@@ -46,6 +46,10 @@
 #define L(p) ((p)->child[0])
 /** starting from p, make a step right */
 #define R(p) ((p)->child[1])
+/** starting from p, make two steps left */
+#define LL(p) (L(L(p)))
+/** starting from p, make a step left, then a step right */
+#define LR(p) R(L(p))
 
 /**
  * worker for PFprop_key;
@@ -250,14 +254,18 @@ infer_key (PFla_op_t *n)
             break;
 
         case la_empty_tbl:
-        case la_element_tag:
+        case la_fcns:
+        case la_docnode:
+        case la_element:
+        case la_attribute:
+        case la_textnode:
+        case la_comment:
+        case la_processi:
+        case la_content:
+        case la_merge_adjacent:
         case la_fragment:
         case la_frag_union:
         case la_empty_frag:
-        case la_docnode:
-        case la_comment:
-        case la_processi:
-        case la_merge_adjacent:
             /* no keys */
             break;
 
@@ -477,23 +485,40 @@ infer_key (PFla_op_t *n)
                 union_ (n->prop->keys, n->sem.doc_access.res);
             break;
 
-        case la_element:
-            /* Element construction builds exactly
-               one element in each iteration. */
-            union_ (n->prop->keys, n->sem.elem.iter_res);
-            union_ (n->prop->keys, n->sem.elem.item_res);
+        case la_twig:
+            /* a constructor builds unique new nodes */
+            union_ (n->prop->keys, n->sem.iter_item.item);
+            switch (L(n)->kind) {
+                case la_docnode:
+                    if (PFprop_key (LL(n)->prop, L(n)->sem.docnode.iter))
+                        union_ (n->prop->keys, n->sem.iter_item.iter);
+                    break;
+                    
+                case la_element:
+                case la_textnode:
+                case la_comment:
+                    if (PFprop_key (LL(n)->prop, L(n)->sem.iter_item.iter))
+                        union_ (n->prop->keys, n->sem.iter_item.iter);
+                    break;
+                    
+                case la_attribute:
+                case la_processi:
+                    if (PFprop_key (LL(n)->prop, 
+                                    L(n)->sem.iter_item1_item2.iter))
+                        union_ (n->prop->keys, n->sem.iter_item.iter);
+                    break;
+                    
+                case la_content:
+                    if (PFprop_key (LR(n)->prop, 
+                                    L(n)->sem.iter_pos_item.iter))
+                        union_ (n->prop->keys, n->sem.iter_item.iter);
+                    break;
+                    
+                default:
+                    break;
+            }
             break;
-
-        case la_attribute:
-            copy (n->prop->keys, L(n)->prop->keys);
-            union_ (n->prop->keys, n->sem.attr.res);
-            break;
-
-        case la_textnode:
-            copy (n->prop->keys, L(n)->prop->keys);
-            union_ (n->prop->keys, n->sem.textnode.res);
-            break;
-
+            
         case la_nil:
         case la_trace:
         case la_trace_msg:

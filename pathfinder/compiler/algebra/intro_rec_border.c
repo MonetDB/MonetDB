@@ -113,7 +113,8 @@ introduce_rec_borders_worker (PFpa_op_t *n, PFarray_t *bases)
             }
             /* Introduce border if the current node is 'inside'
                the recursion while its right child is not. */
-            if (base_path && R(n) && !pfIN(R(n))) {
+            if (base_path && R(n) && !pfIN(R(n)) &&
+                R(n)->kind != pa_fcns) {
                 R(n) = PFpa_rec_border (R(n));
                 R(n)->prop = L(R(n))->prop;
             }

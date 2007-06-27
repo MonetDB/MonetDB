@@ -46,40 +46,59 @@ typedef unsigned int PFmil_ident_t;
 /* reserved identifiers. */
 #define PF_MIL_VAR_UNUSED       0
 #define PF_MIL_VAR_WS           1
-#define PF_MIL_VAR_ATTR         2
-#define PF_MIL_VAR_ELEM         3
-#define PF_MIL_VAR_STR          4
-#define PF_MIL_VAR_INT          5
-#define PF_MIL_VAR_DBL          6
-#define PF_MIL_VAR_DEC          7
-#define PF_MIL_VAR_BOOL         8
-#define PF_MIL_VAR_ATTR_OWN     9
-#define PF_MIL_VAR_ATTR_QN     10
-#define PF_MIL_VAR_ATTR_CONT   11
-#define PF_MIL_VAR_QN_LOC      12
-#define PF_MIL_VAR_QN_URI      13
-#define PF_MIL_VAR_ATTR_PROP   14
-#define PF_MIL_VAR_PROP_VAL    15
-#define PF_MIL_VAR_PRE_PROP    16
-#define PF_MIL_VAR_PRE_CONT    17
-#define PF_MIL_VAR_PROP_TEXT   18
-#define PF_MIL_VAR_PROP_COM    19
-#define PF_MIL_VAR_PROP_INS    20
-#define PF_MIL_VAR_LE          21
-#define PF_MIL_VAR_LT          22
-#define PF_MIL_VAR_EQ          23
-#define PF_MIL_VAR_GT          24
-#define PF_MIL_VAR_GE          25
-#define PF_MIL_VAR_TRACE_OUTER 26
-#define PF_MIL_VAR_TRACE_INNER 27
-#define PF_MIL_VAR_TRACE_ITER  28
-#define PF_MIL_VAR_TRACE_MSG   29
-#define PF_MIL_VAR_TRACE_ITEM  30
-#define PF_MIL_VAR_TRACE_TYPE  31
-#define PF_MIL_VAR_TRACE_REL   32
-#define PF_MIL_VAR_TIME_LOAD   33
-#define PF_MIL_VAR_TIME_QUERY  34
-#define PF_MIL_VAR_TIME_PRINT  35
+#define PF_MIL_VAR_WS_CONT      2
+#define PF_MIL_VAR_KIND_DOC     3
+#define PF_MIL_VAR_KIND_ELEM    4
+#define PF_MIL_VAR_KIND_TEXT    5
+#define PF_MIL_VAR_KIND_COM     6
+#define PF_MIL_VAR_KIND_PI      7
+
+#define PF_MIL_VAR_ATTR         8
+#define PF_MIL_VAR_ELEM         9
+
+#define PF_MIL_VAR_STR         10
+#define PF_MIL_VAR_INT         11
+#define PF_MIL_VAR_DBL         12
+#define PF_MIL_VAR_DEC         13
+#define PF_MIL_VAR_BOOL        14
+
+#define PF_MIL_VAR_PRE_SIZE    15
+#define PF_MIL_VAR_PRE_LEVEL   16
+#define PF_MIL_VAR_PRE_KIND    17
+#define PF_MIL_VAR_PRE_PROP    18
+#define PF_MIL_VAR_PRE_CONT    19
+#define PF_MIL_VAR_PRE_NID     20
+#define PF_MIL_VAR_NID_RID     21
+#define PF_MIL_VAR_FRAG_ROOT   22
+#define PF_MIL_VAR_ATTR_OWN    23
+#define PF_MIL_VAR_ATTR_QN     24
+#define PF_MIL_VAR_ATTR_PROP   25
+#define PF_MIL_VAR_ATTR_CONT   26
+#define PF_MIL_VAR_QN_LOC      27
+#define PF_MIL_VAR_QN_URI      28
+#define PF_MIL_VAR_PROP_VAL    29
+#define PF_MIL_VAR_PROP_TEXT   30
+#define PF_MIL_VAR_PROP_COM    31
+#define PF_MIL_VAR_PROP_INS    32
+#define PF_MIL_VAR_PROP_TGT    33
+
+#define PF_MIL_VAR_LE          34
+#define PF_MIL_VAR_LT          35
+#define PF_MIL_VAR_EQ          36
+#define PF_MIL_VAR_GT          37
+#define PF_MIL_VAR_GE          38
+
+#define PF_MIL_VAR_TRACE_OUTER 39
+#define PF_MIL_VAR_TRACE_INNER 40
+#define PF_MIL_VAR_TRACE_ITER  41
+#define PF_MIL_VAR_TRACE_MSG   42
+#define PF_MIL_VAR_TRACE_ITEM  43
+#define PF_MIL_VAR_TRACE_TYPE  44
+#define PF_MIL_VAR_TRACE_REL   45
+
+#define PF_MIL_VAR_TIME_LOAD   46
+#define PF_MIL_VAR_TIME_QUERY  47
+#define PF_MIL_VAR_TIME_PRINT  48
 
 #define PF_MIL_RES_VAR_COUNT (PF_MIL_VAR_TIME_PRINT + 1)
 
@@ -108,6 +127,7 @@ enum PFmil_kind_t {
 #endif
 
     , m_new          /**< MIL new() operator (creates new BATs) */
+    , m_sseqbase     /**< MIL seqbase() function */
     , m_seqbase      /**< MIL seqbase() function */
     , m_key          /**< MIL key() function */
     , m_insert       /**< MIL insert() function to insert single BUNs */
@@ -153,6 +173,8 @@ enum PFmil_kind_t {
 
     , m_merged_union /**< MIL merged_union() function (from the pathfinder
                           runtime module */
+    , m_multi_mu     /**< MIL multi_merged_union() function (from the pathfinder
+                          runtime module */
 
     , m_sort         /**< MIL sort function */
     , m_sort_rev     /**< MIL sort_rev function */
@@ -181,6 +203,7 @@ enum PFmil_kind_t {
     , m_mround_up    /**< multiplexed operator round_up */
     
     , m_gt           /**< greater than */
+    , m_eq           /**< equal */
     , m_meq          /**< multiplexed comparison (equality) */
     , m_mgt          /**< multiplexed comparison (greater than) */
     , m_mge          /**< multiplexed comparison (greater equal) */
@@ -206,6 +229,7 @@ enum PFmil_kind_t {
     , m_gmin         /**< Grouped min() function `{min}()' */
     , m_sum          /**< MIL sum() function */
     , m_gsum         /**< Grouped sum() function `{sum}()' */
+    , m_egsum        /**< Grouped sum() function `{sum}()' */
     
     , m_declare      /**< declare variable */
     , m_nop          /**< `no operation', do nothing.
@@ -366,6 +390,8 @@ enum PFmil_kind_t {
 
     , m_add_qnames   /**< add_qnames() function (Pathfinder runtime) */
 
+    , m_add_content  /**< add_conten() function (Pathfinder runtime) */
+    
     , m_chk_qnames   /**< invalid_qname() function (Pathfinder runtime) */
 
     , m_print        /**< MIL print() function */
@@ -486,6 +512,9 @@ PFmil_t * PFmil_while (const PFmil_t *, const PFmil_t *);
 PFmil_t * PFmil_assgn (const PFmil_t *v, const PFmil_t *e);
 
 /** MIL seqbase() function */
+PFmil_t * PFmil_seqbase_lookup (const PFmil_t *);
+
+/** MIL seqbase() function */
 PFmil_t * PFmil_seqbase (const PFmil_t *, const PFmil_t *);
 
 /** MIL key() function */
@@ -587,6 +616,9 @@ PFmil_t * PFmil_mc_intersect (const PFmil_t *);
 /** MIL merged_union() function (from the pathfinder runtime module) */
 PFmil_t * PFmil_merged_union (const PFmil_t *);
 
+/** MIL multi_merged_union() function (from the pathfinder runtime module) */
+PFmil_t * PFmil_multi_merged_union (const PFmil_t *);
+
 /** list arguments in a variable argument list function */
 PFmil_t * PFmil_arg (const PFmil_t *, const PFmil_t *);
 
@@ -645,6 +677,10 @@ PFmil_t * PFmil_sum (const PFmil_t *);
 /** Grouped sum function `{sum}()' (aka. ``pumped sum'') */
 PFmil_t * PFmil_gsum (const PFmil_t *);
 
+/** Grouped sum function `{sum}()' with two parameters
+    (aka. ``pumped sum'') */
+PFmil_t * PFmil_egsum (const PFmil_t *, const PFmil_t *);
+
 /** typecast */
 PFmil_t * PFmil_cast (const PFmil_t *, const PFmil_t *);
 
@@ -689,6 +725,9 @@ PFmil_t * PFmil_mround_up (const PFmil_t *);
 
 /** greater than */
 PFmil_t * PFmil_gt (const PFmil_t *, const PFmil_t *);
+
+/** equal */
+PFmil_t * PFmil_eq (const PFmil_t *, const PFmil_t *);
 
 /** Multiplexed comparison operator (equality) */
 PFmil_t * PFmil_meq (const PFmil_t *, const PFmil_t *);
@@ -1245,6 +1284,7 @@ PFmil_t * PFmil_add_qname (const PFmil_t *, const PFmil_t *,
                            const PFmil_t *, const PFmil_t *);
 PFmil_t * PFmil_add_qnames (const PFmil_t *, const PFmil_t *,
                             const PFmil_t *, const PFmil_t *);
+PFmil_t * PFmil_add_content (const PFmil_t *, const PFmil_t *, const PFmil_t *);
 PFmil_t * PFmil_check_qnames (const PFmil_t *);
 
 PFmil_t * PFmil_declare (const PFmil_t *);

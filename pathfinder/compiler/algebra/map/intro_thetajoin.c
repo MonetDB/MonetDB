@@ -443,44 +443,20 @@ find_join_worker (PFla_op_t *n,
             }
             break;
 
+        case la_twig:
+        case la_fcns:
+        case la_docnode:
         case la_element:
+        case la_attribute:
+        case la_textnode:
+        case la_comment:
+        case la_processi:
+        case la_content:
             /* FIXME: for now we assume that a theta-join 
-               cannot be pushed through an element constructor */
+               cannot be pushed through a constructor */
             LEFT_COLS(n)  = att_NULL;
             RIGHT_COLS(n) = att_NULL;
             break;
-
-        case la_element_tag:
-            break;
-
-        case la_attribute:
-            if (LEFT_COLS(n) & n->sem.attr.res) {
-                LEFT_COLS(n) = diff   (LEFT_COLS(n), n->sem.attr.res);
-                LEFT_COLS(n) = union_ (LEFT_COLS(n), n->sem.attr.qn);
-                LEFT_COLS(n) = union_ (LEFT_COLS(n), n->sem.attr.val);
-            }
-            if (RIGHT_COLS(n) & n->sem.attr.res) {
-                RIGHT_COLS(n) = diff   (RIGHT_COLS(n), n->sem.attr.res);
-                RIGHT_COLS(n) = union_ (RIGHT_COLS(n), n->sem.attr.qn);
-                RIGHT_COLS(n) = union_ (RIGHT_COLS(n), n->sem.attr.val);
-            }
-            break;
-
-        case la_textnode:
-            if (LEFT_COLS(n) & n->sem.textnode.res) {
-                LEFT_COLS(n) = diff   (LEFT_COLS(n), n->sem.textnode.res);
-                LEFT_COLS(n) = union_ (LEFT_COLS(n), n->sem.textnode.item);
-            }
-            if (RIGHT_COLS(n) & n->sem.textnode.res) {
-                RIGHT_COLS(n) = diff   (RIGHT_COLS(n), n->sem.textnode.res);
-                RIGHT_COLS(n) = union_ (RIGHT_COLS(n), n->sem.textnode.item);
-            }
-            break;
-
-        case la_docnode:
-        case la_comment:
-        case la_processi:
-            assert (!"not implemented yet?");
 
         case la_merge_adjacent:
             /* FIXME: for now we assume that a theta-join 

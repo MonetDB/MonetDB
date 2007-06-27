@@ -309,14 +309,17 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
             case la_all:
             case la_scjoin:
             case la_doc_tbl:
-            case la_element:
-            case la_element_tag:
-            case la_attribute: /* treated in case la_root */
-            case la_textnode: /* treated in case la_root */
+            case la_twig:
+            case la_fcns:
             case la_docnode:
+            case la_element:
+            case la_attribute:
+            case la_textnode:
             case la_comment:
             case la_processi:
+            case la_content:
             case la_merge_adjacent:
+            case la_roots:
             case la_fragment:
             case la_frag_union:
             case la_empty_frag:
@@ -400,28 +403,6 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
                 if ((modified = GEN(lp->sem.doc_access.res))) LP = R(lp);
                 break;
 
-            case la_roots:
-                if (!PFprop_key (rp->prop, ratt) ||
-                    !PFprop_subdom (rp->prop,
-                                    PFprop_dom (lp->prop, latt),
-                                    PFprop_dom (rp->prop, ratt)))
-                    /* Ensure that the values of the left join argument
-                       are a subset of the values of the right join argument
-                       and that the right join argument is keyed. These
-                       two tests make sure that we have exactly one match per
-                       tuple in the left relation and thus the result of the
-                       attribute/textnode constructor stays stable. */
-                    break;
-
-                /* attributes */
-                if (L(lp)->kind == la_attribute &&
-                    (modified = GEN(L(lp)->sem.attr.res))) LP = LL(lp);
-                
-                /* textnodes */
-                if (L(lp)->kind == la_textnode &&
-                    (modified = GEN(L(lp)->sem.textnode.res))) LP = LL(lp);
-                break;
-
             case la_dummy:
                 LP = L(lp);
                 next_join = p;
@@ -450,14 +431,17 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
             case la_all:
             case la_scjoin:
             case la_doc_tbl:
-            case la_element:
-            case la_element_tag:
-            case la_attribute: /* treated in case la_root */
-            case la_textnode: /* treated in case la_root */
+            case la_twig:
+            case la_fcns:
             case la_docnode:
+            case la_element:
+            case la_attribute:
+            case la_textnode:
             case la_comment:
             case la_processi:
+            case la_content:
             case la_merge_adjacent:
+            case la_roots:
             case la_fragment:
             case la_frag_union:
             case la_empty_frag:
@@ -1412,102 +1396,6 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
                 }
                 break;
 
-            case la_roots:
-                if (!PFprop_key (rp->prop, ratt) ||
-                    !PFprop_subdom (rp->prop,
-                                    PFprop_dom (lp->prop, latt),
-                                    PFprop_dom (rp->prop, ratt)))
-                    /* Ensure that the values of the left join argument
-                       are a subset of the values of the right join argument
-                       and that the right join argument is keyed. These
-                       two tests make sure that we have exactly one match per
-                       tuple in the left relation and thus the result of the
-                       attribute/textnode constructor stays stable. */
-                    break;
-
-                /* attributes */
-                if (L(lp)->kind == la_attribute &&
-                    !is_join_att (p, L(lp)->sem.attr.res)) {
-
-                    PFalg_proj_t *proj_list;
-                    PFalg_att_t cur;
-                    unsigned int count = 0;
-                    /* create projection list */
-                    proj_list = PFmalloc (lp->schema.count *
-                                          sizeof (*(proj_list)));
-                                          
-                    for (unsigned int i = 0; i < lp->schema.count; i++) {
-                        cur = lp->schema.items[i].name;
-                        if (cur != latt)
-                            proj_list[count++] = proj (cur, cur);
-                    }
-                    /* add join column with its original name
-                       to the projection list */
-                    proj_list[count++] = proj (latt,
-                                               p->sem.eqjoin_unq.res);
-                                               
-                    /* make sure that frag and roots see
-                       the new attribute node */
-                    *L(lp) = *(attribute (eqjoin_unq (LL(lp), rp, latt, ratt,
-                                                      p->sem.eqjoin_unq.res),
-                                          L(lp)->sem.attr.res,
-                                          is_join_att(p, L(lp)->sem.attr.qn)
-                                             ? p->sem.eqjoin_unq.res
-                                             : L(lp)->sem.attr.qn,
-                                          is_join_att(p, L(lp)->sem.attr.val)
-                                             ? p->sem.eqjoin_unq.res
-                                             : L(lp)->sem.attr.val));
-                    *p = *(roots (L(lp)));
-                    /* the schema of the new roots operator has to
-                       be pruned to maintain the schema of the original
-                       roots operator -- its pointer is replaced */
-                    *lp = *(PFla_project_ (p, count, proj_list));
-                    
-                    next_join = LL(p);
-                    break;
-                }
-                
-                /* textnodes */
-                if (L(lp)->kind == la_textnode &&
-                    !is_join_att (p, L(lp)->sem.textnode.res)) {
-
-                    PFalg_proj_t *proj_list;
-                    PFalg_att_t cur;
-                    unsigned int count = 0;
-                    /* create projection list */
-                    proj_list = PFmalloc (lp->schema.count *
-                                          sizeof (*(proj_list)));
-                                          
-                    for (unsigned int i = 0; i < lp->schema.count; i++) {
-                        cur = lp->schema.items[i].name;
-                        if (cur != latt)
-                            proj_list[count++] = proj (cur, cur);
-                    }
-                    /* add join column with its original name
-                       to the projection list */
-                    proj_list[count++] = proj (latt,
-                                               p->sem.eqjoin_unq.res);
-                                               
-                    /* make sure that frag and roots see
-                       the new textnode node */
-                    *(L(lp)) = *(textnode (eqjoin_unq (LL(lp), rp, latt, ratt,
-                                                       p->sem.eqjoin_unq.res),
-                                           L(lp)->sem.textnode.res,
-                                           is_join_att(p,
-                                                       L(lp)->sem.textnode.item)
-                                              ? p->sem.eqjoin_unq.res
-                                              : L(lp)->sem.textnode.item));
-                    *p = *(roots (L(lp)));
-                    /* the schema of the new roots operator has to
-                       be pruned to maintain the schema of the original
-                       roots operator -- its pointer is replaced */
-                    *lp = *(PFla_project_ (p, count, proj_list));
-                    
-                    next_join = LL(p);
-                    break;
-                }
-                break;
-                
             case la_cond_err:
                 /* this breaks proxy generation - thus don't 
                    rewrite conditional errors */
@@ -1558,15 +1446,15 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
                 *p = *(trace (eqjoin_unq (L(lp), rp, latt, ratt,
                                           p->sem.eqjoin_unq.res),
                               R(lp),
-                              is_join_att(p, lp->sem.trace.iter)
+                              is_join_att(p, lp->sem.iter_pos_item.iter)
                                   ? p->sem.eqjoin_unq.res
-                                  : lp->sem.trace.iter,
-                              is_join_att(p, lp->sem.trace.pos)
+                                  : lp->sem.iter_pos_item.iter,
+                              is_join_att(p, lp->sem.iter_pos_item.pos)
                                   ? p->sem.eqjoin_unq.res
-                                  : lp->sem.trace.pos,
-                              is_join_att(p, lp->sem.trace.item)
+                                  : lp->sem.iter_pos_item.pos,
+                              is_join_att(p, lp->sem.iter_pos_item.item)
                                   ? p->sem.eqjoin_unq.res
-                                  : lp->sem.trace.item));
+                                  : lp->sem.iter_pos_item.item));
                 
                 /* the schema of the new trace operator has to
                    be pruned to maintain the schema of the original
@@ -1641,12 +1529,17 @@ map_name (PFla_op_t *p, PFalg_att_t att)
         case la_all:
         case la_scjoin:
         case la_doc_tbl:
-        case la_element:
-        case la_element_tag:
+        case la_twig:
+        case la_fcns:
         case la_docnode:
+        case la_element:
+        case la_attribute:
+        case la_textnode:
         case la_comment:
         case la_processi:
+        case la_content:
         case la_merge_adjacent:
+        case la_roots:
         case la_fragment:
         case la_frag_union:
         case la_empty_frag:
@@ -1671,7 +1564,6 @@ map_name (PFla_op_t *p, PFalg_att_t att)
         case la_eqjoin_unq:
         case la_semijoin:
         case la_thetajoin:
-        case la_roots:
         case la_trace:
         case la_cond_err:
             /* name does not change */
@@ -1713,12 +1605,6 @@ map_name (PFla_op_t *p, PFalg_att_t att)
             break;
         case la_doc_access:
             if (att == p->sem.doc_access.res) return att_NULL;
-            break;
-        case la_attribute:
-            if (att == p->sem.attr.res) return att_NULL;
-            break;
-        case la_textnode:
-            if (att == p->sem.textnode.res) return att_NULL;
             break;
     }
     return att;

@@ -291,6 +291,13 @@ prop_infer_reqvals (PFla_op_t *n, reqval_t reqvals)
         case la_count:
         case la_seqty1:
         case la_all:
+        case la_doc_tbl:
+        case la_twig:
+        case la_docnode:
+        case la_attribute:
+        case la_textnode:
+        case la_comment:
+        case la_processi:
         case la_fragment:
             rv.name = 0;
             rv.val = 0;
@@ -320,8 +327,9 @@ prop_infer_reqvals (PFla_op_t *n, reqval_t reqvals)
             break;
 
         case la_scjoin:
+        case la_fcns:
         case la_element:
-        case la_element_tag:
+        case la_content:
         case la_merge_adjacent:
         case la_frag_union:
         case la_string_join:
@@ -350,29 +358,6 @@ prop_infer_reqvals (PFla_op_t *n, reqval_t reqvals)
             rv.val = diff (n->prop->reqvals.val, n->sem.doc_access.res);
             prop_infer_reqvals (R(n), rv);
             break;
-
-        case la_doc_tbl:
-            rv.name = 0;
-            rv.val = 0;
-            prop_infer_reqvals (L(n), rv);
-            break;
-
-        case la_attribute:
-            rv.name = diff (rv.name, n->sem.attr.res);
-            rv.val = diff (rv.val, n->sem.attr.res);
-            prop_infer_reqvals (L(n), rv);
-            break;
-
-        case la_textnode:
-            rv.name = diff (rv.name, n->sem.textnode.res);
-            rv.val = diff (rv.val, n->sem.textnode.res);
-            prop_infer_reqvals (L(n), rv);
-            break;
-
-        case la_docnode:
-        case la_comment:
-        case la_processi:
-            assert (!"not implemented yet?");
 
         case la_nil:
             break;

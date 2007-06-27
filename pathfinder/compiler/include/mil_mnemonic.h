@@ -82,6 +82,9 @@
 #define seq(...) PFmil_seq (__VA_ARGS__)
 
 /** seqbase() operator */
+#define seqbase_lookup(a) PFmil_seqbase_lookup((a))
+
+/** seqbase() operator */
 #define seqbase(a,b) PFmil_seqbase((a), (b))
 
 /** key() function */
@@ -181,6 +184,9 @@
 /** merged_union() function */
 #define merged_union(a) PFmil_merged_union (a)
 
+/** multi_merged_union() function */
+#define multi_merged_union(a) PFmil_multi_merged_union (a)
+
 /** build argument list for MIL variable argument list functions */
 #define arg(a,b) PFmil_arg ((a), (b))
 
@@ -216,9 +222,10 @@
 #define gcount(a) PFmil_gcount(a)
 #define egcount(a,b) PFmil_egcount((a),(b))
 
-/** sum() operator and grouped count */
+/** sum() operator and grouped sum */
 #define sum(a) PFmil_sum(a)
 #define gsum(a) PFmil_gsum(a)
+#define egsum(a,b) PFmil_egsum((a),(b))
 
 /** type cast */
 #define cast(type,e) PFmil_cast ((type), (e))
@@ -252,6 +259,9 @@
 
 /** greater than */
 #define gt(a,b) PFmil_gt ((a), (b))
+
+/** equal */
+#define eq(a,b) PFmil_eq ((a), (b))
 
 /** multiplexed comparison (greater than) */
 #define mgt(a,b) PFmil_mgt ((a), (b))
@@ -309,6 +319,7 @@
 #define textnode(a,b) PFmil_textnode ((a), (b))
 #define add_qname(a,b,c,d) PFmil_add_qname ((a), (b), (c), (d))
 #define add_qnames(a,b,c,d) PFmil_add_qnames ((a), (b), (c), (d))
+#define add_content(a,b,c)  PFmil_add_content ((a), (b), (c))
 #define check_qnames(a) PFmil_check_qnames ((a))
 
 /** Multiplexed search() function `[search](a,b)' */

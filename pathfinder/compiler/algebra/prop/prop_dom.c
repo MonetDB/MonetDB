@@ -951,31 +951,79 @@ infer_dom (PFla_op_t *n, unsigned int id)
             add_dom (n->prop, n->sem.doc_access.res, id++);
             break;
 
-        case la_element:
+        case la_twig:
             /* retain domain for attribute iter */
-            add_dom (n->prop,
-                     n->sem.elem.iter_res,
-                     PFprop_dom (RL(n)->prop, n->sem.elem.iter_qn));
+            switch (L(n)->kind) {
+                case la_docnode:
+                    add_dom (n->prop,
+                             n->sem.iter_item.iter,
+                             PFprop_dom (L(n)->prop,
+                                         L(n)->sem.docnode.iter));
+                    break;
+                    
+                case la_element:
+                case la_textnode:
+                case la_comment:
+                    add_dom (n->prop,
+                             n->sem.iter_item.iter,
+                             PFprop_dom (L(n)->prop,
+                                         L(n)->sem.iter_item.iter));
+                    break;
+                    
+                case la_attribute:
+                case la_processi:
+                    add_dom (n->prop,
+                             n->sem.iter_item.iter,
+                             PFprop_dom (L(n)->prop,
+                                         L(n)->sem.iter_item1_item2.iter));
+                    break;
+                    
+                case la_content:
+                    add_dom (n->prop,
+                             n->sem.iter_item.iter,
+                             PFprop_dom (L(n)->prop,
+                                         L(n)->sem.iter_pos_item.iter));
+                    break;
+                    
+                default:
+                    break;
+            }
             /* create new domain for attribute item */
-            add_dom (n->prop, n->sem.elem.item_res, id++);
+            add_dom (n->prop, n->sem.iter_item.item, id++);
             break;
-
-        case la_element_tag:
-            break;
-
-        case la_attribute:
-            bulk_add_dom (n->prop, L(n));
-            add_dom (n->prop, n->sem.attr.res, id++);
-            break;
-
-        case la_textnode:
-            bulk_add_dom (n->prop, L(n));
-            add_dom (n->prop, n->sem.textnode.res, id++);
+            
+        case la_fcns:
             break;
 
         case la_docnode:
+            /* retain domain for attribute iter */
+            add_dom (n->prop,
+                     n->sem.docnode.iter,
+                     PFprop_dom (L(n)->prop, n->sem.docnode.iter));
+            break;
+
+        case la_element:
         case la_comment:
+        case la_textnode:
+            /* retain domain for attribute iter */
+            add_dom (n->prop,
+                     n->sem.iter_item.iter,
+                     PFprop_dom (L(n)->prop, n->sem.iter_item.iter));
+            break;
+
+        case la_attribute:
         case la_processi:
+            /* retain domain for attribute iter */
+            add_dom (n->prop,
+                     n->sem.iter_item1_item2.iter,
+                     PFprop_dom (L(n)->prop, n->sem.iter_item1_item2.iter));
+            break;
+
+        case la_content:
+            /* retain domain for attribute iter */
+            add_dom (n->prop,
+                     n->sem.iter_pos_item.iter,
+                     PFprop_dom (R(n)->prop, n->sem.iter_pos_item.iter));
             break;
 
         case la_merge_adjacent:

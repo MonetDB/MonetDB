@@ -52,8 +52,12 @@
 #define R(p) ((p)->child[1])
 #define LL(p) (L(L(p)))
 #define RL(p) (L(R(p)))
+#define LR(p) (R(L(p)))
 #define LLL(p) (LL(L(p)))
 #define LLR(p) (R(LL(p)))
+#define LRL(p) (L(LR(p)))
+#define LRLL(p) (LL(LR(p)))
+#define LLRL(p) (RL(LL(p)))
 
 #define SEEN(p) ((p)->bit_dag)
 
@@ -817,6 +821,45 @@ opt_complex (PFla_op_t *p)
                                         R(p)->sem.proj.items[0],
                                         R(p)->sem.proj.items[1]);
             }
+            break;
+
+        case la_fcns:
+            /**
+             * match the following pattern
+             *              _ _ _ _ _
+             *            |          \
+             *         content        |
+             *         /     \         
+             *     frag_U    attach   |
+             *     /   \       |       
+             *  empty  frag  roots    |
+             *  frag      \   /        
+             *            twig        |
+             *              | _ _ _ _/
+             *  
+             * and throw it away ( - - - )
+             */
+            if (L(p)->kind == la_content &&
+                LR(p)->kind == la_attach &&
+                LRL(p)->kind == la_roots &&
+                LRLL(p)->kind == la_twig &&
+                LL(p)->kind == la_frag_union &&
+                LLL(p)->kind == la_empty_frag &&
+                LLR(p)->kind == la_fragment &&
+                LLRL(p) == LRLL(p) &&
+                /* input columns match the output
+                   columns of the underlying twig */
+                L(p)->sem.iter_pos_item.iter ==
+                LRLL(p)->sem.iter_item.iter &&
+                L(p)->sem.iter_pos_item.item ==
+                LRLL(p)->sem.iter_item.item &&
+                /* input twig is referenced only once */
+                PFprop_refctr (LR(p)) == 1 &&
+                PFprop_refctr (LRL(p)) == 1) {
+                L(p) = L(LRLL(p));
+            }
+            break;
+                
         default:
             break;
     }
@@ -836,6 +879,7 @@ PFalgopt_complex (PFla_op_t *root)
     PFprop_infer_set (root);
     PFprop_infer_unq_names (root);
     PFprop_infer_reqval (root);
+    PFprop_infer_refctr (root);
 
     /* Optimize algebra tree */
     opt_complex (root);

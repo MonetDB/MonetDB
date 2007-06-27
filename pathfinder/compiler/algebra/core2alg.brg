@@ -84,75 +84,76 @@ typedef struct PFcnode_t *NODEPTR_TYPE;
 %term nil                =  6 /**< end-of-sequence marker */
 
 %term seq                =  7 /**< sequence construction */
-%term ordered            =  8
-%term unordered          =  9
+%term twig_seq           =  8 /**< sequence construction within twigs */
+%term ordered            =  9
+%term unordered          = 10
 
-%term flwr               = 10 /**< flwr expression */
-%term let                = 11 /**< let expression */
-%term letbind            = 12 /**< binding part of a let expression */
-%term for_               = 13 /**< for expression */
-%term forbind            = 14 /**< binding part of a for expression */
-%term forvars            = 15 /**< variable pair (var + pos. var) of a for */
+%term flwr               = 14 /**< flwr expression */
+%term let                = 15 /**< let expression */
+%term letbind            = 16 /**< binding part of a let expression */
+%term for_               = 17 /**< for expression */
+%term forbind            = 18 /**< binding part of a for expression */
+%term forvars            = 19 /**< variable pair (var + pos. var) of a for */
 
-%term orderby            = 16 /**< orderby clause */
-%term orderspecs         = 17 /**< list of order specs */
+%term orderby            = 20 /**< orderby clause */
+%term orderspecs         = 21 /**< list of order specs */
 
-%term apply              = 18 /**< function application */
-%term arg                = 19 /**< function argument (list) */
+%term apply              = 22 /**< function application */
+%term arg                = 23 /**< function argument (list) */
 
-%term typesw             = 20 /**< typeswitch clause */
-%term cases              = 21 /**< case concatenation for typeswitch */
-%term case_              = 22 /**< single case for typeswitch */
-%term default_           = 23 /**< default branch in typeswitch */
-%term seqtype            = 24 /**< a SequenceType */
-%term seqcast            = 25 /**< cast along <: */
-/* %term proof           = 26      typechecker only: prove <: relationship */
-/* %term subty           = 27      subtype condition for proof() */
-/* %term stattype        = 28      static type of expression. Required for
-                                   fs:convert-operand. Will be removed during
-                                   typechecking and replaced by seqtype, as
-                                   soon as types are known. */
+%term typesw             = 25 /**< typeswitch clause */
+%term cases              = 26 /**< case concatenation for typeswitch */
+%term case_              = 27 /**< single case for typeswitch */
+%term default_           = 28 /**< default branch in typeswitch */
+%term seqtype            = 29 /**< a SequenceType */
+%term seqcast            = 30 /**< cast along <: */
 
-%term if_                = 29 /**< if-then-else conditional */
-%term then_else          = 30 /**< then- and else-branches of an
-                                   if-then-else conditional */
+%term if_                = 34 /**< if-then-else conditional */
+%term then_else          = 35 /**< then- and else-branches of an
+                                if-then-else conditional */
 
-%term locsteps           = 31 /**< path of location steps only */
-%term ancestor           = 32 /**< the parent, the parent's parent,... */
-%term ancestor_or_self   = 33 /**< the parent, the parent's parent,... + self */
-%term attribute          = 34 /**< attributes of the context node */
-%term child              = 35 /**< children of the context node */
-%term descendant         = 36 /**< children, children's children,... + self */
-%term descendant_or_self = 37 /**< children, children's children,... */
-%term following          = 38 /**< nodes after current node (document order) */
-%term following_sibling  = 39 /**< all following nodes with same parent */
-%term parent             = 40 /**< parent node (exactly one or none) */
-%term preceding          = 41 /**< nodes before context node (document order) */
-%term preceding_sibling  = 42 /**< all preceding nodes with same parent */
-%term self               = 43 /**< the context node itself */
+%term locsteps           = 40 /**< path of location steps only */
 
-%term elem               = 44 /**< the element constructor */
-%term attr               = 45 /**< the attribute constructor */
-%term text               = 46 /**< the text constructor */
-%term doc                = 47 /**< the document constructor */
-%term comment            = 48 /**< the comment constructor */
-%term pi                 = 49 /**< the processing-instruction constructor */
-%term tag                = 50 /**< the tagname for elem. and attr. constr. */
+  /* XPath axes */
+%term ancestor           = 41 /**< the parent, the parent's parent,... */
+%term ancestor_or_self   = 42 /**< the parent, the parent's parent,... + self */
+%term attribute          = 43 /**< attributes of the context node */
+%term child              = 44 /**< children of the context node */
+%term descendant         = 45 /**< children, children's children,... + self */
+%term descendant_or_self = 46 /**< children, children's children,... */
+%term following          = 47 /**< nodes after current node (document order) */
+%term following_sibling  = 48 /**< all following nodes with same parent */
+%term parent             = 49 /**< parent node (exactly one or none) */
+%term preceding          = 50 /**< nodes before context node (document order) */
+%term preceding_sibling  = 51 /**< all preceding nodes with same parent */
+%term self               = 52 /**< the context node itself */
 
-%term true_              = 51 /**< built-in function `fn:true ()' */
-%term false_             = 52 /**< built-in function `fn:false ()' */
-%term empty              = 53 /**< built-in function `empty' */
-%term main               = 54 /**< tree root
+  /* Constructor Nodes */
+%term elem               = 55 /**< the element constructor */
+%term attr               = 56 /**< the attribute constructor */
+%term text               = 57 /**< the text constructor */
+%term doc                = 58 /**< the document constructor */
+%term comment            = 59 /**< the comment constructor */
+%term pi                 = 60 /**< the processing-instruction constructor */
+%term tag                = 61 /**< the tagname for elem. and attr. constr. */
+
+%term true_              = 65 /**< built-in function `fn:true ()' */
+%term false_             = 66 /**< built-in function `fn:false ()' */
+%term empty              = 67 /**< built-in function `empty' */
+
+%term main               = 68 /**< tree root.
                                    Separates function declarations from
                                    the query body. */
-%term fun_decls          = 55 /**< list of function declarations */
-%term fun_decl           = 56 /**< function declaration */
-%term params             = 57 /**< function declaration parameter list */
-%term param              = 58 /**< function declaration parameter */
-%term cast               = 59 /**< XQuery `cast as' operation */
+%term fun_decls          = 69 /**< list of function declarations */
+%term fun_decl           = 70 /**< function declaration */
+%term params             = 71 /**< function declaration parameter list */
+%term param              = 72 /**< function declaration parameter */
+%term cast               = 73 /**< function declaration parameter */
 
-%term recursion          = 60 /**< "with $v seeded by..." expression */
-%term seed               = 61
+  /* Pathfinder extension: recursion */
+%term recursion          = 74 /**< "with $v seeded by..." expression */
+%term seed               = 75
+
 %%
 
 Query:              main (FunctionDecls, CoreExpr)              =   1 (10);
@@ -219,16 +220,26 @@ CoreExpr:     locsteps (preceding (seqtype), CoreExpr)          =  39 (10);
 CoreExpr:     locsteps (preceding_sibling (seqtype), CoreExpr)  =  40 (10);
 CoreExpr:     locsteps (self (seqtype), CoreExpr)               =  41 (10);
 
-CoreExpr:           elem (TagName, CoreExpr)                    =  50 (10);
-CoreExpr:           attr (TagName, CoreExpr)                    =  51 (10);
+CoreExpr:           TwigExpr                                    =  45 (20);
                                                                      
+TwigSeq:            twig_seq (TwigExpr, TwigSeq)                =  46 (10);
+TwigSeq:            TwigExpr                                    =  47 (10);
+
+/* the following rule has to be more expensive then
+   the normal empty rule as otherwise empty is mapped
+   into an empty constructor */
+TwigExpr:           empty                                       =  48 (20);
+TwigExpr:           CoreExpr                                    =  49  (0);
+                                                                     
+TwigExpr:           doc (TwigSeq)                               =  50 (10);
+TwigExpr:           elem (TagName, TwigSeq)                     =  51 (10);
+TwigExpr:           attr (TagName, CoreExpr)                    =  52 (10);
+TwigExpr:           text (CoreExpr)                             =  53 (10);
+TwigExpr:           comment (CoreExpr)                          =  54 (10);
+TwigExpr:           pi (CoreExpr, CoreExpr)                     =  55 (10);
+                                                                      
 TagName:            tag                                         = 400 (10);
 TagName:            CoreExpr                                    = 401 (10);
-                                                                     
-CoreExpr:           text (CoreExpr)                             =  52 (10);
-CoreExpr:           doc (CoreExpr)                              =  53 (10);
-CoreExpr:           comment (CoreExpr)                          =  54 (10);
-CoreExpr:           pi (CoreExpr)                               =  55 (10);
                                                                      
 CoreExpr:           apply (FunctionArgs)                        =  60 (10);
                                                                      
@@ -415,12 +426,12 @@ reduce (PFcnode_t * p, int goalnt)
         /* CoreExpr:           flwr (OptBindExpr, CoreExpr) */
         case 4:
 
-        /* CoreExpr:           for_ (forbind (forvars (var, nil),
+        /* OptBindExpr:        for_ (forbind (forvars (var, nil),
                                               Atom),
                                      CoreExpr) */
         case 5:
 
-        /* CoreExpr:           let (letbind (var, CoreExpr), CoreExpr) */
+        /* OptBindExpr:        let (letbind (var, CoreExpr), CoreExpr) */
         case 6:
 
         /* CoreExpr:           if_ (Atom, then_else (CoreExpr, CoreExpr)) */
@@ -1774,82 +1785,166 @@ reduce (PFcnode_t * p, int goalnt)
             A(p) = locstep (alg_self, LL(p)->sem.type, A(R(p)));
             break;
 
-        /* CoreExpr:           elem (TagName, CoreExpr) */
+        /* CoreExpr:           TwigExpr */
+        case 45:
+        {   /*
+             * Introduce a twig operator that generates 
+             * the correct new pre values and provides a result
+             * and a new document fragment.
+             *
+             * env, loop: e => q
+             *
+             * n = twig (q)
+             * ----------------------------------------------------------------
+             * env, loop: twig e =>
+             *                                           pos
+             * rel:  (proj_iter,item:pre (roots (n))) x -----
+             *                                            1
+             *                                                          zero
+             *    where roots (n) = sel (res)(= res:(level, zero) (n x ------))
+             *                                                            0
+             *
+             * frag: proj_pre,size,level,kind,prop,frag (n)
+             */
+
+            PFla_op_t *twig = twig (A(p).rel,
+                                    att_iter,
+                                    att_item);
+
+            A(p) = (struct  PFla_pair_t) {
+                     .rel = attach (roots (twig),
+                                    att_pos, lit_nat (1)),
+                     .frag = PFla_set (fragment (twig))};
+        }   break;
+
+        /* TwigExpr:           twig_seq (TwigExpr, TwigSeq) */
+        case 46:
+            /* Represent a sequence in a twig constructor by
+               the special operator fcns (first-child-next-sibling) */
+
+            A(p) = (struct  PFla_pair_t) {
+                     .rel = fcns (A(L(p)).rel, A(R(p)).rel),
+                     .frag = PFla_empty_set () };
+            break;
+            
+        /* TwigSeq:            TwigExpr: */
+        case 47:
+            /* Represent the end of a twig sequence by nil token:
+               fcns (expr, nil). */
+
+            A(p) = (struct  PFla_pair_t) {
+                     .rel = fcns (A(p).rel, nil ()),
+                     .frag = PFla_empty_set () };
+            break;
+            
+        /* TwigExpr:           empty */
+        case 48:
+            /* Represent the empty content of a document or element
+               constructor by the nil token. */
+
+            A(p) = (struct  PFla_pair_t) {
+                     .rel = nil (),
+                     .frag = PFla_empty_set () };
+            break;
+           
+        /* TwigExpr:           CoreExpr */
+        case 49:
+            /* Represent the (already generated) node content of a document
+               or element constructor (e.g., nodes from a queried document)
+               by a content operator. The task of this operator is to collect
+               all subtree nodes and prepare them for a subtree copy. */
+
+            A(p) = (struct  PFla_pair_t) {
+                     .rel = content (PFla_set_to_la (A(p).frag), A(p).rel,
+                                     att_iter, att_pos, att_item),
+                     .frag = PFla_empty_set () };
+            break;
+
+        /* TwigExpr:           doc (TwigSeq) */
         case 50:
-        {
             /*
-             * CoreExpr (q2) evaluates to a sequence of nodes. TagName (q1)
-             * is the name of a new node which becomes the common root of
-             * the constructed nodes.
+             * env, loop: e => q, doc (q)
+             * ----------------------------------------------------------------
+             * env, loop: docnode e =>
+             *
+             * rel:       docnode (loop, q)
+             * frag:      _
+             *
+             * Inside a twig constructor every node constructor produces
+             * neither a schema nor a fragment information. This allows
+             * different implementations to use whatever document layout 
+             * they prefer. Only after the complete twig is constructed
+             * the twig operator provides a schema and the new fragment
+             * information.
+             */
+            A(p) = (struct  PFla_pair_t) {
+                     .rel = docnode (loop, A(L(p)).rel, att_iter),
+                     .frag = PFla_empty_set () };
+            break;
+
+        /* TwigExpr:           elem (TagName, TwigSeq) */
+        case 51:
+            /*
+             * CoreExpr (q2) evaluates to a sequence of nodes (fcns operators).
+             * TagName (q1) is the name of a new node which becomes the common
+             * root of the constructed tree.
              *
              * env, loop: e1 => q1, doc (q1)
-             * env, loop: e2 => q2, doc (q2)
-             *
-             * n = element (doc (q2), q1, q2)
+             * env, loop: e2 => q2, _
              * -----------------------------------------------------------------
              * env, loop: element e1 {e2} =>
-             *                                               pos
-             * result:    (proj_iter,item:pre (roots (n))) x -----
-             *                                                1
-             *                                                          zero
-             *    where roots (n) = sel (res)(= res:(level, zero) (n x ------))
-             *                                                            0
              *
-             * frag:       proj_pre,size,level,kind,prop,frag (n)
+             * rel:       element (q1, q2)
+             * frag:      _
+             *
+             * Inside a twig constructor every node constructor produces
+             * neither a schema nor a fragment information. This allows
+             * different implementations to use whatever document layout 
+             * they prefer. Only after the complete twig is constructed
+             * the twig operator provides a schema and the new fragment
+             * information.
              */
-
-            PFla_op_t *elem = element (PFla_set_to_la (A(R(p)).frag),
-                                       A(L(p)).rel, A(R(p)).rel,
-                                       att_iter, att_item,
-                                       att_iter, att_pos, att_item,
-                                       att_iter, att_item);
-
             A(p) = (struct  PFla_pair_t) {
-                     .rel = attach (roots (elem),
-                                    att_pos, lit_nat (1)),
-                     .frag = PFla_set (fragment (elem))};
-        } break;
+                     .rel = element (A(L(p)).rel, A(R(p)).rel,
+                                     att_iter,
+                                     att_item),
+                     .frag = PFla_empty_set () };
+            break;
 
-        /* CoreExpr:           attr (TagName, CoreExpr) */
-        case 51:
-        {
+        /* TwigExpr:           attr (TagName, CoreExpr) */
+        case 52:
             /*
-             * CoreExpr (q2) evaluates to a sequence of attributes. TagName
-             * (q1) is the name of a new node which becomes the common root
-             * of the constructed attributes.
+             * CoreExpr (q2) evaluates to a sequence of attribute values.
+             * TagName (q1) is the name of a new node.
              *
              * env, loop: e1 => q1, doc (q1)
              * env, loop: e2 => q2, doc (q2)
-             *
-             * n = attribute (doc (q2), q1, q2)
              * ----------------------------------------------------------------
              * env, loop: attribute e1 {e2} =>
-             *                                               pos
-             * result:    (proj_iter,item:pre (roots (n))) x -----
-             *                                                1
-             *                                                          zero
-             *    where roots (n) = sel (res)(= res:(level, zero) (n x ------))
-             *                                                            0
              *
-             * frag:       proj_pre,size,level,kind,prop,frag (n)
+             * rel:       attribute (q1 
+             *                       |X|_iter1,iter
+             *                       (proj_iter1:iter,item1:item (q2)))
+             * frag:      _
+             *
+             * Inside a twig constructor every node constructor produces
+             * neither a schema nor a fragment information. This allows
+             * different implementations to use whatever document layout 
+             * they prefer. Only after the complete twig is constructed
+             * the twig operator provides a schema and the new fragment
+             * information.
              */
-
-            PFla_op_t *attr = attribute (
-                                  eqjoin (
-                                      A(L(p)).rel,
-                                      project (A(R(p)).rel,
-                                               proj (att_iter1, att_iter),
-                                               proj (att_item1, att_item)),
-                                      att_iter, att_iter1),
-                                  att_res, att_item, att_item1);
-
             A(p) = (struct  PFla_pair_t) {
-                     .rel = project(roots (attr),
-                                    proj (att_iter, att_iter),
-                                    proj (att_pos, att_pos),
-                                    proj (att_item, att_res)),
-                     .frag = PFla_set (fragment (attr))};
-        } break;
+                     .rel = attribute (
+                                eqjoin (
+                                    A(L(p)).rel,
+                                    project (A(R(p)).rel,
+                                             proj (att_iter1, att_iter),
+                                             proj (att_item1, att_item)),
+                                    att_iter, att_iter1),
+                                att_iter, att_item, att_item1),
+                     .frag = PFla_empty_set () };
+            break;
 
         /* TagName:            tag */
         case 400:
@@ -1865,70 +1960,83 @@ reduce (PFcnode_t * p, int goalnt)
         case 401:
             break;
 
-        /* CoreExpr:           text (CoreExpr) */
-        case 52:
-        {
+        /* TwigExpr:           text (CoreExpr) */
+        case 53:
             /*
              * env, loop: e => q, doc (q)
-             *
-             * n = textnode (doc (q), q)
              * ----------------------------------------------------------------
              * env, loop: textnode e =>
-             *                                               pos
-             * result:    (proj_iter,item:pre (roots (n))) x -----
-             *                                                1
-             *                                                          zero
-             *    where roots (n) = sel (res)(= res:(level, zero) (n x ------))
-             *                                                            0
              *
-             * frag:       proj_pre,size,level,kind,prop,frag (n)
+             * rel:       textnode (q)
+             * frag:      _
+             *
+             * Inside a twig constructor every node constructor produces
+             * neither a schema nor a fragment information. This allows
+             * different implementations to use whatever document layout 
+             * they prefer. Only after the complete twig is constructed
+             * the twig operator provides a schema and the new fragment
+             * information.
              */
-            PFla_op_t *textnode = textnode (A(L(p)).rel, att_res, att_item);
-
             A(p) = (struct  PFla_pair_t) {
-                     .rel = project(roots (textnode),
-                                    proj (att_iter, att_iter),
-                                    proj (att_pos, att_pos),
-                                    proj (att_item, att_res)),
-                     .frag = PFla_set (fragment (textnode))};
-        } break;
-
-        /* CoreExpr:           doc (CoreExpr) */
-        case 53:
-        {
-            /*
-             * env, loop: e => q, doc (q)
-             *
-             * n = docnode (doc (q), q)
-             * ----------------------------------------------------------------
-             * env, loop: docnode e =>
-             *                                               pos
-             * result:    (proj_iter,item:pre (roots (n))) x -----
-             *                                                1
-             *                                                          zero
-             *    where roots (n) = sel (res)(= res:(level, zero) (n x ------))
-             *                                                            0
-             *
-             * frag:       proj_pre,size,level,kind,prop,frag (n)
-             */
-            PFla_op_t *docnode = docnode (PFla_set_to_la (A(L(p)).frag),
-                                           A(L(p)).rel);
-
-            A(p) = (struct  PFla_pair_t) {
-                     .rel = roots (docnode),
-                     .frag = PFla_set (fragment (docnode))};
-        } break;
-
-        /* CoreExpr:           comment (CoreExpr) */
-        case 54:
-            /* FIXME: to do */
-            PFoops (OOPS_FATAL, "Comment not implemented");
+                     .rel = textnode (A(L(p)).rel, att_iter, att_item),
+                     .frag = PFla_empty_set () };
             break;
 
-        /* CoreExpr:           pi (CoreExpr) */
+        /* TwigExpr:           comment (CoreExpr) */
+        case 54:
+            /*
+             * env, loop: e => q, doc (q)
+             * ----------------------------------------------------------------
+             * env, loop: comment e =>
+             *
+             * rel:       comment (q)
+             * frag:      _
+             *
+             * Inside a twig constructor every node constructor produces
+             * neither a schema nor a fragment information. This allows
+             * different implementations to use whatever document layout 
+             * they prefer. Only after the complete twig is constructed
+             * the twig operator provides a schema and the new fragment
+             * information.
+             */
+            A(p) = (struct  PFla_pair_t) {
+                     .rel = comment (A(L(p)).rel, att_iter, att_item),
+                     .frag = PFla_empty_set () };
+            break;
+
+        /* TwigExpr:           pi (CoreExpr, CoreExpr) */
         case 55:
-            /* FIXME: to do */
-            PFoops (OOPS_FATAL, "Processing Instruction not implemented");
+            /*
+             * CoreExpr (q2) evaluates to the string content.
+             * CoreExpr (q1) is the target of a new node.
+             *
+             * env, loop: e1 => q1, doc (q1)
+             * env, loop: e2 => q2, doc (q2)
+             * ----------------------------------------------------------------
+             * env, loop: processi {e1}{e2} =>
+             *
+             * rel:       processi (q1 
+             *                      |X|_iter1,iter
+             *                      (proj_iter1:iter,item1:item (q2)))
+             * frag:      _
+             *
+             * Inside a twig constructor every node constructor produces
+             * neither a schema nor a fragment information. This allows
+             * different implementations to use whatever document layout 
+             * they prefer. Only after the complete twig is constructed
+             * the twig operator provides a schema and the new fragment
+             * information.
+             */
+            A(p) = (struct  PFla_pair_t) {
+                     .rel = processi (
+                                eqjoin (
+                                    A(L(p)).rel,
+                                    project (A(R(p)).rel,
+                                             proj (att_iter1, att_iter),
+                                             proj (att_item1, att_item)),
+                                    att_iter, att_iter1),
+                                att_iter, att_item, att_item1),
+                     .frag = PFla_empty_set () };
             break;
 
         /* CoreExpr:           apply (FunctionArgs) */
@@ -2424,14 +2532,55 @@ reduce (PFcnode_t * p, int goalnt)
     }
 
     /* check consistency of our iter|pos|item interface */
-    switch (p->kind) {
-        case c_main:
-        case c_for:
-        case c_let:
-        case c_nil:
-        case c_orderspecs:
-        case c_arg:
+    switch (rule) {
+        /* result: pos|item */
+        /* Query:              main (FunctionDecls, CoreExpr) */
+        case 1:
+
+        /* flwr intermediates */
+        /* OptBindExpr:        for_ (forbind (forvars (var, nil),
+                                              Atom), CoreExpr) */
+        case 5:
+        /* OptBindExpr:        let (letbind (var, CoreExpr), CoreExpr) */
+        case 6:
+        /* OptBindExpr:        nil */
+        case 7:
+            
+        /* order by */
+        /* OrderSpecs:         orderspecs (CoreExpr, nil) */
+        case 300:
+        /* OrderSpecs:         orderspecs (CoreExpr, OrderSpecs) */
+        case 301:
+
+        /* twig constructors */
+        /* TwigExpr:           twig_seq (TwigExpr, TwigSeq) */
+        case 46:
+        /* TwigSeq:            TwigExpr: */
+        case 47:
+        /* TwigExpr:           empty */
+        case 48:
+        /* TwigExpr:           CoreExpr */
+        case 49:
+        /* TwigExpr:           doc (TwigSeq) */
+        case 50:
+        /* TwigExpr:           elem (TagName, TwigSeq) */
+        case 51:
+        /* TwigExpr:           attr (TagName, CoreExpr) */
+        case 52:
+        /* TwigExpr:           text (CoreExpr) */
+        case 53:
+        /* TwigExpr:           comment (CoreExpr) */
+        case 54:
+        /* TwigExpr:           pi (CoreExpr, CoreExpr) */
+        case 55:
+
+        /* function application */
+        /* FunctionArgs:       nil */
+        case 500:
+        /* FunctionArgs:       arg (FunctionArg, FunctionArgs) */
+        case 501:
             break;
+
         default:
         {
             unsigned int count = 0;

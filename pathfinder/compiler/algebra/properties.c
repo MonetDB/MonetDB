@@ -115,26 +115,26 @@ PFprop_infer (bool card, bool const_, bool set,
 
     /* for each property required infer
        the properties of the complete DAG */
+    if (unq_names)
+        PFprop_infer_unq_names (root);
+    if (key)
+        PFprop_infer_key (root);
     if (card)
         PFprop_infer_card (root);
     if (const_)
         PFprop_infer_const (root);
-    if (set)
-        PFprop_infer_set (root);
     if (dom)
         PFprop_infer_dom (root);
+    if (set)
+        PFprop_infer_set (root);
     if (icol)
         PFprop_infer_icol (root);
-    if (key)
-        PFprop_infer_key (root);
     if (ocols)
         PFprop_infer_ocol (root);
     if (reqval)
         PFprop_infer_reqval (root);
     if (ori_names)
         PFprop_infer_ori_names (root);
-    if (unq_names)
-        PFprop_infer_unq_names (root);
     if (refctr)
         PFprop_infer_refctr (root);
 }

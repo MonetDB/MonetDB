@@ -66,7 +66,7 @@ infer_card (PFla_op_t *n)
     switch (n->kind) {
         case la_serialize:
         case la_doc_access:
-        case la_element:
+        case la_content:
             /* cardinality stays the same */
             n->prop->card = R(n)->prop->card;
             break;
@@ -95,9 +95,13 @@ infer_card (PFla_op_t *n)
         case la_type_assert:
         case la_cast:
         case la_doc_tbl:
-        case la_element_tag:
+        case la_twig:
+        case la_docnode:
+        case la_element:
         case la_attribute:
         case la_textnode:
+        case la_comment:
+        case la_processi:
         case la_roots:
         case la_proxy:
         case la_proxy_base:
@@ -122,6 +126,7 @@ infer_card (PFla_op_t *n)
         case la_distinct:
         case la_scjoin:
         case la_dup_scjoin:
+        case la_fcns:
         case la_merge_adjacent:
         case la_fragment:
         case la_frag_union:
@@ -148,14 +153,6 @@ infer_card (PFla_op_t *n)
             /* if part is not present the
                aggregation yields only one tuple */
             n->prop->card = n->sem.aggr.part ? 0 : 1;
-            break;
-
-        case la_docnode:
-        case la_comment:
-        case la_processi:
-            PFoops (OOPS_FATAL,
-                    "no solution yet for cardinality "
-                    "of remaining constructors");
             break;
 
         case la_cond_err:

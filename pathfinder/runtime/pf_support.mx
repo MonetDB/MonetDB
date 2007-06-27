@@ -7530,6 +7530,79 @@ of the transient nodes.\n\
 NOTE: the working set 'ws' is changed as side effect!",
         "pf_support");
 
+PROC add_content (BAT[void, str] item, BAT[void, BAT] ws, int slot) : BAT[void,oid]
+{
+    # find all strings that are not already in the working set ...
+    var ws_prop_string := ws.fetch(slot).fetch(WS);
+    var unq_str := item.tunique().hmark(0@0);
+    var str_unq := unq_str.reverse().kdiff(ws_prop_string.reverse());
+    unq_str := nil;
+    # ... and add them to the 'slot' container
+    var seqb := oid(int(ws_prop_string.seqbase()) + ws_prop_string.count());
+    unq_str := str_unq.hmark(seqb);
+    str_unq := nil;
+    ws_prop_string := ws_prop_string.insert(unq_str);
+    unq_str := nil;
+
+    # get the property values of the strings;
+    # we invest in sorting ws_prop_string &  X_strings/item on the TYPE_str 
+    # join columns as the mergejoin proved to be faster and more robust with
+    # large BATs than a hashjoin
+    var ws_string_prop := ws_prop_string.reverse().sort();
+    var X_item := item.mark(0@0);
+    var X_strings := item.tmark(0@0).tsort();
+    var X_prop := X_strings.leftjoin(ws_string_prop);
+    X_strings := nil;
+    ws_string_prop := nil;
+    var newProp := X_item.leftjoin(X_prop);
+    X_item := nil;
+    X_prop := nil;
+
+    return newProp;
+}
+
+PROC multi_merged_union (BAT[void, BAT] b) : BAT[void,BAT]
+{
+    var iter     := bat (void, oid).seqbase(0@0);
+    var pre      := bat (void, oid).seqbase(0@0);
+    var size     := bat (void, int).seqbase(0@0);
+    var level    := bat (void, chr).seqbase(0@0);
+    var kind     := bat (void, chr).seqbase(0@0);
+    var prop     := bat (void, oid).seqbase(0@0);
+    var cont     := bat (void, oid).seqbase(0@0);
+    var old_pre  := bat (void, oid).seqbase(0@0);
+    var old_cont := bat (void, oid).seqbase(0@0);
+    var res;
+
+    b@batloop() {
+        res := merged_union (iter,     $t.fetch(0),
+                             pre,      $t.fetch(1), 
+                             size,     $t.fetch(2), 
+                             level,    $t.fetch(3), 
+                             kind,     $t.fetch(4), 
+                             prop,     $t.fetch(5), 
+                             cont,     $t.fetch(6), 
+                             old_pre,  $t.fetch(7), 
+                             old_cont, $t.fetch(8));
+        iter     := res.fetch(0);
+        pre      := res.fetch(1);
+        size     := res.fetch(2);
+        level    := res.fetch(3);
+        kind     := res.fetch(4);
+        prop     := res.fetch(5);
+        cont     := res.fetch(6);
+        old_pre  := res.fetch(7);
+        old_cont := res.fetch(8);
+    }
+    return res;
+}
+
+
+@- !!! THE FOLLOWING PROCs (*_constr) ARE DEPRECATED !!!
+   They are however not removed yet to support comparison
+   with older MIL scripts (that rely on the PROCs.
+@mil
+
 PROC text_constr (BAT[void, str] item, BAT[void, BAT] ws) : BAT[void,BAT]
 {
     # find all strings that are not already in the working set ...

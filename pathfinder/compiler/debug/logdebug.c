@@ -85,13 +85,15 @@ static char *a_id[]  = {
     , [la_dup_scjoin]       = "/|+"               /* light blue */
     , [la_doc_tbl]          = "DOC"
     , [la_doc_access]       = "access"
+    , [la_twig]             = "twig"
+    , [la_fcns]             = "fcns"
+    , [la_docnode]          = "DOCNODE"          /* lawn \"#00FF00\" */
     , [la_element]          = "ELEM"             /* lawn \"#00FF00\" */
-    , [la_element_tag]      = "ELEM_TAG"         /* lawn \"#00FF00\" */
     , [la_attribute]        = "ATTR"             /* lawn \"#00FF00\" */
     , [la_textnode]         = "TEXT"             /* lawn \"#00FF00\" */
-    , [la_docnode]          = "DOCNODE"          /* lawn \"#00FF00\" */
     , [la_comment]          = "COMMENT"          /* lawn \"#00FF00\" */
     , [la_processi]         = "PI"               /* lawn \"#00FF00\" */
+    , [la_content]          = "CONTENT"          /* lawn \"#00FF00\" */
     , [la_merge_adjacent]   = "#pf:merge-adjacent-text-nodes"
     , [la_roots]            = "ROOTS"
     , [la_fragment]         = "FRAGs"
@@ -151,13 +153,15 @@ static char *xml_id[]  = {
     , [la_dup_scjoin]       = "duplicate generating path step"
     , [la_doc_tbl]          = "fn:doc"
     , [la_doc_access]       = "#pf:string-value"
+    , [la_twig]             = "twig_construction"
+    , [la_fcns]             = "constructor_sequence_(fcns)"
+    , [la_docnode]          = "documentnode_construction"
     , [la_element]          = "element_construction"
-    , [la_element_tag]      = "element_tagname"
     , [la_attribute]        = "attribute_construction"
     , [la_textnode]         = "textnode_construction"
-    , [la_docnode]          = "documentnode_construction"
     , [la_comment]          = "comment_construction"
     , [la_processi]         = "pi_construction"
+    , [la_content]          = "constructor_content"
     , [la_merge_adjacent]   = "#pf:merge-adjacent-text-nodes"
     , [la_roots]            = "ROOTS"
     , [la_fragment]         = "FRAG"
@@ -332,13 +336,15 @@ la_dot (PFarray_t *dot, PFla_op_t *n)
         , [la_dup_scjoin]     = "\"#1E9099\""
         , [la_doc_tbl]        = "\"#C0C0C0\""
         , [la_doc_access]     = "\"#CCCCFF\""
+        , [la_twig]           = "\"#00AA44\""
+        , [la_fcns]           = "\"#009959\""
+        , [la_docnode]        = "\"#00CC59\""
         , [la_element]        = "\"#00CC59\""
-        , [la_element_tag]    = "\"#00CC59\""
         , [la_attribute]      = "\"#00CC59\""
         , [la_textnode]       = "\"#00CC59\""
-        , [la_docnode]        = "\"#00CC59\""
         , [la_comment]        = "\"#00CC59\""
         , [la_processi]       = "\"#00CC59\""
+        , [la_content]        = "\"#00CC59\""
         , [la_merge_adjacent] = "\"#00D000\""
         , [la_roots]          = "\"#E0E0E0\""
         , [la_fragment]       = "\"#E0E0E0\""
@@ -680,54 +686,47 @@ la_dot (PFarray_t *dot, PFla_op_t *n)
                             PFatt_str (n->sem.doc_access.att));
             break;
 
+        case la_twig:
         case la_element:
-            PFarray_printf (dot, "%s (%s, %s:<%s, %s><%s, %s, %s>)",
+        case la_textnode:
+        case la_comment:
+        case la_trace_msg:
+            PFarray_printf (dot, "%s (%s, %s)",
                             a_id[n->kind],
-                            PFatt_str (n->sem.elem.iter_res),
-                            PFatt_str (n->sem.elem.item_res),
-                            PFatt_str (n->sem.elem.iter_qn),
-                            PFatt_str (n->sem.elem.item_qn),
-                            PFatt_str (n->sem.elem.iter_val),
-                            PFatt_str (n->sem.elem.pos_val),
-                            PFatt_str (n->sem.elem.item_val));
+                            PFatt_str (n->sem.iter_item.iter),
+                            PFatt_str (n->sem.iter_item.item));
+            break;
+        
+        case la_docnode:
+            PFarray_printf (dot, "%s (%s)",
+                            a_id[n->kind],
+                            PFatt_str (n->sem.docnode.iter));
             break;
         
         case la_attribute:
-            PFarray_printf (dot, "%s (%s:<%s, %s>)", a_id[n->kind],
-                            PFatt_str (n->sem.attr.res),
-                            PFatt_str (n->sem.attr.qn),
-                            PFatt_str (n->sem.attr.val));
+        case la_processi:
+            PFarray_printf (dot, "%s (%s, %s, %s)", a_id[n->kind],
+                            PFatt_str (n->sem.iter_item1_item2.iter),
+                            PFatt_str (n->sem.iter_item1_item2.item1),
+                            PFatt_str (n->sem.iter_item1_item2.item2));
             break;
 
-        case la_textnode:
-            PFarray_printf (dot, "%s (%s:<%s>)", a_id[n->kind],
-                            PFatt_str (n->sem.textnode.res),
-                            PFatt_str (n->sem.textnode.item));
+        case la_content:
+        case la_trace:
+            PFarray_printf (dot,
+                            "%s (%s, %s, %s)",
+                            a_id[n->kind],
+                            PFatt_str (n->sem.iter_pos_item.iter),
+                            PFatt_str (n->sem.iter_pos_item.pos),
+                            PFatt_str (n->sem.iter_pos_item.item));
             break;
-
+        
         case la_cond_err:
             PFarray_printf (dot, "%s (%s)\\n%s ...", a_id[n->kind],
                             PFatt_str (n->sem.err.att),
                             PFstrndup (n->sem.err.str, 16));
             break;
             
-        case la_trace:
-            PFarray_printf (dot,
-                            "%s (%s, %s, %s)",
-                            a_id[n->kind],
-                            PFatt_str (n->sem.trace.iter),
-                            PFatt_str (n->sem.trace.pos),
-                            PFatt_str (n->sem.trace.item));
-            break;
-        
-        case la_trace_msg:
-            PFarray_printf (dot,
-                            "%s (%s, %s)",
-                            a_id[n->kind],
-                            PFatt_str (n->sem.trace_msg.iter),
-                            PFatt_str (n->sem.trace_msg.item));
-            break;
-        
         case la_trace_map:
             PFarray_printf (dot,
                             "%s (%s, %s)",
@@ -764,10 +763,7 @@ la_dot (PFarray_t *dot, PFla_op_t *n)
         case la_intersect:
         case la_difference:
         case la_distinct:
-        case la_element_tag:
-        case la_docnode:
-        case la_comment:
-        case la_processi:
+        case la_fcns:
         case la_merge_adjacent:
         case la_roots:
         case la_fragment:
@@ -1555,42 +1551,69 @@ la_xml (PFarray_t *xml, PFla_op_t *n)
                             "    </content>\n");
             break;
 
+        case la_twig:
         case la_element:
+        case la_textnode:
+        case la_comment:
+        case la_trace_msg:
+            PFarray_printf (xml,
+                            "    <content>\n"
+                            "      <column name=\"%s\" function=\"iter\"/>\n"
+                            "      <column name=\"%s\" function=\"item\"/>\n"
+                            "    </content>\n",
+                            PFatt_str (n->sem.iter_item.iter),
+                            PFatt_str (n->sem.iter_item.item));
+            break;
+        
+        case la_docnode:
+            PFarray_printf (xml,
+                            "    <content>\n"
+                            "      <column name=\"%s\" function=\"iter\"/>\n"
+                            "    </content>\n",
+                            PFatt_str (n->sem.docnode.iter));
+            break;
+        
+        case la_attribute:
+            PFarray_printf (xml,
+                            "    <content>\n"
+                            "      <column name=\"%s\" function=\"iter\"/>\n"
+                            "      <column name=\"%s\" function=\"qname item\""
+                                    "/>\n"
+                            "      <column name=\"%s\" function=\"content item"
+                                    "/>\n"
+                            "    </content>\n",
+                            PFatt_str (n->sem.iter_item1_item2.iter),
+                            PFatt_str (n->sem.iter_item1_item2.item1),
+                            PFatt_str (n->sem.iter_item1_item2.item2));
+            break;
+
+        case la_processi:
+            PFarray_printf (xml,
+                            "    <content>\n"
+                            "      <column name=\"%s\" function=\"iter\"/>\n"
+                            "      <column name=\"%s\" function=\"target item\""
+                                    "/>\n"
+                            "      <column name=\"%s\" function=\"value item"
+                                    "/>\n"
+                            "    </content>\n",
+                            PFatt_str (n->sem.iter_item1_item2.iter),
+                            PFatt_str (n->sem.iter_item1_item2.item1),
+                            PFatt_str (n->sem.iter_item1_item2.item2));
+            break;
+
+        case la_content:
+        case la_trace:
             PFarray_printf (xml,
                             "    <content>\n"
                             "      <column name=\"%s\" function=\"iter\"/>\n"
                             "      <column name=\"%s\" function=\"pos\"/>\n"
                             "      <column name=\"%s\" function=\"item\"/>\n"
                             "    </content>\n",
-                            PFatt_str (n->sem.elem.iter_val),
-                            PFatt_str (n->sem.elem.pos_val),
-                            PFatt_str (n->sem.elem.item_val));
+                            PFatt_str (n->sem.iter_pos_item.iter),
+                            PFatt_str (n->sem.iter_pos_item.pos),
+                            PFatt_str (n->sem.iter_pos_item.item));
             break;
         
-        case la_attribute:
-            PFarray_printf (xml,
-                            "    <content>\n"
-                            "      <column name=\"%s\" new=\"true\"/>\n"
-                            "      <column name=\"%s\" function=\"qname item\""
-                                    " new=\"false\"/>\n"
-                            "      <column name=\"%s\" function=\"content item"
-                                    "\" new=\"false\"/>\n"
-                            "    </content>\n",
-                            PFatt_str (n->sem.attr.res),
-                            PFatt_str (n->sem.attr.qn),
-                            PFatt_str (n->sem.attr.val));
-            break;
-
-        case la_textnode:
-            PFarray_printf (xml,
-                            "    <content>\n"
-                            "      <column name=\"%s\" new=\"true\"/>\n"
-                            "      <column name=\"%s\" new=\"false\"/>\n"
-                            "    </content>\n",
-                            PFatt_str (n->sem.textnode.res),
-                            PFatt_str (n->sem.textnode.item));
-            break;
-
         case la_merge_adjacent:
             PFarray_printf (xml,
                             "    <content>\n"
@@ -1613,28 +1636,6 @@ la_xml (PFarray_t *xml, PFla_op_t *n)
                             PFstrdup (n->sem.err.str));
             break;
 
-        case la_trace:
-            PFarray_printf (xml,
-                            "    <content>\n"
-                            "      <column name=\"%s\" function=\"iter\"/>\n"
-                            "      <column name=\"%s\" function=\"pos\"/>\n"
-                            "      <column name=\"%s\" function=\"item\"/>\n"
-                            "    </content>\n",
-                            PFatt_str (n->sem.trace.iter),
-                            PFatt_str (n->sem.trace.pos),
-                            PFatt_str (n->sem.trace.item));
-            break;
-        
-        case la_trace_msg:
-            PFarray_printf (xml,
-                            "    <content>\n"
-                            "      <column name=\"%s\" function=\"iter\"/>\n"
-                            "      <column name=\"%s\" function=\"item\"/>\n"
-                            "    </content>\n",
-                            PFatt_str (n->sem.trace_msg.iter),
-                            PFatt_str (n->sem.trace_msg.item));
-            break;
-        
         case la_trace_map:
             PFarray_printf (xml,
                             "    <content>\n"

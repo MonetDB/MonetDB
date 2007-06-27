@@ -108,21 +108,20 @@ enum PFpa_op_kind_t {
     , pa_llscj_prec_sibl= 110 /**< Loop-Lifted StaircaseJoin PrecedingSibling */
     , pa_doc_tbl        = 120 /**< Access to persistent document relation */
     , pa_doc_access     = 121 /**< Access to string content of loaded docs */
-    , pa_element        = 122 /**< element-constructing operator */
-    , pa_element_tag    = 123 /**< part of the element-constructing operator;
-                                  connecting element tag and content;
-                                  due to Burg we use two "wire2" operators
-                                  now instead of one "wire3 operator "*/
-    , pa_attribute      = 124 /**< attribute-constructing operator */
-    , pa_textnode       = 125 /**< text node-constructing operator */
-    , pa_docnode        = 126 /**< document node-constructing operator */
-    , pa_comment        = 127 /**< comment-constructing operator */
-    , pa_processi       = 128 /**< processing instruction-constr. operator */
-    , pa_merge_adjacent = 129
-    , pa_roots          = 130
-    , pa_fragment       = 131
-    , pa_frag_union     = 132
-    , pa_empty_frag     = 133
+    , pa_twig           = 122 /**< twig root operator */
+    , pa_fcns           = 123 /**< twig constructor sequence */
+    , pa_docnode        = 124 /**< document node-constructing operator */
+    , pa_element        = 125 /**< element-constructing operator */
+    , pa_attribute      = 126 /**< attribute-constructing operator */
+    , pa_textnode       = 127 /**< text node-constructing operator */
+    , pa_comment        = 128 /**< comment-constructing operator */
+    , pa_processi       = 129 /**< processing instruction-constr. operator */
+    , pa_content        = 130 /**< constructor content operator (elem|doc) */
+    , pa_merge_adjacent = 131
+    , pa_roots          = 132
+    , pa_fragment       = 133
+    , pa_frag_union     = 134
+    , pa_empty_frag     = 135
     , pa_cond_err       = 140 /**< conditional error operator */
     , pa_nil            = 141 /**< end of the list of parameters */
     , pa_trace          = 142 /**< debug operator */
@@ -297,7 +296,14 @@ union PFpa_op_sem_t {
         PFalg_att_t      item;    /**< item column */
     } scjoin;
 
-    /* store the column names necessary for accessing iter and item columns */
+    /* store the column names necessary for a twig root operator */
+    /* store the column names necessary for a document constructor */
+    /* store the column names necessary for an element constructor */
+    /* store the column names necessary for a text constructor */
+    /* store the column names necessary for a comment constructor */
+    /* store the column names necessary for a constructor content operator */
+    /* semantic content for debug operator */
+    /* semantic content for debug message operator */
     struct {
         PFalg_att_t     iter;     /**< iter column */
         PFalg_att_t     item;     /**< item column */
@@ -311,29 +317,18 @@ union PFpa_op_sem_t {
     } doc_access;
 
     /* store the column names necessary for an attribute constructor */
+    /* store the column names necessary for a pi constructor */
     struct {
-        PFalg_att_t     qn;       /**< name of the qname item column */
-        PFalg_att_t     val;      /**< name of the value item column */
-        PFalg_att_t     res;      /**< attribute to hold the result */
-    } attr;
-
-    /* store the column names necessary for a text constructor */
-    struct {
-        PFalg_att_t     item;     /**< name of the item column */
-        PFalg_att_t     res;      /**< attribute to hold the result */
-    } textnode;
+        PFalg_att_t     iter;     /**< name of the iter column */
+        PFalg_att_t     item1;    /**< name of the first item column */
+        PFalg_att_t     item2;    /**< name of the second item column */
+    } iter_item1_item2;
 
     /* semantic content for conditional error */
     struct {
         PFalg_att_t     att;     /**< name of the boolean attribute */
         char *          str;     /**< error message */
     } err;
-    
-    /* semantic content for debug operator */
-    struct {
-        PFalg_att_t     iter;      /**< iter column of input relation */
-        PFalg_att_t     item;      /**< item column of input relation */
-    } trace;
     
     /* semantic content for debug relation map operator */
     struct {
@@ -747,33 +742,55 @@ PFpa_op_t * PFpa_doc_access (const PFpa_op_t *doc,
                              PFalg_att_t att,
                              PFalg_doc_t doc_col);
 
-/**
- * element constructor
- *
- * Requires an iter | item schema as its qname input
- * and a an iter | pos | item schema as its content input.
- */
-PFpa_op_t * PFpa_element (const PFpa_op_t *, 
-                          const PFpa_op_t *,
-                          const PFpa_op_t *,
-                          PFalg_att_t,
-                          PFalg_att_t,
-                          PFalg_att_t);
+/** Constructor for twig root operators. */
+PFpa_op_t * PFpa_twig (const PFpa_op_t *twig,
+                       PFalg_att_t iter,
+                       PFalg_att_t item);
 
-/**
- * Attribute constructor
- */
-PFpa_op_t * PFpa_attribute (const PFpa_op_t *,
-                            PFalg_att_t,
-                            PFalg_att_t,
-                            PFalg_att_t);
+/** Constructor for twig constructor sequence operators. */
+PFpa_op_t * PFpa_fcns (const PFpa_op_t *fc,
+                       const PFpa_op_t *ns);
+                          
+/** Constructor for document node operators. */
+PFpa_op_t * PFpa_docnode (const PFpa_op_t *scope,
+                          const PFpa_op_t *fcns,
+                          PFalg_att_t iter);
 
-/**
- * Text constructor
- */
-PFpa_op_t * PFpa_textnode (const PFpa_op_t *,
-                           PFalg_att_t, PFalg_att_t);
+/** Constructor for element operators. */
+PFpa_op_t * PFpa_element (const PFpa_op_t *tags,
+                          const PFpa_op_t *fcns,
+                          PFalg_att_t iter,
+                          PFalg_att_t item);
 
+/** Constructor for attribute operators. */
+PFpa_op_t * PFpa_attribute (const PFpa_op_t *cont,
+                            PFalg_att_t iter,
+                            PFalg_att_t qn,
+                            PFalg_att_t val);
+
+/** Constructor for text node operators. */
+PFpa_op_t * PFpa_textnode (const PFpa_op_t *cont, 
+                           PFalg_att_t iter,
+                           PFalg_att_t item);
+
+/** Constructor for comment operators. */
+PFpa_op_t * PFpa_comment (const PFpa_op_t *cont,
+                          PFalg_att_t iter,
+                          PFalg_att_t item);
+
+/** Constructor for processing instruction operators. */
+PFpa_op_t * PFpa_processi (const PFpa_op_t *cont,
+                           PFalg_att_t iter,
+                           PFalg_att_t target,
+                           PFalg_att_t val);
+
+/** Constructor for constructor content operators (elem|doc). */
+PFpa_op_t * PFpa_content (const PFpa_op_t *doc,
+                          const PFpa_op_t *cont,
+                          PFalg_att_t iter,
+                          PFalg_att_t item);
+
+/** Constructor for pf:merge-adjacent-text-nodes() functionality */
 PFpa_op_t * PFpa_merge_adjacent (const PFpa_op_t *fragment,
                                  const PFpa_op_t *n,
                                  PFalg_att_t,

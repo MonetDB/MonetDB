@@ -291,30 +291,49 @@ char * PFmil_var_str (PFmil_ident_t name) {
     switch (name) {
         case PF_MIL_VAR_UNUSED:      return "unused";
         case PF_MIL_VAR_WS:          return "ws";     
+        case PF_MIL_VAR_WS_CONT:     return "WS";     
+                                     
+        case PF_MIL_VAR_KIND_DOC:    return "DOCUMENT";     
+        case PF_MIL_VAR_KIND_ELEM:   return "ELEMENT";     
+        case PF_MIL_VAR_KIND_TEXT:   return "TEXT";     
+        case PF_MIL_VAR_KIND_COM:    return "COMMENT";     
+        case PF_MIL_VAR_KIND_PI:     return "PI";     
+                                     
         case PF_MIL_VAR_ATTR:        return "ATTR";   
         case PF_MIL_VAR_ELEM:        return "ELEM";   
+                                     
         case PF_MIL_VAR_STR:         return "STR";    
         case PF_MIL_VAR_INT:         return "INT";    
         case PF_MIL_VAR_DBL:         return "DBL";    
         case PF_MIL_VAR_DEC:         return "DEC";    
         case PF_MIL_VAR_BOOL:        return "BOOL";
+                                     
+        case PF_MIL_VAR_PRE_SIZE:    return "PRE_SIZE";
+        case PF_MIL_VAR_PRE_LEVEL:   return "PRE_LEVEL";
+        case PF_MIL_VAR_PRE_KIND:    return "PRE_KIND";
+        case PF_MIL_VAR_PRE_PROP:    return "PRE_PROP";
+        case PF_MIL_VAR_PRE_CONT:    return "PRE_CONT";
+        case PF_MIL_VAR_PRE_NID:     return "PRE_NID";
+        case PF_MIL_VAR_NID_RID:     return "NID_RID";
+        case PF_MIL_VAR_FRAG_ROOT:   return "FRAG_ROOT";
         case PF_MIL_VAR_ATTR_OWN:    return "ATTR_OWN";
         case PF_MIL_VAR_ATTR_QN:     return "ATTR_QN";  
+        case PF_MIL_VAR_ATTR_PROP:   return "ATTR_PROP";
         case PF_MIL_VAR_ATTR_CONT:   return "ATTR_CONT";
         case PF_MIL_VAR_QN_LOC:      return "QN_LOC";   
         case PF_MIL_VAR_QN_URI:      return "QN_URI";   
-        case PF_MIL_VAR_ATTR_PROP:   return "ATTR_PROP";
         case PF_MIL_VAR_PROP_VAL:    return "PROP_VAL"; 
-        case PF_MIL_VAR_PRE_PROP:    return "PRE_PROP"; 
-        case PF_MIL_VAR_PRE_CONT:    return "PRE_CONT"; 
         case PF_MIL_VAR_PROP_TEXT:   return "PROP_TEXT";
         case PF_MIL_VAR_PROP_COM:    return "PROP_COM"; 
         case PF_MIL_VAR_PROP_INS:    return "PROP_INS";    
+        case PF_MIL_VAR_PROP_TGT:    return "PROP_TGT";    
+                                     
         case PF_MIL_VAR_LE:          return "LE";
         case PF_MIL_VAR_LT:          return "LT";
         case PF_MIL_VAR_EQ:          return "EQ";
         case PF_MIL_VAR_GT:          return "GT";
         case PF_MIL_VAR_GE:          return "GE";
+                                     
         case PF_MIL_VAR_TRACE_OUTER: return "trace_outer";
         case PF_MIL_VAR_TRACE_INNER: return "trace_inner";
         case PF_MIL_VAR_TRACE_ITER:  return "trace_iter";
@@ -322,9 +341,11 @@ char * PFmil_var_str (PFmil_ident_t name) {
         case PF_MIL_VAR_TRACE_ITEM:  return "trace_item";
         case PF_MIL_VAR_TRACE_TYPE:  return "trace_type";
         case PF_MIL_VAR_TRACE_REL:   return "trace_rel";
+
         case PF_MIL_VAR_TIME_LOAD:   return "time_load";
         case PF_MIL_VAR_TIME_QUERY:  return "time_query";
         case PF_MIL_VAR_TIME_PRINT:  return "time_print";
+
         default:
         {
             assert (name >= PF_MIL_RES_VAR_COUNT);
@@ -448,6 +469,15 @@ PFmil_t *
 PFmil_seqbase (const PFmil_t *bat, const PFmil_t *base)
 {
     return wire2 (m_seqbase, bat, base);
+}
+
+/**
+ * Monet seqbase() function.
+ */
+PFmil_t *
+PFmil_seqbase_lookup (const PFmil_t *bat)
+{
+    return wire1 (m_sseqbase, bat);
 }
 
 PFmil_t *
@@ -748,6 +778,15 @@ PFmil_merged_union (const PFmil_t *a)
 }
 
 /**
+ * MIL multi_merged_union operator
+ */
+PFmil_t *
+PFmil_multi_merged_union (const PFmil_t *a)
+{
+    return wire1 (m_multi_mu, a);
+}
+
+/**
  * build argument lists for variable argument list functions
  */
 PFmil_t *
@@ -919,6 +958,15 @@ PFmil_gsum (const PFmil_t *a)
 }
 
 /**
+ * Monet grouped sum operator `{sum}()' with two parameters
+ */
+PFmil_t *
+PFmil_egsum (const PFmil_t *a, const PFmil_t *b)
+{
+    return wire2 (m_egsum, a, b);
+}
+
+/**
  * Type cast.
  */
 PFmil_t *
@@ -1055,6 +1103,15 @@ PFmil_t *
 PFmil_gt (const PFmil_t *a, const PFmil_t *b)
 {
     return wire2 (m_gt, a, b);
+}
+
+/**
+ * Equal operator
+ */
+PFmil_t *
+PFmil_eq (const PFmil_t *a, const PFmil_t *b)
+{
+    return wire2 (m_eq, a, b);
 }
 
 /**
@@ -2158,6 +2215,13 @@ PFmil_add_qnames (const PFmil_t *prefix, const PFmil_t *uri,
                   const PFmil_t *local, const PFmil_t *ws)
 {
     return wire4 (m_add_qnames, prefix, uri, local, ws);
+}
+
+PFmil_t *
+PFmil_add_content (const PFmil_t *item_str, const PFmil_t *ws,
+                   const PFmil_t *container)
+{
+    return wire3 (m_add_content, item_str, ws, container);
 }
 
 PFmil_t *

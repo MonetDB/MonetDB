@@ -260,8 +260,13 @@ infer_const (PFla_op_t *n)
         case la_cast:
         case la_dup_scjoin:
         case la_doc_access:
+        case la_docnode:
+        case la_element:
         case la_attribute:
         case la_textnode:
+        case la_comment:
+        case la_processi:
+        case la_content:
         case la_roots:
         case la_trace:
         case la_dummy:
@@ -573,14 +578,56 @@ infer_const (PFla_op_t *n)
                         PFprop_const_val (L(n)->prop, n->sem.doc_tbl.iter));
             break;
 
-        case la_element:
-            if (PFprop_const (RL(n)->prop, n->sem.elem.iter_qn))
-                PFprop_mark_const (
-                        n->prop,
-                        n->sem.elem.iter_res,
-                        PFprop_const_val (RL(n)->prop, n->sem.elem.iter_qn));
+        case la_twig:
+            switch (L(n)->kind) {
+                case la_docnode:
+                    if (PFprop_const (L(n)->prop, L(n)->sem.docnode.iter))
+                        PFprop_mark_const (
+                                n->prop,
+                                n->sem.iter_item.iter,
+                                PFprop_const_val (L(n)->prop, 
+                                                  L(n)->sem.docnode.iter));
+                    break;
+                    
+                case la_element:
+                case la_textnode:
+                case la_comment:
+                    if (PFprop_const (L(n)->prop, L(n)->sem.iter_item.iter))
+                        PFprop_mark_const (
+                                n->prop,
+                                n->sem.iter_item.iter,
+                                PFprop_const_val (L(n)->prop, 
+                                                  L(n)->sem.iter_item.iter));
+                    break;
+                    
+                case la_attribute:
+                case la_processi:
+                    if (PFprop_const (L(n)->prop, 
+                                      L(n)->sem.iter_item1_item2.iter))
+                        PFprop_mark_const (
+                                n->prop,
+                                n->sem.iter_item.iter,
+                                PFprop_const_val (
+                                    L(n)->prop, 
+                                    L(n)->sem.iter_item1_item2.iter));
+                    break;
+                    
+                case la_content:
+                    if (PFprop_const (L(n)->prop, 
+                                      L(n)->sem.iter_pos_item.iter))
+                        PFprop_mark_const (
+                                n->prop,
+                                n->sem.iter_item.iter,
+                                PFprop_const_val (
+                                    L(n)->prop, 
+                                    L(n)->sem.iter_pos_item.iter));
+                    break;
+                    
+                default:
+                    break;
+            }
             break;
-
+            
         case la_nil:
         case la_trace_msg:
         case la_trace_map:
@@ -633,12 +680,14 @@ infer_const (PFla_op_t *n)
         case la_type_assert:
         case la_dup_scjoin:
         case la_doc_access:
-        case la_element_tag:
+        case la_fcns:
+        case la_docnode:
+        case la_element:
         case la_attribute:
         case la_textnode:
-        case la_docnode:
         case la_comment:
         case la_processi:
+        case la_content:
         case la_merge_adjacent:
         case la_roots:
         case la_fragment:

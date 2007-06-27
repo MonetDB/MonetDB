@@ -123,19 +123,27 @@
 /* all operator (see PFla_all()) */
 #define all(a,b,c,d)      PFla_all((a), (b), (c), (d))
 
-/** staircase join */
+/* staircase join */
 #define scjoin(a,b,c,d,e,f,g) PFla_scjoin ((a),(b),(c),(d),(e),(f),(g))
 #define dup_scjoin(a,b,c,d,e,f) PFla_dup_scjoin ((a),(b),(c),(d),(e),(f))
 
-/** document table */
+/* document table */
 #define doc_tbl(a,b,c,d)    PFla_doc_tbl((a),(b),(c),(d))
 
-/** document content access */
+/* document content access */
 #define doc_access(a,b,c,d,e) PFla_doc_access ((a), (b), (c), (d), (e))
 
+/* twig root operator */
+#define twig(a,b,c)       PFla_twig ((a),(b),(c))
+
+/* twig constructor sequence */
+#define fcns(a,b)         PFla_fcns ((a),(b))
+
+/* document node-constructing operator */
+#define docnode(a,b,c)    PFla_docnode ((a),(b),(c))
+
 /* element-constructing operator */
-#define element(a,b,c,d,e,f,g,h,i,j) \
-        PFla_element ((a),(b),(c),(d),(e),(f),(g),(h),(i),(j))
+#define element(a,b,c,d) PFla_element ((a),(b),(c),(d))
 
 /* attribute-constructing operator */
 #define attribute(a,b,c,d) PFla_attribute ((a),(b),(c),(d))
@@ -143,21 +151,21 @@
 /* text node-constructing operator */
 #define textnode(a,b,c)   PFla_textnode ((a),(b),(c))
 
-/* document node-constructing operator */
-#define docnode(a,b)      PFla_docnode ((a),(b))
-
 /* comment-constructing operator */
-#define comment(a)        PFla_comment ((a))
+#define comment(a,b,c)    PFla_comment ((a),(b),(c))
 
 /* processing instruction-constructing operator */
-#define processi(a)       PFla_processi ((a))
+#define processi(a,b,c,d) PFla_processi ((a),(b),(c),(d))
 
-/* constructor for fs:item-sequence-to-node-sequence() functionality */
-#define pos_merge_str(a)  PFla_pos_merge_str ((a))
+/* constructor content operator (elem|doc) */
+#define content(a,b,c,d,e) PFla_content ((a),(b),(c),(d),(e))
 
 /* constructor for pf:merge-adjacent-text-nodes() functionality */
 #define merge_adjacent(a,b,c,d,e,f,g,h) \
         PFla_pf_merge_adjacent_text_nodes ((a),(b),(c),(d),(e),(f),(g),(h))
+
+/* constructor for fs:item-sequence-to-node-sequence() functionality */
+#define pos_merge_str(a)  PFla_pos_merge_str ((a))
 
 /** constructor for algebraic representation of newly ceated xml nodes */
 #define roots(a)          PFla_roots ((a))

@@ -102,6 +102,8 @@ diff_np (PFarray_t *np_list, PFalg_att_t cur)
         }
 }
 
+static PFalg_att_t twig_iter;
+
 /**
  * Worker for PFprop_trace_names(). It recursively propagates
  * the name pair list.
@@ -239,40 +241,120 @@ map_names (PFla_op_t *n, PFla_op_t *goal, PFarray_t *par_np_list)
             diff_np (np_list, n->sem.doc_access.res);
             break;
 
-        case la_element:
-            assert (n->sem.elem.iter_qn == n->sem.elem.iter_res &&
-                    n->sem.elem.iter_val == n->sem.elem.iter_res);
-            
-            /* make sure that only iter survives */
-            diff_np (np_list, n->sem.elem.item_res);
-            
-            /* do the recursive calls by hand */
-            res_list = map_names (RL(n), goal, np_list);
-            if (res_list) return res_list;
-            res_list = map_names (RR(n), goal, np_list);
-            if (res_list) return res_list;
+        case la_twig:
+            diff_np (np_list, n->sem.iter_item.item);
+            /* make sure the underlying constructors 
+               propagate the correct information */
+            if (PFarray_last (np_list)) {
+                assert (CUR_AT(np_list, 0) == n->sem.iter_item.iter);
+                twig_iter = ORI_AT(np_list, 0);
+            } else
+                twig_iter = att_NULL;
+
+            /* empty the name pair list */
+            PFarray_last (np_list) = 0;
             res_list = map_names (L(n), goal, np_list);
             return res_list;
-            
-            break;
-        
-        case la_element_tag:
-            /* operator element already did the job. */
             break;
             
-        case la_attribute:
-            diff_np (np_list, n->sem.attr.res);
-            break;
-
-        case la_textnode:
-            diff_np (np_list, n->sem.textnode.res);
+        case la_fcns:
             break;
 
         case la_docnode:
+        {
+            PFalg_att_t twig_iter_old = twig_iter;
+            
+            if (twig_iter)
+                add_name_pair (np_list, twig_iter, n->sem.docnode.iter);
+
+            twig_iter = att_NULL;
+            /* infer properties for children and 
+               return the resulting mapping */
+            res_list = map_names (L(n), goal, np_list);
+            twig_iter = twig_iter_old;
+            if (res_list) return res_list;
+                
+            /* empty the name pair list */
+            PFarray_last (np_list) = 0;
+            res_list = map_names (R(n), goal, np_list);
+            return res_list;
+        }   break;
+            
+        case la_element:
+        {
+            PFalg_att_t twig_iter_old = twig_iter;
+            
+            if (twig_iter)
+                add_name_pair (np_list, twig_iter, n->sem.iter_item.iter);
+
+            twig_iter = att_NULL;
+            /* infer properties for children and 
+               return the resulting mapping */
+            res_list = map_names (L(n), goal, np_list);
+            twig_iter = twig_iter_old;
+            if (res_list) return res_list;
+
+            /* empty the name pair list */
+            PFarray_last (np_list) = 0;
+            res_list = map_names (R(n), goal, np_list);
+            return res_list;
+        }   break;
+            
+        case la_textnode:
         case la_comment:
+        {
+            PFalg_att_t twig_iter_old = twig_iter;
+            
+            if (twig_iter)
+                add_name_pair (np_list, twig_iter, n->sem.iter_item.iter);
+
+            twig_iter = att_NULL;
+            /* infer properties for children and 
+               return the resulting mapping */
+            res_list = map_names (L(n), goal, np_list);
+            twig_iter = twig_iter_old;
+            if (res_list) return res_list;
+        }   break;
+            
+        case la_attribute:
         case la_processi:
-            /* constructors discarded here */
-            break;
+        {
+            PFalg_att_t twig_iter_old = twig_iter;
+            
+            if (twig_iter)
+                add_name_pair (np_list,
+                               twig_iter,
+                               n->sem.iter_item1_item2.iter);
+
+            twig_iter = att_NULL;
+            /* infer properties for children and 
+               return the resulting mapping */
+            res_list = map_names (L(n), goal, np_list);
+            twig_iter = twig_iter_old;
+            if (res_list) return res_list;
+        }   break;
+            
+        case la_content:
+        {
+            PFalg_att_t twig_iter_old = twig_iter;
+            
+            if (twig_iter)
+                add_name_pair (np_list,
+                               twig_iter,
+                               n->sem.iter_pos_item.iter);
+            
+            twig_iter = att_NULL;
+            /* infer properties for children and 
+               return the resulting mapping */
+            res_list = map_names (R(n), goal, np_list);
+            if (res_list) return res_list;
+
+            /* empty the name pair list */
+            PFarray_last (np_list) = 0;
+            res_list = map_names (L(n), goal, np_list);
+            twig_iter = twig_iter_old;
+            return res_list;
+        }   break;
             
         case la_merge_adjacent:
             assert (n->sem.merge_adjacent.iter_res ==

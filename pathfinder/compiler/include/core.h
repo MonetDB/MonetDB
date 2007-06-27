@@ -79,54 +79,55 @@ enum PFctype_t {
   , c_nil                =  6 /**< end-of-sequence marker */
 
   , c_seq                =  7 /**< sequence construction */
-  , c_ordered            =  8
-  , c_unordered          =  9
+  , c_twig_seq           =  8 /**< sequence construction within twigs */
+  , c_ordered            =  9
+  , c_unordered          = 10
 
-  , c_flwr               = 10 /**< flwr expression */
-  , c_let                = 11 /**< let expression */
-  , c_letbind            = 12 /**< binding part of a let expression */
-  , c_for                = 13 /**< for expression */
-  , c_forbind            = 14 /**< binding part of a for expression */
-  , c_forvars            = 15 /**< variable pair (var + pos. var) of a for */
+  , c_flwr               = 14 /**< flwr expression */
+  , c_let                = 15 /**< let expression */
+  , c_letbind            = 16 /**< binding part of a let expression */
+  , c_for                = 17 /**< for expression */
+  , c_forbind            = 18 /**< binding part of a for expression */
+  , c_forvars            = 19 /**< variable pair (var + pos. var) of a for */
 
-  , c_orderby            = 16 /**< orderby clause */
-  , c_orderspecs         = 17 /**< list of order specs */
+  , c_orderby            = 20 /**< orderby clause */
+  , c_orderspecs         = 21 /**< list of order specs */
 
-  , c_apply              = 18 /**< function application */
-  , c_arg                = 19 /**< function argument (list) */
+  , c_apply              = 22 /**< function application */
+  , c_arg                = 23 /**< function argument (list) */
 
-  , c_typesw             = 20 /**< typeswitch clause */
-  , c_cases              = 21 /**< case concatenation for typeswitch */
-  , c_case               = 22 /**< single case for typeswitch */
-  , c_default            = 23 /**< default branch in typeswitch */
-  , c_seqtype            = 24 /**< a SequenceType */
-  , c_seqcast            = 25 /**< cast along <: */
-  , c_proof              = 26 /**< typechecker only: prove <: relationship */
-  , c_subty              = 27 /**< subtype condition for proof() */
-  , c_stattype           = 28 /**< static type of expression. Required for
+  , c_typesw             = 25 /**< typeswitch clause */
+  , c_cases              = 26 /**< case concatenation for typeswitch */
+  , c_case               = 27 /**< single case for typeswitch */
+  , c_default            = 28 /**< default branch in typeswitch */
+  , c_seqtype            = 29 /**< a SequenceType */
+  , c_seqcast            = 30 /**< cast along <: */
+  , c_proof              = 31 /**< typechecker only: prove <: relationship */
+  , c_subty              = 32 /**< subtype condition for proof() */
+  , c_stattype           = 33 /**< static type of expression. Required for
                                 fs:convert-operand. Will be removed during
                                 typechecking and replaced by seqtype, as
                                 soon as types are known. */
 
-  , c_if                 = 29 /**< if-then-else conditional */
-  , c_then_else          = 30 /**< then- and else-branches of an
+  , c_if                 = 34 /**< if-then-else conditional */
+  , c_then_else          = 35 /**< then- and else-branches of an
                                 if-then-else conditional */
 
-  , c_locsteps           = 31 /**< path of location steps only */
+  , c_locsteps           = 40 /**< path of location steps only */
 
   /* XPath axes */
-  , c_ancestor           = 32 /**< the parent, the parent's parent,... */
-  , c_ancestor_or_self   = 33 /**< the parent, the parent's parent,... + self */
-  , c_attribute          = 34 /**< attributes of the context node */
-  , c_child              = 35 /**< children of the context node */
-  , c_descendant         = 36 /**< children, children's children,... + self */
-  , c_descendant_or_self = 37 /**< children, children's children,... */
-  , c_following          = 38 /**< nodes after current node (document order) */
-  , c_following_sibling  = 39 /**< all following nodes with same parent */
-  , c_parent             = 40 /**< parent node (exactly one or none) */
-  , c_preceding          = 41 /**< nodes before context node (document order) */
-  , c_preceding_sibling  = 42 /**< all preceding nodes with same parent */
-  , c_self               = 43 /**< the context node itself */
+  , c_ancestor           = 41 /**< the parent, the parent's parent,... */
+  , c_ancestor_or_self   = 42 /**< the parent, the parent's parent,... + self */
+  , c_attribute          = 43 /**< attributes of the context node */
+  , c_child              = 44 /**< children of the context node */
+  , c_descendant         = 45 /**< children, children's children,... + self */
+  , c_descendant_or_self = 46 /**< children, children's children,... */
+  , c_following          = 47 /**< nodes after current node (document order) */
+  , c_following_sibling  = 48 /**< all following nodes with same parent */
+  , c_parent             = 49 /**< parent node (exactly one or none) */
+  , c_preceding          = 50 /**< nodes before context node (document order) */
+  , c_preceding_sibling  = 51 /**< all preceding nodes with same parent */
+  , c_self               = 52 /**< the context node itself */
 /* [STANDOFF] */
   , c_select_narrow      = 100 /**< regions contained in a context-node */
   , c_select_wide        = 101 /**< regions overlapping a context-node */
@@ -135,33 +136,33 @@ enum PFctype_t {
 /* [/STANDOFF] */
 
   /* Constructor Nodes */
-  , c_elem               = 44 /**< the element constructor */
-  , c_attr               = 45 /**< the attribute constructor */
-  , c_text               = 46 /**< the text constructor */
-  , c_doc                = 47 /**< the document constructor */
-  , c_comment            = 48 /**< the comment constructor */
-  , c_pi                 = 49 /**< the processing-instruction constructor */
-  , c_tag                = 50 /**< the tagname for elem. and attr. constr. */
+  , c_elem               = 55 /**< the element constructor */
+  , c_attr               = 56 /**< the attribute constructor */
+  , c_text               = 57 /**< the text constructor */
+  , c_doc                = 58 /**< the document constructor */
+  , c_comment            = 59 /**< the comment constructor */
+  , c_pi                 = 60 /**< the processing-instruction constructor */
+  , c_tag                = 61 /**< the tagname for elem. and attr. constr. */
 
-  , c_true               = 51 /**< built-in function `fn:true ()' */
-  , c_false              = 52 /**< built-in function `fn:false ()' */
-  , c_empty              = 53 /**< built-in function `empty' */
+  , c_true               = 65 /**< built-in function `fn:true ()' */
+  , c_false              = 66 /**< built-in function `fn:false ()' */
+  , c_empty              = 67 /**< built-in function `empty' */
 
-  , c_main               = 54 /**< tree root.
+  , c_main               = 68 /**< tree root.
                                    Separates function declarations from
                                    the query body. */
-  , c_fun_decls          = 55 /**< list of function declarations */
-  , c_fun_decl           = 56 /**< function declaration */
-  , c_params             = 57 /**< function declaration parameter list */
-  , c_param              = 58 /**< function declaration parameter */
-  , c_cast               = 59 /**< function declaration parameter */
+  , c_fun_decls          = 69 /**< list of function declarations */
+  , c_fun_decl           = 70 /**< function declaration */
+  , c_params             = 71 /**< function declaration parameter list */
+  , c_param              = 72 /**< function declaration parameter */
+  , c_cast               = 73 /**< function declaration parameter */
 
   /* Pathfinder extension: recursion */
-  , c_recursion          = 60 /**< "with $v seeded by..." expression */
-  , c_seed               = 61
+  , c_recursion          = 74 /**< "with $v seeded by..." expression */
+  , c_seed               = 75
 
   /* Pathfinder extension: XRPC */
-  , c_xrpc               = 62 /**< XRPC calls: "execute at" */
+  , c_xrpc               = 76 /**< XRPC calls: "execute at" */
 };
 
 /** Core tree node type indicators */
@@ -271,6 +272,7 @@ PFcnode_t *PFcore_orderby (bool, const PFcnode_t *, const PFcnode_t *);
 PFcnode_t *PFcore_orderspecs (PFsort_t, const PFcnode_t *, const PFcnode_t *);
 
 PFcnode_t *PFcore_seq (const PFcnode_t *, const PFcnode_t *);
+PFcnode_t *PFcore_twig_seq (const PFcnode_t *, const PFcnode_t *);
 PFcnode_t *PFcore_ordered (const PFcnode_t *);
 PFcnode_t *PFcore_unordered (const PFcnode_t *);
 PFcnode_t *PFcore_empty (void);

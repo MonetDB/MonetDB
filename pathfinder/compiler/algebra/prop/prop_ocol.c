@@ -76,7 +76,7 @@ PFprop_ocol (const PFla_op_t *n, PFalg_att_t attr)
  * Return the type of @a attr in the list of ocol columns
  */
 PFalg_type_t
-PFprop_type (const PFla_op_t *n, PFalg_att_t attr)
+PFprop_type_of (const PFla_op_t *n, PFalg_att_t attr)
 {
     assert (n);
     for (unsigned int i = 0; i < n->schema.count; i++)
@@ -519,34 +519,45 @@ infer_ocol (PFla_op_t *n)
                                         .type = aat_pnode };
             break;
 
-        case la_element:
+        case la_twig:
             new_ocols (n, 2);
 
             ocol_at (n, 0)
-                = (PFalg_schm_item_t) { .name = n->sem.elem.iter_res,
+                = (PFalg_schm_item_t) { .name = n->sem.iter_item.iter,
                                         .type = aat_nat };
-            ocol_at (n, 1)
-                = (PFalg_schm_item_t) { .name = n->sem.elem.item_res,
-                                        .type = aat_pnode };
+
+            /* Check if the twig consists of only attributes ... */
+            if (L(n)->kind == la_attribute ||
+                (L(n)->kind == la_content &&
+                 PFprop_type_of (L(n)->child[1],
+                                 L(n)->sem.iter_pos_item.item) == aat_anode))
+                ocol_at (n, 1)
+                    = (PFalg_schm_item_t) { .name = n->sem.iter_item.item,
+                                            .type = aat_anode };
+            /* ... attributes and other nodes ... */
+            else if (L(n)->kind == la_content &&
+                     PFprop_type_of (L(n)->child[1],
+                                     L(n)->sem.iter_pos_item.item) & aat_anode)
+                ocol_at (n, 1)
+                    = (PFalg_schm_item_t) { .name = n->sem.iter_item.item,
+                                            .type = aat_node };
+            /* ... or only other nodes (without attributes). */
+            else
+                ocol_at (n, 1)
+                    = (PFalg_schm_item_t) { .name = n->sem.iter_item.item,
+                                            .type = aat_pnode };
             break;
 
+        /* operators without schema */
+        case la_fcns:
+        case la_element:
         case la_docnode:
+        case la_attribute:
+        case la_textnode:
         case la_comment:
         case la_processi:
-            break;
-
-        case la_attribute:
-            ocols (n) = copy_ocols (ocols (L(n)), ocols_count (L(n)) + 1);
-            ocol_at (n, ocols_count (n)).name = n->sem.attr.res;
-            ocol_at (n, ocols_count (n)).type = aat_anode;
-            ocols_count (n)++;
-            break;
-
-        case la_textnode:
-            ocols (n) = copy_ocols (ocols (L(n)), ocols_count (L(n)) + 1);
-            ocol_at (n, ocols_count (n)).name = n->sem.textnode.res;
-            ocol_at (n, ocols_count (n)).type = aat_pnode;
-            ocols_count (n)++;
+        case la_content:
+            /* keep empty schema */
             break;
 
         /* operator with static iter|pos|item schema */
@@ -561,8 +572,12 @@ infer_ocol (PFla_op_t *n)
                                         .type = aat_nat };
             ocol_at (n, 2)
                 = (PFalg_schm_item_t) { .name = n->sem.merge_adjacent.item_res,
-                                        .type = (PFprop_type(R(n), n->sem.merge_adjacent.item_res) & aat_anode)?
-                                                aat_node : aat_pnode};
+                                        .type = (PFprop_type_of (
+                                                     R(n),
+                                                     n->sem.merge_adjacent
+                                                           .item_res)
+                                                 & aat_anode)
+                                                ? aat_node : aat_pnode};
           break;
 
         case la_roots:
@@ -573,7 +588,6 @@ infer_ocol (PFla_op_t *n)
         case la_fragment:
         case la_frag_union:
         case la_empty_frag:
-        case la_element_tag:
             /* keep empty schema */
             break;
 

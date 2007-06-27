@@ -55,6 +55,8 @@
 /** and so on... */
 #define RL(p) L(R(p))
 #define LRL(p) L(R(L(p)))
+#define LLL(p) L(L(L(p)))
+#define LLR(p) R(L(L(p)))
 
 #define SEEN(p) ((p)->bit_dag)
 
@@ -377,89 +379,60 @@ opt_icol (PFla_op_t *p)
             break;
 
         case la_roots:
-            switch (L(p)->kind) {
-                case la_element:
-                    /* prune element if result column is not required */
-                    if (!PFprop_icol (p->prop, L(p)->sem.elem.item_res)) {
-                        *p = *PFla_dummy (LRL(p));
-                    }
-                    break;
-                case la_attribute:
-                    /* prune attribute if result column is not required */
-                    if (!PFprop_icol (p->prop, L(p)->sem.attr.res)) {
-                        *p = *PFla_dummy (LL(p));
-                    }
-                    break;
-                case la_textnode:
-                    /* prune textnode if result column is not required */
-                    if (!PFprop_icol (p->prop, L(p)->sem.textnode.res)) {
-                        *p = *PFla_dummy (LL(p));
-                    }
-                    break;
-                default:
-                    break;
-            } 
+            /* prune twig if result column is not required */
+            if (L(p)->kind == la_twig &&
+                !PFprop_icol (p->prop, L(p)->sem.iter_item.item))
+                switch (LL(p)->kind) {
+                    case la_docnode:
+                        *p = *PFla_project (
+                                  LLL(p),
+                                  PFalg_proj (
+                                      L(p)->sem.iter_item.iter,
+                                      LL(p)->sem.docnode.iter));
+                        break;
+
+                    case la_element:
+                    case la_textnode:
+                    case la_comment:
+                        *p = *PFla_project (
+                                  LLL(p),
+                                  PFalg_proj (
+                                      L(p)->sem.iter_item.iter,
+                                      LL(p)->sem.iter_item.iter));
+                        break;
+
+                    case la_attribute:
+                    case la_processi:
+                        *p = *PFla_project (
+                                  LLL(p),
+                                  PFalg_proj (
+                                      L(p)->sem.iter_item.iter,
+                                      LL(p)->sem.iter_item1_item2.iter));
+                        break;
+
+                    case la_content:
+                        *p = *PFla_project (
+                                  LLR(p),
+                                  PFalg_proj (
+                                      L(p)->sem.iter_item.iter,
+                                      LL(p)->sem.iter_pos_item.iter));
+                        break;
+
+                    default:
+                        assert (0);
+                        break;
+                }
             break;
 
         case la_frag_union:
-            if (L(p)->kind == la_fragment) {
-                switch (LL(p)->kind) {
-                    case la_element:
-                        /* prune reference to element
-                           if result column is not required */
-                        if (!PFprop_icol (LL(p)->prop, 
-                                          LL(p)->sem.elem.item_res)) {
-                            *p = *PFla_dummy (R(p));
-                        }
-                        break;
-                    case la_attribute:
-                        /* prune reference to attribute
-                           if result column is not required */
-                        if (!PFprop_icol (LL(p)->prop, LL(p)->sem.attr.res)) {
-                            *p = *PFla_dummy (R(p));
-                        }
-                        break;
-                    case la_textnode:
-                        /* prune reference to textnode 
-                           if result column is not required */
-                        if (!PFprop_icol (LL(p)->prop,
-                                          LL(p)->sem.textnode.res)) {
-                            *p = *PFla_dummy (R(p));
-                        }
-                        break;
-                    default:
-                        break;
-                }
-            }
-            else if (R(p)->kind == la_fragment) {
-                switch (RL(p)->kind) {
-                    case la_element:
-                        /* prune reference to element
-                           if result column is not required */
-                        if (!PFprop_icol (RL(p)->prop,
-                                          RL(p)->sem.elem.item_res)) {
-                            *p = *PFla_dummy (L(p));
-                        }
-                        break;
-                    case la_attribute:
-                        /* prune reference to attribute
-                           if result column is not required */
-                        if (!PFprop_icol (RL(p)->prop, RL(p)->sem.attr.res)) {
-                            *p = *PFla_dummy (L(p));
-                        }
-                        break;
-                    case la_textnode:
-                        /* prune reference to textnode 
-                           if result column is not required */
-                        if (!PFprop_icol (RL(p)->prop,
-                                          RL(p)->sem.textnode.res)) {
-                            *p = *PFla_dummy (L(p));
-                        }
-                        break;
-                    default:
-                        break;
-                }
-            }
+            if (L(p)->kind == la_fragment &&
+                LL(p)->kind == la_twig &&
+                !PFprop_icol (LL(p)->prop, LL(p)->sem.iter_item.item))
+                *p = *PFla_dummy (R(p));
+            else if (R(p)->kind == la_fragment &&
+                RL(p)->kind == la_twig &&
+                !PFprop_icol (RL(p)->prop, RL(p)->sem.iter_item.item))
+                *p = *PFla_dummy (L(p));
             break;
             
         case la_rec_arg:

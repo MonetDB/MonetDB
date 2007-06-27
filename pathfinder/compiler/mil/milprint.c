@@ -31,6 +31,7 @@
    expression    : Variable                                 <m_var>
                  | literal                                  <m_lit_*, m_nil>
                  | 'new (' Type ',' Type ')'                <m_new>
+                 | expression '.seqbase ()'                 <m_sseqbase>
                  | expression '.seqbase (' expression ')'   <m_seqbase>
                  | expression '.select (' expression ')'    <m_select>
                  | expression '.exist (' expression ')'     <m_exist>
@@ -98,6 +99,7 @@
                  | '[floor](' expression ')'                <m_mfloor>
                  | '[round_up](' expression ')'             <m_mround_up>
                  | '>(' expression ',' expression ')'       <m_gt>
+                 | '=(' expression ',' expression ')'       <m_eq>
                  | '[=](' expression ',' expression ')'     <m_meq>
                  | '[>](' expression ',' expression ')'     <m_mgt>
                  | '[>=](' expression ',' expression ')'    <m_mge>
@@ -121,6 +123,7 @@
                  | '{max}(' expression ')'                  <m_gmax>
                  | '{min}(' expression ')'                  <m_gmin>
                  | '{sum}(' expression ')'                  <m_gsum>
+                 | '{sum}(' expression ',' expression ')'   <m_egsum>
                  | 'usec ()'                                <m_usec>
                  | 'new_ws ()'                              <m_new_ws>
                  | 'mposjoin (' exp ',' exp ',' exp ')'     <m_mposjoin>
@@ -133,12 +136,14 @@
                  | 'text_constr (' expr ',' expr ')'        <m_text_constr>
                  | 'add_qname (' ex ',' ex ',' ex ',' ex ')'<m_add_qname>
                  | 'add_qnames(' ex ',' ex ',' ex ',' ex ')'<m_add_qnames>
+                 | 'add_content (' exp ',' exp ',' exp ')'  <m_add_content>
                  | 'check_qnames (' expression ')'          <m_chk_qnames>
                  | 'sc_desc (' ex ',' ex ',' ex ',' ex ')'  <m_sc_desc>
                  | 'merged_adjacent_text_nodes
                              (' ex ',' ex ',' ex ',' ex ')' <m_merge_adjacent>
                  | 'string_join (' expr ',' expr ')'        <m_string_join>
                  | 'merged_union (' args ')'                <m_merged_union>
+                 | 'multi_merged_union (' expr ')'          <m_multi_mu>
                  | 'ds_link (' args ')'                     <m_mc_intersect>
 
                  | 'llscj_child (' a ',' b ',' c ',' d ')'  <m_llscj_child>
@@ -200,6 +205,7 @@
 static char *ID[] = {
 
       [m_new]          = "new"
+    , [m_sseqbase]     = "seqbase"
     , [m_seqbase]      = "seqbase"
     , [m_key]          = "key"
     , [m_order]        = "order"
@@ -233,6 +239,7 @@ static char *ID[] = {
     , [m_sintersect]   = "sintersect"
     , [m_mc_intersect] = "ds_link"
     , [m_merged_union] = "merged_union"
+    , [m_multi_mu]     = "multi_merged_union"
     , [m_var]          = "var"
 
     , [m_sort]         = "sort"
@@ -257,6 +264,7 @@ static char *ID[] = {
     , [m_mfloor]       = "[floor]"
     , [m_mround_up]    = "[round_up]"
     , [m_gt]           = ">"
+    , [m_eq]           = "="
     , [m_meq]          = "[=]"
     , [m_mgt]          = "[>]"
     , [m_mge]          = "[>=]"
@@ -286,6 +294,7 @@ static char *ID[] = {
     , [m_text_constr]  = "text_constr"
     , [m_add_qname]    = "add_qname"
     , [m_add_qnames]   = "add_qnames"
+    , [m_add_content]  = "add_content"
     , [m_chk_qnames]   = "invalid_qname"
 
     , [m_llscj_anc]              = "loop_lifted_ancestor_step"
@@ -446,6 +455,7 @@ static char *ID[] = {
     , [m_gmin]     = "{min}"
     , [m_sum]      = "sum"
     , [m_gsum]     = "{sum}"
+    , [m_egsum]    = "{sum}"
     , [m_bat]      = "bat"
     , [m_catch]    = "CATCH"
     , [m_error]    = "ERROR"
@@ -751,6 +761,8 @@ print_expression (PFmil_t * n)
             milprintf (")");
             break;
 
+        /* expression : expression '.seqbase ()' */
+        case m_sseqbase:
         /* expression : expression '.reverse' */
         case m_reverse:
         /* expression : expression '.mirror' */
@@ -791,6 +803,8 @@ print_expression (PFmil_t * n)
         case m_assert_order:
         /* expression '.chk_order ()' */
         case m_chk_order:
+        /* expression : 'multi_merged_union (' expr ')' */
+        case m_multi_mu:
             print_expression (n->child[0]);
             milprintf (".%s ()", ID[n->kind]);
             break;
@@ -851,6 +865,8 @@ print_expression (PFmil_t * n)
         case m_mmod:
         /* expression : '>(' expression ',' expression ')' */
         case m_gt:
+        /* expression : '=(' expression ',' expression ')' */
+        case m_eq:
         /* expression : '[=](' expression ',' expression ')' */
         case m_meq:
         /* expression : '[>](' expression ',' expression ')' */
@@ -948,6 +964,8 @@ print_expression (PFmil_t * n)
         case m_mposjoin:
         /* expression : 'mvaljoin (' exp ',' exp ',' exp ')' */
         case m_mvaljoin:
+        /* expression : 'add_content (' exp ',' exp ',' exp ')' */
+        case m_add_content:
             milprintf ("%s (", ID[n->kind]);
             print_expression (n->child[0]);
             milprintf (", ");
@@ -959,6 +977,8 @@ print_expression (PFmil_t * n)
 
         /* expression: '{count}(' expression ',' expression ')' */
         case m_egcount:
+        /* expression: '{sum}(' expression ',' expression ')' */
+        case m_egsum:
         /* expression : 'doc_tbl (' expr ',' expr ')' */
         case m_doc_tbl:
         /* expression : 'elem_constr_empty (' expr ',' expr ')' */

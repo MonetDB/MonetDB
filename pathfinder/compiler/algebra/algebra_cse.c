@@ -384,13 +384,15 @@ subexp_eq (PFla_op_t *a, PFla_op_t *b)
             return true;
             break;
 
+        case la_twig:
+        case la_fcns:
+        case la_docnode:
         case la_element:
-        case la_element_tag:
         case la_attribute:
         case la_textnode:
-        case la_docnode:
         case la_comment:
         case la_processi:
+        case la_content:
             /*
              * No common subexpression elimination performed here, since,
              * even if two node constructors are identical, they create

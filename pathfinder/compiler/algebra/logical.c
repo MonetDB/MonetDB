@@ -2278,43 +2278,107 @@ PFla_doc_access (const PFla_op_t *doc, const PFla_op_t *n,
 
 
 /**
- * Constructor for element operators.
- *
- * @a doc is the current document, @a tag constructs the elements'
- * tag names, and @a cont is the content of the tags.
- *
- * Since algebra optimization will be performed using Burg, we must
- * convert this "wire3" operator into two "wire2" operators.
+ * Constructor for twig root operators.
  */
-PFla_op_t * PFla_element (const PFla_op_t *doc,
-                          const PFla_op_t *tag, const PFla_op_t *cont,
-                          PFalg_att_t iter_qn, PFalg_att_t item_qn,
-                          PFalg_att_t iter_val, PFalg_att_t pos_val, 
-                          PFalg_att_t item_val,
-                          PFalg_att_t iter_res, PFalg_att_t item_res)
+PFla_op_t * PFla_twig (const PFla_op_t *n,
+                       PFalg_att_t iter,
+                       PFalg_att_t item)
 {
-    PFla_op_t *ret = la_op_wire2 (la_element, doc,
-                                    la_op_wire2 (la_element_tag,
-                                                  tag, cont));
+    PFla_op_t *ret = la_op_wire1 (la_twig, n);
 
     /* store columns to work on in semantical field */
-    ret->sem.elem.iter_qn  = iter_qn;
-    ret->sem.elem.item_qn  = item_qn;
-    ret->sem.elem.iter_val = iter_val;
-    ret->sem.elem.pos_val  = pos_val;
-    ret->sem.elem.item_val = item_val;
-    ret->sem.elem.iter_res = iter_res;
-    ret->sem.elem.item_res = item_res;
+    ret->sem.iter_item.iter = iter;
+    ret->sem.iter_item.item = item;
 
-    /* The schema of the result part is iter|item */
+    /* allocate memory for the result schema;
+       it's the same schema as n's plus an additional result column  */
     ret->schema.count = 2;
     ret->schema.items
-        = PFmalloc (ret->schema.count * sizeof (*ret->schema.items));
+        = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
 
-    ret->schema.items[0]
-        = (PFalg_schm_item_t) { .name = iter_res, .type = aat_nat };
-    ret->schema.items[1]
-        = (PFalg_schm_item_t) { .name = item_res, .type = aat_pnode };
+    ret->schema.items[0].name = iter;
+    ret->schema.items[0].type = aat_nat;
+    ret->schema.items[1].name = item;
+    /* Check if the twig consists of only attributes ... */
+    if (n->kind == la_attribute ||
+        (n->kind == la_content &&
+         PFprop_type_of (n->child[1],
+                         n->sem.iter_pos_item.item) == aat_anode))
+        ret->schema.items[1].type = aat_anode;
+    /* ... attributes and other nodes ... */
+    else if (n->kind == la_content &&
+             PFprop_type_of (n->child[1],
+                             n->sem.iter_pos_item.item) & aat_anode)
+        ret->schema.items[1].type = aat_node;
+    /* ... or only other nodes (without attributes). */
+    else
+        ret->schema.items[1].type = aat_pnode;
+
+    return ret;
+}
+
+
+/**
+ * Constructor for twig constructor sequence operators.
+ *
+ * @a fc is the next 'first' child operator and @a ns is the
+ * next sibling in the constructor sequence operator list.
+ */
+PFla_op_t * PFla_fcns (const PFla_op_t *fc,
+                       const PFla_op_t *ns)
+{
+    PFla_op_t *ret = la_op_wire2 (la_fcns, fc, ns);
+
+    /* Constructors have no schema */
+    ret->schema.count = 0;
+    ret->schema.items = NULL;
+
+    return ret;
+}
+
+
+/**
+ * Constructor for document node operators.
+ *
+ * @a scope is the current scope the document node is constructed in
+ * and @a fcns is the content of the node.
+ */
+PFla_op_t * PFla_docnode (const PFla_op_t *scope, const PFla_op_t *fcns,
+                          PFalg_att_t iter)
+{
+    PFla_op_t *ret = la_op_wire2 (la_docnode, scope, fcns);
+
+    /* store columns to work on in semantical field */
+    ret->sem.docnode.iter = iter;
+
+    /* Constructors have no schema */
+    ret->schema.count = 0;
+    ret->schema.items = NULL;
+
+    return ret;
+}
+
+
+/**
+ * Constructor for element operators.
+ *
+ * @a tag constructs the elements' tag names, and @a fcns 
+ * is the content of the new elements.
+ */
+PFla_op_t * PFla_element (const PFla_op_t *tag,
+                          const PFla_op_t *fcns,
+                          PFalg_att_t iter,
+                          PFalg_att_t item)
+{
+    PFla_op_t *ret = la_op_wire2 (la_element, tag, fcns);
+
+    /* store columns to work on in semantical field */
+    ret->sem.iter_item.iter = iter;
+    ret->sem.iter_item.item = item;
+
+    /* Constructors have no schema */
+    ret->schema.count = 0;
+    ret->schema.items = NULL;
 
     return ret;
 }
@@ -2323,32 +2387,22 @@ PFla_op_t * PFla_element (const PFla_op_t *doc,
 /**
  * Constructor for attribute operators.
  *
- * @a rel stores the name of the attribute, and @a val is the value of
- * the attribute. @a res is the column that stores the resulting attribute
- * references. @a qn and @a val reference the respective input columns.
+ * @a cont stores the name-value relation of the attribute. @a iter, @a qn,
+ * and @a val reference the iter, qname, and value input columns, respectively.
  */
-PFla_op_t * PFla_attribute (const PFla_op_t *rel,
-                            PFalg_att_t res, PFalg_att_t qn, PFalg_att_t val)
+PFla_op_t * PFla_attribute (const PFla_op_t *cont,
+                            PFalg_att_t iter, PFalg_att_t qn, PFalg_att_t val)
 {
-    PFla_op_t *ret = la_op_wire1 (la_attribute, rel);
+    PFla_op_t *ret = la_op_wire1 (la_attribute, cont);
 
-    /* allocate memory for the result schema; it's the qname schema
-       plus an additional column with the attribute references */
-    ret->schema.count = rel->schema.count + 1;
-    ret->schema.items
-        = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
+    /* store columns to work on in semantical field */
+    ret->sem.iter_item1_item2.iter  = iter;
+    ret->sem.iter_item1_item2.item1 = qn;
+    ret->sem.iter_item1_item2.item2 = val;
 
-    /* copy schema from argument 'rel' ... */
-    for (unsigned int i = 0; i < rel->schema.count; i++)
-        ret->schema.items[i] = rel->schema.items[i];
-
-    /* ... and add the result column */
-    ret->schema.items[ret->schema.count - 1]
-        = (PFalg_schm_item_t) { .name = res, .type = aat_anode };
-
-    ret->sem.attr.qn  = qn;
-    ret->sem.attr.val = val;
-    ret->sem.attr.res = res;
+    /* Constructors have no schema */
+    ret->schema.count = 0;
+    ret->schema.items = NULL;
 
     return ret;
 }
@@ -2358,54 +2412,21 @@ PFla_op_t * PFla_attribute (const PFla_op_t *rel,
  * Constructor for text content operators.
  *
  * @a cont is the relation storing the textnode content; @item points
- * to the respective column and @res is the new resulting column with
- * the textnode references.
+ * to the respective column and @iter marks the scope in which the
+ * nodes are constructed in.
  */
 PFla_op_t *
-PFla_textnode (const PFla_op_t *cont, PFalg_att_t res, PFalg_att_t item)
+PFla_textnode (const PFla_op_t *cont, PFalg_att_t iter, PFalg_att_t item)
 {
     PFla_op_t *ret = la_op_wire1 (la_textnode, cont);
 
-    /* allocate memory for the result schema; it's the input schema
-       plus an additional column with the textnode references */
-    ret->schema.count = cont->schema.count + 1;
-    ret->schema.items
-        = PFmalloc (ret->schema.count * sizeof (*ret->schema.items));
+    /* store columns to work on in semantical field */
+    ret->sem.iter_item.iter = iter;
+    ret->sem.iter_item.item = item;
 
-    /* copy schema from argument 'cont' ... */
-    for (unsigned int i = 0; i < cont->schema.count; i ++)
-        ret->schema.items[i] = cont->schema.items[i];
-
-    /* ... and add the result column */
-    ret->schema.items[ret->schema.count - 1]
-        = (PFalg_schm_item_t) { .name = res, .type = aat_pnode };
-
-    ret->sem.textnode.item  = item;
-    ret->sem.textnode.res  = res;
-
-    return ret;
-}
-
-
-/**
- * Constructor for document node operators.
- *
- * @a doc is the current document and @a cont is the content of
- * the node.
- */
-PFla_op_t * PFla_docnode (const PFla_op_t *doc, const PFla_op_t *cont)
-{
-    PFla_op_t *ret = la_op_wire2 (la_docnode, doc, cont);
-
-    /* The schema of the result part is iter|item */
-    ret->schema.count = 2;
-    ret->schema.items
-        = PFmalloc (ret->schema.count * sizeof (*ret->schema.items));
-
-    ret->schema.items[0]
-        = (PFalg_schm_item_t) { .name = att_iter, .type = aat_nat };
-    ret->schema.items[1]
-        = (PFalg_schm_item_t) { .name = att_item, .type = aat_pnode };
+    /* Constructors have no schema */
+    ret->schema.count = 0;
+    ret->schema.items = NULL;
 
     return ret;
 }
@@ -2414,22 +2435,22 @@ PFla_op_t * PFla_docnode (const PFla_op_t *doc, const PFla_op_t *cont)
 /**
  * Constructor for comment operators.
  *
- * @a cont is the content of
- * the comment.
+ * @a cont is the relation storing the comment content; @item points
+ * to the respective column and @iter marks the scope in which the
+ * nodes are constructed in.
  */
-PFla_op_t * PFla_comment (const PFla_op_t *cont)
+PFla_op_t *
+PFla_comment (const PFla_op_t *cont, PFalg_att_t iter, PFalg_att_t item)
 {
     PFla_op_t *ret = la_op_wire1 (la_comment, cont);
 
-    /* The schema of the result part is iter|item */
-    ret->schema.count = 2;
-    ret->schema.items
-        = PFmalloc (ret->schema.count * sizeof (*ret->schema.items));
+    /* store columns to work on in semantical field */
+    ret->sem.iter_item.iter = iter;
+    ret->sem.iter_item.item = item;
 
-    ret->schema.items[0]
-        = (PFalg_schm_item_t) { .name = att_iter, .type = aat_nat };
-    ret->schema.items[1]
-        = (PFalg_schm_item_t) { .name = att_item, .type = aat_pnode };
+    /* Constructors have no schema */
+    ret->schema.count = 0;
+    ret->schema.items = NULL;
 
     return ret;
 }
@@ -2438,52 +2459,92 @@ PFla_op_t * PFla_comment (const PFla_op_t *cont)
 /**
  * Constructor for processing instruction operators.
  *
- * @a cont is the content of
- * the processing instruction.
+ * @a cont stores the target-value relation of the processing-instruction.
+ * @a iter, @a target, and @a val reference the iter, target, and value
+ * input columns, respectively.
  */
-PFla_op_t * PFla_processi (const PFla_op_t *cont)
+PFla_op_t * PFla_processi (const PFla_op_t *cont,
+                           PFalg_att_t iter,
+                           PFalg_att_t target,
+                           PFalg_att_t val)
 {
     PFla_op_t *ret = la_op_wire1 (la_processi, cont);
 
-    /* The schema of the result part is iter|item */
-    ret->schema.count = 2;
-    ret->schema.items
-        = PFmalloc (ret->schema.count * sizeof (*ret->schema.items));
+    /* store columns to work on in semantical field */
+    ret->sem.iter_item1_item2.iter  = iter;
+    ret->sem.iter_item1_item2.item1 = target;
+    ret->sem.iter_item1_item2.item2 = val;
 
-    ret->schema.items[0]
-        = (PFalg_schm_item_t) { .name = att_iter, .type = aat_nat };
-    ret->schema.items[1]
-        = (PFalg_schm_item_t) { .name = att_item, .type = aat_pnode };
+    /* Constructors have no schema */
+    ret->schema.count = 0;
+    ret->schema.items = NULL;
 
     return ret;
 }
 
+
+/**
+ * Constructor for constructor content operators (elem|doc).
+ *
+ * Use @a doc to retrieve information about the nodes in @a cont,
+ * i.e. to collect all subtree nodes (using a descendant-or-self::node()
+ * step) for later use in the twig constructor.
+ *
+ * The input parameters have the following schemata:
+ * - @a doc:  none (as it is a node fragment)
+ * - @a cont: iter | pos | item
+ */
+PFla_op_t * PFla_content (const PFla_op_t *doc,
+                          const PFla_op_t *cont,
+                          PFalg_att_t iter,
+                          PFalg_att_t pos,
+                          PFalg_att_t item)
+{
+    PFla_op_t *ret = la_op_wire2 (la_content, doc, cont);
+
+    /* store columns to work on in semantical field */
+    ret->sem.iter_pos_item.iter  = iter;
+    ret->sem.iter_pos_item.pos   = pos;
+    ret->sem.iter_pos_item.item  = item;
+
+    /* Constructors have no schema */
+    ret->schema.count = 0;
+    ret->schema.items = NULL;
+
+    return ret;
+}
+
+
 /**
  * Constructor for pf:merge-adjacent-text-nodes() functionality.
  *
- * Use @a doc to retrieve information about the nodes in @n, i.e. to
+ * Use @a doc to retrieve information about the nodes in @a cont, i.e. to
  * determine which ones are text nodes. If two consecutive text nodes
- * are found in @a n (same "iter", consecutive "pos" value), merge
+ * are found in @a cont (same "iter", consecutive "pos" value), merge
  * them into one text node. If the content of a text node is empty,
  * discard the node.
  * The input parameters have the following schemata:
- * - @a doc: none (as it is a node fragment)
- * - @a n:   iter | pos | item
+ * - @a doc:  none (as it is a node fragment)
+ * - @a cont: iter | pos | item
  * The output are an algebra representation of all nodes (old and new,
  * i.e. unmerged and merged) and a fragment representation of the newly
  * created nodes only.
  */
 PFla_op_t *
-PFla_pf_merge_adjacent_text_nodes (
-    const PFla_op_t *doc, const PFla_op_t *n,
-    PFalg_att_t iter_in, PFalg_att_t pos_in, PFalg_att_t item_in,
-    PFalg_att_t iter_res, PFalg_att_t pos_res, PFalg_att_t item_res)
+PFla_pf_merge_adjacent_text_nodes (const PFla_op_t *doc,
+                                   const PFla_op_t *cont,
+                                   PFalg_att_t iter_in,
+                                   PFalg_att_t pos_in,
+                                   PFalg_att_t item_in,
+                                   PFalg_att_t iter_res,
+                                   PFalg_att_t pos_res,
+                                   PFalg_att_t item_res)
 {
     unsigned int i;
-    PFla_op_t *ret = la_op_wire2 (la_merge_adjacent, doc, n);
+    PFla_op_t *ret = la_op_wire2 (la_merge_adjacent, doc, cont);
 
-    for (i = 0; i < n->schema.count; i++)
-        if (n->schema.items[i].name == item_in)
+    for (i = 0; i < cont->schema.count; i++)
+        if (cont->schema.items[i].name == item_in)
             break;
         
     /* store columns to work on in semantical field */
@@ -2498,14 +2559,14 @@ PFla_pf_merge_adjacent_text_nodes (
     ret->schema.count = 3;
     ret->schema.items
         = PFmalloc (ret->schema.count * sizeof (*ret->schema.items));
-
+    
     ret->schema.items[0]
         = (PFalg_schm_item_t) { .name = iter_res, .type = aat_nat };
     ret->schema.items[1]
         = (PFalg_schm_item_t) { .name = pos_res, .type = aat_nat };
     ret->schema.items[2]
         = (PFalg_schm_item_t) { .name = item_res,
-                                .type = n->schema.items[i].type & aat_anode
+                                .type = cont->schema.items[i].type & aat_anode
                                         ? aat_node : aat_pnode };
 
     return ret;
@@ -2754,9 +2815,9 @@ PFla_trace (const PFla_op_t *n1,
     ret = la_op_wire2 (la_trace, n1, n2);
 
     /* insert semantic values (column names) into the result */
-    ret->sem.trace.iter = iter;
-    ret->sem.trace.pos  = pos;
-    ret->sem.trace.item = item;
+    ret->sem.iter_pos_item.iter = iter;
+    ret->sem.iter_pos_item.pos  = pos;
+    ret->sem.iter_pos_item.item = item;
 
     /* allocate memory for the result schema (= schema(n1)) */
     ret->schema.count = n1->schema.count;
@@ -2801,8 +2862,8 @@ PFla_trace_msg (const PFla_op_t *n1,
     ret = la_op_wire2 (la_trace_msg, n1, n2);
 
     /* insert semantic values (column names) into the result */
-    ret->sem.trace_msg.iter = iter;
-    ret->sem.trace_msg.item = item;
+    ret->sem.iter_item.iter = iter;
+    ret->sem.iter_item.item = item;
 
     /* allocate memory for the result schema (= schema(n1)) */
     ret->schema.count = n1->schema.count;

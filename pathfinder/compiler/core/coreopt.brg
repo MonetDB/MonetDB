@@ -121,52 +121,55 @@ static PFarray_t *var_env[HASH_BUCKETS];
 %term nil                =  6 /**< end-of-sequence marker */
 
 %term seq                =  7 /**< sequence construction */
-%term ordered            =  8
-%term unordered          =  9
+%term twig_seq           =  8 /**< sequence construction within twigs */
+%term ordered            =  9
+%term unordered          = 10
 
-%term flwr               = 10 /**< flwr expression */
-%term let                = 11 /**< let expression */
-%term letbind            = 12 /**< binding part of a let expression */
-%term for_               = 13 /**< for expression */
-%term forbind            = 14 /**< binding part of a for expression */
-%term forvars            = 15 /**< variable pair (var + pos. var) of a for */
+%term flwr               = 14 /**< flwr expression */
+%term let                = 15 /**< let expression */
+%term letbind            = 16 /**< binding part of a let expression */
+%term for_               = 17 /**< for expression */
+%term forbind            = 18 /**< binding part of a for expression */
+%term forvars            = 19 /**< variable pair (var + pos. var) of a for */
 
-%term orderby            = 16 /**< orderby clause */
-%term orderspecs         = 17 /**< list of order specs */
+%term orderby            = 20 /**< orderby clause */
+%term orderspecs         = 21 /**< list of order specs */
 
-%term apply              = 18 /**< function application */
-%term arg                = 19 /**< function argument (list) */
+%term apply              = 22 /**< function application */
+%term arg                = 23 /**< function argument (list) */
 
-%term typesw             = 20 /**< typeswitch clause */
-%term cases              = 21 /**< case concatenation for typeswitch */
-%term case_              = 22 /**< single case for typeswitch */
-%term default_           = 23 /**< default branch in typeswitch */
-%term seqtype            = 24 /**< a SequenceType */
-%term seqcast            = 25 /**< cast along <: */
-%term proof              = 26 /**< typechecker only: prove <: relationship */
-%term subty              = 27 /**< subtype condition for proof() */
-%term stattype           = 28 /**< static type of expression. Required for
-                                   fs:convert-operand. Will be removed during
-                                   typechecking and replaced by seqtype, as
-                                   soon as types are known. */
+%term typesw             = 25 /**< typeswitch clause */
+%term cases              = 26 /**< case concatenation for typeswitch */
+%term case_              = 27 /**< single case for typeswitch */
+%term default_           = 28 /**< default branch in typeswitch */
+%term seqtype            = 29 /**< a SequenceType */
+%term seqcast            = 30 /**< cast along <: */
+%term proof              = 31 /**< typechecker only: prove <: relationship */
+%term subty              = 32 /**< subtype condition for proof() */
+%term stattype           = 33 /**< static type of expression. Required for
+                                fs:convert-operand. Will be removed during
+                                typechecking and replaced by seqtype, as
+                                soon as types are known. */
 
-%term if_                = 29 /**< if-then-else conditional */
-%term then_else          = 30 /**< then- and else-branches of an
-                                   if-then-else conditional */
+%term if_                = 34 /**< if-then-else conditional */
+%term then_else          = 35 /**< then- and else-branches of an
+                                if-then-else conditional */
 
-%term locsteps           = 31 /**< path of location steps only */
-%term ancestor           = 32 /**< the parent, the parent's parent,... */
-%term ancestor_or_self   = 33 /**< the parent, the parent's parent,... + self */
-%term attribute          = 34 /**< attributes of the context node */
-%term child              = 35 /**< children of the context node */
-%term descendant         = 36 /**< children, children's children,... + self */
-%term descendant_or_self = 37 /**< children, children's children,... */
-%term following          = 38 /**< nodes after current node (document order) */
-%term following_sibling  = 39 /**< all following nodes with same parent */
-%term parent             = 40 /**< parent node (exactly one or none) */
-%term preceding          = 41 /**< nodes before context node (document order) */
-%term preceding_sibling  = 42 /**< all preceding nodes with same parent */
-%term self               = 43 /**< the context node itself */
+%term locsteps           = 40 /**< path of location steps only */
+
+  /* XPath axes */
+%term ancestor           = 41 /**< the parent, the parent's parent,... */
+%term ancestor_or_self   = 42 /**< the parent, the parent's parent,... + self */
+%term attribute          = 43 /**< attributes of the context node */
+%term child              = 44 /**< children of the context node */
+%term descendant         = 45 /**< children, children's children,... + self */
+%term descendant_or_self = 46 /**< children, children's children,... */
+%term following          = 47 /**< nodes after current node (document order) */
+%term following_sibling  = 48 /**< all following nodes with same parent */
+%term parent             = 49 /**< parent node (exactly one or none) */
+%term preceding          = 50 /**< nodes before context node (document order) */
+%term preceding_sibling  = 51 /**< all preceding nodes with same parent */
+%term self               = 52 /**< the context node itself */
 /* [STANDOFF] */
 %term select_narrow      = 100 /**< regions contained in a context-node */
 %term select_wide        = 101 /**< regions overlapping a context-node */
@@ -174,55 +177,60 @@ static PFarray_t *var_env[HASH_BUCKETS];
 %term reject_wide        = 103 /**< all regions except the overlapping regions */
 /* [/STANDOFF] */
 
-%term elem               = 44 /**< the element constructor */
-%term attr               = 45 /**< the attribute constructor */
-%term text               = 46 /**< the text constructor */
-%term doc                = 47 /**< the document constructor */
-%term comment            = 48 /**< the comment constructor */
-%term pi                 = 49 /**< the processing-instruction constructor */
-%term tag                = 50 /**< the tagname for elem. and attr. constr. */
+  /* Constructor Nodes */
+%term elem               = 55 /**< the element constructor */
+%term attr               = 56 /**< the attribute constructor */
+%term text               = 57 /**< the text constructor */
+%term doc                = 58 /**< the document constructor */
+%term comment            = 59 /**< the comment constructor */
+%term pi                 = 60 /**< the processing-instruction constructor */
+%term tag                = 61 /**< the tagname for elem. and attr. constr. */
 
-%term true_              = 51 /**< built-in function `fn:true ()' */
-%term false_             = 52 /**< built-in function `fn:false ()' */
-%term empty              = 53 /**< built-in function `empty' */
-%term main               = 54 /**< tree root
+%term true_              = 65 /**< built-in function `fn:true ()' */
+%term false_             = 66 /**< built-in function `fn:false ()' */
+%term empty              = 67 /**< built-in function `empty' */
+
+%term main               = 68 /**< tree root.
                                    Separates function declarations from
                                    the query body. */
-%term fun_decls          = 55 /**< list of function declarations */
-%term fun_decl           = 56 /**< function declaration */
-%term params             = 57 /**< function declaration parameter list */
-%term param              = 58 /**< function declaration parameter */
-%term cast               = 59 /**< XQuery `cast as' operation */
+%term fun_decls          = 69 /**< list of function declarations */
+%term fun_decl           = 70 /**< function declaration */
+%term params             = 71 /**< function declaration parameter list */
+%term param              = 72 /**< function declaration parameter */
+%term cast               = 73 /**< function declaration parameter */
 
-/* Pathfinder extension: recursion */
-%term recursion          = 60 /**< Pathfinder extension: recursion */
-%term seed               = 61 /**< Pathfinder extension: recursion */
+  /* Pathfinder extension: recursion */
+%term recursion          = 74 /**< "with $v seeded by..." expression */
+%term seed               = 75
 
-/* Pathfinder extension: XRPC */
-%term xrpc               = 62 /**< Pathfinder extension: XRPC */
+  /* Pathfinder extension: XRPC */
+%term xrpc               = 76 /**< XRPC calls: "execute at" */
 
 %%
 
+/* all rules starting from rule 40 are never used
+   for optimization (-- see also different formatting) */ 
+
 Query:              main (FunctionDecls, CoreExpr)              =   1 (10);
                                                                      
-CoreExpr:           Atom                                        =   2 (10);
-CoreExpr:           SequenceTypeCast                            =   3 (10);
+CoreExpr:           Atom                                        =   40(10);
+CoreExpr:           SequenceTypeCast                            =   41(10);
                                                                      
-CoreExpr:           flwr (OptBindExpr, CoreExpr)                =   4 (10);
+CoreExpr:           flwr (OptBindExpr, CoreExpr)                =   2 (10);
 
 CoreExpr:           flwr (for_ (forbind (forvars (var, nil),
                                          Atom),
-                                nil), var)                      =   5 (10);
+                                nil), var)                      =   3 (10);
 
 CoreExpr:           flwr (let (letbind (var, CoreExpr),       
-                               nil), var)                       =   6 (10);
+                               nil), var)                       =   4 (10);
 
 OptBindExpr:        for_ (forbind (forvars (var, OptVar),            
                                    Atom),                            
-                          OptBindExpr)                          =   7 (10);
+                          OptBindExpr)                          =   5 (10);
                                                                      
-OptVar:             nil                                         =   8 (10);
-OptVar:             var                                         =   9 (10);
+OptVar:             nil                                         =   42(10);
+OptVar:             var                                         =   43(10);
                                                                      
 OptBindExpr:        let (letbind (var, Atom), OptBindExpr)      =  10 (10);
 OptBindExpr:        let (letbind (var,                               
@@ -237,115 +245,125 @@ OptBindExpr:        let (letbind (var,
                                              OptBindExpr),           
                                         CoreExpr)),                  
                          OptBindExpr)                           =  12 (10);
-OptBindExpr:        let (letbind (var, CoreExpr), OptBindExpr)  =  13 (10);
-OptBindExpr:        nil                                         =  14 (10);
+OptBindExpr:        let (letbind (var, CoreExpr), OptBindExpr)  =   44(10);
+OptBindExpr:        nil                                         =   45(10);
                                                                      
 CoreExpr:           typesw (Atom,                                    
                             cases (case_ (SequenceType,              
                                           CoreExpr),                 
-                                   default_ (CoreExpr)))        =  20 (10);
+                                   default_ (CoreExpr)))        =  13 (10);
                                                                      
-SequenceType:       seqtype                                     =  21 (10);
-SequenceType:       stattype (CoreExpr)                         =  22 (10);
+SequenceType:       seqtype                                     =   46(10);
+SequenceType:       stattype (CoreExpr)                         =   47(10);
                                                                      
-SequenceTypeCast:   seqcast (SequenceType, CoreExpr)            =  23 (10);
+SequenceTypeCast:   seqcast (SequenceType, CoreExpr)            =  24 (10);
                                                                      
 CoreExpr:           proof (subty (CoreExpr, SequenceType),           
-                           CoreExpr)                            =  24 (10);
+                           CoreExpr)                            =   48(10);
                                                                      
-CoreExpr:           if_ (Atom, then_else (CoreExpr, CoreExpr))  =  25 (10);
+CoreExpr:           if_ (Atom, then_else (CoreExpr, CoreExpr))  =   49(10);
                                                                      
-CoreExpr:           seq (seq (CoreExpr, CoreExpr), CoreExpr)    =  27 (10);
-CoreExpr:           seq (CoreExpr, CoreExpr)                    =  28 (10);
-CoreExpr:           seq (empty, CoreExpr)                       =  29 (10);
-CoreExpr:           seq (CoreExpr, empty)                       =  30 (10);
+CoreExpr:           seq (seq (CoreExpr, CoreExpr), CoreExpr)    =  15 (10);
+CoreExpr:           seq (CoreExpr, CoreExpr)                    =   50(10);
+CoreExpr:           seq (empty, CoreExpr)                       =  16 (10);
+CoreExpr:           seq (CoreExpr, empty)                       =  17 (10);
                                                                      
-CoreExpr:           LocationSteps                               =  31 (10);
-CoreExpr:           LocationStep                                =  32 (10);
+CoreExpr:           twig_seq (CoreExpr, seq (CoreExpr,
+                                             CoreExpr))         =  18 (10);
+CoreExpr:           twig_seq (seq (CoreExpr, CoreExpr), 
+                              CoreExpr)                         =  19 (10);
+CoreExpr:           twig_seq (CoreExpr, CoreExpr)               =   51(10);
+CoreExpr:           twig_seq (empty, CoreExpr)                  =  20 (10);
+CoreExpr:           twig_seq (CoreExpr, empty)                  =  21 (10);
+
+CoreExpr:           LocationSteps                               =   55(10);
+CoreExpr:           LocationStep                                =   56(10);
                                                                      
-LocationStep:       ancestor (SequenceType)                     =  33 (10);
-LocationStep:       ancestor_or_self (SequenceType)             =  34 (10);
-LocationStep:       attribute (SequenceType)                    =  35 (10);
-LocationStep:       child (SequenceType)                        =  36 (10);
-LocationStep:       descendant (SequenceType)                   =  37 (10);
-LocationStep:       descendant_or_self (SequenceType)           =  38 (10);
-LocationStep:       following (SequenceType)                    =  39 (10);
-LocationStep:       following_sibling (SequenceType)            =  40 (10);
-LocationStep:       parent (SequenceType)                       =  41 (10);
-LocationStep:       preceding (SequenceType)                    =  42 (10);
-LocationStep:       preceding_sibling (SequenceType)            =  43 (10);
-LocationStep:       self (SequenceType)                         =  44 (10);
+LocationStep:       ancestor (SequenceType)                     =   57(10);
+LocationStep:       ancestor_or_self (SequenceType)             =   58(10);
+LocationStep:       attribute (SequenceType)                    =   59(10);
+LocationStep:       child (SequenceType)                        =   60(10);
+LocationStep:       descendant (SequenceType)                   =   61(10);
+LocationStep:       descendant_or_self (SequenceType)           =   62(10);
+LocationStep:       following (SequenceType)                    =   63(10);
+LocationStep:       following_sibling (SequenceType)            =   64(10);
+LocationStep:       parent (SequenceType)                       =   65(10);
+LocationStep:       preceding (SequenceType)                    =   66(10);
+LocationStep:       preceding_sibling (SequenceType)            =   67(10);
+LocationStep:       self (SequenceType)                         =   68(10);
 /* [STANDOFF] */
-LocationStep:       select_narrow (SequenceType)                =  100 (10);
-LocationStep:       select_wide (SequenceType)                  =  101 (10);
-LocationStep:       reject_narrow (SequenceType)                =  102 (10);
-LocationStep:       reject_wide (SequenceType)                  =  103 (10);
+LocationStep:       select_narrow (SequenceType)                =   69(10);
+LocationStep:       select_wide (SequenceType)                  =   70(10);
+LocationStep:       reject_narrow (SequenceType)                =   71(10);
+LocationStep:       reject_wide (SequenceType)                  =   72(10);
 /* [/STANDOFF] */
                                                                      
-LocationSteps:      locsteps (LocationStep, LocationSteps)      =  51 (10);
-LocationSteps:      locsteps (LocationStep, Atom)               =  52 (10);
+LocationSteps:      locsteps (LocationStep, LocationSteps)      =   75(10);
+LocationSteps:      locsteps (LocationStep, Atom)               =   76(10);
                                                                      
-CoreExpr:           elem (TagName, CoreExpr)                    =  53 (10);
-CoreExpr:           attr (TagName, CoreExpr)                    =  54 (10);
-CoreExpr:           text (CoreExpr)                             =  55 (10);
-CoreExpr:           doc (CoreExpr)                              =  56 (10);
-CoreExpr:           comment (CoreExpr)                          =  57 (10);
-CoreExpr:           pi (CoreExpr)                               =  58 (10);
+CoreExpr:           elem (TagName, CoreExpr)                    =   77(10);
+CoreExpr:           elem (TagName, seq (CoreExpr, CoreExpr))    =  22 (10);
+CoreExpr:           attr (TagName, CoreExpr)                    =   78(10);
+CoreExpr:           text (CoreExpr)                             =   79(10);
+CoreExpr:           doc (CoreExpr)                              =   80(10);
+CoreExpr:           doc (seq (CoreExpr, CoreExpr))              =  23 (10);
+CoreExpr:           comment (CoreExpr)                          =   81(10);
+CoreExpr:           pi (CoreExpr)                               =   82(10);
                                                                      
-TagName:            tag                                         =  59 (10);
-TagName:            CoreExpr                                    =  60 (10);
+TagName:            tag                                         =   83(10);
+TagName:            CoreExpr                                    =   84(10);
                                                                      
-CoreExpr:           apply (FunctionArgs)                        =  61 (10);
-CoreExpr:           apply (arg (Atom, nil))                     =  62 (10);
-CoreExpr:           apply (arg (Atom, arg (Atom, nil)))         =  63 (10);
+CoreExpr:           apply (FunctionArgs)                        =   85(10);
+CoreExpr:           apply (arg (Atom, nil))                     =  25 (10);
+CoreExpr:           apply (arg (Atom, arg (Atom, nil)))         =  26 (10);
 
-FunctionArgs:       arg (Atom, FunctionArgs)                    =  64 (10);
-FunctionArgs:       arg (SequenceTypeCast, FunctionArgs)        =  65 (10);
-FunctionArgs:       nil                                         =  66 (10);
+FunctionArgs:       arg (Atom, FunctionArgs)                    =   86(10);
+FunctionArgs:       arg (SequenceTypeCast, FunctionArgs)        =   87(10);
+FunctionArgs:       nil                                         =   88(10);
                                                                      
-CoreExpr:           ordered (CoreExpr)                          =  67 (10);
-CoreExpr:           unordered (CoreExpr)                        =  68 (10);
+CoreExpr:           ordered (CoreExpr)                          =   90(10);
+CoreExpr:           unordered (CoreExpr)                        =   91(10);
                                                                      
-CoreExpr:           orderby (OrderSpecs, CoreExpr)              =  69 (10);
+CoreExpr:           orderby (OrderSpecs, CoreExpr)              =   92(10);
                                                                      
-OrderSpecs:         orderspecs (CoreExpr, nil)                  =  70 (10);
-OrderSpecs:         orderspecs (CoreExpr, OrderSpecs)           =  71 (10);
+OrderSpecs:         orderspecs (CoreExpr, nil)                  =   93(10);
+OrderSpecs:         orderspecs (CoreExpr, OrderSpecs)           =   94(10);
                                                                      
-CoreExpr:           cast (SequenceType, CoreExpr)               =  72 (10);
+CoreExpr:           cast (SequenceType, CoreExpr)               =  27 (10);
                                                                      
-Atom:               var                                         =  73 (10);
-Atom:               empty                                       =  74 (10);
-Atom:               LiteralValue                                =  75 (10);
+Atom:               var                                         =  28 (10);
+Atom:               empty                                       =   95(10);
+Atom:               LiteralValue                                =   96(10);
                                                                      
-LiteralValue:       lit_str                                     =  81 (10);
-LiteralValue:       lit_int                                     =  82 (10);
-LiteralValue:       lit_dec                                     =  83 (10);
-LiteralValue:       lit_dbl                                     =  84 (10);
-LiteralValue:       true_                                       =  85 (10);
-LiteralValue:       false_                                      =  86 (10);
+LiteralValue:       lit_str                                     =  100(10);
+LiteralValue:       lit_int                                     =  101(10);
+LiteralValue:       lit_dec                                     =  102(10);
+LiteralValue:       lit_dbl                                     =  103(10);
+LiteralValue:       true_                                       =  104(10);
+LiteralValue:       false_                                      =  105(10);
                                                                      
-FunctionDecls:      nil                                         =  87 (10);
-FunctionDecls:      fun_decls (FunctionDecl, FunctionDecls)     =  88 (10);
+FunctionDecls:      nil                                         =  106(10);
+FunctionDecls:      fun_decls (FunctionDecl, FunctionDecls)     =  107(10);
                                                                      
-FunctionDecl:       fun_decl (ParamList, FunctionBody)          =  89 (10);
+FunctionDecl:       fun_decl (ParamList, FunctionBody)          =  110(10);
                                                                      
-ParamList:          nil                                         =  90 (10);
-ParamList:          params (FunParam, ParamList)                =  91 (10);
+ParamList:          nil                                         =  111(10);
+ParamList:          params (FunParam, ParamList)                =  112(10);
                                                                      
-FunctionBody:       CoreExpr                                    =  92 (10);
+FunctionBody:       CoreExpr                                    =  113(10);
                                                                      
-FunParam:           param (SequenceType, var)                   =  93 (10);
+FunParam:           param (SequenceType, var)                   =  114(10);
 
 /* Pathfinder extension: recursion */
-CoreExpr:           recursion (var, seed (Atom, CoreExpr))      =  76 (10);
+CoreExpr:           recursion (var, seed (Atom, CoreExpr))      =  115(10);
 
 /* Pathfinder extension: XRPC */
-CoreExpr:           xrpc (Atom, CoreExpr)                       =  77 (10);
+CoreExpr:           xrpc (Atom, CoreExpr)                       =  116(10);
 
 /* push down #pf:merge-adjacent-text-nodes */
 CoreExpr:           flwr (let (letbind (var, seq (CoreExpr,
                                                   CoreExpr)),
-                               nil), apply (arg (var, nil)))    =  78 (10);
+                               nil), apply (arg (var, nil)))    =  29 (10);
 
 %%
 
@@ -444,7 +462,7 @@ reduce (PFcnode_t * p, int goalnt)
 
             /* CoreExpr:           flwr (OptBindExpr,
                                          CoreExpr) */
-            case 4:
+            case 2:
                 /* Make sure to collect all variables first ... */
                 rewritten |= reduce (kids[0], nts[0]);
                 /* ... and then fill in the replacements. */
@@ -463,6 +481,20 @@ reduce (PFcnode_t * p, int goalnt)
 
                     rewritten = true;
                 }
+                /* see ``case 6'' (as rules seem to overlap):
+                   CoreExpr: flwr (let (letbind (var, CoreExpr), nil), var) */
+                /* replace unnecessary let binding 
+                   'let $a := ... return $a' by its input '...' */
+                else if (L(p)->kind == c_let &&
+                         LL(p)->kind == c_letbind &&
+                         LLL(p)->kind == c_var &&
+                         R(p)->kind == c_var &&
+                         LLL(p)->sem.var == R(p)->sem.var) {
+                    *p = *LLR(p);
+                    relabel (p, kids);
+                    rewritten = true;
+                }
+                         
                 break;
 
             /* OptBindExpr:        let (letbind (var, Atom), OptBindExpr) */
@@ -550,7 +582,7 @@ reduce (PFcnode_t * p, int goalnt)
         /* CoreExpr:           flwr (for_ (forbind (forvars (var, nil),
                                                     Atom),
                                            nil), var) */
-        case 5:
+        case 3:
             /* replace for loops of the form
                'for $a in ... return $a' by its input '...' */
             if (LLLL(p)->sem.var == R(p)->sem.var) {
@@ -562,7 +594,7 @@ reduce (PFcnode_t * p, int goalnt)
             
         /* CoreExpr:           flwr (let (letbind (var, CoreExpr),       
                                           nil), var) */
-        case 6:
+        case 4:
             /* replace unnecessary let binding 
                'let $a := ... return $a' by its input '...' */
             if (LLL(p)->sem.var == R(p)->sem.var) {
@@ -575,7 +607,7 @@ reduce (PFcnode_t * p, int goalnt)
         /* OptBindExpr:        for_ (forbind (forvars (var, OptVar),
                                               Atom),
                                      OptBindExpr) */
-        case 7:
+        case 5:
             /*
              * If we iterate over a sequence that we know (from static
              * typing) to always have length 1, replace the `for' by
@@ -673,7 +705,7 @@ reduce (PFcnode_t * p, int goalnt)
                                        cases (case_ (SequenceType,
                                                      CoreExpr),
                                               default_ (CoreExpr))) */
-        case 20:
+        case 13:
             /*
              * If we statically know that the type of an expression matches
              * a typeswitch case, we can remove the typeswitch.
@@ -731,26 +763,56 @@ reduce (PFcnode_t * p, int goalnt)
             break;
 
         /* CoreExpr:           seq (seq (CoreExpr, CoreExpr), CoreExpr) */
-        case 27:
+        case 15:
+        /* CoreExpr:           twig_seq (seq (CoreExpr, CoreExpr), CoreExpr) */
+        case 19:
             *p = *seq (LL(p), seq (LR(p), R(p)));
             relabel (p, kids);
             rewritten = true;
             break;
                 
         /* CoreExpr:           seq (empty, CoreExpr) */
-        case 29:
+        case 16:
+        /* CoreExpr:           twig_seq (empty, CoreExpr) */
+        case 20:
             *p = *R(p);
             rewritten = true;
             break;
 
         /* CoreExpr:           seq (CoreExpr, empty) */
-        case 30:
+        case 17:
+        /* CoreExpr:           twig_seq (CoreExpr, empty) */
+        case 21:
             *p = *L(p);
             rewritten = true;
             break;
 
+        /* CoreExpr:           twig_seq (CoreExpr, seq (CoreExpr, CoreExpr)) */
+        case 18:
+        /* CoreExpr:           elem (TagName, seq (CoreExpr, CoreExpr)) */
+        case 22:
+        {
+            PFty_t ty_r = TY(R(p));
+            R(p) = twig_seq (RL(p), RR(p));
+            TY(R(p)) = ty_r;
+
+            relabel (p, kids);
+            rewritten = true;
+        }   break;
+
+        /* CoreExpr:           doc (seq (CoreExpr, CoreExpr)) */
+        case 23:
+        {
+            PFty_t ty_l = TY(L(p));
+            L(p) = twig_seq (LL(p), LR(p));
+            TY(L(p)) = ty_l;
+
+            relabel (p, kids);
+            rewritten = true;
+        }   break;
+
         /* CoreExpr:           apply (arg (Atom, nil)) */
-        case 62:
+        case 25:
             if (! PFqname_eq (p->sem.fun->qname, PFqname (PFns_fn, "data"))) {
                 /*
                  * If the argument is a subtype of atomic*, fn:data()
@@ -1060,7 +1122,16 @@ reduce (PFcnode_t * p, int goalnt)
                         = function (PFqname (PFns_fn, "string"));
                     *p = *constr(p_text, apply (fn_string,
                                                 arg (LL(p), nil ())));
+                    PFty_check (p);
+
                     rewritten = true;
+
+                    /*
+                     * Re-label entire subtree. Type-checking may have
+                     * modified all the state labels in the subtree, so
+                     * we have to restore them.
+                     */
+                    PFcoreopt_label (p);
                     break;
                 }
             }
@@ -1074,13 +1145,13 @@ reduce (PFcnode_t * p, int goalnt)
                               PFqname (PFns_pf, "merge-adjacent-text-nodes"))) {
                     /* is empty */
                 if (LL(p)->kind == c_empty ||
-                    /* contains exactly one text node */
-                    PFty_subtype (TY(LL(p)), PFty_text()) ||
-                    /* contains exactly one text node and some attributes*/
+                    /* contains at most one text node */
+                    PFty_subtype (TY(LL(p)), PFty_opt (PFty_text())) ||
+                    /* contains at most one text node and some attributes*/
                     PFty_subtype (TY(LL(p)), PFty_seq (
                                                  PFty_star (
                                                      PFty_xs_anyAttribute ()),
-                                                 PFty_text())) ||
+                                                 PFty_opt (PFty_text()))) ||
                     /* contains no text nodes */
                     PFty_subtype (TY(LL(p)),
                                   PFty_star (
@@ -1101,7 +1172,7 @@ reduce (PFcnode_t * p, int goalnt)
             break;
 
         /* CoreExpr:           apply (arg (Atom, arg (Atom, nil))) */
-        case 63:
+        case 26:
             /*
              * fn:concat does not need to append an empty string
              */
@@ -1139,9 +1210,8 @@ reduce (PFcnode_t * p, int goalnt)
             break;
 
         /* SequenceTypeCast:   seqcast (SequenceType, CoreExpr) */
-        case 23:
         /* CoreExpr:           cast (SequenceType, CoreExpr) */
-        case 72:
+        case 27:
             if (PFty_subtype (TY(L(p)), TY(R(p))) &&
                 PFty_subtype (TY(R(p)), TY(L(p)))) {
                 *p = *R(p);
@@ -1151,7 +1221,7 @@ reduce (PFcnode_t * p, int goalnt)
             break;
             
         /* Atom:                var */
-        case 73:
+        case 28:
             {
                 /*
                  * See the comment in the declaration of var_env and
@@ -1177,7 +1247,7 @@ reduce (PFcnode_t * p, int goalnt)
         /* CoreExpr:           flwr (let (letbind (var, seq (CoreExpr,
                                                              CoreExpr),
                                           nil), apply (arg (var, nil))) */
-        case 78:
+        case 29:
             /* Special rewrite: Push down the #pf:merge-adjacent-text-nodes
                function if its input is a sequence where at least one argument
                does not contain text nodes. */
@@ -1191,18 +1261,32 @@ reduce (PFcnode_t * p, int goalnt)
                     PFcnode_t *lseq = LLRL(p);
                     LLR(p) = LLRR(p);
                     *p = *seq (lseq, flwr (L(p), R(p)));
+                    PFty_check (p);
 
-                    relabel (p, kids);
                     rewritten = true;
+
+                    /*
+                     * Re-label entire subtree. Type-checking may have
+                     * modified all the state labels in the subtree, so
+                     * we have to restore them.
+                     */
+                    PFcoreopt_label (p);
                 } else if (!PFty_subtype (PFty_opt (PFty_text ()),
                                           TY(LLRR(p)))) {
                     /* push #pf:matn into left sequence constructor input */
                     PFcnode_t *rseq = LLRR(p);
                     LLR(p) = LLRL(p);
                     *p = *seq (flwr (L(p), R(p)), rseq);
+                    PFty_check (p);
 
-                    relabel (p, kids);
                     rewritten = true;
+
+                    /*
+                     * Re-label entire subtree. Type-checking may have
+                     * modified all the state labels in the subtree, so
+                     * we have to restore them.
+                     */
+                    PFcoreopt_label (p);
                 }
             }
             break;

@@ -1497,13 +1497,15 @@ opt_mvd (PFla_op_t *p)
             }
             break;
 
+        case la_twig:
+        case la_fcns:
+        case la_docnode:
         case la_element:
-        case la_element_tag:
         case la_attribute:
         case la_textnode:
-        case la_docnode:
         case la_comment:
         case la_processi:
+        case la_content:
         case la_merge_adjacent:
         case la_roots:
             /* constructors introduce like the unpartitioned 

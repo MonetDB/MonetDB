@@ -110,6 +110,7 @@ var_duplication (PFmil_t *root, PFmil_ident_t *var)
             *var = root->sem.ident;
             return true;
 
+        case m_fetch:
         case m_assert_order:
         case m_chk_order:
         case m_order:
@@ -194,8 +195,9 @@ mil_dce_worker (PFmil_t *root, PFbitset_t *used_vars, PFbitset_t *dirty_vars,
                 if (var_duplication (rvalue, &var) ) {
                     /* Assignment is of the form x := y. Neither x nor y 
                        can be dirty */
-                    if (PFbitset_get (dirty_vars, var) ||
-                        PFbitset_get (dirty_vars, lvalue->sem.ident))
+                    if ((PFbitset_get (dirty_vars, var) && used) ||
+                        (PFbitset_get (dirty_vars, lvalue->sem.ident) &&
+                         PFbitset_get (used_vars, var)))
                         PFoops (OOPS_FATAL,
                                 "illegal combination of copy-by-reference "
                                 "and side-effects");

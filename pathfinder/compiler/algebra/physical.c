@@ -60,6 +60,37 @@
 #define SORT_COST 700
 
 /**
+ * check for a column @a a in op @a p.
+ */ 
+static bool
+check_col (const PFpa_op_t *p, PFalg_att_t a)
+{
+    assert (p);
+
+    for (unsigned int i = 0; i < p->schema.count; i++)
+        if (a == p->schema.items[i].name)
+            return true;
+    
+    return false;
+}
+
+/**
+ * check for the type of column @a a in op @a p.
+ */ 
+static PFalg_simple_type_t
+type_of (const PFpa_op_t *p, PFalg_att_t a)
+{
+    assert (p);
+
+    for (unsigned int i = 0; i < p->schema.count; i++)
+        if (a == p->schema.items[i].name)
+            return p->schema.items[i].type;
+    
+    assert (0);
+    return 0;
+}
+
+/**
  * Create an algebra operator (leaf) node.
  *
  * Allocates memory for an algebra operator leaf node
@@ -2539,168 +2570,297 @@ PFpa_doc_access (const PFpa_op_t *doc, const PFpa_op_t *alg,
 }
 
 /**
- * Generate physical plan for element constructor
- * Returns a (frag, result) pair.
+ * Constructor for twig root operators.
  */
-PFpa_op_t *
-PFpa_element (const PFpa_op_t *fragment,
-              const PFpa_op_t *qname, 
-              const PFpa_op_t *content,
-              PFalg_att_t iter, PFalg_att_t pos, PFalg_att_t item)
+PFpa_op_t * PFpa_twig (const PFpa_op_t *n,
+                       PFalg_att_t iter,
+                       PFalg_att_t item)
 {
-    PFpa_op_t         *ret;
+    PFpa_op_t *ret = wire1 (pa_twig, n);
 
-#ifndef NDEBUG
-    unsigned short found = 0;
-
-    for (unsigned int i = 0; i < qname->schema.count; i++)
-        if (qname->schema.items[i].name == iter
-            || qname->schema.items[i].name == item)
-            found++;
-
-    if (found != 2)
-        PFoops (OOPS_FATAL,
-                "Element constructor requires iter|item schema for qnames.");
-
-    found = 0;
-
-    for (unsigned int i = 0; i < content->schema.count; i++)
-        if (content->schema.items[i].name == iter
-            || content->schema.items[i].name == pos
-            || content->schema.items[i].name == item)
-            found++;
-
-    if (found != 3)
-        PFoops (OOPS_FATAL,
-                "Element constructor requires iter|pos|item schema "
-                "for the element content.");
-#else
-    (void) pos; /* pacify compiler */
-#endif
-
-    ret = wire2 (pa_element, fragment, 
-                             wire2(pa_element_tag, qname,
-                                                   content));
-
+    /* store columns to work on in semantical field */
     ret->sem.ii.iter = iter;
     ret->sem.ii.item = item;
 
-    /* The schema of the result part is iter|item */
+    /* allocate memory for the result schema;
+       it's the same schema as n's plus an additional result column  */
     ret->schema.count = 2;
-    ret->schema.items
-        = PFmalloc (ret->schema.count * sizeof (*ret->schema.items));
-
-    ret->schema.items[0]
-        = (PFalg_schm_item_t) { .name = iter,
-                                .type = aat_nat };
-    ret->schema.items[1]
-        = (PFalg_schm_item_t) { .name = item,
-                                .type = aat_pnode };
-
-    /* ---- attribute: orderings ---- */
-
-    /* the input is sorted by `iter', therefore the output will be as well. */
-    PFord_set_add (ret->orderings, sortby (iter));
-    /* additionally as we return only one value per iteration the output
-       is refined by the item order */
-    PFord_set_add (ret->orderings, sortby (iter, item));
-
-    /* ---- attribute: costs ---- */
-    /* dummy costs as we have only this version */
-    ret->cost = DEFAULT_COST + fragment->cost + qname->cost + content->cost;
-
-    return ret;
-}
-
-/**
- * Generate physical plan for attribute constructor
- * Returns a (frag, result) pair.
- */
-PFpa_op_t *
-PFpa_attribute (const PFpa_op_t *rel,
-                PFalg_att_t qn, PFalg_att_t val, PFalg_att_t res)
-{
-    PFpa_op_t         *ret;
-
-#ifndef NDEBUG
-    unsigned short found = 0;
-
-    for (unsigned int i = 0; i < rel->schema.count; i++)
-        if (rel->schema.items[i].name == val
-            || rel->schema.items[i].name == qn)
-            found++;
-
-    if (found != 2)
-        PFoops (OOPS_FATAL,
-                "Attribute constructor requires columns %s and %s.",
-                PFatt_str (qn), PFatt_str (val));
-#endif
-
-    ret = wire1 (pa_attribute, rel);
-
-    /* allocate memory for the result schema; it's the qname schema
-       plus an additional column with the attribute references */
-    ret->schema.count = rel->schema.count + 1;
     ret->schema.items
         = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
 
-    /* copy schema from argument 'rel' ... */
-    for (unsigned int i = 0; i < rel->schema.count; i++)
-        ret->schema.items[i] = rel->schema.items[i];
+    ret->schema.items[0].name = iter;
+    ret->schema.items[0].type = aat_nat;
+    ret->schema.items[1].name = item;
+    /* Check if the twig consists of only attributes ... */
+    if (n->kind == pa_attribute ||
+        (n->kind == pa_content &&
+         type_of (n->child[1], n->sem.ii.item) == aat_anode))
+        ret->schema.items[1].type = aat_anode;
+    /* ... attributes and other nodes ... */
+    else if (n->kind == pa_content &&
+             type_of (n->child[1], n->sem.ii.item) & aat_anode)
+        ret->schema.items[1].type = aat_node;
+    /* ... or only other nodes (without attributes). */
+    else
+        ret->schema.items[1].type = aat_pnode;
 
-    /* ... and add the result column */
-    ret->schema.items[ret->schema.count - 1]
-        = (PFalg_schm_item_t) { .name = res, .type = aat_anode };
+    /* orderings */
 
-    ret->sem.attr.qn  = qn;
-    ret->sem.attr.val = val;
-    ret->sem.attr.res = res;
-
-    /* ---- attribute: orderings ---- */
-    for (unsigned int i = 0; i < PFord_set_count (rel->orderings); i++)
-        PFord_set_add (ret->orderings, PFord_set_at (rel->orderings, i));
-
-    /* ---- attribute: costs ---- */
-    /* dummy costs as we have only this version */
-    ret->cost = DEFAULT_COST + rel->cost;
-
+    /* add all possible orderings */
+    PFord_set_add (ret->orderings, sortby (iter));
+    PFord_set_add (ret->orderings, sortby (item));
+    PFord_set_add (ret->orderings, sortby (iter, item));
+    PFord_set_add (ret->orderings, sortby (item, iter));
+            
+    /* costs */
+    ret->cost = DEFAULT_COST + n->cost;
+    
     return ret;
 }
 
 /**
- * Generate physical plan for textnode constructor
- * Returns a (frag, result) pair.
+ * Constructor for twig constructor sequence operators.
+ *
+ * @a fc is the next 'first' child operator and @a ns is the
+ * next sibling in the constructor sequence operator list.
+ */
+PFpa_op_t * PFpa_fcns (const PFpa_op_t *fc,
+                       const PFpa_op_t *ns)
+{
+    PFpa_op_t *ret = wire2 (pa_fcns, fc, ns);
+
+    /* Constructors have no schema */
+    ret->schema.count = 0;
+    ret->schema.items = NULL;
+
+    /* orderings */
+    
+    /* costs */
+    ret->cost = DEFAULT_COST + fc->cost + ns->cost;
+    
+    return ret;
+}
+
+/**
+ * Constructor for document node operators.
+ *
+ * @a scope is the current scope the document node is constructed in
+ * and @a fcns is the content of the node.
+ */
+PFpa_op_t * PFpa_docnode (const PFpa_op_t *scope, const PFpa_op_t *fcns,
+                          PFalg_att_t iter)
+{
+    PFpa_op_t *ret = wire2 (pa_docnode, scope, fcns);
+
+    assert (check_col (scope, iter));
+    
+    /* store columns to work on in semantical field */
+    ret->sem.ii.iter = iter;
+    ret->sem.ii.item = att_NULL;
+
+    /* Constructors have no schema */
+    ret->schema.count = 0;
+    ret->schema.items = NULL;
+
+    /* orderings */
+    
+    /* costs */
+    ret->cost = DEFAULT_COST + scope->cost + fcns->cost;
+    
+    return ret;
+}
+
+/**
+ * Constructor for element operators.
+ *
+ * @a tag constructs the elements' tag names, and @a fcns 
+ * is the content of the new elements.
+ */
+PFpa_op_t * PFpa_element (const PFpa_op_t *tag,
+                          const PFpa_op_t *fcns,
+                          PFalg_att_t iter,
+                          PFalg_att_t item)
+{
+    PFpa_op_t *ret = wire2 (pa_element, tag, fcns);
+
+    assert (check_col (tag, iter) && check_col (tag, item));
+
+    /* store columns to work on in semantical field */
+    ret->sem.ii.iter = iter;
+    ret->sem.ii.item = item;
+
+    /* Constructors have no schema */
+    ret->schema.count = 0;
+    ret->schema.items = NULL;
+
+    /* orderings */
+    
+    /* costs */
+    ret->cost = DEFAULT_COST + tag->cost + fcns->cost;
+    
+    return ret;
+}
+
+/**
+ * Constructor for attribute operators.
+ *
+ * @a cont stores the name-value relation of the attribute. @a iter, @a qn,
+ * and @a val reference the iter, qname, and value input columns, respectively.
+ */
+PFpa_op_t * PFpa_attribute (const PFpa_op_t *cont,
+                            PFalg_att_t iter, PFalg_att_t qn, PFalg_att_t val)
+{
+    PFpa_op_t *ret = wire1 (pa_attribute, cont);
+
+    assert (check_col (cont, iter) &&
+            check_col (cont, qn) &&
+            check_col (cont, val));
+
+    /* store columns to work on in semantical field */
+    ret->sem.iter_item1_item2.iter  = iter;
+    ret->sem.iter_item1_item2.item1 = qn;
+    ret->sem.iter_item1_item2.item2 = val;
+
+    /* Constructors have no schema */
+    ret->schema.count = 0;
+    ret->schema.items = NULL;
+
+    /* orderings */
+    
+    /* costs */
+    ret->cost = DEFAULT_COST + cont->cost;
+    
+    return ret;
+}
+
+/**
+ * Constructor for text content operators.
+ *
+ * @a cont is the relation storing the textnode content; @item points
+ * to the respective column and @iter marks the scope in which the
+ * nodes are constructed in.
  */
 PFpa_op_t *
-PFpa_textnode (const PFpa_op_t *rel, PFalg_att_t res, 
-               PFalg_att_t item)
+PFpa_textnode (const PFpa_op_t *cont, PFalg_att_t iter, PFalg_att_t item)
 {
-    PFpa_op_t         *ret;
+    PFpa_op_t *ret = wire1 (pa_textnode, cont);
 
-    ret = wire1 (pa_textnode, rel);
+    assert (check_col (cont, iter) && check_col (cont, item));
 
-    /* The schema of the result part is iter|item */
-    ret->schema.count = rel->schema.count + 1;
-    ret->schema.items
-        = PFmalloc (ret->schema.count * sizeof (*ret->schema.items));
+    /* store columns to work on in semantical field */
+    ret->sem.ii.iter = iter;
+    ret->sem.ii.item = item;
 
-    for (unsigned int i = 0; i < rel->schema.count; i ++)
-        ret->schema.items[i] = rel->schema.items[i];
+    /* Constructors have no schema */
+    ret->schema.count = 0;
+    ret->schema.items = NULL;
 
-    ret->schema.items[ret->schema.count - 1]
-        = (PFalg_schm_item_t) { .name = res, .type = aat_pnode };
+    /* orderings */
+    
+    /* costs */
+    ret->cost = DEFAULT_COST + cont->cost;
+    
+    return ret;
+}
 
-    ret->sem.textnode.item  = item;
-    ret->sem.textnode.res  = res;
+/**
+ * Constructor for comment operators.
+ *
+ * @a cont is the relation storing the comment content; @item points
+ * to the respective column and @iter marks the scope in which the
+ * nodes are constructed in.
+ */
+PFpa_op_t *
+PFpa_comment (const PFpa_op_t *cont, PFalg_att_t iter, PFalg_att_t item)
+{
+    PFpa_op_t *ret = wire1 (pa_comment, cont);
 
-    /* ---- textnode: orderings ---- */
-    for (unsigned int i = 0; i < PFord_set_count (rel->orderings); i++)
-        PFord_set_add (ret->orderings, PFord_set_at (rel->orderings, i));
+    assert (check_col (cont, iter) && check_col (cont, item));
 
-    /* ---- textnode: costs ---- */
-    /* dummy costs as we have only this version */
-    ret->cost = DEFAULT_COST + rel->cost;
+    /* store columns to work on in semantical field */
+    ret->sem.ii.iter = iter;
+    ret->sem.ii.item = item;
 
+    /* Constructors have no schema */
+    ret->schema.count = 0;
+    ret->schema.items = NULL;
+
+    /* orderings */
+    
+    /* costs */
+    ret->cost = DEFAULT_COST + cont->cost;
+    
+    return ret;
+}
+
+/**
+ * Constructor for processing instruction operators.
+ *
+ * @a cont stores the target-value relation of the processing-instruction.
+ * @a iter, @a target, and @a val reference the iter, target, and value
+ * input columns, respectively.
+ */
+PFpa_op_t * PFpa_processi (const PFpa_op_t *cont,
+                           PFalg_att_t iter,
+                           PFalg_att_t target,
+                           PFalg_att_t val)
+{
+    PFpa_op_t *ret = wire1 (pa_processi, cont);
+
+    assert (check_col (cont, iter) &&
+            check_col (cont, target) &&
+            check_col (cont, val));
+
+    /* store columns to work on in semantical field */
+    ret->sem.iter_item1_item2.iter  = iter;
+    ret->sem.iter_item1_item2.item1 = target;
+    ret->sem.iter_item1_item2.item2 = val;
+
+    /* Constructors have no schema */
+    ret->schema.count = 0;
+    ret->schema.items = NULL;
+
+    /* orderings */
+    
+    /* costs */
+    ret->cost = DEFAULT_COST + cont->cost;
+    
+    return ret;
+}
+
+/**
+ * Constructor for constructor content operators (elem|doc).
+ *
+ * Use @a doc to retrieve information about the nodes in @a cont,
+ * i.e. to collect all subtree nodes (using a descendant-or-self::node()
+ * step) for later use in the twig constructor.
+ *
+ * The input parameters have the following schemata:
+ * - @a doc:  none (as it is a node fragment)
+ * - @a cont: iter | pos | item
+ */
+PFpa_op_t * PFpa_content (const PFpa_op_t *doc,
+                          const PFpa_op_t *cont,
+                          PFalg_att_t iter,
+                          PFalg_att_t item)
+{
+    PFpa_op_t *ret = wire2 (pa_content, doc, cont);
+
+    assert (check_col (cont, iter) && check_col (cont, item));
+
+    /* store columns to work on in semantical field */
+    ret->sem.ii.iter  = iter;
+    ret->sem.ii.item  = item;
+
+    /* Constructors have no schema */
+    ret->schema.count = 0;
+    ret->schema.items = NULL;
+
+    /* orderings */
+    
+    /* costs */
+    ret->cost = DEFAULT_COST + doc->cost + cont->cost;
+    
     return ret;
 }
 
@@ -2893,8 +3053,8 @@ PFpa_trace (const PFpa_op_t *n1,
     ret = wire2 (pa_trace, n1, n2);
 
     /* insert semantic values (column names) into the result */
-    ret->sem.trace.iter     = iter;
-    ret->sem.trace.item     = item;
+    ret->sem.ii.iter = iter;
+    ret->sem.ii.item = item;
 
     /* allocate memory for the result schema (= schema(n1)) */
     ret->schema.count = n1->schema.count;
@@ -2944,8 +3104,8 @@ PFpa_trace_msg (const PFpa_op_t *n1,
     ret = wire2 (pa_trace_msg, n1, n2);
 
     /* insert semantic values (column names) into the result */
-    ret->sem.trace.iter     = iter;
-    ret->sem.trace.item     = item;
+    ret->sem.ii.iter = iter;
+    ret->sem.ii.item = item;
 
     /* allocate memory for the result schema (= schema(n1)) */
     ret->schema.count = n1->schema.count;

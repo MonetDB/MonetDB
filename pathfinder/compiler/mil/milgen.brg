@@ -130,18 +130,20 @@ typedef struct PFpa_op_t *NODEPTR_TYPE;
 %term llscj_prec_sibl= 110
 %term doc_tbl        = 120
 %term doc_access     = 121
-%term element        = 122
-%term element_tag    = 123
-%term attribute      = 124
-%term textnode       = 125
-%term docnode        = 126
-%term comment        = 127
-%term processi       = 128
-%term merge_adjacent = 129
-%term roots          = 130
-%term fragment       = 131
-%term frag_union     = 132
-%term empty_frag     = 133
+%term twig           = 122
+%term fcns           = 123
+%term docnode        = 124
+%term element        = 125
+%term attribute      = 126
+%term textnode       = 127
+%term comment        = 128
+%term processi       = 129
+%term content        = 130
+%term merge_adjacent = 131
+%term roots          = 132
+%term fragment       = 133
+%term frag_union     = 134
+%term empty_frag     = 135
 %term cond_err       = 140
 %term nil            = 141
 %term trace          = 142
@@ -218,16 +220,21 @@ Rel:      llscj_prec_sibl (FragList, Rel)                          =  90 (10);
 
 FragRel:  doc_tbl (Rel)                                            = 100 (10);
 Rel:      doc_access (FragList, Rel)                               = 101 (10);
-FragRel:  element (FragList, element_tag (Rel, empty_tbl))         = 102 (10);
-FragRel:  element (FragList, 
-                   element_tag (Rel, rec_border (empty_tbl)))      = 103 (10);
-FragRel:  element (FragList, element_tag (Rel, Rel))               = 104 (10);
-FragRel:  attribute (Rel)                                          = 105 (10);
-FragRel:  textnode (Rel)                                           = 106 (10);
-FragRel:  docnode (FragList, Rel)                                  = 107 (10);
-FragRel:  comment (Rel)                                            = 108 (10);
-FragRel:  processi (Rel)                                           = 109 (10);
-FragRel:  merge_adjacent (FragList, Rel)                           = 110 (10);
+FragRel:  twig (Twig)                                              = 102 (10);
+FragRel:  twig (attribute (Rel))                                   = 103 (10);
+FragRel:  twig (textnode (Rel))                                    = 104 (10);
+Fcns:     fcns (Twig, Fcns)                                        = 105 (10);
+Fcns:     fcns (Twig, nil)                                         = 106 (10);
+Twig:     docnode (Rel, fcns (nil, nil))                           = 107 (10);
+Twig:     docnode (Rel, Fcns)                                      = 108 (10);
+Twig:     element (Rel, fcns (nil, nil))                           = 109 (10);
+Twig:     element (Rel, Fcns)                                      = 110 (10);
+Twig:     attribute (Rel)                                          = 111 (10);
+Twig:     textnode (Rel)                                           = 112 (10);
+Twig:     comment (Rel)                                            = 113 (10);
+Twig:     processi (Rel)                                           = 114 (10);
+Twig:     content (FragList, Rel)                                  = 115 (10);
+FragRel:  merge_adjacent (FragList, Rel)                           = 116 (10);
 
 Rel:      roots (FragRel)                                          = 120 (10);
 Frag:     fragment (FragRel)                                       = 121 (10);
@@ -309,6 +316,30 @@ new_trace_id (void)
     static unsigned int trace_id = 1;
     return trace_id++;
 }
+
+/**
+ * The state information necessary to build a twig 
+ * of multiple node constructors in one go.
+ */
+struct twig_state_t {
+    unsigned int pre;          /* pre id in the twig tree */
+    unsigned int parent;       /* pre id of the parent in the twig tree */
+    unsigned int size;         /* static size value of a node */
+    unsigned int level;        /* static level of a twig node */
+    PFarray_t   *elem_vars;    /* ordered list of node constructor
+                                  representations */
+    PFarray_t   *attr_vars;    /* ordered list of attribute constructor
+                                  representations */
+    PFmil_t     *loop;         /* loop relation */
+    bool         elem_content; /* information if a content operator
+                                  with element nodes appears in the twig */
+};
+
+/** short-hand for struct twig_state_t */
+typedef struct twig_state_t twig_state_t;
+
+/** current twig state */
+static twig_state_t *twig_state;
 
 /**
  * Return a ``new'' valid variable.  Will try to re-use an old,
@@ -1065,6 +1096,14 @@ reduce (PFpa_op_t * p, int goalnt)
         case 1:
         /* Query:    serialize (FragList, empty_tbl) */
         case 2:
+        /* FragRel:  twig (Twig) */
+        case 102:
+        /* Fcns:     fcns (Twig, Fcns) */
+        case 105:
+        /* Twig:     docnode (Rel, Fcns) */
+        case 108:
+        /* Twig:     element (Rel, Fcns) */
+        case 110:
         /* Rel:      rec_fix (Rec, Rel) */
         case 140:
             topdown = true;
@@ -3050,7 +3089,7 @@ reduce (PFpa_op_t * p, int goalnt)
              *
              * We get the duplicate-free equivalent of our input by
              * joining the extend of v with each input BAT (and
-             * generating a new key with mark().
+             * generating a new key with mark()).
              *
              * v := v.CTextend ().mark (0@0).reverse ();
              */
@@ -4320,10 +4359,9 @@ reduce (PFpa_op_t * p, int goalnt)
                  assgn (var (v->name),
                         doc_tbl (var (PF_MIL_VAR_WS),
                                  VAR (L(p)->env, p->sem.ii.item, aat_str))),
-                 assgn (var (PF_MIL_VAR_WS), 
-                        fetch (var (v->name), lit_int (0))),
                  assgn (var (pre->name), fetch (var (v->name), lit_int (1))),
-                 assgn (var (frag->name), fetch (var (v->name), lit_int (2)))
+                 assgn (var (frag->name), fetch (var (v->name), lit_int (2))),
+                 assgn (var (PF_MIL_VAR_WS), fetch (var (v->name), lit_int (0)))
                  );
 
             unpin (v, 1);
@@ -4466,194 +4504,1667 @@ reduce (PFpa_op_t * p, int goalnt)
         }
             break;
 
-        /* FragRel: element (FragList, element_tag (Rel, empty_lit_tbl)) */
+        /* FragRel:  twig (Twig) */
         case 102:
-        /* FragRel: element (FragList, 
-                             element_tag (Rel, rec_border (empty_tbl))) */
+        { /* top-down */
+            unsigned int i;
+            mvar_t *root_pre, *root_frag, *root_iter, 
+                   *mmu_res, *seqb, *newPre, *tmp;
+
+            /* backup old twig state before traversing the children... */
+            twig_state_t *old_twig_state = twig_state;
+
+            /* ... and create a new one */
+            twig_state = PFmalloc (sizeof (twig_state_t));
+            twig_state->pre          = 0;
+            twig_state->parent       = 0;
+            twig_state->size         = 0;
+            twig_state->level        = 0;
+            twig_state->elem_vars    = PFarray (sizeof (mvar_t *));
+            twig_state->attr_vars    = PFarray (sizeof (mvar_t *));
+            twig_state->loop         = NULL;
+            twig_state->elem_content = false;
+
+            /* translate the child operators */
+            reduce(kids[0], nts[0]);
+
+            root_iter = new_var (p->refctr);
+            root_pre  = new_var (p->refctr);
+            root_frag = new_var (p->refctr);
+            mmu_res   = new_var (1);
+            seqb      = new_var (1);
+            newPre    = new_var (1);
+
+            /* the result of the twig construction will be stored 
+               in the variables root_iter, root_pre, and root_frag */
+            env_add (p->env, p->sem.ii.iter, aat_nat,   root_iter);
+            env_add (p->env, p->sem.ii.item, aat_pre,   root_pre);
+            env_add (p->env, p->sem.ii.item, aat_pfrag, root_frag);
+            
+            /* FIXME: We cannot cope with a single content operator
+               that provides only attribute nodes */
+
+            /* merge all input node constructors 
+               (in the correct order -- the one stored
+                in twig_state->elem_vars) */
+            if (PFarray_last (twig_state->elem_vars) > 1) {
+                mvar_t *mmu_input = new_var (1);
+                
+                /* create relation to hold all the input relations 
+                   for the merged_union operation */ 
+                execute (
+                    assgn (var (mmu_input->name),
+                           seqbase (new (type (mty_void), type (mty_bat)),
+                                    lit_oid (0))));
+                
+                /* fill in all input relations (in the correct order) */
+                for (i = 0; i < PFarray_last (twig_state->elem_vars); i++) {
+                    tmp = *(mvar_t **) PFarray_at (twig_state->elem_vars, i);
+                    execute (bappend (var (mmu_input->name), var (tmp->name)));
+                    unpin (tmp, 1);
+                }
+                
+                /* apply merged union operation over multiple inputs */
+                execute (
+                    assgn (var (mmu_res->name),
+                           multi_merged_union (var (mmu_input->name))));
+                unpin (mmu_input, 1);
+
+            } else {
+                /* no merged_union needed in case we only have a single
+                   constructor (with possibly multiple attributes) */
+                assert (PFarray_last (twig_state->elem_vars) == 1);
+                tmp = *(mvar_t **) PFarray_at (twig_state->elem_vars, 0);
+                
+                execute (assgn (var (mmu_res->name), var (tmp->name)));
+                unpin (tmp, 1);
+            }
+
+            /* Generate the MIL code necessary for document, element, 
+               textnodes, comments, and processing-instructions */
+            execute (
+
+                /* get the offset for the first free node id:
+                   seqb := oid (ws.fetch(PRE_SIZE).fetch(WS).count() +
+                                ws.fetch(PRE_SIZE).fetch(WS).seqbase().int());
+                */
+                assgn (var (seqb->name),
+                       cast (
+                           type (mty_oid),
+                           add (
+                               count (
+                                   fetch (
+                                       fetch (
+                                           var (PF_MIL_VAR_WS),
+                                           var (PF_MIL_VAR_PRE_SIZE)),
+                                       var (PF_MIL_VAR_WS_CONT))),
+                               cast (
+                                   type (mty_int),
+                                   seqbase_lookup (
+                                       fetch (
+                                           fetch (
+                                               var (PF_MIL_VAR_WS),
+                                               var (PF_MIL_VAR_PRE_SIZE)),
+                                           var (PF_MIL_VAR_WS_CONT))))))),
+                /* create a column with the new pre numbers:
+                   newPre := mmu_res.fetch(0).mark(seqb); */
+                assgn (var (newPre->name),
+                       mark (
+                           fetch (var (mmu_res->name), lit_int (0)),
+                           var (seqb->name))),
+                
+
+                /* fill the constructed nodes into the ws */
+                
+                /* size:
+                   ws.fetch(PRE_SIZE).fetch(WS).append (mmu_res.fetch(2)); */
+                bappend (fetch (
+                             fetch (
+                                 var (PF_MIL_VAR_WS),
+                                 var (PF_MIL_VAR_PRE_SIZE)),
+                             var (PF_MIL_VAR_WS_CONT)),
+                         fetch (var (mmu_res->name), lit_int (2))),
+                /* level:
+                   ws.fetch(PRE_LEVEL).fetch(WS).append (mmu_res.fetch(3)); */
+                bappend (fetch (
+                             fetch (
+                                 var (PF_MIL_VAR_WS),
+                                 var (PF_MIL_VAR_PRE_LEVEL)),
+                             var (PF_MIL_VAR_WS_CONT)),
+                         fetch (var (mmu_res->name), lit_int (3))),
+                /* kind:
+                   ws.fetch(PRE_KIND).fetch(WS).append (mmu_res.fetch(4)); */
+                bappend (fetch (
+                             fetch (
+                                 var (PF_MIL_VAR_WS),
+                                 var (PF_MIL_VAR_PRE_KIND)),
+                             var (PF_MIL_VAR_WS_CONT)),
+                         fetch (var (mmu_res->name), lit_int (4))),
+                /* prop:
+                   ws.fetch(PRE_PROP).fetch(WS).append (mmu_res.fetch(5)); */
+                bappend (fetch (
+                             fetch (
+                                 var (PF_MIL_VAR_WS),
+                                 var (PF_MIL_VAR_PRE_PROP)),
+                             var (PF_MIL_VAR_WS_CONT)),
+                         fetch (var (mmu_res->name), lit_int (5))),
+                /* cont:
+                   ws.fetch(PRE_CONT).fetch(WS).append (mmu_res.fetch(6)); */
+                bappend (fetch (
+                             fetch (
+                                 var (PF_MIL_VAR_WS),
+                                 var (PF_MIL_VAR_PRE_CONT)),
+                             var (PF_MIL_VAR_WS_CONT)),
+                         fetch (var (mmu_res->name), lit_int (6))),
+                /* pre_nid:
+                   ws.fetch(PRE_NID).fetch(WS).append (newPre); */
+                bappend (fetch (
+                             fetch (
+                                 var (PF_MIL_VAR_WS),
+                                 var (PF_MIL_VAR_PRE_NID)),
+                             var (PF_MIL_VAR_WS_CONT)),
+                         var (newPre->name)),
+                /* nid_rid:
+                   ws.fetch(NID_RID).fetch(WS).append (newPre); */
+                bappend (fetch (
+                             fetch (
+                                 var (PF_MIL_VAR_WS),
+                                 var (PF_MIL_VAR_NID_RID)),
+                             var (PF_MIL_VAR_WS_CONT)),
+                         var (newPre->name)),
+                
+                /* select roots and fill environment */
+
+                /* collect new pre values of the root nodes:
+                   root_pre := mmu_res.fetch(1).reverse().mark(seqb).reverse()
+                                      .ord_uselect(0@0).mark(0@0).reverse(); */
+                assgn (var (root_pre->name),
+                       reverse (
+                           mark (
+                               uselect (
+                                   reverse (
+                                       mark (
+                                           reverse (
+                                               fetch (
+                                                   var (mmu_res->name),
+                                                   lit_int (1))),
+                                           var (seqb->name))),
+                                   lit_oid (0)),
+                               lit_oid (0)))),
+                
+                /* prepare new iter column:
+                   root_iter := root_pre.leftjoin (mmu_res.fetch(0)
+                                                          .reverse.mark(seqb)
+                                                          .reverse()); */
+                assgn (var (root_iter->name),
+                       leftjoin (
+                           var (root_pre->name),
+                           reverse (
+                               mark (
+                                   reverse (
+                                       fetch (
+                                           var (mmu_res->name),
+                                           lit_int (0))),
+                                   var (seqb->name))))),
+                /* prepare the new fragment column:
+                   root_frag := root_pre.leftjoin (mmu_res.fetch(6)
+                                                          .reverse.mark(seqb)
+                                                          .reverse()); */
+                assgn (var (root_frag->name),
+                       leftjoin (
+                           var (root_pre->name),
+                           reverse (
+                               mark (
+                                   reverse (
+                                       fetch (
+                                           var (mmu_res->name),
+                                           lit_int (6))),
+                                   var (seqb->name))))),
+
+                /* make the fragment boundaries known:
+                   ws.fetch(FRAG_ROOT)
+                     .fetch(WS)
+                     .insert(root_pre.reverse().project(oid_nil).reverse()); */
+                binsert (fetch (
+                             fetch (
+                                 var (PF_MIL_VAR_WS),
+                                 var (PF_MIL_VAR_FRAG_ROOT)),
+                             var (PF_MIL_VAR_WS_CONT)),
+                         reverse (
+                             project (
+                                 reverse (var (root_pre->name)),
+                                 lit_oid (0)))) );
+            
+            unpin (seqb, 1);
+
+            /* map root attributes (dslink (iter, pre))
+               and add them to the ws */
+            if (PFarray_last (twig_state->attr_vars)) {
+                PFmil_t *bodymilprog, *oldmilprog;
+                mvar_t  *a_iter  = new_var (1);
+                mvar_t  *a_pre   = new_var (1);
+                mvar_t  *a_qn    = new_var (1);
+                mvar_t  *a_val   = new_var (1);
+                mvar_t  *a_cont  = new_var (1);
+                mvar_t  *count   = new_var (1);
+                mvar_t  *mapping = new_var (1);
+                mvar_t  *sorting = new_var (1);
+
+                /* first collect the overall size */
+                execute (assgn (var (count->name), lit_int (0)));
+                for (i = 0; i < PFarray_last (twig_state->attr_vars); i++) {
+                    tmp = *(mvar_t **) PFarray_at (twig_state->attr_vars, i);
+                    execute (assgn (var (count->name),
+                                    add (var (count->name),
+                                         count (var (tmp->name)))));
+                }
+
+                oldmilprog = milprog;
+                /* start new milprog for the nesting:
+                   'if (...) {...} else {}' */
+                milprog = nop ();
+
+                /* create relation to hold all the input relations 
+                   for the append operation */ 
+                execute (
+                    assgn (var (a_iter->name),
+                           seqbase (new (type (mty_void), type (mty_oid)),
+                                    lit_oid (0))),
+                    assgn (var (a_pre->name),
+                           seqbase (new (type (mty_void), type (mty_oid)),
+                                    lit_oid (0))),
+                    assgn (var (a_qn->name),
+                           seqbase (new (type (mty_void), type (mty_oid)),
+                                    lit_oid (0))),
+                    assgn (var (a_val->name),
+                           seqbase (new (type (mty_void), type (mty_oid)),
+                                    lit_oid (0))),
+                    assgn (var (a_cont->name),
+                           seqbase (new (type (mty_void), type (mty_oid)),
+                                    lit_oid (0))));
+                
+                /* add all possible root attributes 
+                   (references stored in twig_state->attr_vars) */
+                for (i = 0; i < PFarray_last (twig_state->attr_vars); i++) {
+                    tmp = *(mvar_t **) PFarray_at (twig_state->attr_vars, i);
+                    execute (
+                        bappend (var (a_iter->name),
+                                 fetch (var (tmp->name), lit_int (0))),
+                        bappend (var (a_pre->name),
+                                 fetch (var (tmp->name), lit_int (1))),
+                        bappend (var (a_qn->name),
+                                 fetch (var (tmp->name), lit_int (2))),
+                        bappend (var (a_val->name),
+                                 fetch (var (tmp->name), lit_int (3))),
+                        bappend (var (a_cont->name),
+                                 fetch (var (tmp->name), lit_int (4))));
+                    unpin (tmp, 1);
+                }
+
+                execute (
+                    /* collect the references to the parent element nodes:
+                       mapping := ds_link (a_iter, mmu_res.fetch(0),
+                                           a_pre, mmu_res.fetch(1)); */
+                    assgn (var (mapping->name),
+                           mc_intersect (
+                               arg (
+                                   arg (
+                                       var (a_iter->name),
+                                       fetch (var (mmu_res->name),
+                                              lit_int (0))),
+                                   arg (
+                                       var (a_pre->name),
+                                       fetch (var (mmu_res->name),
+                                              lit_int (1)))))),
+                    
+                    /* get the pre values and align them
+                       with the attribute values:
+                       mapping := a_iter.mirror()
+                                        .leftjoin(mapping.join(newPre)); */
+                    assgn (var (mapping->name),
+                           leftjoin (mirror (var (a_iter->name)),
+                                     join (var (mapping->name),
+                                           var (newPre->name)))),
+
+                    /* fill the constructed attributes into the ws */
+                
+                    /* own:
+                       ws.fetch(ATTR_OWN).fetch(WS).append(mapping); */
+                    bappend (fetch (
+                                 fetch (
+                                     var (PF_MIL_VAR_WS),
+                                     var (PF_MIL_VAR_ATTR_OWN)),
+                                 var (PF_MIL_VAR_WS_CONT)),
+                             var (mapping->name)),
+                    /* qn:
+                       ws.fetch(ATTR_QN).fetch(WS).append(a_qn); */
+                    bappend (fetch (
+                                 fetch (
+                                     var (PF_MIL_VAR_WS),
+                                     var (PF_MIL_VAR_ATTR_QN)),
+                                 var (PF_MIL_VAR_WS_CONT)),
+                             var (a_qn->name)),
+                    /* prop:
+                       ws.fetch(ATTR_PROP).fetch(WS).append(a_val); */
+                    bappend (fetch (
+                                 fetch (
+                                     var (PF_MIL_VAR_WS),
+                                     var (PF_MIL_VAR_ATTR_PROP)),
+                                 var (PF_MIL_VAR_WS_CONT)),
+                             var (a_val->name)),
+                    /* cont:
+                       ws.fetch(ATTR_CONT).fetch(WS).append(a_cont); */
+                    bappend (fetch (
+                                 fetch (
+                                     var (PF_MIL_VAR_WS),
+                                     var (PF_MIL_VAR_ATTR_CONT)),
+                                 var (PF_MIL_VAR_WS_CONT)),
+                             var (a_cont->name)));
+                unpin (mapping, 1);
+
+                /* check for duplicate attributes and generate 
+                   a runtime error if duplicates have been found. */
+                execute (
+                    /* sorting := a_iter.reverse().sort().reverse(); */
+                    assgn (
+                        var (sorting->name),
+                        reverse (sort (reverse (var (a_iter->name)), DIR_ASC))),
+                    /* sorting := sorting.CTrefine (a_pre); */
+                    assgn (
+                        var (sorting->name),
+                        ctrefine (
+                            var (sorting->name),
+                            var (a_pre->name),
+                            DIR_ASC)),
+                    /* sorting := sorting.CTrefine (
+                                              mposjoin (a_qn,
+                                                        a_cont,
+                                                        ws.fetch(QN_URI))); */
+                    assgn (
+                        var (sorting->name),
+                        ctrefine (
+                            var (sorting->name),
+                            mposjoin (
+                                var (a_qn->name),
+                                var (a_cont->name),
+                                fetch (
+                                    var (PF_MIL_VAR_WS),
+                                    var (PF_MIL_VAR_QN_URI))),
+                            DIR_ASC)),
+                    /* sorting := sorting.CTrefine (
+                                              mposjoin (a_qn,
+                                                        a_cont,
+                                                        ws.fetch(QN_LOC))); */
+                    assgn (
+                        var (sorting->name),
+                        ctrefine (
+                            var (sorting->name),
+                            mposjoin (
+                                var (a_qn->name),
+                                var (a_cont->name),
+                                fetch (
+                                    var (PF_MIL_VAR_WS),
+                                    var (PF_MIL_VAR_QN_LOC))),
+                            DIR_ASC)),
+                    /* if (sorting.count() != sorting.tunique().count())
+                       { ERROR ("..."); } else {} */
+                    if_ (not (eq (count (var (sorting->name)),
+                              count (tunique (var (sorting->name))))),
+                         error (lit_str ("err:XQDY0025: attribute names are not"
+                                         " unique in constructed element.")),
+                         nop ()));
+                unpin (sorting, 1);
+
+                unpin (a_iter, 1);
+                unpin (a_pre, 1);
+                unpin (a_qn, 1);
+                unpin (a_val, 1);
+                unpin (a_cont, 1);
+
+                /* store nested MIL code */
+                bodymilprog = milprog;
+                /* activate old mil program */
+                milprog = oldmilprog;
+                
+                /* fill in the MIL code for root attributes:
+                   if (count > 0) { ... } else { } */
+                execute (
+                    if_ (gt (var (count->name), lit_int (0)),
+                    /* then */ bodymilprog,
+                    /* else */ nop ()));
+                
+                unpin (count, 1);
+            }
+
+            /* collect and update content attributes (mvaljoin) */
+            if (twig_state->elem_content) {
+                mvar_t *attr = new_var (1);
+                mvar_t *item = new_var (1);
+                mvar_t *cont = new_var (1);
+
+                execute (
+                    /* lookup attribute ids for all subtree nodes:
+                       attr := mvaljoin (mmu_res.fetch(7),
+                                         mmu_res.fetch(8),
+                                         ws.fetch(ATTR_OWN)); */
+                    assgn (
+                        var (attr->name),
+                        mvaljoin (
+                            fetch (var (mmu_res->name), lit_int (7)),
+                            fetch (var (mmu_res->name), lit_int (8)),
+                            fetch (
+                                var (PF_MIL_VAR_WS),
+                                var (PF_MIL_VAR_ATTR_OWN)))),
+                    
+                    /* align the resulting attribute ids and the fragment
+                       information:
+                       item := attr.reverse().mark(0@0).reverse();
+                       cont := attr.mark(0@0).reverse()
+                                   .leftjoin(mmu_res.fetch(8)); */
+                    assgn (var (item->name),
+                           reverse (
+                               mark (
+                                   reverse (
+                                       var (attr->name)),
+                                   lit_oid (0)))),
+                    assgn (var (cont->name),
+                           leftjoin (
+                               reverse (
+                                   mark (
+                                       var (attr->name),
+                                       lit_oid (0))),
+                               fetch (var (mmu_res->name), lit_int (8)))),
+
+                    /* fill the constructed attributes into the ws */
+                
+                    /* own:
+                       ws.fetch(ATTR_OWN).fetch(WS)
+                         .append(attr.mark(0@0).reverse().leftjoin(newPre)); */
+                    bappend (fetch (
+                                 fetch (
+                                     var (PF_MIL_VAR_WS),
+                                     var (PF_MIL_VAR_ATTR_OWN)),
+                                 var (PF_MIL_VAR_WS_CONT)),
+                             leftjoin (
+                                 reverse (
+                                     mark (
+                                         var (attr->name),
+                                         lit_oid (0))),
+                                 var (newPre->name))),
+                    /* qn:
+                       ws.fetch(ATTR_QN).fetch(WS)
+                         .append(mposjoin(item,cont,ws.fetch(ATTR_QN))); */
+                    bappend (fetch (
+                                 fetch (
+                                     var (PF_MIL_VAR_WS),
+                                     var (PF_MIL_VAR_ATTR_QN)),
+                                 var (PF_MIL_VAR_WS_CONT)),
+                             mposjoin (
+                                 var (item->name),
+                                 var (cont->name),
+                                 fetch (
+                                     var (PF_MIL_VAR_WS),
+                                     var (PF_MIL_VAR_ATTR_QN)))),
+                    /* prop:
+                       ws.fetch(ATTR_PROP).fetch(WS)
+                         .append(mposjoin(item,cont,ws.fetch(ATTR_PROP))); */
+                    bappend (fetch (
+                                 fetch (
+                                     var (PF_MIL_VAR_WS),
+                                     var (PF_MIL_VAR_ATTR_PROP)),
+                                 var (PF_MIL_VAR_WS_CONT)),
+                             mposjoin (
+                                 var (item->name),
+                                 var (cont->name),
+                                 fetch (
+                                     var (PF_MIL_VAR_WS),
+                                     var (PF_MIL_VAR_ATTR_PROP)))),
+                    /* cont:
+                       ws.fetch(ATTR_CONT).fetch(WS)
+                         .append(mposjoin(item,cont,ws.fetch(ATTR_CONT))); */
+                    bappend (fetch (
+                                 fetch (
+                                     var (PF_MIL_VAR_WS),
+                                     var (PF_MIL_VAR_ATTR_CONT)),
+                                 var (PF_MIL_VAR_WS_CONT)),
+                             mposjoin (
+                                 var (item->name),
+                                 var (cont->name),
+                                 fetch (
+                                     var (PF_MIL_VAR_WS),
+                                     var (PF_MIL_VAR_ATTR_CONT)))),
+                    );
+                unpin (attr, 1);
+                unpin (item, 1);
+                unpin (cont, 1);
+            }
+
+            unpin (mmu_res, 1);
+            unpin (newPre, 1);
+
+            /* reset old twig state */
+            twig_state = old_twig_state;
+        }
+            break;
+        
+        /* FragRel:  twig (attribute (Rel)) */
         case 103:
         {
-            /* copy the iter BAT */
+            mvar_t *seqb = new_var (1);
+            mvar_t *root_attr = new_var (p->refctr);
+            mvar_t *root_frag = new_var (p->refctr);
+            mvar_t *iter = env_mvar (LL(p)->env,
+                                     L(p)->sem.iter_item1_item2.iter,
+                                     aat_nat);
+            PFmil_t *qn  = VAR (LL(p)->env,
+                                L(p)->sem.iter_item1_item2.item1,
+                                aat_qname);
+            PFmil_t *val = VAR (LL(p)->env,
+                                L(p)->sem.iter_item1_item2.item2,
+                                aat_str);
 
-             mvar_t *iter = env_mvar (L(R(p))->env, p->sem.ii.iter, aat_nat);
-             env_add (p->env, p->sem.ii.iter, aat_nat, iter);
-             pin (iter, p->refctr);
-
-
-             /* temporary variable */
-             mvar_t *v = new_var (1);
-             /* result BATs */
-             mvar_t *pre  = new_var (p->refctr);
-             mvar_t *frag = new_var (p->refctr);
-             env_add (p->env, p->sem.ii.item, aat_pre, pre);
-             env_add (p->env, p->sem.ii.item, aat_pfrag, frag);
-
-             execute (
-                  assgn (var (v->name),
-                         empty_element (VAR (L(R(p))->env, 
-                                             p->sem.ii.item, aat_qname),
-                                        var (PF_MIL_VAR_WS))),
-                  assgn (var (PF_MIL_VAR_WS),
-                         fetch (var (v->name), lit_int (0))),
-                  assgn (var (pre->name), fetch (var (v->name), 
-                                                 lit_int (1))),
-                  assgn (var (frag->name), fetch (var (v->name),
-                                                  lit_int (2)))
-                  );
-
-            unpin (v, 1);
-        } break;
-
-        /* FragRel: element (FragList, element_tag (Rel, Rel)) */
+            execute (
+                /* get first free pre value */
+                assgn (var (seqb->name),
+                       cast (
+                           type (mty_oid),
+                           add (
+                               count (
+                                   fetch (
+                                       fetch (
+                                           var (PF_MIL_VAR_WS),
+                                           var (PF_MIL_VAR_ATTR_OWN)),
+                                       var (PF_MIL_VAR_WS_CONT))),
+                               cast (
+                                   type (mty_int),
+                                   seqbase_lookup (
+                                       fetch (
+                                           fetch (
+                                               var (PF_MIL_VAR_WS),
+                                               var (PF_MIL_VAR_ATTR_OWN)),
+                                           var (PF_MIL_VAR_WS_CONT))))))),
+                /* own */
+                bappend (fetch (
+                             fetch (
+                                 var (PF_MIL_VAR_WS),
+                                 var (PF_MIL_VAR_ATTR_OWN)),
+                             var (PF_MIL_VAR_WS_CONT)),
+                         project (qn, cast (type (mty_oid), nil ()))),
+                /* qn */
+                bappend (fetch (
+                             fetch (
+                                 var (PF_MIL_VAR_WS),
+                                 var (PF_MIL_VAR_ATTR_QN)),
+                             var (PF_MIL_VAR_WS_CONT)),
+                         qn),
+                /* prop */
+                bappend (fetch (
+                             fetch (
+                                 var (PF_MIL_VAR_WS),
+                                 var (PF_MIL_VAR_ATTR_PROP)),
+                             var (PF_MIL_VAR_WS_CONT)),
+                         add_content (val, 
+                                      var (PF_MIL_VAR_WS),
+                                      var (PF_MIL_VAR_PROP_VAL))),
+                /* cont */
+                bappend (fetch (
+                             fetch (
+                                 var (PF_MIL_VAR_WS),
+                                 var (PF_MIL_VAR_ATTR_CONT)),
+                             var (PF_MIL_VAR_WS_CONT)),
+                         project (qn, var (PF_MIL_VAR_WS_CONT))),
+                
+                /* new root pre values */
+                assgn (var (root_attr->name),
+                       mark (qn, var (seqb->name))),
+                /* fragment information */ 
+                assgn (var (root_frag->name),
+                       project (qn, var (PF_MIL_VAR_WS_CONT))));
+            
+            unpin (seqb, 1);
+            pin (iter, p->refctr);
+            env_add (p->env, p->sem.ii.iter, aat_nat,   iter);
+            env_add (p->env, p->sem.ii.item, aat_attr,  root_attr);
+            env_add (p->env, p->sem.ii.item, aat_afrag, root_frag);
+        }
+            break;
+        
+        /* FragRel:  twig (textnode (Rel)) */
         case 104:
         {
-            /* copy the iter BAT */
-            mvar_t *iter = env_mvar (L(R(p))->env, p->sem.ii.iter, aat_nat);
-            env_add (p->env, p->sem.ii.iter, aat_nat, iter);
+            mvar_t *seqb = new_var (1);
+            mvar_t *root_pre  = new_var (p->refctr);
+            mvar_t *root_frag = new_var (p->refctr);
+            mvar_t *iter = env_mvar (LL(p)->env, L(p)->sem.ii.iter, aat_nat);
+            PFmil_t *item = VAR (LL(p)->env, L(p)->sem.ii.item, aat_str);
+
+            execute (
+                /* get first free pre value */
+                assgn (var (seqb->name),
+                       cast (
+                           type (mty_oid),
+                           add (
+                               count (
+                                   fetch (
+                                       fetch (
+                                           var (PF_MIL_VAR_WS),
+                                           var (PF_MIL_VAR_PRE_SIZE)),
+                                       var (PF_MIL_VAR_WS_CONT))),
+                               cast (
+                                   type (mty_int),
+                                   seqbase_lookup (
+                                       fetch (
+                                           fetch (
+                                               var (PF_MIL_VAR_WS),
+                                               var (PF_MIL_VAR_PRE_SIZE)),
+                                           var (PF_MIL_VAR_WS_CONT))))))),
+                /* size */
+                bappend (fetch (
+                             fetch (
+                                 var (PF_MIL_VAR_WS),
+                                 var (PF_MIL_VAR_PRE_SIZE)),
+                             var (PF_MIL_VAR_WS_CONT)),
+                         project (item, lit_int (0))),
+                /* level */
+                bappend (fetch (
+                             fetch (
+                                 var (PF_MIL_VAR_WS),
+                                 var (PF_MIL_VAR_PRE_LEVEL)),
+                             var (PF_MIL_VAR_WS_CONT)),
+                         project (item, cast (type (mty_chr), lit_int (0)))),
+                /* kind */
+                bappend (fetch (
+                             fetch (
+                                 var (PF_MIL_VAR_WS),
+                                 var (PF_MIL_VAR_PRE_KIND)),
+                             var (PF_MIL_VAR_WS_CONT)),
+                         project (item, var (PF_MIL_VAR_KIND_TEXT))),
+                /* prop */
+                bappend (fetch (
+                             fetch (
+                                 var (PF_MIL_VAR_WS),
+                                 var (PF_MIL_VAR_PRE_PROP)),
+                             var (PF_MIL_VAR_WS_CONT)),
+                         add_content (item, 
+                                      var (PF_MIL_VAR_WS),
+                                      var (PF_MIL_VAR_PROP_TEXT))),
+                /* cont */
+                bappend (fetch (
+                             fetch (
+                                 var (PF_MIL_VAR_WS),
+                                 var (PF_MIL_VAR_PRE_CONT)),
+                             var (PF_MIL_VAR_WS_CONT)),
+                         project (item, var (PF_MIL_VAR_WS_CONT))),
+                /* pre_nid */
+                bappend (fetch (
+                             fetch (
+                                 var (PF_MIL_VAR_WS),
+                                 var (PF_MIL_VAR_PRE_NID)),
+                             var (PF_MIL_VAR_WS_CONT)),
+                         mark (item, var (seqb->name))),
+                /* nid_rid */
+                bappend (fetch (
+                             fetch (
+                                 var (PF_MIL_VAR_WS),
+                                 var (PF_MIL_VAR_NID_RID)),
+                             var (PF_MIL_VAR_WS_CONT)),
+                         mark (item, var (seqb->name))),
+                
+                /* new root pre values */
+                assgn (var (root_pre->name),
+                       mark (item, var (seqb->name))),
+                /* fragment information */ 
+                assgn (var (root_frag->name),
+                       project (item, var (PF_MIL_VAR_WS_CONT))),
+
+                /* make the fragment boundaries known */
+                binsert (fetch (
+                             fetch (
+                                 var (PF_MIL_VAR_WS),
+                                 var (PF_MIL_VAR_FRAG_ROOT)),
+                             var (PF_MIL_VAR_WS_CONT)),
+                         reverse (
+                             project (
+                                 reverse (var (root_pre->name)),
+                                 lit_oid (0)))));
+            
+            unpin (seqb, 1);
             pin (iter, p->refctr);
-            PFmil_t *pre, *pfrag, *attr, *afrag;
-            mvar_t *tmp;
-
-            /* temporary variable */
-            mvar_t *v = new_var (1);
-            /* result BATs */
-            mvar_t *res_pre = new_var (p->refctr);
-            mvar_t *res_frag = new_var (p->refctr);
-
-            env_add (p->env, p->sem.ii.item, aat_pre, res_pre);
-            env_add (p->env, p->sem.ii.item, aat_pfrag, res_frag);
-
-            /* check occurrence of attributes and other nodes
-               and react accordingly */ 
-            if ((tmp = env_mvar_unsafe (R(R(p))->env,
-                                        p->sem.ii.item,
-                                        aat_pre)))
-            {
-                 pre = var (tmp->name);
-                 pfrag = VAR (R(R(p))->env, p->sem.ii.item, aat_pfrag);
-            } else {
-                 pre = seqbase (new (type (mty_void), type (mty_oid)),
-                                lit_oid (0));
-                 pfrag = pre;
-            }
-               
-            if ((tmp = env_mvar_unsafe (R(R(p))->env,
-                                        p->sem.ii.item,
-                                        aat_attr)))
-            {
-                 attr = var (tmp->name);
-                 afrag = VAR (R(R(p))->env, p->sem.ii.item, aat_afrag);
-            } else {
-                 attr = seqbase (new (type (mty_void), type (mty_oid)),
-                                 lit_oid (0));
-                 afrag = attr;
-            }
-
-            execute (
-                 assgn (var (v->name),
-                        element (VAR (L(R(p))->env, p->sem.ii.iter, aat_nat),
-                                 VAR (L(R(p))->env, p->sem.ii.item, aat_qname),
-                                 VAR (R(R(p))->env, p->sem.ii.iter, aat_nat),
-                                 pre, pfrag, attr, afrag,
-                                 var (PF_MIL_VAR_WS))),
-                 assgn (var (PF_MIL_VAR_WS),
-                        fetch (var (v->name), lit_int (0))),
-                 assgn (var (res_pre->name), 
-                        fetch (var (v->name), lit_int (1))),
-                 assgn (var (res_frag->name),
-                        fetch (var (v->name), lit_int (2)))
-                 );
-
-            unpin (v, 1);
-        } break;
-
-        /* FragRel: attribute (Rel) */
+            env_add (p->env, p->sem.ii.iter, aat_nat,   iter);
+            env_add (p->env, p->sem.ii.item, aat_pre,   root_pre);
+            env_add (p->env, p->sem.ii.item, aat_pfrag, root_frag);
+        }
+            break;
+        
+        /* Fcns:     fcns (Twig, Fcns) */
         case 105:
-        {
-            /* temporary variable */
-            mvar_t *v = new_var (1);
-            /* result BATs */
-            mvar_t *attr  = new_var (p->refctr);
-            mvar_t *frag = new_var (p->refctr);
+        { /* top-down */
 
-            env_add (p->env, p->sem.attr.res, aat_attr, attr);
-            env_add (p->env, p->sem.attr.res, aat_afrag, frag);
+            /* traverse the DAG in sequence order */
+            reduce(kids[0], nts[0]);
+            reduce(kids[1], nts[1]);
+            
+            /* propagate the size information of the content
+               operators underneath */
+            if (env_count (L(p)->env) &&
+                env_count (R(p)->env)) {
+                mvar_t *v = new_var (1);
+                mvar_t *l = env_at (L(p)->env, 0).mvar;
+                mvar_t *r = env_at (R(p)->env, 0).mvar;
+                
+                assert (env_count (L(p)->env) == 1);
+                assert (env_count (R(p)->env) == 1);
 
-            execute (
-                assgn (var (v->name),
-                       attribute (VAR (L(p)->env, p->sem.attr.qn, aat_qname),
-                                  VAR (L(p)->env, p->sem.attr.val, aat_str),
-                                  var (PF_MIL_VAR_WS))),
-                assgn (var (PF_MIL_VAR_WS), fetch (var (v->name), lit_int (0))),
-                assgn (var (attr->name), fetch (var (v->name), lit_int (1))),
-                assgn (var (frag->name), fetch (var (v->name), lit_int (2)))
-                );
+                execute (
+                    assgn (var (v->name),
+                           madd (var (l->name), var (r->name))));
 
-            unpin (v, 1);
+                env_add (p->env,
+                         env_at (L(p)->env, 0).att,
+                         env_at (L(p)->env, 0).ty,
+                         v);
+                
+            } else if (env_count (L(p)->env)) {
+                
+                assert (env_count (L(p)->env) == 1);
+                env_add (p->env,
+                         env_at (L(p)->env, 0).att,
+                         env_at (L(p)->env, 0).ty,
+                         env_at (L(p)->env, 0).mvar);
+                pin (env_at (p->env, 0).mvar, 1);
 
-            /* copy all the existing variables of the qname relation */
-            for (unsigned int i = 0; i < PFarray_last (L(p)->env); i++) {
+            } else if (env_count (R(p)->env)) {
 
-                env_t entry = env_at (L(p)->env, i);
-
-                env_add (p->env, entry.att, entry.ty, entry.mvar);
-
-                pin (entry.mvar, p->refctr);
+                assert (env_count (R(p)->env) == 1);
+                env_add (p->env,
+                         env_at (R(p)->env, 0).att,
+                         env_at (R(p)->env, 0).ty,
+                         env_at (R(p)->env, 0).mvar);
+                pin (env_at (p->env, 0).mvar, 1);
             }
-        } break;
-
-        /* FragRel: textnode (Rel) */
+        }
+            break;
+        
+        /* Fcns:     fcns (Twig, nil) */
         case 106:
+            /* propagate the size information of the content
+               operators underneath */
+            if (env_count (L(p)->env)) {
+                assert (env_count (L(p)->env) == 1);
+                env_add (p->env,
+                         env_at (L(p)->env, 0).att,
+                         env_at (L(p)->env, 0).ty,
+                         env_at (L(p)->env, 0).mvar);
+                pin (env_at (p->env, 0).mvar, 1);
+            }
+            break;
+        
+        /* Twig:     docnode (Rel, fcns (nil, nil)) */
+        case 107:
         {
-            /* temporary variable */
-            mvar_t *v = new_var (1);
-            /* result BATs */
-            mvar_t *pre  = new_var (p->refctr);
-            mvar_t *frag = new_var (p->refctr);
-
-            env_add (p->env, p->sem.textnode.res, aat_pre, pre);
-            env_add (p->env, p->sem.textnode.res, aat_pfrag, frag);
+            mvar_t  *v = new_var (1);
+            PFmil_t *iter = VAR (L(p)->env, p->sem.ii.iter, aat_nat);
 
             execute (
                 assgn (var (v->name),
-                       textnode (VAR (L(p)->env, p->sem.textnode.item, aat_str),
-                                 var (PF_MIL_VAR_WS))),
-                assgn (var (PF_MIL_VAR_WS), fetch (var (v->name), lit_int (0))),
-                assgn (var (pre->name), fetch (var (v->name), lit_int (1))),
-                assgn (var (frag->name), fetch (var (v->name), lit_int (2)))
-                );
-            unpin (v, 1);
-
-            /* copy all the existing variables */
-            for (unsigned int i = 0; i < PFarray_last (L(p)->env); i++) {
-
-                env_t entry = env_at (L(p)->env, i);
-
-                env_add (p->env, entry.att, entry.ty, entry.mvar);
-
-                pin (entry.mvar, p->refctr);
-            }
-        } break;
-
-        /* Rel:      docnode (FragList, Rel) */
-        case 107:
-            PFoops (OOPS_FATAL,
-                    "docnode not implemented yet.");
+                       seqbase (new (type (mty_void), type (mty_bat)),
+                                lit_oid (0))),
+                /* iter */
+                bappend (var (v->name), iter),
+                /* pre */
+                bappend (var (v->name),
+                         project (iter, lit_oid (twig_state->pre))),
+                /* size */
+                bappend (var (v->name),
+                         project (iter, lit_int (0))),
+                /* level */
+                bappend (var (v->name),
+                         project (iter, 
+                                  cast (type (mty_chr),
+                                        lit_int (twig_state->level)))),
+                /* kind */
+                bappend (var (v->name),
+                         project (iter, var (PF_MIL_VAR_KIND_DOC))),
+                /* prop */
+                bappend (var (v->name),
+                         project (iter, cast (type (mty_oid), nil ()))),
+                /* cont */
+                bappend (var (v->name),
+                         project (iter, var (PF_MIL_VAR_WS_CONT))),
+                /* old_pre */
+                bappend (var (v->name),
+                         project (iter, cast (type (mty_oid), nil ()))),
+                /* old_cont */
+                bappend (var (v->name),
+                         project (iter, cast (type (mty_oid), nil ()))));
+                        
+            *(mvar_t **) PFarray_add (twig_state->elem_vars) = v;
+            twig_state->pre++;
+            twig_state->size++;
+        }
             break;
-
-        /* Rel:      comment (Rel) */
+        
+        /* Twig:     docnode (Rel, Fcns) */
         case 108:
-            PFoops (OOPS_FATAL,
-                    "comment not implemented yet.");
-            break;
+        { /* top-down */
+            unsigned int old_twig_state_pre,
+                         old_twig_state_parent,
+                         old_twig_state_size;
+            mvar_t  *v = new_var (1);
+            mvar_t  *size = new_var (1);
+            PFmil_t *iter;
 
-        /* Rel:      processi (Rel) */
+            /* translate the qnames */
+            reduce(kids[0], nts[0]);
+            
+            iter = VAR (L(p)->env, p->sem.ii.iter, aat_nat);
+            
+            /* add the element representation into the ordered
+               twig state list to ensure that the constructed node
+               appears before all children */
+            *(mvar_t **) PFarray_add (twig_state->elem_vars) = v;
+            
+            /* store the twig state information
+               and prepare for the translation of the children */ 
+            old_twig_state_pre    = twig_state->pre;
+            old_twig_state_parent = twig_state->parent;
+            old_twig_state_size   = twig_state->size;
+
+            twig_state->parent = twig_state->pre;
+            twig_state->pre++;
+            twig_state->size = 0;
+            twig_state->level++;
+            twig_state->loop = iter;
+            
+            /* translate the children */
+            reduce(kids[1], nts[1]);
+            
+            /* reset the level information */
+            twig_state->level--;
+            
+            /* calculate the sizes */
+            if (env_count (R(p)->env) && twig_state->size) {
+                mvar_t *content_size = env_at (R(p)->env, 0).mvar;
+                
+                assert (env_count (R(p)->env) == 1);
+                
+                execute (
+                    assgn (var (size->name),
+                           madd (var (content_size->name),
+                                 lit_int (twig_state->size))));
+
+                env_add (p->env,
+                         env_at (R(p)->env, 0).att,
+                         env_at (R(p)->env, 0).ty,
+                         env_at (R(p)->env, 0).mvar);
+                pin (env_at (p->env, 0).mvar, 1);
+
+            } else if (env_count (R(p)->env)) {
+                mvar_t *content_size = env_at (R(p)->env, 0).mvar;
+                
+                assert (env_count (R(p)->env) == 1);
+                
+                execute (
+                    assgn (var (size->name),
+                           var (content_size->name)));
+
+                env_add (p->env,
+                         env_at (R(p)->env, 0).att,
+                         env_at (R(p)->env, 0).ty,
+                         env_at (R(p)->env, 0).mvar);
+                pin (env_at (p->env, 0).mvar, 1);
+
+            } else {
+                execute (
+                    assgn (var (size->name),
+                           project (iter, lit_int (twig_state->size))));
+            }
+
+            execute (
+                assgn (var (v->name),
+                       seqbase (new (type (mty_void), type (mty_bat)),
+                                lit_oid (0))),
+                /* iter */
+                bappend (var (v->name), iter),
+                /* pre */
+                bappend (var (v->name),
+                         project (iter, lit_oid (old_twig_state_pre))),
+                /* size */
+                bappend (var (v->name), var (size->name)),
+                /* level */
+                bappend (var (v->name),
+                         project (iter, 
+                                  cast (type (mty_chr),
+                                        lit_int (twig_state->level)))),
+                /* kind */
+                bappend (var (v->name),
+                         project (iter, var (PF_MIL_VAR_KIND_DOC))),
+                /* prop */
+                bappend (var (v->name),
+                         project (iter, cast (type (mty_oid), nil ()))),
+                /* cont */
+                bappend (var (v->name),
+                         project (iter, var (PF_MIL_VAR_WS_CONT))),
+                /* old_pre */
+                bappend (var (v->name),
+                         project (iter, cast (type (mty_oid), nil ()))),
+                /* old_cont */
+                bappend (var (v->name),
+                         project (iter, cast (type (mty_oid), nil ()))));
+
+            unpin (size, 1);
+                        
+            twig_state->size = twig_state->size + old_twig_state_size + 1;
+            twig_state->parent = old_twig_state_parent;
+        }
+            break;
+        
+        /* Twig:     element (Rel, fcns (nil, nil)) */
         case 109:
-            PFoops (OOPS_FATAL,
-                    "processing-instruction not implemented yet.");
-            break;
+        {
+            mvar_t  *v = new_var (1);
+            PFmil_t *iter = VAR (L(p)->env, p->sem.ii.iter, aat_nat);
+            PFmil_t *item = VAR (L(p)->env, p->sem.ii.item, aat_qname);
 
-        /* Rel:      merge_adjacent (FragList, Rel) */
+            execute (
+                assgn (var (v->name),
+                       seqbase (new (type (mty_void), type (mty_bat)),
+                                lit_oid (0))),
+                /* iter */
+                bappend (var (v->name), iter),
+                /* pre */
+                bappend (var (v->name),
+                         project (iter, lit_oid (twig_state->pre))),
+                /* size */
+                bappend (var (v->name),
+                         project (iter, lit_int (0))),
+                /* level */
+                bappend (var (v->name),
+                         project (iter, 
+                                  cast (type (mty_chr),
+                                        lit_int (twig_state->level)))),
+                /* kind */
+                bappend (var (v->name),
+                         project (iter, var (PF_MIL_VAR_KIND_ELEM))),
+                /* prop */
+                bappend (var (v->name), item),
+                /* cont */
+                bappend (var (v->name),
+                         project (iter, var (PF_MIL_VAR_WS_CONT))),
+                /* old_pre */
+                bappend (var (v->name),
+                         project (iter, cast (type (mty_oid), nil ()))),
+                /* old_cont */
+                bappend (var (v->name),
+                         project (iter, cast (type (mty_oid), nil ()))));
+                        
+            *(mvar_t **) PFarray_add (twig_state->elem_vars) = v;
+            twig_state->pre++;
+            twig_state->size++;
+        }
+            break;
+        
+        /* Twig:     element (Rel, Fcns) */
         case 110:
+        { /* top-down */
+            unsigned int old_twig_state_pre,
+                         old_twig_state_parent,
+                         old_twig_state_size;
+            mvar_t  *v = new_var (1);
+            mvar_t  *size = new_var (1);
+            PFmil_t *iter, *item;
+
+            /* translate the qnames */
+            reduce(kids[0], nts[0]);
+            
+            iter = VAR (L(p)->env, p->sem.ii.iter, aat_nat);
+            item = VAR (L(p)->env, p->sem.ii.item, aat_qname);
+            
+            /* add the element representation into the ordered
+               twig state list to ensure that the constructed node
+               appears before all children */
+            *(mvar_t **) PFarray_add (twig_state->elem_vars) = v;
+            
+            /* store the twig state information
+               and prepare for the translation of the children */ 
+            old_twig_state_pre    = twig_state->pre;
+            old_twig_state_parent = twig_state->parent;
+            old_twig_state_size   = twig_state->size;
+
+            twig_state->parent = twig_state->pre;
+            twig_state->pre++;
+            twig_state->size = 0;
+            twig_state->level++;
+            twig_state->loop = iter;
+            
+            /* translate the children */
+            reduce(kids[1], nts[1]);
+            
+            /* reset the level information */
+            twig_state->level--;
+            
+            /* calculate the sizes */
+            if (env_count (R(p)->env) && twig_state->size) {
+                mvar_t *content_size = env_at (R(p)->env, 0).mvar;
+                
+                assert (env_count (R(p)->env) == 1);
+                
+                execute (
+                    assgn (var (size->name),
+                           madd (var (content_size->name),
+                                 lit_int (twig_state->size))));
+
+                env_add (p->env,
+                         env_at (R(p)->env, 0).att,
+                         env_at (R(p)->env, 0).ty,
+                         env_at (R(p)->env, 0).mvar);
+                pin (env_at (p->env, 0).mvar, 1);
+
+            } else if (env_count (R(p)->env)) {
+                mvar_t *content_size = env_at (R(p)->env, 0).mvar;
+                
+                assert (env_count (R(p)->env) == 1);
+                
+                execute (
+                    assgn (var (size->name),
+                           var (content_size->name)));
+
+                env_add (p->env,
+                         env_at (R(p)->env, 0).att,
+                         env_at (R(p)->env, 0).ty,
+                         env_at (R(p)->env, 0).mvar);
+                pin (env_at (p->env, 0).mvar, 1);
+
+            } else {
+                execute (
+                    assgn (var (size->name),
+                           project (iter, lit_int (twig_state->size))));
+            }
+
+            execute (
+                assgn (var (v->name),
+                       seqbase (new (type (mty_void), type (mty_bat)),
+                                lit_oid (0))),
+                /* iter */
+                bappend (var (v->name), iter),
+                /* pre */
+                bappend (var (v->name),
+                         project (iter, lit_oid (old_twig_state_pre))),
+                /* size */
+                bappend (var (v->name), var (size->name)),
+                /* level */
+                bappend (var (v->name),
+                         project (iter, 
+                                  cast (type (mty_chr),
+                                        lit_int (twig_state->level)))),
+                /* kind */
+                bappend (var (v->name),
+                         project (iter, var (PF_MIL_VAR_KIND_ELEM))),
+                /* prop */
+                bappend (var (v->name), item),
+                /* cont */
+                bappend (var (v->name),
+                         project (iter, var (PF_MIL_VAR_WS_CONT))),
+                /* old_pre */
+                bappend (var (v->name),
+                         project (iter, cast (type (mty_oid), nil ()))),
+                /* old_cont */
+                bappend (var (v->name),
+                         project (iter, cast (type (mty_oid), nil ()))));
+                        
+            unpin (size, 1);
+                        
+            twig_state->size = twig_state->size + old_twig_state_size + 1;
+            twig_state->parent = old_twig_state_parent;
+        }
+            break;
+        
+        /* Twig:     attribute (Rel) */
+        case 111:
+        {
+            mvar_t  *v = new_var (1);
+            mvar_t  *prop = new_var (1);
+            PFmil_t *iter = VAR (L(p)->env,
+                                 p->sem.iter_item1_item2.iter,
+                                 aat_nat);
+            PFmil_t *qn   = VAR (L(p)->env, 
+                                 p->sem.iter_item1_item2.item1,
+                                 aat_qname);
+            PFmil_t *val  = VAR (L(p)->env,
+                                 p->sem.iter_item1_item2.item2,
+                                 aat_str);
+
+            execute (
+                assgn (var (prop->name),
+                       add_content (val, 
+                                    var (PF_MIL_VAR_WS),
+                                    var (PF_MIL_VAR_PROP_VAL))),
+                assgn (var (v->name),
+                       seqbase (new (type (mty_void), type (mty_bat)),
+                                lit_oid (0))),
+                /* iter */
+                bappend (var (v->name), iter),
+                /* pre (parent) */
+                bappend (var (v->name),
+                         project (iter, lit_oid (twig_state->parent))),
+                /* qname */
+                bappend (var (v->name), qn),
+                /* value */
+                bappend (var (v->name), var (prop->name)),
+                /* cont */
+                bappend (var (v->name),
+                         project (iter, var (PF_MIL_VAR_WS_CONT))));
+                        
+            unpin (prop, 1);
+                        
+            *(mvar_t **) PFarray_add (twig_state->attr_vars) = v;
+        }
+            break;
+        
+        /* Twig:     textnode (Rel) */
+        case 112:
+        {
+            mvar_t  *v = new_var (1);
+            mvar_t  *prop = new_var (1);
+            PFmil_t *iter = VAR (L(p)->env, p->sem.ii.iter, aat_nat);
+            PFmil_t *item = VAR (L(p)->env, p->sem.ii.item, aat_str);
+
+            execute (
+                assgn (var (prop->name),
+                       add_content (item, 
+                                    var (PF_MIL_VAR_WS),
+                                    var (PF_MIL_VAR_PROP_TEXT))),
+                assgn (var (v->name),
+                       seqbase (new (type (mty_void), type (mty_bat)),
+                                lit_oid (0))),
+                /* iter */
+                bappend (var (v->name), iter),
+                /* pre */
+                bappend (var (v->name),
+                         project (iter, lit_oid (twig_state->pre))),
+                /* size */
+                bappend (var (v->name),
+                         project (iter, lit_int (0))),
+                /* level */
+                bappend (var (v->name),
+                         project (iter, 
+                                  cast (type (mty_chr),
+                                        lit_int (twig_state->level)))),
+                /* kind */
+                bappend (var (v->name),
+                         project (iter, var (PF_MIL_VAR_KIND_TEXT))),
+                /* prop */
+                bappend (var (v->name), var (prop->name)),
+                /* cont */
+                bappend (var (v->name),
+                         project (iter, var (PF_MIL_VAR_WS_CONT))),
+                /* old_pre */
+                bappend (var (v->name),
+                         project (iter, cast (type (mty_oid), nil ()))),
+                /* old_cont */
+                bappend (var (v->name),
+                         project (iter, cast (type (mty_oid), nil ()))));
+                        
+            unpin (prop, 1);
+                        
+            *(mvar_t **) PFarray_add (twig_state->elem_vars) = v;
+            twig_state->pre++;
+            twig_state->size++;
+        }
+            break;
+        
+        /* Twig:     comment (Rel) */
+        case 113:
+        {
+            mvar_t  *v = new_var (1);
+            mvar_t  *prop = new_var (1);
+            PFmil_t *iter = VAR (L(p)->env, p->sem.ii.iter, aat_nat);
+            PFmil_t *item = VAR (L(p)->env, p->sem.ii.item, aat_str);
+
+            execute (
+                assgn (var (prop->name),
+                       add_content (item, 
+                                    var (PF_MIL_VAR_WS),
+                                    var (PF_MIL_VAR_PROP_COM))),
+                assgn (var (v->name),
+                       seqbase (new (type (mty_void), type (mty_bat)),
+                                lit_oid (0))),
+                /* iter */
+                bappend (var (v->name), iter),
+                /* pre */
+                bappend (var (v->name),
+                         project (iter, lit_oid (twig_state->pre))),
+                /* size */
+                bappend (var (v->name),
+                         project (iter, lit_int (0))),
+                /* level */
+                bappend (var (v->name),
+                         project (iter, 
+                                  cast (type (mty_chr),
+                                        lit_int (twig_state->level)))),
+                /* kind */
+                bappend (var (v->name),
+                         project (iter, var (PF_MIL_VAR_KIND_COM))),
+                /* prop */
+                bappend (var (v->name), var (prop->name)),
+                /* cont */
+                bappend (var (v->name),
+                         project (iter, var (PF_MIL_VAR_WS_CONT))),
+                /* old_pre */
+                bappend (var (v->name),
+                         project (iter, cast (type (mty_oid), nil ()))),
+                /* old_cont */
+                bappend (var (v->name),
+                         project (iter, cast (type (mty_oid), nil ()))));
+
+            unpin (prop, 1);
+                        
+            *(mvar_t **) PFarray_add (twig_state->elem_vars) = v;
+            twig_state->pre++;
+            twig_state->size++;
+        }
+            break;
+        
+        /* Twig:     processi (Rel) */
+        case 114:
+            assert (!"not implemented yet");
+            break;
+        
+        /* Twig:     content (FragRel, Rel) */
+        case 115:
+        {
+            PFalg_simple_type_t item_ty = 0;
+            mvar_t *a_iter = NULL, *a_item = NULL, *a_cont = NULL,
+                   *p_iter = NULL, *p_item = NULL, *p_cont = NULL;
+            bool treat_attr = false, treat_pre = false;
+            
+            /* look up item type */
+            for (unsigned int i = 0; i < R(p)->schema.count; i++)
+                if (p->sem.ii.item == R(p)->schema.items[i].name) {
+                    item_ty = R(p)->schema.items[i].type;
+                    break;
+                }
+            assert (item_ty);
+
+            /* based on the item type treat only attributes or other nodes */
+            if (item_ty == aat_pnode) {
+                treat_pre = true;
+                p_iter = env_mvar (R(p)->env, p->sem.ii.iter, aat_nat);
+                p_item = env_mvar (R(p)->env, p->sem.ii.item, aat_pre);
+                p_cont = env_mvar (R(p)->env, p->sem.ii.item, aat_pfrag);
+            } else if (item_ty == aat_anode) {
+                treat_attr = true;
+                a_iter = env_mvar (R(p)->env, p->sem.ii.iter, aat_nat);
+                a_item = env_mvar (R(p)->env, p->sem.ii.item, aat_attr);
+                a_cont = env_mvar (R(p)->env, p->sem.ii.item, aat_afrag);
+            } else /* mixed content */ {
+                mvar_t *iter, *tmp;
+                treat_pre  = true;
+                treat_attr = true;
+                p_iter = new_var (1);
+                p_item = new_var (1);
+                p_cont = new_var (1);
+                a_iter = new_var (1);
+                a_item = new_var (1);
+                a_cont = new_var (1);
+                
+                iter = env_mvar (R(p)->env, p->sem.ii.iter, aat_nat);
+                /* split up by nodes... */
+                
+                /* p_item := pre.select(oid_nil, oid_nil);
+                   p_iter := p_item.reverse().leftjoin (iter)
+                                   .reverse().mark(0@0).reverse();
+                   p_item := p_item.reverse().mark(0@0).reverse(); */
+                tmp = env_mvar (R(p)->env, p->sem.ii.item, aat_pre);
+                execute (
+                    assgn (
+                        var (p_item->name),
+                        select2 (
+                            var (tmp->name),
+                            cast (type (mty_oid), nil ()),
+                            cast (type (mty_oid), nil ()))),
+                    assgn (
+                        var (p_iter->name),
+                        reverse (
+                            mark (
+                                reverse (
+                                    leftjoin (
+                                        reverse (
+                                            var (p_item->name)),
+                                        var (iter->name))),
+                                lit_oid (0)))),
+                    assgn (
+                        var (p_item->name),
+                        reverse (
+                            mark (
+                                reverse (
+                                    var (p_item->name)),
+                                lit_oid (0)))));
+                /* p_cont := pfrag.select(oid_nil, oid_nil).tmark(0@0); */
+                tmp = env_mvar (R(p)->env, p->sem.ii.item, aat_pfrag);
+                execute (
+                    assgn (
+                        var (p_cont->name),
+                        reverse (
+                            mark (
+                                reverse (
+                                    select2 (
+                                        var (tmp->name),
+                                        cast (type (mty_oid), nil ()),
+                                        cast (type (mty_oid), nil ()))),
+                                lit_oid (0)))));
+
+                /* ... and attributes */
+                        
+                /* a_item := attr.select(oid_nil, oid_nil);
+                   a_iter := a_item.reverse().leftjoin (iter)
+                                   .reverse().mark(0@0).reverse();
+                   a_item := a_item.reverse().mark(0@0).reverse(); */
+                tmp = env_mvar (R(p)->env, p->sem.ii.item, aat_attr);
+                execute (
+                    assgn (
+                        var (a_item->name),
+                        select2 (
+                            var (tmp->name),
+                            cast (type (mty_oid), nil ()),
+                            cast (type (mty_oid), nil ()))),
+                    assgn (
+                        var (a_iter->name),
+                        reverse (
+                            mark (
+                                reverse (
+                                    leftjoin (
+                                        reverse (
+                                            var (a_item->name)),
+                                        var (iter->name))),
+                                lit_oid (0)))),
+                    assgn (
+                        var (a_item->name),
+                        reverse (
+                            mark (
+                                reverse (
+                                    var (a_item->name)),
+                                lit_oid (0)))));
+                /* a_cont := afrag.select(oid_nil, oid_nil).tmark(0@0); */
+                tmp = env_mvar (R(p)->env, p->sem.ii.item, aat_afrag);
+                execute (
+                    assgn (
+                        var (a_cont->name),
+                        reverse (
+                            mark (
+                                reverse (
+                                    select2 (
+                                        var (tmp->name),
+                                        cast (type (mty_oid), nil ()),
+                                        cast (type (mty_oid), nil ()))),
+                                lit_oid (0)))));
+            }
+            
+            /* first handle root attributes */
+            if (treat_attr) {
+                mvar_t  *v = new_var (1);
+
+                /* collect attribute names, values, and container... */
+                execute (
+                    assgn (var (v->name),
+                           seqbase (new (type (mty_void), type (mty_bat)),
+                                    lit_oid (0))),
+                    /* iter */
+                    bappend (var (v->name), var (a_iter->name)),
+                    /* pre (parent) */
+                    bappend (var (v->name),
+                             project (var (a_iter->name),
+                                      lit_oid (twig_state->parent))),
+                    /* qname */
+                    bappend (var (v->name),
+                             mposjoin (
+                                 var (a_item->name),
+                                 var (a_cont->name),
+                                 fetch (var (PF_MIL_VAR_WS),
+                                        var (PF_MIL_VAR_ATTR_QN)))),
+                    /* value */
+                    bappend (var (v->name),
+                             mposjoin (
+                                 var (a_item->name),
+                                 var (a_cont->name),
+                                 fetch (var (PF_MIL_VAR_WS),
+                                        var (PF_MIL_VAR_ATTR_PROP)))),
+                    /* cont */
+                    bappend (var (v->name),
+                             mposjoin (
+                                 var (a_item->name),
+                                 var (a_cont->name),
+                                 fetch (var (PF_MIL_VAR_WS),
+                                        var (PF_MIL_VAR_ATTR_CONT)))));
+
+                /* ... and add them to list of root attributes */ 
+                *(mvar_t **) PFarray_add (twig_state->attr_vars) = v;
+            }
+            
+            if (treat_pre) {
+                mvar_t  *unq_iter, *scj_res, *root_level, *content_level;
+                mvar_t  *iter = new_var (1);
+                mvar_t  *item = new_var (1);
+                mvar_t  *cont = new_var (1);
+                mvar_t  *v    = new_var (1);
+
+                unq_iter = new_var (1);
+                scj_res  = new_var (1);
+                /* evaluate descendant-or-self::node() step:
+                   unq_iter := p_iter.mirror();
+                   scj_res := loop_lifted_descendant_or_self_step (
+                                  p_iter, p_item, p_cont, ws, 0);
+                   iter := scj_res.fetch(0);
+                   item := scj_res.fetch(1);
+                   # cont is probably a fake project
+                   cont := scj_res.fetch(2);
+                   # avoid iter being a fake project
+                   iter := materialize(iter, item); */
+                execute (
+                    assgn (
+                        var (unq_iter->name),
+                        mirror (var (p_iter->name))),
+                    assgn (
+                        var (scj_res->name),
+                        llscj_desc_self (
+                            var (unq_iter->name),
+                            var (p_item->name),
+                            var (p_cont->name),
+                            var (PF_MIL_VAR_WS),
+                            lit_int (0))),
+                    assgn (
+                        var (iter->name),
+                        fetch(var (scj_res->name), lit_int (0))),
+                    assgn (
+                        var (item->name),
+                        fetch(var (scj_res->name), lit_int (1))),
+                    assgn (
+                        var (cont->name),
+                        fetch(var (scj_res->name), lit_int (2))),
+                    assgn (
+                        var (iter->name),
+                        materialize (
+                            var (iter->name),
+                            var (item->name))));
+                unpin (unq_iter, 1);
+                unpin (scj_res, 1);
+                    
+                root_level    = new_var (1);
+                content_level = new_var (1);
+                /* collect node values and insert them into
+                   list of twig constructors:
+                   v := new(void, bat).seqbase(0@0);
+                   v.append(iter.leftjoin(p_iter).chk_order());
+                   v.append(item.project(%twig_state->pre%));
+                   v.append(mposjoin(item,cont,ws.fetch(PRE_SIZE)));
+                   root_level := mposjoin(p_item,p_cont,ws.fetch(PRE_LEVEL));
+                   # map root_level to the correct cardinality
+                   root_level := iter.leftjoin(root_level);
+                   content_level := mposjoin(item,cont,ws.fetch(PRE_LEVEL)); 
+                   content_level := [-](content_level, root_level);
+                   content_level := [+](content_level, %twig_state->level%);
+                   v.append(content_level);
+                   v.append(mposjoin(item,cont,ws.fetch(PRE_KIND)));
+                   v.append(mposjoin(item,cont,ws.fetch(PRE_PROP)));
+                   v.append(mposjoin(item,cont,ws.fetch(PRE_CONT)));
+                   v.append(item);
+                   # avoid cont being a fake project
+                   v.append(materialize (cont, item));
+                   */
+                execute (
+                    assgn (var (v->name),
+                           seqbase (new (type (mty_void), type (mty_bat)),
+                                    lit_oid (0))),
+                    /* iter */
+                    bappend (var (v->name), 
+                             chk_order (
+                                 leftjoin (
+                                     var (iter->name),
+                                     var (p_iter->name)))),
+                    /* pre */
+                    bappend (var (v->name),
+                             project (
+                                 var (item->name),
+                                 lit_oid (twig_state->pre))),
+                    /* size */
+                    bappend (var (v->name),
+                             mposjoin (
+                                 var (item->name),
+                                 var (cont->name),
+                                 fetch (var (PF_MIL_VAR_WS),
+                                        var (PF_MIL_VAR_PRE_SIZE)))),
+                    /* level */
+                    assgn (
+                        var (root_level->name),
+                         mposjoin (
+                             var (p_item->name),
+                             var (p_cont->name),
+                             fetch (var (PF_MIL_VAR_WS),
+                                    var (PF_MIL_VAR_PRE_LEVEL)))),
+                    assgn (
+                        var (root_level->name),
+                        leftjoin (
+                            var (iter->name),
+                            var (root_level->name))),
+                    assgn (
+                        var (content_level->name),
+                         mposjoin (
+                             var (item->name),
+                             var (cont->name),
+                             fetch (var (PF_MIL_VAR_WS),
+                                    var (PF_MIL_VAR_PRE_LEVEL)))),
+                    assgn (
+                        var (content_level->name),
+                        msub (
+                            var (content_level->name),
+                            var (root_level->name))),
+                    assgn (
+                        var (content_level->name),
+                        madd (
+                            var (content_level->name),
+                            cast (
+                                type (mty_chr),
+                                lit_int (twig_state->level)))),
+                    bappend (var (v->name),
+                             var (content_level->name)),
+                    /* kind */
+                    bappend (var (v->name),
+                             mposjoin (
+                                 var (item->name),
+                                 var (cont->name),
+                                 fetch (var (PF_MIL_VAR_WS),
+                                        var (PF_MIL_VAR_PRE_KIND)))),
+                    /* prop */
+                    bappend (var (v->name),
+                             mposjoin (
+                                 var (item->name),
+                                 var (cont->name),
+                                 fetch (var (PF_MIL_VAR_WS),
+                                        var (PF_MIL_VAR_PRE_PROP)))),
+                    /* cont */
+                    bappend (var (v->name),
+                             mposjoin (
+                                 var (item->name),
+                                 var (cont->name),
+                                 fetch (var (PF_MIL_VAR_WS),
+                                        var (PF_MIL_VAR_PRE_CONT)))),
+                    /* old_pre */
+                    bappend (var (v->name),
+                             var (item->name)),
+                    /* old_cont */
+                    bappend (var (v->name),
+                             materialize (
+                                 var (cont->name),
+                                 var (item->name))));
+                unpin (root_level, 1);
+                unpin (content_level, 1);
+                unpin (iter, 1);
+                unpin (item, 1);
+                unpin (cont, 1);
+                        
+                *(mvar_t **) PFarray_add (twig_state->elem_vars) = v;
+                twig_state->pre++;
+                /* tell the twig constructor to handle
+                   subtree attribute copies */
+                twig_state->elem_content = true;
+                
+                /* add summed sizes to the environment */
+                if (twig_state->loop) {
+                    mvar_t *sizes = new_var (1);
+                    mvar_t *gsize = new_var (1);
+
+                    /* sizes := mposjoin(p_item,p_cont,ws.fetch(PRE_SIZE);
+                       # don't forget the node itself
+                       sizes := [+](sizes, 1);
+                       sizes := p_iter.reverse().leftjoin(sizes);
+                       gsize := {sum}(sizes,%twig_state->loop%.reverse());
+                       # map back to head values
+                       sizes := %twig_state->loop%.leftjoin(gsize); */
+                    execute (
+                        assgn (
+                            var (sizes->name),
+                            mposjoin (
+                                var (p_item->name),
+                                var (p_cont->name),
+                                fetch (var (PF_MIL_VAR_WS),
+                                       var (PF_MIL_VAR_PRE_SIZE)))),
+                        assgn (
+                            var (sizes->name),
+                            madd (var (sizes->name), lit_int (1))),
+                        assgn (
+                            var (sizes->name),
+                            leftjoin (
+                                reverse (var (p_iter->name)),
+                                var (sizes->name))),
+                        assgn (
+                            var (gsize->name),
+                            egsum (
+                                var (sizes->name),
+                                reverse (twig_state->loop))),
+                        assgn (
+                            var (gsize->name),
+                            leftjoin (
+                                twig_state->loop,
+                                var (gsize->name))));
+                    unpin (sizes, 1);
+                    /* add the grouped sizes to the variable environment */
+                    env_add (p->env, att_NULL, aat_int, gsize);
+                }
+            }
+
+            if (treat_pre && treat_attr) {
+                unpin (p_iter, 1);
+                unpin (p_item, 1);
+                unpin (p_cont, 1);
+                unpin (a_iter, 1);
+                unpin (a_item, 1);
+                unpin (a_cont, 1);
+            }
+        }
+            break;
+        
+        /* Rel:      merge_adjacent (FragList, Rel) */
+        case 116:
         {
             PFmil_t *iter = NULL, *pre = NULL, *pfrag = NULL;
 
@@ -4685,12 +6196,12 @@ reduce (PFpa_op_t * p, int goalnt)
             execute (
                 assgn (var (v->name),
                        merge_adjacent (iter, pre, pfrag, var (PF_MIL_VAR_WS))),
-                assgn (var (PF_MIL_VAR_WS), 
-                       fetch (var (v->name), lit_oid (0))),
                 assgn (var (res_pre->name), 
                        fetch (var (v->name), lit_oid (1))),
                 assgn (var (res_frag->name), 
-                       fetch (var (v->name), lit_oid (2))));
+                       fetch (var (v->name), lit_oid (2))),
+                assgn (var (PF_MIL_VAR_WS), 
+                       fetch (var (v->name), lit_oid (0))));
 
             unpin (v, 1);
             env_add (p->env, p->sem.ii.item, aat_pre, res_pre);
@@ -4772,14 +6283,14 @@ reduce (PFpa_op_t * p, int goalnt)
                          env_at (L(p)->env, i).mvar);
 
                 /* as a side effect fill in the trace information */ 
-                if (env_at (L(p)->env, i).att == p->sem.trace.iter) {
+                if (env_at (L(p)->env, i).att == p->sem.ii.iter) {
                     /* fill in the iter information */
                     execute (
                         insert (var (PF_MIL_VAR_TRACE_ITER),
                                 lit_oid (trace_id),
                                 var (env_at (L(p)->env, i).mvar->name)));
                 }
-                else if (env_at (L(p)->env, i).att == p->sem.trace.item) {
+                else if (env_at (L(p)->env, i).att == p->sem.ii.item) {
                     /* fill in the item information */
                     execute (
                         insert (var (PF_MIL_VAR_TRACE_ITEM),
@@ -4792,9 +6303,9 @@ reduce (PFpa_op_t * p, int goalnt)
             }
 
             /* collect the message information */
-            iter = VAR (RL(p)->env, R(p)->sem.trace.iter, aat_nat);
+            iter = VAR (RL(p)->env, R(p)->sem.ii.iter, aat_nat);
             assert (iter);
-            item = VAR (RL(p)->env, R(p)->sem.trace.item, aat_str);
+            item = VAR (RL(p)->env, R(p)->sem.ii.item, aat_str);
             assert (item);
             
             execute (
@@ -6060,6 +7571,9 @@ PFmilgen (PFpa_op_t *n)
              assgn (var (PF_MIL_VAR_TRACE_REL  ),
                     new (type (mty_oid), type (mty_oid))));
     
+    /* dummy initialization */
+    twig_state = NULL;
+
     /* start compilation */
     reduce (n, 1);
 

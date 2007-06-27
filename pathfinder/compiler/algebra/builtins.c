@@ -2932,20 +2932,17 @@ pf_item_seq_to_node_seq_worker_single_atomic (const PFla_op_t *loop,
     /*
      * convert item into string and construct a textnode out of it
      */
-    PFla_op_t *t_nodes = textnode (
-                             cast (rel,
-                                   att_cast,
-                                   att_item,
-                                   aat_str),
-                             att_res, att_cast);
+    PFla_op_t *t_nodes = twig (textnode (
+                                   cast (rel,
+                                         att_cast,
+                                         att_item,
+                                         aat_str),
+                                   att_iter, att_cast),
+                               att_iter, att_item);
 
     /* get the roots of the new text nodes and add pos column */
     return (struct  PFla_pair_t) {
-                 .rel  = attach (
-                             project (roots (t_nodes),
-                                      proj (att_iter, att_iter),
-                                      proj (att_item, att_res)),
-                             att_pos, lit_nat (1)),
+                 .rel  = attach (roots (t_nodes), att_pos, lit_nat (1)),
                  /* union of those nodes we had in the very beginning
                   * (those in frag) and those produced by text node
                   * creation
@@ -2994,15 +2991,14 @@ pf_item_seq_to_node_seq_worker_atomic (const PFla_op_t *loop,
                          att_iter, att_item,
                          att_iter, att_item);
 
-    PFla_op_t *t_nodes = textnode (strings, att_res, att_item);
+    PFla_op_t *t_nodes = twig (textnode (
+                                   strings,
+                                   att_iter, att_item),
+                               att_iter, att_item);
 
     /* get the roots of the new text nodes and add pos column */
     return (struct  PFla_pair_t) {
-                 .rel  = attach (
-                             project (roots (t_nodes),
-                                      proj (att_iter, att_iter),
-                                      proj (att_item, att_res)),
-                             att_pos, lit_nat (1)),
+                 .rel  = attach (roots (t_nodes), att_pos, lit_nat (1)),
                  /* union of those nodes we had in the very beginning
                   * (those in part1) and those produced by text node
                   * creation
@@ -3173,15 +3169,18 @@ pf_item_seq_to_node_seq_worker (struct PFla_pair_t *args,
      * create textnodes for each string
      * (casted atomic values and whitespace strings)
      */
-    PFla_op_t *t_nodes = textnode (
-                             disjunion (
-                                 attach (project (strings,
-                                                 proj (att_iter, att_iter),
-                                                 proj (att_pos, att_pos),
-                                                 proj (att_item, att_cast)),
-                                        att_ord, lit_nat (1)),
-                                 sep),
-                                 att_res, att_item);
+    PFla_op_t *unq_strings = number (
+                                 disjunion (
+                                     attach (project (strings,
+                                                     proj (att_iter, att_iter),
+                                                     proj (att_pos, att_pos),
+                                                     proj (att_item, att_cast)),
+                                            att_ord, lit_nat (1)),
+                                     sep),
+                                 att_inner, att_NULL);
+
+    PFla_op_t *t_nodes = twig (textnode (unq_strings, att_inner, att_item),
+                               att_iter, att_item);
                          
     /* get the roots of the new text nodes, form union of roots and
      * part1, and sort result on att_pos and att_ord column
@@ -3190,11 +3189,20 @@ pf_item_seq_to_node_seq_worker (struct PFla_pair_t *args,
                  .rel = project (
                             rownum (
                                 disjunion (
-                                    project (roots (t_nodes),
-                                             proj (att_iter, att_iter),
-                                             proj (att_pos, att_pos),
-                                             proj (att_item, att_res),
-                                             proj (att_ord, att_ord)),
+                                    project (
+                                        eqjoin (
+                                            roots (t_nodes),
+                                            project (
+                                                unq_strings,
+                                                proj (att_outer, att_iter),
+                                                proj (att_inner, att_inner),
+                                                proj (att_pos, att_pos),
+                                                proj (att_ord, att_ord)),
+                                            att_iter, att_inner),
+                                        proj (att_iter, att_outer),
+                                        proj (att_pos, att_pos),
+                                        proj (att_item, att_item),
+                                        proj (att_ord, att_ord)),
                                     attach (part1, att_ord, lit_nat (1))),
                                 att_pos1, sortby (att_pos, att_ord), att_iter),
                             proj (att_iter, att_iter),

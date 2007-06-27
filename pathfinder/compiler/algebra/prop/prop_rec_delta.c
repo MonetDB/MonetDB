@@ -68,9 +68,6 @@ check_op (PFla_op_t *n)
         case la_semijoin:
         case la_thetajoin:
         case la_dup_scjoin:
-        case la_docnode:
-        case la_comment:
-        case la_processi:
         case la_proxy:
         case la_proxy_base:
         case la_cross_mvd:
@@ -290,27 +287,22 @@ check_op (PFla_op_t *n)
 
         case la_scjoin:
         case la_doc_access:
-        case la_element:
             ITER (n) = ITER (R(n));
             POS  (n) = POS  (R(n));
             INNER(n) = INNER(R(n));
             break;
             
-        case la_element_tag:
-            /* we may not allow a reference to the input sequence */
-            if (ITER(R(n)) & att_iter)
-                return true;
-            /* fall through */
+        case la_twig:
+        case la_fcns:
+        case la_docnode:
+        case la_element:
         case la_attribute:
         case la_textnode:
-            /* ensure that the cardinality of the input sequence
-               is not used to create new nodes */
-            if (INNER(L(n)) & att_iter)
-                return true;
-
-            ITER (n) = ITER (L(n));
-            POS  (n) = POS  (L(n));
-            INNER(n) = INNER(L(n));
+        case la_comment:
+        case la_processi:
+        case la_content:
+            /* every constructor breaks the delta evaluation */
+            return true;
             break;
 
         case la_merge_adjacent:

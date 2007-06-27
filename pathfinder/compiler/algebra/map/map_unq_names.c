@@ -550,40 +550,59 @@ map_unq_names (PFla_op_t *p, PFarray_t *map)
                               p->sem.doc_access.doc_col);
             break;
 
+        case la_twig:
+            res = twig (U(L(p)),
+                        UNAME(p, p->sem.iter_item.iter),
+                        UNAME(p, p->sem.iter_item.item));
+            break;
+
+        case la_fcns:
+            res = fcns (U(L(p)), U(R(p)));
+            break;
+            
+        case la_docnode:
+            res = docnode (U(L(p)), U(R(p)),
+                           UNAME (L(p), p->sem.docnode.iter));
+            break;
+                        
         case la_element:
             res = element (
-                      U(L(p)), U(L(R(p))), U(R(R(p))),
-                      /* unique name of input attributes iter_qn, item_qn,
-                         iter_val, pos_val, and item_val are stored in the
-                         child operators only */
-                      UNAME(L(R(p)), p->sem.elem.iter_qn),
-                      UNAME(L(R(p)), p->sem.elem.item_qn),
-                      UNAME(R(R(p)), p->sem.elem.iter_val),
-                      UNAME(R(R(p)), p->sem.elem.pos_val),
-                      UNAME(R(R(p)), p->sem.elem.item_val),
-                      UNAME(p, p->sem.elem.iter_res),
-                      UNAME(p, p->sem.elem.item_res));
+                      U(L(p)), U(R(p)),
+                      UNAME (L(p), p->sem.iter_item.iter),
+                      UNAME (L(p), p->sem.iter_item.item));
             break;
         
-        case la_element_tag:
-            return; /* skip element tag */
-
         case la_attribute:
             res = attribute (U(L(p)),
-                             UNAME(p, p->sem.attr.res),
-                             UNAME(p, p->sem.attr.qn),
-                             UNAME(p, p->sem.attr.val));
+                             UNAME(L(p), p->sem.iter_item1_item2.iter),
+                             UNAME(L(p), p->sem.iter_item1_item2.item1),
+                             UNAME(L(p), p->sem.iter_item1_item2.item2));
             break;
 
         case la_textnode:
             res = textnode (U(L(p)),
-                            UNAME(p, p->sem.textnode.res),
-                            UNAME(p, p->sem.textnode.item));
+                            UNAME (L(p), p->sem.iter_item.iter),
+                            UNAME (L(p), p->sem.iter_item.item));
             break;
 
-        case la_docnode:
         case la_comment:
+            res = comment (U(L(p)),
+                           UNAME (L(p), p->sem.iter_item.iter),
+                           UNAME (L(p), p->sem.iter_item.item));
+            break;
+
         case la_processi:
+            res = processi (U(L(p)),
+                            UNAME(L(p), p->sem.iter_item1_item2.iter),
+                            UNAME(L(p), p->sem.iter_item1_item2.item1),
+                            UNAME(L(p), p->sem.iter_item1_item2.item2));
+            break;
+
+        case la_content:
+            res = content (U(L(p)), U(R(p)),
+                           UNAME(R(p), p->sem.iter_pos_item.iter),
+                           UNAME(R(p), p->sem.iter_pos_item.pos),
+                           UNAME(R(p), p->sem.iter_pos_item.item));
             break;
 
         case la_merge_adjacent:
@@ -627,17 +646,17 @@ map_unq_names (PFla_op_t *p, PFarray_t *map)
             res = trace (
                       U(L(p)),
                       U(R(p)),
-                      UNAME(p, p->sem.trace.iter),
-                      UNAME(p, p->sem.trace.pos),
-                      UNAME(p, p->sem.trace.item));
+                      UNAME(p, p->sem.iter_pos_item.iter),
+                      UNAME(p, p->sem.iter_pos_item.pos),
+                      UNAME(p, p->sem.iter_pos_item.item));
             break;
 
         case la_trace_msg:
             res = trace_msg (
                       U(L(p)),
                       U(R(p)),
-                      UNAME(p, p->sem.trace_msg.iter),
-                      UNAME(p, p->sem.trace_msg.item));
+                      UNAME(p, p->sem.iter_item.iter),
+                      UNAME(p, p->sem.iter_item.item));
             break;
 
         case la_trace_map:

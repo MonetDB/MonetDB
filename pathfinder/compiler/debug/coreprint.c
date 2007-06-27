@@ -60,6 +60,7 @@ char *c_id[]  = {
   , [c_nil]                = "nil"
 
   , [c_seq]                = "seq"
+  , [c_twig_seq]           = "twig_seq"
   , [c_ordered]            = "ordered"
   , [c_unordered]          = "unordered"
 

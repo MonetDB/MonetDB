@@ -537,39 +537,59 @@ map_ori_names (PFla_op_t *p, PFarray_t *map)
                               p->sem.doc_access.doc_col);
             break;
 
+        case la_twig:
+            res = twig (O(L(p)),
+                        ONAME(p, p->sem.iter_item.iter),
+                        ONAME(p, p->sem.iter_item.item));
+            break;
+
+        case la_fcns:
+            res = fcns (O(L(p)), O(R(p)));
+            break;
+            
+        case la_docnode:
+            res = docnode (PROJ(LEFT, p), O(R(p)),
+                           ONAME (p, p->sem.docnode.iter));
+            break;
+                        
         case la_element:
             res = element (
-                      O(L(p)), 
-                      PROJ(LEFT, R(p)),
-                      PROJ(RIGHT, R(p)),
-                      ONAME(p, p->sem.elem.iter_qn),
-                      ONAME(p, p->sem.elem.item_qn),
-                      ONAME(p, p->sem.elem.iter_val),
-                      ONAME(p, p->sem.elem.pos_val),
-                      ONAME(p, p->sem.elem.item_val),
-                      ONAME(p, p->sem.elem.iter_res),
-                      ONAME(p, p->sem.elem.item_res));
+                      PROJ(LEFT, p), O(R(p)),
+                      ONAME (p, p->sem.iter_item.iter),
+                      ONAME (p, p->sem.iter_item.item));
             break;
         
-        case la_element_tag:
-            return; /* skip element tag */
-
         case la_attribute:
-            res = attribute (SEC_PROJ(LEFT, p, p->sem.attr.res),
-                             ONAME(p, p->sem.attr.res),
-                             ONAME(p, p->sem.attr.qn),
-                             ONAME(p, p->sem.attr.val));
+            res = attribute (PROJ(LEFT, p),
+                             ONAME(p, p->sem.iter_item1_item2.iter),
+                             ONAME(p, p->sem.iter_item1_item2.item1),
+                             ONAME(p, p->sem.iter_item1_item2.item2));
             break;
 
         case la_textnode:
-            res = textnode (SEC_PROJ(LEFT, p, p->sem.textnode.res),
-                            ONAME(p, p->sem.textnode.res),
-                            ONAME(p, p->sem.textnode.item));
+            res = textnode (PROJ(LEFT, p),
+                            ONAME (p, p->sem.iter_item.iter),
+                            ONAME (p, p->sem.iter_item.item));
             break;
 
-        case la_docnode:
         case la_comment:
+            res = comment (PROJ(LEFT, p),
+                           ONAME (p, p->sem.iter_item.iter),
+                           ONAME (p, p->sem.iter_item.item));
+            break;
+
         case la_processi:
+            res = processi (PROJ(LEFT, p),
+                            ONAME(p, p->sem.iter_item1_item2.iter),
+                            ONAME(p, p->sem.iter_item1_item2.item1),
+                            ONAME(p, p->sem.iter_item1_item2.item2));
+            break;
+
+        case la_content:
+            res = content (O(L(p)), PROJ(RIGHT, p),
+                           ONAME(p, p->sem.iter_pos_item.iter),
+                           ONAME(p, p->sem.iter_pos_item.pos),
+                           ONAME(p, p->sem.iter_pos_item.item));
             break;
 
         case la_merge_adjacent:
@@ -613,17 +633,17 @@ map_ori_names (PFla_op_t *p, PFarray_t *map)
             res = trace (
                       PROJ(LEFT, p),
                       O(R(p)),
-                      ONAME(p, p->sem.trace.iter),
-                      ONAME(p, p->sem.trace.pos),
-                      ONAME(p, p->sem.trace.item));
+                      ONAME(p, p->sem.iter_pos_item.iter),
+                      ONAME(p, p->sem.iter_pos_item.pos),
+                      ONAME(p, p->sem.iter_pos_item.item));
             break;
 
         case la_trace_msg:
             res = trace_msg (
                       PROJ(LEFT, p),
                       O(R(p)),
-                      ONAME(p, p->sem.trace_msg.iter),
-                      ONAME(p, p->sem.trace_msg.item));
+                      ONAME(p, p->sem.iter_item.iter),
+                      ONAME(p, p->sem.iter_item.item));
             break;
 
         case la_trace_map:

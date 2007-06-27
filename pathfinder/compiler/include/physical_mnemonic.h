@@ -136,9 +136,33 @@
 #define doc_tbl(a,b,c)    PFpa_doc_tbl ((a), (b), (c))
 #define doc_access(a,b,c,d,e) PFpa_doc_access ((a), (b), (c), (d), (e))
 
-#define element(a,b,c,d,e,f)    PFpa_element ((a),(b),(c),(d),(e),(f))
+/* twig root operator */
+#define twig(a,b,c)       PFpa_twig ((a),(b),(c))
+
+/* twig constructor sequence */
+#define fcns(a,b)         PFpa_fcns ((a),(b))
+
+/* document node-constructing operator */
+#define docnode(a,b,c)    PFpa_docnode ((a),(b),(c))
+
+/* element-constructing operator */
+#define element(a,b,c,d) PFpa_element ((a),(b),(c),(d))
+
+/* attribute-constructing operator */
 #define attribute(a,b,c,d) PFpa_attribute ((a),(b),(c),(d))
-#define textnode(a,b,c)  PFpa_textnode ((a),(b),(c))
+
+/* text node-constructing operator */
+#define textnode(a,b,c)   PFpa_textnode ((a),(b),(c))
+
+/* comment-constructing operator */
+#define comment(a,b,c)    PFpa_comment ((a),(b),(c))
+
+/* processing instruction-constructing operator */
+#define processi(a,b,c,d) PFpa_processi ((a),(b),(c),(d))
+
+/* constructor content operator (elem|doc) */
+#define content(a,b,c,d)  PFpa_content ((a),(b),(c),(d))
+
 #define merge_adjacent(a,b,c,d,e) PFpa_merge_adjacent ((a),(b),(c),(d),(e))
 
 /** roots() operator */

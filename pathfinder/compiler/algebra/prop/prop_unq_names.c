@@ -48,6 +48,10 @@
 #define R(p) ((p)->child[1])
 /** starting from p, make a step right, then a step left */
 #define RL(p) L(R(p))
+/** starting from p, make two steps left */
+#define LL(p) L(L(p))
+/** starting from p, make a step left, then a step right */
+#define LR(p) R(L(p))
 
 /* worker for PFprop_unq_name* */
 static PFalg_att_t
@@ -447,30 +451,55 @@ infer_unq_names (PFla_op_t *n, unsigned int id)
             new_name_pair (np_list, n->sem.doc_access.res, id++);
             break;
 
-        case la_element:
-            add_name_pair (np_list,
-                           n->sem.elem.iter_res,
-                           PFprop_unq_name (RL(n)->prop, 
-                                            n->sem.elem.iter_qn));
-            new_name_pair (np_list, n->sem.elem.item_res, id++);
-            break;
-        
-        case la_element_tag:
+        case la_twig:
+            switch (L(n)->kind) {
+                case la_docnode:
+                    add_name_pair (np_list,
+                                   n->sem.iter_item.iter,
+                                   PFprop_unq_name (LL(n)->prop, 
+                                                    L(n)->sem.docnode.iter));
+                    break;
+                    
+                case la_element:
+                case la_textnode:
+                case la_comment:
+                    add_name_pair (np_list,
+                                   n->sem.iter_item.iter,
+                                   PFprop_unq_name (LL(n)->prop, 
+                                                    L(n)->sem.iter_item.iter));
+                    break;
+                    
+                case la_attribute:
+                case la_processi:
+                    add_name_pair (np_list,
+                                   n->sem.iter_item.iter,
+                                   PFprop_unq_name (
+                                       LL(n)->prop, 
+                                       L(n)->sem.iter_item1_item2.iter));
+                    break;
+                    
+                case la_content:
+                    add_name_pair (np_list,
+                                   n->sem.iter_item.iter,
+                                   PFprop_unq_name (
+                                       LR(n)->prop, 
+                                       L(n)->sem.iter_pos_item.iter));
+                    break;
+                    
+                default:
+                    break;
+            }
+            new_name_pair (np_list, n->sem.iter_item.item, id++);
             break;
             
-        case la_attribute:
-            bulk_add_name_pairs (np_list, L(n));
-            new_name_pair (np_list, n->sem.attr.res, id++);
-            break;
-
-        case la_textnode:
-            bulk_add_name_pairs (np_list, L(n));
-            new_name_pair (np_list, n->sem.textnode.res, id++);
-            break;
-
+        case la_fcns:
         case la_docnode:
+        case la_element:
+        case la_attribute:
+        case la_textnode:
         case la_comment:
         case la_processi:
+        case la_content:
             break;
             
         case la_merge_adjacent:

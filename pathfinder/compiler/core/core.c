@@ -726,6 +726,22 @@ PFcore_seq (const PFcnode_t *e1, const PFcnode_t *e2)
     return PFcore_wire2 (c_seq, e1, e2);
 }
 
+/**
+ * Create a new core tree node representing a sequence construction
+ * underneath a constructor (i.e., the `,' operator in XQuery):
+ *
+ *     e1, e2
+ *
+ * @param e1 left side of the comma
+ * @param e2 right side of the comma
+ * @return core representation of sequence construction
+ */
+PFcnode_t *
+PFcore_twig_seq (const PFcnode_t *e1, const PFcnode_t *e2)
+{
+    return PFcore_wire2 (c_twig_seq, e1, e2);
+}
+
 PFcnode_t *
 PFcore_ordered (const PFcnode_t *e)
 {

@@ -111,14 +111,16 @@ typedef struct PFla_op_t *NODEPTR_TYPE;
 %term  dup_scjoin     =  51
 %term  doc_tbl        =  52
 %term  doc_access     =  53
-%term  element        =  60
-%term  element_tag    =  61
-%term  attribute      =  62
-%term  textnode       =  63
-%term  docnode        =  64
-%term  comment        =  65
-%term  processi       =  66
-%term  merge_adjacent =  67
+%term  twig           =  60
+%term  fcns           =  61
+%term  docnode        =  62
+%term  element        =  63
+%term  attribute      =  64
+%term  textnode       =  65
+%term  comment        =  66
+%term  processi       =  67
+%term  content        =  68
+%term  merge_adjacent =  69
 %term  roots_         =  70
 %term  fragment       =  71
 %term  frag_union     =  72
@@ -189,15 +191,21 @@ ScjRel: scjoin (Frag, distinct (Rel))             =  64 (10);
 Rel:    dup_scjoin (Frag, Rel)                    =  65 (10);
 Rel:    doc_access (Frag, Rel)                    =  66 (10);
 
-Rel:    roots_ (doc_tbl (Rel))                    =  70 (10);
-Rel:    roots_ (element (Frag,                       
-                         element_tag (Rel, Rel))) =  71 (10);
-Rel:    roots_ (attribute (Rel))                  =  72 (10);
-Rel:    roots_ (textnode (Rel))                   =  73 (10);
-Rel:    roots_ (docnode (Frag, Rel))              =  74 (10);
-Rel:    roots_ (comment (Rel))                    =  75 (10);
-Rel:    roots_ (processi (Rel))                   =  76 (10);
-Rel:    roots_ (merge_adjacent (Frag, Rel))       =  77 (10);
+Rel:    roots_ (doc_tbl (Rel))                    =  67 (10);
+Rel:    roots_ (twig (Twig))                      =  68 (10);
+Rel:    roots_ (merge_adjacent (Frag, Rel))       =  69 (10);
+
+Twig:   docnode (Rel, Fcns)                       =  70 (10);
+Twig:   element (Rel, Fcns)                       =  71 (10);
+Twig:   attribute (Rel)                           =  72 (10);
+Twig:   textnode (Rel)                            =  73 (10);
+Twig:   comment (Rel)                             =  74 (10);
+Twig:   processi (Rel)                            =  75 (10);
+Twig:   content (Frag, Rel)                       =  76 (10);
+Twig:   nil                                       =  77 (10);
+
+Fcns:   fcns (Twig, Fcns)                         =  78 (10);
+Fcns:   nil                                       =  79 (10);
 
 Rel:    cond_err (Rel, Rel)                       =  80 (10);
 Rel:    cond_err (Rel, EmptyRel)                  =  81  (0);
@@ -219,15 +227,8 @@ Rel:    EmptyRel                                  =  99  (0);
 
 
 Frag:    fragment (doc_tbl (Rel))                 = 100 (10);
-Frag:    fragment (element (Frag, 
-                            element_tag (Rel,
-                                         Rel)))   = 101 (10);
-Frag:    fragment (attribute (Rel))               = 102 (10);
-Frag:    fragment (textnode (Rel))                = 103 (10);
-Frag:    fragment (docnode (Frag, Rel))           = 104 (10);
-Frag:    fragment (comment (Rel))                 = 105 (10);
-Frag:    fragment (processi (Rel))                = 106 (10);
-Frag:    fragment (merge_adjacent (Frag, Rel))    = 107 (10);
+Frag:    fragment (twig (Twig))                   = 101 (10);
+Frag:    fragment (merge_adjacent (Frag, Rel))    = 102 (10);
 
 Frag:    frag_union (Frag, Frag)                  = 111 (10);
 Frag:    empty_frag                               = 112 (10);
@@ -271,15 +272,19 @@ EmptyRel:    scjoin (Frag, EmptyRel)              = 170  (0);
 EmptyRel:    doc_access (Frag, EmptyRel)          = 171  (0);
 
 EmptyRel:    roots_ (doc_tbl (EmptyRel))          = 180  (0);
-EmptyRel:    roots_ (element (Frag, 
-                              element_tag (EmptyRel,
-                                          Rel)))  = 181  (0);
-EmptyRel:    roots_ (attribute (EmptyRel))        = 182  (0);
-EmptyRel:    roots_ (textnode (EmptyRel))         = 183  (0);
-EmptyRel:    roots_ (comment (EmptyRel))          = 185  (0);
-EmptyRel:    roots_ (processi (EmptyRel))         = 186  (0);
+EmptyRel:    roots_ (twig (docnode (EmptyRel,
+                                    Fcns)))       = 181  (0);
+EmptyRel:    roots_ (twig (element (EmptyRel,
+                                    Fcns)))       = 182  (0);
+EmptyRel:    roots_ (twig (attribute (EmptyRel))) = 183  (0);
+EmptyRel:    roots_ (twig (textnode (EmptyRel)))  = 184  (0);
+EmptyRel:    roots_ (twig (comment (EmptyRel)))   = 185  (0);
+EmptyRel:    roots_ (twig (processi (EmptyRel)))  = 186  (0);
+EmptyRel:    roots_ (twig (content (Frag,
+                                    EmptyRel)))   = 187  (0);
+EmptyRel:    roots_ (twig (nil))                  = 188  (0);
 EmptyRel:    roots_ (merge_adjacent (Frag,                   
-                                     EmptyRel))   = 187  (0);
+                                     EmptyRel))   = 189  (0);
 EmptyRel:    cond_err (EmptyRel, Rel)             = 190  (0);
 EmptyRel:    string_join (EmptyRel, Rel)          = 201  (0);
 EmptyRel:    dummy (EmptyRel)                     = 202  (0);
@@ -1047,103 +1052,11 @@ reduce (PFla_op_t *p, int goalnt)
             relabel (p, kids);
         } break;
 
-        /* every occurrence of EmptyRel already copes with
-           the empty relation - we therefore do not rewrite
-           any of the below rules (they are pruned anyway) */
-
-        /* EmptyRel:    empty_tbl */
-        case 120:
-        /* EmptyRel:    attach (EmptyRel) */
-        case 121:
-        /* EmptyRel:    cross (EmptyRel, Rel) */
-        case 122:
-        /* EmptyRel:    cross (Rel, EmptyRel) */
-        case 123:
-        /* EmptyRel:    eqjoin (EmptyRel, Rel) */
-        case 124:
-        /* EmptyRel:    eqjoin (Rel, EmptyRel) */
-        case 125:
-        /* EmptyRel:    semijoin (EmptyRel, Rel) */
-        case 126:
-        /* EmptyRel:    semijoin (Rel, EmptyRel) */
-        case 127:
-        /* EmptyRel:    project (EmptyRel) */
-        case 128:
-        /* EmptyRel:    select_ (EmptyRel) */
-        case 129:
-        /* EmptyRel:    disjunion (EmptyRel, EmptyRel) */
-        case 130:
-        /* EmptyRel:    intersect (EmptyRel, Rel) */
-        case 131:
-        /* EmptyRel:    intersect (Rel, EmptyRel) */
-        case 132:
-        /* EmptyRel:    difference (EmptyRel, Rel) */
-        case 133:
-        /* EmptyRel:    distinct (EmptyRel) */
-        case 134:
-        /* EmptyRel:    fun_1to1 (EmptyRel) */
-        case 140:
-        /* EmptyRel:    num_gt (EmptyRel) */
-        case 146:
-        /* EmptyRel:    num_eq (EmptyRel) */
-        case 147:
-        /* EmptyRel:    bool_and (EmptyRel) */
-        case 148:
-        /* EmptyRel:    bool_or (EmptyRel) */
-        case 149:
-        /* EmptyRel:    bool_not (EmptyRel) */
-        case 150:
-        /* EmptyRel:    avg (EmptyRel) */
-        case 151:
-        /* EmptyRel:    max_ (EmptyRel) */
-        case 152:
-        /* EmptyRel:    min_ (EmptyRel) */
-        case 153:
-        /* EmptyRel:    sum (EmptyRel) */
-        case 154:
-        /* EmptyRel:    count (EmptyRel) */
-        case 155:
-        /* EmptyRel:    rownum (EmptyRel) */
-        case 160:
-        /* EmptyRel:    number (EmptyRel) */
-        case 161:
-        /* EmptyRel:    type (EmptyRel) */
-        case 162:
-        /* EmptyRel:    type_assert (EmptyRel) */
-        case 163:
-        /* EmptyRel:    cast (EmptyRel) */
-        case 164:
-        /* EmptyRel:    seqty1 (EmptyRel) */
-        case 165:
-        /* EmptyRel:    all (EmptyRel) */
-        case 166:
-        /* EmptyRel:    scjoin (Frag, EmptyRel) */
-        case 170:
-        /* EmptyRel:    doc_access (Frag, EmptyRel) */
-        case 171:
-        /* EmptyRel:    roots_ (doc_tbl (EmptyRel)) */
-        case 180:
-        /* EmptyRel:    roots_ (element (Frag, element_tag (EmptyRel, Rel))) */
-        case 181:
-        /* EmptyRel:    roots_ (attribute (EmptyRel)) */
-        case 182:
-        /* EmptyRel:    roots_ (textnode (EmptyRel)) */
-        case 183:
-        /* EmptyRel:    roots_ (comment (EmptyRel)) */
-        case 185:
-        /* EmptyRel:    roots_ (processi (EmptyRel)) */
-        case 186:
-        /* EmptyRel:    roots_ (merge_adjacent (Frag, EmptyRel)) */
-        case 187:
-        /* EmptyRel:    cond_err (EmptyRel, Rel) */
-        case 190:
-        /* EmptyRel:    string_join (EmptyRel, Rel) */
-        case 201:
-        /* EmptyRel:    dummy (EmptyRel) */
-        case 202:
-            break;
-
         default:
+            /* every occurrence of EmptyRel already copes with
+               the empty relation - we therefore need no special
+               translation and use the default branch (the rules
+               are pruned anyway) */
             break;
     }
 

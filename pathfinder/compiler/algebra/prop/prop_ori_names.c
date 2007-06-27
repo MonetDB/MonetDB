@@ -460,58 +460,73 @@ infer_ori_names (PFla_op_t *n, PFarray_t *par_np_list)
             diff_np (n->prop->r_name_pairs, np_list, n->sem.doc_access.res);
             break;
 
-        case la_element:
-            ori = find_ori_name (np_list, n->sem.elem.iter_res);
-            /* input qn iter column */
-            unq = n->sem.elem.iter_qn;
-            add_name_pair (np_list, ori, unq);
-            add_name_pair (R(n)->prop->name_pairs, ori, unq);
-            add_name_pair (R(n)->prop->l_name_pairs, ori, unq);
-            /* input val iter column */
-            unq = n->sem.elem.iter_val;
-            add_name_pair (np_list, ori, unq);
-            add_name_pair (R(n)->prop->name_pairs, ori, unq);
-            add_name_pair (R(n)->prop->r_name_pairs, ori, unq);
-                
-            ori = find_ori_name (np_list, n->sem.elem.item_res);
-            /* input qn item column */
-            unq = n->sem.elem.item_qn;
-            add_name_pair (np_list, ori, unq);
-            add_name_pair (R(n)->prop->name_pairs, ori, unq);
-            add_name_pair (R(n)->prop->l_name_pairs, ori, unq);
-            /* input val item column */
-            unq = n->sem.elem.item_val;
-            add_name_pair (np_list, ori, unq);
-            add_name_pair (R(n)->prop->name_pairs, ori, unq);
-            add_name_pair (R(n)->prop->r_name_pairs, ori, unq);
-
-            /* introduce new column pos
-               (FREE(n) ensures that item and 
-                res column names are not used) */
-            unq = n->sem.elem.pos_val;
-            ori = PFalg_ori_name (unq, FREE(n));
-            add_name_pair (np_list, ori, unq);
-            add_name_pair (R(n)->prop->name_pairs, ori, unq);
-            add_name_pair (R(n)->prop->r_name_pairs, ori, unq);
-            FREE(n) = diff (FREE(n), ori);
-            break;
-        
-        case la_element_tag:
-            /* operator element already did the job. */
+        case la_twig:
+        case la_fcns:
             break;
             
-        case la_attribute:
-            diff_np (n->prop->l_name_pairs, np_list, n->sem.attr.res);
-            break;
-
-        case la_textnode:
-            diff_np (n->prop->l_name_pairs, np_list, n->sem.textnode.res);
-            break;
-
         case la_docnode:
+            /* input iter column */
+            ori = att_iter;
+            unq = n->sem.docnode.iter;
+            add_name_pair (np_list, ori, unq);
+            add_name_pair (n->prop->l_name_pairs, ori, unq);
+            break;
+
+        case la_element:
+        case la_textnode:
         case la_comment:
+            /* input iter column */
+            ori = att_iter;
+            unq = n->sem.iter_item.iter;
+            add_name_pair (np_list, ori, unq);
+            add_name_pair (n->prop->l_name_pairs, ori, unq);
+            
+            /* input item column */
+            ori = att_item;
+            unq = n->sem.iter_item.item;
+            add_name_pair (np_list, ori, unq);
+            add_name_pair (n->prop->l_name_pairs, ori, unq);
+            break;
+
+        case la_attribute:
         case la_processi:
-            /* constructors discarded here */
+            /* input iter column */
+            ori = att_iter;
+            unq = n->sem.iter_item1_item2.iter;
+            add_name_pair (np_list, ori, unq);
+            add_name_pair (n->prop->l_name_pairs, ori, unq);
+            
+            /* input item1 column */
+            ori = att_item;
+            unq = n->sem.iter_item1_item2.item1;
+            add_name_pair (np_list, ori, unq);
+            add_name_pair (n->prop->l_name_pairs, ori, unq);
+            
+            /* input item2 column */
+            ori = att_item1;
+            unq = n->sem.iter_item1_item2.item2;
+            add_name_pair (np_list, ori, unq);
+            add_name_pair (n->prop->l_name_pairs, ori, unq);
+            break;
+
+        case la_content:
+            /* input iter column */
+            ori = att_iter;
+            unq = n->sem.iter_pos_item.iter;
+            add_name_pair (np_list, ori, unq);
+            add_name_pair (n->prop->r_name_pairs, ori, unq);
+            
+            /* input pos column */
+            ori = att_pos;
+            unq = n->sem.iter_pos_item.pos;
+            add_name_pair (np_list, ori, unq);
+            add_name_pair (n->prop->r_name_pairs, ori, unq);
+            
+            /* input item column */
+            ori = att_item;
+            unq = n->sem.iter_pos_item.item;
+            add_name_pair (np_list, ori, unq);
+            add_name_pair (n->prop->r_name_pairs, ori, unq);
             break;
             
         case la_merge_adjacent:

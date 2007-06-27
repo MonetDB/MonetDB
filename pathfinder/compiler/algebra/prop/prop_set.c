@@ -152,8 +152,12 @@ prop_infer_set (PFla_op_t *n, bool set)
         case la_count:
         case la_rownum:
         case la_number:
+        case la_twig:
+        case la_docnode:
         case la_attribute:
         case la_textnode:
+        case la_comment:
+        case la_processi:
             l_set = false;
             break;
 
@@ -168,18 +172,13 @@ prop_infer_set (PFla_op_t *n, bool set)
             r_set = n->prop->set;
             break;
 
+        case la_fcns:
         case la_element:
-        case la_element_tag:
+        case la_content:
         case la_merge_adjacent:
         case la_string_join:
             l_set = false;
             r_set = false;
-            break;
-
-        case la_docnode:
-        case la_comment:
-        case la_processi:
-            assert (!"not implemented yet?");
             break;
 
         case la_frag_union:

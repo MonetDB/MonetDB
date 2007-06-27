@@ -9430,6 +9430,8 @@ simplifyCoreTree (PFcnode_t *c)
     {
         case c_var:
             break;
+        case c_twig_seq:
+            c->kind = c_seq;
         case c_seq:
             /* prunes every empty node in the sequence construction */
             simplifyCoreTree (L(c));

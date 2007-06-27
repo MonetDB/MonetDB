@@ -246,6 +246,7 @@ Rel:    thetajoin (Rel, Rel)                         = 115 (10);
 
 #define MAX_KIDS 10
 
+#if 0
 /* Prototypes */
 static PFalg_simple_type_t type_of (PFla_op_t *, PFalg_att_t);
 
@@ -274,7 +275,9 @@ static PFsql_t *collect (PFla_op_t * p);
 /**
  * We collect the SQL statements during compilation here.
  */
+#endif
 static PFsql_t *sql_stmts = NULL;
+#if 0
 
 /* The execute is used to construct the sequence
  * of `common table expressions'.
@@ -4877,6 +4880,7 @@ parse (PFla_op_t * n)
   reduce (n, 1);
 }
 
+#endif
 
 PFsql_t *
 PFlalg2sql (PFla_op_t * n)
@@ -4885,6 +4889,7 @@ PFlalg2sql (PFla_op_t * n)
 
   assert (n);
 
+#if 0
   /* set reference counters in algebra tree nodes */
   inc_refctr (n);
   PFla_dag_reset (n);
@@ -4893,6 +4898,7 @@ PFlalg2sql (PFla_op_t * n)
 
   parse (n);
 
+#endif
   return sql_stmts;
 }
 

@@ -1499,131 +1499,244 @@ plan_doc_access (const PFla_op_t *n)
 }
 
 /**
- * Generate physical plan for element constructor
+ * Generate physical plan for twig constructor
  *
  * @note
  *   Following the ideas in @ref live_nodes, we generate exactly
  *   one plan for this operator.
  */
 static PFplanlist_t *
-plan_element (const PFla_op_t *n)
+plan_twig (const PFla_op_t *n)
 {
-    PFpa_op_t     *element;
-    PFplanlist_t  *ret                = new_planlist ();
-    PFplanlist_t  *ordered_qn         = new_planlist ();
-    PFplanlist_t  *ordered_cont       = new_planlist ();
-    plan_t        *cheapest_frag_plan = NULL;
-    plan_t        *cheapest_qn_plan   = NULL;
-    plan_t        *cheapest_cont_plan = NULL;
-    PFalg_att_t    iter = n->sem.elem.iter_qn;
-    PFalg_att_t    pos  = n->sem.elem.pos_val;
-    PFalg_att_t    item = n->sem.elem.item_qn;
+    PFplanlist_t  *ret           = new_planlist ();
+    plan_t        *cheapest_plan = NULL;
+    PFalg_att_t    iter          = n->sem.iter_item.iter;
+    PFalg_att_t    item          = n->sem.iter_item.item;
 
-#ifndef NDEBUG
-    /* ensure that matching columns (iter, pos, item) have the same name */
-    assert (n->sem.elem.iter_qn == n->sem.elem.iter_val &&
-            n->sem.elem.iter_qn == n->sem.elem.iter_res);
-    assert (n->sem.elem.item_qn == n->sem.elem.item_val &&
-            n->sem.elem.item_qn == n->sem.elem.item_res);
-#endif
-
-    /* find the cheapest plan for the fragments */
+    /* find the cheapest plan */
     for (unsigned int i = 0; i < PFarray_last (L(n)->plans); i++)
-        if (!cheapest_frag_plan
+        if (!cheapest_plan
             || costless (*(plan_t **) PFarray_at (L(n)->plans, i),
-                         cheapest_frag_plan))
-            cheapest_frag_plan = *(plan_t **) PFarray_at (L(n)->plans, i);
+                         cheapest_plan))
+            cheapest_plan = *(plan_t **) PFarray_at (L(n)->plans, i);
 
-    /* find the cheapest plan for the qnames */
-    for (unsigned int i = 0; i < PFarray_last (L(R(n))->plans); i++)
-        add_plans (ordered_qn,
+    add_plan (ret, twig (cheapest_plan, iter, item));
+
+    return ret;
+}
+
+/**
+ * Generate physical plan for twig sequence constructor
+ */
+static PFplanlist_t *
+plan_fcns (const PFla_op_t *n)
+{
+    PFplanlist_t  *ret = new_planlist ();
+
+    /* for each plan combination , generate a constructor sequence */
+    for (unsigned int i = 0; i < PFarray_last (L(n)->plans); i++)
+        for (unsigned int j = 0; j < PFarray_last (R(n)->plans); j++)
+            add_plan (ret,
+                      fcns (
+                          *(plan_t **) PFarray_at (L(n)->plans, i),
+                          *(plan_t **) PFarray_at (R(n)->plans, j)));
+
+    return ret;
+}
+
+/**
+ * Generate physical plan for docnode constructor
+ */
+static PFplanlist_t *
+plan_docnode (const PFla_op_t *n)
+{
+    PFplanlist_t  *ret        = new_planlist ();
+    PFplanlist_t  *ordered_in = new_planlist ();
+    PFalg_att_t    iter       = n->sem.docnode.iter;
+
+    for (unsigned int i = 0; i < PFarray_last (L(n)->plans); i++)
+        add_plans (ordered_in,
                    ensure_ordering (
-                       *(plan_t **) PFarray_at (L(R(n))->plans, i),
+                       *(plan_t **) PFarray_at (L(n)->plans, i),
                        sortby (iter)));
 
-    for (unsigned int i = 0; i < PFarray_last (ordered_qn); i++)
-        if (!cheapest_qn_plan
-            || costless (*(plan_t **) PFarray_at (ordered_qn, i),
-                         cheapest_qn_plan))
-            cheapest_qn_plan = *(plan_t **) PFarray_at (ordered_qn, i);
+    /* for each plan, generate a constructor */
+    for (unsigned int i = 0; i < PFarray_last (ordered_in); i++)
+        for (unsigned int j = 0; j < PFarray_last (R(n)->plans); j++)
+            add_plan (ret,
+                      docnode (
+                          *(plan_t **) PFarray_at (ordered_in, i),
+                          *(plan_t **) PFarray_at (R(n)->plans, j),
+                          iter));
 
-    /* find the cheapest plan for the content */
-    for (unsigned int i = 0; i < PFarray_last (R(R(n))->plans); i++)
-        add_plans (ordered_cont,
+    return ret;
+}
+
+/**
+ * Generate physical plan for element constructor
+ */
+static PFplanlist_t *
+plan_element (const PFla_op_t *n)
+{
+    PFplanlist_t  *ret        = new_planlist ();
+    PFplanlist_t  *ordered_in = new_planlist ();
+    PFalg_att_t    iter       = n->sem.iter_item.iter;
+    PFalg_att_t    item       = n->sem.iter_item.item;
+
+    for (unsigned int i = 0; i < PFarray_last (L(n)->plans); i++)
+        add_plans (ordered_in,
                    ensure_ordering (
-                       *(plan_t **) PFarray_at (R(R(n))->plans, i),
-                       sortby (iter, pos)));
+                       *(plan_t **) PFarray_at (L(n)->plans, i),
+                       sortby (iter)));
 
-    for (unsigned int i = 0; i < PFarray_last (ordered_cont); i++)
-        if (!cheapest_cont_plan
-            || costless (*(plan_t **) PFarray_at (ordered_cont, i),
-                         cheapest_cont_plan))
-            cheapest_cont_plan = *(plan_t **) PFarray_at (ordered_cont, i);
-
-    element = element (cheapest_frag_plan,
-                       cheapest_qn_plan,
-                       cheapest_cont_plan,
-                       iter, pos, item);
-
-    /* assure that element_tag also gets a property */
-    R(element)->prop = PFprop ();
-
-    add_plan (ret, element);
+    /* for each plan, generate a constructor */
+    for (unsigned int i = 0; i < PFarray_last (ordered_in); i++)
+        for (unsigned int j = 0; j < PFarray_last (R(n)->plans); j++)
+            add_plan (ret,
+                      element (
+                          *(plan_t **) PFarray_at (ordered_in, i),
+                          *(plan_t **) PFarray_at (R(n)->plans, j),
+                          iter, item));
 
     return ret;
 }
 
 /**
  * Generate physical plan for attribute constructor
- *
- * @note
- *   Following the ideas in @ref live_nodes, we generate exactly
- *   one plan for this operator.
  */
 static PFplanlist_t *
 plan_attribute (const PFla_op_t *n)
 {
-    PFplanlist_t  *ret           = new_planlist ();
-    plan_t        *cheapest_plan = NULL;
+    PFplanlist_t  *ret        = new_planlist ();
+    PFplanlist_t  *ordered_in = new_planlist ();
+    PFalg_att_t    iter       = n->sem.iter_item1_item2.iter;
 
-    /* find the cheapest plan */
     for (unsigned int i = 0; i < PFarray_last (L(n)->plans); i++)
-        if (!cheapest_plan
-            || costless (*(plan_t **) PFarray_at (L(n)->plans, i),
-                         cheapest_plan))
-            cheapest_plan = *(plan_t **) PFarray_at (L(n)->plans, i);
+        add_plans (ordered_in,
+                   ensure_ordering (
+                       *(plan_t **) PFarray_at (L(n)->plans, i),
+                       sortby (iter)));
 
-    add_plan (ret, attribute (cheapest_plan,
-                              n->sem.attr.qn,
-                              n->sem.attr.val,
-                              n->sem.attr.res));
+    /* for each plan, generate a constructor */
+    for (unsigned int i = 0; i < PFarray_last (ordered_in); i++)
+        add_plan (ret,
+                  attribute (
+                      *(plan_t **) PFarray_at (ordered_in, i),
+                      iter,
+                      n->sem.iter_item1_item2.item1,
+                      n->sem.iter_item1_item2.item2));
 
     return ret;
 }
 
 /**
- * Generate physical plan for text constructor
- *
- * @note
- *   Following the ideas in @ref live_nodes, we generate exactly
- *   one plan for this operator.
+ * Generate physical plan for textnode constructor
  */
 static PFplanlist_t *
 plan_textnode (const PFla_op_t *n)
 {
-    PFplanlist_t  *ret                = new_planlist ();
-    plan_t        *cheapest_plan = NULL;
+    PFplanlist_t  *ret        = new_planlist ();
+    PFplanlist_t  *ordered_in = new_planlist ();
+    PFalg_att_t    iter       = n->sem.iter_item.iter;
 
-    /* find the cheapest plan */
     for (unsigned int i = 0; i < PFarray_last (L(n)->plans); i++)
-        if (!cheapest_plan
-            || costless (*(plan_t **) PFarray_at (L(n)->plans, i),
-                         cheapest_plan))
-            cheapest_plan = *(plan_t **) PFarray_at (L(n)->plans, i);
+        add_plans (ordered_in,
+                   ensure_ordering (
+                       *(plan_t **) PFarray_at (L(n)->plans, i),
+                       sortby (iter)));
 
-    add_plan (ret, textnode (cheapest_plan,
-                             n->sem.textnode.res,
-                             n->sem.textnode.item));
+    /* for each plan, generate a constructor */
+    for (unsigned int i = 0; i < PFarray_last (ordered_in); i++)
+        add_plan (ret,
+                  textnode (
+                      *(plan_t **) PFarray_at (ordered_in, i),
+                      iter,
+                      n->sem.iter_item.item));
+
+    return ret;
+}
+
+/**
+ * Generate physical plan for comment constructor
+ */
+static PFplanlist_t *
+plan_comment (const PFla_op_t *n)
+{
+    PFplanlist_t  *ret        = new_planlist ();
+    PFplanlist_t  *ordered_in = new_planlist ();
+    PFalg_att_t    iter       = n->sem.iter_item.iter;
+
+    for (unsigned int i = 0; i < PFarray_last (L(n)->plans); i++)
+        add_plans (ordered_in,
+                   ensure_ordering (
+                       *(plan_t **) PFarray_at (L(n)->plans, i),
+                       sortby (iter)));
+
+    /* for each plan, generate a constructor */
+    for (unsigned int i = 0; i < PFarray_last (ordered_in); i++)
+        add_plan (ret,
+                  comment (
+                      *(plan_t **) PFarray_at (ordered_in, i),
+                      iter,
+                      n->sem.iter_item.item));
+
+    return ret;
+}
+
+/**
+ * Generate physical plan for processi constructor
+ */
+static PFplanlist_t *
+plan_processi (const PFla_op_t *n)
+{
+    PFplanlist_t  *ret        = new_planlist ();
+    PFplanlist_t  *ordered_in = new_planlist ();
+    PFalg_att_t    iter       = n->sem.iter_item1_item2.iter;
+
+    for (unsigned int i = 0; i < PFarray_last (L(n)->plans); i++)
+        add_plans (ordered_in,
+                   ensure_ordering (
+                       *(plan_t **) PFarray_at (L(n)->plans, i),
+                       sortby (iter)));
+
+    /* for each plan, generate a constructor */
+    for (unsigned int i = 0; i < PFarray_last (ordered_in); i++)
+        add_plan (ret,
+                  processi (
+                      *(plan_t **) PFarray_at (ordered_in, i),
+                      iter,
+                      n->sem.iter_item1_item2.item1,
+                      n->sem.iter_item1_item2.item2));
+
+    return ret;
+}
+
+/**
+ * Generate physical plan for content constructor
+ */
+static PFplanlist_t *
+plan_content (const PFla_op_t *n)
+{
+    PFplanlist_t  *ret        = new_planlist ();
+    PFplanlist_t  *ordered_in = new_planlist ();
+    PFalg_att_t    iter       = n->sem.iter_pos_item.iter;
+    PFalg_att_t    pos        = n->sem.iter_pos_item.pos;
+
+    for (unsigned int i = 0; i < PFarray_last (R(n)->plans); i++)
+        add_plans (ordered_in,
+                   ensure_ordering (
+                       *(plan_t **) PFarray_at (R(n)->plans, i),
+                       sortby (iter, pos)));
+
+    /* for each plan, generate a constructor */
+    for (unsigned int i = 0; i < PFarray_last (L(n)->plans); i++)
+        for (unsigned int j = 0; j < PFarray_last (ordered_in); j++)
+            add_plan (ret,
+                      content (
+                          *(plan_t **) PFarray_at (L(n)->plans, i),
+                          *(plan_t **) PFarray_at (ordered_in, j),
+                          iter,
+                          n->sem.iter_pos_item.item));
 
     return ret;
 }
@@ -1781,8 +1894,8 @@ plan_trace (const PFla_op_t *n)
 {
     PFplanlist_t *ret = new_planlist ();
     PFplanlist_t *sorted_n1 = new_planlist ();
-    PFalg_att_t   iter = n->sem.trace.iter;
-    PFalg_att_t   pos  = n->sem.trace.pos;
+    PFalg_att_t   iter = n->sem.iter_pos_item.iter;
+    PFalg_att_t   pos  = n->sem.iter_pos_item.pos;
 
     for (unsigned int i = 0; i < PFarray_last (L(n)->plans); i++)
         add_plans (sorted_n1,
@@ -1796,8 +1909,8 @@ plan_trace (const PFla_op_t *n)
                       trace (
                           *(plan_t **) PFarray_at (sorted_n1, i),
                           *(plan_t **) PFarray_at (R(n)->plans, j),
-                          n->sem.trace.iter,
-                          n->sem.trace.item));
+                          n->sem.iter_pos_item.iter,
+                          n->sem.iter_pos_item.item));
 
     return ret;
 }
@@ -1816,8 +1929,8 @@ plan_trace_msg (const PFla_op_t *n)
                       trace_msg (
                           *(plan_t **) PFarray_at (L(n)->plans, i),
                           *(plan_t **) PFarray_at (R(n)->plans, j),
-                          n->sem.trace_msg.iter,
-                          n->sem.trace_msg.item));
+                          n->sem.iter_item.iter,
+                          n->sem.iter_item.item));
 
     return ret;
 }
@@ -2379,7 +2492,6 @@ plan_subexpression (PFla_op_t *n)
 
     switch (n->kind) {
         /* process the following logical algebra nodes top-down */
-        case la_element:
         case la_rec_fix:
             break;
         default:
@@ -2496,19 +2608,16 @@ plan_subexpression (PFla_op_t *n)
         case la_doc_tbl:        plans = plan_doc_tbl (n);      break;
         case la_doc_access:     plans = plan_doc_access (n);   break;
 
-        case la_element:
-            plan_subexpression (L(n));
-            assert (R(n)->kind == la_element_tag);
-            plan_subexpression (L(R(n)));
-            plan_subexpression (R(R(n)));
-            plans = plan_element (n);
-            break;
-
+        case la_twig:           plans = plan_twig (n);         break;
+        case la_fcns:           plans = plan_fcns (n);         break;
+        case la_docnode:        plans = plan_docnode (n);      break;
+        case la_element:        plans = plan_element (n);      break;
         case la_attribute:      plans = plan_attribute (n);    break;
         case la_textnode:       plans = plan_textnode (n);     break;
-     /* case la_docnode:        */
-     /* case la_comment:        */
-     /* case la_processi:       */
+        case la_comment:        plans = plan_comment (n);      break;
+        case la_processi:       plans = plan_processi (n);     break;
+        case la_content:        plans = plan_content (n);      break;
+
         case la_merge_adjacent: plans = plan_merge_texts (n);  break;
 
         case la_roots:          plans = plan_roots (n);        break;

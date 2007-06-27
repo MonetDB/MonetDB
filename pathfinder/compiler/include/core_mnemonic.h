@@ -61,6 +61,7 @@
 #undef let        
 #undef letbind
 #undef seq        
+#undef twig_seq        
 #undef empty      
 #undef true_      
 #undef false_     
@@ -111,6 +112,7 @@
 #define orderby(s,e1,e2)      PFcore_orderby ((s), (e1), (e2))
 #define orderspecs(m,e1,e2)   PFcore_orderspecs ((m), (e1), (e2))
 #define seq(e1,e2)            PFcore_seq ((e1), (e2))
+#define twig_seq(e1,e2)       PFcore_twig_seq ((e1), (e2))
 #define ordered(e)            PFcore_ordered (e)
 #define unordered(e)          PFcore_unordered (e)
 #define empty()               PFcore_empty ()

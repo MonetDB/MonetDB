@@ -104,13 +104,15 @@ static char *a_id[]  = {
     , [pa_llscj_prec_sibl] = "//| prec-sibl"
     , [pa_doc_tbl]         = "DOC"
     , [pa_doc_access]      = "access"
+    , [pa_twig]            = "TWIG"             /* lawn \"#00FF00\" */
+    , [pa_fcns]            = "FCNS"             /* lawn \"#00FF00\" */
+    , [pa_docnode]         = "DOC"              /* lawn \"#00FF00\" */
     , [pa_element]         = "ELEM"             /* lawn \"#00FF00\" */
-    , [pa_element_tag]     = "ELEM_TAG"         /* lawn \"#00FF00\" */
     , [pa_attribute]       = "ATTR"             /* lawn \"#00FF00\" */
     , [pa_textnode]        = "TEXT"             /* lawn \"#00FF00\" */
-    , [pa_docnode]         = "DOC"              /* lawn \"#00FF00\" */
     , [pa_comment]         = "COMMENT"          /* lawn \"#00FF00\" */
     , [pa_processi]        = "PI"               /* lawn \"#00FF00\" */
+    , [pa_content]         = "CONTENT"          /* lawn \"#00FF00\" */
     , [pa_merge_adjacent]  = "#pf:merge-adjacent-text-nodes"
     , [pa_roots]           = "ROOTS"
     , [pa_fragment]        = "FRAGs"
@@ -183,13 +185,15 @@ static char *xml_id[]  = {
     , [pa_llscj_prec_sibl] = "scjoin"
     , [pa_doc_tbl]         = "fn:doc"
     , [pa_doc_access]      = "access"
+    , [pa_twig]            = "twig"
+    , [pa_fcns]            = "fcns"
+    , [pa_docnode]         = "doc"
     , [pa_element]         = "elem"
-    , [pa_element_tag]     = "elem_tag"
     , [pa_attribute]       = "attr"
     , [pa_textnode]        = "text"
-    , [pa_docnode]         = "doc"
     , [pa_comment]         = "comment"
     , [pa_processi]        = "pi"
+    , [pa_content]         = "content"
     , [pa_merge_adjacent]  = "#pf:merge-adjacent-text-nodes"
     , [pa_roots]           = "roots"
     , [pa_fragment]        = "frags"
@@ -376,13 +380,15 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, unsigned int node_id)
         , [pa_llscj_prec_sibl] = "\"#1E90FF\""
         , [pa_doc_tbl]         = "\"#C0C0C0\""
         , [pa_doc_access]      = "\"#CCCCFF\""
+        , [pa_twig]            = "\"#00FC59\""
+        , [pa_fcns]            = "\"#00FC59\""
+        , [pa_docnode]         = "\"#00FC59\""
         , [pa_element]         = "\"#00FC59\""
-        , [pa_element_tag]     = "\"#00FC59\""
         , [pa_attribute]       = "\"#00FC59\""
         , [pa_textnode]        = "\"#00FC59\""
-        , [pa_docnode]         = "\"#00FC59\""
         , [pa_comment]         = "\"#00FC59\""
         , [pa_processi]        = "\"#00FC59\""
+        , [pa_content]         = "\"#00FC59\""
         , [pa_merge_adjacent]  = "\"#00D000\""
         , [pa_roots]           = "\"#E0E0E0\""
         , [pa_fragment]        = "\"#E0E0E0\""
@@ -676,17 +682,31 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, unsigned int node_id)
                             PFatt_str (n->sem.doc_access.att));
             break;
 
-        case pa_attribute:
-            PFarray_printf (dot, "%s (%s:<%s, %s>)", a_id[n->kind],
-                            PFatt_str (n->sem.attr.res),
-                            PFatt_str (n->sem.attr.qn),
-                            PFatt_str (n->sem.attr.val));
-            break;
-
+        case pa_twig:
+        case pa_element:
         case pa_textnode:
-            PFarray_printf (dot, "%s (%s:<%s>)", a_id[n->kind],
-                            PFatt_str (n->sem.textnode.res),
-                            PFatt_str (n->sem.textnode.item));
+        case pa_comment:
+        case pa_content:
+        case pa_trace:
+        case pa_trace_msg:
+            PFarray_printf (dot, "%s (%s, %s)",
+                            a_id[n->kind],
+                            PFatt_str (n->sem.ii.iter),
+                            PFatt_str (n->sem.ii.item));
+            break;
+        
+        case pa_docnode:
+            PFarray_printf (dot, "%s (%s)",
+                            a_id[n->kind],
+                            PFatt_str (n->sem.ii.iter));
+            break;
+        
+        case pa_attribute:
+        case pa_processi:
+            PFarray_printf (dot, "%s (%s:<%s, %s>)", a_id[n->kind],
+                            PFatt_str (n->sem.iter_item1_item2.iter),
+                            PFatt_str (n->sem.iter_item1_item2.item1),
+                            PFatt_str (n->sem.iter_item1_item2.item2));
             break;
 
         case pa_cond_err:
@@ -695,15 +715,6 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, unsigned int node_id)
                             PFstrndup (n->sem.err.str, 16));
             break;
 
-        case pa_trace:
-        case pa_trace_msg:
-            PFarray_printf (dot,
-                            "%s (%s, %s)",
-                            a_id[n->kind],
-                            PFatt_str (n->sem.trace.iter),
-                            PFatt_str (n->sem.trace.item));
-            break;
-        
         case pa_trace_map:
             PFarray_printf (dot,
                             "%s (%s, %s)",
@@ -718,11 +729,7 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, unsigned int node_id)
         case pa_intersect:
         case pa_difference:
         case pa_doc_tbl:
-        case pa_element:
-        case pa_element_tag:
-        case pa_docnode:
-        case pa_comment:
-        case pa_processi:
+        case pa_fcns:
         case pa_merge_adjacent:
         case pa_roots:
         case pa_fragment:
@@ -1518,7 +1525,13 @@ pa_xml (PFarray_t *xml, PFpa_op_t *n, unsigned int node_id)
                             "    </content>\n");
             break;
 
+        case pa_twig:
         case pa_element:
+        case pa_textnode:
+        case pa_comment:
+        case pa_content:
+        case pa_trace:
+        case pa_trace_msg:
             PFarray_printf (xml,
                             "    <content>\n"
                             "      <column name=\"%s\" function=\"iter\"/>\n"
@@ -1528,43 +1541,40 @@ pa_xml (PFarray_t *xml, PFpa_op_t *n, unsigned int node_id)
                             PFatt_str (n->sem.ii.item));
             break;
         
+        case pa_docnode:
+            PFarray_printf (xml,
+                            "    <content>\n"
+                            "      <column name=\"%s\" function=\"iter\"/>\n"
+                            "    </content>\n",
+                            PFatt_str (n->sem.ii.iter));
+            break;
+        
         case pa_attribute:
             PFarray_printf (xml,
                             "    <content>\n"
-                            "      <column name=\"%s\" new=\"true\">\n"
-                            "        <annotation>result of the attribute "
-                                    "construction</annotation>\n"
-                            "      </column>\n"
+                            "      <column name=\"%s\" function=\"iter\"/>\n"
                             "      <column name=\"%s\" function=\"qname item\""
-                                    " new=\"false\">\n"
-                            "        <annotation>qname argument"
-                                    "</annotation>\n"
-                            "      </column>\n"
+                                    "/>\n"
                             "      <column name=\"%s\" function=\"content item"
-                                    "\" new=\"false\">\n"
-                            "        <annotation>value argument"
-                                    "</annotation>\n"
-                            "      </column>\n"
+                                    "/>\n"
                             "    </content>\n",
-                            PFatt_str (n->sem.attr.res),
-                            PFatt_str (n->sem.attr.qn),
-                            PFatt_str (n->sem.attr.val));
+                            PFatt_str (n->sem.iter_item1_item2.iter),
+                            PFatt_str (n->sem.iter_item1_item2.item1),
+                            PFatt_str (n->sem.iter_item1_item2.item2));
             break;
 
-        case pa_textnode:
+        case pa_processi:
             PFarray_printf (xml,
                             "    <content>\n"
-                            "      <column name=\"%s\" new=\"true\">\n"
-                            "        <annotation>result of the textnode "
-                                    "construction</annotation>\n"
-                            "      </column>\n"
-                            "      <column name=\"%s\" new=\"false\">\n"
-                            "        <annotation>value argument"
-                                    "</annotation>\n"
-                            "      </column>\n"
+                            "      <column name=\"%s\" function=\"iter\"/>\n"
+                            "      <column name=\"%s\" function=\"target item\""
+                                    "/>\n"
+                            "      <column name=\"%s\" function=\"value item"
+                                    "/>\n"
                             "    </content>\n",
-                            PFatt_str (n->sem.textnode.res),
-                            PFatt_str (n->sem.textnode.item));
+                            PFatt_str (n->sem.iter_item1_item2.iter),
+                            PFatt_str (n->sem.iter_item1_item2.item1),
+                            PFatt_str (n->sem.iter_item1_item2.item2));
             break;
 
         case pa_merge_adjacent:

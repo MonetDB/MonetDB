@@ -197,6 +197,9 @@ prop_infer_icols_rec_body (PFla_op_t *n)
                  "only recursion operators expected!");
 }
             
+static bool twig_needed;
+static bool first_twig_child;
+
 /**
  * worker for PFprop_infer
  * infers the icols property during the second run
@@ -486,75 +489,136 @@ prop_infer_icols (PFla_op_t *n, PFalg_att_t icols)
             n->prop->r_icols = union_ (n->prop->r_icols, n->sem.doc_access.att);
             break;
 
-        case la_element:
-            /* whenever the element itself is not needed column item
-               is missing and therefore the name expression can be
-               used as replacement */
-
-            /* infer empty list for fragments */
-            prop_infer_icols (L(n), 0);
-
-            /* do only infer input columns if operator is not required */
-            if (!(n->prop->icols & n->sem.elem.item_res))
-            {
-                /* infer current icols schema for the qnames as replacement */
-                if (n->prop->icols & n->sem.elem.iter_res)
-                    prop_infer_icols (RL(n), n->sem.elem.iter_qn);
-                else
-                    prop_infer_icols (RL(n), 0);
-
-                /* infer empty list for missing content */
-                prop_infer_icols (RR(n), 0);
+        case la_twig:
+            /* make sure the underlying constructors 
+               propagate the correct information */
+            if ((n->prop->icols & n->sem.iter_item.item)) {
+                twig_needed = true;
             } else {
-                /* infer iter|item schema for element name relation */
-                prop_infer_icols (RL(n), union_ (n->sem.elem.iter_qn,
-                                                 n->sem.elem.item_qn));
-
-                /* infer iter|pos|item schema for element content relation */
-                prop_infer_icols (RR(n),
-                                  union_ (union_ (n->sem.elem.iter_val,
-                                                  n->sem.elem.item_val),
-                                          n->sem.elem.pos_val));
+                twig_needed = false;
+                first_twig_child = true;
             }
-
+            prop_infer_icols (L(n), 0);
             skip_children = true;
             break;
-
-        case la_element_tag:
-            /* This will never be called. */
-            break;
-
-        case la_attribute:
-            /* whenever the attribute itself is not needed column item
-               is missing and therefore the input expression can be
-               used as replacement. */
-
-            /* do only infer input columns if operator is required */
-            if ((n->prop->icols & n->sem.attr.res))
-            {
-                n->prop->l_icols = diff (n->prop->icols, n->sem.attr.res);
-                n->prop->l_icols = union_ (n->prop->l_icols, n->sem.attr.qn);
-                n->prop->l_icols = union_ (n->prop->l_icols, n->sem.attr.val);
-            } else {
-                n->prop->l_icols = diff (n->prop->icols, n->sem.attr.res);
-            }
-            break;
-
-        case la_textnode:
-            n->prop->l_icols = n->prop->icols;
-
-            /* do not infer input columns if operator is not required */
-            if (!(n->prop->icols & n->sem.textnode.res))
-                break;
-
-            n->prop->l_icols = diff (n->prop->l_icols, n->sem.textnode.res);
-            n->prop->l_icols = union_ (n->prop->l_icols, n->sem.textnode.item);
+            
+        case la_fcns:
             break;
 
         case la_docnode:
+            /* whenever the constructor itself is not needed column item
+               is missing and therefore the name expression can be
+               used as replacement */
+            if (twig_needed) {
+                n->prop->icols = n->sem.docnode.iter;
+                twig_needed = false;
+                prop_infer_icols (L(n), n->prop->icols);
+                twig_needed = true;
+                prop_infer_icols (R(n), 0);
+                twig_needed = true;
+                prop_infer_icols (R(n), 0);
+            } else if (first_twig_child) {
+                first_twig_child = false;
+                n->prop->icols = n->sem.docnode.iter;
+                prop_infer_icols (L(n), n->prop->icols);
+                prop_infer_icols (R(n), 0);
+            } else {
+                prop_infer_icols (L(n), 0);
+                prop_infer_icols (R(n), 0);
+            }
+            skip_children = true;
+            break;
+
+        case la_element:
+            /* whenever the constructor itself is not needed column item
+               is missing and therefore the name expression can be
+               used as replacement */
+            if (twig_needed) {
+                n->prop->icols = union_ (n->sem.iter_item.iter,
+                                         n->sem.iter_item.item);
+                twig_needed = false;
+                prop_infer_icols (L(n), n->prop->icols);
+                twig_needed = true;
+                prop_infer_icols (R(n), 0);
+            } else if (first_twig_child) {
+                first_twig_child = false;
+                n->prop->icols = n->sem.iter_item.iter;
+                prop_infer_icols (L(n), n->prop->icols);
+                prop_infer_icols (R(n), 0);
+            } else {
+                prop_infer_icols (L(n), 0);
+                prop_infer_icols (R(n), 0);
+            }
+            skip_children = true;
+            break;
+            
+        case la_textnode:
         case la_comment:
+            /* whenever the constructor itself is not needed column item
+               is missing and therefore the name expression can be
+               used as replacement */
+            if (twig_needed) {
+                n->prop->icols = union_ (n->sem.iter_item.iter,
+                                         n->sem.iter_item.item);
+                twig_needed = false;
+                prop_infer_icols (L(n), n->prop->icols);
+                twig_needed = true;
+            } else if (first_twig_child) {
+                first_twig_child = false;
+                n->prop->icols = n->sem.iter_item.iter;
+                prop_infer_icols (L(n), n->prop->icols);
+            } else {
+                prop_infer_icols (L(n), 0);
+            }
+            skip_children = true;
+            break;
+
+        case la_attribute:
         case la_processi:
-            assert (!"not implemented yet?");
+            /* whenever the constructor itself is not needed column item
+               is missing and therefore the name expression can be
+               used as replacement */
+            if (twig_needed) {
+                n->prop->icols = union_ (
+                                     n->sem.iter_item1_item2.iter,
+                                     union_ (n->sem.iter_item1_item2.item1,
+                                             n->sem.iter_item1_item2.item2));
+                twig_needed = false;
+                prop_infer_icols (L(n), n->prop->icols);
+                twig_needed = true;
+            } else if (first_twig_child) {
+                first_twig_child = false;
+                n->prop->icols = n->sem.iter_item1_item2.iter;
+                prop_infer_icols (L(n), n->prop->icols);
+            } else {
+                prop_infer_icols (L(n), 0);
+            }
+            skip_children = true;
+            break;
+
+        case la_content:
+            /* whenever the constructor itself is not needed column item
+               is missing and therefore the name expression can be
+               used as replacement */
+            if (twig_needed) {
+                n->prop->icols = union_ (n->sem.iter_pos_item.iter,
+                                         union_ (n->sem.iter_pos_item.pos,
+                                                 n->sem.iter_pos_item.item));
+                twig_needed = false;
+                prop_infer_icols (L(n), 0);
+                prop_infer_icols (R(n), n->prop->icols);
+                twig_needed = true;
+            } else if (first_twig_child) {
+                n->prop->icols = n->sem.iter_pos_item.iter;
+                first_twig_child = false;
+                prop_infer_icols (L(n), 0);
+                prop_infer_icols (R(n), n->prop->icols);
+            } else {
+                prop_infer_icols (L(n), 0);
+                prop_infer_icols (R(n), 0);
+            }
+            skip_children = true;
+            break;
 
         case la_merge_adjacent:
             /* infer empty list for fragments */
@@ -591,14 +655,17 @@ prop_infer_icols (PFla_op_t *n, PFalg_att_t icols)
 
         case la_trace:
             n->prop->l_icols = n->prop->icols;
-            n->prop->l_icols = union_ (n->prop->l_icols, n->sem.trace.iter);
-            n->prop->l_icols = union_ (n->prop->l_icols, n->sem.trace.pos);
-            n->prop->l_icols = union_ (n->prop->l_icols, n->sem.trace.item);
+            n->prop->l_icols = union_ (n->prop->l_icols,
+                                       n->sem.iter_pos_item.iter);
+            n->prop->l_icols = union_ (n->prop->l_icols,
+                                       n->sem.iter_pos_item.pos);
+            n->prop->l_icols = union_ (n->prop->l_icols,
+                                       n->sem.iter_pos_item.item);
             break;
 
         case la_trace_msg:
-            n->prop->l_icols = union_ (n->sem.trace_msg.iter,
-                                       n->sem.trace_msg.item);
+            n->prop->l_icols = union_ (n->sem.iter_item.iter,
+                                       n->sem.iter_item.item);
             break;
 
         case la_trace_map:
