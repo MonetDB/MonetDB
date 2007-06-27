@@ -56,6 +56,7 @@ as error to the connecting client.
 #include "mal_config.h"
 #include "merovingian.h"
 #include "mal_sabaoth.h"
+#include <stream_socket.h>
 #include <stdlib.h> /* exit */
 #include <stdarg.h>	/* variadic stuff */
 #include <stdio.h> /* fprintf */
@@ -194,13 +195,14 @@ forkMserver(str database, sabdb** stats)
 		pid = fork();
 		if (pid == 0) {
 			/* ok, now exec that mserver we want */
-			str e = alloca(sizeof(char) * 512);
-			snprintf(e, 511, "--dbname=%s", database);
-			merlog("executing: %s %s", _merovingian_mserver, e);
+			str dbname = alloca(sizeof(char) * 512);
+			snprintf(dbname, 511, "--dbname=%s", database);
+			merlog("executing %s for database %s",
+					_merovingian_mserver, dbname);
 			execl(_merovingian_mserver, _merovingian_mserver,
 					"--set", "daemon=yes",
-					e,
-					"--dbinit=include sql;",
+					dbname,
+					"--dbinit=include sql;", /* yes, this IS correct */
 					(char *)NULL);
 			/* if the exec returns, it is because of a failure */
 			merlog("executing failed: %s", strerror(errno));
@@ -225,19 +227,23 @@ forkMserver(str database, sabdb** stats)
 err
 handleClient(int sock)
 {
-#if 0
-	stream *in, *out;
-	char *buf = (char *) malloc(sizeof(char) * 8096);
-	stream *fdin = block_stream(in);
-	stream *fdout = block_stream(out);
-	bstream *bs;
+	stream *fdin, *fout;
+	bstream *fin;
+	str buf = alloca(sizeof(char) * 8096);
+	char *user = NULL, *algo = NULL, *passwd = NULL, *lang = NULL;
+	char *database = NULL, *s;
+	sabdb *top = NULL;
+	sabdb *stat = NULL;
 
-	if (!fdin || !fdout) {
+	fdin = block_stream(socket_rastream(sock, "read"));
+	fout = block_stream(socket_wastream(sock, "write"));
+
+	if (!fdin || !fout) {
 		return(newErr("inputstream or outputstream problems"));
 	}
 
 	/* note that we claim to speak proto 8 here */
-	stream_printf(fdout, "%s:merovingian:8:%s:%s",
+	stream_printf(fout, "%s:merovingian:8:%s:%s",
 			"void",  /* some bs */
 			"plain", /* FIXME: don't do difficult things for now */
 #ifdef WORDS_BIGENDIAN
@@ -246,22 +252,16 @@ handleClient(int sock)
 			"LIT"
 #endif
 			);
-	stream_flush(fdout);
+	stream_flush(fout);
 	/* get response */
-	stream_read_block(fdin, buf, BLOCK, 1);
+	stream_read_block(fdin, buf, 8095, 1);
 
-	bs = bstream_create(fdin, 128 * BLOCK);
-
-	bs->eof = 1;
-
-	char *user = buf, *algo = NULL, *passwd = NULL, *lang = NULL;
-	char *database = NULL, *s;
-	int key = 0;
-	bstream *fin = bs;
-	stream *fout = fdout;
+	fin = bstream_create(fdin, 128 * 8096);
+	fin->eof = 1;
 
 	/* decode BIG/LIT:user:{cypher}passwordchal:lang:database: line */
 
+	user = buf;
 	/* byte order */
 	s = strchr(user, ':');
 	if (s) {
@@ -269,10 +269,11 @@ handleClient(int sock)
 		stream_set_byteorder(fin->s, strcmp(user, "BIG") == 0);
 		user = s + 1;
 	} else {
-		err e = merlog("client challenge error: %s", buf);
+		err e = newErr("client challenge error: %s", buf);
 		stream_printf(fout, "!incomplete challenge '%s'\n", user);
 		stream_flush(fout);
-		free(buf);
+		stream_close(fout);
+		stream_close(fdin);
 		return(e);
 	}
 
@@ -283,28 +284,31 @@ handleClient(int sock)
 		passwd = s + 1;
 		/* decode algorithm, i.e. {plain}mypasswordchallenge */
 		if (*passwd != '{') {
-			err e = merlog("client challenge error: %s", buf);
+			err e = newErr("client challenge error: %s", buf);
 			stream_printf(fout, "!invalid password entry\n");
 			stream_flush(fout);
-			free(buf);
+			stream_close(fout);
+			stream_close(fdin);
 			return(e);
 		}
 		algo = passwd + 1;
 		s = strchr(algo, '}');
 		if (!s) {
-			err e = merlog("client challenge error: %s", buf);
+			err e = newErr("client challenge error: %s", buf);
 			stream_printf(fout, "!invalid password entry\n");
 			stream_flush(fout);
-			free(buf);
+			stream_close(fout);
+			stream_close(fdin);
 			return(e);
 		}
 		*s = 0;
 		passwd = s + 1;
 	} else {
-		err e = merlog("client challenge error: %s", buf);
+		err e = newErr("client challenge error: %s", buf);
 		stream_printf(fout, "!incomplete challenge '%s'\n", user);
 		stream_flush(fout);
-		free(buf);
+		stream_close(fout);
+		stream_close(fdin);
 		return(e);
 	}
 
@@ -314,10 +318,11 @@ handleClient(int sock)
 		*s = 0;
 		lang = s + 1;
 	} else {
-		err e = merlog("client challenge error: %s", buf);
+		err e = newErr("client challenge error: %s", buf);
 		stream_printf(fout, "!incomplete challenge, missing language\n");
 		stream_flush(fout);
-		free(buf);
+		stream_close(fout);
+		stream_close(fdin);
 		return(e);
 	}
 
@@ -332,16 +337,67 @@ handleClient(int sock)
 			*s = 0;
 	}
 
-	err e = forkMserver(database);
-	if (e != NO_ERR) {
-		stream_printf(fout, "!internal error while starting a new mserver\n");
-		stream_flush(fout);
-		return(e);
+	if (*database == '\0') {
+		/* send a redirect to the "default" database, since we don't
+		 * know what "default" is, we can't do much more than
+		 * redirecting to the first database which appears to be online. */
+		str er = SABAOTHgetStatus(&top, NULL);
+		if (er != MAL_SUCCEED) {
+			err e = newErr(er);
+			GDKfree(er);
+			stream_printf(fout, "!internal error, please try again later\n");
+			stream_flush(fout);
+			stream_close(fout);
+			stream_close(fdin);
+			return(e);
+		}
+		stat = top;
+		while (stat != NULL) {
+			if (stat->state == SABdbRunning) {
+				break;
+			}
+		}
+		if (stat == NULL) {
+			SABAOTHfreeStatus(&top);
+			stream_printf(fout, "!no database running, and no database specified\n");
+			stream_flush(fout);
+			stream_close(fout);
+			stream_close(fdin);
+			return(newErr("no database running, and no database specified"));
+		}
+	} else {
+		err e = forkMserver(database, &top);
+		if (e != NO_ERR) {
+			stream_printf(fout, "!internal error while starting a new mserver\n");
+			stream_flush(fout);
+			stream_close(fout);
+			stream_close(fdin);
+			return(e);
+		}
+		stat = top;
 	}
 
 	/* need to send a redirect */
-#endif
-	(void)sock;
+	if (stat->conns == NULL || stat->conns->val == NULL) {
+		err e = newErr("database %s does not allow connections", stat->dbname);
+		stream_printf(fout, "!database %s does not allow connections\n", stat->dbname);
+		stream_flush(fout);
+		stream_close(fout);
+		stream_close(fdin);
+		SABAOTHfreeStatus(&top);
+		return(e);
+	}
+
+	merlog("redirecting client for database %s to %s", stat->dbname, stat->conns->val);
+
+	stream_printf(fout, "^%s%s?lang=%s&user=%s\n",
+			stat->conns->val, stat->dbname, lang, user);
+	/* flush redirect and return */
+	stream_flush(fout);
+	stream_close(fout);
+	stream_close(fdin);
+
+	SABAOTHfreeStatus(&top);
 	return(NO_ERR);
 }
 
