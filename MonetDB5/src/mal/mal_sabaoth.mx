@@ -94,7 +94,7 @@ mal_export void SABAOTHinit(str dbfarm, str dbname);
 @c
 /**
  * Initialises this Sabaoth instance to use the given dbfarm and dbname.
- * dbfarm may be NULL to indicate that there is no active database.  The
+ * dbname may be NULL to indicate that there is no active database.  The
  * arguments are copied for internal use.
  */
 void SABAOTHinit(str dbfarm, str dbname) {
