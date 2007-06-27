@@ -107,21 +107,26 @@ void SABAOTHinit(str dbfarm, str dbname) {
 	if (_sabaoth_internal_dbname != NULL)
 		free(_sabaoth_internal_dbname);
 
-	len = strlen(dbfarm) + 1;
-	_sabaoth_internal_dbfarm = malloc(sizeof(char) * (len));
-	memcpy(_sabaoth_internal_dbfarm, dbfarm, len);
-	/* remove trailing slashes */
-	while (len > 0 && _sabaoth_internal_dbfarm[len - 1] == '/') {
-		_sabaoth_internal_dbfarm[len - 1] = '\0';
+	len = strlen(dbfarm);
+	_sabaoth_internal_dbfarm = malloc(sizeof(char) * (len + 1));
+	memcpy(_sabaoth_internal_dbfarm, dbfarm, len + 1);
+	/* remove trailing slashes, newlines and spaces */
+	len--;
+	while (len > 0 && (
+				_sabaoth_internal_dbfarm[len] == '/' ||
+				_sabaoth_internal_dbfarm[len] == '\n' ||
+				_sabaoth_internal_dbfarm[len] == ' '))
+	{
+		_sabaoth_internal_dbfarm[len] = '\0';
 		len--;
 	}
 
 	if (dbname == NULL) {
 		_sabaoth_internal_dbname = NULL;
 	} else {
-		len = strlen(dbname) + 1;
-		_sabaoth_internal_dbname = malloc(sizeof(char) * (len));
-		memcpy(_sabaoth_internal_dbname, dbname, len);
+		len = strlen(dbname);
+		_sabaoth_internal_dbname = malloc(sizeof(char) * (len + 1));
+		memcpy(_sabaoth_internal_dbname, dbname, len + 1);
 	}
 }
 
@@ -393,8 +398,8 @@ str SABAOTHgetStatus(sabdb** ret, str dbname) {
 	FILE *f;
 	int fd;
 
-	sabdb* sdb = *ret;
-	sdb = NULL;
+	sabdb *sdb, *top;
+	sdb = top = *ret = NULL;
 
 	buf[PATHLENGTH] = '\0';
 	/* scan the parent for directories */
@@ -402,13 +407,18 @@ str SABAOTHgetStatus(sabdb** ret, str dbname) {
 			getFarmPath(&path, PATHLENGTH, NULL));
 	d = opendir(path);
 	if (d == NULL)
-		throw(MAL, "sabaoth.getStatus", "unable to open directory %s: %s",
+		throw(IO, "sabaoth.getStatus", "unable to open directory %s: %s",
 				path, strerror(errno));
 	while ((e = readdir(d)) != NULL) {
 		if (dbname != NULL && strcmp(e->d_name, dbname) != 0)
 			continue;
 
-		sdb = malloc(sizeof(sabdb));
+		if (sdb == NULL) {
+			top = sdb = malloc(sizeof(sabdb));
+		} else {
+			sdb = sdb->next = malloc(sizeof(sabdb));
+		}
+		sdb->next = NULL;
 
 		/* store the database name */
 		sdb->dbname = strdup(e->d_name);
@@ -515,6 +525,7 @@ str SABAOTHgetStatus(sabdb** ret, str dbname) {
 	}
 	(void) closedir(d);
 
+	*ret = top;
 	return(MAL_SUCCEED);
 }
 
