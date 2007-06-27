@@ -390,8 +390,8 @@ handleClient(int sock)
 
 	merlog("redirecting client for database %s to %s", stat->dbname, stat->conns->val);
 
-	stream_printf(fout, "^%s%s?lang=%s&user=%s\n",
-			stat->conns->val, stat->dbname, lang, user);
+	stream_printf(fout, "^%s%s\n",
+			stat->conns->val, stat->dbname);
 	/* flush redirect and return */
 	stream_flush(fout);
 	stream_close(fout);
