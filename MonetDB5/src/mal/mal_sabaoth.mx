@@ -394,7 +394,6 @@ str SABAOTHgetStatus(sabdb** ret, str dbname) {
 	str data = alloca(sizeof(char) * 8096);
 	str path = alloca(sizeof(char) * (PATHLENGTH + 1));
 	str p;
-	int len;
 	FILE *f;
 	int fd;
 
@@ -427,25 +426,18 @@ str SABAOTHgetStatus(sabdb** ret, str dbname) {
 		sdb->scens = NULL;
 		snprintf(buf, PATHLENGTH, "%s/%s/%s", path, e->d_name, SCENARIOFILE);
 		if ((f = fopen(buf, "r")) != NULL) {
-			if ((len = fread(data, 1, 8095, f)) > 0) {
-				sablist* np = NULL;
-				buf[len] = '\0';
-				while ((p = strchr(buf, '\n')) != NULL) {
-					*p = '\0';
-					if (sdb->scens == NULL) {
-						sdb->scens = malloc(sizeof(sablist));
-						sdb->scens->val = strdup(buf);
-						sdb->scens->next = NULL;
-						np = sdb->scens;
-					} else {
-						np = np->next = malloc(sizeof(sablist));
-						np->val = strdup(buf);
-						np->next = NULL;
-					}
-					buf = p + 1;
+			sablist* np = NULL;
+			while (fgets(data, 8095, f) != NULL) {
+				if (sdb->scens == NULL) {
+					sdb->scens = malloc(sizeof(sablist));
+					sdb->scens->val = strdup(data);
+					sdb->scens->next = NULL;
+					np = sdb->scens;
+				} else {
+					np = np->next = malloc(sizeof(sablist));
+					np->val = strdup(data);
+					np->next = NULL;
 				}
-				/* trailing stuff without an ending newline, is simply
-				 * not valid in Sabaoth, so we don't care */
 			}
 			(void)fclose(f);
 		}
@@ -454,25 +446,18 @@ str SABAOTHgetStatus(sabdb** ret, str dbname) {
 		sdb->conns = NULL;
 		snprintf(buf, PATHLENGTH, "%s/%s/%s", path, e->d_name, CONNECTIONFILE);
 		if ((f = fopen(buf, "r")) != NULL) {
-			if ((len = fread(data, 1, 8095, f)) > 0) {
-				sablist* np = NULL;
-				buf[len] = '\0';
-				while ((p = strchr(buf, '\n')) != NULL) {
-					*p = '\0';
-					if (sdb->conns == NULL) {
-						sdb->conns = malloc(sizeof(sablist));
-						sdb->conns->val = strdup(buf);
-						sdb->conns->next = NULL;
-						np = sdb->conns;
-					} else {
-						np = np->next = malloc(sizeof(sablist));
-						np->val = strdup(buf);
-						np->next = NULL;
-					}
-					buf = p + 1;
+			sablist* np = NULL;
+			while (fgets(data, 8095, f) != NULL) {
+				if (sdb->conns == NULL) {
+					sdb->conns = malloc(sizeof(sablist));
+					sdb->conns->val = strdup(data);
+					sdb->conns->next = NULL;
+					np = sdb->conns;
+				} else {
+					np = np->next = malloc(sizeof(sablist));
+					np->val = strdup(data);
+					np->next = NULL;
 				}
-				/* trailing stuff without an ending newline, is simply
-				 * not valid in Sabaoth, so we don't care */
 			}
 			(void)fclose(f);
 		}
