@@ -264,7 +264,7 @@ public final class MapiSocket {
 
 				URI u;
 				try {
-					u = new URI(suri.substring(4));
+					u = new URI(suri.substring(5));
 				} catch (URISyntaxException e) {
 					throw new MCLParseException(e.toString());
 				}
@@ -318,7 +318,7 @@ public final class MapiSocket {
 
 		// challenge string to use as salt/key
 		String challenge = chaltok[0];
-		// chaltok[1]; // server type, not needed yet 
+		String servert = chaltok[1];
 		try {
 			version = Integer.parseInt(chaltok[2].trim());	// protocol version
 		} catch (NumberFormatException e) {
@@ -341,6 +341,11 @@ public final class MapiSocket {
 				// proto 8, the byteorder of the blocks is always little
 				// endian because most machines today are.
 				String hashes = (hash == null ? chaltok[3] : hash);
+				// if we deal with merovingian, mask our credentials
+				if (servert.equals("merovingian")) {
+					username = "merovingian";
+					password = "merovingian";
+				}
 				String pwhash;
 				if (hashes.indexOf("SHA1") != -1) {
 					try {
