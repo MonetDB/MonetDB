@@ -401,6 +401,9 @@ str SABAOTHgetStatus(sabdb** ret, str dbname) {
 	rethrow("sabaoth.getStatus", p,
 			getFarmPath(&path, PATHLENGTH, NULL));
 	d = opendir(path);
+	if (d == NULL)
+		throw(MAL, "sabaoth.getStatus", "unable to open directory %s: %s",
+				path, strerror(errno));
 	while ((e = readdir(d)) != NULL) {
 		if (dbname != NULL && strcmp(e->d_name, dbname) != 0)
 			continue;
