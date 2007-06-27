@@ -348,6 +348,7 @@ All Rights Reserved.
     <uptodate targetfile="${jdbc-jar}" property="uptodate.jdbc-jar">
       <srcfiles dir="${srcdir}">
         <include name="${jdbc-package}/**/*.java" />
+        <include name="${mcl-package}/**/*.java" />
       </srcfiles>
     </uptodate>
     <uptodate targetfile="${jdbcclient-jar}"
@@ -355,6 +356,7 @@ All Rights Reserved.
       <srcfiles dir="${srcdir}">
         <include name="${client-package}/**/*.java" />
         <include name="${jdbc-package}/**/*.java" />
+        <include name="${mcl-package}/**/*.java" />
       </srcfiles>
     </uptodate>
     <condition property="uptodate.drivers">
