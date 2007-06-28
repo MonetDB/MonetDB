@@ -95,7 +95,7 @@ typedef struct trans {
 
 typedef struct logger {
 	int debug;
-	int changes;
+	unsigned int changes;
 	int version;
 	lng id;
 	int tid;
@@ -133,7 +133,7 @@ gdk_export void logger_destroy(logger *lg);
 gdk_export int logger_exit(logger *lg);
 gdk_export int logger_restart(logger *lg);
 gdk_export int logger_cleanup(logger *lg);
-gdk_export int logger_changes(logger *lg);
+gdk_export unsigned int logger_changes(logger *lg);
 gdk_export int logger_sequence(logger *lg, int seq, lng *id);
 
 /* todo pass the transaction id */
@@ -1172,7 +1172,7 @@ logger_cleanup(logger *lg)
 	return LOG_OK;
 }
 
-int
+unsigned int
 logger_changes(logger *lg)
 {
 	return lg->changes;
