@@ -400,12 +400,14 @@ struct PFla_op_t {
                                         node; required exclusively to
                                         create dot output. */
                                         
-    struct PFsql_alg_ann_t    *sql_ann; /**< SQL annotations used during code
+    struct PFsql_alg_ann_t    *sql_ann;  /**< SQL annotations used during code
                                              generation. */
+    unsigned int        delta_pre;       /**< delta pre value */
+    unsigned int        delta_level;     /**< delta level value */
     unsigned            dirty:1;         /**< indicates nested SQL statements */
     unsigned 		distinct:1;	 /**< checks if we should set the
 					      distinct flag in SQL select*/
-    unsigned int        crrltn_cnt;       /**< count correlation
+    unsigned int        crrltn_cnt;      /**< count correlation
                                               names */
 };
 
@@ -424,6 +426,13 @@ struct PFla_pair_t {
 typedef struct PFla_pair_t PFla_pair_t;
 
 /* ***************** Constructors ******************* */
+
+/**
+ * A duplicate operator that duplicates a given node,
+ * and set the child to the given left and right arguments.
+ */
+PFla_op_t * PFla_op_duplicate (PFla_op_t *n, PFla_op_t *left,
+                               PFla_op_t *right);
 
 /**
  * A dummy operator that is generated whenever some rewrite 
