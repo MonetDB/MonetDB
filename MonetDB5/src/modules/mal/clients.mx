@@ -330,10 +330,8 @@ CLTquit(int *ret)
 
 	(void) ret;		/* fool compiler */
 	if( c != mal_clients )
-		throw(MAL, "client.quit", 
-			"Server not stopped from console.");
-	/* die the hard way */
-	c->curprg->def->stop = 0;
+		throw(MAL, "client.quit", "Server not stopped from console.");
+	c->mode = FINISHING;
 	return MAL_SUCCEED;
 }
 
