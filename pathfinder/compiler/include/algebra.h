@@ -349,6 +349,15 @@ PFalg_tuple_t PFalg_tuple_ (unsigned int count, PFalg_atom_t *atoms);
 PFalg_attlist_t PFalg_attlist_ (unsigned int count, PFalg_att_t *atts);
 
 
+/* Returns the original schema without the attributes given in the list */
+#define PFalg_schema_diff(schema, ...) \
+    PFalg_schema_diff_ (schema, \
+            (sizeof ((PFalg_att_t[]) { __VA_ARGS__ })   \
+                       / sizeof (PFalg_att_t)), \
+            (PFalg_att_t[]) {__VA_ARGS__})
+PFalg_schema_t PFalg_schema_diff_(PFalg_schema_t schema,
+                        unsigned int count, PFalg_att_t *atts);
+
 /** Constructor for projection list item */
 PFalg_proj_t PFalg_proj (PFalg_att_t new, PFalg_att_t old);
 

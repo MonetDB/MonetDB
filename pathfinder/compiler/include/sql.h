@@ -51,7 +51,7 @@
 #define sql_col_nameid  0x00000080
 #define sql_col_value   0x00000100
 #define sql_col_name    0x00000200
-#define sql_col_apre    0x00000400
+#define sql_col_dpre    0x00000400
 typedef unsigned int PFsql_special_t;
 
 /* Reserve identifiers. */
@@ -279,8 +279,12 @@ typedef struct PFsql_t PFsql_t;
  */
 struct PFsql_alg_ann_t
 {
+  int delta_pre;                    /**< local pre value for constructions
+                                         with the twig-constructor */
   PFsql_t *tabname;		    /**< Table name that this subexpression
                                          has been bound to. NULL otherwise. */
+  PFsql_t *toplevel;                /**< for content we produce two statements
+                                         to reduce calculation time */
   PFsql_t *sfw;			    /**< SQL code that implements this
                                          subexpression. Should always be an
                                          SFW clause. */

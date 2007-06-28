@@ -983,8 +983,6 @@ PFsql_column_name_str (PFsql_ident_t ident)
 	{
 	case sql_col_pre:
 	  return "pre";
-	case sql_col_apre:
-	  return "apre";
 	case sql_col_level:
 	  return "level";
 	case sql_col_size:
@@ -1001,6 +999,8 @@ PFsql_column_name_str (PFsql_ident_t ident)
 	  return "value";
 	case sql_col_name:
 	  return "name";
+        case sql_col_dpre:
+          return "deltapre";
 	default:
 	  PFoops (OOPS_FATAL, "unknown special flag set");
 	}
@@ -1041,7 +1041,7 @@ PFsql_simple_type_str (PFalg_simple_type_t type)
       return "INTEGER";		/*return "DECIMAL(20,10)"; */
     case aat_uA:
     case aat_str:
-      return "VARCHAR(32000)";
+      return "VARCHAR(100)";
     case aat_charseq:
       return "CHAR(100)";
     case aat_dbl:
