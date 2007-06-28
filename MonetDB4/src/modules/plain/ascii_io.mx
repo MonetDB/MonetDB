@@ -551,7 +551,7 @@ ASCIIcreate_bats(ascii *as)
 	for (i = 0; i < as->nr_attrs; i++) {
 		fmt[i].c = void_bat_create(fmt[i].adt, nr);
 		if (!fmt[i].c) {
-			GDKerror("ASCIIcreate_bats: Failed to create bat of size %d\n", as->nr);
+			GDKerror("ASCIIcreate_bats: Failed to create bat of size " SZFMT "\n", as->nr);
 			return -1;
 		}
 	}
