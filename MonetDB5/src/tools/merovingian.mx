@@ -61,6 +61,14 @@ as error to the connecting client.
 #include <stdarg.h>	/* variadic stuff */
 #include <stdio.h> /* fprintf */
 #include <sys/types.h>
+#include <sys/socket.h>
+#ifdef HAVE_SYS_UN_H
+#include <sys/un.h>
+#endif
+#ifdef HAVE_NETDB_H
+# include <netdb.h>
+# include <netinet/in.h>
+#endif
 #include <unistd.h>
 #include <string.h> /* strdup, strerror */
 #include <alloca.h>
@@ -70,6 +78,13 @@ as error to the connecting client.
 
 #define snprintf _snprintf
 #define vsnprintf _vsnprintf
+#endif
+
+#define SOCKPTR struct sockaddr *
+#if HAVE_SOCKLEN_T
+#define SOCKLEN socklen_t
+#else
+#define SOCKLEN int
 #endif
 
 typedef char* err;
@@ -433,7 +448,7 @@ acceptConnections(unsigned short port)
 
 	do {
 		server.sin_port = htons((unsigned short) ((port) & 0xFFFF));
-		if (bind(sock, (struct sockaddr*) &server, length) < 0) {
+		if (bind(sock, (SOCKPTR) &server, length) < 0) {
 			if (
 #ifdef EADDRINUSE
 errno == EADDRINUSE &&
@@ -453,7 +468,7 @@ errno == WSAEADDRINUSE &&
 		}
 	} while (1);
 
-	if (getsockname(sock, (struct sockaddr*) &server, &length) < 0)
+	if (getsockname(sock, (SOCKPTR) &server, &length) < 0)
 		return(newErr("failed getting socket name: %s",
 				strerror(errno)));
 	/* keep queue of 5 */
@@ -490,7 +505,7 @@ errno == WSAEADDRINUSE &&
 			continue;
 		}
 		if (sock >= 0 && FD_ISSET(sock, &fds)) {
-			if ((msgsock = accept(sock, (struct sockaddr*) 0, (socklen_t *) 0)) < 0) {
+			if ((msgsock = accept(sock, (SOCKPTR) 0, (socklen_t *) 0)) < 0) {
 				if (errno != EINTR) {
 					msg = "accept failed";
 					goto error;
@@ -576,7 +591,7 @@ main(int argc, char *argv[])
 			SABAOTHfreeStatus(&stats);
 	}
 
-	/* main handle external connections loop */
+	/* handle external connections main loop */
 	e = acceptConnections(MEROV_PORT);
 
 	if (e != NO_ERR) {
