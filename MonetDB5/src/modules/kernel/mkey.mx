@@ -30,14 +30,20 @@ comment "left-rotate an int by nbits";
 pattern hash(v:any):int 
 address MKEYhash 
 comment "compute a hash int number from any value";
+command hash(v:bit):int 
+address MKEYhash_bit; 
 command hash(v:chr):int 
 address MKEYhash_chr; 
+command hash(v:bte):int 
+address MKEYhash_bte; 
 command hash(v:sht):int 
 address MKEYhash_sht; 
 command hash(v:int):int 
 address MKEYhash_int; 
 command hash(v:flt):int 
 address MKEYhash_flt; 
+command hash(v:wrd):int 
+address MKEYhash_wrd; 
 command hash(v:dbl):int 
 address MKEYhash_dbl; 
 command hash(v:lng):int 
@@ -63,7 +69,7 @@ sides and then join these keys. Consider the following BATs.
 @verbatim
 orders                  customer                link
 ====================    =====================   ===========
-        zipcode hnr            zipcode hnr    oid     cid
+        zipcode h_nr            zipcode hnr    oid     cid
 o1      13      9       c1      11      10      o1      c5
 o2      11      10      c2      11      11      o2      c1
 o3      11      11      c3      12      2       o3      c2
@@ -168,10 +174,13 @@ could be replaced by partitioned hash-join with radix-cluster/decluster.
 
 mkey_export str  MKEYrotate(int *ret, int *v, int *nbits);
 mkey_export str  MKEYhash(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+mkey_export str  MKEYhash_bit(int *ret, bit *v);
 mkey_export str  MKEYhash_chr(int *ret, chr *v);
+mkey_export str  MKEYhash_bte(int *ret, bte *v);
 mkey_export str  MKEYhash_sht(int *ret, sht *v);
 mkey_export str  MKEYhash_int(int *ret, int *v);
 mkey_export str  MKEYhash_flt(int *ret, flt *v);
+mkey_export str  MKEYhash_wrd(int *ret, wrd *v);
 mkey_export str  MKEYhash_dbl(int *ret, dbl *v);
 mkey_export str  MKEYhash_lng(int *ret, lng *v);
 mkey_export str  MKEYhash_str(int *ret, str *v);
@@ -195,24 +204,26 @@ CMDrotate(int *res, int *val, int *n)
 	return GDK_SUCCEED;
 }
 
+/* 64bit: the CMDhash functions should probably return wrd and use the
+ * same hash functions as the rest of MonetDB */
 int
-CMDhash_chr(int *res, chr *val)
+CMDhash_bte(int *res, bte *val)
 {
-	*res = *(chr *) val;
+	*res = *val;
 	return GDK_SUCCEED;
 }
 
 int
 CMDhash_sht(int *res, sht *val)
 {
-	*res = *(sht *) val;
+	*res = *val;
 	return GDK_SUCCEED;
 }
 
 int
 CMDhash_int(int *res, int *val)
 {
-	*res = *(int *) val;
+	*res = *val;
 	return GDK_SUCCEED;
 }
 
@@ -223,6 +234,16 @@ CMDhash_flt(int *res, flt *val)
 	return GDK_SUCCEED;
 }
 
+int
+CMDhash_wrd(int *res, wrd *val)
+{
+#if SIZEOF_WRD == SIZEOF_INT
+	*res = (int) *val;
+#else
+	*res = (int) (*val >> 32) ^ (int) *val;
+#endif
+	return GDK_SUCCEED;
+}
 int
 CMDhash_lng(int *res, lng *val)
 {
@@ -240,6 +261,8 @@ CMDhash_dbl(int *res, dbl *val)
 int
 CMDhash_str(int *res, str val)
 {
+/* 64bit: if CMDhash continues to return int, then this should
+ * probably be changed to not throw away the top bits of the result */
 	*res = strHash(val);
 	return GDK_SUCCEED;
 }
@@ -247,7 +270,7 @@ CMDhash_str(int *res, str val)
 int
 CMDhash(int *res, ptr val, int tpe)
 {
-	hash_t code;		/* 64-bits on 64 systems; we truncate it here to save space */
+	int code;		/* 64-bits on 64 systems; we truncate it here to save space */
 
 	switch (ATOMstorage(tpe)) {
 	case TYPE_void:
@@ -255,6 +278,9 @@ CMDhash(int *res, ptr val, int tpe)
 		break;
 	case TYPE_chr:
 		code = *(chr *) val;
+		break;
+	case TYPE_bte:
+		code = *(bte *) val;
 		break;
 	case TYPE_sht:
 		code = *(sht *) val;
@@ -268,10 +294,10 @@ CMDhash(int *res, ptr val, int tpe)
 		code = ((int *) val)[0] ^ ((int *) val)[1];
 		break;
 	case TYPE_str:
-		code = strHash((char*)val);
+		code = (int) strHash((char*)val); /* 64bit: truncating top bits */
 		break;
 	default:
-		code = (*BATatoms[tpe].atomHash) (val);
+		code = (int) (*BATatoms[tpe].atomHash)(val); /* 64bit: truncating top bits */
 	}
 	*res = code;
 	return GDK_SUCCEED;
@@ -289,7 +315,7 @@ MKEYrotate_xor_hash(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	int rbit = 32 - *rotate;
 	int mask = (1 << lbit) - 1;
 
-	if (tpe == TYPE_chr) {
+	if (tpe == TYPE_chr || tpe == TYPE_bte) {
 		chr *cur = (chr*) pval;
 		*dst = GDK_ROTATE(*h, lbit, rbit, mask) ^ *cur;
 	} else if (tpe == TYPE_sht) {
@@ -333,13 +359,13 @@ CMDbulk_rotate_xor_hash(BAT **res, BAT *bn, int *rotate, BAT *b)
 	} else if (*rotate < 0 || *rotate >= 32) {
 		GDKerror("CMDbulk_rotate_xor_hash: (%s,%d,%s): illegal number of rotate bits.\n", BATgetId(bn), *rotate, BATgetId(b));
 		return GDK_FAIL;
-	} else if (tpe == TYPE_chr) {
-		chr *cur = (chr *) BUNtloc(b, BUNfirst(b));
-		chr *end = (chr *) BUNtloc(b, BUNlast(b));
+	} else if (tpe == TYPE_bte || tpe == TYPE_chr) {
+		bte *cur = (bte *) BUNtloc(b, BUNfirst(b));
+		bte *end = (bte *) BUNtloc(b, BUNlast(b));
 
 		while (cur < end) {
 			*dst = GDK_ROTATE(*dst, lbit, rbit, mask) ^ *cur;
-			cur = (chr *) (((BUN) cur) + xx);
+			cur = (bte *) (((BUN) cur) + xx);
 			dst = (int *) (((BUN) dst) + yy);
 		}
 	} else if (tpe == TYPE_sht) {
@@ -377,9 +403,9 @@ CMDbulk_rotate_xor_hash(BAT **res, BAT *bn, int *rotate, BAT *b)
 		str base = b->theap->base;
 
 		while (cur < end) {
+                        str src = base + *cur;
 			hash_t val;
-
-			val = strHash(base + *cur);
+			GDK_STRHASH(src, val);
 			*dst = GDK_ROTATE(*dst, lbit, rbit, mask) ^ val;
 			cur = (int *) (((BUN) cur) + xx);
 			dst = (int *) (((BUN) dst) + yy);
@@ -392,11 +418,11 @@ CMDbulk_rotate_xor_hash(BAT **res, BAT *bn, int *rotate, BAT *b)
 			dst = (int *) (((BUN) dst) + yy);
 		}
 	} else {
-		hash_t (*hash) (ptr) = BATatoms[b->ttype].atomHash;
+		hash_t (*hash)(ptr) = BATatoms[b->ttype].atomHash;
 		BUN p, q;
 
 		BATloopFast(b, p, q, xx) {
-			*dst = GDK_ROTATE(*dst, lbit, rbit, mask) ^ (*hash) (BUNtail(b, p));
+			*dst = GDK_ROTATE(*dst, lbit, rbit, mask) ^ (int) (*hash)(BUNtail(b, p)); /* 64bit: truncating top bits */
 			dst = (int *) (((BUN) dst) + yy);
 		}
 	}
@@ -412,9 +438,21 @@ CMDbulk_rotate_xor_hash(BAT **res, BAT *bn, int *rotate, BAT *b)
 The remainder contains the wrapping needed for M5
 @c
 str  
+MKEYhash_bit(int *ret, bit *v)
+{
+	CMDhash_bte(ret,v);
+	return MAL_SUCCEED;
+}
+str  
 MKEYhash_chr(int *ret, chr *v)
 {
-	CMDhash_chr(ret,v);
+	CMDhash_bte(ret,v);
+	return MAL_SUCCEED;
+}
+str  
+MKEYhash_bte(int *ret, chr *v)
+{
+	CMDhash_bte(ret,v);
 	return MAL_SUCCEED;
 }
 str  
@@ -436,29 +474,41 @@ MKEYhash_flt(int *ret, flt *v)
 	CMDhash_flt(ret,v);
 	return MAL_SUCCEED;
 }
+
+str  
+MKEYhash_wrd(int *ret, wrd *v)
+{
+	CMDhash_wrd(ret,v);
+	return MAL_SUCCEED;
+}
+
 str  
 MKEYhash_dbl(int *ret, dbl *v)
 {
 	CMDhash_dbl(ret,v);
 	return MAL_SUCCEED;
 }
+
 str  
 MKEYhash_lng(int *ret, lng *v)
 {
 	CMDhash_lng(ret,v);
 	return MAL_SUCCEED;
 }
+
 str  
 MKEYhash_str(int *ret, str *v)
 {
 	CMDhash_str(ret,*v);
 	return MAL_SUCCEED;
 }
+
 str
 MKEYrotate(int *res, int *val, int *n){
 	CMDrotate(res,val,n);
 	return MAL_SUCCEED;
 }
+
 str
 MKEYhash(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	int *ret;

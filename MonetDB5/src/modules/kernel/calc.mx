@@ -20,7 +20,7 @@
 @+ Basic arithmetic 
 This module is an extended version of the V4 arithmetic module.
 It implements the arithmetic operations on the built-in types,
-@emph{chr}, @emph{sht}, @emph{int}, @emph{flt}, @emph{dbl} and @emph{lng}.
+@emph{chr}, @emph{bte}, @emph{sht}, @emph{int}, @emph{flt}, @emph{dbl} and @emph{lng}.
 All combinations are implemented. Limited combinations are implemented
 for @emph{bit}, @emph{oid} and @emph{str}. 
 
@@ -93,8 +93,9 @@ built-in type set (int,lng,sht,bit,oid,flt,...)
 @mal
 module calc;
 
-	@:mal_isnil(chr)@
 	@:mal_isnil(bit)@
+	@:mal_isnil(chr)@
+	@:mal_isnil(bte)@
 	@:mal_isnil(sht)@
 	@:mal_isnil(int)@
 	@:mal_isnil(oid)@
@@ -142,28 +143,39 @@ the least interesting one is pushed onto the symbol table stack first.
 		@:cmp_ops(flt,dbl)@
 		@:cmp_ops(dbl,dbl)@
 
-		@:cmp_ops(chr,chr)@
-		@:cmp_ops(chr,sht)@
-		@:cmp_ops(chr,int)@
-		@:cmp_ops(chr,lng)@
-
 		@:eq_ops(bit,bit)@
 		@:eq_ops(bit,chr)@
+		@:eq_ops(bit,bte)@
 		@:eq_ops(bit,sht)@
 		@:eq_ops(bit,int)@
 		@:eq_ops(bit,lng)@
 
+		@:cmp_ops(chr,chr)@
+		@:cmp_ops(chr,bte)@
+		@:cmp_ops(chr,sht)@
+		@:cmp_ops(chr,int)@
+		@:cmp_ops(chr,lng)@
+
+		@:cmp_ops(bte,chr)@
+		@:cmp_ops(bte,bte)@
+		@:cmp_ops(bte,sht)@
+		@:cmp_ops(bte,int)@
+		@:cmp_ops(bte,lng)@
+
 		@:cmp_ops(sht,chr)@
+		@:cmp_ops(sht,bte)@
 		@:cmp_ops(sht,sht)@
 		@:cmp_ops(sht,int)@
 		@:cmp_ops(sht,lng)@
 
 		@:cmp_ops(int,chr)@
+		@:cmp_ops(int,bte)@
 		@:cmp_ops(int,sht)@
 		@:cmp_ops(int,int)@
 		@:cmp_ops(int,lng)@
 
 		@:cmp_ops(lng,chr)@
+		@:cmp_ops(lng,bte)@
 		@:cmp_ops(lng,sht)@
 		@:cmp_ops(lng,int)@
 		@:cmp_ops(lng,lng)@
@@ -175,6 +187,8 @@ The macro expects three parameters, two input atomic types and a result type.
 @mal
 command %(left:chr, right:int) :int 
 address CALCbinarycheckMODchrint;
+command %(left:bte, right:int) :int 
+address CALCbinarycheckMODbteint;
 command %(left:sht, right:int) :int 
 address CALCbinarycheckMODshtint;
 command %(left:int, right:int) :int 
@@ -185,6 +199,8 @@ command %(left:lng, right:lng) :lng
 address CALCbinarycheckMODlnglng;
 command %(left:int, right:chr) :chr 
 address CALCbinarycheckMODintchr;
+command %(left:int, right:bte) :bte 
+address CALCbinarycheckMODintbte;
 command %(left:int, right:sht) :sht 
 address CALCbinarycheckMODintsht;
 
@@ -209,6 +225,7 @@ The coercions described below ensure that there is never any information loss.
 @mal
 
 	@:mal_calc_ops(flt,chr,flt)@
+	@:mal_calc_ops(flt,bte,flt)@
 	@:mal_calc_ops(flt,sht,flt)@
 	@:mal_calc_ops(flt,int,flt)@
 	@:mal_calc_ops(flt,lng,flt)@
@@ -216,6 +233,7 @@ The coercions described below ensure that there is never any information loss.
 	@:mal_calc_ops(flt,dbl,dbl)@
 
 	@:mal_calc_ops(dbl,chr,dbl)@
+	@:mal_calc_ops(dbl,bte,dbl)@
 	@:mal_calc_ops(dbl,sht,dbl)@
 	@:mal_calc_ops(dbl,int,dbl)@
 	@:mal_calc_ops(dbl,lng,dbl)@
@@ -225,13 +243,23 @@ The coercions described below ensure that there is never any information loss.
 	@:mal_calc_ops(oid,oid,oid)@
 
 	@:mal_calc_ops(chr,chr,chr)@
+	@:mal_calc_ops(chr,bte,bte)@
 	@:mal_calc_ops(chr,sht,sht)@
 	@:mal_calc_ops(chr,int,int)@
 	@:mal_calc_ops(chr,lng,lng)@
 	@:mal_calc_ops(chr,flt,flt)@
 	@:mal_calc_ops(chr,dbl,dbl)@
 
+	@:mal_calc_ops(bte,chr,chr)@
+	@:mal_calc_ops(bte,bte,bte)@
+	@:mal_calc_ops(bte,sht,sht)@
+	@:mal_calc_ops(bte,int,int)@
+	@:mal_calc_ops(bte,lng,lng)@
+	@:mal_calc_ops(bte,flt,flt)@
+	@:mal_calc_ops(bte,dbl,dbl)@
+
 	@:mal_calc_ops(sht,chr,sht)@
+	@:mal_calc_ops(sht,bte,sht)@
 	@:mal_calc_ops(sht,sht,sht)@
 	@:mal_calc_ops(sht,int,int)@
 	@:mal_calc_ops(sht,lng,lng)@
@@ -239,6 +267,7 @@ The coercions described below ensure that there is never any information loss.
 	@:mal_calc_ops(sht,dbl,dbl)@
 
 	@:mal_calc_ops(int,chr,int)@
+	@:mal_calc_ops(int,bte,int)@
 	@:mal_calc_ops(int,sht,int)@
 	@:mal_calc_ops(int,int,int)@
 	@:mal_calc_ops(int,lng,lng)@
@@ -246,6 +275,7 @@ The coercions described below ensure that there is never any information loss.
 	@:mal_calc_ops(int,dbl,dbl)@
 
 	@:mal_calc_ops(lng,chr,lng)@
+	@:mal_calc_ops(lng,bte,lng)@
 	@:mal_calc_ops(lng,sht,lng)@
 	@:mal_calc_ops(lng,int,lng)@
 	@:mal_calc_ops(lng,lng,lng)@
@@ -260,6 +290,7 @@ The coercions described below ensure that there is never any information loss.
 @-
 @mal
 	@:mal_binary_ops(chr,chr)@
+	@:mal_binary_ops(bte,bte)@
 	@:mal_binary_ops(sht,sht)@
 	@:mal_binary_ops(int,int)@
 	@:mal_binary_ops(oid,oid)@
@@ -285,6 +316,7 @@ The unary operators include coercion routines for built-in types
 	@:mal_unary_ops(dbl)@
 	@:mal_unary_ops(flt)@
 	@:mal_unary_ops(chr)@
+	@:mal_unary_ops(bte)@
 	@:mal_unary_ops(sht)@
 	@:mal_unary_ops(int)@
 	@:mal_unary_ops(lng)@
@@ -300,6 +332,7 @@ Coercion functions are typical used in multiplex calls.
 	@:mal_coercion(@1,oid)@
 	@:mal_coercion(@1,bit)@
 	@:mal_coercion(@1,chr)@
+	@:mal_coercion(@1,bte)@
 	@:mal_coercion(@1,sht)@
 	@:mal_coercion(@1,int)@
 	@:mal_coercion(@1,lng)@
@@ -308,12 +341,15 @@ Coercion functions are typical used in multiplex calls.
 @mal
 	@:scalar_coercion(bit)@
 	@:scalar_coercion(chr)@
+	@:scalar_coercion(bte)@
+	@:scalar_coercion(bte)@
 	@:scalar_coercion(lng)@
 	@:scalar_coercion(int)@
 	@:scalar_coercion(sht)@
 
 	@:mal_coercion(oid,oid)@
 	@:mal_coercion(oid,lng)@
+	@:mal_coercion(oid,bte)@
 	@:mal_coercion(oid,sht)@
 	@:mal_coercion(oid,int)@
 	@:mal_coercion(oid,flt)@
@@ -321,16 +357,19 @@ Coercion functions are typical used in multiplex calls.
 
 	@:mal_coercion(flt,flt)@
 	@:mal_coercion(flt,dbl)@
+	@:mal_coercion(flt,bte)@
 	@:mal_coercion(flt,sht)@
 	@:mal_coercion(flt,int)@
 	@:mal_coercion(flt,lng)@
 
 	@:mal_coercion(dbl,dbl)@
 	@:mal_coercion(dbl,flt)@
+	@:mal_coercion(dbl,bte)@
 	@:mal_coercion(dbl,sht)@
 	@:mal_coercion(dbl,int)@
 	@:mal_coercion(dbl,lng)@
 
+	@:mal_coercion(str,bte)@
 	@:mal_coercion(str,sht)@
 	@:mal_coercion(str,int)@
 	@:mal_coercion(str,lng)@
@@ -338,9 +377,16 @@ Coercion functions are typical used in multiplex calls.
 	@:mal_coercion(str,dbl)@
 
 	@:mal_coercion(chr,chr)@
+	@:mal_coercion(chr,bte)@
 	@:mal_coercion(chr,sht)@
 	@:mal_coercion(chr,int)@
 	@:mal_coercion(chr,lng)@
+
+	@:mal_coercion(bte,chr)@
+	@:mal_coercion(bte,bte)@
+	@:mal_coercion(bte,sht)@
+	@:mal_coercion(bte,int)@
+	@:mal_coercion(bte,lng)@
 @+ Boolean operations { or, xor, and, not }
 @mal
 command or(left:bit, right:bit) :bit 
@@ -373,6 +419,7 @@ array. Specific operations work with this interpretation.
 		address CALCbinaryRSH@1int;
 @mal
 	@:mal_bitwise_ops(chr)@
+	@:mal_bitwise_ops(bte)@
 	@:mal_bitwise_ops(sht)@
 	@:mal_bitwise_ops(int)@
 	@:mal_bitwise_ops(lng)@
@@ -400,6 +447,7 @@ Those accessible at the MAL command level are introduced below.
 @:convertCmd(bit)@
 @:convertCmd(ptr)@
 @:convertCmd(chr)@
+@:convertCmd(bte)@
 
 command bat(v:str):bat[:any_1,:any_2] 
 address CALCstr2bat;
@@ -654,13 +702,23 @@ the string representations.
    operator between the operands */
 #define OP(l,op,r)	((l) op (r))
 @:c_calc_ops(chr,chr,chr)@
+@:c_calc_ops(chr,bte,bte)@
 @:c_calc_ops(chr,sht,sht)@
 @:c_calc_ops(chr,int,int)@
 @:c_calc_ops(chr,lng,lng)@
 @:c_calc_ops(chr,flt,flt)@
 @:c_calc_ops(chr,dbl,dbl)@
 
+@:c_calc_ops(bte,chr,chr)@
+@:c_calc_ops(bte,bte,bte)@
+@:c_calc_ops(bte,sht,sht)@
+@:c_calc_ops(bte,int,int)@
+@:c_calc_ops(bte,lng,lng)@
+@:c_calc_ops(bte,flt,flt)@
+@:c_calc_ops(bte,dbl,dbl)@
+
 @:c_calc_ops(sht,chr,sht)@
+@:c_calc_ops(sht,bte,sht)@
 @:c_calc_ops(sht,sht,sht)@
 @:c_calc_ops(sht,int,int)@
 @:c_calc_ops(sht,lng,lng)@
@@ -668,6 +726,7 @@ the string representations.
 @:c_calc_ops(sht,dbl,dbl)@
 
 @:c_calc_ops(int,chr,int)@
+@:c_calc_ops(int,bte,int)@
 @:c_calc_ops(int,sht,int)@
 @:c_calc_ops(int,int,int)@
 @:c_calc_ops(int,lng,lng)@
@@ -675,6 +734,7 @@ the string representations.
 @:c_calc_ops(int,dbl,dbl)@
 
 @:c_calc_ops(lng,chr,lng)@
+@:c_calc_ops(lng,bte,lng)@
 @:c_calc_ops(lng,sht,lng)@
 @:c_calc_ops(lng,int,lng)@
 @:c_calc_ops(lng,lng,lng)@
@@ -682,6 +742,7 @@ the string representations.
 @:c_calc_ops(lng,dbl,dbl)@
 
 @:c_calc_ops(flt,chr,flt)@
+@:c_calc_ops(flt,bte,flt)@
 @:c_calc_ops(flt,sht,flt)@
 @:c_calc_ops(flt,int,flt)@
 @:c_calc_ops(flt,lng,flt)@
@@ -689,6 +750,7 @@ the string representations.
 @:c_calc_ops(flt,dbl,dbl)@
 
 @:c_calc_ops(dbl,chr,dbl)@
+@:c_calc_ops(dbl,bte,dbl)@
 @:c_calc_ops(dbl,sht,dbl)@
 @:c_calc_ops(dbl,int,dbl)@
 @:c_calc_ops(dbl,lng,dbl)@
@@ -699,6 +761,7 @@ the string representations.
 
 #define calc_abs(s) ((s)>0)?(s):-(s)
 @:calc_unop(ABS,calc_abs,chr)@
+@:calc_unop(ABS,calc_abs,bte)@
 @:calc_unop(ABS,calc_abs,sht)@
 @:calc_unop(ABS,calc_abs,int)@
 @:calc_unop(ABS,calc_abs,flt)@
@@ -707,6 +770,7 @@ the string representations.
 
 #define calc_inv(s) (1/(s))
 @:check_unop(INV,calc_inv,chr)@
+@:check_unop(INV,calc_inv,bte)@
 @:check_unop(INV,calc_inv,sht)@
 @:check_unop(INV,calc_inv,int)@
 @:check_unop(INV,calc_inv,flt)@
@@ -715,6 +779,7 @@ the string representations.
 
 #define calc_neg(s) (-(s))
 @:calc_unop(NEG,calc_neg,chr)@
+@:calc_unop(NEG,calc_neg,bte)@
 @:calc_unop(NEG,calc_neg,sht)@
 @:calc_unop(NEG,calc_neg,int)@
 @:calc_unop(NEG,calc_neg,flt)@
@@ -730,6 +795,7 @@ str CALClength@1(int *res , @1 *a ) {
 @c
 
 @:calc_length(chr)@
+@:calc_length(bte)@
 @:calc_length(sht)@
 @:calc_length(int)@
 @:calc_length(flt)@
@@ -761,6 +827,7 @@ str CALCbinary@1@3(@3 *res , @3 *a, @3 *b ) {
 @c
 #define calc_max(s1,s2) ((s1)>(s2))?(s1):(s2)
 @:calc_macrobinop(MAX,calc_max,chr)@
+@:calc_macrobinop(MAX,calc_max,bte)@
 @:calc_macrobinop(MAX,calc_max,sht)@
 @:calc_macrobinop(MAX,calc_max,int)@
 @:calc_macrobinop(MAX,calc_max,oid)@
@@ -770,6 +837,7 @@ str CALCbinary@1@3(@3 *res , @3 *a, @3 *b ) {
 
 #define calc_min(s1,s2) ((s1)<(s2))?(s1):(s2)
 @:calc_macrobinop(MIN,calc_min,chr)@
+@:calc_macrobinop(MIN,calc_min,bte)@
 @:calc_macrobinop(MIN,calc_min,sht)@
 @:calc_macrobinop(MIN,calc_min,int)@
 @:calc_macrobinop(MIN,calc_min,oid)@
@@ -778,12 +846,14 @@ str CALCbinary@1@3(@3 *res , @3 *a, @3 *b ) {
 @:calc_macrobinop(MIN,calc_min,lng)@
 
 @:check_binop(MOD,%,chr,int,int,int,"Modulo zero is not possible")@
+@:check_binop(MOD,%,bte,int,int,int,"Modulo zero is not possible")@
 @:check_binop(MOD,%,sht,sht,sht,sht,"Modulo zero is not possible")@
 @:check_binop(MOD,%,sht,int,int,int,"Modulo zero is not possible")@
 @:check_binop(MOD,%,int,int,int,int,"Modulo zero is not possible")@
 @:check_binop(MOD,%,lng,lng,lng,lng,"Modulo zero is not possible")@
 @:check_binop(MOD,%,lng,int,int,lng,"Modulo zero is not possible")@
 @:check_binop(MOD,%,int,chr,chr,int,"Modulo zero is not possible")@
+@:check_binop(MOD,%,int,bte,bte,int,"Modulo zero is not possible")@
 @:check_binop(MOD,%,int,sht,sht,int,"Modulo zero is not possible")@
 
 /* a % b when a and/or b are float (double) doesn't exist, so provide
@@ -794,11 +864,13 @@ str CALCbinary@1@3(@3 *res , @3 *a, @3 *b ) {
 @:check_binop(MOD,%,flt,flt,flt,flt,"Modulo zero is not possible")@
 
 @:c_bitwise_ops(chr)@
+@:c_bitwise_ops(bte)@
 @:c_bitwise_ops(sht)@
 @:c_bitwise_ops(int)@
 @:c_bitwise_ops(lng)@
 
 @:c_shift_ops(chr)@
+@:c_shift_ops(bte)@
 @:c_shift_ops(sht)@
 @:c_shift_ops(int)@
 
@@ -981,27 +1053,38 @@ str CALCcomp@4@2@3(bit *retval, @2 *v1, @3 *v2){
 		@:c_comp_op(@1,dbl,dbl,@2)@
 
 		@:c_comp_op(@1,chr,chr,@2)@
+		@:c_comp_op(@1,chr,bte,@2)@
 		@:c_comp_op(@1,chr,sht,@2)@
 		@:c_comp_op(@1,chr,int,@2)@
 		@:c_comp_op(@1,chr,lng,@2)@
 
+		@:c_comp_op(@1,bte,chr,@2)@
+		@:c_comp_op(@1,bte,bte,@2)@
+		@:c_comp_op(@1,bte,sht,@2)@
+		@:c_comp_op(@1,bte,int,@2)@
+		@:c_comp_op(@1,bte,lng,@2)@
+
 		@:c_comp_op(@1,bit,bit,@2)@
 		@:c_comp_op(@1,bit,chr,@2)@
+		@:c_comp_op(@1,bit,bte,@2)@
 		@:c_comp_op(@1,bit,sht,@2)@
 		@:c_comp_op(@1,bit,int,@2)@
 		@:c_comp_op(@1,bit,lng,@2)@
 
 		@:c_comp_op(@1,sht,chr,@2)@
+		@:c_comp_op(@1,sht,bte,@2)@
 		@:c_comp_op(@1,sht,sht,@2)@
 		@:c_comp_op(@1,sht,int,@2)@
 		@:c_comp_op(@1,sht,lng,@2)@
 
 		@:c_comp_op(@1,int,chr,@2)@
+		@:c_comp_op(@1,int,bte,@2)@
 		@:c_comp_op(@1,int,sht,@2)@
 		@:c_comp_op(@1,int,int,@2)@
 		@:c_comp_op(@1,int,lng,@2)@
 
 		@:c_comp_op(@1,lng,chr,@2)@
+		@:c_comp_op(@1,lng,bte,@2)@
 		@:c_comp_op(@1,lng,sht,@2)@
 		@:c_comp_op(@1,lng,int,@2)@
 		@:c_comp_op(@1,lng,lng,@2)@
@@ -1029,6 +1112,7 @@ str CALCcomp@2any(bit *retval, ptr *v1, int tpe, ptr *v2){
 }
 @c
 @:c_between_op(chr)@
+@:c_between_op(bte)@
 @:c_between_op(sht)@
 @:c_between_op(int)@
 @:c_between_op(oid)@
@@ -1097,6 +1181,7 @@ str CALCnil2@1(@1 *retval, ptr val){
 @c
 @:c_isnil(bit)@
 @:c_isnil(chr)@
+@:c_isnil(bte)@
 @:c_isnil(sht)@
 @:c_isnil(int)@
 @:c_isnil(oid)@
@@ -1285,6 +1370,7 @@ str CALC@22@1(@1 *res, @2 *a)
 @:mal_coercion_impl(bit,bit, , *a != 0)@
 @:mal_coercion_impl(bit,oid, , *a != 0)@
 @:mal_coercion_impl(bit,chr, , *a != 0)@
+@:mal_coercion_impl(bit,bte, , *a != 0)@
 @:mal_coercion_impl(bit,sht, , *a != 0)@
 @:mal_coercion_impl(bit,int, , *a != 0)@
 @:mal_coercion_impl(bit,lng, , *a != 0)@
@@ -1293,6 +1379,7 @@ str CALC@22@1(@1 *res, @2 *a)
 
 @:mal_coercion_impl(lng,oid,, (lng) *a)@
 @:mal_coercion_impl(lng,chr,, (lng) *a)@
+@:mal_coercion_impl(lng,bte,, (lng) *a)@
 @:mal_coercion_impl(lng,bit,, (lng) *a)@
 @:mal_coercion_impl(lng,sht,, (lng) *a)@
 @:mal_coercion_impl(lng,int,, (lng) *a)@
@@ -1303,6 +1390,7 @@ str CALC@22@1(@1 *res, @2 *a)
 @:mal_coercion_impl(sht,oid, , (sht) *a)@
 @:mal_coercion_impl(sht,bit, , (sht) *a)@
 @:mal_coercion_impl(sht,chr, , (sht) *a)@
+@:mal_coercion_impl(sht,bte, , (sht) *a)@
 @:mal_coercion_impl(sht,sht, , (sht) *a)@
 @:mal_coercion_impl(sht,int, , (sht) *a)@
 @:mal_coercion_impl(sht,lng, , (sht) *a)@
@@ -1312,6 +1400,7 @@ str CALC@22@1(@1 *res, @2 *a)
 @:mal_coercion_impl(int,oid, , (int) *a)@
 @:mal_coercion_impl(int,bit, , (int) *a)@
 @:mal_coercion_impl(int,chr, , (int) *a)@
+@:mal_coercion_impl(int,bte, , (int) *a)@
 @:mal_coercion_impl(int,sht, , (int) *a)@
 @:mal_coercion_impl(int,int, , (int) *a)@
 @:mal_coercion_impl(int,lng, , (int) *a)@
@@ -1320,6 +1409,7 @@ str CALC@22@1(@1 *res, @2 *a)
 
 @:mal_coercion_impl(oid,bit, || *a < 0 , (oid) *a)@
 @:mal_coercion_impl(oid,chr, || *a < 0 , (oid) *a)@
+@:mal_coercion_impl(oid,bte, || *a < 0 , (oid) *a)@
 @:mal_coercion_impl(oid,oid, , (oid) *a)@
 @:mal_coercion_impl(oid,lng, || *a < 0 , (oid) *a)@
 @:mal_coercion_impl(oid,sht, || *a < 0 , (oid) *a)@
@@ -1331,6 +1421,7 @@ str CALC@22@1(@1 *res, @2 *a)
 @:mal_coercion_impl(flt,dbl, , (flt) *a)@
 @:mal_coercion_impl(flt,sht, , (flt) *a)@
 @:mal_coercion_impl(flt,chr, , (flt) *a)@
+@:mal_coercion_impl(flt,bte, , (flt) *a)@
 @:mal_coercion_impl(flt,int, , (flt) *a)@
 @:mal_coercion_impl(flt,lng, , (flt) *a)@
 
@@ -1339,16 +1430,28 @@ str CALC@22@1(@1 *res, @2 *a)
 @:mal_coercion_impl(dbl,sht, , (dbl) *a)@
 @:mal_coercion_impl(dbl,int, , (dbl) *a)@
 @:mal_coercion_impl(dbl,chr, , (dbl) *a)@
+@:mal_coercion_impl(dbl,bte, , (dbl) *a)@
 @:mal_coercion_impl(dbl,lng, , (dbl) *a)@
 
 @:mal_coercion_impl(chr,bit, , (chr) *a)@
 @:mal_coercion_impl(chr,chr, , (chr) *a)@
+@:mal_coercion_impl(chr,bte, , (chr) *a)@
 @:mal_coercion_impl(chr,oid, , (chr) *a)@
 @:mal_coercion_impl(chr,flt, , (chr) *a)@
 @:mal_coercion_impl(chr,dbl, , (chr) *a)@
 @:mal_coercion_impl(chr,sht, , (chr) *a)@
 @:mal_coercion_impl(chr,int, , (chr) *a)@
 @:mal_coercion_impl(chr,lng, , (chr) *a)@
+
+@:mal_coercion_impl(bte,bit, , (bte) *a)@
+@:mal_coercion_impl(bte,chr, , (bte) *a)@
+@:mal_coercion_impl(bte,bte, , (bte) *a)@
+@:mal_coercion_impl(bte,oid, , (bte) *a)@
+@:mal_coercion_impl(bte,flt, , (bte) *a)@
+@:mal_coercion_impl(bte,dbl, , (bte) *a)@
+@:mal_coercion_impl(bte,sht, , (bte) *a)@
+@:mal_coercion_impl(bte,int, , (bte) *a)@
+@:mal_coercion_impl(bte,lng, , (bte) *a)@
 
 calc_export str CALCbat2BAT(int *res, bat *bid);
 str CALCbat2BAT(int *res, bat *bid){
@@ -1536,6 +1639,7 @@ CALCbatid2bat(int *bid, int *ret)
 @:convertImpl(ptr)@
 @:convertImpl(bat)@
 @:convertImpl(chr)@
+@:convertImpl(bte)@
 
 @-
 @= setoidCode

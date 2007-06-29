@@ -62,12 +62,12 @@ address ALGfind
 comment "Returns the tail value 't' for which some [h,t] BUN 
 	exists in b.  If no such BUN exists, an error occurs." ;
 
-command position(b:bat[:any_1,:any_2], v:any_1):int
+command position(b:bat[:any_1,:any_2], v:any_1):wrd
 address ALGposition
 comment "Returns BAT position [0.. b.count] of 'v' in the head 
 	column of b. It Return an error if 'v' does not exist.";
 
-command position(b:bat[:any_1,:any_2], val:any_1, tval:any_2) :int 
+command position(b:bat[:any_1,:any_2], val:any_1, tval:any_2) :wrd 
 address ALGpositionBUN
 comment "Returns the position of the value pair It returns an 
 	error if 'val' does not exist.";
@@ -668,34 +668,52 @@ command max(b:bat[:any_1,:any_2]):any_2
 address ALGmaxany
 comment "Return the highest tail value or nil.";
 @+ Type-Specific Sum, Prod, Max and Min
-For X in @{ sht,int,flt,dbl,lng @},  we generate the
+For X in @{ bte,sht,int,wrd,flt,dbl,lng @},  we generate the
 aggregate functions using a macro.
 @-
-@= sum_definition
-command sum (b:bat[:any_1,:@1] ) :@2 
-address ALGsum_@1_@2
-comment "Gives the sum of all tail values";
-command product(b:bat[:any_1,:@1] ) :@2 
-address ALGprod_@1_@2
-comment "Gives the product of all tail values";
 @mal
-@:sum_definition(sht,sht)@
-@:sum_definition(sht,int)@
-@:sum_definition(sht,lng)@
-@:sum_definition(int,int)@
-@:sum_definition(int,lng)@
-@:sum_definition(lng,lng)@
-@:sum_definition(flt,flt)@
-@:sum_definition(flt,dbl)@
-@:sum_definition(dbl,dbl)@
+@:sumprod(sum,"Gives the sum of all tail values.")@
+@:sumprod(prod,"Gives the product of all tail values.")@
+@= sumprod_definition
+command @1 (b:bat[:any_1,:@2] ) :@4 
+address ALG@1_@2_@4
+comment @3;
+@mal
+@= sumprod
+@:sumprod_definition(@1,bte,@2,bte)@
+@:sumprod_definition(@1,bte,@2,sht)@
+@:sumprod_definition(@1,bte,@2,int)@
+@:sumprod_definition(@1,bte,@2,wrd)@
+@:sumprod_definition(@1,bte,@2,lng)@
+@:sumprod_definition(@1,sht,@2,sht)@
+@:sumprod_definition(@1,sht,@2,int)@
+@:sumprod_definition(@1,sht,@2,wrd)@
+@:sumprod_definition(@1,sht,@2,lng)@
+@:sumprod_definition(@1,int,@2,int)@
+@:sumprod_definition(@1,int,@2,wrd)@
+@:sumprod_definition(@1,int,@2,lng)@
+@:sumprod_definition(@1,wrd,@2,wrd)@
+@:sumprod_definition(@1,wrd,@2,lng)@
+@:sumprod_definition(@1,lng,@2,lng)@
+@:sumprod_definition(@1,flt,@2,flt)@
+@:sumprod_definition(@1,flt,@2,dbl)@
+@:sumprod_definition(@1,dbl,@2,dbl)@
+
+@:sumprod_definition(@1,bte,@2,dbl)@
+@:sumprod_definition(@1,sht,@2,dbl)@
+@:sumprod_definition(@1,int,@2,dbl)@
+@:sumprod_definition(@1,wrd,@2,dbl)@
+@:sumprod_definition(@1,lng,@2,dbl)@
 
 @= avg_definition
 command avg (b:bat[:any_1,:@1] ) :dbl 
 address ALGavg_@1
 comment "Gives the avg of all tail values";
 @mal
+@:avg_definition(bte)@
 @:avg_definition(sht)@
 @:avg_definition(int)@
+@:avg_definition(wrd)@
 @:avg_definition(lng)@
 @:avg_definition(flt)@
 @:avg_definition(dbl)@
@@ -704,8 +722,10 @@ comment "Gives the avg of all tail values";
 command @1 ( b:bat[:any_1,:@2] ) :@2 
 address ALG@1_@2 comment @3;
 @= aggregate
+@:aggregate_definition(@1,bte,@2)@
 @:aggregate_definition(@1,sht,@2)@
 @:aggregate_definition(@1,int,@2)@
+@:aggregate_definition(@1,wrd,@2)@
 @:aggregate_definition(@1,flt,@2)@
 @:aggregate_definition(@1,dbl,@2)@
 @:aggregate_definition(@1,lng,@2)@
@@ -799,7 +819,7 @@ different situations as conditions.
 
 algebra_export ptr BATmax(BAT *b, ptr aggr);
 algebra_export ptr BATmin(BAT *b, ptr aggr);
-algebra_export int doCMDfetch(ptr ret, BAT *b, lng i);
+//algebra_export int doCMDfetch(ptr ret, BAT *b, lng i);
 algebra_export str ALGprojectNIL(int *ret, int *bid);
 algebra_export str ALGselectInclusive(int *result, int *bid, ptr low, ptr high, bit *lin, bit *rin);
 algebra_export str ALGselect(int *result, int *bid, ptr low, ptr high);
@@ -807,8 +827,10 @@ algebra_export str ALGselect(int *result, int *bid, ptr low, ptr high);
 @= avg_export
 algebra_export str ALGavg_@1(dbl *res, int *bid);
 @h
+@:avg_export(bte)@
 @:avg_export(sht)@
 @:avg_export(int)@
+@:avg_export(wrd)@
 @:avg_export(lng)@
 @:avg_export(flt)@
 @:avg_export(dbl)@
@@ -819,37 +841,6 @@ algebra_export str ALGavg_@1(dbl *res, int *bid);
 #include "mal_config.h"
 #include "algebra.h"
 
-@= BATaggr
-ptr BAT@1(BAT *b, ptr aggr) {
-		int t;
-		size_t s;
-		ptr v, x;
-
-		BATcheck(b, "BAT@1");
-		s = BATcount(b);
-		t = b->ttype;
-		if (BATtvoid(b)) {
-			@:aggr@1(chr,loc,simple,chr,void)@
-		} else {
-			switch(ATOMstorage(t)) {
-			case TYPE_chr: @:aggr@1(chr,loc,simple,chr,atom)@ break;
-			case TYPE_sht: @:aggr@1(sht,loc,simple,sht,atom)@ break;
-			case TYPE_int: @:aggr@1(int,loc,simple,int,atom)@ break;
-			case TYPE_flt: @:aggr@1(flt,loc,simple,flt,atom)@ break;
-			case TYPE_dbl: @:aggr@1(dbl,loc,simple,dbl,atom)@ break;
-			case TYPE_lng: @:aggr@1(lng,loc,simple,lng,atom)@ break;
-			default:if (b->tvarsized) {
-						   @:aggr@1(chr,var,atom,t,atom)@ break;
-					 } else {
-						   @:aggr@1(chr,loc,atom,t,atom)@ break;
-			}		}
-		}
-		return x;
-}
-
-@c
-@:BATaggr(min)@
-@:BATaggr(max)@
 
 @* Command Implementations in C
 This module contains just a wrapper implementations; since all described
@@ -909,21 +900,6 @@ CMDprod_@1_@2(@2* res, BAT *b)
 	return GDK_SUCCEED;
 }
 
-@+ BAT avg operation
-The avg aggregate only works for int and float fields.
-
-@= avg_implementation
-int
-CMDavg_@1(dbl* res, BAT *b)
-{
-	int cnt = BATcount(b);
-	dbl result=0.0;
-
-	CMDsum_@1_dbl(&result, b);
-	*res = result/cnt;
-	return GDK_SUCCEED;
-}
-
 @+ Minimum and Maximum
 The routines @`BATmin@5(b) and @`BATmax@5(b) compute the minimum and
 maximum value of the tail column of a BAT.
@@ -959,12 +935,12 @@ CMDmax_@1(@1* result, BAT *b)
 		}
 	}
 	if (aggr) {
-	   memcpy(aggr, x=v, ATOMsize(t));
+	       memcpy(aggr, x=v, ATOMsize(t));
 	} else {
-	   /* alloc new space and copy the atom into it */
-	   s = ATOMlen(t, v);
-	   memcpy(x = (ptr) GDKmalloc(s), v, s);
-   }
+	       /* alloc new space and copy the atom into it */
+	       s = ATOMlen(t, v);
+	       memcpy(x = (ptr) GDKmalloc(s), v, s);
+       }
 @= voidaggr
 	if (aggr) {
 		*(oid *) aggr = *(oid *) (x=v);
@@ -979,39 +955,114 @@ CMDmax_@1(@1* result, BAT *b)
 	v = (s == 0)?ATOMnilptr(t):BUNtail(b, BUNlast(b)-BUNsize(b));
 	@:@5aggr(@1,@2,@3,@4,GT)@
 
-@c
+@= BATaggr
+ptr
+BAT@1(BAT *b, ptr aggr)
+{
+	int t;
+	size_t s;
+	ptr v, x;
 
+	BATcheck(b, "BAT@1");
+	s = BATcount(b);
+	t = b->ttype;
+	if (BATtvoid(b)) {
+		@:aggr@1(chr,loc,simple,chr,void)@
+	} else {
+		switch(ATOMstorage(t)) {
+		case TYPE_chr:
+			@:aggr@1(chr,loc,simple,chr,atom)@
+			break;
+		case TYPE_bte:
+			@:aggr@1(bte,loc,simple,bte,atom)@
+			break;
+		case TYPE_sht:
+			@:aggr@1(sht,loc,simple,sht,atom)@
+			break;
+		case TYPE_int:
+			@:aggr@1(int,loc,simple,int,atom)@
+			break;
+		case TYPE_flt:
+			@:aggr@1(flt,loc,simple,flt,atom)@
+			break;
+		case TYPE_dbl:
+			@:aggr@1(dbl,loc,simple,dbl,atom)@
+			break;
+		case TYPE_lng:
+			@:aggr@1(lng,loc,simple,lng,atom)@
+			break;
+		default:
+			if (b->tvarsized) {
+				@:aggr@1(chr,var,atom,t,atom)@
+				break;
+			} else {
+				@:aggr@1(chr,loc,atom,t,atom)@
+				break;
+			}
+		}
+	}
+	return x;
+}
+@c
+@:BATaggr(min)@
+@:BATaggr(max)@
+
+@:sum_implementation(bte,bte,0)@
+@:sum_implementation(bte,sht,0)@
+@:sum_implementation(bte,int,0)@
+@:sum_implementation(bte,wrd,0)@
+@:sum_implementation(bte,lng,0)@
 @:sum_implementation(sht,sht,0)@
 @:sum_implementation(sht,int,0)@
+@:sum_implementation(sht,wrd,0)@
 @:sum_implementation(sht,lng,0)@
-@:sum_implementation(sht,dbl,0)@
 @:sum_implementation(int,int,0)@
+@:sum_implementation(int,wrd,0)@
 @:sum_implementation(int,lng,0)@
-@:sum_implementation(int,dbl,0)@
+@:sum_implementation(wrd,wrd,0)@
+@:sum_implementation(wrd,lng,0)@
+@:sum_implementation(lng,wrd,0)@
 @:sum_implementation(lng,lng,0)@
-@:sum_implementation(lng,dbl,0)@
 @:sum_implementation(flt,flt,0.0)@
 @:sum_implementation(flt,dbl,0.0)@
 @:sum_implementation(dbl,dbl,0.0)@
 
+@:sum_implementation(bte,dbl,0.0)@
+@:sum_implementation(sht,dbl,0.0)@
+@:sum_implementation(int,dbl,0.0)@
+@:sum_implementation(wrd,dbl,0.0)@
+@:sum_implementation(lng,dbl,0.0)@
+
+@:prod_implementation(bte,bte,1)@
+@:prod_implementation(bte,sht,1)@
+@:prod_implementation(bte,int,1)@
+@:prod_implementation(bte,wrd,1)@
+@:prod_implementation(bte,lng,1)@
 @:prod_implementation(sht,sht,1)@
 @:prod_implementation(sht,int,1)@
+@:prod_implementation(sht,wrd,1)@
 @:prod_implementation(sht,lng,1)@
 @:prod_implementation(int,int,1)@
+@:prod_implementation(int,wrd,1)@
 @:prod_implementation(int,lng,1)@
+@:prod_implementation(wrd,wrd,1)@
+@:prod_implementation(wrd,lng,1)@
+@:prod_implementation(lng,wrd,1)@
 @:prod_implementation(lng,lng,1)@
 @:prod_implementation(flt,flt,1.0)@
 @:prod_implementation(flt,dbl,1.0)@
 @:prod_implementation(dbl,dbl,1.0)@
 
-@:avg_implementation(sht)@
-@:avg_implementation(int)@
-@:avg_implementation(lng)@
-@:avg_implementation(flt)@
-@:avg_implementation(dbl)@
+@:prod_implementation(bte,dbl,0.0)@
+@:prod_implementation(sht,dbl,0.0)@
+@:prod_implementation(int,dbl,0.0)@
+@:prod_implementation(wrd,dbl,0.0)@
+@:prod_implementation(lng,dbl,0.0)@
 
+@:aggregate_implementation(bte)@
 @:aggregate_implementation(sht)@
 @:aggregate_implementation(int)@
+@:aggregate_implementation(wrd)@
 @:aggregate_implementation(flt)@
 @:aggregate_implementation(dbl)@
 @:aggregate_implementation(lng)@
@@ -1162,19 +1213,12 @@ CMDbandjoin(BAT **result, BAT *left, BAT *right, ptr minus, ptr plus)
 }
 
 @-
-Let cut this text down with some Mx macro's
+Let's cut this text down with some Mx macros
 @= unary
 int
 CMD@1(BAT **result, BAT *b)
 {
 	return (*result = @2(b))?GDK_SUCCEED:GDK_FAIL;
-}
-@= unaryint
-int
-CMD@1(int *result, BAT *b)
-{
-	*result = @2(b);
-	return GDK_SUCCEED;
 }
 @= binary
 int
@@ -1205,7 +1249,6 @@ CMD@1(BAT **result, BAT* b, int *param)
 #define BAThmark_default(b) BATmirror(BATmark(b,OIDnew(BATcount(b))))
 #define BATwcopy(b) BATcopy(b, b->htype, b->ttype, 1)
 #define BATrcopy(b) BATcopy(b, b->htype, b->ttype, 2)
-
 @c
 @:unary(histogram,BAThistogram)@
 @:unary(histogram_rev,BAThistogram_rev)@
@@ -1245,7 +1288,7 @@ int
 CMDtunique(BAT **result, BAT* b)
 {
 	oid id = oid_nil;
-	BAT *v = BATconst(BATmirror(b), TYPE_oid, &id);
+	BAT *v = BATconst(BATmirror(b), TYPE_void, &id);
 	*result = BATkunique(v);
 	BBPreclaim(v);
 	return *result?GDK_SUCCEED:GDK_FAIL;
@@ -1476,7 +1519,7 @@ CMDslice_int(BAT **retval, BAT *b, int *start, int *end)
 @- BUN Get/Fetch
 @c
 int
-CMDposition(int *retval, BAT *b, ptr val)
+CMDposition(wrd *retval, BAT *b, ptr val)
 {
 	ptr p = (b->htype == TYPE_bat) ? (ptr) &((BAT *) val)->batCacheid : val;
 	ptr v = BUNfnd(b, p);
@@ -1490,7 +1533,7 @@ CMDposition(int *retval, BAT *b, ptr val)
 }
 
 int
-CMDpositionBUN(int *retval, BAT *b, ptr val, ptr tval)
+CMDpositionBUN(wrd *retval, BAT *b, ptr val, ptr tval)
 {
 	ptr p = (b->htype == TYPE_bat) ? (ptr) &((BAT *) val)->batCacheid : val;
 	ptr o = (b->ttype == TYPE_bat) ? (ptr) &((BAT *) tval)->batCacheid : tval;
@@ -1510,8 +1553,8 @@ CMDfetchbat(BAT **ret, BAT *b, BAT *s)
 	return (*ret = BATfetch(b, s)) ? GDK_SUCCEED : GDK_FAIL;
 }
 
-int
-doCMDfetch(ptr ret, BAT *b, lng i)
+static int
+fetch(ptr ret, BAT *b, lng i)
 {
 	if (i < 0 || i >= (lng) BATcount(b)) {
 		GDKerror("CMDfetch: idx out of range\n");
@@ -1536,7 +1579,7 @@ doCMDfetch(ptr ret, BAT *b, lng i)
 		} else if (_s == 4) {
 			*(int*) ret = *(int*) BUNtail(b, @1);
 		} else if (_s == 1) {
-			*(chr*) ret = *(chr*) BUNtail(b, @1);
+			*(bte*) ret = *(bte*) BUNtail(b, @1);
 		} else if (_s == 2) {
 			*(sht*) ret = *(sht*) BUNtail(b, @1);
 		} else if (_s == 8) {
@@ -1552,17 +1595,19 @@ doCMDfetch(ptr ret, BAT *b, lng i)
 int
 CMDfetch(ptr ret, BAT *b, lng *pos)
 {
-	return doCMDfetch(ret, b, (size_t) * pos);
+	return fetch(ret, b, (size_t) *pos);
 }
 
 int
-CMDfetchoid(ptr ret, BAT *b, oid *pos)
+CMDfetch_wrd(ptr ret, BAT *b, wrd *pos)
 {
-	if (b->hseqbase == oid_nil) {
-		GDKerror("CMDfetchoid: void lookup on uninitialized column.\n");
-		return GDK_FAIL;
-	}
-	return doCMDfetch(ret, b, (size_t) (*pos - b->hseqbase));
+	return fetch(ret, b, (size_t) *pos);
+}
+
+int
+CMDfetch_int(ptr ret, BAT *b, int *pos)
+{
+	return fetch(ret, b, (size_t) *pos);
 }
 
 int
@@ -1669,6 +1714,9 @@ CMDr@1_@2(oid* ret, BAT *b, ptr v)
 		case TYPE_chr:
 			p = SORTfnd@4_chr(BATmirror(b),v);
 			break;
+		case TYPE_bte:
+			p = SORTfnd@4_bte(BATmirror(b),v);
+			break;
 		case TYPE_sht:
 			p = SORTfnd@4_sht(BATmirror(b),v);
 			break;
@@ -1725,6 +1773,9 @@ CMDfind_@2(oid *ret, BAT *b, ptr v)
 		case TYPE_chr:
 			p = SORTfnd@4_chr(BATmirror(b),v);
 			break;
+		case TYPE_bte:
+			p = SORTfnd@4_bte(BATmirror(b),v);
+			break;
 		case TYPE_sht:
 			p = SORTfnd@4_sht(BATmirror(b),v);
 			break;
@@ -1762,7 +1813,7 @@ CMDfind_@2(oid *ret, BAT *b, ptr v)
 int
 CMDmerge(BAT **ret, BAT *b)
 {
-	int n = BATcount(b);
+	size_t n = BATcount(b);
 	BAT *bn = *ret = BATnew(TYPE_lng, TYPE_void, n);
 	BUN p, q;
 	int xx;
@@ -1792,9 +1843,9 @@ CMDmerge(BAT **ret, BAT *b)
 int
 CMDsplit(BAT **ret, BAT *b)
 {
-	int n = BATcount(b);
+	size_t n = BATcount(b);
 	BAT *bn = *ret = BATnew(TYPE_oid, TYPE_oid, n);
-	int i;
+	size_t i;
 	lng *r = (lng *) BUNhead(b, BUNfirst(b));
 
 	for (i = 0; i < n; i++, r++) {
@@ -1853,42 +1904,58 @@ str ALGprod_@1_@2(@2* res, int *bid) {
 }
 @c
 
+@:ALGsum_implementation(bte,bte,0)@
+@:ALGsum_implementation(bte,sht,0)@
+@:ALGsum_implementation(bte,int,0)@
+@:ALGsum_implementation(bte,wrd,0)@
+@:ALGsum_implementation(bte,lng,0)@
 @:ALGsum_implementation(sht,sht,0)@
 @:ALGsum_implementation(sht,int,0)@
+@:ALGsum_implementation(sht,wrd,0)@
 @:ALGsum_implementation(sht,lng,0)@
 @:ALGsum_implementation(int,int,0)@
+@:ALGsum_implementation(int,wrd,0)@
 @:ALGsum_implementation(int,lng,0)@
+@:ALGsum_implementation(wrd,wrd,0)@
+@:ALGsum_implementation(wrd,lng,0)@
+@:ALGsum_implementation(lng,wrd,0)@
 @:ALGsum_implementation(lng,lng,0)@
 @:ALGsum_implementation(flt,flt,0.0)@
 @:ALGsum_implementation(flt,dbl,0.0)@
 @:ALGsum_implementation(dbl,dbl,0.0)@
 
+@:ALGsum_implementation(bte,dbl,0.0)@
+@:ALGsum_implementation(sht,dbl,0.0)@
+@:ALGsum_implementation(int,dbl,0.0)@
+@:ALGsum_implementation(wrd,dbl,0.0)@
+@:ALGsum_implementation(lng,dbl,0.0)@
+
+@:ALGprod_implementation(bte,bte,1)@
+@:ALGprod_implementation(bte,sht,1)@
+@:ALGprod_implementation(bte,int,1)@
+@:ALGprod_implementation(bte,wrd,1)@
+@:ALGprod_implementation(bte,lng,1)@
 @:ALGprod_implementation(sht,sht,1)@
 @:ALGprod_implementation(sht,int,1)@
+@:ALGprod_implementation(sht,wrd,1)@
 @:ALGprod_implementation(sht,lng,1)@
 @:ALGprod_implementation(int,int,1)@
+@:ALGprod_implementation(int,wrd,1)@
 @:ALGprod_implementation(int,lng,1)@
+@:ALGprod_implementation(wrd,wrd,1)@
+@:ALGprod_implementation(wrd,lng,1)@
+@:ALGprod_implementation(lng,wrd,1)@
 @:ALGprod_implementation(lng,lng,1)@
 @:ALGprod_implementation(flt,flt,1.0)@
 @:ALGprod_implementation(flt,dbl,1.0)@
 @:ALGprod_implementation(dbl,dbl,1.0)@
 
-@= avg_impl
-str ALGavg_@1(dbl *res, int *bid) {
-	BAT *b;
-	if( (b= BATdescriptor(*bid)) == NULL ){
-		 throw(MAL, "algebra.prod", "Cannot access descriptor");
-	}
-	CMDavg_@1(res,b);
-	BBPreleaseref(b->batCacheid);
-	return MAL_SUCCEED;
-}
-@c
-@:avg_impl(sht)@
-@:avg_impl(int)@
-@:avg_impl(lng)@
-@:avg_impl(flt)@
-@:avg_impl(dbl)@
+@:ALGprod_implementation(bte,dbl,0.0)@
+@:ALGprod_implementation(sht,dbl,0.0)@
+@:ALGprod_implementation(int,dbl,0.0)@
+@:ALGprod_implementation(wrd,dbl,0.0)@
+@:ALGprod_implementation(lng,dbl,0.0)@
+
 @-
 @= ALGaggregate_implementation
 algebra_export str ALGmin_@1(@1* res, int *bid) ;
@@ -1918,11 +1985,13 @@ str ALGmax_@1(@1* res, int *bid) {
 	throw(MAL, "algebra.max", "GDKerror");
 }
 @c
+@:ALGaggregate_implementation(bte)@
 @:ALGaggregate_implementation(sht)@
 @:ALGaggregate_implementation(int)@
+@:ALGaggregate_implementation(wrd)@
+@:ALGaggregate_implementation(lng)@
 @:ALGaggregate_implementation(flt)@
 @:ALGaggregate_implementation(dbl)@
-@:ALGaggregate_implementation(lng)@
 
 algebra_export str ALGminany(ptr result, int *bid);
 str
@@ -3016,9 +3085,9 @@ ALGslice_int(int *ret, bat *bid, int *start, int *end)
 
 @- BUN Get/Fetch
 @c
-algebra_export str ALGposition(int *retval, int *bid, ptr val);
+algebra_export str ALGposition(wrd *retval, int *bid, ptr val);
 str
-ALGposition(int *retval, int *bid, ptr val)
+ALGposition(wrd *retval, int *bid, ptr val)
 {
 	BAT *b;
 
@@ -3031,9 +3100,9 @@ ALGposition(int *retval, int *bid, ptr val)
 	return MAL_SUCCEED;
 }
 
-algebra_export str ALGpositionBUN(int *retval, int *bid, ptr val, ptr tval);
+algebra_export str ALGpositionBUN(wrd *retval, int *bid, ptr val, ptr tval);
 str
-ALGpositionBUN(int *retval, int *bid, ptr val, ptr tval)
+ALGpositionBUN(wrd *retval, int *bid, ptr val, ptr tval)
 {
 	BAT *b;
 
@@ -3426,5 +3495,48 @@ algebra_export str ALGreuse(int *ret, int *bid)
 		BBPkeepref(*ret = *bid);
 	return MAL_SUCCEED;
 }
+
+@+ BAT avg operation
+The avg aggregate only works for int and float fields.
+
+@= avg_implementation
+int
+CMDavg_@1(dbl* res, BAT *b)
+{
+	int cnt = BATcount(b);
+	dbl result=0.0;
+
+	CMDsum_@1_dbl(&result, b);
+	*res = result/cnt;
+	return GDK_SUCCEED;
+}
+
+@c
+@:avg_implementation(bte)@
+@:avg_implementation(sht)@
+@:avg_implementation(int)@
+@:avg_implementation(wrd)@
+@:avg_implementation(lng)@
+@:avg_implementation(flt)@
+@:avg_implementation(dbl)@
+
+@= avg_impl
+str ALGavg_@1(dbl *res, int *bid) {
+	BAT *b;
+	if( (b= BATdescriptor(*bid)) == NULL ){
+		 throw(MAL, "algebra.prod", "Cannot access descriptor");
+	}
+	CMDavg_@1(res,b);
+	BBPreleaseref(b->batCacheid);
+	return MAL_SUCCEED;
+}
+@c
+@:avg_impl(bte)@
+@:avg_impl(sht)@
+@:avg_impl(int)@
+@:avg_impl(wrd)@
+@:avg_impl(lng)@
+@:avg_impl(flt)@
+@:avg_impl(dbl)@
 
 @}

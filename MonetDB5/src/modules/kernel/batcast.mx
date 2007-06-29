@@ -35,6 +35,7 @@ against overflow.
 @mal
 	@:idempotent(bit)@
 	@:idempotent(chr)@
+	@:idempotent(bte)@
 	@:idempotent(sht)@
 	@:idempotent(int)@
 	@:idempotent(oid)@
@@ -43,12 +44,21 @@ against overflow.
 	@:idempotent(dbl)@
 	@:idempotent(str)@
 
+	@:coercion(bte,oid)@
+	@:coercion(bte,sht)@
+	@:coercion(bte,int)@
+	@:coercion(bte,lng)@
+	@:coercion(bte,flt)@
+	@:coercion(bte,dbl)@
+
 	@:coercion(sht,oid)@
+	@:coercion(sht,bte)@
 	@:coercion(sht,int)@
 	@:coercion(sht,lng)@
 	@:coercion(sht,flt)@
 	@:coercion(sht,dbl)@
 
+	@:coercion(int,bte)@
 	@:coercion(int,sht)@
 	@:coercion(int,oid)@
 	@:coercion(int,lng)@
@@ -56,31 +66,37 @@ against overflow.
 	@:coercion(int,dbl)@
 
 	@:coercion(lng,oid)@
+	@:coercion(lng,bte)@
 	@:coercion(lng,sht)@
 	@:coercion(lng,int)@
 	@:coercion(lng,flt)@
 	@:coercion(lng,dbl)@
 
+	@:coercion(oid,bte)@
 	@:coercion(oid,sht)@
 	@:coercion(oid,int)@
 	@:coercion(oid,lng)@
 	@:coercion(oid,flt)@
 	@:coercion(oid,dbl)@
 
+	@:coercion(flt,bte)@
 	@:coercion(flt,sht)@
 	@:coercion(flt,int)@
 	@:coercion(flt,lng)@
 	@:coercion(flt,dbl)@
 
+	@:coercion(dbl,bte)@
 	@:coercion(dbl,sht)@
 	@:coercion(dbl,int)@
 	@:coercion(dbl,lng)@
 	@:coercion(dbl,flt)@
 
+	@:coercion(bit,bte)@
 	@:coercion(bit,sht)@
 	@:coercion(bit,int)@
 	@:coercion(bit,lng)@
 
+	@:coercion(bte,bit)@
 	@:coercion(sht,bit)@
 	@:coercion(int,bit)@
 	@:coercion(lng,bit)@
@@ -252,6 +268,7 @@ int	oidToStr(char **dst, int *len, oid *src  ){
 }
 	@:Idempotent(bit)@
 	@:Idempotent(chr)@
+	@:Idempotent(bte)@
 	@:Idempotent(sht)@
 	@:Idempotent(int)@
 	@:Idempotent(oid)@
@@ -262,6 +279,7 @@ int	oidToStr(char **dst, int *len, oid *src  ){
 
 	@:GeneralStr(bit)@
 	@:GeneralStr(chr)@
+	@:GeneralStr(bte)@
 	@:GeneralStr(sht)@
 	@:GeneralStr(int)@
 	@:GeneralStr(lng)@
@@ -278,12 +296,21 @@ The reduction coding is still to be provided.
 Write out all combinations to ease subsequent
 code fine tuning
 @c
+	@:CoercionEnlarge(bte,sht)@
+	@:CoercionEnlarge(bte,oid)@
+	@:CoercionEnlarge(bte,int)@
+	@:CoercionEnlarge(bte,lng)@
+	@:CoercionEnlarge(bte,flt)@
+	@:CoercionEnlarge(bte,dbl)@
+
+	@:CoercionReduce(sht,bte)@
 	@:CoercionEnlarge(sht,oid)@
 	@:CoercionEnlarge(sht,int)@
 	@:CoercionEnlarge(sht,lng)@
 	@:CoercionEnlarge(sht,flt)@
 	@:CoercionEnlarge(sht,dbl)@
 
+	@:CoercionReduce(int,bte)@
 	@:CoercionReduce(int,sht)@
 	@:CoercionEnlarge(int,oid)@
 	@:CoercionEnlarge(int,lng)@
@@ -291,31 +318,37 @@ code fine tuning
 	@:CoercionEnlarge(int,dbl)@
 
 	@:CoercionReduce(lng,oid)@
+	@:CoercionReduce(lng,bte)@
 	@:CoercionReduce(lng,sht)@
 	@:CoercionReduce(lng,int)@
 	@:CoercionEnlarge(lng,flt)@
 	@:CoercionEnlarge(lng,dbl)@
 
+	@:CoercionReduce(oid,bte)@
 	@:CoercionReduce(oid,sht)@
 	@:CoercionReduce(oid,int)@
 	@:CoercionEnlarge(oid,lng)@
 	@:CoercionEnlarge(oid,flt)@
 	@:CoercionEnlarge(oid,dbl)@
 
+	@:CoercionReduce(flt,bte)@
 	@:CoercionReduce(flt,sht)@
 	@:CoercionReduce(flt,int)@
 	@:CoercionReduce(flt,lng)@
 	@:CoercionEnlarge(flt,dbl)@
 
+	@:CoercionReduce(dbl,bte)@
 	@:CoercionReduce(dbl,sht)@
 	@:CoercionReduce(dbl,int)@
 	@:CoercionReduce(dbl,lng)@
 	@:CoercionReduce(dbl,flt)@
 
+	@:CoercionEnlarge(bit,bte)@
 	@:CoercionEnlarge(bit,sht)@
 	@:CoercionEnlarge(bit,int)@
 	@:CoercionEnlarge(bit,lng)@
 
+	@:CoercionReduce(bte,bit)@
 	@:CoercionReduce(sht,bit)@
 	@:CoercionReduce(int,bit)@
 	@:CoercionReduce(lng,bit)@
