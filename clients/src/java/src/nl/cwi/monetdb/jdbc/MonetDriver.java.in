@@ -276,6 +276,7 @@ final public class MonetDriver implements Driver {
 		typeMap.put("varchar", new Integer(Types.VARCHAR));
 		typeMap.put("clob", new Integer(Types.CLOB));
 		typeMap.put("oid", new Integer(Types.OTHER));
+		typeMap.put("tinyint", new Integer(Types.TINYINT));
 		typeMap.put("smallint", new Integer(Types.SMALLINT));
 		typeMap.put("int", new Integer(Types.INTEGER));
 		typeMap.put("bigint", new Integer(Types.BIGINT));
