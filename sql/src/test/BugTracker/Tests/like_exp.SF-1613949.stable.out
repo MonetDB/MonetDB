@@ -23,7 +23,7 @@ Over..
 
 % sys.tables,	sys.tables,	sys.tables,	sys.tables,	sys.tables,	sys.tables,	sys.tables,	sys.tables # table_name
 % id,	name,	schema_id,	query,	type,	system,	commit_action,	temporary # name
-% int,	varchar,	int,	varchar,	smallint,	boolean,	smallint,	smallint # type
+% int,	varchar,	int,	varchar,	smallint,	boolean,	smallint,	tinyint # type
 % 1,	0,	1,	0,	1,	5,	1,	1 # length
 
 # 21:38:42 >  

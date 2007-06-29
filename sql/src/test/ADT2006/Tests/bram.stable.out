@@ -140,7 +140,7 @@ Over..
 % 0,	10 # length
 % .,	. # table_name
 % mon,	murders # name
-% smallint,	int # type
+% tinyint,	int # type
 % 2,	1 # length
 [ 1,	0	]
 [ 2,	2	]
@@ -156,7 +156,7 @@ Over..
 [ 12,	2	]
 % .,	sys. # table_name
 % mon,	victim # name
-% smallint,	varchar # type
+% tinyint,	varchar # type
 % 2,	42 # length
 [ 2,	"Annie Millwood"	]
 [ 2,	"Frances Coles"	]

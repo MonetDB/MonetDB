@@ -252,14 +252,14 @@ dump_1(backend *sql, MalBlkPtr mb, stmt *s, char *mod, char *name)
 }
 
 void
-dump_2(backend *sql, MalBlkPtr mb, stmt *s, char *name)
+dump_2(backend *sql, MalBlkPtr mb, stmt *s, char *mod, char *name)
 {
 	InstrPtr q;
 	int o1 = _dumpstmt(sql, mb, s->op1.stval);
 	int o2 = _dumpstmt(sql, mb, s->op2.stval);
 
 	@:SQLprelude@
-	q = newStmt1(mb, algebraRef, name);
+	q = newStmt1(mb, mod, name);
 	q = pushArgument(mb, q, o1);
 	q = pushArgument(mb, q, o2);
 	s->nr = getDestVar(q);
@@ -494,11 +494,11 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 		}
 			break;
 		case st_const:{
-			dump_2(sql, mb, s, "project");
+			dump_2(sql, mb, s, algebraRef, "project");
 		}
 			break;
 		case st_mark:{
-			dump_2(sql, mb, s, "markT");
+			dump_2(sql, mb, s, algebraRef, "markT");
 		}
 			break;
 		case st_gen_group:{
@@ -870,15 +870,18 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 		}
 			break;
 		case st_semijoin:{
-			dump_2(sql, mb, s, "semijoin");
+			if (s->op1.stval->h && s->op1.stval->h == s->op2.stval->h)
+				dump_2(sql, mb, s, sqlRef, "sql_semijoin");
+			else
+				dump_2(sql, mb, s, algebraRef, "semijoin");
 		}
 			break;
 		case st_diff:{
-			dump_2(sql, mb, s, "kdifference");
+			dump_2(sql, mb, s, algebraRef, "kdifference");
 		}
 			break;
 		case st_union:{
-			dump_2(sql, mb, s, "kunion");
+			dump_2(sql, mb, s, algebraRef, "kunion");
 		}
 			break;
 		case st_outerjoin:
@@ -1303,10 +1306,9 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			char *mod = _strdup(s->op4.aggrval->aggr->mod);
 			char *aggrfunc = s->op4.aggrval->aggr->imp;
 			int restype = s->op4.aggrval->res.type->localtype;
-			sql_subtype *tpe = tail_type(s->op1.stval);
 			int output_type_needed = 0;
 			
-			if (tpe && strcmp(aggrfunc, "sum") == 0) 
+			if (strcmp(aggrfunc, "sum") == 0) 
 				output_type_needed = 1;
 
 			@:SQLprelude@
@@ -1950,7 +1952,15 @@ backend_call(backend *be, Client c, cq *cq)
 
 		for (i=0; i<m->argc; i++){
 			atom *a = m->args[i];
+			sql_subtype *pt = cq->params+i;
 
+			if (!atom_cast(a, pt)) {
+				char buf[BUFSIZ];
+
+				snprintf(buf, BUFSIZ, "wrong argument for function call (expected %s instead of %s)\n", pt->type->sqlname, atom_type(a)->type->sqlname);
+				sql_error(m, 003, buf);
+				break;
+			}
 			if (atom_null(a)) {
 				sql_subtype *t = cq->params+i;
 				/* need type from the prepared argument */

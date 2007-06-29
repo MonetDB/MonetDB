@@ -25,6 +25,7 @@
 #include "rel_semantic.h"
 
 extern void rel_print(mvc *sql, sql_rel *rel, int depth);
+extern const char *op2string(operator_type op);
 
 #endif /*_REL_DUMP_H_*/
 @c
@@ -158,6 +159,37 @@ exps_print(mvc *sql, list *exps, int depth, int alias)
 	for( en = exps->h; en; en = en->next ) 
 		exp_print(sql, en->data, depth+1, (en->next!=NULL), alias);
 	printf(" ]");
+}
+
+const char *
+op2string(operator_type op) 
+{
+	switch (op) {
+	case op_basetable:
+		return "basetable";
+	case op_table:
+		return "table";
+	case op_project:
+		return "project";
+	case op_select: 
+		return "select";
+	case op_join: 
+	case op_left: 
+	case op_right: 
+	case op_full: 
+		return "join";
+	case op_union: 
+	case op_inter: 
+	case op_except: 
+		return "set op";
+	case op_groupby: 
+		return "group by";
+	case op_orderby: 
+		return "order by";
+	case op_topn: 
+		return "topn";
+	}
+	return "unknown";
 }
 
 void

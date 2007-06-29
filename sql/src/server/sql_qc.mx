@@ -180,10 +180,25 @@ param_list_cmp(sql_subtype *typelist, atom **atoms, int plen)
 
 		/* NULL values match any type */
 		if (!atom_null(a2) && param_cmp(t1, atom_type(a2)) != 0) {
-			/* FLT == DEC */
-			if (t1->type->eclass != EC_FLT || 
-		 	    a2->d == dbl_nil || 
-			    atom_type(a2)->type->eclass != EC_DEC) 
+			sql_subtype *at = atom_type(a2);
+
+			/* FLT == DEC/NUM and DEC/NUM are equal */
+			if ((!(t1->type->eclass == EC_FLT && 
+			    (at->type->eclass == EC_DEC ||
+			     at->type->eclass == EC_NUM))) &&
+			   (!(t1->type->eclass == EC_DEC &&
+			      at->type->eclass == EC_NUM &&
+			      t1->type->localtype >= at->type->localtype)) &&
+			/*
+			   (!(t1->type->eclass == EC_DEC &&
+			      at->type->eclass == EC_DEC &&
+			      t1->type->localtype >= at->type->localtype &&
+			      at->digits <= t1->digits &&
+			      at->scale <= t1->scale)) &&
+			*/
+			   (!(t1->type->eclass == EC_NUM &&
+			      atom_type(a2)->type->eclass == EC_NUM &&
+			       t1->type->localtype >= atom_type(a2)->type->localtype)))
 				return -1;
 		}
 	}

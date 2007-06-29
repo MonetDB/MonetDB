@@ -50,7 +50,7 @@ Over..
 [ 1	]
 % t920585.a,	t920585.a,	t920585.a,	t920585.a,	t920585.a,	t920585.a # table_name
 % name,	query,	istable,	system,	commit_action,	temporary # name
-% varchar,	varchar,	boolean,	boolean,	smallint,	smallint # type
+% varchar,	varchar,	boolean,	boolean,	smallint,	tinyint # type
 % 12,	222,	5,	5,	1,	1 # length
 [ "_columns",	NULL,	true,	true,	2,	0	]
 [ "_columns",	NULL,	true,	true,	0,	0	]

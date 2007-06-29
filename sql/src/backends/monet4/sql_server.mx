@@ -77,6 +77,9 @@ access after being logged in.
 	.COMMAND mvc_next_value( mvc m, str sname, str seqname ) : lng = mvc_next_value;
 		"return the next value of the sequence"
 
+	.COMMAND [mvc_next_value]( mvc m, BAT[oid,str] snames, str seqname ) : bat[oid,lng] = mvc_bat_next_value;
+		"return the next value of the sequence for the bat of schema names"
+
 	.COMMAND mvc_get_value( mvc m, str sname, str sequence ) : lng = mvc_get_value;
 		"return the current value of the sequence"
 
@@ -147,9 +150,11 @@ stream.
 
 @= mel_round
 	.COMMAND dec_round( @1 v, @1 r ) : @1 = @1_dec_round_wrap; "round off the value v to nearests multiple of r"
-	.COMMAND round( @1 v, int d, int s, sht r ) : @1 = @1_round_wrap; "round off the decimal v(d,s) to r digits behind the dot (if r < 0, before the dot)"
+
+	.COMMAND round( @1 v, int d, int s, bte r ) : @1 = @1_round_wrap; "round off the decimal v(d,s) to r digits behind the dot (if r < 0, before the dot)"
 @m
 
+@:mel_round(bte)@
 @:mel_round(sht)@
 @:mel_round(int)@
 @:mel_round(lng)@
@@ -164,6 +169,7 @@ stream.
  .COMMAND @1( str v, int digits ) : @1 = str_2num_@1; "cast to @1 and check for overflow"
  .COMMAND @1( str v, int digits, int scale ) : @1 = str_2dec_@1; "cast to dec(@1) and check for overflow"
 @m
+@:mel_cast(bte)@
 @:mel_cast(sht)@
 @:mel_cast(int)@
 @:mel_cast(lng)@
@@ -184,9 +190,11 @@ stream.
  .COMMAND @1( @2 v, int d2, int s2 ) : @1 = @2_num2dec_@1; "cast number to decimale(@1) and check for overflow"
 @m
 
+@:mel_cast_2dec(bte,flt)@
 @:mel_cast_2dec(sht,flt)@
 @:mel_cast_2dec(int,flt)@
 @:mel_cast_2dec(lng,flt)@
+@:mel_cast_2dec(bte,dbl)@
 @:mel_cast_2dec(sht,dbl)@
 @:mel_cast_2dec(int,dbl)@
 @:mel_cast_2dec(lng,dbl)@
@@ -201,18 +209,27 @@ stream.
 @:mel_cast_dec2(@1,@2)@
 @m
 
+@:mel_cast2(bte,bte)@
+@:mel_cast2(bte,sht)@
+@:mel_cast2(bte,int)@
+@:mel_cast2(bte,lng)@
+@:mel_cast2(sht,bte)@
 @:mel_cast2(sht,sht)@
 @:mel_cast2(sht,int)@
 @:mel_cast2(sht,lng)@
+@:mel_cast2(int,bte)@
 @:mel_cast2(int,sht)@
 @:mel_cast2(int,int)@
 @:mel_cast2(int,lng)@
+@:mel_cast2(lng,bte)@
 @:mel_cast2(lng,sht)@
 @:mel_cast2(lng,int)@
 @:mel_cast2(lng,lng)@
+@:mel_cast2(flt,bte)@
 @:mel_cast2(flt,sht)@
 @:mel_cast2(flt,int)@
 @:mel_cast2(flt,lng)@
+@:mel_cast2(dbl,bte)@
 @:mel_cast2(dbl,sht)@
 @:mel_cast2(dbl,int)@
 @:mel_cast2(dbl,lng)@
@@ -224,6 +241,7 @@ stream.
 @m
 
 @:mel_interval(str)@
+@:mel_interval(bte)@
 @:mel_interval(sht)@
 @:mel_interval(int)@
 @:mel_interval(lng)@
@@ -431,6 +449,61 @@ mvc_next_value(lng *res, mvc *C, str sname, str seqname)
 	}
 	return GDK_FAIL;
 }
+
+int
+mvc_bat_next_value(BAT **res, mvc *C, BAT *snames, str seqname)
+{
+	mvc *c = *(mvc**)C;
+	int xx;
+	BAT *r;
+	BUN p,q;
+	sql_schema *s = NULL;
+	sql_sequence *seq = NULL;
+	seqbulk *sb = NULL;
+
+	r = BATnew(snames->htype, TYPE_lng, BATcount(snames));
+	if (!r) {
+		GDKerror("Cannot create bat");
+		return GDK_FAIL;
+	}
+
+	BATseqbase(r, snames->hseqbase);
+	if (!BATcount(snames)) {
+		*res = r;
+		return GDK_SUCCEED;
+	}
+
+	BATloopFast(snames,p,q,xx){
+		str sname = BUNtail(snames,BUNfirst(snames));
+		lng l;
+
+		if (!s || strcmp(s->base.name, sname) != 0) {
+			if (sb)
+				seqbulk_destroy(sb);
+			s = mvc_bind_schema(c, sname);
+			seq = NULL;
+			if (!s || 
+			    (seq = find_sql_sequence(s, seqname)) == NULL ||
+			    !(sb = seqbulk_create(seq, BATcount(snames))) ) {
+				BBPunfix(r->batCacheid);
+				GDKerror("sql.next_value error");
+				return GDK_FAIL;
+			}
+		}
+		if (!seqbulk_next_value(sb, &l)) {
+			BBPunfix(r->batCacheid);
+			seqbulk_destroy(sb);
+			GDKerror("sql.next_value error");
+			return GDK_FAIL;
+		}
+		BUNins(r, BUNhead(snames,p), &l, FALSE);
+	}
+	if (sb) 
+		seqbulk_destroy(sb);
+	*res = r;
+	return GDK_SUCCEED;
+}
+
 int
 mvc_get_value(lng *res, mvc *C, str sname, str seqname)
 {
@@ -741,7 +814,7 @@ int @1_dec_round_wrap( @1 *res, @1 *v, @1 *r )
 	return GDK_SUCCEED;
 }
 
-int @1_round_wrap( @1 *res, @1 *v, int *d, int *s, sht *r )
+int @1_round_wrap( @1 *res, @1 *v, int *d, int *s, bte *r )
 {
 	/* shortcut nil */
 	if (*v == @1_nil) {
@@ -814,6 +887,7 @@ str_2num_@1( @1 *res, str v, int *len )
 	return str_2dec_@1( res, v, len, &zero );
 }
 @c
+@:round(bte)@
 @:round(sht)@
 @:round(int)@
 @:round(lng)@
@@ -857,6 +931,7 @@ str_2_@1( @1 *res, str val )
 	return GDK_SUCCEED;
 }
 @c
+@:cast(bte)@
 @:cast(sht)@
 @:cast(int)@
 @:cast(lng)@
@@ -998,9 +1073,13 @@ int @2_dec2dec_@1( @1 *res, int *S1, @2 *v, int *d2, int *S2 )
 	return GDK_SUCCEED;
 }
 @c
+@:numcastup(bte,bte)@
+@:numcastup(sht,bte)@
 @:numcastup(sht,sht)@
+@:numcastup(int,bte)@
 @:numcastup(int,sht)@
 @:numcastup(int,int)@
+@:numcastup(lng,bte)@
 @:numcastup(lng,sht)@
 @:numcastup(lng,int)@
 @:numcastup(lng,lng)@
@@ -1042,9 +1121,11 @@ int @2_num2dec_@1( @1 *res, @2 *v, int *d2, int *s2 )
 	return GDK_SUCCEED;
 }
 @c
+@:fnumcastdown(bte,flt)@
 @:fnumcastdown(sht,flt)@
 @:fnumcastdown(int,flt)@
 @:fnumcastdown(lng,flt)@
+@:fnumcastdown(bte,dbl)@
 @:fnumcastdown(sht,dbl)@
 @:fnumcastdown(int,dbl)@
 @:fnumcastdown(lng,dbl)@
@@ -1112,9 +1193,11 @@ int @2_dec2dec_@1( @1 *res, int *S1, @2 *v, int *d2, int *S2 )
 	return GDK_SUCCEED;
 }
 @c
+@:fnumcastup(flt,bte)@
 @:fnumcastup(flt,sht)@
 @:fnumcastup(flt,int)@
 @:fnumcastup(flt,lng)@
+@:fnumcastup(dbl,bte)@
 @:fnumcastup(dbl,sht)@
 @:fnumcastup(dbl,int)@
 @:fnumcastup(dbl,lng)@
@@ -1189,6 +1272,9 @@ int @2_dec2dec_@1( @1 *res, int *S1, @2 *v, int *d2, int *S2 )
 	}
 }
 @c
+@:numcastdown(bte,sht)@
+@:numcastdown(bte,int)@
+@:numcastdown(bte,lng)@
 @:numcastdown(sht,int)@
 @:numcastdown(sht,lng)@
 @:numcastdown(int,lng)@
@@ -1245,6 +1331,7 @@ int second_interval_@1( lng *res, @1 *s, int *ek, int *sk ){
 }
 @c
 
+@:c_interval(bte)@
 @:c_interval(sht)@
 @:c_interval(int)@
 @:c_interval(lng)@
@@ -1375,6 +1462,11 @@ proc sql_union (bat[any::1,any::2] b1, bat[any::1,any::2] b2) : bat[any::1,any::
 #	return b1;
 }
 
+proc sql_semijoin (bat[oid,any::1] b1, bat[oid,any::2] b2) : bat[oid,any::1] {
+	var x := b2.mirror();
+	return x.join(b1);
+}
+
 proc log2(int i) : int {
   var n := 0;
   while(i > 1)  {
@@ -1388,6 +1480,9 @@ proc log2(int i) : int {
 var myc := mvc(ptr(nil));
 proc next_value( str sname, str v ) : lng {
 	return mvc_next_value(myc, sname, v);
+}
+proc [next_value]( bat[oid,str] snames, str v ) : lng {
+	return [mvc_next_value](myc, snames, v);
 }
 proc get_value( str sname, str v ) : lng {
 	return mvc_get_value(myc, sname, v);

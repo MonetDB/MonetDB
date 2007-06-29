@@ -629,7 +629,10 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 			break;
 		}
 		case st_semijoin:
-			dump_2(sql, s, "semijoin", nr);
+			if (s->op1.stval->h && s->op1.stval->h == s->op2.stval->h)
+				dump_2(sql, s, "sql_semijoin", nr);
+			else
+				dump_2(sql, s, "semijoin", nr);
 			break;
 		case st_diff:
 			dump_2(sql, s, "kdiff", nr);
@@ -950,7 +953,7 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 			int l = backend_dumpstmt_(s->op1.stval, nr, sql);
 			size_t buflen = strlen(s->op4.aggrval->aggr->imp) + SMALLBUFSIZ;
 			char *aggrfunc = s->op4.aggrval->aggr->imp;
-			sql_subtype *tpe = tail_type(s->op1.stval);
+			sql_subtype *tpe = tail_type(s);
 
 			buf = NEW_ARRAY(char, buflen + 1);
 
@@ -1548,25 +1551,37 @@ milnode2(ValPtr valp)
 }
 
 static YYSTREE
-monet4_interpret(Cntxt procstk, mvc *c, char *name, int *err)
+monet4_interpret(Cntxt procstk, mvc *c, cq *q, int *err)
 {
 	YYSTREE callnode;
 	YYSTREE argtree;
 	ValRecord v;
 
 	v.vtype = TYPE_void;
-	callnode = milnode(TOK_FUNCTION, TYPE_str, _strdup(name));
+	callnode = milnode(TOK_FUNCTION, TYPE_str, _strdup(q->name));
 	argtree = Myynode(0, 0);
 	if (c->argc) {
 		int i;
 		for (i = 0; i < c->argc; i++){
 			atom *a = c->args[i];
 			YYSTREE arg;
+			sql_subtype *pt = q->params+i;
 
+			/*
 			if (atom_null(a)) {
 				if (a->data.vtype == TYPE_str && a->data.val.sval == NULL) {
 					a->data.val.sval = GDKstrdup(str_nil);
 				}
+			}
+			*/
+			
+			if (!atom_cast(a, pt)) {
+				char buf[BUFSIZ];
+
+				snprintf(buf, BUFSIZ, "wrong argument for function call (expected %s instead of %s)\n", pt->type->sqlname, atom_type(a)->type->sqlname);
+				sql_error(c, 003, buf);
+				*err = -1;
+				return NULL;
 			}
 			arg = milnode2(&a->data);
 			argtree = Myyexpand(argtree, arg);
@@ -1589,7 +1604,7 @@ int backend_call( backend *be, mvc *c, cq *q )
 	YYSTREE callnode;
 
 	be->mvc->type = q->type;
-	callnode = monet4_interpret(procstk, c, q->name, &err);
+	callnode = monet4_interpret(procstk, c, q, &err);
 
 	if (!err) {
 		q->code = (backend_code) callnode;
@@ -1622,7 +1637,16 @@ backend_fastpath(backend *be, mvc *c, cq *q)
 
 		for (i = 1; i <= c->argc; i++) {
 			atom *a = c->args[i-1];
+			sql_subtype *pt = q->params+i-1;
 
+			if (!atom_cast(a, pt)) {
+				char buf[BUFSIZ];
+
+				snprintf(buf, BUFSIZ, "wrong argument for fast call (expected %s instead of %s)\n", pt->type->sqlname, atom_type(a)->type->sqlname);
+				sql_error(c, 003, buf);
+				return -1;
+			}
+			/*
 			if (atom_null(a)) {
 				int t = argv[i].vtype;
 
@@ -1636,7 +1660,6 @@ backend_fastpath(backend *be, mvc *c, cq *q)
 						a->data.val.pval = NULL;
 					}
 				}
-			/* cast DEC into FLT */
 			} else if (a->data.vtype != argv[i].vtype && argv[i].vtype == TYPE_dbl) { 
 				a->data.vtype = argv[i].vtype;
 				a->data.val.dval = a->d;
@@ -1644,6 +1667,8 @@ backend_fastpath(backend *be, mvc *c, cq *q)
 				a->data.vtype = argv[i].vtype;
 				a->data.val.fval = a->d;
 			}
+			*/
+			/* cast DEC into FLT */
 			argv[i] = a->data;
 		}
 	}

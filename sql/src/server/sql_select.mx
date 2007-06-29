@@ -805,12 +805,13 @@ sql_cast(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset, int f)
 		}
 	}
 	if (l) {
-		sql_subtype *ltpe = tail_type(l);
+		char *ltpe = tail_type(l)?tail_type(l)->type->sqlname:"unknown";
+
 		l = check_types(sql, tpe, l, type_cast);
 		if (!l) {
 			/* we overwrite the error here */
 			sql->errstr[0] = 0;
-			return sql_error(sql, 02, "CAST: cannot cast type '%s' to type '%s'", ltpe?ltpe->type->sqlname:"unknown", tpe->type->sqlname );
+			return sql_error(sql, 02, "CAST: cannot cast type '%s' to type '%s'", ltpe, tpe->type->sqlname );
 		}
 	}
 	return l;
@@ -1235,7 +1236,7 @@ sql_aggrop(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset, int f)
 			fix_scale (avg(dec(sht)) -> double */
 		sql_subtype *t = tail_type(s);
 
-		/* inconsistent sql requires NULL != NULL and NULL <> NULL, ie unknown
+		/* inconsistent sql requires NULL != NULL, ie unknown
 		 * but also NULL means no values, which means 'ignore'
 		 *
 		 * so here we need to ignore NULLs

@@ -28,642 +28,642 @@ Over..
 
 % . # table_name 
 % single_value # name 
-% smallint # type 
+% tinyint # type 
 % 1 # length 
 [ 0	] 
 % . # table_name 
 % single_value # name 
-% smallint # type 
+% tinyint # type 
 % 1 # length 
 [ 1	] 
 % . # table_name 
 % single_value # name 
-% smallint # type 
+% tinyint # type 
 % 1 # length 
 [ 2	] 
 % . # table_name 
 % single_value # name 
-% smallint # type 
+% tinyint # type 
 % 1 # length 
 [ 3	] 
 % . # table_name 
 % single_value # name 
-% smallint # type 
+% tinyint # type 
 % 1 # length 
 [ 4	] 
 % . # table_name 
 % single_value # name 
-% smallint # type 
+% tinyint # type 
 % 1 # length 
 [ 5	] 
 % . # table_name 
 % single_value # name 
-% smallint # type 
+% tinyint # type 
 % 1 # length 
 [ 6	] 
 % . # table_name 
 % single_value # name 
-% smallint # type 
+% tinyint # type 
 % 1 # length 
 [ 7	] 
 % . # table_name 
 % single_value # name 
-% smallint # type 
+% tinyint # type 
 % 1 # length 
 [ 8	] 
 % . # table_name 
 % single_value # name 
-% smallint # type 
+% tinyint # type 
 % 1 # length 
 [ 9	] 
 % . # table_name 
 % single_value # name 
-% smallint # type 
+% tinyint # type 
 % 2 # length 
 [ 10	] 
 % . # table_name 
 % single_value # name 
-% smallint # type 
+% tinyint # type 
 % 2 # length 
 [ 11	] 
 % . # table_name 
 % single_value # name 
-% smallint # type 
+% tinyint # type 
 % 2 # length 
 [ 12	] 
 % . # table_name 
 % single_value # name 
-% smallint # type 
+% tinyint # type 
 % 2 # length 
 [ 13	] 
 % . # table_name 
 % single_value # name 
-% smallint # type 
+% tinyint # type 
 % 2 # length 
 [ 14	] 
 % . # table_name 
 % single_value # name 
-% smallint # type 
+% tinyint # type 
 % 2 # length 
 [ 15	] 
 % . # table_name 
 % single_value # name 
-% smallint # type 
+% tinyint # type 
 % 2 # length 
 [ 16	] 
 % . # table_name 
 % single_value # name 
-% smallint # type 
+% tinyint # type 
 % 2 # length 
 [ 17	] 
 % . # table_name 
 % single_value # name 
-% smallint # type 
+% tinyint # type 
 % 2 # length 
 [ 18	] 
 % . # table_name 
 % single_value # name 
-% smallint # type 
+% tinyint # type 
 % 2 # length 
 [ 19	] 
 % . # table_name 
 % single_value # name 
-% smallint # type 
+% tinyint # type 
 % 2 # length 
 [ 20	] 
 % . # table_name 
 % single_value # name 
-% smallint # type 
+% tinyint # type 
 % 2 # length 
 [ 21	] 
 % . # table_name 
 % single_value # name 
-% smallint # type 
+% tinyint # type 
 % 2 # length 
 [ 22	] 
 % . # table_name 
 % single_value # name 
-% smallint # type 
+% tinyint # type 
 % 2 # length 
 [ 23	] 
 % . # table_name 
 % single_value # name 
-% smallint # type 
+% tinyint # type 
 % 2 # length 
 [ 24	] 
 % . # table_name 
 % single_value # name 
-% smallint # type 
+% tinyint # type 
 % 2 # length 
 [ 25	] 
 % . # table_name 
 % single_value # name 
-% smallint # type 
+% tinyint # type 
 % 2 # length 
 [ 26	] 
 % . # table_name 
 % single_value # name 
-% smallint # type 
+% tinyint # type 
 % 2 # length 
 [ 27	] 
 % . # table_name 
 % single_value # name 
-% smallint # type 
+% tinyint # type 
 % 2 # length 
 [ 28	] 
 % . # table_name 
 % single_value # name 
-% smallint # type 
+% tinyint # type 
 % 2 # length 
 [ 29	] 
 % . # table_name 
 % single_value # name 
-% smallint # type 
+% tinyint # type 
 % 2 # length 
 [ 30	] 
 % . # table_name 
 % single_value # name 
-% smallint # type 
+% tinyint # type 
 % 2 # length 
 [ 31	] 
 % . # table_name 
 % single_value # name 
-% smallint # type 
+% tinyint # type 
 % 2 # length 
 [ 32	] 
 % . # table_name 
 % single_value # name 
-% smallint # type 
+% tinyint # type 
 % 2 # length 
 [ 33	] 
 % . # table_name 
 % single_value # name 
-% smallint # type 
+% tinyint # type 
 % 2 # length 
 [ 34	] 
 % . # table_name 
 % single_value # name 
-% smallint # type 
+% tinyint # type 
 % 2 # length 
 [ 35	] 
 % . # table_name 
 % single_value # name 
-% smallint # type 
+% tinyint # type 
 % 2 # length 
 [ 36	] 
 % . # table_name 
 % single_value # name 
-% smallint # type 
+% tinyint # type 
 % 2 # length 
 [ 37	] 
 % . # table_name 
 % single_value # name 
-% smallint # type 
+% tinyint # type 
 % 2 # length 
 [ 38	] 
 % . # table_name 
 % single_value # name 
-% smallint # type 
+% tinyint # type 
 % 2 # length 
 [ 39	] 
 % . # table_name 
 % single_value # name 
-% smallint # type 
+% tinyint # type 
 % 2 # length 
 [ 40	] 
 % . # table_name 
 % single_value # name 
-% smallint # type 
+% tinyint # type 
 % 2 # length 
 [ 41	] 
 % . # table_name 
 % single_value # name 
-% smallint # type 
+% tinyint # type 
 % 2 # length 
 [ 42	] 
 % . # table_name 
 % single_value # name 
-% smallint # type 
+% tinyint # type 
 % 2 # length 
 [ 43	] 
 % . # table_name 
 % single_value # name 
-% smallint # type 
+% tinyint # type 
 % 2 # length 
 [ 44	] 
 % . # table_name 
 % single_value # name 
-% smallint # type 
+% tinyint # type 
 % 2 # length 
 [ 45	] 
 % . # table_name 
 % single_value # name 
-% smallint # type 
+% tinyint # type 
 % 2 # length 
 [ 46	] 
 % . # table_name 
 % single_value # name 
-% smallint # type 
+% tinyint # type 
 % 2 # length 
 [ 47	] 
 % . # table_name 
 % single_value # name 
-% smallint # type 
+% tinyint # type 
 % 2 # length 
 [ 48	] 
 % . # table_name 
 % single_value # name 
-% smallint # type 
+% tinyint # type 
 % 2 # length 
 [ 49	] 
 % . # table_name 
 % single_value # name 
-% smallint # type 
+% tinyint # type 
 % 2 # length 
 [ 50	] 
 % . # table_name 
 % single_value # name 
-% smallint # type 
+% tinyint # type 
 % 2 # length 
 [ 51	] 
 % . # table_name 
 % single_value # name 
-% smallint # type 
+% tinyint # type 
 % 2 # length 
 [ 52	] 
 % . # table_name 
 % single_value # name 
-% smallint # type 
+% tinyint # type 
 % 2 # length 
 [ 53	] 
 % . # table_name 
 % single_value # name 
-% smallint # type 
+% tinyint # type 
 % 2 # length 
 [ 54	] 
 % . # table_name 
 % single_value # name 
-% smallint # type 
+% tinyint # type 
 % 2 # length 
 [ 55	] 
 % . # table_name 
 % single_value # name 
-% smallint # type 
+% tinyint # type 
 % 2 # length 
 [ 56	] 
 % . # table_name 
 % single_value # name 
-% smallint # type 
+% tinyint # type 
 % 2 # length 
 [ 57	] 
 % . # table_name 
 % single_value # name 
-% smallint # type 
+% tinyint # type 
 % 2 # length 
 [ 58	] 
 % . # table_name 
 % single_value # name 
-% smallint # type 
+% tinyint # type 
 % 2 # length 
 [ 59	] 
 % . # table_name 
 % single_value # name 
-% smallint # type 
+% tinyint # type 
 % 2 # length 
 [ 60	] 
 % . # table_name 
 % single_value # name 
-% smallint # type 
+% tinyint # type 
 % 2 # length 
 [ 61	] 
 % . # table_name 
 % single_value # name 
-% smallint # type 
+% tinyint # type 
 % 2 # length 
 [ 62	] 
 % . # table_name 
 % single_value # name 
-% smallint # type 
+% tinyint # type 
 % 2 # length 
 [ 63	] 
 % . # table_name 
 % single_value # name 
-% smallint # type 
+% tinyint # type 
 % 2 # length 
 [ 64	] 
 % . # table_name 
 % single_value # name 
-% smallint # type 
+% tinyint # type 
 % 2 # length 
 [ 65	] 
 % . # table_name 
 % single_value # name 
-% smallint # type 
+% tinyint # type 
 % 2 # length 
 [ 66	] 
 % . # table_name 
 % single_value # name 
-% smallint # type 
+% tinyint # type 
 % 2 # length 
 [ 67	] 
 % . # table_name 
 % single_value # name 
-% smallint # type 
+% tinyint # type 
 % 2 # length 
 [ 68	] 
 % . # table_name 
 % single_value # name 
-% smallint # type 
+% tinyint # type 
 % 2 # length 
 [ 69	] 
 % . # table_name 
 % single_value # name 
-% smallint # type 
+% tinyint # type 
 % 2 # length 
 [ 70	] 
 % . # table_name 
 % single_value # name 
-% smallint # type 
+% tinyint # type 
 % 2 # length 
 [ 71	] 
 % . # table_name 
 % single_value # name 
-% smallint # type 
+% tinyint # type 
 % 2 # length 
 [ 72	] 
 % . # table_name 
 % single_value # name 
-% smallint # type 
+% tinyint # type 
 % 2 # length 
 [ 73	] 
 % . # table_name 
 % single_value # name 
-% smallint # type 
+% tinyint # type 
 % 2 # length 
 [ 74	] 
 % . # table_name 
 % single_value # name 
-% smallint # type 
+% tinyint # type 
 % 2 # length 
 [ 75	] 
 % . # table_name 
 % single_value # name 
-% smallint # type 
+% tinyint # type 
 % 2 # length 
 [ 76	] 
 % . # table_name 
 % single_value # name 
-% smallint # type 
+% tinyint # type 
 % 2 # length 
 [ 77	] 
 % . # table_name 
 % single_value # name 
-% smallint # type 
+% tinyint # type 
 % 2 # length 
 [ 78	] 
 % . # table_name 
 % single_value # name 
-% smallint # type 
+% tinyint # type 
 % 2 # length 
 [ 79	] 
 % . # table_name 
 % single_value # name 
-% smallint # type 
+% tinyint # type 
 % 2 # length 
 [ 80	] 
 % . # table_name 
 % single_value # name 
-% smallint # type 
+% tinyint # type 
 % 2 # length 
 [ 81	] 
 % . # table_name 
 % single_value # name 
-% smallint # type 
+% tinyint # type 
 % 2 # length 
 [ 82	] 
 % . # table_name 
 % single_value # name 
-% smallint # type 
+% tinyint # type 
 % 2 # length 
 [ 83	] 
 % . # table_name 
 % single_value # name 
-% smallint # type 
+% tinyint # type 
 % 2 # length 
 [ 84	] 
 % . # table_name 
 % single_value # name 
-% smallint # type 
+% tinyint # type 
 % 2 # length 
 [ 85	] 
 % . # table_name 
 % single_value # name 
-% smallint # type 
+% tinyint # type 
 % 2 # length 
 [ 86	] 
 % . # table_name 
 % single_value # name 
-% smallint # type 
+% tinyint # type 
 % 2 # length 
 [ 87	] 
 % . # table_name 
 % single_value # name 
-% smallint # type 
+% tinyint # type 
 % 2 # length 
 [ 88	] 
 % . # table_name 
 % single_value # name 
-% smallint # type 
+% tinyint # type 
 % 2 # length 
 [ 89	] 
 % . # table_name 
 % single_value # name 
-% smallint # type 
+% tinyint # type 
 % 2 # length 
 [ 90	] 
 % . # table_name 
 % single_value # name 
-% smallint # type 
+% tinyint # type 
 % 2 # length 
 [ 91	] 
 % . # table_name 
 % single_value # name 
-% smallint # type 
+% tinyint # type 
 % 2 # length 
 [ 92	] 
 % . # table_name 
 % single_value # name 
-% smallint # type 
+% tinyint # type 
 % 2 # length 
 [ 93	] 
 % . # table_name 
 % single_value # name 
-% smallint # type 
+% tinyint # type 
 % 2 # length 
 [ 94	] 
 % . # table_name 
 % single_value # name 
-% smallint # type 
+% tinyint # type 
 % 2 # length 
 [ 95	] 
 % . # table_name 
 % single_value # name 
-% smallint # type 
+% tinyint # type 
 % 2 # length 
 [ 96	] 
 % . # table_name 
 % single_value # name 
-% smallint # type 
+% tinyint # type 
 % 2 # length 
 [ 97	] 
 % . # table_name 
 % single_value # name 
-% smallint # type 
+% tinyint # type 
 % 2 # length 
 [ 98	] 
 % . # table_name 
 % single_value # name 
-% smallint # type 
+% tinyint # type 
 % 2 # length 
 [ 99	] 
 % . # table_name 
 % single_value # name 
-% smallint # type 
+% tinyint # type 
 % 3 # length 
 [ 100	] 
 % . # table_name 
 % single_value # name 
-% smallint # type 
+% tinyint # type 
 % 3 # length 
 [ 101	] 
 % . # table_name 
 % single_value # name 
-% smallint # type 
+% tinyint # type 
 % 3 # length 
 [ 102	] 
 % . # table_name 
 % single_value # name 
-% smallint # type 
+% tinyint # type 
 % 3 # length 
 [ 103	] 
 % . # table_name 
 % single_value # name 
-% smallint # type 
+% tinyint # type 
 % 3 # length 
 [ 104	] 
 % . # table_name 
 % single_value # name 
-% smallint # type 
+% tinyint # type 
 % 3 # length 
 [ 105	] 
 % . # table_name 
 % single_value # name 
-% smallint # type 
+% tinyint # type 
 % 3 # length 
 [ 106	] 
 % . # table_name 
 % single_value # name 
-% smallint # type 
+% tinyint # type 
 % 3 # length 
 [ 107	] 
 % . # table_name 
 % single_value # name 
-% smallint # type 
+% tinyint # type 
 % 3 # length 
 [ 108	] 
 % . # table_name 
 % single_value # name 
-% smallint # type 
+% tinyint # type 
 % 3 # length 
 [ 109	] 
 % . # table_name 
 % single_value # name 
-% smallint # type 
+% tinyint # type 
 % 3 # length 
 [ 110	] 
 % . # table_name 
 % single_value # name 
-% smallint # type 
+% tinyint # type 
 % 3 # length 
 [ 111	] 
 % . # table_name 
 % single_value # name 
-% smallint # type 
+% tinyint # type 
 % 3 # length 
 [ 112	] 
 % . # table_name 
 % single_value # name 
-% smallint # type 
+% tinyint # type 
 % 3 # length 
 [ 113	] 
 % . # table_name 
 % single_value # name 
-% smallint # type 
+% tinyint # type 
 % 3 # length 
 [ 114	] 
 % . # table_name 
 % single_value # name 
-% smallint # type 
+% tinyint # type 
 % 3 # length 
 [ 115	] 
 % . # table_name 
 % single_value # name 
-% smallint # type 
+% tinyint # type 
 % 3 # length 
 [ 116	] 
 % . # table_name 
 % single_value # name 
-% smallint # type 
+% tinyint # type 
 % 3 # length 
 [ 117	] 
 % . # table_name 
 % single_value # name 
-% smallint # type 
+% tinyint # type 
 % 3 # length 
 [ 118	] 
 % . # table_name 
 % single_value # name 
-% smallint # type 
+% tinyint # type 
 % 3 # length 
 [ 119	] 
 % . # table_name 
 % single_value # name 
-% smallint # type 
+% tinyint # type 
 % 3 # length 
 [ 120	] 
 % . # table_name 
 % single_value # name 
-% smallint # type 
+% tinyint # type 
 % 3 # length 
 [ 121	] 
 % . # table_name 
 % single_value # name 
-% smallint # type 
+% tinyint # type 
 % 3 # length 
 [ 122	] 
 % . # table_name 
 % single_value # name 
-% smallint # type 
+% tinyint # type 
 % 3 # length 
 [ 123	] 
 % . # table_name 
 % single_value # name 
-% smallint # type 
+% tinyint # type 
 % 3 # length 
 [ 124	] 
 % . # table_name 
 % single_value # name 
-% smallint # type 
+% tinyint # type 
 % 3 # length 
 [ 125	] 
 % . # table_name 
 % single_value # name 
-% smallint # type 
+% tinyint # type 
 % 3 # length 
 [ 126	] 
 % . # table_name 
 % single_value # name 
-% smallint # type 
+% tinyint # type 
 % 3 # length 
 [ 127	] 
 % . # table_name 

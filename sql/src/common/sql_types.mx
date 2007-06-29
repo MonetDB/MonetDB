@@ -43,6 +43,7 @@ easy to find something akin you intend to enter.
 #define EC_CHAR 	3
 #define EC_STRING 	4
 #define EC_BLOB		5
+#define EC_VARCHAR(e)	(e==EC_CHAR||e==EC_STRING)
 
 #define EC_NUM 		6
 #define EC_INTERVAL 	7
@@ -155,7 +156,9 @@ static void sqltypeinit(void);
 
 int digits2bits(int digits) 
 {
-	if (digits < 5) 
+	if (digits < 3) 
+		return 8;
+	else if (digits < 5) 
 		return 16;
 	else if (digits < 10) 
 		return 32;
@@ -201,7 +204,7 @@ static int convert_matrix[EC_MAX][EC_MAX] = {
 /* EC_CHAR */	{ 2, 2, 2, 1, 1, 0, 2, 2, 2, 2, 2, 2, 2, 0 },
 /* EC_STRING */	{ 2, 2, 2, 1, 1, 0, 2, 2, 2, 2, 2, 2, 2, 0 },
 /* EC_BLOB */	{ 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0 },
-/* EC_NUM */	{ 0, 0, 0, 1, 1, 0, 1, 1, 1, 1, 0, 1, 0, 0 },
+/* EC_NUM */	{ 0, 0, 2, 1, 1, 0, 1, 1, 1, 1, 0, 1, 0, 0 },
 /* EC_INTERVAL*/{ 0, 0, 0, 1, 1, 0, 1, 0, 0, 0, 1, 1, 1, 0 },
 /* EC_DEC */	{ 0, 0, 0, 1, 1, 0, 1, 1, 1, 1, 0, 0, 0, 0 },
 /* EC_FLT */	{ 0, 0, 0, 1, 1, 0, 1, 1, 1, 1, 0, 0, 0, 0 },
@@ -279,7 +282,7 @@ localtypes_cmp(int nlt, int olt)
 {
 	if (nlt == TYPE_flt || nlt == TYPE_dbl) {
 		nlt = TYPE_dbl;
-	} else if (nlt == TYPE_sht || nlt == TYPE_int || nlt == TYPE_lng) {
+	} else if (nlt == TYPE_bte || nlt == TYPE_sht || nlt == TYPE_int || nlt == TYPE_lng) {
 		nlt = TYPE_lng;
 	}
 	if (nlt == olt)
@@ -1226,7 +1229,7 @@ sqltypeinit(void)
 	sql_type *ts[100];
 	sql_type **strings, **numerical;
 	sql_type **decimals, **floats, **dates, **end, **t;
-	sql_type *STR, *SHT, *INT, *LNG, *OID, *BIT, *DBL;
+	sql_type *STR, *BTE, *SHT, *INT, *LNG, *OID, *BIT, *DBL;
 	sql_type *SECINT, *MONINT, *DTE; 
 	sql_type *TME, *TMETZ, *TMESTAMP, *TMESTAMPTZ;
 	sql_type *ANY;
@@ -1248,7 +1251,7 @@ sqltypeinit(void)
 
 	OID = *t++ = sql_create_type("OID", 31, 0, 2, EC_NUM, "oid");
 	(void)OID; /* pacify picky compilers */
-	/*sql_create_type("TINYINT",   8, SCALE_FIX, 2,  EC_NUM, "uchr"); */
+	BTE = *t++ = sql_create_type("TINYINT",   8, SCALE_FIX, 2, EC_NUM, "bte");
 	SHT = *t++ = sql_create_type("SMALLINT", 16, SCALE_FIX, 2, EC_NUM, "sht");
 	INT = *t++ = sql_create_type("INT",      32, SCALE_FIX, 2, EC_NUM, "int");
 	LNG = *t++ = sql_create_type("BIGINT",   64, SCALE_FIX, 2, EC_NUM, "lng");
@@ -1256,7 +1259,7 @@ sqltypeinit(void)
 	decimals = t;
 	/* decimal(d,s) (d indicates nr digits,
 	   s scale indicates nr of digits after the dot .) */
-	/*#sql_type("DECIMAL", 2, SCALE_FIX, 10, EC_DEC, "uchr"); */
+	*t++ = sql_create_type("DECIMAL",  2, SCALE_FIX, 10, EC_DEC, "bte");
 	*t++ = sql_create_type("DECIMAL",  4, SCALE_FIX, 10, EC_DEC, "sht");
 	*t++ = sql_create_type("DECIMAL",  9, SCALE_FIX, 10, EC_DEC, "int");
 	*t++ = sql_create_type("DECIMAL", 19, SCALE_FIX, 10, EC_DEC, "lng");
@@ -1309,15 +1312,14 @@ sqltypeinit(void)
 	sql_create_func("sql_max", "calc", "max", ANY, ANY, ANY, SCALE_FIX);
 	sql_create_func3("ifthenelse", "calc", "ifthenelse", BIT, ANY, ANY, ANY, SCALE_NONE);
 
-	for (t = numerical+1; t < decimals; t++) {
-		sql_create_aggr("sum", "aggr", "sum", *t, *t);
-		sql_create_aggr("avg", "aggr", "avg", *t, DBL);
-	}
-	for (t = numerical+1; t < floats; t += 3) {
+	/* sum for numerical and decimals */
+	for (t = numerical+1; t < floats; t += 4) {
 		sql_create_aggr("sum", "aggr", "sum", *(t), *(t + 1));
 		sql_create_aggr("sum", "aggr", "sum", *(t + 1), *(t + 2));
-		sql_create_aggr("sum", "aggr", "sum", *(t + 2), *(t + 2));
+		sql_create_aggr("sum", "aggr", "sum", *(t + 2), *(t + 3));
+		sql_create_aggr("sum", "aggr", "sum", *(t + 3), *(t + 3));
 	}
+
 	for (t = numerical+1; t < floats; t++) {
 		sql_create_aggr("avg", "aggr", "avg", *(t), DBL);
 		sql_create_func("mod", "calc", "%", *t, *t, *t, SCALE_FIX);
@@ -1388,7 +1390,7 @@ sqltypeinit(void)
 
 	for (t = decimals; t < dates; t++) {
 		sql_create_func("truncate", "sql", "trunc", *t, INT, *t, SCALE_NONE);
-		sql_create_func("round", "sql", "round", *t, SHT, *t, SCALE_NONE);
+		sql_create_func("round", "sql", "round", *t, BTE, *t, SCALE_NONE);
 	}
 
 	for (t = numerical; t < end; t++) {

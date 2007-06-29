@@ -23,7 +23,7 @@ Over..
 
 % . # table_name
 % sql_add_single_value # name
-% smallint # type
+% tinyint # type
 % 1 # length
 [ 2	]
 

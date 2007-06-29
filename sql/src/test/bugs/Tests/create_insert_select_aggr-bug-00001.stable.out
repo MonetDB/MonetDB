@@ -23,14 +23,14 @@ Over..
 
 % . # table_name
 % single_value # name
-% smallint # type
+% tinyint # type
 % 1 # length
 [ 1	]
 [ 1	]
 [ 1	]
 % . # table_name
 % single_value # name
-% smallint # type
+% tinyint # type
 % 1 # length
 [ 1	]
 [ 1	]
@@ -43,7 +43,7 @@ Over..
 [ 2,	"Jochem"	]
 % . # table_name
 % sql_sub_single_value # name
-% int # type
+% smallint # type
 % 2 # length
 [ 15	]
 % sys._tables,	sys._tables,	sys._tables,	sys._tables,	sys._tables # table_name
@@ -98,7 +98,7 @@ Over..
 [ 1	]
 % sys._tables,	.,	.,	. # table_name
 % name,	single_value,	single_value,	single_value # name
-% varchar,	smallint,	smallint,	smallint # type
+% varchar,	tinyint,	tinyint,	tinyint # type
 % 0,	1,	1,	1 # length
 
 # 11:55:26 >  

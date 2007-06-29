@@ -737,38 +737,80 @@ reljoin( mvc *sql, list *l1, list *l2 )
 stmt *
 push_semijoin( stmt *select, stmt *s )
 {
-	if (select->type == st_unop) 
-		return push_semijoin(stmt_dup(select->op1.stval), s);
+	if (select->type == st_unop){ 
+		stmt *op1 = stmt_dup(select->op1.stval);
+
+		op1 = push_semijoin(op1, s);
+		stmt_destroy(select);
+		return stmt_unop(op1, sql_dup_func(select->op4.funcval));
+	}
 	if (select->type == st_binop) {
 		stmt *op1 = stmt_dup(select->op1.stval);
 		stmt *op2 = stmt_dup(select->op2.stval);
 		if (op1->nrcols) 
-			op1 = push_semijoin(op1, stmt_dup(s));
+			op1 = push_semijoin(op1, s);
 		if (op2->nrcols) 
-			op2 = push_semijoin(op2, stmt_dup(s));
-		stmt_destroy(s);
+			op2 = push_semijoin(op2, s);
+		stmt_destroy(select);
 		return stmt_binop(op1, op2, sql_dup_func(select->op4.funcval));
 	}
+
+	/* semijoin(reverse(semijoin(reverse(x)),s) */
+	if (select->type == st_reverse &&
+	    select->op1.stval->type == st_semijoin &&
+	    select->op1.stval->op1.stval->type == st_reverse) {
+		stmt *op1 = stmt_dup( select->op1.stval->op1.stval->op1.stval);
+		stmt *op2 = stmt_dup( select->op1.stval->op2.stval);
+
+		op1 = push_semijoin( op1, s );
+		stmt_destroy(select);
+		return stmt_reverse(stmt_semijoin( stmt_reverse(op1), op2));
+	}
 	if (select->type != st_select2 && select->type != st_uselect2 &&
-	    select->type != st_select && select->type != st_uselect) 
-		return stmt_semijoin(stmt_dup(select), s);
+	    select->type != st_select && select->type != st_uselect)
+		return stmt_semijoin(select, stmt_dup(s));
 
 	s = push_semijoin(stmt_dup(select->op1.stval), s);
-	if (select->type == st_select2) 
-		return stmt_select2( s, stmt_dup(select->op2.stval), stmt_dup(select->op3.stval), (comp_type)select->flag);
+	if (select->type == st_select2) {
+		comp_type cmp = select->flag;
+		stmt *op2 = stmt_dup( select->op2.stval);
+		stmt *op3 = stmt_dup( select->op3.stval);
 
-	if (select->type == st_uselect2) 
-		return stmt_uselect2( s, stmt_dup(select->op2.stval), stmt_dup(select->op3.stval), (comp_type)select->flag);
-
-	if (select->type == st_select) {
-		if (select->flag == cmp_like || select->flag == cmp_notlike)
-			return stmt_likeselect( s, stmt_dup(select->op2.stval), stmt_dup(select->op3.stval), (comp_type)select->flag);
-		else
-			return stmt_select( s, stmt_dup(select->op2.stval), (comp_type)select->flag);
+		stmt_destroy(select);
+		return stmt_select2( s, op2, op3, cmp);
 	}
 
-	if (select->type == st_uselect) 
-		return stmt_uselect( s, stmt_dup(select->op2.stval), (comp_type)select->flag);
+	if (select->type == st_uselect2) {
+		comp_type cmp = select->flag;
+		stmt *op2 = stmt_dup( select->op2.stval);
+		stmt *op3 = stmt_dup( select->op3.stval);
+
+		stmt_destroy(select);
+		return stmt_uselect2( s, op2, op3, cmp);
+	}
+
+	if (select->type == st_select) {
+		comp_type cmp = select->flag;
+		stmt *op2 = stmt_dup( select->op2.stval);
+
+		if (cmp == cmp_like || cmp == cmp_notlike) {
+			stmt *op3 = stmt_dup( select->op3.stval);
+
+			stmt_destroy(select);
+			return stmt_likeselect( s, op2, op3, cmp);
+		} else {
+			stmt_destroy(select);
+			return stmt_select( s, op2, cmp);
+		}
+	}
+
+	if (select->type == st_uselect) {
+		comp_type cmp = select->flag;
+		stmt *op2 = stmt_dup( select->op2.stval);
+
+		stmt_destroy(select);
+		return stmt_uselect( s, op2, cmp);
+	}
 	assert(0);
 	return NULL;
 }
@@ -791,7 +833,7 @@ push_select_stmt( list *l, stmt *sel )
 	node *n;
 
 	for (n = l->h; n; n = n->next) {
-		sel = push_semijoin(n->data, sel);
+		sel = push_semijoin(stmt_dup(n->data), sel);
 	}
 	return sel;
 }
@@ -913,6 +955,8 @@ rel2bin(mvc *c, stmt *s)
 		if (list_length(l) == 1) {
 			res = rel2bin(c, l->h->data);
 		} else {
+			stmt *sel;
+
 			l = list_dup(l, (fdup)&stmt_dup);
 			if (!mvc_debug_on(c, 4096)) {
 				l = shrink_select_ranges(c, l);
@@ -921,23 +965,16 @@ rel2bin(mvc *c, stmt *s)
 			l = use_ukey(c, l);
 			n = list_find(l, (void*)1, (fcmp) &find_unique);
 			if (!n) {
-				list *ll = create_stmt_list();
-				for (n = l->h; n; n = n->next) {
-					list_append(ll, rel2bin(c, n->data));
-				}
-				if (ol != l) 
-					list_destroy(l);
-				l = ll;
-				res = (stmt *) list_reduce(l, (freduce) &stmt_semijoin, (fdup) &stmt_dup);
-			} else {
-				stmt *sel = stmt_dup(n->data); 
-
-				/*printf("found a select return a unique value. Lets try to do it first. So we push it through the other selects\n");*/
-				list_remove_node(l, n);
-				sel = push_select_stmt(l, sel);
-				res = rel2bin(c, sel);
-				stmt_destroy(sel);
+				/* TODO reorder select list 
+				   (this is also needed for the unique case) */
+				n = l->h;
 			}
+			sel = stmt_dup(n->data); 
+			list_remove_node(l, n);
+
+			sel = push_select_stmt(l, sel);
+			res = rel2bin(c, sel);
+			stmt_destroy(sel);
 		}
 
 		if (ol != l)

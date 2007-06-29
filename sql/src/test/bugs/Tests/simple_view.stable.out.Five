@@ -21,7 +21,7 @@ Over..
 
 % sys.tt,	sys.tv,	sys.tv # table_name
 % name,	s,	i # name
-% varchar,	char,	smallint # type
+% varchar,	char,	tinyint # type
 % 12,	3,	1 # length
 [ "schemas",	"str",	1	]
 [ "types",	"str",	1	]

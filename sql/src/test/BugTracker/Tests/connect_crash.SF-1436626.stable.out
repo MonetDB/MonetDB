@@ -11,7 +11,7 @@ stdout of test 'connect_crash.SF-1436626` in directory 'src/test/BugTracker` its
 # Visit http://monetdb.cwi.nl/ for further information.
 % . # table_name
 % single_value # name
-% smallint # type
+% tinyint # type
 % 1 # length
 [ 1	]
 quit();

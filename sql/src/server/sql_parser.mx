@@ -546,7 +546,7 @@ int yydebug=1;
 	ALL ANY SOME GLOBAL CAST CONVERT
 	CHARACTER VARYING LARGE OBJECT VARCHAR CLOB BINARY sqlBLOB
 	sqlDECIMAL sqlFLOAT
-	SMALLINT BIGINT sqlINTEGER
+	TINYINT SMALLINT BIGINT sqlINTEGER
 	sqlDOUBLE sqlREAL PRECISION PARTIAL SIMPLE ACTION CASCADE RESTRICT
 	BOOL_FALSE BOOL_TRUE
 	CURRENT_DATE CURRENT_TIMESTAMP CURRENT_TIME LOCALTIMESTAMP LOCALTIME
@@ -3606,7 +3606,9 @@ literal:
 		  /* find the most suitable data type for the given number */
 		  if (!err) {
 		    int bits = digits2bits(digits);
-		    if (value >= GDK_sht_min && value <= GDK_sht_max)
+		    if (value >= GDK_bte_min && value <= GDK_bte_max)
+		  	  sql_find_subtype(&t, "tinyint", bits, 0 );
+		    else if (value >= GDK_sht_min && value <= GDK_sht_max)
 		  	  sql_find_subtype(&t, "smallint", bits, 0 );
 		    else if (value >= GDK_int_min && value <= GDK_int_max)
 		  	  sql_find_subtype(&t, "int", bits, 0 );
@@ -4001,6 +4003,7 @@ data_type:
 			   *       See p. 85 SQL-99
 			   */
 			}
+ |  TINYINT		{ sql_find_subtype(&$$, "tinyint", 0, 0); }
  |  SMALLINT		{ sql_find_subtype(&$$, "smallint", 0, 0); }
  |  sqlINTEGER		{ sql_find_subtype(&$$, "int", 0, 0); }
  |  BIGINT		{ sql_find_subtype(&$$, "bigint", 0, 0); }
@@ -4235,7 +4238,8 @@ intval:
 		  tpe = tail_type(var);
 		  if (tpe->type->localtype == TYPE_lng ||
 		      tpe->type->localtype == TYPE_int ||
-		      tpe->type->localtype == TYPE_sht ) {
+		      tpe->type->localtype == TYPE_sht ||
+		      tpe->type->localtype == TYPE_bte ) {
 			$$ = stack_get_number(m, name);
 		  } else {
 			char buf[BUFSIZ];

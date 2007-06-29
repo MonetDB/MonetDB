@@ -104,8 +104,10 @@ extern int convert2str( mvc *m, int eclass, int d, int sc, int has_tz, ptr p, in
 int
 dec_tostr(void *extra, char **Buf, int *len, int type, ptr a)
 {
-	/* support dec map to sht, int and lng */
-	if (type == TYPE_sht) {
+	/* support dec map to bte, sht, int and lng */
+	if (type == TYPE_bte) {
+		@:dec_tostr(bte)@
+	} else if (type == TYPE_sht) {
 		@:dec_tostr(sht)@
 	} else if (type == TYPE_int) {
 		@:dec_tostr(int)@
@@ -282,6 +284,7 @@ bat_max_@1length(BAT *b)
 	return ret;
 }
 @c
+@:bat_max_xlength(bte)@
 @:bat_max_xlength(sht)@
 @:bat_max_xlength(int)@
 @:bat_max_xlength(lng)@
@@ -346,10 +349,12 @@ bat_max_@1length(BAT *b)
 ptr *
 dec_frstr(void *extra, int type, char *s, char *e, char quote)
 {
-	/* support dec map to sht, int and lng */
+	/* support dec map to bte, sht, int and lng */
 	(void) e;
 	(void) quote;
-	if (type == TYPE_sht) {
+	if (type == TYPE_bte) {
+		@:dec_frstr(bte)@
+	} else if (type == TYPE_sht) {
 		@:dec_frstr(sht)@
 	} else if (type == TYPE_int) {
 		@:dec_frstr(int)@
@@ -586,6 +591,7 @@ mvc_send_@1(stream *s, @1 cnt){
 	return stream_write(s, b, 50- (b-buf),1)==1;
 }
 @c
+@:mvc_send(bte)@
 @:mvc_send(sht)@
 @:mvc_send(int)@
 @:mvc_send(lng)@
@@ -654,6 +660,9 @@ export_value( mvc *m, stream *s, int eclass, char *sqlname, int d, int sc, ptr p
 		ok = (stream_write(s, "NULL", sizeof("NULL") - 1, 1) == 1);
 	} else {
 		switch(mtype) {
+		case TYPE_bte:
+			ok = mvc_send_bte(s, *(bte*)p);
+			break;
 		case TYPE_sht:
 			ok = mvc_send_sht(s, *(sht*)p);
 			break;
@@ -807,7 +816,9 @@ export_length( stream *s, int mtype, int eclass, int digits, int scale, bat bid,
 		if (bid) {
 			BAT *b = BATdescriptor(bid);
 
-			if (mtype == TYPE_sht) {
+			if (mtype == TYPE_bte) {
+				count = bat_max_btelength(b);
+			} else if (mtype == TYPE_sht) {
 				count = bat_max_shtlength(b);
 			} else if (mtype == TYPE_int) {
 				count = bat_max_intlength(b);
@@ -818,7 +829,9 @@ export_length( stream *s, int mtype, int eclass, int digits, int scale, bat bid,
 		} else {
 			if (p) {
 				lng val = 0;
-				if (mtype == TYPE_sht) {
+				if (mtype == TYPE_bte) {
+					val = *((bte *)p);
+				} else if (mtype == TYPE_sht) {
 					val = *((sht *)p);
 				} else if (mtype == TYPE_int) {
 					val = *((int *)p);

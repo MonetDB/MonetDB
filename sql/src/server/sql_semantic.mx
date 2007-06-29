@@ -585,18 +585,54 @@ fix_scale(mvc *sql, sql_subtype *ct, stmt *s, int both, int always)
 stmt *
 inplace_convert(mvc *sql, sql_subtype *ct, stmt *s)
 {
-	sql_subtype *st = tail_type(s);
+	atom *a;
+	//sql_subtype *st = tail_type(s);
 
 				 /* exclude named variables */
-	if (s->type != st_var || s->op1.sval || s->ref.refcnt > 1 || ct->scale)
+	if (s->type != st_var || s->op1.sval || s->ref.refcnt > 1 || 
+		(ct->scale && ct->type->eclass != EC_FLT))
 		return s;
 
+	a = sql_bind_arg(sql, s->flag);
+
+	if (atom_cast(a, ct)) {
+		stmt *r = stmt_varnr(s->flag, ct);
+		sql_convert_arg(sql, s->flag, ct);
+		stmt_destroy(s);
+		return r;
+	}
+
+/*
 	if (ct->digits == 0 || ct->type->radix == 2 || 
 	   (ct->digits > 0 && st->digits < ct->digits)) {
 		stmt *r = s;
 
-		if (ct->type->localtype == st->type->localtype) {
-			if (ct->type->localtype == TYPE_lng || ct->type->localtype == TYPE_int || ct->type->localtype == TYPE_sht) {
+		atom *a = sql_bind_arg(sql, s->flag);
+
+		if (ct->type->localtype >= st->type->localtype) {
+			if (ct->type->localtype == TYPE_str) {
+				sql_subtype nt;
+
+				sql_init_subtype(&nt, st->type, ct->digits, ct->scale);
+				r = stmt_varnr(s->flag, &nt);
+				sql_convert_arg(sql, s->flag, &nt);
+			}
+		} else
+		if (atom_cast(a, ct)) {
+			r = stmt_varnr(s->flag, ct);
+			sql_convert_arg(sql, s->flag, ct);
+		} else
+		if (ct->type->localtype >= st->type->localtype) {
+			if (ct->type->localtype == TYPE_lng || ct->type->localtype == TYPE_int || ct->type->localtype == TYPE_sht || ct->type->localtype == TYPE_bte) {
+				r = stmt_varnr(s->flag, ct);
+				sql_convert_arg(sql, s->flag, ct);
+			}
+		}
+*/
+
+/*
+		if (ct->type->localtype >= st->type->localtype) {
+			if (ct->type->localtype == TYPE_lng || ct->type->localtype == TYPE_int || ct->type->localtype == TYPE_sht || ct->type->localtype == TYPE_bte) {
 				r = stmt_varnr(s->flag, ct);
 				sql_convert_arg(sql, s->flag, ct);
 			} else if (ct->type->localtype == TYPE_str) {
@@ -614,8 +650,8 @@ inplace_convert(mvc *sql, sql_subtype *ct, stmt *s)
 				sql_convert_arg(sql, s->flag, ct);
 			}
 		}
-		/* cheap convert decimal into float */
-		if (ct->type->eclass == EC_FLT && st->type->eclass == EC_DEC) {
+		if (ct->type->eclass == EC_FLT && 
+		   (st->type->eclass == EC_DEC || st->type->eclass == EC_NUM)){
 			atom *a = sql_bind_arg(sql, s->flag);
 
 			r = stmt_varnr(s->flag, ct);
@@ -636,6 +672,8 @@ inplace_convert(mvc *sql, sql_subtype *ct, stmt *s)
 			stmt_destroy(s);
 		return r;
 	}
+*/
+		/* cheap convert decimal into float */
 	return s;
 }
 

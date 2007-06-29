@@ -128,7 +128,7 @@ scanner_init_keywords(void)
 	keywords_insert("DELIMITERS", DELIMITERS);
 	keywords_insert("STDIN", STDIN);
 
-	keywords_insert("TINYINT", SMALLINT);
+	keywords_insert("TINYINT", TINYINT);
 	keywords_insert("SMALLINT", SMALLINT);
 	keywords_insert("INTEGER", sqlINTEGER);
 	keywords_insert("INT", sqlINTEGER);

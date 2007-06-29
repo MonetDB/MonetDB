@@ -27,7 +27,7 @@ Over..
 [ 1	]
 % sys.nutki,	sys.nutki # table_name
 % id,	valsum # name
-% int,	int # type
+% int,	bigint # type
 % 1,	1 # length
 [ 1,	3	]
 [ 3,	7	]

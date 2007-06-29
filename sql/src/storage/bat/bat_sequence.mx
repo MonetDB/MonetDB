@@ -23,6 +23,20 @@ extern void sequences_init(void);
 extern void sequences_exit(void);
 
 extern int seq_next_value(sql_sequence *seq, lng *val);
+
+/* for bulk next values, the API is split in 3 parts */
+
+typedef struct seqbulk {
+	void *internal_seq;
+	sql_sequence *seq;
+	int cnt;
+	int save; 
+} seqbulk;
+
+extern seqbulk *seqbulk_create(sql_sequence *seq, int cnt);
+extern int seqbulk_next_value(seqbulk *seq, lng *val);
+extern void seqbulk_destroy(seqbulk *seq);
+
 extern int seq_get_value(sql_sequence *seq, lng *val);
 extern int seq_restart(sql_sequence *seq, lng start);
 
@@ -175,6 +189,85 @@ seq_next_value(sql_sequence *seq, lng *val)
 	}
 	assert(nr<s->cached);
 	store_unlock(); 
+	return 1;
+}
+
+seqbulk *seqbulk_create(sql_sequence *seq, int cnt)
+{
+	seqbulk *sb = NEW(seqbulk);
+	bat_sequence *s;
+	node *n = NULL;
+
+	if (!sb)
+		return NULL;
+
+	store_lock();
+	sb->seq = seq;
+	sb->cnt = cnt;
+	sb->save = 0;
+
+	for ( n = sql_seqs->h; n; n = n ->next ) {
+		s = n->data;
+		if (s->seqid == seq->base.id)
+			break;
+	}
+	if (!n) {
+		s = sql_create_sequence(seq);
+		if (!s) {
+			_DELETE(sb);
+			return NULL;
+		}
+		list_append(sql_seqs, s);
+	} else {
+		s = n->data;
+	}
+	sb->internal_seq = s;
+	return sb;
+}
+
+void seqbulk_destroy(seqbulk *sb)
+{
+
+	if (sb->save) {
+		sql_sequence *seq = sb->seq;
+		bat_sequence *s = sb->internal_seq;
+
+		sql_update_sequence_cache(seq, s->cached);
+	}
+	_DELETE(sb);
+	store_unlock();
+}
+
+int seqbulk_next_value(seqbulk *sb, lng *val)
+{
+	lng nr = 0;
+	bat_sequence *s = sb->internal_seq;
+	sql_sequence *seq = sb->seq;
+
+	if (s->called)
+		s->cur += seq->increment;
+
+	/* handle min/max and cycle */
+	if ((seq->maxvalue && s->cur > seq->maxvalue) ||
+	    (seq->minvalue && s->cur < seq->minvalue))
+	{
+		if (seq->cycle) {
+			/* cycle to the min value again */
+			s->cur = seq->minvalue;
+			sb->save = 1;
+		} else { /* we're out of numbers */
+			return(0);
+		}
+	}
+	s->called = 1;
+	nr = s->cur;
+	*val = nr;
+	if (nr == s->cached) {
+		s->cached = nr + seq->cacheinc*seq->increment;
+		sb->save = 1;
+		return 1;
+	}
+	assert(nr<s->cached);
 	return 1;
 }
 

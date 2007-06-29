@@ -28,48 +28,48 @@ Over..
 % 0 # length
 % . # table_name
 % single_value # name
-% smallint # type
+% tinyint # type
 % 1 # length
 % . # table_name
 % single_value # name
-% smallint # type
-% 1 # length
-[ 1	]
-[ 1	]
-[ 1	]
-% . # table_name
-% single_value # name
-% smallint # type
-% 1 # length
-% . # table_name
-% single_value # name
-% smallint # type
+% tinyint # type
 % 1 # length
 [ 1	]
 [ 1	]
 [ 1	]
 % . # table_name
 % single_value # name
-% smallint # type
+% tinyint # type
 % 1 # length
 % . # table_name
 % single_value # name
-% smallint # type
+% tinyint # type
+% 1 # length
+[ 1	]
+[ 1	]
+[ 1	]
+% . # table_name
+% single_value # name
+% tinyint # type
+% 1 # length
+% . # table_name
+% single_value # name
+% tinyint # type
 % 1 # length
 [ 1	]
 % .,	sys. # table_name
 % single_value,	count_ # name
-% smallint,	int # type
+% tinyint,	int # type
 % 1,	1 # length
 [ 1,	3	]
 % .,	. # table_name
 % single_value,	count_ # name
-% smallint,	int # type
+% tinyint,	int # type
 % 1,	1 # length
 [ 1,	0	]
 % .,	. # table_name
 % single_value,	count_single_value # name
-% smallint,	int # type
+% tinyint,	int # type
 % 1,	1 # length
 [ 1,	0	]
 

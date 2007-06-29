@@ -15,14 +15,14 @@ server 11 : "module(mapi); mil_start(); module(sql_server);"
 server 11 : "module(mapi); mil_start(); module(sql_server);", client 1: SQL
 % . # table_name
 % single_value # name
-% smallint # type
+% tinyint # type
 % 3 # length
 [ 111 	]
 
 server 11 : "module(mapi); mil_start(); module(sql_server);", client 2: (SQL) SQL
 % . # table_name
 % single_value # name
-% smallint # type
+% tinyint # type
 % 3 # length
 [ 112 	]
 
@@ -42,7 +42,7 @@ server 12 : "module(mapi); mil_start(); module(sql_server);"
 server 12 : "module(mapi); mil_start(); module(sql_server);", client 1: SQL
 % . # table_name
 % single_value # name
-% smallint # type
+% tinyint # type
 % 3 # length
 [ 121 	]
 
@@ -52,7 +52,7 @@ server 12 : "module(mapi); mil_start(); module(sql_server);", client 2: (SQL) MA
 server 12 : "module(mapi); mil_start(); module(sql_server);", client 3: (SQL) (MAPI) SQL
 % . # table_name
 % single_value # name
-% smallint # type
+% tinyint # type
 % 3 # length
 [ 123 	]
 

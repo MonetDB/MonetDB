@@ -24,7 +24,7 @@ Over..
 [ 3	]
 % sys.t1123132,	sys.t1123132,	sys.t1123132 # table_name
 % min_aap,	max_aap,	sum_aap # name
-% int,	int,	int # type
+% int,	int,	bigint # type
 % 1,	1,	1 # length
 [ 1,	2,	3	]
 

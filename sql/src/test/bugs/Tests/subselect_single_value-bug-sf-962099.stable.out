@@ -23,12 +23,12 @@ Over..
 
 % .,	. # table_name
 % single_value,	single_value # name
-% smallint,	smallint # type
+% tinyint,	tinyint # type
 % 1,	1 # length
 [ 1,	2	]
 % .t,	.t # table_name
 % single_value,	single_value # name
-% smallint,	smallint # type
+% tinyint,	tinyint # type
 % 1,	1 # length
 [ 1,	2	]
 

@@ -35,7 +35,7 @@ typedef struct list {
 	int cnt;
 } list;
 
-typedef int (*traverse_func) (char *clientdata, int seqnr, void *data);
+typedef int (*traverse_func) (void *clientdata, int seqnr, void *data);
 
 extern list *list_create(fdestroy destroy);
 
@@ -51,7 +51,7 @@ extern void list_remove_data(list *l, void *data);
 extern void list_move_data(list *l, list *d, void *data);
 
 
-extern int list_traverse(list *l, traverse_func f, char *clientdata);
+extern int list_traverse(list *l, traverse_func f, void *clientdata);
 
 /* the compare function gets one element from the list and a key from the
  * as input from the find function 

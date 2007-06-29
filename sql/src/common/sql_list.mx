@@ -173,7 +173,7 @@ list_move_data(list *s, list *d, void *data)
 }
 
 int
-list_traverse(list *l, traverse_func f, char *clientdata)
+list_traverse(list *l, traverse_func f, void *clientdata)
 {
 	int res = 0, seqnr = 0;
 	node *n = l->h;

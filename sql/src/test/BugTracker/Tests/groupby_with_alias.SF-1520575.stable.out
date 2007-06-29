@@ -27,7 +27,7 @@ Over..
 % 1 # length
 % .,	sys.a # table_name
 % bug_alias,	sum_f2 # name
-% varchar,	int # type
+% varchar,	bigint # type
 % 0,	1 # length
 
 # 11:54:20 >  

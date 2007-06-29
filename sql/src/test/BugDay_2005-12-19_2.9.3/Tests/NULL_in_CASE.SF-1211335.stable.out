@@ -23,23 +23,23 @@ Over..
 
 % . # table_name
 % ifthenelse_=_single_value # name
-% smallint # type
+% tinyint # type
 % 1 # length
 [ 1	]
 % . # table_name
 % ifthenelse_=_single_value # name
-% smallint # type
-% 6 # length
+% tinyint # type
+% 4 # length
 [ NULL	]
 % . # table_name
 % ifthenelse_=_single_value # name
-% smallint # type
+% tinyint # type
 % 1 # length
 [ 2	]
 % . # table_name
 % ifthenelse_=_single_value # name
-% smallint # type
-% 6 # length
+% tinyint # type
+% 4 # length
 [ NULL	]
 % . # table_name
 % ifthenelse_=_single_value # name

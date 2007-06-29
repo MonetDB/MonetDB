@@ -23,7 +23,7 @@ Over..
 
 % sys.lineitem,	sys.lineitem,	sys.lineitem,	sys.lineitem,	sys.,	sys.,	sys.lineitem,	sys.,	sys.,	sys.lineitem # table_name
 % l_returnflag,	l_linestatus,	sum_qty,	sum_base_price,	sum_disc_price,	sum_charge,	avg_qty,	avg_price,	avg_disc,	count_order # name
-% varchar,	varchar,	int,	decimal,	decimal,	decimal,	double,	double,	double,	int # type
+% varchar,	varchar,	bigint,	decimal,	decimal,	decimal,	double,	double,	double,	int # type
 % 1,	1,	6,	17,	21,	21,	22,	22,	22,	5 # length
 [ "A",	"F",	380456,	532348211.65,	505822441.4861,	526165934.000839,	25.575154611454693,	35785.709306937351,	0.050081339069642378,	14876	]
 [ "N",	"F",	8971,	12384801.37,	11798257.2080,	12282485.056933,	25.778735632183906,	35588.509683908051,	0.047758620689655168,	348	]

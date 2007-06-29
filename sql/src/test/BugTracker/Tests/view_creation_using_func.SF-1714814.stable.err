@@ -12,10 +12,10 @@ stderr of test 'view_creation_using_func.SF-1714814` in directory 'src/test/BugT
 # 18:25:58 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=36305 
 # 18:25:58 >  
 
-MAPI  = monetdb@localhost:36305
+MAPI  = monetdb@koala:34067
 QUERY = create view v1 as select * from t1 where id = f(1);
-ERROR = !SELECT: no such unary operator 'f(smallint)'
-MAPI  = monetdb@localhost:36305
+ERROR = !SELECT: no such unary operator 'f(tinyint)'
+MAPI  = monetdb@koala:34067
 QUERY = drop view v1;
 ERROR = !DROP VIEW: unknown view 'v1'
 

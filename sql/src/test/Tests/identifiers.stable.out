@@ -23,32 +23,32 @@ Over..
 
 % . # table_name
 % bla # name
-% smallint # type
+% tinyint # type
 % 1 # length
 [ 1	]
 % . # table_name
 % bla # name
-% smallint # type
+% tinyint # type
 % 1 # length
 [ 1	]
 % . # table_name
 % bla # name
-% smallint # type
+% tinyint # type
 % 1 # length
 [ 1	]
 % . # table_name
 % Bla # name
-% smallint # type
+% tinyint # type
 % 1 # length
 [ 1	]
 % . # table_name
 % BLA # name
-% smallint # type
+% tinyint # type
 % 1 # length
 [ 1	]
 % . # table_name
 % B"la" # name
-% smallint # type
+% tinyint # type
 % 1 # length
 [ 1	]
 

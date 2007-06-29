@@ -23,7 +23,7 @@ Over..
 
 % sys.b,	sys.a # table_name
 % cape_date,	numppl # name
-% date,	int # type
+% date,	bigint # type
 % 10,	1 # length
 
 # 11:50:11 >  

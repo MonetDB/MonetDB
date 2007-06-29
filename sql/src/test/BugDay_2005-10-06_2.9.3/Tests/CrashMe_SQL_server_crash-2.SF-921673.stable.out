@@ -23,7 +23,7 @@ Over..
 
 % .,	sys.schemas,	sys.tables,	sys.columns,	sys.columns,	sys.columns,	sys.columns,	.,	.,	.,	.,	sys.columns,	.,	.,	.,	sys.,	.,	.,	. # table_name
 % table_cat,	table_schem,	table_name,	column_name,	type_name,	column_size,	decimal_digits,	buffer_length,	num_prec_radix,	nullable,	remarks,	column_def,	sql_data_type,	sql_datetime_sub,	char_octet_length,	ordinal_position,	scope_catalog,	scope_schema,	scope_table # name
-% char,	varchar,	varchar,	varchar,	varchar,	int,	int,	smallint,	smallint,	char,	char,	varchar,	smallint,	smallint,	smallint,	int,	char,	char,	char # type
+% char,	varchar,	varchar,	varchar,	varchar,	int,	int,	tinyint,	tinyint,	char,	char,	varchar,	tinyint,	tinyint,	tinyint,	int,	char,	char,	char # type
 % 0,	3,	10,	11,	7,	4,	1,	1,	2,	0,	0,	1,	1,	1,	1,	1,	0,	0,	0 # length
 [ NULL,	"sys",	"args",	"id",	"int",	32,	0,	0,	10,	NULL,	NULL,	NULL,	0,	0,	0,	1,	NULL,	NULL,	NULL	]
 [ NULL,	"sys",	"args",	"func_id",	"int",	32,	0,	0,	10,	NULL,	NULL,	NULL,	0,	0,	0,	2,	NULL,	NULL,	NULL	]

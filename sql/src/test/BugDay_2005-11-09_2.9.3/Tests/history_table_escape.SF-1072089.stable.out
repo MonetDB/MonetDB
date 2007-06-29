@@ -24,7 +24,7 @@ Over..
 [ 0	]
 % . # table_name
 % single_value # name
-% smallint # type
+% tinyint # type
 % 1 # length
 [ 1	]
 % . # table_name

@@ -24,6 +24,7 @@ multi-version-catalog and support routines copied
 from the Version 4 code base.
 
 @mal
+module batsql;
 module sql;
 
 command start():void 
@@ -98,6 +99,10 @@ command next_value( sname:str, sequence:str ):lng
 address mvc_next_value
 comment "return the next value of the sequence";
 
+command batsql.next_value( sname:bat[:oid,:str], sequence:str ) :bat[:oid,:lng]
+address mvc_bat_next_value
+comment "return the next value of the sequence";
+
 command get_value( sname:str, sequence:str ):lng
 address mvc_get_value
 comment "return the current value of the sequence";
@@ -160,6 +165,8 @@ command rsColumn(rs:int, tname:str, name:str, typename:str, digits:int, scale:in
 address mvc_result_column_wrap
 comment "Add the colunm to the table query result";
 
+command rsColumn(rs:int, tname:str, name:str, typename:str, digits:int, scale:int, val:bte ) :void
+address mvc_result_value_bte;
 command rsColumn(rs:int, tname:str, name:str, typename:str, digits:int, scale:int, val:sht ) :void
 address mvc_result_value_sht;
 command rsColumn(rs:int, tname:str, name:str, typename:str, digits:int, scale:int, val:lng ) :void
@@ -285,6 +292,7 @@ command batcalc.rotate_xor_hash(h:bat[:oid,:int], nbits:int, b:bat[:oid,:any_1])
 
 pattern calc.hash( v:any ) :int address MKEYhash; 
 command calc.hash( v:chr ) :int address MKEYhash_chr; 
+command calc.hash( v:bte ) :int address MKEYhash_bte; 
 command calc.hash( v:sht ) :int address MKEYhash_sht; 
 command calc.hash( v:int ) :int address MKEYhash_int; 
 command calc.hash( v:flt ) :int address MKEYhash_flt; 
@@ -309,7 +317,7 @@ address @1_dec_round_wrap
 comment "round off the value v to nearests multiple of r";
 
 
-command round( v:@1, d:int, s:int, r:sht) :@1
+command round( v:@1, d:int, s:int, r:bte) :@1
 address @1_round_wrap
 comment "round off the decimal v(d,s) to r digits behind the dot (if r < 0, before the dot)";
 @-
@@ -326,6 +334,7 @@ comment "round off the value v to nearests multiple of r";
 command aggr.exist(b:bat[:any_1,:any_2], h:any_1):bit 
 address ALGexist;
 
+@:mal_round(bte)@
 @:mal_round(sht)@
 @:mal_round(int)@
 @:mal_round(lng)@
@@ -365,6 +374,7 @@ address CALC@12str
 comment "Cast @1 to str";
 @}
 @mal
+@:mal_cast(bte)@
 @:mal_cast(sht)@
 @:mal_cast(int)@
 @:mal_cast(lng)@
@@ -392,6 +402,9 @@ command calc.str( v:str) :str
 address CALCstr2str
 comment "Idempotent cast of strings";
 
+command calc.bte( v:bit) :bte 
+address CALCbit2bte
+comment "Cast bit to bte ";
 command calc.sht( v:bit) :sht 
 address CALCbit2sht
 comment "Cast bit to sht ";
@@ -421,9 +434,11 @@ command calc.@1( v:@2, digits:int, scale:int ) :@1
 address @2_num2dec_@1
 comment "cast number to decimal(@1) and check for overflow";
 @mal
+@:mal_cast_2dec(bte,flt)@
 @:mal_cast_2dec(sht,flt)@
 @:mal_cast_2dec(int,flt)@
 @:mal_cast_2dec(lng,flt)@
+@:mal_cast_2dec(bte,dbl)@
 @:mal_cast_2dec(sht,dbl)@
 @:mal_cast_2dec(int,dbl)@
 @:mal_cast_2dec(lng,dbl)@
@@ -441,18 +456,27 @@ comment "cast decimal(@2) to decimal(@1) and check for overflow";
 @:mal_cast_2dec(@1,@2)@
 @:mal_cast_dec2(@1,@2)@
 @mal
+@:mal_cast2(bte,bte)@
+@:mal_cast2(bte,sht)@
+@:mal_cast2(bte,int)@
+@:mal_cast2(bte,lng)@
+@:mal_cast2(sht,bte)@
 @:mal_cast2(sht,sht)@
 @:mal_cast2(sht,int)@
 @:mal_cast2(sht,lng)@
+@:mal_cast2(int,bte)@
 @:mal_cast2(int,sht)@
 @:mal_cast2(int,int)@
 @:mal_cast2(int,lng)@
+@:mal_cast2(lng,bte)@
 @:mal_cast2(lng,sht)@
 @:mal_cast2(lng,int)@
 @:mal_cast2(lng,lng)@
+@:mal_cast2(flt,bte)@
 @:mal_cast2(flt,sht)@
 @:mal_cast2(flt,int)@
 @:mal_cast2(flt,lng)@
+@:mal_cast2(dbl,bte)@
 @:mal_cast2(dbl,sht)@
 @:mal_cast2(dbl,int)@
 @:mal_cast2(dbl,lng)@
@@ -468,6 +492,7 @@ comment "cast @1 to a month_interval and check for overflow";
 @mal
 
 @:mal_interval(str)@
+@:mal_interval(bte)@
 @:mal_interval(sht)@
 @:mal_interval(int)@
 @:mal_interval(lng)@
@@ -502,6 +527,10 @@ function mmath.rand( v:int ) :int;
 	return x;
 end mmath.rand;
 
+function sql_semijoin(b1:bat[:oid,:any_1], b2:bat[:oid,:any_2]) :bat[:oid,:any_1];
+	x := bat.mirror(b2);
+	return algebra.join(x,b1);
+end sql_semijoin;
 @mal
 
 command prelude()
@@ -613,6 +642,7 @@ sql5_export str mvc_result_value_@1(int *ret, int *rs, str *tn, str *name, str *
 @:result_value_export(lng)@
 @:result_value_export(int)@
 @:result_value_export(sht)@
+@:result_value_export(bte)@
 
 sql5_export str mvc_result_value_wrap(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str mvc_affected_rows_wrap(int *r, lng *nr, str *w);
@@ -626,6 +656,7 @@ sql5_export str setVariable(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str getVariable(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str sql_variables(int *res);
 sql5_export str mvc_next_value(lng *res, str *sname, str *seqname);
+sql5_export str mvc_bat_next_value(int *res, int *sname, str *seqname);
 sql5_export str mvc_get_value(lng *res, str *sname, str *seqname);
 sql5_export str mvc_restart_seq(lng *res, str *sname, str *seqname, lng *start);
 sql5_export str mvc_affected_rows_int(int *r, int *nr, str *w);
@@ -639,10 +670,11 @@ sql5_export str dump_opt_stats(int *r);
 sql5_export str @1_dec_round_wrap( @1 *res, @1 *v, @1 *r );
 sql5_export str @1_dbl_dec_round_wrap( @1 *res, @1 *v, dbl *r );
 sql5_export str @1_int_dec_round_wrap( @1 *res, @1 *v, int *r );
-sql5_export str @1_round_wrap( @1 *res, @1 *v, int *d, int *s, sht *r );
+sql5_export str @1_round_wrap( @1 *res, @1 *v, int *d, int *s, bte *r );
 sql5_export str str_2dec_@1( @1 *res, str *val, int *d, int *sc );
 sql5_export str str_2num_@1( @1 *res, str *v, int *len );
 @h
+@:round_export(bte)@
 @:round_export(sht)@
 @:round_export(int)@
 @:round_export(lng)@
@@ -652,6 +684,7 @@ sql5_export str SQL@1_2_str( str *res, @1 *val );
 @h
 @:cast_export(bit,bitToStr)@
 @:cast_export(oid,OIDtoStr)@
+@:cast_export(bte,bteToStr)@
 @:cast_export(sht,shtToStr)@
 @:cast_export(int,intToStr)@
 @:cast_export(lng,lngToStr)@
@@ -673,6 +706,7 @@ sql5_export str @1_@2_dec_round_wrap( @1 *res, @1 *v, @2 *r );
 sql5_export str month_interval_@1( int *ret, @1 *s, int *ek, int *sk );
 sql5_export str second_interval_@1( lng *res, @1 *s, int *ek, int *sk );
 @h
+@:c_interval_export(bte)@
 @:c_interval_export(sht)@
 @:c_interval_export(int)@
 @:c_interval_export(lng)@
@@ -686,11 +720,16 @@ sql5_export str @2_dec2_@1( @1 *res, int *s1, @2 *v );
 sql5_export str @2_dec2dec_@1( @1 *res, int *S1, @2 *v, int *d2, int *S2 );
 sql5_export str @2_num2dec_@1( @1 *res, @2 *v, int *d2, int *s2 );
 @h
+@:numcastup_export(bte,bte)@
+@:numcastup_export(bte,oid)@
+@:numcastup_export(sht,bte)@
 @:numcastup_export(sht,sht)@
 @:numcastup_export(sht,oid)@
+@:numcastup_export(int,bte)@
 @:numcastup_export(int,sht)@
 @:numcastup_export(int,int)@
 @:numcastup_export(int,oid)@
+@:numcastup_export(lng,bte)@
 @:numcastup_export(lng,sht)@
 @:numcastup_export(lng,int)@
 @:numcastup_export(lng,oid)@
@@ -699,9 +738,11 @@ sql5_export str @2_num2dec_@1( @1 *res, @2 *v, int *d2, int *s2 );
 @:simpledowncast_export(@1,@2)@
 sql5_export str @2_num2dec_@1( @1 *res, @2 *v, int *d2, int *s2 );
 @h
+@:fnumcastdown_export(bte,flt)@
 @:fnumcastdown_export(sht,flt)@
 @:fnumcastdown_export(int,flt)@
 @:fnumcastdown_export(lng,flt)@
+@:fnumcastdown_export(bte,dbl)@
 @:fnumcastdown_export(sht,dbl)@
 @:fnumcastdown_export(int,dbl)@
 @:fnumcastdown_export(lng,dbl)@
@@ -711,9 +752,11 @@ sql5_export str @2_dec2_@1( @1 *res, int *s1, @2 *v );
 sql5_export str @2_dec2dec_@1( @1 *res, int *S1, @2 *v, int *d2, int *S2 );
 sql5_export str @2_num2dec_@1( @1 *res, @2 *v, int *d2, int *s2 );
 @h
+@:fnumcastup_export(flt,bte)@
 @:fnumcastup_export(flt,sht)@
 @:fnumcastup_export(flt,int)@
 @:fnumcastup_export(flt,lng)@
+@:fnumcastup_export(dbl,bte)@
 @:fnumcastup_export(dbl,sht)@
 @:fnumcastup_export(dbl,int)@
 @:fnumcastup_export(dbl,lng)@
@@ -723,6 +766,9 @@ sql5_export str @2_dec2_@1( @1 *res, int *s1, @2 *v );
 sql5_export str @2_dec2dec_@1( @1 *res, int *S1, @2 *v, int *d2, int *S2 );
 sql5_export str @2_num2dec_@1( @1 *res, @2 *v, int *d2, int *s2 );
 @h
+@:numcastdown_export(bte,sht)@
+@:numcastdown_export(bte,int)@
+@:numcastdown_export(bte,lng)@
 @:numcastdown_export(sht,int)@
 @:numcastdown_export(sht,lng)@
 @:numcastdown_export(int,lng)@
@@ -995,6 +1041,69 @@ mvc_next_value(lng *res, str *sname, str *seqname)
 			return MAL_SUCCEED;
 	}
 	throw(SQL, "sql.next_value", "error");
+}
+
+str
+mvc_bat_next_value(int *res, int *sid, str *seqname)
+{
+	mvc *m = NULL;
+	str msg = getContext(&m, NULL);
+	int xx;
+	BAT *b, *r;
+	BUN p,q;
+	sql_schema *s = NULL;
+	sql_sequence *seq = NULL;
+	seqbulk *sb = NULL;
+
+	if (msg)
+		return msg;
+
+	if( (b = BATdescriptor(*sid)) == NULL )
+		throw(SQL, "sql.next_value", "Cannot access descriptor");
+
+	r= BATnew(b->htype, TYPE_lng, BATcount(b));
+	if (!r) {
+		BBPunfix(b->batCacheid);
+		throw(SQL, "sql.next_value", "Cannot create bat");
+	}
+
+	BATseqbase(r, b->hseqbase);
+	if (!BATcount(b)) {
+		BBPunfix(b->batCacheid);
+		BBPkeepref( *res = r->batCacheid);
+		return MAL_SUCCEED;
+	}
+
+	BATloopFast(b,p,q,xx){
+		str sname = BUNtail(b,BUNfirst(b));
+		lng l;
+
+		if (!s || strcmp(s->base.name, sname) != 0) {
+			if (sb)
+				seqbulk_destroy(sb);
+			s = mvc_bind_schema(m, sname);
+			seq = NULL;
+			if (!s || 
+			    (seq = find_sql_sequence(s, *seqname)) == NULL ||
+			    !(sb = seqbulk_create(seq, BATcount(b))) ) {
+				BBPunfix(b->batCacheid);
+				BBPunfix(r->batCacheid);
+				throw(SQL, "sql.next_value", "error");
+			}
+		}
+		if (!seqbulk_next_value(sb, &l)) {
+			BBPunfix(b->batCacheid);
+			BBPunfix(r->batCacheid);
+			seqbulk_destroy(sb);
+			throw(SQL, "sql.next_value", "error");
+		}
+		BUNins(r, BUNhead(b,p), &l, FALSE);
+	}
+	if (sb) 
+		seqbulk_destroy(sb);
+	BBPunfix(b->batCacheid);
+	BBPkeepref( *res = r->batCacheid);
+	return MAL_SUCCEED;
 }
 
 str
@@ -1348,6 +1457,7 @@ mvc_result_value_@1(int *ret, int *rs, str *tn, str *name, str *type, int *digit
 @:result_value(lng)@
 @:result_value(int)@
 @:result_value(sht)@
+@:result_value(bte)@
 str
 /*mvc_result_value_wrap(int *ret, int *rs, str *tn, str *name, str *type, int *digits, int *scale, ptr p, int mtype)*/
 mvc_result_value_wrap(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
@@ -1712,7 +1822,7 @@ str @1_dec_round_wrap( @1 *res, @1 *v, @1 *r )
 	*res = val;
 	return NULL;
 }
-str @1_round_wrap( @1 *res, @1 *v, int *d, int *s, sht *r )
+str @1_round_wrap( @1 *res, @1 *v, int *d, int *s, bte *r )
 {
 	/* shortcut nil */
 	if (*v == @1_nil) {
@@ -1797,6 +1907,7 @@ str_2num_@1( @1 *res, str *v, int *len )
 }
 @c
 
+@:round(bte)@
 @:round(sht)@
 @:round(int)@
 @:round(lng)@
@@ -1855,6 +1966,7 @@ SQL@1_2_str( str *res, @1 *val )
 @c
 @:cast(bit,bitToStr)@
 @:cast(oid,OIDtoStr)@
+@:cast(bte,bteToStr)@
 @:cast(sht,shtToStr)@
 @:cast(int,intToStr)@
 @:cast(lng,lngToStr)@
@@ -2022,11 +2134,16 @@ str @2_num2dec_@1( @1 *res, @2 *v, int *d2, int *s2 )
 }
 
 @c
+@:numcastup(bte,bte)@
+@:numcastup(bte,oid)@
+@:numcastup(sht,bte)@
 @:numcastup(sht,sht)@
 @:numcastup(sht,oid)@
+@:numcastup(int,bte)@
 @:numcastup(int,sht)@
 @:numcastup(int,int)@
 @:numcastup(int,oid)@
+@:numcastup(lng,bte)@
 @:numcastup(lng,sht)@
 @:numcastup(lng,int)@
 @:numcastup(lng,oid)@
@@ -2069,9 +2186,11 @@ str @2_num2dec_@1( @1 *res, @2 *v, int *d2, int *s2 )
 	return MAL_SUCCEED;
 }
 @c
+@:fnumcastdown(bte,flt)@
 @:fnumcastdown(sht,flt)@
 @:fnumcastdown(int,flt)@
 @:fnumcastdown(lng,flt)@
+@:fnumcastdown(bte,dbl)@
 @:fnumcastdown(sht,dbl)@
 @:fnumcastdown(int,dbl)@
 @:fnumcastdown(lng,dbl)@
@@ -2139,9 +2258,11 @@ str @2_num2dec_@1( @1 *res, @2 *v, int *d2, int *s2 )
 	return @2_dec2dec_@1( res, &zero, v, d2, s2 );
 }
 @c
+@:fnumcastup(flt,bte)@
 @:fnumcastup(flt,sht)@
 @:fnumcastup(flt,int)@
 @:fnumcastup(flt,lng)@
+@:fnumcastup(dbl,bte)@
 @:fnumcastup(dbl,sht)@
 @:fnumcastup(dbl,int)@
 @:fnumcastup(dbl,lng)@
@@ -2216,6 +2337,9 @@ str @2_num2dec_@1( @1 *res, @2 *v, int *d2, int *s2 )
 	return @2_dec2dec_@1( res, &zero, v, d2, s2 );
 }
 @c
+@:numcastdown(bte,sht)@
+@:numcastdown(bte,int)@
+@:numcastdown(bte,lng)@
 @:numcastdown(sht,int)@
 @:numcastdown(sht,lng)@
 @:numcastdown(int,lng)@
@@ -2278,6 +2402,7 @@ second_interval_@1( lng *res, @1 *s, int *ek, int *sk ){
 	return MAL_SUCCEED;
 }
 @c
+@:c_interval(bte)@
 @:c_interval(sht)@
 @:c_interval(int)@
 @:c_interval(lng)@

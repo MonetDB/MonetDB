@@ -694,7 +694,7 @@ load_key(sql_trans *tr, BAT *keys, BUN j, sql_table *t)
 
 		fk->rkey = NULL;
 		fk->on_delete = action & 255;
-		fk->on_update = (action>>8) && 255;
+		fk->on_update = (action>>8) & 255;
 	}
 
 	cols = BATselect(kc_id, (ptr) &nk->base.id, (ptr) &nk->base.id);
@@ -3786,7 +3786,7 @@ rollforward_update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 		cur = temp_descriptor(oc->bat.bid);
 		if (ft->cleared && ttr == gtrans) {
 			bat_clear(cur);
-			BATcommit(cur);
+			BATcommit(cur); 
 			ok = log_bat_clear(sql_logger, oc->bat.name);
 			if (ok == LOG_OK) 
 				ok = log_bat_clear(sql_logger, oc->bat.uname);
@@ -3826,6 +3826,9 @@ rollforward_update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 					ins = cur;
 					cur = swpbat;
 				} else {
+					if (BATcount(cur)+BATcount(ins) > (size_t) REMAP_PAGE_MAXSIZE) { /* try to use mmap() */
+        					BATmmap(cur, STORE_MMAP, STORE_MMAP, STORE_MMAP);
+    					}
 					BATappend(cur,ins,TRUE);
 					bat_clear(ins);
 				}
@@ -3938,6 +3941,9 @@ rollforward_update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 						ins = cur;
 						cur = swpbat;
 					} else {
+						if (BATcount(cur)+BATcount(ins) > (size_t) REMAP_PAGE_MAXSIZE) { /* try to use mmap() */
+        						BATmmap(cur, STORE_MMAP, STORE_MMAP, STORE_MMAP);
+    						}
 						BATappend(cur,ins,TRUE);
 						bat_clear(ins);
 					}

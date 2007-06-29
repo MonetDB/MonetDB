@@ -24,7 +24,7 @@ Over..
 
 % .result,	.result # table_name
 % pos_nat,	item_int # name
-% smallint,	int # type
+% tinyint,	int # type
 % 1,	1 # length
 [ 1,	0	]
 

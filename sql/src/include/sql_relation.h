@@ -59,8 +59,10 @@ typedef struct expression {
 #define DISTINCT	1
 #define NO_NIL		2
  
+#define MAXOPS 16
+
 typedef enum operator_type {
-	op_basetable,
+	op_basetable = 0,
 	op_table,
 	op_project,
 	op_select,
@@ -92,6 +94,8 @@ typedef enum operator_type {
 	(rel->op == op_project && rel->r != NULL)
 
 typedef struct relation {
+	sql_ref ref;
+
 	operator_type op;	
 	char *name;   
 	void *l;
