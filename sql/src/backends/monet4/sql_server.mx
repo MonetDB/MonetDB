@@ -721,7 +721,8 @@ mathematical operators. The extensions required to support
 SQL-99 are shown below. At some point they also should be
 moved to module code base.
 @= round
-int @1_dec_round_wrap( @1 *res, @1 *v, @1 *r )
+int 
+@1_dec_round_wrap( @1 *res, @1 *v, @1 *r )
 {
 	@1 val = *v;
 	@1 add = *r;
@@ -741,7 +742,8 @@ int @1_dec_round_wrap( @1 *res, @1 *v, @1 *r )
 	return GDK_SUCCEED;
 }
 
-int @1_round_wrap( @1 *res, @1 *v, int *d, int *s, sht *r )
+int 
+@1_round_wrap( @1 *res, @1 *v, int *d, int *s, sht *r )
 {
 	/* shortcut nil */
 	if (*v == @1_nil) {
@@ -766,12 +768,13 @@ int @1_round_wrap( @1 *res, @1 *v, int *d, int *s, sht *r )
 	return GDK_SUCCEED;
 }
 
-int str_2dec_@1( @1 *res, str val, int *d, int *sc )
+int 
+str_2dec_@1( @1 *res, str val, int *d, int *sc )
 {
 	char *s = strip_extra_zeros(val);
 	char *dot = strchr(s, '.');
 	int digits = _strlen(s) - 1;
-	int scale = digits - (int) (dot-s);
+	int scale = digits - (dot-s);
 	lng value = 0;
 
 	if (!dot) {
@@ -782,14 +785,14 @@ int str_2dec_@1( @1 *res, str val, int *d, int *sc )
 	value = decimal_from_str(s);
 	if (*s == '+' || *s == '-')
 		digits --;
-	if (scale < *sc) {
+	if (scale < *sc){
 		/* the current scale is too small, increase it by adding 0's */
 		int d = *sc - scale;	/* CANNOT be 0! */
 
 		value *= scales[d];
 		scale += d;
 		digits += d;
-	} else if (scale > *sc) {
+	} else if (scale > *sc){
 		/* the current scale is too big, decrease it by correctly rounding */
 		int d = scale - *sc;	/* CANNOT be 0 */
 		lng rnd = scales[d]>>1;
@@ -819,7 +822,8 @@ str_2num_@1( @1 *res, str v, int *len )
 @:round(lng)@
 
 @= fround
-int @1_dec_round_wrap( @1 *res, @1 *v, @1 *r )
+int 
+@1_dec_round_wrap( @1 *res, @1 *v, @1 *r )
 {
 	@1 val = *v;
 
@@ -897,7 +901,8 @@ str_cast(str *res, mvc *M, int *eclass, int *d, int *s, int *has_tz, ptr v, int 
 }
 
 @= simpleupcast
-int @2_2_@1( @1 *res, @2 *v )
+int 
+@2_2_@1( @1 *res, @2 *v )
 {
 	/* shortcut nil */
 	if (*v == @2_nil) {
@@ -915,7 +920,7 @@ int @2_2_@1( @1 *res, @2 *v )
 @= simpledowncast
 int @2_2_@1( @1 *res, @2 *v )
 {
-	lng val = (lng) *v;
+	lng val = *v;
 
 	/* shortcut nil */
 	if (*v == @2_nil) {
@@ -937,7 +942,8 @@ int @2_2_@1( @1 *res, @2 *v )
 @= numcastup
 @:simpleupcast(@1,@2)@
 
-int @2_dec2_@1( @1 *res, int *s1, @2 *v )
+int 
+@2_dec2_@1( @1 *res, int *s1, @2 *v )
 {
 	int scale = *s1;
 	@1 r, h = (*v<0)?-5:5; 
@@ -947,7 +953,7 @@ int @2_dec2_@1( @1 *res, int *s1, @2 *v )
 		*res = @1_nil;
 		return(GDK_SUCCEED);
 	}
-	
+
 	/* since the @1 type is bigger than or equal to the @2 type, it will
 	   always fit */
 	r = (@1)*v;
@@ -957,13 +963,8 @@ int @2_dec2_@1( @1 *res, int *s1, @2 *v )
 	return GDK_SUCCEED;
 }
 
-int @2_num2dec_@1( @1 *res, @2 *v, int *d2, int *s2 )
-{
-	int zero = 0;
-	return @2_dec2dec_@1( res, &zero, v, d2, s2 );
-}
-
-int @2_dec2dec_@1( @1 *res, int *S1, @2 *v, int *d2, int *S2 )
+int 
+@2_dec2dec_@1( @1 *res, int *S1, @2 *v, int *d2, int *S2 )
 {
 	int p = *d2, inlen = 1;
 	@2 cpyval = *v;
@@ -997,6 +998,14 @@ int @2_dec2dec_@1( @1 *res, int *S1, @2 *v, int *d2, int *S2 )
 	*res = r;
 	return GDK_SUCCEED;
 }
+
+int 
+@2_num2dec_@1( @1 *res, @2 *v, int *d2, int *s2 )
+{
+	int zero = 0;
+	return @2_dec2dec_@1( res, &zero, v, d2, s2 );
+}
+
 @c
 @:numcastup(sht,sht)@
 @:numcastup(int,sht)@
@@ -1011,7 +1020,8 @@ int @2_dec2dec_@1( @1 *res, int *S1, @2 *v, int *d2, int *S2 )
 /* when casting a floating point to an decimal we like to preserve the 
  * precision.  This means we first scale the float before converting.
 */
-int @2_num2dec_@1( @1 *res, @2 *v, int *d2, int *s2 )
+int 
+@2_num2dec_@1( @1 *res, @2 *v, int *d2, int *s2 )
 {
 	int p = *d2, inlen = 1, scale = *s2;
 	@2 r;
@@ -1052,7 +1062,8 @@ int @2_num2dec_@1( @1 *res, @2 *v, int *d2, int *s2 )
 @= fnumcastup
 @:simpleupcast(@1,@2)@
 
-int @2_dec2_@1( @1 *res, int *s1, @2 *v )
+int 
+@2_dec2_@1( @1 *res, int *s1, @2 *v )
 {
 	int scale = *s1;
 	@1 r;
@@ -1072,13 +1083,8 @@ int @2_dec2_@1( @1 *res, int *s1, @2 *v )
 	return GDK_SUCCEED;
 }
 
-int @2_num2dec_@1( @1 *res, @2 *v, int *d2, int *s2 )
-{
-	int zero = 0;
-	return @2_dec2dec_@1( res, &zero, v, d2, s2 );
-}
-
-int @2_dec2dec_@1( @1 *res, int *S1, @2 *v, int *d2, int *S2 )
+int 
+@2_dec2dec_@1( @1 *res, int *S1, @2 *v, int *d2, int *S2 )
 {
 	int p = *d2, inlen = 1;
 	@2 cpyval = *v;
@@ -1111,6 +1117,13 @@ int @2_dec2dec_@1( @1 *res, int *S1, @2 *v, int *d2, int *S2 )
 	*res = r;
 	return GDK_SUCCEED;
 }
+int 
+@2_num2dec_@1( @1 *res, @2 *v, int *d2, int *s2 )
+{
+	int zero = 0;
+	return @2_dec2dec_@1( res, &zero, v, d2, s2 );
+}
+
 @c
 @:fnumcastup(flt,sht)@
 @:fnumcastup(flt,int)@
@@ -1123,7 +1136,8 @@ int @2_dec2dec_@1( @1 *res, int *S1, @2 *v, int *d2, int *S2 )
 @= numcastdown
 @:simpledowncast(@1,@2)@
 
-int @2_dec2_@1( @1 *res, int *s1, @2 *v )
+int 
+@2_dec2_@1( @1 *res, int *s1, @2 *v )
 {
 	int scale = *s1;
 	lng val = *v, h = (val<0)?-5:5;
@@ -1146,13 +1160,8 @@ int @2_dec2_@1( @1 *res, int *s1, @2 *v )
 	}
 }
 
-int @2_num2dec_@1( @1 *res, @2 *v, int *d2, int *s2 )
-{
-	int zero = 0;
-	return @2_dec2dec_@1( res, &zero, v, d2, s2 );
-}
-
-int @2_dec2dec_@1( @1 *res, int *S1, @2 *v, int *d2, int *S2 )
+int 
+@2_dec2dec_@1( @1 *res, int *S1, @2 *v, int *d2, int *S2 )
 {
 	int p = *d2, inlen = 1;
 	lng val = *v, cpyval = val, h = (val<0)?-5:5;
@@ -1188,12 +1197,21 @@ int @2_dec2dec_@1( @1 *res, int *S1, @2 *v, int *d2, int *S2 )
 		return GDK_FAIL;
 	}
 }
+
+int 
+@2_num2dec_@1( @1 *res, @2 *v, int *d2, int *s2 )
+{
+	int zero = 0;
+	return @2_dec2dec_@1( res, &zero, v, d2, s2 );
+}
 @c
 @:numcastdown(sht,int)@
 @:numcastdown(sht,lng)@
 @:numcastdown(int,lng)@
 
-int month_interval_str( int *ret, str s, int *ek, int *sk ){
+int 
+month_interval_str( int *ret, str s, int *ek, int *sk )
+{
 	lng res;
 
 	if (interval_from_str( s, *sk, *ek, &res ) < 0)
@@ -1201,7 +1219,10 @@ int month_interval_str( int *ret, str s, int *ek, int *sk ){
 	*ret = (int) res;
 	return GDK_SUCCEED;
 }
-int second_interval_str( lng *res, str s, int *ek, int *sk ){
+
+int 
+second_interval_str( lng *res, str s, int *ek, int *sk )
+{
 
 	if (interval_from_str( s, *sk, *ek, res ) < 0)
 		return GDK_FAIL;
@@ -1209,7 +1230,8 @@ int second_interval_str( lng *res, str s, int *ek, int *sk ){
 }
 
 @= c_interval
-int month_interval_@1( int *ret, @1 *s, int *ek, int *sk ){
+int 
+month_interval_@1( int *ret, @1 *s, int *ek, int *sk ){
 	int r = (int)*s;
 
 	(void)ek;
@@ -1224,7 +1246,8 @@ int month_interval_@1( int *ret, @1 *s, int *ek, int *sk ){
 	*ret = r;
 	return GDK_SUCCEED;
 }
-int second_interval_@1( lng *res, @1 *s, int *ek, int *sk ){
+int 
+second_interval_@1( lng *res, @1 *s, int *ek, int *sk ){
 	lng r = *s;
 
 	(void)ek;
@@ -1249,7 +1272,8 @@ int second_interval_@1( lng *res, @1 *s, int *ek, int *sk ){
 @:c_interval(int)@
 @:c_interval(lng)@
 
-int zero_or_one(ptr ret, BAT* b) 
+int 
+zero_or_one(ptr ret, BAT* b) 
 {
 	ptr p;
 	int c = BATcount(b);

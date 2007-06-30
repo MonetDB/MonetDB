@@ -401,6 +401,7 @@ mvc_commit(mvc *m, int chain, char *name)
 		m->type = Q_TRANS;
 		if (mvc_debug)
 			fprintf(stderr, "mvc_commit %s done\n", (name) ? name : "");
+		m->last = NULL;
 		return 0;
 	}
 
@@ -420,6 +421,7 @@ mvc_commit(mvc *m, int chain, char *name)
 		sql_trans_begin(m->session);
 	store_unlock();
 	m->type = Q_TRANS;
+	m->last = NULL;
 	if (mvc_debug)
 		fprintf(stderr, "mvc_commit %s done\n", (name) ? name : "");
 	return ok;

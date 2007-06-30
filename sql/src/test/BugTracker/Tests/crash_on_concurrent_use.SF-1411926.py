@@ -10,6 +10,7 @@ def server_start(dbinit):
     return srv
 
 def server_stop(srv):
+    time.sleep(5)                      # give server time to start
     srv.close()
 
 def clients(client, runs, clmd):
@@ -34,7 +35,11 @@ class Client(threading.Thread):
 		clients(self.client, 20, clcmd)			
 
 def main():
-	srv = server_start('include sql;')
+    	check_version = os.system('%s --version' % os.getenv('MSERVER'))
+	if check_version == 0:
+		srv = server_start('include sql;')
+	else:
+		srv = server_start('module(sql_server);')
 	client_0 = Client(0)
 	client_1 = Client(1)
 	client_0.start()
