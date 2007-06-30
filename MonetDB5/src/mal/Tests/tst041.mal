@@ -41,3 +41,9 @@ o:= nil:blob;
 io.print(o);
 o:= calc.blob(nil:blob);
 io.print(o);
+
+w:= nil:wrd;
+io.print(w);
+
+B:= nil:bte;
+io.print(B);

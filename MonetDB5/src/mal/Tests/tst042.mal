@@ -3,6 +3,8 @@ i := 1;
 f := 3.14;
 c := 'a';
 b:= true;
+w:= 1:wrd;
+B:= 2:bte;
 bb:= bat.new(:oid,:str);
 
 st:= inspect.getType(s); io.printf("%s\n",st);
@@ -10,6 +12,8 @@ it:= inspect.getType(i); io.printf("%s\n",it);
 ft:= inspect.getType(f); io.printf("%s\n",ft);
 ct:= inspect.getType(c); io.printf("%s\n",ct);
 bt:= inspect.getType(b); io.printf("%s\n",bt);
+wt:= inspect.getType(b); io.printf("%s\n",wt);
+Bt:= inspect.getType(b); io.printf("%s\n",Bt);
 (ht,tt):= inspect.getType(bb); 
 io.printf("bat  head %s\n",ht);
 io.printf("bat  head %s\n",tt);
