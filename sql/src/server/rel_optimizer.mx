@@ -767,7 +767,7 @@ exps_remove_alias(sql_exp *e, list *exps)
 static sql_exp *
 exp_push_down(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t) 
 {
-	sql_exp *ne;
+	sql_exp *ne = NULL;
 
 	switch(e->type) {
 	case e_column:
