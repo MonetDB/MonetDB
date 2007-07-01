@@ -42,26 +42,34 @@ function user.main():void;	# 0  (main:void)
     f := 3.1400001;	# 3  (f:flt)<-(_6:flt)
     c := 'a';	# 4  (c:chr)<-(_8:chr)
     b := true;	# 5  (b:bit)<-(_10:bit)
-    bb := bat.new(:oid,:str);	# 6 CMDBATnew (bb:bat[:oid,:str])<-(_12:oid)(_13:str)
-    st := inspect.getType(s);	# 7 INSPECTtypeName (st:str)<-(s:str)
-    io.printf("%s\n",st);	# 8 IOprint_formatted_str (_15:void)<-(_16:str)(st:str)
-    it := inspect.getType(i);	# 9 INSPECTtypeName (it:str)<-(i:int)
-    io.printf("%s\n",it);	# 10 IOprint_formatted_str (_18:void)<-(_16:str)(it:str)
-    ft := inspect.getType(f);	# 11 INSPECTtypeName (ft:str)<-(f:flt)
-    io.printf("%s\n",ft);	# 12 IOprint_formatted_str (_20:void)<-(_16:str)(ft:str)
-    ct := inspect.getType(c);	# 13 INSPECTtypeName (ct:str)<-(c:chr)
-    io.printf("%s\n",ct);	# 14 IOprint_formatted_str (_22:void)<-(_16:str)(ct:str)
-    bt := inspect.getType(b);	# 15 INSPECTtypeName (bt:str)<-(b:bit)
-    io.printf("%s\n",bt);	# 16 IOprint_formatted_str (_24:void)<-(_16:str)(bt:str)
-    (ht,tt):= inspect.getType(bb);	# 17 INSPECTtypeName (ht:str)(tt:str)<-(bb:bat[:oid,:str])
-    io.printf("bat  head %s\n",ht);	# 18 IOprint_formatted_str (_27:void)<-(_28:str)(ht:str)
-    io.printf("bat  head %s\n",tt);	# 19 IOprint_formatted_str (_29:void)<-(_28:str)(tt:str)
-end main;	# 20  
+    w := 1:wrd;	# 6  (w:wrd)<-(_12:wrd)
+    B := 2:bte;	# 7  (B:bte)<-(_14:bte)
+    bb := bat.new(:oid,:str);	# 8 CMDBATnew (bb:bat[:oid,:str])<-(_16:oid)(_17:str)
+    st := inspect.getType(s);	# 9 INSPECTtypeName (st:str)<-(s:str)
+    io.printf("%s\n",st);	# 10 IOprint_formatted_str (_19:void)<-(_20:str)(st:str)
+    it := inspect.getType(i);	# 11 INSPECTtypeName (it:str)<-(i:int)
+    io.printf("%s\n",it);	# 12 IOprint_formatted_str (_22:void)<-(_20:str)(it:str)
+    ft := inspect.getType(f);	# 13 INSPECTtypeName (ft:str)<-(f:flt)
+    io.printf("%s\n",ft);	# 14 IOprint_formatted_str (_24:void)<-(_20:str)(ft:str)
+    ct := inspect.getType(c);	# 15 INSPECTtypeName (ct:str)<-(c:chr)
+    io.printf("%s\n",ct);	# 16 IOprint_formatted_str (_26:void)<-(_20:str)(ct:str)
+    bt := inspect.getType(b);	# 17 INSPECTtypeName (bt:str)<-(b:bit)
+    io.printf("%s\n",bt);	# 18 IOprint_formatted_str (_28:void)<-(_20:str)(bt:str)
+    wt := inspect.getType(w);	# 19 INSPECTtypeName (wt:str)<-(w:wrd)
+    io.printf("%s\n",wt);	# 20 IOprint_formatted_str (_30:void)<-(_20:str)(wt:str)
+    Bt := inspect.getType(B);	# 21 INSPECTtypeName (Bt:str)<-(B:bte)
+    io.printf("%s\n",Bt);	# 22 IOprint_formatted_str (_32:void)<-(_20:str)(Bt:str)
+    (ht,tt):= inspect.getType(bb);	# 23 INSPECTtypeName (ht:str)(tt:str)<-(bb:bat[:oid,:str])
+    io.printf("bat  head %s\n",ht);	# 24 IOprint_formatted_str (_35:void)<-(_36:str)(ht:str)
+    io.printf("bat  head %s\n",tt);	# 25 IOprint_formatted_str (_37:void)<-(_36:str)(tt:str)
+end main;	# 26  
 str
 int
 flt
 chr
 bit
+wrd
+bte
 bat  head oid
 bat  head str
 
