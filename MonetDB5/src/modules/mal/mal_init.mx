@@ -192,6 +192,7 @@ include opt_reduce;
 include opt_remap;
 include opt_singleton;
 include opt_strengthReduction;
+include opt_statistics;
 
 include chopper;
 
