@@ -333,7 +333,7 @@ CLTquit(int *ret)
 		throw(MAL, "client.quit", "Server not stopped from console.");
 	c->mode = FINISHING;
 	return MAL_SUCCEED;
-	/* throw(MAL, "client.quit", "Server stopped.");*/
+	/* throw(MAL, "client.quit", "Server stopped."); */
 }
 
 str
