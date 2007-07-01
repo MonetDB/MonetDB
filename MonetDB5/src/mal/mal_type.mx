@@ -94,7 +94,6 @@ derived from the parser to avoid a loop in the define-structure.
 
 
 mal_export str getTypeName(malType tpe);
-mal_export malType coercion(malType t1, malType t2);
 mal_export int getTypeIndex(str nme, int len, int deftpe);
 mal_export malType reverseBatType(malType v);
 mal_export malType malAnyBatType(malType t1, malType t2);
@@ -161,67 +160,6 @@ getTypeName(malType tpe)
 	return GDKstrdup(ATOMname(tpe));
 }
 
-@+ Type coercion
-The coercion scheme below should at some point be added to the GDK kernel.
-@c
-int gdkCoercionTable[12][12] = {
-/*      void bit chr sht bat int 
-        oid ptr flt dbl lng str */
-/* void */
-	{TYPE_void, TYPE_any, TYPE_any, TYPE_any, TYPE_any, TYPE_any,
-	 TYPE_any, TYPE_any, TYPE_any, TYPE_any, TYPE_any, TYPE_str},
-/* bit */
-	{TYPE_any, TYPE_bit, TYPE_any, TYPE_any, TYPE_any, TYPE_any,
-	 TYPE_any, TYPE_any, TYPE_any, TYPE_any, TYPE_any, TYPE_str},
-/* chr */
-	{TYPE_any, TYPE_any, TYPE_chr, TYPE_any, TYPE_any, TYPE_any,
-	 TYPE_any, TYPE_any, TYPE_any, TYPE_any, TYPE_any, TYPE_str},
-/* sht */
-	{TYPE_any, TYPE_any, TYPE_any, TYPE_sht, TYPE_any, TYPE_int,
-	 TYPE_any, TYPE_any, TYPE_flt, TYPE_dbl, TYPE_lng, TYPE_str},
-/* bat */
-	{TYPE_any, TYPE_any, TYPE_any, TYPE_any, TYPE_bat, TYPE_any,
-	 TYPE_any, TYPE_any, TYPE_any, TYPE_any, TYPE_any, TYPE_str},
-/* int */
-	{TYPE_any, TYPE_any, TYPE_any, TYPE_int, TYPE_any, TYPE_int,
-	 TYPE_any, TYPE_any, TYPE_flt, TYPE_dbl, TYPE_lng, TYPE_str},
-/* oid */
-	{TYPE_any, TYPE_any, TYPE_any, TYPE_int, TYPE_any, TYPE_int,
-	 TYPE_oid, TYPE_any, TYPE_any, TYPE_int, TYPE_any, TYPE_str},
-/* ptr */
-	{TYPE_any, TYPE_any, TYPE_any, TYPE_any, TYPE_any, TYPE_any,
-	 TYPE_any, TYPE_ptr, TYPE_any, TYPE_any, TYPE_any, TYPE_str},
-/* flt */
-	{TYPE_any, TYPE_any, TYPE_any, TYPE_any, TYPE_any, TYPE_any,
-	 TYPE_any, TYPE_any, TYPE_flt, TYPE_dbl, TYPE_any, TYPE_str},
-/* dbl */
-	{TYPE_any, TYPE_any, TYPE_any, TYPE_any, TYPE_any, TYPE_any,
-	 TYPE_any, TYPE_any, TYPE_dbl, TYPE_dbl, TYPE_any, TYPE_str},
-/* lng */
-	{TYPE_any, TYPE_any, TYPE_any, TYPE_lng, TYPE_any, TYPE_lng,
-	 TYPE_any, TYPE_any, TYPE_flt, TYPE_dbl, TYPE_lng, TYPE_str},
-/* str */
-	{TYPE_str, TYPE_str, TYPE_str, TYPE_str, TYPE_str, TYPE_str,
-	 TYPE_str, TYPE_str, TYPE_str, TYPE_str, TYPE_str, TYPE_str}
-};
-
-@-
-Coercion is defined in terms of malType structures, which means
-that we have to be prepared to deal with type variables as well.
-[This function is not used ]
-@c
-
-malType
-coercion(malType t1, malType t2)
-{
-	if (t1 == t2)
-		return t1;
-	if (t1 < 0 || t1 >= TYPE_str)
-		return t1;
-	if (t2 < 0 || t2 >= TYPE_str)
-		return t2;
-	return gdkCoercionTable[(int) t1][(int) t2];
-}
 
 @+ Some utilities 
 In many places we need a confirmed type identifier.
