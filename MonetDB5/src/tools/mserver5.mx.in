@@ -620,7 +620,10 @@ the configuration file.
 
 	emergencyBreakpoint();
 	for (i = 0; monet_script[i]; i++) {
-		evalFile(mal_clients, monet_script[i], listing);
+		str msg=evalFile(mal_clients, monet_script[i], listing);
+		/* check for internal exception message to terminate */
+		if(msg  && strcmp(msg,"MALException:client.quit:Server stopped.")==0)
+			mal_exit();
 		GDKfree(monet_script[i]);
 		monet_script[i] = 0;
 	}
