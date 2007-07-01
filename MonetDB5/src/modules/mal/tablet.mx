@@ -429,7 +429,7 @@ typedef struct Table_t {
 	BAT *pivot;
 	str error;	/* last error */
 	unsigned int rowwidth;		/* sum of columns used for mallocs */
-	Column *columns;
+	Column columns[1];			/* at least one column, enlarged upon need */
 } Tablet;
 
 tablet_export BAT *TABLETload(BAT *names, BAT *seps, BAT *types, char *datafile, size_t nr);
