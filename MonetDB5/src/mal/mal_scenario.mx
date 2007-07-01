@@ -559,6 +559,9 @@ between speed and ability to analysis its behavior.
 #endif
 		if (msg) {
 			/* FIXME: why is the error not handed back to the user here? */
+			/* for later */
+			int r= strcmp(msg,"MALException:client.quit:Server stopped.")==0;
+			if( r ) break;
 			GDKfree(msg); 
 			msg=0;
 		}
@@ -593,7 +596,8 @@ runScenario(Client c)
 	if( c== 0 || c->phase[MAL_SCENARIO_READER] == 0) return msg;
 
 	msg= runScenarioBody(c);
-	if( msg != MAL_SUCCEED)
+	if( msg != MAL_SUCCEED && 
+		strcmp(msg,"MALException:client.quit:Server stopped."))
 		stream_printf(c->fdout,"!%s\n",msg);
 #ifdef MAL_SCENARIO_DEBUG
 	printf("About to terminate scenario %s\n", c->scenario);

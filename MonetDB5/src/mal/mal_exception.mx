@@ -269,6 +269,9 @@ showException(enum malexception type, str fcn, str format, ...)
 	va_list ap;
 	str msg;
 
+	/* ignore an internal exception */
+	if( strcmp(fcn,"client.quit")==0)
+		return;
 	va_start(ap, format);
 	msg = createExceptionInternal(type, fcn, format, ap);
 	va_end(ap);
