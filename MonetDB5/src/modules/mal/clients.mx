@@ -332,7 +332,8 @@ CLTquit(int *ret)
 	if( c != mal_clients )
 		throw(MAL, "client.quit", "Server not stopped from console.");
 	c->mode = FINISHING;
-	throw(MAL, "client.quit", "Server stopped.");
+	return MAL_SUCCEED;
+	/* throw(MAL, "client.quit", "Server stopped.");*/
 }
 
 str
