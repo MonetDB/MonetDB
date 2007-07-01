@@ -1,0 +1,19 @@
+stderr of test 'optimizers` in directory 'src/backends/monet5` itself:
+
+
+# 08:05:50 >  
+# 08:05:50 >  Mtimeout -timeout 180  mserver5 "--config=/ufs/mk/monet5stable/Linux/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5stable//Linux/lib/MonetDB5:/ufs/mk/monet5stable//Linux/lib/MonetDB5/lib:/ufs/mk/monet5stable//Linux/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/mk/monet5stable//dbfarm" --set "sql_logdir=/ufs/mk/monet5stable//dblogs/logs/sql" --set "xquery_logdir=/ufs/mk/monet5stable//Linux/var/MonetDB5/xquery_logs" --set mapi_open=true --set mapi_port=35043 --set xrpc_port=43626 --set monet_prompt= --trace "--dbname=mTests_src_backends_monet5" --dbinit=' include sql;' ; echo ; echo Over..
+# 08:05:50 >  
+
+#warning: please don't forget to set your vault key!
+#(see /ufs/mk/monet5stable/Linux/etc/monetdb5.conf)
+
+# 08:05:50 >  
+# 08:05:50 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=gio --port=35043 
+# 08:05:50 >  
+
+
+# 08:05:51 >  
+# 08:05:51 >  Done.
+# 08:05:51 >  
+

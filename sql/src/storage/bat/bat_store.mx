@@ -4033,6 +4033,23 @@ rollforward_update_schema(sql_trans *tr, sql_schema *fs, sql_schema *ts)
 {
 	int ok = LOG_OK;
 
+	if (isTempSchema(fs)) {
+		if (fs->tables.set) {
+			node *n;
+			for (n = fs->tables.set->h; n; n = n->next) {
+				sql_table *t = n->data;
+	
+				if ((isTable(t) && isGlobalTable(t)) || 
+				    t->commit_action == CA_DELETE) {
+					sql_trans_clear_table(tr, t);
+				} else if (t->commit_action == CA_DROP) {
+					sql_trans_drop_table(tr, t->s, t->base.id, DROP_RESTRICT);
+				}
+			}
+		}
+		return ok;
+	}
+
 	if (ok == LOG_OK)
 		ok = rollforward_changeset_updates(tr, &fs->types, &ts->types, &ts->base, (rfufunc) NULL, (rfcfunc) &rollforward_create_type, (rfdfunc) NULL, (dupfunc) &type_dup);
 
@@ -4365,9 +4382,27 @@ reset_table(sql_trans *tr, sql_table *ft, sql_table *pft)
 static int
 reset_schema(sql_trans *tr, sql_schema *fs, sql_schema *pfs)
 {
+	int ok = LOG_OK;
+
+	if (isTempSchema(fs)) {
+		if (fs->tables.set) {
+			node *n;
+			for (n = fs->tables.set->h; n; n = n->next) {
+				sql_table *t = n->data;
+	
+				if ((isTable(t) && isGlobalTable(t)) || 
+				     t->commit_action == CA_DELETE) {
+					sql_trans_clear_table(tr, t);
+				} else if (t->commit_action == CA_DROP) {
+					sql_trans_drop_table(tr, t->s, t->base.id, DROP_RESTRICT);
+				}
+			}
+		}
+		return ok;
+	}
+
 	/* did we make changes or is the global changed after we started */
 	if (fs->base.wtime || tr->stime < pfs->base.wtime) {
-		int ok = LOG_OK;
 		fs->base.wtime = fs->base.rtime = 0;
 
 		ok = reset_changeset(tr, &fs->types, &pfs->types, &fs->base, (resetf) &reset_type, (dupfunc) &type_dup);
@@ -4380,7 +4415,7 @@ reset_schema(sql_trans *tr, sql_schema *fs, sql_schema *pfs)
 		if (ok == LOG_OK)
 			return reset_changeset(tr, &fs->tables, &pfs->tables, &fs->base, (resetf) &reset_table, (dupfunc) &table_dup);
 	}
-	return LOG_OK;
+	return ok;
 }
 
 static int
@@ -4438,7 +4473,8 @@ sql_trans_validate(sql_trans *tr)
 			sql_schema *s = n->data;
 			sql_schema *os;
 
-			if (strcmp(s->base.name,"tmp") == 0)
+			
+			if (isTempSchema(s))
 				continue;
 
  			os = find_sql_schema(tr->parent, s->base.name);

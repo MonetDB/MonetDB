@@ -721,18 +721,14 @@ sql5_export str @2_dec2dec_@1( @1 *res, int *S1, @2 *v, int *d2, int *S2 );
 sql5_export str @2_num2dec_@1( @1 *res, @2 *v, int *d2, int *s2 );
 @h
 @:numcastup_export(bte,bte)@
-@:numcastup_export(bte,oid)@
 @:numcastup_export(sht,bte)@
 @:numcastup_export(sht,sht)@
-@:numcastup_export(sht,oid)@
 @:numcastup_export(int,bte)@
 @:numcastup_export(int,sht)@
 @:numcastup_export(int,int)@
-@:numcastup_export(int,oid)@
 @:numcastup_export(lng,bte)@
 @:numcastup_export(lng,sht)@
 @:numcastup_export(lng,int)@
-@:numcastup_export(lng,oid)@
 @:numcastup_export(lng,lng)@
 @= fnumcastdown_export
 @:simpledowncast_export(@1,@2)@
@@ -1802,9 +1798,9 @@ mathematical operators. The extensions required to support
 SQL-99 are shown below. At some point they also should be
 moved to module code base.
 @= round
-str @1_dec_round_wrap( @1 *res, @1 *v, @1 *r )
+str 
+@1_dec_round_wrap( @1 *res, @1 *v, @1 *r )
 {
-/* dec_round(dec d, 100) = (d + 100/2)/100 */
 	@1 val = *v;
 	@1 add = *r;
 
@@ -1822,7 +1818,9 @@ str @1_dec_round_wrap( @1 *res, @1 *v, @1 *r )
 	*res = val;
 	return NULL;
 }
-str @1_round_wrap( @1 *res, @1 *v, int *d, int *s, bte *r )
+
+str 
+@1_round_wrap( @1 *res, @1 *v, int *d, int *s, bte *r )
 {
 	/* shortcut nil */
 	if (*v == @1_nil) {
@@ -1847,12 +1845,15 @@ str @1_round_wrap( @1 *res, @1 *v, int *d, int *s, bte *r )
 	return MAL_SUCCEED;
 }
 
-str @1_dbl_dec_round_wrap( @1 *res, @1 *v, dbl *r )
+str 
+@1_dbl_dec_round_wrap( @1 *res, @1 *v, dbl *r )
 {
 	@1 add = *r;	/* lossy conversion */
 	return @1_dec_round_wrap(res,v, &add);
 }
-str @1_int_dec_round_wrap( @1 *res, @1 *v, int *r )
+
+str 
+@1_int_dec_round_wrap( @1 *res, @1 *v, int *r )
 {
 	@1 add = *r;	/* lossy conversion */
 	return @1_dec_round_wrap(res,v, &add);
@@ -1863,7 +1864,7 @@ str_2dec_@1( @1 *res, str *val, int *d, int *sc )
 {
 	char *s = strip_extra_zeros(*val);
 	char *dot = strchr(s, '.');
-	int digits = strlen(s) - 1;
+	int digits = _strlen(s) - 1;
 	int scale = digits - (dot-s);
 	lng value = 0;
 
@@ -1899,6 +1900,7 @@ str_2dec_@1( @1 *res, str *val, int *d, int *sc )
 	*res = (@1) value;
 	return MAL_SUCCEED;
 }
+
 str
 str_2num_@1( @1 *res, str *v, int *len )
 {
@@ -1913,7 +1915,8 @@ str_2num_@1( @1 *res, str *v, int *len )
 @:round(lng)@
 
 @= fround
-str @1_@2_dec_round_wrap( @1 *res, @1 *v, @2 *r )
+str 
+@1_@2_dec_round_wrap( @1 *res, @1 *v, @2 *r )
 {
 	@1 val = *v;
 
@@ -1954,6 +1957,7 @@ str_2_@1( @1 *res, str *val )
 		GDKfree(p);
 	return MAL_SUCCEED;
 }
+
 str
 SQL@1_2_str( str *res, @1 *val )
 {
@@ -2011,7 +2015,7 @@ SQLstr_cast(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		sz = convert2str(m, eclass, d, s, has_tz, p, tpe, &r, len);
 	} else {
 		str v = *(str*)p; 
-		sz = strlen(v);
+		sz = _strlen(v);
 		if (len == 0 || sz <= len) 
 			r = GDKstrdup(v);
 	}
@@ -2030,7 +2034,8 @@ SQLstr_cast(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 @= simpleupcast
-str @2_2_@1( @1 *res, @2 *v )
+str 
+@2_2_@1( @1 *res, @2 *v )
 {
 	/* shortcut nil */
 	if (*v == @2_nil) {
@@ -2073,8 +2078,7 @@ str @2_2_@1( @1 *res, @2 *v )
 str @2_dec2_@1( @1 *res, int *s1, @2 *v )
 {
 	int scale = *s1;
-	lng vdummy= *v;
-	@1 r, h = (vdummy <0)?-5:5; 
+	@1 r, h = (*v<0)?-5:5; 
 
 	/* shortcut nil */
 	if (*v == @2_nil) {
@@ -2086,18 +2090,18 @@ str @2_dec2_@1( @1 *res, int *s1, @2 *v )
 	   always fit */
 	r = (@1)*v;
 	if (scale) 
-		r = (r+h)/scales[scale];
+		r = (@1) ((r + h) / scales[scale]);
 	*res = r;
 	return(MAL_SUCCEED);
 }
 
-str @2_dec2dec_@1( @1 *res, int *S1, @2 *v, int *d2, int *S2 )
+str 
+@2_dec2dec_@1( @1 *res, int *S1, @2 *v, int *d2, int *S2 )
 {
 	int p = *d2, inlen = 1;
 	@2 cpyval = *v;
 	int s1 = *S1, s2 = *S2;
-	lng vdummy= *v;
-	@1 r, h = ( vdummy<0)?-5:5; 
+	@1 r, h = (*v<0)?-5:5; 
 
 	/* shortcut nil */
 	if (*v == @2_nil) {
@@ -2120,14 +2124,15 @@ str @2_dec2dec_@1( @1 *res, int *S1, @2 *v, int *d2, int *S2 )
 	   always fit */
 	r = (@1)*v;
 	if (s2 > s1) 
-		r *= scales[s2-s1];
+		r *= (@1) scales[s2 - s1];
 	else if (s2 != s1) 
-		r = (r+h)/scales[s1-s2];
+		r = (@1) ((r + h) / scales[s1 - s2]);
 	*res = r;
 	return(MAL_SUCCEED);
 }
 
-str @2_num2dec_@1( @1 *res, @2 *v, int *d2, int *s2 )
+str 
+@2_num2dec_@1( @1 *res, @2 *v, int *d2, int *s2 )
 {
 	int zero = 0;
 	return @2_dec2dec_@1( res, &zero, v, d2, s2 );
@@ -2135,18 +2140,14 @@ str @2_num2dec_@1( @1 *res, @2 *v, int *d2, int *s2 )
 
 @c
 @:numcastup(bte,bte)@
-@:numcastup(bte,oid)@
 @:numcastup(sht,bte)@
 @:numcastup(sht,sht)@
-@:numcastup(sht,oid)@
 @:numcastup(int,bte)@
 @:numcastup(int,sht)@
 @:numcastup(int,int)@
-@:numcastup(int,oid)@
 @:numcastup(lng,bte)@
 @:numcastup(lng,sht)@
 @:numcastup(lng,int)@
-@:numcastup(lng,oid)@
 @:numcastup(lng,lng)@
 
 @= fnumcastdown
@@ -2155,7 +2156,8 @@ str @2_num2dec_@1( @1 *res, @2 *v, int *d2, int *s2 )
 /* when casting a floating point to an decimal we like to preserve the 
  * precision.  This means we first scale the float before converting.
 */
-str @2_num2dec_@1( @1 *res, @2 *v, int *d2, int *s2 )
+str 
+@2_num2dec_@1( @1 *res, @2 *v, int *d2, int *s2 )
 {
 	int p = *d2, inlen = 1, scale = *s2;
 	@2 r;
@@ -2169,10 +2171,10 @@ str @2_num2dec_@1( @1 *res, @2 *v, int *d2, int *s2 )
 	
 	/* since the @1 type is bigger than or equal to the @2 type, it will
 	   always fit */
-	r = (@1)*v;
+	r = (@2) *v;
 	if (scale) 
 		r *= scales[scale];
-	cpyval = r;
+	cpyval = (lng) r;
 
 	/* count the number of digits in the input */
 	while (cpyval /= 10)
@@ -2182,7 +2184,7 @@ str @2_num2dec_@1( @1 *res, @2 *v, int *d2, int *s2 )
 		throw(SQL, "convert",
 			"too many digits (%d > %d)", inlen, p);
 	}
-	*res = r;
+	*res = (@1) r;
 	return MAL_SUCCEED;
 }
 @c
@@ -2198,7 +2200,8 @@ str @2_num2dec_@1( @1 *res, @2 *v, int *d2, int *s2 )
 @= fnumcastup
 @:simpleupcast(@1,@2)@
 
-str @2_dec2_@1( @1 *res, int *s1, @2 *v )
+str 
+@2_dec2_@1( @1 *res, int *s1, @2 *v )
 {
 	int scale = *s1;
 	@1 r;
@@ -2218,7 +2221,8 @@ str @2_dec2_@1( @1 *res, int *s1, @2 *v )
 	return MAL_SUCCEED;
 }
 
-str @2_dec2dec_@1( @1 *res, int *S1, @2 *v, int *d2, int *S2 )
+str 
+@2_dec2dec_@1( @1 *res, int *S1, @2 *v, int *d2, int *S2 )
 {
 	int p = *d2, inlen = 1;
 	@2 cpyval = *v;
@@ -2252,7 +2256,8 @@ str @2_dec2dec_@1( @1 *res, int *S1, @2 *v, int *d2, int *S2 )
 	return MAL_SUCCEED;
 }
 
-str @2_num2dec_@1( @1 *res, @2 *v, int *d2, int *s2 )
+str 
+@2_num2dec_@1( @1 *res, @2 *v, int *d2, int *s2 )
 {
 	int zero = 0;
 	return @2_dec2dec_@1( res, &zero, v, d2, s2 );
@@ -2271,7 +2276,8 @@ str @2_num2dec_@1( @1 *res, @2 *v, int *d2, int *s2 )
 @= numcastdown
 @:simpledowncast(@1,@2)@
 
-str @2_dec2_@1( @1 *res, int *s1, @2 *v )
+str 
+@2_dec2_@1( @1 *res, int *s1, @2 *v )
 {
 	int scale = *s1;
 	lng val = *v, h = (val<0)?-5:5;
@@ -2294,7 +2300,8 @@ str @2_dec2_@1( @1 *res, int *s1, @2 *v )
 	}
 }
 
-str @2_dec2dec_@1( @1 *res, int *S1, @2 *v, int *d2, int *S2 )
+str 
+@2_dec2dec_@1( @1 *res, int *S1, @2 *v, int *d2, int *S2 )
 {
 	int p = *d2, inlen = 1;
 	lng val = *v, cpyval = val, h = (val<0)?-5:5;
@@ -2331,7 +2338,8 @@ str @2_dec2dec_@1( @1 *res, int *S1, @2 *v, int *d2, int *S2 )
 	}
 }
 
-str @2_num2dec_@1( @1 *res, @2 *v, int *d2, int *s2 )
+str 
+@2_num2dec_@1( @1 *res, @2 *v, int *d2, int *s2 )
 {
 	int zero = 0;
 	return @2_dec2dec_@1( res, &zero, v, d2, s2 );
@@ -2345,7 +2353,8 @@ str @2_num2dec_@1( @1 *res, @2 *v, int *d2, int *s2 )
 @:numcastdown(int,lng)@
 
 str 
-month_interval_str( int *ret, str *s, int *ek, int *sk ){
+month_interval_str( int *ret, str *s, int *ek, int *sk )
+{
 	lng res;
 
 	if (interval_from_str( *s, *sk, *ek, &res ) < 0)
@@ -2356,7 +2365,8 @@ month_interval_str( int *ret, str *s, int *ek, int *sk ){
 }
 
 str 
-second_interval_str( lng *res, str *s, int *ek, int *sk ){
+second_interval_str( lng *res, str *s, int *ek, int *sk )
+{
 
 	if (interval_from_str( *s, *sk, *ek, res ) < 0)
 		throw(SQL, "calc.second_interval",

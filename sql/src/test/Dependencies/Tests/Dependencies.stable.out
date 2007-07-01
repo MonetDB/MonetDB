@@ -1,11 +1,11 @@
 stdout of test 'Dependencies` in directory 'src/test/Dependencies` itself:
 
 
-# 08:24:17 >  
-# 08:24:17 >  Mtimeout -timeout 180  Mserver "--config=/ufs/niels/scratch/monetdb/Linux-x86_64/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB4:/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB4/lib:/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB4/bin" --set "gdk_dbfarm=/ufs/niels/scratch/monetdb/Linux-x86_64/var/MonetDB4/dbfarm" --set "sql_logdir=/ufs/niels/scratch/monetdb/Linux-x86_64/var/MonetDB4/sql_logs" --set "xquery_logdir=/ufs/niels/scratch/monetdb/Linux-x86_64/var/MonetDB4/xquery_logs" --set mapi_open=true --set mapi_port=34067 --set xrpc_port=43036 --set monet_prompt= --trace "--dbname=mTests_src_test_Dependencies" --dbinit=" module(sql_server);" ; echo ; echo Over..
-# 08:24:17 >  
+# 15:33:56 >  
+# 15:33:56 >  Mtimeout -timeout 180  Mserver "--config=/ufs/niels/scratch/rc/Linux-x86_64/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB4:/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB4/lib:/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB4/bin" --set "gdk_dbfarm=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB4/dbfarm" --set "sql_logdir=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB4/sql_logs" --set "xquery_logdir=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB4/xquery_logs" --set mapi_open=true --set mapi_port=39240 --set xrpc_port=48885 --set monet_prompt= --trace "--dbname=mTests_src_test_Dependencies" --dbinit=" module(sql_server);" ; echo ; echo Over..
+# 15:33:56 >  
 
-# Monet Database Server V4.17.1
+# Monet Database Server V4.18.0
 # Copyright (c) 1993-2007, CWI. All rights reserved.
 # Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
