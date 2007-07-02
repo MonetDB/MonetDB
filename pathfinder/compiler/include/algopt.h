@@ -33,8 +33,8 @@
 #define ALGOPT_H
 
 #include "logical.h"
-
-PFla_op_t * PFalgopt (PFla_op_t *root, bool timing);
+#include "load_stats.h"
+PFla_op_t * PFalgopt (PFla_op_t *root, bool timing, PFguide_tree_t *guide_tree);
 
 /**
  * Infer property for a DAG rooted in root
@@ -52,6 +52,7 @@ PFla_op_t * PFalgopt_mvd (PFla_op_t *root, unsigned int noneffective_tries);
 PFla_op_t * PFalgopt_reqval (PFla_op_t *root);
 PFla_op_t * PFalgopt_set (PFla_op_t *root);
 PFla_op_t * PFalgopt_thetajoin (PFla_op_t *root);
+PFla_op_t * PFalgopt_guide(PFla_op_t *root, PFguide_tree_t *guide);
 
 #endif  /* ALGOPT_H */
 

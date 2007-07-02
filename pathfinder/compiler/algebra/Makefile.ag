@@ -31,7 +31,7 @@ SUBDIRS = opt prop map
 #YFLAGS = -d -p pf
 #LFLAGS = -Ppf -olex.yy.c
 
-INCLUDES = ../include $(MONETDB_INCS)
+INCLUDES = ../include $(MONETDB_INCS) $(LIBXML2_CFLAGS)
 
 # locally disable "-Werror"
 #X_CFLAGS = "-pedantic"
@@ -51,7 +51,8 @@ lib_algebra = {
                 physical.c \
                 intro_rec_border.c \
                 ordering.c \
-                builtins.c
+                builtins.c \
+                load_stats.c
 }
 
 #EXTRA_DIST =

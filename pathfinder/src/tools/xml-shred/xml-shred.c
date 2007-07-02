@@ -78,7 +78,6 @@ typedef enum kind_t kind_t;
 
 /* size of the hashtable */
 #define HASHTABLE_SIZE 2000 
-
 /* prime number due to bertrands theorem:
  * there exists a prime number p that satisfy,
  * the following condition
@@ -97,6 +96,8 @@ typedef enum kind_t kind_t;
 int hashfunc(char *str); 
 
 #define HASHFUNCTION(str) MAD(hashfunc(strndup(str, MIN(strlen(str), 10))))
+
+#define GUIDE_PADDING_COUNT 4
 
 /* We use a seperate chaining strategy to
  * mantain out hash_table,
@@ -145,6 +146,7 @@ struct node_t {
     node_t   *parent;
     kind_t    kind;
     xmlChar  *prop;
+    nat       guide;
 };
 
 static node_t stack[STACK_MAX];
@@ -155,7 +157,7 @@ static nat post;
 static nat rank;
 static nat att_id;
 
-static char *format = "%e, %s, %l, %k, %t";
+static char *format = "%e, %s, %l, %k, %t, %g";
 FILE *out;
 FILE *out_attr;
 char  filename[FILENAME_MAX];
@@ -175,6 +177,45 @@ static int bufpos;
 char *strndup(const char *s, size_t n);
 char *strdup(const char *s);
 
+FILE  *guide_out;
+char   outfile_guide[FILENAME_MAX];
+
+typedef struct child_list_t child_list_t;
+
+typedef struct guide_tree_t guide_tree_t;
+struct guide_tree_t {
+    char           *tag_name;
+    nat             count;
+    guide_tree_t   *parent;
+    child_list_t   *child_list;
+    child_list_t   *last_child;
+    nat             guide;
+    kind_t          kind;
+};
+
+struct child_list_t {
+    child_list_t    *next_element;
+    guide_tree_t    *node;
+};
+
+/* current guide count */
+nat guide_count = 1;
+/* current node in the guide tree */
+guide_tree_t *current_guide_node = NULL;
+guide_tree_t *root_guide_node = NULL;
+guide_tree_t *leaf_guide_node = NULL;
+
+/* add a guide child to the parent */
+void add_guide_child(guide_tree_t *parent, guide_tree_t *child);
+
+/* insert a node in the guide tree */
+guide_tree_t* insert_guide_node(char *tag_name, guide_tree_t 
+    *parent, kind_t kind);
+
+/* print the guide tree */
+void print_guide_tree(guide_tree_t *root, int tree_depth);
+
+
 static void
 start_document (void *ctx)
 {
@@ -184,6 +225,9 @@ start_document (void *ctx)
     level = 0;
     max_level = 0;
     att_id = 0;
+
+    current_guide_node = insert_guide_node(filename, NULL, doc);
+    root_guide_node = current_guide_node;
 
     stack[level] = (node_t) {
         .pre            = pre,
@@ -195,7 +239,8 @@ start_document (void *ctx)
         .parent         = NULL,
         .kind           = doc,
         .prop           = filename_given ? strndup (filename, PROPSIZE)
-                                         : ""
+                                         : "",
+        .guide          = current_guide_node->guide
     };
 }
 
@@ -216,14 +261,23 @@ end_document (void *ctx)
     print_tuple (stack[level]);
 
     free (stack[level].prop);
+
+    current_guide_node = current_guide_node->parent;
 }
 
 static void
 start_element (void *ctx, const xmlChar *tagname, const xmlChar **atts)
 {
+    const xmlChar **atts_back = atts;
+
+    guide_tree_t *attr_guide_node = NULL;
+    current_guide_node = insert_guide_node((char*)tagname, 
+        current_guide_node, elem);
+
     /* check if tagname is larger than TAG_SIZE characters */
     if ( strlen((char*)tagname) > TAG_SIZE) {
-    	fprintf(stderr, "We support only tagnames with length <= %i\n", TAG_SIZE);
+    	fprintf(stderr, "We support only tagnames with length <= %i\n", 
+            TAG_SIZE);
 
 	free_hash (hash_table);
 	exit(1);
@@ -254,7 +308,8 @@ start_element (void *ctx, const xmlChar *tagname, const xmlChar **atts)
 
 	    hashtable_insert(hash_table, (char*)tagname, name_id);
 
-	    fprintf (out_attr, "%i, \"%s\"\n", name_id, strndup((char*)tagname,PROPSIZE));
+	    fprintf (out_attr, "%i, \"%s\"\n", name_id, 
+                strndup((char*)tagname,PROPSIZE));
 	}
     }
 
@@ -269,18 +324,25 @@ start_element (void *ctx, const xmlChar *tagname, const xmlChar **atts)
         .parent         = stack + level - 1,
 	.name_id        = name_id, 
         .kind           = elem,
-        .prop           = (!sql_atts)?strndup((char*)tagname, TAG_SIZE):NULL 
+        .prop           = (!sql_atts)?strndup((char*)tagname, TAG_SIZE):NULL,
+        .guide          = current_guide_node->guide
     };
 
 
     /*
      * FIXME: handle attributes here
      */
+
+
     if (!suppress_attributes && atts)
         if (!sql_atts)
 	    while (*atts) {
-		fprintf (out_attr, "%lu, %lu, \"%s\", \"%s\"\n", att_id++, pre,
-			 atts[0], atts[1]);
+                attr_guide_node = insert_guide_node((char*)atts_back[0],
+                    current_guide_node, attr);
+
+		fprintf (out_attr, "%lu, %lu, \"%s\", \"%s\", %i\n", 
+                    att_id++, pre, atts[0], atts[1], attr_guide_node->guide);
+
 		atts += 2;
 	    }
 	/* handle attributes as we need for sql generation */
@@ -288,14 +350,16 @@ start_element (void *ctx, const xmlChar *tagname, const xmlChar **atts)
 	   while (*atts) {
 		/* check if tagname is larger than TEXT_SIZE characters */
 		if ( strlen((char*)atts[1]) > TEXT_SIZE) {
-		    fprintf(stderr, "We support only attribute content with length <= %i\n", TEXT_SIZE);
+		    fprintf(stderr, "We support only attribute content"
+                        " with length <= %i\n", TEXT_SIZE);
 
 		    free_hash(hash_table);
 	            exit(1);
 		}
 	        /* check if tagname is larger than TAG_SIZE characters */
 		if ( strlen((char*)atts[0]) > TAG_SIZE) {
-                     fprintf(stderr, "We support only attributes with length <= %i\n", TAG_SIZE);
+                     fprintf(stderr, "We support only attributes with "
+                         "length <= %i\n", TAG_SIZE);
 
 		     free_hash(hash_table);
 	             exit(1);
@@ -315,6 +379,9 @@ start_element (void *ctx, const xmlChar *tagname, const xmlChar **atts)
 		    fprintf (out_attr, "%i, \"%s\"\n", name_id, strndup((char*)atts[0],PROPSIZE));
 		}
 
+                attr_guide_node = insert_guide_node((char*)atts_back[0], 
+                    current_guide_node, attr);
+
 		pre++;
 	   	print_tuple ((node_t) {
 			.pre = pre,
@@ -327,7 +394,9 @@ start_element (void *ctx, const xmlChar *tagname, const xmlChar **atts)
 			.parent = 0,
 			.name_id = name_id,
 			.kind = attr,
-			.prop = (char*)atts[1]});
+			.prop = (char*)atts[1],
+                        .guide = attr_guide_node->guide,
+                });
 		atts += 2;
 	     }
 }
@@ -349,6 +418,9 @@ end_element ()
     free (stack[level].prop);
     level--;
     assert (level >= 0);
+
+    if(current_guide_node->parent != NULL)
+        current_guide_node = current_guide_node->parent;
 }
 
 void
@@ -360,6 +432,40 @@ characters (void *ctx, const xmlChar *chars, int n)
     }
 
     buf[PROPSIZE] = '\0';
+
+    leaf_guide_node = insert_guide_node(NULL, current_guide_node, text);
+}
+
+void
+processing_instruction (void *ctx, const xmlChar *target,  const xmlChar *chars)
+{
+    leaf_guide_node = insert_guide_node((char*)target, current_guide_node, pi);
+
+    if (bufpos < PROPSIZE) {
+        snprintf (buf + bufpos, MIN (strlen(target), PROPSIZE - bufpos) + 1, 
+            "%s", target);
+        bufpos += MIN (strlen(target), PROPSIZE - bufpos);
+    }
+
+    buf[PROPSIZE] = '\0';
+
+    flush_buffer();
+}
+
+void
+comment (void *ctx,  const xmlChar *chars)
+{
+    leaf_guide_node = insert_guide_node(NULL, current_guide_node, comm);
+
+    if (bufpos < PROPSIZE) {
+        snprintf (buf + bufpos, MIN (strlen(chars), PROPSIZE - bufpos) + 1, 
+            "%s", chars);
+        bufpos += MIN (strlen(chars), PROPSIZE - bufpos);
+    }
+
+    buf[PROPSIZE] = '\0';
+
+    flush_buffer();
 }
 
 static void
@@ -380,7 +486,7 @@ flush_buffer (void)
 
         if (level > max_level)
             max_level = level;
-
+        
         stack[level] = (node_t) {
             .pre            = pre,
 	    .apre           = -1,
@@ -391,8 +497,9 @@ flush_buffer (void)
             .level          = level,
             .parent         = stack + level - 1,
 	    .name_id        = -1,
-            .kind           = text,
+            .kind           = leaf_guide_node->kind,
             .prop           = buf,
+            .guide          = leaf_guide_node->guide,
         };
 
         post++;
@@ -412,8 +519,8 @@ static xmlSAXHandler saxhandler = {
     , .startElement          = start_element
     , .endElement            = end_element
     , .characters            = characters
-    , .processingInstruction = NULL
-    , .comment               = NULL
+    , .processingInstruction = processing_instruction
+    , .comment               = comment
     , .error                 = NULL
     , .cdataBlock            = NULL
     , .internalSubset        = NULL
@@ -519,6 +626,7 @@ print_tuple (node_t tuple)
 		    	fprintf(out, "NULL");
 		    }
 		} break;    
+                case 'g':  fprintf (out, "%lu", tuple.guide); break;
 
                 default:   putc (format[i], out); break;
             }
@@ -626,10 +734,27 @@ main (int argc, char **argv)
 
     fprintf (stderr, "tree height was %i\n", max_level);
     if (sql_atts)
-        fprintf(stderr, "There are %i tagnames and attribute names in the document\n", new_nameid());
+        fprintf(stderr, "There are %i tagnames and attribute names in "
+            "the document\n", new_nameid());
 
     if (sql_atts)
 	free_hash(hash_table);
+
+    /* Open the file */
+    if(outfile_given) {
+        snprintf (outfile_guide, FILENAME_MAX, "%s_guide.xml", outfile);
+        guide_out = fopen(outfile_guide, "w");
+        if (!guide_out) {
+            fprintf (stderr, "error opening output file(s).\n");
+            exit (EXIT_FAILURE);
+        }
+
+    } else 
+        guide_out = stdout;
+    
+
+    print_guide_tree(root_guide_node, 0);
+    
     return 0;
 }
 
@@ -725,3 +850,134 @@ void free_hash(bucket_t **hash_table)
         free(hash_table[i]);
    }
 }
+
+
+void 
+add_guide_child(guide_tree_t *parent, guide_tree_t *child)
+{
+
+     if((parent == NULL) || (child == NULL))
+         return;
+
+     /* insert new child in the list */
+     child_list_t *new_child_list = (child_list_t*)malloc(sizeof(child_list_t));
+     *new_child_list = (child_list_t){
+         .next_element = NULL,
+         .node  = child,
+     };
+
+     if(parent->child_list == NULL) {
+         parent->child_list = new_child_list;
+     } else {
+         parent->last_child->next_element = new_child_list;
+     }
+
+     parent->last_child = new_child_list;
+     child->parent = parent;
+
+     return;
+}
+
+guide_tree_t* 
+insert_guide_node(char *tag_name, guide_tree_t *parent, kind_t kind)
+{
+
+    bool found_child = false;
+    int counter = 0;
+    child_list_t *child_list = NULL;
+    guide_tree_t *child_node = NULL;
+    guide_tree_t *new_guide_node = NULL;
+
+
+    if (parent != NULL) {
+        /* Serch through all child if the node just exist */
+        child_list = parent->child_list;
+            
+        while(child_list != NULL){
+            child_node = child_list->node;
+            if((child_node->tag_name == tag_name) && 
+                (child_node->kind == kind) ) {
+
+                child_node->count = child_node->count + 1;
+                return child_node;
+            }
+            child_list = child_list->next_element;
+        } 
+    }
+
+    /* create a new guide node */
+    new_guide_node = (guide_tree_t*)malloc(sizeof(guide_tree_t));
+    *new_guide_node = (guide_tree_t) {
+        .tag_name = tag_name,
+        .count = 1,
+        .parent = parent,
+        .child_list = NULL, 
+        .last_child = NULL,
+        .guide = guide_count,
+        .kind = kind,
+    };
+    /* increment the guide count */ 
+    guide_count++;
+
+    /* associate child with the parent */
+    add_guide_child(parent, new_guide_node);
+    
+    return new_guide_node;
+}
+
+void 
+print_guide_tree(guide_tree_t *root, int tree_depth)
+{
+    child_list_t  *child_list = root->child_list;
+    child_list_t  *child_list_free = NULL;
+    bool          print_end_tag = true;
+
+    /* print the padding */
+    int i = 0;
+    for(i = 0; i < tree_depth * GUIDE_PADDING_COUNT; i++)
+      fprintf(guide_out, " ");
+
+    print_end_tag = child_list == NULL ? false : true;
+
+    /* print the node self */
+    if(root->tag_name != NULL) {
+    print_end_tag ?
+         fprintf(guide_out, 
+             "<node guide=\"%i\" count=\"%i\" kind=\"%i\" name=\"%s\">\n",
+             root->guide, root->count, root->kind + 1, root->tag_name) 
+         : fprintf(guide_out, 
+             "<node guide=\"%i\" count=\"%i\" kind=\"%i\" name=\"%s\"/>\n",
+             root->guide, root->count, root->kind + 1, root->tag_name);
+    } else {
+    print_end_tag ?
+         fprintf(guide_out, 
+              "<node guide=\"%i\" count=\"%i\" kind=\"%i\">\n",
+              root->guide, root->count, root->kind + 1)
+         : fprintf(guide_out, 
+               "<node guide=\"%i\" count=\"%i\" kind=\"%i\"/>\n",
+               root->guide, root->count, root->kind + 1);
+    }
+
+    while(child_list != NULL) {
+       print_guide_tree(child_list->node, tree_depth+1);
+       child_list_free = child_list;
+       child_list = child_list->next_element;
+       if(child_list_free != NULL)
+           free(child_list_free);
+    }
+
+    /* print the end tag */
+    if(print_end_tag) {
+        for(i = 0; i < tree_depth * GUIDE_PADDING_COUNT; i++)
+            fprintf(guide_out, " ");
+
+        fprintf(guide_out, "</node>\n");
+    }
+
+    free(root);
+    root = NULL;
+}
+
+
+
+

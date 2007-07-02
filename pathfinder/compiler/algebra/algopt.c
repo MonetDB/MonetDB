@@ -44,6 +44,8 @@
 #include "la_proxy.h"
 #include "la_thetajoin.h"
 
+//#include "load_stats.h"
+
 #define MAP_ORI_NAMES(phase)                                                \
         if (unq_names) {                                                    \
             PFinfo (OOPS_WARNING,                                           \
@@ -86,11 +88,10 @@
  * Invoke algebra optimization.
  */
 PFla_op_t *
-PFalgopt (PFla_op_t *root, bool timing)
+PFalgopt (PFla_op_t *root, bool timing, PFguide_tree_t* guide_tree)
 {
     assert (PFstate.opt_alg);
-
-    long tm;
+    long tm = 0;
     bool const_no_attach = false;
     bool unq_names = false;
     bool proxies_involved = false;
@@ -313,6 +314,22 @@ PFalgopt (PFla_op_t *root, bool timing)
                 tm = PFtimer_stop (tm);
                 if (timing)
                     PFlog ("   complete property inference:\t    %s",
+                           PFtimer_str (tm));
+                break;
+
+            case 'g':
+                if(guide_tree == NULL) {
+                    PFinfo (OOPS_WARNING, "guide tree is NULL "
+                        "- no guide optimization\n");
+                        break;
+                }
+
+                tm = PFtimer_start ();
+                root = PFalgopt_guide(root, guide_tree);
+                tm = PFtimer_stop (tm);
+                
+                if(timing)
+                    PFlog ("   guide optimization:\t    %s",
                            PFtimer_str (tm));
                 break;
 

@@ -36,21 +36,22 @@ Usage: pf [OPTION] [FILE]
          4  after namespaces have been checked and resolved
          5  after option declarations have been extracted from the parse tree
          6  after variable scoping has been checked
-         7  after XQuery built-in functions have been loaded
-         8  after valid function usage has been checked
-         9  after XML Schema predefined types have been loaded
-        10  after XML Schema document has been imported (if any)
-        11  after the abstract syntax tree has been mapped to Core
-        12  after the Core tree has been simplified/normalized
-        13  after type inference and checking
-        14  after XQuery Core optimization
-        15  after the Core tree has been translated to the logical algebra
-        16  after the logical algebra tree has been rewritten/optimized
-        17  after the CSE on the logical algebra tree
-        18  after compiling logical into the physical algebra
-        19  after introducing recursion boundaries
-        20  after compiling the physical algebra into MIL code
-        21  after the MIL program has been serialized
+         7  after guide tree has been build
+         8  after XQuery built-in functions have been loaded
+         9  after valid function usage has been checked
+        10  after XML Schema predefined types have been loaded
+        11  after XML Schema document has been imported (if any)
+        12  after the abstract syntax tree has been mapped to Core
+        13  after the Core tree has been simplified/normalized
+        14  after type inference and checking
+        15  after XQuery Core optimization
+        16  after the Core tree has been translated to the logical algebra
+        17  after the logical algebra tree has been rewritten/optimized
+        18  after the CSE on the logical algebra tree
+        19  after compiling logical into the physical algebra
+        20  after introducing recursion boundaries
+        21  after compiling the physical algebra into MIL code
+        22  after the MIL program has been serialized
 = -g, --gensql: generate SQL code
 = -d TEST, --debug=TEST: call internall debugging function TEST
 = -a, --print-abstract-syntax-tree: print abstract syntax tree

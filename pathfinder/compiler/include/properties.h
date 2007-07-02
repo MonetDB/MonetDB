@@ -43,6 +43,8 @@ typedef struct PFprop_t PFprop_t;
 
 #include "algebra.h"
 #include "logical.h"
+#include "load_stats.h"
+#include "bitset.h"
 
 /* required values list */
 struct reqval_t {
@@ -95,6 +97,9 @@ struct PFprop_t {
                                    corresponding new unique names. */
     PFarray_t  *r_name_pairs; /**< List of unique attributes with their
                                    corresponding new unique names. */
+    PFarray_t  *guide_mapping_list;  /**< List of guide mappings that contain
+                                          a pair of column and list of guide
+                                          nodes for the operator */
 };
 
 /* constant item */
@@ -177,6 +182,7 @@ void PFprop_infer_reqval (PFla_op_t *root);
 void PFprop_infer_unq_names (PFla_op_t *root);
 void PFprop_infer_ori_names (PFla_op_t *root);
 void PFprop_infer_refctr (PFla_op_t *root);
+void PFprop_infer_guide(PFla_op_t *root, PFguide_tree_t *guide);
 
 bool PFprop_check_rec_delta (PFla_op_t *root);
 
@@ -455,5 +461,6 @@ PFalg_attlist_t PFprop_trace_names (PFla_op_t *start,
                                     PFalg_attlist_t list);
 
 #endif  /* PROPERTIES_H */
+
 
 /* vim:set shiftwidth=4 expandtab: */

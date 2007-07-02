@@ -96,6 +96,8 @@ PFprop (void)
     ret->l_name_pairs = NULL;
     ret->r_name_pairs = NULL;
 
+    /* initialize guide bitset */
+    ret->guide_mapping_list = NULL;
     return ret;
 }
 

@@ -45,6 +45,12 @@
 #include "prettyp.h"
 #include "oops.h"
 #include "pfstrings.h"
+#include "bitset.h"
+#include "load_stats.h"
+
+/* print the guide nodes of the operator */
+void print_guide(PFarray_t *dot, PFla_op_t *n);
+
 
 /** Node names to print out for all the Algebra tree nodes. */
 static char *a_id[]  = {
@@ -923,6 +929,9 @@ la_dot (PFarray_t *dot, PFla_op_t *n)
                 fmt++;
         }
     }
+
+    /* print guide information*/
+    print_guide(dot, n);
 
     /* close up label */
     PFarray_printf (dot, "\", color=%s ];\n", color[n->kind]);
@@ -1804,6 +1813,35 @@ PFla_xml (FILE *f, PFla_op_t *root)
         /* put content of array into file */
         fprintf (f, "%s", (char *) xml->base);
     }
+}
+
+/* print the guide nodes of the operator */
+void 
+print_guide(PFarray_t *dot, PFla_op_t *n)
+{
+    PFarray_t *guide_mapping_list = n->prop->guide_mapping_list;
+    PFguide_mapping_t *guide_mapping = NULL;
+    PFarray_t *guide_list = NULL;
+    PFguide_tree_t *element = NULL;
+
+    if(guide_mapping_list != NULL) {
+        PFarray_printf (dot, "\\nGUIDE: \\n");
+        for(unsigned int i = 0; i < PFarray_last(guide_mapping_list); i++) {
+            /* get element from PFarray_t */
+            guide_mapping = *((PFguide_mapping_t**) PFarray_at(
+                    guide_mapping_list, i));            
+
+            guide_list = guide_mapping->guide_list;
+            /* print guide nodes */
+            for (unsigned int j = 0; j < PFarray_last(guide_list); j++) {
+                element = *((PFguide_tree_t**) PFarray_at(guide_list, j));
+                PFarray_printf (dot, "column: %s  guide: %i kind= %i  "
+                        "tag_name= %s\\n", guide_mapping->column, 
+                        element->guide, element->kind, element->tag_name);
+            }
+            PFarray_printf (dot, "\\n");
+        }
+    } 
 }
 
 /* vim:set shiftwidth=4 expandtab: */

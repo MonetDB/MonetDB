@@ -576,6 +576,12 @@ infer_const (PFla_op_t *n)
                         n->prop,
                         n->sem.doc_tbl.iter,
                         PFprop_const_val (L(n)->prop, n->sem.doc_tbl.iter));
+
+            if (PFprop_const (L(n)->prop, n->sem.doc_tbl.item))
+                PFprop_mark_const (
+                        n->prop,
+                        n->sem.doc_tbl.item,
+                        PFprop_const_val (L(n)->prop, n->sem.doc_tbl.item));
             break;
 
         case la_twig:

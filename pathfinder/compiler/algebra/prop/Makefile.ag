@@ -45,5 +45,6 @@ lib_prop = {
                 prop_reqval.c \
                 prop_set.c \
                 prop_trace_names.c \
-                prop_unq_names.c
+                prop_unq_names.c \
+                prop_guide.c
 }
