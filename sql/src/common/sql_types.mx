@@ -1229,7 +1229,7 @@ sqltypeinit(void)
 	sql_type *ts[100];
 	sql_type **strings, **numerical;
 	sql_type **decimals, **floats, **dates, **end, **t;
-	sql_type *STR, *BTE, *SHT, *INT, *LNG, *OID, *BIT, *DBL;
+	sql_type *STR, *BTE, *INT, *LNG, *OID, *BIT, *DBL;
 	sql_type *SECINT, *MONINT, *DTE; 
 	sql_type *TME, *TMETZ, *TMESTAMP, *TMESTAMPTZ;
 	sql_type *ANY;
@@ -1250,9 +1250,8 @@ sqltypeinit(void)
 	numerical = t;
 
 	OID = *t++ = sql_create_type("OID", 31, 0, 2, EC_NUM, "oid");
-	(void)OID; /* pacify picky compilers */
 	BTE = *t++ = sql_create_type("TINYINT",   8, SCALE_FIX, 2, EC_NUM, "bte");
-	SHT = *t++ = sql_create_type("SMALLINT", 16, SCALE_FIX, 2, EC_NUM, "sht");
+	      *t++ = sql_create_type("SMALLINT", 16, SCALE_FIX, 2, EC_NUM, "sht");
 	INT = *t++ = sql_create_type("INT",      32, SCALE_FIX, 2, EC_NUM, "int");
 	LNG = *t++ = sql_create_type("BIGINT",   64, SCALE_FIX, 2, EC_NUM, "lng");
 
