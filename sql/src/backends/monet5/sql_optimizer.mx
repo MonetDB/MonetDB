@@ -101,15 +101,6 @@ quite some (expensive) instructions can be safed.
 The current heuristic is geared at avoiding trivial
 factory structures.
 @-
-@= SQLglobal
-{	sql_subtype ctype;
-	stmt *r;
-    ValRecord src;
-	sql_find_subtype(&ctype, "varchar", 1024, 0);
-	r = stmt_var(_strdup(@1), &ctype, 0, 1);
-	stack_push_var(be->mvc, @1, r, &ctype);
-	stack_set_var(be->mvc, @1, VALset(&src, ctype.type->localtype, @2));
-}
 @c
 #include "sql_config.h"
 #include "mal_builder.h"
@@ -474,6 +465,7 @@ addQueryToCache(Client c)
 	backend *be = ((backend *) c->state[MAL_SCENARIO_PARSER]);
 	str optimizer;
 	MalBlkPtr mb;
+    	ValRecord src;
 
 	insertSymbol(c->nspace, c->curprg);
 	trimMalBlk(c->curprg->def);
@@ -514,23 +506,27 @@ And before we actually execute the program, we should
 expand the macros (unless this has already been taken
 care of.
 @c
-	if( strcmp(optimizer,"on")==0 ||
-		strcmp(optimizer,"default")==0 ){ 
+	if( strcmp(optimizer,"on")==0 || strcmp(optimizer,"default")==0 ){ 
 		str base = GDKstrdup(defaultPlan);
-		@:SQLglobal("optimizer", defaultPlan)@
+
+		stack_set_var(be->mvc, "optimizer", 
+			VALset(&src, TYPE_str, defaultPlan));
 		addOptimizers(c,mb, base);
 		optimizeMALBlock(mb);
 		GDKfree(base);
 	} else
 	if( strcmp(optimizer,"off")==0 ){ 
 		str base = GDKstrdup(minimalPlan);
-		@:SQLglobal("optimizer", minimalPlan)@
+
+		stack_set_var(be->mvc, "optimizer", 
+			VALset(&src, TYPE_str, minimalPlan));
 		/* no real optimization needed */
 		addOptimizers(c,mb, base);
 		optimizeMALBlock(mb);
 		GDKfree(base);
 	} else {
 		str base = GDKstrdup(optimizer);
+
 		addOptimizers(c,mb,base);
 		GDKfree(base);
 
