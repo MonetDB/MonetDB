@@ -624,6 +624,7 @@ the configuration file.
 		/* check for internal exception message to terminate */
 		if(msg  && strcmp(msg,"MALException:client.quit:Server stopped.")==0)
 			mal_exit();
+		if( msg) GDKfree(msg);
 		GDKfree(monet_script[i]);
 		monet_script[i] = 0;
 	}
