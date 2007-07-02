@@ -14,12 +14,14 @@ opt_export str OPT@1(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 
 @= wrapOptimizer
 /* #define _DEBUG_OPTIMIZER_*/
+#include "opt_statistics.h"
+
 str OPT@1(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	str modnme;
 	str fcnnme;
 	Module  scope=NULL;
 	Symbol s= NULL;
-	lng clk= GDKusec();
+	lng t,clk= GDKusec();
 	int actions = 0;
 
 	optimizerInit();
@@ -71,7 +73,8 @@ str OPT@1(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	stream_printf(GDKout,"finished @1 %d\n",actions);
 	printFunction(GDKout,mb,LIST_MAL_ALL);
 #endif
-    optimizerCheck(mb, "optimizer.@1", actions, GDKusec() - clk,@2);
+    optimizerCheck(mb, "optimizer.@1", actions, t=(GDKusec() - clk),@2);
+	QOTupdateStatistics("@1",actions,t);
 	addtoMalBlkHistory(mb);
 	return MAL_SUCCEED;
 }

@@ -16,7 +16,8 @@ lib_optimizer = {
 		opt_accumulators.mx opt_qep.mx opt_mergetable.mx \
 		opt_remoteQueries.mx opt_joinselect.mx opt_partitions.mx \
 		opt_evaluate.mx opt_inline.mx opt_pushranges.mx \
-		opt_accessmode.mx opt_joinpath.mx opt_heuristics.mx opt_remap.mx
+		opt_accessmode.mx opt_joinpath.mx opt_heuristics.mx opt_remap.mx \
+		opt_statistics.mx
 
 	HEADERS = h 
 	#SCRIPTS = mal
@@ -36,7 +37,8 @@ scripts_mal = {
 		opt_accumulators.mx opt_qep.mx opt_mergetable.mx \
 		opt_remoteQueries.mx opt_joinselect.mx opt_partitions.mx \
 		opt_evaluate.mx opt_inline.mx opt_pushranges.mx \
-		opt_accessmode.mx opt_joinpath.mx opt_heuristics.mx opt_remap.mx
+		opt_accessmode.mx opt_joinpath.mx opt_heuristics.mx opt_remap.mx \
+		opt_statistics.mx
 }
 
 EXTRA_DIST_DIR = Tests
