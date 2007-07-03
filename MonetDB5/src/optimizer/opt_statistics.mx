@@ -25,7 +25,7 @@ and a source of information of dynamic optimization decisions.
 The command is stored in the inspection module, because it
 otherwise interferes with the general optimizer phase.
 @mal
-command inspect.getStatistics(nme:str):bat[:oid,:any_1]
+command inspect.getStatistics(nme:str):bat[:any_1,:any_2]
 address QOTgetStatistics
 comment "Get optimizer property statistics 
 such as #calls, #total actions, #total time";
@@ -35,7 +35,7 @@ such as #calls, #total actions, #total time";
 @h
 #ifndef _Q_STATISTICS_H
 #define _Q_STATISTICS_H
-/* #define _Q_STATISTICS_DEBUG */
+/* #define _Q_STATISTICS_DEBUG*/
 
 #include "mal_interpreter.h"
 #include "mal_scenario.h"
@@ -45,6 +45,7 @@ such as #calls, #total actions, #total time";
 
 opt_export str QOTgetStatistics(int *ret, str *nme);
 opt_export void QOTupdateStatistics(str nme, int prop, lng val);
+opt_export void QOTstatisticsExit();
 #endif /* _Q_STATISTICS_H */
 @c
 #include "mal_config.h"
@@ -57,8 +58,6 @@ callback function.
 @- Optimizer statistics
 A few global tables are maintained with optimizer statistics.
 They provide the basis for dynamic optimization and offline analysis
-@= updateStep
-	/* do it */
 @c
 #define QOTnames	0
 #define QOTcalls	1
@@ -73,11 +72,14 @@ QOT_create(str hnme, str tnme, int ht, int tt)
 	BAT *b;
 	char buf[128];
 
-	snprintf(buf, 128, "optstat_%s_%s", hnme, tnme);
+	snprintf(buf, 128, "stat_%s_%s", hnme, tnme);
 	b = BATdescriptor(BBPindex(buf));
 	if (b)
 		return b;
 
+#ifdef _Q_STATISTICS_DEBUG
+	stream_printf(GDKout,"create optimizer statistics %s %s\n",hnme,tnme);
+#endif
 	b = BATnew(ht, tt, 256);
 	if (b == NULL)
 		GDKfatal("QOT_create: could not allocate.");
@@ -88,21 +90,17 @@ QOT_create(str hnme, str tnme, int ht, int tt)
 	return b;
 }
 static void QOTstatisticsInit(){
-	if( qotStat[0]) return;
-	qotStat[QOTnames]= QOT_create("opt","names",TYPE_oid,TYPE_str);
-	qotStat[QOTcalls]= QOT_create("opt","calls",TYPE_oid,TYPE_int);
-	qotStat[QOTactions]= QOT_create("opt","actions",TYPE_oid,TYPE_int);
-	qotStat[QOTtimings]= QOT_create("opt","timings",TYPE_oid,TYPE_int);
+	oid o=oid_nil;
+	if( qotStat[QOTnames]) return;
+	qotStat[QOTnames]= QOT_create("opt","names",TYPE_void,TYPE_str);
+	BATseqbase(qotStat[QOTnames],o);
+	qotStat[QOTcalls]= QOT_create("opt","calls",TYPE_void,TYPE_int);
+	BATseqbase(qotStat[QOTcalls],o);
+	qotStat[QOTactions]= QOT_create("opt","actions",TYPE_void,TYPE_int);
+	BATseqbase(qotStat[QOTactions],o);
+	qotStat[QOTtimings]= QOT_create("opt","timings",TYPE_void,TYPE_int);
+	BATseqbase(qotStat[QOTtimings],o);
 }
-
-/*
-static void QOTstatisticsExit(){
-	int i;
-	for(i=0; i<5;i++)
-	if(qotStat[i]) 
-		BBPreclaim(qotStat[i]);
-}
-*/
 
 static int QOTindex(str nme){
 	if( nme == 0) return -1;
@@ -116,42 +114,61 @@ static int QOTindex(str nme){
 void
 QOTupdateStatistics(str nme, int actions, lng val){
 	BUN p;
-	oid o=oid_nil;
-	int *i;
-	lng *l;
+	oid idx;
+	int ival=0, *ip= &ival;
+	lng lval=0, *lp= &lval;
 
 	QOTstatisticsInit();
 #ifdef _Q_STATISTICS_DEBUG
 	stream_printf(GDKout,"update optimizer statistics\n");
 #endif
-	p= BUNfnd(BATrevert(qotStat[0]),(ptr)nme);
+	p= BUNfnd(BATmirror(qotStat[QOTnames]),(ptr)nme);
 	if( p == 0) {
 #ifdef _Q_STATISTICS_DEBUG
+		stream_printf(GDKout,"initialized? %d\n",qotStat[QOTnames]==0);
 		stream_printf(GDKout,"insert optimizer statistics %s\n",nme);
 #endif
-		BUNins(qotStat[0],&o, nme,TRUE);
-		p= BUNfnd(BATrevert(qotStat[0]),(ptr)nme);
-		if( p == 0)
+		ival= (int) BATcount(qotStat[QOTnames]);
+		BUNappend(qotStat[QOTnames], nme,TRUE);
+		BUNappend(qotStat[QOTcalls],  &ival, TRUE);
+		BUNappend(qotStat[QOTactions], &ival, TRUE);
+		BUNappend(qotStat[QOTtimings], &lval, TRUE);
+		p= BUNfnd(BATmirror(qotStat[QOTnames]),(ptr)nme);
+		if(p==0){
+#ifdef _Q_STATISTICS_DEBUG
+			stream_printf(GDKout,"not found\n");
+#endif
 			return;
-	}
-	o= * (oid*) BUNhead(qotStat[0],p);
-	p= BUNfnd(qotStat[QOTcalls],&o);
-	if( p== NULL)
-		stream_printf(GDKout,"#Could not access 'calls'");
-	i= (int*) BUNtail(qotStat[QOTcalls],p);
-	*i= *i+1;
+		}
+	} 
+	idx= *(oid*) BUNhead(qotStat[QOTnames],p);
 
-	p= BUNfnd(qotStat[QOTactions],&o);
+	p= BUNfnd(qotStat[QOTcalls],&idx);
 	if( p== NULL)
-		stream_printf(GDKout,"#Could not access 'calls'");
-	i= (int*) BUNtail(qotStat[QOTactions],p);
-	*i= *i+ actions;
+		stream_printf(GDKout,"#Could not access 'calls'\n");
 
-	p= BUNfnd(qotStat[QOTtimings],&o);
+	ip= (int*) BUNtail(qotStat[QOTcalls],p);
+	*ip= *ip+1;
+
+	p= BUNfnd(qotStat[QOTactions],&idx);
 	if( p== NULL)
-		stream_printf(GDKout,"#Could not access 'calls'");
-	l= (lng*) BUNtail(qotStat[QOTtimings],p);
-	*l= *l+ val;
+		stream_printf(GDKout,"#Could not access 'actions'\n");
+	ip= (int*) BUNtail(qotStat[QOTactions],p);
+	*ip= *ip+ actions;
+
+	p= BUNfnd(qotStat[QOTtimings],&idx);
+	if( p== NULL)
+		stream_printf(GDKout,"#Could not access 'timings'\n");
+	lp= (lng*) BUNtail(qotStat[QOTtimings],p);
+	*lp= *lp+ val;
+}
+void
+QOTstatisticsExit(){
+	TMsubcommit(qotStat[QOTnames]);
+	TMsubcommit(qotStat[QOTcalls]);
+	TMsubcommit(qotStat[QOTactions]);
+	TMsubcommit(qotStat[QOTtimings]);
+	TMcommit();
 }
 str
 QOTgetStatistics(int *ret, str *nme){
