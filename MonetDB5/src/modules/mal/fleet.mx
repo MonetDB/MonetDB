@@ -21,99 +21,76 @@
 This module contains a simple interface for setting up
 a fleet of Mservers. They exchange objects and 
 cooperatively optimize and execute MAL functions.
-A fleet is characterised by a central registry,
-a name and authorized access to all servers participating.
-
-[Let's see how far we get if we use a logically 2-layered
-setup]
+A fleet is characterised by a registry, a name and 
+authorized access to all servers participating.
 
 The prime underlying assumptions are :
 @enumerate
 @item
-a global store, the objects known are conceptually
-part of the database named after the fleet.
+a registry, the objects known are conceptually
+part of the global database named after the fleet.
 @item  
 peers are cooperative, they interact logically with the registry.
 @item
 directive management, 
 the issuer of a request is responsible for object management,
 e.g. garbage collection.
-@item  
-MAPI compliant, the interaction between servers is based
-on the MAPI protocol.
-[[ a needless requirement ]]
 @item
 connections are silently re-established upon need. 
 Failure produces a MAL exception.
 @end enumerate
 
 A server can always take the role of a registry, as long
-as it won't conflict with others claiming the same.
-It creates a name space from which peers can import objects
+as it won't conflict with others claiming the same fleet name.
+It creates a name space by which peers can import objects
 and export definitions for shared use
 
-A server can join a fleet by calling the enroll() function 
+A server can join a fleet by calling the join() function 
 for its registry. It will set-up the local connection
-administration or even collect what can be learned about the
-peers. You can detach() from the fleet at any point in time.
-[[ for fleets: join and leave ]]
+administration or even collect what can be learned about 
+other peers.
 
-The registry will send a detach function to all known 
-members to effectuate the request using the alias assigned
-to a peer.
-[[ Why? ]]
-Moreover, accidental use of the alias in fleet operations
-can be locally flagged as erroneous.
-[[ I don't understand what this means ]]
+As long as a server belongs to a fleet it is globally known by 
+the quadruple (fleetname,alias, host,port). 
 
-Each server in a fleet maintains a module named after
-each alias obtained to hold MAL functions and global variables
-hosted/cached on behave of the other peers. 
-[[ why? this causes a lot of junk, namespace pollution, and doesn't seem necessary to me at all, we better just solve it using temporary names ]]
-It provides an anchor point for garbage collection after a server
-detached itself or when site specific functions should
-be distinguished.
-[[ garbage collection is for persistent objects up to the user ]]
+You can leave() the fleet at any point in time.
+Locally the alias is invalidated. The registry is notified
+as well that the mapping has become invalid.
+An attempt to contact an obsolete peer can be used to update
+any local cache of peer information.
 
-The key operation to communicate with the members of
-a fleet is the bind() operation. It takes arguments
-to uniquely identify an object managed by one of the
-peers. It returns an alias by which it can be manipulated.
-Any MAL object can be the target of a bind. As long as its
-underlying implementation knows how to resolve it.
+Let S,T be peers in the fleet F. S contains a function S.f()
+and a BAT locally named "Bs", likewise, T.g(), T.f() and "Bt". 
+Our goal is to exchange variables and functions.
+To make this happen we have to avoid name clashes.
 
-Once the alias is known, the object itself can be retrieved
-using get().
-[[ why first a bind then a get? ]]
-We always pass the fleet name (as a string constant) to
-ease detection of fleet related actions.
-A copy of the object is obtained. The alias encodes the
-peer from which it is obtained and sufficient information
-for the peer to deliver the correct object.
+Before objects can be exchanged they have to become known
+at the fleet level. For example, site S exports its objects
+as F.f() and F.Bs, respectively. Site T can export F.g() and F.Ts.
+It will fail to export T.f(), because it is already known.
+A new name should be chosen by T, e.g. export T.fprime().
 
+A secondary goal is to benefit as much as possible from
+knowledge on a remote site. Thus, ideally we would like
+the definition of S.f() to become known at T. 
+It suffices to introduce the fleet module F. It holds
+the workset portion of the global schema. Then, T can
+issue an import(fleetname,f). An optimizer can now use
+its body to optimize a query.
+
+The approach to exchange variables uses the same scheme.
+The object is made known to the fleet using an export()
+and its value is copied to the local stack frame
+using an import.
 @verbatim
-fleet.enroll("tromp");
-alias:= fleet.bind("tromp","captains");
-b:bat[:oid,:str] := fleet.get("tromp",alias);
-@end verbatim
+#publishing site
+captains:= bat.new(:oid,:str);
+fleet.join("tromp");
+fleet.export("tromp","captains",captains);
 
-An object can be shared with the peers by announcing
-its existence to the fleet. No further action is taken
-other then enabling bind of other to succeed.
-The external name should not conflict with others.
-[[ why announce objects?  "the fleet is characterized by a central registry" ]]
-@verbatim
-fleet.enroll("tromp");
-b:= bat.new(:oid,:str);
-fleet.put("tromp","captains",b);
-@end verbatim
-
-Functions known at peers can be handled in a similar
-way. Below we export the function and obtain a copy.
-@verbatim
-fleet.put("tromp","sharedFcn","myModule","myFcn");
-alias:= fleet.bind("tromp","sharedFcn");
-fleet.get("tromp",alias); #alias.sharedFn is now known
+#interested site
+fleet.join("tromp");
+b:bat[:oid,:str]:= fleet.import("tromp","captains");
 @end verbatim
 
 Note that the structure sofar requires sites A and B
@@ -122,14 +99,22 @@ We could say that there is an outside agency
 enacts the contract, telling A and B what they should
 locally know.
 
-Remote execution of a MAL function is a primitive
-supported at the fleet level. Critial issue is
-were to execute the function. Of course, we can either
-implement function or data shipping.
+The primitives allow for local execution of functions
+known anywhere using copied data. We ship the data
+to the local site, i.e. data shipping.
+
+An alternative is to leave the decision where
+to execute a function to the underlying system.
+The critial issues are to assess the transport cost
+and to resolve locality of the arguments (and targets).
+The fleet.execute() function wraps any MAL instruction
+to find an optimal scheme.
+
 @verbatim
-fcn := fleet.bind("tromp","sharedFcn");
-answ:int := fleet.execute("tromp",fcn,b,2);
+b:bat[:oid,:str]:= fleet.bind("tromp","captains");
+answ:int := fleet.execute("tromp","f",b);
 @end verbatim
+
 @{
 @mal
 module fleet;
@@ -137,15 +122,15 @@ module fleet;
 command registry(name:str,port:nr)
 address FLEETregistry
 comment "Take upon you to act as a localhost registry and listen
-to requests to join/detach";
+to requests to join/leave";
 
-command enroll(nme:str, host:str, port:nr): str
-address FLEETenroll
+command join(nme:str, host:str, port:nr): str
+address FLEETjoin
 comment "Join a fleet of Mservers by calling its registry.
 It returns an alias by which the server will be known 
 within the fleet.";
 
-command detach(alias:str)
+command leave(alias:str)
 comment "Leave the fleet of servers for which you have an alias";
 
 command members(name:str):bat[:oid,:str]
