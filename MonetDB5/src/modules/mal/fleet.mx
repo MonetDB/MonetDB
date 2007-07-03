@@ -116,11 +116,11 @@ alias:= fleet.bind("tromp","sharedFcn");
 fleet.get("tromp",alias); #alias.sharedFn is now known
 @end verbatim
 
-Note that the structure sofar requirs sites A and B
-to cooperate. They can not enforce one-another to act.
+Note that the structure sofar requires sites A and B
+to cooperate. They can not enforce one another to act.
 We could say that there is an outside agency 
 enacts the contract, telling A and B what they should
-locally known.
+locally know.
 
 Remote execution of a MAL function is a primitive
 supported at the fleet level. Critial issue is
