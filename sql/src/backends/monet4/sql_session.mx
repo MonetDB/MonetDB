@@ -363,7 +363,6 @@ sqlclient(backend *sql, bstream *in, stream *out)
 	mvc *m = sql->mvc;
 	int err, go = TRUE;
 	int language = 'S';
-	prot oldmode;
 
 	in->eof = 1;		/* force prompt on first iteration */
 	while (go) {
@@ -441,7 +440,6 @@ query string with "M".
 			continue;
 		}
 @c
-		oldmode = m->scanner.mode;
 		if (language == 's') {
 			language = 'S';
 			m->scanner.mode = LINE_1;
@@ -499,7 +497,6 @@ query string with "M".
 
 		m->mode = m->explain;
 		err = sqlexecute(sql, out);
-		m->scanner.mode = oldmode;
 		if (err) /* output error */
 			go = handle_error(m, out, pstatus);
 	}

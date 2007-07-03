@@ -32,13 +32,6 @@ typedef struct keyword {
 	struct keyword *next;
 } keyword;
 
-#define HASH_SIZE 32768
-#define HASH_MASK (HASH_SIZE-1)
-
-extern int keywords_init_done;
-extern keyword *keywords[HASH_SIZE];
-
-extern int keyword_key(char *k, int *l);
 extern void keywords_insert(char *k, int token);
 extern keyword *find_keyword(char *text);
 extern int keyword_exists(char *text);

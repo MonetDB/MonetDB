@@ -873,7 +873,6 @@ SQLparser(Client c)
 	lng T0 = 0;
 	int pstatus = 0;
 	int err = 0;
-	prot oldmode;
 
 	be = ((backend *) c->state[MAL_SCENARIO_PARSER]);
 	if (be == 0) {
@@ -898,7 +897,6 @@ SQLparser(Client c)
 		m->sa = sa_create();
 
 	m->mode = m->explain;
-	oldmode = m->scanner.mode;
 	if (be->language == 's') {
 		be->language = 'S';
 		m->scanner.mode = LINE_1;
@@ -1109,7 +1107,6 @@ Inspect the variables for post code-generation actions.
 finalize:
 	if(m->mode== m_explain  && be->q && be->q->code)
 		printFunction(GDKout, ((Symbol)(be->q->code))->def, LIST_MAL_INSTR | LIST_MAL_PROPS);
-	m->scanner.mode = oldmode;
 @-
 Gather the statistics for post analysis. It should preferably
 be stored in an SQL table
