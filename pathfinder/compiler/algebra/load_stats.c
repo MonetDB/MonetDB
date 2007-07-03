@@ -77,11 +77,14 @@ start_element (void *ctx, const xmlChar *tagname, const xmlChar **atts)
 
     /* get attributes */
     if((atts != NULL) && *atts) {
-        guide = atoi(atts[1]);
+        guide = atoi((char *)atts[1]);
+
         atts += 2;
-        count =  atoi(atts[1]);
+        count = atoi((char *)atts[1]); 
+
         atts += 2;
-        kind = atoi(atts[1]) - 1;
+        kind = atoi((char *)atts[1]) - 1;
+
         atts += 2;
         tag_name = (*atts != NULL) ? (char*)atts[1] : NULL;
     }
