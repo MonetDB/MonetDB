@@ -2851,7 +2851,7 @@ subset_add_outer(stmt *ptable, stmt *s)
 }
 */
 
-void
+static void
 filter(stmt *ptable, stmt *s)
 {
 
