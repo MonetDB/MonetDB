@@ -186,6 +186,10 @@ param_list_cmp(sql_subtype *typelist, atom **atoms, int plen)
 			if ((!(t1->type->eclass == EC_FLT && 
 			    (at->type->eclass == EC_DEC ||
 			     at->type->eclass == EC_NUM))) &&
+			   (!(EC_VARCHAR(t1->type->eclass) &&
+			      EC_VARCHAR(atom_type(a2)->type->eclass) &&
+			      (!t1->digits ||
+			       t1->digits >= atom_type(a2)->digits))) &&
 			   (!(t1->type->eclass == EC_DEC &&
 			      at->type->eclass == EC_NUM &&
 			      t1->type->localtype >= at->type->localtype)) &&
