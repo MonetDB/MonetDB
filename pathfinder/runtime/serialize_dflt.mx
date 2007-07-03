@@ -59,11 +59,11 @@ static size_t cS_sz = 4; /* strlen (commentStart); */
 static size_t cE_sz = 3; /* strlen (commentEnd); */
 
 static char *attributeStart = "attribute ";
-static char *attributeMid = " { ";
-static char *attributeEnd = " }";
+static char *attributeMid = " { \"";
+static char *attributeEnd = "\" }";
 static size_t aS_sz = 10; /* strlen (attributeStart); */
-static size_t aM_sz = 3; /* strlen (attributeMid); */
-static size_t aE_sz = 2; /* strlen (attributeEnd); */
+static size_t aM_sz = 4; /* strlen (attributeMid); */
+static size_t aE_sz = 3; /* strlen (attributeEnd); */
 
 static char *textnodeStart = "text {";
 static char *textnodeEnd = "}";
@@ -577,7 +577,7 @@ dflt_seqEmitAttribute (XqueryCtx* ctx, str prefix, str loc, str value)
     }
 
     stream_write (ctx->out, attributeMid, aM_sz, 1);
-    stream_write (ctx->out, value, strlen(value), 1);
+    emit_escaped_all (ctx, value);
     stream_write (ctx->out, attributeEnd, aE_sz, 1);
 
     return SUCCESS;

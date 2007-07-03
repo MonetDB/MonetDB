@@ -55,7 +55,7 @@ xquery("xml-root-name"  ,query , 0).printf();
 xquery("dm"             ,query , 0).printf();
 1,
 2.300000,
-attribute attr { val },
+attribute attr { "val" },
 30.000000,
 "string",
 <?xml version="1.0" encoding="utf-8"?>
@@ -69,7 +69,7 @@ text {"text"},
 xquery("mapi-dm"        ,query , 0).printf();
 =1,
 =2.300000,
-=attribute attr { val },
+=attribute attr { "val" },
 =30.000000,
 ="string",
 =<?xml version="1.0" encoding="utf-8"?>
@@ -90,7 +90,7 @@ printf("%s",xquery("seq"            ,query , 0));
 % 60	# length
 [ "1"	]
 [ "2.300000"	]
-[ "attribute attr { val }"	]
+[ "attribute attr { "val" }"	]
 [ "30.000000"	]
 [ "\"string\""	]
 [ "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<elem>text<!--comment--><?pi_tgt pi_data?></elem>\n"	]
@@ -100,7 +100,7 @@ printf("%s",xquery("seq"            ,query , 0));
 [ "<?pi_tgt pi_data?>"	]
 
 xquery("seq"            ,query , 0).print();
-[ "&1 0 10 1 10\n% xquery.result\t# table_name\n% xml\t# name\n% varchar\t# type\n% 60\t# length\n[ \"1\"\t]\n[ \"2.300000\"\t]\n[ \"attribute attr { val }\"\t]\n[ \"30.000000\"\t]\n[ \"\\\"string\\\"\"\t]\n[ \"<?xml version=\\\"1.0\\\" encoding=\\\"utf-8\\\"?>\\n<elem>text<!--comment--><?pi_tgt pi_data?></elem>\\n\"\t]\n[ \"<elem>text<!--comment--><?pi_tgt pi_data?></elem>\"\t]\n[ \"text {\\\"text\\\"}\"\t]\n[ \"<!--comment-->\"\t]\n[ \"<?pi_tgt pi_data?>\"\t]\n" ]
+[ "&1 0 10 1 10\n% xquery.result\t# table_name\n% xml\t# name\n% varchar\t# type\n% 60\t# length\n[ \"1\"\t]\n[ \"2.300000\"\t]\n[ \"attribute attr { \"val\" }\"\t]\n[ \"30.000000\"\t]\n[ \"\\\"string\\\"\"\t]\n[ \"<?xml version=\\\"1.0\\\" encoding=\\\"utf-8\\\"?>\\n<elem>text<!--comment--><?pi_tgt pi_data?></elem>\\n\"\t]\n[ \"<elem>text<!--comment--><?pi_tgt pi_data?></elem>\"\t]\n[ \"text {\\\"text\\\"}\"\t]\n[ \"<!--comment-->\"\t]\n[ \"<?pi_tgt pi_data?>\"\t]\n" ]
 
 
 # default mode is xml mode (it also works with mapi

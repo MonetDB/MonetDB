@@ -1,0 +1,2 @@
+module(pathfinder);
+xquery ("dm", "<aap q=\"noot &quot; mies\" />/@q", 0).printf();

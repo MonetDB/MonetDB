@@ -17,20 +17,20 @@ quit();
 
 Over..
 
-# 22:33:44 >  
-# 22:33:44 >  Mtimeout -timeout 60 MapiClient -lmil -u monetdb -P monetdb "--config=/ufs/manegold/_/scratch0/Monet/Testing/Current/.GNU.64.64.d.--enable-debug.PREFIX./MONETDB/etc/MonetDB.conf" --host=localhost --port=34148 < doc-order_in_attributes.SF-1328671.milC
-# 22:33:44 >  
+# 16:37:38 >  
+# 16:37:38 >  Mtimeout -timeout 60 MapiClient -lmil -umonetdb -Pmonetdb "--config=/local_tmp/work1/MonetDB4/Linux/etc/MonetDB.conf" --host=notekemper08 --port=36807
+# 16:37:38 >  
 
-attribute value { 2 },
-attribute value { 3 }
-attribute value { 2 },
-attribute name { 4 },
-attribute value { 3 }
-attribute name { 4 },
-attribute value { 2 },
-attribute value { 3 }
+attribute value { "2" },
+attribute value { "3" }
+attribute value { "2" },
+attribute name { "4" },
+attribute value { "3" }
+attribute name { "4" },
+attribute value { "2" },
+attribute value { "3" }
 
-# 22:33:45 >  
-# 22:33:45 >  Done.
-# 22:33:45 >  
+# 16:37:38 >  
+# 16:37:38 >  Done.
+# 16:37:38 >  
 
