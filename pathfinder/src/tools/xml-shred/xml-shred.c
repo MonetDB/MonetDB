@@ -67,7 +67,7 @@ typedef enum kind_t kind_t;
 #define NO_KEY -1 
 
 /* returns true if no such key is found */
-#define NOKEY(k) (k == -1)
+#define NOKEY(k) (k == NO_KEY)
 
 
 /**
@@ -198,11 +198,12 @@ struct child_list_t {
     guide_tree_t    *node;
 };
 
+#define GUIDE_INIT 1
+
 /* current guide count */
-nat guide_count = 1;
+nat guide_count = GUIDE_INIT;
 /* current node in the guide tree */
 guide_tree_t *current_guide_node = NULL;
-guide_tree_t *root_guide_node = NULL;
 guide_tree_t *leaf_guide_node = NULL;
 
 /* add a guide child to the parent */
@@ -227,7 +228,6 @@ start_document (void *ctx)
     att_id = 0;
 
     current_guide_node = insert_guide_node(filename, NULL, doc);
-    root_guide_node = current_guide_node;
 
     stack[level] = (node_t) {
         .pre            = pre,
@@ -262,7 +262,7 @@ end_document (void *ctx)
 
     free (stack[level].prop);
 
-    current_guide_node = current_guide_node->parent;
+    assert (current_guide_node->guide == GUIDE_INIT);
 }
 
 static void
@@ -419,8 +419,7 @@ end_element ()
     level--;
     assert (level >= 0);
 
-    if(current_guide_node->parent != NULL)
-        current_guide_node = current_guide_node->parent;
+    current_guide_node = current_guide_node->parent;
 }
 
 void
@@ -558,6 +557,19 @@ print_help (int argc, char **argv)
 }
 
 static void
+print_kind (FILE *f, kind_t kind) {
+    switch (kind) {
+       case elem: putc ('1', f); break;
+       case attr: putc ('2', f); break;
+       case text: putc ('3', f); break;
+       case comm: putc ('4', f); break;
+       case pi:   putc ('5', f); break;
+       case doc:  putc ('6', f); break;
+       default: assert (0);
+    }
+}
+
+static void
 print_tuple (node_t tuple)
 {
     unsigned int i;
@@ -588,15 +600,7 @@ print_tuple (node_t tuple)
                                fprintf (out, "NULL");
                            break;
                 case 'k': 
-                           switch (tuple.kind) {
-                               case elem: putc ('1', out); break;
-                               case attr: putc ('2', out); break;
-                               case text: putc ('3', out); break;
-                               case comm: putc ('4', out); break;
-                               case pi:   putc ('5', out); break;
-                               case doc:  putc ('6', out); break;
-                               default: assert (0);
-                           }
+                           print_kind (out, tuple.kind);
                            break;
 		case 'n':
 		        if (tuple.name_id == -1)
@@ -753,7 +757,7 @@ main (int argc, char **argv)
         guide_out = stdout;
     
 
-    print_guide_tree(root_guide_node, 0);
+    print_guide_tree(current_guide_node, 0);
     
     return 0;
 }
@@ -890,12 +894,12 @@ insert_guide_node(char *tag_name, guide_tree_t *parent, kind_t kind)
 
 
     if (parent != NULL) {
-        /* Serch through all child if the node just exist */
+        /* Search all children and check if the node already exist */
         child_list = parent->child_list;
             
-        while(child_list != NULL){
+        while(child_list != NULL) {
             child_node = child_list->node;
-            if((child_node->tag_name == tag_name) && 
+            if ((child_node->tag_name == tag_name) && 
                 (child_node->kind == kind) ) {
 
                 child_node->count = child_node->count + 1;
@@ -930,33 +934,26 @@ print_guide_tree(guide_tree_t *root, int tree_depth)
 {
     child_list_t  *child_list = root->child_list;
     child_list_t  *child_list_free = NULL;
-    bool          print_end_tag = true;
+    bool           print_end_tag = true;
+    int            i;
 
     /* print the padding */
-    int i = 0;
     for(i = 0; i < tree_depth * GUIDE_PADDING_COUNT; i++)
       fprintf(guide_out, " ");
 
     print_end_tag = child_list == NULL ? false : true;
 
     /* print the node self */
-    if(root->tag_name != NULL) {
-    print_end_tag ?
-         fprintf(guide_out, 
-             "<node guide=\"%i\" count=\"%i\" kind=\"%i\" name=\"%s\">\n",
-             root->guide, root->count, root->kind + 1, root->tag_name) 
-         : fprintf(guide_out, 
-             "<node guide=\"%i\" count=\"%i\" kind=\"%i\" name=\"%s\"/>\n",
-             root->guide, root->count, root->kind + 1, root->tag_name);
-    } else {
-    print_end_tag ?
-         fprintf(guide_out, 
-              "<node guide=\"%i\" count=\"%i\" kind=\"%i\">\n",
-              root->guide, root->count, root->kind + 1)
-         : fprintf(guide_out, 
-               "<node guide=\"%i\" count=\"%i\" kind=\"%i\"/>\n",
-               root->guide, root->count, root->kind + 1);
-    }
+    fprintf (
+        guide_out, 
+        "<node guide=\"%i\" count=\"%i\" kind=\"",
+        root->guide,
+        root->count);
+    print_kind (guide_out, root->kind);
+    fprintf (guide_out, "\"");
+    if (root->tag_name != NULL)
+        fprintf (guide_out, " name=\"%s\"", root->tag_name);
+    fprintf (guide_out, "%s>\n", print_end_tag ? "" : "/"); 
 
     while(child_list != NULL) {
        print_guide_tree(child_list->node, tree_depth+1);
@@ -967,7 +964,7 @@ print_guide_tree(guide_tree_t *root, int tree_depth)
     }
 
     /* print the end tag */
-    if(print_end_tag) {
+    if (print_end_tag) {
         for(i = 0; i < tree_depth * GUIDE_PADDING_COUNT; i++)
             fprintf(guide_out, " ");
 
