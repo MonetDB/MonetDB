@@ -1,0 +1,142 @@
+@' The contents of this file are subject to the MonetDB Public License
+@' Version 1.1 (the "License"); you may not use this file except in
+@' compliance with the License. You may obtain a copy of the License at
+@' http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+@'
+@' Software distributed under the License is distributed on an "AS IS"
+@' basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+@' License for the specific language governing rights and limitations
+@' under the License.
+@'
+@' The Original Code is the MonetDB Database System.
+@'
+@' The Initial Developer of the Original Code is CWI.
+@' Portions created by CWI are Copyright (C) 1997-2007 CWI.
+@' All Rights Reserved.
+
+@f remote
+@a Fabian Groffen
+@+ Remote querying functionality
+Communication with other mservers at the MAL level is a
+delicate task.  However, it is indispensable for any
+distributed functionality on MonetDB.  This module provides
+an abstract way to store and retrieve objects on a remote
+site.  Additionally, functions on a remote site can be
+executed.  This yields in three primitive functions that
+form the basis for distribution methods: get, put and exec.
+
+The get method simply retrieves a remote object, and returns
+it locally.  Objects can be anything, values, BATs, functions,
+etc.  The same holds for the put method, but the other way
+around.  A local object can be stored on a remote site.  Upon
+a successful store, the put method returns the identifier on
+the remote site.  With this identifier the object can be
+addressed, e.g. using the exec method to execute a function
+that was just stored before.
+
+The get and put methods are symmetric.  Performing a get on an
+identifier that was returned by put, will result in an equal
+object to the one that was put.  After such operation an
+expensive copy of the original object is made.
+
+The choice to let exec only execute functions was made to avoid
+problems to decide what should be returned to the caller.  With
+a function it is clear and simple to return that what the
+function being called would return.  Any extra output (e.g.
+io.print calls) may cause havoc in the system.
+
+This leads to the final contract of this module.  The methods
+should be used correctly, by obeying their contract.  Failing
+to do so will result in errors and undefined behaviour.
+
+@mal
+module remote;
+
+command prelude() :void
+address RMTprelude
+comment "Initialise the remote module";
+
+command epilogue() :void
+address RMTepilogue
+comment "Release the resources held by the remote module";
+
+
+command get(host:str, ident:str):any
+address RMTget
+comment "Retrieves and returns the object referenced by ident from host";
+
+command put(host:str, object:any):str
+address RMTput
+comment "Stores object on host and returns its identifier on host";
+
+command exec(host:str, ident:func, ... arg1:any, arg2:any ...):any
+address RMTexec
+comment "Executes function ident on host using the given arguments and returns its result";
+
+#remote.prelude();
+@-
+
+@- Implementation
+
+@h
+
+#ifndef _REMOTE_DEF
+#define _REMOTE_DEF
+
+#ifdef WIN32
+#ifndef LIBREMOTE
+#define remote_export extern __declspec(dllimport)
+#else
+#define remote_export extern __declspec(dllexport)
+#endif
+#else
+#define remote_export extern
+#endif
+
+remote_export str RMTprelude(int *ret);
+remote_export str RMTepilogue(int *ret);
+remote_export str RMTget(int *ret, str *host, str *ident);
+remote_export str RMTput(int *ret, str *host, int *obj);
+remote_export str RMTexec(int *ret, str *host, str *ident, ...) ;
+
+#endif
+@-
+
+@c
+#include "mal_config.h"
+#include <mal.h>
+#include <mal_exception.h>
+#include <mal_remote.h>	/* for the implementation of the functions */
+
+str RMTprelude(int *ret) {
+	(void)ret;
+
+	return(MAL_SUCCEED);
+}
+
+str RMTepilogue(int *ret) {
+	(void)ret;
+
+	return(MAL_SUCCEED);
+}
+
+str RMTget(int *ret, str *host, str *ident) {
+	(void)host;
+	(void)ident;
+	*ret = 0;
+	return(MAL_SUCCEED);
+}
+
+str RMTput(int *ret, str *host, int *obj) {
+	(void)host;
+	(void)obj;
+	*ret = 0;
+	return(MAL_SUCCEED);
+}
+
+str RMTexec(int *ret, str *host, str *ident, ...) {
+	(void)host;
+	(void)ident;
+	*ret = 0;
+	return(MAL_SUCCEED);
+}
