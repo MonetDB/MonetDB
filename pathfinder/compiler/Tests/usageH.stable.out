@@ -35,8 +35,8 @@ Usage: pf [OPTION] [FILE]
          3  after parse/abstract syntax tree has been normalized
          4  after namespaces have been checked and resolved
          5  after option declarations have been extracted from the parse tree
-         6  after variable scoping has been checked
-         7  after guide tree has been build
+         6  after guide tree has been build
+         7  after variable scoping has been checked
          8  after XQuery built-in functions have been loaded
          9  after valid function usage has been checked
         10  after XML Schema predefined types have been loaded
