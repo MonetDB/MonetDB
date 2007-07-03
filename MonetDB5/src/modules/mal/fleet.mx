@@ -41,6 +41,7 @@ e.g. garbage collection.
 @item  
 MAPI compliant, the interaction between servers is based
 on the MAPI protocol.
+[[ a needless requirement ]]
 @item
 connections are silently re-established upon need. 
 Failure produces a MAL exception.
@@ -55,21 +56,26 @@ A server can join a fleet by calling the enroll() function
 for its registry. It will set-up the local connection
 administration or even collect what can be learned about the
 peers. You can detach() from the fleet at any point in time.
+[[ for fleets: join and leave ]]
 
-The registry will sent a detach function to all known 
+The registry will send a detach function to all known 
 members to effectuate the request using the alias assigned
 to a peer.
+[[ Why? ]]
 Moreover, accidental use of the alias in fleet operations
 can be locally flagged as erroneous.
+[[ I don't understand what this means ]]
 
-Each server in a fleet maintain a module named after
+Each server in a fleet maintains a module named after
 each alias obtained to hold MAL functions and global variables
 hosted/cached on behave of the other peers. 
+[[ why? this causes a lot of junk, namespace pollution, and doesn't seem necessary to me at all, we better just solve it using temporary names ]]
 It provides an anchor point for garbage collection after a server
 detached itself or when site specific functions should
 be distinguished.
+[[ garbage collection is for persistent objects up to the user ]]
 
-The key operations to communicate with the members of
+The key operation to communicate with the members of
 a fleet is the bind() operation. It takes arguments
 to uniquely identify an object managed by one of the
 peers. It returns an alias by which it can be manipulated.
@@ -78,6 +84,7 @@ underlying implementation knows how to resolve it.
 
 Once the alias is known, the object itself can be retrieved
 using get().
+[[ why first a bind then a get? ]]
 We always pass the fleet name (as a string constant) to
 ease detection of fleet related actions.
 A copy of the object is obtained. The alias encodes the
@@ -94,6 +101,7 @@ An object can be shared with the peers by announcing
 its existence to the fleet. No further action is taken
 other then enabling bind of other to succeed.
 The external name should not conflict with others.
+[[ why announce objects?  "the fleet is characterized by a central registry" ]]
 @verbatim
 fleet.enroll("tromp");
 b:= bat.new(:oid,:str);
