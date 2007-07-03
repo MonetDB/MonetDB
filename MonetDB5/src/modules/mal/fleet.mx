@@ -1,0 +1,1069 @@
+@' The contents of this file are subject to the MonetDB Public License
+@' Version 1.1 (the "License"); you may not use this file except in
+@' compliance with the License. You may obtain a copy of the License at
+@' http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+@'
+@' Software distributed under the License is distributed on an "AS IS"
+@' basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+@' License for the specific language governing rights and limitations
+@' under the License.
+@'
+@' The Original Code is the MonetDB Database System.
+@'
+@' The Initial Developer of the Original Code is CWI.
+@' Portions created by CWI are Copyright (C) 1997-2007 CWI.
+@' All Rights Reserved.
+
+@f fleet
+@a M. Kersten, F. Groffen
+@v 1.1
+@+ Multi-server interface
+This module contains a simple interface for setting up
+a fleet of Mservers. They exchange objects and 
+cooperatively optimize and execute MAL functions.
+A fleet is characterised by a central registry,
+a name and authorized access to all servers participating.
+
+[Let's see how far we get if we use a logically 2-layered
+setup]
+
+The prime underlying assumptions are :
+@enumerate
+@item
+a global store, the objects known are conceptually
+part of the database named after the fleet.
+@item  
+peers are cooperative, they interact logically with the registry.
+@item
+directive management, 
+the issuer of a request is responsible for object management,
+e.g. garbage collection.
+@item  
+MAPI compliant, the interaction between servers is based
+on the MAPI protocol.
+@item
+connections are silently re-established upon need. 
+Failure produces a MAL exception.
+@end enumerate
+
+A server can always take the role of a registry, as long
+as it won't conflict with others claiming the same.
+It creates a name space from which peers can import objects
+and export definitions for shared use
+
+A server can join a fleet by calling the enroll() function 
+for its registry. It will set-up the local connection
+administration or even collect what can be learned about the
+peers. You can detach() from the fleet at any point in time.
+
+The registry will sent a detach function to all known 
+members to effectuate the request using the alias assigned
+to a peer.
+Moreover, accidental use of the alias in fleet operations
+can be locally flagged as erroneous.
+
+Each server in a fleet maintain a module named after
+each alias obtained to hold MAL functions and global variables
+hosted/cached on behave of the other peers. 
+It provides an anchor point for garbage collection after a server
+detached itself or when site specific functions should
+be distinguished.
+
+The key operations to communicate with the members of
+a fleet is the bind() operation. It takes arguments
+to uniquely identify an object managed by one of the
+peers. It returns an alias by which it can be manipulated.
+Any MAL object can be the target of a bind. As long as its
+underlying implementation knows how to resolve it.
+
+Once the alias is known, the object itself can be retrieved
+using get().
+We always pass the fleet name (as a string constant) to
+ease detection of fleet related actions.
+A copy of the object is obtained. The alias encodes the
+peer from which it is obtained and sufficient information
+for the peer to deliver the correct object.
+
+@verbatim
+fleet.enroll("tromp");
+alias:= fleet.bind("tromp","captains");
+b:bat[:oid,:str] := fleet.get("tromp",alias);
+@end verbatim
+
+An object can be shared with the peers by announcing
+its existence to the fleet. No further action is taken
+other then enabling bind of other to succeed.
+The external name should not conflict with others.
+@verbatim
+fleet.enroll("tromp");
+b:= bat.new(:oid,:str);
+fleet.put("tromp","captains",b);
+@end verbatim
+
+Functions known at peers can be handled in a similar
+way. Below we export the function and obtain a copy.
+@verbatim
+fleet.put("tromp","sharedFcn","myModule","myFcn");
+alias:= fleet.bind("tromp","sharedFcn");
+fleet.get("tromp",alias); #alias.sharedFn is now known
+@end verbatim
+
+Note that the structure sofar requirs sites A and B
+to cooperate. They can not enforce one-another to act.
+We could say that there is an outside agency 
+enacts the contract, telling A and B what they should
+locally known.
+
+Remote execution of a MAL function is a primitive
+supported at the fleet level. Critial issue is
+were to execute the function. Of course, we can either
+implement function or data shipping.
+@verbatim
+fcn := fleet.bind("tromp","sharedFcn");
+answ:int := fleet.execute("tromp",fcn,b,2);
+@end verbatim
+@{
+@mal
+module fleet;
+
+command registry(name:str,port:nr)
+address FLEETregistry
+comment "Take upon you to act as a localhost registry and listen
+to requests to join/detach";
+
+command enroll(nme:str, host:str, port:nr): str
+address FLEETenroll
+comment "Join a fleet of Mservers by calling its registry.
+It returns an alias by which the server will be known 
+within the fleet.";
+
+command detach(alias:str)
+comment "Leave the fleet of servers for which you have an alias";
+
+command members(name:str):bat[:oid,:str]
+comment "Produce the alias member list of a fleet";
+
+pattern put(alias:int, nme:str, val:any_1):void
+address FLEETput
+comment "Send a value to a remote site";
+
+pattern put(nme:str, val:any_1):str
+address FLEETputLocal
+comment "Prepare sending a value to a remote site";
+
+pattern rpc(key:int,qry:str...):any
+address FLEETmapi_rpc_single_row
+comment "Sent a simple query for execution and fetch result";
+
+pattern rpc(key:int,qry:str):bat[:any_1,:any_2]
+address FLEETmapi_rpc_bat;
+
+command rpc(key:int,qry:str):void
+address FLEETquery
+comment "Sent a simple query for execution";
+
+pattern bind(key:int,rschema:str,rtable:str,rcolumn:str,i:int):bat[:any_1,:any_2]
+address FLEETbindBAT
+comment "Bind a remote variable to a local one";
+
+pattern bind(key:int,rschema:str,rtable:str,i:int):bat[:any_1,:any_2]
+address FLEETbindBAT
+comment "Bind a remote variable to a local one";
+
+pattern bind(key:int,remoteName:str):bat[:any_1,:any_2]
+address FLEETbindBAT
+comment "Bind a remote variable to a local one";
+
+@-
+@{
+@h
+#ifndef FLEET_H
+#define FLEET_H
+/* #define DEBUG_FLEET */
+
+#include "mal_client.h"
+#include "mal_session.h"
+#include "mal_exception.h"
+#include "mal_interpreter.h"
+#include "mal_authorize.h"
+#include "mal_sabaoth.h"
+#include <Mapi.h>
+
+#ifdef WIN32
+#ifndef LIBMFLEET
+#define m_export extern __declspec(dllimport)
+#else
+#define m_export extern __declspec(dllexport)
+#endif
+#else
+#define m_export extern
+#endif
+
+
+#define NEW_ARRAY( type, size )	(type*)GDKmalloc((size)*sizeof(type))
+#define STREQ(a, b) 		(strcmp(a, b)==0)
+
+#define FLEETPORT		50000
+#define FLEETSSLPORT		40000
+#define FLEETMAXUSERS 		5
+
+m_export str FLEETmapi_rpc_single_row(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+m_export str FLEETmapi_rpc_single_bat(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+m_export str FLEETput(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+m_export str FLEETputLocal(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+m_export str FLEETbindBAT(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+m_export str FLEETclient(int *res, stream **In, stream **Out);
+m_export str FLEETmapi_rpc_single_row(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+m_export str FLEETmapi_rpc_bat(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+
+#endif /* FLEET_H */
+@c
+#include "mal_config.h"
+#include "mserver.h"
+#include <stream_socket.h>
+
+#include  <sys/types.h>
+#ifdef HAVE_SYS_UN_H
+#include <sys/un.h>
+#endif
+#ifdef HAVE_NETDB_H
+# include <netdb.h>
+# include <netinet/in.h>
+#endif
+
+#define SOCKPTR struct sockaddr *
+#if HAVE_SOCKLEN_T
+#define SOCKLEN socklen_t
+#else
+#define SOCKLEN int
+#endif
+
+@c
+#define MAXSESSIONS 32
+struct{
+	int key;
+	str dbalias;	/* logical name of the session */
+	Client c;
+	Mapi mid;		/* communication channel */
+	MapiHdl hdl;	/* result set handle */
+} FLEETsessions[MAXSESSIONS];
+
+static int sessionkey=0;
+
+/* #define MAPI_TEST*/
+
+str
+FLEETconnectAll(int *key, str *host, int *port, str *username, str *password, str *lang, int ssl){
+	Mapi mid;
+	int i;
+
+	mal_set_lock(mal_contextLock,"FLEETconnect");
+	for(i=1; i< MAXSESSIONS; i++)
+	if( FLEETsessions[i].c ==0 ) break;
+
+	if( i==MAXSESSIONS){
+		mal_unset_lock(mal_contextLock,"FLEETconnect");
+		throw(IO, "mserver.connect", "Too many sessions");
+	}
+	FLEETsessions[i].c= MCgetClient();
+	FLEETsessions[i].key= ++sessionkey;
+	mal_unset_lock(mal_contextLock,"FLEETconnect");
+
+	if (ssl)
+		mid = mapi_connect_ssl(*host, *port, *username, *password, *lang, NULL);
+	else
+		mid = mapi_connect(*host, *port, *username, *password, *lang, NULL);
+
+	if (mapi_error(mid)) {
+		str err = mapi_error_str(mid);
+		if (err == NULL)
+			err = "(no reason given)";
+		if (err[0] == '!')
+			err = err + 1;
+		FLEETsessions[i].c = NULL;
+		throw(IO, "mserver.connect", "Could not connect: %s", err);
+	}
+
+#ifdef MAPI_TEST
+	stream_printf(GDKout,"Succeeded to establish session\n");
+#endif
+	FLEETsessions[i].mid= mid;
+	*key = FLEETsessions[i].key;
+	return MAL_SUCCEED;
+}
+
+str
+FLEETdisconnectALL(int *key){
+	int i;
+
+	mal_set_lock(mal_contextLock,"FLEETdisconnect");
+
+	for(i=1; i< MAXSESSIONS; i++)
+		if( FLEETsessions[i].c != 0 ) {
+			FLEETsessions[i].c = 0;
+			FLEETsessions[i].dbalias = NULL;
+			*key = FLEETsessions[i].key;
+			mapi_disconnect(FLEETsessions[i].mid);
+		}
+
+	mal_unset_lock(mal_contextLock,"FLEETdisconnect");
+
+#ifdef MAPI_TEST
+	stream_printf(GDKout,"Succeeded to close all session\n");
+#endif
+	return MAL_SUCCEED;
+}
+
+str
+FLEETdisconnectWithAlias(int *key, str *dbalias){
+	int i;
+
+	mal_set_lock(mal_contextLock,"FLEETdisconnectWithAlias");
+
+	for(i=0; i<MAXSESSIONS; i++)
+		 if( FLEETsessions[i].dbalias &&
+			 strcmp(FLEETsessions[i].dbalias, *dbalias)==0){
+				FLEETsessions[i].c = 0;
+				FLEETsessions[i].dbalias = NULL;
+				*key = FLEETsessions[i].key;
+				mapi_disconnect(FLEETsessions[i].mid);
+				break;
+		}
+
+	if( i==MAXSESSIONS){
+		mal_unset_lock(mal_contextLock,"FLEETdisconnectWithAlias");
+		throw(IO, "mserver.disconnect", "Impossible to close session for db_alias: '%s'", *dbalias);
+	}
+
+	mal_unset_lock(mal_contextLock,"FLEETdisconnectWithAlias");
+
+#ifdef MAPI_TEST
+	stream_printf(GDKout,"Succeeded to close all session\n");
+#endif
+
+	return MAL_SUCCEED;
+}
+
+str
+FLEETconnect(int *key, str *host, int *port, str *username, str *password, str *lang){
+	return FLEETconnectAll(key,host,port,username,password,lang, FALSE);
+}
+str
+FLEETconnectssl(int *key, str *host, int *port, str *username, str *password, str *lang){
+	return FLEETconnectAll(key,host,port,username,password,lang, TRUE);
+}
+
+
+str
+FLEETreconnectAlias(int *key, str *host, int *port, str  * dbalias, str *username, str *password, str *lang){
+	int i;
+	str msg=MAL_SUCCEED;
+
+	for(i=0; i<MAXSESSIONS; i++)
+	 if( FLEETsessions[i].key && 
+		 FLEETsessions[i].dbalias &&
+		 strcmp(FLEETsessions[i].dbalias, *dbalias)==0){
+			*key = FLEETsessions[i].key;
+			return msg;
+	}
+
+	msg= FLEETconnectAll(key, host, port, username, password, lang, FALSE);
+	if( msg == MAL_SUCCEED)
+		msg = FLEETsetAlias(&i, key, dbalias);
+	return msg;
+}
+str
+FLEETreconnectWithoutAlias(int *key,str *host, int *port, str *username, str *password, str *lang){
+	int i;
+	str msg=MAL_SUCCEED, nme= "anonymous";
+
+	for(i=0; i<MAXSESSIONS; i++)
+	 if( FLEETsessions[i].key ){
+			*key = FLEETsessions[i].key;
+			return msg;
+	}
+
+	msg= FLEETconnectAll(key, host, port, username, password, lang, FALSE);
+	if( msg == MAL_SUCCEED)
+		msg = FLEETsetAlias(&i, key, &nme);
+	return msg;
+}
+@-
+@= accessTest
+ for(i=0; i< MAXSESSIONS; i++)
+ if( FLEETsessions[i].c &&
+     FLEETsessions[i].key== @1 ) break;
+ if( i== MAXSESSIONS)
+	throw(MAL, "mserver.@2","Access violation,"
+		" could not find matching session descriptor");
+  mid= FLEETsessions[i].mid;
+  (void) mid; /* silence compilers */
+@c
+str
+FLEETsetAlias(int *ret, int *key, str *dbalias){
+	int i;
+	Mapi mid;
+	@:accessTest(*key,setAlias)@
+    FLEETsessions[i].dbalias= GDKstrdup(*dbalias);
+	*ret = 0;
+	return MAL_SUCCEED;
+}
+str
+FLEETlookup(int *ret, str *dbalias)
+{
+	int i;
+	for(i=0; i< MAXSESSIONS; i++)
+	if( FLEETsessions[i].dbalias &&
+		strcmp(FLEETsessions[i].dbalias, *dbalias)==0){
+		*ret= FLEETsessions[i].key; 
+		return MAL_SUCCEED;
+	}
+	throw(MAL, "mserver.lookup", "Could not find database connection");
+}
+str
+FLEETtrace(int *ret, int *key, int *flag){
+	(void )ret;
+	mapi_trace(FLEETsessions[*key].mid,*flag);
+	return MAL_SUCCEED;
+}
+str
+FLEETdisconnect(int *ret, int *key){
+	int i;
+	Mapi mid;
+	@:accessTest(*key,disconnect)@
+	mapi_disconnect(mid);
+	if( FLEETsessions[i].dbalias)
+		GDKfree(FLEETsessions[i].dbalias);
+	FLEETsessions[i].dbalias= 0;
+	*ret = 0;
+	return MAL_SUCCEED;
+}
+str
+FLEETdestroy(int *ret, int *key){
+	int i;
+	Mapi mid;
+	@:accessTest(*key,destroy)@
+	mapi_destroy(mid);
+	FLEETsessions[i].c= 0;
+	if( FLEETsessions[i].dbalias)
+		GDKfree(FLEETsessions[i].dbalias);
+	FLEETsessions[i].dbalias= 0;
+	*ret = 0;
+	return MAL_SUCCEED;
+}
+
+str
+FLEETreconnect(int *ret, int *key){
+	int i;
+	Mapi mid;
+	@:accessTest(*key,destroy)@
+	mapi_reconnect(mid);
+	*ret = 0;
+	return MAL_SUCCEED;
+}
+str
+FLEETping(int *ret, int *key){
+	int i;
+	Mapi mid;
+	@:accessTest(*key,destroy)@
+	*ret= mapi_ping(mid);
+	return MAL_SUCCEED;
+}
+str 
+FLEETquery(int *ret, int *key, str *qry){
+	Mapi mid;
+	MapiHdl hdl=0;
+	int i;
+	@:accessTest(*key,query)@
+	if( FLEETsessions[i].hdl)
+		mapi_close_handle(FLEETsessions[i].hdl);
+	FLEETsessions[i].hdl = mapi_query(mid, *qry);
+	@:catchErrors(mserver.query)@
+	*ret = *key;
+	return MAL_SUCCEED;
+}
+str 
+FLEETquery_handle(int *ret, int *key, str *qry){
+	Mapi mid;
+	MapiHdl hdl=0;
+	int i;
+	@:accessTest(*key,query_handle)@
+	mapi_query_handle(FLEETsessions[i].hdl, *qry);
+	@:catchErrors(mserver.query_handle)@
+	*ret = *key;
+	return MAL_SUCCEED;
+}
+str
+FLEETquery_array(MalBlkPtr mb, MalStkPtr stk, InstrPtr pc){
+	(void) mb; (void) stk; (void) pc;
+	throw(MAL, "mserver.query_array","not yet implemented");
+}
+str 
+FLEETprepare(int *ret, int *key, str *qry){
+	Mapi mid;
+	int i;
+	@:accessTest(*key,prepare)@
+	if( FLEETsessions[i].hdl)
+		mapi_close_handle(FLEETsessions[i].hdl);
+	FLEETsessions[i].hdl= mapi_prepare(mid, *qry);
+	if( mapi_error(mid) ) 
+		throw(MAL, "mserver.prepare",
+			mapi_result_error(FLEETsessions[i].hdl));
+	*ret = *key;
+	return MAL_SUCCEED;
+}
+str 
+FLEETexecute(int *ret, int *key){
+	Mapi mid;
+	int i;
+	@:accessTest(*key,execute)@
+	mapi_execute(FLEETsessions[i].hdl);
+	if( mapi_error(mid) ) 
+		throw(MAL, "mserver.execute",
+			mapi_result_error(FLEETsessions[i].hdl));
+	*ret = *key;
+	return MAL_SUCCEED;
+}
+str 
+FLEETfinish(int *ret, int *key){
+	Mapi mid;
+	int i;
+	@:accessTest(*key,finish)@
+	mapi_finish(FLEETsessions[i].hdl);
+	if( mapi_error(mid) ) 
+		throw(MAL, "mserver.finish",
+			mapi_result_error(FLEETsessions[i].hdl));
+	*ret = *key;
+	return MAL_SUCCEED;
+}
+str 
+FLEETget_row_count(int *ret, int *key){
+	Mapi mid;
+	int i;
+	@:accessTest(*key,get_row_count)@
+	*ret= mapi_get_row_count(FLEETsessions[i].hdl);
+	if( mapi_error(mid) ) 
+		throw(MAL, "mserver.get_row_count",
+			mapi_result_error(FLEETsessions[i].hdl));
+	return MAL_SUCCEED;
+}
+str 
+FLEETget_field_count(int *ret, int *key){
+	Mapi mid;
+	int i;
+	@:accessTest(*key,get_field_count)@
+	*ret= mapi_get_field_count(FLEETsessions[i].hdl);
+	if( mapi_error(mid) ) 
+		throw(MAL, "mserver.get_field_count",
+			mapi_result_error(FLEETsessions[i].hdl));
+	return MAL_SUCCEED;
+}
+str 
+FLEETrows_affected(int *ret, int *key){
+	Mapi mid;
+	int i;
+	@:accessTest(*key,rows_affected)@
+	*ret= mapi_rows_affected(FLEETsessions[i].hdl);
+	return MAL_SUCCEED;
+}
+str 
+FLEETfetch_row(int *ret, int *key){
+	Mapi mid;
+	int i;
+	@:accessTest(*key,fetch_row)@
+	*ret= mapi_fetch_row(FLEETsessions[i].hdl);
+	return MAL_SUCCEED;
+}
+str 
+FLEETfetch_all_rows(int *ret, int *key){
+	Mapi mid;
+	int i;
+	@:accessTest(*key,fetch_all_rows)@
+	*ret= mapi_fetch_all_rows(FLEETsessions[i].hdl);
+	return MAL_SUCCEED;
+}
+str 
+FLEETfetch_field_str(str *ret, int *key, int *fnr){
+	Mapi mid;
+	int i;
+	str fld;
+	@:accessTest(*key,fetch_field)@
+	fld= mapi_fetch_field(FLEETsessions[i].hdl,*fnr);
+	*ret= GDKstrdup(fld? fld: str_nil);
+	if( mapi_error(mid) ) 
+		throw(MAL, "mserver.fetch_field_str",
+			mapi_result_error(FLEETsessions[i].hdl));
+	return MAL_SUCCEED;
+}
+str 
+FLEETfetch_field_int(int *ret, int *key, int *fnr){
+	Mapi mid;
+	int i;
+	str fld;
+	@:accessTest(*key,fetch_field)@
+	fld= mapi_fetch_field(FLEETsessions[i].hdl,*fnr);
+	*ret= fld? (int) atol(fld): int_nil;
+	if( mapi_error(mid) ) 
+		throw(MAL, "mserver.fetch_field_int",
+			mapi_result_error(FLEETsessions[i].hdl));
+	return MAL_SUCCEED;
+}
+str 
+FLEETfetch_field_lng(lng *ret, int *key, int *fnr){
+	Mapi mid;
+	int i;
+	str fld;
+	@:accessTest(*key,fetch_field)@
+	fld= mapi_fetch_field(FLEETsessions[i].hdl,*fnr);
+	*ret= fld? atol(fld): lng_nil;
+	if( mapi_error(mid) ) 
+		throw(MAL, "mserver.fetch_field_lng",
+			mapi_result_error(FLEETsessions[i].hdl));
+	return MAL_SUCCEED;
+}
+str 
+FLEETfetch_field_sht(sht *ret, int *key, int *fnr){
+	Mapi mid;
+	int i;
+	str fld;
+	@:accessTest(*key,fetch_field)@
+	fld= mapi_fetch_field(FLEETsessions[i].hdl,*fnr);
+	*ret= fld? (sht) atol(fld): sht_nil;
+	if( mapi_error(mid) ) 
+		throw(MAL, "mserver.fetch_field",
+			mapi_result_error(FLEETsessions[i].hdl));
+	return MAL_SUCCEED;
+}
+str 
+FLEETfetch_field_void(oid *ret, int *key, int *fnr){
+	Mapi mid;
+	int i;
+	@:accessTest(*key,fetch_field)@
+	(void) fnr;
+	*ret = oid_nil;
+	throw(MAL, "mserver.fetch_field_void","defaults to nil");
+}
+str 
+FLEETfetch_field_oid(oid *ret, int *key, int *fnr){
+	Mapi mid;
+	int i;
+	str fld;
+	@:accessTest(*key,fetch_field)@
+	fld= mapi_fetch_field(FLEETsessions[i].hdl,*fnr);
+	if( mapi_error(mid) ) 
+		throw(MAL, "mserver.fetch_field_oid",
+			mapi_result_error(FLEETsessions[i].hdl));
+	if(fld==0 || strcmp(fld,"nil")==0)
+		*(oid*) ret= void_nil;
+	else *(oid*) ret = (oid) atol(fld);
+	return MAL_SUCCEED;
+}
+str 
+FLEETfetch_field_chr(chr *ret, int *key, int *fnr){
+	Mapi mid;
+	int i;
+	str fld;
+	@:accessTest(*key,fetch_field)@
+	fld= mapi_fetch_field(FLEETsessions[i].hdl,*fnr);
+	if( mapi_error(mid) ) 
+		throw(MAL, "mserver.fetch_field_chr",
+			mapi_result_error(FLEETsessions[i].hdl));
+	if(fld==0 || strcmp(fld,"nil")==0)
+		*(chr*) ret= chr_nil;
+	else *(chr*) ret = *fld;
+	return MAL_SUCCEED;
+}
+str 
+FLEETfetch_line(str *ret, int *key){
+	Mapi mid;
+	int i;
+	str fld;
+	@:accessTest(*key,fetch_line)@
+	fld= mapi_fetch_line(FLEETsessions[i].hdl);
+	if( mapi_error(mid) ) 
+		throw(MAL, "mserver.fetch_line",
+			mapi_result_error(FLEETsessions[i].hdl));
+	*ret= GDKstrdup(fld? fld:str_nil);
+	return MAL_SUCCEED;
+}
+str 
+FLEETnext_result(int *ret, int *key){
+	Mapi mid;
+	int i;
+	@:accessTest(*key,next_result)@
+	mapi_next_result(FLEETsessions[i].hdl);
+	if( mapi_error(mid) ) 
+		throw(MAL, "mserver.next_result",
+			mapi_result_error(FLEETsessions[i].hdl));
+	*ret= *key;
+	return MAL_SUCCEED;
+}
+str 
+FLEETfetch_reset(int *ret, int *key){
+	Mapi mid;
+	int i;
+	@:accessTest(*key,fetch_reset)@
+	mapi_fetch_reset(FLEETsessions[i].hdl);
+	if( mapi_error(mid) ) 
+		throw(MAL, "mserver.fetch_reset",
+			mapi_result_error(FLEETsessions[i].hdl));
+	*ret= *key;
+	return MAL_SUCCEED;
+}
+str
+FLEETfetch_field_bat(int *bid, int *key){
+	int i,j,cnt;
+	Mapi mid;
+	char *fld;
+	int o=0; 
+	BAT *b;
+
+	@:accessTest(*key,rpc)@
+	b= BATnew(TYPE_oid,TYPE_str,256);
+	cnt= mapi_get_field_count(FLEETsessions[i].hdl);
+	for(j=0; j< cnt; j++){
+		fld= mapi_fetch_field(FLEETsessions[i].hdl,j);
+		if( mapi_error(mid) ) {
+			*bid = b->batCacheid;
+			BBPkeepref(*bid);
+			throw(MAL, "mserver.fetch_field_bat",
+				mapi_result_error(FLEETsessions[i].hdl));
+		}
+		BUNins(b,&o,fld, FALSE);
+		o++;
+	}
+	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
+	*bid = b->batCacheid;
+	BBPkeepref(*bid);
+	return MAL_SUCCEED;
+}
+str
+FLEETerror(int *ret, int *key){
+	Mapi mid;
+	int i;
+	@:accessTest(*key,error)@
+	*ret= mapi_error(mid);
+	return MAL_SUCCEED;
+}
+str
+FLEETgetError(str *ret, int *key){
+	Mapi mid;
+	int i;
+	@:accessTest(*key,getError)@
+	*ret= GDKstrdup(mapi_error_str(mid));
+	return MAL_SUCCEED;
+}
+
+str 
+FLEETexplain(str *ret, int *key){
+	Mapi mid;
+	int i;
+
+	@:accessTest(*key,explain)@
+	*ret= GDKstrdup(mapi_error_str(mid));
+	return MAL_SUCCEED;
+}
+@-
+The remainder should contain the wrapping of 
+relevant FLEET functions. Furthermore, we 
+should analyse the return value and update 
+the stack trace.
+
+Two routines should be 
+mserver.rpc(key,"query") 
+@-
+The generic scheme for handling a remote MAL
+procedure call with a single row answer.
+@c
+void FLEETfieldAnalysis(str fld, int tpe, ValPtr v){
+	v->vtype= tpe;
+	switch(tpe){
+	case TYPE_void:
+		v->val.oval = void_nil;
+		break;
+	case TYPE_oid:
+		if(fld==0 || strcmp(fld,"nil")==0)
+			v->val.oval= void_nil;
+		else v->val.oval = (oid) atol(fld);
+		break;
+	case TYPE_bit:
+		if(fld== 0 || strcmp(fld,"nil")==0)
+			v->val.cval[0]= bit_nil;
+		else
+		if(strcmp(fld,"true")==0)
+			v->val.cval[0]= TRUE;
+		if(strcmp(fld,"false")==0)
+			v->val.cval[0]= FALSE;
+		v->val.cval[1]= 0;
+		v->val.cval[2]= 0;
+		v->val.cval[3]= 0;
+		break;
+	case TYPE_chr:
+		if(fld==0 || strcmp(fld,"nil")==0)
+			v->val.cval[0]= chr_nil;
+		else
+			v->val.cval[0]= *fld;
+		v->val.cval[1]= 0;
+		v->val.cval[2]= 0;
+		v->val.cval[3]= 0;
+		break;
+	case TYPE_sht:
+		if(fld==0 || strcmp(fld,"nil")==0)
+			v->val.shval = sht_nil;
+		else v->val.shval= (sht)  atol(fld);
+		break;
+	case TYPE_int:
+		if(fld==0 || strcmp(fld,"nil")==0)
+			v->val.ival = int_nil;
+		else v->val.ival= (int)  atol(fld);
+		break;
+	case TYPE_lng:
+		if(fld==0 || strcmp(fld,"nil")==0)
+			v->val.lval= lng_nil;
+		else v->val.lval= (lng)  atol(fld);
+		break;
+	case TYPE_flt:
+		if(fld==0 || strcmp(fld,"nil")==0)
+			v->val.fval= flt_nil;
+		else v->val.fval= (flt)  atof(fld);
+		break;
+	case TYPE_dbl:
+		if(fld==0 || strcmp(fld,"nil")==0)
+			v->val.dval= dbl_nil;
+		else v->val.dval= (dbl)  atof(fld);
+		break;
+	case TYPE_str:
+		if(fld==0 || strcmp(fld,"nil")==0){
+			v->val.sval= GDKstrdup(str_nil);
+			v->len= strlen(v->val.sval);
+		} else {
+			v->val.sval= GDKstrdup(fld);
+			v->len= strlen(fld);
+		}
+		break;
+	}
+}
+str
+FLEETmapi_rpc_single_row(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	int key,i,j;
+	Mapi mid;
+	MapiHdl hdl;
+	char *s,*fld, *qry=0;
+
+	key= * (int*) getArgReference(stk,pci,pci->retc);
+	@:accessTest(key,rpc)@
+#ifdef MAPI_TEST
+	stream_printf(GDKout,"about to sent: %s\n",qry);
+#endif
+	/* glue all strings together */
+	for(i= pci->retc+1; i<pci->argc; i++){
+		fld= * (str*) getArgReference(stk,pci,i);
+		if( qry == 0)
+			qry= GDKstrdup(fld);
+		else {	
+			s= (char*) GDKmalloc(strlen(qry)+strlen(fld)+1);
+			strcpy(s,qry);
+			strcat(s,fld);
+			GDKfree(qry);
+			qry= s;
+		}
+	}
+	hdl= mapi_query(mid, qry);
+	@:catchErrors(mserver.rpc)@
+	GDKfree(qry);
+
+	i= 0;
+	while( mapi_fetch_row(hdl)){
+		for(j=0; j<pci->retc; j++){
+			fld= mapi_fetch_field(hdl,j);
+#ifdef MAPI_TEST
+			stream_printf(GDKout,"Got: %s\n",fld);
+#endif
+			switch(getVarType(mb,getArg(pci,j)) ){
+			case TYPE_void:
+			case TYPE_oid:
+			case TYPE_bit:
+			case TYPE_chr:
+			case TYPE_sht:
+			case TYPE_int:
+			case TYPE_lng:
+			case TYPE_flt:
+			case TYPE_dbl:
+			case TYPE_str:
+				FLEETfieldAnalysis(fld, 
+					getVarType(mb,getArg(pci,j)),
+					&stk->stk[getArg(pci,j)]);
+				break;
+			default:
+				throw(MAL, "mapi.rpc",
+						"Missing type implementation ");
+			/* all the other basic types come here */
+			}
+		}
+		i++;
+	}
+	if( i>1)
+		throw(MAL, "mapi.rpc","Too many answers");
+	return MAL_SUCCEED;
+}
+@-
+Transport of the BATs is only slightly more complicated.
+The generic implementation based on a pattern is the next
+step. 
+@c
+str
+FLEETmapi_rpc_bat(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+	int *ret;
+	int *key;
+	str *qry,err= MAL_SUCCEED;
+	int i;
+	Mapi mid;
+	MapiHdl hdl;
+	char *fld1, *fld2;
+	BAT *b;
+	ValRecord hval,tval;
+	int ht,tt;
+
+	ret= (int*) getArgReference(stk,pci,0);
+	key= (int*) getArgReference(stk,pci,pci->retc);
+	qry= (str*) getArgReference(stk,pci,pci->retc+1);
+	@:accessTest(*key,rpc)@
+	ht= getHeadType(getVarType(mb,getArg(pci,0)));
+	tt= getTailType(getVarType(mb,getArg(pci,0)));
+
+	hdl= mapi_query(mid, *qry);
+	@:catchErrors(mserver.rpc)@
+	
+	b= BATnew(ht,tt,256);
+	i= 0;
+	if ( mapi_fetch_row(hdl)){
+		int oht = ht, ott = tt;
+
+		fld1= mapi_fetch_field(hdl,0);
+		fld2= mapi_fetch_field(hdl,1);
+		if (fld1 && ht == TYPE_void) 
+			ht = TYPE_oid;
+		if (fld2 && tt == TYPE_void) 
+			tt = TYPE_oid;
+		FLEETfieldAnalysis(fld1, ht, &hval);
+		FLEETfieldAnalysis(fld2, tt, &tval);
+		if (oht != ht)
+			BATseqbase(b, hval.val.oval);
+		if (ott != tt)
+			BATseqbase(BATmirror(b), tval.val.oval);
+		BUNins(b,VALget(&hval),VALget(&tval), FALSE);
+	}
+	while( mapi_fetch_row(hdl)){
+		fld1= mapi_fetch_field(hdl,0);
+		fld2= mapi_fetch_field(hdl,1);
+		FLEETfieldAnalysis(fld1, ht, &hval);
+		FLEETfieldAnalysis(fld2, tt, &tval);
+		BUNins(b,VALget(&hval),VALget(&tval), FALSE);
+	}
+	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
+	*ret = b->batCacheid;
+	BBPkeepref(*ret);
+
+	return err;
+}
+str
+FLEETput(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+	int *key;
+	str *nme;
+	ptr val;
+	int i,tpe;
+	Mapi mid;
+	MapiHdl hdl=0;
+	char *w=0, buf[BUFSIZ];
+
+	key= (int*) getArgReference(stk,pci,pci->retc);
+	nme= (str*) getArgReference(stk,pci,pci->retc+1);
+	val= (ptr) getArgReference(stk,pci,pci->retc+2);
+	@:accessTest(*key,put)@
+	switch( (tpe=getArgType(mb,pci, pci->retc+2)) ){
+	case TYPE_bat:
+	case TYPE_ptr:
+		throw(MAL, "mserver.glue","Unsupported type");
+        case TYPE_str:
+                snprintf(buf,BUFSIZ,"%s:=%s;",*nme,*(char**)val);
+                break;
+	default:
+		ATOMformat(tpe,val,&w);
+		snprintf(buf,BUFSIZ,"%s:=%s;",*nme,w);
+		GDKfree(w);
+		break;
+	}
+	if( FLEETsessions[i].hdl)
+		mapi_close_handle(FLEETsessions[i].hdl);
+	FLEETsessions[i].hdl= mapi_query(mid, buf);
+	@:catchErrors(mserver.put)@
+	return MAL_SUCCEED;
+}
+str
+FLEETputLocal(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+	str *ret, *nme;
+	ptr val;
+	int tpe;
+	char *w=0, buf[BUFSIZ];
+
+	ret= (str*) getArgReference(stk,pci,0);
+	nme= (str*) getArgReference(stk,pci,pci->retc);
+	val= (ptr) getArgReference(stk,pci,pci->retc+1);
+	switch( (tpe=getArgType(mb,pci, pci->retc+1)) ){
+	case TYPE_bat:
+	case TYPE_ptr:
+		throw(MAL, "mserver.glue","Unsupported type");
+        case TYPE_str:
+                snprintf(buf,BUFSIZ,"%s:=%s;",*nme,*(char**)val);
+                break;
+	default:
+		ATOMformat(tpe,val,&w);
+		snprintf(buf,BUFSIZ,"%s:=%s;",*nme,w);
+		GDKfree(w);
+		break;
+	}
+	*ret= GDKstrdup(buf);
+	return MAL_SUCCEED;
+}
+str 
+FLEETbindBAT(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+	int *key;
+	str *nme,*tab,*col;
+	int i;
+	Mapi mid;
+	MapiHdl hdl=0;
+	char buf[BUFSIZ];
+	key= (int*) getArgReference(stk,pci,pci->retc);
+	nme= (str*) getArgReference(stk,pci,pci->retc+1);
+	@:accessTest(*key,bind)@
+	if( pci->argc == 6) {
+		tab= (str*) getArgReference(stk,pci,pci->retc+2);
+		col= (str*) getArgReference(stk,pci,pci->retc+3);
+		i= *(int*) getArgReference(stk,pci,pci->retc+4);
+		snprintf(buf,BUFSIZ,"%s:bat[:void,:%s]:=sql.bind(\"%s\",\"%s\",\"%s\",0,%d);",
+			getVarName(mb,getDestVar(pci)),
+			getTypeName(getTailType(getVarType(mb,getDestVar(pci)))),
+			*nme, *tab,*col,i);
+	} else if( pci->argc == 5) {
+		tab= (str*) getArgReference(stk,pci,pci->retc+2);
+		i= *(int*) getArgReference(stk,pci,pci->retc+3);
+		snprintf(buf,BUFSIZ,"%s:bat[:void,:oid]:=sql.bind(\"%s\",\"%s\",0,%d);",
+			getVarName(mb,getDestVar(pci)),*nme, *tab,i);
+	} else {
+		str hn,tn;
+		int target= getArgType(mb,pci,0);
+		hn= getTypeName(getHeadType(target));
+		tn= getTypeName(getTailType(target));
+		snprintf(buf,BUFSIZ,"%s:bat[%s,%s]:=bbp.bind(\"%s\");",
+			getVarName(mb,getDestVar(pci)), hn,tn, *nme);
+		GDKfree(hn);
+		GDKfree(tn);
+	}
+	if( FLEETsessions[i].hdl)
+		mapi_close_handle(FLEETsessions[i].hdl);
+	FLEETsessions[i].hdl= mapi_query(mid, buf);
+	@:catchErrors(mserver.bind)@
+	return MAL_SUCCEED;
+}
+@}
