@@ -193,7 +193,6 @@ PFguide_tree()
         PFqname (PFns_lib, "guide"));
 
     if (!options) {
-        PFlog ("pf:guide not set.\n");
         return NULL;
     } else {   
         /* it will be used the first item only to create the guide */
