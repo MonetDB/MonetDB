@@ -32,15 +32,10 @@
 
 #include "pathfinder.h"
 #include <assert.h>
-#include <stdio.h>
 #include <string.h>
 
-#include "properties.h"
 #include "load_stats.h"
-#include "logical.h"
 #include "alg_dag.h"
-#include "bitset.h"
-#include "pfstrings.h"
 #include "subtyping.h"
 
 #define SEEN(n) ((n)->bit_dag)
@@ -53,77 +48,73 @@ PFns_t PFns_guide =
       .uri    = "" };  
 
 /* extract the filename from the path */
-char *get_filename(char * path_and_filename);
+static char *get_filename(char * path_and_filename);
 
 /* add a PFguide_mapping_t to a @guide_mapping_list  if the @a column 
  * do not exist, otherwise it will be added only @a guide in the 
  * corresponding PFguide_mapping_t in @guide_mapping_list */
-PFarray_t *add_guide(PFarray_t *guide_mapping_list, 
+static PFarray_t *add_guide(PFarray_t *guide_mapping_list, 
         PFguide_tree_t  *guide, char *column);
 
 /* add the @a guide_mapping to the @a guide_mapping_list, if the 
  * column already exist the guide nodes will be added to the right 
  * guide mapping in @a guide_mapping_list */
-PFarray_t *add_guide_mapping(PFarray_t *guide_mapping_list,
+static PFarray_t *add_guide_mapping(PFarray_t *guide_mapping_list,
         PFguide_mapping_t *guide_mapping);
-
-/* remove the PFguide_mapping_t from the @a guide_mapping_list where 
- * the column is equal */
-PFarray_t *remove_column(PFarray_t *guide_mapping_list, char* column);
 
 /* get the corresponding PFguide_mapping_t element from @a guide_mapping_list
  * where the columns are equal */
-PFguide_mapping_t *get_guide_mapping(PFarray_t *guide_mapping_list,
+static PFguide_mapping_t *get_guide_mapping(PFarray_t *guide_mapping_list,
         char* column);
 
 /* initialize the guide property in @a n */
-void copy_doc_tbl(PFla_op_t *n, PFguide_tree_t *guide);
+static void copy_doc_tbl(PFla_op_t *n, PFguide_tree_t *guide);
 
 /* Intersect between left and right child guide nodes */
-void union_guides(PFla_op_t  *n);
+static void union_guides(PFla_op_t  *n);
 
 /* Differnce between left and right child guide nodes */
-void difference(PFla_op_t  *n);
+static void difference(PFla_op_t  *n);
 
 /* Create a PFty_t from a guide element */
-PFty_t  create_PFty_t(PFguide_tree_t *n);
+static PFty_t  create_PFty_t(PFguide_tree_t *n);
 
 /* Returns all ancestor of @a n */
-PFarray_t *getAncestorFromGuide(PFguide_tree_t *n, PFty_t type);
+static PFarray_t *getAncestorFromGuide(PFguide_tree_t *n, PFty_t type);
 
 /* Get recursive all descendant elements */
-PFarray_t *getDescendantFromGuideRec(PFguide_tree_t *n, PFty_t type,
+static PFarray_t *getDescendantFromGuideRec(PFguide_tree_t *n, PFty_t type,
     PFarray_t *descendant);
 
 /* Returns all descendant of @a n if they are a suptype of @a type */
-PFarray_t *getDescendantFromGuide(PFguide_tree_t *n, PFty_t type);
+static PFarray_t *getDescendantFromGuide(PFguide_tree_t *n, PFty_t type);
 
 /* Remove duplicate guides from array */
-void remove_duplicate(PFla_op_t *n);
+static void remove_duplicate(PFla_op_t *n);
 
 /* Copy the guides from the right child to the parent */
-void copyR(PFla_op_t *n); 
+static void copyR(PFla_op_t *n); 
 
 /* Copy the guide_mapping_list from the left child to the parent */
-void copyL(PFla_op_t *n);
+static void copyL(PFla_op_t *n);
 
 /* Copy guides for the scjoin operator*/
-void copy_scjoin(PFla_op_t *n);
+static void copy_scjoin(PFla_op_t *n);
 
 /* Copy guides for the project operator */
-void copy_project(PFla_op_t *n);
+static void copy_project(PFla_op_t *n);
 
 /* Infer domain properties; worker for prop_infer(). */
-void infer_guide(PFla_op_t *n, PFguide_tree_t *guide);
+static void infer_guide(PFla_op_t *n, PFguide_tree_t *guide);
 
 /* worker for PFprop_infer_guide */
-void prop_infer(PFla_op_t *n, PFguide_tree_t *guide);
+static void prop_infer(PFla_op_t *n, PFguide_tree_t *guide);
 
 
 /* Extract the filename from @a path_and_filename 
  * example: '/home/user/filename.xml' will return 'filename.xml' 
  * example: 'filename.xml' will return 'filename.xml' */
-char *
+static char *
 get_filename(char * path_and_filename) 
 {
     char  *pos = NULL, * filename = NULL;
@@ -146,7 +137,7 @@ get_filename(char * path_and_filename)
 /* add a PFguide_mapping_t to a @guide_mapping_list  if the @a column 
  * do not exist, otherwise it will be added only @a guide in the 
  * corresponding PFguide_mapping_t in @guide_mapping_list */
-PFarray_t *
+static PFarray_t *
 add_guide(PFarray_t *guide_mapping_list,PFguide_tree_t  *guide, char *column)
 {
     if(guide == NULL || column == NULL)
@@ -197,7 +188,7 @@ add_guide(PFarray_t *guide_mapping_list,PFguide_tree_t  *guide, char *column)
 /* add the @a guide_mapping to the @a guide_mapping_list, if the
  * column already exist the guide nodes will be added to the right
  * guide mapping in @a guide_mapping_list */
-PFarray_t *
+static PFarray_t *
 add_guide_mapping(PFarray_t *guide_mapping_list,
         PFguide_mapping_t *guide_mapping)
 {
@@ -225,36 +216,9 @@ add_guide_mapping(PFarray_t *guide_mapping_list,
     return new_guide_mapping_list;
 }
 
-/* remove the PFguide_mapping_t from the @a guide_mapping_list where 
- * the column is equal */
-PFarray_t *
-remove_column(PFarray_t *guide_mapping_list, char* column)
-{
-    assert(guide_mapping_list);
-    assert(column);
-
-    PFarray_t *new_guide_mapping_list = PFarray(sizeof(PFguide_mapping_t**));
-    PFguide_mapping_t *guide_mapping = NULL;
-    
-    /* lookup if the column just exist */
-    for(unsigned int i = 0; i < PFarray_last(guide_mapping_list); i++) {
-        /* get element from PFarray_t */
-        guide_mapping = *((PFguide_mapping_t**) PFarray_at(
-                guide_mapping_list, i));
-
-        /* if column is not equal, add the PFguide_mapping_t */
-        if(strcmp(column, guide_mapping->column) != 0) {
-            *(PFguide_mapping_t**) PFarray_add(new_guide_mapping_list) = 
-                    guide_mapping;
-        }
-    }    
-
-    return new_guide_mapping_list;
-}
-
 /* get the corresponding PFguide_mapping_t element from @a guide_mapping_list
  * where the columns are equal */
-PFguide_mapping_t *
+static PFguide_mapping_t *
 get_guide_mapping(PFarray_t *guide_mapping_list, char* column)
 {
     assert(guide_mapping_list);
@@ -276,7 +240,7 @@ get_guide_mapping(PFarray_t *guide_mapping_list, char* column)
 }
 
 /* initialize the guide property in @a n */
-void
+static void
 copy_doc_tbl(PFla_op_t *n, PFguide_tree_t *guide)
 {
     assert(n);
@@ -306,7 +270,7 @@ copy_doc_tbl(PFla_op_t *n, PFguide_tree_t *guide)
 
 
 /* Intersect between left and right child guide nodes */
-void
+static void
 union_guides(PFla_op_t  *n)
 {
     assert(n);
@@ -363,7 +327,7 @@ union_guides(PFla_op_t  *n)
 /* Compute the difference between left and right child. 
  * Will return elements from left child without the 
  * the elements in right child */
-void
+static void
 difference(PFla_op_t  *n)
 {
     assert(n);
@@ -460,7 +424,7 @@ difference(PFla_op_t  *n)
 }
 
 /* Create a PFty_t type from a guide node */
-PFty_t 
+static PFty_t 
 create_PFty_t(PFguide_tree_t *n)
 {
     PFty_t  ret;
@@ -489,7 +453,7 @@ create_PFty_t(PFguide_tree_t *n)
 }
 
 /* return the ancestors of @a n */
-PFarray_t *
+static PFarray_t *
 getAncestorFromGuide(PFguide_tree_t *n, PFty_t type) 
 {
     assert(n);
@@ -511,7 +475,7 @@ getAncestorFromGuide(PFguide_tree_t *n, PFty_t type)
 
 /* Get recursive all descendant elements that are subtypes 
  * of @type */
-PFarray_t *
+static PFarray_t *
 getDescendantFromGuideRec(PFguide_tree_t *n, PFty_t type, 
     PFarray_t *descendant)
 {
@@ -541,7 +505,7 @@ getDescendantFromGuideRec(PFguide_tree_t *n, PFty_t type,
 }
 
 /* Returns all descendant of @a n if they are a suptype of @a type */
-PFarray_t *
+static PFarray_t *
 getDescendantFromGuide(PFguide_tree_t *n, PFty_t type)
 {
     PFarray_t  *descendant =  PFarray(sizeof(PFguide_tree_t**));
@@ -550,7 +514,7 @@ getDescendantFromGuide(PFguide_tree_t *n, PFty_t type)
 }
 
 /* Remove duplicate guides from array */
-void
+static void
 remove_duplicate(PFla_op_t *n)
 {
 
@@ -601,7 +565,7 @@ remove_duplicate(PFla_op_t *n)
 }
 
 /* Copy the guide_mapping_list from the right child to the parent */
-void 
+static void 
 copyR(PFla_op_t *n)
 {
     assert(n);
@@ -619,7 +583,7 @@ copyR(PFla_op_t *n)
 }
 
 /* Copy the guide_mapping_list from the left child to the parent */
-void 
+static void 
 copyL(PFla_op_t *n)
 {
     assert(n);
@@ -637,7 +601,7 @@ copyL(PFla_op_t *n)
 }
 
 /* Stair case join / pathstep */
-void
+static void
 copy_scjoin(PFla_op_t *n)
 {
     assert(n);
@@ -814,7 +778,7 @@ copy_scjoin(PFla_op_t *n)
 }
 
 /* copy guide nodes for project operator*/
-void 
+static void 
 copy_project(PFla_op_t *n)
 {
     assert(n);
@@ -864,7 +828,7 @@ copy_project(PFla_op_t *n)
 
 
 /* Infer domain properties; worker for prop_infer(). */
-void
+static void
 infer_guide(PFla_op_t *n, PFguide_tree_t *guide)
 {
     assert(n);
@@ -953,7 +917,9 @@ infer_guide(PFla_op_t *n, PFguide_tree_t *guide)
         case la_dup_scjoin:
         case la_empty_frag: 
         case la_lit_tbl:
-        default:
+        case la_twig:
+        case la_fcns:
+        case la_content:
             break;
     }
     return;
@@ -961,7 +927,7 @@ infer_guide(PFla_op_t *n, PFguide_tree_t *guide)
 
 
 /* worker for PFprop_infer_guide */ 
-void
+static void
 prop_infer(PFla_op_t *n, PFguide_tree_t *guide)
 {
     /* no guide tree -> do nothing */

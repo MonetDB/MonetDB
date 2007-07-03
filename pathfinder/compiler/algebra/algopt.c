@@ -44,8 +44,6 @@
 #include "la_proxy.h"
 #include "la_thetajoin.h"
 
-//#include "load_stats.h"
-
 #define MAP_ORI_NAMES(phase)                                                \
         if (unq_names) {                                                    \
             PFinfo (OOPS_WARNING,                                           \

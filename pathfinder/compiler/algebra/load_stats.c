@@ -59,11 +59,7 @@ PFguide_tree_t  *current_guide_node = NULL;
 PFguide_tree_t  *root_guide_node = NULL;
 
 /* Add a new child to the parent */
-void add_guide_child(PFguide_tree_t *parent, PFguide_tree_t *child);
-
-/* public function to create a guide tree from a file */
-PFguide_tree_t* PFguide_tree();
-
+static void add_guide_child(PFguide_tree_t *parent, PFguide_tree_t *child);
 
 /* start of a XML element */
 static void
@@ -259,7 +255,7 @@ PFguide_tree()
 }
 
 /* create association between parent and child */
-void
+static void
 add_guide_child(PFguide_tree_t *parent, PFguide_tree_t *child)
 {
     

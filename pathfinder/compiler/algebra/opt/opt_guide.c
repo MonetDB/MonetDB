@@ -35,20 +35,18 @@
 
 #include "pathfinder.h"
 #include <assert.h>
-#include <stdio.h>
 
 #include "algopt.h"
-#include "properties.h"
 #include "alg_dag.h"
 
 
-void opt_guide (PFla_op_t *n);
+static void opt_guide (PFla_op_t *n);
 
 /* worker for PFalgopt_guide */
-void
+static void
 opt_guide (PFla_op_t *n)
 {
-    assert(n);
+    (void) n;
     return;
 }
 

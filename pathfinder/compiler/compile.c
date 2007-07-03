@@ -92,9 +92,6 @@
 /* include libxml2 library to parse module definitions from an URI */
 #include "libxml/xmlIO.h"
 
-/* to parse options from the query */
-#include "env.h"
-
 /*
 extern PFarray_t *modules;
 */
@@ -105,8 +102,8 @@ static char *phases[] = {
     [ 3]  = "after parse/abstract syntax tree has been normalized",
     [ 4]  = "after namespaces have been checked and resolved",
     [ 5]  = "after option declarations have been extracted from the parse tree",
-    [ 6]  = "after variable scoping has been checked",
-    [ 7]  = "after guide tree has been build",
+    [ 6]  = "after guide tree has been build",
+    [ 7]  = "after variable scoping has been checked",
     [ 8]  = "after XQuery built-in functions have been loaded",
     [ 9]  = "after valid function usage has been checked",
     [10]  = "after XML Schema predefined types have been loaded",
@@ -387,13 +384,13 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
 
     STOP_POINT(5);
 
-    /* Check variable scoping and replace QNames by PFvar_t pointers */
-    PFvarscope (proot);
+    /* create guide tree */
+    guide_tree =  PFguide_tree();
   
     STOP_POINT(6);
 
-    /* create guide tree */
-    guide_tree =  PFguide_tree();
+    /* Check variable scoping and replace QNames by PFvar_t pointers */
+    PFvarscope (proot);
 
     STOP_POINT(7);
 
