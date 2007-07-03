@@ -772,7 +772,7 @@ push_semijoin( stmt *select, stmt *s )
 
 	s = push_semijoin(stmt_dup(select->op1.stval), s);
 	if (select->type == st_select2) {
-		comp_type cmp = select->flag;
+		comp_type cmp = (comp_type)select->flag;
 		stmt *op2 = stmt_dup( select->op2.stval);
 		stmt *op3 = stmt_dup( select->op3.stval);
 
@@ -781,7 +781,7 @@ push_semijoin( stmt *select, stmt *s )
 	}
 
 	if (select->type == st_uselect2) {
-		comp_type cmp = select->flag;
+		comp_type cmp = (comp_type)select->flag;
 		stmt *op2 = stmt_dup( select->op2.stval);
 		stmt *op3 = stmt_dup( select->op3.stval);
 
@@ -790,7 +790,7 @@ push_semijoin( stmt *select, stmt *s )
 	}
 
 	if (select->type == st_select) {
-		comp_type cmp = select->flag;
+		comp_type cmp = (comp_type)select->flag;
 		stmt *op2 = stmt_dup( select->op2.stval);
 
 		if (cmp == cmp_like || cmp == cmp_notlike) {
@@ -805,7 +805,7 @@ push_semijoin( stmt *select, stmt *s )
 	}
 
 	if (select->type == st_uselect) {
-		comp_type cmp = select->flag;
+		comp_type cmp = (comp_type)select->flag;
 		stmt *op2 = stmt_dup( select->op2.stval);
 
 		stmt_destroy(select);
