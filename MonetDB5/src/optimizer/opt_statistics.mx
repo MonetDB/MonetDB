@@ -168,7 +168,6 @@ QOTstatisticsExit(){
 	TMsubcommit(qotStat[QOTcalls]);
 	TMsubcommit(qotStat[QOTactions]);
 	TMsubcommit(qotStat[QOTtimings]);
-	TMcommit();
 }
 str
 QOTgetStatistics(int *ret, str *nme){
@@ -177,7 +176,8 @@ QOTgetStatistics(int *ret, str *nme){
 	idx= QOTindex(*nme);
 	if( idx <  0)
 		throw(MAL,"optimizer.getStatistics","Illegal property");
-	(void) ret;
+	if( qotStat[idx] ==  0)
+		throw(MAL,"optimizer.getStatistics","Statistics table not valid");
 	BBPincref(*ret= qotStat[idx]->batCacheid,TRUE);
 	return MAL_SUCCEED;
 }

@@ -75,6 +75,6 @@ str OPT@1(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 #endif
     optimizerCheck(mb, "optimizer.@1", actions, t=(GDKusec() - clk),@2);
 	QOTupdateStatistics("@1",actions,t);
-	addtoMalBlkHistory(mb);
+	addtoMalBlkHistory(mb,"@1");
 	return MAL_SUCCEED;
 }

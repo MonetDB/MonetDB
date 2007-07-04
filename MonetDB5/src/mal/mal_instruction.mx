@@ -406,6 +406,7 @@ typedef struct MALBLK {
 	ProfPtr profiler;
 	struct MALBLK *history;/* of optimizer actions */
 	int keephistory;	/* do we need the history at all */
+	str marker;			/* history points are marked for backtracking */
 } *MalBlkPtr, MalBlkRecord;
 
 @-
@@ -478,10 +479,12 @@ mal_export void resetMalBlk(MalBlkPtr mb, int stop);
 mal_export void newMalBlkStmt(MalBlkPtr mb, int maxstmts);
 mal_export void prepareMalBlk(MalBlkPtr mb, str s);
 mal_export void freeMalBlk(MalBlkPtr mb);
-mal_export MalBlkPtr copyMalBlk(MalBlkPtr);
-mal_export void addtoMalBlkHistory(MalBlkPtr mb);
+mal_export MalBlkPtr copyMalBlk(MalBlkPtr mb);
+mal_export void addtoMalBlkHistory(MalBlkPtr mb,str marker);
 mal_export void showMalBlkHistory(MalBlkPtr mb);
 mal_export MalBlkPtr getMalBlkHistory(MalBlkPtr mb,int idx);
+mal_export MalBlkPtr gotoMalBlkMarker(MalBlkPtr mb, str marker);
+mal_export MalBlkPtr getMalBlkMarker(MalBlkPtr mb, str marker);
 mal_export void expandMalBlk(MalBlkPtr mb, int lines);
 mal_export void trimMalBlk(MalBlkPtr mb);
 mal_export void moveInstruction(MalBlkPtr mb, int pc, int target);
@@ -640,6 +643,7 @@ newMalBlk(int maxvars, int maxstmts)
 	mb->alternative = NULL;
 	mb->history = NULL;
 	mb->keephistory = 0;
+	mb->marker = 0;
 	mb->typefixed = 0;
 	mb->flowfixed = 0;
 	mb->profiler = NULL;
@@ -712,6 +716,7 @@ copyMalBlk(MalBlkPtr old)
 	mb->alternative = old->alternative;
 	mb->history = NULL;
 	mb->keephistory= old->keephistory;
+	mb->marker = 0;
 	mb->var = (VarPtr *) GDKmalloc(sizeof(VarPtr) * old->vsize);
 
 	if (mb->var == NULL)
@@ -749,11 +754,12 @@ copyMalBlk(MalBlkPtr old)
 }
 
 void
-addtoMalBlkHistory(MalBlkPtr mb){
+addtoMalBlkHistory(MalBlkPtr mb, str marker){
 	MalBlkPtr cpy,h;
 	if( mb->keephistory){
 		cpy= copyMalBlk(mb);
 		cpy->history= NULL;
+		mb->marker= GDKstrdup(marker);
 		if( mb->history== NULL)
 			mb->history= cpy;
 		else{
@@ -769,6 +775,35 @@ getMalBlkHistory(MalBlkPtr mb, int idx){
 	while( h && idx-- >= 0)
 		h= h->history;
 	return h?h:mb;
+}
+@-
+You can retrieve the history by its marker as well.
+@c
+MalBlkPtr
+getMalBlkMarker(MalBlkPtr mb, str marker){
+	MalBlkPtr h=mb;
+	while( h && h->marker && strcmp(h->marker,marker))
+		h= h->history;
+	return h?h:mb;
+}
+@-
+You can roll back the history to a specific marker.
+A NULL is returned when the marker can not be found.
+@c
+MalBlkPtr
+gotoMalBlkMarker(MalBlkPtr mb, str marker){
+	MalBlkPtr h=mb,g;
+	while(h && h->marker && strcmp(h->marker,marker))
+		h= h->history;
+	if( h == NULL)
+		return NULL; /* marker not found */
+	while( h && h->marker && strcmp(h->marker,marker)){
+		g= h;
+		h= h->history;
+		g->history=0;
+		freeMalBlk(g);
+	}
+	return h;
 }
 @-
 The MalBlk structures potentially consume a lot a of space, because it

@@ -81,7 +81,7 @@ str
 RUNisolation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	(void) stk;
-	addtoMalBlkHistory(mb);
+	addtoMalBlkHistory(mb,"isolation");
 	removeInstruction(mb, p);
 	return MAL_SUCCEED;
 }
