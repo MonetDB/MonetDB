@@ -33,8 +33,6 @@
 #ifndef LOAD_STATS_H
 #define LOAD_STATS_H
 
-#include "variable.h"
-
 /* Kind of a guide node */
 enum PFguide_kind_t {
       elem  /* element node */
@@ -45,9 +43,6 @@ enum PFguide_kind_t {
     , doc   /* document node */
 };
 typedef enum PFguide_kind_t PFguide_kind_t;
-
-/* Stores the child of a guide node */
-//typedef struct PFguide_child_list_t PFguide_child_list_t;
 
 /* The guide tree */
 typedef struct PFguide_tree_t PFguide_tree_t;
@@ -68,7 +63,7 @@ struct PFguide_mapping_t {
 };
 
 /* create a guide tree from a file */
-PFguide_tree_t* PFguide_tree();
+PFguide_tree_t *PFguide_tree (void);
 
 #endif  /* LOAD_STATS_H */ 
 
