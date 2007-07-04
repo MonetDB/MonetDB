@@ -118,20 +118,19 @@ str RMTepilogue(int *ret) {
 }
 
 @mal
-pattern serveget(ident:str):str
+pattern serveget(ident:str):void
 address RMTserveget
-comment "Returns a description of the given identifier";
+comment "Prints a description of the given identifier";
 @h
 remote_export str RMTserveget(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 @c
 /**
- * serveget returns a descriptive string to the caller on the given
- * identifier ident.  This method is used by get() to retrieve an
- * object.  serveget returns a single tuple with information on the
- * object.  The first column in the tuple is the MAL type of the object.
- * Depending on this, the other columns are filled in.  For scalar data
- * types, the second column represents the value of the scalar as a
- * string, e.g.
+ * serveget prints a descriptive string for the given identifier ident.
+ * This method is used by get() to retrieve an object.  serveget prints
+ * a single tuple with information on the object.  The first column in
+ * the tuple is the MAL type of the object.  Depending on this, the
+ * other columns are filled in.  For scalar data types, the second
+ * column represents the value of the scalar as a string, e.g.
  * [ "int", "1" ]
  * More complex types that need to be fetched afterwards just get extra
  * information where available, e.g. to describe a BAT with oid head and
@@ -144,6 +143,7 @@ str RMTserveget(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	VarPtr n;
 	ValPtr v;
 	char ret[256];
+	Client c = MCgetClient();
 
 	name = (str)getArgValue(stk, pci, 1);
 	i = findVariable(mb, name);
@@ -180,9 +180,7 @@ str RMTserveget(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	}
 	ret[255] = '\0';
 
-	/* set the return value */
-	v = &stk->stk[getArg(pci, 0)];
-	v->val.sval = GDKstrdup(ret);
+	stream_printf(c->fdout, "%s\n", ret);
 
 	return(MAL_SUCCEED);
 }
@@ -221,6 +219,10 @@ str RMTget(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		v->val.ival = bid;
 		BBPincref(bid, TRUE);
 	}
+
+	/* set the return value */
+	v = &stk->stk[getArg(pci, 0)];
+	v->val.sval = GDKstrdup(ret)
 #endif
 
 	return(MAL_SUCCEED);
