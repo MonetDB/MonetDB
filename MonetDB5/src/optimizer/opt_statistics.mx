@@ -90,7 +90,7 @@ QOT_create(str hnme, str tnme, int ht, int tt)
 	return b;
 }
 static void QOTstatisticsInit(){
-	oid o=oid_nil;
+	oid o=0;
 	if( qotStat[QOTnames]) return;
 	qotStat[QOTnames]= QOT_create("opt","names",TYPE_void,TYPE_str);
 	BATseqbase(qotStat[QOTnames],o);
@@ -121,10 +121,10 @@ QOTupdateStatistics(str nme, int actions, lng val)
 		stream_printf(GDKout,"insert optimizer statistics %s\n",nme);
 #endif
 		ival= (int) BATcount(qotStat[QOTnames]);
-		BUNappend(qotStat[QOTnames], nme,TRUE);
-		BUNappend(qotStat[QOTcalls],  &ival, TRUE);
-		BUNappend(qotStat[QOTactions], &ival, TRUE);
-		BUNappend(qotStat[QOTtimings], &lval, TRUE);
+		BUNappend(qotStat[QOTnames], nme,FALSE);
+		BUNappend(qotStat[QOTcalls],  &ival, FALSE);
+		BUNappend(qotStat[QOTactions], &ival, FALSE);
+		BUNappend(qotStat[QOTtimings], &lval, FALSE);
 		p= BUNfnd(BATmirror(qotStat[QOTnames]),(ptr)nme);
 		if(p==0){
 #ifdef _Q_STATISTICS_DEBUG
