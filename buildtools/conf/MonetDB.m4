@@ -697,7 +697,7 @@ yes-*-*)
 -icc*-linux*|-ecc*-linux*)
       	case "$host-$icc_ver" in
         *-*-*-10.*)   	CFLAGS="$CFLAGS -std=c99"	;;
-      	*-*-*-)    	CFLAGS="$CFLAGS -c99" 		;;
+      	*-*-*-*)    	CFLAGS="$CFLAGS -c99" 		;;
       	esac   
 	;;
 -pgcc*-linux*)
