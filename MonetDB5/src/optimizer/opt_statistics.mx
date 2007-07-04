@@ -120,11 +120,10 @@ QOTupdateStatistics(str nme, int actions, lng val)
 		stream_printf(GDKout,"initialized? %d\n",qotStat[QOTnames]==0);
 		stream_printf(GDKout,"insert optimizer statistics %s\n",nme);
 #endif
-		ival= (int) BATcount(qotStat[QOTnames]);
 		BUNappend(qotStat[QOTnames], nme, FALSE);
 		BUNappend(qotStat[QOTcalls],  &ival, FALSE);
 		BUNappend(qotStat[QOTactions], &ival, FALSE);
-		BUNappend(qotStat[QOTtimings], &lval, FALSE);
+		BUNappend(qotStat[QOTtimings], &ival, FALSE);
 		p= BUNfnd(BATmirror(qotStat[QOTnames]),(ptr)nme);
 		if(p==0){
 #ifdef _Q_STATISTICS_DEBUG
