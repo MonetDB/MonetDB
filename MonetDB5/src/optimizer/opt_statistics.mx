@@ -121,7 +121,7 @@ QOTupdateStatistics(str nme, int actions, lng val)
 		stream_printf(GDKout,"insert optimizer statistics %s\n",nme);
 #endif
 		ival= (int) BATcount(qotStat[QOTnames]);
-		BUNappend(qotStat[QOTnames], nme,FALSE);
+		BUNappend(qotStat[QOTnames], nme, FALSE);
 		BUNappend(qotStat[QOTcalls],  &ival, FALSE);
 		BUNappend(qotStat[QOTactions], &ival, FALSE);
 		BUNappend(qotStat[QOTtimings], &lval, FALSE);
@@ -173,10 +173,10 @@ static int
 QOTindex(str nme)
 {
 	if( nme == 0) return -1;
-	if(strcmp(nme,"names")) return QOTnames;
-	if(strcmp(nme,"calls")) return QOTcalls;
-	if(strcmp(nme,"actions")) return QOTactions;
-	if(strcmp(nme,"timings")) return QOTtimings;
+	if(strcmp(nme,"names") == 0) return QOTnames;
+	if(strcmp(nme,"calls") == 0) return QOTcalls;
+	if(strcmp(nme,"actions") == 0) return QOTactions;
+	if(strcmp(nme,"timings") == 0) return QOTtimings;
 	return -1;
 }
 
@@ -190,7 +190,7 @@ QOTgetStatistics(int *ret, str *nme)
 		throw(MAL,"optimizer.getStatistics","Illegal property");
 	if( qotStat[idx] ==  0)
 		throw(MAL,"optimizer.getStatistics","Statistics table not valid");
-	BBPincref(*ret= qotStat[idx]->batCacheid,TRUE);
+	BBPincref(*ret= qotStat[idx]->batCacheid, TRUE);
 	return MAL_SUCCEED;
 }
 
