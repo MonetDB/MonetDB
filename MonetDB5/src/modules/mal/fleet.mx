@@ -52,6 +52,8 @@ other peers.
 
 As long as a server belongs to a fleet it is globally known by 
 the quadruple (fleetname,alias, host,port). 
+The alias act as an authorization ticket to interact with
+a peer directly.
 
 You can leave() the fleet at any point in time.
 Locally the alias is invalidated. The registry is notified
@@ -99,22 +101,54 @@ We could say that there is an outside agency
 enacts the contract, telling A and B what they should
 locally know.
 
+The import/export operations use the fleet registry to find
+the peer who owns the object. A more direct way is
+to address a known peer to deliver the object. This,
+however, requires the peer's alias to be known.
+
+@verbatim
+#site makes its nickname known
+fleet.join("tromp","amsterdam");
+
+#site interested in the amsterdam
+#can now get the alias and communicate directly.
+alias:= fleet.alias("tromp","amsterdam");
+b:bat[:oid,:str]:= fleet.import(alias,"captains");
+@end verbatim
+
 The primitives allow for local execution of functions
 known anywhere using copied data. We ship the data
-to the local site, i.e. data shipping.
+to the local site.
 
-An alternative is to leave the decision where
+An alternative is to request a peer to execute the
+function in its own context.
+
+Snippets. A local object is exported (captains) and
+used as function argument in a remote execution.
+@verbatim
+alias:= fleet.alias("tromp","hoorn");
+b:bat[:oid,:str]:= fleet.export(alias,"captains");
+answ:int := fleet.execute(alias,"f",b);
+@end verbatim
+
+If the object is not owned, then we first have
+to assure its accessibility. The bind call
+is targeted at the Amsterdam. The site Hoorn
+should obtain a copy of the bat directly from
+its source.
+@verbatim
+amsterdam:= fleet.alias("tromp","amsterdam");
+b:bat[:oid,:str]:= fleet.bind(amsterdam,"captains");
+alias:= fleet.alias("tromp","hoorn");
+answ:int := fleet.execute(alias,"f",b);
+@end verbatim
+
+A final step is to leave the decision where
 to execute a function to the underlying system.
 The critial issues are to assess the transport cost
 and to resolve locality of the arguments (and targets).
 The fleet.execute() function wraps any MAL instruction
 to find an optimal scheme.
-
-@verbatim
-b:bat[:oid,:str]:= fleet.bind("tromp","captains");
-answ:int := fleet.execute("tromp","f",b);
-@end verbatim
-
 @{
 @mal
 module fleet;
