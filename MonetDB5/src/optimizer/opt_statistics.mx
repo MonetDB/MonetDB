@@ -102,17 +102,9 @@ static void QOTstatisticsInit(){
 	BATseqbase(qotStat[QOTtimings],o);
 }
 
-static int QOTindex(str nme){
-	if( nme == 0) return -1;
-	if(strcmp(nme,"names")) return QOTnames;
-	if(strcmp(nme,"calls")) return QOTcalls;
-	if(strcmp(nme,"actions")) return QOTactions;
-	if(strcmp(nme,"timings")) return QOTtimings;
-	return -1;
-}
-
 void
-QOTupdateStatistics(str nme, int actions, lng val){
+QOTupdateStatistics(str nme, int actions, lng val)
+{
 	BUN p;
 	oid idx;
 	int ival=0, *ip= &ival;
@@ -162,15 +154,35 @@ QOTupdateStatistics(str nme, int actions, lng val){
 	lp= (lng*) BUNtail(qotStat[QOTtimings],p);
 	*lp= *lp+ val;
 }
+
 void
-QOTstatisticsExit(){
-	TMsubcommit(qotStat[QOTnames]);
-	TMsubcommit(qotStat[QOTcalls]);
-	TMsubcommit(qotStat[QOTactions]);
-	TMsubcommit(qotStat[QOTtimings]);
+QOTstatisticsExit()
+{
+	BAT *names = BATnew(TYPE_void,TYPE_str, 4);
+
+	BUNappend(names, BBPname(qotStat[QOTnames]->batCacheid), FALSE);
+	BUNappend(names, BBPname(qotStat[QOTcalls]->batCacheid), FALSE);
+	BUNappend(names, BBPname(qotStat[QOTactions]->batCacheid), FALSE);
+	BUNappend(names, BBPname(qotStat[QOTtimings]->batCacheid), FALSE);
+
+	TMsubcommit(names);
+	BBPreclaim(names);
 }
+
+static int 
+QOTindex(str nme)
+{
+	if( nme == 0) return -1;
+	if(strcmp(nme,"names")) return QOTnames;
+	if(strcmp(nme,"calls")) return QOTcalls;
+	if(strcmp(nme,"actions")) return QOTactions;
+	if(strcmp(nme,"timings")) return QOTtimings;
+	return -1;
+}
+
 str
-QOTgetStatistics(int *ret, str *nme){
+QOTgetStatistics(int *ret, str *nme)
+{
 	int idx;
 	QOTstatisticsInit();
 	idx= QOTindex(*nme);
