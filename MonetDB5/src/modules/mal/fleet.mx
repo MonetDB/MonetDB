@@ -52,19 +52,20 @@ other peers.
 
 As long as a server belongs to a fleet it is globally known by 
 the quadruple (fleetname,alias, host,port). 
-The alias act as an authorization ticket to interact with
-a peer directly.
+The alias act as an authorization ticket (a capability)
+to interact with a peer directly.
 
 You can leave() the fleet at any point in time.
 Locally the alias is invalidated. The registry is notified
-as well that the mapping has become invalid.
-An attempt to contact an obsolete peer can be used to update
-any local cache of peer information.
+that the mapping has become invalid.
+An attempt to contact a peer with an obsolete alias
+can be used to update any local cache of peer information.
 
 Let S,T be peers in the fleet F. S contains a function S.f()
 and a BAT locally named "Bs", likewise, T.g(), T.f() and "Bt". 
 Our goal is to exchange variables and functions.
-To make this happen we have to avoid name clashes.
+To make this happen we have to avoid name clashes
+The responsibility for this lies with the individual peers.
 
 Before objects can be exchanged they have to become known
 at the fleet level. For example, site S exports its objects
@@ -74,32 +75,40 @@ A new name should be chosen by T, e.g. export T.fprime().
 
 A secondary goal is to benefit as much as possible from
 knowledge on a remote site. Thus, ideally we would like
-the definition of S.f() to become known at T. 
+the definition of F.f() to become known at T. 
 It suffices to introduce the fleet module F. It holds
 the workset portion of the global schema. Then, T can
 issue an import(fleetname,f). An optimizer can now use
 its body to optimize a query.
 
 The approach to exchange variables uses the same scheme.
-The object is made known to the fleet using an export()
-and its value is copied to the local stack frame
-using an import.
+The object is made known to the fleet using an export().
+The server issuing this command is considered the owner of
+the object. It gives the power to retract the export and to
+ensure transaction safety.
+From that point onwards, optimizers can use the name in the
+construction of distributed query execution plans.
+
+The fleet.import() can be used to assure that the external object
+is still known.
+
 @verbatim
-#publishing site
+#publishing site:
 captains:= bat.new(:oid,:str);
-fleet.join("tromp");
-fleet.export("tromp","captains",captains);
+alias:= fleet.getAlias("tromp");
+fleet.export(alias,"captains",captains);
 
 #interested site
-fleet.join("tromp");
-b:bat[:oid,:str]:= fleet.import("tromp","captains");
+alias:= fleet.getAlias("tromp");
+b:bat[:oid,:str]:= fleet.import(alias,"captains");
 @end verbatim
 
 Note that the structure sofar requires sites A and B
 to cooperate. They can not enforce one another to act.
 We could say that there is an outside agency 
-enacts the contract, telling A and B what they should
-locally know.
+enacts the contract, telling A and B what they should do.
+Typically this is an optimizer that uses the fleet 
+tables to derive plans.
 
 The import/export operations use the fleet registry to find
 the peer who owns the object. A more direct way is
@@ -112,35 +121,37 @@ fleet.join("tromp","amsterdam");
 
 #site interested in the amsterdam
 #can now get the alias and communicate directly.
-alias:= fleet.alias("tromp","amsterdam");
+alias:= fleet.getAlias("tromp","amsterdam");
 b:bat[:oid,:str]:= fleet.import(alias,"captains");
 @end verbatim
 
-The primitives allow for local execution of functions
-known anywhere using copied data. We ship the data
-to the local site.
+@- Object shipping
+The actions so far manage meta information. At runtime
+we are also interested in the actual values.
+The function get(alias,objNickname) and put(alias,objNickname)
+implement transport of any object between servers.
+Beware that a copy of an object is shipped. The owner 
+site remains responsible.
 
-An alternative is to request a peer to execute the
+@- Remote execution
+Given the import() and get() we can always pull 
+objects to the local site for execution.
+An alternative is to (forcefully) request a peer to execute the
 function in its own context.
 
-Snippets. A local object is exported (captains) and
-used as function argument in a remote execution.
+For example, a local function is constructed and executed at
+a remote site as follows:
 @verbatim
-alias:= fleet.alias("tromp","hoorn");
-b:bat[:oid,:str]:= fleet.export(alias,"captains");
-answ:int := fleet.execute(alias,"f",b);
-@end verbatim
+#site Amsterdam prepares a remote qry
+function qry():int
+  alias:= fleet.alias("tromp","amsterdam");
+  b:bat[:oid,:str]:= fleet.get(alias,"captains");
+  return qry := aggr.count(b);
+end qry;
 
-If the object is not owned, then we first have
-to assure its accessibility. The bind call
-is targeted at the Amsterdam. The site Hoorn
-should obtain a copy of the bat directly from
-its source.
-@verbatim
-amsterdam:= fleet.alias("tromp","amsterdam");
-b:bat[:oid,:str]:= fleet.bind(amsterdam,"captains");
+#remotely execute this at Hoorn
 alias:= fleet.alias("tromp","hoorn");
-answ:int := fleet.execute(alias,"f",b);
+answ:int := fleet.execute(alias,"qry");
 @end verbatim
 
 A final step is to leave the decision where
@@ -149,6 +160,23 @@ The critial issues are to assess the transport cost
 and to resolve locality of the arguments (and targets).
 The fleet.execute() function wraps any MAL instruction
 to find an optimal scheme.
+
+@verbatim
+amsterdam:= fleet.alias("tromp","amsterdam");
+hoorn:= fleet.alias("tromp","hoorn");
+captains:= bat.new(:oid,:str);
+answ:int := fleet.execute(alias,"qry",captains);
+@end verbatim
+
+@- Case studies
+@itemize
+@item Replication management
+Assume a master-slave scheme where the updates on the master
+should be reflected in the slave.
+@item Parallel execution
+Paralle execution is still tricky, because you have to model
+the wait-for graph.
+@end itemize
 @{
 @mal
 module fleet;
