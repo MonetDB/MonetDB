@@ -61,15 +61,11 @@ address RMTepilogue
 comment "Release the resources held by the remote module";
 
 
-command get(host:str, ident:str):any
-address RMTget
-comment "Retrieves and returns the object referenced by ident from host";
-
-command put(host:str, object:any):str
+pattern put(host:str, object:any):str
 address RMTput
 comment "Stores object on host and returns its identifier on host";
 
-command exec(host:str, ident:func, ... arg1:any, arg2:any ...):any
+pattern exec(host:str, ident:str...):any
 address RMTexec
 comment "Executes function ident on host using the given arguments and returns its result";
 
@@ -95,9 +91,9 @@ comment "Executes function ident on host using the given arguments and returns i
 
 remote_export str RMTprelude(int *ret);
 remote_export str RMTepilogue(int *ret);
-remote_export str RMTget(int *ret, str *host, str *ident);
-remote_export str RMTput(int *ret, str *host, int *obj);
-remote_export str RMTexec(int *ret, str *host, str *ident, ...) ;
+
+remote_export str RMTput(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+remote_export str RMTexec(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 #endif
 @-
@@ -106,7 +102,8 @@ remote_export str RMTexec(int *ret, str *host, str *ident, ...) ;
 #include "mal_config.h"
 #include <mal.h>
 #include <mal_exception.h>
-#include <mal_remote.h>	/* for the implementation of the functions */
+#include <mal_interpreter.h>
+#include "remote.h"	/* for the implementation of the functions */
 
 str RMTprelude(int *ret) {
 	(void)ret;
@@ -120,23 +117,125 @@ str RMTepilogue(int *ret) {
 	return(MAL_SUCCEED);
 }
 
-str RMTget(int *ret, str *host, str *ident) {
-	(void)host;
-	(void)ident;
-	*ret = 0;
+@mal
+pattern serveget(ident:str):str
+address RMTserveget
+comment "Returns a description of the given identifier";
+@h
+remote_export str RMTserveget(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+@c
+/**
+ * serveget returns a descriptive string to the caller on the given
+ * identifier ident.  This method is used by get() to retrieve an
+ * object.  serveget returns a single tuple with information on the
+ * object.  The first column in the tuple is the MAL type of the object.
+ * Depending on this, the other columns are filled in.  For scalar data
+ * types, the second column represents the value of the scalar as a
+ * string, e.g.
+ * [ "int", "1" ]
+ * More complex types that need to be fetched afterwards just get extra
+ * information where available, e.g. to describe a BAT with oid head and
+ * str tail:
+ * [ "bat", "oid", "str" ]
+ */
+str RMTserveget(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
+	int i;
+	str name;
+	VarPtr n;
+	ValPtr v;
+	char ret[256];
+
+	name = (str)getArgValue(stk, pci, 1);
+	i = findVariable(mb, name);
+	if (i < 0)
+		throw(MAL, "remote.serveget", "no such symbol '%s'", name);
+
+	n = getVar(mb, i);
+	v = stk->stk + i;
+	if (n->type == TYPE_any || isAnyExpression(n->type)) {
+		/* TODO: deal with functions */
+		throw(MAL, "remote.serveget", "cannot deal with '%s' type", getTypeName(n->type));
+	} else if (isaBatType(n->type)) {
+		char head[10], tail[10];
+		if (getHeadIndex(n->type) > 0) {
+			sprintf(head, "any%c%d", TMPMARKER, getHeadIndex(n->type));
+		} else if (getHeadType(n->type) == TYPE_any) {
+			sprintf(head, "any");
+		} else {
+			sprintf(head, "%s", ATOMname(getHeadType(n->type)));
+		}
+		if (getTailIndex(n->type) > 0) {
+			sprintf(tail, "any%c%d", TMPMARKER, getTailIndex(n->type));
+		} else if (getTailType(n->type) == TYPE_any) {
+			sprintf(tail, "any");
+		} else {
+			sprintf(tail, "%s", ATOMname(getTailType(n->type)));
+		}
+
+		snprintf(ret, 255, "[ \"bat\",\t\"%s\",\t\"%s\"\t]", head, tail);
+	} else {
+		str val;
+		ATOMformat(n->type, v, &val);
+		snprintf(ret, 255, "[ \"%s\",\t\"%s\"\t]", ATOMname(n->type), val);
+	}
+	ret[255] = '\0';
+
+	/* set the return value */
+	v = &stk->stk[getArg(pci, 0)];
+	v->val.sval = GDKstrdup(ret);
+
 	return(MAL_SUCCEED);
 }
 
-str RMTput(int *ret, str *host, int *obj) {
-	(void)host;
-	(void)obj;
-	*ret = 0;
+@mal
+pattern get(conn:str, ident:str):any
+address RMTget
+comment "Retrieves and returns the object referenced by ident from conn";
+@h
+remote_export str RMTget(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+@c
+/**
+ * get fetches the object referenced by ident over connection conn.
+ */
+str RMTget(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
+	(void)mb;
+	(void)stk;
+	(void)pci;
+#if 0
+	str name;
+	ValPtr v;
+
+	(void)mb;
+
+	/* arg 1 */
+	name = (str) getArgValue(stk, pci, 1);
+	if (isIdentifier(name)< 0)
+		throw(MAL, "bbp.take", "identifier expected");
+	/* return (arg 0) */
+	v = &stk->stk[getArg(pci, 0)];
+
+	/* check what v is, and set it's value */
+	if ((v->vtype == TYPE_any || v->vtype == TYPE_bat)) {
+		/* adjust the types as well */
+		v->vtype = TYPE_bat;
+		v->val.ival = bid;
+		BBPincref(bid, TRUE);
+	}
+#endif
+
 	return(MAL_SUCCEED);
 }
 
-str RMTexec(int *ret, str *host, str *ident, ...) {
-	(void)host;
-	(void)ident;
-	*ret = 0;
+str RMTput(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
+	(void)mb;
+	(void)stk;
+	(void)pci;
+	return(MAL_SUCCEED);
+}
+
+str RMTexec(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
+	(void)mb;
+	(void)stk;
+	(void)pci;
 	return(MAL_SUCCEED);
 }
