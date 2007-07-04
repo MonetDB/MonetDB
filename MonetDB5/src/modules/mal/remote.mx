@@ -174,7 +174,7 @@ str RMTserveget(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 
 		snprintf(ret, 255, "[ \"bat\",\t\"%s\",\t\"%s\"\t]", head, tail);
 	} else {
-		str val;
+		str val = NULL;
 		ATOMformat(n->type, v, &val);
 		snprintf(ret, 255, "[ \"%s\",\t\"%s\"\t]", ATOMname(n->type), val);
 	}
