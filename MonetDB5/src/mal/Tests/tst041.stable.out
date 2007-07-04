@@ -115,7 +115,11 @@ function user.main():void;	# 0  (main:void)
     io.print(o);	# 66 IOprint_val (_66:void)<-(o:blob)
     o := calc.blob(nil:blob);	# 67 BLOBblob_blob (o:blob)<-(_65:blob)
     io.print(o);	# 68 IOprint_val (_67:void)<-(o:blob)
-end main;	# 69  
+    w := nil:wrd;	# 69  (w:wrd)<-(_69:wrd)
+    io.print(w);	# 70 IOprint_val (_70:void)<-(w:wrd)
+    B := nil:bte;	# 71  (B:bte)<-(_72:bte)
+    io.print(B);	# 72 IOprint_val (_73:void)<-(B:bte)
+end main;	# 73  
 [ nil ]
 [ 23 ]
 [ nil ]
@@ -148,6 +152,8 @@ end main;	# 69
 [ 'Z' ]
 [ nil ]
 [ 'X' ]
+[ nil ]
+[ nil ]
 [ nil ]
 [ nil ]
 
