@@ -268,6 +268,13 @@ str RMTget(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	if (mhdl) {
 		int vtype;
 
+		if (mapi_result_error(mhdl) != NULL) {
+			str err = createException(MAL, "remote.get", "%s",
+					getExceptionMessage(mapi_result_error(mhdl)));
+			mapi_close_handle(mhdl);
+			return(err);
+		}
+
 		if (mapi_get_row_count(mhdl) != 1) {
 			int c = mapi_get_row_count(mhdl);
 			mapi_close_handle(mhdl);
