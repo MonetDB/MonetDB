@@ -369,18 +369,23 @@ dec_frstr(void *extra, int type, char *s, char *e, char quote)
 ptr *
 _ASCIIadt_frStr(void *extra, int type, char *s, char *e, char quote)
 {
-	ptr *res = NULL;
-	ascii_io *fmt = extra;
+	ascii_io *c = extra;
 
-	if (!(type == TYPE_str && quote) && strcasecmp(s, "NULL") == 0) {
-		res = (ptr *) ATOMnil(type);
+	if (s == NULL || (!(type == TYPE_str && quote) && strcasecmp(s, "NULL") == 0)) {
+        	ptr src = ATOMnilptr(type);
+        	int len = ATOMlen(ATOMtype(type), src);
+
+		if (c->len < len) {
+			c->len = len;
+			c->data = GDKrealloc(c->data,len); 
+		}
+        	memcpy(c->data, src, len);
 	} else if (type == TYPE_str) {
-		return ASCIIstrFrStr(fmt, s, e);
+		return ASCIIstrFrStr(c, s, e);
 	} else {
-		(void) (*BATatoms[type].atomFromStr) (s, &fmt->len, (ptr) &fmt->data);
-		res = fmt->data;
+		(void)(*BATatoms[type].atomFromStr)(s, &c->len, (ptr) &c->data);
 	}
-	return res;
+	return c->data;
 }
 
 
