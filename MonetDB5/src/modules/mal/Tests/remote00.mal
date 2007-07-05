@@ -1,0 +1,15 @@
+# we need this include untill remote is added to the default modules
+include remote;
+
+# simply assign a simple value, and let serveget describe it
+b := 1;
+remote.serveget("b");
+
+# this one might cause trouble on different platforms due to float
+# handling, we might consider commenting this one out
+c := 3.4;
+remote.serveget("c");
+
+# we can also describe "complexer" types (a BAT for now)
+d := bat.new(:oid, :str);
+remote.serveget("d");

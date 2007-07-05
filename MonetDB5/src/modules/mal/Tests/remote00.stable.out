@@ -1,0 +1,52 @@
+stdout of test 'remote00` in directory 'src/modules/mal` itself:
+
+
+# 11:27:38 >  
+# 11:27:38 >  Mtimeout -timeout 60  mserver5 "--config=/ufs/fabian/scratch/monetdb/current/program-x86_64/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/fabian/scratch/monetdb/current/program-x86_64/lib64/MonetDB5:/ufs/fabian/scratch/monetdb/current/program-x86_64/lib64/MonetDB5/lib:/ufs/fabian/scratch/monetdb/current/program-x86_64/lib64/MonetDB5/bin" --set "gdk_dbfarm=/net/pegasus.ins.cwi.nl/export/scratch0/fabian/vtmp/mtest-current-pegasus.ins.cwi.nl/five/dbfarm" --set "sql_logdir=/net/pegasus.ins.cwi.nl/export/scratch0/fabian/vtmp/mtest-current-pegasus.ins.cwi.nl/five/sqllog" --set "xquery_logdir=/net/pegasus.ins.cwi.nl/export/scratch0/fabian/vtmp/mtest-current-pegasus.ins.cwi.nl/five/xquerylog" --set mapi_open=true --set mapi_port=36650 --set xrpc_port=44030 --set monet_prompt= --trace --dbname=mTests_src_modules_mal  remote00.mal
+# 11:27:38 >  
+
+
+
+
+
+# MonetDB Server v5.1.0
+# Copyright (c) 1993-2007 CWI, all rights reserved
+# Compiled for x86_64-pc-linux-gnu/64bit with 64bit OIDs dynamically linked
+# dbname:mTests_src_modules_mal
+# Visit http://monetdb.cwi.nl/ for further information
+## we need this include untill remote is added to the default modules
+#include remote;
+#
+## simply assign a simple value, and let serveget describe it
+#b := 1;
+#remote.serveget("b");
+#
+#c := 3.4;
+#remote.serveget("c");
+#
+## we can also describe "complexer" types (a BAT for now)
+#d := bat.new(:oid, :str);
+#remote.serveget("d");
+#
+function user.main():void;	# 0  (main:void)
+# we need this include untill remote is added to the default modules 	# 1  (_1:str)
+#remote.prelude(); 	# 2  (_2:str)
+# simply assign a simple value, and let serveget describe it 	# 3  (_3:str)
+    b := 1;	# 4  (b:int)<-(_5:int)
+    remote.serveget("b");	# 5 RMTserveget (_6:void)<-(_7:str)
+# this one might cause trouble on different platforms due to float 	# 6  (_8:str)
+# handling, we might consider commenting this one out 	# 7  (_9:str)
+    c := 3.4000001;	# 8  (c:flt)<-(_11:flt)
+    remote.serveget("c");	# 9 RMTserveget (_12:void)<-(_13:str)
+# we can also describe "complexer" types (a BAT for now) 	# 10  (_14:str)
+    d := bat.new(:oid,:str);	# 11 CMDBATnew (d:bat[:oid,:str])<-(_16:oid)(_17:str)
+    remote.serveget("d");	# 12 RMTserveget (_18:void)<-(_19:str)
+end main;	# 13  
+[ "int",	"1"	]
+[ "flt",	"3.4000001"	]
+[ "bat",	"oid",	"str"	]
+
+# 11:27:38 >  
+# 11:27:38 >  Done.
+# 11:27:38 >  
+
