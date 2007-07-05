@@ -49,25 +49,26 @@ This leads to the final contract of this module.  The methods
 should be used correctly, by obeying their contract.  Failing
 to do so will result in errors and undefined behaviour.
 
+The first argument to all three functions is the name of the
+connection the operation has to be performed on.  A connection
+has to be created before it can be used.  During creation of
+such connection, details like credentials, hostname and
+database can be given.  Currently, connections are stored in
+memory and not made persistent.  This could be changed in the
+future to allow created connections to exist over server
+restarts.
+
 @mal
 module remote;
 
-command prelude() :void
+command prelude():void
 address RMTprelude
 comment "Initialise the remote module";
 
-command epilogue() :void
+command epilogue():void
 address RMTepilogue
 comment "Release the resources held by the remote module";
 
-
-pattern put(host:str, object:any):str
-address RMTput
-comment "Stores object on host and returns its identifier on host";
-
-pattern exec(host:str, ident:str...):any
-address RMTexec
-comment "Executes function ident on host using the given arguments and returns its result";
 
 #remote.prelude();
 @-
@@ -92,9 +93,6 @@ comment "Executes function ident on host using the given arguments and returns i
 remote_export str RMTprelude(int *ret);
 remote_export str RMTepilogue(int *ret);
 
-remote_export str RMTput(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-remote_export str RMTexec(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-
 #endif
 @-
 
@@ -106,6 +104,36 @@ remote_export str RMTexec(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 #include <Mapi.h>
 #include "remote.h"	/* for the implementation of the functions */
 
+typedef struct _connection {
+	char               name[16];  /* name of the connection,
+                                     15 chars should be enough for everyone */
+	Mapi               mconn;     /* the Mapi handle for the connection */
+	struct _connection *next;     /* the next connection in the list */
+} *connection;
+
+static connection connections = NULL;
+
+static str RMTfindconn(connection *ret, str *conn) {
+	connection c = connections;
+
+	/* conn should be passed as valid variable here */
+
+
+	/* just make sure the return isn't garbage */
+	*ret = NULL;
+
+	/* walk through the list */
+	while (c != NULL) {
+		if (strcmp(c->name, *conn) == 0) {
+			/* ok, found */
+			*ret = c;
+			return(MAL_SUCCEED);
+		}
+	}
+
+	throw(MAL, "remote.<findconn>", "no such connection with name '%s'", *conn);
+}
+
 str RMTprelude(int *ret) {
 	(void)ret;
 
@@ -113,7 +141,19 @@ str RMTprelude(int *ret) {
 }
 
 str RMTepilogue(int *ret) {
+	connection c = connections, t;
+
 	(void)ret;
+
+	/* free connections list */
+	while (c != NULL) {
+		t = c;
+		c = c->next;
+		mapi_destroy(t->mconn);
+		GDKfree(t);
+	}
+	/* not sure, but better be safe than sorry */
+	connections = NULL;
 
 	return(MAL_SUCCEED);
 }
@@ -200,23 +240,26 @@ str RMTget(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	str ident, conn, type;
 	ValPtr v;
 	char qbuf[512];
+	connection c;
 	Mapi mconn;
 	MapiHdl mhdl;
 
 	(void)mb;
 
 	conn = (str)getArgValue(stk, pci, 1);
+	if (conn == NULL || strcmp(conn, (str)str_nil) == 0)
+		throw(ILLARG, "remote.get", "connection name is NULL or nil");
 	ident = (str)getArgValue(stk, pci, 2);
 	if (isIdentifier(ident) < 0)
-		throw(MAL, "remote.get", "identifier expected, got '%s'", ident);
+		throw(ILLARG, "remote.get", "identifier expected, got '%s'", ident);
 
 	/* lookup conn, set mconn if valid */
-	mconn = NULL; /* FIXME */
+	rethrow("remote.get", type, RMTfindconn(&c, &conn));
+	mconn = c->mconn;
 	/* ensure it is connected */
 	if (mapi_reconnect(mconn) != MOK) {
 		throw(IO, "remote.get", "an error occurred during (re)connect "
 				"of connection %s: %s", conn, mapi_error_str(mconn));
-		mapi_disconnect(mconn);
 		/* TODO: throw away connection? */
 	}
 
@@ -295,6 +338,13 @@ str RMTget(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	return(MAL_SUCCEED);
 }
 
+@mal
+pattern put(conn:str, object:any):str
+address RMTput
+comment "Stores object on host and returns its identifier on host";
+@h
+remote_export str RMTput(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+@c
 str RMTput(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	(void)mb;
 	(void)stk;
@@ -302,9 +352,130 @@ str RMTput(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	return(MAL_SUCCEED);
 }
 
+@mal
+pattern exec(conn:str, ident:str...):any
+address RMTexec
+comment "Executes function ident on host using the given arguments and returns its result";
+@h
+remote_export str RMTexec(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+@c
 str RMTexec(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	(void)mb;
 	(void)stk;
 	(void)pci;
 	return(MAL_SUCCEED);
 }
+
+@mal
+command create(conn:str, host:str, port:int, dbname:str, user:str, passwd:str):void
+address RMTcreate
+comment "Creates a new connection conn using the given details";
+@h
+remote_export str RMTcreate(
+		int *ret,
+		str *conn,
+		str *host,
+		int *port,
+		str *dbname,
+		str *user,
+		str *passwd);
+@c
+str RMTcreate(
+		int *ret,
+		str *conn,
+		str *host,
+		int *port,
+		str *dbname,
+		str *user,
+		str *passwd)
+{
+	connection c;
+	int s;
+
+	if (conn == NULL || *conn == NULL || strcmp(*conn, (str)str_nil) == 0)
+		throw(ILLARG, "remote.create", "connection name is NULL or nil");
+	if ((s = strlen(*conn)) > 15)
+		throw(ILLARG, "remote.create", "connection name may not exceed 15 characters");
+	if (host == NULL || *host == NULL || strcmp(*host, (str)str_nil) == 0)
+		throw(ILLARG, "remote.create", "hostname is NULL or nil");
+	if (port == NULL || *port <= 0)
+		throw(ILLARG, "remote.create", "port is NULL or <= 0");
+	if (dbname == NULL || *dbname == NULL)
+		throw(ILLARG, "remote.create", "database name is NULL");
+	if (user == NULL || *user == NULL || strcmp(*user, (str)str_nil) == 0)
+		throw(ILLARG, "remote.create", "username is NULL or nil");
+	if (passwd == NULL || *passwd == NULL || strcmp(*passwd, (str)str_nil) == 0)
+		throw(ILLARG, "remote.create", "password is NULL or nil");
+
+
+	/* find a free slot, start with special case of connections not
+	 * being set */
+	if (connections == NULL) {
+		connections = GDKmalloc(sizeof(struct _connection));
+		c = connections;
+	} else {
+		/* ok, it's set, so find the last element in the list */
+		c = connections;
+		while (c->next != NULL) {
+			/* at the same time also check if this connection name
+			 * already exists */
+			if (strcmp(c->name, *conn) == 0)
+				throw(MAL, "remote.create", "a connection with name "
+						"'%s' already exists", *conn);
+			c = c->next;
+		}
+		c = c->next = GDKmalloc(sizeof(struct _connection));
+	}
+	memcpy(connections->name, *conn, s + 1 /* \0 */);
+	connections->mconn = mapi_mapi(*host, *port, *user, *passwd, "mal",
+			(strcmp(*dbname, (str)str_nil) == 0 ? NULL : *dbname));
+	connections->next = NULL;
+
+	/* just make sure the return isn't garbage */
+	*ret = 0;
+
+	return(MAL_SUCCEED);
+}
+
+@mal
+command destroy(conn:str):void
+address RMTdestroy
+comment "Destroys a previously created connection";
+@h
+remote_export str RMTdestroy(int *ret, str *conn);
+@c
+str RMTdestroy(int *ret, str *conn) {
+	connection c = connections, t;
+
+	if (conn == NULL || *conn == NULL || strcmp(*conn, (str)str_nil) == 0)
+		throw(ILLARG, "remote.destroy", "connection name is NULL or nil");
+
+
+	/* just make sure the return isn't garbage */
+	*ret = 0;
+
+	/* walk through the list */
+	t = NULL;
+	while (c != NULL) {
+		if (strcmp(c->name, *conn) == 0) {
+			/* ok, delete it... */
+			if (t == NULL) { /* the top */
+				t = c->next;
+				mapi_destroy(c->mconn);
+				GDKfree(c);
+				connections = t;
+			} else {
+				/* connect the grand child to the grand parent */
+				t->next = c->next;
+				/* and kill the parent in the middle */
+				mapi_destroy(c->mconn);
+				GDKfree(c);
+			}
+
+			return(MAL_SUCCEED);
+		}
+	}
+
+	throw(MAL, "remote.destroy", "no such connection with name '%s'", *conn);
+}
+
