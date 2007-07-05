@@ -58,9 +58,6 @@ PFguide_tree_t  *current_guide_node = NULL;
 /* the root element of the guide tree */
 PFguide_tree_t  *root_guide_node = NULL;
 
-/* Add a new child to the parent */
-static void add_guide_child(PFguide_tree_t *parent, PFguide_tree_t *child);
-
 /* start of a XML element */
 static void
 start_element (void *ctx, const xmlChar *tagname, const xmlChar **atts)
@@ -69,24 +66,72 @@ start_element (void *ctx, const xmlChar *tagname, const xmlChar **atts)
 
     unsigned int guide = 0;     /* the guide number of the node */
     unsigned int count = 0;     /* count of same nodes */
-    PFguide_kind_t kind = 0;    /* kind if the guide node */
-    char *tag_name = NULL;      /* tag name of the guide node */
+    unsigned int kind_int = - 1;   /* read kind as integer */
+    PFguide_kind_t kind = test;    /* kind if the guide node */
+    char *tag_name = NULL;         /* tag name of the guide node */
+    char *attribute_name = NULL; 
 
     (void) ctx;                 /* pacify compiler */
     (void) tagname;             /* pacify compiler */
-
+    
     /* get attributes */
     if((atts != NULL) && *atts) {
-        guide = atoi((char *)atts[1]);
-
-        atts += 2;
-        count = atoi((char *)atts[1]); 
-
-        atts += 2;
-        kind = atoi((char *)atts[1]) - 1;
-
-        atts += 2;
-        tag_name = (*atts != NULL) ? (char*)atts[1] : NULL;
+        while(*atts) {
+            /* get attribute name */ 
+            attribute_name = (unsigned int)(char*)atts[0];
+     
+            if(strcmp(attribute_name, "guide") == 0)
+                guide = (unsigned int) atoi((char *)atts[1]);
+    
+            if(strcmp(attribute_name, "count") == 0)
+                count = (unsigned int) atoi((char *)atts[1]); 
+    
+            if(strcmp(attribute_name, "kind") == 0) {
+                kind_int = (unsigned int) atoi((char *)atts[1]);
+                switch(kind_int) {
+                    case 0:
+                        kind = elem;
+                        break;
+                    case 1:
+                        kind = attr;
+                        break;
+                    case 2:
+                        kind = text;
+                        break;
+                    case 3:
+                        kind = comm;
+                        break;
+                    case 4:
+                        kind = pi;
+                        break;
+                    case 5:
+                        kind = doc;
+                        break;
+                    default:
+                        kind = text;
+                        break;
+                }
+            }
+    
+            if(strcmp(attribute_name, "name") == 0)
+                tag_name = (*atts != NULL) ? (char*)atts[1] : NULL;
+    
+            atts += 2;
+        }
+    }
+    
+    switch(kind) {
+        case elem:
+        case attr:
+        case doc:
+        case pi:
+            if(tag_name == NULL)
+                 PFoops (OOPS_FATAL, "Guide optimization - "
+                        "tag_name of a guide is NULL when it is required\n");
+            break;
+        default:
+            break;
+    
     }
 
     /* create the first guide node */
@@ -131,7 +176,15 @@ start_element (void *ctx, const xmlChar *tagname, const xmlChar **atts)
                 tag_name, strlen(tag_name));
 
         /* create association between parent and child */
-        add_guide_child(current_guide_node, new_guide_node);
+        if((current_guide_node != NULL) && (new_guide_node != NULL)) {
+            /* insert new guide node in the child list */
+            if(current_guide_node->child_list == NULL) {
+                current_guide_node->child_list = PFarray(sizeof(PFguide_tree_t**));
+            }
+            new_guide_node->parent = current_guide_node;
+            *(PFguide_tree_t**) PFarray_add(current_guide_node->child_list) = new_guide_node;
+        }
+
         /* set actual node as current node */
         current_guide_node = new_guide_node;        
     }
@@ -139,7 +192,7 @@ start_element (void *ctx, const xmlChar *tagname, const xmlChar **atts)
 
 /* end of a XML element */
 static void
-end_element ()
+end_element (void)
 {
     /* go a level higher in the tree */
     if(current_guide_node->parent != NULL) 
@@ -235,8 +288,7 @@ PFguide_tree()
     result = xmlValidateDtd(validCtxt, doc, dtdPtr);
     
     if(result == 0) { 
-        PFlog ("XML input invalid\t");  
-        return NULL; 
+        PFoops (OOPS_FATAL, "Guide optimization - XML input is invalid.\n");  
     }
 
     /* start XML parsing */
@@ -249,29 +301,11 @@ PFguide_tree()
 
     /* Document is not well-formed */
     if (! ctx->wellFormed) {
-        PFlog ("XML input not well-formed. Exit\n");
-        exit (EXIT_FAILURE);
+        PFoops (OOPS_FATAL, "Guide optimization - " 
+                "XML input is not well-formed.\n");
     }
 
     return root_guide_node;
-}
-
-/* create association between parent and child */
-static void
-add_guide_child(PFguide_tree_t *parent, PFguide_tree_t *child)
-{
-    
-    if((parent == NULL) || (child == NULL))
-        return;
-
-    /* insert new guide node in the child list */
-    if(parent->child_list == NULL) {
-        parent->child_list = PFarray(sizeof(PFguide_tree_t**));
-    }
-    child->parent = parent;
-    *(PFguide_tree_t**) PFarray_add(parent->child_list) = child;
-
-    return;
 }
 /* vim:set shiftwidth=4 expandtab filetype=c: */
 

@@ -29,6 +29,7 @@
  * Universitaet Muenchen, respectively.  All Rights Reserved.
  *
  */
+#include "ordering.h"
 
 #ifndef LOAD_STATS_H
 #define LOAD_STATS_H
@@ -58,8 +59,8 @@ struct PFguide_tree_t {
 /* Maps a list of guides to a column */
 typedef struct PFguide_mapping_t PFguide_mapping_t;
 struct PFguide_mapping_t {
-    char        *column;        /* name of the column */
-    PFarray_t   *guide_list;    /* list of guide nodes */
+    PFalg_att_t   column;        /* name of the column */
+    PFarray_t    *guide_list;    /* list of guide nodes */
 };
 
 /* create a guide tree from a file */

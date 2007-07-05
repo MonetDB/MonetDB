@@ -152,6 +152,7 @@ PFstate_t PFstate = {
                                 "}IMTS{_[J]OKVCGCG"
                                 "}IMTS{_[J]OKVCG"
                                 "}IMTS{_[J]OKVCGCGP",
+
     .format              = NULL,
 
 #ifndef NDEBUG
