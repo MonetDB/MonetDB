@@ -1,0 +1,32 @@
+include remote;
+# for testweb, we need to ask the server itself how it is available, use
+# sabaoth for that
+include sabaoth;
+
+h := sabaoth.getLocalConnectionHost();
+p := sabaoth.getLocalConnectionPort();
+
+# create a connecton to ourself
+remote.create("test", h, p, nil:str, "monetdb", "monetdb");
+
+# retrieve a value (that for sure won't exist)
+remote.get("test", "b1");
+catch MALException:str;
+	io.printf("!%s\n",MALException);
+exit MALException;
+
+# should raise an exception (the arguments don't matter here)
+remote.create("test", "localhost", 50000, nil:str, "test", "test");
+catch MALException:str;
+	io.printf("!%s\n",MALException);
+exit MALException;
+
+# help testweb a bit, since currently no cleanup is done on server
+# shutdown
+remote.destroy("test");
+
+# this should fail now
+remote.destroy("test");
+catch MALException:str;
+	io.printf("!%s\n",MALException);
+exit MALException;

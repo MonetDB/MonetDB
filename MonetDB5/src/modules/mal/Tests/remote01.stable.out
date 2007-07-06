@@ -1,0 +1,80 @@
+stdout of test 'remote01` in directory 'src/modules/mal` itself:
+
+
+# 09:35:17 >  
+# 09:35:17 >  Mtimeout -timeout 60  mserver5 "--config=/ufs/fabian/scratch/monetdb/current/program-x86_64/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/fabian/scratch/monetdb/current/program-x86_64/lib64/MonetDB5:/ufs/fabian/scratch/monetdb/current/program-x86_64/lib64/MonetDB5/lib:/ufs/fabian/scratch/monetdb/current/program-x86_64/lib64/MonetDB5/bin" --set "gdk_dbfarm=/net/pegasus.ins.cwi.nl/export/scratch0/fabian/vtmp/mtest-current-pegasus.ins.cwi.nl/five/dbfarm" --set "sql_logdir=/net/pegasus.ins.cwi.nl/export/scratch0/fabian/vtmp/mtest-current-pegasus.ins.cwi.nl/five/sqllog" --set "xquery_logdir=/net/pegasus.ins.cwi.nl/export/scratch0/fabian/vtmp/mtest-current-pegasus.ins.cwi.nl/five/xquerylog" --set mapi_open=true --set mapi_port=37413 --set xrpc_port=46951 --set monet_prompt= --trace --dbname=mTests_src_modules_mal  remote01.mal
+# 09:35:17 >  
+
+
+
+
+
+# MonetDB Server v5.1.0
+# Copyright (c) 1993-2007 CWI, all rights reserved
+# Compiled for x86_64-pc-linux-gnu/64bit with 64bit OIDs dynamically linked
+# dbname:mTests_src_modules_mal
+# Visit http://monetdb.cwi.nl/ for further information
+#include remote;
+#
+## create a connecton to ourself
+#remote.create("test", "localhost", 50000, nil:str, "monetdb", "monetdb");
+#
+## retrieve a value (that for sure won't exist)
+#remote.get("test", "b1");
+#catch MALException:str;
+#	io.printf("!%s\n",MALException);
+#exit MALException;
+#
+## should raise an exception
+#remote.create("test", "localhost", 50000, nil:str, "monetdb", "monetdb");
+#catch MALException:str;
+#	io.printf("!%s\n",MALException);
+#exit MALException;
+#
+## help testweb a bit, since currently no cleanup is done on server
+## shutdown
+#remote.destroy("test");
+#
+## this should fail now
+#remote.destroy("test");
+#catch MALException:str;
+#	io.printf("!%s\n",MALException);
+#exit MALException;
+#
+function user.main():void;	# 0  (main:void)
+#remote.prelude(); 	# 1  (_1:str)
+# for testweb, we need to ask the server itself how it is available, use 	# 2  (_2:str)
+# sabaoth for that 	# 3  (_3:str)
+#sabaoth.prelude(); 	# 4  (_4:str)
+    h := sabaoth.getLocalConnectionHost();	# 5 SABgetLocalConnectionHost (h:str)
+    p := sabaoth.getLocalConnectionPort();	# 6 SABgetLocalConnectionPort (p:int)
+# create a connecton to ourself 	# 7  (_7:str)
+    remote.create("test",h,p,nil:str,"monetdb","monetdb");	# 8 RMTcreate (_8:void)<-(_9:str)(h:str)(p:int)(_10:str)(_11:str)(_11:str)
+# retrieve a value (that for sure won't exist) 	# 9  (_12:str)
+    remote.get("test","b1");	# 10 RMTget (_13:any)<-(_9:str)(_14:str)
+catch MALException:str ;	# 11  (MALException:str) jump 13
+    io.printf("!%s\n",MALException);	# 12 IOprint_formatted_str (_16:void)<-(_17:str)(MALException:str)
+exit MALException:str ;	# 13  (MALException:str)
+# should raise an exception (the arguments don't matter here) 	# 14  (_18:str)
+    remote.create("test","localhost",50000,nil:str,"test","test");	# 15 RMTcreate (_19:void)<-(_9:str)(_20:str)(_21:int)(_10:str)(_9:str)(_9:str)
+catch MALException:str ;	# 16  (MALException:str) jump 18
+    io.printf("!%s\n",MALException);	# 17 IOprint_formatted_str (_22:void)<-(_17:str)(MALException:str)
+exit MALException:str ;	# 18  (MALException:str)
+# help testweb a bit, since currently no cleanup is done on server 	# 19  (_23:str)
+# shutdown 	# 20  (_24:str)
+    remote.destroy("test");	# 21 RMTdestroy (_25:void)<-(_9:str)
+# this should fail now 	# 22  (_26:str)
+    remote.destroy("test");	# 23 RMTdestroy (_27:void)<-(_9:str)
+catch MALException:str ;	# 24  (MALException:str) jump 26
+    io.printf("!%s\n",MALException);	# 25 IOprint_formatted_str (_28:void)<-(_17:str)(MALException:str)
+exit MALException:str ;	# 26  (MALException:str)
+end main;	# 27  
+!MALException:remote.get:no such symbol 'b1'
+
+!MALException:remote.create:a connection with name 'test' already exists
+!MALException:remote.destroy:no such connection with name 'test'
+
+# 10:57:19 >  
+# 10:57:19 >  Done.
+# 10:57:19 >  
+
