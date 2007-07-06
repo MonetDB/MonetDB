@@ -113,7 +113,7 @@ typedef struct _connection {
 
 static connection connections = NULL;
 
-static str RMTfindconn(connection *ret, str *conn) {
+static str RMTfindconn(connection *ret, str conn) {
 	connection c = connections;
 
 	/* conn should be passed as valid variable here */
@@ -124,14 +124,45 @@ static str RMTfindconn(connection *ret, str *conn) {
 
 	/* walk through the list */
 	while (c != NULL) {
-		if (strcmp(c->name, *conn) == 0) {
-			/* ok, found */
+		if (strcmp(c->name, conn) == 0) {
+			/* ok found, ensure it is connected */
+			if (mapi_ping(c->mconn) != MOK && mapi_reconnect(c->mconn) != MOK) {
+				throw(IO, "remote.<findconn>", "an error occurred during "
+						"(re)connect of connection '%s': %s",
+						conn, mapi_error_str(c->mconn));
+				/* TODO: throw away connection? */
+			}
 			*ret = c;
 			return(MAL_SUCCEED);
 		}
 	}
 
 	throw(MAL, "remote.<findconn>", "no such connection with name '%s'", *conn);
+}
+
+static str RMTquery(MapiHdl *ret, str func, Mapi conn, str query) {
+	MapiHdl mhdl;
+
+	*ret = NULL;
+	mhdl = mapi_query(conn, query);
+	if (mhdl) {
+		if (mapi_result_error(mhdl) != NULL) {
+			str err = createException(MAL, func, "%s",
+					getExceptionMessage(mapi_result_error(mhdl)));
+			mapi_close_handle(mhdl);
+			return(err);
+		}
+	} else {
+		if (mapi_result_error(mhdl) != NULL) {
+			throw(IO, func, "an error occurred on connection %s: %s",
+					conn, mapi_result_error(mhdl));
+		} else {
+			throw(MAL, func, "remote function invocation didn't return a result");
+		}
+	}
+
+	*ret = mhdl;
+	return(MAL_SUCCEED);
 }
 
 str RMTprelude(int *ret) {
@@ -195,7 +226,8 @@ str RMTserveget(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	v = stk->stk + i;
 	if (n->type == TYPE_any || isAnyExpression(n->type)) {
 		/* TODO: deal with functions */
-		throw(MAL, "remote.serveget", "cannot deal with '%s' type", getTypeName(n->type));
+		throw(MAL, "remote.serveget", "cannot deal with '%s' type",
+				getTypeName(n->type));
 	} else if (isaBatType(n->type)) {
 		char head[10], tail[10];
 		if (getHeadIndex(n->type) > 0) {
@@ -239,6 +271,7 @@ remote_export str RMTget(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 str RMTget(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	str ident, conn, type;
 	ValPtr v;
+	int vtype;
 	char qbuf[512];
 	connection c;
 	Mapi mconn;
@@ -254,93 +287,71 @@ str RMTget(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		throw(ILLARG, "remote.get", "identifier expected, got '%s'", ident);
 
 	/* lookup conn, set mconn if valid */
-	rethrow("remote.get", type, RMTfindconn(&c, &conn));
+	rethrow("remote.get", type, RMTfindconn(&c, conn));
 	mconn = c->mconn;
-	/* ensure it is connected */
-	if (mapi_reconnect(mconn) != MOK) {
-		throw(IO, "remote.get", "an error occurred during (re)connect "
-				"of connection %s: %s", conn, mapi_error_str(mconn));
-		/* TODO: throw away connection? */
-	}
 
 	snprintf(qbuf, 511, "remote.serveget(\"%s\");", ident);
-	mhdl = mapi_query(mconn, qbuf);
-	if (mhdl) {
-		int vtype;
+	rethrow("remote.get", type, RMTquery(&mhdl, "remote.get", mconn, qbuf));
 
-		if (mapi_result_error(mhdl) != NULL) {
-			str err = createException(MAL, "remote.get", "%s",
-					getExceptionMessage(mapi_result_error(mhdl)));
-			mapi_close_handle(mhdl);
-			return(err);
-		}
-
-		if (mapi_get_row_count(mhdl) != 1) {
-			int c = mapi_get_row_count(mhdl);
-			mapi_close_handle(mhdl);
-			throw(MAL, "remote.get", "unexpected number of rows (%d), expecting 1", c);
-		}
-		mapi_fetch_row(mhdl); /* should succeed */
-		type = mapi_fetch_field(mhdl, 0); /* should be there */
-		if (type == NULL) {
-			mapi_close_handle(mhdl);
-			throw(MAL, "remote.get", "missing first column in tuple");
-		}
-
-		/* get the return value */
-		v = &stk->stk[getArg(pci, 0)];
-
-		vtype = getTypeIndex(type, strlen(type), -1);
-		if (vtype == TYPE_bat) {
-			int h, t;
-			str val;
-			/* no checks on the existence of the values */
-			val = mapi_fetch_field(mhdl, 1);
-			h = getTypeIndex(val, strlen(val), -1);
-			val = mapi_fetch_field(mhdl, 2);
-			t = getTypeIndex(val, strlen(val), -1);
-			vtype = newBatType(h, t);
-
-			/* adjust the return type */
-			v->vtype = vtype;
-			/* TODO: get the BAT, etc. */
-			/* v->val.ival = bid; */
-			mapi_close_handle(mhdl);
-			throw(MAL, "remote.get", "fetching BATs not yet implemented!");
-		} else if (vtype == TYPE_any) {
-			mapi_close_handle(mhdl);
-			throw(MAL, "remote.get", "can't handle variables of type 'any'");
-		} else {
-			/* we risk getting something we don't understand here */
-			ptr p = NULL;
-			str val;
-
-			/* no checks on the existence of the value */
-			val = mapi_fetch_field(mhdl, 1);
-
-			ATOMfromstr(vtype, &p, 0, val);
-			if (p != NULL) {
-				VALset(v, vtype, p);
-				if (ATOMextern(vtype) == 0)
-					GDKfree(p);
-			} else {
-				char tval[512];
-				snprintf(tval, 511, "%s", val);
-				tval[511] = '\0';
-				mapi_close_handle(mhdl);
-				throw(MAL, "remote.get", "unable to parse value '%s'", tval);
-			}
-		}
-
+	if (mapi_get_row_count(mhdl) != 1) {
+		int c = mapi_get_row_count(mhdl);
 		mapi_close_handle(mhdl);
+		throw(MAL, "remote.get", "unexpected number of rows (%d), expecting 1", c);
+	}
+	mapi_fetch_row(mhdl); /* should succeed */
+	type = mapi_fetch_field(mhdl, 0); /* should be there */
+	if (type == NULL) {
+		mapi_close_handle(mhdl);
+		throw(MAL, "remote.get", "missing first column in tuple");
+	}
+
+	/* get the return value */
+	v = &stk->stk[getArg(pci, 0)];
+
+	vtype = getTypeIndex(type, strlen(type), -1);
+	if (vtype == TYPE_bat) {
+		int h, t;
+		str val;
+		/* no checks on the existence of the values */
+		val = mapi_fetch_field(mhdl, 1);
+		h = getTypeIndex(val, strlen(val), -1);
+		val = mapi_fetch_field(mhdl, 2);
+		t = getTypeIndex(val, strlen(val), -1);
+		vtype = newBatType(h, t);
+
+		/* adjust the return type */
+		v->vtype = vtype;
+		/* TODO: get the BAT, etc. */
+		/* v->val.ival = bid; */
+		mapi_close_handle(mhdl);
+		throw(MAL, "remote.get", "fetching BATs not yet implemented!");
+	} else if (vtype == TYPE_any) {
+		mapi_close_handle(mhdl);
+		throw(MAL, "remote.get", "can't handle variables of type 'any'");
 	} else {
-		if (mapi_result_error(mhdl) != NULL) {
-			throw(IO, "remote.get", "an error occurred on connection %s: %s",
-					conn, mapi_result_error(mhdl));
+		/* we risk getting something we don't understand here */
+		ptr p = NULL;
+		str val;
+		int len;
+
+		/* no checks on the existence of the value */
+		val = mapi_fetch_field(mhdl, 1);
+
+		ATOMfromstr(vtype, &p, &len, val);
+		if (p != NULL) {
+			VALset(v, vtype, p);
+			if (ATOMextern(vtype) == 0)
+				GDKfree(p);
 		} else {
-			throw(MAL, "remote.get", "remote.serveget invocation didn't return a result");
+			char tval[512];
+			snprintf(tval, 511, "%s", val);
+			tval[511] = '\0';
+			mapi_close_handle(mhdl);
+			throw(MAL, "remote.get", "unable to parse value '%s'", tval);
 		}
 	}
+
+	mapi_close_handle(mhdl);
 
 	return(MAL_SUCCEED);
 }
@@ -356,17 +367,17 @@ static unsigned int _remote_object_counter = 0;
 /**
  * getnextid prints the next unique local identifier as a tuple with one
  * column, e.g.:
- * [ "_remote_put_object_1" ]
+ * [ "remote_put_object_1" ]
  * This method is used by put() to store an object.  The identifiers
  * generated by getnextid are based on a simple and naive strategy of
  * having a prefix and a counter that result in a hopefully unique
- * identifier.  The current prefix is "_remote_put_object_" which should
+ * identifier.  The current prefix is "remote_put_object_" which should
  * reduce possible conflicts to a minimum.
  */
 str RMTgetnextid(int *ret) {
 	Client c = MCgetClient();
 
-	stream_printf(c->fdout, "[ \"_remote_put_object_%d\"\t]\n",
+	stream_printf(c->fdout, "[ \"remote_put_object_%d\"\t]\n",
 			_remote_object_counter++);
 
 	*ret = 0;
@@ -380,10 +391,66 @@ comment "Stores object on host and returns its identifier on host";
 @h
 remote_export str RMTput(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 @c
+/**
+ * stores the given object on the remote host.  The identifier of the
+ * object on the remote host is returned for later use.
+ */
 str RMTput(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
-	(void)mb;
-	(void)stk;
-	(void)pci;
+	str ident, conn, type;
+	int i;
+	connection c;
+	ValPtr v;
+	Mapi mconn;
+	MapiHdl mhdl;
+
+	conn = (str)getArgValue(stk, pci, 1);
+	if (conn == NULL || strcmp(conn, (str)str_nil) == 0)
+		throw(ILLARG, "remote.put", "connection name is NULL or nil");
+
+	/* lookup conn, set mconn if valid */
+	rethrow("remote.put", type, RMTfindconn(&c, conn));
+	mconn = c->mconn;
+
+	/* get a free identifier on the remote host */
+	rethrow("remote.put", type, RMTquery(&mhdl, "remote.put", mconn, "remote.getnextid();"));
+	if (mapi_get_row_count(mhdl) != 1) {
+		int c = mapi_get_row_count(mhdl);
+		mapi_close_handle(mhdl);
+		throw(MAL, "remote.put", "unexpected number of rows (%d), expecting 1", c);
+	}
+	mapi_fetch_row(mhdl); /* should succeed */
+	ident = mapi_fetch_field(mhdl, 0); /* should be there */
+	if (ident == NULL) {
+		mapi_close_handle(mhdl);
+		throw(MAL, "remote.put", "missing first column in tuple");
+	}
+	mapi_close_handle(mhdl);
+
+	/* depending on the input object generate actions to store the
+	 * object remotely*/
+	i = getArgType(mb, pci, 2);
+	if (i == TYPE_any || isAnyExpression(i)) {
+		/* TODO: functions */
+		throw(MAL, "remote.put", "cannot deal with '%s' type",
+				getTypeName(i));
+	} else if (isaBatType(i)) {
+		/* TODO: do BAT handling */
+		throw(MAL, "remote.put", "storing of BATs not yet supported");
+	} else {
+		str val = NULL;
+		char qbuf[512];
+		v = &stk->stk[getArg(pci, 2)];
+		ATOMformat(i, v, &val);
+		snprintf(qbuf, 511, "%s := %s:%s;\n", ident, val, ATOMname(i));
+		qbuf[511] = '\0';
+		rethrow("remote.put", type, RMTquery(&mhdl, "remote.put", mconn, qbuf));
+		mapi_close_handle(mhdl);
+	}
+
+	/* return the identifier */
+	v = &stk->stk[getArg(pci, 0)];
+	v->vtype = TYPE_str;
+	v->val.sval = GDKstrdup(ident);
 	return(MAL_SUCCEED);
 }
 

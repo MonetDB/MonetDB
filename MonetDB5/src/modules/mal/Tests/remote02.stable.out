@@ -1,0 +1,75 @@
+stdout of test 'remote02` in directory 'src/modules/mal` itself:
+
+
+# 14:16:07 >  
+# 14:16:07 >  Mtimeout -timeout 60  mserver5 "--config=/ufs/fabian/scratch/monetdb/current/program-x86_64/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/fabian/scratch/monetdb/current/program-x86_64/lib64/MonetDB5:/ufs/fabian/scratch/monetdb/current/program-x86_64/lib64/MonetDB5/lib:/ufs/fabian/scratch/monetdb/current/program-x86_64/lib64/MonetDB5/bin" --set "gdk_dbfarm=/net/pegasus.ins.cwi.nl/export/scratch0/fabian/vtmp/mtest-current-pegasus.ins.cwi.nl/five/dbfarm" --set "sql_logdir=/net/pegasus.ins.cwi.nl/export/scratch0/fabian/vtmp/mtest-current-pegasus.ins.cwi.nl/five/sqllog" --set "xquery_logdir=/net/pegasus.ins.cwi.nl/export/scratch0/fabian/vtmp/mtest-current-pegasus.ins.cwi.nl/five/xquerylog" --set mapi_open=true --set mapi_port=35191 --set xrpc_port=49347 --set monet_prompt= --trace --dbname=mTests_src_modules_mal  remote02.mal
+# 14:16:07 >  
+
+
+
+# MonetDB Server v5.1.0
+# Copyright (c) 1993-2007 CWI, all rights reserved
+# Compiled for x86_64-pc-linux-gnu/64bit with 64bit OIDs dynamically linked
+# dbname:mTests_src_modules_mal
+# Visit http://monetdb.cwi.nl/ for further information
+#include remote;
+## for testweb, we need to ask the server itself how it is available, use
+## sabaoth for that
+#include sabaoth;
+#
+#h := sabaoth.getLocalConnectionHost();
+#p := sabaoth.getLocalConnectionPort();
+#
+## create a connecton to ourself
+#remote.create("test", h, p, nil:str, "monetdb", "monetdb");
+#
+#b := 4.3;
+#c := 12;
+#
+## store the values
+#i := remote.put("test", b);
+#j := remote.put("test", c);
+#
+## retrieve the value
+#r := remote.get("test", i);
+#s := remote.get("test", j);
+#
+## see if it really is here
+#io.print(r);
+#io.print(s);
+#
+## help testweb a bit, since currently no cleanup is done on server
+## shutdown
+#remote.destroy("test");
+#
+function user.main():void;	# 0  (main:void)
+#remote.prelude(); 	# 1  (_1:str)
+# for testweb, we need to ask the server itself how it is available, use 	# 2  (_2:str)
+# sabaoth for that 	# 3  (_3:str)
+#sabaoth.prelude(); 	# 4  (_4:str)
+    h := sabaoth.getLocalConnectionHost();	# 5 SABgetLocalConnectionHost (h:str)
+    p := sabaoth.getLocalConnectionPort();	# 6 SABgetLocalConnectionPort (p:int)
+# create a connecton to ourself 	# 7  (_7:str)
+    remote.create("test",h,p,nil:str,"monetdb","monetdb");	# 8 RMTcreate (_8:void)<-(_9:str)(h:str)(p:int)(_10:str)(_11:str)(_11:str)
+    b := 4.30000019;	# 9  (b:flt)<-(_13:flt)
+    c := 12;	# 10  (c:int)<-(_15:int)
+# store the values 	# 11  (_16:str)
+    i := remote.put("test",b);	# 12 RMTput (i:str)<-(_9:str)(b:flt)
+    j := remote.put("test",c);	# 13 RMTput (j:str)<-(_9:str)(c:int)
+# retrieve the value 	# 14  (_19:str)
+    r := remote.get("test",i);	# 15 RMTget (r:any)<-(_9:str)(i:str)
+    s := remote.get("test",j);	# 16 RMTget (s:any)<-(_9:str)(j:str)
+# see if it really is here 	# 17  (_22:str)
+    io.print(r);	# 18 IOprint_val (_23:void)<-(r:any)
+    io.print(s);	# 19 IOprint_val (_24:void)<-(s:any)
+# help testweb a bit, since currently no cleanup is done on server 	# 20  (_25:str)
+# shutdown 	# 21  (_26:str)
+    remote.destroy("test");	# 22 RMTdestroy (_27:void)<-(_9:str)
+end main;	# 23  
+[ 4.30000019 ]
+[ 12 ]
+
+# 14:16:07 >  
+# 14:16:07 >  Done.
+# 14:16:07 >  
+
