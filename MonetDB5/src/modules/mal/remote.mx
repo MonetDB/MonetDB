@@ -332,7 +332,7 @@ str RMTget(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		/* we risk getting something we don't understand here */
 		ptr p = NULL;
 		str val;
-		int len;
+		int len = 0;
 
 		/* no checks on the existence of the value */
 		val = mapi_fetch_field(mhdl, 1);
