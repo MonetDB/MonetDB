@@ -3122,8 +3122,12 @@ mapi_cache_freeup_internal(struct MapiResultSet *result, int k)
 		}
 		result->cache.line[i].rows = result->cache.line[i + k].rows;
 		result->cache.line[i + k].rows = 0;
-		if (result->cache.line[i].anchors)
+		if (result->cache.line[i].anchors) {
+			int j = 0;
+			for(j=0; j<result->cache.line[i].fldcnt; j++)
+				free(result->cache.line[i].anchors[j]);
 			free(result->cache.line[i].anchors);
+		}
 		result->cache.line[i].anchors = result->cache.line[i + k].anchors;
 		result->cache.line[i + k].anchors = 0;
 		result->cache.line[i].fldcnt = result->cache.line[i + k].fldcnt;
@@ -3146,8 +3150,12 @@ mapi_cache_freeup_internal(struct MapiResultSet *result, int k)
 			free(result->cache.line[i].rows);
 		}
 		result->cache.line[i].rows = 0;
-		if (result->cache.line[i].anchors)
+		if (result->cache.line[i].anchors) {
+			int j = 0;
+			for(j=0; j<result->cache.line[i].fldcnt; j++)
+				free(result->cache.line[i].anchors[j]);
 			free(result->cache.line[i].anchors);
+		}
 		result->cache.line[i].anchors = 0;
 		result->cache.line[i].fldcnt = 0;
 	}
