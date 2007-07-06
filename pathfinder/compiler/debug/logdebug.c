@@ -1762,7 +1762,7 @@ la_xml (PFarray_t *xml, PFla_op_t *n)
                             "      <column name=\"%s\" function=\"iter\"/>\n"
                             "      <column name=\"%s\" function=\"qname item\""
                                     "/>\n"
-                            "      <column name=\"%s\" function=\"content item"
+                            "      <column name=\"%s\" function=\"content item\""
                                     "/>\n"
                             "    </content>\n",
                             PFatt_str (n->sem.iter_item1_item2.iter),
@@ -1776,7 +1776,7 @@ la_xml (PFarray_t *xml, PFla_op_t *n)
                             "      <column name=\"%s\" function=\"iter\"/>\n"
                             "      <column name=\"%s\" function=\"target item\""
                                     "/>\n"
-                            "      <column name=\"%s\" function=\"value item"
+                            "      <column name=\"%s\" function=\"value item\""
                                     "/>\n"
                             "    </content>\n",
                             PFatt_str (n->sem.iter_item1_item2.iter),
