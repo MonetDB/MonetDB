@@ -422,21 +422,22 @@ str RMTcreate(
 		c = connections;
 	} else {
 		/* ok, it's set, so find the last element in the list */
-		c = connections;
-		while (c->next != NULL) {
+		connection t = c = connections;
+		do {
 			/* at the same time also check if this connection name
 			 * already exists */
 			if (strcmp(c->name, *conn) == 0)
 				throw(MAL, "remote.create", "a connection with name "
 						"'%s' already exists", *conn);
+			t = c;
 			c = c->next;
-		}
-		c = c->next = GDKmalloc(sizeof(struct _connection));
+		} while (c != NULL);
+		c = t->next = GDKmalloc(sizeof(struct _connection));
 	}
-	memcpy(connections->name, *conn, s + 1 /* \0 */);
-	connections->mconn = mapi_mapi(*host, *port, *user, *passwd, "mal",
+	memcpy(c->name, *conn, s + 1 /* \0 */);
+	c->mconn = mapi_mapi(*host, *port, *user, *passwd, "mal",
 			(strcmp(*dbname, (str)str_nil) == 0 ? NULL : *dbname));
-	connections->next = NULL;
+	c->next = NULL;
 
 	/* just make sure the return isn't garbage */
 	*ret = 0;
