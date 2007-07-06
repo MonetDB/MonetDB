@@ -4036,15 +4036,18 @@ rollforward_update_schema(sql_trans *tr, sql_schema *fs, sql_schema *ts)
 	if (isTempSchema(fs)) {
 		if (fs->tables.set) {
 			node *n;
-			for (n = fs->tables.set->h; n; n = n->next) {
+			for (n = fs->tables.set->h; n; ) {
+				node *nxt = n->next;
 				sql_table *t = n->data;
 	
-				if ((isTable(t) && isGlobalTable(t)) || 
+				if ((isTable(t) && isGlobalTable(t) &&
+				    t->commit_action != CA_PRESERVE) || 
 				    t->commit_action == CA_DELETE) {
 					sql_trans_clear_table(tr, t);
 				} else if (t->commit_action == CA_DROP) {
 					sql_trans_drop_table(tr, t->s, t->base.id, DROP_RESTRICT);
 				}
+				n = nxt;
 			}
 		}
 		return ok;
@@ -4387,15 +4390,18 @@ reset_schema(sql_trans *tr, sql_schema *fs, sql_schema *pfs)
 	if (isTempSchema(fs)) {
 		if (fs->tables.set) {
 			node *n;
-			for (n = fs->tables.set->h; n; n = n->next) {
+			for (n = fs->tables.set->h; n; ) {
+				node *nxt = n->next;
 				sql_table *t = n->data;
 	
-				if ((isTable(t) && isGlobalTable(t)) || 
-				     t->commit_action == CA_DELETE) {
+				if ((isTable(t) && isGlobalTable(t) &&
+				    t->commit_action != CA_PRESERVE) || 
+				    t->commit_action == CA_DELETE) {
 					sql_trans_clear_table(tr, t);
 				} else if (t->commit_action == CA_DROP) {
 					sql_trans_drop_table(tr, t->s, t->base.id, DROP_RESTRICT);
 				}
+				n = nxt;
 			}
 		}
 		return ok;

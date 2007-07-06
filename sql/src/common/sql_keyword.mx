@@ -22,10 +22,13 @@
 #include "sql_string.h"
 #include "sql_keyword.h"
 
-int keywords_init_done = 0;
-keyword *keywords[HASH_SIZE];
+#define HASH_SIZE 32768
+#define HASH_MASK (HASH_SIZE-1)
 
-int
+static int keywords_init_done = 0;
+static keyword *keywords[HASH_SIZE];
+
+static int
 keyword_key(char *k, int *l)
 {
 	char *s = k;
