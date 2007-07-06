@@ -86,7 +86,7 @@ comment "Experiment with partitioned databases";
 #include "opt_prelude.h"
 #include "opt_support.h"
 
-/*#define DEBUG_OPT_PARTITIONED	show partial result */
+/* #define DEBUG_OPT_PARTITIONED	show partial result */
 @c
 #include "mal_config.h"
 #include "opt_partitions.h"
@@ -109,30 +109,32 @@ static int localVar(MalBlkPtr mb, char *prefix, int idx, int tpe){
 	return newVariable(mb,GDKstrdup(name),tpe);
 }
 
+static void setSegment(MalBlkPtr mb, InstrPtr p, int grp){
+	int j;
+	for(j=0; j<p->retc; j++){
+		setArgProperty(mb, p,j,"segment","=",TYPE_int,&grp);
+	}
+}
+
 static int
 OPTpartitionProperties(MalBlkPtr mb)
 {
-	int i,j,k,limit,done, lastsegment=0,grp= 1;
-	InstrPtr *old,p;
-	int *outflow= (int*) alloca(sizeof(int)*mb->vtop);
+	int i,j,k,done, lastsegment=0,grp= 1;
+	InstrPtr p;
+	int *used= (int*) alloca(sizeof(int)*mb->vtop);
 
-	memset((char*) outflow, 0, sizeof(int)*mb->vtop);
+	memset((char*) used, 0, sizeof(int)*mb->vtop);
 	for(i=0;i<mb->stop; i++){
 		p= getInstrPtr(mb,i);
 		for(j=p->retc; j<p->argc;j++)
-			outflow[getArg(p,j)]++;
+			used[getArg(p,j)]++;
 	}
-	limit= mb->stop;
-	old = mb->stmt;
-	newMalBlkStmt(mb,limit);
 
-	for(i=0;i< limit; i++){
-		p=old[i];
+	for(i=0;i< mb->stop; i++){
+		p=getInstrPtr(mb,i);
 		if( getFunctionId(p)== bindRef && getModuleId(p)==sqlRef){
 			/* test the BPM catalog */
-
 			setArgProperty(mb, p,0,"segment","=",TYPE_int,&grp);
-			pushInstruction(mb,p);
 			grp++;
 			continue;
 		}
@@ -140,17 +142,12 @@ OPTpartitionProperties(MalBlkPtr mb)
 			/* this BAT can be ignored */
 			j= -1;
 			setArgProperty(mb, p,1,"segment","=",TYPE_int,&j);
-			pushInstruction(mb,p);
 			grp++;
 			continue;
 		}
 		/* find plan segments, a linear trail of single target instructions */
 		/* mark all result variables to belong to the same segment */
-		for(j=0; j<p->retc; j++){
-			setArgProperty(mb, p,j,"segment","=",TYPE_int,&grp);
-		}
-		pushInstruction(mb,p);
-/* printInstruction(GDKout,mb,p,LIST_MAL_PROPS);*/
+		setSegment(mb,p,grp);
 
 		done=0;
 		if( isFragmentGroup(p) && !hasSideEffects(p,TRUE) ){
@@ -162,17 +159,14 @@ OPTpartitionProperties(MalBlkPtr mb)
 					done=k;
 				if( done!= k)
 					goto newgroup;
-				if( outflow[getArg(p,j)]>1)
+				if( used[getArg(p,j)]>1)
 					goto newgroup;
 			}
 			if( p->retc==1)
 				goto nxtgroup;
 		newgroup:
 			++grp;
-/* printf("new segment start here %d \n",grp);*/
-			for(j=0; j<p->retc; j++){
-				setArgProperty(mb, p,j,"segment","=",TYPE_int,&grp);
-			}
+			setSegment(mb,p,grp);
 			lastsegment=0;
 		} else
 		if( !isFragmentGroup(p) ){
@@ -180,13 +174,10 @@ OPTpartitionProperties(MalBlkPtr mb)
 				getModuleId(p)== batcalcRef ||
 				getModuleId(p)== aggrRef)
 				lastsegment= ++grp;
-			for(j=0; j<p->retc; j++){
-				setArgProperty(mb, p,j,"segment","=",TYPE_int,&grp);
-			}
+			setSegment(mb,p,grp);
 		} 
-nxtgroup:
-	;
-}
+nxtgroup: ;
+	}
 #ifdef DEBUG_OPT_PARTITIONED
 	setLifespan(mb);
 	chkProgram(MCgetClient()->nspace,mb);
