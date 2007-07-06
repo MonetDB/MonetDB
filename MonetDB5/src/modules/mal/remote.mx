@@ -248,8 +248,13 @@ str RMTserveget(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		snprintf(ret, 255, "[ \"bat\",\t\"%s\",\t\"%s\"\t]", head, tail);
 	} else {
 		str val = NULL;
-		ATOMformat(n->type, v, &val);
-		snprintf(ret, 255, "[ \"%s\",\t\"%s\"\t]", ATOMname(n->type), val);
+		if (ATOMvarsized(n->type)) {
+			ATOMformat(n->type, *(str *)v, &val);
+			snprintf(ret, 255, "[ \"%s\",\t%s\t]", ATOMname(n->type), val);
+		} else {
+			ATOMformat(n->type, v, &val);
+			snprintf(ret, 255, "[ \"%s\",\t\"%s\"\t]", ATOMname(n->type), val);
+		}
 	}
 	ret[255] = '\0';
 
@@ -337,17 +342,21 @@ str RMTget(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		/* no checks on the existence of the value */
 		val = mapi_fetch_field(mhdl, 1);
 
-		ATOMfromstr(vtype, &p, &len, val);
-		if (p != NULL) {
-			VALset(v, vtype, p);
-			if (ATOMextern(vtype) == 0)
-				GDKfree(p);
+		if (ATOMvarsized(vtype)) {
+			VALset(v, vtype, GDKstrdup(val));
 		} else {
-			char tval[512];
-			snprintf(tval, 511, "%s", val);
-			tval[511] = '\0';
-			mapi_close_handle(mhdl);
-			throw(MAL, "remote.get", "unable to parse value '%s'", tval);
+			ATOMfromstr(vtype, &p, &len, val);
+			if (p != NULL) {
+				VALset(v, vtype, p);
+				if (ATOMextern(vtype) == 0)
+					GDKfree(p);
+			} else {
+				char tval[512];
+				snprintf(tval, 511, "%s", val);
+				tval[511] = '\0';
+				mapi_close_handle(mhdl);
+				throw(MAL, "remote.get", "unable to parse value '%s'", tval);
+			}
 		}
 	}
 
@@ -438,9 +447,13 @@ str RMTput(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		throw(MAL, "remote.put", "storing of BATs not yet supported");
 	} else {
 		str val = NULL;
-		char qbuf[512];
-		v = &stk->stk[getArg(pci, 2)];
-		ATOMformat(i, v, &val);
+		char qbuf[512]; /* FIXME: this should be dynamic */
+		ptr v = (ptr)getArgReference(stk, pci, 2);
+		if (ATOMvarsized(i)) {
+			ATOMformat(i, *(str *)v, &val);
+		} else {
+			ATOMformat(i, v, &val);
+		}
 		snprintf(qbuf, 511, "%s := %s:%s;\n", ident, val, ATOMname(i));
 		qbuf[511] = '\0';
 		rethrow("remote.put", type, RMTquery(&mhdl, "remote.put", mconn, qbuf));

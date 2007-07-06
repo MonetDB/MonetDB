@@ -13,3 +13,7 @@ remote.serveget("c");
 # we can also describe "complexer" types (a BAT for now)
 d := bat.new(:oid, :str);
 remote.serveget("d");
+
+# and a varsized object (like a string) should work too
+g := "Hello world!";
+remote.serveget("g");

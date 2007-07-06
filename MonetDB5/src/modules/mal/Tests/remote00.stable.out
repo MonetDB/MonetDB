@@ -9,6 +9,8 @@ stdout of test 'remote00` in directory 'src/modules/mal` itself:
 
 
 
+
+
 # MonetDB Server v5.1.0
 # Copyright (c) 1993-2007 CWI, all rights reserved
 # Compiled for x86_64-pc-linux-gnu/64bit with 64bit OIDs dynamically linked
@@ -41,10 +43,14 @@ function user.main():void;	# 0  (main:void)
 # we can also describe "complexer" types (a BAT for now) 	# 10  (_14:str)
     d := bat.new(:oid,:str);	# 11 CMDBATnew (d:bat[:oid,:str])<-(_16:oid)(_17:str)
     remote.serveget("d");	# 12 RMTserveget (_18:void)<-(_19:str)
-end main;	# 13  
+# and a varsized object (like a string) should work too 	# 13  (_20:str)
+    g := "Hello world!";	# 14  (g:str)<-(_22:str)
+    remote.serveget("g");	# 15 RMTserveget (_23:void)<-(_24:str)
+end main;	# 16  
 [ "int",	"1"	]
 [ "flt",	"3.4000001"	]
 [ "bat",	"oid",	"str"	]
+[ "str",	"Hello world!"	]
 
 # 11:27:38 >  
 # 11:27:38 >  Done.
