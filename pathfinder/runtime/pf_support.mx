@@ -7916,7 +7916,7 @@ PROC elem_constr (BAT[void, oid] qn_iter,
     } else { # end of ``if (pre.count() != 0)''
 
         root_size := qn_iter.project(0);
-        root_prop := qn_item; # !the seqbase of qn_item is later modified
+        root_prop := qn_item.copy(); # !the seqbase of qn_item is later modified
         root_kind := qn_iter.project(ELEMENT);
         root_cont := qn_iter.project(WS);
         root_level := qn_iter.project(chr(0));
