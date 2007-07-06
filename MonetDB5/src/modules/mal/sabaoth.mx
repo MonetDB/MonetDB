@@ -48,6 +48,14 @@ command marchConnection(host:str, port:int, ssl:bit)
 address SABmarchConnection
 comment "Publishes the given host/port as available for connecting to this server";
 
+command getLocalConnectionHost():str
+address SABgetLocalConnectionHost
+comment "Returns the hostname this server can be connected to, or nil if none";
+
+command getLocalConnectionPort():int
+address SABgetLocalConnectionPort
+comment "Returns the port this server can be connected to, or 0 if none";
+
 command wildRetreat()
 address SABwildRetreat
 comment "Unpublishes everything known for this server";
@@ -83,6 +91,8 @@ sabaoth_export str SABepilogue(int *ret);
 sabaoth_export str SABmarchScenario(int *ret, str *lang);
 sabaoth_export str SABretreatScenario(int *ret, str *lang);
 sabaoth_export str SABmarchConnection(int *ret, str *host, int *port, bit *ssl) ;
+sabaoth_export str SABgetLocalConnectionHost(str *ret);
+sabaoth_export str SABgetLocalConnectionPort(int *ret);
 sabaoth_export str SABwildRetreat(int *ret);
 
 #endif
@@ -117,6 +127,56 @@ str SABretreatScenario(int *ret, str *lang){
 
 str SABmarchConnection(int *ret, str *host, int *port, bit *ssl) {
 	return SABAOTHmarchConnection(ret, host, port, ssl);
+}
+
+str SABgetLocalConnectionHost(str *ret) {
+	str tmp, con, p;
+
+	rethrow("sabaoth.getLocalConnectionHost", tmp,
+			SABAOTHgetLocalConnection(&con));
+
+	if (strcmp(con, (str)str_nil) == 0) {
+		*ret = con;
+		return(MAL_SUCCEED);
+	}
+
+	/* con looks like mapi:monetdb://hostname:port/database?bla */
+	/* do some poor man's parsing */
+	tmp = con;
+	p = strchr(con, ':') + 1;
+	con = strchr(p, ':') + 3;
+	p = strchr(con, ':');
+	*p = '\0';
+
+	*ret = GDKstrdup(con);
+	GDKfree(tmp);
+	return(MAL_SUCCEED);
+}
+
+str SABgetLocalConnectionPort(int *ret) {
+	str tmp, con, p;
+
+	rethrow("sabaoth.getLocalConnectionHost", tmp,
+			SABAOTHgetLocalConnection(&con));
+
+	if (strcmp(con, (str)str_nil) == 0) {
+		*ret = 0;
+		GDKfree(con);
+		return(MAL_SUCCEED);
+	}
+
+	/* con looks like mapi:monetdb://hostname:port/database?bla */
+	/* do some poor man's parsing */
+	tmp = con;
+	p = strchr(con, ':') + 1;
+	p = strchr(p, ':') + 1;
+	con = strchr(p, ':') + 1;
+	p = strchr(con, '/');
+	*p = '\0';
+
+	*ret = atoi(con);
+	GDKfree(tmp);
+	return(MAL_SUCCEED);
 }
 
 str SABwildRetreat(int *ret) {

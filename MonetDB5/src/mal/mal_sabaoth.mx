@@ -269,6 +269,39 @@ str SABAOTHmarchConnection(int *ret, str *host, int *port, bit *ssl) {
 }
 
 @h
+mal_export str SABAOTHgetLocalConnection(str *ret);
+@c
+/**
+ * Returns the connection string for the current database, or nil when
+ * there is none.  If there are multiple connections defined, only the
+ * first is returned.
+ */
+str SABAOTHgetLocalConnection(str *ret) {
+	FILE *f;
+	str path = alloca(sizeof(char) * (PATHLENGTH + 1));
+	char data[8096];
+	str tmp;
+
+	rethrow("sabaoth.getLocalConnection", tmp,
+			getDBPath(&path, PATHLENGTH, CONNECTIONFILE));
+
+	data[8095] = '\0';
+	if ((f = fopen(path, "r")) != NULL) {
+		if (fgets(data, 8095, f) != NULL) {
+			if (*data != '\0' && data[strlen(data) - 1] == '\n')
+				data[strlen(data) - 1] = '\0';
+			*ret = GDKstrdup(data);
+			(void)fclose(f);
+			return(MAL_SUCCEED);
+		}
+		(void)fclose(f);
+	}
+
+	*ret = GDKstrdup(str_nil);
+	return(MAL_SUCCEED);
+}
+
+@h
 mal_export str SABAOTHwildRetreat(int *ret);
 @c
 /**
