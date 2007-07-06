@@ -206,7 +206,7 @@ typedef struct PFalg_proj_t PFalg_proj_t;
 
 
 
-/* ....... staircase join specs (semantic infos of scj operators) ....... */
+/* ....... path step specs (semantic infos of step operators) ....... */
 
 /** location steps */
 enum PFalg_axis_t {

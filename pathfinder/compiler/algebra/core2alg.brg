@@ -359,7 +359,7 @@ static bool ordering = false;
  */
 static unsigned int seq_count = 0;
 
-/* Constructor for staircase join */
+/* Constructor for a path step */
 static struct PFla_pair_t locstep (PFalg_axis_t axis, PFty_t seqty, 
                                    struct PFla_pair_t p);
 
@@ -788,13 +788,12 @@ reduce (PFcnode_t * p, int goalnt)
                        needs to respect the sequence order 
                        (in- and outside the flwor block). */
                     A(p) = (struct PFla_pair_t) {
-                            .rel = project (rownum (eqjoin (A(R(p)).rel,
-                                                            MAP,
-                                                            att_iter,
-                                                            att_inner),
-                                                    att_pos1,
-                                                    sortby (att_iter, att_pos),
-                                                    att_outer),
+                            .rel = project (rank (eqjoin (A(R(p)).rel,
+                                                          MAP,
+                                                          att_iter,
+                                                          att_inner),
+                                                  att_pos1,
+                                                  sortby (att_iter, att_pos)),
                                             proj (att_iter, att_outer),
                                             proj (att_pos, att_pos1),
                                             proj (att_item, att_item)),
@@ -846,13 +845,12 @@ reduce (PFcnode_t * p, int goalnt)
                     }
 
                     A(p) = (struct PFla_pair_t) {
-                            .rel = project (rownum (eqjoin (A(R(p)).rel,
-                                                            MAP,
-                                                            att_iter,
-                                                            att_inner),
-                                                    att_pos1,
-                                                    sortby,
-                                                    att_outer),
+                            .rel = project (rank (eqjoin (A(R(p)).rel,
+                                                          MAP,
+                                                          att_iter,
+                                                          att_inner),
+                                                  att_pos1,
+                                                  sortby),
                                             proj (att_iter, att_outer),
                                             proj (att_pos, att_pos1),
                                             proj (att_item, att_item)),
@@ -922,7 +920,7 @@ reduce (PFcnode_t * p, int goalnt)
             /* initiate translation of e1 */
             reduce (kids[1], nts[1]);
 
-            number = number (A(LR(p)).rel, att_inner, att_NULL);
+            number = number (A(LR(p)).rel, att_inner);
 
             /* translate $v */
             var = attach (project (number,
@@ -1263,15 +1261,14 @@ reduce (PFcnode_t * p, int goalnt)
             
             A(p) = (struct  PFla_pair_t) {
                      .rel = project (
-                                rownum (
+                                rank (
                                     disjunion (
                                         attach (
                                             A(L(p)).rel,
                                             att_ord, lit_nat (1)),
                                         A(R(p)).rel),
                                     att_pos1,
-                                    sortby (att_ord, att_pos),
-                                    att_iter),
+                                    sortby (att_ord, att_pos)),
                                 proj (att_iter, att_iter),
                                 proj (att_pos, att_pos1),
                                 proj (att_item, att_item)),
@@ -1294,7 +1291,7 @@ reduce (PFcnode_t * p, int goalnt)
              */
             A(p) = (struct  PFla_pair_t) {
                      .rel = project (
-                                rownum (
+                                rank (
                                     disjunion (
                                         attach (
                                             A(L(p)).rel,
@@ -1303,8 +1300,7 @@ reduce (PFcnode_t * p, int goalnt)
                                             A(R(p)).rel,
                                             att_ord, lit_nat (2))),
                                     att_pos1,
-                                    sortby (att_ord, att_pos),
-                                    att_iter),
+                                    sortby (att_ord, att_pos)),
                                 proj (att_iter, att_iter),
                                 proj (att_pos, att_pos1),
                                 proj (att_item, att_item)),
@@ -2239,7 +2235,7 @@ reduce (PFcnode_t * p, int goalnt)
              * will be mapped into the following DAG (e1 -> q1; e2 -> q2;
              * child edges: '---'; 'semantical' edges: '- -')
              *
-             *         rownum_(pos:<item>||iter)
+             *          rank_(pos:<item>)
              *            |
              *         distinct
              *            |
@@ -2256,8 +2252,8 @@ reduce (PFcnode_t * p, int goalnt)
              *              |     ----|----  \     U (2)
              *         |    |         |           / \
              *              |           (base)|  /  diff (1)
-             *         | rownum_                 |   | \
-             *          (pos:<item>||iter)    |  | __|__\
+             *         |  rank_                  |   | \
+             *          (pos:<item>)          |  | __|__\
              *         |    |                    |/  |
              *           (use (1), (2), or    \  |   |
              *         |  (3) as input)     rec_base |
@@ -2496,16 +2492,14 @@ reduce (PFcnode_t * p, int goalnt)
             if (x_used)
                 x_rec_param = rec_param (
                                   rec_arg (
-                                      rownum (
+                                      rank (
                                           seed,
                                           att_pos,
-                                          sortby (att_item),
-                                          att_iter),
-                                      rownum (
+                                          sortby (att_item)),
+                                      rank (
                                           body,
                                           att_pos,
-                                          sortby (att_item),
-                                          att_iter),
+                                          sortby (att_item)),
                                       base_x),
                                   loop_rec_param);
             else
@@ -2514,9 +2508,9 @@ reduce (PFcnode_t * p, int goalnt)
             /* ---------------- RECURSION ----------------- */
             
             A(p) = (struct PFla_pair_t) {
-                     .rel = rownum (
+                     .rel = rank (
                                 rec_fix (x_rec_param, res),
-                                att_pos, sortby (att_item), att_iter),
+                                att_pos, sortby (att_item)),
                      .frag = A(RR(p)).frag };
 
             /* clean up environment and loop relation */
@@ -2599,7 +2593,7 @@ reduce (PFcnode_t * p, int goalnt)
 }
 
 /**
- * Construct a relational expression for a staircase join
+ * Construct a relational expression for a path step
  */
 static struct PFla_pair_t
 locstep (PFalg_axis_t axis, PFty_t seqty, struct PFla_pair_t p)
@@ -2611,21 +2605,22 @@ locstep (PFalg_axis_t axis, PFty_t seqty, struct PFla_pair_t p)
      * (row_pos<item>/iter (SCJ (proj_iter,item (q(e)), delta)), delta)
      *
      * A(L(p)).rel contains a axis node with information on the
-     * location step. Will be read out in PFla_scjoin().
+     * location step. Will be read out in PFla_step().
      */
-    PFla_op_t *scjoin = scjoin (PFla_set_to_la (p.frag),
-                                project (p.rel,
-                                         proj (att_iter, att_iter),
-                                         proj (att_item, att_item)),
-                                axis, seqty, att_iter, att_item, att_item);
+    PFla_op_t *step = PFla_step_simple (
+                          PFla_set_to_la (p.frag),
+                          project (p.rel,
+                                   proj (att_iter, att_iter),
+                                   proj (att_item, att_item)),
+                          axis, seqty, att_iter, att_item, att_item);
 
     if (ordering)
         return (struct  PFla_pair_t) {
-                   .rel = rownum (scjoin, att_pos, sortby (att_item), att_iter),
+                   .rel = rank (step, att_pos, sortby (att_item)),
                    .frag = p.frag };
     else
         return (struct  PFla_pair_t) {
-                   .rel = number (scjoin, att_pos, att_iter),
+                   .rel = number (step, att_pos),
                    .frag = p.frag };
 }
 

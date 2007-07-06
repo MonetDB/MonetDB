@@ -67,7 +67,7 @@ check_op (PFla_op_t *n)
            in initial plans */
         case la_semijoin:
         case la_thetajoin:
-        case la_dup_scjoin:
+        case la_dup_step:
         case la_proxy:
         case la_proxy_base:
         case la_cross_mvd:
@@ -228,6 +228,12 @@ check_op (PFla_op_t *n)
             }
             break;
 
+        case la_to:
+            ITER (n) = ITER (L(n));
+            POS  (n) = POS  (L(n));
+            INNER(n) = INNER(L(n));
+            break;
+
         case la_avg:
         case la_max:
         case la_min:
@@ -251,7 +257,18 @@ check_op (PFla_op_t *n)
             /* a numbering partitioned by ITER indicates a new sequence
                order -- we thus add new position column */
             if (n->sem.rownum.part && ITER(n) & n->sem.rownum.part)
-                POS(n) |= n->sem.rownum.attname;
+                POS(n) |= n->sem.rownum.res;
+            break;
+            
+        case la_rank:
+            ITER (n) = ITER (L(n));
+            POS  (n) = POS  (L(n));
+            INNER(n) = INNER(L(n));
+            
+            /* a numbering indicates a new sequence
+               order -- we thus add new position column */
+            if (ITER(n))
+                POS(n) |= n->sem.rank.res;
             break;
             
         case la_number:
@@ -259,19 +276,13 @@ check_op (PFla_op_t *n)
             POS  (n) = POS  (L(n));
             INNER(n) = INNER(L(n));
             
-            /* a numbering partitioned by ITER indicates a new sequence
-               order -- we thus add new position column */
-            if (n->sem.number.part && ITER(n) & n->sem.number.part)
-                POS(n) |= n->sem.number.attname;
-            
             /* mark new iteration column that is generated 
                based on the old input sequence.
                This column is needed to ensure that we do not
                use the cardinality to generate new nodes */
             if ((ITER(L(n)) & att_iter ||
                  INNER(L(n)) & att_iter) &&
-                n->sem.number.attname == att_inner &&
-                !n->sem.number.part)
+                n->sem.number.res == att_inner)
                 INNER(n) |= att_inner;
             break;
             
@@ -285,7 +296,10 @@ check_op (PFla_op_t *n)
             INNER(n) = INNER(L(n));
             break;
 
-        case la_scjoin:
+        case la_step:
+        case la_guide_step:
+        case la_id:
+        case la_idref:
         case la_doc_access:
             ITER (n) = ITER (R(n));
             POS  (n) = POS  (R(n));
@@ -411,9 +425,9 @@ prop_check (PFla_op_t *n)
         /* this reference is the only one */
         REFS(L(n)) == 1 &&
         /* column item generates a value that may be required */
-        PFprop_reqval (n->prop, n->sem.attach.attname) &&
+        PFprop_reqval (n->prop, n->sem.attach.res) &&
         /* the required value differs from the attached value */
-        PFprop_reqval_val (n->prop, n->sem.attach.attname) !=
+        PFprop_reqval_val (n->prop, n->sem.attach.res) !=
         n->sem.attach.value.val.bln)
         /* mark the distinct operator as unused */
         NOT_USED(L(n)) = true;

@@ -49,6 +49,18 @@
 #include "logical.h"
 #include "logical_mnemonic.h"
 
+/**
+ * Assign correct row numbers in case we need the real values.
+ */
+static PFla_op_t *
+adjust_positions (const PFla_op_t *n)
+{
+    return project (rownum (n, att_pos1, sortby (att_pos), att_iter),
+                    proj (att_iter, att_iter),
+                    proj (att_pos, att_pos1),
+                    proj (att_item, att_item));
+}
+
 /* ----------------------------------------- */
 /* Helper functions to build a decision tree */
 /* ----------------------------------------- */
@@ -493,7 +505,7 @@ fn_data (struct PFla_pair_t (*str_val)
                                   proj (att_item, att_item));
     
     /* renumber */
-    PFla_op_t *q = number (nodes, att_inner, att_NULL);
+    PFla_op_t *q = number (nodes, att_inner);
     
     PFla_op_t *map = project (q, 
                               proj (att_outer, att_iter), 
@@ -2024,7 +2036,7 @@ PFbui_fn_distinct_values (const PFla_op_t *loop, bool ordering,
                                  project (args[0].rel,
                                       proj (att_iter, att_iter),
                                       proj (att_item, att_item))),
-                             att_pos, att_iter),
+                             att_pos),
                   .frag = args[0].frag };
 }
 
@@ -2035,7 +2047,7 @@ PFbui_fn_insert_before (const PFla_op_t *loop, bool ordering,
     /* mark all rows true where the second argument is greather than
        the index position */
     PFla_op_t *partition = gt (eqjoin (
-                                   cast (args[0].rel,
+                                   cast (adjust_positions (args[0].rel),
                                          att_cast,
                                          att_pos,
                                          aat_int),
@@ -2079,11 +2091,10 @@ PFbui_fn_insert_before (const PFla_op_t *loop, bool ordering,
     return (struct PFla_pair_t) {
         /* patch the third function argument into the middle*/
         .rel = project (
-                    rownum (
+                    rank (
                         disjunion (first, disjunion (second, third)),
                         att_pos1,
-                        sortby (att_ord, att_pos),
-                        att_iter),
+                        sortby (att_ord, att_pos)),
                     proj (att_iter, att_iter),
                     proj (att_pos, att_pos1),
                     proj (att_item, att_item)),
@@ -2104,28 +2115,24 @@ PFbui_fn_remove (const PFla_op_t *loop, bool ordering,
      */
     return (struct PFla_pair_t) {
         .rel = project (
-                   rownum (
-                       select_ (
-                           not (eq (eqjoin (
-                                        cast (args[0].rel,
-                                              att_cast,
-                                              att_pos,
-                                              aat_int),
-                                        project (args[1].rel,
-                                                 proj (att_iter1, att_iter),
-                                                 proj (att_item1, att_item)),
-                                        att_iter,
-                                        att_iter1),
-                                    att_res,
-                                    att_cast,
-                                    att_item1),
-                                att_res1, att_res),
-                           att_res1),
-                       att_pos1,
-                       sortby (att_pos),
-                       att_iter),
+                   select_ (
+                       not (eq (eqjoin (
+                                    cast (adjust_positions (args[0].rel),
+                                          att_cast,
+                                          att_pos,
+                                          aat_int),
+                                    project (args[1].rel,
+                                             proj (att_iter1, att_iter),
+                                             proj (att_item1, att_item)),
+                                    att_iter,
+                                    att_iter1),
+                                att_res,
+                                att_cast,
+                                att_item1),
+                            att_res1, att_res),
+                       att_res1),
                    proj (att_iter, att_iter),
-                   proj (att_pos, att_pos1),
+                   proj (att_pos, att_pos),
                    proj (att_item, att_item)),
         .frag = args[0].frag };
 }
@@ -2142,11 +2149,10 @@ PFbui_fn_reverse (const PFla_op_t *loop, bool ordering,
      */
     return (struct PFla_pair_t) {
         .rel  = project (
-                    rownum (
+                    rank (
                         args[0].rel,
                         att_res,
-                        PFord_refine (PFordering (), att_pos, DIR_DESC),
-                        att_iter),
+                        PFord_refine (PFordering (), att_pos, DIR_DESC)),
                     proj (att_iter, att_iter),
                     proj (att_pos, att_res),
                     proj (att_item, att_item)),
@@ -2179,28 +2185,24 @@ PFbui_fn_subsequence_till_end (const PFla_op_t *loop, bool ordering,
      */
     return (struct PFla_pair_t) {
         .rel = project (
-                   rownum (
-                       select_ (
-                           not (gt (eqjoin (
-                                        cast (args[0].rel,
-                                              att_cast,
-                                              att_pos,
-                                              aat_int),
-                                        project (startingLoc,
-                                                 proj (att_iter1, att_iter),
-                                                 proj (att_item1, att_item)),
-                                        att_iter,
-                                        att_iter1),
-                                    att_res,
-                                    att_item1,
-                                    att_cast),
-                                att_res1, att_res),
-                           att_res1),
-                       att_pos1,
-                       sortby (att_pos),
-                       att_iter),
+                   select_ (
+                       not (gt (eqjoin (
+                                    cast (adjust_positions (args[0].rel),
+                                          att_cast,
+                                          att_pos,
+                                          aat_int),
+                                    project (startingLoc,
+                                             proj (att_iter1, att_iter),
+                                             proj (att_item1, att_item)),
+                                    att_iter,
+                                    att_iter1),
+                                att_res,
+                                att_item1,
+                                att_cast),
+                            att_res1, att_res),
+                       att_res1),
                    proj (att_iter, att_iter),
-                   proj (att_pos, att_pos1),
+                   proj (att_pos, att_pos),
                    proj (att_item, att_item)),
         .frag = args[0].frag };
 }
@@ -2235,7 +2237,7 @@ PFbui_fn_subsequence (const PFla_op_t *loop, bool ordering,
     first_cond = project (
                      select_ (
                          not (gt (eqjoin (
-                                      cast (args[0].rel,
+                                      cast (adjust_positions (args[0].rel),
                                             att_cast,
                                             att_pos,
                                             aat_int),
@@ -2259,28 +2261,24 @@ PFbui_fn_subsequence (const PFla_op_t *loop, bool ordering,
        and fill in new position values afterwards */
     return (struct PFla_pair_t) {
         .rel = project (
-                   rownum (
-                       select_ (
-                           gt (fun_1to1 (
-                                   eqjoin (
-                                       first_cond,
-                                       project (length,
-                                                proj (att_iter1, att_iter),
-                                                proj (att_item2, att_item)),
-                                       att_iter,
-                                       att_iter1),
-                                   alg_fun_num_add,
-                                   att_res,
-                                   attlist (att_item2, att_item1)),
-                               att_res1,
+                   select_ (
+                       gt (fun_1to1 (
+                               eqjoin (
+                                   first_cond,
+                                   project (length,
+                                            proj (att_iter1, att_iter),
+                                            proj (att_item2, att_item)),
+                                   att_iter,
+                                   att_iter1),
+                               alg_fun_num_add,
                                att_res,
-                               att_cast),
-                           att_res1),
-                       att_pos1,
-                       sortby (att_pos),
-                       att_iter),
+                               attlist (att_item2, att_item1)),
+                           att_res1,
+                           att_res,
+                           att_cast),
+                       att_res1),
                    proj (att_iter, att_iter),
-                   proj (att_pos, att_pos1),
+                   proj (att_pos, att_pos),
                    proj (att_item, att_item)),
         .frag = args[0].frag };
 }
@@ -2299,7 +2297,7 @@ PFbui_fn_unordered (const PFla_op_t *loop, bool ordering,
                     project (args[0].rel,
                              proj (att_iter, att_iter),
                              proj (att_item, att_item)),
-                    att_pos, att_iter),
+                    att_pos),
         .frag = args[0].frag };
 }
 
@@ -2392,12 +2390,12 @@ PFbui_op_union (const PFla_op_t *loop, bool ordering,
     
     if (ordering)
         return (struct  PFla_pair_t) {
-            .rel = rownum (distinct,
-                           att_pos, sortby (att_item), att_iter),
+            .rel = rank (distinct,
+                         att_pos, sortby (att_item)),
             .frag = PFla_set_union (args[0].frag, args[1].frag) };
     else
         return (struct  PFla_pair_t) {
-            .rel = number (distinct, att_pos, att_iter),
+            .rel = number (distinct, att_pos),
             .frag = PFla_set_union (args[0].frag, args[1].frag) };
 }
 
@@ -2428,12 +2426,12 @@ PFbui_op_intersect (const PFla_op_t *loop, bool ordering,
     
     if (ordering)
         return (struct  PFla_pair_t) {
-            .rel = rownum (distinct,
-                           att_pos, sortby (att_item), att_iter),
+            .rel = rank (distinct,
+                         att_pos, sortby (att_item)),
             .frag = PFla_set_union (args[0].frag, args[1].frag) };
     else
         return (struct  PFla_pair_t) {
-            .rel = number (distinct, att_pos, att_iter),
+            .rel = number (distinct, att_pos),
             .frag = PFla_set_union (args[0].frag, args[1].frag) };
 }
 
@@ -2466,13 +2464,13 @@ PFbui_op_except (const PFla_op_t *loop, bool ordering,
     
     if (ordering)
         return (struct  PFla_pair_t) {
-            .rel = rownum (difference,
-                           att_pos, sortby (att_item), att_iter),
+            .rel = rank (difference,
+                         att_pos, sortby (att_item)),
             /* result nodes can only originate from first argument */
             .frag = args[0].frag };
     else
         return (struct  PFla_pair_t) {
-            .rel = number (difference, att_pos, att_iter),
+            .rel = number (difference, att_pos),
             /* result nodes can only originate from first argument */
             .frag = args[0].frag };
 }
@@ -2887,12 +2885,12 @@ PFbui_pf_distinct_doc_order (const PFla_op_t *loop, bool ordering,
     
     if (ordering)
         return (struct  PFla_pair_t) {
-            .rel = rownum (distinct,
-                           att_pos, sortby (att_item), att_iter),
+            .rel = rank (distinct,
+                         att_pos, sortby (att_item)),
             .frag = args[0].frag };
     else
         return (struct  PFla_pair_t) {
-            .rel = number (distinct, att_pos, att_iter),
+            .rel = number (distinct, att_pos),
             .frag = args[0].frag };
 }
 
@@ -3059,11 +3057,11 @@ pf_item_seq_to_node_seq_worker_attr (
      */
     return (struct  PFla_pair_t) {
                  .rel = project (
-                            rownum (
+                            rank (
                                 disjunion (
                                     attach (part1, att_ord, lit_nat (1)),
                                     attach (text.rel, att_ord, lit_nat (2))),
-                                att_pos1, sortby (att_ord, att_pos), att_iter),
+                                att_pos1, sortby (att_ord, att_pos)),
                             proj (att_iter, att_iter),
                             proj (att_pos, att_pos1),
                             proj (att_item, att_item)),
@@ -3099,11 +3097,15 @@ static struct PFla_pair_t
 pf_item_seq_to_node_seq_worker (struct PFla_pair_t *args,
                                 PFalg_simple_type_t split_type)
 {
+    /* assign correct row numbers as we need them later
+       for finding adjacent textnodes */
+    PFla_op_t *input = adjust_positions (args[0].rel);
+                               
     /*
      * carry out specific type test on type split_type
      * (either aat_pnode or aat_node)
      */
-    PFla_op_t *type = type (args[0].rel, att_res, att_item, split_type);
+    PFla_op_t *type = type (input, att_res, att_item, split_type);
 
     /* select those rows that have type "node" (part1) */
     PFla_op_t *part1 = project (
@@ -3177,7 +3179,7 @@ pf_item_seq_to_node_seq_worker (struct PFla_pair_t *args,
                                                      proj (att_item, att_cast)),
                                             att_ord, lit_nat (1)),
                                      sep),
-                                 att_inner, att_NULL);
+                                 att_inner);
 
     PFla_op_t *t_nodes = twig (textnode (unq_strings, att_inner, att_item),
                                att_iter, att_item);
@@ -3187,7 +3189,7 @@ pf_item_seq_to_node_seq_worker (struct PFla_pair_t *args,
      */
     return (struct  PFla_pair_t) {
                  .rel = project (
-                            rownum (
+                            rank (
                                 disjunion (
                                     project (
                                         eqjoin (
@@ -3204,7 +3206,7 @@ pf_item_seq_to_node_seq_worker (struct PFla_pair_t *args,
                                         proj (att_item, att_item),
                                         proj (att_ord, att_ord)),
                                     attach (part1, att_ord, lit_nat (1))),
-                                att_pos1, sortby (att_pos, att_ord), att_iter),
+                                att_pos1, sortby (att_pos, att_ord)),
                             proj (att_iter, att_iter),
                             proj (att_pos, att_pos1),
                             proj (att_item, att_item)),
@@ -3359,14 +3361,15 @@ PFbui_pf_string_value_elem (const PFla_op_t *loop, bool ordering,
     (void) ordering;
 
     /* retrieve all descendant textnodes (`/descendant-or-self::text()') */
-    node_scj = rownum (
-                   scjoin (PFla_set_to_la (args[0].frag),
-                           project (args[0].rel,
-                                    proj (att_iter, att_iter),
-                                    proj (att_item, att_item)),
-                           alg_desc_s, PFty_text (),
-                           att_iter, att_item, att_item),
-                   att_pos, sortby (att_item), att_iter);
+    node_scj = rank (
+                   PFla_step_simple (
+                       PFla_set_to_la (args[0].frag),
+                       project (args[0].rel,
+                                proj (att_iter, att_iter),
+                                proj (att_item, att_item)),
+                       alg_desc_s, PFty_text (),
+                       att_iter, att_item, att_item),
+                   att_pos, sortby (att_item));
 
     /* concatenate all texts within an iteration using
        the empty string as delimiter */
@@ -3440,14 +3443,15 @@ PFbui_pf_string_value_elem_attr (const PFla_op_t *loop, bool ordering,
                    proj (att_item, att_item));
 
     /* retrieve all descendant textnodes (`/descendant-or-self::text()') */
-    node_scj = rownum (
-                   scjoin (PFla_set_to_la (args[0].frag),
-                           project (sel_node,
-                                    proj (att_iter, att_iter),
-                                    proj (att_item, att_item)),
-                           alg_desc_s, PFty_text (),
-                           att_iter, att_item, att_item),
-                   att_pos, sortby (att_item), att_iter);
+    node_scj = rank (
+                   PFla_step_simple (
+                       PFla_set_to_la (args[0].frag),
+                       project (sel_node,
+                                proj (att_iter, att_iter),
+                                proj (att_item, att_item)),
+                       alg_desc_s, PFty_text (),
+                       att_iter, att_item, att_item),
+                   att_pos, sortby (att_item));
 
     /* concatenate all texts within an iteration using
        the empty string as delimiter */

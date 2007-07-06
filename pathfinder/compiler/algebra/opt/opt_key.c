@@ -118,7 +118,7 @@ opt_key (PFla_op_t *p)
                 /* replace rownum by attach if part is key */
                 *p = *PFla_attach (
                           L(p),
-                          p->sem.rownum.attname,
+                          p->sem.rownum.res,
                           PFalg_lit_nat (1));
                 SEEN(p) = true;                   
             } else {
@@ -148,48 +148,33 @@ opt_key (PFla_op_t *p)
             }
             break;
         
-        case la_number:
-            if (PFprop_key_left (p->prop, p->sem.number.part)) {
-                /* replace number by attach if part is key */
-                *p = *PFla_attach (
-                          L(p),
-                          p->sem.number.attname,
-                          PFalg_lit_nat (1));
-                SEEN(p) = true;                   
-            } else if (p->sem.number.part)
-                break;
+        case la_rank:
+        {
+            /* discard all sort criterions after a key attribute */
+            PFord_ordering_t sortby = PFordering ();
 
-/* FIXME: We discard the following optimization as it
-   replaces number operators by rownum operators. These
-   are more difficult to cope with in the proxy generation
-   phase. */
-#if 0
-            /* if there already exists a key column with the
-               same type we can replace the number operator
-               by a projection. */
-            for (unsigned int i = 0; i < p->schema.count; i++)
-                if (PFprop_key_left (p->prop, p->schema.items[i].name) &&
-                    p->sem.number.attname != p->schema.items[i].name &&
-                    p->schema.items[i].type == aat_nat) {
-                    PFalg_proj_t *proj = PFmalloc (
-                                             p->schema.count
-                                             * sizeof (PFalg_proj_t));
-                    /* copy property list */
-                    for (unsigned int j = 0; j < p->schema.count; j++)
-                        if (p->sem.number.attname == p->schema.items[j].name)
-                            proj[j] = PFalg_proj (p->sem.number.attname,
-                                                  p->schema.items[i].name);
-                        else
-                            proj[j] = PFalg_proj (p->schema.items[j].name,
-                                                  p->schema.items[j].name);
-                                                  
-                    *p = *PFla_project_ (L(p), p->schema.count, proj);
-                    SEEN(p) = true;
+            for (unsigned int i = 0;
+                 i < PFord_count (p->sem.rank.sortby);
+                 i++) {
+                sortby = PFord_refine (
+                             sortby,
+                             PFord_order_col_at (
+                                 p->sem.rank.sortby,
+                                 i),
+                             PFord_order_dir_at (
+                                 p->sem.rank.sortby,
+                                 i));
+                if (PFprop_key_left (
+                        p->prop,
+                        PFord_order_col_at (
+                            p->sem.rank.sortby,
+                            i)))
                     break;
-                }
-#endif
-            break;
+            }
 
+            p->sem.rank.sortby = sortby;
+        }   break;
+        
         default:
             break;
     }

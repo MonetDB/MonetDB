@@ -249,7 +249,7 @@ infer_ori_names (PFla_op_t *n, PFarray_t *par_np_list)
         case la_attach:
             /* infer all columns except the one introduced by the attach
                operator */
-            diff_np (n->prop->l_name_pairs, np_list, n->sem.attach.attname);
+            diff_np (n->prop->l_name_pairs, np_list, n->sem.attach.res);
             break;
 
         case la_cross:
@@ -304,7 +304,7 @@ infer_ori_names (PFla_op_t *n, PFarray_t *par_np_list)
                    unique name to support the correct reference.) The
                    matching then exploits this special column if both
                    join arguments have the same unique name. */
-                ori = PFalg_ori_name (att2, FREE(n));; 
+                ori = PFalg_ori_name (att2, FREE(n)); 
                 FREE(n) = diff (FREE(n), ori);
                 /* create special name */
                 unq = PFalg_unq_name (att_item, 0);
@@ -379,6 +379,26 @@ infer_ori_names (PFla_op_t *n, PFarray_t *par_np_list)
             diff_np (n->prop->l_name_pairs, np_list, n->sem.unary.res);
             break;
 
+        case la_to:
+            unq = n->sem.to.att1;
+            ori = PFalg_ori_name (unq, FREE(n));
+            FREE(n) = diff (FREE(n), ori);
+            add_name_pair (np_list, ori, unq);
+            add_name_pair (n->prop->l_name_pairs, ori, unq);
+
+            unq = n->sem.to.att2;
+            ori = PFalg_ori_name (unq, FREE(n));
+            FREE(n) = diff (FREE(n), ori);
+            add_name_pair (np_list, ori, unq);
+            add_name_pair (n->prop->l_name_pairs, ori, unq);
+
+            if (n->sem.to.part) {
+                unq = n->sem.to.part;
+                ori = find_ori_name (np_list, unq);
+                add_name_pair (n->prop->l_name_pairs, ori, unq);
+            }
+            break;
+
         case la_avg:
 	case la_max:
 	case la_min:
@@ -387,7 +407,7 @@ infer_ori_names (PFla_op_t *n, PFarray_t *par_np_list)
         case la_seqty1:
         case la_all:
             /* operators introducing a completely new set of names
-               for its operands (aggregates, scjoin, doc_tbl, element,
+               for its operands (aggregates, steps, doc_tbl, element,
                merge_adjacent, and string_join) store these columns 
                both in the name pair list of the child and in the current
                name pair list to support correct renaming if the proposed
@@ -410,11 +430,15 @@ infer_ori_names (PFla_op_t *n, PFarray_t *par_np_list)
             break;
 
         case la_rownum:
-            diff_np (n->prop->l_name_pairs, np_list, n->sem.rownum.attname);
+            diff_np (n->prop->l_name_pairs, np_list, n->sem.rownum.res);
+            break;
+            
+        case la_rank:
+            diff_np (n->prop->l_name_pairs, np_list, n->sem.rank.res);
             break;
             
         case la_number:
-            diff_np (n->prop->l_name_pairs, np_list, n->sem.number.attname);
+            diff_np (n->prop->l_name_pairs, np_list, n->sem.number.res);
             break;
 
         case la_type:
@@ -426,23 +450,45 @@ infer_ori_names (PFla_op_t *n, PFarray_t *par_np_list)
             n->prop->l_name_pairs = PFarray_copy (np_list);
             break;
 
-        case la_scjoin:
+        case la_step:
+        case la_guide_step:
             /* input iter column */
-            unq = n->sem.scjoin.iter;
+            unq = n->sem.step.iter;
             ori = find_ori_name (np_list, unq);
             add_name_pair (n->prop->r_name_pairs, ori, unq);
                 
             /* input item column (use same name as for output) */
-            ori = find_ori_name (np_list, n->sem.scjoin.item_res);
-            unq = n->sem.scjoin.item;
+            ori = find_ori_name (np_list, n->sem.step.item_res);
+            unq = n->sem.step.item;
             add_name_pair (np_list, ori, unq);
             add_name_pair (n->prop->r_name_pairs, ori, unq);
             break;
             
-        case la_dup_scjoin:
-            diff_np (n->prop->r_name_pairs, np_list, n->sem.scjoin.item_res);
+        case la_dup_step:
+            diff_np (n->prop->r_name_pairs, np_list, n->sem.step.item_res);
             break;
 
+        case la_id:
+        case la_idref:
+            /* input iter column */
+            unq = n->sem.id.iter;
+            ori = find_ori_name (np_list, unq);
+            add_name_pair (n->prop->r_name_pairs, ori, unq);
+                
+            /* input item column (use same name as for output) */
+            ori = find_ori_name (np_list, n->sem.id.item_res);
+            unq = n->sem.id.item;
+            add_name_pair (np_list, ori, unq);
+            add_name_pair (n->prop->r_name_pairs, ori, unq);
+
+            /* input item_doc column */
+            unq = n->sem.id.item_doc;
+            ori = PFalg_ori_name (unq, FREE(n));
+            FREE(n) = diff (FREE(n), ori);
+            add_name_pair (np_list, ori, unq);
+            add_name_pair (n->prop->r_name_pairs, ori, unq);
+            break;
+            
         case la_doc_tbl:
             /* input iter column */
             unq = n->sem.doc_tbl.iter;
@@ -517,13 +563,14 @@ infer_ori_names (PFla_op_t *n, PFarray_t *par_np_list)
             add_name_pair (n->prop->r_name_pairs, ori, unq);
             
             /* input pos column */
-            ori = att_pos;
+            ori = PFalg_ori_name (n->sem.iter_pos_item.pos, ~att_iter);
             unq = n->sem.iter_pos_item.pos;
             add_name_pair (np_list, ori, unq);
             add_name_pair (n->prop->r_name_pairs, ori, unq);
             
             /* input item column */
-            ori = att_item;
+            ori = PFalg_ori_name (n->sem.iter_pos_item.item,
+                                  ~(att_iter | ori));
             unq = n->sem.iter_pos_item.item;
             add_name_pair (np_list, ori, unq);
             add_name_pair (n->prop->r_name_pairs, ori, unq);
@@ -534,28 +581,31 @@ infer_ori_names (PFla_op_t *n, PFarray_t *par_np_list)
             ori = find_ori_name (np_list, 
                                  n->sem.merge_adjacent.iter_res);
             unq = n->sem.merge_adjacent.iter_in;
-            add_name_pair (np_list, ori, unq);
+            assert (n->sem.merge_adjacent.iter_in ==
+                    n->sem.merge_adjacent.iter_res);
             add_name_pair (n->prop->r_name_pairs, ori, unq);
             
             /* input pos column (use same name as for output) */
             ori = find_ori_name (np_list, 
                                  n->sem.merge_adjacent.pos_res);
             unq = n->sem.merge_adjacent.pos_in;
-            add_name_pair (np_list, ori, unq);
+            assert (n->sem.merge_adjacent.pos_in ==
+                    n->sem.merge_adjacent.pos_res);
             add_name_pair (n->prop->r_name_pairs, ori, unq);
                 
             /* input item column (use same name as for output) */
             ori = find_ori_name (np_list, 
                                  n->sem.merge_adjacent.item_res);
             unq = n->sem.merge_adjacent.item_in;
-            add_name_pair (np_list, ori, unq);
+            if (!find_ori_name (np_list, unq))
+                add_name_pair (np_list, ori, unq);
             add_name_pair (n->prop->r_name_pairs, ori, unq);
             break;
             
         case la_roots:
         {
             PFarray_t *child_np_list;
-            PFalg_att_t unq1, unq2, ori1, ori2;
+            PFalg_att_t unq, ori;
             
             /* child_np_list is expected to be equal to np_list,
                meaning that the constructor in the child node
@@ -565,19 +615,14 @@ infer_ori_names (PFla_op_t *n, PFarray_t *par_np_list)
 
             /* make sure that no projection is required after
                the roots operator */
-            for (unsigned int i = 0; i < PFarray_last (child_np_list); i++) {
-                unq1 = ((name_pair_t *) PFarray_at (child_np_list, i))->unq;
-                ori1 = ((name_pair_t *) PFarray_at (child_np_list, i))->ori;
+            for (unsigned int j = 0; j < PFarray_last (np_list); j++) {
+                unq = ((name_pair_t *) PFarray_at (np_list, j))->unq;
+                ori = ((name_pair_t *) PFarray_at (np_list, j))->ori;
                 
-                for (unsigned int j = 0; j < PFarray_last (np_list); j++) {
-                    unq2 = ((name_pair_t *) PFarray_at (np_list, j))->unq;
-                    ori2 = ((name_pair_t *) PFarray_at (np_list, j))->ori;
-                    
-                    if (unq1 == unq2 && ori1 != ori2)
-                        PFoops (OOPS_FATAL,
-                                "a constructor has to have exactly one "
-                                "referencing root node");
-                }
+                if (find_ori_name (child_np_list, unq) != ori)
+                    PFoops (OOPS_FATAL,
+                            "a constructor has to have exactly one "
+                            "referencing root node");
             }
                         
             n->prop->l_name_pairs = PFarray_copy (np_list);

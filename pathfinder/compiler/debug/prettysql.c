@@ -511,7 +511,7 @@ print_statement(PFsql_t *n)
             break;
 
         case sql_over:
-            PFprettyprintf(" ROWNUMBER () OVER (%c", START_BLOCK );
+            PFprettyprintf("ROWNUMBER () OVER (%c", START_BLOCK );
             print_window_clause(R(n));
             PFprettyprintf("%c)", END_BLOCK);
             break;

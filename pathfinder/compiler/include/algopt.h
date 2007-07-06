@@ -33,7 +33,7 @@
 #define ALGOPT_H
 
 #include "logical.h"
-#include "load_stats.h"
+
 PFla_op_t * PFalgopt (PFla_op_t *root, bool timing, PFguide_tree_t *guide_tree);
 
 /**
@@ -45,6 +45,7 @@ PFla_op_t * PFalgopt_complex (PFla_op_t *root);
 PFla_op_t * PFalgopt_const (PFla_op_t *root, bool no_attach);
 PFla_op_t * PFalgopt_dom (PFla_op_t *root);
 PFla_op_t * PFalgopt_general (PFla_op_t *root);
+PFla_op_t * PFalgopt_guide (PFla_op_t *root, PFguide_tree_t *guide);
 PFla_op_t * PFalgopt_icol (PFla_op_t *root);
 PFla_op_t * PFalgopt_join_pd (PFla_op_t *root);
 PFla_op_t * PFalgopt_key (PFla_op_t *root);
@@ -52,7 +53,6 @@ PFla_op_t * PFalgopt_mvd (PFla_op_t *root, unsigned int noneffective_tries);
 PFla_op_t * PFalgopt_reqval (PFla_op_t *root);
 PFla_op_t * PFalgopt_set (PFla_op_t *root);
 PFla_op_t * PFalgopt_thetajoin (PFla_op_t *root);
-PFla_op_t * PFalgopt_guide(PFla_op_t *root, PFguide_tree_t *guide);
 
 #endif  /* ALGOPT_H */
 

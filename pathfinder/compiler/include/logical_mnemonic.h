@@ -95,6 +95,9 @@
 /* boolean NOT operator */
 #define not(a,b,c)        PFla_not ((a),(b),(c))
 
+/* op:to operator */
+#define to(a,b,c,d,e)     PFla_to ((a),(b),(c),(d),(e))
+
 /* operator applying a (partitioned) aggregation function on a column */
 #define aggr(a,b,c,d,e)      PFla_aggr ((a),(b),(c),(d),(e))
 
@@ -104,8 +107,11 @@
 /** rownum operator */
 #define rownum(a,b,c,d)   PFla_rownum ((a),(b),(c),(d))
 
+/** rank operator */
+#define rank(a,b,c)       PFla_rank ((a),(b),(c))
+
 /** number operator */
-#define number(a,b,c)     PFla_number ((a),(b),(c))
+#define number(a,b)       PFla_number ((a),(b))
 
 /** type test operator */
 #define type(a,b,c,d)     PFla_type ((a),(b),(c),(d))
@@ -123,9 +129,17 @@
 /* all operator (see PFla_all()) */
 #define all(a,b,c,d)      PFla_all((a), (b), (c), (d))
 
-/* staircase join */
-#define scjoin(a,b,c,d,e,f,g) PFla_scjoin ((a),(b),(c),(d),(e),(f),(g))
-#define dup_scjoin(a,b,c,d,e,f) PFla_dup_scjoin ((a),(b),(c),(d),(e),(f))
+/* path step */
+#define step(a,b,c,d,e,f,g,h) PFla_step ((a),(b),(c),(d),(e),(f),(g),(h))
+#define dup_step(a,b,c,d,e,f,g) PFla_dup_step ((a),(b),(c),(d),(e),(f),(g))
+#define guide_step(a,b,c,d,e,f,g,h,i,j) \
+        PFla_guide_step ((a),(b),(c),(d),(e),(f),(g),(h),(i),(j))
+
+/* fn:id */
+#define id(a,b,c,d,e,f)   PFla_id ((a),(b),(c),(d),(e),(f))
+
+/* fn:idref */
+#define idref(a,b,c,d,e,f) PFla_idref ((a),(b),(c),(d),(e),(f))
 
 /* document table */
 #define doc_tbl(a,b,c,d)    PFla_doc_tbl((a),(b),(c),(d))

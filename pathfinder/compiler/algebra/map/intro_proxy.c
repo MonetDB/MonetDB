@@ -455,7 +455,6 @@ semijoin_entry (PFla_op_t *p)
              check_base(L(rp)) &&
              L(p)->schema.count == 1 &&
              lp->schema.count == 1 &&
-             !rp->sem.number.part &&
              PFprop_subdom (p->prop,
                             PFprop_dom_left (p->prop,
                                              p->sem.eqjoin.att1),
@@ -465,7 +464,7 @@ semijoin_entry (PFla_op_t *p)
                             PFprop_dom_right (p->prop,
                                               p->sem.eqjoin.att2),
                             PFprop_dom (rp->prop,
-                                        rp->sem.number.attname)))
+                                        rp->sem.number.res)))
             ||
             (rp->kind == la_distinct &&
              lp->kind == la_number &&
@@ -477,12 +476,11 @@ semijoin_entry (PFla_op_t *p)
                                               p->sem.eqjoin.att2),
                             PFprop_dom_left (p->prop,
                                              p->sem.eqjoin.att1)) &&
-             !lp->sem.number.part &&
              PFprop_subdom (p->prop,
                             PFprop_dom_left (p->prop,
                                              p->sem.eqjoin.att1),
                             PFprop_dom (lp->prop,
-                                        lp->sem.number.attname))));
+                                        lp->sem.number.res))));
 }
 
 /**
@@ -549,7 +547,7 @@ only_eqjoin_refs_worker (PFla_op_t *p, PFla_op_t *exit,
                          PFprop_dom_right (p->prop,
                                            p->sem.eqjoin.att2),
                          PFprop_dom (exit->prop,
-                                     exit->sem.number.attname)))
+                                     exit->sem.number.res)))
          ||
          (PFprop_subdom (p->prop,
                          PFprop_dom_right (p->prop,
@@ -560,7 +558,7 @@ only_eqjoin_refs_worker (PFla_op_t *p, PFla_op_t *exit,
                          PFprop_dom_left (p->prop,
                                           p->sem.eqjoin.att1),
                          PFprop_dom (exit->prop,
-                                     exit->sem.number.attname)))))
+                                     exit->sem.number.res)))))
         cur_op = OP_JOIN;
     else
         cur_op = OP_NOJOIN;
@@ -785,7 +783,7 @@ modify_semijoin_proxy (PFla_op_t *root,
      */
 
     /* name of the key column */
-    num_col = proxy_exit->sem.number.attname;
+    num_col = proxy_exit->sem.number.res;
 
     exit_proj  = PFmalloc (proxy_exit->schema.count * sizeof (PFalg_proj_t));
     proxy_proj = PFmalloc (proxy_entry->schema.count * sizeof (PFalg_proj_t));
@@ -875,8 +873,8 @@ modify_semijoin_proxy (PFla_op_t *root,
     }
 
     /* build the modified DAG */
-    num1 = PFla_number (L(lexit), num_col1, att_NULL);
-    num2 = PFla_number (R(lexit), num_col2, att_NULL);
+    num1 = PFla_number (L(lexit), num_col1);
+    num2 = PFla_number (R(lexit), num_col2);
 
     if (lexit->kind == la_cross)
         op = PFla_cross (num1, num2);
@@ -918,7 +916,7 @@ modify_semijoin_proxy (PFla_op_t *root,
                 
     }
     
-    number = PFla_number (op, num_col, att_NULL);
+    number = PFla_number (op, num_col);
 
     new_number = PFla_number (
                      PFla_eqjoin (
@@ -939,7 +937,7 @@ modify_semijoin_proxy (PFla_op_t *root,
                              num_col_alias1),
                          num_col2,
                          num_col_alias2),
-                     num_col, att_NULL);
+                     num_col);
 
     *proxy_entry = *PFla_project_ (
                         new_number,
@@ -1048,11 +1046,8 @@ proxy_nest_exit (PFla_op_t *p, PFla_op_t *entry)
     if (cur->kind != la_cross)
         return false;
     
-    /* only allow key columns */
-    if (p->sem.number.part) return false;
-    
     /* look up the newly generated domain and the join domains */
-    super_dom = PFprop_dom (p->prop, p->sem.number.attname);
+    super_dom = PFprop_dom (p->prop, p->sem.number.res);
     att1_dom = PFprop_dom_left (entry->prop, entry->sem.eqjoin.att1);
     att2_dom = PFprop_dom_right (entry->prop, entry->sem.eqjoin.att2);
 
@@ -1247,7 +1242,7 @@ nest_proxy (PFla_op_t *root,
     /* Generate a new column name that will hold the values of the
        new upper number operator... */
     new_num_col = PFalg_ori_name (
-                      PFalg_unq_name (proxy_exit->sem.number.attname, 0),
+                      PFalg_unq_name (proxy_exit->sem.number.res, 0),
                       ~used_cols);
     used_cols = used_cols | new_num_col;
 
@@ -1277,7 +1272,7 @@ nest_proxy (PFla_op_t *root,
     for (i = 0; i < proxy_exit->schema.count; i++) {
         cur_col = proxy_exit->schema.items[i].name;
 
-        if (cur_col != proxy_exit->sem.number.attname) {
+        if (cur_col != proxy_exit->sem.number.res) {
             new_col = PFalg_ori_name (PFalg_unq_name (cur_col, 0), ~used_cols);
             used_cols = used_cols | new_col;
         
@@ -1302,8 +1297,7 @@ nest_proxy (PFla_op_t *root,
                       R(proxy_entry),
                       proxy_entry->sem.eqjoin.att1,
                       proxy_entry->sem.eqjoin.att2),
-                  new_num_col,
-                  att_NULL);
+                  new_num_col);
 
     /* create the projection that builds the input 
        to the originally left branch */
@@ -1361,13 +1355,13 @@ nest_proxy (PFla_op_t *root,
  * Nothing needed up front.
  */
 static void
-dup_scjoin_prepare (PFla_op_t *root)
+dup_step_prepare (PFla_op_t *root)
 {
     (void) root;
 }
 
 /**
- * dup_scjoin_entry detects an expression 
+ * dup_step_entry detects an expression 
  * of the following form:
  *
  *        |X|
@@ -1375,7 +1369,7 @@ dup_scjoin_prepare (PFla_op_t *root)
  *     /       \
  *    (pi)      |
  *    |         |
- *   scjoin   (pi)
+ *   step     (pi)
  *    |         |
  *    (pi)      |
  *     \__   __/
@@ -1383,12 +1377,12 @@ dup_scjoin_prepare (PFla_op_t *root)
  *         #
  */
 static bool
-dup_scjoin_entry (PFla_op_t *p)
+dup_step_entry (PFla_op_t *p)
 {
     PFalg_att_t join_att;
     PFla_op_t  *cur,
                *number = NULL,
-               *scjoin = NULL;
+               *step   = NULL;
     
     if (p->kind != la_eqjoin)
         return false;
@@ -1407,11 +1401,10 @@ dup_scjoin_entry (PFla_op_t *p)
     }
     
     if (cur->kind == la_number &&
-        cur->sem.number.attname == join_att &&
-        !cur->sem.number.part)
+        cur->sem.number.res == join_att)
         number = cur;
-    else if (cur->kind == la_scjoin &&
-        cur->sem.scjoin.iter == join_att) {
+    else if (cur->kind == la_step &&
+        cur->sem.step.iter == join_att) {
         cur = R(cur);
         
         /* cope with projection */
@@ -1425,9 +1418,8 @@ dup_scjoin_entry (PFla_op_t *p)
         }
         
         if (cur->kind == la_number &&
-            cur->sem.number.attname == join_att &&
-            !cur->sem.number.part)
-            scjoin = cur;
+            cur->sem.number.res == join_att)
+            step = cur;
     } else
         return false;
 
@@ -1445,13 +1437,12 @@ dup_scjoin_entry (PFla_op_t *p)
     }
     
     if (cur->kind == la_number &&
-        cur->sem.number.attname == join_att &&
-        !cur->sem.number.part &&
+        cur->sem.number.res == join_att &&
         !number)
         number = cur;
-    else if (cur->kind == la_scjoin &&
-        cur->sem.scjoin.iter == join_att &&
-        !scjoin) {
+    else if (cur->kind == la_step &&
+        cur->sem.step.iter == join_att &&
+        !step) {
         cur = R(cur);
         
         /* cope with projection */
@@ -1465,21 +1456,20 @@ dup_scjoin_entry (PFla_op_t *p)
         }
         
         if (cur->kind == la_number &&
-            cur->sem.number.attname == join_att &&
-            !cur->sem.number.part)
-            scjoin = cur;
+            cur->sem.number.res == join_att)
+            step = cur;
     } else
         return false;
 
-    return scjoin && scjoin == number;
+    return step && step == number;
 }
 
 /**
- * dup_scjoin_exit just tests whether the previously detected
+ * dup_step_exit just tests whether the previously detected
  * number operator matches the current one.
  */
 static bool
-dup_scjoin_exit (PFla_op_t *p, PFla_op_t *entry)
+dup_step_exit (PFla_op_t *p, PFla_op_t *entry)
 {
     PFla_op_t *cur;
     
@@ -1493,7 +1483,7 @@ dup_scjoin_exit (PFla_op_t *p, PFla_op_t *entry)
                 cur = L(cur);
                 break;
                 
-            case la_scjoin:
+            case la_step:
                 cur = R(cur);
                 break;
                 
@@ -1505,7 +1495,7 @@ dup_scjoin_exit (PFla_op_t *p, PFla_op_t *entry)
 }
 
 /**
- * intro_dup_scjoin replaces the pattern 
+ * intro_dup_step replaces the pattern 
  * detected above
  *
  *        |X|
@@ -1513,7 +1503,7 @@ dup_scjoin_exit (PFla_op_t *p, PFla_op_t *entry)
  *     /       \
  *    (pi)      |
  *    |         |
- *   scjoin   (pi)
+ *   step     (pi)
  *    |         |
  *    (pi)      |
  *     \__   __/
@@ -1521,19 +1511,19 @@ dup_scjoin_exit (PFla_op_t *p, PFla_op_t *entry)
  *         #
  *
  * (if there are no outside references) into
- * a duplicate aware scjoin operator dup_scjoin. 
+ * a duplicate aware step operator dup_step. 
  * A projection on top of the new operator ensures
  * the correct mapping of the columns.
  */
 static bool
-intro_dup_scjoin (PFla_op_t *root,
+intro_dup_step (PFla_op_t *root,
                   PFla_op_t *proxy_entry,
                   PFla_op_t *proxy_exit,
                   PFarray_t *conflict_list,
                   PFarray_t *exit_refs,
                   PFarray_t *checked_nodes)
 {
-    PFla_op_t    *scjoin, 
+    PFla_op_t    *step, 
                  *proj = NULL,
                  *cur;
     PFalg_proj_t *proj_list;
@@ -1562,26 +1552,26 @@ intro_dup_scjoin (PFla_op_t *root,
     }
     
     /* detect in which branch of the eqjoin operator 
-       the scjoin resides and prepare the transformation */
-    if (L(proxy_entry)->kind == la_scjoin) {
+       the step resides and prepare the transformation */
+    if (L(proxy_entry)->kind == la_step) {
         join_att = proxy_entry->sem.eqjoin.att2;
-        scjoin   = L(proxy_entry);
+        step     = L(proxy_entry);
         cur      = R(proxy_entry);
     } else if (L(proxy_entry)->kind == la_project &&
-               LL(proxy_entry)->kind == la_scjoin) {
+               LL(proxy_entry)->kind == la_step) {
         join_att = proxy_entry->sem.eqjoin.att2;
         proj     =  L(proxy_entry);
-        scjoin   = LL(proxy_entry);
+        step     = LL(proxy_entry);
         cur      =  R(proxy_entry);
-    } else if (R(proxy_entry)->kind == la_scjoin) {
+    } else if (R(proxy_entry)->kind == la_step) {
         join_att = proxy_entry->sem.eqjoin.att1;
-        scjoin   = R(proxy_entry);
+        step     = R(proxy_entry);
         cur      = L(proxy_entry);
     } else if (R(proxy_entry)->kind == la_project &&
-               RL(proxy_entry)->kind == la_scjoin) {
+               RL(proxy_entry)->kind == la_step) {
         join_att = proxy_entry->sem.eqjoin.att1;
         proj     =  R(proxy_entry);
-        scjoin   = RL(proxy_entry);
+        step     = RL(proxy_entry);
         cur      =  L(proxy_entry);
     } else
         PFoops (OOPS_FATAL, "Proxy pattern does not match");
@@ -1591,7 +1581,7 @@ intro_dup_scjoin (PFla_op_t *root,
     proj_list = PFmalloc (proxy_entry->schema.count * sizeof (PFalg_proj_t));
 
     /* Fill the name pairs of the projection list with the tuples streaming
-       through the non-scjoin branch of the eqjoin (as well as the one for 
+       through the non-step branch of the eqjoin (as well as the one for 
        the second join argument). */
     if (cur->kind == la_project) {
         for (i = 0; i < cur->sem.proj.count; i++) {
@@ -1615,59 +1605,60 @@ intro_dup_scjoin (PFla_op_t *root,
                                                  cur->schema.items[i].name);
         }
     }
-    /* Collect the names of the inputs to ensure that the dup_scjoin
+    /* Collect the names of the inputs to ensure that the dup_step
        creates a new column name. */
     for (i = 0; i < proxy_exit->schema.count; i++)
         used_cols = used_cols | proxy_exit->schema.items[i].name;
     
     /* Get the column name providing the context 
-       nodes of the staircase join */
-    if (R(scjoin)->kind == la_project) {
-        for (i = 0; i < R(scjoin)->sem.proj.count; i++)
-            if (scjoin->sem.scjoin.item ==
-                R(scjoin)->sem.proj.items[i].new) {
-                item = R(scjoin)->sem.proj.items[i].old;
+       nodes of the path step */
+    if (R(step)->kind == la_project) {
+        for (i = 0; i < R(step)->sem.proj.count; i++)
+            if (step->sem.step.item ==
+                R(step)->sem.proj.items[i].new) {
+                item = R(step)->sem.proj.items[i].old;
                 break;
             }
 
         assert (item);
     } else 
-        item = scjoin->sem.scjoin.item;
+        item = step->sem.step.item;
 
     /* Ensure that the context node column is not the same 
-       as the resulting column of the new staircase join */
+       as the resulting column of the new path step */
     used_cols = used_cols | item;
     
-    /* Create a new column name for the result of the new staircase join. */
+    /* Create a new column name for the result of the new path step. */
     item_res = PFalg_ori_name (PFalg_unq_name (att_item, 0), ~used_cols);
 
-    /* Get the column of the resulting item column of the scjoin */
+    /* Get the column of the resulting item column of the step */
     if (proj) {
         assert (proj->sem.proj.count <= 2);
         
         for (i = 0; i < proj->sem.proj.count; i++)
-            if (scjoin->sem.scjoin.item ==
+            if (step->sem.step.item ==
                 proj->sem.proj.items[i].old) {
                 item_proj = proj->sem.proj.items[i].new;
                 break;
             }
     } else
-        item_proj = scjoin->sem.scjoin.item;
+        item_proj = step->sem.step.item;
     
-    /* If the column generated by the staircase join is in the overall
+    /* If the column generated by the path step is in the overall
        result, then add it to the projection list. */
     if (item_proj) {
         proj_list[count++] = PFalg_proj (item_proj, item_res);
     }
 
-    /* Replace the detected pattern by the new duplicate generating scjoin
+    /* Replace the detected pattern by the new duplicate generating step
        and a name mapping projection on top of it. */
     *proxy_entry = *PFla_project_ (
-                        PFla_dup_scjoin (
-                            L(scjoin),
+                        PFla_dup_step (
+                            L(step),
                             proxy_exit,
-                            scjoin->sem.scjoin.axis,
-                            scjoin->sem.scjoin.ty,
+                            step->sem.step.axis,
+                            step->sem.step.ty,
+                            step->sem.step.level,
                             item,
                             item_res),
                         proxy_entry->schema.count,
@@ -1744,10 +1735,9 @@ join_exit (PFla_op_t *p, PFla_op_t *entry)
     /* only allow key columns and look up the newly generated domain */
     if (p->kind == la_rownum) {
         if (p->sem.rownum.part) return false;
-        dom = PFprop_dom (p->prop, p->sem.rownum.attname);
+        dom = PFprop_dom (p->prop, p->sem.rownum.res);
     } else {
-        if (p->sem.number.part) return false;
-        dom = PFprop_dom (p->prop, p->sem.number.attname);
+        dom = PFprop_dom (p->prop, p->sem.number.res);
     }
 
     /* look up the super domain of the two join attributes */
@@ -1889,7 +1879,7 @@ generate_join_proxy (PFla_op_t *root,
     PFprop_infer_unq_names (root);
 
     /* short-hand for the key column name */
-    num_col = proxy_exit->sem.number.attname;
+    num_col = proxy_exit->sem.number.res;
 
     /* Skip the first entry of the exit_proj projection list
        (-- it will be filled in after collecting all the used column
@@ -2074,7 +2064,7 @@ generate_join_proxy (PFla_op_t *root,
                                  base_proj));
     /* Create a new number operator which will replace the old key column
        and will be used for the mapping of the old key column as well. */
-    num_op = PFla_number (base_op, new_num_col, att_NULL);
+    num_op = PFla_number (base_op, new_num_col);
     /* Create a projection that replaces the old by the new number column. */
     exit_op = PFla_project_ (num_op, proxy_exit->schema.count, exit_proj);
 
@@ -2346,7 +2336,7 @@ collect_mappings (PFla_op_t *p,
     while (p->kind != la_proxy) {
         switch (p->kind) {
             case la_attach:
-                collect_mappings_worker (p->sem.attach.attname,
+                collect_mappings_worker (p->sem.attach.res,
                                          PFalg_attlist_ (0, NULL),
                                          req_count,
                                          req_col_names,
@@ -2707,7 +2697,7 @@ unnest_proxy (PFla_op_t *root,
     /* used_cols = used_cols | num_col2; */
 
     /* create overall number operator */
-    num_op = PFla_number (L(proxy2_base), num_col1, att_NULL);
+    num_op = PFla_number (L(proxy2_base), num_col1);
 
     /* create projection that replaces the number operator of the
        'upper' proxy pattern */
@@ -2723,7 +2713,7 @@ unnest_proxy (PFla_op_t *root,
         if (j == req_count)
             base1_proj[i] = PFalg_proj (cur_col, num_col1);
     }
-    base1_proj[i] = PFalg_proj (proxy1_num->sem.number.attname, num_col1);
+    base1_proj[i] = PFalg_proj (proxy1_num->sem.number.res, num_col1);
 
     /* replace the number operator */
     *proxy1_num = *PFla_project_ (num_op,
@@ -2738,7 +2728,7 @@ unnest_proxy (PFla_op_t *root,
         cur_col = proxy2_base->schema.items[i].name;
         base2_proj[i] = PFalg_proj (cur_col, cur_col);
     }
-    base2_proj[i] = PFalg_proj (proxy2_num->sem.number.attname, num_col1);
+    base2_proj[i] = PFalg_proj (proxy2_num->sem.number.res, num_col1);
 
     /* replace the number operator */
     *proxy2_num = *PFla_project_ (num_op,
@@ -3098,12 +3088,12 @@ PFintro_proxies (PFla_op_t *root)
     PFarray_last (checked_nodes) = 0;
 
     /* rewrite joins that contain only a single XPath location
-       step into a new dup_scjoin operator. */
+       step into a new dup_step operator. */
     intro_proxy_kind (root,
-                      dup_scjoin_prepare,
-                      dup_scjoin_entry,
-                      dup_scjoin_exit,
-                      intro_dup_scjoin,
+                      dup_step_prepare,
+                      dup_step_entry,
+                      dup_step_exit,
+                      intro_dup_step,
                       checked_nodes);
 
     /* As we match the same nodes (equi-joins) again we need to reset

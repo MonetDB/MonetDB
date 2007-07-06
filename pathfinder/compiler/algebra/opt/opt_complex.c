@@ -86,7 +86,7 @@ opt_complex (PFla_op_t *p)
              * the complete subtree by a literal table.
              */
             if (PFprop_icols_count (p->prop) == 1 &&
-                PFprop_icol (p->prop, p->sem.attach.attname) &&
+                PFprop_icol (p->prop, p->sem.attach.res) &&
                 PFprop_card (p->prop) >= 1) {
                 
                 PFla_op_t *res;
@@ -105,7 +105,7 @@ opt_complex (PFla_op_t *p)
                     tuples[i].count = 1;
                 }
 
-                res = PFla_lit_tbl_ (PFalg_attlist (p->sem.attach.attname),
+                res = PFla_lit_tbl_ (PFalg_attlist (p->sem.attach.res),
                                      count, tuples);
 
                 /* Every column of the relation will point
@@ -115,41 +115,41 @@ opt_complex (PFla_op_t *p)
                    operators.) */
                 for (unsigned int i = 0; i < p->schema.count; i++)
                     proj[i] = PFalg_proj (p->schema.items[i].name,
-                                          p->sem.attach.attname);
+                                          p->sem.attach.res);
                                           
                 *p = *PFla_project_ (res, p->schema.count, proj);
             }
             /* prune unnecessary attach-project operators */
             if (L(p)->kind == la_project &&
                 L(p)->schema.count == 1 &&
-                LL(p)->kind == la_scjoin &&
-                p->sem.attach.attname == LL(p)->sem.scjoin.iter &&
-                PFprop_const (LL(p)->prop, LL(p)->sem.scjoin.iter) &&
+                LL(p)->kind == la_step &&
+                p->sem.attach.res == LL(p)->sem.step.iter &&
+                PFprop_const (LL(p)->prop, LL(p)->sem.step.iter) &&
                 PFalg_atom_comparable (
                     p->sem.attach.value,
-                    PFprop_const_val (LL(p)->prop, LL(p)->sem.scjoin.iter)) &&
+                    PFprop_const_val (LL(p)->prop, LL(p)->sem.step.iter)) &&
                 !PFalg_atom_cmp (
                     p->sem.attach.value,
-                    PFprop_const_val (LL(p)->prop, LL(p)->sem.scjoin.iter)) &&
-                L(p)->sem.proj.items[0].new == LL(p)->sem.scjoin.item_res) {
+                    PFprop_const_val (LL(p)->prop, LL(p)->sem.step.iter)) &&
+                L(p)->sem.proj.items[0].new == LL(p)->sem.step.item_res) {
                 *p = *PFla_dummy (LL(p));
                 break;
             }
             /* prune unnecessary attach-project operators */
             if (L(p)->kind == la_project &&
                 L(p)->schema.count == 1 &&
-                LL(p)->kind == la_scjoin &&
-                PFprop_const (LL(p)->prop, LL(p)->sem.scjoin.iter) &&
+                LL(p)->kind == la_step &&
+                PFprop_const (LL(p)->prop, LL(p)->sem.step.iter) &&
                 PFalg_atom_comparable (
                     p->sem.attach.value,
-                    PFprop_const_val (LL(p)->prop, LL(p)->sem.scjoin.iter)) &&
+                    PFprop_const_val (LL(p)->prop, LL(p)->sem.step.iter)) &&
                 !PFalg_atom_cmp (
                     p->sem.attach.value,
-                    PFprop_const_val (LL(p)->prop, LL(p)->sem.scjoin.iter)) &&
-                L(p)->sem.proj.items[0].old == LL(p)->sem.scjoin.item_res) {
+                    PFprop_const_val (LL(p)->prop, LL(p)->sem.step.iter)) &&
+                L(p)->sem.proj.items[0].old == LL(p)->sem.step.item_res) {
                 *p = *PFla_project (PFla_dummy (LL(p)),
-                                    PFalg_proj (p->sem.attach.attname,
-                                                LL(p)->sem.scjoin.iter),
+                                    PFalg_proj (p->sem.attach.res,
+                                                LL(p)->sem.step.iter),
                                     L(p)->sem.proj.items[0]);
                 break;
             }
@@ -158,7 +158,7 @@ opt_complex (PFla_op_t *p)
                 L(p)->schema.count == 1 &&
                 LL(p)->kind == la_roots &&
                 LLL(p)->kind == la_doc_tbl &&
-                p->sem.attach.attname == LLL(p)->sem.doc_tbl.iter &&
+                p->sem.attach.res == LLL(p)->sem.doc_tbl.iter &&
                 PFprop_const (LLL(p)->prop, LLL(p)->sem.doc_tbl.iter) &&
                 PFalg_atom_comparable (
                     p->sem.attach.value,
@@ -565,6 +565,26 @@ opt_complex (PFla_op_t *p)
             }
         }   break;
 
+        /* to get rid of the operator 'and' and to split up
+           different conditions we can introduce additional
+           select operators above comparisons whose required
+           value is true. */
+        case la_bool_and:
+            if (PFprop_reqval (p->prop, p->sem.binary.res) &&
+                PFprop_reqval_val (p->prop, p->sem.binary.res) &&
+                PFprop_set (p->prop)) {
+                *p = *PFla_attach (
+                          PFla_select (
+                              PFla_select (
+                                  L(p),
+                                  p->sem.binary.att1),
+                              p->sem.binary.att2),
+                          p->sem.binary.res,
+                          PFalg_lit_bln (true));
+            }
+            break;
+            
+#if 0
         case la_rownum:
             /* match the pattern rownum - (project -) rownum and
                try to merge both row number operators if the nested
@@ -594,11 +614,11 @@ opt_complex (PFla_op_t *p)
                and ensure that the column generated by the nested
                row number operator is not used above the outer rownum. */
             if (rownum->kind == la_rownum &&
-                !PFprop_icol (p->prop, rownum->sem.rownum.attname)) {
+                !PFprop_icol (p->prop, rownum->sem.rownum.res)) {
                 
                 PFord_ordering_t sortby;
                 PFalg_proj_t *proj_list;
-                PFalg_att_t inner_att = rownum->sem.rownum.attname;
+                PFalg_att_t inner_att = rownum->sem.rownum.res;
                 PFalg_att_t inner_part = rownum->sem.rownum.part;
                 unsigned int pos_part = 0, pos_att = 0, count = 0;
 
@@ -695,132 +715,106 @@ opt_complex (PFla_op_t *p)
                                           
                     /* adjust column name of the rownum operator */
                     proj_list[count++] = PFalg_proj (
-                                             p->sem.rownum.attname,
-                                             rownum->sem.rownum.attname);
+                                             p->sem.rownum.res,
+                                             rownum->sem.rownum.res);
                                              
                     for (i = 0; i < p->schema.count; i++)
                         if (p->schema.items[i].name != 
-                            p->sem.rownum.attname)
+                            p->sem.rownum.res)
                             proj_list[count++] = PFalg_proj (
                                                      p->schema.items[i].name,
                                                      p->schema.items[i].name);
                                                    
                     *p = *PFla_project_ (PFla_rownum (L(rownum),
-                                                      rownum->sem.rownum.attname,
+                                                      rownum->sem.rownum.res,
                                                       sortby,
                                                       p->sem.rownum.part),
                                          count, proj_list);
                 }
                 else
                     *p = *PFla_rownum (rownum,
-                                       p->sem.rownum.attname,
+                                       p->sem.rownum.res,
                                        sortby,
                                        p->sem.rownum.part);
 
                 break;
             }
 
-            /* check a pattern that occurs very often 
-               ('doc_access(.../text())') in the generated
-               code and remove the unnecessary rownum operator */
-            if (L(p)->kind == la_project &&
-                LL(p)->kind == la_doc_access &&
-                LLR(p)->kind == la_rownum &&
-                PFord_count (p->sem.rownum.sortby) == 1 &&
-                p->sem.rownum.part &&
-                PFord_count (LLR(p)->sem.rownum.sortby) == 1 &&
-                LLR(p)->sem.rownum.part) {
-                unsigned int  i;
-                PFalg_att_t   pos, iter, cur;
-                PFalg_proj_t *proj;
-
-                pos   = LLR(p)->sem.rownum.attname;
-                iter  = LLR(p)->sem.rownum.part;
-
-                for (i = 0; i < L(p)->sem.proj.count; i++)
-                    if (L(p)->sem.proj.items[i].old == iter) {
-                        iter = L(p)->sem.proj.items[i].new;
-                        break;
-                    }
-                for (i = 0; i < L(p)->sem.proj.count; i++)
-                    if (L(p)->sem.proj.items[i].old == pos) {
-                        pos = L(p)->sem.proj.items[i].new;
-                        break;
-                    }
-                if (pos == iter ||
-                    PFord_order_col_at (
-                        p->sem.rownum.sortby, 0) != pos ||
-                    PFord_order_dir_at (
-                        p->sem.rownum.sortby, 0) != DIR_ASC ||
-                    iter != p->sem.rownum.part)
-                    break;
-                
-                /* We have now checked that the above rownumber does
-                   nothing new so replace it by a projection. */
-                proj = PFmalloc (p->schema.count * sizeof (PFalg_proj_t));
-                for (i = 0; i < p->schema.count; i++) {
-                    cur = p->schema.items[i].name;
-                    if (cur == p->sem.rownum.attname)
-                        /* replace the new column by the already
-                           existing sort criterion */
-                        proj[i] = PFalg_proj (cur, pos);
-                    else
-                        proj[i] = PFalg_proj (cur, cur);
-                }
-                *p = *PFla_project_ (L(p), p->schema.count, proj);
-                break;                
-            }
         }   break;
+#endif
 
-        /* to get rid of the operator 'and' and to split up
-           different conditions we can introduce additional
-           select operators above comparisons whose required
-           value is true. */
-        case la_bool_and:
-            if (PFprop_reqval (p->prop, p->sem.binary.res) &&
-                PFprop_reqval_val (p->prop, p->sem.binary.res) &&
-                PFprop_set (p->prop)) {
-                *p = *PFla_attach (
-                          PFla_select (
-                              PFla_select (
-                                  L(p),
-                                  p->sem.binary.att1),
-                              p->sem.binary.att2),
-                          p->sem.binary.res,
-                          PFalg_lit_bln (true));
+        /* Replace a rank operator with a single ascending order
+           criterion by a projection that links the output column
+           to the order criterion. */
+        case la_rank:
+            if (PFord_count (p->sem.rank.sortby) == 1 &&
+                PFord_order_dir_at (p->sem.rank.sortby, 0) == DIR_ASC) {
+                PFalg_proj_t *proj_list;
+                unsigned int count = 0;
+
+                /* create projection list */
+                proj_list = PFmalloc (p->schema.count *
+                                      sizeof (*(proj_list)));
+                                      
+                /* adjust column name of the rank operator */
+                proj_list[count++] = PFalg_proj (
+                                         p->sem.rank.res,
+                                         PFord_order_col_at (
+                                             p->sem.rank.sortby,
+                                             0));
+                                         
+                for (unsigned int i = 0; i < p->schema.count; i++)
+                    if (p->schema.items[i].name != p->sem.rank.res)
+                        proj_list[count++] = PFalg_proj (
+                                                 p->schema.items[i].name,
+                                                 p->schema.items[i].name);
+
+                *p = *PFla_project_ (L(p), count, proj_list);
             }
             break;
             
-        case la_scjoin:
+        case la_step:
+            if (p->sem.step.level < 0)
+                p->sem.step.level = PFprop_level (p->prop,
+                                                  p->sem.step.item_res);
+
             if (R(p)->kind == la_project &&
-                RL(p)->kind == la_scjoin) {
-                if ((p->sem.scjoin.item == 
+                RL(p)->kind == la_step) {
+                if ((p->sem.step.item == 
                      R(p)->sem.proj.items[0].new &&
-                     RL(p)->sem.scjoin.item_res == 
+                     RL(p)->sem.step.item_res == 
                      R(p)->sem.proj.items[0].old &&
-                     p->sem.scjoin.iter ==
+                     p->sem.step.iter ==
                      R(p)->sem.proj.items[1].new &&
-                     RL(p)->sem.scjoin.iter == 
+                     RL(p)->sem.step.iter == 
                      R(p)->sem.proj.items[1].old) ||
-                    (p->sem.scjoin.item == 
+                    (p->sem.step.item == 
                      R(p)->sem.proj.items[1].new &&
-                     RL(p)->sem.scjoin.item_res == 
+                     RL(p)->sem.step.item_res == 
                      R(p)->sem.proj.items[1].old &&
-                     p->sem.scjoin.iter ==
+                     p->sem.step.iter ==
                      R(p)->sem.proj.items[0].new &&
-                     RL(p)->sem.scjoin.iter == 
+                     RL(p)->sem.step.iter == 
                      R(p)->sem.proj.items[0].old))
-                    *p = *PFla_project (PFla_scjoin (
+                    *p = *PFla_project (PFla_step (
                                             L(p),
                                             RL(p),
-                                            p->sem.scjoin.axis,
-                                            p->sem.scjoin.ty,
-                                            RL(p)->sem.scjoin.iter,
-                                            RL(p)->sem.scjoin.item,
-                                            RL(p)->sem.scjoin.item_res),
+                                            p->sem.step.axis,
+                                            p->sem.step.ty,
+                                            p->sem.step.level,
+                                            RL(p)->sem.step.iter,
+                                            RL(p)->sem.step.item,
+                                            RL(p)->sem.step.item_res),
                                         R(p)->sem.proj.items[0],
                                         R(p)->sem.proj.items[1]);
             }
+            break;
+
+        case la_dup_step:
+        case la_guide_step:
+            if (p->sem.step.level < 0)
+                p->sem.step.level = PFprop_level (p->prop,
+                                                  p->sem.step.item_res);
             break;
 
         case la_fcns:
@@ -873,6 +867,7 @@ PFalgopt_complex (PFla_op_t *root)
 {
     /* Infer key, icols, domain, and unique names
        properties first */
+    PFprop_infer_level (root);
     PFprop_infer_key (root);
     PFprop_infer_icol (root);
     PFprop_infer_dom (root);

@@ -96,8 +96,12 @@ PFprop (void)
     ret->l_name_pairs = NULL;
     ret->r_name_pairs = NULL;
 
-    /* initialize guide bitset */
+    /* initialize level information */
+    ret->level_mapping = NULL;
+    
+    /* initialize guide mapping list */
     ret->guide_mapping_list = NULL;
+
     return ret;
 }
 
@@ -109,20 +113,24 @@ void
 PFprop_infer (bool card, bool const_, bool set,
               bool dom, bool icol,
               bool key, bool ocols, bool reqval, 
-              bool refctr,
+              bool level, bool refctr, bool guides,
               bool ori_names, bool unq_names,
-              PFla_op_t *root)
+              PFla_op_t *root, PFguide_tree_t *guide)
 {
     PFprop_create_prop (root);
 
     /* for each property required infer
        the properties of the complete DAG */
+    if (level)
+        PFprop_infer_level (root);
     if (unq_names)
         PFprop_infer_unq_names (root);
     if (key)
         PFprop_infer_key (root);
     if (card)
         PFprop_infer_card (root);
+    if (guides)
+        PFprop_infer_guide (root, guide);
     if (const_)
         PFprop_infer_const (root);
     if (dom)

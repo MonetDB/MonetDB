@@ -310,7 +310,7 @@ plan_attach (const PFla_op_t *n)
     for (unsigned int r = 0; r < PFarray_last (L(n)->plans); r++)
         add_plan (ret,
                   attach (*(plan_t **) PFarray_at (L(n)->plans, r),
-                          n->sem.attach.attname,
+                          n->sem.attach.res,
                           n->sem.attach.value));
 
     return ret;
@@ -1219,9 +1219,32 @@ plan_rownum (const PFla_op_t *n)
     for (unsigned int i = 0; i < PFarray_last (sorted); i++)
         add_plan (ret,
                   number (*(plan_t **) PFarray_at (sorted, i),
-                          n->sem.rownum.attname,
+                          n->sem.rownum.res,
                           n->sem.rownum.part));
 
+    return ret;
+}
+
+static PFplanlist_t *
+plan_rank (const PFla_op_t *n)
+{
+    PFplanlist_t *ret    = new_planlist ();
+    PFplanlist_t *sorted = new_planlist ();
+
+    assert (n); assert (n->kind == la_rank);
+    assert (L(n)); assert (L(n)->plans);
+
+    for (unsigned int i = 0; i < PFarray_last (L(n)->plans); i++)
+        add_plans (sorted,
+                   ensure_ordering (
+                       *(plan_t **) PFarray_at (L(n)->plans, i),
+                       n->sem.rank.sortby));
+
+    for (unsigned int i = 0; i < PFarray_last (sorted); i++)
+        add_plan (ret,
+                  number (*(plan_t **) PFarray_at (sorted, i),
+                          n->sem.rank.res,
+                          att_NULL));
     return ret;
 }
 
@@ -1244,8 +1267,8 @@ plan_number (const PFla_op_t *n)
                 = *(plan_t **) PFarray_at (L(n)->plans, i);
 
     add_plan (ret, number (cheapest_unordered,
-                           n->sem.number.attname,
-                           n->sem.number.part));
+                           n->sem.number.res,
+                           att_NULL));
 
     return ret;
 }
@@ -1312,11 +1335,11 @@ plan_cast (const PFla_op_t *n)
 }
 
 /**
- * Create physical plan for the staircase join operator (XPath location
+ * Create physical plan for the path step operator (XPath location
  * steps). Uses helper functions plan_scj_XXX.
  */
 static PFplanlist_t *
-plan_scjoin (const PFla_op_t *n)
+plan_step (const PFla_op_t *n)
 {
     PFplanlist_t *ret     = new_planlist ();
     PFpa_op_t* (*llscj) (const PFpa_op_t *, const PFpa_op_t *, const PFty_t,
@@ -1325,10 +1348,10 @@ plan_scjoin (const PFla_op_t *n)
 
 #ifndef NDEBUG
     /* ensure that input and output columns have the same name */
-    assert (n->sem.scjoin.item == n->sem.scjoin.item_res);
+    assert (n->sem.step.item == n->sem.step.item_res);
 #endif
 
-    switch (n->sem.scjoin.axis) {
+    switch (n->sem.step.axis) {
         case alg_anc:       llscj = PFpa_llscj_anc;         break;
         case alg_anc_s:     llscj = PFpa_llscj_anc_self;    break;
         case alg_attr:      llscj = PFpa_llscj_attr;        break;
@@ -1358,11 +1381,11 @@ plan_scjoin (const PFla_op_t *n)
      * encoded in a single integer value.
      */
     const PFord_ordering_t in[2]
-        = { sortby (n->sem.scjoin.iter, n->sem.scjoin.item),
-            sortby (n->sem.scjoin.item, n->sem.scjoin.iter) };
+        = { sortby (n->sem.step.iter, n->sem.step.item),
+            sortby (n->sem.step.item, n->sem.step.iter) };
     const PFord_ordering_t out[2]
-        = { sortby (n->sem.scjoin.iter, n->sem.scjoin.item),
-            sortby (n->sem.scjoin.item, n->sem.scjoin.iter) };
+        = { sortby (n->sem.step.iter, n->sem.step.item),
+            sortby (n->sem.step.item, n->sem.step.iter) };
 
     /* consider the two possible input orderings */
     for (unsigned short i = 0; i < 2; i++) {
@@ -1382,16 +1405,16 @@ plan_scjoin (const PFla_op_t *n)
         for (unsigned int k = 0; k < PFarray_last (ordered); k++)
             for (unsigned int l = 0; l < PFarray_last (L(n)->plans); l++)
                 /* the evaluation of the attribute axis keeps the input order */
-                if (n->sem.scjoin.axis == alg_attr)
+                if (n->sem.step.axis == alg_attr)
                     add_plan (
                         ret,
                         llscj (*(plan_t **) PFarray_at (L(n)->plans, l),
                                *(plan_t **) PFarray_at (ordered, k),
-                               n->sem.scjoin.ty,
+                               n->sem.step.ty,
                                in[i],
                                out[i],
-                               n->sem.scjoin.iter,
-                               n->sem.scjoin.item));
+                               n->sem.step.iter,
+                               n->sem.step.item));
                 else
                     for (unsigned short o = 0; o < 2; o++)
                         add_plan (
@@ -1399,11 +1422,11 @@ plan_scjoin (const PFla_op_t *n)
                             llscj (*(plan_t **) PFarray_at (L(n)->plans,
                                                             l),
                                    *(plan_t **) PFarray_at (ordered, k),
-                                   n->sem.scjoin.ty,
+                                   n->sem.step.ty,
                                    in[i],
                                    out[o],
-                                   n->sem.scjoin.iter,
-                                   n->sem.scjoin.item));
+                                   n->sem.step.iter,
+                                   n->sem.step.item));
     }
 
     return ret;
@@ -2597,6 +2620,7 @@ plan_subexpression (PFla_op_t *n)
         case la_count:          plans = plan_count (n);        break;
 
         case la_rownum:         plans = plan_rownum (n);       break;
+        case la_rank:           plans = plan_rank (n);         break;
         case la_number:         plans = plan_number (n);       break;
         case la_type:           plans = plan_type (n);         break;
         case la_type_assert:    plans = plan_type_assert (n);  break;
@@ -2604,7 +2628,7 @@ plan_subexpression (PFla_op_t *n)
      /* case la_seqty1:         */
      /* case la_all:            */
 
-        case la_scjoin:         plans = plan_scjoin (n);       break;
+        case la_step:           plans = plan_step (n);         break;
         case la_doc_tbl:        plans = plan_doc_tbl (n);      break;
         case la_doc_access:     plans = plan_doc_access (n);   break;
 

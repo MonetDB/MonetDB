@@ -169,9 +169,9 @@ find_join_worker (PFla_op_t *n,
             break;
 
         case la_attach:
-            BOOL_COLS(n)  = diff (BOOL_COLS(n),  n->sem.attach.attname);
-            LEFT_COLS(n)  = diff (LEFT_COLS(n),  n->sem.attach.attname);
-            RIGHT_COLS(n) = diff (RIGHT_COLS(n), n->sem.attach.attname);
+            BOOL_COLS(n)  = diff (BOOL_COLS(n),  n->sem.attach.res);
+            LEFT_COLS(n)  = diff (LEFT_COLS(n),  n->sem.attach.res);
+            RIGHT_COLS(n) = diff (RIGHT_COLS(n), n->sem.attach.res);
             break;
 
         case la_cross:
@@ -315,6 +315,19 @@ find_join_worker (PFla_op_t *n,
             }
             break;
 
+        case la_to:
+            if (LEFT_COLS(n) & n->sem.to.res) {
+                LEFT_COLS(n) = diff   (LEFT_COLS(n), n->sem.to.res);
+                LEFT_COLS(n) = union_ (LEFT_COLS(n), n->sem.to.att1);
+                LEFT_COLS(n) = union_ (LEFT_COLS(n), n->sem.to.att2);
+            }
+            if (RIGHT_COLS(n) & n->sem.to.res) {
+                RIGHT_COLS(n) = diff   (RIGHT_COLS(n), n->sem.to.res);
+                RIGHT_COLS(n) = union_ (RIGHT_COLS(n), n->sem.to.att1);
+                RIGHT_COLS(n) = union_ (RIGHT_COLS(n), n->sem.to.att2);
+            }
+            break;
+
         case la_avg:
 	case la_max:
 	case la_min:
@@ -338,8 +351,8 @@ find_join_worker (PFla_op_t *n,
             break;
 
         case la_rownum:
-            if (LEFT_COLS(n) & n->sem.rownum.attname) {
-                LEFT_COLS(n) = diff   (LEFT_COLS(n), n->sem.rownum.attname);
+            if (LEFT_COLS(n) & n->sem.rownum.res) {
+                LEFT_COLS(n) = diff   (LEFT_COLS(n), n->sem.rownum.res);
 
                 for (unsigned int i = 0;
                      i < PFord_count (n->sem.rownum.sortby);
@@ -354,8 +367,8 @@ find_join_worker (PFla_op_t *n,
                                            n->sem.rownum.part);
             }
 
-            if (RIGHT_COLS(n) & n->sem.rownum.attname) {
-                RIGHT_COLS(n) = diff   (RIGHT_COLS(n), n->sem.rownum.attname);
+            if (RIGHT_COLS(n) & n->sem.rownum.res) {
+                RIGHT_COLS(n) = diff   (RIGHT_COLS(n), n->sem.rownum.res);
                 
                 for (unsigned int i = 0;
                      i < PFord_count (n->sem.rownum.sortby);
@@ -371,14 +384,33 @@ find_join_worker (PFla_op_t *n,
             }
             break;
 
-        case la_number:
-            if (LEFT_COLS(n) & n->sem.number.attname && n->sem.number.part)
-                LEFT_COLS(n) = union_ (LEFT_COLS(n), n->sem.number.part);
-            if (RIGHT_COLS(n) & n->sem.number.attname && n->sem.number.part)
-                RIGHT_COLS(n) = union_ (RIGHT_COLS(n), n->sem.number.part);
+        case la_rank:
+            if (LEFT_COLS(n) & n->sem.rank.res) {
+                LEFT_COLS(n) = diff   (LEFT_COLS(n), n->sem.rank.res);
 
-            LEFT_COLS(n)  = diff   (LEFT_COLS(n), n->sem.number.attname);
-            RIGHT_COLS(n) = diff   (RIGHT_COLS(n), n->sem.number.attname);
+                for (unsigned int i = 0;
+                     i < PFord_count (n->sem.rank.sortby);
+                     i++)
+                    LEFT_COLS(n) = union_ (LEFT_COLS(n),
+                                           PFord_order_col_at (
+                                               n->sem.rank.sortby, i));
+            }
+
+            if (RIGHT_COLS(n) & n->sem.rank.res) {
+                RIGHT_COLS(n) = diff   (RIGHT_COLS(n), n->sem.rank.res);
+                
+                for (unsigned int i = 0;
+                     i < PFord_count (n->sem.rank.sortby);
+                     i++)
+                    RIGHT_COLS(n) = union_ (RIGHT_COLS(n),
+                                            PFord_order_col_at (
+                                                n->sem.rank.sortby, i));
+            }
+            break;
+
+        case la_number:
+            LEFT_COLS(n)  = diff   (LEFT_COLS(n), n->sem.number.res);
+            RIGHT_COLS(n) = diff   (RIGHT_COLS(n), n->sem.number.res);
             break;
 
         case la_type:
@@ -399,25 +431,30 @@ find_join_worker (PFla_op_t *n,
         case la_type_assert:
             break;
 
-        case la_scjoin:
-            if (LEFT_COLS(n) & n->sem.scjoin.item_res) {
-                LEFT_COLS(n) = diff   (LEFT_COLS(n), n->sem.scjoin.item_res);
-                LEFT_COLS(n) = union_ (LEFT_COLS(n), n->sem.scjoin.item);
+        case la_step:
+        case la_dup_step:
+        case la_guide_step:
+            if (LEFT_COLS(n) & n->sem.step.item_res) {
+                LEFT_COLS(n) = diff   (LEFT_COLS(n), n->sem.step.item_res);
+                LEFT_COLS(n) = union_ (LEFT_COLS(n), n->sem.step.item);
             }
-            if (RIGHT_COLS(n) & n->sem.scjoin.item_res) {
-                RIGHT_COLS(n) = diff   (RIGHT_COLS(n), n->sem.scjoin.item_res);
-                RIGHT_COLS(n) = union_ (RIGHT_COLS(n), n->sem.scjoin.item);
+            if (RIGHT_COLS(n) & n->sem.step.item_res) {
+                RIGHT_COLS(n) = diff   (RIGHT_COLS(n), n->sem.step.item_res);
+                RIGHT_COLS(n) = union_ (RIGHT_COLS(n), n->sem.step.item);
             }
             break;
 
-        case la_dup_scjoin:
-            if (LEFT_COLS(n) & n->sem.scjoin.item_res) {
-                LEFT_COLS(n) = diff   (LEFT_COLS(n), n->sem.scjoin.item_res);
-                LEFT_COLS(n) = union_ (LEFT_COLS(n), n->sem.scjoin.item);
+        case la_id:
+        case la_idref:
+            if (LEFT_COLS(n) & n->sem.id.item_res) {
+                LEFT_COLS(n) = diff   (LEFT_COLS(n), n->sem.id.item_res);
+                LEFT_COLS(n) = union_ (LEFT_COLS(n), n->sem.id.item);
+                LEFT_COLS(n) = union_ (LEFT_COLS(n), n->sem.id.item_doc);
             }
-            if (RIGHT_COLS(n) & n->sem.scjoin.item_res) {
-                RIGHT_COLS(n) = diff   (RIGHT_COLS(n), n->sem.scjoin.item_res);
-                RIGHT_COLS(n) = union_ (RIGHT_COLS(n), n->sem.scjoin.item);
+            if (RIGHT_COLS(n) & n->sem.id.item_res) {
+                RIGHT_COLS(n) = diff   (RIGHT_COLS(n), n->sem.id.item_res);
+                RIGHT_COLS(n) = union_ (RIGHT_COLS(n), n->sem.id.item);
+                RIGHT_COLS(n) = union_ (RIGHT_COLS(n), n->sem.id.item_doc);
             }
             break;
 

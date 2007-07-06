@@ -90,6 +90,7 @@ infer_card (PFla_op_t *n)
         case la_bool_or:
         case la_bool_not:
         case la_rownum:
+        case la_rank:
         case la_number:
         case la_type:
         case la_type_assert:
@@ -124,8 +125,11 @@ infer_card (PFla_op_t *n)
         case la_intersect:
         case la_difference:
         case la_distinct:
-        case la_scjoin:
-        case la_dup_scjoin:
+        case la_step:
+        case la_dup_step:
+        case la_guide_step:
+        case la_id:
+        case la_idref:
         case la_fcns:
         case la_merge_adjacent:
         case la_fragment:
@@ -141,6 +145,12 @@ infer_card (PFla_op_t *n)
                both of them */
             n->prop->card = L(n)->prop->card && R(n)->prop->card ?
                             L(n)->prop->card + R(n)->prop->card : 0;
+            break;
+
+        case la_to:
+            /* with constant information 
+               we could infer the cardinality better */
+            n->prop->card = 0;
             break;
 
         case la_avg:

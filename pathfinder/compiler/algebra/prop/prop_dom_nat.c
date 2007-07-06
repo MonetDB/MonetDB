@@ -274,7 +274,7 @@ infer_dom (PFla_op_t *n, unsigned int id)
         case la_attach:
             bulk_add_dom (n->prop, L(n));
             if (n->sem.attach.value.type == aat_nat)
-                add_dom (n->prop, n->sem.attach.attname, id++);
+                add_dom (n->prop, n->sem.attach.res, id++);
             break;
 
         case la_cross:
@@ -644,6 +644,24 @@ infer_dom (PFla_op_t *n, unsigned int id)
             bulk_add_dom (n->prop, L(n));
             break;
 
+        case la_to:
+            if (n->sem.to.part) { 
+                PFalg_simple_type_t join_ty = 0;
+                /* find the partition type */
+                for (unsigned int i = 0; i < n->schema.count; i++)
+                    if (n->schema.items[i].name == n->sem.to.part) {
+                        join_ty = n->schema.items[i].type;
+                        break;
+                    }
+                assert (join_ty);
+
+                if (join_ty == aat_nat)
+                    add_dom (n->prop,
+                             n->sem.to.part,
+                             PFprop_dom (L(n)->prop, n->sem.to.part));
+            }
+            break;
+
         case la_avg:
         case la_max:
         case la_min:
@@ -670,22 +688,28 @@ infer_dom (PFla_op_t *n, unsigned int id)
 
         case la_rownum:
             bulk_add_dom (n->prop, L(n));
-            add_dom (n->prop, n->sem.rownum.attname, id++);
+            add_dom (n->prop, n->sem.rownum.res, id++);
+            break;
+
+        case la_rank:
+            bulk_add_dom (n->prop, L(n));
+            add_dom (n->prop, n->sem.rank.res, id++);
             break;
 
         case la_number:
             bulk_add_dom (n->prop, L(n));
-            add_dom (n->prop, n->sem.number.attname, id++);
+            add_dom (n->prop, n->sem.number.res, id++);
             break;
 
-        case la_scjoin:
+        case la_step:
+        case la_guide_step:
             /* create new subdomain for attribute iter */
             add_subdom (n->prop, PFprop_dom (R(n)->prop,
-                                             n->sem.scjoin.iter), id);
-            add_dom (n->prop, n->sem.scjoin.iter, id++);
+                                             n->sem.step.iter), id);
+            add_dom (n->prop, n->sem.step.iter, id++);
             break;
 
-        case la_dup_scjoin:
+        case la_dup_step:
             for (unsigned int i = 0; i < R(n)->schema.count; i++)
                 if (R(n)->schema.items[i].type == aat_nat) {
                     add_subdom (n->prop,
@@ -694,6 +718,14 @@ infer_dom (PFla_op_t *n, unsigned int id)
                                 id);
                     add_dom (n->prop, R(n)->schema.items[i].name, id++);
                 }
+            break;
+
+        case la_id:
+        case la_idref:
+            /* create new subdomain for attribute iter */
+            add_subdom (n->prop, PFprop_dom (R(n)->prop,
+                                             n->sem.id.iter), id);
+            add_dom (n->prop, n->sem.id.iter, id++);
             break;
 
         case la_doc_tbl:

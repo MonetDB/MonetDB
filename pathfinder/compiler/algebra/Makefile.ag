@@ -40,19 +40,19 @@ lib_algebra = {
         NOINST
         DIR = libdir
         SOURCES = \
-                core2alg.brg \
                 alg_dag.c \
                 algebra.c \
-                properties.c \
-                algopt.c \
                 algebra_cse.c \
-                logical.c \
-                planner.c \
-                physical.c \
-                intro_rec_border.c \
-                ordering.c \
+                algopt.c \
                 builtins.c \
-                load_stats.c
+                core2alg.brg \
+                intro_rec_border.c \
+                load_stats.c \
+                logical.c \
+                ordering.c \
+                physical.c \
+                planner.c \
+                properties.c
 }
 
 #EXTRA_DIST =

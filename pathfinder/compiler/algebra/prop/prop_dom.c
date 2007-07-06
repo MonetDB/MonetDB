@@ -523,7 +523,7 @@ infer_dom (PFla_op_t *n, unsigned int id)
 
         case la_attach:
             bulk_add_dom (n->prop, L(n));
-            add_dom (n->prop, n->sem.attach.attname, id++);
+            add_dom (n->prop, n->sem.attach.res, id++);
             break;
 
         case la_cross:
@@ -875,6 +875,14 @@ infer_dom (PFla_op_t *n, unsigned int id)
             add_dom (n->prop, n->sem.unary.res, id++);
             break;
 
+        case la_to:
+            add_dom (n->prop, n->sem.to.res, id++);
+            if (n->sem.to.part)
+                add_dom (n->prop,
+                         n->sem.to.part,
+                         PFprop_dom (L(n)->prop, n->sem.to.part));
+            break;
+
         case la_avg:
         case la_sum:
         case la_count:
@@ -901,12 +909,17 @@ infer_dom (PFla_op_t *n, unsigned int id)
 
         case la_rownum:
             bulk_add_dom (n->prop, L(n));
-            add_dom (n->prop, n->sem.rownum.attname, id++);
+            add_dom (n->prop, n->sem.rownum.res, id++);
+            break;
+
+        case la_rank:
+            bulk_add_dom (n->prop, L(n));
+            add_dom (n->prop, n->sem.rank.res, id++);
             break;
 
         case la_number:
             bulk_add_dom (n->prop, L(n));
-            add_dom (n->prop, n->sem.number.attname, id++);
+            add_dom (n->prop, n->sem.number.res, id++);
             break;
 
         case la_type:
@@ -919,22 +932,33 @@ infer_dom (PFla_op_t *n, unsigned int id)
             bulk_add_dom (n->prop, L(n));
             break;
 
-        case la_scjoin:
+        case la_step:
+        case la_guide_step:
             /* create new subdomain for attribute iter */
             add_subdom (n->prop, PFprop_dom (R(n)->prop,
-                                             n->sem.scjoin.iter), id);
-            add_dom (n->prop, n->sem.scjoin.iter, id++);
+                                             n->sem.step.iter), id);
+            add_dom (n->prop, n->sem.step.iter, id++);
             /* create new domain for attribute item */
-            add_dom (n->prop, n->sem.scjoin.item_res, id++);
+            add_dom (n->prop, n->sem.step.item_res, id++);
             break;
 
-        case la_dup_scjoin:
+        case la_dup_step:
             for (unsigned int i = 0; i < R(n)->schema.count; i++) {
                 add_subdom (n->prop, PFprop_dom (R(n)->prop,
                                                  R(n)->schema.items[i].name), id);
                 add_dom (n->prop, R(n)->schema.items[i].name, id++);
             }
-            add_dom (n->prop, n->sem.scjoin.item_res, id++);
+            add_dom (n->prop, n->sem.step.item_res, id++);
+            break;
+
+        case la_id:
+        case la_idref:
+            /* create new subdomain for attribute iter */
+            add_subdom (n->prop, PFprop_dom (R(n)->prop,
+                                             n->sem.id.iter), id);
+            add_dom (n->prop, n->sem.id.iter, id++);
+            /* create new domain for attribute item */
+            add_dom (n->prop, n->sem.id.item_res, id++);
             break;
 
         case la_doc_tbl:

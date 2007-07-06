@@ -38,7 +38,7 @@
 #include "array.h"
 #include "alg_dag.h"
 
-/* compare types in staircase join operator nodes */
+/* compare types in path step operator nodes */
 #include "subtyping.h"
 
 #include <assert.h>
@@ -179,7 +179,7 @@ subexp_eq (PFla_op_t *a, PFla_op_t *b)
             break;
 
         case la_attach:
-            return (a->sem.attach.attname == b->sem.attach.attname &&
+            return (a->sem.attach.res == b->sem.attach.res &&
                     PFalg_atom_comparable (a->sem.attach.value,
                                            b->sem.attach.value) &&
                     !PFalg_atom_cmp (a->sem.attach.value,
@@ -258,6 +258,13 @@ subexp_eq (PFla_op_t *a, PFla_op_t *b)
                     && a->sem.unary.res == b->sem.unary.res);
             break;
 
+        case la_to:
+            return (a->sem.to.res == b->sem.to.res
+                    && a->sem.to.att1 == b->sem.to.att1
+                    && a->sem.to.att2 == b->sem.to.att2
+                    && a->sem.to.part == b->sem.to.part);
+            break;
+
         case la_avg:
 	case la_max:
 	case la_min:
@@ -277,7 +284,7 @@ subexp_eq (PFla_op_t *a, PFla_op_t *b)
             return true;
 
         case la_rownum:
-            if (a->sem.rownum.attname != b->sem.rownum.attname)
+            if (a->sem.rownum.res != b->sem.rownum.res)
                 return false;
 
             for (unsigned int i = 0;
@@ -297,9 +304,24 @@ subexp_eq (PFla_op_t *a, PFla_op_t *b)
             return true;
             break;
 
+        case la_rank:
+            if (a->sem.rank.res != b->sem.rank.res)
+                return false;
+
+            for (unsigned int i = 0;
+                 i < PFord_count (a->sem.rank.sortby);
+                 i++)
+                if (PFord_order_col_at (a->sem.rank.sortby, i) !=
+                    PFord_order_col_at (b->sem.rank.sortby, i) ||
+                    PFord_order_dir_at (a->sem.rank.sortby, i) !=
+                    PFord_order_dir_at (b->sem.rank.sortby, i))
+                    return false;
+
+            return true;
+            break;
+
         case la_number:
-            if (a->sem.number.attname != b->sem.number.attname ||
-                a->sem.number.part != b->sem.number.part)
+            if (a->sem.number.res != b->sem.number.res)
                 return false;
 
             return true;
@@ -317,14 +339,34 @@ subexp_eq (PFla_op_t *a, PFla_op_t *b)
                     && a->sem.type.ty == b->sem.type.ty);
             break;
 
-        case la_scjoin:
-        case la_dup_scjoin:
-            return (a->sem.scjoin.axis == b->sem.scjoin.axis
-                    && PFty_subtype (a->sem.scjoin.ty, b->sem.scjoin.ty)
-                    && PFty_subtype (b->sem.scjoin.ty, a->sem.scjoin.ty)
-                    && a->sem.scjoin.iter     == b->sem.scjoin.iter
-                    && a->sem.scjoin.item     == b->sem.scjoin.item
-                    && a->sem.scjoin.item_res == b->sem.scjoin.item_res);
+        case la_step:
+        case la_dup_step:
+        case la_guide_step:
+            if (a->sem.step.axis        != b->sem.step.axis
+             || !PFty_subtype (a->sem.step.ty, b->sem.step.ty)
+             || !PFty_subtype (b->sem.step.ty, a->sem.step.ty)
+             || a->sem.step.guide_count != b->sem.step.guide_count
+             || a->sem.step.level       != b->sem.step.level
+             || a->sem.step.iter        != b->sem.step.iter
+             || a->sem.step.item        != b->sem.step.item
+             || a->sem.step.item_res    != b->sem.step.item_res)
+                return false;
+
+            for (unsigned int i = 0;
+                 i < a->sem.step.guide_count;
+                 i++)
+                if (a->sem.step.guides[i] != b->sem.step.guides[i])
+                    return false;
+            
+            return true;
+            break;
+
+        case la_id:
+        case la_idref:
+            return (a->sem.id.iter == b->sem.id.iter
+                    && a->sem.id.item == b->sem.id.item
+                    && a->sem.id.item_res == b->sem.id.item_res
+                    && a->sem.id.item_doc == b->sem.id.item_doc);
             break;
 
         case la_doc_access:

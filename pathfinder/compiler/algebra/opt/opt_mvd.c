@@ -318,9 +318,9 @@ opt_mvd (PFla_op_t *p)
             *p = *(cross_can (
                       LL(p),
                       attach (
-                          lit_tbl (attlist (L(p)->sem.attach.attname),
+                          lit_tbl (attlist (L(p)->sem.attach.res),
                                    tuple (L(p)->sem.attach.value)),
-                          p->sem.attach.attname,
+                          p->sem.attach.res,
                           p->sem.attach.value)));
             modified = true;
         }
@@ -328,10 +328,10 @@ opt_mvd (PFla_op_t *p)
             /* push attach into both cross product operands */
             *p = *(cross_can (
                        attach (LL(p),
-                               p->sem.attach.attname,
+                               p->sem.attach.res,
                                p->sem.attach.value),
                        attach (LR(p),
-                               p->sem.attach.attname,
+                               p->sem.attach.res,
                                p->sem.attach.value)));
             modified = true;
         }
@@ -543,9 +543,9 @@ opt_mvd (PFla_op_t *p)
             *p = *(cross_can (
                       LL(p),
                       disjunion (
-                          lit_tbl (attlist (L(p)->sem.attach.attname),
+                          lit_tbl (attlist (L(p)->sem.attach.res),
                                    tuple (L(p)->sem.attach.value)),
-                          lit_tbl (attlist (R(p)->sem.attach.attname),
+                          lit_tbl (attlist (R(p)->sem.attach.res),
                                    tuple (R(p)->sem.attach.value)))));
             modified = true;
             break;
@@ -556,7 +556,7 @@ opt_mvd (PFla_op_t *p)
                 *p = *(cross_can (
                            LL(p),
                            disjunion (
-                               lit_tbl (attlist (L(p)->sem.attach.attname),
+                               lit_tbl (attlist (L(p)->sem.attach.res),
                                         tuple (L(p)->sem.attach.value)),
                                RR(p))));
                 modified = true;
@@ -566,7 +566,7 @@ opt_mvd (PFla_op_t *p)
                 *p = *(cross_can (
                            LL(p),
                            disjunion (
-                               lit_tbl (attlist (L(p)->sem.attach.attname),
+                               lit_tbl (attlist (L(p)->sem.attach.res),
                                         tuple (L(p)->sem.attach.value)),
                                RL(p))));
                 modified = true;
@@ -579,7 +579,7 @@ opt_mvd (PFla_op_t *p)
                 *p = *(cross_can (
                            RL(p),
                            disjunion (
-                               lit_tbl (attlist (R(p)->sem.attach.attname),
+                               lit_tbl (attlist (R(p)->sem.attach.res),
                                         tuple (R(p)->sem.attach.value)),
                                LR(p))));
                 modified = true;
@@ -589,7 +589,7 @@ opt_mvd (PFla_op_t *p)
                 *p = *(cross_can (
                            RL(p),
                            disjunion (
-                               lit_tbl (attlist (R(p)->sem.attach.attname),
+                               lit_tbl (attlist (R(p)->sem.attach.res),
                                         tuple (R(p)->sem.attach.value)),
                                LL(p))));
                 modified = true;
@@ -778,6 +778,41 @@ opt_mvd (PFla_op_t *p)
     case la_bool_not:
         modified = modify_unary_op (p, PFla_not);
         break;
+        
+    case la_to:
+        if (is_cross (L(p))) {
+            if (att_present (LL(p), p->sem.to.att1) &&
+                att_present (LL(p), p->sem.to.att2)) {
+                *p = *(cross_can (
+                           LR(p),
+                           project (to (attach (LL(p),
+                                                p->sem.to.part,
+                                                lit_nat(1)),
+                                        p->sem.to.res,
+                                        p->sem.to.att1,
+                                        p->sem.to.att2,
+                                        p->sem.to.part),
+                                    proj (p->sem.to.res,
+                                          p->sem.to.res))));
+                modified = true;
+            } else if (att_present (LR(p), p->sem.to.att1) &&
+                       att_present (LR(p), p->sem.to.att2)) {
+                *p = *(cross_can (
+                           LL(p),
+                           project (to (attach (LR(p),
+                                                p->sem.to.part,
+                                                lit_nat(1)),
+                                        p->sem.to.res,
+                                        p->sem.to.att1,
+                                        p->sem.to.att2,
+                                        p->sem.to.part),
+                                    proj (p->sem.to.res,
+                                          p->sem.to.res))));
+                modified = true;
+            }
+        }
+        break;
+        
     case la_avg:
         modified = modify_aggr (p, la_avg);
         break;
@@ -849,7 +884,7 @@ opt_mvd (PFla_op_t *p)
                           LL(p),
                           rownum (
                               LR(p),
-                              p->sem.rownum.attname,
+                              p->sem.rownum.res,
                               p->sem.rownum.sortby,
                               att_NULL)));
                 modified = true;
@@ -878,7 +913,7 @@ opt_mvd (PFla_op_t *p)
                           LR(p),
                           rownum (
                               LL(p),
-                              p->sem.rownum.attname,
+                              p->sem.rownum.res,
                               p->sem.rownum.sortby,
                               att_NULL)));
                 modified = true;
@@ -887,35 +922,64 @@ opt_mvd (PFla_op_t *p)
         }
         break;
 
-    case la_number:
-        /* An expression that contains the partitioning attribute is
-           independent of the number. The translation thus moves the
-           expression above the number operator and removes its partitioning
-           column. */ 
-        if (is_cross (L(p)) &&
-            p->sem.number.part) {
-            if (att_present (LL(p), p->sem.number.part)) {
+    case la_rank:
+        /* An expression that does not contain any sorting column
+           required by the rank operator, is independent of the rank. 
+           The translation thus moves the expression above the rank. */
+        if (is_cross (L(p))) {
+            bool sortby;
+
+            /* first check the dependencies of the left cross product input */
+            sortby = false;
+            for (unsigned int i = 0; i < LL(p)->schema.count; i++)
+                for (unsigned int j = 0;
+                     j < PFord_count (p->sem.rank.sortby);
+                     j++)
+                    if (LL(p)->schema.items[i].name 
+                        == PFord_order_col_at (
+                               p->sem.rank.sortby,
+                               j)) {
+                        sortby = true;
+                        break;
+                    }
+            if (!sortby) {
                 *p = *(cross_can (
                           LL(p),
-                          number (
+                          rank (
                               LR(p),
-                              p->sem.number.attname,
-                              att_NULL)));
+                              p->sem.rank.res,
+                              p->sem.rank.sortby)));
                 modified = true;
                 break;
             }
-            /* if not present it has to be in the right operand */
-            else {
+
+            /* then check the dependencies of the right cross product input */
+            sortby = false;
+            for (unsigned int i = 0; i < LR(p)->schema.count; i++)
+                for (unsigned int j = 0;
+                     j < PFord_count (p->sem.rownum.sortby);
+                     j++)
+                    if (LR(p)->schema.items[i].name 
+                        == PFord_order_col_at (
+                               p->sem.rownum.sortby,
+                               j)) {
+                        sortby = true;
+                        break;
+                    }
+            if (!sortby) {
                 *p = *(cross_can (
                           LR(p),
-                          number (
+                          rank (
                               LL(p),
-                              p->sem.number.attname,
-                              att_NULL)));
+                              p->sem.rank.res,
+                              p->sem.rank.sortby)));
                 modified = true;
                 break;
             }
         }
+        break;
+
+    case la_number:
         break;
 
     case la_type:
@@ -1081,82 +1145,205 @@ opt_mvd (PFla_op_t *p)
         }
         break;
         
-    case la_scjoin:
+    case la_step:
         if (is_cross (R(p))) {
-            if (att_present (RL(p), p->sem.scjoin.item)) {
+            if (att_present (RL(p), p->sem.step.item)) {
                 *p = *(cross_can (
                            RR(p),
-                           project (scjoin (L(p),
+                           project (step (L(p),
                                             attach (RL(p),
-                                                    p->sem.scjoin.iter,
+                                                    p->sem.step.iter,
                                                     lit_nat(1)),
-                                            p->sem.scjoin.axis,
-                                            p->sem.scjoin.ty,
-                                            p->sem.scjoin.iter,
-                                            p->sem.scjoin.item,
-                                            p->sem.scjoin.item_res),
-                                    proj (p->sem.scjoin.item_res,
-                                          p->sem.scjoin.item_res))));
+                                            p->sem.step.axis,
+                                            p->sem.step.ty,
+                                            p->sem.step.level,
+                                            p->sem.step.iter,
+                                            p->sem.step.item,
+                                            p->sem.step.item_res),
+                                    proj (p->sem.step.item_res,
+                                          p->sem.step.item_res))));
             } else {
                 *p = *(cross_can (
                            RL(p),
-                           project (scjoin (L(p),
+                           project (step (L(p),
                                             attach (RR(p),
-                                                    p->sem.scjoin.iter,
+                                                    p->sem.step.iter,
                                                     lit_nat(1)),
-                                            p->sem.scjoin.axis,
-                                            p->sem.scjoin.ty,
-                                            p->sem.scjoin.iter,
-                                            p->sem.scjoin.item,
-                                            p->sem.scjoin.item_res),
-                                    proj (p->sem.scjoin.item_res,
-                                          p->sem.scjoin.item_res))));
+                                            p->sem.step.axis,
+                                            p->sem.step.ty,
+                                            p->sem.step.level,
+                                            p->sem.step.iter,
+                                            p->sem.step.item,
+                                            p->sem.step.item_res),
+                                    proj (p->sem.step.item_res,
+                                          p->sem.step.item_res))));
             }
             modified = true;
         }
         break;
         
-    case la_dup_scjoin:
+    case la_dup_step:
         if (is_cross (R(p))) {
-            bool switch_left = att_present (RL(p), p->sem.scjoin.item);
-            bool switch_right = att_present (RR(p), p->sem.scjoin.item);
+            bool switch_left = att_present (RL(p), p->sem.step.item);
+            bool switch_right = att_present (RR(p), p->sem.step.item);
                                
             if (switch_left && switch_right) {
-                *p = *(cross_can (dup_scjoin (
+                *p = *(cross_can (dup_step (
                                         L(p),
                                         RL(p),
-                                        p->sem.scjoin.axis,
-                                        p->sem.scjoin.ty,
-                                        p->sem.scjoin.item,
-                                        p->sem.scjoin.item_res),
-                                  dup_scjoin (
+                                        p->sem.step.axis,
+                                        p->sem.step.ty,
+                                        p->sem.step.level,
+                                        p->sem.step.item,
+                                        p->sem.step.item_res),
+                                  dup_step (
                                         L(p), 
                                         RR(p),
-                                        p->sem.scjoin.axis,
-                                        p->sem.scjoin.ty,
-                                        p->sem.scjoin.item,
-                                        p->sem.scjoin.item_res)));
+                                        p->sem.step.axis,
+                                        p->sem.step.ty,
+                                        p->sem.step.level,
+                                        p->sem.step.item,
+                                        p->sem.step.item_res)));
                 modified = true;
             }
             else if (switch_left) {
-                *p = *(cross_can (dup_scjoin (
+                *p = *(cross_can (dup_step (
                                         L(p), RL(p),
-                                        p->sem.scjoin.axis,
-                                        p->sem.scjoin.ty,
-                                        p->sem.scjoin.item,
-                                        p->sem.scjoin.item_res),
+                                        p->sem.step.axis,
+                                        p->sem.step.ty,
+                                        p->sem.step.level,
+                                        p->sem.step.item,
+                                        p->sem.step.item_res),
                                   RR(p)));
                 modified = true;
             }
             else if (switch_right) {
                 *p = *(cross_can (RL(p),
-                                  dup_scjoin (
+                                  dup_step (
                                         L(p),
                                         RR(p),
-                                        p->sem.scjoin.axis,
-                                        p->sem.scjoin.ty,
-                                        p->sem.scjoin.item,
-                                        p->sem.scjoin.item_res)));
+                                        p->sem.step.axis,
+                                        p->sem.step.ty,
+                                        p->sem.step.level,
+                                        p->sem.step.item,
+                                        p->sem.step.item_res)));
+                modified = true;
+            }
+        }
+        break;
+        
+    case la_guide_step:
+        if (is_cross (R(p))) {
+            if (att_present (RL(p), p->sem.step.item)) {
+                *p = *(cross_can (
+                           RR(p),
+                           project (guide_step (
+                                        L(p),
+                                        attach (RL(p),
+                                                p->sem.step.iter,
+                                                lit_nat(1)),
+                                        p->sem.step.axis,
+                                        p->sem.step.ty,
+                                        p->sem.step.guide_count,
+                                        p->sem.step.guides,
+                                        p->sem.step.level,
+                                        p->sem.step.iter,
+                                        p->sem.step.item,
+                                        p->sem.step.item_res),
+                                    proj (p->sem.step.item_res,
+                                          p->sem.step.item_res))));
+            } else {
+                *p = *(cross_can (
+                           RL(p),
+                           project (guide_step (
+                                        L(p),
+                                        attach (RR(p),
+                                                p->sem.step.iter,
+                                                lit_nat(1)),
+                                        p->sem.step.axis,
+                                        p->sem.step.ty,
+                                        p->sem.step.guide_count,
+                                        p->sem.step.guides,
+                                        p->sem.step.level,
+                                        p->sem.step.iter,
+                                        p->sem.step.item,
+                                        p->sem.step.item_res),
+                                    proj (p->sem.step.item_res,
+                                          p->sem.step.item_res))));
+            }
+            modified = true;
+        }
+        break;
+        
+    case la_id:
+        if (is_cross (R(p))) {
+            if (att_present (RL(p), p->sem.id.item) &&
+                att_present (RL(p), p->sem.id.item_doc)) {
+                *p = *(cross_can (
+                           RR(p),
+                           project (id (L(p),
+                                        attach (RL(p),
+                                                p->sem.id.iter,
+                                                lit_nat(1)),
+                                        p->sem.id.iter,
+                                        p->sem.id.item,
+                                        p->sem.id.item_res,
+                                        p->sem.id.item_doc),
+                                    proj (p->sem.id.item_res,
+                                          p->sem.id.item_res))));
+                modified = true;
+            } else if (att_present (RR(p), p->sem.id.item) &&
+                       att_present (RR(p), p->sem.id.item_doc)) {
+                *p = *(cross_can (
+                           RL(p),
+                           project (id (L(p),
+                                        attach (RR(p),
+                                                p->sem.id.iter,
+                                                lit_nat(1)),
+                                        p->sem.id.iter,
+                                        p->sem.id.item,
+                                        p->sem.id.item_res,
+                                        p->sem.id.item_doc),
+                                    proj (p->sem.id.item_res,
+                                          p->sem.id.item_res))));
+                modified = true;
+            }
+        }
+        break;
+        
+    case la_idref:
+        if (is_cross (R(p))) {
+            if (att_present (RL(p), p->sem.id.item) &&
+                att_present (RL(p), p->sem.id.item_doc)) {
+                *p = *(cross_can (
+                           RR(p),
+                           project (idref (
+                                        L(p),
+                                        attach (RL(p),
+                                                p->sem.id.iter,
+                                                lit_nat(1)),
+                                        p->sem.id.iter,
+                                        p->sem.id.item,
+                                        p->sem.id.item_res,
+                                        p->sem.id.item_doc),
+                                    proj (p->sem.id.item_res,
+                                          p->sem.id.item_res))));
+                modified = true;
+            } else if (att_present (RR(p), p->sem.id.item) &&
+                       att_present (RR(p), p->sem.id.item_doc)) {
+                *p = *(cross_can (
+                           RL(p),
+                           project (idref (
+                                        L(p),
+                                        attach (RR(p),
+                                                p->sem.id.iter,
+                                                lit_nat(1)),
+                                        p->sem.id.iter,
+                                        p->sem.id.item,
+                                        p->sem.id.item_res,
+                                        p->sem.id.item_doc),
+                                    proj (p->sem.id.item_res,
+                                          p->sem.id.item_res))));
                 modified = true;
             }
         }
@@ -1260,7 +1447,7 @@ opt_mvd (PFla_op_t *p)
                 modified = true;
             }
             else if (LL(p)->kind == la_attach && 
-                     LL(p)->sem.attach.attname == L(p)->sem.doc_tbl.item) {
+                     LL(p)->sem.attach.res == L(p)->sem.doc_tbl.item) {
                 /* save iter relation */
                 PFla_op_t *iter_rel = LL(L(p));
                 
@@ -1429,8 +1616,7 @@ opt_mvd (PFla_op_t *p)
             LL(LL(p))->kind == la_number &&
             L(LL(LL(p))) == p->sem.proxy.base1 &&
             p->sem.proxy.ref->kind == la_project &&
-            L(p->sem.proxy.ref) == LL(LL(p)) &&
-            !LL(LL(p))->sem.number.part) {
+            L(p->sem.proxy.ref) == LL(LL(p))) {
 
             PFla_op_t *cross = L(p->sem.proxy.base1);
             PFla_op_t *lcross, *rcross;
@@ -1526,8 +1712,7 @@ opt_mvd (PFla_op_t *p)
 
                 PFla_op_t *new_number = PFla_number (
                                             PFla_proxy_base (lcross),
-                                            L(ref)->sem.number.attname,
-                                            att_NULL);
+                                            L(ref)->sem.number.res);
 
                 *ref = *PFla_project_ (new_number, 
                                        ref->schema.count,

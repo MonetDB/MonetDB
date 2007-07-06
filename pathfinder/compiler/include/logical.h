@@ -40,6 +40,7 @@
 #include "physical.h"
 #include "ordering.h"
 #include "mem.h"
+#include "load_stats.h"
 
 /** algebra operator node */
 typedef struct PFla_op_t PFla_op_t;
@@ -75,13 +76,15 @@ enum PFla_op_kind_t {
     , la_bool_and       = 28 /**< boolean AND operator */
     , la_bool_or        = 29 /**< boolean OR operator */
     , la_bool_not       = 30 /**< boolean NOT operator */
-    , la_avg            = 31 /**< operator for (partitioned) avg of a column */
-    , la_max            = 32 /**< operator for (partitioned) max of a column */
-    , la_min            = 33 /**< operator for (partitioned) min of a column */
-    , la_sum            = 34 /**< operator for (partitioned) sum of a column */
-    , la_count          = 35 /**< (partitioned) row counting operator */
-    , la_rownum         = 36 /**< consecutive number generation */
-    , la_number         = 37 /**< consecutive number generation */
+    , la_to             = 31 /**< op:to operator */
+    , la_avg            = 32 /**< operator for (partitioned) avg of a column */
+    , la_max            = 33 /**< operator for (partitioned) max of a column */
+    , la_min            = 34 /**< operator for (partitioned) min of a column */
+    , la_sum            = 35 /**< operator for (partitioned) sum of a column */
+    , la_count          = 36 /**< (partitioned) row counting operator */
+    , la_rownum         = 37 /**< consecutive number generation */
+    , la_rank           = 38 /**< arbitrary but ordered number generation */
+    , la_number         = 39 /**< arbitrary, unordered number generation */
     , la_type           = 40 /**< selection of rows where a column is of a
                                   certain type */
     , la_type_assert    = 41 /**< restricts the type of a relation */
@@ -89,10 +92,13 @@ enum PFla_op_kind_t {
     , la_seqty1         = 43 /**< test for exactly one type occurrence in one
                                   iteration (Pathfinder extension) */
     , la_all            = 44 /**< test if all items in an iteration are true */
-    , la_scjoin         = 50 /**< staircase join */
-    , la_dup_scjoin     = 51 /**< staircase join */
-    , la_doc_tbl        = 52 /**< document relation (is also a fragment) */
-    , la_doc_access     = 53 /**< document access necessary for pf:string-value */
+    , la_step           = 50 /**< path step */
+    , la_dup_step       = 51 /**< duplicate generating path step */
+    , la_guide_step     = 52 /**< path step (with guide information) */
+    , la_id             = 53 /**< Operator representing a fn:id node lookup */
+    , la_idref          = 54 /**< Operator representing a fn:idref node lookup */
+    , la_doc_tbl        = 55 /**< document relation (is also a fragment) */
+    , la_doc_access     = 56 /**< document access necessary for pf:string-value */
     , la_twig           = 60 /**< twig root operator */
     , la_fcns           = 61 /**< twig constructor sequence */
     , la_docnode        = 62 /**< document node-constructing operator */
@@ -155,7 +161,7 @@ union PFla_op_sem_t {
                                        constructor */
 
     struct {
-        PFalg_att_t     attname;  /**< names of new attribute */
+        PFalg_att_t     res;      /**< names of new attribute */
         PFalg_atom_t    value;    /**< value for the new attribute */
     } attach;                     /**< semantic content for column attachment
                                        operator (ColumnAttach) */
@@ -219,6 +225,14 @@ union PFla_op_sem_t {
         PFalg_att_t     res;      /**< attribute to hold the result */
     } unary;
 
+    /* semantic content for op:to operator */
+    struct {
+        PFalg_att_t     att1;     /**< first operand */
+        PFalg_att_t     att2;     /**< second operand */
+        PFalg_att_t     part;     /**< partitioning attribute */
+        PFalg_att_t     res;      /**< attribute to hold the result */
+    } to;
+
     /*
      * semantic content for operators applying a 
      * (partitioned) aggregation function (count, sum, min, max and avg)
@@ -234,18 +248,23 @@ union PFla_op_sem_t {
 
     /* semantic content for rownum operator */
     struct {
-        PFalg_att_t      attname;  /**< name of generated (integer) attribute */
-        PFord_ordering_t sortby;   /**< sort crit. (list of attribute names
-                                        and direction) */
-        PFalg_att_t      part;     /**< optional partitioning attribute,
-                                        otherwise NULL */
+        PFalg_att_t     res;      /**< name of generated (integer) attribute */
+        PFord_ordering_t sortby;  /**< sort crit. (list of attribute names
+                                       and direction) */
+        PFalg_att_t     part;     /**< optional partitioning attribute,
+                                       otherwise NULL */
     } rownum;
+
+    /* semantic content for rank operator */
+    struct {
+        PFalg_att_t     res;      /**< name of generated (integer) attribute */
+        PFord_ordering_t sortby;  /**< sort crit. (list of attribute names
+                                       and direction) */
+    } rank;
 
     /* semantic content for number operator */
     struct {
-        PFalg_att_t     attname;  /**< name of generated (integer) attribute */
-        PFalg_att_t     part;     /**< optional partitioning attribute,
-                                       otherwise NULL */
+        PFalg_att_t     res;      /**< name of generated (integer) attribute */
     } number;
 
     /* semantic content for type test, cast, and type_assert operator */
@@ -258,14 +277,26 @@ union PFla_op_sem_t {
                              /* Note that 'res' is ignored by la_type_assert */
     } type;
 
+    /* store the semantic information for path steps (with guide information) */
     struct {
-        PFalg_axis_t    axis;
-        PFty_t          ty;
+        PFalg_axis_t     axis;
+        PFty_t           ty;
+        unsigned int     guide_count;
+        PFguide_tree_t **guides;
+        int              level;
+        PFalg_att_t      iter;     /**< column to look up the iterations */
+        PFalg_att_t      item;     /**< column to look up the context nodes */
+        PFalg_att_t      item_res; /**< column to store the resulting nodes */
+    } step;
+
+    /* store the semantic information for fn:id/fn:idref */
+    struct {
         PFalg_att_t     iter;     /**< column to look up the iterations */
         PFalg_att_t     item;     /**< column to look up the context nodes */
         PFalg_att_t     item_res; /**< column to store the resulting nodes */
-    } scjoin;
-
+        PFalg_att_t     item_doc; /**< column to store the fragment info */
+    } id;
+    
     /* store the column names necessary for document lookup */
     struct {
         PFalg_att_t     iter;     /**< iter column to retain */
@@ -400,6 +431,7 @@ struct PFla_op_t {
                                         node; required exclusively to
                                         create dot output. */
                                         
+    /* SQL specific node information */
     struct PFsql_alg_ann_t    *sql_ann;  /**< SQL annotations used during code
                                              generation. */
     unsigned int        delta_pre;       /**< delta pre value */
@@ -428,11 +460,16 @@ typedef struct PFla_pair_t PFla_pair_t;
 /* ***************** Constructors ******************* */
 
 /**
- * A duplicate operator that duplicates a given node,
- * and set the child to the given left and right arguments.
+ * An operator that duplicates a given node and uses the
+ * the nodes in @a left and @a right as its children.
  */
 PFla_op_t * PFla_op_duplicate (PFla_op_t *n, PFla_op_t *left,
                                PFla_op_t *right);
+
+/**
+ * An operator that duplicates a given node.
+ */
+#define PFla_op_clone(a) PFla_op_duplicate((a),(a)->child[0],(a)->child[1])
 
 /**
  * A dummy operator that is generated whenever some rewrite 
@@ -479,7 +516,7 @@ PFla_op_t *PFla_empty_tbl (PFalg_attlist_t a);
 PFla_op_t *PFla_empty_tbl_ (PFalg_schema_t s);
 
 PFla_op_t *PFla_attach (const PFla_op_t *n,
-                        PFalg_att_t attname, PFalg_atom_t value);
+                        PFalg_att_t res, PFalg_atom_t value);
 
 /**
  * Cross product (Cartesian product) of two relations.
@@ -627,6 +664,13 @@ PFla_op_t * PFla_or (const PFla_op_t *n, PFalg_att_t res,
 /** Constructor for boolean NOT operators. */
 PFla_op_t * PFla_not (const PFla_op_t *n, PFalg_att_t res, PFalg_att_t att);
 
+/** Constructor for op:to operator. */
+PFla_op_t * PFla_to (const PFla_op_t *n, 
+                     PFalg_att_t res,
+                     PFalg_att_t att1,
+                     PFalg_att_t att2,
+                     PFalg_att_t part);
+
 /** 
  * Constructor for operators forming the application of a 
  * (partitioned) aggregation function (sum, min, max and avg) on a column.
@@ -638,12 +682,16 @@ PFla_op_t * PFla_aggr (PFla_op_kind_t kind, const PFla_op_t *n,
 PFla_op_t * PFla_count (const PFla_op_t *n, PFalg_att_t res,
                         PFalg_att_t part);
 
-/** Constructor for row numbering operator. */
+/** Constructor for the row numbering operator. */
 PFla_op_t * PFla_rownum (const PFla_op_t *n, PFalg_att_t a,
                          PFord_ordering_t s, PFalg_att_t p);
 
-/** Constructor for numbering operator. */
-PFla_op_t * PFla_number (const PFla_op_t *n, PFalg_att_t a, PFalg_att_t p);
+/** Constructor for the ranking operator. */
+PFla_op_t * PFla_rank (const PFla_op_t *n, PFalg_att_t a,
+                       PFord_ordering_t s);
+
+/** Constructor for the numbering operator. */
+PFla_op_t * PFla_number (const PFla_op_t *n, PFalg_att_t a);
 
 /**
  * Constructor for type test of column values. The result is
@@ -679,23 +727,70 @@ PFla_op_t * PFla_all (const PFla_op_t *n, PFalg_att_t res,
                       PFalg_att_t att, PFalg_att_t part);
 
 /**
- * Staircase join between two relations. Each such join corresponds
- * to the evaluation of an XPath location step.
+ * Constructor for XPath step evaluation.
  */
-PFla_op_t * PFla_scjoin (const PFla_op_t *doc, const PFla_op_t *n,
-                         PFalg_axis_t axis, PFty_t seqty,
-                         PFalg_att_t iter, PFalg_att_t item,
-                         PFalg_att_t item_res);
+PFla_op_t * PFla_step_simple (const PFla_op_t *doc, const PFla_op_t *n,
+                              PFalg_axis_t axis, PFty_t seqty,
+                              PFalg_att_t iter, PFalg_att_t item,
+                              PFalg_att_t item_res);
 
 /**
- * Staircase join without duplicates between two relations.
- * Each such join corresponds to the evaluation of an XPath 
- * location step.
+ * Constructor for XPath step evaluation.
  */
-PFla_op_t * PFla_dup_scjoin (const PFla_op_t *doc, const PFla_op_t *n,
+PFla_op_t * PFla_step (const PFla_op_t *doc, const PFla_op_t *n,
+                       PFalg_axis_t axis, PFty_t seqty, int level,
+                       PFalg_att_t iter, PFalg_att_t item,
+                       PFalg_att_t item_res);
+
+/**
+ * Constructor for XPath step evaluation (without duplicate removal).
+ */
+PFla_op_t * PFla_dup_step_simple (const PFla_op_t *doc, const PFla_op_t *n,
+                                  PFalg_axis_t axis, PFty_t seqty,
+                                  PFalg_att_t item,
+                                  PFalg_att_t item_res);
+
+/**
+ * Constructor for XPath step evaluation (without duplicate removal).
+ */
+PFla_op_t * PFla_dup_step (const PFla_op_t *doc, const PFla_op_t *n,
+                           PFalg_axis_t axis, PFty_t seqty, int level,
+                           PFalg_att_t item,
+                           PFalg_att_t item_res);
+
+/**
+ * Constructor for XPath step evaluation (with guide information).
+ */
+PFla_op_t * PFla_guide_step_simple (const PFla_op_t *doc, const PFla_op_t *n,
+                                    PFalg_axis_t axis, PFty_t seqty,
+                                    unsigned int guide_count,
+                                    PFguide_tree_t **guides,
+                                    PFalg_att_t iter, PFalg_att_t item,
+                                    PFalg_att_t item_res);
+
+/**
+ * Constructor for XPath step evaluation (with guide information).
+ */
+PFla_op_t * PFla_guide_step (const PFla_op_t *doc, const PFla_op_t *n,
                              PFalg_axis_t axis, PFty_t seqty,
-                             PFalg_att_t item,
+                             unsigned int guide_count,
+                             PFguide_tree_t **guides, int level,
+                             PFalg_att_t iter, PFalg_att_t item,
                              PFalg_att_t item_res);
+
+/**
+ * Constructor for fn:id evaluation.
+ */
+PFla_op_t * PFla_id (const PFla_op_t *doc, const PFla_op_t *n,
+                     PFalg_att_t iter, PFalg_att_t item,
+                     PFalg_att_t item_res, PFalg_att_t item_doc);
+
+/**
+ * Constructor for fn:idref evaluation.
+ */
+PFla_op_t * PFla_idref (const PFla_op_t *doc, const PFla_op_t *n,
+                        PFalg_att_t iter, PFalg_att_t item,
+                        PFalg_att_t item_res, PFalg_att_t item_doc);
 
 /*********** node construction functionality *************/
 

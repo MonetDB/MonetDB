@@ -45,12 +45,6 @@
 #include "prettyp.h"
 #include "oops.h"
 #include "pfstrings.h"
-#include "bitset.h"
-#include "load_stats.h"
-
-/* print the guide nodes of the operator */
-void print_guide(PFarray_t *dot, PFla_op_t *n);
-
 
 /** Node names to print out for all the Algebra tree nodes. */
 static char *a_id[]  = {
@@ -58,48 +52,53 @@ static char *a_id[]  = {
     , [la_lit_tbl]          = "TBL"
     , [la_empty_tbl]        = "EMPTY_TBL"
     , [la_attach]           = "Attach"
-    , [la_cross]            = "Cross"             /* \"#00FFFF\" */
-    , [la_eqjoin]           = "Join"              /* \"#00FF00\" */
-    , [la_eqjoin_unq]       = "Join"              /* \"#00FF00\" */
-    , [la_semijoin]         = "SemiJoin"          /* \"#00FF00\" */
-    , [la_thetajoin]        = "ThetaJoin"         /* \"#00FF00\" */
+    , [la_cross]            = "Cross"
+    , [la_eqjoin]           = "Join"
+    , [la_eqjoin_unq]       = "Join"
+    , [la_semijoin]         = "SemiJoin"
+    , [la_thetajoin]        = "ThetaJoin"
     , [la_project]          = "Project"
     , [la_select]           = "Select"
     , [la_disjunion]        = "UNION"
     , [la_intersect]        = "INTERSECT"
-    , [la_difference]       = "DIFF"             /* \"#FFA500\" */
-    , [la_distinct]         = "DISTINCT"         /* indian \"#FF0000\" */
+    , [la_difference]       = "DIFF"
+    , [la_distinct]         = "DISTINCT"
     , [la_fun_1to1]         = "1:1 fun"
     , [la_num_eq]           = "="
     , [la_num_gt]           = ">"
     , [la_bool_and ]        = "AND"
     , [la_bool_or ]         = "OR"
     , [la_bool_not]         = "NOT"
+    , [la_to]               = "op:to"
     , [la_avg]              = "AVG"
     , [la_max]              = "MAX"
     , [la_min]              = "MIN"
     , [la_sum]              = "SUM"
     , [la_count]            = "COUNT"
-    , [la_rownum]           = "ROW#"              /* \"#FF0000\" */
-    , [la_number]           = "NUMBER"            /* \"#FF0000\" */
+    , [la_rownum]           = "ROW#"
+    , [la_rank]             = "RANK"
+    , [la_number]           = "NUMBER"
     , [la_type]             = "TYPE"
     , [la_type_assert]      = "type assertion"
     , [la_cast]             = "CAST"
     , [la_seqty1]           = "SEQTY1"
     , [la_all]              = "ALL"
-    , [la_scjoin]           = "/|"               /* light blue */
-    , [la_dup_scjoin]       = "/|+"               /* light blue */
+    , [la_step]             = "/|"
+    , [la_dup_step]         = "/|+"
+    , [la_guide_step]       = "/| (guide)"
+    , [la_id]               = "fn:id"
+    , [la_idref]            = "fn:idref"
     , [la_doc_tbl]          = "DOC"
     , [la_doc_access]       = "access"
     , [la_twig]             = "twig"
     , [la_fcns]             = "fcns"
-    , [la_docnode]          = "DOCNODE"          /* lawn \"#00FF00\" */
-    , [la_element]          = "ELEM"             /* lawn \"#00FF00\" */
-    , [la_attribute]        = "ATTR"             /* lawn \"#00FF00\" */
-    , [la_textnode]         = "TEXT"             /* lawn \"#00FF00\" */
-    , [la_comment]          = "COMMENT"          /* lawn \"#00FF00\" */
-    , [la_processi]         = "PI"               /* lawn \"#00FF00\" */
-    , [la_content]          = "CONTENT"          /* lawn \"#00FF00\" */
+    , [la_docnode]          = "DOCNODE"
+    , [la_element]          = "ELEM"
+    , [la_attribute]        = "ATTR"
+    , [la_textnode]         = "TEXT"
+    , [la_comment]          = "COMMENT"
+    , [la_processi]         = "PI"
+    , [la_content]          = "CONTENT"
     , [la_merge_adjacent]   = "#pf:merge-adjacent-text-nodes"
     , [la_roots]            = "ROOTS"
     , [la_fragment]         = "FRAGs"
@@ -143,20 +142,25 @@ static char *xml_id[]  = {
     , [la_bool_and ]        = "and"
     , [la_bool_or ]         = "or"
     , [la_bool_not]         = "not"
+    , [la_to]               = "op:to"
     , [la_avg]              = "avg"
     , [la_max]              = "max"
     , [la_min]              = "min"
     , [la_sum]              = "sum"
     , [la_count]            = "count"
     , [la_rownum]           = "rownum"
+    , [la_rank]             = "rank"
     , [la_number]           = "number"
     , [la_type]             = "type"
     , [la_type_assert]      = "type assertion"
     , [la_cast]             = "cast"
     , [la_seqty1]           = "seqty1"
     , [la_all]              = "all"
-    , [la_scjoin]           = "XPath step"
-    , [la_dup_scjoin]       = "duplicate generating path step"
+    , [la_step]             = "XPath step"
+    , [la_dup_step]         = "duplicate generating path step"
+    , [la_guide_step]       = "XPath step (with guide information)"
+    , [la_id]               = "fn:id"
+    , [la_idref]            = "fn:idref"
     , [la_doc_tbl]          = "fn:doc"
     , [la_doc_access]       = "#pf:string-value"
     , [la_twig]             = "twig_construction"
@@ -326,20 +330,25 @@ la_dot (PFarray_t *dot, PFla_op_t *n)
         , [la_bool_and ]      = "\"#C0C0C0\""
         , [la_bool_or ]       = "\"#C0C0C0\""
         , [la_bool_not]       = "\"#C0C0C0\""
+        , [la_to]             = "\"#C0C0C0\""
         , [la_avg]            = "\"#A0A0A0\""
         , [la_max]            = "\"#A0A0A0\""
         , [la_min]            = "\"#A0A0A0\""
         , [la_sum]            = "\"#A0A0A0\""
         , [la_count]          = "\"#A0A0A0\""
         , [la_rownum]         = "\"#FF0000\""
+        , [la_rank]           = "\"#FF3333\""
         , [la_number]         = "\"#FF9999\""
         , [la_type]           = "\"#C0C0C0\""
         , [la_type_assert]    = "\"#C0C0C0\""
         , [la_cast]           = "\"#C0C0C0\""
         , [la_seqty1]         = "\"#C0C0C0\""
         , [la_all]            = "\"#C0C0C0\""
-        , [la_scjoin]         = "\"#1E90FF\""
-        , [la_dup_scjoin]     = "\"#1E9099\""
+        , [la_step]           = "\"#1E90FF\""
+        , [la_dup_step]       = "\"#1E9099\""
+        , [la_guide_step]     = "\"#1E9099\""
+        , [la_id]             = "\"#2EA0A9\""
+        , [la_idref]          = "\"#2EA0A9\""
         , [la_doc_tbl]        = "\"#C0C0C0\""
         , [la_doc_access]     = "\"#CCCCFF\""
         , [la_twig]           = "\"#00AA44\""
@@ -422,7 +431,7 @@ la_dot (PFarray_t *dot, PFla_op_t *n)
 
         case la_attach:
             PFarray_printf (dot, "%s (%s), val: %s", a_id[n->kind],
-                            PFatt_str (n->sem.attach.attname),
+                            PFatt_str (n->sem.attach.res),
                             literal (n->sem.attach.value));
             break;
 
@@ -509,6 +518,15 @@ la_dot (PFarray_t *dot, PFla_op_t *n)
                             PFatt_str (n->sem.unary.att));
 	    break;
 
+        case la_to:
+            PFarray_printf (dot, "%s (%s:<%s,%s>/%s)",
+                            a_id[n->kind],
+                            PFatt_str (n->sem.to.res),
+                            PFatt_str (n->sem.to.att1),
+                            PFatt_str (n->sem.to.att2),
+                            PFatt_str (n->sem.to.part));
+	    break;
+
         case la_avg:
         case la_max:
         case la_min:
@@ -538,7 +556,7 @@ la_dot (PFarray_t *dot, PFla_op_t *n)
 
         case la_rownum:
             PFarray_printf (dot, "%s (%s:<", a_id[n->kind],
-                            PFatt_str (n->sem.rownum.attname));
+                            PFatt_str (n->sem.rownum.res));
 
             if (PFord_count (n->sem.rownum.sortby))
                 PFarray_printf (dot, "%s%s", 
@@ -567,14 +585,34 @@ la_dot (PFarray_t *dot, PFla_op_t *n)
             PFarray_printf (dot, ")");
             break;
 
-        case la_number:
-            PFarray_printf (dot, "%s (%s", a_id[n->kind],
-                            PFatt_str (n->sem.number.attname));
-            if (n->sem.number.part != att_NULL)
-                PFarray_printf (dot, "/%s", 
-                                PFatt_str (n->sem.number.part));
+        case la_rank:
+            PFarray_printf (dot, "%s (%s:<", a_id[n->kind],
+                            PFatt_str (n->sem.rank.res));
 
-            PFarray_printf (dot, ")");
+            if (PFord_count (n->sem.rank.sortby))
+                PFarray_printf (dot, "%s%s", 
+                                PFatt_str (
+                                    PFord_order_col_at (
+                                        n->sem.rank.sortby, 0)),
+                                PFord_order_dir_at (
+                                    n->sem.rank.sortby, 0) == DIR_ASC
+                                ? "" : " (desc)");
+
+            for (c = 1; c < PFord_count (n->sem.rank.sortby); c++)
+                PFarray_printf (dot, ", %s%s", 
+                                PFatt_str (
+                                    PFord_order_col_at (
+                                        n->sem.rank.sortby, c)),
+                                PFord_order_dir_at (
+                                    n->sem.rank.sortby, c) == DIR_ASC
+                                ? "" : " (desc)");
+
+            PFarray_printf (dot, ">)");
+            break;
+
+        case la_number:
+            PFarray_printf (dot, "%s (%s)", a_id[n->kind],
+                            PFatt_str (n->sem.number.res));
             break;
 
         case la_type:
@@ -599,12 +637,13 @@ la_dot (PFarray_t *dot, PFla_op_t *n)
                             PFalg_simple_type_str (n->sem.type.ty));
             break;
 
-        case la_scjoin:
-        case la_dup_scjoin:
+        case la_step:
+        case la_dup_step:
+        case la_guide_step:
             PFarray_printf (dot, "%s ", a_id[n->kind]);
                 
             /* print out XPath axis */
-            switch (n->sem.scjoin.axis)
+            switch (n->sem.step.axis)
             {
                 case alg_anc:
                     PFarray_printf (dot, "ancestor::");
@@ -646,17 +685,42 @@ la_dot (PFarray_t *dot, PFla_op_t *n)
                         "unknown XPath axis in dot output");
             }
 
-            if (n->kind == la_scjoin)
+            if (n->kind == la_step)
                 PFarray_printf (dot, "%s (%s, %s)", 
-                                PFty_str (n->sem.scjoin.ty),
-                                PFatt_str (n->sem.scjoin.iter),
-                                PFatt_str (n->sem.scjoin.item));
-            else
+                                PFty_str (n->sem.step.ty),
+                                PFatt_str (n->sem.step.iter),
+                                PFatt_str (n->sem.step.item));
+            else if (n->kind == la_dup_step)
                 PFarray_printf (dot, "%s (%s:%s)", 
-                                PFty_str (n->sem.scjoin.ty),
-                                PFatt_str (n->sem.scjoin.item_res),
-                                PFatt_str (n->sem.scjoin.item));
+                                PFty_str (n->sem.step.ty),
+                                PFatt_str (n->sem.step.item_res),
+                                PFatt_str (n->sem.step.item));
+            else {
+                bool first = true;
+                PFarray_printf (dot, "%s - (",
+                                PFty_str (n->sem.step.ty));
+                
+                for (unsigned int i = 0; i < n->sem.step.guide_count; i++) {
+                    PFarray_printf (dot, "%s%i", first ? "" : ", ",
+                                    n->sem.step.guides[i]->guide);
+                    first = false;
+                }
+                PFarray_printf (dot, ") (%s, %s)", 
+                                PFatt_str (n->sem.step.iter),
+                                PFatt_str (n->sem.step.item));
+            }
 
+            PFarray_printf (dot, "\\nlevel=%i", n->sem.step.level);
+            break;
+
+        case la_id:
+        case la_idref:
+            PFarray_printf (dot, "%s (%s:%s, %s, %s)",
+                            a_id[n->kind],
+                            PFatt_str (n->sem.id.item_res),
+                            PFatt_str (n->sem.id.iter),
+                            PFatt_str (n->sem.id.item),
+                            PFatt_str (n->sem.id.item_doc));
             break;
 
         case la_doc_tbl:
@@ -921,6 +985,51 @@ la_dot (PFarray_t *dot, PFla_op_t *n)
                 if (PFprop_set (n->prop))
                     PFarray_printf (dot, "\\nset"); 
             }
+            if (*fmt == '+' || *fmt == 'L') {
+                /* print columns that have a level information attached */
+                bool first = true;
+                for (unsigned int i = 0; i < n->schema.count; i++) {
+                    PFalg_att_t att = n->schema.items[i].name;
+                    int level = PFprop_level (n->prop, att);
+                    if (level >= 0) {
+                        PFarray_printf (
+                            dot,
+                            "%s %s=%i",
+                            first ? "\\nlevel:" : ",",
+                            PFatt_str (att),
+                            level);
+                        first = false;
+                    }
+                }
+            }
+            if (*fmt == '+' || *fmt == 'U') {
+                PFarray_t *guide_mapping_list = n->prop->guide_mapping_list;
+                if (guide_mapping_list && PFarray_last (guide_mapping_list)) {
+                    PFguide_mapping_t *guide_mapping;
+                    PFarray_t *guide_list;
+                    unsigned int i, j;
+                    bool first = true;
+                    
+                    for (i = 0; i < PFarray_last(guide_mapping_list); i++) {
+                        guide_mapping = *((PFguide_mapping_t**) PFarray_at(
+                                guide_mapping_list, i));            
+                        
+                        PFarray_printf (dot, "%s %s:", 
+                                        first ? "\\nGUIDE:" : ",",
+                                        PFatt_str(guide_mapping->column));
+                        first = false;
+                        
+                        /* print guides */
+                        guide_list = guide_mapping->guide_list;
+                        for (j = 0; j < PFarray_last(guide_list); j++)
+                            PFarray_printf (
+                                dot,
+                                " %i",
+                                (*((PFguide_tree_t**)
+                                   PFarray_at(guide_list, j)))->guide);
+                    }
+                } 
+            }
 
             /* stop after all properties have been printed */
             if (*fmt == '+')
@@ -929,9 +1038,6 @@ la_dot (PFarray_t *dot, PFla_op_t *n)
                 fmt++;
         }
     }
-
-    /* print guide information*/
-    print_guide(dot, n);
 
     /* close up label */
     PFarray_printf (dot, "\", color=%s ];\n", color[n->kind]);
@@ -1218,7 +1324,7 @@ la_xml (PFarray_t *xml, PFla_op_t *n)
                             "        %s\n"
                             "      </column>\n"
                             "    </content>\n",
-                            PFatt_str (n->sem.attach.attname),
+                            PFatt_str (n->sem.attach.res),
                             xml_literal (n->sem.attach.value));
             break;
 
@@ -1340,6 +1446,23 @@ la_xml (PFarray_t *xml, PFla_op_t *n)
                             PFatt_str (n->sem.unary.att));
             break;
 
+        case la_to:
+            PFarray_printf (xml,
+                            "    <content>\n"
+                            "      <column name=\"%s\" new=\"true\"/>\n"
+                            "      <column name=\"%s\" new=\"false\""
+                                         " function=\"start\"/>\n"
+                            "      <column name=\"%s\" new=\"false\""
+                                         " function=\"end\"/>\n"
+                            "      <column name=\"%s\" new=\"false\""
+                                         " function=\"partition\"/>\n"
+                            "    </content>\n",
+                            PFatt_str (n->sem.to.res),
+                            PFatt_str (n->sem.to.att1),
+                            PFatt_str (n->sem.to.att2),
+                            PFatt_str (n->sem.to.part));
+            break;
+
         case la_avg:
         case la_max:
         case la_min:
@@ -1379,7 +1502,7 @@ la_xml (PFarray_t *xml, PFla_op_t *n)
             PFarray_printf (xml, 
                             "    <content>\n" 
                             "      <column name=\"%s\" new=\"true\"/>\n",
-                            PFatt_str (n->sem.rownum.attname));
+                            PFatt_str (n->sem.rownum.res));
 
             for (c = 0; c < PFord_count (n->sem.rownum.sortby); c++)
                 PFarray_printf (xml, 
@@ -1403,19 +1526,34 @@ la_xml (PFarray_t *xml, PFla_op_t *n)
             PFarray_printf (xml, "    </content>\n");
             break;
 
-        case la_number:
+        case la_rank:
             PFarray_printf (xml, 
                             "    <content>\n" 
                             "      <column name=\"%s\" new=\"true\"/>\n",
-                            PFatt_str (n->sem.number.attname));
+                            PFatt_str (n->sem.rank.res));
 
-            if (n->sem.number.part != att_NULL)
-                PFarray_printf (xml,
-                                "      <column name=\"%s\" function=\"partition\""
+            for (c = 0; c < PFord_count (n->sem.rank.sortby); c++)
+                PFarray_printf (xml, 
+                                "      <column name=\"%s\" function=\"sort\""
+                                        " position=\"%u\" direction=\"%s\""
                                         " new=\"false\"/>\n",
-                                PFatt_str (n->sem.number.part));
+                                PFatt_str (
+                                    PFord_order_col_at (
+                                        n->sem.rank.sortby, c)),
+                                c+1,
+                                PFord_order_dir_at (
+                                    n->sem.rank.sortby, c) == DIR_ASC
+                                ? "ascending" : "descending");
 
             PFarray_printf (xml, "    </content>\n");
+            break;
+
+        case la_number:
+            PFarray_printf (xml, 
+                            "    <content>\n" 
+                            "      <column name=\"%s\" new=\"true\"/>\n"
+                            "    </content>\n",
+                            PFatt_str (n->sem.number.res));
             break;
 
         case la_type:
@@ -1452,12 +1590,13 @@ la_xml (PFarray_t *xml, PFla_op_t *n)
                             PFalg_simple_type_str (n->sem.type.ty));
             break;
 
-        case la_scjoin:
-        case la_dup_scjoin:
+        case la_step:
+        case la_dup_step:
+        case la_guide_step:
             PFarray_printf (xml, "    <content>\n      <step axis=\"");
                 
             /* print out XPath axis */
-            switch (n->sem.scjoin.axis)
+            switch (n->sem.step.axis)
             {
                 case alg_anc:
                     PFarray_printf (xml, "ancestor");
@@ -1499,24 +1638,59 @@ la_xml (PFarray_t *xml, PFla_op_t *n)
                         "unknown XPath axis in dot output");
             }
 
-            if (n->kind == la_scjoin)
+            if (n->kind == la_step)
                 PFarray_printf (xml,
                                 "\" type=\"%s\"/>\n"
                                 "      <column name=\"%s\" function=\"iter\"/>\n"
                                 "      <column name=\"%s\" function=\"item\"/>\n"
                                 "    </content>\n",
-                                PFty_str (n->sem.scjoin.ty),
-                                PFatt_str (n->sem.scjoin.iter),
-                                PFatt_str (n->sem.scjoin.item));
-            else
+                                PFty_str (n->sem.step.ty),
+                                PFatt_str (n->sem.step.iter),
+                                PFatt_str (n->sem.step.item));
+            else if (n->kind == la_dup_step)
                 PFarray_printf (xml,
                                 "\" type=\"%s\"/>\n"
                                 "      <column name=\"%s\" new=\"true\"/>\n"
                                 "      <column name=\"%s\" function=\"item\"/>\n"
                                 "    </content>\n",
-                                PFty_str (n->sem.scjoin.ty),
-                                PFatt_str (n->sem.scjoin.item_res),
-                                PFatt_str (n->sem.scjoin.item));
+                                PFty_str (n->sem.step.ty),
+                                PFatt_str (n->sem.step.item_res),
+                                PFatt_str (n->sem.step.item));
+            else {
+                bool first = true;
+                PFarray_printf (xml,
+                                "\" type=\"%s\" guide=\"",
+                                PFty_str (n->sem.step.ty));
+                
+                for (unsigned int i = 0; i < n->sem.step.guide_count; i++) {
+                    PFarray_printf (xml, "%s%i", first ? "" : " ",
+                                    n->sem.step.guides[i]->guide);
+                    first = false;
+                }
+                
+                PFarray_printf (xml,
+                                "\"/>\n"
+                                "      <column name=\"%s\" function=\"iter\"/>\n"
+                                "      <column name=\"%s\" function=\"item\"/>\n"
+                                "    </content>\n",
+                                PFatt_str (n->sem.step.iter),
+                                PFatt_str (n->sem.step.item));
+            }
+            break;
+
+        case la_id:
+        case la_idref:
+            PFarray_printf (xml,
+                            "    <content>\n"
+                            "      <column name=\"%s\" new=\"true\"/>\n"
+                            "      <column name=\"%s\" function=\"iter\"/>\n"
+                            "      <column name=\"%s\" function=\"item\"/>\n"
+                            "      <column name=\"%s\" function=\"docnode\"/>\n"
+                            "    </content>\n",
+                            PFatt_str (n->sem.id.item_res),
+                            PFatt_str (n->sem.id.iter),
+                            PFatt_str (n->sem.id.item),
+                            PFatt_str (n->sem.id.item_doc));
             break;
 
         case la_doc_tbl:
@@ -1813,35 +1987,6 @@ PFla_xml (FILE *f, PFla_op_t *root)
         /* put content of array into file */
         fprintf (f, "%s", (char *) xml->base);
     }
-}
-
-/* print the guide nodes of the operator */
-void 
-print_guide(PFarray_t *dot, PFla_op_t *n)
-{
-    PFarray_t *guide_mapping_list = n->prop->guide_mapping_list;
-    PFguide_mapping_t *guide_mapping = NULL;
-    PFarray_t *guide_list = NULL;
-    PFguide_tree_t *element = NULL;
-
-    if(guide_mapping_list != NULL) {
-        PFarray_printf (dot, "\\nGUIDE: \\n");
-        for(unsigned int i = 0; i < PFarray_last(guide_mapping_list); i++) {
-            /* get element from PFarray_t */
-            guide_mapping = *((PFguide_mapping_t**) PFarray_at(
-                    guide_mapping_list, i));            
-
-            guide_list = guide_mapping->guide_list;
-            /* print guide nodes */
-            for (unsigned int j = 0; j < PFarray_last(guide_list); j++) {
-                element = *((PFguide_tree_t**) PFarray_at(guide_list, j));
-                PFarray_printf (dot, "column: %s  guide: %i kind= %i  "
-                        "tag_name= %s\\n", guide_mapping->column, 
-                        element->guide, element->kind, element->tag_name);
-            }
-            PFarray_printf (dot, "\\n");
-        }
-    } 
 }
 
 /* vim:set shiftwidth=4 expandtab: */

@@ -274,7 +274,7 @@ infer_key (PFla_op_t *n)
             copy (n->prop->keys, L(n)->prop->keys);
 
             if (PFprop_card (n->prop) == 1)
-                union_ (n->prop->keys, n->sem.attach.attname);
+                union_ (n->prop->keys, n->sem.attach.res);
             break;
 
         case la_cross:
@@ -396,6 +396,13 @@ infer_key (PFla_op_t *n)
                 union_ (n->prop->keys, n->sem.unary.res);
             break;
 
+        case la_to:
+            /* if the partition is not present
+               op:to generates key values */
+            if (!n->sem.to.part)
+                union_ (n->prop->keys, n->sem.to.res);
+            break;
+
         case la_avg:
         case la_max:
         case la_min:
@@ -419,17 +426,19 @@ infer_key (PFla_op_t *n)
             /* if the cardinality is equal to one
                the result is key itself */
             if (PFprop_card (n->prop) == 1 || !n->sem.rownum.part)
-                union_ (n->prop->keys, n->sem.rownum.attname);
+                union_ (n->prop->keys, n->sem.rownum.res);
+            break;
+
+        case la_rank:
+            /* key columns are propagated */
+            copy (n->prop->keys, L(n)->prop->keys);
+            union_ (n->prop->keys, n->sem.rank.res);
             break;
 
         case la_number:
             /* key columns are propagated */
             copy (n->prop->keys, L(n)->prop->keys);
-
-            /* if the cardinality is equal to one
-               the result is key itself */
-            if (PFprop_card (n->prop) == 1 || !n->sem.number.part)
-                union_ (n->prop->keys, n->sem.number.attname);
+            union_ (n->prop->keys, n->sem.number.res);
             break;
 
         case la_type:
@@ -443,25 +452,32 @@ infer_key (PFla_op_t *n)
                 union_ (n->prop->keys, n->sem.type.res);
             break;
 
-        case la_scjoin:
-            if (n->sem.scjoin.axis == alg_chld &&
-                PFprop_key (R(n)->prop, n->sem.scjoin.iter) &&
-                PFprop_key (R(n)->prop, n->sem.scjoin.item))
-                union_ (n->prop->keys, n->sem.scjoin.item_res);
+        case la_step:
+        case la_guide_step:
+            if (n->sem.step.axis == alg_chld &&
+                PFprop_key (R(n)->prop, n->sem.step.iter) &&
+                PFprop_key (R(n)->prop, n->sem.step.item))
+                union_ (n->prop->keys, n->sem.step.item_res);
 
             /*
-            if (n->sem.scjoin.axis == alg_attr &&
-                ! (PFQNAME_NS_WILDCARD (n->sem.scjoin.ty.name)
-                   || PFQNAME_LOC_WILDCARD (n->sem.scjoin.ty.name)) &&
-                PFprop_key (R(n)->prop, n->sem.scjoin.iter))
-                union_ (n->prop->keys, n->sem.scjoin.iter);
-            else */ if (PFprop_const (n->prop, n->sem.scjoin.iter))
-                union_ (n->prop->keys, n->sem.scjoin.item_res);
+            if (n->sem.step.axis == alg_attr &&
+                ! (PFQNAME_NS_WILDCARD (n->sem.step.ty.name)
+                   || PFQNAME_LOC_WILDCARD (n->sem.step.ty.name)) &&
+                PFprop_key (R(n)->prop, n->sem.step.iter))
+                union_ (n->prop->keys, n->sem.step.iter);
+            else */ if (PFprop_const (n->prop, n->sem.step.iter))
+                union_ (n->prop->keys, n->sem.step.item_res);
             break;
 
-        case la_dup_scjoin:
+        case la_dup_step:
             if (PFprop_card (R(n)->prop) == 1)
-                union_ (n->prop->keys, n->sem.scjoin.item_res);
+                union_ (n->prop->keys, n->sem.step.item_res);
+            break;
+
+        case la_id:
+        case la_idref:
+            if (PFprop_const (n->prop, n->sem.id.iter))
+                union_ (n->prop->keys, n->sem.id.item_res);
             break;
 
         case la_doc_tbl:

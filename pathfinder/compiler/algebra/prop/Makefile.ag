@@ -37,14 +37,15 @@ lib_prop = {
                 prop_const.c \
                 prop_dom.c \
                 prop_dom_nat.c \
+                prop_guide.c \
                 prop_icol.c \
                 prop_key.c \
+                prop_level.c \
                 prop_ocol.c \
                 prop_ori_names.c \
                 prop_rec_delta.c \
                 prop_reqval.c \
                 prop_set.c \
                 prop_trace_names.c \
-                prop_unq_names.c \
-                prop_guide.c
+                prop_unq_names.c
 }

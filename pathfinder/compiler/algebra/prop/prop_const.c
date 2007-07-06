@@ -254,11 +254,12 @@ infer_const (PFla_op_t *n)
         case la_bool_or:
         case la_bool_not:
         case la_rownum:
+        case la_rank:
         case la_number:
         case la_type:
         case la_type_assert:
         case la_cast:
-        case la_dup_scjoin:
+        case la_dup_step:
         case la_doc_access:
         case la_docnode:
         case la_element:
@@ -321,9 +322,9 @@ infer_const (PFla_op_t *n)
 
         case la_attach:
             /* attached column is always constant */
-            if (!PFprop_const (n->prop, n->sem.attach.attname))
+            if (!PFprop_const (n->prop, n->sem.attach.res))
                 PFprop_mark_const (n->prop,
-                                   n->sem.attach.attname,
+                                   n->sem.attach.res,
                                    n->sem.attach.value);
             break;
 
@@ -497,6 +498,21 @@ infer_const (PFla_op_t *n)
                                         n->sem.unary.att).val.bln));
             break;
 
+        case la_to:
+            if (PFprop_const (L(n)->prop, n->sem.to.att1) &&
+                PFprop_const (L(n)->prop, n->sem.to.att2) &&
+                PFalg_atom_comparable (
+                    PFprop_const_val (L(n)->prop, n->sem.to.att1),
+                    PFprop_const_val (L(n)->prop, n->sem.to.att2)) &&
+                !PFalg_atom_cmp (
+                    PFprop_const_val (L(n)->prop, n->sem.to.att1),
+                    PFprop_const_val (L(n)->prop, n->sem.to.att2)))
+                PFprop_mark_const (
+                    n->prop,
+                    n->sem.to.res,
+                    PFprop_const_val (L(n)->prop, n->sem.to.att1));
+            break;
+
         case la_avg:
         case la_max:
         case la_min:
@@ -562,12 +578,29 @@ infer_const (PFla_op_t *n)
             }  
             break;
 
-        case la_scjoin:
-            if (PFprop_const (R(n)->prop, n->sem.scjoin.iter))
+        case la_step:
+            if (PFprop_const (R(n)->prop, n->sem.step.iter))
                 PFprop_mark_const (
                         n->prop,
-                        n->sem.scjoin.iter,
-                        PFprop_const_val (R(n)->prop, n->sem.scjoin.iter));
+                        n->sem.step.iter,
+                        PFprop_const_val (R(n)->prop, n->sem.step.iter));
+            break;
+
+        case la_guide_step:
+            if (PFprop_const (R(n)->prop, n->sem.step.iter))
+                PFprop_mark_const (
+                        n->prop,
+                        n->sem.step.iter,
+                        PFprop_const_val (R(n)->prop, n->sem.step.iter));
+            break;
+
+        case la_id:
+        case la_idref:
+            if (PFprop_const (R(n)->prop, n->sem.id.iter))
+                PFprop_mark_const (
+                        n->prop,
+                        n->sem.id.iter,
+                        PFprop_const_val (R(n)->prop, n->sem.id.iter));
             break;
 
         case la_doc_tbl:
@@ -576,12 +609,6 @@ infer_const (PFla_op_t *n)
                         n->prop,
                         n->sem.doc_tbl.iter,
                         PFprop_const_val (L(n)->prop, n->sem.doc_tbl.iter));
-
-            if (PFprop_const (L(n)->prop, n->sem.doc_tbl.item))
-                PFprop_mark_const (
-                        n->prop,
-                        n->sem.doc_tbl.item,
-                        PFprop_const_val (L(n)->prop, n->sem.doc_tbl.item));
             break;
 
         case la_twig:
@@ -682,9 +709,10 @@ infer_const (PFla_op_t *n)
            Leave it out as it isn't a common case */
         case la_fun_1to1:
         case la_rownum:
+        case la_rank:
         case la_number:
         case la_type_assert:
-        case la_dup_scjoin:
+        case la_dup_step:
         case la_doc_access:
         case la_fcns:
         case la_docnode:

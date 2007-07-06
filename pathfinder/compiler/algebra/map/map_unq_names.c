@@ -163,7 +163,7 @@ map_unq_names (PFla_op_t *p, PFarray_t *map)
 
         case la_attach:
             res = attach (U(L(p)),
-                          UNAME(p, p->sem.attach.attname),
+                          UNAME(p, p->sem.attach.res),
                           p->sem.attach.value);
             break;
 
@@ -436,6 +436,15 @@ map_unq_names (PFla_op_t *p, PFarray_t *map)
             res = unary_op (PFla_not, p, map);
             break;
 
+        case la_to:
+            res = to (U(L(p)), 
+                      UNAME(p, p->sem.to.res),
+                      /* attribute att is stored only in child operator */
+                      UNAME(L(p), p->sem.to.att1),
+                      UNAME(L(p), p->sem.to.att2),
+                      p->sem.to.part?UNAME(p, p->sem.to.part):att_NULL);
+            break;
+
         case la_avg:
         case la_max:
         case la_min:
@@ -468,15 +477,33 @@ map_unq_names (PFla_op_t *p, PFarray_t *map)
                                  p->sem.rownum.sortby, i));
                                                    
             res = rownum (U(L(p)),
-                          UNAME(p, p->sem.rownum.attname),
+                          UNAME(p, p->sem.rownum.res),
                           sortby,
                           UNAME(p, p->sem.rownum.part));
         }   break;
         
+        case la_rank:
+        {
+            PFord_ordering_t sortby = PFordering ();
+
+            for (unsigned int i = 0;
+                 i < PFord_count (p->sem.rank.sortby);
+                 i++)
+                sortby = PFord_refine (
+                             sortby,
+                             UNAME(p, PFord_order_col_at (
+                                          p->sem.rank.sortby, i)),
+                             PFord_order_dir_at (
+                                 p->sem.rank.sortby, i));
+                                                   
+            res = rank (U(L(p)),
+                        UNAME(p, p->sem.rank.res),
+                        sortby);
+        }   break;
+        
         case la_number:
             res = number (U(L(p)),
-                          UNAME(p, p->sem.number.attname),
-                          UNAME(p, p->sem.number.part));
+                          UNAME(p, p->sem.number.res));
             break;
         
         case la_type:
@@ -515,25 +542,65 @@ map_unq_names (PFla_op_t *p, PFarray_t *map)
                        p->sem.aggr.part?UNAME(p, p->sem.aggr.part):att_NULL);
             break;
 
-        case la_scjoin:
-            res = scjoin (U(L(p)), U(R(p)),
-                          p->sem.scjoin.axis,
-                          p->sem.scjoin.ty,
-                          UNAME(p, p->sem.scjoin.iter),
-                          /* unique name of input attribute item is 
-                             stored in the child operator only */
-                          UNAME(R(p), p->sem.scjoin.item),
-                          UNAME(p, p->sem.scjoin.item_res));
+        case la_step:
+            res = step (U(L(p)), U(R(p)),
+                        p->sem.step.axis,
+                        p->sem.step.ty,
+                        p->sem.step.level,
+                        UNAME(p, p->sem.step.iter),
+                        /* unique name of input attribute item is 
+                           stored in the child operator only */
+                        UNAME(R(p), p->sem.step.item),
+                        UNAME(p, p->sem.step.item_res));
             break;
                            
-        case la_dup_scjoin:
-            res = dup_scjoin (U(L(p)), U(R(p)),
-                              p->sem.scjoin.axis,
-                              p->sem.scjoin.ty,
-                              UNAME(p, p->sem.scjoin.item),
-                              UNAME(p, p->sem.scjoin.item_res));
+        case la_dup_step:
+            res = dup_step (U(L(p)), U(R(p)),
+                            p->sem.step.axis,
+                            p->sem.step.ty,
+                            p->sem.step.level,
+                            UNAME(p, p->sem.step.item),
+                            UNAME(p, p->sem.step.item_res));
             break;
                            
+        case la_guide_step:
+            res = guide_step (U(L(p)), U(R(p)),
+                              p->sem.step.axis,
+                              p->sem.step.ty,
+                              p->sem.step.guide_count,
+                              p->sem.step.guides,
+                              p->sem.step.level,
+                              UNAME(p, p->sem.step.iter),
+                              /* unique name of input attribute item is 
+                                 stored in the child operator only */
+                              UNAME(R(p), p->sem.step.item),
+                              UNAME(p, p->sem.step.item_res));
+            break;
+
+        case la_id:
+            res = id (U(L(p)), U(R(p)),
+                      UNAME(p, p->sem.id.iter),
+                      /* unique name of input attribute item is 
+                         stored in the child operator only */
+                      UNAME(R(p), p->sem.id.item),
+                      UNAME(p, p->sem.id.item_res),
+                      /* unique name of input attribute item_doc
+                         is stored in the child operator only */
+                      UNAME(R(p), p->sem.id.item_doc));
+            break;
+            
+        case la_idref:
+            res = idref (U(L(p)), U(R(p)),
+                         UNAME(p, p->sem.id.iter),
+                         /* unique name of input attribute item is 
+                            stored in the child operator only */
+                         UNAME(R(p), p->sem.id.item),
+                         UNAME(p, p->sem.id.item_res),
+                         /* unique name of input attribute item_doc
+                            is stored in the child operator only */
+                         UNAME(R(p), p->sem.id.item_doc));
+            break;
+            
         case la_doc_tbl:
             res = doc_tbl (U(L(p)),
                            UNAME(p, p->sem.doc_tbl.iter),
@@ -561,9 +628,9 @@ map_unq_names (PFla_op_t *p, PFarray_t *map)
             break;
             
         case la_docnode:
-            res = docnode (U(L(p)), U(R(p)),
-                           UNAME (L(p), p->sem.docnode.iter));
-            break;
+        res = docnode (U(L(p)), U(R(p)),
+                       UNAME (L(p), p->sem.docnode.iter));
+        break;
                         
         case la_element:
             res = element (

@@ -43,8 +43,6 @@ typedef struct PFprop_t PFprop_t;
 
 #include "algebra.h"
 #include "logical.h"
-#include "load_stats.h"
-#include "bitset.h"
 
 /* required values list */
 struct reqval_t {
@@ -74,6 +72,11 @@ struct PFprop_t {
                                   required values. */
     PFarray_t   *name_pairs; /**< List of attributes with their corresponding
                                   unique names. */
+    PFarray_t   *level_mapping; /**< List of attributes annotated with
+                                     level information. */
+    PFarray_t   *guide_mapping_list; /**< List of guide mappings that contain
+                                          a pair of column and list of guide
+                                          nodes for the operator */
 
     /* to allow peep-hole optimizations we also store property
        information of the children (left child 'l_', right child 'r_' */
@@ -97,9 +100,6 @@ struct PFprop_t {
                                    corresponding new unique names. */
     PFarray_t  *r_name_pairs; /**< List of unique attributes with their
                                    corresponding new unique names. */
-    PFarray_t  *guide_mapping_list;  /**< List of guide mappings that contain
-                                          a pair of column and list of guide
-                                          nodes for the operator */
 };
 
 /* constant item */
@@ -139,6 +139,13 @@ struct name_pair_t {
 };
 typedef struct name_pair_t name_pair_t;
 
+/* level information */
+struct level_t {
+    PFalg_att_t attr;
+    int         level;
+};
+typedef struct level_t level_t;
+
 /**
  * Create new property container.
  */
@@ -151,9 +158,9 @@ PFprop_t *PFprop (void);
 void PFprop_infer (bool card, bool const_, bool set, 
                    bool dom, bool icols,
                    bool key, bool ocols, bool reqval, 
-                   bool refctr,
+                   bool level, bool refctr, bool guides,
                    bool ori_names, bool unq_names,
-                   PFla_op_t *root);
+                   PFla_op_t *root, PFguide_tree_t *guide);
 
 /**
  * Reset the property of an operator.
@@ -181,8 +188,9 @@ void PFprop_infer_ocol (PFla_op_t *root);
 void PFprop_infer_reqval (PFla_op_t *root);
 void PFprop_infer_unq_names (PFla_op_t *root);
 void PFprop_infer_ori_names (PFla_op_t *root);
+void PFprop_infer_level (PFla_op_t *root);
 void PFprop_infer_refctr (PFla_op_t *root);
-void PFprop_infer_guide(PFla_op_t *root, PFguide_tree_t *guide);
+void PFprop_infer_guide (PFla_op_t *root, PFguide_tree_t *guide);
 
 bool PFprop_check_rec_delta (PFla_op_t *root);
 
@@ -441,6 +449,13 @@ PFalg_att_t PFprop_ori_name_left (const PFprop_t *prop, PFalg_att_t attr);
  * in the right name mapping field of property container @a prop.
  */
 PFalg_att_t PFprop_ori_name_right (const PFprop_t *prop, PFalg_att_t attr);
+
+/* ------------------------ level property accessors ----------------------- */
+
+/**
+ * Return the level of nodes stored in column @a attr.
+ */
+int PFprop_level (const PFprop_t *prop, PFalg_att_t attr);
 
 /* ------------------ reference counter property accessors ----------------- */
 

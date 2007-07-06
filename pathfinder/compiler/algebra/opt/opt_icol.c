@@ -189,7 +189,7 @@ opt_icol (PFla_op_t *p)
 
         case la_attach:
             /* prune attach if result column is not required */
-            if (!PFprop_icol (p->prop, p->sem.attach.attname)) {
+            if (!PFprop_icol (p->prop, p->sem.attach.res)) {
                 *p = *PFla_dummy (L(p));
                 break;
             }
@@ -334,7 +334,15 @@ opt_icol (PFla_op_t *p)
 
         case la_rownum:
             /* prune rownum if result column is not required */
-            if (!PFprop_icol (p->prop, p->sem.rownum.attname)) {
+            if (!PFprop_icol (p->prop, p->sem.rownum.res)) {
+                *p = *PFla_dummy (L(p));
+                break;
+            }
+            break;
+
+        case la_rank:
+            /* prune rank if result column is not required */
+            if (!PFprop_icol (p->prop, p->sem.rank.res)) {
                 *p = *PFla_dummy (L(p));
                 break;
             }
@@ -342,7 +350,7 @@ opt_icol (PFla_op_t *p)
 
         case la_number:
             /* prune number if result column is not required */
-            if (!PFprop_icol (p->prop, p->sem.number.attname)) {
+            if (!PFprop_icol (p->prop, p->sem.number.res)) {
                 *p = *PFla_dummy (L(p));
                 break;
             }
@@ -367,7 +375,7 @@ opt_icol (PFla_op_t *p)
             }
             break;
 
-        case la_scjoin:
+        case la_step:
             break;
 
         case la_doc_access:

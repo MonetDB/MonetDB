@@ -242,7 +242,7 @@ prop_infer_icols (PFla_op_t *n, PFalg_att_t icols)
 
         case la_attach:
             n->prop->l_icols = diff (n->prop->icols,
-                                     n->sem.attach.attname);
+                                     n->sem.attach.res);
             break;
 
         case la_cross:
@@ -368,6 +368,16 @@ prop_infer_icols (PFla_op_t *n, PFalg_att_t icols)
             n->prop->l_icols = union_ (n->prop->l_icols, n->sem.unary.att);
             break;
 
+        case la_to:
+            /* infer att1|att2 schema for input relation */
+            n->prop->l_icols = union_ (n->sem.to.att1,
+                                       n->sem.to.att2);
+            /* only infer part if available */
+            if (n->sem.to.part != att_NULL)
+                n->prop->l_icols = union_ (n->prop->l_icols,
+                                           n->sem.to.part);
+            break;
+            
         case la_avg:
 	case la_max:
 	case la_min:
@@ -404,10 +414,10 @@ prop_infer_icols (PFla_op_t *n, PFalg_att_t icols)
             n->prop->l_icols = n->prop->icols;
 
             /* do not infer input columns if operator is not required */
-            if (!(n->prop->icols & n->sem.rownum.attname))
+            if (!(n->prop->icols & n->sem.rownum.res))
                 break;
 
-            n->prop->l_icols = diff (n->prop->l_icols, n->sem.rownum.attname);
+            n->prop->l_icols = diff (n->prop->l_icols, n->sem.rownum.res);
 
             for (unsigned int i = 0;
                  i < PFord_count (n->sem.rownum.sortby);
@@ -422,18 +432,31 @@ prop_infer_icols (PFla_op_t *n, PFalg_att_t icols)
                                            n->sem.rownum.part);
             break;
 
+        case la_rank:
+            n->prop->l_icols = n->prop->icols;
+
+            /* do not infer input columns if operator is not required */
+            if (!(n->prop->icols & n->sem.rank.res))
+                break;
+
+            n->prop->l_icols = diff (n->prop->l_icols, n->sem.rank.res);
+
+            for (unsigned int i = 0;
+                 i < PFord_count (n->sem.rank.sortby);
+                 i++)
+                n->prop->l_icols = union_ (n->prop->l_icols,
+                                           PFord_order_col_at (
+                                               n->sem.rank.sortby, i));
+            break;
+
         case la_number:
             n->prop->l_icols = n->prop->icols;
 
             /* do not infer input columns if operator is not required */
-            if (!(n->prop->icols & n->sem.number.attname))
+            if (!(n->prop->icols & n->sem.number.res))
                 break;
 
-            n->prop->l_icols = diff (n->prop->l_icols, n->sem.number.attname);
-            /* only infer part if available */
-            if (n->sem.number.part != att_NULL)
-                n->prop->l_icols = union_ (n->prop->l_icols,
-                                           n->sem.number.part);
+            n->prop->l_icols = diff (n->prop->l_icols, n->sem.number.res);
             break;
 
         case la_type:
@@ -455,20 +478,32 @@ prop_infer_icols (PFla_op_t *n, PFalg_att_t icols)
             n->prop->l_icols = n->prop->icols;
             break;
 
-        case la_scjoin:
+        case la_step:
+        case la_guide_step:
             /* infer empty list for fragments */
             n->prop->l_icols = 0;
             /* infer iter|item schema for input relation */
-            n->prop->r_icols = union_ (n->sem.scjoin.iter,
-                                       n->sem.scjoin.item);
+            n->prop->r_icols = union_ (n->sem.step.iter,
+                                       n->sem.step.item);
             break;
 
-        case la_dup_scjoin:
+        case la_dup_step:
             /* infer empty list for fragments */
             n->prop->l_icols = 0;
             n->prop->r_icols = n->prop->icols;
-            n->prop->r_icols = diff (n->prop->r_icols, n->sem.scjoin.item_res);
-            n->prop->r_icols = union_ (n->prop->r_icols, n->sem.scjoin.item);
+            n->prop->r_icols = diff (n->prop->r_icols, n->sem.step.item_res);
+            n->prop->r_icols = union_ (n->prop->r_icols, n->sem.step.item);
+            break;
+
+        case la_id:
+        case la_idref:
+            /* infer empty list for fragments */
+            n->prop->l_icols = 0;
+            /* infer iter|item|item_doc schema for input relation */
+            n->prop->r_icols = union_ (n->sem.id.iter,
+                                       n->sem.id.item);
+            n->prop->r_icols = union_ (n->prop->r_icols,
+                                       n->sem.id.item_doc);
             break;
 
         case la_doc_tbl:

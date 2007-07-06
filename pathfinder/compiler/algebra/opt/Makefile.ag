@@ -37,12 +37,12 @@ lib_opt = {
                 opt_const.c \
                 opt_dom.c \
                 opt_general.brg \
+                opt_guide.c \
                 opt_icol.c \
                 opt_join_pd.c \
                 opt_key.c \
                 opt_mvd.c \
                 opt_reqval.c \
                 opt_set.c \
-                opt_thetajoin.c \
-                opt_guide.c
+                opt_thetajoin.c
 }

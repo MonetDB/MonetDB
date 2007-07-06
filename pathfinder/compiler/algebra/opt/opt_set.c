@@ -77,50 +77,52 @@ opt_set (PFla_op_t *p)
     /* action code */
     switch (p->kind) {
         case la_eqjoin:
-            /* Rewrite scjoin into duplicate generating scjoins
+            /* Rewrite step into duplicate generating step
                (underneath join operators). This hopefully allows
                the above join to be pushed down in a later phase. */
             if (PFprop_set (p->prop) &&
-                L(p)->kind == la_scjoin &&
+                L(p)->kind == la_step &&
                 PFprop_set (L(p)->prop)) {
                 PFalg_att_t item_res;
                 item_res = PFalg_ori_name (
                                PFalg_unq_name (att_item, 0),
-                               ~(L(p)->sem.scjoin.item |
-                                 L(p)->sem.scjoin.iter));
+                               ~(L(p)->sem.step.item |
+                                 L(p)->sem.step.iter));
                 *L(p) = *PFla_project (
-                             PFla_dup_scjoin (
+                             PFla_dup_step (
                                  LL(p),
                                  LR(p),
-                                 L(p)->sem.scjoin.axis,
-                                 L(p)->sem.scjoin.ty,
-                                 L(p)->sem.scjoin.item,
+                                 L(p)->sem.step.axis,
+                                 L(p)->sem.step.ty,
+                                 L(p)->sem.step.level,
+                                 L(p)->sem.step.item,
                                  item_res),
-                             PFalg_proj (L(p)->sem.scjoin.iter,
-                                         L(p)->sem.scjoin.iter),
-                             PFalg_proj (L(p)->sem.scjoin.item,
+                             PFalg_proj (L(p)->sem.step.iter,
+                                         L(p)->sem.step.iter),
+                             PFalg_proj (L(p)->sem.step.item,
                                          item_res));
                 break;
             }
             if (PFprop_set (p->prop) &&
-                R(p)->kind == la_scjoin &&
+                R(p)->kind == la_step &&
                 PFprop_set (R(p)->prop)) {
                 PFalg_att_t item_res;
                 item_res = PFalg_ori_name (
                                PFalg_unq_name (att_item, 0),
-                               ~(R(p)->sem.scjoin.item |
-                                 R(p)->sem.scjoin.iter));
+                               ~(R(p)->sem.step.item |
+                                 R(p)->sem.step.iter));
                 *R(p) = *PFla_project (
-                             PFla_dup_scjoin (
+                             PFla_dup_step (
                                  RL(p),
                                  RR(p),
-                                 R(p)->sem.scjoin.axis,
-                                 R(p)->sem.scjoin.ty,
-                                 R(p)->sem.scjoin.item,
+                                 R(p)->sem.step.axis,
+                                 R(p)->sem.step.ty,
+                                 L(p)->sem.step.level,
+                                 R(p)->sem.step.item,
                                  item_res),
-                             PFalg_proj (R(p)->sem.scjoin.iter,
-                                         R(p)->sem.scjoin.iter),
-                             PFalg_proj (R(p)->sem.scjoin.item,
+                             PFalg_proj (R(p)->sem.step.iter,
+                                         R(p)->sem.step.iter),
+                             PFalg_proj (R(p)->sem.step.item,
                                          item_res));
                 break;
             }
@@ -131,33 +133,34 @@ opt_set (PFla_op_t *p)
                 *p = *PFla_dummy (L(p));
             break;
 
-        case la_scjoin:
+        case la_step:
             if (PFprop_set (p->prop) &&
-                PFprop_icol (p->prop, p->sem.scjoin.item) &&
-                !PFprop_icol (p->prop, p->sem.scjoin.iter))
-                *p = *PFla_scjoin (
+                PFprop_icol (p->prop, p->sem.step.item) &&
+                !PFprop_icol (p->prop, p->sem.step.iter))
+                *p = *PFla_step (
                           L(p),
                           PFla_attach (
                               PFla_project (
                                   R(p),
                                   PFalg_proj (
-                                      p->sem.scjoin.item,
-                                      p->sem.scjoin.item)),
-                              p->sem.scjoin.iter,
+                                      p->sem.step.item,
+                                      p->sem.step.item)),
+                              p->sem.step.iter,
                               PFalg_lit_nat (1)),
-                          p->sem.scjoin.axis,
-                          p->sem.scjoin.ty,
-                          p->sem.scjoin.iter,
-                          p->sem.scjoin.item,
-                          p->sem.scjoin.item);
+                          p->sem.step.axis,
+                          p->sem.step.ty,
+                          p->sem.step.level,
+                          p->sem.step.iter,
+                          p->sem.step.item,
+                          p->sem.step.item);
             break;
             
-        case la_dup_scjoin:
+        case la_dup_step:
             if (PFprop_set (p->prop) &&
                 PFprop_icols_count (p->prop) == 2 &&
-                PFprop_icol (p->prop, p->sem.scjoin.item_res)) {
+                PFprop_icol (p->prop, p->sem.step.item_res)) {
                 PFalg_att_t iter = 0,
-                            item = p->sem.scjoin.item_res;
+                            item = p->sem.step.item_res;
                 
                 for (unsigned int i = 0; i < p->schema.count; i++)
                     if (PFprop_icol (p->prop, p->schema.items[i].name) &&
@@ -170,21 +173,46 @@ opt_set (PFla_op_t *p)
                 if (!iter)
                     break;
                 
-                *p = *PFla_scjoin (
+                *p = *PFla_step (
                           L(p), 
                           PFla_project (
                               R(p),
-                              PFalg_proj (p->sem.scjoin.item_res,
-                                          p->sem.scjoin.item),
+                              PFalg_proj (p->sem.step.item_res,
+                                          p->sem.step.item),
                               PFalg_proj (iter, iter)),
-                          p->sem.scjoin.axis,
-                          p->sem.scjoin.ty,
+                          p->sem.step.axis,
+                          p->sem.step.ty,
+                          p->sem.step.level,
                           iter,
-                          p->sem.scjoin.item_res,
-                          p->sem.scjoin.item_res);
+                          p->sem.step.item_res,
+                          p->sem.step.item_res);
             }
             break;
                 
+        case la_guide_step:
+            if (PFprop_set (p->prop) &&
+                PFprop_icol (p->prop, p->sem.step.item) &&
+                !PFprop_icol (p->prop, p->sem.step.iter))
+                *p = *PFla_guide_step (
+                          L(p),
+                          PFla_attach (
+                              PFla_project (
+                                  R(p),
+                                  PFalg_proj (
+                                      p->sem.step.item,
+                                      p->sem.step.item)),
+                              p->sem.step.iter,
+                              PFalg_lit_nat (1)),
+                          p->sem.step.axis,
+                          p->sem.step.ty,
+                          p->sem.step.guide_count,
+                          p->sem.step.guides,
+                          p->sem.step.level,
+                          p->sem.step.iter,
+                          p->sem.step.item,
+                          p->sem.step.item);
+            break;
+            
         default:
             break;
     }

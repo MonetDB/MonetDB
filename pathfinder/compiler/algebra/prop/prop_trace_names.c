@@ -166,7 +166,7 @@ map_names (PFla_op_t *n, PFla_op_t *goal, PFarray_t *par_np_list)
             break;
             
         case la_attach:
-            diff_np (np_list, n->sem.attach.attname);
+            diff_np (np_list, n->sem.attach.res);
             break;
 
         case la_project:
@@ -206,6 +206,10 @@ map_names (PFla_op_t *n, PFla_op_t *goal, PFarray_t *par_np_list)
             diff_np (np_list, n->sem.unary.res);
             break;
 
+        case la_to:
+            diff_np (np_list, n->sem.to.res);
+            break;
+
         case la_avg:
 	case la_max:
 	case la_min:
@@ -216,11 +220,15 @@ map_names (PFla_op_t *n, PFla_op_t *goal, PFarray_t *par_np_list)
             break;
             
         case la_rownum:
-            diff_np (np_list, n->sem.rownum.attname);
+            diff_np (np_list, n->sem.rownum.res);
+            break;
+            
+        case la_rank:
+            diff_np (np_list, n->sem.rank.res);
             break;
             
         case la_number:
-            diff_np (np_list, n->sem.number.attname);
+            diff_np (np_list, n->sem.number.res);
             break;
 
         case la_type:
@@ -228,9 +236,15 @@ map_names (PFla_op_t *n, PFla_op_t *goal, PFarray_t *par_np_list)
             diff_np (np_list, n->sem.type.res);
             break;
 
-        case la_scjoin:
-        case la_dup_scjoin:
-            diff_np (np_list, n->sem.scjoin.item_res);
+        case la_step:
+        case la_dup_step:
+        case la_guide_step:
+            diff_np (np_list, n->sem.step.item_res);
+            break;
+
+        case la_id:
+        case la_idref:
+            diff_np (np_list, n->sem.id.item_res);
             break;
 
         case la_doc_tbl:

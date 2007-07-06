@@ -226,8 +226,8 @@ map_ori_names (PFla_op_t *p, PFarray_t *map)
         }   break;
 
         case la_attach:
-            res = attach (SEC_PROJ(LEFT, p, p->sem.attach.attname),
-                          ONAME(p, p->sem.attach.attname),
+            res = attach (SEC_PROJ(LEFT, p, p->sem.attach.res),
+                          ONAME(p, p->sem.attach.res),
                           p->sem.attach.value);
             break;
 
@@ -428,6 +428,14 @@ map_ori_names (PFla_op_t *p, PFarray_t *map)
             res = unary_op (PFla_not, p, map);
             break;
 
+        case la_to:
+            res = to (PROJ(LEFT, p), 
+                      ONAME(p, p->sem.to.res),
+                      ONAME(p, p->sem.to.att1),
+                      ONAME(p, p->sem.to.att2),
+                      p->sem.to.part?ONAME(p, p->sem.to.part):att_NULL);
+            break;
+            
         case la_avg:
         case la_max:
         case la_min:
@@ -458,16 +466,34 @@ map_ori_names (PFla_op_t *p, PFarray_t *map)
                              PFord_order_dir_at (
                                  p->sem.rownum.sortby, i));
                                                    
-            res = rownum (SEC_PROJ(LEFT, p, p->sem.rownum.attname),
-                          ONAME(p, p->sem.rownum.attname),
+            res = rownum (SEC_PROJ(LEFT, p, p->sem.rownum.res),
+                          ONAME(p, p->sem.rownum.res),
                           sortby,
                           ONAME(p, p->sem.rownum.part));
         }   break;
         
+        case la_rank:
+        {
+            PFord_ordering_t sortby = PFordering ();
+
+            for (unsigned int i = 0;
+                 i < PFord_count (p->sem.rank.sortby);
+                 i++)
+                sortby = PFord_refine (
+                             sortby,
+                             ONAME(p, PFord_order_col_at (
+                                          p->sem.rank.sortby, i)),
+                             PFord_order_dir_at (
+                                 p->sem.rank.sortby, i));
+                                                   
+            res = rank (SEC_PROJ(LEFT, p, p->sem.rank.res),
+                        ONAME(p, p->sem.rank.res),
+                        sortby);
+        }   break;
+        
         case la_number:
-            res = number (SEC_PROJ(LEFT, p, p->sem.number.attname),
-                          ONAME(p, p->sem.number.attname),
-                          ONAME(p, p->sem.number.part));
+            res = number (SEC_PROJ(LEFT, p, p->sem.number.res),
+                          ONAME(p, p->sem.number.res));
             break;
         
         case la_type:
@@ -504,24 +530,54 @@ map_ori_names (PFla_op_t *p, PFarray_t *map)
                        p->sem.aggr.part?ONAME(p, p->sem.aggr.part):att_NULL);
             break;
 
-        case la_scjoin:
-            res = scjoin (O(L(p)), PROJ(RIGHT, p),
-                          p->sem.scjoin.axis,
-                          p->sem.scjoin.ty,
-                          ONAME(p, p->sem.scjoin.iter),
-                          ONAME(p, p->sem.scjoin.item),
-                          ONAME(p, p->sem.scjoin.item_res));
+        case la_step:
+            res = step (O(L(p)), PROJ(RIGHT, p),
+                        p->sem.step.axis,
+                        p->sem.step.ty,
+                        p->sem.step.level,
+                        ONAME(p, p->sem.step.iter),
+                        ONAME(p, p->sem.step.item),
+                        ONAME(p, p->sem.step.item_res));
             break;
                            
-        case la_dup_scjoin:
-            res = dup_scjoin (O(L(p)), 
-                              SEC_PROJ(RIGHT, p, p->sem.scjoin.item_res),
-                              p->sem.scjoin.axis,
-                              p->sem.scjoin.ty,
-                              ONAME(p, p->sem.scjoin.item),
-                              ONAME(p, p->sem.scjoin.item_res));
+        case la_dup_step:
+            res = dup_step (O(L(p)), 
+                            SEC_PROJ(RIGHT, p, p->sem.step.item_res),
+                            p->sem.step.axis,
+                            p->sem.step.ty,
+                            p->sem.step.level,
+                            ONAME(p, p->sem.step.item),
+                            ONAME(p, p->sem.step.item_res));
             break;
             
+        case la_guide_step:
+            res = guide_step (O(L(p)), PROJ(RIGHT, p),
+                              p->sem.step.axis,
+                              p->sem.step.ty,
+                              p->sem.step.guide_count,
+                              p->sem.step.guides,
+                              p->sem.step.level,
+                              ONAME(p, p->sem.step.iter),
+                              ONAME(p, p->sem.step.item),
+                              ONAME(p, p->sem.step.item_res));
+            break;
+                           
+        case la_id:
+            res = id (O(L(p)), PROJ(RIGHT, p),
+                      ONAME(p, p->sem.id.iter),
+                      ONAME(p, p->sem.id.item),
+                      ONAME(p, p->sem.id.item_res),
+                      ONAME(p, p->sem.id.item_doc));
+            break;
+                           
+        case la_idref:
+            res = idref (O(L(p)), PROJ(RIGHT, p),
+                         ONAME(p, p->sem.id.iter),
+                         ONAME(p, p->sem.id.item),
+                         ONAME(p, p->sem.id.item_res),
+                         ONAME(p, p->sem.id.item_doc));
+            break;
+                           
         case la_doc_tbl:
             res = doc_tbl (PROJ(LEFT, p),
                            ONAME(p, p->sem.doc_tbl.iter),
@@ -593,14 +649,45 @@ map_ori_names (PFla_op_t *p, PFarray_t *map)
             break;
 
         case la_merge_adjacent:
-            res = merge_adjacent (
-                      O(L(p)), PROJ(RIGHT, p),
-                      ONAME(p, p->sem.merge_adjacent.iter_in),
-                      ONAME(p, p->sem.merge_adjacent.pos_in),
-                      ONAME(p, p->sem.merge_adjacent.item_in),
-                      ONAME(p, p->sem.merge_adjacent.iter_res),
-                      ONAME(p, p->sem.merge_adjacent.pos_res),
-                      ONAME(p, p->sem.merge_adjacent.item_res));
+            /* In case columns pos and item_in are identical columns
+               item_in and item_out cannot refer to the same original
+               name. Then we need to ensure that we correct the naming
+               upfront (as the physical translation relies on the fact
+               that item_in and item_out are identical columns). */
+            if (ONAME(p, p->sem.merge_adjacent.item_in) !=
+                ONAME(p, p->sem.merge_adjacent.item_res)) {
+                PFalg_att_t iter, pos, item_in, item_out;
+                iter     = ONAME(p, p->sem.merge_adjacent.iter_in);
+                pos      = ONAME(p, p->sem.merge_adjacent.pos_in);
+                item_in  = ONAME(p, p->sem.merge_adjacent.item_in);
+                item_out = ONAME(p, p->sem.merge_adjacent.item_res);
+
+                assert (iter == ONAME(p, p->sem.merge_adjacent.iter_res));
+                assert (pos  == ONAME(p, p->sem.merge_adjacent.pos_res));
+                assert (item_in == pos);
+
+                res = merge_adjacent (
+                          O(L(p)),
+                          project (PROJ(RIGHT, p),
+                                   proj (iter, iter),
+                                   proj (pos, pos),
+                                   proj (item_out, item_in)),
+                          iter,
+                          pos,
+                          item_out,
+                          iter,
+                          pos,
+                          item_out);
+            }
+            else
+                res = merge_adjacent (
+                          O(L(p)), PROJ(RIGHT, p),
+                          ONAME(p, p->sem.merge_adjacent.iter_in),
+                          ONAME(p, p->sem.merge_adjacent.pos_in),
+                          ONAME(p, p->sem.merge_adjacent.item_in),
+                          ONAME(p, p->sem.merge_adjacent.iter_res),
+                          ONAME(p, p->sem.merge_adjacent.pos_res),
+                          ONAME(p, p->sem.merge_adjacent.item_res));
             break;
 
         case la_roots:

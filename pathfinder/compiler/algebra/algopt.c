@@ -89,7 +89,7 @@ PFla_op_t *
 PFalgopt (PFla_op_t *root, bool timing, PFguide_tree_t* guide_tree)
 {
     assert (PFstate.opt_alg);
-    long tm = 0;
+    long tm;
     bool const_no_attach = false;
     bool unq_names = false;
     bool proxies_involved = false;
@@ -264,6 +264,23 @@ PFalgopt (PFla_op_t *root, bool timing, PFguide_tree_t* guide_tree)
                            PFtimer_str (tm));
                 break;
 
+            case 'U':
+                if (!guide_tree) {
+                    PFinfo (OOPS_WARNING,
+                            "No guides found - guide node"
+                            " optimization is ignored");
+                    break;
+                }
+                tm = PFtimer_start ();
+
+                root = PFalgopt_guide (root, guide_tree);
+                
+                tm = PFtimer_stop (tm);
+                if (timing)
+                    PFlog ("   guide optimization:\t    %s",
+                           PFtimer_str (tm));
+                break;
+
             case 'V':
                 MAP_ORI_NAMES("required value optimization")
                 REMOVE_PROXIES("required value optimization")
@@ -290,10 +307,12 @@ PFalgopt (PFla_op_t *root, bool timing, PFguide_tree_t* guide_tree)
                                   true  /* key */,
                                   false /* ocols */, 
                                   false /* reqval */,
+                                  true  /* level */,
                                   true  /* refctr */,
+                                  true  /* guides */,
                                   true  /* original names */,
                                   false /* unique names */,
-                                  root);
+                                  root, guide_tree);
                 
                 else
                     PFprop_infer (true  /* card */,
@@ -304,30 +323,16 @@ PFalgopt (PFla_op_t *root, bool timing, PFguide_tree_t* guide_tree)
                                   true  /* key */,
                                   true  /* ocols */, 
                                   true  /* reqval */,
+                                  true  /* level */,
                                   true  /* refctr */,
+                                  true  /* guides */,
                                   false /* original names */,
                                   true  /* unique names */,
-                                  root);
+                                  root, guide_tree);
                 
                 tm = PFtimer_stop (tm);
                 if (timing)
                     PFlog ("   complete property inference:\t    %s",
-                           PFtimer_str (tm));
-                break;
-
-            case 'g':
-                if(guide_tree == NULL) {
-                    PFinfo (OOPS_WARNING, "guide tree is NULL "
-                        "- no guide optimization\n");
-                        break;
-                }
-
-                tm = PFtimer_start ();
-                root = PFalgopt_guide(root, guide_tree);
-                tm = PFtimer_stop (tm);
-                
-                if(timing)
-                    PFlog ("   guide optimization:\t    %s",
                            PFtimer_str (tm));
                 break;
 

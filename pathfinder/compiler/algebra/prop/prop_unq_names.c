@@ -163,7 +163,7 @@ infer_unq_names (PFla_op_t *n, unsigned int id)
             
         case la_attach:
             bulk_add_name_pairs (np_list, L(n));
-            new_name_pair (np_list, n->sem.attach.attname, id++);
+            new_name_pair (np_list, n->sem.attach.res, id++);
             break;
 
         case la_cross:
@@ -390,6 +390,15 @@ infer_unq_names (PFla_op_t *n, unsigned int id)
             new_name_pair (np_list, n->sem.unary.res, id++);
             break;
 
+        case la_to:
+            new_name_pair (np_list, n->sem.to.res, id++);
+            if (n->sem.to.part)
+                add_name_pair (np_list,
+                               n->sem.to.part, 
+                               PFprop_unq_name (L(n)->prop,
+                                                n->sem.to.part));
+            break;
+
         case la_avg:
 	case la_max:
 	case la_min:
@@ -407,12 +416,17 @@ infer_unq_names (PFla_op_t *n, unsigned int id)
 
         case la_rownum:
             bulk_add_name_pairs (np_list, L(n));
-            new_name_pair (np_list, n->sem.rownum.attname, id++);
+            new_name_pair (np_list, n->sem.rownum.res, id++);
+            break;
+
+        case la_rank:
+            bulk_add_name_pairs (np_list, L(n));
+            new_name_pair (np_list, n->sem.rank.res, id++);
             break;
 
         case la_number:
             bulk_add_name_pairs (np_list, L(n));
-            new_name_pair (np_list, n->sem.number.attname, id++);
+            new_name_pair (np_list, n->sem.number.res, id++);
             break;
 
         case la_type:
@@ -425,17 +439,27 @@ infer_unq_names (PFla_op_t *n, unsigned int id)
             bulk_add_name_pairs (np_list, L(n));
             break;
 
-        case la_scjoin:
+        case la_step:
+        case la_guide_step:
             add_name_pair (np_list, 
-                           n->sem.scjoin.iter,
+                           n->sem.step.iter,
                            PFprop_unq_name (R(n)->prop,
-                                            n->sem.scjoin.iter));
-            new_name_pair (np_list, n->sem.scjoin.item_res, id++);
+                                            n->sem.step.iter));
+            new_name_pair (np_list, n->sem.step.item_res, id++);
             break;
             
-        case la_dup_scjoin:
+        case la_dup_step:
             bulk_add_name_pairs (np_list, R(n));
-            new_name_pair (np_list, n->sem.scjoin.item_res, id++);
+            new_name_pair (np_list, n->sem.step.item_res, id++);
+            break;
+            
+        case la_id:
+        case la_idref:
+            add_name_pair (np_list, 
+                           n->sem.id.iter,
+                           PFprop_unq_name (R(n)->prop,
+                                            n->sem.id.iter));
+            new_name_pair (np_list, n->sem.id.item_res, id++);
             break;
             
         case la_doc_tbl:

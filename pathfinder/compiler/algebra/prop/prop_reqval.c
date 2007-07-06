@@ -173,8 +173,8 @@ prop_infer_reqvals (PFla_op_t *n, reqval_t reqvals)
             break;
 
         case la_attach:
-            rv.name = diff (rv.name, n->sem.attach.attname);
-            rv.val = diff (rv.val, n->sem.attach.attname);
+            rv.name = diff (rv.name, n->sem.attach.res);
+            rv.val = diff (rv.val, n->sem.attach.res);
             prop_infer_reqvals (L(n), rv);
             break;
 
@@ -223,8 +223,9 @@ prop_infer_reqvals (PFla_op_t *n, reqval_t reqvals)
             break;
 
         case la_distinct:
-        case la_rownum: /* in rownum and number type of res is != boolean */
-        case la_number: /* and therefore never needs to be removed */
+        case la_rownum: /* in rownum, rank, and number */
+        case la_rank:   /* type of res is != boolean and */
+        case la_number: /* therefore never needs to be removed */
         case la_type_assert:
         case la_roots:
         case la_proxy:
@@ -284,6 +285,7 @@ prop_infer_reqvals (PFla_op_t *n, reqval_t reqvals)
             prop_infer_reqvals (L(n), rv);
             break;
 
+        case la_to:
         case la_avg:
         case la_max:
         case la_min:
@@ -326,7 +328,10 @@ prop_infer_reqvals (PFla_op_t *n, reqval_t reqvals)
             prop_infer_reqvals (L(n), rv);
             break;
 
-        case la_scjoin:
+        case la_step:
+        case la_guide_step:
+        case la_id:
+        case la_idref:
         case la_fcns:
         case la_element:
         case la_content:
@@ -339,13 +344,13 @@ prop_infer_reqvals (PFla_op_t *n, reqval_t reqvals)
             prop_infer_reqvals (R(n), rv);
             break;
             
-        case la_dup_scjoin:
+        case la_dup_step:
             rv.name = 0;
             rv.val = 0;
             prop_infer_reqvals (L(n), rv);
 
-            rv.name = diff (n->prop->reqvals.name, n->sem.scjoin.item_res);
-            rv.val = diff (n->prop->reqvals.val, n->sem.scjoin.item_res);
+            rv.name = diff (n->prop->reqvals.name, n->sem.step.item_res);
+            rv.val = diff (n->prop->reqvals.val, n->sem.step.item_res);
             prop_infer_reqvals (R(n), rv);
             break;
 

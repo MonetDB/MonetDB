@@ -1296,7 +1296,7 @@ reduce (PFla_op_t * p, int goalnt)
 
               /* add expression for attach to the column environment */
               sql_column_env_add (p->sql_ann->colmap,
-                      p->sem.attach.attname, p->sem.attach.value.type,
+                      p->sem.attach.res, p->sem.attach.value.type,
                       literal (p->sem.attach.value));
 
               assert (L (p)->sql_ann->sfw->child[1]);
@@ -2201,8 +2201,8 @@ reduce (PFla_op_t * p, int goalnt)
               }
 
               sql_column_env_add (p->sql_ann->colmap,
-                      p->sem.rownum.attname,
-                      type_of (p, p->sem.rownum.attname),
+                      p->sem.rownum.res,
+                      type_of (p, p->sem.rownum.res),
                       over
                       (rownumber (),
                        window_clause
@@ -2238,20 +2238,11 @@ reduce (PFla_op_t * p, int goalnt)
               }
 
               sql_column_env_add (p->sql_ann->colmap,
-                      p->sem.number.attname,
-                      type_of (p, p->sem.number.attname),
+                      p->sem.number.res,
+                      type_of (p, p->sem.number.res),
                       over
                       (rownumber (),
-                       window_clause
-                       ((p->sem.number.part == 0) ?
-                        NULL :
-                        partition
-                        (part_expressions
-                         (sql_expression (L (p)->sql_ann->colmap,
-                                          p->sem.number.part,
-                                          type_of (L (p),
-                                              p->sem.number.
-                                              part)))), NULL)));
+                       window_clause (NULL, NULL))); 
 
               where_env_copy (L (p)->sql_ann->wheremap, p->sql_ann->wheremap);
 
@@ -2278,7 +2269,7 @@ reduce (PFla_op_t * p, int goalnt)
           /* ScjRel: scjoin (Frag, Rel) */
       case 53:
           {
-              p->sql_ann = llscj (p->sem.scjoin.axis, LR (p), p);
+              p->sql_ann = llscj (p->sem.step.axis, LR (p), p);
 
               for (PFla_op_t * loop = LL (p); loop->kind != la_empty_frag;
                       loop = L (loop))
@@ -2286,7 +2277,7 @@ reduce (PFla_op_t * p, int goalnt)
                   *(p->sql_ann) = (PFsql_alg_ann_t)
                   {
                       .sfw = disjunion
-                          (llscj (p->sem.scjoin.axis, R (loop), p)->sfw,
+                          (llscj (p->sem.step.axis, R (loop), p)->sfw,
                            p->sql_ann->sfw)};
               }
 
@@ -2302,7 +2293,7 @@ reduce (PFla_op_t * p, int goalnt)
       case 54:
           {
               /* combine more than one staircase join steps */
-              p->sql_ann = llscj (p->sem.scjoin.axis, LR (p), p);
+              p->sql_ann = llscj (p->sem.step.axis, LR (p), p);
 
               for (PFla_op_t * loop = LL (p); loop->kind != la_empty_frag;
                       loop = L (loop))
@@ -2310,7 +2301,7 @@ reduce (PFla_op_t * p, int goalnt)
                   *(p->sql_ann) = (PFsql_alg_ann_t)
                   {
                       .sfw = disjunion
-                          (llscj (p->sem.scjoin.axis, R (loop), p)->sfw,
+                          (llscj (p->sem.step.axis, R (loop), p)->sfw,
                            p->sql_ann->sfw)};
               }
 
@@ -4985,7 +4976,7 @@ llscj_axis (PFalg_axis_t axis, PFsql_correlation_name_t c1,
 				       (sql_special_name_new (sql_col_pre)->
 					ident), c2)
 			    /*sql_expression(R(p)->sql_ann->colmap,
-			       p->sem.scjoin.item, aat_pre) */
+			       p->sem.step.item, aat_pre) */
 			   ));
 
 	sql_where_env_add (ann->wheremap,
@@ -5354,13 +5345,13 @@ llscj (PFalg_axis_t axis, const PFla_op_t * frag, const PFla_op_t * p)
   PFsql_alg_ann_t *ret = sql_alg_ann_new ();
 
   /* abbreviations for input expressions */
-  PFty_t ty = p->sem.scjoin.ty;
+  PFty_t ty = p->sem.step.ty;
   PFsql_t *iter;
   PFsql_t *item;
 
   /* get attribute names of scj */
-  PFalg_att_t pa_iter = p->sem.scjoin.iter;
-  PFalg_att_t pa_item = p->sem.scjoin.item;
+  PFalg_att_t pa_iter = p->sem.step.iter;
+  PFalg_att_t pa_item = p->sem.step.item;
 
   /*
    * Determine generic input arguments.

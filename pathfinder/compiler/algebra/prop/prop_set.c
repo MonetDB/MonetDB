@@ -147,10 +147,12 @@ prop_infer_set (PFla_op_t *n, bool set)
             l_set = true;
             break;
 
+        case la_to:
         case la_avg:
         case la_sum:
         case la_count:
         case la_rownum:
+        case la_rank:
         case la_number:
         case la_twig:
         case la_docnode:
@@ -161,8 +163,11 @@ prop_infer_set (PFla_op_t *n, bool set)
             l_set = false;
             break;
 
-        case la_scjoin:
-        case la_dup_scjoin:
+        case la_step:
+        case la_dup_step:
+        case la_guide_step:
+        case la_id:
+        case la_idref:
             l_set = false;
             r_set = true;
             break;

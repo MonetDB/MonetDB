@@ -109,6 +109,7 @@ opt_const (PFla_op_t *p, bool no_attach)
             case la_max:
             case la_min:
             case la_rownum:
+            case la_rank:
             case la_number:
                 /* these rules apply a 'real rewrite'
                    and therefore continue */
@@ -622,23 +623,30 @@ opt_const (PFla_op_t *p, bool no_attach)
                 PFprop_const (p->prop, p->sem.rownum.part))
                 p->sem.rownum.part = att_NULL;
 
-            /* replace rownum by number operator
-               if no sort criterions remain */
-            if (!PFord_count (p->sem.rownum.sortby)) {
-                *p = *PFla_number (L(p),
-                                   p->sem.rownum.attname,
-                                   p->sem.rownum.part);
-                SEEN(p) = true;
-            }
         }   break;
 
-        case la_number:
-            /* only include partitioning attribute if it is not constant */
-            if (p->sem.number.part &&
-                PFprop_const (p->prop, p->sem.number.part)) {
-                p->sem.number.part = att_NULL;
-            }
-            break;
+        case la_rank:
+        {
+            /* discard all sort criterions that are constant */
+            PFord_ordering_t sortby = PFordering ();
+
+            for (unsigned int i = 0;
+                 i < PFord_count (p->sem.rank.sortby);
+                 i++)
+                if (!PFprop_const (p->prop,
+                                   PFord_order_col_at (
+                                       p->sem.rank.sortby, i)))
+                    sortby = PFord_refine (
+                                sortby,
+                                PFord_order_col_at (
+                                    p->sem.rank.sortby,
+                                    i),
+                                PFord_order_dir_at (
+                                    p->sem.rank.sortby,
+                                    i));
+
+            p->sem.rank.sortby = sortby;
+        }   break;
 
         case la_type:
         case la_cast:

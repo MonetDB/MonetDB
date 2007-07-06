@@ -95,22 +95,27 @@ typedef struct PFla_op_t *NODEPTR_TYPE;
 %term  bool_and       =  28
 %term  bool_or        =  29
 %term  bool_not       =  30
-%term  avg            =  31
-%term  max_           =  32
-%term  min_           =  33
-%term  sum            =  34
-%term  count          =  35
-%term  rownum         =  36
-%term  number         =  37
+%term  to             =  31
+%term  avg            =  32
+%term  max_           =  33
+%term  min_           =  34
+%term  sum            =  35
+%term  count          =  36
+%term  rownum         =  37
+%term  rank           =  38
+%term  number         =  39
 %term  type           =  40
 %term  type_assert    =  41
 %term  cast           =  42
 %term  seqty1         =  43
 %term  all            =  44
-%term  scjoin         =  50
-%term  dup_scjoin     =  51
-%term  doc_tbl        =  52
-%term  doc_access     =  53
+%term  step           =  50
+%term  dup_step       =  51
+%term  guide_step     =  52
+%term  id             =  53
+%term  idref          =  54
+%term  doc_tbl        =  55
+%term  doc_access     =  56
 %term  twig           =  60
 %term  fcns           =  61
 %term  docnode        =  62
@@ -161,19 +166,21 @@ Rel:    intersect (Rel, Rel)                      =  23 (10);
 Rel:    difference (Rel, Rel)                     =  24 (10);
 Rel:    difference (Rel, EmptyRel)                =  25  (5);
 Rel:    distinct (Rel)                            =  26 (10);
-Rel:    distinct (scjoin (Frag, Rel))             =  27 (5);
+Rel:    distinct (step (Frag, Rel))               =  27  (5);
 Rel:    fun_1to1 (Rel)                            =  30 (10);
-Rel:    num_gt (Rel)                              =  36 (10);
-Rel:    num_eq (Rel)                              =  37 (10);
-Rel:    bool_and (Rel)                            =  38 (10);
-Rel:    bool_or (Rel)                             =  39 (10);
-Rel:    bool_not (Rel)                            =  40 (10);
+Rel:    num_gt (Rel)                              =  35 (10);
+Rel:    num_eq (Rel)                              =  36 (10);
+Rel:    bool_and (Rel)                            =  37 (10);
+Rel:    bool_or (Rel)                             =  38 (10);
+Rel:    bool_not (Rel)                            =  39 (10);
+Rel:    to (Rel)                                  =  40 (10);
 Rel:    avg (Rel)                                 =  41 (10);
 Rel:    max_ (Rel)                                =  42 (10);
 Rel:    min_ (Rel)                                =  43 (10);
 Rel:    sum (Rel)                                 =  44 (10);
 Rel:    count (Rel)                               =  45 (10);
-Rel:    rownum (Rel)                              =  50 (10);
+Rel:    rownum (Rel)                              =  49 (10);
+Rel:    rank (Rel)                                =  50 (10);
 Rel:    number (Rel)                              =  51 (10);
 Rel:    number (number (Rel))                     =  52 (10);
 Rel:    number (project (number (Rel)))           =  53 (10);
@@ -185,53 +192,56 @@ Rel:    cast (Rel)                                =  58 (10);
 Rel:    seqty1 (Rel)                              =  59 (10);
 Rel:    all (Rel)                                 =  60 (10);
 Rel:    ScjRel                                    =  61 (10);
-ScjRel: scjoin (Frag, Rel)                        =  62 (10);
-ScjRel: scjoin (Frag, ScjRel)                     =  63 (10);
-ScjRel: scjoin (Frag, distinct (Rel))             =  64 (10);
-Rel:    dup_scjoin (Frag, Rel)                    =  65 (10);
-Rel:    doc_access (Frag, Rel)                    =  66 (10);
+ScjRel: step (Frag, Rel)                          =  62 (10);
+ScjRel: step (Frag, ScjRel)                       =  63 (10);
+ScjRel: step (Frag, distinct (Rel))               =  64 (10);
+Rel:    dup_step (Frag, Rel)                      =  65 (10);
+Rel:    guide_step (Frag, Rel)                    =  66 (10);
+Rel:    id (Frag, Rel)                            =  67 (10);
+Rel:    idref (Frag, Rel)                         =  68 (10);
+Rel:    doc_access (Frag, Rel)                    =  69 (10);
 
-Rel:    roots_ (doc_tbl (Rel))                    =  67 (10);
-Rel:    roots_ (twig (Twig))                      =  68 (10);
-Rel:    roots_ (merge_adjacent (Frag, Rel))       =  69 (10);
+Rel:    roots_ (doc_tbl (Rel))                    =  75 (10);
+Rel:    roots_ (twig (Twig))                      =  76 (10);
+Rel:    roots_ (merge_adjacent (Frag, Rel))       =  77 (10);
 
-Twig:   docnode (Rel, Fcns)                       =  70 (10);
-Twig:   element (Rel, Fcns)                       =  71 (10);
-Twig:   attribute (Rel)                           =  72 (10);
-Twig:   textnode (Rel)                            =  73 (10);
-Twig:   comment (Rel)                             =  74 (10);
-Twig:   processi (Rel)                            =  75 (10);
-Twig:   content (Frag, Rel)                       =  76 (10);
-Twig:   nil                                       =  77 (10);
+Twig:   docnode (Rel, Fcns)                       =  78 (10);
+Twig:   element (Rel, Fcns)                       =  79 (10);
+Twig:   attribute (Rel)                           =  80 (10);
+Twig:   textnode (Rel)                            =  81 (10);
+Twig:   comment (Rel)                             =  82 (10);
+Twig:   processi (Rel)                            =  83 (10);
+Twig:   content (Frag, Rel)                       =  84 (10);
+Twig:   nil                                       =  85 (10);
 
-Fcns:   fcns (Twig, Fcns)                         =  78 (10);
-Fcns:   nil                                       =  79 (10);
+Fcns:   fcns (Twig, Fcns)                         =  86 (10);
+Fcns:   nil                                       =  87 (10);
 
-Rel:    cond_err (Rel, Rel)                       =  80 (10);
-Rel:    cond_err (Rel, EmptyRel)                  =  81  (0);
-Rel:    trace (Rel, Msg)                          =  85 (10);
-Msg:    trace_msg (Rel, Map)                      =  86 (10);
-Map:    trace_map (Rel, Map)                      =  87 (10);
-Map:    nil                                       =  88 (10);
+Rel:    cond_err (Rel, Rel)                       =  88 (10);
+Rel:    cond_err (Rel, EmptyRel)                  =  89  (0);
+Rel:    trace (Rel, Msg)                          =  93 (10);
+Msg:    trace_msg (Rel, Map)                      =  94 (10);
+Map:    trace_map (Rel, Map)                      =  95 (10);
+Map:    nil                                       =  96 (10);
 
-Rel:    rec_fix (Rec, Rel)                        =  90 (10);
-Rel:    rec_base                                  =  91 (10);
-Rec:    rec_param (Arg, Rec)                      =  92 (10);
-Rec:    nil                                       =  93 (10);
-Arg:    rec_arg (Rel, Rel)                        =  94 (10);
+Rel:    rec_fix (Rec, Rel)                        =  98 (10);
+Rel:    rec_base                                  =  99 (10);
+Rec:    rec_param (Arg, Rec)                      = 100 (10);
+Rec:    nil                                       = 101 (10);
+Arg:    rec_arg (Rel, Rel)                        = 102 (10);
 
-Rel:    string_join (Rel, Rel)                    =  95 (10);
-Rel:    dummy (Rel)                               =  96 (10);
+Rel:    string_join (Rel, Rel)                    = 103 (10);
+Rel:    dummy (Rel)                               = 104 (10);
 
-Rel:    EmptyRel                                  =  99  (0);
+Rel:    EmptyRel                                  = 107  (0);
 
 
-Frag:    fragment (doc_tbl (Rel))                 = 100 (10);
-Frag:    fragment (twig (Twig))                   = 101 (10);
-Frag:    fragment (merge_adjacent (Frag, Rel))    = 102 (10);
+Frag:    fragment (doc_tbl (Rel))                 = 108 (10);
+Frag:    fragment (twig (Twig))                   = 109 (10);
+Frag:    fragment (merge_adjacent (Frag, Rel))    = 110 (10);
 
-Frag:    frag_union (Frag, Frag)                  = 111 (10);
-Frag:    empty_frag                               = 112 (10);
+Frag:    frag_union (Frag, Frag)                  = 118 (10);
+Frag:    empty_frag                               = 119 (10);
 
 
 EmptyRel:    empty_tbl                            = 120  (0);
@@ -251,25 +261,31 @@ EmptyRel:    intersect (Rel, EmptyRel)            = 132  (0);
 EmptyRel:    difference (EmptyRel, Rel)           = 133  (0);
 EmptyRel:    distinct (EmptyRel)                  = 134  (0);
 EmptyRel:    fun_1to1 (EmptyRel)                  = 140  (0);
-EmptyRel:    num_gt (EmptyRel)                    = 146  (0);
-EmptyRel:    num_eq (EmptyRel)                    = 147  (0);
-EmptyRel:    bool_and (EmptyRel)                  = 148  (0);
-EmptyRel:    bool_or (EmptyRel)                   = 149  (0);
-EmptyRel:    bool_not (EmptyRel)                  = 150  (0);
+EmptyRel:    num_gt (EmptyRel)                    = 145  (0);
+EmptyRel:    num_eq (EmptyRel)                    = 146  (0);
+EmptyRel:    bool_and (EmptyRel)                  = 147  (0);
+EmptyRel:    bool_or (EmptyRel)                   = 148  (0);
+EmptyRel:    bool_not (EmptyRel)                  = 149  (0);
+EmptyRel:    to (EmptyRel)                        = 150  (0);
 EmptyRel:    avg (EmptyRel)                       = 151  (0);
 EmptyRel:    max_ (EmptyRel)                      = 152  (0);
 EmptyRel:    min_ (EmptyRel)                      = 153  (0);
 EmptyRel:    sum (EmptyRel)                       = 154  (0);
 EmptyRel:    count (EmptyRel)                     = 155  (0);
-EmptyRel:    rownum (EmptyRel)                    = 160  (0);
+EmptyRel:    rownum (EmptyRel)                    = 159  (0);
+EmptyRel:    rank (EmptyRel)                      = 160  (0);
 EmptyRel:    number (EmptyRel)                    = 161  (0);
 EmptyRel:    type (EmptyRel)                      = 162  (0);
 EmptyRel:    type_assert (EmptyRel)               = 163  (0);
 EmptyRel:    cast (EmptyRel)                      = 164  (0);
 EmptyRel:    seqty1 (EmptyRel)                    = 165  (0);
 EmptyRel:    all (EmptyRel)                       = 166  (0);
-EmptyRel:    scjoin (Frag, EmptyRel)              = 170  (0);
-EmptyRel:    doc_access (Frag, EmptyRel)          = 171  (0);
+EmptyRel:    step (Frag, EmptyRel)                = 170  (0);
+EmptyRel:    dup_step (Frag, EmptyRel)            = 171  (0);
+EmptyRel:    guide_step (Frag, EmptyRel)          = 172  (0);
+EmptyRel:    id (Frag, EmptyRel)                  = 173  (0);
+EmptyRel:    idref (Frag, EmptyRel)               = 174  (0);
+EmptyRel:    doc_access (Frag, EmptyRel)          = 175  (0);
 
 EmptyRel:    roots_ (doc_tbl (EmptyRel))          = 180  (0);
 EmptyRel:    roots_ (twig (docnode (EmptyRel,
@@ -496,7 +512,7 @@ reduce (PFla_op_t *p, int goalnt)
             if (p->schema.count > 1) {
                 bool found = false, rewrite = true;
                 for (unsigned int i = 0; i < p->schema.count; i++)
-                    if (p->sem.proj.items[i].old == L(p)->sem.attach.attname) {
+                    if (p->sem.proj.items[i].old == L(p)->sem.attach.res) {
                         found = true;
                         rewrite = rewrite &&
                                   (p->sem.proj.items[i].old 
@@ -511,12 +527,12 @@ reduce (PFla_op_t *p, int goalnt)
                     unsigned int count = 0;
                     
                     for (unsigned int j = 0; j < p->schema.count; j++)
-                        if (L(p)->sem.attach.attname
+                        if (L(p)->sem.attach.res
                             != p->sem.proj.items[j].old)
                             proj[count++] = p->sem.proj.items[j];
 
                     *p = *PFla_attach (PFla_project_ (LL(p), count, proj),
-                                       L(p)->sem.attach.attname,
+                                       L(p)->sem.attach.res,
                                        L(p)->sem.attach.value);
                     SEEN(L(p)) = false;
                     SEEN(p) = false;
@@ -774,7 +790,7 @@ reduce (PFla_op_t *p, int goalnt)
             relabel (p, kids);
             break;
 
-        /* Rel:    distinct (scjoin (Frag, Rel)) */
+        /* Rel:    distinct (step (Frag, Rel)) */
         case 27:
             /* return left child */
             *p = *PFla_dummy (L(p));
@@ -785,7 +801,7 @@ reduce (PFla_op_t *p, int goalnt)
             break;
 
         /* Rel:    rownum (Rel) */
-        case 50:
+        case 49:
 #if 0 
 /* this is only allowed if the numbers do not matter */
 
@@ -803,11 +819,11 @@ reduce (PFla_op_t *p, int goalnt)
                                                  * sizeof (PFalg_proj_t));
                         /* copy property list */
                         for (i = 0; i < p->schema.count; i++)
-                            if (p->sem.rownum.attname ==
+                            if (p->sem.rownum.res ==
                                 p->schema.items[i].name)
                                 /* as rownum column we use the single
                                    sort criterion */
-                                proj[i] = PFalg_proj (p->sem.number.attname,
+                                proj[i] = PFalg_proj (p->sem.number.res,
                                                       cur_col);
                             else
                                 proj[i] = PFalg_proj (p->schema.items[i].name,
@@ -824,48 +840,42 @@ reduce (PFla_op_t *p, int goalnt)
 
         /* Rel:    number (number (Rel)) */
         case 52:
-            if (! p->sem.number.part && 
-                ! L(p)->sem.number.part) {
-                PFalg_proj_t *proj = PFmalloc (
-                                         p->schema.count
-                                         * sizeof (PFalg_proj_t));
-                /* copy property list */
-                for (unsigned int i = 0; i < p->schema.count; i++)
-                    if (p->sem.number.attname == p->schema.items[i].name)
-                        proj[i] = PFalg_proj (p->sem.number.attname,
-                                              L(p)->sem.number.attname);
-                    else
-                        proj[i] = PFalg_proj (p->schema.items[i].name,
-                                              p->schema.items[i].name);
-                                              
-                *p = *PFla_project_ (L(p), p->schema.count, proj);
-                SEEN(p) = false;
-                relabel (p, kids);
-                break;
-            }
-            break;
+        {
+            PFalg_proj_t *proj = PFmalloc (
+                                     p->schema.count
+                                     * sizeof (PFalg_proj_t));
+            /* copy property list */
+            for (unsigned int i = 0; i < p->schema.count; i++)
+                if (p->sem.number.res == p->schema.items[i].name)
+                    proj[i] = PFalg_proj (p->sem.number.res,
+                                          L(p)->sem.number.res);
+                else
+                    proj[i] = PFalg_proj (p->schema.items[i].name,
+                                          p->schema.items[i].name);
+                                          
+            *p = *PFla_project_ (L(p), p->schema.count, proj);
+            SEEN(p) = false;
+            relabel (p, kids);
+        }   break;
 
         /* Rel:    number (project (number (Rel))) */
         case 53:
-            if (! p->sem.number.part && 
-                ! LL(p)->sem.number.part) {
-                unsigned int count = L(p)->sem.proj.count;
-                PFalg_proj_t *proj = PFmalloc (
-                                         (count + 1)
-                                         * sizeof (PFalg_proj_t));
-                /* copy property list */
-                for (unsigned int i = 0; i < count; i++)
-                    proj[i] = L(p)->sem.proj.items[i];
+        {
+            unsigned int count = L(p)->sem.proj.count;
+            PFalg_proj_t *proj = PFmalloc (
+                                     (count + 1)
+                                     * sizeof (PFalg_proj_t));
+            /* copy property list */
+            for (unsigned int i = 0; i < count; i++)
+                proj[i] = L(p)->sem.proj.items[i];
 
-                proj[count] = PFalg_proj (p->sem.number.attname,
-                                          LL(p)->sem.number.attname);
+            proj[count] = PFalg_proj (p->sem.number.res,
+                                      LL(p)->sem.number.res);
 
-                *p = *PFla_project_ (LL(p), count + 1, proj);
-                SEEN(p) = false;
-                relabel (p, kids);
-                break;
-            }
-            break;
+            *p = *PFla_project_ (LL(p), count + 1, proj);
+            SEEN(p) = false;
+            relabel (p, kids);
+        }   break;
 
         /* Rel:    type_assert (Rel) */
         case 55:
@@ -998,18 +1008,20 @@ reduce (PFla_op_t *p, int goalnt)
             }
         } break;
 
-        /* ScjRel: scjoin (Frag, ScjRel) */
+        /* ScjRel: step (Frag, ScjRel) */
         case 63:
-            /* combine scjoins if they are of the form:
+            /* combine steps if they are of the form:
                ``/descandent-or-self::node()/child::element()'' */
-            if (R(p)->sem.scjoin.axis == alg_desc_s &&
-                PFty_equality (R(p)->sem.scjoin.ty, PFty_xs_anyNode ()) &&
-                p->sem.scjoin.axis == alg_chld) {
+            if (R(p)->sem.step.axis == alg_desc_s &&
+                PFty_equality (R(p)->sem.step.ty, PFty_xs_anyNode ()) &&
+                p->sem.step.axis == alg_chld) {
                 /* rewrite child into descendant
                    and discard descendant-or-self step */
-                *p = *PFla_scjoin (L(p), RR(p), alg_desc, p->sem.scjoin.ty,
-                                   p->sem.scjoin.iter, R(p)->sem.scjoin.item,
-                                   p->sem.scjoin.item_res);
+                *p = *PFla_step_simple (
+                          L(p), RR(p),
+                          alg_desc, p->sem.step.ty,
+                          p->sem.step.iter, R(p)->sem.step.item,
+                          p->sem.step.item_res);
                 SEEN(p) = false;
                 /* relabel does not know that the left and the right children
                    are already labeled correctly and thus would relabel 
@@ -1022,7 +1034,7 @@ reduce (PFla_op_t *p, int goalnt)
             }
             break;
 
-        /* ScjRel: scjoin (Frag, distinct (Rel)) */
+        /* ScjRel: step (Frag, distinct (Rel)) */
         case 64:
             R(p) = L(R(p));
             SEEN(p) = false;
@@ -1030,7 +1042,7 @@ reduce (PFla_op_t *p, int goalnt)
             break;
 
         /* Rel:    cond_err (Rel, EmptyRel) */
-        case 81:
+        case 89:
             /* an error node with an empty condition
                relation triggers no error */
             *p = *PFla_dummy (L(p));
@@ -1041,7 +1053,7 @@ reduce (PFla_op_t *p, int goalnt)
             break;
 
         /* Rel:    EmptyRel */
-        case 99:
+        case 107:
         {
             /*
              * Replace any sub-tree that we determined empty with these

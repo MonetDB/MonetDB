@@ -77,14 +77,14 @@ resolve_proxies (PFla_op_t *p)
              |X|
              / \
             /   |
-         scjoin |
+          step  |
             |   |
            pi   |
             \   |
              \ /
               #
     */
-    if (p->kind == la_dup_scjoin) {
+    if (p->kind == la_dup_step) {
         PFla_op_t    *number;
         PFalg_att_t   used_cols = 0,
                       join_att1,
@@ -107,25 +107,26 @@ resolve_proxies (PFla_op_t *p)
         join_att2 = PFalg_ori_name (PFalg_unq_name (att_iter, 0), ~used_cols);
 
         /* Generate a new number operator. */
-        number = PFla_number (R(p), join_att2, att_NULL);
+        number = PFla_number (R(p), join_att2);
 
         /* Generate the pattern sketched above. The projection
-           underneath the staircase join operator renames the
+           underneath the path step operator renames the
            join columns as well as the resulting item column. */
         *p = *PFla_project_ (
                   PFla_eqjoin (
-                      PFla_scjoin (
+                      PFla_step (
                           L(p),
                           PFla_project (
                               number,
                               PFalg_proj (join_att1, join_att2),
-                              PFalg_proj (p->sem.scjoin.item_res,
-                                          p->sem.scjoin.item)),
-                          p->sem.scjoin.axis,
-                          p->sem.scjoin.ty,
+                              PFalg_proj (p->sem.step.item_res,
+                                          p->sem.step.item)),
+                          p->sem.step.axis,
+                          p->sem.step.ty,
+                          p->sem.step.level,
                           join_att1,
-                          p->sem.scjoin.item_res,
-                          p->sem.scjoin.item_res),
+                          p->sem.step.item_res,
+                          p->sem.step.item_res),
                       number, 
                       join_att1,
                       join_att2),
