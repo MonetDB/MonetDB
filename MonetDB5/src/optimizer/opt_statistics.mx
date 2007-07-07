@@ -45,7 +45,7 @@ such as #calls, #total actions, #total time";
 
 opt_export str QOTgetStatistics(int *ret, str *nme);
 opt_export void QOTupdateStatistics(str nme, int prop, lng val);
-opt_export void QOTstatisticsExit();
+opt_export void QOTstatisticsExit(void);
 #endif /* _Q_STATISTICS_H */
 @c
 #include "mal_config.h"
