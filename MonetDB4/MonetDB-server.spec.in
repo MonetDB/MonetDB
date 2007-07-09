@@ -45,7 +45,7 @@ automatic index management, extensibility of data types and search
 accellerators, SQL- and XML- frontends.
 Requires: MonetDB-client = 1.18
 %if !%{?buildsystem}
-BuildRequires: MonetDB-devel = 1.18
+BuildRequires: MonetDB-devel = 1.19
 BuildRequires: MonetDB-client-devel = 1.18
 %endif
 PreReq: /sbin/chkconfig, /sbin/service, sh-utils
