@@ -64,7 +64,7 @@ They provide the basis for dynamic optimization and offline analysis
 #define QOTactions	2
 #define QOTtimings	3
 
-static BAT *qotStat[4];
+static BAT *qotStat[4] = { NULL };
 
 static BAT *
 QOT_create(str hnme, str tnme, int ht, int tt)
@@ -91,6 +91,7 @@ QOT_create(str hnme, str tnme, int ht, int tt)
 }
 static void QOTstatisticsInit(){
 	oid o=0;
+
 	if( qotStat[QOTnames]) return;
 	qotStat[QOTnames]= QOT_create("opt","names",TYPE_void,TYPE_str);
 	BATseqbase(qotStat[QOTnames],o);
@@ -100,6 +101,9 @@ static void QOTstatisticsInit(){
 	BATseqbase(qotStat[QOTactions],o);
 	qotStat[QOTtimings]= QOT_create("opt","timings",TYPE_void,TYPE_int);
 	BATseqbase(qotStat[QOTtimings],o);
+
+	/* save them at least once */
+	QOTstatisticsExit();
 }
 
 void
