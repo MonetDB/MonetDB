@@ -490,7 +490,7 @@ static struct option long_options[] = {
 #endif
     { "dead-code-elimination",     required_argument, NULL, 'e' },
     { "format",                    required_argument, NULL, 'f' },
-    { "gensql",                       no_argument,    NULL, 'g' },
+    { "sql",                       no_argument,    NULL, 'g' },
     { "help",                         no_argument,    NULL, 'h' },
     { "print-logical-algebra",        no_argument,    NULL, 'l' },
     { "optimize-algebra",          required_argument, NULL, 'o' },
@@ -645,14 +645,14 @@ main (int argc, char *argv[])
 #ifndef NDEBUG
                                      "d:"
 #endif
-                                     "e:f:ghlo:pqrs:t", 
+                                     "e:f:Shlo:pqrs:t", 
                          long_options, &option_index);
 #else
         c = getopt (argc, argv, "ADHMO::PTXabc"
 #ifndef NDEBUG
                                 "d:"
 #endif
-                                "e:f:ghlo:pqrs:t");
+                                "e:f:Shlo:pqrs:t");
 #endif
 
         if (c == -1)
@@ -720,7 +720,7 @@ main (int argc, char *argv[])
                 for (i = 1; i < (sizeof (phases) / sizeof (char *)); i++)
                     printf ("        %2u  %s\n", i, phases[i]);
 
-                printf ("  -g%s: generate SQL code\n",
+                printf ("  -S%s: generate SQL code\n",
                         long_option (opt_buf, ", --%s", 'g'));
 
 #ifndef NDEBUG
@@ -917,7 +917,7 @@ main (int argc, char *argv[])
             case 't':
                 status->print_types = true;
                 break;
-            case 'g':
+            case 'S':
                 status->summer_branch = false;
                 status->stop_after = 19;
                 status->generate_sql = true;

@@ -52,7 +52,7 @@ Usage: pf [OPTION] [FILE]
         20  after introducing recursion boundaries
         21  after compiling the physical algebra into MIL code
         22  after the MIL program has been serialized
-= -g, --gensql: generate SQL code
+= -S, --sql: generate SQL code 
 = -d TEST, --debug=TEST: call internall debugging function TEST
 = -a, --print-abstract-syntax-tree: print abstract syntax tree
 = -c, --print-core-tree: print internal Core language
