@@ -40,6 +40,7 @@
 #include "map_names.h"
 #include "oops.h"
 #include "timer.h"
+#include "opt_algebra_cse.h"
 #include "algebra_cse.h"
 #include "la_proxy.h"
 #include "la_thetajoin.h"
@@ -129,6 +130,18 @@ PFalgopt (PFla_op_t *root, bool timing, PFguide_tree_t* guide_tree)
                 if (timing)
                     PFlog ("   complex optimization:\t    %s",
                            PFtimer_str (tm));
+                break;
+
+            case 'E':
+                MAP_ORI_NAMES("common subexpression elimination")
+                REMOVE_PROXIES("common subexpression elimination")
+
+                tm = PFtimer_start ();
+
+                root = PFalgopt_cse (root);
+                if (timing)
+                    PFlog("   common subexpression elimination:\t    %s",
+                            PFtimer_str (tm));
                 break;
 
             case 'O':

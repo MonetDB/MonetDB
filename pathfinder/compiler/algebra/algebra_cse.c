@@ -63,7 +63,7 @@ static PFarray_t *subexps;
  * @param b Tuple to test against tuple @a a.
  * @return Boolean value @c true, if the two tuples are equal.
  */
-bool
+static bool
 tuple_eq (PFalg_tuple_t a, PFalg_tuple_t b)
 {
     unsigned int i;

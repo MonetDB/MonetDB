@@ -499,6 +499,8 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
         goto bailout;
     }
 
+
+
     /*
      * map core to algebra tree
      */
@@ -537,6 +539,34 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
     if (status->timing)
         PFlog ("CSE in logical algebra tree:\t\t %s",
                PFtimer_str (tm));
+
+    PFsql_t *sqlroot = NULL;
+   /* generate SQL code if requested */
+   if (status->generate_sql) {
+       if(laroot) {
+            /* this is not the final semantic of this function */
+            sqlroot = PFlalg2sql(laroot);
+            if (sqlroot) {
+                if (status->print_pretty) {
+                    PFsql_pretty(pfout, sqlroot);
+                }
+                else {
+                    PFarray_t *sqlprog = PFsql_serialize( sqlroot );
+                    if( sqlprog )
+                        PFsqlprint(pfout, sqlprog);
+                }
+            }
+            else
+               PFinfo(OOPS_NOTICE,
+                 "SQL expressions not available at this "
+                 "point of compilation");
+        }
+        else
+           PFinfo(OOPS_NOTICE,
+             "SQL expressions not available at this "
+             "point of compilation");
+        goto bailout;
+    }
 
     STOP_POINT(18);
 
@@ -697,28 +727,6 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
             PFinfo (OOPS_NOTICE,
                     "Physical algebra tree not available at this "
                     "point of compilation");
-    }
-
-    /* print SQL statements if requested */
-    if(status->generate_sql) {
-         if(laroot) {
-             /* this is not the final semantic of this function */
-             PFsql_t* sqlroot = PFlalg2sql(laroot);
-             if (sqlroot) {
-                 if (status->print_pretty) {
-                     PFsql_pretty(pfout, sqlroot);
-                 }
-                 else {
-                     PFarray_t *sqlprog = PFsql_serialize( sqlroot );
-                     if( sqlprog )
-                         PFsqlprint(pfout, sqlprog);
-                 }
-             }
-         }
-         else
-            PFinfo(OOPS_NOTICE,
-                  "SQL expressions not available at this "
-                  "point of compilation");
     }
 
     return ( 1 ); /* EXIT_SUCCESS */
