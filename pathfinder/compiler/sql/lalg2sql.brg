@@ -75,12 +75,8 @@
 /* start with non-terminal */
 %start Query
 
-/**
- * Node identifiers, corresponding to the node kinds in
- * include/logical.h
- */
 %term serialize      =  1 /**< serialize algebra expression
-                              (Placed on the very top of the tree.) */
+%term                          (Placed on the very top of the tree.) */
 %term lit_tbl        =  2 /**< literal table */
 %term empty_tbl      =  3 /**< empty literal table */
 %term attach         =  4 /**< attach constant column */
@@ -88,7 +84,7 @@
 %term eqjoin         =  6 /**< equi-join */
 %term semijoin       =  7 /**< semi-join */
 %term thetajoin      =  8 /**< theta-join (with possibly multiple
-                               predicates) */
+%term                          predicates) */
 %term project        =  9 /**< algebra projection and renaming operator */
 %term select_        = 10 /**< selection of rows where column value != 0 */
 %term disjunion      = 11 /**< union two relations with same schema */
@@ -96,32 +92,37 @@
 %term difference     = 13 /**< difference of two relations w/ same schema */
 %term distinct       = 14 /**< duplicate elimination operator */
 %term fun_1to1       = 20 /**< generic operator that extends the schema with
-                               a new column where each value is determined 
-                               by the values of a single row (cardinality 
-                               stays the same) */
+                         a new column where each value is determined 
+                         by the values of a single row (cardinality 
+                         stays the same) */
 %term num_eq         = 25 /**< numeric equal operator */
 %term num_gt         = 26 /**< numeric greater-than operator */
 %term bool_and       = 28 /**< boolean AND operator */
 %term bool_or        = 29 /**< boolean OR operator */
 %term bool_not       = 30 /**< boolean NOT operator */
-%term avg            = 31 /**< operator for (partitioned) avg of a column */
-%term max_           = 32 /**< operator for (partitioned) max of a column */
-%term min_           = 33 /**< operator for (partitioned) min of a column */
-%term sum            = 34 /**< operator for (partitioned) sum of a column */
-%term count          = 35 /**< (partitioned) row counting operator */
-%term rownum         = 36 /**< consecutive number generation */
-%term number         = 37 /**< consecutive number generation */
+%term to             = 31 /**< op:to operator */
+%term avg            = 32 /**< operator for (partitioned) avg of a column */
+%term max_           = 33 /**< operator for (partitioned) max of a column */
+%term min_           = 34 /**< operator for (partitioned) min of a column */
+%term sum            = 35 /**< operator for (partitioned) sum of a column */
+%term count          = 36 /**< (partitioned) row counting operator */
+%term rownum         = 37 /**< consecutive number generation */
+%term rank           = 38 /**< arbitrary but ordered number generation */
+%term number         = 39 /**< arbitrary, unordered number generation */
 %term type           = 40 /**< selection of rows where a column is of a
-                               certain type */
+                         certain type */
 %term type_assert    = 41 /**< restricts the type of a relation */
 %term cast           = 42 /**< type cast of an attribute */
 %term seqty1         = 43 /**< test for exactly one type occurrence in one
-                               iteration (Pathfinder extension) */
+%term                                   iteration (Pathfinder extension) */
 %term all            = 44 /**< test if all items in an iteration are true */
-%term scjoin         = 50 /**< staircase join */
-%term dup_scjoin     = 51 /**< staircase join */
-%term doc_tbl        = 52 /**< document relation (is also a fragment) */
-%term doc_access     = 53 /**< document access necessary for pf:string-value */
+%term step           = 50 /**< path step */
+%term dup_step       = 51 /**< duplicate generating path step */
+%term guide_step     = 52 /**< path step (with guide information) */
+%term id             = 53 /**< Operator representing a fn:id node lookup */
+%term idref          = 54 /**< Operator representing a fn:idref node lookup */
+%term doc_tbl        = 55 /**< document relation (is also a fragment) */
+%term doc_access     = 56 /**< document access necessary for pf:string-value */
 %term twig           = 60 /**< twig root operator */
 %term fcns           = 61 /**< twig constructor sequence */
 %term docnode        = 62 /**< document node-constructing operator */
@@ -132,16 +133,15 @@
 %term processi       = 67 /**< processing instruction-constr. operator */
 %term content        = 68 /**< constructor content operator (elem|doc) */
 %term merge_adjacent = 69 /**< operator for pf:merge-adjacent-text-nodes
-                               builtin function */
+%term                                   builtin function */
 %term roots_         = 70 /**< algebraic repres. of the roots of newly
-                               created xml nodes (e.g. element());
-                               schema: iter | pos | item */
-/* all operators below represent xml node fragments with no schema */
+                                  created xml nodes (e.g. element());
+                                  schema: iter | pos | item */
+    /* all operators below represent xml node fragments with no schema */
 %term fragment       = 71 /**< representation of a node fragment */
 %term frag_union     = 72 /**< special node type used to form an algebraic
-                               union of fragments */
+                                  union of fragments */
 %term empty_frag     = 73 /**< representation of an empty fragment */
-                     
 %term cond_err       = 80 /**< facility to trigger runtime errors */
 %term nil            = 81 /**< end of the list of parameters */
 %term trace          = 82 /**< debug operator */
@@ -150,15 +150,16 @@
 %term rec_fix        = 85 /**< operator representing a tail recursion */
 %term rec_param      = 86 /**< list of parameters of the recursion */
 %term rec_arg        = 87 /**< reference to the arguments of a parameter
-                               in the recursion */
+                                  in the recursion */
 %term rec_base       = 88 /**< base of the DAG describing the recursion */
+    
 %term proxy          = 96 /**< proxy operator that represents a group
-                               of operators */
+                                  of operators */
 %term proxy_base     = 97 /**< completes the content of the proxy 
-                               (a virtual base table) */
+                                  (a virtual base table) */
 %term cross_mvd      = 98 /**< clone column aware cross product */
 %term eqjoin_unq     = 99 /**< clone column aware equi-join */                            
-/* builtin support for XQuery functions */
+    /* builtin support for XQuery functions */
 %term string_join    =102 /**< fn:string-join */
 
 %term dummy          =120 /**< dummy operator that does nothing */
@@ -204,10 +205,11 @@ Rel:    string_join (Rel, Rel)                       = 43  (10);
 
 Rel:    rownum (Rel)                                 = 50  (10);
 Rel:    number (Rel)                                 = 51  (10);
-Rel:    ScjRel                                       = 52  (50);
+Rel:    rank (Rel)                                   = 223 (10);
+Rel:    StRel                                        = 52  (50);
 
-ScjRel: scjoin (Frag, Rel)                           = 53  (10);
-ScjRel: scjoin (Frag, ScjRel)                        = 54  (10);
+StRel:  step (Frag, Rel)                             = 53  (10);
+StRel:  step (Frag, StRel)                           = 54  (10);
 Rel:    doc_access (Frag, Rel)                       = 55  (10);
 
 Rel:    roots_ (Constr)                              = 60  (10);
@@ -216,7 +218,7 @@ Frag:   frag_union (Frag, Frag)                      = 62  (10);
 Frag:   frag_union (empty_frag, Frag)                = 63  (10);
 Frag:   empty_frag                                   = 64  (10);
 
-List:   fcns (Constra, List)                          = 219 (10);
+List:   fcns (Constra, List)                         = 219 (10);
 List:   nil                                          = 220 (10);
 
 Constr: doc_tbl (Rel)                                = 70  (10);
@@ -253,7 +255,7 @@ Rel:    eqjoin_unq (Rel, Rel)                        = 113 (10);
 Rel:    cross_mvd (Rel, Rel)                         = 114 (10);
 Rel:    thetajoin (Rel, Rel)                         = 115 (10);
 
-Rel:    disjunion (count(Rel), attach(difference(Rel, project(count(Rel))))) = 222 (5); 
+Rel:    disjunion (count(Rel), attach(difference(Rel, project(count(Rel))))) = 222 (5);
 
 %%
 
@@ -1118,30 +1120,100 @@ reduce (PFla_op_t * p, int goalnt)
 
               PFsql_t *clmnlist = NULL;
               /* adding information about the result relation */
-              for (unsigned int col = 0; col < R (p)->schema.count; col++)
-              {
-                  for (PFalg_simple_type_t t = 1; t; t <<= 1)
-                  {
-                      if (t & TYPE_MASK (R (p)->schema.items[col].type))
-                      {
-                          schm_inf = schema_information (schm_inf,
-                                  schema_expression
-                                  (schema_result (),
-                                   column_name
-                                   (sql_column_name_new
-                                    (R (p)->schema.
-                                     items[col].name,
-                                     t)->ident)));
-                          clmnlist =
-                              column_list (clmnlist,
-                                      column_name (sql_column_name_new
-                                          (R (p)->schema.items[col].
-                                           name, t)->ident));
-                      }
-                  }
-              }
+              schm_inf = schema_information
+                         (
+                          schm_inf,
+                          schema_expression
+                          (
+                           schema_result(),
+                           column_name
+                           (
+                            sql_column_name_new
+                            (
+                             att_pos,
+                             aat_nat
+                            )->ident
+                           )
+                          )
+                         );
+
+              clmnlist = column_list
+                         (
+                          clmnlist,
+                          column_name
+                          (
+                           sql_column_name_new (att_pos, aat_nat)->ident
+                          )
+                         );
+
+              schm_inf = schema_information
+                         (
+                          schm_inf,
+                          schema_expression
+                          (
+                           schema_result(),
+                           column_name
+                           (
+                            sql_column_name_new
+                            (
+                             att_item,
+                             type_of (R (p),
+                                        p->sem.serialize.item)
+                                        
+                            )->ident
+                           )
+                          )
+                         );
+
+              clmnlist = column_list
+                         (
+                          clmnlist,
+                          column_name
+                          (
+                           sql_column_name_new (att_item,
+                                type_of (R (p), p->sem.serialize.item))->ident
+                          )
+                         );
 
               PFsql_t *result = result (clmnlist);
+
+              PFsql_t *result_query = 
+                        select
+                        (
+                            select_list
+                            (
+                             column_assign
+                             (
+                              sql_expression
+                              (
+                               R (p)->sql_ann->colmap,
+                               p->sem.serialize.pos,
+                               type_of (R (p), p->sem.serialize.pos)
+                              ),
+                              column_name
+                              (
+                               sql_column_name_new (att_pos, aat_nat)->ident
+                              )
+                             ),
+                             column_assign
+                             (
+                              sql_expression
+                              (
+                               R (p)->sql_ann->colmap,
+                               p->sem.serialize.item,
+                               type_of (R (p), p->sem.serialize.item)
+                              ),
+                              column_name
+                              (
+                               sql_column_name_new (att_item, aat_pre)->ident
+                              )
+                             )
+                            ),
+                            R (p)->sql_ann->sfw->child[1],
+                            R (p)->sql_ann->sfw->child[2],
+                            R (p)->sql_ann->sfw->child[3]
+                       );
+                            
 
               schm_inf = schema_information (schm_inf,
                       schema_expression (schema_result (),
@@ -1193,7 +1265,7 @@ reduce (PFla_op_t * p, int goalnt)
               execute (comment ("===================="),
                        comment ("= RESULT RELATIONS ="),
                        comment ("===================="),
-                        bind (result, R (p)->sql_ann->sfw));
+                        bind (result, result_query));
 
               sql_correlation_name_t *coll_crrl = sql_correlation_name_new ();
 
@@ -2164,8 +2236,59 @@ reduce (PFla_op_t * p, int goalnt)
                   (NULL, from_list (L (p)->sql_ann->sfw->child[1]), NULL, NULL);
           }
           break;
+      /* Rel:    rank (Rel) */
+      case 223:
+      {
+        /* copy all existing expressions */
+        for (unsigned int i = 0; 
+            i < PFarray_last (L (p)->sql_ann->colmap); i++) {
+            sql_column_env_t entry =
+                sql_column_env_at (L (p)->sql_ann->colmap, i);
+            sql_column_env_add (p->sql_ann->colmap, entry.att, entry.type,
+                                    entry.expression);
+        }
 
-          /* Rel:    rownum (Rel) */
+        where_env_copy (L (p)->sql_ann->wheremap, p->sql_ann->wheremap);
+
+        /* construct the sortby list used by the rank operator */
+        PFsql_t *srtbylist = NULL;
+        for (int j = PFord_count (p->sem.rank.sortby)-1; j >= 0;
+                    j--) {
+            srtbylist = sortkey_expressions
+                        (
+                         srtbylist,
+                         order
+                         (
+                          sql_expression (L (p)->sql_ann->colmap,
+                           PFord_order_col_at (p->sem.rank.sortby, j),
+                           type_of (L (p), PFord_order_col_at (
+                                p->sem.rank.sortby, j))),
+                          (PFord_order_dir_at (p->sem.rank.sortby, j))?
+                            desc():asc()
+                         )
+                        );
+        }
+
+        sql_column_env_add (p->sql_ann->colmap,
+                    p->sem.rank.res,
+                    type_of (p, p->sem.rank.res),
+                    over
+                    (
+                     rownumber (),
+                     window_clause
+                     (
+                      NULL,
+                      order_by (srtbylist)
+                     )
+                    ));
+
+         assert (L (p)->sql_ann->sfw);
+
+         sql_stmt = select (NULL, L (p)->sql_ann->sfw->child[1], NULL, NULL);
+
+         p->dirty = true;
+      } break;
+      /* Rel:    rownum (Rel) */
       case 50:
           {
               /* copy all existing expressions */
@@ -2252,7 +2375,7 @@ reduce (PFla_op_t * p, int goalnt)
               p->dirty = true;
           } break;
 
-          /* Rel:    ScjRel */
+          /* Rel:    StRel */
       case 52:
           {
               sql_stmt = select
@@ -2266,7 +2389,7 @@ reduce (PFla_op_t * p, int goalnt)
           }
           break;
 
-          /* ScjRel: scjoin (Frag, Rel) */
+          /* StRel: step (Frag, Rel) */
       case 53:
           {
               p->sql_ann = llscj (p->sem.step.axis, LR (p), p);
@@ -2289,7 +2412,7 @@ reduce (PFla_op_t * p, int goalnt)
           }
           break;
 
-          /* ScjRel: scjoin (Frag, ScjRel) */
+          /* StRel: step (Frag, StRel) */
       case 54:
           {
               /* combine more than one staircase join steps */
@@ -3177,7 +3300,7 @@ reduce (PFla_op_t * p, int goalnt)
                             sql_col_pre)->ident),
                     column_name (sql_column_name_new (
                             att_pos,
-                            type_of (R (p), p->sem.iter_pos_item.pos))->ident),
+                            aat_nat)->ident),
                     column_name (sql_column_name_new (
                             att_iter,
                             type_of ( R (p), p->sem.iter_pos_item.iter))->ident)
@@ -3972,8 +4095,7 @@ gen_content (PFla_op_t *p, PFla_op_t *frag,
              sql_expression (R (p)->sql_ann->colmap,
                  p->sem.iter_pos_item.pos,
                  type_of (R (p), p->sem.iter_pos_item.pos)),
-             column_name (sql_column_name_new (p->sem.iter_pos_item.pos,
-                     type_of (R (p), p->sem.iter_pos_item.iter))->ident)
+             column_name (sql_column_name_new (att_pos, aat_nat)->ident)
              ),
          column_assign (
              sql_expression (R (p)->sql_ann->colmap, 
@@ -4090,11 +4212,11 @@ gen_toplevel_content (PFla_op_t *p, PFla_op_t *frag,
         PFsql_t *wherelist = NULL;
         for (unsigned int i = 0;
 	     i < PFarray_last (R (p)->sql_ann->wheremap); i++)
-	  {
-	    sql_where_env_t entry =
-	      sql_where_env_at (R (p)->sql_ann->wheremap, i);
-	    wherelist = where_list (wherelist, entry.expression);
-	  }
+        {
+            sql_where_env_t entry =
+              sql_where_env_at (R (p)->sql_ann->wheremap, i);
+            wherelist = where_list (wherelist, entry.expression);
+        }
 
         wherelist = where_list (wherelist,
               eq
@@ -4435,10 +4557,8 @@ gen_select (const PFla_op_t * p, PFsql_alg_ann_t * ann)
 
   for (unsigned int i = 0; i < p->schema.count; i++)
     {
-      for (PFalg_simple_type_t t = 1; t; t <<= 1)
-	{
-	  if (t & TYPE_MASK (p->schema.items[i].type))
-	    {
+      for (PFalg_simple_type_t t = 1; t; t <<= 1) {
+	  if (t & TYPE_MASK (p->schema.items[i].type)) {
 
 	      /* get the sql operation bound to
 	       * att/type tuple */
@@ -5385,12 +5505,12 @@ llscj (PFalg_axis_t axis, const PFla_op_t * frag, const PFla_op_t * p)
   /* this new relation we need to get the attributes beside the pre
      value */
   if (leg_crrl->name == 0)
-    {
-      PFsql_t *fr2 = table_deco (alias (frag->sql_ann->fragment,
-					correlation_name (crrl2->name)),
-				 true);
-      fromlist = from_list_add (fromlist, fr2);
-    }
+  {
+    PFsql_t *fr2 = table_deco (alias (frag->sql_ann->fragment,
+  				correlation_name (crrl2->name)),
+  			 true);
+    fromlist = from_list_add (fromlist, fr2);
+  }
 
   /* this relation we need to get the new elements we want to find
      with the axis steps */
@@ -5403,7 +5523,7 @@ llscj (PFalg_axis_t axis, const PFla_op_t * frag, const PFla_op_t * p)
   /* copy iter and item expression to current environment */
   sql_column_env_add (ret->colmap, pa_iter, aat_nat, iter);
   sql_column_env_add (ret->colmap,
-		      pa_item, PFty_subtype (ty,
+		      p->sem.step.item_res, PFty_subtype (ty,
 					     PFty_xs_anyAttribute ())?
 		      aat_attr : aat_pre,
 		      crrl_deco (column_name

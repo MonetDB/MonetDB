@@ -198,6 +198,7 @@ print_clm_list(PFsql_t *n)
             break;
 
         default:
+            printf ("n->kind %i\n", n->kind);
             assert (0);
     }
 }
@@ -712,7 +713,7 @@ print_from_list (FILE *f, PFsql_t *n, int i)
             indent (f, i);
             print_from_list (f, R(n), i);
             break;
-            
+
         case sql_alias:
         case sql_tb_name:
         case sql_tbl_name:

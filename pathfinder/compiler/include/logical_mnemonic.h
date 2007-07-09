@@ -195,6 +195,9 @@
 
 #define nil() PFla_nil ()
 
+/* duplicates a node with its given children */
+#define duplicate(n, l, r)  PFla_op_duplicate ((n), (l), (r))
+
 /* Constructor for debug operator */
 #define trace(a,b,c,d,e) PFla_trace ((a),(b),(c),(d),(e))
 
