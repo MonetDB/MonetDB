@@ -9,6 +9,8 @@ stdout of test 'remote02` in directory 'src/modules/mal` itself:
 
 
 
+
+
 # MonetDB Server v5.1.0
 # Copyright (c) 1993-2007 CWI, all rights reserved
 # Compiled for x86_64-pc-linux-gnu/64bit with 64bit OIDs dynamically linked
@@ -56,27 +58,38 @@ function user.main():void;	# 0  (main:void)
     a := "Fabian!";	# 9  (a:str)<-(_13:str)
     b := 4.30000019;	# 10  (b:flt)<-(_15:flt)
     c := 12;	# 11  (c:int)<-(_17:int)
-# store the values 	# 12  (_18:str)
-    i := remote.put("test",a);	# 13 RMTput (i:str)<-(_9:str)(a:str)
-    j := remote.put("test",b);	# 14 RMTput (j:str)<-(_9:str)(b:flt)
-    k := remote.put("test",c);	# 15 RMTput (k:str)<-(_9:str)(c:int)
-# retrieve the value 	# 16  (_22:str)
-    r := remote.get("test",i);	# 17 RMTget (r:any)<-(_9:str)(i:str)
-    s := remote.get("test",j);	# 18 RMTget (s:any)<-(_9:str)(j:str)
-    t := remote.get("test",k);	# 19 RMTget (t:any)<-(_9:str)(k:str)
-# see if it really is here 	# 20  (_26:str)
-    io.print(r);	# 21 IOprint_val (_27:void)<-(r:any)
-    io.print(s);	# 22 IOprint_val (_28:void)<-(s:any)
-    io.print(t);	# 23 IOprint_val (_29:void)<-(t:any)
-# help testweb a bit, since currently no cleanup is done on server 	# 24  (_30:str)
-# shutdown 	# 25  (_31:str)
-    remote.destroy("test");	# 26 RMTdestroy (_32:void)<-(_9:str)
-end main;	# 27  
+    d := bat.new(:str,:int);	# 12 CMDBATnew (d:bat[:str,:int])<-(_19:str)(_20:int)
+    bat.insert(d,"bla",1);	# 13 BKCinsert_bun (_21:void)<-(d:bat[:str,:int])(_22:str)(_23:int)
+# store the values 	# 14  (_24:str)
+    i := remote.put("test",a);	# 15 RMTput (i:str)<-(_9:str)(a:str)
+    j := remote.put("test",b);	# 16 RMTput (j:str)<-(_9:str)(b:flt)
+    k := remote.put("test",c);	# 17 RMTput (k:str)<-(_9:str)(c:int)
+    l := remote.put("test",d);	# 18 RMTput (l:str)<-(_9:str)(d:bat[:str,:int])
+# retrieve the value 	# 19  (_29:str)
+    r := remote.get("test",i);	# 20 RMTget (r:any)<-(_9:str)(i:str)
+    s := remote.get("test",j);	# 21 RMTget (s:any)<-(_9:str)(j:str)
+    t := remote.get("test",k);	# 22 RMTget (t:any)<-(_9:str)(k:str)
+    u := remote.get("test",l);	# 23 RMTget (u:any)<-(_9:str)(l:str)
+# see if it really is here 	# 24  (_34:str)
+    io.print(r);	# 25 IOprint_val (_35:void)<-(r:any)
+    io.print(s);	# 26 IOprint_val (_36:void)<-(s:any)
+    io.print(t);	# 27 IOprint_val (_37:void)<-(t:any)
+    io.print(u);	# 28 IOprint_val (_38:void)<-(u:any)
+# help testweb a bit, since currently no cleanup is done on server 	# 29  (_39:str)
+# shutdown 	# 30  (_40:str)
+    remote.destroy("test");	# 31 RMTdestroy (_41:void)<-(_9:str)
+end main;	# 32  
 [ "Fabian!" ]
 [ 4.30000019 ]
 [ 12 ]
+#-----------------#
+# h	t	  # name
+# str	int	  # type
+#-----------------#
+[ "bla",  1	  ]
+#MALexit: clients still active
 
-# 14:16:07 >  
-# 14:16:07 >  Done.
-# 14:16:07 >  
+# 16:03:25 >  
+# 16:03:25 >  Done.
+# 16:03:25 >  
 

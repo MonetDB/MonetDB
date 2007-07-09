@@ -203,7 +203,7 @@ remote_export str RMTserveget(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
  * the tuple is the MAL type of the object.  Depending on this, the
  * other columns are filled in.  For scalar data types, the second
  * column represents the value of the scalar as a string, e.g.
- * [ "int", "1" ]
+ * [ "int", 1 ]
  * More complex types that need to be fetched afterwards just get extra
  * information where available, e.g. to describe a BAT with oid head and
  * str tail:
@@ -230,6 +230,8 @@ str RMTserveget(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 				getTypeName(n->type));
 	} else if (isaBatType(n->type)) {
 		char head[10], tail[10];
+		BAT *b;
+
 		if (getHeadIndex(n->type) > 0) {
 			sprintf(head, "any%c%d", TMPMARKER, getHeadIndex(n->type));
 		} else if (getHeadType(n->type) == TYPE_any) {
@@ -245,16 +247,21 @@ str RMTserveget(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 			sprintf(tail, "%s", ATOMname(getTailType(n->type)));
 		}
 
-		snprintf(ret, 255, "[ \"bat\",\t\"%s\",\t\"%s\"\t]", head, tail);
+		if ((b = BATdescriptor(v->val.ival)) == NULL)
+			throw(MAL, "remote.serveget",
+					"invalid BAT descriptor for '%s'", name);
+		snprintf(ret, 255, "[ \"bat\",\t\"%s\",\t\"%s\",\t" SZFMT "\t]",
+				head, tail, BATcount(b));
+		BBPunfix(b->batCacheid);
 	} else {
 		str val = NULL;
 		if (ATOMvarsized(n->type)) {
 			ATOMformat(n->type, *(str *)v, &val);
-			snprintf(ret, 255, "[ \"%s\",\t%s\t]", ATOMname(n->type), val);
 		} else {
 			ATOMformat(n->type, v, &val);
-			snprintf(ret, 255, "[ \"%s\",\t\"%s\"\t]", ATOMname(n->type), val);
 		}
+		snprintf(ret, 255, "[ \"%s\",\t%s\t]", ATOMname(n->type), val);
+		GDKfree(val);
 	}
 	ret[255] = '\0';
 
@@ -274,7 +281,7 @@ remote_export str RMTget(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
  * get fetches the object referenced by ident over connection conn.
  */
 str RMTget(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
-	str ident, conn, type;
+	str ident, conn, type, tmp;
 	ValPtr v;
 	int vtype;
 	char qbuf[512];
@@ -292,11 +299,11 @@ str RMTget(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		throw(ILLARG, "remote.get", "identifier expected, got '%s'", ident);
 
 	/* lookup conn, set mconn if valid */
-	rethrow("remote.get", type, RMTfindconn(&c, conn));
+	rethrow("remote.get", tmp, RMTfindconn(&c, conn));
 	mconn = c->mconn;
 
 	snprintf(qbuf, 511, "remote.serveget(\"%s\");", ident);
-	rethrow("remote.get", type, RMTquery(&mhdl, "remote.get", mconn, qbuf));
+	rethrow("remote.get", tmp, RMTquery(&mhdl, "remote.get", mconn, qbuf));
 
 	if (mapi_get_row_count(mhdl) != 1) {
 		int c = mapi_get_row_count(mhdl);
@@ -315,21 +322,67 @@ str RMTget(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 
 	vtype = getTypeIndex(type, strlen(type), -1);
 	if (vtype == TYPE_bat) {
-		int h, t;
-		str val;
+		int h, t, s;
+		ptr l, r;
+		lng len;
+		str val, var;
+		BAT *b;
+
 		/* no checks on the existence of the values */
 		val = mapi_fetch_field(mhdl, 1);
 		h = getTypeIndex(val, strlen(val), -1);
 		val = mapi_fetch_field(mhdl, 2);
 		t = getTypeIndex(val, strlen(val), -1);
 		vtype = newBatType(h, t);
+		val = mapi_fetch_field(mhdl, 3);
+		len = atol(val);
+		mapi_close_handle(mhdl);
+
+#if SIZEOF_SIZE_T == 4
+		if (len & 0x80000000FFFFFFFF != len)
+			throw(MAL, "remote.get", "remote BAT is too big for this "
+					"32-bits (configured) system");
+#endif
+		/* FIXME: len < 0 ???? */
+
+		snprintf(qbuf, 511, "io.print(%s);", ident);
+		rethrow("remote.get", tmp, RMTquery(&mhdl, "remote.get", mconn, qbuf));
+
+		if (mapi_get_row_count(mhdl) != len) {
+			int rc = mapi_get_row_count(mhdl);
+			mapi_close_handle(mhdl);
+			throw(MAL, "remote.get", "expected " LLFMT " tuples, "
+					"will get only %d", len, rc);
+		}
+		b = BATnew(h, t, len);
+
+		/* some checks maybe ... */
+		while (len-- > 0) {
+			mapi_fetch_row(mhdl);
+			val = mapi_fetch_field(mhdl, 0); /* should be there */
+			var = mapi_fetch_field(mhdl, 1);
+			if (ATOMvarsized(h)) {
+				l = (ptr)val;
+			} else {
+				s = 0;
+				l = NULL;
+				ATOMfromstr(h, &l, &s, val);
+			}
+			if (ATOMvarsized(t)) {
+				r = (ptr)val;
+			} else {
+				s = 0;
+				r = NULL;
+				ATOMfromstr(t, &r, &s, var);
+			}
+			BUNins(b, l, r, FALSE);
+			if (!ATOMvarsized(h)) GDKfree(l);
+			if (!ATOMvarsized(t)) GDKfree(r);
+		}
 
 		/* adjust the return type */
 		v->vtype = vtype;
-		/* TODO: get the BAT, etc. */
-		/* v->val.ival = bid; */
-		mapi_close_handle(mhdl);
-		throw(MAL, "remote.get", "fetching BATs not yet implemented!");
+		v->val.ival = b->batCacheid;
 	} else if (vtype == TYPE_any) {
 		mapi_close_handle(mhdl);
 		throw(MAL, "remote.get", "can't handle variables of type 'any'");
@@ -406,7 +459,7 @@ remote_export str RMTput(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
  */
 str RMTput(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	str ident, conn, type;
-	int i;
+	int i, bid;
 	connection c;
 	ValPtr v;
 	Mapi mconn;
@@ -443,8 +496,52 @@ str RMTput(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		throw(MAL, "remote.put", "cannot deal with '%s' type",
 				getTypeName(i));
 	} else if (isaBatType(i)) {
-		/* TODO: do BAT handling */
-		throw(MAL, "remote.put", "storing of BATs not yet supported");
+		/* naive approach using bat.new() and bat.insert() calls */
+		char head[10], tail[10];
+		char qbuf[512]; /* FIXME: this should be dynamic */
+		BAT *b;
+		BUN p, q;
+		str headv, tailv;
+
+		if (getHeadIndex(i) > 0) {
+			sprintf(head, "any%c%d", TMPMARKER, getHeadIndex(i));
+		} else if (getHeadType(i) == TYPE_any) {
+			sprintf(head, "any");
+		} else {
+			sprintf(head, "%s", ATOMname(getHeadType(i)));
+		}
+		if (getTailIndex(i) > 0) {
+			sprintf(tail, "any%c%d", TMPMARKER, getTailIndex(i));
+		} else if (getTailType(i) == TYPE_any) {
+			sprintf(tail, "any");
+		} else {
+			sprintf(tail, "%s", ATOMname(getTailType(i)));
+		}
+
+		bid = *(int *)getArgReference(stk, pci, 2);
+		if ((b = BATdescriptor(bid)) == NULL)
+			throw(MAL, "remote.put", "cannot access BAT descriptor");
+
+		qbuf[511] = '\0';
+		snprintf(qbuf, 511, "%s := bat.new(:%s, :%s, " SZFMT ");",
+				ident, head, tail, BATcount(b));
+
+		rethrow("remote.put", type, RMTquery(&mhdl, "remote.put", mconn, qbuf));
+		mapi_close_handle(mhdl);
+
+		headv = tailv = NULL;
+		BATloop(b, p, q) {
+			ATOMformat(getHeadType(i), BUNhead(b, p), &headv);
+			ATOMformat(getTailType(i), BUNtail(b, p), &tailv);
+			snprintf(qbuf, 511, "bat.insert(%s, %s:%s, %s:%s);",
+					ident, headv, head, tailv, tail);
+			rethrow("remote.put", type, RMTquery(&mhdl, "remote.put", mconn, qbuf));
+			/* we leak headv and tailv here if an exception is thrown */
+			mapi_close_handle(mhdl);
+		}
+		GDKfree(headv);
+		GDKfree(tailv);
+		BBPunfix(b->batCacheid);
 	} else {
 		str val = NULL;
 		char qbuf[512]; /* FIXME: this should be dynamic */
@@ -456,6 +553,7 @@ str RMTput(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		}
 		snprintf(qbuf, 511, "%s := %s:%s;\n", ident, val, ATOMname(i));
 		qbuf[511] = '\0';
+		GDKfree(val);
 		rethrow("remote.put", type, RMTquery(&mhdl, "remote.put", mconn, qbuf));
 		mapi_close_handle(mhdl);
 	}

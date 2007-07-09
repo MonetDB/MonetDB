@@ -12,21 +12,26 @@ remote.create("test", h, p, nil:str, "monetdb", "monetdb");
 a := "Fabian!";
 b := 4.3;
 c := 12;
+d := bat.new(:str, :int);
+bat.insert(d, "bla", 1);
 
 # store the values
 i := remote.put("test", a);
 j := remote.put("test", b);
 k := remote.put("test", c);
+l := remote.put("test", d);
 
 # retrieve the value
 r := remote.get("test", i);
 s := remote.get("test", j);
 t := remote.get("test", k);
+u := remote.get("test", l);
 
 # see if it really is here
 io.print(r);
 io.print(s);
 io.print(t);
+io.print(u);
 
 # help testweb a bit, since currently no cleanup is done on server
 # shutdown
