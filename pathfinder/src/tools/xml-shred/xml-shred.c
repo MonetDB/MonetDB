@@ -157,11 +157,7 @@ static nat post;
 static nat rank;
 static nat att_id;
 
-<<<<<<< xml-shred.c
 static char *format = "%e,%s,%l,%k,%t";
-=======
-static char *format = "%e, %s, %l, %k, %t, %g";
->>>>>>> 1.8
 FILE *out;
 FILE *out_attr;
 char  filename[FILENAME_MAX];
