@@ -684,11 +684,11 @@ la_dot (PFarray_t *dot, PFla_op_t *n)
                 default: PFoops (OOPS_FATAL,
                         "unknown XPath axis in dot output");
             }
-
             if (n->kind == la_step)
-                PFarray_printf (dot, "%s (%s, %s)", 
+                PFarray_printf (dot, "%s (%s, %s:%s)", 
                                 PFty_str (n->sem.step.ty),
                                 PFatt_str (n->sem.step.iter),
+                                PFatt_str (n->sem.step.item_res),
                                 PFatt_str (n->sem.step.item));
             else if (n->kind == la_dup_step)
                 PFarray_printf (dot, "%s (%s:%s)", 
@@ -724,9 +724,10 @@ la_dot (PFarray_t *dot, PFla_op_t *n)
             break;
 
         case la_doc_tbl:
-            PFarray_printf (dot, "%s (%s, %s)", 
+            PFarray_printf (dot, "%s (%s, %s:%s)", 
                             a_id[n->kind],
                             PFatt_str (n->sem.doc_tbl.iter),
+                            PFatt_str (n->sem.doc_tbl.item_res),
                             PFatt_str (n->sem.doc_tbl.item));
             break;
 
