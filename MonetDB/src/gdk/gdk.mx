@@ -2209,6 +2209,7 @@ gdk_export size_t GDK_mem_bigsize;	/* size after which we use VM rather than hea
 gdk_export size_t GDK_mem_maxsize;	/* max allowed size of committed memory */
 gdk_export size_t GDK_vm_minsize;	/* smallest size allowed for a vm block */
 gdk_export size_t GDK_vm_maxsize;	/* max allowed size of reserverd vm */
+gdk_export int    GDK_vm_trim;		/* run vmtrim thread */
 
 gdk_export size_t GDKmem_inuse(void);	/* RAM/swapmem that MonetDB is really using now */
 gdk_export size_t GDKmem_cursize(void);	/* RAM/swapmem that MonetDB has claimed from OS */

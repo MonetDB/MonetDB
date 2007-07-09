@@ -393,6 +393,7 @@ size_t GDK_vm_maxsize = GDK_VM_MAXSIZE;
 
 int GDK_vm_allocs = 0;
 int GDK_mem_allocs = 0;
+int GDK_vm_trim = 1;
 
 /* at least each 50M of memory increase, BBPtrim is run */
 #define CHKMEM(meminc, vminc) do {					\
@@ -1460,7 +1461,7 @@ GDKinit(char *dbname, char *dbfarm, int alloc_map)
 	BATrename(GDKenv, "monet_environment");
 	BATmode(GDKenv, TRANSIENT);
 #ifndef WIN32
-	if (!GDKembedded && GDKgetenv_isyes("gdk_vmtrim")) {
+	if (!GDKembedded && GDK_vm_trim) {
 		MT_Id t;
 
 		MT_create_thread(&t, GDKvmtrim, &GDK_mem_maxsize);
