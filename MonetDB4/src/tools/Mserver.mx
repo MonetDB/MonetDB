@@ -167,9 +167,11 @@ Monet_init(opt *set, int setlen)
 	if ((p = mo_find_option(set, setlen, "gdk_debug")))
 		GDKdebug = strtol(p, NULL, 10);
 
-	if ((p = mo_find_option(set, setlen, "gdk_mem_pagebits"))) {
+	if ((p = mo_find_option(set, setlen, "gdk_mem_pagebits"))) 
 		GDK_mem_pagebits = strtol(p, NULL, 10);
-        }
+
+	if ((p = mo_find_option(set, setlen, "gdk_vmtrim"))) 
+		GDK_vm_trim = strcasecmp(p, "yes") == 0;
 
 	/* determine Monet's kernel settings. */
 	if (!GDKinit(dbname, dbfarm, strcasecmp(alloc_map, "yes") == 0)) {

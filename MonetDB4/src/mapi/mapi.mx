@@ -856,6 +856,7 @@ Get the new information for the server socket and start listening.
 		struct timeval tv;
 		fd_set fds;
 		SOCKET msgsock;
+
 		FD_ZERO(&fds);
 		if (sock != INVALID_SOCKET)
 			FD_SET(sock, &fds);

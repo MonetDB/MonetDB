@@ -264,6 +264,7 @@ typedef struct ascii_io_t {
 	void *extra;
 	void *data;
 	int len;
+	int nillen;
 } ascii_io;
 
 typedef struct ascii_load_t {
@@ -384,19 +385,12 @@ ASCIIadt_frStr(void *extra, int type, char *s, char *e, char quote)
 {
 	ascii_io *c = extra;
 
-	if (s == NULL || (!(type == TYPE_str && quote) && strcmp(s, "nil") == 0)) {
-        	ptr src = ATOMnilptr(type);
-        	int len = ATOMlen(ATOMtype(type), src);
-
-		if (c->len < len) {
-			c->len = len;
-			c->data = GDKrealloc(c->data,len); 
-		}
-        	memcpy(c->data, src, len);
+	if (s == NULL || (!quote && strcmp(s, "nil") == 0)) {
+        	memcpy(c->data, ATOMnilptr(type), c->nillen);
 	} else if (type == TYPE_str) {
 		return ASCIIstrFrStr(c, s, e);
 	} else {
-		(void) (*BATatoms[type].atomFromStr) (s, &c->len, (ptr) &c->data);
+		(void)(*BATatoms[type].atomFromStr)(s, &c->len, (ptr) &c->data);
 	}
 	return c->data;
 }
@@ -431,8 +425,9 @@ create_loadformat(ascii *as, BAT *names, BAT *seps, BAT *types)
 		fmt[p].tostr = &ASCIIadt_toStr;
 		fmt[p].frstr = &ASCIIadt_frStr;
 		fmt[p].extra = fmt+p;
-		fmt[p].data = NULL;
-		fmt[p].len = 0;
+		fmt[p].len = fmt[p].nillen = 
+			ATOMlen(fmt[p].adt, ATOMnilptr(fmt[p].adt));
+		fmt[p].data = GDKmalloc(fmt[p].len);
 		if (ascii_io_debug)
 			stream_printf(GDKerr, "%s\n", fmt[p].name);
 	}
@@ -467,6 +462,7 @@ create_dumpformat(ascii *as, BAT *names, BAT *seps, BAT *bats)
 		fmt[p].extra = fmt+p;
 		fmt[p].data = NULL;
 		fmt[p].len = 0;
+		fmt[p].nillen = 0;
 		BBPunfix(b->batCacheid);
 	}
 	return as->nr_attrs;
@@ -579,18 +575,13 @@ ASCIIcollect_bats(ascii *as)
 	return bats;
 }
 
-static INLINE int
-myisspace(int s)
-{
-	return s == ' ' || s == '\t' || s == '\n';
-}
+#define myisspace(s)  (s == ' ' || s == '\t' || s == '\n')
 
 static INLINE char *
 lstrip(char *s)
 {
-	while (myisspace((int) *s)) {
+	while (myisspace((int) *s)) 
 		s++;
-	}
 	return s;
 }
 
@@ -598,13 +589,11 @@ static INLINE char *
 rstrip(char *e)
 {
 	e--;
-	while (myisspace((int) *e)) {
+	while (myisspace((int) *e)) 
 		e--;
-	}
 	e++;
-	if (e && *e) {
+	if (e && *e) 
 		*e = 0;
-	}
 	return e;
 }
 
@@ -658,8 +647,6 @@ insert_val(ascii_io *fmt, char *s, char *e, char quote)
 	}
 
 	res = (BUNappend(fmt->c, adt, FALSE) == NULL);
-	if (fmt->data != adt)
-		GDKfree(adt);
 	return res;
 }
 
@@ -691,51 +678,48 @@ insert_line(ascii * as, char *line)
 	ascii_io *fmt = as->format;
 	char *s, *e = 0, quote = 0;
 	size_t i;
-	int first = 0;
 
 	for (i = 0; i < as->nr_attrs && res == 0; i++) {
-		first = 1;
+		e = 0;
 		s = line;
+
+		/* skip leading spaces */
+		while (myisspace((int) (*line)))
+			line++;
+
+		/* recognize fields starting with a quote */
+		if ( (*line == '\"' || *line == '\'') && 
+	             (line == s || *(line - 1) != '\\')) {
+			quote = *line;
+			line++;
+			line = skip_string(line, quote);
+			if (!line) {
+				GDKerror("End of string (%c) missing in %s at line %d\n", quote, s, BATcount(fmt->c));
+				return -1;
+			}
+		}
+
 		/* skip until separator */
 		while (*line) {
-			if (*line == *(fmt[i].sep)){
-				if( fmt[i].sep[1] == 0 ||
-				    strncmp(fmt[i].sep, line, fmt[i].seplen) == 0) {
-					e = line;
-					break;
-				}
+			if (*line == *(fmt[i].sep) &&
+			    (fmt[i].sep[1] == 0 || 
+			     strncmp(fmt[i].sep, line, fmt[i].seplen) == 0)) {
+				e = line;
+				break;
 			}
-			/* recognize fields starting with a quote */
-			if (first && (*line == '\"' || *line == '\'')
-				   && (line == s || *(line - 1) != '\\')) {
-				quote = *line;
-				line++;
-				line = skip_string(line, quote);
-				if (!line) {
-					GDKerror("End of string (%c) missing in %s at line %d\n", quote, s, BATcount(fmt->c));
-					return -1;
-				}
-				first = 0;
-			} else {
-				if (first && !isspace((int) (*line)))
-					first = 0;
-				line++;
-			}
+			line++;
 		}
 		if (!e && i == (as->nr_attrs-1))
 			e = line;
 		if (e) {
-			char *end = e;
-
 			res |= insert_val(&fmt[i], s, e, quote);
 			quote = 0;
-			line = end + fmt[i].seplen;
+			line = e + fmt[i].seplen;
 		} else {
 			GDKerror("missing sep %s line %d field %d\n", 
 				fmt->sep, BATcount(fmt->c), i);
 			return -1;
 		}
-		e = 0;
 	}
 	return res;
 }
