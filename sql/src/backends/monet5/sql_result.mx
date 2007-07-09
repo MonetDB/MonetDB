@@ -395,15 +395,13 @@ _ASCIIadt_frStr(void *extra, int type, char *s, char *e, char quote)
 {
 	Column *c = extra;
 
-	if (s == NULL || (!(type == TYPE_str && quote) && strcasecmp(s, "NULL") == 0)) {
-        	ptr src = ATOMnilptr(type);
-        	int len = ATOMlen(ATOMtype(type), src);
-
-		if (c->len < len) {
-			c->len = len;
-			c->data = GDKrealloc(c->data,len); 
-		}
-        	memcpy(c->data, src, len);
+	if (s == NULL || (!quote && 
+			(s[0] == 'N' || s[0] == 'n') &&
+			(s[1] == 'U' || s[1] == 'u') &&
+			(s[2] == 'L' || s[2] == 'l') &&
+			(s[3] == 'L' || s[3] == 'l') &&
+			(s[4] == 0))) { 
+        	memcpy(c->data, ATOMnilptr(type), c->nillen);
 	} else if (type == TYPE_str) {
 		return TABLETstrFrStr(c, s, e);
 	} else {
@@ -484,8 +482,9 @@ mvc_import_table(mvc *m, bstream *bs, char *tname, char *sep, char *rsep, int sz
 			fmt[i].tostr = &_ASCIIadt_toStr;
 			fmt[i].frstr = &_ASCIIadt_frStr;
 			fmt[i].extra = fmt+i;
-			fmt[i].data = NULL;
-			fmt[i].len = 0;
+			fmt[i].len = fmt[i].nillen = 
+				ATOMlen(fmt[i].adt, ATOMnilptr(fmt[i].adt));
+			fmt[i].data = GDKmalloc(fmt[i].len);
 			fmt[i].c = NULL;
 			if (col->type.type->eclass == EC_DEC) {
 				fmt[i].tostr = &dec_tostr;
@@ -760,6 +759,7 @@ mvc_export_table(mvc *m, stream *s, res_table *t, BAT *order, size_t offset, siz
 		fmt[i].extra = fmt+i;
 		fmt[i].data = NULL;
 		fmt[i].len = 0;
+		fmt[i].nillen = 0;
 		if (c->type.type->eclass == EC_DEC) {
 			fmt[i].tostr = &dec_tostr;
 			fmt[i].frstr = &dec_frstr;

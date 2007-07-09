@@ -123,6 +123,9 @@ Over..
 [ "oid",	"int",	14	]
 [ "oid",	"int",	14	]
 [ "oid",	"int",	14	]
+[ "oid",	"int",	15	]
+[ "oid",	"int",	15	]
+[ "oid",	"int",	15	]
 [ "oid",	"int",	25	]
 [ "oid",	"int",	25	]
 [ "oid",	"int",	25	]
@@ -235,6 +238,7 @@ Over..
 [ "oid",	"str",	1	]
 [ "oid",	"str",	2	]
 [ "oid",	"str",	3	]
+[ "oid",	"str",	15	]
 [ "oid",	"str",	25	]
 [ "oid",	"str",	25	]
 [ "oid",	"str",	32	]
@@ -256,7 +260,7 @@ Over..
 % single_value,	count_ # name
 % char,	int # type
 % 10,	3 # length
-[ "persistent",	223	]
+[ "persistent",	227	]
 
 # 15:17:44 >  
 # 15:17:44 >  Done.

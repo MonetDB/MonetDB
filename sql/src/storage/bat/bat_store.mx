@@ -2662,12 +2662,14 @@ store_manager(void)
 
 		MT_sleep_ms(30000);
 		MT_set_lock(bs_lock, "store_manager");
-		if (transactions || !active || !sql_logger || 
+		if (nr_active || !active || !sql_logger || 
 			logger_changes(sql_logger) < 1000) {
 			MT_unset_lock(bs_lock, "store_manager");
 			continue;
 		}
 		logging = 1;
+		/* make sure we reset all transactions on re-activation */
+		schema_number++;
 		res = logger_restart(sql_logger);
 		MT_unset_lock(bs_lock, "store_manager");
 		if (logging && res == LOG_OK)

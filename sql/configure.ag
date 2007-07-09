@@ -49,9 +49,9 @@ AM_MONETDB_TOOLS()
 AM_MONETDB_OPTIONS()
 AM_MONETDB_LIBS()
 AM_MONETDB_UTILS()
-req_monetdb4_ver='4.18.0'
+req_monetdb4_ver='4.19.0'
 AM_MONETDB4($req_monetdb4_ver)
-req_monetdb5_ver='5.0.0'
+req_monetdb5_ver='5.1.0'
 AM_MONETDB5($req_monetdb5_ver)
 
 if test "x$have_monetdb4" != xyes -a "x$have_monetdb5" != xyes; then
