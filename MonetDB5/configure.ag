@@ -44,7 +44,7 @@ fi
 
 dnl Check for Monet
 # Check for Monet 
-req_monetdb_ver='1.18.0'
+req_monetdb_ver='1.19.0'
 AM_MONETDB_COMMON($req_monetdb_ver)
 if test "x$have_monetdb" != xyes; then
 	if test "x$MONETDBVERS" = "x"; then

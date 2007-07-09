@@ -403,6 +403,7 @@ typedef struct Column_t {
 	void *extra;
 	void *data;
 	int len;
+	int nillen;
 } Column;
 
 @-
@@ -947,25 +948,16 @@ TABLETstrFrStr(Column *c, char *s, char *e)
 ptr *
 TABLETadt_frStr(void *extra, int type, char *s, char *e, char quote)
 {
-	ptr *res = NULL;
 	Column *c = extra;
 
-	if (s == NULL || (!(type == TYPE_str && quote) && strcmp(s, "nil") == 0)) {
-        	ptr src = ATOMnilptr(type);
-        	int len = ATOMlen(ATOMtype(type), src);
-
-		if (c->len < len) {
-			c->len = len;
-			c->data = GDKrealloc(c->data,len); 
-		}
-        	memcpy(c->data, src, len);
+	if (s == NULL || (!quote && strcmp(s, "nil") == 0)) {
+        	memcpy(c->data, ATOMnilptr(type), c->nillen);
 	} else if (type == TYPE_str) {
 		return TABLETstrFrStr(c, s, e);
 	} else {
-		(void) (*BATatoms[type].atomFromStr) (s, &c->len, (ptr) &c->data);
-		res = c->data;
+		(void)(*BATatoms[type].atomFromStr)(s, &c->len, (ptr) &c->data);
 	}
-	return res;
+	return c->data;
 }
 
 int
@@ -1020,8 +1012,9 @@ create_loadformat(Tablet * as, BAT *names, BAT *seps, BAT *types)
 		fmt[p].tostr = &TABLETadt_toStr;
 		fmt[p].frstr = &TABLETadt_frStr;
 		fmt[p].extra = fmt+p;
-		fmt[p].data = NULL;
-		fmt[p].len = 0;
+		fmt[p].len = fmt[p].nillen = 
+			ATOMlen(fmt[p].adt, ATOMnilptr(fmt[p].adt));
+		fmt[p].data = GDKmalloc(fmt[p].len);
 		if (tablet_debug)
 			stream_printf(GDKerr, "%s\n", fmt[p].name);
 	}
@@ -1056,6 +1049,7 @@ create_dumpformat(Tablet * as, BAT *names, BAT *seps, BAT *bats)
 		fmt[p].extra = fmt+p;
 		fmt[p].data = NULL;
 		fmt[p].len = 0;
+		fmt[p].nillen = 0;
 		BBPunfix(b->batCacheid);
 	}
 	return as->nr_attrs;
@@ -1168,18 +1162,13 @@ TABLETcollect_bats(Tablet * as)
 	return bats;
 }
 
-static INLINE int
-myisspace(int s)
-{
-	return s == ' ' || s == '\t' || s == '\n';
-}
+#define myisspace(s)  (s == ' ' || s == '\t' || s == '\n')
 
 static INLINE char *
 lstrip(char *s)
 {
-	while (myisspace((int) *s)) {
+	while (myisspace((int) *s)) 
 		s++;
-	}
 	return s;
 }
 
@@ -1187,13 +1176,11 @@ static INLINE char *
 rstrip(char *e)
 {
 	e--;
-	while (myisspace((int) *e)) {
+	while (myisspace((int) *e)) 
 		e--;
-	}
 	e++;
-	if (e && *e) {
+	if (e && *e) 
 		*e = 0;
-	}
 	return e;
 }
 
@@ -1254,8 +1241,6 @@ insert_val(Column * fmt, char *s, char *e, char quote, ptr key, str *err)
 		res = (BUNins(fmt->c, key, adt, FALSE) == NULL);
 	else
 		res = (BUNappend(fmt->c, adt, FALSE) == NULL);
-	if (fmt->data != adt)
-		GDKfree(adt);
 	return res;
 }
 
@@ -1287,55 +1272,52 @@ insert_line(Tablet * as, char *line, ptr key)
 	Column *fmt = as->format;
 	char *s, *e = 0, quote = 0;
 	size_t i;
-	int first = 0;
 	char errmsg[BUFSIZ];
 
 	for (i = 0; i < as->nr_attrs && res == 0; i++) {
-		first = 1;
+		e = 0;
 		s = line;
+
+		/* skip leading spaces */
+		while (myisspace((int) (*line)))
+			line++;
+
+		/* recognize fields starting with a quote */
+		if ( (*line == '\"' || *line == '\'') && 
+	             (line == s || *(line - 1) != '\\')) {
+			quote = *line;
+			line++;
+			line = skip_string(line, quote);
+			if (!line) {
+				snprintf(errmsg,BUFSIZ, "End of string (%c) missing "
+					"in %s at line %d\n", quote, s, (int) BATcount(fmt->c));
+				as->error= GDKstrdup(errmsg);
+				return -1;
+			}
+		}
+
 		/* skip until separator */
 		while (*line) {
-			if (*line == *(fmt[i].sep)){
-				if( fmt[i].sep[1] == 0 ||
-				    strncmp(fmt[i].sep, line, fmt[i].seplen) == 0) {
-					e = line;
-					break;
-				}
+			if (*line == *(fmt[i].sep) &&
+			    (fmt[i].sep[1] == 0 || 
+			     strncmp(fmt[i].sep, line, fmt[i].seplen) == 0)) {
+				e = line;
+				break;
 			}
-			/* recognize fields starting with a quote */
-			if (first && (*line == '\"' || *line == '\'')
-				   && (line == s || *(line - 1) != '\\')) {
-				quote = *line;
-				line++;
-				line = skip_string(line, quote);
-				if (!line) {
-					snprintf(errmsg,BUFSIZ, "End of string (%c) missing "
-						"in %s at line %d\n", quote, s, (int) BATcount(fmt->c));
-					as->error= GDKstrdup(errmsg);
-					return -1;
-				}
-				first = 0;
-			} else {
-				if (first && !isspace((int) (*line)))
-					first = 0;
-				line++;
-			}
+			line++;
 		}
 		if (!e && i == (as->nr_attrs-1))
 			e = line;
 		if (e) {
-			char *end = e;
-
 			res |= insert_val(&fmt[i], s, e, quote, key, &as->error);
 			quote = 0;
-			line = end + fmt[i].seplen;
+			line = e + fmt[i].seplen;
 		} else {
 			snprintf(errmsg,BUFSIZ, "missing sep %s line %d field %d\n", 
-				fmt->sep, (int) BATcount(fmt->c), (int)i);
+				fmt->sep, (int)BATcount(fmt->c), (int)i);
 			as->error= GDKstrdup(errmsg);
 			return -1;
 		}
-		e = 0;
 	}
 	return res;
 }
@@ -1495,7 +1477,7 @@ ssize_t
 TABLETload_file(Tablet * as, bstream *b, stream *out)
 {
 	int res = 0, done = 0;
-	size_t i = 0, tuples=0;
+	size_t i = 0;
 	char *sep = as->format[as->nr_attrs - 1].sep;
 	int seplen = as->format[as->nr_attrs - 1].seplen;
 
@@ -1525,8 +1507,6 @@ TABLETload_file(Tablet * as, bstream *b, stream *out)
 			if (e) {
 				*e = '\0';
 				if (insert_line(as, s, NULL) < 0) {
-					GDKerror(as->error);
-					as->error=0;
 					s = e + seplen;
 					b->pos = (s - b->buf);
 					res = -1;
@@ -1550,11 +1530,10 @@ TABLETload_file(Tablet * as, bstream *b, stream *out)
 								GDKerror(as->error);
 								as->error=0;
 								GDKerror("TABLETload_file: read error "
-										"(after loading %d records)\n", 
-											tuples);
+										"(after loading %d records)\n",
+										BATcount(as->format[0].c));
 							res = -1;
 						}
-						tuples++;
 						break;
 					}
 					end = b->buf + b->len;
