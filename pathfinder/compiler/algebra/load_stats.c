@@ -162,8 +162,11 @@ start_element (void *ctx, const xmlChar *tagname, const xmlChar **atts)
 
 /* end of a XML element */
 static void
-end_element ()
+end_element (void *ctx, const xmlChar *name)
 {
+    (void) ctx;
+    (void) name;
+
     /* go a level higher in the tree */
     current_guide_node = current_guide_node->parent;
 }

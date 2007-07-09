@@ -402,8 +402,11 @@ start_element (void *ctx, const xmlChar *tagname, const xmlChar **atts)
 }
 
 static void
-end_element ()
+end_element (void *ctx, const xmlChar *name)
 {
+    (void) ctx;
+    (void) name;
+
     flush_buffer ();
 
     rank++;
