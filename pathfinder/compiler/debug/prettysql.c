@@ -198,7 +198,6 @@ print_clm_list(PFsql_t *n)
             break;
 
         default:
-            printf ("n->kind %i\n", n->kind);
             assert (0);
     }
 }
