@@ -886,6 +886,7 @@ resolve_name_conflicts (PFla_op_t *n)
         case la_intersect:
         case la_difference:
         case la_distinct:
+            return;
         case la_fun_1to1:
         {
             old = n->sem.fun_1to1.res;
