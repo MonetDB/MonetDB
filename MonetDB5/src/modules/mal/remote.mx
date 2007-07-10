@@ -101,6 +101,7 @@ remote_export str RMTepilogue(int *ret);
 #include <mal.h>
 #include <mal_exception.h>
 #include <mal_interpreter.h>
+#include <mal_function.h> /* for printFunction */
 #include <Mapi.h>
 #include "remote.h"	/* for the implementation of the functions */
 
@@ -208,6 +209,10 @@ remote_export str RMTserveget(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
  * information where available, e.g. to describe a BAT with oid head and
  * str tail and one BUN:
  * [ "bat", "oid", "str", 1 ]
+ * Emission of a function is currently done inline after a function
+ * tuple which has the number of plans from the plan stack in the second
+ * column:
+ * [ "function", 1 ]
  */
 str RMTserveget(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	int i;
@@ -219,13 +224,34 @@ str RMTserveget(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 
 	name = (str)getArgValue(stk, pci, 1);
 	i = findVariable(mb, name);
-	if (i < 0)
-		throw(MAL, "remote.serveget", "no such symbol '%s'", name);
+	if (i < 0) {
+		/* look it up as a function */
+		Symbol s = NULL;
+		Client c = MCgetClient();
+		Module mod;
+
+		mod = findModule(c->nspace, getName("user", 4)); /* FIXME */
+		s = findSymbolInModule(mod, putName(name, strlen(name)));
+		if (s == NULL) {
+			throw(MAL, "remote.serveget", "no such object '%s'", name);
+		} else {
+			/* FIXME: this should print the number of plans in the
+			 * planstack */
+			snprintf(ret, 255, "[ \"function\",\t%d\t]", 1);
+			ret[255] = '\0';
+			stream_printf(c->fdout, "%s\n", ret);
+			/* FIXME: this should print the plans from the planstack
+			 * somehow in a better way.  LIST_MAPI is just a hack for
+			 * now... */
+			printFunction(c->fdout, s->def,
+					LIST_MAL_INSTR | LIST_MAL_PROPS | LIST_MAPI);
+		}
+		return(MAL_SUCCEED);
+	}
 
 	n = getVar(mb, i);
 	v = stk->stk + i;
 	if (n->type == TYPE_any || isAnyExpression(n->type)) {
-		/* TODO: deal with functions */
 		throw(MAL, "remote.serveget", "cannot deal with '%s' type",
 				getTypeName(n->type));
 	} else if (isaBatType(n->type)) {

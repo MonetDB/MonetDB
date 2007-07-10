@@ -17,3 +17,10 @@ remote.serveget("d");
 # and a varsized object (like a string) should work too
 g := "Hello world!";
 remote.serveget("g");
+
+# of course functions shouldn't be a problem
+function f():str;
+	r := "brrrr";
+	return(r);
+end f;
+remote.serveget("f");
