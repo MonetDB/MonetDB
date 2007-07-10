@@ -460,7 +460,8 @@ infer_ori_names (PFla_op_t *n, PFarray_t *par_np_list)
             /* input item column (use same name as for output) */
             ori = find_ori_name (np_list, n->sem.step.item_res);
             unq = n->sem.step.item;
-            add_name_pair (np_list, ori, unq);
+            if (!find_ori_name (np_list, unq))
+                add_name_pair (np_list, ori, unq);
             add_name_pair (n->prop->r_name_pairs, ori, unq);
             break;
             
@@ -478,7 +479,8 @@ infer_ori_names (PFla_op_t *n, PFarray_t *par_np_list)
             /* input item column (use same name as for output) */
             ori = find_ori_name (np_list, n->sem.id.item_res);
             unq = n->sem.id.item;
-            add_name_pair (np_list, ori, unq);
+            if (!find_ori_name (np_list, unq))
+                add_name_pair (np_list, ori, unq);
             add_name_pair (n->prop->r_name_pairs, ori, unq);
 
             /* input item_doc column */
@@ -498,7 +500,8 @@ infer_ori_names (PFla_op_t *n, PFarray_t *par_np_list)
             /* input item column (use same name as for output) */
             ori = find_ori_name (np_list, n->sem.doc_tbl.item_res);
             unq = n->sem.doc_tbl.item;
-            add_name_pair (np_list, ori, unq);
+            if (!find_ori_name (np_list, unq))
+                add_name_pair (np_list, ori, unq);
             add_name_pair (n->prop->l_name_pairs, ori, unq);
             break;
             

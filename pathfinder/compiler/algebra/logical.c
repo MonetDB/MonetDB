@@ -2090,14 +2090,8 @@ PFla_seqty1 (const PFla_op_t *n,
                         "algebra operator `seqty1' only allowed on boolean "
                         "attributes. (attribute `%s')", PFatt_str (att));
         }
-        if (part == n->schema.items[i].name) {
+        if (part == n->schema.items[i].name)
             part_found = true;
-            if (n->schema.items[i].type != aat_nat)
-                PFoops (OOPS_FATAL,
-                        "algebra operator `seqty1' can only partition by "
-                        "`nat' attributes. (attribute `%s')",
-                        PFatt_str (part));
-        }
     }
 
     if (!att_found || !part_found)
@@ -2115,7 +2109,7 @@ PFla_seqty1 (const PFla_op_t *n,
     ret->schema.items = PFmalloc (2 * sizeof (PFalg_schema_t));
     
     ret->schema.items[0].name = part;
-    ret->schema.items[0].type = aat_nat;
+    ret->schema.items[0].type = PFprop_type_of (n, part);
     ret->schema.items[1].name = res;
     ret->schema.items[1].type = aat_bln;
 
@@ -2160,14 +2154,8 @@ PFla_all (const PFla_op_t *n,
                         "algebra operator `all' only allowed on boolean "
                         "attributes. (attribute `%s')", PFatt_str (att));
         }
-        if (part  == n->schema.items[i].name) {
+        if (part  == n->schema.items[i].name)
             part_found = true;
-            if (n->schema.items[i].type != aat_nat)
-                PFoops (OOPS_FATAL,
-                        "algebra operator `all' can only partition by "
-                        "`nat' attributes. (attribute `%s')",
-                        PFatt_str (part));
-        }
     }
 
     if (!att_found || !part_found)
@@ -2185,7 +2173,7 @@ PFla_all (const PFla_op_t *n,
     ret->schema.items = PFmalloc (2 * sizeof (PFalg_schema_t));
     
     ret->schema.items[0].name = part;
-    ret->schema.items[0].type = aat_nat;
+    ret->schema.items[0].type = PFprop_type_of (n, part);
     ret->schema.items[1].name = res;
     ret->schema.items[1].type = aat_bln;
 
@@ -2230,10 +2218,6 @@ PFla_step (const PFla_op_t *doc, const PFla_op_t *n,
 
 #ifndef NDEBUG
     /* verify schema of 'n' */
-    if (n->schema.count != 2)
-        PFoops (OOPS_FATAL,
-                "argument of path step does not have iter | item schema");
-
     for (i = 0; i < n->schema.count; i++) {
         if (n->schema.items[i].name == iter
          || n->schema.items[i].name == item)
@@ -2243,6 +2227,10 @@ PFla_step (const PFla_op_t *doc, const PFla_op_t *n,
                     "illegal attribute `%s' in path step",
                     PFatt_str (n->schema.items[i].name));
     }
+    if (!(PFprop_type_of (n, item) & aat_node))
+        PFoops (OOPS_FATAL,
+                "wrong item type '0x%X' in the input of a path step",
+                PFprop_type_of (n, item));
 #endif
 
     
@@ -2252,7 +2240,8 @@ PFla_step (const PFla_op_t *doc, const PFla_op_t *n,
         = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
 
     ret->schema.items[0]
-        = (struct PFalg_schm_item_t) { .name = iter, .type = aat_nat };
+        = (struct PFalg_schm_item_t) { .name = iter,
+                                       .type = PFprop_type_of (n, iter) };
     /* the result of an attribute axis is also of type attribute */
     if (ret->sem.step.axis == alg_attr) 
         ret->schema.items[1]
@@ -2293,9 +2282,6 @@ PFla_dup_step (const PFla_op_t *doc, const PFla_op_t *n,
 {
     PFla_op_t    *ret;
     unsigned int  i;
-#ifndef NDEBUG
-    bool item_present = false;
-#endif
 
     assert (n); assert (doc);
 
@@ -2313,19 +2299,19 @@ PFla_dup_step (const PFla_op_t *doc, const PFla_op_t *n,
     ret->sem.step.item_res    = item_res;
 
 #ifndef NDEBUG
-    for (i = 0; i < n->schema.count; i++) {
-        if (n->schema.items[i].name == item)
-            item_present = true;
-        if (n->schema.items[i].name == item_res)
-            PFoops (OOPS_FATAL,
-                    "illegal attribute `%s' in the input "
-                    "of the path step",
-                    PFatt_str (n->schema.items[i].name));
-    }
-    if (!item_present)
+    if (PFprop_ocol (n, item_res))
+        PFoops (OOPS_FATAL,
+                "illegal attribute `%s' in the input "
+                "of a path step",
+                PFatt_str (item_res));
+    if (!PFprop_ocol (n, item))
         PFoops (OOPS_FATAL, 
                 "column `%s' needed in path step is missing",
                 PFatt_str (item));
+    if (!(PFprop_type_of (n, item) & aat_node))
+        PFoops (OOPS_FATAL,
+                "wrong item type '0x%X' in the input of a path step",
+                PFprop_type_of (n, item));
 #endif
 
     /* allocate memory for the result schema */
@@ -2401,10 +2387,6 @@ PFla_guide_step (const PFla_op_t *doc, const PFla_op_t *n,
 
 #ifndef NDEBUG
     /* verify schema of 'n' */
-    if (n->schema.count != 2)
-        PFoops (OOPS_FATAL,
-                "argument of path step does not have iter | item schema");
-
     for (i = 0; i < n->schema.count; i++) {
         if (n->schema.items[i].name == iter
          || n->schema.items[i].name == item)
@@ -2414,6 +2396,10 @@ PFla_guide_step (const PFla_op_t *doc, const PFla_op_t *n,
                     "illegal attribute `%s' in path step",
                     PFatt_str (n->schema.items[i].name));
     }
+    if (!(PFprop_type_of (n, item) & aat_node))
+        PFoops (OOPS_FATAL,
+                "wrong item type (%i) in the input of a path step",
+                PFprop_type_of (n, item));
 #endif
 
     /* allocate memory for the result schema */
@@ -2422,7 +2408,8 @@ PFla_guide_step (const PFla_op_t *doc, const PFla_op_t *n,
         = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
 
     ret->schema.items[0]
-        = (struct PFalg_schm_item_t) { .name = iter, .type = aat_nat };
+        = (struct PFalg_schm_item_t) { .name = iter,
+                                       .type = PFprop_type_of (n, iter) };
     /* the result of an attribute axis is also of type attribute */
     if (ret->sem.step.axis == alg_attr) 
         ret->schema.items[1]
@@ -2474,12 +2461,6 @@ fn_id (bool id, const PFla_op_t *doc, const PFla_op_t *n,
 
 #ifndef NDEBUG
     /* verify schema of 'n' */
-    if (n->schema.count != 3)
-        PFoops (OOPS_FATAL,
-                "argument of fn:id%s does not "
-                " have iter|item|item_doc schema",
-                id ? "" : "ref");
-
     for (i = 0; i < n->schema.count; i++) {
         if (n->schema.items[i].name == iter
          || n->schema.items[i].name == item
@@ -2491,6 +2472,16 @@ fn_id (bool id, const PFla_op_t *doc, const PFla_op_t *n,
                     PFatt_str (n->schema.items[i].name),
                     id ? "" : "ref");
     }
+    if (!(PFprop_type_of (n, item_doc) & aat_node))
+        PFoops (OOPS_FATAL,
+                "wrong doc item type '0x%X' in the input of fn:id%s",
+                PFprop_type_of (n, item_doc),
+                id ? "" : "ref");
+    if (!(PFprop_type_of (n, item) & aat_node))
+        PFoops (OOPS_FATAL,
+                "wrong item type '0x%X' in the input of fn:id%s",
+                PFprop_type_of (n, item),
+                id ? "" : "ref");
 #endif
 
     /* allocate memory for the result schema */
@@ -2499,7 +2490,8 @@ fn_id (bool id, const PFla_op_t *doc, const PFla_op_t *n,
         = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
 
     ret->schema.items[0]
-        = (struct PFalg_schm_item_t) { .name = iter, .type = aat_nat };
+        = (struct PFalg_schm_item_t) { .name = iter,
+                                       .type = PFprop_type_of (n, iter) };
     ret->schema.items[1]
         = (struct PFalg_schm_item_t) { .name = item_res, .type = aat_pnode };
 
@@ -2553,7 +2545,8 @@ PFla_doc_tbl (const PFla_op_t *rel,
         = PFmalloc (ret->schema.count * sizeof (*ret->schema.items));
 
     ret->schema.items[0]
-        = (PFalg_schm_item_t) { .name = iter, .type = aat_nat };
+        = (PFalg_schm_item_t) { .name = iter,
+                                .type = PFprop_type_of (rel, iter) };
     ret->schema.items[1]
         = (PFalg_schm_item_t) { .name = item_res, .type = aat_pnode };
 
@@ -2599,6 +2592,7 @@ PFla_op_t * PFla_twig (const PFla_op_t *n,
                        PFalg_att_t iter,
                        PFalg_att_t item)
 {
+    PFalg_simple_type_t iter_type = 0;
     PFla_op_t *ret = la_op_wire1 (la_twig, n);
 
     /* store columns to work on in semantical field */
@@ -2611,8 +2605,26 @@ PFla_op_t * PFla_twig (const PFla_op_t *n,
     ret->schema.items
         = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
 
+    if (n->kind == la_attribute ||
+        n->kind == la_processi)
+        iter_type = PFprop_type_of (
+                        n->child[0],
+                        n->sem.iter_item1_item2.iter);
+    else if (n->kind == la_content)
+        iter_type = PFprop_type_of (
+                        n->child[1],
+                        n->sem.iter_item.iter);
+    else if (n->kind == la_docnode)
+        iter_type = PFprop_type_of (
+                        n->child[0],
+                        n->sem.docnode.iter);
+    else
+        iter_type = PFprop_type_of (
+                        n->child[0],
+                        n->sem.iter_item.iter);
+
     ret->schema.items[0].name = iter;
-    ret->schema.items[0].type = aat_nat;
+    ret->schema.items[0].type = iter_type;
     ret->schema.items[1].name = item;
     /* Check if the twig consists of only attributes ... */
     if (n->kind == la_attribute ||
@@ -3507,7 +3519,8 @@ PFla_fn_string_join (const PFla_op_t *text, const PFla_op_t *sep,
         = PFmalloc (ret->schema.count * sizeof (*ret->schema.items));
 
     ret->schema.items[0]
-        = (PFalg_schm_item_t) { .name = iter_res, .type = aat_nat };
+        = (PFalg_schm_item_t) { .name = iter_res,
+                                .type = PFprop_type_of (sep, iter_sep) };
     ret->schema.items[1]
         = (PFalg_schm_item_t) { .name = item_res, .type = aat_str };
 

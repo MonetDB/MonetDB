@@ -531,13 +531,38 @@ map_ori_names (PFla_op_t *p, PFarray_t *map)
             break;
 
         case la_step:
-            res = step (O(L(p)), PROJ(RIGHT, p),
-                        p->sem.step.axis,
-                        p->sem.step.ty,
-                        p->sem.step.level,
-                        ONAME(p, p->sem.step.iter),
-                        ONAME(p, p->sem.step.item),
-                        ONAME(p, p->sem.step.item_res));
+            /* In case columns iter and item_in are identical columns
+               item_in and item_out cannot refer to the same original
+               name. Then we need to ensure that we correct the naming
+               upfront (as the physical translation relies on the fact
+               that item_in and item_out are identical columns). */
+            if (ONAME(p, p->sem.step.item) !=
+                ONAME(p, p->sem.step.item_res)) {
+                PFalg_att_t iter, item_in, item_out;
+                iter     = ONAME(p, p->sem.step.iter);
+                item_in  = ONAME(p, p->sem.step.item);
+                item_out = ONAME(p, p->sem.step.item_res);
+
+                assert (item_in == iter);
+
+                res = step (O(L(p)), 
+                            project (PROJ(RIGHT, p),
+                                     proj (iter, iter),
+                                     proj (item_out, item_in)),
+                            p->sem.step.axis,
+                            p->sem.step.ty,
+                            p->sem.step.level,
+                            iter,
+                            item_out,
+                            item_out);
+            } else
+                res = step (O(L(p)), PROJ(RIGHT, p),
+                            p->sem.step.axis,
+                            p->sem.step.ty,
+                            p->sem.step.level,
+                            ONAME(p, p->sem.step.iter),
+                            ONAME(p, p->sem.step.item),
+                            ONAME(p, p->sem.step.item_res));
             break;
                            
         case la_dup_step:
@@ -551,38 +576,136 @@ map_ori_names (PFla_op_t *p, PFarray_t *map)
             break;
             
         case la_guide_step:
-            res = guide_step (O(L(p)), PROJ(RIGHT, p),
-                              p->sem.step.axis,
-                              p->sem.step.ty,
-                              p->sem.step.guide_count,
-                              p->sem.step.guides,
-                              p->sem.step.level,
-                              ONAME(p, p->sem.step.iter),
-                              ONAME(p, p->sem.step.item),
-                              ONAME(p, p->sem.step.item_res));
+            /* In case columns iter and item_in are identical columns
+               item_in and item_out cannot refer to the same original
+               name. Then we need to ensure that we correct the naming
+               upfront (as the physical translation relies on the fact
+               that item_in and item_out are identical columns). */
+            if (ONAME(p, p->sem.step.item) !=
+                ONAME(p, p->sem.step.item_res)) {
+                PFalg_att_t iter, item_in, item_out;
+                iter     = ONAME(p, p->sem.step.iter);
+                item_in  = ONAME(p, p->sem.step.item);
+                item_out = ONAME(p, p->sem.step.item_res);
+
+                assert (item_in == iter);
+
+                res = guide_step (O(L(p)), 
+                                  project (PROJ(RIGHT, p),
+                                           proj (iter, iter),
+                                           proj (item_out, item_in)),
+                                  p->sem.step.axis,
+                                  p->sem.step.ty,
+                                  p->sem.step.guide_count,
+                                  p->sem.step.guides,
+                                  p->sem.step.level,
+                                  iter,
+                                  item_out,
+                                  item_out);
+            } else
+                res = guide_step (O(L(p)), PROJ(RIGHT, p),
+                                  p->sem.step.axis,
+                                  p->sem.step.ty,
+                                  p->sem.step.guide_count,
+                                  p->sem.step.guides,
+                                  p->sem.step.level,
+                                  ONAME(p, p->sem.step.iter),
+                                  ONAME(p, p->sem.step.item),
+                                  ONAME(p, p->sem.step.item_res));
             break;
                            
         case la_id:
-            res = id (O(L(p)), PROJ(RIGHT, p),
-                      ONAME(p, p->sem.id.iter),
-                      ONAME(p, p->sem.id.item),
-                      ONAME(p, p->sem.id.item_res),
-                      ONAME(p, p->sem.id.item_doc));
+            /* In case columns iter and item_in are identical columns
+               item_in and item_out cannot refer to the same original
+               name. Then we need to ensure that we correct the naming
+               upfront (as the physical translation relies on the fact
+               that item_in and item_out are identical columns). */
+            if (ONAME(p, p->sem.id.item) !=
+                ONAME(p, p->sem.id.item_res)) {
+                PFalg_att_t iter, item_in, item_out, item_doc;
+                iter     = ONAME(p, p->sem.id.iter);
+                item_in  = ONAME(p, p->sem.id.item);
+                item_out = ONAME(p, p->sem.id.item_res);
+                item_doc = ONAME(p, p->sem.id.item_doc);
+
+                assert (item_in == iter);
+
+                res = id (O(L(p)),
+                          project (PROJ(RIGHT, p),
+                                   proj (iter, iter),
+                                   proj (item_out, item_in),
+                                   proj (item_doc, item_doc)),
+                          iter,
+                          item_out,
+                          item_out,
+                          item_doc);
+            } else
+                res = id (O(L(p)), PROJ(RIGHT, p),
+                          ONAME(p, p->sem.id.iter),
+                          ONAME(p, p->sem.id.item),
+                          ONAME(p, p->sem.id.item_res),
+                          ONAME(p, p->sem.id.item_doc));
             break;
                            
         case la_idref:
-            res = idref (O(L(p)), PROJ(RIGHT, p),
-                         ONAME(p, p->sem.id.iter),
-                         ONAME(p, p->sem.id.item),
-                         ONAME(p, p->sem.id.item_res),
-                         ONAME(p, p->sem.id.item_doc));
+            /* In case columns iter and item_in are identical columns
+               item_in and item_out cannot refer to the same original
+               name. Then we need to ensure that we correct the naming
+               upfront (as the physical translation relies on the fact
+               that item_in and item_out are identical columns). */
+            if (ONAME(p, p->sem.id.item) !=
+                ONAME(p, p->sem.id.item_res)) {
+                PFalg_att_t iter, item_in, item_out, item_doc;
+                iter     = ONAME(p, p->sem.id.iter);
+                item_in  = ONAME(p, p->sem.id.item);
+                item_out = ONAME(p, p->sem.id.item_res);
+                item_doc = ONAME(p, p->sem.id.item_doc);
+
+                assert (item_in == iter);
+
+                res = idref (O(L(p)),
+                             project (PROJ(RIGHT, p),
+                                      proj (iter, iter),
+                                      proj (item_out, item_in),
+                                      proj (item_doc, item_doc)),
+                             iter,
+                             item_out,
+                             item_out,
+                             item_doc);
+            } else
+                res = idref (O(L(p)), PROJ(RIGHT, p),
+                             ONAME(p, p->sem.id.iter),
+                             ONAME(p, p->sem.id.item),
+                             ONAME(p, p->sem.id.item_res),
+                             ONAME(p, p->sem.id.item_doc));
             break;
                            
         case la_doc_tbl:
-            res = doc_tbl (PROJ(LEFT, p),
-                           ONAME(p, p->sem.doc_tbl.iter),
-                           ONAME(p, p->sem.doc_tbl.item),
-                           ONAME(p, p->sem.doc_tbl.item_res));
+            /* In case columns iter and item_in are identical columns
+               item_in and item_out cannot refer to the same original
+               name. Then we need to ensure that we correct the naming
+               upfront (as the physical translation relies on the fact
+               that item_in and item_out are identical columns). */
+            if (ONAME(p, p->sem.doc_tbl.item) !=
+                ONAME(p, p->sem.doc_tbl.item_res)) {
+                PFalg_att_t iter, item_in, item_out;
+                iter     = ONAME(p, p->sem.doc_tbl.iter);
+                item_in  = ONAME(p, p->sem.doc_tbl.item);
+                item_out = ONAME(p, p->sem.doc_tbl.item_res);
+
+                assert (item_in == iter);
+
+                res = doc_tbl (project (PROJ(LEFT, p),
+                                        proj (iter, iter),
+                                        proj (item_out, item_in)),
+                               iter,
+                               item_out,
+                               item_out);
+            } else
+                res = doc_tbl (PROJ(LEFT, p),
+                               ONAME(p, p->sem.doc_tbl.iter),
+                               ONAME(p, p->sem.doc_tbl.item),
+                               ONAME(p, p->sem.doc_tbl.item_res));
             break;
                            
         case la_doc_access:

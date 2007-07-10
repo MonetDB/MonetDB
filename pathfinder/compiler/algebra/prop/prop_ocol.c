@@ -498,17 +498,35 @@ infer_ocol (PFla_op_t *n)
             ocol_at (n, 0).type = aat_bln;
             if (n->sem.aggr.part) {
                 ocol_at (n, 1).name = n->sem.aggr.part;
-                ocol_at (n, 1).type = aat_nat;
+                ocol_at (n, 1).type = PFprop_type_of (L(n), n->sem.aggr.part);
             }
             break;
 
         case la_step:
         case la_guide_step:
+#ifndef NDEBUG
+            /* verify schema of 'n' */
+            for (unsigned int i = 0; i < R(n)->schema.count; i++) {
+                if (R(n)->schema.items[i].name == n->sem.step.iter
+                 || R(n)->schema.items[i].name == n->sem.step.item)
+                    continue;
+                else
+                    PFoops (OOPS_FATAL,
+                            "illegal attribute `%s' in path step",
+                            PFatt_str (R(n)->schema.items[i].name));
+            }
+            if (!(PFprop_type_of (R(n), n->sem.step.item) & aat_node))
+                PFoops (OOPS_FATAL,
+                        "wrong item type '0x%X' in the input of a path step",
+                        PFprop_type_of (R(n), n->sem.step.item));
+#endif
             new_ocols (n, 2);
 
             ocol_at (n, 0)
                 = (PFalg_schm_item_t) { .name = n->sem.step.iter,
-                                        .type = aat_nat };
+                                        .type = PFprop_type_of (
+                                                    R(n),
+                                                    n->sem.step.iter) };
 
             if (n->sem.step.axis == alg_attr) 
                 ocol_at (n, 1)
@@ -521,6 +539,21 @@ infer_ocol (PFla_op_t *n)
             break;
 
         case la_dup_step:
+#ifndef NDEBUG
+            if (PFprop_ocol (R(n), n->sem.step.item_res))
+                PFoops (OOPS_FATAL,
+                        "illegal attribute `%s' in the input "
+                        "of a path step",
+                        PFatt_str (n->sem.step.item_res));
+            if (!PFprop_ocol (R(n), n->sem.step.item))
+                PFoops (OOPS_FATAL, 
+                        "column `%s' needed in path step is missing",
+                        PFatt_str (n->sem.step.item));
+            if (!(PFprop_type_of (R(n), n->sem.step.item) & aat_node))
+                PFoops (OOPS_FATAL,
+                        "wrong item type '0x%X' in the input of a path step",
+                        PFprop_type_of (R(n), n->sem.step.item));
+#endif
             ocols (n) = copy_ocols (ocols (R(n)), ocols_count (R(n)) + 1);
             if (n->sem.step.axis == alg_attr) 
                 ocol_at (n, ocols_count (n))
@@ -535,11 +568,36 @@ infer_ocol (PFla_op_t *n)
             
         case la_id:
         case la_idref:
+#ifndef NDEBUG
+            for (unsigned int i = 0; i < R(n)->schema.count; i++) {
+                if (R(n)->schema.items[i].name == n->sem.id.iter
+                 || R(n)->schema.items[i].name == n->sem.id.item
+                 || R(n)->schema.items[i].name == n->sem.id.item_doc)
+                    continue;
+                else
+                    PFoops (OOPS_FATAL,
+                            "illegal attribute `%s' in fn:id%s",
+                            PFatt_str (R(n)->schema.items[i].name),
+                            n->kind == la_id ? "" : "ref");
+            }
+            if (!(PFprop_type_of (R(n), n->sem.id.item_doc) & aat_node))
+                PFoops (OOPS_FATAL,
+                        "wrong doc item type '0x%X' in the input of fn:id%s",
+                        PFprop_type_of (R(n), n->sem.id.item_doc),
+                        n->kind == la_id ? "" : "ref");
+            if (!(PFprop_type_of (R(n), n->sem.id.item) & aat_node))
+                PFoops (OOPS_FATAL,
+                        "wrong item type '0x%X' in the input of fn:id%s",
+                        PFprop_type_of (R(n), n->sem.id.item),
+                        n->kind == la_id ? "" : "ref");
+#endif
             new_ocols (n, 2);
 
             ocol_at (n, 0)
                 = (PFalg_schm_item_t) { .name = n->sem.id.iter,
-                                        .type = aat_nat };
+                                        .type = PFprop_type_of (
+                                                    R(n),
+                                                    n->sem.id.iter) };
 
             ocol_at (n, 1)
                 = (PFalg_schm_item_t) { .name = n->sem.id.item_res,
@@ -559,18 +617,41 @@ infer_ocol (PFla_op_t *n)
 
             ocol_at (n, 0)
                 = (PFalg_schm_item_t) { .name = n->sem.doc_tbl.iter,
-                                        .type = aat_nat };
+                                        .type = PFprop_type_of (
+                                                    L(n),
+                                                    n->sem.doc_tbl.iter) };
             ocol_at (n, 1)
                 = (PFalg_schm_item_t) { .name = n->sem.doc_tbl.item_res,
                                         .type = aat_pnode };
             break;
 
         case la_twig:
+        {
+            PFalg_simple_type_t iter_type = 0;
+
+            if (L(n)->kind == la_attribute ||
+                L(n)->kind == la_processi)
+                iter_type = PFprop_type_of (
+                                L(L(n)),
+                                L(n)->sem.iter_item1_item2.iter);
+            else if (L(n)->kind == la_content)
+                iter_type = PFprop_type_of (
+                                R(L(n)),
+                                L(n)->sem.iter_item.iter);
+            else if (L(n)->kind == la_docnode)
+                iter_type = PFprop_type_of (
+                                L(L(n)),
+                                L(n)->sem.docnode.iter);
+            else
+                iter_type = PFprop_type_of (
+                                L(L(n)),
+                                L(n)->sem.iter_item.iter);
+                    
             new_ocols (n, 2);
 
             ocol_at (n, 0)
                 = (PFalg_schm_item_t) { .name = n->sem.iter_item.iter,
-                                        .type = aat_nat };
+                                        .type = iter_type };
 
             /* Check if the twig consists of only attributes ... */
             if (L(n)->kind == la_attribute ||
@@ -592,7 +673,7 @@ infer_ocol (PFla_op_t *n)
                 ocol_at (n, 1)
                     = (PFalg_schm_item_t) { .name = n->sem.iter_item.item,
                                             .type = aat_pnode };
-            break;
+        }   break;
 
         /* operators without schema */
         case la_fcns:
@@ -612,7 +693,10 @@ infer_ocol (PFla_op_t *n)
 
             ocol_at (n, 0)
                 = (PFalg_schm_item_t) { .name = n->sem.merge_adjacent.iter_res,
-                                        .type = aat_nat };
+                                        .type = PFprop_type_of (
+                                                    R(n),
+                                                    n->sem.merge_adjacent
+                                                          .iter_in) };
             ocol_at (n, 1)
                 = (PFalg_schm_item_t) { .name = n->sem.merge_adjacent.pos_res,
                                         .type = PFprop_type_of (
@@ -712,7 +796,10 @@ infer_ocol (PFla_op_t *n)
 
             ocol_at (n, 0)
                 = (PFalg_schm_item_t) { .name = n->sem.string_join.iter_res,
-                                        .type = aat_nat };
+                                        .type = PFprop_type_of (
+                                                    R(n),
+                                                    n->sem.string_join
+                                                          .iter_sep) };
             ocol_at (n, 1)
                 = (PFalg_schm_item_t) { .name = n->sem.string_join.item_res,
                                         .type = aat_str };
