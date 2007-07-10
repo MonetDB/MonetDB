@@ -606,7 +606,7 @@ MDBlist3(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	else
 		printFunction(c->fdout, s->def, LIST_MAL_INSTR | LIST_MAL_PROPS);
 	(void) mb;		/* fool compiler */
-	return NULL;
+	return MAL_SUCCEED;
 }
 
 str
