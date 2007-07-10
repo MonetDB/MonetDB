@@ -24,3 +24,4 @@ function f():str;
 	return(r);
 end f;
 remote.serveget("f");
+remote.serveget("user.f");

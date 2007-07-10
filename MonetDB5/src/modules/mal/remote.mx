@@ -229,9 +229,16 @@ str RMTserveget(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		Symbol s = NULL;
 		Client c = MCgetClient();
 		Module mod;
+		str symbol;
 
-		mod = findModule(c->nspace, getName("user", 4)); /* FIXME */
-		s = findSymbolInModule(mod, putName(name, strlen(name)));
+		if ((symbol = strchr(name, '.')) != NULL) {
+			*symbol++ = '\0';
+		} else {
+			symbol = name;
+			name = "user";	/* FIXME: should be "default" schema */
+		}
+		mod = findModule(c->nspace, getName(name, 4));
+		s = findSymbolInModule(mod, putName(symbol, strlen(symbol)));
 		if (s == NULL) {
 			throw(MAL, "remote.serveget", "no such object '%s'", name);
 		} else {
