@@ -97,6 +97,10 @@ struct PFstate_t {
     bool standoff_axis_steps; /**< command line switch: -b */
 
     char *opt_alg;            /**< list of algebraic optimizations 
+                                   -- specific for MIL compilation
+                                   (command line switch -o) */
+    char *opt_sql;            /**< list of algebraic optimizations 
+                                   -- specific for SQL compilation
                                    (command line switch -o) */
     char *format;             /**< dot output format (command line switch -f) */
 

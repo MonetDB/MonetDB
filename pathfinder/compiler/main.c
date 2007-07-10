@@ -615,6 +615,7 @@ main (int argc, char *argv[])
 
  {
     unsigned int i;
+    bool explicit_opt = false;
 
     PFstate_t* status = &PFstate;
 
@@ -783,15 +784,10 @@ main (int argc, char *argv[])
                                             "algebra\n");
                 printf ("         _  does nothing (used for structuring "
                                             "the options)\n");
-                printf ("         (default is: "
-                                  "'-o OIKDCG_VGO_[J]OKVCG"
-                                           "}IM__{_[J]OKVCG"
-                                           "}IM__{_[J]OKVCGCG"
-                                           "}IM__{_[J]OKVCG"
-                                           "}IMTS{_[J]OKVCGCG"
-                                           "}IMTS{_[J]OKVCG"
-                                           "}IMTS{_[J]OKVCGCGP')\n");
-
+                printf ("         (algebra default is: '-o %s')\n",
+                        status->opt_alg);
+                printf ("         (SQL default is:     '-o %s')\n",
+                        status->opt_sql);
                 printf ("  -e[0|1]%s: dead code elimination:\n"
                         "         0 disable dead code elimination\n"
                         "         1 enable dead code elimination (default)\n",
@@ -897,6 +893,7 @@ main (int argc, char *argv[])
                 break;
 
             case 'o':
+                explicit_opt = true;
                 status->opt_alg = PFstrdup (optarg);
                 PFinfo (OOPS_NOTICE, 
                         "optimization options: `%s'", 
@@ -919,8 +916,11 @@ main (int argc, char *argv[])
                 break;
             case 'S':
                 status->summer_branch = false;
-                status->stop_after = 19;
                 status->generate_sql = true;
+                if (!status->stop_after)
+                    status->stop_after = 19;
+                if (!explicit_opt)
+                    status->opt_alg = status->opt_sql;
                 break;
             default:
                 PFoops (OOPS_CMDLINEARGS, "try `%s -h'", progname);
