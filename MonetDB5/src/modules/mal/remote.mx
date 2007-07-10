@@ -339,7 +339,7 @@ str RMTget(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		mapi_close_handle(mhdl);
 
 #if SIZEOF_SIZE_T == 4
-		if (len & 0x80000000FFFFFFFF != len)
+		if ((lng)(len & 0x80000000FFFFFFFF) != len)
 			throw(MAL, "remote.get", "remote BAT is too big for this "
 					"32-bits (configured) system");
 #endif
