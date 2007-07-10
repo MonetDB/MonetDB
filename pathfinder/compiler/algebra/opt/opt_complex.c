@@ -289,6 +289,11 @@ opt_complex (PFla_op_t *p)
                 PFalg_proj_t *proj = PFmalloc (p->schema.count *
                                                sizeof (PFalg_proj_t));
                 unsigned int count = 0;
+                PFla_op_t *semijoin;
+                PFla_op_t *left = L(p);
+                PFla_op_t *right = R(p);
+                PFalg_att_t latt = p->sem.eqjoin.att1;
+                PFalg_att_t ratt = p->sem.eqjoin.att2;
 
                 for (unsigned int i = 0; i < L(p)->schema.count; i++)
                     proj[count++] = PFalg_proj (
@@ -300,14 +305,33 @@ opt_complex (PFla_op_t *p)
                                         R(p)->schema.items[i].name,
                                         R(p)->schema.items[i].name);
 
-                *p = *PFla_project_ (
-                          PFla_semijoin (
-                              R(p),
-                              L(p),
-                              p->sem.eqjoin.att2,
-                              p->sem.eqjoin.att1),
-                          count,
-                          proj);
+                while (left->kind == la_project) {
+                    for (unsigned int i = 0; i < left->sem.proj.count; i++)
+                        if (latt == left->sem.proj.items[i].new) {
+                            latt = left->sem.proj.items[i].old;
+                            break;
+                        }
+                    left = L(left);
+                }
+                while (right->kind == la_project) {
+                    for (unsigned int i = 0; i < right->sem.proj.count; i++)
+                        if (ratt == right->sem.proj.items[i].new) {
+                            ratt = right->sem.proj.items[i].old;
+                            break;
+                        }
+                    right = L(right);
+                }
+                
+                if (latt == ratt && left == right)
+                    semijoin = R(p);
+                else
+                    semijoin = PFla_semijoin (
+                                   R(p),
+                                   L(p),
+                                   p->sem.eqjoin.att2,
+                                   p->sem.eqjoin.att1);
+                
+                *p = *PFla_project_ (semijoin, count, proj);
                 break;
             }
 
@@ -323,6 +347,11 @@ opt_complex (PFla_op_t *p)
                 PFalg_proj_t *proj = PFmalloc (p->schema.count *
                                                sizeof (PFalg_proj_t));
                 unsigned int count = 0;
+                PFla_op_t *semijoin;
+                PFla_op_t *left = L(p);
+                PFla_op_t *right = R(p);
+                PFalg_att_t latt = p->sem.eqjoin.att1;
+                PFalg_att_t ratt = p->sem.eqjoin.att2;
 
                 for (unsigned int i = 0; i < L(p)->schema.count; i++)
                     proj[count++] = PFalg_proj (
@@ -334,14 +363,33 @@ opt_complex (PFla_op_t *p)
                                         R(p)->schema.items[i].name,
                                         p->sem.eqjoin.att1);
 
-                *p = *PFla_project_ (
-                          PFla_semijoin (
-                              L(p),
-                              R(p),
-                              p->sem.eqjoin.att1,
-                              p->sem.eqjoin.att2),
-                          count,
-                          proj);
+                while (left->kind == la_project) {
+                    for (unsigned int i = 0; i < left->sem.proj.count; i++)
+                        if (latt == left->sem.proj.items[i].new) {
+                            latt = left->sem.proj.items[i].old;
+                            break;
+                        }
+                    left = L(left);
+                }
+                while (right->kind == la_project) {
+                    for (unsigned int i = 0; i < right->sem.proj.count; i++)
+                        if (ratt == right->sem.proj.items[i].new) {
+                            ratt = right->sem.proj.items[i].old;
+                            break;
+                        }
+                    right = L(right);
+                }
+                
+                if (latt == ratt && left == right)
+                    semijoin = L(p);
+                else
+                    semijoin = PFla_semijoin (
+                                   L(p),
+                                   R(p),
+                                   p->sem.eqjoin.att1,
+                                   p->sem.eqjoin.att2);
+                
+                *p = *PFla_project_ (semijoin, count, proj);
                 break;
             }
         }   break;
@@ -867,12 +915,14 @@ PFalgopt_complex (PFla_op_t *root)
 {
     /* Infer key, icols, domain, and unique names
        properties first */
+    PFprop_infer_unq_names (root);
+    /* already inferred by PFprop_infer_unq_names 
+    PFprop_infer_key (root); 
+    */
     PFprop_infer_level (root);
-    PFprop_infer_key (root);
     PFprop_infer_icol (root);
     PFprop_infer_dom (root);
     PFprop_infer_set (root);
-    PFprop_infer_unq_names (root);
     PFprop_infer_reqval (root);
     PFprop_infer_refctr (root);
 
