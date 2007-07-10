@@ -164,12 +164,16 @@ prop_infer_set (PFla_op_t *n, bool set)
             break;
 
         case la_step:
-        case la_dup_step:
         case la_guide_step:
         case la_id:
         case la_idref:
             l_set = false;
             r_set = true;
+            break;
+
+        case la_dup_step:
+            l_set = false;
+            r_set = n->prop->set;
             break;
 
         case la_doc_access:
