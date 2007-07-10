@@ -77,6 +77,8 @@ struct PFprop_t {
     PFarray_t   *guide_mapping_list; /**< List of guide mappings that contain
                                           a pair of column and list of guide
                                           nodes for the operator */
+    PFarray_t   *ckeys;      /**< List of composite lists of attributes that
+                                  build a key for a relation. */
 
     /* to allow peep-hole optimizations we also store property
        information of the children (left child 'l_', right child 'r_' */
@@ -156,7 +158,7 @@ PFprop_t *PFprop (void);
  * rooted in root whose flag is set.
  */
 void PFprop_infer (bool card, bool const_, bool set, 
-                   bool dom, bool icols,
+                   bool dom, bool icols, bool ckey,
                    bool key, bool ocols, bool reqval, 
                    bool level, bool refctr, bool guides,
                    bool ori_names, bool unq_names,
@@ -178,6 +180,7 @@ void PFprop_create_prop (PFla_op_t *root);
  *  corresponding prop/prop_*.c file)
  */
 void PFprop_infer_card (PFla_op_t *root);
+void PFprop_infer_composite_key (PFla_op_t *root);
 void PFprop_infer_const (PFla_op_t *root);
 void PFprop_infer_set (PFla_op_t *root);
 void PFprop_infer_dom (PFla_op_t *root);
@@ -200,6 +203,23 @@ bool PFprop_check_rec_delta (PFla_op_t *root);
  * Return cardinality stored in property container @a prop.
  */
 unsigned int PFprop_card (const PFprop_t *prop);
+
+/* -------------------- composite key property accessors ------------------- */
+
+/**
+ * Test if all columns in a schema @a schema together build a composite key
+ */
+unsigned int PFprop_ckey (const PFprop_t *prop, PFalg_schema_t schema);
+
+/*
+ * count number of composite keys
+ */
+unsigned int PFprop_ckeys_count (const PFprop_t *prop);
+
+/**
+ * Return attributes that build a composite key (at position @a i) as an attlist
+ */
+PFalg_attlist_t PFprop_ckey_at (const PFprop_t *prop, unsigned int i);
 
 /* ---------------------- constant property accessors ---------------------- */
 

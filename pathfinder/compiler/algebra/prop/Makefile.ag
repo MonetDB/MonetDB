@@ -34,6 +34,7 @@ lib_prop = {
         DIR = libdir
         SOURCES = \
                 prop_card.c \
+                prop_composite_key.c \
                 prop_const.c \
                 prop_dom.c \
                 prop_dom_nat.c \

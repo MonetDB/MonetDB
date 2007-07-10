@@ -139,8 +139,10 @@ PFalgopt (PFla_op_t *root, bool timing, PFguide_tree_t* guide_tree)
                 tm = PFtimer_start ();
 
                 root = PFalgopt_cse (root);
+
+                tm = PFtimer_stop (tm);
                 if (timing)
-                    PFlog("   common subexpression elimination:\t    %s",
+                    PFlog("   structural CSE optimization:\t    %s",
                             PFtimer_str (tm));
                 break;
 
@@ -248,6 +250,20 @@ PFalgopt (PFla_op_t *root, bool timing, PFguide_tree_t* guide_tree)
                            PFtimer_str (tm));
                 break;
 
+            case 'Q':
+                MAP_ORI_NAMES("join-graph optimization")
+                proxies_involved = false;
+
+                tm = PFtimer_start ();
+
+                root = PFalgopt_join_graph (root);
+                
+                tm = PFtimer_stop (tm);
+                if (timing)
+                    PFlog ("   join-graph optimization:\t    %s",
+                           PFtimer_str (tm));
+                break;
+
             case 'S':
                 /* we need the icols property and thus cannot 
                    apply the optimization if our names are unique */
@@ -317,6 +333,7 @@ PFalgopt (PFla_op_t *root, bool timing, PFguide_tree_t* guide_tree)
                                   true  /* set */,
                                   true  /* dom */,
                                   false /* icol */,
+                                  false /* composite key */,
                                   true  /* key */,
                                   false /* ocols */, 
                                   false /* reqval */,
@@ -333,6 +350,7 @@ PFalgopt (PFla_op_t *root, bool timing, PFguide_tree_t* guide_tree)
                                   true  /* set */,
                                   true  /* dom */,
                                   true  /* icol */,
+                                  true  /* composite key */,
                                   true  /* key */,
                                   true  /* ocols */, 
                                   true  /* reqval */,

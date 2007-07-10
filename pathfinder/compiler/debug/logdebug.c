@@ -710,7 +710,8 @@ la_dot (PFarray_t *dot, PFla_op_t *n)
                                 PFatt_str (n->sem.step.item));
             }
 
-            PFarray_printf (dot, "\\nlevel=%i", n->sem.step.level);
+            if (n->sem.step.level >= 0)
+                PFarray_printf (dot, "\\nlevel=%i", n->sem.step.level);
             break;
 
         case la_id:
@@ -1028,6 +1029,27 @@ la_dot (PFarray_t *dot, PFla_op_t *n)
                                 " %i",
                                 (*((PFguide_tree_t**)
                                    PFarray_at(guide_list, j)))->guide);
+                    }
+                } 
+            }
+            if (*fmt == '+' || *fmt == 'Y') {
+                if (PFprop_ckeys_count (n->prop)) {
+                    PFalg_attlist_t list;
+                    unsigned int i, j;
+                    bool first = true;
+                    
+                    PFarray_printf (dot, "\\ncomposite keys:");
+
+                    for (i = 0; i < PFprop_ckeys_count (n->prop); i++) {
+                        list = PFprop_ckey_at (n->prop, i);
+                        first = true;
+                        for (j = 0; j < list.count; j++) {
+                            PFarray_printf (dot, "%s%s",
+                                            first ? "\\n<" : ", ",
+                                            PFatt_str(list.atts[j]));
+                            first = false;
+                        }
+                        PFarray_printf (dot, ">");
                     }
                 } 
             }

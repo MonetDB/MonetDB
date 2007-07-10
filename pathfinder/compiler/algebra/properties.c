@@ -102,6 +102,9 @@ PFprop (void)
     /* initialize guide mapping list */
     ret->guide_mapping_list = NULL;
 
+    /* initialize composite key list */
+    ret->ckeys = NULL;
+
     return ret;
 }
 
@@ -111,7 +114,7 @@ PFprop (void)
  */
 void
 PFprop_infer (bool card, bool const_, bool set,
-              bool dom, bool icol,
+              bool dom, bool icol, bool ckey,
               bool key, bool ocols, bool reqval, 
               bool level, bool refctr, bool guides,
               bool ori_names, bool unq_names,
@@ -125,6 +128,8 @@ PFprop_infer (bool card, bool const_, bool set,
         PFprop_infer_level (root);
     if (unq_names)
         PFprop_infer_unq_names (root);
+    if (ckey)
+        PFprop_infer_composite_key (root);
     if (key)
         PFprop_infer_key (root);
     if (card)

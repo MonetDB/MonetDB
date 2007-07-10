@@ -39,6 +39,7 @@ lib_opt = {
                 opt_general.brg \
                 opt_guide.c \
                 opt_icol.c \
+                opt_join_graph.c \
                 opt_join_pd.c \
                 opt_key.c \
                 opt_mvd.c \

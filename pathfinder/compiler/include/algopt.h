@@ -47,6 +47,7 @@ PFla_op_t * PFalgopt_dom (PFla_op_t *root);
 PFla_op_t * PFalgopt_general (PFla_op_t *root);
 PFla_op_t * PFalgopt_guide (PFla_op_t *root, PFguide_tree_t *guide);
 PFla_op_t * PFalgopt_icol (PFla_op_t *root);
+PFla_op_t * PFalgopt_join_graph (PFla_op_t *root);
 PFla_op_t * PFalgopt_join_pd (PFla_op_t *root);
 PFla_op_t * PFalgopt_key (PFla_op_t *root);
 PFla_op_t * PFalgopt_mvd (PFla_op_t *root, unsigned int noneffective_tries);
