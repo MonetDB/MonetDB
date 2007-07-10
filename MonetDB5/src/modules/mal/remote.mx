@@ -206,8 +206,8 @@ remote_export str RMTserveget(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
  * [ "int", 1 ]
  * More complex types that need to be fetched afterwards just get extra
  * information where available, e.g. to describe a BAT with oid head and
- * str tail:
- * [ "bat", "oid", "str" ]
+ * str taili and one BUN:
+ * [ "bat", "oid", "str", 1 ]
  */
 str RMTserveget(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	int i;

@@ -47,9 +47,9 @@ function user.main():void;	# 0  (main:void)
     g := "Hello world!";	# 14  (g:str)<-(_22:str)
     remote.serveget("g");	# 15 RMTserveget (_23:void)<-(_24:str)
 end main;	# 16  
-[ "int",	"1"	]
-[ "flt",	"3.4000001"	]
-[ "bat",	"oid",	"str"	]
+[ "int",	1	]
+[ "flt",	3.4000001	]
+[ "bat",	"oid",	"str",	0	]
 [ "str",	"Hello world!"	]
 
 # 11:27:38 >  
