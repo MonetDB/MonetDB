@@ -641,7 +641,7 @@ PFalg_schema_diff_ (PFalg_schema_t schema, unsigned int count,
         {
             .count = c,
             .items = (PFalg_schm_item_t *) PFmalloc (
-                c * sizeof (PFalg_schm_item_t *))
+                c * sizeof (PFalg_schm_item_t))
         };
 
     

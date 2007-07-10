@@ -1803,13 +1803,37 @@ patch_projections (PFla_op_t *a, PFla_op_t *b)
         case la_semijoin:
         case la_thetajoin:
         {
+            PFla_op_t *lchild = L (a);
+            PFla_op_t *rchild = R (a);
+
+            bool found = false;
+            PFalg_att_t fatt = att_NULL;
+
             for (unsigned int i = 0; i < a->schema.count; i++) {
+
+                if (eff_attribute_ (EFF (lchild), a->schema.items[i].name) != att_NULL) {
+                    fatt = eff_attribute_ (EFF (lchild), a->schema.items[i].name);
+                    found = true;
+                }
+                    
+                if (!found)
+                    if (eff_attribute_ (EFF (rchild), a->schema.items[i].name) != att_NULL) {
+                        fatt = eff_attribute_ (EFF (rchild), a->schema.items[i].name);
+                        found = true;
+                    }
+
+                if (fatt == att_NULL)
+                    assert (!"this should not happen");
+
                 *(eff_map_t *) PFarray_add (effmap) = 
                     (eff_map_t)
                     {
                         .ori_att = a->schema.items[i].name,
-                        .eff_att = b->schema.items[i].name
+                        .eff_att = fatt 
                     };
+
+                fatt = att_NULL;
+                found = false;
             }
         } break;
         case la_project:
