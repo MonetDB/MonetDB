@@ -334,13 +334,13 @@ typedef struct VARRECORD {
 
 /* type check status is kept around to improve type checking efficiency */
 #define TYPE_ERROR      -1
-#define TYPE_UNKNOWN            0
-#define TYPE_DYNAMIC            1
-#define TYPE_BIND           2
-#define TYPE_RESOLVED              4
+#define TYPE_UNKNOWN     0
+#define TYPE_DYNAMIC     1
+#define TYPE_BIND        2
+#define TYPE_RESOLVED    4
 
-#define QUICKCLEANUP 1
-#define GARBAGECONTROL 2
+#define QUICKCLEANUP     1
+#define GARBAGECONTROL   2
 
 #define VARARGS 1	/* deal with variable arguments */
 #define VARRETS 2
@@ -2365,7 +2365,7 @@ instruction2str(MalBlkPtr mb, InstrPtr p, int flg)
 
 	len = 8196;
 	s = GDKmalloc(len);
-	if (flg ) {
+	if (flg) {
 		if( p->token<0){
 			s[0] = '#';
 			s[1] = 0;
@@ -2616,7 +2616,7 @@ promptInstruction(stream *fd, MalBlkPtr mb, InstrPtr p, int flg)
 		GDKfatal("printInstruction:no file\n");
 	ps = instruction2str(mb, p, flg);
 	/* ps[strlen(ps)-1] = 0; remove '\n' */
-	stream_printf(fd, "%s", ps);
+	stream_printf(fd, "%s%s", (flg & LIST_MAPI ? "=" : ""), ps);
 	GDKfree(ps);
 }
 
