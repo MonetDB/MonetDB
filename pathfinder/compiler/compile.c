@@ -548,12 +548,11 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
         PFlog ("CSE in logical algebra tree:\t\t %s",
                PFtimer_str (tm));
 
-    PFsql_t *sqlroot = NULL;
    /* generate SQL code if requested */
    if (status->generate_sql) {
        if(laroot) {
             /* this is not the final semantic of this function */
-            sqlroot = PFlalg2sql(laroot);
+            PFsql_t *sqlroot = PFlalg2sql(laroot);
             if (sqlroot) {
                 if (status->print_pretty) {
                     PFsql_pretty(pfout, sqlroot);
