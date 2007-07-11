@@ -6,9 +6,6 @@ stdout of test 'remote01` in directory 'src/modules/mal` itself:
 # 09:35:17 >  
 
 
-
-
-
 # MonetDB Server v5.1.0
 # Copyright (c) 1993-2007 CWI, all rights reserved
 # Compiled for x86_64-pc-linux-gnu/64bit with 64bit OIDs dynamically linked
@@ -69,7 +66,7 @@ catch MALException:str ;	# 24  (MALException:str) jump 26
     io.printf("!%s\n",MALException);	# 25 IOprint_formatted_str (_28:void)<-(_17:str)(MALException:str)
 exit MALException:str ;	# 26  (MALException:str)
 end main;	# 27  
-!MALException:remote.get:no such symbol 'b1'
+!MALException:remote.get:no such object 'user'
 
 !MALException:remote.create:a connection with name 'test' already exists
 !MALException:remote.destroy:no such connection with name 'test'
