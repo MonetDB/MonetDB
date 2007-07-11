@@ -40,33 +40,40 @@ stdout of test 'remote01` in directory 'src/modules/mal` itself:
 #
 function user.main():void;	# 0  (main:void)
 #remote.prelude(); 	# 1  (_1:str)
-# for testweb, we need to ask the server itself how it is available, use 	# 2  (_2:str)
-# sabaoth for that 	# 3  (_3:str)
-#sabaoth.prelude(); 	# 4  (_4:str)
-    h := sabaoth.getLocalConnectionHost();	# 5 SABgetLocalConnectionHost (h:str)
-    p := sabaoth.getLocalConnectionPort();	# 6 SABgetLocalConnectionPort (p:int)
-# create a connecton to ourself 	# 7  (_7:str)
-    remote.create("test",h,p,nil:str,"monetdb","monetdb");	# 8 RMTcreate (_8:void)<-(_9:str)(h:str)(p:int)(_10:str)(_11:str)(_11:str)
-# retrieve a value (that for sure won't exist) 	# 9  (_12:str)
-    remote.get("test","b1");	# 10 RMTget (_13:any)<-(_9:str)(_14:str)
-catch MALException:str ;	# 11  (MALException:str) jump 13
-    io.printf("!%s\n",MALException);	# 12 IOprint_formatted_str (_16:void)<-(_17:str)(MALException:str)
-exit MALException:str ;	# 13  (MALException:str)
-# should raise an exception (the arguments don't matter here) 	# 14  (_18:str)
-    remote.create("test","localhost",50000,nil:str,"test","test");	# 15 RMTcreate (_19:void)<-(_9:str)(_20:str)(_21:int)(_10:str)(_9:str)(_9:str)
-catch MALException:str ;	# 16  (MALException:str) jump 18
-    io.printf("!%s\n",MALException);	# 17 IOprint_formatted_str (_22:void)<-(_17:str)(MALException:str)
-exit MALException:str ;	# 18  (MALException:str)
-# help testweb a bit, since currently no cleanup is done on server 	# 19  (_23:str)
-# shutdown 	# 20  (_24:str)
-    remote.destroy("test");	# 21 RMTdestroy (_25:void)<-(_9:str)
-# this should fail now 	# 22  (_26:str)
-    remote.destroy("test");	# 23 RMTdestroy (_27:void)<-(_9:str)
-catch MALException:str ;	# 24  (MALException:str) jump 26
-    io.printf("!%s\n",MALException);	# 25 IOprint_formatted_str (_28:void)<-(_17:str)(MALException:str)
-exit MALException:str ;	# 26  (MALException:str)
-end main;	# 27  
-!MALException:remote.get:no such object 'user'
+# ideally we would like to do this, however that's unfortunately 	# 2  (_2:str)
+# impossible since variadic stuff doesn't work in functions 	# 3  (_3:str)
+#function exec(conn:str, ident:str...):any; 	# 4  (_4:str)
+#	id := remote.exec(conn, ident, ...); 	# 5  (_5:str)
+#	ret := remote.get(conn, id); 	# 6  (_6:str)
+#	return(ret); 	# 7  (_7:str)
+#end exec; 	# 8  (_8:str)
+# for testweb, we need to ask the server itself how it is available, use 	# 9  (_9:str)
+# sabaoth for that 	# 10  (_10:str)
+#sabaoth.prelude(); 	# 11  (_11:str)
+    h := sabaoth.getLocalConnectionHost();	# 12 SABgetLocalConnectionHost (h:str)
+    p := sabaoth.getLocalConnectionPort();	# 13 SABgetLocalConnectionPort (p:int)
+# create a connecton to ourself 	# 14  (_14:str)
+    remote.create("test",h,p,nil:str,"monetdb","monetdb");	# 15 RMTcreate (_15:void)<-(_16:str)(h:str)(p:int)(_17:str)(_18:str)(_18:str)
+# retrieve a value (that for sure won't exist) 	# 16  (_19:str)
+    remote.get("test","b1");	# 17 RMTget (_20:any)<-(_16:str)(_21:str)
+catch MALException:str ;	# 18  (MALException:str) jump 20
+    io.printf("!%s\n",MALException);	# 19 IOprint_formatted_str (_23:void)<-(_24:str)(MALException:str)
+exit MALException:str ;	# 20  (MALException:str)
+# should raise an exception (the arguments don't matter here) 	# 21  (_25:str)
+    remote.create("test","localhost",50000,nil:str,"test","test");	# 22 RMTcreate (_26:void)<-(_16:str)(_27:str)(_28:int)(_17:str)(_16:str)(_16:str)
+catch MALException:str ;	# 23  (MALException:str) jump 25
+    io.printf("!%s\n",MALException);	# 24 IOprint_formatted_str (_29:void)<-(_24:str)(MALException:str)
+exit MALException:str ;	# 25  (MALException:str)
+# help testweb a bit, since currently no cleanup is done on server 	# 26  (_30:str)
+# shutdown 	# 27  (_31:str)
+    remote.destroy("test");	# 28 RMTdestroy (_32:void)<-(_16:str)
+# this should fail now 	# 29  (_33:str)
+    remote.destroy("test");	# 30 RMTdestroy (_34:void)<-(_16:str)
+catch MALException:str ;	# 31  (MALException:str) jump 33
+    io.printf("!%s\n",MALException);	# 32 IOprint_formatted_str (_35:void)<-(_24:str)(MALException:str)
+exit MALException:str ;	# 33  (MALException:str)
+end main;	# 34  
+!MALException:remote.get:no such object 'b1'
 
 !MALException:remote.create:a connection with name 'test' already exists
 !MALException:remote.destroy:no such connection with name 'test'

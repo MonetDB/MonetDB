@@ -114,7 +114,7 @@ typedef struct _connection {
 
 static connection connections = NULL;
 
-static str RMTfindconn(connection *ret, str conn) {
+static INLINE str RMTfindconn(connection *ret, str conn) {
 	connection c = connections;
 
 	/* conn should be passed as valid variable here */
@@ -141,7 +141,7 @@ static str RMTfindconn(connection *ret, str conn) {
 	throw(MAL, "remote.<findconn>", "no such connection with name '%s'", *conn);
 }
 
-static str RMTquery(MapiHdl *ret, str func, Mapi conn, str query) {
+static INLINE str RMTquery(MapiHdl *ret, str func, Mapi conn, str query) {
 	MapiHdl mhdl;
 
 	*ret = NULL;
@@ -166,174 +166,107 @@ static str RMTquery(MapiHdl *ret, str func, Mapi conn, str query) {
 	return(MAL_SUCCEED);
 }
 
-str RMTprelude(int *ret) {
-	(void)ret;
+static INLINE str RMTinternalput(str *ret, Mapi mconn, int type, ptr value) {
+	str tmp;
+	str ident;
+	MapiHdl mhdl = NULL;
 
-	return(MAL_SUCCEED);
-}
-
-str RMTepilogue(int *ret) {
-	connection c = connections, t;
-
-	(void)ret;
-
-	/* free connections list */
-	while (c != NULL) {
-		t = c;
-		c = c->next;
-		mapi_destroy(t->mconn);
-		GDKfree(t);
+	/* get a free identifier on the remote host */
+	rethrow("remote.put", tmp, RMTquery(&mhdl, "remote.put", mconn, "remote.getnextid();"));
+	if (mapi_get_row_count(mhdl) != 1) {
+		int c = mapi_get_row_count(mhdl);
+		mapi_close_handle(mhdl);
+		throw(MAL, "remote.put", "unexpected number of rows (%d), expecting 1", c);
 	}
-	/* not sure, but better be safe than sorry */
-	connections = NULL;
-
-	return(MAL_SUCCEED);
-}
-
-@mal
-pattern serveget(ident:str):void
-address RMTserveget
-comment "Prints a description of the given identifier";
-@h
-remote_export str RMTserveget(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-@c
-/**
- * serveget prints a descriptive string for the given identifier ident.
- * This method is used by get() to retrieve an object.  serveget prints
- * a single tuple with information on the object.  The first column in
- * the tuple is the MAL type of the object.  Depending on this, the
- * other columns are filled in.  For scalar data types, the second
- * column represents the value of the scalar as a string, e.g.
- * [ "int", 1 ]
- * More complex types that need to be fetched afterwards just get extra
- * information where available, e.g. to describe a BAT with oid head and
- * str tail and one BUN:
- * [ "bat", "oid", "str", 1 ]
- * Emission of a function is currently done inline after a function
- * tuple which has the number of plans from the plan stack in the second
- * column:
- * [ "function", 1 ]
- */
-str RMTserveget(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
-	int i;
-	str name;
-	VarPtr n;
-	ValPtr v;
-	char ret[256];
-	Client c = MCgetClient();
-
-	name = (str)getArgValue(stk, pci, 1);
-	i = findVariable(mb, name);
-	if (i < 0) {
-		/* look it up as a function */
-		Symbol s = NULL;
-		Client c = MCgetClient();
-		Module mod;
-		str symbol;
-
-		if ((symbol = strchr(name, '.')) != NULL) {
-			*symbol++ = '\0';
-		} else {
-			symbol = name;
-			name = "user";	/* FIXME: should be "default" schema */
-		}
-		mod = findModule(c->nspace, getName(name, 4));
-		s = findSymbolInModule(mod, putName(symbol, strlen(symbol)));
-		if (s == NULL) {
-			throw(MAL, "remote.serveget", "no such object '%s'", name);
-		} else {
-			/* FIXME: this should print the number of plans in the
-			 * planstack */
-			snprintf(ret, 255, "[ \"function\",\t%d\t]", 1);
-			ret[255] = '\0';
-			stream_printf(c->fdout, "%s\n", ret);
-			/* FIXME: this should print the plans from the planstack
-			 * somehow in a better way.  LIST_MAPI is just a hack for
-			 * now... */
-			printFunction(c->fdout, s->def,
-					LIST_MAL_INSTR | LIST_MAL_PROPS | LIST_MAPI);
-		}
-		return(MAL_SUCCEED);
+	mapi_fetch_row(mhdl); /* should succeed */
+	tmp = mapi_fetch_field(mhdl, 0); /* should be there */
+	if (tmp == NULL) {
+		mapi_close_handle(mhdl);
+		throw(MAL, "remote.put", "missing first column in tuple");
 	}
+	/* allocate on the stack as not to leak when we error lateron */
+	ident = alloca(sizeof(char) * (strlen(tmp) + 1));
+	memcpy(ident, tmp, strlen(tmp) + 1);
+	mapi_close_handle(mhdl);
 
-	n = getVar(mb, i);
-	v = stk->stk + i;
-	if (n->type == TYPE_any || isAnyExpression(n->type)) {
-		throw(MAL, "remote.serveget", "cannot deal with '%s' type",
-				getTypeName(n->type));
-	} else if (isaBatType(n->type)) {
+	/* depending on the input object generate actions to store the
+	 * object remotely*/
+	if (type == TYPE_any || isAnyExpression(type)) {
+		/* TODO: functions */
+		throw(MAL, "remote.put", "cannot deal with '%s' type",
+				getTypeName(type));
+	} else if (isaBatType(type)) {
+		/* naive approach using bat.new() and bat.insert() calls */
 		char head[10], tail[10];
+		char qbuf[512]; /* FIXME: this should be dynamic */
+		int bid;
 		BAT *b;
+		BUN p, q;
+		str headv, tailv;
 
-		if (getHeadIndex(n->type) > 0) {
-			sprintf(head, "any%c%d", TMPMARKER, getHeadIndex(n->type));
-		} else if (getHeadType(n->type) == TYPE_any) {
+		if (getHeadIndex(type) > 0) {
+			sprintf(head, "any%c%d", TMPMARKER, getHeadIndex(type));
+		} else if (getHeadType(type) == TYPE_any) {
 			sprintf(head, "any");
 		} else {
-			sprintf(head, "%s", ATOMname(getHeadType(n->type)));
+			sprintf(head, "%s", ATOMname(getHeadType(type)));
 		}
-		if (getTailIndex(n->type) > 0) {
-			sprintf(tail, "any%c%d", TMPMARKER, getTailIndex(n->type));
-		} else if (getTailType(n->type) == TYPE_any) {
+		if (getTailIndex(type) > 0) {
+			sprintf(tail, "any%c%d", TMPMARKER, getTailIndex(type));
+		} else if (getTailType(type) == TYPE_any) {
 			sprintf(tail, "any");
 		} else {
-			sprintf(tail, "%s", ATOMname(getTailType(n->type)));
+			sprintf(tail, "%s", ATOMname(getTailType(type)));
 		}
 
-		if ((b = BATdescriptor(v->val.ival)) == NULL)
-			throw(MAL, "remote.serveget",
-					"invalid BAT descriptor for '%s'", name);
-		snprintf(ret, 255, "[ \"bat\",\t\"%s\",\t\"%s\",\t" SZFMT "\t]",
-				head, tail, BATcount(b));
+		bid = *(int *)value;
+		if ((b = BATdescriptor(bid)) == NULL)
+			throw(MAL, "remote.put", "cannot access BAT descriptor");
+
+		qbuf[511] = '\0';
+		snprintf(qbuf, 511, "%s := bat.new(:%s, :%s, " SZFMT ");",
+				ident, head, tail, BATcount(b));
+
+		rethrow("remote.put", tmp, RMTquery(&mhdl, "remote.put", mconn, qbuf));
+		mapi_close_handle(mhdl);
+
+		headv = tailv = NULL;
+		BATloop(b, p, q) {
+			ATOMformat(getHeadType(type), BUNhead(b, p), &headv);
+			ATOMformat(getTailType(type), BUNtail(b, p), &tailv);
+			snprintf(qbuf, 511, "bat.insert(%s, %s:%s, %s:%s);",
+					ident, headv, head, tailv, tail);
+			rethrow("remote.put", tmp, RMTquery(&mhdl, "remote.put", mconn, qbuf));
+			/* we leak headv and tailv here if an exception is thrown */
+			mapi_close_handle(mhdl);
+		}
+		GDKfree(headv);
+		GDKfree(tailv);
 		BBPunfix(b->batCacheid);
 	} else {
 		str val = NULL;
-		if (ATOMvarsized(n->type)) {
-			ATOMformat(n->type, *(str *)v, &val);
+		char qbuf[512]; /* FIXME: this should be dynamic */
+		if (ATOMvarsized(type)) {
+			ATOMformat(type, *(str *)value, &val);
 		} else {
-			ATOMformat(n->type, v, &val);
+			ATOMformat(type, value, &val);
 		}
-		snprintf(ret, 255, "[ \"%s\",\t%s\t]", ATOMname(n->type), val);
+		snprintf(qbuf, 511, "%s := %s:%s;\n", ident, val, ATOMname(type));
+		qbuf[511] = '\0';
 		GDKfree(val);
+		rethrow("remote.put", tmp, RMTquery(&mhdl, "remote.put", mconn, qbuf));
+		mapi_close_handle(mhdl);
 	}
-	ret[255] = '\0';
 
-	stream_printf(c->fdout, "%s\n", ret);
-
+	*ret = GDKstrdup(ident);
 	return(MAL_SUCCEED);
 }
 
-@mal
-pattern get(conn:str, ident:str):any
-address RMTget
-comment "Retrieves and returns the object referenced by ident from conn";
-@h
-remote_export str RMTget(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-@c
-/**
- * get fetches the object referenced by ident over connection conn.
- */
-str RMTget(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
-	str ident, conn, type, tmp;
-	ValPtr v;
+static INLINE str RMTinternalget(Mapi mconn, str ident, ValPtr v) {
+	str type, tmp;
 	int vtype;
 	char qbuf[512];
-	connection c;
-	Mapi mconn;
 	MapiHdl mhdl;
-
-	(void)mb;
-
-	conn = (str)getArgValue(stk, pci, 1);
-	if (conn == NULL || strcmp(conn, (str)str_nil) == 0)
-		throw(ILLARG, "remote.get", "connection name is NULL or nil");
-	ident = (str)getArgValue(stk, pci, 2);
-	if (isIdentifier(ident) < 0)
-		throw(ILLARG, "remote.get", "identifier expected, got '%s'", ident);
-
-	/* lookup conn, set mconn if valid */
-	rethrow("remote.get", tmp, RMTfindconn(&c, conn));
-	mconn = c->mconn;
 
 	snprintf(qbuf, 511, "remote.serveget(\"%s\");", ident);
 	rethrow("remote.get", tmp, RMTquery(&mhdl, "remote.get", mconn, qbuf));
@@ -350,11 +283,19 @@ str RMTget(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		throw(MAL, "remote.get", "missing first column in tuple");
 	}
 
-	/* get the return value */
-	v = &stk->stk[getArg(pci, 0)];
-
 	vtype = getTypeIndex(type, strlen(type), -1);
-	if (vtype == TYPE_bat) {
+	if (vtype == -1) {
+		/* this is probably a function, because it isn't a valid thing */
+		if (strcmp(type, "function") != 0)
+			throw(MAL, "remote.get", "unsupported type: '%s'", type);
+		/* uhm... now what?
+		 * we cannot "return" a function (at least not now), so the only
+		 * thing we /can/ do is to make it locally available somehow,
+		 * and like put return the local identifier.  We basically need
+		 * an "eval"-like functionality for this...  Let's say that this
+		 * attempt using callString feels very scary. */
+		throw(MAL, "remote.get", "I don't know yet how to do functions properly");
+	} else if (vtype == TYPE_bat) {
 		int h, t, s;
 		ptr l, r;
 		lng len;
@@ -451,6 +392,176 @@ str RMTget(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	return(MAL_SUCCEED);
 }
 
+str RMTprelude(int *ret) {
+	(void)ret;
+
+	return(MAL_SUCCEED);
+}
+
+str RMTepilogue(int *ret) {
+	connection c = connections, t;
+
+	(void)ret;
+
+	/* free connections list */
+	while (c != NULL) {
+		t = c;
+		c = c->next;
+		mapi_destroy(t->mconn);
+		GDKfree(t);
+	}
+	/* not sure, but better be safe than sorry */
+	connections = NULL;
+
+	return(MAL_SUCCEED);
+}
+
+@mal
+pattern serveget(ident:str):void
+address RMTserveget
+comment "Prints a description of the given identifier";
+@h
+remote_export str RMTserveget(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+@c
+/**
+ * serveget prints a descriptive string for the given identifier ident.
+ * This method is used by get() to retrieve an object.  serveget prints
+ * a single tuple with information on the object.  The first column in
+ * the tuple is the MAL type of the object.  Depending on this, the
+ * other columns are filled in.  For scalar data types, the second
+ * column represents the value of the scalar as a string, e.g.
+ * [ "int", 1 ]
+ * More complex types that need to be fetched afterwards just get extra
+ * information where available, e.g. to describe a BAT with oid head and
+ * str tail and one BUN:
+ * [ "bat", "oid", "str", 1 ]
+ * Emission of a function is currently done inline after a function
+ * tuple which has the number of plans from the plan stack in the second
+ * column:
+ * [ "function", 1 ]
+ */
+str RMTserveget(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
+	int i;
+	str name;
+	VarPtr n;
+	ValPtr v;
+	char ret[256];
+	Client c = MCgetClient();
+
+	name = (str)getArgValue(stk, pci, 1);
+	i = findVariable(mb, name);
+	if (i < 0) {
+		/* look it up as a function */
+		Symbol s = NULL;
+		Client c = MCgetClient();
+		Module mod;
+		str symbol;
+
+		if ((symbol = strchr(name, '.')) != NULL) {
+			*symbol++ = '\0';
+		} else {
+			symbol = name;
+			name = "user";	/* FIXME: should be "default" schema */
+		}
+		mod = findModule(c->nspace, getName(name, 4));
+		s = findSymbolInModule(mod, putName(symbol, strlen(symbol)));
+		if (s == NULL) {
+			throw(MAL, "remote.serveget", "no such object '%s'", symbol);
+		} else {
+			/* FIXME: this should print the number of plans in the
+			 * planstack */
+			snprintf(ret, 255, "[ \"function\",\t%d\t]", 1);
+			ret[255] = '\0';
+			stream_printf(c->fdout, "%s\n", ret);
+			/* FIXME: this should print the plans from the planstack
+			 * somehow in a better way.  LIST_MAPI is just a hack for
+			 * now... */
+			printFunction(c->fdout, s->def,
+					LIST_MAL_INSTR | LIST_MAL_PROPS | LIST_MAPI);
+		}
+		return(MAL_SUCCEED);
+	}
+
+	n = getVar(mb, i);
+	v = stk->stk + i;
+	if (n->type == TYPE_any || isAnyExpression(n->type)) {
+		throw(MAL, "remote.serveget", "cannot deal with '%s' type",
+				getTypeName(n->type));
+	} else if (isaBatType(n->type)) {
+		char head[10], tail[10];
+		BAT *b;
+
+		if (getHeadIndex(n->type) > 0) {
+			sprintf(head, "any%c%d", TMPMARKER, getHeadIndex(n->type));
+		} else if (getHeadType(n->type) == TYPE_any) {
+			sprintf(head, "any");
+		} else {
+			sprintf(head, "%s", ATOMname(getHeadType(n->type)));
+		}
+		if (getTailIndex(n->type) > 0) {
+			sprintf(tail, "any%c%d", TMPMARKER, getTailIndex(n->type));
+		} else if (getTailType(n->type) == TYPE_any) {
+			sprintf(tail, "any");
+		} else {
+			sprintf(tail, "%s", ATOMname(getTailType(n->type)));
+		}
+
+		if ((b = BATdescriptor(v->val.ival)) == NULL)
+			throw(MAL, "remote.serveget",
+					"invalid BAT descriptor for '%s'", name);
+		snprintf(ret, 255, "[ \"bat\",\t\"%s\",\t\"%s\",\t" SZFMT "\t]",
+				head, tail, BATcount(b));
+		BBPunfix(b->batCacheid);
+	} else {
+		str val = NULL;
+		if (ATOMvarsized(n->type)) {
+			ATOMformat(n->type, *(str *)v, &val);
+		} else {
+			ATOMformat(n->type, v, &val);
+		}
+		snprintf(ret, 255, "[ \"%s\",\t%s\t]", ATOMname(n->type), val);
+		GDKfree(val);
+	}
+	ret[255] = '\0';
+
+	stream_printf(c->fdout, "%s\n", ret);
+
+	return(MAL_SUCCEED);
+}
+
+@mal
+pattern get(conn:str, ident:str):any
+address RMTget
+comment "Retrieves and returns the object referenced by ident from conn";
+@h
+remote_export str RMTget(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+@c
+/**
+ * get fetches the object referenced by ident over connection conn.
+ */
+str RMTget(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
+	str conn, ident, tmp;
+	connection c;
+
+	(void)mb;
+
+	conn = (str)getArgValue(stk, pci, 1);
+	if (conn == NULL || strcmp(conn, (str)str_nil) == 0)
+		throw(ILLARG, "remote.get", "connection name is NULL or nil");
+	ident = (str)getArgValue(stk, pci, 2);
+	if (isIdentifier(ident) < 0)
+		throw(ILLARG, "remote.get", "identifier expected, got '%s'", ident);
+
+	/* lookup conn, set mconn if valid */
+	rethrow("remote.get", tmp, RMTfindconn(&c, conn));
+
+	/* perform the get */
+	rethrow("remote.get", tmp, RMTinternalget(c->mconn,
+				ident, &stk->stk[getArg(pci, 0)]));
+
+	return(MAL_SUCCEED);
+}
+
 @mal
 command getnextid():void
 address RMTgetnextid
@@ -491,124 +602,141 @@ remote_export str RMTput(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
  * object on the remote host is returned for later use.
  */
 str RMTput(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
-	str ident, conn, type;
-	int i, bid;
+	str conn, tmp, ident;
 	connection c;
 	ValPtr v;
-	Mapi mconn;
-	MapiHdl mhdl;
 
 	conn = (str)getArgValue(stk, pci, 1);
 	if (conn == NULL || strcmp(conn, (str)str_nil) == 0)
 		throw(ILLARG, "remote.put", "connection name is NULL or nil");
 
-	/* lookup conn, set mconn if valid */
-	rethrow("remote.put", type, RMTfindconn(&c, conn));
-	mconn = c->mconn;
+	/* lookup conn */
+	rethrow("remote.put", tmp, RMTfindconn(&c, conn));
 
-	/* get a free identifier on the remote host */
-	rethrow("remote.put", type, RMTquery(&mhdl, "remote.put", mconn, "remote.getnextid();"));
-	if (mapi_get_row_count(mhdl) != 1) {
-		int c = mapi_get_row_count(mhdl);
-		mapi_close_handle(mhdl);
-		throw(MAL, "remote.put", "unexpected number of rows (%d), expecting 1", c);
-	}
-	mapi_fetch_row(mhdl); /* should succeed */
-	ident = mapi_fetch_field(mhdl, 0); /* should be there */
-	if (ident == NULL) {
-		mapi_close_handle(mhdl);
-		throw(MAL, "remote.put", "missing first column in tuple");
-	}
-	mapi_close_handle(mhdl);
-
-	/* depending on the input object generate actions to store the
-	 * object remotely*/
-	i = getArgType(mb, pci, 2);
-	if (i == TYPE_any || isAnyExpression(i)) {
-		/* TODO: functions */
-		throw(MAL, "remote.put", "cannot deal with '%s' type",
-				getTypeName(i));
-	} else if (isaBatType(i)) {
-		/* naive approach using bat.new() and bat.insert() calls */
-		char head[10], tail[10];
-		char qbuf[512]; /* FIXME: this should be dynamic */
-		BAT *b;
-		BUN p, q;
-		str headv, tailv;
-
-		if (getHeadIndex(i) > 0) {
-			sprintf(head, "any%c%d", TMPMARKER, getHeadIndex(i));
-		} else if (getHeadType(i) == TYPE_any) {
-			sprintf(head, "any");
-		} else {
-			sprintf(head, "%s", ATOMname(getHeadType(i)));
-		}
-		if (getTailIndex(i) > 0) {
-			sprintf(tail, "any%c%d", TMPMARKER, getTailIndex(i));
-		} else if (getTailType(i) == TYPE_any) {
-			sprintf(tail, "any");
-		} else {
-			sprintf(tail, "%s", ATOMname(getTailType(i)));
-		}
-
-		bid = *(int *)getArgReference(stk, pci, 2);
-		if ((b = BATdescriptor(bid)) == NULL)
-			throw(MAL, "remote.put", "cannot access BAT descriptor");
-
-		qbuf[511] = '\0';
-		snprintf(qbuf, 511, "%s := bat.new(:%s, :%s, " SZFMT ");",
-				ident, head, tail, BATcount(b));
-
-		rethrow("remote.put", type, RMTquery(&mhdl, "remote.put", mconn, qbuf));
-		mapi_close_handle(mhdl);
-
-		headv = tailv = NULL;
-		BATloop(b, p, q) {
-			ATOMformat(getHeadType(i), BUNhead(b, p), &headv);
-			ATOMformat(getTailType(i), BUNtail(b, p), &tailv);
-			snprintf(qbuf, 511, "bat.insert(%s, %s:%s, %s:%s);",
-					ident, headv, head, tailv, tail);
-			rethrow("remote.put", type, RMTquery(&mhdl, "remote.put", mconn, qbuf));
-			/* we leak headv and tailv here if an exception is thrown */
-			mapi_close_handle(mhdl);
-		}
-		GDKfree(headv);
-		GDKfree(tailv);
-		BBPunfix(b->batCacheid);
-	} else {
-		str val = NULL;
-		char qbuf[512]; /* FIXME: this should be dynamic */
-		ptr v = (ptr)getArgReference(stk, pci, 2);
-		if (ATOMvarsized(i)) {
-			ATOMformat(i, *(str *)v, &val);
-		} else {
-			ATOMformat(i, v, &val);
-		}
-		snprintf(qbuf, 511, "%s := %s:%s;\n", ident, val, ATOMname(i));
-		qbuf[511] = '\0';
-		GDKfree(val);
-		rethrow("remote.put", type, RMTquery(&mhdl, "remote.put", mconn, qbuf));
-		mapi_close_handle(mhdl);
-	}
+	/* put the thing */
+	rethrow("remote.put", tmp, RMTinternalput(&ident,
+				c->mconn,
+				getArgType(mb, pci, 2),
+				getArgReference(stk, pci, 2)));
 
 	/* return the identifier */
 	v = &stk->stk[getArg(pci, 0)];
 	v->vtype = TYPE_str;
-	v->val.sval = GDKstrdup(ident);
+	v->val.sval = ident;
 	return(MAL_SUCCEED);
 }
 
 @mal
+
+# ideally we would like to do this, however that's unfortunately
+# impossible since variadic stuff doesn't work in functions
+#function exec(conn:str, ident:str...):any;
+#	id := remote.exec(conn, ident, ...);
+#	ret := remote.get(conn, id);
+#	return(ret);
+#end exec;
+
 pattern exec(conn:str, ident:str...):any
 address RMTexec
 comment "Executes function ident on host using the given arguments and returns its result";
 @h
 remote_export str RMTexec(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 @c
+/**
+ * exec executes the function with its given arguments on the remote
+ * host, returning the function's return value.  exec is more of a
+ * convenience wrapper than a primitive.  It basically first ships all
+ * arguments to the remote server using put calls.  It continues by
+ * calling the function with the given arguments, and assiging the
+ * return value to a variable.  This variable is finally returned using
+ * a get call.  The exec method exists because the middle action (actual
+ * calling of the function on the remote site) is not possible using get
+ * or put calls.
+ */
 str RMTexec(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
+	str conn, func, ident, rident, tmp;
+	str *argv;
+	int argc, i, len;
+	connection c;
+	char qbuf[512];	/* FIXME: make this dynamic */
+	MapiHdl mhdl;
+
 	(void)mb;
-	(void)stk;
-	(void)pci;
+
+	conn = (str)getArgValue(stk, pci, 1);
+	if (conn == NULL || strcmp(conn, (str)str_nil) == 0)
+		throw(ILLARG, "remote.exec", "connection name is NULL or nil");
+	func = (str)getArgValue(stk, pci, 2);
+	if (func == NULL || strcmp(func, (str)str_nil) == 0)
+		throw(ILLARG, "remote.exec", "function name is NULL or nil");
+
+	/* remote.put() returns an identifier.  This identifier is a string,
+	 * hence what we receive here is a string that describes the
+	 * function on the other side, which may or may not include a module
+	 * name.  There is not much what we can do about that.  You might
+	 * think, "why this whole story here?"  The answer is here:
+	 * http://www.nabble.com/Re%3A--Monetdb-checkins--MonetDB5-src-modules-mal-Tests-remote00.mal%2C-%2C-1.3%2C-1.4-remote00.stable.out%2C-%2C-1.4%2C-1.5-p11520207.html
+	 * Why we don't want remote.get() to return two strings for function
+	 * objects?  Well, a) it requires the user to "know" that too, and
+	 * doesn't keep the return type consistent.  b) it would be
+	 * impossible here to detect the difference between "default" module
+	 * (none given) and specified module since we have varargs for the
+	 * arguments to the function. */
+
+	/* lookup conn */
+	rethrow("remote.exec", tmp, RMTfindconn(&c, conn));
+
+	argc = pci->argc - 3 /* ret, conn, func */;
+	assert(argc >= 0);
+	argv = alloca(sizeof(str) * argc);
+
+#define FREEargv	for (i = 0; i < argc; i++) GDKfree(argv[i]);
+
+	/* put the arguments one by one, and save the remote identifier in
+	 * argv for later usage on the function invocation */
+	for (i = 3; i < pci->argc; i++) {
+		rethrow("remote.exec", tmp, RMTinternalput(&ident,
+					c->mconn,
+					getArgType(mb, pci, i),
+					getArgReference(stk, pci, i)));
+		/* FIXME: we leak argv if above fires */
+		argv[i - 3] = ident;
+	}
+	/* get a free identifier on the remote host */
+	mhdl = NULL;
+	rethrow("remote.exec", tmp, RMTquery(&mhdl, "remote.exec", c->mconn, "remote.getnextid();"));
+	if (mapi_get_row_count(mhdl) != 1) {
+		int c = mapi_get_row_count(mhdl);
+		mapi_close_handle(mhdl);
+		FREEargv;
+		throw(MAL, "remote.put", "unexpected number of rows (%d), expecting 1", c);
+	}
+	mapi_fetch_row(mhdl); /* should succeed */
+	tmp = mapi_fetch_field(mhdl, 0); /* should be there */
+	if (tmp == NULL) {
+		mapi_close_handle(mhdl);
+		FREEargv;
+		throw(MAL, "remote.put", "missing first column in tuple");
+	}
+	/* allocate on the stack as not to leak when we error lateron */
+	rident = alloca(sizeof(char) * (strlen(tmp) + 1));
+	memcpy(rident, tmp, strlen(tmp) + 1);
+	/* build the function invocation string */
+	len = 0;
+	len += snprintf(&qbuf[len], 511 - len, "%s := %s(", rident, ident);
+	mapi_close_handle(mhdl);
+	for (i = 0; i < argc; i++) {
+		len += snprintf(&qbuf[len], 511 - len, "%s%s",
+				(i > 0 ? ", " : ""), argv[i]);
+	}
+	len += snprintf(&qbuf[len], 511 - len, ");");
+	rethrow("remote.exec", tmp, RMTquery(&mhdl, "remote.exec", c->mconn, qbuf));
+	mapi_close_handle(mhdl);  /* we don't care at all about what it outputs */
+
+	/* get the rident value, and return it */
+	rethrow("remote.exec", tmp, RMTinternalget(c->mconn,
+				rident, &stk->stk[getArg(pci, 0)]));
+
 	return(MAL_SUCCEED);
 }
 
