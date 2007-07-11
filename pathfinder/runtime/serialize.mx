@@ -146,6 +146,8 @@ typedef struct XqueryCtx {
      */
     int            stackPtr;
     SerializeFrame tagStack[MAXTAGDEPTH];
+    /* */
+    void*	_private;   /* private application defined space */
 } XqueryCtx;
 
 /**
@@ -1923,3 +1925,463 @@ xquery_print_result_DRIVER (
                dblVAL,
                strVAL);
 }
+
+#ifdef HAVE_PROBXML
+
+#define EQDEBUG 1
+
+#define DACH(CTX) ((struct DuplAttrChk*)CTX->_private)
+
+#define DACH_MAXATTR	32
+#define DACH_MAXBUFF	8192
+
+typedef struct DuplAttrChk {
+	int	equal;
+	int	building;
+	char*	elname; /* tagname of the current element */
+	int	alist_cur;
+	int	alist_max;
+	char**	alist;
+	int	abuff_cur;
+	int	abuff_max;
+	char*	abuff;
+} Dach;
+
+static int
+dach_alloc(struct DuplAttrChk* dach) {
+    dach->alist_cur = 0;
+    dach->alist_max = DACH_MAXATTR;
+    dach->alist = GDKmalloc(dach->alist_max*sizeof(char*));
+    dach->abuff_cur = 0;
+    dach->abuff_max = DACH_MAXBUFF;
+    dach->abuff = GDKmalloc(dach->abuff_max*sizeof(char));
+    return 1;
+}
+
+static int
+dach_free(struct DuplAttrChk* dach) {
+    GDKfree(dach->alist);
+    dach->alist = NULL;
+    GDKfree(dach->abuff);
+    dach->abuff = NULL;
+    return 1;
+}
+
+static INLINE void
+dach_start_build(struct DuplAttrChk* dach, char* elname) {
+    dach->elname 	= elname;
+    dach->alist_cur	= 0;
+    dach->abuff_cur	= 0;
+    dach->abuff[0]	= 0;
+    dach->equal 	= 0;
+    dach->building	= 1;
+}
+
+static INLINE void
+dach_start_check(struct DuplAttrChk* dach) {
+    dach->equal 	= 1; /* true until otherwise proven */
+    dach->building	= 0;
+}
+
+static INLINE void
+dach_finish_check(struct DuplAttrChk* dach) {
+    if ( dach->equal ) { /* still equal */
+	for(int i=0; i<dach->alist_cur; i++) {
+	    if (dach->alist[i] ) {
+    	        if (EQDEBUG) stream_printf(GDKout,"#eqdebug: no corresponding left attr: <%s ... %s\n",dach->elname, dach->alist[i]);
+	        dach->equal = 0; /* not deep equal */
+	    }
+        }
+    }
+}
+
+static INLINE int
+dach_add2buff(struct DuplAttrChk* dach, char* s) {
+    int l = strlen(s) + 1;
+    if ( (dach->abuff_cur + l) > dach->abuff_max ) {
+	dach->abuff_max *= 2;
+    	if ( !(dach->abuff = GDKrealloc(dach->abuff, dach->abuff_max)))
+	    return 0;
+    }
+    memcpy(&dach->abuff[dach->abuff_cur],s,l);
+    dach->abuff_cur += l-1;
+    return 1;
+}
+
+static bool
+dach_handle_attribute (XqueryCtx* ctx, str prefix, str loc, str value)
+{
+    struct DuplAttrChk* dach = DACH(ctx);
+    
+    int start = dach->abuff_cur;
+
+    if ( prefix && *prefix && loc && *loc ) {
+        dach_add2buff(dach, prefix);
+        dach_add2buff(dach, ":");
+        dach_add2buff(dach, loc);
+    } else if ( prefix && *prefix ) { /* default namespace */
+        dach_add2buff(dach, prefix);
+    } else {
+        dach_add2buff(dach, loc);
+    }
+    dach_add2buff(dach, "=");
+    dach_add2buff(dach, "\"");
+    dach_add2buff(dach, value);
+    dach_add2buff(dach, "\"");
+    dach->abuff_cur++;
+    /* */
+    char* newattr = &dach->abuff[start];
+    /* */
+    if ( dach->building ) {
+        if ( dach->alist_cur == dach->alist_max ) {
+	    dach->alist_max *= 2;
+	    if ( !(dach->alist = GDKrealloc(dach->alist, dach->abuff_max*sizeof(char*))))
+	    	return 0;
+	}
+	dach->alist[dach->alist_cur++] = newattr;
+    } else {
+    	/* just checking */
+	int i;
+	for(i=0; i<dach->alist_cur; i++) {
+	    if (dach->alist[i] && (strcmp(dach->alist[i],newattr)==0) ) {
+		dach->alist[i] = 0; /* found corresponding attr */
+	        break;
+	    }
+	}
+	if ( (i==dach->alist_cur) && dach->equal) {
+	    /* did not find attr, so not deep equal */
+    	    if (EQDEBUG) stream_printf(GDKout,"#eqdebug: no corresponding right attr: <%s ... %s\n",dach->elname, newattr);
+	    dach->equal = 0;
+	}
+	dach->abuff_cur = start; /* reclaim string space */
+    }
+    if (0) stream_printf(GDKout,"#eqdebug: dach_handle_attribute[%s](%s)\n",(dach->building?"build":"check"),newattr);
+    return SUCCESS;
+}
+
+/*
+ *
+ *
+ */
+
+static int
+probxml_deep_eq_scan(XqueryCtx* ctx, oid* pre, oid to, BAT* pre_cont, oid cont, int* vCONT)
+{
+    ptr res;
+    chr kind;
+    *vCONT = cont;
+    /* int poppedTags = 0; */
+
+    if (*pre>to)
+    	return 9999; /* end of scan */
+    do {
+        getWsValue(res,ctx,cont,PRE_KIND,*pre);
+        kind = *(chr*) res;
+        
+        /* jump over holes introduced by updates */
+        if (kind == chr_nil) {
+            getWsValue(res,ctx,cont,PRE_SIZE,*pre);
+            int size = (*(int*)res) & GDK_int_max;
+            *pre = *pre + size + 1;
+            continue;
+        }
+    
+	/*
+         * while( moreTags(ctx) && *pre > topSF(ctx)->limit ) {
+         *   popTag(ctx);
+	 *   poppedTags++;
+         * }
+	 */
+
+        /* get container and value reference */
+        if ( pre_cont ) {
+            findTailValue(res,ctx,pre_cont,*pre);
+            *vCONT = (int)*(oid*)res;
+        }
+	/*
+         * getWsValue(res,ctx,cont,PRE_PROP,*pre);
+         * prop = *(oid*) res;
+	 */
+        
+        switch( kind ) {
+            case (char)0: /* ELEMENT */
+            case (char)1: /* PFTEXT */
+            case (char)2: /* COMMENT */
+            case (char)3: /* PI */
+		    return (int)kind;
+            case (char)4:
+                {   /* DOCUMENT */
+                    /* INCOMPLETE, what to do here ??? */
+                    break;
+                }
+            case (char)5:
+                {   /* COLLECTION */
+                    /* nothing to be done, here */
+                    break;
+                }
+            default:
+                fatal_err (ctx,
+                           "Unknow kind %d IN probxml_deep_eq_scan",
+                           (int)kind);
+                return PROBLEM;
+        }
+        *pre++;
+    } while (*pre <= to);
+    /* 
+     * while( moreTags(ctx) ) {
+     *   popTag(ctx);
+     *   poppedTags++;
+     * }
+     */
+    return 9999;
+}
+
+static int
+probxml_deep_eq_range(
+	XqueryCtx* ctx,
+	oid lpre, oid lto, BAT* lpre_cont, oid lcont,
+	oid rpre, oid rto, BAT* rpre_cont, oid rcont
+	)
+{
+    do {
+	ptr res;
+        int lvCONT, rvCONT;
+
+        int lkind = probxml_deep_eq_scan(ctx,&lpre,lto,lpre_cont,lcont,&lvCONT);
+        int rkind = probxml_deep_eq_scan(ctx,&rpre,rto,rpre_cont,rcont,&rvCONT);
+
+	if ( lkind != rkind ) {
+    	    if (EQDEBUG) stream_printf(GDKout,"#eqdebug: not eq range_king(%d,%d).\n",lkind,rkind);
+	    return 0;
+	}
+	if ( lkind == 9999 ) {
+    	    if (0) stream_printf(GDKout,"#eqdebug: end of range for both sides.\n");
+	    return 1; /* end of range, equal */
+	} else {
+            getWsValue(res,ctx,lcont,PRE_PROP,lpre);
+            oid lprop = *(oid*) res;
+            getWsValue(res,ctx,rcont,PRE_PROP,rpre);
+            oid rprop = *(oid*) res;
+	    if (lkind == 0 ) { /* ELEMENT */
+                getWsValue (res, ctx, lvCONT, QN_URI, lprop);
+                str luri    = (str) res;
+                getWsValue (res, ctx, rvCONT, QN_URI, rprop);
+                str ruri    = (str) res;
+                getWsValue (res, ctx, lvCONT, QN_PREFIX, lprop);
+                str lprefix = (str) res;
+                getWsValue (res, ctx, rvCONT, QN_PREFIX, rprop);
+                str rprefix = (str) res;
+                getWsValue (res, ctx, lvCONT, QN_LOC, lprop);
+                str lname   = (str) res;
+                getWsValue (res, ctx, rvCONT, QN_LOC, rprop);
+                str rname   = (str) res;
+		/* */
+    	        if (0) stream_printf(GDKout,"#eqdebug: comparing ELEMENTS(<%s>,<%s>).\n",lname,rname);
+		if ( strcmp(lname,rname) != 0 ) {
+    	            if (EQDEBUG) stream_printf(GDKout,"#eqdebug: comparing ELEMENTS(<%s>,<%s>) FAILS.\n",lname,rname);
+	 	    return 0;
+		}
+		if ( ((luri && ruri) && strcmp(luri,ruri) != 0) || (luri && !ruri) || (!luri && ruri) )  {
+    	            if (EQDEBUG) stream_printf(GDKout,"#eqdebug: comparing ELEMENTS(<%s>) URI(%s,%s) FAILS.\n",lname,luri,ruri);
+		    return 0;
+		}
+		if ( ((lprefix && rprefix) && strcmp(lprefix,rprefix) != 0) || (lprefix && !rprefix) || (!lprefix && rprefix) )  {
+    	            if (EQDEBUG) stream_printf(GDKout,"#eqdebug: comparing ELEMENTS(<%s>) PREFIX(%s,%s) FAILS.\n",lname,lprefix,rprefix);
+		    return 0;
+		}
+		/* now handle the attributes of the node */
+		dach_start_build(DACH(ctx),lname);
+		process_node_attr(ctx,lcont,lpre);
+		dach_start_check(DACH(ctx));
+		process_node_attr(ctx,rcont,rpre);
+		dach_finish_check(DACH(ctx));
+		if ( !DACH(ctx)->equal ) {
+		    return 0;
+		}
+	     } else if (lkind == 1 ) { /* STR */
+                getWsValue(res,ctx,lvCONT,PROP_TEXT,lprop);
+		str lstr = (str)res;
+                getWsValue(res,ctx,rvCONT,PROP_TEXT,rprop);
+		str rstr = (str)res;
+    	        if (0) stream_printf(GDKout,"#eqdebug: comparing STR(\"%s\",\"%s\").\n",lstr,rstr);
+		if ( strcmp(lstr,rstr) != 0 ) {
+    	            if (EQDEBUG) stream_printf(GDKout,"#eqdebug: deep-equal STR(\"%s\",\"%s\") == FALSE.\n",lstr,rstr);
+	 	    return 0;
+	        }
+	     } else if (lkind == 2 ) { /* COMMENT */
+                getWsValue(res,ctx,lvCONT,PROP_COM,lprop);
+		str lcom = (str)res;
+                getWsValue(res,ctx,rvCONT,PROP_COM,rprop);
+		str rcom = (str)res;
+		if ( strcmp(lcom,rcom) != 0 ) {
+    	            if (EQDEBUG) stream_printf(GDKout,"#eqdebug: deep-equal COMMENT(\"%s\",\"%s\") == FALSE.\n",lcom,rcom);
+	 	    return 0;
+		}
+	     } else if (lkind == 3 ) { /* PI */
+                    getWsValue(res,ctx,lvCONT,PROP_TGT,lprop);
+                    str ltarget = (str) res;
+                    getWsValue(res,ctx,lvCONT,PROP_INS,lprop);
+                    str ldata = (str) res;
+                    getWsValue(res,ctx,rvCONT,PROP_TGT,rprop);
+                    str rtarget = (str) res;
+                    getWsValue(res,ctx,rvCONT,PROP_INS,rprop);
+                    str rdata = (str) res;
+		if ( strcmp(ltarget,rtarget) != 0 || strcmp(ldata,rdata) != 0) {
+    	            if (EQDEBUG) stream_printf(GDKout,"#eqdebug: deep-equal PI(%s,%s),PI(%s,%s) == FALSE.\n",ltarget,ldata,rtarget,rdata);
+	 	    return 0;
+		}
+	     } else {
+		stream_printf(GDKout,"#eqdebug: unknown kind: %d\n",lkind);
+	        return 0;
+	     }
+	}
+	lpre++;
+	rpre++;
+    } while ( 1 );
+    return 1; /* range is equal */
+}
+
+static int 
+probxml_deep_eq_node(XqueryCtx* ctx, int lcont, oid loid, int rcont, oid roid) {
+    ptr res;
+
+    if ( (loid == roid) && (lcont == rcont) ) /* nodes are identical */
+        return 1;
+    getWsValue (res, ctx, lcont, PRE_KIND, loid);
+    int l_kind = *(chr*) res;
+    getWsValue (res, ctx, rcont, PRE_KIND, roid);
+    int r_kind = *(chr*) res;
+    /* */
+    if ( l_kind == r_kind ) {
+        if (l_kind == (char)1 /* TEXT */) {
+            oid lprop, lval_cont;
+            /* get value container */
+            getWsValue(res, ctx, lcont, PRE_CONT, loid);
+            lval_cont = *(oid*) res;
+            /* get value reference */
+            getWsValue(res, ctx, lcont, PRE_PROP, loid);
+            lprop = *(oid*) res;
+            getWsValue (res, ctx, lval_cont, PROP_TEXT, lprop);
+	    str lstr = (str)res;
+	    /* */
+            oid rprop, rval_cont;
+            /* get value container */
+            getWsValue(res, ctx, rcont, PRE_CONT, roid);
+            rval_cont = *(oid*) res;
+            /* get value reference */
+            getWsValue(res, ctx, rcont, PRE_PROP, roid);
+            rprop = *(oid*) res;
+            getWsValue (res, ctx, rval_cont, PROP_TEXT, rprop);
+	    str rstr = (str)res;
+	    /* */
+	    if ( strcmp(lstr,rstr) != 0 ) {
+    	        if (EQDEBUG) stream_printf(GDKout,"#eqdebug: not eq STR(%s,%s).\n",lstr,rstr);
+		return 0;
+	    }
+	} else {
+            oid lpre = loid, lpre_size;
+            getWsValue(res, ctx, lcont, PRE_SIZE, lpre);
+            lpre_size = lpre + *(int*) res;
+            BAT *lb;
+            getWsBAT(lb, ctx, lcont, PRE_CONT);
+
+            oid rpre = roid, rpre_size;
+            getWsValue(res, ctx, rcont, PRE_SIZE, rpre);
+            rpre_size = rpre + *(int*) res;
+            BAT *rb;
+            getWsBAT(rb, ctx, rcont, PRE_CONT);
+
+            return probxml_deep_eq_range(
+	    		ctx, 
+                        lpre, lpre_size, IS_FAKE_PROJECT(lb)?NULL:lb, lcont,
+                        rpre, rpre_size, IS_FAKE_PROJECT(rb)?NULL:rb, rcont
+		   );
+	}
+    } else {
+    	if (EQDEBUG) stream_printf(GDKout,"#eqdebug: kind not equal.\n");
+	return 0;
+    }
+    return 1;
+}
+
+int
+CMDprobxml_deep_eq(BAT** resbat, BAT* ws, BAT* litem, BAT* lkind, BAT* ritem, BAT*rkind)
+{
+    struct serializeFunStruct mySerializeFun;
+    memcpy(&mySerializeFun,&nullSerializeFun,sizeof(struct serializeFunStruct));
+    mySerializeFun.handle_attribute = dach_handle_attribute;
+
+    XqueryCtx  ctx_struct, *ctx = &ctx_struct;
+    if (!createWsContext(ctx,ws,"xml",NULL,NULL,&mySerializeFun,"",GDKout))
+        return GDK_FAIL;
+    struct DuplAttrChk dach; /* hander of attribute equality check */
+    ctx->_private = &dach;
+    if (!dach_alloc(&dach))
+    	return GDK_FAIL;
+
+    *resbat = BATnew(TYPE_void,TYPE_bit,BATcount(litem));
+
+    static BUN (*l_fun_k) (BAT *, oid);
+    static BUN (*r_fun_k) (BAT *, oid);
+    if (IS_FAKE_PROJECT(lkind))
+        l_fun_k = fake_lookup_bun;
+    else
+        l_fun_k = lookup_bun;
+    if (IS_FAKE_PROJECT(rkind))
+        r_fun_k = fake_lookup_bun;
+    else
+        r_fun_k = lookup_bun;
+
+    BATseqbase(*resbat,0);
+
+    BUN lp, lq;
+    int dummy;
+    BATloopFast(litem, lp, lq, dummy) {
+        ptr res;
+        oid index = *(oid*)BUNhead(litem, lp);
+
+        oid loid  = *(oid*)BUNtail(litem, lp);
+
+        findTailValue(res, ctx, ritem, index);
+	oid roid = *(oid*)res;
+
+        int cck;
+
+        findTailValue2 (l_fun_k, res, lkind, index);
+        cck = *(int*)res;
+        if ( XTRACT_KIND(cck) != ELEM) {
+	    GDKerror("unexpected left non ELEM");
+	    return GDK_FAIL;
+	}
+        int lcont = XTRACT_CONT(cck);
+
+        findTailValue2 (r_fun_k, res, rkind, index);
+        cck = *(int*)res;
+        if ( XTRACT_KIND(cck) != ELEM) {
+	    GDKerror("unexpected right non ELEM");
+	    return GDK_FAIL;
+	}
+        int rcont = XTRACT_CONT(cck);
+
+        bit eq;
+
+	if ( probxml_deep_eq_node(ctx,lcont,loid,rcont,roid) ) {
+	    eq = TRUE;
+	} else {
+	    eq = FALSE;
+	}
+	BUNappend(*resbat,&eq,FALSE);
+    }
+    if (!dach_free(&dach))
+    	return GDK_FAIL;
+    if ( !disposeWsContext(ctx) )
+        return GDK_FAIL;
+    BBPfix((*resbat)->batCacheid);
+    if ( 0 ) {
+        BATprintf(GDKout,litem);
+        BATprintf(GDKout,*resbat);
+    }
+    return  GDK_SUCCEED;
+}
+
+#endif /* HAVE_PROBXML */

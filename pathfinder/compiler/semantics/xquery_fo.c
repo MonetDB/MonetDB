@@ -2196,8 +2196,13 @@ PFfun_xquery_fo (void)
             .par_ty = (PFty_t[]) { PFty_xs_integer () },
             .ret_ty = PFty_xs_integer () } } }
 #endif
-
 #ifdef HAVE_PROBXML
+    , /* pxmlsup:deep-equal (node, node) as boolean */
+      { .ns = PFns_pxmlsup, .loc = "deep-equal",
+        .arity = 2, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_xs_anyNode (),
+                                   PFty_xs_anyNode () },
+            .ret_ty = PFty_xs_boolean () } } }
     , /* pxmlsup:nid (xs:element) as string */
       { .ns = PFns_pxmlsup, .loc = "newid",
         .arity = 1, .sig_count = 1, .sigs = { {

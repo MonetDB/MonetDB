@@ -3657,6 +3657,57 @@ evaluateOp (opt_t *f, int rcode, int rc1, int rc2,
     milprintf(f, "} # end of '%s' calculation\n", operator);
 }
 
+#ifdef HAVE_PROBXML
+static void
+evaluateDeepEq (opt_t *f, int rcode, int rc1, int rc2,
+            int counter, char *operator, type_co t_co)
+{
+    milprintf(f, "{ # pxmlsup:deep-equal (Deep equal) calculation\n");
+    if (rc2 != NORMAL)
+        milprintf(f, "var val_snd := item%s;\n", kind_str(rc2));
+    else
+        milprintf(f, "var val_snd := item.leftfetchjoin(%s);\n", t_co.table);
+
+    if (rc1 != NORMAL)
+        milprintf(f, "var val_fst := item%s%03u;\n", kind_str(rc1), counter);
+    else
+        milprintf(f, "var val_fst := item%03u.leftfetchjoin(%s);\n", counter, t_co.table);
+
+    // milprintf(f, "val_fst := [%s](val_fst,val_snd);\n", operator);
+    milprintf(f, "val_fst := probxml_deep_eq(ws,item%03u,kind%03u,item,kind);\n", counter,counter);
+
+    if (rcode == BOOL) {
+        milprintf(f, "item := val_fst.[oid]();\n");
+        milprintf(f, "kind := BOOL;\n");
+    } else if (rcode != NORMAL) {
+        milprintf(f, "item%s := val_fst;\n", kind_str(rcode)); 
+    } else {
+        addValues(f, t_co, "val_fst", "item"); 
+    }
+    milprintf(f, "} # end of pxmlsup:deep-equal (Deep Equal) \n");
+}
+
+static int
+translateDeepEq (opt_t *f, int cur_level, int counter, char *comp, PFcnode_t *args)
+{
+    int rc1, rc2;
+
+    /* translate the subtrees */
+    rc1 = translate2MIL (f, VALUES, cur_level, counter, L(args));
+    counter++;
+    saveResult_ (f, counter, rc1); 
+
+    rc2 = translate2MIL (f, VALUES, cur_level, counter, RL(args));
+
+    evaluateDeepEq (f, BOOL, rc1, rc2, counter, comp, bool_container());
+
+    /* clear the intermediate result of the second subtree */
+    deleteResult_ (f, counter, rc1);
+
+    return NORMAL;
+}
+#endif /*HAVE_PROBXML */
+
 /**
  * evaluateOpOpt evaluates a operation and gives back a new 
  * intermediate result. It first gets the iter values and joins
@@ -8595,7 +8646,12 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         return rc;
     }
 #endif /* PFTIJAH */
+
 #ifdef HAVE_PROBXML
+    else if (!PFqname_eq(fnQname,PFqname (PFns_pxmlsup,"deep-equal")))
+    {
+        return translateDeepEq (f, cur_level, counter, "deep-equal", args);
+    }
     else if (!PFqname_eq(fnQname,PFqname (PFns_pxmlsup,"newid")))
     {
         rc = translate2MIL (f, VALUES, cur_level, counter, L(args));
@@ -11325,6 +11381,7 @@ const char* PFinitMIL(void) {
 	"var tijah_lock  := lock_nil; # pftijah collection lock\n"
 #endif
 #ifdef HAVE_PROBXML
+   "module(\"probxml\");\n"
    "var newid_counter := 1LL;\n"
 #endif
         "\n"

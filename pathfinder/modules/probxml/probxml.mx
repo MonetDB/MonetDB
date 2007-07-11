@@ -30,10 +30,13 @@
 .COMMAND probxml_test_c(str) : str = CMDprobxml_test;
  "INCOMPLETE"
 
+.COMMAND probxml_deep_eq(BAT[void,bat] ws, BAT[void,oid] litem, BAT[void,int] lkind,BAT[void,oid] ritem, BAT[void,int] rkind) : BAT[void,bit] = CMDprobxml_deep_eq;
+"INCOMPLETE"
+
 .PRELUDE = probxml_prelude;
 .EPILOGUE = probxml_epilogue;
 
-.END pftijah;
+.END probxml;
 @mil
 ###
 # This file contains implementations the probxml MIL scripts
