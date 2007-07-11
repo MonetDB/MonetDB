@@ -173,11 +173,6 @@ static INLINE str RMTinternalput(str *ret, Mapi mconn, int type, ptr value) {
 
 	/* get a free identifier on the remote host */
 	rethrow("remote.put", tmp, RMTquery(&mhdl, "remote.put", mconn, "remote.getnextid();"));
-	if (mapi_get_row_count(mhdl) != 1) {
-		int c = mapi_get_row_count(mhdl);
-		mapi_close_handle(mhdl);
-		throw(MAL, "remote.put", "unexpected number of rows (%d), expecting 1", c);
-	}
 	mapi_fetch_row(mhdl); /* should succeed */
 	tmp = mapi_fetch_field(mhdl, 0); /* should be there */
 	if (tmp == NULL) {
@@ -271,11 +266,6 @@ static INLINE str RMTinternalget(Mapi mconn, str ident, ValPtr v) {
 	snprintf(qbuf, 511, "remote.serveget(\"%s\");", ident);
 	rethrow("remote.get", tmp, RMTquery(&mhdl, "remote.get", mconn, qbuf));
 
-	if (mapi_get_row_count(mhdl) != 1) {
-		int c = mapi_get_row_count(mhdl);
-		mapi_close_handle(mhdl);
-		throw(MAL, "remote.get", "unexpected number of rows (%d), expecting 1", c);
-	}
 	mapi_fetch_row(mhdl); /* should succeed */
 	type = mapi_fetch_field(mhdl, 0); /* should be there */
 	if (type == NULL) {
@@ -322,14 +312,6 @@ static INLINE str RMTinternalget(Mapi mconn, str ident, ValPtr v) {
 		snprintf(qbuf, 511, "io.print(%s);", ident);
 		rethrow("remote.get", tmp, RMTquery(&mhdl, "remote.get", mconn, qbuf));
 
-#if 0
-		if (mapi_get_row_count(mhdl) != len) {
-			int rc = mapi_get_row_count(mhdl);
-			mapi_close_handle(mhdl);
-			throw(MAL, "remote.get", "expected " LLFMT " tuples, "
-					"will get only %d", len, rc);
-		}
-#endif
 		b = BATnew(h, t, len);
 
 		/* some checks maybe ... */
@@ -707,12 +689,6 @@ str RMTexec(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	/* get a free identifier on the remote host */
 	mhdl = NULL;
 	rethrow("remote.exec", tmp, RMTquery(&mhdl, "remote.exec", c->mconn, "remote.getnextid();"));
-	if (mapi_get_row_count(mhdl) != 1) {
-		int c = mapi_get_row_count(mhdl);
-		mapi_close_handle(mhdl);
-		FREEargv;
-		throw(MAL, "remote.put", "unexpected number of rows (%d), expecting 1", c);
-	}
 	mapi_fetch_row(mhdl); /* should succeed */
 	tmp = mapi_fetch_field(mhdl, 0); /* should be there */
 	if (tmp == NULL) {
