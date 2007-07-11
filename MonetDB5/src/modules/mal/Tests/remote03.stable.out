@@ -1,0 +1,104 @@
+stdout of test 'remote03` in directory 'src/modules/mal` itself:
+
+
+# 15:28:56 >  
+# 15:28:56 >  Mtimeout -timeout 60  mserver5 "--config=/ufs/fabian/scratch/monetdb/current/program-x86_64/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/fabian/scratch/monetdb/current/program-x86_64/lib64/MonetDB5:/ufs/fabian/scratch/monetdb/current/program-x86_64/lib64/MonetDB5/lib:/ufs/fabian/scratch/monetdb/current/program-x86_64/lib64/MonetDB5/bin" --set "gdk_dbfarm=/net/pegasus.ins.cwi.nl/export/scratch0/fabian/vtmp/mtest-current-pegasus.ins.cwi.nl/five/dbfarm" --set "sql_logdir=/net/pegasus.ins.cwi.nl/export/scratch0/fabian/vtmp/mtest-current-pegasus.ins.cwi.nl/five/sqllog" --set "xquery_logdir=/net/pegasus.ins.cwi.nl/export/scratch0/fabian/vtmp/mtest-current-pegasus.ins.cwi.nl/five/xquerylog" --set mapi_open=true --set mapi_port=34439 --set xrpc_port=43409 --set monet_prompt= --trace --dbname=mTests_src_modules_mal  remote03.mal
+# 15:28:56 >  
+
+
+
+# MonetDB Server v5.1.0
+# Copyright (c) 1993-2007 CWI, all rights reserved
+# Compiled for x86_64-pc-linux-gnu/64bit with 64bit OIDs dynamically linked
+# dbname:mTests_src_modules_mal
+# Visit http://monetdb.cwi.nl/ for further information
+#include remote;
+## for testweb, we need to ask the server itself how it is available, use
+## sabaoth for that
+#include sabaoth;
+#
+#h := sabaoth.getLocalConnectionHost();
+#p := sabaoth.getLocalConnectionPort();
+#
+## create a connecton to ourself
+#remote.create("test", h, p, nil:str, "monetdb", "monetdb");
+#
+## io.print only outputs things, but returns nothing
+#a := remote.exec("test", "io.print", "bla");
+#io.print(a);
+#
+## now do it with a function that returns something (a BAT in this case)
+#b := remote.exec("test", "inspect.getAtomNames");
+#io.print(b);
+#
+## help testweb a bit, since currently no cleanup is done on server
+## shutdown
+#remote.destroy("test");
+#
+function user.main():void;	# 0  (main:void)
+#remote.prelude(); 	# 1  (_1:str)
+# ideally we would like to do this, however that's unfortunately 	# 2  (_2:str)
+# impossible since variadic stuff doesn't work in functions 	# 3  (_3:str)
+#function exec(conn:str, ident:str...):any; 	# 4  (_4:str)
+#	id := remote.exec(conn, ident, ...); 	# 5  (_5:str)
+#	ret := remote.get(conn, id); 	# 6  (_6:str)
+#	return(ret); 	# 7  (_7:str)
+#end exec; 	# 8  (_8:str)
+# for testweb, we need to ask the server itself how it is available, use 	# 9  (_9:str)
+# sabaoth for that 	# 10  (_10:str)
+#sabaoth.prelude(); 	# 11  (_11:str)
+    h := sabaoth.getLocalConnectionHost();	# 12 SABgetLocalConnectionHost (h:str)
+    p := sabaoth.getLocalConnectionPort();	# 13 SABgetLocalConnectionPort (p:int)
+# create a connecton to ourself 	# 14  (_14:str)
+    remote.create("test",h,p,nil:str,"monetdb","monetdb");	# 15 RMTcreate (_15:void)<-(_16:str)(h:str)(p:int)(_17:str)(_18:str)(_18:str)
+# io.print only outputs things, but returns nothing 	# 16  (_19:str)
+    a := remote.exec("test","io.print","bla");	# 17 RMTexec (a:any)<-(_16:str)(_21:str)(_22:str)
+    io.print(a);	# 18 IOprint_val (_23:void)<-(a:any)
+# now do it with a function that returns something (a BAT in this case) 	# 19  (_24:str)
+    b := remote.exec("test","inspect.getAtomNames");	# 20 RMTexec (b:any)<-(_16:str)(_26:str)
+    io.print(b);	# 21 IOprint_val (_27:void)<-(b:any)
+# help testweb a bit, since currently no cleanup is done on server 	# 22  (_28:str)
+# shutdown 	# 23  (_29:str)
+    remote.destroy("test");	# 24 RMTdestroy (_30:void)<-(_16:str)
+end main;	# 25  
+[ nil ]
+#-------------------------#
+# h	t		  # name
+# int	str		  # type
+#-------------------------#
+[ 0,	  "void"	  ]
+[ 1,	  "bit"		  ]
+[ 2,	  "chr"		  ]
+[ 3,	  "bte"		  ]
+[ 4,	  "sht"		  ]
+[ 5,	  "BAT"		  ]
+[ 6,	  "int"		  ]
+[ 7,	  "oid"		  ]
+[ 8,	  "wrd"		  ]
+[ 9,	  "ptr"		  ]
+[ 10,	  "flt"		  ]
+[ 11,	  "dbl"		  ]
+[ 12,	  "lng"		  ]
+[ 13,	  "str"		  ]
+[ 14,	  "lock"	  ]
+[ 15,	  "sema"	  ]
+[ 16,	  "streams"	  ]
+[ 17,	  "bstream"	  ]
+[ 18,	  "pcre"	  ]
+[ 19,	  "blob"	  ]
+[ 20,	  "sqlblob"	  ]
+[ 21,	  "color"	  ]
+[ 22,	  "url"		  ]
+[ 23,	  "date"	  ]
+[ 24,	  "daytime"	  ]
+[ 25,	  "timestamp"	  ]
+[ 26,	  "timezone"	  ]
+[ 27,	  "zrule"	  ]
+[ 28,	  "inet"	  ]
+[ 29,	  "mapentry"	  ]
+[ 30,	  "idxentry"	  ]
+
+# 15:28:56 >  
+# 15:28:56 >  Done.
+# 15:28:56 >  
+

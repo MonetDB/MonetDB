@@ -322,12 +322,14 @@ static INLINE str RMTinternalget(Mapi mconn, str ident, ValPtr v) {
 		snprintf(qbuf, 511, "io.print(%s);", ident);
 		rethrow("remote.get", tmp, RMTquery(&mhdl, "remote.get", mconn, qbuf));
 
+#if 0
 		if (mapi_get_row_count(mhdl) != len) {
 			int rc = mapi_get_row_count(mhdl);
 			mapi_close_handle(mhdl);
 			throw(MAL, "remote.get", "expected " LLFMT " tuples, "
 					"will get only %d", len, rc);
 		}
+#endif
 		b = BATnew(h, t, len);
 
 		/* some checks maybe ... */
@@ -343,7 +345,7 @@ static INLINE str RMTinternalget(Mapi mconn, str ident, ValPtr v) {
 				ATOMfromstr(h, &l, &s, val);
 			}
 			if (ATOMvarsized(t)) {
-				r = (ptr)val;
+				r = (ptr)var;
 			} else {
 				s = 0;
 				r = NULL;
@@ -654,7 +656,7 @@ remote_export str RMTexec(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
  * or put calls.
  */
 str RMTexec(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
-	str conn, func, ident, rident, tmp;
+	str conn, func, ident, tmp;
 	str *argv;
 	int argc, i, len;
 	connection c;
@@ -719,11 +721,11 @@ str RMTexec(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		throw(MAL, "remote.put", "missing first column in tuple");
 	}
 	/* allocate on the stack as not to leak when we error lateron */
-	rident = alloca(sizeof(char) * (strlen(tmp) + 1));
-	memcpy(rident, tmp, strlen(tmp) + 1);
+	ident = alloca(sizeof(char) * (strlen(tmp) + 1));
+	memcpy(ident, tmp, strlen(tmp) + 1);
 	/* build the function invocation string */
 	len = 0;
-	len += snprintf(&qbuf[len], 511 - len, "%s := %s(", rident, ident);
+	len += snprintf(&qbuf[len], 511 - len, "%s := %s(", ident, func);
 	mapi_close_handle(mhdl);
 	for (i = 0; i < argc; i++) {
 		len += snprintf(&qbuf[len], 511 - len, "%s%s",
@@ -735,7 +737,7 @@ str RMTexec(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 
 	/* get the rident value, and return it */
 	rethrow("remote.exec", tmp, RMTinternalget(c->mconn,
-				rident, &stk->stk[getArg(pci, 0)]));
+				ident, &stk->stk[getArg(pci, 0)]));
 
 	return(MAL_SUCCEED);
 }
