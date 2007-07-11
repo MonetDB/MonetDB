@@ -1,0 +1,46 @@
+stdout of test 'merged-union_error_with_fn-sum.SF-1751684` in directory 'tests/BugTracker` itself:
+
+
+# 13:49:29 >  
+# 13:49:29 >  Mtimeout -timeout 60  Mserver "--config=/net/corona.ins.cwi.nl/export/scratch0/manegold/Monet/Testing/Stable/prefix.--enable-strict_--disable-optimize_--enable-debug/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/net/corona.ins.cwi.nl/export/scratch0/manegold/Monet/Testing/Stable/prefix.--enable-strict_--disable-optimize_--enable-debug/lib64/MonetDB4:/net/corona.ins.cwi.nl/export/scratch0/manegold/Monet/Testing/Stable/prefix.--enable-strict_--disable-optimize_--enable-debug/lib64/MonetDB4/lib:/net/corona.ins.cwi.nl/export/scratch0/manegold/Monet/Testing/Stable/prefix.--enable-strict_--disable-optimize_--enable-debug/lib64/MonetDB4/bin" --set "gdk_dbfarm=/net/corona.ins.cwi.nl/export/scratch0/manegold/Monet/Testing/Stable/prefix.--enable-strict_--disable-optimize_--enable-debug/var/dbfarm" --set "sql_logdir=/net/corona.ins.cwi.nl/export/scratch0/manegold/Monet/Testing/Stable/prefix.--enable-strict_--disable-optimize_--enable-debug/var/sql_logs" --set "xquery_logdir=/net/corona.ins.cwi.nl/export/scratch0/manegold/Monet/Testing/Stable/prefix.--enable-strict_--disable-optimize_--enable-debug/var/xquery_logs" --set mapi_open=true --set mapi_port=36780 --set xrpc_port=46239 --set monet_prompt= --trace --dbname=mTests_tests_BugTracker  
+# 13:49:29 >  
+
+# Monet Database Server V4.18.1
+# Copyright (c) 1993-2007, CWI. All rights reserved.
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
+# Visit http://monetdb.cwi.nl/ for further information.
+module(pathfinder);
+# XRPC administrative console at http://localhost:46239/admin
+module(streams);
+module(unix);
+
+var TSTSRCDIR := getenv("TSTSRCDIR");
+
+xquery("xml","
+let $res := doc(\""+TSTSRCDIR+"/merged-union_error_with_fn-sum.SF-1751684.xml\")
+for $f in distinct-values(data($res//@id))
+return ($f,fn:sum($res//link[@id=$f]/@score))
+").printf();
+fflush(stdout());
+<?xml version="1.0" encoding="utf-8"?>
+<XQueryResult>540874 0.000000 191698 0.000000 1810518 0.000000 221824 0.000000 1124376 0.000000 1075178 0.000000 2773076 0.000000 36611 73.898743 1032697 0.000000 16894 0.000000 360089 8.210971</XQueryResult>
+fflush(stderr());
+
+debugmask(0);
+
+xquery("xml","
+let $res := doc(\""+TSTSRCDIR+"/merged-union_error_with_fn-sum.SF-1751684.xml\")
+for $f in distinct-values(data($res//@id))
+return ($f,fn:sum($res//link[@id=$f]/@score))
+").printf();
+fflush(stdout());
+<?xml version="1.0" encoding="utf-8"?>
+<XQueryResult>540874 0.000000 191698 0.000000 1810518 0.000000 221824 0.000000 1124376 0.000000 1075178 0.000000 2773076 0.000000 36611 73.898743 1032697 0.000000 16894 0.000000 360089 8.210971</XQueryResult>
+fflush(stderr());
+
+quit();
+
+# 13:49:30 >  
+# 13:49:30 >  Done.
+# 13:49:30 >  
+

@@ -1,0 +1,25 @@
+module(pathfinder);
+module(streams);
+module(unix);
+
+var TSTSRCDIR := getenv("TSTSRCDIR");
+
+xquery("xml","
+let $res := doc(\""+TSTSRCDIR+"/merged-union_error_with_fn-sum.SF-1751684.xml\")
+for $f in distinct-values(data($res//@id))
+return ($f,fn:sum($res//link[@id=$f]/@score))
+").printf();
+fflush(stdout());
+fflush(stderr());
+
+debugmask(0);
+
+xquery("xml","
+let $res := doc(\""+TSTSRCDIR+"/merged-union_error_with_fn-sum.SF-1751684.xml\")
+for $f in distinct-values(data($res//@id))
+return ($f,fn:sum($res//link[@id=$f]/@score))
+").printf();
+fflush(stdout());
+fflush(stderr());
+
+quit();
