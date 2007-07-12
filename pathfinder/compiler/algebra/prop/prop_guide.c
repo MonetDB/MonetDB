@@ -240,7 +240,7 @@ create_PFty_t(PFguide_tree_t *n)
                 PFty_xs_anyType());
             break;
         case(attr):
-            ret = PFty_elem(PFqname(PFns_guide, n->tag_name),
+            ret = PFty_attr(PFqname(PFns_guide, n->tag_name),
                 PFty_star(PFty_atomic()));
             break;
         case(text):
@@ -686,9 +686,19 @@ copy_step(PFla_op_t *n)
         /* attribute axis */
             for(unsigned int i = 0; i < PFarray_last(guide_list); i++) {
                 element = *((PFguide_tree_t**) PFarray_at(guide_list, i));
-                if(PFty_subtype(create_PFty_t(element), n->sem.step.ty))
-                    /* add guide nodes to return array */
-                    new_guide_mapping_list = add_guide(new_guide_mapping_list, element, column_out);
+                childs = element->child_list;
+                /* subtype check for all childs */
+                for(unsigned int j = 0; j < PFarray_last(childs); j++) {
+                    child_element= *((PFguide_tree_t**) PFarray_at(childs,j));
+                    if(PFty_subtype(
+                            create_PFty_t(child_element),
+                            n->sem.step.ty)) {
+
+                        /* add guide nodes to return array */
+                        new_guide_mapping_list = add_guide(
+                        new_guide_mapping_list, child_element, column_out);
+                    }
+                }
             }
             break;
         default:
