@@ -68,7 +68,7 @@ start_element (void *ctx, const xmlChar *tagname, const xmlChar **atts)
 
     unsigned int   guide    = 0;    /* the guide number of the node */
     unsigned int   count    = 0;    /* count of same nodes */
-    int            kind_int = - 1;  /* read kind as integer */
+    unsigned int   kind_int = 0;    /* read kind as integer */
     PFguide_kind_t kind     = text; /* kind if the guide node */
     char          *tag_name = NULL; /* tag name of the guide node */
     char          *attribute_name; 
@@ -89,14 +89,14 @@ start_element (void *ctx, const xmlChar *tagname, const xmlChar **atts)
                 count = (unsigned int) atoi((char *)atts[1]); 
     
             if (strcmp (attribute_name, "kind") == 0) {
-                kind_int = atoi ((char *) atts[1]);
+                kind_int = (unsigned int) atoi ((char *) atts[1]);
                 switch(kind_int) {
-                    case 0: kind = elem; break;
-                    case 1: kind = attr; break;
-                    case 2: kind = text; break;
-                    case 3: kind = comm; break;
-                    case 4: kind = pi;   break;
-                    case 5: kind = doc;  break;
+                    case 1: kind = elem; break;
+                    case 2: kind = attr; break;
+                    case 3: kind = text; break;
+                    case 4: kind = comm; break;
+                    case 5: kind = pi;   break;
+                    case 6: kind = doc;  break;
                     default: assert (0); break;
                 }
             }
