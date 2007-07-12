@@ -3662,6 +3662,7 @@ static void
 evaluateDeepEq (opt_t *f, int rcode, int rc1, int rc2,
             int counter, char *operator, type_co t_co)
 {
+    (void)operator;
     milprintf(f, "{ # pxmlsup:deep-equal (Deep equal) calculation\n");
     if (rc2 != NORMAL)
         milprintf(f, "var val_snd := item%s;\n", kind_str(rc2));
