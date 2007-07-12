@@ -1928,7 +1928,7 @@ xquery_print_result_DRIVER (
 
 #ifdef HAVE_PROBXML
 
-#define EQDEBUG 1
+#define EQDEBUG 0
 
 #define DACH(CTX) ((struct DuplAttrChk*)CTX->_private)
 

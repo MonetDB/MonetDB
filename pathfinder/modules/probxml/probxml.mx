@@ -33,6 +33,9 @@
 .COMMAND probxml_deep_eq(BAT[void,bat] ws, BAT[void,oid] litem, BAT[void,int] lkind,BAT[void,oid] ritem, BAT[void,int] rkind) : BAT[void,bit] = CMDprobxml_deep_eq;
 "INCOMPLETE"
 
+.COMMAND edit_distance(str l, str r) : lng = CMDedit_distance;
+"INCOMPLETE"
+
 .PRELUDE = probxml_prelude;
 .EPILOGUE = probxml_epilogue;
 
@@ -65,6 +68,87 @@ PROC probxml_ping() : void :=
 #include <pathfinder.h>
 
 #include "probxml.h"
+
+#define min2(a2, b2) (((a2) < (b2)) ? (a2) : (b2))
+
+#define min3(a3,b3,c3) min2(min2(a3, b3), c3)
+
+#define I(M,N) ((mdim*(M))+N)
+
+// computes the Levenshtein distance between two strings
+// "x" represent the pattern and "y" represent the text
+// "m" is the pattern length and "n" is the text length
+int LD(const char *x, const char *y) {
+	unsigned int m = strlen(x);
+	unsigned int n = strlen(y);
+	if (n == 0) { 
+		return m;
+	} else if (m == 0) {
+		return n;
+	}
+	// creating a matrix of m+1 rows and n+1 columns
+	unsigned int i;
+	int mdim = m + 1;
+	int ndim = n + 1;
+	int *matrix = GDKmalloc(mdim*ndim*sizeof(int));
+
+	// initialising the first row of the matrix
+	for(i = 0; i <= n; ++i) {
+		matrix[I(0,i)] = i; 
+	}
+
+	// initialising the first column of the matrix
+	for(i = 0; i <= m; ++i) {
+		matrix[I(i,0)] = i; 
+	}
+
+	// complementary variables for computing the "Levenshtein distance"
+	unsigned int above_cell, left_cell, diagonal_cell, cost;
+
+	// starting the main process for computing 
+	// the distance between the two strings "x" and "y"
+	for(i = 1; i <= m; ++i) {
+		for(unsigned int j = 1; j <= n; ++j) {
+			// if the current two characters
+			// of both strings are the same
+			// then, the corresponding cost value
+			// will be zero,otherwise it will be 1
+			if (x[i-1] == y[j-1]) {
+				cost = 0;
+			} 
+			else {
+				cost = 1;
+			}
+			// current cell of the matrix: matrix[i][j]
+
+			// finds the above cell to the current cell
+			above_cell = matrix[I(i-1,j)];
+
+			// finds the left cell to the current cell
+			left_cell = matrix[I(i,j-1)];
+
+			// finds the diagonally above cell to the current cell
+			diagonal_cell = matrix[I(i-1,j-1)];
+
+			// computes the current value of the "edit distance" and place
+			// the result into the current matrix cell
+			matrix[I(i,j)] = min3(above_cell + 1, left_cell + 1, diagonal_cell + cost);
+		}
+	}
+	// placing the final result into a variable
+	unsigned int result = matrix[I(m,n)];
+	// freeing memory that has been used
+	// for the "matrix variable"
+	GDKfree(matrix);
+	// returning result of the search
+	return result;
+}
+
+int CMDedit_distance (lng* res, str l, str r)
+{
+    *res = (lng)LD(l,r);
+    return GDK_SUCCEED;
+}
 
 int CMDprobxml_test (str* res, str arg)
 {

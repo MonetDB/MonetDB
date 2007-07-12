@@ -8652,6 +8652,49 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
     {
         return translateDeepEq (f, cur_level, counter, "deep-equal", args);
     }
+    else if (!PFqname_eq(fnQname,PFqname (PFns_pxmlsup,"edit-distance")))
+    {
+        int rc2;
+        char *item_int = kind_str(INT);
+        char *item_str = kind_str(STR);
+        item_ext = (code)?item_int:"";
+
+        rc = translate2MIL (f, VALUES, cur_level, counter, L(args));
+        if (rc == NORMAL)
+        {
+            milprintf(f, "item%s := item%s;\n", item_str, val_join(STR));
+        }
+
+        counter++;
+        saveResult_ (f, counter, STR);
+
+        rc2 = translate2MIL (f, VALUES, cur_level, counter, RL(args));
+        if (rc2 == NORMAL)
+        {
+            milprintf(f, "item%s := item%s;\n", item_str, val_join(STR));
+        }
+
+        milprintf(f,
+                "{ # edit-distance (string, string)\n "
+                "var result := item%s%03u.[edit_distance](item%s);\n",
+		item_str, counter,
+                kind_str(STR));
+        milprintf(f, "kind := INT;\n ");
+        if (code)
+        {
+            milprintf(f,"item%s := result;\n", item_ext);
+        }
+        else
+        {
+            addValues(f, int_container(), "result", "item");
+        }
+        milprintf(f, "} # end of edit-distance (string, string)\n ");
+        deleteResult_ (f, counter, STR);
+        return (code)?INT:NORMAL;
+
+
+
+    }
     else if (!PFqname_eq(fnQname,PFqname (PFns_pxmlsup,"newid")))
     {
         rc = translate2MIL (f, VALUES, cur_level, counter, L(args));
@@ -8670,8 +8713,10 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                   "newid_counter := newid_counter + res.count();\n"
         );
 
-        if (code) milprintf(f, "item%s := res;\n", item_ext);
-        else addValues (f, t_co, "res", "item");
+        if (code)
+		milprintf(f, "item%s := res;\n", item_ext);
+        else
+		addValues (f, t_co, "res", "item");
 
         item_ext = (code)?item_ext:"";
         milprintf(f, "} # end of fn:newid\n");

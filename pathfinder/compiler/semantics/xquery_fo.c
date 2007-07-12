@@ -2203,6 +2203,12 @@ PFfun_xquery_fo (void)
             .par_ty = (PFty_t[]) { PFty_xs_anyNode (),
                                    PFty_xs_anyNode () },
             .ret_ty = PFty_xs_boolean () } } }
+    , /* pxmlsup:edit-distance (string, string) as int */
+      { .ns = PFns_pxmlsup, .loc = "edit-distance",
+        .arity = 2, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_xs_string (),
+                                   PFty_xs_string () },
+            .ret_ty = PFty_xs_integer () } } }
     , /* pxmlsup:nid (xs:element) as string */
       { .ns = PFns_pxmlsup, .loc = "newid",
         .arity = 1, .sig_count = 1, .sigs = { {
