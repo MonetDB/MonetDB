@@ -674,8 +674,6 @@ str RMTexec(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	assert(argc >= 0);
 	argv = alloca(sizeof(str) * argc);
 
-#define FREEargv	for (i = 0; i < argc; i++) GDKfree(argv[i]);
-
 	/* put the arguments one by one, and save the remote identifier in
 	 * argv for later usage on the function invocation */
 	for (i = 3; i < pci->argc; i++) {
@@ -686,6 +684,9 @@ str RMTexec(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		/* FIXME: we leak argv if above fires */
 		argv[i - 3] = ident;
 	}
+
+#define FREEargv	for (i = 0; i < argc; i++) GDKfree(argv[i]);
+
 	/* get a free identifier on the remote host */
 	mhdl = NULL;
 	rethrow("remote.exec", tmp, RMTquery(&mhdl, "remote.exec", c->mconn, "remote.getnextid();"));
@@ -708,6 +709,7 @@ str RMTexec(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 				(i > 0 ? ", " : ""), argv[i]);
 	}
 	len += snprintf(&qbuf[len], 511 - len, ");");
+	FREEargv;
 	rethrow("remote.exec", tmp, RMTquery(&mhdl, "remote.exec", c->mconn, qbuf));
 	mapi_close_handle(mhdl);  /* we don't care at all about what it outputs */
 
