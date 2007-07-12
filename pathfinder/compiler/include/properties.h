@@ -495,6 +495,16 @@ PFalg_attlist_t PFprop_trace_names (PFla_op_t *start,
                                     PFla_op_t *goal,
                                     PFalg_attlist_t list);
 
+
+/* ---------------------- guide property accessors ------------------------- */
+/* Return if the property @a prop has guide nodes for @a column  */
+bool PFprop_guide(PFprop_t *prop, PFalg_att_t column);
+/* Return how many guide nodes are in the property @a prop for @a column */
+unsigned int PFprop_guide_count(PFprop_t *prop, PFalg_att_t column);
+/* Return an array of pointers of PFguide_tree_t of  guide nodes in the 
+ * property @a prop for @a column */
+PFguide_tree_t** PFprop_guide_elements(PFprop_t *prop, PFalg_att_t column);
+
 #endif  /* PROPERTIES_H */
 
 
