@@ -7563,18 +7563,18 @@ PROC add_content (BAT[void, str] item, BAT[void, BAT] ws, int slot) : BAT[void,o
 
 PROC multi_merged_union (BAT[void, BAT] b) : BAT[void,BAT]
 {
-    var iter     := bat (void, oid).seqbase(0@0);
-    var pre      := bat (void, oid).seqbase(0@0);
-    var size     := bat (void, int).seqbase(0@0);
-    var level    := bat (void, chr).seqbase(0@0);
-    var kind     := bat (void, chr).seqbase(0@0);
-    var prop     := bat (void, oid).seqbase(0@0);
-    var cont     := bat (void, oid).seqbase(0@0);
-    var old_pre  := bat (void, oid).seqbase(0@0);
-    var old_cont := bat (void, oid).seqbase(0@0);
-    var res;
+    var res := b.fetch(0);
 
-    b@batloop() {
+    b.slice(1,count(b))@batloop() {
+        var iter     := res.fetch(0);
+        var pre      := res.fetch(1);
+        var size     := res.fetch(2);
+        var level    := res.fetch(3);
+        var kind     := res.fetch(4);
+        var prop     := res.fetch(5);
+        var cont     := res.fetch(6);
+        var old_pre  := res.fetch(7);
+        var old_cont := res.fetch(8);
         res := merged_union (iter,     $t.fetch(0),
                              pre,      $t.fetch(1), 
                              size,     $t.fetch(2), 
@@ -7584,15 +7584,6 @@ PROC multi_merged_union (BAT[void, BAT] b) : BAT[void,BAT]
                              cont,     $t.fetch(6), 
                              old_pre,  $t.fetch(7), 
                              old_cont, $t.fetch(8));
-        iter     := res.fetch(0);
-        pre      := res.fetch(1);
-        size     := res.fetch(2);
-        level    := res.fetch(3);
-        kind     := res.fetch(4);
-        prop     := res.fetch(5);
-        cont     := res.fetch(6);
-        old_pre  := res.fetch(7);
-        old_cont := res.fetch(8);
     }
     return res;
 }
