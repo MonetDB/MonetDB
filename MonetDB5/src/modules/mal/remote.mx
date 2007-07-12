@@ -638,8 +638,7 @@ remote_export str RMTexec(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
  * or put calls.
  */
 str RMTexec(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
-	str conn, func, ident, tmp;
-	str *argv;
+	str conn, func, ident, arg, tmp;
 	int argc, i, len;
 	connection c;
 	char qbuf[512];	/* FIXME: make this dynamic */
@@ -670,46 +669,38 @@ str RMTexec(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	/* lookup conn */
 	rethrow("remote.exec", tmp, RMTfindconn(&c, conn));
 
-	argc = pci->argc - 3 /* ret, conn, func */;
-	assert(argc >= 0);
-	argv = alloca(sizeof(str) * argc);
-
-	/* put the arguments one by one, and save the remote identifier in
-	 * argv for later usage on the function invocation */
-	for (i = 3; i < pci->argc; i++) {
-		rethrow("remote.exec", tmp, RMTinternalput(&ident,
-					c->mconn,
-					getArgType(mb, pci, i),
-					getArgReference(stk, pci, i)));
-		/* FIXME: we leak argv if above fires */
-		argv[i - 3] = ident;
-	}
-
-#define FREEargv	for (i = 0; i < argc; i++) GDKfree(argv[i]);
-
 	/* get a free identifier on the remote host */
 	mhdl = NULL;
 	rethrow("remote.exec", tmp, RMTquery(&mhdl, "remote.exec", c->mconn, "remote.getnextid();"));
 	mapi_fetch_row(mhdl); /* should succeed */
-	tmp = mapi_fetch_field(mhdl, 0); /* should be there */
-	if (tmp == NULL) {
+	ident = mapi_fetch_field(mhdl, 0); /* should be there */
+	if (ident == NULL) {
 		mapi_close_handle(mhdl);
-		FREEargv;
-		throw(MAL, "remote.put", "missing first column in tuple");
+		throw(MAL, "remote.exec", "missing first column in tuple");
 	}
-	/* allocate on the stack as not to leak when we error lateron */
-	ident = alloca(sizeof(char) * (strlen(tmp) + 1));
-	memcpy(ident, tmp, strlen(tmp) + 1);
-	/* build the function invocation string */
+
+	/* build the function invocation string in qbuf */
 	len = 0;
 	len += snprintf(&qbuf[len], 511 - len, "%s := %s(", ident, func);
 	mapi_close_handle(mhdl);
-	for (i = 0; i < argc; i++) {
+
+	/* handle the arguments to the function */
+	argc = pci->argc - 3 /* ret, conn, func */;
+	assert(argc >= 0);
+
+	/* put the arguments one by one, and dynamically build the
+	 * invocation string */
+	for (i = 3; i < pci->argc; i++) {
+		rethrow("remote.exec", tmp, RMTinternalput(&arg,
+					c->mconn,
+					getArgType(mb, pci, i),
+					getArgReference(stk, pci, i)));
 		len += snprintf(&qbuf[len], 511 - len, "%s%s",
-				(i > 0 ? ", " : ""), argv[i]);
+				(i > 3 ? ", " : ""), arg);
 	}
+
+	/* finish end execute the invocation string */
 	len += snprintf(&qbuf[len], 511 - len, ");");
-	FREEargv;
 	rethrow("remote.exec", tmp, RMTquery(&mhdl, "remote.exec", c->mconn, qbuf));
 	mapi_close_handle(mhdl);  /* we don't care at all about what it outputs */
 
