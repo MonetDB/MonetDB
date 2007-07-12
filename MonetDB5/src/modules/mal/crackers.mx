@@ -5905,7 +5905,7 @@ createView:
 @
 
 @= RangeSelectBody
-        BAT *b, *c, *view;
+        BAT *b, *c, *view=NULL;
         int  m, h;
         lng vl=-1, vh=-1, posl, posh, cl1, ch1, cl2, ch2;
         int zz,_vl;
