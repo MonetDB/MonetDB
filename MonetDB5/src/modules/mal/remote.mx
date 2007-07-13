@@ -114,6 +114,12 @@ typedef struct _connection {
 
 static connection connections = NULL;
 
+/**
+ * Helper function to return a connection matching a given string, or an
+ * error if it does not exist.  Before the connection is returned, it is
+ * made sure that it is usable.  If the connection cannot be made
+ * useable, an error is returned.
+ */
 static INLINE str RMTfindconn(connection *ret, str conn) {
 	connection c = connections;
 
@@ -141,6 +147,11 @@ static INLINE str RMTfindconn(connection *ret, str conn) {
 	throw(MAL, "remote.<findconn>", "no such connection with name '%s'", *conn);
 }
 
+/**
+ * Helper function to execute a query over the given connection,
+ * returning the result handle.  If communication fails in one way or
+ * another, an error is returned.
+ */
 static INLINE str RMTquery(MapiHdl *ret, str func, Mapi conn, str query) {
 	MapiHdl mhdl;
 
@@ -148,7 +159,7 @@ static INLINE str RMTquery(MapiHdl *ret, str func, Mapi conn, str query) {
 	mhdl = mapi_query(conn, query);
 	if (mhdl) {
 		if (mapi_result_error(mhdl) != NULL) {
-			str err = createException(MAL, func, "%s",
+			str err = createException(IO, func, "%s",
 					getExceptionMessage(mapi_result_error(mhdl)));
 			mapi_close_handle(mhdl);
 			return(err);
@@ -158,7 +169,7 @@ static INLINE str RMTquery(MapiHdl *ret, str func, Mapi conn, str query) {
 			throw(IO, func, "an error occurred on connection %s: %s",
 					conn, mapi_result_error(mhdl));
 		} else {
-			throw(MAL, func, "remote function invocation didn't return a result");
+			throw(IO, func, "remote function invocation didn't return a result");
 		}
 	}
 
@@ -166,6 +177,12 @@ static INLINE str RMTquery(MapiHdl *ret, str func, Mapi conn, str query) {
 	return(MAL_SUCCEED);
 }
 
+/**
+ * Helper function to place the given object on the remote host via the
+ * given connection.  An id will be fetched from the remote host, and
+ * set in ret if no problems occur, on which an error is returned.  The
+ * id can be used to reference the object put on the remote host.
+ */
 static INLINE str RMTinternalput(str *ret, Mapi mconn, int type, ptr value) {
 	str tmp;
 	str ident;
@@ -187,7 +204,6 @@ static INLINE str RMTinternalput(str *ret, Mapi mconn, int type, ptr value) {
 	/* depending on the input object generate actions to store the
 	 * object remotely*/
 	if (type == TYPE_any || isAnyExpression(type)) {
-		/* TODO: functions */
 		throw(MAL, "remote.put", "cannot deal with '%s' type",
 				getTypeName(type));
 	} else if (isaBatType(type)) {
@@ -257,6 +273,10 @@ static INLINE str RMTinternalput(str *ret, Mapi mconn, int type, ptr value) {
 	return(MAL_SUCCEED);
 }
 
+/**
+ * Helper function to return a remote object via the given connection as
+ * a local object.
+ */
 static INLINE str RMTinternalget(Mapi mconn, str ident, ValPtr v) {
 	str type, tmp;
 	int vtype;
@@ -274,18 +294,7 @@ static INLINE str RMTinternalget(Mapi mconn, str ident, ValPtr v) {
 	}
 
 	vtype = getTypeIndex(type, strlen(type), -1);
-	if (vtype == -1) {
-		/* this is probably a function, because it isn't a valid thing */
-		if (strcmp(type, "function") != 0)
-			throw(MAL, "remote.get", "unsupported type: '%s'", type);
-		/* uhm... now what?
-		 * we cannot "return" a function (at least not now), so the only
-		 * thing we /can/ do is to make it locally available somehow,
-		 * and like put return the local identifier.  We basically need
-		 * an "eval"-like functionality for this...  Let's say that this
-		 * attempt using callString feels very scary. */
-		throw(MAL, "remote.get", "I don't know yet how to do functions properly");
-	} else if (vtype == TYPE_bat) {
+	if (vtype == TYPE_bat) {
 		int h, t, s;
 		ptr l, r;
 		lng len;
@@ -419,10 +428,6 @@ remote_export str RMTserveget(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
  * information where available, e.g. to describe a BAT with oid head and
  * str tail and one BUN:
  * [ "bat", "oid", "str", 1 ]
- * Emission of a function is currently done inline after a function
- * tuple which has the number of plans from the plan stack in the second
- * column:
- * [ "function", 1 ]
  */
 str RMTserveget(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	int i;
@@ -434,37 +439,8 @@ str RMTserveget(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 
 	name = (str)getArgValue(stk, pci, 1);
 	i = findVariable(mb, name);
-	if (i < 0) {
-		/* look it up as a function */
-		Symbol s = NULL;
-		Client c = MCgetClient();
-		Module mod;
-		str symbol;
-
-		if ((symbol = strchr(name, '.')) != NULL) {
-			*symbol++ = '\0';
-		} else {
-			symbol = name;
-			name = "user";	/* FIXME: should be "default" schema */
-		}
-		mod = findModule(c->nspace, getName(name, 4));
-		s = findSymbolInModule(mod, putName(symbol, strlen(symbol)));
-		if (s == NULL) {
-			throw(MAL, "remote.serveget", "no such object '%s'", symbol);
-		} else {
-			/* FIXME: this should print the number of plans in the
-			 * planstack */
-			snprintf(ret, 255, "[ \"function\",\t%d\t]", 1);
-			ret[255] = '\0';
-			stream_printf(c->fdout, "%s\n", ret);
-			/* FIXME: this should print the plans from the planstack
-			 * somehow in a better way.  LIST_MAPI is just a hack for
-			 * now... */
-			printFunction(c->fdout, s->def,
-					LIST_MAL_INSTR | LIST_MAL_PROPS | LIST_MAPI);
-		}
-		return(MAL_SUCCEED);
-	}
+	if (i < 0)
+		throw(MAL, "remote.serveget", "no such object '%s'", name);
 
 	n = getVar(mb, i);
 	v = stk->stk + i;
