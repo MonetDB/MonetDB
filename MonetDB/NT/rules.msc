@@ -16,7 +16,7 @@
 # Portions created by CWI are Copyright (C) 1997-2007 CWI.
 # All Rights Reserved.
 
-!INCLUDE $(TOPDIR)\..\..\buildtools\conf\rules.msc
+!INCLUDE $(TOPDIR)\winrules.msc
 
 pkg = MonetDB
 CONFIG_H=monetdb_config.h

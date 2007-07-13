@@ -16,6 +16,9 @@
 # Portions created by CWI are Copyright (C) 1997-2007 CWI.
 # All Rights Reserved.
 
+prefix = ..\NT
+bindir = $(bindir)\bin
+
 !IFDEF DEBUG
 CFLAGS = -I. -GF -W3 -MDd -nologo -Zi -Od -D_DEBUG -RTC1 -ZI
 !ELSE
@@ -23,6 +26,8 @@ CFLAGS = -I. -GF -W3 -MD -nologo -Zi
 !ENDIF
 
 MV=copy
+COPY=copy
+MKDIR=mkdir
 MT=mt
 DEL=del
 FILTER=grep -v
@@ -30,6 +35,10 @@ YACC=bison -b y -y
 YFLAGS=-d
 
 all: burg.exe
+
+install: all
+	if not exist "$(bindir)" $(MKDIR) "$(bindir)"
+	$(COPY) burg.exe "$(bindir)"
 
 clean:
 	del *.exe *.obj

@@ -15,7 +15,7 @@
 # All Rights Reserved.
 
 MTSAFE
-INCLUDES = ../include 
+INCLUDES = ../include -I$(MONETDB_INCLUDEDIR)
 
 BINS = {
 	DIR = libdir/MonetDB/Tests

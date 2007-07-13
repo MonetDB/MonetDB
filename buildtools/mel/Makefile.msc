@@ -16,6 +16,9 @@
 # Portions created by CWI are Copyright (C) 1997-2007 CWI.
 # All Rights Reserved.
 
+prefix = ..\NT
+bindir = $(prefix)\bin
+
 MX = ..\Mx\Mx.exe
 !IFDEF DEBUG
 CFLAGS = -I. -GF -W3 -wd4273 -wd4102 -MDd -nologo -Zi -Od -D_DEBUG -RTC1 -ZI
@@ -24,6 +27,8 @@ CFLAGS = -I. -GF -wd4273 -wd4102 -W3 -MD -nologo -Zi
 !ENDIF
 CXXFLAGS = $(CFLAGS) -EHsc
 MV=copy
+COPY=copy
+MKDIR=mkdir
 MT=mt
 DEL=del
 ECHO=echo
@@ -32,6 +37,10 @@ LEX=flex
 YFLAGS = -d
 
 all: mel.exe
+
+install: all
+	if not exist "$(bindir)" $(MKDIR) "$(bindir)"
+	$(COPY) mel.exe "$(bindir)"
 
 MEL_OBJS = any_arg.obj atom_arg.obj atom.obj atomops.obj bat_arg.obj   \
 	   builtin.obj command.obj debug.obj depend.obj dependency.obj \

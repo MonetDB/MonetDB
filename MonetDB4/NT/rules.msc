@@ -16,7 +16,8 @@
 # Portions created by CWI are Copyright (C) 1997-2007 CWI.
 # All Rights Reserved.
 
-!INCLUDE $(TOPDIR)\..\..\buildtools\conf\rules.msc
+RULESMSC = $(MONETDB_PREFIX)\share\MonetDB\winrules.msc
+!INCLUDE $(RULESMSC)
 
 MONETDB_INCLUDEDIR=$(MONETDB_PREFIX)\include
 

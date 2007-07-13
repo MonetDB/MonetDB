@@ -18,8 +18,10 @@ check: "$(SRCDIR)\Makefile.msc"
 	$(MAKE) /nologo /i /f "$(SRCDIR)\Makefile.msc" "prefix=$(prefix)" check
 	call RunMtest.bat
 
-install: targetdirs monetdb_config.h all
+install: targetdirs monetdb_winconfig.h monetdb_config.h winrules.msc all
+	$(INSTALL) monetdb_winconfig.h "$(includedir)"
 	$(INSTALL) monetdb_config.h "$(includedir)"
+	$(INSTALL) winrules.msc "$(pkgdatadir)"
 	$(MAKE) /nologo /f "$(SRCDIR)\Makefile.msc" "prefix=$(prefix)" install
 
 $(SRCDIR)\Makefile.msc: "$(SRCDIR)\Makefile.ag"
