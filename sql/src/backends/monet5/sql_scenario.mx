@@ -173,8 +173,9 @@ SQLprelude(void)
 	/* s->tactics = .. */
 	s->engine = "MALengine";
 	sqlinit = GDKgetenv("sqlinit");
-	if (!strcmp(GDKgetenv("monet_welcome"), "yes"))
-		printf("# MonetDB/SQL Server v2.19.0 on port %s\n", GDKgetenv("mapi_port"));
+	tmp = GDKgetenv("monet_welcome");
+	if (tmp != NULL && strcmp(tmp, "yes") == 0)
+		printf("# MonetDB/SQL module v2.19.0 loaded\n");
 	return SABAOTHmarchScenario(&res, &s->name);
 }
 
