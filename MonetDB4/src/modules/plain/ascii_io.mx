@@ -319,6 +319,7 @@ static BAT *
 void_bat_create(int adt, size_t nr)
 {
 	BAT *b = BATnew(TYPE_void, adt, BATTINY);
+	BAT *bm = NULL;
 
 	/* check for correct structures */
 	if (b == NULL)
@@ -329,6 +330,16 @@ void_bat_create(int adt, size_t nr)
         	BATmmap(b, STORE_MMAP, STORE_MMAP, STORE_MMAP);
 	if (nr > BATTINY)
 		b = BATextend(b, nr);
+
+	/* disable all properties here */
+	bm = BBP_cache(-b->batCacheid);
+	b->tsorted = FALSE;
+	b->T->nosorted = 0;
+	b->tdense = FALSE;
+	b->T->nodense = 0;
+	b->tkey = bm->hkey = FALSE;
+	b->T->nokey[0] = 0;
+	b->T->nokey[1] = 1;
 	return b;
 }
 
@@ -567,6 +578,7 @@ ASCIIcollect_bats(ascii *as)
 	for (i = 0; i < as->nr_attrs; i++) {
 		BUNins(bats, (ptr) fmt[i].name, (ptr) &fmt[i].c->batCacheid, FALSE);
 		BATsetaccess(fmt[i].c, BAT_READ);
+		BATpropcheck(fmt[i].c, BATPROPS_ALL);
 		if (cnt != BATcount(fmt[i].c)) {
 			GDKerror("Error: counts are not equal\n");
 			return NULL;
@@ -616,7 +628,6 @@ rfind_quote(char *s, char quote)
 static INLINE int
 insert_val(ascii_io *fmt, char *s, char *e, char quote)
 {
-	int res = 0;
 	char *end = e;
 	char bak = *e;
 	ptr *adt;
@@ -635,9 +646,8 @@ insert_val(ascii_io *fmt, char *s, char *e, char quote)
 		s = lstrip(s);
 		e = rstrip(e);
 	}
-	if (e < s) {
+	if (e < s)
 		e = s;
-	}
 	adt = fmt->frstr(fmt->extra, fmt->adt, s, e, quote);
 	*end = bak;
 
@@ -646,8 +656,10 @@ insert_val(ascii_io *fmt, char *s, char *e, char quote)
 		return -1;
 	}
 
-	res = (BUNappend(fmt->c, adt, FALSE) == NULL);
-	return res;
+	bunfastins(fmt->c, NULL, adt);
+	return 0;
+bunins_failed:
+	return -1;
 }
 
 static INLINE char *
