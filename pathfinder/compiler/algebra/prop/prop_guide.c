@@ -301,7 +301,7 @@ getDescendantFromGuideRec(PFguide_tree_t *n, PFty_t type,
         /* get recursive all descendant element */
         getDescendantFromGuideRec(element, type, descendant); 
         /* add element if it is a subtype of @a type*/
-        if(PFty_subtype(create_PFty_t(element), type)) {
+        if(PFty_subtype(create_PFty_t(element),type)) {
             *((PFguide_tree_t**) PFarray_add(descendant)) = element;
         }
     }
@@ -591,6 +591,16 @@ copy_step(PFla_op_t *n)
         return;
     }
 
+    /* if axis is NOT the attribute axis, but the ty is ty_attr
+     * the guides will be emty */
+    if(axis != alg_attr) {
+        if(n->sem.step.ty.type == ty_attr) {
+            new_guide_mapping_list = add_guide(new_guide_mapping_list, 
+                    child_element, column_out);          
+            MAPPING_LIST(n) = new_guide_mapping_list;
+            return;
+        }
+    } 
     switch(axis) {
         case(alg_chld):
         /* child axis */
@@ -607,8 +617,7 @@ copy_step(PFla_op_t *n)
                             create_PFty_t(child_element),
                             n->sem.step.ty)) {
                         /* add child */
-                        new_guide_mapping_list = add_guide(new_guide_mapping_list, child_element,
-                                column_out);
+                        new_guide_mapping_list = add_guide(new_guide_mapping_list, child_element, column_out);
                     }
                 }
             }
@@ -651,7 +660,10 @@ copy_step(PFla_op_t *n)
                 /* add ancestor to return array */
                 for(unsigned int k = 0; k < PFarray_last(help_array); k++) {
                     element2= *((PFguide_tree_t**) PFarray_at(help_array, k));
-                    new_guide_mapping_list = add_guide(new_guide_mapping_list, element2, column_out);
+                    if(PFty_subtype(create_PFty_t(element2),
+                            n->sem.step.ty)) {
+                        new_guide_mapping_list = add_guide(new_guide_mapping_list, element2, column_out);
+                    }
                 }
             }
             break;
@@ -690,7 +702,10 @@ copy_step(PFla_op_t *n)
                 /* add descendant to return array */
                 for(unsigned int k = 0; k < PFarray_last(help_array); k++) {
                     element2= *((PFguide_tree_t**) PFarray_at(help_array, k));
-                    new_guide_mapping_list = add_guide(new_guide_mapping_list, element2, column_out);
+                    if(PFty_promotable(create_PFty_t(element2),
+                            n->sem.step.ty)) {
+                        new_guide_mapping_list = add_guide(new_guide_mapping_list, element2, column_out);
+                    }
                 }
             }
             break;
@@ -707,7 +722,6 @@ copy_step(PFla_op_t *n)
                     if(PFty_subtype(
                             create_PFty_t(child_element),
                             n->sem.step.ty)) {
-
                         /* add guide nodes to return array */
                         new_guide_mapping_list = add_guide(
                         new_guide_mapping_list, child_element, column_out);
@@ -720,7 +734,6 @@ copy_step(PFla_op_t *n)
     }
 
     MAPPING_LIST(n) = new_guide_mapping_list;
-
     return;
 }
 
