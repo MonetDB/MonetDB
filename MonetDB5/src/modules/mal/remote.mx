@@ -177,8 +177,10 @@ static INLINE str RMTquery(MapiHdl *ret, str func, Mapi conn, str query) {
 	mhdl = mapi_query(conn, query);
 	if (mhdl) {
 		if (mapi_result_error(mhdl) != NULL) {
-			str err = createException(IO, func, "%s",
-					getExceptionMessage(mapi_result_error(mhdl)));
+			str err = createException(
+					getExceptionType(mapi_result_error(mhdl)),
+					func,
+					"%s", getExceptionMessage(mapi_result_error(mhdl)));
 			mapi_close_handle(mhdl);
 			return(err);
 		}

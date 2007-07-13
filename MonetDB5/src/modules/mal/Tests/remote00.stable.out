@@ -8,6 +8,8 @@ stdout of test 'remote00` in directory 'src/modules/mal` itself:
 
 
 
+
+
 # MonetDB Server v5.1.0
 # Copyright (c) 1993-2007 CWI, all rights reserved
 # Compiled for x86_64-pc-linux-gnu/64bit with 64bit OIDs dynamically linked
@@ -30,18 +32,6 @@ stdout of test 'remote00` in directory 'src/modules/mal` itself:
 ## and a varsized object (like a string) should work too
 #g := "Hello world!";
 #remote.serveget("g");
-#
-## of course functions shouldn't be a problem
-#function f():str;
-#	r := "brrrr";
-#	return(r);
-#end f;
-function user.f():str;	# 0  (f:str)
-    r := "brrrr";	# 1  (r:str)<-(_2:str)
-    return r;	# 2  (r:str)
-end f;	# 3  
-#remote.serveget("f");
-#remote.serveget("user.f");
 #
 function user.main():void;	# 0  (main:void)
 # we need this include untill remote is added to the default modules 	# 1  (_1:str)
@@ -66,24 +56,11 @@ function user.main():void;	# 0  (main:void)
 # and a varsized object (like a string) should work too 	# 20  (_27:str)
     g := "Hello world!";	# 21  (g:str)<-(_29:str)
     remote.serveget("g");	# 22 RMTserveget (_30:void)<-(_31:str)
-# of course functions shouldn't be a problem 	# 23  (_32:str)
-    remote.serveget("f");	# 24 RMTserveget (_33:void)<-(_34:str)
-    remote.serveget("user.f");	# 25 RMTserveget (_35:void)<-(_36:str)
-end main;	# 26  
+end main;	# 23  
 [ "int",	1	]
 [ "flt",	3.4000001	]
 [ "bat",	"oid",	"str",	0	]
 [ "str",	"Hello world!"	]
-[ "function",	1	]
-=function user.f():str;
-=    r := "brrrr";
-=    return r;
-=end f;
-[ "function",	1	]
-=function user.f():str;
-=    r := "brrrr";
-=    return r;
-=end f;
 
 # 13:29:10 >  
 # 13:29:10 >  Done.
