@@ -85,7 +85,7 @@ PFprop_type_of (const PFla_op_t *n, PFalg_att_t attr)
 
     /* you should never get there */
     PFoops (OOPS_FATAL,
-                 "Type of %u not found in schema", attr);
+                 "Type of %s not found in schema", PFatt_str (attr));
 
     return aat_int; /* satisfy picky compilers */
 }
@@ -383,7 +383,7 @@ infer_ocol (PFla_op_t *n)
                     PFprop_ocol (L(n), n->sem.to.att2));
 
             ocol_at (n, 0).name = n->sem.to.res;
-            ocol_at (n, 0).type = PFprop_type_of (L(n), n->sem.to.res);
+            ocol_at (n, 0).type = aat_int;
             
             if (n->sem.to.part) {
                 assert (PFprop_ocol (L(n), n->sem.to.part));
@@ -585,7 +585,7 @@ infer_ocol (PFla_op_t *n)
                         "wrong doc item type '0x%X' in the input of fn:id%s",
                         PFprop_type_of (R(n), n->sem.id.item_doc),
                         n->kind == la_id ? "" : "ref");
-            if (!(PFprop_type_of (R(n), n->sem.id.item) & aat_node))
+            if (!(PFprop_type_of (R(n), n->sem.id.item) & aat_str))
                 PFoops (OOPS_FATAL,
                         "wrong item type '0x%X' in the input of fn:id%s",
                         PFprop_type_of (R(n), n->sem.id.item),

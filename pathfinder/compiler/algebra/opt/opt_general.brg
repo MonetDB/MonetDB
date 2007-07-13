@@ -167,6 +167,8 @@ Rel:    difference (Rel, Rel)                     =  24 (10);
 Rel:    difference (Rel, EmptyRel)                =  25  (5);
 Rel:    distinct (Rel)                            =  26 (10);
 Rel:    distinct (step (Frag, Rel))               =  27  (5);
+Rel:    distinct (id (Frag, Rel))                 =  28  (5);
+Rel:    distinct (idref (Frag, Rel))              =  29  (5);
 Rel:    fun_1to1 (Rel)                            =  30 (10);
 Rel:    num_gt (Rel)                              =  35 (10);
 Rel:    num_eq (Rel)                              =  36 (10);
@@ -792,6 +794,10 @@ reduce (PFla_op_t *p, int goalnt)
 
         /* Rel:    distinct (step (Frag, Rel)) */
         case 27:
+        /* Rel:    distinct (id (Frag, Rel)) */
+        case 28:
+        /* Rel:    distinct (idref (Frag, Rel)) */
+        case 29:
             /* return left child */
             *p = *PFla_dummy (L(p));
             SEEN(p) = false;

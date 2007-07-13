@@ -2477,7 +2477,7 @@ fn_id (bool id, const PFla_op_t *doc, const PFla_op_t *n,
                 "wrong doc item type '0x%X' in the input of fn:id%s",
                 PFprop_type_of (n, item_doc),
                 id ? "" : "ref");
-    if (!(PFprop_type_of (n, item) & aat_node))
+    if (!(PFprop_type_of (n, item) & aat_str))
         PFoops (OOPS_FATAL,
                 "wrong item type '0x%X' in the input of fn:id%s",
                 PFprop_type_of (n, item),

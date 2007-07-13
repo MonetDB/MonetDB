@@ -347,8 +347,8 @@ la_dot (PFarray_t *dot, PFla_op_t *n)
         , [la_step]           = "\"#1E90FF\""
         , [la_dup_step]       = "\"#1E9099\""
         , [la_guide_step]     = "\"#007AE0\""
-        , [la_id]             = "\"#2EA0A9\""
-        , [la_idref]          = "\"#2EA0A9\""
+        , [la_id]             = "\"#1E90FF\""
+        , [la_idref]          = "\"#1E90FF\""
         , [la_doc_tbl]        = "\"#C0C0C0\""
         , [la_doc_access]     = "\"#CCCCFF\""
         , [la_twig]           = "\"#00AA44\""
@@ -687,11 +687,14 @@ la_dot (PFarray_t *dot, PFla_op_t *n)
                         "unknown XPath axis in dot output");
             }
             if (n->kind == la_step)
-                PFarray_printf (dot, "%s (%s, %s:%s)", 
+                PFarray_printf (dot, "%s (%s, %s%s%s)", 
                                 PFty_str (n->sem.step.ty),
                                 PFatt_str (n->sem.step.iter),
                                 PFatt_str (n->sem.step.item_res),
-                                PFatt_str (n->sem.step.item));
+                                n->sem.step.item_res != n->sem.step.item
+                                ? ":" : "",
+                                n->sem.step.item_res != n->sem.step.item
+                                ? PFatt_str (n->sem.step.item) : "");
             else if (n->kind == la_dup_step)
                 PFarray_printf (dot, "%s (%s:%s)", 
                                 PFty_str (n->sem.step.ty),
@@ -707,9 +710,13 @@ la_dot (PFarray_t *dot, PFla_op_t *n)
                                     n->sem.step.guides[i]->guide);
                     first = false;
                 }
-                PFarray_printf (dot, ") (%s, %s)", 
+                PFarray_printf (dot, ") (%s, %s%s%s)", 
                                 PFatt_str (n->sem.step.iter),
-                                PFatt_str (n->sem.step.item));
+                                PFatt_str (n->sem.step.item_res),
+                                n->sem.step.item_res != n->sem.step.item
+                                ? ":" : "",
+                                n->sem.step.item_res != n->sem.step.item
+                                ? PFatt_str (n->sem.step.item) : "");
             }
 
             if (n->sem.step.level >= 0)
@@ -718,8 +725,9 @@ la_dot (PFarray_t *dot, PFla_op_t *n)
 
         case la_id:
         case la_idref:
-            PFarray_printf (dot, "%s (%s:%s, %s, %s)",
+            PFarray_printf (dot, "%s (%s, %s:<%s, %s, %s>)",
                             a_id[n->kind],
+                            PFatt_str (n->sem.id.iter),
                             PFatt_str (n->sem.id.item_res),
                             PFatt_str (n->sem.id.iter),
                             PFatt_str (n->sem.id.item),
@@ -727,11 +735,14 @@ la_dot (PFarray_t *dot, PFla_op_t *n)
             break;
 
         case la_doc_tbl:
-            PFarray_printf (dot, "%s (%s, %s:%s)", 
+            PFarray_printf (dot, "%s (%s, %s%s%s)", 
                             a_id[n->kind],
                             PFatt_str (n->sem.doc_tbl.iter),
                             PFatt_str (n->sem.doc_tbl.item_res),
-                            PFatt_str (n->sem.doc_tbl.item));
+                            n->sem.doc_tbl.item_res != n->sem.doc_tbl.item
+                            ? ":" : "",
+                            n->sem.doc_tbl.item_res != n->sem.doc_tbl.item
+                            ? PFatt_str (n->sem.doc_tbl.item) : "");
             break;
 
         case la_doc_access:

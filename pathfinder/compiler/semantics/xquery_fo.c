@@ -1586,7 +1586,8 @@ PFfun_xquery_fo (void)
       { .ns = PFns_op, .loc = "to",
         .arity = 2, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_xs_integer (), PFty_xs_integer () },
-            .ret_ty = PFty_star (PFty_xs_integer ()) } } }
+            .ret_ty = PFty_star (PFty_xs_integer ()) } },
+        .alg = PFbui_op_to }
     , /* fn:id (string*) as element* */
       { .ns = PFns_fn, .loc = "id",
         .arity = 1, .sig_count = 1, .sigs = { {
@@ -1597,7 +1598,8 @@ PFfun_xquery_fo (void)
         .arity = 2, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_star (PFty_xs_string ()),
                                 PFty_node () },
-            .ret_ty = PFty_star (PFty_xs_anyElement ()) } } }
+            .ret_ty = PFty_star (PFty_xs_anyElement ()) } },
+        .alg = PFbui_fn_id }
     , /* fn:idref (string*) as element* */
       { .ns = PFns_fn, .loc = "idref",
         .arity = 1, .sig_count = 1, .sigs = { {
@@ -1608,7 +1610,8 @@ PFfun_xquery_fo (void)
         .arity = 2, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_star (PFty_xs_string ()),
                                 PFty_node () },
-            .ret_ty = PFty_star (PFty_xs_anyElement ()) } } }
+            .ret_ty = PFty_star (PFty_xs_anyElement ()) } },
+        .alg = PFbui_fn_idref }
     , /* fn:doc (string?) as document? - FIXME: is type of PFty_doc right? */
       { .ns = PFns_fn, .loc = "doc",
         .arity = 1, .sig_count = 1, .sigs = { {

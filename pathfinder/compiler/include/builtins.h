@@ -482,6 +482,18 @@ struct PFla_pair_t PFbui_fn_sum_dbl (const PFla_op_t *loop,
                                      struct PFla_pair_t *args);
 
 /* 15.5. Functions and Operators that Generate Sequences */
+struct PFla_pair_t PFbui_op_to (const PFla_op_t *loop,
+                                bool ordering,
+                                struct PFla_pair_t *args);
+
+struct PFla_pair_t PFbui_fn_id (const PFla_op_t *loop,
+                                bool ordering,
+                                struct PFla_pair_t *args);
+
+struct PFla_pair_t PFbui_fn_idref (const PFla_op_t *loop,
+                                   bool ordering,
+                                   struct PFla_pair_t *args);
+
 struct PFla_pair_t PFbui_fn_doc (const PFla_op_t *loop,
                                  bool ordering,
                                  struct PFla_pair_t *args);

@@ -2788,6 +2788,110 @@ PFbui_fn_sum_zero_dbl (const PFla_op_t *loop, bool ordering,
 /* ----------------------------------------------------- */
 
 /**
+ * Build up operator tree for built-in function 'op:to (int, int)'.
+ */
+struct PFla_pair_t
+PFbui_op_to (const PFla_op_t *loop, bool ordering,
+             struct PFla_pair_t *args)
+{
+    (void) loop;
+    (void) ordering;
+
+    PFla_op_t *to = to (project (
+                            eqjoin (
+                                project (
+                                    args[0].rel,
+                                    proj (att_iter, att_iter),
+                                    proj (att_item, att_item)),
+                                project (
+                                    args[1].rel,
+                                    proj (att_iter1, att_iter),
+                                    proj (att_item1, att_item)),
+                                att_iter,
+                                att_iter1),
+                            proj (att_iter, att_iter),
+                            proj (att_item, att_item),
+                            proj (att_item1, att_item1)),
+                        att_item,
+                        att_item,
+                        att_item1,
+                        att_iter);
+
+    return (struct PFla_pair_t) {
+        .rel = rank (
+                   to,
+                   att_pos,
+                   sortby (att_item)),
+        .frag = PFla_empty_set () };
+}
+
+
+static struct PFla_pair_t
+fn_id (const PFla_op_t *loop, bool ordering,
+       struct PFla_pair_t *args, bool id)
+{
+    PFla_op_t *in, *op, *doc;
+    
+    (void) loop;
+    (void) ordering;
+
+    in = project (
+             eqjoin (
+                 project (
+                     args[0].rel,
+                     proj (att_iter, att_iter),
+                     proj (att_item, att_item)),
+                 project (
+                     args[1].rel,
+                     proj (att_iter1, att_iter),
+                     proj (att_item1, att_item)),
+                 att_iter,
+                 att_iter1),
+             proj (att_iter, att_iter),
+             proj (att_item, att_item),
+             proj (att_item1, att_item1));
+
+    doc = PFla_set_to_la (args[1].frag);
+    
+    if (id)
+       op = id (doc, in, att_iter, att_item, att_item, att_item1);
+    else
+       op = idref (doc, in, att_iter, att_item, att_item, att_item1);
+
+    if (ordering)
+        return (struct PFla_pair_t) {
+            .rel = rank (distinct (op), att_pos, sortby (att_item)),
+            .frag = args[1].frag };
+    else
+        return (struct PFla_pair_t) {
+            .rel = number (distinct (op), att_pos),
+            .frag = args[1].frag };
+}
+
+
+/**
+ * Build up operator tree for built-in function 'fn:id (string*, node)'.
+ */
+struct PFla_pair_t
+PFbui_fn_id (const PFla_op_t *loop, bool ordering,
+             struct PFla_pair_t *args)
+{
+    return fn_id (loop, ordering, args, true);
+}
+
+
+/**
+ * Build up operator tree for built-in function 'fn:idref (string*, node)'.
+ */
+struct PFla_pair_t
+PFbui_fn_idref (const PFla_op_t *loop, bool ordering,
+                struct PFla_pair_t *args)
+{
+    return fn_id (loop, ordering, args, false);
+}
+
+
+/**
  * Built-in function <code>fn:doc(xs:string?)</code>: Return root
  * node of document that is found under given URI. Return empty
  * sequence if the argument is the empty sequence.
