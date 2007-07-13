@@ -233,6 +233,9 @@ static PFarray_t *merge_guide_mapping_list(PFarray_t *list1, PFarray_t *list2)
 static PFty_t
 create_PFty_t(PFguide_tree_t *n)
 {
+
+    assert(n);
+
     PFty_t  ret;
     switch(n->kind) {
         case(elem):
@@ -656,6 +659,8 @@ copy_step(PFla_op_t *n)
       /* parent axis */
            for(unsigned int i = 0; i < PFarray_last(guide_list); i++) {
                 element = *((PFguide_tree_t**) PFarray_at(guide_list, i));
+                if(element->parent == NULL)
+                    break;
                 if(PFty_subtype(create_PFty_t(element->parent),
                             n->sem.step.ty)) {
                     /* add guide nodes to return array */
