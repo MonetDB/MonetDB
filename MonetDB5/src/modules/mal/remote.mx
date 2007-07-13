@@ -26,28 +26,46 @@ executed.  This yields in three primitive functions that
 form the basis for distribution methods: get, put and exec.
 
 The get method simply retrieves a remote object, and returns
-it locally.  Objects can be anything, values, BATs, functions,
-etc.  The same holds for the put method, but the other way
+it locally.  Objects can be simple values, strings or BATs.
+The same holds for the put method, but the other way
 around.  A local object can be stored on a remote site.  Upon
-a successful store, the put method returns the identifier on
-the remote site.  With this identifier the object can be
-addressed, e.g. using the exec method to execute a function
-that was just stored before.
+a successful store, the put method returns the remote
+identifier for the stored object.  With this identifier the
+object can be addressed, e.g. using the get method to retrieve
+the object that was stored again.
 
 The get and put methods are symmetric.  Performing a get on an
 identifier that was returned by put, will result in an equal
 object to the one that was put.  After such operation an
-expensive copy of the original object is made.
+(expensive) copy of the original object is made.
 
 The choice to let exec only execute functions was made to avoid
 problems to decide what should be returned to the caller.  With
 a function it is clear and simple to return that what the
 function being called would return.  Any extra output (e.g.
-io.print calls) may cause havoc in the system.
+io.print calls) may cause havoc in the system, but are currently
+known to be ignored.
 
 This leads to the final contract of this module.  The methods
 should be used correctly, by obeying their contract.  Failing
-to do so will result in errors and undefined behaviour.
+to do so will result in errors and possibly undefined behaviour.
+
+It is impossible to get and put functions directly, as the
+semantical meaning of such operation is unclear.  A function
+cannot be assigned to a variable (such as get() would do).
+Storing a function on a remote site with put() could lead to
+conflicts if a function with the same name already exists there,
+let alone if the module the function comes from is accessible.
+Finally, C-implemented functions, such as io.print() cannot be
+stored for obvious reasons and would require even more
+complicated (byte?) code shipping and remote compilation to
+make it work.  As an alternative, a user can serialise local
+script-functions to strings and use those in an exec call to
+a remote function that can parse the string to turn it into a
+function.  Of course this also works the other way around using
+an exec of the serialise function on the remote host for the
+remote function to acquire the string representation of the
+function locally.
 
 The first argument to all three functions is the name of the
 connection the operation has to be performed on.  A connection
@@ -800,4 +818,6 @@ str RMTdestroy(int *ret, str *conn) {
 
 	throw(MAL, "remote.destroy", "no such connection with name '%s'", *conn);
 }
+
+/* vim: set foldmethod=syntax: */
 
