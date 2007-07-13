@@ -260,6 +260,10 @@ str SABAOTHmarchConnection(int *ret, str *host, int *port, bit *ssl) {
 	if ((f = fopen(path, "a")) != NULL) {
 		/* append to the file */
 		fprintf(f, "mapi%s:monetdb://%s:%i/\n", *ssl ? "s" : "", *host, *port);
+		/* (some) people tend to like (very) noisy programs, hence to
+		 * please them, announce that we're now available from outside */
+		printf("#listening for connections on mapi%s:monetdb://%s:%i/\n",
+				*ssl ? "s" : "", *host, *port);
 		(void)fflush(f);
 		(void)fclose(f);
 		return(MAL_SUCCEED);
