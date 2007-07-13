@@ -595,6 +595,8 @@ copy_step(PFla_op_t *n)
             for(unsigned int i = 0; i < PFarray_last(guide_list); i++) {
                 element = *((PFguide_tree_t**) PFarray_at(guide_list, i));
                 childs = element->child_list;
+                if(childs == NULL)
+                    continue;
                 /* subtype check for all childs */
                 for(unsigned int j = 0; j < PFarray_last(childs); j++) {
                     child_element= *((PFguide_tree_t**) PFarray_at(childs,j));
@@ -611,6 +613,7 @@ copy_step(PFla_op_t *n)
 
         case(alg_self):
         /* self axis */
+
             for(unsigned int i = 0; i < PFarray_last(guide_list); i++) {
                 element = *((PFguide_tree_t**) PFarray_at(guide_list, i));
                 /* subtype check for all childs */
@@ -640,6 +643,8 @@ copy_step(PFla_op_t *n)
                 /* find all ancestor */
                 element = *((PFguide_tree_t**) PFarray_at(guide_list, i));
                 help_array = getAncestorFromGuide(element, n->sem.step.ty);
+                if(help_array == NULL)
+                    continue;
                 /* add ancestor to return array */
                 for(unsigned int k = 0; k < PFarray_last(help_array); k++) {
                     element2= *((PFguide_tree_t**) PFarray_at(help_array, k));
@@ -675,6 +680,8 @@ copy_step(PFla_op_t *n)
             for(unsigned int i = 0; i < PFarray_last(guide_list); i++) {
                 element = *((PFguide_tree_t**) PFarray_at(guide_list, i));
                 help_array = getDescendantFromGuide(element,n->sem.step.ty);
+                if(help_array == NULL)
+                    continue;
                 /* add descendant to return array */
                 for(unsigned int k = 0; k < PFarray_last(help_array); k++) {
                     element2= *((PFguide_tree_t**) PFarray_at(help_array, k));
@@ -687,6 +694,8 @@ copy_step(PFla_op_t *n)
             for(unsigned int i = 0; i < PFarray_last(guide_list); i++) {
                 element = *((PFguide_tree_t**) PFarray_at(guide_list, i));
                 childs = element->child_list;
+                if(childs == NULL)
+                    continue;  
                 /* subtype check for all childs */
                 for(unsigned int j = 0; j < PFarray_last(childs); j++) {
                     child_element= *((PFguide_tree_t**) PFarray_at(childs,j));
@@ -952,7 +961,6 @@ infer_guide(PFla_op_t *n, PFguide_tree_t *guide)
 {
     assert(n);
     assert(n->prop);
-
     switch (n->kind) {
         /* copyR */ 
         case la_serialize:
