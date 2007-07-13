@@ -192,7 +192,18 @@ Version information, and compile time options.
 void
 monet_version()
 {
+	opt *set;
+	int len, i;
+
+	/* all we want is the GDK version ... */
+	len = mo_builtin_settings(&set);
+	for (i = 0; i < len && strcmp(set->name, "gdk_version") != 0; i++)
+		set++;
+	if (i == len)
+		set->value = "(unknown)";
+
 	printf("MonetDB Server v%s\n", VERSION);
+	printf("based on GDK   v%s\n", set->value);
 	printf("Copyright (c) 1993-2007 CWI, all rights reserved\n");
 	printf("Compiled by: %s\n", "@builtby@");
 	printf("Compilation: %s\n", "@compilercall@");
