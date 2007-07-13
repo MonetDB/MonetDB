@@ -61,7 +61,9 @@ as error to the connecting client.
 #include <stdarg.h>	/* variadic stuff */
 #include <stdio.h> /* fprintf */
 #include <sys/types.h>
+#ifdef HAVE_SYS_SOCKET_H
 #include <sys/socket.h>
+#endif
 #ifdef HAVE_SYS_UN_H
 #include <sys/un.h>
 #endif
