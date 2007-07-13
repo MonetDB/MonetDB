@@ -26,6 +26,7 @@ bin_mserver5 = {
 }
 
 bin_merovingian = {
+	COND = NOT_WIN32
 	SOURCES = merovingian.mx
 	LIBS = ../mal/libmal @SHARED_LIBS@ $(MONETDB_LIBS) -lstream \
 		   $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
