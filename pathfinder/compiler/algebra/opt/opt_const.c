@@ -103,6 +103,7 @@ opt_const (PFla_op_t *p, bool no_attach)
         switch (p->kind) {
             case la_eqjoin:
             case la_select:
+            case la_disjunion:
             case la_difference:
             case la_distinct:
             case la_avg:
@@ -355,6 +356,64 @@ opt_const (PFla_op_t *p, bool no_attach)
                     SEEN(p) = true;
                     break;
                 }
+            }
+            break;
+
+        case la_disjunion:
+            /* match unpartitioned count pattern
+               (where the partitioning criterion is constant)
+                             |
+                             U
+                     _______/ \_______
+                    /                 \
+                   pi_item           pi_item
+                    |                 |
+                    |                 @item:0
+                    |                 |
+                    |                diff
+                    |               /   \
+                    |             loop  pi_iter
+                    |                    |
+                    \_______   _________/   
+                            \ /
+                           count_item:/iter
+                             |
+              
+               and replace it by an unpartitioned count */
+            if (p->schema.count == 1 &&
+                L(p)->kind == la_project &&
+                L(L(p))->kind == la_count &&
+                PFprop_const (L(L(p))->prop, L(L(p))->sem.aggr.part) &&
+                R(p)->kind == la_project &&
+                L(R(p))->kind == la_attach &&
+                L(R(p))->sem.attach.value.type == aat_int &&
+                L(R(p))->sem.attach.value.val.int_ == 0 &&
+                L(L(R(p)))->kind == la_difference &&
+                R(L(L(R(p))))->kind == la_project &&
+                R(L(L(R(p))))->sem.proj.items[0].new ==
+                L(L(p))->sem.aggr.part &&
+                L(R(L(L(R(p))))) == L(L(p))) {
+
+                /* check that the values in the loop are constant
+                   and provide the same value */
+                assert (PFprop_const (L(L(L(R(p))))->prop,
+                                      L(L(p))->sem.aggr.part));
+                assert (
+                    PFalg_atom_comparable (
+                        PFprop_const_val (L(L(L(R(p))))->prop,
+                                          L(L(p))->sem.aggr.part),
+                        PFprop_const_val (L(L(p))->prop,
+                                          L(L(p))->sem.aggr.part)) &&
+                    !PFalg_atom_cmp (
+                        PFprop_const_val (L(L(L(R(p))))->prop,
+                                          L(L(p))->sem.aggr.part),
+                        PFprop_const_val (L(L(p))->prop,
+                                          L(L(p))->sem.aggr.part)));
+
+                *p = *PFla_count (L(L(L(p))),
+                                  p->schema.items[0].name,
+                                  att_NULL);
+                break;
             }
             break;
 
