@@ -589,14 +589,13 @@ SQLGetInfo_(ODBCDbc *dbc,
 		nValue = SQL_GB_NO_RELATION;
 		len = sizeof(SQLUSMALLINT);
 		break;
-	case SQL_KEYWORDS:{
+	case SQL_KEYWORDS:
 		/* Returns the MonetDB keywords which are not listed
 		 * as ODBC keyword in the #define SQL_ODBC_KEYWORDS
 		 * in sql.h
 		 */
 		sValue = "BOOLEAN,COLUMNS,FLOOR,IMPORT,REAL";
 		break;
-	}
 	case SQL_ORDER_BY_COLUMNS_IN_SELECT:
 		sValue = "N";
 		break;
@@ -622,20 +621,20 @@ SQLGetInfo_(ODBCDbc *dbc,
 	case SQL_MAX_COLUMNS_IN_TABLE:
 	case SQL_MAX_TABLES_IN_SELECT:
 		/* no specified limit for SQL_MAX_COLUMNS_IN_xxx */
-		nValue = (SQLUSMALLINT) 0;	/* no limits */
+		nValue = 0;	/* no limits */
 		len = sizeof(SQLUSMALLINT);
 		break;
 	case SQL_MAX_INDEX_SIZE:
 	case SQL_MAX_ROW_SIZE:
 	case SQL_MAX_STATEMENT_LEN:
-		nValue = (SQLUINTEGER) 0;	/* no max.len. */
+		nValue = 0;	/* no max.len. */
 		len = sizeof(SQLUINTEGER);
 		break;
 	case SQL_MAX_ROW_SIZE_INCLUDES_LONG:
 		sValue = "N";
 		break;
 	case SQL_MAX_USER_NAME_LEN:
-		nValue = (SQLUSMALLINT) 0;	/* no max.len. */
+		nValue = 0;	/* no max.len. */
 		len = sizeof(SQLUSMALLINT);
 		break;
 	case SQL_MAX_CHAR_LITERAL_LEN:
@@ -646,7 +645,7 @@ SQLGetInfo_(ODBCDbc *dbc,
 		sValue = "Y";
 		break;
 	case SQL_MAX_BINARY_LITERAL_LEN:
-		nValue = (SQLUINTEGER) 0;	/* not supported yet */
+		nValue = 0;	/* not supported yet */
 		len = sizeof(SQLUINTEGER);
 		break;
 	case SQL_LIKE_ESCAPE_CLAUSE:
