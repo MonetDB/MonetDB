@@ -434,12 +434,12 @@ typedef struct Table_t {
 } Tablet;
 
 tablet_export BAT *TABLETload(BAT *names, BAT *seps, BAT *types, char *datafile, size_t nr);
-tablet_export BAT *TABLETinput(BAT *names, BAT *seps, BAT *types, bstream *s, stream *out, size_t nr);
+tablet_export BAT *TABLETinput(BAT *names, BAT *seps, BAT *types, bstream *s, stream *out, size_t nr, size_t est);
 tablet_export size_t TABLEToutput(BAT *order, BAT *seps, BAT *bats, stream *s);
 tablet_export void TABLETdump(BAT *names, BAT *seps, BAT *bats, char *datafile, size_t nr);
 
 /* The low level routines are primarilly used by the SQL front-end.*/
-tablet_export int TABLETcreate_bats(Tablet * as);
+tablet_export int TABLETcreate_bats(Tablet * as, size_t est);
 tablet_export size_t TABLETassign_BATs(Tablet * as, BAT *bats);
 tablet_export ssize_t TABLETload_file(Tablet * as, bstream *b, stream *out);
 tablet_export BAT *TABLETcollect_bats(Tablet * as);
@@ -884,6 +884,7 @@ static BAT *
 void_bat_create(int adt, size_t nr)
 {
 	BAT *b = BATnew(TYPE_void, adt, BATTINY);
+	BAT *bm = NULL;
 
 	/* check for correct structures */
 	if (b == NULL)
@@ -894,6 +895,16 @@ void_bat_create(int adt, size_t nr)
         	BATmmap(b, STORE_MMAP, STORE_MMAP, STORE_MMAP);
 	if (nr > BATTINY)
 		b = BATextend(b, nr);
+
+	/* disable all properties here */
+	bm = BBP_cache(-b->batCacheid);
+	b->tsorted = FALSE;
+	b->T->nosorted = 0;
+	b->tdense = FALSE;
+	b->T->nodense = 0;
+	b->tkey = bm->hkey = FALSE;
+	b->T->nokey[0] = 0;
+	b->T->nokey[1] = 1;
 	return b;
 }
 
@@ -1123,16 +1134,13 @@ check_BATs(Tablet * as)
 }
 
 int
-TABLETcreate_bats(Tablet * as)
+TABLETcreate_bats(Tablet * as, size_t est)
 {
 	Column *fmt = as->format;
 	size_t i;
-	size_t nr = 0;
 
-	if (as->nr != ~(size_t)0)
-		nr = as->nr;
 	for (i = 0; i < as->nr_attrs; i++) {
-		fmt[i].c = void_bat_create(fmt[i].adt, nr);
+		fmt[i].c = void_bat_create(fmt[i].adt, est);
 		if (!fmt[i].c) {
 			GDKerror("TABLETcreate_bats: Failed to create bat of size " SZFMT "\n", as->nr);
 			return -1;
@@ -1154,6 +1162,7 @@ TABLETcollect_bats(Tablet * as)
 	for (i = 0; i < as->nr_attrs; i++) {
 		BUNins(bats, (ptr) fmt[i].name, (ptr) &fmt[i].c->batCacheid, FALSE);
 		BATsetaccess(fmt[i].c, BAT_READ);
+		BATpropcheck(fmt[i].c, BATPROPS_ALL);
 		if (cnt != BATcount(fmt[i].c)) {
 			GDKerror("Error: counts are not equal\n");
 			return NULL;
@@ -1203,7 +1212,6 @@ rfind_quote(char *s, char quote)
 static INLINE int
 insert_val(Column * fmt, char *s, char *e, char quote, ptr key, str *err)
 {
-	int res = 0;
 	char *end = e;
 	char bak = *e;
 	ptr *adt;
@@ -1224,9 +1232,8 @@ insert_val(Column * fmt, char *s, char *e, char quote, ptr key, str *err)
 		s = lstrip(s);
 		e = rstrip(e);
 	}
-	if (e < s) {
+	if (e < s) 
 		e = s;
-	}
 	adt = fmt->frstr(fmt->extra, fmt->adt, s, e, quote);
 	*end = bak;
 
@@ -1237,11 +1244,11 @@ insert_val(Column * fmt, char *s, char *e, char quote, ptr key, str *err)
 		return -1;
 	}
 
-	if( key)
-		res = (BUNins(fmt->c, key, adt, FALSE) == NULL);
-	else
-		res = (BUNappend(fmt->c, adt, FALSE) == NULL);
-	return res;
+	/* key maybe NULL but thats not a problem, as long as we have void */
+	bunfastins(fmt->c, key, adt);
+	return 0;
+bunins_failed:
+	return -1;
 }
 
 static INLINE char *
@@ -1678,6 +1685,7 @@ TABLETload(BAT *names, BAT *seps, BAT *types, char *datafile, size_t nr)
 	BAT *res;
 	stream *s = open_rastream(datafile);
 	bstream *b = NULL;
+	size_t est = nr;
 
 	if (s == NULL || stream_errnr(s)) {
 		GDKerror("could not open file %s\n", datafile);
@@ -1686,9 +1694,9 @@ TABLETload(BAT *names, BAT *seps, BAT *types, char *datafile, size_t nr)
 		}
 		return NULL;
 	}
-	if( nr== 0)
-		nr= estimator(datafile);
-	res = TABLETinput(names, seps, types, b = bstream_create(s, SIZE), NULL, nr);
+	if (nr == ~(size_t) 0)
+		est = estimator(datafile);
+	res = TABLETinput(names, seps, types, b = bstream_create(s, SIZE), NULL, nr, est);
 	bstream_destroy(b);
 	stream_close(s);
 	stream_destroy(s);
@@ -1696,14 +1704,14 @@ TABLETload(BAT *names, BAT *seps, BAT *types, char *datafile, size_t nr)
 }
 
 BAT *
-TABLETinput(BAT *names, BAT *seps, BAT *types, bstream *s, stream *out, size_t nr)
+TABLETinput(BAT *names, BAT *seps, BAT *types, bstream *s, stream *out, size_t nr, size_t est)
 {
 	BAT *bats = NULL;
 	Tablet as;
 
 	as.nr_attrs = 0;
 	as.nr = nr;
-	if (create_loadformat(&as, names, seps, types) != ~(size_t) 0 && TABLETcreate_bats(&as) >= 0) {
+	if (create_loadformat(&as, names, seps, types) != ~(size_t) 0 && TABLETcreate_bats(&as, est) >= 0) {
 		if (TABLETload_file(&as, s, out) >= 0)
 			bats = TABLETcollect_bats(&as);
 	}
@@ -1789,10 +1797,13 @@ tablet_input(BAT **bats, BAT *names, BAT *seps, BAT *types, void **s, int *N)
 {
 	bstream *b = NULL;
 	size_t nr = ~(size_t)0;
+	size_t est = 0;
 
-	if (*N >= 0)
+	if (*N >= 0) {
 		nr = *N;
-	*bats = TABLETinput(names, seps, types, b = bstream_create(*(stream **) s, SIZE), NULL, nr);
+		est = nr;
+	}
+	*bats = TABLETinput(names, seps, types, b = bstream_create(*(stream **) s, SIZE), NULL, nr, est);
 	bstream_destroy(b);
 }
 
