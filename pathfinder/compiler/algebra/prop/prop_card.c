@@ -127,7 +127,6 @@ infer_card (PFla_op_t *n)
         case la_distinct:
         case la_step:
         case la_dup_step:
-        case la_guide_step:
         case la_id:
         case la_idref:
         case la_fcns:
@@ -165,6 +164,15 @@ infer_card (PFla_op_t *n)
             n->prop->card = n->sem.aggr.part ? 0 : 1;
             break;
 
+        case la_guide_step:
+            if (R(n)->prop->card == 1 &&
+                n->sem.step.guide_count == 1 &&
+                n->sem.step.guides[0]->count == 1) 
+                n->prop->card = 1;
+            else
+                n->prop->card = 0;
+            break;
+            
         case la_cond_err:
             /* Optimizations are allowed to prune errors
                as long as the cardinality stays the same.

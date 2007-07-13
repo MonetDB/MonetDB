@@ -79,6 +79,18 @@ opt_complex (PFla_op_t *p)
 
     /* action code */
     switch (p->kind) {
+        case la_serialize:
+            if (PFprop_card (p->prop) == 1) {
+                R(p) = PFla_attach (
+                           PFla_project (
+                               R(p),
+                               PFalg_proj (p->sem.serialize.item,
+                                           p->sem.serialize.item)),
+                           p->sem.serialize.pos,
+                           PFalg_lit_nat (1));
+            }
+            break;
+
         case la_attach:
             /**
              * if an attach column is the only required column
@@ -122,7 +134,7 @@ opt_complex (PFla_op_t *p)
             /* prune unnecessary attach-project operators */
             if (L(p)->kind == la_project &&
                 L(p)->schema.count == 1 &&
-                LL(p)->kind == la_step &&
+                (LL(p)->kind == la_step || LL(p)->kind == la_guide_step) &&
                 p->sem.attach.res == LL(p)->sem.step.iter &&
                 PFprop_const (LL(p)->prop, LL(p)->sem.step.iter) &&
                 PFalg_atom_comparable (
@@ -138,7 +150,7 @@ opt_complex (PFla_op_t *p)
             /* prune unnecessary attach-project operators */
             if (L(p)->kind == la_project &&
                 L(p)->schema.count == 1 &&
-                LL(p)->kind == la_step &&
+                (LL(p)->kind == la_step || LL(p)->kind == la_guide_step) &&
                 PFprop_const (LL(p)->prop, LL(p)->sem.step.iter) &&
                 PFalg_atom_comparable (
                     p->sem.attach.value,
@@ -818,6 +830,12 @@ opt_complex (PFla_op_t *p)
                                                  p->schema.items[i].name);
 
                 *p = *PFla_project_ (L(p), count, proj_list);
+            }
+            break;
+
+        case la_number:
+            if (PFprop_card (p->prop) == 1) {
+                *p = *PFla_attach (L(p), p->sem.number.res, PFalg_lit_nat (1));
             }
             break;
             

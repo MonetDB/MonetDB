@@ -37,17 +37,62 @@
 #include <assert.h>
 
 #include "algopt.h"
+#include "properties.h"
 #include "alg_dag.h"
 
+/*
+ * Easily access subtree-parts.
+ */
+/** starting from p, make a step left */
+#define L(p) ((p)->child[0])
+/** starting from p, make a step right */
+#define R(p) ((p)->child[1])
 
-static void opt_guide (PFla_op_t *n);
+#define SEEN(p) ((p)->bit_dag)
 
 /* worker for PFalgopt_guide */
 static void
-opt_guide (PFla_op_t *n)
+opt_guide (PFla_op_t *p)
 {
-    (void) n;
-    return;
+    assert (p);
+
+    /* rewrite each node only once */
+    if (SEEN(p))
+        return;
+    else
+        SEEN(p) = true;
+
+    /* apply guide-related optimization for children */
+    for (unsigned int i = 0; i < PFLA_OP_MAXCHILD && p->child[i]; i++)
+        opt_guide (p->child[i]);
+
+    /* action code */
+    switch (p->kind) {
+        case la_step:
+            if (PFprop_guide (p->prop, p->sem.step.item_res)) {
+                if (PFprop_guide_count (p->prop, p->sem.step.item_res))
+                    *p = *PFla_guide_step (
+                              L(p),
+                              R(p),
+                              p->sem.step.axis,
+                              p->sem.step.ty,
+                              PFprop_guide_count (
+                                  p->prop,
+                                  p->sem.step.item_res),
+                              PFprop_guide_elements (
+                                  p->prop,
+                                  p->sem.step.item_res),
+                              p->sem.step.level,
+                              p->sem.step.iter,
+                              p->sem.step.item,
+                              p->sem.step.item_res);
+                break;
+            }
+            break;
+
+        default:
+            break;
+    }
 }
 
 /**

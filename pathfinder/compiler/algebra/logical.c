@@ -2369,7 +2369,7 @@ PFla_guide_step (const PFla_op_t *doc, const PFla_op_t *n,
     assert (n); assert (doc);
 
     /* create new join node */
-    ret = la_op_wire2 (la_step, doc, n);
+    ret = la_op_wire2 (la_guide_step, doc, n);
 
     /* insert semantic value (axis/kind test, col names) into the result */
     ret->sem.step.axis        = axis;

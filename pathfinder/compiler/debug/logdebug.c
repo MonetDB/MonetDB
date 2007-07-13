@@ -346,7 +346,7 @@ la_dot (PFarray_t *dot, PFla_op_t *n)
         , [la_all]            = "\"#C0C0C0\""
         , [la_step]           = "\"#1E90FF\""
         , [la_dup_step]       = "\"#1E9099\""
-        , [la_guide_step]     = "\"#1E9099\""
+        , [la_guide_step]     = "\"#007AE0\""
         , [la_id]             = "\"#2EA0A9\""
         , [la_idref]          = "\"#2EA0A9\""
         , [la_doc_tbl]        = "\"#C0C0C0\""
@@ -637,9 +637,11 @@ la_dot (PFarray_t *dot, PFla_op_t *n)
                             PFalg_simple_type_str (n->sem.type.ty));
             break;
 
+        case la_guide_step:
+            /* overwrite standard node layout */
+            PFarray_printf (dot, "\", fontcolor=\"#FFFFFF\", label=\"");
         case la_step:
         case la_dup_step:
-        case la_guide_step:
             PFarray_printf (dot, "%s ", a_id[n->kind]);
                 
             /* print out XPath axis */
@@ -1005,32 +1007,27 @@ la_dot (PFarray_t *dot, PFla_op_t *n)
                 }
             }
             if (*fmt == '+' || *fmt == 'U') {
-                PFarray_t *guide_mapping_list = n->prop->guide_mapping_list;
-                if (guide_mapping_list && PFarray_last (guide_mapping_list)) {
-                    PFguide_mapping_t *guide_mapping;
-                    PFarray_t *guide_list;
-                    unsigned int i, j;
-                    bool first = true;
+                PFguide_tree_t **guides;
+                PFalg_att_t att;
+                unsigned int i, j, count;
+                bool first = true;
+                
+                for (i = 0; i < n->schema.count; i++) {
+                    att = n->schema.items[i].name;
+                    if (PFprop_guide (n->prop, att)) {
                     
-                    for (i = 0; i < PFarray_last(guide_mapping_list); i++) {
-                        guide_mapping = *((PFguide_mapping_t**) PFarray_at(
-                                guide_mapping_list, i));            
-                        
                         PFarray_printf (dot, "%s %s:", 
                                         first ? "\\nGUIDE:" : ",",
-                                        PFatt_str(guide_mapping->column));
+                                        PFatt_str(att));
                         first = false;
                         
                         /* print guides */
-                        guide_list = guide_mapping->guide_list;
-                        for (j = 0; j < PFarray_last(guide_list); j++)
-                            PFarray_printf (
-                                dot,
-                                " %i",
-                                (*((PFguide_tree_t**)
-                                   PFarray_at(guide_list, j)))->guide);
+                        count  = PFprop_guide_count (n->prop, att);
+                        guides = PFprop_guide_elements (n->prop, att);
+                        for (j = 0; j < count; j++)
+                            PFarray_printf (dot, " %i", guides[j]->guide);
                     }
-                } 
+                }
             }
             if (*fmt == '+' || *fmt == 'Y') {
                 if (PFprop_ckeys_count (n->prop)) {
