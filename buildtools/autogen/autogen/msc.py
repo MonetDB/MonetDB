@@ -505,6 +505,9 @@ def msc_binary(fd, var, binmap, msc):
             msc['SCRIPTS'].append(name)
         return
 
+    if binmap.has_key('MTSAFE'):
+        fd.write("CFLAGS=$(CFLAGS) $(thread_safe_flag_spec)\n")
+
     HDRS = []
     hdrs_ext = []
     if binmap.has_key('HEADERS'):
@@ -520,17 +523,22 @@ def msc_binary(fd, var, binmap, msc):
         binname = binmap['NAME'][0]
     else:
         binname = name
+    binname2 = binname.replace('-','_').replace('.', '_')
+
+    if binmap.has_key('COND'):
+        condname = 'defined(' + ') && defined('.join(binmap['COND']) + ')'
+        fd.write('!IF %s\n' % condname)
+        fd.write('C_%s_exe = %s.exe\n' % (binname2, binname))
+        msc['BINS'].append((binname, '$(C_%s_exe)' % binname2, condname))
+    else:
+        condname = ''
+        msc['BINS'].append((binname, binname, condname))
 
     if binmap.has_key("DIR"):
         bd = binmap["DIR"][0] # use first name given
-        fd.write("%sdir = %s\n" % (binname.replace('-','_'), msc_translate_dir(bd,msc)) );
+        fd.write("%sdir = %s\n" % (binname2, msc_translate_dir(bd,msc)) );
     else:
-        fd.write("%sdir = $(bindir)\n" % binname.replace('-','_'));
-
-    msc['BINS'].append(binname)
-
-    if binmap.has_key('MTSAFE'):
-        fd.write("CFLAGS=$(CFLAGS) $(thread_safe_flag_spec)\n")
+        fd.write("%sdir = $(bindir)\n" % binname2);
 
     binlist = []
     if binmap.has_key("LIBS"):
@@ -540,7 +548,7 @@ def msc_binary(fd, var, binmap, msc):
     if binlist:
         msc_additional_libs(fd, binname, "", "BIN", binlist, [], msc)
 
-    srcs = binname.replace('-','_')+"_OBJS ="
+    srcs = binname2+"_OBJS ="
     for target in binmap['TARGETS']:
         t, ext = split_filename(target)
         if ext == "o":
@@ -559,15 +567,20 @@ def msc_binary(fd, var, binmap, msc):
             if target not in SCRIPTS:
                 SCRIPTS.append(target)
     fd.write(srcs + "\n")
-    fd.write("%s.exe: $(%s_OBJS)\n" % (binname, binname.replace('-','_')))
+    fd.write("%s.exe: $(%s_OBJS)\n" % (binname, binname2))
     fd.write('\t$(CC) $(CFLAGS)')
-    fd.write(" -Fe%s.exe $(%s_OBJS) /link $(%s_LIBS) /subsystem:console /NODEFAULTLIB:LIBC\n" % (binname, binname.replace('-','_'), binname.replace('-','_')))
+    fd.write(" -Fe%s.exe $(%s_OBJS) /link $(%s_LIBS) /subsystem:console /NODEFAULTLIB:LIBC\n" % (binname, binname2, binname2))
     fd.write("\t$(EDITBIN) $@ /HEAP:1048576,1048576 /LARGEADDRESSAWARE\n");
-    fd.write("\tif exist $@.manifest $(MT) -manifest $@.manifest -outputresource:$@;1\n\n");
+    fd.write("\tif exist $@.manifest $(MT) -manifest $@.manifest -outputresource:$@;1\n");
+    if condname:
+        fd.write('!ELSE\n')
+        fd.write('C_%s_exe =\n' % binname2)
+        fd.write('!ENDIF\n')
+    fd.write('\n')
 
     if SCRIPTS:
-        fd.write(binname.replace('-','_')+"_SCRIPTS =" + msc_space_sep_list(SCRIPTS))
-        msc['BUILT_SOURCES'].append("$(" + binname.replace('-','_') + "_SCRIPTS)")
+        fd.write(binname2+"_SCRIPTS =" + msc_space_sep_list(SCRIPTS))
+        msc['BUILT_SOURCES'].append("$(" + binname2 + "_SCRIPTS)")
 
     if binmap.has_key('HEADERS'):
         for h in HDRS:
@@ -604,7 +617,7 @@ def msc_bins(fd, var, binsmap, msc):
         else:
             fd.write("%sdir = $(bindir)\n" % (bin.replace('-','_')) );
 
-        msc['BINS'].append(bin)
+        msc['BINS'].append((bin, bin, ''))
 
         if binsmap.has_key(bin + "_LIBS"):
             msc_additional_libs(fd, bin, "", "BIN", binsmap[bin + "_LIBS"], [], msc)
@@ -1110,8 +1123,11 @@ def output(tree, cwd, topdir):
                 fd.write(' "%s"' % v)
 
     if msc['BINS']:
-        for v in msc['BINS']:
-            fd.write(' "%s.exe"' % v)
+        for x, v, cond in msc['BINS']:
+            if v[:1] == '$':
+                fd.write(' %s' % v)
+            else:
+                fd.write(' "%s.exe"' % v)
 
     if msc['SCRIPTS']:
         for v in msc['SCRIPTS']:
@@ -1135,15 +1151,26 @@ def output(tree, cwd, topdir):
     l = []
     for dst, (src, ext, dir, instlib, cond) in msc['INSTALL'].items():
         l.append(dst)
+    b = []
+    for dst, src, cond in msc['BINS']:
+        b.append(dst)
 
     fd.write("install-exec: %s %s\n" % (
-        msc_list2string(msc['BINS'], '"install_bin_','" '),
+        msc_list2string(b, '"install_bin_','" '),
         msc_list2string(l, '"install_','" ')))
     if msc['BINS']:
-        for v in msc['BINS']:
-            fd.write('install_bin_%s: "%s.exe"\n' % (v, v))
-            fd.write('\tif not exist "$(%sdir)" $(MKDIR) "$(%sdir)"\n' % (v.replace('-','_'), v.replace('-','_')))
-            fd.write('\t$(INSTALL) "%s.exe" "$(%sdir)"\n' % (v,v.replace('-','_')))
+        for dst, src, cond in msc['BINS']:
+            if cond:
+                fd.write('!IF %s\n' % cond)
+            if src[:1] != '$':
+                src = '"%s.exe"' % src
+            fd.write('install_bin_%s: %s\n' % (dst, src))
+            fd.write('\tif not exist "$(%sdir)" $(MKDIR) "$(%sdir)"\n' % (dst.replace('-','_'), dst.replace('-','_')))
+            fd.write('\t$(INSTALL) %s "$(%sdir)"\n' % (src,dst.replace('-','_')))
+            if cond:
+                fd.write('!ELSE\n')
+                fd.write('install_bin_%s:\n' % dst)
+                fd.write('!ENDIF\n')
     if msc['INSTALL']:
         for dst, (src, ext, dir, instlib, cond) in msc['INSTALL'].items():
             if not dir:
