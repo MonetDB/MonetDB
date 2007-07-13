@@ -49,6 +49,13 @@ SQLProcedures_(ODBCStmt *stmt,
 	       SQLCHAR *szSchemaName, SQLSMALLINT nSchemaNameLength,
 	       SQLCHAR *szProcName, SQLSMALLINT nProcNameLength)
 {
+	RETCODE rc;
+
+	/* buffer for the constructed query to do meta data retrieval */
+	char *query = NULL;
+	char *query_end;
+
+	/* convert input string parameters to normal null terminated C strings */
 	fixODBCstring(szCatalogName, nCatalogNameLength, SQLSMALLINT, addStmtError, stmt);
 	fixODBCstring(szSchemaName, nSchemaNameLength, SQLSMALLINT, addStmtError, stmt);
 	fixODBCstring(szProcName, nProcNameLength, SQLSMALLINT, addStmtError, stmt);
@@ -71,18 +78,66 @@ SQLProcedures_(ODBCStmt *stmt,
 	   SMALLINT     procedure_type
 	 */
 
-	/* for now return dummy result set */
-	return SQLExecDirect_(stmt, (SQLCHAR *)
-			      "select "
-			      "cast('' as varchar(1)) as procedure_cat, "
-			      "cast('' as varchar(1)) as procedure_schem, "
-			      "cast('' as varchar(1)) as procedure_name, "
-			      "0 as num_input_params, "
-			      "0 as num_output_params, "
-			      "0 as num_result_sets, "
-			      "cast('' as varchar(1)) as remarks, "
-			      "cast(0 as smallint) as procedure_type "
-			      "where 0 = 1", SQL_NTS);
+	query = (char *) malloc(1000 + nSchemaNameLength + nProcNameLength);
+	assert(query);
+	query_end = query;
+
+	snprintf(query_end, 1000,
+		 "select "
+		 "cast(null as varchar(1)) as \"procedure_cat\", "
+		 "\"s\".\"name\" as \"procedure_schem\", "
+		 "\"p\".\"name\" as \"procedure_name\", "
+		 "0 as \"num_input_params\", "
+		 "0 as \"num_output_params\", "
+		 "0 as \"num_result_sets\", "
+		 "cast('' as varchar(1)) as \"remarks\", "
+		 "cast(%d as smallint) as \"procedure_type\" "
+		 "from sys.\"functions\" as \"p\", sys.\"schemas\" as \"s\" "
+		 "where \"p\".\"schema_id\" = \"s\".\"id\" "
+		 "and \"p\".\"sql\" = true ",
+		 SQL_PT_UNKNOWN);
+	query_end += strlen(query_end);
+
+	/* Construct the selection condition query part */
+	if (nCatalogNameLength > 0) {
+		/* filtering requested on catalog name */
+		/* we do not support catalog names, so ignore it */
+	}
+
+	if (nSchemaNameLength > 0) {
+		/* filtering requested on schema name */
+		/* use LIKE when it contains a wildcard '%' or a '_' */
+		/* TODO: the wildcard may be escaped. Check it
+		   and maybe convert it. */
+		sprintf(query_end, "and \"s\".\"name\" %s '%.*s' ",
+			memchr(szSchemaName, '%', nSchemaNameLength) || memchr(szSchemaName, '_', nSchemaNameLength) ? "like" : "=",
+			nSchemaNameLength, (char*)szSchemaName);
+		query_end += strlen(query_end);
+	}
+
+	if (nProcNameLength > 0) {
+		/* filtering requested on procedure name */
+		/* use LIKE when it contains a wildcard '%' or a '_' */
+		/* TODO: the wildcard may be escaped.  Check
+		   it and may be convert it. */
+		sprintf(query_end, "and \"p\".\"name\" %s '%.*s' ",
+			memchr(szProcName, '%', nProcNameLength) || memchr(szProcName, '_', nProcNameLength) ? "like" : "=",
+			nProcNameLength, (char*)szProcName);
+		query_end += strlen(query_end);
+	}
+
+	/* add the ordering */
+	strcpy(query_end,
+	       "order by \"procedure_cat\", \"procedure_schem\", \"procedure_name\"");
+	query_end += strlen(query_end);
+
+	/* query the MonetDB data dictionary tables */
+
+	rc = SQLExecDirect_(stmt, (SQLCHAR *) query, SQL_NTS);
+
+	free(query);
+
+	return rc;
 }
 
 SQLRETURN SQL_API
