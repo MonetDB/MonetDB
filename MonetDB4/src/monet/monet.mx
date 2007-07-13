@@ -388,7 +388,8 @@ monet_hello(stream *out)
 	if (GDKgetenv_isyes("monet_welcome")) {
 		if (out == NULL)
 			out = GDKout;
-		stream_printf(out, "# Monet Database Server V%s\n", monet_version);
+		stream_printf(out, "# MonetDB Server v%s\n", monet_version);
+		stream_printf(out, "# based on GDK   v%s\n", GDKgetenv("gdk_version"));
 		stream_printf(out, "# Copyright (c) 1993-2007, CWI. "
 			      "All rights reserved.\n");
 		stream_printf(out, "# Compiled for %s/" SZFMT "bit with " SZFMT "bit OIDs; %s linked.\n", 
