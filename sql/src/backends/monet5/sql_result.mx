@@ -492,7 +492,7 @@ mvc_import_table(mvc *m, bstream *bs, char *tname, char *sep, char *rsep, int sz
 				fmt[i].extra = &col->type;
 			}
 		}
-		if (TABLETcreate_bats(&as) >= 0) {
+		if (TABLETcreate_bats(&as, sz) >= 0) {
 			if (TABLETload_file(&as, bs, out) >= 0)
 				bats = TABLETcollect_bats(&as);
 		}
