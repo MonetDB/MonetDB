@@ -1,10 +1,10 @@
 module(unix);
 module(ascii_io);
-var l := new(int,void);
-var r := new(oid,void);
+var l := new(int,oid);
+var r := new(oid,oid);
 var TSTSRCDIR := getenv("TSTSRCDIR");
-import(l,TSTSRCDIR+"/BATpropcheck-BATjoin.SF-1568652.L.bat");
-import(r,TSTSRCDIR+"/BATpropcheck-BATjoin.SF-1568652.R.bat");
+import(l,TSTSRCDIR+"/BATpropcheck-BATjoin.SF-1568652.L.bat").project(nil);
+import(r,TSTSRCDIR+"/BATpropcheck-BATjoin.SF-1568652.R.bat").project(nil);
 print(count(l));
 print(count(r));
 print(slice(l,0,9));

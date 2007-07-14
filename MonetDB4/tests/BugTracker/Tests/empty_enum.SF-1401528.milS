@@ -4,7 +4,7 @@ module(enum);
 
 var TSTSRCDIR := getenv("TSTSRCDIR");
 
-var entities := new(void,str).import(TSTSRCDIR+"/empty_enum.SF-1401528.txt").seqbase(0@0);
+var entities := new(oid,str).import(TSTSRCDIR+"/empty_enum.SF-1401528.txt").reverse().mark(0@0).reverse();
 
 var enum_entities:=enum_create("enum_entities",entities);
 
