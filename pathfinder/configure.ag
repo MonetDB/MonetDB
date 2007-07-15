@@ -30,7 +30,7 @@ dnl AH_TOP([#include "sysdefs.h"])
 AH_BOTTOM([#include "stddef.h"])
 
 dnl ----------------------
-AM_INIT_AUTOMAKE("pathfinder", 0.19.0, [no-define])
+AM_INIT_AUTOMAKE("pathfinder", 0.19.0)
 AM_CONFIG_HEADER(pf_config.h:conf/config.h.in)
 CONFIG_H=pf_config.h
 AC_SUBST(CONFIG_H)

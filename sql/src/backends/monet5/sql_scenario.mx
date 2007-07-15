@@ -175,7 +175,7 @@ SQLprelude(void)
 	sqlinit = GDKgetenv("sqlinit");
 	tmp = GDKgetenv("monet_welcome");
 	if (tmp != NULL && strcmp(tmp, "yes") == 0)
-		printf("# MonetDB/SQL module v2.19.0 loaded\n");
+		printf("# MonetDB/SQL module v" VERSION " loaded\n");
 	return SABAOTHmarchScenario(&res, &s->name);
 }
 

@@ -19,3 +19,6 @@
 /* Manual config.h. needed for win32 .  */
 
 #include <monetdb_winconfig.h>
+
+/* Version number of package */
+#define VERSION "@VERSION@"
