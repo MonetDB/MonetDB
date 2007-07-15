@@ -20,6 +20,9 @@
 
 AC_PREREQ(2.59)
 AC_INIT([MonetDB Common], [1.19.0], [monet@cwi.nl], [MonetDB])
+#                          ^^^^^^
+# Maintained via vertoo. Please don't modify by hand!
+# Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
 AC_CONFIG_AUX_DIR(conf)
 AC_CANONICAL_HOST
 AC_CANONICAL_TARGET

@@ -19,6 +19,9 @@ dnl -*- mode: autoconf -*-
 dnl Process this file with autoconf to produce a configure script.
 AC_PREREQ(2.59)
 AC_INIT([MonetDB Server], [5.1.0], [monet@cwi.nl], [MonetDB5])
+#                          ^^^^^
+# Maintained via vertoo. Please don't modify by hand!
+# Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
 AC_CONFIG_AUX_DIR(conf)
 AC_CANONICAL_HOST
 AC_CANONICAL_TARGET
@@ -45,6 +48,9 @@ fi
 dnl Check for Monet
 # Check for Monet 
 req_monetdb_ver='1.19.0'
+#                ^^^^^^
+# Maintained via vertoo. Please don't modify by hand!
+# Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
 AM_MONETDB_COMMON($req_monetdb_ver)
 if test "x$have_monetdb" != xyes; then
 	if test "x$MONETDBVERS" = "x"; then
@@ -54,6 +60,9 @@ if test "x$have_monetdb" != xyes; then
 	fi
 fi
 req_clients_ver='1.18.0'
+#                ^^^^^^
+# Maintained via vertoo. Please don't modify by hand!
+# Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
 AM_MONETDB_CLIENTS($req_clients_ver)
 AM_MONETDB_DEFAULTS()
 AM_MONETDB_COMPILER()

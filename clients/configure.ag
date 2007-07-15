@@ -20,6 +20,9 @@
 
 AC_PREREQ(2.59)
 AC_INIT([MonetDB clients], [1.19.0], [monet@cwi.nl], [clients])
+#                           ^^^^^^
+# Maintained via vertoo. Please don't modify by hand!
+# Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
 AC_CONFIG_AUX_DIR(conf)
 AC_CANONICAL_HOST
 AC_CANONICAL_TARGET
@@ -71,6 +74,9 @@ AC_SUBST(Qexec_prefix)
 
 # Check for Monet 
 req_monetdb_ver='1.18.0'
+#                ^^^^^^
+# Maintained via vertoo. Please don't modify by hand!
+# Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
 AM_MONETDB_COMMON($req_monetdb_ver)
 if test "x$have_monetdb" != xyes; then
 	if test "x$MONETDBVERS" = "x"; then

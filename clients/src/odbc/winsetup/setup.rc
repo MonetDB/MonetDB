@@ -81,11 +81,17 @@ BEGIN
             VALUE "CompanyName", "CWI"
             VALUE "FileDescription", "MonetDB ODBC Setup DLL"
             VALUE "FileVersion", "2.18.0\0"
+            //                    ^^^^^^^^
+            // Maintained via vertoo. Please don't modify by hand!
+            // Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
             VALUE "InternalName", "libMonetODBCs.dll"
             VALUE "LegalCopyright", "Copyright (c) CWI 2006-2007"
             VALUE "OriginalFilename", "libMonetODBCs.dll"
             VALUE "ProductName", "MonetDB SQL Server"
             VALUE "ProductVersion", "2.18.0\0"
+            //                       ^^^^^^^^
+            // Maintained via vertoo. Please don't modify by hand!
+            // Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
         END
     END
     BLOCK "VarFileInfo"

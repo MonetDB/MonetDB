@@ -21,3 +21,6 @@
 pkg = MonetDB
 CONFIG_H=monetdb_config.h
 VERSION=1.19.0
+#       ^^^^^^
+# Maintained via vertoo. Please don't modify by hand!
+# Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.

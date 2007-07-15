@@ -19,6 +19,9 @@ BEGIN
       VALUE "CompanyName", "CWI\0"
       VALUE "FileDescription", "MonetDB ODBC Driver DLL\0"
       VALUE "FileVersion", "2.18.0\0"
+      //                    ^^^^^^^^
+      // Maintained via vertoo. Please don't modify by hand!
+      // Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
       VALUE "InternalName", "libMonetODBC\0"
       VALUE "LegalCopyright", "Copyright © CWI 2004-2007\0"
       VALUE "LegalTrademarks", "\0"
@@ -26,6 +29,9 @@ BEGIN
       VALUE "PrivateBuild", "\0"
       VALUE "ProductName", "MonetDB SQL Server\0"
       VALUE "ProductVersion", "2.18.0\0"
+      //                       ^^^^^^^^
+      // Maintained via vertoo. Please don't modify by hand!
+      // Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
       VALUE "SpecialBuild", "\0"
     END
   END

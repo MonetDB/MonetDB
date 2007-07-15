@@ -27,12 +27,18 @@ AH_BOTTOM([#include "stddef.h"])
 
 dnl ----------------------
 AM_INIT_AUTOMAKE("sql", 2.19.0)
+#                       ^^^^^^
+# Maintained via vertoo. Please don't modify by hand!
+# Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
 AM_CONFIG_HEADER(sql_config.h:conf/config.h.in)
 CONFIG_H=sql_config.h
 AC_SUBST(CONFIG_H)
 
 dnl Check for Monet
 req_monetdb_ver='1.18.0'
+#                ^^^^^^
+# Maintained via vertoo. Please don't modify by hand!
+# Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
 AM_MONETDB_COMMON($req_monetdb_ver)
 if test "x$have_monetdb" != xyes; then
 	if test "x$MONETDBVERS" = "x"; then
@@ -42,6 +48,9 @@ if test "x$have_monetdb" != xyes; then
 	fi
 fi
 req_clients_ver='1.18.0'
+#                ^^^^^^
+# Maintained via vertoo. Please don't modify by hand!
+# Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
 AM_MONETDB_CLIENTS($req_clients_ver)
 AM_MONETDB_DEFAULTS()
 AM_MONETDB_COMPILER()
@@ -50,8 +59,14 @@ AM_MONETDB_OPTIONS()
 AM_MONETDB_LIBS()
 AM_MONETDB_UTILS()
 req_monetdb4_ver='4.19.0'
+#                 ^^^^^^
+# Maintained via vertoo. Please don't modify by hand!
+# Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
 AM_MONETDB4($req_monetdb4_ver)
 req_monetdb5_ver='5.1.0'
+#                 ^^^^^
+# Maintained via vertoo. Please don't modify by hand!
+# Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
 AM_MONETDB5($req_monetdb5_ver)
 
 if test "x$have_monetdb4" != xyes -a "x$have_monetdb5" != xyes; then

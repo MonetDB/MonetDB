@@ -34,6 +34,9 @@ BuildRequires: python
 
 %if !%{?buildsystem}
 BuildRequires: MonetDB-devel = 1.18
+#                              ^^^^
+# Maintained via vertoo. Please don't modify by hand!
+# Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
 %endif
 
 %package devel
@@ -86,11 +89,17 @@ main-memory perspective with use of a fully decomposed storage model,
 automatic index management, extensibility of data types and search
 accellerators, SQL- and XML- frontends.
 Requires: MonetDB = 1.18
+#                   ^^^^
+# Maintained via vertoo. Please don't modify by hand!
+# Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
 
 %description devel
 Add the MonetDB client devel description here
 Requires: %{name} = %{version}-%{release}
 Requires: MonetDB-devel = 1.18
+#                         ^^^^
+# Maintained via vertoo. Please don't modify by hand!
+# Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
 
 %description odbc
 Add the MonetDB SQL odbc description here

@@ -28,5 +28,8 @@ Name: ${pkg}
 Description: A SQL/ODBC/JDBC interface to MonetDB.
 Version: @VERSION@
 Requires: MonetDB >= 4.18.0
+#                    ^^^^^^
+# Maintained via vertoo. Please don't modify by hand!
+# Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
 Cflags: -I${includedir}/sql
 Libs: -L${libdir} -lMonetODBC

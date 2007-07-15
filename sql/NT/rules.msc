@@ -20,6 +20,9 @@ RULESMSC = $(MONETDB_PREFIX)\share\MonetDB\winrules.msc
 !INCLUDE $(RULESMSC)
 
 VERSION = 2.19.0
+#         ^^^^^^
+# Maintained via vertoo. Please don't modify by hand!
+# Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
 
 pkg = sql
 CONFIG_H=sql_config.h

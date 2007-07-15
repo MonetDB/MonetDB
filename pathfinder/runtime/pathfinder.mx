@@ -3879,6 +3879,9 @@ xquery_status := XQUERY_STATUS_READY;
 mapi_register(xquery_frontend()); # open up mapi client access
 if (monet_environment.find("monet_welcome") = "yes") 
     printf("%c MonetDB/XQuery module v0.19.0 loaded\n", int(35));
+    #                                 ^^^^^^
+    # Maintained via vertoo. Please don't modify by hand!
+    # Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
 rpcd_start();                     # open up xrpc access
 fork(pf_logmanager());            # start checkpointing thread
 
