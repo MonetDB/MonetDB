@@ -35,7 +35,7 @@ ant_jar_jdbc = {
 
 ant_jar_jdbcclient = {
 	DIR = datadir/MonetDB/lib
-	FILES = jdbcclient-1.6.jar
+	FILES = jdbcclient.jar
 }
 
 ant_jar_xrpcwrapper = {
