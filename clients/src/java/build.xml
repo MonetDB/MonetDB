@@ -173,7 +173,7 @@ All Rights Reserved.
   <target name="create_mjclient">
     <echo message="Crafting an mjclient wrapper script" />
     <filter token="JDBCCLIENT_JAR"
-      value="jdbcclient-${JDBC_MAJOR}.${JDBC_MINOR}.jar" />
+      value="jdbcclient.jar" />
 
     <!-- now copy and filter the file -->
     <copy file="${scriptdir}/mjclient"
@@ -186,7 +186,7 @@ All Rights Reserved.
   <target name="create_mjclient_bat">
     <echo message="Crafting an mjclient.bat wrapper script" />
     <filter token="JDBCCLIENT_JAR"
-      value="jdbcclient-${JDBC_MAJOR}.${JDBC_MINOR}.jar" />
+      value="jdbcclient.jar" />
 
     <!-- now copy and filter the file -->
     <copy file="${scriptdir}/mjclient.bat"

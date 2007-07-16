@@ -45,7 +45,7 @@ esac
 case $1 in
 	jdbc)
 		TYPE=JDBC
-		FILES="monetdb-XXX-jdbc.jar jdbcclient-XXX.jar monetdb-XXX-xmldb.jar"
+		FILES="monetdb-XXX-jdbc.jar monetdb-XXX-xmldb.jar"
 		;;
 	mcl)
 		TYPE=MCL
