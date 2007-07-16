@@ -169,7 +169,7 @@ def split_filename(f):
     return base,ext
 
 def readfile(f):
-    src = open(f, 'rb')
+    src = open(f, 'r')
     buf = src.read()
     src.close()
     return buf
