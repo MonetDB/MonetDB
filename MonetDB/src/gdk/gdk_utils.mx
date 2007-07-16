@@ -2194,7 +2194,7 @@ THRprintf(stream *s, const char *format, ...)
 }
 
 @h
-gdk_export char *GDKversion(void);
+gdk_export const char *GDKversion(void);
 
 @c
 static char *_gdk_version_string = VERSION;
@@ -2203,7 +2203,7 @@ static char *_gdk_version_string = VERSION;
  * string does not have to (and should not) be freed.  Do not inline
  * this function or the wrong VERSION will be used.
  */
-char *GDKversion() {
+const char *GDKversion(void) {
 	return(_gdk_version_string);
 }
 
