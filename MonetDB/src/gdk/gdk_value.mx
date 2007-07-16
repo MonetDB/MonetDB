@@ -697,11 +697,5 @@ VALconvert(int typ, ValPtr t)
 	return p == ILLEGALVALUE ? p : VALptr(t);
 }
 
-
-static char *_gdk_version_string = VERSION;
-char *GDKversion() {
-	return(_gdk_version_string);
-}
-
 @}
 @
