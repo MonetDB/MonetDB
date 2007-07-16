@@ -3274,14 +3274,6 @@ gdk_export int BATmultijoin(int argc, BAT *argv[], RowFcn tuple_fcn, ptr tuple_d
 @
 
 @h
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-#ifdef __cplusplus
-}
-#endif
-
 @{
 #define ILLEGALVALUE	((ptr)-1L)
 #define MAXPARAMS	32
