@@ -4686,7 +4686,7 @@ translateAggregates (opt_t *f, int code, int rc,
             "if (ipik.count() != 0) { # fn:%s\n"
             "var iter_grp  := iter.materialize(ipik);\n"
             "iter := iter_grp.tunique();\n"
-            "var iter_aggr := {%s}(item%s, iter_grp, iter).tmark(0@0);\n"
+            "var iter_aggr := {%s}(item%s.materialize(ipik), iter_grp, iter).tmark(0@0);\n"
             "iter := iter.hmark(0@0);\n"
             "ipik := iter;\n"
             "pos := 1@0;\n"
