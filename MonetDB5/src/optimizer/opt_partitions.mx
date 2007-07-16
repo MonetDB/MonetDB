@@ -431,5 +431,6 @@ An assignment to the target is not allowed [to be checked separately]
 @:exportOptimizer(partitions)@
 #endif
 @c
+#include "opt_statistics.h"
 @:wrapOptimizer(partitions,OPT_CHECK_ALL)@
 @}

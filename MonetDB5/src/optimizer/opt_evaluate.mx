@@ -160,6 +160,7 @@ a constant itself.
 @:exportOptimizer(evaluate)@
 #endif
 @c
+#include "opt_statistics.h"
 @:wrapOptimizer(evaluate,OPT_CHECK_ALL)@
 @}
 

@@ -318,5 +318,6 @@ OPTmultiplexImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 @:exportOptimizer(multiplex)@
 #endif /* _OPT_MULTIPLEX_H_ */
 @c
+#include "opt_statistics.h"
 @:wrapOptimizer(multiplex,OPT_CHECK_ALL)@
 @}

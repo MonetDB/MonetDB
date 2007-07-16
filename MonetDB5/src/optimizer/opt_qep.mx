@@ -296,5 +296,6 @@ OPTdumpQEPImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 @:exportOptimizer(dumpQEP)@
 #endif /* _OPT_QEP_ */
 @c
+#include "opt_statistics.h"
 @:wrapOptimizer(dumpQEP,OPT_CHECK_ALL)@
 @}

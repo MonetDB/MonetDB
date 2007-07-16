@@ -113,5 +113,6 @@ OPTaccessmodeImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 @:exportOptimizer(accessmode)@
 #endif
 @c
+#include "opt_statistics.h"
 @:wrapOptimizer(accessmode,OPT_CHECK_ALL)@
 @}

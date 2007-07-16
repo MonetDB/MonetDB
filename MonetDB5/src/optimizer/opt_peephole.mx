@@ -146,6 +146,7 @@ OPTpeepholeImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 @:exportOptimizer(peephole)@
 #endif
 @c
+#include "opt_statistics.h"
 @:wrapOptimizer(peephole,OPT_CHECK_ALL)@
 @}
 

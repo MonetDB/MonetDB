@@ -154,5 +154,6 @@ OPTreduceImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 @:exportOptimizer(reduce)@
 #endif
 @c
+#include "opt_statistics.h"
 @:wrapOptimizer(reduce,OPT_CHECK_ALL)@
 @}

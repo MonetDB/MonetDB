@@ -107,5 +107,6 @@ OPTcrackImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 @:exportOptimizer(crack)@
 #endif
 @c
+#include "opt_statistics.h"
 @:wrapOptimizer(crack,OPT_CHECK_ALL)@
 @}

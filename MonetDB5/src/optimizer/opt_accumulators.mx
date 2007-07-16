@@ -204,5 +204,6 @@ sure it becomes one.
 @:exportOptimizer(accumulators)@
 #endif
 @c
+#include "opt_statistics.h"
 @:wrapOptimizer(accumulators,OPT_CHECK_ALL)@
 @}

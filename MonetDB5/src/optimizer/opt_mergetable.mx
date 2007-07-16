@@ -440,5 +440,6 @@ For the time being, they are no-ops.
 @:exportOptimizer(mergetable)@
 #endif
 @c
+#include "opt_statistics.h"
 @:wrapOptimizer(mergetable,OPT_CHECK_ALL)@
 @}

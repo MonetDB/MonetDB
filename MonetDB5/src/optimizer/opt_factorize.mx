@@ -247,5 +247,6 @@ OPTfactorizeImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 @:exportOptimizer(factorize)@
 #endif
 @c
+#include "opt_statistics.h"
 @:wrapOptimizer(factorize,OPT_CHECK_ALL)@
 @}

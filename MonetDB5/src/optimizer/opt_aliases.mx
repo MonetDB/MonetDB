@@ -142,5 +142,6 @@ OPTaliasesImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 @:exportOptimizer(aliases)@
 #endif
 @c
+#include "opt_statistics.h"
 @:wrapOptimizer(aliases,OPT_CHECK_ALL)@
 @}

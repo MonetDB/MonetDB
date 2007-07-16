@@ -351,5 +351,6 @@ OPTsingletonImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 @:exportOptimizer(singleton)@
 #endif
 @c
+#include "opt_statistics.h"
 @:wrapOptimizer(singleton,OPT_CHECK_ALL)@
 @}

@@ -289,5 +289,6 @@ end:
 @:exportOptimizer(joinselect)@
 #endif
 @c
+#include "opt_statistics.h"
 @:wrapOptimizer(joinselect,OPT_CHECK_ALL)@
 @}

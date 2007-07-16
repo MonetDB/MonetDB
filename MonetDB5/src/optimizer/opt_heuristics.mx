@@ -166,6 +166,7 @@ Should be done differently
 @:exportOptimizer(heuristics)@
 #endif
 @c
+#include "opt_statistics.h"
 @:wrapOptimizer(heuristics,OPT_CHECK_ALL)@
 
 @}

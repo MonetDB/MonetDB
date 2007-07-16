@@ -273,5 +273,6 @@ an initially empty insertion BAT.
 The costModel does not change the program properties,
 which means we can skip the expensive defensive tests.
 @c
+#include "opt_statistics.h"
 @:wrapOptimizer(costModel,0)@
 @}

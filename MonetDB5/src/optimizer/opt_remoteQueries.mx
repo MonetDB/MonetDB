@@ -453,5 +453,6 @@ to be shipped should be simple.
 @:exportOptimizer(remoteQueries)@
 #endif
 @c
+#include "opt_statistics.h"
 @:wrapOptimizer(remoteQueries,OPT_CHECK_ALL)@
 @}

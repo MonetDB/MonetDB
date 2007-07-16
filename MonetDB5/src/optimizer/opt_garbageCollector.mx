@@ -207,5 +207,6 @@ OPTgarbageCollectorImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 @:exportOptimizer(garbageCollector)@
 #endif
 @c
+#include "opt_statistics.h"
 @:wrapOptimizer(garbageCollector,OPT_CHECK_ALL)@
 @}

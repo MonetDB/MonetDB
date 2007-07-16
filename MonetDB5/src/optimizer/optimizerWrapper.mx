@@ -14,7 +14,6 @@ opt_export str OPT@1(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 
 @= wrapOptimizer
 /* #define _DEBUG_OPTIMIZER_*/
-#include "opt_statistics.h"
 
 str OPT@1(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	str modnme;

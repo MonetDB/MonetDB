@@ -145,5 +145,6 @@ OPTdeadcodeImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 @:exportOptimizer(deadcode)@
 #endif
 @c
+#include "opt_statistics.h"
 @:wrapOptimizer(deadcode,OPT_CHECK_ALL)@
 @}

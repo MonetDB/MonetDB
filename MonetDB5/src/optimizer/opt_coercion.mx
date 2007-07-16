@@ -100,5 +100,6 @@ structure. A cheaper optimizer is sufficient.
 @:exportOptimizer(coercion)@
 #endif
 @c
+#include "opt_statistics.h"
 @:wrapOptimizer(coercion,OPT_CHECK_FLOW)@
 @}

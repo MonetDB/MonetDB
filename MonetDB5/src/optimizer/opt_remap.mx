@@ -213,5 +213,6 @@ OPTremapMultiplex(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 @:exportOptimizer(remap)@
 #endif
 @c
+#include "opt_statistics.h"
 @:wrapOptimizer(remap,OPT_CHECK_ALL)@
 @}

@@ -87,5 +87,6 @@ OPTinlineImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 @:exportOptimizer(inline)@
 #endif
 @c
+#include "opt_statistics.h"
 @:wrapOptimizer(inline,OPT_CHECK_ALL)@
 @}

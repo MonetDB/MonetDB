@@ -321,5 +321,6 @@ OPTemptySetImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 @:exportOptimizer(emptySet)@
 #endif
 @c
+#include "opt_statistics.h"
 @:wrapOptimizer(emptySet,OPT_CHECK_ALL)@
 @}

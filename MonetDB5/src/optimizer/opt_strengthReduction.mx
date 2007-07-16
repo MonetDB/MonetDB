@@ -249,5 +249,6 @@ after the loop, because then you may not simple move an expression.
 @:exportOptimizer(strengthReduction)@
 #endif
 @c
+#include "opt_statistics.h"
 @:wrapOptimizer(strengthReduction,OPT_CHECK_ALL)@
 @}
