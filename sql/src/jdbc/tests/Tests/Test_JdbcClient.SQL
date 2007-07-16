@@ -1,7 +1,7 @@
 #!/bin/bash
 
 pdd="`monetdb-clients-config --pkgdatadir`"
-JAR="`ls $pdd/lib/jdbcclient-*.*.jar | head -n1`"
+JAR="$pdd/lib/jdbcclient.jar"
 
 cat << EOF > .monetdb
 user=monetdb

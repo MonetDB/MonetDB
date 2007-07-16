@@ -2053,8 +2053,8 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_3BB3996E3E4D4A64B574C39D8398AB69"
             {
-            "SourcePath" = "8:..\\..\\..\\clients\\NT\\share\\MonetDB\\lib\\jdbcclient-1.6.jar"
-            "TargetName" = "8:jdbcclient-1.6.jar"
+            "SourcePath" = "8:..\\..\\..\\clients\\NT\\share\\MonetDB\\lib\\jdbcclient.jar"
+            "TargetName" = "8:jdbcclient.jar"
             "Tag" = "8:"
             "Folder" = "8:_2E7A7A2A3AA7443EB1803999F76D6C26"
             "Condition" = "8:"
