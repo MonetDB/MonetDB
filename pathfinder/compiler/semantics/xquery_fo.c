@@ -1796,6 +1796,12 @@ PFfun_xquery_fo (void)
             .par_ty = (PFty_t[]) { PFty_node () },
             .ret_ty = PFty_xs_string () } },
         .alg = PFbui_pf_string_value }
+    , /* pf:product (double*) as double */
+      { .ns = PFns_lib, .loc = "product",
+        .arity = 1, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_star (PFty_xs_double ()) },
+            .ret_ty = PFty_xs_double () } }
+      }
 
 
 /* #2. PATHFINDER SPECIFIC DOCUMENT MANAGEMENT FUNCTIONS */

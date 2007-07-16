@@ -3658,49 +3658,23 @@ evaluateOp (opt_t *f, int rcode, int rc1, int rc2,
 }
 
 #ifdef HAVE_PROBXML
-static void
-evaluateDeepEq (opt_t *f, int rcode, int rc1, int rc2,
-            int counter, char *operator, type_co t_co)
-{
-    (void)operator;
-    milprintf(f, "{ # pxmlsup:deep-equal (Deep equal) calculation\n");
-    if (rc2 != NORMAL)
-        milprintf(f, "var val_snd := item%s;\n", kind_str(rc2));
-    else
-        milprintf(f, "var val_snd := item.leftfetchjoin(%s);\n", t_co.table);
-
-    if (rc1 != NORMAL)
-        milprintf(f, "var val_fst := item%s%03u;\n", kind_str(rc1), counter);
-    else
-        milprintf(f, "var val_fst := item%03u.leftfetchjoin(%s);\n", counter, t_co.table);
-
-    // milprintf(f, "val_fst := [%s](val_fst,val_snd);\n", operator);
-    milprintf(f, "val_fst := probxml_deep_eq(ws,item%03u,kind%03u,item,kind);\n", counter,counter);
-
-    if (rcode == BOOL) {
-        milprintf(f, "item := val_fst.[oid]();\n");
-        milprintf(f, "kind := BOOL;\n");
-    } else if (rcode != NORMAL) {
-        milprintf(f, "item%s := val_fst;\n", kind_str(rcode)); 
-    } else {
-        addValues(f, t_co, "val_fst", "item"); 
-    }
-    milprintf(f, "} # end of pxmlsup:deep-equal (Deep Equal) \n");
-}
 
 static int
 translateDeepEq (opt_t *f, int cur_level, int counter, char *comp, PFcnode_t *args)
 {
-    int rc1, rc2;
+    (void)comp;
 
     /* translate the subtrees */
-    rc1 = translate2MIL (f, VALUES, cur_level, counter, L(args));
+    int rc1 = translate2MIL (f, VALUES, cur_level, counter, L(args));
     counter++;
     saveResult_ (f, counter, rc1); 
+    translate2MIL (f, VALUES, cur_level, counter, RL(args));
 
-    rc2 = translate2MIL (f, VALUES, cur_level, counter, RL(args));
-
-    evaluateDeepEq (f, BOOL, rc1, rc2, counter, comp, bool_container());
+    milprintf(f, "{ # pxmlsup:deep-equal calculation\n");
+    milprintf(f, "var val_fst := probxml_deep_eq(ws,item%03u,kind%03u,item,kind);\n", counter,counter);
+    milprintf(f, "item := val_fst.[oid]();\n");
+    milprintf(f, "kind := BOOL;\n");
+    milprintf(f, "} # end of pxmlsup:deep-equal\n");
 
     /* clear the intermediate result of the second subtree */
     deleteResult_ (f, counter, rc1);
@@ -7429,15 +7403,25 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         rc = translate2MIL (f, VALUES, cur_level, counter, L(args));
         return translateAggregates (f, code, rc, fun, args, "min");
     }
-    else if (!PFqname_eq(fnQname,PFqname (PFns_fn,"sum")))
+    else if (!PFqname_eq(fnQname,PFqname (PFns_fn,"sum")) || !PFqname_eq(fnQname,PFqname (PFns_lib,"product")) ) 
     {
         assert (fun->sig_count == 1);
         int rcode = get_kind(fun->sigs[0].ret_ty);
         type_co t_co = kind_container(rcode);
         item_ext = kind_str(rcode);
+	char* milfun;
+	char* emptyval;
+
+	if ( !PFqname_eq(fnQname,PFqname (PFns_fn,"sum")) ) {
+	    milfun   = "sum";
+	    emptyval = "0";
+	} else {
+	    milfun = "prod";
+	    emptyval = "1";
+	}
 
         rc = translate2MIL (f, VALUES, cur_level, counter, L(args));
-        rc = translateAggregates (f, VALUES, rc, fun, args, "sum");
+        rc = translateAggregates (f, VALUES, rc, fun, args, milfun);
         if (rc == NORMAL)
         {
             milprintf(f, "item%s := item%s;\n", item_ext, val_join(rcode));
@@ -7457,9 +7441,11 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         {
             milprintf(f, 
                     "iter := loop%03u;\n"
-                    "item%s := %s(0);\n",
+                    "item%s := %s(%s);\n",
                     cur_level,
-                    item_ext, t_co.mil_type);
+                    item_ext,
+		    t_co.mil_type,
+		    emptyval);
         }
 
         milprintf(f,
