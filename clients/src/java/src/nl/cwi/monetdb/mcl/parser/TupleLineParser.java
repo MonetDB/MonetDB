@@ -58,7 +58,7 @@ public class TupleLineParser extends MCLParser {
 				throw new MCLParseException(values.length +
 						" columns expected, but only single value found");
 
-			// return the whole string but the trailing =
+			// return the whole string but the leading =
 			values[0] = source.substring(1);
 
 			// reset colnr
