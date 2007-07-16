@@ -196,6 +196,16 @@ monet_version()
 	printf("MonetDB Server v%s\n", VERSION);
 	printf("based on GDK   v%s\n", GDKversion());
 	printf("Copyright (c) 1993-2007 CWI, all rights reserved\n");
+	printf("Configured for prefix: " MONETDBPREFIX "\n");
+	printf("Libraries:\n");
+#ifdef HAVE_LIBPCRE
+#include <pcre.h>
+	printf("  libpcre: %s (%s)\n", pcre_version(), "@pcreversion@");
+#endif
+#ifdef HAVE_OPENSSL
+#include <openssl/opensslv.h>
+	printf("  openssl: %s (%s)\n", OPENSSL_VERSION_TEXT, "@opensslversion@");
+#endif
 	printf("Compiled by: %s\n", "@builtby@");
 	printf("Compilation: %s\n", "@compilercall@");
 	printf("Linking:     %s\n", "@linkercall@");
