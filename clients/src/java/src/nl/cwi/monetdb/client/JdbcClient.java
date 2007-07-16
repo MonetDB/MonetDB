@@ -152,7 +152,7 @@ public class JdbcClient {
 
 		if (copts.getOption("help").isPresent()) {
 			System.out.print(
-"Usage java -jar jdbcclient-X.Y.jar\n" +
+"Usage java -jar jdbcclient.jar\n" +
 "                  [-h host[:port]] [-p port] [-f file] [-u user]\n" +
 "                  [-l language] [-b database] [-e] [-d [table]]\n" +
 "                  [-X<opt>]\n" +
