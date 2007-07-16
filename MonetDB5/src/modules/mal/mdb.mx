@@ -118,10 +118,13 @@ command getContext(s:str):str
 address MDBgetExceptionContext
 comment "Extract the context string from the exception message";
 
-pattern list():void 
+pattern list():void
 address MDBlist
 comment "Dump the current routine on standard out.";
-pattern list(M:str,F:str):void 
+pattern listMapi():void
+address MDBlistMapi
+comment "Dump the current routine on standard out with Mapi prefix.";
+pattern list(M:str,F:str):void
 address MDBlist3
 comment "Dump the routine M.F on standard out.";
 pattern List():void 
@@ -211,6 +214,7 @@ mdb_export str MDBgetExceptionVariable(str *ret, str *msg);
 mdb_export str MDBgetExceptionReason(str *ret, str *msg);
 mdb_export str MDBgetExceptionContext(str *ret, str *msg);
 mdb_export str MDBlist(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+mdb_export str MDBlistMapi(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mdb_export str MDBshowFlowGraph(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mdb_export str MDBlist3(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mdb_export str MDBlistDetail(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
@@ -587,6 +591,17 @@ MDBlist(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	(void) p;
 	(void) stk;
 	printFunction(c->fdout, mb, LIST_MAL_INSTR | LIST_MAL_PROPS);
+	return MAL_SUCCEED;
+}
+
+str
+MDBlistMapi(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+{
+	Client c = MCgetClient();
+
+	(void) p;
+	(void) stk;
+	printFunction(c->fdout, mb, LIST_MAL_INSTR | LIST_MAL_PROPS | LIST_MAPI);
 	return MAL_SUCCEED;
 }
 

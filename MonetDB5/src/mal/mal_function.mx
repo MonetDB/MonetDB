@@ -620,10 +620,19 @@ For commands we do not have to clone the routine. We merely have to
 assure that the type-constraints are obeyed. The resulting type
 is returned.
 @c
-void printFunction(stream *fd, MalBlkPtr mb, int flg){
+void printFunction(stream *fd, MalBlkPtr mb, int flg) {
 	int i;
-	for(i=0;i<mb->stop;i++)
-	printInstruction(fd,mb, getInstrPtr(mb,i),flg);
+	if (flg & LIST_MAPI) {
+		/* a bit dirty, but only here we have the number of lines */
+		stream_printf(fd, "&1 0 %d 1 %d\n", /* type id rows columns tuples */
+				mb->stop, mb->stop);
+		stream_printf(fd, "%% .explain # table_name\n");
+		stream_printf(fd, "%% mal # name\n");
+		stream_printf(fd, "%% clob # type\n");
+		stream_printf(fd, "%% 76 # length\n");	/* terminal width */
+	}
+	for (i = 0; i < mb->stop; i++)
+		printInstruction(fd, mb, getInstrPtr(mb, i), flg);
 }
 @- Lifespan analysis
 Optimizers may be interested in the characteristic of the
