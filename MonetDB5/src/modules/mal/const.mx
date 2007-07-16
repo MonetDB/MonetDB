@@ -158,7 +158,8 @@ CSTprelude(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		insertToBox(box, "dbname", GDKgetenv("gdk_dbname"));
 		insertToBox(box, "dbfarm", GDKgetenv("gdk_dbfarm"));
 		insertToBox(box, "version", VERSION);
-		insertToBox(box, "gdk_version", (const str)GDKversion());
+		snprintf(u, 24, "%s", GDKversion());
+		insertToBox(box, "gdk_version", u);
 		insertToBox(box, "config", GDKgetenv("gdk_config"));
 		/* old bat.mx and algebra.mx constants */
 	}

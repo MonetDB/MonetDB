@@ -226,7 +226,7 @@ mal_export void loadBox(str nme);
 mal_export int releaseAllBox(Box box);
 
 mal_export int depositBox(Box box, str name, ValPtr val);
-mal_export void insertToBox(Box box, const str name, const str val);
+mal_export void insertToBox(Box box, str name, str val);
 mal_export int takeBox(Box box, str name, ValPtr val, int tpe);
 mal_export int bindBAT(Box box, str name, str location);
 mal_export int releaseBox(Box box, str name);
@@ -418,7 +418,7 @@ depositBox(Box box, str name, ValPtr val)
 }
 
 void
-insertToBox(Box box, const str nme, const str val)
+insertToBox(Box box, str nme, str val)
 {
 	ValRecord vr;
 
