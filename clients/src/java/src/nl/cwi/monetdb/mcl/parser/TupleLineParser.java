@@ -51,6 +51,22 @@ public class TupleLineParser extends MCLParser {
 		char[] chrLine = new char[len];
 		source.getChars(0, len, chrLine, 0);
 
+		// first detect whether this is a single value line (=) or a
+		// real tuple ([)
+		if (chrLine[0] == '=') {
+			if (values.length != 1)
+				throw new MCLParseException(values.length +
+						" columns expected, but only single value found");
+
+			// return the whole string but the trailing =
+			values[0] = source.substring(1);
+
+			// reset colnr
+			reset();
+
+			return(0);
+		}
+
 		// extract separate fields by examining string, char for char
 		boolean inString = false, escaped = false;
 		int cursor = 2, column = 0, i = 2;

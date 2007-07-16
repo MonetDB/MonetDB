@@ -1,5 +1,5 @@
 RELEASE NOTES
-MonetDB JDBC driver version 1.6 (Steadfast_p1/MCL-1.0)
+MonetDB JDBC driver version 1.6 (Steadfast_p2/MCL-1.0)
 Fabian Groffen <Fabian.Groffen@cwi.nl>
 
 Release date: 2007-07-16
