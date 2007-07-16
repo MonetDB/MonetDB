@@ -88,8 +88,8 @@ LIBC_INCS = $(PTHREAD_INCS)
 MATH_LIBS =
 SOCKET_LIBS = wsock32.lib
 
-MEL="$(TOPDIR)\..\..\buildtools\mel\mel.exe"
-MX="$(TOPDIR)\..\..\buildtools\Mx\Mx.exe"
+MEL=mel.exe
+MX=Mx.exe
 CP=copy
 MV=copy
 DEL=del
