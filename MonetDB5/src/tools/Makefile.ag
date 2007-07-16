@@ -16,13 +16,15 @@
 
 
 MTSAFE
-INCLUDES = -I../mal $(CLIENTS_INCS) $(MONETDB_INCS)
+INCLUDES = -I../mal $(CLIENTS_INCS) $(MONETDB_INCS) $(OPENSSL_INCS)
 
 bin_mserver5 = {
 	SOURCES = mserver5.mx.in
-	LIBS = ../mal/libmal @SHARED_LIBS@ $(MONETDB_LIBS) -lbat -lmutils -lstream \
+	LIBS = ../mal/libmal @SHARED_LIBS@ $(MONETDB_LIBS) \
+                -lbat -lmutils -lstream \
                 $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
-                $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
+                $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) \
+                $(PCRE_LIBS) $(OPENSSL_LIBS)
 }
 
 bin_merovingian = {

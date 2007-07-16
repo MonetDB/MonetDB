@@ -157,11 +157,8 @@ CSTprelude(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		insertToBox(box, "user", u);
 		insertToBox(box, "dbname", GDKgetenv("gdk_dbname"));
 		insertToBox(box, "dbfarm", GDKgetenv("gdk_dbfarm"));
-		insertToBox(box, "version", GDKversion());
-		/* Stefan.Manegold@cwi.nl:
-		 * Should the above indeed be GDKversion(), or rather the version of
-		 * MonetDB(5) Server, i.e., VERSION ?
-		 */
+		insertToBox(box, "version", VERSION);
+		insertToBox(box, "gdk_version", (const str)GDKversion());
 		insertToBox(box, "config", GDKgetenv("gdk_config"));
 		/* old bat.mx and algebra.mx constants */
 	}
