@@ -1612,7 +1612,6 @@ gdk_export char *GDKload(str nme, str ext, size_t size, size_t chunk, int mode);
 gdk_export int GDKsave(str nme, str ext, void *buf, size_t size, int mode);
 gdk_export int GDKunlink(str dir, str nme, str extension);
 gdk_export int GDKmove(str dir1, str nme1, str ext1, str dir2, str nme2, str ext2);
-
 @
 @}
 
@@ -3275,6 +3274,16 @@ gdk_export int BATmultijoin(int argc, BAT *argv[], RowFcn tuple_fcn, ptr tuple_d
 @
 
 @h
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+gdk_export char *GDKversion();
+
+#ifdef __cplusplus
+}
+#endif
+
 @{
 #define ILLEGALVALUE	((ptr)-1L)
 #define MAXPARAMS	32
