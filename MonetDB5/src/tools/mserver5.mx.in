@@ -175,7 +175,7 @@ monet_hello(opt *set, int setlen)
 
 	if (msg && strcmp(msg, "yes") == 0) {
 		printf("# MonetDB Server v" VERSION "\n");
-		printf("# based on GDK   v%s\n", GDKgetenv("gdk_version"));
+		printf("# based on GDK   v%s\n", GDKversion());
 		printf("# Copyright (c) 1993-2007 CWI, all rights reserved\n");
 		printf("# Compiled for %s/" SZFMT "bit with " SZFMT "bit OIDs %s linked\n", HOST, (size_t) (sizeof(ptr) * 8), (size_t) (sizeof(oid) * 8), linkinfo);
 #ifdef MONET_GLOBAL_DEBUG
@@ -193,18 +193,8 @@ Version information, and compile time options.
 void
 monet_version()
 {
-	opt *set;
-	int len, i;
-
-	/* all we want is the GDK version ... */
-	len = mo_builtin_settings(&set);
-	for (i = 0; i < len && strcmp(set->name, "gdk_version") != 0; i++)
-		set++;
-	if (i == len)
-		set->value = "(unknown)";
-
 	printf("MonetDB Server v%s\n", VERSION);
-	printf("based on GDK   v%s\n", set->value);
+	printf("based on GDK   v%s\n", GDKversion());
 	printf("Copyright (c) 1993-2007 CWI, all rights reserved\n");
 	printf("Compiled by: %s\n", "@builtby@");
 	printf("Compilation: %s\n", "@compilercall@");
