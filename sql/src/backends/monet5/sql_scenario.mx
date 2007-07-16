@@ -856,7 +856,7 @@ SQLsetTimer(Client c, int onoff)
 void
 SQLshowPlan(Client c)
 {
-	newStmt(c->curprg->def,"mdb","list");
+	newStmt(c->curprg->def, "mdb", "listMapi");
 }
 
 @-
@@ -1109,7 +1109,7 @@ Inspect the variables for post code-generation actions.
 @c
 finalize:
 	if(m->mode== m_explain  && be->q && be->q->code)
-		printFunction(GDKout, ((Symbol)(be->q->code))->def, LIST_MAL_INSTR | LIST_MAL_PROPS);
+		printFunction(GDKout, ((Symbol)(be->q->code))->def, LIST_MAL_INSTR | LIST_MAL_PROPS | LIST_MAPI);
 @-
 Gather the statistics for post analysis. It should preferably
 be stored in an SQL table
@@ -1281,9 +1281,8 @@ cached routine, which may be hidden . For now we take a shortcut.
 		if( be->q) {
 			InstrPtr p;
 			p = getInstrPtr(c->curprg->def,1);
-			if( p->blk)
-				printFunction(c->fdout, p->blk, c->listing);
-
+			if (p->blk)
+				printFunction(c->fdout, p->blk, c->listing | LIST_MAPI);
 		}
 		c->curprg->def->errors = -1; /* don;t execute */
 	} 
