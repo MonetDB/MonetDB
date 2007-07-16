@@ -178,7 +178,7 @@ copts.produceHelpMessage()
 			// We cannot use the DatabaseMetaData here, because we
 			// cannot get a Connection.  So instead, we just get the
 			// values we want out of the Driver directly.
-			System.out.println("Driver: " + 
+			System.out.println("Driver: v" + 
 					nl.cwi.monetdb.jdbc.MonetDriver.getDriverVersion());
 			System.exit(0);
 		}
@@ -452,7 +452,7 @@ copts.produceHelpMessage()
 					if (dbmd != null) {
 						out.println("Database: " + dbmd.getDatabaseProductName() + " " +
 							dbmd.getDatabaseProductVersion());
-						out.println("Driver: " + dbmd.getDriverName() + " " +
+						out.println("Driver: " + dbmd.getDriverName() + " v" +
 							dbmd.getDriverVersion());
 					}
 					out.println("Type \\q to quit, \\h for a list of available commands");

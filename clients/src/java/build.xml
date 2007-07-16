@@ -48,7 +48,7 @@ All Rights Reserved.
   <property name="jdbc-jar"
     value="${jardir}/monetdb-${JDBC_MAJOR}.${JDBC_MINOR}-jdbc.jar" />
   <property name="jdbcclient-jar"
-    value="${jardir}/jdbcclient-${JDBC_MAJOR}.${JDBC_MINOR}.jar" />
+    value="${jardir}/jdbcclient.jar" />
   <property name="mcl-jar"
     value="${jardir}/monetdb-${MCL_MAJOR}.${MCL_MINOR}-mcl.jar" />
   <property name="xmldb-jar"

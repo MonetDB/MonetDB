@@ -113,13 +113,7 @@ sed \
 
 for file in \
 	Makefile.ag \
-	../../../*/NT/MonetDB4-SQL/MonetDB4-Installer.vdproj \
-	../../../*/NT/MonetDB5-SQL/MonetDB5-Installer.vdproj \
-	../../../*/src/jdbc/tests/Tests/Test_JdbcClient.SQL.bat \
 	../../../*/src/jdbc/tests/Tests/Test.SQL.bat \
-	../../../*/NT/MonetDB-XQuery/MonetDB-XQuery.vdproj \
-	../../../*/NT/MonetDB4-XQuery/MonetDB4-Installer.vdproj \
-	../../../*/tests/BugTracker/Tests/JDBC_250_results.SF-1730556.XQUERY.bat \
 	; do
 	if [[ -f ${file} ]] ; then
 		for f in $FILES ; do

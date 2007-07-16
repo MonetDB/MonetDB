@@ -53,7 +53,7 @@ final public class MonetDriver implements Driver {
 	private static final int DRIVERMINOR = @JDBC_MINOR@;
 	/** Version suffix string */
 	private static final String DRIVERVERSIONSUFFIX =
-		"@JDBC_VER_SUFFIX@ based on MCL @MCL_MAJOR@.@MCL_MINOR@";
+		"@JDBC_VER_SUFFIX@ based on MCL v@MCL_MAJOR@.@MCL_MINOR@";
 	// We're not fully compliant, but what we support is compliant
 	/** Whether this driver is JDBC compliant or not */
 	private static final boolean MONETJDBCCOMPLIANT = false;
