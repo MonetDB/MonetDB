@@ -2088,7 +2088,7 @@ public class MonetConnection implements Connection {
 		 *
 		 * @param monet the socket to write to
 		 */
-		public SendThread(BufferedMCLWriter conn) {
+		public SendThread(BufferedMCLWriter out) {
 			super("SendThread");
 			setDaemon(true);
 			this.out = out;

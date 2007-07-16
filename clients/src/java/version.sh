@@ -106,10 +106,13 @@ diff="diff -Naur"
 
 file="release.txt"
 sed \
-	-e "s|version ${ESC_MAJOR}\.${ESC_MINOR} (${ESC_SUFFIX})|version ${NEW_MAJOR}.${NEW_MINOR} \(${NEW_SUFFIX}\)|g" \
+	-e "s|version ${ESC_MAJOR}\.${ESC_MINOR} (${ESC_SUFFIX}|version ${NEW_MAJOR}.${NEW_MINOR} \(${NEW_SUFFIX}|g" \
+	-e "s|${TYPE}-${ESC_MAJOR}\.${ESC_MINOR}|${TYPE}-${NEW_MAJOR}.${NEW_MINOR}|g" \
 	-e "s|Release date: 20[0-9][0-9]-[01][0-9]-[0-3][0-9]|Release date: `date +%F`|" \
 	${file} | ${diff} ${file} - | ${patch}
 
+# not found:
+# ../../../*/tests/BugTracker/Tests/JDBC_250_results.SF-1730556.XQUERY.bat \
 for file in \
 	Makefile.ag \
 	../../../*/NT/MonetDB4-SQL/MonetDB4-Installer.vdproj \
@@ -118,7 +121,6 @@ for file in \
 	../../../*/src/jdbc/tests/Tests/Test.SQL.bat \
 	../../../*/NT/MonetDB-XQuery/MonetDB-XQuery.vdproj \
 	../../../*/NT/MonetDB4-XQuery/MonetDB4-Installer.vdproj \
-	../../../*/tests/BugTracker/Tests/JDBC_250_results.SF-1730556.XQUERY.bat \
 	; do
 	if [[ -f ${file} ]] ; then
 		for f in $FILES ; do
@@ -138,5 +140,4 @@ sed \
 	-e "s|${TYPE}_MAJOR=${ESC_MAJOR}|${TYPE}_MAJOR=${NEW_MAJOR}|g" \
 	-e "s|${TYPE}_MINOR=${ESC_MINOR}|${TYPE}_MINOR=${NEW_MINOR}|g" \
 	-e "s|${TYPE}_VER_SUFFIX=${ESC_SUFFIX}|${TYPE}_VER_SUFFIX=${NEW_SUFFIX}|g" \
-	-e "s|${TYPE}-${ESC_MAJOR}\.${ESC_MINOR}|${TYPE}-${NEW_MAJOR}.${NEW_MINOR}|g" \
 	${file} | ${diff} ${file} - | ${patch}
