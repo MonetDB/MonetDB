@@ -17,7 +17,7 @@
 # All Rights Reserved.
 
 prefix = ..\NT
-bindir = $(bindir)\bin
+bindir = $(prefix)\bin
 
 !IFDEF DEBUG
 CFLAGS = -I. -GF -W3 -MDd -nologo -Zi -Od -D_DEBUG -RTC1 -ZI
