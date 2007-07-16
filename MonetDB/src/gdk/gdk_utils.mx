@@ -2193,6 +2193,10 @@ THRprintf(stream *s, const char *format, ...)
 	return n;
 }
 
+@h
+gdk_export char *GDKversion(void);
+
+@c
 static char *_gdk_version_string = VERSION;
 /**
  * Returns the GDK version as internally allocated string.  Hence the

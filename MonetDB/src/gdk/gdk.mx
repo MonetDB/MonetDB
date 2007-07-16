@@ -3278,8 +3278,6 @@ gdk_export int BATmultijoin(int argc, BAT *argv[], RowFcn tuple_fcn, ptr tuple_d
 extern "C" {
 #endif
 
-gdk_export char *GDKversion();
-
 #ifdef __cplusplus
 }
 #endif
