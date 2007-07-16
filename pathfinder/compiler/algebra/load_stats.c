@@ -41,7 +41,9 @@
 #include "pathfinder.h"	
 
 #include <stdio.h>
+#ifdef HAVE_STDBOOL_H
 #include <stdbool.h>
+#endif
 #include <string.h>
 #include <assert.h>
 
