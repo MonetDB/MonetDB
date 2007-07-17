@@ -574,12 +574,16 @@ str SABAOTHfreeStatus(sabdb** ret) {
 		if (p->dbname != NULL) free(p->dbname);
 		r = p->scens;
 		while (r != NULL) {
+			if (r->val != NULL)
+				free(r->val);
 			s = r->next;
 			free(r);
 			r = s;
 		}
 		r = p->conns;
 		while (r != NULL) {
+			if (r->val != NULL)
+				free(r->val);
 			s = r->next;
 			free(r);
 			r = s;
