@@ -49,7 +49,7 @@ period.  The Merovingian will log such refusals as well as return this
 as error to the connecting client.
 
 @h
-#define MEROV_VERSION	"0.1"
+#define MEROV_VERSION	"0.2"
 #define MEROV_PORT		50000
 
 @c
@@ -68,8 +68,11 @@ as error to the connecting client.
 #include <sys/un.h>
 #endif
 #ifdef HAVE_NETDB_H
-# include <netdb.h>
-# include <netinet/in.h>
+#include <netdb.h>
+#include <netinet/in.h>
+#endif
+#ifdef HAVE_FCNTL_H
+#include <fcntl.h>
 #endif
 #include <unistd.h>
 #include <string.h> /* strdup, strerror */
@@ -97,34 +100,45 @@ typedef char* err;
 
 static str _merovingian_mserver = NULL;
 
-/**
- * Tries to log the given string and formatting parameter stuff.  This
- * function may decide how to log it, e.g. syslog, it's own logfile or
- * stderr.
- *
- * Currently this method just spits everything it gets to stderr.
- */
+typedef struct _dpair {
+	FILE* fout;
+	FILE* ferr;
+	pid_t pid;
+	char name[24];
+	struct _dpair* next;
+}* dpair;
+
 static void
-merlog(str fmt, ...)
+logListener(void *p)
 {
-	va_list ap;
-	char message[4096];
-	int len;
+	dpair d = (dpair)p;
+	dpair w;
+	FILE *fout, *ferr;
+	char buf[8096];
 
-	va_start(ap, fmt);
+	/* the first entry in the list of d is where our output should go to */
+	fout = d->fout;
+	ferr = d->ferr;
 
-	len = snprintf(message, 4095, "[merovingian]:" LLFMT " ",
-			(long long int)getpid());
-	len += vsnprintf(message + len, 4095 - len, fmt, ap);
-	message[len] = '\0';
+	/* skip the first entry, we don't care about it in the normal loop */
+	d = d->next;
 
-	/* trim trailing newlines */
-	while (len > 0 && message[--len] == '\n')
-		message[len] = '\0';
-
-	fprintf(stderr, "%s\n", message);
-
-	va_end(ap);
+	do {
+		w = d;
+		while (w != NULL) {
+			if (fgets(buf, 8096, w->fout) != NULL) {
+				fprintf(fout, "MSG %s[" LLFMT "]: %s",
+						w->name, (long long int)w->pid, buf);
+			}
+			if (fgets(buf, 8096, w->ferr) != NULL) {
+				fprintf(ferr, "ERR %s[" LLFMT "]: %s",
+						w->name, (long long int)w->pid, buf);
+			}
+			w = w->next;
+		}
+		/* wait a tenth of a second */
+		MT_sleep_ms(10);
+	} while (1);
 }
 
 /**
@@ -159,7 +173,7 @@ newErr(str fmt, ...)
  * forbidden by restart policy. (TODO)
  */
 static err
-forkMserver(str database, sabdb** stats)
+forkMserver(str database, sabdb** stats, dpair dp)
 {
 #ifdef NATIVE_WIN32
 	intptr_t rv = 0;
@@ -172,6 +186,8 @@ forkMserver(str database, sabdb** stats)
 #else
 	pid_t pid;
 	str er;
+	int pfdo[2];
+	int pfde[2];
 
 	er = SABAOTHgetStatus(stats, database);
 	if (er != MAL_SUCCEED) {
@@ -192,57 +208,83 @@ forkMserver(str database, sabdb** stats)
 
 	switch ((*stats)->state) {
 		case SABdbRunning:
-			merlog("database %s already running", database);
+			fprintf(stdout, "database %s already running\n", database);
 			return(NO_ERR);
 		break;
 		case SABdbCrashed:
-			merlog("database %s has crashed, attempting restart", database);
+			fprintf(stdout, "database %s has crashed, attempting restart\n", database);
 		break;
 		case SABdbInactive:
-			merlog("starting database %s", database);
+			fprintf(stdout, "starting database %s\n", database);
 		break;
 		default:
 			return(newErr("unknown state: %d", (*stats)->state));
 	}
 
+	/* create the pipes (filedescriptors) now, such that we and the
+	 * child have the same descriptor set */
+	if (pipe(pfdo) == -1)
+		return(newErr("unable to create pipe: %s\n", strerror(errno)));
+	if (pipe(pfde) == -1)
+		return(newErr("unable to create pipe: %s\n", strerror(errno)));
+
 	pid = fork();
 	if (pid == 0) {
-		/* child: refork again, such that this child can die, and the
-		 * childchild becomes an orphan which init cares for */
-		pid = fork();
-		if (pid == 0) {
-			/* ok, now exec that mserver we want */
-			str dbname = alloca(sizeof(char) * 512);
-			snprintf(dbname, 511, "--dbname=%s", database);
-			merlog("executing %s for database %s",
-					_merovingian_mserver, dbname);
-			execl(_merovingian_mserver, _merovingian_mserver,
-					"--set", "daemon=yes",
-					dbname,
-					"--dbinit=include sql;", /* yes, this IS correct */
-					(char *)NULL);
-			/* if the exec returns, it is because of a failure */
-			merlog("executing failed: %s", strerror(errno));
-			exit(1);
-		} else if (pid > 0) {
-			/* we are the parent of the childchild, so let's die */
-			exit(0);
-		} else {
-			/* bleh... forking failed :( nothing we can do but log */
-			merlog("forking sub-child failed, no mserver spawned!");
-			exit(1);
-		}
+		str dbname = alloca(sizeof(char) * 512);
+
+		/* redirect stdout and stderr to a new pair of fds for
+		 * logging help */
+		close(pfdo[0]);
+		dup2(pfdo[1], 1);
+		close(pfdo[1]);
+
+		close(pfde[0]);
+		dup2(pfde[1], 2);
+		close(pfde[1]);
+
+		/* we don't use stdin, neither should mserver ... */
+		close(0);
+
+		/* ok, now exec that mserver we want */
+		snprintf(dbname, 511, "--dbname=%s", database);
+		fprintf(stdout, "executing %s for database %s\n",
+				_merovingian_mserver, dbname);
+		execl(_merovingian_mserver, _merovingian_mserver,
+				"--set", "daemon=yes",
+				dbname,
+				"--dbinit=include sql;", /* yes, this IS correct */
+				(char *)NULL);
+		/* if the exec returns, it is because of a failure */
+		fprintf(stderr, "executing failed: %s\n", strerror(errno));
+		exit(1);
 	} else if (pid > 0) {
-		/* parent: fine, we're done */
+		/* parent: fine, let's add the pipes for this child */
+		while (dp->next != NULL)
+			dp = dp->next;
+		dp = dp->next = malloc(sizeof(struct _dpair));
+		dp->fout = fdopen(pfdo[0], "r");
+		fcntl(pfdo[0], F_SETFL, O_NONBLOCK);
+		close(pfdo[1]);
+		dp->ferr = fdopen(pfde[0], "r");
+		fcntl(pfde[0], F_SETFL, O_NONBLOCK);
+		close(pfde[1]);
+		dp->next = NULL;
+		dp->pid = pid;
+		snprintf(dp->name, 23, "%s", "mserver5");
+
 		return(NO_ERR);
 	}
-	/* forking failed somehow */
+	/* forking failed somehow, cleanup the pipes */
+	close(pfdo[0]);
+	close(pfdo[1]);
+	close(pfde[0]);
+	close(pfde[1]);
 	return(newErr(strerror(errno)));
 #endif
 }
 
 err
-handleClient(int sock)
+handleClient(int sock, dpair dp)
 {
 	stream *fdin, *fout;
 	bstream *fin;
@@ -383,7 +425,7 @@ handleClient(int sock)
 			return(newErr("no database running, and no database specified"));
 		}
 	} else {
-		err e = forkMserver(database, &top);
+		err e = forkMserver(database, &top, dp);
 		if (e != NO_ERR) {
 			stream_printf(fout, "!internal error while starting a new mserver\n");
 			stream_flush(fout);
@@ -405,7 +447,8 @@ handleClient(int sock)
 		return(e);
 	}
 
-	merlog("redirecting client for database %s to %s", stat->dbname, stat->conns->val);
+	fprintf(stdout, "redirecting client for database %s to %s\n",
+			stat->dbname, stat->conns->val);
 
 	stream_printf(fout, "^%s%s\n",
 			stat->conns->val, stat->dbname);
@@ -419,7 +462,7 @@ handleClient(int sock)
 }
 
 err
-acceptConnections(unsigned short port)
+acceptConnections(unsigned short port, dpair dp)
 {
 	struct sockaddr_in server;
 	int sock = -1;
@@ -477,7 +520,7 @@ errno == WSAEADDRINUSE &&
 	listen(sock, 5);
 
 	gethostname(host, (int) 512);
-	merlog("listening for connections on %s:%d", host, port);
+	fprintf(stdout, "listening for connections on %s:%d\n", host, port);
 
 	do {
 		int retval;
@@ -517,9 +560,9 @@ errno == WSAEADDRINUSE &&
 		} else
 			continue;
 		/* TODO: maybe do this in a thread */
-		e = handleClient(msgsock);
+		e = handleClient(msgsock, dp);
 		if (e != NO_ERR) {
-			merlog("client error: %s", e);
+			fprintf(stderr, "client error: %s\n", getErrMsg(e));
 			freeErr(e);
 		}
 	} while (1);
@@ -538,24 +581,71 @@ main(int argc, char *argv[])
 	FILE *cnf = NULL;
 	char buf[1024];
 	sabdb* stats = NULL;
+	MT_Id tid;
+	dpair d, q = alloca(sizeof(struct _dpair));
+	int pfd[2];
 
-	merlog("Merovingian %s starting ...", MEROV_VERSION);
+	printf("Welcome all\n");
+	/* save the real stdout and stderr */
+	argp = dup(1);
+	q->fout = fdopen(argp, "w");
+	argp = dup(2);
+	q->ferr = fdopen(argp, "w");
+	q->pid = 0;
+	snprintf(q->name, 23, "console");
+	d = q->next = alloca(sizeof(struct _dpair));
+
+	/* redirect stdout */
+	if (pipe(pfd) == -1) {
+		fprintf(stderr, "%s: unable to create pipe: %s\n",
+				argv[0], strerror(errno));
+		return(1);
+	}
+	d->fout = fdopen(pfd[0], "r");
+	fcntl(pfd[0], F_SETFL, O_NONBLOCK);
+	dup2(pfd[1], 1);
+	close(pfd[1]);
+
+	/* redirect stderr */
+	if (pipe(pfd) == -1) {
+		fprintf(stderr, "%s: unable to create pipe: %s\n",
+				argv[0], strerror(errno));
+		return(1);
+	}
+	d->ferr = fdopen(pfd[0], "r");
+	fcntl(pfd[0], F_SETFL, O_NONBLOCK);
+	dup2(pfd[1], 2);
+	close(pfd[1]);
+
+	d->next = NULL;
+	d->pid = getpid();
+	snprintf(d->name, 23, "%s", "merovingian");
+
+	if (MT_create_thread(&tid, logListener, (void *)q) < 0) {
+		fprintf(q->ferr, "%s: unable to create logthread, exiting\n", argv[0]);
+		return(1);
+	}
+
+	fprintf(stdout, "Merovingian %s starting ...\n", MEROV_VERSION);
 
 	snprintf(buf, 1023, "%s/bin/mserver5", MONETDBPREFIX);
-	_merovingian_mserver = strdup(buf);
+	_merovingian_mserver = alloca(sizeof(char) * (strlen(buf) + 1));
+	memcpy(_merovingian_mserver, buf, strlen(buf) + 1);
 
 	snprintf(buf, 1023, "%s%s", MONETDBPREFIX, conf + 9);
 	cnf = fopen(buf, "r");
 	if (cnf == NULL) {
-		merlog("cannot open config file %s", buf);
+		fprintf(stderr, "cannot open config file %s\n", buf);
 		exit(1);
 	}
 
 	conf = NULL;
-	while (fgets(buf, 1023, cnf) != 0) {
+	while (fgets(buf, 1023, cnf) != NULL) {
 		if (*buf && strncmp(buf, "gdk_dbfarm=", 11) == 0) {
 			p = strchr(buf, '=');
 			conf = strdup(++p);
+			/* eliminate fgets' newline */
+			conf[strlen(conf) - 1] = '\0';
 			break;
 		}
 	}
@@ -563,7 +653,7 @@ main(int argc, char *argv[])
 	fclose(cnf);
 
 	if (conf == NULL) {
-		merlog("cannot find dbfarm via config file");
+		fprintf(stderr, "cannot find dbfarm via config file\n");
 		exit(1);
 	}
 
@@ -578,15 +668,15 @@ main(int argc, char *argv[])
 		conf = strdup(buf);
 	}
 
-	merlog("monitoring dbfarm %s", conf);
+	fprintf(stdout, "monitoring dbfarm %s\n", conf);
 
 	SABAOTHinit(conf, NULL);
 	free(conf);
 
 	for (argp = 1; argp < argc; argp++) {
-		e = forkMserver(argv[argp], &stats);
+		e = forkMserver(argv[argp], &stats, d);
 		if (e != NO_ERR) {
-			merlog("failed to fork mserver: %s", e);
+			fprintf(stderr, "failed to fork mserver: %s\n", getErrMsg(e));
 			freeErr(e);
 		}
 		if (stats != NULL)
@@ -594,10 +684,10 @@ main(int argc, char *argv[])
 	}
 
 	/* handle external connections main loop */
-	e = acceptConnections(MEROV_PORT);
+	e = acceptConnections(MEROV_PORT, d);
 
 	if (e != NO_ERR) {
-		merlog("%s", e);
+		fprintf(stderr, "%s\n", e);
 		freeErr(e);
 		return(1);
 	}
