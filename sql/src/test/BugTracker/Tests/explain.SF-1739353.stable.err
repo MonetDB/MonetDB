@@ -1,0 +1,30 @@
+stderr of test 'explain.SF-1739353` in directory 'src/test/BugTracker` itself:
+
+
+# 13:06:43 >  
+# 13:06:43 >  Mtimeout -timeout 420  mserver5 "--config=/ufs/fabian/scratch/monetdb/current/program-x86_64/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/fabian/scratch/monetdb/current/program-x86_64/lib64/MonetDB5:/ufs/fabian/scratch/monetdb/current/program-x86_64/lib64/MonetDB5/lib:/ufs/fabian/scratch/monetdb/current/program-x86_64/lib64/MonetDB5/bin" --set "gdk_dbfarm=/net/pegasus.ins.cwi.nl/export/scratch0/fabian/vtmp/mtest-current-pegasus.ins.cwi.nl/sql/dbfarm" --set "sql_logdir=/net/pegasus.ins.cwi.nl/export/scratch0/fabian/vtmp/mtest-current-pegasus.ins.cwi.nl/sql/sqllog" --set "xquery_logdir=/net/pegasus.ins.cwi.nl/export/scratch0/fabian/vtmp/mtest-current-pegasus.ins.cwi.nl/sql/xquerylog" --set mapi_open=true --set mapi_port=31876 --set xrpc_port=48015 --set monet_prompt= --trace "--dbname=mTests_src_test_BugTracker" --dbinit=' include sql;' ; echo ; echo Over..
+# 13:06:43 >  
+
+#warning: please don't forget to set your vault key!
+#(see /ufs/fabian/scratch/monetdb/current/program-x86_64/etc/monetdb5.conf)
+
+# 13:06:43 >  
+# 13:06:43 >  Mtimeout -timeout 300 ./explain.SF-1739353.SQL explain.SF-1739353 
+# 13:06:43 >  
+
+
+# 13:06:43 >  
+# 13:06:43 >  Mtimeout -timeout 60 mjclient -h pegasus -p 31876 -d mTests_src_test_BugTracker -f ../../../../../../../../../scratch1/fabian/monetdb/current/sql/src/test/BugTracker/Tests/explain.SF-1739353-data.sql
+# 13:06:43 >  
+
+
+# 13:06:43 >  
+# 13:06:43 >  Mtimeout -timeout 60 mjclient -h pegasus -p 31876 -d mTests_src_test_BugTracker -q
+# 13:06:43 >  
+
+Database connect failed: schema authorization error
+
+# 13:06:44 >  
+# 13:06:44 >  Done.
+# 13:06:44 >  
+

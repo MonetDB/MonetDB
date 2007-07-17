@@ -76,3 +76,4 @@ update_fkey_with_value_not_in_the_pkey.SF-1734143
 alter_table_add_fkey.SF-1737668
 select_id_not_in_another_select.SF-1737777
 crash_on_concurrent_use.SF-1411926
+HAVE_JAVA?explain.SF-1739353
