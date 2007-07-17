@@ -15,11 +15,11 @@ extern RuleNum		max_rule;
 extern ERuleNum		max_erule_num;
 extern int		max_arity;
 
-#ifdef __STDC__
+/*#ifdef __STDC__*/
 #define ARGS(x) x
-#else
-#define ARGS(x) ()
-#endif
+/*#else*/
+/*#define ARGS(x) ()*/
+/*#endif*/
 
 #ifndef NOLEX
 #define DELTAWIDTH	4

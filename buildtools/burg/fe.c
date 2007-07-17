@@ -21,7 +21,7 @@ static void doRule ARGS((RuleAST));
 static void doTable ARGS((Operator));
 
 static void
-doBinding(b) Binding b;
+doBinding(Binding b)
 {
 	int new;
 	Symbol s;
@@ -39,7 +39,7 @@ doBinding(b) Binding b;
 }
 
 static void
-doDecl(a) Arity a;
+doDecl(Arity a)
 {
 	if (!a) {
 		return;
@@ -53,7 +53,7 @@ static List xpatterns;
 static int tcount;
 
 static NonTerminal
-lookup(p) Pattern p;
+lookup(Pattern p)
 {
 	char buf[10];
 	char *s;
@@ -81,7 +81,7 @@ lookup(p) Pattern p;
 }
 
 static NonTerminal
-normalize(ast, nt, patt) PatternAST ast; NonTerminal nt; Pattern *patt;
+normalize(PatternAST ast, NonTerminal nt, Pattern *patt)
 {
 	Symbol s;
 	int new;
@@ -156,7 +156,7 @@ normalize(ast, nt, patt) PatternAST ast; NonTerminal nt; Pattern *patt;
 }
 
 static void
-doEnterNonTerm(ast) RuleAST ast;
+doEnterNonTerm(RuleAST ast)
 {
 	int new;
 	Symbol s;
@@ -195,7 +195,7 @@ doEnterNonTerm(ast) RuleAST ast;
 }
 
 static void
-doRule(ast) RuleAST ast;
+doRule(RuleAST ast)
 {
 	Pattern pat;
 
@@ -204,13 +204,13 @@ doRule(ast) RuleAST ast;
 }
 
 static void
-doTable(op) Operator op;
+doTable(Operator op)
 {
 	op->table = newTable(op);
 }
 
 void 
-doSpec(decls, rules) List decls; List rules;
+doSpec(List decls, List rules)
 {
 	foreachList((ListFn) doDecl, decls);
 	debug(debugTables, foreachList((ListFn) dumpOperator_l, operators_));
@@ -227,7 +227,7 @@ doSpec(decls, rules) List decls; List rules;
 }
 
 void
-doStart(name) char *name;
+doStart(char *name)
 {
 	Symbol s;
 	int new;
@@ -250,7 +250,7 @@ doStart(name) char *name;
 }
 
 void
-doGrammarNts()
+doGrammarNts(void)
 {
 	List l;
 	int new;
@@ -273,7 +273,7 @@ doGrammarNts()
 }
 
 void
-doGram(nts) List nts;
+doGram(List nts)
 {
 	if (grammarNts) {
 		yyerror1("Redeclaration of %%gram\n");
@@ -283,7 +283,7 @@ doGram(nts) List nts;
 }
 
 Arity 
-newArity(ar, b) int ar; List b;
+newArity(int ar, List b)
 {
 	Arity a = (Arity) zalloc(sizeof(struct arity));
 	a->arity = ar;
@@ -292,7 +292,7 @@ newArity(ar, b) int ar; List b;
 }
 
 Binding 
-newBinding(name, opnum) char *name; int opnum;
+newBinding(char *name, int opnum)
 {
 	Binding b = (Binding) zalloc(sizeof(struct binding));
 	if (opnum == 0) {
@@ -306,7 +306,7 @@ newBinding(name, opnum) char *name; int opnum;
 }
 
 PatternAST
-newPatternAST(op, children) char *op; List children;
+newPatternAST(char *op, List children)
 {
 	PatternAST p = (PatternAST) zalloc(sizeof(struct patternAST));
 	p->op = op;
@@ -317,7 +317,7 @@ newPatternAST(op, children) char *op; List children;
 int max_ruleAST;
 
 RuleAST
-newRuleAST(lhs, pat, erulenum, cost) char *lhs; PatternAST pat; int erulenum; IntList cost;
+newRuleAST(char *lhs, PatternAST pat, int erulenum, IntList cost)
 {
 	RuleAST p = (RuleAST) zalloc(sizeof(struct ruleAST));
 	p->lhs = lhs;
@@ -334,13 +334,13 @@ newRuleAST(lhs, pat, erulenum, cost) char *lhs; PatternAST pat; int erulenum; In
 }
 
 void
-dumpBinding(b) Binding b;
+dumpBinding(Binding b)
 {
 	printf("%s=%d ", b->name, b->opnum);
 }
 
 void
-dumpArity(a) Arity a;
+dumpArity(Arity a)
 {
 	List l;
 
@@ -353,7 +353,7 @@ dumpArity(a) Arity a;
 }
 
 void
-dumpPatternAST(p) PatternAST p;
+dumpPatternAST(PatternAST p)
 {
 	List l;
 
@@ -372,7 +372,7 @@ dumpPatternAST(p) PatternAST p;
 }
 
 void
-dumpRuleAST(p) RuleAST p;
+dumpRuleAST(RuleAST p)
 {
 	printf("%s : ", p->lhs);
 	dumpPatternAST(p->pat);
@@ -380,7 +380,7 @@ dumpRuleAST(p) RuleAST p;
 }
 
 void
-dumpDecls(decls) List decls;
+dumpDecls(List decls)
 {
 	List l;
 
@@ -391,7 +391,7 @@ dumpDecls(decls) List decls;
 }
 
 void
-dumpRules(rules) List rules;
+dumpRules(List rules)
 {
 	List l;
 
