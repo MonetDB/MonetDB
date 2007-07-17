@@ -7,6 +7,8 @@ stdout of test 'explain.SF-1739353` in directory 'src/test/BugTracker` itself:
 
 
 
+
+
 # MonetDB server v5.1.0, based on kernel v1.19.0
 # Serving database 'mTests_src_test_BugTracker'
 # Compiled for x86_64-pc-linux-gnu/64bit with 64bit OIDs dynamically linked

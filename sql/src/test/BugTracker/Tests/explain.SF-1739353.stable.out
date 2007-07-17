@@ -1,18 +1,15 @@
 stdout of test 'explain.SF-1739353` in directory 'src/test/BugTracker` itself:
 
 
-# 13:06:43 >  
-# 13:06:43 >  Mtimeout -timeout 420  mserver5 "--config=/ufs/fabian/scratch/monetdb/current/program-x86_64/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/fabian/scratch/monetdb/current/program-x86_64/lib64/MonetDB5:/ufs/fabian/scratch/monetdb/current/program-x86_64/lib64/MonetDB5/lib:/ufs/fabian/scratch/monetdb/current/program-x86_64/lib64/MonetDB5/bin" --set "gdk_dbfarm=/net/pegasus.ins.cwi.nl/export/scratch0/fabian/vtmp/mtest-current-pegasus.ins.cwi.nl/sql/dbfarm" --set "sql_logdir=/net/pegasus.ins.cwi.nl/export/scratch0/fabian/vtmp/mtest-current-pegasus.ins.cwi.nl/sql/sqllog" --set "xquery_logdir=/net/pegasus.ins.cwi.nl/export/scratch0/fabian/vtmp/mtest-current-pegasus.ins.cwi.nl/sql/xquerylog" --set mapi_open=true --set mapi_port=31876 --set xrpc_port=48015 --set monet_prompt= --trace "--dbname=mTests_src_test_BugTracker" --dbinit=' include sql;' ; echo ; echo Over..
-# 13:06:43 >  
+# 13:18:23 >  
+# 13:18:23 >  Mtimeout -timeout 300  Mserver "--config=/ufs/fabian/scratch/monetdb/current/program-x86_64/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/fabian/scratch/monetdb/current/program-x86_64/lib64/MonetDB4:/ufs/fabian/scratch/monetdb/current/program-x86_64/lib64/MonetDB4/lib:/ufs/fabian/scratch/monetdb/current/program-x86_64/lib64/MonetDB4/bin" --set "gdk_dbfarm=/net/pegasus.ins.cwi.nl/export/scratch0/fabian/vtmp/mtest-current-pegasus.ins.cwi.nl/sql/dbfarm" --set "sql_logdir=/net/pegasus.ins.cwi.nl/export/scratch0/fabian/vtmp/mtest-current-pegasus.ins.cwi.nl/sql/sqllog" --set "xquery_logdir=/net/pegasus.ins.cwi.nl/export/scratch0/fabian/vtmp/mtest-current-pegasus.ins.cwi.nl/sql/xquerylog" --set mapi_open=true --set mapi_port=36347 --set xrpc_port=43236 --set monet_prompt= --trace "--dbname=mTests_src_test_BugTracker" --dbinit=" module(sql_server);" ; echo ; echo Over..
+# 13:18:23 >  
 
-
-
-# MonetDB server v5.1.0, based on kernel v1.19.0
-# Serving database 'mTests_src_test_BugTracker'
-# Compiled for x86_64-pc-linux-gnu/64bit with 64bit OIDs dynamically linked
-# Copyright (c) 1993-2007 CWI, all rights reserved
-# Visit http://monetdb.cwi.nl/ for further information
-# Listening for connection requests on mapi:monetdb://pegasus.ins.cwi.nl:31876/
+# MonetDB Server v4.19.0
+# based on GDK   v1.19.0
+# Copyright (c) 1993-2007, CWI. All rights reserved.
+# Compiled for x86_64-pc-linux-gnu/64bit with 64bit OIDs; dynamically linked.
+# Visit http://monetdb.cwi.nl/ for further information.
 # MonetDB/SQL module v2.19.0 loaded
 
 printf("\nReady.\n");
@@ -22,14 +19,14 @@ quit();
 
 Over..
 
-# 13:09:50 >  
-# 13:09:50 >  Mtimeout -timeout 300 ./explain.SF-1739353.SQL explain.SF-1739353 
-# 13:09:50 >  
+# 13:18:23 >  
+# 13:18:23 >  Mtimeout -timeout 180 ./explain.SF-1739353.SQL explain.SF-1739353 
+# 13:18:23 >  
 
 
-# 13:09:50 >  
-# 13:09:50 >  Mtimeout -timeout 60 mjclient -h pegasus -p 36830 -d mTests_src_test_BugTracker -f ../../../../../../../../../scratch1/fabian/monetdb/current/sql/src/test/BugTracker/Tests/explain.SF-1739353-data.sql
-# 13:09:50 >  
+# 13:18:23 >  
+# 13:18:23 >  Mtimeout -timeout 60 mjclient -h pegasus -p 36347 -d mTests_src_test_BugTracker -f ../../../../../../../../../scratch1/fabian/monetdb/current/sql/src/test/BugTracker/Tests/explain.SF-1739353-data.sql
+# 13:18:23 >  
 
 +-----------------------------------------------------------------------+
 | statement                                                             |
@@ -143,12 +140,7 @@ Over..
 105 rows
 
 
-# 13:09:51 >  
-# 13:09:51 >  Mtimeout -timeout 60 mjclient -h pegasus -p 36830 -d mTests_src_test_BugTracker -q
-# 13:09:51 >  
-
-
-# 13:09:51 >  
-# 13:09:51 >  Done.
-# 13:09:51 >  
+# 13:18:24 >  
+# 13:18:24 >  Done.
+# 13:18:24 >  
 
