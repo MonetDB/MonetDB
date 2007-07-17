@@ -14,15 +14,7 @@
 /******************************************************************************/
 /****************************   Public Routines   *****************************/
 
-#ifdef __STDC__
-
 extern int Stem( char *word );      /* returns 1 on success, 0 otherwise */
-
-#else
-
-extern int Stem();
-
-#endif
 
 #endif
 

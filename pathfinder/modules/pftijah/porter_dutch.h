@@ -42,19 +42,11 @@
 /******************************************************************************/
 /****************************   Public Routines   *****************************/
 
-#ifdef __STDC__
-
 extern int dStem( char *word );
 /* returns: 1 --> non-word containing numbers and hyphens, not stemmed
                   e.g. 12-5-1995
             2 --> word was not changed, e.g. 'loop' --> 'loop'
 	    3 --> word was changed */
-
-#else
-
-extern int Stem();
-
-#endif
 
 #endif
 

@@ -119,8 +119,6 @@ static char *end;                  /* pointer to the end of the word */
 /*****************************************************************************/
 /********************   Private Function Declarations   **********************/
 
-#ifdef __STDC__
-
 static int WordSize( char *word );
 #if 0
 static int ContainsVowel( char *word );
@@ -136,24 +134,6 @@ static int ReplaceInfix( char *word, RuleList *rule );
 static int StripDashes( char *word );
 static int gt2( char *word );
 static int RemoveDia( char *c );
-#else
-
-static int WordSize( /* word */ );
-#if 0
-static int ContainsVowel( /* word */ );
-#endif
-static int DupVCond( /* word */ );
-static int DuplicateV( /* word */ );
-static int EndsWithC( /* word */ );
-static int EndsWithV( /* word */ );
-static int EndsWithVX( /* word */ );
-static int ReplaceSuffix( /* word, rule */ );
-static int ReplacePrefix( /* word, rule */ );
-static int ReplaceInfix( /* word, rule */ );
-static int StripDashes( /* word */ );
-static int gt2( /* word */ );
-static int RemoveDia( /* character */ );
-#endif
 
 /******************************************************************************/
 /*****************   Initialized Private Data Structures   ********************/

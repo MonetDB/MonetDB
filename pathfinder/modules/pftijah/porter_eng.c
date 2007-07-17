@@ -56,25 +56,12 @@ static char *end;                  /* pointer to the end of the word */
 /*****************************************************************************/
 /********************   Private Function Declarations   **********************/
 
-#ifdef __STDC__
-
 static int WordSize( char *word );
 static int ContainsVowel( char *word );
 static int EndsWithCVC( char *word );
 static int AddAnE( char *word );
 static int RemoveAnE( char *word );
 static int ReplaceEnd( char *word, RuleList *rule );
-
-#else
-
-static int WordSize( /* word */ );
-static int ContainsVowel( /* word */ );
-static int EndsWithCVC( /* word */ );
-static int AddAnE( /* word */ );
-static int RemoveAnE( /* word */ );
-static int ReplaceEnd( /* word, rule */ );
-
-#endif
 
 /******************************************************************************/
 /*****************   Initialized Private Data Structures   ********************/
