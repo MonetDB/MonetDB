@@ -1364,6 +1364,8 @@ PROC ws_create(int update) : BAT[void,bat]
     ws.fetch(PRE_PROP).fetch(WS).append(oid_nil);
     ws.fetch(PRE_KIND).fetch(WS).append(COLLECTION);
     ws.fetch(PRE_NID).fetch(WS).append(oid_nil);
+    ws.fetch(PRE_CONT).fetch(WS).append(oid_nil);
+    ws.fetch(NID_RID).fetch(WS).append(0@0);
     ws.fetch(FRAG_ROOT).fetch(WS).insert(0@0,1@0); # first root is 1@0
 
     # add identical bat references as 'master' bats just to make the transient container complete  
