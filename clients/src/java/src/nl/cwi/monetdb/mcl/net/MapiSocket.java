@@ -389,7 +389,7 @@ public final class MapiSocket {
 				// generate response
 				response = "BIG:";	// JVM byte-order is big-endian
 				response += username + ":" + pwhash + ":" + language;
-				response += ":" + database + ":";
+				response += ":" + (database == null ? "" : database) + ":";
 
 				return(response);
 		}

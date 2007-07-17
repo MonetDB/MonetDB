@@ -66,7 +66,7 @@ public class JdbcClient {
 		// this one is only here for the .monetdb file parsing, it is
 		// removed before the command line arguments are parsed
 		copts.addOption(null, "password", CmdLineOpts.CAR_ONE, null, null);
-		copts.addOption("d", "database", CmdLineOpts.CAR_ONE, "demo",
+		copts.addOption("d", "database", CmdLineOpts.CAR_ONE, "",
 				"Try to connect to the given database (only makes sense " +
 				"if connecting to a DatabasePool, M5 or equivalent process).");
 		copts.addOption("l", "language", CmdLineOpts.CAR_ONE, "sql",
@@ -451,7 +451,8 @@ copts.produceHelpMessage()
 					out.println("Welcome to the MonetDB interactive JDBC terminal!");
 					if (dbmd != null) {
 						out.println("Database: " + dbmd.getDatabaseProductName() + " " +
-							dbmd.getDatabaseProductVersion());
+							dbmd.getDatabaseProductVersion() + ", '" +
+							dbmd.getConnection().getCatalog() + "'");
 						out.println("Driver: " + dbmd.getDriverName() + " v" +
 							dbmd.getDriverVersion());
 					}

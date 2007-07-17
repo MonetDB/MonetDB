@@ -159,8 +159,6 @@ public class MonetConnection implements Connection {
 			throw new IllegalArgumentException("hostname should not be null or empty");
 		if (port == 0)
 			throw new IllegalArgumentException("port should not be 0");
-		if (database == null || database.trim().equals(""))
-			throw new IllegalArgumentException("database should not be null or empty");
 		if (username == null || username.trim().equals(""))
 			throw new IllegalArgumentException("user should not be null or empty");
 		if (password == null || password.trim().equals(""))
