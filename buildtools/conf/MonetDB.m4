@@ -1695,6 +1695,9 @@ if test "x$have_pthread" != xno; then
 	AC_CHECK_LIB($pthread, pthread_kill_other_threads_np,
 		AC_DEFINE(HAVE_PTHREAD_KILL_OTHER_THREADS_NP, 1,
 			[Define if you have the pthread_kill_other_threads_np function]))
+	AC_CHECK_LIB($pthread, pthread_setschedprio,
+		AC_DEFINE(HAVE_PTHREAD_SETSCHEDPRIO, 1,
+			[Define if you have the pthread_setschedprio function]))
 	LIBS="$save_LIBS"
 
 fi
