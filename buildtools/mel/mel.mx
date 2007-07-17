@@ -860,6 +860,8 @@ get_signature(char *fcn)
 %{
 #include <mel_config.h>
 #include "mel.h"
+/* this prevents an extraneous declaration of malloc and free from happening */
+#define YYINCLUDED_STDLIB_H
 #include <string.h>
 #ifdef HAVE_MALLOC_H
 #include <malloc.h>
