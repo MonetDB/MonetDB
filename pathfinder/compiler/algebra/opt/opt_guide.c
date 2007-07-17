@@ -35,11 +35,17 @@
 
 #include "pathfinder.h"
 #include <assert.h>
+#include <stdio.h> 
 
 #include "algopt.h"
 #include "properties.h"
 #include "alg_dag.h"
 
+#define SEEN(n) ((n)->bit_dag)  
+/* prop of n */
+#define PROP(n) ((n)->prop) 
+/* axis of n, n must be a step */
+#define AXIS(n) ((n)->sem.step.axis)
 /*
  * Easily access subtree-parts.
  */
@@ -47,53 +53,170 @@
 #define L(p) ((p)->child[0])
 /** starting from p, make a step right */
 #define R(p) ((p)->child[1])
+/** starting from p, make two steps right */
+#define RR(p) (((p)->child[1])->child[1])
 
-#define SEEN(p) ((p)->bit_dag)
+/* Merge 2 guide_steps if it is possible */
+static void merge_guide_steps(PFla_op_t *n);
 
 /* worker for PFalgopt_guide */
+static void opt_guide(PFla_op_t *n);
+
+
+/* Merge 2 guide_steps if it is possible */
 static void
-opt_guide (PFla_op_t *p)
+merge_guide_steps(PFla_op_t *n)
 {
-    assert (p);
+    assert(n);
+
+    /* apply chances for step operators */
+    if(n->kind == la_guide_step) {
+        assert(PROP(n));
+        assert(R(n));
+        /* right child has guide_step -> delete it */
+        if(R(n)->kind == la_guide_step) {
+
+            bool merge_steps = false;
+            PFalg_axis_t new_axis;
+
+            assert(RR(n));
+
+            /* check if axis can be merged */
+            if(!((AXIS(n) == alg_self || AXIS(n) == alg_chld || 
+                    AXIS(n) == alg_desc || AXIS(n) == alg_desc_s) &&
+                (AXIS(R(n)) == alg_self || AXIS(R(n)) == alg_chld || 
+                    AXIS(R(n)) == alg_desc || AXIS(R(n)) == alg_desc_s))) 
+         
+                if(!((AXIS(n) == alg_self || AXIS(n) == alg_par || 
+                        AXIS(n) == alg_anc || AXIS(n) == alg_anc_s) &&
+                    (AXIS(R(n)) == alg_self || AXIS(R(n)) == alg_par || 
+                        AXIS(R(n)) == alg_anc || AXIS(R(n)) == alg_anc_s))) 
+                    return;
+            
+            /* self axis */
+            if(AXIS(n) == alg_self) {
+                switch(AXIS(R(n))) {
+                    case alg_self:
+                    case alg_chld:
+                    case alg_desc:
+                    case alg_desc_s:
+                    case alg_par:
+                    case alg_anc:
+                    case alg_anc_s:
+                        new_axis = AXIS(R(n));
+                        merge_steps = true;
+                        break;
+                    default:
+                        return;
+                }
+            } else
+            if(AXIS(R(n)) == alg_self) {
+                switch(AXIS(n)) {
+                    case alg_self:
+                    case alg_chld:
+                    case alg_desc:
+                    case alg_desc_s:
+                    case alg_par:
+                    case alg_anc:
+                    case alg_anc_s:
+                        new_axis = AXIS(n);
+                        merge_steps = true;
+                        break;
+                    default:
+                        return;
+                }
+            } else           
+            /* child and desc axis -> new_axis = desc */
+            if(AXIS(n) == alg_chld || AXIS(R(n)) == alg_chld || 
+                    AXIS(n) == alg_desc || AXIS(R(n)) == alg_desc) {
+                new_axis = alg_desc;
+                merge_steps = true;
+            } else
+            /* parent and anc axis -> new axis = desc */
+            if(AXIS(n) == alg_par || AXIS(R(n)) == alg_par || 
+                    AXIS(n) == alg_anc || AXIS(R(n)) == alg_anc) { 
+                new_axis = alg_anc;
+                merge_steps = true;
+            } else
+            /* if both axis are equal */
+            if(AXIS(n) == AXIS(R(n))) {
+                new_axis = AXIS(n);
+                merge_steps = true;
+            }
+
+            if(merge_steps == false)
+                return;
+
+            AXIS(n) = new_axis;
+            R(n) = RR(n);
+            return;
+        }
+    }
+    return;
+}
+
+/* worker for PFalgopt_guide */
+static void 
+opt_guide(PFla_op_t *n)
+{
+    assert(n);
 
     /* rewrite each node only once */
-    if (SEEN(p))
+    if(SEEN(n))
         return;
     else
-        SEEN(p) = true;
+        SEEN(n) = true;
 
     /* apply guide-related optimization for children */
-    for (unsigned int i = 0; i < PFLA_OP_MAXCHILD && p->child[i]; i++)
-        opt_guide (p->child[i]);
+    for (unsigned int i = 0; i < PFLA_OP_MAXCHILD && n->child[i]; i++)
+        opt_guide (n->child[i]);
 
-    /* action code */
-    switch (p->kind) {
+    /* apply chances for step operators */
+    switch (n->kind) {
         case la_step:
-            if (PFprop_guide (p->prop, p->sem.step.item_res)) {
-                if (PFprop_guide_count (p->prop, p->sem.step.item_res))
-                    *p = *PFla_guide_step (
-                              L(p),
-                              R(p),
-                              p->sem.step.axis,
-                              p->sem.step.ty,
-                              PFprop_guide_count (
-                                  p->prop,
-                                  p->sem.step.item_res),
-                              PFprop_guide_elements (
-                                  p->prop,
-                                  p->sem.step.item_res),
-                              p->sem.step.level,
-                              p->sem.step.iter,
-                              p->sem.step.item,
-                              p->sem.step.item_res);
-                break;
+            assert(PROP(n));
+            assert(L(n));
+            assert(R(n));
+    
+            PFla_op_t *ret = NULL;  /* new guide_step operator */
+            unsigned int count = 0; /* # of guide nodes */
+            PFguide_tree_t** guides = NULL; /* array of guide nodes */
+            PFalg_att_t column = n->sem.step.item_res;
+    
+            /* look if operator has guide nodes */
+            if(PFprop_guide(PROP(n), column) == false)
+                break; 
+    
+            /* # of guide nodes */
+            count = PFprop_guide_count(PROP(n), column);
+            /* guide list is empty -> create empty table*/
+            if(count == 0) {
+                ret = PFla_empty_tbl_ (n->schema);
+            } else {
+                /* get guide nodes */
+                guides = PFprop_guide_elements(PROP(n), column);
+                /* create new step operator */
+                ret = PFla_guide_step(L(n), R(n), n->sem.step.axis, 
+                            n->sem.step.ty, count, guides, n->sem.step.level, 
+                            n->sem.step.iter, n->sem.step.item, 
+                            n->sem.step.item_res);
+    
             }
+        
+            *n = *ret;
+            SEEN(n) = true;
             break;
-
         default:
             break;
     }
+    
+    
+    /* merge 2 guide_step operator if possible */
+    merge_guide_steps(n);
+
+    return;
 }
+
 
 /**
   * Invoke algebra optimization.
