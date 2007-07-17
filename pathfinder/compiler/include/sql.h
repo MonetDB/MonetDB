@@ -52,6 +52,7 @@
 #define sql_col_value   0x00000100
 #define sql_col_name    0x00000200
 #define sql_col_dpre    0x00000400
+#define sql_col_guide   0x00000800
 typedef unsigned int PFsql_special_t;
 
 /* Reserve identifiers. */
