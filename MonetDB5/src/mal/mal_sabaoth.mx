@@ -253,6 +253,7 @@ str SABAOTHmarchConnection(int *ret, str *host, int *port, bit *ssl) {
 	FILE *f;
 	str path = alloca(sizeof(char) * (PATHLENGTH + 1));
 	str tmp;
+
 	(void)ret;
 
 	rethrow("sabaoth.marchConnection", tmp,
@@ -262,7 +263,7 @@ str SABAOTHmarchConnection(int *ret, str *host, int *port, bit *ssl) {
 		fprintf(f, "mapi%s:monetdb://%s:%i/\n", *ssl ? "s" : "", *host, *port);
 		/* (some) people tend to like (very) noisy programs, hence to
 		 * please them, announce that we're now available from outside */
-		printf("#listening for connections on mapi%s:monetdb://%s:%i/\n",
+		printf("# Listening for connection requests on mapi%s:monetdb://%s:%i/\n",
 				*ssl ? "s" : "", *host, *port);
 		(void)fflush(f);
 		(void)fclose(f);

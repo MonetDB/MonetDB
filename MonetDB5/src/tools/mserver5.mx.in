@@ -174,15 +174,15 @@ monet_hello(opt *set, int setlen)
 	char *msg = mo_find_option(set, setlen, "monet_welcome");
 
 	if (msg && strcmp(msg, "yes") == 0) {
-		printf("# MonetDB Server v" VERSION "\n");
-		printf("# based on GDK   v%s\n", GDKversion());
-		printf("# Copyright (c) 1993-2007 CWI, all rights reserved\n");
+		printf("# MonetDB server v" VERSION "\n");
+		printf("# Based on kernel v%s\n", GDKversion());
+		printf("# Database serviced:%s\n", GDKgetenv("gdk_dbname"));
 		printf("# Compiled for %s/" SZFMT "bit with " SZFMT "bit OIDs %s linked\n", HOST, (size_t) (sizeof(ptr) * 8), (size_t) (sizeof(oid) * 8), linkinfo);
 #ifdef MONET_GLOBAL_DEBUG
-		printf("# config:%s\n", GDKgetenv("config"));
-		printf("# dbfarm:%s\n", GDKgetenv("gdk_dbfarm"));
+		printf("# Configuration:%s\n", GDKgetenv("config"));
+		printf("# Database farm:%s\n", GDKgetenv("gdk_dbfarm"));
 #endif
-		printf("# dbname:%s\n", GDKgetenv("gdk_dbname"));
+		printf("# Copyright (c) 1993-2007 CWI, all rights reserved\n");
 		printf("# Visit http://monetdb.cwi.nl/ for further information\n");
 	}
 }
