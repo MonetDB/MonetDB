@@ -190,6 +190,13 @@ monet_hello(opt *set, int setlen)
 @-
 Version information, and compile time options.
 @c
+#ifdef HAVE_LIBPCRE
+#include <pcre.h>
+#endif
+#ifdef HAVE_OPENSSL
+#include <openssl/opensslv.h>
+#endif
+
 void
 monet_version()
 {
@@ -199,11 +206,9 @@ monet_version()
 	printf("Configured for prefix: " MONETDBPREFIX "\n");
 	printf("Libraries:\n");
 #ifdef HAVE_LIBPCRE
-#include <pcre.h>
 	printf("  libpcre: %s (%s)\n", pcre_version(), "@pcreversion@");
 #endif
 #ifdef HAVE_OPENSSL
-#include <openssl/opensslv.h>
 	printf("  openssl: %s (%s)\n", OPENSSL_VERSION_TEXT, "@opensslversion@");
 #endif
 	printf("Compiled by: %s\n", "@builtby@");
