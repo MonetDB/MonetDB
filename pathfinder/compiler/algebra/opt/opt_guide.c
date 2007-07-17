@@ -174,6 +174,7 @@ opt_guide(PFla_op_t *n)
     /* apply chances for step operators */
     switch (n->kind) {
         case la_step:
+	{
             assert(PROP(n));
             assert(L(n));
             assert(R(n));
@@ -206,6 +207,7 @@ opt_guide(PFla_op_t *n)
             *n = *ret;
             SEEN(n) = true;
             break;
+	}
         default:
             break;
     }
