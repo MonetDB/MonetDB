@@ -117,6 +117,8 @@
 /* starting level of global variables */
 #define GLO_LEV -1
 
+/* #define DO_PROFILE 1 */
+
 /**
  * mps_error calls PFoops with more text, since something is wrong
  * in the translation, if this message appears.
@@ -9092,8 +9094,19 @@ translate2MIL (opt_t *f, int code, int cur_level, int counter, PFcnode_t *c)
         case c_apply:
             if (c->sem.fun->builtin)
             {
+#ifdef DO_PROFILE
+    		milprintf(f,"var txxx := usec();\n");
+#endif
                 rc = translateFunction (f, code, cur_level, counter, 
                                         c->sem.fun, D(c));
+#ifdef DO_PROFILE
+    		milprintf(f,
+			"var tc := usec() - txxx;\n" 
+			"prof_fun_time.insert(\"%s\",tc);\n"
+    			"printf(\"+ F[%s]:\\ttime=%% 8.3f ms. items=%% d\\n\",dbl(tc)/1000.0,item.count());\n"
+                	"\n"
+	      	,PFqname_loc (c->sem.fun->qname),PFqname_loc (c->sem.fun->qname));
+#endif
             }
             else
             {
@@ -11421,6 +11434,9 @@ const char* PFinitMIL(void) {
    "module(\"probxml\");\n"
    "var newid_counter := 1LL;\n"
 #endif
+#ifdef DO_PROFILE
+   "var prof_fun_time := new(str,lng);\n"
+#endif
         "\n"
         "# value containers for literal values\n"
         "var int_values := bat(lng,void).key(true).reverse().seqbase(0@0);\n"
@@ -11585,6 +11601,8 @@ const char* PFstartMIL(int statement_type) {
            "  time_print := usec() - time_print;\n"\
            "  printf(\"\\nTrans  %% 10.3f msec\\nShred  %% 10.3f msec\\nQuery  %% 10.3f msec\\n" LASTPHASE " %% 10.3f msec\\n\","\
            "      dbl(time_compile)/1000.0, dbl(time_shred)/1000.0, dbl(time_exec - time_shred)/1000.0, time_print/1000.0);\n}"
+
+
 const char* PFstopMIL(int statement_type) {
     return (statement_type==0)?
                (PF_STOPMIL_RDONLY):
@@ -11737,6 +11755,9 @@ PFprintMILtemp (PFcnode_t *c, int optimize, int module_base, int num_fun, long t
         timing = PFtimer_stop(timing);
         milprintf(f, "iter := 1@0;\n");
         milprintf(f, "time_compile := %dLL;\n" , timing);
+#ifdef DO_PROFILE
+        milprintf(f, "{sum}(prof_fun_time).print();\n");
+#endif
         milprintf(f, PFstopMIL(stmt));
     }
 
