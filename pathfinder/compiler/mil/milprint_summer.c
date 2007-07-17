@@ -8635,6 +8635,11 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
 #endif /* PFTIJAH */
 
 #ifdef HAVE_PROBXML
+    else if (!PFqname_eq(fnQname,PFqname (PFns_pxmlsup,"val_except")))
+    {
+        translateIntersect (f, "diff", cur_level, counter, args);
+        return NORMAL;
+    }
     else if (!PFqname_eq(fnQname,PFqname (PFns_pxmlsup,"deep-equal")))
     {
         return translateDeepEq (f, cur_level, counter, "deep-equal", args);

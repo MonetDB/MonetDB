@@ -2206,6 +2206,18 @@ PFfun_xquery_fo (void)
             .ret_ty = PFty_xs_integer () } } }
 #endif
 #ifdef HAVE_PROBXML
+    , /* pxmlsup:val_except (str*, str*) as str* */
+      { .ns = PFns_pxmlsup, .loc = "val_except",
+        .arity = 2, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_star (PFty_xs_string ()),
+                                PFty_star (PFty_xs_string ()) },
+            .ret_ty = PFty_star (PFty_xs_string ()) } } }
+    , /* pxmlsup:val_except (int*, int*) as int* */
+      { .ns = PFns_pxmlsup, .loc = "val_except",
+        .arity = 2, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_star (PFty_xs_integer ()),
+                                PFty_star (PFty_xs_integer ()) },
+            .ret_ty = PFty_star (PFty_xs_integer ()) } } }
     , /* pxmlsup:deep-equal (node, node) as boolean */
       { .ns = PFns_pxmlsup, .loc = "deep-equal",
         .arity = 2, .sig_count = 1, .sigs = { {
