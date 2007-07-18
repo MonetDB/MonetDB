@@ -482,11 +482,7 @@ extern int IndexStop;
    
 @c
 #include "mal_config.h"
-#include "mal.h"
-#include "mal_exception.h"
 #include "crackers.h"
-#include "mtime.h"
-#include "bat5.h"
 
 int maxCrackMap = 0;
 
