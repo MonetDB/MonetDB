@@ -1,90 +1,643 @@
+@' The contents of this file are subject to the MonetDB Public License
+@' Version 1.1 (the "License"); you may not use this file except in
+@' compliance with the License. You may obtain a copy of the License at
+@' http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+@'
+@' Software distributed under the License is distributed on an "AS IS"
+@' basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+@' License for the specific language governing rights and limitations
+@' under the License.
+@'
+@' The Original Code is the MonetDB Database System.
+@'
+@' The Initial Developer of the Original Code is CWI.
+@' Portions created by CWI are Copyright (C) 1997-2007 CWI.
+@' All Rights Reserved.
 
-/* BEGIN -------------------------------------- Sideways Cracking -------------------------------------------------------------------*/
+@f crackers_sideways
+@a Martin Kersten, Stratos Idreos, Stefan Manegold
+@d March 2006 - July 2007
+@* Sideways Cracking
 
-@= crackAlgebraSideways
-command hselect(b:bat[:oid,:@1],bp:bat[:oid,:@2],l:@1,h:@1,li:bit,hi:bit):bat[:oid,:@1]
-address CRKhselectBoundsSideways_@1_@2
-comment "Retrieve the subset head using a cracker
-        index producing preferably a BATview.";
 
-command tselect(b:bat[:oid,:@1],bp:bat[:oid,:@2],l:@1,h:@1,li:bit,hi:bit):bat[:oid,:@2]
-address CRKtselectBoundsSideways_@1_@2
-comment "Retrieve the subset tail using a cracker
-        index producing preferably a BATview.";
+@+ Interface
 
-command dselect(b:bat[:oid,:@1],bp:bat[:oid,:@2],l:@1,h:@1,li:bit,hi:bit,l2:@2,h2:@2,li2:bit,hi2:bit):bat[:oid,:bit]
-address CRKdselectBoundsSideways_@1_@2
-comment "Crack based on @1 and evaluate the @2 disjunctive predicate outside the cracked area. Return a bit vector.";
 
-command joinselect( b:bat[:oid,:@2],l:@2, h:@2, li:bit, hi:bit ):bat[:oid,:bit]
-address CRKjoinSelectSideways_@2
-comment "From cpair, only those BUNs qualify that satisfy the range-restriction on the tail.
-        The result is a new [:oid,:bit] BAT that reflects the positions of buns in cpair. 
-	For each tuple that qualifies in cpair, the respective position in the pivot is marked with a 1";
+@- Type expansion
 
-command joinselect( b:bat[:oid,:@1],bp:bat[:oid,:@2], pivot:bat[:oid,:bit], cl:@1, ch:@1, cli:bit, chi:bit, l:@2, h:@2, li:bit, hi:bit ):bat[:oid,:bit]
-address CRKjoinSelectSideways_P_@1_@2
-comment "Use the pivot. For each tuple in pivot with a 1, check if the respective tuple (in the same position)
-	 in the tail of cpair satisfies the range restriction. If not mark the pivot BUN as 0.";
-
-command djoinselect( b:bat[:oid,:@1],bp:bat[:oid,:@2], pivot:bat[:oid,:bit], l:@2, h:@2, li:bit, hi:bit ):bat[:oid,:bit]
-address CRKdjoinSelectSideways_P_@1_@2
-comment "Use the pivot. For each tuple in pivot with a 0, check if the respective tuple (in the same position)
-	 in the tail of cpair satisfies the range restriction. If yes mark the pivot BUN as 1.";
-
-command project( b:bat[:oid,:@1],bp:bat[:oid,:@2], l:@1,h:@1,li:bit,hi:bit):bat[:oid,:@2]
-address CRKProjectCrack_@1_@2
-comment "Sync and project the tail of the cpair";
-
-command project( b:bat[:oid,:@1],bp:bat[:oid,:@2],pivot:bat[:oid,:bit],l:@1,h:@1,li:bit,hi:bit):bat[:oid,:@2]
-address CRKProject_@1_@2
-comment "Sync the cracking pair and project the tail";
-
-command dproject( b:bat[:oid,:@1],bp:bat[:oid,:@2],pivot:bat[:oid,:bit]):bat[:oid,:@2]
-address CRKdProject_@1_@2
-comment "Sync the cracking pair and project the tail. Use for disjunctive queries that require a larger bit vector";
-
-command projectH( b:bat[:oid,:@1],bp:bat[:oid,:@2],l:@1,h:@1,li:bit,hi:bit):bat[:oid,:@1]
-address CRKProjectH_@1_@2
-comment "Sync the cracking pair and project the head";
-
-command DeleteMap( b:bat[:oid,:@1], bp:bat[:oid,:@2] ):void
-address DeleteCrackerMap
-comment "Throw away a certain map"; 
-
-command insert( b:bat[:oid,:@1], bp:bat[:oid,:@2], c:bat[:@1,:@2]):void
-address CRKinsert
-comment "Keep the insertions BAT separatelly and merge in the future on demand with the Ripple";
-
-command printPendingInsertions( b:bat[:oid,:@1], bp:bat[:oid,:@2]):void
-address CRKprintPendingInsertions
-comment "Print the pending insertions";
-
-command extendCrackerMap(b:bat[:oid,:@1], bp:bat[:oid,:@2], P:lng):void
-address CRKextendCrackerMap
-comment "Extend the cracker map by P positions";
-
-command sizePendingInsertions(b:bat[:oid,:@1], bp:bat[:oid,:@2]):void
-address CRKsizePendingInsertions
-comment "Get the size of the pending insertions for this map";
-
+@= TypeSwitch_1
+@:@1(,chr,simple,,chr,@2)@
+@:@1(,sht,simple,,sht,@2)@
+@:@1(,int,simple,,int,@2)@
+@:@1(,lng,simple,,lng,@2)@
+@:@1(,flt,simple,,flt,@2)@
+@:@1(,dbl,simple,,dbl,@2)@
+@:@1(,date,atom,TYPE_,loc,@2)@
 @
 
-@mal
-@:crackAlgebraSideways(int,chr)@
-@:crackAlgebraSideways(int,sht)@
-@:crackAlgebraSideways(int,int)@
-@:crackAlgebraSideways(int,lng)@
-@:crackAlgebraSideways(int,flt)@
-@:crackAlgebraSideways(int,dbl)@
-@:crackAlgebraSideways(int,date)@
-@:crackAlgebraSideways(date,chr)@
-@:crackAlgebraSideways(date,sht)@
-@:crackAlgebraSideways(date,int)@
-@:crackAlgebraSideways(date,lng)@
-@:crackAlgebraSideways(date,flt)@
-@:crackAlgebraSideways(date,dbl)@
-@:crackAlgebraSideways(date,date)@
+@= TypeSwitch_2
+@:@1(int,,simple,,int,@2)@
+@:@1(date,,atom,TYPE_,loc,@2)@
+@
+
+@= TypeSwitch_3
+/* TODO: add the rest of the type combinations once code is stable */
+@:@1(int,chr,simple,,,@2)@
+@:@1(int,sht,simple,,,@2)@
+@:@1(int,int,simple,,,@2)@
+@:@1(int,lng,simple,,,@2)@
+@:@1(int,flt,simple,,,@2)@
+@:@1(int,dbl,simple,,,@2)@
+@:@1(int,date,atom,TYPE_,,@2)@
+@:@1(date,chr,atom,TYPE_,,@2)@
+@:@1(date,sht,atom,TYPE_,,@2)@
+@:@1(date,int,atom,TYPE_,,@2)@
+@:@1(date,lng,atom,TYPE_,,@2)@
+@:@1(date,flt,atom,TYPE_,,@2)@
+@:@1(date,dbl,atom,TYPE_,,@2)@
+@:@1(date,date,atom,TYPE_,,@2)@
+@
+
+
+@- Header file
+ 
+@h
+#ifndef _CRACKERS_SIDEWAYS_H_
+#define _CRACKERS_SIDEWAYS_H_
+
+/* Exported signatures */
+@:SidewaysFunctions_decl_0@
+@:TypeSwitch_1(SidewaysFunctions_decl_1)@
+@:TypeSwitch_3(SidewaysFunctions_decl_3)@
+
+#endif /* _CRACKERS_SIDEWAYS_H */
+@
+
+
+@- Exported signatures
+ 
+@= SidewaysFunctions_decl_0
+crackers_export str CRKsizePendingInsertions(int *k, int *bid, int *pbid);
+crackers_export str CRKextendCrackerMap(int *k, int *bid, int *pbid, lng positions);
+crackers_export str CRKprintPendingInsertions(int *k, int *bid, int  *pbid);
+crackers_export str CRKinsert(int *k, int *bid, int *pbid, int *insertions);
+crackers_export str DeleteCrackerMap(int *k, int *bid, int *pbid);
+@
+
+@= SidewaysFunctions_decl_1
+/* JoinSelectFunctionsSidewaysWithoutPivot */
+crackers_export str CRKjoinSelectSideways_@2(int *res, int *cpair, @2 *low, @2 *hgh, bit *inclusiveLow, bit *inclusiveHgh);
+@
+
+@= SidewaysFunctions_decl_3
+/* SelectFunctionsSideways */
+crackers_export str CRKhselectBoundsSideways_@1_@2(int *vid, int *bid, int *pbid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh);
+crackers_export str CRKtselectBoundsSideways_@1_@2(int *vid, int *bid, int *pbid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh);
+crackers_export str CRKdselectBoundsSideways_@1_@2(int *vid, int *bid, int *pbid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh, @2 *low2, @2 *hgh2, bit *inclusiveLow2, bit *inclusiveHgh2);
+/* JoinSelectFunctionsSideways */
+crackers_export str CRKjoinSelectSideways_P_@1_@2(int *res, int *bid, int *pbid, int *pivot, @1 *low1, @1 *hgh1, bit *inclusiveLow1, bit *inclusiveHgh1, @2 *low, @2 *hgh, bit *inclusiveLow, bit *inclusiveHgh);
+crackers_export str CRKdjoinSelectSideways_P_@1_@2(int *res, int *bid, int *pbid, int *pivot, @2 *low, @2 *hgh, bit *inclusiveLow, bit *inclusiveHgh);
+/* Project */
+crackers_export str CRKProjectCrack_@1_@2(int *res, int *bid, int *pbid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh);
+crackers_export str CRKProjectH_@1_@2(int *res, int *bid, int *pbid, int *pivot, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh);
+crackers_export str CRKProject_@1_@2(int *res, int *bid, int *pbid, int *pivot, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh);
+crackers_export str CRKdProject_@1_@2(int *res, int *bid, int *pbid, int *pivot);
+@
+
+
+@{
+@+ Implementation
+
+ 
+@- C file
+
+@c
+#include "mal_config.h"
+#include "crackers.h"
+
+/* Local support functions and macros */
+@:existsCrackerIndexSideways@
+@:TypeSwitch_3(operationsSideways,)@
+@:NewIndexSidewaysCracking_0@
+@:TypeSwitch_2(NewIndexSidewaysCracking_2,)@
+@:TypeSwitch_3(SyncOperation,)@
+@:TypeSwitch_2(TapeOperations,)@
+@:TypeSwitch_2(updatesSideways,)@
+@:TypeSwitch_3(crackOperationsSideways,)@
+@:TypeSwitch_1(JoinSelectOperationsSideways,WithoutPivot)@
+@:TypeSwitch_3(JoinSelectOperationsSideways,)@
+
+/* Exported functions */
+@:SidewaysFunctions_impl_0@
+@:TypeSwitch_1(SidewaysFunctions_impl_1)@
+@:TypeSwitch_3(SidewaysFunctions_impl_3)@
+@
+
+
+@- Exported functions
+
+@= SidewaysFunctions_impl_0
+str
+CRKsizePendingInsertions(int *k, int *bid, int *pbid){
+        BAT *u;
+	int i;
+	(void)k;
+
+        i=existsCrackerIndexSideways(*bid,*pbid);
+        if (i == -1)
+                fprintf(stderr, " the crack index does not exist \n");
+        if (CrackerIndex[i].iid > 0){
+                u = BATdescriptor(CrackerIndex[i].iid);
+                printf("\n pending insertions size: "SZFMT" \n",BATcount(u));
+                BBPunfix(u->batCacheid);
+        }
+        else
+                printf("\n pending insertions size: 0 \n");
+
+	 return MAL_SUCCEED;
+}
+
+str
+CRKextendCrackerMap(int *k, int *bid, int *pbid, lng positions){
+        BAT *b;
+        int position = existsCrackerIndexSideways(*bid,*pbid);
+        (void) k;
+
+        if (position == -1)
+                throw(MAL, "crackers.CRKextendCrackermap", "Cannot find cracker index");
+        if ((b = BATdescriptor(CrackerIndex[position].cbid)) == NULL)
+                throw(MAL, "crackers.CRKextendCrackerMap", "Cannot access cracker Map");
+
+        if (BATextend(b, positions) == NULL)
+                throw(MAL, "crackers.CRKextendCrackerMap", "Failed to extend the cracker Map");
+
+        BBPunfix(b->batCacheid);
+
+        return MAL_SUCCEED;
+}
+
+str
+CRKprintPendingInsertions(int *k, int *bid, int *pbid){
+        int i = existsCrackerIndexSideways(*bid,*pbid);
+	(void) k;
+
+        if (i == -1)
+		 throw(MAL, "crackers.CRKprintPendingInsertions", "Cannot find cracker map");
+
+        if (CrackerIndex[i].iid > 0)
+                BATprint(BATdescriptor(CrackerIndex[i].iid));
+
+	return MAL_SUCCEED;
+}
+
+str
+CRKinsert(int *k, int *bid, int *pbid, int *insertions){
+        int position = existsCrackerIndexSideways(*bid,*pbid);
+        (void) k;
+
+        if (position == -1)
+                throw(MAL, "crackers.CRKinsert", "Cannot find cracker map");
+
+        appendInsertions(insertions,position);
+
+        return MAL_SUCCEED;
+}
+
+str
+DeleteCrackerMap(int *k, int *bid, int *pbid){
+	int i;
+	(void)k;
+	for (i = 0; i < maxCrackMap; i++)
+		if (CrackerIndex[i].bid == *bid && CrackerIndex[i].pbid == *pbid){
+			CrackerIndex[i].bid  = -2;
+			CrackerIndex[i].pbid = -2;
+		}
+	return MAL_SUCCEED;
+}
+@
+
+
+@= SidewaysFunctions_impl_1
+/* JoinSelectFunctionsSidewaysWithoutPivot */
+str                     
+CRKjoinSelectSideways_@2(int *res, int *cpair, @2 *low, @2 *hgh, bit *inclusiveLow, bit *inclusiveHgh){               
+        if (@3_EQ(low,ATOMnilptr(TYPE_@2),@4@2)){
+		if (*inclusiveHgh==TRUE)
+                	return JoinSelectSingleSideways_RE_@2(res, cpair, hgh);
+		else
+                	return JoinSelectSingleSideways_RO_@2(res, cpair, hgh);
+	}
+        else if (@3_EQ(hgh,ATOMnilptr(TYPE_@2),@4@2))
+		if (*inclusiveLow==TRUE)
+                	return JoinSelectSingleSideways_LE_@2(res, cpair, low);
+		else
+                	return JoinSelectSingleSideways_LO_@2(res, cpair, low);
+        else{
+		if ((*inclusiveLow==TRUE) && (*inclusiveHgh==TRUE))
+                	return JoinSelectRangeSideways_LE_RE_@2(res, cpair, low, hgh);
+		else
+		if ((*inclusiveLow==TRUE) && (*inclusiveHgh==FALSE))
+                	return JoinSelectRangeSideways_LE_RO_@2(res, cpair, low, hgh);
+		else
+		if ((*inclusiveLow==FALSE) && (*inclusiveHgh==FALSE))
+                	return JoinSelectRangeSideways_LO_RO_@2(res, cpair, low, hgh);
+		else
+		if ((*inclusiveLow==FALSE) && (*inclusiveHgh==TRUE))
+                	return JoinSelectRangeSideways_LO_RE_@2(res, cpair, low, hgh);
+	}
+        throw(MAL, "crackers.crackJoinSelectSideways", "case not handled");
+}
+@
+
+@= SidewaysFunctions_impl_3
+/* SelectFunctionsSideways */
+str
+CRKhselectBoundsSideways_@1_@2(int *vid, int *bid, int *pbid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh){
+	if (@3_EQ(low,ATOMnilptr(TYPE_@1),@4@1))
+       		throw(MAL, "crackers.CRKhselectBoundsSideways_@1_@2", "case not handled");
+	else if (@3_EQ(hgh,ATOMnilptr(TYPE_@1),@4@1))
+        	throw(MAL, "crackers.CRKhselectBoundsSideways_@1_@2", "case not handled");
+	else
+		return CRKRangeSideways_@1_@2(vid, bid, pbid, low, hgh, inclusiveLow, inclusiveHgh, FALSE);
+
+        throw(MAL, "crackers.CRKhselectBoundsSideways_@1_@2", "case not handled");
+}
+
+str
+CRKtselectBoundsSideways_@1_@2(int *vid, int *bid, int *pbid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh){
+	if (@3_EQ(low,ATOMnilptr(TYPE_@1),@4@1))
+       		throw(MAL, "crackers.CRKtselectBoundsSideways_@1_@2", "case not handled");
+	else if (@3_EQ(hgh,ATOMnilptr(TYPE_@1),@4@1))
+        	throw(MAL, "crackers.CRKtselectBoundsSideways_@1_@2", "case not handled");
+	else
+		return CRKRangeSideways_@1_@2(vid, bid, pbid, low, hgh, inclusiveLow, inclusiveHgh, TRUE);
+
+        throw(MAL, "crackers.CRKtselectBoundsSideways_@1_@2", "case not handled");
+}
+
+str
+CRKdselectBoundsSideways_@1_@2(int *vid, int *bid, int *pbid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh, @2 *low2, @2 *hgh2, bit *inclusiveLow2, bit *inclusiveHgh2){
+	if (@3_EQ(low,ATOMnilptr(TYPE_@1),@4@1))
+       		throw(MAL, "crackers.CRKdselectBoundsSideways_@1_@2", "case not handled");
+	else if (@3_EQ(hgh,ATOMnilptr(TYPE_@1),@4@1))
+        	throw(MAL, "crackers.CRKdselectBoundsSideways_@1_@2", "case not handled");
+	else
+		return CRKdRangeSideways_@1_@2(vid, bid, pbid, low, hgh, inclusiveLow, inclusiveHgh, low2, hgh2, inclusiveLow2, inclusiveHgh2);
+
+        throw(MAL, "crackers.CRKdselectBoundsSideways_@1_@2", "case not handled");
+}
+
+/* JoinSelectFunctionsSideways */
+str                     
+CRKjoinSelectSideways_P_@1_@2(int *res, int *bid, int *pbid, int *pivot, @1 *low1, @1 *hgh1, bit *inclusiveLow1, bit *inclusiveHgh1, @2 *low, @2 *hgh, bit *inclusiveLow, bit *inclusiveHgh){               
+        if (@3_EQ(low,ATOMnilptr(TYPE_@2),@4@2)){
+		if (*inclusiveHgh==TRUE)
+                	return JoinSelectSingleSideways_P_RE_@1_@2(res, bid, pbid, pivot, hgh, low1, hgh1, inclusiveLow1, inclusiveHgh1);
+		else
+                	return JoinSelectSingleSideways_P_RO_@1_@2(res, bid, pbid, pivot, hgh, low1, hgh1, inclusiveLow1, inclusiveHgh1);
+	}
+        else if (@3_EQ(hgh,ATOMnilptr(TYPE_@2),@4@2))
+		if (*inclusiveLow==TRUE)
+                	return JoinSelectSingleSideways_P_LE_@1_@2(res, bid, pbid, pivot, low, low1, hgh1, inclusiveLow1, inclusiveHgh1);
+		else
+                	return JoinSelectSingleSideways_P_LO_@1_@2(res, bid, pbid, pivot, low, low1, hgh1, inclusiveLow1, inclusiveHgh1);
+        else{
+		if ((*inclusiveLow==TRUE) && (*inclusiveHgh==TRUE))
+                	return JoinSelectRangeSideways_P_LE_RE_@1_@2(res, bid, pbid, pivot, low, hgh, low1, hgh1, inclusiveLow1, inclusiveHgh1);
+		else
+		if ((*inclusiveLow==TRUE) && (*inclusiveHgh==FALSE))
+                	return JoinSelectRangeSideways_P_LE_RO_@1_@2(res, bid, pbid, pivot, low, hgh, low1, hgh1, inclusiveLow1, inclusiveHgh1);
+		else
+		if ((*inclusiveLow==FALSE) && (*inclusiveHgh==FALSE))
+                	return JoinSelectRangeSideways_P_LO_RO_@1_@2(res, bid, pbid, pivot, low, hgh, low1, hgh1, inclusiveLow1, inclusiveHgh1);
+		else
+		if ((*inclusiveLow==FALSE) && (*inclusiveHgh==TRUE))
+                	return JoinSelectRangeSideways_P_LO_RE_@1_@2(res, bid, pbid, pivot, low, hgh, low1, hgh1, inclusiveLow1, inclusiveHgh1);
+	}
+        throw(MAL, "crackers.crackJoinSelectSideways", "case not handled");
+}
+
+str                     
+CRKdjoinSelectSideways_P_@1_@2(int *res, int *bid, int *pbid, int *pivot, @2 *low, @2 *hgh, bit *inclusiveLow, bit *inclusiveHgh){               
+        if (@3_EQ(low,ATOMnilptr(TYPE_@2),@4@2)){
+		if (*inclusiveHgh==TRUE)
+        		throw(MAL, "crackers.crackJoinSelectSideways", "case not handled");
+		else
+        		throw(MAL, "crackers.crackJoinSelectSideways", "case not handled");
+	}
+        else if (@3_EQ(hgh,ATOMnilptr(TYPE_@2),@4@2))
+		if (*inclusiveLow==TRUE)
+        		throw(MAL, "crackers.crackJoinSelectSideways", "case not handled");
+		else
+        		throw(MAL, "crackers.crackJoinSelectSideways", "case not handled");
+        else{
+		if ((*inclusiveLow==TRUE) && (*inclusiveHgh==TRUE))
+                	return dJoinSelectRangeSideways_P_LE_RE_@1_@2(res, bid, pbid, pivot, low, hgh);
+		else
+		if ((*inclusiveLow==TRUE) && (*inclusiveHgh==FALSE))
+                	return dJoinSelectRangeSideways_P_LE_RO_@1_@2(res, bid, pbid, pivot, low, hgh);
+		else
+		if ((*inclusiveLow==FALSE) && (*inclusiveHgh==FALSE))
+                	return dJoinSelectRangeSideways_P_LO_RO_@1_@2(res, bid, pbid, pivot, low, hgh);
+		else
+		if ((*inclusiveLow==FALSE) && (*inclusiveHgh==TRUE))
+                	return dJoinSelectRangeSideways_P_LO_RE_@1_@2(res, bid, pbid, pivot, low, hgh);
+	}
+        throw(MAL, "crackers.crackJoinSelectSideways", "case not handled");
+}
+
+/* Project */
+str
+CRKProjectCrack_@1_@2(int *res, int *bid, int *pbid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh){
+        BAT *b, *c, *view;
+	int m;
+	lng cl1,cl2,ch1,ch2;
+
+	m = existsCrackerIndexSideways(*bid, *pbid);
+	if (m==-1){	
+		@:CreateCrackerMap(@1,@2)@		
+		BBPincref(b->batCacheid,TRUE);
+	}	
+
+	selectMergeInsertionsPart_@1Sideways(low, inclusiveLow, hgh, inclusiveHgh, m);
+	Sync_@1_@2(m,existsCrackerIndexSideways(*bid, -1));
+
+        if ((b = BATdescriptor(CrackerIndex[m].cbid)) == NULL) 
+                throw(MAL, "crackers.crackJoinSelectSideways", "Cannot access descriptor");
+
+        if ((c = BATdescriptor(CrackerIndex[m].cid)) == NULL)
+                throw(MAL, "crackers.crackRange", "Cannot access crack index");
+                
+        GetLow_@1(*low, *inclusiveLow, CrackerIndex[m].Tree, c, BUNhloc(c, BUNfirst(c)), BUNsize(c), &cl1, &ch1, 0, BUNindex(b, BUNlast(b)-BUNsize(b)));
+                
+        GetHgh_@1(*hgh, *inclusiveHgh, CrackerIndex[m].Tree, c, BUNhloc(c, BUNfirst(c)), BUNsize(c), &cl2, &ch2, 0, BUNindex(b, BUNlast(b)-BUNsize(b)));
+
+	if (cl1 != 0) cl1++;
+
+        view = BATslice(BATmirror(VIEWhead_(BATmirror(b), BAT_READ)), cl1, ch2+1);
+
+        *res = view->batCacheid;
+        BBPkeepref(*res);
+
+        BBPunfix(b->batCacheid);
+        BBPunfix(c->batCacheid);
+        return MAL_SUCCEED;
+}
+
+str
+CRKProjectH_@1_@2(int *res, int *bid, int *pbid,int *pivot, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh){
+        BAT *b, *p, *r, *c, *pair;
+        BUN pairh, pivott, rest, reslast;
+        lng size, fsize;
+        int bsize, psize, rsize;
+        lng skip;
+	int m;
+	lng cl1,cl2,ch1,ch2;
+	lng j;
+
+	m = existsCrackerIndexSideways(*bid, *pbid);
+	if (m==-1){	
+		@:CreateCrackerMap(@1,@2)@		
+		BBPincref(b->batCacheid,TRUE);
+	}	
+
+	selectMergeInsertionsPart_@1Sideways(low, inclusiveLow, hgh, inclusiveHgh, m);
+	Sync_@1_@2(m,existsCrackerIndexSideways(*bid, -1));
+
+        if ((pair = BATdescriptor(CrackerIndex[m].cbid)) == NULL) 
+                throw(MAL, "crackers.crackJoinSelectSideways", "Cannot access descriptor");
+
+	if ((c = BATdescriptor(CrackerIndex[m].cid)) == NULL)
+                throw(MAL, "crackers.crackRange", "Cannot access crack index");
+
+        GetLow_@1(*low, *inclusiveLow, CrackerIndex[m].Tree, c, BUNhloc(c, BUNfirst(c)), BUNsize(c), &cl1, &ch1, 0, BUNindex(pair, BUNlast(pair)-BUNsize(pair)));
+
+        GetHgh_@1(*hgh, *inclusiveHgh, CrackerIndex[m].Tree, c, BUNhloc(c, BUNfirst(c)), BUNsize(c), &cl2, &ch2, 0, BUNindex(pair, BUNlast(pair)-BUNsize(pair)));
+
+	if (cl1 != 0) cl1++;
+
+        b = BATslice(pair, cl1, ch2+1);
+	
+        if ((p = BATdescriptor(*pivot)) == NULL) {
+                throw(MAL, "crackers.crackJoinSelectSideways", "Cannot access descriptor");
+        }
+
+        size = BATcount(p);
+ 	r = BATnew(TYPE_void,b->htype,size);
+
+        pairh  = BUNhloc(b, BUNfirst(b));
+        pivott = BUNtloc(p, BUNfirst(p));
+        rest   = BUNtloc(r, BUNfirst(r));
+        bsize = BUNsize(b);
+        psize = BUNsize(p);
+        rsize = BUNsize(r);
+        skip = 0;
+	fsize = 0;
+        for (j = 0; j<size; j++){
+                if (*(bit*)pivott == TRUE){
+                        pairh += skip*bsize;
+			*(@1*)rest = *(@1*)pairh; 
+			rest += rsize;
+                        skip = 0;
+			fsize++;
+                }
+                pivott += psize;
+                skip++;
+        }
+
+        reslast = BUNfirst(r) + rsize*fsize;
+        r->batBuns->free =  reslast - r->batBuns->base;
+        BATsetcount(r, fsize);
+
+	r->hsorted = FALSE;
+        r->tsorted = FALSE;
+        r->hdense = FALSE;
+        r->tdense = FALSE;
+
+        BBPkeepref(r->batCacheid);
+        BBPunfix(p->batCacheid);
+        BBPunfix(b->batCacheid);
+        BBPunfix(pair->batCacheid);
+        *res = r->batCacheid;
+
+        return MAL_SUCCEED;
+}
+
+str
+CRKProject_@1_@2(int *res, int *bid, int *pbid,int *pivot, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh){
+        BAT *b, *p, *r, *c, *pair;
+        BUN pairt, pivott, rest, reslast;
+        lng size, fsize;
+        int bsize, psize, rsize;
+        lng skip;
+	int m;
+	lng cl1,cl2,ch1,ch2;
+	lng j;
+
+	/* If the necessary map does not exits, then create it */	
+	m = existsCrackerIndexSideways(*bid, *pbid);
+	if (m==-1){	
+		@:CreateCrackerMap(@1,@2)@		
+		BBPincref(b->batCacheid,TRUE);
+	}	
+
+	/* Align the map based on the cracker tape of this set */
+	selectMergeInsertionsPart_@1Sideways(low, inclusiveLow, hgh, inclusiveHgh, m);
+	Sync_@1_@2(m,existsCrackerIndexSideways(*bid, -1));
+
+	/* Get the map */
+        if ((pair = BATdescriptor(CrackerIndex[m].cbid)) == NULL) 
+                throw(MAL, "crackers.CRKProject", "Cannot access descriptor");
+
+	if ((c = BATdescriptor(CrackerIndex[m].cid)) == NULL)
+                throw(MAL, "crackers.CRKProject", "Cannot access crack index");
+
+	/* Get the result area on the map
+           Note. We know that this search leads to an exact match sice a project call always 
+           follows a select call with the same restriction in the same query. 
+           Then this restriction is on the cracker tape. */
+        GetLow_@1(*low, *inclusiveLow, CrackerIndex[m].Tree, c, BUNhloc(c, BUNfirst(c)), BUNsize(c), &cl1, &ch1, 0, BUNindex(pair, BUNlast(pair)-BUNsize(pair)));
+
+        GetHgh_@1(*hgh, *inclusiveHgh, CrackerIndex[m].Tree, c, BUNhloc(c, BUNfirst(c)), BUNsize(c), &cl2, &ch2, 0, BUNindex(pair, BUNlast(pair)-BUNsize(pair)));
+
+	if (cl1 != 0) cl1++;
+
+        b = BATslice(pair, cl1, ch2+1);
+	
+        if ((p = BATdescriptor(*pivot)) == NULL) 
+                throw(MAL, "crackers.CRKProject", "Cannot access descriptor");
+
+        size = BATcount(p);
+ 	r = BATnew(TYPE_void,b->ttype,size);
+
+        pairt  = BUNtloc(b, BUNfirst(b));
+        pivott = BUNtloc(p, BUNfirst(p));
+        rest   = BUNtloc(r, BUNfirst(r));
+        bsize = BUNsize(b);
+        psize = BUNsize(p);
+        rsize = BUNsize(r);
+        skip = 0;
+	fsize = 0;
+        for (j = 0; j<size; j++){
+                if (*(bit*)pivott == TRUE){
+                        pairt += skip*bsize;
+			*(@2*)rest = *(@2*)pairt; 
+			rest += rsize;
+                        skip = 0;
+			fsize++;
+                }
+                pivott += psize;
+                skip++;
+        }
+
+        reslast = BUNfirst(r) + rsize*fsize;
+        r->batBuns->free =  reslast - r->batBuns->base;
+        BATsetcount(r, fsize);
+
+	r->hsorted = FALSE;
+        r->tsorted = FALSE;
+        r->hdense = FALSE;
+        r->tdense = FALSE;
+
+        *res = r->batCacheid;
+        BBPkeepref(r->batCacheid);
+        BBPunfix(p->batCacheid);
+        BBPunfix(b->batCacheid);
+        BBPunfix(pair->batCacheid);
+
+        return MAL_SUCCEED;
+}
+
+str
+CRKdProject_@1_@2(int *res, int *bid, int *pbid,int *pivot){
+        BAT *b, *p, *r;
+        BUN pairt, pivott, rest, reslast;
+        lng size, fsize;
+        int bsize, psize, rsize;
+        lng skip;
+	int m;
+	lng j;
+
+	/* If the necessary map does not exits, then create it */	
+	m = existsCrackerIndexSideways(*bid, *pbid);
+	if (m==-1){	
+		@:CreateCrackerMap(@1,@2)@		
+		BBPincref(b->batCacheid,TRUE);
+	}	
+
+	/* Align the map based on the cracker tape of this set */
+	Sync_@1_@2(m,existsCrackerIndexSideways(*bid, -1));
+
+	/* Get the map */
+        if ((b = BATdescriptor(CrackerIndex[m].cbid)) == NULL) 
+                throw(MAL, "crackers.CRKProject", "Cannot access descriptor");
+	
+        if ((p = BATdescriptor(*pivot)) == NULL) 
+                throw(MAL, "crackers.CRKProject", "Cannot access descriptor");
+
+        size = BATcount(p);
+ 	r = BATnew(TYPE_void,b->ttype,size);
+
+        pairt  = BUNtloc(b, BUNfirst(b));
+        pivott = BUNtloc(p, BUNfirst(p));
+        rest   = BUNtloc(r, BUNfirst(r));
+        bsize = BUNsize(b);
+        psize = BUNsize(p);
+        rsize = BUNsize(r);
+        skip = 0;
+	fsize = 0;
+        for (j = 0; j<size; j++){
+                if (*(bit*)pivott == TRUE){
+                        pairt += skip*bsize;
+			*(@2*)rest = *(@2*)pairt; 
+			rest += rsize;
+                        skip = 0;
+			fsize++;
+                }
+                pivott += psize;
+                skip++;
+        }
+
+        reslast = BUNfirst(r) + rsize*fsize;
+        r->batBuns->free =  reslast - r->batBuns->base;
+        BATsetcount(r, fsize);
+
+	r->hsorted = FALSE;
+        r->tsorted = FALSE;
+        r->hdense = FALSE;
+        r->tdense = FALSE;
+
+        *res = r->batCacheid;
+        BBPkeepref(r->batCacheid);
+        BBPunfix(p->batCacheid);
+        BBPunfix(b->batCacheid);
+
+        return MAL_SUCCEED;
+}
+@
+
+
+@- Local support functions and macros
+
+@= JoinSelectOperationsSideways
+@:JoinSelectRSideways@6(@1,@2,LO,RE,GT,LE,@3,@4)@
+@:JoinSelectRSideways@6(@1,@2,LE,RE,GE,LE,@3,@4)@
+@:JoinSelectRSideways@6(@1,@2,LO,RO,GT,LT,@3,@4)@
+@:JoinSelectRSideways@6(@1,@2,LE,RO,GE,LT,@3,@4)@
+@:JoinSelectSideways@6(@1,@2,RO,LT,@3,@4)@
+@:JoinSelectSideways@6(@1,@2,RE,LE,@3,@4)@
+@:JoinSelectSideways@6(@1,@2,LO,GT,@3,@4)@
+@:JoinSelectSideways@6(@1,@2,LE,GE,@3,@4)@
+@
+
+@= operationsSideways
+@:crackInTwoUnorderedPiecesSideways(@1,@2,LE,LE,GT,@3,@4)@
+@:crackInTwoUnorderedPiecesSideways(@1,@2,RE,LT,GE,@3,@4)@
+@:crackInThreeUnorderedPiecesSideways(@1,@2,LO,RE,LE,GT,LE,GT,@3,@4)@
+@:crackInThreeUnorderedPiecesSideways(@1,@2,LE,RE,LT,GE,LE,GT,@3,@4)@
+@:crackInThreeUnorderedPiecesSideways(@1,@2,LO,RO,LE,GT,LT,GE,@3,@4)@
+@:crackInThreeUnorderedPiecesSideways(@1,@2,LE,RO,LT,GE,LT,GE,@3,@4)@
+@
 
 @= shuffleSideways
 	hdummy = *(@1*) @3;
@@ -97,8 +650,7 @@ comment "Get the size of the pending insertions for this map";
 @
 
 @= crackInTwoUnorderedPiecesSideways
-crackers_export str CRKcrackUnorderedZeroSideways_@3_@1_@2( BAT *b, @1 mval, lng first, lng last, lng *pos);
-str
+static str
 CRKcrackUnorderedZeroSideways_@3_@1_@2( BAT *b, @1 mval, lng first, lng last, lng *pos){
         BUN vm, vl;
         BUN vmt, vlt;
@@ -149,9 +701,7 @@ CRKcrackUnorderedZeroSideways_@3_@1_@2( BAT *b, @1 mval, lng first, lng last, ln
 @
 
 @= crackInThreeUnorderedPiecesSideways
-
-crackers_export str CRKcrackUnorderedThreeSideways_@3_@4_@1_@2( BAT *b, @1 low, @1 hgh, lng first, lng last, lng *posl, lng *posh);
-str
+static str
 CRKcrackUnorderedThreeSideways_@3_@4_@1_@2( BAT *b, @1 low, @1 hgh, lng first, lng last, lng *posl, lng *posh){
         BUN vm, vl, hmax;
         BUN vmt, vlt, hmaxt;
@@ -238,32 +788,8 @@ CRKcrackUnorderedThreeSideways_@3_@4_@1_@2( BAT *b, @1 low, @1 hgh, lng first, l
 }
 @
 
-@= operationsSideways
-@:crackInTwoUnorderedPiecesSideways(@1,@2,LE,LE,GT,@3,@4)@
-@:crackInTwoUnorderedPiecesSideways(@1,@2,RE,LT,GE,@3,@4)@
-@:crackInThreeUnorderedPiecesSideways(@1,@2,LO,RE,LE,GT,LE,GT,@3,@4)@
-@:crackInThreeUnorderedPiecesSideways(@1,@2,LE,RE,LT,GE,LE,GT,@3,@4)@
-@:crackInThreeUnorderedPiecesSideways(@1,@2,LO,RO,LE,GT,LT,GE,@3,@4)@
-@:crackInThreeUnorderedPiecesSideways(@1,@2,LE,RO,LT,GE,LT,GE,@3,@4)@
-@
-
-@c
-@:operationsSideways(int,int,simple,)@
-@:operationsSideways(int,sht,simple,)@
-@:operationsSideways(int,chr,simple,)@
-@:operationsSideways(int,lng,simple,)@
-@:operationsSideways(int,flt,simple,)@
-@:operationsSideways(int,dbl,simple,)@
-@:operationsSideways(int,date,simple,)@  /* TODO: add the rest of the type combinations once code is stable */
-@:operationsSideways(date,int,atom,TYPE_)@
-@:operationsSideways(date,sht,atom,TYPE_)@
-@:operationsSideways(date,chr,atom,TYPE_)@
-@:operationsSideways(date,lng,atom,TYPE_)@
-@:operationsSideways(date,flt,atom,TYPE_)@
-@:operationsSideways(date,dbl,atom,TYPE_)@
-@:operationsSideways(date,date,atom,TYPE_)@  /* TODO: add the rest of the type combinations once code is stable */
-
-int
+@= existsCrackerIndexSideways
+static int
 existsCrackerIndexSideways(int bid, int pbid){
 	int i;
 	
@@ -272,96 +798,11 @@ existsCrackerIndexSideways(int bid, int pbid){
 			return i;
 	return -1;
 }
+@
 
-crackers_export str CRKsizePendingInsertions(int *k, int *bid, int *pbid);
-str
-CRKsizePendingInsertions(int *k, int *bid, int *pbid){
-        BAT *u;
-	int i;
-	(void)k;
-
-        i=existsCrackerIndexSideways(*bid,*pbid);
-        if (i == -1)
-                fprintf(stderr, " the crack index does not exist \n");
-        if (CrackerIndex[i].iid > 0){
-                u = BATdescriptor(CrackerIndex[i].iid);
-                printf("\n pending insertions size: "SZFMT" \n",BATcount(u));
-                BBPunfix(u->batCacheid);
-        }
-        else
-                printf("\n pending insertions size: 0 \n");
-
-	 return MAL_SUCCEED;
-}
-
-
-crackers_export str CRKextendCrackerMap(int *k, int *bid, int *pbid, lng positions);
-str
-CRKextendCrackerMap(int *k, int *bid, int *pbid, lng positions){
-        BAT *b;
-        int position = existsCrackerIndexSideways(*bid,*pbid);
-        (void) k;
-
-        if (position == -1)
-                throw(MAL, "crackers.CRKextendCrackermap", "Cannot find cracker index");
-        if ((b = BATdescriptor(CrackerIndex[position].cbid)) == NULL)
-                throw(MAL, "crackers.CRKextendCrackerMap", "Cannot access cracker Map");
-
-        if (BATextend(b, positions) == NULL)
-                throw(MAL, "crackers.CRKextendCrackerMap", "Failed to extend the cracker Map");
-
-        BBPunfix(b->batCacheid);
-
-        return MAL_SUCCEED;
-}
-
-crackers_export str CRKprintPendingInsertions(int *k, int *bid, int  *pbid);
-str
-CRKprintPendingInsertions(int *k, int *bid, int *pbid){
-        int i = existsCrackerIndexSideways(*bid,*pbid);
-	(void) k;
-
-        if (i == -1)
-		 throw(MAL, "crackers.CRKprintPendingInsertions", "Cannot find cracker map");
-
-        if (CrackerIndex[i].iid > 0)
-                BATprint(BATdescriptor(CrackerIndex[i].iid));
-
-	return MAL_SUCCEED;
-}
-
-
-crackers_export str CRKinsert(int *k, int *bid, int *pbid, int *insertions);
-str
-CRKinsert(int *k, int *bid, int *pbid, int *insertions){
-        int position = existsCrackerIndexSideways(*bid,*pbid);
-        (void) k;
-
-        if (position == -1)
-                throw(MAL, "crackers.CRKinsert", "Cannot find cracker map");
-
-        appendInsertions(insertions,position);
-
-        return MAL_SUCCEED;
-}
-
-
-crackers_export str DeleteCrackerMap(int *k, int *bid, int *pbid);
-str
-DeleteCrackerMap(int *k, int *bid, int *pbid){
-	int i;
-	(void)k;
-	for (i = 0; i < maxCrackMap; i++)
-		if (CrackerIndex[i].bid == *bid && CrackerIndex[i].pbid == *pbid){
-			CrackerIndex[i].bid  = -2;
-			CrackerIndex[i].pbid = -2;
-		}
-	return MAL_SUCCEED;
-}
-
-@= NewIndexSidewaysCracking
-int
-newCrackerIndexHistorySideways_@1(int bid, int chid, int hiid){
+@= NewIndexSidewaysCracking_0
+static int
+newCrackerIndexHistorySideways(int bid, int chid, int hiid){
         int i, freemap = -1, units = 1024;
 
         for (i = 0; i < maxCrackMap; i++)
@@ -406,8 +847,10 @@ newCrackerIndexHistorySideways_@1(int bid, int chid, int hiid){
         CrackerIndex[i].mergeDeletions = -1;
         return i;
 }
+@
 
-int
+@= NewIndexSidewaysCracking_2
+static int
 newCrackerIndexSideways_@1(int bid, int cbid, int pbid){
 	int i, freemap = -1, units = 1024;
 	BAT *b;
@@ -458,17 +901,6 @@ newCrackerIndexSideways_@1(int bid, int cbid, int pbid){
 }
 @
 
-@c
-@:NewIndexSidewaysCracking(chr)@
-@:NewIndexSidewaysCracking(sht)@
-@:NewIndexSidewaysCracking(int)@
-@:NewIndexSidewaysCracking(lng)@
-@:NewIndexSidewaysCracking(flt)@
-@:NewIndexSidewaysCracking(dbl)@
-@:NewIndexSidewaysCracking(date)@
-
-/* function "reCreateMap" is used as is in selections cracking */
-
 @= crkTwoRTreeSideways
         /*CRACK in two pieces cl2-ch2 using <incHgh bound*/
         if (*inclusiveHgh == TRUE)
@@ -485,6 +917,7 @@ newCrackerIndexSideways_@1(int bid, int cbid, int pbid){
                 gapH = -1;
                 vh--;
         }
+@
 
 @= crkTwoLTreeSideways
         /*CRACK in two pieces cl1-ch1 using >incLow bound*/
@@ -523,7 +956,7 @@ newCrackerIndexSideways_@1(int bid, int cbid, int pbid){
 @
 
 @= SyncOperation
-str
+static str
 Sync_@1_@2(int m, int h){
 	BAT *h1,*h2,*b, *c;
 	BUN h1head,h1tail,h2head,h2tail;
@@ -674,7 +1107,7 @@ Sync_@1_@2(int m, int h){
 @
 
 @= TapeOperations
-int
+static int
 CreateTape_@1(int bid){
 	BAT *h1,*h2;
 	lng tape_size= 200000;
@@ -690,10 +1123,10 @@ CreateTape_@1(int bid){
 	BBPkeepref(h1->batCacheid);
 	BBPkeepref(h2->batCacheid);
 
-	return newCrackerIndexHistorySideways_@1(bid, h1->batCacheid, h2->batCacheid);				
+	return newCrackerIndexHistorySideways(bid, h1->batCacheid, h2->batCacheid);				
 }
 
-str
+static str
 AddToTape_@1(int h, @1 low, @1 hgh, bit li, bit hi){
 	BAT *h1,*h2;
 	lng size;	
@@ -722,29 +1155,6 @@ AddToTape_@1(int h, @1 low, @1 hgh, bit li, bit hi){
 }
 @
 
-@c
-@:SyncOperation(int,chr,simple,)@
-@:SyncOperation(int,sht,simple,)@
-@:SyncOperation(int,int,simple,)@
-@:SyncOperation(int,lng,simple,)@
-@:SyncOperation(int,flt,simple,)@
-@:SyncOperation(int,dbl,simple,)@
-@:SyncOperation(int,date,simple,)@
-@:SyncOperation(date,chr,atom,TYPE_)@
-@:SyncOperation(date,sht,atom,TYPE_)@
-@:SyncOperation(date,int,atom,TYPE_)@
-@:SyncOperation(date,lng,atom,TYPE_)@
-@:SyncOperation(date,flt,atom,TYPE_)@
-@:SyncOperation(date,dbl,atom,TYPE_)@
-@:SyncOperation(date,date,atom,TYPE_)@
-
-@:TapeOperations(chr)@
-@:TapeOperations(sht)@
-@:TapeOperations(int)@
-@:TapeOperations(lng)@
-@:TapeOperations(flt)@
-@:TapeOperations(dbl)@
-@:TapeOperations(date)@
 
 @= CreateResultSideways
 createView:
@@ -813,7 +1223,7 @@ createView:
 @
 
 @= updatesSideways
-str
+static str
 selectMergeInsertionsPart_@1Sideways( @1 *low, bit *inclusiveLow, @1 *hgh, bit *inclusiveHgh, int position){
 	BAT *u,*b;
 	lng updates, updatesStart, updatesEnd;
@@ -894,14 +1304,6 @@ selectMergeInsertionsPart_@1Sideways( @1 *low, bit *inclusiveLow, @1 *hgh, bit *
 }
 @
 
-@c
-@:updatesSideways(chr,,simple,,chr)@
-@:updatesSideways(sht,,simple,,sht)@
-@:updatesSideways(int,,simple,,int)@
-@:updatesSideways(lng,,simple,,lng)@
-@:updatesSideways(flt,,simple,,flt)@
-@:updatesSideways(dbl,,simple,,dbl)@
-@:updatesSideways(date,,atom,TYPE_,loc)@
 
 @= analyzeTailDisjunction
  
@@ -976,17 +1378,6 @@ createView:
         BBPunfix(b->batCacheid);
         *vid = p->batCacheid;
 }
-@
-
-	for (j = vh+1; j<size; j++){
-                if (@2_@4(low2,pairt,@3@1) && @2_@5(hgh2,pairt,@3@1))
-                        *(bit*)pivott = (bit)TRUE;
-                else
-                        *(bit*)pivott = (bit)FALSE;
-
-                pairt  += bsize;
-                pivott += psize;
-        }
 @
 
 @= CreateDisjunctiveResultSideways
@@ -1084,6 +1475,7 @@ createView:
 
         if (CrackerIndex[m].reCreate == 1){
                 
+                /* function "reCreateMap" is used as is in selections cracking */
                 reCreateMap_@1(m);
                 
                 /* Take the index of the bat */
@@ -1192,7 +1584,7 @@ createView:
 @
 
 @= crackOperationsSideways
-str
+static str
 CRKRangeSideways_@1_@2(int *vid, int *bid, int *pbid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh, bit tail){
 	@:RangeSelectBody(@1,@2,@3,@4)@
 
@@ -1202,7 +1594,7 @@ CRKRangeSideways_@1_@2(int *vid, int *bid, int *pbid, @1 *low, @1 *hgh, bit *inc
         return MAL_SUCCEED;
 }
 
-str
+static str
 CRKdRangeSideways_@1_@2(int *vid, int *bid, int *pbid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh, @2 *low2, @2 *hgh2, bit *inclusiveLow2, bit *inclusiveHgh2){
 	@:RangeSelectBody(@1,@2,@3,@4)@
 
@@ -1213,79 +1605,6 @@ CRKdRangeSideways_@1_@2(int *vid, int *bid, int *pbid, @1 *low, @1 *hgh, bit *in
         return MAL_SUCCEED;
 }
 @
-
-@c
-@:crackOperationsSideways(int,chr,simple,)@
-@:crackOperationsSideways(int,sht,simple,)@
-@:crackOperationsSideways(int,int,simple,)@
-@:crackOperationsSideways(int,lng,simple,)@
-@:crackOperationsSideways(int,flt,simple,)@
-@:crackOperationsSideways(int,dbl,simple,)@
-@:crackOperationsSideways(int,date,simple,)@
-@:crackOperationsSideways(date,chr,atom,TYPE_)@
-@:crackOperationsSideways(date,sht,atom,TYPE_)@
-@:crackOperationsSideways(date,int,atom,TYPE_)@
-@:crackOperationsSideways(date,lng,atom,TYPE_)@
-@:crackOperationsSideways(date,flt,atom,TYPE_)@
-@:crackOperationsSideways(date,dbl,atom,TYPE_)@
-@:crackOperationsSideways(date,date,atom,TYPE_)@
-
-@= SelectFunctionsSideways
-crackers_export str CRKhselectBoundsSideways_@1_@2(int *vid, int *bid, int *pbid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh);
-str
-CRKhselectBoundsSideways_@1_@2(int *vid, int *bid, int *pbid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh){
-	if (@3_EQ(low,ATOMnilptr(TYPE_@1),@4@1))
-       		throw(MAL, "crackers.CRKhselectBoundsSideways_@1_@2", "case not handled");
-	else if (@3_EQ(hgh,ATOMnilptr(TYPE_@1),@4@1))
-        	throw(MAL, "crackers.CRKhselectBoundsSideways_@1_@2", "case not handled");
-	else
-		return CRKRangeSideways_@1_@2(vid, bid, pbid, low, hgh, inclusiveLow, inclusiveHgh, FALSE);
-
-        throw(MAL, "crackers.CRKhselectBoundsSideways_@1_@2", "case not handled");
-}
-
-crackers_export str CRKtselectBoundsSideways_@1_@2(int *vid, int *bid, int *pbid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh);
-str
-CRKtselectBoundsSideways_@1_@2(int *vid, int *bid, int *pbid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh){
-	if (@3_EQ(low,ATOMnilptr(TYPE_@1),@4@1))
-       		throw(MAL, "crackers.CRKtselectBoundsSideways_@1_@2", "case not handled");
-	else if (@3_EQ(hgh,ATOMnilptr(TYPE_@1),@4@1))
-        	throw(MAL, "crackers.CRKtselectBoundsSideways_@1_@2", "case not handled");
-	else
-		return CRKRangeSideways_@1_@2(vid, bid, pbid, low, hgh, inclusiveLow, inclusiveHgh, TRUE);
-
-        throw(MAL, "crackers.CRKtselectBoundsSideways_@1_@2", "case not handled");
-}
-
-crackers_export str CRKdselectBoundsSideways_@1_@2(int *vid, int *bid, int *pbid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh, @2 *low2, @2 *hgh2, bit *inclusiveLow2, bit *inclusiveHgh2);
-str
-CRKdselectBoundsSideways_@1_@2(int *vid, int *bid, int *pbid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh, @2 *low2, @2 *hgh2, bit *inclusiveLow2, bit *inclusiveHgh2){
-	if (@3_EQ(low,ATOMnilptr(TYPE_@1),@4@1))
-       		throw(MAL, "crackers.CRKdselectBoundsSideways_@1_@2", "case not handled");
-	else if (@3_EQ(hgh,ATOMnilptr(TYPE_@1),@4@1))
-        	throw(MAL, "crackers.CRKdselectBoundsSideways_@1_@2", "case not handled");
-	else
-		return CRKdRangeSideways_@1_@2(vid, bid, pbid, low, hgh, inclusiveLow, inclusiveHgh, low2, hgh2, inclusiveLow2, inclusiveHgh2);
-
-        throw(MAL, "crackers.CRKdselectBoundsSideways_@1_@2", "case not handled");
-}
-@
-
-@c
-@:SelectFunctionsSideways(int,chr,simple,)@
-@:SelectFunctionsSideways(int,sht,simple,)@
-@:SelectFunctionsSideways(int,int,simple,)@
-@:SelectFunctionsSideways(int,lng,simple,)@
-@:SelectFunctionsSideways(int,flt,simple,)@
-@:SelectFunctionsSideways(int,dbl,simple,)@
-@:SelectFunctionsSideways(int,date,simple,)@
-@:SelectFunctionsSideways(date,chr,atom,TYPE_)@
-@:SelectFunctionsSideways(date,sht,atom,TYPE_)@
-@:SelectFunctionsSideways(date,int,atom,TYPE_)@
-@:SelectFunctionsSideways(date,lng,atom,TYPE_)@
-@:SelectFunctionsSideways(date,flt,atom,TYPE_)@
-@:SelectFunctionsSideways(date,dbl,atom,TYPE_)@
-@:SelectFunctionsSideways(date,date,atom,TYPE_)@
 
 @= JoinSelectBodySideways
         BAT *b, *p;     
@@ -1438,486 +1757,36 @@ CRKdselectBoundsSideways_@1_@2(int *vid, int *bid, int *pbid, @1 *low, @1 *hgh, 
 @
 
 @= JoinSelectRSidewaysWithoutPivot
-str
+static str
 JoinSelectRangeSideways_@3_@4_@2(int *res, int *cpair, @2 *low, @2 *hgh){
         @:JoinSelectBodySideways(,@2,@7_@5(pairt,low,@8@2) && @7_@6(pairt,hgh,@8@2))@
 }
+@
 
 @= JoinSelectRSideways
-str
+static str
 JoinSelectRangeSideways_P_@3_@4_@1_@2(int *res, int *bid, int *pbid, int *pivot, @2 *low, @2 *hgh, @1 *low1, @1 *hgh1, bit *inclusiveLow1, bit *inclusiveHgh1){
         @:JoinSelectBodySidewaysWithPivot(@1,@2,@7_@5(pairt,low,@8@2) && @7_@6(pairt,hgh,@8@2))@
 }
 
-str
+static str
 dJoinSelectRangeSideways_P_@3_@4_@1_@2(int *res, int *bid, int *pbid, int *pivot, @2 *low, @2 *hgh){
         @:dJoinSelectBodySidewaysWithPivot(@1,@2,@7_@5(pairt,low,@8@2) && @7_@6(pairt,hgh,@8@2))@
 }
 @
 
 @= JoinSelectSidewaysWithoutPivot
-str
+static str
 JoinSelectSingleSideways_@3_@2(int *res, int *cpair, @2 *mid){
         @:JoinSelectBodySideways(,@2,@5_@4(pairt,mid,@6@2))@
 }
+@
 
 @= JoinSelectSideways
-str
+static str
 JoinSelectSingleSideways_P_@3_@1_@2(int *res, int *bid, int *pbid, int *pivot, @2 *mid, @1 *low1, @1 *hgh1, bit *inclusiveLow1, bit *inclusiveHgh1){
         @:JoinSelectBodySidewaysWithPivot(@1,@2,@5_@4(pairt,mid,@6@2))@
 }
 @
 
-@= JoinSelectOperationsSideways
-@:JoinSelectRSideways(@1,@2,LO,RE,GT,LE,@3,@4)@
-@:JoinSelectRSideways(@1,@2,LE,RE,GE,LE,@3,@4)@
-@:JoinSelectRSideways(@1,@2,LO,RO,GT,LT,@3,@4)@
-@:JoinSelectRSideways(@1,@2,LE,RO,GE,LT,@3,@4)@
-@:JoinSelectSideways(@1,@2,RO,LT,@3,@4)@
-@:JoinSelectSideways(@1,@2,RE,LE,@3,@4)@
-@:JoinSelectSideways(@1,@2,LO,GT,@3,@4)@
-@:JoinSelectSideways(@1,@2,LE,GE,@3,@4)@
-@
-
-@= JoinSelectOperationsSidewaysWithoutPivot
-@:JoinSelectRSidewaysWithoutPivot(,@2,LO,RE,GT,LE,@3,@4)@
-@:JoinSelectRSidewaysWithoutPivot(,@2,LE,RE,GE,LE,@3,@4)@
-@:JoinSelectRSidewaysWithoutPivot(,@2,LO,RO,GT,LT,@3,@4)@
-@:JoinSelectRSidewaysWithoutPivot(,@2,LE,RO,GE,LT,@3,@4)@
-@:JoinSelectSidewaysWithoutPivot(,@2,RO,LT,@3,@4)@
-@:JoinSelectSidewaysWithoutPivot(,@2,RE,LE,@3,@4)@
-@:JoinSelectSidewaysWithoutPivot(,@2,LO,GT,@3,@4)@
-@:JoinSelectSidewaysWithoutPivot(,@2,LE,GE,@3,@4)@
-@
-
-@= JoinSelectFunctionsSidewaysWithoutPivot
-crackers_export str CRKjoinSelectSideways_@2(int *res, int *cpair, @2 *low, @2 *hgh, bit *inclusiveLow, bit *inclusiveHgh);
-str                     
-CRKjoinSelectSideways_@2(int *res, int *cpair, @2 *low, @2 *hgh, bit *inclusiveLow, bit *inclusiveHgh){               
-        if (@3_EQ(low,ATOMnilptr(TYPE_@2),@4@2)){
-		if (*inclusiveHgh==TRUE)
-                	return JoinSelectSingleSideways_RE_@2(res, cpair, hgh);
-		else
-                	return JoinSelectSingleSideways_RO_@2(res, cpair, hgh);
-	}
-        else if (@3_EQ(hgh,ATOMnilptr(TYPE_@2),@4@2))
-		if (*inclusiveLow==TRUE)
-                	return JoinSelectSingleSideways_LE_@2(res, cpair, low);
-		else
-                	return JoinSelectSingleSideways_LO_@2(res, cpair, low);
-        else{
-		if ((*inclusiveLow==TRUE) && (*inclusiveHgh==TRUE))
-                	return JoinSelectRangeSideways_LE_RE_@2(res, cpair, low, hgh);
-		else
-		if ((*inclusiveLow==TRUE) && (*inclusiveHgh==FALSE))
-                	return JoinSelectRangeSideways_LE_RO_@2(res, cpair, low, hgh);
-		else
-		if ((*inclusiveLow==FALSE) && (*inclusiveHgh==FALSE))
-                	return JoinSelectRangeSideways_LO_RO_@2(res, cpair, low, hgh);
-		else
-		if ((*inclusiveLow==FALSE) && (*inclusiveHgh==TRUE))
-                	return JoinSelectRangeSideways_LO_RE_@2(res, cpair, low, hgh);
-	}
-        throw(MAL, "crackers.crackJoinSelectSideways", "case not handled");
-}
-
-@= JoinSelectFunctionsSideways
-crackers_export str CRKjoinSelectSideways_P_@1_@2(int *res, int *bid, int *pbid, int *pivot, @1 *low1, @1 *hgh1, bit *inclusiveLow1, bit *inclusiveHgh1, @2 *low, @2 *hgh, bit *inclusiveLow, bit *inclusiveHgh);
-str                     
-CRKjoinSelectSideways_P_@1_@2(int *res, int *bid, int *pbid, int *pivot, @1 *low1, @1 *hgh1, bit *inclusiveLow1, bit *inclusiveHgh1, @2 *low, @2 *hgh, bit *inclusiveLow, bit *inclusiveHgh){               
-        if (@3_EQ(low,ATOMnilptr(TYPE_@2),@4@2)){
-		if (*inclusiveHgh==TRUE)
-                	return JoinSelectSingleSideways_P_RE_@1_@2(res, bid, pbid, pivot, hgh, low1, hgh1, inclusiveLow1, inclusiveHgh1);
-		else
-                	return JoinSelectSingleSideways_P_RO_@1_@2(res, bid, pbid, pivot, hgh, low1, hgh1, inclusiveLow1, inclusiveHgh1);
-	}
-        else if (@3_EQ(hgh,ATOMnilptr(TYPE_@2),@4@2))
-		if (*inclusiveLow==TRUE)
-                	return JoinSelectSingleSideways_P_LE_@1_@2(res, bid, pbid, pivot, low, low1, hgh1, inclusiveLow1, inclusiveHgh1);
-		else
-                	return JoinSelectSingleSideways_P_LO_@1_@2(res, bid, pbid, pivot, low, low1, hgh1, inclusiveLow1, inclusiveHgh1);
-        else{
-		if ((*inclusiveLow==TRUE) && (*inclusiveHgh==TRUE))
-                	return JoinSelectRangeSideways_P_LE_RE_@1_@2(res, bid, pbid, pivot, low, hgh, low1, hgh1, inclusiveLow1, inclusiveHgh1);
-		else
-		if ((*inclusiveLow==TRUE) && (*inclusiveHgh==FALSE))
-                	return JoinSelectRangeSideways_P_LE_RO_@1_@2(res, bid, pbid, pivot, low, hgh, low1, hgh1, inclusiveLow1, inclusiveHgh1);
-		else
-		if ((*inclusiveLow==FALSE) && (*inclusiveHgh==FALSE))
-                	return JoinSelectRangeSideways_P_LO_RO_@1_@2(res, bid, pbid, pivot, low, hgh, low1, hgh1, inclusiveLow1, inclusiveHgh1);
-		else
-		if ((*inclusiveLow==FALSE) && (*inclusiveHgh==TRUE))
-                	return JoinSelectRangeSideways_P_LO_RE_@1_@2(res, bid, pbid, pivot, low, hgh, low1, hgh1, inclusiveLow1, inclusiveHgh1);
-	}
-        throw(MAL, "crackers.crackJoinSelectSideways", "case not handled");
-}
-
-crackers_export str CRKdjoinSelectSideways_P_@1_@2(int *res, int *bid, int *pbid, int *pivot, @2 *low, @2 *hgh, bit *inclusiveLow, bit *inclusiveHgh);
-str                     
-CRKdjoinSelectSideways_P_@1_@2(int *res, int *bid, int *pbid, int *pivot, @2 *low, @2 *hgh, bit *inclusiveLow, bit *inclusiveHgh){               
-        if (@3_EQ(low,ATOMnilptr(TYPE_@2),@4@2)){
-		if (*inclusiveHgh==TRUE)
-        		throw(MAL, "crackers.crackJoinSelectSideways", "case not handled");
-		else
-        		throw(MAL, "crackers.crackJoinSelectSideways", "case not handled");
-	}
-        else if (@3_EQ(hgh,ATOMnilptr(TYPE_@2),@4@2))
-		if (*inclusiveLow==TRUE)
-        		throw(MAL, "crackers.crackJoinSelectSideways", "case not handled");
-		else
-        		throw(MAL, "crackers.crackJoinSelectSideways", "case not handled");
-        else{
-		if ((*inclusiveLow==TRUE) && (*inclusiveHgh==TRUE))
-                	return dJoinSelectRangeSideways_P_LE_RE_@1_@2(res, bid, pbid, pivot, low, hgh);
-		else
-		if ((*inclusiveLow==TRUE) && (*inclusiveHgh==FALSE))
-                	return dJoinSelectRangeSideways_P_LE_RO_@1_@2(res, bid, pbid, pivot, low, hgh);
-		else
-		if ((*inclusiveLow==FALSE) && (*inclusiveHgh==FALSE))
-                	return dJoinSelectRangeSideways_P_LO_RO_@1_@2(res, bid, pbid, pivot, low, hgh);
-		else
-		if ((*inclusiveLow==FALSE) && (*inclusiveHgh==TRUE))
-                	return dJoinSelectRangeSideways_P_LO_RE_@1_@2(res, bid, pbid, pivot, low, hgh);
-	}
-        throw(MAL, "crackers.crackJoinSelectSideways", "case not handled");
-}
-@
-
-@c
-@:JoinSelectOperationsSidewaysWithoutPivot(,chr,simple,)@
-@:JoinSelectOperationsSidewaysWithoutPivot(,sht,simple,)@
-@:JoinSelectOperationsSidewaysWithoutPivot(,int,simple,)@
-@:JoinSelectOperationsSidewaysWithoutPivot(,lng,simple,)@
-@:JoinSelectOperationsSidewaysWithoutPivot(,flt,simple,)@
-@:JoinSelectOperationsSidewaysWithoutPivot(,dbl,simple,)@
-@:JoinSelectOperationsSidewaysWithoutPivot(,date,atom,TYPE_)@
-
-@:JoinSelectOperationsSideways(int,chr,simple,)@
-@:JoinSelectOperationsSideways(int,sht,simple,)@
-@:JoinSelectOperationsSideways(int,int,simple,)@
-@:JoinSelectOperationsSideways(int,lng,simple,)@
-@:JoinSelectOperationsSideways(int,flt,simple,)@
-@:JoinSelectOperationsSideways(int,dbl,simple,)@
-@:JoinSelectOperationsSideways(int,date,atom,TYPE_)@
-@:JoinSelectOperationsSideways(date,chr,atom,TYPE_)@
-@:JoinSelectOperationsSideways(date,sht,atom,TYPE_)@
-@:JoinSelectOperationsSideways(date,int,atom,TYPE_)@
-@:JoinSelectOperationsSideways(date,lng,atom,TYPE_)@
-@:JoinSelectOperationsSideways(date,flt,atom,TYPE_)@
-@:JoinSelectOperationsSideways(date,dbl,atom,TYPE_)@
-@:JoinSelectOperationsSideways(date,date,atom,TYPE_)@
-
-@:JoinSelectFunctionsSidewaysWithoutPivot(,chr,simple,)@
-@:JoinSelectFunctionsSidewaysWithoutPivot(,sht,simple,)@
-@:JoinSelectFunctionsSidewaysWithoutPivot(,int,simple,)@
-@:JoinSelectFunctionsSidewaysWithoutPivot(,lng,simple,)@
-@:JoinSelectFunctionsSidewaysWithoutPivot(,flt,simple,)@
-@:JoinSelectFunctionsSidewaysWithoutPivot(,dbl,simple,)@
-@:JoinSelectFunctionsSidewaysWithoutPivot(,date,atom,TYPE_)@
-
-@:JoinSelectFunctionsSideways(int,chr,simple,)@
-@:JoinSelectFunctionsSideways(int,sht,simple,)@
-@:JoinSelectFunctionsSideways(int,int,simple,)@
-@:JoinSelectFunctionsSideways(int,lng,simple,)@
-@:JoinSelectFunctionsSideways(int,flt,simple,)@
-@:JoinSelectFunctionsSideways(int,dbl,simple,)@
-@:JoinSelectFunctionsSideways(int,date,atom,TYPE_)@
-@:JoinSelectFunctionsSideways(date,chr,atom,TYPE_)@
-@:JoinSelectFunctionsSideways(date,sht,atom,TYPE_)@
-@:JoinSelectFunctionsSideways(date,int,atom,TYPE_)@
-@:JoinSelectFunctionsSideways(date,lng,atom,TYPE_)@
-@:JoinSelectFunctionsSideways(date,flt,atom,TYPE_)@
-@:JoinSelectFunctionsSideways(date,dbl,atom,TYPE_)@
-@:JoinSelectFunctionsSideways(date,date,atom,TYPE_)@
-
-@= Project
-crackers_export str CRKProjectCrack_@1(int *res, int *bid, int *pbid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh);
-str
-CRKProjectCrack_@1_@2(int *res, int *bid, int *pbid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh){
-        BAT *b, *c, *view;
-	int m;
-	lng cl1,cl2,ch1,ch2;
-
-	m = existsCrackerIndexSideways(*bid, *pbid);
-	if (m==-1){	
-		@:CreateCrackerMap(@1,@2)@		
-		BBPincref(b->batCacheid,TRUE);
-	}	
-
-	selectMergeInsertionsPart_@1Sideways(low, inclusiveLow, hgh, inclusiveHgh, m);
-	Sync_@1_@2(m,existsCrackerIndexSideways(*bid, -1));
-
-        if ((b = BATdescriptor(CrackerIndex[m].cbid)) == NULL) 
-                throw(MAL, "crackers.crackJoinSelectSideways", "Cannot access descriptor");
-
-        if ((c = BATdescriptor(CrackerIndex[m].cid)) == NULL)
-                throw(MAL, "crackers.crackRange", "Cannot access crack index");
-                
-        GetLow_@1(*low, *inclusiveLow, CrackerIndex[m].Tree, c, BUNhloc(c, BUNfirst(c)), BUNsize(c), &cl1, &ch1, 0, BUNindex(b, BUNlast(b)-BUNsize(b)));
-                
-        GetHgh_@1(*hgh, *inclusiveHgh, CrackerIndex[m].Tree, c, BUNhloc(c, BUNfirst(c)), BUNsize(c), &cl2, &ch2, 0, BUNindex(b, BUNlast(b)-BUNsize(b)));
-
-	if (cl1 != 0) cl1++;
-
-        view = BATslice(BATmirror(VIEWhead_(BATmirror(b), BAT_READ)), cl1, ch2+1);
-
-        *res = view->batCacheid;
-        BBPkeepref(*res);
-
-        BBPunfix(b->batCacheid);
-        BBPunfix(c->batCacheid);
-        return MAL_SUCCEED;
-}
-
-crackers_export str CRKProjectH_@1_@2(int *res, int *bid, int *pbid, int *pivot, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh);
-str
-CRKProjectH_@1_@2(int *res, int *bid, int *pbid,int *pivot, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh){
-        BAT *b, *p, *r, *c, *pair;
-        BUN pairh, pivott, rest, reslast;
-        lng size, fsize;
-        int bsize, psize, rsize;
-        lng skip;
-	int m;
-	lng cl1,cl2,ch1,ch2;
-	lng j;
-
-	m = existsCrackerIndexSideways(*bid, *pbid);
-	if (m==-1){	
-		@:CreateCrackerMap(@1,@2)@		
-		BBPincref(b->batCacheid,TRUE);
-	}	
-
-	selectMergeInsertionsPart_@1Sideways(low, inclusiveLow, hgh, inclusiveHgh, m);
-	Sync_@1_@2(m,existsCrackerIndexSideways(*bid, -1));
-
-        if ((pair = BATdescriptor(CrackerIndex[m].cbid)) == NULL) 
-                throw(MAL, "crackers.crackJoinSelectSideways", "Cannot access descriptor");
-
-	if ((c = BATdescriptor(CrackerIndex[m].cid)) == NULL)
-                throw(MAL, "crackers.crackRange", "Cannot access crack index");
-
-        GetLow_@1(*low, *inclusiveLow, CrackerIndex[m].Tree, c, BUNhloc(c, BUNfirst(c)), BUNsize(c), &cl1, &ch1, 0, BUNindex(pair, BUNlast(pair)-BUNsize(pair)));
-
-        GetHgh_@1(*hgh, *inclusiveHgh, CrackerIndex[m].Tree, c, BUNhloc(c, BUNfirst(c)), BUNsize(c), &cl2, &ch2, 0, BUNindex(pair, BUNlast(pair)-BUNsize(pair)));
-
-	if (cl1 != 0) cl1++;
-
-        b = BATslice(pair, cl1, ch2+1);
-	
-        if ((p = BATdescriptor(*pivot)) == NULL) {
-                throw(MAL, "crackers.crackJoinSelectSideways", "Cannot access descriptor");
-        }
-
-        size = BATcount(p);
- 	r = BATnew(TYPE_void,b->htype,size);
-
-        pairh  = BUNhloc(b, BUNfirst(b));
-        pivott = BUNtloc(p, BUNfirst(p));
-        rest   = BUNtloc(r, BUNfirst(r));
-        bsize = BUNsize(b);
-        psize = BUNsize(p);
-        rsize = BUNsize(r);
-        skip = 0;
-	fsize = 0;
-        for (j = 0; j<size; j++){
-                if (*(bit*)pivott == TRUE){
-                        pairh += skip*bsize;
-			*(@1*)rest = *(@1*)pairh; 
-			rest += rsize;
-                        skip = 0;
-			fsize++;
-                }
-                pivott += psize;
-                skip++;
-        }
-
-        reslast = BUNfirst(r) + rsize*fsize;
-        r->batBuns->free =  reslast - r->batBuns->base;
-        BATsetcount(r, fsize);
-
-	r->hsorted = FALSE;
-        r->tsorted = FALSE;
-        r->hdense = FALSE;
-        r->tdense = FALSE;
-
-        BBPkeepref(r->batCacheid);
-        BBPunfix(p->batCacheid);
-        BBPunfix(b->batCacheid);
-        BBPunfix(pair->batCacheid);
-        *res = r->batCacheid;
-
-        return MAL_SUCCEED;
-}
-
-crackers_export str CRKProject_@1_@2(int *res, int *bid, int *pbid, int *pivot, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh);
-str
-CRKProject_@1_@2(int *res, int *bid, int *pbid,int *pivot, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh){
-        BAT *b, *p, *r, *c, *pair;
-        BUN pairt, pivott, rest, reslast;
-        lng size, fsize;
-        int bsize, psize, rsize;
-        lng skip;
-	int m;
-	lng cl1,cl2,ch1,ch2;
-	lng j;
-
-	/* If the necessary map does not exits, then create it */	
-	m = existsCrackerIndexSideways(*bid, *pbid);
-	if (m==-1){	
-		@:CreateCrackerMap(@1,@2)@		
-		BBPincref(b->batCacheid,TRUE);
-	}	
-
-	/* Align the map based on the cracker tape of this set */
-	selectMergeInsertionsPart_@1Sideways(low, inclusiveLow, hgh, inclusiveHgh, m);
-	Sync_@1_@2(m,existsCrackerIndexSideways(*bid, -1));
-
-	/* Get the map */
-        if ((pair = BATdescriptor(CrackerIndex[m].cbid)) == NULL) 
-                throw(MAL, "crackers.CRKProject", "Cannot access descriptor");
-
-	if ((c = BATdescriptor(CrackerIndex[m].cid)) == NULL)
-                throw(MAL, "crackers.CRKProject", "Cannot access crack index");
-
-	/* Get the result area on the map
-           Note. We know that this search leads to an exact match sice a project call always 
-           follows a select call with the same restriction in the same query. 
-           Then this restriction is on the cracker tape. */
-        GetLow_@1(*low, *inclusiveLow, CrackerIndex[m].Tree, c, BUNhloc(c, BUNfirst(c)), BUNsize(c), &cl1, &ch1, 0, BUNindex(pair, BUNlast(pair)-BUNsize(pair)));
-
-        GetHgh_@1(*hgh, *inclusiveHgh, CrackerIndex[m].Tree, c, BUNhloc(c, BUNfirst(c)), BUNsize(c), &cl2, &ch2, 0, BUNindex(pair, BUNlast(pair)-BUNsize(pair)));
-
-	if (cl1 != 0) cl1++;
-
-        b = BATslice(pair, cl1, ch2+1);
-	
-        if ((p = BATdescriptor(*pivot)) == NULL) 
-                throw(MAL, "crackers.CRKProject", "Cannot access descriptor");
-
-        size = BATcount(p);
- 	r = BATnew(TYPE_void,b->ttype,size);
-
-        pairt  = BUNtloc(b, BUNfirst(b));
-        pivott = BUNtloc(p, BUNfirst(p));
-        rest   = BUNtloc(r, BUNfirst(r));
-        bsize = BUNsize(b);
-        psize = BUNsize(p);
-        rsize = BUNsize(r);
-        skip = 0;
-	fsize = 0;
-        for (j = 0; j<size; j++){
-                if (*(bit*)pivott == TRUE){
-                        pairt += skip*bsize;
-			*(@2*)rest = *(@2*)pairt; 
-			rest += rsize;
-                        skip = 0;
-			fsize++;
-                }
-                pivott += psize;
-                skip++;
-        }
-
-        reslast = BUNfirst(r) + rsize*fsize;
-        r->batBuns->free =  reslast - r->batBuns->base;
-        BATsetcount(r, fsize);
-
-	r->hsorted = FALSE;
-        r->tsorted = FALSE;
-        r->hdense = FALSE;
-        r->tdense = FALSE;
-
-        *res = r->batCacheid;
-        BBPkeepref(r->batCacheid);
-        BBPunfix(p->batCacheid);
-        BBPunfix(b->batCacheid);
-        BBPunfix(pair->batCacheid);
-
-        return MAL_SUCCEED;
-}
-
-crackers_export str CRKdProject_@1_@2(int *res, int *bid, int *pbid, int *pivot);
-str
-CRKdProject_@1_@2(int *res, int *bid, int *pbid,int *pivot){
-        BAT *b, *p, *r;
-        BUN pairt, pivott, rest, reslast;
-        lng size, fsize;
-        int bsize, psize, rsize;
-        lng skip;
-	int m;
-	lng j;
-
-	/* If the necessary map does not exits, then create it */	
-	m = existsCrackerIndexSideways(*bid, *pbid);
-	if (m==-1){	
-		@:CreateCrackerMap(@1,@2)@		
-		BBPincref(b->batCacheid,TRUE);
-	}	
-
-	/* Align the map based on the cracker tape of this set */
-	Sync_@1_@2(m,existsCrackerIndexSideways(*bid, -1));
-
-	/* Get the map */
-        if ((b = BATdescriptor(CrackerIndex[m].cbid)) == NULL) 
-                throw(MAL, "crackers.CRKProject", "Cannot access descriptor");
-	
-        if ((p = BATdescriptor(*pivot)) == NULL) 
-                throw(MAL, "crackers.CRKProject", "Cannot access descriptor");
-
-        size = BATcount(p);
- 	r = BATnew(TYPE_void,b->ttype,size);
-
-        pairt  = BUNtloc(b, BUNfirst(b));
-        pivott = BUNtloc(p, BUNfirst(p));
-        rest   = BUNtloc(r, BUNfirst(r));
-        bsize = BUNsize(b);
-        psize = BUNsize(p);
-        rsize = BUNsize(r);
-        skip = 0;
-	fsize = 0;
-        for (j = 0; j<size; j++){
-                if (*(bit*)pivott == TRUE){
-                        pairt += skip*bsize;
-			*(@2*)rest = *(@2*)pairt; 
-			rest += rsize;
-                        skip = 0;
-			fsize++;
-                }
-                pivott += psize;
-                skip++;
-        }
-
-        reslast = BUNfirst(r) + rsize*fsize;
-        r->batBuns->free =  reslast - r->batBuns->base;
-        BATsetcount(r, fsize);
-
-	r->hsorted = FALSE;
-        r->tsorted = FALSE;
-        r->hdense = FALSE;
-        r->tdense = FALSE;
-
-        *res = r->batCacheid;
-        BBPkeepref(r->batCacheid);
-        BBPunfix(p->batCacheid);
-        BBPunfix(b->batCacheid);
-
-        return MAL_SUCCEED;
-}
-@
-
-@c
-@:Project(int,chr)@
-@:Project(int,sht)@
-@:Project(int,int)@
-@:Project(int,lng)@
-@:Project(int,flt)@
-@:Project(int,dbl)@
-@:Project(int,date)@
-@:Project(date,chr,atom,TYPE_)@
-@:Project(date,sht,atom,TYPE_)@
-@:Project(date,int,atom,TYPE_)@
-@:Project(date,lng,atom,TYPE_)@
-@:Project(date,flt,atom,TYPE_)@
-@:Project(date,dbl,atom,TYPE_)@
-@:Project(date,date,atom,TYPE_)@
-
-/* END -------------------------------------Sideways cracking-----------------------------------------------------------------*/
+@}

@@ -1,4 +1,105 @@
-/* BEGIN -----------------------AVL-tree implementation for the cracker index --------------------------------------*/
+@' The contents of this file are subject to the MonetDB Public License
+@' Version 1.1 (the "License"); you may not use this file except in
+@' compliance with the License. You may obtain a copy of the License at
+@' http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+@'
+@' Software distributed under the License is distributed on an "AS IS"
+@' basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+@' License for the specific language governing rights and limitations
+@' under the License.
+@'
+@' The Original Code is the MonetDB Database System.
+@'
+@' The Initial Developer of the Original Code is CWI.
+@' Portions created by CWI are Copyright (C) 1997-2007 CWI.
+@' All Rights Reserved.
+
+@f crackers_AVL_tree
+@a Martin Kersten, Stratos Idreos, Stefan Manegold
+@d March 2006 - July 2007
+@* AVL Tree
+
+AVL-tree implementation for the cracker index
+
+
+@+ Interface
+ 
+
+@- Type expansion
+
+@= TypeSwitch
+@:@1(chr,simple,)@
+@:@1(sht,simple,)@
+@:@1(int,simple,)@
+@:@1(lng,simple,)@
+@:@1(flt,simple,)@
+@:@1(dbl,simple,)@
+@:@1(date,atom,TYPE_)@
+@
+
+
+@- Header file
+
+@h
+#ifndef _CRACKERS_AVL_TREE_H_
+#define _CRACKERS_AVL_TREE_H_
+
+#ifdef LIBCRACKERS
+/* Signatures shared within the crackers module/library */
+@:AVLtreeSharedFunctions_decl_0@
+@:TypeSwitch(AVLtreeSharedFunctions_decl_1)@
+#endif
+
+#endif /* _CRACKERS_AVL_TREE_H */
+@
+
+
+@- Signatures shared within the crackers module/library
+
+@= AVLtreeSharedFunctions_decl_0
+int Height(struct Node * x);
+struct Node * SingleRotateLeft(int m, struct Node * node);
+struct Node * SingleRotateRight(int m, struct Node * node);
+struct Node * DoubleRotateLeft(int m, struct Node * node);
+struct Node * DoubleRotateRight(int m, struct Node * node);
+struct Node * findPreviousPieceWalkingBack(struct Node * node);
+struct Node * findNextPiece(struct Node * node);
+void FreeAVLTree(struct Node * current);
+void printAVLTree(struct Node * current, BAT *b, BUN base, int xx);
+@
+
+@= AVLtreeSharedFunctions_decl_1
+bit GetLow_@1(@1  x, bit inclusive, struct Node * current, BAT *b, BUN base, int xx, lng *p1, lng *p2, lng previous, lng next);
+bit GetHgh_@1(@1  x, bit inclusive, struct Node * current, BAT *b, BUN base, int xx, lng *p1, lng *p2, lng previous, lng next);
+struct Node * InsertTree_@1(int m, int indexPosition, @1 value, bit inclusive, lng crackPosition, struct Node * current, BAT * b, BUN base, int xx);
+struct Node * findNodeH_@1(@1  x, bit inclusive, struct Node * current, BAT *b, BUN base, int xx, struct Node * next);
+struct Node * findNodeL_@1(@1  x, bit inclusive, struct Node * current, BAT *b, BUN base, int xx, struct Node * prev);
+void PartiallyLazyFreeAVLTree_@1(struct Node * current, @1 value, BAT *b, BUN base, int xx);
+@
+
+
+@{
+@+ Implementation
+
+
+@- C file
+
+@c
+#include "mal_config.h"
+#include "crackers.h"
+
+/* Local support functions and macros */
+@:AVLtreeLocalFunctions@
+
+/* Functions shared within the crackers module/library */
+@:AVLtreeSharedFunctions_impl_0@
+@:TypeSwitch(AVLtreeSharedFunctions_impl_1)@
+@
+
+
+@-Functions shared within the crackers module/library
+
+@= AVLtreeSharedFunctions_impl_0
 int
 Height(struct Node * x){
         if( x == NULL )
@@ -99,114 +200,6 @@ DoubleRotateRight(int m, struct Node * node){
             return SingleRotateRight(m, node);
 }
 
-/* Get the previous node in the tree (in terms of value), the result can be any node, deleted or no */
-struct Node *
-getPreviousNodeAny(struct Node * current){
-	struct Node *res = NULL;
-
-	if (current->left !=NULL){
-		res = current->left;
-		while(res->right != NULL)
-			res = res->right;
-	}
-
-	return res;	
-}
-
-/* Get the next node in the tree (in terms of value), the result can be any node, deleted or no */
-struct Node *
-getNextNodeAny(struct Node * current){
-        struct Node *res = NULL;
-
-        if (current->right !=NULL){
-                res = current->right;
-                while(res->left != NULL)
-                        res = res->left;
-        }
-
-        return res;
-}
-
-struct Node *
-getP(struct Node * current){
-        struct Node *res = NULL;
-
-	if (current->right != NULL)
-		res = getP(current->right);
-	if (res == NULL){
-		if (current->deleted == FALSE)
-			res = current;
-		else
-		if (current->left != NULL)
-			res = getP(current->left);
-	}
-	return res;
-}
-
-struct Node *
-getN(struct Node * current){
-        struct Node *res = NULL;
-
-	if (current->left != NULL)
-		res = getN(current->left);
-	if (res == NULL){
-		if (current->deleted == FALSE)
-			res = current;
-		else
-		if (current->right != NULL)
-			res = getN(current->right);
-	}
-	return res;
-}
-
-/* Get the previous node in the tree (in terms of value), the result can be only a non deleted node */
-struct Node *
-getPreviousNode(struct Node * current, struct Node * previous){
-        struct Node *res = NULL;
-
-	if (current->left != NULL)
-		res= getP(current->left);
-	if (res == NULL)
-		return previous;
-        return res;
-
-}
-
-/* Get the next node in the tree (in terms of value), the result can be only a non deleted node */
-struct Node *
-getNextNode(struct Node * current, struct Node * next){
-        struct Node *res = NULL;
-
-	if (current->right != NULL)
-		res= getN(current->right);
-	if (res == NULL)
-		return next;
-        return res;
-}
-
-lng
-getPreviousPosition(struct Node * current, BAT *b, BUN base, int xx, lng previous){
-        struct Node *res = NULL;
-
-	if (current->left != NULL)
-		res= getP(current->left);
-	if (res == NULL)
-		return previous;
-        return *(lng*)BUNhloc(b,base + ((res->position) * xx));
-
-}
-
-lng
-getNextPosition(struct Node * current, BAT *b, BUN base, int xx, lng next){
-        struct Node *res = NULL;
-
-	if (current->right != NULL)
-		res= getN(current->right);
-	if (res == NULL)
-		return next;
-        return *(lng*)BUNhloc(b,base + ((res->position) * xx));
-}
-
 struct Node *
 findPreviousPieceWalkingBack(struct Node * node){
 	struct Node * res = NULL, *current = node;
@@ -265,7 +258,42 @@ findNextPiece(struct Node * node){
 	return res;
 }
 
-@= TreeOperations
+void
+FreeAVLTree(struct Node * current){
+
+	if (current->left != NULL)
+		FreeAVLTree(current->left);
+
+	if (current->right != NULL)
+		FreeAVLTree(current->right);
+
+	GDKfree(current);
+		
+	return;
+}
+
+void
+printAVLTree(struct Node * current, BAT *b, BUN base, int xx){
+	BUN cur;
+
+	cur = base + ((current->position) * xx);
+	if (current->deleted == FALSE) {
+		printf("\n "LLFMT", %d  Hols:"LLFMT" ", *(lng*)BUNhloc(b, cur), *(int*)BUNtloc(b, cur), current->hols );
+	} else
+		printf("\n DELETED "LLFMT", %d  Hols:"LLFMT" ", *(lng*)BUNhloc(b, cur), *(int*)BUNtloc(b, cur), current->hols );
+	
+	if (current->left != NULL)
+                printAVLTree(current->left, b, base, xx);
+
+        if (current->right != NULL)
+                printAVLTree(current->right, b, base, xx);
+
+        return;
+
+}
+@
+
+@= AVLtreeSharedFunctions_impl_1
 bit
 GetLow_@1(@1  x, bit inclusive, struct Node * current, BAT *b, BUN base, int xx, lng *p1, lng *p2, lng previous, lng next){
 	BUN cur, curValue;
@@ -558,46 +586,117 @@ PartiallyLazyFreeAVLTree_@1(struct Node * current, @1 value, BAT *b, BUN base, i
 }
 @
 
-@c
-@:TreeOperations(chr,simple,)@
-@:TreeOperations(sht,simple,)@
-@:TreeOperations(int,simple,)@
-@:TreeOperations(lng,simple,)@
-@:TreeOperations(flt,simple,)@
-@:TreeOperations(dbl,simple,)@
-@:TreeOperations(date,atom,TYPE_)@
 
-void
-FreeAVLTree(struct Node * current){
+@- Local support functions and macros
 
-	if (current->left != NULL)
-		FreeAVLTree(current->left);
+@= AVLtreeLocalFunctions
+/* Get the previous node in the tree (in terms of value), the result can be any node, deleted or no */
+static struct Node *
+getPreviousNodeAny(struct Node * current){
+	struct Node *res = NULL;
+
+	if (current->left !=NULL){
+		res = current->left;
+		while(res->right != NULL)
+			res = res->right;
+	}
+
+	return res;	
+}
+
+/* Get the next node in the tree (in terms of value), the result can be any node, deleted or no */
+static struct Node *
+getNextNodeAny(struct Node * current){
+        struct Node *res = NULL;
+
+        if (current->right !=NULL){
+                res = current->right;
+                while(res->left != NULL)
+                        res = res->left;
+        }
+
+        return res;
+}
+
+static struct Node *
+getP(struct Node * current){
+        struct Node *res = NULL;
 
 	if (current->right != NULL)
-		FreeAVLTree(current->right);
-
-	GDKfree(current);
-		
-	return;
+		res = getP(current->right);
+	if (res == NULL){
+		if (current->deleted == FALSE)
+			res = current;
+		else
+		if (current->left != NULL)
+			res = getP(current->left);
+	}
+	return res;
 }
 
-void
-printAVLTree(struct Node * current, BAT *b, BUN base, int xx){
-	BUN cur;
+static struct Node *
+getN(struct Node * current){
+        struct Node *res = NULL;
 
-	cur = base + ((current->position) * xx);
-	if (current->deleted == FALSE) {
-		printf("\n "LLFMT", %d  Hols:"LLFMT" ", *(lng*)BUNhloc(b, cur), *(int*)BUNtloc(b, cur), current->hols );
-	} else
-		printf("\n DELETED "LLFMT", %d  Hols:"LLFMT" ", *(lng*)BUNhloc(b, cur), *(int*)BUNtloc(b, cur), current->hols );
-	
 	if (current->left != NULL)
-                printAVLTree(current->left, b, base, xx);
+		res = getN(current->left);
+	if (res == NULL){
+		if (current->deleted == FALSE)
+			res = current;
+		else
+		if (current->right != NULL)
+			res = getN(current->right);
+	}
+	return res;
+}
 
-        if (current->right != NULL)
-                printAVLTree(current->right, b, base, xx);
+/* Get the previous node in the tree (in terms of value), the result can be only a non deleted node */
+static struct Node *
+getPreviousNode(struct Node * current, struct Node * previous){
+        struct Node *res = NULL;
 
-        return;
+	if (current->left != NULL)
+		res= getP(current->left);
+	if (res == NULL)
+		return previous;
+        return res;
 
 }
-/* END -------------------------AVL-tree implementation for the cracker index----------------------------------------------- */
+
+/* Get the next node in the tree (in terms of value), the result can be only a non deleted node */
+static struct Node *
+getNextNode(struct Node * current, struct Node * next){
+        struct Node *res = NULL;
+
+	if (current->right != NULL)
+		res= getN(current->right);
+	if (res == NULL)
+		return next;
+        return res;
+}
+
+static lng
+getPreviousPosition(struct Node * current, BAT *b, BUN base, int xx, lng previous){
+        struct Node *res = NULL;
+
+	if (current->left != NULL)
+		res= getP(current->left);
+	if (res == NULL)
+		return previous;
+        return *(lng*)BUNhloc(b,base + ((res->position) * xx));
+
+}
+
+static lng
+getNextPosition(struct Node * current, BAT *b, BUN base, int xx, lng next){
+        struct Node *res = NULL;
+
+	if (current->right != NULL)
+		res= getN(current->right);
+	if (res == NULL)
+		return next;
+        return *(lng*)BUNhloc(b,base + ((res->position) * xx));
+}
+@
+
+@}

@@ -1,5 +1,139 @@
+@' The contents of this file are subject to the MonetDB Public License
+@' Version 1.1 (the "License"); you may not use this file except in
+@' compliance with the License. You may obtain a copy of the License at
+@' http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+@'
+@' Software distributed under the License is distributed on an "AS IS"
+@' basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+@' License for the specific language governing rights and limitations
+@' under the License.
+@'
+@' The Original Code is the MonetDB Database System.
+@'
+@' The Initial Developer of the Original Code is CWI.
+@' Portions created by CWI are Copyright (C) 1997-2007 CWI.
+@' All Rights Reserved.
 
-/* BEGIN ---------------------------Select Operators----------------------------------------------------------------*/
+@f crackers_select_ops
+@a Martin Kersten, Stratos Idreos, Stefan Manegold
+@d March 2006 - July 2007
+@* Select Operators
+
+
+@+ Interface
+
+
+@- Type expansion
+
+@= TypeSwitch
+@:@1(chr,simple,,chr)@
+@:@1(sht,simple,,sht)@
+@:@1(int,simple,,int)@
+@:@1(lng,simple,,lng)@
+@:@1(flt,simple,,flt)@
+@:@1(dbl,simple,,dbl)@
+@:@1(date,atom,TYPE_,loc)@
+@
+
+
+@- Header file
+
+@h
+#ifndef _CRACKERS_SELECT_H_
+#define _CRACKERS_SELECT_H_
+
+/* Exported signatures */
+@:TypeSwitch(SelectFunctions_decl)@
+
+#endif /* _CRACKERS_SELECT_H */
+@
+
+
+@- Exported signatures
+
+@= SelectFunctions_decl
+crackers_export str CRKselectBounds_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh);
+crackers_export str CRKuselectBounds_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh);
+crackers_export str CRKselectValue_@1(int *vid, int *bid, @1 *value);
+crackers_export str CRKuselectValue_@1(int *vid, int *bid, @1 *value);
+crackers_export str CRKselect_@1(int *vid, int *bid, @1 *low, @1 *hgh);
+crackers_export str CRKuselect_@1(int *vid, int *bid, @1 *low, @1 *hgh);
+@
+
+
+@{
+@+ Implementation
+
+
+@- C file
+
+@c
+#include "mal_config.h"
+#include "crackers.h"
+
+/* Local support functions and macros */
+@:TypeSwitch(crackOperations)@
+
+/* Exported functions */
+@:TypeSwitch(SelectFunctions_impl)@
+@
+
+
+@- Exported functions
+
+@= SelectFunctions_impl
+str
+CRKselectBounds_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh){		
+	if (@2_EQ(low,ATOMnilptr(TYPE_@1),@3@1))
+		return CRKRangeLeftNilTree_@1(vid, bid, hgh, inclusiveHgh, TRUE);
+	else if (@2_EQ(hgh,ATOMnilptr(TYPE_@1),@3@1))
+		return CRKRangeRightNilTree_@1(vid, bid, low, inclusiveLow, TRUE);
+	else
+		return CRKRangeTree_@1(vid, bid, low, hgh, inclusiveLow, inclusiveHgh, TRUE);
+
+       	throw(MAL, "crackers.CRKselectBounds_@1", "case not handled");
+}
+
+str
+CRKuselectBounds_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh){
+	if (@2_EQ(low,ATOMnilptr(TYPE_@1),@3@1))
+		return CRKRangeLeftNilTree_@1(vid, bid, hgh, inclusiveHgh, FALSE);
+	else if (@2_EQ(hgh,ATOMnilptr(TYPE_@1),@3@1))
+		return CRKRangeRightNilTree_@1(vid, bid, low, inclusiveLow, FALSE);
+	else
+		return CRKRangeTree_@1(vid, bid, low, hgh, inclusiveLow, inclusiveHgh, FALSE);
+
+        throw(MAL, "crackers.CRKuselectBounds_@1", "case not handled");
+}
+
+str
+CRKselectValue_@1(int *vid, int *bid, @1 *value){
+	bit inclusive = TRUE;
+	return CRKuselectBounds_@1(vid, bid, value, value, &inclusive, &inclusive);
+}
+
+str
+CRKuselectValue_@1(int *vid, int *bid, @1 *value){
+	bit inclusive = TRUE;
+	return CRKuselectBounds_@1(vid, bid, value, value, &inclusive, &inclusive);
+}
+
+str
+CRKselect_@1(int *vid, int *bid, @1 *low, @1 *hgh){
+	bit inclusive = TRUE;
+	return CRKselectBounds_@1(vid, bid, low, hgh, &inclusive, &inclusive);
+}
+
+str
+CRKuselect_@1(int *vid, int *bid, @1 *low, @1 *hgh){
+	bit inclusive = TRUE;
+	return CRKuselectBounds_@1(vid, bid, low, hgh, &inclusive, &inclusive);
+}
+@
+
+
+@- Local support functions and macros
+
 @= crkThreeTree
         /*printf("crack in three pieces\n");*/
 	if (*inclusiveLow == TRUE && *inclusiveHgh == TRUE)
@@ -16,6 +150,7 @@
 		addCrackerIndex_@1(m,low,*inclusiveLow,_vl,c);
 		addCrackerIndex_@1(m,hgh,HBound,vh,c);
 	}
+@
 
 @= crkTwoLTree
 	/*CRACK in two pieces cl1-ch1 using >incLow bound*/
@@ -186,7 +321,7 @@ createView:
 @
 
 @= crackOperations
-lng
+static lng
 shiftHoles_@1(struct Node *lowNode, struct Node *lowNodeNext, BAT *b, int xx, BAT *c, BUN idxFirst, int zz, @1 *hgh, bit *inclusiveHgh, int position){
 	lng holSize = 0, LposCr = 0, HposCr = 0, holPiece = 0, buns;
 	BUN hghPos = NULL, crkFirst;
@@ -254,7 +389,7 @@ shiftHoles_@1(struct Node *lowNode, struct Node *lowNodeNext, BAT *b, int xx, BA
 	return holSize;
 }
 
-str
+static str
 selectMergeDeletionsPart_@1(int *bid, @1 *low, bit *inclusiveLow, @1 *hgh, bit *inclusiveHgh, bit *rippledDeletions, int position){
 	BAT *u;
 	lng updates, updatesStart, updatesEnd;
@@ -369,7 +504,7 @@ selectMergeDeletionsPart_@1(int *bid, @1 *low, bit *inclusiveLow, @1 *hgh, bit *
 	return NULL;
 }
 
-str
+static str
 selectMergeInsertionsPart_@1(int *bid, @1 *low, bit *inclusiveLow, @1 *hgh, bit *inclusiveHgh, int position){
 	BAT *u,*b;
 	lng updates, updatesStart, updatesEnd;
@@ -460,7 +595,7 @@ selectMergeInsertionsPart_@1(int *bid, @1 *low, bit *inclusiveLow, @1 *hgh, bit 
 To do that, we first search the index to determine which parts of the result we already
 know and which parts we have to crack. Then we crack, if necessary,
 the appropriate pieces, update the index and return the result */
-str
+static str
 CRKRangeTree_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh, bit tail){
 	BAT *b,*c,*bo;
 	BAT *view;
@@ -697,7 +832,7 @@ CRKRangeTree_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *in
 	return MAL_SUCCEED;
 }
 
-str
+static str
 CRKRangeLeftNilTree_@1(int *vid, int *bid, @1 *hgh, bit *inclusiveHgh, bit tail){
 	BAT *b,*c,*bo;
 	BAT *view;
@@ -796,7 +931,7 @@ CRKRangeLeftNilTree_@1(int *vid, int *bid, @1 *hgh, bit *inclusiveHgh, bit tail)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 CRKRangeRightNilTree_@1(int *vid, int *bid, @1 *low, bit *inclusiveLow, bit tail){
 	BAT *b,*c,*bo;
 	BAT *view;
@@ -895,78 +1030,4 @@ CRKRangeRightNilTree_@1(int *vid, int *bid, @1 *low, bit *inclusiveLow, bit tail
 }
 @
 
-@c
-@:crackOperations(chr,simple,,chr)@
-@:crackOperations(sht,simple,,sht)@
-@:crackOperations(int,simple,,int)@
-@:crackOperations(lng,simple,,lng)@
-@:crackOperations(flt,simple,,flt)@
-@:crackOperations(dbl,simple,,dbl)@
-@:crackOperations(date,atom,TYPE_,loc)@
-
-@= SelectFunctions
-crackers_export str CRKselectBounds_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh);
-str
-CRKselectBounds_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh){		
-	if (@2_EQ(low,ATOMnilptr(TYPE_@1),@3@1))
-		return CRKRangeLeftNilTree_@1(vid, bid, hgh, inclusiveHgh, TRUE);
-	else if (@2_EQ(hgh,ATOMnilptr(TYPE_@1),@3@1))
-		return CRKRangeRightNilTree_@1(vid, bid, low, inclusiveLow, TRUE);
-	else
-		return CRKRangeTree_@1(vid, bid, low, hgh, inclusiveLow, inclusiveHgh, TRUE);
-
-       	throw(MAL, "crackers.CRKselectBounds_@1", "case not handled");
-}
-
-crackers_export str CRKuselectBounds_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh);
-str
-CRKuselectBounds_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh){
-	if (@2_EQ(low,ATOMnilptr(TYPE_@1),@3@1))
-		return CRKRangeLeftNilTree_@1(vid, bid, hgh, inclusiveHgh, FALSE);
-	else if (@2_EQ(hgh,ATOMnilptr(TYPE_@1),@3@1))
-		return CRKRangeRightNilTree_@1(vid, bid, low, inclusiveLow, FALSE);
-	else
-		return CRKRangeTree_@1(vid, bid, low, hgh, inclusiveLow, inclusiveHgh, FALSE);
-
-        throw(MAL, "crackers.CRKuselectBounds_@1", "case not handled");
-}
-
-crackers_export str CRKselectValue_@1(int *vid, int *bid, @1 *value);
-str
-CRKselectValue_@1(int *vid, int *bid, @1 *value){
-	bit inclusive = TRUE;
-	return CRKuselectBounds_@1(vid, bid, value, value, &inclusive, &inclusive);
-}
-
-crackers_export str CRKuselectValue_@1(int *vid, int *bid, @1 *value);
-str
-CRKuselectValue_@1(int *vid, int *bid, @1 *value){
-	bit inclusive = TRUE;
-	return CRKuselectBounds_@1(vid, bid, value, value, &inclusive, &inclusive);
-}
-
-crackers_export str CRKselect_@1(int *vid, int *bid, @1 *low, @1 *hgh);
-str
-CRKselect_@1(int *vid, int *bid, @1 *low, @1 *hgh){
-	bit inclusive = TRUE;
-	return CRKselectBounds_@1(vid, bid, low, hgh, &inclusive, &inclusive);
-}
-
-crackers_export str CRKuselect_@1(int *vid, int *bid, @1 *low, @1 *hgh);
-str
-CRKuselect_@1(int *vid, int *bid, @1 *low, @1 *hgh){
-	bit inclusive = TRUE;
-	return CRKuselectBounds_@1(vid, bid, low, hgh, &inclusive, &inclusive);
-}
-@
-
-@c
-@:SelectFunctions(chr,simple,)@
-@:SelectFunctions(sht,simple,)@
-@:SelectFunctions(int,simple,)@
-@:SelectFunctions(lng,simple,)@
-@:SelectFunctions(flt,simple,)@
-@:SelectFunctions(dbl,simple,)@
-@:SelectFunctions(date,atom,TYPE_)@
-
-/* END ---------------------------Select Operators----------------------------------------------------------------*/
+@}

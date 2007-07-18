@@ -1,5 +1,243 @@
+@' The contents of this file are subject to the MonetDB Public License
+@' Version 1.1 (the "License"); you may not use this file except in
+@' compliance with the License. You may obtain a copy of the License at
+@' http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+@'
+@' Software distributed under the License is distributed on an "AS IS"
+@' basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+@' License for the specific language governing rights and limitations
+@' under the License.
+@'
+@' The Original Code is the MonetDB Database System.
+@'
+@' The Initial Developer of the Original Code is CWI.
+@' Portions created by CWI are Copyright (C) 1997-2007 CWI.
+@' All Rights Reserved.
 
-@= CreateNewIndex
+@f crackers_index
+@a Martin Kersten, Stratos Idreos, Stefan Manegold
+@d March 2006 - July 2007
+@* Cracker index
+
+
+@+ Interface
+ 
+
+@- Type expansion
+
+@= TypeSwitch
+@:@1(chr,simple,)@
+@:@1(sht,simple,)@
+@:@1(int,simple,)@
+@:@1(lng,simple,)@
+@:@1(flt,simple,)@
+@:@1(dbl,simple,)@
+@:@1(date,atom,TYPE_)@
+@
+
+
+@- Header file
+
+@h
+#ifndef _CRACKERS_INDEX_H_
+#define _CRACKERS_INDEX_H_
+
+#ifdef LIBCRACKERS
+/* Type definitions shared within the crackers module/library */
+
+struct Node{
+        lng	      position;
+	bit 	      inclusive;	
+        struct Node  *left;
+        struct Node  *right;
+        int	      height;
+	bit	      head;
+	bit	      deleted;
+        struct Node  *previous;
+	bit 	      isPreviousSmaller;	
+	lng	      hols; /* # of hols before this piece */
+};
+
+typedef struct {
+			/* Core cracking */
+	int 		bid;   		/* The base BAT */
+	int 		cbid;   	/* The cracker column/BAT i.e., the copy on which we actually crack */
+
+	int 		cid;   		/* The cracker index for BAT */
+	struct Node 	*Tree; 		/* The AVL-tree part of the cracker index */
+
+			/* Updates */
+	int 		iid;   		/* The pending insertions column */
+	int 		did;   		/* The pending deletions column */
+
+	bit		reCreate;	/* Indicates whether we need to recreate the index if we chose to forget it */
+
+	sht		mergeInsertions;/* Indicates wether there are insertions to merge -->  -1 no insertions,
+												0 complete merge,
+												1 gradually,
+												2 ripple */
+	sht		mergeDeletions; /* Indicates wether there are insertions to merge -->  -1 no insertions,
+												0 complete merge,
+												1 gradually,
+												2 ripple */
+	bit 		deleteNodes;    /* If set true, merging operations will delete nodes 
+					   form the cracker index if this makes things easier */
+
+			/* Sideways cracking */
+	int 		pbid; 		/* The cracker map. Together with the bid, they uniquely identify 
+				           a cracker map when pid is -1 then chid stores the cracker 
+                                           tape for all the cracker maps where bid is head 
+				           hiid is a [bit,bit] BAT that stores inclusive information 
+					   for each bound stored in chid */
+
+	lng 		nextCrack;	/* Points to the next cracking operation that should be applied 
+                                           in thhis map to sync it */
+	int 		chid;
+	int 		hiid;
+} CrackerIndexNode;
+
+/* Signatures shared within the crackers module/library */
+@:IndexSharedFunctions_decl_0@
+@:TypeSwitch(IndexSharedFunctions_decl_1)@
+
+#endif
+
+/* Exported signatures */
+@:IndexExport_decl@
+
+#endif /* _CRACKERS_INDEX_H */
+@
+
+
+@- Exported signatures
+
+@= IndexExport_decl
+crackers_export str CRKprintCrackerIndexBATpart(int *k, int *bid);
+crackers_export str CRKprintAVLTree_int(int *k, int *bid);
+crackers_export str CRKprintCrackerBAT(int *k, int *bid);
+crackers_export str CRKgetCrackerBAT(int *vid, int *bid);
+@
+
+
+@- Signatures shared within the crackers module/library
+
+@= IndexSharedFunctions_decl_0
+int existsCrackerIndex(int bid);
+@
+
+@= IndexSharedFunctions_decl_1
+/* CreateNewIndex */
+int newCrackerIndex_@1(int bid, int cbid);
+void reCreateMap_@1(int position);
+
+/* InsertIndexElements */
+void addCrackerIndex_@1(int m, @1 *value, bit inclusive, lng index, BAT * b);
+@
+
+
+@{
+@+ Implementation
+
+
+@- C file
+
+@c
+#include "mal_config.h"
+#include "crackers.h"
+
+/* Functions shared within the crackers module/library */
+@:IndexSharedFunctions_impl_0@
+@:TypeSwitch(IndexSharedFunctions_impl_1)@
+
+/* Exported functions */
+@:IndexExport_impl@
+@
+
+
+@- Exported functions
+
+@= IndexExport_impl
+str
+CRKprintCrackerIndexBATpart(int *k, int *bid){
+	int i = existsCrackerIndex(*bid);
+
+	(void)k;
+
+	if (i == -1)
+		fprintf(stderr, " the crack index does not exist \n");
+	BATprint(BATdescriptor(CrackerIndex[i].cid));
+
+	return MAL_SUCCEED;
+}
+
+str
+CRKprintAVLTree_int(int *k, int *bid){
+	BAT *c;
+	int zz, position;
+	BUN idxFirst;
+
+	(void) k;
+
+	position = existsCrackerIndex(*bid);
+        if (position == -1)
+                fprintf(stderr, " the crack index does not exist \n");
+
+	if ((c = BATdescriptor(CrackerIndex[position].cid)) == NULL)
+                throw(MAL, "crackers.CRKprintAVLTree_int", "Cannot access cracker index");
+
+        zz = BUNsize(c);
+        idxFirst = BUNfirst(c);
+	printAVLTree(CrackerIndex[position].Tree, c, idxFirst, zz);
+
+	BBPunfix(c->batCacheid);
+
+	return MAL_SUCCEED;
+}
+
+str
+CRKprintCrackerBAT(int *k, int *bid){
+	int i = existsCrackerIndex(*bid);
+
+	(void)k;
+
+	if (i == -1)
+		fprintf(stderr, " the crack index does not exist \n");
+	BATprint(BATdescriptor(CrackerIndex[i].cbid));
+
+	return MAL_SUCCEED;
+}
+
+str
+CRKgetCrackerBAT(int *vid, int *bid){
+        int i = existsCrackerIndex(*bid);
+        if (i == -1)
+                fprintf(stderr, " the cracker index does not exist \n");
+        if (CrackerIndex[i].cbid > 0)
+		*vid = CrackerIndex[i].cbid;
+	else
+		*vid = -1;
+
+        return MAL_SUCCEED;
+}
+@
+
+
+@- Functions shared within the crackers module/library
+
+@= IndexSharedFunctions_impl_0
+int
+existsCrackerIndex(int bid){
+	int i;
+	
+	for (i = 0; i < maxCrackMap; i++)
+		if (CrackerIndex[i].bid == bid)
+			return i;
+	return -1;
+}
+@
+
+@= IndexSharedFunctions_impl_1
+/* CreateNewIndex */
 int
 newCrackerIndex_@1(int bid, int cbid){
 	int i, freemap = -1, units = 1024;
@@ -59,104 +297,9 @@ reCreateMap_@1(int position){
 	
 	return;
 }
-@
 
-@c
-@:CreateNewIndex(chr)@
-@:CreateNewIndex(sht)@
-@:CreateNewIndex(int)@
-@:CreateNewIndex(lng)@
-@:CreateNewIndex(flt)@
-@:CreateNewIndex(dbl)@
-@:CreateNewIndex(date)@
 
-int
-existsCrackerIndex(int bid){
-	int i;
-	
-	for (i = 0; i < maxCrackMap; i++)
-		if (CrackerIndex[i].bid == bid)
-			return i;
-	return -1;
-}
-
-void
-printCrackerIndexBATpart(int bid){
-	int i = existsCrackerIndex(bid);
-	if (i == -1)
-		fprintf(stderr, " the crack index does not exist \n");
-	BATprint(BATdescriptor(CrackerIndex[i].cid));
-}
-
-str
-CRKprintCrackerIndexBATpart(int *k, int *bid){
-	(void)k;
-	printCrackerIndexBATpart(*bid);
-
-	return MAL_SUCCEED;
-}
-
-str
-CRKprintAVLTree_int(int *k, int *bid){
-	BAT *c;
-	int zz, position;
-	BUN idxFirst;
-
-	(void) k;
-
-	position = existsCrackerIndex(*bid);
-        if (position == -1)
-                fprintf(stderr, " the crack index does not exist \n");
-
-	if ((c = BATdescriptor(CrackerIndex[position].cid)) == NULL)
-                throw(MAL, "crackers.CRKprintAVLTree_int", "Cannot access cracker index");
-
-        zz = BUNsize(c);
-        idxFirst = BUNfirst(c);
-	printAVLTree(CrackerIndex[position].Tree, c, idxFirst, zz);
-
-	BBPunfix(c->batCacheid);
-
-	return MAL_SUCCEED;
-}
-
-void
-printCrackerBAT(int bid){
-	int i = existsCrackerIndex(bid);
-	if (i == -1)
-		fprintf(stderr, " the crack index does not exist \n");
-	BATprint(BATdescriptor(CrackerIndex[i].cbid));
-}
-
-str
-CRKprintCrackerBAT(int *k, int *bid){
-	(void)k;
-	printCrackerBAT(*bid);
-
-	return MAL_SUCCEED;
-}
-
-str
-CRKgetCrackerBAT(int *vid, int *bid){
-        int i = existsCrackerIndex(*bid);
-        if (i == -1)
-                fprintf(stderr, " the cracker index does not exist \n");
-        if (CrackerIndex[i].cbid > 0)
-		*vid = CrackerIndex[i].cbid;
-	else
-		*vid = -1;
-
-        return MAL_SUCCEED;
-}
-
-@= insertIndexElement
-	*(lng*) @2 = @4;	
-	*(@1 *) @3 = @5;	
-	(b)->batBuns->free += xx;
-        (b)->batCount ++;
-@
-
-@= InsertIndexElements
+/* InsertIndexElements */
 void
 addCrackerIndex_@1(int m, @1 *value, bit inclusive, lng index, BAT * b){
 	BUN ph,pt,base;
@@ -189,13 +332,14 @@ addCrackerIndex_@1(int m, @1 *value, bit inclusive, lng index, BAT * b){
 }
 @
 
-@c
-@:InsertIndexElements(chr,simple,)@
-@:InsertIndexElements(sht,simple,)@
-@:InsertIndexElements(int,simple,)@
-@:InsertIndexElements(lng,simple,)@
-@:InsertIndexElements(flt,simple,)@
-@:InsertIndexElements(dbl,simple,)@
-@:InsertIndexElements(date,atom,TYPE_)@
 
+@- Local support functions and macros
 
+@= insertIndexElement
+	*(lng*) @2 = @4;	
+	*(@1 *) @3 = @5;	
+	(b)->batBuns->free += xx;
+        (b)->batCount ++;
+@
+
+@}

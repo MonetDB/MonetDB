@@ -16,7 +16,7 @@
 
 @f crackers
 @a Martin Kersten, Stratos Idreos, Stefan Manegold
-@d March 2006
+@d March 2006 - July 2007
 @* Cracker index
 
 Database cracking aims at enhancing query processing by adapting the way 
@@ -96,50 +96,90 @@ can be stopped by setting the granule size,
 i.e.  the minimum number of tuples in each piece,
 or the maximum number of pieces.
 
+The implementation is geared at early experimentation
+without all the details to make the code robust and
+ultra fast.
+
+
+@+ Interface
+
+
+@- Type expansion
+
+@= TypeSwitch_1
+@:@1(@2,chr)@
+@:@1(@2,sht)@
+@:@1(@2,int)@
+@:@1(@2,lng)@
+@:@1(@2,flt)@
+@:@1(@2,dbl)@
+@:@1(@2,date)@
+@
+
+@= TypeSwitch_2
+@:TypeSwitch_1(@1,int)@
+@:TypeSwitch_1(@1,date)@
+@
+
+
+@- MAL file
+
 @mal
 module crackers;
 
-@= crackAlgebra
-command select(b:bat[:oid,:@1],l:@1,h:@1):bat[:oid,:@1]
-address CRKselect_@1
+@:TypeSwitch_1(Select)@
+@:TypeSwitch_1(JoinSelect)@
+@:TypeSwitch_1(Updates)@
+@:TypeSwitch_1(Index)@
+@:TypeSwitch_1(CoreUnordered)@
+@:TypeSwitch_1(CoreOrdered)@
+@:TypeSwitch_1(Validate)@
+@:TypeSwitch_1(AVLindex)@
+
+@:TypeSwitch_2(Sideways)@
+@
+
+@= Select
+command select(b:bat[:oid,:@2],l:@2,h:@2):bat[:oid,:@2]
+address CRKselect_@2
 comment "Retrieve the subset using a cracker
         index producing preferably a BATview.";
 
-command select(b:bat[:oid,:@1],l:@1):bat[:oid,:@1]
-address CRKselectValue_@1
+command select(b:bat[:oid,:@2],l:@2):bat[:oid,:@2]
+address CRKselectValue_@2
 comment "Retrieve the subset using a cracker
         index producing preferably a BATview.";
 
-command select(b:bat[:oid,:@1],l:@1,h:@1,li:bit,hi:bit):bat[:oid,:@1]
-address CRKselectBounds_@1
+command select(b:bat[:oid,:@2],l:@2,h:@2,li:bit,hi:bit):bat[:oid,:@2]
+address CRKselectBounds_@2
 comment "Retrieve the subset using a cracker
         index producing preferably a BATview.";
 
-command uselect(b:bat[:any_1,:@1],l:@1,h:@1):bat[:any_1,:oid]
-address CRKuselect_@1
+command uselect(b:bat[:any_1,:@2],l:@2,h:@2):bat[:any_1,:oid]
+address CRKuselect_@2
 comment "Retrieve the subset using a cracker
         index producing preferably a BATview.";
 
-command uselect(b:bat[:any_1,:@1],l:@1):bat[:any_1,:oid]
-address CRKuselectValue_@1
+command uselect(b:bat[:any_1,:@2],l:@2):bat[:any_1,:oid]
+address CRKuselectValue_@2
 comment "Retrieve the subset using a cracker
         index producing preferably a BATview.";
 
-command uselect(b:bat[:any_1,:@1],l:any_2,h:any_3,li:any_4,hi:any_5):bat[:any_1,:oid]
-address CRKuselectBounds_@1
+command uselect(b:bat[:any_1,:@2],l:any_2,h:any_3,li:any_4,hi:any_5):bat[:any_1,:oid]
+address CRKuselectBounds_@2
 comment "Retrieve the subset using a cracker
         index producing preferably a BATview.";
 @
 
-@= joinuselect
-command joinuselect( right:bat[:oid,:@1], l:@1, h:@1, li:bit, hi:bit, left:bat[:oid,:oid] ):bat[:oid,:oid]
-address CRKjoinSelectDefault_@1
+@= JoinSelect
+command joinuselect( right:bat[:oid,:@2], l:@2, h:@2, li:bit, hi:bit, left:bat[:oid,:oid] ):bat[:oid,:oid]
+address CRKjoinSelectDefault_@2
 comment "Join left and right on head-OIDs.
 	From right, only those BUNs qualify that satisfy the range-restriction on the tail.
 	The result is a new [:oid,:void] BAT.";
 
-command joinuselect( right:bat[:oid,:@1], l:@1, h:@1, li:bit, hi:bit, left:bat[:oid,:oid], inPlace:bit , isForeignKey:bit):bat[:oid,:oid]
-address CRKjoinSelectBounds_@1
+command joinuselect( right:bat[:oid,:@2], l:@2, h:@2, li:bit, hi:bit, left:bat[:oid,:oid], inPlace:bit , isForeignKey:bit):bat[:oid,:oid]
+address CRKjoinSelectBounds_@2
 comment "Join left and right on head-OIDs.
 	From right, only those BUNs qualify that satisfy the range-restriction on the tail.
 	If inPlace is TRUE (and left has an OID head and is not a BAT-view), we operate in-place,
@@ -149,188 +189,251 @@ comment "Join left and right on head-OIDs.
 	(NOTE: This may lead to CRASHES, if isForeignKey is incorrectly passed as TRUE!)";
 @
 
-@= crackfcn
-command printCrackerIndexBATpart(b:bat[:any_1,:@1]):void
-address CRKprintCrackerIndexBATpart
-comment "Print the cracker index of b";
-
-command printCrackerBAT(b:bat[:any_1,:@1]):void
-address CRKprintCrackerBAT
-comment "Print the cracker BAT of b";
-
-command getCrackerBAT(b:bat[:oid,:@1]):bat[:oid,:@1]
-address CRKgetCrackerBAT
-comment "Get the cracker BAT of b";
-
-command printCrackerInsertions(b:bat[:any_1,:@1]):void
-address CRKprintCrackerInsertions
-comment "Print the pending insertions of the cracker BAT of b";
-
-command printCrackerDeletions(b:bat[:any_1,:@1]):void
-address CRKprintCrackerDeletions
-comment "Print the pending deletions of the cracker BAT of b";
-
-command sizeCrackerInsertions(b:bat[:any_1,:@1]):void
-address CRKsizeCrackerInsertions
-comment "Get the size of the pending insertions of the cracker BAT of b";
-
-command sizeCrackerDeletions(b:bat[:any_1,:@1]):void
-address CRKsizeCrackerDeletions
-comment "Get the size of the pending deletions of the cracker BAT of b";
-
-command insertionsForget(b:bat[:any_1,:@1], c:bat[:any_1,:@1]):void
-address CRKmergeInsertions_Forget
-comment "Append c to the cracked BAT of b and completelly forget the cracker index";
-
-command insertionsPartiallyForget(b:bat[:any_1,:@1], c:bat[:any_1,:@1]):void
-address CRKmergeInsertions_PartiallyForget_@1
+@= Updates
+command insertionsPartiallyForget(b:bat[:any_1,:@2], c:bat[:any_1,:@2]):void
+address CRKmergeInsertions_PartiallyForget_@2
 comment "Append c to the cracked BAT of b and partially forget 
          the cracker index, i.e., forget only what is affected";
 
-command insertionsBForce(b:bat[:any_1,:@1], c:bat[:any_1,:@1]):void
-address CRKmergeInsertionsB_Force_@1
+command insertionsBForce(b:bat[:any_1,:@2], c:bat[:any_1,:@2]):void
+address CRKmergeInsertionsB_Force_@2
 comment "Merge the insertions BAT with the cracker bat and update the cracker index";
 
-command insertionsBOnNeed(b:bat[:any_1,:@1], c:bat[:any_1,:@1]):void
+
+command printCrackerInsertions(b:bat[:any_1,:@2]):void
+address CRKprintCrackerInsertions
+comment "Print the pending insertions of the cracker BAT of b";
+
+command printCrackerDeletions(b:bat[:any_1,:@2]):void
+address CRKprintCrackerDeletions
+comment "Print the pending deletions of the cracker BAT of b";
+
+command sizeCrackerInsertions(b:bat[:any_1,:@2]):void
+address CRKsizeCrackerInsertions
+comment "Get the size of the pending insertions of the cracker BAT of b";
+
+command sizeCrackerDeletions(b:bat[:any_1,:@2]):void
+address CRKsizeCrackerDeletions
+comment "Get the size of the pending deletions of the cracker BAT of b";
+
+command insertionsForget(b:bat[:any_1,:@2], c:bat[:any_1,:@2]):void
+address CRKmergeInsertions_Forget
+comment "Append c to the cracked BAT of b and completelly forget the cracker index";
+
+command insertionsBOnNeed(b:bat[:any_1,:@2], c:bat[:any_1,:@2]):void
 address CRKmergeInsertionsB_OnNeed
 comment "Keep the insertions BAT separatelly and do a complete merge 
          only if a relevant query arrives in the future";
 
-command insertionsBOnNeedGradually(b:bat[:any_1,:@1], c:bat[:any_1,:@1]):void
+command insertionsBOnNeedGradually(b:bat[:any_1,:@2], c:bat[:any_1,:@2]):void
 address CRKmergeInsertionsB_OnNeedGradually
 comment "Keep the insertions BAT separatelly and merge only what is 
          needed if a relevant query arrives in the future";
 
-command insertionsBOnNeedGraduallyRipple(b:bat[:any_1,:@1], c:bat[:any_1,:@1]):void
+command insertionsBOnNeedGraduallyRipple(b:bat[:any_1,:@2], c:bat[:any_1,:@2]):void
 address CRKmergeInsertionsB_OnNeedGraduallyRipple
 comment "Keep the insertions BAT separatelly and merge only what is needed 
          using the ripple strategy if a relevant query arrives in the future";
 
-command deletionsOnNeed(b:bat[:any_1,:@1], c:bat[:any_1,:@1]):void
+command deletionsOnNeed(b:bat[:any_1,:@2], c:bat[:any_1,:@2]):void
 address CRKmergeDeletions_OnNeed
 comment "Keep the deletions BAT separatelly and do a complete merge only 
          if a relevant query arrives in the future";
 
-command deletionsOnNeedGradually(b:bat[:any_1,:@1], c:bat[:any_1,:@1]):void
+command deletionsOnNeedGradually(b:bat[:any_1,:@2], c:bat[:any_1,:@2]):void
 address CRKmergeDeletions_OnNeedGradually
 comment "Keep the deletions BAT separatelly and merge only what is 
          needed if a relevant query arrives in the future";
 
-command deletionsOnNeedGraduallyRipple(b:bat[:any_1,:@1], c:bat[:any_1,:@1]):void
+command deletionsOnNeedGraduallyRipple(b:bat[:any_1,:@2], c:bat[:any_1,:@2]):void
 address CRKmergeDeletions_OnNeedGraduallyRipple
 comment "Keep the deletions BAT separatelly and merge only what is 
          needed using ripple if a relevant query arrives in the future";
 
-command verifyCrackerIndex(b:bat[:any_1,:@1]):void
-address CRKverifyCrackerIndex_@1
-comment "Check the cracker index and column, whether each value is in the correct chunk";
-
-command extendCrackerBAT(b:bat[:any_1,:@1], P:lng):void
+command extendCrackerBAT(b:bat[:any_1,:@2], P:lng):void
 address CRKextendCrackerBAT
 comment "Extend the cracker column by P positions";
+@
 
-command printAVLTree_int(b:bat[:any_1,:@1]):void
+@= Index
+command printCrackerIndexBATpart(b:bat[:any_1,:@2]):void
+address CRKprintCrackerIndexBATpart
+comment "Print the cracker index of b";
+
+command printCrackerBAT(b:bat[:any_1,:@2]):void
+address CRKprintCrackerBAT
+comment "Print the cracker BAT of b";
+
+command getCrackerBAT(b:bat[:oid,:@2]):bat[:oid,:@2]
+address CRKgetCrackerBAT
+comment "Get the cracker BAT of b";
+
+command printAVLTree_int(b:bat[:any_1,:@2]):void
 address CRKprintAVLTree_int
 comment "Print the AVL Tree of the cracker index (for debugging purposes)";
 @
 
-@= crackO
-command zcrackOrdered (b:bat[:oid,:@1], mid:@1) :bat[:oid,:@1]
-address CRKcrackOrderedZero_@1
+@= CoreOrdered
+command zcrackOrdered (b:bat[:oid,:@2], mid:@2) :bat[:oid,:@2]
+address CRKcrackOrderedZero_@2
 comment "Break a BAT into two pieces with
 	 tail<=mid, tail>mid,
 	 respectively; maintaining the head-oid order within each piece.";
 
-command crackOrdered (b:bat[:oid,:@1], mid:@1) :bat[:oid,:@1]
-address CRKcrackOrderedOne_@1
+command crackOrdered (b:bat[:oid,:@2], mid:@2) :bat[:oid,:@2]
+address CRKcrackOrderedOne_@2
 comment "Break a BAT into three pieces with
 	 tail<mid, tail==mid, tail>mid,
 	 respectively; maintaining the head-oid order within each piece.";
 
-command zcrackOrdered (b:bat[:oid,:@1], low:@1, hgh:@1) :bat[:oid,:@1]
-address CRKcrackOrderedThree_@1
+command zcrackOrdered (b:bat[:oid,:@2], low:@2, hgh:@2) :bat[:oid,:@2]
+address CRKcrackOrderedThree_@2
 comment "Break a BAT into three pieces with
 	 tail<=low, low<tail<=hgh, tail>hgh,
 	 respectively; maintaining the head-oid order within each piece.";
 @
 
-@= crack
-command zcrackUnordered (b:bat[:oid,:@1], mid:@1) :bat[:oid,:@1]
-address CRKcrackUnorderedZero_@1
+@= CoreUnordered
+command zcrackUnordered (b:bat[:oid,:@2], mid:@2) :bat[:oid,:@2]
+address CRKcrackUnorderedZero_@2
 comment "Break a BAT into two pieces with
 	 tail<=mid, tail>mid,
 	 respectively.";
 
-command zcrackUnordered (b:bat[:oid,:@1], low:@1, hgh:@1) :bat[:oid,:@1]
-address CRKcrackUnorderedThree_@1
+command zcrackUnordered (b:bat[:oid,:@2], low:@2, hgh:@2) :bat[:oid,:@2]
+address CRKcrackUnorderedThree_@2
 comment "Break a BAT into three pieces with
 	 tail<=low, low<tail<=hgh, tail>hgh,
 	 respectively.";
+@
+
+@= Validate
+@:crack_validate(@2,Ordered,; maintaining the head-oid order within each piece)@
+@:crack_validate(@2,Unordered,)@
+
+command verifyCrackerIndex(b:bat[:any_1,:@2]):void
+address CRKverifyCrackerIndex_@2
+comment "Check the cracker index and column, whether each value is in the correct chunk";
 @
 
 @= crack_validate
-command zcrackOrdered_validate (b:bat[:oid,:@1], mid:@1) :bit
-address CRKcrackOrderedZero_validate_@1
+command zcrack@2_validate (b:bat[:oid,:@1], mid:@1) :bit
+address CRKcrack@2Zero_validate_@1
 comment "Validate whether a BAT is correctly broken into two pieces with
 	 tail<=mid, tail>mid,
-	 respectively; maintaining the head-oid order within each piece.";
+	 respectively@3.";
 
-command crackOrdered_validate (b:bat[:oid,:@1], mid:@1) :bit
-address CRKcrackOrderedOne_validate_@1
+command crack@2_validate (b:bat[:oid,:@1], mid:@1) :bit
+address CRKcrack@2One_validate_@1
 comment "Validate whether a BAT is correctly broken into three pieces with
 	 tail<mid, tail==mid, tail>mid,
-	 respectively; maintaining the head-oid order within each piece.";
+	 respectively@3.";
 
-command crackOrdered_validate (b:bat[:oid,:@1], low:@1, hgh:@1) :bit
-address CRKcrackOrderedTwo_validate_@1
+command crack@2_validate (b:bat[:oid,:@1], low:@1, hgh:@1) :bit
+address CRKcrack@2Two_validate_@1
 comment "Validate whether a BAT is correctly broken into five pieces with
 	 tail<low, tail==low, low<tail<hgh, tail==hgh, tail>hgh,
-	 respectively; maintaining the head-oid order within each piece.";
+	 respectively@3.";
 
-command zcrackOrdered_validate (b:bat[:oid,:@1], low:@1, hgh:@1) :bit
-address CRKcrackOrderedThree_validate_@1
+command zcrack@2_validate (b:bat[:oid,:@1], low:@1, hgh:@1) :bit
+address CRKcrack@2Three_validate_@1
 comment "Validate whether a BAT is correctly broken into three pieces with
 	 tail<=low, low<tail<=hgh, tail>hgh,
-	 respectively; maintaining the head-oid order within each piece.";
-
-command zcrackUnordered_validate (b:bat[:oid,:@1], mid:@1) :bit
-address CRKcrackUnorderedZero_validate_@1
-comment "Validate whether a BAT is correctly broken into two pieces with
-	 tail<=mid, tail>mid,
-	 respectively.";
-
-command zcrackUnordered_validate (b:bat[:oid,:@1], low:@1, hgh:@1) :bit
-address CRKcrackUnorderedThree_validate_@1
-comment "Validate whether a BAT is correctly broken into three pieces with
-	 tail<=low, low<tail<=hgh, tail>hgh,
-	 respectively.";
+	 respectively@3.";
 @
 
-@= crackSig
-	@:crackAlgebra(@1)@
-	@:joinuselect(@1)@
-	@:crackfcn(@1)@
-	@:crack(@1)@
-	@:crackO(@1)@
-	@:crack_validate(@1)@
+@= Sideways
+command DeleteMap( b:bat[:oid,:@1], bp:bat[:oid,:@2] ):void
+address DeleteCrackerMap
+comment "Throw away a certain map"; 
+
+command insert( b:bat[:oid,:@1], bp:bat[:oid,:@2], c:bat[:@1,:@2]):void
+address CRKinsert
+comment "Keep the insertions BAT separatelly and merge in the future on demand with the Ripple";
+
+command printPendingInsertions( b:bat[:oid,:@1], bp:bat[:oid,:@2]):void
+address CRKprintPendingInsertions
+comment "Print the pending insertions";
+
+command extendCrackerMap(b:bat[:oid,:@1], bp:bat[:oid,:@2], P:lng):void
+address CRKextendCrackerMap
+comment "Extend the cracker map by P positions";
+
+command sizePendingInsertions(b:bat[:oid,:@1], bp:bat[:oid,:@2]):void
+address CRKsizePendingInsertions
+comment "Get the size of the pending insertions for this map";
+
+
+command joinselect( b:bat[:oid,:@2],l:@2, h:@2, li:bit, hi:bit ):bat[:oid,:bit]
+address CRKjoinSelectSideways_@2
+comment "From cpair, only those BUNs qualify that satisfy the range-restriction on the tail.
+        The result is a new [:oid,:bit] BAT that reflects the positions of buns in cpair. 
+	For each tuple that qualifies in cpair, the respective position in the pivot is marked with a 1";
+
+
+command hselect(b:bat[:oid,:@1],bp:bat[:oid,:@2],l:@1,h:@1,li:bit,hi:bit):bat[:oid,:@1]
+address CRKhselectBoundsSideways_@1_@2
+comment "Retrieve the subset head using a cracker
+        index producing preferably a BATview.";
+
+command tselect(b:bat[:oid,:@1],bp:bat[:oid,:@2],l:@1,h:@1,li:bit,hi:bit):bat[:oid,:@2]
+address CRKtselectBoundsSideways_@1_@2
+comment "Retrieve the subset tail using a cracker
+        index producing preferably a BATview.";
+
+command dselect(b:bat[:oid,:@1],bp:bat[:oid,:@2],l:@1,h:@1,li:bit,hi:bit,l2:@2,h2:@2,li2:bit,hi2:bit):bat[:oid,:bit]
+address CRKdselectBoundsSideways_@1_@2
+comment "Crack based on @1 and evaluate the @2 disjunctive predicate outside the cracked area. Return a bit vector.";
+
+
+command joinselect( b:bat[:oid,:@1],bp:bat[:oid,:@2], pivot:bat[:oid,:bit], cl:@1, ch:@1, cli:bit, chi:bit, l:@2, h:@2, li:bit, hi:bit ):bat[:oid,:bit]
+address CRKjoinSelectSideways_P_@1_@2
+comment "Use the pivot. For each tuple in pivot with a 1, check if the respective tuple (in the same position)
+	 in the tail of cpair satisfies the range restriction. If not mark the pivot BUN as 0.";
+
+command djoinselect( b:bat[:oid,:@1],bp:bat[:oid,:@2], pivot:bat[:oid,:bit], l:@2, h:@2, li:bit, hi:bit ):bat[:oid,:bit]
+address CRKdjoinSelectSideways_P_@1_@2
+comment "Use the pivot. For each tuple in pivot with a 0, check if the respective tuple (in the same position)
+	 in the tail of cpair satisfies the range restriction. If yes mark the pivot BUN as 1.";
+
+
+command project( b:bat[:oid,:@1],bp:bat[:oid,:@2], l:@1,h:@1,li:bit,hi:bit):bat[:oid,:@2]
+address CRKProjectCrack_@1_@2
+comment "Sync and project the tail of the cpair";
+
+command project( b:bat[:oid,:@1],bp:bat[:oid,:@2],pivot:bat[:oid,:bit],l:@1,h:@1,li:bit,hi:bit):bat[:oid,:@2]
+address CRKProject_@1_@2
+comment "Sync the cracking pair and project the tail";
+
+command dproject( b:bat[:oid,:@1],bp:bat[:oid,:@2],pivot:bat[:oid,:bit]):bat[:oid,:@2]
+address CRKdProject_@1_@2
+comment "Sync the cracking pair and project the tail. Use for disjunctive queries that require a larger bit vector";
+
+command projectH( b:bat[:oid,:@1],bp:bat[:oid,:@2],l:@1,h:@1,li:bit,hi:bit):bat[:oid,:@1]
+address CRKProjectH_@1_@2
+comment "Sync the cracking pair and project the head";
 @
 
-@mal
-@:crackSig(chr)@
-@:crackSig(sht)@
-@:crackSig(int)@
-@:crackSig(lng)@
-@:crackSig(flt)@
-@:crackSig(dbl)@
-@:crackSig(date)@
+@= AVLindex
+command buildAVLIndex(b:bat[:any_1,:@2]):void
+address CRKmakeAVLIndex_@2
+comment "Create an AVL tree index for this BAT";
 
-@-
-@{
-@- include prelude.mx
-@* Implementation
-The implementation is geared at early experimentation
-without all the details to make the code robust and
-ultra fast.
+command InsertAVLIndex(b:bat[:any_1,:@2], u:bat[:any_1,:@2]):void
+address CRKInsertAVLIndex_@2
+comment "Insert u in the AVL tree index of BAT b";
+
+command selectAVL(b:bat[:any_1,:@2],l:any_2,h:any_3,li:any_4,hi:any_5):bat[:any_6,:@2]
+address CRKAVLIndexSelectBounds_@2
+comment "Retrieve the subset using the AVL index";
+
+command deleteAVL(b:bat[:any_1,:@2],u:bat[:any_2,:@2]):void
+address CRKdeleteFromAVL_@2
+comment "Delete a collection of values from the index";
+@
+
+
+@- Header file
 
 @h
 #ifndef _CRACKERS_H_
@@ -349,83 +452,33 @@ ultra fast.
 #define crackers_export extern
 #endif
 
-struct Node{
-        lng	      position;
-	bit 	      inclusive;	
-        struct Node  *left;
-        struct Node  *right;
-        int	      height;
-	bit	      head;
-	bit	      deleted;
-        struct Node  *previous;
-	bit 	      isPreviousSmaller;	
-	lng	      hols; /* # of hols before this piece */
-};
+#include "mtime.h"
+#include "crackers_select_ops.h"
+#include "crackers_joinselect_ops.h"
+#include "crackers_sideways.h"
+#include "crackers_updates.h"
+#include "crackers_validation.h"
+#include "crackers_index.h"
+#include "crackers_core_unordered.h"
+#include "crackers_core_ordered.h"
+#include "crackers_AVL_tree.h"
+#include "crackers_AVL_index.h"
 
-typedef struct {
-			/* Core cracking */
-	int 		bid;   		/* The base BAT */
-	int 		cbid;   	/* The cracker column/BAT i.e., the copy on which we actually crack */
-
-	int 		cid;   		/* The cracker index for BAT */
-	struct Node 	*Tree; 		/* The AVL-tree part of the cracker index */
-
-			/* Updates */
-	int 		iid;   		/* The pending insertions column */
-	int 		did;   		/* The pending deletions column */
-
-	bit		reCreate;	/* Indicates whether we need to recreate the index if we chose to forget it */
-
-	sht		mergeInsertions;/* Indicates wether there are insertions to merge -->  -1 no insertions,
-												0 complete merge,
-												1 gradually,
-												2 ripple */
-	sht		mergeDeletions; /* Indicates wether there are insertions to merge -->  -1 no insertions,
-												0 complete merge,
-												1 gradually,
-												2 ripple */
-	bit 		deleteNodes;    /* If set true, merging operations will delete nodes 
-					   form the cracker index if this makes things easier */
-
-			/* Sideways cracking */
-	int 		pbid; 		/* The cracker map. Together with the bid, they uniquely identify 
-				           a cracker map when pid is -1 then chid stores the cracker 
-                                           tape for all the cracker maps where bid is head 
-				           hiid is a [bit,bit] BAT that stores inclusive information 
-					   for each bound stored in chid */
-
-	lng 		nextCrack;	/* Points to the next cracking operation that should be applied 
-                                           in thhis map to sync it */
-	int 		chid;
-	int 		hiid;
-} CrackerIndexNode;
-
-crackers_export str CRKselect(int *vid, int *bid, int *low, int *hgh);
-crackers_export str CRKselectValue(int *vid, int *bid, int *value);
-crackers_export str CRKuselect(int *vid, int *bid, int *low, int *hgh);
-crackers_export str CRKuselectValue(int *vid, int *bid, int *value);
-
-crackers_export str CRKprintCrackerIndexBATpart(int *k, int *bid);
-crackers_export str CRKprintCrackerBAT(int *k, int *bid);
-crackers_export str CRKgetCrackerBAT(int *vid, int *bid);
-crackers_export str CRKsizeCrackerInsertions(int *k, int *bid);
-crackers_export str CRKsizeCrackerDeletions(int *k, int *bid);
-crackers_export str CRKprintCrackerInsertions(int *k, int *bid);
-crackers_export str CRKprintCrackerDeletions(int *k, int *bid);
-crackers_export str CRKmergeInsertions_Forget(int *k, int *bid, int *new);
-crackers_export str CRKmergeInsertions_OnNeed(int *k, int *bid, int *new, bit *deleteNodes);
-crackers_export str CRKmergeInsertionsB_OnNeed(int *k, int *bid, int *new);
-crackers_export str CRKmergeInsertions_OnNeedGradually(int *k, int *bid, int *new, bit *deleteNodes);
-crackers_export str CRKmergeInsertionsB_OnNeedGradually(int *k, int *bid, int *new);
-crackers_export str CRKmergeInsertions_OnNeedGraduallyRipple(int *k, int *bid, int *new, bit *deleteNodes);
-crackers_export str CRKmergeInsertionsB_OnNeedGraduallyRipple(int *k, int *bid, int *new);
-crackers_export str CRKextendCrackerBAT(int *k, int *bid, lng positions);
-crackers_export str CRKprintAVLTree_int(int *k, int *bid);
-crackers_export str CRKmergeDeletions_OnNeed(int *k, int *bid, int *new);
-crackers_export str CRKmergeDeletions_OnNeedGradually(int *k, int *bid, int *new);
-crackers_export str CRKmergeDeletions_OnNeedGraduallyRipple(int *k, int *bid, int *new);
+#ifdef LIBCRACKERS 
+extern int maxCrackMap;
+extern CrackerIndexNode *CrackerIndex;
+extern int IndexEntries;
+extern int IndexSize;
+extern int IndexStop;
+#endif
 
 #endif /* _CRACKERS_H */
+
+
+@{
+@+ Implementation
+
+@- C file
    
 @c
 #include "mal_config.h"
@@ -435,43 +488,14 @@ crackers_export str CRKmergeDeletions_OnNeedGraduallyRipple(int *k, int *bid, in
 #include "mtime.h"
 #include "bat5.h"
 
-#define MAXPIECE 1024*100
+int maxCrackMap = 0;
 
-static int maxCrackMap = 0;
-
-static CrackerIndexNode *CrackerIndex;
+CrackerIndexNode *CrackerIndex;
 int IndexEntries = 220000; /* Initial size used for the bat that stores index values */
 
 /* Temp variables used to test the effect of stop updating the index, they operate only on one cracker bat */
 int IndexSize = 0;
 int IndexStop = 250000;
-
-
-/* Implement an AVL index on top of a BAT for comparison against cracking */
-
-@= AVLfcn
-command buildAVLIndex(b:bat[:any_1,:@1]):void
-address CRKmakeAVLIndex_@1
-comment "Create an AVL tree index for this BAT";
-
-command InsertAVLIndex(b:bat[:any_1,:@1], u:bat[:any_1,:@1]):void
-address CRKInsertAVLIndex_@1
-comment "Insert u in the AVL tree index of BAT b";
-
-command selectAVL(b:bat[:any_1,:@1],l:any_2,h:any_3,li:any_4,hi:any_5):bat[:any_6,:@1]
-address CRKAVLIndexSelectBounds_@1
-comment "Retrieve the subset using the AVL index";
-
-command deleteAVL(b:bat[:any_1,:@1],u:bat[:any_2,:@1]):void
-address CRKdeleteFromAVL_@1
-comment "Delete a collection of values from the index";
 @
 
-@mal
-@:AVLfcn(chr)@
-@:AVLfcn(sht)@
-@:AVLfcn(int)@
-@:AVLfcn(lng)@
-@:AVLfcn(flt)@
-@:AVLfcn(dbl)@
-@:AVLfcn(date)@
+@}

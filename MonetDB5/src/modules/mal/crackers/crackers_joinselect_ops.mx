@@ -1,5 +1,187 @@
+@' The contents of this file are subject to the MonetDB Public License
+@' Version 1.1 (the "License"); you may not use this file except in
+@' compliance with the License. You may obtain a copy of the License at
+@' http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+@'
+@' Software distributed under the License is distributed on an "AS IS"
+@' basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+@' License for the specific language governing rights and limitations
+@' under the License.
+@'
+@' The Original Code is the MonetDB Database System.
+@'
+@' The Initial Developer of the Original Code is CWI.
+@' Portions created by CWI are Copyright (C) 1997-2007 CWI.
+@' All Rights Reserved.
 
-/* BEGIN ---------------------------JoinSelect Operators----------------------------------------------------------------*/
+@f crackers_joinselect_ops
+@a Martin Kersten, Stratos Idreos, Stefan Manegold
+@d March 2006 - July 2007
+@* JoinSelect Operators
+
+
+@+ Interface
+ 
+
+@- Type expansion
+
+@= TypeSwitch
+@:@1(chr,simple,)@
+@:@1(sht,simple,)@
+@:@1(int,simple,)@
+@:@1(lng,simple,)@
+@:@1(flt,simple,)@
+@:@1(dbl,simple,)@
+@:@1(date,atom,TYPE_)@
+@
+
+
+@- Header file
+
+@h
+#ifndef _CRACKERS_JOINSELECT_H_
+#define _CRACKERS_JOINSELECT_H_
+
+/* Exported signatures */
+@:TypeSwitch(JoinSelectFunctions_decl)@
+
+#endif /* _CRACKERS_JOINSELECT_H */
+@
+
+
+@- Exported signatures
+
+@= JoinSelectFunctions_decl
+crackers_export str CRKjoinSelectDefault_@1(int *res, int *right, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh, int *left);
+crackers_export str CRKjoinSelectBounds_@1(int *res, int *right, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh, int *left, bit *inPlace, bit *isForeignKey);
+@
+
+
+@{
+@+ Implementation
+
+
+@- C file
+
+@c
+#include "mal_config.h"
+#include "crackers.h"
+
+/* Local support functions and macros */
+@:TypeSwitch(JoinSelectOperations)@
+
+/* Exported functions */
+@:TypeSwitch(JoinSelectFunctions_impl)@
+@
+
+
+@- Exported functions
+
+@= JoinSelectFunctions_impl
+str
+CRKjoinSelectDefault_@1(int *res, int *right, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh, int *left){
+	bit inPlace = FALSE;
+	bit isForeignKey = FALSE;
+	return CRKjoinSelectBounds_@1( res, right, low, hgh, inclusiveLow, inclusiveHgh, left, &inPlace, &isForeignKey);
+}
+
+str
+CRKjoinSelectBounds_@1(int *res, int *right, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh, int *left, bit *inPlace, bit *isForeignKey){
+	BAT *l, *r;
+
+	if ((l = BATdescriptor(*left)) == NULL) 
+        	throw(MAL, "crackers.crackJoinSelect", "Cannot access descriptor");
+
+	if ((r = BATdescriptor(*right)) == NULL) {
+		BBPunfix(*left);
+        	throw(MAL, "crackers.crackJoinSelect", "Cannot access descriptor");
+        }
+
+	if (!BAThdense(r)) {
+		BBPunfix(*left);
+		BBPunfix(*right);
+		throw(MAL, "crackers.crackJoinSelect", "right BAT must have a dense head");
+	}
+
+	if (BATcount(l) == 0 || BATcount(r) == 0){
+		BAT *d = BATnew(TYPE_oid, TYPE_void, 0);
+		d->batBuns->free = 0;
+		BATsetcount(d, 0);
+		d->hsorted = GDK_SORTED;
+		d->hdense = TRUE;
+		BATseqbase(d, (oid)0);
+		BATkey(d, TRUE);
+		d->tsorted = FALSE;
+		d->tdense = FALSE;
+		BATseqbase(BATmirror(d), oid_nil);
+		BATkey(BATmirror(d), FALSE);
+		d->batRestricted= BAT_READ;
+		BBPkeepref(d->batCacheid);
+		*res = d->batCacheid;
+		BBPunfix(*left);
+		BBPunfix(*right);
+		return MAL_SUCCEED;
+	}	
+
+        if (@2_EQ(low,ATOMnilptr(TYPE_@1),@3@1)){
+		if (*inclusiveHgh==TRUE)
+                	return JoinSelectSingle_RE_@1(res, l, r, hgh, *inPlace, *isForeignKey);
+		else
+                	return JoinSelectSingle_RO_@1(res, l, r, hgh, *inPlace, *isForeignKey);
+	}
+        else if (@2_EQ(hgh,ATOMnilptr(TYPE_@1),@3@1))
+		if (*inclusiveLow==TRUE)
+                	return JoinSelectSingle_LE_@1(res, l, r, low, *inPlace, *isForeignKey);
+		else
+                	return JoinSelectSingle_LO_@1(res, l, r, low, *inPlace, *isForeignKey);
+        else{
+		if ((*inclusiveLow==TRUE) && (*inclusiveHgh==TRUE))
+                	return JoinSelectRange_LE_RE_@1(res, l, r, low, hgh, *inPlace, *isForeignKey);
+		else
+		if ((*inclusiveLow==TRUE) && (*inclusiveHgh==FALSE))
+                	return JoinSelectRange_LE_RO_@1(res, l, r, low, hgh, *inPlace, *isForeignKey);
+		else
+		if ((*inclusiveLow==FALSE) && (*inclusiveHgh==FALSE))
+                	return JoinSelectRange_LO_RO_@1(res, l, r, low, hgh, *inPlace, *isForeignKey);
+		else
+		if ((*inclusiveLow==TRUE) && (*inclusiveHgh==TRUE))
+                	return JoinSelectRange_LE_RE_@1(res, l, r, low, hgh, *inPlace, *isForeignKey);
+	}
+        throw(MAL, "crackers.crackJoinSelect", "case not handled");
+}
+@
+
+
+@- Local support functions and macros
+
+@= JoinSelectOperations
+@(
+@:JoinSelectR(@1,LO,RE,GT,LE,@2,@3)@
+@)
+@:JoinSelectR(@1,LE,RE,GE,LE,@2,@3)@
+@:JoinSelectR(@1,LO,RO,GT,LT,@2,@3)@
+@:JoinSelectR(@1,LE,RO,GE,LT,@2,@3)@
+@:JoinSelectS(@1,RO,LT,@2,@3)@
+@:JoinSelectS(@1,RE,LE,@2,@3)@
+@:JoinSelectS(@1,LO,GT,@2,@3)@
+@:JoinSelectS(@1,LE,GE,@2,@3)@
+@
+
+
+@= JoinSelectR
+static str
+JoinSelectRange_@2_@3_@1(int *res, BAT *l, BAT *r, @1 *low, @1 *hgh, bit inPlace, bit isForeignKey){
+	@:JoinSelectBody(@6_@4(rt,low,@7@1) && @6_@5(rt,hgh,@7@1))@
+}
+@
+
+@= JoinSelectS
+static str
+JoinSelectSingle_@2_@1(int *res, BAT *l, BAT *r, @1 *mid, bit inPlace, bit isForeignKey){
+	@:JoinSelectBody(@4_@3(rt,mid,@5@1))@
+}
+@
+
 @= JoinSelectBody
 /* Joins a left=[oid,void] bat with a right=[void, any_type] bat on head-OIDs.
 From the right bat, only BUNs that pass the range-restriction on the tail qualify.
@@ -115,123 +297,4 @@ The result is a [oid,void] bat. */
 	return MAL_SUCCEED;
 @
 
-@= JoinSelectR
-str
-JoinSelectRange_@2_@3_@1(int *res, BAT *l, BAT *r, @1 *low, @1 *hgh, bit inPlace, bit isForeignKey){
-	@:JoinSelectBody(@6_@4(rt,low,@7@1) && @6_@5(rt,hgh,@7@1))@
-}
-@
-
-@= JoinSelectS
-str
-JoinSelectSingle_@2_@1(int *res, BAT *l, BAT *r, @1 *mid, bit inPlace, bit isForeignKey){
-	@:JoinSelectBody(@4_@3(rt,mid,@5@1))@
-}
-@
-
-@= JoinSelectOperations
-@:JoinSelectR(@1,LO,RE,GT,LE,@2,@3)@
-@:JoinSelectR(@1,LE,RE,GE,LE,@2,@3)@
-@:JoinSelectR(@1,LO,RO,GT,LT,@2,@3)@
-@:JoinSelectR(@1,LE,RO,GE,LT,@2,@3)@
-@:JoinSelectS(@1,RO,LT,@2,@3)@
-@:JoinSelectS(@1,RE,LE,@2,@3)@
-@:JoinSelectS(@1,LO,GT,@2,@3)@
-@:JoinSelectS(@1,LE,GE,@2,@3)@
-@
-
-@c
-@:JoinSelectOperations(chr,simple,)@
-@:JoinSelectOperations(sht,simple,)@
-@:JoinSelectOperations(int,simple,)@
-@:JoinSelectOperations(lng,simple,)@
-@:JoinSelectOperations(flt,simple,)@
-@:JoinSelectOperations(dbl,simple,)@
-@:JoinSelectOperations(date,atom,TYPE_)@
-
-@= JoinSelectFunctions
-crackers_export str CRKjoinSelectDefault_@1(int *res, int *right, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh, int *left);
-crackers_export str CRKjoinSelectBounds_@1(int *res, int *right, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh, int *left, bit *inPlace, bit *isForeignKey);
-
-str
-CRKjoinSelectDefault_@1(int *res, int *right, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh, int *left){
-	bit inPlace = FALSE;
-	bit isForeignKey = FALSE;
-	return CRKjoinSelectBounds_@1( res, right, low, hgh, inclusiveLow, inclusiveHgh, left, &inPlace, &isForeignKey);
-}
-
-str
-CRKjoinSelectBounds_@1(int *res, int *right, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh, int *left, bit *inPlace, bit *isForeignKey){
-	BAT *l, *r;
-
-	if ((l = BATdescriptor(*left)) == NULL) 
-        	throw(MAL, "crackers.crackJoinSelect", "Cannot access descriptor");
-
-	if ((r = BATdescriptor(*right)) == NULL) {
-		BBPunfix(*left);
-        	throw(MAL, "crackers.crackJoinSelect", "Cannot access descriptor");
-        }
-
-	if (!BAThdense(r)) {
-		BBPunfix(*left);
-		BBPunfix(*right);
-		throw(MAL, "crackers.crackJoinSelect", "right BAT must have a dense head");
-	}
-
-	if (BATcount(l) == 0 || BATcount(r) == 0){
-		BAT *d = BATnew(TYPE_oid, TYPE_void, 0);
-		d->batBuns->free = 0;
-		BATsetcount(d, 0);
-		d->hsorted = GDK_SORTED;
-		d->hdense = TRUE;
-		BATseqbase(d, (oid)0);
-		BATkey(d, TRUE);
-		d->tsorted = FALSE;
-		d->tdense = FALSE;
-		BATseqbase(BATmirror(d), oid_nil);
-		BATkey(BATmirror(d), FALSE);
-		d->batRestricted= BAT_READ;
-		BBPkeepref(d->batCacheid);
-		*res = d->batCacheid;
-		BBPunfix(*left);
-		BBPunfix(*right);
-		return MAL_SUCCEED;
-	}	
-
-        if (@2_EQ(low,ATOMnilptr(TYPE_@1),@3@1)){
-		if (*inclusiveHgh==TRUE)
-                	return JoinSelectSingle_RE_@1(res, l, r, hgh, *inPlace, *isForeignKey);
-		else
-                	return JoinSelectSingle_RO_@1(res, l, r, hgh, *inPlace, *isForeignKey);
-	}
-        else if (@2_EQ(hgh,ATOMnilptr(TYPE_@1),@3@1))
-		if (*inclusiveLow==TRUE)
-                	return JoinSelectSingle_LE_@1(res, l, r, low, *inPlace, *isForeignKey);
-		else
-                	return JoinSelectSingle_LO_@1(res, l, r, low, *inPlace, *isForeignKey);
-        else{
-		if ((*inclusiveLow==TRUE) && (*inclusiveHgh==TRUE))
-                	return JoinSelectRange_LE_RE_@1(res, l, r, low, hgh, *inPlace, *isForeignKey);
-		else
-		if ((*inclusiveLow==TRUE) && (*inclusiveHgh==FALSE))
-                	return JoinSelectRange_LE_RO_@1(res, l, r, low, hgh, *inPlace, *isForeignKey);
-		else
-		if ((*inclusiveLow==FALSE) && (*inclusiveHgh==FALSE))
-                	return JoinSelectRange_LO_RO_@1(res, l, r, low, hgh, *inPlace, *isForeignKey);
-		else
-		if ((*inclusiveLow==TRUE) && (*inclusiveHgh==TRUE))
-                	return JoinSelectRange_LE_RE_@1(res, l, r, low, hgh, *inPlace, *isForeignKey);
-	}
-        throw(MAL, "crackers.crackJoinSelect", "case not handled");
-}
-@
-
-@c
-@:JoinSelectFunctions(chr,simple,)@
-@:JoinSelectFunctions(sht,simple,)@
-@:JoinSelectFunctions(int,simple,)@
-@:JoinSelectFunctions(lng,simple,)@
-@:JoinSelectFunctions(flt,simple,)@
-@:JoinSelectFunctions(dbl,simple,)@
-@:JoinSelectFunctions(date,atom,TYPE_)@
-/* END ---------------------------JoinSelect Operators----------------------------------------------------------------*/
+@}

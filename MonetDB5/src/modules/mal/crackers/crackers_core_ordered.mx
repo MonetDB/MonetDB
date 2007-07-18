@@ -1,4 +1,156 @@
-/* BEGIN -------------------------------Core cracking ----------------------------------------------------------------------*/
+@' The contents of this file are subject to the MonetDB Public License
+@' Version 1.1 (the "License"); you may not use this file except in
+@' compliance with the License. You may obtain a copy of the License at
+@' http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+@'
+@' Software distributed under the License is distributed on an "AS IS"
+@' basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+@' License for the specific language governing rights and limitations
+@' under the License.
+@'
+@' The Original Code is the MonetDB Database System.
+@'
+@' The Initial Developer of the Original Code is CWI.
+@' Portions created by CWI are Copyright (C) 1997-2007 CWI.
+@' All Rights Reserved.
+
+@f crackers_core_ordered
+@a Martin Kersten, Stratos Idreos, Stefan Manegold
+@d March 2006 - July 2007
+@* Core cracking (ordered)
+
+
+@+ Interface
+ 
+
+@- Type expansion
+
+@= TypeSwitch
+@:@1(chr,simple,)@
+@:@1(sht,simple,)@
+@:@1(int,simple,)@
+@:@1(lng,simple,)@
+@:@1(flt,simple,)@
+@:@1(dbl,simple,)@
+@:@1(date,atom,TYPE_)@
+@
+
+
+@- Header file
+
+@h
+#ifndef _CRACKERS_CORE_ORDERED_H_
+#define _CRACKERS_CORE_ORDERED_H_
+
+/* Exported signatures */
+@:TypeSwitch(CoreOrderedFunctions_decl)@
+
+#endif /* _CRACKERS_CORE_ORDERED_H */
+@
+
+
+@- Exported signatures
+
+@= CoreOrderedFunctions_decl
+crackers_export str CRKcrackOrderedZero_@1 (int *res, int *bid, @1 *mid);
+crackers_export str CRKcrackOrderedOne_@1 (int *res, int *bid, @1 *mid);
+crackers_export str CRKcrackOrderedThree_@1 (int *res, int *bid, @1 *low, @1 *hgh);
+@
+
+
+
+
+@{
+@+ Implementation
+
+
+@- C file
+
+@c
+#include "mal_config.h"
+#include "crackers.h"
+
+/* Local support functions and macros */
+@:TypeSwitch(operationsOrdered)@
+
+/* Exported functions */
+@:TypeSwitch(CoreOrderedFunctions_impl)@
+@
+
+
+@- Exported functions
+
+@= CoreOrderedFunctions_impl
+str
+CRKcrackOrderedZero_@1 (int *res, int *bid, @1 *mid){
+        BAT *b;
+        str msg;
+	lng pos;
+
+        if ((b = BATdescriptor(*bid)) == NULL) 
+                throw(MAL, "crackers.crack_zeroOrdered", "Cannot access descriptor");
+
+        msg = CRKcrackOrderedZero_LE_@1(b,*mid, 0, BATcount(b)-1,&pos);
+
+        BBPkeepref(b->batCacheid);
+        *res = *bid;
+        return msg;
+}
+
+str
+CRKcrackOrderedOne_@1 (int *res, int *bid, @1 *mid){
+        BAT *b;
+	str msg;
+
+        if ((b = BATdescriptor(*bid)) == NULL) 
+                throw(MAL, "crackers.crack_oneOrdered", "Cannot access descriptor");
+
+	msg = CRKcrackOrderedThree_LE_RE_@1(b,*mid,*mid, 0, BATcount(b)-1);
+        BBPkeepref(b->batCacheid);
+        *res = *bid;
+        return msg;
+}
+
+str
+CRKcrackOrderedThree_@1 (int *res, int *bid, @1 *low, @1 *hgh){
+	BAT *b;
+	str msg;
+	lng posl,posh;
+
+	if ((b = BATdescriptor(*bid)) == NULL) 
+		throw(MAL, "crackers.crack_threeOrdered", "Cannot access descriptor");
+
+        msg = CRKcrackOrderedThreeL_LO_RE_@1(b,*low,*hgh, 0, BATcount(b)-1,&posl, &posh);
+	BBPkeepref(b->batCacheid);
+	*res = *bid;
+	return msg;
+}
+@
+
+
+@- Local support functions and macros
+
+@= operationsOrdered
+@:crackInTwoOrderedPieces(@1,LE,<=,>)@
+@(
+@:crackInTwoOrderedPieces(@1,RE,<,>=)@
+@)
+
+@:crackInThreeOrderedPieces(@1,LE,RE,<,>=,<=,>)@
+@(
+@:crackInThreeOrderedPieces(@1,LE,RO,<,>=,<,>=)@
+@:crackInThreeOrderedPieces(@1,LO,RE,<=,>,<=,>)@
+@:crackInThreeOrderedPieces(@1,LO,RO,<=,>,<,>=)@
+@)
+
+@:crackInThreeOrderedPiecesL(@1,LO,RE,<=,>,<=,>)@
+@(
+@:crackInThreeOrderedPiecesL(@1,LE,RE,<,>=,<=,>)@
+@:crackInThreeOrderedPiecesL(@1,LO,RO,<=,>,<,>=)@
+@:crackInThreeOrderedPiecesL(@1,LE,RO,<,>=,<,>=)@
+@)
+@
+
 @= moveOrdered
 	while (@1 @6 ){
 		@2 @4= xx;
@@ -77,8 +229,7 @@
 @
 
 @= crackInThreeOrderedPieces
-crackers_export str CRKcrackOrderedThree_@2_@3_@1(BAT *b, @1 low, @1 hgh, int idx_first, int idx_last);
-str
+static str
 CRKcrackOrderedThree_@2_@3_@1(BAT *b, @1 low, @1 hgh, int idx_first, int idx_last){
 	BUN hh, ht, tmpt, tmph, ch, ct, t, s, fh, ft;
 	oid *scr_h;
@@ -128,9 +279,10 @@ CRKcrackOrderedThree_@2_@3_@1(BAT *b, @1 low, @1 hgh, int idx_first, int idx_las
 	
 	return MAL_SUCCEED;
 }
+@
 
-crackers_export str CRKcrackOrderedThreeL_@2_@3_@1(BAT *b, @1 low, @1 hgh, lng idx_first, lng idx_last, lng *posl, lng *posh);
-str
+@= crackInThreeOrderedPiecesL
+static str
 CRKcrackOrderedThreeL_@2_@3_@1(BAT *b, @1 low, @1 hgh, lng idx_first, lng idx_last, lng *posl, lng *posh){
 	BUN lh, lt, hh, ht, tmpt, tmph, t, s, fh, ft, mh, mt;
 	oid *scr_h,*mscr_h;
@@ -423,8 +575,7 @@ CRKcrackOrderedThreeL_@2_@3_@1(BAT *b, @1 low, @1 hgh, lng idx_first, lng idx_la
 @
 
 @= crackInTwoOrderedPieces
-crackers_export str CRKcrackOrderedZero_@2_@1(BAT *b, @1 mid, lng idx_first, lng idx_last, lng *pos);
-str
+static str
 CRKcrackOrderedZero_@2_@1(BAT *b, @1 mid, lng idx_first, lng idx_last, lng *pos){
 	BUN hh, ht, tmpt, tmph, fh, ft;
 	BUN ch, ct, t, s;
@@ -496,67 +647,4 @@ CRKcrackOrderedZero_@2_@1(BAT *b, @1 mid, lng idx_first, lng idx_last, lng *pos)
 }
 @
 
-@= operationsOrdered
-@:crackInTwoOrderedPieces(@1,LE,<=,>)@
-@:crackInTwoOrderedPieces(@1,RE,<,>=)@
-@:crackInThreeOrderedPieces(@1,LO,RE,<=,>,<=,>)@
-@:crackInThreeOrderedPieces(@1,LE,RE,<,>=,<=,>)@
-@:crackInThreeOrderedPieces(@1,LO,RO,<=,>,<,>=)@
-@:crackInThreeOrderedPieces(@1,LE,RO,<,>=,<,>=)@
-
-crackers_export str CRKcrackOrderedZero_@1 (int *res, int *bid, @1 *mid);
-str
-CRKcrackOrderedZero_@1 (int *res, int *bid, @1 *mid){
-        BAT *b;
-        str msg;
-	lng pos;
-
-        if ((b = BATdescriptor(*bid)) == NULL) 
-                throw(MAL, "crackers.crack_zeroOrdered", "Cannot access descriptor");
-
-        msg = CRKcrackOrderedZero_LE_@1(b,*mid, 0, BATcount(b)-1,&pos);
-
-        BBPkeepref(b->batCacheid);
-        *res = *bid;
-        return msg;
-}
-
-crackers_export str CRKcrackOrderedOne_@1 (int *res, int *bid, @1 *mid);
-str
-CRKcrackOrderedOne_@1 (int *res, int *bid, @1 *mid){
-        BAT *b;
-	str msg;
-
-        if ((b = BATdescriptor(*bid)) == NULL) 
-                throw(MAL, "crackers.crack_oneOrdered", "Cannot access descriptor");
-
-	msg = CRKcrackOrderedThree_LE_RE_@1(b,*mid,*mid, 0, BATcount(b)-1);
-        BBPkeepref(b->batCacheid);
-        *res = *bid;
-        return msg;
-}
-
-crackers_export str CRKcrackOrderedThree_@1 (int *res, int *bid, @1 *low, @1 *hgh);
-str
-CRKcrackOrderedThree_@1 (int *res, int *bid, @1 *low, @1 *hgh){
-	BAT *b;
-	str msg;
-	lng posl,posh;
-
-	if ((b = BATdescriptor(*bid)) == NULL) 
-		throw(MAL, "crackers.crack_threeOrdered", "Cannot access descriptor");
-
-        msg = CRKcrackOrderedThreeL_LO_RE_@1(b,*low,*hgh, 0, BATcount(b)-1,&posl, &posh);
-	BBPkeepref(b->batCacheid);
-	*res = *bid;
-	return msg;
-}
-@c
-@:operationsOrdered(chr,simple,)@
-@:operationsOrdered(sht,simple,)@
-@:operationsOrdered(int,simple,)@
-@:operationsOrdered(lng,simple,)@
-@:operationsOrdered(flt,simple,)@
-@:operationsOrdered(dbl,simple,)@
-@:operationsOrdered(date,atom,TYPE_)@
-/* END -------------------------Core cracking Ordered---------------------------------------------------------*/
+@]
