@@ -806,42 +806,37 @@ reduce (PFla_op_t *p, int goalnt)
             relabel (p, kids);
             break;
 
-        /* Rel:    rownum (Rel) */
-        case 49:
-#if 0 
-/* this is only allowed if the numbers do not matter */
+        /* Rel:    rank (Rel) */
+        case 50:
+            /* Replace a rank operator with a single ascending order
+               criterion by a projection that links the output column
+               to the order criterion. */
+            if (PFord_count (p->sem.rank.sortby) == 1 &&
+                PFord_order_dir_at (p->sem.rank.sortby, 0) == DIR_ASC) {
+                PFalg_proj_t *proj_list;
+                unsigned int count = 0;
 
-            /* replace rownum by projection if it only contains one
-               sort (and no partioning) criterion that is of type nat */ 
-            if (!p->sem.rownum.part &&
-                p->sem.rownum.sortby.count == 1)
-                for (unsigned int i = 0; i < p->schema.count; i++) {
-                    PFalg_att_t cur_col = p->schema.items[i].name;
-                    
-                    if (cur_col == p->sem.rownum.sortby.atts[0] &&
-                        p->schema.items[i].type == aat_nat) {
-                        PFalg_proj_t *proj = PFmalloc (
-                                                 p->schema.count
-                                                 * sizeof (PFalg_proj_t));
-                        /* copy property list */
-                        for (i = 0; i < p->schema.count; i++)
-                            if (p->sem.rownum.res ==
-                                p->schema.items[i].name)
-                                /* as rownum column we use the single
-                                   sort criterion */
-                                proj[i] = PFalg_proj (p->sem.number.res,
-                                                      cur_col);
-                            else
-                                proj[i] = PFalg_proj (p->schema.items[i].name,
-                                                      p->schema.items[i].name);
-                                                      
-                        *p = *PFla_project_ (L(p), p->schema.count, proj);
-                        SEEN(p) = false;
-                        relabel (p, kids);
-                        break;
-                    }
-                }
-#endif
+                /* create projection list */
+                proj_list = PFmalloc (p->schema.count *
+                                      sizeof (*(proj_list)));
+                                      
+                /* adjust column name of the rank operator */
+                proj_list[count++] = PFalg_proj (
+                                         p->sem.rank.res,
+                                         PFord_order_col_at (
+                                             p->sem.rank.sortby,
+                                             0));
+                                         
+                for (unsigned int i = 0; i < p->schema.count; i++)
+                    if (p->schema.items[i].name != p->sem.rank.res)
+                        proj_list[count++] = PFalg_proj (
+                                                 p->schema.items[i].name,
+                                                 p->schema.items[i].name);
+
+                *p = *PFla_project_ (L(p), count, proj_list);
+                SEEN(p) = false;
+                relabel (p, kids);
+            }
             break;
 
         /* Rel:    number (number (Rel)) */
