@@ -909,7 +909,7 @@ def am_translate_dir(path, am):
                'oldincludedir', 'pkgbindir', 'pkgdatadir', 'pkgincludedir',
                'pkglibdir', 'pkglocalstatedir', 'pkgsysconfdir', 'sbindir',
                'sharedstatedir', 'srcdir', 'sysconfdir', 'top_builddir',
-               'top_srcdir'):
+               'top_srcdir', 'prefix'):
         dir = "$("+dir+")"
     dir = dir + rest
     return dir
