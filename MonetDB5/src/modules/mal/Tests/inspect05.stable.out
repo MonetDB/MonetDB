@@ -3671,6 +3671,7 @@ end main;	# 11
 [ "getDebug",				  "command",	  "mdb",	  "():int ",														  "MDBgetDebug;"				  ]
 [ "inspect",				  "pattern",	  "mdb",	  "(mod:str,fcn:str):void ",												  "MDBinspect;"					  ]
 [ "list",				  "pattern",	  "mdb",	  "(M:str,F:str):void ",												  "MDBlist3;"					  ]
+[ "listMapi",			  "pattern",	  "mdb",	  "():void ",													  "MDBlistMapi;"				  ]
 [ "list",				  "pattern",	  "mdb",	  "():void ",														  "MDBlist;"					  ]
 [ "setDebug",				  "command",	  "mdb",	  "(flg:int):int ",													  "MDBsetDebug;"				  ]
 [ "setDebug",				  "command",	  "mdb",	  "(flg:str):int ",													  "MDBsetDebugStr;"				  ]
