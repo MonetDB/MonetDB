@@ -12,8 +12,16 @@ prefix = $(MAKEDIR)
 
 !IFDEF HAVE_MONETDB5
 RUNMSERVER5 = RunMserver5.bat
+M5INSTALLER = install-m5installer
 !ELSE
 RUNMSERVER5 =
+M5INSTALLER =
+!ENDIF
+
+!IFDEF HAVE_MONETDB5
+M4INSTALLER = install-m4installer
+!ELSE
+M4INSTALLER =
 !ENDIF
 
 all: "$(SRCDIR)\Makefile.msc" all-msc unistd.h RunMserver.bat RunMtest.bat RunMapprove.bat $(RUNMSERVER5)
@@ -23,8 +31,17 @@ check: "$(SRCDIR)\Makefile.msc" RunMtest.bat
 	$(MAKE) /nologo /i /f "$(SRCDIR)\Makefile.msc" "prefix=$(prefix)" check
 	call RunMtest.bat
 
-install: targetdirs all
+install: targetdirs all $(M4INSTALLER) $(M5INSTALLER)
 	$(MAKE) /nologo /f "$(SRCDIR)\Makefile.msc" "prefix=$(prefix)" install
+	$(INSTALL) MSQLserver.bat "$(prefix)"
+
+install-m4installer:
+	$(INSTALL) MonetDB4-SQL\MonetDB4-Installer.sln "$(prefix)"
+	$(INSTALL) MonetDB4-SQL\MonetDB4-Installer.vdproj "$(prefix)"
+
+install-m5installer:
+	$(INSTALL) MonetDB5-SQL\MonetDB5-Installer.sln "$(prefix)"
+	$(INSTALL) MonetDB5-SQL\MonetDB5-Installer.vdproj "$(prefix)"
 
 $(SRCDIR)\Makefile.msc:
 	$(CD) "$(SRCDIR)" && autogen.py

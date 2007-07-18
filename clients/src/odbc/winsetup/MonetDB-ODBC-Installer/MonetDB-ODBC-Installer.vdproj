@@ -155,7 +155,7 @@
         {
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_2FB9A57E3DD7443F97A7C8B0DBF82DB5"
             {
-            "SourcePath" = "8:..\\..\\..\\..\\..\\MonetDB4\\banner.bmp"
+            "SourcePath" = "8:banner.bmp"
             "TargetName" = "8:banner.bmp"
             "Tag" = "8:"
             "Folder" = "8:_E71AEF246CD8428C98B2ECCFE2014056"
@@ -175,7 +175,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_42425D9BCD9641D3ABC839D5A29358DE"
             {
-            "SourcePath" = "8:..\\..\\..\\..\\NT\\lib\\libMapi.dll"
+            "SourcePath" = "8:lib\\libMapi.dll"
             "TargetName" = "8:libMapi.dll"
             "Tag" = "8:"
             "Folder" = "8:_376EC0506E4F452CA2C78ACE11515435"
@@ -195,7 +195,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_5CCCB992693C48C0BFEF4B0EFBBD884A"
             {
-            "SourcePath" = "8:..\\..\\..\\..\\..\\MonetDB\\license.rtf"
+            "SourcePath" = "8:icense.rtf"
             "TargetName" = "8:license.rtf"
             "Tag" = "8:"
             "Folder" = "8:_E71AEF246CD8428C98B2ECCFE2014056"
@@ -215,7 +215,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_8ADC98E4D05143999FFC87CAB78E68C9"
             {
-            "SourcePath" = "8:..\\..\\..\\..\\NT\\bin\\odbcinstall.exe"
+            "SourcePath" = "8:bin\\odbcinstall.exe"
             "TargetName" = "8:odbcinstall.exe"
             "Tag" = "8:"
             "Folder" = "8:_E71AEF246CD8428C98B2ECCFE2014056"
@@ -235,7 +235,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_931FDCC4685C438DB61DFA8D32DF80D1"
             {
-            "SourcePath" = "8:..\\..\\..\\..\\..\\MonetDB\\NT\\lib\\libmutils.dll"
+            "SourcePath" = "8:lib\\libmutils.dll"
             "TargetName" = "8:libmutils.dll"
             "Tag" = "8:"
             "Folder" = "8:_376EC0506E4F452CA2C78ACE11515435"
@@ -255,7 +255,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_BC1CD3A227FA4EB7B035DFA62EF4D82C"
             {
-            "SourcePath" = "8:..\\..\\..\\..\\..\\MonetDB\\NT\\lib\\libstream.dll"
+            "SourcePath" = "8:lib\\libstream.dll"
             "TargetName" = "8:libstream.dll"
             "Tag" = "8:"
             "Folder" = "8:_376EC0506E4F452CA2C78ACE11515435"
@@ -275,7 +275,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_CB89303C19364CECA36BDC911637BE9C"
             {
-            "SourcePath" = "8:..\\..\\..\\..\\..\\MonetDB4\\website.html"
+            "SourcePath" = "8:website.html"
             "TargetName" = "8:website.html"
             "Tag" = "8:"
             "Folder" = "8:_E71AEF246CD8428C98B2ECCFE2014056"
@@ -295,7 +295,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_E763DA578AC34798B710589F4C224BDE"
             {
-            "SourcePath" = "8:..\\..\\..\\..\\NT\\lib\\libMonetODBCs.dll"
+            "SourcePath" = "8:lib\\libMonetODBCs.dll"
             "TargetName" = "8:libMonetODBCs.dll"
             "Tag" = "8:"
             "Folder" = "8:_376EC0506E4F452CA2C78ACE11515435"
@@ -315,7 +315,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_E78854C05F3D4756B29D929C6E751845"
             {
-            "SourcePath" = "8:..\\..\\..\\..\\NT\\lib\\libMonetODBC.dll"
+            "SourcePath" = "8:lib\\libMonetODBC.dll"
             "TargetName" = "8:libMonetODBC.dll"
             "Tag" = "8:"
             "Folder" = "8:_376EC0506E4F452CA2C78ACE11515435"

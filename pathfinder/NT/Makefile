@@ -21,6 +21,11 @@ check: "$(SRCDIR)\Makefile.msc" RunMtest.bat
 install: targetdirs pf_config.h all
 	$(INSTALL) pf_config.h "$(includedir)"
 	$(MAKE) /nologo /f "$(SRCDIR)\Makefile.msc" "prefix=$(prefix)" install
+	$(INSTALL) MXQclient.bat "$(prefix)"
+	$(INSTALL) MXQserver.bat "$(prefix)"
+	$(INSTALL) pf.bat "$(prefix)"
+	$(INSTALL) MonetDB4-XQuery/MonetDB4-Installer.sln "$(prefix)"
+	$(INSTALL) MonetDB4-XQuery/MonetDB4-Installer.vdproj "$(prefix)"
 
 $(SRCDIR)\Makefile.msc: "$(SRCDIR)\Makefile.ag"
         $(CD) "$(SRCDIR)" && autogen.py

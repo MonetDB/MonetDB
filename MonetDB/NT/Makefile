@@ -22,6 +22,9 @@ install: targetdirs monetdb_winconfig.h monetdb_config.h winrules.msc all
 	$(INSTALL) monetdb_winconfig.h "$(includedir)"
 	$(INSTALL) monetdb_config.h "$(includedir)"
 	$(INSTALL) winrules.msc "$(pkgdatadir)"
+	$(INSTALL) banner.bmp "$(prefix)"
+	$(INSTALL) license.rtf "$(prefix)"
+	$(INSTALL) website.html "$(prefix)"
 	$(MAKE) /nologo /f "$(SRCDIR)\Makefile.msc" "prefix=$(prefix)" install
 
 $(SRCDIR)\Makefile.msc: "$(SRCDIR)\Makefile.ag"

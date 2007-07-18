@@ -1055,7 +1055,7 @@
         {
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_00A82A41507C4D0CA77AA4298B12733F"
             {
-            "SourcePath" = "8:..\\..\\..\\MonetDB4\\NT\\lib\\MonetDB4\\mmath.mil"
+            "SourcePath" = "8:lib\\MonetDB4\\mmath.mil"
             "TargetName" = "8:mmath.mil"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
@@ -1075,7 +1075,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_0581C9BC0BF44338AF297782A3EA793D"
             {
-            "SourcePath" = "8:..\\share\\MonetDB\\sql\\math.sql"
+            "SourcePath" = "8:share\\MonetDB\\sql\\math.sql"
             "TargetName" = "8:math.sql"
             "Tag" = "8:"
             "Folder" = "8:_9AD056F041C4488B825BCBCC559BC6A2"
@@ -1095,7 +1095,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_0631B58B8488483F9D280E38FBB646C5"
             {
-            "SourcePath" = "8:..\\..\\..\\MonetDB4\\NT\\lib\\MonetDB4\\restore.mil"
+            "SourcePath" = "8:lib\\MonetDB4\\restore.mil"
             "TargetName" = "8:restore.mil"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
@@ -1115,7 +1115,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_0B66CDD0892C4DD59AD2C1F0C81C5E3E"
             {
-            "SourcePath" = "8:..\\..\\..\\clients\\NT\\share\\MonetDB\\python\\CMapi.py"
+            "SourcePath" = "8:share\\MonetDB\\python\\CMapi.py"
             "TargetName" = "8:CMapi.py"
             "Tag" = "8:"
             "Folder" = "8:_7FBFE910168F4B7C817DFA594E7BB44E"
@@ -1135,7 +1135,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_0C33051D1E8445EC823BCB0873B891D6"
             {
-            "SourcePath" = "8:..\\..\\..\\MonetDB4\\NT\\lib\\MonetDB4\\lib_malalgebra.dll"
+            "SourcePath" = "8:lib\\MonetDB4\\lib_malalgebra.dll"
             "TargetName" = "8:lib_malalgebra.dll"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
@@ -1155,7 +1155,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_0EF2B9D242A64A2998BF36273AD01166"
             {
-            "SourcePath" = "8:..\\share\\MonetDB\\sql\\stats.sql"
+            "SourcePath" = "8:share\\MonetDB\\sql\\stats.sql"
             "TargetName" = "8:stats.sql"
             "Tag" = "8:"
             "Folder" = "8:_9AD056F041C4488B825BCBCC559BC6A2"
@@ -1175,7 +1175,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_0F3917FBB7DB4C7EA8CE15996B961C05"
             {
-            "SourcePath" = "8:..\\share\\doc\\MonetDB-SQL-2.19.0\\dump-restore.txt"
+            "SourcePath" = "8:share\\doc\\MonetDB-SQL-2.19.0\\dump-restore.txt"
             "TargetName" = "8:dump-restore.txt"
             "Tag" = "8:"
             "Folder" = "8:_876B289F659E4FE681DDAD9153E36616"
@@ -1195,7 +1195,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_11CB1E338938478894097DC0B65D8899"
             {
-            "SourcePath" = "8:..\\..\\..\\MonetDB4\\NT\\lib\\MonetDB4\\lib_mel.dll"
+            "SourcePath" = "8:lib\\MonetDB4\\lib_mel.dll"
             "TargetName" = "8:lib_mel.dll"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
@@ -1215,7 +1215,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_1376203E14554FBF9344BBDD6BC934E3"
             {
-            "SourcePath" = "8:..\\..\\..\\MonetDB4\\NT\\lib\\MonetDB4\\lib_algebra.dll"
+            "SourcePath" = "8:lib\\MonetDB4\\lib_algebra.dll"
             "TargetName" = "8:lib_algebra.dll"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
@@ -1235,7 +1235,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_13FF8722927344F3897B7434F8410234"
             {
-            "SourcePath" = "8:..\\..\\..\\MonetDB4\\NT\\lib\\MonetDB4\\lib_arith.dll"
+            "SourcePath" = "8:lib\\MonetDB4\\lib_arith.dll"
             "TargetName" = "8:lib_arith.dll"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
@@ -1255,7 +1255,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_1463EE1B22C04587AC36BBB138396168"
             {
-            "SourcePath" = "8:..\\..\\..\\MonetDB4\\NT\\lib\\MonetDB4\\bat_arith.mil"
+            "SourcePath" = "8:lib\\MonetDB4\\bat_arith.mil"
             "TargetName" = "8:bat_arith.mil"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
@@ -1275,7 +1275,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_14D3FAC18FFF4BDCBE9AE817B6262BA8"
             {
-            "SourcePath" = "8:..\\..\\..\\MonetDB4\\NT\\lib\\MonetDB4\\lib_trans.dll"
+            "SourcePath" = "8:lib\\MonetDB4\\lib_trans.dll"
             "TargetName" = "8:lib_trans.dll"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
@@ -1295,7 +1295,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_154F694AAE084D4697C8543C0816FF1C"
             {
-            "SourcePath" = "8:..\\..\\..\\MonetDB4\\NT\\lib\\libmonet.dll"
+            "SourcePath" = "8:lib\\libmonet.dll"
             "TargetName" = "8:libmonet.dll"
             "Tag" = "8:"
             "Folder" = "8:_A3C9BE5CA72B42628868618D180581DA"
@@ -1315,7 +1315,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_176AA0DE26EA4B928012BB410E91F55E"
             {
-            "SourcePath" = "8:..\\share\\MonetDB\\sql\\ms_functions.sql"
+            "SourcePath" = "8:share\\MonetDB\\sql\\ms_functions.sql"
             "TargetName" = "8:ms_functions.sql"
             "Tag" = "8:"
             "Folder" = "8:_9AD056F041C4488B825BCBCC559BC6A2"
@@ -1335,7 +1335,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_188985900D9B45A49840EAD93F5521CE"
             {
-            "SourcePath" = "8:..\\..\\..\\MonetDB4\\NT\\lib\\MonetDB4\\lib_salgebra.dll"
+            "SourcePath" = "8:lib\\MonetDB4\\lib_salgebra.dll"
             "TargetName" = "8:lib_salgebra.dll"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
@@ -1355,7 +1355,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_1B6D66F3FD4645D4A1CE8C09DF5F2978"
             {
-            "SourcePath" = "8:..\\..\\..\\MonetDB4\\NT\\lib\\MonetDB4\\lib_bat.dll"
+            "SourcePath" = "8:lib\\MonetDB4\\lib_bat.dll"
             "TargetName" = "8:lib_bat.dll"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
@@ -1375,7 +1375,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_1BDC7C5BF1444E39BA20498553AB258E"
             {
-            "SourcePath" = "8:..\\..\\..\\MonetDB4\\NT\\lib\\MonetDB4\\backup.mil"
+            "SourcePath" = "8:lib\\MonetDB4\\backup.mil"
             "TargetName" = "8:backup.mil"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
@@ -1395,7 +1395,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_1CD9165E4E834D62A6B5C0D9E8A62580"
             {
-            "SourcePath" = "8:..\\..\\..\\MonetDB4\\NT\\lib\\MonetDB4\\lib_streams.dll"
+            "SourcePath" = "8:lib\\MonetDB4\\lib_streams.dll"
             "TargetName" = "8:lib_streams.dll"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
@@ -1415,7 +1415,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_1CF3981625D7433488FABAA49C317E0F"
             {
-            "SourcePath" = "8:..\\..\\..\\clients\\NT\\share\\MonetDB\\lib\\monetdb-1.6-jdbc.jar"
+            "SourcePath" = "8:share\\MonetDB\\lib\\monetdb-1.6-jdbc.jar"
             "TargetName" = "8:monetdb-1.6-jdbc.jar"
             "Tag" = "8:"
             "Folder" = "8:_2E7A7A2A3AA7443EB1803999F76D6C26"
@@ -1435,7 +1435,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_1FE7B02CBBA5493DA5E90CC441A198FC"
             {
-            "SourcePath" = "8:..\\..\\..\\MonetDB4\\banner.bmp"
+            "SourcePath" = "8:banner.bmp"
             "TargetName" = "8:banner.bmp"
             "Tag" = "8:"
             "Folder" = "8:_D9A7267FC9784D8BBD3CBC6EC1754DBE"
@@ -1455,7 +1455,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_20041D36818145F79333D30CAFA1A737"
             {
-            "SourcePath" = "8:..\\..\\..\\MonetDB4\\NT\\lib\\MonetDB4\\bat.mil"
+            "SourcePath" = "8:lib\\MonetDB4\\bat.mil"
             "TargetName" = "8:bat.mil"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
@@ -1475,7 +1475,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_202110E965B442D4A8F65968BAC24362"
             {
-            "SourcePath" = "8:..\\..\\..\\MonetDB4\\NT\\lib\\MonetDB4\\alarm.mil"
+            "SourcePath" = "8:lib\\MonetDB4\\alarm.mil"
             "TargetName" = "8:alarm.mil"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
@@ -1495,7 +1495,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_214CE3254EAE466E8527E710384ECF15"
             {
-            "SourcePath" = "8:..\\..\\..\\MonetDB4\\NT\\lib\\MonetDB4\\oo7.mil"
+            "SourcePath" = "8:lib\\MonetDB4\\oo7.mil"
             "TargetName" = "8:oo7.mil"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
@@ -1515,7 +1515,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_24C843C9BCEA4ABEBCA5D1EA6732690F"
             {
-            "SourcePath" = "8:..\\..\\..\\MonetDB4\\NT\\lib\\MonetDB4\\lib_pqueue.dll"
+            "SourcePath" = "8:lib\\MonetDB4\\lib_pqueue.dll"
             "TargetName" = "8:lib_pqueue.dll"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
@@ -1535,7 +1535,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_25911C9FEE794C20929785C8AE7F20A0"
             {
-            "SourcePath" = "8:..\\share\\MonetDB\\sql\\mtime.sql"
+            "SourcePath" = "8:share\\MonetDB\\sql\\mtime.sql"
             "TargetName" = "8:mtime.sql"
             "Tag" = "8:"
             "Folder" = "8:_9AD056F041C4488B825BCBCC559BC6A2"
@@ -1555,7 +1555,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_26CEA5F24A884A2DAA7ABEBDB6712B3C"
             {
-            "SourcePath" = "8:..\\share\\MonetDB\\sql\\dependency_functions.sql"
+            "SourcePath" = "8:share\\MonetDB\\sql\\dependency_functions.sql"
             "TargetName" = "8:dependency_functions.sql"
             "Tag" = "8:"
             "Folder" = "8:_9AD056F041C4488B825BCBCC559BC6A2"
@@ -1575,7 +1575,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_298D0E3117F64178B13FED4C76736E1D"
             {
-            "SourcePath" = "8:..\\..\\..\\MonetDB4\\NT\\lib\\MonetDB4\\lib_oo7.dll"
+            "SourcePath" = "8:lib\\MonetDB4\\lib_oo7.dll"
             "TargetName" = "8:lib_oo7.dll"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
@@ -1595,7 +1595,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_2B5D5F94F0634282B3D0691E8BF5FE70"
             {
-            "SourcePath" = "8:..\\..\\..\\clients\\NT\\lib\\libMonetODBC.dll"
+            "SourcePath" = "8:lib\\libMonetODBC.dll"
             "TargetName" = "8:libMonetODBC.dll"
             "Tag" = "8:"
             "Folder" = "8:_A3C9BE5CA72B42628868618D180581DA"
@@ -1615,7 +1615,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_2C1052FB43EC42A2B02FAE9C013DF335"
             {
-            "SourcePath" = "8:..\\..\\..\\MonetDB4\\NT\\lib\\MonetDB4\\bat_mmath.mil"
+            "SourcePath" = "8:lib\\MonetDB4\\bat_mmath.mil"
             "TargetName" = "8:bat_mmath.mil"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
@@ -1635,7 +1635,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_2CA3CB676BC341B29AC6DDECF9B3AEBB"
             {
-            "SourcePath" = "8:..\\..\\..\\MonetDB4\\website.html"
+            "SourcePath" = "8:website.html"
             "TargetName" = "8:website.html"
             "Tag" = "8:"
             "Folder" = "8:_562B007DB0FC4C0D8EBC256D71FF091B"
@@ -1655,7 +1655,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_2E7E97DCF2B74D96AF84B0A7D69AC39E"
             {
-            "SourcePath" = "8:..\\..\\..\\MonetDB4\\NT\\lib\\MonetDB4\\streams.mil"
+            "SourcePath" = "8:lib\\MonetDB4\\streams.mil"
             "TargetName" = "8:streams.mil"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
@@ -1675,7 +1675,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_2EE920B0781A46759506EA99AD03646F"
             {
-            "SourcePath" = "8:..\\..\\..\\MonetDB4\\NT\\lib\\MonetDB4\\sys.mil"
+            "SourcePath" = "8:lib\\MonetDB4\\sys.mil"
             "TargetName" = "8:sys.mil"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
@@ -1695,7 +1695,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_30094FC841364AD1A30FBEA679B9D390"
             {
-            "SourcePath" = "8:..\\share\\MonetDB\\sql\\url.sql"
+            "SourcePath" = "8:share\\MonetDB\\sql\\url.sql"
             "TargetName" = "8:url.sql"
             "Tag" = "8:"
             "Folder" = "8:_9AD056F041C4488B825BCBCC559BC6A2"
@@ -1715,7 +1715,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_30106428D2E047FF8B3268AE6B238F86"
             {
-            "SourcePath" = "8:..\\..\\..\\MonetDB4\\NT\\lib\\MonetDB4\\lib_xtables.dll"
+            "SourcePath" = "8:lib\\MonetDB4\\lib_xtables.dll"
             "TargetName" = "8:lib_xtables.dll"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
@@ -1735,7 +1735,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_3038872583E444A1ABF57228F372C9A4"
             {
-            "SourcePath" = "8:..\\..\\..\\MonetDB4\\NT\\lib\\MonetDB4\\lib_color.dll"
+            "SourcePath" = "8:lib\\MonetDB4\\lib_color.dll"
             "TargetName" = "8:lib_color.dll"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
@@ -1755,7 +1755,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_306F48BFC7924938994848B19F86C98A"
             {
-            "SourcePath" = "8:..\\..\\..\\MonetDB4\\NT\\lib\\MonetDB4\\mkey.mil"
+            "SourcePath" = "8:lib\\MonetDB4\\mkey.mil"
             "TargetName" = "8:mkey.mil"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
@@ -1775,7 +1775,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_321DB6EFF7B84F4A80B4646C4E734374"
             {
-            "SourcePath" = "8:..\\..\\..\\MonetDB4\\NT\\lib\\MonetDB4\\profiler.mil"
+            "SourcePath" = "8:lib\\MonetDB4\\profiler.mil"
             "TargetName" = "8:profiler.mil"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
@@ -1795,7 +1795,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_360663D6060443F7B03AD0DBC5105C5A"
             {
-            "SourcePath" = "8:..\\..\\..\\clients\\NT\\bin\\MapiClient.py"
+            "SourcePath" = "8:bin\\MapiClient.py"
             "TargetName" = "8:MapiClient.py"
             "Tag" = "8:"
             "Folder" = "8:_1EC19BD0D849484790DB6A7D69758E24"
@@ -1815,7 +1815,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_39FD737767A745D79A092FD51807BE6F"
             {
-            "SourcePath" = "8:..\\..\\..\\MonetDB4\\NT\\lib\\MonetDB4\\iterator.mil"
+            "SourcePath" = "8:lib\\MonetDB4\\iterator.mil"
             "TargetName" = "8:iterator.mil"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
@@ -1835,7 +1835,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_3A784575E8ED4C8887B1FA947EB6FB0D"
             {
-            "SourcePath" = "8:..\\..\\..\\MonetDB4\\NT\\lib\\MonetDB4\\lib_wisc.dll"
+            "SourcePath" = "8:lib\\MonetDB4\\lib_wisc.dll"
             "TargetName" = "8:lib_wisc.dll"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
@@ -1855,7 +1855,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_3B785B9EAFFF470F931AF82A1706B119"
             {
-            "SourcePath" = "8:..\\..\\..\\MonetDB4\\NT\\lib\\MonetDB4\\lib_aggr.dll"
+            "SourcePath" = "8:lib\\MonetDB4\\lib_aggr.dll"
             "TargetName" = "8:lib_aggr.dll"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
@@ -1875,7 +1875,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_3BB3996E3E4D4A64B574C39D8398AB69"
             {
-            "SourcePath" = "8:..\\..\\..\\clients\\NT\\share\\MonetDB\\lib\\jdbcclient.jar"
+            "SourcePath" = "8:share\\MonetDB\\lib\\jdbcclient.jar"
             "TargetName" = "8:jdbcclient.jar"
             "Tag" = "8:"
             "Folder" = "8:_2E7A7A2A3AA7443EB1803999F76D6C26"
@@ -1895,7 +1895,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_3F6B624F6E6140A8A32CA8728C87E437"
             {
-            "SourcePath" = "8:..\\..\\..\\clients\\NT\\bin\\MapiClient.exe"
+            "SourcePath" = "8:bin\\MapiClient.exe"
             "TargetName" = "8:MapiClient.exe"
             "Tag" = "8:"
             "Folder" = "8:_1EC19BD0D849484790DB6A7D69758E24"
@@ -1915,7 +1915,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_3F7C7290EE214ABFAA8B58AA27AF33D3"
             {
-            "SourcePath" = "8:..\\..\\..\\MonetDB4\\NT\\lib\\MonetDB4\\lock.mil"
+            "SourcePath" = "8:lib\\MonetDB4\\lock.mil"
             "TargetName" = "8:lock.mil"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
@@ -1935,7 +1935,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_403C2853805740E99A8F17DFA3B93E73"
             {
-            "SourcePath" = "8:..\\..\\..\\MonetDB4\\NT\\lib\\MonetDB4\\lib_logger.dll"
+            "SourcePath" = "8:lib\\MonetDB4\\lib_logger.dll"
             "TargetName" = "8:lib_logger.dll"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
@@ -1955,7 +1955,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_4850D28CDC9546EF95E164D20A0C99A2"
             {
-            "SourcePath" = "8:..\\..\\..\\clients\\NT\\share\\MonetDB\\python\\MonetSQLdb\\monetexceptions.py"
+            "SourcePath" = "8:share\\MonetDB\\python\\MonetSQLdb\\monetexceptions.py"
             "TargetName" = "8:monetexceptions.py"
             "Tag" = "8:"
             "Folder" = "8:_8BEAD47AF9E04B72BD661C6E4482E400"
@@ -1975,7 +1975,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_4876D7136FF544E4AD73660C2644357B"
             {
-            "SourcePath" = "8:..\\..\\..\\MonetDB4\\NT\\lib\\MonetDB4\\constant.mil"
+            "SourcePath" = "8:lib\\MonetDB4\\constant.mil"
             "TargetName" = "8:constant.mil"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
@@ -1995,7 +1995,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_494E0DCCB5E040FE9093CC764418563E"
             {
-            "SourcePath" = "8:..\\..\\..\\MonetDB4\\NT\\lib\\MonetDB4\\stats.mil"
+            "SourcePath" = "8:lib\\MonetDB4\\stats.mil"
             "TargetName" = "8:stats.mil"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
@@ -2015,7 +2015,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_49C9F863C1614A73A9FB0C8EDF59444C"
             {
-            "SourcePath" = "8:..\\..\\..\\MonetDB4\\NT\\lib\\MonetDB4\\lib_str.dll"
+            "SourcePath" = "8:lib\\MonetDB4\\lib_str.dll"
             "TargetName" = "8:lib_str.dll"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
@@ -2035,7 +2035,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_4F8B4465A9934D3A9026712431C46082"
             {
-            "SourcePath" = "8:..\\..\\..\\MonetDB4\\NT\\lib\\MonetDB4\\lib_vector.dll"
+            "SourcePath" = "8:lib\\MonetDB4\\lib_vector.dll"
             "TargetName" = "8:lib_vector.dll"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
@@ -2055,7 +2055,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_53588BE4DB964D2ABFEC152BFB434EBD"
             {
-            "SourcePath" = "8:..\\..\\..\\MonetDB4\\NT\\lib\\MonetDB4\\lib_bat_arith.dll"
+            "SourcePath" = "8:lib\\MonetDB4\\lib_bat_arith.dll"
             "TargetName" = "8:lib_bat_arith.dll"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
@@ -2075,7 +2075,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_550C796581E34FC192D66BDD247C3436"
             {
-            "SourcePath" = "8:..\\..\\..\\MonetDB4\\NT\\lib\\MonetDB4\\arith.mil"
+            "SourcePath" = "8:lib\\MonetDB4\\arith.mil"
             "TargetName" = "8:arith.mil"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
@@ -2095,7 +2095,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_58119F6597194367999F8C8287917E8E"
             {
-            "SourcePath" = "8:..\\lib\\MonetDB4\\lib_sql_server.dll"
+            "SourcePath" = "8:lib\\MonetDB4\\lib_sql_server.dll"
             "TargetName" = "8:lib_sql_server.dll"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
@@ -2115,7 +2115,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_5AB2C8D80BA84419B8567670A9CCF6E7"
             {
-            "SourcePath" = "8:..\\..\\..\\MonetDB4\\NT\\lib\\MonetDB4\\image.mil"
+            "SourcePath" = "8:lib\\MonetDB4\\image.mil"
             "TargetName" = "8:image.mil"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
@@ -2135,7 +2135,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_5CD4A36A71254F5CB5A4827EF0311279"
             {
-            "SourcePath" = "8:..\\..\\..\\MonetDB4\\NT\\lib\\MonetDB4\\lib_lock.dll"
+            "SourcePath" = "8:lib\\MonetDB4\\lib_lock.dll"
             "TargetName" = "8:lib_lock.dll"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
@@ -2155,7 +2155,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_5D63ACF85C5C46429097E9EA8A0F6769"
             {
-            "SourcePath" = "8:..\\..\\..\\MonetDB4\\NT\\lib\\MonetDB4\\enum.mil"
+            "SourcePath" = "8:lib\\MonetDB4\\enum.mil"
             "TargetName" = "8:enum.mil"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
@@ -2175,7 +2175,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_5E4854251ADA4A6C954F3DA053015F35"
             {
-            "SourcePath" = "8:..\\..\\..\\MonetDB4\\NT\\lib\\MonetDB4\\radix.mil"
+            "SourcePath" = "8:lib\\MonetDB4\\radix.mil"
             "TargetName" = "8:radix.mil"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
@@ -2195,7 +2195,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_673F6AE58A9D4A81AF8C16A458AB1C6D"
             {
-            "SourcePath" = "8:..\\..\\..\\MonetDB4\\NT\\lib\\MonetDB4\\str.mil"
+            "SourcePath" = "8:lib\\MonetDB4\\str.mil"
             "TargetName" = "8:str.mil"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
@@ -2215,7 +2215,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_6F1C6D04B737498BB5BA3F67E429B136"
             {
-            "SourcePath" = "8:..\\..\\..\\MonetDB4\\NT\\lib\\MonetDB4\\bitset.mil"
+            "SourcePath" = "8:lib\\MonetDB4\\bitset.mil"
             "TargetName" = "8:bitset.mil"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
@@ -2235,7 +2235,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_706E66D6DC07480A89193FA2B779C2D5"
             {
-            "SourcePath" = "8:..\\..\\..\\clients\\NT\\share\\MonetDB\\python\\MonetSQLdb\\converters.py"
+            "SourcePath" = "8:share\\MonetDB\\python\\MonetSQLdb\\converters.py"
             "TargetName" = "8:converters.py"
             "Tag" = "8:"
             "Folder" = "8:_8BEAD47AF9E04B72BD661C6E4482E400"
@@ -2255,7 +2255,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_72D1708106B34FF29A04EC259ACA305C"
             {
-            "SourcePath" = "8:..\\..\\..\\MonetDB4\\NT\\lib\\MonetDB4\\pcl.mil"
+            "SourcePath" = "8:lib\\MonetDB4\\pcl.mil"
             "TargetName" = "8:pcl.mil"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
@@ -2275,7 +2275,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_7402A90F22C5410E959DBB63043C99E7"
             {
-            "SourcePath" = "8:..\\..\\..\\MonetDB\\NT\\share\\MonetDB\\python\\monet_options.py"
+            "SourcePath" = "8:share\\MonetDB\\python\\monet_options.py"
             "TargetName" = "8:monet_options.py"
             "Tag" = "8:"
             "Folder" = "8:_7FBFE910168F4B7C817DFA594E7BB44E"
@@ -2295,7 +2295,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_759ADD1D149042258840FE76C50237DE"
             {
-            "SourcePath" = "8:..\\..\\..\\MonetDB4\\NT\\lib\\MonetDB4\\xtables.mil"
+            "SourcePath" = "8:lib\\MonetDB4\\xtables.mil"
             "TargetName" = "8:xtables.mil"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
@@ -2315,7 +2315,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_76ACE18448C84B76BD06F7A20D958888"
             {
-            "SourcePath" = "8:..\\..\\..\\clients\\NT\\lib\\libMapi.dll"
+            "SourcePath" = "8:lib\\libMapi.dll"
             "TargetName" = "8:libMapi.dll"
             "Tag" = "8:"
             "Folder" = "8:_A3C9BE5CA72B42628868618D180581DA"
@@ -2335,7 +2335,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_78D9A92D1D6D4A018AFF823C233A0444"
             {
-            "SourcePath" = "8:..\\share\\MonetDB\\python\\monetdb.py"
+            "SourcePath" = "8:share\\MonetDB\\python\\monetdb.py"
             "TargetName" = "8:monetdb.py"
             "Tag" = "8:"
             "Folder" = "8:_7FBFE910168F4B7C817DFA594E7BB44E"
@@ -2355,7 +2355,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_790850BDAA634D3CB9C6AE02280E4A7C"
             {
-            "SourcePath" = "8:..\\..\\..\\MonetDB4\\NT\\lib\\MonetDB4\\lib_upgrade.dll"
+            "SourcePath" = "8:lib\\MonetDB4\\lib_upgrade.dll"
             "TargetName" = "8:lib_upgrade.dll"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
@@ -2375,7 +2375,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_7DD6B44A167D4C0CB7784015E4AEC936"
             {
-            "SourcePath" = "8:..\\MSQLserver.bat"
+            "SourcePath" = "8:MSQLserver.bat"
             "TargetName" = "8:MSQLserver.bat"
             "Tag" = "8:"
             "Folder" = "8:_D9A7267FC9784D8BBD3CBC6EC1754DBE"
@@ -2395,7 +2395,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_7E7D3A9B052042C59703EA318805A8B5"
             {
-            "SourcePath" = "8:..\\..\\..\\MonetDB4\\NT\\lib\\MonetDB4\\decimal.mil"
+            "SourcePath" = "8:lib\\MonetDB4\\decimal.mil"
             "TargetName" = "8:decimal.mil"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
@@ -2415,7 +2415,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_82A8A35BBBCB45A799D60E417981109F"
             {
-            "SourcePath" = "8:..\\..\\..\\clients\\NT\\lib\\php5\\php_monetdb.dll"
+            "SourcePath" = "8:lib\\php5\\php_monetdb.dll"
             "TargetName" = "8:php_monetdb.dll"
             "Tag" = "8:"
             "Folder" = "8:_7C47F0F21AA74610A98A8091E0F37567"
@@ -2435,7 +2435,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_831B0381643441FE84693FF71651AF10"
             {
-            "SourcePath" = "8:..\\..\\..\\clients\\NT\\share\\MonetDB\\python\\MonetSQLdb\\cursors.py"
+            "SourcePath" = "8:share\\MonetDB\\python\\MonetSQLdb\\cursors.py"
             "TargetName" = "8:cursors.py"
             "Tag" = "8:"
             "Folder" = "8:_8BEAD47AF9E04B72BD661C6E4482E400"
@@ -2455,7 +2455,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_841711466F9E4A2489EB096535A4A91E"
             {
-            "SourcePath" = "8:..\\share\\MonetDB\\python\\_monetdb.dll"
+            "SourcePath" = "8:share\\MonetDB\\python\\_monetdb.dll"
             "TargetName" = "8:_monetdb.dll"
             "Tag" = "8:"
             "Folder" = "8:_7FBFE910168F4B7C817DFA594E7BB44E"
@@ -2475,7 +2475,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_84232E5AD95040E39CACF44DBCA83D91"
             {
-            "SourcePath" = "8:..\\..\\..\\MonetDB4\\NT\\lib\\MonetDB4\\lib_mkey.dll"
+            "SourcePath" = "8:lib\\MonetDB4\\lib_mkey.dll"
             "TargetName" = "8:lib_mkey.dll"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
@@ -2495,7 +2495,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_854DDCA1A1C241D0B9EA6AFB34CDE6D2"
             {
-            "SourcePath" = "8:..\\..\\..\\MonetDB4\\NT\\Mserver.bat"
+            "SourcePath" = "8:Mserver.bat"
             "TargetName" = "8:Mserver.bat"
             "Tag" = "8:"
             "Folder" = "8:_D9A7267FC9784D8BBD3CBC6EC1754DBE"
@@ -2515,7 +2515,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_855A39BB45D34A28B2219FCFA83CB3A9"
             {
-            "SourcePath" = "8:..\\..\\..\\clients\\NT\\share\\MonetDB\\python\\MonetSQLdb\\__init__.py"
+            "SourcePath" = "8:share\\MonetDB\\python\\MonetSQLdb\\__init__.py"
             "TargetName" = "8:__init__.py"
             "Tag" = "8:"
             "Folder" = "8:_8BEAD47AF9E04B72BD661C6E4482E400"
@@ -2535,7 +2535,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_8BC0A289A0DC450B8F11684E25562B6F"
             {
-            "SourcePath" = "8:..\\..\\..\\MonetDB4\\NT\\lib\\MonetDB4\\txtsim.mil"
+            "SourcePath" = "8:lib\\MonetDB4\\txtsim.mil"
             "TargetName" = "8:txtsim.mil"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
@@ -2555,7 +2555,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_8C6D50B1EED941CEB35FEEAEBEC5B673"
             {
-            "SourcePath" = "8:..\\..\\..\\MonetDB4\\NT\\lib\\MonetDB4\\aggrX3.mil"
+            "SourcePath" = "8:lib\\MonetDB4\\aggrX3.mil"
             "TargetName" = "8:aggrX3.mil"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
@@ -2575,7 +2575,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_8D138327C6814F74B314F6472670F5BF"
             {
-            "SourcePath" = "8:..\\..\\..\\MonetDB4\\NT\\lib\\MonetDB4\\lib_iterator.dll"
+            "SourcePath" = "8:lib\\MonetDB4\\lib_iterator.dll"
             "TargetName" = "8:lib_iterator.dll"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
@@ -2595,7 +2595,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_8E2EFF1568E946A29237DB22EF630890"
             {
-            "SourcePath" = "8:..\\..\\..\\MonetDB4\\NT\\lib\\MonetDB4\\lib_sys.dll"
+            "SourcePath" = "8:lib\\MonetDB4\\lib_sys.dll"
             "TargetName" = "8:lib_sys.dll"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
@@ -2615,7 +2615,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_8FF45856AE4640D195C01D0100C480FC"
             {
-            "SourcePath" = "8:..\\..\\..\\MonetDB4\\NT\\lib\\MonetDB4\\pqueue.mil"
+            "SourcePath" = "8:lib\\MonetDB4\\pqueue.mil"
             "TargetName" = "8:pqueue.mil"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
@@ -2635,7 +2635,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_92687BC340694343AEB4EB808A95FC8B"
             {
-            "SourcePath" = "8:..\\..\\..\\MonetDB4\\NT\\lib\\MonetDB4\\lib_unix.dll"
+            "SourcePath" = "8:lib\\MonetDB4\\lib_unix.dll"
             "TargetName" = "8:lib_unix.dll"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
@@ -2655,7 +2655,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_92DE8D997EA84EF49237343E180078ED"
             {
-            "SourcePath" = "8:..\\..\\..\\MonetDB4\\NT\\lib\\MonetDB4\\salgebra.mil"
+            "SourcePath" = "8:lib\\MonetDB4\\salgebra.mil"
             "TargetName" = "8:salgebra.mil"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
@@ -2675,7 +2675,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_94789FC8B91E4B3088268A3EFDA463D7"
             {
-            "SourcePath" = "8:..\\..\\..\\MonetDB4\\NT\\lib\\MonetDB4\\lib_mmath.dll"
+            "SourcePath" = "8:lib\\MonetDB4\\lib_mmath.dll"
             "TargetName" = "8:lib_mmath.dll"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
@@ -2695,7 +2695,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_94B802858CCA492887CA29E89976F3C8"
             {
-            "SourcePath" = "8:..\\..\\..\\MonetDB4\\NT\\lib\\MonetDB4\\malalgebra.mil"
+            "SourcePath" = "8:lib\\MonetDB4\\malalgebra.mil"
             "TargetName" = "8:malalgebra.mil"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
@@ -2715,7 +2715,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_96E52ADB5A69428A8B36ED244F856D2B"
             {
-            "SourcePath" = "8:..\\..\\..\\MonetDB4\\NT\\lib\\MonetDB4\\mel.mil"
+            "SourcePath" = "8:lib\\MonetDB4\\mel.mil"
             "TargetName" = "8:mel.mil"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
@@ -2735,7 +2735,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_98C72D8A83254DE4ADC989F6B13D76CC"
             {
-            "SourcePath" = "8:..\\..\\..\\MonetDB4\\NT\\lib\\MonetDB4\\lib_array.dll"
+            "SourcePath" = "8:lib\\MonetDB4\\lib_array.dll"
             "TargetName" = "8:lib_array.dll"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
@@ -2755,7 +2755,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_98F7BEADF4F24FD9A3558686B5B89B36"
             {
-            "SourcePath" = "8:..\\..\\..\\MonetDB4\\NT\\lib\\MonetDB4\\unix.mil"
+            "SourcePath" = "8:lib\\MonetDB4\\unix.mil"
             "TargetName" = "8:unix.mil"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
@@ -2775,7 +2775,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_99984D9694EA4483A9C74159EF8B6DEA"
             {
-            "SourcePath" = "8:..\\..\\..\\MonetDB4\\NT\\lib\\MonetDB4\\ascii_io.mil"
+            "SourcePath" = "8:lib\\MonetDB4\\ascii_io.mil"
             "TargetName" = "8:ascii_io.mil"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
@@ -2795,7 +2795,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_9A97A5686CAF49E5ABD3B0E42F9296D2"
             {
-            "SourcePath" = "8:..\\..\\..\\MonetDB4\\NT\\MapiClient.bat"
+            "SourcePath" = "8:MapiClient.bat"
             "TargetName" = "8:MapiClient.bat"
             "Tag" = "8:"
             "Folder" = "8:_D9A7267FC9784D8BBD3CBC6EC1754DBE"
@@ -2815,7 +2815,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_9BBB92DB81024D72BC962CB193DA7C6F"
             {
-            "SourcePath" = "8:..\\..\\..\\clients\\NT\\share\\MonetDB\\python\\Mapi.py"
+            "SourcePath" = "8:share\\MonetDB\\python\\Mapi.py"
             "TargetName" = "8:Mapi.py"
             "Tag" = "8:"
             "Folder" = "8:_7FBFE910168F4B7C817DFA594E7BB44E"
@@ -2835,7 +2835,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_9BCE4E788F1C4F4DBBE2F9AEB9A64EC7"
             {
-            "SourcePath" = "8:..\\..\\..\\MonetDB4\\NT\\etc\\MonetDB.conf"
+            "SourcePath" = "8:etc\\MonetDB.conf"
             "TargetName" = "8:MonetDB.conf"
             "Tag" = "8:"
             "Folder" = "8:_B5DFB5D13EE441F8B42616036AACB603"
@@ -2855,7 +2855,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_9DE0CA047DA44992AD1B4C10198CA579"
             {
-            "SourcePath" = "8:..\\..\\..\\MonetDB4\\NT\\lib\\MonetDB4\\counters.mil"
+            "SourcePath" = "8:lib\\MonetDB4\\counters.mil"
             "TargetName" = "8:counters.mil"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
@@ -2875,7 +2875,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_A7AC45E9F8ED494380F662841B539DE9"
             {
-            "SourcePath" = "8:..\\..\\..\\MonetDB4\\NT\\lib\\MonetDB4\\trans.mil"
+            "SourcePath" = "8:lib\\MonetDB4\\trans.mil"
             "TargetName" = "8:trans.mil"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
@@ -2895,7 +2895,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_AA8F9BF4CF8643099DCED10BE2B0E11A"
             {
-            "SourcePath" = "8:..\\..\\..\\MonetDB4\\NT\\bin\\Mserver.exe"
+            "SourcePath" = "8:bin\\Mserver.exe"
             "TargetName" = "8:Mserver.exe"
             "Tag" = "8:"
             "Folder" = "8:_1EC19BD0D849484790DB6A7D69758E24"
@@ -2915,7 +2915,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_AC941A48F4F94C69968FC3EFC885CD9C"
             {
-            "SourcePath" = "8:..\\..\\..\\MonetDB4\\NT\\lib\\MonetDB4\\bitvector.mil"
+            "SourcePath" = "8:lib\\MonetDB4\\bitvector.mil"
             "TargetName" = "8:bitvector.mil"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
@@ -2935,7 +2935,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_ACE147D861724CDE9ABF3428C63F740F"
             {
-            "SourcePath" = "8:..\\..\\..\\MonetDB4\\NT\\lib\\MonetDB4\\tcpip.mil"
+            "SourcePath" = "8:lib\\MonetDB4\\tcpip.mil"
             "TargetName" = "8:tcpip.mil"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
@@ -2955,7 +2955,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_AE4DE6CBA77D450EA12BDD0424DF2E30"
             {
-            "SourcePath" = "8:..\\..\\..\\MonetDB\\NT\\lib\\libbat.dll"
+            "SourcePath" = "8:lib\\libbat.dll"
             "TargetName" = "8:libbat.dll"
             "Tag" = "8:"
             "Folder" = "8:_A3C9BE5CA72B42628868618D180581DA"
@@ -2975,7 +2975,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_AFF9F6E61DBA4165985EDB4430F915A3"
             {
-            "SourcePath" = "8:..\\share\\doc\\MonetDB-SQL-2.19.0\\dump-restore.html"
+            "SourcePath" = "8:share\\doc\\MonetDB-SQL-2.19.0\\dump-restore.html"
             "TargetName" = "8:dump-restore.html"
             "Tag" = "8:"
             "Folder" = "8:_876B289F659E4FE681DDAD9153E36616"
@@ -2995,7 +2995,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_B05E1CB7083D4B99A879D0AA98262FED"
             {
-            "SourcePath" = "8:..\\..\\..\\MonetDB4\\NT\\lib\\MonetDB4\\url.mil"
+            "SourcePath" = "8:lib\\MonetDB4\\url.mil"
             "TargetName" = "8:url.mil"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
@@ -3015,7 +3015,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_B083E4A23A7240ED8F26627A1DCC7923"
             {
-            "SourcePath" = "8:..\\..\\..\\MonetDB4\\NT\\lib\\MonetDB4\\lib_builtin.dll"
+            "SourcePath" = "8:lib\\MonetDB4\\lib_builtin.dll"
             "TargetName" = "8:lib_builtin.dll"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
@@ -3035,7 +3035,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_B2629E518DCA4B46BB2BDBC35F24A99C"
             {
-            "SourcePath" = "8:..\\..\\..\\MonetDB4\\NT\\lib\\MonetDB4\\lib_bitvector.dll"
+            "SourcePath" = "8:lib\\MonetDB4\\lib_bitvector.dll"
             "TargetName" = "8:lib_bitvector.dll"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
@@ -3055,7 +3055,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_B2E21D4EE31E4B6B82B3D922486360B0"
             {
-            "SourcePath" = "8:..\\..\\..\\MonetDB4\\NT\\lib\\MonetDB4\\aggr.mil"
+            "SourcePath" = "8:lib\\MonetDB4\\aggr.mil"
             "TargetName" = "8:aggr.mil"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
@@ -3075,7 +3075,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_B2E2A442CE544B589FA99C28FAA6DA06"
             {
-            "SourcePath" = "8:..\\..\\..\\MonetDB4\\NT\\lib\\MonetDB4\\uchr.mil"
+            "SourcePath" = "8:lib\\MonetDB4\\uchr.mil"
             "TargetName" = "8:uchr.mil"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
@@ -3095,7 +3095,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_B44E4DBF28214C5F8E146367ED28914D"
             {
-            "SourcePath" = "8:..\\..\\..\\MonetDB4\\license.rtf"
+            "SourcePath" = "8:license.rtf"
             "TargetName" = "8:license.rtf"
             "Tag" = "8:"
             "Folder" = "8:_D9A7267FC9784D8BBD3CBC6EC1754DBE"
@@ -3115,7 +3115,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_B55C2E9581A04D7EA001CFB23AEAA61D"
             {
-            "SourcePath" = "8:..\\..\\..\\clients\\NT\\bin\\odbcinstall.exe"
+            "SourcePath" = "8:bin\\odbcinstall.exe"
             "TargetName" = "8:odbcinstall.exe"
             "Tag" = "8:"
             "Folder" = "8:_D9A7267FC9784D8BBD3CBC6EC1754DBE"
@@ -3135,7 +3135,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_B6B1EB67BA88473296C9B91B765F6B9A"
             {
-            "SourcePath" = "8:..\\..\\..\\MonetDB4\\NT\\lib\\MonetDB4\\lib_decimal.dll"
+            "SourcePath" = "8:lib\\MonetDB4\\lib_decimal.dll"
             "TargetName" = "8:lib_decimal.dll"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
@@ -3155,7 +3155,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_B733873C04804AFF818444030EDDD6CA"
             {
-            "SourcePath" = "8:..\\..\\..\\MonetDB4\\NT\\lib\\MonetDB4\\array.mil"
+            "SourcePath" = "8:lib\\MonetDB4\\array.mil"
             "TargetName" = "8:array.mil"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
@@ -3175,7 +3175,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_B7F58C0C695548109FC8E31E04BB80B5"
             {
-            "SourcePath" = "8:..\\..\\..\\MonetDB4\\NT\\lib\\MonetDB4\\mapi.mil"
+            "SourcePath" = "8:lib\\MonetDB4\\mapi.mil"
             "TargetName" = "8:mapi.mil"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
@@ -3195,7 +3195,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_BB68BB21BF9643D68ADB9782A029C748"
             {
-            "SourcePath" = "8:..\\..\\..\\MonetDB4\\NT\\lib\\MonetDB4\\vector.mil"
+            "SourcePath" = "8:lib\\MonetDB4\\vector.mil"
             "TargetName" = "8:vector.mil"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
@@ -3215,7 +3215,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_BC1F267828014014B48C980B947EB9D7"
             {
-            "SourcePath" = "8:..\\share\\MonetDB\\sql\\cache.sql"
+            "SourcePath" = "8:share\\MonetDB\\sql\\cache.sql"
             "TargetName" = "8:cache.sql"
             "Tag" = "8:"
             "Folder" = "8:_9AD056F041C4488B825BCBCC559BC6A2"
@@ -3235,7 +3235,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_BCDA33DC73564D1AB15F5DA7382AC660"
             {
-            "SourcePath" = "8:..\\..\\..\\MonetDB4\\NT\\lib\\MonetDB4\\monettime.mil"
+            "SourcePath" = "8:lib\\MonetDB4\\monettime.mil"
             "TargetName" = "8:monettime.mil"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
@@ -3255,7 +3255,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_BDD6DF4F294342BF97E5C7D0F1FA14FB"
             {
-            "SourcePath" = "8:..\\..\\..\\MonetDB4\\NT\\lib\\MonetDB4\\color.mil"
+            "SourcePath" = "8:lib\\MonetDB4\\color.mil"
             "TargetName" = "8:color.mil"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
@@ -3275,7 +3275,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_C0C3B9C6085142A3905DC07F94CD4C7F"
             {
-            "SourcePath" = "8:..\\..\\..\\MonetDB4\\NT\\lib\\MonetDB4\\lib_bat_cast.dll"
+            "SourcePath" = "8:lib\\MonetDB4\\lib_bat_cast.dll"
             "TargetName" = "8:lib_bat_cast.dll"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
@@ -3295,7 +3295,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_C100901C5441461382117A1319645609"
             {
-            "SourcePath" = "8:..\\..\\..\\MonetDB4\\NT\\lib\\MonetDB4\\lib_ddbench.dll"
+            "SourcePath" = "8:lib\\MonetDB4\\lib_ddbench.dll"
             "TargetName" = "8:lib_ddbench.dll"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
@@ -3315,7 +3315,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_C11A0CF758F74855993FFB7E2E824EB3"
             {
-            "SourcePath" = "8:..\\..\\..\\MonetDB4\\NT\\lib\\MonetDB4\\lib_url.dll"
+            "SourcePath" = "8:lib\\MonetDB4\\lib_url.dll"
             "TargetName" = "8:lib_url.dll"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
@@ -3335,7 +3335,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_C1EABD4AF3A942CF93A2B76DA65DE2B5"
             {
-            "SourcePath" = "8:..\\..\\..\\MonetDB4\\NT\\lib\\MonetDB4\\lib_stats.dll"
+            "SourcePath" = "8:lib\\MonetDB4\\lib_stats.dll"
             "TargetName" = "8:lib_stats.dll"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
@@ -3375,7 +3375,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_C5242D47CCAF43738AE51929A86E7658"
             {
-            "SourcePath" = "8:..\\..\\..\\MonetDB4\\NT\\lib\\MonetDB4\\ddbench.mil"
+            "SourcePath" = "8:lib\\MonetDB4\\ddbench.mil"
             "TargetName" = "8:ddbench.mil"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
@@ -3395,7 +3395,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_C6B3E106BBE74EBC8A262E7BD3763C1E"
             {
-            "SourcePath" = "8:..\\share\\MonetDB\\sql\\bbp.sql"
+            "SourcePath" = "8:share\\MonetDB\\sql\\bbp.sql"
             "TargetName" = "8:bbp.sql"
             "Tag" = "8:"
             "Folder" = "8:_9AD056F041C4488B825BCBCC559BC6A2"
@@ -3415,7 +3415,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_C73F9B95B9664994B199230DA245D1F3"
             {
-            "SourcePath" = "8:..\\..\\..\\clients\\NT\\share\\MonetDB\\php\\monetdb_query_demo.php"
+            "SourcePath" = "8:share\\MonetDB\\php\\monetdb_query_demo.php"
             "TargetName" = "8:monetdb_query_demo.php"
             "Tag" = "8:"
             "Folder" = "8:_69999C4142A6488CB44E3C22BC2E4BFA"
@@ -3435,7 +3435,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_C99FEF06249D492D9232D0456F98CC9D"
             {
-            "SourcePath" = "8:..\\..\\..\\clients\\NT\\share\\MonetDB\\python\\_MapiLib.pyd"
+            "SourcePath" = "8:share\\MonetDB\\python\\_MapiLib.pyd"
             "TargetName" = "8:_MapiLib.pyd"
             "Tag" = "8:"
             "Folder" = "8:_7FBFE910168F4B7C817DFA594E7BB44E"
@@ -3455,7 +3455,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_CB3C9EC9B4FF49E9815AC97E05BB8A46"
             {
-            "SourcePath" = "8:..\\..\\..\\MonetDB\\NT\\lib\\libmutils.dll"
+            "SourcePath" = "8:lib\\libmutils.dll"
             "TargetName" = "8:libmutils.dll"
             "Tag" = "8:"
             "Folder" = "8:_A3C9BE5CA72B42628868618D180581DA"
@@ -3475,7 +3475,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_CBFFD783FC354873B5A5137667A6A5F5"
             {
-            "SourcePath" = "8:..\\..\\..\\MonetDB4\\NT\\lib\\MonetDB4\\lib_bitset.dll"
+            "SourcePath" = "8:lib\\MonetDB4\\lib_bitset.dll"
             "TargetName" = "8:lib_bitset.dll"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
@@ -3495,7 +3495,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_CC1FDAF9EA6E4C15903C49F90AE58677"
             {
-            "SourcePath" = "8:..\\..\\..\\MonetDB4\\NT\\lib\\MonetDB4\\bat_cast.mil"
+            "SourcePath" = "8:lib\\MonetDB4\\bat_cast.mil"
             "TargetName" = "8:bat_cast.mil"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
@@ -3515,7 +3515,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_CDF313BBB2C74DDD9AF9B5285BAD6DB9"
             {
-            "SourcePath" = "8:..\\..\\..\\MonetDB4\\NT\\lib\\MonetDB4\\lib_uchr.dll"
+            "SourcePath" = "8:lib\\MonetDB4\\lib_uchr.dll"
             "TargetName" = "8:lib_uchr.dll"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
@@ -3535,7 +3535,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_D1E93ACABD2C4F8CBBB87B92E9857311"
             {
-            "SourcePath" = "8:..\\..\\..\\MonetDB4\\NT\\lib\\MonetDB4\\lib_aggrX3.dll"
+            "SourcePath" = "8:lib\\MonetDB4\\lib_aggrX3.dll"
             "TargetName" = "8:lib_aggrX3.dll"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
@@ -3555,7 +3555,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_D1EB751A6FC0411282BE1B7E59C98C46"
             {
-            "SourcePath" = "8:..\\..\\..\\clients\\NT\\share\\MonetDB\\python\\MonetSQLdb\\times.py"
+            "SourcePath" = "8:share\\MonetDB\\python\\MonetSQLdb\\times.py"
             "TargetName" = "8:times.py"
             "Tag" = "8:"
             "Folder" = "8:_8BEAD47AF9E04B72BD661C6E4482E400"
@@ -3575,7 +3575,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_D2120B6B37C34F27A8B50F72DF72123E"
             {
-            "SourcePath" = "8:..\\..\\..\\MonetDB4\\NT\\lib\\MonetDB4\\lib_ascii_io.dll"
+            "SourcePath" = "8:lib\\MonetDB4\\lib_ascii_io.dll"
             "TargetName" = "8:lib_ascii_io.dll"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
@@ -3595,7 +3595,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_D35B268D11664AB68E23903A0318D11D"
             {
-            "SourcePath" = "8:..\\..\\..\\MonetDB4\\NT\\lib\\MonetDB4\\algebra.mil"
+            "SourcePath" = "8:lib\\MonetDB4\\algebra.mil"
             "TargetName" = "8:algebra.mil"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
@@ -3615,7 +3615,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_D8EB9DDD48C34E4A871EE78D429029C1"
             {
-            "SourcePath" = "8:..\\..\\..\\MonetDB4\\NT\\lib\\MonetDB4\\lib_radix.dll"
+            "SourcePath" = "8:lib\\MonetDB4\\lib_radix.dll"
             "TargetName" = "8:lib_radix.dll"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
@@ -3635,7 +3635,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_DAB135FA295E441FAE9C414910CFFFDB"
             {
-            "SourcePath" = "8:..\\..\\..\\MonetDB4\\NT\\lib\\MonetDB4\\blob.mil"
+            "SourcePath" = "8:lib\\MonetDB4\\blob.mil"
             "TargetName" = "8:blob.mil"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
@@ -3655,7 +3655,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_DB3242097F75443EAEE116BCC9A4247C"
             {
-            "SourcePath" = "8:..\\..\\..\\MonetDB\\NT\\lib\\libstream.dll"
+            "SourcePath" = "8:lib\\libstream.dll"
             "TargetName" = "8:libstream.dll"
             "Tag" = "8:"
             "Folder" = "8:_A3C9BE5CA72B42628868618D180581DA"
@@ -3675,7 +3675,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_DBD010AA07C0455580063855180FCADE"
             {
-            "SourcePath" = "8:..\\..\\..\\MonetDB4\\NT\\lib\\MonetDB4\\lib_pcre.dll"
+            "SourcePath" = "8:lib\\MonetDB4\\lib_pcre.dll"
             "TargetName" = "8:lib_pcre.dll"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
@@ -3695,7 +3695,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_DC564E39C0974ACFAF9F1FE76C736657"
             {
-            "SourcePath" = "8:..\\..\\..\\MonetDB4\\NT\\lib\\MonetDB4\\lib_pcl.dll"
+            "SourcePath" = "8:lib\\MonetDB4\\lib_pcl.dll"
             "TargetName" = "8:lib_pcl.dll"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
@@ -3715,7 +3715,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_DC5DB4903C3C4F5397F753993DFBD78E"
             {
-            "SourcePath" = "8:..\\..\\..\\MonetDB4\\NT\\lib\\MonetDB4\\lib_constant.dll"
+            "SourcePath" = "8:lib\\MonetDB4\\lib_constant.dll"
             "TargetName" = "8:lib_constant.dll"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
@@ -3735,7 +3735,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_E1D1F67A020E43D9B52D6DF3B8E4B7E6"
             {
-            "SourcePath" = "8:..\\..\\..\\MonetDB4\\NT\\lib\\MonetDB4\\lib_image.dll"
+            "SourcePath" = "8:lib\\MonetDB4\\lib_image.dll"
             "TargetName" = "8:lib_image.dll"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
@@ -3755,7 +3755,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_E298383979EF49ACAAB09A7F26023E08"
             {
-            "SourcePath" = "8:..\\..\\..\\MonetDB4\\NT\\lib\\MonetDB4\\lib_tcpip.dll"
+            "SourcePath" = "8:lib\\MonetDB4\\lib_tcpip.dll"
             "TargetName" = "8:lib_tcpip.dll"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
@@ -3775,7 +3775,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_E2B6007084CD4A44A2C3CAC84A1BA0D5"
             {
-            "SourcePath" = "8:..\\..\\..\\clients\\NT\\lib\\libMonetODBCs.dll"
+            "SourcePath" = "8:lib\\libMonetODBCs.dll"
             "TargetName" = "8:libMonetODBCs.dll"
             "Tag" = "8:"
             "Folder" = "8:_A3C9BE5CA72B42628868618D180581DA"
@@ -3795,7 +3795,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_E3940EBC92994E09A525C66C77EE20CA"
             {
-            "SourcePath" = "8:..\\..\\..\\clients\\NT\\share\\MonetDB\\python\\MapiLib.py"
+            "SourcePath" = "8:share\\MonetDB\\python\\MapiLib.py"
             "TargetName" = "8:MapiLib.py"
             "Tag" = "8:"
             "Folder" = "8:_7FBFE910168F4B7C817DFA594E7BB44E"
@@ -3815,7 +3815,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_E47E08E27E2F4100814367FBE5BC9215"
             {
-            "SourcePath" = "8:..\\..\\..\\clients\\NT\\share\\MonetDB\\php\\php.ini"
+            "SourcePath" = "8:share\\MonetDB\\php\\php.ini"
             "TargetName" = "8:php.ini"
             "Tag" = "8:"
             "Folder" = "8:_69999C4142A6488CB44E3C22BC2E4BFA"
@@ -3835,7 +3835,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_E50B03EF13354FA5BBECA51029B4234C"
             {
-            "SourcePath" = "8:..\\lib\\MonetDB4\\sql_server.mil"
+            "SourcePath" = "8:lib\\MonetDB4\\sql_server.mil"
             "TargetName" = "8:sql_server.mil"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
@@ -3855,7 +3855,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_E70EEEB49763403C80C6DD79D99E2AF9"
             {
-            "SourcePath" = "8:..\\..\\..\\MonetDB4\\NT\\lib\\MonetDB4\\qt.mil"
+            "SourcePath" = "8:lib\\MonetDB4\\qt.mil"
             "TargetName" = "8:qt.mil"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
@@ -3875,7 +3875,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_E7E8DD7A95554D829C22E34BE45751F6"
             {
-            "SourcePath" = "8:..\\..\\..\\MonetDB4\\NT\\lib\\MonetDB4\\lib_txtsim.dll"
+            "SourcePath" = "8:lib\\MonetDB4\\lib_txtsim.dll"
             "TargetName" = "8:lib_txtsim.dll"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
@@ -3895,7 +3895,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_E9BC27A87CCA4AA2AE5E8D8127E45B7A"
             {
-            "SourcePath" = "8:..\\..\\..\\MonetDB4\\NT\\lib\\MonetDB4\\upgrade.mil"
+            "SourcePath" = "8:lib\\MonetDB4\\upgrade.mil"
             "TargetName" = "8:upgrade.mil"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
@@ -3915,7 +3915,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_ECAEB856F1664BAB9BA4C5E0FC43D2C1"
             {
-            "SourcePath" = "8:..\\..\\..\\MonetDB4\\NT\\lib\\MonetDB4\\builtin.mil"
+            "SourcePath" = "8:lib\\MonetDB4\\builtin.mil"
             "TargetName" = "8:builtin.mil"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
@@ -3935,7 +3935,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_F0029914192546A68D98F43958663E5B"
             {
-            "SourcePath" = "8:..\\..\\..\\MonetDB4\\NT\\lib\\MonetDB4\\lib_mapi.dll"
+            "SourcePath" = "8:lib\\MonetDB4\\lib_mapi.dll"
             "TargetName" = "8:lib_mapi.dll"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
@@ -3955,7 +3955,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_F2F490C207F64697AC581AE22FD96F73"
             {
-            "SourcePath" = "8:..\\..\\..\\clients\\NT\\share\\MonetDB\\python\\odbc.py"
+            "SourcePath" = "8:share\\MonetDB\\python\\odbc.py"
             "TargetName" = "8:odbc.py"
             "Tag" = "8:"
             "Folder" = "8:_7FBFE910168F4B7C817DFA594E7BB44E"
@@ -3975,7 +3975,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_F4E362FA6FE745AE8E1007072796D44E"
             {
-            "SourcePath" = "8:..\\..\\..\\MonetDB4\\NT\\lib\\MonetDB4\\lib_qt.dll"
+            "SourcePath" = "8:lib\\MonetDB4\\lib_qt.dll"
             "TargetName" = "8:lib_qt.dll"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
@@ -3995,7 +3995,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_F672A4FCFB82488D836C1F137DBD7B19"
             {
-            "SourcePath" = "8:..\\..\\..\\MonetDB4\\NT\\lib\\MonetDB4\\lib_bat_mmath.dll"
+            "SourcePath" = "8:lib\\MonetDB4\\lib_bat_mmath.dll"
             "TargetName" = "8:lib_bat_mmath.dll"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
@@ -4015,7 +4015,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_F80F769FC44344008DB76E7AA331F2F7"
             {
-            "SourcePath" = "8:..\\..\\..\\MonetDB4\\NT\\lib\\MonetDB4\\wisc.mil"
+            "SourcePath" = "8:lib\\MonetDB4\\wisc.mil"
             "TargetName" = "8:wisc.mil"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
@@ -4035,7 +4035,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_F86E7CD2945749D4859CF520A2A51448"
             {
-            "SourcePath" = "8:..\\..\\..\\MonetDB4\\NT\\lib\\MonetDB4\\logger.mil"
+            "SourcePath" = "8:lib\\MonetDB4\\logger.mil"
             "TargetName" = "8:logger.mil"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
@@ -4055,7 +4055,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_FB1A9D056CC9497AA72B6DAC10333AC7"
             {
-            "SourcePath" = "8:..\\..\\..\\MonetDB4\\NT\\lib\\MonetDB4\\lib_enum.dll"
+            "SourcePath" = "8:lib\\MonetDB4\\lib_enum.dll"
             "TargetName" = "8:lib_enum.dll"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
@@ -4075,7 +4075,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_FB2CD67F14B341898137014BDBB65716"
             {
-            "SourcePath" = "8:..\\..\\..\\MonetDB4\\NT\\lib\\MonetDB4\\lib_counters.dll"
+            "SourcePath" = "8:lib\\MonetDB4\\lib_counters.dll"
             "TargetName" = "8:lib_counters.dll"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
@@ -4095,7 +4095,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_FB51896C4066435D98D39FF956F4A947"
             {
-            "SourcePath" = "8:..\\..\\..\\clients\\NT\\share\\MonetDB\\python\\_odbc.pyd"
+            "SourcePath" = "8:share\\MonetDB\\python\\_odbc.pyd"
             "TargetName" = "8:_odbc.pyd"
             "Tag" = "8:"
             "Folder" = "8:_7FBFE910168F4B7C817DFA594E7BB44E"
@@ -4115,7 +4115,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_FC5454B563024721949258E8FBA78DAF"
             {
-            "SourcePath" = "8:..\\..\\..\\MonetDB4\\NT\\lib\\MonetDB4\\lib_blob.dll"
+            "SourcePath" = "8:lib\\MonetDB4\\lib_blob.dll"
             "TargetName" = "8:lib_blob.dll"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
@@ -4135,7 +4135,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_FC8238DC7B7A46ABA41FB212A44168D2"
             {
-            "SourcePath" = "8:..\\..\\..\\MonetDB4\\NT\\lib\\MonetDB4\\pcre.mil"
+            "SourcePath" = "8:lib\\MonetDB4\\pcre.mil"
             "TargetName" = "8:pcre.mil"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
@@ -4155,7 +4155,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_FD2C54B1AD154F758154024F19E87786"
             {
-            "SourcePath" = "8:..\\..\\..\\MonetDB4\\NT\\lib\\MonetDB4\\lib_profiler.dll"
+            "SourcePath" = "8:lib\\MonetDB4\\lib_profiler.dll"
             "TargetName" = "8:lib_profiler.dll"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
@@ -4175,7 +4175,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_FFC343C82BE6458C9856FD18A106929D"
             {
-            "SourcePath" = "8:..\\..\\..\\MonetDB4\\NT\\lib\\MonetDB4\\lib_alarm.dll"
+            "SourcePath" = "8:lib\\MonetDB4\\lib_alarm.dll"
             "TargetName" = "8:lib_alarm.dll"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
@@ -4195,7 +4195,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_FFDD5F6893374C8CBC65EF4CC717B2E6"
             {
-            "SourcePath" = "8:..\\..\\..\\MonetDB4\\NT\\lib\\MonetDB4\\lib_monettime.dll"
+            "SourcePath" = "8:lib\\MonetDB4\\lib_monettime.dll"
             "TargetName" = "8:lib_monettime.dll"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"

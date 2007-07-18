@@ -21,6 +21,7 @@ check: "$(SRCDIR)\Makefile.msc"
 install: targetdirs clients_config.h all
 	$(INSTALL) clients_config.h "$(includedir)"
 	$(MAKE) /nologo /f "$(SRCDIR)\Makefile.msc" "prefix=$(prefix)" install
+	$(INSTALL) MapiClient.bat "$(prefix)"
 
 $(SRCDIR)\Makefile.msc: "$(SRCDIR)\Makefile.ag"
         $(CD) "$(SRCDIR)" && autogen.py
