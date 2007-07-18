@@ -1,0 +1,237 @@
+
+/* BEGIN ---------------------------JoinSelect Operators----------------------------------------------------------------*/
+@= JoinSelectBody
+/* Joins a left=[oid,void] bat with a right=[void, any_type] bat on head-OIDs.
+From the right bat, only BUNs that pass the range-restriction on the tail qualify.
+The result is a [oid,void] bat. */
+	BAT *d;
+	BUN rt, rbase, dt;
+	int zz, dd;
+	oid rmin, rmax;
+	bit d_hdense = FALSE;
+
+	rmin = *(oid*)BUNhead(r, BUNfirst(r));
+	rmax = rmin + (BATcount(r) - 1);
+	zz = BUNsize(r);
+	rbase = BUNtloc(r, BUNfirst(r)) - rmin*zz;
+
+	if (!inPlace || l->batParentid != 0 || l->htype == TYPE_void) {
+		d = BATnew(TYPE_oid, TYPE_void, MIN(BATcount(l), BATcount(r)));
+	} else {
+		d = l;
+	}
+
+	dt = BUNhloc(d, BUNfirst(d));
+	dd = BUNsize(d);
+
+	/* For each BUN of the left bat check if the corresponding BUN in the right bat satisfies the restriction.
+	   If yes the respective oid is added to the result */
+	if (BAThdense(l)) {
+		oid lv = MAX(rmin, *(oid*)BUNhead(l, BUNfirst(l)));
+		oid llast = MIN(rmax, lv + (BATcount(l) - 1));
+		oid l0 = lv;
+		BUN d0 = dt;
+		rt = rbase + lv*zz;
+		while (lv <= llast) {
+			if (@1) {
+				*(oid*)dt = lv;
+				dt += dd;	
+			}		
+			lv++;
+			rt += zz;
+		}
+		d_hdense = ((size_t)(dt - d0)/dd == (lv - l0));
+	} else {
+		int xx = BUNsize(l);
+		BUN llast = BUNhloc(l, BUNlast(l));
+		BUN lt = BUNhloc(l, BUNfirst(l));
+		oid lv = oid_nil;
+
+		if (isForeignKey) {
+			while (lt < llast) {
+				lv = *(oid*)lt;
+				rt = rbase + lv*zz;
+				if (@1) {
+					*(oid*)dt = lv;
+					dt += dd;	
+				}	
+				lt += xx;
+			}
+		} else if (BAThordered(l)&1) {
+			while(lt < llast && (lv = *(oid*)lt) < rmin) {
+				lt += xx;
+			}
+			while(lt < llast && (lv = *(oid*)lt) <= rmax) {
+				rt = rbase + lv*zz;
+				if (@1) {
+					*(oid*)dt = lv;
+					dt += dd;	
+				}	
+				lt += xx;
+			}
+		} else {
+			while(lt < llast){
+			    lv = *(oid*)lt;
+			    if (lv >= rmin && lv <= rmax) {
+				rt = rbase + lv*zz;
+				if (@1){
+					*(oid*)dt = lv;
+					dt += dd;	
+				}	
+			    }
+			    lt += xx;
+			}
+		}
+	}
+
+	d->batBuns->free = dt - d->batBuns->base;
+    	BATsetcount(d, d->batBuns->free/dd);
+	d->hsorted = (BATcount(d)<2 || BAThordered(l)&1) ? GDK_SORTED : 0;
+	d->hdense = BATcount(d)<2 || d_hdense;
+	if (d->hdense) {
+		if (BATcount(d)==0) {
+			/* does not really matter */
+			BATseqbase(d, (oid)0);
+		} else {
+			BATseqbase(d, *(oid*)BUNhloc(d,BUNfirst(d)));
+		}
+	} else {
+		BATseqbase(d, oid_nil);
+	}
+	BATkey(d, BATcount(d)<2 || l->hkey);
+	d->tsorted = FALSE;
+	d->tdense = FALSE;
+	BATseqbase(BATmirror(d), oid_nil);
+	BATkey(BATmirror(d), FALSE);
+	d->batRestricted= BAT_READ;
+	BBPkeepref(d->batCacheid);
+	*res=d->batCacheid;
+
+	if (d != l) {
+		BBPunfix(l->batCacheid);
+	}
+	BBPunfix(r->batCacheid);
+	
+	return MAL_SUCCEED;
+@
+
+@= JoinSelectR
+str
+JoinSelectRange_@2_@3_@1(int *res, BAT *l, BAT *r, @1 *low, @1 *hgh, bit inPlace, bit isForeignKey){
+	@:JoinSelectBody(@6_@4(rt,low,@7@1) && @6_@5(rt,hgh,@7@1))@
+}
+@
+
+@= JoinSelectS
+str
+JoinSelectSingle_@2_@1(int *res, BAT *l, BAT *r, @1 *mid, bit inPlace, bit isForeignKey){
+	@:JoinSelectBody(@4_@3(rt,mid,@5@1))@
+}
+@
+
+@= JoinSelectOperations
+@:JoinSelectR(@1,LO,RE,GT,LE,@2,@3)@
+@:JoinSelectR(@1,LE,RE,GE,LE,@2,@3)@
+@:JoinSelectR(@1,LO,RO,GT,LT,@2,@3)@
+@:JoinSelectR(@1,LE,RO,GE,LT,@2,@3)@
+@:JoinSelectS(@1,RO,LT,@2,@3)@
+@:JoinSelectS(@1,RE,LE,@2,@3)@
+@:JoinSelectS(@1,LO,GT,@2,@3)@
+@:JoinSelectS(@1,LE,GE,@2,@3)@
+@
+
+@c
+@:JoinSelectOperations(chr,simple,)@
+@:JoinSelectOperations(sht,simple,)@
+@:JoinSelectOperations(int,simple,)@
+@:JoinSelectOperations(lng,simple,)@
+@:JoinSelectOperations(flt,simple,)@
+@:JoinSelectOperations(dbl,simple,)@
+@:JoinSelectOperations(date,atom,TYPE_)@
+
+@= JoinSelectFunctions
+crackers_export str CRKjoinSelectDefault_@1(int *res, int *right, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh, int *left);
+crackers_export str CRKjoinSelectBounds_@1(int *res, int *right, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh, int *left, bit *inPlace, bit *isForeignKey);
+
+str
+CRKjoinSelectDefault_@1(int *res, int *right, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh, int *left){
+	bit inPlace = FALSE;
+	bit isForeignKey = FALSE;
+	return CRKjoinSelectBounds_@1( res, right, low, hgh, inclusiveLow, inclusiveHgh, left, &inPlace, &isForeignKey);
+}
+
+str
+CRKjoinSelectBounds_@1(int *res, int *right, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh, int *left, bit *inPlace, bit *isForeignKey){
+	BAT *l, *r;
+
+	if ((l = BATdescriptor(*left)) == NULL) 
+        	throw(MAL, "crackers.crackJoinSelect", "Cannot access descriptor");
+
+	if ((r = BATdescriptor(*right)) == NULL) {
+		BBPunfix(*left);
+        	throw(MAL, "crackers.crackJoinSelect", "Cannot access descriptor");
+        }
+
+	if (!BAThdense(r)) {
+		BBPunfix(*left);
+		BBPunfix(*right);
+		throw(MAL, "crackers.crackJoinSelect", "right BAT must have a dense head");
+	}
+
+	if (BATcount(l) == 0 || BATcount(r) == 0){
+		BAT *d = BATnew(TYPE_oid, TYPE_void, 0);
+		d->batBuns->free = 0;
+		BATsetcount(d, 0);
+		d->hsorted = GDK_SORTED;
+		d->hdense = TRUE;
+		BATseqbase(d, (oid)0);
+		BATkey(d, TRUE);
+		d->tsorted = FALSE;
+		d->tdense = FALSE;
+		BATseqbase(BATmirror(d), oid_nil);
+		BATkey(BATmirror(d), FALSE);
+		d->batRestricted= BAT_READ;
+		BBPkeepref(d->batCacheid);
+		*res = d->batCacheid;
+		BBPunfix(*left);
+		BBPunfix(*right);
+		return MAL_SUCCEED;
+	}	
+
+        if (@2_EQ(low,ATOMnilptr(TYPE_@1),@3@1)){
+		if (*inclusiveHgh==TRUE)
+                	return JoinSelectSingle_RE_@1(res, l, r, hgh, *inPlace, *isForeignKey);
+		else
+                	return JoinSelectSingle_RO_@1(res, l, r, hgh, *inPlace, *isForeignKey);
+	}
+        else if (@2_EQ(hgh,ATOMnilptr(TYPE_@1),@3@1))
+		if (*inclusiveLow==TRUE)
+                	return JoinSelectSingle_LE_@1(res, l, r, low, *inPlace, *isForeignKey);
+		else
+                	return JoinSelectSingle_LO_@1(res, l, r, low, *inPlace, *isForeignKey);
+        else{
+		if ((*inclusiveLow==TRUE) && (*inclusiveHgh==TRUE))
+                	return JoinSelectRange_LE_RE_@1(res, l, r, low, hgh, *inPlace, *isForeignKey);
+		else
+		if ((*inclusiveLow==TRUE) && (*inclusiveHgh==FALSE))
+                	return JoinSelectRange_LE_RO_@1(res, l, r, low, hgh, *inPlace, *isForeignKey);
+		else
+		if ((*inclusiveLow==FALSE) && (*inclusiveHgh==FALSE))
+                	return JoinSelectRange_LO_RO_@1(res, l, r, low, hgh, *inPlace, *isForeignKey);
+		else
+		if ((*inclusiveLow==TRUE) && (*inclusiveHgh==TRUE))
+                	return JoinSelectRange_LE_RE_@1(res, l, r, low, hgh, *inPlace, *isForeignKey);
+	}
+        throw(MAL, "crackers.crackJoinSelect", "case not handled");
+}
+@
+
+@c
+@:JoinSelectFunctions(chr,simple,)@
+@:JoinSelectFunctions(sht,simple,)@
+@:JoinSelectFunctions(int,simple,)@
+@:JoinSelectFunctions(lng,simple,)@
+@:JoinSelectFunctions(flt,simple,)@
+@:JoinSelectFunctions(dbl,simple,)@
+@:JoinSelectFunctions(date,atom,TYPE_)@
+/* END ---------------------------JoinSelect Operators----------------------------------------------------------------*/

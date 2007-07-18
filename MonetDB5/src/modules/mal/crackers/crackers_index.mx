@@ -1,0 +1,201 @@
+
+@= CreateNewIndex
+int
+newCrackerIndex_@1(int bid, int cbid){
+	int i, freemap = -1, units = 1024;
+	BAT *b;
+	
+	for (i = 0; i < maxCrackMap; i++)
+		if (CrackerIndex[i].bid == -1)
+			freemap = i;
+
+	if (freemap != -1) {
+		CrackerIndex[freemap].bid = bid;
+		return freemap;
+	}
+
+	if (i == maxCrackMap) {
+		CrackerIndexNode *x;
+
+		if (maxCrackMap > 0)
+			units = (int) (1.2 * maxCrackMap);
+		x = (CrackerIndexNode *) GDKmalloc(sizeof(CrackerIndexNode) * units);
+		memset(x, 0, sizeof(CrackerIndexNode) * units);
+		if (CrackerIndex) {
+			fprintf(stderr, "reallocate index \n");
+			memcpy(x, CrackerIndex, sizeof(CrackerIndexNode) * i);
+			GDKfree(CrackerIndex);
+		}
+		CrackerIndex = x;
+		maxCrackMap = units;
+	}
+
+	CrackerIndex[i].chid = -1;
+	CrackerIndex[i].hiid = -1;
+	CrackerIndex[i].pbid = -1;
+	CrackerIndex[i].bid = bid;
+	CrackerIndex[i].cbid = cbid;
+	b = BATnew(TYPE_lng, TYPE_@1, IndexEntries);	/* TODO: size */
+	BBPkeepref(b->batCacheid);
+	CrackerIndex[i].cid = b->batCacheid;
+	CrackerIndex[i].iid = -1;
+	CrackerIndex[i].did = -1;
+	CrackerIndex[i].mergeInsertions = -1;
+	CrackerIndex[i].reCreate = 0;
+	CrackerIndex[i].Tree = NULL;
+	CrackerIndex[i].deleteNodes = FALSE;
+	CrackerIndex[i].mergeDeletions = -1;
+	return i;
+}
+
+void
+reCreateMap_@1(int position){
+	BAT *b;
+
+	b = BATnew(TYPE_lng, TYPE_@1, IndexEntries);	/* TODO: size */
+	BBPkeepref(b->batCacheid);
+	CrackerIndex[position].cid = b->batCacheid;
+	CrackerIndex[position].reCreate = 0;
+	
+	return;
+}
+@
+
+@c
+@:CreateNewIndex(chr)@
+@:CreateNewIndex(sht)@
+@:CreateNewIndex(int)@
+@:CreateNewIndex(lng)@
+@:CreateNewIndex(flt)@
+@:CreateNewIndex(dbl)@
+@:CreateNewIndex(date)@
+
+int
+existsCrackerIndex(int bid){
+	int i;
+	
+	for (i = 0; i < maxCrackMap; i++)
+		if (CrackerIndex[i].bid == bid)
+			return i;
+	return -1;
+}
+
+void
+printCrackerIndexBATpart(int bid){
+	int i = existsCrackerIndex(bid);
+	if (i == -1)
+		fprintf(stderr, " the crack index does not exist \n");
+	BATprint(BATdescriptor(CrackerIndex[i].cid));
+}
+
+str
+CRKprintCrackerIndexBATpart(int *k, int *bid){
+	(void)k;
+	printCrackerIndexBATpart(*bid);
+
+	return MAL_SUCCEED;
+}
+
+str
+CRKprintAVLTree_int(int *k, int *bid){
+	BAT *c;
+	int zz, position;
+	BUN idxFirst;
+
+	(void) k;
+
+	position = existsCrackerIndex(*bid);
+        if (position == -1)
+                fprintf(stderr, " the crack index does not exist \n");
+
+	if ((c = BATdescriptor(CrackerIndex[position].cid)) == NULL)
+                throw(MAL, "crackers.CRKprintAVLTree_int", "Cannot access cracker index");
+
+        zz = BUNsize(c);
+        idxFirst = BUNfirst(c);
+	printAVLTree(CrackerIndex[position].Tree, c, idxFirst, zz);
+
+	BBPunfix(c->batCacheid);
+
+	return MAL_SUCCEED;
+}
+
+void
+printCrackerBAT(int bid){
+	int i = existsCrackerIndex(bid);
+	if (i == -1)
+		fprintf(stderr, " the crack index does not exist \n");
+	BATprint(BATdescriptor(CrackerIndex[i].cbid));
+}
+
+str
+CRKprintCrackerBAT(int *k, int *bid){
+	(void)k;
+	printCrackerBAT(*bid);
+
+	return MAL_SUCCEED;
+}
+
+str
+CRKgetCrackerBAT(int *vid, int *bid){
+        int i = existsCrackerIndex(*bid);
+        if (i == -1)
+                fprintf(stderr, " the cracker index does not exist \n");
+        if (CrackerIndex[i].cbid > 0)
+		*vid = CrackerIndex[i].cbid;
+	else
+		*vid = -1;
+
+        return MAL_SUCCEED;
+}
+
+@= insertIndexElement
+	*(lng*) @2 = @4;	
+	*(@1 *) @3 = @5;	
+	(b)->batBuns->free += xx;
+        (b)->batCount ++;
+@
+
+@= InsertIndexElements
+void
+addCrackerIndex_@1(int m, @1 *value, bit inclusive, lng index, BAT * b){
+	BUN ph,pt,base;
+        int xx = BUNsize(b);
+
+	ph = BUNhloc(b, BUNlast(b));
+	pt = BUNtloc(b, BUNlast(b));
+
+        if (BATcount(b) == 0){
+                @:insertIndexElement(@1, BUNhloc(b, BUNfirst(b)), BUNtloc(b, BUNfirst(b)), index, *value)@
+		CrackerIndex[m].Tree = (struct Node *)GDKmalloc(sizeof(struct Node));
+                CrackerIndex[m].Tree->position = 0;
+                CrackerIndex[m].Tree->inclusive = inclusive;
+                CrackerIndex[m].Tree->height = 0;
+                CrackerIndex[m].Tree->left = NULL;
+                CrackerIndex[m].Tree->right = NULL;		
+                CrackerIndex[m].Tree->head = TRUE;	
+                CrackerIndex[m].Tree->deleted = FALSE;	
+                CrackerIndex[m].Tree->previous = NULL;	
+                CrackerIndex[m].Tree->hols = 0;	
+
+                return;
+        }
+
+	base = BUNhloc(b, BUNfirst(b));
+        if ( (InsertTree_@1(m, BATcount(b), *value, inclusive, index, CrackerIndex[m].Tree, b, base, xx)) != NULL ) {
+		/* use a new BUN only if we cannot reuse a previously deleted one */
+		@:insertIndexElement(@1, ph, pt, index, *value)@
+	}
+}
+@
+
+@c
+@:InsertIndexElements(chr,simple,)@
+@:InsertIndexElements(sht,simple,)@
+@:InsertIndexElements(int,simple,)@
+@:InsertIndexElements(lng,simple,)@
+@:InsertIndexElements(flt,simple,)@
+@:InsertIndexElements(dbl,simple,)@
+@:InsertIndexElements(date,atom,TYPE_)@
+
+

@@ -1,0 +1,206 @@
+
+/* BEGIN -----------------------Core Cracking Unordered------------------------------------------------------*/
+
+@= shuffle
+        tdummy= *(@1*) @2;
+        *(@1*) @2= *(@1*) @3;
+        *(@1*) @3= tdummy;
+
+        hdummy= *(oid*)((char*)@2 - b->tloc);
+        *(oid*)((char*)@2 - b->tloc) = *(oid*)((char*)@3 - b->tloc);
+        *(oid*)((char*)@3 - b->tloc) = hdummy;
+@
+
+@= crackInTwoUnorderedPieces
+crackers_export str CRKcrackUnorderedZero_@2_@1( BAT *b, @1 mval, lng first, lng last, lng *pos);
+str
+CRKcrackUnorderedZero_@2_@1( BAT *b, @1 mval, lng first, lng last, lng *pos){
+        ptr vm, vl;
+        int xx;
+        oid hdummy;
+        @1 tdummy;
+
+        /* set bounds for the iterator */
+        xx = BUNsize(b);
+
+        vm = BUNtloc(b, BUNptr(b,first));
+        vl= BUNtloc(b,BUNptr(b,last));
+
+        while(vm<vl) {
+                if (@5_@3(vm, &mval,@6@1))
+                        vm = (ptr) ((char *) vm + xx);
+                else {
+                        while( @5_@4(vl, &mval,@6@1) && vl>vm)
+                                vl = (ptr) ((char *) vl - xx);
+                        @:shuffle(@1,vm,vl)@
+                        vl = (ptr) ((char *) vl - xx);
+                        vm = (ptr) ((char *) vm + xx);
+                }
+        }
+
+	if (vl == vm) {
+		if (@5_@4(vl, &mval,@6@1))
+			*pos = BUNindex(b,(ptr) ((char *) vl - xx)); /*works for empty left piece also*/
+		else{
+			*pos = BUNindex(b,vl);
+			if (BUNindex(b,vl)==(size_t)last) /*empty right piece*/
+				*pos = *pos+1;
+		}
+	}
+	else
+		*pos = BUNindex(b,vl);
+		
+        return MAL_SUCCEED;
+}
+@
+
+@= crackInThreeUnorderedPieces
+
+crackers_export str CRKcrackUnorderedThree_@2_@3_@1( BAT *b, @1 low, @1 hgh, lng first, lng last, lng *posl, lng *posh);
+str
+CRKcrackUnorderedThree_@2_@3_@1( BAT *b, @1 low, @1 hgh, lng first, lng last, lng *posl, lng *posh){
+        ptr vm, vl, hmax;
+        int xx;
+        oid hdummy;
+        @1 tdummy;
+
+        /* set bounds for the iterator */
+        xx = BUNsize(b);
+
+        vm = BUNtloc(b, BUNptr(b,first));
+        hmax = BUNtloc(b,BUNptr(b,last));
+        while( @8_@7(hmax, &hgh,@9@1) && hmax>vm)
+                hmax= (ptr)((char*) hmax - xx);
+
+	if (hmax == vm){
+		if (@8_@7(hmax, &hgh,@9@1)){ /*left and middle are empty*/
+			*posl =  1;
+			*posh = -1;
+		}
+		else if (@8_@5(hmax, &low,@9@1))  /*result is one bun*/
+			*posl = *posh = BUNindex(b,hmax);
+		else{
+			*posl = BUNindex(b,(ptr) ((char *) hmax + xx));
+			*posh = BUNindex(b,hmax);
+		}
+		return MAL_SUCCEED;
+	}
+
+        vl = hmax;
+        while( @8_@5(vl, &low,@9@1) && vl>vm){
+                /* move all high values into their final place */
+                if( @8_@7(vl, &hgh,@9@1)){
+                        @:shuffle(@1,vl,hmax)@
+                        hmax= (ptr)((char*) hmax - xx);
+                }
+                vl= (ptr)((char*) vl - xx);
+        }
+	if (vl == vm){/*left piece is empty*/
+		if (@8_@7(vl, &hgh,@9@1)){
+			@:shuffle(@1,vl,hmax)@
+			*posl = BUNindex(b,vl);
+		}
+		else if (@8_@5(vl, &low,@9@1))
+			*posl = BUNindex(b,vl);
+		else
+			*posl = BUNindex(b,(ptr) ((char *) vl + xx));
+		*posh = BUNindex(b,hmax);
+		return MAL_SUCCEED;
+	}
+        /* vl point to the first <=low, all values >hg are beyond hmax */
+
+        /* perform Zero crack first */
+        while(vm<=vl) {
+                if (@8_@4(vm, &low,@9@1))
+                        vm = (ptr) ((char *) vm + xx);
+                else {
+                        @:shuffle(@1,vm,vl)@
+                        while( @8_@5(vl, &low,@9@1) && vl>vm){
+                                if(@8_@7(vl, &hgh,@9@1) ){
+                                        @:shuffle(@1,vl,hmax)@
+                                        hmax= (ptr)((char*) hmax - xx);
+                                }
+                                vl = (ptr) ((char *) vl - xx);
+                        }
+                }
+        }
+	if (vm ==  BUNtloc(b,BUNptr(b,last+1))){ /*right and middle are empty*/
+		*posl = -1;
+		*posh = -1;
+		return MAL_SUCCEED;
+	}	
+	if (hmax == vl){ /*then middle piece is empty*/
+		*posl = BUNindex(b,(ptr) ((char *) vl + xx));
+		*posh = BUNindex(b,hmax);
+		return MAL_SUCCEED;
+	}
+	*posl = BUNindex(b,vm);
+	*posh = BUNindex(b,hmax);
+
+	return MAL_SUCCEED;
+}
+@
+
+@= operations
+@:crackInTwoUnorderedPieces(@1,LE,LE,GT,@2,@3)@
+@:crackInTwoUnorderedPieces(@1,RE,LT,GE,@2,@3)@
+@:crackInThreeUnorderedPieces(@1,LO,RE,LE,GT,LE,GT,@2,@3)@
+@:crackInThreeUnorderedPieces(@1,LE,RE,LT,GE,LE,GT,@2,@3)@
+@:crackInThreeUnorderedPieces(@1,LO,RO,LE,GT,LT,GE,@2,@3)@
+@:crackInThreeUnorderedPieces(@1,LE,RO,LT,GE,LT,GE,@2,@3)@
+crackers_export str CRKcrackUnorderedZero_@1 (int *res, int *bid, @1 *mid);
+
+str
+CRKcrackUnorderedZero_@1 (int *res, int *bid, @1 *mid){
+        BAT *b;
+        str msg;
+	lng pos;
+
+        if ((b = BATdescriptor(*bid)) == NULL)
+                throw(MAL, "crackers.crack_zeroUnordered", "Cannot access descriptor");
+
+        /* set bounds for the iterator */
+        if( sizeof(struct SCRATCH{ oid hdummy; @1 tdummy; } ) != BUNsize(b) )
+                throw(MAL, "crackers.crack_zeroUnordered", "Need more clever mapping ");
+
+        msg = CRKcrackUnorderedZero_LE_@1( b, *mid,(size_t) 0, BATcount(b)-1, &pos);
+
+        BBPkeepref(b->batCacheid);
+        *res = *bid;
+        return msg;
+}
+
+crackers_export str CRKcrackUnorderedThree_@1 (int *res, int *bid, @1 *low, @1 *hgh);
+str
+CRKcrackUnorderedThree_@1 (int *res, int *bid, @1 *low, @1 *hgh){
+        BAT *b;
+        str msg;
+	lng posl, posh;
+
+        if (*(@1 *) low > *(@1 *) hgh)
+                throw(MAL, "crackers.crack_threeUnordered", "illegal range");
+        if ((b = BATdescriptor(*bid)) == NULL)
+                throw(MAL, "crackers.crack_threeUnordered", "Cannot access descriptor");
+
+        /* set bounds for the iterator */
+        if( sizeof(struct SCRATCH{ oid hdummy; @1 tdummy; } ) != BUNsize(b) )
+                throw(MAL, "crackers.crack_threeUnordered", "Need more clever mapping ");
+
+        msg = CRKcrackUnorderedThree_LO_RE_@1( b, *low, *hgh, 0, BATcount(b)-1,&posl, &posh);
+
+        BBPkeepref(b->batCacheid);
+        *res = *bid;
+        return msg;
+}
+@
+
+@c
+@:operations(chr,simple,)@
+@:operations(sht,simple,)@
+@:operations(int,simple,)@
+@:operations(lng,simple,)@
+@:operations(flt,simple,)@
+@:operations(dbl,simple,)@
+@:operations(date,atom,TYPE_)@
+
+/* END ---------------------Core cracking Unordered-----------------------------------------------------*/

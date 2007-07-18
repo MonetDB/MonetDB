@@ -1,0 +1,972 @@
+
+/* BEGIN ---------------------------Select Operators----------------------------------------------------------------*/
+@= crkThreeTree
+        /*printf("crack in three pieces\n");*/
+	if (*inclusiveLow == TRUE && *inclusiveHgh == TRUE)
+		CRKcrackUnorderedThree_LE_RE_@1(b,*low,*hgh, @2, @3, &vl, &vh);
+	if (*inclusiveLow == TRUE && *inclusiveHgh == FALSE)
+		CRKcrackUnorderedThree_LE_RO_@1(b,*low,*hgh, @2, @3, &vl, &vh);
+	if (*inclusiveLow == FALSE && *inclusiveHgh == TRUE)
+		CRKcrackUnorderedThree_LO_RE_@1(b,*low,*hgh, @2, @3, &vl, &vh);
+	if (*inclusiveLow == FALSE && *inclusiveHgh == FALSE)
+		CRKcrackUnorderedThree_LO_RO_@1(b,*low,*hgh, @2, @3, &vl, &vh);
+				
+	if (vl != -1 && vh != -1){
+		if (vl>0) _vl=vl-1; else _vl=vl;		
+		addCrackerIndex_@1(m,low,*inclusiveLow,_vl,c);
+		addCrackerIndex_@1(m,hgh,HBound,vh,c);
+	}
+
+@= crkTwoLTree
+	/*CRACK in two pieces cl1-ch1 using >incLow bound*/
+	if (*inclusiveLow == TRUE)
+		CRKcrackUnorderedZero_RE_@1(b,*low, cl1, ch1,&vl);
+	else
+		CRKcrackUnorderedZero_LE_@1(b,*low, cl1, ch1,&vl);
+	if (vl < cl1){
+		/*then the left piece is empty*/
+		gapL = -1;
+	}
+	if (vl > ch1){
+		/*then the right piece is empty*/
+		vl--;
+		gapL = -1;
+	}
+	vl++; /* We need to take next position because the crack function always returns the last bun of the left piece.
+		Instead we want the first bun of the right piece*/
+@
+
+@= crkTwoRTree
+	/*CRACK in two pieces cl2-ch2 using <incHgh bound*/
+	if (*inclusiveHgh == TRUE)
+		CRKcrackUnorderedZero_LE_@1(b,*hgh, cl2, ch2,&vh);
+	else
+		CRKcrackUnorderedZero_RE_@1(b,*hgh, cl2, ch2,&vh);
+
+	/*check for gaps*/
+	if (vh < cl2)
+		/*then the left piece is empty*/
+		gapH = -1;
+	if (vh > ch2){
+		/*then the right piece is empty*/
+		gapH = -1;
+		vh--;
+	}
+@
+
+@= searchForLow
+	l = SORTfndfirst_@4(c,low);
+	lt = BUNtloc(c, l);
+	lh = BUNhloc(c, l);
+	posA = l;	
+
+	/* if all indices contain values smaller than low, crack the area
+		between the last index and the last BUN of the cracked bat */
+	if (l == BUNlast(c)){
+		l -= xx; lt -= xx; lh -= xx;
+		if  (*(lng*)lh > 0)
+			cl = *(lng*)lh;
+		else
+			cl = *(lng*)lh - 2*(*(lng*)lh);
+		cl++;
+	} else
+	if (@2_EQ(lt,low,@3@1)){
+		/* The first two cases are when the low bound already
+			exists in the index */
+		if  (*(lng*)lh < 0 && *inclusiveLow == TRUE)
+			vl = (*(lng*)lh - 2*(*(lng*)lh))+1;
+		else
+		if  (*(lng*)lh > 0 && *inclusiveLow == FALSE)
+			vl = *(lng*)lh+1;
+
+		/* We want values that the previous index has;
+		   special case when there is no previous index */
+		else
+		if  (*(lng*)lh > 0 && *inclusiveLow == TRUE){
+			if (l == BUNfirst(c)){
+				l  -= xx;
+				cl = BUNindex(b, BUNfirst(b));
+			}else{
+				l  -= xx; lh -= xx; lt -= xx;
+				if  (*(lng*)lh > 0)
+					cl = *(lng*)lh;
+				else
+					cl = *(lng*)lh - 2*(*(lng*)lh);
+				cl++;
+			}
+		} else
+		if  (*(lng*)lh < 0 && *inclusiveLow == FALSE){
+		/*  This index contains values that we do not want (the equals to
+			low) so we check the next one. If it is equal to low then
+			this is an exact match, otherwise we have to crack.
+			Also if this was the last index we have to crack anyway. */
+			lt += xx;
+			l  +=xx;
+			if (@2_EQ(lt,low,@3@1) && l != BUNlast(c)){
+				lh += xx;
+				vl = *(lng*)lh+1;
+			} else{
+				lt -= xx;
+				l  -= xx;
+				cl = (*(lng*)lh - 2*(*(lng*)lh))+1;
+			}
+		}
+	} else{
+		/* No exact match was found so we have to crack. Take the
+		   previous index because this one is higher than low.
+		   If there is no previous index, crack the bat from the beginning. */
+		if (l == BUNfirst(c)){
+			l  -= xx; lh -= xx; lt -= xx;
+			cl = BUNindex(b, BUNfirst(b));
+		} else{
+			l  -= xx; lh -= xx; lt -= xx;
+			if  (*(lng*)lh > 0)
+				cl = *(lng*)lh;
+			else
+				cl = *(lng*)lh - 2*(*(lng*)lh);
+			cl++;
+		}
+	}	
+@
+
+@= searchForHgh
+	h = SORTfndfirst_@4(c,hgh);
+	ht = BUNtloc(c, h);
+	hh = BUNhloc(c, h);
+	posB = h;	
+
+	if (h == BUNlast(c))
+		ch = BUNindex(b, BUNlast(b) - BUNsize(b));
+	else
+	if (@2_EQ(ht,hgh,@3@1)){
+		/* The first two cases are when the low bound already exists in the index */
+		if  (*(lng*)hh > 0 && *inclusiveHgh == TRUE)
+			vh = *(lng*)hh;
+		else if  (*(lng*)hh < 0 && *inclusiveHgh == FALSE)
+			vh = *(lng*)hh - 2*(*(lng*)hh);
+
+		/* We want values that the next index has; special case when there is no next index */
+		else if  (*(lng*)hh < 0 && *inclusiveHgh == TRUE){
+			ht += xx; h  += xx; hh += xx;
+			if (h == BUNlast(c))
+				ch = BUNindex(b, BUNlast(b)-BUNsize(b)); /*todo this might be the same with current index*/
+			else if (@2_EQ(ht,hgh,@3@1))
+				vh = *(lng*)hh;
+			else {
+				ch= *(lng*)hh;
+				if (ch < 0) ch = *(lng*)hh - 2*(*(lng*)hh);
+			}
+		}
+		/* This index contains values that we do not want (the equals to hgh)
+		   so we have to crack up to this one. We know that there is no
+		   previous index that excludes only the values we do not want (the
+		   hghs) Also we cannot check for hgh-1 */
+		else if  (*(lng*)hh > 0 && *inclusiveHgh == FALSE)
+			ch = *(lng*)hh;
+	} else{
+		/* No exact match was found so we have to crack. */
+		if  (*(lng*)hh > 0)
+			ch = *(lng*)hh;
+		else
+			ch = *(lng*)hh - 2*(*(lng*)hh);
+	}
+@
+
+@= CreateResult
+createView:
+	view = BATslice(b, vl, vh+1);
+
+	if (!tail)
+		view = BATslice(VIEWhead_(b, BAT_READ), vl, vh+1);
+	
+	*vid = view->batCacheid;
+	BBPkeepref(*vid);
+
+	BBPunfix(b->batCacheid);
+@
+
+@= crackOperations
+lng
+shiftHoles_@1(struct Node *lowNode, struct Node *lowNodeNext, BAT *b, int xx, BAT *c, BUN idxFirst, int zz, @1 *hgh, bit *inclusiveHgh, int position){
+	lng holSize = 0, LposCr = 0, HposCr = 0, holPiece = 0, buns;
+	BUN hghPos = NULL, crkFirst;
+	struct Node *hghNode, *stopNode;
+
+	crkFirst = BUNfirst(b);
+	stopNode = findNodeH_@1(*hgh, *inclusiveHgh, CrackerIndex[position].Tree, c, idxFirst, zz, NULL);
+
+	while (1){
+		if (lowNode == NULL)
+			hghNode = lowNodeNext;
+		 else
+			hghNode = findNextPiece(lowNode);
+		
+		/* find deletes that belong in this piece */
+		if (lowNode != NULL && hghNode != NULL){
+       	 	        hghPos = BUNhloc(c, idxFirst + (hghNode->position) * xx);
+      		        LposCr = *(lng*)BUNhloc(c, idxFirst + (lowNode->position) * xx) + holSize;
+        	        HposCr = *(lng*)hghPos;
+		} else
+		if (lowNode == NULL && hghNode != NULL){
+       	 	        hghPos = BUNhloc(c, idxFirst + (hghNode->position) * xx);
+			LposCr = 0;
+       	 	        HposCr = *(lng*)hghPos;
+		} else
+		if (lowNode != NULL && hghNode == NULL){
+			LposCr = *(lng*)BUNhloc(c, idxFirst + (lowNode->position) * xx) + holSize;
+       	                HposCr = BATcount(b)-1;
+		}
+
+		if (hghNode != NULL)
+			holPiece = hghNode->hols;
+		else
+			holPiece = 0;
+
+		HposCr -= holPiece;
+		buns = HposCr - LposCr;
+		/* no need to to shift if nothing has been deleted from previous pieces */
+		if (holSize > 0 && buns > 0){
+			if (holSize >= buns)
+				memcpy(crkFirst+(LposCr-(holSize-1))*xx, crkFirst+(LposCr+1)*xx, buns*xx);
+			else
+				memcpy(crkFirst+(LposCr-(holSize-1))*xx, crkFirst+(LposCr+1+(buns-holSize))*xx, holSize*xx);
+		}
+		holSize += holPiece;
+		if (hghNode != NULL){
+			if (hghNode == stopNode)
+				break;
+			hghNode->hols = 0;
+			lowNode = hghNode;
+			*(lng*)hghPos = *(lng*)hghPos - holSize;
+		} else
+			break;
+	}
+
+	if (holSize > 0){
+		if (hghNode == NULL){
+			BUN crkLast = BUNlast(b) - (holSize)*xx;
+			b->batBuns->free = crkLast - b->batBuns->base;
+	       		BATsetcount(b, b->batBuns->free/xx);
+		} else
+	                hghNode->hols = holSize;
+	}
+
+	return holSize;
+}
+
+str
+selectMergeDeletionsPart_@1(int *bid, @1 *low, bit *inclusiveLow, @1 *hgh, bit *inclusiveHgh, bit *rippledDeletions, int position){
+	BAT *u;
+	lng updates, updatesStart, updatesEnd;
+	BUN l, lt, updLast;
+	int xx;
+
+	if (CrackerIndex[position].did == -1) return NULL;
+	if ((u = BATdescriptor(CrackerIndex[position].did)) == NULL)
+		return "Cannot access the deletions BAT";			
+
+	if (CrackerIndex[position].mergeInsertions > 0){
+                        BAT *insertions, *intersect;
+                        if (CrackerIndex[position].iid < 0) goto findDeletes; 
+                        if ((insertions = BATdescriptor(CrackerIndex[position].iid)) == NULL)
+                                goto findDeletes;
+                        if (BATcount(insertions)==0) {
+                                BBPunfix(insertions->batCacheid);
+                                goto findDeletes;
+                        }
+
+                        intersect = BATsintersect(insertions,u);
+
+                        if (BATcount(intersect)>0){
+                                insertions = BATdel(insertions,intersect,TRUE);
+                                u = BATdel(u,intersect,TRUE);
+                        }
+
+                        BBPunfix(intersect->batCacheid);
+                        BBPunfix(insertions->batCacheid);
+        }
+
+	findDeletes:;
+	
+	updates = BATcount(u);
+	if (updates == 0){
+		BBPunfix(u->batCacheid);
+                return NULL; /* no qualifying values in the deletions */
+        }
+	xx = BUNsize(u);
+
+	/* if necessary, sort in place the deletions bat */
+	if (u->tsorted == FALSE){
+		u->batRestricted = BAT_WRITE;
+		BATmirror(BATorder(BATmirror(u)));
+	}
+
+	/* binary search to find the position of the lowest requested value in the deletions*/
+	l = SORTfndfirst_@4(u,low);
+	lt = BUNtloc(u,l);
+	updLast = BUNtloc(u, BUNlast(u));
+
+        /* no qualifying values in the deletions */
+	if (lt == updLast){
+		BBPunfix(u->batCacheid);	
+		return NULL; 
+	}
+
+	if (@2_EQ(lt,low,@3@1) && *inclusiveLow == FALSE){
+		while (lt < updLast && @2_EQ(lt,low,@3@1))
+			lt +=xx;
+	} 
+			
+	if (lt == updLast){
+		BBPunfix(u->batCacheid);	
+		return NULL; /* no qualifying values in the deletions */
+	}
+
+	if ( @2_GT(lt,hgh,@3@1) || (@2_EQ(lt,hgh,@3@1) && *inclusiveHgh==FALSE) ){
+		BBPunfix(u->batCacheid);	
+		return NULL; /* no qualifying values in the deletions */ 	
+	}
+
+	updatesStart = BUNindex(u,lt);	
+	
+	/* binary search to find the position of the highest requested value in the deletions */
+        l = SORTfndfirst_@4(u, hgh);
+	lt = BUNtloc(u,l);
+	if (lt < updLast){
+		if (@2_EQ(lt,hgh,@3@1) && *inclusiveHgh == TRUE){	
+			while (lt < updLast && @2_EQ(lt,hgh,@3@1))
+                         	lt +=xx;
+			lt-=xx;
+		} else
+		if (@2_EQ(lt,hgh,@3@1) && *inclusiveHgh == FALSE)
+                        lt -=xx;
+		else
+		if ( @2_GT(lt,hgh,@3@1) )
+                        lt -=xx;
+	}
+
+	if (lt == updLast) lt-=xx;
+	updatesEnd = BUNindex(u,lt);
+
+	BBPunfix(u->batCacheid);
+		
+	if (CrackerIndex[position].mergeDeletions == 0){	
+		/* merge completely */
+		mergeDeletions_@1(bid, &CrackerIndex[position].did, 0, updates-1);
+		CrackerIndex[position].mergeDeletions = -1 ;
+		CrackerIndex[position].did = -1;
+
+	} else if (CrackerIndex[position].mergeDeletions == 1)
+		/* merge only the requested values */			
+		mergeDeletionsGradually_@1(bid, &CrackerIndex[position].did, updatesStart, updatesEnd);
+			
+	else if (CrackerIndex[position].mergeDeletions == 2){
+		/* merge only the requested values using the ripple strategy */
+		mergeDeletionsGraduallyRipple_@1(bid, &CrackerIndex[position].did, updatesStart, updatesEnd, low, *inclusiveLow, hgh, *inclusiveHgh);	
+		*rippledDeletions = TRUE;
+	}
+
+	return NULL;
+}
+
+str
+selectMergeInsertionsPart_@1(int *bid, @1 *low, bit *inclusiveLow, @1 *hgh, bit *inclusiveHgh, int position){
+	BAT *u,*b;
+	lng updates, updatesStart, updatesEnd;
+	BUN l, lt, updLast;
+	int xx;
+	 if (CrackerIndex[position].iid == -1) return NULL;
+	if ((u = BATdescriptor(CrackerIndex[position].iid)) == NULL)
+		return "Cannot access insertions BAT";			
+
+	updates = BATcount(u);
+	if (updates == 0){
+        	BBPunfix(u->batCacheid);
+                return NULL; /* no qualifying values in the insertions */
+        }
+
+	/* if necessary, sort in place the insertions bat */
+	if (u->tsorted == FALSE){
+		u->batRestricted = BAT_WRITE;
+		BATmirror(BATorder(BATmirror(u)));
+	}
+
+	/* binary search to find the position of the lowest requested value in the insertions */
+	l = SORTfndfirst_@4(u,low);
+	lt = BUNtloc(u,l);
+	updLast = BUNtloc(u, BUNlast(u));
+	if (lt == updLast){
+		BBPunfix(u->batCacheid);	
+		return NULL; /* no qualifying values in the insertions */
+	}
+	xx = BUNsize(u);
+	if (@2_EQ(lt,low,@3@1) && *inclusiveLow == FALSE){
+		while (lt < updLast && @2_EQ(lt,low,@3@1))
+			lt +=xx;
+	} 			
+	if (lt == updLast){
+		BBPunfix(u->batCacheid);	
+		return NULL; /* no qualifying values in the insertions */
+	}
+	if ( @2_GT(lt,hgh,@3@1) || (@2_EQ(lt,hgh,@3@1) && *inclusiveHgh==FALSE) ){
+		BBPunfix(u->batCacheid);	
+		return NULL; /* no qualifying values in the insertions */ 	
+	}
+	updatesStart = BUNindex(u,lt);	
+	
+	/* binary search to find the position of the highest requested value in the insertions */
+        l = SORTfndfirst_@4(u, hgh);
+	lt = BUNtloc(u,l);
+	if (lt < updLast){
+		if (@2_EQ(lt,hgh,@3@1) && *inclusiveHgh == TRUE){	
+			while (lt < updLast && @2_EQ(lt,hgh,@3@1))
+                            	lt +=xx;
+			lt-=xx;
+		} else
+		if (@2_EQ(lt,hgh,@3@1) && *inclusiveHgh == FALSE)
+                        lt -=xx;
+		else
+		if ( @2_GT(lt,hgh,@3@1) )
+                        lt -=xx;
+	}
+
+	if (lt == updLast) lt-=xx;
+	updatesEnd = BUNindex(u,lt);
+	
+	if (CrackerIndex[position].mergeInsertions == 0){	
+		/* merge completely */
+		BBPunfix(u->batCacheid);
+		mergeInsertionsB_@1(bid, &CrackerIndex[position].iid, 0, updates-1);
+		CrackerIndex[position].mergeInsertions = -1 ;
+		CrackerIndex[position].iid = -1;
+
+	} else if (CrackerIndex[position].mergeInsertions == 1){
+		/* merge only the requested values */			
+		BBPunfix(u->batCacheid);
+		mergeInsertionsBGradually_@1(bid, &CrackerIndex[position].iid, updatesStart, updatesEnd);
+	}
+	 else if (CrackerIndex[position].mergeInsertions == 2){
+		/* merge only the requested values using the ripple strategy */
+		if ((b = BATdescriptor(CrackerIndex[position].cbid)) == NULL)
+                        throw(MAL, "crackers.crackRange", "Cannot access crack index");
+		mergeInsertionsBRipple_@1(b, u, updatesStart, updatesEnd, hgh, *inclusiveHgh, position);	
+		BBPunfix(u->batCacheid);
+		BBPunfix(b->batCacheid);
+	}	
+	return NULL;
+}
+
+/* This function takes a range and returns a view with the result. 
+To do that, we first search the index to determine which parts of the result we already
+know and which parts we have to crack. Then we crack, if necessary,
+the appropriate pieces, update the index and return the result */
+str
+CRKRangeTree_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh, bit tail){
+	BAT *b,*c,*bo;
+	BAT *view;
+	int  m;
+	lng vl=-1, vh=-1, posl, posh;
+	/* vl and vh are the low and high index values to create the view with the result */
+	lng cl1, ch1, cl2, ch2;
+	/* index values in the case we have to crack
+		|cl1...........ch1|.....................|cl2.........ch2|
+		if we have to crack only one piece, i.e., if our range falls
+		in one piece only then we crack from cl to ch otherwise we use
+		the other indices as it is shown */
+	int xx, zz;
+	int _vl;
+	bit HBound, foundLow=0, foundHgh=0;
+	int gapL = 1;
+	int gapH = 1;
+	bit rippledDeletions = FALSE;
+	struct Node *lowNode=NULL, *hghNode=NULL, *lowNodeNext=NULL, *temp;
+	BUN idxFirst;
+	
+	if (@2_GT(low,hgh,@3@1))
+		throw(MAL, "crackers.crack", "illegal range");
+	
+	if (*inclusiveHgh == TRUE) HBound = FALSE;
+	else	HBound = TRUE; 				
+
+	m = existsCrackerIndex(*bid);
+
+	/* if this is the first time we select something from this bat,
+		we have to create the crack indx for it and
+	   if necessary materialize the head of the bat */
+	if (m == -1){
+		if ((bo = BATdescriptor(*bid)) == NULL)
+			throw(MAL, "crackers.crackRange", "Cannot access descriptor");
+		b = BATcopy(bo, bo->htype, bo->ttype, TRUE);
+		if ( bo->htype == TYPE_void)
+			b = BATmaterializeh(b,BATcount(b));
+		b->hsorted = FALSE;
+		b->tsorted = FALSE;
+		b->hdense = FALSE;
+		b->tdense = FALSE;
+		/*BATkey(b,TRUE);*/
+		BATkey(BATmirror(b),FALSE);
+		b->batRestricted= BAT_READ;
+		BATmode(b,PERSISTENT);
+		bo->batRestricted= BAT_READ;
+
+		m = newCrackerIndex_@1(*bid,b->batCacheid);
+
+		if ((c = BATdescriptor(CrackerIndex[m].cid)) == NULL)
+			throw(MAL, "crackers.crackRange", "Cannot access crack index");
+
+		/* Since the index is empty we know we have to crack
+		   anyway so crack in three pieces cl-ch */
+		posl = BUNindex(b,BUNfirst(b));
+		posh = BUNindex(b,BUNlast(b)-BUNsize(b));
+
+		/*printf(" "LLFMT" \n ",posh-posl);*/
+		@:crkThreeTree(@1,posl,posh)@
+		
+		BBPincref(b->batCacheid,TRUE);
+		BBPunfix(bo->batCacheid);
+		goto createView;
+	}
+	
+	/* If an index exists for this bat (so it has been cracked before)
+		we search the index to find where our range falls after this
+		search if we have a match on the low range vl will hold the
+		index value, otherwise it will be -1. The same for hgh and vh
+		if there is no match for low then cl will hold the index that
+		from there on we have to crack. The same from hgh and ch
+		Note that in the case of the low range  we always have to increment
+		by one since we want the values that are after this index
+		(because of the way the crack index is created).
+		Also after the search l and h should point to the low and hgh indices
+		(in the crack index) found either as a match or to crack.
+		This is used later on to determine which pieces we have to crack */
+
+	/* Check if this bat was previously cracked but the map is not there anymore
+		this may happen if we chose to forget the index because of updates, so now we
+		have to create a new one and crack in three pieces anyway */
+	if (CrackerIndex[m].reCreate == 1){
+		reCreateMap_@1(m);
+	
+		/* Take the index of the bat */
+		if ((c = BATdescriptor(CrackerIndex[m].cid)) == NULL)
+			throw(MAL, "crackers.crackRange", "Cannot access cracker index");
+
+		/* Take the copy of the bat for which we maintain the index */
+		if ((b = BATdescriptor(CrackerIndex[m].cbid)) == NULL)
+			throw(MAL, "crackers.crackRange", "Cannot access cracker BAT");
+	
+		posl = BUNindex(b,BUNfirst(b));
+		posh = BUNindex(b,BUNlast(b)-BUNsize(b));
+
+		@:crkThreeTree(@1,posl,posh)@
+		goto createView;
+	}
+	
+	/* Take the index of the bat */
+	if ((c = BATdescriptor(CrackerIndex[m].cid)) == NULL)
+		throw(MAL, "crackers.crackRange", "Cannot access crack index");
+
+	/* Take the copy of the bat for which we maintain the index */
+	if ((b = BATdescriptor(CrackerIndex[m].cbid)) == NULL)
+		throw(MAL, "crackers.crackRange", "Cannot access crack index");
+
+	xx = BUNsize(b);
+	zz = BUNsize(c);
+	idxFirst = BUNfirst(c);
+
+	/* deal with pending deletions if any */
+	if (CrackerIndex[m].mergeDeletions >= 0){
+		str msg = selectMergeDeletionsPart_@1(bid, low, inclusiveLow, hgh, inclusiveHgh, &rippledDeletions, m);
+		if (msg != NULL)
+			throw(MAL, "crackers.crackRange",msg);
+	}
+	
+	if (CrackerIndex[m].mergeDeletions == 2 && rippledDeletions == FALSE){
+		lowNode = findNodeL_@1(*low, *inclusiveLow, CrackerIndex[m].Tree, c, idxFirst, zz, NULL);
+                if (lowNode == NULL){
+                        lowNodeNext = NULL;
+                        temp = CrackerIndex[m].Tree;
+                        if (temp->deleted == FALSE)
+                                lowNodeNext = temp;
+                        while (temp->left != NULL){
+                                temp = temp->left;
+                                if (temp->deleted == FALSE)
+                                        lowNodeNext = temp;
+                        }
+                } else
+                        lowNodeNext = findNextPiece(lowNode);
+
+		shiftHoles_@1(lowNode, lowNodeNext, b, xx, c, idxFirst, zz, hgh, inclusiveHgh, m);	
+	}
+
+	/* deal with pending insertions if any */
+	if (CrackerIndex[m].mergeInsertions >= 0){
+		str msg = selectMergeInsertionsPart_@1(bid, low, inclusiveLow, hgh, inclusiveHgh, m);
+                if (msg != NULL)
+                        throw(MAL, "crackers.crackRange",msg);
+	}
+
+	/* find out where in the index the low falls */
+	
+	foundLow = GetLow_@1(*low, *inclusiveLow, CrackerIndex[m].Tree, c, BUNhloc(c, BUNfirst(c)), zz, &cl1, &ch1, 0, BUNindex(b, BUNlast(b)-BUNsize(b)));
+
+	/* find out where in the index the high falls */
+	foundHgh = GetHgh_@1(*hgh, *inclusiveHgh, CrackerIndex[m].Tree, c, BUNhloc(c, BUNfirst(c)), zz, &cl2, &ch2, 0, BUNindex(b, BUNlast(b)-BUNsize(b)));
+
+	/*need to increase one position for the low bound only since we always store the previous position in the index*/
+	if (cl1 != 0) cl1++;
+	if (cl2 != 0) cl2++;
+
+	/* find the hols if any in the pieces to crack so that cracking does not touch deleted buns */
+        if (CrackerIndex[m].mergeDeletions == 2){
+		lng holsLow = 0, holsHgh = 0;
+		/* if not done before while shifting hols find lowNode and lowNodeNext */
+		if (rippledDeletions == TRUE){
+			lowNode = findNodeL_@1(*low, *inclusiveLow, CrackerIndex[m].Tree, c, idxFirst, zz, NULL);
+       	         	if (lowNode == NULL){
+                        	lowNodeNext = NULL;
+                   		temp = CrackerIndex[m].Tree;
+                        	if (temp->deleted == FALSE)
+                                	lowNodeNext = temp;
+                        	while (temp->left != NULL){
+                                	temp = temp->left;
+                                	if (temp->deleted == FALSE)
+                                	        lowNodeNext = temp;
+                        	}
+                	} else
+                        	lowNodeNext = findNextPiece(lowNode);
+		}
+
+		hghNode = findNodeH_@1(*hgh, *inclusiveHgh, CrackerIndex[m].Tree, c, idxFirst, zz, NULL);
+		if (lowNodeNext != NULL)
+			holsLow = lowNodeNext->hols;
+
+		if (hghNode != NULL)
+			holsHgh = hghNode->hols;
+
+		/* so if there are hols the positions where we crack are appropriately decreased */
+		ch1 -= holsLow;
+		ch2 -= holsHgh;
+	}	
+
+
+	/* If one or both of the result view bounds were not found using the
+	index then we have to crack */
+	if (foundLow == 0 || foundHgh == 0){
+		if (foundLow == 0 && foundHgh == 0){
+			/* If ch2 is right after cl1 in the index then we split this piece in three pieces*/
+			if (cl1 == cl2){
+				/*CRACK in three pieces cl1-ch2 */
+				@:crkThreeTree(@1,cl1,ch2)@
+
+			} else {
+				/* Else we have to do two cracks separatelly */
+	
+				/* For the cl bound and the next one in the index*/
+				@:crkTwoLTree(@1)@
+
+				/* For the ch bound and the previous one in the index*/
+				@:crkTwoRTree(@1)@
+
+				if (IndexSize <IndexStop){
+					if (vl>0) _vl=vl-1; else _vl=vl;		
+					if (gapL>0) addCrackerIndex_@1(m,low,*inclusiveLow,_vl,c);
+					if (gapH>0) addCrackerIndex_@1(m,hgh,HBound,vh,c);
+				}
+			}
+		} else
+		if (foundLow == 0){
+			@:crkTwoLTree(@1)@
+			if (IndexSize <IndexStop){
+				if (vl>0) _vl=vl-1; else _vl=vl;		
+				if (gapL>0) addCrackerIndex_@1(m,low,*inclusiveLow,_vl,c);
+			}
+			vh = ch2;
+		} else
+		if (foundHgh == 0){
+			@:crkTwoRTree(@1)@
+			if (IndexSize <IndexStop)
+				if (gapH>0) addCrackerIndex_@1(m,hgh,HBound,vh,c);
+			vl = cl1;
+		} 	
+	} else {
+		vl = cl1;
+		vh = ch2;
+	}
+
+	@:CreateResult()@
+	return MAL_SUCCEED;
+}
+
+str
+CRKRangeLeftNilTree_@1(int *vid, int *bid, @1 *hgh, bit *inclusiveHgh, bit tail){
+	BAT *b,*c,*bo;
+	BAT *view;
+	int  m;
+	lng vl=-1, vh=-1;
+	lng cl2, ch2;
+	int xx;
+	bit HBound,foundHgh=0;
+	int gapH = 1;
+	
+	if (*inclusiveHgh == TRUE) HBound = FALSE;
+	else	HBound = TRUE; 				
+
+	m = existsCrackerIndex(*bid);
+
+	/* if this is the first time we select something from this bat,
+		we have to create the crack indx for it and
+	   if necessary materialize the head of the bat */
+	if (m == -1){
+		if ((bo = BATdescriptor(*bid)) == NULL)
+			throw(MAL, "crackers.crackRange", "Cannot access descriptor");
+		b = BATcopy(bo, bo->htype, bo->ttype, TRUE);
+		if ( bo->htype == TYPE_void)
+			b = BATmaterializeh(b,BATcount(b));
+		b->hsorted = FALSE;
+		b->tsorted = FALSE;
+		b->hdense = FALSE;
+		b->tdense = FALSE;
+		b->batRestricted= BAT_READ;
+		BATmode(b,PERSISTENT);
+		bo->batRestricted= BAT_READ;
+
+		m = newCrackerIndex_@1(*bid,b->batCacheid);
+
+		if ((c = BATdescriptor(CrackerIndex[m].cid)) == NULL)
+			throw(MAL, "crackers.crackRange", "Cannot access crack index");
+
+		cl2 = BUNindex(b,BUNfirst(b));
+		ch2 = BUNindex(b,BUNlast(b)-BUNsize(b));
+		@:crkTwoRTree(@1)@
+		if (gapH>0) addCrackerIndex_@1(m,hgh,HBound,vh,c);
+		vl = BUNindex(b,BUNfirst(b));
+		
+		BBPincref(b->batCacheid,TRUE);
+		BBPunfix(bo->batCacheid);
+		goto createView;
+	}
+	
+	if (CrackerIndex[m].cid == -1){
+		reCreateMap_@1(m);
+	
+		/* Take the index of the bat */
+		if ((c = BATdescriptor(CrackerIndex[m].cid)) == NULL)
+			throw(MAL, "crackers.crackRange", "Cannot access crack index");
+
+		/* Take the copy of the bat for which we maintain the index */
+		if ((b = BATdescriptor(CrackerIndex[m].cbid)) == NULL)
+			throw(MAL, "crackers.crackRange", "Cannot access crack index");
+	
+		cl2 = BUNindex(b,BUNfirst(b));
+		ch2 = BUNindex(b,BUNlast(b)-BUNsize(b));
+		@:crkTwoRTree(@1)@
+		if (gapH>0) addCrackerIndex_@1(m,hgh,HBound,vh,c);
+		vl = BUNindex(b,BUNfirst(b));
+
+		goto createView;
+	}
+
+	/* Take the index of the bat */
+	if ((c = BATdescriptor(CrackerIndex[m].cid)) == NULL)
+		throw(MAL, "crackers.crackRange", "Cannot access crack index");
+
+	/* Take the copy of the bat for which we maintain the index */
+	if ((b = BATdescriptor(CrackerIndex[m].cbid)) == NULL)
+		throw(MAL, "crackers.crackRange", "Cannot access crack index");
+
+	xx = BUNsize(c);
+
+	vl = BUNindex(b,BUNfirst(b));
+
+	/* find out where in the index the high falls */
+	foundHgh = GetHgh_@1(*hgh, HBound, CrackerIndex[m].Tree, c, BUNhloc(c, BUNfirst(c)), xx, &cl2, &ch2, 0, BUNindex(b, BUNlast(b)-BUNsize(b)));
+
+	/*need to increase one position for the low bound only since we always store the previous position in the index*/
+	if (cl2 != 0) cl2++;
+
+	if (foundHgh == 0){
+		@:crkTwoRTree(@1)@
+		if (IndexSize <IndexStop)
+			if (gapH>0) addCrackerIndex_@1(m,hgh,HBound,vh,c);
+	} 	
+	else
+		vh = ch2;
+		
+	@:CreateResult()@
+	return MAL_SUCCEED;
+}
+
+str
+CRKRangeRightNilTree_@1(int *vid, int *bid, @1 *low, bit *inclusiveLow, bit tail){
+	BAT *b,*c,*bo;
+	BAT *view;
+	int  m;
+	lng vl=-1, vh=-1;
+	lng cl1, ch1;
+	int xx;
+	bit foundLow=0;
+	int gapL = 1;
+	
+	m = existsCrackerIndex(*bid);
+
+	/* if this is the first time we select something from this bat,
+		we have to create the crack indx for it and
+	   if necessary materialize the head of the bat */
+	if (m == -1){
+		if ((bo = BATdescriptor(*bid)) == NULL)
+			throw(MAL, "crackers.crackRange", "Cannot access descriptor");
+		b = BATcopy(bo, bo->htype, bo->ttype, TRUE);
+		if ( bo->htype == TYPE_void)
+			b = BATmaterializeh(b,BATcount(b));
+		b->hsorted = FALSE;
+		b->tsorted = FALSE;
+		b->hdense = FALSE;
+		b->tdense = FALSE;
+		b->batRestricted= BAT_READ;
+		BATmode(b,PERSISTENT);
+		bo->batRestricted= BAT_READ;
+
+		m = newCrackerIndex_@1(*bid,b->batCacheid);
+
+		if ((c = BATdescriptor(CrackerIndex[m].cid)) == NULL)
+			throw(MAL, "crackers.crackRange", "Cannot access crack index");
+
+		cl1 = BUNindex(b,BUNfirst(b));
+		ch1 = BUNindex(b,BUNlast(b)-BUNsize(b));
+		@:crkTwoLTree(@1)@
+		if (gapL>0) addCrackerIndex_@1(m,low,*inclusiveLow,vl,c);
+		vh = BUNindex(b,BUNlast(b)-BUNsize(b));
+		
+		BBPincref(b->batCacheid,TRUE);
+		BBPunfix(bo->batCacheid);
+		goto createView;
+	}
+	
+	if (CrackerIndex[m].cid == -1){
+		reCreateMap_@1(m);
+	
+		/* Take the index of the bat */
+		if ((c = BATdescriptor(CrackerIndex[m].cid)) == NULL)
+			throw(MAL, "crackers.crackRange", "Cannot access crack index");
+
+		/* Take the copy of the bat for which we maintain the index */
+		if ((b = BATdescriptor(CrackerIndex[m].cbid)) == NULL)
+			throw(MAL, "crackers.crackRange", "Cannot access crack index");
+	
+		cl1 = BUNindex(b,BUNfirst(b));
+		ch1 = BUNindex(b,BUNlast(b)-BUNsize(b));
+		@:crkTwoLTree(@1)@
+		if (gapL>0) addCrackerIndex_@1(m,low,*inclusiveLow,vl,c);
+		vh = BUNindex(b,BUNlast(b)-BUNsize(b));
+
+		goto createView;
+	}
+
+
+	/* Take the index of the bat */
+	if ((c = BATdescriptor(CrackerIndex[m].cid)) == NULL)
+		throw(MAL, "crackers.crackRange", "Cannot access crack index");
+
+	/* Take the copy of the bat for which we maintain the index */
+	if ((b = BATdescriptor(CrackerIndex[m].cbid)) == NULL)
+		throw(MAL, "crackers.crackRange", "Cannot access crack index");
+
+	xx = BUNsize(c);
+
+	vh = BUNindex(b,BUNlast(b)-BUNsize(b));
+
+
+	/* find out where in the index the low falls */
+	foundLow = GetLow_@1(*low,*inclusiveLow, CrackerIndex[m].Tree, c, BUNhloc(c, BUNfirst(c)), xx, &cl1, &ch1, 0, BUNindex(b, BUNlast(b)-BUNsize(b)));
+
+	/*need to increase one position for the low bound only since we always store the previous position in the index*/
+	if (cl1 != 0) cl1++;
+
+	if (foundLow == 0){
+		@:crkTwoLTree(@1)@
+		if (IndexSize <IndexStop)
+			if (gapL>0) addCrackerIndex_@1(m,low,*inclusiveLow,vl,c);
+	} 	
+	else
+		vl = cl1;
+		
+	@:CreateResult()@
+	return MAL_SUCCEED;
+}
+@
+
+@c
+@:crackOperations(chr,simple,,chr)@
+@:crackOperations(sht,simple,,sht)@
+@:crackOperations(int,simple,,int)@
+@:crackOperations(lng,simple,,lng)@
+@:crackOperations(flt,simple,,flt)@
+@:crackOperations(dbl,simple,,dbl)@
+@:crackOperations(date,atom,TYPE_,loc)@
+
+@= SelectFunctions
+crackers_export str CRKselectBounds_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh);
+str
+CRKselectBounds_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh){		
+	if (@2_EQ(low,ATOMnilptr(TYPE_@1),@3@1))
+		return CRKRangeLeftNilTree_@1(vid, bid, hgh, inclusiveHgh, TRUE);
+	else if (@2_EQ(hgh,ATOMnilptr(TYPE_@1),@3@1))
+		return CRKRangeRightNilTree_@1(vid, bid, low, inclusiveLow, TRUE);
+	else
+		return CRKRangeTree_@1(vid, bid, low, hgh, inclusiveLow, inclusiveHgh, TRUE);
+
+       	throw(MAL, "crackers.CRKselectBounds_@1", "case not handled");
+}
+
+crackers_export str CRKuselectBounds_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh);
+str
+CRKuselectBounds_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh){
+	if (@2_EQ(low,ATOMnilptr(TYPE_@1),@3@1))
+		return CRKRangeLeftNilTree_@1(vid, bid, hgh, inclusiveHgh, FALSE);
+	else if (@2_EQ(hgh,ATOMnilptr(TYPE_@1),@3@1))
+		return CRKRangeRightNilTree_@1(vid, bid, low, inclusiveLow, FALSE);
+	else
+		return CRKRangeTree_@1(vid, bid, low, hgh, inclusiveLow, inclusiveHgh, FALSE);
+
+        throw(MAL, "crackers.CRKuselectBounds_@1", "case not handled");
+}
+
+crackers_export str CRKselectValue_@1(int *vid, int *bid, @1 *value);
+str
+CRKselectValue_@1(int *vid, int *bid, @1 *value){
+	bit inclusive = TRUE;
+	return CRKuselectBounds_@1(vid, bid, value, value, &inclusive, &inclusive);
+}
+
+crackers_export str CRKuselectValue_@1(int *vid, int *bid, @1 *value);
+str
+CRKuselectValue_@1(int *vid, int *bid, @1 *value){
+	bit inclusive = TRUE;
+	return CRKuselectBounds_@1(vid, bid, value, value, &inclusive, &inclusive);
+}
+
+crackers_export str CRKselect_@1(int *vid, int *bid, @1 *low, @1 *hgh);
+str
+CRKselect_@1(int *vid, int *bid, @1 *low, @1 *hgh){
+	bit inclusive = TRUE;
+	return CRKselectBounds_@1(vid, bid, low, hgh, &inclusive, &inclusive);
+}
+
+crackers_export str CRKuselect_@1(int *vid, int *bid, @1 *low, @1 *hgh);
+str
+CRKuselect_@1(int *vid, int *bid, @1 *low, @1 *hgh){
+	bit inclusive = TRUE;
+	return CRKuselectBounds_@1(vid, bid, low, hgh, &inclusive, &inclusive);
+}
+@
+
+@c
+@:SelectFunctions(chr,simple,)@
+@:SelectFunctions(sht,simple,)@
+@:SelectFunctions(int,simple,)@
+@:SelectFunctions(lng,simple,)@
+@:SelectFunctions(flt,simple,)@
+@:SelectFunctions(dbl,simple,)@
+@:SelectFunctions(date,atom,TYPE_)@
+
+/* END ---------------------------Select Operators----------------------------------------------------------------*/
