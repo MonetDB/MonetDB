@@ -96,7 +96,7 @@ static char *ID[] = {
 
 /* forward declarations for the left site of grammar rules */
 static void print_statement(PFsql_t*);
-static void print_expr(PFsql_t*);
+static void print_expr (PFsql_t*);
 static void print_fullselect(FILE*,PFsql_t*,int);
 
 static void 
@@ -227,7 +227,30 @@ print_schema_name (PFsql_t *n)
 }
 
 static void
-print_expr(PFsql_t *n)
+print_conjunctive_list (FILE *f, PFsql_t *n, int i)
+{
+    assert (n);
+
+    switch (n->kind) {
+        case sql_and:
+            print_conjunctive_list (f, L(n), i);
+            indent (f, i-4);
+            fprintf (f, "AND ");
+            print_conjunctive_list (f, R(n), i);
+            break;
+
+        default:
+            /* prettyprint a single expression */
+            PFprettyprintf ("%c", START_BLOCK);
+            print_expr (n);
+            PFprettyprintf ("%c", END_BLOCK);
+            pretty_dump (f, i);
+            break;
+    }
+}
+
+static void
+print_expr (PFsql_t *n)
 {
     assert (n);
 
@@ -664,12 +687,7 @@ print_join (FILE *f, PFsql_t *n, int i)
             print_join (f, L(n), i);
             indent (f, i-3);
             fprintf (f, "ON ");
-
-            /* prettyprint expression */
-            PFprettyprintf ("%c", START_BLOCK);
-            print_expr (R(n));
-            PFprettyprintf ("%c", END_BLOCK);
-            pretty_dump (f, i);
+            print_conjunctive_list (f, R(n), i);
             break;
             
         case sql_innr_join:
@@ -776,12 +794,7 @@ print_fullselect (FILE *f, PFsql_t *n, int i)
             if (n->child[2]) {
                 indent (f, i);
                 fprintf (f, " WHERE ");
-
-                /* prettyprint where list */
-                PFprettyprintf ("%c", START_BLOCK);
-                print_expr (n->child[2]);
-                PFprettyprintf ("%c", END_BLOCK);
-                pretty_dump (f, i+7);
+                print_conjunctive_list (f, n->child[2], i+7);
             }
 
             /* GROUP BY (optional) */
