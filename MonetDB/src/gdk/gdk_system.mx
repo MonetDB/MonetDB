@@ -143,6 +143,7 @@ gdk_export int MT_create_thread(MT_Id *t, void (*function) (void *), void *arg);
 gdk_export void MT_exit_thread(int status);
 gdk_export void MT_global_exit(int status);
 gdk_export MT_Id MT_getpid(void);
+gdk_export int MT_join_thread(MT_Id t);
 gdk_export int MT_kill_thread(MT_Id t);
 
 #ifdef HAVE_PTHREAD_SIGMASK
@@ -187,7 +188,7 @@ gdk_export MT_Lock MT_system_lock;
 
 @- MT Semaphore API
 @h
-#if defined(_AIX) || defined(__APPLE_CC__)
+#if defined(_AIX) || defined(__MACH_O__)
 typedef struct {
 	int cnt;
 	pthread_mutex_t mutex;
@@ -425,6 +426,12 @@ MT_exit_thread(int s)
 	pthread_exit(&st);
 }
 
+int
+MT_join_thread(MT_Id t)
+{
+	return pthread_join((pthread_t)(t - 1), NULL);
+}
+
 
 int
 MT_kill_thread(MT_Id t)
@@ -439,7 +446,7 @@ MT_kill_thread(MT_Id t)
 #endif
 }
 
-#if defined(_AIX) || defined(__APPLE_CC__)
+#if defined(_AIX) || defined(__MACH_O__)
 void
 pthread_sema_init(pthread_sema_t *s, int flag, int nresources)
 {
