@@ -273,7 +273,7 @@ public final class MapiSocket {
 				String warnings =
 					connect(u.getHost(), p == -1 ? port : p, user, pass);
 				if (warnings == null) warnings = "";
-				warnings = "Redirect by " + host + ":" + 
+				warn += "\nRedirect by " + host + ":" + 
 					port + " to " + suri + "\n" + warnings;
 			} else {
 				String msg = "The server sent a redirect for this connection:";
