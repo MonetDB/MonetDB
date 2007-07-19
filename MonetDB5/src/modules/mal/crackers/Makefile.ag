@@ -38,4 +38,4 @@ scripts_mal = {
 	SOURCES = crackers.mx
 }
 
-EXTRA_DIST_DIR = Tests
+#EXTRA_DIST_DIR = Tests
