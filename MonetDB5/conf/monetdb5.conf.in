@@ -106,6 +106,17 @@ delay=120		#waiting between pinging the server
 # if the guardian process is running, it will automatically
 # restart the server upon failuer and sent an email to the owner
 
+# Merovingian section
+#====================================
+# Merovingian logs messages and errors by default to the stdout and
+# stderr channels on the console.  By setting one or both of the
+# variables below, one can specify messages and/or errors to be logged
+# to a file instead.  It is legitimate to have both mero_msglog and
+# mero_errlog pointing to the same file, as in the default below.
+# Unsetting below defaults will make merovingian log to the screen.
+#mero_msglog=@prefix@/var/log/merovingian.log
+#mero_errlog=@prefix@/var/log/merovingian.log
+
 # MAL section
 # Monet Virtual Machine
 #====================================

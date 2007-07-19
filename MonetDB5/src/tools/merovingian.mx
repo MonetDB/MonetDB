@@ -136,6 +136,8 @@ logListener(void *p)
 			}
 			w = w->next;
 		}
+		fflush(fout);
+		fflush(ferr);
 		/* wait a tenth of a second */
 		MT_sleep_ms(10);
 	} while (1);
@@ -647,12 +649,33 @@ error:
 	return(newErr("accept connection: %s", msg));
 }
 
+static str
+replacePrefix(str s)
+{
+	str p;
+	str buf;
+
+	/* unfortunately we have to replace occurences of ${prefix} with
+	 * MONETDBPREFIX, which is medieval in this language */
+	p = strstr(s, "${prefix}");
+	if (p != NULL) {
+		buf = malloc(sizeof(char) * (strlen(s) + strlen(MONETDBPREFIX) + 1));
+		memcpy(buf, s, p - s);
+		memcpy(buf + (p - s), MONETDBPREFIX, strlen(MONETDBPREFIX));
+		memcpy(buf + (p - s) + strlen(MONETDBPREFIX), s + (p - s) + 9, strlen(s) - 9 - (p - s) + 1);
+		return(strdup(buf));
+	} else {
+		return(strdup(s));
+	}
+}
+
 int
 main(int argc, char *argv[])
 {
 	err e;
 	int argp;
 	str conf = MONETDBCONFIG;
+	str dbfarm, msglog, errlog;
 	str p;
 	FILE *cnf = NULL;
 	char buf[1024];
@@ -661,13 +684,82 @@ main(int argc, char *argv[])
 	dpair d, q = alloca(sizeof(struct _dpair));
 	int pfd[2];
 
-	/* save the real stdout and stderr */
-	argp = dup(1);
-	q->fout = fdopen(argp, "w");
-	argp = dup(2);
-	q->ferr = fdopen(argp, "w");
+	/* hunt for the config file, and read it */
+	snprintf(buf, 1023, "%s/bin/mserver5", MONETDBPREFIX);
+	_merovingian_mserver = alloca(sizeof(char) * (strlen(buf) + 1));
+	memcpy(_merovingian_mserver, buf, strlen(buf) + 1);
+
+	snprintf(buf, 1023, "%s%s", MONETDBPREFIX, conf + 9);
+	cnf = fopen(buf, "r");
+	if (cnf == NULL) {
+		fprintf(stderr, "cannot open config file %s\n", buf);
+		exit(1);
+	}
+
+	dbfarm = NULL;
+	msglog = NULL;
+	errlog = NULL;
+	while (fgets(buf, 1024, cnf) != NULL) {
+		/* eliminate fgets' newline */
+		buf[strlen(buf) - 1] = '\0';
+		if (*buf && strncmp(buf, "gdk_dbfarm=", 11) == 0) {
+			p = strchr(buf, '=');
+			dbfarm = replacePrefix(++p);
+		} else if (*buf && strncmp(buf, "mero_msglog=", 12) == 0) {
+			p = strchr(buf, '=');
+			msglog = replacePrefix(++p);
+		} else if (*buf && strncmp(buf, "mero_errlog=", 12) == 0) {
+			p = strchr(buf, '=');
+			errlog = replacePrefix(++p);
+		}
+	}
+
+	fclose(cnf);
+
+	if (dbfarm == NULL) {
+		fprintf(stderr, "cannot find dbfarm via config file\n");
+		exit(1);
+	}
+
+	/* where should our msg output go to? */
+	if (msglog == NULL) {
+		/* stdout, save it */
+		argp = dup(1);
+		q->fout = fdopen(argp, "w");
+	} else {
+		/* write to the given file */
+		q->fout = fopen(msglog, "a");
+		if (q->fout == NULL) {
+			fprintf(stderr, "unable to open '%s': %s\n",
+					msglog, strerror(errno));
+			exit(1);
+		}
+	}
+	free(msglog);
+
+	/* where should our err output go to? */
+	if (errlog == NULL) {
+		/* stderr, save it */
+		argp = dup(2);
+		q->ferr = fdopen(argp, "w");
+	} else {
+		/* write to the given file */
+		if (strcmp(msglog, errlog) == 0) {
+			q->ferr = q->fout;
+		} else {
+			q->ferr = fopen(errlog, "a");
+			if (q->ferr == NULL) {
+				fprintf(stderr, "unable to open '%s': %s\n",
+						errlog, strerror(errno));
+				exit(1);
+			}
+		}
+	}
+	free(errlog);
+
+	/* store the structure */
 	q->pid = 0;
-	snprintf(q->name, 23, "console");
+	snprintf(q->name, 23, "output");
 	d = q->next = alloca(sizeof(struct _dpair));
 
 	/* redirect stdout */
@@ -702,51 +794,10 @@ main(int argc, char *argv[])
 	}
 
 	merlog("Merovingian %s starting ...", MEROV_VERSION);
+	merlog("monitoring dbfarm %s", dbfarm);
 
-	snprintf(buf, 1023, "%s/bin/mserver5", MONETDBPREFIX);
-	_merovingian_mserver = alloca(sizeof(char) * (strlen(buf) + 1));
-	memcpy(_merovingian_mserver, buf, strlen(buf) + 1);
-
-	snprintf(buf, 1023, "%s%s", MONETDBPREFIX, conf + 9);
-	cnf = fopen(buf, "r");
-	if (cnf == NULL) {
-		fprintf(stderr, "cannot open config file %s\n", buf);
-		exit(1);
-	}
-
-	conf = NULL;
-	while (fgets(buf, 1024, cnf) != NULL) {
-		if (*buf && strncmp(buf, "gdk_dbfarm=", 11) == 0) {
-			p = strchr(buf, '=');
-			conf = strdup(++p);
-			/* eliminate fgets' newline */
-			conf[strlen(conf) - 1] = '\0';
-			break;
-		}
-	}
-
-	fclose(cnf);
-
-	if (conf == NULL) {
-		fprintf(stderr, "cannot find dbfarm via config file\n");
-		exit(1);
-	}
-
-	/* unfortunately we have to replace occurences of ${prefix} with
-	 * MONETDBPREFIX, which is medieval in this language */
-	p = strstr(conf, "${prefix}");
-	if (p != NULL) {
-		memcpy(buf, conf, p - conf);
-		memcpy(buf + (p - conf), MONETDBPREFIX, strlen(MONETDBPREFIX));
-		memcpy(buf + (p - conf) + strlen(MONETDBPREFIX), conf + (p - conf) + 9, strlen(conf) - 9 - (p - conf) + 1);
-		free(conf);
-		conf = strdup(buf);
-	}
-
-	merlog("monitoring dbfarm %s", conf);
-
-	SABAOTHinit(conf, NULL);
-	free(conf);
+	SABAOTHinit(dbfarm, NULL);
+	free(dbfarm);
 
 	for (argp = 1; argp < argc; argp++) {
 		e = forkMserver(argv[argp], &stats, d);
