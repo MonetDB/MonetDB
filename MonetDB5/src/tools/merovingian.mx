@@ -78,6 +78,8 @@ as error to the connecting client.
 #include <string.h> /* strdup, strerror */
 #include <alloca.h>
 #include <errno.h>
+#include <signal.h> /* handle Ctrl-C, etc. */
+#include <pthread.h>
 #ifdef _MSC_VER
 #include <process.h>
 
@@ -108,6 +110,7 @@ typedef struct _dpair {
 	struct _dpair* next;
 }* dpair;
 
+static int _keepLogging = 1;
 static void
 logListener(void *p)
 {
@@ -115,6 +118,7 @@ logListener(void *p)
 	dpair w;
 	FILE *fout, *ferr;
 	char buf[8096];
+	int hadData;
 
 	/* the first entry in the list of d is where our output should go to */
 	fout = d->fout;
@@ -125,19 +129,30 @@ logListener(void *p)
 
 	do {
 		w = d;
+		hadData = 0;
 		while (w != NULL) {
 			if (fgets(buf, 8096, w->fout) != NULL) {
 				fprintf(fout, "MSG %s[" LLFMT "]: %s",
 						w->name, (long long int)w->pid, buf);
+				hadData = 1;
 			}
 			if (fgets(buf, 8096, w->ferr) != NULL) {
 				fprintf(ferr, "ERR %s[" LLFMT "]: %s",
 						w->name, (long long int)w->pid, buf);
+				hadData = 1;
 			}
 			w = w->next;
 		}
 		fflush(fout);
 		fflush(ferr);
+		/* see if we need to break the loop */
+		if (_keepLogging == 0) {
+			if (hadData == 0) {
+				break;
+			} else {
+				continue;	/* don't wait if someone's waiting for us */
+			}
+		}
 		/* wait a tenth of a second */
 		MT_sleep_ms(10);
 	} while (1);
@@ -356,7 +371,7 @@ forkMserver(str database, sabdb** stats, dpair dp)
 #endif
 }
 
-err
+static err
 handleClient(int sock, dpair dp)
 {
 	stream *fdin, *fout;
@@ -539,7 +554,8 @@ handleClient(int sock, dpair dp)
 	return(NO_ERR);
 }
 
-err
+static int _keepListening = 1;
+static err
 acceptConnections(unsigned short port, dpair dp)
 {
 	struct sockaddr_in server;
@@ -621,16 +637,20 @@ errno == WSAEADDRINUSE &&
 			continue;
 		}
 		if (retval < 0) {
+			if (_keepListening == 0)
+				break;
 			if (errno != EINTR) {
-				msg = "select failed";
+				msg = strerror(errno);
 				goto error;
 			}
 			continue;
 		}
 		if (sock >= 0 && FD_ISSET(sock, &fds)) {
 			if ((msgsock = accept(sock, (SOCKPTR) 0, (socklen_t *) 0)) < 0) {
+				if (_keepListening == 0)
+					break;
 				if (errno != EINTR) {
-					msg = "accept failed";
+					msg = strerror(errno);
 					goto error;
 				}
 				continue;
@@ -643,9 +663,12 @@ errno == WSAEADDRINUSE &&
 			fprintf(stderr, "client error: %s\n", getErrMsg(e));
 			freeErr(e);
 		}
-	} while (1);
+	} while (_keepListening);
+	close(sock);
+	return(NO_ERR);
 
 error:
+	close(sock);
 	return(newErr("accept connection: %s", msg));
 }
 
@@ -669,6 +692,13 @@ replacePrefix(str s)
 	}
 }
 
+static void
+handler(int sig)
+{
+	merlog("caught signal %d, Merovingian %s stopping ...", sig, MEROV_VERSION);
+	_keepListening = 0;
+}
+
 int
 main(int argc, char *argv[])
 {
@@ -680,9 +710,11 @@ main(int argc, char *argv[])
 	FILE *cnf = NULL;
 	char buf[1024];
 	sabdb* stats = NULL;
-	MT_Id tid;
 	dpair d, q = alloca(sizeof(struct _dpair));
 	int pfd[2];
+	pthread_t tid;
+	struct sigaction sa;
+	int ret;
 
 	/* hunt for the config file, and read it */
 	snprintf(buf, 1023, "%s/bin/mserver5", MONETDBPREFIX);
@@ -788,8 +820,19 @@ main(int argc, char *argv[])
 	d->pid = getpid();
 	snprintf(d->name, 23, "%s", "merovingian");
 
-	if (MT_create_thread(&tid, logListener, (void *)q) < 0) {
+	if (pthread_create(&tid, NULL, (void *(*)(void *))logListener, (void *)q) < 0) {
 		fprintf(q->ferr, "%s: unable to create logthread, exiting\n", argv[0]);
+		return(1);
+	}
+
+	sigemptyset(&sa.sa_mask);
+	sa.sa_handler = handler;
+	if (
+			sigaction(SIGINT, &sa, NULL) == -1 ||
+			sigaction(SIGQUIT, &sa, NULL) == -1 ||
+			sigaction(SIGTERM, &sa, NULL) == -1)
+	{
+		fprintf(q->ferr, "%s: unable to create signal handlers\n", argv[0]);
 		return(1);
 	}
 
@@ -812,14 +855,24 @@ main(int argc, char *argv[])
 	/* handle external connections main loop */
 	e = acceptConnections(MEROV_PORT, d);
 
+	ret = 0;
 	if (e != NO_ERR) {
 		fprintf(stderr, "%s\n", e);
 		freeErr(e);
-		return(1);
+		ret = 1;
 	}
 
-	free(_merovingian_mserver);
-	return(0);
+	if (_keepListening != 0)
+		merlog("Merovingian %s stopping ...", MEROV_VERSION);
+	_keepLogging = 0;
+	if ((argp = pthread_join(tid, NULL)) != 0) {
+		fprintf(q->ferr, "failed to stop logging thread: %s\n", strerror(argp));
+		ret = 1;
+	}
+
+	fclose(q->fout);
+	fclose(q->ferr);
+	return(ret);
 }
 
 /* vim:set ts=4 sw=4 noexpandtab: */
