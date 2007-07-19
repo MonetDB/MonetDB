@@ -554,9 +554,8 @@ handleClient(int sock, dpair dp)
 	return(NO_ERR);
 }
 
-static int _keepListening = 1;
 static err
-acceptConnections(unsigned short port, dpair dp)
+openConnection(int *ret, unsigned short port)
 {
 	struct sockaddr_in server;
 	int sock = -1;
@@ -566,7 +565,6 @@ acceptConnections(unsigned short port, dpair dp)
 	int i = 0;
 	unsigned short origport = port;
 	char host[512];
-	str msg;
 
 	sock = socket(AF_INET, SOCK_STREAM, 0);
 	if (sock < 0)
@@ -616,13 +614,22 @@ errno == WSAEADDRINUSE &&
 	gethostname(host, (int) 512);
 	merlog("listening for connections on %s:%d", host, port);
 
-	do {
-		int retval;
-		struct timeval tv;
-		fd_set fds;
-		int msgsock;
-		err e;
+	*ret = sock;
+	return(NO_ERR);
+}
 
+static int _keepListening = 1;
+static str
+acceptConnections(int sock, dpair dp)
+{
+	str msg;
+	int retval;
+	struct timeval tv;
+	fd_set fds;
+	int msgsock;
+	err e;
+
+	do {
 		FD_ZERO(&fds);
 		if (sock >= 0)
 			FD_SET(sock, &fds);
@@ -686,7 +693,7 @@ replacePrefix(str s)
 		memcpy(buf, s, p - s);
 		memcpy(buf + (p - s), MONETDBPREFIX, strlen(MONETDBPREFIX));
 		memcpy(buf + (p - s) + strlen(MONETDBPREFIX), s + (p - s) + 9, strlen(s) - 9 - (p - s) + 1);
-		return(strdup(buf));
+		return(buf);
 	} else {
 		return(strdup(s));
 	}
@@ -715,6 +722,7 @@ main(int argc, char *argv[])
 	pthread_t tid;
 	struct sigaction sa;
 	int ret;
+	int sock;
 
 	/* hunt for the config file, and read it */
 	snprintf(buf, 1023, "%s/bin/mserver5", MONETDBPREFIX);
@@ -826,6 +834,7 @@ main(int argc, char *argv[])
 	}
 
 	sigemptyset(&sa.sa_mask);
+	sa.sa_flags = 0;
 	sa.sa_handler = handler;
 	if (
 			sigaction(SIGINT, &sa, NULL) == -1 ||
@@ -842,20 +851,25 @@ main(int argc, char *argv[])
 	SABAOTHinit(dbfarm, NULL);
 	free(dbfarm);
 
-	for (argp = 1; argp < argc; argp++) {
-		e = forkMserver(argv[argp], &stats, d);
-		if (e != NO_ERR) {
-			fprintf(stderr, "failed to fork mserver: %s\n", getErrMsg(e));
-			freeErr(e);
+	/* open up a connection */
+	e = openConnection(&sock, MEROV_PORT);
+	if (e == NO_ERR) {
+		for (argp = 1; argp < argc; argp++) {
+			e = forkMserver(argv[argp], &stats, d);
+			if (e != NO_ERR) {
+				fprintf(stderr, "failed to fork mserver: %s\n", getErrMsg(e));
+				freeErr(e);
+			}
+			if (stats != NULL)
+				SABAOTHfreeStatus(&stats);
 		}
-		if (stats != NULL)
-			SABAOTHfreeStatus(&stats);
+
+		/* handle external connections main loop */
+		e = acceptConnections(sock, d);
 	}
 
-	/* handle external connections main loop */
-	e = acceptConnections(MEROV_PORT, d);
-
 	ret = 0;
+
 	if (e != NO_ERR) {
 		fprintf(stderr, "%s\n", e);
 		freeErr(e);
@@ -864,6 +878,7 @@ main(int argc, char *argv[])
 
 	if (_keepListening != 0)
 		merlog("Merovingian %s stopping ...", MEROV_VERSION);
+
 	_keepLogging = 0;
 	if ((argp = pthread_join(tid, NULL)) != 0) {
 		fprintf(q->ferr, "failed to stop logging thread: %s\n", strerror(argp));
@@ -872,6 +887,14 @@ main(int argc, char *argv[])
 
 	fclose(q->fout);
 	fclose(q->ferr);
+
+	d = d->next;
+	while (d != NULL) {
+		q = d->next;
+		free(d);
+		d = q;
+	}
+
 	return(ret);
 }
 
