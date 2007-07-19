@@ -499,7 +499,11 @@ handleClient(int sock, dpair dp)
 	} else {
 		err e = forkMserver(database, &top, dp);
 		if (e != NO_ERR) {
-			stream_printf(fout, "!internal error while starting a new mserver\n");
+			if (top == NULL) {
+				stream_printf(fout, "!no such database '%s', please create it first\n", database);
+			} else {
+				stream_printf(fout, "!internal error while starting a new mserver\n");
+			}
 			stream_flush(fout);
 			stream_close(fout);
 			stream_close(fdin);
