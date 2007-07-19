@@ -22,7 +22,7 @@ srcdir=`cd '@Xsrcdir@'; pwd`
 uname=`uname`
 
 # where compiled modules are to be found
-MOD_PATH="${builddir}/src/compiler/.libs:${builddir}/src/compiler:${srcdir}/src/compiler:${builddir}/src/optimizer/.libs:${builddir}/src/optimizer:${srcdir}/src/optimizer:${builddir}/src/scheduler/.libs:${builddir}/src/scheduler:${srcdir}/src/scheduler:${builddir}/src/modules/atoms/.libs:${builddir}/src/modules/atoms:${srcdir}/src/modules/atoms:${builddir}/src/modules/kernel/.libs:${builddir}/src/modules/kernel:${srcdir}/src/modules/kernel:${builddir}/src/modules/mal/.libs:${builddir}/src/modules/mal:${srcdir}/src/modules/mal"
+MOD_PATH="${builddir}/src/compiler/.libs:${builddir}/src/compiler:${srcdir}/src/compiler:${builddir}/src/optimizer/.libs:${builddir}/src/optimizer:${srcdir}/src/optimizer:${builddir}/src/scheduler/.libs:${builddir}/src/scheduler:${srcdir}/src/scheduler:${builddir}/src/modules/atoms/.libs:${builddir}/src/modules/atoms:${srcdir}/src/modules/atoms:${builddir}/src/modules/kernel/.libs:${builddir}/src/modules/kernel:${srcdir}/src/modules/kernel:${builddir}/src/modules/mal/.libs:${builddir}/src/modules/mal:${srcdir}/src/modules/mal:${builddir}/src/modules/mal/crackers/.libs:${builddir}/src/modules/mal/crackers:${srcdir}/src/modules/mal/crackers"
 
 if [ "${LD_LIBRARY_PATH}" ] ; then
 	LD_LIBRARY_PATH=":${LD_LIBRARY_PATH}"
