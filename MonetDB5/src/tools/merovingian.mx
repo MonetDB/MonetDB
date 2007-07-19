@@ -235,14 +235,14 @@ forkMserver(str database, sabdb** stats, dpair dp)
 
 	switch ((*stats)->state) {
 		case SABdbRunning:
-			merlog("database %s already running\n", database);
+			merlog("database %s already running", database);
 			return(NO_ERR);
 		break;
 		case SABdbCrashed:
-			merlog("database %s has crashed, attempting restart\n", database);
+			merlog("database %s has crashed, attempting restart", database);
 		break;
 		case SABdbInactive:
-			merlog("starting database %s\n", database);
+			merlog("starting database %s", database);
 		break;
 		default:
 			return(newErr("unknown state: %d", (*stats)->state));
@@ -251,9 +251,9 @@ forkMserver(str database, sabdb** stats, dpair dp)
 	/* create the pipes (filedescriptors) now, such that we and the
 	 * child have the same descriptor set */
 	if (pipe(pfdo) == -1)
-		return(newErr("unable to create pipe: %s\n", strerror(errno)));
+		return(newErr("unable to create pipe: %s", strerror(errno)));
 	if (pipe(pfde) == -1)
-		return(newErr("unable to create pipe: %s\n", strerror(errno)));
+		return(newErr("unable to create pipe: %s", strerror(errno)));
 
 	pid = fork();
 	if (pid == 0) {
@@ -274,7 +274,7 @@ forkMserver(str database, sabdb** stats, dpair dp)
 
 		/* ok, now exec that mserver we want */
 		snprintf(dbname, 511, "--dbname=%s", database);
-		merlog("executing %s for database %s\n",
+		merlog("executing %s for database %s",
 				_merovingian_mserver, dbname);
 		execl(_merovingian_mserver, _merovingian_mserver,
 				"--set", "daemon=yes",
@@ -285,6 +285,8 @@ forkMserver(str database, sabdb** stats, dpair dp)
 		fprintf(stderr, "executing failed: %s\n", strerror(errno));
 		exit(1);
 	} else if (pid > 0) {
+		int i;
+
 		/* parent: fine, let's add the pipes for this child */
 		while (dp->next != NULL)
 			dp = dp->next;
@@ -298,6 +300,48 @@ forkMserver(str database, sabdb** stats, dpair dp)
 		dp->next = NULL;
 		dp->pid = pid;
 		snprintf(dp->name, 23, "%s", "mserver5");
+
+		/* wait for the child to open up a communication channel */
+		for (i = 0; i < 20; i++) {	/* wait up to 10 seconds */
+			/* stats cannot be NULL, as we don't allow starting not
+			 * existing databases */
+			SABAOTHfreeStatus(stats);
+			er = SABAOTHgetStatus(stats, database);
+			if (er != MAL_SUCCEED) {
+				/* since the client mserver lives its own life anyway,
+				 * it's not really a problem we exit here */
+				err e = newErr("%s", er);
+				GDKfree(er);
+				*stats = NULL;
+				return(e);
+			}
+			if ((*stats)->state == SABdbRunning &&
+					(*stats)->conns != NULL &&
+					(*stats)->conns->val != NULL)
+			{
+				break;
+			}
+			MT_sleep_ms(500);
+		}
+		if (i > 20) {
+			/* we've never found a connection */
+			switch ((*stats)->state) {
+				case SABdbRunning:
+					return(newErr(
+								"timeout when waiting for database '%s' to "
+								"open up a communication channel", database));
+				case SABdbCrashed:
+					return(newErr(
+								"database '%s' has crashed after starting, "
+								"manual intervention needed", database));
+				case SABdbInactive:
+					return(newErr(
+								"database '%s' appears to cleanly shut down "
+								"itself after starting", database));
+				default:
+					return(newErr("unknown state: %d", (*stats)->state));
+			}
+		}
 
 		return(NO_ERR);
 	}
@@ -442,6 +486,7 @@ handleClient(int sock, dpair dp)
 			if (stat->state == SABdbRunning) {
 				break;
 			}
+			stat = stat->next;
 		}
 		if (stat == NULL) {
 			SABAOTHfreeStatus(&top);
@@ -474,7 +519,7 @@ handleClient(int sock, dpair dp)
 		return(e);
 	}
 
-	merlog("redirecting client for database %s to %s\n",
+	merlog("redirecting client for database %s to %s",
 			stat->dbname, stat->conns->val);
 
 	stream_printf(fout, "^%s%s\n",
@@ -547,7 +592,7 @@ errno == WSAEADDRINUSE &&
 	listen(sock, 5);
 
 	gethostname(host, (int) 512);
-	merlog("listening for connections on %s:%d\n", host, port);
+	merlog("listening for connections on %s:%d", host, port);
 
 	do {
 		int retval;
@@ -652,7 +697,7 @@ main(int argc, char *argv[])
 		return(1);
 	}
 
-	merlog("Merovingian %s starting ...\n", MEROV_VERSION);
+	merlog("Merovingian %s starting ...", MEROV_VERSION);
 
 	snprintf(buf, 1023, "%s/bin/mserver5", MONETDBPREFIX);
 	_merovingian_mserver = alloca(sizeof(char) * (strlen(buf) + 1));
@@ -694,7 +739,7 @@ main(int argc, char *argv[])
 		conf = strdup(buf);
 	}
 
-	merlog("monitoring dbfarm %s\n", conf);
+	merlog("monitoring dbfarm %s", conf);
 
 	SABAOTHinit(conf, NULL);
 	free(conf);
