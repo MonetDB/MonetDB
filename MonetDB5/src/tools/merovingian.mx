@@ -142,6 +142,33 @@ logListener(void *p)
 }
 
 /**
+ * Logs the given string and formatting parameter stuff by writing it to
+ * stdout.
+ */
+static void
+merlog(str fmt, ...)
+{
+	va_list ap;
+	char message[4096];
+	int len;
+
+	va_start(ap, fmt);
+
+	len = vsnprintf(message, 4095, fmt, ap);
+	message[len] = '\0';
+
+	/* trim trailing newlines */
+	while (len > 0 && message[--len] == '\n')
+		message[len] = '\0';
+
+	fprintf(stdout, "%s\n", message);
+	/* flush the stream, it seems that for some reason this is necessary */
+	fflush(stdout);
+
+	va_end(ap);
+}
+
+/**
  * Creates a new error, allocated with malloc.  The error should be
  * freed using freeErr().
  */
@@ -208,14 +235,14 @@ forkMserver(str database, sabdb** stats, dpair dp)
 
 	switch ((*stats)->state) {
 		case SABdbRunning:
-			fprintf(stdout, "database %s already running\n", database);
+			merlog("database %s already running\n", database);
 			return(NO_ERR);
 		break;
 		case SABdbCrashed:
-			fprintf(stdout, "database %s has crashed, attempting restart\n", database);
+			merlog("database %s has crashed, attempting restart\n", database);
 		break;
 		case SABdbInactive:
-			fprintf(stdout, "starting database %s\n", database);
+			merlog("starting database %s\n", database);
 		break;
 		default:
 			return(newErr("unknown state: %d", (*stats)->state));
@@ -247,7 +274,7 @@ forkMserver(str database, sabdb** stats, dpair dp)
 
 		/* ok, now exec that mserver we want */
 		snprintf(dbname, 511, "--dbname=%s", database);
-		fprintf(stdout, "executing %s for database %s\n",
+		merlog("executing %s for database %s\n",
 				_merovingian_mserver, dbname);
 		execl(_merovingian_mserver, _merovingian_mserver,
 				"--set", "daemon=yes",
@@ -447,7 +474,7 @@ handleClient(int sock, dpair dp)
 		return(e);
 	}
 
-	fprintf(stdout, "redirecting client for database %s to %s\n",
+	merlog("redirecting client for database %s to %s\n",
 			stat->dbname, stat->conns->val);
 
 	stream_printf(fout, "^%s%s\n",
@@ -520,7 +547,7 @@ errno == WSAEADDRINUSE &&
 	listen(sock, 5);
 
 	gethostname(host, (int) 512);
-	fprintf(stdout, "listening for connections on %s:%d\n", host, port);
+	merlog("listening for connections on %s:%d\n", host, port);
 
 	do {
 		int retval;
@@ -585,7 +612,6 @@ main(int argc, char *argv[])
 	dpair d, q = alloca(sizeof(struct _dpair));
 	int pfd[2];
 
-	printf("Welcome all\n");
 	/* save the real stdout and stderr */
 	argp = dup(1);
 	q->fout = fdopen(argp, "w");
@@ -626,7 +652,7 @@ main(int argc, char *argv[])
 		return(1);
 	}
 
-	fprintf(stdout, "Merovingian %s starting ...\n", MEROV_VERSION);
+	merlog("Merovingian %s starting ...\n", MEROV_VERSION);
 
 	snprintf(buf, 1023, "%s/bin/mserver5", MONETDBPREFIX);
 	_merovingian_mserver = alloca(sizeof(char) * (strlen(buf) + 1));
@@ -640,7 +666,7 @@ main(int argc, char *argv[])
 	}
 
 	conf = NULL;
-	while (fgets(buf, 1023, cnf) != NULL) {
+	while (fgets(buf, 1024, cnf) != NULL) {
 		if (*buf && strncmp(buf, "gdk_dbfarm=", 11) == 0) {
 			p = strchr(buf, '=');
 			conf = strdup(++p);
@@ -668,7 +694,7 @@ main(int argc, char *argv[])
 		conf = strdup(buf);
 	}
 
-	fprintf(stdout, "monitoring dbfarm %s\n", conf);
+	merlog("monitoring dbfarm %s\n", conf);
 
 	SABAOTHinit(conf, NULL);
 	free(conf);
