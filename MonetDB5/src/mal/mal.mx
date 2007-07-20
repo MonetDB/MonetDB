@@ -383,7 +383,7 @@ Before continuing we should make sure that all clients
 			claimed += (cntxt->mode == CLAIMED);
 			awaiting += (cntxt->mode == AWAITING);
 			if( cntxt->mode & FINISHING)
-				printf("#CLient %d %d\n",(int)(cntxt - mal_clients), cntxt->idx);
+				printf("#Client %d %d\n",(int)(cntxt - mal_clients), cntxt->idx);
 		}
 		if( finishing+claimed+awaiting)
 			MT_sleep_ms(1000);
