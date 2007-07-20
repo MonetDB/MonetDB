@@ -331,6 +331,13 @@ void emergencyBreakpoint(){
 	/* just a handle to break after system initialization for GDB */
 }
 
+static void
+handler(int sig)
+{
+	(void)sig;
+	mal_exit();
+}
+
 int
 main(int argc, char **av)
 {
@@ -568,6 +575,22 @@ faster system start.
 		fprintf(stderr, "!%s\n", err);
 		GDKfree(err);
 	}
+
+	{
+		struct sigaction sa;
+
+		sigemptyset(&sa.sa_mask);
+		sa.sa_flags = 0;
+		sa.sa_handler = handler;
+		if (
+				sigaction(SIGINT, &sa, NULL) == -1 ||
+				sigaction(SIGQUIT, &sa, NULL) == -1 ||
+				sigaction(SIGTERM, &sa, NULL) == -1)
+		{
+			fprintf(stderr, "!unable to create signal handlers\n");
+		}
+	}
+
 	{
 		str lang = "mal";
 		/* we inited mal before, so publish its existence */
