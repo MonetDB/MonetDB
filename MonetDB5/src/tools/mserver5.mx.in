@@ -552,6 +552,8 @@ faster system start.
 		return 0;
 	GDKdebug=debug;	/* overruled by command line */
 
+	GDKsetenv("monet_version", VERSION);
+
 	/* configure sabaoth to use the right dbfarm and active database */
 	SABAOTHinit(GDKgetenv("gdk_dbfarm"), GDKgetenv("gdk_dbname"));
 	/* wipe out all cruft, if left over */
