@@ -451,7 +451,6 @@ procs();
 [ "mposjoin(any, oid, BAT[oid,BAT]) : BAT[void,any]"												  ]
 [ "msecs(int, int, int, int, int) : lng"														  ]
 [ "msync(BAT[void,any::1], oid, bit) : BAT[void,any::1]"																							  ]
-[ "multi_merged_union(BAT[void,BAT]) : BAT[void,BAT]"																						  ]
 [ "mvaljoin(any, oid, BAT[oid,BAT]) : BAT[oid,oid]"												  ]
 [ "mylog_delta(logger, BAT[any,any], str) : void"													  ]
 [ "myupdate(BAT[any::1,any::2], BAT[any::1,any::2]) : BAT[any::1,any::2]"									  ]

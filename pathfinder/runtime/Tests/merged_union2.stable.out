@@ -832,16 +832,16 @@ print(res_mu.fetch(0), res_mu.fetch(1), res_mu.fetch(2));
 
 
 res_mu := merged_union (a1, a5, b5, b1); # wrong length
-!ERROR: merged_union: BAT 3 (hseqbase=2) must have the same hseqbase as BAT 1 (hseqbase=0).
+!ERROR: merged_union: BAT/column 2 of table 1 (hseqbase=2) must have the same hseqbase as all other BATs/columns of table 1 (hseqbase=0).
 !ERROR: CMDmerged_union: operation failed.
 res_mu := merged_union (a1, a5, e, a5); # wrong seqbase
 
 res_mu := merged_union (b1, b2); # string, string
 res_mu := merged_union (a1, b2); # oid, string
-!ERROR: merged_union: BATs 1 (ttype=7) & 2 (ttype=13) must have the same tail types.
+!ERROR: merged_union: BAT/column 1 of table 2 (ttype=13) must have the same tail type as BAT/column 1 of all other tables (ttype=7).
 !ERROR: CMDmerged_union: operation failed.
 res_mu := merged_union (c1, a2); # int, oid
-!ERROR: merged_union: BATs 1 (ttype=6) & 2 (ttype=7) must have the same tail types.
+!ERROR: merged_union: BAT/column 1 of table 2 (ttype=7) must have the same tail type as BAT/column 1 of all other tables (ttype=6).
 !ERROR: CMDmerged_union: operation failed.
 
 var z1 := a1.copy();
@@ -876,10 +876,10 @@ z1.print();
 [ 7@0,	  10@0	  ]
 
 res_mu := merged_union (z1, a2); # first not dense
-!ERROR: merged_union: BAT 1 must have a dense head.
+!ERROR: merged_union: BAT/column 1 of table 1 must have a dense head.
 !ERROR: CMDmerged_union: operation failed.
 res_mu := merged_union (a2, z1); # snd not dens
-!ERROR: merged_union: BAT 2 must have a dense head.
+!ERROR: merged_union: BAT/column 1 of table 2 must have a dense head.
 !ERROR: CMDmerged_union: operation failed.
 
 z1.delete(7@0,10@0);
@@ -922,10 +922,10 @@ print(res_mu.fetch(0));
 z1.insert(8@0,9@0);
 
 res_mu := merged_union (z1, a2); # fst not sorted
-!ERROR: merged_union: tail of first BAT must be sorted.
+!ERROR: merged_union: tail of first BAT/column of table 1 must be sorted.
 !ERROR: CMDmerged_union: operation failed.
 res_mu := merged_union (a2, z1); # snd not sorted
-!ERROR: merged_union: tail of second BAT must be sorted.
+!ERROR: merged_union: tail of first BAT/column of table 2 must be sorted.
 !ERROR: CMDmerged_union: operation failed.
 quit();
 

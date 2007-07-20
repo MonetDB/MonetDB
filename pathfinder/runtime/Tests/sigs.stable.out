@@ -65,6 +65,7 @@ module 'pf_support'
 [ "merged_union(any, any, ..any..) : BAT[void,BAT]"													  ]
 [ "movedata(BAT[void,BAT], oid, oid, int, int) : void"													  ]
 [ "mposjoin(BAT[oid,oid], BAT[oid,oid], BAT[oid,BAT]) : BAT[void,any]"									  ]
+[ "multi_merged_union(BAT[void,BAT]) : BAT[void,BAT]"														  ]
 [ "mvaljoin(BAT[oid,oid], BAT[oid,oid], BAT[oid,BAT]) : BAT[oid,oid]"									  ]
 [ "myupdate(BAT[any::1,any::2], BAT[any::1,any::2]) : BAT[any::1,any::2]"										  ]
 [ "myupdate(BAT[any::1,any::2], any::1, any::2) : BAT[any::1,any::2]"											  ]

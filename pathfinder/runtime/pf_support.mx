@@ -133,6 +133,17 @@ Merges pairs of bats according to the order as defined by the first pair's tails
  input."
 @)
 
+.COMMAND multi_merged_union (BAT[void, BAT] b)
+		: BAT[void,BAT] = CMDmulti_merged_union;
+"PARAMETERS:
+BAT[void,BAT t[void,BAT c[VoID,any]]]:
+a void-headed BAT of n void-headed BATs t such that each BAT t represents a
+relational table t of m columns c, each represented by a dense-headed BAT c;
+the first column of each table must be sorted.
+DESCRIPTION: 
+Merges the n relational tables t according to the value-order as defined by the
+first columns of all tables."
+
 .COMMAND ll_tokenize( BAT[void,str] strs, BAT[void,str] seps )
 		: BAT[oid,str] = CMDll_strSplit;
 "PARAMETERS:
@@ -5042,266 +5053,353 @@ CMDappendConvert(BAT** res, BAT *b, ptr t, int tpe)
 }
 
 static int 
-merged_union( BAT** res, int nbats, BAT **b) 
+merged_union( BAT** res, int ntabs, int ncols, BAT ***b) 
 {
-	BAT *bn[MAXPARAMS>>1], *BN;
-	BUN cur[MAXPARAMS], dst[MAXPARAMS>>1], DST;
-	int bs[MAXPARAMS], bns[MAXPARAMS>>1], BS;
-	size_t idx[MAXPARAMS], cnt[MAXPARAMS];
-	int npairs = 1, i, j, k, any, b0 = -1, b1 = -1;
-	bit concat = FALSE;
-	chr *w = NULL;
-	size_t sze = 0, h = 0;
+	BAT *bn[ncols], *BN, *temp, *tmp[2], *tgt;
+	BUN cur[ntabs][ncols], dst[ncols], DST;
+	bte bs[ntabs][ncols], bns[ncols], BS;
+	bit mat[ntabs];
+	int ttpe[ncols];	/* sht / bte ? */
+	oid hsqb[ntabs];
+	size_t Bcnt[ntabs], inc[2];
+	int t, c, any, non_empty[ntabs+1];
+	bit concat01 = FALSE, concat10 = FALSE;
+	bte *w = NULL, *ww[2], *wt, *ws[2];
+	size_t res_count = 0, h = 0;
+
+	BAT *src[2];
+	BUN csr[2];
+	bte sze[2];
+	size_t idx[2], cnt[2], hs[2], ht;
 	
+	assert(ncols > 0);
+	assert(ntabs > 1);
+	assert(ntabs <= GDK_bte_max); /* allows to use type bte for w[] */
+
 	*res = NULL;
 
 	/* check arguments */
-	ERRORcheck(BATcount(b[0])>1 && !(BATtordered(b[0])&1), "merged_union: tail of first BAT must be sorted.\n");
-	ERRORcheck(BATcount(b[1])>1 && !(BATtordered(b[1])&1), "merged_union: tail of second BAT must be sorted.\n");
-	if (nbats&1) {
-		GDKerror("merged_union: uneven number of BATs: %d.\n", nbats);
-		return GDK_FAIL;
+	for (t=0; t<ntabs; t++) {
+		if (BATcount(b[t][0])>1 && !(BATtordered(b[t][0])&1)) {
+			GDKerror("merged_union: tail of first BAT/column of table %d must be sorted.\n", t+1);
+			return GDK_FAIL;
+		}
 	}
-	npairs = nbats>>1;
 
-	for (i=0; i<nbats; i+=2) {
-		bit ci, cj;
-		j = i+1;
-		ci = !is_fake_project(b[i]);
-		cj = !is_fake_project(b[j]);
-		if (ci && b0 < 0) {
-			b0 = i;
-		}
-		if (cj && b1 < 0) {
-			b1 = j;
-		}
-		if (ci && !BAThdense(b[i])) {
-			GDKerror("merged_union: BAT %d must have a dense head.\n", i+1);
-			return GDK_FAIL;
-		}
-		if (cj && !BAThdense(b[j])) {
-			GDKerror("merged_union: BAT %d must have a dense head.\n", j+1);
-			return GDK_FAIL;
-		}
-		if (ATOMtype(b[i]->ttype) != ATOMtype(b[j]->ttype)) {
-			GDKerror("merged_union: BATs %d (ttype=%d) & %d (ttype=%d) must have the same tail types.\n", 
-					i+1, b[i]->ttype, j+1, ATOMtype(b[j]->ttype));
-			return GDK_FAIL;
-		}
-		if (ci && b0 >= 0 && b[i]->hseqbase != b[b0]->hseqbase) {
-			GDKerror("merged_union: BAT %d (hseqbase="OIDFMT") must have the same hseqbase as BAT %d (hseqbase="OIDFMT").\n", 
-					i+1, b[i]->hseqbase, b0+1, b[b0]->hseqbase);
-			return GDK_FAIL;
-		}
-		if (cj && b1 >= 0 && b[j]->hseqbase != b[b1]->hseqbase) {
-			GDKerror("merged_union: BAT %d (hseqbase="OIDFMT") must have the same hseqbase as BAT %d (hseqbase="OIDFMT").\n", 
-					j+1, b[j]->hseqbase, b1+1, b[b1]->hseqbase);
-			return GDK_FAIL;
-		}
-		if (ci && b0 >= 0 && BATcount(b[i]) != BATcount(b[b0])) {
-			GDKerror("merged_union: BAT %d ("SZFMT" BUNs) must have the same size as BAT %d ("SZFMT" BUNs).\n", 
-					i+1, BATcount(b[i]), b0+1, BATcount(b[b0]));
-			return GDK_FAIL;
-		}
-		if (cj && b1 >= 0 && BATcount(b[j]) != BATcount(b[b1])) {
-			GDKerror("merged_union: BAT %d ("SZFMT" BUNs) must have the same size as BAT %d ("SZFMT" BUNs).\n", 
-					j+1, BATcount(b[j]), b1+1, BATcount(b[b1]));
-			return GDK_FAIL;
-		}
+	for (t=0; t<ntabs; t++) {
+		mat[t]  = FALSE;
+		hsqb[t] = oid_nil;
+		Bcnt[t] = (size_t)-1;
 	}
-	if (b0 < 0) {
-		GDKerror("merged_union: at least one of the 'odd' BATs must be materialized, i.e., no 'fake_project'.\n");
-		return GDK_FAIL;
+	for (c=0; c<ncols; c++) {
+		ttpe[c] = int_nil;
 	}
-	if (b1 < 0) {
-		GDKerror("merged_union: at least one of the 'even' BATs must be materialized, i.e., no 'fake_project'.\n");
-		return GDK_FAIL;
+
+	non_empty[ntabs] = 0;
+	for (t=0; t<ntabs; t++) {
+	    for (c=0; c<ncols; c++) {
+		if (ttpe[c] == int_nil || ( ttpe[c] == TYPE_oid && b[t][c]->ttype == TYPE_void ) ) {
+			/* get column type and record whether any OID column was non-materialized (VoID) */
+			ttpe[c] = b[t][c]->ttype;
+		} else {
+			/* check column type (VoID matches with OID) */
+			if (ATOMtype(ttpe[c]) != ATOMtype(b[t][c]->ttype)) {
+				GDKerror("merged_union: BAT/column %d of table %d (ttype=%d) must have the same tail type as BAT/column %d of all other tables (ttype=%d).\n", 
+						c+1, t+1, b[t][c]->ttype, c+1, ATOMtype(ttpe[c]));
+				return GDK_FAIL;
+			}
+		}
+		if (!is_fake_project(b[t][c])) {
+			mat[t] |= TRUE;
+			if (!BAThdense(b[t][c])) {
+				GDKerror("merged_union: BAT/column %d of table %d must have a dense head.\n", c+1, t+1);
+				return GDK_FAIL;
+			}
+			if (hsqb[t] == oid_nil) {
+				hsqb[t] = b[t][c]->hseqbase;
+			} else {
+				if (hsqb[t] != b[t][c]->hseqbase) {
+					GDKerror("merged_union: BAT/column %d of table %d (hseqbase="OIDFMT") must have the same hseqbase as all other BATs/columns of table %d (hseqbase="OIDFMT").\n", 
+							c+1, t+1, b[t][c]->hseqbase, t+1, hsqb[t]);
+					return GDK_FAIL;
+				}
+			}
+			if (Bcnt[t] == (size_t)-1) {
+				Bcnt[t] = BATcount(b[t][c]);
+			} else {
+				if (Bcnt[t] != BATcount(b[t][c])) {
+					GDKerror("merged_union: BAT/column %d of table %d ("SZFMT" BUNs) must have the same size as all other BATs/columns of table %d ("SZFMT" BUNs).\n", 
+							c+1, t+1, BATcount(b[t][c]), t+1, Bcnt[t]);
+					return GDK_FAIL;
+				}
+			}
+		}
+	    }
+	    if (!mat[t]) {
+			GDKerror("merged_union: at least one BAT/column of table %d must be materialized, i.e., no 'fake_project'.\n", t+1);
+			return GDK_FAIL;
+	    }
+	    res_count += Bcnt[t];
+	    non_empty[non_empty[ntabs]] = t;
+	    non_empty[ntabs] += (Bcnt[t] > 0);
 	}
 
 	/* create result BATs */
 
-	sze = BATcount(b[b0]) + BATcount(b[b1]);
-	BN = BATnew(TYPE_void, TYPE_bat, npairs);
+	BN = BATnew(TYPE_void, TYPE_bat, ncols);
 	if (BN == NULL) {
-		GDKerror("merged_union: BATnew(TYPE_void, TYPE_bat, %d) failed.\n", npairs);
+		GDKerror("merged_union: BATnew(TYPE_void, TYPE_bat, %d) failed.\n", ncols);
 		return GDK_FAIL;
 	}
-	for (k=0; k<npairs; k++) {
-		i = k<<1;
-		bn[k] = BATnew(TYPE_void, ATOMtype(b[i]->ttype), sze);
-		if (bn[k] == NULL) {
-			GDKerror("merged_union: BATnew(TYPE_void, %s, " SZFMT ") failed.\n", ATOMname(ATOMtype(b[i]->ttype)), sze);
-			while (k>0) {
-				BBPreclaim(bn[--k]);
+	temp = BATnew(TYPE_void, ATOMtype(ttpe[0]), res_count);
+	if (temp == NULL) {
+		GDKerror("merged_union: BATnew(TYPE_void, %s, " SZFMT ") failed.\n", ATOMname(ATOMtype(ttpe[0])), res_count);
+		BBPreclaim(BN);
+		return GDK_FAIL;
+	}
+	for (c=0; c<ncols; c++) {
+		bn[c] = BATnew(TYPE_void, ATOMtype(ttpe[c]), res_count);
+		if (bn[c] == NULL) {
+			GDKerror("merged_union: BATnew(TYPE_void, %s, " SZFMT ") failed.\n", ATOMname(ATOMtype(ttpe[c])), res_count);
+			while (c>0) {
+				BBPreclaim(bn[--c]);
 			}
+			BBPreclaim(temp);
 			BBPreclaim(BN);
 			return GDK_FAIL;
 		}
 	}
-	if (sze > 0) {
-		w = (chr*)GDKmalloc(sze);
-		if (w == NULL) {
-			GDKerror("merged_union: GDKmalloc(" SZFMT ") failed.\n", sze);
-			goto cleanup;
-		}
+	w = (bte*)GDKmalloc(2*res_count + 1);
+	if (w == NULL) {
+		GDKerror("merged_union: GDKmalloc(" SZFMT ") failed.\n", 2*res_count + 1);
+		goto cleanup;
 	}
 
 	/* do the merged_union */
 
-	for (k=0; k<npairs; k++) {
-		bns[k] = BUNsize(bn[k]);
-		dst[k] = BUNlast(bn[k]);
+	for (c=0; c<ncols; c++) {
+		bns[c] = (bte)BUNsize(bn[c]);
+		dst[c] = BUNlast(bn[c]);
 	}
-	for (i=0; i<nbats; i++) {
-		if (is_fake_project(b[i])) {
-			bs[i] = 0;
+	for (t=0; t<ntabs; t++) {
+	    for (c=0; c<ncols; c++) {
+		if (is_fake_project(b[t][c])) {
+			bs[t][c] = (bte)0;
 		} else {
-			bs[i] = BUNsize(b[i]);
+			bs[t][c] = (bte)BUNsize(b[t][c]);
 		}
-		cur[i] = BUNfirst(b[i]);
-		idx[i] = 0;
-		if (i&1) {
-			cnt[i] = BATcount(b[b1]);
-		} else {
-			cnt[i] = BATcount(b[b0]);
-		}
+		cur[t][c] = BUNfirst(b[t][c]);
+	    }
 	}
+@
 @= merged_union_0
-	/*  @1: ATOMstorage(b[@3]->ttype) (chr, sht, int, flt, lng, dbl, any=b[@3]->ttype)
+	/*  @1: ATOMstorage(ttpe[0]) (chr, bte, sht, int, flt, lng, dbl, any=ttpe[0])
 	 *  @2: tloc, tvar, tail
-	 *  @3: 0, 1
-	 *  @5: tail value comparison,
-		e.g.,	simple_LE(BUN@2(b[0],cur[0]), BUN@2(b[1],cur[1]), @1)
-		or	atom_GT(BUN@2(b[0],cur[0]), BUN@2(b[1],cur[1]), @1)
+	 *  @3: 0 1
+	 *  @4: tail value comparison,
+		e.g.,	simple_LE(BUN@2(src[0],csr[0]), BUN@2(src[1],csr[1]), @1)
+		or	  atom_GT(BUN@2(src[0],csr[0]), BUN@2(src[1],csr[1]), @1)
 	 */
 	/* copy tails from BAT @3 to the results; 
 	   for each BUN, remember in w, whether it came from BAT 0 or BAT 1 */
 	while ((idx[@3] < cnt[@3]) && (@4)) {
-		void@1_bunfastins_nocheck_noinc(bn[0],dst[0],0,BUN@2(b[@3],cur[@3]));
+		void@1_bunfastins_nocheck_noinc(tgt,dst[0],0,BUN@2(src[@3],csr[@3]));
+		wt[ht] = ws[@3][hs[@3]];
 		idx[@3]++;
-		cur[@3] += bs[@3];
+		csr[@3] += sze[@3];
 		dst[0] += bns[0];
-		w[h++] = (chr)@3;
+		hs[@3] += inc[@3];
+		ht++;
 	}
+
+	/* sucessively pair-wise merge-union the first BAT/column of all tables */
+@
 @= merged_union_1
-	/*  @1: ATOMstorage(b[0]->ttype) (chr, sht, int, flt, lng, dbl, any=b[0]->ttype)
+	/*  @1: ATOMstorage(ttpe[0]) (chr, bte, sht, int, flt, lng, dbl, any=ttpe[0])
 	 *  @2: tloc, tvar, tail (for BAT 0)
 	 *  @3: tloc, tvar, tail (for BAT 1)
 	 *  @4: simple, atom
 	 */
-	/* merge-union the first two BATs; regard and preserve tail-order */
-	h = 0;
-	concat = (BATcount(b[0])==0 || BATcount(b[1])==0);
-	if (!concat) {
-		concat = ( BATtordered(b[0])&BATtordered(b[1])&1 && \
-		           @4_LE(BUN@2(b[0],BUNlast(b[0])-BUNsize(b[0])),BUN@3(b[1],cur[1]),@1) );
+	/* merge-union the first BATs/columns; regard and preserve tail-order */
+	concat01 = (cnt[0]==0 || cnt[1]==0);
+	concat10 = FALSE;
+	if (BATtordered(src[0])&BATtordered(src[1])&1 || (BATtordered(src[0])&1 && cnt[1]==1) || (cnt[0]==1 && BATtordered(src[1])&1) ) {
+		if (!concat01) {
+			concat01 = @4_LE(BUN@2(src[0],BUNlast(src[0])-BUNsize(src[0])),BUN@3(src[1],csr[1]),@1);
+		}
+		if (!concat01) {
+			concat10 = @4_LT(BUN@3(src[1],BUNlast(src[1])-BUNsize(src[1])),BUN@2(src[0],csr[0]),@1);
+		}
 	}
-	if (!concat) {
+	if (!concat01 && !concat10) {
 		while ((idx[0] < cnt[0]) && (idx[1] < cnt[1])) {
-			@:merged_union_0(@1,@2,0,@4_LE(BUN@2(b[0],cur[0]),BUN@3(b[1],cur[1]),@1))@
+			@:merged_union_0(@1,@2,0,@4_LE(BUN@2(src[0],csr[0]),BUN@3(src[1],csr[1]),@1))@
 			if (idx[0] < cnt[0]) {
-				@:merged_union_0(@1,@3,1,@4_GT(BUN@2(b[0],cur[0]),BUN@3(b[1],cur[1]),@1))@
+				@:merged_union_0(@1,@3,1,@4_GT(BUN@2(src[0],csr[0]),BUN@3(src[1],csr[1]),@1))@
 			}
 		}
 	}
 	/* get remaining BUNs */
-	@:merged_union_0(@1,@2,0,TRUE)@
+	if (!concat10) {
+		@:merged_union_0(@1,@2,0,TRUE)@
+	}
 	@:merged_union_0(@1,@3,1,TRUE)@
+	@:merged_union_0(@1,@2,0,TRUE)@
+@
 @= merged_union_2
-	/*  @1: ATOMstorage(b[0]->ttype) (chr, sht, int, flt, lng, dbl, any=b[0]->ttype)
+	/*  @1: ATOMstorage(ttpe[0]) (chr, bte, sht, int, flt, lng, dbl, any=ttpe[0])
 	 *  @2: tloc, tvar, tail (for BAT 0)
 	 *  @3: simple, atom
 	 */
 	@:merged_union_1(@1,@2,@2,@3)@
 	break;
+@
 @= merged_union_3
-	/*  @1: ATOMstorage(b[@3]->ttype) (chr, sht, int, flt, lng, dbl, any=b[0]->ttype)
-	 *  @2: tloc, tvar, tail
-	 */
-	/* merge-union each of the remaining BAT-pairs; 
-	   w tell us, from which BAT we need to get the next BUN */
-	for (h=0; h<sze; h++) {
-		j = i + (int)w[h];
-		void@1_bunfastins_nocheck_noinc(bn[k],dst[k],0,BUN@2(b[j],cur[j]));
-		idx[j]++;
-		cur[j] += bs[j];
-		dst[k] += bns[k];
-	}
-@= merged_union_4
-	/*  @1: ATOMstorage(b[@3]->ttype) (chr, sht, int, flt, lng, dbl, any=b[0]->ttype)
-	 *  @2: tloc, tvar, tail
-	 */
-	@:merged_union_3(@1,@2)@
-	break;
-@c
-	/* merge-union the first two BATs */
+		sze[0] = BUNsize(src[0]);
+		sze[1] = BUNsize(src[1]);
+		csr[0] = BUNfirst(src[0]);
+		csr[1] = BUNfirst(src[1]);
+		cnt[0] = BATcount(src[0]);
+		cnt[1] = BATcount(src[1]);
+		dst[0] = BUNfirst(tgt);
+		idx[0] = idx[1] = 0;
+		hs[0] = hs[1] = ht = 0;
+		
 /* HACK(?): compare [v]oid (unsigned) as int/lng (signed) to get nil's first... */
 #if SIZEOF_OID == SIZEOF_INT
-	if (b[0]->ttype==TYPE_void && b[1]->ttype==TYPE_void) {
-		@:merged_union_1(int,tvar,tvar,simple)@
-	} else if (b[0]->ttype==TYPE_void && b[1]->ttype==TYPE_oid) {
-		@:merged_union_1(int,tvar,tloc,simple)@
-	} else if (b[0]->ttype==TYPE_oid && b[1]->ttype==TYPE_void) {
-		@:merged_union_1(int,tloc,tvar,simple)@
-	} else if (b[0]->ttype==TYPE_oid && b[1]->ttype==TYPE_oid) {
-		@:merged_union_1(int,tloc,tloc,simple)@
+		if (src[0]->ttype==TYPE_void && src[1]->ttype==TYPE_void) {
+			@:merged_union_1(int,tvar,tvar,simple)@
+		} else if (src[0]->ttype==TYPE_void && src[1]->ttype==TYPE_oid) {
+			@:merged_union_1(int,tvar,tloc,simple)@
+		} else if (src[0]->ttype==TYPE_oid && src[1]->ttype==TYPE_void) {
+			@:merged_union_1(int,tloc,tvar,simple)@
+		} else if (src[0]->ttype==TYPE_oid && src[1]->ttype==TYPE_oid) {
+			@:merged_union_1(int,tloc,tloc,simple)@
 #else
-	if (b[0]->ttype==TYPE_void && b[1]->ttype==TYPE_void) {
-		@:merged_union_1(lng,tvar,tvar,simple)@
-	} else if (b[0]->ttype==TYPE_void && b[1]->ttype==TYPE_oid) {
-		@:merged_union_1(lng,tvar,tloc,simple)@
-	} else if (b[0]->ttype==TYPE_oid && b[1]->ttype==TYPE_void) {
-		@:merged_union_1(lng,tloc,tvar,simple)@
-	} else if (b[0]->ttype==TYPE_oid && b[1]->ttype==TYPE_oid) {
-		@:merged_union_1(lng,tloc,tloc,simple)@
-#endif
-	} else {
-		any = b[0]->ttype;
-		switch(ATOMstorage(b[0]->ttype)) {
-		case TYPE_chr:	@:merged_union_2(chr,tloc,simple)@
-		case TYPE_sht:	@:merged_union_2(sht,tloc,simple)@
-		case TYPE_int:	@:merged_union_2(int,tloc,simple)@
-		case TYPE_flt:	@:merged_union_2(flt,tloc,simple)@
-		case TYPE_lng:	@:merged_union_2(lng,tloc,simple)@
-		case TYPE_dbl:	@:merged_union_2(dbl,tloc,simple)@
-		default:
-			if (b[0]->tvarsized) {
-				@:merged_union_2(any,tvar,atom)@
-			} else {
-				@:merged_union_2(any,tloc,atom)@
-			}
-		}
-	}
-	/* merge-union each of the remaining BAT-pairs */
-	for (k=1; k<npairs; k++) {
-		i = (k<<1);
-		j = i+1;
-/* HACK(?): compare [v]oid (unsigned) at int/lng (signed) to get nil's first... */
-#if SIZEOF_OID == SIZEOF_INT
-		if (b[i]->ttype==TYPE_void || b[j]->ttype==TYPE_void) {
-			@:merged_union_3(int,tail,simple)@
-		} else if (b[i]->ttype==TYPE_oid && b[j]->ttype==TYPE_oid) {
-			@:merged_union_3(int,tloc,simple)@
-#else
-		if (b[i]->ttype==TYPE_void || b[j]->ttype==TYPE_void) {
-			@:merged_union_3(lng,tail,simple)@
-		} else if (b[i]->ttype==TYPE_oid && b[j]->ttype==TYPE_oid) {
-			@:merged_union_3(lng,tloc,simple)@
+		if (src[0]->ttype==TYPE_void && src[1]->ttype==TYPE_void) {
+			@:merged_union_1(lng,tvar,tvar,simple)@
+		} else if (src[0]->ttype==TYPE_void && src[1]->ttype==TYPE_oid) {
+			@:merged_union_1(lng,tvar,tloc,simple)@
+		} else if (src[0]->ttype==TYPE_oid && src[1]->ttype==TYPE_void) {
+			@:merged_union_1(lng,tloc,tvar,simple)@
+		} else if (src[0]->ttype==TYPE_oid && src[1]->ttype==TYPE_oid) {
+			@:merged_union_1(lng,tloc,tloc,simple)@
 #endif
 		} else {
-			any = b[i]->ttype;
-			switch(ATOMstorage(b[i]->ttype)) {
-			case TYPE_chr:	@:merged_union_4(chr,tloc)@
-			case TYPE_sht:	@:merged_union_4(sht,tloc)@
-			case TYPE_int:	@:merged_union_4(int,tloc)@
-			case TYPE_flt:	@:merged_union_4(flt,tloc)@
-			case TYPE_lng:	@:merged_union_4(lng,tloc)@
-			case TYPE_dbl:	@:merged_union_4(dbl,tloc)@
+			any = src[0]->ttype;
+			switch(ATOMstorage(any)) {
+			case TYPE_chr:	@:merged_union_2(chr,tloc,simple)@
+			case TYPE_bte:	@:merged_union_2(bte,tloc,simple)@
+			case TYPE_sht:	@:merged_union_2(sht,tloc,simple)@
+			case TYPE_int:	@:merged_union_2(int,tloc,simple)@
+			case TYPE_flt:	@:merged_union_2(flt,tloc,simple)@
+			case TYPE_lng:	@:merged_union_2(lng,tloc,simple)@
+			case TYPE_dbl:	@:merged_union_2(dbl,tloc,simple)@
 			default:
-				if (b[i]->tvarsized) {
-					@:merged_union_4(any,tvar)@
+				if (src[0]->tvarsized) {
+					@:merged_union_2(any,tvar,atom)@
 				} else {
-					@:merged_union_4(any,tloc)@
+					@:merged_union_2(any,tloc,atom)@
+				}
+			}
+		}
+		
+		tgt->batBuns->free = dst[0] - tgt->batBuns->base;
+		BATsetcount(tgt, tgt->batBuns->free/bns[0]);
+		if (!tgt->batDirty) tgt->batDirty = TRUE;
+		BATkey(BATmirror(tgt),FALSE);
+		tgt->tsorted = GDK_SORTED;
+		tgt->tdense = FALSE;
+@
+@c
+	tgt = bn[0];
+	wt = w;
+	ws[0] = w + res_count;
+	ws[1] = w + res_count + 1;
+	inc[0] = inc [1] = 0;
+
+	if (non_empty[ntabs] == 1) {
+		src[0] = b[non_empty[0]][0];
+		src[1] = b[non_empty[0] == 0][0];
+		ws[0][0] = non_empty[0];
+		ws[1][0] = (non_empty[0] == 0);
+
+		@:merged_union_3@
+	} else
+	  if (non_empty[ntabs] == 2) {
+		src[0] = b[non_empty[0]][0];
+		src[1] = b[non_empty[1]][0];
+		ws[0][0] = non_empty[0];
+		ws[1][0] = non_empty[1];
+
+		@:merged_union_3@
+	} else {
+		t = ntabs - 1;
+		tmp[0] = bn[0];
+		tmp[1] = temp;
+		ww[0] = w;
+		ww[1] = ws[1];
+		wt = ww[t&1];
+		wt[0] = t;
+		tgt = b[t--][0];
+		for (; t >= 0; t--) {
+			src[0] = b[t][0];
+			src[1] = tgt;
+			tgt = tmp[t&1];
+			ws[0][0] = t;
+			ws[1] = wt;
+			wt = ww[t&1];
+
+			@:merged_union_3@
+
+			inc[1] = 1;
+		}
+	}
+
+	/* merge-union the remaining BATs/columns of all tables */
+@
+@= merged_union_4
+	/*  @1: ATOMstorage(ttpe[c]) (chr, bte, sht, int, flt, lng, dbl, any)
+	 *  @2: tloc, tvar, tail
+	 */
+	/* merge-union the remaining BATs/columns of all tables:
+	   w tell us, from which table we need to get the next BUN */
+	for (h=0; h<res_count; h++) {
+		t = w[h];
+		void@1_bunfastins_nocheck_noinc(bn[c],dst[c],0,BUN@2(b[t][c],cur[t][c]));
+		cur[t][c] += bs[t][c];
+		dst[c] += bns[c];
+	}
+@
+@= merged_union_5
+	/*  @1: ATOMstorage(ttpe[c]) (chr, bte, sht, int, flt, lng, dbl, any)
+	 *  @2: tloc, tvar, tail
+	 */
+	@:merged_union_4(@1,@2)@
+	break;
+@
+@c
+	for (c=1; c<ncols; c++) {
+		if (ttpe[c]==TYPE_void) {
+			/* at least one OID column is non-materialized (VoID) */
+			@:merged_union_4(oid,tail)@
+		} else if (ttpe[c]==TYPE_oid) {
+			/* all OID columns are materialized */
+			@:merged_union_4(oid,tloc)@
+		} else {
+			switch(ATOMstorage(ttpe[c])) {
+			case TYPE_chr:	@:merged_union_5(chr,tloc)@
+			case TYPE_bte:	@:merged_union_5(bte,tloc)@
+			case TYPE_sht:	@:merged_union_5(sht,tloc)@
+			case TYPE_int:	@:merged_union_5(int,tloc)@
+			case TYPE_flt:	@:merged_union_5(flt,tloc)@
+			case TYPE_lng:	@:merged_union_5(lng,tloc)@
+			case TYPE_dbl:	@:merged_union_5(dbl,tloc)@
+			default:
+				if (b[0][c]->tvarsized) {
+					@:merged_union_5(any,tvar)@
+				} else {
+					@:merged_union_5(any,tloc)@
 				}
 			}
 		}
@@ -5309,42 +5407,59 @@ merged_union( BAT** res, int nbats, BAT **b)
 
 	/* set BAT properties */
 
-	for (k=0; k<npairs; k++) {
-		BAT *b0 = b[2*k], *b1 = b[(2*k)+1];
-		BATseqbase(bn[k], (oid)0);
-		bn[k]->batBuns->free = dst[k] - bn[k]->batBuns->base;
-		BATsetcount(bn[k], bn[k]->batBuns->free/BUNsize(bn[k]));
-		if (!bn[k]->batDirty) bn[k]->batDirty = TRUE;
-		BATkey(bn[k],TRUE);
-		BATkey(BATmirror(bn[k]),FALSE);
-		bn[k]->hsorted = GDK_SORTED;
-		if (k==0 || (BATcount(b0)==0 && BATcount(b1)==0)) {
-			bn[k]->tsorted = GDK_SORTED;
-		} else
-		  if (BATcount(b0)==0) {
-			bn[k]->tsorted = (BATtordered(b1)&1 ? GDK_SORTED : FALSE);
-		} else
-		  if (BATcount(b1)==0) {
-			bn[k]->tsorted = (BATtordered(b0)&1 ? GDK_SORTED : FALSE);
-		} else {
-			bn[k]->tsorted = ( ( concat && \
-			                     BATtordered(b0)&BATtordered(b1)&1 && \
-			                     atom_LE(BUNtail(b0,BUNlast(b0)-BUNsize(b0)),BUNtail(b1,BUNfirst(b1)),b0->ttype) ) \
-			                  ? GDK_SORTED \
-			                  : FALSE );
+@(
+	/* not required as concat01 & concat10 are inherited from above */
+	if (non_empty[ntabs] == 2) {
+		BAT *b0 = b[non_empty[0]][0];
+		BAT *b1 = b[non_empty[1]][0];
+		concat01 = concat10 = FALSE;
+		if (BATtordered(b0)&BATtordered(b1)&1 || (BATtordered(b0)&1 && BATcount(b1)==1) || (BATcount(b0)==1 && BATtordered(b1)&1) ) {
+			concat01 = atom_LE(BUNtail(b0,BUNlast(b0)-BUNsize(b0)),BUNtail(b1,BUNfirst(b1)),ATOMstorage(ATOMtype(ttpe[0])));
+			concat10 = !concat01 && \
+			           atom_LT(BUNtail(b1,BUNlast(b1)-BUNsize(b1)),BUNtail(b0,BUNfirst(b0)),ATOMstorage(ATOMtype(ttpe[0])));
 		}
-		bn[k]->hdense = TRUE;
-		bn[k]->tdense = FALSE;
+	}
+@)
+	for (c=0; c<ncols; c++) {
+		BATseqbase(bn[c], (oid)0);
+		bn[c]->batBuns->free = dst[c] - bn[c]->batBuns->base;
+		BATsetcount(bn[c], bn[c]->batBuns->free/bns[c]);
+		assert(BATcount(bn[c]) == res_count);
+		if (!bn[c]->batDirty) bn[c]->batDirty = TRUE;
+		BATkey(bn[c],TRUE);
+		BATkey(BATmirror(bn[c]),(res_count < 2));
+		bn[c]->hsorted = GDK_SORTED;
+		if (c == 0 || res_count < 2) {
+			bn[c]->tsorted = GDK_SORTED;
+		} else
+		  if (non_empty[ntabs] == 1) {
+			bn[c]->tsorted = (BATtordered(b[non_empty[0]][c])&1 ? GDK_SORTED : FALSE);
+		} else
+		  if (non_empty[ntabs] == 2) {
+			BAT *b0 = b[non_empty[0]][c];
+			BAT *b1 = b[non_empty[1]][c];
+			if ( ( BATtordered(b0)&BATtordered(b1)&1 || (BATtordered(b0)&1 && BATcount(b1)==1) || (BATcount(b0)==1 && BATtordered(b1)&1) ) && \
+			     ( ( concat01 && atom_LE(BUNtail(b0,BUNlast(b0)-BUNsize(b0)),BUNtail(b1,BUNfirst(b1)),ATOMstorage(ATOMtype(ttpe[c]))) ) || \
+			       ( concat10 && atom_LE(BUNtail(b1,BUNlast(b1)-BUNsize(b1)),BUNtail(b0,BUNfirst(b0)),ATOMstorage(ATOMtype(ttpe[c]))) ) ) ) {
+				bn[c]->tsorted = GDK_SORTED;
+			} else {
+				bn[c]->tsorted = FALSE;
+			}
+		} else {
+			bn[c]->tsorted = FALSE;
+		}
+		bn[c]->hdense = TRUE;
+		bn[c]->tdense = FALSE;
 	}
 
 	/* insert bn[] BATs in BN BAT */
 
 	DST = BUNlast(BN);
-	BS = BUNsize(BN);
+	BS = (bte)BUNsize(BN);
 	BATseqbase(BN, (oid)0);
-	for (k=0; k<npairs; k++) {
-		voidany_bunfastins_nocheck_noinc(BN,DST,0,&bn[k]->batCacheid);
-		BBPunfix(bn[k]->batCacheid);
+	for (c=0; c<ncols; c++) {
+		voidany_bunfastins_nocheck_noinc(BN,DST,0,&bn[c]->batCacheid);
+		BBPunfix(bn[c]->batCacheid);
 		DST += BS;
 	}
 	BN->batBuns->free = DST - BN->batBuns->base;
@@ -5360,34 +5475,67 @@ merged_union( BAT** res, int nbats, BAT **b)
 	*res = BN;
 
 	GDKfree(w);
+	BBPreclaim(temp);
 
 	return GDK_SUCCEED;
 bunins_failed:
 	GDKerror("merged_union: bunins failed.\n");
 cleanup:
 	BBPreclaim(BN);
-	for (k=0; k<npairs; k++) {
-		BBPreclaim(bn[k]);
+	BBPreclaim(temp);
+	for (c=0; c<ncols; c++) {
+		BBPreclaim(bn[c]);
 	}
 	return GDK_FAIL;
 }
 
 int CMDmerged_union( BAT** res, ptr L, int ltpe, ptr R, int rtpe, ... )
 {
-	int i, tpe, nbats = 0, ret = GDK_SUCCEED;
-	BAT *b[MAXPARAMS];
+	int tpe, nbats, t, ntabs = 2, ncols, ret = GDK_SUCCEED;
+	BAT ***b;
 	va_list ap;
         ptr p;
 
-	/* first convert any constant parameters to fake projects */
-	if (CMDfakeProject(b+nbats, L, ltpe) == GDK_SUCCEED) {
+	nbats = 2;
+	va_start(ap,rtpe);
+	while((p = va_arg(ap, ptr)) != NULL) {
+                tpe = va_arg(ap, int);
 		nbats++;
-		if (CMDfakeProject(b+nbats, R, rtpe) == GDK_SUCCEED) {
+	}
+	va_end(ap);
+	if (nbats&1) {
+		GDKerror("merged_union: uneven number of BATs: %d.\n", nbats);
+		return GDK_FAIL;
+	}
+	ncols = nbats>>1;
+
+	b = (BAT***)GDKmalloc(ntabs*sizeof(BAT**));
+	if (b == NULL) {
+		GDKerror("merged_union: GDKmalloc(" SZFMT ") failed.\n", ntabs*sizeof(BAT**));
+		return GDK_FAIL;
+	}
+	for (t=0; t<ntabs; t++) {
+		b[t] = (BAT**)GDKmalloc(ncols*sizeof(BAT*));
+		if (b[t] == NULL) {
+			GDKerror("merged_union: GDKmalloc(" SZFMT ") failed.\n", ncols*sizeof(BAT*));
+			while (t>0) {
+				GDKfree(b[--t]);
+			}
+			GDKfree(b);
+			return GDK_FAIL;
+		}
+	}
+
+	nbats = 0;
+	/* first convert any constant parameters to fake projects */
+	if (CMDfakeProject(&b[nbats&1][nbats>>1], L, ltpe) == GDK_SUCCEED) {
+		nbats++;
+		if (CMDfakeProject(&b[nbats&1][nbats>>1], R, rtpe) == GDK_SUCCEED) {
 			nbats++;
 			va_start(ap,rtpe);
 			while((p = va_arg(ap, ptr)) != NULL) {
         		        tpe = va_arg(ap, int);
-				if (CMDfakeProject(b+nbats, p, tpe) == GDK_SUCCEED) {
+				if (CMDfakeProject(&b[nbats&1][nbats>>1], p, tpe) == GDK_SUCCEED) {
 					nbats++;
 				} else {
 					ret = GDK_FAIL;
@@ -5398,11 +5546,104 @@ int CMDmerged_union( BAT** res, ptr L, int ltpe, ptr R, int rtpe, ... )
 		}
 	}
 	if (ret == GDK_SUCCEED) {
-		ret = merged_union(res, nbats, b);
+		ret = merged_union(res, ntabs, ncols, b);
 	}
+
 	/* unfix all bats; this destroys any created fake projects */
-	for(i=0; i<nbats; i++) 
-		BBPunfix(b[i]->batCacheid);
+	while (--nbats >= 0) {
+		BBPunfix(b[nbats&1][nbats>>1]->batCacheid);
+	}
+	for(t=0; t<ntabs; t++) {
+		GDKfree(b[t]);
+	}
+	GDKfree(b);
+	return ret;
+}
+
+int CMDmulti_merged_union( BAT** res, BAT *Bt)
+{
+	int t, ntabs, c, ncols = 0, ret = GDK_SUCCEED;
+	BAT **Bc, ***b;
+
+	BATcheck(Bt, "multi_merged_union");
+
+	if (Bt->ttype != TYPE_bat) {
+		GDKerror("multi_merged_union: tail-type must be BAT, not %s.\n", ATOMname(Bt->ttype));
+		return GDK_FAIL;
+	}
+
+	if ((ntabs = BATcount(Bt)) < 2) {
+		GDKerror("multi_merged_union: input must contain at least 2 tables/BUNs.\n");
+		return GDK_FAIL;
+	}
+
+	Bc = (BAT**)GDKmalloc(ntabs*sizeof(BAT*));
+	if (Bc == NULL) {
+		GDKerror("multi_merged_union: GDKmalloc(" SZFMT ") failed.\n", ntabs*sizeof(BAT*));
+		return GDK_FAIL;
+	}
+
+	for (t=0; t<ntabs; t++) {
+		Bc[t] = BATdescriptor(*(bat*)BUNtloc(Bt, BUNptr(Bt,t)));
+		if (Bc[t]->ttype != TYPE_bat) {
+			GDKerror("multi_merged_union: tail-type of BAT holding table %d must be BAT, not %s.\n", t+1, ATOMname(Bc[t]->ttype));
+			ret = GDK_FAIL;
+		} else if (t == 0) {
+			assert(BATcount(Bc[t]) <= (size_t)GDK_int_max);
+			if ((ncols = (int)BATcount(Bc[t])) < 1) {
+				GDKerror("multi_merged_union: first table must consist of at least 1 column.\n");
+				ret = GDK_FAIL;
+			}
+		} else if (ncols != (int)BATcount(Bc[t])) {
+			GDKerror("multi_merged_union: table %d (%d columns) must have as many columns as all other tables (%d columns).\n",
+			          t+1, (int)BATcount(Bc[t]), ncols);
+			ret = GDK_FAIL;
+		}
+		if (ret == GDK_FAIL) {
+			while (t >= 0) {
+				BBPunfix(Bc[t--]->batCacheid);
+			}
+			GDKfree(Bc);
+			return GDK_FAIL;
+		}
+	}
+
+	b = (BAT***)GDKmalloc(ntabs*sizeof(BAT**));
+	if (b == NULL) {
+		GDKerror("multi_merged_union: GDKmalloc(" SZFMT ") failed.\n", ntabs*sizeof(BAT**));
+		for (t=0; t<ntabs; t++) BBPunfix(Bc[t]->batCacheid);
+		GDKfree(Bc);
+		return GDK_FAIL;
+	}
+	for (t=0; t<ntabs; t++) {
+		b[t] = (BAT**)GDKmalloc(ncols*sizeof(BAT*));
+		if (b[t] == NULL) {
+			GDKerror("multi_merged_union: GDKmalloc(" SZFMT ") failed.\n", ncols*sizeof(BAT*));
+			while (t>0) {
+				GDKfree(b[--t]);
+			}
+			GDKfree(b);
+			for (t=0; t<ntabs; t++) BBPunfix(Bc[t]->batCacheid);
+			GDKfree(Bc);
+			return GDK_FAIL;
+		}
+	}
+
+	for (t=0; t<ntabs; t++) {
+		for (c=0; c<ncols; c++) {
+			b[t][c] = BATdescriptor(*(bat*)BUNtloc(Bc[t], BUNptr(Bc[t],c)));
+		}
+		BBPunfix(Bc[t]->batCacheid);
+	}
+	GDKfree(Bc);
+
+	ret = merged_union(res, ntabs, ncols, b);
+
+	for (t=0; t<ntabs; t++) {
+		for (c=0; c<ncols; c++) {
+			BBPunfix(b[t][c]->batCacheid);
+		}
+	}
 	return ret;
 }
 
@@ -7559,33 +7800,6 @@ PROC add_content (BAT[void, str] item, BAT[void, BAT] ws, int slot) : BAT[void,o
     X_prop := nil;
 
     return newProp;
-}
-
-PROC multi_merged_union (BAT[void, BAT] b) : BAT[void,BAT]
-{
-    var res := b.fetch(0);
-
-    b.slice(1,count(b))@batloop() {
-        var iter     := res.fetch(0);
-        var pre      := res.fetch(1);
-        var size     := res.fetch(2);
-        var level    := res.fetch(3);
-        var kind     := res.fetch(4);
-        var prop     := res.fetch(5);
-        var cont     := res.fetch(6);
-        var old_pre  := res.fetch(7);
-        var old_cont := res.fetch(8);
-        res := merged_union (iter,     $t.fetch(0),
-                             pre,      $t.fetch(1), 
-                             size,     $t.fetch(2), 
-                             level,    $t.fetch(3), 
-                             kind,     $t.fetch(4), 
-                             prop,     $t.fetch(5), 
-                             cont,     $t.fetch(6), 
-                             old_pre,  $t.fetch(7), 
-                             old_cont, $t.fetch(8));
-    }
-    return res;
 }
 
 
