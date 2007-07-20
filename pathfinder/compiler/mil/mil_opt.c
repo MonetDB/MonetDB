@@ -536,7 +536,7 @@ static void opt_endscope(opt_t* o, unsigned int scope) {
  */
 static void opt_assign(opt_t *o, opt_name_t *name, unsigned int stmt) {
 	int i = opt_findvar(o, name);
-	/* we may only prune if the variable being overwritten comes from a unconditional scope */
+	/* we may only prune if the variable being overwritten comes from an unconditional scope */
 	if (i >= 0) {
 		unsigned int def_stmt = o->vars[i].def_stmt;
 		unsigned int cond = OPT_COND(o);
@@ -576,8 +576,12 @@ static void opt_assign(opt_t *o, opt_name_t *name, unsigned int stmt) {
 			opt_move_add(o, stmt); /* register this statement as moveable */
 #endif
 		}
-	} else {
-		/* delete this statement */
+	} else if (o->curvar+1 < OPT_VARS) {
+		/* delete this statement (but only if there was no
+		   variable overflow, but note that we can't actually
+		   see whether there was overflow, we can only see
+		   whether the table is full, so we assume that there
+		   was overflow when the table is full) */
 		o->stmts[stmt].deleted = o->delete;
 	}
 }
