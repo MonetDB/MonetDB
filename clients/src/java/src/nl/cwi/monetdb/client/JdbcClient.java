@@ -450,11 +450,12 @@ copts.produceHelpMessage()
 					// print welcome message
 					out.println("Welcome to the MonetDB interactive JDBC terminal!");
 					if (dbmd != null) {
-						out.println("Database: " + dbmd.getDatabaseProductName() + " " +
-							dbmd.getDatabaseProductVersion() + ", '" +
-							dbmd.getConnection().getCatalog() + "'");
+						out.println("Database: " +
+								dbmd.getDatabaseProductName() + " v" +
+								dbmd.getDatabaseProductVersion() + ", '" +
+								dbmd.getConnection().getCatalog() + "'");
 						out.println("Driver: " + dbmd.getDriverName() + " v" +
-							dbmd.getDriverVersion());
+								dbmd.getDriverVersion());
 					}
 					out.println("Type \\q to quit, \\h for a list of available commands");
 					out.flush();
