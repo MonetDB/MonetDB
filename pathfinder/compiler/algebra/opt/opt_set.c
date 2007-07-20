@@ -117,7 +117,7 @@ opt_set (PFla_op_t *p)
                                  RR(p),
                                  R(p)->sem.step.axis,
                                  R(p)->sem.step.ty,
-                                 L(p)->sem.step.level,
+                                 R(p)->sem.step.level,
                                  R(p)->sem.step.item,
                                  item_res),
                              PFalg_proj (R(p)->sem.step.iter,
