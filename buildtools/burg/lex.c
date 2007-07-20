@@ -23,7 +23,7 @@ static void ReadOldComment ARGS((ReadFn));
 extern char *inFileName;
 
 static char *
-StrCopy(s) char *s;
+StrCopy(char *s)
 {
 	char *t = (char *)zalloc(strlen(s) + 1);
 	strcpy(t,s);
@@ -31,7 +31,7 @@ StrCopy(s) char *s;
 }
 
 static int
-simple_get()
+simple_get(void)
 {
 	int ch;
 	if ((ch = getchar()) == '\n') {
@@ -41,7 +41,7 @@ simple_get()
 }
 
 static int
-code_get()
+code_get(void)
 {
 	int ch;
 	if ((ch = getchar()) == '\n') {
@@ -54,7 +54,7 @@ code_get()
 }
 
 void
-yypurge()
+yypurge(void)
 {
         char linetag[sizeof ("#line ????? ''\n") + FILENAME_MAX];
 
@@ -69,7 +69,7 @@ yypurge()
 
 
 static void
-ReadCharString(rdfn, which) ReadFn rdfn; int which;
+ReadCharString(ReadFn rdfn, int which)
 {
 	int ch;
 	int backslash = 0;
@@ -91,7 +91,7 @@ ReadCharString(rdfn, which) ReadFn rdfn; int which;
 }
 
 static void
-ReadOldComment(rdfn) ReadFn rdfn;
+ReadOldComment(ReadFn rdfn)
 {
 	/* will not work for comments delimiter in string */
 
@@ -114,7 +114,7 @@ ReadOldComment(rdfn) ReadFn rdfn;
 }
 
 static void
-ReadCodeBlock()
+ReadCodeBlock(void)
 {
 	int ch;
 	int firstline = yyline;
@@ -158,13 +158,13 @@ ReadCodeBlock()
 
 static int done;
 void
-yyfinished()
+yyfinished(void)
 {
 	done = 1;
 }
 
 int
-yylex()
+yylex(void)
 {
 	int ch;
 	char *ptr = buf;
@@ -263,13 +263,13 @@ yylex()
 }
 
 void
-yyerror1(str) char *str;
+yyerror1(char *str)
 {
 	fprintf(stderr, "line %d: %s", yyline, str);
 }
 
 void
-yyerror(str) char *str;
+yyerror(char *str)
 {
 	yyerror1(str);
 	fprintf(stderr, "\n");

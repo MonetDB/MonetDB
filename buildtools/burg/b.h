@@ -244,7 +244,7 @@ extern void findChainRules ARGS((void));
 extern void findAllPairs ARGS((void));
 extern void addRelevant ARGS((Relevant, NonTerminalNum));
 
-extern void *zalloc ARGS((unsigned int));
+extern void *zalloc ARGS((size_t));
 extern void zfree ARGS((void *));
 
 extern NonTerminal	start;

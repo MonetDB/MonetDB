@@ -6,7 +6,7 @@ char rcsid_zalloc[] = "$Id$";
 #include "b.h"
 
 int
-fatal(name, line) char *name; int line;
+fatal(char *name, int line)
 {
 	fprintf(stderr, "assertion failed: file %s, line %d\n", name, line);
 	exit(1);
@@ -14,9 +14,9 @@ fatal(name, line) char *name; int line;
 }
 
 void *
-zalloc(size) unsigned int size;
+zalloc(size_t size)
 {
-	void *t = (void *) malloc((size_t)size);
+	void *t = (void *) malloc(size);
 	if (!t) {
 		fprintf(stderr, "Malloc failed---PROGRAM ABORTED\n");
 		exit(1);
@@ -26,7 +26,7 @@ zalloc(size) unsigned int size;
 }
 
 void
-zfree(p) void *p;
+zfree(void *p)
 {
 	free(p);
 }
