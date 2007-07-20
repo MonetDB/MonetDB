@@ -389,7 +389,7 @@ forkMserver(str database, sabdb** stats, dpair dp)
 		/* ok, now exec that mserver we want */
 		snprintf(dbname, 511, "--dbname=%s", database);
 		merlog("executing '%s' for database '%s'",
-				_merovingian_mserver, dbname);
+				_merovingian_mserver, database);
 		execl(_merovingian_mserver, _merovingian_mserver,
 				"--set", "daemon=yes",
 				dbname,
