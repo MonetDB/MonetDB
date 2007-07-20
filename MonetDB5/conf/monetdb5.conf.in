@@ -116,6 +116,18 @@ delay=120		#waiting between pinging the server
 # Unsetting below defaults will make merovingian log to the screen.
 #mero_msglog=@prefix@/var/log/merovingian.log
 #mero_errlog=@prefix@/var/log/merovingian.log
+#
+# mservers that were started by Merovingian are not shut down when the
+# Merovingian is shut down.  This behaviour might be undesirable if the
+# Merovingian is ran as daemon process that represents MonetDB, such as
+# in an init.d script.  Setting the time-out value below to a positive
+# non-zero value will shut down each mserver that was started with a
+# given time-out in seconds.  If the time-out expires, the mserver is
+# killed using the SIGKILL signal.  A time-out value of 0 means that no
+# mserver is shut down, meaning they will live on after the Merovingian
+# has shut down.  The default is to shut down all started mservers with
+# a time-out of 7 seconds.
+mero_exittimeout=7
 
 # MAL section
 # Monet Virtual Machine

@@ -49,7 +49,7 @@ period.  The Merovingian will log such refusals as well as return this
 as error to the connecting client.
 
 @h
-#define MEROV_VERSION	"0.2"
+#define MEROV_VERSION	"0.3"
 #define MEROV_PORT		50000
 
 @c
@@ -103,10 +103,12 @@ typedef char* err;
 static str _merovingian_mserver = NULL;
 
 typedef struct _dpair {
-	FILE* fout;
-	FILE* ferr;
-	pid_t pid;
-	char name[24];
+	FILE* fout;       /* where to read stdout messages from */
+	FILE* ferr;       /* where to read stderr messages from */
+	pid_t pid;        /* this process' id */
+	char name[24];    /* the name of this process */
+	char* dbname;     /* the database that this server serves */
+	pthread_t tid;    /* thread id used when terminating this server */
 	struct _dpair* next;
 }* dpair;
 
@@ -156,6 +158,101 @@ logListener(void *p)
 		/* wait a tenth of a second */
 		MT_sleep_ms(10);
 	} while (1);
+}
+
+int timeout = 0;
+/**
+ * The terminateProcess function tries to let the given mserver process
+ * shut down gracefully within a given time-out.  If that fails, it send
+ * the deadly SIGKILL signal to the mserver process and returns.
+ */
+static void
+terminateProcess(void *p)
+{
+	dpair d = (dpair)p;
+	sabdb *stats;
+	str er;
+	int i;
+
+	er = SABAOTHgetStatus(&stats, d->dbname);
+	if (er != MAL_SUCCEED) {
+		fprintf(stderr, "cannot terminate process " LLFMT ": %s\n",
+				(long long int)d->pid, er);
+		GDKfree(er);
+		return;
+	}
+
+	if (stats == NULL) {
+		fprintf(stderr, "strange, process " LLFMT " serves database '%s' "
+				"which does not exist\n", (long long int)d->pid, d->dbname);
+		return;
+	}
+
+	switch (stats->state) {
+		case SABdbRunning:
+			/* ok, what we expect */
+		break;
+		case SABdbCrashed:
+			fprintf(stderr, "cannot shut down database '%s', mserver "
+					"(pid " LLFMT ") has crashed\n",
+					d->dbname, (long long int)d->pid);
+			SABAOTHfreeStatus(&stats);
+			return;
+		case SABdbInactive:
+			fprintf(stdout, "database '%s' appears to have shut down already\n",
+					d->dbname);
+			fflush(stdout);
+			SABAOTHfreeStatus(&stats);
+			return;
+		default:
+			fprintf(stderr, "unknown state: %d", stats->state);
+			SABAOTHfreeStatus(&stats);
+			return;
+	}
+
+	/* ok, once we get here, we'll be shutting down the server */
+	fprintf(stdout, "sending process " LLFMT " (database '%s') the "
+			"TERM signal\n", (long long int)d->pid, d->dbname);
+	fflush(stdout);
+	kill(d->pid, SIGTERM);
+	for (i = 0; i < timeout * 2; i++) {
+		if (stats != NULL)
+			SABAOTHfreeStatus(&stats);
+		MT_sleep_ms(500);
+		er = SABAOTHgetStatus(&stats, d->dbname);
+		if (er != MAL_SUCCEED) {
+			fprintf(stderr, "unexpected problem: %s\n", er);
+			GDKfree(er);
+			/* don't die, just continue, so we KILL in the end */
+		} else if (stats == NULL) {
+			fprintf(stderr, "hmmmm, database '%s' suddenly doesn't exist "
+					"any more\n", d->dbname);
+		} else {
+			switch (stats->state) {
+				case SABdbRunning:
+					/* ok, try again */
+				break;
+				case SABdbCrashed:
+					fprintf (stderr, "database '%s' crashed after SIGTERM\n",
+							d->dbname);
+					SABAOTHfreeStatus(&stats);
+					return;
+				case SABdbInactive:
+					fprintf(stdout, "database '%s' has shut down\n", d->dbname);
+					fflush(stdout);
+					SABAOTHfreeStatus(&stats);
+					return;
+				default:
+					fprintf(stderr, "unknown state: %d", stats->state);
+				break;
+			}
+		}
+	}
+	fprintf(stderr, "timeout of %d seconds expired, sending process " LLFMT
+			" (database '%s') the KILL signal\n",
+			timeout, (long long int)d->pid, d->dbname);
+	kill(d->pid, SIGKILL);
+	return;
 }
 
 /**
@@ -252,14 +349,14 @@ forkMserver(str database, sabdb** stats, dpair dp)
 
 	switch ((*stats)->state) {
 		case SABdbRunning:
-			merlog("database %s already running", database);
+			merlog("database '%s' already running", database);
 			return(NO_ERR);
 		break;
 		case SABdbCrashed:
-			merlog("database %s has crashed, attempting restart", database);
+			merlog("database '%s' has crashed, attempting restart", database);
 		break;
 		case SABdbInactive:
-			merlog("starting database %s", database);
+			merlog("starting database '%s'", database);
 		break;
 		default:
 			return(newErr("unknown state: %d", (*stats)->state));
@@ -291,7 +388,7 @@ forkMserver(str database, sabdb** stats, dpair dp)
 
 		/* ok, now exec that mserver we want */
 		snprintf(dbname, 511, "--dbname=%s", database);
-		merlog("executing %s for database %s",
+		merlog("executing '%s' for database '%s'",
 				_merovingian_mserver, dbname);
 		execl(_merovingian_mserver, _merovingian_mserver,
 				"--set", "daemon=yes",
@@ -317,6 +414,7 @@ forkMserver(str database, sabdb** stats, dpair dp)
 		dp->next = NULL;
 		dp->pid = pid;
 		snprintf(dp->name, 23, "%s", "mserver5");
+		dp->dbname = strdup(database);
 
 		/* wait for the child to open up a communication channel */
 		for (i = 0; i < 20; i++) {	/* wait up to 10 seconds */
@@ -531,8 +629,8 @@ handleClient(int sock, dpair dp)
 
 	/* need to send a redirect */
 	if (stat->conns == NULL || stat->conns->val == NULL) {
-		err e = newErr("database %s does not allow connections", stat->dbname);
-		stream_printf(fout, "!database %s does not allow connections\n", stat->dbname);
+		err e = newErr("database '%s' does not allow connections", stat->dbname);
+		stream_printf(fout, "!database '%s' does not allow connections\n", stat->dbname);
 		stream_flush(fout);
 		stream_close(fout);
 		stream_close(fdin);
@@ -540,7 +638,7 @@ handleClient(int sock, dpair dp)
 		return(e);
 	}
 
-	merlog("redirecting client for database %s to %s",
+	merlog("redirecting client for database '%s' to %s",
 			stat->dbname, stat->conns->val);
 
 	stream_printf(fout, "^%s%s\n",
@@ -739,6 +837,7 @@ main(int argc, char *argv[])
 	dbfarm = NULL;
 	msglog = NULL;
 	errlog = NULL;
+	timeout = 0;
 	while (fgets(buf, 1024, cnf) != NULL) {
 		/* eliminate fgets' newline */
 		buf[strlen(buf) - 1] = '\0';
@@ -751,6 +850,9 @@ main(int argc, char *argv[])
 		} else if (*buf && strncmp(buf, "mero_errlog=", 12) == 0) {
 			p = strchr(buf, '=');
 			errlog = replacePrefix(++p);
+		} else if (*buf && strncmp(buf, "mero_exittimeout=", 17) == 0) {
+			p = strchr(buf, '=');
+			timeout = atoi(++p);
 		}
 	}
 
@@ -879,18 +981,49 @@ main(int argc, char *argv[])
 	if (_keepListening != 0)
 		merlog("Merovingian %s stopping ...", MEROV_VERSION);
 
+	/* we don't need merovingian itself */
+	d = d->next;
+
+	/* stop started mservers */
+	if (timeout > 0) {
+		dpair t = d;
+		while (t != NULL) {
+			if (pthread_create(&(t->tid), NULL,
+						(void *(*)(void *))terminateProcess, (void *)t) < 0)
+			{
+				fprintf(q->ferr, "%s: unable to create thread to terminate "
+						"database '%s'\n", argv[0], d->dbname);
+				t->tid = 0;
+				ret = 1;
+			}
+			t = t->next;
+		}
+		/* wait for all processes to be terminated */
+		t = d;
+		while (t != NULL) {
+			if (t->tid != 0 && (argp = pthread_join(t->tid, NULL)) != 0) {
+				fprintf(q->ferr, "failed to wait for termination thread: "
+						"%s\n", strerror(argp));
+				ret = 1;
+			}
+			t = t->next;
+		}
+	}
+
 	_keepLogging = 0;
 	if ((argp = pthread_join(tid, NULL)) != 0) {
-		fprintf(q->ferr, "failed to stop logging thread: %s\n", strerror(argp));
+		fprintf(q->ferr, "failed to wait for logging thread: %s\n", strerror(argp));
 		ret = 1;
 	}
 
 	fclose(q->fout);
 	fclose(q->ferr);
 
-	d = d->next;
+	/* clean up dbpair structs */
 	while (d != NULL) {
 		q = d->next;
+		if (d->dbname != NULL)
+			free(d->dbname);
 		free(d);
 		d = q;
 	}
