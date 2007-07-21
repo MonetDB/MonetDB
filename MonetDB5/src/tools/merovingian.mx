@@ -820,7 +820,7 @@ main(int argc, char *argv[])
 	pthread_t tid;
 	struct sigaction sa;
 	int ret;
-	int sock;
+	int sock = 0;
 
 	/* hunt for the config file, and read it */
 	snprintf(buf, 1023, "%s/bin/mserver5", MONETDBPREFIX);
