@@ -294,12 +294,7 @@ PFalgopt (PFla_op_t *root, bool timing, PFguide_tree_t* guide_tree)
                 break;
 
             case 'U':
-                if (!guide_tree) {
-                    PFinfo (OOPS_WARNING,
-                            "No guides found - guide node"
-                            " optimization is ignored");
-                    break;
-                }
+                if (!guide_tree) break;
                 tm = PFtimer_start ();
 
                 root = PFalgopt_guide (root, guide_tree);
