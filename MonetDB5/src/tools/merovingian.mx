@@ -881,6 +881,53 @@ handler(int sig)
 	_keepListening = 0;
 }
 
+static dpair servers;
+
+static void
+childhandler(int sig, siginfo_t *si, void *unused)
+{
+	dpair p, q;
+
+	(void)sig;
+	(void)unused;
+
+	if (si->si_code != CLD_EXITED &&
+			si->si_code != CLD_KILLED &&
+			si->si_code != CLD_DUMPED)
+	{
+		/* ignore traps, stops and continues, we only want terminations
+		 * of the client process */
+		return;
+	}
+
+	/* get the pid from the former child, and locate it in our list */
+	q = servers;
+	p = q->next;
+	while (p != NULL) {
+		if (p->pid == si->si_pid) {
+			/* remove it, disconnect first, then free (because the
+			 * logger might access it otherwise after the free) */
+			q->next = p->next;
+			if (si->si_code == CLD_EXITED) {
+				merlog("database '%s' (%d) has exited with exit status %d",
+						p->dbname, p->pid, si->si_status);
+			} else if (si->si_code == CLD_KILLED) {
+				merlog("database '%s' (%d) was killed by signal %d",
+						p->dbname, p->pid, si->si_status);
+			} else if (si->si_code == CLD_DUMPED) {
+				merlog("database '%s' (%d) has crashed (dumped core)",
+						p->dbname, p->pid);
+			}
+			if (p->dbname)
+				free(p->dbname);
+			free(p);
+			break;
+		}
+		q = p;
+		p = q->next;
+	}
+}
+
 int
 main(int argc, char *argv[])
 {
@@ -1012,6 +1059,8 @@ main(int argc, char *argv[])
 	d->pid = getpid();
 	d->dbname = "merovingian";
 
+	servers = d;
+
 	if (pthread_create(&tid, NULL, (void *(*)(void *))logListener, (void *)q) < 0) {
 		fprintf(q->ferr, "%s: unable to create logthread, exiting\n", argv[0]);
 		return(1);
@@ -1025,6 +1074,14 @@ main(int argc, char *argv[])
 			sigaction(SIGQUIT, &sa, NULL) == -1 ||
 			sigaction(SIGTERM, &sa, NULL) == -1)
 	{
+		fprintf(q->ferr, "%s: unable to create signal handlers\n", argv[0]);
+		return(1);
+	}
+
+	sa.sa_flags = SA_SIGINFO;
+	sigemptyset(&sa.sa_mask);
+	sa.sa_sigaction = childhandler;
+	if (sigaction(SIGCHLD, &sa, NULL) == -1) {
 		fprintf(q->ferr, "%s: unable to create signal handlers\n", argv[0]);
 		return(1);
 	}
@@ -1066,6 +1123,15 @@ main(int argc, char *argv[])
 	/* we don't need merovingian itself */
 	d = d->next;
 
+	/* before we kill all our children, make sure we won't shoot
+	 * ourself in the foot because of our SIGCHLD handler */
+	sigemptyset(&sa.sa_mask);
+	sa.sa_flags = 0;
+	sa.sa_handler = SIG_DFL;
+	/* ignore error, if it fails, the only thing we can do is fail and
+	 * don't kill anything, so risk a race condition with hard crash
+	 * here */
+	sigaction(SIGCHLD, &sa, NULL);
 	/* stop started mservers */
 	if (timeout > 0) {
 		dpair t = d;
