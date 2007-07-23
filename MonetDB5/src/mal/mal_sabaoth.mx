@@ -597,4 +597,124 @@ str SABAOTHfreeStatus(sabdb** ret) {
 }
 
 @h
+typedef struct Ssabuplog {
+	int startcntr;     /* the number of start attempts */
+	int stopcntr;      /* the number of successful stop attempts */
+	int crashcntr;     /* startcntr - stopcntr (for convenience) */
+	time_t avguptime;  /* number of seconds up when not crashing */
+	time_t maxuptime;  /* longest uptime when not crashing */
+	time_t minuptime;  /* shortest uptime when not crashing */
+	time_t lastcrash;  /* time of last crash, -1 if none */
+	time_t laststart;  /* time of last start */
+	int crashavg1;     /* if there was a crash in the last start attempt */
+	int crashavg10;    /* average of crashes in the last 10 start attempts */
+	int crashavg30;    /* average of crashes in the last 30 start attempts */
+} sabuplog;
+
+mal_export str SABAOTHgetUplogInfo(sabuplog* ret, str dbname);
+@c
+/**
+ * Parses the .uplog file for the given database, and fills ret with the
+ * parsed information.
+ */
+str SABAOTHgetUplogInfo(sabuplog* ret, str dbname) {
+	str path = alloca(sizeof(char) * (PATHLENGTH + 1));
+	str log = alloca(sizeof(char) * (PATHLENGTH + 1));
+	str tmp;
+	char data[24];
+	char *p;
+	DIR *d;
+	struct dirent *e;
+	FILE *f;
+	time_t start, stop, up;
+	int avg10[10];
+	int avg30[30];
+	int i;
+
+	memset(avg10, 0, sizeof(int) * 10);
+	memset(avg30, 0, sizeof(int) * 30);
+
+	/* clear the struct */
+	memset(ret, 0, sizeof(sabuplog));
+	ret->minuptime = -1;
+	ret->lastcrash = -1;
+
+	/* scan the parent for directories */
+	rethrow("sabaoth.getStatus", tmp,
+			getFarmPath(&path, PATHLENGTH, NULL));
+	d = opendir(path);
+	if (d == NULL)
+		throw(IO, "sabaoth.getUplogInfo", "unable to open directory %s: %s",
+				path, strerror(errno));
+	while ((e = readdir(d)) != NULL) {
+		if (dbname != NULL && strcmp(e->d_name, dbname) != 0)
+			continue;
+
+		snprintf(log, PATHLENGTH, "%s/%s/%s", path, e->d_name, UPLOGFILE);
+		log[PATHLENGTH] = '\0';
+		if ((f = fopen(log, "r")) != NULL) {
+			start = stop = up = 0;
+			p = data;
+			while ((*p = (char)fgetc(f)) != EOF) {
+				switch (*p) {
+					case '\t':
+						/* start attempt */
+						ret->startcntr++;
+						if (start != 0)
+							ret->lastcrash = start;
+						memmove(&avg10[0], &avg10[1], sizeof(int) * 9);
+						memmove(&avg30[0], &avg30[1], sizeof(int) * 29);
+						avg10[9] = avg30[29] = ret->crashavg1 = 
+							(start != 0 ? 1 : 0);
+						*p = '\0';
+						ret->laststart = start = (time_t)atol(data);
+						p = data;
+					break;
+					case '\n':
+						/* successful stop */
+						ret->stopcntr++;
+						*p = '\0';
+						stop = (time_t)atol(data);
+						p = data;
+						i = stop - start;
+						if (i > ret->maxuptime)
+							ret->maxuptime = i;
+						if (ret->minuptime == -1 || ret->minuptime > i)
+							ret->minuptime = i;
+						up += i;
+						start = 0;
+					break;
+					default:
+						/* timestamp */
+						p++;
+					break;
+				}
+			}
+			if (start != 0)
+				ret->lastcrash = start;
+			memmove(&avg10[0], &avg10[1], sizeof(int) * 9);
+			memmove(&avg30[0], &avg30[1], sizeof(int) * 29);
+			avg10[9] = avg30[29] = ret->crashavg1 =
+				(start != 0 ? 1 : 0);
+			ret->crashcntr = ret->startcntr - ret->stopcntr;
+			ret->avguptime = (time_t)(((double)up / (double)ret->stopcntr) + 0.5);
+			for (i = 0; i < 10; i++)
+				ret->crashavg10 += avg10[i];
+			ret->crashavg10 = (int)(((double)ret->crashavg10 / 10.0) + 0.5);
+			for (i = 0; i < 30; i++)
+				ret->crashavg30 += avg30[i];
+			ret->crashavg30 = (int)(((double)ret->crashavg30 / 30.0) + 0.5);
+			(void)fclose(f);
+		} else {
+			throw(IO, "sabaoth.getUplogInfo", "unable to open file %s: %s",
+					log, strerror(errno));
+		}
+
+		break;
+	}
+
+	return(MAL_SUCCEED);
+}
+
+@h
 #endif
