@@ -49,8 +49,8 @@ period.  The Merovingian will log such refusals as well as return this
 as error to the connecting client.
 
 @h
-#define MEROV_VERSION	"0.3"
-#define MEROV_PORT		50000
+#define MEROV_VERSION   "0.3"
+#define MEROV_PORT      50000
 
 @c
 #include "mal_config.h"
@@ -121,7 +121,7 @@ logListener(void *p)
 	FILE *fout, *ferr;
 	char buf[8096];
 	int hadData;
-	char mytime[256];
+	char mytime[20];
 	time_t now, lastout, lasterr;
 	struct tm *tmp;
 	int equalouterr;
@@ -361,6 +361,9 @@ forkMserver(str database, sabdb** stats, dpair dp)
 #else
 	pid_t pid;
 	str er;
+	sabuplog info;
+	struct tm *t;
+	char tstr[20];
 	int pfdo[2];
 	int pfde[2];
 
@@ -381,27 +384,68 @@ forkMserver(str database, sabdb** stats, dpair dp)
 	 * more than one entries in the list, so we assume we have the right
 	 * one here. */
 
+	/* retrieve uplog information to print a short conclusion */
+	er = SABAOTHgetUplogInfo(&info, database);
+	if (er != MAL_SUCCEED) {
+		err e = newErr("could not retrieve uplog information: %s", er);
+		GDKfree(er);
+		SABAOTHfreeStatus(stats);
+		*stats = NULL;
+		return(e);
+	}
+
 	switch ((*stats)->state) {
 		case SABdbRunning:
-			merlog("database '%s' already running", database);
+			t = localtime(&info.laststart);
+			strftime(tstr, sizeof(tstr), "%Y-%m-%d %H:%M:%S", t);
+			merlog("database '%s' already running since %s, "
+					"up min/avg/max: " LLFMT "/" LLFMT "/" LLFMT ", "
+					"crash average: %d %d %d (%d-%d=%d)",
+					database, tstr,
+					(lng)info.minuptime, (lng)info.avguptime, (lng)info.maxuptime,
+					info.crashavg1, info.crashavg10, info.crashavg30,
+					info.startcntr, info.stopcntr, info.crashcntr);
 			return(NO_ERR);
 		break;
 		case SABdbCrashed:
-			merlog("database '%s' has crashed, attempting restart", database);
+			t = localtime(&info.lastcrash);
+			strftime(tstr, sizeof(tstr), "%Y-%m-%d %H:%M:%S", t);
+			merlog("database '%s' has crashed after start on %s, "
+					"attempting restart, "
+					"up min/avg/max: " LLFMT "/" LLFMT "/" LLFMT ", "
+					"crash average: %d %d %d (%d-%d=%d)",
+					database, tstr,
+					(lng)info.minuptime, (lng)info.avguptime, (lng)info.maxuptime,
+					info.crashavg1, info.crashavg10, info.crashavg30,
+					info.startcntr, info.stopcntr, info.crashcntr);
 		break;
 		case SABdbInactive:
-			merlog("starting database '%s'", database);
+			merlog("starting database '%s', "
+					"up min/avg/max: " LLFMT "/" LLFMT "/" LLFMT ", "
+					"crash average: %d %d %d (%d-%d=%d)",
+					database,
+					(lng)info.minuptime, (lng)info.avguptime, (lng)info.maxuptime,
+					info.crashavg1, info.crashavg10, info.crashavg30,
+					info.startcntr, info.stopcntr, info.crashcntr);
 		break;
 		default:
+			SABAOTHfreeStatus(stats);
+			*stats = NULL;
 			return(newErr("unknown state: %d", (*stats)->state));
 	}
 
 	/* create the pipes (filedescriptors) now, such that we and the
 	 * child have the same descriptor set */
-	if (pipe(pfdo) == -1)
+	if (pipe(pfdo) == -1) {
+		SABAOTHfreeStatus(stats);
+		*stats = NULL;
 		return(newErr("unable to create pipe: %s", strerror(errno)));
-	if (pipe(pfde) == -1)
+	}
+	if (pipe(pfde) == -1) {
+		SABAOTHfreeStatus(stats);
+		*stats = NULL;
 		return(newErr("unable to create pipe: %s", strerror(errno)));
+	}
 
 	pid = fork();
 	if (pid == 0) {
