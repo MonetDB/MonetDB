@@ -106,13 +106,13 @@ typedef struct _dpair {
 	FILE* fout;       /* where to read stdout messages from */
 	FILE* ferr;       /* where to read stderr messages from */
 	pid_t pid;        /* this process' id */
-	char name[24];    /* the name of this process */
 	char* dbname;     /* the database that this server serves */
 	pthread_t tid;    /* thread id used when terminating this server */
 	struct _dpair* next;
 }* dpair;
 
 static int _keepLogging = 1;
+static int _timeInterval = 0;
 static void
 logListener(void *p)
 {
@@ -121,26 +121,53 @@ logListener(void *p)
 	FILE *fout, *ferr;
 	char buf[8096];
 	int hadData;
+	char mytime[256];
+	time_t now, lastout, lasterr;
+	struct tm *tmp;
+	int equalouterr;
 
 	/* the first entry in the list of d is where our output should go to */
 	fout = d->fout;
 	ferr = d->ferr;
 
+	if (d->dbname == NULL || fout == ferr) {
+		equalouterr = 1;
+	} else {
+		equalouterr = 0;
+	}
+
 	/* skip the first entry, we don't care about it in the normal loop */
 	d = d->next;
 
+#define PRINT_TIME(STREAM, CHAN) \
+	now = time(NULL); \
+	if (now - CHAN >= _timeInterval) { \
+		tmp = localtime(&now); \
+		strftime(mytime, sizeof(mytime), "%Y-%m-%d %H:%M:%S", tmp); \
+		fprintf(STREAM, "TME %s\n", mytime); \
+		CHAN = now; \
+	}
+
+	lastout = 0;
+	lasterr = 0;
 	do {
 		w = d;
 		hadData = 0;
 		while (w != NULL) {
 			if (fgets(buf, 8096, w->fout) != NULL) {
+				PRINT_TIME(fout, lastout);
 				fprintf(fout, "MSG %s[" LLFMT "]: %s",
-						w->name, (long long int)w->pid, buf);
+						w->dbname, (long long int)w->pid, buf);
 				hadData = 1;
 			}
 			if (fgets(buf, 8096, w->ferr) != NULL) {
+				if (equalouterr == 1) {
+					PRINT_TIME(ferr, lastout);
+				} else {
+					PRINT_TIME(ferr, lasterr);
+				}
 				fprintf(ferr, "ERR %s[" LLFMT "]: %s",
-						w->name, (long long int)w->pid, buf);
+						w->dbname, (long long int)w->pid, buf);
 				hadData = 1;
 			}
 			w = w->next;
@@ -158,6 +185,13 @@ logListener(void *p)
 		/* wait a tenth of a second */
 		MT_sleep_ms(10);
 	} while (1);
+	/* make sure we emit the current timestamp before we quit */
+	lastout = 0;
+	PRINT_TIME(fout, lastout);
+	if (equalouterr == 0) {
+		lasterr =  0;
+		PRINT_TIME(ferr, lasterr);
+	}
 }
 
 int timeout = 0;
@@ -413,7 +447,6 @@ forkMserver(str database, sabdb** stats, dpair dp)
 		close(pfde[1]);
 		dp->next = NULL;
 		dp->pid = pid;
-		snprintf(dp->name, 23, "%s", "mserver5");
 		dp->dbname = strdup(database);
 
 		/* wait for the child to open up a communication channel */
@@ -853,6 +886,9 @@ main(int argc, char *argv[])
 		} else if (*buf && strncmp(buf, "mero_exittimeout=", 17) == 0) {
 			p = strchr(buf, '=');
 			timeout = atoi(++p);
+		} else if (*buf && strncmp(buf, "mero_timeinterval=", 18) == 0) {
+			p = strchr(buf, '=');
+			_timeInterval = atoi(++p);
 		}
 	}
 
@@ -862,6 +898,9 @@ main(int argc, char *argv[])
 		fprintf(stderr, "cannot find dbfarm via config file\n");
 		exit(1);
 	}
+
+	q->pid = 0;
+	q->dbname = NULL;
 
 	/* where should our msg output go to? */
 	if (msglog == NULL) {
@@ -876,6 +915,7 @@ main(int argc, char *argv[])
 					msglog, strerror(errno));
 			exit(1);
 		}
+		q->dbname = "file";
 	}
 	free(msglog);
 
@@ -896,12 +936,10 @@ main(int argc, char *argv[])
 				exit(1);
 			}
 		}
+		q->dbname = "file";
 	}
 	free(errlog);
 
-	/* store the structure */
-	q->pid = 0;
-	snprintf(q->name, 23, "output");
 	d = q->next = alloca(sizeof(struct _dpair));
 
 	/* redirect stdout */
@@ -928,7 +966,7 @@ main(int argc, char *argv[])
 
 	d->next = NULL;
 	d->pid = getpid();
-	snprintf(d->name, 23, "%s", "merovingian");
+	d->dbname = "merovingian";
 
 	if (pthread_create(&tid, NULL, (void *(*)(void *))logListener, (void *)q) < 0) {
 		fprintf(q->ferr, "%s: unable to create logthread, exiting\n", argv[0]);

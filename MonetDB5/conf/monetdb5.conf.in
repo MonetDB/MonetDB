@@ -117,6 +117,20 @@ delay=120		#waiting between pinging the server
 #mero_msglog=@prefix@/var/log/merovingian.log
 #mero_errlog=@prefix@/var/log/merovingian.log
 #
+# Log messages may not be instantly logged, because the process that
+# writes the message does not flush its buffered stream.  Since
+# Merovingian cannot force other processes to flush their output, the
+# time when Merovingian receives the message need not to be (close) to
+# the actual time the message was generated.  For this reason it makes
+# not much sense to tag each line with the time it is printed by
+# Merovingian.  Instead, Merovingian does a rough time indication by
+# inserting TME records in the log output.  The seconds interval in
+# which Merovingian should print such TME record can be specified below.
+# Note that an interval of 0 makes Merovingian print a TME record for
+# every printed log record.  The default is to print a TME record every
+# 10 minutes.
+mero_timeinterval=600
+#
 # mservers that were started by Merovingian are not shut down when the
 # Merovingian is shut down.  This behaviour might be undesirable if the
 # Merovingian is ran as daemon process that represents MonetDB, such as
