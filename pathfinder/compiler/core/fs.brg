@@ -491,20 +491,16 @@ ValueExpr:              ExtensionExpr                               = 151 (10);
 
 ValidateExpr:           validate (OptExpr)                          = 152 (10);
 
-PathExpr:               StepExpr                                    = 153 (10);
+PathExpr:               FilterExpr                                  = 153 (10);
 PathExpr:               LocationPath                                = 154 (10);
 
 LocationPath:           root_                                       = 155 (10);
-LocationPath:           locpath (StepExpr, StepExpr)                = 156 (10);
-LocationPath:           locpath (LocationStep, StepExpr)            = 157 (10);
-
-StepExpr:               LocationStep                                = 158 (10);
-StepExpr:               FilterExpr                                  = 159 (10);
+LocationPath:           locpath (PathExpr, PathExpr)                = 156 (10);
+LocationPath:           locpath (step (NodeTest), PathExpr)         = 157 (10);
+LocationPath:           pred (LocationPath, OptExpr)                = 158 (10);
 
 FilterExpr:             PrimaryExpr                                 = 160 (10);
-FilterExpr:             pred (StepExpr, OptExpr)                    = 161 (10);
-
-LocationStep:           step (NodeTest)                             = 162 (10);
+FilterExpr:             pred (PathExpr, OptExpr)                    = 161 (10);
 
 PrimaryExpr:            Literal                                     = 163 (10);
 PrimaryExpr:            Var                                         = 164 (10);
@@ -915,9 +911,11 @@ reduce (PFpnode_t * p, int goalnt)
         case 92:
         /* NodeTest:               node_ty (node_ty (ElemOrAttrType)) */
         case 94:
-        /* LocationPath:           locpath (StepExpr, StepExpr) */
+        /* LocationPath:           locpath (PathExpr, PathExpr) */
         case 156:
-        /* FilterExpr:             pred (StepExpr, Expr) */
+        /* LocationPath:           pred (LocationPath, OptExpr) */
+        case 158:
+        /* FilterExpr:             pred (PathExpr, Expr) */
         case 161:
         /* FunctionCall:           apply (nil) */
         case 184:
@@ -2365,15 +2363,27 @@ reduce (PFpnode_t * p, int goalnt)
             PFoops_loc (OOPS_NOTSUPPORTED, p->loc, "validation not supported");
             break;
 
-        /* PathExpr:               StepExpr */
+        /* PathExpr:               PathExpr */
         case 153:
             assert (C(p));
             break;
 
         /* PathExpr:               LocationPath */
         case 154:
+        {   /* guarantee document order (even for reverse axis steps) */
             assert (C(p));
-            break;
+
+            PFvar_t *v = new_var (NULL);
+            PFfun_t *ddo_as   = function (
+                                    PFqname (
+                                        PFns_pf, 
+                                        "distinct-doc-order-or-atomic-sequence"
+                                            ));
+                
+            C(p) = flwr (let (letbind (var (v), C(p)),
+                              nil ()),
+                         APPLY (ddo_as, var (v)));
+        } break;
 
         /* LocationPath:           root_ */
         case 155:
@@ -2422,7 +2432,7 @@ reduce (PFpnode_t * p, int goalnt)
 #endif
         } break;
 
-        /* LocationPath:           locpath (StepExpr, StepExpr) */
+        /* LocationPath:           locpath (PathExpr, PathExpr) */
         case 156:
         {
             /* TOPDOWN */
@@ -2533,13 +2543,13 @@ reduce (PFpnode_t * p, int goalnt)
 
         } break;
 
-        /* LocationPath:           locpath (LocationStep, StepExpr) */
+        /* LocationPath:           locpath (step (NodeTest), PathExpr) */
         case 157:
         {   /*
              * For regular location steps, we don't actually need the
              * complicated stuff in the above rule.
              *
-             * let $v1 := StepExpr return
+             * let $v1 := PathExpr return
              *   typeswitch ($v1)
              *     case node* return
              *                  let $v2 := $v1/LocationStep return
@@ -2551,6 +2561,9 @@ reduce (PFpnode_t * p, int goalnt)
             PFfun_t *ddo = function (PFqname (PFns_pf, "distinct-doc-order"));
             PFfun_t *fn_error = function (PFqname (PFns_fn, "error"));
 
+            assert (C(LL(p)));
+            
+            C(L(p)) = step (L(p)->sem.axis, C(LL(p)));
             C(p) = flwr (let (letbind (var (v1), C(R(p))),
                               nil ()),
                          typeswitch (
@@ -2566,24 +2579,28 @@ reduce (PFpnode_t * p, int goalnt)
                                APPLY (fn_error,
                                       str ("err:XP0019: Argument to location "
                                            "step must be a node sequence."))))));
+
+            /* Return the result of the path step in reverse document order
+               if the axis is a reverse axis. This enables predicates to lookup
+               the values at the correct position. */
+            if (L(p)->sem.axis == p_ancestor ||
+                L(p)->sem.axis == p_ancestor_or_self ||
+                L(p)->sem.axis == p_parent ||
+                L(p)->sem.axis == p_preceding ||
+                L(p)->sem.axis == p_preceding_sibling) {
+                
+                PFvar_t *v = new_var (NULL);
+                PFfun_t *fn_rev = function (PFqname (PFns_fn, "reverse"));
+                
+                C(p) = flwr (let (letbind (var (v), C(p)),
+                                  nil ()),
+                             APPLY (fn_rev, var (v)));
+            }
         } break;
 
-        /* StepExpr:               LocationStep */
+        /* LocationPath:           pred (LocationPath, OptExpr) */
         case 158:
-            assert (C(p));
-            break;
-
-        /* StepExpr:               FilterExpr */
-        case 159:
-            assert (C(p));
-            break;
-
-        /* FilterExpr:             PrimaryExpr */
-        case 160:
-            assert (C(p));
-            break;
-
-        /* FilterExpr:             pred (StepExpr, Expr) */
+        /* FilterExpr:             pred (PathExpr, Expr) */
         case 161:
         {   /* TOPDOWN */
 
@@ -2756,10 +2773,9 @@ reduce (PFpnode_t * p, int goalnt)
             fs_last = last;
         } break;
 
-        /* LocationStep:           step (NodeTest) */
-        case 162:
-            assert (C(L(p)));
-            C(p) = step (p->sem.axis, C(L(p)));
+        /* FilterExpr:             PrimaryExpr */
+        case 160:
+            assert (C(p));
             break;
 
         /* PrimaryExpr:            Literal */

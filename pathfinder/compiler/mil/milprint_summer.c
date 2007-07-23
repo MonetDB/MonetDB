@@ -7868,6 +7868,19 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
     {
         return evaluate_join (f, code, cur_level, counter, args);
     }
+    else if (!PFqname_eq(fnQname, PFqname (PFns_fn,"reverse")))
+    {
+        translate2MIL (f, NORMAL, cur_level, counter, L(args));
+        milprintf(f,
+                "{ # translate fn:reverse (item*) as item*\n"
+                "var sort := iter.tsort().CTrefine_rev(pos).hmark(0@0);\n"
+                "iter := sort.leftfetchjoin (iter);\n"
+                "pos := tmark_grp_unique (iter, iter);\n"
+                "item := sort.leftfetchjoin (item);\n"
+                "ipik := sort;\n"
+                "} # end of translate fn:reverse (item*) as item*\n");
+        return NORMAL;
+    }
     else if (!PFqname_eq(fnQname, PFqname (PFns_fn,"unordered")))
     {
         milprintf(f, "# ignored fn:unordered\n");
@@ -9624,6 +9637,11 @@ simplifyCoreTree (PFcnode_t *c)
             }
             break;
         case c_for:
+            /* FIXME: disable the following rewrite as this breaks
+               the evaluation of some queries. A more advanced check
+               is needed if avoiding this rewrite decreases 
+               the performance of some queries. */
+#if 0
             /* 
                 for $x in for $y in e
                           return e_y
@@ -9647,6 +9665,7 @@ simplifyCoreTree (PFcnode_t *c)
                 TY(R(c)) = *PFty_simplify ((PFty_quantifier (PFty_defn (TY(RLR(c))))) (TY(RR(c))));
                 TY(c) = *PFty_simplify ((PFty_quantifier (PFty_defn (TY(LR(c))))) (TY(R(c))));
             }
+#endif
 
             simplifyCoreTree (LR(c));
             simplifyCoreTree (R(c));
