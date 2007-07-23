@@ -49,7 +49,7 @@ period.  The Merovingian will log such refusals as well as return this
 as error to the connecting client.
 
 @h
-#define MEROV_VERSION   "0.3"
+#define MEROV_VERSION   "0.4"
 #define MEROV_PORT      50000
 
 @c
