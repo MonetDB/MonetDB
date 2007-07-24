@@ -607,8 +607,8 @@ typedef struct Ssabuplog {
 	time_t lastcrash;  /* time of last crash, -1 if none */
 	time_t laststart;  /* time of last start */
 	int crashavg1;     /* if there was a crash in the last start attempt */
-	int crashavg10;    /* average of crashes in the last 10 start attempts */
-	int crashavg30;    /* average of crashes in the last 30 start attempts */
+	double crashavg10; /* average of crashes in the last 10 start attempts */
+	double crashavg30; /* average of crashes in the last 30 start attempts */
 } sabuplog;
 
 mal_export str SABAOTHgetUplogInfo(sabuplog* ret, str dbname);
@@ -700,10 +700,10 @@ str SABAOTHgetUplogInfo(sabuplog* ret, str dbname) {
 			ret->avguptime = (time_t)(((double)up / (double)ret->stopcntr) + 0.5);
 			for (i = 0; i < 10; i++)
 				ret->crashavg10 += avg10[i];
-			ret->crashavg10 = (int)(((double)ret->crashavg10 / 10.0) + 0.5);
+			ret->crashavg10 = ret->crashavg10 / 10.0;
 			for (i = 0; i < 30; i++)
 				ret->crashavg30 += avg30[i];
-			ret->crashavg30 = (int)(((double)ret->crashavg30 / 30.0) + 0.5);
+			ret->crashavg30 = ret->crashavg30 / 30.0;
 			(void)fclose(f);
 		} else {
 			throw(IO, "sabaoth.getUplogInfo", "unable to open file %s: %s",

@@ -400,7 +400,7 @@ forkMserver(str database, sabdb** stats, dpair dp)
 			strftime(tstr, sizeof(tstr), "%Y-%m-%d %H:%M:%S", t);
 			merlog("database '%s' already running since %s, "
 					"up min/avg/max: " LLFMT "/" LLFMT "/" LLFMT ", "
-					"crash average: %d %d %d (%d-%d=%d)",
+					"crash average: %d.00 %.2f %.2f (%d-%d=%d)",
 					database, tstr,
 					(lng)info.minuptime, (lng)info.avguptime, (lng)info.maxuptime,
 					info.crashavg1, info.crashavg10, info.crashavg30,
@@ -413,7 +413,7 @@ forkMserver(str database, sabdb** stats, dpair dp)
 			merlog("database '%s' has crashed after start on %s, "
 					"attempting restart, "
 					"up min/avg/max: " LLFMT "/" LLFMT "/" LLFMT ", "
-					"crash average: %d %d %d (%d-%d=%d)",
+					"crash average: %d.00 %.2f %.2f (%d-%d=%d)",
 					database, tstr,
 					(lng)info.minuptime, (lng)info.avguptime, (lng)info.maxuptime,
 					info.crashavg1, info.crashavg10, info.crashavg30,
@@ -422,7 +422,7 @@ forkMserver(str database, sabdb** stats, dpair dp)
 		case SABdbInactive:
 			merlog("starting database '%s', "
 					"up min/avg/max: " LLFMT "/" LLFMT "/" LLFMT ", "
-					"crash average: %d %d %d (%d-%d=%d)",
+					"crash average: %d.00 %.2f %.2f (%d-%d=%d)",
 					database,
 					(lng)info.minuptime, (lng)info.avguptime, (lng)info.maxuptime,
 					info.crashavg1, info.crashavg10, info.crashavg30,
