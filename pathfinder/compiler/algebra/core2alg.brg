@@ -175,7 +175,7 @@ LiteralValue:       empty                                       = 108 (10);
 CoreExpr:           flwr (OptBindExpr, CoreExpr)                =   4 (10);
 
 OptBindExpr:        for_ (forbind (forvars (var, OptVar),            
-                                   Atom),                            
+                                   CoreExpr),                            
                           OptBindExpr)                          =   5 (10);
                                                                      
 OptVar:             var                                         = 200 (10);
@@ -184,7 +184,8 @@ OptVar:             nil                                         = 201 (10);
 OptBindExpr:        let (letbind (var, CoreExpr), OptBindExpr)  =   6 (10);
 OptBindExpr:        nil                                         =   7 (10);
                                                                      
-CoreExpr:           if_ (Atom, then_else (CoreExpr, CoreExpr))  =   8 (10);
+CoreExpr:           if_ (CoreExpr,
+                         then_else (CoreExpr, CoreExpr))        =   8 (10);
                                                                      
 CoreExpr:           seq (CoreExpr, SeqCoreExpr)                 =   9 (10);
 CoreExpr:           seq (CoreExpr, CoreExpr)                    =  10 (10);
@@ -199,7 +200,7 @@ OrderSpecs:         orderspecs (CoreExpr, OrderSpecs)           = 301 (10);
 CoreExpr:           ordered (CoreExpr)                          =  14 (10);
 CoreExpr:           unordered (CoreExpr)                        =  15 (10);
                                                                      
-CoreExpr:           typesw (Atom,                                    
+CoreExpr:           typesw (CoreExpr,                                    
                             cases (case_ (seqtype,                   
                                           CoreExpr),                 
                                    default_ (CoreExpr)))        =  20 (10);
@@ -246,7 +247,7 @@ CoreExpr:           apply (FunctionArgs)                        =  60 (10);
 FunctionArgs:       nil                                         = 500 (10);
 FunctionArgs:       arg (FunctionArg, FunctionArgs)             = 501 (10);
                                                                      
-FunctionArg:        Atom                                        = 502 (10);
+FunctionArg:        CoreExpr                                    = 502 (10);
                                                                      
                                                                      
 FunctionDecls:      nil                                         =  70 (10);
@@ -261,7 +262,7 @@ FunctionBody:       CoreExpr                                    = 603 (10);
                                                                      
 FunParam:           param (seqtype, var)                        = 604 (10);
 
-CoreExpr:           recursion (var, seed (Atom, CoreExpr))      =  72 (10);
+CoreExpr:           recursion (var, seed (CoreExpr, CoreExpr))  =  72 (10);
 
 %%
 
@@ -427,14 +428,14 @@ reduce (PFcnode_t * p, int goalnt)
         case 4:
 
         /* OptBindExpr:        for_ (forbind (forvars (var, nil),
-                                              Atom),
+                                              CoreExpr),
                                      CoreExpr) */
         case 5:
 
         /* OptBindExpr:        let (letbind (var, CoreExpr), CoreExpr) */
         case 6:
 
-        /* CoreExpr:           if_ (Atom, then_else (CoreExpr, CoreExpr)) */
+        /* CoreExpr:           if_ (CoreExpr, then_else (CoreExpr, CoreExpr)) */
         case 8:
 
         /* CoreExpr:           seq (CoreExpr, SeqCoreExpr) */
@@ -461,7 +462,7 @@ reduce (PFcnode_t * p, int goalnt)
         /* CoreExpr:           unordered (CoreExpr) */
         case 15:
 
-        /* CoreExpr:           typesw (Atom,
+        /* CoreExpr:           typesw (CoreExpr,
                                        cases (case_ (seqtype,
                                                      CoreExpr),
                                               default_ (CoreExpr))) */
@@ -473,7 +474,7 @@ reduce (PFcnode_t * p, int goalnt)
         /* FunctionArgs:       arg (FunctionArg, FunctionArgs) */
         case 501:
             
-        /* CoreExpr:           recursion (var, seed (Atom, CoreExpr)) */
+        /* CoreExpr:           recursion (var, seed (CoreExpr, CoreExpr)) */
         case 72:
             topdown = true;
             break;
@@ -869,7 +870,7 @@ reduce (PFcnode_t * p, int goalnt)
         }   break;
 
         /* OptBindExpr:        for_ (forbind (forvars (var, OptVar),
-                                              Atom),
+                                              CoreExpr),
                                      OptBindExpr) */
         case 5:
         {   /* TOPDOWN */
@@ -1114,7 +1115,7 @@ reduce (PFcnode_t * p, int goalnt)
             /* we don't need a translation -- it would be ignored anyway */
             break;
 
-        /* CoreExpr:           if_ (Atom, then_else (CoreExpr, CoreExpr)) */
+        /* CoreExpr:           if_ (CoreExpr, then_else (CoreExpr, CoreExpr)) */
         case 8:
         {   /* TOPDOWN */
 
@@ -1533,7 +1534,7 @@ reduce (PFcnode_t * p, int goalnt)
             ordering = old_ordering;
         } break;
 
-        /* CoreExpr:           typesw (Atom,
+        /* CoreExpr:           typesw (CoreExpr,
                                        cases (case_ (seqtype,
                                                      CoreExpr),
                                               default_ (CoreExpr))) */
@@ -2042,18 +2043,19 @@ reduce (PFcnode_t * p, int goalnt)
             /*
              * Function application (user-defined functions):
              *
-             * (1) Save current variable environment.
+             * (1) Save current variable and function parameter environment.
              * (2) Enter bindings for all variables in the function
              *     signature to the variable environment.
              * (3) Invoke compilation for the function body (accessible
              *     via the PFfun_t struct).
-             * (4) Restore variable environment.
+             * (4) Restore variable and function parameter environment.
              */
 
             PFarray_t  *old_env;
             PFarray_t  *old_fun_args;
 
-            /* (1) Save current variable environment and create a new one. */
+            /* (1) Save current variable and function parameter environment
+               and create new ones. */
             old_env = env;
 
             env = PFarray (sizeof (PFla_env_t));
@@ -2062,15 +2064,15 @@ reduce (PFcnode_t * p, int goalnt)
                 *((PFla_env_t *) PFarray_add (env))
                     = *((PFla_env_t *) PFarray_at (old_env, i));
 
-            /* (2) Enter bindings for function parameters.
-             *     We do this by reducing our child nodes in a
-             *     top-down fashion.
-             */
-
             old_fun_args = fun_args;
 
             /* We will collect the argument values here */
             fun_args = PFarray (sizeof (struct PFla_pair_t));
+
+            /* (2) Enter bindings for function parameters.
+             *     We do this by reducing our child nodes in a
+             *     top-down fashion.
+             */
 
             /* Top-down processing puts all argument values into this array */
             reduce (kids[0], nts[0]);
@@ -2165,8 +2167,9 @@ reduce (PFcnode_t * p, int goalnt)
                 A(p) = A(p->sem.fun->core);
             }
 
-            /* (4) Restore variable environment. */
+            /* (4) Restore variable and function parameter environments. */
             env = old_env;
+            fun_args = old_fun_args;
 
         } break;
 
@@ -2189,11 +2192,11 @@ reduce (PFcnode_t * p, int goalnt)
 
         } break;
 
-        /* FunctionArg:        Atom */
+        /* FunctionArg:        CoreExpr */
         case 502:
             break;
 
-        /* CoreExpr:           recursion (var, seed (Atom, CoreExpr)) */
+        /* CoreExpr:           recursion (var, seed (CoreExpr, CoreExpr)) */
         case 72:
         {   /* TOPDOWN */
             /*
@@ -2533,7 +2536,7 @@ reduce (PFcnode_t * p, int goalnt)
 
         /* flwr intermediates */
         /* OptBindExpr:        for_ (forbind (forvars (var, nil),
-                                              Atom), CoreExpr) */
+                                              CoreExpr), CoreExpr) */
         case 5:
         /* OptBindExpr:        let (letbind (var, CoreExpr), CoreExpr) */
         case 6:
