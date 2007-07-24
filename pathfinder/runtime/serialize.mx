@@ -2125,7 +2125,7 @@ probxml_deep_eq_scan(XqueryCtx* ctx, oid* pre, oid to, BAT* pre_cont, oid cont, 
                            (int)kind);
                 return PROBLEM;
         }
-        *pre++;
+        (*pre)++;
     } while (*pre <= to);
     /* 
      * while( moreTags(ctx) ) {
