@@ -188,7 +188,7 @@ gdk_export MT_Lock MT_system_lock;
 
 @- MT Semaphore API
 @h
-#if defined(_AIX) || defined(__MACH_O__)
+#if defined(_AIX) || defined(__MACH__)
 typedef struct {
 	int cnt;
 	pthread_mutex_t mutex;
@@ -446,7 +446,7 @@ MT_kill_thread(MT_Id t)
 #endif
 }
 
-#if defined(_AIX) || defined(__MACH_O__)
+#if defined(_AIX) || defined(__MACH__)
 void
 pthread_sema_init(pthread_sema_t *s, int flag, int nresources)
 {
