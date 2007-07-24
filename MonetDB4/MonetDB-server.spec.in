@@ -34,22 +34,29 @@ BuildRequires: python
 %define bits 64
 %endif
 
+Requires: MonetDB-client >= 1.18
+%if !%(?buildsystem)
+BuildRequires: MonetDB-devel >= 1.18
+BuildRequires: MonetDB-client-devel >= 1.18
+%endif
+PreReq: /sbin/chkconfig, /sbin/service, sh-utils
+PreReq: %{_sbindir}/groupadd, %{_sbindir}/useradd
+
 %package devel
 Summary: MonetDB development package 
 Group: System 
+Requires: %{name} = %{version}-%{release}
+Requires: MonetDB-devel >= 1.18
+Requires: MonetDB-client-devel >= 1.18
 
 %description
 MonetDB is a database management system that is developed from a
 main-memory perspective with use of a fully decomposed storage model,
 automatic index management, extensibility of data types and search
 accellerators, SQL- and XML- frontends.
-Requires: MonetDB-client
-PreReq: /sbin/chkconfig, /sbin/service, sh-utils
-PreReq: %{_sbindir}/groupadd, %{_sbindir}/useradd
 
 %description devel
 Add the MonetDB devel description here
-Requires: %{name}
 
 %prep
 rm -rf $RPM_BUILD_ROOT

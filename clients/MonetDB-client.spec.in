@@ -14,6 +14,7 @@ BuildRoot: /var/tmp/%{name}-root
 Packager: Niels Nes <Niels.Nes@cwi.nl>
 License:   MPL - http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
 BuildRequires: python 
+Requires: MonetDB >= 1.18
 
 %{!?_with_php: %{!?_without_php: %define _with_php --with-php}}
 %{!?_with_python: %{!?_without_python: %define _with_python --with-python}}
@@ -32,16 +33,30 @@ BuildRequires: python
 %define bits 64
 %endif
 
+%if !%(?buildsystem)
+BuildRequires: MonetDB-devel >= 1.18
+%endif
+
+%package devel
+Summary: MonetDB Client development package
+Group: System
+Requires: %{name} = %{version}-%{release}
+Requires: MonetDB-devel >= 1.18
+
 %package odbc
 Summary: MonetDB SQL odbc
 Group: System
+Requires: %{name} = %{version}-%{release}
 
 %if %{?_with_php:1}%{!?_with_php:0}
 %package php
 Summary: MonetDB php interface
 Group: System
+Requires: %{name} = %{version}-%{release}
+Requires: php
+%define php_extensiondir %(php-config --extension-dir)
 %if !%{?buildsystem}
-BuildRequires: php 
+BuildRequires: php, php-devel
 %endif
 %endif
 
@@ -49,8 +64,11 @@ BuildRequires: php
 %package python
 Summary: MonetDB python interface
 Group: System
+Requires: %{name} = %{version}-%{release}
+Requires: python = @PYTHON_VERSION@
+%define python_libdir %(python -c 'import distutils.sysconfig; print distutils.sysconfig.get_python_lib(1,0,"")')
 %if !%{?buildsystem}
-BuildRequires: python swig
+BuildRequires: python, python-devel = @PYTHON_VERSION@, swig
 %endif
 %endif
 
@@ -58,8 +76,11 @@ BuildRequires: python swig
 %package perl
 Summary: MonetDB perl interface
 Group: System
+Requires: %{name} = %{version}-%{release}
+Requires: perl
+%define perl_libdir %(perl -MConfig -e '$x=$Config{installvendorarch}; $x =~ s|$Config{vendorprefix}/||; print $x;')
 %if !%{?buildsystem}
-BuildRequires: perl swig 
+BuildRequires: perl, perl-devel, swig
 %endif
 %endif
 
@@ -67,8 +88,9 @@ BuildRequires: perl swig
 %package java
 Summary: MonetDB java interface
 Group: System
+Requires: java
 %if !%{?buildsystem}
-BuildRequires: ant java 
+BuildRequires: ant, java 
 %endif
 %endif
 
@@ -77,40 +99,31 @@ MonetDB is a database management system that is developed from a
 main-memory perspective with use of a fully decomposed storage model,
 automatic index management, extensibility of data types and search
 accellerators, SQL- and XML- frontends.
-Requires: MonetDB
+
+%description devel
+Add the MonetDB client devel description here
 
 %description odbc
 Add the MonetDB SQL odbc description here
-Requires: %{name}
 
 %if %{?_with_php:1}%{!?_with_php:0}
 %description php
 Add the MonetDB php description here
-Requires: %{name}
-Requires: php
-%define php_extensiondir %(php-config --extension-dir)
 %endif
 
 %if %{?_with_python:1}%{!?_with_python:0}
 %description python
 Add the MonetDB python description here
-Requires: %{name}
-Requires: python
-%define python_libdir %(python -c 'import distutils.sysconfig; print distutils.sysconfig.get_python_lib(1,0,"")')
 %endif
 
 %if %{?_with_perl:1}%{!?_with_perl:0}
 %description perl
 Add the MonetDB perl description here
-Requires: %{name}
-Requires: perl
-%define perl_libdir %(perl -MConfig -e '$x=$Config{installvendorarch}; $x =~ s|$Config{vendorprefix}/||; print $x;')
 %endif
 
 %if %{?_with_java:1}%{!?_with_java:0}
 %description java
 Add the MonetDB java description here
-Requires: java
 %endif
 
 %prep
@@ -156,10 +169,15 @@ rm -fr $RPM_BUILD_ROOT
 %defattr(-,root,root) 
 %{prefix}/bin/MapiClient* 
 %{prefix}/bin/msqldump* 
-%{prefix}/bin/monetdb-clients-config
-%{_libdir}/libMapi.* 
-%{prefix}/include/MonetDB/mapilib/Mapi.h
+%{_libdir}/libMapi.so.*
 
+
+%files devel
+%defattr(-,root,root)
+%{prefix}/bin/monetdb-clients-config
+%{_libdir}/libMapi.la
+%{_libdir}/libMapi.so
+%{prefix}/include/MonetDB/mapilib/Mapi.h
 
 # todo odbc-devel package ?
 %files odbc
