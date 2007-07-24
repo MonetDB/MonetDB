@@ -429,7 +429,13 @@ MT_exit_thread(int s)
 int
 MT_join_thread(MT_Id t)
 {
-	return pthread_join((pthread_t)(t - 1), NULL);
+	pthread_t id;
+#ifdef PTW32
+        id.p = (void*) (t - 1); id.x = 0;
+#else
+        id = (pthread_t) (t - 1);
+#endif
+	return pthread_join(id, NULL);
 }
 
 
@@ -437,9 +443,13 @@ int
 MT_kill_thread(MT_Id t)
 {
 #ifdef HAVE_PTHREAD_KILL
-	thread_t id = (thread_t) (t - 1);
-
-	return pthread_kill((pthread_t) id, SIGHUP);
+	pthread_t id;
+#ifdef PTW32
+        id.p = (void*) (t - 1); id.x = 0;
+#else
+        id = (pthread_t) (t - 1);
+#endif
+	return pthread_kill(id, SIGHUP);
 #else
 	(void) t;
 	return -1;		/* XXX */
