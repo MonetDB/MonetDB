@@ -11,8 +11,8 @@ stdout of test 'BATpropcheck-BATjoin.SF-1568652` in directory 'tests/BugTracker`
 # Visit http://monetdb.cwi.nl/ for further information.
 module(unix);
 module(ascii_io);
-var l := new(int,void);
-var r := new(oid,void);
+var l := new(int,oid);
+var r := new(oid,oid);
 var TSTSRCDIR := getenv("TSTSRCDIR");
 import(l,TSTSRCDIR+"/BATpropcheck-BATjoin.SF-1568652.L.bat");
 import(r,TSTSRCDIR+"/BATpropcheck-BATjoin.SF-1568652.R.bat");
@@ -20,6 +20,8 @@ print(count(l));
 [ 100 ]
 print(count(r));
 [ 1652 ]
+l := l.project(nil);
+r := r.project(nil);
 print(slice(l,0,9));
 #-----------------#
 # h	t	  # name
