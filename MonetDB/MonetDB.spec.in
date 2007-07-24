@@ -32,6 +32,7 @@ BuildRequires: python
 %package devel
 Summary: MonetDB development package 
 Group: System 
+Requires: %{name} = %{version}-%{release}
 
 %description
 MonetDB is a database management system that is developed from a
@@ -41,7 +42,6 @@ accellerators, SQL- and XML- frontends.
 
 %description devel
 Add the MonetDB devel description here
-Requires: %{name} = %{version}-%{release}
 
 %prep
 rm -rf $RPM_BUILD_ROOT

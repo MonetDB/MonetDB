@@ -34,35 +34,36 @@ BuildRequires: python
 %define bits 64
 %endif
 
-%package devel
-Summary: MonetDB development package 
-Group: System 
-
-%description
-MonetDB is a database management system that is developed from a
-main-memory perspective with use of a fully decomposed storage model,
-automatic index management, extensibility of data types and search
-accellerators, SQL- and XML- frontends.
-Requires: MonetDB-client = 1.18
-#                          ^^^^
+Requires: MonetDB-client >= 1.18
+#                           ^^^^
 # Maintained via vertoo. Please don't modify by hand!
 # Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
 %if !%{?buildsystem}
-BuildRequires: MonetDB-devel = 1.19
-#                              ^^^^
+BuildRequires: MonetDB-devel >= 1.19
+#                               ^^^^
 # Maintained via vertoo. Please don't modify by hand!
 # Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
-BuildRequires: MonetDB-client-devel = 1.18
-#                                     ^^^^
+BuildRequires: MonetDB-client-devel >= 1.18
+#                                      ^^^^
 # Maintained via vertoo. Please don't modify by hand!
 # Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
 %endif
 PreReq: /sbin/chkconfig, /sbin/service, sh-utils
 PreReq: %{_sbindir}/groupadd, %{_sbindir}/useradd
 
+%package devel
+Summary: MonetDB development package 
+Group: System 
+Requires: %{name} = %{version}-%{release}
+
+%description
+MonetDB is a database management system that is developed from a
+main-memory perspective with use of a fully decomposed storage model,
+automatic index management, extensibility of data types and search
+accellerators, SQL- and XML- frontends.
+
 %description devel
 Add the MonetDB devel description here
-Requires: %{name} = %{version}-%{release}
 
 %prep
 rm -rf $RPM_BUILD_ROOT
