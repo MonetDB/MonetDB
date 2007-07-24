@@ -19,7 +19,7 @@ INCLUDES = ../include -I$(MONETDB_INCLUDEDIR)
 
 BINS = {
 	DIR = libdir/MonetDB/Tests
-	SOURCES = odbcsample1.c
+	SOURCES = odbcsample1.c testgetinfo.c
 	LIBS = ../driver/libMonetODBC
 }
 
