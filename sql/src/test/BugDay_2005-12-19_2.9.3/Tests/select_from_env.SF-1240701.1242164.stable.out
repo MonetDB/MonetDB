@@ -69,6 +69,7 @@ Over..
 [ "xrpc_user"	]
 [ "xrpc_trusted"	]
 [ "monet_cwd"	]
+[ "monet_version"	]
 
 # 13:22:15 >  
 # 13:22:15 >  Done.
