@@ -8,3 +8,8 @@ for $i in doc("monetdb-sources.xml")/XIRAF/*
 return do insert $i into doc("test.xml")/XIRAF/device[@name="pc01"]
 <>
 count(doc("test.xml")//*)
+<>
+for $i in doc("monetdb-sources.xml")/XIRAF/*
+return do insert $i into doc("test.xml")/XIRAF/device[@name="pc01"]
+<>
+count(doc("test.xml")//*)

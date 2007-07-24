@@ -3562,7 +3562,7 @@ PROC do_update_insert(bat[void, bat] ws, bat[void,lng] insert_update, bat[void,o
             # not enough space on the current page, see if there is space at the
             # start of the next
             var nxtpgno := oid(lng(pageno) + 1);
-            if ((int(pageno) << REMAP_PAGE_BITS) <= docsize) {
+            if ((int(nxtpgno) << REMAP_PAGE_BITS) <= docsize) {
               var nxtpgid := map_pid_update.reverse().find(nxtpgno);
               var nxtisoldpg := false;
               if (map_pid.exist(nxtpgid)) {
