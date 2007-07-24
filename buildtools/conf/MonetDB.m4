@@ -2401,7 +2401,12 @@ if test "x$have_php" != xno; then
 		AC_PATH_PROG(PHP_CONFIG, $PHP_CONFIG, no)
 	fi
 	if test $PHP_CONFIG = no; then
-		AC_MSG_RESULT(Cannot find php-config. Please use --with-php-config=PATH)
+		if test "x$have_php" != xauto
+		then
+		    AC_MSG_ERROR([Cannot find php-config. Please use --with-php-config=PATH])
+		else
+		    AC_MSG_WARN([Cannot find php-config. Please use --with-php-config=PATH])
+		fi
 		have_php=no
 	fi
 fi
