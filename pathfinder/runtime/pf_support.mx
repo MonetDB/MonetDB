@@ -5193,7 +5193,7 @@ merged_union( BAT** res, int ntabs, int ncols, BAT ***b)
 	}
 @
 @= merged_union_0
-	/*  @1: ATOMstorage(ttpe[0]) (chr, bte, sht, int, flt, lng, dbl, any=ttpe[0])
+	/*  @1: ATOMstorage(ttpe[0]) (chr, bte, sht, int, flt, lng, dbl, any=ATOMstorage(ttpe[0]))
 	 *  @2: tloc, tvar, tail
 	 *  @3: 0 1
 	 *  @4: tail value comparison,
@@ -5215,7 +5215,7 @@ merged_union( BAT** res, int ntabs, int ncols, BAT ***b)
 	/* sucessively pair-wise merge-union the first BAT/column of all tables */
 @
 @= merged_union_1
-	/*  @1: ATOMstorage(ttpe[0]) (chr, bte, sht, int, flt, lng, dbl, any=ttpe[0])
+	/*  @1: ATOMstorage(ttpe[0]) (chr, bte, sht, int, flt, lng, dbl, any=ATOMstorage(ttpe[0]))
 	 *  @2: tloc, tvar, tail (for BAT 0)
 	 *  @3: tloc, tvar, tail (for BAT 1)
 	 *  @4: simple, atom
@@ -5225,10 +5225,10 @@ merged_union( BAT** res, int ntabs, int ncols, BAT ***b)
 	concat10 = FALSE;
 	if (BATtordered(src[0])&BATtordered(src[1])&1 || (BATtordered(src[0])&1 && cnt[1]==1) || (cnt[0]==1 && BATtordered(src[1])&1) ) {
 		if (!concat01) {
-			concat01 = @4_LE(BUN@2(src[0],BUNlast(src[0])-BUNsize(src[0])),BUN@3(src[1],csr[1]),@1);
+			concat01 = @4_LE(BUN@2(src[0],BUNlast(src[0])-BUNsize(src[0])),BUN@3(src[1],BUNfirst(src[1])),@1);
 		}
 		if (!concat01) {
-			concat10 = @4_LT(BUN@3(src[1],BUNlast(src[1])-BUNsize(src[1])),BUN@2(src[0],csr[0]),@1);
+			concat10 = @4_LT(BUN@3(src[1],BUNlast(src[1])-BUNsize(src[1])),BUN@2(src[0],BUNfirst(src[0])),@1);
 		}
 	}
 	if (!concat01 && !concat10) {
@@ -5247,7 +5247,7 @@ merged_union( BAT** res, int ntabs, int ncols, BAT ***b)
 	@:merged_union_0(@1,@2,0,TRUE)@
 @
 @= merged_union_2
-	/*  @1: ATOMstorage(ttpe[0]) (chr, bte, sht, int, flt, lng, dbl, any=ttpe[0])
+	/*  @1: ATOMstorage(ttpe[0]) (chr, bte, sht, int, flt, lng, dbl, any=ATOMstorage(ttpe[0]))
 	 *  @2: tloc, tvar, tail (for BAT 0)
 	 *  @3: simple, atom
 	 */
@@ -5286,8 +5286,8 @@ merged_union( BAT** res, int ntabs, int ncols, BAT ***b)
 			@:merged_union_1(lng,tloc,tloc,simple)@
 #endif
 		} else {
-			any = src[0]->ttype;
-			switch(ATOMstorage(any)) {
+			any = ATOMstorage(src[0]->ttype);
+			switch(any) {
 			case TYPE_chr:	@:merged_union_2(chr,tloc,simple)@
 			case TYPE_bte:	@:merged_union_2(bte,tloc,simple)@
 			case TYPE_sht:	@:merged_union_2(sht,tloc,simple)@
@@ -5406,20 +5406,6 @@ merged_union( BAT** res, int ntabs, int ncols, BAT ***b)
 	}
 
 	/* set BAT properties */
-
-@(
-	/* not required as concat01 & concat10 are inherited from above */
-	if (non_empty[ntabs] == 2) {
-		BAT *b0 = b[non_empty[0]][0];
-		BAT *b1 = b[non_empty[1]][0];
-		concat01 = concat10 = FALSE;
-		if (BATtordered(b0)&BATtordered(b1)&1 || (BATtordered(b0)&1 && BATcount(b1)==1) || (BATcount(b0)==1 && BATtordered(b1)&1) ) {
-			concat01 = atom_LE(BUNtail(b0,BUNlast(b0)-BUNsize(b0)),BUNtail(b1,BUNfirst(b1)),ATOMstorage(ATOMtype(ttpe[0])));
-			concat10 = !concat01 && \
-			           atom_LT(BUNtail(b1,BUNlast(b1)-BUNsize(b1)),BUNtail(b0,BUNfirst(b0)),ATOMstorage(ATOMtype(ttpe[0])));
-		}
-	}
-@)
 	for (c=0; c<ncols; c++) {
 		BATseqbase(bn[c], (oid)0);
 		bn[c]->batBuns->free = dst[c] - bn[c]->batBuns->base;
