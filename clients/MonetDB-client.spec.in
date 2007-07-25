@@ -74,10 +74,10 @@ BuildRequires: php, php-devel
 Summary: MonetDB python interface
 Group: System
 Requires: %{name} = %{version}-%{release}
-Requires: python = @PYTHON_VERSION@
+Requires: python
 %define python_libdir %(python -c 'import distutils.sysconfig; print distutils.sysconfig.get_python_lib(1,0,"")')
 %if !%{?buildsystem}
-BuildRequires: python, python-devel = @PYTHON_VERSION@, swig
+BuildRequires: python, python-devel, swig
 %endif
 %endif
 
