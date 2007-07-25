@@ -160,7 +160,6 @@ static void
 opt_guide(PFla_op_t *n)
 {
     assert(n);
-
     /* rewrite each node only once */
     if(SEEN(n))
         return;
@@ -201,7 +200,6 @@ opt_guide(PFla_op_t *n)
                             n->sem.step.ty, count, guides, n->sem.step.level, 
                             n->sem.step.iter, n->sem.step.item, 
                             n->sem.step.item_res);
-    
             }
         
             *n = *ret;
@@ -211,7 +209,6 @@ opt_guide(PFla_op_t *n)
         default:
             break;
     }
-    
     
     /* merge 2 guide_step operator if possible */
     merge_guide_steps(n);
@@ -226,6 +223,7 @@ opt_guide(PFla_op_t *n)
 PFla_op_t* 
 PFalgopt_guide(PFla_op_t *root, PFguide_tree_t *guide)
 {
+    assert(guide);
 
     PFprop_infer_guide(root, guide);
 
