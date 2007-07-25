@@ -248,6 +248,16 @@ linkercall="$LD $LDFLAGS"
 AC_SUBST(linkercall)
 builtby="${USER}@`hostname`"
 AC_SUBST(builtby)
+pcreversion="(not linked to any PCRE library)"
+if test "x$have_pcre" = xyes; then
+	pcreversion="compiled with `$PCRE_CONFIG --version 2>/dev/null`"
+fi
+AC_SUBST(pcreversion)
+opensslversion="(not linked to any openssl library)"
+if test "x$have_openssl" != xno; then
+	opensslversion="compiled with `openssl version 2>/dev/null`"
+fi
+AC_SUBST(opensslversion)
 
 dnl  CFLAGS for our code are stricter than what autoconf can cope with.
 CFLAGS="$CFLAGS \$(X_CFLAGS)"
