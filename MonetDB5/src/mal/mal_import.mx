@@ -205,7 +205,7 @@ instruction line at a time and attempt to execute it immediately.
 Note, this precludes entering complex MAL structures on the primary
 input channel, because 1) this requires complex code to keep track
 that we are in 'definition mode' 2) this requires (too) careful
-typing by the user, because he can not make an typing error
+typing by the user, because he cannot make a typing error
 
 Therefore, all compound code fragments should be loaded and executed
 using the evalFile and callString command. It will parse the complete
