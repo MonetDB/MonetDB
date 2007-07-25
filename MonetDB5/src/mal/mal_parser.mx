@@ -39,7 +39,7 @@ and interpretation overhead.
 @+ The lexical analyzer
 The implementation of the lexical analyzer is straightforward:
 the input is taken from a client input buffer. It is assumed that
-this buffer contains the complete MIL structure to be parsed.
+this buffer contains the complete MAL structure to be parsed.
 @h
 #ifndef _MAL_PARSER_H
 #define _MAL_PARSER_H
