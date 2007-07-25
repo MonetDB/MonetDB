@@ -46,7 +46,7 @@ $(rpmtopdir)/rpmmacros:
 	echo "#%top_builddirroot %{_topdir}/INSTALL/" >> $(rpmtopdir)/rpmmacros
 
 rpm:	MonetDB-SQL.spec $(top_builddir)/$(distdir).tar.gz $(rpmtopdir)/rpmmacros
-	$(RPMBUILD) -ta ${python} ${monetdb4} ${monetdb5} --define="buildsystem 1" --target `uname -m` --rcfile $(rpmtopdir)/rpmrc $(top_builddir)/$(distdir).tar.gz
+	$(RPMBUILD) -ta ${python} ${monetdb4} ${monetdb5} --define="buildsystem 1" --define="comp_cc @CC@" --target `uname -m` --rcfile $(rpmtopdir)/rpmrc $(top_builddir)/$(distdir).tar.gz
 	for i in rpm/SRPMS/*_@LINUX_DIST@.oid@oids@* ; do \
 		mv "$$i" "`echo "$$i" | sed 's|_@LINUX_DIST@.oid@oids@||'`" ; \
 	done

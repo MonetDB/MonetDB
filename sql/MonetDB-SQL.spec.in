@@ -29,13 +29,11 @@ BuildRequires: MonetDB-client-devel >= 1.18
 # Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
 %endif
 %if %{?_with_python:1}%{!?_with_python:0}
-Requires: python = @PYTHON_VERSION@
+Requires: python
 %if !%{?buildsystem}
-BuildRequires: python, python-devel = @PYTHON_VERSION@, swig
+BuildRequires: python, python-devel, swig
 %endif
 %endif
-
-%define comp_cc @CC@
 
 # groups of related archs
 %define all_x86 i386 i586 i686
@@ -116,7 +114,7 @@ rm -rf $RPM_BUILD_ROOT
 	--enable-assert=no \
 	--enable-optimize \
 	--enable-bits=%{bits} \
-	CC="%{comp_cc}" \
+	%{?comp_cc:CC="%{comp_cc}"} \
 	--prefix=%{prefix} \
 	--libdir=%{_libdir} \
 	--with-monetdb=%{prefix} \
@@ -135,7 +133,7 @@ make install \
 #find $RPM_BUILD_ROOT -name .incs.in | xargs rm
 
 rm -rf $RPM_BUILD_ROOT%{_libdir}/MonetDB4/Tests/*
-rm -rf $RPM_BUILD_ROOT%{prefix}/@PYTHON_LIBDIR@
+rm -rf $RPM_BUILD_ROOT%{prefix}/lib*/python*/site-packages
 rm -rf $RPM_BUILD_ROOT%{prefix}/include/sql
 rm -rf $RPM_BUILD_ROOT%{_libdir}/pkgconfig/MonetDB-SQL.pc
 

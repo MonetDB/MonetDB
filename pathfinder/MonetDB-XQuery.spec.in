@@ -31,8 +31,6 @@ BuildRequires: MonetDB4-server-devel >= 4.18
 %endif
 BuildRequires: libxml2-devel
 
-%define comp_cc @CC@
-
 # groups of related archs
 %define all_x86 i386 i586 i686
 
@@ -75,7 +73,7 @@ rm -rf $RPM_BUILD_ROOT
 	--enable-assert=no \
 	--enable-optimize \
 	--enable-bits=%{bits} \
-	CC="%{comp_cc}" \
+	%{?comp_cc:CC="%{comp_cc}"} \
 	--prefix=%{prefix} \
 	--libdir=%{_libdir} \
 	--with-monet=%{prefix}

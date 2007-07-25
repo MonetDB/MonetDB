@@ -22,7 +22,6 @@ BuildRequires: python
 
 %{!?_with_python: %{!?_without_python: %define _with_python --with-python}}
 %{!?buildsystem: %define buildsystem 0}
-%define comp_cc @CC@
 %define builddoc 0
 
 # groups of related archs
@@ -84,7 +83,7 @@ rm -rf $RPM_BUILD_ROOT
 	--enable-assert=no \
 	--enable-optimize \
 	--enable-bits=%{bits} \
-	CC="%{comp_cc}" \
+	%{?comp_cc:CC="%{comp_cc}"} \
 	--prefix=%{prefix} \
 	--sysconfdir=%{sysconfdir} \
 	--localstatedir=%{localstatedir} \
