@@ -190,7 +190,9 @@ enum PFsql_kind_t
   sql_avg = 72,
   sql_case = 73,
   sql_when = 74,
-  sql_else = 75
+  sql_else = 75,
+  sql_in = 76,
+  sql_lit_list = 77
 };
 typedef enum PFsql_kind_t PFsql_kind_t;
 
@@ -1030,6 +1032,23 @@ PFsql_t *PFsql_and (const PFsql_t * a, const PFsql_t * b);
  * Construct a boolean `or' operator.
  */
 PFsql_t *PFsql_or (const PFsql_t * a, const PFsql_t * b);
+
+
+/**
+ * A sequence of in_list-expressions.
+ */
+#define PFsql_lit_list(...) \
+    PFsql_lit_list_(sizeof((PFsql_t *[]) {__VA_ARGS__} \
+    ) / \
+    sizeof(PFsql_t*), (const PFsql_t *[]) \
+    {__VA_ARGS__} \
+    )
+
+PFsql_t *PFsql_lit_list_ (unsigned int count, const PFsql_t ** list);
+/**
+ * Construct a in operator
+ */
+PFsql_t *PFsql_in (const PFsql_t * column, const PFsql_t * list);
 #endif /* __SQL_H__ */
 
 /* vim:set shiftwidth=4 expandtab: */

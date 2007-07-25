@@ -140,6 +140,8 @@
 #define from_list_add( list, item )    PFsql_from_list_add( list, item )
 /** A sequence of columns */
 #define column_list(...)             PFsql_column_list( __VA_ARGS__ )
+/** A sequence of literals */
+#define literal_list(count, list)         PFsql_lit_list_ (count, list )
 
 #define where_list( ... )              PFsql_where_list( __VA_ARGS__ )
 #define where_list_empty( )            PFsql_where_list_empty( )
@@ -170,6 +172,8 @@
 #define div( a, b )                 PFsql_div( a, b )
 /** Construct a like operator. */
 #define like( a, b )		    PFsql_like( a, b )
+/** Construct a in operator. */
+#define in( a, b )              PFsql_in ( a, b )
 
 /*......... Boolean operator constructors .......*/
 
