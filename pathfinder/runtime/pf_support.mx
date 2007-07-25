@@ -5063,7 +5063,7 @@ merged_union( BAT** res, int ntabs, int ncols, BAT ***b)
 	oid hsqb[ntabs];
 	size_t Bcnt[ntabs], inc[2];
 	int t, c, any, non_empty[ntabs+1];
-	bit concat01 = FALSE, concat10 = FALSE;
+	bit concat01 = FALSE, concat10 = FALSE, void_fix = FALSE;
 	bte *w = NULL, *ww[2], *wt, *ws[2];
 	size_t res_count = 0, h = 0;
 
@@ -5255,6 +5255,10 @@ merged_union( BAT** res, int ntabs, int ncols, BAT ***b)
 	break;
 @
 @= merged_union_3
+		if ((void_fix = (src[0] == src[1] && src[0]->ttype==TYPE_void && src[1]->ttype==TYPE_void))) {
+			/* create an artifical view (i.e., new BATdescriptor) to avoid concurrent void access problem */
+			src[0] = VIEWcreate(src[0]);
+		}
 		sze[0] = BUNsize(src[0]);
 		sze[1] = BUNsize(src[1]);
 		csr[0] = BUNfirst(src[0]);
@@ -5310,6 +5314,9 @@ merged_union( BAT** res, int ntabs, int ncols, BAT ***b)
 		BATkey(BATmirror(tgt),FALSE);
 		tgt->tsorted = GDK_SORTED;
 		tgt->tdense = FALSE;
+		if (void_fix) {
+			BBPunfix(src[0]->batCacheid);
+		}
 @
 @c
 	tgt = bn[0];
