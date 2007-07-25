@@ -74,7 +74,7 @@ make install \
 mkdir -p $RPM_BUILD_ROOT/%{localstatedir}/MonetDB/dbfarm
 # insert example db here!
 
-find $RPM_BUILD_ROOT -name .incs.in | xargs rm -f
+find $RPM_BUILD_ROOT -name .incs.in -print -o -name \*.la -print | xargs rm -f
 
 # cleanup stuff we don't want to install
 rm -rf $RPM_BUILD_ROOT%{prefix}/share/%{name}/Mprofile-commands.lst
@@ -91,9 +91,9 @@ rm -fr $RPM_BUILD_ROOT
 
 %files 
 %defattr(-,root,root) 
-%{_libdir}/libmutils.*
-%{_libdir}/libstream.*
-%{_libdir}/libbat.*
+%{_libdir}/libmutils.so.*
+%{_libdir}/libstream.so.*
+%{_libdir}/libbat.so.*
 
 %files devel
 %defattr(-,root,root) 
@@ -102,6 +102,9 @@ rm -fr $RPM_BUILD_ROOT
 
 %{prefix}/include/%{name}/*.h
 %{prefix}/include/%{name}/*/*.[hcm]
+%{_libdir}/libmutils.so
+%{_libdir}/libstream.so
+%{_libdir}/libbat.so
 
 %changelog
 * Mon Jun 25 2007 Sjoerd Mullender <sjoerd@acm.org> - @VERSION@-1

@@ -92,7 +92,7 @@ make install \
 mkdir -p $RPM_BUILD_ROOT/%{localstatedir}/MonetDB5/dbfarm
 # insert example db here!
 
-find $RPM_BUILD_ROOT -name .incs.in | xargs rm -f
+find $RPM_BUILD_ROOT -name .incs.in -print -o -name \*.la -print | xargs rm -f
 
 # cleanup stuff we don't want to install
 rm -rf $RPM_BUILD_ROOT%{_libdir}/MonetDB5/Tests/*
@@ -129,9 +129,7 @@ rm -fr $RPM_BUILD_ROOT
 %{prefix}/bin/monetdb5-config
 %{prefix}/include/MonetDB5/*.h
 %{prefix}/include/MonetDB5/*/*.[hcm]
-%{_libdir}/*.la
 %{_libdir}/*.so 
-%{_libdir}/MonetDB5/lib/*.la
 %{_libdir}/MonetDB5/lib/*.so 
 
 

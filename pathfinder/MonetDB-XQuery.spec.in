@@ -87,6 +87,7 @@ make install \
 	DESTDIR=$RPM_BUILD_ROOT 
 
 #find $RPM_BUILD_ROOT -name .incs.in | xargs rm
+find $RPM_BUILD_ROOT -name \*.la | xargs rm -f
 
 rm -rf $RPM_BUILD_ROOT%{_libdir}/MonetDB5
 
@@ -102,7 +103,7 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/MonetDB4/lib/lib_*
 %{_libdir}/MonetDB4/*.mil
 %{prefix}/bin/Mbeddedxq
-%{_libdir}/libembeddedxq.*
+%{_libdir}/libembeddedxq.so.*
 %{_datadir}/doc/MonetDB-XQuery-%{version}/*
 #%{_datadir}/doc/%{name}-%{version}/*
 %{_datadir}/MonetDB/xrpc/admin/*
@@ -111,6 +112,7 @@ rm -rf $RPM_BUILD_ROOT
 %files devel
 %defattr(-,root,root) 
 %{prefix}/include/pathfinder/*.h
+%{_libdir}/libembeddedxq.so
 
 %changelog
 * Mon Jun 25 2007 Sjoerd Mullender <sjoerd@acm.org> - @VERSION@-1

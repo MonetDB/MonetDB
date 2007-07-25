@@ -100,7 +100,7 @@ make install \
 mkdir -p $RPM_BUILD_ROOT/%{localstatedir}/MonetDB4/dbfarm
 # insert example db here!
 
-find $RPM_BUILD_ROOT -name .incs.in | xargs rm -f
+find $RPM_BUILD_ROOT -name .incs.in -print -o -name \*.la -print | xargs rm -f
 
 # cleanup stuff we don't want to install
 rm -rf $RPM_BUILD_ROOT%{_libdir}/MonetDB4/Tests/*
@@ -117,10 +117,9 @@ rm -fr $RPM_BUILD_ROOT
 %{prefix}/bin/Mserver 
 %{prefix}/bin/Mbeddedmil 
 
-%{_libdir}/libmonet.*
-%{_libdir}/libembeddedmil.*
-%{_libdir}/MonetDB4/lib/*.so* 
-%{_libdir}/MonetDB4/lib/*.la* 
+%{_libdir}/libmonet.so.*
+%{_libdir}/libembeddedmil.so.*
+%{_libdir}/MonetDB4/lib/*.so.* 
 %{_libdir}/MonetDB4/*.mil* 
 
 %dir %{localstatedir}/MonetDB4
@@ -134,6 +133,9 @@ rm -fr $RPM_BUILD_ROOT
 %{_libdir}/pkgconfig/MonetDB.pc
 %{prefix}/include/MonetDB4/*.h
 %{prefix}/include/MonetDB4/*/*.[hcm]
+%{_libdir}/libmonet.so
+%{_libdir}/libembeddedmil.so
+%{_libdir}/MonetDB4/lib/*.so
 
 
 %pre 

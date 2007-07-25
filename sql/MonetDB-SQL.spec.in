@@ -131,6 +131,7 @@ make install \
 	DESTDIR=$RPM_BUILD_ROOT 
 
 #find $RPM_BUILD_ROOT -name .incs.in | xargs rm
+find $RPM_BUILD_ROOT -name \*.la | xargs rm -f
 
 rm -rf $RPM_BUILD_ROOT%{_libdir}/MonetDB4/Tests/*
 rm -rf $RPM_BUILD_ROOT%{prefix}/lib*/python*/site-packages
@@ -152,9 +153,7 @@ rm -rf $RPM_BUILD_ROOT
 %files server4
 %defattr(-,root,root) 
 %{prefix}/bin/Mbeddedsql
-%{prefix}/bin/Mbeddedsql5
 %{_libdir}/libembeddedsql.*
-%{_libdir}/libembeddedsql5.*
 %{_libdir}/MonetDB4/lib/lib_sql_server*
 %{_libdir}/MonetDB4/*.mil
 %{prefix}/include/embeddedclient.h
@@ -165,6 +164,8 @@ rm -rf $RPM_BUILD_ROOT
 %defattr(-,root,root) 
 #%{prefix}/bin/Mbeddedsql
 #%{_libdir}/libembeddedsql.*
+%{prefix}/bin/Mbeddedsql5
+%{_libdir}/libembeddedsql5.*
 %{_libdir}/MonetDB5/lib/lib_sql*
 %{_libdir}/MonetDB5/*.mal
 %endif

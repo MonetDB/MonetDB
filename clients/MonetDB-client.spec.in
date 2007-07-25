@@ -88,7 +88,15 @@ Requires: %{name} = %{version}-%{release}
 Requires: perl
 %define perl_libdir %(perl -MConfig -e '$x=$Config{installvendorarch}; $x =~ s|$Config{vendorprefix}/||; print $x;')
 %if !%{?buildsystem}
-BuildRequires: perl, perl-devel, swig
+BuildRequires: perl, swig
+%if %{?fc7:1}%{!?fc7:0}
+# in Fedora Core 6 there is no perl-devel package: everything is in perl;
+# in Fedora 7 there is a perl-devel package which we need.  Presumably this
+# test needs refinement for Fedora > 7.  We may be able to check for the
+# existence of the variable "fedora" since it seems to be present in F7 but
+# not in FC6.
+BuildRequires: perl-devel
+%endif
 %endif
 %endif
 
@@ -161,7 +169,7 @@ rm -rf $RPM_BUILD_ROOT
 make install \
 	DESTDIR=$RPM_BUILD_ROOT 
 
-find $RPM_BUILD_ROOT -name .incs.in | xargs rm -f
+find $RPM_BUILD_ROOT -name .incs.in -print -o -name \*.la -print | xargs rm -f
 
 # cleanup stuff we don't want to install
 rm -rf $RPM_BUILD_ROOT%{_datadir}/MonetDB/Tests/*
@@ -183,7 +191,6 @@ rm -fr $RPM_BUILD_ROOT
 %files devel
 %defattr(-,root,root) 
 %{prefix}/bin/monetdb-clients-config
-%{_libdir}/libMapi.la
 %{_libdir}/libMapi.so
 %{prefix}/include/MonetDB/mapilib/Mapi.h
 
