@@ -202,10 +202,10 @@ malInclude(Client c, str name, int listing)
 A recurring situation is to execute a stream of simple MAL instructions
 stored on a file or comes from standard input. We parse one MAL 
 instruction line at a time and attempt to execute it immediately.
-Note, this precludes entereing complex MAL structures on the primary
+Note, this precludes entering complex MAL structures on the primary
 input channel, because 1) this requires complex code to keep track
-that we are in 'definition mode' 2) this requires (too) carefull
-typing by the user, because he can not make an typeing error
+that we are in 'definition mode' 2) this requires (too) careful
+typing by the user, because he can not make an typing error
 
 Therefore, all compound code fragments should be loaded and executed
 using the evalFile and callString command. It will parse the complete
