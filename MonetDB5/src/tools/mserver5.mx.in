@@ -200,9 +200,9 @@ Version information, and compile time options.
 void
 monet_version()
 {
-	printf("MonetDB Server v%s\n", VERSION);
-	printf("based on GDK   v%s\n", GDKversion());
+	printf("MonetDB server v" VERSION ", based on kernel v%s\n", GDKversion());
 	printf("Copyright (c) 1993-2007 CWI, all rights reserved\n");
+	printf("Visit http://monetdb.cwi.nl/ for further information\n");
 	printf("Configured for prefix: " MONETDBPREFIX "\n");
 	printf("Libraries:\n");
 #ifdef HAVE_LIBPCRE
