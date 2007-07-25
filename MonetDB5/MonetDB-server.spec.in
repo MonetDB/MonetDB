@@ -35,7 +35,7 @@ BuildRequires: python
 %endif
 
 Requires: MonetDB-client >= 1.18
-%if !%(?buildsystem)
+%if !%{?buildsystem}
 BuildRequires: MonetDB-devel >= 1.18
 BuildRequires: MonetDB-client-devel >= 1.18
 %endif

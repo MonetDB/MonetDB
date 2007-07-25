@@ -33,7 +33,7 @@ Requires: MonetDB >= 1.18
 %define bits 64
 %endif
 
-%if !%(?buildsystem)
+%if !%{?buildsystem}
 BuildRequires: MonetDB-devel >= 1.18
 %endif
 
