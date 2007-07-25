@@ -616,9 +616,9 @@ str RMTput(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 #	return(ret);
 #end exec;
 
-pattern exec(conn:str, ident:str...):any
+pattern exec(conn:str, mod:str, func:str...):any
 address RMTexec
-comment "Executes function ident on host using the given arguments and returns its result";
+comment "Executes function mod.func over conn using the given arguments and returns its result";
 @h
 remote_export str RMTexec(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 @c
@@ -634,7 +634,7 @@ remote_export str RMTexec(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
  * or put calls.
  */
 str RMTexec(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
-	str conn, func, ident, arg, tmp;
+	str conn, mod, func, ident, arg, tmp;
 	int argc, i, len;
 	connection c;
 	char qbuf[512];	/* FIXME: make this dynamic */
@@ -645,22 +645,12 @@ str RMTexec(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	conn = (str)getArgValue(stk, pci, 1);
 	if (conn == NULL || strcmp(conn, (str)str_nil) == 0)
 		throw(ILLARG, "remote.exec", "connection name is NULL or nil");
-	func = (str)getArgValue(stk, pci, 2);
+	mod = (str)getArgValue(stk, pci, 2);
+	if (mod == NULL || strcmp(mod, (str)str_nil) == 0)
+		throw(ILLARG, "remote.exec", "module name is NULL or nil");
+	func = (str)getArgValue(stk, pci, 3);
 	if (func == NULL || strcmp(func, (str)str_nil) == 0)
 		throw(ILLARG, "remote.exec", "function name is NULL or nil");
-
-	/* remote.put() returns an identifier.  This identifier is a string,
-	 * hence what we receive here is a string that describes the
-	 * function on the other side, which may or may not include a module
-	 * name.  There is not much what we can do about that.  You might
-	 * think, "why this whole story here?"  The answer is here:
-	 * http://www.nabble.com/Re%3A--Monetdb-checkins--MonetDB5-src-modules-mal-Tests-remote00.mal%2C-%2C-1.3%2C-1.4-remote00.stable.out%2C-%2C-1.4%2C-1.5-p11520207.html
-	 * Why we don't want remote.get() to return two strings for function
-	 * objects?  Well, a) it requires the user to "know" that too, and
-	 * doesn't keep the return type consistent.  b) it would be
-	 * impossible here to detect the difference between "default" module
-	 * (none given) and specified module since we have varargs for the
-	 * arguments to the function. */
 
 	/* lookup conn */
 	rethrow("remote.exec", tmp, RMTfindconn(&c, conn));
@@ -677,7 +667,7 @@ str RMTexec(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 
 	/* build the function invocation string in qbuf */
 	len = 0;
-	len += snprintf(&qbuf[len], 511 - len, "%s := %s(", ident, func);
+	len += snprintf(&qbuf[len], 511 - len, "%s := %s.%s(", ident, mod, func);
 	mapi_close_handle(mhdl);
 
 	/* handle the arguments to the function */
@@ -686,13 +676,13 @@ str RMTexec(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 
 	/* put the arguments one by one, and dynamically build the
 	 * invocation string */
-	for (i = 3; i < pci->argc; i++) {
+	for (i = 4; i < pci->argc; i++) {
 		rethrow("remote.exec", tmp, RMTinternalput(&arg,
 					c->mconn,
 					getArgType(mb, pci, i),
 					getArgReference(stk, pci, i)));
 		len += snprintf(&qbuf[len], 511 - len, "%s%s",
-				(i > 3 ? ", " : ""), arg);
+				(i > 4 ? ", " : ""), arg);
 	}
 
 	/* finish end execute the invocation string */

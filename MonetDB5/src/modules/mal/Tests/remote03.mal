@@ -9,12 +9,20 @@ p := sabaoth.getLocalConnectionPort();
 # create a connecton to ourself
 remote.create("test", h, p, nil:str, "monetdb", "monetdb");
 
+# this is invalid, as io.print is an invalid module, and bla will be
+# taken as function
+f := remote.exec("test", "io.print", "bla");
+io.print(f);
+catch MALException:str;
+	io.printf("!%s\n",MALException);
+exit MALException;
+
 # io.print only outputs things, but returns nothing
-a := remote.exec("test", "io.print", "bla");
+a := remote.exec("test", "io", "print", "bla");
 io.print(a);
 
 # now do it with a function that returns something (a BAT in this case)
-b := remote.exec("test", "inspect.getAtomNames");
+b := remote.exec("test", "inspect", "getAtomNames");
 io.print(b);
 
 # help testweb a bit, since currently no cleanup is done on server

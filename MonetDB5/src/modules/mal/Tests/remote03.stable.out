@@ -5,10 +5,10 @@ stdout of test 'remote03` in directory 'src/modules/mal` itself:
 # 15:28:56 >  Mtimeout -timeout 60  mserver5 "--config=/ufs/fabian/scratch/monetdb/current/program-x86_64/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/fabian/scratch/monetdb/current/program-x86_64/lib64/MonetDB5:/ufs/fabian/scratch/monetdb/current/program-x86_64/lib64/MonetDB5/lib:/ufs/fabian/scratch/monetdb/current/program-x86_64/lib64/MonetDB5/bin" --set "gdk_dbfarm=/net/pegasus.ins.cwi.nl/export/scratch0/fabian/vtmp/mtest-current-pegasus.ins.cwi.nl/five/dbfarm" --set "sql_logdir=/net/pegasus.ins.cwi.nl/export/scratch0/fabian/vtmp/mtest-current-pegasus.ins.cwi.nl/five/sqllog" --set "xquery_logdir=/net/pegasus.ins.cwi.nl/export/scratch0/fabian/vtmp/mtest-current-pegasus.ins.cwi.nl/five/xquerylog" --set mapi_open=true --set mapi_port=34439 --set xrpc_port=43409 --set monet_prompt= --trace --dbname=mTests_src_modules_mal  remote03.mal
 # 15:28:56 >  
 
-
-
-# MonetDB Server v5.1.0
-# Copyright (c) 1993-2007 CWI, all rights reserved
+!WARNING: GDKlockHome: ignoring empty or invalid .gdk_lock.
+!WARNING: BBPdir: initializing BBP.
+# MonetDB server v5.1.0, based on kernel v1.19.0
+# Serving database 'mTests_src_modules_mal'
 # Compiled for x86_64-pc-linux-gnu/64bit with 64bit OIDs dynamically linked
 # dbname:mTests_src_modules_mal
 # Visit http://monetdb.cwi.nl/ for further information
@@ -51,16 +51,26 @@ function user.main():void;	# 0  (main:void)
     p := sabaoth.getLocalConnectionPort();	# 13 SABgetLocalConnectionPort (p:int)
 # create a connecton to ourself 	# 14  (_14:str)
     remote.create("test",h,p,nil:str,"monetdb","monetdb");	# 15 RMTcreate (_15:void)<-(_16:str)(h:str)(p:int)(_17:str)(_18:str)(_18:str)
-# io.print only outputs things, but returns nothing 	# 16  (_19:str)
-    a := remote.exec("test","io.print","bla");	# 17 RMTexec (a:any)<-(_16:str)(_21:str)(_22:str)
-    io.print(a);	# 18 IOprint_val (_23:void)<-(a:any)
-# now do it with a function that returns something (a BAT in this case) 	# 19  (_24:str)
-    b := remote.exec("test","inspect.getAtomNames");	# 20 RMTexec (b:any)<-(_16:str)(_26:str)
-    io.print(b);	# 21 IOprint_val (_27:void)<-(b:any)
-# help testweb a bit, since currently no cleanup is done on server 	# 22  (_28:str)
-# shutdown 	# 23  (_29:str)
-    remote.destroy("test");	# 24 RMTdestroy (_30:void)<-(_16:str)
-end main;	# 25  
+# this is invalid, as io.print is an invalid module, and bla will be 	# 16  (_19:str)
+# taken as function 	# 17  (_20:str)
+    f := remote.exec("test","io.print","bla");	# 18 RMTexec (f:any)<-(_16:str)(_22:str)(_23:str)
+    io.print(f);	# 19 IOprint_val (_24:void)<-(f:any)
+catch MALException:str ;	# 20  (MALException:str) jump 22
+    io.printf("!%s\n",MALException);	# 21 IOprint_formatted_str (_26:void)<-(_27:str)(MALException:str)
+exit MALException:str ;	# 22  (MALException:str)
+# io.print only outputs things, but returns nothing 	# 23  (_28:str)
+    a := remote.exec("test","io","print","bla");	# 24 RMTexec (a:any)<-(_16:str)(_30:str)(_31:str)(_23:str)
+    io.print(a);	# 25 IOprint_val (_32:void)<-(a:any)
+# now do it with a function that returns something (a BAT in this case) 	# 26  (_33:str)
+    b := remote.exec("test","inspect","getAtomNames");	# 27 RMTexec (b:any)<-(_16:str)(_35:str)(_36:str)
+    io.print(b);	# 28 IOprint_val (_37:void)<-(b:any)
+# help testweb a bit, since currently no cleanup is done on server 	# 29  (_38:str)
+# shutdown 	# 30  (_39:str)
+    remote.destroy("test");	# 31 RMTdestroy (_40:void)<-(_16:str)
+end main;	# 32  
+!MALException:remote.exec:remote_put_object_0 := io.print.bla();
+!SyntaxException:parseError:                              ^'(' expected
+
 [ nil ]
 #-------------------------#
 # h	t		  # name
