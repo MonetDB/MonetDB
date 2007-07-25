@@ -104,6 +104,8 @@ static void print_schema_table (PFsql_t *);
 static void print_schema_relcol (PFsql_t *);
 static void print_join (PFsql_t *);
 static void print_comment (PFsql_t *);
+static void print_lit_list (PFsql_t * n);
+
 
 static void
 print_comment (PFsql_t * n)
@@ -559,6 +561,14 @@ print_expr (PFsql_t * n)
 	sqlprintf ("%%')");
       }
       break;
+
+    case sql_in:
+        sqlprintf("(");
+        print_statement(n->child[0]);
+        sqlprintf(" IN (");
+        print_lit_list(n->child[1]);
+        sqlprintf("))");
+        break;
     default:
       {
 	PFoops (OOPS_FATAL, "expression screwed up (%u)", n->kind);
@@ -1013,6 +1023,23 @@ print_variable (PFsql_t * n)
       sqlprintf ("(");
       print_clm_list (n->child[0]);
       sqlprintf (")");
+    }
+}
+
+static void
+print_lit_list (PFsql_t * n)
+{
+  assert (n);
+
+  switch (n->kind)
+    {
+    case sql_lit_list:
+      print_lit_list (n->child[0]);
+      sqlprintf (", ");
+      print_lit_list (n->child[1]);
+      break;
+    default:
+      print_statement (n);
     }
 }
 

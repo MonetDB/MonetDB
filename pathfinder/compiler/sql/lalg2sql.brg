@@ -44,7 +44,6 @@
   #include "mem.h"
   #include "oops.h"		/* PFoops() */
   #include "subtyping.h"
-
   /**
    * Accessors for the burg pattern matcher
    */
@@ -209,11 +208,10 @@ Rel:    StRel                                        = 52  (50);
 
 StRel:  step (Frag, Rel)                             = 53  (10);
 StRel:  step (Frag, StRel)                           = 54  (10);
+Rel:    guide_step (Frag, Rel)                       = 225 (10);
 Rel:    dup_step (Frag, Rel)                         = 224 (10);
 
 Rel:    doc_access (Frag, Rel)                       = 55  (10);
-
-
 
 Rel:    roots_ (Constr)                              = 60  (10);
 Frag:   fragment (Constr)                            = 61  (10);
@@ -286,6 +284,9 @@ static struct PFsql_alg_ann_t *llscj (const PFla_op_t * frag,
 
 static struct PFsql_alg_ann_t *dup_step (const PFla_op_t * frag,
                         const PFla_op_t * p);
+
+static struct PFsql_alg_ann_t *guide_llscj (const PFla_op_t * frag, 
+            const PFla_op_t * p);
 
 static PFsql_alg_ann_t *doc_access (PFla_op_t * frag, PFla_op_t * p);
 
@@ -2556,6 +2557,31 @@ reduce (PFla_op_t * p, int goalnt)
                   (NULL, FROM (p), NULL, NULL) : p->sql_ann->sfw;
               if (p->sql_ann->sfw->kind == sql_select && !PFprop_set (p->prop))
                   sql_stmt->sem.select.distinct = true;
+          }
+          break;
+
+          /* Rel: guide_step (Frag, Rel) */
+      case 225:
+          {
+              p->sql_ann = guide_llscj (LR (p), p);
+
+              for (PFla_op_t * loop = LL (p); loop->kind != la_empty_frag;
+                      loop = L (loop)) {
+                  *(p->sql_ann) = (PFsql_alg_ann_t) {
+                      .sfw = disjunion
+                          (guide_llscj (R (loop), p)->sfw,
+                           p->sql_ann->sfw)};
+              }
+
+              sql_stmt = (p->sql_ann->sfw->kind == sql_select) ?
+                  select
+                  (NULL, p->sql_ann->sfw->child[1], NULL, NULL) : p->sql_ann->sfw;
+              if (p->sql_ann->sfw->kind == sql_select && !PFprop_set (p->prop))
+                  sql_stmt->sem.select.distinct = true;
+                /* if set property is not set dump the query */
+              if (!PFprop_set (p->prop))
+                  p->dirty = true;
+
           }
           break;
 
@@ -5508,27 +5534,20 @@ llscj (const PFla_op_t * frag, const PFla_op_t * p)
 }
 
 static struct PFsql_alg_ann_t *
-dup_step (const PFla_op_t * frag, const PFla_op_t * p)
+guide_llscj (const PFla_op_t * frag, const PFla_op_t * p)
 {
   assert (frag->sql_ann->fragment);
 
   /* initialize the environment to fill */
   PFsql_alg_ann_t *ret = sql_alg_ann_new ();
 
-  /* copy all existing expressions */
-  for (unsigned int i = 0;
-          i < PFarray_last (COLMAP (R (p))); i++) {
-      sql_column_env_t entry =
-          sql_column_env_at (COLMAP (R (p)), i);
-      sql_column_env_add (ret->colmap, entry.att, entry.type,
-                          entry.expression);
-  }
-
   /* abbreviations for input expressions */
   PFty_t ty = p->sem.step.ty;
+  PFsql_t *iter;
   PFsql_t *item;
 
   /* get attribute names of scj */
+  PFalg_att_t pa_iter = p->sem.step.iter;
   PFalg_att_t pa_item = p->sem.step.item;
 
   /*
@@ -5537,7 +5556,11 @@ dup_step (const PFla_op_t * frag, const PFla_op_t * p)
   assert (p);
   assert (R (p));
   assert (COLMAP (R (p)));
-  item = sql_expression (COLMAP (R (p)), pa_item, aat_pre);
+
+  iter = sql_expression (COLMAP (R (p)), pa_iter, type_of (R (p), pa_iter));
+  assert (iter);
+
+  item = sql_expression (COLMAP (R (p)), pa_item, type_of (R (p), pa_item));
   assert (item);
 
   /* get the correlation name of item */
@@ -5577,19 +5600,26 @@ dup_step (const PFla_op_t * frag, const PFla_op_t * p)
   fromlist = from_list_add (fromlist, fr1);
 
   /* copy iter and item expression to current environment */
-  sql_column_env_add (ret->colmap,
-		      p->sem.step.item_res, PFty_subtype (ty,
+  sql_column_env_add (
+              ret->colmap,
+              pa_iter,
+              type_of (p, pa_iter),
+              iter);
+  sql_column_env_add (
+              ret->colmap,
+		      p->sem.step.item_res,
+              PFty_subtype (ty,
 					     PFty_xs_anyAttribute ())?
 		      aat_attr : aat_pre,
 		      crrl_deco (COLUMN_SPEC (sql_col_pre),
 				 crrl1->name));
 
   /* copy existing wheremap */
-  for (unsigned int i = 0;
-      i < PFarray_last (R (p)->sql_ann->wheremap); i++) {
+  for (unsigned int i = 0; i < PFarray_last (R (p)->sql_ann->wheremap); i++)
+    {
       sql_where_env_t entry = sql_where_env_at (R (p)->sql_ann->wheremap, i);
       sql_where_env_add (ret->wheremap, entry.expression);
-  }
+    }
 
   if (leg_crrl->name == 0)
     sql_where_env_add (ret->wheremap,
@@ -5726,10 +5756,272 @@ dup_step (const PFla_op_t * frag, const PFla_op_t * p)
 	      "in staircase join");
     }
 
-  ret->sfw = gen_select (p, ret);
-  ret->sfw->child[1] = fromlist;
+  /* create the in operator of guide information */
+    unsigned int guide_node_count = p->sem.step.guide_count; 
+    /* literal list with statistical information */
+    PFsql_t **list = (PFsql_t**)
+            PFmalloc (
+                guide_node_count*sizeof(PFsql_t*));
 
-  return ret;
+    /* guide nodes, with the statistical information */
+    PFguide_tree_t ** guide_elements = p->sem.step.guides;
+
+    /* create literals from guide nodes */
+    for (unsigned int i = 0; i < guide_node_count; i++) {
+        list[i] = lit_int(guide_elements[i]->guide);
+    }
+  
+    PFsql_t *literal = PFsql_lit_list_
+                       (
+                        guide_node_count,
+                        (const PFsql_t**)list
+                       );
+  
+    PFsql_t *guide = in
+                     (
+                       crrl_deco (
+                       COLUMN_SPEC(sql_col_guide),
+                       crrl1->name),
+                       literal
+                     );
+  
+    sql_where_env_add (ret->wheremap, guide);        
+
+    ret->sfw = gen_select (p, ret);
+    ret->sfw->child[1] = fromlist;
+
+  
+    return ret;
+}
+    
+static struct PFsql_alg_ann_t *
+dup_step (const PFla_op_t * frag, const PFla_op_t * p)
+{
+
+
+
+
+
+      assert (frag->sql_ann->fragment);
+    
+      /* initialize the environment to fill */
+    PFsql_alg_ann_t *ret = sql_alg_ann_new ();
+  
+    /* copy all existing expressions */
+    for (unsigned int i = 0;
+            i < PFarray_last (COLMAP (R (p))); i++) {
+        sql_column_env_t entry =
+            sql_column_env_at (COLMAP (R (p)), i);
+        sql_column_env_add (ret->colmap, entry.att, entry.type,
+                            entry.expression);
+    }
+  
+    /* abbreviations for input expressions */
+    PFty_t ty = p->sem.step.ty;
+    PFsql_t *item;
+  
+    /* get attribute names of scj */
+    PFalg_att_t pa_item = p->sem.step.item;
+  
+    /*
+     * Determine generic input arguments.
+     */
+    assert (p);
+    assert (R (p));
+    assert (COLMAP (R (p)));
+    item = sql_expression (COLMAP (R (p)), pa_item, aat_pre);
+    assert (item);
+  
+    /* get the correlation name of item */
+    sql_correlation_name_t item_crrl;
+    item_crrl.name = item->crrlname;
+  
+    /* get new correlation name for frag expression */
+    sql_correlation_name_t *leg_crrl =
+      (sql_correlation_name_t *) PFmalloc (sizeof (sql_correlation_name_t));
+  
+    /* check if the alias expression with item_crrl as correlation name
+       is marked with frag */
+    leg_crrl->name = sql_search_frag (FROM (R (p)), item_crrl);
+    sql_correlation_name_t *crrl1 = sql_correlation_name_new ();
+  
+    sql_correlation_name_t *crrl2 =
+      (leg_crrl->name > 0) ? leg_crrl : sql_correlation_name_new ();
+  
+    PFsql_t *fromlist = FROM (R (p));
+  
+    /* this new relation we need to get the attributes beside the pre
+       value */
+    if (leg_crrl->name == 0)
+    {
+      PFsql_t *fr2 = table_deco (alias (frag->sql_ann->fragment,
+    				correlation_name (crrl2->name)),
+    			 true);
+      fromlist = from_list_add (fromlist, fr2);
+    }
+  
+    /* this relation we need to get the new elements we want to find
+       with the axis steps */
+    PFsql_t *fr1 =
+      table_deco (alias
+  		(frag->sql_ann->fragment, correlation_name (crrl1->name)),
+  		true);
+    fromlist = from_list_add (fromlist, fr1);
+  
+    /* copy iter and item expression to current environment */
+    sql_column_env_add (ret->colmap,
+  		      p->sem.step.item_res, PFty_subtype (ty,
+  					     PFty_xs_anyAttribute ())?
+  		      aat_attr : aat_pre,
+  		      crrl_deco (COLUMN_SPEC (sql_col_pre),
+  				 crrl1->name));
+  
+    /* copy existing wheremap */
+    for (unsigned int i = 0;
+        i < PFarray_last (R (p)->sql_ann->wheremap); i++) {
+        sql_where_env_t entry = sql_where_env_at (R (p)->sql_ann->wheremap, i);
+        sql_where_env_add (ret->wheremap, entry.expression);
+    }
+  
+    if (leg_crrl->name == 0)
+      sql_where_env_add (ret->wheremap,
+  		       eq
+  		       (crrl_deco
+  			(COLUMN_SPEC (sql_col_pre),
+  			 crrl2->name), item));
+  
+    if (PFty_subtype (ty, PFty_xs_anyElement ()))
+      {
+        /* This is a test for element nodes */
+  
+  
+  
+        /* This is just a generic element kind test */
+      if (PFty_subtype (PFty_xs_anyElement (), ty))
+  	{
+  	  llscj_elem (p, crrl1->name, crrl2->name, frag, &fromlist, ret);
+  	}
+        /* test on element kind and local name only */
+        else if (PFty_subtype (PFty_elem (PFqname (PFns_wild,
+  						 PFqname_loc (PFty_name
+  							      (PFty_defn
+  							       (ty)))),
+  					PFty_xs_anyType ()), ty))
+  	{
+  	  llscj_elem_loc (p,
+  			  lit_str (PFqname_loc (PFty_name (PFty_defn (ty)))),
+  			  crrl1->name, crrl2->name, frag, &fromlist, ret);
+  	}
+        /* test on element kind and namespace only */
+        else
+  	if (PFty_subtype
+  	    (PFty_elem
+  	     (PFqname (PFqname_ns (PFty_name (PFty_defn (ty))), NULL),
+  	      PFty_xs_anyType ()), ty))
+  	{
+  	  PFoops (OOPS_FATAL, "SQLgen: namespace tests only not supported");
+  	}
+        /* test on element and full QName */
+        else if (PFty_subtype (PFty_elem (PFty_name (PFty_defn (ty)),
+  					PFty_xs_anyType ()), ty))
+  	{
+  	  /* we simply ignore the namespace here */
+  	  llscj_elem_nsloc (p,
+  			    lit_str (""),
+  			    lit_str (PFqname_loc
+  				     (PFty_name (PFty_defn (ty)))),
+  			    crrl1->name, crrl2->name, frag, &fromlist, ret);
+  	}
+        /*
+         * We couldn't figure out what element test we got, give up.
+         */
+        else
+  	{
+  	  PFoops (OOPS_FATAL,
+  		  "SQLgen: problem with an XPath step: cannot evaluate "
+  		  "node test `%s'", PFty_str (ty));
+  	}
+      }
+    /* If the node wasn't some element test, maybe it is a text() test? */
+    else if (PFty_subtype (ty, PFty_text ()))
+      {
+        llscj_text (p, crrl1->name, crrl2->name, frag, &fromlist, ret);
+      }
+    /* or a comment test ? */
+    else if (PFty_subtype (ty, PFty_comm ()))
+      {
+        llscj_comm (p, crrl1->name, crrl2->name, frag, &fromlist, ret);
+      }
+    /* some test for processing instructions TODO */
+    else if (PFty_subtype (ty, PFty_pi (NULL)))
+      {
+        assert (!"missing processing instruction test");
+      }
+    else if (PFty_subtype (PFty_xs_anyNode (), ty))
+      {
+        assert (!"missing anynode test");
+      }
+    else if (PFty_subtype (ty, PFty_xs_anyAttribute ()))
+      {
+  
+        /* It is just a generic attribute kind test?
+           (e.g. .../attribute) */
+        if (PFty_subtype (PFty_xs_anyAttribute (), ty))
+  	;
+  
+        /* Is it a test on attribute kind and local name only? */
+        else if (PFty_subtype (PFty_attr (PFqname (PFns_wild,
+  						 PFqname_loc (PFty_name
+  							      (PFty_defn
+  							       (ty)))),
+  					PFty_xs_anySimpleType ()), ty))
+  	{
+  	  assert (!"Is it a test on attribute kind and local name only?");
+  	}
+        /* Or maybe a test on attribute kind and namespace only? */
+        else
+  	if (PFty_subtype
+  	    (PFty_attr
+  	     (PFqname (PFqname_ns (PFty_name (PFty_defn (ty))), NULL),
+  	      PFty_xs_anySimpleType ()), ty))
+  	{
+  	  assert (!"Or maybe a test on attribute kind and namespace only?");
+  	}
+        /* A test on attribute kind and full QName? */
+        else if (PFty_subtype (PFty_attr (PFty_name (PFty_defn (ty)),
+  					PFty_xs_anySimpleType ()), ty))
+  	{
+  	  /* we simply ignore namespace here */
+  	  llscj_attr_nsloc (lit_str (""),
+  			    lit_str (PFqname_loc
+  				     (PFty_name (PFty_defn (ty)))),
+  			    crrl1->name, crrl2->name, ret);
+  	}
+        /*
+       * If we couldn't figure out what attribute test we got,
+       * give up.
+       *
+       * NOTE: The surface language actually allows such tests. We
+       *       just cannot implement them (yet):
+       *
+       *    doc("foo")/attribute::attribute(shoeSize, xs:integer)
+       */
+      else
+	PFoops (OOPS_FATAL,
+		"SQLgen: Problem with an XPath step: cannot evaluate "
+		"node test `%s'", PFty_str (ty));
+    }
+    else
+      {
+        PFoops (OOPS_FATAL,
+  	      "SQLgen: we couldn't figure out what we test "
+  	      "in staircase join");
+    }
+
+    ret->sfw = gen_select (p, ret);
+    ret->sfw->child[1] = fromlist;
+
+    return ret;
 }
 
 static PFsql_alg_ann_t *

@@ -280,7 +280,7 @@ PFsql_from_list_add (const PFsql_t * list, const PFsql_t * item)
  *   for you, so you will only have to pass a list of arguments to
  *   that (variable argument list) macro.
  *
- * @param   count Number of expressions in the array that follows.
+ e @param   count Number of expressions in the array that follows.
  * @param   list  Array of exactly @a count expression nodes.
  * @return        A chain of expression nodes.
  */
@@ -999,8 +999,10 @@ PFsql_column_name_str (PFsql_ident_t ident)
 	  return "value";
 	case sql_col_name:
 	  return "name";
-        case sql_col_dpre:
-          return "deltapre";
+    case sql_col_dpre:
+      return "deltapre";
+    case sql_col_guide:
+      return "guide";
 	default:
 	  PFoops (OOPS_FATAL, "unknown special flag set");
 	}
@@ -1418,4 +1420,31 @@ PFsql_or (const PFsql_t * a, const PFsql_t * b)
   return wire2 (sql_or, a, b);
 }
 
+PFsql_t *
+PFsql_lit_list_ (unsigned int count, const PFsql_t ** list) 
+{
+  assert (count > 0);
+
+  if (list[0] == NULL)
+    return PFsql_lit_list_ (count - 1, list + 1);
+  else if (count == 1)
+    return (PFsql_t *) list[0];
+  else
+    return wire2 (sql_lit_list,
+		  PFsql_lit_list_ (count - 1, list + 1), list[0]);
+  return NULL;			/* satisfy picky compilers */
+}
+
+
+/**
+ * Create a SQL tree node representing the in operator
+ */
+PFsql_t *
+PFsql_in (const PFsql_t * column, const PFsql_t * list)
+{
+  return wire2 (sql_in, column, list);
+}
+
 /* vim:set shiftwidth=4 expandtab: */
+
+
