@@ -14,6 +14,10 @@ stdout of test 'bogus_text_step.SF-1537500.alg` in directory 'tests/BugTracker` 
 # Copyright (c) 1993-2006, CWI. All rights reserved.
 # Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
+# MonetDB/XQuery module v0.19.0 loaded
+# XRPC administrative console at http://localhost:49018/admin
+<?xml version="1.0" encoding="utf-8"?>
+<XQueryResult></XQueryResult>
 
 # 16:50:41 >  
 # 16:50:41 >  Done.
