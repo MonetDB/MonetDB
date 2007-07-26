@@ -87,6 +87,12 @@ Add the MonetDB5 SQL server module description here
 # %package devel
 # Summary: MonetDB SQL development package 
 # Group: System 
+# %if %{?_with_monetdb4:1}%{!?_with_monetdb4:0}
+# Requires: %{name}-server4 = 4.18
+# %else
+# Requires: %{name}-server5 = 5.0
+# %endif
+# Requires: MonetDB-devel = 1.18
 
 %description
 MonetDB is a database management system that is developed from a
@@ -96,12 +102,6 @@ accellerators, SQL- and XML- frontends.
 
 # %description devel
 # Add the MonetDB devel description here
-# %if %{?_with_monetdb4:1}%{!?_with_monetdb4:0}
-# Requires: %{name}-server4 = 4.18
-# %else
-# Requires: %{name}-server5 = 5.0
-# %endif
-# Requires: MonetDB-devel = 1.18
 
 %prep
 rm -rf $RPM_BUILD_ROOT

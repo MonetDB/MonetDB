@@ -189,7 +189,7 @@ rm -fr $RPM_BUILD_ROOT
 
 
 %files devel
-%defattr(-,root,root) 
+%defattr(-,root,root)
 %{prefix}/bin/monetdb-clients-config
 %{_libdir}/libMapi.so
 %{prefix}/include/MonetDB/mapilib/Mapi.h
