@@ -1,0 +1,19 @@
+pf:add-doc("$TSTSRCDIR/replace-corrupts.SF-1758902.xml", "notes_consumer02.xml", "notes_consumer02.xml", 10)
+<>
+doc("notes_consumer02.xml")
+<>
+let $doc := doc("notes_consumer02.xml") return $doc
+<>
+let $doc := doc("notes_consumer02.xml")
+let $orig := $doc/notes/objectnote[@xid="14"]
+let $on := element objectnote { attribute xid {"14"}, attribute user {"unknown"}, attribute unixtime {"1185198696"}, text {"nootje"}, element original { $orig } }
+return if (exists($orig)) then (do replace $orig with $on) else (do insert $on as last into $doc/notes)
+<>
+let $doc := doc("notes_consumer02.xml") return $doc
+<>
+let $doc := doc("notes_consumer02.xml")
+let $orig := $doc/notes/objectnote[@xid="14"]
+let $on := element objectnote { attribute xid {"14"}, attribute user {"unknown"}, attribute unixtime {"1185198696"}, text {"nootje, pinda"}, element original { $orig } }
+return if (exists($orig)) then (do replace $orig with $on) else (do insert $on as last into $doc/notes)
+<>
+let $doc := doc("notes_consumer02.xml") return $doc

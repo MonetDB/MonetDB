@@ -3818,6 +3818,9 @@ PROC do_update_insert(bat[void, bat] ws, bat[void,lng] insert_update, bat[void,o
                   pre := oid(docsize);
                 }
               }
+              if ((int(pre) >= docsize) and (rid <= pagelast)) {
+                holesize :+= (int(pagelast) - int(rid)) + 1;
+              }
             }
             # note: holeatstart = 0 if the insert point isn't at the start of the hole at the end of the page
             if ((holesize + holeatstart) < insertsize) {
