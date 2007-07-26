@@ -1568,7 +1568,7 @@ returns all nodes on the @1 axis of the ctx-nodes duplicate free for each group.
 @
 @= pre_sort_input
 	# pre-sort input
-	if ( and(order,1) = 0 ) {
+	if ( (and(order,1) = 0) and not(ordered(reverse(item)))) {
 		var ord := item.tsort();
 		    ord := ord.CTrefine(iter).mark(0@0).reverse();
 		iter := ord.leftfetchjoin(iter);
