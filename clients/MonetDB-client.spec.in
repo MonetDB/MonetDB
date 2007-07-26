@@ -13,7 +13,7 @@ Source: clients-%{version}.tar.gz
 BuildRoot: /var/tmp/%{name}-root
 Packager: Niels Nes <Niels.Nes@cwi.nl>
 License:   MPL - http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
-BuildRequires: python 
+BuildRequires: python
 Requires: MonetDB >= 1.18
 
 %{!?_with_php: %{!?_without_php: %define _with_php --with-php}}
@@ -64,10 +64,10 @@ BuildRequires: php, php-devel
 Summary: MonetDB python interface
 Group: System
 Requires: %{name} = %{version}-%{release}
-Requires: python = @PYTHON_VERSION@
+Requires: python
 %define python_libdir %(python -c 'import distutils.sysconfig; print distutils.sysconfig.get_python_lib(1,0,"")')
 %if !%{?buildsystem}
-BuildRequires: python, python-devel = @PYTHON_VERSION@, swig
+BuildRequires: python, python-devel, swig
 %endif
 %endif
 
@@ -79,7 +79,15 @@ Requires: %{name} = %{version}-%{release}
 Requires: perl
 %define perl_libdir %(perl -MConfig -e '$x=$Config{installvendorarch}; $x =~ s|$Config{vendorprefix}/||; print $x;')
 %if !%{?buildsystem}
-BuildRequires: perl, perl-devel, swig
+BuildRequires: perl, swig
+%if %{?fc7:1}%{!?fc7:0}
+# in Fedora Core 6 there is no perl-devel package: everything is in perl;
+# in Fedora 7 there is a perl-devel package which we need.  Presumably this
+# test needs refinement for Fedora > 7.  We may be able to check for the
+# existence of the variable "fedora" since it seems to be present in F7 but
+# not in FC6.
+BuildRequires: perl-devel
+%endif
 %endif
 %endif
 
@@ -200,7 +208,7 @@ rm -fr $RPM_BUILD_ROOT
 %files python
 %defattr(-,root,root) 
 %{prefix}/%{python_libdir}/*
-%{prefix}/share/MonetDB/python/Mapi.py
+%{prefix}/share/MonetDB/python/Mapi.py*
 %endif
 
 %if %{?_with_perl:1}%{!?_with_perl:0}
@@ -216,3 +224,8 @@ rm -fr $RPM_BUILD_ROOT
 %{prefix}/bin/mjclient 
 %{prefix}/share/MonetDB/lib/*jar
 %endif
+
+%changelog
+* Mon Jun 25 2007 Sjoerd Mullender <sjoerd@acm.org> - @VERSION@-1
+- Built.
+

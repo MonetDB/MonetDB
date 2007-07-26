@@ -23,9 +23,9 @@ BuildRequires: MonetDB-devel >= 1.18
 BuildRequires: MonetDB-client-devel >= 1.18
 %endif
 %if %{?_with_python:1}%{!?_with_python:0}
-Requires: python = @PYTHON_VERSION@
+Requires: python
 %if !%{?buildsystem}
-BuildRequires: python, python-devel = @PYTHON_VERSION@, swig
+BuildRequires: python, python-devel, swig
 %endif
 %endif
 
@@ -151,3 +151,8 @@ rm -rf $RPM_BUILD_ROOT
 # %files devel
 # %defattr(-,root,root) 
 # %{_libdir}/pkgconfig/MonetDB-SQL.pc
+
+%changelog
+* Mon Jun 25 2007 Sjoerd Mullender <sjoerd@acm.org> - @VERSION@-1
+- Built.
+

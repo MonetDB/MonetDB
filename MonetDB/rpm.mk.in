@@ -39,7 +39,7 @@ $(rpmtopdir)/rpmmacros:
 	echo "#%top_builddirroot %{_topdir}/INSTALL/" >> $(rpmtopdir)/rpmmacros
 
 rpm:	MonetDB.spec $(top_builddir)/$(distdir).tar.gz $(rpmtopdir)/rpmmacros
-	$(RPMBUILD) -ta --define="comp_cc @CC@" --target `uname -m` --rcfile $(rpmtopdir)/rpmrc $(top_builddir)/$(distdir).tar.gz
+	$(RPMBUILD) --rcfile $(rpmtopdir)/rpmrc -ta --target `uname -m` --define="comp_cc @CC@" $(top_builddir)/$(distdir).tar.gz
 	for i in rpm/SRPMS/*_@LINUX_DIST@.oid@oids@* ; do \
 		mv "$$i" "`echo "$$i" | sed 's|_@LINUX_DIST@.oid@oids@||'`" ; \
 	done
@@ -47,7 +47,7 @@ rpm:	MonetDB.spec $(top_builddir)/$(distdir).tar.gz $(rpmtopdir)/rpmmacros
 	rm -rf $(rpmtopdir)/BUILD
 
 srpm:	MonetDB.spec $(top_builddir)/$(distdir).tar.gz $(rpmtopdir)/rpmmacros
-	$(RPMBUILD) -ts --rcfile $(rpmtopdir)/rpmrc $(top_builddir)/$(distdir).tar.gz
+	$(RPMBUILD) --rcfile $(rpmtopdir)/rpmrc -ts $(top_builddir)/$(distdir).tar.gz
 	for i in rpm/SRPMS/*_@LINUX_DIST@.oid@oids@* ; do \
 		mv "$$i" "`echo "$$i" | sed 's|_@LINUX_DIST@.oid@oids@||'`" ; \
 	done

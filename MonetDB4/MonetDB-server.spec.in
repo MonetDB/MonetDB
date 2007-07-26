@@ -131,3 +131,7 @@ umask 022
 #create monetdb init script
 #/sbin/chkconfig --add monetdb
 
+%changelog
+* Mon Jun 25 2007 Sjoerd Mullender <sjoerd@acm.org> - @VERSION@-1
+- Built.
+
