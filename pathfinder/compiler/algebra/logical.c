@@ -1809,7 +1809,13 @@ PFla_rank (const PFla_op_t *n, PFalg_att_t a, PFord_ordering_t s)
                     PFatt_str (PFord_order_col_at (
                                    ret->sem.rank.sortby, i)));
 
-        if (!monomorphic (n->schema.items[j].type))
+        /* FIXME: we do allow polymorphic sequences as these
+           are only introduced by a combination of sequence
+           construction and optimizing rank operators. We only
+           ensure that these polymorphic columns are not the first
+           order constraint. The order of applying the different
+           columns independentely thus does not matter. */
+        if (!i && !monomorphic (n->schema.items[j].type))
             PFoops (OOPS_FATAL,
                     "sort criterion for rank must be monomorphic, "
                     "type: %i, name: %s",

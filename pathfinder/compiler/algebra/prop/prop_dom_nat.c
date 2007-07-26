@@ -523,7 +523,9 @@ infer_dom (PFla_op_t *n, unsigned int id)
                     for (j = 0; j < R(n)->schema.count; j++)
                         if (L(n)->schema.items[i].name ==
                             R(n)->schema.items[j].name) {
-                            assert (R(n)->schema.items[j].type == aat_nat);
+                            if (R(n)->schema.items[j].type != aat_nat)
+                                break;
+
                             dom1 = PFprop_dom (L(n)->prop,
                                                L(n)->schema.items[i].name);
                             dom2 = PFprop_dom (R(n)->prop,
