@@ -507,7 +507,7 @@ create_type_list(dlist *params, int param)
 		/*char subtype_name[BUFSIZ];*/
 
 		if (param) {
-	               	an = n->data.lval->h;
+			an = n->data.lval->h;
 			par_subtype = &an->next->data.typeval;
 			list_append(type_list, par_subtype);
 		} else { 
