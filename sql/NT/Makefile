@@ -36,12 +36,12 @@ install: targetdirs all $(M4INSTALLER) $(M5INSTALLER)
 	$(INSTALL) MSQLserver.bat "$(prefix)"
 
 install-m4installer:
-	$(INSTALL) MonetDB4-SQL\MonetDB4-Installer.sln "$(prefix)"
-	$(INSTALL) MonetDB4-SQL\MonetDB4-Installer.vdproj "$(prefix)"
+	$(INSTALL) MonetDB4-SQL\MonetDB4-SQL-Installer.sln "$(prefix)"
+	$(INSTALL) MonetDB4-SQL\MonetDB4-SQL-Installer.vdproj "$(prefix)"
 
 install-m5installer:
-	$(INSTALL) MonetDB5-SQL\MonetDB5-Installer.sln "$(prefix)"
-	$(INSTALL) MonetDB5-SQL\MonetDB5-Installer.vdproj "$(prefix)"
+	$(INSTALL) MonetDB5-SQL\MonetDB5-SQL-Installer.sln "$(prefix)"
+	$(INSTALL) MonetDB5-SQL\MonetDB5-SQL-Installer.vdproj "$(prefix)"
 
 $(SRCDIR)\Makefile.msc:
 	$(CD) "$(SRCDIR)" && autogen.py

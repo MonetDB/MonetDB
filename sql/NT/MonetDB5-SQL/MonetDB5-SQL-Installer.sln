@@ -1,5 +1,5 @@
 Microsoft Visual Studio Solution File, Format Version 8.00
-Project("{54435603-DBB4-11D2-8724-00A0C9A8B90C}") = "MonetDB4-Installer", "MonetDB4-Installer.vdproj", "{E5EBAB1B-6991-4ACC-8DBD-36E77E3D7F45}"
+Project("{54435603-DBB4-11D2-8724-00A0C9A8B90C}") = "MonetDB5-SQL-Installer", "MonetDB5-Installer.vdproj", "{E5EBAB1B-6991-4ACC-8DBD-36E77E3D7F45}"
 	ProjectSection(ProjectDependencies) = postProject
 	EndProjectSection
 EndProject
