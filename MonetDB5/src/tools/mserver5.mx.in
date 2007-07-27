@@ -583,6 +583,7 @@ faster system start.
 		GDKfree(err);
 	}
 
+#ifdef HAVE_SIGACTION
 	{
 		struct sigaction sa;
 
@@ -597,6 +598,13 @@ faster system start.
 			fprintf(stderr, "!unable to create signal handlers\n");
 		}
 	}
+#else
+	signal(SIGINT, handler);
+#ifdef SIGQUIT
+	signal(SIGQUIT, handler);
+#endif
+	signal(SIGTERM, handler);
+#endif
 
 	{
 		str lang = "mal";
