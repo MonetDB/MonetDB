@@ -3787,7 +3787,8 @@ PROC do_update_insert(bat[void, bat] ws, bat[void,lng] insert_update, bat[void,o
               if (int(pre) >= docsize) {
                 holesize := int(REMAP_PAGE_SIZE - (lng(docsize) and REMAP_PAGE_MASK));
               }
-              while ((int(pre) < docsize) and (rid <= pagelast)) {
+              var loop := true;
+              while (loop and (int(pre) < docsize) and (rid <= pagelast)) {
                 var s := 0;
                 if (isoldpage) {
                   if (rid_size_update.exist(rid)) {
@@ -3809,7 +3810,7 @@ PROC do_update_insert(bat[void, bat] ws, bat[void,lng] insert_update, bat[void,o
                   rid := oid(lng(rid) + h);
                 } else {
                   # not a hole, terminate loop
-                  pre := oid(docsize);
+                  loop := false;
                 }
               }
               if ((int(pre) >= docsize) and (rid <= pagelast)) {
