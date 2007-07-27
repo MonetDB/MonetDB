@@ -1485,13 +1485,6 @@ specific (PFfun_t *fn, PFcnode_t *args)
                                   (PFty_prime (PFty_defn(TY(L(args)))))));
     }
 
-    /* specific typing rules for fn:reverse() */
-    if (! PFqname_eq (fn->qname, PFqname (PFns_fn, "reverse"))) {
-        assert (args->kind == c_arg && R(args)->kind == c_nil);
-        return *PFty_simplify (PFty_quantifier (TY(L(args)))
-                                   (PFty_prime (PFty_defn(TY(L(args))))));
-    }
-
     /* specific typing rules for fn:subsequence() */
     if (! PFqname_eq (fn->qname, PFqname (PFns_fn, "subsequence"))) {
 
@@ -1520,7 +1513,9 @@ specific (PFfun_t *fn, PFcnode_t *args)
                         PFty_prime (PFty_defn (TY(L(args))))));
     }
 
-    if (! PFqname_eq (fn->qname, PFqname (PFns_fn, "trace")) ||
+    if (! PFqname_eq (fn->qname, PFqname (PFns_fn, "distinct-values")) ||
+        ! PFqname_eq (fn->qname, PFqname (PFns_fn, "reverse")) ||
+        ! PFqname_eq (fn->qname, PFqname (PFns_fn, "trace")) ||
         ! PFqname_eq (fn->qname, PFqname (PFns_fn, "unordered"))) {
         return *PFty_simplify (
                     (PFty_quantifier (PFty_defn (TY(L(args))))
