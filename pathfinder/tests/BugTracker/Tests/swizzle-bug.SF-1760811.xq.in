@@ -1,0 +1,45 @@
+pf:add-doc("$TSTSRCDIR/swizzle-bug-xiraf48457.SF-1760811.xml","wrappers.xml","wrappers.xml",10)
+<>
+
+do insert ("
+", <device name="pc01" type="unknown"/>, "
+") into doc("wrappers.xml")/XIRAF
+<>
+
+pf:add-doc("$TSTSRCDIR/swizzle-bug-xiraf48466.SF-1760811.xml","prepared48465.data","prepared48465.data")
+<>
+
+let $source := doc("prepared48465.data")
+let $destination := doc("wrappers.xml")
+for $item in $source/XIRAF/item return   do insert $item/*  into $destination/id(exactly-one($item/@nid) cast as xs:string)
+<>
+
+pf:add-doc("$TSTSRCDIR/swizzle-bug-xiraf48478.SF-1760811.xml","prepared48477.data","prepared48477.data")
+<>
+
+let $source := doc("prepared48477.data")
+let $destination := doc("wrappers.xml")
+for $item in $source/XIRAF/item return   do insert $item/*  into $destination/id(exactly-one($item/@nid) cast as xs:string)
+<>
+
+pf:add-doc("$TSTSRCDIR/swizzle-bug-xiraf48484.SF-1760811.xml","prepared48483.data","prepared48483.data")
+<>
+
+let $source := doc("prepared48483.data")
+let $destination := doc("wrappers.xml")
+for $item in $source/XIRAF/item return   do insert $item/*  into $destination/id(exactly-one($item/@nid) cast as xs:string)
+<>
+
+element { "job" } {
+	  attribute { "tool" } { "general-purpose/hash-tool" },
+	  attribute { "project" } { "wrappers" },
+	  for $xirafNode in subsequence( for $i in 
+	            doc("wrappers.xml")//file[@xstart and @xend]
+	        
+	where not($i/container/@tool[.="general-purpose/hash-tool"])
+	return $i, 1, 16384)
+	
+	return element { "item" } {
+	  attribute { "nid" } { pf:nid($xirafNode) },   if (exists($xirafNode/@xpoint)) then	  ($xirafNode/@xpoint, $xirafNode/../../@xstart, $xirafNode/../../@xend)  else	  ($xirafNode/@xstart, $xirafNode/@xend)  
+	}
+	}
