@@ -1062,8 +1062,6 @@ reduce (PFpnode_t * p, int goalnt)
              *  ParamList  ReturnType
              */
 
-            PFvar_t *v = new_var (NULL);
-
             /*
              * No need to compile function signature.  This has been
              * done already in process_fun_sigs().
@@ -1078,9 +1076,8 @@ reduce (PFpnode_t * p, int goalnt)
              * (see W3C XQuery 3.1.5 or function_conversion()
              */
 
-            C(LR(p)) = flwr (let (letbind (var (v), C(LR(p))), nil ()),
-                             function_conversion (var (v), 
-                                                  C(LLR(p))->sem.type));
+            C(LR(p)) = function_conversion (C(LR(p)),
+                                            C(LLR(p))->sem.type);
             L(p)->sem.fun->core = C(LR(p));
 
             fun_sigs = fun_decls (fun_decl (L(p)->sem.fun, C(LLL(p)), C(LR(p))),
@@ -1415,14 +1412,9 @@ reduce (PFpnode_t * p, int goalnt)
                                          where (OptWhereClause_,
                                                 ord_ret (nil, OptExpr))) */
         case 60:
-        {
-            PFvar_t *v = new_var (NULL);
-
             C(p) = flwr (C(L(p)),
-                         flwr (let (letbind (var (v), C(RL(p))), nil ()),
-                               if_ (var (v),
-                                    then_else (C(RRR(p)), empty ()))));
-        } break;
+                         if_ (C(RL(p)), then_else (C(RRR(p)), empty ())));
+            break;
 
         /* FLWORExpr:              flwr (OptBindExpr,
                                          where (OptWhereClause_,
@@ -1430,19 +1422,13 @@ reduce (PFpnode_t * p, int goalnt)
                                                             OrderSpecList),
                                                     OptExpr))) */
         case 61:
-        {
-            PFvar_t *v = new_var (NULL);
-
             C(p) = flwr (C(L(p)),
                          orderby (RRL(p)->sem.tru,    /* stable or not? */
                                   C(RRLL(p)),
-                                  flwr (let (letbind (var (v),
-                                                      C(RL(p))),
-                                             nil ()),
-                                        if_ (var (v),
-                                             then_else (C(RRR(p)), 
-                                                        empty ())))));
-        } break;
+                                  if_ (C(RL(p)),
+                                       then_else (C(RRR(p)), 
+                                                  empty ()))));
+            break;
 
         /* OptBindExpr:            nil */
         case 62:
@@ -1482,14 +1468,10 @@ reduce (PFpnode_t * p, int goalnt)
                                                 OptExpr),
                                           OptBindExpr) */
         case 65:
-        {
-            PFvar_t *v = new_var (NULL);
-
-            C(p) = let (letbind (var (v), C(LR(p))),
-                        for_ (forbind (forvars (C(LLLL(p)), C(LLR(p))),
-                                              var (v)),
-                              C(R(p))));
-        } break;
+            C(p) = for_ (forbind (forvars (C(LLLL(p)), C(LLR(p))),
+                                  C(LR(p))),
+                         C(R(p)));
+            break;
 
         /* OptBindExpr:            binds (bind (vars (var_type (
                                                           Var,
@@ -1499,18 +1481,16 @@ reduce (PFpnode_t * p, int goalnt)
                                           OptBindExpr) */
         case 66:
         {
-            PFvar_t *v1 = new_var (NULL);
-            PFvar_t *v2 = new_var (NULL);
+            PFvar_t *v = new_var (NULL);
 
-            C(p) = let (letbind (var (v1), C(LR(p))),
-                        for_ (forbind (forvars (var (v2), C(LLR(p))),
-                                              var (v1)),
-                              let (letbind (C(LLLL(p)),
-                                            proof (subty (var (v2),
-                                                          C(LLLR(p))),
-                                                   seqcast (C(LLLR(p)),
-                                                            var (v2)))),
-                                   C(R(p)))));
+            C(p) = for_ (forbind (forvars (var (v), C(LLR(p))),
+                                  C(LR(p))),
+                         let (letbind (C(LLLL(p)),
+                                       proof (subty (var (v),
+                                                     C(LLLR(p))),
+                                              seqcast (C(LLLR(p)),
+                                                       var (v)))),
+                              C(R(p))));
         } break;
 
         /* OptPosVar:              nil */
@@ -1593,52 +1573,23 @@ reduce (PFpnode_t * p, int goalnt)
              *  ==
              * not (some $a in e1 satisfies not (e2))
              *  ==
-             * let $v1 := some $a in e1 satisfies
-             *              let $v2 := e2 return not ($v2) return
-             *   not ($v1)
-             *
-             * ==
-             *
-             * let $v2 := some $a in e1 satisfies
-             *              let $v4 := e2 
-             *              return let $v3 := boolean ($v4)
-             *                     return not ($v3)
-             * return let $v1 := boolean ($v2)
-             *        return not ($v1)
+             * not (boolean (some $a in e1 satisfies not (boolean (e2))))
              *
              * (As not() uses boolean() to ensure that all items are
              *  present and we only want to support the more specific
              *  variant of not() we introduce additional calls 
              *  to boolean().)
              */
-            PFvar_t *v1      = new_var (NULL);
-            PFvar_t *v2      = new_var (NULL);
-            PFvar_t *v3      = new_var (NULL);
-            PFvar_t *v4      = new_var (NULL);
             PFfun_t *fn_not  = function (PFqname (PFns_fn, "not"));
             PFfun_t *fn_bool = function (PFqname (PFns_fn, "boolean"));
 
-            C(p) = flwr (let (
-                             letbind (
-                                 var (v2), 
+            C(p) = APPLY (fn_not, 
+                          APPLY (fn_bool,
                                  some (
                                      C(LLLLL(p)),
                                      C(LLR(p)),
-                                     flwr (let (letbind (var (v4), C(R(p))),
-                                                nil ()),
-                                           flwr (let (letbind (
-                                                          var (v3),
-                                                          APPLY (fn_bool,
-                                                                 var (v4))),
-                                                      nil ()),
-                                                 APPLY (fn_not, 
-                                                        var (v3)))))),
-                             nil ()),
-                         flwr (let (letbind (var (v1),
-                                             APPLY (fn_bool, var (v2))),
-                                    nil ()),
-                               APPLY (fn_not, (var (v1)))));
-
+                                     APPLY (fn_not, 
+                                            APPLY (fn_bool, C(R(p)))))));
         } break;
 
         /* QuantifiedExpr:         every (binds (bind (vars (var_type (Var,
@@ -1653,70 +1604,38 @@ reduce (PFpnode_t * p, int goalnt)
              *  ==
              * not (some $a as t in e1 satisfies not (e2))
              *  ==
-             * let $v1 := some $a as t in e1 satisfies
-             *              let $v2 := e2 return not ($v2) return
-             *   not ($v1)
+             * not (boolean (some $a as t in e1 satisfies not (boolean (e2))))
              *  ==
-             * let $v1 :=
-             *   some $v3 in e1 satisfies
-             *     let $a := proof ($v3, t, seqcast (t, $v3)) return
-             *       let $v2 := e2 return not ($v2) return
-             *   not ($v1)
-             *
-             * ==
-             *
-             * let $v2 := some $v5 in e1 satisfies
-             *              let $a := proof ($v5, t, seqcast (t, $v5))
-             *              return let $v4 := e2 
-             *                     return let $v3 := boolean ($v4)
-             *                            return not ($v3)
-             * return let $v1 := boolean ($v2)
-             *        return not ($v1)
+             * not (boolean (
+             *   some $v in e1 satisfies
+             *     let $a := proof ($v, t, seqcast (t, $v))
+             *     return not (boolean (e2))))
              *
              * (As not() uses boolean() to ensure that all items are
              *  present and we only want to support the more specific
              *  variant of not() we introduce additional calls 
              *  to boolean().)
              */
-            PFvar_t *v1 = new_var (NULL);
-            PFvar_t *v2 = new_var (NULL);
-            PFvar_t *v3 = new_var (NULL);
-            PFvar_t *v4 = new_var (NULL);
-            PFvar_t *v5 = new_var (NULL);
+            PFvar_t *v = new_var (NULL);
             PFfun_t *fn_not  = function (PFqname (PFns_fn, "not"));
             PFfun_t *fn_bool = function (PFqname (PFns_fn, "boolean"));
 
-            C(p) = flwr (let (letbind (
-                                  var (v2), 
-                                  some (
-                                      var (v5),
-                                      C(LLR(p)),
-                                      flwr (let (
-                                                letbind (
-                                                    C(LLLLL(p)),
-                                                    proof (subty (var (v5),
-                                                                  C(LLLLR(p))),
-                                                           seqcast (C(LLLLR(p)),
-                                                                    var (v5)))),
-                                                nil ()),
-                                            flwr (let (letbind (var (v4), 
-                                                                C(R(p))),
-                                                       nil ()),
-                                                  flwr (
-                                                      let (
-                                                          letbind (
-                                                              var (v3), 
-                                                              APPLY (fn_bool,
-                                                                     var (v4))),
-                                                          nil ()),
-                                                      APPLY (fn_not, var (v3)))
-                                            )))),
-                              nil ()),
-                          flwr (let (letbind (var (v1), 
-                                              APPLY (fn_bool, var (v2))),
-                                     nil ()),
-                                APPLY (fn_not, (var (v1)))));
-
+            C(p) = APPLY (fn_not,
+                          APPLY (fn_bool, 
+                                 some (
+                                     var (v),
+                                     C(LLR(p)),
+                                     flwr (let (
+                                               letbind (
+                                                   C(LLLLL(p)),
+                                                   proof (subty (var (v),
+                                                                 C(LLLLR(p))),
+                                                          seqcast (C(LLLLR(p)),
+                                                                   var (v)))),
+                                               nil ()),
+                                           APPLY (fn_not,
+                                                  APPLY (fn_bool,
+                                                         C(R(p))))))));
         } break;
 
         /* TypeswitchExpr:         typeswitch (
@@ -1975,13 +1894,8 @@ reduce (PFpnode_t * p, int goalnt)
         /* IfExpr:                 if_ (Expr,
                                         then_else (OptExpr, OptExpr)) */
         case 101:
-        {
-            PFvar_t *v = new_var (NULL);
-
-            C(p) = flwr (let (letbind (var (v), ebv (C(L(p)))), nil ()),
-                         if_ (var (v),
-                              then_else (C(RL(p)), C(RR(p)))));
-        } break;
+            C(p) = if_ (ebv (C(L(p))), then_else (C(RL(p)), C(RR(p))));
+            break;
 
         /* OrExpr:                 AndExpr */
         case 102:
@@ -1990,13 +1904,9 @@ reduce (PFpnode_t * p, int goalnt)
         /* OrExpr:                 or (AndExpr, OrExpr) */
         case 103:
         {
-            PFvar_t *v1 = new_var (NULL);
-            PFvar_t *v2 = new_var (NULL);
             PFfun_t *op_or = function (PFqname (PFns_op, "or"));
 
-            C(p) = flwr (let (letbind (var (v1), ebv (C(L(p)))), nil ()),
-                         flwr (let (letbind (var (v2), ebv (C(R(p)))), nil ()),
-                               APPLY (op_or, var (v1), var (v2))));
+            C(p) = APPLY (op_or, ebv (C(L(p))), ebv (C(R(p))));
         } break;
 
         /* AndExpr:                ComparisonExpr */
@@ -2006,13 +1916,9 @@ reduce (PFpnode_t * p, int goalnt)
         /* AndExpr:                and (ComparisonExpr, AndExpr) */
         case 105:
         {
-            PFvar_t *v1 = new_var (NULL);
-            PFvar_t *v2 = new_var (NULL);
             PFfun_t *op_and = function (PFqname (PFns_op, "and"));
 
-            C(p) = flwr (let (letbind (var (v1), ebv (C(L(p)))), nil ()),
-                         flwr (let (letbind (var (v2), ebv (C(R(p)))), nil ()),
-                               APPLY (op_and, var (v1), var (v2))));
+            C(p) = APPLY (op_and, ebv (C(L(p))), ebv (C(R(p))));
         } break;
 
         /* ComparisonExpr:         RangeExpr */
@@ -2195,20 +2101,12 @@ reduce (PFpnode_t * p, int goalnt)
         case 131:
         {
             PFfun_t *op_idiv = function (PFqname (PFns_op, "idiv"));
-            PFvar_t *v1 = new_var (NULL);
-            PFvar_t *v2 = new_var (NULL);
 
-            C(p) = flwr (
-                    let (letbind (
-                            var (v1),
-                            fs_convert_op_by_type (fn_data (C(L(p))),
-                                PFty_xs_integer ())), nil ()),
-                    flwr (let (letbind (
-                                var (v2),
-                                fs_convert_op_by_type (fn_data (C(R(p))),
-                                    PFty_xs_integer ())),
-                            nil ()),
-                        APPLY (op_idiv, var (v1), var (v2))));
+            C(p) =  APPLY (op_idiv, 
+                           fs_convert_op_by_type (fn_data (C(L(p))),
+                                                  PFty_xs_integer ()),
+                           fs_convert_op_by_type (fn_data (C(R(p))),
+                                                  PFty_xs_integer ()));
         } break;
 
         /* MultiplicativeExpr:     mod (UnionExpr, MultiplicativeExpr) */
@@ -2259,16 +2157,12 @@ reduce (PFpnode_t * p, int goalnt)
 
         /* InstanceofExpr:         instof (TreatExpr, SequenceType) */
         case 139:
-        {
-            PFvar_t *v = new_var (NULL);
-
-            C(p) = flwr (let (letbind (var (v), C(L(p))), nil ()),
-                         typeswitch (
-                             var (v),
-                             cases (
-                                 case_ (C(R(p)), true_ ()),
-                                 default_ (false_ ()))));
-        } break;
+            C(p) = typeswitch (
+                       C(L(p)),
+                       cases (
+                           case_ (C(R(p)), true_ ()),
+                           default_ (false_ ())));
+            break;
 
         /* TreatExpr:              CastableExpr */
         case 140:
@@ -2304,15 +2198,8 @@ reduce (PFpnode_t * p, int goalnt)
 
         /* CastExpr:               cast (UnaryExpr, SingleType) */
         case 145:
-        {
-            PFvar_t *v1 = new_var (NULL);
-            PFvar_t *v2 = new_var (NULL);
-
-            C(p) = flwr (let (letbind (var (v1), C(L(p))), nil ()),
-                         flwr (let (letbind (var (v2), fn_data (var (v1))),
-                                    nil ()),
-                               cast (C(R(p)), var (v2))));
-        } break;
+            C(p) = cast (C(R(p)), fn_data (C(L(p))));
+            break;
 
         /* UnaryExpr:              ValueExpr */
         case 146:
@@ -2321,29 +2208,25 @@ reduce (PFpnode_t * p, int goalnt)
         /* UnaryExpr:              uminus (ValueExpr) */
         case 147:
         {
-            PFvar_t *v = new_var (NULL);
             PFfun_t *op_minus = function (PFqname (PFns_op, "minus"));
 
-            C(p) = flwr (let (letbind (var (v),
-                                       fs_convert_op_by_type (
-                                           fn_data (C(L(p))),
-                                           PFty_xs_double ())),
-                              nil ()),
-                         APPLY (op_minus, num (0), var (v)));
+            C(p) = APPLY (op_minus,
+                          num (0), 
+                          fs_convert_op_by_type (
+                              fn_data (C(L(p))),
+                              PFty_xs_double ()));
         } break;
 
         /* UnaryExpr:              uplus (ValueExpr) */
         case 148:
         {
-            PFvar_t *v = new_var (NULL);
             PFfun_t *op_plus = function (PFqname (PFns_op, "plus"));
 
-            C(p) = flwr (let (letbind (var (v),
-                                       fs_convert_op_by_type (
-                                           fn_data (C(L(p))),
-                                           PFty_xs_double ())),
-                              nil ()),
-                    APPLY (op_plus, num (0), var (v)));
+            C(p) = APPLY (op_plus,
+                          num (0), 
+                          fs_convert_op_by_type (
+                              fn_data (C(L(p))),
+                              PFty_xs_double ()));
         } break;
 
         /* ValueExpr:              ValidateExpr */
@@ -2373,16 +2256,13 @@ reduce (PFpnode_t * p, int goalnt)
         {   /* guarantee document order (even for reverse axis steps) */
             assert (C(p));
 
-            PFvar_t *v = new_var (NULL);
             PFfun_t *ddo_as   = function (
                                     PFqname (
                                         PFns_pf, 
                                         "distinct-doc-order-or-atomic-sequence"
                                             ));
                 
-            C(p) = flwr (let (letbind (var (v), C(p)),
-                              nil ()),
-                         APPLY (ddo_as, var (v)));
+            C(p) = APPLY (ddo_as, C(p));
         } break;
 
         /* LocationPath:           root_ */
@@ -2466,21 +2346,19 @@ reduce (PFpnode_t * p, int goalnt)
              *
              * In XQuery Core:
              *
-             * let $v1 := E1 return
-             *   typeswitch ($v1)
+             * let $v := E1 return
+             *   typeswitch ($v)
              *     case node* return
-             *       let $v2 := let $fs:last := fn:count ($v1) return
-             *                    for $fs:dot at $fs:position in $v1 return E2
-             *         return
-             *           fs:distinct-doc-order-or-atomic-sequence ($v2)
+             *       fs:distinct-doc-order-or-atomic-sequence (
+             *           let $fs:last := fn:count ($v) returni
+             *               for $fs:dot at $fs:position in $v return E2)
              *     default error (err:XP0019)
              */
 
             PFvar_t *dot;
             PFvar_t *position;
             PFvar_t *last;
-            PFvar_t *v1 = new_var (NULL);
-            PFvar_t *v2 = new_var (NULL);
+            PFvar_t *v = new_var (NULL);
 
             PFfun_t *fn_error = function (PFqname (PFns_fn, "error"));
             PFfun_t *count    = function (PFqname (PFns_fn, "count"));
@@ -2508,29 +2386,24 @@ reduce (PFpnode_t * p, int goalnt)
             reduce (kids[0], nts[0]);
 
             C(p) =
-                flwr (let (letbind (var (v1), C(R(p))), nil ()),
+                flwr (let (letbind (var (v), C(R(p))), nil ()),
                   typeswitch (
-                    var (v1),
+                    var (v),
                     cases (
                       case_ (
                         seqtype (PFty_star (PFty_xs_anyNode ())),
-                        flwr (
-                          let (
-                            letbind (
-                              var (v2),
-                              flwr (
-                                let (
-                                  letbind (var (fs_last), 
-                                           APPLY (count, var (v1))),
-                                  nil ()),
-                                flwr (for_ (
-                                    forbind (forvars (var (fs_dot),
-                                                      var (fs_position)),
-                                             var (v1)),
-                                    nil ()),
-                                C(L(p))))),
-                            nil ()),
-                          APPLY (ddo_as, var (v2)))),
+                        APPLY (ddo_as,
+                               flwr (
+                                 let (
+                                   letbind (var (fs_last), 
+                                            APPLY (count, var (v))),
+                                   nil ()),
+                                 flwr (for_ (
+                                     forbind (forvars (var (fs_dot),
+                                                       var (fs_position)),
+                                              var (v)),
+                                     nil ()),
+                                 C(L(p)))))),
                       default_ (
                         APPLY (fn_error,
                                str ("err:XP0019: Argument to location step "
@@ -2549,32 +2422,26 @@ reduce (PFpnode_t * p, int goalnt)
              * For regular location steps, we don't actually need the
              * complicated stuff in the above rule.
              *
-             * let $v1 := PathExpr return
-             *   typeswitch ($v1)
+             * let $v := PathExpr return
+             *   typeswitch ($v)
              *     case node* return
-             *                  let $v2 := $v1/LocationStep return
-             *                    fs:distinct-doc-order ($v2)
+             *         fs:distinct-doc-order ($v/LocationStep)
              *     default error (err:XP0019)
              */
-            PFvar_t *v1 = new_var (NULL);
-            PFvar_t *v2 = new_var (NULL);
+            PFvar_t *v = new_var (NULL);
             PFfun_t *ddo = function (PFqname (PFns_pf, "distinct-doc-order"));
             PFfun_t *fn_error = function (PFqname (PFns_fn, "error"));
 
             assert (C(LL(p)));
             
             C(L(p)) = step (L(p)->sem.axis, C(LL(p)));
-            C(p) = flwr (let (letbind (var (v1), C(R(p))),
+            C(p) = flwr (let (letbind (var (v), C(R(p))),
                               nil ()),
                          typeswitch (
-                           var (v1),
+                           var (v),
                            cases (
                              case_ (seqtype (PFty_star (PFty_xs_anyNode ())),
-                               flwr (let (letbind (var (v2), 
-                                                   locsteps (C(L(p)),
-                                                             var (v1))),
-                                          nil ()),
-                                     APPLY (ddo, var (v2)))),
+                               APPLY (ddo, locsteps (C(L(p)),var (v)))),
                              default_ (
                                APPLY (fn_error,
                                       str ("err:XP0019: Argument to location "
@@ -2925,14 +2792,9 @@ reduce (PFpnode_t * p, int goalnt)
                                  PFqname (PFns_fn, "number")))
                ) {
                 if (fs_dot) {
-                    PFvar_t *v = new_var (NULL);
-                    C(p) = flwr (let (letbind (var (v),
-                                              APPLY (
-                                                  function (
-                                                      PFqname (PFns_fn,
-                                                               "string")),
-                                       var (fs_dot))), nil ()),
-                                 APPLY (p->sem.fun, var (v)));
+                    C(p) = APPLY (p->sem.fun, 
+                                  APPLY (function (PFqname (PFns_fn, "string")),
+                                         var (fs_dot)));
                 }
                 else
                     PFoops_loc (OOPS_NOCONTEXT, p->loc, "``.'' is unbound");
@@ -3097,14 +2959,10 @@ reduce (PFpnode_t * p, int goalnt)
                for the second and third argument of fn:subsequence(). */
             if (! PFqname_eq (fun->qname, PFqname (PFns_fn, "subsequence")) &&
                 param_num > 0) {
-                PFvar_t *v1 = new_var (NULL);
-                PFvar_t *v2 = new_var (NULL);
-                
-                converted = flwr (let (letbind (var (v1), converted), nil ()),
-                                  APPLY (function (PFqname (PFns_fn, "round")),
-                                         var (v1)));
-		converted = flwr (let (letbind (var (v2), converted), nil ()),
-                                  cast (seqtype (PFty_xs_integer ()), var (v2)));
+                converted = APPLY (function (PFqname (PFns_fn, "round")),
+                                   converted);
+		converted = cast (seqtype (PFty_xs_integer ()),
+                                  converted);
             }
             
             /* Implicitly call fn:boolean() before fn:not(). */
@@ -3116,14 +2974,10 @@ reduce (PFpnode_t * p, int goalnt)
                 implicit = function (PFqname (PFns_fn, "string"));
 
             if (implicit) {
-                PFvar_t *v1 = new_var (NULL);
-
-                C(p) = flwr (let (letbind (var (v1), converted),
+                C(p) = flwr (let (letbind (var (v),
+                                           APPLY (implicit, converted)),
                                   nil ()),
-                             flwr (let (letbind (var (v),
-                                                 APPLY (implicit, var (v1))),
-                                        nil ()),
-                                   C(R(p))));
+                             C(R(p)));
             }
             else {
                 /* construct return value */
@@ -3202,9 +3056,6 @@ reduce (PFpnode_t * p, int goalnt)
              *   the empty sequence differently. For now, we leave everything
              *   as it is and wait until the W3C guys know what they want.
              */
-	    PFvar_t *v1 = new_var (NULL);
-	    PFvar_t *v2 = new_var (NULL);
-	    PFvar_t *v3 = new_var (NULL);
             PFfun_t *is2uA =
 	      function (PFqname (PFns_pf, "item-sequence-to-untypedAtomic"));
 
@@ -3213,21 +3064,12 @@ reduce (PFpnode_t * p, int goalnt)
 	     *
 	     * text { e }
 	     *  ==
-	     * let $v1 := fn:data (e) return
-	     *   let $v2 := pf:item-sequence-to-untypedAtomic ($v1) return
-	     *     let $v3 := $v2 cast as xs:string? return
-	     *        text { $v3 }
+	     * text { pf:item-sequence-to-untypedAtomic (fn:data (e))
+                      cast as xs:string? }
 	     */
-	    C(p) = flwr (let (letbind (var (v1), fn_data (C(L(p)))),
-			      nil ()),
-			 flwr (let (letbind (var (v2),
-					     APPLY (is2uA, (var (v1)))),
-				    nil ()),
-			       flwr (let (letbind (var (v3),
-					  cast (seqtype (PFty_opt (PFty_xs_string ())),
-						var (v2))),
-					  nil ()),
-				     constr (p->kind, var (v3)))));   
+	    C(p) = constr (p->kind, 
+                           cast (seqtype (PFty_opt (PFty_xs_string ())),
+                                 APPLY (is2uA, fn_data (C(L(p))))));
         } break;
 
         /* CommentConstructor:     comment (Expr) */
@@ -3243,20 +3085,10 @@ reduce (PFpnode_t * p, int goalnt)
         /* PIConstructor:          pi (OptExpr, OptContentExpr) */
         case 200:
         {
-            PFvar_t *target  = new_var (NULL);
-            PFvar_t *content = new_var (NULL);
-            PFvar_t *v       = new_var (NULL);
-
             PFfun_t *is2uA =
                 function (PFqname (PFns_pf, "item-sequence-to-untypedAtomic"));
 
-            C(p) = flwr (let (letbind (var (target), C(L(p))), nil ()),
-                         flwr (let (letbind (var (v), C(R(p))), nil ()),
-                               flwr (let (letbind (var (content), 
-                                                   APPLY (is2uA, var (v))),
-                                          nil ()),
-                                     constr_pi (var (target), 
-                                                var (content)))));
+            C(p) = constr_pi (C(L(p)), APPLY (is2uA, C(R(p))));
         } break;
 
         /* DocumentConstructor:    doc (Expr) */
@@ -3300,29 +3132,21 @@ reduce (PFpnode_t * p, int goalnt)
              *   identity, as element construction will fiddle with strings
              *   there anyway.
              */
-            PFvar_t *v1 = new_var (NULL);
-            PFvar_t *v2 = new_var (NULL);
             PFfun_t *resolve_qname
                 = function (PFqname (PFns_fn, "resolve-QName"));
 
-            C(p) = flwr (let (letbind (var (v1), fn_data (C(p))), nil ()),
-                         flwr (let (letbind (
-                                     var (v2),
-                                     fs_convert_op_by_type (var (v1),
-                                                            PFty_xs_string ())),
-                                    nil ()),
-                               APPLY (resolve_qname, var (v2))));
+            C(p) = APPLY (resolve_qname,
+                          fs_convert_op_by_type (fn_data (C(p)),
+                                                 PFty_xs_string ()));
         } break;
 
         /* OptContentExpr:         OptExpr */
         case 204:
         {
-            PFvar_t *v = new_var (NULL);
             PFfun_t *is2ns =
                 function (PFqname (PFns_pf, "item-sequence-to-node-sequence"));
 
-            C(p) = flwr (let (letbind (var (v), C(p)), nil ()),
-                         APPLY (is2ns, var (v)));
+            C(p) = APPLY (is2ns, C(p));
 
         } break;
 
@@ -3347,28 +3171,18 @@ reduce (PFpnode_t * p, int goalnt)
              *  b. Cast each atomic value in the resulting sequence to a string
              *  c. Merge all the resulting strings with a space character
              *     inbetween.
-             *
-             * let $v1 := [[ $1$ ]] return
-             *    let $v2 := for $v3 in $v1 return fn:string($v3)
-             *       return
-             *       fn:string-join( $v2, " " )
              */
-            PFvar_t *v1 = new_var (NULL);
-            PFvar_t *v2 = new_var (NULL);
-            PFvar_t *v3 = new_var (NULL);
+            PFvar_t *v = new_var (NULL);
             PFfun_t *string = function (PFqname (PFns_fn, "string"));
             PFfun_t *string_join = function (PFqname (PFns_fn, "string-join"));
 
-            C(p) =
-                flwr (let (letbind (var (v1), C(p)), nil ()),
-                      flwr (let (letbind (
-                                     var (v2),
-                                     flwr (for_ (forbind (forvars (var (v3),
-                                                                   nil ()),
-                                                 var (v1)), nil ()),
-                                           APPLY (string, var (v3)))),
-                                 nil ()),
-                            APPLY (string_join, var (v2), str (" "))));
+            C(p) = APPLY (string_join,
+                          flwr (for_ (forbind (forvars (var (v),
+                                                        nil ()),
+                                               C(p)),
+                                      nil()),
+                                APPLY (string, var (v))),
+                          str (" "));
         } break;
 
         /* AttributeValue:         empty_seq */
@@ -3387,18 +3201,11 @@ reduce (PFpnode_t * p, int goalnt)
              * converted in the rule AttrEnclosedExpr. All that is left
              * to do is to concatenate them.
              *
-             * let $v1 := [[ e1 ]] return
-             *   let $v2 := [[ e2 ]] return
-             *     fn:concat ($v1, $v2)
+             * fn:concat ([[ e1 ]], [[ e2 ]])
              */
-            PFvar_t *v1 = new_var (NULL);
-            PFvar_t *v2 = new_var (NULL);
             PFfun_t *concat = function (PFqname (PFns_fn, "concat"));
 
-            C(p) = flwr (let (letbind (var (v1), C(L(p))), nil ()),
-                         flwr (let (letbind (var (v2), C(R(p))), nil ()),
-                               APPLY (concat, var (v1), var (v2))));
-
+            C(p) = APPLY (concat, C(L(p)), C(R(p)));
         } break;
 
         /* ExtensionExpr:          ext_expr (Pragmas, nil) */
@@ -4078,70 +3885,45 @@ comparison_worker (PFpnode_t *p, PFfun_t *fun)
 {
     PFvar_t *v1 = new_var (NULL);
     PFvar_t *v2 = new_var (NULL);
-    PFvar_t *u1 = new_var (NULL);
-    PFvar_t *u2 = new_var (NULL);
 
-    C(p) = some (var (v1), fn_data (C(L(p))),
-            some (
-                var (v2), fn_data (C(R(p))),
-                flwr (let (letbind (var (u1),
-                                    fs_convert_op_by_type (
-                                        fs_convert_op_by_expr (var (v1),
-                                                               var (v2)),
-                                        PFty_xs_string ())), nil ()),
-                      flwr (let (letbind (var (u2),
-                                          fs_convert_op_by_type (
-                                              fs_convert_op_by_expr (var (v2),
-                                                                     var (v1)),
-                                              PFty_xs_string ())), nil ()),
-                            APPLY (fun, var (u1), var (u2))))));
+    C(p) = some (
+               var (v1), fn_data (C(L(p))),
+               some (
+                   var (v2), fn_data (C(R(p))),
+                   APPLY (
+                       fun,
+                       fs_convert_op_by_type (
+                           fs_convert_op_by_expr (var (v1), var (v2)),
+                           PFty_xs_string ()),
+                       fs_convert_op_by_type (
+                           fs_convert_op_by_expr (var (v2), var (v1)),
+                           PFty_xs_string ()))));
 }
 
 static void
 val_comparison_worker (PFpnode_t *p, PFfun_t *fun)
 {
-    PFvar_t *v1 = new_var (NULL);
-    PFvar_t *v2 = new_var (NULL);
-
-    C(p) = flwr (let (letbind (
-                          var (v1),
-                          fs_convert_op_by_type (fn_data (C(L(p))),
-                                                 PFty_xs_string ())), nil ()),
-                 flwr (let (letbind (
-                                var (v2),
-                                fs_convert_op_by_type (fn_data (C(R(p))),
-                                                       PFty_xs_string ())),
-                            nil ()),
-                       APPLY (fun, var (v1), var (v2))));
+    C(p) = APPLY (fun, 
+                  fs_convert_op_by_type (fn_data (C(L(p))),
+                                         PFty_xs_string ()),
+                  fs_convert_op_by_type (fn_data (C(R(p))),
+                                         PFty_xs_string ()));
 }
 
 static void
 calculation_worker (PFpnode_t *p, PFfun_t *fun)
 {
-    PFvar_t *v1 = new_var (NULL);
-    PFvar_t *v2 = new_var (NULL);
-
-    C(p) = flwr (let (letbind (
-                          var (v1),
-                          fs_convert_op_by_type (fn_data (C(L(p))),
-                                                 PFty_xs_double ())), nil ()),
-                 flwr (let (letbind (
-                                var (v2),
-                                fs_convert_op_by_type (fn_data (C(R(p))),
-                                                       PFty_xs_double ())),
-                            nil ()),
-                       APPLY (fun, var (v1), var (v2))));
+    C(p) = APPLY (fun,
+                  fs_convert_op_by_type (fn_data (C(L(p))),
+                                         PFty_xs_double ()),
+                  fs_convert_op_by_type (fn_data (C(R(p))),
+                                         PFty_xs_double ()));
 }
 
 static void
 two_arg_fun_worker (PFpnode_t *p, PFfun_t *fun)
 {
-    PFvar_t *v1 = new_var (NULL);
-    PFvar_t *v2 = new_var (NULL);
-
-    C(p) = flwr (let (letbind (var (v1), C(L(p))), nil ()),
-                 flwr (let (letbind (var (v2), C(R(p))), nil ()),
-                       APPLY (fun, var (v1), var (v2))));
+    C(p) = APPLY (fun, C(L(p)), C(R(p)));
 }
 
 /**
@@ -4217,9 +3999,7 @@ function_conversion (const PFcnode_t *e, PFty_t expected)
     PFty_t exp_prime;
 
     PFcnode_t *ret;
-    PFvar_t   *v1 = new_var (NULL);
-    PFvar_t   *v2 = new_var (NULL);
-    PFvar_t   *v3 = new_var (NULL);
+    PFvar_t   *v = new_var (NULL);
 
     assert (e);
 
@@ -4238,23 +4018,16 @@ function_conversion (const PFcnode_t *e, PFty_t expected)
            does not need to be casted to atomic 
            -- we therefore can skip the convert-op */
         if (PFty_eq (exp_prime, PFty_atomic ()))
-            ret = flwr (let (letbind (var (v1), e), nil ()),
-                        fn_data (var (v1)));
+            ret = fn_data (e);
         else 
             /* Steps 1 and 2:
              *
-             * let $v1 := e return
-             *   let $v2 := fn:data ($v1) return
-             *     for $v3 in $v2 return
-             *       convert-op ($v3, exp_prime)
+             * for $v in fn:data (e) return
+             *   convert-op ($v, exp_prime)
              */
-            ret = flwr (let (letbind (var (v1), e), nil ()),
-                        flwr (let (letbind (var (v2), fn_data (var (v1))), 
-                                   nil ()),
-                              flwr (for_ (forbind (forvars (var (v3), nil ()),
-                                                   var (v2)), nil ()),
-                                    fs_convert_op_by_type (var (v3),
-                                                           exp_prime))));
+            ret = flwr (for_ (forbind (forvars (var (v), nil ()),
+                                       fn_data (e)), nil ()),
+                        fs_convert_op_by_type (var (v), exp_prime));
 
     }
     else

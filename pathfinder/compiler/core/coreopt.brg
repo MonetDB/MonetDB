@@ -287,7 +287,7 @@ CoreExpr:           twig_seq (CoreExpr, CoreExpr)               =   51(10);
 CoreExpr:           twig_seq (empty, CoreExpr)                  =  20 (10);
 CoreExpr:           twig_seq (CoreExpr, empty)                  =  21 (10);
 
-CoreExpr:           LocationSteps                               =   55(10);
+CoreExpr:           LocationSteps                               =  29 (10);
 CoreExpr:           LocationStep                                =   56(10);
                                                                      
 LocationStep:       ancestor (SequenceType)                     =   57(10);
@@ -370,11 +370,6 @@ CoreExpr:           recursion (var, seed (CoreExpr, CoreExpr))  =  115(10);
 
 /* Pathfinder extension: XRPC */
 CoreExpr:           xrpc (CoreExpr, CoreExpr)                   =  116(10);
-
-/* push down #pf:merge-adjacent-text-nodes */
-CoreExpr:           flwr (let (letbind (var, seq (CoreExpr,
-                                                  CoreExpr)),
-                               nil), apply (arg (var, nil)))    =  29 (10);
 
 %%
 
@@ -492,21 +487,6 @@ reduce (PFcnode_t * p, int goalnt)
 
                     rewritten = true;
                 }
-                /* see ``case 6'' (as rules seem to overlap):
-                   CoreExpr: flwr (let (letbind (var, CoreExpr), nil), var) */
-                /* replace unnecessary let binding 
-                   'let $a := ... return $a' by its input '...' */
-                else if (L(p)->kind == c_let &&
-                         LL(p)->kind == c_letbind &&
-                         LLL(p)->kind == c_var &&
-                         R(p)->kind == c_var &&
-                         LLL(p)->sem.var == R(p)->sem.var &&
-                         !R(p)->sem.var->global) {
-                    *p = *LLR(p);
-                    relabel (p, kids);
-                    rewritten = true;
-                }
-                         
                 break;
 
             /* OptBindExpr:        let (letbind (var, CoreExpr), OptBindExpr) */
@@ -531,7 +511,9 @@ reduce (PFcnode_t * p, int goalnt)
 
                 /* add mapping for this variable to the environment */
                 *((bind_t *) PFarray_add (var_env[hash(LL(p)->sem.var)]))
-                    = (bind_t) { .var = LL(p)->sem.var, .atom = LR(p), .child = -1 };
+                    = (bind_t) { .var = LL(p)->sem.var,
+                                 .atom = LR(p),
+                                 .child = -1 };
 
                 if (LL(p)->sem.var->global && LR(p)->kind == c_var)
                     LR(p)->sem.var->global = true;
@@ -1128,29 +1110,26 @@ reduce (PFcnode_t * p, int goalnt)
                               PFqname (PFns_pf,
                                        "item-sequence-to-untypedAtomic"))) {
                 
-                PFvar_t   *v1 = new_var (NULL);
-                PFvar_t   *v2 = new_var (NULL);
-                PFvar_t   *v3 = new_var (NULL);
-                PFfun_t   *fn_string
-                    = function (PFqname (PFns_fn, "string"));
-                PFfun_t   *fn_string_join
-                    = function (PFqname (PFns_fn, "string-join"));
+                /* cope with empty sequences */
+                if (PFty_subtype (TY(LL(p)), PFty_empty ())) {
+                    *p = *cast (seqtype (PFty_untypedAtomic ()),
+                                str (""));
+                }
+                else {
+                    PFvar_t   *v = new_var (NULL);
+                    PFfun_t   *fn_string
+                        = function (PFqname (PFns_fn, "string"));
+                    PFfun_t   *fn_string_join
+                        = function (PFqname (PFns_fn, "string-join"));
 
-                *p = *flwr (let (letbind (
-                                     var (v1),
-                                     flwr (for_ (forbind (forvars (var (v2),
-                                                                   nil ()),
-                                                          LL(p)), nil ()),
-                                           apply (fn_string, 
-                                                  arg (var (v2), nil ())))), 
-                            let (letbind (
-                                    var (v3),
-                                    apply (
-                                        fn_string_join,
-                                        arg (var (v1), arg (str (" "),nil())))),
-                                 nil ())),
-                            cast (seqtype (PFty_untypedAtomic ()),
-                                  var (v3)));
+                    *p = *cast (seqtype (PFty_untypedAtomic ()),
+                                APPLY (fn_string_join,
+                                       flwr (for_ (forbind (forvars (var (v),
+                                                                     nil ()),
+                                                            LL(p)), nil ()),
+                                             APPLY (fn_string, var (v))),
+                                       str (" ")));
+                }
 
                 PFty_check (p);
 
@@ -1230,6 +1209,52 @@ reduce (PFcnode_t * p, int goalnt)
                     rewritten = true;
                     break;
                 }
+                /* Special rewrite: Push down the #pf:merge-adjacent-text-nodes
+                   function if its input is a sequence where at least one
+                   argument does not contain text nodes. */
+                else if (LL(p)->kind == c_seq) {
+                    if (!PFty_subtype (PFty_opt (PFty_text ()),
+                                       TY(LLL(p)))) {
+                        PFfun_t *pf_matn
+                            = function (
+                                  PFqname (
+                                      PFns_pf,
+                                      "merge-adjacent-text-nodes"));
+                        
+                        /* push #pf:matn into right sequence constructor input */
+                        *p = *seq (LLL(p), APPLY (pf_matn, LLR(p)));
+                        PFty_check (p);
+
+                        rewritten = true;
+
+                        /*
+                         * Re-label entire subtree. Type-checking may have
+                         * modified all the state labels in the subtree, so
+                         * we have to restore them.
+                         */
+                        PFcoreopt_label (p);
+                    } else if (!PFty_subtype (PFty_opt (PFty_text ()),
+                                              TY(LLR(p)))) {
+                        PFfun_t *pf_matn
+                            = function (
+                                  PFqname (
+                                      PFns_pf,
+                                      "merge-adjacent-text-nodes"));
+                        
+                        /* push #pf:matn into left sequence constructor input */
+                        *p = *seq (APPLY (pf_matn, LLL(p)), LLR(p));
+                        PFty_check (p);
+
+                        rewritten = true;
+
+                        /*
+                         * Re-label entire subtree. Type-checking may have
+                         * modified all the state labels in the subtree, so
+                         * we have to restore them.
+                         */
+                        PFcoreopt_label (p);
+                    }
+                }
             }
             break;
 
@@ -1279,7 +1304,18 @@ reduce (PFcnode_t * p, int goalnt)
                 *p = *R(p);
                 rewritten = true;
                 break;
-            }
+            } else if (PFty_subtype (TY(L(p)),
+                                     PFty_opt (PFty_xs_string ())) &&
+                       (R(p)->kind == c_seqcast || R(p)->kind == c_cast) &&
+                       PFty_subtype (TY(RL(p)), 
+                                     PFty_opt (PFty_untypedAtomic ())) &&
+                       PFty_subtype (TY(RR(p)), PFty_xs_string ())) {
+                /* remove two adjacent cast operators that cast from string
+                   to untypedAtomic and back to string */
+                *p = *RR(p);
+                rewritten = true;
+                break;                    
+            } 
             break;
             
         /* Atom:                var */
@@ -1306,53 +1342,19 @@ reduce (PFcnode_t * p, int goalnt)
             }
             break;
 
-        /* CoreExpr:           flwr (let (letbind (var, seq (CoreExpr,
-                                                             CoreExpr),
-                                          nil), apply (arg (var, nil))) */
+        /* CoreExpr:           LocationSteps */
         case 29:
-            /* Special rewrite: Push down the #pf:merge-adjacent-text-nodes
-               function if its input is a sequence where at least one argument
-               does not contain text nodes. */
-            if (LLL(p)->sem.var == RLL(p)->sem.var &&
-                !PFqname_eq (R(p)->sem.fun->qname,
-                             PFqname (PFns_pf,
-                                      "merge-adjacent-text-nodes"))) {
-                if (!PFty_subtype (PFty_opt (PFty_text ()),
-                                   TY(LLRL(p)))) {
-                    /* push #pf:matn into right sequence constructor input */
-                    PFcnode_t *lseq = LLRL(p);
-                    LLR(p) = LLRR(p);
-                    *p = *seq (lseq, flwr (L(p), R(p)));
-                    PFty_check (p);
-
-                    rewritten = true;
-
-                    /*
-                     * Re-label entire subtree. Type-checking may have
-                     * modified all the state labels in the subtree, so
-                     * we have to restore them.
-                     */
-                    PFcoreopt_label (p);
-                } else if (!PFty_subtype (PFty_opt (PFty_text ()),
-                                          TY(LLRR(p)))) {
-                    /* push #pf:matn into left sequence constructor input */
-                    PFcnode_t *rseq = LLRR(p);
-                    LLR(p) = LLRL(p);
-                    *p = *seq (flwr (L(p), R(p)), rseq);
-                    PFty_check (p);
-
-                    rewritten = true;
-
-                    /*
-                     * Re-label entire subtree. Type-checking may have
-                     * modified all the state labels in the subtree, so
-                     * we have to restore them.
-                     */
-                    PFcoreopt_label (p);
-                }
+            /* remove bogus steps starting from attribute nodes */
+            assert (p->kind == c_locsteps);
+            if (L(p)->kind != c_parent &&
+                PFty_subtype (TY(R(p)), PFty_star (PFty_xs_anyAttribute ()))) {
+                *p = *empty ();
+                TY(p) = PFty_empty ();
+                rewritten = true;
+                break;
             }
             break;
-            
+
         default:
             break;
     }

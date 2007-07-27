@@ -469,10 +469,7 @@ PFcore_typeswitch (const PFcnode_t *e1, const PFcnode_t *e2)
 {
     assert (e1); assert (e2);
 
-    /* first argument must be a variable,
-     * second argument must be a cases list 
-     */    
-    assert (IS_ATOM (e1));
+    /* second argument must be a cases list */    
     assert (e2->kind == c_cases);
 
     return PFcore_wire2 (c_typesw, e1, e2);
@@ -541,9 +538,6 @@ PFcore_if (const PFcnode_t *cond, const PFcnode_t *ret)
 {
     assert (cond); assert (ret); assert (ret->kind == c_then_else);
 
-    /* first argument must be an atom */
-    assert (IS_ATOM (cond));
-
     return PFcore_wire2 (c_if, cond, ret);
 }
 
@@ -611,9 +605,6 @@ PFcnode_t *
 PFcore_forbind (const PFcnode_t *vars, const PFcnode_t *expr)
 {
     assert (vars); assert (vars->kind == c_forvars); assert (expr);
-
-    /* binding expression must be an atom */
-    assert (IS_ATOM (expr));
 
     return PFcore_wire2 (c_forbind, vars, expr);
 }
@@ -1399,7 +1390,6 @@ PFcore_apply_ (PFfun_t *fn, ...)
     va_list arglist;
     PFarray_t *args;
     PFcnode_t *a;
-    PFvar_t *v;
     unsigned int i;
     PFcnode_t *core, *fnargs;
     PFcnode_t *apply;
@@ -1420,17 +1410,8 @@ PFcore_apply_ (PFfun_t *fn, ...)
 
     i = PFarray_last (args);
 
-    while (i--) {
-        v = PFcore_new_var (0);
-
-        core = PFcore_flwr (
-                   PFcore_let (
-                       PFcore_letbind (PFcore_var (v),
-                                       *((PFcnode_t **) PFarray_at (args, i))),
-                       PFcore_nil ()),
-                   core);
-        fnargs = PFcore_arg (PFcore_var (v), fnargs);
-    }
+    while (i--)
+        fnargs = PFcore_arg (*((PFcnode_t **) PFarray_at (args, i)), fnargs);
 
     /* bind apply instead of dummy node */
     *apply = *(PFcore_apply (fn, fnargs));
@@ -1459,8 +1440,7 @@ PFcnode_t *
 PFcore_fs_convert_op_by_type (const PFcnode_t *e, PFty_t t)
 {
     PFty_t target;
-    PFvar_t *v1 = PFcore_new_var (0);
-    PFvar_t *v2 = PFcore_new_var (0);
+    PFvar_t *v = PFcore_new_var (0);
 
     assert (e);
 
@@ -1475,31 +1455,27 @@ PFcore_fs_convert_op_by_type (const PFcnode_t *e, PFty_t t)
         target = t;
 
     /*
-     * let $v1 := [[ e ]] return
-     *   for $v2 in $v2 return
-     *     typeswitch ($v2)
-     *       case xdt:untypedAtomic return cast $v2 to <target type>
-     *       default return $v2
+     *   for $v in [[ e ]] return
+     *     typeswitch ($v)
+     *       case xdt:untypedAtomic return cast $v to <target type>
+     *       default return $v
      *
      * where <target type> has been determined above to xs:string
      * if t is xdt:untypedAtomic or to t otherwise.
      */
     return PFcore_flwr (
-               PFcore_let (PFcore_letbind (PFcore_var (v1), e), PFcore_nil ()),
-               PFcore_flwr (
-                   PFcore_for (PFcore_forbind (PFcore_forvars (PFcore_var (v2),
-                                                               PFcore_nil ()),
-                                               PFcore_var (v1)), 
-                               PFcore_nil ()),
-                   PFcore_typeswitch (
-                       PFcore_var (v2),
-                       PFcore_cases (
-                           PFcore_case (
-                               PFcore_seqtype (PFty_xdt_untypedAtomic ()),
-                    /*return*/ PFcore_cast (PFcore_seqtype (target),
-                                            PFcore_var (v2))),
-                           PFcore_default (PFcore_var (v2))))
-                   )
+               PFcore_for (PFcore_forbind (PFcore_forvars (PFcore_var (v),
+                                                           PFcore_nil ()),
+                                           e),
+                           PFcore_nil ()),
+               PFcore_typeswitch (
+                   PFcore_var (v),
+                   PFcore_cases (
+                       PFcore_case (
+                           PFcore_seqtype (PFty_xdt_untypedAtomic ()),
+                /*return*/ PFcore_cast (PFcore_seqtype (target),
+                                        PFcore_var (v))),
+                       PFcore_default (PFcore_var (v))))
                );
 }
 
@@ -1550,23 +1526,21 @@ PFcore_fs_convert_op_by_expr (const PFcnode_t *e1, const PFcnode_t *e2)
 {
     PFvar_t *v1 = PFcore_new_var (0);
     PFvar_t *v2 = PFcore_new_var (0);
-    PFvar_t *v3 = PFcore_new_var (0);
 
     /*
-     * let $v1 := [[ e1 ]] return
-     *   let $v2 := [[ e2 ]] return
-     *     for $v3 in $v1 return
-     *       typeswitch ($v3)                  // $v3 is from e1
-     *         case xdt:untypedAtomic return
-     *           typeswitch ($v2)              // $v2 is e2
-     *             case xdt:untypedAtomic return cast $v3 as xs:string
-     *             case xs:string return cast $v3 as xs:string
-     *             case xs:boolean return cast $v3 as xs:boolean
-     *             case xs:integer return cast $v3 as xs:integer
-     *             case xs:double return cast $v3 as xs:double
-     *             case xs:decimal return cast $v3 as xs:decimal
-     *             default return $v3 // should not happen
-     *         default return $v3
+     * let $v2 := [[ e2 ]] return
+     *   for $v1 in [[ e1 ]] return
+     *     typeswitch ($v1)                  // $v1 is from e1
+     *       case xdt:untypedAtomic return
+     *         typeswitch ($v2)              // $v2 is e2
+     *           case xdt:untypedAtomic return cast $v1 as xs:string
+     *           case xs:string return cast $v1 as xs:string
+     *           case xs:boolean return cast $v1 as xs:boolean
+     *           case xs:integer return cast $v1 as xs:integer
+     *           case xs:double return cast $v1 as xs:double
+     *           case xs:decimal return cast $v1 as xs:decimal
+     *           default return $v1 // should not happen
+     *       default return $v1
      */
     PFcnode_t *type_conv = 
         add_conversion_case (
@@ -1574,42 +1548,39 @@ PFcore_fs_convert_op_by_expr (const PFcnode_t *e1, const PFcnode_t *e2)
                 add_conversion_case (
                     add_conversion_case (
                         add_conversion_case (
-                            PFcore_var (v3),
-                            v2, v3, PFty_xs_decimal ()),
-                        v2, v3, PFty_xs_double ()),
-                    v2, v3, PFty_xs_integer ()),
-                v2, v3, PFty_xs_boolean ()),
-            v2, v3, PFty_xs_string ());
+                            PFcore_var (v1),
+                            v2, v1, PFty_xs_decimal ()),
+                        v2, v1, PFty_xs_double ()),
+                    v2, v1, PFty_xs_integer ()),
+                v2, v1, PFty_xs_boolean ()),
+            v2, v1, PFty_xs_string ());
 
     return PFcore_flwr (
-               PFcore_let (PFcore_letbind (PFcore_var (v1), e1),
+               PFcore_let (PFcore_letbind (PFcore_var (v2), e2),
                            PFcore_nil ()),
                PFcore_flwr (
-                   PFcore_let (PFcore_letbind (PFcore_var (v2), e2),
-                               PFcore_nil ()),
-                   PFcore_flwr (
-                       PFcore_for (
-                           PFcore_forbind (PFcore_forvars (PFcore_var (v3),
-                                                           PFcore_nil ()),
-                                           PFcore_var (v1)),
-                           PFcore_nil ()),
-                       PFcore_typeswitch
-                          (PFcore_var (v3),
-                           PFcore_cases
-                               (PFcore_case
-                                   (PFcore_seqtype (PFty_xdt_untypedAtomic ()),
-                                    PFcore_typeswitch
-                                       (PFcore_var (v2),
-                                        PFcore_cases
-                                           (PFcore_case
+                   PFcore_for (
+                       PFcore_forbind (PFcore_forvars (PFcore_var (v1),
+                                                       PFcore_nil ()),
+                                       e1),
+                       PFcore_nil ()),
+                   PFcore_typeswitch
+                      (PFcore_var (v1),
+                       PFcore_cases
+                           (PFcore_case
+                               (PFcore_seqtype (PFty_xdt_untypedAtomic ()),
+                                PFcore_typeswitch
+                                   (PFcore_var (v2),
+                                    PFcore_cases
+                                       (PFcore_case
+                                           (PFcore_seqtype
+                                               (PFty_xdt_untypedAtomic ()),
+                                            PFcore_cast
                                                (PFcore_seqtype
-                                                   (PFty_xdt_untypedAtomic ()),
-                                                PFcore_cast
-                                                   (PFcore_seqtype
-                                                       (PFty_xs_string ()),
-                                                    PFcore_var (v3))),
-                                            PFcore_default (type_conv)))),
-                                PFcore_default (PFcore_var (v3)))))));
+                                                   (PFty_xs_string ()),
+                                                PFcore_var (v1))),
+                                        PFcore_default (type_conv)))),
+                            PFcore_default (PFcore_var (v1))))));
 }
 
 /**
@@ -1621,12 +1592,9 @@ PFcore_fs_convert_op_by_expr (const PFcnode_t *e1, const PFcnode_t *e2)
 PFcnode_t *
 PFcore_fn_data (const PFcnode_t *n)
 {
-    PFvar_t *v = PFcore_new_var (NULL);
     PFfun_t *fn_data = PFcore_function (PFqname (PFns_fn, "data"));
 
-    return PFcore_flwr (
-               PFcore_let (PFcore_letbind (PFcore_var (v), n), PFcore_nil ()),
-               APPLY (fn_data, PFcore_var (v)));
+    return APPLY (fn_data, n);
 
 #if 0
     PFvar_t *v1 = PFcore_new_var (NULL);
@@ -1695,51 +1663,24 @@ PFcore_fn_data (const PFcnode_t *n)
 PFcnode_t *
 PFcore_some (const PFcnode_t *v, const PFcnode_t *expr, const PFcnode_t *qExpr)
 {
-    PFvar_t *v1 = PFcore_new_var (0);
-    PFvar_t *v2 = PFcore_new_var (0);
-    PFvar_t *v3 = PFcore_new_var (0);
-    PFvar_t *v4 = PFcore_new_var (0);
-    PFvar_t *v5 = PFcore_new_var (0);
     PFfun_t *fn_not   = PFcore_function (PFqname (PFns_fn, "not"));
     PFfun_t *fn_empty = PFcore_function (PFqname (PFns_fn, "empty"));
                                                                                                                                                           
-    return PFcore_flwr (
-               PFcore_let (PFcore_letbind (PFcore_var (v1), expr), 
-                           PFcore_nil ()),
-               PFcore_flwr (
-                   PFcore_let (
-                       PFcore_letbind (PFcore_var (v2),
-                                       PFcore_flwr (
-                                           PFcore_for (
-                                               PFcore_forbind (
-                                                   PFcore_forvars (
-                                                       v,
-                                                       PFcore_nil ()),
-                                                   PFcore_var (v1)),
-                                               PFcore_nil ()),
-                                           PFcore_flwr (
-                                               PFcore_let (
-                                                   PFcore_letbind (
-                                                       PFcore_var (v3),
-                                                       PFcore_ebv (qExpr)),
-                                                   PFcore_nil ()),
-                                               PFcore_if 
-                                                  (PFcore_var (v3),
-                                                   PFcore_then_else (
-                                                       PFcore_num (1),
-                                                       PFcore_empty ()))))),
-                       PFcore_nil ()),
-                   PFcore_flwr (
-                       PFcore_let (
-                           PFcore_letbind (PFcore_var (v4),
-                                           APPLY (fn_empty, PFcore_var (v2))),
-                           PFcore_nil ()),
-                       PFcore_flwr (
-                           PFcore_let (
-                               PFcore_letbind (PFcore_var (v5),
-                                               APPLY (fn_not, PFcore_var (v4))),
-                               PFcore_nil ()),
-                           PFcore_var (v5)))));
+    return APPLY (fn_not, 
+                  APPLY (fn_empty,
+                         PFcore_flwr (
+                             PFcore_for (
+                                 PFcore_forbind (
+                                     PFcore_forvars (
+                                         v,
+                                         PFcore_nil ()),
+                                     expr),
+                                 PFcore_nil ()),
+                                 PFcore_if 
+                                    (PFcore_ebv (qExpr),
+                                     PFcore_then_else (
+                                         PFcore_num (1),
+                                         PFcore_empty ())))));
 }
 
 /**
@@ -1776,25 +1717,9 @@ PFcore_some (const PFcnode_t *v, const PFcnode_t *expr, const PFcnode_t *qExpr)
 PFcnode_t *
 PFcore_ebv (const PFcnode_t *n)
 {
-    PFvar_t *v;
-
     assert (n);
 
-    if (n->kind == c_var)
-        /* if the core expression already is a variable, we re-use it and
-         * determine the effective boolean value.
-         */
-        return APPLY (PFcore_function (PFqname (PFns_fn, "boolean")), n);
-    else {
-        /* if n is not a variable, wrap the evaluation into a 'let' clause
-         * and call this function again.
-         */
-        v = PFcore_new_var (0);
-        
-        return PFcore_flwr (PFcore_let (PFcore_letbind (PFcore_var (v), n), 
-                                        PFcore_nil ()),
-                            PFcore_ebv (PFcore_var (v)));
-    }
+    return APPLY (PFcore_function (PFqname (PFns_fn, "boolean")), n);
 }
 
 /* vim:set shiftwidth=4 expandtab: */
