@@ -3629,7 +3629,12 @@ PROC do_update_insert(bat[void, bat] ws, bat[void,lng] insert_update, bat[void,o
               var pgstart := oid(lng(lastpage) << REMAP_PAGE_BITS);
               # (insertsize - datasize - holeatend) is what gets inserted after the current page;
               # ANDing that with REMAP_PAGE_MASK gives us how much gets inserted on the last page
-              cpwhere_rid := oid(int(pgstart) + (((insertsize - datasize) - holeatend) and int(REMAP_PAGE_MASK)));
+              if (insertsize <= (datasize + holeatend)) {
+                # no new data needs to go to the new page, just move the old data to the start of the new page
+                cpwhere_rid := pgstart;
+              } else {
+                cpwhere_rid := oid(int(pgstart) + (((insertsize - datasize) - holeatend) and int(REMAP_PAGE_MASK)));
+              }
 
               if (cpwhere_rid > pgstart) {
                 # fix up hole at start of last page since it doesn't
@@ -3793,7 +3798,8 @@ PROC do_update_insert(bat[void, bat] ws, bat[void,lng] insert_update, bat[void,o
               if (int(pre) >= docsize) {
                 holesize := int(REMAP_PAGE_SIZE - (lng(docsize) and REMAP_PAGE_MASK));
               }
-              while ((int(pre) < docsize) and (rid <= pagelast)) {
+              var loop := true;
+              while (loop and (int(pre) < docsize) and (rid <= pagelast)) {
                 var s := 0;
                 if (isoldpage) {
                   if (rid_size_update.exist(rid)) {
@@ -3815,7 +3821,7 @@ PROC do_update_insert(bat[void, bat] ws, bat[void,lng] insert_update, bat[void,o
                   rid := oid(lng(rid) + h);
                 } else {
                   # not a hole, terminate loop
-                  pre := oid(docsize);
+                  loop := false;
                 }
               }
               if ((int(pre) >= docsize) and (rid <= pagelast)) {

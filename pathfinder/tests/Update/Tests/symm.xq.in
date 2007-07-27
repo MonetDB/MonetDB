@@ -1,0 +1,24 @@
+pf:add-doc("$TSTSRCDIR/symm.xml", "symm.xml", "symm.xml", 10)
+<>
+do insert doc("symm.xml")/documents/document[2] after exactly-one(doc("symm.xml")/documents/document[3])
+<>
+doc("symm.xml")
+<>
+do replace value of exactly-one(doc("symm.xml")/documents/document[4]/title/child::node()) with "Synchronized Multimedia Integration Language (SMIL) 2.1"
+<>
+doc("symm.xml")
+<>
+do replace value of exactly-one(doc("symm.xml")/documents/document[4]/@published) with "2005-12-13"
+<>
+doc("symm.xml")
+<>
+do insert text{"&#10;"} before exactly-one(doc("symm.xml")/documents/document[4])
+<>
+doc("symm.xml")
+<>
+for $doc in doc("symm.xml")/documents/document
+  return (do insert element published {text{$doc/@published}} as first into $doc,
+          do insert text{"&#10;"} as first into $doc,
+          do delete $doc/@published)
+<>
+doc("symm.xml")

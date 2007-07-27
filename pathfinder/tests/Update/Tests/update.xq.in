@@ -1,3 +1,5 @@
+pf:add-doc("$TSTSRCDIR/testdoc.xml", "testdoc.xml", "testdoc.xml", 10)
+<>
 let $testdoc := doc("testdoc.xml") return (
 (:
 test insert attribute with the following tests:
@@ -98,3 +100,5 @@ for $elem in $testdoc/document/element[@attribute = 40]
   return (do insert <a/> after exactly-one($elem),
 	  do insert <b/> after exactly-one($elem))
 )
+<>
+doc("testdoc.xml")

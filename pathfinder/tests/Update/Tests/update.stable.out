@@ -14,17 +14,14 @@ stdout of test 'update` in directory 'tests/Update` itself:
 printf("\nReady.\n");
 
 Ready.
-module("pathfinder");
-var docname := "testdoc.xml";
-var int_values := bat(lng,void).key(true).reverse().seqbase(0@0);
-var dbl_values := bat(dbl,void).key(true).reverse().seqbase(0@0);
-var str_values := bat(str,void).key(true).reverse().seqbase(0@0).append("");
-var ws := ws_create();
-var r := ws_opendoc(ws, bat(void,str,1).append(docname));
-var item := r.hmark(0@0);
-var kind := r.tmark(0@0).set_kind(ELEM);
-var iter := new(void,oid).seqbase(0@0).append(1@0);
-print_result("xml","","",ws,tunique(iter),iter,item,constant2bat(kind),int_values,dbl_values,str_values);
+quit();
+
+Over..
+
+# 12:45:02 >  
+# 12:45:02 >  Mtimeout -timeout 60 MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=hirundo --port=34885 update.xq
+# 12:45:02 >  
+
 <?xml version="1.0" encoding="utf-8"?>
 <XQueryResult><document><?pi0000 foo?>
 <element author="Sjoerd Mullender" title="test element" attr="0000" copyright="CWI" xyzzy="hgulp" foo="bar" Attribute="0000">element content 0000</element>
@@ -10127,19 +10124,6 @@ print_result("xml","","",ws,tunique(iter),iter,item,constant2bat(kind),int_value
 <element author="Sjoerd Mullender" title="test element" attr="9998" copyright="CWI" xyzzy="hgulp" foo="bar" Attribute="9998">element content 9998</element>
 <element author="Sjoerd Mullender" title="test element" attr="9999" copyright="CWI" xyzzy="hgulp" foo="bar" Attribute="9999">element content 9999</element>
 </document></XQueryResult>
-ws_destroy(ws);
-;
-printf("\nDone..\n");
-
-Done..
-quit();
-
-Over..
-
-# 16:26:23 >  
-# 16:26:23 >  Mtimeout -timeout 60 MapiClient -lxquery -sxml -u monetdb -P monetdb --host=localhost --port=33597 t.xq
-# 16:26:23 >  
-
 
 # 16:26:31 >  
 # 16:26:31 >  Done.

@@ -74,7 +74,7 @@ stderr of test 'illegal-insert` in directory 'tests/Update` itself:
 # 23:35:44 >  Mtimeout -timeout 60 MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=localhost --port=36738 illegal-insert.xq
 # 23:35:44 >  
 
-MAPI  = monetdb@localhost:30269
+MAPI  = monetdb@hirundo:34885
 QUERY = do insert <foo/> into exactly-one(doc("document1.xml"))
 ERROR = !ERROR: cannot insert into a document node
 

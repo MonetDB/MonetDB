@@ -1,0 +1,257 @@
+stdout of test 'symm` in directory 'tests/Update` itself:
+
+
+# 11:30:16 >  
+# 11:30:16 >  Mtimeout -timeout 180  Mserver "--config=/ufs/sjoerd/Monet-Stable/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/sjoerd/src/MonetDB/stable/pathfinder/x86_64-unknown-linux-gnu/runtime/.libs:/ufs/sjoerd/src/MonetDB/stable/pathfinder/x86_64-unknown-linux-gnu/runtime:/ufs/sjoerd/src/MonetDB/stable/pathfinder/runtime:/ufs/sjoerd/src/MonetDB/stable/pathfinder/x86_64-unknown-linux-gnu/modules/pftijah/.libs:/ufs/sjoerd/src/MonetDB/stable/pathfinder/x86_64-unknown-linux-gnu/modules/pftijah:/ufs/sjoerd/src/MonetDB/stable/pathfinder/modules/pftijah:/ufs/sjoerd/Monet-Stable/lib64/MonetDB4:/ufs/sjoerd/Monet-Stable/lib64/MonetDB4/lib:/ufs/sjoerd/Monet-Stable/lib64/MonetDB4/bin" --set "gdk_dbfarm=/ufs/sjoerd/src/MonetDB/stable/pathfinder/x86_64-unknown-linux-gnu/dbfarm" --set "sql_logdir=/ufs/sjoerd/src/MonetDB/stable/pathfinder/x86_64-unknown-linux-gnu/sql_logs" --set "xquery_logdir=/ufs/sjoerd/src/MonetDB/stable/pathfinder/x86_64-unknown-linux-gnu/xquery_logs" --set mapi_open=true --set mapi_port=31348 --set xrpc_port=43835 --set monet_prompt= --trace "--dbname=mTests_tests_Update" --dbinit=" module(pathfinder);" ; echo ; echo Over..
+# 11:30:16 >  
+
+# Monet Database Server V4.18.1
+# Copyright (c) 1993-2007, CWI. All rights reserved.
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
+# Visit http://monetdb.cwi.nl/ for further information.
+# XRPC administrative console at http://localhost:43835/admin
+
+printf("\nReady.\n");
+
+Ready.
+quit();
+
+Over..
+
+# 11:30:17 >  
+# 11:30:17 >  Mtimeout -timeout 60 MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=hirundo --port=31348 symm.xq
+# 11:30:17 >  
+
+<?xml version="1.0" encoding="utf-8"?>
+<XQueryResult><documents>
+<document published="1998-06-15">
+<title>
+Synchronized Multimedia Integration Language (SMIL) 1.0 Specification
+</title>
+<author>
+Synchronized Multimedia (SYMM) Working Group of the World-Wide Web Consortium
+</author>
+<type>
+Recommendation
+</type>
+</document>
+<document published="2001-08-07">
+<title>
+Synchronized Multimedia Integration Language (SMIL) 2.0
+</title>
+<author>
+Synchronized Multimedia (SYMM) Working Group of the World-Wide Web Consortium
+</author>
+<type>
+Recommendation
+</type>
+</document>
+<document published="2005-01-07">
+<title>
+Synchronized Multimedia Integration Language (SMIL) 2.0, 2nd Edition
+</title>
+<author>
+Synchronized Multimedia (SYMM) Working Group of the World-Wide Web Consortium
+</author>
+<type>
+Recommendation
+</type>
+</document><document published="2001-08-07">
+<title>
+Synchronized Multimedia Integration Language (SMIL) 2.0
+</title>
+<author>
+Synchronized Multimedia (SYMM) Working Group of the World-Wide Web Consortium
+</author>
+<type>
+Recommendation
+</type>
+</document>
+</documents></XQueryResult>
+<?xml version="1.0" encoding="utf-8"?>
+<XQueryResult><documents>
+<document published="1998-06-15">
+<title>
+Synchronized Multimedia Integration Language (SMIL) 1.0 Specification
+</title>
+<author>
+Synchronized Multimedia (SYMM) Working Group of the World-Wide Web Consortium
+</author>
+<type>
+Recommendation
+</type>
+</document>
+<document published="2001-08-07">
+<title>
+Synchronized Multimedia Integration Language (SMIL) 2.0
+</title>
+<author>
+Synchronized Multimedia (SYMM) Working Group of the World-Wide Web Consortium
+</author>
+<type>
+Recommendation
+</type>
+</document>
+<document published="2005-01-07">
+<title>
+Synchronized Multimedia Integration Language (SMIL) 2.0, 2nd Edition
+</title>
+<author>
+Synchronized Multimedia (SYMM) Working Group of the World-Wide Web Consortium
+</author>
+<type>
+Recommendation
+</type>
+</document><document published="2001-08-07">
+<title>Synchronized Multimedia Integration Language (SMIL) 2.1</title>
+<author>
+Synchronized Multimedia (SYMM) Working Group of the World-Wide Web Consortium
+</author>
+<type>
+Recommendation
+</type>
+</document>
+</documents></XQueryResult>
+<?xml version="1.0" encoding="utf-8"?>
+<XQueryResult><documents>
+<document published="1998-06-15">
+<title>
+Synchronized Multimedia Integration Language (SMIL) 1.0 Specification
+</title>
+<author>
+Synchronized Multimedia (SYMM) Working Group of the World-Wide Web Consortium
+</author>
+<type>
+Recommendation
+</type>
+</document>
+<document published="2001-08-07">
+<title>
+Synchronized Multimedia Integration Language (SMIL) 2.0
+</title>
+<author>
+Synchronized Multimedia (SYMM) Working Group of the World-Wide Web Consortium
+</author>
+<type>
+Recommendation
+</type>
+</document>
+<document published="2005-01-07">
+<title>
+Synchronized Multimedia Integration Language (SMIL) 2.0, 2nd Edition
+</title>
+<author>
+Synchronized Multimedia (SYMM) Working Group of the World-Wide Web Consortium
+</author>
+<type>
+Recommendation
+</type>
+</document><document published="2005-12-13">
+<title>Synchronized Multimedia Integration Language (SMIL) 2.1</title>
+<author>
+Synchronized Multimedia (SYMM) Working Group of the World-Wide Web Consortium
+</author>
+<type>
+Recommendation
+</type>
+</document>
+</documents></XQueryResult>
+<?xml version="1.0" encoding="utf-8"?>
+<XQueryResult><documents>
+<document published="1998-06-15">
+<title>
+Synchronized Multimedia Integration Language (SMIL) 1.0 Specification
+</title>
+<author>
+Synchronized Multimedia (SYMM) Working Group of the World-Wide Web Consortium
+</author>
+<type>
+Recommendation
+</type>
+</document>
+<document published="2001-08-07">
+<title>
+Synchronized Multimedia Integration Language (SMIL) 2.0
+</title>
+<author>
+Synchronized Multimedia (SYMM) Working Group of the World-Wide Web Consortium
+</author>
+<type>
+Recommendation
+</type>
+</document>
+<document published="2005-01-07">
+<title>
+Synchronized Multimedia Integration Language (SMIL) 2.0, 2nd Edition
+</title>
+<author>
+Synchronized Multimedia (SYMM) Working Group of the World-Wide Web Consortium
+</author>
+<type>
+Recommendation
+</type>
+</document>
+<document published="2005-12-13">
+<title>Synchronized Multimedia Integration Language (SMIL) 2.1</title>
+<author>
+Synchronized Multimedia (SYMM) Working Group of the World-Wide Web Consortium
+</author>
+<type>
+Recommendation
+</type>
+</document>
+</documents></XQueryResult>
+<?xml version="1.0" encoding="utf-8"?>
+<XQueryResult><documents>
+<document>
+<published>1998-06-15</published>
+<title>
+Synchronized Multimedia Integration Language (SMIL) 1.0 Specification
+</title>
+<author>
+Synchronized Multimedia (SYMM) Working Group of the World-Wide Web Consortium
+</author>
+<type>
+Recommendation
+</type>
+</document>
+<document>
+<published>2001-08-07</published>
+<title>
+Synchronized Multimedia Integration Language (SMIL) 2.0
+</title>
+<author>
+Synchronized Multimedia (SYMM) Working Group of the World-Wide Web Consortium
+</author>
+<type>
+Recommendation
+</type>
+</document>
+<document>
+<published>2005-01-07</published>
+<title>
+Synchronized Multimedia Integration Language (SMIL) 2.0, 2nd Edition
+</title>
+<author>
+Synchronized Multimedia (SYMM) Working Group of the World-Wide Web Consortium
+</author>
+<type>
+Recommendation
+</type>
+</document>
+<document>
+<published>2005-12-13</published>
+<title>Synchronized Multimedia Integration Language (SMIL) 2.1</title>
+<author>
+Synchronized Multimedia (SYMM) Working Group of the World-Wide Web Consortium
+</author>
+<type>
+Recommendation
+</type>
+</document>
+</documents></XQueryResult>
+
+# 11:30:18 >  
+# 11:30:18 >  Done.
+# 11:30:18 >  
+

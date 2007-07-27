@@ -13,23 +13,6 @@ stdout of test 'insert-1` in directory 'tests/Update` itself:
 printf("\nReady.\n");
 
 Ready.
-var docname := "document.xml";
-var int_values := bat(lng,void).key(true).reverse().seqbase(0@0);
-var dbl_values := bat(dbl,void).key(true).reverse().seqbase(0@0);
-var str_values := bat(str,void).key(true).reverse().seqbase(0@0).append("");
-var ws := ws_create();
-var r := ws_opendoc(ws, bat(void,str,1).append(docname));
-var item := r.hmark(0@0);
-var kind := r.tmark(0@0).set_kind(ELEM);
-var iter := new(void,oid).seqbase(0@0).append(1@0);
-print_result("xml","","",ws,tunique(iter),iter,item,constant2bat(kind),int_values,dbl_values,str_values);
-<?xml version="1.0" encoding="utf-8"?>
-<XQueryResult><document attr="value"><foo/></document></XQueryResult>
-ws_destroy(ws);
-;
-printf("\nDone..\n");
-
-Done..
 quit();
 
 Over..
@@ -38,6 +21,8 @@ Over..
 # 14:14:26 >  Mtimeout -timeout 60 MapiClient -lxquery -sxml -u monetdb -P monetdb --host=localhost --port=55842 insert-1.xq
 # 14:14:26 >  
 
+<?xml version="1.0" encoding="utf-8"?>
+<XQueryResult><document attr="value"><foo/></document></XQueryResult>
 
 # 14:14:26 >  
 # 14:14:26 >  Done.
