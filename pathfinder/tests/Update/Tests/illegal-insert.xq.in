@@ -1,0 +1,5 @@
+pf:add-doc("$TSTSRCDIR/document.xml", "document1.xml", "document1.xml", 10)
+<>
+do insert <foo/> into exactly-one(doc("document1.xml"))
+<>
+doc("document1.xml")

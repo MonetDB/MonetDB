@@ -1,0 +1,17 @@
+stderr of test 'symm` in directory 'tests/Update` itself:
+
+
+# 11:30:16 >  
+# 11:30:16 >  Mtimeout -timeout 180  Mserver "--config=/ufs/sjoerd/Monet-Stable/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/sjoerd/src/MonetDB/stable/pathfinder/x86_64-unknown-linux-gnu/runtime/.libs:/ufs/sjoerd/src/MonetDB/stable/pathfinder/x86_64-unknown-linux-gnu/runtime:/ufs/sjoerd/src/MonetDB/stable/pathfinder/runtime:/ufs/sjoerd/src/MonetDB/stable/pathfinder/x86_64-unknown-linux-gnu/modules/pftijah/.libs:/ufs/sjoerd/src/MonetDB/stable/pathfinder/x86_64-unknown-linux-gnu/modules/pftijah:/ufs/sjoerd/src/MonetDB/stable/pathfinder/modules/pftijah:/ufs/sjoerd/Monet-Stable/lib64/MonetDB4:/ufs/sjoerd/Monet-Stable/lib64/MonetDB4/lib:/ufs/sjoerd/Monet-Stable/lib64/MonetDB4/bin" --set "gdk_dbfarm=/ufs/sjoerd/src/MonetDB/stable/pathfinder/x86_64-unknown-linux-gnu/dbfarm" --set "sql_logdir=/ufs/sjoerd/src/MonetDB/stable/pathfinder/x86_64-unknown-linux-gnu/sql_logs" --set "xquery_logdir=/ufs/sjoerd/src/MonetDB/stable/pathfinder/x86_64-unknown-linux-gnu/xquery_logs" --set mapi_open=true --set mapi_port=31348 --set xrpc_port=43835 --set monet_prompt= --trace "--dbname=mTests_tests_Update" --dbinit=" module(pathfinder);" ; echo ; echo Over..
+# 11:30:16 >  
+
+
+# 11:30:17 >  
+# 11:30:17 >  Mtimeout -timeout 60 MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=hirundo --port=31348 symm.xq
+# 11:30:17 >  
+
+
+# 11:30:18 >  
+# 11:30:18 >  Done.
+# 11:30:18 >  
+
