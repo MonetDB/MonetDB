@@ -1,0 +1,17 @@
+stderr of test 'bpmUpdate` in directory 'src/modules/mal` itself:
+
+
+# 03:37:48 >  
+# 03:37:48 >  Mtimeout -timeout 60  mserver5 "--config=/ufs/mk/monet5/Linux/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5//Linux/lib/MonetDB5:/ufs/mk/monet5//Linux/lib/MonetDB5/lib:/ufs/mk/monet5//Linux/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/mk/monet5//Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5//Linux/var/MonetDB5/sql_logs" --set "xquery_logdir=/ufs/mk/monet5//Linux/var/MonetDB5/xquery_logs" --set mapi_open=true --set mapi_port=39694 --set xrpc_port=49963 --set monet_prompt= --trace --dbname=mTests_src_modules_mal  bpmUpdate.mal
+# 03:37:48 >  
+
+#warning: please don't forget to set your vault key!
+#(see /ufs/mk/monet5/Linux/etc/monetdb5.conf)
+mserver5: /ufs/mk/monet5//package/MonetDB5/src/modules/mal/bpm.mx:726: newPartition: Assertion `bpmcat[i] == ((void *)0)' failed.
+
+!Mtimeout: signal 6: mserver5 --config=/ufs/mk/monet5/Linux/etc/monetdb5.conf --debug=10 --set monet_mod_path=/ufs/mk/monet5//Linux/lib/MonetDB5:/ufs/mk/monet5//Linux/lib/MonetDB5/lib:/ufs/mk/monet5//Linux/lib/MonetDB5/bin --set gdk_dbfarm=/ufs/mk/monet5//Linux/var/MonetDB5/dbfarm --set sql_logdir=/ufs/mk/monet5//Linux/var/MonetDB5/sql_logs --set xquery_logdir=/ufs/mk/monet5//Linux/var/MonetDB5/xquery_logs --set mapi_open=true --set mapi_port=39694 --set xrpc_port=49963 --set monet_prompt= --trace --dbname=mTests_src_modules_mal bpmUpdate.mal 
+
+# 03:37:48 >  
+# 03:37:48 >  Done.
+# 03:37:48 >  
+

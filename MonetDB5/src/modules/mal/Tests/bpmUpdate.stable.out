@@ -1,0 +1,38 @@
+stdout of test 'bpmUpdate` in directory 'src/modules/mal` itself:
+
+
+# 03:37:48 >  
+# 03:37:48 >  Mtimeout -timeout 60  mserver5 "--config=/ufs/mk/monet5/Linux/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5//Linux/lib/MonetDB5:/ufs/mk/monet5//Linux/lib/MonetDB5/lib:/ufs/mk/monet5//Linux/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/mk/monet5//Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5//Linux/var/MonetDB5/sql_logs" --set "xquery_logdir=/ufs/mk/monet5//Linux/var/MonetDB5/xquery_logs" --set mapi_open=true --set mapi_port=39694 --set xrpc_port=49963 --set monet_prompt= --trace --dbname=mTests_src_modules_mal  bpmUpdate.mal
+# 03:37:48 >  
+
+# MonetDB server v5.1.0, based on kernel v1.19.0
+# Serving database 'mTests_src_modules_mal'
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Copyright (c) 1993-2007 CWI, all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://gio.ins.cwi.nl:39694/
+#a:= bat.new(:oid,:int);
+#bat.insert(a,0@0,1);
+#io.print(a);
+#b:= bpm.unfold(a);
+#c:= bpm.fold(b);
+#io.print(c);
+#
+function user.main():void;	# 0  (main:void)
+    a := bat.new(:oid,:int);	# 1 CMDBATnew (a:bat[:oid,:int])<-(_2:oid)(_3:int)
+    bat.insert(a,0@0,1);	# 2 BKCinsert_bun (_4:void)<-(a:bat[:oid,:int])(_5:oid)(_6:int)
+    io.print(a);	# 3 IOprint_val (_7:void)<-(a:bat[:oid,:int])
+    b := bpm.unfold(a);	# 4 BPMunfold (b:bat[:oid,:int])<-(a:bat[:oid,:int])
+    c := bpm.fold(b);	# 5 BPMfold (c:bat[:oid,:int])<-(b:bat[:oid,:int])
+    io.print(c);	# 6 IOprint_val (_10:void)<-(c:bat[:oid,:int])
+end main;	# 7  
+#-----------------#
+# h	t	  # name
+# void	int	  # type
+#-----------------#
+[ 0@0,	  1	  ]
+
+# 03:37:48 >  
+# 03:37:48 >  Done.
+# 03:37:48 >  
+
