@@ -66,7 +66,7 @@ They are marked as unsafe.
 #define _OPT_ALIASES_
 #include "opt_prelude.h"
 #include "opt_support.h"
-#include "mal_interpreter.h"
+#include "mal_exception.h"
 
 /* #define DEBUG_OPT_ALIASES      show partial result */
 

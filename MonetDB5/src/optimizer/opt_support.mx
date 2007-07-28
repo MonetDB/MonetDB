@@ -1045,6 +1045,8 @@ hasSideEffects(InstrPtr p, int strict)
 		getFunctionId(p) == insertRef ||
 		getFunctionId(p) == inplaceRef ||
 		getFunctionId(p) == appendRef ||
+		getFunctionId(p) == setAccessRef ||
+		getFunctionId(p) == setWriteModeRef ||
 		getFunctionId(p) == replaceRef ||
 		getFunctionId(p) == deleteRef)
 		return TRUE;
@@ -1071,7 +1073,7 @@ hasSideEffects(InstrPtr p, int strict)
 		return FALSE;
 	}
 	if (getModuleId(p) == constraintsRef)
-		return TRUE;
+		return FALSE;
 	if( getModuleId(p) == mserverRef){
 		if( getFunctionId(p) == rpcRef)
 			return TRUE;

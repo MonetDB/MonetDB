@@ -47,29 +47,37 @@ function user.main():void;	# 0  (main:void)
 # use a fake sql library 	# 2  (_2:str)
     mdb.list("sql","query");	# 3 MDBlist3 (_6:void)<-(_4:str)(_5:str)
 end main;	# 4  
-function sql.query{segment=2}():void;
-    t1:bat[:oid,:int]{segment=2}  := sql.bind("sys","t","i",0);
-    bpm1:bat[:oid,:int]  := bpm.take("sys_t_i");
-    _21 := bpm.new(:oid,:oid);
-barrier t1:bat[:oid,:int]{segment=2}  := bpm.newIterator(bpm1);
-    t11{segment=4} := algebra.markT(t1,0@0);
-    t12{segment=4} := bat.reverse(t11);
-    bpm.addPartition(_21,t12);
-    redo t1:bat[:oid,:int]{segment=2}  := bpm.hasMoreElements(bpm1);
-exit t1:bat[:oid,:int]{segment=2} ;
-    _27 := bpm.new(:oid,:int);
-barrier t12{segment=4} := bpm.newIterator(_21);
-barrier t1:bat[:oid,:int]{segment=2}  := bpm.newIterator(bpm1);
-    t13{segment=5} := algebra.join(t12,t1);
-    bpm.addPartition(_27,t13);
-    redo t1:bat[:oid,:int]{segment=2}  := bpm.hasMoreElements(bpm1);
-    redo t12{segment=4} := bpm.hasMoreElements(_21);
-exit t1:bat[:oid,:int]{segment=2} ;
-exit t12{segment=4};
-    t13{segment=5} := bpm.glue(_27);
-    t14{segment=6} := sql.resultSet(1,1,t13);
+function sql.query():void;
+    t1:bat[:oid,:int]  := sql.bind("sys","t","i",0);
+    bpm1:bat[:oid,:int]  := bpm.unfold(t1);
+    _20 := bpm.new(:oid,:oid);
+barrier t1:bat[:oid,:int]  := bpm.newIterator(bpm1);
+    t11 := algebra.markT(t1,0@0);
+    bpm.addPartition(_20,t11);
+    redo t1:bat[:oid,:int]  := bpm.hasMoreElements(bpm1);
+exit t1:bat[:oid,:int] ;
+    _26 := bpm.new(:oid,:oid);
+barrier t11 := bpm.newIterator(_20);
+    t12 := bat.reverse(t11);
+    bpm.addPartition(_26,t12);
+    redo t11 := bpm.hasMoreElements(_20);
+exit t11;
+    _32 := bpm.new(:oid,:int);
+barrier t12 := bpm.newIterator(_26);
+barrier t1:bat[:oid,:int]  := bpm.newIterator(bpm1);
+    t13{segment=-1} := algebra.join(t12,t1);
+    bpm.addPartition(_32,t13);
+    redo t1:bat[:oid,:int]  := bpm.hasMoreElements(bpm1);
+    redo t12 := bpm.hasMoreElements(_26);
+exit t1:bat[:oid,:int] ;
+exit t12;
+    t13{segment=-1} := bpm.fold(_32);
+    t14 := sql.resultSet(1,1,t13);
     sql.rsColumn(t14,"sys.t","i","int",32,0,t13);
     sql.exportResult(t14,"");
+    bpm.garbage(bpm1);
+    bpm.garbage(_20);
+    bpm.garbage(_26);
 end query;
 
 # 09:48:30 >  
