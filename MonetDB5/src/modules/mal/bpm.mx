@@ -1318,7 +1318,9 @@ BPMcountInternal(bat bid)
 		materializePartition(bpmcat[i]); 
 		ret= ret + bpmcat[i]->cnt;
 	}
-printf("bpmcountInternal %d ->%d\n",bid,ret);
+#ifdef _DEBUG_BPM_
+	printf("bpmcountInternal %d ->%d\n",bid,ret);
+#endif
 	return ret;
 }
 str
@@ -1432,9 +1434,9 @@ BPMaddSegment(int *ret, bat *bid, bat *src){
 	}
 	if ((rngType(b->htype) !=rngType(ba->htype)) ||
 		 (rngType(b->ttype) != rngType(ba->ttype))) {
-		#ifdef _DEBUG_BPM_
+#ifdef _DEBUG_BPM_
 			stream_printf(GDKout,"b: %d,%d alias: %d,%d\n", b->htype,b->ttype,ba->htype,ba->ttype);
-		#endif
+	#endif
 		BBPunfix(ba->batCacheid); 
 		BBPunfix(b->batCacheid); 
 		throw(MAL,"bpm.addSegment","Uncompatible BAT types");
@@ -1442,7 +1444,9 @@ BPMaddSegment(int *ret, bat *bid, bat *src){
 
 	BBPunfix(ba->batCacheid); 
 	cnt = BATcount(b);
-printf("addSegment %d -> %d\n",b->batCacheid,cnt);
+#ifdef _DEBUG_BPM_
+	printf("addSegment %d -> %d\n",b->batCacheid,cnt);
+#endif
 	maxcnt = 2*BATTINY / BUNsize(b) - cnt;
 	/* is it a big piece or no enough space in the existing? */
 	if( guessNewPartition(b) || 
@@ -1452,7 +1456,9 @@ printf("addSegment %d -> %d\n",b->batCacheid,cnt);
 		BBPincref(b->batCacheid,TRUE);
 		insertPartition(bpmcat[pa->prv],p);
 		p->cnt = cnt;
-printf("guess-> %d\n",(int) p->cnt);
+#ifdef _DEBUG_BPM_
+		printf("guess-> %d\n",(int) p->cnt);
+#endif
 		p->alias = pa->alias;
 		@:defaultRange(p,b)@
 	} else {
@@ -1462,7 +1468,9 @@ printf("guess-> %d\n",(int) p->cnt);
 			throw(MAL,"bpm.addSegment","Partition BAT not found");
 		BATappend(bn,b,TRUE);
 		px ->cnt += BATcount(b);
-printf("no guess-> %d\n",(int)px->cnt);
+#ifdef _DEBUG_BPM_
+		printf("no guess-> %d\n",(int)px->cnt);
+#endif
 		BBPunfix(bn->batCacheid); 
 	}
 	*ret= *bid;
