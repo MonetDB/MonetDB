@@ -420,6 +420,7 @@ str defaultPlan=
 	"joinPath,"
 	"deadcode,"
 	"reduce,"
+	/* "partitions,"*/
 	"garbageCollector," 
 	"multiplex";
 static str minimalPlan=
@@ -496,6 +497,7 @@ to allow inspection.
 	if( optimizer == 0 ) 
 		optimizer= defaultPlan;
 #ifdef _SQL_OPTIMIZER_DEBUG
+	if( optimizer)
 	stream_printf(c->fdout,"optimizer:%s:\n",optimizer?optimizer:"unknown");
 #endif
 @-
