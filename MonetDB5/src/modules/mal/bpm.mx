@@ -1307,17 +1307,23 @@ BPMisPartitioned(bat bid){
 	return getAlias(bid)!= 0;
 }
 
-str
-BPMcount(int *ret, bat *bid)
+static int
+BPMcountInternal(bat bid)
 {
-	int i;
+	int ret=0, i;
 	Partition ps;
-	if( (ps= getAlias(*bid)) == 0)
-		throw(MAL,"bpm.count","Partitioned BAT not found");
+	if( (ps= getAlias(bid)) == 0)
+		return 0;
 	for(i= ps->nxt ; i!=ps->bid && bpmcat[i] ; i= bpmcat[i]->nxt){
 		materializePartition(bpmcat[i]); 
-		*ret= *ret + bpmcat[i]->cnt;
+		ret= ret + bpmcat[i]->cnt;
 	}
+printf("bpmcountInternal %d ->%d\n",bid,ret);
+	return ret;
+}
+str
+BPMcount(int *ret, bat *bid){
+	*ret= BPMcountInternal(*bid);
 	return MAL_SUCCEED;
 }
 str
@@ -1414,7 +1420,7 @@ BPMaddSegment(int *ret, bat *bid, bat *src){
 	BAT *b,*bn, *ba;
 
 	assureSpace();
-	if( (pa= getAlias(*bid)) == 0)
+	if( (pa= getAlias(ABS(*bid))) == 0)
 		throw(MAL,"bpm.addSegment","Alias not found");
 	ba= BATdescriptor(pa->bid);
 	if( ba== NULL)
@@ -1436,6 +1442,7 @@ BPMaddSegment(int *ret, bat *bid, bat *src){
 
 	BBPunfix(ba->batCacheid); 
 	cnt = BATcount(b);
+printf("addSegment %d -> %d\n",b->batCacheid,cnt);
 	maxcnt = 2*BATTINY / BUNsize(b) - cnt;
 	/* is it a big piece or no enough space in the existing? */
 	if( guessNewPartition(b) || 
@@ -1445,6 +1452,7 @@ BPMaddSegment(int *ret, bat *bid, bat *src){
 		BBPincref(b->batCacheid,TRUE);
 		insertPartition(bpmcat[pa->prv],p);
 		p->cnt = cnt;
+printf("guess-> %d\n",(int) p->cnt);
 		p->alias = pa->alias;
 		@:defaultRange(p,b)@
 	} else {
@@ -1453,7 +1461,8 @@ BPMaddSegment(int *ret, bat *bid, bat *src){
 		if( bn== NULL)
 			throw(MAL,"bpm.addSegment","Partition BAT not found");
 		BATappend(bn,b,TRUE);
-		px ->cnt = BATcount(bn);
+		px ->cnt += BATcount(b);
+printf("no guess-> %d\n",(int)px->cnt);
 		BBPunfix(bn->batCacheid); 
 	}
 	*ret= *bid;
@@ -1688,7 +1697,7 @@ BPMhybridPolicy( BAT *b, BAT *bs, int ov)
 #endif
 
 	if ((space1 < Mmin) || (space2 < Mmin)) {
-		BPMcount(&cnt,&b->batCacheid);
+		cnt= BPMcountInternal(b->batCacheid);
 		if (cnt ==0) or =0;
 		else or=BPMoraclePolicy(0.4, (double)BATcount(b)/(BPMpiecesCnt(b->batCacheid)*cnt));
 #ifdef _DEBUG_BPM_
@@ -1795,7 +1804,7 @@ BPMadaptImpl(bat *ret, bat *bid, ptr low, ptr hgh, bat *rs, int policy )
 		cs= BPMhybridPolicy(b,bs,ov);
 
 	if(policy == ORACLEPOLICY ) {
-		BPMcount(&cnt,&b->batCacheid);
+		cnt= BPMcountInternal(b->batCacheid);
 		bcnt = BATcount(b);
 		if ( (cnt ==0) || (bcnt ==0) || (BATcount(bs) ==0) ) or =0;
 		else or=BPMoraclePolicy((double)BATcount(bs)/bcnt, (double)bcnt/cnt);
@@ -2170,7 +2179,7 @@ BPMfold(bat *ret, bat *bid){
 	}
 
 printf("Not to be reached yet \n");
-	BPMcount(&cnt,bid);
+	cnt=BPMcountInternal(*bid);
 	b= BATdescriptor(i);
 	if( b== NULL)
 		throw(MAL,"bpm.fold","Partitioned BAT not found");
