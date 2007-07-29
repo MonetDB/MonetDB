@@ -410,6 +410,9 @@ OPTbarrierList(MalBlkPtr mb, InstrPtr p, int *alias, int offset){
 		q = newStmt(mb, bpmRef, "newIterator");
 		q->barrier= BARRIERsymbol;
 		q->argv[0]= getArg(p,j);
+#ifdef DEBUG_OPT_PARTITIONED
+		printf("barrier %d ->%d\n",getArg(p,j), alias[getArg(p,j)]);
+#endif
 		pushArgument(mb, q, 
 			(alias[getArg(p,j)]?alias[getArg(p,j)]:getArg(p,j)) );
 	}
@@ -452,9 +455,11 @@ OPTbakeIterator(MalBlkPtr mb, InstrPtr p, int *alias, int *garbage){
 	tpe= getArgType(mb,p,0);
 	pushArgument(mb,anchor,newTypeVariable(mb,getHeadType(tpe)));
 	pushArgument(mb,anchor,newTypeVariable(mb,getTailType(tpe)));
+#ifdef DEBUG_OPT_PARTITIONED
+	printf("alias[%d]=%d\n",getArg(p,0),getArg(q,0));
+#endif
 	alias[getArg(p,0)]= getArg(q,0);
 	garbage[getArg(q,0)]= 1;
-	/* printf("new %d\n",getArg(q,0));*/
 
 	/* dump the iterators */
 	OPTbarrierList(mb,p,alias,getModuleId(p)==batcalcRef);
@@ -472,7 +477,7 @@ OPTbakeIterator(MalBlkPtr mb, InstrPtr p, int *alias, int *garbage){
 
 static void
 OPTnaiveIterations(MalBlkPtr mb){
-	int i,j,limit,vlimit=mb->vtop*2;
+	int i,j,limit,vlimit= mb->vsize + mb->ssize*4; /* statements are expanded*/
 	InstrPtr *old,p,q;
 	int *alias= (int*) alloca(sizeof(int)*vlimit);
 	int *garbage= (int*) alloca(sizeof(int)*vlimit);
@@ -498,6 +503,9 @@ Assume all bind operations are over partitioned bats.
 				localVar(mb,"bpm",getArg(p,0), getVarType(mb, getArg(p,0)));
 			freezeVarType(mb,q->argv[0]);
 			alias[getArg(p,0)]= getArg(q,0);
+#ifdef DEBUG_OPT_PARTITIONED
+		printf("1 alias[%d]=%d\n",getArg(p,0),getArg(q,0));
+#endif
 /*
 			snprintf(name,1024,"%s_%s_%s",
 				getConstant(mb, getArg(p,1)).val.sval,
@@ -544,9 +552,11 @@ of the sql repository
 			garbage[getArg(q,1)]=0;
 			/* printf("fold %d  %d\n",getArg(q,0),getArg(q,1));*/
 			alias[getArg(p,j)]= 0;
+#ifdef DEBUG_OPT_PARTITIONED
+			printf("alias[%d]=0\n",getArg(p,j));
+#endif
 			setSegmentNr(mb,p,j,-1);
 		}
-		/* alias[getArg(p,0)]= getArg(p,0);*/
 		if( p->token == ENDsymbol)
 			break;
 		pushInstruction(mb,p);
@@ -564,11 +574,9 @@ static int strategy=0;
 static int
 OPTpartitionsImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	lng clk= GDKusec();
 	if( strategy)
 		OPTpartitionStrategy(mb, OPTpartitionProperties(mb));
 	else OPTnaiveIterations(mb);
-	optimizerCheck(mb,"partitions",1,GDKusec()-clk,OPT_CHECK_ALL);
 #ifdef DEBUG_OPT_PARTITIONED
 	stream_printf(GDKout,"partition optimizer Strategy\n");
 	printFunction(GDKout,mb,0);
