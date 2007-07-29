@@ -2147,8 +2147,10 @@ BPMfold(bat *ret, bat *bid){
 	BAT *b,*bn;
 
 	i=ABS(*bid);
-	if( (ps= getAlias(i)) == 0)
+	if( (ps= getAlias(i)) == 0){
+		BBPincref(*ret=*bid,TRUE);
 		return MAL_SUCCEED; /* alias bas may already be folded */
+	}
 
 	if( BPMpiecesCnt(ps->alias) == 1){
 		/* promote */
@@ -2203,11 +2205,14 @@ str
 BPMgarbage(int *ret,int *bid){
 	int i,j;
 	(void) ret;
+	/* printf("garbage %d\n",*bid);*/
 	for(i= *bid; bpmcat[i]; ){
 		j= bpmcat[i]->nxt;
-		/* printf("freeing %d\n",*bid);*/
+		/* printf("freeing %d\n",i);*/
 		GDKfree(bpmcat[i]);
 		bpmcat[i]= 0;
+		if( i != *bid)
+			BBPdecref(i,TRUE);
 		i= j;
 	}
 	return MAL_SUCCEED;
