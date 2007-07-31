@@ -47,7 +47,8 @@ lib_pf = {
                 levelsteps.mx \
 		ll_staircasejoin.mx \
                 ll_upwards.mx \
-                ll_prec_foll.mx
+                ll_prec_foll.mx \
+                ll_sibling.mx
 }
 
 lib__pf_support = {

@@ -1,0 +1,529 @@
+@' Copyright Notice:
+@' -----------------
+@'
+@' The contents of this file are subject to the Pathfinder Public License
+@' Version 1.1 (the "License"); you may not use this file except in
+@' compliance with the License.  You may obtain a copy of the License at
+@' http://monetdb.cwi.nl/Legal/PathfinderLicense-1.1.html
+@'
+@' Software distributed under the License is distributed on an "AS IS"
+@' basis, WITHOUT WARRANTY OF ANY KIND, either express or implied.  See
+@' the License for the specific language governing rights and limitations
+@' under the License.
+@'
+@' The Original Code is the Pathfinder system.
+@'
+@' The Original Code has initially been developed by the Database &
+@' Information Systems Group at the University of Konstanz, Germany and
+@' is now maintained by the Database Systems Group at the Technische
+@' Universitaet Muenchen, Germany.  Portions created by the University of
+@' Konstanz and the Technische Universitaet Muenchen are Copyright (C)
+@' 2000-2005 University of Konstanz and (C) 2005-2007 Technische
+@' Universitaet Muenchen, respectively.  All Rights Reserved.
+@'
+@' $Id$
+
+@f ll_sibling
+@a Stefan Manegold
+@t ll_sibling
+
+@c
+
+/*******************************************
+* ll_sibling.c : axis step operators for loop-lifted following-sibling axis
+*
+*/
+#include "pf_config.h"
+#include "levelsteps.h"
+#include <gdk.h>
+
+/**
+ * This file contains the axis step algoritms for the following-sibling axis.
+ * 
+ * The algorithm works similiar to the staircase-join approach:
+ * 
+ * - evaluation is done during a single sequential scan of the
+ *   size- & level- tables and the context set
+ *   (we use size to enable skipping and level to check the sibling property)
+ * - context set pruning is performed on-the-fly
+ */
+
+/* check, if result buffer is big enough; otherwise extend it */
+#define PFll_check_BAT_capacity(b,grow,res_cur) \
+{\
+	size_t _oldcap, _reqcap, _bunsize = BUNsize(b);\
+        /* mark the end point of the BUNs section in the BUNheap */\
+        res->batBuns->free = ((BUN)res_cur) - res->batBuns->base;\
+        BATsetcount(res, (res->batBuns->free+Bunbase(res)-BUNfirst(res))/BUNsize(res));\
+        /* check BAT capacity and extend if required */\
+        _oldcap = BATbuncount(b);\
+        _reqcap = BATcount(b) + grow;\
+        if (_oldcap < _reqcap) {\
+            size_t _newcap = MAX(_reqcap, BATgrows(b));\
+            if (BATextend((b), _newcap) == NULL) {\
+                GDKerror("%s: BATextend of BAT '%s' (#%d) failed "\
+                         "for " SZFMT " buns (" SZFMT " bytes).\n",\
+                         __func__, BATgetId(b), (b)->batCacheid,\
+                         _newcap, _newcap * _bunsize);\
+                BBPreclaim(b);\
+                return GDK_FAIL;\
+            }\
+            _newcap = BATbuncount(b);\
+            if (_newcap < _reqcap) {\
+                GDKerror("%s: BATextend of BAT '%s' (#%d) failed: "\
+                         "required " SZFMT " buns (" SZFMT " bytes), "\
+                         "got only " SZFMT " buns (" SZFMT " bytes).\n",\
+                         __func__, BATgetId(b), (b)->batCacheid,\
+                         _reqcap, _reqcap * _bunsize,\
+                         _newcap, _newcap * _bunsize);\
+                BBPreclaim(b);\
+                return GDK_FAIL;\
+            }\
+            res_cur = (oid*) BUNhead(res, BUNlast(res));\
+        }\
+}
+
+typedef struct stack_elem st_el;
+
+struct stack_elem {
+    oid  ctx;       /* active item (contect node) */
+    oid* fst_iter;  /* first iter row of the actual ctx node */
+    oid* lst_iter;  /* last iter row of the actual ctx node */
+};
+
+/* FOLLOWING SIBLING STEP */
+int
+PFll_following_sibling(BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, BAT *pre_level, BAT *pre_kind, chr *_kind_test)
+{
+    @:init(following_sibling)@
+
+@= init
+    char *name = "PFll_@1";
+    const int sz_msk = ~(1<<31);
+    int *size = 0, sz = 0;
+    chr *level = 0;
+    chr *kind = 0, kind_test = *_kind_test;
+
+    size_t res_size = 0, grow = 0;
+    BAT *res = 0;
+    oid *iter_cur = 0, *iter_end = 0, *ctx_cur = 0, *ctx_end = 0, *res_cur = 0;
+    int iter_nxt = 0, ctx_nxt = 0;
+    bit one_ctx = 0;
+    oid min_iter = 0, max_iter = 0, num_iter = 0, ctx_max = 0, doc_max = 0;
+    oid cur_sib;
+    chr cur_lev;
+
+    /* --------------------------- checks ---------------------------------- */
+
+    BATcheck(iter_bat, name);
+    BATcheck(ctx_bat, name);
+    BATcheck(pre_size, name);
+    BATcheck(pre_level, name);
+    BATcheck(pre_kind, name);
+
+    iter_cur = (oid*) BUNtail(iter_bat, BUNfirst(iter_bat)); 
+    iter_end = (oid*) BUNtail(iter_bat, BUNlast(iter_bat));
+    iter_nxt = BUNsize(iter_bat)/sizeof(oid);
+
+    ctx_cur = (oid*) BUNtail(ctx_bat, BUNfirst(ctx_bat)); 
+    ctx_end = (oid*) BUNtail(ctx_bat, BUNlast(ctx_bat));
+    ctx_nxt = BUNsize(ctx_bat)/sizeof(oid);
+    ctx_max = *(ctx_end - ctx_nxt);
+    one_ctx = *ctx_cur == ctx_max;
+    
+    doc_max = pre_size->hseqbase + BATcount(pre_size);
+
+    ALGODEBUG
+        THRprintf(GDKout, "%s: |iter_bat|="SZFMT", |ctx_bat|="SZFMT", |pre_size|="SZFMT", |pre_level|="SZFMT", |pre_kind|="SZFMT", kind_test=%d, one_ctx=%d\n",
+                          name, BATcount(iter_bat), BATcount(ctx_bat), BATcount(pre_size), BATcount(pre_level), BATcount(pre_kind), (int)kind_test, (int)one_ctx);
+
+    if (!(BAThdense(iter_bat) && BAThdense(ctx_bat)))
+    {
+        GDKerror("%s: both iter_bat and ctx_bat must have a dense head.\n", name);
+        return GDK_FAIL;
+    }
+    if ((iter_bat->hseqbase != ctx_bat->hseqbase) || (BATcount(iter_bat) != BATcount(ctx_bat)))
+    {
+        GDKerror("%s: iter_bat and ctx_bat must be head-aligned, i.e., have equal head seqbases and length.\n", name);
+        return GDK_FAIL;
+    }
+    if (!(BATtordered(ctx_bat) & 1))
+    {
+        GDKerror("%s: ctx_bat must be ordered on tail.\n", name);
+        return GDK_FAIL;
+    }
+    if (one_ctx && !(BATtordered(iter_bat) & 1))
+    {
+        GDKerror("%s: iter_bat must be ordered on tail.\n", name);
+        return GDK_FAIL;
+    }
+
+    if (!BAThdense(pre_size))
+    {
+        GDKerror("%s: head of pre_size must be dense.\n", name);
+        return GDK_FAIL;
+    }
+    if (pre_size->ttype != TYPE_int)
+    {
+        GDKerror("%s: tail of pre_size must be type INT.\n", name);
+        return GDK_FAIL;
+    }
+    if (BUNsize(pre_size) != sizeof(int))
+    {
+        GDKerror("%s: head (oid) of pre_size must NOT be materialized.\n", name);
+        return GDK_FAIL;
+    }
+    if (*ctx_cur < pre_size->hseqbase || ctx_max >= pre_size->hseqbase + BATcount(pre_size))
+    {
+        GDKerror("%s: context nodes exceed collection range.\n", name);
+        return GDK_FAIL;
+    }
+    size = ((int*) BUNtloc(pre_size, BUNfirst(pre_size))) - (int)pre_size->hseqbase;
+
+    if (!BAThdense(pre_level))
+    {
+        GDKerror("%s: head of pre_level must be dense.\n", name);
+        return GDK_FAIL;
+    }
+    if (pre_level->ttype != TYPE_chr)
+    {
+        GDKerror("%s: tail of pre_level must be type CHR.\n", name);
+        return GDK_FAIL;
+    }
+    if (BUNsize(pre_level) != sizeof(chr))
+    {
+        GDKerror("%s: head (oid) of pre_level must NOT be materialized.\n", name);
+        return GDK_FAIL;
+    }
+    if (pre_level->hseqbase != pre_size->hseqbase || BATcount(pre_level) != BATcount(pre_size))
+    {
+        GDKerror("%s: heads of pre_level & pre_size must be aligned (i.e., same seqbase and same length).\n", name);
+        return GDK_FAIL;
+    }
+    level = ((chr*) BUNtloc(pre_level, BUNfirst(pre_level))) - (int)pre_level->hseqbase;
+
+    if (kind_test != chr_nil) {
+        if (!BAThdense(pre_kind))
+        {
+            GDKerror("%s: head of pre_kind must be dense.\n", name);
+            return GDK_FAIL;
+        }
+        if ((pre_size->hseqbase != pre_kind->hseqbase) || (BATcount(pre_size) != BATcount(pre_kind)))
+        {
+            GDKerror("%s: pre_size and pre_kind must be head-aligned, i.e., have equal head seqbases and length.\n", name);
+            return GDK_FAIL;
+        }
+        if (pre_kind->ttype != TYPE_chr)
+        {
+            GDKerror("%s: tail of pre_kind must be type CHR.\n", name);
+            return GDK_FAIL;
+        }
+        if (BUNsize(pre_kind) != sizeof(chr))
+        {
+            GDKerror("%s: head (oid) of pre_kind must NOT be materialized.\n", name);
+            return GDK_FAIL;
+        }
+        kind = ((chr*) BUNtloc(pre_kind, BUNfirst(pre_kind))) - (int)pre_kind->hseqbase;
+    }
+
+    /* --------------------------- empty result ---------------------------- */
+
+    if (BATcount(ctx_bat) == 0 || BATcount(pre_size) == 0)
+    {
+        res = BATnew(TYPE_oid, TYPE_void, 0);
+        BATkey (res, TRUE);
+        res->hsorted = GDK_SORTED;
+        res->hdense = TRUE;
+        BATseqbase (res, (oid)0); /* does not really matter */
+        BATkey (BATmirror(res), TRUE);
+        res->tsorted = TRUE;
+        res->tdense = TRUE;
+        BATseqbase (BATmirror(res), (oid)0); /* does not really matter */
+        BATset(res, TRUE);
+        *result = res;
+        return GDK_SUCCEED;
+    }
+
+    /* --------------------------- analyze iters --------------------------- */
+
+    if (BATtordered(iter_bat) & 1)
+    {
+        min_iter = *iter_cur;
+        max_iter = *(iter_end - iter_nxt);
+    } else {
+        oid *cur_iter = iter_cur;
+        min_iter = GDK_oid_max;
+        max_iter = GDK_oid_min;
+        for (; cur_iter < iter_end; cur_iter += iter_nxt) {
+            oid iter = *cur_iter;
+            if (iter < min_iter) min_iter = iter;
+            if (iter > max_iter) max_iter = iter;
+        }
+    }
+    assert(min_iter <= max_iter);
+    num_iter = (max_iter - min_iter) + 1;
+
+    ALGODEBUG
+        THRprintf(GDKout, "%s: min_iter="OIDFMT", max_iter="OIDFMT", num_iter="OIDFMT"\n",
+                          name, min_iter, max_iter, num_iter);
+
+    /* --- result bat allocation. for result size use res_size parameter --- */
+
+    res_size = BATcount(ctx_bat); /* ??? */
+    res = BATnew(TYPE_oid, TYPE_oid, res_size);
+    if (res == NULL) 
+    { 
+        GDKerror("%s: could not allocate a result BAT of size "SZFMT".\n", name, res_size);
+        return GDK_FAIL;
+    }
+    assert(BUNsize(res) == 2 * sizeof(oid));
+    assert((res->hloc == 0) && (res->tloc == sizeof(oid)));
+    res_cur = (oid*) BUNhead(res, BUNlast(res)); 
+@
+@c
+    /* ------------------------- actual algorithm -------------------------- */
+
+    if (kind_test != chr_nil) {
+        @:ll_foll_sib(if (kind[cur_sib] == kind_test))@
+    } else {
+        @:ll_foll_sib()@
+    }
+    
+@= ll_foll_sib
+    if (one_ctx) {
+        /* 1 ctx, 1/n iter */
+        int num_sib = 0;
+
+        /* count sibligs for excat result BAT allocation */
+        cur_lev = level[*ctx_cur];
+        cur_sib = *ctx_cur + size[*ctx_cur] + 1;
+        while (cur_sib <= doc_max && ((sz = size[cur_sib]) < 0 || level[cur_sib] == cur_lev)) {
+            num_sib += (sz >= 0);
+            cur_sib += 1 + (sz & sz_msk); 
+        }
+        grow = num_iter * num_sib;
+        if (num_sib > 0) {
+            cur_sib = *ctx_cur + size[*ctx_cur] + 1;
+            /* check, if result buffer is big enough; otherwise extend it */
+            PFll_check_BAT_capacity(res, grow, res_cur);
+            if (num_iter == 1) {
+                ALGODEBUG THRprintf(GDKout, "%s: 1 ctx, 1 iter\n", name);
+                while (cur_sib <= doc_max && ((sz = size[cur_sib]) < 0 || level[cur_sib] == cur_lev)) {
+                    if (sz >= 0) {
+                        @1 {
+                            *res_cur++ = min_iter;
+                            *res_cur++ = cur_sib;
+                        }
+                    }
+                    cur_sib += 1 + (sz & sz_msk); 
+                }
+            } else {
+                /* num_iter > 1 */
+                ALGODEBUG THRprintf(GDKout, "%s: 1 ctx, n iter\n", name);
+                while (cur_sib <= doc_max && ((sz = size[cur_sib]) < 0 || level[cur_sib] == cur_lev)) {
+                    if (sz >= 0) {
+                        @1 {
+                            oid *cur_iter = iter_cur;
+#ifndef NDEBUG
+                            oid prev_iter = oid_nil;
+#endif
+                            for (; cur_iter < iter_end; cur_iter += iter_nxt) {
+#ifndef NDEBUG
+                                assert(*cur_iter != prev_iter);
+                                prev_iter = *cur_iter;
+#endif
+                                *res_cur++ = *cur_iter;
+                                *res_cur++ = cur_sib;
+                            }
+                        }
+                    }
+                    cur_sib += 1 + (sz & sz_msk); 
+                }
+            }
+        }
+    } else
+    if (num_iter == 1) {
+        /* n ctx, 1 iter */
+        ALGODEBUG THRprintf(GDKout, "%s: n ctx, 1 iter\n", name);
+        @:ll_foll_sib_n_ctx(@1,oid)@
+    } else {
+        /* n ctx, n iter */
+        ALGODEBUG THRprintf(GDKout, "%s: n ctx, n iter\n", name);
+        @:ll_foll_sib_n_ctx(@1,st_el)@
+    }
+@
+@= push_oid
+        stack[stack_top] = @1;
+@
+@= next_oid
+        ctx_cur += ctx_nxt;
+@
+@= pop_oid
+        ctx = stack[stack_top];
+@
+@= result_oid
+        *res_cur++ = min_iter;
+        *res_cur++ = cur_sib;
+@
+@= push_st_el
+        stack[stack_top].ctx = @1;
+@
+@= next_st_el
+        stack[stack_top].fst_iter = iter_cur;
+        while (ctx_cur < ctx_end && *ctx_cur == stack[stack_top].ctx) {
+            stack[stack_top].lst_iter = iter_cur;
+            ctx_cur += ctx_nxt;
+            iter_cur += iter_nxt;
+        }
+@
+@= pop_st_el
+        ctx = stack[stack_top].ctx;
+@
+@= result_st_el
+{
+        oid *cur_iter = stack[stack_top].fst_iter;
+#ifndef NDEBUG
+        oid prev_iter = oid_nil;
+#endif
+        for (; cur_iter <= stack[stack_top].lst_iter; cur_iter += iter_nxt) {
+#ifndef NDEBUG
+            assert(*cur_iter != prev_iter);
+            prev_iter = *cur_iter;
+#endif
+            *res_cur++ = *cur_iter;
+            *res_cur++ = cur_sib;
+        }
+}
+@
+@= ll_foll_sib_n_ctx
+{
+        int stack_top = -1;
+        @2 *stack = 0;
+        oid ctx;
+
+        stack = (@2*)GDKmalloc(sizeof(@2) * (XML_DEPTH_MAX + 1));
+        if (stack == NULL) {
+            GDKerror("%s: could not allocate stack of size "SZFMT".\n", name, sizeof(@2) * (XML_DEPTH_MAX + 1));
+            return GDK_FAIL;
+        }
+
+        grow = num_iter; /* can we do/guess/estimate better ??? */
+
+        /* start with first item */
+        stack_top++;
+        @:push_@2(*ctx_cur)@
+        /* get next item */
+        @:next_@2()@
+        while (ctx_cur < ctx_end) {
+            /* proceed with top of stack as active item */
+            @:pop_@2()@
+            cur_lev = level[ctx];
+            cur_sib = ctx + size[ctx] + 1;
+            /* get all siblings of active item up to the current item */
+            while (cur_sib <= *ctx_cur && ((sz = size[cur_sib]) < 0 || level[cur_sib] == cur_lev)) {
+                if (sz >= 0) {
+                    @1 {
+                        /* check, if result buffer is big enough; otherwise extend it */
+                        PFll_check_BAT_capacity(res, grow, res_cur);
+                        @:result_@2()@
+                    }
+                }
+                ctx = cur_sib;
+                cur_sib += 1 + (sz & sz_msk); 
+            }
+            if (*ctx_cur == ctx) {
+                /* current item is sibling of active item;
+                   replace active item on stack by current item to avoid duplicates */
+                @:push_@2(*ctx_cur)@
+            } else
+            if (level[cur_sib] == cur_lev) {
+                /* current item is descendant of sibling of active item */
+                /* suspend active item; recall on stack where to proceed */
+                @:push_@2(ctx)@
+                /* push current item on stack */
+                stack_top++;
+                @:push_@2(*ctx_cur)@
+            } else {
+                /* done with active item; remove it from stack */
+                stack_top--;
+                if (stack_top < 0) {
+                    /* stack empty; push current item on stack */
+                    stack_top++;
+                    @:push_@2(*ctx_cur)@
+                } else {
+                    /* continue with suspended item from stack */
+                    continue;
+                }
+            }
+            /* get next item */
+            @:next_@2()@
+        }
+        /* process suspended items from stack (if any) */
+        while (stack_top >= 0) {
+            /* proceed with top of stack as active item */
+            @:pop_@2()@
+            cur_lev = level[ctx];
+            cur_sib = ctx + size[ctx] + 1;
+            /* get all remaining siblings of active item */
+            while (cur_sib <= doc_max && ((sz = size[cur_sib]) < 0 || level[cur_sib] == cur_lev)) {
+                if (sz >= 0) {
+                    @1 {
+                        /* check, if result buffer is big enough; otherwise extend it */
+                        PFll_check_BAT_capacity(res, grow, res_cur);
+                        @:result_@2()@
+                    }
+                }
+                cur_sib += 1 + (sz & sz_msk); 
+            }
+            /* done with active item; remove it from stack */
+            stack_top--;
+        }
+        GDKfree(stack);
+}
+@
+@c
+    @:end@
+
+@= end
+    /* mark the end point of the BUNs section in the BUNheap */
+    res->batBuns->free = ((BUN)res_cur) - res->batBuns->base;
+    BATsetcount(res, (res->batBuns->free+Bunbase(res)-BUNfirst(res))/BUNsize(res));
+    /* -------------------- set result properties ---------------------- */
+{
+    bit trivial  = (BATcount(res) < 2);
+    oid fst_item = *(oid*)BUNtail(res, BUNfirst(res));
+    oid lst_item = *(oid*)BUNtail(res, BUNlast(res) - BUNsize(res));
+    bit one_item = (fst_item == lst_item);
+    bit one_iter = (num_iter == 1);
+
+    res->batDirty = TRUE;
+    res->hdense = (trivial||(res->htype==TYPE_void)); /* might be TRUE in some more cases... */
+    if (res->hdense) {
+        if (BATcount(res) == 0) {
+            BATseqbase (res, (oid)0); /* does not really matter */
+        } else {
+            BATseqbase (res, *(oid*)BUNhead(res, BUNfirst(res)));
+        }
+    }
+    res->hsorted = ((one_iter||one_item) ? GDK_SORTED : 0); /* might be TRUE in some more cases... */
+    BATkey(res,(res->hdense||one_item)); /* might be TRUE in some more cases... */
+    res->tdense = (trivial||(res->ttype==TYPE_void)); /* might be TRUE in some more cases... */
+    if (res->tdense) {
+        if (BATcount(res) == 0) {
+            BATseqbase (BATmirror(res), (oid)0); /* does not really matter */
+        } else {
+            BATseqbase (BATmirror(res), *(oid*)BUNtail(res, BUNfirst(res)));
+        }
+    }
+    res->tsorted = GDK_SORTED;
+    BATkey(BATmirror(res),(res->tdense||one_iter)); /* might be TRUE in some more cases... */
+    BATset(res, TRUE);
+}
+    *result = res;
+
+    return GDK_SUCCEED;
+@
+@c
+}
+
+/* vim:set shiftwidth=4 expandtab: */

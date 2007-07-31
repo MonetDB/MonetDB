@@ -216,7 +216,7 @@ procs();
 [ "floor(flt) : flt"																	  ]
 [ "fn_put(BAT[oid,BAT], BAT[void,str], BAT[void,oid], any, BAT[void,lng], BAT[void,dbl], BAT[void,dbl], BAT[void,str]) : void"										  ]
 [ "following(BAT[void,oid], BAT[void,oid], oid, BAT[void,BAT], int, chr) : BAT[void,BAT]"																			  ]
-[ "following_sibling(BAT[void,oid], BAT[void,oid], oid, BAT[void,BAT], int) : BAT[void,BAT]"								  ]
+[ "following_sibling(BAT[void,oid], BAT[void,oid], oid, BAT[void,BAT], int, chr) : BAT[void,BAT]"																		  ]
 [ "fopen(str, str) : Stream"																  ]
 [ "fputs(str, Stream) : void"																  ]
 [ "get_attr_own(BAT[void,BAT], any, any) : BAT[oid,oid]"																					  ]

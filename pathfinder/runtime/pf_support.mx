@@ -300,7 +300,29 @@ BAT[void,int] pre_size (from the working set)
 BAT[void,chr] pre_kind (from the working set)
 chr kind_test (kind to test for; chr_nil if no kind test)
 DESCRIPTION:
-returns all nodes on the @2 axis of the ctx-nodes duplicate free for each group."
+returns all nodes on the @1 axis of the ctx-nodes duplicate free for each group."
+@m
+@:ll_sibling_decl(following)@
+@(
+@:ll_sibling_decl(preceding)@
+@)
+
+@= ll_sibling_decl
+.COMMAND ll_@1_sibling(BAT[oid,oid] iter,
+               BAT[oid,oid] ctx,
+               BAT[oid,int] pre_size,
+               BAT[oid,chr] pre_level,
+               BAT[oid,chr] pre_kind,
+               chr kind_test): BAT[oid,oid] = PFll_@1_sibling;
+"PARAMETERS:
+BAT[void,oid] iter (grouping relation; sorted on tail within each ctx group)
+BAT[void,oid] ctx (context set; sorted on tail)
+BAT[void,int] pre_size  (from the working set)
+BAT[void,int] pre_level (from the working set)
+BAT[void,chr] pre_kind  (from the working set)
+chr kind_test (kind to test for; chr_nil if no kind test)
+DESCRIPTION:
+returns all nodes on the @1-sibling axis of the ctx-nodes duplicate free for each group."
 @m
 @:scj_cmd(descorself,descendant-or-self)@
 @:scj_cmd(desc,descendant)@
@@ -361,7 +383,9 @@ returns all nodes on the @2 axis of the ctx-nodes duplicate free for each group.
 @m
 @:lev_cmd(child,child)@
 @:lev_cmd(parent,parent)@
+@(
 @:lev_cmd(fs,following-sibling)@
+@)
 @:lev_cmd(ps,preceding-sibling)@
 
 @= lev_cmd
@@ -1408,8 +1432,15 @@ PROC combine_node_info (any frag1, bat[void,oid] pre1, any attr1,
 
 @:wrap(child)@
 
+@(
 @:step(following_sibling,following-sibling,lev_fs,@:level_intro@,@:level_code@,,)@
+@)
 @:step(preceding_sibling,preceding-sibling,lev_ps,@:level_intro@,@:level_code@,,)@
+
+@:ll_sibling_impl(following)@
+@(
+@:ll_sibling_impl(preceding)@
+@)
 
 @(
 @:step(following,following,following_void,,@:sizes_code@, @:foll_prec_code@,@:doc_pre@)@
@@ -1698,6 +1729,32 @@ PROC @1(BAT[void,oid] iter, BAT[void,oid] ctx, oid cont, BAT[void,bat] ws, int o
 }
 @
 
+@= ll_sibling_impl
+PROC @1_sibling(BAT[void,oid] iter, BAT[void,oid] item, oid cont, BAT[void,bat] ws, int order, chr kind_test) : BAT[void,bat]
+{
+    var pre_levels := ws.fetch(PRE_LEVEL).fetch(cont);
+    var pre_sizes := ws.fetch(PRE_SIZE).fetch(cont);
+    var pre_kinds;
+    if (isnil(kind_test)) {
+        # no kind test
+        pre_kinds := new(void,chr,0).seqbase(0@0).access(BAT_READ);
+    } else {
+        pre_kinds := ws.fetch(PRE_KIND).fetch(cont);
+    }
+
+    iter := iter.chk_order();
+    item := item.chk_order();
+    @:pre_sort_input@
+
+    var res := ll_@1_sibling(iter.chk_order(), item.chk_order(), pre_sizes, pre_levels, pre_kinds, kind_test);
+    var result := new(void,bat,2).seqbase(0@0).append(hmark(res,0@0)).append(tmark(res,0@0)).access(BAT_READ);
+
+    @:post_sort_output@
+    
+    return result;
+}
+@
+
 @= ll_prec_foll_impl
 PROC @1(BAT[void,oid] iter, BAT[void,oid] item, oid cont, BAT[void,bat] ws, int order, chr kind_test) : BAT[void,bat]
 {
@@ -1736,7 +1793,7 @@ PROC @1(BAT[void,oid] iter, BAT[void,oid] item, oid cont, BAT[void,bat] ws, int 
 @:loop_lifted_scj_step1x(following)@
 @:loop_lifted_scj_step1x(preceding)@
 
-@:loop_lifted_scj_step1(following_sibling)@
+@:loop_lifted_scj_step1x(following_sibling)@
 @:loop_lifted_scj_step1(preceding_sibling)@
 @
 #==================================================================
