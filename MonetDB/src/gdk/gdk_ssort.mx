@@ -121,28 +121,28 @@ merge_getmem(MergeState *ms, ssize_t need)
 	return -1;
 }
 
-#define PTRADD(p, n, w)		(void *) ((char *) (p) + (n) * (w))
+#define PTRADD(p, n, w)		((void *) ((char *) (p) + (n) * (w)))
 
 #define COPY(d,s,w) do {					\
 		switch (w) {					\
 		case sizeof(bte):				\
-			* (bte *) d = * (bte *) s;		\
+			* (bte *) (d) = * (bte *) (s);		\
 			break;					\
 		case sizeof(sht):				\
-			* (sht *) d = * (sht *) s;		\
+			* (sht *) (d) = * (sht *) (s);		\
 			break;					\
 		case sizeof(int):				\
-			* (int *) d = * (int *) s;		\
+			* (int *) (d) = * (int *) (s);		\
 			break;					\
 		case sizeof(lng):				\
-			* (lng *) d = * (lng *) s;		\
+			* (lng *) (d) = * (lng *) (s);		\
 			break;					\
 		case 2 * sizeof(lng):				\
-			* (lng *) d = * (lng *) s;		\
-			* ((lng *) d + 1) = * ((lng *) s + 1);	\
+			* (lng *) (d) = * (lng *) (s);		\
+			* ((lng *) (d) + 1) = * ((lng *) (s) + 1);	\
 			break;					\
 		default:					\
-			memcpy(d, s, (size_t) w);		\
+			memcpy((d), (s), (size_t) (w));		\
 			break;					\
 		}						\
 	} while (0)
