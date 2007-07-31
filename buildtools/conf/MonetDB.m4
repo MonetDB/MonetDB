@@ -1689,6 +1689,9 @@ if test "x$have_pthread" != xno; then
 						pthread=pthread PTHREAD_LIBS="$PTHREAD_LIBS -lpthread -lposix4",
 						[ if test "x$have_pthread" != xauto; then AC_MSG_ERROR([pthread library not found]); fi; have_pthread=no ],
 						"-lposix4")))))
+	AC_CHECK_LIB($pthread, pthread_kill,
+		AC_DEFINE(HAVE_PTHREAD_KILL, 1,
+			[Define if you have the pthread_kill function]))
 	AC_CHECK_LIB($pthread, pthread_sigmask,
 		AC_DEFINE(HAVE_PTHREAD_SIGMASK, 1,
 			[Define if you have the pthread_sigmask function]))
