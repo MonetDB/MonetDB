@@ -82,7 +82,7 @@ rm -rf $RPM_BUILD_ROOT
 make install \
 	DESTDIR=$RPM_BUILD_ROOT 
 
-mkdir -p $RPM_BUILD_ROOT/%{localstatedir}/MonetDB4/dbfarm
+mkdir -p $RPM_BUILD_ROOT/%{localstatedir}/MonetDB4
 # insert example db here!
 
 find $RPM_BUILD_ROOT -name .incs.in | xargs rm -f
@@ -108,7 +108,7 @@ rm -fr $RPM_BUILD_ROOT
 %{_libdir}/MonetDB4/lib/*.la* 
 %{_libdir}/MonetDB4/*.mil* 
 
-%dir %{localstatedir}/MonetDB4
+%attr(770,monetdb,monetdb) %dir %{localstatedir}/MonetDB4
 
 %config(noreplace) %{sysconfdir}/MonetDB.conf 
 
