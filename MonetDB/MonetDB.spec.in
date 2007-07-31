@@ -71,9 +71,6 @@ rm -rf $RPM_BUILD_ROOT
 make install \
 	DESTDIR=$RPM_BUILD_ROOT 
 
-mkdir -p $RPM_BUILD_ROOT/%{localstatedir}/MonetDB/dbfarm
-# insert example db here!
-
 find $RPM_BUILD_ROOT -name .incs.in -print -o -name \*.la -print | xargs rm -f
 
 # cleanup stuff we don't want to install
