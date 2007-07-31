@@ -80,7 +80,7 @@ rm -rf $RPM_BUILD_ROOT
 make install \
 	DESTDIR=$RPM_BUILD_ROOT 
 
-mkdir -p $RPM_BUILD_ROOT/%{localstatedir}/MonetDB5/dbfarm
+mkdir -p $RPM_BUILD_ROOT/%{localstatedir}/MonetDB5
 # insert example db here!
 
 find $RPM_BUILD_ROOT -name .incs.in | xargs rm -f
@@ -107,10 +107,10 @@ rm -fr $RPM_BUILD_ROOT
 %{prefix}/bin/stethoscope
 
 %{_libdir}/*.so.*
-%{_libdir}/MonetDB5/lib/*.so.* 
+%{_libdir}/MonetDB5/lib/*.so*
 %{_libdir}/MonetDB5/*.mal 
 
-%dir %{localstatedir}/MonetDB5
+%attr(770,monetdb,monetdb) %dir %{localstatedir}/MonetDB5
 
 %config(noreplace) %{sysconfdir}/monetdb5.conf
 
@@ -122,7 +122,6 @@ rm -fr $RPM_BUILD_ROOT
 %{_libdir}/*.la
 %{_libdir}/*.so 
 %{_libdir}/MonetDB5/lib/*.la
-%{_libdir}/MonetDB5/lib/*.so 
 
 
 %pre 
