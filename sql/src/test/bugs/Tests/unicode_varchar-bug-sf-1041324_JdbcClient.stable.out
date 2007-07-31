@@ -1,19 +1,24 @@
 stdout of test 'unicode_varchar-bug-sf-1041324_JdbcClient` in directory 'src/test/bugs` itself:
 
 
-# 12:55:12 >  
-# 12:55:12 >  Mtimeout -timeout 300 Mserver "--config=/ufs/fabian/scratch/monetdb/current/program-x86_64/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/fabian/scratch/monetdb/current/program-x86_64/lib/MonetDB:/ufs/fabian/scratch/monetdb/current/program-x86_64/lib/bin" --set "gdk_dbfarm=/ufs/fabian/scratch/monetdb/current/program-x86_64/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/fabian/scratch/monetdb/current/program-x86_64/var/MonetDB/log" --set mapi_port=38933 --set sql_port=45579 --set xquery_port=52530 --set monet_prompt= --trace "--dbname=mTests_src_test_bugs" --dbinit="module(sql_server); sql_server_start();" ; echo ; echo Over..
-# 12:55:12 >  
+# 15:12:10 >  
+# 15:12:10 >  Mtimeout -timeout 300  mserver5 "--config=/ufs/fabian/scratch/monetdb/current/program-x86_64/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/fabian/scratch/monetdb/current/program-x86_64/lib64/MonetDB5:/ufs/fabian/scratch/monetdb/current/program-x86_64/lib64/MonetDB5/lib:/ufs/fabian/scratch/monetdb/current/program-x86_64/lib64/MonetDB5/bin" --set "gdk_dbfarm=/net/pegasus.ins.cwi.nl/export/scratch0/fabian/vtmp/mtest-current-pegasus.ins.cwi.nl/sql/dbfarm" --set "sql_logdir=/net/pegasus.ins.cwi.nl/export/scratch0/fabian/vtmp/mtest-current-pegasus.ins.cwi.nl/sql/sqllog" --set "xquery_logdir=/net/pegasus.ins.cwi.nl/export/scratch0/fabian/vtmp/mtest-current-pegasus.ins.cwi.nl/sql/xquerylog" --set mapi_open=true --set mapi_port=30451 --set xrpc_port=40862 --set monet_prompt= --trace "--dbname=mTests_src_test_bugs" --dbinit=' include sql;' ; echo ; echo Over..
+# 15:12:10 >  
 
-# Monet Database Server V4.9.3
-# Copyright (c) 1993-2005, CWI. All rights reserved.
-# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
-# Visit http://monetdb.cwi.nl/ for further information.
 
-printf("\nReady.\n");
+
+# MonetDB server v5.1.0, based on kernel v1.19.0
+# Serving database 'mTests_src_test_bugs'
+# Compiled for x86_64-pc-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Copyright (c) 1993-2007 CWI, all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://pegasus.ins.cwi.nl:30451/
+# MonetDB/SQL module v2.19.0 loaded
 
 Ready.
-quit();
+#function user.main():void;
+#    clients.quit();
+#end main;
 
 Over..
 
@@ -30,6 +35,13 @@ Over..
 | single_value                                                                                                                     |
 +==================================================================================================================================+
 | http://shopping.b92.net/index.php?IDS=11&ID_Group=39&ID_prod=754&PROD_NAME=Belgrade+Coffee+Shop+4&GROUP_NAME=Muzi�a+produkcija   |
++----------------------------------------------------------------------------------------------------------------------------------+
+1 row
+
++----------------------------------------------------------------------------------------------------------------------------------+
+| single_value                                                                                                                     |
++==================================================================================================================================+
+| SAVE 25¢ ON ICE CREAM                                                                                                            |
 +----------------------------------------------------------------------------------------------------------------------------------+
 1 row
 
