@@ -340,8 +340,9 @@ subexp_eq (PFla_op_t *a, PFla_op_t *b)
             break;
 
         case la_step:
-        case la_dup_step:
+        case la_step_join:
         case la_guide_step:
+        case la_guide_step_join:
             if (a->sem.step.axis        != b->sem.step.axis
              || !PFty_subtype (a->sem.step.ty, b->sem.step.ty)
              || !PFty_subtype (b->sem.step.ty, a->sem.step.ty)

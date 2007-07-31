@@ -415,7 +415,8 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
                 if ((modified = GEN(lp->sem.type.res))) LP = L(lp);
                 break;
                 
-            case la_dup_step:
+            case la_step_join:
+            case la_guide_step_join:
                 if ((modified = GEN(lp->sem.step.item_res))) LP = R(lp);
                 break;
 
@@ -1454,14 +1455,33 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
                 }
                 break;
                 
-            case la_dup_step:
+            case la_step_join:
                 if (!is_join_att (p, lp->sem.step.item_res)) {
-                    *p = *(dup_step (
+                    *p = *(step_join (
                                L(lp),
                                eqjoin_unq (R(lp), rp, latt, ratt,
                                            p->sem.eqjoin_unq.res),
                                lp->sem.step.axis,
                                lp->sem.step.ty,
+                               lp->sem.step.level,
+                               is_join_att(p, lp->sem.step.item)
+                                  ? p->sem.eqjoin_unq.res
+                                  : lp->sem.step.item,
+                               lp->sem.step.item_res));
+                    next_join = R(p);
+                }
+                break;
+
+            case la_guide_step_join:
+                if (!is_join_att (p, lp->sem.step.item_res)) {
+                    *p = *(guide_step_join (
+                               L(lp),
+                               eqjoin_unq (R(lp), rp, latt, ratt,
+                                           p->sem.eqjoin_unq.res),
+                               lp->sem.step.axis,
+                               lp->sem.step.ty,
+                               lp->sem.step.guide_count,
+                               lp->sem.step.guides,
                                lp->sem.step.level,
                                is_join_att(p, lp->sem.step.item)
                                   ? p->sem.eqjoin_unq.res
@@ -1696,7 +1716,8 @@ map_name (PFla_op_t *p, PFalg_att_t att)
         case la_type_assert:
             if (att == p->sem.type.res) return att_NULL;
             break;
-        case la_dup_step:
+        case la_step_join:
+        case la_guide_step_join:
             if (att == p->sem.step.item_res) return att_NULL;
             break;
         case la_doc_access:

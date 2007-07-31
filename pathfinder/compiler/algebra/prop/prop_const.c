@@ -259,7 +259,8 @@ infer_const (PFla_op_t *n)
         case la_type:
         case la_type_assert:
         case la_cast:
-        case la_dup_step:
+        case la_step_join:
+        case la_guide_step_join:
         case la_doc_access:
         case la_docnode:
         case la_element:
@@ -712,7 +713,8 @@ infer_const (PFla_op_t *n)
         case la_rank:
         case la_number:
         case la_type_assert:
-        case la_dup_step:
+        case la_step_join:
+        case la_guide_step_join:
         case la_doc_access:
         case la_fcns:
         case la_docnode:

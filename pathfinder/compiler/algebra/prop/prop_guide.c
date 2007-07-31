@@ -113,7 +113,7 @@ static void copy_step(PFla_op_t *n);
 static void copy_guide_step(PFla_op_t *n);
 
 /* Copy guides for the step operator*/
-static void copy_dup_step(PFla_op_t *n);
+static void copy_step_join(PFla_op_t *n);
 
 /* Union between left and right child guide nodes */
 static void copy_disunion(PFla_op_t  *n);
@@ -843,8 +843,8 @@ copy_intersect(PFla_op_t  *n)
     return; 
 }
 
-/* Copy guides for the dup_step operator*/
-static void copy_dup_step(PFla_op_t *n)
+/* Copy guides for the step_join operator*/
+static void copy_step_join(PFla_op_t *n)
 {
     assert(n);
     assert(PROP(n));
@@ -1081,12 +1081,13 @@ infer_guide(PFla_op_t *n, PFguide_tree_t *guide)
             remove_duplicate(n);
             break;
 
-        /* dup_step */
-        case la_dup_step: 
-            copy_dup_step(n);
+        /* step_join */
+        case la_step_join: 
+            copy_step_join(n);
             break;
 
         case la_guide_step:
+        case la_guide_step_join:
             copy_guide_step(n);
             break;
 

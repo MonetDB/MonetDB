@@ -597,7 +597,8 @@ infer_ckey (PFla_op_t *n)
                         n->sem.step.iter | n->sem.step.item_res);
             break;
 
-        case la_dup_step:
+        case la_step_join:
+        case la_guide_step_join:
         {
             PFarray_t *right = R(n)->prop->ckeys;
             PFalg_att_t ckey;

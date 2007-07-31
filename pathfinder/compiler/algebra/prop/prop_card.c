@@ -126,7 +126,7 @@ infer_card (PFla_op_t *n)
         case la_difference:
         case la_distinct:
         case la_step:
-        case la_dup_step:
+        case la_step_join:
         case la_id:
         case la_idref:
         case la_fcns:
@@ -165,6 +165,7 @@ infer_card (PFla_op_t *n)
             break;
 
         case la_guide_step:
+        case la_guide_step_join:
             if (R(n)->prop->card == 1 &&
                 n->sem.step.guide_count == 1 &&
                 n->sem.step.guides[0]->count == 1) 

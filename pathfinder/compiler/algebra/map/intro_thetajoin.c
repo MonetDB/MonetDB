@@ -432,8 +432,9 @@ find_join_worker (PFla_op_t *n,
             break;
 
         case la_step:
-        case la_dup_step:
+        case la_step_join:
         case la_guide_step:
+        case la_guide_step_join:
             if (LEFT_COLS(n) & n->sem.step.item_res) {
                 LEFT_COLS(n) = diff   (LEFT_COLS(n), n->sem.step.item_res);
                 LEFT_COLS(n) = union_ (LEFT_COLS(n), n->sem.step.item);

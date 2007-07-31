@@ -73,94 +73,100 @@
 /* start with non-terminal */
 %start Query
 
-%term serialize      =  1 /**< serialize algebra expression
-                               (Placed on the very top of the tree.) */
-%term lit_tbl        =  2 /**< literal table */
-%term empty_tbl      =  3 /**< empty literal table */
-%term attach         =  4 /**< attach constant column */
-%term cross          =  5 /**< cross product (Cartesian product) */
-%term eqjoin         =  6 /**< equi-join */
-%term semijoin       =  7 /**< semi-join */
-%term thetajoin      =  8 /**< theta-join (with possibly multiple
-                               predicates) */
-%term project        =  9 /**< algebra projection and renaming operator */
-%term select_        = 10 /**< selection of rows where column value != 0 */
-%term disjunion      = 11 /**< union two relations with same schema */
-%term intersect      = 12 /**< intersect two relations with same schema */
-%term difference     = 13 /**< difference of two relations w/ same schema */
-%term distinct       = 14 /**< duplicate elimination operator */
-%term fun_1to1       = 20 /**< generic operator that extends the schema with
-                               a new column where each value is determined 
-                               by the values of a single row (cardinality 
-                               stays the same) */
-%term num_eq         = 25 /**< numeric equal operator */
-%term num_gt         = 26 /**< numeric greater-than operator */
-%term bool_and       = 28 /**< boolean AND operator */
-%term bool_or        = 29 /**< boolean OR operator */
-%term bool_not       = 30 /**< boolean NOT operator */
-%term to             = 31 /**< op:to operator */
-%term avg            = 32 /**< operator for (partitioned) avg of a column */
-%term max_           = 33 /**< operator for (partitioned) max of a column */
-%term min_           = 34 /**< operator for (partitioned) min of a column */
-%term sum            = 35 /**< operator for (partitioned) sum of a column */
-%term count          = 36 /**< (partitioned) row counting operator */
-%term rownum         = 37 /**< consecutive number generation */
-%term rank           = 38 /**< arbitrary but ordered number generation */
-%term number         = 39 /**< arbitrary, unordered number generation */
-%term type           = 40 /**< selection of rows where a column is of a
-                               certain type */
-%term type_assert    = 41 /**< restricts the type of a relation */
-%term cast           = 42 /**< type cast of an attribute */
-%term seqty1         = 43 /**< test for exactly one type occurrence in one
-                               iteration (Pathfinder extension) */
-%term all            = 44 /**< test if all items in an iteration are true */
-%term step           = 50 /**< path step */
-%term dup_step       = 51 /**< duplicate generating path step */
-%term guide_step     = 52 /**< path step (with guide information) */
-%term id             = 53 /**< Operator representing a fn:id node lookup */
-%term idref          = 54 /**< Operator representing a fn:idref node lookup */
-%term doc_tbl        = 55 /**< document relation (is also a fragment) */
-%term doc_access     = 56 /**< document access necessary for pf:string-value */
-%term twig           = 60 /**< twig root operator */
-%term fcns           = 61 /**< twig constructor sequence */
-%term docnode        = 62 /**< document node-constructing operator */
-%term element        = 63 /**< element-constructing operator */
-%term attribute      = 64 /**< attribute-constructing operator */
-%term textnode       = 65 /**< text node-constructing operator */
-%term comment        = 66 /**< comment-constructing operator */
-%term processi       = 67 /**< processing instruction-constr. operator */
-%term content        = 68 /**< constructor content operator (elem|doc) */
-%term merge_adjacent = 69 /**< operator for pf:merge-adjacent-text-nodes
-                               builtin function */
-%term roots_         = 70 /**< algebraic repres. of the roots of newly
-                               created xml nodes (e.g. element());
-                               schema: iter | pos | item */
+%term serialize       =  1 /**< serialize algebra expression
+                                (Placed on the very top of the tree.) */
+%term lit_tbl         =  2 /**< literal table */
+%term empty_tbl       =  3 /**< empty literal table */
+%term attach          =  4 /**< attach constant column */
+%term cross           =  5 /**< cross product (Cartesian product) */
+%term eqjoin          =  6 /**< equi-join */
+%term semijoin        =  7 /**< semi-join */
+%term thetajoin       =  8 /**< theta-join (with possibly multiple
+                                predicates) */
+%term project         =  9 /**< algebra projection and renaming operator */
+%term select_         = 10 /**< selection of rows where column value != 0 */
+%term disjunion       = 11 /**< union two relations with same schema */
+%term intersect       = 12 /**< intersect two relations with same schema */
+%term difference      = 13 /**< difference of two relations w/ same schema */
+%term distinct        = 14 /**< duplicate elimination operator */
+%term fun_1to1        = 20 /**< generic operator that extends the schema with
+                                a new column where each value is determined 
+                                by the values of a single row (cardinality 
+                                stays the same) */
+%term num_eq          = 25 /**< numeric equal operator */
+%term num_gt          = 26 /**< numeric greater-than operator */
+%term bool_and        = 28 /**< boolean AND operator */
+%term bool_or         = 29 /**< boolean OR operator */
+%term bool_not        = 30 /**< boolean NOT operator */
+%term to              = 31 /**< op:to operator */
+%term avg             = 32 /**< operator for (partitioned) avg of a column */
+%term max_            = 33 /**< operator for (partitioned) max of a column */
+%term min_            = 34 /**< operator for (partitioned) min of a column */
+%term sum             = 35 /**< operator for (partitioned) sum of a column */
+%term count           = 36 /**< (partitioned) row counting operator */
+%term rownum          = 37 /**< consecutive number generation */
+%term rank            = 38 /**< arbitrary but ordered number generation */
+%term number          = 39 /**< arbitrary, unordered number generation */
+%term type            = 40 /**< selection of rows where a column is of a
+                                certain type */
+%term type_assert     = 41 /**< restricts the type of a relation */
+%term cast            = 42 /**< type cast of an attribute */
+%term seqty1          = 43 /**< test for exactly one type occurrence in one
+                                iteration (Pathfinder extension) */
+%term all             = 44 /**< test if all items in an iteration are true */
+%term step            = 49 /**< XPath location step */
+%term step_join       = 50 /**< duplicate generating path step */
+%term guide_step      = 51 /**< XPath location step 
+                                (with guide information) */
+%term guide_step_join = 52 /**< duplicate generating path step 
+                                (with guide information) */
+%term id              = 53 /**< Operator representing a fn:id node lookup */
+%term idref           = 54 /**< Operator representing a fn:idref node 
+                                lookup */
+%term doc_tbl         = 55 /**< document relation (is also a fragment) */
+%term doc_access      = 56 /**< document access necessary 
+                                for pf:string-value */
+%term twig            = 60 /**< twig root operator */
+%term fcns            = 61 /**< twig constructor sequence */
+%term docnode         = 62 /**< document node-constructing operator */
+%term element         = 63 /**< element-constructing operator */
+%term attribute       = 64 /**< attribute-constructing operator */
+%term textnode        = 65 /**< text node-constructing operator */
+%term comment         = 66 /**< comment-constructing operator */
+%term processi        = 67 /**< processing instruction-constr. operator */
+%term content         = 68 /**< constructor content operator (elem|doc) */
+%term merge_adjacent  = 69 /**< operator for pf:merge-adjacent-text-nodes
+                                builtin function */
+%term roots_          = 70 /**< algebraic repres. of the roots of newly
+                                created xml nodes (e.g. element());
+                                schema: iter | pos | item */
 /* all operators below represent xml node fragments with no schema */
-%term fragment       = 71 /**< representation of a node fragment */
-%term frag_union     = 72 /**< special node type used to form an algebraic
-                               union of fragments */
-%term empty_frag     = 73 /**< representation of an empty fragment */
-%term cond_err       = 80 /**< facility to trigger runtime errors */
-%term nil            = 81 /**< end of the list of parameters */
-%term trace          = 82 /**< debug operator */
-%term trace_msg      = 83 /**< debug operator */
-%term trace_map      = 84 /**< debug relation map operator */
-%term rec_fix        = 85 /**< operator representing a tail recursion */
-%term rec_param      = 86 /**< list of parameters of the recursion */
-%term rec_arg        = 87 /**< reference to the arguments of a parameter
-                               in the recursion */
-%term rec_base       = 88 /**< base of the DAG describing the recursion */
-    
-%term proxy          = 96 /**< proxy operator that represents a group
-                               of operators */
-%term proxy_base     = 97 /**< completes the content of the proxy 
-                               (a virtual base table) */
-%term cross_mvd      = 98 /**< clone column aware cross product */
-%term eqjoin_unq     = 99 /**< clone column aware equi-join */                            
+%term fragment        = 71 /**< representation of a node fragment */
+%term frag_union      = 72 /**< special node type used to form an algebraic
+                                union of fragments */
+%term empty_frag      = 73 /**< representation of an empty fragment */
+                             
+%term cond_err        = 80 /**< facility to trigger runtime errors */
+%term nil             = 81 /**< end of the list of parameters */
+%term trace           = 82 /**< debug operator */
+%term trace_msg       = 83 /**< debug operator */
+%term trace_map       = 84 /**< debug relation map operator */
+%term rec_fix         = 85 /**< operator representing a tail recursion */
+%term rec_param       = 86 /**< list of parameters of the recursion */
+%term rec_arg         = 87 /**< reference to the arguments of a parameter
+                                in the recursion */
+%term rec_base        = 88 /**< base of the DAG describing the recursion */
+                         
+%term proxy           = 96 /**< proxy operator that represents a group
+                                of operators */
+%term proxy_base      = 97 /**< completes the content of the proxy 
+                                (a virtual base table) */
+%term cross_mvd       = 98 /**< clone column aware cross product */
+%term eqjoin_unq      = 99 /**< clone column aware equi-join */
 /* builtin support for XQuery functions */
-%term string_join    =102 /**< fn:string-join */
-
-%term dummy          =120 /**< dummy operator that does nothing */
+%term string_join     =102 /**< fn:string-join */
+                         
+%term dummy           =120 /**< dummy operator that does nothing */
 
 %% 
 
@@ -209,7 +215,8 @@ Rel:    StRel                                        = 52  (50);
 StRel:  step (Frag, Rel)                             = 53  (10);
 StRel:  step (Frag, StRel)                           = 54  (10);
 Rel:    guide_step (Frag, Rel)                       = 225 (10);
-Rel:    dup_step (Frag, Rel)                         = 224 (10);
+Rel:    step_join (Frag, Rel)                        = 224 (10);
+Rel:    guide_step_join (Frag, Rel)                  = 226 (10);
 
 Rel:    doc_access (Frag, Rel)                       = 55  (10);
 
@@ -2508,7 +2515,7 @@ reduce (PFla_op_t * p, int goalnt)
             sql_stmt->sem.select.distinct = true;
     }
     break;
-    /* Rel: dup_step (Frag, Rel) */
+    /* Rel: step_join (Frag, Rel) */
     case 224:
     {
         /* Fill the annotation with values to

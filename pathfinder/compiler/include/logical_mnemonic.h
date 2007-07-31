@@ -131,9 +131,11 @@
 
 /* path step */
 #define step(a,b,c,d,e,f,g,h) PFla_step ((a),(b),(c),(d),(e),(f),(g),(h))
-#define dup_step(a,b,c,d,e,f,g) PFla_dup_step ((a),(b),(c),(d),(e),(f),(g))
+#define step_join(a,b,c,d,e,f,g) PFla_step_join ((a),(b),(c),(d),(e),(f),(g))
 #define guide_step(a,b,c,d,e,f,g,h,i,j) \
         PFla_guide_step ((a),(b),(c),(d),(e),(f),(g),(h),(i),(j))
+#define guide_step_join(a,b,c,d,e,f,g,h,i) \
+        PFla_guide_step_join ((a),(b),(c),(d),(e),(f),(g),(h),(i))
 
 /* fn:id */
 #define id(a,b,c,d,e,f)   PFla_id ((a),(b),(c),(d),(e),(f))

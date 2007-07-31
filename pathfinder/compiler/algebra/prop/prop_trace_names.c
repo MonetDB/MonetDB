@@ -237,8 +237,9 @@ map_names (PFla_op_t *n, PFla_op_t *goal, PFarray_t *par_np_list)
             break;
 
         case la_step:
-        case la_dup_step:
+        case la_step_join:
         case la_guide_step:
+        case la_guide_step_join:
             diff_np (np_list, n->sem.step.item_res);
             break;
 

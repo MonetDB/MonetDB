@@ -465,7 +465,8 @@ infer_ori_names (PFla_op_t *n, PFarray_t *par_np_list)
             add_name_pair (n->prop->r_name_pairs, ori, unq);
             break;
             
-        case la_dup_step:
+        case la_step_join:
+        case la_guide_step_join:
             diff_np (n->prop->r_name_pairs, np_list, n->sem.step.item_res);
             break;
 

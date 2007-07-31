@@ -57,102 +57,147 @@
 #define RR(p) (((p)->child[1])->child[1])
 
 /* Merge 2 guide_steps if it is possible */
-static void merge_guide_steps(PFla_op_t *n);
-
-/* worker for PFalgopt_guide */
-static void opt_guide(PFla_op_t *n);
-
-
-/* Merge 2 guide_steps if it is possible */
 static void
-merge_guide_steps(PFla_op_t *n)
+merge_guide_steps (PFla_op_t *n)
 {
+    PFla_op_t *step1, *step2, *proj = NULL;
+    PFalg_att_t item;
+    PFalg_axis_t new_axis;
+
     assert(n);
+    assert (n->kind == la_step ||
+            n->kind == la_step_join ||
+            n->kind == la_guide_step ||
+            n->kind == la_guide_step_join);
+    
+    step1 = n;
+    step2 = R(n);
+    item = n->sem.step.item;
 
-    /* apply chances for step operators */
-    if(n->kind == la_guide_step) {
-        assert(PROP(n));
-        assert(R(n));
-        /* right child has guide_step -> delete it */
-        if(R(n)->kind == la_guide_step) {
-
-            bool merge_steps = false;
-            PFalg_axis_t new_axis;
-
-            assert(RR(n));
-
-            /* check if axis can be merged */
-            if(!((AXIS(n) == alg_self || AXIS(n) == alg_chld || 
-                    AXIS(n) == alg_desc || AXIS(n) == alg_desc_s) &&
-                (AXIS(R(n)) == alg_self || AXIS(R(n)) == alg_chld || 
-                    AXIS(R(n)) == alg_desc || AXIS(R(n)) == alg_desc_s))) 
-         
-                if(!((AXIS(n) == alg_self || AXIS(n) == alg_par || 
-                        AXIS(n) == alg_anc || AXIS(n) == alg_anc_s) &&
-                    (AXIS(R(n)) == alg_self || AXIS(R(n)) == alg_par || 
-                        AXIS(R(n)) == alg_anc || AXIS(R(n)) == alg_anc_s))) 
-                    return;
-            
-            /* self axis */
-            if(AXIS(n) == alg_self) {
-                switch(AXIS(R(n))) {
-                    case alg_self:
-                    case alg_chld:
-                    case alg_desc:
-                    case alg_desc_s:
-                    case alg_par:
-                    case alg_anc:
-                    case alg_anc_s:
-                        new_axis = AXIS(R(n));
-                        merge_steps = true;
-                        break;
-                    default:
-                        return;
-                }
-            } else
-            if(AXIS(R(n)) == alg_self) {
-                switch(AXIS(n)) {
-                    case alg_self:
-                    case alg_chld:
-                    case alg_desc:
-                    case alg_desc_s:
-                    case alg_par:
-                    case alg_anc:
-                    case alg_anc_s:
-                        new_axis = AXIS(n);
-                        merge_steps = true;
-                        break;
-                    default:
-                        return;
-                }
-            } else           
-            /* child and desc axis -> new_axis = desc */
-            if(AXIS(n) == alg_chld || AXIS(R(n)) == alg_chld || 
-                    AXIS(n) == alg_desc || AXIS(R(n)) == alg_desc) {
-                new_axis = alg_desc;
-                merge_steps = true;
-            } else
-            /* parent and anc axis -> new axis = desc */
-            if(AXIS(n) == alg_par || AXIS(R(n)) == alg_par || 
-                    AXIS(n) == alg_anc || AXIS(R(n)) == alg_anc) { 
-                new_axis = alg_anc;
-                merge_steps = true;
-            } else
-            /* if both axis are equal */
-            if(AXIS(n) == AXIS(R(n))) {
-                new_axis = AXIS(n);
-                merge_steps = true;
+    if (step2->kind == la_project) {
+        proj = step2;
+        step2 = L(proj);
+        for (unsigned int i = 0; i < proj->sem.proj.count; i++)
+            if (proj->sem.proj.items[i].new == item) {
+                item = proj->sem.proj.items[i].old;
+                break;
             }
-
-            if(merge_steps == false)
-                return;
-
-            AXIS(n) = new_axis;
-            R(n) = RR(n);
-            return;
-        }
     }
-    return;
+        
+    /* do not merge if we have no adjacent steps */
+    if (step2->kind != la_step &&
+        step2->kind != la_step_join &&
+        step2->kind != la_guide_step &&
+        step2->kind != la_guide_step_join)
+        return;
+
+    /* do not merge if step1 does not work
+       on the result of step2 */
+    if (item != step2->sem.step.item_res)
+        return;
+
+    /* check if axes can be merged */
+    if (!((AXIS(step1) == alg_self || AXIS(step1) == alg_chld || 
+           AXIS(step1) == alg_desc || AXIS(step1) == alg_desc_s) &&
+          (AXIS(step2) == alg_self || AXIS(step2) == alg_chld || 
+           AXIS(step2) == alg_desc || AXIS(step2) == alg_desc_s))) 
+ 
+        if (!((AXIS(step1) == alg_self || AXIS(step1) == alg_par || 
+               AXIS(step1) == alg_anc || AXIS(step1) == alg_anc_s) &&
+              (AXIS(step2) == alg_self || AXIS(step2) == alg_par || 
+               AXIS(step2) == alg_anc || AXIS(step2) == alg_anc_s))) 
+            return;
+    
+    /* try to merge the axes */
+    
+    /* self axis */
+    if (AXIS(step1) == alg_self)
+        switch (AXIS(step2)) {
+            case alg_self:
+            case alg_chld:
+            case alg_desc:
+            case alg_desc_s:
+            case alg_par:
+            case alg_anc:
+            case alg_anc_s:
+                new_axis = AXIS(step2);
+                break;
+            default:
+                return;
+        }
+    else if (AXIS(step2) == alg_self)
+        switch(AXIS(step1)) {
+            case alg_self:
+            case alg_chld:
+            case alg_desc:
+            case alg_desc_s:
+            case alg_par:
+            case alg_anc:
+            case alg_anc_s:
+                new_axis = AXIS(step1);
+                break;
+            default:
+                return;
+        }
+    else if (AXIS(step1) == alg_chld || AXIS(step2) == alg_chld ||
+             AXIS(step1) == alg_desc || AXIS(step2) == alg_desc)
+        /* child and desc axis -> new_axis = desc */
+        new_axis = alg_desc;
+    else if (AXIS(step1) == alg_par || AXIS(step2) == alg_par || 
+             AXIS(step1) == alg_anc || AXIS(step2) == alg_anc)
+        /* parent and anc axis -> new axis = desc */
+        new_axis = alg_anc;
+    else if (AXIS(step1) == AXIS(step2))
+        /* if both axis are equal */
+        new_axis = AXIS(step1);
+    else
+        return;
+
+    if (proj) {
+        unsigned int count = 0;
+        PFalg_proj_t *proj_list;
+
+        proj_list = PFmalloc (proj->sem.proj.count *
+                              sizeof (*(proj_list)));
+                              
+        for (unsigned int i = 0; i < proj->sem.proj.count; i++)
+            if (proj->sem.proj.items[i].old == 
+                step2->sem.step.item_res) {
+                proj_list[i] = PFalg_proj (
+                                   proj->sem.proj.items[i].new,
+                                   step2->sem.step.item);
+                count++;
+            } else
+                proj_list[i] = proj->sem.proj.items[i];
+
+        /* do not rewrite if the result of step2
+           is referenced multiple times */
+        if (count > 1) return;
+        
+        R(step1) = PFla_project_ (R(step2), proj->sem.proj.count, proj_list);
+    } else if (step2->kind == la_step_join ||
+               step2->kind == la_guide_step_join) {
+        PFalg_proj_t *proj_list;
+
+        proj_list = PFmalloc (step2->schema.count *
+                              sizeof (*(proj_list)));
+                              
+        for (unsigned int i = 0; i < step2->schema.count; i++)
+            if (step2->schema.items[i].name == 
+                step2->sem.step.item_res)
+                proj_list[i] = PFalg_proj (
+                                   step2->sem.step.item_res,
+                                   step2->sem.step.item);
+            else
+                proj_list[i] = PFalg_proj (
+                                   step2->schema.items[i].name,
+                                   step2->schema.items[i].name);
+
+        R(step1) = PFla_project_ (R(step2), step2->schema.count, proj_list);
+    } else
+        R(step1) = R(step2);
+    
+    AXIS(step1) = new_axis;
 }
 
 /* worker for PFalgopt_guide */
@@ -173,6 +218,7 @@ opt_guide(PFla_op_t *n)
     /* apply chances for step operators */
     switch (n->kind) {
         case la_step:
+        case la_step_join:
 	{
             assert(PROP(n));
             assert(L(n));
@@ -189,31 +235,54 @@ opt_guide(PFla_op_t *n)
     
             /* # of guide nodes */
             count = PFprop_guide_count(PROP(n), column);
+
             /* guide list is empty -> create empty table*/
-            if(count == 0) {
+            if (count == 0) {
                 ret = PFla_empty_tbl_ (n->schema);
             } else {
                 /* get guide nodes */
                 guides = PFprop_guide_elements(PROP(n), column);
                 /* create new step operator */
-                ret = PFla_guide_step(L(n), R(n), n->sem.step.axis, 
-                            n->sem.step.ty, count, guides, n->sem.step.level, 
-                            n->sem.step.iter, n->sem.step.item, 
-                            n->sem.step.item_res);
+                if (n->kind == la_step) {
+                    ret = PFla_guide_step (
+                              L(n), R(n), n->sem.step.axis, 
+                              n->sem.step.ty, count, guides,
+                              n->sem.step.level, 
+                              n->sem.step.iter, n->sem.step.item, 
+                              n->sem.step.item_res);
+
+                    merge_guide_steps(ret);
+                } else {
+                    ret = PFla_guide_step_join (
+                              L(n), R(n), n->sem.step.axis,
+                              n->sem.step.ty, count, guides,
+                              n->sem.step.level,
+                              n->sem.step.item, 
+                              n->sem.step.item_res);
+
+                    if (PFprop_set (n->prop) &&
+                        !PFprop_icol (n->prop, n->sem.step.item))
+                        merge_guide_steps(ret);
+                }
             }
         
             *n = *ret;
             SEEN(n) = true;
+        }   break;
+
+        case la_guide_step:
+            merge_guide_steps (n);
             break;
-	}
+            
+        case la_guide_step_join:
+            if (PFprop_set (n->prop) &&
+                !PFprop_icol (n->prop, n->sem.step.item))
+                merge_guide_steps (n);
+            break;
+        
         default:
             break;
     }
-    
-    /* merge 2 guide_step operator if possible */
-    merge_guide_steps(n);
-
-    return;
 }
 
 
@@ -225,11 +294,13 @@ PFalgopt_guide(PFla_op_t *root, PFguide_tree_t *guide)
 {
     assert(guide);
 
-    PFprop_infer_guide(root, guide);
+    PFprop_infer_set (root);
+    PFprop_infer_icol (root);
+    PFprop_infer_guide (root, guide);
 
     /* Optimize algebra tree */
-    opt_guide(root);
-    PFla_dag_reset(root);
+    opt_guide (root);
+    PFla_dag_reset (root);
 
     return root;
 }

@@ -2272,7 +2272,7 @@ PFla_step_simple (const PFla_op_t *doc, const PFla_op_t *n,
 
 
 /**
- * Path step operator (without duplicate removal.
+ * Path step operator (without duplicate removal).
  *
  * Each such step operator corresponds to the evaluation of an XPath
  * location step starting from the context nodes in column @a item.
@@ -2281,10 +2281,10 @@ PFla_step_simple (const PFla_op_t *doc, const PFla_op_t *n,
  * step.
  */
 PFla_op_t *
-PFla_dup_step (const PFla_op_t *doc, const PFla_op_t *n,
-                 PFalg_axis_t axis, PFty_t seqty, int level, 
-                 PFalg_att_t item,
-                 PFalg_att_t item_res)
+PFla_step_join (const PFla_op_t *doc, const PFla_op_t *n,
+                PFalg_axis_t axis, PFty_t seqty, int level, 
+                PFalg_att_t item,
+                PFalg_att_t item_res)
 {
     PFla_op_t    *ret;
     unsigned int  i;
@@ -2292,7 +2292,7 @@ PFla_dup_step (const PFla_op_t *doc, const PFla_op_t *n,
     assert (n); assert (doc);
 
     /* create new join node */
-    ret = la_op_wire2 (la_dup_step, doc, n);
+    ret = la_op_wire2 (la_step_join, doc, n);
 
     /* insert semantic value (axis/kind test, col names) into the result */
     ret->sem.step.axis        = axis;
@@ -2342,11 +2342,11 @@ PFla_dup_step (const PFla_op_t *doc, const PFla_op_t *n,
 }
 
 PFla_op_t *
-PFla_dup_step_simple (const PFla_op_t *doc, const PFla_op_t *n,
-                      PFalg_axis_t axis, PFty_t seqty, 
-                      PFalg_att_t item, PFalg_att_t item_res)
+PFla_step_join_simple (const PFla_op_t *doc, const PFla_op_t *n,
+                       PFalg_axis_t axis, PFty_t seqty, 
+                       PFalg_att_t item, PFalg_att_t item_res)
 {
-    return PFla_dup_step (doc, n, axis, seqty, -1, item, item_res);
+    return PFla_step_join (doc, n, axis, seqty, -1, item, item_res);
 }
 
 
@@ -2444,6 +2444,96 @@ PFla_guide_step_simple (const PFla_op_t *doc, const PFla_op_t *n,
                iter, item, item_res);
 }
 
+
+/**
+ * Path step operator (without duplicate removal and with guide
+ * information).
+ *
+ * Each such step operator corresponds to the evaluation of an XPath
+ * location step starting from the context nodes in column @a item.
+ * @a doc is not a "real" algebra node, but just serves
+ * as a container for semantic information on the kind test and location
+ * step.
+ */
+PFla_op_t *
+PFla_guide_step_join (const PFla_op_t *doc, const PFla_op_t *n,
+                      PFalg_axis_t axis, PFty_t seqty,
+                      unsigned int guide_count, PFguide_tree_t **guides,
+                      int level, PFalg_att_t item, PFalg_att_t item_res)
+{
+    PFla_op_t    *ret;
+    unsigned int  i;
+
+    assert (n); assert (doc);
+
+    /* create new join node */
+    ret = la_op_wire2 (la_guide_step_join, doc, n);
+
+    /* insert semantic value (axis/kind test, col names) into the result */
+    ret->sem.step.axis        = axis;
+    ret->sem.step.ty          = seqty;
+    ret->sem.step.guide_count = guide_count;
+    ret->sem.step.guides      = memcpy (PFmalloc (guide_count *
+                                                  sizeof (PFguide_tree_t *)),
+                                        guides,
+                                        guide_count *
+                                        sizeof (PFguide_tree_t *));
+    ret->sem.step.level       = level;
+    ret->sem.step.iter        = att_NULL;
+    ret->sem.step.item        = item;
+    ret->sem.step.item_res    = item_res;
+
+#ifndef NDEBUG
+    if (PFprop_ocol (n, item_res))
+        PFoops (OOPS_FATAL,
+                "illegal attribute `%s' in the input "
+                "of a path step",
+                PFatt_str (item_res));
+    if (!PFprop_ocol (n, item))
+        PFoops (OOPS_FATAL, 
+                "column `%s' needed in path step is missing",
+                PFatt_str (item));
+    if (!(PFprop_type_of (n, item) & aat_node))
+        PFoops (OOPS_FATAL,
+                "wrong item type '0x%X' in the input of a path step",
+                PFprop_type_of (n, item));
+#endif
+
+    /* allocate memory for the result schema */
+    ret->schema.count = n->schema.count + 1;
+    ret->schema.items
+        = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
+
+    for (i = 0; i < n->schema.count; i++)
+        ret->schema.items[i] = n->schema.items[i];
+
+    /* the result of an attribute axis is also of type attribute */
+    if (ret->sem.step.axis == alg_attr) 
+        ret->schema.items[i]
+            = (struct PFalg_schm_item_t) { .name = item_res,
+                                           .type = aat_anode };
+    else
+        ret->schema.items[i]
+            = (struct PFalg_schm_item_t) { .name = item_res,
+                                           .type = aat_pnode };
+
+    return ret;
+}
+
+PFla_op_t *
+PFla_guide_step_join_simple (const PFla_op_t *doc, const PFla_op_t *n,
+                             PFalg_axis_t axis, PFty_t seqty, 
+                             unsigned int guide_count, PFguide_tree_t **guides,
+                             PFalg_att_t item, PFalg_att_t item_res)
+{
+    return PFla_guide_step_join (
+               doc, n,
+               axis, seqty,
+               guide_count, guides,
+               -1, item, item_res);
+}
+
+
 static PFla_op_t *
 fn_id (bool id, const PFla_op_t *doc, const PFla_op_t *n,
        PFalg_att_t iter, PFalg_att_t item,
@@ -2503,6 +2593,7 @@ fn_id (bool id, const PFla_op_t *doc, const PFla_op_t *n,
 
     return ret;
 }
+
 
 /**
  * Id operator (implements fn:id).
@@ -3712,13 +3803,13 @@ PFla_op_duplicate (PFla_op_t *n, PFla_op_t *left, PFla_op_t *right)
                               n->sem.step.item,
                               n->sem.step.item_res);
             
-        case la_dup_step:
-            return PFla_dup_step (left, right,
-                                  n->sem.step.axis,
-                                  n->sem.step.ty,
-                                  n->sem.step.level,
-                                  n->sem.step.item,
-                                  n->sem.step.item_res);
+        case la_step_join:
+            return PFla_step_join (left, right,
+                                   n->sem.step.axis,
+                                   n->sem.step.ty,
+                                   n->sem.step.level,
+                                   n->sem.step.item,
+                                   n->sem.step.item_res);
             
         case la_guide_step:
             return PFla_guide_step (left, right,
@@ -3730,6 +3821,16 @@ PFla_op_duplicate (PFla_op_t *n, PFla_op_t *left, PFla_op_t *right)
                                     n->sem.step.iter,
                                     n->sem.step.item,
                                     n->sem.step.item_res);
+            
+        case la_guide_step_join:
+            return PFla_guide_step_join (left, right,
+                                         n->sem.step.axis,
+                                         n->sem.step.ty,
+                                         n->sem.step.guide_count,
+                                         n->sem.step.guides,
+                                         n->sem.step.level,
+                                         n->sem.step.item,
+                                         n->sem.step.item_res);
             
         case la_id:
             return PFla_id (left, right,

@@ -5,7 +5,7 @@
  * of join graphs much easier. The idea is to use less but more generic
  * distinct operators (that e.g., remove duplicates of multiple nested
  * path steps in one go instead of a single distinct after each step).
- * Furthermore we try to replace all step operators by dup_step operators
+ * Furthermore we try to replace all step operators by step_join operators
  * that can handle more input columns (than just iter|item) which should
  * ultimatively lead to less mapping joins and blocking number operators.
  *
@@ -228,18 +228,28 @@ opt_join_graph (PFla_op_t *p)
             }
         }   break;
             
-        /* Replace all step operators by dup_step operators
+        /* Replace all step operators by step_join operators
            to allow a following optimization phase to get rid
            of unnecessary eqjoin and number operators */
         case la_step:
-            if (PFprop_set (p->prop)) {
+            if ((PFprop_set (p->prop)) ||
+                    
+                (PFprop_key_right (p->prop, p->sem.step.item) &&
+                 PFprop_level_right (p->prop, p->sem.step.item) >= 0 &&
+                 (p->sem.step.axis == alg_attr ||
+                  p->sem.step.axis == alg_chld ||
+                  p->sem.step.axis == alg_self ||
+                  p->sem.step.axis == alg_desc ||
+                  p->sem.step.axis == alg_desc_s))) {
+                
                 PFalg_att_t item_res;
                 item_res = PFalg_ori_name (
                                PFalg_unq_name (att_item, 0),
                                ~(p->sem.step.item |
                                  p->sem.step.iter));
+
                 *p = *PFla_project (
-                             PFla_dup_step (
+                             PFla_step_join (
                                  L(p),
                                  R(p),
                                  p->sem.step.axis,
@@ -249,13 +259,53 @@ opt_join_graph (PFla_op_t *p)
                                  item_res),
                              PFalg_proj (p->sem.step.iter,
                                          p->sem.step.iter),
-                             PFalg_proj (p->sem.step.item,
+                             PFalg_proj (p->sem.step.item_res,
                                          item_res));
+                break;
+            }
+            break;
+            
+        /* Replace all guide_step operators by guide_step_join
+           operators to allow a following optimization phase
+           to get rid of unnecessary eqjoin and number operators */
+        case la_guide_step:
+            if ((PFprop_set (p->prop)) ||
+                    
+                (PFprop_key_right (p->prop, p->sem.step.item) &&
+                 PFprop_level_right (p->prop, p->sem.step.item) >= 0 &&
+                 (p->sem.step.axis == alg_attr ||
+                  p->sem.step.axis == alg_chld ||
+                  p->sem.step.axis == alg_self ||
+                  p->sem.step.axis == alg_desc ||
+                  p->sem.step.axis == alg_desc_s))) {
+                
+                PFalg_att_t item_res;
+                item_res = PFalg_ori_name (
+                               PFalg_unq_name (att_item, 0),
+                               ~(p->sem.step.item |
+                                 p->sem.step.iter));
+                
+                *p = *PFla_project (
+                             PFla_guide_step_join (
+                                 L(p),
+                                 R(p),
+                                 p->sem.step.axis,
+                                 p->sem.step.ty,
+                                 p->sem.step.guide_count,
+                                 p->sem.step.guides,
+                                 p->sem.step.level,
+                                 p->sem.step.item,
+                                 item_res),
+                             PFalg_proj (p->sem.step.iter,
+                                         p->sem.step.iter),
+                             PFalg_proj (p->sem.step.item_res,
+                                         item_res));
+                break;
             }
             break;
             
         /* throw away proxy nodes and thus avoid calling option '-o {'
-           which would remove all dup_steps as well. */
+           which would remove all step_joins as well. */
         case la_proxy:
         case la_proxy_base:
             *p = *PFla_dummy (L(p));
@@ -278,6 +328,9 @@ PFalgopt_join_graph (PFla_op_t *root)
     /* PFprop_infer_key (root); */
     PFprop_infer_icol (root);
     PFprop_infer_set (root);
+    PFprop_infer_key (root);
+    /* level is already inferred by key */
+    /* PFprop_infer_level (root); */
 
     /* Optimize algebra tree */
     opt_join_graph (root);

@@ -48,6 +48,19 @@
 
 #define UNKNOWN_LEVEL -1
 
+static int
+level_lookup (PFarray_t *level_mapping, PFalg_att_t attr)
+{
+    if (!level_mapping)
+        return UNKNOWN_LEVEL;
+
+    for (unsigned int i = 0; i < PFarray_last (level_mapping); i++)
+        if (attr == ((level_t *) PFarray_at (level_mapping, i))->attr)
+            return ((level_t *) PFarray_at (level_mapping, i))->level;
+
+    return UNKNOWN_LEVEL;
+}
+
 /**
  * Return level stored in property container @a prop.
  */
@@ -55,14 +68,29 @@ int
 PFprop_level (const PFprop_t *prop, PFalg_att_t attr)
 {
     assert (prop);
-    if (!prop->level_mapping)
-        return UNKNOWN_LEVEL;
+    return level_lookup (prop->level_mapping, attr);
+}
 
-    for (unsigned int i = 0; i < PFarray_last (prop->level_mapping); i++)
-        if (attr == ((level_t *) PFarray_at (prop->level_mapping, i))->attr)
-            return ((level_t *) PFarray_at (prop->level_mapping, i))->level;
+/**
+ * Return the level of nodes stored in column @a attr
+ * in the left level mapping filed of property container @a prop.
+ */
+int
+PFprop_level_left (const PFprop_t *prop, PFalg_att_t attr)
+{
+    assert (prop);
+    return level_lookup (prop->l_level_mapping, attr);
+}
 
-    return UNKNOWN_LEVEL;
+/**
+ * Return the level of nodes stored in column @a attr
+ * in the right level mapping filed of property container @a prop.
+ */
+int
+PFprop_level_right (const PFprop_t *prop, PFalg_att_t attr)
+{
+    assert (prop);
+    return level_lookup (prop->r_level_mapping, attr);
 }
 
 static void
@@ -74,22 +102,20 @@ copy_level_info (PFla_op_t *n, PFla_op_t *child)
         n->prop->level_mapping = PFarray_copy (child->prop->level_mapping);
 }
 
-static void
-insert_level_info (PFla_op_t *n, PFla_op_t *child)
-{
-    assert (n && n->prop && child && child->prop);
-    if (!n->prop->level_mapping &&
-        child->prop->level_mapping)
-        n->prop->level_mapping = PFarray_copy (child->prop->level_mapping);
-    else if (n->prop->level_mapping &&
-             child->prop->level_mapping) {
-        PFarray_t *base = n->prop->level_mapping;
-        PFarray_t *content = child->prop->level_mapping;
-
-        for (unsigned int i = 0; i < PFarray_last (content); i++)
-            *(level_t *) PFarray_add (base) =
-                *(level_t *) PFarray_at (content, i);
-    }
+#define insert_level_info(lvl_mapping,child)                      \
+{                                                                 \
+    assert (child && child->prop);                                \
+    if (!lvl_mapping &&                                           \
+        child->prop->level_mapping)                               \
+        lvl_mapping = PFarray_copy (child->prop->level_mapping);  \
+    else if (lvl_mapping &&                                       \
+             child->prop->level_mapping) {                        \
+        PFarray_t *content = child->prop->level_mapping;          \
+                                                                  \
+        for (unsigned int i = 0; i < PFarray_last (content); i++) \
+            *(level_t *) PFarray_add (lvl_mapping) =              \
+                *(level_t *) PFarray_at (content, i);             \
+    }                                                             \
 }
 
 static void
@@ -110,6 +136,10 @@ mark_level (PFprop_t *prop, PFalg_att_t attr, int level)
 static void
 infer_level (PFla_op_t *n)
 {
+    /* copy key properties of children into current node */
+    if (L(n)) insert_level_info (n->prop->l_level_mapping, L(n));
+    if (R(n)) insert_level_info (n->prop->r_level_mapping, R(n));
+
     switch (n->kind) {
         case la_serialize:
         case la_doc_access:
@@ -185,7 +215,7 @@ infer_level (PFla_op_t *n)
         case la_cross_mvd:
         case la_eqjoin_unq:
             copy_level_info (n, L(n));
-            insert_level_info (n, R(n));
+            insert_level_info (n->prop->level_mapping, R(n));
             break;
             
         case la_project:
@@ -219,8 +249,10 @@ infer_level (PFla_op_t *n)
                     }
             break;
             
+        case la_step_join:
+        case la_guide_step_join:
+            copy_level_info (n, R(n));
         case la_step:
-        case la_dup_step:
         case la_guide_step:
             if (n->sem.step.level >= 0)
                 mark_level (n->prop, n->sem.step.item_res, n->sem.step.level);
@@ -248,6 +280,11 @@ infer_level (PFla_op_t *n)
                             break;
                     }
             }
+            if (PFprop_level (R(n)->prop, n->sem.step.iter) !=
+                PFprop_level (n->prop, n->sem.step.iter))
+                mark_level (n->prop,
+                            n->sem.step.iter,
+                            PFprop_level (R(n)->prop, n->sem.step.iter));
             break;
 
         case la_twig:
@@ -279,6 +316,11 @@ prop_infer (PFla_op_t *n)
     /* reset level property */
     if (n->prop->level_mapping)
         PFarray_last (n->prop->level_mapping) = 0;
+
+    if (n->prop->l_level_mapping)
+        PFarray_last (n->prop->l_level_mapping) = 0;
+    if (n->prop->r_level_mapping)
+        PFarray_last (n->prop->r_level_mapping) = 0;
 
     /* infer level information */
     infer_level (n);

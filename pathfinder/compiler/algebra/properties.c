@@ -98,6 +98,8 @@ PFprop (void)
 
     /* initialize level information */
     ret->level_mapping = NULL;
+    ret->l_level_mapping = NULL;
+    ret->r_level_mapping = NULL;
     
     /* initialize guide mapping list */
     ret->guide_mapping_list = NULL;
@@ -124,14 +126,14 @@ PFprop_infer (bool card, bool const_, bool set,
 
     /* for each property required infer
        the properties of the complete DAG */
-    if (level)
-        PFprop_infer_level (root);
     if (unq_names)
         PFprop_infer_unq_names (root);
     if (ckey)
         PFprop_infer_composite_key (root);
     if (key)
         PFprop_infer_key (root);
+    if (level)
+        PFprop_infer_level (root);
     if (card)
         PFprop_infer_card (root);
     if (guides)

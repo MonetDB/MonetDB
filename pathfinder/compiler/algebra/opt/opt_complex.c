@@ -813,8 +813,9 @@ opt_complex (PFla_op_t *p)
             }
             break;
 
-        case la_dup_step:
+        case la_step_join:
         case la_guide_step:
+        case la_guide_step_join:
             if (p->sem.step.level < 0)
                 p->sem.step.level = PFprop_level (p->prop,
                                                   p->sem.step.item_res);

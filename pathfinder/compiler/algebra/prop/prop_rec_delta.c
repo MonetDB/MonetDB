@@ -67,7 +67,8 @@ check_op (PFla_op_t *n)
            in initial plans */
         case la_semijoin:
         case la_thetajoin:
-        case la_dup_step:
+        case la_step_join:
+        case la_guide_step_join:
         case la_proxy:
         case la_proxy_base:
         case la_cross_mvd:

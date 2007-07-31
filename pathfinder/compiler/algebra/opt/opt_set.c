@@ -89,7 +89,7 @@ opt_set (PFla_op_t *p)
                                ~(L(p)->sem.step.item |
                                  L(p)->sem.step.iter));
                 *L(p) = *PFla_project (
-                             PFla_dup_step (
+                             PFla_step_join (
                                  LL(p),
                                  LR(p),
                                  L(p)->sem.step.axis,
@@ -112,7 +112,7 @@ opt_set (PFla_op_t *p)
                                ~(R(p)->sem.step.item |
                                  R(p)->sem.step.iter));
                 *R(p) = *PFla_project (
-                             PFla_dup_step (
+                             PFla_step_join (
                                  RL(p),
                                  RR(p),
                                  R(p)->sem.step.axis,
@@ -155,7 +155,7 @@ opt_set (PFla_op_t *p)
                           p->sem.step.item);
             break;
             
-        case la_dup_step:
+        case la_step_join:
             if (PFprop_set (p->prop) &&
                 PFprop_icols_count (p->prop) == 2 &&
                 PFprop_icol (p->prop, p->sem.step.item_res)) {

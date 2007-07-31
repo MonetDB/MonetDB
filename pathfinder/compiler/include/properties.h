@@ -102,6 +102,10 @@ struct PFprop_t {
                                    corresponding new unique names. */
     PFarray_t  *r_name_pairs; /**< List of unique attributes with their
                                    corresponding new unique names. */
+    PFarray_t  *l_level_mapping; /**< List of attributes annotated with
+                                      level information. */
+    PFarray_t  *r_level_mapping; /**< List of attributes annotated with
+                                      level information. */
 };
 
 /* constant item */
@@ -476,6 +480,18 @@ PFalg_att_t PFprop_ori_name_right (const PFprop_t *prop, PFalg_att_t attr);
  * Return the level of nodes stored in column @a attr.
  */
 int PFprop_level (const PFprop_t *prop, PFalg_att_t attr);
+
+/**
+ * Return the level of nodes stored in column @a attr
+ * in the left level mapping filed of property container @a prop.
+ */
+int PFprop_level_left (const PFprop_t *prop, PFalg_att_t attr);
+
+/**
+ * Return the level of nodes stored in column @a attr
+ * in the right level mapping filed of property container @a prop.
+ */
+int PFprop_level_right (const PFprop_t *prop, PFalg_att_t attr);
 
 /* ------------------ reference counter property accessors ----------------- */
 

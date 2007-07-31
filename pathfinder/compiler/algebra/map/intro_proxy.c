@@ -1355,13 +1355,13 @@ nest_proxy (PFla_op_t *root,
  * Nothing needed up front.
  */
 static void
-dup_step_prepare (PFla_op_t *root)
+step_join_prepare (PFla_op_t *root)
 {
     (void) root;
 }
 
 /**
- * dup_step_entry detects an expression 
+ * step_join_entry detects an expression 
  * of the following form:
  *
  *        |X|
@@ -1377,7 +1377,7 @@ dup_step_prepare (PFla_op_t *root)
  *         #
  */
 static bool
-dup_step_entry (PFla_op_t *p)
+step_join_entry (PFla_op_t *p)
 {
     PFalg_att_t join_att;
     PFla_op_t  *cur,
@@ -1403,7 +1403,7 @@ dup_step_entry (PFla_op_t *p)
     if (cur->kind == la_number &&
         cur->sem.number.res == join_att)
         number = cur;
-    else if (cur->kind == la_step &&
+    else if ((cur->kind == la_step || cur->kind == la_guide_step) &&
         cur->sem.step.iter == join_att) {
         cur = R(cur);
         
@@ -1440,7 +1440,7 @@ dup_step_entry (PFla_op_t *p)
         cur->sem.number.res == join_att &&
         !number)
         number = cur;
-    else if (cur->kind == la_step &&
+    else if ((cur->kind == la_step || cur->kind == la_guide_step) &&
         cur->sem.step.iter == join_att &&
         !step) {
         cur = R(cur);
@@ -1465,11 +1465,11 @@ dup_step_entry (PFla_op_t *p)
 }
 
 /**
- * dup_step_exit just tests whether the previously detected
+ * step_join_exit just tests whether the previously detected
  * number operator matches the current one.
  */
 static bool
-dup_step_exit (PFla_op_t *p, PFla_op_t *entry)
+step_join_exit (PFla_op_t *p, PFla_op_t *entry)
 {
     PFla_op_t *cur;
     
@@ -1484,6 +1484,7 @@ dup_step_exit (PFla_op_t *p, PFla_op_t *entry)
                 break;
                 
             case la_step:
+            case la_guide_step:
                 cur = R(cur);
                 break;
                 
@@ -1495,7 +1496,7 @@ dup_step_exit (PFla_op_t *p, PFla_op_t *entry)
 }
 
 /**
- * intro_dup_step replaces the pattern 
+ * intro_step_join replaces the pattern 
  * detected above
  *
  *        |X|
@@ -1511,12 +1512,12 @@ dup_step_exit (PFla_op_t *p, PFla_op_t *entry)
  *         #
  *
  * (if there are no outside references) into
- * a duplicate aware step operator dup_step. 
+ * a duplicate aware step operator step_join. 
  * A projection on top of the new operator ensures
  * the correct mapping of the columns.
  */
 static bool
-intro_dup_step (PFla_op_t *root,
+intro_step_join (PFla_op_t *root,
                   PFla_op_t *proxy_entry,
                   PFla_op_t *proxy_exit,
                   PFarray_t *conflict_list,
@@ -1553,22 +1554,26 @@ intro_dup_step (PFla_op_t *root,
     
     /* detect in which branch of the eqjoin operator 
        the step resides and prepare the transformation */
-    if (L(proxy_entry)->kind == la_step) {
+    if (L(proxy_entry)->kind == la_step ||
+        L(proxy_entry)->kind == la_guide_step) {
         join_att = proxy_entry->sem.eqjoin.att2;
         step     = L(proxy_entry);
         cur      = R(proxy_entry);
     } else if (L(proxy_entry)->kind == la_project &&
-               LL(proxy_entry)->kind == la_step) {
+               (LL(proxy_entry)->kind == la_step ||
+                LL(proxy_entry)->kind == la_guide_step)) {
         join_att = proxy_entry->sem.eqjoin.att2;
         proj     =  L(proxy_entry);
         step     = LL(proxy_entry);
         cur      =  R(proxy_entry);
-    } else if (R(proxy_entry)->kind == la_step) {
+    } else if (R(proxy_entry)->kind == la_step ||
+               R(proxy_entry)->kind == la_guide_step) {
         join_att = proxy_entry->sem.eqjoin.att1;
         step     = R(proxy_entry);
         cur      = L(proxy_entry);
     } else if (R(proxy_entry)->kind == la_project &&
-               RL(proxy_entry)->kind == la_step) {
+               (RL(proxy_entry)->kind == la_step ||
+                RL(proxy_entry)->kind == la_guide_step)) {
         join_att = proxy_entry->sem.eqjoin.att1;
         proj     =  R(proxy_entry);
         step     = RL(proxy_entry);
@@ -1605,7 +1610,7 @@ intro_dup_step (PFla_op_t *root,
                                                  cur->schema.items[i].name);
         }
     }
-    /* Collect the names of the inputs to ensure that the dup_step
+    /* Collect the names of the inputs to ensure that the step_join
        creates a new column name. */
     for (i = 0; i < proxy_exit->schema.count; i++)
         used_cols = used_cols | proxy_exit->schema.items[i].name;
@@ -1652,17 +1657,32 @@ intro_dup_step (PFla_op_t *root,
 
     /* Replace the detected pattern by the new duplicate generating step
        and a name mapping projection on top of it. */
-    *proxy_entry = *PFla_project_ (
-                        PFla_dup_step (
-                            L(step),
-                            proxy_exit,
-                            step->sem.step.axis,
-                            step->sem.step.ty,
-                            step->sem.step.level,
-                            item,
-                            item_res),
-                        proxy_entry->schema.count,
-                        proj_list);
+    if (step->kind == la_step)
+        *proxy_entry = *PFla_project_ (
+                            PFla_step_join (
+                                L(step),
+                                proxy_exit,
+                                step->sem.step.axis,
+                                step->sem.step.ty,
+                                step->sem.step.level,
+                                item,
+                                item_res),
+                            proxy_entry->schema.count,
+                            proj_list);
+    else
+        *proxy_entry = *PFla_project_ (
+                            PFla_guide_step_join (
+                                L(step),
+                                proxy_exit,
+                                step->sem.step.axis,
+                                step->sem.step.ty,
+                                step->sem.step.guide_count,
+                                step->sem.step.guides,
+                                step->sem.step.level,
+                                item,
+                                item_res),
+                            proxy_entry->schema.count,
+                            proj_list);
     return true;
 }
 
@@ -3088,12 +3108,12 @@ PFintro_proxies (PFla_op_t *root)
     PFarray_last (checked_nodes) = 0;
 
     /* rewrite joins that contain only a single XPath location
-       step into a new dup_step operator. */
+       step into a new step_join operator. */
     intro_proxy_kind (root,
-                      dup_step_prepare,
-                      dup_step_entry,
-                      dup_step_exit,
-                      intro_dup_step,
+                      step_join_prepare,
+                      step_join_entry,
+                      step_join_exit,
+                      intro_step_join,
                       checked_nodes);
 
     /* As we match the same nodes (equi-joins) again we need to reset

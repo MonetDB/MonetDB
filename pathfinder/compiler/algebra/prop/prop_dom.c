@@ -942,7 +942,8 @@ infer_dom (PFla_op_t *n, unsigned int id)
             add_dom (n->prop, n->sem.step.item_res, id++);
             break;
 
-        case la_dup_step:
+        case la_step_join:
+        case la_guide_step_join:
             for (unsigned int i = 0; i < R(n)->schema.count; i++) {
                 add_subdom (n->prop, PFprop_dom (R(n)->prop,
                                                  R(n)->schema.items[i].name), id);

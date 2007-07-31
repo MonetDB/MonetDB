@@ -469,7 +469,18 @@ infer_key (PFla_op_t *n)
                 union_ (n->prop->keys, n->sem.step.item_res);
             break;
 
-        case la_dup_step:
+        case la_step_join:
+        case la_guide_step_join:
+            if (PFprop_level_right (n->prop, n->sem.step.item) >= 0 &&
+                key_worker (R(n)->prop->keys, n->sem.step.item) &&
+                (n->sem.step.axis == alg_attr ||
+                 n->sem.step.axis == alg_chld ||
+                 n->sem.step.axis == alg_self ||
+                 n->sem.step.axis == alg_desc ||
+                 n->sem.step.axis == alg_desc_s)) {
+                union_ (n->prop->keys, n->sem.step.item_res);
+            }
+
             if (PFprop_card (R(n)->prop) == 1)
                 union_ (n->prop->keys, n->sem.step.item_res);
             break;
@@ -631,6 +642,7 @@ PFprop_infer_key (PFla_op_t *root) {
     /* use the cheaper domain inference that only infers
        domains for columns of the native type */
     PFprop_infer_nat_dom (root);
+    PFprop_infer_level (root);
 
     prop_infer (root);
     PFla_dag_reset (root);

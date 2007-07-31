@@ -448,7 +448,8 @@ infer_unq_names (PFla_op_t *n, unsigned int id)
             new_name_pair (np_list, n->sem.step.item_res, id++);
             break;
             
-        case la_dup_step:
+        case la_step_join:
+        case la_guide_step_join:
             bulk_add_name_pairs (np_list, R(n));
             new_name_pair (np_list, n->sem.step.item_res, id++);
             break;

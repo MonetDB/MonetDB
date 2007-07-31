@@ -715,9 +715,9 @@ apply_patch (PFla_op_t *n, PFarray_t *assembly1, PFarray_t *assembly2)
             n->sem.step.iter = eff_attribute_ (assembly2, n->sem.step.iter);
             n->sem.step.item = eff_attribute_ (assembly2, n->sem.step.item);
         } break;
-        case la_dup_step:
+        case la_step_join:
         {
-            assert (!"la_dup_step not yet supported!");
+            assert (!"la_step_join not yet supported!");
         } break;
         case la_guide_step:
         {
@@ -971,9 +971,9 @@ resolve_name_conflicts (PFla_op_t *n)
                                 old);
             n->sem.step.item_res = new;
         } break;
-        case la_dup_step:
+        case la_step_join:
         {
-            assert (!"la_dup_step not yet supported"); 
+            assert (!"la_step_join not yet supported"); 
         } break;
         case la_guide_step:
         {
@@ -1515,9 +1515,9 @@ subexp_eq (PFla_op_t *a, PFla_op_t *b)
 
             return true;
         } break;
-        case la_dup_step:
+        case la_step_join:
         {
-            assert (!"la_dup_step not yet supported");
+            assert (!"la_step_join not yet supported");
         } break;
         case la_guide_step:
         {
@@ -2049,9 +2049,9 @@ patch_projections (PFla_op_t *a, PFla_op_t *b)
                 };
 
         } break;
-        case la_dup_step:
+        case la_step_join:
         {
-            assert (!"la_dup_step not yet supported");
+            assert (!"la_step_join not yet supported");
         } break;
         case la_guide_step:
         {

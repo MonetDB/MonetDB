@@ -171,7 +171,8 @@ prop_infer_set (PFla_op_t *n, bool set)
             r_set = true;
             break;
 
-        case la_dup_step:
+        case la_step_join:
+        case la_guide_step_join:
             l_set = false;
             r_set = n->prop->set;
             break;

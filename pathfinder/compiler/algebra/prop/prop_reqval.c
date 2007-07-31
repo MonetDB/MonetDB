@@ -344,7 +344,8 @@ prop_infer_reqvals (PFla_op_t *n, reqval_t reqvals)
             prop_infer_reqvals (R(n), rv);
             break;
             
-        case la_dup_step:
+        case la_step_join:
+        case la_guide_step_join:
             rv.name = 0;
             rv.val = 0;
             prop_infer_reqvals (L(n), rv);

@@ -156,10 +156,10 @@ PFstate_t PFstate = {
                                 "}IM__{_[J]OKVCG"
                                 "}IM__{_[J]OKVCGCG"
                                 "}IM__{_[J]OKVCG"
-                                "}IMTS{_[J]OKVCGCG"
-                                "}IMTS{_[J]OKVCG"
-                                "}IMTS{_[J]OKVCGE[]CGP"
-                           "}IQ[J]}IQ[J]IOKVCGCGP",
+                                "}IMTS{_[J]OKVCGUCG"
+                                "}IMTS{_[J]OKVCGU"
+                                "}IMTS{_[J]OKVCGUE[]CGP"
+                           "}IQ[J]}IQ[J]IOKVCGQUCGP",
 
     .format              = NULL,
 

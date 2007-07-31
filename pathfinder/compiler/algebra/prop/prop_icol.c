@@ -487,7 +487,8 @@ prop_infer_icols (PFla_op_t *n, PFalg_att_t icols)
                                        n->sem.step.item);
             break;
 
-        case la_dup_step:
+        case la_step_join:
+        case la_guide_step_join:
             /* infer empty list for fragments */
             n->prop->l_icols = 0;
             n->prop->r_icols = n->prop->icols;

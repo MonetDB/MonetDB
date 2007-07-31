@@ -84,8 +84,8 @@ resolve_proxies (PFla_op_t *p)
              \ /
               #
     */
-    if (p->kind == la_dup_step) {
-        PFla_op_t    *number;
+    if (p->kind == la_step_join || p->kind == la_guide_step_join) {
+        PFla_op_t    *number, *step;
         PFalg_att_t   used_cols = 0,
                       join_att1,
                       join_att2,
@@ -112,21 +112,40 @@ resolve_proxies (PFla_op_t *p)
         /* Generate the pattern sketched above. The projection
            underneath the path step operator renames the
            join columns as well as the resulting item column. */
+        if (p->kind == la_step_join)
+            step = PFla_step (
+                       L(p),
+                       PFla_project (
+                           number,
+                           PFalg_proj (join_att1, join_att2),
+                           PFalg_proj (p->sem.step.item_res,
+                                       p->sem.step.item)),
+                       p->sem.step.axis,
+                       p->sem.step.ty,
+                       p->sem.step.level,
+                       join_att1,
+                       p->sem.step.item_res,
+                       p->sem.step.item_res);
+        else
+            step = PFla_guide_step (
+                       L(p),
+                       PFla_project (
+                           number,
+                           PFalg_proj (join_att1, join_att2),
+                           PFalg_proj (p->sem.step.item_res,
+                                       p->sem.step.item)),
+                       p->sem.step.axis,
+                       p->sem.step.ty,
+                       p->sem.step.guide_count,
+                       p->sem.step.guides,
+                       p->sem.step.level,
+                       join_att1,
+                       p->sem.step.item_res,
+                       p->sem.step.item_res);
+        
         *p = *PFla_project_ (
                   PFla_eqjoin (
-                      PFla_step (
-                          L(p),
-                          PFla_project (
-                              number,
-                              PFalg_proj (join_att1, join_att2),
-                              PFalg_proj (p->sem.step.item_res,
-                                          p->sem.step.item)),
-                          p->sem.step.axis,
-                          p->sem.step.ty,
-                          p->sem.step.level,
-                          join_att1,
-                          p->sem.step.item_res,
-                          p->sem.step.item_res),
+                      step,
                       number, 
                       join_att1,
                       join_att2),

@@ -565,14 +565,14 @@ map_ori_names (PFla_op_t *p, PFarray_t *map)
                             ONAME(p, p->sem.step.item_res));
             break;
                            
-        case la_dup_step:
-            res = dup_step (O(L(p)), 
-                            SEC_PROJ(RIGHT, p, p->sem.step.item_res),
-                            p->sem.step.axis,
-                            p->sem.step.ty,
-                            p->sem.step.level,
-                            ONAME(p, p->sem.step.item),
-                            ONAME(p, p->sem.step.item_res));
+        case la_step_join:
+            res = step_join (O(L(p)), 
+                             SEC_PROJ(RIGHT, p, p->sem.step.item_res),
+                             p->sem.step.axis,
+                             p->sem.step.ty,
+                             p->sem.step.level,
+                             ONAME(p, p->sem.step.item),
+                             ONAME(p, p->sem.step.item_res));
             break;
             
         case la_guide_step:
@@ -614,6 +614,18 @@ map_ori_names (PFla_op_t *p, PFarray_t *map)
                                   ONAME(p, p->sem.step.item_res));
             break;
                            
+        case la_guide_step_join:
+            res = guide_step_join (O(L(p)), 
+                                   SEC_PROJ(RIGHT, p, p->sem.step.item_res),
+                                   p->sem.step.axis,
+                                   p->sem.step.ty,
+                                   p->sem.step.guide_count,
+                                   p->sem.step.guides,
+                                   p->sem.step.level,
+                                   ONAME(p, p->sem.step.item),
+                                   ONAME(p, p->sem.step.item_res));
+            break;
+            
         case la_id:
             /* In case columns iter and item_in are identical columns
                item_in and item_out cannot refer to the same original

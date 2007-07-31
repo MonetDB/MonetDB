@@ -1433,16 +1433,17 @@ opt_mvd (PFla_op_t *p)
             break;
             
         case la_step:
+        case la_guide_step:
             break;
             
-        case la_dup_step:
+        case la_step_join:
             if (is_tj (R(p))) {
                 bool switch_left = PFprop_ocol (RL(p), p->sem.step.item);
                 bool switch_right = PFprop_ocol (RR(p), p->sem.step.item);
                                    
                 if (switch_left && switch_right) {
                     resolve_name_conflicts (R(p), p->sem.step.item_res);
-                    *p = *(thetajoin_opt (dup_step (
+                    *p = *(thetajoin_opt (step_join (
                                                 L(p),
                                                 RL(p),
                                                 p->sem.step.axis,
@@ -1450,7 +1451,7 @@ opt_mvd (PFla_op_t *p)
                                                 p->sem.step.level,
                                                 p->sem.step.item,
                                                 p->sem.step.item_res),
-                                          dup_step (
+                                          step_join (
                                                 L(p), 
                                                 RR(p),
                                                 p->sem.step.axis,
@@ -1463,7 +1464,7 @@ opt_mvd (PFla_op_t *p)
                 }
                 else if (switch_left) {
                     resolve_name_conflicts (R(p), p->sem.step.item_res);
-                    *p = *(thetajoin_opt (dup_step (
+                    *p = *(thetajoin_opt (step_join (
                                                 L(p), RL(p),
                                                 p->sem.step.axis,
                                                 p->sem.step.ty,
@@ -1477,7 +1478,7 @@ opt_mvd (PFla_op_t *p)
                 else if (switch_right) {
                     resolve_name_conflicts (R(p), p->sem.step.item_res);
                     *p = *(thetajoin_opt (RL(p),
-                                          dup_step (
+                                          step_join (
                                                 L(p),
                                                 RR(p),
                                                 p->sem.step.axis,
@@ -1491,7 +1492,70 @@ opt_mvd (PFla_op_t *p)
             }
             break;
             
-        case la_guide_step:
+        case la_guide_step_join:
+            if (is_tj (R(p))) {
+                bool switch_left = PFprop_ocol (RL(p), p->sem.step.item);
+                bool switch_right = PFprop_ocol (RR(p), p->sem.step.item);
+                                   
+                if (switch_left && switch_right) {
+                    resolve_name_conflicts (R(p), p->sem.step.item_res);
+                    *p = *(thetajoin_opt (guide_step_join (
+                                                L(p),
+                                                RL(p),
+                                                p->sem.step.axis,
+                                                p->sem.step.ty,
+                                                p->sem.step.guide_count,
+                                                p->sem.step.guides,
+                                                p->sem.step.level,
+                                                p->sem.step.item,
+                                                p->sem.step.item_res),
+                                          guide_step_join (
+                                                L(p), 
+                                                RR(p),
+                                                p->sem.step.axis,
+                                                p->sem.step.ty,
+                                                p->sem.step.guide_count,
+                                                p->sem.step.guides,
+                                                p->sem.step.level,
+                                                p->sem.step.item,
+                                                p->sem.step.item_res),
+                                          R(p)->sem.thetajoin_opt.pred));
+                    modified = true;
+                }
+                else if (switch_left) {
+                    resolve_name_conflicts (R(p), p->sem.step.item_res);
+                    *p = *(thetajoin_opt (guide_step_join (
+                                                L(p), RL(p),
+                                                p->sem.step.axis,
+                                                p->sem.step.ty,
+                                                p->sem.step.guide_count,
+                                                p->sem.step.guides,
+                                                p->sem.step.level,
+                                                p->sem.step.item,
+                                                p->sem.step.item_res),
+                                          RR(p),
+                                          R(p)->sem.thetajoin_opt.pred));
+                    modified = true;
+                }
+                else if (switch_right) {
+                    resolve_name_conflicts (R(p), p->sem.step.item_res);
+                    *p = *(thetajoin_opt (RL(p),
+                                          guide_step_join (
+                                                L(p),
+                                                RR(p),
+                                                p->sem.step.axis,
+                                                p->sem.step.ty,
+                                                p->sem.step.guide_count,
+                                                p->sem.step.guides,
+                                                p->sem.step.level,
+                                                p->sem.step.item,
+                                                p->sem.step.item_res),
+                                          R(p)->sem.thetajoin_opt.pred));
+                    modified = true;
+                }
+            }
+            break;
+            
         case la_id:
         case la_idref:
             

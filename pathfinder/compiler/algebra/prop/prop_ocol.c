@@ -538,7 +538,8 @@ infer_ocol (PFla_op_t *n)
                                             .type = aat_pnode };
             break;
 
-        case la_dup_step:
+        case la_step_join:
+        case la_guide_step_join:
 #ifndef NDEBUG
             if (PFprop_ocol (R(n), n->sem.step.item_res))
                 PFoops (OOPS_FATAL,

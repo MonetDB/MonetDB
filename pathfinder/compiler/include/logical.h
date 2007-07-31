@@ -51,95 +51,100 @@ typedef struct PFla_op_t PFla_op_t;
 
 /** algebra operator kinds */
 enum PFla_op_kind_t {
-      la_serialize      =  1 /**< serialize algebra expression
-                                  (Placed on the very top of the tree.) */
-    , la_lit_tbl        =  2 /**< literal table */
-    , la_empty_tbl      =  3 /**< empty literal table */
-    , la_attach         =  4 /**< attach constant column */
-    , la_cross          =  5 /**< cross product (Cartesian product) */
-    , la_eqjoin         =  6 /**< equi-join */
-    , la_semijoin       =  7 /**< semi-join */
-    , la_thetajoin      =  8 /**< theta-join (with possibly multiple
-                                  predicates) */
-    , la_project        =  9 /**< algebra projection and renaming operator */
-    , la_select         = 10 /**< selection of rows where column value != 0 */
-    , la_disjunion      = 11 /**< union two relations with same schema */
-    , la_intersect      = 12 /**< intersect two relations with same schema */
-    , la_difference     = 13 /**< difference of two relations w/ same schema */
-    , la_distinct       = 14 /**< duplicate elimination operator */
-    , la_fun_1to1       = 20 /**< generic operator that extends the schema with
-                                  a new column where each value is determined 
-                                  by the values of a single row (cardinality 
-                                  stays the same) */
-    , la_num_eq         = 25 /**< numeric equal operator */
-    , la_num_gt         = 26 /**< numeric greater-than operator */
-    , la_bool_and       = 28 /**< boolean AND operator */
-    , la_bool_or        = 29 /**< boolean OR operator */
-    , la_bool_not       = 30 /**< boolean NOT operator */
-    , la_to             = 31 /**< op:to operator */
-    , la_avg            = 32 /**< operator for (partitioned) avg of a column */
-    , la_max            = 33 /**< operator for (partitioned) max of a column */
-    , la_min            = 34 /**< operator for (partitioned) min of a column */
-    , la_sum            = 35 /**< operator for (partitioned) sum of a column */
-    , la_count          = 36 /**< (partitioned) row counting operator */
-    , la_rownum         = 37 /**< consecutive number generation */
-    , la_rank           = 38 /**< arbitrary but ordered number generation */
-    , la_number         = 39 /**< arbitrary, unordered number generation */
-    , la_type           = 40 /**< selection of rows where a column is of a
-                                  certain type */
-    , la_type_assert    = 41 /**< restricts the type of a relation */
-    , la_cast           = 42 /**< type cast of an attribute */
-    , la_seqty1         = 43 /**< test for exactly one type occurrence in one
-                                  iteration (Pathfinder extension) */
-    , la_all            = 44 /**< test if all items in an iteration are true */
-    , la_step           = 50 /**< path step */
-    , la_dup_step       = 51 /**< duplicate generating path step */
-    , la_guide_step     = 52 /**< path step (with guide information) */
-    , la_id             = 53 /**< Operator representing a fn:id node lookup */
-    , la_idref          = 54 /**< Operator representing a fn:idref node lookup */
-    , la_doc_tbl        = 55 /**< document relation (is also a fragment) */
-    , la_doc_access     = 56 /**< document access necessary for pf:string-value */
-    , la_twig           = 60 /**< twig root operator */
-    , la_fcns           = 61 /**< twig constructor sequence */
-    , la_docnode        = 62 /**< document node-constructing operator */
-    , la_element        = 63 /**< element-constructing operator */
-    , la_attribute      = 64 /**< attribute-constructing operator */
-    , la_textnode       = 65 /**< text node-constructing operator */
-    , la_comment        = 66 /**< comment-constructing operator */
-    , la_processi       = 67 /**< processing instruction-constr. operator */
-    , la_content        = 68 /**< constructor content operator (elem|doc) */
-    , la_merge_adjacent = 69 /**< operator for pf:merge-adjacent-text-nodes
-                                  builtin function */
-    , la_roots          = 70 /**< algebraic repres. of the roots of newly
-                                  created xml nodes (e.g. element());
-                                  schema: iter | pos | item */
+      la_serialize       =  1 /**< serialize algebra expression
+                                   (Placed on the very top of the tree.) */
+    , la_lit_tbl         =  2 /**< literal table */
+    , la_empty_tbl       =  3 /**< empty literal table */
+    , la_attach          =  4 /**< attach constant column */
+    , la_cross           =  5 /**< cross product (Cartesian product) */
+    , la_eqjoin          =  6 /**< equi-join */
+    , la_semijoin        =  7 /**< semi-join */
+    , la_thetajoin       =  8 /**< theta-join (with possibly multiple
+                                   predicates) */
+    , la_project         =  9 /**< algebra projection and renaming operator */
+    , la_select          = 10 /**< selection of rows where column value != 0 */
+    , la_disjunion       = 11 /**< union two relations with same schema */
+    , la_intersect       = 12 /**< intersect two relations with same schema */
+    , la_difference      = 13 /**< difference of two relations w/ same schema */
+    , la_distinct        = 14 /**< duplicate elimination operator */
+    , la_fun_1to1        = 20 /**< generic operator that extends the schema with
+                                   a new column where each value is determined 
+                                   by the values of a single row (cardinality 
+                                   stays the same) */
+    , la_num_eq          = 25 /**< numeric equal operator */
+    , la_num_gt          = 26 /**< numeric greater-than operator */
+    , la_bool_and        = 28 /**< boolean AND operator */
+    , la_bool_or         = 29 /**< boolean OR operator */
+    , la_bool_not        = 30 /**< boolean NOT operator */
+    , la_to              = 31 /**< op:to operator */
+    , la_avg             = 32 /**< operator for (partitioned) avg of a column */
+    , la_max             = 33 /**< operator for (partitioned) max of a column */
+    , la_min             = 34 /**< operator for (partitioned) min of a column */
+    , la_sum             = 35 /**< operator for (partitioned) sum of a column */
+    , la_count           = 36 /**< (partitioned) row counting operator */
+    , la_rownum          = 37 /**< consecutive number generation */
+    , la_rank            = 38 /**< arbitrary but ordered number generation */
+    , la_number          = 39 /**< arbitrary, unordered number generation */
+    , la_type            = 40 /**< selection of rows where a column is of a
+                                   certain type */
+    , la_type_assert     = 41 /**< restricts the type of a relation */
+    , la_cast            = 42 /**< type cast of an attribute */
+    , la_seqty1          = 43 /**< test for exactly one type occurrence in one
+                                   iteration (Pathfinder extension) */
+    , la_all             = 44 /**< test if all items in an iteration are true */
+    , la_step            = 49 /**< XPath location step */
+    , la_step_join       = 50 /**< duplicate generating path step */
+    , la_guide_step      = 51 /**< XPath location step 
+                                   (with guide information) */
+    , la_guide_step_join = 52 /**< duplicate generating path step 
+                                   (with guide information) */
+    , la_id              = 53 /**< Operator representing a fn:id node lookup */
+    , la_idref           = 54 /**< Operator representing a fn:idref node 
+                                   lookup */
+    , la_doc_tbl         = 55 /**< document relation (is also a fragment) */
+    , la_doc_access      = 56 /**< document access necessary 
+                                   for pf:string-value */
+    , la_twig            = 60 /**< twig root operator */
+    , la_fcns            = 61 /**< twig constructor sequence */
+    , la_docnode         = 62 /**< document node-constructing operator */
+    , la_element         = 63 /**< element-constructing operator */
+    , la_attribute       = 64 /**< attribute-constructing operator */
+    , la_textnode        = 65 /**< text node-constructing operator */
+    , la_comment         = 66 /**< comment-constructing operator */
+    , la_processi        = 67 /**< processing instruction-constr. operator */
+    , la_content         = 68 /**< constructor content operator (elem|doc) */
+    , la_merge_adjacent  = 69 /**< operator for pf:merge-adjacent-text-nodes
+                                   builtin function */
+    , la_roots           = 70 /**< algebraic repres. of the roots of newly
+                                   created xml nodes (e.g. element());
+                                   schema: iter | pos | item */
     /* all operators below represent xml node fragments with no schema */
-    , la_fragment       = 71 /**< representation of a node fragment */
-    , la_frag_union     = 72 /**< special node type used to form an algebraic
-                                  union of fragments */
-    , la_empty_frag     = 73 /**< representation of an empty fragment */
-                            
-    , la_cond_err       = 80 /**< facility to trigger runtime errors */
-    , la_nil            = 81 /**< end of the list of parameters */
-    , la_trace          = 82 /**< debug operator */
-    , la_trace_msg      = 83 /**< debug operator */
-    , la_trace_map      = 84 /**< debug relation map operator */
-    , la_rec_fix        = 85 /**< operator representing a tail recursion */
-    , la_rec_param      = 86 /**< list of parameters of the recursion */
-    , la_rec_arg        = 87 /**< reference to the arguments of a parameter
-                                  in the recursion */
-    , la_rec_base       = 88 /**< base of the DAG describing the recursion */
-    
-    , la_proxy          = 96 /**< proxy operator that represents a group
-                                  of operators */
-    , la_proxy_base     = 97 /**< completes the content of the proxy 
-                                  (a virtual base table) */
-    , la_cross_mvd      = 98 /**< clone column aware cross product */
-    , la_eqjoin_unq     = 99 /**< clone column aware equi-join */                            
+    , la_fragment        = 71 /**< representation of a node fragment */
+    , la_frag_union      = 72 /**< special node type used to form an algebraic
+                                   union of fragments */
+    , la_empty_frag      = 73 /**< representation of an empty fragment */
+                             
+    , la_cond_err        = 80 /**< facility to trigger runtime errors */
+    , la_nil             = 81 /**< end of the list of parameters */
+    , la_trace           = 82 /**< debug operator */
+    , la_trace_msg       = 83 /**< debug operator */
+    , la_trace_map       = 84 /**< debug relation map operator */
+    , la_rec_fix         = 85 /**< operator representing a tail recursion */
+    , la_rec_param       = 86 /**< list of parameters of the recursion */
+    , la_rec_arg         = 87 /**< reference to the arguments of a parameter
+                                   in the recursion */
+    , la_rec_base        = 88 /**< base of the DAG describing the recursion */
+                         
+    , la_proxy           = 96 /**< proxy operator that represents a group
+                                   of operators */
+    , la_proxy_base      = 97 /**< completes the content of the proxy 
+                                   (a virtual base table) */
+    , la_cross_mvd       = 98 /**< clone column aware cross product */
+    , la_eqjoin_unq      = 99 /**< clone column aware equi-join */
     /* builtin support for XQuery functions */
-    , la_string_join    =102 /**< fn:string-join */
-
-    , la_dummy          =120 /**< dummy operator that does nothing */
+    , la_string_join     =102 /**< fn:string-join */
+                         
+    , la_dummy           =120 /**< dummy operator that does nothing */
 };
 /** algebra operator kinds */
 typedef enum PFla_op_kind_t PFla_op_kind_t;
@@ -745,18 +750,18 @@ PFla_op_t * PFla_step (const PFla_op_t *doc, const PFla_op_t *n,
 /**
  * Constructor for XPath step evaluation (without duplicate removal).
  */
-PFla_op_t * PFla_dup_step_simple (const PFla_op_t *doc, const PFla_op_t *n,
-                                  PFalg_axis_t axis, PFty_t seqty,
-                                  PFalg_att_t item,
-                                  PFalg_att_t item_res);
+PFla_op_t * PFla_step_join_simple (const PFla_op_t *doc, const PFla_op_t *n,
+                                   PFalg_axis_t axis, PFty_t seqty,
+                                   PFalg_att_t item,
+                                   PFalg_att_t item_res);
 
 /**
  * Constructor for XPath step evaluation (without duplicate removal).
  */
-PFla_op_t * PFla_dup_step (const PFla_op_t *doc, const PFla_op_t *n,
-                           PFalg_axis_t axis, PFty_t seqty, int level,
-                           PFalg_att_t item,
-                           PFalg_att_t item_res);
+PFla_op_t * PFla_step_join (const PFla_op_t *doc, const PFla_op_t *n,
+                            PFalg_axis_t axis, PFty_t seqty, int level,
+                            PFalg_att_t item,
+                            PFalg_att_t item_res);
 
 /**
  * Constructor for XPath step evaluation (with guide information).
@@ -777,6 +782,29 @@ PFla_op_t * PFla_guide_step (const PFla_op_t *doc, const PFla_op_t *n,
                              PFguide_tree_t **guides, int level,
                              PFalg_att_t iter, PFalg_att_t item,
                              PFalg_att_t item_res);
+
+/**
+ * Constructor for XPath step evaluation (without duplicate removal and
+ * with guide information).
+ */
+PFla_op_t * PFla_guide_step_join_simple (const PFla_op_t *doc,
+                                         const PFla_op_t *n,
+                                         PFalg_axis_t axis, PFty_t seqty,
+                                         unsigned int guide_count,
+                                         PFguide_tree_t **guides,
+                                         PFalg_att_t item,
+                                         PFalg_att_t item_res);
+
+/**
+ * Constructor for XPath step evaluation (without duplicate removal and
+ * with guide information).
+ */
+PFla_op_t * PFla_guide_step_join (const PFla_op_t *doc, const PFla_op_t *n,
+                                  PFalg_axis_t axis, PFty_t seqty,
+                                  unsigned int guide_count,
+                                  PFguide_tree_t **guides, int level,
+                                  PFalg_att_t item,
+                                  PFalg_att_t item_res);
 
 /**
  * Constructor for fn:id evaluation.

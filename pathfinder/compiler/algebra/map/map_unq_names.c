@@ -554,13 +554,13 @@ map_unq_names (PFla_op_t *p, PFarray_t *map)
                         UNAME(p, p->sem.step.item_res));
             break;
                            
-        case la_dup_step:
-            res = dup_step (U(L(p)), U(R(p)),
-                            p->sem.step.axis,
-                            p->sem.step.ty,
-                            p->sem.step.level,
-                            UNAME(p, p->sem.step.item),
-                            UNAME(p, p->sem.step.item_res));
+        case la_step_join:
+            res = step_join (U(L(p)), U(R(p)),
+                             p->sem.step.axis,
+                             p->sem.step.ty,
+                             p->sem.step.level,
+                             UNAME(p, p->sem.step.item),
+                             UNAME(p, p->sem.step.item_res));
             break;
                            
         case la_guide_step:
@@ -577,6 +577,17 @@ map_unq_names (PFla_op_t *p, PFarray_t *map)
                               UNAME(p, p->sem.step.item_res));
             break;
 
+        case la_guide_step_join:
+            res = guide_step_join (U(L(p)), U(R(p)),
+                                   p->sem.step.axis,
+                                   p->sem.step.ty,
+                                   p->sem.step.guide_count,
+                                   p->sem.step.guides,
+                                   p->sem.step.level,
+                                   UNAME(p, p->sem.step.item),
+                                   UNAME(p, p->sem.step.item_res));
+            break;
+                           
         case la_id:
             res = id (U(L(p)), U(R(p)),
                       UNAME(p, p->sem.id.iter),

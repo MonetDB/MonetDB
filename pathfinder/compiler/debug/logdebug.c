@@ -84,8 +84,9 @@ static char *a_id[]  = {
     , [la_seqty1]           = "SEQTY1"
     , [la_all]              = "ALL"
     , [la_step]             = "/|"
-    , [la_dup_step]         = "/|+"
+    , [la_step_join]        = "/|+"
     , [la_guide_step]       = "/| (guide)"
+    , [la_guide_step_join]  = "/|+ (guide)"
     , [la_id]               = "fn:id"
     , [la_idref]            = "fn:idref"
     , [la_doc_tbl]          = "DOC"
@@ -157,8 +158,9 @@ static char *xml_id[]  = {
     , [la_seqty1]           = "seqty1"
     , [la_all]              = "all"
     , [la_step]             = "XPath step"
-    , [la_dup_step]         = "duplicate generating path step"
+    , [la_step_join]        = "path step join"
     , [la_guide_step]       = "XPath step (with guide information)"
+    , [la_guide_step_join]  = "path step join (with guide information)"
     , [la_id]               = "fn:id"
     , [la_idref]            = "fn:idref"
     , [la_doc_tbl]          = "fn:doc"
@@ -309,75 +311,76 @@ la_dot (PFarray_t *dot, PFla_op_t *n)
     assert(n->node_id);
 
     static char *color[] = {
-          [la_serialize]      = "\"#C0C0C0\""
-        , [la_lit_tbl]        = "\"#C0C0C0\""
-        , [la_empty_tbl]      = "\"#C0C0C0\""
-        , [la_attach]         = "\"#EEEEEE\""
-        , [la_cross]          = "\"#990000\""
-        , [la_eqjoin]         = "\"#00FF00\""
-        , [la_eqjoin_unq]     = "\"#00CC00\""
-        , [la_semijoin]       = "\"#009900\""
-        , [la_thetajoin]      = "\"#00AA00\""
-        , [la_project]        = "\"#EEEEEE\""
-        , [la_select]         = "\"#00DDDD\""
-        , [la_disjunion]      = "\"#909090\""
-        , [la_intersect]      = "\"#FFA500\""
-        , [la_difference]     = "\"#FFA500\""
-        , [la_distinct]       = "\"#FFA500\""
-        , [la_fun_1to1]       = "\"#C0C0C0\""
-        , [la_num_eq]         = "\"#00DDDD\""
-        , [la_num_gt]         = "\"#00DDDD\""
-        , [la_bool_and ]      = "\"#C0C0C0\""
-        , [la_bool_or ]       = "\"#C0C0C0\""
-        , [la_bool_not]       = "\"#C0C0C0\""
-        , [la_to]             = "\"#C0C0C0\""
-        , [la_avg]            = "\"#A0A0A0\""
-        , [la_max]            = "\"#A0A0A0\""
-        , [la_min]            = "\"#A0A0A0\""
-        , [la_sum]            = "\"#A0A0A0\""
-        , [la_count]          = "\"#A0A0A0\""
-        , [la_rownum]         = "\"#FF0000\""
-        , [la_rank]           = "\"#FF3333\""
-        , [la_number]         = "\"#FF9999\""
-        , [la_type]           = "\"#C0C0C0\""
-        , [la_type_assert]    = "\"#C0C0C0\""
-        , [la_cast]           = "\"#C0C0C0\""
-        , [la_seqty1]         = "\"#C0C0C0\""
-        , [la_all]            = "\"#C0C0C0\""
-        , [la_step]           = "\"#1E90FF\""
-        , [la_dup_step]       = "\"#1E9099\""
-        , [la_guide_step]     = "\"#007AE0\""
-        , [la_id]             = "\"#1E90FF\""
-        , [la_idref]          = "\"#1E90FF\""
-        , [la_doc_tbl]        = "\"#C0C0C0\""
-        , [la_doc_access]     = "\"#CCCCFF\""
-        , [la_twig]           = "\"#00AA44\""
-        , [la_fcns]           = "\"#009959\""
-        , [la_docnode]        = "\"#00CC59\""
-        , [la_element]        = "\"#00CC59\""
-        , [la_attribute]      = "\"#00CC59\""
-        , [la_textnode]       = "\"#00CC59\""
-        , [la_comment]        = "\"#00CC59\""
-        , [la_processi]       = "\"#00CC59\""
-        , [la_content]        = "\"#00CC59\""
-        , [la_merge_adjacent] = "\"#00D000\""
-        , [la_roots]          = "\"#E0E0E0\""
-        , [la_fragment]       = "\"#E0E0E0\""
-        , [la_frag_union]     = "\"#E0E0E0\""
-        , [la_empty_frag]     = "\"#E0E0E0\""
-        , [la_cond_err]       = "\"#C0C0C0\""
-        , [la_nil]            = "\"#FFFFFF\""
-        , [la_trace]          = "\"#FF5500\""
-        , [la_trace_msg]      = "\"#FF5500\""
-        , [la_trace_map]      = "\"#FF5500\""
-        , [la_rec_fix]        = "\"#FF00FF\""
-        , [la_rec_param]      = "\"#FF00FF\""
-        , [la_rec_arg]        = "\"#BB00BB\""
-        , [la_rec_base]       = "\"#BB00BB\""
-        , [la_proxy]          = "\"#DFFFFF\""
-        , [la_proxy_base]     = "\"#DFFFFF\""
-        , [la_string_join]    = "\"#C0C0C0\""
-        , [la_dummy]          = "\"#FFFFFF\""
+          [la_serialize]       = "#C0C0C0"
+        , [la_lit_tbl]         = "#C0C0C0"
+        , [la_empty_tbl]       = "#C0C0C0"
+        , [la_attach]          = "#EEEEEE"
+        , [la_cross]           = "#990000"
+        , [la_eqjoin]          = "#00FF00"
+        , [la_eqjoin_unq]      = "#00CC00"
+        , [la_semijoin]        = "#009900"
+        , [la_thetajoin]       = "#00AA00"
+        , [la_project]         = "#EEEEEE"
+        , [la_select]          = "#00DDDD"
+        , [la_disjunion]       = "#909090"
+        , [la_intersect]       = "#FFA500"
+        , [la_difference]      = "#FFA500"
+        , [la_distinct]        = "#FFA500"
+        , [la_fun_1to1]        = "#C0C0C0"
+        , [la_num_eq]          = "#00DDDD"
+        , [la_num_gt]          = "#00DDDD"
+        , [la_bool_and ]       = "#C0C0C0"
+        , [la_bool_or ]        = "#C0C0C0"
+        , [la_bool_not]        = "#C0C0C0"
+        , [la_to]              = "#C0C0C0"
+        , [la_avg]             = "#A0A0A0"
+        , [la_max]             = "#A0A0A0"
+        , [la_min]             = "#A0A0A0"
+        , [la_sum]             = "#A0A0A0"
+        , [la_count]           = "#A0A0A0"
+        , [la_rownum]          = "#FF0000"
+        , [la_rank]            = "#FF3333"
+        , [la_number]          = "#FF9999"
+        , [la_type]            = "#C0C0C0"
+        , [la_type_assert]     = "#C0C0C0"
+        , [la_cast]            = "#C0C0C0"
+        , [la_seqty1]          = "#C0C0C0"
+        , [la_all]             = "#C0C0C0"
+        , [la_step]            = "#1E90FF"
+        , [la_step_join]       = "#1E9099"
+        , [la_guide_step]      = "#007AE0"
+        , [la_guide_step_join] = "#007A7A"
+        , [la_id]              = "#1E90FF"
+        , [la_idref]           = "#1E90FF"
+        , [la_doc_tbl]         = "#C0C0C0"
+        , [la_doc_access]      = "#CCCCFF"
+        , [la_twig]            = "#00AA44"
+        , [la_fcns]            = "#009959"
+        , [la_docnode]         = "#00CC59"
+        , [la_element]         = "#00CC59"
+        , [la_attribute]       = "#00CC59"
+        , [la_textnode]        = "#00CC59"
+        , [la_comment]         = "#00CC59"
+        , [la_processi]        = "#00CC59"
+        , [la_content]         = "#00CC59"
+        , [la_merge_adjacent]  = "#00D000"
+        , [la_roots]           = "#E0E0E0"
+        , [la_fragment]        = "#E0E0E0"
+        , [la_frag_union]      = "#E0E0E0"
+        , [la_empty_frag]      = "#E0E0E0"
+        , [la_cond_err]        = "#C0C0C0"
+        , [la_nil]             = "#FFFFFF"
+        , [la_trace]           = "#FF5500"
+        , [la_trace_msg]       = "#FF5500"
+        , [la_trace_map]       = "#FF5500"
+        , [la_rec_fix]         = "#FF00FF"
+        , [la_rec_param]       = "#FF00FF"
+        , [la_rec_arg]         = "#BB00BB"
+        , [la_rec_base]        = "#BB00BB"
+        , [la_proxy]           = "#DFFFFF"
+        , [la_proxy_base]      = "#DFFFFF"
+        , [la_string_join]     = "#C0C0C0"
+        , [la_dummy]           = "#FFFFFF"
     };
 
     /* open up label */
@@ -638,10 +641,11 @@ la_dot (PFarray_t *dot, PFla_op_t *n)
             break;
 
         case la_guide_step:
+        case la_guide_step_join:
             /* overwrite standard node layout */
             PFarray_printf (dot, "\", fontcolor=\"#FFFFFF\", label=\"");
         case la_step:
-        case la_dup_step:
+        case la_step_join:
             PFarray_printf (dot, "%s ", a_id[n->kind]);
                 
             /* print out XPath axis */
@@ -686,38 +690,34 @@ la_dot (PFarray_t *dot, PFla_op_t *n)
                 default: PFoops (OOPS_FATAL,
                         "unknown XPath axis in dot output");
             }
-            if (n->kind == la_step)
-                PFarray_printf (dot, "%s (%s, %s%s%s)", 
-                                PFty_str (n->sem.step.ty),
-                                PFatt_str (n->sem.step.iter),
-                                PFatt_str (n->sem.step.item_res),
-                                n->sem.step.item_res != n->sem.step.item
-                                ? ":" : "",
-                                n->sem.step.item_res != n->sem.step.item
-                                ? PFatt_str (n->sem.step.item) : "");
-            else if (n->kind == la_dup_step)
-                PFarray_printf (dot, "%s (%s:%s)", 
-                                PFty_str (n->sem.step.ty),
-                                PFatt_str (n->sem.step.item_res),
-                                PFatt_str (n->sem.step.item));
-            else {
+            PFarray_printf (dot, "%s ", PFty_str (n->sem.step.ty));
+            
+            /* print guide info */
+            if (n->kind == la_guide_step ||
+                n->kind == la_guide_step_join) {
                 bool first = true;
-                PFarray_printf (dot, "%s - (",
-                                PFty_str (n->sem.step.ty));
+                PFarray_printf (dot, "- (");
                 
                 for (unsigned int i = 0; i < n->sem.step.guide_count; i++) {
                     PFarray_printf (dot, "%s%i", first ? "" : ", ",
                                     n->sem.step.guides[i]->guide);
                     first = false;
                 }
-                PFarray_printf (dot, ") (%s, %s%s%s)", 
+                PFarray_printf (dot, ") ");
+            }
+            
+            if (n->kind == la_step || n->kind == la_guide_step)
+                PFarray_printf (dot, "(%s, %s%s%s)", 
                                 PFatt_str (n->sem.step.iter),
                                 PFatt_str (n->sem.step.item_res),
                                 n->sem.step.item_res != n->sem.step.item
                                 ? ":" : "",
                                 n->sem.step.item_res != n->sem.step.item
                                 ? PFatt_str (n->sem.step.item) : "");
-            }
+            else
+                PFarray_printf (dot, "(%s:%s)", 
+                                PFatt_str (n->sem.step.item_res),
+                                PFatt_str (n->sem.step.item));
 
             if (n->sem.step.level >= 0)
                 PFarray_printf (dot, "\\nlevel=%i", n->sem.step.level);
@@ -1071,7 +1071,7 @@ la_dot (PFarray_t *dot, PFla_op_t *n)
     }
 
     /* close up label */
-    PFarray_printf (dot, "\", color=%s ];\n", color[n->kind]);
+    PFarray_printf (dot, "\", color=\"%s\" ];\n", color[n->kind]);
 
     for (c = 0; c < PFLA_OP_MAXCHILD && n->child[c]; c++) {      
         PFarray_printf (dot, "node%i -> node%i;\n",
@@ -1622,8 +1622,9 @@ la_xml (PFarray_t *xml, PFla_op_t *n)
             break;
 
         case la_step:
-        case la_dup_step:
+        case la_step_join:
         case la_guide_step:
+        case la_guide_step_join:
             PFarray_printf (xml, "    <content>\n      <step axis=\"");
                 
             /* print out XPath axis */
@@ -1669,44 +1670,34 @@ la_xml (PFarray_t *xml, PFla_op_t *n)
                         "unknown XPath axis in dot output");
             }
 
-            if (n->kind == la_step)
-                PFarray_printf (xml,
-                                "\" type=\"%s\"/>\n"
-                                "      <column name=\"%s\" function=\"iter\"/>\n"
-                                "      <column name=\"%s\" function=\"item\"/>\n"
-                                "    </content>\n",
-                                PFty_str (n->sem.step.ty),
-                                PFatt_str (n->sem.step.iter),
-                                PFatt_str (n->sem.step.item));
-            else if (n->kind == la_dup_step)
-                PFarray_printf (xml,
-                                "\" type=\"%s\"/>\n"
-                                "      <column name=\"%s\" new=\"true\"/>\n"
-                                "      <column name=\"%s\" function=\"item\"/>\n"
-                                "    </content>\n",
-                                PFty_str (n->sem.step.ty),
-                                PFatt_str (n->sem.step.item_res),
-                                PFatt_str (n->sem.step.item));
-            else {
+            PFarray_printf (xml, "\" type=\"%s\"", PFty_str (n->sem.step.ty));
+            
+            if (n->kind == la_guide_step || n->kind == la_guide_step_join) {
                 bool first = true;
-                PFarray_printf (xml,
-                                "\" type=\"%s\" guide=\"",
-                                PFty_str (n->sem.step.ty));
-                
+                PFarray_printf (xml, " guide=\"");
                 for (unsigned int i = 0; i < n->sem.step.guide_count; i++) {
                     PFarray_printf (xml, "%s%i", first ? "" : " ",
                                     n->sem.step.guides[i]->guide);
                     first = false;
                 }
-                
+            }
+            
+            if (n->kind == la_step || n->kind == la_guide_step)
                 PFarray_printf (xml,
-                                "\"/>\n"
+                                "/>\n"
                                 "      <column name=\"%s\" function=\"iter\"/>\n"
                                 "      <column name=\"%s\" function=\"item\"/>\n"
                                 "    </content>\n",
                                 PFatt_str (n->sem.step.iter),
                                 PFatt_str (n->sem.step.item));
-            }
+            else 
+                PFarray_printf (xml,
+                                "/>\n"
+                                "      <column name=\"%s\" new=\"true\"/>\n"
+                                "      <column name=\"%s\" function=\"item\"/>\n"
+                                "    </content>\n",
+                                PFatt_str (n->sem.step.item_res),
+                                PFatt_str (n->sem.step.item));
             break;
 
         case la_id:

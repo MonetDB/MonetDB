@@ -1182,13 +1182,13 @@ opt_mvd (PFla_op_t *p)
         }
         break;
         
-    case la_dup_step:
+    case la_step_join:
         if (is_cross (R(p))) {
             bool switch_left = att_present (RL(p), p->sem.step.item);
             bool switch_right = att_present (RR(p), p->sem.step.item);
                                
             if (switch_left && switch_right) {
-                *p = *(cross_can (dup_step (
+                *p = *(cross_can (step_join (
                                         L(p),
                                         RL(p),
                                         p->sem.step.axis,
@@ -1196,7 +1196,7 @@ opt_mvd (PFla_op_t *p)
                                         p->sem.step.level,
                                         p->sem.step.item,
                                         p->sem.step.item_res),
-                                  dup_step (
+                                  step_join (
                                         L(p), 
                                         RR(p),
                                         p->sem.step.axis,
@@ -1207,7 +1207,7 @@ opt_mvd (PFla_op_t *p)
                 modified = true;
             }
             else if (switch_left) {
-                *p = *(cross_can (dup_step (
+                *p = *(cross_can (step_join (
                                         L(p), RL(p),
                                         p->sem.step.axis,
                                         p->sem.step.ty,
@@ -1219,7 +1219,7 @@ opt_mvd (PFla_op_t *p)
             }
             else if (switch_right) {
                 *p = *(cross_can (RL(p),
-                                  dup_step (
+                                  step_join (
                                         L(p),
                                         RR(p),
                                         p->sem.step.axis,
@@ -1272,6 +1272,64 @@ opt_mvd (PFla_op_t *p)
                                           p->sem.step.item_res))));
             }
             modified = true;
+        }
+        break;
+        
+    case la_guide_step_join:
+        if (is_cross (R(p))) {
+            bool switch_left = att_present (RL(p), p->sem.step.item);
+            bool switch_right = att_present (RR(p), p->sem.step.item);
+                               
+            if (switch_left && switch_right) {
+                *p = *(cross_can (guide_step_join (
+                                        L(p),
+                                        RL(p),
+                                        p->sem.step.axis,
+                                        p->sem.step.ty,
+                                        p->sem.step.guide_count,
+                                        p->sem.step.guides,
+                                        p->sem.step.level,
+                                        p->sem.step.item,
+                                        p->sem.step.item_res),
+                                  guide_step_join (
+                                        L(p), 
+                                        RR(p),
+                                        p->sem.step.axis,
+                                        p->sem.step.ty,
+                                        p->sem.step.guide_count,
+                                        p->sem.step.guides,
+                                        p->sem.step.level,
+                                        p->sem.step.item,
+                                        p->sem.step.item_res)));
+                modified = true;
+            }
+            else if (switch_left) {
+                *p = *(cross_can (guide_step_join (
+                                        L(p), RL(p),
+                                        p->sem.step.axis,
+                                        p->sem.step.ty,
+                                        p->sem.step.guide_count,
+                                        p->sem.step.guides,
+                                        p->sem.step.level,
+                                        p->sem.step.item,
+                                        p->sem.step.item_res),
+                                  RR(p)));
+                modified = true;
+            }
+            else if (switch_right) {
+                *p = *(cross_can (RL(p),
+                                  guide_step_join (
+                                        L(p),
+                                        RR(p),
+                                        p->sem.step.axis,
+                                        p->sem.step.ty,
+                                        p->sem.step.guide_count,
+                                        p->sem.step.guides,
+                                        p->sem.step.level,
+                                        p->sem.step.item,
+                                        p->sem.step.item_res)));
+                modified = true;
+            }
         }
         break;
         
