@@ -102,7 +102,8 @@ PFfun_xquery_fo (void)
       { .ns = PFns_fn, .loc = "string",
         .arity = 0, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_none () },
-            .ret_ty = PFty_xs_string () } } }
+            .ret_ty = PFty_xs_string () } },
+        .alg = NULL }
       /* fn:string ((atomic|attribute)?) as string */
       /* (F&O 2.3) */
     , { .ns = PFns_fn, .loc = "string",
@@ -288,7 +289,8 @@ PFfun_xquery_fo (void)
         .arity = 2, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_star (PFty_item ()),
                                    PFty_xs_string () },
-            .ret_ty = PFty_star (PFty_item ()) } } }
+            .ret_ty = PFty_star (PFty_item ()) } },
+        .alg = NULL }
 
 
 /* 6. FUNCTIONS AND OPERATORS ON NUMERICS */
@@ -1016,7 +1018,8 @@ PFfun_xquery_fo (void)
     , /* fn:string-length () as integer */
       { .ns = PFns_fn, .loc = "string-length",
         .arity = 0, .sig_count = 1, .sigs = { {
-            .ret_ty = PFty_xs_integer () } } }
+            .ret_ty = PFty_xs_integer () } },
+        .alg = NULL }
     , /* fn:string-length (string?) as integer */
       { .ns = PFns_fn, .loc = "string-length",
         .arity = 1, .sig_count = 1, .sigs = { {
@@ -1025,7 +1028,8 @@ PFfun_xquery_fo (void)
     , /* fn:normalize-space () as string */
       { .ns = PFns_fn, .loc = "normalize-space",
         .arity = 0,  .sig_count = 1, .sigs = { {
-            .ret_ty = PFty_xs_string () } } }
+            .ret_ty = PFty_xs_string () } },
+        .alg = NULL }
     , /* fn:normalize-space (string?) as string */
       { .ns = PFns_fn, .loc = "normalize-space",
         .arity = 1, .sig_count = 1, .sigs = { {
@@ -1182,7 +1186,8 @@ PFfun_xquery_fo (void)
     , /* fn:name (node) as string */
       { .ns = PFns_fn, .loc = "name",
         .arity = 0,  .sig_count = 1, .sigs = { {
-            .ret_ty = PFty_xs_string () } } }
+            .ret_ty = PFty_xs_string () } },
+        .alg = NULL }
     , /* fn:name (node) as string */
       { .ns = PFns_fn, .loc = "name",
         .arity = 1, .sig_count = 1, .sigs = { {
@@ -1193,7 +1198,8 @@ PFfun_xquery_fo (void)
     , /* fn:local-name (node) as string */
       { .ns = PFns_fn, .loc = "local-name",
         .arity = 0,  .sig_count = 1, .sigs = { {
-            .ret_ty = PFty_xs_string () } } }
+            .ret_ty = PFty_xs_string () } },
+        .alg = NULL }
     , /* fn:local-name (node) as string */
       { .ns = PFns_fn, .loc = "local-name",
         .arity = 1, .sig_count = 1, .sigs = { {
@@ -1204,7 +1210,8 @@ PFfun_xquery_fo (void)
     , /* fn:namespace-uri (node) as string */
       { .ns = PFns_fn, .loc = "namespace-uri",
         .arity = 0,  .sig_count = 1, .sigs = { {
-            .ret_ty = PFty_xs_string () } } }
+            .ret_ty = PFty_xs_string () } },
+        .alg = NULL }
     , /* fn:namespace-uri (node) as string */
       { .ns = PFns_fn, .loc = "namespace-uri",
         .arity = 1, .sig_count = 1, .sigs = { {
@@ -1256,7 +1263,8 @@ PFfun_xquery_fo (void)
       { .ns = PFns_fn, .loc = "root",
         .arity = 0, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_none () },
-            .ret_ty = PFty_node() } } }
+            .ret_ty = PFty_node() } },
+        .alg = NULL }
     , /* fn:root (node?) as node? */
       { .ns = PFns_fn, .loc = "root",
         .arity = 1, .sig_count = 1, .sigs = { {
@@ -1592,7 +1600,8 @@ PFfun_xquery_fo (void)
       { .ns = PFns_fn, .loc = "id",
         .arity = 1, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_star (PFty_xs_string ()) },
-            .ret_ty = PFty_star (PFty_xs_anyElement ()) } } }
+            .ret_ty = PFty_star (PFty_xs_anyElement ()) } },
+        .alg = NULL }
     , /* fn:id (string*, node) as element* */
       { .ns = PFns_fn, .loc = "id",
         .arity = 2, .sig_count = 1, .sigs = { {
@@ -1604,7 +1613,8 @@ PFfun_xquery_fo (void)
       { .ns = PFns_fn, .loc = "idref",
         .arity = 1, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_star (PFty_xs_string ()) },
-            .ret_ty = PFty_star (PFty_xs_anyElement ()) } } }
+            .ret_ty = PFty_star (PFty_xs_anyElement ()) } },
+        .alg = NULL }
     , /* fn:idref (string*, node) as element* */
       { .ns = PFns_fn, .loc = "idref",
         .arity = 2, .sig_count = 1, .sigs = { {
@@ -1796,12 +1806,6 @@ PFfun_xquery_fo (void)
             .par_ty = (PFty_t[]) { PFty_node () },
             .ret_ty = PFty_xs_string () } },
         .alg = PFbui_pf_string_value }
-    , /* pf:product (double*) as double */
-      { .ns = PFns_lib, .loc = "product",
-        .arity = 1, .sig_count = 1, .sigs = { {
-            .par_ty = (PFty_t[]) { PFty_star (PFty_xs_double ()) },
-            .ret_ty = PFty_xs_double () } }
-      }
 
 
 /* #2. PATHFINDER SPECIFIC DOCUMENT MANAGEMENT FUNCTIONS */
@@ -1973,6 +1977,12 @@ PFfun_xquery_fo (void)
             .par_ty = (PFty_t[]) { PFty_opt (PFty_xs_double ()),
                                    PFty_opt (PFty_xs_double ()) },
             .ret_ty = PFty_opt (PFty_xs_double ()) } } }
+    , /* pf:product (double*) as double */
+      { .ns = PFns_lib, .loc = "product",
+        .arity = 1, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_star (PFty_xs_double ()) },
+            .ret_ty = PFty_xs_double () } }
+      }
 
 
 /* #3. UPDATE FUNCTIONS */
