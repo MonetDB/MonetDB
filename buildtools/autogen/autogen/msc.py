@@ -361,7 +361,7 @@ def msc_dep(fd, tar, deplist, msc):
     if ext == "mil":
         fd.write(getsrc)
         if b+".tmpmil" in deplist:
-            fd.write('\t$(MEL) $(INCLUDES) -mil "%s.m" > "$@"\n' % (b))
+            fd.write('\t$(MEL) $(INCLUDES) -mil "%s.m" > "%s.mil"\n' % (b, b))
             fd.write('\ttype "%s.tmpmil" >> "%s.mil"\n' % (b, b))
             fd.write('\tif not exist .libs $(MKDIR) .libs\n')
             fd.write('\t$(INSTALL) "%s.mil" ".libs\\%s.mil"\n' % (b, b))
