@@ -670,6 +670,7 @@ loadTijahContext(BAT* tjCtx_BAT, char* selTagList) {
 		     }
 #endif
 	             if ( !BUNins(res->b_globalTerm, &zero, sw, FALSE)){
+                         GDKerror("loadTijahContext: inserting stopword fails\n");
 	                 return NULL;
 	             }
 #ifdef TJ_TRACE

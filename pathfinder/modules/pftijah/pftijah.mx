@@ -42,6 +42,9 @@
 .COMMAND tijah_tokenize(str) : str = CMDtijah_tokenize;
  "INCOMPLETE"
 
+.COMMAND tj_chk_dict_hash(BAT[oid,str], BAT[oid,str]) : void = CMDtj_chk_dict_hash;
+"INCOMPLETE"
+
 .COMMAND tj_create_termdb(int, oid) : void = CMDtj_create_termdb;
  "INCOMPLETE"
 
@@ -359,7 +362,8 @@ PROC tj_init_global(BAT[str,str] param) : void :=
     tj_init_global(param,true);
 }
 
-const GLOBAL_TTBAT := true;
+const GLOBAL_TTBAT := false;
+const VOID_TTBAT   := false;
 
 PROC _tj_TermBat(str ftiName) : str :=
 {
@@ -567,8 +571,13 @@ PROC _tj_init_collection(str ftiName, BAT[str,str] param, BAT[void,str] v_pfc, b
               bat(_tj_TagBat(ftiName)).delete();
               bat(_tj_RTagBat(ftiName)).delete();
 	  } else {
-              new(oid,str).persists(true).bbpname(_tj_TermBat(ftiName));
-              new(oid,str).persists(true).bbpname(_tj_TagBat(ftiName));
+	      if ( VOID_TTBAT) {
+                  new(void,str).persists(true).bbpname(_tj_TermBat(ftiName));
+                  new(void,str).persists(true).bbpname(_tj_TagBat(ftiName));
+	      } else {
+                  new(oid,str).persists(true).bbpname(_tj_TermBat(ftiName));
+                  new(oid,str).persists(true).bbpname(_tj_TagBat(ftiName));
+	      }
               new(oid,oid).persists(true).bbpname(_tj_RTagBat(ftiName));
 	  }
       }
@@ -1140,19 +1149,23 @@ PROC _tj_finalize_collection(str ftiName, BAT[str,bat] collBat, bit fforce) : vo
     var lst_fpre := parambat.find("_last_tijahPre");
     _tj_set_parameter(collBat, "_last_finalizedPre", lst_fpre);
     #
-    var gterm_sort := bat(_tj_TermBat(ftiName)).reverse().sort().reverse();
-    gterm_sort.access(BAT_APPEND);
-    gterm_sort.mmap(1);
-    var gtag_sort := bat(_tj_TagBat(ftiName)).reverse().sort().reverse();
-    gtag_sort.access(BAT_APPEND);
-    gtag_sort.mmap(1);
+    if ( false ) {
+    	# we now do hash lookups and always ensure there's a hash table on the
+	# dictionarys when querying
+        var gterm_sort := bat(_tj_TermBat(ftiName)).reverse().sort().reverse();
+        gterm_sort.access(BAT_APPEND);
+        gterm_sort.mmap(1);
+        var gtag_sort := bat(_tj_TagBat(ftiName)).reverse().sort().reverse();
+        gtag_sort.access(BAT_APPEND);
+        gtag_sort.mmap(1);
 
-    collBat.replace("_globalTerms", gterm_sort);
-    collBat.replace("_globalTags", gtag_sort);
-    var replaceBats := collBat.find("replaceBats");
-    replaceBats.insert("_globalTerms", _tj_TermBat(ftiName));
-    replaceBats.insert("_globalTags", _tj_TagBat(ftiName));
+        collBat.replace("_globalTerms", gterm_sort);
+        collBat.replace("_globalTags", gtag_sort);
+        var replaceBats := collBat.find("replaceBats");
+        replaceBats.insert("_globalTerms", _tj_TermBat(ftiName));
+        replaceBats.insert("_globalTags", _tj_TagBat(ftiName));
     
+    }
     collBat.find("submitBats").append(_tj_TermBat(ftiName));
     collBat.find("submitBats").append(_tj_TagBat(ftiName));
     
@@ -2934,6 +2947,31 @@ int CMDtj_log(str format, int* i) {
 	        fprintf(f,(const char*)format,*i);
 	        fclose(f);
 	    }
+	}
+	return GDK_SUCCEED;
+}
+
+int CMDtj_chk_dict_hash(BAT* b_tag, BAT* b_term)
+{
+	if ( b_tag->thash == NULL ) {
+	     // stream_printf(GDKout,"C[]: ADD HASHTABLE TO TAG DICTIONARY\n");
+#ifdef TJ_TRACE
+	     if ( TJ_TRACE ) stream_printf(GDKout,"C[]: CREATE NEW HASHTABLE ON TAG DICTIONARY\n");
+#endif
+	     if ( !BAThash(BATmirror(b_tag),0) ) {
+                 GDKerror("CMDtj_chk_dict_hash: adding hashtable to Tag fails\n");
+	         return GDK_FAIL;
+	     }
+	}
+	if ( b_term->thash == NULL ) {
+	     // stream_printf(GDKout,"C[]: ADD HASHTABLE TO TERM DICTIONARY\n");
+#ifdef TJ_TRACE
+	     if ( TJ_TRACE ) stream_printf(GDKout,"C[]: CREATE NEW HASHTABLE ON TERM DICTIONARY\n");
+#endif
+	     if ( !BAThash(BATmirror(b_term),0) ) {
+                 GDKerror("CMDtj_chk_dict_hash: adding hashtable to Term fails\n");
+	         return GDK_FAIL;
+	     }
 	}
 	return GDK_SUCCEED;
 }

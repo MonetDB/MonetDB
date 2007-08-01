@@ -52,7 +52,8 @@ tj_add2collection("coll2_frag100",path+"/xml-docs/dilbert2.xml","dilbert2.xml",t
 tj_add2collection("coll2_frag100",path+"/xml-docs/special.xml","special.xml",true);
 
 # compare indexed collections
-var tids := bat("tj_globalTerms").sort().kunique().hmark(0@0);
+var tids := bat(_tj_TagBat("coll2_frag")).sort().kunique().hmark(0@0);
+
 var coll1 := indexfetchjoin(tids, bat("tj_coll1_frag_TermIndex"), bat("tj_coll1_frag_Terms"));
 var coll2 := indexfetchjoin(tids, bat("tj_coll2_frag_TermIndex"), bat("tj_coll2_frag_Terms"));
 var coll3 := indexfetchjoin(tids, bat("tj_coll1_frag100_TermIndex"), bat("tj_coll1_frag100_Terms"));

@@ -508,6 +508,9 @@ int old_main(BAT* optbat, char* startNodes_name)
     MILPRINTF(MILOUT, "modify_qenv(qenv,QENV_SCOREBASE,\"%s\");\n",qenv_scorebase);
     MILPRINTF(MILOUT, "modify_qenv(qenv,QENV_C_LAMBDA,\"%s\");\n",qenv_c_lambda);
     MILPRINTF(MILOUT, "modify_qenv(qenv,QENV_RECURSIVE_TAGS,\"%s\");\n","0");
+    // ensure the hash tables are hashed
+    MILPRINTF(MILOUT, "tj_chk_dict_hash(bat(_tj_TagBat(\"%s\")),bat(_tj_TermBat(\"%s\")));\n",parserCtx->collection,parserCtx->collection);
+
     // Prepend some variables to the MIL code.
     if ( qenv_prox_val ) { 
         MILPRINTF(MILOUT, "modify_qenv(qenv,QENV_TERM_PROXIMITY,\"%s\");\n",qenv_prox_val);

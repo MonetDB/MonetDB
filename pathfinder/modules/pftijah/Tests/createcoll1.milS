@@ -19,7 +19,7 @@ tj_add2collection("testcoll2",path+"/xml-docs/dilbert2.xml","dilbert2.xml",true)
 tj_add2collection("testcoll2",path+"/xml-docs/special.xml","special.xml",true);
 
 # compare indexed collections
-var tids := bat("tj_globalTerms").sort().kunique().hmark(0@0);
+var tids := bat(_tj_TagBat("testcoll1")).sort().kunique().hmark(0@0);
 var coll1 := indexfetchjoin(tids, bat("tj_testcoll1_TermIndex"), bat("tj_testcoll1_Terms"));
 var coll2 := indexfetchjoin(tids, bat("tj_testcoll2_TermIndex"), bat("tj_testcoll2_Terms"));
 diff(coll1,coll2).print();

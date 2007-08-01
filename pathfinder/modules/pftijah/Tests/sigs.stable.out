@@ -42,6 +42,7 @@ module 'pftijah'
 [ "tijah_tokenize(str) : str"																		  ]
 [ "tj_add2collection(str, BAT[str,str], bit) : void"															  ]
 [ "tj_add2collection(str, str, str, bit) : void"															  ]
+[ "tj_chk_dict_hash(BAT[oid,str], BAT[oid,str]) : void"															  ]
 [ "tj_create_termdb(int, oid) : void"																	  ]
 [ "tj_delete_collection(str) : void"																	  ]
 [ "tj_delete_global() : void"																		  ]
