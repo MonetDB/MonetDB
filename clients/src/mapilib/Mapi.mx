@@ -3044,7 +3044,7 @@ mapi_stream_into(Mapi mid, char *docname, char *colname)
 		char buf[BUFSIZ];
 		int i;
 
-		/* HACK alert, switch to mil too lose the extra 'S' */
+		/* HACK alert, switch to mil to lose the extra 'S' */
 		mid->languageId = LANG_MIL; 
 		if (!colname)
 			return mapi_Xcommand(mid, "copy", docname);
