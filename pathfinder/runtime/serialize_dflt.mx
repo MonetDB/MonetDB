@@ -41,7 +41,7 @@
 /* contains dummy callback functions */
 #include "serialize_null.h"
 
-/* a lot of characters, static strings, and its sizes 
+/* a lot of characters, static strings, and their sizes 
    (the idea is to reuse constant character pointers during
     serialization) */
 static char s_   = ' ';
@@ -178,8 +178,8 @@ emit_escaped@1 (XqueryCtx* ctx, char* src) {
             stream_write (ctx->out, &src[start], end - start, 1);
             start = end + 1;
 
-            if ( isspecial_ch == 1 ) { /* print octal */
-		stream_printf(ctx->out,"&#%d;",(unsigned char)src[end]);
+            if ( isspecial_ch == 1 ) { /* print character entity */
+                stream_printf(ctx->out,"&#%d;",(unsigned char)src[end]);
             } else {
                 char *emit_val = dflt_ws->special_val[(int)isspecial_ch];
                 int   emit_len = dflt_ws->special_len[(int)isspecial_ch];
@@ -206,6 +206,33 @@ emit_escaped@1 (XqueryCtx* ctx, char* src) {
  * Emit a string with all entities escaped.
  */
 @:emit_escaped(_entities,&& isspecial_ch <= 5)@
+
+/*
+ * This function is responsible for the presentation of special characters
+ * and XML entity characters in the result.
+ *
+ * Emit a string with all special character escaped in octal.
+ */
+static void
+emit_escaped_comment (XqueryCtx* ctx, char* src) {
+    int start = 0, end;
+    unsigned char isspecial_ch;
+
+    for(end = 0; src[end]; end++) {
+        isspecial_ch = dflt_ws->isspecial_tab[(int)(unsigned char)src[end]];
+/* XXX do we need to do anything special for other special characters? */
+        if (src[end] == '\n') {
+            /* print all characters that were collected 
+               since the last special character. */
+            if (start < end)
+                stream_write (ctx->out, &src[start], end - start, 1);
+            stream_printf(ctx->out,dflt_ws->newline);
+            start = end + 1;
+        }
+    }
+    if ( start < end )
+        stream_write (ctx->out, &src[start], end - start, 1);
+}
 
 /**
  * dflt driver initialization function
@@ -419,7 +446,7 @@ static bool
 dflt_handle_comment (XqueryCtx* ctx, str comm)
 {
     stream_write (ctx->out, commentStart, cS_sz, 1);
-    stream_write (ctx->out, comm, strlen (comm), 1);
+    emit_escaped_comment (ctx, comm);
     stream_write (ctx->out, commentEnd, cE_sz, 1);
 
     return SUCCESS;

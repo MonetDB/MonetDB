@@ -1,0 +1,3 @@
+pf:add-doc("$TSTSRCDIR/comment-print-bug.SF-1755466.xml","comment-print-bug.SF-1755466.xml")
+<>
+doc("comment-print-bug.SF-1755466.xml")

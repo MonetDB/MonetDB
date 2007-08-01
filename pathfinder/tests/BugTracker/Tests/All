@@ -122,5 +122,6 @@ crash_on_concatenated_query.SF-1730547
 error_in_preceeding_axis.SF-1731850
 attribute_serialization.SF-1743442
 merged-union_error_with_fn-sum.SF-1751684
+comment-print-bug.SF-1755466
 replace-corrupts.SF-1758902
 swizzle-bug.SF-1760811
