@@ -528,7 +528,6 @@ of the sql repository
 		if( OPTuseIterator(mb, p, alias) == 0 )
 			goto jump2;
 		if( getModuleId(p) == constraintsRef ||
-			getFunctionId(p)== sortTailRef ||
 			getModuleId(p) == aggrRef){
 			getModuleId(p)= bpmRef;
 			pushInstruction(mb,p);

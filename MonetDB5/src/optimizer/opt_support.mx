@@ -1045,6 +1045,7 @@ hasSideEffects(InstrPtr p, int strict)
 		getFunctionId(p) == insertRef ||
 		getFunctionId(p) == inplaceRef ||
 		getFunctionId(p) == appendRef ||
+		getFunctionId(p) == sortTailRef ||
 		getFunctionId(p) == setAccessRef ||
 		getFunctionId(p) == setWriteModeRef ||
 		getFunctionId(p) == replaceRef ||
