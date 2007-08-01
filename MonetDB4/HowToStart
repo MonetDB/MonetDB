@@ -38,28 +38,35 @@ CVS
 Python
 	MonetDB uses Python (version 2.0.0 or better) during
 	configuration of the software.  See http://www.python.org/ for
-	more information.
+	more information.  (It must be admitted, version 2.0.0 is
+	ancient and has not recently been tested, we currently use
+	2.4 and newer.)
 
 autoconf/automake/libtool
 	MonetDB uses GNU autoconf__ (>= 2.53) and automake__ (>= 1.5)
 	during the Bootstrap_ phase, and libtool__ (>= 1.4) during the
-	Make_ phase.
+	Make_ phase.  This is not needed when you start with the
+	source distribution.
 
 standard software development tools
 	To compile MonetDB, you also need to have the following
 	standard software development tools installed and ready for
 	use on you system:
 
-	- a C/C++ compiler (e.g., GNU's gcc/g++)
-	- a lexical analyzer generator (e.g., ``lex`` or ``flex``)
-	- a parser generator (e.g., ``yacc`` or ``bison``)
+	- a C compiler (e.g. GNU's ``gcc``);
 	- GNU ``make`` (``gmake``) (native ``make`` on, e.g., IRIX and Solaris
-	  usually don't work)
+	  usually don't work).
+
+	The following are not needed when you start with the source
+	distribution:
+
+	- a C++ compiler (e.g. GNU's ``g++``);
+	- a lexical analyzer generator (e.g., ``lex`` or ``flex``);
+	- a parser generator (e.g., ``yacc`` or ``bison``).
 
 Mx, mel, and autogen
-	These tools are only needed if you are building from CVS.  If
-	you start with the source distribution from `SourceForge`__
-	you don't need this.
+	These tools are not needed when you start with the source
+	distribution.
 
 	Before building MonetDB, you first need to build and install
 	the MonetDB buildtools.  Check out buildtools with
@@ -81,7 +88,6 @@ __ http://sourceforge.net/docman/?group_id=1
 __ http://www.gnu.org/software/autoconf/
 __ http://www.gnu.org/software/automake/
 __ http://www.gnu.org/software/libtool/
-__ http://sourceforge.net/project/showfiles.php?group_id=56967
 
 
 Getting the Software
