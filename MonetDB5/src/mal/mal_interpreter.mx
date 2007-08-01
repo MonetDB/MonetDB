@@ -1595,6 +1595,7 @@ if( cntxt->flags && stk->cmd != 't' && stk->cmd != 'C'){
 		/* calculate the read/write byte flow */
 		stream_printf(cntxt->fdout,"# ");
 		showVolume(cntxt,stk,pci,0);
+		stream_printf(cntxt->fdout,"/");
 		showVolume(cntxt,stk,pci,1);
 		/* showVolume(cntxt,stk,pci,2);*/
 	}
@@ -1604,10 +1605,7 @@ if( cntxt->flags && stk->cmd != 't' && stk->cmd != 'C'){
 		stream_printf(cntxt->fdout,":");
 		displayVolume(cntxt,cntxt->bigfoot);
 	}
-	if( cntxt->flags & flowFlag){
-		stream_printf(cntxt->fdout,"\n");
-	} else
-		printTraceCall(cntxt->fdout,mb,stk,stkpc, cntxt->flags);
+	printTraceCall(cntxt->fdout,mb,stk,stkpc, cntxt->flags);
 	if( cntxt->flags & timerFlag)
 		cntxt->timer = GDKusec();
 }
