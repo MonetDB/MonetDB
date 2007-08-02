@@ -537,8 +537,7 @@ of the sql repository
 @c
 		if( OPTuseIterator(mb, p, alias) == 0 )
 			goto jump2;
-		if( getModuleId(p) == constraintsRef ||
-			getModuleId(p) == aggrRef){
+		if( getModuleId(p) == constraintsRef ){
 			getModuleId(p)= bpmRef;
 			pushInstruction(mb,p);
 			if( alias[getArg(p,1)])
@@ -547,6 +546,7 @@ of the sql repository
 		}
 
 		if( !hasSideEffects(p,TRUE) && p->retc == 1 &&
+			getModuleId(p)!= aggrRef &&
 		    !( getModuleId(p)== sqlRef)
 		){
 			OPTbakeIterator(mb, p, alias, garbage);
