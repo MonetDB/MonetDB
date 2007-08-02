@@ -622,6 +622,15 @@ information on the combined content.
 
 A ring may be empty.
 
+CAVEAT 1. Operations like revert do not return a new bat descriptor,
+which may lead to a situation that BATs may end up to be shared
+in two rings. This is currently catched in addSegment, which takes
+a copy of the BAT instead. Further optimization is needed here.
+
+CAVEAT 2. Grouping and aggregations are handled using reconstruction
+of the original table. This is not the most optimal scheme.
+The optimizer should be patched to handel more cases.
+
 Every partition is the result of at most four operations:
 range/hash partition on head/tail.
 The consolidated properties are administered for use
@@ -1433,6 +1442,16 @@ BPMaddSegment(int *ret, bat *bid, bat *src){
 		BBPunfix(ba->batCacheid); 
 		throw(MAL,"bpm.addSegment","Partial partition BAT not found");
 	}
+	if(bpmcat[*src] ){
+		BAT *bb;
+#ifdef _DEBUG_BPM_
+		stream_printf(GDKout,"Attempt to share a ring segment");
+		BPMprintRing(GDKout,bpmcat[*src]);
+#endif
+		bb= BATcopy(b, b->htype, b->ttype,TRUE);
+		BBPunfix(b->batCacheid);
+		b= bb;
+	}
 	if ((rngType(b->htype) !=rngType(ba->htype)) ||
 		 (rngType(b->ttype) != rngType(ba->ttype))) {
 #ifdef _DEBUG_BPM_
@@ -1449,7 +1468,7 @@ BPMaddSegment(int *ret, bat *bid, bat *src){
 #ifdef _DEBUG_BPM_
 	printf("addSegment %d -> %d\n",*bid, *src);
 #endif
-	maxcnt = 2*BATTINY / BUNsize(b) - cnt;
+	maxcnt = 2*BATTINY - cnt;
 	/* is it a big piece or no enough space in the existing? */
 	if( guessNewPartition(b) || 
 		emptyRing(pa) ||
@@ -1457,14 +1476,14 @@ BPMaddSegment(int *ret, bat *bid, bat *src){
 		p= newPartition(b->batCacheid);
 		bpmcat[b->batCacheid]->bid = b->batCacheid;
 		BBPincref(b->batCacheid,TRUE);
-		insertPartition(bpmcat[pa->prv],p);
+		insertPartition(pa,p);
 		p->cnt = cnt;
-#ifdef _DEBUG_BPM_
-		printf("guess-> %d\n",(int) p->cnt);
-		BPMprintRing(GDKout,pa);
-#endif
 		p->alias = pa->alias;
 		@:defaultRange(p,b)@
+#ifdef _DEBUG_BPM_
+		printf("guess-> %d ring %d px %d\n",(int) p->cnt, emptyRing(pa), px!=0);
+		BPMprintRing(GDKout,pa);
+#endif
 	} else {
 		/* add the content to the acceptor segment */
 		bn= BATdescriptor(px->bid);
@@ -1474,6 +1493,7 @@ BPMaddSegment(int *ret, bat *bid, bat *src){
 		px ->cnt += BATcount(b);
 		BBPunfix(bn->batCacheid); 
 #ifdef _DEBUG_BPM_
+		@:defaultRange(px,bn)@
 		printf("no guess-> %d\n",(int)px->cnt);
 		BPMprintRing(GDKout,px);
 #endif
@@ -2183,6 +2203,7 @@ BPMfold(bat *ret, bat *bid){
 		GDKfree(bpmcat[b->batCacheid]);
 		bpmcat[b->batCacheid]= 0;
 		BBPunfix(*ret);
+		assert(i!= *ret);
 		GDKfree(bpmcat[i]);
 		bpmcat[i]= 0;
 		return MAL_SUCCEED;
@@ -2230,7 +2251,7 @@ BPMgarbage(int *ret,int *bid){
 		/* printf("freeing %d\n",i);*/
 		GDKfree(bpmcat[i]);
 		bpmcat[i]= 0;
-		if( i != *bid)
+		if( i != *bid) 
 			BBPdecref(i,TRUE);
 		i= j;
 	}
@@ -2439,17 +2460,19 @@ BPMnewIterator(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL,"bpm.newIterator","Can not access alias BAT");
 	if( p->nxt == p->bid)
 		throw(MAL,"bpm.newIterator","Partitioned BAT lacks partitions");
-#ifdef _DEBUG_BPM_
-	stream_printf(GDKout,"iterator for: %d\n",*bid);
-	BPMprintPartition(GDKout, p);
-#endif
 
 	if( emptyRing(p)){
 		*ret= 0;
 		return MAL_SUCCEED;
 	}
 	materializePartition(bpmcat[p->nxt]);
-	*ret = p->nxt;
+	if( p->alias== p->nxt)
+		*ret= 0;
+	else *ret = p->nxt;
+#ifdef _DEBUG_BPM_
+	stream_printf(GDKout,"new iterator %d: %d\n",*bid,*ret);
+	BPMprintRing(GDKout, p);
+#endif
 	BBPincref(p->nxt,TRUE);
 	return MAL_SUCCEED;
 }
@@ -2558,6 +2581,7 @@ str
 BPMhasMoreElements(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	bat idx, *ret, bid;
+	Partition p;
 	(void) mb;
 
 	ret= (bat *)getArgReference(stk, pci, 0);
@@ -2565,14 +2589,20 @@ BPMhasMoreElements(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bid= *(bat *)getArgReference(stk, pci, 1);
 
 	BPMopen();
-	if( bpmcat[bid] == 0 || bpmcat[idx] == 0)
+	if( (p= getAlias(bid)) == 0)
+		throw(MAL,"bpm.hasMoreElements","Can not access alias BAT");
+	if( bpmcat[idx] == 0)
 		throw(MAL,"bpm.hasMoreElements","Can not access BAT");
-	if( bpmcat[idx]->nxt == bid)
+	if( bpmcat[idx]->nxt == p->alias)
 		*ret= 0;	/* end of sequence */
 	else {
-		materializePartition(bpmcat[idx]);
+		materializePartition(bpmcat[bpmcat[idx]->nxt]);
 		BBPincref(*ret= bpmcat[idx]->nxt,TRUE);
 	}
+#ifdef _DEBUG_BPM_
+	stream_printf(GDKout,"hasmore : %d %d %d\n",idx, bid, *ret);
+	BPMprintPartition(GDKout, p);
+#endif
 	return MAL_SUCCEED;
 }
 
@@ -3056,20 +3086,15 @@ BPMsplitquant(bat *ret, bat *bid, int *mb)
 			BPMprintPartition(GDKout,p);
 #endif
 		}
-
 		dropPartition(bpmcat[i]);
 		BBPunfix(b->batCacheid);
 		nxt = bpmcat[bb[n-2]]->nxt;
-		GDKfree(sep);	GDKfree(bb);  GDKfree(cnts);
-		
-	
+		GDKfree(sep);
+		GDKfree(bb);
+		GDKfree(cnts);
 	}
-
 	return MAL_SUCCEED;
 }
-
-
-@c
 str
 BPMprelude(int *ret)
 {
