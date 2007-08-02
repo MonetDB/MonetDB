@@ -20,7 +20,7 @@ check: "$(SRCDIR)\Makefile.msc" RunMtest.bat
 install: targetdirs mal_config.h all
 	$(INSTALL) mal_config.h "$(includedir)"
 	$(MAKE) /nologo /f "$(SRCDIR)\Makefile.msc" "prefix=$(prefix)" install
-	$(INSTALL) M5server.bat "$(prefix)"
+	if not "$(MAKEDIR)" == "$(prefix)" $(INSTALL) M5server.bat "$(prefix)"
 
 $(SRCDIR)\Makefile.msc:
 	$(CD) "$(SRCDIR)" && autogen.py

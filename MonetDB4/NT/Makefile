@@ -21,7 +21,7 @@ check: "$(SRCDIR)\Makefile.msc" RunMtest.bat
 install: targetdirs monetdb4_config.h all
 	$(INSTALL) monetdb4_config.h "$(includedir)"
 	$(MAKE) /nologo /f "$(SRCDIR)\Makefile.msc" "prefix=$(prefix)" install
-	$(INSTALL) Mserver.bat "$(prefix)"
+	if not "$(MAKEDIR)" == "$(prefix)" $(INSTALL) Mserver.bat "$(prefix)"
 
 $(SRCDIR)\Makefile.msc: "$(SRCDIR)\Makefile.ag"
         $(CD) "$(SRCDIR)" && autogen.py

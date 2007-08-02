@@ -21,9 +21,9 @@ check: "$(SRCDIR)\Makefile.msc" RunMtest.bat
 install: targetdirs pf_config.h all
 	$(INSTALL) pf_config.h "$(includedir)"
 	$(MAKE) /nologo /f "$(SRCDIR)\Makefile.msc" "prefix=$(prefix)" install
-	$(INSTALL) MXQclient.bat "$(prefix)"
-	$(INSTALL) MXQserver.bat "$(prefix)"
-	$(INSTALL) pf.bat "$(prefix)"
+	if not "$(MAKEDIR)" == "$(prefix)" $(INSTALL) MXQclient.bat "$(prefix)"
+	if not "$(MAKEDIR)" == "$(prefix)" $(INSTALL) MXQserver.bat "$(prefix)"
+	if not "$(MAKEDIR)" == "$(prefix)" $(INSTALL) pf.bat "$(prefix)"
 	$(INSTALL) MonetDB4-XQuery\MonetDB4-XQuery-Installer.sln "$(prefix)"
 	$(INSTALL) MonetDB4-XQuery\MonetDB4-XQuery-Installer.vdproj "$(prefix)"
 

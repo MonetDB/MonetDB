@@ -33,7 +33,7 @@ check: "$(SRCDIR)\Makefile.msc" RunMtest.bat
 
 install: targetdirs all $(M4INSTALLER) $(M5INSTALLER)
 	$(MAKE) /nologo /f "$(SRCDIR)\Makefile.msc" "prefix=$(prefix)" install
-	$(INSTALL) MSQLserver.bat "$(prefix)"
+	if not "$(MAKEDIR)" == "$(prefix)" $(INSTALL) MSQLserver.bat "$(prefix)"
 
 install-m4installer:
 	$(INSTALL) MonetDB4-SQL\MonetDB4-SQL-Installer.sln "$(prefix)"

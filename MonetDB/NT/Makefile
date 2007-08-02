@@ -23,9 +23,9 @@ install: targetdirs monetdb_winconfig.h monetdb_config.h winrules.msc all
 	$(INSTALL) monetdb_config.h "$(includedir)"
 	$(INSTALL) winrules.msc "$(pkgdatadir)"
 	$(MAKE) /nologo /f "$(SRCDIR)\Makefile.msc" "prefix=$(prefix)" install
-	$(INSTALL) banner.bmp "$(prefix)"
-	$(INSTALL) license.rtf "$(prefix)"
-	$(INSTALL) website.html "$(prefix)"
+	if not "$(MAKEDIR)" == "$(prefix)" $(INSTALL) banner.bmp "$(prefix)"
+	if not "$(MAKEDIR)" == "$(prefix)" $(INSTALL) license.rtf "$(prefix)"
+	if not "$(MAKEDIR)" == "$(prefix)" $(INSTALL) website.html "$(prefix)"
 
 $(SRCDIR)\Makefile.msc: "$(SRCDIR)\Makefile.ag"
         $(CD) "$(SRCDIR)" && autogen.py
