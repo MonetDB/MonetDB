@@ -277,8 +277,7 @@ Blocking operations, such as sorting, aggregation, and
 the aligned bat calculations require more care.
 @c
 		/* remap specific instructions to list versions */
-		if( getModuleId(p)==aggrRef  &&
-		    getFunctionId(p)== countRef &&
+		if( getFunctionId(p)== countRef &&
 			alias[getArg(p,1)]!= getArg(p,1) &&
 			p->argc ==2  ){
 			getModuleId(p)= bpmRef;
@@ -474,6 +473,16 @@ OPTbakeIterator(MalBlkPtr mb, InstrPtr p, int *alias, int *garbage){
 
 	OPTredoList(mb,p,alias,getModuleId(p)==batcalcRef);
 }
+@-
+Be aware the the SQL produces sql.bind(-,-,-,0) and sql.bind(-,-,-,3)
+which lead to the same BAT id. This causes sharing in a ring, with
+possib;e side effects upon garbage collection.
+@c
+static int bindTest(MalBlkPtr mb, InstrPtr p){
+	ValPtr v;
+	v= &getConstant(mb,getArg(p,4));
+	return v->val.ival>0;
+}
 
 static void
 OPTnaiveIterations(MalBlkPtr mb){
@@ -495,7 +504,8 @@ OPTnaiveIterations(MalBlkPtr mb){
 @- 
 Assume all bind operations are over partitioned bats.
 @c
-		if( getFunctionId(p)== bindRef && getModuleId(p)== sqlRef){
+		if( getFunctionId(p)== bindRef && getModuleId(p)== sqlRef &&
+			bindTest(mb,p) ){
 			pushInstruction(mb,p);
 			/* hdl:= bpm.take(name) */
 			q = newStmt(mb,"bpm","unfold");
