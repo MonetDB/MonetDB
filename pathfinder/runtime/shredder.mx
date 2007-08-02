@@ -829,6 +829,92 @@ shred_end_document(void *xmlCtx)
 
 
 
+/* converts a string with character entities (&#38;) to UTF-8 (& in this case)
+   returns newly allocated memory, to be freed with free() */
+static xmlChar *
+charEntToUtf8(const xmlChar *a_val, const xmlChar *a_end)
+{
+	/* UTF-8 encoding is smaller than character entity encoding, so this is enough memory */
+	xmlChar *newval = malloc(a_end - a_val + 1);
+	int i = 0;
+	int val;
+
+	while (a_val < a_end) {
+		if (a_val[0] == '&' && a_val[1] == '#') {
+			const xmlChar *p = a_val;
+			a_val += 2;
+			val = 0;
+			if (*a_val == 'x') {
+				a_val++;
+				while (a_val < a_end && *a_val != ';') {
+					if ('0' <= *a_val && *a_val <= '9')
+						val = (val << 4) | (*a_val - '0');
+					else if ('a' <= *a_val && *a_val <= 'f')
+						val = (val << 4) | (*a_val - 'a' + 10);
+					else if ('A' <= *a_val && *a_val <= 'F')
+						val = (val << 4) | (*a_val - 'A' + 10);
+					else {
+						/* incorrect charref encoding, copy literally */
+						a_val = p;
+						goto fail;
+					}
+					a_val++;
+				}
+			} else {
+				while (a_val < a_end && *a_val != ';') {
+					if ('0' <= *a_val && *a_val <= '9')
+						val = (val * 10) + (*a_val - '0');
+					else {
+						/* incorrect charref encoding, copy literally */
+						a_val = p;
+						goto fail;
+					}
+					a_val++;
+				}
+			}
+			if (a_val >= a_end || *a_val != ';') {
+				/* incorrect charref encoding, copy literally */
+				a_val = p;
+				goto fail;
+			}
+			if (val < 0x80)
+				newval[i++] = val;
+			else if (val < 0x800) {
+				newval[i++] = 0xC0 | ((val >> 6) & 0x1F);
+				newval[i++] = 0x80 | ((val & 0x3F) & 0x3F);
+			} else if (val < 0x10000) {
+				newval[i++] = 0xE0 | ((val >> 12) & 0x0F);
+				newval[i++] = 0x80 | ((val >> 6) & 0x3F);
+				newval[i++] = 0x80 | ((val & 0x3F) & 0x3F);
+			} else if (val < 0x200000) {
+				newval[i++] = 0xF0 | ((val >> 18) & 0x07);
+				newval[i++] = 0x80 | ((val >> 12) & 0x3F);
+				newval[i++] = 0x80 | ((val >> 6) & 0x3F);
+				newval[i++] = 0x80 | ((val & 0x3F) & 0x3F);
+			} else if (val < 0x4000000) {
+				newval[i++] = 0xF8 | ((val >> 24) & 0x03);
+				newval[i++] = 0xF0 | ((val >> 18) * 0x3F);
+				newval[i++] = 0x80 | ((val >> 12) & 0x3F);
+				newval[i++] = 0x80 | ((val >> 6) & 0x3F);
+				newval[i++] = 0x80 | ((val & 0x3F) & 0x3F);
+			} else {
+				newval[i++] = 0xF8 | ((val >> 30) & 0x01);
+				newval[i++] = 0xF8 | ((val >> 24) & 0x3F);
+				newval[i++] = 0xF0 | ((val >> 18) * 0x3F);
+				newval[i++] = 0x80 | ((val >> 12) & 0x3F);
+				newval[i++] = 0x80 | ((val >> 6) & 0x3F);
+				newval[i++] = 0x80 | ((val & 0x3F) & 0x3F);
+			}
+		} else {
+		  fail:
+			newval[i++] = *a_val;
+		}
+		a_val++;
+	}
+	newval[i] = 0;
+	return newval;
+}
+
 /**
  * SAX callback, invoked whenever `<t ...>' is seen
  */
@@ -899,8 +985,6 @@ shred_start_element(void *xmlCtx,
         const xmlChar *a_val = atts[i+3];
         const xmlChar *a_end = atts[i+4];
 
-        xmlChar qiChar = *a_end; /* remember char value */
-        *(xmlChar*)a_end = 0; /* UGLY HACK: ignore const modifier */
 #ifdef DEBUG
         stream_printf(GDKout, "  attr(");
         if (a_uri) stream_printf(GDKout, "uri=%s, ", a_uri);
@@ -919,8 +1003,10 @@ shred_start_element(void *xmlCtx,
             idref_suffix = (attrType == XML_ATTRIBUTE_ID)?"id":"idref";
         }
 
-        /* INCOMPLETE, this value stuff should be done properly by libxml2, but how? */
-        val_id = shredBAT_append_str(shredCtx, PROP_VAL,(char*)a_val);
+	xmlChar *newval = charEntToUtf8(a_val, a_end);
+        val_id = shredBAT_append_str(shredCtx, PROP_VAL,(char*)newval);
+	free(newval);
+	newval = 0;
         qn_id  = handle_pfx_uri_loc(shredCtx, (char*) a_pfx, (char*) a_uri, (char*) a_tag, idref_suffix);
         oid ownerPre = node.nid;
 
@@ -944,7 +1030,6 @@ shred_start_element(void *xmlCtx,
         shredCtx->dstBAT[ATTR_QN].cast.oidCAST[nattr] = qn_id;
         shredCtx->dstBAT[ATTR_PROP].cast.oidCAST[nattr] = val_id;
 
-        *(xmlChar*)a_end = qiChar;              /* restore the quote */
         /* process next attribute */
         if (shredCtx->serFun) {
             shredCtx->serFun->handle_attribute(shredCtx->serCtx,(str)a_pfx,(str)a_tag,(str)a_val);

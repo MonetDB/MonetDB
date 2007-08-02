@@ -703,10 +703,11 @@ PROC get_root(BAT[oid,bat] ws, BAT[void,oid] item, BAT[void,int] kind, BAT[void,
         return result.access(BAT_READ).tmark(seqbase);
 }
 
-PROC get_attr_own(BAT[void,bat] ws, any nids, any cont) : BAT[oid,oid]
+PROC impl_attr_own(BAT[oid,bat] ws, any nids, any cont) : BAT[oid,oid]
 {
     var private := mvaljoin(nids, cont, ws.fetch(ATTR_OWN_PRIVATE));
     var shared := mvaljoin(nids, cont, ws.fetch(ATTR_OWN_SHARED));
+
     var cnt_p := count(int(private));
     var cnt_s := count(int(shared));
     if (cnt_s = 0LL) return private; # private is all we got.
@@ -724,6 +725,15 @@ PROC get_attr_own(BAT[void,bat] ws, any nids, any cont) : BAT[oid,oid]
     return reverse(res.fetch(0)).leftfetchjoin(res.fetch(1));
 }
 
+PROC get_attr_own(BAT[oid,bat] ws, oid nid, any cont) : BAT[oid,oid]
+{
+    return impl_attr_own(ws, nid, cont);
+}
+
+PROC get_attr_own(BAT[oid,bat] ws, BAT[oid,oid] nids, any cont) : BAT[oid,oid]
+{
+    return nids.mark(0@0).leftjoin(impl_attr_own(ws, nids.tmark(0@0), cont));
+}
 
 PROC fn_put(BAT[oid,bat] ws, BAT[void,str] uri, BAT[void,oid] item, any kind,
             BAT[void,lng] int_values, BAT[void,dbl] dbl_values,

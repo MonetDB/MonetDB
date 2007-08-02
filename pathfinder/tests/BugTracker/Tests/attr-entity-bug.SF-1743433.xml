@@ -1,0 +1,10 @@
+<doc>
+ <a attr="&amp;"/>
+ <b attr="&#38;"/>
+ <b attr="&#x26;"/>
+ <d attr="&#38;amp;"/>
+ &amp;
+ &#38;
+ &#x26;
+ &#38;amp;
+</doc>

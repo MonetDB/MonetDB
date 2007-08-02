@@ -1684,7 +1684,6 @@ PROC _runtime_flush() : void
     var shortlocks := [fetch]([reverse](colname_runtime), RT_LOCK_FREELIST);
     var longlocks := [fetch]([reverse](colname_runtime), RT_NID_FREELIST);
     var runtimes := [_runtime_create](colname_runtime.mirror(), shortlocks, longlocks);
-    colname_runtime.delete().insert(runtimes); 
 }
 
 PROC _ws_opencoll(lng wsid, 
@@ -1931,6 +1930,7 @@ PROC runtime(lock shortlock, lock longlock) : BAT[lock,bat]
 PROC _runtime_create(str colname, lock shortlock, lock longlock) : BAT[lock,bat] 
 {
     var runtime := runtime(shortlock, longlock);
+    colname_runtime.delete(colname);
     colname_runtime.insert(colname, runtime);
     return runtime;
 }
@@ -2151,37 +2151,41 @@ PROC __runtime_addchunk(lng wsid,
                         oid att,
                         bit updatable) : str 
 {
-    var maintain := (count(runtime) > RT_QN_NID);
-    var commitbat := str(lng(coll_oid));
-    var unq := empty_bat; 
+    var unq, commitbat := str(lng(coll_oid));
 
     if (updatable) {
-        # if updatable index exists, we must maintain it
-        if (maintain) unq := runtime.fetch(RT_QN_NID_UNQ);
-        commitbat := str_nil; # no new persistent bats 
-    } else if (pre = 0@0) { 
+        commitbat := str_nil; # no new persistent bats
+        if (count(runtime) <= RT_QN_NID) return commitbat; # no index to maintain..
+        unq := runtime.fetch(RT_QN_NID_UNQ);
+    } else if (pre = 0@0) {
         # first shred (readonly) automatically creates persistent sorted index
         var cnt := bat(str(lng(coll_oid)) + "_qn_histogram");
         unq := reverse(ord_uselect([*](cnt,[log]([dbl](cnt))), dbl_nil, dbl(count(knd))));
     } else {
-        # incremental readonly shred with existing indices: deactivate them
+        # but we do not maintain read-only indices after additional shreds (too costly to re-sort each time)
+        var qn_nid     := commitbat + "_qn_nid";
+        var vx_hsh_nid := commitbat + "_vx_hsh_nid";
+
+        # first check whether it has an index at all
+        if (not(isnil(CATCH({ bat(vx_hsh_nid).persists(false).rename("old_" + vx_hsh_nid);
+                              bat(qn_nid).persists(false).rename("old_" + qn_nid); })))) return str_nil;
+
+        # replace the runtime bat with an empty one to delete all references to the old index bats
         var coll_shortlock := reverse(runtime).fetch(RT_LOCK_FREELIST);
         var coll_longlock := reverse(runtime).fetch(RT_NID_FREELIST);
-        runtime.delete().insert(runtime(coll_shortlock,coll_longlock));
-        var qn_nid := commitbat + "_qn_nid";
-        var vx_hsh_nid := commitbat + "_vx_hsh_nid";
-        commitbat := "old_" + commitbat;
-        CATCH({ bat(qn_nid).persists(false).rename(commitbat + "_qn_nid");
-                bat(vx_hsh_nid).persists(false).rename(commitbat + "_vx_hsh_nid"); }); # delete idx in commit
+        lock_set(pf_short);
+        var err := CATCH(_runtime_create(colname, coll_shortlock, coll_longlock));
+        lock_unset(pf_short);
+        if (not(isnil(err))) ERROR(err);
+
+        return "old_" + commitbat; # use commit to *remove* old index bats
     }
-    if (int(unq) != int(empty_bat)) {
-        # compute a (partial) [qn,nid] inverted list, and insert in into the index
-        var idx := __runtime_index(coll_oid,  
-                                   sze, nid, knd, prp, unq, rid, attr_own, attr_qn, attr_prp, prp_val, prp_txt, map_pid, 
-                                   pre, att, updatable);
-        if (updatable)  
-            __runtime_maintain(wsid, colname, runtime, idx.fetch(1), bat(int,oid,0).access(BAT_READ), idx.fetch(0), empty_bat, empty_bat, empty_bat);
-    }
+    # compute a (partial) [qn,nid] inverted list, and insert in into the index
+    var idx := __runtime_index(coll_oid,
+                               sze, nid, knd, prp, unq, rid, attr_own, attr_qn, attr_prp, prp_val, prp_txt, map_pid,
+                               pre, att, updatable);
+    if (updatable)
+        __runtime_maintain(wsid, colname, runtime, idx.fetch(1), bat(int,oid,0).access(BAT_READ), idx.fetch(0), empty_bat, empty_bat, empty_bat);
     return commitbat;
 }
 

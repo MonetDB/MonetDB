@@ -1,0 +1,3 @@
+pf:add-doc("$TSTSRCDIR/attr-entity-bug.SF-1743433.xml", "attr-entity-bug.SF-1743433.xml", "attr-entity-bug.SF-1743433.xml")
+<>
+doc("attr-entity-bug.SF-1743433.xml")
