@@ -668,7 +668,7 @@ PROC get_root(BAT[oid,bat] ws, BAT[void,oid] item, BAT[void,int] kind, BAT[void,
         return result.access(BAT_READ).tmark(seqbase);
 }
 
-OC impl_attr_own(BAT[oid,bat] ws, any nids, any cont) : BAT[oid,oid]
+PROC impl_attr_own(BAT[oid,bat] ws, any nids, any cont) : BAT[oid,oid]
 {
     var private := mvaljoin(nids, cont, ws.fetch(ATTR_OWN_PRIVATE));
     var shared := mvaljoin(nids, cont, ws.fetch(ATTR_OWN_SHARED));
