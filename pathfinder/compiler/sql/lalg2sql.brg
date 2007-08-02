@@ -288,8 +288,8 @@ static void where_env_copy (PFarray_t * srcwheremap,
 			    PFarray_t * destwheremap);
 
 static struct step_lattice_t *step (const PFla_op_t * frag,
-				                     const PFla_op_t * p,
-                                     bool dupstep);
+				                    const PFla_op_t * p,
+                                    bool dupstep);
 
 static PFsql_alg_ann_t *doc_access (
                         PFla_op_t * frag,
@@ -975,10 +975,11 @@ get_twig_constr (PFla_op_t *p, PFla_op_t *n)
  * have some special dependencies we want bring together
  * in a structure */
 struct step_lattice_t {
-    PFsql_alg_ann_t *ann;
-    PFsql_t         *fromlist;
-    PFsql_correlation_name_t doccrrl;
-};
+    PFsql_alg_ann_t           *ann;
+    PFsql_t                   *fromlist;
+    PFarray_t                 *wheremap;
+    PFsql_correlation_name_t  doccrrl;
+};            
 typedef struct step_lattice_t step_lattice_t; 
 
 static step_lattice_t*
@@ -2680,14 +2681,32 @@ reduce (PFla_op_t * p, int goalnt)
         case 53:
         {
             step_lattice_t *sl = step (LR (p), p, false);
+
+            /* copy the the wheremap coming from the underlying
+             * nodes */
+            where_env_copy (R (p)->sql_ann->wheremap, sl->ann->wheremap);
+            /* copy step restrictions */
+            where_env_copy (sl->wheremap, sl->ann->wheremap);
+
             p->sql_ann = sl->ann;
+
             /* even generate the valid sql-clause */
             p->sql_ann->sfw = gen_select (p, p->sql_ann, sl->fromlist);
 
+            /* due to the distribute law we can split the
+             * steps in a few unions, each consisting of
+             * disjoint fragments */
             for (PFla_op_t * loop = LL (p); loop->kind != la_empty_frag;
                         loop = L (loop)) {
 
                 sl = step (R (loop), p, false); 
+
+                /* copy the the wheremap coming from the underlying
+                 * nodes */
+                where_env_copy (R (p)->sql_ann->wheremap, sl->ann->wheremap);
+                /* copy step restrictions */
+                where_env_copy (sl->wheremap, sl->ann->wheremap);
+
                 PFsql_t *sfw = gen_select (R (loop), sl->ann, sl->fromlist);
 
                 *(p->sql_ann) = 
@@ -2740,34 +2759,60 @@ reduce (PFla_op_t * p, int goalnt)
 
             step_lattice_t *sl = step (LR (p), p, true);
 
-            sql_where_env_add (sl->ann->wheremap,
+           /* copy the the wheremap coming from the underlying
+             * nodes */
+            where_env_copy (R (p)->sql_ann->wheremap, sl->ann->wheremap);
+
+            /* copy step restrictions only when no guide
+             * nodes are available */
+            if ((guide_node_count <= 0) || (!guide_elements)) {
+                /* copy step restrictions */
+                where_env_copy (sl->wheremap, sl->ann->wheremap);
+            } else {
+                /* add guide restriction */
+                sql_where_env_add (sl->ann->wheremap,
                                    in
                                    (
                                     crrl_deco (
-                                      COLUMN_SPEC(sql_col_guide),
-                                      sl->doccrrl),
+                                       COLUMN_SPEC(sql_col_guide),
+                                       sl->doccrrl),
                                     literal
                                    ));
-
+            }
 
             p->sql_ann = sl->ann;
             /* even generate the valid sql-clause */
             p->sql_ann->sfw = gen_select (p, p->sql_ann, sl->fromlist);
 
+            /* due to the distribute law we can split the
+             * steps in a few unions, each consisting of
+             * disjoint fragments */
             for (PFla_op_t * loop = LL (p); loop->kind != la_empty_frag;
                         loop = L (loop)) {
 
                 sl = step (R (loop), p, true); 
 
-                sql_where_env_add (sl->ann->wheremap,
+                /* copy the the wheremap coming from the underlying
+                 * nodes */
+                where_env_copy (R (p)->sql_ann->wheremap, sl->ann->wheremap);
+    
+                /* copy step restrictions only when no guide
+                 * nodes are available */
+                if ((guide_node_count <= 0) || (!guide_elements)) {
+                    /* copy step restrictions */
+                    where_env_copy (sl->wheremap, sl->ann->wheremap);
+                } else {
+                    /* add guide restriction */
+                    sql_where_env_add (sl->ann->wheremap,
                                        in
                                        (
                                         crrl_deco (
-                                          COLUMN_SPEC(sql_col_guide),
-                                          sl->doccrrl),
+                                           COLUMN_SPEC(sql_col_guide),
+                                           sl->doccrrl),
                                         literal
                                        ));
-                                       
+                }
+
                 PFsql_t *sfw = gen_select (R (loop), sl->ann, sl->fromlist);
 
                 *(p->sql_ann) = 
@@ -2818,33 +2863,59 @@ reduce (PFla_op_t * p, int goalnt)
 
             step_lattice_t *sl = step (LR (p), p, false);
 
-            sql_where_env_add (sl->ann->wheremap,
+           /* copy the the wheremap coming from the underlying
+             * nodes */
+            where_env_copy (R (p)->sql_ann->wheremap, sl->ann->wheremap);
+
+            /* copy step restrictions only when no guide
+             * nodes are available */
+            if ((guide_node_count <= 0) || (!guide_elements)) {
+                /* copy step restrictions */
+                where_env_copy (sl->wheremap, sl->ann->wheremap);
+            } else {
+                /* add guide restriction */
+                sql_where_env_add (sl->ann->wheremap,
                                    in
                                    (
                                     crrl_deco (
-                                      COLUMN_SPEC(sql_col_guide),
-                                      sl->doccrrl),
+                                       COLUMN_SPEC(sql_col_guide),
+                                       sl->doccrrl),
                                     literal
                                    ));
-
+            }
 
             p->sql_ann = sl->ann;
             /* even generate the valid sql-clause */
             p->sql_ann->sfw = gen_select (p, p->sql_ann, sl->fromlist);
 
+            /* due to the distribute law we can split the
+             * steps in a few unions, each consisting of
+             * disjoint fragments */
             for (PFla_op_t * loop = LL (p); loop->kind != la_empty_frag;
                         loop = L (loop)) {
 
                 sl = step (R (loop), p, false); 
 
-                sql_where_env_add (sl->ann->wheremap,
+                /* copy the the wheremap coming from the underlying
+                 * nodes */
+                where_env_copy (R (p)->sql_ann->wheremap, sl->ann->wheremap);
+
+                /* copy step restrictions only when no guide
+                 * nodes are available */
+                if ((guide_node_count <= 0) || (!guide_elements)) {
+                    /* copy step restrictions */
+                    where_env_copy (sl->wheremap, sl->ann->wheremap);
+                } else {
+                    /* add guide restriction */
+                    sql_where_env_add (sl->ann->wheremap,
                                        in
                                        (
                                         crrl_deco (
-                                          COLUMN_SPEC(sql_col_guide),
-                                          sl->doccrrl),
+                                           COLUMN_SPEC(sql_col_guide),
+                                           sl->doccrrl),
                                         literal
                                        ));
+                }
                                        
                 PFsql_t *sfw = gen_select (R (loop), sl->ann, sl->fromlist);
 
@@ -2882,14 +2953,31 @@ reduce (PFla_op_t * p, int goalnt)
         case 224:
         {
             step_lattice_t *sl = step (LR (p), p, true);
+
+            /* copy the the wheremap coming from the underlying
+             * nodes */
+            where_env_copy (R (p)->sql_ann->wheremap, sl->ann->wheremap);
+            /* copy step restrictions */
+            where_env_copy (sl->wheremap, sl->ann->wheremap);
+
             p->sql_ann = sl->ann;
             /* even generate the valid sql-clause */
             p->sql_ann->sfw = gen_select (p, sl->ann, sl->fromlist);
 
+            /* due to the distribute law we can split the
+             * steps in a few unions, each consisting of
+             * disjoint fragments */
             for (PFla_op_t * loop = LL (p); loop->kind != la_empty_frag;
                         loop = L (loop)) {
 
                 sl = step (R (loop), p, true); 
+
+                /* copy the the wheremap coming from the underlying
+                 * nodes */
+                where_env_copy (R (p)->sql_ann->wheremap, sl->ann->wheremap);
+                /* copy step restrictions */
+                where_env_copy (sl->wheremap, sl->ann->wheremap);
+
                 PFsql_t *sfw = gen_select (R (loop), sl->ann, sl->fromlist);
 
                 *(p->sql_ann) = 
@@ -2917,6 +3005,13 @@ reduce (PFla_op_t * p, int goalnt)
         case 54:
         {
             step_lattice_t *sl = step (LR (p), p, false);
+
+            /* copy the the wheremap coming from the underlying
+             * nodes */
+            where_env_copy (R (p)->sql_ann->wheremap, sl->ann->wheremap);
+            /* copy step restrictions */
+            where_env_copy (sl->wheremap, sl->ann->wheremap);
+
             p->sql_ann = sl->ann;
             /* even generate the valid sql-clause */
             p->sql_ann->sfw = gen_select (p, p->sql_ann, sl->fromlist);
@@ -2925,7 +3020,16 @@ reduce (PFla_op_t * p, int goalnt)
                         loop = L (loop)) {
 
                 sl = step (R (loop), p, false); 
+
+                /* copy the the wheremap coming from the underlying
+                 * nodes */
+                where_env_copy (R (p)->sql_ann->wheremap, sl->ann->wheremap);
+                /* copy step restrictions */
+                where_env_copy (sl->wheremap, sl->ann->wheremap);
+
                 PFsql_t *sfw = gen_select (R (loop), sl->ann, sl->fromlist);
+
+
 
                 *(p->sql_ann) = 
                     (PFsql_alg_ann_t)
@@ -5977,15 +6081,8 @@ step (const PFla_op_t * frag, const PFla_op_t * p, bool dupstep)
                           COLUMN_SPEC (sql_col_pre),
                           crrl1->name));
 
-    /* copy existing wheremap */
-    for (unsigned int i = 0;
-         i < PFarray_last (R (p)->sql_ann->wheremap); i++)
-    {
-        sql_where_env_t entry = sql_where_env_at (
-                                    R (p)->sql_ann->wheremap, i);
-        sql_where_env_add (ret->wheremap, entry.expression);
-    }
-
+    /* we only collect the restriction
+     * generated during the step */
     if (leg_crrl->name == 0)
         sql_where_env_add (ret->wheremap,
                            eq
@@ -6131,6 +6228,11 @@ step (const PFla_op_t * frag, const PFla_op_t * p, bool dupstep)
 
     step_lat->ann = ret;
     step_lat->fromlist = fromlist;
+    step_lat->wheremap = ret->wheremap;
+
+    /* link the return wheremap to an empty wherelist*/
+    ret->wheremap = PFarray (sizeof (sql_where_env_t));
+
     step_lat->doccrrl = crrl1->name; 
 
     return step_lat;
