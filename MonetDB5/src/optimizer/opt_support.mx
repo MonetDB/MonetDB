@@ -1056,6 +1056,7 @@ hasSideEffects(InstrPtr p, int strict)
 		getModuleId(p) == streamsRef ||
 		getModuleId(p) == bstreamRef ||
 		getModuleId(p) == mdbRef ||
+		getModuleId(p) == malRef ||
 		getModuleId(p) == optimizerRef ||
 		getModuleId(p) == lockRef ||
 		getModuleId(p) == semaRef ||

@@ -456,7 +456,7 @@ OPTbakeIterator(MalBlkPtr mb, InstrPtr p, int *alias, int *garbage){
 	garbage[getArg(q,0)]= 1;
 
 	/* dump the iterators */
-	OPTbarrierList(mb,p,alias,getModuleId(p)==batcalcRef);
+	OPTbarrierList(mb,p,alias, p->argc>3 && getModuleId(p)==batcalcRef);
 
 	/* run the partitioned operation */
 	pushInstruction(mb,p);
@@ -466,7 +466,7 @@ OPTbakeIterator(MalBlkPtr mb, InstrPtr p, int *alias, int *garbage){
 	pushArgument(mb,q,getArg(anchor,0));
 	pushArgument(mb,q,getArg(p,0));
 
-	OPTredoList(mb,p,alias,getModuleId(p)==batcalcRef);
+	OPTredoList(mb,p,alias, p->argc>3 && getModuleId(p)==batcalcRef);
 }
 @-
 Be aware the the SQL produces sql.bind(-,-,-,0) and sql.bind(-,-,-,3)
