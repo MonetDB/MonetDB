@@ -9244,9 +9244,9 @@ translate2MIL (opt_t *f, int code, int cur_level, int counter, PFcnode_t *c)
                                "bat[void,oid] v_item000, "
                                "bat[void,int] v_kind000) : bat[void,bat] { # fn:%s\n"
                     "var iter;\nvar pos;\nvar item;\nvar kind;\nvar ipik;\n"
-                    "var v_pos000 := tmark_grp_unique(v_iter000,v_iter000);\n"
-                    "v_pos000 := [oid](v_pos000).access(BAT_WRITE);\n"
-                    "v_vid000 := [oid](v_vid000).access(BAT_WRITE);\n"
+                    "var v_pos000 := CTmap(CTgroup(v_vid000,v_iter000));\n"
+                    "v_pos000  := tmark_grp_unique(v_pos000,v_pos000);\n"
+                    "v_vid000  := [oid](v_vid000).access(BAT_WRITE);\n"
                     "v_iter000 := [oid](v_iter000).access(BAT_WRITE);\n"
                     "v_item000 := [oid](v_item000).access(BAT_WRITE);\n"
                     "v_kind000 := [int](v_kind000).access(BAT_WRITE);\n",
