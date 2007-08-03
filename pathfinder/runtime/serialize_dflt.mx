@@ -223,10 +223,8 @@ emit_escaped@1 (XqueryCtx* ctx, char* src) {
 static void
 emit_escaped_comment (XqueryCtx* ctx, char* src) {
     int start = 0, end;
-    unsigned char isspecial_ch;
 
     for(end = 0; src[end]; end++) {
-        isspecial_ch = dflt_ws->isspecial_tab[(int)(unsigned char)src[end]];
 /* XXX do we need to do anything special for other special characters? */
         if (src[end] == '\n') {
             /* print all characters that were collected 

@@ -2483,7 +2483,7 @@ PROC ws_findnodes(BAT[void,bat] ws,
         var key_pre := vx_lookup(ws, cont, key_val, uri, loc, false);
 
         if (isid) { # for ID() we also perform NID access; merging with IDs, conserves pre-order
-            id_pre  := id_split.leftjoin(split_nids).leftjoin(nid_rid).[swizzle](map_pid).tsort();
+            id_pre  := id_split.leftjoin(split_nids).leftjoin(nid_rid).ord_select(oid_nil,oid_nil).[swizzle](map_pid).tsort();
             id_pre  := merged_union(id_pre.tmark(0@0), key_pre.tmark(0@0), 
                                     id_pre.hmark(0@0), key_pre.hmark(0@0).leftfetchjoin(key_id));
             key_pre := id_pre.fetch(0);
