@@ -173,7 +173,7 @@ static void
 OPTpartitionStrategy(MalBlkPtr mb, int last)
 {
 	int i,j,limit;
-	InstrPtr *old,p,q,anchor=NULL;
+	InstrPtr *old,p=0,q,anchor=NULL;
 	InstrPtr *listanchor= (InstrPtr*) alloca(sizeof(InstrPtr)*mb->vtop);
 	int *seg, curseg= -1, prevseg= -1;
 	int *alias= (int*) alloca(sizeof(int)*mb->vtop*2);
@@ -192,12 +192,6 @@ OPTpartitionStrategy(MalBlkPtr mb, int last)
 	pushInstruction(mb,old[0]); /* signature */
 	for(i=1;i< limit; i++){
 		p= old[i];
-@-
-Skip the instructions that are not affected by partitions
-		if( getModuleId(p)== calcRef){
-			pushInstruction(mb,p);
-			continue;
-		}
 @-
 All result variables belong to the same segment, provided
 that we do not re-use them 
@@ -380,7 +374,8 @@ care in the iterator.
 	}
 	/* garbage collect the partition records */
 	newStmt(mb,"bpm","garbage");
-	pushInstruction(mb,p);
+	if(p)
+		pushInstruction(mb,p);
 }
 @- Naive partitioning
 The simplistic approach starts here
