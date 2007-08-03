@@ -1360,10 +1360,9 @@ str
 BPMsortTail(int *ret, bat *bid)
 {
 	BAT *b;
-	Partition ps;
 	str msg;
 
-	if( (ps= getAlias(*bid)) == 0)
+	if( getAlias(*bid) == 0)
 		throw(MAL,"bpm.emptySet","Partitioned BAT not found");
 	msg= BPMfold(ret,bid);
 	if( msg) return msg;
