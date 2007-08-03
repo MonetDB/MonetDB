@@ -482,7 +482,7 @@ static int bindTest(MalBlkPtr mb, InstrPtr p){
 static void
 OPTnaiveIterations(MalBlkPtr mb){
 	int i,j,limit,vlimit= mb->vsize + mb->ssize*4; /* statements are expanded*/
-	InstrPtr *old,p,q;
+	InstrPtr *old,p=0,q;
 	int *alias= (int*) alloca(sizeof(int)*vlimit);
 	int *garbage= (int*) alloca(sizeof(int)*vlimit);
 	/* char name[1024];*/
