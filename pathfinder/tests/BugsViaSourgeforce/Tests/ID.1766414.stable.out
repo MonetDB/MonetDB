@@ -18,7 +18,22 @@ quit();
 
 Over..
 
-# 01:36:04 >  
-# 01:36:04 >  Mtimeout -timeout 60 MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=localhost --port=35921 -lxquery -oxml /data/home/boncz/gcc-64-32-debug/mTests/tests/BugsViaSourgeforce/ID.1766414.xq
-# 01:36:04 >  
+# 13:36:20 >  
+# 13:36:20 >  Mtimeout -timeout 60 MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=corona --port=33010 ID.1766414.xq
+# 13:36:20 >  
+
+<?xml version="1.0" encoding="utf-8"?>
+<XQueryResult>500</XQueryResult>
+<?xml version="1.0" encoding="utf-8"?>
+<XQueryResult>500</XQueryResult>
+<?xml version="1.0" encoding="utf-8"?>
+<XQueryResult>500</XQueryResult>
+<?xml version="1.0" encoding="utf-8"?>
+<XQueryResult>500</XQueryResult>
+<?xml version="1.0" encoding="utf-8"?>
+<XQueryResult>500</XQueryResult>
+
+# 13:36:20 >  
+# 13:36:20 >  Done.
+# 13:36:20 >  
 
