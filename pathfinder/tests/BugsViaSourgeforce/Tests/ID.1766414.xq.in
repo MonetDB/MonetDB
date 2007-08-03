@@ -1,0 +1,6 @@
+pf:add-doc("$TSTSRCDIR/ID.1766414.xml","ID.1766414.bib.xml","myCollection")
+<>
+pf:add-doc("$TSTSRCDIR/ID.1766414.xml","ID.1766414.book.xml","myCollection")
+<>
+pf:add-doc("$TSTSRCDIR/ID.1766414.xml","ID.1766414.helloworld.xml","myCollection")
+<>
