@@ -240,6 +240,7 @@ typedef struct tijahContextStruct {
 	char* stemmer;	/* name of the stemmer used for this collection */
 	tjStemCtx* stemCtx;
 	char	checkStopWords;
+	oid	lastStopWord;
 } tjCtx;
 
 #define DOEMIT(TJCTX)	((TJCTX)->selTagDepth)
@@ -279,11 +280,16 @@ tj_tagOid(tjCtx* tjctx, str t) {
 #else
     BUN bun;
 
+    // stream_printf(GDKout,"tj_tagOid(\"%s\"): start\n",t);
     HASHfnd_str(bun, tjctx->hm_globalTag, (str)t);
     if ( bun ) {
-        return *(oid*)BUNtail(tjctx->hm_globalTag,bun);
+        // stream_printf(GDKout,"tj_tagOid(\"%s\"): bun found @ %d\n",t,BUNindex(tjctx->hm_globalTag,bun));
+        return (oid)BUNindex(tjctx->hm_globalTag,bun);
+        // return *(oid*)BUNtail(tjctx->hm_globalTag,bun);
     } else {
-    	if ( BUNins(tjctx->b_globalTag, &tjctx->n_globalTag, (str)t, FALSE) ) {
+        // stream_printf(GDKout,"tj_tagOid(\"%s\"): bun not found\n",t);
+    	// if ( BUNins(tjctx->b_globalTag, &tjctx->n_globalTag, (str)t, FALSE) ) {
+    	if ( BUNappend(tjctx->b_globalTag, (str)t, FALSE) ) {
 	    /* check if the recursive tagswitcher still is large enough */
     	    if ( (int)tjctx->n_globalTag >= tjctx->tagswitch_sz ) {
                 int old = tjctx->tagswitch_sz;
@@ -294,6 +300,7 @@ tj_tagOid(tjCtx* tjctx, str t) {
             }
     	    return tjctx->n_globalTag++;
         } else {
+            stream_printf(GDKout,"tj_tagOid(\"%s\"): insert error\n",t);
     	    GDKerror("INSERT OF \"%s\" in globalTag fails.\n");
     	    return oid_nil;
         }
@@ -309,7 +316,9 @@ tj_checkTerm(tjCtx* tjctx, char *t) {
    BUN bun;
 
    HASHfnd_str(bun, tjctx->hm_globalTerm, (str)t);
-   return ( bun ? *(oid*)BUNtail(tjctx->hm_globalTerm,bun) : oid_nil );
+   // return ( bun ? *(oid*)BUNtail(tjctx->hm_globalTerm,bun) : oid_nil );
+   oid res = ( bun ? (oid)BUNindex(tjctx->hm_globalTerm,bun) : oid_nil );
+   return (res < tjctx->lastStopWord) ? 0 : res;
 }
 
 INLINE static oid
@@ -320,10 +329,15 @@ tj_termOid(tjCtx* tjctx, char *t) {
     BUN bun;
 
     HASHfnd_str(bun, tjctx->hm_globalTerm, (str)t);
-    if ( bun )
-        return *(oid*)BUNtail(tjctx->hm_globalTerm,bun);
-    else {
-    	if ( BUNins(tjctx->b_globalTerm, &tjctx->n_globalTerm, (str)t, FALSE)){
+    if ( bun ) {
+        oid res = (oid)BUNindex(tjctx->hm_globalTerm,bun);
+
+	if ( 0 && res < tjctx->lastStopWord ) stream_printf(GDKout,"SKIP STOPWORD[\"%s\"]\n",t);
+	return (res < tjctx->lastStopWord) ? 0 : res;
+    } else {
+    	// if ( BUNins(tjctx->b_globalTerm, &tjctx->n_globalTerm, (str)t, FALSE)){
+    	if ( BUNappend(tjctx->b_globalTerm, (str)t, FALSE)){
+	    if (0) stream_printf(GDKout,"N-WORD[\"%s\"]=%d@0\n",t,tjctx->n_globalTerm);
     	    return tjctx->n_globalTerm++;
         } else { 
     	    GDKerror("INSERT OF \"%s\" in globalTerm fails.\n");
@@ -546,7 +560,15 @@ loadTijahContext(BAT* tjCtx_BAT, char* selTagList) {
 	    if (  (strcmp(str_stopw,"false") == 0) || (strcmp(str_stopw,"off")==0) )
 	        res->checkStopWords = 0;
 	}
+	res->lastStopWord   = 0;
+	str str_laststopw = readCollParam(res,"lastStopWord");
+	if ( str_laststopw != str_nil ) {
+		long v = atol(str_laststopw);
 
+		if ( v < 1 ) {
+		} else
+			res->lastStopWord = (oid)v;
+	}
 	str str_stemmer = readCollParam(res,"stemmer");
 
 	if ( str_stemmer != str_nil ) 
@@ -651,8 +673,9 @@ loadTijahContext(BAT* tjCtx_BAT, char* selTagList) {
 	res->hm_globalTerm = BATmirror(res->b_globalTerm);
 
 	if ( res->n_globalTerm == 0 ) {
-	     oid zero = 0;
-	     if ( !BUNins(res->b_globalTerm, &zero, (str)stopwordMarker, FALSE)){
+	     // if ( !BUNins(res->b_globalTerm, &zero, (str)stopwordMarker, FALSE)){
+	     
+	     if ( !BUNappend(res->b_globalTerm, (str)stopwordMarker, FALSE)){
 	             return NULL;
 	     }
 	     res->n_globalTerm++;
@@ -663,20 +686,27 @@ loadTijahContext(BAT* tjCtx_BAT, char* selTagList) {
 	     if ( res->checkStopWords ) {
 		 for(int i=0; res->stemCtx->stopWords[i]; i++) {
 		     str sw = (str)res->stemCtx->stopWords[i];
-		     /* INCOMPLETE, store it with 0 in termDB */
 #ifdef USE_TERMDB
 	             if ( !tdb_insertTerm(res->tdb,(char*)sw, zero, 0) ) {
 		         return NULL;
 		     }
 #endif
-	             if ( !BUNins(res->b_globalTerm, &zero, sw, FALSE)){
+	             // if ( !BUNins(res->b_globalTerm, &zero, sw, FALSE)){
+	             if ( !BUNappend(res->b_globalTerm, sw, FALSE)){
                          GDKerror("loadTijahContext: inserting stopword fails\n");
 	                 return NULL;
 	             }
+	             res->n_globalTerm++;
 #ifdef TJ_TRACE
 	             if ( TJ_TRACE ) stream_printf(GDKout,"C[%s]:ADDED STOPWORD \"%s\" to GLOBALTERM\n",res->name,sw);
 #endif
 		     }
+		 res->lastStopWord = res->n_globalTerm; 
+	         char buff[8];
+
+	         sprintf(&buff[0],OIDFMT,(int)res->lastStopWord);
+	         if ( ! replaceCollParam(res,"lastStopWord",(str)&buff[0]))
+	             return 0;
 	     }
 	}
 	if ( res->b_globalTerm->thash == NULL ) {

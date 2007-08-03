@@ -42,7 +42,7 @@
 .COMMAND tijah_tokenize(str) : str = CMDtijah_tokenize;
  "INCOMPLETE"
 
-.COMMAND tj_chk_dict_hash(BAT[oid,str], BAT[oid,str]) : void = CMDtj_chk_dict_hash;
+.COMMAND tj_chk_dict_hash(BAT[void,str], BAT[void,str]) : void = CMDtj_chk_dict_hash;
 "INCOMPLETE"
 
 .COMMAND tj_create_termdb(int, oid) : void = CMDtj_create_termdb;
@@ -363,14 +363,14 @@ PROC tj_init_global(BAT[str,str] param) : void :=
 }
 
 const GLOBAL_TTBAT := false;
-const VOID_TTBAT   := false;
+const VOID_TTBAT   := true;
 
 PROC _tj_TermBat(str ftiName) : str :=
 {
     if ( GLOBAL_TTBAT )
         return "tj_globalTerms";
     else
-    	return "tj_" + ftiName + "_terms";
+    	return "tj_" + ftiName + "_termdict";
 }
 
 PROC _tj_TagBat(str ftiName) : str :=
@@ -378,7 +378,7 @@ PROC _tj_TagBat(str ftiName) : str :=
     if ( GLOBAL_TTBAT )
         return "tj_globalTags";
     else
-    	return "tj_" + ftiName + "_tags";
+    	return "tj_" + ftiName + "_tagdict";
 }
 
 PROC _tj_RTagBat(str ftiName) : str :=
@@ -572,8 +572,8 @@ PROC _tj_init_collection(str ftiName, BAT[str,str] param, BAT[void,str] v_pfc, b
               bat(_tj_RTagBat(ftiName)).delete();
 	  } else {
 	      if ( VOID_TTBAT) {
-                  new(void,str).persists(true).bbpname(_tj_TermBat(ftiName));
-                  new(void,str).persists(true).bbpname(_tj_TagBat(ftiName));
+                  new(void,str).seqbase(0@0).persists(true).bbpname(_tj_TermBat(ftiName));
+                  new(void,str).seqbase(0@0).persists(true).bbpname(_tj_TagBat(ftiName));
 	      } else {
                   new(oid,str).persists(true).bbpname(_tj_TermBat(ftiName));
                   new(oid,str).persists(true).bbpname(_tj_TagBat(ftiName));
@@ -664,6 +664,7 @@ PROC _tj_init_collection(str ftiName, BAT[str,str] param, BAT[void,str] v_pfc, b
         parambat.insert("fragmentSize",fragsize);
         parambat.insert("tagFilter",tagfilter);
         parambat.insert("preExpansion","4");
+        parambat.insert("lastStopWord","0");
         parambat.insert("status","building");
         parambat.insert("_last_tijahPre","1");
         parambat.insert("_last_finalizedPre","0");
@@ -1444,11 +1445,14 @@ PROC anc_desc_llscj( bat[oid,any] anc, bat[oid,any] desc, bat[void,int] pre_size
 ##
 PROC _terms2void_tid( bat[void,str] Qterms, str bg_cName): bat[void,oid] :=
 {
-    var stemmer := bat("tj_"+ bg_cName +"_param").find("stemmer");
-    var stemmed := [tj_normalizeTerm]( [toLower](Qterms), stemmer );
+    var param    := bat("tj_"+ bg_cName +"_param");
+    var stemmer  := param.find("stemmer");
+    var firstterm:= oid(param.find("lastStopWord"));
+    var stemmed  := [tj_normalizeTerm]( [toLower](Qterms), stemmer );
     var tids := bat(_tj_TermBat(bg_cName)).join( stemmed.reverse() ).sort().hmark(oid(0));
-    var stopwords := tids.uselect(0@0);
-    tids := tids.kdiff(stopwords);
+    #var stopwords := tids.uselect(0@0,firstterm,TRUE,FALSE);
+    #tids := tids.kdiff(stopwords);
+    tids := tids.select(firstterm,oid(nil),TRUE,FALSE);
     return tids;
 }
 
