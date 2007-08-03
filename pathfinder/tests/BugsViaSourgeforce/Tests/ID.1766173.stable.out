@@ -1,0 +1,26 @@
+stdout of test 'ID.1766173` in directory 'tests/BugsViaSourgeforce` itself:
+
+
+# 01:36:03 >  
+# 01:36:03 >  Mtimeout -timeout 240 Mserver "--config=/data/home/boncz/gcc-64-32-debug/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/data/home/boncz/gcc-64-32-debug//lib64/MonetDB:/data/home/boncz/gcc-64-32-debug//lib64/MonetDB/lib:/data/home/boncz/gcc-64-32-debug/lib/MonetDB:/data/home/boncz/gcc-64-32-debug/lib/MonetDB/lib:/data/home/boncz/gcc-64-32-debug/lib/MonetDB/bin" --set "gdk_dbfarm=/data/home/boncz/gcc-64-32-debug/var/MonetDB/dbfarm" --set "sql_logdir=/data/home/boncz/gcc-64-32-debug/var/MonetDB/sql_logs" --set "sql_logdir=/data/home/boncz/gcc-64-32-debug/var/MonetDB/xquery_logs" --set mapi_port=35921 --set monet_prompt= --trace "--dbname=mTests_tests_BugsViaSourgeforce" --dbinit=" module(pathfinder);" ; echo ; echo Over..
+# 01:36:03 >  
+
+# Monet Database Server V4.18.0
+# Copyright (c) 1993-2007, CWI. All rights reserved.
+# Compiled for i686-pc-win32/32bit with 32bit OIDs; dynamically linked.
+# Visit http://monetdb.cwi.nl/ for further information.
+# XRPC administrative console at http://localhost:50001/admin
+
+printf("\nReady.\n");
+
+Ready.
+quit();
+
+Over..
+
+# 01:36:04 >  
+# 01:36:04 >  Mtimeout -timeout 60 MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=localhost --port=35921 -lxquery -oxml /data/home/boncz/gcc-64-32-debug/mTests/tests/BugsViaSourgeforce/ID.1766173.xq
+# 01:36:04 >  
+
+<?xml version="1.0" encoding="utf-8"?>
+<XQueryResult><result><list><a pos="1">x</a><arest>y</arest><b pos="1">p</b><brest>q</brest></list><list><a pos="1">x</a><arest>y</arest><b pos="2">q</b><brest/></list><list><a pos="2">y</a><arest/><b pos="1">p</b><brest>q</brest></list><list><a pos="2">y</a><arest/><b pos="2">q</b><brest/></list></result></XQueryResult> 
