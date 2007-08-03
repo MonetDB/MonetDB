@@ -287,10 +287,6 @@ static PFsql_t *bin_comp (PFsql_t * (*op) (const PFsql_t *, const PFsql_t *),
 static void where_env_copy (PFarray_t * srcwheremap,
 			    PFarray_t * destwheremap);
 
-static struct step_lattice_t *step (const PFla_op_t * frag,
-				                    const PFla_op_t * p,
-                                    bool dupstep);
-
 static PFsql_alg_ann_t *doc_access (
                         PFla_op_t * frag,
                         PFla_op_t * p);
@@ -408,6 +404,10 @@ static PFsql_t *literal (PFalg_atom_t);
 #define FROM(p)   ((p)->sql_ann->sfw->child[1])
 #define WHERE(p)  ((p)->sql_ann->sfw->child[2])
 #define GROUP(p)  ((p)->sql_ann->sfw->child[3])
+
+/* dup_steps */
+#define DUP_STEP(p) ((p)->kind == la_step_join || (p)->kind == la_guide_step_join)
+#define GUIDE_STEP(p) ((p)->kind == la_guide_step || (p)->kind == la_guide_step_join)
 
 /* encoding for the different types in out XML scheme */
 #define ELEM    1    /* element node */
@@ -757,10 +757,12 @@ struct sql_where_env_t
 };
 typedef struct sql_where_env_t sql_where_env_t;
 
+
+
 /**
  * Returns a new where environment.
  */
-static PFarray_t *
+static PFarray_t*
 sql_where_env_new (void)
 {
     return PFarray (sizeof (sql_where_env_t));
@@ -783,10 +785,11 @@ sql_where_env_at (const PFarray_t * env, unsigned int i)
 static void
 sql_where_env_add (PFarray_t * env, PFsql_t * expr)
 {
+    assert (env);
     *(sql_where_env_t *) PFarray_add (env) =
         (sql_where_env_t)
         {
-            .expression = expr
+            .expression = expr,
         };
 }
 
@@ -971,23 +974,6 @@ get_twig_constr (PFla_op_t *p, PFla_op_t *n)
     return tbl_list;
 }
 
-/* step operators: namely guide_step, step and step-join
- * have some special dependencies we want bring together
- * in a structure */
-struct step_lattice_t {
-    PFsql_alg_ann_t           *ann;
-    PFsql_t                   *fromlist;
-    PFarray_t                 *wheremap;
-    PFsql_correlation_name_t  doccrrl;
-};            
-typedef struct step_lattice_t step_lattice_t; 
-
-static step_lattice_t*
-step_lattice_new ()
-{
-    return (step_lattice_t*)PFmalloc (sizeof (struct step_lattice_t));
-}
-
 /**
  * Does a DAG preorder traversal and determines the incoming
  * edges of each node.
@@ -1038,6 +1024,8 @@ static PFsql_t *gen_ctx_statement (PFla_op_t * p, PFla_op_t * frag,
 				   sql_correlation_name_t * t2loc_crrl,
 				   sql_correlation_name_t * t3loc_crrl);
 #endif 
+static struct PFsql_alg_ann_t* step (const PFla_op_t * frag,
+                                     const PFla_op_t * p); 
 
 static PFsql_t* gen_content (PFla_op_t *p, PFla_op_t *frag,
                                 sql_correlation_name_t *doc1,
@@ -2677,254 +2665,22 @@ reduce (PFla_op_t * p, int goalnt)
             if (!PFprop_set (p->prop))
                 p->dirty = true;
         } break;
-        /* StRel: step (Frag, Rel) */
-        case 53:
-        {
-            step_lattice_t *sl = step (LR (p), p, false);
-
-            /* copy the the wheremap coming from the underlying
-             * nodes */
-            where_env_copy (R (p)->sql_ann->wheremap, sl->ann->wheremap);
-            /* copy step restrictions */
-            where_env_copy (sl->wheremap, sl->ann->wheremap);
-
-            p->sql_ann = sl->ann;
-
-            /* even generate the valid sql-clause */
-            p->sql_ann->sfw = gen_select (p, p->sql_ann, sl->fromlist);
-
-            /* due to the distribute law we can split the
-             * steps in a few unions, each consisting of
-             * disjoint fragments */
-            for (PFla_op_t * loop = LL (p); loop->kind != la_empty_frag;
-                        loop = L (loop)) {
-
-                sl = step (R (loop), p, false); 
-
-                /* copy the the wheremap coming from the underlying
-                 * nodes */
-                where_env_copy (R (p)->sql_ann->wheremap, sl->ann->wheremap);
-                /* copy step restrictions */
-                where_env_copy (sl->wheremap, sl->ann->wheremap);
-
-                PFsql_t *sfw = gen_select (R (loop), sl->ann, sl->fromlist);
-
-                *(p->sql_ann) = 
-                    (PFsql_alg_ann_t)
-                    {
-                        .sfw = disjunion
-                               (
-                                sfw,
-                                p->sql_ann->sfw
-                               )
-                    };
-            }
-
-            sql_stmt = (p->sql_ann->sfw->kind == sql_select) ?
-                            select
-                            (
-                             NULL,
-                             FROM (p),
-                             NULL,
-                             NULL
-                            ) :
-                            p->sql_ann->sfw;
-
-            if ((p->sql_ann->sfw->kind == sql_select) && !(PFprop_set (p->prop)))
-                sql_stmt->sem.select.distinct = true;
-        } break;
-        /* Rel:    guide_step_join (Frag, Rel) */
-        case 226: 
-        {
-            /* create the in operator of guide information */
-            unsigned int guide_node_count = p->sem.step.guide_count; 
-            /* literal list with statistical information */
-           PFsql_t **list = (PFsql_t**)
-                            PFmalloc (
-                                guide_node_count*sizeof(PFsql_t*));
-
-           /* guide nodes, with the statistical information */
-           PFguide_tree_t ** guide_elements = p->sem.step.guides;
-
-           /* create literals from guide nodes */
-           for (unsigned int i = 0; i < guide_node_count; i++) {
-               list[i] = lit_int(guide_elements[i]->guide);
-           }
-  
-           PFsql_t *literal = PFsql_lit_list_
-                              (
-                               guide_node_count,
-                               (const PFsql_t**)list
-                              );
-
-            step_lattice_t *sl = step (LR (p), p, true);
-
-           /* copy the the wheremap coming from the underlying
-             * nodes */
-            where_env_copy (R (p)->sql_ann->wheremap, sl->ann->wheremap);
-
-            /* copy step restrictions only when no guide
-             * nodes are available */
-            if ((guide_node_count <= 0) || (!guide_elements)) {
-                /* copy step restrictions */
-                where_env_copy (sl->wheremap, sl->ann->wheremap);
-            } else {
-                /* add guide restriction */
-                sql_where_env_add (sl->ann->wheremap,
-                                   in
-                                   (
-                                    crrl_deco (
-                                       COLUMN_SPEC(sql_col_guide),
-                                       sl->doccrrl),
-                                    literal
-                                   ));
-            }
-
-            p->sql_ann = sl->ann;
-            /* even generate the valid sql-clause */
-            p->sql_ann->sfw = gen_select (p, p->sql_ann, sl->fromlist);
-
-            /* due to the distribute law we can split the
-             * steps in a few unions, each consisting of
-             * disjoint fragments */
-            for (PFla_op_t * loop = LL (p); loop->kind != la_empty_frag;
-                        loop = L (loop)) {
-
-                sl = step (R (loop), p, true); 
-
-                /* copy the the wheremap coming from the underlying
-                 * nodes */
-                where_env_copy (R (p)->sql_ann->wheremap, sl->ann->wheremap);
-    
-                /* copy step restrictions only when no guide
-                 * nodes are available */
-                if ((guide_node_count <= 0) || (!guide_elements)) {
-                    /* copy step restrictions */
-                    where_env_copy (sl->wheremap, sl->ann->wheremap);
-                } else {
-                    /* add guide restriction */
-                    sql_where_env_add (sl->ann->wheremap,
-                                       in
-                                       (
-                                        crrl_deco (
-                                           COLUMN_SPEC(sql_col_guide),
-                                           sl->doccrrl),
-                                        literal
-                                       ));
-                }
-
-                PFsql_t *sfw = gen_select (R (loop), sl->ann, sl->fromlist);
-
-                *(p->sql_ann) = 
-                    (PFsql_alg_ann_t)
-                    {
-                        .sfw = disjunion
-                               (
-                                sfw,
-                                p->sql_ann->sfw
-                               )
-                    };
-            }
-
-            sql_stmt = 
-                   (p->sql_ann->sfw->kind == sql_select) ?
-                   select
-                   (
-                    NULL,
-                    p->sql_ann->sfw->child[1],
-                    NULL,
-                    NULL
-                   ) :
-                   p->sql_ann->sfw;
-        } break;
         /* Rel: guide_step (Frag, Rel) */
         case 225:
         {
-            /* create the in operator of guide information */
-            unsigned int guide_node_count = p->sem.step.guide_count; 
-            /* literal list with statistical information */
-           PFsql_t **list = (PFsql_t**)
-                            PFmalloc (
-                                guide_node_count*sizeof(PFsql_t*));
-
-           /* guide nodes, with the statistical information */
-           PFguide_tree_t ** guide_elements = p->sem.step.guides;
-
-           /* create literals from guide nodes */
-           for (unsigned int i = 0; i < guide_node_count; i++) {
-               list[i] = lit_int(guide_elements[i]->guide);
-           }
-  
-           PFsql_t *literal = PFsql_lit_list_
-                              (
-                               guide_node_count,
-                               (const PFsql_t**)list
-                              );
-
-            step_lattice_t *sl = step (LR (p), p, false);
-
-           /* copy the the wheremap coming from the underlying
-             * nodes */
-            where_env_copy (R (p)->sql_ann->wheremap, sl->ann->wheremap);
-
-            /* copy step restrictions only when no guide
-             * nodes are available */
-            if ((guide_node_count <= 0) || (!guide_elements)) {
-                /* copy step restrictions */
-                where_env_copy (sl->wheremap, sl->ann->wheremap);
-            } else {
-                /* add guide restriction */
-                sql_where_env_add (sl->ann->wheremap,
-                                   in
-                                   (
-                                    crrl_deco (
-                                       COLUMN_SPEC(sql_col_guide),
-                                       sl->doccrrl),
-                                    literal
-                                   ));
-            }
-
-            p->sql_ann = sl->ann;
-            /* even generate the valid sql-clause */
-            p->sql_ann->sfw = gen_select (p, p->sql_ann, sl->fromlist);
-
+            p->sql_ann = step (LR (p), p);
             /* due to the distribute law we can split the
              * steps in a few unions, each consisting of
              * disjoint fragments */
             for (PFla_op_t * loop = LL (p); loop->kind != la_empty_frag;
                         loop = L (loop)) {
 
-                sl = step (R (loop), p, false); 
-
-                /* copy the the wheremap coming from the underlying
-                 * nodes */
-                where_env_copy (R (p)->sql_ann->wheremap, sl->ann->wheremap);
-
-                /* copy step restrictions only when no guide
-                 * nodes are available */
-                if ((guide_node_count <= 0) || (!guide_elements)) {
-                    /* copy step restrictions */
-                    where_env_copy (sl->wheremap, sl->ann->wheremap);
-                } else {
-                    /* add guide restriction */
-                    sql_where_env_add (sl->ann->wheremap,
-                                       in
-                                       (
-                                        crrl_deco (
-                                           COLUMN_SPEC(sql_col_guide),
-                                           sl->doccrrl),
-                                        literal
-                                       ));
-                }
-                                       
-                PFsql_t *sfw = gen_select (R (loop), sl->ann, sl->fromlist);
-
                 *(p->sql_ann) = 
                     (PFsql_alg_ann_t)
                     {
                         .sfw = disjunion
                                (
-                                sfw,
+                                step (R (loop), p)->sfw,
                                 p->sql_ann->sfw
                                )
                     };
@@ -2941,120 +2697,52 @@ reduce (PFla_op_t * p, int goalnt)
                    ) :
                    p->sql_ann->sfw;
 
-            if (p->sql_ann->sfw->kind == sql_select &&
-                !PFprop_set (p->prop))
+            if ((p->sql_ann->sfw->kind == sql_select) 
+                    && !(PFprop_set (p->prop)))
                 sql_stmt->sem.select.distinct = true;
 
             /* if set property is not set dump the query */
             if (!PFprop_set (p->prop))
                 p->dirty = true;
+
         } break;
+        /* StRel: step (Frag, Rel) */
+        case 53:
+        /* StRel: step (Frag, StRel) */
+        case 54:
         /* Rel: dup_step (Frag, Rel) */
         case 224:
+        /* Rel: guide_step_join (Frag, Rel) */
+        case 226: 
         {
-            step_lattice_t *sl = step (LR (p), p, true);
-
-            /* copy the the wheremap coming from the underlying
-             * nodes */
-            where_env_copy (R (p)->sql_ann->wheremap, sl->ann->wheremap);
-            /* copy step restrictions */
-            where_env_copy (sl->wheremap, sl->ann->wheremap);
-
-            p->sql_ann = sl->ann;
-            /* even generate the valid sql-clause */
-            p->sql_ann->sfw = gen_select (p, sl->ann, sl->fromlist);
-
+            p->sql_ann = step (LR (p), p);
             /* due to the distribute law we can split the
              * steps in a few unions, each consisting of
              * disjoint fragments */
             for (PFla_op_t * loop = LL (p); loop->kind != la_empty_frag;
                         loop = L (loop)) {
 
-                sl = step (R (loop), p, true); 
-
-                /* copy the the wheremap coming from the underlying
-                 * nodes */
-                where_env_copy (R (p)->sql_ann->wheremap, sl->ann->wheremap);
-                /* copy step restrictions */
-                where_env_copy (sl->wheremap, sl->ann->wheremap);
-
-                PFsql_t *sfw = gen_select (R (loop), sl->ann, sl->fromlist);
-
                 *(p->sql_ann) = 
                     (PFsql_alg_ann_t)
                     {
                         .sfw = disjunion
                                (
-                                sfw,
+                                step (R (loop), p)->sfw,
                                 p->sql_ann->sfw
                                )
                     };
             }
 
-            sql_stmt = (p->sql_ann->sfw->kind == sql_select)?
-                        select
-                        (
-                         NULL,
-                         FROM (p),
-                         NULL,
-                         NULL
-                        ) :
-                        p->sql_ann->sfw;
-        } break;
-        /* StRel: step (Frag, StRel) */
-        case 54:
-        {
-            step_lattice_t *sl = step (LR (p), p, false);
-
-            /* copy the the wheremap coming from the underlying
-             * nodes */
-            where_env_copy (R (p)->sql_ann->wheremap, sl->ann->wheremap);
-            /* copy step restrictions */
-            where_env_copy (sl->wheremap, sl->ann->wheremap);
-
-            p->sql_ann = sl->ann;
-            /* even generate the valid sql-clause */
-            p->sql_ann->sfw = gen_select (p, p->sql_ann, sl->fromlist);
-
-            for (PFla_op_t * loop = LL (p); loop->kind != la_empty_frag;
-                        loop = L (loop)) {
-
-                sl = step (R (loop), p, false); 
-
-                /* copy the the wheremap coming from the underlying
-                 * nodes */
-                where_env_copy (R (p)->sql_ann->wheremap, sl->ann->wheremap);
-                /* copy step restrictions */
-                where_env_copy (sl->wheremap, sl->ann->wheremap);
-
-                PFsql_t *sfw = gen_select (R (loop), sl->ann, sl->fromlist);
-
-
-
-                *(p->sql_ann) = 
-                    (PFsql_alg_ann_t)
-                    {
-                        .sfw = disjunion
-                               (
-                                sfw,
-                                p->sql_ann->sfw
-                               )
-                    };
-            }
-
-            sql_stmt = (p->sql_ann->sfw->kind == sql_select) ?
-                        select
-                        (
-                         NULL,
-                         FROM (p),
-                         NULL,
-                         NULL
-                        ) :
-                        p->sql_ann->sfw;
-
-            if (p->sql_ann->sfw->kind == sql_select &&
-                !PFprop_set (p->prop))
-                sql_stmt->sem.select.distinct = true;
+            sql_stmt = 
+                   (p->sql_ann->sfw->kind == sql_select) ?
+                   select
+                   (
+                    NULL,
+                    p->sql_ann->sfw->child[1],
+                    NULL,
+                    NULL
+                   ) :
+                   p->sql_ann->sfw;
         } break;
         /* Rel:    doc_access (Frag, Rel) */
         case 55:
@@ -4309,6 +3997,8 @@ reduce (PFla_op_t * p, int goalnt)
                 }
             }
 
+            where_env_copy (R (p)->sql_ann->wheremap, p->sql_ann->wheremap);
+
             p->sql_ann->fragment = collect (L (p));
 
             sql_stmt = select (NULL, FROM (R (p)), NULL, NULL);
@@ -5511,7 +5201,7 @@ where_env_copy (PFarray_t * srcwheremap, PFarray_t * destwheremap)
 }
 
 static void
-llscj_attr_axis (PFsql_correlation_name_t c1,
+llscj_attr_axis (const PFla_op_t *p, PFsql_correlation_name_t c1,
 		 PFsql_correlation_name_t c2, struct PFsql_alg_ann_t *ann)
 {
   sql_where_env_add (ann->wheremap,
@@ -5532,77 +5222,99 @@ llscj_attr_axis (PFsql_correlation_name_t c1,
               COLUMN_SPEC (sql_col_pre),
 				 c1)));
 
-  sql_where_env_add (ann->wheremap,
-		     eq
-		     (crrl_deco
-		      (COLUMN_SPEC (sql_col_level), c1),
-		      add (crrl_deco
-			   (COLUMN_SPEC (sql_col_level),
-			    c2), lit_int (1))));
+   if (!GUIDE_STEP (p))
+       sql_where_env_add (ann->wheremap,
+       	     eq
+       	     (crrl_deco
+       	      (COLUMN_SPEC (sql_col_level), c1),
+       	      add (crrl_deco
+       		   (COLUMN_SPEC (sql_col_level),
+       		    c2), lit_int (1))));
 }
 
 static void
 llscj_axis (const PFla_op_t *p, PFsql_correlation_name_t c1,
 	    PFsql_correlation_name_t c2,
 	    PFsql_t ** fromlist, const PFla_op_t * frag,
-	    struct PFsql_alg_ann_t *ann)
+	    PFsql_alg_ann_t *ann) 
 {
-
-  /* we use the static information level if it is
-   * available */
-  if (LEVEL_SET (p))
-      sql_where_env_add (ann->wheremap,
-                    eq
-                    (
-                     crrl_deco
-                     (
-                      COLUMN_SPEC (sql_col_level)
-                      ,
-                      c1
-                     ),
-                     lit_int (p->sem.step.level)
-                    ));
-
-  assert (frag->sql_ann->fragment);
-  switch (p->sem.step.axis)
-    {
-      /* ancestor axis */
-    case alg_anc:
-      {
-    if (!LEVEL_SET (p))
+    /* we use the static information level if it is
+     * available */
+    if (LEVEL_SET (p) && !GUIDE_STEP (p))
         sql_where_env_add (ann->wheremap,
-                   gt
-                   (crrl_deco
-                    (COLUMN_SPEC (sql_col_level),
-                     c2),
-                    crrl_deco (COLUMN_SPEC (sql_col_level), c1)));
+                           eq
+                           (
+                            crrl_deco (
+                                COLUMN_SPEC (sql_col_level),
+                                c1),
+                            lit_int (p->sem.step.level)
+                           ));
 
-	sql_where_env_add (ann->wheremap,
-			   gteq (add
-				 (crrl_deco
-				  (COLUMN_SPEC (sql_col_pre), c2),
-				  crrl_deco (COLUMN_SPEC (sql_col_size), c2)),
-				 crrl_deco (COLUMN_SPEC (sql_col_pre), c1)));
-	sql_where_env_add (ann->wheremap,
-			   gteq (crrl_deco
-				 (COLUMN_SPEC (sql_col_pre),
-				  c2),
-				 add (crrl_deco
-				      (COLUMN_SPEC (sql_col_pre), c1),
-				      crrl_deco (COLUMN_SPEC (sql_col_size),
-						 c1))));
+    assert (frag->sql_ann->fragment);
+    switch (p->sem.step.axis) {
+        /* ancestor axis */
+        case alg_anc:
+        {
+            if (!LEVEL_SET (p) &&
+                !GUIDE_STEP (p))
+                sql_where_env_add (ann->wheremap,
+                                   gt
+                                   (
+                                    crrl_deco (
+                                        COLUMN_SPEC (sql_col_level),
+                                        c2),
+                                    crrl_deco (
+                                        COLUMN_SPEC (sql_col_level),
+                                        c1)
+                                   ));
+
+                sql_where_env_add (ann->wheremap,
+    			                   gteq
+                                   (
+                                    add
+    				                (
+                                     crrl_deco (
+                                         COLUMN_SPEC (sql_col_pre),
+                                         c2),
+                                     crrl_deco (
+                                         COLUMN_SPEC (sql_col_size),
+                                         c2)
+                                    ),
+                    				crrl_deco (
+                                        COLUMN_SPEC (sql_col_pre),
+                                        c1)
+                                   ));
+
+                 sql_where_env_add (ann->wheremap,
+                                    gteq
+                                    (
+                                     crrl_deco (
+                                         COLUMN_SPEC (sql_col_pre),
+                                         c2),
+                                     add
+                                     (
+                                      crrl_deco (
+                                          COLUMN_SPEC (sql_col_pre),
+                                          c1),
+                                      crrl_deco (
+                                          COLUMN_SPEC (sql_col_size),
+                                          c1)
+                                     )
+                                    ));
       }
       break;
       /* ancestor-or-self axis */
     case alg_anc_s:
       {
-      if (!LEVEL_SET (p))
+      if (!LEVEL_SET (p)  &&
+          !GUIDE_STEP (p))
             sql_where_env_add (ann->wheremap,
                        gt
                        (crrl_deco
                         (COLUMN_SPEC (sql_col_level),
                          c2),
                         crrl_deco (COLUMN_SPEC (sql_col_level), c1)));
+
 	sql_where_env_add (ann->wheremap,
 			   gteq (add
 				 (crrl_deco
@@ -5638,7 +5350,8 @@ llscj_axis (const PFla_op_t *p, PFsql_correlation_name_t c1,
 			     crrl_deco (COLUMN_SPEC (sql_col_size), c2)),
 			    crrl_deco (COLUMN_SPEC (sql_col_pre), c1)));
 
-        if (!LEVEL_SET (p))
+        if (!LEVEL_SET (p) &&
+            !GUIDE_STEP (p))
             sql_where_env_add (ann->wheremap,
                        eq
                        (crrl_deco
@@ -5719,6 +5432,7 @@ llscj_axis (const PFla_op_t *p, PFsql_correlation_name_t c1,
 					  correlation_name (crrl->name)));
 
 	/* get parent of context node */
+      if (!LEVEL_SET (p))
 	sql_where_env_add (ann->wheremap,
 			   eq
 			   (crrl_deco
@@ -5760,7 +5474,8 @@ llscj_axis (const PFla_op_t *p, PFsql_correlation_name_t c1,
       /* parent axis */
     case alg_par:
       {
-      if (!LEVEL_SET (p))
+      if (!LEVEL_SET (p) &&
+          !GUIDE_STEP (p))
             sql_where_env_add (ann->wheremap,
                        eq
                        (crrl_deco
@@ -5882,34 +5597,36 @@ llscj_axis (const PFla_op_t *p, PFsql_correlation_name_t c1,
     }
 }
 
-
 static void
 llscj_elem (const PFla_op_t *p, PFsql_correlation_name_t c1,
 	    PFsql_correlation_name_t c2, const PFla_op_t * frag,
-	    PFsql_t ** fromlist, struct PFsql_alg_ann_t *ann)
+	    PFsql_t ** fromlist, PFsql_alg_ann_t *ann)
 {
   assert (frag->sql_ann->fragment);
 
-  sql_where_env_add (ann->wheremap,
-		     eq
-		     (crrl_deco
-		      (COLUMN_SPEC (sql_col_kind), c1),
-		      lit_int (ELEM)));
+  if (!GUIDE_STEP (p))
+      sql_where_env_add (ann->wheremap,
+                 eq
+                 (
+                  crrl_deco (
+                      COLUMN_SPEC (sql_col_kind), c1),
+                  lit_int (ELEM)
+                 ));
 
   llscj_axis (p, c1, c2, fromlist, frag, ann);
 }
 
 static void
-llscj_attr (PFsql_correlation_name_t c1,
+llscj_attr (const PFla_op_t *p, PFsql_correlation_name_t c1,
 	    PFsql_correlation_name_t c2, struct PFsql_alg_ann_t *ann)
 {
-  sql_where_env_add (ann->wheremap,
-		     eq
-		     (crrl_deco
-		      (COLUMN_SPEC (sql_col_kind), c1),
-		      lit_int (ATTR)));
-
-  llscj_attr_axis (c1, c2, ann);
+  if (!DUP_STEP (p))
+      sql_where_env_add (ann->wheremap,
+    		     eq
+    		     (crrl_deco
+    		      (COLUMN_SPEC (sql_col_kind), c1),
+    		      lit_int (ATTR)));
+      llscj_attr_axis (p, c1, c2, ann);
 }
 
 
@@ -5918,14 +5635,18 @@ llscj_text (const PFla_op_t *p, PFsql_correlation_name_t c1,
 	    PFsql_correlation_name_t c2, const PFla_op_t * frag,
 	    PFsql_t ** fromlist, struct PFsql_alg_ann_t *ann)
 {
-  assert (frag->sql_ann->fragment);
-  sql_where_env_add (ann->wheremap,
-		     eq
-		     (crrl_deco
-		      (COLUMN_SPEC (sql_col_kind), c1),
-		      lit_int (PF_TEXT)));
+    assert (frag->sql_ann->fragment);
 
-  llscj_axis (p, c1, c2, fromlist, frag, ann);
+    if (!GUIDE_STEP (p))
+        sql_where_env_add (ann->wheremap,
+                   eq
+                   (
+                      crrl_deco (
+                          COLUMN_SPEC (sql_col_kind), c1),
+                      lit_int (PF_TEXT)
+                   ));
+
+   llscj_axis (p, c1, c2, fromlist, frag, ann);
 }
 
 
@@ -5934,17 +5655,20 @@ llscj_comm (const PFla_op_t *p, PFsql_correlation_name_t c1,
 	    PFsql_correlation_name_t c2, const PFla_op_t * frag,
 	    PFsql_t ** fromlist, struct PFsql_alg_ann_t *ann)
 {
-  assert (frag->sql_ann->fragment);
+    assert (frag->sql_ann->fragment);
 
-  sql_where_env_add (ann->wheremap,
-		     eq
-		     (crrl_deco
-		      (COLUMN_SPEC (sql_col_kind), c1),
-		      lit_int (COMM)));
+    if (!GUIDE_STEP (p))
+        sql_where_env_add (ann->wheremap,
+                    eq
+                    (
+                     crrl_deco
+                     (
+                         COLUMN_SPEC (sql_col_kind), c1),
+                         lit_int (COMM)
+                    ));
 
-  llscj_axis (p, c1, c2, fromlist, frag, ann);
+    llscj_axis (p, c1, c2, fromlist, frag, ann);
 }
-
 
 #define llscj_elem_nsloc(ax, ns, loc, c1, c2, frag, fr, ann) \
     llscj_elem_loc(ax, loc, c1, c2, frag, fr, ann)
@@ -5954,39 +5678,42 @@ llscj_elem_loc (const PFla_op_t *p, PFsql_t * loc, PFsql_correlation_name_t c1,
 		PFsql_t ** fromlist, struct PFsql_alg_ann_t *ann)
 {
   assert (frag->sql_ann->fragment);
-
-  sql_where_env_add (ann->wheremap,
-		     eq
-		     (crrl_deco
-		      (COLUMN_SPEC (sql_col_name), c1),
-		      loc));
+  
+  if (!GUIDE_STEP (p))
+      sql_where_env_add (ann->wheremap,
+                         eq
+                         (
+                          crrl_deco (
+                              COLUMN_SPEC (sql_col_name), c1),
+                          loc
+                         ));
 
   llscj_elem (p, c1, c2, frag, fromlist, ann);
 }
 
-#define llscj_attr_nsloc(ns, loc, c1, c2, ann) \
-    step_attr_loc(loc, c1, c2, ann)
+#define llscj_attr_nsloc(p, ns, loc, c1, c2, ann) \
+    step_attr_loc(p, loc, c1, c2, ann)
 static void
-step_attr_loc (PFsql_t * loc, PFsql_correlation_name_t c1,
+step_attr_loc (const PFla_op_t *p, PFsql_t * loc, PFsql_correlation_name_t c1,
 		PFsql_correlation_name_t c2, struct PFsql_alg_ann_t *ann)
 {
+  if (!DUP_STEP (p)) 
   sql_where_env_add (ann->wheremap,
 		     eq
 		     (crrl_deco
 		      (COLUMN_SPEC (sql_col_name), c1),
 		      loc));
 
-  llscj_attr (c1, c2, ann);
+  llscj_attr (p, c1, c2, ann);
 }
 
 
-static struct step_lattice_t*
-step (const PFla_op_t * frag, const PFla_op_t * p, bool dupstep)
+static struct PFsql_alg_ann_t*
+step (const PFla_op_t * frag, const PFla_op_t * p)
 {
     assert (frag->sql_ann->fragment);
 
     /* initialize the environment to fill */
-    step_lattice_t  *step_lat = step_lattice_new ();
     PFsql_alg_ann_t *ret = sql_alg_ann_new ();
 
     /* abbreviations for input expressions */
@@ -6004,22 +5731,20 @@ step (const PFla_op_t * frag, const PFla_op_t * p, bool dupstep)
     assert (p);
     assert (R (p));
     assert (COLMAP (R (p)));
+
     /* copy all existing expressions */
-    if (dupstep)
-    for (unsigned int i = 0;
-         i < PFarray_last (COLMAP (R (p))); i++) {
-        sql_column_env_t entry =
-            sql_column_env_at (COLMAP (R (p)), i);
-        sql_column_env_add (ret->colmap, entry.att, entry.type,
-                          entry.expression);
-    }
-
-
-    if (!dupstep) {
-        iter = sql_expression (COLMAP (R (p)), pa_iter,
-                           type_of (R (p), pa_iter));
-        assert (iter);
-    }
+    if (DUP_STEP (p))
+        for (unsigned int i = 0;
+             i < PFarray_last (COLMAP (R (p))); i++) {
+            sql_column_env_t entry =
+                sql_column_env_at (COLMAP (R (p)), i);
+            sql_column_env_add (ret->colmap, entry.att, entry.type,
+                              entry.expression);
+        } else { 
+            iter = sql_expression (COLMAP (R (p)), pa_iter,
+                               type_of (R (p), pa_iter));
+            assert (iter);
+        }
 
     item = sql_expression (COLMAP (R (p)), pa_item,
                            type_of (R (p), pa_item));
@@ -6048,8 +5773,7 @@ step (const PFla_op_t * frag, const PFla_op_t * p, bool dupstep)
 
     /* this new relation we need to get the attributes beside the pre
        value */
-    if (leg_crrl->name == 0)
-    {
+    if (leg_crrl->name == 0) {
         PFsql_t *fr2 = table_deco (alias (frag->sql_ann->fragment,
                     correlation_name (crrl2->name)),
                 true);
@@ -6065,12 +5789,13 @@ step (const PFla_op_t * frag, const PFla_op_t * p, bool dupstep)
     fromlist = from_list_add (fromlist, fr1);
 
     /* copy iter and item expression to current environment */
-    if (!dupstep) {
+    if (!DUP_STEP (p)) {
         sql_column_env_add (ret->colmap,
                              pa_iter,
                              type_of (p, pa_iter),
                              iter);
     }
+
     sql_column_env_add (ret->colmap,
                         p->sem.step.item_res,
                         PFty_subtype (
@@ -6080,6 +5805,9 @@ step (const PFla_op_t * frag, const PFla_op_t * p, bool dupstep)
                         crrl_deco (
                           COLUMN_SPEC (sql_col_pre),
                           crrl1->name));
+
+    /* copy the existing wheremap */
+    where_env_copy (R (p)->sql_ann->wheremap, ret->wheremap);
 
     /* we only collect the restriction
      * generated during the step */
@@ -6200,7 +5928,7 @@ step (const PFla_op_t * frag, const PFla_op_t * p, bool dupstep)
                             PFty_xs_anySimpleType ()), ty))
             {
                 /* we simply ignore namespace here */
-                llscj_attr_nsloc (lit_str (""),
+                llscj_attr_nsloc (p, lit_str (""),
                         lit_str (PFqname_loc
                             (PFty_name (PFty_defn (ty)))),
                         crrl1->name, crrl2->name, ret);
@@ -6226,16 +5954,42 @@ step (const PFla_op_t * frag, const PFla_op_t * p, bool dupstep)
                 "in staircase join");
     }
 
-    step_lat->ann = ret;
-    step_lat->fromlist = fromlist;
-    step_lat->wheremap = ret->wheremap;
+    if (GUIDE_STEP (p)) {
+        /* create the in operator of guide information */
+        unsigned int guide_node_count = p->sem.step.guide_count; 
+        /* literal list with statistical information */
+        PFsql_t **list = (PFsql_t**)
+                                PFmalloc (
+                                    guide_node_count*sizeof(PFsql_t*));
 
-    /* link the return wheremap to an empty wherelist*/
-    ret->wheremap = PFarray (sizeof (sql_where_env_t));
+        /* guide nodes, with the statistical information */
+        PFguide_tree_t ** guide_elements = p->sem.step.guides;
 
-    step_lat->doccrrl = crrl1->name; 
+        /* create literals from guide nodes */
+        for (unsigned int i = 0; i < guide_node_count; i++) {
+            list[i] = lit_int(guide_elements[i]->guide);
+        }
+  
+        PFsql_t *literal = PFsql_lit_list_
+                           (
+                            guide_node_count,
+                            (const PFsql_t**)list
+                           );
 
-    return step_lat;
+            /* add guide restriction */
+        sql_where_env_add (ret->wheremap,
+                           in
+                           (
+                            crrl_deco (
+                               COLUMN_SPEC(sql_col_guide),
+                               crrl1->name),
+                            literal
+                           ));
+    }
+
+    ret->sfw = gen_select (p, ret, fromlist);
+
+    return ret;
 }
 
 static PFsql_alg_ann_t *
@@ -6447,3 +6201,4 @@ PFlalg2sql (PFla_op_t * n)
 
 
 /* vim:set shiftwidth=4 expandtab filetype=c: */
+
