@@ -704,7 +704,7 @@ loadTijahContext(BAT* tjCtx_BAT, char* selTagList) {
 		 res->lastStopWord = res->n_globalTerm; 
 	         char buff[8];
 
-	         sprintf(&buff[0],OIDFMT,(int)res->lastStopWord);
+	         sprintf(&buff[0],OIDFMT,res->lastStopWord);
 	         if ( ! replaceCollParam(res,"lastStopWord",(str)&buff[0]))
 	             return 0;
 	     }
