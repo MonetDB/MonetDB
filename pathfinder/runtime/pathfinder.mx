@@ -2481,7 +2481,7 @@ PROC ws_findnodes(BAT[void,bat] ws,
         var key_pre := vx_lookup(ws, cont, key_val, uri, loc, false);
 
         if (isid) { # for ID() we also perform NID access; merging with IDs, conserves pre-order
-            id_pre  := id_split.leftjoin(split_nids).leftjoin(nid_rid).[swizzle](map_pid).tsort();
+            id_pre  := id_split.leftjoin(split_nids).leftjoin(nid_rid).ord_select(oid_nil,oid_nil).[swizzle](map_pid).tsort();
             id_pre  := merged_union(id_pre.tmark(0@0), key_pre.tmark(0@0), 
                                     id_pre.hmark(0@0), key_pre.hmark(0@0).leftfetchjoin(key_id));
             key_pre := id_pre.fetch(0);
@@ -4194,10 +4194,11 @@ xquery_mil2tree(xquery_client *ctx,
     YYSTREE ret = NULL, treebak = c->tree;
     char* bufbak = c->input;
     int listing_bak = c->listing;
+    int lineno = 1;
     c->listing = 0;
     c->input = buf;
     c->tree = NULL;
-    if (parseClient(c, FALSE))
+    if (parseClient(c, FALSE, "<xquery>", &lineno))
         ret = c->tree;
     c->tree = treebak;
     c->input = bufbak;
