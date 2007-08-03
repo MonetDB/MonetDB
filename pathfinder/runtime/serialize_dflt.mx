@@ -206,6 +206,13 @@ emit_escaped@1 (XqueryCtx* ctx, char* src) {
  * Emit a string with all entities escaped.
  */
 @:emit_escaped(_entities,&& isspecial_ch <= 5)@
+/*
+ * This function is responsible for the presentation of special characters
+ * and XML entity characters in the result.
+ *
+ * Emit a string with only newlines escaped.
+ */
+@:emit_escaped(_newline,&& isspecial_ch == 5)@
 
 /*
  * This function is responsible for the presentation of special characters
@@ -586,6 +593,17 @@ esc_seqEmitStr (XqueryCtx* ctx, str sv)
 }
 
 /**
+ * Emit a String element of an XQUERY/Pathfinder result sequence
+ */
+static bool
+text_seqEmitStr (XqueryCtx* ctx, str sv)
+{
+    emit_escaped_newline (ctx, sv);
+
+    return SUCCESS;
+}
+
+/**
  * Output generation handler. Handles top-level attributes.
  */
 static bool
@@ -608,6 +626,23 @@ dflt_seqEmitAttribute (XqueryCtx* ctx, str prefix, str loc, str value)
     stream_write (ctx->out, attributeEnd, aE_sz, 1);
 
     return SUCCESS;
+}
+
+/**
+ * Output generation handler. Handles top-level attributes.
+ */
+static bool
+text_seqEmitAttribute (XqueryCtx* ctx, str prefix, str loc, str value)
+{
+    (void) ctx;
+    (void) prefix;
+    (void) loc;
+    (void) value;
+    
+    GDKerror("serialize_dflt.mx: unable to print top level "
+             "attribute nodes in text mode\n");
+    
+    return PROBLEM;
 }
 
 /**
@@ -1128,6 +1163,78 @@ struct serializeFunStruct mapi_dmSerializeFun = {
     null_seqItemStart,
     null_seqItemEnd,
     dm_seqItemSeparator
+};
+
+struct serializeFunStruct textSerializeFun = {
+    "text",
+    dflt_init,
+    dflt_cleanup,
+
+    null_startSerialize,
+    null_endSerialize,
+
+    null_handle_startDocument,
+    null_handle_endDocument,
+    dflt_handle_startElement,
+    dflt_handle_endElement,
+    dflt_handle_characters,
+    dflt_handle_ignorableWhitespace,
+    dflt_handle_comment,
+    dflt_handle_processingInstruction,
+
+    dflt_complete_startElement,
+    dflt_complete_startElementEmpty,
+    dflt_handle_attribute,
+
+    dflt_seqEmitBool,
+    dflt_seqEmitInt,
+    dflt_seqEmitDbl,
+    text_seqEmitStr,
+    text_seqEmitAttribute,
+    text_seqEmitStr,
+
+    dm_seqStart,
+    null_complete_seqStart,
+    dm_seqEnd,
+    null_seqItemStart,
+    null_seqItemEnd,
+    null_seqItemSeparator
+};
+
+struct serializeFunStruct mapi_textSerializeFun = {
+    "text mapi",
+    mapi_init,
+    dflt_cleanup,
+
+    null_startSerialize,
+    null_endSerialize,
+
+    null_handle_startDocument,
+    null_handle_endDocument,
+    dflt_handle_startElement,
+    dflt_handle_endElement,
+    dflt_handle_characters,
+    dflt_handle_ignorableWhitespace,
+    dflt_handle_comment,
+    dflt_handle_processingInstruction,
+
+    dflt_complete_startElement,
+    dflt_complete_startElementEmpty,
+    dflt_handle_attribute,
+
+    dflt_seqEmitBool,
+    dflt_seqEmitInt,
+    dflt_seqEmitDbl,
+    text_seqEmitStr,
+    text_seqEmitAttribute,
+    text_seqEmitStr,
+
+    dm_seqStart,
+    null_complete_seqStart,
+    dm_seqEnd,
+    null_seqItemStart,
+    null_seqItemEnd,
+    null_seqItemSeparator
 };
 
 struct serializeFunStruct xmlSerializeFun = {

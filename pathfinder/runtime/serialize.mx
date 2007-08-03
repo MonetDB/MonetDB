@@ -89,13 +89,14 @@
 /* serialization modes */
 #define MODE_XML       (1 << 0)
 #define MODE_DM        (1 << 1)
-#define MODE_SAX       (1 << 2)
-#define MODE_MAPI      (1 << 3)
-#define MODE_SEQ       (1 << 4)
-#define MODE_NO_ROOT   (1 << 5)
-#define MODE_NO_HEADER (1 << 6) /* without the line <?xml ...?> */
-#define MODE_TYPED     (1 << 7)
-#define MODE_XRPC      (1 << 8)
+#define MODE_TEXT      (1 << 2)
+#define MODE_SAX       (1 << 3)
+#define MODE_MAPI      (1 << 4)
+#define MODE_SEQ       (1 << 5)
+#define MODE_NO_ROOT   (1 << 6)
+#define MODE_NO_HEADER (1 << 7) /* without the line <?xml ...?> */
+#define MODE_TYPED     (1 << 8)
+#define MODE_XRPC      (1 << 9)
 
 struct XmlNsFrame; /* forward */
 typedef struct XmlNsFrame {
@@ -214,6 +215,8 @@ extern struct serializeFunStruct
     saxSerializeFun,
     dmSerializeFun,
     mapi_dmSerializeFun,
+    textSerializeFun,
+    mapi_textSerializeFun,
     xmlSerializeFun,
     mapi_xmlSerializeFun,
     typed_xmlSerializeFun,
@@ -1305,7 +1308,7 @@ createWsContext (XqueryCtx*        ctx,
     /* reset the modes */
     ctx->modes = 0;
 
-    /* choose a mode: {xml, dm, sax} */ 
+    /* choose a mode: {xml, dm, text, sax} */ 
     if (match(mode,"xml")) {
         ctx->modes = MODE_XML;
 
@@ -1358,6 +1361,8 @@ createWsContext (XqueryCtx*        ctx,
         ctx->modes = MODE_SEQ;
     else if (match(mode,"dm"))
         ctx->modes = MODE_DM;
+    else if (match(mode,"text"))
+        ctx->modes = MODE_TEXT;
     else if (match(mode,"sax")) {
         ctx->modes = MODE_SAX;
 
@@ -1380,7 +1385,8 @@ createWsContext (XqueryCtx*        ctx,
     }
 
     /* add mapi = characters at the start of each line */
-    if ((ctx->modes & (MODE_DM | MODE_XML)) && match(mode,"mapi"))
+    if ((ctx->modes & (MODE_DM | MODE_TEXT | MODE_XML )) &&
+         match(mode,"mapi"))
         ctx->modes = ctx->modes | MODE_MAPI;
 
 
@@ -1400,6 +1406,12 @@ createWsContext (XqueryCtx*        ctx,
             ctx->driverFun = & mapi_dmSerializeFun;
         else
             ctx->driverFun = & dmSerializeFun;
+    }
+    else if ( ctx->modes & MODE_TEXT ) {
+        if ( ctx->modes & MODE_MAPI )
+            ctx->driverFun = & mapi_textSerializeFun;
+        else
+            ctx->driverFun = & textSerializeFun;
     }
     else if ( ctx->modes & MODE_XML ) {
         if ( ctx->modes & MODE_MAPI &&  ctx->modes & MODE_TYPED )
@@ -1594,7 +1606,7 @@ lookup_bun (BAT *b, oid offset)
 /**
  * Main XQUERY/Pathfinder result sequence printing routine. 
  * Arguments are
- * mode: e.g. "xml", "sax", "seq", "dm", ("noroot", "typed")
+ * mode: e.g. "xml", "sax", "seq", "dm", "text", ("noroot", "typed")
  * ws : the working set
  * max_iter : often 1@0. we can also print multiple iters for XRPC or debugging
  * item/item/kind : sequence result BATs (iter as a constant bat)
