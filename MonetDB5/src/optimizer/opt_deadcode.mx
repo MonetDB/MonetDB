@@ -122,6 +122,11 @@ OPTdeadcodeImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				break;
 			} 
 
+		if( getModuleId(p)== sqlRef && getFunctionId(p)== assertRef &&
+			isConstant(mb,getArg(p,1)) && getConstant(mb,getArg(p,1)).val.ival==0){
+			freeInstruction(p);
+			actions++;
+		} else
 		if (se || hasSideEffects(p, FALSE) )
 			pushInstruction(mb,p);
 		else {
