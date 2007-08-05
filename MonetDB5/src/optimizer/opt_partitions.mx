@@ -568,7 +568,7 @@ of the sql repository
 	/* garbage collect the partition records */
 	for(i=0; i< vlimit; i++)
 	if( garbage[i]){
-		q=newStmt(mb,"bpm","garbage");
+		q=newStmt(mb,bpmRef,"garbage");
 		pushArgument(mb,q,i);
 	}
 	pushInstruction(mb,p);
