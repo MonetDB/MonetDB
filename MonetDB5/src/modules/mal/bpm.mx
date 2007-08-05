@@ -320,6 +320,10 @@ comment "Split all partitions that cover the split value";
 command addPartition(b:bat[:any_1,:any_2],s:bat[:any_1,:any_2]):void
 address BPMaddSegment
 comment "Add a partition to a fragmented temporary table";
+command addPartition(b:bat[:any_1,:any_2],s:BAT):void
+address BPMaddSegment
+comment "Add a partition to a fragmented temporary table";
+
 command addPartition(nme:str,b:bat[:any_1,:any_2]) :bat[:any_1,:any_2]
 address BPMaddPartition
 comment "Add a new partition to the chain for name";
@@ -798,7 +802,8 @@ partitions, then we might save time by performing
 one pass over the underlying source
 @c
 
-static str materializePartition(Partition p){
+static str 
+materializePartition(Partition p){
 	BAT *b,*bn;
 	assureSpace();
 	if( p->delayed== 0)
@@ -806,10 +811,10 @@ static str materializePartition(Partition p){
 	b= BATdescriptor(p->bid);
 	bn= BAT_select_(b, VALptr(&p->tlow),VALptr(&p->thgh), 
 			TRUE, FALSE, TRUE, FALSE);
+	BBPunfix(b->batCacheid);
 	if( bn== NULL)
 		throw(MAL,"bpm.materialize","Could not create BAT");
 	BBPkeepref(bn->batCacheid);
-	BBPunfix(b->batCacheid);
 	p->bid= bn->batCacheid;
 	p->delayed = 0;
 	return MAL_SUCCEED;
@@ -1026,7 +1031,6 @@ BPMdeposit(bat *ret, str *nme, bat *src)
 	}
 	pa = newPartition(ba->batCacheid);
 	bpmcat[ba->batCacheid]->bid = ba->batCacheid;
-	BBPincref(ba->batCacheid,TRUE);
 	pa->alias= pa->bid;
 	pa->name= nme? GDKstrdup(*nme): BBPname(ba->batCacheid);
 	pa->nxt= pa->prv= pa->bid;
@@ -1078,6 +1082,7 @@ BPMsplitpartition(bat *ret, bat *bid, ptr val)
 	int (*cmp) (ptr, ptr);
 	ptr nilptr;
 	int i;
+	str msg=MAL_SUCCEED;
 	(void) ret;
 
 	BPMopen();
@@ -1097,7 +1102,8 @@ BPMsplitpartition(bat *ret, bat *bid, ptr val)
 #endif
 	/* overlap by excluding outliers */
 	for(i= ps->nxt ; i!=ps->bid && bpmcat[i] ; i= bpmcat[i]->nxt){
-	materializePartition(bpmcat[i]); 
+	if( (msg=materializePartition(bpmcat[i])) )
+		return msg; 
 	if( *bid > 0){
 		if( greater(i,tlow,val) || equal(i,tlow,val) ||
 			less(i,thgh,val) || equal(i,thgh,val) ){
@@ -1228,7 +1234,8 @@ BPMsortPartitions(int *ret, bat *bid)
 		throw(MAL,"bpm.sort","Can not alias BAT");
 	/* replace each partition with its sorted version */
 	for(i= a->nxt ; i!= a->alias; i= nx){
-		materializePartition(bpmcat[i]); 
+		if( (msg=materializePartition(bpmcat[i])) )
+			return msg; 
 		nx= bpmcat[i]->nxt;
 		
 		@:getBATdescriptor(&bpmcat[i]->bid,b,"bpm.sortPartitions");
@@ -1274,7 +1281,8 @@ BPMhashPartitions(int *ret, bat *bid)
 	if( (a= getAlias(*bid)) == 0)
 		throw(MAL,"bpm.hash","Can not alias BAT");
 	for(i= a->nxt; i!= a->alias; i= bpmcat[i]->nxt) {
-		materializePartition(bpmcat[i]); 
+		if( (msg=materializePartition(bpmcat[i])) )
+			return msg; 
 				
 		@:getBATdescriptor(&bpmcat[i]->bid,b,"bpm.hashPartitions");
 		if (b == NULL) {
@@ -1308,10 +1316,11 @@ BPMcountInternal(bat bid)
 	int ret=0, i;
 	Partition ps;
 	BAT *b;
+
 	if( (ps= getAlias(bid)) == 0)
 		return 0;
 	for(i= ps->nxt ; i!=ps->bid && bpmcat[i] ; i= bpmcat[i]->nxt){
-		materializePartition(bpmcat[i]); 
+		materializePartition(bpmcat[i]);
 		b= BATdescriptor(bpmcat[i]->bid);
 		if( BATcount(b) != bpmcat[i]->cnt)
 			printf("wrong count administration\n");
@@ -1335,8 +1344,15 @@ BPMemptySet(int *ret, bat *bid)
 {
 	int i;
 	Partition ps;
-	if( (ps= getAlias(*bid)) == 0)
-		throw(MAL,"bpm.emptySet","Partitioned BAT not found");
+	BAT *b;
+	if( (ps= getAlias(*bid)) == 0){
+		b= BATdescriptor(*bid);
+		*ret = BATcount(b)==0;
+		if(b==0)
+			throw(MAL,"bpm.emptySet","Can not access BAT");
+		BBPunfix(b->batCacheid);
+		return MAL_SUCCEED;
+	}
 	for(i= ps->nxt ; i!=ps->bid && bpmcat[i] ; i= bpmcat[i]->nxt){
 		if( bpmcat[i]->cnt)
 			throw(MAL,"bpm.emptySet","emptySet");
@@ -1374,10 +1390,11 @@ static int
 BPMpiecesImpl(bat bid){
 	int i,cnt=0;
 	Partition ps;
+
 	if( (ps= getAlias(bid)) == 0)
 		return 1;
 	for(i= ps->nxt ; i!=ps->bid && bpmcat[i] ; i= bpmcat[i]->nxt){
-		materializePartition(bpmcat[i]); 
+		materializePartition(bpmcat[i]);
 		cnt +=1;
 	}
 	return cnt;
@@ -1417,7 +1434,7 @@ getAcceptor(bat ba, int maxcnt){
 		return bpmcat[bn->batCacheid];
 	}
 	for(i=p->nxt; i!= p->bid && bpmcat[i]; i=bpmcat[i]->nxt){
-		materializePartition(bpmcat[i]); 
+		materializePartition(bpmcat[i]);
 		if( (int)bpmcat[i]->cnt < maxcnt)
 			return bpmcat[i];
 	}
@@ -2121,6 +2138,7 @@ BPMtakePartition(bat *ret, bat *bid, int *index)
 {
 	int i,j;
 	Partition p;
+	str msg= MAL_SUCCEED;
 
 	BPMopen();
 	p= bpmcat[*bid];
@@ -2130,8 +2148,9 @@ BPMtakePartition(bat *ret, bat *bid, int *index)
 	for(j=1,i=bpmcat[p->alias]->nxt; 
 		j< *index && i!= p->alias ; 
 		i= bpmcat[i]->nxt){
-		materializePartition(bpmcat[i]);
-		j++;
+			if( (msg=materializePartition(bpmcat[i])) )
+				return msg; 
+			j++;
 	}
 	if(i== p->alias )
 		throw(MAL,"bpm.takePartition","No partition number %d",*index);
@@ -2183,6 +2202,7 @@ BPMfold(bat *ret, bat *bid){
 	int i,cnt=0,j;
 	Partition ps;
 	BAT *b,*bn;
+	str msg= MAL_SUCCEED;
 
 	i= *bid;
 	if( (ps= getAlias(i)) == 0){
@@ -2199,16 +2219,17 @@ BPMfold(bat *ret, bat *bid){
 		if( b== NULL)
 			throw(MAL,"bpm.fold","Partition element not found");
 		*ret= b->batCacheid;
+/* printf("free %d\n", b->batCacheid);*/
 		GDKfree(bpmcat[b->batCacheid]);
 		bpmcat[b->batCacheid]= 0;
 		BBPunfix(*ret);
 		assert(i!= *ret);
+/* printf("free %d\n", i);*/
 		GDKfree(bpmcat[i]);
 		bpmcat[i]= 0;
 		return MAL_SUCCEED;
 	}
 
-printf("Not to be reached yet \n");
 	cnt=BPMcountInternal(*bid);
 	b= BATdescriptor(i);
 	if( b== NULL)
@@ -2219,7 +2240,8 @@ printf("Not to be reached yet \n");
 		throw(MAL,"bpm.fold","Can not create BAT");
 
 	for(i= ps->nxt ; i!=ps->bid && bpmcat[i] ; ) {
-		materializePartition(bpmcat[i]); 
+		if( (msg=materializePartition(bpmcat[i])) )
+			return msg; 
 		b= BATdescriptor(i);
 		if( b== NULL)
 			throw(MAL,"bpm.fold","Partitioned BAT not found");
@@ -2244,10 +2266,14 @@ str
 BPMgarbage(int *ret,int *bid){
 	int i,j;
 	(void) ret;
-	/* printf("garbage %d\n",*bid);*/
+#ifdef _DEBUG_BPM_
+	printf("garbage %d\n",*bid);
+#endif
 	for(i= *bid; bpmcat[i]; ){
 		j= bpmcat[i]->nxt;
-		/* printf("freeing %d\n",i);*/
+#ifdef _DEBUG_BPM_
+		printf("freeing %d\n",i);
+#endif
 		GDKfree(bpmcat[i]);
 		bpmcat[i]= 0;
 		if( i != *bid) 
@@ -2278,7 +2304,8 @@ BPMinsert(bat *ret, bat *bid, bat *ins)
 	for(i= bpmcat[p->alias]->nxt;
 		i!= p->alias && msg== MAL_SUCCEED; 
 		i= bpmcat[i]->nxt){
-			materializePartition(bpmcat[i]); 
+			if( (msg=materializePartition(bpmcat[i])) )
+				return msg; 
 			msg=BKCinsert_bat(ret,&bpmcat[i]->bid,ins);
 		}
 	*ret= 0;
@@ -2299,8 +2326,9 @@ BPMdelete(bat *ret, bat *bid, bat *del)
 	for(i= bpmcat[p->alias]->nxt;
 		i!= p->alias && msg== MAL_SUCCEED; 
 		i= bpmcat[i]->nxt){
-		materializePartition(bpmcat[i]); 
-		msg=BKCdelete_bat(ret,&bpmcat[i]->bid,del);
+			if( (msg=materializePartition(bpmcat[i])) )
+				return msg; 
+			msg=BKCdelete_bat(ret,&bpmcat[i]->bid,del);
 	}
 	*ret= 0;
 	return msg;
@@ -2320,10 +2348,11 @@ BPMreplace(bat *ret, bat *bid, bat *ins, bat *del)
 	for(i= bpmcat[p->alias]->nxt;
 		i!= p->alias && msg== MAL_SUCCEED; 
 		i= bpmcat[i]->nxt) {
-		materializePartition(bpmcat[i]);
-		msg=BKCdelete_bat(ret,&bpmcat[i]->bid,del);
-		if( msg == MAL_SUCCEED)
-			msg=BKCinsert_bat(ret,&bpmcat[i]->bid,ins);
+			if( (msg=materializePartition(bpmcat[i])) )
+				return msg; 
+			msg=BKCdelete_bat(ret,&bpmcat[i]->bid,del);
+			if( msg == MAL_SUCCEED)
+				msg=BKCinsert_bat(ret,&bpmcat[i]->bid,ins);
 	}
 	*ret= 0;
 	return msg;
@@ -2334,6 +2363,7 @@ BPMgetNames(bat *ret)
 {
 	BAT *b;
 	int i;
+	str msg= MAL_SUCCEED;
 
 	BPMopen();
 	b = BATnew(TYPE_int, TYPE_str, BBPlimit);
@@ -2342,7 +2372,8 @@ BPMgetNames(bat *ret)
 	
 	for(i=1; i<bpmcatsize; i++)
 	if (bpmcat[i] && bpmcat[i]->name){
-		materializePartition(bpmcat[i]); 
+		if( (msg=materializePartition(bpmcat[i])) )
+			return msg; 
 		BUNins(b, &i, bpmcat[i]->name,TRUE);
 	}
 	
@@ -2367,7 +2398,8 @@ BPMdiscard(int *ret, bat *bid)
 		i!= p->alias && msg== MAL_SUCCEED; 
 		i= r) {
 	/*	msg= BKCdestroy(&r, &bpmcat[i]->bid); */
-		materializePartition(bpmcat[i]);
+		if( (msg=materializePartition(bpmcat[i])) )
+			return msg; 
 		msg= BKCsetTransient(&r,&bpmcat[i]->bid);
 		if( bpmcat[i]->name)
 			GDKfree(bpmcat[i]->name);
@@ -2393,7 +2425,8 @@ BPMdiscardAll(int *ret)
 	BPMopen();
 	for( i=1; i<bpmcatsize && msg== MAL_SUCCEED; i++)
 	if( bpmcat[i] && bpmcat[i]->name){
-		materializePartition(bpmcat[i]); 
+		if( (msg=materializePartition(bpmcat[i])) )
+			return msg; 
 		msg= BPMdiscard(ret, &i);
 	}
 	*ret =0;
@@ -2448,6 +2481,7 @@ BPMnewIterator(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	bat *ret, *bid;
 	Partition p;
+	str msg= MAL_SUCCEED;
 	(void) mb;
 
 	ret= (bat *)getArgReference(stk, pci, 0);
@@ -2457,14 +2491,13 @@ BPMnewIterator(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	
 	if( (p= getAlias(*bid)) == 0)
 		throw(MAL,"bpm.newIterator","Can not access alias BAT");
-	if( p->nxt == p->bid)
-		throw(MAL,"bpm.newIterator","Partitioned BAT lacks partitions");
 
 	if( emptyRing(p)){
 		*ret= 0;
 		return MAL_SUCCEED;
 	}
-	materializePartition(bpmcat[p->nxt]);
+	if( (msg=materializePartition(bpmcat[p->nxt])) )
+		return msg; 
 	if( p->alias== p->nxt)
 		*ret= 0;
 	else *ret = p->nxt;
@@ -2519,6 +2552,7 @@ BPMnewIteratorRng(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int i;
 	int (*cmp) (ptr, ptr);
 	ptr nilptr, low, hgh;
+	str msg= MAL_SUCCEED;
 	(void) mb;
 
 	ret= (bat *)getArgReference(stk, pci, 0);
@@ -2539,7 +2573,8 @@ BPMnewIteratorRng(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BBPunfix(b->batCacheid);	/* don't need it anymore */
 
 	for( i= bpmcat[p->alias]->nxt; i!= p->alias ; i= bpmcat[i]->nxt){
-		materializePartition(bpmcat[i]);
+		if( (msg=materializePartition(bpmcat[i])) )
+			return msg; 
 		if( *bid > 0){
 			if( greater(i,tlow,hgh) || less(i,thgh,low) ){
 					/* this fragment need not needed */
@@ -2614,6 +2649,7 @@ BPMhasMoreElementsRng(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int (*cmp) (ptr, ptr);
 	ptr nilptr, low, hgh;
 	Partition p;
+	str msg= MAL_SUCCEED;
 	(void) mb;
 
 	ret= (bat *)getArgReference(stk, pci, 0);
@@ -2636,7 +2672,8 @@ BPMhasMoreElementsRng(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BBPunfix(b->batCacheid);	/* don't need it anymore */
 
 	for( i= bpmcat[*ret]->nxt; i!= p->alias ; i= bpmcat[i]->nxt) {
-		materializePartition(bpmcat[i]);
+		if( (msg=materializePartition(bpmcat[i])) )
+			return msg; 
 		if( *bid > 0){
 			if( greater(i,tlow,hgh) || less(i,thgh,low) ){
 					/* this fragment need not needed */
@@ -2647,7 +2684,8 @@ BPMhasMoreElementsRng(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					/* this fragment need not needed */
 					continue;
 				}
-		materializePartition(bpmcat[i]);
+		if( (msg=materializePartition(bpmcat[i])) )
+			return msg; 
 		@:getBATdescriptor(&bpmcat[i]->bid,b,"bpm.range")@
 #ifdef _DEBUG_BPM_
 				stream_printf(GDKout, "got matching fragment %d\n",i);
@@ -2683,11 +2721,13 @@ BPMgetDimension(ptr *first, ptr *last, ptr *vlow, ptr *vhgh, int *bid)
 str
 BPMgetNumberOfPartitions(int *ret, int *bid){
 	int base,i,cnt=0;
+	str msg= MAL_SUCCEED;
 	base = *bid;
 	for( i= bpmcat[base]->nxt;
 		 base != i && i ;
 		 i= bpmcat[i]->nxt){
-		materializePartition(bpmcat[i]);
+		if( (msg=materializePartition(bpmcat[i])) )
+			return msg; 
 		cnt++;
 	}
 	*ret= cnt;
@@ -2760,7 +2800,8 @@ BPMmapname(int *ret)
 
 	for(i=1; i< bpmcatsize; i++)
 		if( bpmcat[i] && bpmcat[i]->name){
-			materializePartition(bpmcat[i]);
+			if( (msg=materializePartition(bpmcat[i])) )
+				return msg; 
 	 		BUNins(b, &i, bpmcat[i]->name, FALSE);
 		}
 
@@ -2783,7 +2824,8 @@ BPMmap@1(int *ret)
 
 	for(i=1; i< bpmcatsize; i++)
 		if( bpmcat[i]){
-			materializePartition(bpmcat[i]); 
+			if( (msg=materializePartition(bpmcat[i])) )
+				return msg; 
 	 		BUNins(b, &i, &bpmcat[i]->@1, FALSE);
 		}
 
@@ -2828,7 +2870,8 @@ BPMmap@1lng(int *ret)
 
 	for(i=1; i< bpmcatsize; i++)
 		if( bpmcat[i]){
-			materializePartition(bpmcat[i]); 
+			if( (msg=materializePartition(bpmcat[i])) )
+				return msg; 
 			v= &bpmcat[i]->@1;
 			if (!nilval(v)){
 				t= v->vtype;
@@ -2868,7 +2911,8 @@ BPMmap@1dbl(int *ret)
 
 	for(i=1; i< bpmcatsize; i++)
 		if( bpmcat[i]){
-			materializePartition(bpmcat[i]);
+			if( (msg=materializePartition(bpmcat[i])) )
+				return msg; 
 			v= &bpmcat[i]->@1;
 			if (!nilval(v)){
 			t= v->vtype;
@@ -2910,7 +2954,8 @@ BPMsaveCatalog(int *r)
 
 	for(i=1; i< bpmcatsize; i++)
 		if( bpmcat[i]){
-			materializePartition(bpmcat[i]); 
+			if( (msg=materializePartition(bpmcat[i])) )
+				return msg; 
 			bt=bpmcat[i]->bid;
 			nm = GDKmalloc(12);
 			snprintf(nm, 12, "bpm_%d", i);
