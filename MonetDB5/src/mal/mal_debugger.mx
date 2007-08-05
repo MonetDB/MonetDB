@@ -473,6 +473,7 @@ mal_export void mdbShowBreakpoints(Client cntxt);
 mal_export void mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc);
 mal_export int mdbSession(void);
 mal_export void mdbStep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc);
+mal_export void mdbDump(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc);
 mal_export void mdbHelp(stream *f);
 mal_export void printStackElm(stream *f, MalBlkPtr mb, VarPtr n, ValPtr v, int index, size_t cnt, int first, int lifespan);
 mal_export void printBATelm(stream *f, int i, size_t cnt, size_t first);
@@ -827,6 +828,15 @@ mdbLocateMalBlk(MalBlkPtr mb, str b, stream *out){
 		return NULL;
 	} 
 	return m;
+}
+
+static void
+mdbBacktrace(Client cntxt, MalStkPtr stk, int pci){
+	for (; stk != NULL; stk = stk->up) {
+		printCall(cntxt, stk->blk, stk, pci);
+		if (stk->up)
+			pci = stk->up->pcup;
+	}
 }
 
 void
@@ -1291,16 +1301,7 @@ mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
 			continue;
 		case 'w':
 		{
-			MalStkPtr w;
-			MalBlkPtr mw = mb;
-			int pci = pc;	/*  how to find enclosing pc */
-
-			for (w = stk; w != NULL; w = w->up) {
-				mw = w->blk;
-				printCall(cntxt, mw, w, pci);
-				if (w->up)
-					pci = w->up->pcup;
-			}
+			mdbBacktrace(cntxt, stk, pc);
 			continue;
 		}
 @-
@@ -1373,6 +1374,13 @@ signatures satisfying the pattern.
 	cntxt->promptlength = oldpromptlength;
 }
 
+void 
+mdbDump(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc){
+	stream_printf(cntxt->fdout,"!MDB dump of instruction %d\n",pc);
+	printFunction(cntxt->fdout, mb, LIST_MAL_ALL | LIST_MAL_PROPS);
+	mdbBacktrace(cntxt, stk, pc);
+	printStack(cntxt->fdout,mb,stk,0);
+}
 static int mdbSessionActive;
 int mdbSession(){
 	return mdbSessionActive;
