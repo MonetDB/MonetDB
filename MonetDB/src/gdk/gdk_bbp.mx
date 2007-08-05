@@ -1116,7 +1116,7 @@ bbpclear(bat i, int idx, str lock)
 		THRprintf(GDKout, "#clear %d (%s)\n", (int) i, BBPname(i));
 	}
 	BBPuncacheit_(i, TRUE);
-	BBP_status_set(i, 0, "BBPclear");
+	BBP_status_set(i, BBPUNLOADING, "BBPclear");
 	BBP_refs(i) = 0;
 	BBP_lrefs(i) = 0;
 	if (lock)
@@ -1137,6 +1137,7 @@ bbpclear(bat i, int idx, str lock)
 	}
 	if (BBP_logical(i) != BBP[ABS(i)].bak[(i) < 0])
 		GDKfree(BBP_logical(i));
+	BBP_status_set(i, 0, "BBPclear");
 	BBP_logical(i) = NULL;
 	BBP_next(i) = BBP_free(idx);
 	BBP_free(idx) = i;
