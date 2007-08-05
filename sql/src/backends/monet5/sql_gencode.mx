@@ -870,9 +870,20 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 		}
 			break;
 		case st_semijoin:{
-			if (s->op1.stval->h && s->op1.stval->h == s->op2.stval->h)
-				dump_2(sql, mb, s, sqlRef, "sql_semijoin");
-			else
+			if (s->op1.stval->h && s->op1.stval->h == s->op2.stval->h){
+				/* dump_2(sql, mb, s, sqlRef, "sql_semijoin");*/
+				InstrPtr mp,mq;
+				int o1 = _dumpstmt(sql, mb, s->op1.stval);
+				int o2 = _dumpstmt(sql, mb, s->op2.stval);
+				@:SQLprelude@
+				mp = newStmt(mb, batRef, mirrorRef);
+				pushArgument(mb,mp,o2);
+				mq = newStmt(mb, algebraRef, joinRef);
+				pushArgument(mb,mq,getArg(mp,0));
+				pushArgument(mb,mq,o1);
+				s->nr = getDestVar(mq);
+				@:SQLpostlude@
+			} else
 				dump_2(sql, mb, s, algebraRef, "semijoin");
 		}
 			break;
