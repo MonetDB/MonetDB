@@ -635,6 +635,10 @@ CAVEAT 2. Grouping and aggregations are handled using reconstruction
 of the original table. This is not the most optimal scheme.
 The optimizer should be patched to handel more cases.
 
+CAVEAT 3. A MAL program may generate an exception, which should
+not disturb garbage collection of temporary partitions. Otherwise,
+the bpm catalog becomes polluted.
+
 Every partition is the result of at most four operations:
 range/hash partition on head/tail.
 The consolidated properties are administered for use
@@ -764,11 +768,13 @@ static Partition getAlias(bat i){
 
 static Partition newPartition(int i){
 	assureSpace();
+	if( i<-BBPlimit || i==0 || i>BBPlimit)
+		return NULL;
 #ifdef _DEBUG_BPM_
-	if( bpmcat[i])
+	if( bpmcat[i]!= 0)
 		stream_printf(GDKout,"re-alloc of partition record %d\n",i);
 #endif
-	if( i && bpmcat[i]== NULL){
+	if( bpmcat[i]== 0){
 		mal_set_lock(mal_contextLock, "bpm");
 		bpmcat[i]= (Partition) GDKzalloc(sizeof(PartitionRec));
 		mal_unset_lock(mal_contextLock, "bpm");
