@@ -85,298 +85,6 @@ static int localVar(MalBlkPtr mb, char *prefix, int idx, int tpe){
 	return newVariable(mb,GDKstrdup(name),tpe);
 }
 
-static void setSegmentNr(MalBlkPtr mb, InstrPtr p, int j, int grp){
-	int *seg;
-	seg= (int*) getPropertyValue(getProps(mb,getArg(p,j)), "segment");
-	if( seg== 0 || *seg == 0)
-		setArgProperty(mb, p,j,"segment","=",TYPE_int,&grp);
-}
-
-static void setSegment(MalBlkPtr mb, InstrPtr p, int grp){
-	int j;
-	for(j=0; j<p->retc; j++)
-		setSegmentNr(mb,p,j,grp);
-}
-
-static int
-OPTpartitionProperties(MalBlkPtr mb)
-{
-	int i,j,k,done,  grp= 1;
-	InstrPtr p;
-	int *used= (int*) alloca(sizeof(int)*mb->vtop);
-
-	memset((char*) used, 0, sizeof(int)*mb->vtop);
-	for(i=0;i<mb->stop; i++){
-		p= getInstrPtr(mb,i);
-		for(j=p->retc; j<p->argc;j++)
-			used[getArg(p,j)]++;
-	}
-
-	for(i=0;i< mb->stop; i++){
-		p=getInstrPtr(mb,i);
-		if( getFunctionId(p)== bindRef && getModuleId(p)==sqlRef){
-			/* test the BPM catalog */
-			setArgProperty(mb, p,0,"segment","=",TYPE_int,&grp);
-			grp++;
-			continue;
-		}
-@-
-Find segments, a linear trail of single target instructions.
-A segment as at most one output and all instructions are
-side-effect free. Those not satisfying this are blocking
-and set to segment -1;
-Mark all result variables to belong to the same segment.
-@c
-		setSegment(mb,p,grp);
-
-		done=0;
-		if( hasSideEffects(p,TRUE) || p->retc > 1)
-			setSegment(mb,p, -1);
-		else
-		if( isFragmentGroup(p) ){
-			for(j=p->retc; j<p->argc; j++)
-			if( isPropertyDefined(getProps(mb,getArg(p,j)),"segment")){
-				k= *(int*) getPropertyValue(getProps(mb,getArg(p,j)),
-									"segment");
-				if(done==0)
-					done=k;
-				if( done!= k)
-					goto newgroup;
-				if( used[getArg(p,j)]>1)
-					goto newgroup;
-			}
-			if( p->retc==1)
-				goto nxtgroup;
-		newgroup:
-			++grp;
-			setSegment(mb,p,grp);
-		} else
-			setSegment(mb,p,-1);
-nxtgroup: ;
-	}
-#ifdef DEBUG_OPT_PARTITIONED
-	setLifespan(mb);
-	chkProgram(MCgetClient()->nspace,mb);
-	stream_printf(GDKout,"#partition properties\n");
-	printFunction(GDKout,mb,LIST_MAL_PROPS);
-#endif
-	return grp;
-}
-@-
-The naive strategy is to produce a nested iterator block,
-which terminates at the resultSet.
-@-
-Wrap a sequence of MAL instructions with an iterators
-to accumulate the result.
-@c
-static void
-OPTpartitionStrategy(MalBlkPtr mb, int last)
-{
-	int i,j,limit;
-	InstrPtr *old,p=0,q,anchor=NULL;
-	InstrPtr *listanchor= (InstrPtr*) alloca(sizeof(InstrPtr)*mb->vtop);
-	int *seg, curseg= -1, prevseg= -1;
-	int *alias= (int*) alloca(sizeof(int)*mb->vtop*2);
-	int *bpm= (int*) alloca(sizeof(int)*mb->vtop*2); /* partitioned or not*/
-	/*char name[1024];*/
-
-	(void) last;
-	memset((char*) alias, 0, sizeof(int)*mb->vtop*2);
-	memset((char*) bpm, 0, sizeof(int)*mb->vtop*2);
-	memset((char*) listanchor, 0, sizeof(InstrPtr)*mb->vtop);
-
-	limit= mb->stop;
-	old = mb->stmt;
-	newMalBlkStmt(mb,limit);
-
-	pushInstruction(mb,old[0]); /* signature */
-	for(i=1;i< limit; i++){
-		p= old[i];
-@-
-All result variables belong to the same segment, provided
-that we do not re-use them 
-@c
-		prevseg= curseg;
-		seg= (int*) getPropertyValue(getProps(mb,getArg(p,0)), "segment");
-		if( (seg== 0 || *seg== prevseg) && *seg!= -1   ){
-			pushInstruction(mb,p);
-			continue;
-		}
-		curseg= *seg;
-@-
-Now we know that there is a segment change. This calls for
-finalization of the old one and starting a new one.
-The last one is referenced by 'anchor', which determined
-the nesting of iterators.
-@c
-		if(anchor){
-			/* save all temporary partitions */
-			for(j=0; j< old[i-1]->retc; j++){
-				int tpe;
-				q = newStmt(mb,"bpm","addPartition");
-				pushArgument(mb,q,getArg(listanchor[j],0));
-				pushArgument(mb,q,getArg(old[i-1],j));
-				tpe= getArgType(mb,old[i-1],j);
-				alias[getArg(old[i-1],j)]=getArg(listanchor[j],0);
-				pushArgument(mb,listanchor[j],newTypeVariable(mb,getHeadType(tpe)));
-				pushArgument(mb,listanchor[j],newTypeVariable(mb,getTailType(tpe)));
-			}
-			/* finalize iterator structure */
-			for(j=anchor->argc-1; j>= anchor->retc; j--)
-			if( isaBatType(getArgType(mb,anchor,j)) ){
-				q = newStmt(mb, bpmRef, "hasMoreElements");
-				q->barrier= REDOsymbol;
-				q->argv[0]= getArg(anchor,j);
-				pushArgument(mb, q, 
-					(alias[getArg(anchor,j)]?alias[getArg(anchor,j)]:getArg(anchor,j)) );
-			}
-
-			for(j=anchor->argc-1; j>=anchor->retc; j--)
-			if( isaBatType(getArgType(mb,anchor,j)) ){
-				q = newInstruction(mb,EXITsymbol);
-				q->barrier= EXITsymbol;
-				q->argv[0]= getArg(anchor,j);
-				pushInstruction(mb,q);
-			}
-			anchor=NULL;
-/* printf("done exit [%d]  %d %d %d\n",i,curseg,prevseg,last);*/
-		}
-@-
-We are left with functions that should simply be dumped,
-taking care of the aliases and special cases.
-@c
-		if( getFunctionId(p)== bindRef && getModuleId(p)== sqlRef){
-			pushInstruction(mb,p);
-			/* hdl:= bpm.take(name) */
-			q = newStmt(mb,"bpm","unfold");
-			q->argv[0]=
-				localVar(mb,"bpm",getArg(p,0), getVarType(mb, getArg(p,0)));
-			freezeVarType(mb,q->argv[0]);
-			alias[getArg(p,0)]= getArg(q,0);
-			bpm[getArg(p,0)] = 1;
-/*
-			snprintf(name,1024,"%s_%s_%s",
-				getConstant(mb, getArg(p,1)).val.sval,
-				getConstant(mb, getArg(p,2)).val.sval,
-				getConstant(mb, getArg(p,3)).val.sval );
-			pushStr(mb, q,name);
-*/
-			pushArgument(mb,q,getArg(p,0));
-			continue;
-		}
-		if( getModuleId(p)== sqlRef)
-			goto justdump;
-@-
-Blocking operations, such as sorting, aggregation, and
-the aligned bat calculations require more care.
-@c
-		/* remap specific instructions to list versions */
-		if( getFunctionId(p)== countRef &&
-			alias[getArg(p,1)]!= getArg(p,1) &&
-			p->argc ==2  ){
-			getModuleId(p)= bpmRef;
-			pushInstruction(mb,p);
-			if( alias[getArg(p,1)])
-				getArg(p,1)= alias[getArg(p,1)];
-			continue;
-		}
-		if( getModuleId(p)==constraintsRef){
-			getModuleId(p)= bpmRef;
-			pushInstruction(mb,p);
-			if( alias[getArg(p,1)])
-				getArg(p,1)= alias[getArg(p,1)];
-			continue;
-		}
-@-
-Detect if we are opening a new segment other then the last one.
-Create the lists needed for all target variables
-and generator the iterators.
-Remember the new segment in prevseg to avoid any superflous glues.
-Currently assume a single one.
-@c
-		if(curseg >0){
-			for(j=0; j<p->retc; j++){
-				listanchor[j]= q = newStmt(mb,"bpm","new");
-				alias[getArg(p,j)]= getArg(q,0);
-			}
-			for(j=p->retc; j<p->argc; j++)
-			if( isaBatType(getArgType(mb,p,j)) ){
-				q = newStmt(mb, bpmRef, "newIterator");
-				q->barrier= BARRIERsymbol;
-				q->argv[0]= getArg(p,j);
-				pushArgument(mb, q, 
-					(alias[getArg(p,j)]?alias[getArg(p,j)]:getArg(p,j)) );
-			}
-			anchor=p;
-/* printf("new iterator block entered[%d] %d %d\n",i,curseg,prevseg);*/
-			prevseg=curseg;
-		}
-@-
-Batcalc operations all work on the assumption that the
-heads are sorted on the heads(oid). If the operands come from
-different partitions sequences, we have to take special
-care in the iterator.
-@c
-		if( getModuleId(p)== batcalcRef){
-			InstrPtr qa;
-			int tpe = getArgType(mb,p,0);
-			listanchor[0]= q = newStmt(mb,"bpm","new");
-			pushArgument(mb,listanchor[0],newTypeVariable(mb,getHeadType(tpe)));
-			pushArgument(mb,listanchor[0],newTypeVariable(mb,getTailType(tpe)));
-			
-			q = newStmt(mb,"bpm","newIterator");
-			q->barrier= BARRIERsymbol;
-			for(j=p->retc+1; j<p->argc; j++)
-				pushReturn(mb,q,newTmpVariable(mb, TYPE_any));
-			for(j=p->retc; j<p->argc; j++)
-				pushArgument(mb,q, alias[getArg(p,j)]);
-
-			alias[getArg(p,0)]= getArg(listanchor[0],0);
-			for(j=p->retc; j<p->argc; j++)
-				getArg(p,j)= getArg(q,j- p->retc);
-			pushInstruction(mb,p);
-
-			qa = newStmt(mb,"bpm","addPartition");
-			pushArgument(mb,qa,getArg(listanchor[0],0));
-			pushArgument(mb,qa,getArg(p,0));
-
-			qa = newStmt(mb, bpmRef, "hasMoreElements");
-			qa->barrier= REDOsymbol;
-			getArg(qa,0)= getArg(q,0);
-			for(j=1;j<q->retc; j++)
-				pushReturn(mb,qa,getArg(q,j));
-			for(j=q->retc;j<q->argc; j++)
-				pushArgument(mb,qa,getArg(q,j));
-
-			qa= newInstruction(mb, EXITsymbol);
-			qa->barrier= EXITsymbol;
-			getArg(qa,0)= getArg(q,0);
-			for(j=1;j<q->retc; j++)
-				pushReturn(mb,qa,getArg(q,j));
-			pushInstruction(mb,qa);
-			continue;
-		}
-	justdump:
-		if( curseg== -1 || curseg != prevseg){
-			for(j= p->retc; j<p->argc; j++)
-			if( (alias[getArg(p,j)] && alias[getArg(p,j)]!= getArg(p,j)) ){
-				q = newStmt(mb,"bpm","fold");
-				q->argv[0]= getArg(p,j);
-				pushArgument(mb,q,alias[getArg(p,j)]);
-				alias[getArg(p,j)]= 0;
-				setSegmentNr(mb,p,j,-1);
-			}
-			alias[getArg(p,0)]= getArg(p,0);
-		}
-		if( p->token == ENDsymbol)
-			break;
-		pushInstruction(mb,p);
-	}
-	/* garbage collect the partition records */
-	newStmt(mb,"bpm","garbage");
-	if(p)
-		pushInstruction(mb,p);
-}
 @- Naive partitioning
 The simplistic approach starts here
 An operation should be replace by an iterator if
@@ -410,6 +118,15 @@ OPTbarrierList(MalBlkPtr mb, InstrPtr p, int *alias, int offset){
 		pushArgument(mb, q, 
 			(alias[getArg(p,j)]?alias[getArg(p,j)]:getArg(p,j)) );
 	}
+}
+static int
+OPTbarrierListCnt(MalBlkPtr mb, InstrPtr p, int *alias){
+	int j,cnt=0;
+	/* count dump the iterators */
+	for(j=p->retc; j<p->argc; j++)
+	if( isaBatType(getArgType(mb,p,j))  && alias[getArg(p,j)]>0)
+		cnt++;
+	return cnt;
 }
 static void
 OPTredoList(MalBlkPtr mb, InstrPtr p, int *alias, int offset){
@@ -542,7 +259,8 @@ of the sql repository
 
 		if( !hasSideEffects(p,TRUE) && p->retc == 1 &&
 			getModuleId(p)!= aggrRef &&
-		    !( getModuleId(p)== sqlRef)
+		    getModuleId(p)!= sqlRef &&
+			OPTbarrierListCnt(mb, p, alias) > 0
 		){
 			OPTbakeIterator(mb, p, alias, garbage);
 			continue;
@@ -559,13 +277,34 @@ of the sql repository
 #ifdef DEBUG_OPT_PARTITIONED
 			printf("alias[%d]=0\n",getArg(p,j));
 #endif
-			setSegmentNr(mb,p,j,-1);
 		}
 		if( p->token == ENDsymbol)
 			break;
 		pushInstruction(mb,p);
 	}
-	/* garbage collect the partition records */
+@-
+Whenever an exception is raised, we should still process
+the garbage collection statements for the partitioned bats.
+@c
+	q= newAssignment(mb);
+	j=findVariable(mb,"SQLexception");
+	if( j <0)
+		j= newVariable(mb,GDKstrdup("SQLexception"),TYPE_str);
+	getArg(q,0)= j;
+	q->barrier= CATCHsymbol;
+	for(i=0; i< vlimit; i++)
+	if( garbage[i]){
+		q=newStmt(mb,bpmRef,"garbage");
+		pushArgument(mb,q,i);
+	}
+	q= newAssignment(mb);
+	getArg(q,0)= j;
+	q->barrier= RAISEsymbol;
+	q= newAssignment(mb);
+	getArg(q,0)= j;
+	q->barrier= EXITsymbol;
+
+	/* if there is no exception */
 	for(i=0; i< vlimit; i++)
 	if( garbage[i]){
 		q=newStmt(mb,bpmRef,"garbage");
@@ -573,14 +312,11 @@ of the sql repository
 	}
 	pushInstruction(mb,p);
 }
-static int strategy=0;
 
 static int
 OPTpartitionsImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	if( strategy)
-		OPTpartitionStrategy(mb, OPTpartitionProperties(mb));
-	else OPTnaiveIterations(mb);
+	OPTnaiveIterations(mb);
 #ifdef DEBUG_OPT_PARTITIONED
 	stream_printf(GDKout,"partition optimizer Strategy\n");
 	printFunction(GDKout,mb,0);
