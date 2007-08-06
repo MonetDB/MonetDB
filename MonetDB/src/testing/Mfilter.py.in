@@ -211,11 +211,6 @@ test = (
                     r'^QUERY = (?:\-\-|select|insert|INSERT) ',
 ##                # pathfinder: loader/usage (without BerkeleyDB):
 ##                    r'^     -c: compress node properties \(40% encoding speed\)$',
-                # Mtest warnings:
-                    r"^! Socket-Check failed for (?:SQL|MAPI)server on <[a-zA-Z0-9]*:[0-9]+> with #[0-9]+; '.*' !$",
-##                    r'^! Waiting [0-9]+ seconds \([0-9]/[0-9]\) \.\.\. (?:Done\.)?$',
-                    r'^! Using new (?:SQL|MAPI)PORT=[0-9]+ !$',
-                    r'^! (?:SQL|MAPI)PORT was not properly released by Mserver !$',
                 # ld warnings on IRIX64:
                     r"^ld64: WARNING 84 : .*/common/.libs/libmutils.so is not used for resolving any symbol.$",
                 # (extra) error messages that used to occur with M4/sql but don't any more with M5/sql:
