@@ -807,6 +807,7 @@ PROC _collection_cleanup() : BAT[str,str]
             collection_size.delete(coll_oid);
             commitBAT.insert([+](str(int(coll_oid)), ws_dsk.reverse().mirror()));
             commitBAT.insert("_qn_nid", +(str(int(coll_oid)), "_qn_nid"));
+            commitBAT.insert("_vx_hsh_nid", +(str(int(coll_oid)), "_vx_hsh_nid"));
          } else {
             # recall the ws-ids that blocked deletion of a collection 
             collection_zombie.append([abs](reverse(project(users,$h))));
