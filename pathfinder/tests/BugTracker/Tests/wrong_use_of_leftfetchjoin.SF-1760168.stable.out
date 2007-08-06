@@ -18,13 +18,15 @@ quit();
 
 Over..
 
-# 08:33:57 >  
-# 08:33:57 >  Mtimeout -timeout 60 MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=corona --port=39667 wrong_use_of_leftfetchjoin.SF-1760168.xq
-# 08:33:57 >  
+# 00:15:57 >  
+# 00:15:57 >  Mtimeout -timeout 60 MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=corona --port=32535 wrong_use_of_leftfetchjoin.SF-1760168.xq
+# 00:15:57 >  
 
-=  Please remove this line if this test is indeed supposed to produce no output, but the error message in wrong_use_of_leftfetchjoin.SF-1760168.stable.err  =
+<?xml version="1.0" encoding="utf-8"?>
+<XQueryResult>1 2 3</XQueryResult>
+=  Please remove this line if the above output is correct  =
 
-# 08:33:57 >  
-# 08:33:57 >  Done.
-# 08:33:57 >  
+# 00:15:57 >  
+# 00:15:57 >  Done.
+# 00:15:57 >  
 
