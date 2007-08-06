@@ -753,11 +753,11 @@ defaultfetchjoin_@1_@2(BAT *bn, BAT *l, BAT *r)
 		ALGODEBUG THRprintf(GDKout, "#BATfetchjoin: BAThvoid(l) && !BATtvoid(l) && BATtdense(l)\n");
 		@:densevoidfetchjoin(@1,@2,@3)@
 	} else if ((BATtordered(l)&1) || hitalways) {
-		/* we did check the bounderies already above */
-		ALGODEBUG THRprintf(GDKout, "#BATfetchjoin: BAThvoid(l) && !BATtvoid(l) && !BATtdense(l) && BATtordered(l)&1\n");
+		/* we did check the bounderies already above (BATtordered(l)&1) or simply "trust" hitalways */
+		ALGODEBUG THRprintf(GDKout, "#BATfetchjoin: BAThvoid(l) && !BATtvoid(l) && !BATtdense(l) && ( BATtordered(l)&1 [== %d] || hitalways [== %d] )\n", (int)(BATtordered(l)&1), (int)hitalways);
 		@:orderedvoidfetchjoin(@1,@2,@3)@
 	} else {
-		ALGODEBUG THRprintf(GDKout, "#BATfetchjoin: BAThvoid(l) && !BATtvoid(l) && !BATtdense(l) && !BATtordered(l)&1\n");
+		ALGODEBUG THRprintf(GDKout, "#BATfetchjoin: BAThvoid(l) && !BATtvoid(l) && !BATtdense(l) && !BATtordered(l)&1 && !hitalways\n");
 		@:defaultvoidfetchjoin(@1,@2,@3)@
 	}
 @c
@@ -773,7 +773,7 @@ batfetchjoin(BAT *l, BAT *r, size_t estimate, bit swap, bit hitalways)
 	BUN r_cur, l_cur, l_end, dst;
 	oid seqbase;
 	BAT *ret = NULL, *bn = NULL, *l_orig = l;
-	int hitalways_check = 0;
+	bit hitalways_check = FALSE;
 
 	BATcheck(l, "BATfetchjoin: l");
 	BATcheck(r, "BATfetchjoin: r");
@@ -798,19 +798,20 @@ batfetchjoin(BAT *l, BAT *r, size_t estimate, bit swap, bit hitalways)
 	/* not checking boundaries is very dangerous; use regression tests with debugmask=8 first */
 	PROPDEBUG {
 		hitalways_check = hitalways;
-		hitalways = 0;
+		hitalways = FALSE;
 	}
 
 	if (lcount == 0 || rcount == 0) {
 		/* below range checking do not support empty bats. so treat them separately (easy) */
 		@:return_empty_join_result(l_orig,r, BATfetchjoin: |l|==0 or |r|==0,1)@
 @= return_empty_join_result
+		ALGODEBUG THRprintf(GDKout, "#@3 => empty result\n");
 #if @4
-		if (hitalways_check && lcount > 0) {
-			GDKerror("BATfetchjoin(%s,%s) does not hit always (|bn|="SZFMT" != "SZFMT"=|l|) => can't use fetchjoin.\n", BATgetId(l), BATgetId(r), BATcount(bn), lcount);
+		if (hitalways|hitalways_check && lcount > 0) {
+			GDKerror("BATfetchjoin(%s,%s) does not hit always (|bn|=0 != "SZFMT"=|l|) => can't use fetchjoin.\n", BATgetId(l), BATgetId(r), lcount);
+			return NULL;
 		}
 #endif
-		ALGODEBUG THRprintf(GDKout, "#@3 => empty result\n");
 		bn = BATnew(@1->htype, @2->ttype, 0);
 		bn->hsorted = bn->tsorted = GDK_SORTED;
 		BATkey(bn, TRUE);
@@ -855,13 +856,12 @@ batfetchjoin(BAT *l, BAT *r, size_t estimate, bit swap, bit hitalways)
                                 empty = 1;
 			}
 		}
-		if (hitalways && (empty?0:BATcount(l)) < lcount) {
-			GDKerror("BATfetchjoin(%s,%s) does not hit always (|bn|=" SZFMT " != " SZFMT "=|l|) => can't use fetchjoin.\n", BATgetId(l), BATgetId(r), empty?0:BATcount(l), lcount);
-			return NULL;
-                }
 		if (empty) {
 			@:return_empty_join_result(l_orig, r, BATfetchjoin: empty,1)@
-		}
+		} else if (hitalways|hitalways_check && BATcount(l) < lcount) {
+			GDKerror("BATfetchjoin(%s,%s) does not hit always (|bn|=" SZFMT " != " SZFMT "=|l|) => can't use fetchjoin.\n", BATgetId(l), BATgetId(r), BATcount(l), lcount);
+			return NULL;
+                }
 		lcount = BATcount(l);
 	}
 	ALGODEBUG THRprintf(GDKout, "#BATfetchjoin: 1\n");
@@ -910,12 +910,12 @@ batfetchjoin(BAT *l, BAT *r, size_t estimate, bit swap, bit hitalways)
 
 			@:fetchjoin_switch_lht(dense)@
 		} else if ((BATtordered(l) & 1) || hitalways) {
-			/* we did check the boundaries already above */
-			ALGODEBUG THRprintf(GDKout, "#BATfetchjoin: !BAThvoid(l) && !BATtdense(l) && BATtordered(l)&1\n");
+			/* we did check the bounderies already above (BATtordered(l)&1) or simply "trust" hitalways */
+			ALGODEBUG THRprintf(GDKout, "#BATfetchjoin: !BAThvoid(l) && !BATtdense(l) && ( BATtordered(l)&1 [== %d] || hitalways [== %d] )\n", (int)(BATtordered(l)&1), (int)hitalways);
 
 			@:fetchjoin_switch_lht(ordered)@
 		} else {
-			ALGODEBUG THRprintf(GDKout, "#BATfetchjoin: !BAThvoid(l) && !BATtdense(l) && !BATtordered(l)&1\n");
+			ALGODEBUG THRprintf(GDKout, "#BATfetchjoin: !BAThvoid(l) && !BATtdense(l) && !BATtordered(l)&1 && !hitalways\n");
 
 			@:fetchjoin_switch_lht(default)@
 		}
@@ -1041,8 +1041,11 @@ batfetchjoin(BAT *l, BAT *r, size_t estimate, bit swap, bit hitalways)
 	if (BATcount(bn) == lcount) {
 		ALIGNsetH(bn, l);	/* BAThkey(r), remember? */
 	} else {
-		if (hitalways_check) {
+		if (hitalways|hitalways_check) {
 			GDKerror("BATfetchjoin(%s,%s) does not hit always (|bn|=" SZFMT " != " SZFMT "=|l|) => can't use fetchjoin.\n", BATgetId(l), BATgetId(r), BATcount(bn), lcount);
+			BBPreclaim(bn);
+			ret = NULL;
+			goto ready;
 		}
 		bn->hsorted = l->hsorted;
 	}
@@ -1060,8 +1063,7 @@ batfetchjoin(BAT *l, BAT *r, size_t estimate, bit swap, bit hitalways)
 	if (l != l_orig) {
 		BBPreclaim(l);	/* was created as a temporary (slice) select on l */
 	}
-	ESTIDEBUG THRprintf(GDKout, "#BATfetchjoin: actual resultsize: " SZFMT "\n", BATcount(bn));
-
+	ESTIDEBUG THRprintf(GDKout, "#BATfetchjoin: actual resultsize: " SZFMT "\n", ret?BATcount(ret):(size_t)0);
 	return ret;
 }
 
