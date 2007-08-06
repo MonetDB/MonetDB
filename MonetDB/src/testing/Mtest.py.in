@@ -1522,10 +1522,8 @@ def RunTest(env, TST, BusyPorts, COND) :
             if test.match(f):
                 SymlinkOrCopy(os.path.join(RELSRCDIR,f),os.path.join(TSTTRGDIR,f))
 
-        if SERVER in ["MAPI", "SQL", "XQUERY"]:
-            CheckSocket2(env, "MAPI")   #, SrvrErr)
-        if SERVER == "XQUERY":
-            CheckSocket2(env, "XRPC")   #, SrvrErr)
+        CheckSocket2(env, "MAPI")   #, SrvrErr)
+        CheckSocket2(env, "XRPC")   #, SrvrErr)
 
         if os.path.isfile(TST+EXT+".src")  and not os.path.isfile(TST+EXT):
             f = open(TST+EXT+".src","r")
@@ -1700,10 +1698,8 @@ def RunTest(env, TST, BusyPorts, COND) :
                         killed = 1
                     p.close()
 
-        if SERVER in ["MAPI", "SQL", "XQUERY"]:
-            CheckSocket3(env, "MAPI", TestErrFile)
-        if SERVER == "XQUERY":
-            CheckSocket3(env, "XRPC", TestErrFile)
+        CheckSocket3(env, "MAPI", TestErrFile)
+        CheckSocket3(env, "XRPC", TestErrFile)
 
         #TODO:
         ##if [ ! -f $TSTTRGBASE/Tests/.old.left-over.tmp.bats. ] ; then  touch $TSTTRGBASE/Tests/.old.left-over.tmp.bats. ; fi
@@ -1872,37 +1868,6 @@ def randomPort(l,h) :
     return port
 ### randomPort(l,h) #
 
-def CheckSocket(env,SERVER,SrvrErr,LogLine) :
-#       if OS == "SunOS":
-#               wait = 241
-#       else:
-#               wait = 61
-    wait = 61
-    repeat = 5
-    host = 'localhost'
-    port = int(env[SERVER+'PORT'])
-    rpt = 0
-    while rpt < repeat:
-        busy, Serrno, Serrstr = CheckPort(host,port)
-        if busy:
-            rpt = rpt + 1
-            Smsg = """
-! Socket-Check failed for %sserver on <%s:%d> with #%d; '%s' !
-! Waiting %d seconds (%d/%d) ... """ % (SERVER, host, port, Serrno, Serrstr, wait, rpt, repeat)
-#            STDERR.write(Smsg)
-#            STDERR.flush()
-#            SrvrErr.write(Smsg)
-#            SrvrErr.flush()
-            time.sleep(wait)
-        else:
-            break
-    if rpt != 0:
-        SrvrErr.write("Done.\n\n")
-        SrvrErr.flush()
-        STDERR.write("Done.\n"+prompt()+LogLine)
-        STDERR.flush()
-### CheckSocket(env,SERVER,SrvrErr,LogLine) #
-
 def CheckSocket2(env,SERVER) :  #,SrvrErr) :
     host = 'localhost'
     port = int(env[SERVER+'PORT'])
@@ -1945,10 +1910,10 @@ def CheckSocket3(env,SERVER,ErrFileName) :
 """ % (SERVER, host, port, Serrno, Serrstr, SERVER)
         STDERR.write(Smsg)
         STDERR.flush()
-#        ErrFile = open(ErrFileName, 'a')
-#        ErrFile.write(Smsg)
-#        ErrFile.flush()
-#        ErrFile.close()
+        ErrFile = open(ErrFileName, 'a')
+        ErrFile.write(Smsg)
+        ErrFile.flush()
+        ErrFile.close()
 ### CheckSocket3(env,SERVER,ErrFileName) #
 
 def prompt() :
