@@ -10,7 +10,7 @@ for file; do
 	# you're always allowed to remove test output
 	if test -f "$file"; then
 	    # you're never allowed to commit a test that failed with a signal
-	    if grep -q '^!Mtimeout: signal' "$file"; then
+	    if grep -q '^!Mtimeout: signal' "$file" || grep -q '^!ERROR: BATSIGcrash' "$file"; then
 		echo "You are not allowed to commit this change to $file"
 		echo "You are trying to approve a test which failed with a signal."
 		echo "This is never acceptable."
