@@ -309,6 +309,7 @@ MDBstop(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	stk->cmd = 0;
 	cntxt->itrace = 0;
 	cntxt->debugOptimizer= FALSE;
+	stream_printf(cntxt->fdout,"mdb>#EOD\n");
 	(void) mb;
 	(void) p;
 	return MAL_SUCCEED;

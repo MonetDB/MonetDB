@@ -928,6 +928,7 @@ mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
 				su->cmd = 0;
 			cntxt->itrace = 0;
 			cntxt->flags = 0;
+			stream_printf(out,"mdb>#EOD\n");
 			/* MDBstatus(0); */
 			cntxt->prompt = oldprompt;
 			cntxt->promptlength = oldpromptlength;
