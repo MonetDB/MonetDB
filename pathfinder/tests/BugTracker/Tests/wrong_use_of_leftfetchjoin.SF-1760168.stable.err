@@ -10,7 +10,6 @@ stderr of test 'wrong_use_of_leftfetchjoin.SF-1760168` in directory 'tests/BugTr
 # 08:33:57 >  Mtimeout -timeout 60 MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=corona --port=39667 wrong_use_of_leftfetchjoin.SF-1760168.xq
 # 08:33:57 >  
 
-=  Please remove this line if this test is indeed not supposed to produce any error message  =
 
 # 08:33:57 >  
 # 08:33:57 >  Done.
