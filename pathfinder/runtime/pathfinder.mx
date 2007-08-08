@@ -2694,7 +2694,7 @@ PROC vx_maintain(BAT[oid,oid] nid,
     return reverse([:rotate_xor_hash=]([int](attrqn).access(BAT_WRITE), 13, val)).leftfetchjoin(nid);
 }
 
-PROC vx_maintain1(BAT[oid,oid] nid,
+PROC vx_maintain(BAT[oid,oid] nid,
                  BAT[oid,str] val) : BAT[int,oid]
 {
     return reverse([hash](val)).leftfetchjoin(nid);
