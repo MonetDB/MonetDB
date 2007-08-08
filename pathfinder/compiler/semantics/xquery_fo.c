@@ -1994,7 +1994,7 @@ PFfun_xquery_fo (void)
             .ret_ty = PFty_stmt () } } }
 #if 0
     /* This signature apparently is too strict (or our static type
-     * inference to coarse).  Relaxed the type of the first argument
+     * inference too coarse).  Relaxed the type of the first argument
      * for the time being (see above). */
     ,  /* upd:rename(xs:anyElement | xs:anyAttribute | p-i, xs:QName) as stmt */
       { .ns = PFns_upd, .loc = "rename",
