@@ -1570,7 +1570,7 @@ See @url{The MAL Profiler} for more details.
 @= timingHndlr
 if( cntxt->flags && stk->cmd != 't' && stk->cmd != 'C'){
 	if( cntxt->flags & timerFlag)
-		stream_printf(cntxt->fdout,"[%6d usec,\t",GDKusec()-cntxt->timer);
+		stream_printf(cntxt->fdout,"[%6d usec ",GDKusec()-cntxt->timer);
 #ifdef HAVE_SYS_RESOURCE_H
 	if( cntxt-> flags & ioFlag){
 		struct  rusage resource;
@@ -1579,7 +1579,7 @@ if( cntxt->flags && stk->cmd != 't' && stk->cmd != 'C'){
 		 ||	resource.ru_oublock - oldoublock ) {
 			stream_printf(cntxt->fdout," %3d R",
 				resource.ru_inblock- oldinblock);
-			stream_printf(cntxt->fdout," %3d W,\t",
+			stream_printf(cntxt->fdout," %3d W ",
 				resource.ru_oublock- oldoublock);
 		}
 	}
@@ -1588,7 +1588,7 @@ if( cntxt->flags && stk->cmd != 't' && stk->cmd != 'C'){
 		struct mallinfo memory;
 		memory= MT_mallinfo();
 		if( memory.arena- oldMemory.arena > 0)
-			stream_printf(cntxt->fdout," %6d bytes,\t",
+			stream_printf(cntxt->fdout," %6d bytes ",
 				memory.arena-oldMemory.arena );
 	}
 	if( cntxt->flags & flowFlag){
@@ -1596,17 +1596,20 @@ if( cntxt->flags && stk->cmd != 't' && stk->cmd != 'C'){
 		showVolume(cntxt,stk,pci,0);
 		stream_printf(cntxt->fdout,"/");
 		showVolume(cntxt,stk,pci,1);
-		stream_printf(cntxt->fdout,",\t");
+		stream_printf(cntxt->fdout," ");
 		/* showVolume(cntxt,stk,pci,2);*/
 	}
 	if( cntxt->flags & bigfootFlag){
 		displayVolume(cntxt,cntxt->vmfoot);
 		stream_printf(cntxt->fdout,":");
 		displayVolume(cntxt,cntxt->bigfoot);
-		stream_printf(cntxt->fdout,",\t");
+		stream_printf(cntxt->fdout," ");
 	}
-	printTraceCall(cntxt->fdout,mb,stk,stkpc, cntxt->flags);
-	stream_printf(cntxt->fdout,"]\n");
+	{str line;
+	line= call2str(mb,stk,stkpc,cntxt->flags);
+	stream_printf(cntxt->fdout, " %s ]\n", line);
+	GDKfree(line);
+	}
 	if( cntxt->flags & timerFlag)
 		cntxt->timer = GDKusec();
 }
