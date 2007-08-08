@@ -312,13 +312,13 @@ static void
 SQLheader(MapiHdl hdl, int *len, int fields)
 {
 	int i;
+	char **names= (char**) alloca(fields * sizeof(char*));
 
 	SQLseparator(len, fields, '-');
 	if (mapi_get_name(hdl, 0)) {
-		fprintf(toConsole, "| ");
 		for (i = 0; i < fields; i++)
-			fprintf(toConsole, "%*s |", (len[i] < 0 ? len[i] : -len[i]), mapi_get_name(hdl, i));
-		fprintf(toConsole, "\n");
+			names[i]= mapi_get_name(hdl,i);
+		SQLrow(len, names, fields);
 	}
 	SQLseparator(len, fields, '=');
 }
