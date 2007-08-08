@@ -475,6 +475,10 @@ const MODIFIED_ATTR := ANCESTOR_NID + 1;
 const MODIFIED_PAGE := MODIFIED_ATTR + 1;
 const NEW_PAGE := MODIFIED_PAGE + 1;
 const DEL_PAGE := NEW_PAGE + 1;
+const DELETED_NID := DEL_PAGE + 1;
+const ADDED_NID := DELETED_NID + 1;
+const DELETED_ATTR := ADDED_NID + 1;
+const ADDED_ATTR := DELETED_ATTR + 1;
 
 
 # transaction debugging / performance profiling 
@@ -592,7 +596,12 @@ const ws_update := bat(int,str)
 	.insert(oid,"modified_attr")
 	.insert(oid,"modified_page")
 	.insert(oid,"new_page")
-	.insert(oid,"del_page").access(BAT_READ).rename("ws_update");
+	.insert(oid,"del_page")
+	.insert(oid,"deleted_nid")
+	.insert(oid,"added_nid")
+	.insert(oid,"deleted_attr")
+	.insert(oid,"added_attr")
+	.access(BAT_READ).rename("ws_update");
 
 # the bats that get changed using the logger in case of updates reach up until qn_histogram
 # (i.e. these are the ones that need to be registered in the logger)
@@ -2678,13 +2687,14 @@ PROC __ws_isolate(BAT[void,BAT] ws,
 
 # helper to compute [hsh,nid] combinations for the VX index
 PROC vx_maintain(BAT[oid,oid] nid,
-                 BAT[oid,oid] qn,
+                 BAT[oid,oid] elemqn, # not yet used
+                 BAT[oid,oid] attrqn,
                  BAT[oid,str] val) : BAT[int,oid]
 {
-    return reverse([:rotate_xor_hash=]([int](qn).access(BAT_WRITE), 13, val)).leftfetchjoin(nid);
+    return reverse([:rotate_xor_hash=]([int](attrqn).access(BAT_WRITE), 13, val)).leftfetchjoin(nid);
 }
 
-PROC vx_maintain(BAT[oid,oid] nid,
+PROC vx_maintain1(BAT[oid,oid] nid,
                  BAT[oid,str] val) : BAT[int,oid]
 {
     return reverse([hash](val)).leftfetchjoin(nid);
