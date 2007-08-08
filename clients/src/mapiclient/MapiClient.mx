@@ -87,8 +87,6 @@ In the SQL mode, a few more convenient commands are available.
 @tab to control the pagination behavior
 @item --pagewidth
 @tab to control the maximum column width (default=80)
-@item --cachesize
-@tab to control the number of rows retained in the buffer.
 @end multitable
 @{
 @+ Implementation
@@ -150,17 +148,17 @@ The result set size is limited by the cache size
 of the Mapi Library. It is sufficiently large to
 accomodate most result to be browsed manually.
 
-The columnwidth determines the maximum space
+The pagewidth determines the maximum space
 allocted for a single row. If the total space
 required is larger, then a heuristic routine is
 called to distribute the available space.
 Attribute values may then span multiple lines.
-Setting the columnwidth to 0 turns of row size
+Setting the pagewidth to 0 turns of row size
 control.
 @c
 static char *pager = 0;		/* use external pager */
 static int pagesize = 0;	/* for SQL pagination */
-static int columnwidth = -1;	/* use raw format */
+static int pagewidth = -1;	/* use raw format */
 static int specials = 0;	/* set when we see EXPLAIN,DEBUG, or TRACE */
 
 /* stolen piece */
@@ -211,20 +209,14 @@ static void
 timerEnd(void)
 {
 	t1 = gettime();
-	if (mark && strncmp(promptbuf, "mdb", 3) != 0 && ((mode == SQL && columnwidth >= 0) || mode != SQL)) {
+	if (mark && strncmp(promptbuf, "mdb", 3) != 0 && ((mode == SQL && pagewidth >= 0) || mode != SQL)) {
 		fprintf(toConsole, "%s % 7ld.%03ld msec %s\n", mark, (t1 - t0) / 1000, (t1 - t0) % 1000, mark2 ? mark2 : "");
 		fflush(toConsole);
 	}
 }
-static int
-SQLalignment(int len, char *val)
-{
-	while (*val == ' ')
-		val++;
-	if (isalpha((int) *val) || *val == '_')
-		return -len;
-	return len;
-}
+
+#define RESETprompt() if (strncmp(reply, "mdb>#EOD", 7) == 0) \
+							sprintf(promptbuf, "%.*s>", (int) sizeof(promptbuf) - 2, language);
 
 static void
 SQLsetSpecial(char *command)
@@ -245,34 +237,42 @@ SQLsetSpecial(char *command)
 }
 
 static void
-SQLrow(int *length, char **rest, int fields)
+SQLrow(int *len, int *numeric, char **rest, int fields)
 {
-	int i, more;
+	int i, more,first=1;
 	char old;
 	char *t;
-	int *len= (int*) alloca(sizeof(int)* fields);
-	memcpy((char*) len, (char*)length, sizeof(int)* fields);
+
+	/* trim the text upon need */
+	for (i = 0; i < fields; i++) {
+		if( rest[i] &&  (int) strlen(rest[i]) > len[i]){
+			int cnt = strlen(rest[i])-len[i];
+			/* first remove a leading spaces */
+			for(t= rest[i]; t && *t && cnt; t++)
+				if( ! (*t == ' '  || *t == '\t') )
+					break;
+				else cnt--;
+			rest[i]= t;
+		}
+	}
 
 	do {
 		fprintf(toConsole, "| ");
 		more = 0;
 		for (i = 0; i < fields; i++) {
-			for(t= rest[i]; t && *t; t++)
-				if( ! (*t == ' '  || *t == '\t') )
-					break;
-			rest[i]= t;
 			if (rest[i] == NULL)
 				fprintf(toConsole, "%*s |", len[i], " ");
 			else {
-				if ((int) strlen(rest[i]) > (len[i] < 0 ? -len[i] : len[i])) {
-					t = rest[i] + (len[i] < 0 ? -len[i] : len[i]);
+				/* break the string into pieces and left-adjust them in the column */
+				if ((int) strlen(rest[i]) > len[i]) {
+					t = rest[i] + len[i];
 					while (t > rest[i] && !(*t == ' ' || *t == '\t'))
 						t--;
 					if( t == rest[i] && !(*t==' ' && *t=='\t'))
-						t=  rest[i]+(len[i]<0?-len[i]:len[i]);
+						t=  rest[i] + len[i];
 					old = *t;
 					*t = 0;
-					fprintf(toConsole, "%*s |", SQLalignment(len[i], rest[i]), rest[i]);
+					fprintf(toConsole, "%*s |", ((first && numeric[i])? len[i]:-len[i]), rest[i]);
 					*t = old;
 					if (old){
 						while( *t && (*t == ' ' || *t == '\n'))
@@ -282,14 +282,14 @@ SQLrow(int *length, char **rest, int fields)
 						rest[i] = 0;
 					if (rest[i]){
 						more++;
-						len[i]= length[i]<0?-length[i]:length[i];
 					}
 				} else {
-					fprintf(toConsole, "%*s |", SQLalignment(len[i], rest[i]), rest[i]);
+					fprintf(toConsole, "%*s |", ((first && numeric[i])? len[i]:-len[i]), rest[i]);
 					rest[i] = 0;
 				}
 			}
 		}
+		first=0;
 		fprintf(toConsole, "\n");
 	} while (more);
 }
@@ -313,12 +313,17 @@ SQLheader(MapiHdl hdl, int *len, int fields)
 {
 	int i;
 	char **names= (char**) alloca(fields * sizeof(char*));
+	int *numeric = (int*) alloca(fields * sizeof(int));
+	char *type;
 
 	SQLseparator(len, fields, '-');
 	if (mapi_get_name(hdl, 0)) {
-		for (i = 0; i < fields; i++)
+		for (i = 0; i < fields; i++){
 			names[i]= mapi_get_name(hdl,i);
-		SQLrow(len, names, fields);
+			type= mapi_get_type(hdl,i);
+			numeric[i]=0;
+		}
+		SQLrow(len, numeric, names, fields);
 	}
 	SQLseparator(len, fields, '=');
 }
@@ -334,8 +339,7 @@ SQLdebugRendering(MapiHdl hdl)
 	sprintf(promptbuf, "mdb>");
 	while ((reply = mapi_fetch_line(hdl)) != NULL) {
 		fprintf(toConsole, "%s\n", reply);
-		if (strncmp(reply, "mdb>#EOD", 7) == 0)
-			sprintf(promptbuf, "%.*s>", (int) sizeof(promptbuf) - 2, language);
+		RESETprompt();
 	}
 }
 
@@ -343,16 +347,17 @@ static void
 SQLexplainRendering(MapiHdl hdl)
 {
 	char *fields[1];
-	int len[1];
+	int len[1],numeric[1];
 
 	if (mapi_result_error(hdl) != NULL) {
 		mapi_explain_result(hdl, stderr);
 	}
 
-	len[0] = columnwidth > 80 ? columnwidth - 3 : 80;
+	len[0] = pagewidth;
+	numeric[0]=0;
 	SQLheader(hdl, len, 1);
 	while ((fields[0] = mapi_fetch_line(hdl)) != NULL) {
-		SQLrow(len, fields, 1);
+		SQLrow(len, numeric, fields, 1);
 	}
 	SQLseparator(len, 1, '-');
 }
@@ -361,19 +366,14 @@ static void
 SQLtraceRenderer(MapiHdl hdl)
 {
 	char *fields[1];
-	int len[1];
 
 	if (mapi_result_error(hdl) != NULL) {
 		mapi_explain_result(hdl, stderr);
 	}
 
-	len[0] = columnwidth > -80 ? -80 : -columnwidth;
-	SQLheader(hdl, len, 1);
 	while ((fields[0] = mapi_fetch_line(hdl)) != NULL) {
-		fields[0]++;
-		SQLrow(len, fields, 1);
+		fprintf(toConsole,"%s\n",fields[0]);
 	}
-/* 	SQLseparator(len,1,'-');*/
 }
 
 static void
@@ -384,14 +384,18 @@ SQLrenderer(MapiHdl hdl)
 	char **rest = 0;
 	char nullstring[5] = "null";
 	int ps = pagesize, silent = 0, rows = 0;
+	int *numeric;
 
 	while ((fields = mapi_fetch_row(hdl))) {
 		if (silent)
 			continue;
 		if (len == 0) {
 			char buf[50];
+			char *type;
+
 			len = (int *) alloca(sizeof(int) * fields);
 			rest = (char **) alloca(sizeof(char *) * fields);
+			numeric = (int *) alloca(sizeof(int) * fields);
 
 			snprintf(buf, 50, "%d rows", mapi_get_row_count(hdl));
 			mark2 = strdup(buf);
@@ -399,8 +403,14 @@ SQLrenderer(MapiHdl hdl)
 				len[i] = mapi_get_len(hdl, i);
 				if ((max = strlen(mapi_get_name(hdl, i))) > len[i])
 					len[i] = max;
-			}
-			if (columnwidth)
+				type= mapi_get_type(hdl,i);
+				numeric[i]= strcmp(type,"int")==0 ||
+							strcmp(type,"tinyint")==0 ||
+							strcmp(type,"smallint")==0 ||
+							strcmp(type,"double")==0 ||
+							strcmp(type,"float")==0;
+				}
+			if (pagewidth)
 				do {
 					total = 0;
 					max = 1;
@@ -409,13 +419,13 @@ SQLrenderer(MapiHdl hdl)
 						if (len[i] > len[max])
 							max = i;
 					}
-					if (3 * fields + total > columnwidth) {
+					if (3 * fields + total > pagewidth) {
 						/* penalty for largest field */
 						total -= len[max];
 						len[max] *= 0.9;
 						total += len[max];
 					}
-				} while (3 * fields + total > columnwidth && len[max] > 1);
+				} while (3 * fields + total > pagewidth && len[max] > 1);
 
 			SQLheader(hdl, len, fields);
 			oldfields = fields;
@@ -427,7 +437,7 @@ SQLrenderer(MapiHdl hdl)
 				rest[i] = nullstring;
 		}
 
-		SQLrow(len, rest, fields);
+		SQLrow(len, numeric, rest, fields);
 		rows++;
 		if (ps && (rows % ps) == ps - 1 && rows != mapi_get_row_count(hdl) && fromConsole) {
 			char buf[BUFSIZ];
@@ -601,6 +611,7 @@ doFile(Mapi mid, const char *file)
 				fprintf(toConsole, "[ %d\t]\n", mapi_rows_affected(hdl));
 			} else {
 				while ((reply = mapi_fetch_line(hdl)) != NULL) {
+					RESETprompt();
 					if (mode == XQUERY && *reply == '=')
 						reply++;
 					fprintf(toConsole, "%s\n", reply);
@@ -788,10 +799,10 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode, int exit_on_
 						break;
 					mapi_setAutocommit(mid, 0);
 					continue;
-				case 'c':
+				case 'w':
 					if (mode == XQUERY)
 						break;
-					columnwidth = (int) atol(line + 2);
+					pagewidth = (int) atol(line + 2);
 					continue;
 				case 'p':
 					if (mode == XQUERY)
@@ -899,7 +910,7 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode, int exit_on_
 					if (strncmp(promptbuf, "mdb", 3) == 0)
 						goto nononsense;
 					if ((reply = mapi_result_error(hdl)) != NULL) {
-						if (columnwidth < 0)
+						if (pagewidth < 0)
 							goto nononsense;
 						fprintf(toConsole, "%s", reply);
 						if (exit_on_error) {
@@ -909,7 +920,7 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode, int exit_on_
 					} else
 						switch (specials) {
 						case 1:
-							if (columnwidth < 0)
+							if (pagewidth < 0)
 								goto nononsense;
 							SQLexplainRendering(hdl);
 							break;
@@ -917,13 +928,14 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode, int exit_on_
 							SQLdebugRendering(hdl);
 							break;
 						case 3:
-							if (columnwidth < 0)
+							if (pagewidth < 0)
 								goto nononsense;
 							SQLtraceRenderer(hdl);
 							break;
 						default:
-							if (columnwidth < 0)
+							if (pagewidth < 0)
 								goto nononsense;
+							sprintf(promptbuf, "%.*s>", (int) sizeof(promptbuf) - 2, language);
 							SQLrenderer(hdl);
 						}
 				} else {
@@ -935,20 +947,19 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode, int exit_on_
 							return 1;
 						}
 					}
-					if (mode == SQL && columnwidth >= 0 && (reply = mapi_fetch_line(hdl)) != NULL) {
+					if (mode == SQL && pagewidth >= 0 && (reply = mapi_fetch_line(hdl)) != NULL) {
+						RESETprompt();
 						if (*reply == '%')
 							SQLrenderer(hdl);
 						else
 							fprintf(toConsole, "%s\n", reply);
-						if (strncmp(reply, "mdb>#EOD", 7) == 0)
-							sprintf(promptbuf, "%.*s>", (int) sizeof(promptbuf) - 2, language);
+						RESETprompt();
 					}
 					while ((reply = mapi_fetch_line(hdl)) != NULL) {
+						RESETprompt();
 						if ((mode == XQUERY || mode == MAL) && *reply == '=')
 							reply++;
 						fprintf(toConsole, "%s\n", reply);
-						if (strncmp(reply, "mdb>#EOD", 7) == 0)
-							sprintf(promptbuf, "%.*s>", (int) sizeof(promptbuf) - 2, language);
 					}
 				}
 			} while ((rc = mapi_needmore(hdl)) == MOK && (rc = mapi_next_result(hdl)) == 1);
@@ -996,7 +1007,7 @@ usage(const char *prog)
 	/* SQL specific rendering */
 	fprintf(stderr, "             | --pager=cmd       /* for pagination */\n");
 	fprintf(stderr, "             | --pagesize=nr     /* for pagination */\n");
-	fprintf(stderr, "             | --columnwidth=nr  /* for pagination */\n");
+	fprintf(stderr, "             | --pagewidth=nr  /* for pagination */\n");
 	exit(-1);
 }
 
@@ -1028,7 +1039,6 @@ main(int argc, char **argv)
 	int option_index;
 	static struct option long_options[] = {
 		{"blocked", 1, 0, 'b'},
-		{"columnwidth", 1, 0, 0},
 		{"config", 1, 0, 'c'},
 		{"collection", 1, 0, 'C'},
 		{"error", 0, 0, 'e'},
@@ -1039,6 +1049,7 @@ main(int argc, char **argv)
 		{"output", 1, 0, 'o'},
 		{"pagesize", 1, 0, 0},
 		{"pager", 1, 0, 0},
+		{"pagewidth", 1, 0, 0},
 		{"passwd", 2, 0, 'P'},
 		{"port", 1, 0, 'p'},
 		{"database", 1, 0, 'd'},
@@ -1069,8 +1080,8 @@ main(int argc, char **argv)
 			if (strcmp(long_options[option_index].name, "pager") == 0) {
 				pager = optarg;
 			}
-			if (strcmp(long_options[option_index].name, "columnwidth") == 0) {
-				columnwidth = atol(optarg);
+			if (strcmp(long_options[option_index].name, "pagewidth") == 0) {
+				pagewidth = atol(optarg);
 			}
 			break;
 		case 'b':
