@@ -477,8 +477,9 @@ const NEW_PAGE := MODIFIED_PAGE + 1;
 const DEL_PAGE := NEW_PAGE + 1;
 const DELETED_NID := DEL_PAGE + 1;
 const ADDED_NID := DELETED_NID + 1;
-const DELETED_ATTR := ADDED_NID + 1;
-const ADDED_ATTR := DELETED_ATTR + 1;
+const ADDED_ATTR := ADDED_NID + 1;
+const DELETED_TEXT_NID := ADDED_ATTR + 1;
+const ADDED_TEXT_NID := DELETED_TEXT_NID + 1;
 
 
 # transaction debugging / performance profiling 
@@ -599,8 +600,9 @@ const ws_update := bat(int,str)
 	.insert(oid,"del_page")
 	.insert(oid,"deleted_nid")
 	.insert(oid,"added_nid")
-	.insert(oid,"deleted_attr")
 	.insert(oid,"added_attr")
+	.insert(oid,"deleted_text_nid")
+	.insert(oid,"added_text_nid")
 	.access(BAT_READ).rename("ws_update");
 
 # the bats that get changed using the logger in case of updates reach up until qn_histogram

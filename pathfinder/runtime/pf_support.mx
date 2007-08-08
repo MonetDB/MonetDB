@@ -2681,7 +2681,6 @@ PROC play_update_tape(bat[void, bat] ws, bat[void, oid] item, bat[void, int] kin
   ws.fetch(NEW_PAGE).reverse().accbuild("hash");
   ws.fetch(DELETED_NID).reverse().accbuild("hash");
   ws.fetch(ADDED_NID).reverse().accbuild("hash");
-  ws.fetch(DELETED_ATTR).reverse().accbuild("hash");
   ws.fetch(ADDED_ATTR).reverse().accbuild("hash");
 
   affected_conts@batloop() {
@@ -2835,7 +2834,10 @@ PROC play_update_tape(bat[void, bat] ws, bat[void, oid] item, bat[void, int] kin
   # prepare for postcommit
 
   var deleted_nid := ws.fetch(DELETED_NID);
-  var deleted_attr := ws.fetch(DELETED_ATTR);
+  # note that all modified and deleted attributes end up in MODIFIED_ATTR
+  var modified_attr := ws.fetch(MODIFIED_ATTR);
+
+  var deleted_text_nid := ws.fetch(DELETED_TEXT_NID);
 
   var old_attr := new(oid,bat);
   var old_text := new(oid,bat);
@@ -2850,114 +2852,39 @@ PROC play_update_tape(bat[void, bat] ws, bat[void, oid] item, bat[void, int] kin
     var nid_rid := ws.fetch(NID_RID).find(cont);
     var map_pid := ws.fetch(MAP_PID).find(cont);
     var pre_prop := ws.fetch(PRE_PROP).find(cont);
-    var attr_own := ws.fetch(ATTR_OWN).find(cont);
-    var attr_qn := ws.fetch(ATTR_QN).find(cont);
-    var attr_prop := ws.fetch(ATTR_PROP).find(cont);
-    var prop_val := ws.fetch(PROP_VAL).find(cont);
+    {
+      var attr_own := ws.fetch(ATTR_OWN).find(cont);
+      var attr_qn := ws.fetch(ATTR_QN).find(cont);
+      var attr_prop := ws.fetch(ATTR_PROP).find(cont);
+      var prop_val := ws.fetch(PROP_VAL).find(cont);
 
-    var nids := deleted_nid.reverse().uselect(cont).reverse(); # [nil,NID]
+      var nids := deleted_nid.reverse().uselect(cont).reverse(); # [nil,NID]
 
-    var elemqns := nids.leftjoin(nid_rid).select(oid_nil, oid_nil).[swizzle](map_pid).leftjoin(pre_prop); # [nil,QNID]
-    var attrids := nids.leftjoin(attr_own.reverse()); # [nil,ATID]
-    # combine with deleted attributes (with double elimination)
-    var attrs := deleted_attr.reverse().uselect(cont); # [ATID,nil]
-    attrids := attrids.reverse().kunion(attrs).hmark(0@0); # [j,ATID]
+      var elemqns := nids.leftjoin(nid_rid).select(oid_nil, oid_nil).[swizzle](map_pid).leftjoin(pre_prop); # [nil,QNID]
+      var attrids := nids.leftjoin(attr_own.reverse()); # [nil,ATID]
+      # combine with deleted attributes (with double elimination)
+      var attrs := modified_attr.reverse().uselect(cont); # [ATID,nil]
+      attrids := attrids.reverse().kunion(attrs).hmark(0@0); # [j,ATID]
 
-    var attrqns := attrids.leftjoin(attr_qn); # [j,ATQN]
-    var attrvals := attrids.leftjoin(attr_prop).leftjoin(prop_val); # [j,ATVAL(str)]
-    var elemnids := attrids.leftjoin(attr_own); # [j,NID]
-    var elemqns := elemnids.leftjoin(nid_rid).[swizzle](map_pid).leftjoin(pre_prop); # [j,QNID]
+      var attrqns := attrids.leftjoin(attr_qn); # [j,ATQN]
+      var attrvals := attrids.leftjoin(attr_prop).leftjoin(prop_val); # [j,ATVAL(str)]
+      var elemnids := attrids.leftjoin(attr_own); # [j,NID]
+      var elemqns := elemnids.leftjoin(nid_rid).[swizzle](map_pid).leftjoin(pre_prop); # [j,QNID]
 
-    old_attr.insert(cont, vx_maintain(elemnids, elemqns, attrqns, attrvals));
+      old_attr.insert(cont, vx_maintain(elemnids, elemqns, attrqns, attrvals));
+    }
 
     # then do text
     {
-      var newvx;
-      var oldvx;
-      var rid_prop_update := ws.fetch(RID_PROP_UPDATE).find(cont); # [RID,PROP] (updated properties)
-      var map_pid := ws.fetch(MAP_PID).find(cont);
-      var map_pid_update := ws.fetch(MAP_PID_UPDATE).find(cont);
-      var del_page := ws.fetch(DEL_PAGE).reverse().uselect(cont).hmark(0@0); # [i,PAGEID]
-      if ((rid_prop_update.count() > 0) or (del_page.count() > 0)) {
-        var rids := rid_prop_update.hmark(0@0);  # [i,RID]
-        # figure out RIDs of deleted pages
-        # we're only interested in deleted original pages (i.e. not
-        # pages that were allocated and deleted in the same
-        # transaction).
-        # just append the RID values to the list of RIDs to be considered.
-        if (del_page.count() > 0) {
-          rids.access(BAT_WRITE);
-          del_page@batloop() {
-            if (map_pid.exist($t)) {
-              if (not(isnil(map_pid.find($t)))) {
-                rids.append(densebat(wrd(REMAP_PAGE_SIZE)).seqbase(oid(lng($t) << REMAP_PAGE_BITS)).reverse());
-              }
-            }
-          }
-          # eliminate duplicates introduced by RIDs of deleted pages already being in RID_PROP_UPDATE
-          rids := rids.tunique().hmark(0@0);
-        }
-        var oldpres := [swizzle](rids, map_pid);  # [i,PRE]
-        oldpres := oldpres.join(ws.fetch(PRE_KIND).find(cont)).uselect(TEXT).mirror().join(oldpres).tmark(0@0);  # [j,PRE] (original text nodes)
-        if (oldpres.count() > 0) {
-          var oldtext := oldpres.leftjoin(ws.fetch(PRE_PROP).find(cont)).leftjoin(ws.fetch(PROP_TEXT).find(cont)); # [j,str]
-          var oldnids := oldpres.leftjoin(ws.fetch(PRE_NID).find(cont));
-          oldvx := vx_maintain(oldnids, oldtext);
-        } else {
-          oldvx := new(int,oid);
-        }
-        {
-          # figure out where to get new value
-          # rid is on old page and was modified
-          var b := rids.join(ws.fetch(RID_KIND_UPDATE).find(cont));
-          # rid is on old page and was unmodified
-          var c := rids.kdiff(b).[swizzle](map_pid).join(ws.fetch(PRE_KIND).find(cont));
-          # select text elements and combine
-          var t := b.access(BAT_WRITE).insert(c).uselect(TEXT).sort().mirror(); # [i,i] (text elems only)
-          rids := t.leftjoin(rids).tmark(0@0); # [i,RID] (only text elements, new numbering)
-        }
-        if (rids.count() > 0) {
-          # rid is on old page and was modified
-          var b := rids.join(ws.fetch(RID_NID_UPDATE).find(cont));
-          # rid is on old page and was unmodified
-          var c := rids.kdiff(b).[swizzle](map_pid).join(ws.fetch(PRE_NID).find(cont));
-          # select text elements and combine
-          var nids := b.access(BAT_WRITE).insert(c).order().tmark(0@0); # [i,NID]
-          # rid is on old page and was modified
-          b := rids.join(ws.fetch(RID_PROP_UPDATE).find(cont));
-          # rid is on old page and was unmodified
-          c := rids.kdiff(b).[swizzle](map_pid).join(ws.fetch(PRE_PROP).find(cont));
-          # select text elements and combine
-          var props := b.access(BAT_WRITE).insert(c).order().tmark(0@0); # [i,PROP]
-          var vals := props.leftjoin(ws.fetch(PROP_TEXT).find(cont));  # [i,TEXT]
-          newvx := vx_maintain(nids, vals);
-        } else {
-          newvx := new(int,oid);
-        }
-      } else {
-        oldvx := new(int,oid);
-        newvx := new(int,oid);
-      }
-      # handle new pages separately
-      var npages := kdiff(map_pid_update.uselect(oid_nil, oid_nil), map_pid.uselect(oid_nil, oid_nil));
-      if (npages.count() > 0) {
-        newvx.access(BAT_WRITE);
-        var rid_kind := ws.fetch(_RID_KIND).find(cont);
-        var rid_prop := ws.fetch(_RID_PROP).find(cont);
-        var rid_nid := ws.fetch(_RID_NID).find(cont);
-        var prop_text := ws.fetch(_PROP_TEXT).find(cont);
-        npages@batloop() {
-          var f := oid(lng($h) << REMAP_PAGE_BITS);
-          var l := oid(lng(f) + REMAP_PAGE_MASK);
-          var r := rid_kind.reverse().ord_select(f, l).reverse().ord_uselect(TEXT).hmark(0@0); # [i,RID] (text elements)
-          var p := r.leftjoin(rid_prop).leftjoin(prop_text);
-          var n := r.leftjoin(rid_nid);
-          newvx.insert(vx_maintain(n, p));
-        }
-      }
-      old_text.insert(cont, sdiff(oldvx, newvx));
-      new_text.insert(cont, sdiff(newvx, oldvx));
+      var prop_text := ws.fetch(PROP_TEXT).find(cont);
+      var nids := deleted_text_nid.reverse().uselect(cont).hmark(0@0); # [i,NID]
+      var texts := nids.leftjoin(nid_rid).select(oid_nil, oid_nil) # [i,RID]
+        .[swizzle](map_pid) # [i,PRE]
+        .leftjoin(pre_prop) # [i,PROP]
+        .leftjoin(prop_text); # [i,TEXT]
+      old_text.insert(cont, vx_maintain(nids, texts));
     }
+
     extend_unprotect(ws, cont);
   }
 
@@ -3035,6 +2962,7 @@ PROC play_update_tape(bat[void, bat] ws, bat[void, oid] item, bat[void, int] kin
 
   var added_nid := ws.fetch(ADDED_NID);
   var added_attr := ws.fetch(ADDED_ATTR);
+  var added_text_nid := ws.fetch(ADDED_TEXT_NID);
 
   ws.seqbase(oid_nil); # indicate that we are done reading our snapshot
 
@@ -3062,33 +2990,46 @@ PROC play_update_tape(bat[void, bat] ws, bat[void, oid] item, bat[void, int] kin
     if (ws_log_active)
       ws_log(ws, "commit-apply exec" + str(ws_logtime - (ws_logtime := usec()))); 
 
+    var newattr;
     var nid_rid := ws.fetch(_NID_RID).find(cont);
     var rid_prop := ws.fetch(_RID_PROP).find(cont);
-    var attr_own := ws.fetch(_ATTR_OWN).find(cont);
-    var attr_qn := ws.fetch(_ATTR_QN).find(cont);
-    var attr_prop := ws.fetch(_ATTR_PROP).find(cont);
-    var prop_val := ws.fetch(_PROP_VAL).find(cont);
+    {
+      var attr_own := ws.fetch(_ATTR_OWN).find(cont);
+      var attr_qn := ws.fetch(_ATTR_QN).find(cont);
+      var attr_prop := ws.fetch(_ATTR_PROP).find(cont);
+      var prop_val := ws.fetch(_PROP_VAL).find(cont);
 
-    var nids := added_nid.reverse().uselect(cont).reverse(); # [nil,NID]
+      var nids := added_nid.reverse().uselect(cont).reverse(); # [nil,NID]
 
-    var elemqns := nids.leftjoin(nid_rid).select(oid_nil, oid_nil).leftjoin(rid_prop); # [nil,QNID]
-    var attrids := nids.leftjoin(attr_own.reverse()); # [nil,ATID]
-    # combine with deleted attributes (with double elimination)
-    var attrs := added_attr.reverse().uselect(cont); # [ATID,nil]
-    attrids := attrids.reverse().kunion(attrs).hmark(0@0); # [j,ATID]
+      var elemqns := nids.leftjoin(nid_rid).select(oid_nil, oid_nil).leftjoin(rid_prop); # [nil,QNID]
+      var attrids := nids.leftjoin(attr_own.reverse()); # [nil,ATID]
+      # combine with deleted attributes (with double elimination)
+      var attrs := added_attr.reverse().uselect(cont); # [ATID,nil]
+      attrids := attrids.reverse().kunion(attrs).hmark(0@0); # [j,ATID]
 
-    var attrqns := attrids.leftjoin(attr_qn); # [j,ATQN]
-    var attrvals := attrids.leftjoin(attr_prop).leftjoin(prop_val); # [j,ATVAL(str)]
-    var elemnids := attrids.leftjoin(attr_own); # [j,NID]
-    var elemqns := elemnids.leftjoin(nid_rid).leftjoin(rid_prop); # [j,QNID]
+      var attrqns := attrids.leftjoin(attr_qn); # [j,ATQN]
+      var attrvals := attrids.leftjoin(attr_prop).leftjoin(prop_val); # [j,ATVAL(str)]
+      var elemnids := attrids.leftjoin(attr_own); # [j,NID]
+      var elemqns := elemnids.leftjoin(nid_rid).leftjoin(rid_prop); # [j,QNID]
 
-    var newattr := vx_maintain(elemnids, elemqns, attrqns, attrvals);
+      newattr := vx_maintain(elemnids, elemqns, attrqns, attrvals);
+    }
+
+    var newtext;
+    {
+      var prop_text := ws.fetch(_PROP_TEXT).find(cont);
+      var nids := added_text_nid.reverse().uselect(cont).hmark(0@0); # [i,NID]
+      var texts := nids.leftjoin(nid_rid).select(oid_nil, oid_nil) # [i,RID]
+        .leftjoin(rid_prop) # [i,PROP]
+        .leftjoin(prop_text); # [i,TEXT]
+      newtext := vx_maintain(nids, texts);
+    }
 
     # ws_postcommit maintains the indices and releases the collection lock
     __ws_postcommit(ws, cont,
                     newattr,
                     old_attr.find(cont),
-                    new_text.find(cont),
+                    newtext,
                     old_text.find(cont),
                     ws.fetch(NID_QN_INS_UPDATE).find(cont).reverse(), 
                     ws.fetch(NID_QN_DEL_UPDATE).find(cont).reverse(), 
@@ -3218,7 +3159,6 @@ PROC do_update_rename(bat[void, bat] ws, bat[void,oid] update_node_item, bat[voi
     {
       var contattr := aconts.reverse().join(aitem);
       ws.fetch(MODIFIED_ATTR).insert(contattr);
-      ws.fetch(DELETED_ATTR).insert(contattr);
       ws.fetch(ADDED_ATTR).insert(contattr);
     }
     aconts.tunique()@batloop() {
@@ -3240,6 +3180,7 @@ PROC do_update_rename(bat[void, bat] ws, bat[void,oid] update_node_item, bat[voi
     elems := elems.mirror();
     var eitem := elems.leftjoin(update_node_item); # [i,PRE]
     var econts := elems.leftjoin(conts); # [i,CONT]
+    var modified_nid := ws.fetch(MODIFIED_NID);
     var deleted_nid := ws.fetch(DELETED_NID);
     var added_nid := ws.fetch(ADDED_NID);
     econts.tunique()@batloop() {
@@ -3261,7 +3202,6 @@ PROC do_update_rename(bat[void, bat] ws, bat[void,oid] update_node_item, bat[voi
       var erids := [swizzle](epres, pid_map);
       var pre_nid := ws.fetch(PRE_NID).find(cont);
       {
-        var modified_nid := ws.fetch(MODIFIED_NID);
         modified_nid.reverse().accbuild("hash");
         modified_nid.insert([lng](epres.join(pre_nid).reverse().project(cont).reverse()).[>>](OID_PAGE_BITS));
       }
@@ -3321,7 +3261,6 @@ PROC do_update_replace(bat[void, bat] ws, bat[void,oid] update_node_item, bat[vo
     {
       var contattr := aconts.reverse().join(aitem);
       ws.fetch(MODIFIED_ATTR).insert(contattr);
-      ws.fetch(DELETED_ATTR).insert(contattr);
       ws.fetch(ADDED_ATTR).insert(contattr);
     }
     aconts.tunique()@batloop() {
@@ -3338,6 +3277,9 @@ PROC do_update_replace(bat[void, bat] ws, bat[void,oid] update_node_item, bat[vo
     elems := elems.mirror(); # [i,i]
     var eitem := elems.leftjoin(update_node_item); # [i.PRE]
     var econts := elems.leftjoin(conts); # [i,CONT]
+    var modified_nid := ws.fetch(MODIFIED_NID);
+    var deleted_text_nid := ws.fetch(DELETED_TEXT_NID);
+    var added_text_nid := ws.fetch(ADDED_TEXT_NID);
     econts.tunique()@batloop() {
       var cont := $h;
 
@@ -3357,7 +3299,6 @@ PROC do_update_replace(bat[void, bat] ws, bat[void,oid] update_node_item, bat[vo
         ERROR("node must be of type TEXT, COMMENT, PI, or ATTRIBUTE\n");
       }
       {
-        var modified_nid := ws.fetch(MODIFIED_NID);
         modified_nid.reverse().accbuild("hash");
         modified_nid.insert([lng](epres.join(pre_nid).reverse().project(cont).reverse()).[>>](OID_PAGE_BITS));
       }
@@ -3371,6 +3312,9 @@ PROC do_update_replace(bat[void, bat] ws, bat[void,oid] update_node_item, bat[vo
         var elvalid := add_string_bulk(ws, cont, _PROP_TEXT, PROP_TEXT_UPDATE, elval, true); # [i,PROPID]
         var upd := etext.leftjoin(erids).reverse().join(elvalid); # [RID,PROPID]
         rid_prop_update.insert(upd);
+        var contnid := etext.leftjoin(epres).leftjoin(pre_nid).reverse().project(cont).reverse(); # [cont,NID]
+        deleted_text_nid.insert(contnid);
+        added_text_nid.insert(contnid);
       }
       if (ecomment.count() > 0) {
         var elval := ecomment.leftjoin(update_replace); # [i,update_replace]
@@ -3486,6 +3430,7 @@ PROC do_update_insert(bat[void, bat] ws, bat[void,lng] insert_update, bat[void,o
     var ancestor_nid := ws.fetch(ANCESTOR_NID);
     var new_page := ws.fetch(NEW_PAGE);
     var added_nid := ws.fetch(ADDED_NID);
+    var added_text_nid := ws.fetch(ADDED_TEXT_NID);
     # one at a time
     elements.leftjoin(update_insert_node_item)@batloop() {
 #       if (debug) printf("\nstart of loop for argument %d\n", int($h));
@@ -4073,10 +4018,10 @@ PROC do_update_insert(bat[void, bat] ws, bat[void,lng] insert_update, bat[void,o
               insprop := insprop.copy().access(BAT_WRITE);
               if (texts.count() > 0) {
                 lastdata := max(lastdata, texts.reverse().max());
-                texts := texts.mirror().tmark(0@0);
-                var textval := mposjoin(texts.leftjoin(insert_pre_prop), texts.leftjoin(insert_pre_cont), ws.fetch(PROP_TEXT));
+                var t := texts.hmark(0@0);
+                var textval := mposjoin(t.leftjoin(insert_pre_prop), t.leftjoin(insert_pre_cont), ws.fetch(PROP_TEXT));
                 var textids := add_string_bulk(ws, doccont, _PROP_TEXT, PROP_TEXT_UPDATE, textval, true);
-                insprop.replace(texts.reverse().join(textids));
+                insprop.replace(t.reverse().join(textids));
               }
               if (comments.count() > 0) {
                 lastdata := max(lastdata, comments.reverse().max());
@@ -4093,6 +4038,10 @@ PROC do_update_insert(bat[void, bat] ws, bat[void,lng] insert_update, bat[void,o
                 var piids := add_pi_bulk(ws, doccont, tgtval, insval);
                 insprop.replace(pis.reverse().join(pis.reverse().join(piids)));
               }
+            }
+            if (texts.count() > 0) {
+                var contnid := texts.project(doccont).reverse().leftjoin(insnnids);
+                added_text_nid.insert(contnid);
             }
             if (elems.count() > 0) {
               lastdata := max(lastdata, elems.reverse().max());
@@ -4207,6 +4156,8 @@ PROC do_delete_nodes(bat[void, bat] ws, oid cont, oid newpre, int delsize) : voi
   var modified_nid := ws.fetch(MODIFIED_NID);
   var deleted_nid := ws.fetch(DELETED_NID);
   var added_nid := ws.fetch(ADDED_NID);
+  var deleted_text_nid := ws.fetch(DELETED_TEXT_NID);
+  var added_text_nid := ws.fetch(ADDED_TEXT_NID);
 
   var pageno := oid(lng(newpre) >> REMAP_PAGE_BITS);
   var pageid := map_pid_update.reverse().find(pageno);
@@ -4322,6 +4273,7 @@ PROC do_delete_nodes(bat[void, bat] ws, oid cont, oid newpre, int delsize) : voi
       # deleted, where the RID refers to the new RID value.
       var nid_qn_del;
       var delnid;
+      var deltnid;
       if (isoldpage) {
         var rk := update_data.mirror().outerjoin(rid_kind_update).access(BAT_WRITE); # [RID,KIND/nil]
         rk.replace(rk.uselect(chr_nil).mirror().[swizzle](map_pid).join(pre_kind));  # [RID,KIND]
@@ -4334,10 +4286,14 @@ PROC do_delete_nodes(bat[void, bat] ws, oid cont, oid newpre, int delsize) : voi
           .join(pre_prop);                  # [RID,oldPROP]
         nid_qn_del := rn.reverse().join(rp);
         delnid := rn.reverse().project(cont).reverse();
+        var rt := rk.uselect(TEXT).mirror();                                         # [RID,RID] (text)
+        var rtn := rt.outerjoin(rid_nid_update).access(BAT_WRITE);                   # [RID,NID/nil]
+        rtn.replace(rtn.uselect(oid_nil).mirror().[swizzle](map_pid).join(pre_nid)); # [RID,NID]
+        deltnid := rtn.reverse().project(cont).reverse();
       } else {
-        var nr := update_data.mirror()      # [newRID,newRID]
-          .join(rid_kind)                   # [newRID,KIND]
-          .uselect(ELEMENT)                 # [newRID,nil] (elements)
+        var nk := update_data.mirror()      # [newRID,newRID]
+          .join(rid_kind);                  # [newRID,KIND]
+        var nr := nk.uselect(ELEMENT)       # [newRID,nil] (elements)
           .mirror()                         # [newRID,newRID]
           .join(rid_nid)                    # [newRID,NID]
           .reverse();                       # [NID,newRID]
@@ -4347,6 +4303,11 @@ PROC do_delete_nodes(bat[void, bat] ws, oid cont, oid newpre, int delsize) : voi
           .[swizzle](map_pid)               # [NID,oldPRE]
           .join(pre_prop);                  # [NID,QN]
         delnid := nr.project(cont).reverse();
+        var nrt := nk.uselect(TEXT)         # [newRID,nil] (text)
+          .mirror()                         # [newRID,newRID]
+          .join(rid_nid)                    # [newRID,NID]
+          .reverse();                       # [NID,newRID]
+        deltnid := nrt.project(cont).reverse();
       }
       # remove all NIDs in update_data from the nid_qn_ins_update; no
       # need to figure out which QNs go with them: we remove them all
@@ -4355,6 +4316,8 @@ PROC do_delete_nodes(bat[void, bat] ws, oid cont, oid newpre, int delsize) : voi
       nid_qn_del_update.insert(nid_qn_del);
       deleted_nid.insert(delnid);
       added_nid.deleteBuns(added_nid.sintersect(delnid));
+      deleted_text_nid.insert(deltnid);
+      added_text_nid.deleteBuns(added_text_nid.sintersect(deltnid));
     }
 
     var rid_nid_page;
@@ -4490,7 +4453,6 @@ PROC do_update_delete(bat[void, bat] ws, bat[void,oid] update_node_item, bat[voi
     {
       var contattr := aconts.reverse().join(update_node_item);
       ws.fetch(MODIFIED_ATTR).insert(contattr);
-      ws.fetch(DELETED_ATTR).insert(contattr);
       var added_attr := ws.fetch(ADDED_ATTR);
       added_attr.deleteBuns(added_attr.sintersect(contattr));
     }
