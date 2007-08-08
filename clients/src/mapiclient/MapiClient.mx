@@ -14,10 +14,10 @@
 @' Portions created by CWI are Copyright (C) 1997-2007 CWI.
 @' All Rights Reserved.
 
-@a Sjoerd Mullender, based on code by M. Kersten and Peter Boncz and Niels Nes
-@v 5
+@a Sjoerd Mullender, M. Kersten, Peter Boncz, Niels Nes
+@v 6
 @f MapiClient
-@* The Mapi Client interface 
+@* The Mapi Client Interface 
 A textual interface to the Monet server using the Mapi library,
 providing command-line access for its users. It is the preferred
 interface for non-DBAs.
@@ -81,6 +81,15 @@ Mserver server running on the local machine. The default user
 To protect your database you may want to introduce another DBA name and
 limit the access permisions of 'monetdb' to the level of a guest account.
 
+In the SQL mode, a few more convenient commands are available.
+@multitable @columnfractions .25 .75 @verb @verb
+@item --pagesize
+@tab to control the pagination behavior
+@item --pagewidth
+@tab to control the maximum column width (default=80)
+@item --cachesize
+@tab to control the number of rows retained in the buffer.
+@end multitable
 @{
 @+ Implementation
 @c
@@ -116,14 +125,42 @@ extern int chdir(const char *);
 #define getlogin() "win32"
 #endif
 
+#define MAL 1
+#define SQL 2
+#define XQUERY 4
+#define MIL 8
+
+static int mode;
 static FILE *toConsole;
+static FILE *fromConsole;
 static char *language = NULL;
 static int start_with_help = 0;
+static char promptbuf[16];
 
 char *command = NULL;
 
 static long t0, t1;		/* used for timing */
 static char *mark, *mark2;
+
+@-
+Pagination and simple ascii-based rendering is
+provided for SQL sessions.
+The result set size is limited by the cache size
+of the Mapi Library. It is sufficiently large to
+accomodate most result to be browsed manually.
+
+The columnwidth determines the maximum space
+allocted for a single row. If the total space
+required is larger, then a heuristic routine is
+called to distribute the available space.
+Attribute values may then span multiple lines.
+Setting the columnwidth to 0 turns of row size
+control.
+@c
+static char *pager= 0;		/* use external pager */
+static int pagesize= 0; 	/* for SQL pagination */
+static int columnwidth= -1; /* use raw format */
+static int specials =0 ; /* set when we see EXPLAIN,DEBUG, or TRACE */
 
 /* stolen piece */
 #ifdef HAVE_FTIME
@@ -173,10 +210,206 @@ static void
 timerEnd(void)
 {
 	t1 = gettime();
-	if (mark) {
+	if (mark && 
+		strncmp(promptbuf,"mdb",3)!= 0 &&
+		((mode==SQL && columnwidth>=0) || mode!=SQL)
+	) {
 		fprintf(toConsole, "%s % 7ld.%03ld msec %s\n", mark, (t1 - t0) / 1000, (t1 - t0) % 1000, mark2 ? mark2 : "");
 		fflush(toConsole);
 	}
+}
+static int SQLalignment(int len, char *val){
+	while(*val == ' ' ) val++;
+	if( isalpha((int) *val) || *val == '_') return -len;
+	return len;
+}
+
+static void SQLsetSpecial(char *command){
+	if( SQL){
+		/* catch the specials for better rendering */
+		char *s= command;
+		while(*s==' ' || *s =='\t') s++;
+		if( strncmp(s,"explain",7)==0)
+			specials=1;
+		if( strncmp(s,"debug",5)==0 )
+			specials=2;
+		if( strncmp(s,"trace",5)==0)
+			specials=3;
+	}
+}
+
+static void 
+SQLrow(int *len, char **rest, int fields){
+	int i,more;
+	char old;
+	char *t;
+	do{
+		fprintf(toConsole,"| ");
+		more=0;
+		for(i=0; i< fields; i++){
+			if( rest[i] == NULL)
+				fprintf(toConsole, "%*s |", len[i]," ");
+			else{
+				if( (int)strlen(rest[i])> (len[i]<0?-len[i]:len[i])){
+					t= rest[i]+(len[i]<0?-len[i]:len[i]);
+					while( t>rest[i]+1 && *t!=' ' && *t!='\t') t--;
+					old= *t;
+					*t=0;
+					fprintf(toConsole, "%*s |", SQLalignment(len[i],rest[i]), rest[i]);
+					*t= old;
+					if(old)
+						rest[i] = *(t+1)? t+1:0;
+					else rest[i]=0;
+					if(rest[i])
+						more++;
+				} else{
+					fprintf(toConsole, "%*s |", SQLalignment(len[i],rest[i]), rest[i]);
+					rest[i]=0;
+				}
+			}
+		}
+		fprintf(toConsole, "\n");
+	} while(more);
+}
+
+static void
+SQLseparator(int *len, int fields, char sep){
+	int i,j;
+	fprintf(toConsole,"+%c",sep);
+	for(i=0;i<fields; i++){
+		for(j=0;j<(len[i]<0?-len[i]:len[i]);j++)
+			fprintf(toConsole,"%c",sep);
+		fprintf(toConsole,"%c+",sep);
+	}
+	fprintf(toConsole,"\n");
+}
+
+static void SQLheader(MapiHdl hdl, int *len, int fields){
+	int i;
+	SQLseparator(len,fields,'-');
+	if( mapi_get_name(hdl,0)){
+		fprintf(toConsole,"| ");
+		for(i=0; i< fields; i++)
+			fprintf(toConsole,"%*s |",(len[i]<0?len[i]:-len[i]), mapi_get_name(hdl,i));
+		fprintf(toConsole,"\n");
+	}
+	SQLseparator(len,fields,'=');
+}
+
+static void
+SQLdebugRendering(MapiHdl hdl){
+	char *reply;
+
+	if (mapi_result_error(hdl) != NULL) {
+		mapi_explain_result(hdl, stderr);
+	}
+	sprintf(promptbuf, "mdb>");
+	while ((reply = mapi_fetch_line(hdl)) != NULL) {
+		fprintf(toConsole, "%s\n", reply);
+		if( strncmp(reply,"mdb>#EOD",7)==0)
+			sprintf(promptbuf, "%.*s>", (int) sizeof(promptbuf) - 2, language);
+	}
+}
+
+static void
+SQLexplainRendering(MapiHdl hdl){
+	char *fields[1];
+	int len[1];
+
+	if (mapi_result_error(hdl) != NULL) {
+		mapi_explain_result(hdl, stderr);
+	}
+	
+	len[0]= columnwidth>80? columnwidth-3:80;
+	SQLheader(hdl,len,1);
+	while ((fields[0] = mapi_fetch_line(hdl)) != NULL) {
+		SQLrow(len,fields,1);
+	}
+	SQLseparator(len,1,'-');
+}
+
+static void
+SQLtraceRenderer(MapiHdl hdl){
+	char *fields[1];
+	int len[1];
+
+	if (mapi_result_error(hdl) != NULL) {
+		mapi_explain_result(hdl, stderr);
+	}
+	
+	len[0]= columnwidth>-80? -80: -columnwidth;
+	SQLheader(hdl,len,1);
+	while ((fields[0] = mapi_fetch_line(hdl)) != NULL) {
+		fields[0]++;
+		SQLrow(len,fields,1);
+	}
+/* 	SQLseparator(len,1,'-');*/
+}
+
+static void
+SQLrenderer(MapiHdl hdl){
+	int i, total, fields, oldfields=0,max;
+	int *len=0;
+	char **rest=0;
+	char nullstring[5]="null";
+	int ps=pagesize,silent=0,rows=0;
+
+	while ( (fields=mapi_fetch_row(hdl)) ) {
+		if( silent) continue;
+		if( len== 0){
+			char buf[50];
+			len= (int*) alloca(sizeof(int)*fields);
+			rest= (char**) alloca(sizeof(char*)*fields);
+
+			snprintf(buf,50,"%d rows", mapi_get_row_count(hdl));
+			mark2= strdup(buf);
+			for(i=0; i<fields; i++){
+				len[i]= mapi_get_len(hdl,i);
+				if( (max=strlen(mapi_get_name(hdl,i))) > len[i])
+					len[i]=max;
+			}
+			if( columnwidth)
+			do{
+				total=0;
+				max=1;
+				for(i=0; i<fields; i++){
+					total+= len[i];
+					if( len[i] > len[max])
+						max= i;
+				}
+				if( 3*fields+total > columnwidth){
+				/* penalty for largest field */
+					total-=  len[max];
+					len[max] *= 0.9;
+					total+=  len[max];
+				}
+			} while( 3*fields+total >columnwidth && len[max]>1);
+
+			SQLheader(hdl,len,fields);
+			oldfields =fields;
+		}
+
+		for(i=0; i< fields; i++){
+			rest[i]= mapi_fetch_field(hdl,i);
+			if(rest[i]== NULL)
+				rest[i]= nullstring;
+		}
+
+		SQLrow(len,rest,fields);
+		rows++;
+		if( ps && (rows % ps) == ps-1 && rows != mapi_get_row_count(hdl) && fromConsole){
+			char buf[BUFSIZ];
+			SQLseparator(len,oldfields,'-');
+			fprintf(toConsole,"next page? (continue,quit,next)");
+			fgets(buf, BUFSIZ, fromConsole);
+			if( buf[0]=='c') ps=0;
+			if( buf[0]=='q') silent=1;
+			if( silent==0)
+				SQLheader(hdl,len,fields);
+		}
+	}
+	if(oldfields)
+		SQLseparator(len,oldfields,'-');
 }
 
 static int
@@ -184,6 +417,7 @@ doRequest(Mapi mid, const char *buf, int interactive)
 {
 	MapiHdl hdl;
 
+	if( SQL) SQLsetSpecial((char*) buf);
 	if ((hdl = mapi_quick_query(mid, buf, toConsole)) == NULL) {
 		mapi_explain(mid, stderr);
 		return 1;
@@ -232,7 +466,7 @@ doRequest(Mapi mid, const char *buf, int interactive)
 
 
 static int
-doFile(Mapi mid, const char *file, int xquery)
+doFile(Mapi mid, const char *file)
 {
 	FILE *fp;
 	char *buf = NULL;
@@ -282,8 +516,10 @@ doFile(Mapi mid, const char *file, int xquery)
 			char *xquery_sep = buf; 
 			assert(hdl != NULL);
 
-			if (xquery) { /* support <>\n xquery separator in file mode (must be at start of line) */
-                                while(xquery_sep) {
+			if (mode== XQUERY) {
+				/* support <>\n xquery separator in file mode 
+				(must be at start of line) */
+				while(xquery_sep) {
 					xquery_sep = strstr(xquery_sep+1,"<>");
 					if (xquery_sep && (xquery_sep[-1] == 10 || xquery_sep[-1] == 13)) {
 						char *next = xquery_sep+2;
@@ -327,7 +563,7 @@ doFile(Mapi mid, const char *file, int xquery)
 					mapi_rows_affected(hdl));
 			} else {
 				while ((reply = mapi_fetch_line(hdl)) != NULL) {
-					if (xquery && *reply == '=')
+					if (mode==XQUERY && *reply == '=')
 						reply++;
 					fprintf(toConsole, "%s\n", reply);
 				}
@@ -352,10 +588,15 @@ doFile(Mapi mid, const char *file, int xquery)
 	return 0;
 }
 
+@-
+The options available for controlling input and rendering depends
+on the language mode.
+@c
 static void
-showCommands(int xquery)
+showCommands()
 {
-	if (xquery) {
+	/* XQuery prelude */
+	if (mode== XQUERY) {
 		fprintf(toConsole, "MapiClient interactive MonetDB/XQuery session: type an XQuery or XQUF update.\n");
 		fprintf(toConsole, "\nSupported document-management XQuery extensions:\n");
 		fprintf(toConsole, " pf:collections() as node()\n");
@@ -364,17 +605,20 @@ showCommands(int xquery)
 		fprintf(toConsole, " pf:add-doc($uri as xs:string, $documentName as xs:string\n");
 		fprintf(toConsole, "     [,$collectionName as xs:string [,$freePercentage as xs:integer]])\n");
 		fprintf(toConsole, "\nSession commands:\n");
-        }
-        else fprintf(toConsole, "?text\t- send help message\n");
+	}
+	else fprintf(toConsole, "?text\t- send help message\n");
+
+	/* shared control options */
 	fprintf(toConsole, "?\t- show this message\n");
-	fprintf(toConsole, "!\t- shell escape\n");
-	fprintf(toConsole, "%s<file\t- read input from file\n", xquery?"<":"");
-	fprintf(toConsole, ">file\t- save response in file\n");
-	fprintf(toConsole, ">\t- response to terminal\n");
-	fprintf(toConsole, "cd\t- change directory\n");
+	fprintf(toConsole, "%s<file\t- read input from file\n", 
+		mode==XQUERY?"<":"\\");
+	fprintf(toConsole, "\\>file\t- save response in file\n");
+	fprintf(toConsole, "\\>\t- response to terminal\n");
 	fprintf(toConsole, "\\q\t- terminate session\n");
 	fprintf(toConsole, "\\T\t- toggle timer\n");
-        if (xquery) {
+
+	switch(mode){
+	case XQUERY:
 		fprintf(toConsole, "<>\t- send query to server (or %s)\n",
 #ifdef WIN32
         "CTRL-Z"
@@ -382,18 +626,23 @@ showCommands(int xquery)
         "CTRL-D"
 #endif
                 );
-        } else {
-		fprintf(toConsole, "\\l\t- line is sent immediately\n");
-		fprintf(toConsole, "\\D\t- dump database\n");
-		fprintf(toConsole, "\\Dtable\t- dump table\n");
+		break;
+	case SQL:
+		fprintf(toConsole, "\\c#\t- set maximal column width (-1=raw,0=no limit, >0 max char)\n");
+		fprintf(toConsole, "\\p#\t- set maximal page size (-1=raw)\n");
+		fprintf(toConsole, "\\D\t- dump database in SQL format\n");
+		fprintf(toConsole, "\\Dtable\t- dump a single table in SQL format\n");
+		fprintf(toConsole, "\\dtable\t- describe the table\n");
 		fprintf(toConsole, "\\A\t- enable auto commit\n");
 		fprintf(toConsole, "\\a\t- disable auto commit\n");
+	default:
+		fprintf(toConsole, "\\l\t- line is sent immediately\n");
 	}
 	fprintf(toConsole, "\\t\t- toggle interaction trace\n");
 }
 
 static int
-doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode, int exit_on_error, int xquery)
+doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode, int exit_on_error)
 {
 	char *line = NULL;
 	char *buf = NULL;
@@ -440,7 +689,8 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode, int exit_on_
 #endif
 			line = fgets(buf, BUFSIZ, fp);
 		}
-		if (line == NULL || (xquery && line[0] == '<' && line[1] == '>')) {
+		if (line == NULL || (mode==XQUERY && 
+			line[0] == '<' && line[1] == '>')) {
 			/* end of file */
 			if (hdl == NULL) {
 				/* nothing more to do */
@@ -452,7 +702,8 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode, int exit_on_
 		} else
 			length = strlen(line);
 
-		if (length > 0 && (!linemode || (hdl == NULL && length > 0 && line[length - 1] == '\n'))) {
+		if (length > 0 && (!linemode || 
+			(hdl == NULL && length > 0 && line[length - 1] == '\n'))) {
 			/* test for special commands */
 			while (length > 0 &&
 			       (*line & ~0x7F) == 0 &&
@@ -482,88 +733,82 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode, int exit_on_
 					mapi_trace(mid, !mapi_get_trace(mid));
 					continue;
 				case 'l':
-                                        if (xquery) break;
+					if (mode==XQUERY) break;
 					linemode = 1;
 					line = "";
 					length = 0;
 					continue;
 				case 'b':
-                                        if (xquery) break;
+					if (mode==XQUERY) break;
 					linemode = 0;
 					continue;
 				case 'A':
-                                        if (xquery) break;
+					if (mode==XQUERY) break;
 					mapi_setAutocommit(mid, 1);
 					continue;
 				case 'a':
-                                        if (xquery) break;
+					if (mode==XQUERY) break;
 					mapi_setAutocommit(mid, 0);
 					continue;
+				case 'c':
+					if (mode==XQUERY) break;
+					columnwidth= (int) atol(line+2);
+					continue;
+				case 'p':
+					if (mode==XQUERY) break;
+					pagesize= (int) atol(line+2);
+					continue;
 				case 'D':
-                                        if (xquery) break;
+					if (mode==XQUERY) break;
 					if (line[length - 1] == '\n')
 						line[--length] = 0;
 					if (line[length - 1] == '\r')
 						line[--length] = 0;
-					if (line[2]) {
+					if( line[2]){
 						fprintf(toConsole, "START TRANSACTION;\n");
-						dump_table(mid, line + 2, toConsole);
+						dump_table(mid, line+2, toConsole);
 						fprintf(toConsole, "COMMIT;\n");
-					} else {
+					} else
 						dump_tables(mid, toConsole);
+					continue;
+				case '<':
+					if (mode==XQUERY && line[1] != '<') break;
+
+					/* read commands from file */
+					if (line[length - 1] == '\n')
+						line[--length] = 0;
+					if (line[length - 1] == '\r')
+						line[--length] = 0;
+					doFile(mid, line + 1 + (mode==XQUERY));
+					continue;
+				case '>':
+					/* redirect output to file */
+					line++;
+					length--;
+					if (line[length - 1] == '\n')
+						line[--length] = 0;
+					if (line[length - 1] == '\r')
+						line[--length] = 0;
+					if (toConsole != stdout && toConsole != stderr)
+						fclose(toConsole);
+					if (length == 0 || strcmp(line, "stdout") == 0)
+						toConsole = stdout;
+					else if (strcmp(line, "stderr") == 0)
+						toConsole = stderr;
+					else if ((toConsole = fopen(line, "w")) == NULL) {
+						toConsole = stdout;
+						fprintf(stderr, "Cannot open %s\n", line);
 					}
 					continue;
 				default:
 					break;
 				}
 				break;
-			case '<':
-                                if (xquery && line[1] != '<') break;
-
-				/* read commands from file */
-				if (line[length - 1] == '\n')
-					line[--length] = 0;
-				if (line[length - 1] == '\r')
-					line[--length] = 0;
-				doFile(mid, line + 1 + xquery, 0);
-				continue;
-			case '>':
-				/* redirect output to file */
-				line++;
-				length--;
-				if (line[length - 1] == '\n')
-					line[--length] = 0;
-				if (line[length - 1] == '\r')
-					line[--length] = 0;
-				if (toConsole != stdout && toConsole != stderr)
-					fclose(toConsole);
-				if (length == 0 || strcmp(line, "stdout") == 0)
-					toConsole = stdout;
-				else if (strcmp(line, "stderr") == 0)
-					toConsole = stderr;
-				else if ((toConsole = fopen(line, "w")) == NULL) {
-					toConsole = stdout;
-					fprintf(stderr, "Cannot open %s\n", line);
-				}
-				continue;
-			case 'c':	/* cd command? */
-				if (line[1] == 'd' &&
-				    (line[2] & ~0x7F) == 0 &&
-				    isspace((int) line[2])) {
-					if (line[length - 1] == '\n')
-						line[--length] = 0;
-					if (line[length - 1] == '\r')
-						line[--length] = 0;
-					if (chdir(line + 3) < 0)
-						perror(line);
-					continue;
-				}
-				break;
 			case '?':
 				if (!isspace((int)line[1]))
 					break;
 				else
-					showCommands(xquery);
+					showCommands();
 				continue;
 			}
 		}
@@ -576,6 +821,7 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode, int exit_on_
 		if (length > 0) {
 			assert(hdl != NULL);
 			sent = 1;
+			SQLsetSpecial(line);
 			mapi_query_part(hdl, line, length);
 			CHECK_RESULT(mid, hdl, buf, continue);
 		}
@@ -594,11 +840,11 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode, int exit_on_
 			   and *then* we send the mapi_query_done.  To
 			   exit, you need to send an end-of-file
 			   again. */
-			if (xquery || mapi_query_done(hdl) == MMORE) {
+			if (mode==XQUERY || mapi_query_done(hdl) == MMORE) {
 			   	if (line != NULL) {
 					continue;	/* get more data */
 			   	} else if (mapi_query_done(hdl) == MMORE) {
-					assert(!xquery); /* XQuery never sends MMORE */
+					assert(mode!=XQUERY); /* XQuery never sends MMORE */
 					hdl = NULL;
 					continue;	/* done */
 				}
@@ -608,25 +854,70 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode, int exit_on_
 			do {
 				char *reply;
 
-				if ((reply = mapi_result_error(hdl)) != NULL) {
-					mapi_explain_result(hdl, stderr);
-					if (exit_on_error) {
-						timerEnd();
-						return 1;
-					}
-				}
 				if (mapi_get_querytype(hdl) == Q_UPDATE) {
 					fprintf(toConsole, "[ %d\t]\n",
 						mapi_rows_affected(hdl));
-				} else {
+				} else
+				if( mode== SQL ){
+					if(strncmp(promptbuf,"mdb",3)==0)
+						goto nononsense;
+					if ((reply = mapi_result_error(hdl)) != NULL) {
+						if( columnwidth<0)
+							goto nononsense;
+						fprintf(toConsole,"%s",reply);
+						if (exit_on_error) {
+							timerEnd();
+							return 1;
+						}
+					} else
+					switch( specials){
+					case 1:
+						if( columnwidth<0)
+							goto nononsense;
+						SQLexplainRendering(hdl);
+						break;
+					case 2:
+						SQLdebugRendering(hdl);
+						break;
+					case 3:
+						if( columnwidth<0)
+							goto nononsense;
+						SQLtraceRenderer(hdl);
+						break;
+					default:
+						if( columnwidth<0)
+							goto nononsense;
+						SQLrenderer(hdl);
+					}
+				} else{
+				nononsense:
+					if ((reply = mapi_result_error(hdl)) != NULL) {
+						mapi_explain_result(hdl, stderr);
+						if (exit_on_error) {
+							timerEnd();
+							return 1;
+						}
+					}
+					if( SQL && columnwidth>=0 && (reply = mapi_fetch_line(hdl)) != NULL) {
+						if( *reply== '%')
+							SQLrenderer(hdl);
+						else
+							fprintf(toConsole, "%s\n", reply);
+						if( strncmp(reply,"mdb>#EOD",7)==0)
+							sprintf(promptbuf, "%.*s>", (int) sizeof(promptbuf) - 2, language);
+					}
 					while ((reply = mapi_fetch_line(hdl)) != NULL) {
-						if (xquery && *reply == '=')
+						if ((mode==XQUERY ||mode==MAL) && *reply == '=')
 							reply++;
 						fprintf(toConsole, "%s\n", reply);
+						if( strncmp(reply,"mdb>#EOD",7)==0)
+							sprintf(promptbuf, "%.*s>", (int) sizeof(promptbuf) - 2, language);
 					}
 				}
-			} while ((rc = mapi_needmore(hdl)) == MOK && (rc = mapi_next_result(hdl)) == 1);
-			if (rc == MMORE && (line != NULL || mapi_query_done(hdl) != MOK))
+			} while ((rc = mapi_needmore(hdl)) == MOK && 
+					 (rc = mapi_next_result(hdl)) == 1);
+			if (rc == MMORE && (line != NULL || 
+				mapi_query_done(hdl) != MOK))
 				continue;	/* get more data */
 
 			CHECK_RESULT(mid, hdl, buf, continue);
@@ -634,10 +925,11 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode, int exit_on_
 			timerEnd();
 			mapi_close_handle(hdl);
 			hdl = NULL;
+			specials=0;
 		}
 		/* for XQuery, only exit when end-of-file and we
 		   didn't send any data */
-	} while (line != NULL || (xquery && sent));
+	} while (line != NULL || (mode==XQUERY && sent));
 	/* reached on end of file */
 	assert(hdl == NULL);
 	return 0;
@@ -666,6 +958,10 @@ usage(const char *prog)
 	fprintf(stderr, " -t          | --trace          /* trace mapi network interaction */\n");
 	fprintf(stderr, " -u user     | --user=user      /* user id */\n");
 	fprintf(stderr, " -?          | --help           /* show this usage message */\n");
+	/* SQL specific rendering */
+	fprintf(stderr, "             | --pager=cmd       /* for pagination */\n");
+	fprintf(stderr, "             | --pagesize=nr     /* for pagination */\n");
+	fprintf(stderr, "             | --columnwidth=nr  /* for pagination */\n");
 	exit(-1);
 }
 
@@ -694,8 +990,10 @@ main(int argc, char **argv)
 	int quiet = 0;
 	int save_history = 0;
 	int interactive = 0;
+	int option_index;
 	static struct option long_options[] = {
 		{"blocked", 1, 0, 'b'},
+		{"columnwidth", 1, 0, 0},
 		{"config", 1, 0, 'c'},
 		{"collection", 1, 0, 'C'},
 		{"error", 0, 0, 'e'},
@@ -704,6 +1002,8 @@ main(int argc, char **argv)
 		{"host", 1, 0, 'h'},
 		{"language", 1, 0, 'l'},
 		{"output", 1, 0, 'o'},
+		{"pagesize", 1, 0, 0},
+		{"pager", 1, 0, 0},
 		{"passwd", 2, 0, 'P'},
 		{"port", 1, 0, 'p'},
 		{"database", 1, 0, 'd'},
@@ -725,8 +1025,19 @@ main(int argc, char **argv)
 	if ((setlen = mo_builtin_settings(&set)) == 0)
 		usage(argv[0]);
 
-	while ((c = getopt_long(argc, argv, "b:c:C:ei::l:u::p:o:P::d:qHh:s:t::TX:?", long_options, NULL)) != -1) {
+	while ((c = getopt_long(argc, argv, "b:c:C:ei::l:u::p:o:P::d:qHh:s:t::TX:?", long_options, &option_index)) != -1) {
 		switch (c) {
+		case 0:
+			if( strcmp(long_options[option_index].name,"pagesize")==0){
+				pagesize = atol(optarg);
+			}
+			if( strcmp(long_options[option_index].name,"pager")==0){
+				pager = optarg;
+			}
+			if( strcmp(long_options[option_index].name,"columnwidth")==0){
+				columnwidth = atol(optarg);
+			}
+			break;
 		case 'b':
 			if (*optarg == 't' || *optarg == 'T' || *optarg == '1')
 				linemode = 0;
@@ -750,12 +1061,16 @@ main(int argc, char **argv)
 			    strcmp(optarg, "sq") == 0 ||
 			    strcmp(optarg, "s") == 0) {
 				language = "sql";
+				mode= SQL;
+				mark = "Timer"; /* default style */
 			} else if (strcmp(optarg, "mil") == 0 ||
 				   strcmp(optarg, "mi") == 0) {
 				language = "mil";
+				mode= MIL;
 			} else if (strcmp(optarg, "mal") == 0 ||
 				   strcmp(optarg, "ma") == 0) {
 				language = "mal";
+				mode= MAL;
 			} else if (strcmp(optarg, "xquery") == 0 ||
 				   strcmp(optarg, "xquer") == 0 ||
 				   strcmp(optarg, "xque") == 0 ||
@@ -763,6 +1078,7 @@ main(int argc, char **argv)
 				   strcmp(optarg, "xq") == 0 ||
 				   strcmp(optarg, "x") == 0) {
 				language = "xquery";
+				mode= XQUERY;
 			} else {
 				fprintf(stderr, "language option needs to be one of sql, mil, mal, or xquery\n");
 				exit(-1);
@@ -801,7 +1117,7 @@ main(int argc, char **argv)
 			quiet = 1;
 			break;
 		case 'T':
-			mark = "Timer";
+			mark = mark ? NULL: "Timer";
 			break;
 		case 't':
 			trace = MAPI_TRACE;
@@ -820,22 +1136,23 @@ main(int argc, char **argv)
 			save_history = 1;
 			break;
 		case '?':
-			if (language) { 
-                                start_with_help = 1;
-                                break;
-                        }
+			start_with_help = 1;
+			break;
 		default:
 			usage(argv[0]);
 		}
 	}
-        /* set default value */
-        if (language == NULL) language = "mil";
+	/* set default language value */
+	if ( mode == 0) {
+		language= "mil";
+		mode = MIL;
+	}
 
 	setlen = mo_system_config(&set, setlen);
 
 	if (port == 0) {
 		char *s = "mapi_port";
-                int p = defaultPort;
+		int p = defaultPort;
 
 		if ((s = mo_find_option(set, setlen, s)) != NULL) {
 			port = strtol(s, NULL, 10);
@@ -844,7 +1161,7 @@ main(int argc, char **argv)
 		}
 	}
 
-	if (strcmp(language, "xquery") == 0 && output == NULL) {
+	if ( mode== XQUERY  && output == NULL) {
 		output = mo_find_option(set, setlen, "xquery_output");
 	}
 
@@ -900,7 +1217,7 @@ main(int argc, char **argv)
 	if (optind < argc) {
 		/* execute from file(s) */
 		while (optind < argc) {
-			c |= doFile(mid, argv[optind], strcmp(language, "xquery") == 0);
+			c |= doFile(mid, argv[optind]);
 			optind++;
 		}
 	}
@@ -908,15 +1225,14 @@ main(int argc, char **argv)
 		/* execute from stdin */
 		struct stat statb;
 		char *prompt = NULL;
-		char promptbuf[16];
 		int interactive_stdin = 0;
-                int xquery = (strcmp(language, "xquery") == 0);
 
-		if (fstat(fileno(stdin), &statb) == 0 && S_ISCHR(statb.st_mode)) {
+		if (fstat(fileno(stdin), &statb) == 0 && S_ISCHR(statb.st_mode)) 
 			interactive_stdin = 1;
-		}
+		
 		if (interactive_stdin) { 
-                        if (start_with_help) showCommands(xquery);
+			if (start_with_help) 
+				showCommands();
 #ifdef HAVE_LIBREADLINE
 			init_readline(mid, language, save_history);
 #else
@@ -925,14 +1241,15 @@ main(int argc, char **argv)
 			/* reading from terminal, prepare prompt */
 			sprintf(promptbuf, "%.*s>", (int) sizeof(promptbuf) - 2, language);
 			prompt = promptbuf;
+			fromConsole= stdin;
 		}
 		/* stream xml document into the server */
-		if (input && xquery) {
+		if (input && mode==XQUERY) {
 			mapi_stream_into(mid, input, colname);
-			c = doFile(mid, NULL, xquery);
-		} else {
-			c = doFileByLines(mid, stdin, prompt, linemode, exit_on_error, xquery);
-		}
+			c = doFile(mid, NULL);
+		} else 
+			c = doFileByLines(mid, stdin, prompt, linemode, exit_on_error);
+		
 #ifdef HAVE_LIBREADLINE
 		if (interactive_stdin) {
 			deinit_readline();
