@@ -245,33 +245,45 @@ SQLsetSpecial(char *command)
 }
 
 static void
-SQLrow(int *len, char **rest, int fields)
+SQLrow(int *length, char **rest, int fields)
 {
 	int i, more;
 	char old;
 	char *t;
+	int *len= (int*) alloca(sizeof(int)* fields);
+	memcpy((char*) len, (char*)length, sizeof(int)* fields);
 
 	do {
 		fprintf(toConsole, "| ");
 		more = 0;
 		for (i = 0; i < fields; i++) {
+			for(t= rest[i]; t && *t; t++)
+				if( ! (*t == ' '  || *t == '\t') )
+					break;
+			rest[i]= t;
 			if (rest[i] == NULL)
 				fprintf(toConsole, "%*s |", len[i], " ");
 			else {
 				if ((int) strlen(rest[i]) > (len[i] < 0 ? -len[i] : len[i])) {
 					t = rest[i] + (len[i] < 0 ? -len[i] : len[i]);
-					while (t > rest[i] + 1 && *t != ' ' && *t != '\t')
+					while (t > rest[i] && !(*t == ' ' || *t == '\t'))
 						t--;
+					if( t == rest[i] && !(*t==' ' && *t=='\t'))
+						t=  rest[i]+(len[i]<0?-len[i]:len[i]);
 					old = *t;
 					*t = 0;
 					fprintf(toConsole, "%*s |", SQLalignment(len[i], rest[i]), rest[i]);
 					*t = old;
-					if (old)
-						rest[i] = *(t + 1) ? t + 1 : 0;
-					else
+					if (old){
+						while( *t && (*t == ' ' || *t == '\n'))
+							t++;
+						rest[i] = *t ? t : 0;
+					} else
 						rest[i] = 0;
-					if (rest[i])
+					if (rest[i]){
 						more++;
+						len[i]= length[i]<0?-length[i]:length[i];
+					}
 				} else {
 					fprintf(toConsole, "%*s |", SQLalignment(len[i], rest[i]), rest[i]);
 					rest[i] = 0;
