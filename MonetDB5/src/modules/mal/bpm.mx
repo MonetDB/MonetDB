@@ -1337,25 +1337,35 @@ BPMcount(int *ret, bat *bid){
 	return MAL_SUCCEED;
 }
 
+@-
+The emptySet constraint superseeds the similar version
+for ordinary BATs.
+@c
 str
 BPMemptySet(int *ret, bat *bid)
 {
-	int i;
+	int i, cnt=0;
 	Partition ps;
 	BAT *b;
+
+	*ret=0;
 	if( (ps= getAlias(*bid)) == 0){
 		b= BATdescriptor(*bid);
 		if(b==0)
 			throw(MAL,"bpm.emptySet","Can not access BAT");
-		*ret = BATcount(b)==0;
+		cnt = BATcount(b);
 		BBPunfix(b->batCacheid);
+		if (cnt)
+			throw(OPTIMIZER, "mal.assert", "emptySet");
 		return MAL_SUCCEED;
 	}
-	*ret=0;
 	for(i= ps->nxt ; i!=ps->bid && bpmcat[i] ; i= bpmcat[i]->nxt){
-		if( bpmcat[i]->cnt)
-			*ret= 1;
-			break;
+		b = BATdescriptor(bpmcat[i]->bid);
+		if (b)
+			cnt = BATcount(b);
+		BBPunfix(b->batCacheid);
+		if (cnt)
+			throw(OPTIMIZER, "mal.assert", "emptySet");
 	}
 	return MAL_SUCCEED;
 }
