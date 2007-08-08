@@ -205,7 +205,9 @@ OPTremapMultiplex(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	(void) mb;
 	(void)stk;
 	(void) p;
+#ifdef DEBUG_OPT_REMAP
 	printInstruction(GDKout,mb,p,LIST_MAL_ALL);
+#endif
 	throw(MAL,"opt.remap","no implementation present");
 }
 @include optimizerWrapper.mx

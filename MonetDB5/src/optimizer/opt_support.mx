@@ -506,6 +506,7 @@ opt_export int hasSameArguments(MalBlkPtr mb, InstrPtr p, InstrPtr q);
 opt_export int isUpdated(MalBlkPtr mb, int pc);
 opt_export int hasCommonResults(InstrPtr p, InstrPtr q);
 opt_export int hasSideEffects(InstrPtr p, int strict);
+opt_export int isBlocking(InstrPtr p);
 opt_export int isFragmentGroup(InstrPtr q);
 opt_export int allArgumentsVisible(MalBlkPtr mb, int pc,int qc);
 opt_export int allTargetsVisible(MalBlkPtr mb, int pc, int qc);
@@ -1058,6 +1059,7 @@ hasSideEffects(InstrPtr p, int strict)
 		getModuleId(p) == mdbRef ||
 		getModuleId(p) == bpmRef ||
 		getModuleId(p) == malRef ||
+		getModuleId(p) == remapRef ||
 		getModuleId(p) == constraintsRef ||
 		getModuleId(p) == optimizerRef ||
 		getModuleId(p) == lockRef ||
@@ -1090,6 +1092,30 @@ hasSideEffects(InstrPtr p, int strict)
 		return TRUE;
 	return FALSE;
 }
+@-
+Breaking up a MAL program into pieces for distributed requires 
+identification of (partial) blocking instructions. A conservative
+definition can be used.
+@c
+int
+isBlocking(InstrPtr p)
+{
+	if (blockStart(p) || blockExit(p) || blockCntrl(p))
+		return TRUE;
+
+	if ( getFunctionId(p) == sortTailRef ||
+		 getFunctionId(p) == sortHRef ||
+		 getFunctionId(p) == sortHTRef ||
+		 getFunctionId(p) == sortTHRef )
+		return TRUE;
+
+	if( getModuleId(p) == aggrRef ||
+		getModuleId(p) == groupRef ||
+		getModuleId(p) == sqlRef )
+			return TRUE;
+	return FALSE;
+}
+
 void
 replaceAlias(MalBlkPtr mb, int pc, int pcl, int src, int alias)
 {

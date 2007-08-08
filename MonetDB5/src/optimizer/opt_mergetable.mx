@@ -19,14 +19,13 @@
 @- Merge Tables 
 A merge association table (MAT) descriptor defines an ordered collection 
 of type compatible BATs, whose union represents a single (virtual) BAT.
-The MAT may represent a partitioned BAT, but could also be an arbitrary
+The MAT may represent a partitioned BAT (see BPM), but could also be an arbitrary
 collection of temporary BATs within a program fragment.
 
 The MAT definition lives within the scope of a single block.
 The MAT optimizer simply expands the plan to
 deal with its components on an individual basis.
-Only when a blocking operator is encounted,
-the underlying BAT is materialized.
+Only when a blocking operator is encounted, the underlying BAT is materialized.
 
 The MAT object can not be passed as an argument to any function
 without first being materialized. Simply because
@@ -94,9 +93,14 @@ argument. This leads to
 @end example
 
 The drawback of this scheme is the explosion in MAL statements.
-It is chosen as a basis for experimentation. In a fullfledge
-system we would also use iterators to avoid it.
+The system could also use iterators to avoid it.
 
+@example
+barrier m:= mat.newIterator(m0,m1,m2);
+	io.print(m);
+	redo m:= mat.newIterator(m0,m1,m2);
+exit m;
+@end example
 @{
 Also consider the MAT as a variable property. This is needed
 to pass a MAT as an argument to functions. If the function does
@@ -126,6 +130,7 @@ comment "Resolve the multi-table definitions";
 @c
 #include "mal_config.h"
 #include "opt_mergetable.h"
+#include "bpm.h"
 
 static int
 isMATalias(int idx, int mvar[], int top){
@@ -187,20 +192,23 @@ OPTmergetableImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 			continue;
 		}
 @-
-A mat.expand() operation looks up the components of the partitioned
-bat and prepares the instruction to expand it.
+A sql.bind() operation is trapped to inspect the partition catalog
+for definitions.
 @c
-		if( (getModuleId(p)== matRef && getFunctionId(p)==expandRef) &&
-			isConstant(mb,getArg(p,1)) && 
-			getVarType(mb,getArg(p,1))== TYPE_str){
+		if( (getModuleId(p)== sqlRef && getFunctionId(p)==bindRef)){
+			int i;
 			pushInstruction(mb,p);
-			p= copyInstruction(p);
-			p->argc--;
-			getFunctionId(p)=newRef;
-			pushInstruction(mb,p);
-			mat[mtop]= p;
-			mvar[mtop] = getArg(p,0);
-			mtop++;
+			i= mb->stop;
+			BPMexpand(mb,getArg(p,0));
+			q= newStmt(mb,matRef,newRef);
+			getArg(q,0)= getArg(p,0);
+			for(; i<mb->stop; i++){
+				mat[mtop]= getInstrPtr(mb,i);
+				mvar[mtop] = getArg(mat[mtop],0);
+				pushArgument(mb,q,mvar[mtop]);
+				setVarType(mb,getArg(q,0), getVarType(mb,getArg(mat[mtop],0)));
+				mtop++;
+			}
 			actions++;
 			continue;
 		}

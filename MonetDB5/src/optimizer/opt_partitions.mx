@@ -198,7 +198,7 @@ static int bindTest(MalBlkPtr mb, InstrPtr p){
 
 static void
 OPTnaiveIterations(MalBlkPtr mb){
-	int i,j,limit,vlimit= mb->vsize + mb->ssize*4; /* statements are expanded*/
+	int i,j,k,limit,vlimit= mb->vsize + mb->ssize*4; /* expanded*/
 	InstrPtr *old,p=0,q;
 	int *alias= (int*) alloca(sizeof(int)*vlimit);
 	int *garbage= (int*) alloca(sizeof(int)*vlimit);
@@ -292,10 +292,11 @@ the garbage collection statements for the partitioned bats.
 		j= newVariable(mb,GDKstrdup("SQLexception"),TYPE_str);
 	getArg(q,0)= j;
 	q->barrier= CATCHsymbol;
-	for(i=0; i< vlimit; i++)
-	if( garbage[i]){
+	for(k=0; k< vlimit; k++)
+	if( garbage[k]){
 		q=newStmt(mb,bpmRef,"garbage");
-		pushArgument(mb,q,i);
+		setVarType(mb,getArg(q,0),TYPE_void);
+		pushArgument(mb,q,k);
 	}
 	q= newAssignment(mb);
 	getArg(q,0)= j;
@@ -305,12 +306,14 @@ the garbage collection statements for the partitioned bats.
 	q->barrier= EXITsymbol;
 
 	/* if there is no exception */
-	for(i=0; i< vlimit; i++)
-	if( garbage[i]){
+	for(k=0; k< vlimit; k++)
+	if( garbage[k]){
 		q=newStmt(mb,bpmRef,"garbage");
-		pushArgument(mb,q,i);
+		setVarType(mb,getArg(q,0),TYPE_void);
+		pushArgument(mb,q,k);
 	}
-	pushInstruction(mb,p);
+	for(;i< limit; i++)
+		pushInstruction(mb,old[i]);
 }
 
 static int
