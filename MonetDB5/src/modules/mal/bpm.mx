@@ -25,7 +25,7 @@ of subqueries using a map-reduce strategy.
 The BAT partition manager (BPM) module is designed to 
 support this strategy using range- and hash-partitioning.
 
-Consider we want to reorganize R:bat[:oid,:int] into three partitions,
+Consider we want to reorganize R:bat[:oid,:int] into two partitions,
 based on splitting by tail value. 
 The following MAL program illustrates the snippet of actions needed:
 @example
@@ -43,14 +43,13 @@ The second call breaks the latter into (101,200)
 and (201,nil:int).
 The BAT partitions share the persistency properties.
 Partitioning on the head simple calls for a reverse operation
-on the source BAT first. Beware that subsequent updates may
-materialize the header.
+on the source BAT first. 
 
 The partition manager also supports hash-based partitioning.
 Its argument is the number of hash bucket bits.
-example
+@example
 	bpm.open();
-	Rrev:= bat.reverse(R:bat[:oid,:int]);
+	Rev:= bat.reverse(R:bat[:oid,:int]);
 	Ralias:= bpm.deposit("myHashVersion",Rev);	# creates side effects
 	bpm.hashPartition(Ralias,2);
 	bpm.close();
@@ -78,15 +77,15 @@ symbolic evaluation.
 
 The former is illustrated with the snippet to select part of
 a partitioned BAT. In this example we collect the partial
-results in the accumulator BAT tu.
+results in the accumulator BAT U.
 @example
 	bpm.open();
-	Ralias:= bpm.take("myversion",:bat[:oid,:int]);
-	tu:= bat.new(:oid,:int);
+	Ralias:bat[:oid,:int]:= bpm.take("myversion");
+	U:= bat.new(:oid,:int);
 barrier Rp:= bpm.newIterator(Ralias);
 	...
 	t:= algebra.select(Rp,0,100);
-	tu:= algebra.union(tu,t);
+	U:= algebra.union(tu,t);
 	...
 	redo Rp:= bpm.hasMoreElements(Ralias);
 exit Rp;
@@ -96,23 +95,22 @@ exit Rp;
 The properties of the partitioned BATs are particularly useful during query
 optimization. However, it only works if the BAT identifier
 can be determined at compile time. For SQL it can be simply looked up in
-the catalog as part of the preparatory optimizer step.
+the catalog as part of a preparatory optimizer step.
 
-The same problem handled by an optimizer that produces the plan
+To illustrate, the same problem handled by an optimizer that produces the plan
 based on a known number of partitions:
 @example
 	bpm.open();
-	R:= bpm.take("myversion",:bat[:oid,:int]); # get the partition alias
-	optimizer.bpm();
+	R:bat[:oid,:int]:= bpm.take("myversion"); # get the partition alias
+	optimizer.mergetable();
 	T:= algebra.select(R,0,100);
 @end example
-is translated into to obtain the
+is translated to the plan:
 @example
 	bpm.open();
-	Ralias:= bpm.take("myversion",:bat[:oid,:int]);
-	R0:bat[:oid,:int]:= bpm.take(Ralias, 0); #get first partition
-	R1:bat[:oid,:int]:= bpm.take(Ralias, 1); #get second partition
-	R2:bat[:oid,:int]:= bpm.take(Ralias, 2); #get third partition
+	R0:bat[:oid,:int]:= bpm.take("myversion", nil:oid,nil:oid, 0,100);
+	R1:bat[:oid,:int]:= bpm.take("myversion", nil:oid,nil:oid, 101,200);
+	R2:bat[:oid,:int]:= bpm.take("myversion", nil:oid,nil:oid, 201,nil:int);
 	R:= mat.new(R0,R1,R2);
 	T:= algebra.select(R,0,100);
 	optimizer.multitable();
@@ -129,7 +127,7 @@ Once the transaction is commited, the updates are propagated
 (in parallel) to all partitions.
 @example
 	bpm.open();
-	Ralias := bpm.take("myversion",:bat[:oid,:int]); 
+	Ralias:bat[:oid,:int] := bpm.take("myversion"); 
 	bpm.insert(Ralias, Rinsert);	# handle pending inserts
 	bpm.delete(Ralias, Rdelete);	# handle pending deletes
 	bpm.replace(Ralias, Rold, Rnew);	# handle pending updates
@@ -145,42 +143,41 @@ ensure that the boundery conditions are met.
 @- Partitioned results
 In many situations, you would like to keep the partial results
 as a partitioned BAT again.
-The easiest solution is to remember the partitions as temporary 
-variables in a list during execution.
-
-However, a persistent partitioned BAT can also be created first,
+The easiest solution is to create a partitioned BAT,
 whose partitions are empty. Subsequently, we insert the temporary results. 
 Depending on the fragmentation criteria, pieces may align
 with the pieces known, or lead to a redistribution of the
 buns to the correct bats.
 
-The previous plan for this becomes
+In the previous plan for this becomes
 @example
 	bpm.open();
 	Tmp := bpm.deposit("tmp",:bat[:oid,:int]);
-	bpm.rangePartition(Tmp,nil,100);
-	bpm.rangePartition(Tmp,101,200);
+	bpm.rangePartition(tmp,nil:int,100);
+	bpm.rangePartition(tmp,101,nil:int);
 
-	Ralias:= bpm.take("myversion",:bat[:oid,:int]); # get the partition alias
-	R0:= bpm.take(Ralias, 0);
+	Ralias:bat[:oid,:int]:= bpm.take("myversion"); # get the partition alias
+	R0:bat[:oid,:int]:= bpm.take("myversion", nil:oid,nil:oid, 0,100);
 	T0:= algebra.select(R0,0,100);
-	bpm.deposit(Tmp,T0);
+	bpm.insert(Tmp,T0);
 
-	R1:= bpm.take(Ralias, 1);
+	R1:bat[:oid,:int]:= bpm.take("myversion", nil:oid,nil:oid, 101,200);
 	T1:= algebra.select(R1,0,100);
-	bpm.deposit(Tmp,T1);
+	bpm.insert(Tmp,T1);
 
-	R2:= bpm.take(Ralias, 2);
+	R2:bat[:oid,:int]:= bpm.take("myversion", nil:oid,nil:oid, 201,nil:int);
 	T2:= algebra.select(R2,0,100);
-	bpm.deposit(Tmp,T2);
+	bpm.insert(Tmp,T2);
 @end example
-The rationale for this approach is that re-distribution
-of temporary results are hidden behind the @sc{bpm} interface.
+Note that a symbolic optimizer can reduce this plan to a small snippet.
+
+The rationale for the update approach is that re-distribution
+of temporary results are hidden behind the @sc{bpm.insert()} interface.
 The only decision that should be taken by the optimizer is
 the fragmentation criteria for the temporary results.
 
 For temporary results the range bounds need not be
-stored in the bpm. Instead, the mat approach could
+stored in the BPM catalog. Instead, the mat approach could
 be used to reduce the plan size.
 @example
 	bpm.open();
@@ -200,10 +197,10 @@ be used to reduce the plan size.
 The default strategy for an optimizer is to replace a
 reference to a partitioned BAT by an iterator.
 @example
-	l:= list.new();
+	l:= bpm.new();
 barrier Elm:bat[:oid,:int]:= bpm.newIterator(Ralias);
 	t:= algebra.select(Elm,0,20);
-	list.append(l,t);
+	bpm.addPartition(l,t);
 	redo Elm:bat[:oid,:int]:= bpm.newIterator(Ralias);
 exit Elm;
 @end example
@@ -265,7 +262,8 @@ address BPMnew
 comment "Create a temporary partitioned table";
 
 command fold(b:bat[:any_1,:any_2]):bat[:any_1,:any_2]
-address BPMfold;
+address BPMfold
+comment "Collapse the partitioned BAT into a single BAT";
 
 command unfold(alias:bat[:any_1,:any_2]) :bat[:any_1,:any_2]
 address BPMunfold
@@ -318,20 +316,11 @@ address BPMsplitpartition
 comment "Split all partitions that cover the split value";
 
 command addPartition(b:bat[:any_1,:any_2],s:bat[:any_1,:any_2]):void
-address BPMaddSegment
+address BPMaddPartition
 comment "Add a partition to a fragmented temporary table";
 command addPartition(b:bat[:any_1,:any_2],s:BAT):void
-address BPMaddSegment
-comment "Add a partition to a fragmented temporary table";
-
-command addPartition(nme:str,b:bat[:any_1,:any_2]) :bat[:any_1,:any_2]
 address BPMaddPartition
-comment "Add a new partition to the chain for name";
-
-command addPartition(nme:str,b:bat[:any_1,:any_2],hl:any_1,hh:any_1, 
-	tl:any_2, th:any_2) :bat[:any_1,:any_2]
-address BPMaddPartitionDim
-comment "Add a new partition to the chain for name and set its dimensions";
+comment "Add a partition to a fragmented temporary table";
 
 command hashPartition(pb:bat[:any_1,:any_2], slots:int):void
 address BPMhash
@@ -349,7 +338,7 @@ comment "Re-organize segment s using the selection (val1,val2) stored in bat rs"
 command take(pb:str):bat[:any_1,:any_2]
 address BPMtake
 comment "Retrieve the alias given the name of a partitioned BAT";
-command take(alias:bat[:any_1,:any_2],index:int) :bat[:any_1,:any_2]
+command take(nme:str, hl:any_1, hh:any_1, tl:any_2, th:any_2) :bat[:any_1,:any_2]
 address BPMtakePartition
 comment "Retrieve a single component of a partitioned BAT by index";
 
@@ -534,16 +523,16 @@ bpm_export str BPMcount(int *ret, bat *src);
 bpm_export str BPMemptySet(int *ret, bat *src);
 bpm_export str BPMsortTail(int *ret, bat *src);
 
-bpm_export str BPMaddSegment(int *ret, bat *dst, bat *src);
-bpm_export str BPMaddPartition(bat *ret, str *nme, bat *src);
-bpm_export str BPMaddPartitionDim(bat *ret, str *nme, bat *src, ptr hl, ptr hh, ptr tl, ptr th);
+bpm_export str BPMaddPartition(int *ret, bat *dst, bat *src);
 bpm_export str BPMhash(bat *ret, bat *bid, int *slots);
 bpm_export str BPMderived(bat *ret, bat *bid, bat *src);
 bpm_export str BPMadapt(bat *ret, bat *bid, ptr low, ptr hgh, bat *rs, int *pol);
 bpm_export str BPMoracle(bat *ret, bat *bid, ptr low, ptr hgh, bat *rs );
 
 bpm_export str BPMtake(bat *ret, str *nme);
-bpm_export str BPMtakePartition(bat *ret, bat *bid, int *idx);
+bpm_export str BPMtakePartition(bat *ret, str *nme, ptr *hl, ptr *hh, ptr *tl, ptr *th);
+
+bpm_export str BPMexpand(MalBlkPtr mb, int alias);
 
 bpm_export str BPMunfold(bat *ret, bat *bid);
 bpm_export str BPMfold(int *ret, bat *src);
@@ -601,6 +590,7 @@ bpm_export str BPMepilogue(int *ret);
 #include "bpm.h"
 #include "bat5.h"
 #include "algebra.h"
+#include "mal_builder.h"
 #define _USE_MATH_DEFINES /* needed to get M_PI on Windows */
 #include <math.h>
 
@@ -609,7 +599,7 @@ bpm_export str BPMepilogue(int *ret);
 #define Mmax	10240*KB
 
 @-
-The partition manager uses its private memory mapped catalog 
+The partition manager uses its private catalog 
 of persistent BATs. The size of the catalog is aligned with
 the BBP size.
 
@@ -628,7 +618,7 @@ A ring may be empty.
 
 CAVEAT 1. Operations like revert do not return a new bat descriptor,
 which may lead to a situation that BATs may end up to be shared
-in two rings. This is currently catched in addSegment, which takes
+in two rings. This is currently catched in addPartition, which takes
 a copy of the BAT instead. Further optimization is needed here.
 
 CAVEAT 2. Grouping and aggregations are handled using reconstruction
@@ -662,6 +652,7 @@ typedef struct PARTITIONREC {
 	char *name;		/* only stored for the alias */
 	bat alias;		/* partition BAT alias, back into BBP*/
 	bat bid;		/* partition BAT, back into BBP */
+	int type;		/* BAT type */
 
 	ValRecord hlow,hhgh; /* head range */
 	ValRecord tlow,thgh; /* tail range */
@@ -687,14 +678,18 @@ static Partition *bpmcat= 0;
 static int bpmcatsize=0;
 static int BPMpiecesImpl(bat bid);
 
-static void BPMprintPartition(stream *f, Partition p){
-	stream_printf(f,"partition: %s alias %d bid %d ",
-		bpmcat[p->alias]->name, p->alias, p->bid);
+static void BPMprintInfo(stream *f, Partition p){
 	stream_printf(f,"bits %d %d ", p->hbits,p->tbits);
 	stream_printf(f,"["); VALprint(f,&p->hlow);
 	stream_printf(f,":"); VALprint(f,&p->hhgh);
 	stream_printf(f,", "); VALprint(f,&p->tlow);
 	stream_printf(f,":"); VALprint(f,&p->thgh);
+}
+
+static void BPMprintPartition(stream *f, Partition p){
+	stream_printf(f,"partition: %s alias %d bid %d ",
+		bpmcat[p->alias]->name, p->alias, p->bid);
+	BPMprintInfo(f,p);
 	stream_printf(f,"] nxt %d prv %d cnt %d\n", p->nxt,p->prv,p->cnt);
 }
 
@@ -702,20 +697,12 @@ static void BPMprintRing(stream *f, Partition p){
 	int i, base;
 	if( p== 0) return;
 	stream_printf(f,"RING[%d] %s ", p->bid,BBPname(p->bid));
-	stream_printf(f,"bits(%d,%d) ", p->hbits,p->tbits);
-	stream_printf(f,"["); VALprint(f,&p->hlow);
-	stream_printf(f,":"); VALprint(f,&p->hhgh);
-	stream_printf(f,", "); VALprint(f,&p->tlow);
-	stream_printf(f,":"); VALprint(f,&p->thgh);
+	BPMprintInfo(f,p);
 	stream_printf(f,"] cnt %d\n", p->cnt);
 	base= p->alias;
 	for(i= p->nxt; bpmcat[i]->bid!= base; i= bpmcat[i]->nxt){
 		stream_printf(f,"[%d] %s ", bpmcat[i]->bid, BBPname(bpmcat[i]->bid));
-		stream_printf(f,"bits(%d,%d) ", bpmcat[i]->hbits,bpmcat[i]->tbits);
-		stream_printf(f,"["); VALprint(f,&bpmcat[i]->hlow);
-		stream_printf(f,":"); VALprint(f,&bpmcat[i]->hhgh);
-		stream_printf(f,", "); VALprint(f,&bpmcat[i]->tlow);
-		stream_printf(f,":"); VALprint(f,&bpmcat[i]->thgh);
+		BPMprintInfo(f,p);
 		stream_printf(f,"] cnt %d\n", bpmcat[i]->cnt);
 	}
 }
@@ -811,9 +798,10 @@ one pass over the underlying source
 static str 
 materializePartition(Partition p){
 	BAT *b,*bn;
-	assureSpace();
+
 	if( p->delayed== 0)
 		return MAL_SUCCEED;
+	assureSpace();
 	b= BATdescriptor(p->bid);
 	bn= BAT_select_(b, VALptr(&p->tlow),VALptr(&p->thgh), 
 			TRUE, FALSE, TRUE, FALSE);
@@ -906,6 +894,7 @@ BPMloadCatalog(){
 		i = *(int *)BUNhead(b,p);
 		nm = (str) BUNtail(b,p);
 		newPartition(i)->name = GDKstrdup(nm);	
+		bpmcat[i]->type= newBatType(b->htype, b->ttype);
 		bpmcat[i]->bid = i;
 		BBPincref(i,TRUE);
 	}
@@ -976,7 +965,6 @@ BPMopen()
 	mal_set_lock(mal_contextLock, "bpm");
 	if(BBPindex("bpm_name"))
 		BPMloadCatalog();
-	else newPartition(0);
 	mal_unset_lock(mal_contextLock, "bpm");
 	return MAL_SUCCEED;
 }
@@ -1036,6 +1024,7 @@ BPMdeposit(bat *ret, str *nme, bat *src)
 		throw(MAL,"bpm.deposit","Can not create partitioned BAT");
 	}
 	pa = newPartition(ba->batCacheid);
+	pa->type = newBatType(ba->htype,ba->ttype);
 	bpmcat[ba->batCacheid]->bid = ba->batCacheid;
 	pa->alias= pa->bid;
 	pa->name= nme? GDKstrdup(*nme): BBPname(ba->batCacheid);
@@ -1043,6 +1032,7 @@ BPMdeposit(bat *ret, str *nme, bat *src)
 	@:defaultRange(pa,ba)@
 
 	p = newPartition(b->batCacheid);
+	p->type = newBatType(b->htype,b->ttype);
 	bpmcat[b->batCacheid]->bid = b->batCacheid;
 	BBPincref(b->batCacheid,TRUE);
 	p->alias= pa->bid;
@@ -1141,6 +1131,7 @@ BPMsplitpartition(bat *ret, bat *bid, ptr val)
 		}
 		BBPkeepref(bn->batCacheid);
 		p= newPartition(bn->batCacheid);
+		p->type = newBatType(bn->htype,bn->ttype);
 		bpmcat[bn->batCacheid]->bid = bn->batCacheid;
 		BBPincref(bn->batCacheid,TRUE);
 		p->alias= bpmcat[i]->alias;
@@ -1252,6 +1243,7 @@ BPMsortPartitions(int *ret, bat *bid)
 			bn= BATcopy(bs, bs->htype,bs->ttype,1);
 
 			p= newPartition(bn->batCacheid);
+			p->type = newBatType(bn->htype,bn->ttype);
 			bpmcat[bn->batCacheid]->bid = bn->batCacheid;
 			BBPincref(bn->batCacheid,TRUE);
 			memcpy((char*) p, (char*) bpmcat[i],sizeof(PartitionRec));
@@ -1353,17 +1345,18 @@ BPMemptySet(int *ret, bat *bid)
 	BAT *b;
 	if( (ps= getAlias(*bid)) == 0){
 		b= BATdescriptor(*bid);
-		*ret = BATcount(b)==0;
 		if(b==0)
 			throw(MAL,"bpm.emptySet","Can not access BAT");
+		*ret = BATcount(b)==0;
 		BBPunfix(b->batCacheid);
 		return MAL_SUCCEED;
 	}
+	*ret=0;
 	for(i= ps->nxt ; i!=ps->bid && bpmcat[i] ; i= bpmcat[i]->nxt){
 		if( bpmcat[i]->cnt)
-			throw(MAL,"bpm.emptySet","emptySet");
+			*ret= 1;
+			break;
 	}
-	(void) ret;
 	return MAL_SUCCEED;
 }
 
@@ -1372,9 +1365,8 @@ int BPMpiecesCnt(bat bid){
 	Partition ps;
 	if( (ps= getAlias(bid)) == 0)
 		return 1;
-	for(i= ps->nxt ; i!=ps->bid && bpmcat[i] ; i= bpmcat[i]->nxt){
+	for(i= ps->nxt ; i!=ps->bid && bpmcat[i] ; i= bpmcat[i]->nxt)
 		cnt +=1;
-	}
 	return cnt;
 }
 
@@ -1386,12 +1378,13 @@ BPMsortTail(int *ret, bat *bid)
 
 	if( getAlias(*bid) == 0)
 		throw(MAL,"bpm.emptySet","Partitioned BAT not found");
-	msg= BPMfold(ret,bid);
-	if( msg) return msg;
+	if( (msg= BPMfold(ret,bid)) )
+		return msg;
 	b= BATdescriptor(*ret);
 	BATmirror(BATsort(BATmirror(b)));
 	return MAL_SUCCEED;
 }
+
 static int 
 BPMpiecesImpl(bat bid){
 	int i,cnt=0;
@@ -1434,6 +1427,7 @@ getAcceptor(bat ba, int maxcnt){
 		b= BATdescriptor(p->bid);
 		bn= BATnew(b->htype, b->ttype, maxcnt);
 		newPartition(bn->batCacheid);
+		p->type = newBatType(bn->htype,bn->ttype);
 		bpmcat[bn->batCacheid]->bid = bn->batCacheid;
 		BBPkeepref(bn->batCacheid);
 		BBPunfix(b->batCacheid);
@@ -1448,21 +1442,21 @@ getAcceptor(bat ba, int maxcnt){
 }
 
 str
-BPMaddSegment(int *ret, bat *bid, bat *src){
+BPMaddPartition(int *ret, bat *bid, bat *src){
 	int cnt=0, maxcnt;
 	Partition pa,p,px;
 	BAT *b,*bn, *ba;
 
 	assureSpace();
 	if( (pa= getAlias(*bid)) == 0)
-		throw(MAL,"bpm.addSegment","Alias not found");
+		throw(MAL,"bpm.addPartition","Alias not found");
 	ba= BATdescriptor(pa->bid);
 	if( ba== NULL)
-		throw(MAL,"bpm.addSegment","Alias BAT not found");
+		throw(MAL,"bpm.addPartition","Alias BAT not found");
 	b= BATdescriptor(*src);
 	if( b== NULL) {
 		BBPunfix(ba->batCacheid); 
-		throw(MAL,"bpm.addSegment","Partial partition BAT not found");
+		throw(MAL,"bpm.addPartition","Partial partition BAT not found");
 	}
 	if(bpmcat[*src] ){
 		BAT *bb;
@@ -1482,13 +1476,13 @@ BPMaddSegment(int *ret, bat *bid, bat *src){
 #endif
 		BBPunfix(ba->batCacheid); 
 		BBPunfix(b->batCacheid); 
-		throw(MAL,"bpm.addSegment","Uncompatible BAT types");
+		throw(MAL,"bpm.addPartition","Uncompatible BAT types");
 	}
 
 	BBPunfix(ba->batCacheid); 
 	cnt = BATcount(b);
 #ifdef _DEBUG_BPM_
-	printf("addSegment %d -> %d\n",*bid, *src);
+	printf("addPartition %d -> %d\n",*bid, *src);
 #endif
 	maxcnt = 2*BATTINY - cnt;
 	/* is it a big piece or no enough space in the existing? */
@@ -1496,6 +1490,7 @@ BPMaddSegment(int *ret, bat *bid, bat *src){
 		emptyRing(pa) ||
 		(px= getAcceptor(*bid,maxcnt))==0 ) {
 		p= newPartition(b->batCacheid);
+		p->type = newBatType(b->htype,b->ttype);
 		bpmcat[b->batCacheid]->bid = b->batCacheid;
 		BBPincref(b->batCacheid,TRUE);
 		insertPartition(pa,p);
@@ -1510,7 +1505,7 @@ BPMaddSegment(int *ret, bat *bid, bat *src){
 		/* add the content to the acceptor segment */
 		bn= BATdescriptor(px->bid);
 		if( bn== NULL)
-			throw(MAL,"bpm.addSegment","Partition BAT not found");
+			throw(MAL,"bpm.addPartition","Partition BAT not found");
 		BATappend(bn,b,TRUE);
 		px ->cnt += BATcount(b);
 		BBPunfix(bn->batCacheid); 
@@ -1525,64 +1520,6 @@ BPMaddSegment(int *ret, bat *bid, bat *src){
 	return MAL_SUCCEED;
 }
 
-str
-BPMaddPartition(bat *ret, str *nme, bat *src)
-{
-	BAT *b;
-	Partition p,pa;
-
-	BPMopen();
-
-	/* test for new name */
-	if( (pa=getByName(*nme)) == 0)
-		return BPMdeposit(ret,nme,src);
-
-	@:getBATdescriptor(src,b,"bpm.addPartition");
-
-	if( bpmcat[b->batCacheid] != 0){
-		BBPunfix(b->batCacheid);
-		throw(MAL,"bpm.addPartition","Duplicate partitioned BAT");
-	}
-	/* simply add the partition to the start of the ring */
-	p= newPartition(*src);
-	bpmcat[*src]->bid = *src;
-	BBPincref(*src,TRUE);
-	p->alias = pa->alias;
-	/* we should derive the range from the BAT content */
-	@:defaultRange(p,b)@
-	BBPkeepref(*ret= b->batCacheid);
-
-#ifdef _DEBUG_BPM_
-	stream_printf(GDKout,"Added partition  %d\n",p->bid);
-	BPMprintPartition(GDKout,p);
-#endif
-
-	return MAL_SUCCEED;
-}
-
-str
-BPMaddPartitionDim(bat *ret, str *nme, bat *src, ptr hl, ptr hh, ptr tl, ptr th)
-{
-	BAT *b;
-	Partition p;
-	str msg;
-
-	if( (msg=BPMaddPartition(ret,nme,src)) != MAL_SUCCEED)
-		return msg;
-	if( (p=bpmcat[*ret]) ==0)
-		throw(MAL,"bpm.addPartitionDim","Partition not created");
-	
-	@:getBATdescriptor(ret,b,"bpm.addpartitiondim");
-
-	/* default range */
-	VALset(&p->hlow, b->htype, hl );
-	VALset(&p->hhgh, b->htype, hh );
-	VALset(&p->tlow, b->ttype, tl );
-	VALset(&p->thgh, b->ttype, th );
-
-	BBPunfix(b->batCacheid);
-	return MAL_SUCCEED;
-}
 
 str
 BPMhash(bat *ret, bat *bid, int *bits)
@@ -1921,6 +1858,7 @@ BPMadaptImpl(bat *ret, bat *bid, ptr low, ptr hgh, bat *rs, int policy )
 	pprev = getByNumber(ps->prv);
 	for(i=0; i<n-1; i++, pprev=p){
 		p= newPartition(bb[i]);
+		p->type = pprev->type;
 		bpmcat[bb[i]]->bid = bb[i];
 		BBPincref(bb[i],TRUE);
 		p->alias= ps->alias;
@@ -2050,6 +1988,7 @@ Add the new partition based on RS.
 @c
 	if( bs1){
 		p= newPartition(bs1->batCacheid);
+		p->type= ps->type;
 		bpmcat[bs1->batCacheid]->bid = bs1->batCacheid;
 		BBPincref(bs1->batCacheid,TRUE);
 		insertPartition(ps,p);
@@ -2075,6 +2014,7 @@ Add the left-over partition to the ring as well.
 @c
 	if( bs2){
 		p= newPartition(bs2->batCacheid);
+		p->type= ps->type;
 		bpmcat[bs2->batCacheid]->bid = bs2->batCacheid;
 		BBPincref(bs2->batCacheid,TRUE);
 		insertPartition(ps,p);
@@ -2140,28 +2080,53 @@ BPMtake(bat *ret, str *nme)
 	return MAL_SUCCEED;
 }
 str
-BPMtakePartition(bat *ret, bat *bid, int *index)
+BPMtakePartition(bat *ret, str *nme, ptr *hl, ptr *hh, ptr *tl, ptr *th)
 {
 	int i,j;
 	Partition p;
 	str msg= MAL_SUCCEED;
 
 	BPMopen();
-	p= bpmcat[*bid];
+	p= getByName(*nme);
 	if( p== 0)
 		throw(MAL,"bpm.take","Partitioned BAT does not exist");
 
 	for(j=1,i=bpmcat[p->alias]->nxt; 
-		j< *index && i!= p->alias ; 
+		i!= p->alias ; 
 		i= bpmcat[i]->nxt){
+			/* determine matching partition */
+			(void) hl;
+			(void) hh;
+			(void) tl;
+			(void) th;
 			if( (msg=materializePartition(bpmcat[i])) )
 				return msg; 
 			j++;
 	}
-	if(i== p->alias )
-		throw(MAL,"bpm.takePartition","No partition number %d",*index);
 	*ret =i;
-	BBPincref(i,TRUE);
+	throw(MAL,"bpm.takePartition","not yet implemented");
+}
+@-
+For the time being we simulate a partitioned SQL environment.
+It contains two pieces for each.
+@c
+str
+BPMexpand(MalBlkPtr mb, int alias){
+	Partition p;
+	InstrPtr q;
+	int i;
+
+	BPMunfold( &i, &alias);
+	p= getByNumber(alias);
+	if( p==0)
+		throw(MAL,"bpm.expand","Partition not known");
+	
+	for(i= p->nxt ; i!=p->bid && bpmcat[i] ; i= bpmcat[i]->nxt) {
+		q = newStmt(mb,"bpm","take");
+		setVarType(mb, getArg(q,0), p->type);
+		pushInt(mb,q,alias);
+		pushInt(mb,q,i);
+	}
 	return MAL_SUCCEED;
 }
 @-
@@ -2178,6 +2143,7 @@ BPMunfold(bat *ret, bat *bid)
 	str msg= MAL_SUCCEED;
 
 	BPMopen();
+	assureSpace();
 	p= bpmcat[*bid];
 	if( p== 0){
 		msg= BPMdeposit(ret, 0, bid);
@@ -2469,6 +2435,7 @@ BPMnew(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL,"bpm.new","Can not create BAT");
 	
 	pa = newPartition(bn->batCacheid);
+	pa->type= newBatType(bn->htype,bn->ttype);
 	bpmcat[bn->batCacheid]->bid = bn->batCacheid;
 	pa->alias= pa->bid;
 	pa->name= GDKstrdup(BBPname(bn->batCacheid));
@@ -3119,6 +3086,7 @@ BPMsplitquant(bat *ret, bat *bid, int *mb)
 		pprev = getByNumber(bpmcat[i]->prv);
 		for(k=0; k<n-1; k++, pprev=p){
 			p= newPartition(bb[k]);
+			p->type= pprev->type;
 			bpmcat[bb[k]]->bid = bb[k];
 			BBPincref(bb[k],TRUE);
 			p->alias= bpmcat[i]->alias;

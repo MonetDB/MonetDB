@@ -25,7 +25,7 @@ This view is only materialized when the operations
 can not deal with the components individually,
 or the incremental operation is not supported.
 
-The module is supported by the mal_multitable optimizer.
+The module is supported by the mal_mergetable optimizer.
 
 The primitives below are chosen to accomodate the SQL
 front-end to produce reasonable efficient code.
@@ -43,13 +43,13 @@ comment "Materialize the MAT into a single BAT";
 pattern print(b:bat[:any_1,:any_2]...):void
 address MATprint;
 
-command expand(grp:str):bat[:any_1,:any_2]
-address MATdummy
-comment "Replace the group by its components";
+pattern newIterator(grp:bat[:any_1,:any_2]...):bat[:any_1,:any_2]
+address MATnewIterator
+comment "Create an iterator over a MAT";
 
-command iterator(grp:str):bat[:any_1,:any_2]
-address MATdummy
-comment "Replace the group by its components";
+pattern hasMoreElements(grp:bat[:any_1,:any_2]...):bat[:any_1,:any_2]
+address MAThasMoreElements
+comment "Find the next element in the merge table";
 
 command info(g:str, e:str):bat[:any_1,:any_2]
 address MATinfo
@@ -80,6 +80,8 @@ comment "retrieve the definition from the partition catalogue";
 
 mat_export str MATnew(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mat_export str MATpack(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+mat_export str MATnewIterator(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+mat_export str MATharMoreElements(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mat_export str MATdummy(int *ret, str *grp);
 mat_export str MATinfo(int *ret, str *grp, str *elm);
 mat_export str MATprint(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
@@ -92,6 +94,36 @@ str
 MATnew(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	(void) mb; (void) stk; (void) p;
+	return MAL_SUCCEED;
+}
+str
+MATnewIterator(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+{
+	int *ret = (int*) getArgReference(stk,p,0);
+	(void) mb; 
+	if( p->argc == 1){
+		*ret = 0;
+	} else
+		*ret= *(int*) getArgReference(stk,p,1);
+	return MAL_SUCCEED;
+}
+str
+MAThasMoreElements(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+{
+	int *ret = (int*) getArgReference(stk,p,0);
+	int i, idx = *ret;
+
+	(void) mb; 
+	for(i=1; i< p->argc; i++)
+	if( *(int*) getArgReference(stk,p,i) == idx){
+		i++;
+		break;
+	}
+	if( i < p->argc)
+		*ret= *(int*) getArgReference(stk,p,i);
+	else
+		*ret = 0;
+	(void) mb; 
 	return MAL_SUCCEED;
 }
 @-
