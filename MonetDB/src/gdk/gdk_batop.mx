@@ -1356,6 +1356,17 @@ BATrestrict(BAT *b, ptr hl, ptr hh, ptr tl, ptr th)
 
 @= chk_order
 	/* for [tpe,void] and [OID,OID] bats, we have fast 128-at-a-time routines */
+	if (b->hkey == 0) {
+		/* sorted and key? */
+		while (cur + @3 * sizeof(@2) < end) {
+			if (!chk_order_key@4_@1((@2 *) cur)) {
+				key = FALSE;
+				break;
+			}
+			cur += @3 * sizeof(@2);
+		}
+	}
+	/* sorted? */
 	while (cur + @3 * sizeof(@2) < end) {
 		if (!chk_order@4_@1((@2 *) cur))
 			break;
@@ -1365,6 +1376,18 @@ BATrestrict(BAT *b, ptr hl, ptr hh, ptr tl, ptr th)
 	if (cur < end) {
 		prv = cur;
 		cur += xx;
+		if (b->hkey == 0 && key) {
+			/* sorted and key? */
+			while (cur < end) {
+				if (*(@2*)prv @5= *(@2*)cur) {
+					key = FALSE;
+					break;
+				}
+				prv = cur;
+				cur += xx;
+			}
+		}
+		/* sorted? */
 		while (cur < end) {
 			if (*(@2*)prv @5 *(@2*)cur) {
 				/* record negative position info */
@@ -1376,20 +1399,39 @@ BATrestrict(BAT *b, ptr hl, ptr hh, ptr tl, ptr th)
 		}
 	}
 
-@= sort_tpe
+@= sort_key_tpe
 static int
-chk_order@3_@1(@1*__r col)
+chk_order@1@3_@4(@4*__r col)
 {
 	int i, r = 1;
 
 	for (i = 0; i < 128; i += 4) {
-		r &= (col[i + 1] @2= col[i + 0]) &
-		     (col[i + 2] @2= col[i + 1]) &
-		     (col[i + 3] @2= col[i + 2]) &
-		     (col[i + 4] @2= col[i + 3]);
+		r &= (col[i + 1] @2 col[i + 0]) &
+		     (col[i + 2] @2 col[i + 1]) &
+		     (col[i + 3] @2 col[i + 2]) &
+		     (col[i + 4] @2 col[i + 3]);
 	}
 	return r;
 }
+
+@= sort_key
+static int
+chk_order@1@3_oid_oid(oid*__r col)
+{
+	int i, r = 1;
+
+	for (i = 0; i < 256; i += 8) {
+		r &= (col[i + 2] @2 col[i + 0]) &
+		     (col[i + 4] @2 col[i + 2]) &
+		     (col[i + 6] @2 col[i + 4]) &
+		     (col[i + 8] @2 col[i + 6]);
+	}
+	return r;
+}
+
+@= sort_tpe
+@:sort_key_tpe(_key,@2,@3,@1)@
+@:sort_key_tpe(,@2=,@3,@1)@
 
 @= sort
 @:sort_tpe(chr,@5,@3)@
@@ -1400,24 +1442,14 @@ chk_order@3_@1(@1*__r col)
 @:sort_tpe(flt,@5,@3)@
 @:sort_tpe(dbl,@5,@3)@
 
-static int
-chk_order@3_oid_oid(oid*__r col)
-{
-	int i, r = 1;
-
-	for (i = 0; i < 256; i += 8) {
-		r &= (col[i + 2] @5= col[i + 0]) &
-		     (col[i + 4] @5= col[i + 2]) &
-		     (col[i + 6] @5= col[i + 4]) &
-		     (col[i + 8] @5= col[i + 6]);
-	}
-	return r;
-}
+@:sort_key(_key,@5,@3)@
+@:sort_key(,@5=,@3)@
 
 int
 BATordered@3(BAT* b)
 {
 	size_t cnt = BATcount(b);
+	bit key = (cnt < 2);
 
 	if ((BAThordered(b) & @1) == 0 && cnt > 0) {
 		int (*cmp)(ptr, ptr) = BATatoms[b->htype].atomCmp;
@@ -1425,6 +1457,8 @@ BATordered@3(BAT* b)
 		char *end = (char *) BUNhloc(b, BUNlast(b));
 		char *prv = NULL;
 		int xx = BUNsize(b);
+
+		key = TRUE;
 
 		/* we may have negative information already; this saves a scan */
 		if (b->H->nosorted@3 > BUNindex(b, cur) && b->H->nosorted@3 < BUNindex(b, end) && cmp(BUNhead(b, BUNptr(b, b->H->nosorted@3 - 1)), BUNhead(b, BUNptr(b, b->H->nosorted@3))) @5 0) {
@@ -1455,6 +1489,20 @@ BATordered@3(BAT* b)
 
 				prv = base + *(var_t *) cur;
 				cur += xx;
+				if (b->hkey == 0) {
+					/* sorted and key? */
+					while (cur < end) {
+						char *val = base + *(var_t *) cur;
+
+						if (cmp(prv, val) @5= 0) {
+							key = FALSE;
+							break;
+						}
+						prv = val;
+						cur += xx;
+					}
+				}
+				/* sorted? */
 				while (cur < end) {
 					char *val = base + *(var_t *) cur;
 
@@ -1469,6 +1517,18 @@ BATordered@3(BAT* b)
 			} else {
 				prv = cur;
 				cur += xx;
+				if (b->hkey == 0) {
+					/* sorted and key? */
+					while (cur < end) {
+						if (cmp(prv, cur) @5= 0) {
+							key = FALSE;
+							break;
+						}
+						prv = cur;
+						cur += xx;
+					}
+				}
+				/* sorted? */
 				while (cur < end) {
 					if (cmp(prv, cur) @5 0) {
 						/* record negative position info */
@@ -1480,6 +1540,10 @@ BATordered@3(BAT* b)
 				}
 			}
 		}
+	}
+	if (b->hkey == 0 && key) {
+		b->batDirtydesc = TRUE;
+		BATkey(b, TRUE);
 	}
 	/* it is sorted@3! set the properties */
 	if ((b->hsorted & (bit) GDK_SORTED@2) == 0) {
