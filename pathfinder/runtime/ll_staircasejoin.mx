@@ -74,21 +74,20 @@ const int PF_SOFTWARE_PREFETCH = 128;
 
 /* DESCENDANT STEP */
 @:ll_proto(descendant)@
-@:ll_head(descendant)@
+@:ll_head(descendant,FALSE)@
     self = FALSE;
     res_size = BATcount(iter_bat);	/* FIXME: estimate size! */
 @:ll_main(descendant, (size[pre] & (1<<31)))@
 
 /* DESCENDANT-OR-SELF STEP */
-@:ll_head(descendant_or_self)@
+@:ll_head(descendant_or_self,FALSE)@
     self = TRUE;
     res_size = BATcount(iter_bat);	/* FIXME: estimate size! */
 @:ll_main(descendant, (size[pre] & (1<<31)))@
 
 /* CHILD STEP */
 @:ll_proto(child)@
-@:ll_head(child)@
-    trivial_cases = FALSE;
+@:ll_head(child,TRUE)@
     res_size = BATcount(iter_bat);	/* FIXME: estimate size! */
 @:ll_main(child, FALSE)@
 
@@ -96,12 +95,12 @@ const int PF_SOFTWARE_PREFETCH = 128;
 
 @= ll_proto
 static int
-ll_@1 (	BAT **res, BAT *iter_bat, BAT *ctx_bat, BAT *cand_bat, int *size,
+ll_@1 (	BAT **res, BAT *iter_bat, BAT *ctx_bat, BAT *end_ctx, BAT *cand_bat, int *size,
 	oid min_iter, oid max_iter, bit no_iter_order, bit self, chr* kind, chr kind_test);
 @
 @= ll_head
 int
-PFll_@1 (BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, BAT *cand_bat,
+PFll_@1 (BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *end_ctx, BAT *pre_size, BAT *cand_bat,
 	 bit *_one_iter, bit *_one_ctx,
 	 oid *_min_iter, oid *_max_iter, bit *_no_iter_order, chr *_kind_test)
 {
@@ -114,7 +113,7 @@ PFll_@1 (BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, BAT *cand_bat
     oid max_iter = *_max_iter;
     bit no_iter_order = *_no_iter_order;
     bit self = FALSE;
-    bit trivial_cases = TRUE;
+    bit child_step = @2;
     chr *kind = NULL, kind_test = *_kind_test;
     BAT *res = NULL;
     BAT *del = NULL;
@@ -125,6 +124,7 @@ PFll_@1 (BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, BAT *cand_bat
 
     BATcheck(iter_bat, name);
     BATcheck(ctx_bat, name);
+    BATcheck(end_ctx, name);
     BATcheck(pre_size, name);
     BATcheck(cand_bat, name);
 
@@ -147,6 +147,19 @@ PFll_@1 (BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, BAT *cand_bat
     {
         GDKerror("%s: iter_bat must be ordered on tail.\n", name);
         @:ll_return(GDK_FAIL)@
+    }
+    if (BATcount(end_ctx) == 0) {
+        end_ctx = NULL; /* empty; not used. */
+    } else {
+        if (!child_step) {
+            GDKerror("%s: end_ctx must be empty.\n", name);
+            @:ll_return(GDK_FAIL)@
+        } else 
+        if ((end_ctx->hseqbase != ctx_bat->hseqbase) || (BATcount(end_ctx) != BATcount(ctx_bat)))
+        {
+            GDKerror("%s: end_ctx must be head-aligned with iter_bat & ctx_bat, i.e., have equal head seqbases and length.\n", name);
+            @:ll_return(GDK_FAIL)@
+        }
     }
 
     if (!BAThdense(pre_size))
@@ -214,7 +227,7 @@ PFll_@1 (BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, BAT *cand_bat
      * @1: step name
      */
     
-    if ( trivial_cases && one_ctx ) {
+    if ( one_ctx && !child_step ) {
 
         /* ------------------------ trivial cases ------------------------- */
 
@@ -306,7 +319,7 @@ PFll_@1 (BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, BAT *cand_bat
         res->batBuns->free = dst - res->batBuns->base;
         BATsetcount(res, (res->batBuns->free+Bunbase(res)-BUNfirst(res))/BUNsize(res));
     } else
-    /* !(trivial_cases && one_ctx) */ {
+    /* ( !one_ctx || child_step ) */ {
 
         /* ------------------------ general cases ------------------------- */
 
@@ -318,7 +331,7 @@ PFll_@1 (BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, BAT *cand_bat
             @:ll_return(GDK_FAIL)@
         }
 
-        if (ll_@1(&res, iter_bat, ctx_bat, cand_bat, size, 
+        if (ll_@1(&res, iter_bat, ctx_bat, end_ctx, cand_bat, size, 
                   min_iter, max_iter, no_iter_order, self, kind, kind_test) == GDK_FAIL )
         {
             @:ll_return(GDK_FAIL)@
@@ -406,19 +419,20 @@ typedef struct stack_item_C si_C;
 struct stack_item_C {
     oid eocs;           /* end of ctx scope (pre + size) */
     oid next_child;     /* preorder rank of the next child node */
-    BUN first;          /* first iter row of the actual ctx node */
-    BUN last;           /* last iter row of the actual ctx node */
+    size_t first;       /* first iter row of the actual ctx node */
+    size_t last;        /* last iter row of the actual ctx node */
 };
 
 static int
-ll_child ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *cand_bat, int* size,
+ll_child ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *end_ctx, BAT *cand_bat, int* size,
              oid min_iter, oid max_iter, bit no_iter_order, bit self, chr *kind, chr kind_test)
 {
     BAT *res = *result;
     si_C *stack = 0;
-    int stack_top = 0, ctx_bunsize = 0, iter_bunsize = 0;
+    int stack_top = 0, ctx_bunsize = 0;
     oid pre = 0, ctx = 0, cur_ctx = 0;
-    BUN cur_bun = 0, iter_bun = 0, ctx_bun = 0, ctx_last = 0;
+    size_t cur_idx = 0, iter_idx = 0;
+    BUN ctx_bun = 0, ctx_last = 0;
     BUN cand_cur = cand_bat?BUNtloc(cand_bat,BUNfirst(cand_bat)):NULL;
     BUN cand_lst = cand_bat?BUNtloc(cand_bat,BUNlast(cand_bat)-BUNsize(cand_bat)):NULL;
 
@@ -436,24 +450,23 @@ ll_child ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *cand_bat, int* size,
     }
     stack_top = 0;
 
+    iter_idx = BUNindex(iter_bat,BUNfirst(iter_bat));
+    assert(!end_ctx || iter_idx == BUNindex(end_ctx,BUNfirst(end_ctx)));
 
-    iter_bunsize = BUNsize(iter_bat);
-    ctx_bunsize = BUNsize(ctx_bat);
-
-    iter_bun = BUNfirst(iter_bat);
     ctx_bun = BUNfirst(ctx_bat);
     ctx_last = BUNlast(ctx_bat);
+    ctx_bunsize = BUNsize(ctx_bat);
 
 @= getnextctx
-    iter_bun += iter_bunsize;
+    iter_idx++;
     ctx_bun += ctx_bunsize;
 @
 @= pushctx
     si_C new_stack_item;
     new_stack_item.eocs = ctx + size[ctx];
     new_stack_item.next_child = ctx + 1;
-    new_stack_item.first = iter_bun;
-    new_stack_item.last = iter_bun;
+    new_stack_item.first = iter_idx;
+    new_stack_item.last = iter_idx;
     stack[stack_top++] = new_stack_item;
     cur_ctx = ctx;
 @
@@ -487,7 +500,7 @@ ll_child ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *cand_bat, int* size,
         /* only a new iter has to be added
            to the list of active iters */
         else if (cur_ctx == ctx) {
-            stack[stack_top-1].last = iter_bun;
+            stack[stack_top-1].last = iter_idx;
             @:getnextctx@
         }
         /* evaluates the ctx node on top of the stack
@@ -570,7 +583,7 @@ ll_child ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *cand_bat, int* size,
         oid prev_iter = oid_nil;
 @
 @= skip_duplicates_body
-            oid next_iter = *(oid*)BUNtail(iter_bat,cur_bun);
+            oid next_iter = *(oid*)BUNtail(iter_bat,BUNptr(iter_bat,cur_idx));
             if (next_iter != prev_iter) {
                 /* (Even) if the same context node (item)
                  * occurs multiple times per iter,
@@ -588,14 +601,14 @@ ll_child ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *cand_bat, int* size,
             }
 @
 @= no_duplicates_body
-            oid next_iter = *(oid*)BUNtail(iter_bat,cur_bun);
+            oid next_iter = *(oid*)BUNtail(iter_bat,BUNptr(iter_bat,cur_idx));
             *(oid*)dst              = next_iter;
             *(oid*)(dst+SIZEOF_OID) = pre;
             dst += bunsize;
 @
 @= inner_loop_child_body
         @1
-        size_t grow = ((stack[stack_top-1].last - stack[stack_top-1].first) / iter_bunsize) + 1;
+        size_t grow = (stack[stack_top-1].last - stack[stack_top-1].first) + 1;
         BUN dst = NULL;
         int bunsize = BUNsize(res);
 
@@ -605,10 +618,20 @@ ll_child ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *cand_bat, int* size,
            a match */
         dst = BUNlast(res);
         assert(!res->hloc);
-        for (cur_bun = stack[stack_top-1].first;
-             cur_bun <= stack[stack_top-1].last;
-             cur_bun += iter_bunsize) {
-            @2
+        if (end_ctx) {
+            for (cur_idx = stack[stack_top-1].first;
+                 cur_idx <= stack[stack_top-1].last;
+                 cur_idx++) {
+                if (pre < *(oid*)BUNtail(end_ctx,BUNptr(end_ctx,cur_idx))) {
+                    @2
+                }
+            }
+        } else {
+            for (cur_idx = stack[stack_top-1].first;
+                 cur_idx <= stack[stack_top-1].last;
+                 cur_idx++) {
+                @2
+            }
         }
         res->batBuns->free = dst - res->batBuns->base;
         BATsetcount(res, (res->batBuns->free+Bunbase(res)-BUNfirst(res))/bunsize);
@@ -642,7 +665,7 @@ struct stack_item_D {
 #define onstack_get(b)	(onstack[(b)>>OST_shift] &   (((OST)1)<<((b)&OST_mask)))
 
 static int
-ll_descendant ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *cand_bat, int* size,
+ll_descendant ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *end_ctx, BAT *cand_bat, int* size,
                 oid min_iter, oid max_iter, bit no_iter_order, bit self, chr* kind, chr kind_test)
 {
     BAT *res = *result;
@@ -659,6 +682,9 @@ ll_descendant ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *cand_bat, int* s
     int OST_bits  = OST_bytes * 8;
     int OST_mask  = OST_bits - 1;
     int OST_shift = 0;
+
+    /* not used, here; keep compilers happy */
+    (void)end_ctx;
     
     if (cand_bat) {
         bs_cnd  = BUNsize(cand_bat);

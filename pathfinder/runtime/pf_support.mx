@@ -347,6 +347,7 @@ axis step evaluation on the @2 axis from the given context."
 @= ll_cmd
 .COMMAND ll_@1(BAT[oid,oid] iter,
                    BAT[oid,oid] ctx,
+                   BAT[oid,oid] end_ctx,
                    BAT[oid,int] pre_size,
                    BAT[void,any] cands,
                    bit one_iter, bit one_ctx,
@@ -355,6 +356,8 @@ axis step evaluation on the @2 axis from the given context."
 "PARAMETERS:
 BAT[void,oid] iter (grouping relation; sorted on tail within each ctx group)
 BAT[void,oid] ctx (context set; sorted on tail)
+BAT[void,oid] end_ctx (context end for 'early-exit' child step in preceding-sibling implementation;
+                       head-aligned with iter & ctx or empty (=> no 'early-exit'))
 BAT[void,int] pre_size (from the working set)
 BAT[oid,oid]  cands (sorted list of result candidate OIDs in the tail)
 bit           one_iter (only one iter?)
@@ -385,8 +388,8 @@ returns all nodes on the @2 axis of the ctx-nodes duplicate free for each group.
 @:lev_cmd(parent,parent)@
 @(
 @:lev_cmd(fs,following-sibling)@
-@)
 @:lev_cmd(ps,preceding-sibling)@
+@)
 
 @= lev_cmd
 .COMMAND lev_@1(BAT[void,chr] pre_level,
@@ -1444,13 +1447,11 @@ PROC combine_node_info (any frag1, bat[void,oid] pre1, any attr1,
 
 @(
 @:step(following_sibling,following-sibling,lev_fs,@:level_intro@,@:level_code@,,)@
-@)
 @:step(preceding_sibling,preceding-sibling,lev_ps,@:level_intro@,@:level_code@,,)@
-
-@:ll_sibling_impl(following)@
-@(
-@:ll_sibling_impl(preceding)@
 @)
+
+@:ll_sibling_impl_following@
+@:ll_sibling_impl_preceding@
 
 @(
 @:step(following,following,following_void,,@:sizes_code@, @:foll_prec_code@,@:doc_pre@)@
@@ -1509,7 +1510,46 @@ PROC combine_node_info (any frag1, bat[void,oid] pre1, any attr1,
                     res.chk_order();
                 }
 @= wrap
+PROC ll_@1(BAT[oid,oid] iter, BAT[oid,oid] ctx, BAT[oid,int] pre_size, BAT[void,any] cands, bit one_iter, bit one_ctx, oid min_iter, oid max_iter, bit no_iter_order, chr kind_test) : BAT[oid,oid]
+{
+        var end_ctx := bat(void,oid,0).seqbase(0@0).access(BAT_READ);
+	return ll_@1(iter, ctx, end_ctx, pre_size, cands, one_iter, one_ctx, min_iter, max_iter, no_iter_order, kind_test);
+}
+ADDHELP("ll_@1", "manegold", "Aug 2007",
+"PARAMETERS:\n\
+BAT[void,oid] iter (grouping relation; sorted on tail within each ctx group)\n\
+BAT[void,oid] ctx (context set; sorted on tail)\n\
+BAT[void,int] pre_size (from the working set)\n\
+BAT[oid,oid]  cands (sorted list of result candidate OIDs in the tail)\n\
+bit           one_iter (only one iter?)\n\
+bit           one_ctx  (only one ctx node, i.e., the same for all iters?)\n\
+oid           min_iter,max_iter (smallest and largest iter id)\n\
+bit           no_iter_order (descendant & descendant_or_self, only: \n\
+               result will be ordered on item, but not sub-ordered on iter)\n\
+DESCRIPTION:\n\
+returns all nodes on the @1 axis of the ctx-nodes duplicate free for each group.",
+"pf_support");
+
 PROC @1 (BAT[oid,oid] iter, BAT[oid,oid] item, oid cont, BAT[oid,bat] ws, int order, BAT[void,any] cands, chr kind_test) : BAT[void,bat]
+{
+        var end_ctx := bat(void,oid,0).seqbase(0@0).access(BAT_READ);
+	return @1(iter, item, end_ctx, cont, ws, order, cands, kind_test);
+}
+ADDHELP("@1", "tsheyar", "Sep 2004",
+"PARAMETERS:\n\
+BAT[void,oid] iter (grouping relation)\n\
+BAT[void,oid] item (context set)\n\
+oid cont (the current container of the ws)\n\
+BAT[void,bat] ws (working set)\n\
+int order (input & output order properties:\n\
+           bit 0: input is sorted on iter(0) or item(1)\n\
+           bit 1: output must be sorted on iter(0) or item(1))\n\
+BAT[oid,oid] cands (sorted list of result candidate OIDs in the tail)\n\
+DESCRIPTION:\n\
+returns all nodes on the @1 axis of the ctx-nodes duplicate free for each group.",
+"pf_support");
+
+PROC @1 (BAT[oid,oid] iter, BAT[oid,oid] item, BAT[oid,oid] end_ctx, oid cont, BAT[oid,bat] ws, int order, BAT[void,any] cands, chr kind_test) : BAT[void,bat]
 {
 	var result := nil;
 	var one_iter := FALSE;
@@ -1578,7 +1618,7 @@ PROC @1 (BAT[oid,oid] iter, BAT[oid,oid] item, oid cont, BAT[oid,bat] ws, int or
 
 	# the actual location step
 	if ( isnil(result) ) {
-		var res := ll_@1 (iter, item, pre_size, cands, one_iter, one_item, 
+		var res := ll_@1 (iter, item, end_ctx, pre_size, cands, one_iter, one_item, 
 		                   min_iter, max_iter, (and(order,2) = 0), kind_test);
                                
                 @:resolve_unique_iters()@
@@ -1597,6 +1637,8 @@ ADDHELP("@1", "tsheyar", "Sep 2004",
 "PARAMETERS:\n\
 BAT[void,oid] iter (grouping relation)\n\
 BAT[void,oid] item (context set)\n\
+BAT[void,oid] end_ctx (context end for 'early-exit' child step in preceding-sibling implementation;\n\
+                       head-aligned with iter & item or empty (=> no 'early-exit'))\n\
 oid cont (the current container of the ws)\n\
 BAT[void,bat] ws (working set)\n\
 int order (input & output order properties:\n\
@@ -1612,10 +1654,9 @@ returns all nodes on the @1 axis of the ctx-nodes duplicate free for each group.
 	if ( (and(order,1) = 0) and not(ordered(reverse(item)))) {
 		var ord := item.tsort();
 		    ord := ord.CTrefine(iter).mark(0@0).reverse();
-		iter := ord.leftfetchjoin(iter);
-		item := ord.leftfetchjoin(item);
-		iter := iter.chk_order();
-		item := item.chk_order();
+		iter := ord.leftfetchjoin(iter).chk_order();
+		item := ord.leftfetchjoin(item).chk_order();
+		order := or(order,1);
 	}
 @
 @= post_sort_output
@@ -1739,8 +1780,8 @@ PROC @1(BAT[void,oid] iter, BAT[void,oid] ctx, oid cont, BAT[void,bat] ws, int o
 }
 @
 
-@= ll_sibling_impl
-PROC @1_sibling(BAT[void,oid] iter, BAT[void,oid] item, oid cont, BAT[void,bat] ws, int order, chr kind_test) : BAT[void,bat]
+@= ll_sibling_impl_following
+PROC following_sibling(BAT[void,oid] iter, BAT[void,oid] item, oid cont, BAT[void,bat] ws, int order, chr kind_test) : BAT[void,bat]
 {
     var pre_levels := ws.fetch(PRE_LEVEL).fetch(cont);
     var pre_sizes := ws.fetch(PRE_SIZE).fetch(cont);
@@ -1756,12 +1797,56 @@ PROC @1_sibling(BAT[void,oid] iter, BAT[void,oid] item, oid cont, BAT[void,bat] 
     item := item.chk_order();
     @:pre_sort_input@
 
-    var res := ll_@1_sibling(iter.chk_order(), item.chk_order(), pre_sizes, pre_levels, pre_kinds, kind_test);
+    var res := ll_following_sibling(iter.chk_order(), item.chk_order(), pre_sizes, pre_levels, pre_kinds, kind_test);
     var result := new(void,bat,2).seqbase(0@0).append(hmark(res,0@0)).append(tmark(res,0@0)).access(BAT_READ);
 
     @:post_sort_output@
     
     return result;
+}
+@
+
+@= ll_sibling_impl_preceding
+#PROC preceding_sibling(BAT[void,oid] iter, BAT[void,oid] item, oid cont, BAT[void,bat] ws, int order, BAT[void,any] cands, chr kind_test) : BAT[void,bat]
+PROC preceding_sibling(BAT[void,oid] iter, BAT[void,oid] item, oid cont, BAT[void,bat] ws, int order, chr kind_test) : BAT[void,bat]
+{
+    var cands;
+    if (isnil(kind_test)) {
+        cands := ws.fetch(PRE_SIZE).fetch(cont).mirror();
+    } else {
+        cands := ws.fetch(PRE_KIND).fetch(cont);
+    }
+    var itr, par;
+    var pre_levels := ws.fetch(PRE_LEVEL).fetch(cont);
+    var pre_sizes := ws.fetch(PRE_SIZE).fetch(cont);
+
+    iter := iter.chk_order();
+    item := item.chk_order();
+    @:pre_sort_input@
+
+    # use one iter per item to get parent of each item
+    itr := iter.mirror();
+    par := ll_parent(itr, item, pre_sizes, pre_levels).chk_order();
+    if (count(par) < count(itr)) {
+        # nodes that don't have a parent also don't have (preceding) siblings
+        itr  := par.hmark(0@0);
+        par  := par.tmark(0@0);
+        iter := itr.leftfetchjoin(iter);
+        item := itr.leftfetchjoin(item);
+    }
+
+    # ensure that intermediate [iter,par,item] result is ordered on [par(asc),iter(asc),item(desc)]
+    if (not(ordered(reverse(par)))) {
+            var ord := par.tsort().CTrefine(iter).CTrefine_rev(item).hmark(0@0);
+            par  := ord.leftfetchjoin(par ).chk_order();
+            iter := ord.leftfetchjoin(iter).chk_order();
+            item := ord.leftfetchjoin(item).chk_order();
+    }
+    # no further sorting required in child()
+    order := or(order,1);
+
+    # child-step from parents with original items as context-ends yields the desired result
+    return child(iter, par, item, cont, ws, order, cands, kind_test);
 }
 @
 
@@ -1804,7 +1889,7 @@ PROC @1(BAT[void,oid] iter, BAT[void,oid] item, oid cont, BAT[void,bat] ws, int 
 @:loop_lifted_scj_step1x(preceding)@
 
 @:loop_lifted_scj_step1x(following_sibling)@
-@:loop_lifted_scj_step1(preceding_sibling)@
+@:loop_lifted_scj_step1x(preceding_sibling)@
 @
 #==================================================================
 # expansions of the loop lifted scj
