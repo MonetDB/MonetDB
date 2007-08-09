@@ -314,13 +314,11 @@ SQLheader(MapiHdl hdl, int *len, int fields)
 	int i;
 	char **names= (char**) alloca(fields * sizeof(char*));
 	int *numeric = (int*) alloca(fields * sizeof(int));
-	char *type;
 
 	SQLseparator(len, fields, '-');
 	if (mapi_get_name(hdl, 0)) {
 		for (i = 0; i < fields; i++){
 			names[i]= mapi_get_name(hdl,i);
-			type= mapi_get_type(hdl,i);
 			numeric[i]=0;
 		}
 		SQLrow(len, numeric, names, fields);
@@ -611,7 +609,6 @@ doFile(Mapi mid, const char *file)
 				fprintf(toConsole, "[ %d\t]\n", mapi_rows_affected(hdl));
 			} else {
 				while ((reply = mapi_fetch_line(hdl)) != NULL) {
-					RESETprompt();
 					if (mode == XQUERY && *reply == '=')
 						reply++;
 					fprintf(toConsole, "%s\n", reply);
@@ -935,7 +932,6 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode, int exit_on_
 						default:
 							if (pagewidth < 0)
 								goto nononsense;
-							sprintf(promptbuf, "%.*s>", (int) sizeof(promptbuf) - 2, language);
 							SQLrenderer(hdl);
 						}
 				} else {
@@ -1079,6 +1075,7 @@ main(int argc, char **argv)
 			}
 			if (strcmp(long_options[option_index].name, "pager") == 0) {
 				pager = optarg;
+				(void) pager; /* will be further used later */
 			}
 			if (strcmp(long_options[option_index].name, "pagewidth") == 0) {
 				pagewidth = atol(optarg);
