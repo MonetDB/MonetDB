@@ -1354,11 +1354,33 @@ BATrestrict(BAT *b, ptr hl, ptr hh, ptr tl, ptr th)
 @:sort(1,,,_rev,>)@
 @:sort(GDK_SORTED_REV,_REV,_rev,,<)@
 
+@= chk_order
+	/* for [tpe,void] and [OID,OID] bats, we have fast 128-at-a-time routines */
+	while (cur + @3 * sizeof(@2) < end) {
+		if (!chk_order@4_@1((@2 *) cur))
+			break;
+		cur += @3 * sizeof(@2);
+	}
+	/* finish remaining <128 tuples */
+	if (cur < end) {
+		prv = cur;
+		cur += xx;
+		while (cur < end) {
+			if (*(@2*)prv @5 *(@2*)cur) {
+				/* record negative position info */
+				b->H->nosorted@4 = BUNindex(b, cur);
+				return FALSE;
+			}
+			prv = cur;
+			cur += xx;
+		}
+	}
+
 @= sort_tpe
 static int
 chk_order@3_@1(@1*__r col)
 {
-	size_t i, r = 1;
+	int i, r = 1;
 
 	for (i = 0; i < 128; i += 4) {
 		r &= (col[i + 1] @2= col[i + 0]) &
@@ -1366,7 +1388,7 @@ chk_order@3_@1(@1*__r col)
 		     (col[i + 3] @2= col[i + 2]) &
 		     (col[i + 4] @2= col[i + 3]);
 	}
-	return r != 0;
+	return r;
 }
 
 @= sort
@@ -1381,7 +1403,7 @@ chk_order@3_@1(@1*__r col)
 static int
 chk_order@3_oid_oid(oid*__r col)
 {
-	size_t i, r = 1;
+	int i, r = 1;
 
 	for (i = 0; i < 256; i += 8) {
 		r &= (col[i + 2] @5= col[i + 0]) &
@@ -1389,7 +1411,7 @@ chk_order@3_oid_oid(oid*__r col)
 		     (col[i + 6] @5= col[i + 4]) &
 		     (col[i + 8] @5= col[i + 6]);
 	}
-	return r != 0;
+	return r;
 }
 
 int
@@ -1401,6 +1423,7 @@ BATordered@3(BAT* b)
 		int (*cmp)(ptr, ptr) = BATatoms[b->htype].atomCmp;
 		char *cur = (char *) BUNhloc(b, BUNfirst(b));
 		char *end = (char *) BUNhloc(b, BUNlast(b));
+		char *prv = NULL;
 		int xx = BUNsize(b);
 
 		/* we may have negative information already; this saves a scan */
@@ -1410,84 +1433,51 @@ BATordered@3(BAT* b)
 
 		/* for [tpe,void] and [OID,OID] bats, we have fast 128-at-a-time routines */
 		if (ATOMstorage(b->htype) == ATOMstorage(TYPE_oid) && BUNsize(b) == 2 * ATOMsize(TYPE_oid)) {
-			while (cur + 256 * sizeof(oid) < end) {
-				if (!chk_order@3_oid_oid((oid *) cur))
-					break;
-				cur += 256 * sizeof(oid);
-			}
+			@:chk_order(oid_oid,oid,256,@3,@5)@
 		} else if (ATOMstorage(b->htype) == TYPE_chr && BUNsize(b) == sizeof(chr)) {
-			while (cur + 128 * sizeof(chr) < end) {
-				if (!chk_order@3_chr((chr *) cur))
-					break;
-				cur += 128 * sizeof(chr);
-			}
+			@:chk_order(chr,chr,128,@3,@5)@
 		} else if (ATOMstorage(b->htype) == TYPE_bte && BUNsize(b) == sizeof(bte)) {
-			while (cur + 128 * sizeof(bte) < end) {
-				if (!chk_order@3_bte((bte *) cur))
-					break;
-				cur += 128 * sizeof(bte);
-			}
+			@:chk_order(bte,bte,128,@3,@5)@
 		} else if (ATOMstorage(b->htype) == TYPE_sht && BUNsize(b) == sizeof(sht)) {
-			while (cur + 128 * sizeof(sht) < end) {
-				if (!chk_order@3_sht((sht *) cur))
-					break;
-				cur += 128 * sizeof(sht);
-			}
+			@:chk_order(sht,sht,128,@3,@5)@
 		} else if (ATOMstorage(b->htype) == TYPE_int && BUNsize(b) == sizeof(int)) {
-			while (cur + 128 * sizeof(int) < end) {
-				if (!chk_order@3_int((int *) cur))
-					break;
-				cur += 128 * sizeof(int);
-			}
+			@:chk_order(int,int,128,@3,@5)@
 		} else if (ATOMstorage(b->htype) == TYPE_lng && BUNsize(b) == sizeof(lng)) {
-			while (cur + 128 * sizeof(lng) < end) {
-				if (!chk_order@3_lng((lng *) cur))
-					break;
-				cur += 128 * sizeof(lng);
-			}
+			@:chk_order(lng,lng,128,@3,@5)@
 		} else if (ATOMstorage(b->htype) == TYPE_flt && BUNsize(b) == sizeof(flt)) {
-			while (cur + 128 * sizeof(flt) < end) {
-				if (!chk_order@3_flt((flt *) cur))
-					break;
-				cur += 128 * sizeof(flt);
-			}
+			@:chk_order(flt,flt,128,@3,@5)@
 		} else if (ATOMstorage(b->htype) == TYPE_dbl && BUNsize(b) == sizeof(dbl)) {
-			while (cur + 128 * sizeof(dbl) < end) {
-				if (!chk_order@3_dbl((dbl *) cur))
-					break;
-				cur += 128 * sizeof(dbl);
-			}
-		}
-
-		/* check sortedness tuple-by-tuple */
-		if (b->hheap) {
-			BUN base = b->hheap->base;
-			char *prv = base + *(var_t *) cur;
-
-			cur += xx;
-			while (cur < end) {
-				char *val = base + *(var_t *) cur;
-
-				if (cmp(prv, val) @5 0) {
-					/* record negative position info */
-					b->H->nosorted@3 = BUNindex(b, cur);
-					return FALSE;
-				}
-				prv = val;
-				cur += xx;
-			}
+			@:chk_order(dbl,dbl,128,@3,@5)@
 		} else {
-			char *prv = cur;
+			/* check sortedness tuple-by-tuple */
+			if (b->hheap) {
+				BUN base = b->hheap->base;
 
-			cur += xx;
-			while (cur < end) {
-				if (cmp(prv, cur) @5 0) {
-					/* record negative position info */
-					b->H->nosorted@3 = BUNindex(b, cur);
-					return FALSE;
+				prv = base + *(var_t *) cur;
+				cur += xx;
+				while (cur < end) {
+					char *val = base + *(var_t *) cur;
+
+					if (cmp(prv, val) @5 0) {
+						/* record negative position info */
+						b->H->nosorted@3 = BUNindex(b, cur);
+						return FALSE;
+					}
+					prv = val;
+					cur += xx;
 				}
+			} else {
 				prv = cur;
 				cur += xx;
+				while (cur < end) {
+					if (cmp(prv, cur) @5 0) {
+						/* record negative position info */
+						b->H->nosorted@3 = BUNindex(b, cur);
+						return FALSE;
+					}
+					prv = cur;
+					cur += xx;
+				}
 			}
 		}
 	}
