@@ -83,9 +83,9 @@ limit the access permisions of 'monetdb' to the level of a guest account.
 
 In the SQL mode, a few more convenient commands are available.
 @multitable @columnfractions .25 .75 @verb @verb
-@item --pagesize
+@item --rows
 @tab to control the pagination behavior
-@item --pagewidth
+@item --width
 @tab to control the maximum column width (default=80)
 @end multitable
 @{
@@ -157,7 +157,7 @@ Setting the pagewidth to 0 turns of row size
 control.
 @c
 static char *pager = 0;		/* use external pager */
-static int pagesize = 0;	/* for SQL pagination */
+static int rowsperpage = 0;	/* for SQL pagination */
 static int pagewidth = -1;	/* use raw format */
 static int specials = 0;	/* set when we see EXPLAIN,DEBUG, or TRACE */
 
@@ -381,8 +381,8 @@ SQLrenderer(MapiHdl hdl)
 	int *len = 0;
 	char **rest = 0;
 	char nullstring[5] = "null";
-	int ps = pagesize, silent = 0, rows = 0;
-	int *numeric = 0;
+	int ps = rowsperpage, silent = 0, rows = 0;
+	int *numeric= 0;
 
 	while ((fields = mapi_fetch_row(hdl))) {
 		if (silent)
@@ -652,14 +652,17 @@ showCommands()
 		fprintf(toConsole, " pf:add-doc($uri as xs:string, $documentName as xs:string\n");
 		fprintf(toConsole, "     [,$collectionName as xs:string [,$freePercentage as xs:integer]])\n");
 		fprintf(toConsole, "\nSession commands:\n");
-	} else
-		fprintf(toConsole, "?text\t- send help message\n");
+	} 
 
 	/* shared control options */
-	fprintf(toConsole, "?\t- show this message\n");
+	fprintf(toConsole, "\\?\t- show this message\n");
 	fprintf(toConsole, "\\<file\t- read input from file\n");
 	fprintf(toConsole, "\\>file\t- save response in file\n");
 	fprintf(toConsole, "\\>\t- response to terminal\n");
+	fprintf(toConsole, "\\|cmd\t- pipe result to process\n");
+#ifdef HAVE_LIBREADLINE
+	fprintf(toConsole, "\\h\t- show the readline history\n");
+#endif
 	fprintf(toConsole, "\\q\t- terminate session\n");
 	fprintf(toConsole, "\\T\t- toggle timer\n");
 
@@ -673,9 +676,12 @@ showCommands()
 #endif
 		    );
 		break;
+	case MAL:
+		fprintf(toConsole, "\\?text\t- get help on item\n");
+		break;
 	case SQL:
-		fprintf(toConsole, "\\c#\t- set maximal column width (-1=raw,0=no limit, >0 max char)\n");
-		fprintf(toConsole, "\\p#\t- set maximal page size (-1=raw)\n");
+		fprintf(toConsole, "\\w#\t- set maximal page width (-1=raw,0=no limit, >0 max char)\n");
+		fprintf(toConsole, "\\r#\t- set maximum rows per page (-1=raw)\n");
 		fprintf(toConsole, "\\D\t- dump database in SQL format\n");
 		fprintf(toConsole, "\\Dtable\t- dump a single table in SQL format\n");
 		fprintf(toConsole, "\\dtable\t- describe the table\n");
@@ -696,6 +702,7 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode, int exit_on_
 	MapiHdl hdl = mapi_get_active(mid);
 	MapiMsg rc = MOK;
 	int sent = 0;		/* whether we sent any data to the server */
+	FILE *pagerFD= 0;	/* for external paging */
 
 #ifdef HAVE_LIBREADLINE
 	if (prompt == NULL)
@@ -801,10 +808,11 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode, int exit_on_
 						break;
 					pagewidth = (int) atol(line + 2);
 					continue;
+				case 'r':
+					rowsperpage = (int) atol(line + 2);
 				case 'p':
 					if (mode == XQUERY)
 						break;
-					pagesize = (int) atol(line + 2);
 					continue;
 				case 'D':
 					if (mode == XQUERY)
@@ -847,16 +855,32 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode, int exit_on_
 						fprintf(stderr, "Cannot open %s\n", line);
 					}
 					continue;
+				case '?':
+					if (!isspace((int) line[1]) && mode == MAL)
+						/* handle MAL help */
+						continue;
+					showCommands();
+					continue;
+				case '|':
+				{	char *s;
+					s=line+2;
+					while(*s && isspace((int) *s) )s++; 
+					s[strlen(s)-1]=0;
+					if( pager) free(pager);
+					pager= *s? strdup(s):NULL;
+					pagewidth= -1; /* disable pagination */
+					rowsperpage= 0;
+				}
+					continue;
+#ifdef HAVE_LIBREADLINE
+				case 'h':
+					fprintf(stderr,"History not yet supported");
+					continue;
+#endif
+					/* show the history */
 				default:
 					break;
 				}
-				break;
-			case '?':
-				if (!isspace((int) line[1]))
-					break;
-				else
-					showCommands();
-				continue;
 			}
 		}
 
@@ -898,6 +922,12 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode, int exit_on_
 			}
 			CHECK_RESULT(mid, hdl, buf, continue);
 
+			if( pager){
+				pagerFD= popen(pager,"w");
+				if( pagerFD== NULL)
+					fprintf(stderr,"Starting '%s' failed\n",pager);
+			}
+			
 			do {
 				char *reply;
 
@@ -935,7 +965,7 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode, int exit_on_
 							SQLrenderer(hdl);
 						}
 				} else {
-				      nononsense:
+  nononsense:
 					if ((reply = mapi_result_error(hdl)) != NULL) {
 						mapi_explain_result(hdl, stderr);
 						if (exit_on_error) {
@@ -955,7 +985,10 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode, int exit_on_
 						RESETprompt();
 						if ((mode == XQUERY || mode == MAL) && *reply == '=')
 							reply++;
-						fprintf(toConsole, "%s\n", reply);
+						if( pagerFD)
+							fprintf(pagerFD, "%s\n", reply);
+						else
+							fprintf(toConsole, "%s\n", reply);
 					}
 				}
 			} while ((rc = mapi_needmore(hdl)) == MOK && (rc = mapi_next_result(hdl)) == 1);
@@ -964,6 +997,8 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode, int exit_on_
 
 			CHECK_RESULT(mid, hdl, buf, continue);
 
+			if(pagerFD)
+				pclose(pagerFD);
 			timerEnd();
 			mapi_close_handle(hdl);
 			hdl = NULL;
@@ -982,28 +1017,31 @@ usage(const char *prog)
 {
 	fprintf(stderr, "Usage: %s [ options ]\n", prog);
 	fprintf(stderr, "Options are:\n");
-	fprintf(stderr, " -b t/f      | --blocked=true/false /* blocked mode */\n");
-	fprintf(stderr, " -c config   | --config=file    /* config filename */\n");
-	fprintf(stderr, " -C colname  | --collection=name /* collection name */\n");
-	fprintf(stderr, " -e          | --error          /* exit on error */\n");
-	fprintf(stderr, " -H          | --history        /* load/save cmdline history (default off) */\n");
-	fprintf(stderr, " -h hostname | --host=hostname  /* host to connect to */\n");
-	fprintf(stderr, " -i          | --interactive    /* read stdin after command line args */\n");
-	fprintf(stderr, " -l language | --language=lang  /* {mal,sql,mil,xquery} */\n");
-	fprintf(stderr, " -P passwd   | --passwd=passwd  /* password */\n");
-	fprintf(stderr, " -p portnr   | --port=portnr    /* port to connect to */\n");
-	fprintf(stderr, " -d database | --database=database /* database to connect to */\n");
-	fprintf(stderr, " -o format   | --output=format  /* output format for xquery (dm (default) or xml) */\n");
-	fprintf(stderr, " -q          | --quiet          /* don't print welcome message */\n");
-	fprintf(stderr, " -s stmt     | --statement=stmt /* run single statement */\n");
-	fprintf(stderr, " -T          | --time           /* time commands */\n");
-	fprintf(stderr, " -t          | --trace          /* trace mapi network interaction */\n");
-	fprintf(stderr, " -u user     | --user=user      /* user id */\n");
-	fprintf(stderr, " -?          | --help           /* show this usage message */\n");
-	/* SQL specific rendering */
-	fprintf(stderr, "             | --pager=cmd       /* for pagination */\n");
-	fprintf(stderr, "             | --pagesize=nr     /* for pagination */\n");
-	fprintf(stderr, "             | --pagewidth=nr  /* for pagination */\n");
+	fprintf(stderr, " -b t/f      | --blocked=true/false  blocked mode\n");
+	fprintf(stderr, " -c config   | --config=file     config filename\n");
+	fprintf(stderr, " -d database | --database=database  database to connect to\n");
+
+	fprintf(stderr, " -e          | --error           exit on error\n");
+	fprintf(stderr, " -H          | --history         load/save cmdline history (default off)\n");
+	fprintf(stderr, " -h hostname | --host=hostname   host to connect to\n");
+	fprintf(stderr, " -i          | --interactive     read stdin after command line args\n");
+	fprintf(stderr, " -l language | --language=lang   {mal,sql,mil,xquery}\n");
+	fprintf(stderr, " -P passwd   | --passwd=passwd   password\n");
+	fprintf(stderr, " -p portnr   | --port=portnr     port to connect to\n");
+	fprintf(stderr, " -q          | --quiet           don't print welcome message\n");
+	fprintf(stderr, " -s stmt     | --statement=stmt  run single statement\n");
+	fprintf(stderr, " -T          | --time            time commands\n");
+	fprintf(stderr, " -t          | --trace           trace mapi network interaction\n");
+	fprintf(stderr, " -u user     | --user=user       user id\n");
+	fprintf(stderr, " -?          | --help            show this usage message\n");
+	fprintf(stderr,"\nSQL specific rendering \n");
+	fprintf(stderr, " -|          | --pager=cmd        for pagination\n");
+	fprintf(stderr, " -r          | --rows=nr          for pagination\n");
+	fprintf(stderr, " -w          | --width=nr         for pagination\n");
+
+	fprintf(stderr,"\nXQuery specific options\n");
+	fprintf(stderr, " -C colname  | --collection=name  collection name\n");
+	fprintf(stderr, " -o format   | --output=format   output format (dm (default) or xml)\n");
 	exit(-1);
 }
 
@@ -1033,6 +1071,8 @@ main(int argc, char **argv)
 	int save_history = 0;
 	int interactive = 0;
 	int option_index;
+	int interactive_stdin = 0;
+	struct stat statb;
 	static struct option long_options[] = {
 		{"blocked", 1, 0, 'b'},
 		{"config", 1, 0, 'c'},
@@ -1043,9 +1083,10 @@ main(int argc, char **argv)
 		{"host", 1, 0, 'h'},
 		{"language", 1, 0, 'l'},
 		{"output", 1, 0, 'o'},
-		{"pagesize", 1, 0, 0},
-		{"pager", 1, 0, 0},
-		{"pagewidth", 1, 0, 0},
+		{"rows", 1, 0, 0},
+		{"pager", 1, 0, '|'},
+		{"width", 1, 0, 'w'},
+		{"rows", 1, 0, 'r'},
 		{"passwd", 2, 0, 'P'},
 		{"port", 1, 0, 'p'},
 		{"database", 1, 0, 'd'},
@@ -1061,6 +1102,11 @@ main(int argc, char **argv)
 	};
 
 	toConsole = stdout;
+
+	/* execute from stdin? */
+	if (fstat(fileno(stdin), &statb) == 0 && S_ISCHR(statb.st_mode))
+		interactive_stdin = 1;
+
 	mark = NULL;
 	mark2 = NULL;
 
@@ -1070,8 +1116,8 @@ main(int argc, char **argv)
 	while ((c = getopt_long(argc, argv, "b:c:C:ei::l:u::p:o:P::d:qHh:s:t::TX:?", long_options, &option_index)) != -1) {
 		switch (c) {
 		case 0:
-			if (strcmp(long_options[option_index].name, "pagesize") == 0) {
-				pagesize = atol(optarg);
+			if (strcmp(long_options[option_index].name, "rows") == 0) {
+				rowsperpage = atol(optarg);
 			}
 			if (strcmp(long_options[option_index].name, "pager") == 0) {
 				pager = optarg;
@@ -1147,6 +1193,19 @@ main(int argc, char **argv)
 		case 's':
 			command = optarg;
 			break;
+		case 'w':
+			pagewidth= atol(optarg);
+			break;
+		case 'r':
+			rowsperpage= atol(optarg);
+			break;
+		case '|':
+		{ char *s;
+			s= optarg;
+			while( *s && isspace((int)*s)) s++;
+			pager= s;
+		}
+			break;
 		case 'q':
 			quiet = 1;
 			break;
@@ -1170,17 +1229,17 @@ main(int argc, char **argv)
 			save_history = 1;
 			break;
 		case '?':
-			start_with_help = 1;
-			break;
+			if( language ){
+				start_with_help = 1;
+				break;
+			}
 		default:
 			usage(argv[0]);
 		}
 	}
-	/* set default language value */
-	if (mode == 0) {
-		language = "mil";
-		mode = MIL;
-	}
+	/* language value is mandatory */
+	if (mode == 0)
+		usage(argv[0]);
 
 	setlen = mo_system_config(&set, setlen);
 
@@ -1257,16 +1316,10 @@ main(int argc, char **argv)
 		}
 	}
 	if (interactive) {
-		/* execute from stdin */
-		struct stat statb;
 		char *prompt = NULL;
-		int interactive_stdin = 0;
-
-		if (fstat(fileno(stdin), &statb) == 0 && S_ISCHR(statb.st_mode))
-			interactive_stdin = 1;
 
 		if (interactive_stdin) {
-			if (start_with_help)
+			if( start_with_help )
 				showCommands();
 #ifdef HAVE_LIBREADLINE
 			init_readline(mid, language, save_history);
