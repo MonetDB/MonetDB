@@ -871,25 +871,33 @@ char **getHelp(Module m, str pat, int completion)
 					if( tstDuplicate(msg,buf) ) continue;
 				} else
 				if( doc) {
+					char *v;
+
 					fcnDefinition(s->def,s->def->stmt[0],buf,FALSE);
 					buf[0]=' ';
+
+					fnd=0;
+					for(f=0;f<top;f++)
+					if( msg[f] && strcmp(buf+1, msg[f]) == 0 ) fnd++;
+					if(fnd) continue;
+
+					v= strstr(buf,"address");
+					if( v) *v=0;
+					msg[top++]= GDKstrdup(buf+1);
+					if( top >=998) return msg;
+					if(v){
+						*v='a';
+						msg[top++]= GDKstrdup(v);
+						if( top >=998) return msg;
+					}
+
 					if( s->def->help) {
-						char *v,*w;
-						v= strchr(buf,0);
-						*v++ = '\\';
-						*v++ = 'n';
+						char *w;
+						v= buf+1;
 						for( w= s->def->help; *w && v <buf+BUFSIZ-1; w++)
 						if( *w == '\n'){
-							*v++ = '\\';
-							*v++ = 'n';
-							w++;
-							if( isspace((int) *w)) {
-								for(; *w && isspace((int) *w); w++);
-								w--;
-							}
+							/*ignore */
 						} else *v++ = *w;
-						*v++ = '\\';
-						*v++ = 'n';
 						*v = 0;
 					}
 					if( tstDuplicate(msg,buf) ) continue;
@@ -899,13 +907,10 @@ char **getHelp(Module m, str pat, int completion)
 					t= strstr(buf,"address");
 					if( t) *t= 0;
 				} 
-				fnd=0;
-				for(f=0;f<top;f++)
-				if( msg[f] && strcmp(buf+1, msg[f]) == 0 ) fnd++;
 				if( fnd == 0 && buf[1]){
 					msg[top++] = GDKstrdup(buf+1);
 					msg[top] = 0;
-					if( top ==999) return msg;
+					if( top >=998) return msg;
 				}
 			}
 			m= m->sibling;
