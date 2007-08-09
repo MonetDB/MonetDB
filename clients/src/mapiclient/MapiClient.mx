@@ -215,8 +215,9 @@ timerEnd(void)
 	}
 }
 
-#define RESETprompt() if (strncmp(reply, "mdb>#EOD", 7) == 0) \
-							sprintf(promptbuf, "%.*s>", (int) sizeof(promptbuf) - 2, language);
+#define RESETprompt() if (strncmp(reply, "mdb>#EOD", 7) == 0) { specials=0;\
+							sprintf(promptbuf, "%.*s>", (int) sizeof(promptbuf) - 2, language); }
+#define debugMode() (strncmp(promptbuf,"mdb",3)==0)
 
 static void
 SQLsetSpecial(char *command)
@@ -335,7 +336,7 @@ SQLdebugRendering(MapiHdl hdl)
 		mapi_explain_result(hdl, stderr);
 	}
 	sprintf(promptbuf, "mdb>");
-	while ((reply = mapi_fetch_line(hdl)) != NULL) {
+	while( (reply = mapi_fetch_line(hdl)) ){
 		fprintf(toConsole, "%s\n", reply);
 		RESETprompt();
 	}
@@ -989,8 +990,9 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode, int exit_on_
 				if (mapi_get_querytype(hdl) == Q_UPDATE) {
 					fprintf(toConsole, "[ %d\t]\n", mapi_rows_affected(hdl));
 				} else if (mode == SQL) {
-					if (strncmp(promptbuf, "mdb", 3) == 0)
-						goto nononsense;
+					if( specials && debugMode())
+						SQLdebugRendering(hdl);
+					else
 					if ((reply = mapi_result_error(hdl)) != NULL) {
 						if (pagewidth < 0)
 							goto nononsense;
@@ -1029,15 +1031,12 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode, int exit_on_
 						}
 					}
 					if (mode == SQL && pagewidth >= 0 && (reply = mapi_fetch_line(hdl)) != NULL) {
-						RESETprompt();
 						if (*reply == '%')
 							SQLrenderer(hdl);
 						else
 							fprintf(toConsole, "%s\n", reply);
-						RESETprompt();
 					}
 					while ((reply = mapi_fetch_line(hdl)) != NULL) {
-						RESETprompt();
 						if ((mode == XQUERY || mode == MAL) && *reply == '=')
 							reply++;
 						if( pagerFD)
@@ -1057,7 +1056,6 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode, int exit_on_
 			timerEnd();
 			mapi_close_handle(hdl);
 			hdl = NULL;
-			specials = 0;
 		}
 		/* for XQuery, only exit when end-of-file and we
 		   didn't send any data */
