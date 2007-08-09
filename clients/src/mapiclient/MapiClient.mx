@@ -382,7 +382,7 @@ SQLrenderer(MapiHdl hdl)
 	char **rest = 0;
 	char nullstring[5] = "null";
 	int ps = pagesize, silent = 0, rows = 0;
-	int *numeric;
+	int *numeric = 0;
 
 	while ((fields = mapi_fetch_row(hdl))) {
 		if (silent)
