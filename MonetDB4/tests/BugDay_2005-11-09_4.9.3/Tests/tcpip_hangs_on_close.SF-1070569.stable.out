@@ -69,11 +69,13 @@ quit();
 
 module(tcpip);
 module(alarm);
+module(unix);
+VAR host := getenv("HOST");
 VAR mapiport := monet_environment.find("mapi_port");
 
 {
 sleep(2); # waiting for first server to start listening
-VAR c := open("localhost:"+(int(mapiport)+0));
+VAR c := open(host+":"+(int(mapiport)+0));
 var x := bat(oid, oid);
 x.insert(0@0, 0@0);
 x.insert(1@0, 0@0);
@@ -90,7 +92,7 @@ close(c);
 
 {
 sleep(2);	# waiting for first server to start listening
-VAR c := open("localhost:"+(int(mapiport)+1));
+VAR c := open(host+":"+(int(mapiport)+1));
 var x := bat(oid, oid);
 x.insert(0@0, 0@0);
 x.insert(1@0, 0@0);
@@ -107,7 +109,7 @@ close(c);
 
 {
 sleep(2);	# waiting for first server to start listening
-VAR c := open("localhost:"+(int(mapiport)+2));
+VAR c := open(host+":"+(int(mapiport)+2));
 var x := bat(oid, oid);
 x.insert(0@0, 0@0);
 x.insert(1@0, 0@0);
@@ -124,7 +126,7 @@ close(c);
 
 {
 sleep(2);	# waiting for first server to start listening
-VAR c := open("localhost:"+(int(mapiport)+3));
+VAR c := open(host+":"+(int(mapiport)+3));
 var x := bat(oid, oid);
 x.insert(0@0, 0@0);
 x.insert(1@0, 0@0);

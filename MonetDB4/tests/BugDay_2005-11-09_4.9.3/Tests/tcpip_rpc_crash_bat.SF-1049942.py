@@ -36,8 +36,10 @@ fork(listen(int(mapiport)));
 
 prelude_2 = '''
 module(tcpip);
+module(unix);
+VAR host := getenv("HOST");
 VAR mapiport := monet_environment.find("mapi_port");
-VAR c := open("localhost:"+mapiport);
+VAR c := open(host+":"+mapiport);
 '''
 
 script_2 = '''

@@ -35,13 +35,15 @@ sleep(4);
 prelude_2 = '''
 module(tcpip);
 module(alarm);
+module(unix);
+VAR host := getenv("HOST");
 VAR mapiport := monet_environment.find("mapi_port");
 '''
 
 script_2 = '''
 {
 sleep(2);
-VAR c := open("localhost:"+mapiport);
+VAR c := open(host+":"+mapiport);
 close(c);
 }
 '''
