@@ -21,4 +21,4 @@
 @rem Future versions might inspect a database of eligible servers
 @rem to direct the interaction to the proper ports.
 
-call java -jar @datadir@\MonetDB\lib\@JDBCCLIENT_JAR@ %*
+call java -jar @datadir@\MonetDB\lib\jdbcclient.jar %*

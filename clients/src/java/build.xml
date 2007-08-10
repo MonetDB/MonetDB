@@ -34,7 +34,6 @@ All Rights Reserved.
   <property name="jardir"               value="jars" />
   <property name="builddir"             value="build" />
   <property name="docdir"               value="doc" />
-  <property name="scriptdir"            value="${builddir}/scripts" />
   <property name="jdbc-package"         value="nl/cwi/monetdb/jdbc" />
   <property name="xmldb-package"        value="nl/cwi/monetdb/xmldb" />
   <property name="mcl-package"          value="nl/cwi/monetdb/mcl" />
@@ -66,6 +65,13 @@ All Rights Reserved.
     <antcall target="jar_xrpcwrapper" />
 
     <antcall target="doc" />
+  </target>
+
+  <target name="distall">
+    <antcall target="jar_mcl" />
+    <antcall target="jar_jdbc" />
+    <antcall target="jar_client" />
+    <antcall target="jar_xrpcwrapper" />
   </target>
 
   <target name="default">
@@ -146,32 +152,6 @@ All Rights Reserved.
         <attribute name="Main-Class" value="nl.cwi.monetdb.client.JdbcClient" />
       </manifest>
     </jar>
-  </target>
-
-  <!-- a convenience script mjclient which calls the jdbcclient -->
-  <target name="create_mjclient">
-    <echo message="Crafting an mjclient wrapper script" />
-    <filter token="JDBCCLIENT_JAR"
-      value="jdbcclient.jar" />
-
-    <!-- now copy and filter the file -->
-    <copy file="${scriptdir}/mjclient"
-      overwrite="true"
-      tofile="${builddir}/mjclient"
-      filtering="yes" />
-  </target>
-
-  <!-- a convenience script mjclient.bat which calls the jdbcclient -->
-  <target name="create_mjclient_bat">
-    <echo message="Crafting an mjclient.bat wrapper script" />
-    <filter token="JDBCCLIENT_JAR"
-      value="jdbcclient.jar" />
-
-    <!-- now copy and filter the file -->
-    <copy file="${scriptdir}/mjclient.bat"
-      overwrite="true"
-      tofile="${builddir}/mjclient.bat"
-      filtering="yes" />
   </target>
 
   <!-- compile targets -->

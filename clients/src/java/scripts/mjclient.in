@@ -23,4 +23,4 @@
 # to direct the interaction to the proper ports.
 
 prefix=@prefix@
-exec java -jar @datadir@/MonetDB/lib/@JDBCCLIENT_JAR@ $*
+exec java -jar @datadir@/MonetDB/lib/jdbcclient.jar $*

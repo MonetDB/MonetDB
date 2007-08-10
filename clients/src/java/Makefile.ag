@@ -23,34 +23,7 @@ EXTRA_DIST_DIR = src \
 		 lib \
 		 example
 
-ant_jar_mcl = {
+ant_distall = {
 	DIR = datadir/MonetDB/lib
-	FILES = monetdb-1.0-mcl.jar
-}
-
-ant_jar_jdbc = {
-	DIR = datadir/MonetDB/lib
-	FILES = monetdb-1.6-jdbc.jar
-}
-
-ant_jar_jdbcclient = {
-	DIR = datadir/MonetDB/lib
-	FILES = jdbcclient.jar
-}
-
-ant_jar_xrpcwrapper = {
-	DIR = datadir/MonetDB/lib
-	FILES = xrpcwrapper-0.1.jar
-}
-
-ant_create_mjclient = {
-	COND = NOT_WIN32
-	DIR = bindir
-	FILES = mjclient
-}
-
-ant_create_mjclient_bat = {
-	COND = NATIVE_WIN32
-	DIR = bindir
-	FILES = mjclient.bat
+	FILES = monetdb-1.0-mcl.jar monetdb-1.6-jdbc.jar jdbcclient.jar xrpcwrapper-0.1.jar
 }
