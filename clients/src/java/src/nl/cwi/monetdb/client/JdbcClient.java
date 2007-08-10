@@ -669,7 +669,8 @@ copts.produceHelpMessage()
 								boolean found = false;
 								while (tbl.next()) {
 									if (tbl.getString("TABLE_NAME").equalsIgnoreCase(object) ||
-											(tbl.getString("TABLE_SCHEM") + "." + tbl.getString("TABLE_NAME")).equalsIgnoreCase(object)) {
+											(tbl.getString("TABLE_SCHEM") + "." + tbl.getString("TABLE_NAME")).equalsIgnoreCase(object))
+									{
 										// we found it, describe it
 										e.dumpSchema(
 												dbmd,
@@ -681,7 +682,7 @@ copts.produceHelpMessage()
 
 										found = true;
 										break;
-											}
+									}
 								}
 								if (!found) System.err.println("Unknown table or view: " + object);
 								tbl.close();
