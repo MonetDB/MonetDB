@@ -1843,7 +1843,17 @@ PROC contained_by(bat[oid,dbl] region, BAT[oid,str] qenv) : bat[oid,dbl] :=
 
     var ctx      := region.sort();
     var pre_size := load( "tj_" + qenv.find(QENV_FTINAME) + "_size1");    
-    var desc     := scj_desc( pre_size, ctx, count(pre_size) );
+        ctx       := ctx.hmark(0@0);
+    var one_ctx   := (ctx.fetch(0) = ctx.fetch(count(ctx)-1));
+    var cands     := pre_size;
+    var one_iter  := TRUE;
+    var min_iter  := 0@0;
+    var max_iter  := min_iter;
+    var iter      := ctx.project(min_iter);
+    var kind_test := chr(nil);
+    var no_iter_order := TRUE;
+    var desc      := ll_descendant(iter, ctx, pre_size, cands, one_iter, one_ctx, min_iter, max_iter, no_iter_order, kind_test);
+        desc      := desc.reverse().project(nil);
     var result   := nodes( desc, qenv ).project( dbl(qenv.find(QENV_SCOREBASE)) );
     
     if ( trace ) tj_trace( "END  contained_by_1" );

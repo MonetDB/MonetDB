@@ -34,8 +34,8 @@
 *
 */
 #include "pf_config.h"
-#include "levelsteps.h"
 #include <gdk.h>
+#include "shredder.h" /* for XML_DEPTH_MAX */
 
 /**
  * This file contains the axis step algoritms for the following-sibling axis.

@@ -44,7 +44,6 @@ lib_serialize = {
 lib_pf = {
 	NOINST
         SOURCES = \
-                levelsteps.mx \
 		ll_staircasejoin.mx \
                 ll_upwards.mx \
                 ll_prec_foll.mx \
@@ -55,8 +54,6 @@ lib__pf_support = {
         DIR = libdir/MonetDB4
         SOURCES = \
                 pf_support.mx \
-                staircasejoin.mx \
-                prec_foll.mx \
                 shredder.mx 
         LIBS = \
                 libserialize libpf $(PF_LIBS) \

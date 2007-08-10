@@ -264,24 +264,6 @@ an overloaded insert).
 
 @- Path steps (staircase join) 
 @m
-@(
-@:prec_foll(following)@
-@:prec_foll(preceding)@
-@)
-
-@= prec_foll
-.COMMAND @1_void (BAT[void,int] pre_size,
-               BAT[oid,any] ctx,
-               BAT[oid,oid] doc_pre,
-               int upperbound) : BAT[oid,void] = PF@1_void;
-"PARAMETERS
-  pre_size: the complete size BAT (preorder rank, size)
-  ctx: context node sequence (preorder rank, *)
-  doc_pre: table of document containers (doc id, preorder start value)
-  upperbound: upperbound for size of result context node sequence
-DESCRIPTION
-axis step evaluation on the @1 axis from the given context."
-@m
 @:ll_prec_foll_decl(following)@
 @:ll_prec_foll_decl(preceding)@
 
@@ -301,11 +283,9 @@ BAT[void,chr] pre_kind (from the working set)
 chr kind_test (kind to test for; chr_nil if no kind test)
 DESCRIPTION:
 returns all nodes on the @1 axis of the ctx-nodes duplicate free for each group."
+@
 @m
 @:ll_sibling_decl(following)@
-@(
-@:ll_sibling_decl(preceding)@
-@)
 
 @= ll_sibling_decl
 .COMMAND ll_@1_sibling(BAT[oid,oid] iter,
@@ -323,22 +303,7 @@ BAT[void,chr] pre_kind  (from the working set)
 chr kind_test (kind to test for; chr_nil if no kind test)
 DESCRIPTION:
 returns all nodes on the @1-sibling axis of the ctx-nodes duplicate free for each group."
-@m
-@:scj_cmd(descorself,descendant-or-self)@
-@:scj_cmd(desc,descendant)@
-@:scj_cmd(ancorself,ancestor-or-self)@
-@:scj_cmd(anc,ancestor)@
-
-@= scj_cmd
-.COMMAND scj_@1(BAT[void,int] pre_size,
-                BAT[oid,any] ctx,
-                int upperbound): BAT[oid,void] = PFscj_@1_void;
-"PARAMETERS
-  pre_size: the complete size BAT (preorder rank, size)
-  ctx: context node sequence (preorder rank, *)
-  upperbound: upperbound for size of result context node sequence
-DESCRIPTION
-axis step evaluation on the @2 axis from the given context."
+@
 @m
 @:ll_cmd(descendant)@
 @:ll_cmd(descendant_or_self)@
@@ -367,6 +332,7 @@ bit           no_iter_order (descendant & descendant_or_self, only:
                result will be ordered on item, but not sub-ordered on iter)
 DESCRIPTION:
 returns all nodes on the @1 axis of the ctx-nodes duplicate free for each group."
+@
 @m
 @:ll_upwards(parent,parent)@
 @:ll_upwards(ancestor,ancestor)@
@@ -383,24 +349,6 @@ BAT[void,int] pre_size (from the working set)
 BAT[void,int] pre_level (from the working set)
 DESCRIPTION:
 returns all nodes on the @2 axis of the ctx-nodes duplicate free for each group."
-@m
-@:lev_cmd(child,child)@
-@:lev_cmd(parent,parent)@
-@(
-@:lev_cmd(fs,following-sibling)@
-@:lev_cmd(ps,preceding-sibling)@
-@)
-
-@= lev_cmd
-.COMMAND lev_@1(BAT[void,chr] pre_level,
-                BAT[oid,any] ctx,
-                int upperbound) : BAT[oid,void] = PFlev_@1;
-"PARAMETERS
-  pre_level: the complete level BAT (preorder rank, level)
-  ctx: context node sequence (preorder rank, *)
-  upperbound: upperbound for size of result context node sequence
-DESCRIPTION
-axis step evaluation on the @2 axis from the given context."
 
 @- update primitives
 @m
@@ -1421,42 +1369,16 @@ PROC combine_node_info (any frag1, bat[void,oid] pre1, any attr1,
 # interface provides...
 # 
 
-@(
-@:step(descendant,descendant,scj_desc,,@:sizes_code@,,)@
-@:step(descendant_or_self,descendant-or-self,scj_descorself,,@:sizes_code@,,)@
-@)
-
 @:wrap(descendant)@
 @:wrap(descendant_or_self)@
-
-@(
-@:step(parent,parent,lev_parent,@:level_intro@,@:level_code@,,)@
-@:step(ancestor,ancestor,scj_anc,,@:sizes_code@,,)@
-@:step(ancestor_or_self,ancestor-or-self,scj_ancorself,,@:sizes_code@,,)@
-@)
+@:wrap(child)@
 
 @:upwards(parent)@
 @:upwards(ancestor)@
 @:upwards(ancestor_or_self)@
 
-@(
-@:step(child,child,lev_child,@:level_intro@,@:level_code@,,)@
-@)
-
-@:wrap(child)@
-
-@(
-@:step(following_sibling,following-sibling,lev_fs,@:level_intro@,@:level_code@,,)@
-@:step(preceding_sibling,preceding-sibling,lev_ps,@:level_intro@,@:level_code@,,)@
-@)
-
 @:ll_sibling_impl_following@
 @:ll_sibling_impl_preceding@
-
-@(
-@:step(following,following,following_void,,@:sizes_code@, @:foll_prec_code@,@:doc_pre@)@
-@:step(preceding,preceding,preceding_void,,@:sizes_code@, @:foll_prec_code@,@:doc_pre@)@
-@)
 
 @:ll_prec_foll_impl(following)@
 @:ll_prec_foll_impl(preceding)@
@@ -1684,84 +1606,6 @@ returns all nodes on the @1 axis of the ctx-nodes duplicate free for each group.
 		          .access(BAT_READ);
 	}
 @
-# use size concept
-@= sizes_code
-pre_sizes
-@
-# use level concept
-@= level_intro
-    var pre_levels := ws.fetch(PRE_LEVEL).fetch(cont);
-@
-@= level_code
-pre_levels
-@
-# code for following and preceding steps
-@= foll_prec_code
-    # find the document root-pre's for prec_foll
-    var nid_rid := ws.fetch(NID_RID).fetch(cont);
-    var map_pid := ws.fetch(MAP_PID).fetch(cont);
-    var doc_pre := ws.fetch(FRAG_ROOT).fetch(cont).tmark(0@0).leftfetchjoin(nid_rid).[swizzle](map_pid).chk_order();
-@
-@= doc_pre
-doc_pre,
-@
-
-@= step
-PROC @1(BAT[void,oid] iter, BAT[void,oid] ctx, oid cont, BAT[void,bat] ws, int order ) : BAT[void,bat]
-{
-    # "order" is not (yet?) used, here.
-
-    var pre_sizes := ws.fetch(PRE_SIZE).fetch(cont);
-    @4
-
-    var unq := {count}(iter.reverse(), iter.tunique(),FALSE);
-
-    var offset := 0;
-    var ctx_slice;
-
-    @6
-
-    var res_iter, res_item;
-    if (count(unq) = 1) {
-        res_iter := constant2bat(unq.reverse().fetch(0));
-	    ctx_slice := ctx.reverse().project(nil);
-	    ctx_slice := ctx_slice.chk_order(); # have to check because step expects it sorted
-        res_item := @3( @5, ctx_slice, @7 pre_sizes.count()).hmark(0@0);
-        res_item := res_item.chk_order();
-    } else {
-        res_iter := bat(void,oid);
-        res_item := bat(void,oid);
-        unq@batloop () {
-            ctx_slice := ctx.slice(offset, offset + $t - 1).reverse().project(nil);
-            ctx_slice := ctx_slice.chk_order(); # have to check because step expects it sorted
-            var res := @3( @5, ctx_slice, @7 pre_sizes.count()).reverse();
-            res := res.chk_order();
-            res_item.append(res);
-            var l := count(res);
-            if (l <= $t) {
-                res_iter.append(iter.slice(offset, offset + l - 1));
-            } else {
-                res_iter.append(res.project($h));
-            }
-            offset := offset + $t;
-        }
-        res_iter := res_iter.seqbase(0@0).access(BAT_READ).chk_order();
-        res_item := res_item.seqbase(0@0).access(BAT_READ).chk_order();
-    }
-    return new(void,bat,2).seqbase(0@0)
-           .append(res_iter)
-           .append(res_item)
-           .access(BAT_READ);
-}
-ADDHELP("@1", "tsheyar", "Sep 2004",
-"PARAMETERS:\n\
-BAT[void,any] iter (grouping relation)\n\
-BAT[void,any] ctx (context set)\n\
-oid cont (the current container of the ws)\n\
-BAT[void,bat] ws (working set)\n\
-DESCRIPTION:\n\
-returns all nodes on the @2 axis of the ctx-nodes duplicate free for each group.",
-"pf_support");
 
 @= upwards
 PROC @1(BAT[void,oid] iter, BAT[void,oid] ctx, oid cont, BAT[void,bat] ws, int order) : BAT[void,bat]
@@ -1853,7 +1697,10 @@ PROC preceding_sibling(BAT[void,oid] iter, BAT[void,oid] item, oid cont, BAT[voi
 @= ll_prec_foll_impl
 PROC @1(BAT[void,oid] iter, BAT[void,oid] item, oid cont, BAT[void,bat] ws, int order, chr kind_test) : BAT[void,bat]
 {
-    @:foll_prec_code@
+    # find the document root-pre's for prec_foll
+    var nid_rid := ws.fetch(NID_RID).fetch(cont);
+    var map_pid := ws.fetch(MAP_PID).fetch(cont);
+    var doc_pre := ws.fetch(FRAG_ROOT).fetch(cont).tmark(0@0).leftfetchjoin(nid_rid).[swizzle](map_pid).chk_order();
     var pre_sizes := ws.fetch(PRE_SIZE).fetch(cont);
     var pre_kinds;
     if (isnil(kind_test)) {
@@ -2042,22 +1889,11 @@ if (postfilter) {
 
 # expanding the scj for the different tests
 @= loop_lifted_scj_wrap1
-@:loop_lifted_scj_wrap_pre(@1)@
-@
-@= loop_lifted_scj_wrap_pre
 @:loop_lifted_scj_step2(@1,,,,,                                                               @:params2@,@:no_pre@)@
 @:loop_lifted_scj_step2(@1,_with_kind_test,  @:kind_args@, @:kind_params@,,                   @:params2@,@:kind_pre(kind)@)@
 @:loop_lifted_scj_step2(@1,_with_nsloc_test, @:nsloc_args@,@:nsloc_params@,@:nsloc_post@,     @:params2@,@:nsloc_pre@)@
 @:loop_lifted_scj_step2(@1,_with_ns_test,    @:ns_args@,   @:ns_params@,   @:ns_post@,        @:params2@,@:ns_pre@)@
 @:loop_lifted_scj_step2(@1,_with_loc_test,   @:loc_args@,  @:loc_params@,  @:loc_post@,       @:params2@,@:loc_pre@)@
-@:loop_lifted_scj_step2(@1,_with_target_test,@:tgt_args@,  @:tgt_params@,  @:target_post@,    @:params2@,@:no_pre@)@
-@
-@= loop_lifted_scj_wrap_post
-@:loop_lifted_scj_step2(@1,,,,,                                                               @:params2@,@:no_pre@)@
-@:loop_lifted_scj_step2(@1,_with_kind_test,  @:kind_args@, @:kind_params@, @:kind_post(kind)@,@:params2@,@:no_pre@)@
-@:loop_lifted_scj_step2(@1,_with_nsloc_test, @:nsloc_args@,@:nsloc_params@,@:nsloc_post@,     @:params2@,@:no_pre@)@
-@:loop_lifted_scj_step2(@1,_with_ns_test,    @:ns_args@,   @:ns_params@,   @:ns_post@,        @:params2@,@:no_pre@)@
-@:loop_lifted_scj_step2(@1,_with_loc_test,   @:loc_args@,  @:loc_params@,  @:loc_post@,       @:params2@,@:no_pre@)@
 @:loop_lifted_scj_step2(@1,_with_target_test,@:tgt_args@,  @:tgt_params@,  @:target_post@,    @:params2@,@:no_pre@)@
 @
 @= loop_lifted_scj_step1
