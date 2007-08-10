@@ -353,8 +353,7 @@ All Rights Reserved.
         <include name="${mcl-package}/**/*.java" />
       </srcfiles>
     </uptodate>
-    <uptodate targetfile="${jdbcclient-jar}"
-      property="uptodate.jdbcclient-jar">
+    <uptodate targetfile="${jdbcclient-jar}" property="uptodate.jdbcclient-jar">
       <srcfiles dir="${srcdir}">
         <include name="${client-package}/**/*.java" />
         <include name="${jdbc-package}/**/*.java" />
@@ -363,16 +362,16 @@ All Rights Reserved.
     </uptodate>
     <condition property="uptodate.drivers">
       <and>
-        <uptodate targetfile="${jdbc-package}/MonetDriver.java">
+        <uptodate targetfile="${builddir}/src/${jdbc-package}/MonetDriver.java">
           <srcfiles dir="${srcdir}">
             <include name="build.properties" />
             <include name="build.local.properties" />
             <include name="${jdbc-package}/MonetDriver.java.in" />
             <include name="${jdbc-package}/**/*.java" />
-            <include name="${client-package}/**/*.java" />
           </srcfiles>
         </uptodate>
-        <uptodate targetfile="${xmldb-package}/base/MonetDBDatabase.java">
+        <uptodate
+          targetfile="${builddir}/src/${xmldb-package}/base/MonetDBDatabase.java">
           <srcfiles dir="${srcdir}">
             <include name="build.properties" />
             <include name="build.local.properties" />
