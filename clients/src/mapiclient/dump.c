@@ -65,7 +65,7 @@ static char *actions[] = {
 #define NR_ACTIONS	((int) (sizeof(actions) / sizeof(actions[0])))
 
 int
-dump_table(Mapi mid, char *tname, FILE *toConsole)
+dump_table(Mapi mid, char *tname, FILE *toConsole, int describe)
 {
 	int cnt = 0, i;
 	MapiHdl hdl;
@@ -498,6 +498,10 @@ dump_table(Mapi mid, char *tname, FILE *toConsole)
 	}
 	mapi_close_handle(hdl);
 
+	/* end of description, continue if you need the data as well */
+	if( describe ) 
+		return 0;
+
 	snprintf(query, maxquerylen, "SELECT count(*) FROM \"%s\"", tname);
 	if ((hdl = mapi_query(mid, query)) == NULL || mapi_error(mid)) {
 		if (hdl) {
@@ -568,7 +572,7 @@ dump_table(Mapi mid, char *tname, FILE *toConsole)
 }
 
 int
-dump_tables(Mapi mid, FILE *toConsole)
+dump_tables(Mapi mid, FILE *toConsole, int describe)
 {
 	const char *start = "START TRANSACTION";
 	const char *end = "COMMIT";
@@ -583,8 +587,9 @@ dump_tables(Mapi mid, FILE *toConsole)
 	MapiHdl hdl;
 	int rc = 0;
 
-	/* start a transaction for the dump */
-	fprintf(toConsole, "START TRANSACTION;\n");
+	if( describe==0)
+		/* start a transaction for the dump */
+		fprintf(toConsole, "START TRANSACTION;\n");
 
 	if ((hdl = mapi_query(mid, start)) == NULL || mapi_error(mid)) {
 		if (hdl) {
@@ -631,7 +636,7 @@ dump_tables(Mapi mid, FILE *toConsole)
 	while (mapi_fetch_row(hdl) != 0) {
 		char *tname = mapi_fetch_field(hdl, 0);
 
-		rc += dump_table(mid, tname, toConsole);
+		rc += dump_table(mid, tname, toConsole, describe);
 	}
 	if (mapi_error(mid)) {
 		mapi_explain_query(hdl, stderr);

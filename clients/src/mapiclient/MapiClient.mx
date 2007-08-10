@@ -511,6 +511,7 @@ SQLrenderer(MapiHdl hdl)
 		SQLseparator(len, oldfields, '-');
 }
 
+
 static int
 doRequest(Mapi mid, const char *buf, int interactive)
 {
@@ -733,7 +734,7 @@ showCommands()
 		    );
 		break;
 	case MAL:
-		fprintf(toConsole, "\\?text\t- get help on item\n");
+		fprintf(toConsole, "\\?pattern\t- get help on MAL function using pattern [modnme[.fcnnme][(][)]] where nme can be replace with *\n");
 		break;
 	case SQL:
 		fprintf(toConsole, "\\w#\t- set maximal page width (-1=raw,0=no limit, >0 max char)\n");
@@ -870,19 +871,37 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode, int exit_on_
 					if (mode == XQUERY)
 						break;
 					continue;
-				case 'D':
-					if (mode == XQUERY)
+				case 'd':
+					if (mode != SQL)
 						break;
 					if (line[length - 1] == '\n')
 						line[--length] = 0;
 					if (line[length - 1] == '\r')
 						line[--length] = 0;
-					if (line[2]) {
+					for( line+=2; *line && isspace((int)*line); line++)
+						;
+					if (*line) {
+						dump_table(mid, line, toConsole,1);
+					} else {
+						doRequest(mid, "select name from tables;", 1);
+					}
+					continue;
+
+				case 'D':
+					if (mode != SQL)
+						break;
+					if (line[length - 1] == '\n')
+						line[--length] = 0;
+					if (line[length - 1] == '\r')
+						line[--length] = 0;
+					for( line+=2; *line && isspace((int)*line); line++)
+						;
+					if (*line) {
 						fprintf(toConsole, "START TRANSACTION;\n");
-						dump_table(mid, line + 2, toConsole);
+						dump_table(mid, line, toConsole,0);
 						fprintf(toConsole, "COMMIT;\n");
 					} else
-						dump_tables(mid, toConsole);
+						dump_tables(mid, toConsole,0);
 					continue;
 				case '<':
 					/* read commands from file */
@@ -912,9 +931,10 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode, int exit_on_
 					}
 					continue;
 				case '?':
-					if (!isspace((int) line[1]) && mode == MAL)
-						/* handle MAL help */
-						continue;
+					if (!isspace((int) line[1]) && mode == MAL){
+						strcpy(line,line+1);
+						break;
+					}
 					showCommands();
 					continue;
 				case '|':
@@ -935,7 +955,7 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode, int exit_on_
 #endif
 					/* show the history */
 				default:
-					break;
+					continue;
 				}
 			}
 		}
