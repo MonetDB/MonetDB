@@ -792,7 +792,7 @@ char **getHelp(Module m, str pat, int completion)
 	str modnme, fcnnme = 0;
 	Module m1;
 	Symbol s;
-	int len1 = 0,len2 = 0,fnd,f;
+	int len1 = 0,len2 = 0,fnd=0,f;
 	char *t, **msg, buf[BUFSIZ];
 	int top=0, i,j,k, sig = 0, doc = 0;
 
