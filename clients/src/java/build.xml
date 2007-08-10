@@ -118,7 +118,8 @@ All Rights Reserved.
       </fileset>
       <fileset dir="${srcdir}">
         <include name="${xrpcwrapper-package}/wrapper_functions.xq" />
-        <include name="${xrpcwrapper-package}/Tests/bib.xml" />
+        <include name="${xrpcwrapper-package}/Tests/*.xml" />
+        <include name="${xrpcwrapper-package}/Tests/*.xq" />
       </fileset>
       <manifest>
         <attribute name="Built-By" value="${user.name}" />
