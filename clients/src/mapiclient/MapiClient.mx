@@ -741,7 +741,8 @@ showCommands()
 		fprintf(toConsole, "\\r#\t- set maximum rows per page (-1=raw)\n");
 		fprintf(toConsole, "\\D\t- dump database in SQL format\n");
 		fprintf(toConsole, "\\Dtable\t- dump a single table in SQL format\n");
-		fprintf(toConsole, "\\dtable\t- describe the table\n");
+		fprintf(toConsole, "\\d\t- show the tables available \n");
+		fprintf(toConsole, "\\dtable\t- describe a single table\n");
 		fprintf(toConsole, "\\A\t- enable auto commit\n");
 		fprintf(toConsole, "\\a\t- disable auto commit\n");
 	default:
@@ -863,10 +864,14 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode, int exit_on_
 				case 'w':
 					if (mode == XQUERY)
 						break;
-					pagewidth = (int) atol(line + 2);
+					for( line+=2; *line && isspace((int)*line); line++)
+						;
+					pagewidth = (int) atol(line);
 					continue;
 				case 'r':
-					rowsperpage = (int) atol(line + 2);
+					for( line+=2; *line && isspace((int)*line); line++)
+						;
+					rowsperpage = (int) atol(line);
 				case 'p':
 					if (mode == XQUERY)
 						break;
@@ -950,7 +955,7 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode, int exit_on_
 					continue;
 #ifdef HAVE_LIBREADLINE
 				case 'h':
-					fprintf(stderr,"History not yet supported");
+					fprintf(stderr,"History listing not yet supported\n");
 					continue;
 #endif
 					/* show the history */
