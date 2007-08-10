@@ -29,8 +29,9 @@ prelude_2 = '''
 module(tcpip);
 module(unix);
 module(ascii_io);
+VAR host := getenv("HOST");
 VAR mapiport := monet_environment.find("mapi_port");
-VAR c := open("localhost:"+mapiport);
+VAR c := open(host+":"+mapiport);
 VAR TSTTRGDIR := getenv("TSTTRGDIR");
 '''
 
