@@ -8,4 +8,4 @@ let $doc1 := doc("hello.xml"),
                 $doc1/*/processing-instruction(),
                 $doc1/*/attribute::*,
                 $doc2)
-return execute at {"localhost:$XRPCPORT"} { xrpc:echoAll($plist)}
+return execute at {"$HOST:$XRPCPORT"} { xrpc:echoAll($plist)}
