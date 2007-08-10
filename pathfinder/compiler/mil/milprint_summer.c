@@ -9255,7 +9255,7 @@ translate2MIL (opt_t *f, int code, int cur_level, int counter, PFcnode_t *c)
             /* we could have multiple different calls */
             translate2MIL (f, NORMAL, 0, counter, R(c));
             milprintf(f,
-                    "return bat(void,bat,4).append(iter).append(item).append(kind).access(BAT_READ);\n"
+                    "return bat(void,bat,4).append(iter).append(item).append(kind).append(pos).access(BAT_READ);\n"
                     "} # end of PROC %s\n",
                     c->sem.fun->sig);
             opt_flush(f, 0);
@@ -11638,6 +11638,7 @@ const char* PFudfMIL(void) {
         "  iter := proc_res.fetch(0);\n"
         "  item := proc_res.fetch(1);\n"
         "  kind := proc_res.fetch(2);\n"
+        "  pos  := proc_res.fetch(3);\n"
         "  if (type(iter) = bat) {\n"
         "    ipik := iter;\n"
         "  } else {\n"
