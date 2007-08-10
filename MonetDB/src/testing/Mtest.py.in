@@ -2978,10 +2978,10 @@ def main(argv) :
         exe = {}
         exe['Mtimeout']      = CheckExec('Mtimeout')     , 'Mtimeout -timeout %d ' % par['TIMEOUT']
         if env['VERSION'] >= 49900:
-            exe['Mserver']       = CheckExec('mserver5')     , '%s mserver5 "--config=%s" --debug=%s %s %s %s %s --set mapi_open=true --set mapi_port=%s --set xrpc_port=%s --set monet_prompt= --trace' % \
+            exe['Mserver']       = CheckExec('mserver5')     , '%s mserver5 "--config=%s" --debug=%s %s %s %s %s --set mapi_open=true --set xrpc_open=true --set mapi_port=%s --set xrpc_port=%s --set monet_prompt= --trace' % \
                                                                (env['setDBG'], opts.config, env['GDK_DEBUG'], env['setMONETDB_MOD_PATH'], env['setGDK_DBFARM'], env['setSQL_LOGDIR'], env['setXQUERY_LOGDIR'], env['MAPIPORT'], env['XRPCPORT'])
         else:
-            exe['Mserver']       = CheckExec('Mserver')      , '%s Mserver "--config=%s" --debug=%s %s %s %s %s --set mapi_open=true --set mapi_port=%s --set xrpc_port=%s --set monet_prompt= --trace' % \
+            exe['Mserver']       = CheckExec('Mserver')      , '%s Mserver "--config=%s" --debug=%s %s %s %s %s --set mapi_open=true --set xrpc_open=true --set mapi_port=%s --set xrpc_port=%s --set monet_prompt= --trace' % \
                                                                (env['setDBG'], opts.config, env['GDK_DEBUG'], env['setMONETDB_MOD_PATH'], env['setGDK_DBFARM'], env['setSQL_LOGDIR'], env['setXQUERY_LOGDIR'], env['MAPIPORT'], env['XRPCPORT'])
         exe['Mdiff']         = CheckExec('Mdiff')        , 'Mdiff'
         exe['python']        = CheckExec(sys.executable) , sys.executable
