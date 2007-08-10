@@ -1,4 +1,4 @@
-execute at { "localhost:$XRPCPORT" }
+execute at { "$HOST:$XRPCPORT" }
     {
         fn:doc("hello.xml")
     }

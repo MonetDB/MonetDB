@@ -1,4 +1,4 @@
 import module namespace xrpc = "xrpc-fun" at
 "$TSTSRCDIR/xrpcfun.xq";
 
-execute at {"localhost:$XRPCPORT"} {xrpc:xrpcConvert("localhost:$XRPCPORT", 100)}
+execute at {"$HOST:$XRPCPORT"} {xrpc:xrpcConvert("$HOST:$XRPCPORT", 100)}

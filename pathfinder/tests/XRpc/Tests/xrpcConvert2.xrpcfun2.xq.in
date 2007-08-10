@@ -6,7 +6,7 @@ import module namespace foo = "xrpc-fun"
 
 declare function bar:xrpcConvert($v as xs:decimal?) as xs:decimal?
 {
-    execute at {"localhost:$XRPCPORT"}{foo:convert($v)}
+    execute at {"$HOST:$XRPCPORT"}{foo:convert($v)}
 
 };
 

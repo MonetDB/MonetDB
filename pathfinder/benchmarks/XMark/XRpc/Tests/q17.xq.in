@@ -1,4 +1,4 @@
 import module namespace xrpc = "http://www.cwi.nl/~boncz/xmark/opt/"
                     at "$TSTSRCBASE/benchmarks/XMark/opt/XQ/Tests/xmark.xq";
 
-execute at {"localhost:$XRPCPORT"} {xrpc:q17("auctionG.xml")}
+execute at {"$HOST:$XRPCPORT"} {xrpc:q17("auctionG.xml")}
