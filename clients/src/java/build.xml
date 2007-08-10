@@ -111,34 +111,12 @@ All Rights Reserved.
 
   <target name="jar_xrpcwrapper"
     depends="compile_util,compile_xrpcwrapper">
-    <copy file="${srcdir}/${xrpcwrapper-package}/wrapper_functions.xq"
-      overwrite="true"
-      tofile="${builddir}/${xrpcwrapper-package}/wrapper_functions.xq"
-      filtering="yes" />
-    <copy file="${srcdir}/${xrpcwrapper-package}/Tests/auctions.xml"
-      overwrite="true"
-      tofile="${builddir}/${xrpcwrapper-package}/Tests/auctions.xml"
-      filtering="yes" />
-    <copy file="${srcdir}/${xrpcwrapper-package}/Tests/bib.xml"
-      overwrite="true"
-      tofile="${builddir}/${xrpcwrapper-package}/Tests/bib.xml"
-      filtering="yes" />
-    <copy file="${srcdir}/${xrpcwrapper-package}/Tests/persons.xml"
-      overwrite="true"
-      tofile="${builddir}/${xrpcwrapper-package}/Tests/persons.xml"
-      filtering="yes" />
-    <copy file="${srcdir}/${xrpcwrapper-package}/Tests/functions.xq"
-      overwrite="true"
-      tofile="${builddir}/${xrpcwrapper-package}/Tests/functions.xq"
-      filtering="yes" />
-    <copy file="${srcdir}/${xrpcwrapper-package}/Tests/test.xq"
-      overwrite="true"
-      tofile="${builddir}/${xrpcwrapper-package}/Tests/test.xq"
-      filtering="yes" />
     <jar jarfile="${xrpcwrapper-jar}">
       <fileset dir="${builddir}">
         <include name="${util-package}/**/*.class" />
         <include name="${xrpcwrapper-package}/**/*.class" />
+      </fileset>
+      <fileset dir="${srcdir}">
         <include name="${xrpcwrapper-package}/wrapper_functions.xq" />
         <include name="${xrpcwrapper-package}/Tests/bib.xml" />
       </fileset>
