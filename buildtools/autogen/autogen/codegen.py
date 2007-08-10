@@ -328,7 +328,7 @@ def do_dep_combine(deps,includes,cwd,incs):
             depfiles.remove(target)
 
 # dependency rules describe two forms of dependencies, first
-# are implicite rules, glue.c depends on proto.h and
+# are implicit rules, glue.c depends on proto.h and
 # second dependency between generated targets based on
 # dependencies between the input files for the target generation process
 # ie. io.m, generates io_glue.c which and depends on io_proto.h)
@@ -498,14 +498,12 @@ def collect_includes(incdirs, cwd, topdir):
     dirs = expand_incdirs( incdirs, topdir )
 
     for dir,org in dirs:
-        if os.path.isabs(dir):
-            f = os.path.join(dir, ".incs.ag")
-            if not os.path.exists(f):
-                f = os.path.join(dir, ".incs.in")
-        else:
-            f = os.path.join(cwd, dir, ".incs.ag")
-            if not os.path.exists(f):
-                f = os.path.join(cwd, dir, ".incs.in")
+        if dir.startswith('$'):
+            continue
+        dir = os.path.join(cwd, dir)
+        f = os.path.join(dir, ".incs.ag")
+        if not os.path.exists(f):
+            f = os.path.join(dir, ".incs.in")
 
         if os.path.exists(f):
             incs = shelve.open(f)
