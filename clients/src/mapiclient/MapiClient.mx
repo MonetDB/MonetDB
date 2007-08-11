@@ -220,11 +220,11 @@ timerEnd(void)
 #define debugMode() (strncmp(promptbuf,"mdb",3)==0)
 
 static void
-SQLsetSpecial(char *command)
+SQLsetSpecial(const char *command)
 {
 	if (mode == SQL) {
 		/* catch the specials for better rendering */
-		char *s = command;
+		const char *s = command;
 
 		while (*s == ' ' || *s == '\t')
 			s++;
@@ -518,7 +518,7 @@ doRequest(Mapi mid, const char *buf, int interactive)
 	MapiHdl hdl;
 
 	if (mode == SQL)
-		SQLsetSpecial((char *) buf);
+		SQLsetSpecial(buf);
 	if ((hdl = mapi_quick_query(mid, buf, toConsole)) == NULL) {
 		mapi_explain(mid, stderr);
 		return 1;
