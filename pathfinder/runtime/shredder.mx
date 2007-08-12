@@ -1868,6 +1868,9 @@ shredder_finalize(shredCtxStruct *shredCtx, BAT *docBAT)
         	shredCtx->dstBAT[PRE_KIND].bat->tdense = 0;
         	BATkey(BATmirror(shredCtx->dstBAT[PRE_KIND].bat), FALSE);
         }
+        if (shredCtx->dstBAT[ATTR_PROP].bat->tkey == TRUE) {
+        	BATkey(BATmirror(shredCtx->dstBAT[ATTR_PROP].bat), FALSE);
+        }
     }
     assert((shredCtx->updatable && shredCtx->nnode_nid <= newsize) || (!shredCtx->updatable && shredCtx->nnode_nid == newsize));
     shredBAT_setcount(&shredCtx->dstBAT[NID_RID], shredCtx->nnode_nid);
