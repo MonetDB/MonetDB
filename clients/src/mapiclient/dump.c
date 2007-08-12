@@ -79,7 +79,7 @@ dump_table(Mapi mid, char *tname, FILE *toConsole, int describe)
 	fprintf(toConsole, " (\n");
 
 	snprintf(query, maxquerylen,
-		 "SELECT DISTINCT \"c\".\"name\","		/* 0 */
+		 "SELECT \"c\".\"name\","		/* 0 */
 			"\"c\".\"type\","		/* 1 */
 			"\"c\".\"type_digits\","	/* 2 */
 			"\"c\".\"type_scale\","		/* 3 */
@@ -212,7 +212,7 @@ dump_table(Mapi mid, char *tname, FILE *toConsole, int describe)
 	}
 	mapi_close_handle(hdl);
 	snprintf(query, maxquerylen,
-		 "SELECT DISTINCT \"kc\".\"column\","		/* 0 */
+		 "SELECT \"kc\".\"column\","		/* 0 */
 			"\"kc\".\"nr\", "		/* 1 */
 			"\"k\".\"name\" "		/* 2 */
 		 "FROM \"keycolumns\" \"kc\", "
@@ -267,7 +267,7 @@ dump_table(Mapi mid, char *tname, FILE *toConsole, int describe)
 	mapi_close_handle(hdl);
 
 	snprintf(query, maxquerylen,
-		 "SELECT DISTINCT \"kc\".\"column\","		/* 0 */
+		 "SELECT \"kc\".\"column\","		/* 0 */
 			"\"kc\".\"nr\", "		/* 1 */
 			"\"k\".\"name\" "		/* 2 */
 		 "FROM \"keycolumns\" \"kc\", "
@@ -325,7 +325,7 @@ dump_table(Mapi mid, char *tname, FILE *toConsole, int describe)
 	mapi_close_handle(hdl);
 
 	snprintf(query, maxquerylen,
-		 "SELECT DISTINCT \"pkt\".\"name\","		/* 0 */
+		 "SELECT \"pkt\".\"name\","		/* 0 */
 			"\"pkkc\".\"column\","		/* 1 */
 			"\"fkkc\".\"column\","		/* 2 */
 			"\"fkkc\".\"nr\","		/* 3 */
@@ -432,7 +432,7 @@ dump_table(Mapi mid, char *tname, FILE *toConsole, int describe)
 	fprintf(toConsole, ");\n");
 
 	snprintf(query, maxquerylen,
-		 "SELECT DISTINCT \"i\".\"name\", "		/* 0 */
+		 "SELECT \"i\".\"name\", "		/* 0 */
 			"\"k\".\"name\", "		/* 1 */
 			"\"kc\".\"nr\", "		/* 2 */
 			"\"c\".\"name\" "		/* 3 */
@@ -576,13 +576,13 @@ dump_tables(Mapi mid, FILE *toConsole, int describe)
 {
 	const char *start = "START TRANSACTION";
 	const char *end = "COMMIT";
-	const char *sequences1 = "SELECT DISTINCT \"name\" FROM \"sequences\"";
-	const char *sequences2 = "SELECT DISTINCT seq.\"name\",get_value_for(s.\"name\",seq.\"name\"),\"minvalue\",\"maxvalue\",\"increment\",\"cycle\" FROM \"sequences\" seq, \"schemas\" s WHERE s.id = seq.schema_id";
+	const char *sequences1 = "SELECT \"name\" FROM \"sequences\"";
+	const char *sequences2 = "SELECT seq.\"name\",get_value_for(s.\"name\",seq.\"name\"),\"minvalue\",\"maxvalue\",\"increment\",\"cycle\" FROM \"sequences\" seq, \"schemas\" s WHERE s.id = seq.schema_id";
 	const char *tables = "SELECT \"name\" FROM \"_tables\" WHERE "
 		"\"type\" = 0 AND \"system\" = FALSE";
-	const char *views = "SELECT DISTINCT \"name\",\"query\" FROM \"_tables\" WHERE "
+	const char *views = "SELECT \"name\",\"query\" FROM \"_tables\" WHERE "
 		"\"type\" = 1 AND \"system\" = FALSE";
-	const char *functions = "SELECT DISTINCT \"func\" FROM \"functions\" WHERE "
+	const char *functions = "SELECT \"func\" FROM \"functions\" WHERE "
 		"\"sql\" = TRUE";
 	MapiHdl hdl;
 	int rc = 0;
