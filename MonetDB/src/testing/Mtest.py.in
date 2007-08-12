@@ -1525,10 +1525,10 @@ def RunTest(env, TST, BusyPorts, COND) :
                 SymlinkOrCopy(os.path.join(RELSRCDIR,f),os.path.join(TSTTRGDIR,f))
 
         # Check for available sockets and block them until we're ready to run the actual test
-        MAPIsocket, reason = CheckSocket2(env, "MAPI")   #, SrvrErr)
-        if MAPIsocket is not None:
-            XRPCsocket, reason = CheckSocket2(env, "XRPC")   #, SrvrErr)
-        if None in (MAPIsocket, XRPCsocket):
+        MAPIsockets, reason = CheckSocket2(env, "MAPI")   #, SrvrErr)
+        if MAPIsockets is not None:
+            XRPCsockets, reason = CheckSocket2(env, "XRPC")   #, SrvrErr)
+        if None in (MAPIsockets, XRPCsockets):
             elem = SkipTest(env, TST, EXT, "as "+reason)
             return TX,Failed,Failed,elem
 
@@ -1541,8 +1541,10 @@ def RunTest(env, TST, BusyPorts, COND) :
             else:
                 elem = SkipTest(env, TST, EXT+".src", "as source file '"+TSTSRC+"` is missing.")
                 # Release reserved sockets before bailing out
-                MAPIsocket.close()
-                XRPCsocket.close()
+                MAPIsockets[0].close()
+                MAPIsockets[1].close()
+                XRPCsockets[0].close()
+                XRPCsockets[1].close()
                 return TX,Failed,Failed,elem
         test = re.compile("^"+TST+"((_[sp][0-9][0-9])?\..*)?\.src$", re.MULTILINE)
         for ff in os.listdir(TSTTRGDIR):
@@ -1674,7 +1676,7 @@ def RunTest(env, TST, BusyPorts, COND) :
         TestErr.close()
 
         t0 = time.time()
-        DoIt (env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOUT, CTIMEOUT, TIMEOUT, MkillUsersAT, ME, MAPIsocket, XRPCsocket)
+        DoIt (env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOUT, CTIMEOUT, TIMEOUT, MkillUsersAT, ME, MAPIsockets, XRPCsockets)
         t1 = time.time()
         TX = t1 - t0
         if not quiet:
@@ -1851,27 +1853,42 @@ def RunTest(env, TST, BusyPorts, COND) :
     return TX,FailedOut,FailedErr,elem
 ### RunTest(env, TST, BusyPorts) #
 
-def CheckPort(host,port) :
+def CheckPort(port) :
+    # Since 'localhost' and $HOST (i.e., `hostname`) are usually different interfaces,
+    # we check both, unless $HOST (`hostname`) appears to be merely an alias for 'localhost'.
     busy = 0
     Serrno = 0
     Serrstr = ""
-    S = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    S0 = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    S1 = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    host = 'localhost'
     try:
-        S.bind((host,port))
+        S0.bind((host,port))
     except socket.error, (Serrno,Serrstr):
         busy = 1
-    return busy, Serrno, Serrstr, S
-### CheckPort(host,port) #
+    if not busy:
+        host = os.environ['HOST']
+        try:
+            S1.bind((host,port))
+        except socket.error, (Serrno,Serrstr):
+            # $HOST just alias for 'localhost'?
+            S0.close()
+            try:
+                S1.bind((host,port))
+            except socket.error, (Serrno,Serrstr):
+                busy = 1
+    return busy, host, Serrno, Serrstr, (S0, S1)
+### CheckPort(port) #
 
 def randomPort(l,h) :
     repeat = randomPortRepeat
-    host = 'localhost'
     port = 0
     rpt = 0
     while rpt < repeat:
         port = random.randrange(l,h,1)
-        busy, Serrno, Serrstr, S = CheckPort(host,port)
-        S.close()
+        busy, host, Serrno, Serrstr, S = CheckPort(port)
+        S[0].close()
+        S[1].close()
         if busy:
             rpt = rpt + 1
         else:
@@ -1880,19 +1897,20 @@ def randomPort(l,h) :
 ### randomPort(l,h) #
 
 def CheckSocket2(env,SERVER) :  #,SrvrErr) :
-    host = 'localhost'
     port = int(env[SERVER+'PORT'])
     newport = port
-    busy, Serrno, Serrstr, S = CheckPort(host,port)
+    busy, host, Serrno, Serrstr, S = CheckPort(port)
     if busy:
-        S.close()
+        S[0].close()
+        S[1].close()
         Smsg = """
 ! Socket-Check failed for %sserver on <%s:%d> with #%d; '%s' !
 """ % (SERVER, host, port, Serrno, Serrstr)
         newport = eval(dft[SERVER+'PORT']) 
-        busy, Serrno, Serrstr, S = CheckPort(host,int(newport))
+        busy, host, Serrno, Serrstr, S = CheckPort(int(newport))
         if busy:
-            S.close()
+            S[0].close()
+            S[1].close()
             Smsg = Smsg + """
 ! Socket-Check failed for %sserver on <%s:%d> with #%d; '%s' !
 ! Giving up after %d attepts !
@@ -1927,10 +1945,10 @@ def CheckSocket2(env,SERVER) :  #,SrvrErr) :
 ### CheckSocket2(env,SERVER)    #,SrvrErr) #
 
 def CheckSocket3(env,SERVER,ErrFileName) :
-    host = 'localhost'
     port = int(env[SERVER+'PORT'])
-    busy, Serrno, Serrstr, S = CheckPort(host,port)
-    S.close()
+    busy, host, Serrno, Serrstr, S = CheckPort(port)
+    S[0].close()
+    S[1].close()
     if busy:
         Smsg = """
 ! Socket-Check failed for %sserver on <%s:%d> with #%d; '%s' !
@@ -2026,7 +2044,7 @@ if os.name == "nt":
 else:
     devnull = '/dev/null'
 
-def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOUT, CTIMEOUT, TIMEOUT, MkillUsersAT, ME, MAPIsocket, XRPCsocket) :
+def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOUT, CTIMEOUT, TIMEOUT, MkillUsersAT, ME, MAPIsockets, XRPCsockets) :
     quiet = env['QUIET']
     ATJOB2 = ""
     LogLine = os.path.join(env['TSTDIR'],TST+EXT)+' '+PRELUDE+' (<=%d,%d,%d) ...' % (TIMEOUT,CTIMEOUT,STIMEOUT)
@@ -2065,8 +2083,10 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
         PRINTF = "printf"
 
     # Release reserved sockets and run the actual test
-    MAPIsocket.close()
-    XRPCsocket.close()
+    MAPIsockets[0].close()
+    MAPIsockets[1].close()
+    XRPCsockets[0].close()
+    XRPCsockets[1].close()
 
     ServerReady = True
     if SERVER in ["MAPI", "SQL", "XQUERY"]:
@@ -2322,7 +2342,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
         TestErr.close()
 
 
-### DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOut, TestErr, STIMEOUT, CTIMEOUT, TIMEOUT, MkillUsersAT, ME, MAPIsocket, XRPCsocket) #
+### DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOut, TestErr, STIMEOUT, CTIMEOUT, TIMEOUT, MkillUsersAT, ME, MAPIsockets, XRPCsockets) #
 
 def Check(command, input) :
     proc = subprocess.Popen(command+" || echo ! Exit 1", shell = True, stdin = subprocess.PIPE, stdout = subprocess.PIPE, stderr = subprocess.PIPE, universal_newlines = True)
@@ -3155,14 +3175,14 @@ def main(argv) :
             if MissingMods:
                 ErrXit('Stopping Pathfinder testing as modules "%s" are missing!' % str(MissingMods))
 
-        host = 'localhost'
-        for S in 'MAPI', 'XRPC':
-            port = int(env[S+'PORT'])
-            busy, Serrno, Serrstr, S = CheckPort(host,port)
-            S.close()
+        for SRVR in 'MAPI', 'XRPC':
+            port = int(env[SRVR+'PORT'])
+            busy, host, Serrno, Serrstr, S = CheckPort(port)
+            S[0].close()
+            S[1].close()
             if busy:
-                Warn("Skipping %s tests as %sPORT=%s is not available (Error #%d: '%s')!" % (S,S,env[S+'PORT'],Serrno,Serrstr))
-                BusyPorts.append(S)
+                Warn("Skipping %s tests as %sPORT=%s is not available on %s (Error #%d: '%s')!" % (SRVR,SRVR,env[SRVR+'PORT'],host,Serrno,Serrstr))
+                BusyPorts.append(SRVR)
 
         # create '.Mapprove.rc'
         env['OS'] = os.environ['OS']
