@@ -86,7 +86,7 @@ dump_table(Mapi mid, char *tname, FILE *toConsole, int describe)
 			"\"c\".\"null\","		/* 4 */
 			"\"c\".\"default\","		/* 5 */
 			"\"c\".\"number\" "		/* 6 */
-		 "FROM \"columns\" \"c\",\"tables\" \"t\" "
+		 "FROM \"sys\".\"_columns\" \"c\",\"sys\".\"_tables\" \"t\" "
 		 "WHERE \"c\".\"table_id\" = \"t\".\"id\" "
 		 "AND '%s' = \"t\".\"name\" ORDER BY \"number\"", tname);
 	if ((hdl = mapi_query(mid, query)) == NULL || mapi_error(mid)) {
@@ -215,9 +215,9 @@ dump_table(Mapi mid, char *tname, FILE *toConsole, int describe)
 		 "SELECT \"kc\".\"column\","		/* 0 */
 			"\"kc\".\"nr\", "		/* 1 */
 			"\"k\".\"name\" "		/* 2 */
-		 "FROM \"keycolumns\" \"kc\", "
-		      "\"keys\" \"k\", "
-		      "\"tables\" \"t\" "
+		 "FROM \"sys\".\"keycolumns\" \"kc\", "
+		      "\"sys\".\"keys\" \"k\", "
+		      "\"sys\".\"_tables\" \"t\" "
 		 "WHERE \"kc\".\"id\" = \"k\".\"id\" AND "
 		       "\"k\".\"table_id\" = \"t\".\"id\" AND "
 		       "\"k\".\"type\" = 0 AND "
@@ -270,9 +270,9 @@ dump_table(Mapi mid, char *tname, FILE *toConsole, int describe)
 		 "SELECT \"kc\".\"column\","		/* 0 */
 			"\"kc\".\"nr\", "		/* 1 */
 			"\"k\".\"name\" "		/* 2 */
-		 "FROM \"keycolumns\" \"kc\", "
-		      "\"keys\" \"k\", "
-		      "\"tables\" \"t\" "
+		 "FROM \"sys\".\"keycolumns\" \"kc\", "
+		      "\"sys\".\"keys\" \"k\", "
+		      "\"sys\".\"_tables\" \"t\" "
 		 "WHERE \"kc\".\"id\" = \"k\".\"id\" AND "
 		       "\"k\".\"table_id\" = \"t\".\"id\" AND "
 		       "\"k\".\"type\" = 1 AND "
@@ -331,12 +331,12 @@ dump_table(Mapi mid, char *tname, FILE *toConsole, int describe)
 			"\"fkkc\".\"nr\","		/* 3 */
 			"\"fkk\".\"name\","		/* 4 */
 			"\"fkk\".\"action\""		/* 5 */
-		 "FROM \"tables\" \"fkt\","
-		      "\"keycolumns\" \"fkkc\","
-		      "\"keys\" \"fkk\","
-		      "\"tables\" \"pkt\","
-		      "\"keycolumns\" \"pkkc\","
-		      "\"keys\" \"pkk\""
+		 "FROM \"sys\".\"_tables\" \"fkt\","
+		      "\"sys\".\"keycolumns\" \"fkkc\","
+		      "\"sys\".\"keys\" \"fkk\","
+		      "\"sys\".\"_tables\" \"pkt\","
+		      "\"sys\".\"keycolumns\" \"pkkc\","
+		      "\"sys\".\"keys\" \"pkk\""
 		 "WHERE \"fkt\".\"id\" = \"fkk\".\"table_id\" AND "
 		       "\"pkt\".\"id\" = \"pkk\".\"table_id\" AND "
 		       "\"fkk\".\"id\" = \"fkkc\".\"id\" AND "
@@ -436,11 +436,11 @@ dump_table(Mapi mid, char *tname, FILE *toConsole, int describe)
 			"\"k\".\"name\", "		/* 1 */
 			"\"kc\".\"nr\", "		/* 2 */
 			"\"c\".\"name\" "		/* 3 */
-		 "FROM \"idxs\" AS \"i\" LEFT JOIN \"keys\" AS \"k\" "
+		 "FROM \"sys\".\"idxs\" AS \"i\" LEFT JOIN \"sys\".\"keys\" AS \"k\" "
 				"ON \"i\".\"name\" = \"k\".\"name\", "
-		      "\"keycolumns\" AS \"kc\", "
-		      "\"columns\" AS \"c\", "
-		      "\"tables\" AS \"t\" "
+		      "\"sys\".\"keycolumns\" AS \"kc\", "
+		      "\"sys\".\"_columns\" AS \"c\", "
+		      "\"sys\".\"_tables\" AS \"t\" "
 		 "WHERE \"i\".\"table_id\" = \"t\".\"id\" AND "
 		       "\"i\".\"id\" = \"kc\".\"id\" AND "
 		       "\"t\".\"id\" = \"c\".\"table_id\" AND "
@@ -576,13 +576,13 @@ dump_tables(Mapi mid, FILE *toConsole, int describe)
 {
 	const char *start = "START TRANSACTION";
 	const char *end = "COMMIT";
-	const char *sequences1 = "SELECT \"name\" FROM \"sequences\"";
-	const char *sequences2 = "SELECT seq.\"name\",get_value_for(s.\"name\",seq.\"name\"),\"minvalue\",\"maxvalue\",\"increment\",\"cycle\" FROM \"sequences\" seq, \"schemas\" s WHERE s.id = seq.schema_id";
-	const char *tables = "SELECT \"name\" FROM \"_tables\" WHERE "
+	const char *sequences1 = "SELECT \"name\" FROM \"sys\".\"sequences\"";
+	const char *sequences2 = "SELECT seq.\"name\",get_value_for(s.\"name\",seq.\"name\"),\"minvalue\",\"maxvalue\",\"increment\",\"cycle\" FROM \"sys\".\"sequences\" seq, \"schemas\" s WHERE s.id = seq.schema_id";
+	const char *tables = "SELECT \"name\" FROM \"sys\".\"_tables\" WHERE "
 		"\"type\" = 0 AND \"system\" = FALSE";
-	const char *views = "SELECT \"name\",\"query\" FROM \"_tables\" WHERE "
+	const char *views = "SELECT \"name\",\"query\" FROM \"sys\".\"_tables\" WHERE "
 		"\"type\" = 1 AND \"system\" = FALSE";
-	const char *functions = "SELECT \"func\" FROM \"functions\" WHERE "
+	const char *functions = "SELECT \"func\" FROM \"sys\".\"functions\" WHERE "
 		"\"sql\" = TRUE";
 	MapiHdl hdl;
 	int rc = 0;
