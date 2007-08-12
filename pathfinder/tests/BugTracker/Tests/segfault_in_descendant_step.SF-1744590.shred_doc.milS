@@ -1,0 +1,8 @@
+module(pathfinder);
+module(unix);
+
+var TSTTRGDIR := getenv("TSTTRGDIR");
+
+shred_doc(TSTTRGDIR+"/segfault_in_descendant_step.SF-1744590.xml","segfault_in_descendant_step.SF-1744590.shred_doc.xml");
+
+quit();

@@ -1,0 +1,17 @@
+stderr of test 'segfault_in_descendant_step.SF-1744590.query_2` in directory 'tests/BugTracker` itself:
+
+
+# 16:23:55 >  
+# 16:23:55 >  Mtimeout -timeout 180  Mserver "--config=/net/corona.ins.cwi.nl/export/scratch0/manegold/Monet/Testing/Stable/prefix.--enable-strict_--disable-optimize_--enable-debug/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/net/corona.ins.cwi.nl/export/scratch0/manegold/Monet/Testing/Stable/prefix.--enable-strict_--disable-optimize_--enable-debug/lib64/MonetDB4:/net/corona.ins.cwi.nl/export/scratch0/manegold/Monet/Testing/Stable/prefix.--enable-strict_--disable-optimize_--enable-debug/lib64/MonetDB4/lib:/net/corona.ins.cwi.nl/export/scratch0/manegold/Monet/Testing/Stable/prefix.--enable-strict_--disable-optimize_--enable-debug/lib64/MonetDB4/bin" --set "gdk_dbfarm=/net/corona.ins.cwi.nl/export/scratch0/manegold/Monet/Testing/Stable/prefix.--enable-strict_--disable-optimize_--enable-debug/var/dbfarm" --set "sql_logdir=/net/corona.ins.cwi.nl/export/scratch0/manegold/Monet/Testing/Stable/prefix.--enable-strict_--disable-optimize_--enable-debug/var/sql_logs" --set "xquery_logdir=/net/corona.ins.cwi.nl/export/scratch0/manegold/Monet/Testing/Stable/prefix.--enable-strict_--disable-optimize_--enable-debug/var/xquery_logs" --set mapi_open=true --set mapi_port=38200 --set xrpc_port=49627 --set monet_prompt= --trace "--dbname=mTests_tests_BugTracker" --dbinit=" module(pathfinder);" ; echo ; echo Over..
+# 16:23:55 >  
+
+
+# 16:23:57 >  
+# 16:23:57 >  Mtimeout -timeout 60 MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=corona --port=38200 segfault_in_descendant_step.SF-1744590.query_2.xq
+# 16:23:57 >  
+
+
+# 16:23:58 >  
+# 16:23:58 >  Done.
+# 16:23:58 >  
+
