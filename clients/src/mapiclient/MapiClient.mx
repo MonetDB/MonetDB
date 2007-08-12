@@ -493,7 +493,8 @@ SQLrenderer(MapiHdl hdl)
 
 		SQLrow(len, numeric, rest, fields);
 		rows++;
-		if (ps && (rows % ps) == ps - 1 && rows != mapi_get_row_count(hdl) && fromConsole) {
+		if (ps && (rows % ps) == ps - 1 && 
+			rows != mapi_get_row_count(hdl) && fromConsole) {
 			char buf[BUFSIZ];
 
 			SQLseparator(len, oldfields, '-');
@@ -734,7 +735,7 @@ showCommands()
 		    );
 		break;
 	case MAL:
-		fprintf(toConsole, "\\?pattern\t- get help on MAL function using pattern [modnme[.fcnnme][(][)]] where nme can be replace with *\n");
+		fprintf(toConsole, "\\?pat\t- help on MAL function using pattern [modnme[.fcnnme][(][)]] using wildcard *\n");
 		break;
 	case SQL:
 		fprintf(toConsole, "\\w#\t- set maximal page width (-1=raw,0=no limit, >0 max char)\n");
@@ -888,7 +889,16 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode, int exit_on_
 					if (*line) {
 						dump_table(mid, line, toConsole,1);
 					} else {
-						doRequest(mid, "select name from tables;", 1);
+						int old= pagewidth;
+						char *qry="select name from tables;";
+						pagewidth= 0;
+						if((hdl= mapi_query(mid,qry))==NULL ||
+							mapi_error(mid) == MOK){
+							SQLrenderer(hdl);
+						}
+						mapi_close_handle(hdl);
+						hdl=0;
+						pagewidth=old;
 					}
 					continue;
 
