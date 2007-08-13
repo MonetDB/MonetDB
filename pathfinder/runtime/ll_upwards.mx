@@ -288,6 +288,11 @@ ll_upwards(               /* RESULT: */
         GDKerror("%s: iter and context bat should be in sync.\n", axis);
         return status;
     }
+    if (!(BATtordered(ctx_bat) & 1))
+    {
+        GDKerror("%s: context bat must be ordered on tail.\n", axis);
+        return status;
+    }
     if (BUNsize(size_bat) != sizeof(int) || size_bat->hseqbase || !BAThdense(size_bat)) {
         GDKerror("%s: illegal size bat passed in.\n", axis);
         return status;
@@ -302,32 +307,65 @@ ll_upwards(               /* RESULT: */
     if (context == NULL) return status;
 
     /* gather the context nodes and analyze them (order, min/max iter)  */
-    if (p < q) {
-	if (!(BATtordered(iter_bat)&1)) {
-	    while(p < q) {
-                context[i].iter = *(oid*) BUNtail(iter_bat,p);
-                context[i].pre  = *(oid*) BUNtail(ctx_bat,r);
+@= ll_upwards_min_max
 	        if (context[i].iter < min_iter) min_iter = context[i].iter;
 	        if (context[i].iter > max_iter) max_iter = context[i].iter;
+@
+@= ll_upwards_copy
+	    while(p < q) {
+                context[i].iter = @1;
+                context[i].pre  = @2;
+                @3
   	        i++; p += k; r += n;
             }
+@
+@c
+    if (p < q) {
+	if (!(BATtordered(iter_bat)&1)) {
+	    if (BATtdense(iter_bat) && BATtdense(ctx_bat)) {
+	        oid iter = iter_bat->tseqbase;
+	        oid pre  = ctx_bat->tseqbase;
+	        @:ll_upwards_copy(iter++, pre++, @:ll_upwards_min_max@)@
+	    } else
+	    if (BATtdense(iter_bat) && ctx_bat->ttype == TYPE_oid) {
+	        oid iter = iter_bat->tseqbase;
+	        @:ll_upwards_copy(iter++, *(oid*) BUNtloc(ctx_bat,r), @:ll_upwards_min_max@)@
+	    } else
+	    if (iter_bat->ttype == TYPE_oid && BATtdense(ctx_bat)) {
+	        oid pre  = ctx_bat->tseqbase;
+	        @:ll_upwards_copy(*(oid*) BUNtloc(iter_bat,p), pre++, @:ll_upwards_min_max@)@
+	    } else
+	    if (iter_bat->ttype == TYPE_oid  && ctx_bat->ttype == TYPE_oid) {
+	        @:ll_upwards_copy(*(oid*) BUNtloc(iter_bat,p), *(oid*) BUNtloc(ctx_bat,r), @:ll_upwards_min_max@)@
+	    } else {
+	        assert(0); /* should never happen */
+	    }
         } else {
             /* ordered iters, so we know min and max */
-	    while(p < q) {
-                context[i].iter = *(oid*) BUNtail(iter_bat,p);
-                context[i].pre  = *(oid*) BUNtail(ctx_bat,r);
-  	        i++; p += k; r += n;
-            }
+	    if (BATtdense(iter_bat) && BATtdense(ctx_bat)) {
+	        oid iter = iter_bat->tseqbase;
+	        oid pre  = ctx_bat->tseqbase;
+	        @:ll_upwards_copy(iter++, pre++,)@
+	    } else
+	    if (BATtdense(iter_bat) && ctx_bat->ttype == TYPE_oid) {
+	        oid iter = iter_bat->tseqbase;
+	        @:ll_upwards_copy(iter++, *(oid*) BUNtloc(ctx_bat,r),)@
+	    } else
+	    if (iter_bat->ttype == TYPE_oid && BATtdense(ctx_bat)) {
+	        oid pre  = ctx_bat->tseqbase;
+	        @:ll_upwards_copy(*(oid*) BUNtloc(iter_bat,p), pre++,)@
+	    } else
+	    if (iter_bat->ttype == TYPE_oid && ctx_bat->ttype == TYPE_oid) {
+	        @:ll_upwards_copy(*(oid*) BUNtloc(iter_bat,p), *(oid*) BUNtloc(ctx_bat,r),)@
+	    } else {
+	        assert(0); /* should never happen */
+	    }
             min_iter = context[0].iter;
             max_iter = context[i-1].iter;
         }
         niters += max_iter - min_iter; /* the size of the per-iter lookup arrays */
     }
     
-    if (!(BATtordered(ctx_bat)&1)) { /* if needed, sort context set on pre-s */
-        GDKqsort(context, NULL, m, sizeof(duple), TYPE_oid, sizeof(oid));
-    }
-
     /* prune is a temporary array of duples, one duple per iter
      * - duple.pre  contains the pre-bound for pruning the previous node
      * - duple.iter is (mis)used to contain the position in context[] of

@@ -1608,14 +1608,16 @@ returns all nodes on the @1 axis of the ctx-nodes duplicate free for each group.
 @
 
 @= upwards
-PROC @1(BAT[void,oid] iter, BAT[void,oid] ctx, oid cont, BAT[void,bat] ws, int order) : BAT[void,bat]
+PROC @1(BAT[void,oid] iter, BAT[void,oid] item, oid cont, BAT[void,bat] ws, int order) : BAT[void,bat]
 {
     var pre_sizes := ws.fetch(PRE_SIZE).fetch(cont);
     var pre_levels := ws.fetch(PRE_LEVEL).fetch(cont);
 
-    # If ctx is not sorted on tail, ll_@1 will internally sort ctx and re-order iter accordingly.
+    iter := iter.chk_order();
+    item := item.chk_order();
+    @:pre_sort_input@
 
-    var res := ll_@1(iter.chk_order(), ctx.chk_order(), pre_sizes, pre_levels);
+    var res := ll_@1(iter, item, pre_sizes, pre_levels);
     var result := new(void,bat,2).seqbase(0@0).append(hmark(res,0@0)).append(tmark(res,0@0)).access(BAT_READ);
 
     @:post_sort_output@
@@ -1641,7 +1643,7 @@ PROC following_sibling(BAT[void,oid] iter, BAT[void,oid] item, oid cont, BAT[voi
     item := item.chk_order();
     @:pre_sort_input@
 
-    var res := ll_following_sibling(iter.chk_order(), item.chk_order(), pre_sizes, pre_levels, pre_kinds, kind_test);
+    var res := ll_following_sibling(iter, item, pre_sizes, pre_levels, pre_kinds, kind_test);
     var result := new(void,bat,2).seqbase(0@0).append(hmark(res,0@0)).append(tmark(res,0@0)).access(BAT_READ);
 
     @:post_sort_output@
