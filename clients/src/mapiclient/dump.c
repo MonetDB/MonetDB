@@ -654,8 +654,8 @@ dump_tables(Mapi mid, FILE *toConsole)
 	if (sname == NULL)
 		return 1;
 	if (strcmp(sname, "sys") != 0 && strcmp(sname, "tmp") != 0) {
-		fprintf(toConsole, "CREATE SCHEMA %s\n", sname);
-		fprintf(toConsole, "SET SCHEMA %s\n", sname);
+		fprintf(toConsole, "CREATE SCHEMA %s;\n", sname);
+		fprintf(toConsole, "SET SCHEMA %s;\n", sname);
 	}
 	free(sname);
 
