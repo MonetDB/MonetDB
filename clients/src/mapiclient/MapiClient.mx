@@ -171,6 +171,7 @@ control.
 #ifdef HAVE_POPEN
 static char *pager = 0;		/* use external pager */
 #endif
+static int rows=0, cols=0;
 static int rowsperpage = 0;	/* for SQL pagination */
 static int pagewidth = -1;	/* use raw mode for file input, tabular format in stdin */
 static int specials = 0;	/* set when we see EXPLAIN,DEBUG, or TRACE */
@@ -641,6 +642,21 @@ setFormatter(char *s){
 		fprintf(toConsole,"non-supported formatter\n");
 }
 
+static void
+setWidth(){
+	struct winsize ws;
+	if( rows == 0){
+#ifdef NATIVE_WIN32
+		pagewidth = DEFWIDTH;
+#else
+		ioctl(fileno(stdin), TIOCGWINSZ, &ws);
+		rows = ws.ws_row;
+		cols = ws.ws_col;
+		pagewidth = cols;
+#endif
+	}
+}
+
 static int
 doRequest(Mapi mid, const char *buf, int interactive)
 {
@@ -1096,16 +1112,19 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode, int exit_on_
 				case '|':
 				{
 					char *s;
+					if (pager)
+						free(pager);
+					pager= NULL;
+					setWidth(); /* reset to system default */
 
 					s = line + 2;
 					while (*s && isspace((int) *s))
 						s++;
+					if( *s == 0)
+						continue;
 					s[strlen(s) - 1] = 0;
-					if (pager)
-						free(pager);
 					pager = *s ? strdup(s) : NULL;
 					pagewidth = -1;	/* disable pagination */
-					rowsperpage = 0;
 				}
 					continue;
 #endif
@@ -1281,8 +1300,10 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode, int exit_on_
 			CHECK_RESULT(mid, hdl, buf, continue);
 
 #ifdef HAVE_POPEN
-			if (pagerFD)
+			if (pagerFD){
 				pclose(pagerFD);
+				pagerFD=NULL;
+			}
 #endif
 			timerEnd();
 			mapi_close_handle(hdl);
@@ -1354,7 +1375,6 @@ main(int argc, char **argv)
 	int linemode = 1;
 	int exit_on_error = 0;
 	int c = 0;
-	int rows=0, cols=0;
 	Mapi mid;
 	int quiet = 0;
 	int save_history = 0;
@@ -1644,17 +1664,7 @@ main(int argc, char **argv)
 			/* reading from terminal, prepare prompt */
 			sprintf(promptbuf, "%.*s>", (int) sizeof(promptbuf) - 2, language);
 			/* use default rendering if not overruled at commandline */
-			if( rows == 0){
-#ifdef NATIVE_WIN32
-				pagewidth = DEFWIDTH;
-#endif
-				struct winsize ws;
-				ioctl(fileno(stdin), TIOCGWINSZ, &ws);
-				rows = ws.ws_row;
-				cols = ws.ws_col;
-				/*printf("new window size %d %d\n",rows,cols);*/
-				pagewidth = cols;
-			}
+			setWidth();
 
 			prompt = promptbuf;
 			fromConsole = stdin;
