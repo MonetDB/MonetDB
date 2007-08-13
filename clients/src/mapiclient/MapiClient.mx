@@ -1520,7 +1520,7 @@ main(int argc, char **argv)
 
 			prompt = promptbuf;
 			fromConsole = stdin;
-		} else echoquery =1;
+		} 
 		/* stream xml document into the server */
 		if (input && mode == XQUERY) {
 			mapi_stream_into(mid, input, colname);
