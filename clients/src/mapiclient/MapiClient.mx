@@ -135,6 +135,7 @@ static FILE *fromConsole;
 static char *language = NULL;
 static int start_with_help = 0;
 static char promptbuf[16];
+static int echoquery= 1;
 
 char *command = NULL;
 
@@ -162,6 +163,9 @@ static char *pager = 0;		/* use external pager */
 static int rowsperpage = 0;	/* for SQL pagination */
 static int pagewidth = -1;	/* use raw mode for file input, tabular format in stdin */
 static int specials = 0;	/* set when we see EXPLAIN,DEBUG, or TRACE */
+static int interactive_stdin = 0;
+
+#define MINCOLSIZE 5
 
 /* stolen piece */
 #ifdef HAVE_FTIME
@@ -178,6 +182,7 @@ static int specials = 0;	/* set when we see EXPLAIN,DEBUG, or TRACE */
 #  include <time.h>
 # endif
 #endif
+#include <sys/ioctl.h>
 
 #if defined(_MSC_VER) && _MSC_VER >= 1400
 #define fileno _fileno
@@ -316,6 +321,12 @@ SQLheader(MapiHdl hdl, int *len, int fields)
 	char **names = (char **) alloca(fields * sizeof(char *));
 	int *numeric = (int *) alloca(fields * sizeof(int));
 
+	if( echoquery && interactive_stdin==0 ){
+		char *qry;
+		qry= mapi_get_query(hdl);
+		fprintf(toConsole,"%s",qry);
+		free(qry);
+	}
 	SQLseparator(len, fields, '-');
 	if (mapi_get_name(hdl, 0)) {
 		for (i = 0; i < fields; i++) {
@@ -469,7 +480,31 @@ SQLrenderer(MapiHdl hdl)
 					strcmp(type, "float") == 0;
 			}
 			if (pagewidth)
-				do {
+			{
+				total = 0;
+				for (i = 0; i < fields; i++)
+					total += len[i];
+				while (2 * fields + total > pagewidth && max)
+				{
+					max=0;
+					total = 0;
+					for (i = 0; i < fields; i++)
+						total += len[i];
+
+					/* punish the column headers first */
+					for(i=0; i< fields; i++)
+					if( (int)strlen(mapi_get_name(hdl,i)) > mapi_get_len(hdl,i) &&
+						len[i]> MINCOLSIZE){
+						len[i]--;
+						total--;
+						if( 2* fields + total == pagewidth)
+							break;
+						max=1;
+					}
+				} 
+				/* punish the long value fields */
+				while (2 * fields + total > pagewidth && len[max] > 1)
+				{
 					total = 0;
 					max = 1;
 					for (i = 0; i < fields; i++) {
@@ -477,13 +512,15 @@ SQLrenderer(MapiHdl hdl)
 						if (len[i] > len[max])
 							max = i;
 					}
-					if (3 * fields + total > pagewidth) {
+
+					if (2 * fields + total > pagewidth) {
 						/* penalty for largest field */
 						total -= len[max];
 						len[max] *= 0.9;
 						total += len[max];
 					}
-				} while (3 * fields + total > pagewidth && len[max] > 1);
+				} 
+			}
 
 			SQLheader(hdl, len, fields);
 			oldfields = fields;
@@ -742,6 +779,7 @@ showCommands()
 	case SQL:
 		fprintf(toConsole, "\\w#\t- set maximal page width (-1=raw,0=no limit, >0 max char)\n");
 		fprintf(toConsole, "\\r#\t- set maximum rows per page (-1=raw)\n");
+		fprintf(toConsole, "\\e\t- echo the query \n");
 		fprintf(toConsole, "\\D table\t- Dumps the table, or the complete database if none given.\n");
 		fprintf(toConsole, "\\d table\t- Describe the table, or the complete database if none given.\n");
 		fprintf(toConsole, "\\A\t- enable auto commit\n");
@@ -827,7 +865,7 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode, int exit_on_
 			switch (*line) {
 			case '\0':
 				/* empty line */
-				break;
+				continue;
 			case '\\':
 				switch (line[1]) {
 				case 'q':
@@ -974,8 +1012,27 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode, int exit_on_
 #endif
 #ifdef HAVE_LIBREADLINE
 				case 'h':
-					fprintf(stderr, "History listing not yet supported\n");
+				{ 	int h;
+					char *nl;
+					for(h=0;h<history_length; h++){
+						nl= history_get(h)? history_get(h)->line:0;
+						if( nl)
+							fprintf(toConsole,"%d %s\n",h,nl);
+					}
 					continue;
+				}
+/* for later
+				case '!':
+				{	char *nl;
+					nl= strchr(line,'\n');
+					if( nl) *nl=0;
+					if( history_expand(line+2,&nl)){
+						fprintf(toConsole, "%s\n",nl);
+					}
+					fprintf(toConsole,"Expansion needs work\n");
+					continue;
+				}
+*/
 #endif
 					/* show the history */
 				default:
@@ -1171,12 +1228,12 @@ main(int argc, char **argv)
 	int linemode = 1;
 	int exit_on_error = 0;
 	int c = 0;
+	int rows=0, cols=0;
 	Mapi mid;
 	int quiet = 0;
 	int save_history = 0;
 	int interactive = 0;
 	int option_index;
-	int interactive_stdin = 0;
 	struct stat statb;
 	static struct option long_options[] = {
 		{"blocked", 1, 0, 'b'},
@@ -1309,6 +1366,7 @@ main(int argc, char **argv)
 			break;
 		case 'w':
 			pagewidth = atol(optarg);
+			rows= -1; /* don't reset pagewidth */
 			break;
 		case 'r':
 			rowsperpage = atol(optarg);
@@ -1447,13 +1505,22 @@ main(int argc, char **argv)
 #endif
 			/* reading from terminal, prepare prompt */
 			sprintf(promptbuf, "%.*s>", (int) sizeof(promptbuf) - 2, language);
-
-			/* use default rendering */
-			pagewidth = 0;
+			/* use default rendering if not overruled at commandline */
+			if( rows == 0){
+#ifdef NATIVE_WIN32
+				pagewidth = 80;
+#endif
+				struct winsize ws;
+				ioctl(fileno(stdin), TIOCGWINSZ, &ws);
+				rows = ws.ws_row;
+				cols = ws.ws_col;
+				/*printf("new window size %d %d\n",rows,cols);*/
+				pagewidth = cols;
+			}
 
 			prompt = promptbuf;
 			fromConsole = stdin;
-		}
+		} else echoquery =1;
 		/* stream xml document into the server */
 		if (input && mode == XQUERY) {
 			mapi_stream_into(mid, input, colname);
