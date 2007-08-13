@@ -1725,14 +1725,9 @@ sql_value_exp(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset, int f,
 	}
 		break;
 	case SQL_PARAMETER:{
-		char n[BUFSIZ];
-
 		if (sql->mode != m_prepare) 
 			return sql_error(sql, 02, "SELECT: parameters ('?') not allowed in normal queries, use PREPARE");
-		snprintf(n, BUFSIZ, "A%d", 
-			(sql->params)?list_length(sql->params):0);
-		sql_add_param(sql, n, NULL);
-		return stmt_var(_strdup(n), NULL, 0, 0);
+		return stmt_var(_strdup(se->data.sval), NULL, 0, 0);
 	}
 	case SQL_NULL:
 		return stmt_atom(atom_general(sql_bind_localtype("str"), NULL, 0));

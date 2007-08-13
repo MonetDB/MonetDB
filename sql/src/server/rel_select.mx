@@ -3398,14 +3398,9 @@ rel_value_exp(mvc *sql, sql_rel **rel, symbol *se, int f)
 	}
 		break;
 	case SQL_PARAMETER:{
-		char n[BUFSIZ];
-
 		if (sql->mode != m_prepare) 
 			return sql_error(sql, 02, "SELECT: parameters ('?') not allowed in normal queries, use PREPARE");
-		snprintf(n, BUFSIZ, "A%d", 
-			(sql->params)?list_length(sql->params):0);
-		sql_add_param(sql, n, NULL);
-		return exp_param(n, NULL);
+		return exp_param(se->data.sval, NULL);
 	}
 	case SQL_ATOM:{
 		AtomNode *an = (AtomNode *) se;

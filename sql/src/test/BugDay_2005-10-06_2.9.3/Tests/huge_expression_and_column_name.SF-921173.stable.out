@@ -17,12 +17,17 @@ quit();
 
 Over..
 
-# 12:37:37 >  
-# 12:37:37 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < huge_expression_and_column_name.SF-921173.sql
-# 12:37:37 >  
+# 22:44:57 >  
+# 22:44:57 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=koala --port=35094 
+# 22:44:57 >  
 
+% . # table_name
+% sql_add_single_value # name
+% smallint # type
+% 4 # length
+[ 2001	]
 
-# 12:37:37 >  
-# 12:37:37 >  Done.
-# 12:37:37 >  
+# 22:44:58 >  
+# 22:44:58 >  Done.
+# 22:44:58 >  
 

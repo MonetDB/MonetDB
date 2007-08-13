@@ -3142,7 +3142,14 @@ value_exp:
  |  string_funcs
  |  case_exp
  |  cast_exp
- |  '?'			{ $$ = _symbol_create( SQL_PARAMETER, NULL ); }
+ |  '?'			
+	{ mvc *m = (mvc*)parm;
+	  int nr = (m->params)?list_length(m->params):0, l = 2 + ((nr+8)>>3);
+	  char *n = sa_alloc(m->sa, l);
+
+	  snprintf(n, l, "A%d", nr);
+	  sql_add_param(m, n, NULL);
+	  $$ = _symbol_create( SQL_PARAMETER, n ); }
  ;
 
 /*
