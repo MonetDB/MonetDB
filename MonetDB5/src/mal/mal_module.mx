@@ -868,7 +868,7 @@ char **getHelp(Module m, str pat, int completion)
 				if( completion ) {
 					snprintf(buf,BUFSIZ," %s.%s", 
 						((*modnme=='*' || *modnme==0)? m->name:modnme),s->name);
-					if( tstDuplicate(msg,buf) ) continue;
+					if( tstDuplicate(msg,buf+1) ) continue;
 				} else
 				if( doc) {
 					char *v;
@@ -876,13 +876,15 @@ char **getHelp(Module m, str pat, int completion)
 					fcnDefinition(s->def,s->def->stmt[0],buf,FALSE);
 					buf[0]=' ';
 
+					v= strstr(buf,"address");
+					if( v) *v=0;
+					if( tstDuplicate(msg,buf+1) ) continue;
+
 					fnd=0;
 					for(f=0;f<top;f++)
 					if( msg[f] && strcmp(buf+1, msg[f]) == 0 ) fnd++;
 					if(fnd) continue;
 
-					v= strstr(buf,"address");
-					if( v) *v=0;
 					msg[top++]= GDKstrdup(buf+1);
 					if( top >=998) return msg;
 					if(v){
@@ -900,7 +902,6 @@ char **getHelp(Module m, str pat, int completion)
 						} else *v++ = *w;
 						*v = 0;
 					}
-					if( tstDuplicate(msg,buf) ) continue;
 				} else if( strcmp(fcnnme,s->name)==0 || *fcnnme=='*' ) {
 					fcnDefinition(s->def,s->def->stmt[0],buf,FALSE);
 					buf[0]=' ';
