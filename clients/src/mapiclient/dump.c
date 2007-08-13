@@ -64,6 +64,38 @@ static char *actions[] = {
 };
 #define NR_ACTIONS	((int) (sizeof(actions) / sizeof(actions[0])))
 
+static char *
+get_schema(Mapi mid)
+{
+	char *sname = NULL;
+	MapiHdl hdl;
+
+	if ((hdl = mapi_query(mid, "SELECT \"current_schema\"")) == NULL || mapi_error(mid)) {
+		if (hdl) {
+			mapi_explain_query(hdl, stderr);
+			mapi_close_handle(hdl);
+		} else
+			mapi_explain(mid, stderr);
+		return NULL;
+	}
+	while ((mapi_fetch_row(hdl)) != 0) {
+		sname = mapi_fetch_field(hdl, 0);
+
+		if (mapi_error(mid)) {
+			mapi_explain_query(hdl, stderr);
+			mapi_close_handle(hdl);
+			return NULL;
+		}
+	}
+	if (mapi_error(mid)) {
+		mapi_explain_query(hdl, stderr);
+		mapi_close_handle(hdl);
+		return NULL;
+	}
+	mapi_close_handle(hdl);
+	return sname ? strdup(sname) : NULL;
+}
+
 int
 dump_table(Mapi mid, char *tname, FILE *toConsole, int describe)
 {
@@ -72,9 +104,21 @@ dump_table(Mapi mid, char *tname, FILE *toConsole, int describe)
 	char *query;
 	size_t maxquerylen = BUFSIZ + strlen(tname);
 	int *string;
+	char *sname;
 
 	query = malloc(maxquerylen);
+
 	fprintf(toConsole, "CREATE TABLE ");
+
+	sname = get_schema(mid);
+	if (sname == NULL) {
+		free(query);
+		return 1;
+	}
+	quoted_print(toConsole, sname);
+	free(sname);
+	fprintf(toConsole, ".");
+
 	quoted_print(toConsole, tname);
 	fprintf(toConsole, " (\n");
 
@@ -86,9 +130,14 @@ dump_table(Mapi mid, char *tname, FILE *toConsole, int describe)
 			"\"c\".\"null\","		/* 4 */
 			"\"c\".\"default\","		/* 5 */
 			"\"c\".\"number\" "		/* 6 */
-		 "FROM \"sys\".\"_columns\" \"c\",\"sys\".\"_tables\" \"t\" "
+		 "FROM \"sys\".\"_columns\" \"c\", "
+		      "\"sys\".\"_tables\" \"t\", "
+		      "\"sys\".\"schemas\" \"s\" "
 		 "WHERE \"c\".\"table_id\" = \"t\".\"id\" "
-		 "AND '%s' = \"t\".\"name\" ORDER BY \"number\"", tname);
+		 "AND '%s' = \"t\".\"name\" "
+		 "AND \"t\".\"schema_id\" = \"s\".\"id\" "
+		 "AND \"s\".\"name\" = \"current_schema\" "
+		 "ORDER BY \"number\"", tname);
 	if ((hdl = mapi_query(mid, query)) == NULL || mapi_error(mid)) {
 		if (hdl) {
 			mapi_explain_query(hdl, stderr);
@@ -499,7 +548,7 @@ dump_table(Mapi mid, char *tname, FILE *toConsole, int describe)
 	mapi_close_handle(hdl);
 
 	/* end of description, continue if you need the data as well */
-	if( describe ) 
+	if (describe)
 		return 0;
 
 	snprintf(query, maxquerylen, "SELECT count(*) FROM \"%s\"", tname);
@@ -572,7 +621,7 @@ dump_table(Mapi mid, char *tname, FILE *toConsole, int describe)
 }
 
 int
-dump_tables(Mapi mid, FILE *toConsole, int describe)
+dump_tables(Mapi mid, FILE *toConsole)
 {
 	const char *start = "START TRANSACTION";
 	const char *end = "COMMIT";
@@ -584,12 +633,12 @@ dump_tables(Mapi mid, FILE *toConsole, int describe)
 		"\"type\" = 1 AND \"system\" = FALSE";
 	const char *functions = "SELECT \"func\" FROM \"sys\".\"functions\" WHERE "
 		"\"sql\" = TRUE";
+	char *sname;
 	MapiHdl hdl;
 	int rc = 0;
 
-	if( describe==0)
-		/* start a transaction for the dump */
-		fprintf(toConsole, "START TRANSACTION;\n");
+	/* start a transaction for the dump */
+	fprintf(toConsole, "START TRANSACTION;\n");
 
 	if ((hdl = mapi_query(mid, start)) == NULL || mapi_error(mid)) {
 		if (hdl) {
@@ -600,6 +649,15 @@ dump_tables(Mapi mid, FILE *toConsole, int describe)
 		return 1;
 	}
 	mapi_close_handle(hdl);
+
+	sname = get_schema(mid);
+	if (sname == NULL)
+		return 1;
+	if (strcmp(sname, "sys") != 0 && strcmp(sname, "tmp") != 0) {
+		fprintf(toConsole, "CREATE SCHEMA %s\n", sname);
+		fprintf(toConsole, "SET SCHEMA %s\n", sname);
+	}
+	free(sname);
 
 	/* dump sequences, part 1 */
 	if ((hdl = mapi_query(mid, sequences1)) == NULL || mapi_error(mid)) {
@@ -636,7 +694,7 @@ dump_tables(Mapi mid, FILE *toConsole, int describe)
 	while (mapi_fetch_row(hdl) != 0) {
 		char *tname = mapi_fetch_field(hdl, 0);
 
-		rc += dump_table(mid, tname, toConsole, describe);
+		rc += dump_table(mid, tname, toConsole, 0);
 	}
 	if (mapi_error(mid)) {
 		mapi_explain_query(hdl, stderr);

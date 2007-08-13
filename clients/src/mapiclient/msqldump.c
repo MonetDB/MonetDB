@@ -175,7 +175,7 @@ main(int argc, char **argv)
 	}
 	mapi_trace(mid, trace);
 
-	c = dump_tables(mid, stdout,0);
+	c = dump_tables(mid, stdout);
 
 	mapi_disconnect(mid);
 	return c;

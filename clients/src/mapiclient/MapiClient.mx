@@ -893,10 +893,10 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode, int exit_on_
 						dump_table(mid, line, toConsole, 1);
 					} else {
 						int old = pagewidth;
-						char *qry = "select name from tables;";
 
+						/* get all table names in current schema */
 						pagewidth = 0;
-						if ((hdl = mapi_query(mid, qry)) == NULL || mapi_error(mid) == MOK) {
+						if ((hdl = mapi_query(mid, "SELECT \"t\".\"name\" FROM \"sys\".\"tables\" \"t\", \"sys\".\"schemas\" \"s\" WHERE \"t\".\"schema_id\" = \"s\".\"id\" AND \"s\".\"name\" = \"current_schema\" ORDER BY \"t\".\"name\"")) != NULL && mapi_error(mid) == MOK) {
 							SQLrenderer(hdl);
 						}
 						mapi_close_handle(hdl);
@@ -919,7 +919,7 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode, int exit_on_
 						dump_table(mid, line, toConsole, 0);
 						fprintf(toConsole, "COMMIT;\n");
 					} else
-						dump_tables(mid, toConsole, 0);
+						dump_tables(mid, toConsole);
 					continue;
 				case '<':
 					/* read commands from file */
