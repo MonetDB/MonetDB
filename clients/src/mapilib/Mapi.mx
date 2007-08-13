@@ -200,6 +200,7 @@ section.
 @item mapi_get_dbname()	@tab	Database being served
 @item mapi_get_field_count()	@tab Number of fields in current row
 @item mapi_get_host()	@tab	Host name of server
+@item mapi_get_query()	@tab	Query being executed
 @item mapi_get_language()	@tab Query language name
 @item mapi_get_mapi_version()	@tab Mapi version name
 @item mapi_get_monet_versionId()	@tab MonetDB version identifier
@@ -1114,6 +1115,7 @@ mapi_export char *mapi_get_table(MapiHdl hdl, int fnr);
 mapi_export char *mapi_get_name(MapiHdl hdl, int fnr);
 mapi_export char *mapi_get_type(MapiHdl hdl, int fnr);
 mapi_export int mapi_get_len(MapiHdl hdl, int fnr);
+mapi_export char *mapi_get_query(MapiHdl hdl);
 mapi_export int mapi_get_querytype(MapiHdl hdl);
 mapi_export int mapi_get_tableid(MapiHdl hdl);
 mapi_export char *mapi_quote(const char *msg, int size);
@@ -4617,6 +4619,14 @@ mapi_get_len(MapiHdl hdl, int fnr)
 	mapi_setError(hdl->mid, "Illegal field number", "mapi_get_len", MERROR);
 	return 0;
 }
+
+char *
+mapi_get_query(MapiHdl hdl)
+{
+	mapi_hdl_check0(hdl, "mapi_get_query");
+	return strdup(hdl->query);
+}
+
 
 int
 mapi_get_querytype(MapiHdl hdl)
