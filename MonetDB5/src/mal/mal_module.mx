@@ -895,13 +895,16 @@ char **getHelp(Module m, str pat, int completion)
 
 					if( s->def->help) {
 						char *w;
-						v= buf+1;
+						strcpy(buf+1,"comment ");
+						v= buf+1+8;
 						for( w= s->def->help; *w && v <buf+BUFSIZ-1; w++)
 						if( *w == '\n'){
 							/*ignore */
 						} else *v++ = *w;
 						*v = 0;
 					}
+					*v++ ='\n';
+					*v=0;
 				} else if( strcmp(fcnnme,s->name)==0 || *fcnnme=='*' ) {
 					fcnDefinition(s->def,s->def->stmt[0],buf,FALSE);
 					buf[0]=' ';
