@@ -229,8 +229,7 @@ timerEnd(void)
 	t1 = gettime();
 	if (mark && 
 		strncmp(promptbuf, "mdb", 3) != 0 && 
-		(mode != SQL || pagewidth >= 0) &&
-		!(mode != XQUERY && XMLformatter ) ) {
+		(mode != SQL || pagewidth >= 0) ){
 		fprintf(toConsole, "%s % 7ld.%03ld msec %s\n", mark, (t1 - t0) / 1000, (t1 - t0) % 1000, mark2 ? mark2 : "");
 		fflush(toConsole);
 	}
@@ -518,23 +517,24 @@ SQLrenderer(MapiHdl hdl)
 	int i, total, fields, oldfields = 0, max;
 	int *len = 0;
 	char **rest = 0;
+	char buf[50];
 	char nullstring[5] = "null";
 	int ps = rowsperpage, silent = 0, rows = 0;
 	int *numeric = 0;
 
+	if( mark2 )
+		free(mark2);
+	mark2= NULL;
 	while ((fields = mapi_fetch_row(hdl)) != 0) {
 		if (silent)
 			continue;
 		if (len == 0) {
-			char buf[50];
 			char *type;
 
 			len = (int *) alloca(sizeof(int) * fields);
 			rest = (char **) alloca(sizeof(char *) * fields);
 			numeric = (int *) alloca(sizeof(int) * fields);
 
-			snprintf(buf, 50, "%d rows", mapi_get_row_count(hdl));
-			mark2 = strdup(buf);
 			for (i = 0; i < fields; i++) {
 				len[i] = mapi_get_len(hdl, i);
 				if ((max = strlen(mapi_get_name(hdl, i))) > len[i])
@@ -617,6 +617,8 @@ SQLrenderer(MapiHdl hdl)
 	}
 	if (oldfields)
 		SQLseparator(len, oldfields, '-');
+	snprintf(buf, 50, "%d rows", mapi_get_row_count(hdl));
+	mark2 = strdup(buf);
 }
 
 static void
