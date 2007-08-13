@@ -350,19 +350,6 @@ BAT[void,int] pre_level (from the working set)
 DESCRIPTION:
 returns all nodes on the @2 axis of the ctx-nodes duplicate free for each group."
 
-@- update primitives
-@m
-.COMMAND delete_nodes_prepare_pre_size (BAT[void,int] pre_size, BAT[oid,void] pre_)
-	: BAT[oid,int] = CMDdelete_nodes_prepare_pre_size;
-"PARAMETERS:
- BAT[void,int] pre_size
- BAT[oid,void] pre_ (pre-order ranks of nodes to be deleted)
-RESULT:
- BAT[oid,int] pre-order ranks and 'fake-size' of nodes to be deleted
-DESCRIPTION:
- Calculates new 'fake-sizes' of nodes to be deleted;
- optimizes 'holes' in pre_size."
-
 @- string primitives
 @m
 .COMMAND splitbat(BAT[oid,str], str sep) : BAT[oid,BAT] = CMDSplitBat;
@@ -4854,109 +4841,6 @@ int CMDcleantmpdir(lng *lim) {
         closedir(dirp);
   	return GDK_SUCCEED;
 }
-
-int CMDdelete_nodes_prepare_pre_size( BAT** ret, BAT *pre_size, BAT *pre_ )
-{
-	BAT *res = NULL;
-	size_t cnt = 0;
-	int bs_res;
-	BUN dst_res;
-	int new_size = int_nil;
-	bit triv_prop;
-
-	BATcheck(pre_size, "delete_nodes_prepare_pre_size");
-	BATcheck(pre_,     "delete_nodes_prepare_pre_size");
-	ERRORcheck(!BAThdense(pre_size),
-	           "delete_nodes_prepare_pre_size: head of BAT pre_size must be dense.\n");
-	ERRORcheck((pre_->htype!=TYPE_oid) && (pre_->htype!=TYPE_void),
-	           "ERRORcheck: head of BAT pre_ must be oid.\n");
-	ERRORcheck((pre_->htype==TYPE_void) && !BAThdense(pre_),
-	           "ERRORcheck: head of BAT pre_ must not be nil.\n");
-	ERRORcheck(!(BAThordered(pre_)&1),
-	           "delete_nodes_prepare_pre_size: head of BAT pre_ must be sorted.\n");
-
-	cnt = BATcount(pre_);
-        res = BATnew(TYPE_oid,TYPE_int,cnt);
-	if (res == NULL) {
-		GDKerror("delete_nodes_prepare_pre_size: BATnew(TYPE_oid, TYPE_int, "SZFMT") failed.\n", cnt);
-		return GDK_FAIL;
-	}
-	bs_res   = BUNsize(res);
-	dst_res  = BUNfirst(res) + ((cnt-1) * bs_res);
-
-	if (BAThdense(pre_)) {
-		oid fst_pre = pre_->hseqbase;
-		oid lst_pre = fst_pre + cnt;
-		oid cur_pre;
-		BUN src_pre_size = NULL;
-		BUNfndVOID(src_pre_size, pre_size, &lst_pre);
-		if (src_pre_size != NULL) {
-			int old_size = *(int*)BUNtloc(pre_size, src_pre_size);
-			if (old_size&(1<<31)) {
-				new_size = (((old_size&GDK_int_max) + 1) | 1<<31);
-			} else {
-				new_size = 1<<31;
-			}
-		} else {
-			new_size = 1<<31;
-		}
-		
-		for (cur_pre = lst_pre - 1 ; cur_pre >= fst_pre ; cur_pre--) {
-			oidint_bunfastins_nocheck_noinc(res, dst_res, &cur_pre, &new_size);
-			dst_res -= bs_res;
-			new_size = (((new_size&GDK_int_max) + 1) | 1<<31); /* new_size--; */
-		}
-	} else {
-		oid prev_pre = oid_nil;
-		int bs_pre_  = BUNsize(pre_);
-		BUN fst_pre_ = BUNfirst(pre_);
-		BUN lst_pre_ = BUNlast(pre_);
-		BUN cur_pre_;
-		for (cur_pre_ = lst_pre_ - bs_pre_ ; cur_pre_ >= fst_pre_ ; cur_pre_ -= bs_pre_) {
-			oid cur_pre = *(oid*)BUNhloc(pre_, cur_pre_);
-			if (cur_pre + 1 != prev_pre) {
-				BUN src_pre_size = NULL;
-				prev_pre = cur_pre + 1;
-				BUNfndVOID(src_pre_size, pre_size, &prev_pre);
-				if (src_pre_size != NULL) {
-					int old_size = *(int*)BUNtloc(pre_size, src_pre_size);
-					if (old_size&(1<<31)) {
-						new_size = (((old_size&GDK_int_max) + 1) | 1<<31); /* old_size - 1 */
-					} else {
-						new_size = 1<<31;
-					}
-				} else {
-					new_size = 1<<31;
-				}
-			}
-			oidint_bunfastins_nocheck_noinc(res, dst_res, &cur_pre, &new_size);
-			prev_pre = cur_pre;
-			dst_res -= bs_res;
-			new_size = (((new_size&GDK_int_max) + 1) | 1<<31); /* new_size--; */
-		}
-	}
-	
-
-        if (!res->batDirty) res->batDirty = TRUE;
-	res->batBuns->free = cnt * bs_res;
-	BATsetcount(res, cnt);
-        triv_prop = (BATcount(res) < 2);
-        BATkey(res,TRUE);
-        BATkey(BATmirror(res),triv_prop);
-        res->hsorted = GDK_SORTED;
-        res->tsorted = (triv_prop?GDK_SORTED:FALSE);
-        res->hdense = (triv_prop || BAThdense(pre_));
-        res->tdense = FALSE;
-        if (BATcount(res) == 0) {
-                BATseqbase(res, (oid)0);
-        } else if (res->hdense) {
-                BATseqbase(res, *(oid*)BUNhloc(res,BUNfirst(res)));
-        }
-	BATseqbase(BATmirror(res), oid_nil);
-
-        *ret = res;
-	return GDK_SUCCEED;
-}  
 
 int 
 CMDisFakeProject(bit *r, ptr v, int tpe) {

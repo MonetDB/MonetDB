@@ -35,7 +35,6 @@ module 'pf_support'
 [ "combine_text_string(BAT[void,oid], BAT[void,oid], BAT[void,str], int) : BAT[oid,str]"						  ]
 [ "constant2bat(any) : BAT[any,any]"															  ]
 [ "correct_sizes(BAT[void,oid], BAT[void,oid], BAT[void,int]) : BAT[void,int]"								  ]
-[ "delete_nodes_prepare_pre_size(BAT[void,int], BAT[oid,void]) : BAT[oid,int]"								  ]
 [ "descendant(BAT[oid,oid], BAT[oid,oid], BAT[oid,oid], oid, BAT[oid,BAT], int, BAT[void,any], chr) : BAT[void,BAT]"						  ]
 [ "descendant(BAT[oid,oid], BAT[oid,oid], oid, BAT[oid,BAT], int, BAT[void,any], chr) : BAT[void,BAT]"							  ]
 [ "descendant_or_self(BAT[oid,oid], BAT[oid,oid], BAT[oid,oid], oid, BAT[oid,BAT], int, BAT[void,any], chr) : BAT[void,BAT]"					  ]
