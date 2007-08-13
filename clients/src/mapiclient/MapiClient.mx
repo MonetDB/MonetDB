@@ -156,7 +156,9 @@ Attribute values may then span multiple lines.
 Setting the pagewidth to 0 turns of row size
 control.
 @c
+#ifdef HAVE_POPEN
 static char *pager = 0;		/* use external pager */
+#endif
 static int rowsperpage = 0;	/* for SQL pagination */
 static int pagewidth = -1;	/* use raw mode for file input, tabular format in stdin */
 static int specials = 0;	/* set when we see EXPLAIN,DEBUG, or TRACE */
@@ -758,7 +760,9 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode, int exit_on_
 	MapiHdl hdl = mapi_get_active(mid);
 	MapiMsg rc = MOK;
 	int sent = 0;		/* whether we sent any data to the server */
+#ifdef HAVE_POPEN
 	FILE *pagerFD= 0;	/* for external paging */
+#endif
 
 #ifdef HAVE_LIBREADLINE
 	if (prompt == NULL)
@@ -949,6 +953,7 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode, int exit_on_
 					}
 					showCommands();
 					continue;
+#ifdef HAVE_POPEN
 				case '|':
 				{	char *s;
 					s=line+2;
@@ -960,6 +965,7 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode, int exit_on_
 					rowsperpage= 0;
 				}
 					continue;
+#endif
 #ifdef HAVE_LIBREADLINE
 				case 'h':
 					fprintf(stderr,"History listing not yet supported\n");
@@ -1010,12 +1016,14 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode, int exit_on_
 			}
 			CHECK_RESULT(mid, hdl, buf, continue);
 
+#ifdef HAVE_POPEN
 			if( pager){
-				pagerFD= popen(pager,"w");
+				pagerFD= popen (pager,"w");
 				if( pagerFD== NULL)
 					fprintf(stderr,"Starting '%s' failed\n",pager);
 			}
-			
+#endif
+
 			do {
 				char *reply;
 
@@ -1071,9 +1079,11 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode, int exit_on_
 					while ((reply = mapi_fetch_line(hdl)) != NULL) {
 						if ((mode == XQUERY || mode == MAL) && *reply == '=')
 							reply++;
+#ifdef HAVE_POPEN
 						if( pagerFD)
 							fprintf(pagerFD, "%s\n", reply);
 						else
+#endif
 							fprintf(toConsole, "%s\n", reply);
 					}
 				}
@@ -1083,8 +1093,10 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode, int exit_on_
 
 			CHECK_RESULT(mid, hdl, buf, continue);
 
+#ifdef HAVE_POPEN
 			if(pagerFD)
 				pclose(pagerFD);
+#endif
 			timerEnd();
 			mapi_close_handle(hdl);
 			hdl = NULL;
@@ -1119,7 +1131,9 @@ usage(const char *prog)
 	fprintf(stderr, " -t          | --trace           trace mapi network interaction\n");
 	fprintf(stderr, " -u user     | --user=user       user id\n");
 	fprintf(stderr, " -?          | --help            show this usage message\n");
+#ifdef HAVE_POPEN
 	fprintf(stderr, " -|          | --pager=cmd        for pagination\n");
+#endif
 
 	fprintf(stderr,"\nSQL specific opions \n");
 	fprintf(stderr, " -r          | --rows=nr          for pagination\n");
@@ -1170,7 +1184,9 @@ main(int argc, char **argv)
 		{"language", 1, 0, 'l'},
 		{"output", 1, 0, 'o'},
 		{"rows", 1, 0, 0},
+#ifdef HAVE_POPEN
 		{"pager", 1, 0, '|'},
+#endif
 		{"width", 1, 0, 'w'},
 		{"rows", 1, 0, 'r'},
 		{"passwd", 2, 0, 'P'},
@@ -1205,10 +1221,12 @@ main(int argc, char **argv)
 			if (strcmp(long_options[option_index].name, "rows") == 0) {
 				rowsperpage = atol(optarg);
 			}
+#ifdef HAVE_POPEN
 			if (strcmp(long_options[option_index].name, "pager") == 0) {
 				pager = optarg;
 				(void) pager; /* will be further used later */
 			}
+#endif
 			if (strcmp(long_options[option_index].name, "pagewidth") == 0) {
 				pagewidth = atol(optarg);
 			}
@@ -1285,6 +1303,7 @@ main(int argc, char **argv)
 		case 'r':
 			rowsperpage= atol(optarg);
 			break;
+#ifdef HAVE_POPEN
 		case '|':
 		{ char *s;
 			s= optarg;
@@ -1292,6 +1311,7 @@ main(int argc, char **argv)
 			pager= s;
 		}
 			break;
+#endif
 		case 'q':
 			quiet = 1;
 			break;
