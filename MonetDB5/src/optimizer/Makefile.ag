@@ -37,7 +37,7 @@ lib_optimizer = {
 
 	HEADERS = h 
 	#SCRIPTS = mal
-	LIBS = ../mal/libmal $(MONETDB_LIBS) -lbat -lstream $(MATH_LIBS) \
+	LIBS = ../mal/libmal ../modules/mal/lib_bpm $(MONETDB_LIBS) -lbat -lstream $(MATH_LIBS) \
                 $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
                 $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) 
 }
