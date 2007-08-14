@@ -569,7 +569,7 @@ SQLtraceRenderer(MapiHdl hdl)
 static void
 SQLrenderer(MapiHdl hdl)
 {
-	int i, total, fields, oldfields = 0, max;
+	int i, total, fields, oldfields = 0, max = 0;
 	int *len = 0;
 	char **rest = 0;
 	char buf[50];
