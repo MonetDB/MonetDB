@@ -1,3 +1,5 @@
+#!/bin/sh
+
 # The contents of this file are subject to the MonetDB Public License
 # Version 1.1 (the "License"); you may not use this file except in
 # compliance with the License. You may obtain a copy of the License at
@@ -14,35 +16,16 @@
 # Portions created by CWI are Copyright (C) 1997-2007 CWI.
 # All Rights Reserved.
 
-SUBDIRS = conf src 
-EXTRA_DIST = RunMtest.in RunMtest.bat.in \
-		RunMapprove.in RunMapprove.bat.in \
-		RunMserver.in RunMserver.bat.in \
-		MonetDB-SQL.spec.in MonetDB-SQL.spec \
-		rpm.mk.in RunMserver.bat.in
-EXTRA_DIST_DIR = NT
+builddir=@QXSQL_BUILD@
 
-headers_pc = {
-	HEADERS = pc
-	SOURCES	= MonetDB-SQL.pc.in
-	DIR = libdir/pkgconfig
-}
+mversion=5
 
-scripts_txt = {
-	SOURCES = HowToStart-SQL-Win32.txt dump-restore.txt 
-	DIR = datadir/doc/MonetDB-SQL-$(VERSION)
-}
+# where compiled modules are to be found
+MOD_PATH="${builddir}/src/backend/monet${mversion}/.libs:${builddir}/src/backend/monet${mversion}:`monetdb${mversion}-config --modpath`"
 
-scripts_html = {
-	SOURCES = dump-restore.html
-	DIR = datadir/doc/MonetDB-SQL-$(VERSION)
-}
+case $mversion in
+4)	server=Mserver;;
+5)	server=mserver5;;
+esac
 
-scripts_docs = {
-	EXT = ""
-	SOURCES = HowToStart-SQL 
-	DIR = datadir/doc/MonetDB-SQL-$(VERSION)
-}
-
-TESTS = RunMtest
-TESTS_ENVIRONMENT = $(SHELL)
+exec $server --set monet_mod_path="${MOD_PATH}" --dbfarm="${builddir}/dbfarm" ${1+"$@"}
