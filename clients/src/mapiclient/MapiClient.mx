@@ -133,6 +133,7 @@ static int mode;
 static FILE *toConsole;
 static FILE *fromConsole;
 static char *language = NULL;
+static char *logfile = NULL;
 static int start_with_help = 0;
 static char promptbuf[16];
 static int echoquery = 0;
@@ -569,7 +570,7 @@ SQLtraceRenderer(MapiHdl hdl)
 static void
 SQLrenderer(MapiHdl hdl)
 {
-	int i, total, fields, oldfields = 0, max = 0;
+	int i, total, fields, oldfields = 0, max=1;
 	int *len = 0;
 	char **rest = 0;
 	char buf[50];
@@ -946,6 +947,7 @@ showCommands(void)
 	default:
 		fprintf(toConsole, "\\l\t- line is sent immediately\n");
 	}
+	fprintf(toConsole, "\\L logfile\t- save client/server interaction\n");
 	fprintf(toConsole, "\\t\t- toggle interaction trace\n");
 }
 
@@ -1156,6 +1158,26 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode, int exit_on_
 						fprintf(stderr, "Cannot open %s\n", line);
 					}
 					continue;
+				case 'L':
+					{	char buf[1024];
+						line += 2;
+						length -= 2;
+						if (line[length - 1] == '\n')
+							line[--length] = 0;
+						if (line[length - 1] == '\r')
+							line[--length] = 0;
+						for (; *line && isspace((int) *line); line++)
+							;
+						if( *line == 0)
+						{
+							snprintf(buf,1024,"monet_%d", getpid());
+							line=buf;
+						}
+						logfile= optarg? optarg: strdup(line);
+						if ( logfile) 
+							mapi_log(mid,logfile);
+						continue;
+					}
 				case '?':
 					if (!isspace((int) line[1]) && mode == MAL) {
 						strcpy(line, line + 1);
@@ -1391,6 +1413,7 @@ usage(const char *prog)
 	fprintf(stderr, " -h hostname | --host=hostname   host to connect to\n");
 	fprintf(stderr, " -i          | --interactive     read stdin after command line args\n");
 	fprintf(stderr, " -l language | --language=lang   {sql,xquery,mal,mil}\n");
+	fprintf(stderr, " -L logfile  | --log=logfile     save client/server interaction\n");
 	fprintf(stderr, " -P passwd   | --passwd=passwd   password\n");
 	fprintf(stderr, " -p portnr   | --port=portnr     port to connect to\n");
 	fprintf(stderr, " -q          | --quiet           don't print welcome message\n");
@@ -1439,18 +1462,19 @@ main(int argc, char **argv)
 	int quiet = 0;
 	int save_history = 0;
 	int interactive = 0;
-	int option_index;
+	int option_index=0;
 	struct stat statb;
 	static struct option long_options[] = {
 		{"blocked", 1, 0, 'b'},
 		{"config", 1, 0, 'c'},
 		{"collection", 1, 0, 'C'},
-		{"error", 0, 0, 'x'},
-		{"echo", 0, 0, 'e'},
+		{"error", 0, 0, 'e'},
+		{"echo", 0, 0, 'E'},
 		{"format", 1, 0, 'f'},
 		{"interactive", 0, 0, 'i'},
 		{"input", 1, 0, 'i'},
 		{"host", 1, 0, 'h'},
+		{"log", 2, 0, 'L'},
 		{"language", 1, 0, 'l'},
 		{"output", 1, 0, 'o'},
 		{"rows", 1, 0, 0},
@@ -1492,7 +1516,7 @@ main(int argc, char **argv)
 				"w:r:P::p:d:S:s:Tt::u::Hq?", long_options, &option_index)) != -1) {
 		switch (c) {
 		case 0:
-			if (strcmp(long_options[option_index].name, "rows") == 0) {
+			if (strcmp(long_options[option_index].name, "rows") == 0 && optarg) {
 				rowsperpage = atol(optarg);
 			}
 #ifdef HAVE_POPEN
@@ -1501,7 +1525,7 @@ main(int argc, char **argv)
 				(void) pager;	/* will be further used later */
 			}
 #endif
-			if (strcmp(long_options[option_index].name, "pagewidth") == 0) {
+			if (strcmp(long_options[option_index].name, "width") == 0 && optarg) {
 				pagewidth = atol(optarg);
 			}
 			break;
@@ -1519,10 +1543,9 @@ main(int argc, char **argv)
 		case 'C':
 			colname = optarg;
 			break;
-		case 'e':
-			if (strcmp(long_options[option_index].name, "echo") == 0) {
-				echoquery = atol(optarg);
-			}
+		case 'E':
+			if (strcmp(long_options[option_index].name, "echo") == 0 && optarg) 
+				echoquery= atol(optarg);
 			break;
 		case 'f':
 			setFormatter(optarg);
@@ -1530,6 +1553,12 @@ main(int argc, char **argv)
 		case 'x':
 			exit_on_error = 1;
 			break;
+		case 'L':
+			{	char buf[1024];
+				snprintf(buf,1024,"monet_%d", getpid());
+				logfile= optarg? optarg: strdup(buf);
+				break;
+			}
 		case 'l':
 			/* accept unambiguous prefix of language */
 			if (strcmp(optarg, "sql") == 0 || strcmp(optarg, "sq") == 0 || strcmp(optarg, "s") == 0) {
@@ -1591,11 +1620,14 @@ main(int argc, char **argv)
 			command = optarg;
 			break;
 		case 'w':
-			pagewidth = atol(optarg);
-			rows = -1;	/* don't reset pagewidth */
+			if( optarg){
+				pagewidth = atol(optarg);
+				rows= -1; /* don't reset pagewidth */
+			}
 			break;
 		case 'r':
-			rowsperpage = atol(optarg);
+			if( optarg)
+				rowsperpage = atol(optarg);
 			break;
 #ifdef HAVE_POPEN
 		case '|':
@@ -1685,10 +1717,15 @@ main(int argc, char **argv)
 		fprintf(stderr, "failed to allocate Mapi structure\n");
 		exit(2);
 	}
+
 	if (mapi_error(mid)) {
 		mapi_explain(mid, stderr);
 		exit(2);
 	}
+
+	if ( logfile) 
+		mapi_log(mid,logfile);
+	
 	if (!quiet) {
 		char *motd = mapi_get_motd(mid);
 
