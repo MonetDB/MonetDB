@@ -2310,7 +2310,6 @@ gdk_export int GDKerrorCount(void);
 #include "gdk_bat.h"
 
 #ifdef NATIVE_WIN32
-#define unlink _unlink
 #ifdef _MSC_VER
 #define fileno _fileno
 #endif
