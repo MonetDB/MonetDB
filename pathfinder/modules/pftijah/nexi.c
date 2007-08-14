@@ -462,6 +462,8 @@ int old_main(BAT* optbat, char* startNodes_name)
         } else if (strcmp(optName, "prior") == 0) {
             if (strcasecmp(optVal, "LENGTH_PRIOR") == 0) {
                 txt_retr_model->prior_type  = LENGTH_PRIOR;
+            } else if (strcasecmp(optVal, "LOG_LENGTH_PRIOR") == 0) {
+                txt_retr_model->prior_type  = LOG_LENGTH_PRIOR;
             } else {
                 txt_retr_model->prior_type  = NO_PRIOR;
             }

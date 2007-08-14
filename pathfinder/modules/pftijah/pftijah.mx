@@ -2690,6 +2690,32 @@ PROC prior_ls(bat region, int size_type, BAT[oid,str] qenv) : bat :=
 #"Adds element prior based on element length to the region score.",
 #"TIJAH");
 
+PROC prior_logls(bat region, int size_type, BAT[oid,str] qenv) : bat :=
+{
+
+        var ctx_size := new(oid,dbl,ENTITY_NUM);
+        var res_reg := new(oid,dbl,ENTITY_NUM);
+
+        if (size_type = SIZE_ENTITY) {
+                ctx_size := size_entity(region,qenv);
+        # Make sure sizes are not zero
+        ctx_size := [+](ctx_size, dbl(0.5));
+        } else if (size_type = SIZE_TERM) {
+                ctx_size := size_term(region,qenv);
+        # Make sure sizes are not zero
+        ctx_size := [+](ctx_size, dbl(0.5));
+    }
+
+        res_reg := [+]([log](region.select(dbl(0),dbl(nil),false,false)),[log]([log](ctx_size)));
+        res_reg := [-](region.select(dbl(0)).project(min(res_reg)),dbl(1)).kunion(res_reg);
+
+        return res_reg;
+
+}
+#ADDHELP("prior_logls", "thijs", "Aug, 2007,
+#"Adds element prior based on log element length to the region score.",
+#"TIJAH");
+
 ################################################################################
 # OVERLAP REMOVAL
 ################################################################################

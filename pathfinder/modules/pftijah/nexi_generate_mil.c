@@ -625,10 +625,12 @@ int SRA_to_MIL(TijahParserContext* parserCtx, int query_num, int use_startNodes,
       case P_PRIOR:
 
         com_nr_left = p_com->left->number;
-        
-        MILPRINTF(MILOUT, "R%d := R%d.prior_ls(%d,qenv);\n", com_num, com_nr_left, txt_retr_model->size_type);
-        
-        break;   
+        if (txt_retr_model->prior_type == LOG_LENGTH_PRIOR) {
+          MILPRINTF(MILOUT, "R%d := R%d.prior_logls(%d,qenv);\n", com_num, com_nr_left, txt_retr_model->size_type);
+        } else {
+          MILPRINTF(MILOUT, "R%d := R%d.prior_ls(%d,qenv);\n", com_num, com_nr_left, txt_retr_model->size_type);
+        }
+        break;
 
       case MUST_CONTAIN_T:
 

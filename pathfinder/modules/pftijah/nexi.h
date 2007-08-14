@@ -120,6 +120,7 @@
 #define NO_PRIOR 1
 #define LENGTH_PRIOR 2
 #define LOG_NORMAL_PRIOR 3
+#define LOG_LENGTH_PRIOR 4
 
 #define PREF_ELEM_SIZE 1000
 
