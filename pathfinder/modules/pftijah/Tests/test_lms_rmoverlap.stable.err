@@ -1,0 +1,17 @@
+stderr of test 'test_lms_rmoverlap` in directory 'modules/pftijah` itself:
+
+
+# 15:26:00 >  
+# 15:26:00 >  Mtimeout -timeout 180  Mserver "--config=/data/home/thijs/local/MonetDB/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/data/home/thijs/local/MonetDB/lib/MonetDB4:/data/home/thijs/local/MonetDB/lib/MonetDB4/lib:/data/home/thijs/local/MonetDB/lib/MonetDB4/bin" --set "gdk_dbfarm=/data/home/thijs/local/MonetDB/var/MonetDB4/dbfarm" --set "sql_logdir=/data/home/thijs/local/MonetDB/var/MonetDB4/sql_logs" --set "xquery_logdir=/data/home/thijs/local/MonetDB/var/MonetDB4/xquery_logs" --set mapi_open=true --set xrpc_open=true --set mapi_port=32477 --set xrpc_port=40789 --set monet_prompt= --trace "--dbname=mTests_modules_pftijah" --dbinit=" module(pathfinder);" ; echo ; echo Over..
+# 15:26:00 >  
+
+
+# 15:26:00 >  
+# 15:26:00 >  Mtimeout -timeout 60 MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=core-1 --port=32477 test_lms_rmoverlap.xq
+# 15:26:00 >  
+
+
+# 15:26:01 >  
+# 15:26:01 >  Done.
+# 15:26:01 >  
+

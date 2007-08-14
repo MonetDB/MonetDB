@@ -269,6 +269,7 @@ struct struct_RMT {
   int param3;
   int prior_type;
   int prior_size;
+  bool rmoverlap;
   char context[TERM_LENGTH];
   float extra;
   struct_RMT *next;

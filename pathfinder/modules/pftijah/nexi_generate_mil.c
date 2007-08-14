@@ -1058,6 +1058,9 @@ int SRA_to_MIL(TijahParserContext* parserCtx, int query_num, int use_startNodes,
       MILPRINTF(MILOUT, "R%d := collect;\n",com_num);
       MILPRINTF(MILOUT, "collect := nil;\n");
     }
+   if(txt_retr_model->rmoverlap){
+    MILPRINTF(MILOUT, "R%d := rm_overlap(R%d%s);\n", com_num, com_num,parserCtx->flastPfx);
+    }
     MILPRINTF(MILOUT, "R%d := R%d.tsort_rev();\n", com_num, com_num);
 #if 0
     MILPRINTF(MILOUT, "if ( retNum >= 0 ) { R%d := R%d.slice(0, retNum - 1); }\n", com_num, com_num);

@@ -1,0 +1,34 @@
+stdout of test 'test_lms_rmoverlap` in directory 'modules/pftijah` itself:
+
+
+# 15:26:00 >  
+# 15:26:00 >  Mtimeout -timeout 180  Mserver "--config=/data/home/thijs/local/MonetDB/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/data/home/thijs/local/MonetDB/lib/MonetDB4:/data/home/thijs/local/MonetDB/lib/MonetDB4/lib:/data/home/thijs/local/MonetDB/lib/MonetDB4/bin" --set "gdk_dbfarm=/data/home/thijs/local/MonetDB/var/MonetDB4/dbfarm" --set "sql_logdir=/data/home/thijs/local/MonetDB/var/MonetDB4/sql_logs" --set "xquery_logdir=/data/home/thijs/local/MonetDB/var/MonetDB4/xquery_logs" --set mapi_open=true --set xrpc_open=true --set mapi_port=32477 --set xrpc_port=40789 --set monet_prompt= --trace "--dbname=mTests_modules_pftijah" --dbinit=" module(pathfinder);" ; echo ; echo Over..
+# 15:26:00 >  
+
+# MonetDB Server v4.19.0
+# based on GDK   v1.19.0
+# Copyright (c) 1993-2007, CWI. All rights reserved.
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
+# Visit http://monetdb.cwi.nl/ for further information.
+# MonetDB/XQuery module v0.19.0 loaded
+# XRPC administrative console at http://localhost:40789/admin
+
+printf("\nReady.\n");
+
+Ready.
+quit();
+
+Over..
+
+# 15:26:00 >  
+# 15:26:00 >  Mtimeout -timeout 60 MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=core-1 --port=32477 test_lms_rmoverlap.xq
+# 15:26:00 >  
+
+<?xml version="1.0" encoding="utf-8"?>
+<XQueryResult><node rank="1"><title>Pathfinder</title></node><node rank="2"><title>Pathfinder and TIJAH</title></node><node rank="3"><para id="par7">This section is about the Pathfinder XML database. This section is 
+                  more about Pathfinder than any other section is about Pathfinder.</para></node><node rank="4"><para id="par6">This chapter is about Pathfinder and TIJAH.</para></node></XQueryResult>
+
+# 15:26:01 >  
+# 15:26:01 >  Done.
+# 15:26:01 >  
+

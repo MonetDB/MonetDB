@@ -217,6 +217,7 @@ int old_main(BAT* optbat, char* startNodes_name)
     //txt_retr_model->prior_type  = LENGTH_PRIOR;    
     //txt_retr_model->prior_size  = 0;
     txt_retr_model->prior_size  = 2;
+    txt_retr_model->rmoverlap = FALSE;
     strcpy(txt_retr_model->context, "");
     txt_retr_model->extra       = 0.0;
     txt_retr_model->next        = NULL;
@@ -465,7 +466,13 @@ int old_main(BAT* optbat, char* startNodes_name)
                 txt_retr_model->prior_type  = NO_PRIOR;
             }
             
-        } else if (strcmp(optName, "returnNumber") == 0) {
+        }  else if (strcmp(optName, "rmoverlap") == 0) {
+           if (strcasecmp(optVal, "TRUE") == 0) {
+                txt_retr_model->rmoverlap = TRUE;
+           } else {
+               txt_retr_model->rmoverlap=FALSE;
+           }
+	} else if (strcmp(optName, "returnNumber") == 0) {
 	    // ignore, is handled by milprint_summer
         } else if (strcmp(optName, "term-proximity") == 0) {
                 qenv_prox_val = (char*)strdup(optVal);

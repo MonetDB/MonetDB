@@ -2690,6 +2690,36 @@ PROC prior_ls(bat region, int size_type, BAT[oid,str] qenv) : bat :=
 #"Adds element prior based on element length to the region score.",
 #"TIJAH");
 
+################################################################################
+# OVERLAP REMOVAL
+################################################################################
+
+PROC rm_overlap(bat ctx,str ind) : bat{
+
+ ctx := ctx.sort();
+ var size := bat("tj_"+qenv.find(QENV_FTINAME)+"_size"+ind);
+ var AD:=anc_desc(ctx,ctx,size);
+ var maxD := AD.join(ctx).sort().{max}();
+ var maxA := AD.reverse().sort().join(ctx).{max}();
+
+ AD:=nil;
+
+ # candidates are nodes that have no descendents or a higher score
+ # than all descendents
+ var candidates := ctx.kdiff(maxD).access(BAT_APPEND);
+ candidates.insert(ctx.[>](maxD).select(true).mirror().join(ctx));
+
+ # keep the candidates without ancestor and w score >= ancestor scores
+ var res := candidates.kdiff(maxA).access(BAT_APPEND);
+ res.insert(candidates.[>=](maxA).select(true).mirror().join(candidates));
+
+ candidates := nil;
+ maxA:=nil;maxD:=nil;
+ return res;
+}
+#ADDHELP("rm_overlap","thijs", "August, 2007",
+#"Removes overlapping elements from result list.",
+#"TIJAH");
 
 
 ################################################################################
