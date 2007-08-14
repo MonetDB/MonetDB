@@ -552,7 +552,7 @@ SQLrenderer(MapiHdl hdl)
 				total = 0;
 				for (i = 0; i < fields; i++)
 					total += len[i];
-				while (2 * fields + total > pagewidth && max)
+				while (2 * fields + total >= pagewidth && max)
 				{
 					max=0;
 					total = 0;
@@ -571,7 +571,7 @@ SQLrenderer(MapiHdl hdl)
 					}
 				} 
 				/* punish the long value fields */
-				while (2 * fields + total > pagewidth && len[max] > 1)
+				while (2 * fields + total >= pagewidth && len[max] > 1)
 				{
 					total = 0;
 					max = 1;
@@ -581,7 +581,7 @@ SQLrenderer(MapiHdl hdl)
 							max = i;
 					}
 
-					if (2 * fields + total > pagewidth) {
+					if (2 * fields + total >= pagewidth) {
 						/* penalty for largest field */
 						total -= len[max];
 						len[max] *= 0.9;
@@ -652,7 +652,7 @@ setWidth(){
 		ioctl(fileno(stdin), TIOCGWINSZ, &ws);
 		rows = ws.ws_row;
 		cols = ws.ws_col;
-		pagewidth = cols;
+		pagewidth = cols; 
 #endif
 	}
 }
@@ -1080,12 +1080,12 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode, int exit_on_
 						line[--length] = 0;
 					if (line[length - 1] == '\r')
 						line[--length] = 0;
-					doFile(mid, line + 1 + (mode == XQUERY));
+					doFile(mid, line + 2);
 					continue;
 				case '>':
 					/* redirect output to file */
-					line++;
-					length--;
+					line += 2;
+					length -= 2;
 					if (line[length - 1] == '\n')
 						line[--length] = 0;
 					if (line[length - 1] == '\r')
