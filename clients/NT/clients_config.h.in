@@ -31,6 +31,9 @@
 /* Define to 1 if you have the `SQLGetPrivateProfileString' function. */
 #define HAVE_SQLGETPRIVATEPROFILESTRING 1
 
+/* Define to 1 if you have the <sys/ioctl.h> header file. */
+/* #undef HAVE_SYS_IOCTL_H */
+
 /* architecture-dependent files */
 #define MONETDB_EXEC_PREFIX "${prefix}"
 
