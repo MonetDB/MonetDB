@@ -912,19 +912,19 @@ showCommands(void)
 	}
 
 	/* shared control options */
-	fprintf(toConsole, "\\?\t- show this message\n");
-	fprintf(toConsole, "\\<file\t- read input from file\n");
-	fprintf(toConsole, "\\>file\t- save response in file, or stdout if no file is given\n");
-	fprintf(toConsole, "\\|cmd\t- pipe result to process\n");
+		fprintf(toConsole, "\\?      - show this message\n");
+		fprintf(toConsole, "\\<file  - read input from file\n");
+		fprintf(toConsole, "\\>file  - save response in file, or stdout if no file is given\n");
+		fprintf(toConsole, "\\|cmd   - pipe result to process\n");
 #ifdef HAVE_LIBREADLINE
-	fprintf(toConsole, "\\h\t- show the readline history\n");
+		fprintf(toConsole, "\\h      - show the readline history\n");
 #endif
-	fprintf(toConsole, "\\q\t- terminate session\n");
-	fprintf(toConsole, "\\T\t- toggle timer\n");
+		fprintf(toConsole, "\\q      - terminate session\n");
+		fprintf(toConsole, "\\T      - toggle timer\n");
 
 	switch (mode) {
 	case XQUERY:
-		fprintf(toConsole, "<>\t- send query to server (or %s)\n",
+		fprintf(toConsole, "<>       - send query to server (or %s)\n",
 #ifdef WIN32
 			"CTRL-Z"
 #else
@@ -933,22 +933,22 @@ showCommands(void)
 		    );
 		break;
 	case MAL:
-		fprintf(toConsole, "\\?pat\t- help on MAL function using pattern [modnme[.fcnnme][(][)]] using wildcard *\n");
+		fprintf(toConsole, "\\?pat   - help on MAL function using pattern [modnme[.fcnnme][(][)]] using wildcard *\n");
 		break;
 	case SQL:
-		fprintf(toConsole, "\\w#\t- set maximal page width (-1=raw,0=no limit, >0 max char)\n");
-		fprintf(toConsole, "\\r#\t- set maximum rows per page (-1=raw)\n");
-		fprintf(toConsole, "\\e\t- echo the query \n");
-		fprintf(toConsole, "\\f\t- format using a built-in renderer {csv,tab,raw,sql,xml} \n");
-		fprintf(toConsole, "\\D table\t- Dumps the table, or the complete database if none given.\n");
-		fprintf(toConsole, "\\d table\t- Describe the table, or the complete database if none given.\n");
-		fprintf(toConsole, "\\A\t- enable auto commit\n");
-		fprintf(toConsole, "\\a\t- disable auto commit\n");
+		fprintf(toConsole, "\\w#     - set maximal page width (-1=raw,0=no limit, >0 max char)\n");
+		fprintf(toConsole, "\\r#     - set maximum rows per page (-1=raw)\n");
+		fprintf(toConsole, "\\e      - echo the query \n");
+		fprintf(toConsole, "\\f      - format using a built-in renderer {csv,tab,raw,sql,xml} \n");
+		fprintf(toConsole, "\\D table- dumps the table, or the complete database if none given.\n");
+		fprintf(toConsole, "\\d table- describe the table, or the complete database if none given.\n");
+		fprintf(toConsole, "\\A      - enable auto commit\n");
+		fprintf(toConsole, "\\a      - disable auto commit\n");
 	default:
-		fprintf(toConsole, "\\l\t- line is sent immediately\n");
+		fprintf(toConsole, "\\l      - line is sent immediately\n");
 	}
-	fprintf(toConsole, "\\L logfile\t- save client/server interaction\n");
-	fprintf(toConsole, "\\t\t- toggle interaction trace\n");
+		fprintf(toConsole, "\\L file - save client/server interaction\n");
+		fprintf(toConsole, "\\t      - toggle interaction trace\n");
 }
 
 static int
@@ -1269,7 +1269,9 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode, int exit_on_
 			mapi_query_part(hdl, line, length);
 			CHECK_RESULT(mid, hdl, buf, continue);
 		}
-		if (linemode) {
+		if (linemode || 
+			(mode==SQL && line[length-2]==';' && line[length-1]=='\n')) {
+			timerStart();
 			assert(hdl != NULL);
 			/* If the server wants more but we're at the
 			   end of file (line == NULL), notify the
@@ -1563,7 +1565,7 @@ main(int argc, char **argv)
 			/* accept unambiguous prefix of language */
 			if (strcmp(optarg, "sql") == 0 || strcmp(optarg, "sq") == 0 || strcmp(optarg, "s") == 0) {
 				language = "sql";
-
+				linemode=0;
 				mode = SQL;
 				mark = "Timer";	/* default style */
 			} else if (strcmp(optarg, "mil") == 0 || strcmp(optarg, "mi") == 0) {
