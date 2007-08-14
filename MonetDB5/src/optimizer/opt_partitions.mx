@@ -1,0 +1,348 @@
+@' The contents of this file are subject to the MonetDB Public License
+@' Version 1.1 (the "License"); you may not use this file except in
+@' compliance with the License. You may obtain a copy of the License at
+@' http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+@'
+@' Software distributed under the License is distributed on an "AS IS"
+@' basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+@' License for the specific language governing rights and limitations
+@' under the License.
+@'
+@' The Original Code is the MonetDB Database System.
+@'
+@' The Initial Developer of the Original Code is CWI.
+@' Portions created by CWI are Copyright (C) 1997-2007 CWI.
+@' All Rights Reserved.
+
+@f opt_partitions
+@a M. Kersten
+@- BAT Partitions
+Limitations on the addressing space in older PCs and the need
+for distributed storage makes that BATs ideally should be 
+looked upon as a union of smaller BATs which are processed
+within the (memory) resource limitations given.
+
+The @sc{partition()} optimizer with the supportive 
+bat partition library @code{bpm}
+addresses the issue with an adaptive database segmentation algorithm.
+It is designed incrementally with a focus 
+on supporting the SQL front-end. In particularly, the
+operators considered is a limited subset of MAL. Occurrence
+of an operator outside this set terminates the optimizer
+activities.
+
+The operation @sc{optimizer.partitions()} hunts for bindings
+of SQL column BATs and prepare code for using partitioned
+versions instead. 
+
+We use two implementations. The first one attempts to find
+segments of linear dependent data and builds an iterator
+around it. This approach is tricky, because you have to 
+take care of special cases. In particular, the semantics
+of the operators on the sequence construction posed quite
+some problems.
+
+The naive() approach simply looks at individual operations
+and surround them with an iterator. An alias table is
+kept around for re-use and detect already partitioned operands.
+The drawback is that potentially a partitioned BAT is 
+read multiple times [it depends on the re-use of variables,
+which can be calculated] and write+read of intermediates.
+Experiments should demonstrate the optimal one.
+@{
+@mal
+pattern optimizer.partitions():str
+address OPTpartitions;
+pattern optimizer.partitions(mod:str, fcn:str):str
+address OPTpartitions
+comment "Experiment with partitioned databases";
+@h
+#ifndef _OPT_PARTITIONED_
+#define _OPT_PARTITIONED_
+#include "opt_prelude.h"
+#include "opt_support.h"
+
+/* #define DEBUG_OPT_PARTITIONED	show partial result */
+@c
+#include "mal_config.h"
+#include "opt_partitions.h"
+#include "mal_interpreter.h"	/* for showErrors() */
+
+@-
+Calling the optimizer from the MAL context currently
+assumes that all sql.bind operations references partitioned BATs.
+We mark the segments derived from a single partitioned bat group.
+This continues until we find a blocking operator
+that requires the results of multiple threads.
+Then we have to close the iterator block and gather the results.
+@c
+static int localVar(MalBlkPtr mb, char *prefix, int idx, int tpe){
+	char name[256];
+	snprintf(name,256,"%s%d",prefix,idx);
+
+	idx=findVariable(mb,name);
+	if( idx >= 0) return idx;
+	return newVariable(mb,GDKstrdup(name),tpe);
+}
+
+@- Naive partitioning
+The simplistic approach starts here
+An operation should be replace by an iterator if
+any of its arguments is partitioned. This is detected
+by an alias function, which is set to the alternative.
+@c
+static int 
+OPTuseIterator(MalBlkPtr mb, InstrPtr p, int *alias){
+	int i;
+	for(i=p->retc; i<p->argc; i++)
+	if( isaBatType(getArgType(mb,p, i)) || alias[getArg(p,i)] > 0)
+		return 1;
+	return 0;
+}
+
+static void
+OPTbarrierList(MalBlkPtr mb, InstrPtr p, int *alias, int offset){
+	int j;
+	InstrPtr q;
+	/* dump the iterators */
+	if( p->retc+offset >= p->argc)
+		offset= 0;
+	for(j=p->retc+offset; j<p->argc; j++)
+	if( isaBatType(getArgType(mb,p,j))  && alias[getArg(p,j)]>0){
+		q = newStmt(mb, bpmRef, "newIterator");
+		q->barrier= BARRIERsymbol;
+		q->argv[0]= getArg(p,j);
+#ifdef DEBUG_OPT_PARTITIONED
+		printf("barrier %d ->%d\n",getArg(p,j), alias[getArg(p,j)]);
+#endif
+		pushArgument(mb, q, 
+			(alias[getArg(p,j)]?alias[getArg(p,j)]:getArg(p,j)) );
+	}
+}
+static int
+OPTbarrierListCnt(MalBlkPtr mb, InstrPtr p, int *alias){
+	int j,cnt=0;
+	/* count dump the iterators */
+	for(j=p->retc; j<p->argc; j++)
+	if( isaBatType(getArgType(mb,p,j))  && alias[getArg(p,j)]>0)
+		cnt++;
+	return cnt;
+}
+static void
+OPTredoList(MalBlkPtr mb, InstrPtr p, int *alias, int offset){
+	int j;
+	InstrPtr q;
+	if( p->retc+offset >= p->argc)
+		offset= 0;
+	/* finalize iterator structure */
+	for(j=p->argc-1; j>= p->retc+offset; j--)
+	if( isaBatType(getArgType(mb,p,j))  && alias[getArg(p,j)]>0){
+		q = newStmt(mb, bpmRef, "hasMoreElements");
+		q->barrier= REDOsymbol;
+		q->argv[0]= getArg(p,j);
+		pushArgument(mb, q, 
+			(alias[getArg(p,j)]?alias[getArg(p,j)]:getArg(p,j)) );
+	}
+
+	for(j=p->argc-1; j>=p->retc+offset; j--)
+	if( isaBatType(getArgType(mb,p,j))  && alias[getArg(p,j)]>0){
+		q = newInstruction(mb,EXITsymbol);
+		q->barrier= EXITsymbol;
+		q->argv[0]= getArg(p,j);
+		pushInstruction(mb,q);
+	}
+}
+
+static void
+OPTbakeIterator(MalBlkPtr mb, InstrPtr p, int *alias, int *garbage){
+	int tpe;
+	InstrPtr q, anchor;
+
+#ifdef DEBUG_OPT_PARTITIONED
+	printf("bakeIterator for:\n");
+	printInstruction(GDKout,mb,p,LIST_MAL_ALL);
+#endif
+	anchor= q = newStmt(mb,"bpm","new");
+	tpe= getArgType(mb,p,0);
+	pushArgument(mb,anchor,newTypeVariable(mb,getHeadType(tpe)));
+	pushArgument(mb,anchor,newTypeVariable(mb,getTailType(tpe)));
+#ifdef DEBUG_OPT_PARTITIONED
+	printf("alias[%d]=%d\n",getArg(p,0),getArg(q,0));
+#endif
+	alias[getArg(p,0)]= getArg(q,0);
+	garbage[getArg(q,0)]= 1;
+
+	/* dump the iterators */
+	OPTbarrierList(mb,p,alias, p->argc>3 && getModuleId(p)==batcalcRef);
+
+	/* run the partitioned operation */
+	pushInstruction(mb,p);
+
+	/* save the temporary partitions */
+	q = newStmt(mb,"bpm","addPartition");
+	pushArgument(mb,q,getArg(anchor,0));
+	pushArgument(mb,q,getArg(p,0));
+
+	OPTredoList(mb,p,alias, p->argc>3 && getModuleId(p)==batcalcRef);
+}
+@-
+Be aware the the SQL produces sql.bind(-,-,-,0) and sql.bind(-,-,-,3)
+which lead to the same BAT id. This causes sharing in a ring, with
+possib;e side effects upon garbage collection.
+@c
+static int bindTest(MalBlkPtr mb, InstrPtr p){
+	ValPtr v;
+	v= &getConstant(mb,getArg(p,4));
+	return v->val.ival>0;
+}
+
+static void
+OPTnaiveIterations(MalBlkPtr mb){
+	int i,j,k,limit,vlimit= mb->vsize + mb->ssize*4; /* expanded*/
+	InstrPtr *old,p=0,q;
+	int *alias= (int*) alloca(sizeof(int)*vlimit);
+	int *garbage= (int*) alloca(sizeof(int)*vlimit);
+	/* char name[1024];*/
+
+	memset((char*) alias, 0, sizeof(int)*vlimit);
+	memset((char*) garbage, 0, sizeof(int)*vlimit);
+
+	limit= mb->stop;
+	old = mb->stmt;
+	newMalBlkStmt(mb,limit);
+	pushInstruction(mb,old[0]); /* signature */
+	for(i=1;i< limit; i++){
+		p= old[i];
+@- 
+Assume all bind operations are over partitioned bats.
+@c
+		if( getFunctionId(p)== bindRef && getModuleId(p)== sqlRef &&
+			bindTest(mb,p) ){
+			pushInstruction(mb,p);
+			/* hdl:= bpm.take(name) */
+			q = newStmt(mb,"bpm","unfold");
+			q->argv[0]=
+				localVar(mb,"bpm",getArg(p,0), getVarType(mb, getArg(p,0)));
+			freezeVarType(mb,q->argv[0]);
+			alias[getArg(p,0)]= getArg(q,0);
+#ifdef DEBUG_OPT_PARTITIONED
+		printf("1 alias[%d]=%d\n",getArg(p,0),getArg(q,0));
+#endif
+/*
+			snprintf(name,1024,"%s_%s_%s",
+				getConstant(mb, getArg(p,1)).val.sval,
+				getConstant(mb, getArg(p,2)).val.sval,
+				getConstant(mb, getArg(p,3)).val.sval );
+			pushStr(mb, q,name);
+*/
+			pushArgument(mb,q,getArg(p,0));
+			garbage[getArg(q,0)]=1;
+			/* printf("unfold  %d %d\n",getArg(q,0),getArg(q,1));*/
+			continue;
+		}
+@-
+The instruction should be broken into an interator
+if any of its arguments is already partitioned.
+The exceptions are 1) there exists a fast direct
+implementation in the bpm for it, 2) it is part
+of the sql repository
+@c
+		if( OPTuseIterator(mb, p, alias) == 0 )
+			goto jump2;
+		if( getModuleId(p) == constraintsRef ){
+			getModuleId(p)= bpmRef;
+			pushInstruction(mb,p);
+			if( alias[getArg(p,1)])
+				getArg(p,1)= alias[getArg(p,1)];
+			continue;
+		}
+
+		if( !hasSideEffects(p,TRUE) && p->retc == 1 &&
+			getModuleId(p)!= aggrRef &&
+		    getModuleId(p)!= sqlRef &&
+			OPTbarrierListCnt(mb, p, alias) > 0
+		){
+			OPTbakeIterator(mb, p, alias, garbage);
+			continue;
+		}
+	jump2:
+		for(j= p->retc; j<p->argc; j++)
+		if( (alias[getArg(p,j)] && alias[getArg(p,j)]!= getArg(p,j)) ){
+			q = newStmt(mb,"bpm","fold");
+			q->argv[0]= getArg(p,j);
+			pushArgument(mb,q,alias[getArg(p,j)]);
+			garbage[getArg(q,1)]=0;
+			/* printf("fold %d  %d\n",getArg(q,0),getArg(q,1));*/
+			alias[getArg(p,j)]= 0;
+#ifdef DEBUG_OPT_PARTITIONED
+			printf("alias[%d]=0\n",getArg(p,j));
+#endif
+		}
+		if( p->token == ENDsymbol)
+			break;
+		pushInstruction(mb,p);
+	}
+@-
+Whenever an exception is raised, we should still process
+the garbage collection statements for the partitioned bats.
+@c
+	q= newAssignment(mb);
+	j=findVariable(mb,"SQLexception");
+	if( j <0)
+		j= newVariable(mb,GDKstrdup("SQLexception"),TYPE_str);
+	getArg(q,0)= j;
+	q->barrier= CATCHsymbol;
+	for(k=0; k< vlimit; k++)
+	if( garbage[k]){
+		q=newStmt(mb,bpmRef,"garbage");
+		setVarType(mb,getArg(q,0),TYPE_void);
+		pushArgument(mb,q,k);
+	}
+	q= newAssignment(mb);
+	getArg(q,0)= j;
+	q->barrier= RAISEsymbol;
+	q= newAssignment(mb);
+	getArg(q,0)= j;
+	q->barrier= EXITsymbol;
+
+	/* if there is no exception */
+	for(k=0; k< vlimit; k++)
+	if( garbage[k]){
+		q=newStmt(mb,bpmRef,"garbage");
+		setVarType(mb,getArg(q,0),TYPE_void);
+		pushArgument(mb,q,k);
+	}
+	for(;i< limit; i++)
+		pushInstruction(mb,old[i]);
+}
+
+static int
+OPTpartitionsImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	OPTnaiveIterations(mb);
+#ifdef DEBUG_OPT_PARTITIONED
+	stream_printf(GDKout,"partition optimizer Strategy\n");
+	printFunction(GDKout,mb,0);
+#endif
+	(void) stk;
+	(void) pci;
+	return 1;
+}
+
+@-
+The translation of a MAL block into a multi-iterator only works if
+the network flow is simple, i.e there exists a 'single' sink, 
+or all the information is compressed
+into variables that are passed back to the caller as a single value,
+or is sent non-interupted to the output channels.
+The bottom-line is to avoid expansion.
+An assignment to the target is not allowed [to be checked separately]
+
+@include optimizerWrapper.mx
+@h
+@:exportOptimizer(partitions)@
+#endif
+@c
+#include "opt_statistics.h"
+@:wrapOptimizer(partitions,OPT_CHECK_ALL)@
+@}

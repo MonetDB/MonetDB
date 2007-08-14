@@ -1,0 +1,24 @@
+stdout of test 'pf-O0_produces_wrong_MIL.SF-1771532` in directory 'tests/BugTracker` itself:
+
+
+# 17:40:04 >  
+# 17:40:04 >  Mtimeout -timeout 180 /usr/bin/python pf-O0_produces_wrong_MIL.SF-1771532.py pf-O0_produces_wrong_MIL.SF-1771532 
+# 17:40:04 >  
+
+
+# 17:40:04 >  
+# 17:40:04 >  pf -O0 pf-O0_produces_wrong_MIL.SF-1771532.xq | Mtimeout -timeout 60 Mserver --config=/ufs/manegold/_/scratch0/Monet/Testing/Stable/prefix.--enable-strict_--disable-debug_--enable-optimize/etc/MonetDB.conf --debug=10 --set monet_mod_path=/net/corona.ins.cwi.nl/export/scratch0/manegold/Monet/Testing/Stable/prefix.--enable-strict_--disable-debug_--enable-optimize/lib64/MonetDB4:/net/corona.ins.cwi.nl/export/scratch0/manegold/Monet/Testing/Stable/prefix.--enable-strict_--disable-debug_--enable-optimize/lib64/MonetDB4/lib:/net/corona.ins.cwi.nl/export/scratch0/manegold/Monet/Testing/Stable/prefix.--enable-strict_--disable-debug_--enable-optimize/lib64/MonetDB4/bin --set gdk_dbfarm=/ufs/manegold/_/scratch0/Monet/Testing/Stable/prefix.--enable-strict_--disable-debug_--enable-optimize/var/dbfarm --set sql_logdir=/ufs/manegold/_/scratch0/Monet/Testing/Stable/prefix.--enable-strict_--disable-debug_--enable-optimize/var/sql_logs --set xquery_logdir=/ufs/manegold/_/scratch0/Monet/Testing/Stable/prefix.--enable-strict_--disable-debug_--enable-optimize/var/xquery_logs --set mapi_open=true --set xrpc_open=true --set mapi_port=33922 --set xrpc_port=40824 --set monet_prompt= --dbname=mTests_tests_BugTracker --dbinit=module(pathfinder);
+# 17:40:04 >  
+
+# Monet Database Server V4.18.1
+# Copyright (c) 1993-2007, CWI. All rights reserved.
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
+# Visit http://monetdb.cwi.nl/ for further information.
+# XRPC administrative console at http://localhost:40824/admin
+<?xml version="1.0" encoding="utf-8"?>
+<XQueryResult><a><prob><integrate><config><nonmultiple>title</nonmultiple><nonmultiple>year</nonmultiple></config><one><movie><title>King Kong</title><year>2005</year></movie></one><two><movie><title>King Kong</title><year>1933</year></movie></two><mustbe><cand b="3" a="1"/><cand b="4" a="2"/></mustbe><impossible>1,4 2,3</impossible><sic><list><cand b="3" a="1"/><cand b="4" a="2"/></list></sic><list prob="0.48999999999999994"><cand b="3" a="1"/><cand b="4" a="2"/></list></integrate><poss prob="1"><movie><prob><integrate><config><nonmultiple>title</nonmultiple><nonmultiple>year</nonmultiple></config><one><title>King Kong</title></one><two><title>King Kong</title></two><mustbe><cand a="1" b="2"/></mustbe><impossible/><sic><list><cand b="2" a="1"/></list></sic><list prob="1"><cand a="1" b="2"/></list></integrate><poss prob="1"><title><prob><poss prob="1.0">King Kong</poss></prob></title></poss></prob><prob><integrate><config><nonmultiple>title</nonmultiple><nonmultiple>year</nonmultiple></config><one><year>2005</year></one><two><year>1933</year></two><mustbe><cand a="1" b="2"/></mustbe><impossible/><sic><list><cand b="2" a="1"/></list></sic><list prob="0.5"><cand a="1" b="2"/></list></integrate><poss prob="1"><year><prob><poss prob="0.5">2005</poss><poss prob="0.5">1933</poss></prob></year></poss></prob></movie></poss></prob></a></XQueryResult>
+
+# 17:40:07 >  
+# 17:40:07 >  Done.
+# 17:40:07 >  
+

@@ -1,0 +1,12 @@
+module namespace bar = "bar";
+
+import module namespace foo = "xrpc-fun"
+    at
+    "$TSTSRCDIR/xrpcfun.xq";
+
+declare function bar:xrpcConvert($v as xs:decimal?) as xs:decimal?
+{
+    execute at {"$HOST:$XRPCPORT"}{foo:convert($v)}
+
+};
+
