@@ -194,7 +194,9 @@ static int interactive_stdin = 0;
 #  include <time.h>
 # endif
 #endif
+#ifdef HAVE_SYS_IOCTL_H
 #include <sys/ioctl.h>
+#endif
 
 #if defined(_MSC_VER) && _MSC_VER >= 1400
 #define fileno _fileno
