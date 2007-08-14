@@ -135,7 +135,7 @@ static FILE *fromConsole;
 static char *language = NULL;
 static int start_with_help = 0;
 static char promptbuf[16];
-static int echoquery= 0;
+static int echoquery = 0;
 
 /* some internal formatters */
 #define RAWformatter	0
@@ -146,7 +146,7 @@ static int echoquery= 0;
 
 #define DEFWIDTH 80
 
-static int formatter= TABLEformatter;
+static int formatter = TABLEformatter;
 
 char *command = NULL;
 
@@ -171,7 +171,7 @@ control.
 #ifdef HAVE_POPEN
 static char *pager = 0;		/* use external pager */
 #endif
-static int rows=0, cols=0;
+static int rows = 0;
 static int rowsperpage = 0;	/* for SQL pagination */
 static int pagewidth = -1;	/* use raw mode for file input, tabular format in stdin */
 static int specials = 0;	/* set when we see EXPLAIN,DEBUG, or TRACE */
@@ -228,9 +228,9 @@ static void
 timerEnd(void)
 {
 	t1 = gettime();
-	if (mark && 
-		strncmp(promptbuf, "mdb", 3) != 0 && 
-		(mode != SQL || pagewidth >= 0) ){
+	if (mark &&
+	    strncmp(promptbuf, "mdb", 3) != 0 &&
+	    (mode != SQL || pagewidth >= 0)) {
 		fprintf(toConsole, "%s % 7ld.%03ld msec %s\n", mark, (t1 - t0) / 1000, (t1 - t0) % 1000, mark2 ? mark2 : "");
 		fflush(toConsole);
 	}
@@ -260,10 +260,10 @@ SQLrow(int *len, int *numeric, char **rest, int fields)
 	int i, more, first = 1;
 	char old;
 	char *t;
-	char separator=',';
+	char separator = ',';
 
 	/* trim the text upon need */
-	switch(formatter){
+	switch (formatter) {
 	case TABLEformatter:
 		for (i = 0; i < fields; i++) {
 			if (rest[i] && (int) strlen(rest[i]) > len[i]) {
@@ -274,7 +274,7 @@ SQLrow(int *len, int *numeric, char **rest, int fields)
 					if (*t != ' ' && *t != '\t')
 						break;
 					else
-					cnt--;
+						cnt--;
 				rest[i] = t;
 			}
 		}
@@ -317,15 +317,15 @@ SQLrow(int *len, int *numeric, char **rest, int fields)
 		} while (more);
 		break;
 	case TABformatter:
-			separator='\t';
+		separator = '\t';
 	case CSVformatter:
-		for( i = 0; i < fields; ){
-			if( rest[i])
-				fprintf(toConsole,"%s",rest[i]);
-			if( ++i < fields)
-				fputc(separator,toConsole);
+		for (i = 0; i < fields;) {
+			if (rest[i])
+				fprintf(toConsole, "%s", rest[i]);
+			if (++i < fields)
+				fputc(separator, toConsole);
 		}
-		fputc('\n',toConsole);
+		fputc('\n', toConsole);
 		break;
 	default:
 		break;
@@ -333,23 +333,74 @@ SQLrow(int *len, int *numeric, char **rest, int fields)
 }
 
 static void
-XMLrenderer(MapiHdl hdl){
-	int i,fields;
-	fprintf(toConsole,"<%s>", mapi_get_table(hdl,0));
-	while ((fields = mapi_fetch_row(hdl)) != 0) {
-		for( i=0; i < fields; i++)
-			fprintf(toConsole,"<%s>%s</%s>",
-				mapi_get_name(hdl,i),
-				(mapi_fetch_field(hdl,i)? mapi_fetch_field(hdl,i):""),
-				mapi_get_name(hdl,i));
+XMLprdata(const char *val)
+{
+	while (*val) {
+		if (*val == '&')
+			fprintf(toConsole, "&amp;");
+		else if (*val == '<')
+			fprintf(toConsole, "&lt;");
+		else if (*val == '>')
+			fprintf(toConsole, "&gt;");
+		else if (*val == '"')
+			fprintf(toConsole, "&quot;");
+		else if (*val == '\'')
+			fprintf(toConsole, "&apos;");
+		else if ((*val & 0xFF) < 0x20)
+			fprintf(toConsole, "&#%d;", *val & 0xFF);
+		else
+			fputc(*val, toConsole);
+		val++;
 	}
-	fprintf(toConsole,"</%s>\n", mapi_get_table(hdl,0));
+}
+
+static void
+XMLprattr(const char *name, const char *val)
+{
+	fprintf(toConsole, " %s=\"", name);
+	XMLprdata(val);
+	fputc('"', toConsole);
+}
+
+static void
+XMLrenderer(MapiHdl hdl)
+{
+	int i, fields;
+
+	fprintf(toConsole, "<?xml version='1.0' encoding='utf-8'?>\n");
+	fprintf(toConsole,
+		"<!DOCTYPE table ["
+		" <!ELEMENT table (row)*>"  /* a table consists of zero or more rows */
+		" <!ELEMENT row (column)+>"  /* a row consists of one or more columns */
+		" <!ELEMENT column (#PCDATA)>"
+		" <!ATTLIST table name CDATA #REQUIRED>"  /* a table has a name */
+		" <!ATTLIST column name CDATA #REQUIRED>]>\n"); /* a column has a name */
+	fprintf(toConsole, "<table");
+	XMLprattr("name", mapi_get_table(hdl, 0));
+	fprintf(toConsole, ">\n");
+	while ((fields = mapi_fetch_row(hdl)) != 0) {
+		fprintf(toConsole, "<row>");
+		for (i = 0; i < fields; i++) {
+			char *data = mapi_fetch_field(hdl, i);
+
+			fprintf(toConsole, "<column");
+			XMLprattr("name", mapi_get_name(hdl, i));
+			fputc('>', toConsole);
+			if (data)
+				XMLprdata(data);
+			fprintf(toConsole, "</column>");
+		}
+		fprintf(toConsole, "</row>\n");
+	}
+	fprintf(toConsole, "</table>\n");
 }
 static void
-RAWrenderer(MapiHdl hdl){
+RAWrenderer(MapiHdl hdl)
+{
 	char *line;
+
 	while ((line = mapi_fetch_line(hdl)) != 0) {
-			fprintf(toConsole,"%s\n", line);
+		fprintf(toConsole, "%s\n", line);
 	}
 }
 
@@ -358,7 +409,7 @@ SQLseparator(int *len, int fields, char sep)
 {
 	int i, j;
 
-	switch(formatter){
+	switch (formatter) {
 	case TABLEformatter:
 		fprintf(toConsole, "+%c", sep);
 		for (i = 0; i < fields; i++) {
@@ -380,15 +431,16 @@ SQLheader(MapiHdl hdl, int *len, int fields)
 	char **names = (char **) alloca(fields * sizeof(char *));
 	int *numeric = (int *) alloca(fields * sizeof(int));
 
-	if( echoquery ){
+	if (echoquery) {
 		char *qry;
-		qry= mapi_get_query(hdl);
-		if(!interactive_stdin)
+
+		qry = mapi_get_query(hdl);
+		if (!interactive_stdin)
 			fputc('#', toConsole);
-		fprintf(toConsole,"%s",qry);
+		fprintf(toConsole, "%s", qry);
 		free(qry);
 	}
-	switch(formatter){
+	switch (formatter) {
 	case TABLEformatter:
 		SQLseparator(len, fields, '-');
 		if (mapi_get_name(hdl, 0)) {
@@ -523,9 +575,9 @@ SQLrenderer(MapiHdl hdl)
 	int ps = rowsperpage, silent = 0, rows = 0;
 	int *numeric = 0;
 
-	if( mark2 )
+	if (mark2)
 		free(mark2);
-	mark2= NULL;
+	mark2 = NULL;
 	while ((fields = mapi_fetch_row(hdl)) != 0) {
 		if (silent)
 			continue;
@@ -547,32 +599,29 @@ SQLrenderer(MapiHdl hdl)
 					strcmp(type, "double") == 0 ||
 					strcmp(type, "float") == 0;
 			}
-			if (pagewidth)
-			{
+			if (pagewidth) {
 				total = 0;
 				for (i = 0; i < fields; i++)
 					total += len[i];
-				while (2 * fields + total >= pagewidth && max)
-				{
-					max=0;
+				while (2 * fields + total >= pagewidth && max) {
+					max = 0;
 					total = 0;
 					for (i = 0; i < fields; i++)
 						total += len[i];
 
 					/* punish the column headers first */
-					for(i=0; i< fields; i++)
-					if( (int)strlen(mapi_get_name(hdl,i)) > mapi_get_len(hdl,i) &&
-						len[i]> MINCOLSIZE){
-						len[i]--;
-						total--;
-						if( 2* fields + total == pagewidth)
-							break;
-						max=1;
-					}
-				} 
+					for (i = 0; i < fields; i++)
+						if (strlen(mapi_get_name(hdl, i)) > (size_t) mapi_get_len(hdl, i) &&
+						    len[i] > MINCOLSIZE) {
+							len[i]--;
+							total--;
+							if (2 * fields + total == pagewidth)
+								break;
+							max = 1;
+						}
+				}
 				/* punish the long value fields */
-				while (2 * fields + total >= pagewidth && len[max] > 1)
-				{
+				while (2 * fields + total >= pagewidth && len[max] > 1) {
 					total = 0;
 					max = 1;
 					for (i = 0; i < fields; i++) {
@@ -587,7 +636,7 @@ SQLrenderer(MapiHdl hdl)
 						len[max] *= 0.9;
 						total += len[max];
 					}
-				} 
+				}
 			}
 
 			SQLheader(hdl, len, fields);
@@ -623,38 +672,36 @@ SQLrenderer(MapiHdl hdl)
 }
 
 static void
-setFormatter(char *s){
-	if( strcmp(s,"sql")==0)
-		formatter= TABLEformatter;
+setFormatter(char *s)
+{
+	if (strcmp(s, "sql") == 0)
+		formatter = TABLEformatter;
+	else if (strcmp(s, "csv") == 0)
+		formatter = CSVformatter;
+	else if (strcmp(s, "tab") == 0)
+		formatter = TABformatter;
+	else if (strcmp(s, "raw") == 0)
+		formatter = RAWformatter;
+	else if (strcmp(s, "xml") == 0)
+		formatter = XMLformatter;
 	else
-	if( strcmp(s,"csv")==0)
-		formatter= CSVformatter;
-	else
-	if( strcmp(s,"tab")==0)
-		formatter= TABformatter;
-	else
-	if( strcmp(s,"raw")==0)
-		formatter= RAWformatter;
-	else
-	if( strcmp(s,"xml")==0)
-		formatter= XMLformatter;
-	else
-		fprintf(toConsole,"non-supported formatter\n");
+		fprintf(toConsole, "non-supported formatter\n");
 }
 
 static void
-setWidth(){
+setWidth(void)
+{
+#ifdef TIOCGWINSZ
 	struct winsize ws;
-	if( rows == 0){
-#ifdef NATIVE_WIN32
-		pagewidth = DEFWIDTH;
-#else
-		ioctl(fileno(stdin), TIOCGWINSZ, &ws);
+
+	pagewidth = DEFWIDTH;
+	if (rows == 0 && ioctl(fileno(stdin), TIOCGWINSZ, &ws) == 0) {
 		rows = ws.ws_row;
-		cols = ws.ws_col;
-		pagewidth = cols; 
-#endif
+		pagewidth = ws.ws_col > 0 ? ws.ws_col : DEFWIDTH;
 	}
+#else
+	pagewidth = DEFWIDTH;
+#endif
 }
 
 static int
@@ -665,13 +712,13 @@ doRequest(Mapi mid, const char *buf, int interactive)
 	if (mode == SQL)
 		SQLsetSpecial(buf);
 
-	if ( (hdl= mapi_query(mid,buf)) != NULL){
-		if( formatter == XMLformatter)
+	if ((hdl = mapi_query(mid, buf)) != NULL) {
+		if (formatter == XMLformatter)
 			XMLrenderer(hdl);
-		else
-		if( formatter == RAWformatter)
+		else if (formatter == RAWformatter)
 			RAWrenderer(hdl);
-		else SQLrenderer(hdl);
+		else
+			SQLrenderer(hdl);
 	}
 	if (mapi_result_error(hdl)) {
 		mapi_explain_result(hdl, stderr);
@@ -847,7 +894,7 @@ The options available for controlling input and rendering depends
 on the language mode.
 @c
 static void
-showCommands()
+showCommands(void)
 {
 	/* XQuery prelude */
 	if (mode == XQUERY) {
@@ -1044,13 +1091,19 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode, int exit_on_
 
 						/* get all table names in current schema */
 						pagewidth = 0;
-						if ((hdl = mapi_query(mid, "SELECT \"t\".\"name\" FROM \"sys\".\"tables\" \"t\", \"sys\".\"schemas\" \"s\" WHERE \"t\".\"schema_id\" = \"s\".\"id\" AND \"s\".\"name\" = \"current_schema\" ORDER BY \"t\".\"name\"")) != NULL && mapi_error(mid) == MOK) {
-							if( formatter == XMLformatter)
+						if ((hdl = mapi_query(mid, "SELECT \"t\".\"name\" "
+								      "FROM \"sys\".\"tables\" \"t\", "
+								      "\"sys\".\"schemas\" \"s\" "
+								      "WHERE \"t\".\"schema_id\" = \"s\".\"id\" "
+								      "AND \"s\".\"name\" = \"current_schema\" "
+								      "ORDER BY \"t\".\"name\"")) != NULL &&
+						    mapi_error(mid) == MOK) {
+							if (formatter == XMLformatter)
 								XMLrenderer(hdl);
-							else
-							if( formatter == RAWformatter)
+							else if (formatter == RAWformatter)
 								RAWrenderer(hdl);
-							else SQLrenderer(hdl);
+							else
+								SQLrenderer(hdl);
 						}
 						mapi_close_handle(hdl);
 						hdl = 0;
@@ -1112,15 +1165,16 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode, int exit_on_
 				case '|':
 				{
 					char *s;
+
 					if (pager)
 						free(pager);
-					pager= NULL;
-					setWidth(); /* reset to system default */
+					pager = NULL;
+					setWidth();	/* reset to system default */
 
 					s = line + 2;
 					while (*s && isspace((int) *s))
 						s++;
-					if( *s == 0)
+					if (*s == 0)
 						continue;
 					s[strlen(s) - 1] = 0;
 					pager = *s ? strdup(s) : NULL;
@@ -1130,12 +1184,14 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode, int exit_on_
 #endif
 #ifdef HAVE_LIBREADLINE
 				case 'h':
-				{ 	int h;
+				{
+					int h;
 					char *nl;
-					for(h=0;h<history_length; h++){
-						nl= history_get(h)? history_get(h)->line:0;
-						if( nl)
-							fprintf(toConsole,"%d %s\n",h,nl);
+
+					for (h = 0; h < history_length; h++) {
+						nl = history_get(h) ? history_get(h)->line : 0;
+						if (nl)
+							fprintf(toConsole, "%d %s\n", h, nl);
 					}
 					continue;
 				}
@@ -1153,10 +1209,12 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode, int exit_on_
 */
 #endif
 				case 'e':
-					echoquery=1;
+					echoquery = 1;
 					continue;
 				case 'f':
-				{ char *s;
+				{
+					char *s;
+
 					if (line[length - 1] == '\n')
 						line[--length] = 0;
 					if (line[length - 1] == '\r')
@@ -1168,7 +1226,7 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode, int exit_on_
 					continue;
 				}
 				case 'x':
-					exit_on_error=1;
+					exit_on_error = 1;
 				default:
 					continue;
 				}
@@ -1255,12 +1313,12 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode, int exit_on_
 						default:
 							if (pagewidth < 0)
 								goto nononsense;
-							if( formatter == XMLformatter)
+							if (formatter == XMLformatter)
 								XMLrenderer(hdl);
-							else
-							if( formatter == RAWformatter)
+							else if (formatter == RAWformatter)
 								RAWrenderer(hdl);
-							else SQLrenderer(hdl);
+							else
+								SQLrenderer(hdl);
 						}
 				} else {
 				      nononsense:
@@ -1272,13 +1330,13 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode, int exit_on_
 						}
 					}
 					if (mode == SQL && pagewidth >= 0 && (reply = mapi_fetch_line(hdl)) != NULL) {
-						if (*reply == '%'){
-							if( formatter == XMLformatter)
+						if (*reply == '%') {
+							if (formatter == XMLformatter)
 								XMLrenderer(hdl);
-							else
-							if( formatter == RAWformatter)
+							else if (formatter == RAWformatter)
 								RAWrenderer(hdl);
-							else SQLrenderer(hdl);
+							else
+								SQLrenderer(hdl);
 						} else
 							fprintf(toConsole, "%s\n", reply);
 					}
@@ -1300,9 +1358,9 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode, int exit_on_
 			CHECK_RESULT(mid, hdl, buf, continue);
 
 #ifdef HAVE_POPEN
-			if (pagerFD){
+			if (pagerFD) {
 				pclose(pagerFD);
-				pagerFD=NULL;
+				pagerFD = NULL;
 			}
 #endif
 			timerEnd();
@@ -1425,7 +1483,11 @@ main(int argc, char **argv)
 	if ((setlen = mo_builtin_settings(&set)) == 0)
 		usage(argv[0]);
 
-	while ((c = getopt_long(argc, argv, "b:c:C:ei::l:u::p:o:P::d:qHh:s:t::TX:?", long_options, &option_index)) != -1) {
+	while ((c = getopt_long(argc, argv, "b:c:C:xef:i::h:l:o:"
+#ifdef HAVE_POPEN
+				"|:"
+#endif
+				"w:r:P::p:d:S:s:Tt::u::Hq?", long_options, &option_index)) != -1) {
 		switch (c) {
 		case 0:
 			if (strcmp(long_options[option_index].name, "rows") == 0) {
@@ -1457,7 +1519,7 @@ main(int argc, char **argv)
 			break;
 		case 'e':
 			if (strcmp(long_options[option_index].name, "echo") == 0) {
-				echoquery= atol(optarg);
+				echoquery = atol(optarg);
 			}
 			break;
 		case 'f':
@@ -1470,13 +1532,16 @@ main(int argc, char **argv)
 			/* accept unambiguous prefix of language */
 			if (strcmp(optarg, "sql") == 0 || strcmp(optarg, "sq") == 0 || strcmp(optarg, "s") == 0) {
 				language = "sql";
+
 				mode = SQL;
 				mark = "Timer";	/* default style */
 			} else if (strcmp(optarg, "mil") == 0 || strcmp(optarg, "mi") == 0) {
 				language = "mil";
+
 				mode = MIL;
 			} else if (strcmp(optarg, "mal") == 0 || strcmp(optarg, "ma") == 0) {
 				language = "mal";
+
 				mode = MAL;
 			} else if (strcmp(optarg, "xquery") == 0 ||
 				   strcmp(optarg, "xquer") == 0 ||
@@ -1485,6 +1550,7 @@ main(int argc, char **argv)
 				   strcmp(optarg, "xq") == 0 ||
 				   strcmp(optarg, "x") == 0) {
 				language = "xquery";
+
 				mode = XQUERY;
 			} else {
 				fprintf(stderr, "language option needs to be one of sql, mil, mal, or xquery\n");
@@ -1518,13 +1584,13 @@ main(int argc, char **argv)
 			dbname = optarg;
 			break;
 		case 's':
-			if( rows== 0)
-				pagewidth= DEFWIDTH;
+			if (rows == 0)
+				pagewidth = DEFWIDTH;
 			command = optarg;
 			break;
 		case 'w':
 			pagewidth = atol(optarg);
-			rows= -1; /* don't reset pagewidth */
+			rows = -1;	/* don't reset pagewidth */
 			break;
 		case 'r':
 			rowsperpage = atol(optarg);
@@ -1663,12 +1729,13 @@ main(int argc, char **argv)
 #endif
 			/* reading from terminal, prepare prompt */
 			sprintf(promptbuf, "%.*s>", (int) sizeof(promptbuf) - 2, language);
+
 			/* use default rendering if not overruled at commandline */
 			setWidth();
 
 			prompt = promptbuf;
 			fromConsole = stdin;
-		} 
+		}
 		/* stream xml document into the server */
 		if (input && mode == XQUERY) {
 			mapi_stream_into(mid, input, colname);
