@@ -99,22 +99,68 @@ get_schema(Mapi mid)
 int
 dump_table(Mapi mid, char *tname, FILE *toConsole, int describe)
 {
-	int cnt = 0, i;
+	int cnt, i;
 	MapiHdl hdl;
 	char *query;
 	size_t maxquerylen = BUFSIZ + strlen(tname);
 	int *string;
 	char *sname;
 
+	if ((sname = strchr(tname, '.')) != NULL) {
+		size_t len = sname - tname;
+
+		sname = malloc(len + 1);
+		strncpy(sname, tname, len);
+		sname[len] = 0;
+		tname += len + 1;
+	} else if ((sname = get_schema(mid)) == NULL) {
+		return 1;
+	}
+
 	query = malloc(maxquerylen);
+	snprintf(query, maxquerylen,
+		 "SELECT \"t\".\"name\" "
+		 "FROM \"sys\".\"_tables\" \"t\", \"sys\".\"schemas\" \"s\" "
+		 "WHERE \"s\".\"name\" = '%s' "
+		 "AND \"t\".\"schema_id\" = \"s\".\"id\" "
+		 "AND \"t\".\"name\" = '%s'",
+		 sname, tname);
+
+	if ((hdl = mapi_query(mid, query)) == NULL || mapi_error(mid)) {
+		if (hdl) {
+			mapi_explain_query(hdl, stderr);
+			mapi_close_handle(hdl);
+		} else
+			mapi_explain(mid, stderr);
+		free(query);
+		free(sname);
+		return 1;
+	}
+	cnt = 0;
+	while ((mapi_fetch_row(hdl)) != 0) {
+		cnt++;
+	}
+	if (mapi_error(mid)) {
+		mapi_explain_query(hdl, stderr);
+		mapi_close_handle(hdl);
+		free(query);
+		free(sname);
+		return 1;
+	}
+	mapi_close_handle(hdl);
+
+	if (cnt != 1) {
+		if (cnt == 0)
+			fprintf(stderr, "Table %s.%s does not exist.\n", sname, tname);
+		else
+			fprintf(stderr, "Table %s.%s not unique.\n", sname, tname);
+		free(query);
+		free(sname);
+		return 1;
+	}
 
 	fprintf(toConsole, "CREATE TABLE ");
 
-	sname = get_schema(mid);
-	if (sname == NULL) {
-		free(query);
-		return 1;
-	}
 	quoted_print(toConsole, sname);
 	free(sname);
 	fprintf(toConsole, ".");
@@ -148,6 +194,7 @@ dump_table(Mapi mid, char *tname, FILE *toConsole, int describe)
 		return 1;
 	}
 
+	cnt = 0;
 	while ((mapi_fetch_row(hdl)) != 0) {
 		char *c_name = mapi_fetch_field(hdl, 0);
 		char *c_type = mapi_fetch_field(hdl, 1);
