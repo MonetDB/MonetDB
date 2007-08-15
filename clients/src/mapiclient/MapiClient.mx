@@ -1568,7 +1568,7 @@ main(int argc, char **argv)
 			break;
 		case 's':
 			if (cols == 0)
-				pagewidth = DEFWIDTH;
+				cols = -1;
 			command = optarg;
 			break;
 		case 'w':
