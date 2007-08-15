@@ -37,10 +37,7 @@ MapiClient [options] [inputfile+]
 The following options are supported:
 
 @multitable @columnfractions .25 .25 .25 @verb @verb @verb
-@item -b t/f      
-@tab --blocked=true/false
-@tab blocked mode 
-@item -x          
+@item -e          
 @tab --error          
 @tab exit on error 
 @item -h hostname 
@@ -242,7 +239,7 @@ timerEnd(void)
 static void
 SQLsetSpecial(const char *command)
 {
-	if (mode == SQL) {
+	if (mode == SQL && command) {
 		/* catch the specials for better rendering */
 		const char *s = command;
 
@@ -489,7 +486,7 @@ SQLexplainRendering(MapiHdl hdl)
 		mapi_explain_result(hdl, stderr);
 	}
 
-	len[0] = pagewidth;
+	len[0] = pagewidth-4; /* remove borders */
 	numeric[0] = 0;
 	SQLheader(hdl, len, 1);
 	while ((fields[0] = mapi_fetch_line(hdl)) != NULL) {
@@ -527,7 +524,7 @@ SQLtraceRenderer(MapiHdl hdl)
 	if (mapi_result_error(hdl) != NULL) {
 		mapi_explain_result(hdl, stderr);
 	}
-	len[0] = pagewidth;
+	len[0] = pagewidth-4; /* remove borders */
 	numeric[0] = 0;
 
 	SQLseparator(len, 1, '-');
@@ -813,7 +810,7 @@ doFile(Mapi mid, const char *file)
 			hdl = mapi_query_prep(mid);
 			CHECK_RESULT(mid, hdl, buf, continue);
 		}
-		if (length > 0 ){
+		if (length > 0) {
 			char *xquery_sep = buf;
 
 			assert(hdl != NULL);
@@ -920,7 +917,7 @@ showCommands(void)
 		fprintf(toConsole, "\\h      - show the readline history\n");
 #endif
 		fprintf(toConsole, "\\q      - terminate session\n");
-		fprintf(toConsole, "\\T      - toggle timer\n");
+		fprintf(toConsole, "\\t      - toggle timer\n");
 
 	switch (mode) {
 	case XQUERY:
@@ -933,12 +930,12 @@ showCommands(void)
 		    );
 		break;
 	case MAL:
-		fprintf(toConsole, "\\?pat   - help on MAL function using pattern [modnme[.fcnnme][(][)]] using wildcard *\n");
+		fprintf(toConsole, "\\?pat   - MAL function help. pat=[modnme[.fcnnme][(][)]] wildcard *\n");
 		break;
 	case SQL:
 		fprintf(toConsole, "\\w#     - set maximal page width (-1=raw,0=no limit, >0 max char)\n");
 		fprintf(toConsole, "\\r#     - set maximum rows per page (-1=raw)\n");
-		fprintf(toConsole, "\\e      - echo the query \n");
+		fprintf(toConsole, "\\E      - echo the query \n");
 		fprintf(toConsole, "\\f      - format using a built-in renderer {csv,tab,raw,sql,xml} \n");
 		fprintf(toConsole, "\\D table- dumps the table, or the complete database if none given.\n");
 		fprintf(toConsole, "\\d table- describe the table, or the complete database if none given.\n");
@@ -948,8 +945,7 @@ showCommands(void)
 		fprintf(toConsole, "\\l      - line is sent immediately\n");
 	}
 		fprintf(toConsole, "\\L file - save client/server interaction\n");
-		fprintf(toConsole, "\\b      - toggle block mode, sent upon empty line\n");
-		fprintf(toConsole, "\\t      - toggle MapiClient debugging\n");
+		fprintf(toConsole, "\\t      - trace MapiClient \n");
 }
 
 static int
@@ -1025,12 +1021,11 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode, int exit_on_
 			/* in the switch, use continue if the line was
 			   processed, use break to send to server */
 			switch (*line) {
+			case '\n':
 			case '\0':
-				if (!linemode && length==0) 
+				if(strncmp(promptbuf, "mdb", 3) == 0)
 					break;
-				if(strncmp(promptbuf, "mdb", 3) )
-					continue;
-				break;
+				continue;
 			case '\\':
 				switch (line[1]) {
 				case 'q':
@@ -1052,11 +1047,6 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode, int exit_on_
 					linemode = 1;
 					line = "";
 					length = 0;
-					continue;
-				case 'b':
-					if (mode == XQUERY)
-						break;
-					linemode = linemode? 0:1;
 					continue;
 				case 'A':
 					if (mode == XQUERY)
@@ -1236,7 +1226,7 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode, int exit_on_
 				}
 */
 #endif
-				case 'e':
+				case 'E':
 					echoquery = 1;
 					continue;
 				case 'f':
@@ -1253,7 +1243,7 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode, int exit_on_
 					setFormatter(s);
 					continue;
 				}
-				case 'x':
+				case 'e':
 					exit_on_error = 1;
 				default:
 					continue;
@@ -1262,23 +1252,20 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode, int exit_on_
 		}
 
 		if (hdl == NULL) {
+			timerStart();
 			hdl = mapi_query_prep(mid);
 			CHECK_RESULT(mid, hdl, buf, continue);
 		}
 		if (length > 0 ||
-			(!linemode && length==0) ||
 			strncmp(promptbuf, "mdb", 3) == 0) {
 			assert(hdl != NULL);
 			sent = 1;
 			SQLsetSpecial(line);
-			timerStart();
 			mapi_query_part(hdl, line, length);
 			CHECK_RESULT(mid, hdl, buf, continue);
 		}
 		if (linemode || 
-			(!linemode && length==0) ||
-			(specials && strncmp(promptbuf, "mdb", 3) == 0) ||
-			(mode==SQL && line[length-2]==';' && line[length-1]=='\n')) {
+			(specials && strncmp(promptbuf, "mdb", 3) == 0) ){
 			assert(hdl != NULL);
 			/* If the server wants more but we're at the
 			   end of file (line == NULL), notify the
@@ -1362,9 +1349,7 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode, int exit_on_
 							return 1;
 						}
 					}
-					if (mode == SQL && 
-						pagewidth >= 0 && 
-						(reply = mapi_fetch_line(hdl)) != NULL) {
+					if (mode == SQL && pagewidth >= 0 && (reply = mapi_fetch_line(hdl)) != NULL) {
 						if (*reply == '%') {
 							if (formatter == XMLformatter)
 								XMLrenderer(hdl);
@@ -1426,12 +1411,11 @@ usage(const char *prog)
 	fprintf(stderr, " -L logfile  | --log=logfile     save client/server interaction\n");
 	fprintf(stderr, " -P passwd   | --passwd=passwd   password\n");
 	fprintf(stderr, " -p portnr   | --port=portnr     port to connect to\n");
-	fprintf(stderr, " -q          | --quiet           don't print welcome message\n");
 	fprintf(stderr, " -s stmt     | --statement=stmt  run single statement\n");
 	fprintf(stderr, " -T          | --time            time commands\n");
 	fprintf(stderr, " -t          | --trace           trace mapi network interaction\n");
 	fprintf(stderr, " -u user     | --user=user       user id\n");
-	fprintf(stderr, " -x          | --error           exit on error\n");
+	fprintf(stderr, " -e          | --error           exit on error\n");
 	fprintf(stderr, " -?          | --help            show this usage message\n");
 #ifdef HAVE_POPEN
 	fprintf(stderr, " -|          | --pager=cmd        for pagination\n");
@@ -1469,7 +1453,6 @@ main(int argc, char **argv)
 	int exit_on_error = 0;
 	int c = 0;
 	Mapi mid;
-	int quiet = 0;
 	int save_history = 0;
 	int interactive = 0;
 	int option_index=0;
@@ -1501,7 +1484,6 @@ main(int argc, char **argv)
 		{"trace", 2, 0, 't'},
 		{"user", 2, 0, 'u'},
 		{"history", 0, 0, 'H'},
-		{"quiet", 0, 0, 'q'},
 		{"help", 0, 0, '?'},
 		{0, 0, 0, 0}
 	};
@@ -1551,7 +1533,7 @@ main(int argc, char **argv)
 		case 'f':
 			setFormatter(optarg);
 			break;
-		case 'x':
+		case 'e':
 			exit_on_error = 1;
 			break;
 		case 'L':
@@ -1564,7 +1546,6 @@ main(int argc, char **argv)
 			/* accept unambiguous prefix of language */
 			if (strcmp(optarg, "sql") == 0 || strcmp(optarg, "sq") == 0 || strcmp(optarg, "s") == 0) {
 				language = "sql";
-				linemode=0;
 				mode = SQL;
 			} else if (strcmp(optarg, "mil") == 0 || strcmp(optarg, "mi") == 0) {
 				language = "mil";
@@ -1641,9 +1622,6 @@ main(int argc, char **argv)
 		}
 			break;
 #endif
-		case 'q':
-			quiet = 1;
-			break;
 		case 'T':
 			mark = "Timer";
 			break;
@@ -1726,12 +1704,6 @@ main(int argc, char **argv)
 	if ( logfile) 
 		mapi_log(mid,logfile);
 	
-	if (!quiet) {
-		char *motd = mapi_get_motd(mid);
-
-		if (motd)
-			printf("%s", motd);
-	}
 	mapi_profile(mid, mark != NULL);
 	mapi_trace(mid, trace);
 	if (output)
