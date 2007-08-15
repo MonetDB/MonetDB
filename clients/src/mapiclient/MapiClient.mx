@@ -37,9 +37,6 @@ MapiClient [options] [inputfile+]
 The following options are supported:
 
 @multitable @columnfractions .25 .25 .25 @verb @verb @verb
-@item -e          
-@tab --error          
-@tab exit on error 
 @item -h hostname 
 @tab --host=hostname  
 @tab host to connect to 
@@ -949,7 +946,7 @@ showCommands(void)
 }
 
 static int
-doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode, int exit_on_error)
+doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode)
 {
 	char *line = NULL;
 	char *buf = NULL;
@@ -1243,8 +1240,6 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode, int exit_on_
 					setFormatter(s);
 					continue;
 				}
-				case 'e':
-					exit_on_error = 1;
 				default:
 					continue;
 				}
@@ -1311,10 +1306,6 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode, int exit_on_
 						if (pagewidth < 0)
 							goto nononsense;
 						fprintf(toConsole, "%s", reply);
-						if (exit_on_error) {
-							timerEnd();
-							return 1;
-						}
 					} else
 						switch (specials) {
 						case 1:
@@ -1344,10 +1335,6 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode, int exit_on_
 				      nononsense:
 					if ((reply = mapi_result_error(hdl)) != NULL) {
 						mapi_explain_result(hdl, stderr);
-						if (exit_on_error) {
-							timerEnd();
-							return 1;
-						}
 					}
 					if (mode == SQL && pagewidth >= 0 && (reply = mapi_fetch_line(hdl)) != NULL) {
 						if (*reply == '%') {
@@ -1415,7 +1402,6 @@ usage(const char *prog)
 	fprintf(stderr, " -T          | --time            time commands\n");
 	fprintf(stderr, " -t          | --trace           trace mapi network interaction\n");
 	fprintf(stderr, " -u user     | --user=user       user id\n");
-	fprintf(stderr, " -e          | --error           exit on error\n");
 	fprintf(stderr, " -?          | --help            show this usage message\n");
 #ifdef HAVE_POPEN
 	fprintf(stderr, " -|          | --pager=cmd        for pagination\n");
@@ -1424,6 +1410,7 @@ usage(const char *prog)
 	fprintf(stderr, "\nSQL specific opions \n");
 	fprintf(stderr, " -r          | --rows=nr          for pagination\n");
 	fprintf(stderr, " -w          | --width=nr         for pagination\n");
+	fprintf(stderr, " -d          | --dump             create an SQL dump\n");
 
 	fprintf(stderr, "\nXQuery specific options\n");
 	fprintf(stderr, " -C colname  | --collection=name  collection name\n");
@@ -1449,8 +1436,8 @@ main(int argc, char **argv)
 	char *colname = NULL;
 	int trace = 0;
 	int guest = 1;
+	int dump = 0;
 	int linemode = 1;
-	int exit_on_error = 0;
 	int c = 0;
 	Mapi mid;
 	int save_history = 0;
@@ -1460,8 +1447,8 @@ main(int argc, char **argv)
 	static struct option long_options[] = {
 		{"config", 1, 0, 'c'},
 		{"collection", 1, 0, 'C'},
-		{"error", 0, 0, 'e'},
-		{"echo", 0, 0, 'E'},
+		{"dump", 0, 0, 'd'},
+		{"echo", 0, 0, 'e'},
 		{"format", 1, 0, 'f'},
 		{"interactive", 0, 0, 'i'},
 		{"input", 1, 0, 'i'},
@@ -1526,15 +1513,11 @@ main(int argc, char **argv)
 		case 'C':
 			colname = optarg;
 			break;
-		case 'E':
-			if (strcmp(long_options[option_index].name, "echo") == 0 && optarg) 
-				echoquery= atol(optarg);
+		case 'e':
+			echoquery= 1;
 			break;
 		case 'f':
 			setFormatter(optarg);
-			break;
-		case 'e':
-			exit_on_error = 1;
 			break;
 		case 'L':
 			{	char buf[1024];
@@ -1593,7 +1576,10 @@ main(int argc, char **argv)
 			setlen = mo_add_option(&set, setlen, opt_cmdline, "port", optarg);
 			break;
 		case 'd':
-			dbname = optarg;
+			if (optarg== NULL && strcmp(long_options[option_index].name, "dump") == 0 ) 
+				dump=1;
+			else
+				dbname = optarg;
 			break;
 		case 's':
 			if (rows == 0)
@@ -1700,6 +1686,13 @@ main(int argc, char **argv)
 		mapi_explain(mid, stderr);
 		exit(2);
 	}
+	if( dump){
+		if( mode == SQL){
+			dump_tables(mid, toConsole);
+			exit(0);
+		} else
+			fprintf(stderr,"Dump only supported for SQL\n");
+	}
 
 	if ( logfile) 
 		mapi_log(mid,logfile);
@@ -1752,7 +1745,7 @@ main(int argc, char **argv)
 			mapi_stream_into(mid, input, colname);
 			c = doFile(mid, NULL);
 		} else
-			c = doFileByLines(mid, stdin, prompt, linemode, exit_on_error);
+			c = doFileByLines(mid, stdin, prompt, linemode);
 
 #ifdef HAVE_LIBREADLINE
 		if (interactive_stdin) {
