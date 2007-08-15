@@ -57,6 +57,7 @@ mal_export void garbageElement(ValPtr v);
 mal_export void garbageCollector(MalBlkPtr mb, MalStkPtr stk, int flag);
 mal_export void releaseBAT(MalBlkPtr mb, MalStkPtr stk, int bid);
 mal_export int getVolume(MalStkPtr stk, InstrPtr pci, int rd);
+mal_export void updateBigFoot(Client cntxt, int bid, int add);
 
 mal_export ptr getArgValue(MalStkPtr stk, InstrPtr pci, int k);
 mal_export ptr getArgReference(MalStkPtr stk, InstrPtr pci, int k);
@@ -73,6 +74,7 @@ static str runMALsequence( Client cntxt, MalBlkPtr mb, int startpc,
 		int stoppc, MalStkPtr stk, MalStkPtr env, InstrPtr pcicaller);
 static str setDynamicType(MalBlkPtr mb, VarPtr v, int tpe, int pc);
 static void showVolume(Client cntxt, MalStkPtr stk, InstrPtr pci, int rd);
+static void displayVolume(Client cntxt, lng vol);
 @-
 We can speed up the copying, provided we ignore copying ptr-based
 objects.
@@ -960,6 +962,8 @@ the bind(namespace, batname, mode) operation. [todo]
 		for(i=0; i<pci->retc; i++)
 		if( stk->stk[getArg(pci,i)].vtype == TYPE_bat){
 			bat bid = stk->stk[getArg(pci,i)].val.br.id;
+			/* update the bigfoot information */
+			updateBigFoot(cntxt, bid, TRUE);
 			/* BAT *b;*/
 			if( backup[i] ){
 				if( backup[i]== bid){
@@ -968,6 +972,7 @@ the bind(namespace, batname, mode) operation. [todo]
 					BBPreleaselref(backup[i]);
 				} else { 
 					/* possible garbage collect the variable */
+					updateBigFoot(cntxt, backup[i], FALSE);
 					BBPdecref(backup[i],TRUE);
 				}
 				backup[i]=0;
@@ -1565,16 +1570,16 @@ See @url{The MAL Profiler} for more details.
 @= timingHndlr
 if( cntxt->flags && stk->cmd != 't' && stk->cmd != 'C'){
 	if( cntxt->flags & timerFlag)
-		stream_printf(cntxt->fdout,"#%6d usec",GDKusec()-cntxt->timer);
+		stream_printf(cntxt->fdout,"[%6d usec ",GDKusec()-cntxt->timer);
 #ifdef HAVE_SYS_RESOURCE_H
 	if( cntxt-> flags & ioFlag){
 		struct  rusage resource;
 		getrusage(RUSAGE_SELF, &resource);
 		if(	resource.ru_inblock - oldinblock 
 		 ||	resource.ru_oublock - oldoublock ) {
-			stream_printf(cntxt->fdout,"# %3d R",
+			stream_printf(cntxt->fdout," %3d R",
 				resource.ru_inblock- oldinblock);
-			stream_printf(cntxt->fdout," %3d W",
+			stream_printf(cntxt->fdout," %3d W ",
 				resource.ru_oublock- oldoublock);
 		}
 	}
@@ -1583,21 +1588,50 @@ if( cntxt->flags && stk->cmd != 't' && stk->cmd != 'C'){
 		struct mallinfo memory;
 		memory= MT_mallinfo();
 		if( memory.arena- oldMemory.arena > 0)
-			stream_printf(cntxt->fdout,"# %6d bytes",
+			stream_printf(cntxt->fdout," %6d bytes ",
 				memory.arena-oldMemory.arena );
 	}
 	if( cntxt->flags & flowFlag){
 		/* calculate the read/write byte flow */
-		stream_printf(cntxt->fdout,"# ");
 		showVolume(cntxt,stk,pci,0);
+		stream_printf(cntxt->fdout,"/");
 		showVolume(cntxt,stk,pci,1);
+		stream_printf(cntxt->fdout," ");
 		/* showVolume(cntxt,stk,pci,2);*/
 	}
-	if( cntxt->flags & timerFlag){
-		printTraceCall(cntxt->fdout,mb,stk,stkpc, cntxt->flags);
+	if( cntxt->flags & bigfootFlag){
+		displayVolume(cntxt,cntxt->vmfoot);
+		stream_printf(cntxt->fdout,":");
+		displayVolume(cntxt,cntxt->bigfoot);
+		stream_printf(cntxt->fdout," ");
+	}
+	{str line;
+	line= call2str(mb,stk,stkpc,cntxt->flags);
+	stream_printf(cntxt->fdout, " %s ]\n", line);
+	GDKfree(line);
+	}
+	if( cntxt->flags & timerFlag)
 		cntxt->timer = GDKusec();
-	} else if( cntxt->flags & flowFlag){
-		stream_printf(cntxt->fdout,"\n");
+}
+@-
+The bigfoot memory tracker keeps track on the space
+occupancy of BATs. It ignores for the time being the heaps.
+@c
+void updateBigFoot(Client cntxt, int bid, int add)
+{
+	BAT *b;
+
+	if( BBP_lrefs(bid)==1 ){
+		b= BATdescriptor(bid);
+		if( b==0) return;
+		/* count it once ! */
+		if( add){
+			cntxt->vmfoot += BATcount(b) * BUNsize(b);
+		} else
+			cntxt->vmfoot -= BATcount(b) * BUNsize(b);
+		if( cntxt->vmfoot > cntxt->bigfoot)
+			cntxt->bigfoot= cntxt->vmfoot;
+		BBPunfix(b->batCacheid);
 	}
 }
 @-
@@ -1623,18 +1657,21 @@ int getVolume(MalStkPtr stk, InstrPtr pci, int rd)
 	return vol;
 }
 
+void displayVolume(Client cntxt, lng vol){
+	if( vol <1024)
+		stream_printf(cntxt->fdout,LLFMT,vol);
+	else
+	if( vol <1024*1024)
+		stream_printf(cntxt->fdout,LLFMT "K",vol/1024);
+	else
+	if( vol <1024* 1024*1024)
+		stream_printf(cntxt->fdout, LLFMT "M",vol/1024/1024);
+	else
+		stream_printf(cntxt->fdout, LLFMT "G",vol/1024/1024/1024);
+}
 void showVolume(Client cntxt, MalStkPtr stk, InstrPtr pci, int rd){
 	int vol;
 	vol= getVolume(stk,pci,rd);
-	if( vol <1024)
-		stream_printf(cntxt->fdout,"%3d",vol);
-	else
-	if( vol <1024*1024)
-		stream_printf(cntxt->fdout,"%3dK",vol/1024);
-	else
-	if( vol <1024* 1024*1024)
-		stream_printf(cntxt->fdout,"%3dM",vol/1024/1024);
-	else
-		stream_printf(cntxt->fdout,"%3dG",vol/1024/1024/1024);
+	displayVolume(cntxt,vol);
 }
 @}

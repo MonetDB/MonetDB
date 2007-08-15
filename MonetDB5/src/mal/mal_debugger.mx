@@ -24,6 +24,10 @@ the MAL compiler provides a sufficient handle to proceed. Once
 it passes the compiler we have to resort to a debugger to
 assess its behavior.
 
+Note, the MAL debugger described here can be used in conjunction
+with the textual interface client @emph{MapiClient} only.
+The JDBC protocol does not permit passing through information that
+'violates' the protocol.
 @menu
 * Program Debugging ::
 * Handling Breakpoints::
@@ -87,7 +91,7 @@ mdb>help
 	down             -- go down the stack
 	up               -- go up the stack
 	trace <var>      -- trace assignment to variables
-	set @verb{ { }timer,flow,io,memory@verb{ } } -- set trace switches
+	set @verb{ { }timer,flow,io,memory,bigfoot@verb{ } } -- set trace switches
 	unset            -- turn off switches
 	help             -- this message
 mdb>
@@ -234,6 +238,9 @@ keeps track on growing memory needs.
 @item io
 keeps track on the amount of physical IO
 and is used to detect operators consuming excessive amounts of space.
+@item bigfoot
+keeps track of the current and maximum virtual memory footprint 
+of the BATs.[incomplete]
 @end table
 
 The snippet below shows setting the @sc{memory} and @sc{timer}
@@ -466,6 +473,7 @@ mal_export void mdbShowBreakpoints(Client cntxt);
 mal_export void mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc);
 mal_export int mdbSession(void);
 mal_export void mdbStep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc);
+mal_export void mdbDump(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export void mdbHelp(stream *f);
 mal_export void printStackElm(stream *f, MalBlkPtr mb, VarPtr n, ValPtr v, int index, size_t cnt, int first, int lifespan);
 mal_export void printBATelm(stream *f, int i, size_t cnt, size_t first);
@@ -751,7 +759,7 @@ printCall(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 {
 	str msg;
 	msg = call2str(mb, stk, pc, cntxt->flags);
-	stream_printf(cntxt->fdout, "%s at %s.%s[%d]\n", msg, 
+	stream_printf(cntxt->fdout, "#%s at %s.%s[%d]\n", msg, 
 		getModuleId(getInstrPtr(mb,0)),
 		getFunctionId(getInstrPtr(mb,0)),pc);
 	GDKfree(msg);
@@ -820,6 +828,15 @@ mdbLocateMalBlk(MalBlkPtr mb, str b, stream *out){
 		return NULL;
 	} 
 	return m;
+}
+
+static void
+mdbBacktrace(Client cntxt, MalStkPtr stk, int pci){
+	for (; stk != NULL; stk = stk->up) {
+		printCall(cntxt, stk->blk, stk, pci);
+		if (stk->up)
+			pci = stk->up->pcup;
+	}
 }
 
 void
@@ -911,6 +928,7 @@ mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
 				su->cmd = 0;
 			cntxt->itrace = 0;
 			cntxt->flags = 0;
+			stream_printf(out,"mdb>#EOD\n");
 			/* MDBstatus(0); */
 			cntxt->prompt = oldprompt;
 			cntxt->promptlength = oldpromptlength;
@@ -969,6 +987,10 @@ mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
 									resource.ru_nswap, resource.ru_inblock, 
 									resource.ru_oublock);
 #endif
+				}
+				if( strncmp("bigfoot",b,7)==0){
+					/* calculate the virtual memory footprint */
+					cntxt->flags |= bigfootFlag;
 				}
 				continue;
 			}
@@ -1093,9 +1115,12 @@ mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
 				/* the 'dense' qualification only shows entries with a hard ref */
 				for (; i < limit; i++)
 					if (BBP_logical(i) && BBP_cache(i) ) {
+						BAT *bd= BATdescriptor(i);
 						if( *b=='d' && BBP_refs(i)==0) continue;
-						stream_printf(out, "[%d] %s lref = %d ref= %d ", 
-							i, BBP_logical(i), BBP_lrefs(i), BBP_refs(i));
+						stream_printf(out, "[%d] %s lref = %d ref= %d views=%d ", 
+							i, BBP_logical(i), BBP_lrefs(i), BBP_refs(i), 
+							bd->batSharecnt);
+						BBPunfix(i);
 						stream_printf(out, " dirty=%d", BATdirty(BBP_cache(i)));
 						if( *BBP_logical(i) =='.')
 							stream_printf(out, " zombie ");
@@ -1256,13 +1281,15 @@ mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
 			if( strncmp("unset",b,5)){
 				skipWord(cntxt, b);
 				skipBlanc(cntxt, b);
-				if( strncmp("flow",b,1) == 0)
+				if( strncmp("flow",b,4) == 0)
 					cntxt->flags &= ~flowFlag;
-				if( strncmp("memory",b,1) == 0)
+				if( strncmp("memory",b,6) == 0)
 					cntxt->flags &= ~memoryFlag;
-				if (strncmp("timer", b, 1) == 0)
+				if (strncmp("timer", b, 5) == 0)
 					cntxt->flags &= ~timerFlag;
-				if (strncmp("io", b, 1) == 0) 
+				if (strncmp("bigfoot", b, 7) == 0)
+					cntxt->flags &= ~bigfootFlag;
+				if (strncmp("io", b, 2) == 0) 
 					cntxt->flags &= ~ioFlag;
 				continue;
 			}
@@ -1275,16 +1302,7 @@ mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
 			continue;
 		case 'w':
 		{
-			MalStkPtr w;
-			MalBlkPtr mw = mb;
-			int pci = pc;	/*  how to find enclosing pc */
-
-			for (w = stk; w != NULL; w = w->up) {
-				mw = w->blk;
-				printCall(cntxt, mw, w, pci);
-				if (w->up)
-					pci = w->up->pcup;
-			}
+			mdbBacktrace(cntxt, stk, pc);
 			continue;
 		}
 @-
@@ -1357,6 +1375,15 @@ signatures satisfying the pattern.
 	cntxt->promptlength = oldpromptlength;
 }
 
+void 
+mdbDump(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+	Client cntxt= MCgetClient();
+	int i= getPC(mb,pci);
+	stream_printf(cntxt->fdout,"!MDB dump of instruction %d\n",i);
+	printFunction(cntxt->fdout, mb, LIST_MAL_ALL | LIST_MAL_PROPS);
+	mdbBacktrace(cntxt, stk, i);
+	printStack(cntxt->fdout,mb,stk,0);
+}
 static int mdbSessionActive;
 int mdbSession(){
 	return mdbSessionActive;
@@ -1618,9 +1645,9 @@ printStackElm(stream *f, MalBlkPtr mb, VarPtr n, ValPtr v, int index, size_t cnt
 		b = BATdescriptor(v->val.ival);
 		if (b) {
 			/* ignore ref count of this call */
-			stream_printf(f, " count=%d lrefs=%d refs=%d", 
+			stream_printf(f, " count=%d lrefs=%d refs=%d views=%d", 
 				BATcount(b), BBP_lrefs(ABS(b->batCacheid)), 
-				BBP_refs(ABS(b->batCacheid)) - 1);
+				BBP_refs(ABS(b->batCacheid)) - 1, b->batSharecnt);
 			BBPunfix(b->batCacheid);
 		}
 	} 

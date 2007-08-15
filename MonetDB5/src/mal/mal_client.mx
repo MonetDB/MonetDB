@@ -139,11 +139,14 @@ usage patterns.
 @h
 	sht		flags;	/* resource tracing flags */
 	lng     timer;  /* trace time in usec */
+	lng		bigfoot; /* maximum virtual memory use */
+	lng		vmfoot; /* virtual memory use */
 
 #define timerFlag	1
 #define memoryFlag	2
 #define ioFlag	4
 #define flowFlag	8
+#define bigfootFlag	16
 @-
 @}
 @-
@@ -433,6 +436,8 @@ collect the buffer when in use.
 	c->itrace = 0;
 	c->debugOptimizer = c->debugScheduler= 0;
 	c->timer = 0;
+	c->bigfoot = 0;
+	c->vmfoot = 0;
 	c->errbuf = 0;
 
 	c->cwd= GDKstrdup(monet_cwd);
