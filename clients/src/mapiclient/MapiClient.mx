@@ -52,10 +52,10 @@ The following options are supported:
 @item -s stmt     
 @tab --statement=stmt 
 @tab run single statement 
-@item -t          
-@tab --trace
+@item -X          
+@tab --Xdebug
 @tab trace mapi network interaction
-@item -T          
+@item -t          
 @tab --time           
 @tab time commands 
 @item -u user     
@@ -166,7 +166,7 @@ control.
 #ifdef HAVE_POPEN
 static char *pager = 0;		/* use external pager */
 #endif
-static int rows = 0;
+static int cols = 0;
 static int rowsperpage = 0;	/* for SQL pagination */
 static int pagewidth = -1;	/* use raw mode for file input, tabular format in stdin */
 static int specials = 0;	/* set when we see EXPLAIN,DEBUG, or TRACE */
@@ -691,11 +691,9 @@ setWidth(void)
 #ifdef TIOCGWINSZ
 	struct winsize ws;
 
-	pagewidth = DEFWIDTH;
-	if (rows == 0 && ioctl(fileno(stdin), TIOCGWINSZ, &ws) == 0) {
-		rows = ws.ws_row;
+	if (cols == 0 && ioctl(fileno(stdin), TIOCGWINSZ, &ws) == 0) 
 		pagewidth = ws.ws_col > 0 ? ws.ws_col : DEFWIDTH;
-	}
+	else pagewidth= cols;
 #else
 	pagewidth = DEFWIDTH;
 #endif
@@ -709,24 +707,18 @@ doRequest(Mapi mid, const char *buf, int interactive)
 	if (mode == SQL)
 		SQLsetSpecial(buf);
 
-	if ((hdl = mapi_query(mid, buf)) != NULL) {
-		if (formatter == XMLformatter)
-			XMLrenderer(hdl);
-		else if (formatter == RAWformatter)
-			RAWrenderer(hdl);
-		else
-			SQLrenderer(hdl);
-	}
-	if (mapi_result_error(hdl)) {
+	if ((hdl = mapi_query(mid, buf)) == NULL ||
+		mapi_error(mid) || mapi_result_error(hdl) ) {
 		mapi_explain_result(hdl, stderr);
 		mapi_close_handle(hdl);
 		return 1;
 	}
-	if (mapi_error(mid)) {
-		mapi_explain_query(hdl, stderr);
-		mapi_close_handle(hdl);
-		return 1;
-	}
+
+	if (formatter == TABLEformatter && pagewidth>=0)
+		SQLrenderer(hdl);
+	else 
+		RAWrenderer(hdl);
+
 	if (!mapi_get_active(mid) || !interactive)
 		mapi_close_handle(hdl);
 	return 0;
@@ -942,7 +934,7 @@ showCommands(void)
 		fprintf(toConsole, "\\l      - line is sent immediately\n");
 	}
 		fprintf(toConsole, "\\L file - save client/server interaction\n");
-		fprintf(toConsole, "\\t      - trace MapiClient \n");
+		fprintf(toConsole, "\\X      - trace MapiClient code\n");
 }
 
 static int
@@ -1028,13 +1020,13 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode)
 				case 'q':
 					free(buf);
 					return 0;
-				case 'T':
+				case 't':
 					mark = mark ? NULL : "Timer";
 					if (mark2)
 						free(mark2);
 					mark2 = strdup(line + 2);
 					continue;
-				case 't':
+				case 'X':
 					/* toggle interaction trace */
 					mapi_trace(mid, !mapi_get_trace(mid));
 					continue;
@@ -1399,8 +1391,8 @@ usage(const char *prog)
 	fprintf(stderr, " -P passwd   | --passwd=passwd   password\n");
 	fprintf(stderr, " -p portnr   | --port=portnr     port to connect to\n");
 	fprintf(stderr, " -s stmt     | --statement=stmt  run single statement\n");
-	fprintf(stderr, " -T          | --time            time commands\n");
-	fprintf(stderr, " -t          | --trace           trace mapi network interaction\n");
+	fprintf(stderr, " -t          | --time            time commands\n");
+	fprintf(stderr, " -X          | --Xdebug          trace mapi network interaction\n");
 	fprintf(stderr, " -u user     | --user=user       user id\n");
 	fprintf(stderr, " -?          | --help            show this usage message\n");
 #ifdef HAVE_POPEN
@@ -1456,7 +1448,6 @@ main(int argc, char **argv)
 		{"log", 2, 0, 'L'},
 		{"language", 1, 0, 'l'},
 		{"output", 1, 0, 'o'},
-		{"rows", 1, 0, 0},
 #ifdef HAVE_POPEN
 		{"pager", 1, 0, '|'},
 #endif
@@ -1467,8 +1458,8 @@ main(int argc, char **argv)
 		{"database", 1, 0, 'd'},
 		{"set", 1, 0, 'S'},
 		{"statement", 1, 0, 's'},
-		{"time", 0, 0, 'T'},
-		{"trace", 2, 0, 't'},
+		{"time", 0, 0, 't'},
+		{"Xdebug", 2, 0, 'X'},
 		{"user", 2, 0, 'u'},
 		{"history", 0, 0, 'H'},
 		{"help", 0, 0, '?'},
@@ -1494,18 +1485,12 @@ main(int argc, char **argv)
 				"w:r:P::p:d:S:s:Tt::u::Hq?", long_options, &option_index)) != -1) {
 		switch (c) {
 		case 0:
-			if (strcmp(long_options[option_index].name, "rows") == 0 && optarg) {
-				rowsperpage = atol(optarg);
-			}
 #ifdef HAVE_POPEN
 			if (strcmp(long_options[option_index].name, "pager") == 0) {
 				pager = optarg;
 				(void) pager;	/* will be further used later */
 			}
 #endif
-			if (strcmp(long_options[option_index].name, "width") == 0 && optarg) {
-				pagewidth = atol(optarg);
-			}
 			break;
 		case 'c':
 			setlen = mo_add_option(&set, setlen, opt_cmdline, "config", optarg);
@@ -1582,15 +1567,13 @@ main(int argc, char **argv)
 				dbname = optarg;
 			break;
 		case 's':
-			if (rows == 0)
+			if (cols == 0)
 				pagewidth = DEFWIDTH;
 			command = optarg;
 			break;
 		case 'w':
-			if( optarg){
-				pagewidth = atol(optarg);
-				rows= -1; /* don't reset pagewidth */
-			}
+			if( optarg)
+				cols = atol(optarg);
 			break;
 		case 'r':
 			if( optarg)
@@ -1608,10 +1591,10 @@ main(int argc, char **argv)
 		}
 			break;
 #endif
-		case 'T':
+		case 't':
 			mark = "Timer";
 			break;
-		case 't':
+		case 'X':
 			trace = MAPI_TRACE;
 			break;
 		case 'S':{
@@ -1710,6 +1693,7 @@ main(int argc, char **argv)
 
 	if (command) {
 		/* execute from command-line */
+		setWidth();
 		c = doRequest(mid, command, interactive);
 		command = NULL;
 	}
