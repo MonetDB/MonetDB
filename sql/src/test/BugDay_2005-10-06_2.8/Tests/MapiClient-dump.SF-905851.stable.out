@@ -1,19 +1,24 @@
 stdout of test 'MapiClient-dump.SF-905851` in directory 'src/test/BugDay_2005-10-06_2.8` itself:
 
 
-# 15:55:37 >  
-# 15:55:37 >  Mtimeout -timeout 360 Mserver "--config=/home/sjoerd/src/stable/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/home/sjoerd/src/stable/lib/MonetDB:/home/sjoerd/src/stable/lib/bin" --set "gdk_dbfarm=/home/sjoerd/src/stable/var/MonetDB/dbfarm" --set "sql_logdir=/home/sjoerd/src/stable/var/MonetDB/log" --set mapi_port=33509 --set sql_port=49307 --set xquery_port=52284 --set monet_prompt= --trace "--dbname=mTests_src_test_BugDay_2005-10-06_2.8" --dbinit="module(sql_server); sql_server_start();" ; echo ; echo Over..
-# 15:55:37 >  
+# 18:56:02 >  
+# 18:56:02 >  Mtimeout -timeout 360  mserver5 "--config=/ufs/mk/monet5/Linux/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5//Linux/lib/MonetDB5:/ufs/mk/monet5//Linux/lib/MonetDB5/lib:/ufs/mk/monet5//Linux/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/mk/monet5//dbfarm" --set "sql_logdir=/ufs/mk/monet5//dblogs/logs/sql" --set "xquery_logdir=/ufs/mk/monet5//Linux/var/MonetDB5/xquery_logs" --set mapi_open=true --set xrpc_open=true --set mapi_port=30232 --set xrpc_port=43644 --set monet_prompt= --trace "--dbname=mTests_src_test_BugDay_2005-10-06_2.8" --dbinit=' include sql;' ; echo ; echo Over..
+# 18:56:02 >  
 
-# Monet Database Server V4.8.3
-# Copyright (c) 1993-2005, CWI. All rights reserved.
-# Compiled for i686-redhat-linux-gnu/32bit with 32bit OIDs; dynamically linked.
-# Visit http://monetdb.cwi.nl/ for further information.
-
-printf("\nReady.\n");
+# MonetDB server v5.1.0, based on kernel v1.19.0
+# Serving database 'mTests_src_test_BugDay_2005-10-06_2.8'
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Copyright (c) 1993-2007 CWI, all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://gio.ins.cwi.nl:30232/
+# MonetDB/SQL module v2.19.0 loaded
 
 Ready.
-quit();
+#function user.main():void;
+#    clients.quit();
+#end main;
+#Client 1 1
+#MALexit: clients still active
 
 Over..
 
@@ -63,7 +68,7 @@ Over..
 # 14:58:14 >  
 
 START TRANSACTION;
-CREATE TABLE "allnewtriples" (
+CREATE TABLE "sys"."allnewtriples" (
 	"id" int NOT NULL,
 	"subject" int NOT NULL,
 	"predicate" int NOT NULL,
@@ -83,7 +88,7 @@ COPY 7 RECORDS INTO "allnewtriples" FROM stdin USING DELIMITERS '\t';
 5	1	2	2	false
 6	2	2	1	false
 7	2	2	2	false
-CREATE TABLE "foreign" (
+CREATE TABLE "sys"."foreign" (
 	"id" int NOT NULL,
 	"subject" int NOT NULL,
 	"predicate" int NOT NULL,
@@ -99,7 +104,7 @@ COPY 7 RECORDS INTO "foreign" FROM stdin USING DELIMITERS '\t';
 5	2	1	1
 6	1	2	1
 7	1	1	2
-CREATE TABLE "triples" (
+CREATE TABLE "sys"."triples" (
 	"id" int NOT NULL,
 	"subject" int NOT NULL,
 	"predicate" int NOT NULL,
