@@ -948,7 +948,8 @@ showCommands(void)
 		fprintf(toConsole, "\\l      - line is sent immediately\n");
 	}
 		fprintf(toConsole, "\\L file - save client/server interaction\n");
-		fprintf(toConsole, "\\t      - toggle interaction trace\n");
+		fprintf(toConsole, "\\b      - toggle block mode, sent upon empty line\n");
+		fprintf(toConsole, "\\t      - toggle MapiClient debugging\n");
 }
 
 static int
@@ -1025,6 +1026,8 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode, int exit_on_
 			   processed, use break to send to server */
 			switch (*line) {
 			case '\0':
+				if (!linemode && length==0) 
+					break;
 				if(strncmp(promptbuf, "mdb", 3) )
 					continue;
 				break;
@@ -1053,7 +1056,7 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode, int exit_on_
 				case 'b':
 					if (mode == XQUERY)
 						break;
-					linemode = 0;
+					linemode = linemode? 0:1;
 					continue;
 				case 'A':
 					if (mode == XQUERY)
@@ -1263,6 +1266,7 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode, int exit_on_
 			CHECK_RESULT(mid, hdl, buf, continue);
 		}
 		if (length > 0 ||
+			(!linemode && length==0) ||
 			strncmp(promptbuf, "mdb", 3) == 0) {
 			assert(hdl != NULL);
 			sent = 1;
@@ -1272,6 +1276,7 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode, int exit_on_
 			CHECK_RESULT(mid, hdl, buf, continue);
 		}
 		if (linemode || 
+			(!linemode && length==0) ||
 			(specials && strncmp(promptbuf, "mdb", 3) == 0) ||
 			(mode==SQL && line[length-2]==';' && line[length-1]=='\n')) {
 			assert(hdl != NULL);
@@ -1410,7 +1415,6 @@ usage(const char *prog)
 {
 	fprintf(stderr, "Usage: %s --language=(sql|xquery|mal|mil) [ options ]\n", prog);
 	fprintf(stderr, "\nOptions are:\n");
-	fprintf(stderr, " -b t/f      | --blocked=true/false  blocked mode\n");
 	fprintf(stderr, " -c config   | --config=file     config filename\n");
 	fprintf(stderr, " -d database | --database=database  database to connect to\n");
 
@@ -1471,7 +1475,6 @@ main(int argc, char **argv)
 	int option_index=0;
 	struct stat statb;
 	static struct option long_options[] = {
-		{"blocked", 1, 0, 'b'},
 		{"config", 1, 0, 'c'},
 		{"collection", 1, 0, 'C'},
 		{"error", 0, 0, 'e'},
@@ -1534,14 +1537,6 @@ main(int argc, char **argv)
 			if (strcmp(long_options[option_index].name, "width") == 0 && optarg) {
 				pagewidth = atol(optarg);
 			}
-			break;
-		case 'b':
-			if (*optarg == 't' || *optarg == 'T' || *optarg == '1')
-				linemode = 0;
-			else if (*optarg == 'f' || *optarg == 'F' || *optarg == '0')
-				linemode = 1;
-			else
-				usage(argv[0]);
 			break;
 		case 'c':
 			setlen = mo_add_option(&set, setlen, opt_cmdline, "config", optarg);
