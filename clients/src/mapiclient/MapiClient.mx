@@ -232,8 +232,8 @@ timerEnd(void)
 {
 	t1 = gettime();
 	if (mark &&
-	    strncmp(promptbuf, "mdb", 3) != 0 &&
-	    (mode != SQL || pagewidth >= 0)) {
+	    strncmp(promptbuf, "mdb", 3) != 0   &&
+		specials == 0){
 		fprintf(toConsole, "%s % 7ld.%03ld msec %s\n", mark, (t1 - t0) / 1000, (t1 - t0) % 1000, mark2 ? mark2 : "");
 		fflush(toConsole);
 	}
@@ -813,7 +813,7 @@ doFile(Mapi mid, const char *file)
 			hdl = mapi_query_prep(mid);
 			CHECK_RESULT(mid, hdl, buf, continue);
 		}
-		if (length > 0) {
+		if (length > 0 ){
 			char *xquery_sep = buf;
 
 			assert(hdl != NULL);
@@ -1025,8 +1025,9 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode, int exit_on_
 			   processed, use break to send to server */
 			switch (*line) {
 			case '\0':
-				/* empty line */
-				continue;
+				if(strncmp(promptbuf, "mdb", 3) )
+					continue;
+				break;
 			case '\\':
 				switch (line[1]) {
 				case 'q':
@@ -1258,21 +1259,21 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode, int exit_on_
 		}
 
 		if (hdl == NULL) {
-			timerStart();
 			hdl = mapi_query_prep(mid);
 			CHECK_RESULT(mid, hdl, buf, continue);
 		}
-		if (length > 0) {
+		if (length > 0 ||
+			strncmp(promptbuf, "mdb", 3) == 0) {
 			assert(hdl != NULL);
 			sent = 1;
 			SQLsetSpecial(line);
+			timerStart();
 			mapi_query_part(hdl, line, length);
 			CHECK_RESULT(mid, hdl, buf, continue);
 		}
 		if (linemode || 
 			(specials && strncmp(promptbuf, "mdb", 3) == 0) ||
 			(mode==SQL && line[length-2]==';' && line[length-1]=='\n')) {
-			timerStart();
 			assert(hdl != NULL);
 			/* If the server wants more but we're at the
 			   end of file (line == NULL), notify the
@@ -1357,7 +1358,8 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode, int exit_on_
 						}
 					}
 					if (mode == SQL && 
-						pagewidth >= 0 && (reply = mapi_fetch_line(hdl)) != NULL) {
+						pagewidth >= 0 && 
+						(reply = mapi_fetch_line(hdl)) != NULL) {
 						if (*reply == '%') {
 							if (formatter == XMLformatter)
 								XMLrenderer(hdl);
@@ -1569,7 +1571,6 @@ main(int argc, char **argv)
 				language = "sql";
 				linemode=0;
 				mode = SQL;
-				mark = "Timer";	/* default style */
 			} else if (strcmp(optarg, "mil") == 0 || strcmp(optarg, "mi") == 0) {
 				language = "mil";
 
@@ -1649,7 +1650,7 @@ main(int argc, char **argv)
 			quiet = 1;
 			break;
 		case 'T':
-			mark = mark ? NULL : "Timer";
+			mark = "Timer";
 			break;
 		case 't':
 			trace = MAPI_TRACE;
