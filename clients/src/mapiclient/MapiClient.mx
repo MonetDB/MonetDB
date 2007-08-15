@@ -714,8 +714,13 @@ doRequest(Mapi mid, const char *buf, int interactive)
 		return 1;
 	}
 
-	if (formatter == TABLEformatter && pagewidth>=0)
+	if ( formatter == TABLEformatter || pagewidth >= 0 ||
+		 formatter == CSVformatter || formatter == TABformatter) {
+		if( pagewidth < 0 ) pagewidth = 0;
 		SQLrenderer(hdl);
+	} else
+	if (formatter == XMLformatter )
+		XMLrenderer(hdl);
 	else 
 		RAWrenderer(hdl);
 
