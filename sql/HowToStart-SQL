@@ -277,7 +277,7 @@ MonetDB/SQL front-end by calling
 
 ::
 
- mclient -lsql -umonetdb -Pmonetdb
+ MapiClient -lsql -umonetdb -Pmonetdb
 
 
 Documentation

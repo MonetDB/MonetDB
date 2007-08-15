@@ -25,7 +25,7 @@ it passes the compiler we have to resort to a debugger to
 assess its behavior.
 
 Note, the MAL debugger described here can be used in conjunction
-with the textual interface client @emph{mclient} only.
+with the textual interface client @emph{MapiClient} only.
 The JDBC protocol does not permit passing through information that
 'violates' the protocol.
 @menu
