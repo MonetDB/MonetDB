@@ -932,7 +932,7 @@ showCommands(void)
 	case SQL:
 		fprintf(toConsole, "\\w#     - set maximal page width (-1=raw,0=no limit, >0 max char)\n");
 		fprintf(toConsole, "\\r#     - set maximum rows per page (-1=raw)\n");
-		fprintf(toConsole, "\\E      - echo the query \n");
+		fprintf(toConsole, "\\e      - echo the query \n");
 		fprintf(toConsole, "\\f      - format using a built-in renderer {csv,tab,raw,sql,xml} \n");
 		fprintf(toConsole, "\\D table- dumps the table, or the complete database if none given.\n");
 		fprintf(toConsole, "\\d table- describe the table, or the complete database if none given.\n");
@@ -1223,7 +1223,7 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode)
 				}
 */
 #endif
-				case 'E':
+				case 'e':
 					echoquery = 1;
 					continue;
 				case 'f':
