@@ -473,7 +473,7 @@ mal_export void mdbShowBreakpoints(Client cntxt);
 mal_export void mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc);
 mal_export int mdbSession(void);
 mal_export void mdbStep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc);
-mal_export void mdbDump(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc);
+mal_export void mdbDump(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export void mdbHelp(stream *f);
 mal_export void printStackElm(stream *f, MalBlkPtr mb, VarPtr n, ValPtr v, int index, size_t cnt, int first, int lifespan);
 mal_export void printBATelm(stream *f, int i, size_t cnt, size_t first);
@@ -759,7 +759,7 @@ printCall(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 {
 	str msg;
 	msg = call2str(mb, stk, pc, cntxt->flags);
-	stream_printf(cntxt->fdout, "%s at %s.%s[%d]\n", msg, 
+	stream_printf(cntxt->fdout, "#%s at %s.%s[%d]\n", msg, 
 		getModuleId(getInstrPtr(mb,0)),
 		getFunctionId(getInstrPtr(mb,0)),pc);
 	GDKfree(msg);
@@ -1376,10 +1376,12 @@ signatures satisfying the pattern.
 }
 
 void 
-mdbDump(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc){
-	stream_printf(cntxt->fdout,"!MDB dump of instruction %d\n",pc);
+mdbDump(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+	Client cntxt= MCgetClient();
+	int i= getPC(mb,pci);
+	stream_printf(cntxt->fdout,"!MDB dump of instruction %d\n",i);
 	printFunction(cntxt->fdout, mb, LIST_MAL_ALL | LIST_MAL_PROPS);
-	mdbBacktrace(cntxt, stk, pc);
+	mdbBacktrace(cntxt, stk, i);
 	printStack(cntxt->fdout,mb,stk,0);
 }
 static int mdbSessionActive;
@@ -1476,6 +1478,7 @@ mdbStep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 		/* return from this debugger */
 		for (su = stk; su; su = su->up)
 			su->cmd = 0;
+		stream_printf(cntxt->fdout,"mdb>#EOD\n");
 		stk->cmd = 'x';	/* will force a graceful termination */
 	}
 	if( mdbSessionActive== 0) return;
