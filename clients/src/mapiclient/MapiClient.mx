@@ -131,6 +131,8 @@ static char *logfile = NULL;
 static int start_with_help = 0;
 static char promptbuf[16];
 static int echoquery = 0;
+#define setPrompt() sprintf(promptbuf, "%.*s>", (int) sizeof(promptbuf) - 2, language);
+#define debugMode() (strncmp(promptbuf, "mdb", 3) == 0)
 
 /* some internal formatters */
 #define RAWformatter	0
@@ -226,7 +228,7 @@ timerEnd(void)
 {
 	t1 = gettime();
 	if (mark &&
-	    strncmp(promptbuf, "mdb", 3) != 0   &&
+		!debugMode() &&
 		specials == 0){
 		fprintf(toConsole, "%s % 7ld.%03ld msec %s\n", mark, (t1 - t0) / 1000, (t1 - t0) % 1000, mark2 ? mark2 : "");
 		fflush(toConsole);
@@ -473,7 +475,7 @@ SQLdebugRendering(MapiHdl hdl)
 		}
 	}
 	if(cnt == 0){
-		sprintf(promptbuf, "%.*s>", (int) sizeof(promptbuf) - 2, language);
+		setPrompt();
 		specials=0;
 	}
 }
@@ -860,7 +862,10 @@ doFile(Mapi mid, const char *file)
 			if ((reply = mapi_result_error(hdl)) != NULL)
 				mapi_explain_result(hdl, stderr);
 			if (mapi_get_querytype(hdl) == Q_UPDATE) {
-				fprintf(toConsole, "[ %d\t]\n", mapi_rows_affected(hdl));
+				if( mode== SQL && pagewidth >= 0)
+					fprintf(toConsole, "Rows affected %d\n", mapi_rows_affected(hdl));
+				else
+					fprintf(toConsole, "[ %d\t]\n", mapi_rows_affected(hdl));
 			} else {
 				while ((reply = mapi_fetch_line(hdl)) != NULL) {
 					if (mode == XQUERY && *reply == '=')
@@ -1012,7 +1017,10 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode)
 		} else
 			length = strlen(line);
 
-		if (length > 0 && (!linemode || (hdl == NULL && length > 0 && line[length - 1] == '\n'))) {
+		if (length > 0 && 
+			mode != MAL &&
+			(!linemode || 
+			 (hdl == NULL && length > 0 && line[length - 1] == '\n'))) {
 			/* test for special commands */
 			while (length > 0 && (*line & ~0x7F) == 0 && isspace((int) *line)) {
 				line++;
@@ -1023,9 +1031,7 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode)
 			switch (*line) {
 			case '\n':
 			case '\0':
-				if(strncmp(promptbuf, "mdb", 3) == 0)
-					break;
-				continue;
+				break;
 			case '\\':
 				switch (line[1]) {
 				case 'q':
@@ -1255,7 +1261,8 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode)
 			CHECK_RESULT(mid, hdl, buf, continue);
 		}
 		if (length > 0 ||
-			strncmp(promptbuf, "mdb", 3) == 0) {
+			debugMode() ||
+			mode == MAL || mode== MIL) {
 			assert(hdl != NULL);
 			sent = 1;
 			SQLsetSpecial(line);
@@ -1263,7 +1270,7 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode)
 			CHECK_RESULT(mid, hdl, buf, continue);
 		}
 		if (linemode || 
-			(specials && strncmp(promptbuf, "mdb", 3) == 0) ){
+			(specials && debugMode()) ){
 			assert(hdl != NULL);
 			/* If the server wants more but we're at the
 			   end of file (line == NULL), notify the
@@ -1301,9 +1308,12 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode)
 				char *reply;
 
 				if (mapi_get_querytype(hdl) == Q_UPDATE) {
-					fprintf(toConsole, "[ %d\t]\n", mapi_rows_affected(hdl));
+					if( mode== SQL && pagewidth >= 0)
+						fprintf(toConsole, "Rows affected %d\n", mapi_rows_affected(hdl));
+					else
+						fprintf(toConsole, "[ %d\t]\n", mapi_rows_affected(hdl));
 				} else if (mode == SQL) {
-					if (specials && strncmp(promptbuf, "mdb", 3) == 0)
+					if (specials && debugMode())
 						SQLdebugRendering(hdl);
 					else if ((reply = mapi_result_error(hdl)) != NULL) {
 						if (pagewidth < 0)
@@ -1350,7 +1360,7 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode)
 						} else
 							fprintf(toConsole, "%s\n", reply);
 					}
-					while ((reply = mapi_fetch_line(hdl)) != NULL) {
+					while ((reply = mapi_fetch_line(hdl)) != NULL && *reply) {
 						if ((mode == XQUERY || mode == MAL) && *reply == '=')
 							reply++;
 #ifdef HAVE_POPEN
@@ -1359,6 +1369,11 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode)
 						else
 #endif
 							fprintf(toConsole, "%s\n", reply);
+						/* we know when the MAL debugger becomes active  and finishes*/
+						if (strncmp(reply, "mdb>#", 5) == 0)
+							sprintf(promptbuf,"mdb>");
+						if (strncmp(reply, "mdb>#EOD", 7) == 0)
+							setPrompt();
 					}
 				}
 			} while ((rc = mapi_needmore(hdl)) == MOK && (rc = mapi_next_result(hdl)) == 1);
@@ -1727,7 +1742,7 @@ main(int argc, char **argv)
 			(void) save_history;	/* pacify compiler */
 #endif
 			/* reading from terminal, prepare prompt */
-			sprintf(promptbuf, "%.*s>", (int) sizeof(promptbuf) - 2, language);
+			setPrompt();
 
 			/* use default rendering if not overruled at commandline */
 			setWidth();
