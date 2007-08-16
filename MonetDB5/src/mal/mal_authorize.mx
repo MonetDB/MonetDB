@@ -891,7 +891,7 @@ AUTHcypherValue(str *ret, str *value) {
 	int keylen = 0;
 
 	if (vaultKey == NULL)
-		throw(MAL, "decypherValue", "The vault is still locked!");
+		throw(MAL, "cypherValue", "The vault is still locked!");
 
 	keylen = strlen(vaultKey);
 
