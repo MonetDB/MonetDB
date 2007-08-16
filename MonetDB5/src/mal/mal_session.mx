@@ -252,30 +252,25 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout)
 			 * message */
 			fprintf(stderr, "!SABAOTHgetStatus: %s\n", err);
 			GDKfree(err);
+			GDKfree(command);
 			return;
 		}
 
-		if (stats != NULL &&
-				stats->conns != NULL &&
-				stats->conns->val != NULL)
-		{
-			switch (stats->state) {
-				case SABdbRunning:
-					stream_printf(fout, "^%s%s\n",
-							stats->conns->val, stats->dbname);
-					stream_flush(fout);
-				break;
-				case SABdbCrashed:
-				case SABdbInactive:
-					stream_printf(fout, "!database %s currently "
-							"not available\n", stats->dbname);
-					stream_flush(fout);
-				break;
-				default:
-					fprintf(stderr, "!missing case statement for SABsbState\n");
-				break;
+		if (stats != NULL) {
+			if (stats->conns != NULL &&
+					stats->conns->val != NULL &&
+					stats->state == SABdbRunning)
+			{
+				stream_printf(fout, "^%s%s\n",
+						stats->conns->val, stats->dbname);
+				stream_flush(fout);
+			} else {
+				stream_printf(fout, "!database %s currently "
+						"not available\n", stats->dbname);
+				stream_flush(fout);
 			}
 			SABAOTHfreeStatus(&stats);
+			GDKfree(command);
 			return;
 		}
 
