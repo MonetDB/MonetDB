@@ -162,6 +162,10 @@ comment "Collect variable binding of current (n-th) stack frame.";
 pattern getStackTrace():bat[:void,:str]
 address MDBStkTrace;
 
+pattern dump()
+address MDBdump
+comment "Dump instruction, stacktrace, and stack";
+
 pattern getDefinition():bat[:void,:str] 
 address MDBgetDefinition
 comment "Returns a string representation of the current function 
@@ -833,6 +837,10 @@ MDBgrabClient(int *ret, int *id){
 	c->itrace = 0;
 	fprintf(stderr,"exchanged descriptors\n");
 	(void) ret;
+	return MAL_SUCCEED;
+}
+str MDBdump(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+	mdbDump(mb,stk,pci);
 	return MAL_SUCCEED;
 }
 str MDBdummy(int *ret){
