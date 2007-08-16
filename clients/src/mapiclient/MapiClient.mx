@@ -521,41 +521,56 @@ static void
 SQLtraceRenderer(MapiHdl hdl)
 {
 	int ps = rowsperpage, rows = 0, silent = 0;
-	char *fields[1];
+	char *fields[2];
 	char *s;
-	int len[1];
-	int kind = 1;
-	int numeric[1];
+	int len[2];
+	int cols = 1;
+	int numeric[2];
 
 	if (mapi_result_error(hdl) != NULL) {
 		mapi_explain_result(hdl, stderr);
 	}
 	len[0] = pagewidth-4; /* remove borders */
 	numeric[0] = 0;
+	numeric[1] = 0;
 
-	SQLseparator(len, 1, '-');
 	while ((fields[0] = mapi_fetch_line(hdl)) != NULL) {
 		if (silent)
 			continue;
-		if (strstr(fields[0], "usec ")) {
-			if (kind == 0)
-				SQLseparator(len, 1, '+');
-			kind = 1;
-		} else {
-			if (kind == 1)
-				SQLseparator(len, 1, '+');
-			kind = 0;
-		}
+		if( *fields[0]=='%' && pagewidth>=0)
+			continue;
+
 		/* simple render */
 		fields[0] = fields[0] + 1;
 		s = strrchr(fields[0], ']');
 		if (s)
 			*s = 0;
-		SQLrow(len, numeric, fields, 1,0);
-		if (ps && rows % ps == ps - 1 && rows != mapi_get_row_count(hdl) && fromConsole) {
+
+		if ( (s=strstr(fields[0], "usec  #")) ){
+			s= strchr(s,'#');
+			*s=0;
+			fields[1]=s+1;
+			if (cols == 1){
+				len[1]= len[0]-strlen(fields[0]);
+				len[0]= strlen(fields[0])-2; /* border */
+				SQLseparator(len, 2, '-');
+				cols = 2;
+			}
+		} else {
+			int olen[1];
+			char *t;
+			olen[0]= pagewidth-4;
+			for( t= fields[0]; *t; t++)
+				if( *t == '\t') *t =' ';
+			SQLrow(olen, numeric, fields, 1,0);
+			continue; /* output should be rendered differently */ 
+		}
+		SQLrow(len, numeric, fields, cols,0);
+		if (ps && rows % ps == ps - 1 && 
+			rows != mapi_get_row_count(hdl) && fromConsole) {
 			char buf[BUFSIZ];
 
-			SQLseparator(len, 1, '-');
+			SQLseparator(len, cols, '-');
 			fprintf(toConsole, "next page? (continue,quit,next)");
 			fgets(buf, BUFSIZ, fromConsole);
 			if (buf[0] == 'c')
@@ -563,11 +578,11 @@ SQLtraceRenderer(MapiHdl hdl)
 			if (buf[0] == 'q')
 				silent = 1;
 			if (silent == 0)
-				SQLseparator(len, 1, '-');
+				SQLseparator(len, cols, '-');
 		}
 		rows++;
 	}
-	SQLseparator(len, 1, '-');
+	SQLseparator(len, cols, '-');
 }
 
 static void
