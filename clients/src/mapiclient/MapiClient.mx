@@ -1363,17 +1363,19 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode)
 					while ((reply = mapi_fetch_line(hdl)) != NULL && *reply) {
 						if ((mode == XQUERY || mode == MAL) && *reply == '=')
 							reply++;
+						/* we know when the MAL debugger becomes active  and finishes*/
+						if (strncmp(reply, "mdb>#", 5) == 0)
+							sprintf(promptbuf,"mdb>");
+						if (strncmp(reply, "mdb>#EOD", 7) == 0){
+							setPrompt();
+							continue;
+						}
 #ifdef HAVE_POPEN
 						if (pagerFD)
 							fprintf(pagerFD, "%s\n", reply);
 						else
 #endif
 							fprintf(toConsole, "%s\n", reply);
-						/* we know when the MAL debugger becomes active  and finishes*/
-						if (strncmp(reply, "mdb>#", 5) == 0)
-							sprintf(promptbuf,"mdb>");
-						if (strncmp(reply, "mdb>#EOD", 7) == 0)
-							setPrompt();
 					}
 				}
 			} while ((rc = mapi_needmore(hdl)) == MOK && (rc = mapi_next_result(hdl)) == 1);
