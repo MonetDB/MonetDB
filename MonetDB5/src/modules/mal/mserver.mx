@@ -460,6 +460,7 @@ doChallenge(str cmd, stream *in, stream *out) {
 		if ((len = stream_read_block(fdin, buf, 1, BLOCK)) < 0 || 
 			/* in embedded mode we allow just one client */
 			(GDKembedded && MCcountClients() > 1)) {
+			/* FIXME: tell the client in a normal way! */
 			stream_close(fdin);
 			stream_destroy(fdin);
 			stream_close(fdout);
