@@ -34,7 +34,6 @@ All Rights Reserved.
   <property name="jardir"               value="jars" />
   <property name="builddir"             value="build" />
   <property name="docdir"               value="doc" />
-  <property name="scriptdir"            value="${builddir}/scripts" />
   <property name="jdbc-package"         value="nl/cwi/monetdb/jdbc" />
   <property name="xmldb-package"        value="nl/cwi/monetdb/xmldb" />
   <property name="mcl-package"          value="nl/cwi/monetdb/mcl" />
@@ -48,7 +47,7 @@ All Rights Reserved.
   <property name="jdbc-jar"
     value="${jardir}/monetdb-${JDBC_MAJOR}.${JDBC_MINOR}-jdbc.jar" />
   <property name="jdbcclient-jar"
-    value="${jardir}/jdbcclient-${JDBC_MAJOR}.${JDBC_MINOR}.jar" />
+    value="${jardir}/jdbcclient.jar" />
   <property name="mcl-jar"
     value="${jardir}/monetdb-${MCL_MAJOR}.${MCL_MINOR}-mcl.jar" />
   <property name="xmldb-jar"
@@ -66,6 +65,13 @@ All Rights Reserved.
     <antcall target="jar_xrpcwrapper" />
 
     <antcall target="doc" />
+  </target>
+
+  <target name="distall">
+    <antcall target="jar_mcl" />
+    <antcall target="jar_jdbc" />
+    <antcall target="jar_jdbcclient" />
+    <antcall target="jar_xrpcwrapper" />
   </target>
 
   <target name="default">
@@ -111,36 +117,15 @@ All Rights Reserved.
 
   <target name="jar_xrpcwrapper"
     depends="compile_util,compile_xrpcwrapper">
-    <copy file="${srcdir}/${xrpcwrapper-package}/wrapper_functions.xq"
-      overwrite="true"
-      tofile="${builddir}/${xrpcwrapper-package}/wrapper_functions.xq"
-      filtering="yes" />
-    <copy file="${srcdir}/${xrpcwrapper-package}/Tests/auctions.xml"
-      overwrite="true"
-      tofile="${builddir}/${xrpcwrapper-package}/Tests/auctions.xml"
-      filtering="yes" />
-    <copy file="${srcdir}/${xrpcwrapper-package}/Tests/bib.xml"
-      overwrite="true"
-      tofile="${builddir}/${xrpcwrapper-package}/Tests/bib.xml"
-      filtering="yes" />
-    <copy file="${srcdir}/${xrpcwrapper-package}/Tests/persons.xml"
-      overwrite="true"
-      tofile="${builddir}/${xrpcwrapper-package}/Tests/persons.xml"
-      filtering="yes" />
-    <copy file="${srcdir}/${xrpcwrapper-package}/Tests/functions.xq"
-      overwrite="true"
-      tofile="${builddir}/${xrpcwrapper-package}/Tests/functions.xq"
-      filtering="yes" />
-    <copy file="${srcdir}/${xrpcwrapper-package}/Tests/test.xq"
-      overwrite="true"
-      tofile="${builddir}/${xrpcwrapper-package}/Tests/test.xq"
-      filtering="yes" />
     <jar jarfile="${xrpcwrapper-jar}">
       <fileset dir="${builddir}">
         <include name="${util-package}/**/*.class" />
         <include name="${xrpcwrapper-package}/**/*.class" />
+      </fileset>
+      <fileset dir="${srcdir}">
         <include name="${xrpcwrapper-package}/wrapper_functions.xq" />
-        <include name="${xrpcwrapper-package}/Tests/bib.xml" />
+        <include name="${xrpcwrapper-package}/Tests/*.xml" />
+        <include name="${xrpcwrapper-package}/Tests/*.xq" />
       </fileset>
       <manifest>
         <attribute name="Built-By" value="${user.name}" />
@@ -167,32 +152,6 @@ All Rights Reserved.
         <attribute name="Main-Class" value="nl.cwi.monetdb.client.JdbcClient" />
       </manifest>
     </jar>
-  </target>
-
-  <!-- a convenience script mjclient which calls the jdbcclient -->
-  <target name="create_mjclient">
-    <echo message="Crafting an mjclient wrapper script" />
-    <filter token="JDBCCLIENT_JAR"
-      value="jdbcclient-${JDBC_MAJOR}.${JDBC_MINOR}.jar" />
-
-    <!-- now copy and filter the file -->
-    <copy file="${scriptdir}/mjclient"
-      overwrite="true"
-      tofile="${builddir}/mjclient"
-      filtering="yes" />
-  </target>
-
-  <!-- a convenience script mjclient.bat which calls the jdbcclient -->
-  <target name="create_mjclient_bat">
-    <echo message="Crafting an mjclient.bat wrapper script" />
-    <filter token="JDBCCLIENT_JAR"
-      value="jdbcclient-${JDBC_MAJOR}.${JDBC_MINOR}.jar" />
-
-    <!-- now copy and filter the file -->
-    <copy file="${scriptdir}/mjclient.bat"
-      overwrite="true"
-      tofile="${builddir}/mjclient.bat"
-      filtering="yes" />
   </target>
 
   <!-- compile targets -->
@@ -301,6 +260,8 @@ All Rights Reserved.
     <!-- Some defaults -->
     <filter token="JDBC_MAJOR" value="${JDBC_MAJOR}" />
     <filter token="JDBC_MINOR" value="${JDBC_MINOR}" />
+    <filter token="MCL_MAJOR" value="${MCL_MAJOR}" />
+    <filter token="MCL_MINOR" value="${MCL_MINOR}" />
     <filter token="JDBC_DEF_PORT" value="${JDBC_DEF_PORT}" />
     <filter token="JDBC_DEF_PORT_XQUERY" value="${JDBC_DEF_PORT_XQUERY}" />
     <filter token="JDBC_VER_SUFFIX" value="${JDBC_VER_SUFFIX} ${TODAY}" />
@@ -348,27 +309,28 @@ All Rights Reserved.
     <uptodate targetfile="${jdbc-jar}" property="uptodate.jdbc-jar">
       <srcfiles dir="${srcdir}">
         <include name="${jdbc-package}/**/*.java" />
+        <include name="${mcl-package}/**/*.java" />
       </srcfiles>
     </uptodate>
-    <uptodate targetfile="${jdbcclient-jar}"
-      property="uptodate.jdbcclient-jar">
+    <uptodate targetfile="${jdbcclient-jar}" property="uptodate.jdbcclient-jar">
       <srcfiles dir="${srcdir}">
         <include name="${client-package}/**/*.java" />
         <include name="${jdbc-package}/**/*.java" />
+        <include name="${mcl-package}/**/*.java" />
       </srcfiles>
     </uptodate>
     <condition property="uptodate.drivers">
       <and>
-        <uptodate targetfile="${jdbc-package}/MonetDriver.java">
+        <uptodate targetfile="${builddir}/src/${jdbc-package}/MonetDriver.java">
           <srcfiles dir="${srcdir}">
             <include name="build.properties" />
             <include name="build.local.properties" />
             <include name="${jdbc-package}/MonetDriver.java.in" />
             <include name="${jdbc-package}/**/*.java" />
-            <include name="${client-package}/**/*.java" />
           </srcfiles>
         </uptodate>
-        <uptodate targetfile="${xmldb-package}/base/MonetDBDatabase.java">
+        <uptodate
+          targetfile="${builddir}/src/${xmldb-package}/base/MonetDBDatabase.java">
           <srcfiles dir="${srcdir}">
             <include name="build.properties" />
             <include name="build.local.properties" />

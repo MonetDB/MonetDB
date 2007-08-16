@@ -66,7 +66,7 @@ public class JdbcClient {
 		// this one is only here for the .monetdb file parsing, it is
 		// removed before the command line arguments are parsed
 		copts.addOption(null, "password", CmdLineOpts.CAR_ONE, null, null);
-		copts.addOption("d", "database", CmdLineOpts.CAR_ONE, "demo",
+		copts.addOption("d", "database", CmdLineOpts.CAR_ONE, "",
 				"Try to connect to the given database (only makes sense " +
 				"if connecting to a DatabasePool, M5 or equivalent process).");
 		copts.addOption("l", "language", CmdLineOpts.CAR_ONE, "sql",
@@ -152,7 +152,7 @@ public class JdbcClient {
 
 		if (copts.getOption("help").isPresent()) {
 			System.out.print(
-"Usage java -jar jdbcclient-X.Y.jar\n" +
+"Usage java -jar jdbcclient.jar\n" +
 "                  [-h host[:port]] [-p port] [-f file] [-u user]\n" +
 "                  [-l language] [-b database] [-e] [-d [table]]\n" +
 "                  [-X<opt>]\n" +
@@ -178,7 +178,7 @@ copts.produceHelpMessage()
 			// We cannot use the DatabaseMetaData here, because we
 			// cannot get a Connection.  So instead, we just get the
 			// values we want out of the Driver directly.
-			System.out.println("Driver: " + 
+			System.out.println("Driver: v" + 
 					nl.cwi.monetdb.jdbc.MonetDriver.getDriverVersion());
 			System.exit(0);
 		}
@@ -450,10 +450,12 @@ copts.produceHelpMessage()
 					// print welcome message
 					out.println("Welcome to the MonetDB interactive JDBC terminal!");
 					if (dbmd != null) {
-						out.println("Database: " + dbmd.getDatabaseProductName() + " " +
-							dbmd.getDatabaseProductVersion());
-						out.println("Driver: " + dbmd.getDriverName() + " " +
-							dbmd.getDriverVersion());
+						out.println("Database: " +
+								dbmd.getDatabaseProductName() + " v" +
+								dbmd.getDatabaseProductVersion() + ", '" +
+								dbmd.getConnection().getCatalog() + "'");
+						out.println("Driver: " + dbmd.getDriverName() + " v" +
+								dbmd.getDriverVersion());
 					}
 					out.println("Type \\q to quit, \\h for a list of available commands");
 					out.flush();
@@ -667,7 +669,8 @@ copts.produceHelpMessage()
 								boolean found = false;
 								while (tbl.next()) {
 									if (tbl.getString("TABLE_NAME").equalsIgnoreCase(object) ||
-											(tbl.getString("TABLE_SCHEM") + "." + tbl.getString("TABLE_NAME")).equalsIgnoreCase(object)) {
+											(tbl.getString("TABLE_SCHEM") + "." + tbl.getString("TABLE_NAME")).equalsIgnoreCase(object))
+									{
 										// we found it, describe it
 										e.dumpSchema(
 												dbmd,
@@ -679,7 +682,7 @@ copts.produceHelpMessage()
 
 										found = true;
 										break;
-											}
+									}
 								}
 								if (!found) System.err.println("Unknown table or view: " + object);
 								tbl.close();

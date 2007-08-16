@@ -535,7 +535,21 @@ public class MonetStatement implements Statement {
 		}
 	}
 
-	public int getQueryTimeout() throws SQLException { throw new SQLException("Method not supported, sorry!"); }
+	/**
+	 * Retrieves the number of seconds the driver will wait for a
+	 * Statement object to execute.  If the limit is exceeded, a
+	 * SQLException is thrown.
+	 * For MonetDB this method always returns zero, as no query
+	 * cancelling is possible.
+	 *
+	 * @return the current query timeout limit in seconds; zero means
+	 *         there is no limit 
+	 * @throws SQLException if a database access error occurs
+	 * @see #setQueryTimeout(int)
+	 */
+	public int getQueryTimeout() throws SQLException {
+		return(0);
+	}
 
 	/**
 	 * Retrieves the current result as a ResultSet object.  This method

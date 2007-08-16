@@ -52,7 +52,8 @@ final public class MonetDriver implements Driver {
 	/** Minor version of this driver */
 	private static final int DRIVERMINOR = @JDBC_MINOR@;
 	/** Version suffix string */
-	private static final String DRIVERVERSIONSUFFIX = "@JDBC_VER_SUFFIX@";
+	private static final String DRIVERVERSIONSUFFIX =
+		"@JDBC_VER_SUFFIX@ based on MCL v@MCL_MAJOR@.@MCL_MINOR@";
 	// We're not fully compliant, but what we support is compliant
 	/** Whether this driver is JDBC compliant or not */
 	private static final boolean MONETJDBCCOMPLIANT = false;
@@ -138,11 +139,11 @@ final public class MonetDriver implements Driver {
 		if (uri.getPort() > 0) info.put("port", "" + uri.getPort());
 
 		// check the database
-		if (uri.getPath() == null || uri.getPath().length() == 0 ||
-				uri.getPath().substring(1).trim().equals(""))
-			throw new SQLException("Invalid URL: A database is " +
-					"required in '" +  url + "'");
-		info.put("database", uri.getPath().substring(1));
+		if (uri.getPath() != null && uri.getPath().length() != 0 &&
+				!uri.getPath().substring(1).trim().equals(""))
+		{
+			info.put("database", uri.getPath().substring(1));
+		}
 
 		if (uri.getQuery() != null) {
 			// handle additional arguments
@@ -276,6 +277,7 @@ final public class MonetDriver implements Driver {
 		typeMap.put("varchar", new Integer(Types.VARCHAR));
 		typeMap.put("clob", new Integer(Types.CLOB));
 		typeMap.put("oid", new Integer(Types.OTHER));
+		typeMap.put("tinyint", new Integer(Types.TINYINT));
 		typeMap.put("smallint", new Integer(Types.SMALLINT));
 		typeMap.put("int", new Integer(Types.INTEGER));
 		typeMap.put("bigint", new Integer(Types.BIGINT));

@@ -38,7 +38,7 @@ All Rights Reserved.
   <property name="jdbc_jar"
     value="${jardir}/monetdb-${JDBC_MAJOR}.${JDBC_MINOR}-jdbc.jar" />
   <property name="jdbc_url"
-    value="jdbc:monetdb://localhost/d?user=monetdb&amp;password=monetdb${debug}" />
+    value="jdbc:monetdb://localhost/?user=monetdb&amp;password=monetdb${debug}" />
 
   <!-- Prepares the build directory -->
   <target name="prepare">
@@ -87,6 +87,7 @@ All Rights Reserved.
   <target name="test">
     <antcall target="Test_Cautocommit" />
     <antcall target="Test_Csavepoints" />
+    <antcall target="Test_Clargequery" />
     <antcall target="Test_Cmanycon" />
     <antcall target="Test_Ctransaction" />
     <antcall target="Test_Creplysize" />
@@ -124,6 +125,12 @@ All Rights Reserved.
   <target name="Test_Csavepoints">
     <antcall target="test_class">
       <param name="test.class" value="Test_Csavepoints" />
+    </antcall>
+  </target>
+
+  <target name="Test_Clargequery">
+    <antcall target="test_class">
+      <param name="test.class" value="Test_Clargequery" />
     </antcall>
   </target>
 

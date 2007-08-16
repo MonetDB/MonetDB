@@ -121,6 +121,9 @@ public class BufferedMCLReader extends BufferedReader {
 			case '[':
 				lineType = RESULT;
 			break;
+			case '=':
+				lineType = RESULT;
+			break;
 			case '^':
 				lineType = REDIRECT;
 			break;
