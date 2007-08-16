@@ -696,6 +696,8 @@ and marking all non-temporary variables as being (potentially) used.
 		prg->def->profiler= NULL;
 	}
 	prg->def->errors = 0;
+	if( c->itrace)
+		stream_printf(c->fdout,"mdb>#EOD\n");
 	return msg;
 }
 
