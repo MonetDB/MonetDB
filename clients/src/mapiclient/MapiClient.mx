@@ -568,6 +568,7 @@ SQLtraceRenderer(MapiHdl hdl)
 		rows++;
 	}
 	SQLseparator(len, 1, '-');
+	specials=0;
 }
 
 static void
