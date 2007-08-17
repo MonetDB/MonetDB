@@ -1,3 +1,5 @@
+pf:add-doc("$TSTSRCDIR/test1280519.xml", "test1280519.xml")
+<>
 let $items := fn:subsequence(fn:doc("test1280519.xml")//Asset, 1, 100)
 let $assets := for $item in $items return $item cast as xs:anyNode
 let $albums := $assets/parent::*
