@@ -1387,7 +1387,6 @@ sqltypeinit(void)
 		}
 	}
 
-	}
 	for (t = decimals; t < dates; t++) 
 		sql_create_func("round", "sql", "round", *t, BTE, *t, SCALE_NONE);
 
