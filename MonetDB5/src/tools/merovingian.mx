@@ -47,6 +47,7 @@ logs a warning upon restart after a crash, Merovingian will refuse to
 start an Mserver if it has crashed a number of times during a recent
 period.  The Merovingian will log such refusals as well as return this
 as error to the connecting client.
+FIXME: actually implement that
 
 @h
 #define MEROV_VERSION   "0.4"
