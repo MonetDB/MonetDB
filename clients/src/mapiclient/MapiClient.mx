@@ -131,6 +131,7 @@ static char *logfile = NULL;
 static int start_with_help = 0;
 static char promptbuf[16];
 static int echoquery = 0;
+
 #define setPrompt() sprintf(promptbuf, "%.*s>", (int) sizeof(promptbuf) - 2, language);
 #define debugMode() (strncmp(promptbuf, "mdb", 3) == 0)
 
@@ -227,8 +228,7 @@ static void
 timerEnd(void)
 {
 	t1 = gettime();
-	if (mark &&
-		specials == 0){
+	if (mark && specials == 0) {
 		fprintf(toConsole, "%s % 7ld.%03ld msec %s\n", mark, (t1 - t0) / 1000, (t1 - t0) % 1000, mark2 ? mark2 : "");
 		fflush(toConsole);
 	}
@@ -253,7 +253,7 @@ SQLsetSpecial(const char *command)
 }
 
 static void
-SQLrow(int *len, int *numeric, char **rest, int fields,int trim)
+SQLrow(int *len, int *numeric, char **rest, int fields, int trim)
 {
 	int i, more, first = 1;
 	char old;
@@ -267,7 +267,7 @@ SQLrow(int *len, int *numeric, char **rest, int fields,int trim)
 			if (rest[i] && (int) strlen(rest[i]) > len[i]) {
 				int cnt = strlen(rest[i]) - len[i];
 
-				/* first remove a leading spaces unless requested*/
+				/* first remove a leading spaces unless requested */
 				for (t = rest[i]; trim && t && *t && cnt; t++)
 					if (*t != ' ' && *t != '\t')
 						break;
@@ -281,7 +281,7 @@ SQLrow(int *len, int *numeric, char **rest, int fields,int trim)
 			fprintf(toConsole, "| ");
 			more = 0;
 			for (i = 0; i < fields; i++) {
-				if (rest[i] == NULL || *rest[i]== 0)
+				if (rest[i] == NULL || *rest[i] == 0)
 					fprintf(toConsole, "%*s |", len[i], " ");
 				else {
 					/* break the string into pieces and left-adjust them in the column */
@@ -333,6 +333,8 @@ SQLrow(int *len, int *numeric, char **rest, int fields,int trim)
 static void
 XMLprdata(const char *val)
 {
+	if (val == NULL)
+		return;
 	while (*val) {
 		if (*val == '&')
 			fprintf(toConsole, "&amp;");
@@ -366,13 +368,12 @@ XMLrenderer(MapiHdl hdl)
 	int i, fields;
 
 	fprintf(toConsole, "<?xml version='1.0' encoding='utf-8'?>\n");
-	fprintf(toConsole,
-		"<!DOCTYPE table ["
-		" <!ELEMENT table (row)*>"  /* a table consists of zero or more rows */
-		" <!ELEMENT row (column)+>"  /* a row consists of one or more columns */
+	fprintf(toConsole, "<!DOCTYPE table ["
+		" <!ELEMENT table (row)*>"			/* a table consists of zero or more rows */
+		" <!ELEMENT row (column)+>"			/* a row consists of one or more columns */
 		" <!ELEMENT column (#PCDATA)>"
-		" <!ATTLIST table name CDATA #REQUIRED>"  /* a table has a name */
-		" <!ATTLIST column name CDATA #REQUIRED>]>\n"); /* a column has a name */
+		" <!ATTLIST table name CDATA #REQUIRED>"	/* a table has a name */
+		" <!ATTLIST column name CDATA #REQUIRED>]>\n");	/* a column has a name */
 	fprintf(toConsole, "<table");
 	XMLprattr("name", mapi_get_table(hdl, 0));
 	fprintf(toConsole, ">\n");
@@ -420,14 +421,15 @@ SQLseparator(int *len, int fields, char sep)
 }
 
 static void
-SQLqueryEcho(MapiHdl hdl){
+SQLqueryEcho(MapiHdl hdl)
+{
 	if (echoquery) {
 		char *qry;
 
 		qry = mapi_get_query(hdl);
 		if (!interactive_stdin)
 			fputc('#', toConsole);
-		if( qry){
+		if (qry) {
 			fprintf(toConsole, "%s", qry);
 			free(qry);
 		}
@@ -449,7 +451,7 @@ SQLheader(MapiHdl hdl, int *len, int fields)
 				names[i] = mapi_get_name(hdl, i);
 				numeric[i] = 0;
 			}
-			SQLrow(len, numeric, names, fields,1);
+			SQLrow(len, numeric, names, fields, 1);
 		}
 		SQLseparator(len, fields, '=');
 	}
@@ -459,7 +461,7 @@ static void
 SQLdebugRendering(MapiHdl hdl)
 {
 	char *reply;
-	int cnt=0;
+	int cnt = 0;
 
 	if (mapi_result_error(hdl) != NULL) {
 		mapi_explain_result(hdl, stderr);
@@ -469,28 +471,29 @@ SQLdebugRendering(MapiHdl hdl)
 		cnt++;
 		fprintf(toConsole, "%s\n", reply);
 		if (strncmp(reply, "mdb>#EOD", 7) == 0) {
-			cnt=0;
+			cnt = 0;
 			break;
 		}
 	}
-	if(cnt == 0){
+	if (cnt == 0) {
 		setPrompt();
-		specials=0;
+		specials = 0;
 	}
 }
 static void
-SQLpagemove(int *len, int fields, int *ps, int *silent){
-			char buf[BUFSIZ];
+SQLpagemove(int *len, int fields, int *ps, int *silent)
+{
+	char buf[BUFSIZ];
 
-			SQLseparator(len, fields, '-');
-			fprintf(toConsole, "next page? (continue,quit,next)");
-			fgets(buf, BUFSIZ, fromConsole);
-			if (buf[0] == 'c')
-				*ps = 0;
-			if (buf[0] == 'q')
-				*silent = 1;
-			if (*silent == 0)
-				SQLseparator(len, fields, '-');
+	SQLseparator(len, fields, '-');
+	fprintf(toConsole, "next page? (continue,quit,next)");
+	fgets(buf, BUFSIZ, fromConsole);
+	if (buf[0] == 'c')
+		*ps = 0;
+	if (buf[0] == 'q')
+		*silent = 1;
+	if (*silent == 0)
+		SQLseparator(len, fields, '-');
 }
 
 static void
@@ -507,19 +510,19 @@ SQLexplainRendering(MapiHdl hdl)
 
 	SQLqueryEcho(hdl);
 
-	len[0] = pagewidth-4; /* remove borders */
+	len[0] = pagewidth - 4;	/* remove borders */
 	numeric[0] = 0;
 	SQLseparator(len, 1, '-');
 	while ((fields[0] = mapi_fetch_line(hdl)) != NULL) {
 		if (silent)
 			continue;
-		SQLrow(len, numeric, fields, 1,0);
-		if (ps && rows % ps == ps - 1 && rows != mapi_get_row_count(hdl) && fromConsole) 
-			SQLpagemove(len,1, &ps, &silent);
+		SQLrow(len, numeric, fields, 1, 0);
+		if (ps && rows % ps == ps - 1 && rows != mapi_get_row_count(hdl) && fromConsole)
+			SQLpagemove(len, 1, &ps, &silent);
 		rows++;
 	}
 	SQLseparator(len, 1, '-');
-	specials=0;
+	specials = 0;
 }
 
 static void
@@ -537,14 +540,14 @@ SQLtraceRenderer(MapiHdl hdl)
 		return;
 	}
 	SQLqueryEcho(hdl);
-	len[0] = pagewidth-4; /* remove borders */
+	len[0] = pagewidth - 4;	/* remove borders */
 	numeric[0] = 0;
 	numeric[1] = 0;
 
 	while ((fields[0] = mapi_fetch_line(hdl)) != NULL) {
 		if (silent)
 			continue;
-		if( *fields[0]=='%' && pagewidth>=0)
+		if (*fields[0] == '%' && pagewidth >= 0)
 			continue;
 
 		/* simple render */
@@ -553,27 +556,28 @@ SQLtraceRenderer(MapiHdl hdl)
 		if (s)
 			*s = 0;
 
-		if ( (s=strchr(fields[0],'#')) ){
-			*s=0;
-			fields[1]=s+1;
-			if (cols == 1){
-				len[1]= len[0]-strlen(fields[0]);
-				len[0]= strlen(fields[0])-2; /* border */
+		if ((s = strchr(fields[0], '#')) != NULL) {
+			*s = 0;
+			fields[1] = s + 1;
+			if (cols == 1) {
+				len[1] = len[0] - strlen(fields[0]);
+				len[0] = strlen(fields[0]) - 2;	/* border */
 				SQLseparator(len, 2, '-');
 				cols = 2;
 			}
 		} else {
 			int olen[1];
 			char *t;
-			olen[0]= pagewidth-4;
-			for( t= fields[0]; *t; t++)
-				if( *t == '\t') *t =' ';
-			SQLrow(olen, numeric, fields, 1,0);
-			continue; /* output should be rendered differently */ 
+
+			olen[0] = pagewidth - 4;
+			for (t = fields[0]; *t; t++)
+				if (*t == '\t')
+					*t = ' ';
+			SQLrow(olen, numeric, fields, 1, 0);
+			continue;	/* output should be rendered differently */
 		}
-		SQLrow(len, numeric, fields, cols,0);
-		if (ps && rows % ps == ps - 1 && 
-			rows != mapi_get_row_count(hdl) && fromConsole) {
+		SQLrow(len, numeric, fields, cols, 0);
+		if (ps && rows % ps == ps - 1 && rows != mapi_get_row_count(hdl) && fromConsole) {
 			SQLpagemove(len, cols, &ps, &silent);
 		}
 		rows++;
@@ -584,7 +588,7 @@ SQLtraceRenderer(MapiHdl hdl)
 static void
 SQLrenderer(MapiHdl hdl)
 {
-	int i, total, fields, oldfields = 0, max=1;
+	int i, total, fields, oldfields = 0, max = 1;
 	int *len = 0;
 	char **rest = 0;
 	char buf[50];
@@ -599,25 +603,26 @@ SQLrenderer(MapiHdl hdl)
 		if (silent)
 			continue;
 		if (len == 0) {
-			char *type;
-
 			len = (int *) alloca(sizeof(int) * fields);
-			memset( (char*) len, 0, sizeof(int)* fields);
+			memset((char *) len, 0, sizeof(int) * fields);
 			rest = (char **) alloca(sizeof(char *) * fields);
-			memset( (char*) rest, 0, sizeof(char *) * fields);
+			memset((char *) rest, 0, sizeof(char *) * fields);
 			numeric = (int *) alloca(sizeof(int) * fields);
-			memset( (char*) numeric, 0, sizeof(int) * fields);
+			memset((char *) numeric, 0, sizeof(int) * fields);
 
 			for (i = 0; i < fields; i++) {
+				char *s;
+
 				len[i] = mapi_get_len(hdl, i);
-				if ((max = strlen(mapi_get_name(hdl, i))) > len[i])
+				s = mapi_get_name(hdl, i);
+				if (s != NULL && (max = strlen(s)) > len[i])
 					len[i] = max;
-				type = mapi_get_type(hdl, i);
-				numeric[i] = strcmp(type, "int") == 0 ||
-					strcmp(type, "tinyint") == 0 ||
-					strcmp(type, "smallint") == 0 ||
-					strcmp(type, "double") == 0 ||
-					strcmp(type, "float") == 0;
+				s = mapi_get_type(hdl, i);
+				numeric[i] = s != NULL && (strcmp(s, "int") == 0 ||
+							   strcmp(s, "tinyint") == 0 ||
+							   strcmp(s, "smallint") == 0 ||
+							   strcmp(s, "double") == 0 ||
+							   strcmp(s, "float") == 0);
 			}
 			if (pagewidth) {
 				total = 0;
@@ -630,8 +635,10 @@ SQLrenderer(MapiHdl hdl)
 						total += len[i];
 
 					/* punish the column headers first */
-					for (i = 0; i < fields; i++)
-						if (strlen(mapi_get_name(hdl, i)) > (size_t) mapi_get_len(hdl, i) &&
+					for (i = 0; i < fields; i++) {
+						char *name = mapi_get_name(hdl, i);
+
+						if (name != NULL && strlen(name) > (size_t) mapi_get_len(hdl, i) &&
 						    len[i] > MINCOLSIZE) {
 							len[i]--;
 							total--;
@@ -639,6 +646,7 @@ SQLrenderer(MapiHdl hdl)
 								break;
 							max = 1;
 						}
+					}
 				}
 				/* punish the long value fields */
 				while (2 * fields + total >= pagewidth && len[max] > 1) {
@@ -669,7 +677,7 @@ SQLrenderer(MapiHdl hdl)
 				rest[i] = nullstring;
 		}
 
-		SQLrow(len, numeric, rest, fields,1);
+		SQLrow(len, numeric, rest, fields, 1);
 		rows++;
 		if (ps && (rows % ps) == ps - 1 && rows != mapi_get_row_count(hdl) && fromConsole) {
 			char buf[BUFSIZ];
@@ -714,9 +722,10 @@ setWidth(void)
 #ifdef TIOCGWINSZ
 	struct winsize ws;
 
-	if (cols == 0 && ioctl(fileno(stdin), TIOCGWINSZ, &ws) == 0) 
+	if (cols == 0 && ioctl(fileno(stdin), TIOCGWINSZ, &ws) == 0)
 		pagewidth = ws.ws_col > 0 ? ws.ws_col : DEFWIDTH;
-	else pagewidth= cols;
+	else
+		pagewidth = cols;
 #else
 	pagewidth = DEFWIDTH;
 #endif
@@ -730,21 +739,22 @@ doRequest(Mapi mid, const char *buf, int interactive)
 	if (mode == SQL)
 		SQLsetSpecial(buf);
 
-	if ((hdl = mapi_query(mid, buf)) == NULL ||
-		mapi_error(mid) || mapi_result_error(hdl) ) {
+	if ((hdl = mapi_query(mid, buf)) == NULL || mapi_error(mid) || mapi_result_error(hdl)) {
 		mapi_explain_result(hdl, stderr);
 		mapi_close_handle(hdl);
 		return 1;
 	}
 
-	if ( formatter == TABLEformatter || pagewidth >= 0 ||
-		 formatter == CSVformatter || formatter == TABformatter) {
-		if( pagewidth < 0 ) pagewidth = 0;
+	if (mode == SQL && (pagewidth >= 0 ||
+			    formatter == TABLEformatter ||
+			    formatter == CSVformatter ||
+			    formatter == TABformatter)) {
+		if (pagewidth < 0)
+			pagewidth = 0;
 		SQLrenderer(hdl);
-	} else
-	if (formatter == XMLformatter )
+	} else if (mode == SQL && formatter == XMLformatter)
 		XMLrenderer(hdl);
-	else 
+	else
 		RAWrenderer(hdl);
 
 	if (!mapi_get_active(mid) || !interactive)
@@ -877,7 +887,7 @@ doFile(Mapi mid, const char *file)
 			if ((reply = mapi_result_error(hdl)) != NULL)
 				mapi_explain_result(hdl, stderr);
 			if (mapi_get_querytype(hdl) == Q_UPDATE) {
-					fprintf(toConsole, "[ %d\t]\n", mapi_rows_affected(hdl));
+				fprintf(toConsole, "[ %d\t]\n", mapi_rows_affected(hdl));
 			} else {
 				while ((reply = mapi_fetch_line(hdl)) != NULL) {
 					if (mode == XQUERY && *reply == '=')
@@ -933,15 +943,15 @@ showCommands(void)
 	}
 
 	/* shared control options */
-		fprintf(toConsole, "\\?      - show this message\n");
-		fprintf(toConsole, "\\<file  - read input from file\n");
-		fprintf(toConsole, "\\>file  - save response in file, or stdout if no file is given\n");
-		fprintf(toConsole, "\\|cmd   - pipe result to process\n");
+	fprintf(toConsole, "\\?      - show this message\n");
+	fprintf(toConsole, "\\<file  - read input from file\n");
+	fprintf(toConsole, "\\>file  - save response in file, or stdout if no file is given\n");
+	fprintf(toConsole, "\\|cmd   - pipe result to process\n");
 #ifdef HAVE_LIBREADLINE
-		fprintf(toConsole, "\\h      - show the readline history\n");
+	fprintf(toConsole, "\\h      - show the readline history\n");
 #endif
-		fprintf(toConsole, "\\q      - terminate session\n");
-		fprintf(toConsole, "\\t      - toggle timer\n");
+	fprintf(toConsole, "\\q      - terminate session\n");
+	fprintf(toConsole, "\\t      - toggle timer\n");
 
 	switch (mode) {
 	case MAL:
@@ -957,8 +967,8 @@ showCommands(void)
 		fprintf(toConsole, "\\A      - enable auto commit\n");
 		fprintf(toConsole, "\\a      - disable auto commit\n");
 	}
-		fprintf(toConsole, "\\L file - save client/server interaction\n");
-		fprintf(toConsole, "\\X      - trace MapiClient code\n");
+	fprintf(toConsole, "\\L file - save client/server interaction\n");
+	fprintf(toConsole, "\\X      - trace MapiClient code\n");
 }
 
 static int
@@ -1026,11 +1036,11 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt)
 			length = strlen(line);
 		if (hdl == NULL && length > 0 && line[length - 1] == '\n') {
 			/* test for special commands */
-			if( mode != MAL)
-			while (length > 0 && (*line & ~0x7F) == 0 && isspace((int) *line)) {
-				line++;
-				length--;
-			}
+			if (mode != MAL)
+				while (length > 0 && (*line & ~0x7F) == 0 && isspace((int) *line)) {
+					line++;
+					length--;
+				}
 			/* in the switch, use continue if the line was
 			   processed, use break to send to server */
 			switch (*line) {
@@ -1093,7 +1103,8 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt)
 
 						/* get all table names in current schema */
 						pagewidth = 0;
-						if ((hdl = mapi_query(mid, "SELECT \"t\".\"name\" "
+						if ((hdl = mapi_query(mid,
+								      "SELECT \"t\".\"name\" "
 								      "FROM \"sys\".\"tables\" \"t\", "
 								      "\"sys\".\"schemas\" \"s\" "
 								      "WHERE \"t\".\"schema_id\" = \"s\".\"id\" "
@@ -1157,25 +1168,26 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt)
 					}
 					continue;
 				case 'L':
-					{	char buf[1024];
-						line += 2;
-						length -= 2;
-						if (line[length - 1] == '\n')
-							line[--length] = 0;
-						if (line[length - 1] == '\r')
-							line[--length] = 0;
-						for (; *line && isspace((int) *line); line++)
-							;
-						if( *line == 0)
-						{
-							snprintf(buf,1024,"monet_%d", getpid());
-							line=buf;
-						}
-						logfile= optarg? optarg: strdup(line);
-						if ( logfile) 
-							mapi_log(mid,logfile);
-						continue;
+				{
+					char buf[1024];
+
+					line += 2;
+					length -= 2;
+					if (line[length - 1] == '\n')
+						line[--length] = 0;
+					if (line[length - 1] == '\r')
+						line[--length] = 0;
+					for (; *line && isspace((int) *line); line++)
+						;
+					if (*line == 0) {
+						snprintf(buf, 1024, "monet_%d", getpid());
+						line = buf;
 					}
+					logfile = optarg ? optarg : strdup(line);
+					if (logfile)
+						mapi_log(mid, logfile);
+					continue;
+				}
 				case '?':
 					if (!isspace((int) line[2]) && mode == MAL) {
 						strcpy(line, line + 1);
@@ -1260,7 +1272,7 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt)
 		}
 		assert(hdl != NULL);
 
-		if (length > 0 ){
+		if (length > 0) {
 			sent = 1;
 			SQLsetSpecial(line);
 			mapi_query_part(hdl, line, length);
@@ -1303,7 +1315,7 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt)
 			char *reply;
 
 			if (mapi_get_querytype(hdl) == Q_UPDATE) {
-				if( mode== SQL && pagewidth >= 0)
+				if (mode == SQL && pagewidth >= 0)
 					fprintf(toConsole, "Rows affected %d\n", mapi_rows_affected(hdl));
 				else
 					fprintf(toConsole, "[ %d\t]\n", mapi_rows_affected(hdl));
@@ -1340,28 +1352,33 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt)
 							SQLrenderer(hdl);
 					}
 			} else {
-	  nononsense:
+			      nononsense:
 				if ((reply = mapi_result_error(hdl)) != NULL) {
 					mapi_explain_result(hdl, stderr);
 				}
-				if (mode == SQL && pagewidth >= 0 && (reply = mapi_fetch_line(hdl)) != NULL) {
+				if (pagewidth >= 0 && (reply = mapi_fetch_line(hdl)) != NULL) {
 					if (*reply == '%') {
-						if (formatter == XMLformatter)
+						switch (formatter) {
+						case XMLformatter:
 							XMLrenderer(hdl);
-						else if (formatter == RAWformatter)
+							break;
+						case RAWformatter:
 							RAWrenderer(hdl);
-						else
+							break;
+						default:
 							SQLrenderer(hdl);
+							break;
+						}
 					} else
 						fprintf(toConsole, "%s\n", reply);
 				}
 				while ((reply = mapi_fetch_line(hdl)) != NULL && *reply) {
 					if ((mode == XQUERY || mode == MAL) && *reply == '=')
 						reply++;
-					/* we know when the MAL debugger becomes active  and finishes*/
+					/* we know when the MAL debugger becomes active and finishes */
 					if (strncmp(reply, "mdb>#", 5) == 0)
-						sprintf(promptbuf,"mdb>");
-					if (strncmp(reply, "mdb>#EOD", 7) == 0){
+						sprintf(promptbuf, "mdb>");
+					if (strncmp(reply, "mdb>#EOD", 7) == 0) {
 						setPrompt();
 						continue;
 					}
@@ -1388,7 +1405,7 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt)
 		timerEnd();
 		mapi_close_handle(hdl);
 		hdl = NULL;
-	
+
 		/* for XQuery, only exit when end-of-file and we
 		   didn't send any data */
 	} while (line != NULL || (mode == XQUERY && sent));
@@ -1457,7 +1474,7 @@ main(int argc, char **argv)
 	Mapi mid;
 	int save_history = 0;
 	int interactive = 0;
-	int option_index=0;
+	int option_index = 0;
 	struct stat statb;
 	static struct option long_options[] = {
 		{"config", 1, 0, 'c'},
@@ -1501,11 +1518,11 @@ main(int argc, char **argv)
 	if ((setlen = mo_builtin_settings(&set)) == 0)
 		usage(argv[0]);
 
-	while ((c = getopt_long(argc, argv, "b:c:C:xef:i::h:l:o:"
+	while ((c = getopt_long(argc, argv, "c:C:ef:i::h:L::l:o:"
 #ifdef HAVE_POPEN
 				"|:"
 #endif
-				"w:r:P::p:d:S:s:Tt::u::Hq?", long_options, &option_index)) != -1) {
+				"w:r:P::p:d:S:s:tX::u::H?", long_options, &option_index)) != -1) {
 		switch (c) {
 		case 0:
 #ifdef HAVE_POPEN
@@ -1522,21 +1539,24 @@ main(int argc, char **argv)
 			colname = optarg;
 			break;
 		case 'e':
-			echoquery= 1;
+			echoquery = 1;
 			break;
 		case 'f':
 			setFormatter(optarg);
 			break;
 		case 'L':
-			{	char buf[1024];
-				snprintf(buf,1024,"monet_%d", getpid());
-				logfile= optarg? optarg: strdup(buf);
-				break;
-			}
+		{
+			char buf[1024];
+
+			snprintf(buf, 1024, "monet_%d", getpid());
+			logfile = optarg ? optarg : strdup(buf);
+			break;
+		}
 		case 'l':
 			/* accept unambiguous prefix of language */
 			if (strcmp(optarg, "sql") == 0 || strcmp(optarg, "sq") == 0 || strcmp(optarg, "s") == 0) {
 				language = "sql";
+
 				mode = SQL;
 			} else if (strcmp(optarg, "mil") == 0 || strcmp(optarg, "mi") == 0) {
 				language = "mil";
@@ -1584,8 +1604,8 @@ main(int argc, char **argv)
 			setlen = mo_add_option(&set, setlen, opt_cmdline, "port", optarg);
 			break;
 		case 'd':
-			if (optarg== NULL && strcmp(long_options[option_index].name, "dump") == 0 ) 
-				dump=1;
+			if (optarg == NULL && strcmp(long_options[option_index].name, "dump") == 0)
+				dump = 1;
 			else
 				dbname = optarg;
 			break;
@@ -1595,11 +1615,11 @@ main(int argc, char **argv)
 			command = optarg;
 			break;
 		case 'w':
-			if( optarg)
+			if (optarg)
 				cols = atol(optarg);
 			break;
 		case 'r':
-			if( optarg)
+			if (optarg)
 				rowsperpage = atol(optarg);
 			break;
 #ifdef HAVE_POPEN
@@ -1692,17 +1712,17 @@ main(int argc, char **argv)
 		mapi_explain(mid, stderr);
 		exit(2);
 	}
-	if( dump){
-		if( mode == SQL){
+	if (dump) {
+		if (mode == SQL) {
 			dump_tables(mid, toConsole);
 			exit(0);
 		} else
-			fprintf(stderr,"Dump only supported for SQL\n");
+			fprintf(stderr, "Dump only supported for SQL\n");
 	}
 
-	if ( logfile) 
-		mapi_log(mid,logfile);
-	
+	if (logfile)
+		mapi_log(mid, logfile);
+
 	mapi_profile(mid, mark != NULL);
 	mapi_trace(mid, trace);
 	if (output)
