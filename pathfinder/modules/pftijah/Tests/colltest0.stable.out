@@ -1,47 +1,29 @@
 stdout of test 'colltest0` in directory 'modules/pftijah` itself:
 
 
-# 16:06:31 >  
-# 16:06:31 >  Mtimeout -timeout 60 Mserver "--config=/usr/local/flokstra/etc/MonetDB.conf" --debug=0 --set "monet_mod_path=/usr/local/flokstra/lib/MonetDB4:/usr/local/flokstra/lib/MonetDB4/lib:/usr/local/flokstra/lib/MonetDB4/bin" --set "gdk_dbfarm=/usr/local/flokstra/var/MonetDB4/dbfarm" --set "sql_logdir=/usr/local/flokstra/var/MonetDB4/sql_logs" --set "xquery_logdir=/usr/local/flokstra/var/MonetDB4/xquery_logs" --set mapi_port=31150 --set xrpc_port=43225 --set monet_prompt= --trace --dbname=mTests_modules_pftijah  
-# 16:06:31 >  
+# 16:59:04 >  
+# 16:59:04 >  Mtimeout -timeout 180  Mserver "--config=/ufs/sjoerd/Monet/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/sjoerd/src/MonetDB/devel/pathfinder/x86_64-unknown-linux-gnu/runtime/.libs:/ufs/sjoerd/src/MonetDB/devel/pathfinder/x86_64-unknown-linux-gnu/runtime:/ufs/sjoerd/src/MonetDB/devel/pathfinder/runtime:/ufs/sjoerd/src/MonetDB/devel/pathfinder/x86_64-unknown-linux-gnu/modules/pftijah/.libs:/ufs/sjoerd/src/MonetDB/devel/pathfinder/x86_64-unknown-linux-gnu/modules/pftijah:/ufs/sjoerd/src/MonetDB/devel/pathfinder/modules/pftijah:/ufs/sjoerd/Monet/lib64/MonetDB4:/ufs/sjoerd/Monet/lib64/MonetDB4/lib:/ufs/sjoerd/Monet/lib64/MonetDB4/bin" --set "gdk_dbfarm=/ufs/sjoerd/src/MonetDB/devel/pathfinder/x86_64-unknown-linux-gnu/dbfarm" --set "sql_logdir=/ufs/sjoerd/src/MonetDB/devel/pathfinder/x86_64-unknown-linux-gnu/sql_logs" --set "xquery_logdir=/ufs/sjoerd/src/MonetDB/devel/pathfinder/x86_64-unknown-linux-gnu/xquery_logs" --set mapi_open=true --set xrpc_open=true --set mapi_port=35394 --set xrpc_port=49230 --set monet_prompt= --trace "--dbname=mTests_modules_pftijah" --dbinit=" module(pathfinder);" ; echo ; echo Over..
+# 16:59:04 >  
 
-# Monet Database Server V4.17.1
+# MonetDB Server v4.19.0
+# based on GDK   v1.19.0
 # Copyright (c) 1993-2007, CWI. All rights reserved.
-# Compiled for i686-suse-linux/32bit with 32bit OIDs; dynamically linked.
+# Compiled for x86_64-redhat-linux-gnu/64bit with 32bit OIDs; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
-module(pathfinder);
-# XRPC administrative console at http://localhost:43225/admin
-module(unix);
+# MonetDB/XQuery module v0.19.0 loaded
+# XRPC administrative console at http://localhost:49230/admin
 
-# should run if you set TSTTRGDIR to pwd
-var path:=getenv("TSTSRCDIR");
+printf("\nReady.\n");
 
-# create the 3 document PFCOLL collection
-shred_doc(bat(void,str)
-              .append(path+"/xml-docs/cdilbert1.xml")
-              .append(path+"/xml-docs/cdilbert2.xml")
-              .append(path+"/xml-docs/cdilbert3.xml").seqbase(0@0),
-          bat(void,str)
-	      .append("cdilbert1.xml")
-	      .append("cdilbert2.xml")
-	      .append("cdilbert3.xml").seqbase(0@0),
-	  bat(void,str)
-	      .append("PFCOLL")
-	      .append("PFCOLL")
-	      .append("PFCOLL").seqbase(0@0),
-	  bat(void,lng)
-	      .append(10LL)
-	      .append(10LL)
-	      .append(10LL).seqbase(0@0));
-# shredding with holes: pagesize=16384, #fillsize=14746
-# Elapsed time = 583us [010us/node]
-# shredding with holes: pagesize=16384, #fillsize=14746
-# Elapsed time = 145us [002us/node]
-# shredding with holes: pagesize=16384, #fillsize=14746
-# Elapsed time = 198us [003us/node]
-# Shredded 3 XML documents, total time after commit=0.012s
-var out := xquery("xml","fn:doc(\"cdilbert2.xml\")");
-printf("%s",out);
+Ready.
+quit();
+
+Over..
+
+# 16:59:08 >  
+# 16:59:08 >  Mtimeout -timeout 60 MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=hirundo --port=35394 colltest0.xq
+# 16:59:08 >  
+
 <?xml version="1.0" encoding="utf-8"?>
 <XQueryResult><strip>
   <panel id="d4">
@@ -70,9 +52,8 @@ printf("%s",out);
     </speech>
   </panel>
 </strip></XQueryResult>
-quit();
 
-# 16:06:32 >  
-# 16:06:32 >  Done.
-# 16:06:32 >  
+# 16:59:09 >  
+# 16:59:09 >  Done.
+# 16:59:09 >  
 
