@@ -194,7 +194,7 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 	 * @throws SQLException if a database access error occurs
 	 */
 	public String getDatabaseProductVersion() throws SQLException {
-		return(getEnv("monet_version"));
+		return(getEnv("gdk_version"));
 	}
 
 	/**

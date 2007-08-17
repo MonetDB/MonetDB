@@ -264,7 +264,7 @@ public final class MapiSocket {
 
 				URI u;
 				try {
-					u = new URI(suri.substring(5));
+					u = new URI(suri.substring(4));
 				} catch (URISyntaxException e) {
 					throw new MCLParseException(e.toString());
 				}
@@ -273,7 +273,7 @@ public final class MapiSocket {
 				String warnings =
 					connect(u.getHost(), p == -1 ? port : p, user, pass);
 				if (warnings == null) warnings = "";
-				warn += "\nRedirect by " + host + ":" + 
+				warnings = "Redirect by " + host + ":" + 
 					port + " to " + suri + "\n" + warnings;
 			} else {
 				String msg = "The server sent a redirect for this connection:";
@@ -318,7 +318,7 @@ public final class MapiSocket {
 
 		// challenge string to use as salt/key
 		String challenge = chaltok[0];
-		String servert = chaltok[1];
+		// chaltok[1]; // server type, not needed yet 
 		try {
 			version = Integer.parseInt(chaltok[2].trim());	// protocol version
 		} catch (NumberFormatException e) {
@@ -341,11 +341,6 @@ public final class MapiSocket {
 				// proto 8, the byteorder of the blocks is always little
 				// endian because most machines today are.
 				String hashes = (hash == null ? chaltok[3] : hash);
-				// if we deal with merovingian, mask our credentials
-				if (servert.equals("merovingian")) {
-					username = "merovingian";
-					password = "merovingian";
-				}
 				String pwhash;
 				if (hashes.indexOf("SHA1") != -1) {
 					try {
@@ -389,7 +384,7 @@ public final class MapiSocket {
 				// generate response
 				response = "BIG:";	// JVM byte-order is big-endian
 				response += username + ":" + pwhash + ":" + language;
-				response += ":" + (database == null ? "" : database) + ":";
+				response += ":" + database + ":";
 
 				return(response);
 		}

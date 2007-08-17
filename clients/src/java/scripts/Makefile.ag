@@ -17,14 +17,12 @@
 MTSAFE
 
 scripts_sh = {
-	COND = NOT_WIN32
-	DIR = bindir
+	NOINST
 	EXT = ""
 	SOURCES = mjclient.in
 }
 
 scripts_bat = {
-	COND = NATIVE_WIN32
-	DIR = bindir
+	NOINST
 	SOURCES = mjclient.bat.in
 }
