@@ -695,7 +695,7 @@ SQLrenderer(MapiHdl hdl)
 	}
 	if (oldfields)
 		SQLseparator(len, oldfields, '-');
-	snprintf(buf, 50, "%d rows", mapi_get_row_count(hdl));
+	snprintf(buf, sizeof(buf), "%d rows", mapi_get_row_count(hdl));
 	mark2 = strdup(buf);
 }
 
@@ -1180,7 +1180,7 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt)
 					for (; *line && isspace((int) *line); line++)
 						;
 					if (*line == 0) {
-						snprintf(buf, 1024, "monet_%d", getpid());
+						snprintf(buf, sizeof(buf), "monet_%d", (int) getpid());
 						line = buf;
 					}
 					logfile = optarg ? optarg : strdup(line);
@@ -1548,7 +1548,7 @@ main(int argc, char **argv)
 		{
 			char buf[1024];
 
-			snprintf(buf, 1024, "monet_%d", getpid());
+			snprintf(buf, sizeof(buf), "monet_%d", (int) getpid());
 			logfile = optarg ? optarg : strdup(buf);
 			break;
 		}
