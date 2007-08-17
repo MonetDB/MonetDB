@@ -9,40 +9,19 @@ stdout of test 'colltest0` in directory 'modules/pftijah` itself:
 # Copyright (c) 1993-2007, CWI. All rights reserved.
 # Compiled for i686-suse-linux/32bit with 32bit OIDs; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
-module(pathfinder);
-# XRPC administrative console at http://localhost:43225/admin
-module(unix);
+# XRPC administrative console at http://localhost:49749/admin
 
-# should run if you set TSTTRGDIR to pwd
-var path:=getenv("TSTSRCDIR");
+printf("\nReady.\n");
 
-# create the 3 document PFCOLL collection
-shred_doc(bat(void,str)
-              .append(path+"/xml-docs/cdilbert1.xml")
-              .append(path+"/xml-docs/cdilbert2.xml")
-              .append(path+"/xml-docs/cdilbert3.xml").seqbase(0@0),
-          bat(void,str)
-	      .append("cdilbert1.xml")
-	      .append("cdilbert2.xml")
-	      .append("cdilbert3.xml").seqbase(0@0),
-	  bat(void,str)
-	      .append("PFCOLL")
-	      .append("PFCOLL")
-	      .append("PFCOLL").seqbase(0@0),
-	  bat(void,lng)
-	      .append(0LL)
-	      .append(0LL)
-	      .append(0LL).seqbase(0@0));
-# Elapsed time = 583us [010us/node]
-# Elapsed time = 178us [003us/node]
-# Elapsed time = 142us [002us/node]
-# Shredded 3 XML documents, total time after commit=0.015s
-
-
-
-# Shredded 1 XML document (cdilbert3.xml), total time after commit=0.014s
-
+Ready.
 quit();
+
+Over..
+
+# 14:20:10 >  
+# 14:20:10 >  Mtimeout -timeout 60 MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=hirundo --port=30760 colltest0.xq
+# 14:20:10 >  
+
 
 # 16:06:32 >  
 # 16:06:32 >  Done.
