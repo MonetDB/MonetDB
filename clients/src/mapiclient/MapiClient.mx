@@ -1024,11 +1024,9 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt)
 			length = 0;
 		} else
 			length = strlen(line);
-
-		if (length > 0 && 
-			mode != MAL &&
-			 (hdl == NULL && length > 0 && line[length - 1] == '\n')) {
+		if (hdl == NULL && length > 0 && line[length - 1] == '\n') {
 			/* test for special commands */
+			if( mode != MAL)
 			while (length > 0 && (*line & ~0x7F) == 0 && isspace((int) *line)) {
 				line++;
 				length--;
@@ -1110,7 +1108,7 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt)
 								SQLrenderer(hdl);
 						}
 						mapi_close_handle(hdl);
-						hdl = 0;
+						hdl = NULL;
 						pagewidth = old;
 					}
 					continue;
@@ -1260,16 +1258,15 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt)
 			hdl = mapi_query_prep(mid);
 			CHECK_RESULT(mid, hdl, buf, continue);
 		}
-		if (length > 0 ||
-			debugMode() ||
-			mode == MAL || mode== MIL) {
-			assert(hdl != NULL);
+		assert(hdl != NULL);
+
+		if (length > 0 ){
 			sent = 1;
 			SQLsetSpecial(line);
 			mapi_query_part(hdl, line, length);
 			CHECK_RESULT(mid, hdl, buf, continue);
 		}
-		assert(hdl != NULL);
+
 		/* If the server wants more but we're at the
 		   end of file (line == NULL), notify the
 		   server that we don't have anything more.
