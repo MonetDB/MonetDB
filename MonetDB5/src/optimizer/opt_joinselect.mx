@@ -164,8 +164,8 @@ OPTjoinselectImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		ps+=xx; 
 		qs = old[*(int*)ps];
 		setModuleId(qs, putName("crackers", 8));
-       		setFunctionId(qs, putName("joinuselect", 11));
-       		pushArgument(mb, qs, getArg(p, 0));
+		setFunctionId(qs, putName("joinuselect", 11));
+		qs= pushArgument(mb, qs, getArg(p, 0));
 		pushInstruction(mb, qs);
 		i++;	
 	}
@@ -180,8 +180,8 @@ OPTjoinselectImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		pi+=xx; 
 		qi = old[*(int*)pi];
 		setModuleId(qi, putName("crackers", 8));
-       		setFunctionId(qi, putName("joinuselect", 11));
-       		pushArgument(mb, qi, getArg(p, 0));
+		setFunctionId(qi, putName("joinuselect", 11));
+		qi= pushArgument(mb, qi, getArg(p, 0));
 		pushInstruction(mb, qi);
 		i++;	
 	}
@@ -191,8 +191,8 @@ OPTjoinselectImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	getArg(r,0) = newTmpVariable(mb, newBatType(TYPE_void, TYPE_void));
 	setModuleId(r, putName("algebra", 7));
         setFunctionId(r, putName("kunion", 6));        
-        pushArgument(mb, r, getArg(qs, 0));
-        pushArgument(mb, r, getArg(qi, 0));
+        r= pushArgument(mb, r, getArg(qs, 0));
+        r= pushArgument(mb, r, getArg(qi, 0));
 	pushInstruction(mb, r);
 
 
@@ -200,7 +200,7 @@ OPTjoinselectImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
         getArg(d,0) = newTmpVariable(mb, newBatType(TYPE_oid, TYPE_void));
         setModuleId(d, putName("bat", 3));
         setFunctionId(d, putName("reverse", 7));
-        pushArgument(mb, d, getArg(r, 0));
+        d= pushArgument(mb, d, getArg(r, 0));
         pushInstruction(mb, d);
 	r=d;
 */
@@ -213,9 +213,9 @@ OPTjoinselectImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		k = newInstruction(mb,ASSIGNsymbol);
 		getArg(k,0) = newTmpVariable(mb, newBatType(TYPE_oid, TYPE_void));
 		setModuleId(k, putName("algebra", 7));
-       		setFunctionId(k, putName("kdifference", 11));
-       		pushArgument(mb, k, getArg(r, 0));
-       		pushArgument(mb, k, getArg(d, 1));
+		setFunctionId(k, putName("kdifference", 11));
+		k= pushArgument(mb, k, getArg(r, 0));
+		k= pushArgument(mb, k, getArg(d, 1));
 		pushInstruction(mb, k);
 		pu+=xx;
 		r = k; 
@@ -232,8 +232,8 @@ OPTjoinselectImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		pu+=xx; 
 		qu = old[*(int*)pu];
 		setModuleId(qu, putName("crackers", 8));
-       		setFunctionId(qu, putName("joinuselect", 11));
-       		pushArgument(mb, qu, getArg(p, 0));
+		setFunctionId(qu, putName("joinuselect", 11));
+		qu= pushArgument(mb, qu, getArg(p, 0));
 		pushInstruction(mb, qu);
 		i++;	
 	}
@@ -242,9 +242,9 @@ OPTjoinselectImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	p = newInstruction(mb,ASSIGNsymbol);
 	getArg(p,0) = newTmpVariable(mb, getArgType(mb,r,0));
 	setModuleId(p, putName("algebra", 7));
-        setFunctionId(p, putName("kunion", 6));        
-        pushArgument(mb, p, getArg(r, 0));
-        pushArgument(mb, p, getArg(qu, 0));
+	setFunctionId(p, putName("kunion", 6));        
+	p= pushArgument(mb, p, getArg(r, 0));
+	p= pushArgument(mb, p, getArg(qu, 0));
 	pushInstruction(mb, p);
 
 	/*remove any bun that is deleted*/
@@ -256,9 +256,9 @@ OPTjoinselectImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		k = newInstruction(mb,ASSIGNsymbol);
 		getArg(k,0) = newTmpVariable(mb, newBatType(TYPE_oid, TYPE_void));
 		setModuleId(k, putName("algebra", 7));
-       		setFunctionId(k, putName("kdifference", 11));
-       		pushArgument(mb, k, getArg(p, 0));
-       		pushArgument(mb, k, getArg(qd, 0));
+		setFunctionId(k, putName("kdifference", 11));
+		k= pushArgument(mb, k, getArg(p, 0));
+       	k= pushArgument(mb, k, getArg(qd, 0));
 		pushInstruction(mb, k);
 		pd += xx;
 		p = k; 

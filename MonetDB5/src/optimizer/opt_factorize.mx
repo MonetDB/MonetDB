@@ -210,8 +210,8 @@ OPTfactorizeImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	/* added control block */
 	v = newVariable(mb, GDKstrdup("always"), TYPE_bit);
 	p = newInstruction(NULL,BARRIERsymbol);
-	pushReturn(mb, p, v);
-	pushBit(mb,p,TRUE);
+	p= pushReturn(mb, p, v);
+	p= pushBit(mb,p,TRUE);
 	mb->stmt[k++] = p;
 
 	for (i = 0; i < sk - 1; i++)
@@ -220,15 +220,15 @@ OPTfactorizeImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	/* finalize the factory */
 	if (returnseen == 0) {
 		p = newInstruction(NULL,YIELDsymbol);
-		pushReturn(mb, p, findVariable(mb, getFcnName(mb)));
+		p= pushReturn(mb, p, findVariable(mb, getFcnName(mb)));
 		mb->stmt[k++] = p;
 	}
 	p = newInstruction(NULL,REDOsymbol);
-	pushReturn(mb, p, v);
+	p= pushReturn(mb, p, v);
 	mb->stmt[k++] = p;
 
 	p = newInstruction(NULL,EXITsymbol);
-	pushReturn(mb, p, v);
+	p= pushReturn(mb, p, v);
 	mb->stmt[k++] = p;
 
 	/* add END statement */

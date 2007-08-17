@@ -221,9 +221,9 @@ It is empty if L> H or when L=H and the bounds are !(true,true).
 					p->argc=1;
 					getModuleId(p)= batRef;
 					getFunctionId(p)= newRef;
-					pushArgument(mb,p, typ=newTypeVariable(mb, getHeadType(x)));
+					p= pushArgument(mb,p, typ=newTypeVariable(mb, getHeadType(x)));
 					isConstant(mb,typ)= TRUE;
-					pushArgument(mb,p, typ=newTypeVariable(mb, getTailType(x)));
+					p= pushArgument(mb,p, typ=newTypeVariable(mb, getTailType(x)));
 					isConstant(mb,typ)= TRUE;
 					actions++;
 				}

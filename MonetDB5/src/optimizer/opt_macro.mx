@@ -282,8 +282,8 @@ inlineMALblock(MalBlkPtr mb, int pc, MalBlkPtr mc)
 	for (n = 0; n < p->retc; n++) {
 		q = ns[k++] = newInstruction(NULL, ASSIGNsymbol);
 		q->argc = q->retc = 0;
-		pushArgument(mb, q, getArg(p, n)); q->retc++;
-		pushNil(mb, q, getArgType(mb, p, n));
+		q= pushArgument(mb, q, getArg(p, n)); q->retc++;
+		q= pushNil(mb, q, getArgType(mb, p, n));
 	}
 
 	/* copying stops at the first return statement */
@@ -407,6 +407,7 @@ replaceMALblock(MalBlkPtr mb, int pc, MalBlkPtr mc)
 		q = getInstrPtr(mc, k);
 		for (j = 0; j < p->argc; j++)
 			cvar[ctop++] = getArg(q, j);
+		assert(ctop < mc->vtop *MAXARG);
 
 		for (j = 0; j < p->argc; j++)
 			mvar[mtop++] = getArg(p, j);

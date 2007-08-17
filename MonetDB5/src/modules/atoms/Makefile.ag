@@ -21,7 +21,7 @@ MTSAFE
 LIBS = {
 	DIR = pkglibdir
 	SEP = _
-	SOURCES = blob.mx url.mx mtime.mx streams.mx inet.mx color.mx
+	SOURCES = blob.mx url.mx mtime.mx streams.mx inet.mx color.mx xml.mx
 
 	HEADERS = h 
 	#SCRIPTS = mal

@@ -11,23 +11,29 @@ end gen;
 
 n:=bpm.new(:oid,:sht);
 
-r1:=gen(100:sht);
+r1:=gen(200:sht);
 bpm.addPartition(n,r1);
+io.print("dump r1");
 bpm.dump(n);
 
-r2:=gen(20:sht);
+r2:=gen(200:sht);
 bpm.addPartition(n,r2);
+io.print("dump r2");
 bpm.dump(n);
 
-r3:=gen(300:sht);
+r3:=gen(200:sht);
 bpm.addPartition(n,r3);
+io.print("dump r3");
 bpm.dump(n);
 
-r4:=gen(50:sht);
+r4:=gen(200:sht);
 bpm.addPartition(n,r4);
+io.print("dump 4");
 bpm.dump(n);
 
-g:=bpm.fold(n);
-c:=aggr.count(g);
-io.print(c);
+barrier g:= bpm.newIterator(n);
+	i:= aggr.count(g);
+	io.printf("cnt %d\n",i);
+redo g:= bpm.hasMoreElements(n);
+exit g;
 

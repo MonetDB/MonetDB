@@ -1445,7 +1445,7 @@ parseAssign(Client cntxt, int cntrl)
 		advance(cntxt,1); /* skip ')' */
 		if( curInstr->retc == 0){
 				/* add dummy variable */
-				pushArgument(curBlk,curInstr, newTmpVariable(curBlk,TYPE_any));
+				curInstr= pushArgument(curBlk,curInstr, newTmpVariable(curBlk,TYPE_any));
 				curInstr->retc++;
 		}
 	} else { 

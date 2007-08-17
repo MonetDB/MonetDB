@@ -63,5 +63,5 @@ CemptySet(int *k, int *bid)
 	BBPunfix(b->batCacheid);
 	if (cnt) 
 		throw(OPTIMIZER, "mal.assert", "emptySet");
-        return MAL_SUCCEED;
+	return MAL_SUCCEED;
 }

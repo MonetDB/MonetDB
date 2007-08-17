@@ -35,12 +35,9 @@ usage: mserver5 [options] [script]
     --dbname=<database_name>
     --dbfarm=<directory>
     --dbinit=<stmt>           Server prepare statement
-	--user=<dbaname>
-	--password=<passwrd>
     --config=<config_file>
     --debug=<number>          trace server actions[0]
     --daemon=yes|no           run in background [no]
-    --delay=<number>          delay between mguardian tests [300]
     --set <option>=<value>    set environment value
     --help                    this list of options
     --version                 version and compile time info
@@ -136,10 +133,7 @@ usage2(char *prog)
 	fprintf(stderr, "    --dbname=<database_name> \n");
 	fprintf(stderr, "    --dbfarm=<directory> \n");
 	fprintf(stderr, "    --dbinit=<stmt>           Server prepare statement\n");
-	fprintf(stderr, "    --user=<str>              Defaults to [monetdb]\n");
-	fprintf(stderr, "    --password=<str>          Defaults to [monetdb]\n");
 	fprintf(stderr, "    --config=<config_file> \n");
-	fprintf(stderr, "    --delay=<number>          cycle delay [300]\n");
 	fprintf(stderr, "    --daemon=yes|no           run in background [no]\n");
 	fprintf(stderr, "    --set <option>=<value>    set environment value\n");
 	fprintf(stderr, "    --help                    this list of options \n");
@@ -361,7 +355,6 @@ main(int argc, char **av)
 		{"dbinit", 1, 0, 0},
 		{"daemon", 1, 0, 0},
 		{"debug", 2, 0, 'd'},
-		{"delay", 1, 0, 0},
 		{"help", 0, 0, 'h'},
 		{"version", 0, 0, 0},
 		{"set", 1, 0, 's'},
@@ -444,10 +437,6 @@ faster system start.
 		case 0:
 			if (strcmp(long_options[option_index].name, "dbname") == 0) {
 				setlen = mo_add_option(&set, setlen, opt_cmdline, "gdk_dbname", optarg);
-				break;
-			}
-			if (strcmp(long_options[option_index].name, "delay") == 0) {
-				setlen = mo_add_option(&set, setlen, opt_cmdline, "delay", optarg);
 				break;
 			}
 			if (strcmp(long_options[option_index].name, "dbfarm") == 0) {

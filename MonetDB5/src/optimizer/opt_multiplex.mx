@@ -119,11 +119,12 @@ OPTexpandMultiplex(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int i = 2, k, mloop, resB, iter = 0, cr;
 	int hvar, tvar;
 	str mod, fcn;
-	int alias[MAXARG];
+	int *alias;
 	InstrPtr q;
 	int ht, tt;
 
 	(void) stk;
+	alias= (int*) alloca(sizeof(int) * pci->maxarg);
 	mod = VALget(&getVar(mb, getArg(pci, 1))->value);
 	mod = putName(mod,strlen(mod));
 	fcn = VALget(&getVar(mb, getArg(pci, 2))->value);
@@ -172,10 +173,10 @@ find the actual arguments at the proper place of the callee.
 	q->barrier = BARRIERsymbol;
 	getArg(q, 0) = mloop = newTmpVariable(mb, TYPE_lng);
 	hvar = newTmpVariable(mb, TYPE_any);
-	pushReturn(mb, q, hvar);
+	q= pushReturn(mb, q, hvar);
 	tvar = newTmpVariable(mb, TYPE_any);
-	pushReturn(mb, q, tvar);
-	pushArgument(mb, q, iter);
+	q= pushReturn(mb, q, tvar);
+	q= pushArgument(mb, q, iter);
 
 	/* $1:= bat.find(Ai,h) or constant */
 	alias[i] = tvar;
@@ -185,8 +186,8 @@ find the actual arguments at the proper place of the callee.
 			q = newFcnCall(mb, algebraRef, "find");
 			alias[i] = newTmpVariable(mb, getTailType(getArgType(mb, pci, i)));
 			getArg(q, 0) = alias[i];
-			pushArgument(mb, q, getArg(pci, i));
-			pushArgument(mb, q, hvar);
+			q= pushArgument(mb, q, getArg(pci, i));
+			q= pushArgument(mb, q, hvar);
 		}
 
 	/* cr:= mod.CMD($1,...,$n); */
@@ -195,7 +196,7 @@ find the actual arguments at the proper place of the callee.
 
 	for (i = 3; i < pci->argc; i++)
 		if (isaBatType(getArgType(mb, pci, i))) {
-			pushArgument(mb, q, alias[i]);
+			q= pushArgument(mb, q, alias[i]);
 		} else {
 			q = pushArgument(mb, q, getArg(pci, i));
 		}
@@ -204,23 +205,23 @@ find the actual arguments at the proper place of the callee.
 	   not append(resB, cr); the head type (oid) may dynamically change */
 	
 	q = newFcnCall(mb, batRef, insertRef);
-	pushArgument(mb, q, resB);
-	pushArgument(mb, q, hvar);
-	pushArgument(mb, q, cr);
+	q= pushArgument(mb, q, resB);
+	q= pushArgument(mb, q, hvar);
+	q= pushArgument(mb, q, cr);
 
 /* redo (mloop,h,r):= hasMoreElements(refBat); */
 	q = newFcnCall(mb, batRef, "hasMoreElements");
 	q->barrier = REDOsymbol;
 	getArg(q, 0) = mloop;
-	pushReturn(mb, q, hvar);
-	pushReturn(mb, q, tvar);
-	pushArgument(mb, q, iter);
+	q= pushReturn(mb, q, hvar);
+	q= pushReturn(mb, q, tvar);
+	q= pushArgument(mb, q, iter);
 
 /* catch   MALException and ignore them  and replace value with nil */
 	q = newInstruction(mb,CATCHsymbol);
 	k = newVariable(mb, GDKstrdup(exceptionToString(MAL)), TYPE_str);
 	getVar(mb,k)->isudftype = 1;
-	pushReturn(mb, q, k);
+	q= pushReturn(mb, q, k);
 	pushInstruction(mb, q);
 
 /* redo (mloop,h,r):= hasMoreElements(refBat); */
@@ -228,24 +229,24 @@ find the actual arguments at the proper place of the callee.
 	q = newFcnCall(mb, batRef, "hasMoreElements");
 	q->barrier = REDOsymbol;
 	getArg(q, 0) = mloop;
-	pushReturn(mb, q, hvar);
-	pushReturn(mb, q, tvar);
-	pushArgument(mb, q, iter);
+	q= pushReturn(mb, q, hvar);
+	q= pushReturn(mb, q, tvar);
+	q= pushArgument(mb, q, iter);
 
 /* finalized the catch block */
 	q= newInstruction(mb,EXITsymbol);
-	pushReturn(mb,q,k);
+	q= pushReturn(mb,q,k);
 	pushInstruction(mb,q);
 
 	q = newAssignment(mb);
 	q->barrier = EXITsymbol;
 	getArg(q, 0) = mloop;
-	pushReturn(mb, q, hvar);
-	pushReturn(mb, q, tvar);
+	q= pushReturn(mb, q, hvar);
+	q= pushReturn(mb, q, tvar);
 
 	q = newAssignment(mb);
 	getArg(q, 0) = getArg(pci, 0);
-	pushArgument(mb, q, resB);
+	q= pushArgument(mb, q, resB);
 	return MAL_SUCCEED;
 }
 

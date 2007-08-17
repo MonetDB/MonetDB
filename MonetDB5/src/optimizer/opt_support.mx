@@ -385,8 +385,10 @@ them in a preferred order of deployment.
 @item 
 @tab    Garbage Collector.
 @end multitable
-@-
-Alias removal can be applied after each other optimization step.
+The interaction also excludes combinations. For example,
+the Accumulator should be used after the Partition
+optimizer.
+
 @node Building Blocks, Framework, Dependencies, The MAL Optimizer
 @- Optimizer Building Blocks
 
@@ -433,7 +435,7 @@ One of the easiest pitfalls is to derive an optimized
 version of a MAL function while it is already referenced by or
 when polymorphic typechecking is required afterwards.
 
-@- Building your optimizer
+@- Building Your Own Optimizer
 Implementation of your own MAL-MAL optimizer can best be started
 from refinement of one of the examples included in the code base.
 Beware that only those used in the critical path of SQL execution
@@ -447,13 +449,18 @@ inject instructions to achieve the desired goal.
 
 A tally on major events should be retained, because it gives
 valuable insight in the effectiveness of your optimizer.
-The effects of all optimizers is collected in a system catalog.[todo]
+The effects of all optimizers is collected in a system catalog.
 
 Each optimizer ends with a strong defense line, @code{optimizerCheck()}
 It performs a complete type and data flow analysis before returning.
 Moreover, if you are in debug mode, it will  keep a copy of the
 plan produced for inspection. Studying the differences between
 optimizer steps provide valuable information to improve your code.
+
+The functionality of the optimizer should be clearly delineated.
+The guiding policy is that it is always safe to not apply an
+optimizer step. 
+This helps to keep the optimizers as independent as possible.
 
 It really helps if you start with a few tiny examples to test
 your optimizer. They should be added to the Tests directory
@@ -462,6 +469,16 @@ and administered in Tests/All.
 Breaking up the optimizer into different components and
 grouping them together in arbitrary sequences calls for
 careful programming.
+
+One of the major hurdles is to test interference of the
+optimizer. The test set is a good starting point, but does
+not garantee that all cases have been covered.
+
+In principle, any subset of optimizers should work flawlessly.
+With a few tens of optimizers this amounts to potential millions
+of runs. Adherence to a partial order reduces the problem, but
+still is likely to be too resource consumptive to test continously.
+
 @{
 The optimizers defined here are registered to the optimizer module.
 @mal
@@ -1132,20 +1149,30 @@ replaceAlias(MalBlkPtr mb, int pc, int pcl, int src, int alias)
 			}
 	}
 }
-
+@-
+Used in the merge table optimizer. It is build incrementally
+and should be conservative.
+@c
 int isFragmentGroup(InstrPtr p){
 	return
-			(getModuleId(p)== algebraRef && getFunctionId(p)== selectRef) ||
-			(getModuleId(p)== algebraRef && getFunctionId(p)==uselectRef) ||
-			(getModuleId(p)== algebraRef && getFunctionId(p)==likeselectRef) ||
-			(getModuleId(p)== batRef && getFunctionId(p)==reverseRef) ||
-			(getModuleId(p)== batRef && getFunctionId(p)==mirrorRef) ||
-			(getModuleId(p)== algebraRef && getFunctionId(p)==markTRef) ||
-			(getModuleId(p)== algebraRef && getFunctionId(p)==kdifferenceRef) ||
-			(getModuleId(p)== algebraRef && getFunctionId(p)== joinRef) ||
-			(getModuleId(p)== algebraRef && getFunctionId(p)== semijoinRef) ||
-			(getModuleId(p)== batRef && getFunctionId(p)== setAccessRef) ||
-			(getModuleId(p)== batRef && getFunctionId(p)== appendRef)  ||
-			(getModuleId(p)== batRef && getFunctionId(p)== deleteRef);
+			(getModuleId(p)== constraintsRef && 
+				getFunctionId(p)== getName("emptySet",8)) ||
+			(getModuleId(p)== algebraRef && (
+				getFunctionId(p)== selectRef ||
+				getFunctionId(p)==uselectRef ||
+				getFunctionId(p)==likeselectRef ||
+				getFunctionId(p)==markTRef ||
+				getFunctionId(p)==kdifferenceRef ||
+				getFunctionId(p)== joinRef ||
+				getFunctionId(p)== semijoinRef
+			)	)  ||
+			(getModuleId(p)== batRef && (
+				getFunctionId(p)==reverseRef ||
+				getFunctionId(p)==mirrorRef ||
+				getFunctionId(p)== setAccessRef ||
+				getFunctionId(p)== setWriteModeRef ||
+				getFunctionId(p)== appendRef  ||
+				getFunctionId(p)== deleteRef
+			) );
 }
 @}

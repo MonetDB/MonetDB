@@ -90,6 +90,7 @@ The simplistic approach starts here
 An operation should be replace by an iterator if
 any of its arguments is partitioned. This is detected
 by an alias function, which is set to the alternative.
+
 @c
 static int 
 OPTuseIterator(MalBlkPtr mb, InstrPtr p, int *alias){
@@ -101,13 +102,11 @@ OPTuseIterator(MalBlkPtr mb, InstrPtr p, int *alias){
 }
 
 static void
-OPTbarrierList(MalBlkPtr mb, InstrPtr p, int *alias, int offset){
+OPTbarrierList(MalBlkPtr mb, InstrPtr p, int *alias){
 	int j;
 	InstrPtr q;
 	/* dump the iterators */
-	if( p->retc+offset >= p->argc)
-		offset= 0;
-	for(j=p->retc+offset; j<p->argc; j++)
+	for(j=p->retc; j<p->argc; j++)
 	if( isaBatType(getArgType(mb,p,j))  && alias[getArg(p,j)]>0){
 		q = newStmt(mb, bpmRef, "newIterator");
 		q->barrier= BARRIERsymbol;
@@ -115,7 +114,7 @@ OPTbarrierList(MalBlkPtr mb, InstrPtr p, int *alias, int offset){
 #ifdef DEBUG_OPT_PARTITIONED
 		printf("barrier %d ->%d\n",getArg(p,j), alias[getArg(p,j)]);
 #endif
-		pushArgument(mb, q, 
+		q= pushArgument(mb, q, 
 			(alias[getArg(p,j)]?alias[getArg(p,j)]:getArg(p,j)) );
 	}
 }
@@ -129,22 +128,20 @@ OPTbarrierListCnt(MalBlkPtr mb, InstrPtr p, int *alias){
 	return cnt;
 }
 static void
-OPTredoList(MalBlkPtr mb, InstrPtr p, int *alias, int offset){
+OPTredoList(MalBlkPtr mb, InstrPtr p, int *alias){
 	int j;
 	InstrPtr q;
-	if( p->retc+offset >= p->argc)
-		offset= 0;
 	/* finalize iterator structure */
-	for(j=p->argc-1; j>= p->retc+offset; j--)
+	for(j=p->argc-1; j>= p->retc; j--)
 	if( isaBatType(getArgType(mb,p,j))  && alias[getArg(p,j)]>0){
 		q = newStmt(mb, bpmRef, "hasMoreElements");
 		q->barrier= REDOsymbol;
 		q->argv[0]= getArg(p,j);
-		pushArgument(mb, q, 
+		q= pushArgument(mb, q, 
 			(alias[getArg(p,j)]?alias[getArg(p,j)]:getArg(p,j)) );
 	}
 
-	for(j=p->argc-1; j>=p->retc+offset; j--)
+	for(j=p->argc-1; j>=p->retc; j--)
 	if( isaBatType(getArgType(mb,p,j))  && alias[getArg(p,j)]>0){
 		q = newInstruction(mb,EXITsymbol);
 		q->barrier= EXITsymbol;
@@ -164,8 +161,8 @@ OPTbakeIterator(MalBlkPtr mb, InstrPtr p, int *alias, int *garbage){
 #endif
 	anchor= q = newStmt(mb,"bpm","new");
 	tpe= getArgType(mb,p,0);
-	pushArgument(mb,anchor,newTypeVariable(mb,getHeadType(tpe)));
-	pushArgument(mb,anchor,newTypeVariable(mb,getTailType(tpe)));
+	anchor= pushArgument(mb,anchor,newTypeVariable(mb,getHeadType(tpe)));
+	anchor= pushArgument(mb,anchor,newTypeVariable(mb,getTailType(tpe)));
 #ifdef DEBUG_OPT_PARTITIONED
 	printf("alias[%d]=%d\n",getArg(p,0),getArg(q,0));
 #endif
@@ -173,17 +170,17 @@ OPTbakeIterator(MalBlkPtr mb, InstrPtr p, int *alias, int *garbage){
 	garbage[getArg(q,0)]= 1;
 
 	/* dump the iterators */
-	OPTbarrierList(mb,p,alias, p->argc>3 && getModuleId(p)==batcalcRef);
+	OPTbarrierList(mb,p,alias);
 
 	/* run the partitioned operation */
 	pushInstruction(mb,p);
 
 	/* save the temporary partitions */
 	q = newStmt(mb,"bpm","addPartition");
-	pushArgument(mb,q,getArg(anchor,0));
-	pushArgument(mb,q,getArg(p,0));
+	q= pushArgument(mb,q,getArg(anchor,0));
+	q= pushArgument(mb,q,getArg(p,0));
 
-	OPTredoList(mb,p,alias, p->argc>3 && getModuleId(p)==batcalcRef);
+	OPTredoList(mb,p,alias);
 }
 @-
 Be aware the the SQL produces sql.bind(-,-,-,0) and sql.bind(-,-,-,3)
@@ -195,8 +192,27 @@ static int bindTest(MalBlkPtr mb, InstrPtr p){
 	v= &getConstant(mb,getArg(p,4));
 	return v->val.ival>0;
 }
+@-
+Garbage collection of partitioned BATs is tricky when the
+sql.bind() operations are nested inside BARRIER-EXIT blocks.
+For the time being we ignore plans that rely on this.
+The test below is rather coarse grained.
+@c
+static int
+OPTisSimple(MalBlkPtr mb){
+	int i,nested=0;
+	InstrPtr p;
 
-static void
+	for(i=0; i<mb->stop; i++){
+		p= getInstrPtr(mb,i);
+		nested +=  p->barrier== BARRIERsymbol || p->barrier== CATCHsymbol;
+		if( getModuleId(p)== sqlRef && getFunctionId(p)== bindRef && nested)
+			return FALSE;
+	}
+	return TRUE;
+}
+
+static int
 OPTnaiveIterations(MalBlkPtr mb){
 	int i,j,k,limit,vlimit= mb->vsize + mb->ssize*4; /* expanded*/
 	InstrPtr *old,p=0,q;
@@ -204,6 +220,8 @@ OPTnaiveIterations(MalBlkPtr mb){
 	int *garbage= (int*) alloca(sizeof(int)*vlimit);
 	/* char name[1024];*/
 
+	if( !OPTisSimple(mb))
+		return 0;
 	memset((char*) alias, 0, sizeof(int)*vlimit);
 	memset((char*) garbage, 0, sizeof(int)*vlimit);
 
@@ -230,12 +248,12 @@ Assume all bind operations are over partitioned bats.
 #endif
 /*
 			snprintf(name,1024,"%s_%s_%s",
-				getConstant(mb, getArg(p,1)).val.sval,
-				getConstant(mb, getArg(p,2)).val.sval,
-				getConstant(mb, getArg(p,3)).val.sval );
-			pushStr(mb, q,name);
+			getConstant(mb, getArg(p,1)).val.sval,
+			getConstant(mb, getArg(p,2)).val.sval,
+			getConstant(mb, getArg(p,3)).val.sval );
+			q= pushStr(mb, q,name);
 */
-			pushArgument(mb,q,getArg(p,0));
+			q= pushArgument(mb,q,getArg(p,0));
 			garbage[getArg(q,0)]=1;
 			/* printf("unfold  %d %d\n",getArg(q,0),getArg(q,1));*/
 			continue;
@@ -244,8 +262,18 @@ Assume all bind operations are over partitioned bats.
 The instruction should be broken into an interator
 if any of its arguments is already partitioned.
 The exceptions are 1) there exists a fast direct
-implementation in the bpm for it, 2) it is part
-of the sql repository
+implementation in the bpm for it, 2) it has
+side-effects, 3) it involves a blocking instruction
+@-
+Caveats.
+The batcalc module uses a merge-like operation
+to scan through multiple BATs. A naive iterator expansion approach would
+lead to a cartesian product. This means the opt_accumulator
+can not be used in this context or a complex backwards
+analysis is needed. At this stage we consider them blocking,
+later a correct partitioned solution can be made.
+
+The bakeIterator currently supports a single result variable.
 @c
 		if( OPTuseIterator(mb, p, alias) == 0 )
 			goto jump2;
@@ -258,21 +286,23 @@ of the sql repository
 		}
 
 		if( !hasSideEffects(p,TRUE) && p->retc == 1 &&
-			getModuleId(p)!= aggrRef &&
-		    getModuleId(p)!= sqlRef &&
+			!isBlocking(p) &&
+			getModuleId(p) != batcalcRef &&
 			OPTbarrierListCnt(mb, p, alias) > 0
 		){
 			OPTbakeIterator(mb, p, alias, garbage);
 			continue;
 		}
+@-
+At this stage we first undo the partitioning.
+@c
 	jump2:
 		for(j= p->retc; j<p->argc; j++)
 		if( (alias[getArg(p,j)] && alias[getArg(p,j)]!= getArg(p,j)) ){
 			q = newStmt(mb,"bpm","fold");
 			q->argv[0]= getArg(p,j);
-			pushArgument(mb,q,alias[getArg(p,j)]);
+			q= pushArgument(mb,q,alias[getArg(p,j)]);
 			garbage[getArg(q,1)]=0;
-			/* printf("fold %d  %d\n",getArg(q,0),getArg(q,1));*/
 			alias[getArg(p,j)]= 0;
 #ifdef DEBUG_OPT_PARTITIONED
 			printf("alias[%d]=0\n",getArg(p,j));
@@ -296,7 +326,7 @@ the garbage collection statements for the partitioned bats.
 	if( garbage[k]){
 		q=newStmt(mb,bpmRef,"garbage");
 		setVarType(mb,getArg(q,0),TYPE_void);
-		pushArgument(mb,q,k);
+		q= pushArgument(mb,q,k);
 	}
 	q= newAssignment(mb);
 	getArg(q,0)= j;
@@ -310,23 +340,19 @@ the garbage collection statements for the partitioned bats.
 	if( garbage[k]){
 		q=newStmt(mb,bpmRef,"garbage");
 		setVarType(mb,getArg(q,0),TYPE_void);
-		pushArgument(mb,q,k);
+		q= pushArgument(mb,q,k);
 	}
 	for(;i< limit; i++)
 		pushInstruction(mb,old[i]);
+	return 1;
 }
 
 static int
 OPTpartitionsImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	OPTnaiveIterations(mb);
-#ifdef DEBUG_OPT_PARTITIONED
-	stream_printf(GDKout,"partition optimizer Strategy\n");
-	printFunction(GDKout,mb,0);
-#endif
 	(void) stk;
 	(void) pci;
-	return 1;
+	return OPTnaiveIterations(mb);
 }
 
 @-

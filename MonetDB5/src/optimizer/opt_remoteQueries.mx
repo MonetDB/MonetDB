@@ -201,7 +201,7 @@ their isolated runtime environment.
 			getModuleId(r)= mserverRef;
 			getFunctionId(r)= lookupRef;
 			j= getArg(r,0)= newTmpVariable(mb, TYPE_int);
-			pushArgument(mb,r, getArg(p,@1));
+			r= pushArgument(mb,r, getArg(p,@1));
 			pushInstruction(mb,r);
 			dbalias[dbtop].dbhdl= j;
 			dbalias[dbtop++].dbname= db;
@@ -214,20 +214,20 @@ their isolated runtime environment.
 	getModuleId(r)= mserverRef;
 	getFunctionId(r)= rpcRef;
 	getArg(r,0)= newTmpVariable(mb, @1);
-	pushArgument(mb,r,j);
+	r= pushArgument(mb,r,j);
 
 @= putRemoteVariables
 	for(j=p->retc; j<p->argc; j++)
 	if( location[getArg(p,j)] == 0 && !isConstant(mb,getArg(p,j)) ){
 		q= newStmt(mb,mserverRef,putRef);
 		getArg(q,0)= newTmpVariable(mb, TYPE_void);
-		pushArgument(mb,q,location[getArg(p,j)]);
-		pushStr(mb,q, getRefName(mb,getArg(p,j)));
-		pushArgument(mb,q,getArg(p,j));
+		q= pushArgument(mb,q,location[getArg(p,j)]);
+		q= pushStr(mb,q, getRefName(mb,getArg(p,j)));
+		q= pushArgument(mb,q,getArg(p,j));
 	}
 @= remoteAction
 	s= RQcall2str(mb,p);
-	pushStr(mb,r,s+1);
+	r= pushStr(mb,r,s+1);
 	GDKfree(s);
 	pushInstruction(mb,r);
 	freeInstruction(p);
@@ -317,7 +317,7 @@ OPTremoteQueriesImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				@:prepareRemote(TYPE_void)@
 
 				s= RQcall2str(mb,p);
-				pushStr(mb,r,s+1);
+				r= pushStr(mb,r,s+1);
 				GDKfree(s);
 				pushInstruction(mb,r);
 				freeInstruction(p);
@@ -401,10 +401,10 @@ to be shipped should be simple.
 				if( location[getArg(p,j)]){
 					q= newStmt(mb,mserverRef,rpcRef);
 					getArg(q,0)= getArg(p,j);
-					pushArgument(mb,q,location[getArg(p,j)]);
+					q= pushArgument(mb,q,location[getArg(p,j)]);
 					snprintf(buf,BUFSIZ,"io.print(%s);",
 						getRefName(mb,getArg(p,j)) );
-					pushStr(mb,q,buf);
+					q= pushStr(mb,q,buf);
 				}
 				pushInstruction(mb,p);
 				/* as of now all the targets are also local */
@@ -417,19 +417,19 @@ to be shipped should be simple.
 				getModuleId(r)= mserverRef;
 				getFunctionId(r)= rpcRef;
 				getArg(r,0)= newTmpVariable(mb, TYPE_void);
-				pushArgument(mb, r, remoteSite);
+				r= pushArgument(mb, r, remoteSite);
 
 				for(j=p->retc; j<p->argc; j++)
 				if( location[getArg(p,j)] == 0 && !isConstant(mb,getArg(p,j)) ){
 					q= newStmt(mb,mserverRef,putRef);
 					getArg(q,0)= newTmpVariable(mb, TYPE_void);
-					pushArgument(mb, q, remoteSite);
-					pushStr(mb,q, getRefName(mb,getArg(p,j)));
-					pushArgument(mb, q, getArg(p,j));
+					q= pushArgument(mb, q, remoteSite);
+					q= pushStr(mb,q, getRefName(mb,getArg(p,j)));
+					q= pushArgument(mb, q, getArg(p,j));
 				}
 				s= RQcall2str(mb, p);
 				pushInstruction(mb,r);
-				pushStr(mb,r,s+1);
+				r= pushStr(mb,r,s+1);
 				GDKfree(s);
 				for(j=0; j<p->retc; j++)
 					location[getArg(p,j)]= remoteSite;

@@ -107,7 +107,7 @@ tables out of memory.
 @= releaseBAT
 {	q= newInstruction(NULL,ASSIGNsymbol);
 	getArg(q,0) = getArg(p,j);
-	pushNil(mb,q, TYPE_bat);
+	q= pushNil(mb,q, TYPE_bat);
 	pushInstruction(mb,q);
 	typeChecker(s,mb,q,TRUE);
 }
@@ -116,7 +116,7 @@ tables out of memory.
 	q= newInstruction(NULL,ASSIGNsymbol);
 	setModuleId(q,batRef);
 	setFunctionId(q,putName("flush",5));
-	pushArgument(mb,q,getArg(p,j));
+	q= pushArgument(mb,q,getArg(p,j));
 	getArg(q,0) = newTmpVariable(mb,TYPE_any);
 	pushInstruction(mb,q);
 	typeChecker(s,mb,q,TRUE);
@@ -140,7 +140,7 @@ tables.
 	q= newInstruction(NULL,ASSIGNsymbol);
 	setModuleId(q,batRef);
 	setFunctionId(q,putName("reduce",6));
-	pushArgument(mb,q,getArg(p,j));
+	q= pushArgument(mb,q,getArg(p,j));
 	getArg(q,0) = getArg(p,j);
 	pushInstruction(mb,q);
 	typeChecker(s,mb,q,TRUE);

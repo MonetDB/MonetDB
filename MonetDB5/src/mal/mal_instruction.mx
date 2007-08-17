@@ -302,7 +302,7 @@ instruction in the source.]
 #endif
 
 #define DEBUG_MAL_INSTR
-#define MAXARG 9
+#define MAXARG 4
 #define STMT_INCREMENT 32
 #define STMT_MAXIMUM  1<<16
 #define MAXVARS 32
@@ -1752,7 +1752,7 @@ end.
 	return vr->vtype != type;
 }
 
-#define MAL_VAR_WINDOW  4*MAXARG
+#define MAL_VAR_WINDOW  32
 int
 fndConstant(MalBlkPtr mb, ValPtr cst)
 {
@@ -1834,10 +1834,12 @@ pushArgument(MalBlkPtr mb, InstrPtr p, int varid)
 		pn = GDKmalloc(space + MAXARG * sizeof(int));
 		memcpy((char *) pn, (char *) p, space);
 		pn->maxarg = p->maxarg + MAXARG;
-		pc = getPC(mb, p);
-		if (pc >= 0)
+		/* most likely the last instruction is affected */
+		for(pc= mb->stop-1; pc >= 0; pc--)
+		if( mb->stmt[pc]== p){
 			mb->stmt[pc] = pn;
-
+			break;
+		}
 		GDKfree(p);
 		p = pn;
 	}

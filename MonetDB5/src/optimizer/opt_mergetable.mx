@@ -19,18 +19,18 @@
 @- Merge Tables 
 A merge association table (MAT) descriptor defines an ordered collection 
 of type compatible BATs, whose union represents a single (virtual) BAT.
-The MAT may represent a partitioned BAT (see BPM), but could also be an arbitrary
-collection of temporary BATs within a program fragment.
+The MAT may represent a partitioned BAT (see BPM), but could also 
+be an arbitrary collection of temporary BATs within a program fragment.
 
 The MAT definition lives within the scope of a single block.
 The MAT optimizer simply expands the plan to
-deal with its components on an individual basis.
+deal with its components on an instruction basis.
 Only when a blocking operator is encounted, the underlying BAT is materialized.
 
 The MAT object can not be passed as an argument to any function
 without first being materialized. Simply because
 the MAT is not known by the type system and none of the lower
-level operations is currently aware of their existence.
+level operations is aware of their existence.
 
 In the first approach of the MAT optimizer we assume that the 
 last BAT in the MAT sequence is used as an accumulator.
@@ -141,19 +141,35 @@ isMATalias(int idx, int mvar[], int top){
 }
 @-
 Packing the BATs into a single one is handled here
+Note that MATs can be defined recursively.
 @c
-InstrPtr MATpackAll(MalBlkPtr mb, InstrPtr  r, int m, InstrPtr *mat, int *mvar, int mtop){
-	int l,k;
+static InstrPtr 
+MATpackAll(MalBlkPtr mb, InstrPtr  r, int m, InstrPtr *mat, int *mvar, int *mtop){
+	int j,l,k;
+	if( r== NULL){
+		r = newInstruction(mb, ASSIGNsymbol);
+		setModuleId(r,matRef);
+		setFunctionId(r,packRef);
+		getArg(r,0)= getArg(mat[m],0);
+	}
 	for(l=mat[m]->retc; l< mat[m]->argc; l++){
-		k= isMATalias( getArg(mat[m],l),mvar,mtop);
+		k= isMATalias( getArg(mat[m],l),mvar,*mtop);
 		if( k< 0)
 			r= pushArgument(mb,r, getArg(mat[m],l));
 		else
 			r= MATpackAll(mb,r, k, mat,mvar,mtop);
 	}
+	for(j=m; j < *mtop-1; j++){
+		mat[j]= mat[j+1];
+		mvar[j]= mvar[j+1];
+	}
+	*mtop = *mtop-1; 
+	pushInstruction(mb,r);
 	return r;
 }
-void MATcollect(int m, InstrPtr *mat, int *mvar, int mtop, int *newvar, int *n){
+
+static void 
+MATcollect(int m, InstrPtr *mat, int *mvar, int mtop, int *newvar, int *n){
 	int i,j,k;
 	for(i= mat[m]->retc; i<mat[m]->argc; i++)
 		if( (j= isMATalias( getArg(mat[m],i), mvar, mtop)) >= 0){
@@ -163,10 +179,20 @@ void MATcollect(int m, InstrPtr *mat, int *mvar, int mtop, int *newvar, int *n){
 		} else { newvar[*n]=  getArg(mat[m],i); *n = *n+1;}
 }
 
-int
+static int
+MATcount(InstrPtr p, int *mvar, int mtop){
+	int j,cnt=0;
+	for(j=p->retc; j<p->argc; j++)
+	if(  isMATalias(getArg(p,j),mvar,mtop) >= 0) {
+		cnt++;
+	}
+	return cnt;
+}
+
+static int
 OPTmergetableImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	InstrPtr *old=0, q,r, mat[256];
-	int oldtop,i,j,k,m,mtop=0, mvar[256],tpe;
+	int oldtop,fm,i,k,m,mtop=0, mvar[256],tpe;
 	int size,match,actions=0;
 #ifdef DEBUG_OPT_MERGETABLE
 	stream_printf(GDKout,"Start MAT optimizer\n");
@@ -192,151 +218,130 @@ OPTmergetableImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 			continue;
 		}
 @-
-A sql.bind() operation is trapped to inspect the partition catalog
-for definitions.
+A sql.bind() operation should be trapped to inspect the partition catalog
+for definitions. For now we simulate a partitioned table, comprised
+of the original base and an empty one.
 @c
 		if( (getModuleId(p)== sqlRef && getFunctionId(p)==bindRef)){
-			int i;
+			InstrPtr p2;
+			int v= getArg(p,0);
+
+			freezeVarType(mb,getArg(p,0));
+#ifdef DEBUG_OPT_MERGETABLE
+			stream_printf(GDKout,"found bind\n");
+			printInstruction(GDKout,mb,p,0);
+#endif
 			pushInstruction(mb,p);
-			i= mb->stop;
-			BPMexpand(mb,getArg(p,0));
+
+			p2= newStmt(mb,batRef,newRef);
+			setVarType(mb,getArg(p2,0),getVarType(mb,v));
+			p2= pushArgument(mb,p2,v);
+
 			q= newStmt(mb,matRef,newRef);
-			getArg(q,0)= getArg(p,0);
-			for(; i<mb->stop; i++){
-				mat[mtop]= getInstrPtr(mb,i);
-				mvar[mtop] = getArg(mat[mtop],0);
-				pushArgument(mb,q,mvar[mtop]);
-				setVarType(mb,getArg(q,0), getVarType(mb,getArg(mat[mtop],0)));
-				mtop++;
-			}
+			setVarType(mb,getArg(q,0),getVarType(mb,v));
+
+			getArg(p,0)= getArg(q,0);
+			getArg(p2,1)= getArg(p,0);
+			getArg(q,0)= v;
+			q= pushArgument(mb,q,getArg(p,0));
+			q= pushArgument(mb,q,getArg(p2,0));
+#ifdef DEBUG_OPT_MERGETABLE
+			stream_printf(GDKout,"new block\n");
+			printInstruction(GDKout,mb,p,0);
+			printInstruction(GDKout,mb,p2,0);
+			printInstruction(GDKout,mb,q,0);
+#endif
+			mat[mtop]= q;
+			mvar[mtop] = v;
+			mtop++;
 			actions++;
 			continue;
 		}
 @-
-If the instruction does not contain MAT references it can be added.
+If the instruction does not contain MAT references it can simply be added.
 Otherwise we have to decide on either packing them or replacement.
 @c
-		match=0;
-		for(j=p->retc; j<p->argc; j++)
-		if(  isMATalias(getArg(p,j),mvar,mtop) >= 0) {
-			m=i; match++;
-		}
+		match= MATcount(p,mvar,mtop);
 		if( match== 0 ){
 			pushInstruction(mb,p);
+#ifdef DEBUG_OPT_MERGETABLE
+			stream_printf(GDKout,"simply move\n");
+			printInstruction(GDKout,mb,p,0);
+#endif
 			continue;
 		}
 @-
-Pack all but one MAT argument together.
-Remove their definitions afterwards.
+Pack MAT arguments, except one, to limit plan explosion.
+The preferred partitioned one is the first argment as it
+often reflects a base table.
 @c
-		if( match>1 ){
-			for( k= p->retc; k<p->argc && match>1; k++, match--)
-			if(	(m=isMATalias(getArg(p,k),mvar,mtop)) >= 0){
+		for( fm= p->argc-1; fm>p->retc ; fm--)
+		if(	(m=isMATalias(getArg(p,fm),mvar,mtop)) >= 0)
+			break;
+
+		for( k=fm-1; match > 1 && k >= p->retc ; k--)
+		if(	(m=isMATalias(getArg(p,k),mvar,mtop)) >= 0){
 #ifdef DEBUG_OPT_MERGETABLE
-				stream_printf(GDKout,"Dependency resolution k=%d\n",k);
-				printInstruction(GDKout,mb,p,0);
+			stream_printf(GDKout,"Pack k=%d\n",k);
+			printInstruction(GDKout,mb,p,0);
 #endif
-				r = newInstruction(mb, ASSIGNsymbol);
-				setModuleId(r,matRef);
-				setFunctionId(r,packRef);
-				getArg(r,0)= getArg(mat[m],0);
-				r= MATpackAll(mb, r, m, mat, mvar, mtop);
-				pushInstruction(mb,r);
-				getArg(p,k)= getArg(r,0);
-				for(j=m; j<mtop-1; j++){
-					mat[j]= mat[j+1];
-					mvar[j]= mvar[j+1];
-				}
-				mtop--; 
-			}
-			if( match== 0)
-				pushInstruction(mb,p);
+			r= MATpackAll(mb, NULL, m, mat, mvar, &mtop);
+			getArg(p,k)= getArg(r,0);
+			match--;
 		}
 @-
 Look at the depth of the MAT definition to limit the explosion.
-@-
-		if( MATdepth(m,mat,mvar,mtop)>1){
-		}
-Left with an instruction with at most one MAT we can replace it.
+		
+Left with an instruction with one MAT we can replace it.
 Not all instructions can be replaced by the sequence. We have to
 group them and check for them individually.
-At first we look for the first argument. Others are dealt with
-through the default case.
 @c
-		if( isFragmentGroup(p) && (m=isMATalias(getArg(p,1),mvar,mtop)) >= 0){
-			r = newInstruction(mb, ASSIGNsymbol);
-			setModuleId(r,matRef);
-			setFunctionId(r,newRef);
-			getArg(r,0)= getArg(p,0);
-			tpe= getArgType(mb,p,0);
+		if( isFragmentGroup(p) && 
+			(m=isMATalias(getArg(p,fm),mvar,mtop)) >= 0){
+#ifdef DEBUG_OPT_MERGETABLE
+			stream_printf(GDKout,"isFragment resolution fm=%d\n",fm);
+			printInstruction(GDKout,mb,p,0);
+#endif
+			if( isaBatType(getVarType(mb,getArg(p,0))) ){
+				r = newInstruction(mb, ASSIGNsymbol);
+				setModuleId(r,matRef);
+				setFunctionId(r,newRef);
+				getArg(r,0)= getArg(p,0);
+				tpe= getArgType(mb,p,0);
+			} else {
+					tpe= TYPE_any;
+					r=0;
+			}
 
 			for(k=1; k< mat[m]->argc; k++){
-				if( k<mat[m]->argc-1 &&  (
-					getFunctionId(p)== insertRef ||
-					getFunctionId(p)== appendRef ))
-					continue;
 				q= copyInstruction(p);
-				getArg(q,1) = getArg(mat[m],k);
+				getArg(q,fm) = getArg(mat[m],k);
 				getArg(q,0) = newTmpVariable(mb, tpe);
 				pushInstruction(mb,q);
-				r= pushArgument(mb,r,getArg(q,0));
+				if( r)
+					r= pushArgument(mb,r,getArg(q,0));
 			}
-			if( getFunctionId(p)== insertRef ||
-				getFunctionId(p)== appendRef ||
-				getFunctionId(p)== deleteRef )
-					match=1;
-			else {
-				match =0;
-				for(j=0;j<mtop; j++)
-					if( mvar[j]== getArg(p,0)) match++;
-				if( match == 0){
-					mvar[mtop] = getArg(p,0);
-					mat[mtop++]= r;
-					pushInstruction(mb,r);
-				}
-			}
-			if( match)
-				freeInstruction(r);
 			actions++;
+			if(r){
+				mat[mtop]= r;
+				mvar[mtop] = getArg(r,0);
+				mtop++;
+				pushInstruction(mb,r);
+			}
+#ifdef DEBUG_OPT_MERGETABLE
+			stream_printf(GDKout,"Fragment result \n");
+			if(r) printInstruction(GDKout,mb,r,0);
+#endif
 			continue;
 		} 
 @-
 The insertions are sent to the last component of the MAT.
 Selection of the proper componetn based on range descriptors will follow.
 @c
-		if(getModuleId(p)== batRef && getFunctionId(p)== insertRef &&
-		(m=isMATalias(getArg(p,1),mvar,mtop)) >= 0){
+		if(	getModuleId(p)== batRef && getFunctionId(p)== insertRef &&
+			(m=isMATalias(getArg(p,1),mvar,mtop)) >= 0){
 			getArg(p,1) = getArg(mat[m],mat[m]->argc-1);
 			pushInstruction(mb,p);
-			continue;
-		} 
-@-
-The MAT argument could also occur as the second one.
-@c
-		if( getModuleId(p)==algebraRef && getFunctionId(p)== joinRef &&
-			(m=isMATalias(getArg(p,2),mvar,mtop)) >= 0){
-			r = newInstruction(mb, ASSIGNsymbol);
-			setModuleId(r,matRef);
-			setFunctionId(r,newRef);
-			getArg(r,0)= getArg(p,0);
-			tpe= getArgType(mb,p,0);
-
-			for(k=1; k< mat[m]->argc; k++){
-				q= copyInstruction(p);
-				getArg(q,2) = getArg(mat[m],k);
-				getArg(q,0) = newTmpVariable(mb, tpe);
-				pushInstruction(mb,q);
-				r= pushArgument(mb,r,getArg(q,0));
-			}
-			match =0;
-			for(j=0;j<mtop; j++)
-			if( mvar[j]== getArg(p,0)) match++;
-			if( match == 0){
-				mvar[mtop] = getArg(p,0);
-				mat[mtop++]= r;
-				pushInstruction(mb,r);
-			}
-			actions++;
 			continue;
 		} 
 @-
@@ -345,9 +350,13 @@ Handle the rewrite v:=aggr.count(b) and sum()
 		if( ((getModuleId(p)==aggrRef && getFunctionId(p)== countRef) || 
 			(getModuleId(p)==aggrRef && getFunctionId(p)==sumRef && p->argc==2)) &&
 			(m=isMATalias(getArg(p,1),mvar,mtop)) >= 0){
+#ifdef DEBUG_OPT_MERGETABLE
+			stream_printf(GDKout,"count/sum \n");
+			printInstruction(GDKout,mb,p,0);
+#endif
 			r = newInstruction(mb,ASSIGNsymbol);
 			getArg(r,0)= getArg(p,0);
-			pushInt(mb,r,0);
+			r= pushInt(mb,r,0);
 			pushInstruction(mb,r);
 			for(k=1; k< mat[m]->argc; k++){
 				int v= newTmpVariable(mb,TYPE_int);
@@ -365,6 +374,9 @@ Handle the rewrite v:=aggr.count(b) and sum()
 				q= pushArgument(mb,q,getArg(r,0));
 				q= pushArgument(mb,q,v);
 				pushInstruction(mb,q);
+#ifdef DEBUG_OPT_MERGETABLE
+				printInstruction(GDKout,mb,q,0);
+#endif
 			}
 			continue;
 		} 
@@ -377,7 +389,7 @@ And the min/max is as easy
 			(m=isMATalias(getArg(p,1),mvar,mtop)) >= 0){
 			r = newInstruction(mb,ASSIGNsymbol);
 			getArg(r,0)= getArg(p,0);
-			pushNil(mb,r,getArgType(mb,p,0));
+			r= pushNil(mb,r,getArgType(mb,p,0));
 			pushInstruction(mb,r);
 			for(k=1; k< mat[m]->argc; k++){
 				int v= newTmpVariable(mb,TYPE_int);
@@ -406,27 +418,17 @@ afterwards for further consideration.
 		for( k= p->retc; k<p->argc; k++)
 		if(	(m=isMATalias(getArg(p,k),mvar,mtop)) >= 0){
 #ifdef DEBUG_OPT_MERGETABLE
-			stream_printf(GDKout,"Dependency resolution k=%d\n",k);
+			stream_printf(GDKout,"pack resolution \n");
 			printInstruction(GDKout,mb,p,0);
 #endif
-			r = newInstruction(mb, ASSIGNsymbol);
-			setModuleId(r,matRef);
-			setFunctionId(r,packRef);
-			getArg(r,0)= getArg(mat[m],0);
-			r= MATpackAll(mb, r, m, mat, mvar, mtop);
-			if(	!( getModuleId(p) == matRef && getFunctionId(p)== newRef) )
-				pushInstruction(mb,r);
-			else freeInstruction(r);
-
-			for(j=m; j<mtop-1; j++){
-				mat[j]= mat[j+1];
-				mvar[j]= mvar[j+1];
-			}
-			mtop--; 
+			r= MATpackAll(mb, NULL, m, mat, mvar, &mtop);
 			actions++;
 			break;
 		}
-
+#ifdef DEBUG_OPT_MERGETABLE
+			stream_printf(GDKout,"last catc\n");
+			printInstruction(GDKout,mb,p,0);
+#endif
 		pushInstruction(mb,p);
 	}
 	GDKfree(old);
@@ -438,7 +440,8 @@ For the time being, they are no-ops.
 	(void) stk; 
 #ifdef DEBUG_OPT_MERGETABLE
 	stream_printf(GDKout,"Result of multi table optimizer\n");
-	printFunction(GDKout, mb, 0);
+	optimizerCheck(mb,"merge test",1,0,0);
+	printFunction(GDKout, mb, LIST_MAL_ALL);
 #endif
 
 	return actions;

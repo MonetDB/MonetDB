@@ -2117,8 +2117,8 @@ BPMtakePartition(bat *ret, str *nme, ptr *hl, ptr *hh, ptr *tl, ptr *th)
 	throw(MAL,"bpm.takePartition","not yet implemented");
 }
 @-
-For the time being we simulate a partitioned SQL environment.
-It contains two pieces for each.
+The Mergetable optimizer may request a list of fragments
+to be included.
 @c
 str
 BPMexpand(MalBlkPtr mb, int alias){
@@ -2129,7 +2129,7 @@ BPMexpand(MalBlkPtr mb, int alias){
 	BPMunfold( &i, &alias);
 	p= getByNumber(alias);
 	if( p==0)
-		throw(MAL,"bpm.expand","Partition not known");
+		return MAL_SUCCEED;
 	
 	for(i= p->nxt ; i!=p->bid && bpmcat[i] ; i= bpmcat[i]->nxt) {
 		q = newStmt(mb,"bpm","take");
@@ -2472,8 +2472,10 @@ BPMnewIterator(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	
 	BPMopen();
 	
-	if( (p= getAlias(*bid)) == 0)
+	if( (p= getAlias(*bid)) == 0){
+		mdbDump(mb,stk,pci);
 		throw(MAL,"bpm.newIterator","Can not access alias BAT");
+	}
 
 	if( emptyRing(p)){
 		*ret= 0;
@@ -2545,8 +2547,10 @@ BPMnewIteratorRng(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	BPMopen();
 	
-	if( (p= getAlias(*bid)) == 0)
+	if( (p= getAlias(*bid)) == 0){
+		mdbDump(mb,stk,pci);
 		throw(MAL,"bpm.newIterator","Can not access alias BAT");
+	}
 	@:getBATdescriptor(&p->bid,b,"bpm.newIterator")@
 
 	/* get the comparison function */
@@ -2606,8 +2610,10 @@ BPMhasMoreElements(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bid= *(bat *)getArgReference(stk, pci, 1);
 
 	BPMopen();
-	if( (p= getAlias(bid)) == 0)
+	if( (p= getAlias(bid)) == 0){
+		mdbDump(mb,stk,pci);
 		throw(MAL,"bpm.hasMoreElements","Can not access alias BAT");
+	}
 	if( bpmcat[idx] == 0)
 		throw(MAL,"bpm.hasMoreElements","Can not access BAT");
 	if( bpmcat[idx]->nxt == p->alias)

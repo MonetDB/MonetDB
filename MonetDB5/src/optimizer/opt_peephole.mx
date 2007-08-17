@@ -117,7 +117,7 @@ OPTpeepholeImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #endif
 			r = newInstruction(mb,ASSIGNsymbol);
 			getArg(r, 0) = getArg(q, 0);
-			pushArgument(mb, r, getArg(p, 1));
+			r= pushArgument(mb, r, getArg(p, 1));
 			freeInstruction(p);
 			freeInstruction(q);
 			pushInstruction(mb, r);

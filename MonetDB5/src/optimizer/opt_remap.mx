@@ -101,7 +101,7 @@ OPTremapDirect(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Module scope){
 		getArg(p,0)= getArg(pci,i);
 	p->retc= p->argc= pci->retc;
 	for(i= pci->retc+2; i<pci->argc; i++)
-		pushArgument(mb,p,getArg(pci,i));
+		p= pushArgument(mb,p,getArg(pci,i));
 #ifdef DEBUG_OPT_REMAP
 	printInstruction(GDKout,mb,p,LIST_MAL_ALL);
 #endif

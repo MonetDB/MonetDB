@@ -86,7 +86,7 @@ function user.main():void;	# 0  (main:void)
     io.print(u);	# 35 IOprint_val (_45:void)<-(u:any)
 # help testweb a bit, since currently no cleanup is done on server 	# 36  (_46:str)
 # shutdown 	# 37  (_47:str)
-    remote.destroy("test");	# 38 RMTdestroy (_48:void)<-(_16:str)
+    remote.destroy("test");	# 38 RMTdestroy (_48:void)<-(_49:str)
 end main;	# 39  
 [ "Fabian!" ]
 [ 4.30000019 ]

@@ -101,7 +101,7 @@ the replacement is aborted.
 		freeInstruction(q);
 		if(available[a]==0){
 			q= newFcnCall(mb,"algebra","reuse");
-			pushArgument(mb,q,a);
+			q= pushArgument(mb,q,a);
 			available[getArg(p,1)]=1;
 			getArg(p,1)=getArg(q,0);
 		} else {
@@ -170,7 +170,7 @@ sure it becomes one.
 @c
 
 			q= copyInstruction(p);
-			pushArgument(mb, p, getArg(p,2));
+			p= pushArgument(mb, p, getArg(p,2));
 			setArg(p,2,getArg(p,1));
 			setArg(p,1,getArg(p,0));
 			@:patchInstruction@
@@ -189,7 +189,7 @@ sure it becomes one.
 			printInstruction(GDKout, mb, p, LIST_MAL_ALL);
 #endif
 			q= copyInstruction(p);
-			pushArgument(mb, p, a);
+			p= pushArgument(mb, p, a);
 			setArg(p,1,getArg(p,0));
 			@:patchInstruction@
 		} 

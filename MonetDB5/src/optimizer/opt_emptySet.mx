@@ -202,7 +202,7 @@ We assume here that string constants have been matched already.
 						setFunctionId(p, NULL);
 						p->argc = 1;
 						p->token = ASSIGNsymbol;
-						pushBit(mb, p, FALSE);
+						p= pushBit(mb, p, FALSE);
 						actions++;
 						break;
 					} 
@@ -258,9 +258,9 @@ of removal of superflous constructions.
 					p->token = ASSIGNsymbol;
 					p->typechk= TYPE_UNKNOWN;
 					p->fcn = NULL;
-					pushArgument(mb, p, 
+					p= pushArgument(mb, p, 
 						newTypeVariable(mb, getHeadType(tpe)));
-					pushArgument(mb, p, 
+					p= pushArgument(mb, p, 
 						newTypeVariable(mb, getTailType(tpe)));
 					actions++;
 					break;
