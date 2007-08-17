@@ -444,11 +444,11 @@ int pqueue_topn_voidany@1(BAT **H, BAT *t, int *N)
   do_pqueue_init(H,t,n);
 
   for(i=0; i<n; i++, idx++, p+=bs) {
-	pqueue_enqueue_any@1(*H, &idx, BUNtvar(t,p), tpe); 
+	pqueue_enqueue_any@1(*H, &idx, BUNtail(t,p), tpe); 
   }
   n = BATcount(t);
   for(; i<n; i++, idx++, p+=bs) {
-	pqueue_topreplace_any@1(*H, &idx, BUNtvar(t,p), tpe); 
+	pqueue_topreplace_any@1(*H, &idx, BUNtail(t,p), tpe); 
   }
   return GDK_SUCCEED;
 }
