@@ -1154,7 +1154,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				 s->op4.typeval.type->eclass == EC_DEC ||
 				 s->op4.typeval.type->eclass == EC_INTERVAL ||
 				 EC_TEMP(s->op4.typeval.type->eclass) ||
-				(s->op4.typeval.type->eclass == EC_STRING && 
+				(EC_VARCHAR(s->op4.typeval.type->eclass) && 
 			    	!(s->op3.typeval.type->eclass == EC_STRING &&
 			    	s->op4.typeval.digits == 0) ) ) ){
 				int type = s->op4.typeval.type->localtype;
@@ -1169,7 +1169,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 
 			/* convert to string is complex, we need full type info
 			   and mvc for the timezone */
-			if (s->op4.typeval.type->eclass == EC_STRING && 
+			if (EC_VARCHAR(s->op4.typeval.type->eclass) && 
 			    !(s->op3.typeval.type->eclass == EC_STRING &&
 			    s->op4.typeval.digits == 0) ) {
 				q = pushInt(mb, q, s->op3.typeval.type->eclass);
@@ -1188,7 +1188,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				q = pushInt(mb, q, s->op4.typeval.scale);
 			}
 			/* convert to string, give error on to large strings */
-			if (s->op4.typeval.type->eclass == EC_STRING && 
+			if (EC_VARCHAR(s->op4.typeval.type->eclass) && 
 			    !(s->op3.typeval.type->eclass == EC_STRING &&
 			    s->op4.typeval.digits == 0) )
 				q = pushInt(mb, q, s->op4.typeval.digits);

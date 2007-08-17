@@ -785,7 +785,7 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 
 			/* convert to string is complex, we need full type info
 			   and mvc for the timezone */
-			if (s->op4.typeval.type->eclass == EC_STRING && 
+			if (EC_VARCHAR(s->op4.typeval.type->eclass) && 
 			    !(s->op3.typeval.type->eclass == EC_STRING &&
 			    s->op4.typeval.digits == 0) ) 
 				len += snprintf(buf+len, buflen-len, "myc, %d, %u, %u, %d, ", s->op3.typeval.type->eclass, s->op3.typeval.digits, s->op3.typeval.scale, type_has_tz(&s->op3.typeval));
@@ -798,7 +798,7 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 			    s->op4.typeval.type->eclass == EC_INTERVAL)
 				len += snprintf(buf+len, buflen-len, ", %u, %u", s->op4.typeval.digits, s->op4.typeval.scale);
 			/* convert to string, give error on to large strings */
-			if (s->op4.typeval.type->eclass == EC_STRING && 
+			if (EC_VARCHAR(s->op4.typeval.type->eclass) && 
 			    !(s->op3.typeval.type->eclass == EC_STRING &&
 			    s->op4.typeval.digits == 0) )
 				len += snprintf(buf+len, buflen-len, ", %u", s->op4.typeval.digits);

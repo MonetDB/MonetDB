@@ -1387,10 +1387,9 @@ sqltypeinit(void)
 		}
 	}
 
-	for (t = decimals; t < dates; t++) {
-		sql_create_func("truncate", "sql", "trunc", *t, INT, *t, SCALE_NONE);
-		sql_create_func("round", "sql", "round", *t, BTE, *t, SCALE_NONE);
 	}
+	for (t = decimals; t < dates; t++) 
+		sql_create_func("round", "sql", "round", *t, BTE, *t, SCALE_NONE);
 
 	for (t = numerical; t < end; t++) {
 		sql_type **u;
