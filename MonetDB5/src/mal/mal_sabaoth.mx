@@ -697,13 +697,20 @@ str SABAOTHgetUplogInfo(sabuplog* ret, str dbname) {
 			avg10[9] = avg30[29] = ret->crashavg1 =
 				(start != 0 ? 1 : 0);
 			ret->crashcntr = ret->startcntr - ret->stopcntr;
-			ret->avguptime = (time_t)(((double)up / (double)ret->stopcntr) + 0.5);
 			for (i = 0; i < 10; i++)
 				ret->crashavg10 += avg10[i];
 			ret->crashavg10 = ret->crashavg10 / 10.0;
 			for (i = 0; i < 30; i++)
 				ret->crashavg30 += avg30[i];
 			ret->crashavg30 = ret->crashavg30 / 30.0;
+
+			if (ret->startcntr > 0) {
+				ret->avguptime = (time_t)(((double)up / (double)ret->stopcntr) + 0.5);
+			} else {
+				ret->avguptime = 0;
+				ret->minuptime = 0;
+				ret->maxuptime = 0;
+			}
 			(void)fclose(f);
 		} else {
 			throw(IO, "sabaoth.getUplogInfo", "unable to open file %s: %s",
