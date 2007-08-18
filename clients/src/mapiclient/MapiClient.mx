@@ -628,7 +628,7 @@ SQLrenderer(MapiHdl hdl)
 				total = 0;
 				for (i = 0; i < fields; i++)
 					total += len[i];
-				while (2 * fields + total >= pagewidth && max) {
+				while (2 * fields + 2 + total >= pagewidth && max) {
 					max = 0;
 					total = 0;
 					for (i = 0; i < fields; i++)
@@ -642,28 +642,26 @@ SQLrenderer(MapiHdl hdl)
 						    len[i] > MINCOLSIZE) {
 							len[i]--;
 							total--;
-							if (2 * fields + total == pagewidth)
+							if (2 * fields + 2+ total == pagewidth)
 								break;
 							max = 1;
 						}
 					}
 				}
 				/* punish the long value fields */
-				while (2 * fields + total >= pagewidth && len[max] > 1) {
+				while (2 * fields + 2 + total >= pagewidth ) {
 					total = 0;
-					max = 1;
+					max = 0;
 					for (i = 0; i < fields; i++) {
 						total += len[i];
 						if (len[i] > len[max])
 							max = i;
 					}
 
-					if (2 * fields + total >= pagewidth) {
-						/* penalty for largest field */
-						total -= len[max];
-						len[max] *= 0.9;
-						total += len[max];
-					}
+					/* penalty for largest field */
+					len[max] --;
+					total--;
+					if( len[max]==1) break;
 				}
 			}
 
@@ -824,13 +822,8 @@ doFile(Mapi mid, const char *file)
 				fclose(fp);
 				file = NULL;
 			}
-			if (hdl == NULL) {
-				/* nothing more to do */
-				timerEnd();
-				free(buf);
-				return 0;
-			}
-			/* hdl != NULL, we should finish the current query */
+			if (hdl == NULL) 
+				break; /* nothing more to do */
 		}
 
 		if (hdl == NULL) {
@@ -906,7 +899,8 @@ doFile(Mapi mid, const char *file)
 
 	} while (length > 0);
 	/* reached on end of file */
-	assert(hdl == NULL);
+	if( hdl)
+		mapi_close_handle(hdl);
 	timerEnd();
 
 	free(buf);
@@ -1004,9 +998,11 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt)
 				continue_completion(func);
 			/* add a newline to the end since that makes
 			   further processing easier */
+			/* don't store shortcut command in the history */
 			if (buf) {
-				add_history(buf);
 				length = strlen(buf);
+				if( length > 1 )
+					add_history(buf);
 				buf = realloc(buf, length + 2);
 				buf[length++] = '\n';
 				buf[length] = 0;
@@ -1260,6 +1256,7 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt)
 					continue;
 				}
 				default:
+					showCommands();
 					continue;
 				}
 			}
@@ -1663,8 +1660,10 @@ main(int argc, char **argv)
 		}
 	}
 	/* language value is mandatory */
-	if (mode == 0)
+	if (mode == 0){
+		fprintf(stderr,"Please specify a language option\n\n");
 		usage(argv[0]);
+	}
 
 	setlen = mo_system_config(&set, setlen);
 
