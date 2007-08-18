@@ -179,7 +179,7 @@ def print_options(options):
         val = getattr(options, name)
         sys.stderr.write('%s = %s\n' % (name, val))
 
-def parse_options(argv, cmd_options = cmd_options, usage = usage):
+def parse_options(argv, cmd_options = cmd_options, usage = usage, default_config = True):
     '''parse_options(argv) -> options
 
     This is the main interface to this module.
@@ -243,7 +243,7 @@ def parse_options(argv, cmd_options = cmd_options, usage = usage):
                     setattr(options, key, val)
         elif long == 'help':
             usage(cmd_options)
-    if not seen_config:
+    if default_config and not seen_config:
         options.config = os.path.join(BuiltinOptions.get(BuiltinOptions(),'sysconfdir'),'MonetDB.conf')
         parse_config(options.config, SystemOptions)
     if debug:
