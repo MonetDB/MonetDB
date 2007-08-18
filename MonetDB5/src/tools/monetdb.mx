@@ -18,12 +18,16 @@
 @a Fabian Groffen
 @v 1.0
 @* MonetDB Database Administrator's Toolkit
-A group of MonetDB servers in a dbfarm are under control of the
-Merovingian, which by itself does not allow any user interaction.
-The monetdb utility is designed to be the interface for the DBA to the
-dbfarm.  Creating or deleting databases next to retrieving status
-information about them are the primary goals of this tool.
+The monetdb utility is designed to be the interface for the DBA to the dbfarm.
+It simplifies database creation and deletion. Furthermore, it
+provides the primary interface to detect the service
+status of all running servers.
 
+Managing the databases servers on a single host is handled by the merovigian,
+which relies on the Sabaoth functionality available in each server.
+The Merovigian prime task is to start database servers and redirect
+clients to the proper port.
+A group of MonetDB servers in a dbfarm are under control of the Merovingian.
 @h
 #define TOOLKIT_VERSION   "0.1"
 
@@ -31,6 +35,8 @@ information about them are the primary goals of this tool.
 #include "mal_config.h" /* MONETDBCONFIG, MONETDBPREFIX */
 #include "monetdb.h"
 #include "mal_sabaoth.h"
+
+/* clean out, only mention those not already covered */
 #include <stdlib.h> /* exit */
 #include <stdarg.h>	/* variadic stuff */
 #include <stdio.h> /* fprintf */
@@ -48,6 +54,9 @@ typedef char* err;
 #define getErrMsg(X) X
 #define NO_ERR (err)0
 
+/* also take care of the OS depedent directory separator */
+#define DIR_SEP '/'
+
 static str
 replacePrefix(str s)
 {
@@ -62,10 +71,10 @@ replacePrefix(str s)
 		memcpy(buf, s, p - s);
 		memcpy(buf + (p - s), MONETDBPREFIX, strlen(MONETDBPREFIX));
 		memcpy(buf + (p - s) + strlen(MONETDBPREFIX), s + (p - s) + 9, strlen(s) - 9 - (p - s) + 1);
-		return(buf);
-	} else {
-		return(strdup(s));
-	}
+	} 
+	for( s=buf; *s; s++)
+		*s= *s=='/'? DIR_SEP:*s;
+	return(buf);
 }
 
 static void
@@ -78,27 +87,27 @@ command_help(int argc, char *argv[])
 		printf("  use the help command to get help for a particular command\n");
 	} else if (strcmp(argv[1], "status") == 0) {
 		printf("Usage: monetdb status [-als] [database ...]\n");
-		printf("  Shows the state of a given database as known to the\n");
-		printf("  Sabaoth system.  Various options control what information\n");
+		printf("  Shows the state of a given database service.\n");
+		printf("  Various options control what information\n");
 		printf("  is displayed.\n");
 		printf("Options:\n");
-		printf("  -a  list status of all databases\n");
-		printf("  -l  use long listing\n");
-		printf("  -s  use short one-line listing\n");
+		printf("  -a         | --all        list status of all databases\n");
+		printf("  -c         | --cycle=#    list status of all databases every # seconds\n");
+		printf("  -b         | --brief      use short one-line listing\n");
 	} else if (strcmp(argv[1], "create") == 0) {
 		printf("Usage: monetdb create database\n");
-		printf("  Initialises a new database in the Sabaoth system.  A\n");
-		printf("  database created with this command makes it available\n");
-		printf("  to Merovingian.\n");
+		printf("  Initialises a new database on the (local?) system. \n");
+		printf(" -d database | --database=nme  \n");
 	} else if (strcmp(argv[1], "destroy") == 0) {
 		printf("Usage: monetdb destroy [-f] database\n");
 		printf("  Removes the given database, including all its data and\n");
 		printf("  logfiles.  Once destroy has completed, all data is lost.\n");
 		printf("  Be careful when using this command.\n");
 		printf("Options:\n");
-		printf("  -f  do not ask for confirmation, destroy right away\n");
+		printf("  -f         | --force  do not ask for confirmation, destroy right away\n");
+		printf(" -d database | --database=nme  \n");
 	} else if (strcmp(argv[1], "help") == 0) {
-		printf("Yeah, help on help, how desparate can you be? ;)");
+		/* printf("Yeah, help on help, how desparate can you be? ;)");*/
 	} else if (strcmp(argv[1], "version") == 0) {
 		printf("Usage: monetdb version\n");
 		printf("  prints the version of the monetdb toolkit\n");
@@ -150,11 +159,12 @@ command_create(int argc, char *argv[], char *dbfarm)
 						argv[1], strerror(errno));
 				exit(1);
 			}
+/* WARNING dir-sep */
 			/* without an .uplog file, Merovingian won't work */
 			snprintf(path, 8095, "%s/%s/.uplog", dbfarm, argv[1]);
 			fclose(fopen(path, "w"));
 			/* avoid GDK from making fugly complaints */
-			snprintf(path, 8095, "%s/%s/.gdk_lock", dbfarm, argv[1]);
+			snprintf(path, 8095, "%s%c%s%c.gdk_lock", dbfarm, DIR_SEP, argv[1], DIR_SEP);
 			f = fopen(path, "w");
 			/* to all insanity, .gdk_lock is "valid" if it contains a
 			 * ':', which it does by pure coincidence of a time having a
@@ -189,7 +199,7 @@ deletedir(char *dir)
 		return(strdup(data));
 	}
 	while ((e = readdir(d)) != NULL) {
-		snprintf(path, PATHLENGTH, "%s/%s", dir, e->d_name);
+		snprintf(path, PATHLENGTH, "%s%c%s", dir, DIR_SEP, e->d_name);
 		if (stat(path, &s) == -1) {
 			snprintf(data, 8095, "unable to stat file %s: %s",
 					path, strerror(errno));
