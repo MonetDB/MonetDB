@@ -1,0 +1,1121 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<JackTheRipper>
+	<scene>
+		<victim>
+			<name>Mary Ann Walker</name>
+			<date-of-birth>1845-08-26</date-of-birth>
+			<length>5'12"</length>
+			<eyes> brown</eyes>
+			<hair>brown hair turning grey</hair>      
+			<date>1888-08-31</date>
+			<location>Buck's Row by Charles Cross</location>
+			<picture>http://www.casebook.org/images/victims_nichols.jpg</picture>
+			<features>
+				five front teeth missing (Rumbelow); two bottom-one top
+				front (Fido), her teeth are slightly discoloured. She is
+				described as having small, delicate features with high
+				cheekbones and grey eyes. She has a small scar on her
+				forehead from a childhood injury.  She is described by
+				Emily Holland as "a very clean woman who always seemed
+				to keep to herself." The doctor at the post mortem
+				remarked on the cleanliness of her thighs.  She is also
+				an alcoholic. 
+			</features>
+			<timeline>
+				<event>
+					<time>11:00 PM</time>
+					Polly is seen walking down Whitechapel Road, she is
+					probably soliciting trade.
+				</event>
+				<event>     
+					<time>12:30 AM</time>
+					She is seen leaving the Frying Pan Public House at
+					the corner of Brick Lane and Thrawl Street. She
+					returns to the lodging house at 18 Thrawl Street.
+				</event> 
+				<event>
+					<time>1:20 or 1:40 AM</time>
+					She is told by the deputy to leave the kitchen of
+					the lodging house because she could not produce her
+					doss money. Polly, on leaving, asks him to save a
+					bed for her. "Never Mind!" She says, "I'll soon get
+					my doss money. See what a jolly bonnet I've got
+					now." She indicates a little black bonnet which no
+					one had seen before.
+				</event>
+				<event> 
+					<time>2:30 AM</time>
+					She meets Emily Holland, who was returning from
+					watching the Shadwell Dry Dock fire, outside of a
+					grocer's shop on the corner of Whitechapel Road and
+					Osborn Street. Polly had come down Osborn Street.
+					Holland describes her as "very drunk and staggered
+					against the wall." Holland calls attention to the
+					church clock striking 2:30. Polly tells Emily that
+					she had had her doss money three times that day and
+					had drunk it away. She says she will return to
+					Flower and Dean Street where she could share a bed
+					with a man after one more attempt to find trade.
+					"I've had my doss money three times today and spent
+					it." She says, "It won't be long before I'm back."
+					The two women talk for seven or eight minutes. Polly
+					leaves walking east down Whitechapel Road.
+					At the time, the services of a destitute prostitute
+					like Polly Nichols could be had for 2 or 3 pence or
+					a stale loaf of bread. 3 pence was the going rate as
+					that was the price of a large glass of gin.
+				</event>
+				<event>  
+					<time>3:15 AM</time>
+					P.C. John Thain, 96J, passes down Buck's Row on his
+					beat. He sees nothing unusual. At approximately the
+					same time Sgt. Kerby passes down Bucks Row and
+					reports the same.
+				</event>
+				<event>   
+					<time>3:40 or 3:45 AM</time>
+					Polly Nichols' body is discovered in Buck's Row by
+					Charles Cross, a carman, on his way to work at
+					Pickfords in the City Road., and Robert Paul who
+					joins him at his request. "Come and look over here,
+					there's a woman." Cross calls to Paul. Cross
+					believes she is dead. Her hands and face are cold
+					but the arms above the elbow and legs are still
+					warm. Paul believes he feels a faint heartbeat. "I
+					think she's breathing," he says "but it is little if
+					she is." 
+				</event>
+			</timeline>
+		</victim>
+		<suspect>
+			<name></name>
+			<picture></picture>
+			<notes></notes>
+		</suspect>
+		<witness>
+			<name>Patrick Mulshaw</name>
+			<time>4:00AM</time>
+			<appearence>suspicious</appearence>
+			<diction>Watchman, old man, I believe somebody is murdered down the street.</diction>
+		</witness>
+		<doctor>
+			<name>Dr. Llewellyn</name> 
+			<picture></picture>
+		</doctor>    
+		<inspector>
+			<name>P.C. Neil </name>
+			<picture>http://www.casebook.org/images/neil.jpg</picture>
+		</inspector>
+	</scene> 
+
+	<scene>
+		<victim>
+			<name>Annie Chapman</name> 
+			<date-of-birth>1841-09</date-of-birth>
+			<length>5'</length>
+			<eyes>blue</eyes>
+			<hair>dark brown, wavy</hair>      
+			<date>1888-09-08</date>
+			<location>29 Hanbury Street</location>
+			<picture>http://www.casebook.org/images/victims_chapman.jpg</picture>
+			<features> Pallid complexion, excellent teeth (possibly two missing in lower jaw), strongly built (stout), thick nose</features>
+		</victim>
+		<suspect>
+			<name></name>
+			<picture></picture>
+			<notes></notes>
+		</suspect>
+		<witness>
+			<name>Emily Walter</name> 
+			<time>2:00 A.M.</time>
+			<appearence>Foreigner aged 37, dark beard and moustache. Wearing short dark jacket, dark vest and trousers, black scarf and black felt hat.</appearence>
+			<diction>Asked witness to enter the backyard of 29 Hanbury Street.</diction>
+		</witness>
+		<witness>
+			<name>Elizabeth Long</name> 
+			<time>5:30 A.M.</time>
+			<appearence>Dark complexion, brown deerstalker hat, possibly a dark overcoat. Aged over 40, somewhat taller than Chapman. A foreigner of "shabby genteel."</appearence>
+			<diction>"Will you?"</diction>
+		</witness>
+		<doctor>
+			<name>Dr. George Baxter Phillips</name> 
+			<picture></picture>
+		</doctor>
+		<inspector>
+			<name></name>
+			<picture></picture>
+		</inspector>
+	</scene>
+
+	<scene>
+		<victim>
+			<name>Elisabeth Stride</name>
+			<date-of-birth>1843-11-27</date-of-birth>
+			<length>5'5"</length>
+			<eyes>light gray</eyes>
+			<hair>curly dark brown</hair>      
+			<date>1888-09-30</date>
+			<location>Berner Street (Henriques Street today)</location>
+			<picture>http://www.casebook.org/images/victims_stride.jpg</picture>
+			<features> pale complexion, all the teeth in her lower left jaw were missing
+			</features>
+		</victim>
+		<suspect>
+			<name></name>
+			<picture></picture>
+			<notes></notes>
+		</suspect>
+		<witness>
+			<name>J. Best and John Gardner</name>
+			<time>11 P.M.</time>
+			<appearence>5'5" tall, English, black moustache, sandy eyelashes, weak, wearing a morning suit and a billycock hat.</appearence>
+			<diction>(none)</diction>
+		</witness>
+		<witness>
+			<name>William Marshall</name>
+			<time>11:45 P.M.</time>
+			<appearence>Small, black coat, dark trousers, middle aged, round cap with a small sailor-like peak. 5'6", stout, appearance of a clerk. No moustache, no gloves, with a cutaway coat.</appearence>
+			<diction>"You would say anything but your prayers." Spoken mildly, with an English accent, and in an educated manner.</diction>
+		</witness>
+		<witness>
+			<name>Matthew Packer</name>
+			<time>12:00 - 12:30 P.M.</time>
+			<appearence>Aged 25-30, 5'7", long black coat buttoned up, soft felt hawker hat, broad shoulders. Maybe a young clerk, frock coat, no gloves.</appearence>
+			<diction>Quiet in speaking, with a rough voice</diction>
+		</witness>
+		<witness>
+			<name>P.C. William Smith</name>
+			<time>12:30 A.M.</time>
+			<appearence>Aged 28, cleanshaven and respectable appearance, 5'7", hard dark felt deerstalker hat, dark clothes. Carrying a newspaper parcel 18 x 7 inches.</appearence>
+			<diction>(none)</diction>
+		</witness>
+		<witness>
+			<name>James Brown</name>
+			<time>12:45 A.M.</time>
+			<appearence>5'7", stout, long black diagonal coat which reached almost to his heels.</appearence>
+			<diction>(none)</diction>
+		</witness>
+		<witness>
+			<name>Israel Schwartz</name>
+			<time>12:45 A.M.</time>
+			<appearence>First man: Aged 30, 5'5", brown haired, fair complexion, small brown moustache, full face, broad shoulders, dark jacket and trousers, black cap with peak. Second man: Aged 35, 5'11", fresh complexion, light brown hair, dark overcoat, old black hard felt hat with a wide brim, clay pipe.</appearence>
+			<diction>"Lipski!"</diction>
+		</witness>
+		<doctor>
+			<name>Dr. George Baxter Phillips</name> 
+			<picture></picture>
+		</doctor>
+		<inspector>
+			<name></name>
+			<picture></picture>
+		</inspector>
+	</scene>
+
+	<scene>
+		<victim>
+			<name>Catherine Eddowes</name>
+			<date-of-birth>1842-04-14</date-of-birth>
+			<length>5'</length>
+			<eyes>hazel</eyes>
+			<hair>dark auburn</hair>      
+			<date>1888-09-30</date>
+			<location>Mitre Square</location>
+			<picture>http://www.casebook.org/images/eddowes1.jpg</picture>
+			<features> She has a tattoo in blue ink on her left forearm "TC."</features>
+		</victim>
+		<suspect>
+			<name></name>
+			<picture></picture>
+			<notes></notes>
+		</suspect>
+		<witness>
+			<name>Joseph Lawende</name>
+			<time>1:30 A.M</time>
+			<appearence>Aged 30, 5'7", fair complexion, brown moustache, salt-and-pepper coat, red neckerchief, grey peaked cloth cap. Sailor-like.</appearence>
+			<diction>(none)</diction>
+		</witness>
+		<witness>
+			<name>James Blenkinsop</name>
+			<time>1:30 A.M.</time>
+			<appearence>Well-dressed.</appearence>
+			<diction>"Have you seen a man and a woman go through here?"</diction>
+		</witness>
+		<doctor>
+			<name>Dr. Frederick Gordon Brown</name> 
+			<picture></picture>
+		</doctor>
+		<inspector>
+			<name></name>
+			<picture></picture>
+		</inspector>
+	</scene>
+
+	<scene>
+		<victim>
+			<name> Mary Jane Kelly</name>
+			<date-of-birth>around 1863</date-of-birth>
+			<length>5'7"</length>
+			<eyes>blue</eyes>
+			<hair>blonde</hair>      
+			<date>1888-11-09</date>
+			<location>13 Miller's Court</location>
+			<picture>http://www.casebook.org/images/victims_kelly.jpg</picture>
+			<features> a fair complexion. "Said to have been possessed of considerable personal attractions." (McNaughten) She was last seen wearing a linsey frock and a red shawl pulled around her shoulders. She was bare headed. Detective Constable Walter Dew claimed to know Kelly well by sight and says that she was attractive and paraded around, usually in the company of two or three friends. He says she always wore a spotlessly clean white apron.
+				Maria Harvey, a friend, says that she was "much superior to that of most persons in her position in life."</features>
+		</victim>
+		<suspect>
+			<name></name>
+			<picture></picture>
+			<notes></notes>
+		</suspect>
+		<witness>
+			<name>Mary Ann Cox</name>
+			<time>11:45 P.M.</time>
+			<appearence>Short, stout man, shabbily dressed. Billycock hat, blotchy face, carroty moustache, holding quart can of beer</appearence>
+			<diction>(none)</diction>
+		</witness>
+		<witness>
+			<name>George Hutchinson</name>
+			<time>2:00 A.M.</time>
+			<appearence>Aged 34-35, 5'6", pale complexion, dark hair, slight moustached curled at each end, long dark coat, collar cuffs of astrakhan, dark jacket underneath. Light waistcoat, thick gold chain with a red stone seal, dark trousers an' button boots, gaiters, white buttons. White shirt, black tie fastened with a horseshoe pin. Dark hat, turned down in middle. Red kerchief. Jewish and respectable in appearance.</appearence>
+			<diction>(none)</diction>
+		</witness>
+		<doctor>
+			<name>Dr. George Baxter Phillips</name> 
+			<picture></picture>
+		</doctor>
+		<doctor>
+			<name>Dr. Thomas Bond</name> 
+			<picture></picture>
+		</doctor>
+		<inspector>
+			<name></name>
+			<picture></picture>
+		</inspector>
+	</scene>
+
+	<scene>
+		<victim>
+			<name>"Fairy Fay"</name>
+			<date-of-birth>unknown</date-of-birth>
+			<length>unknown</length>
+			<eyes>unknown</eyes>
+			<hair>unknown</hair>      
+			<date>1887-12-26</date>
+			<location>the alleys of Commercial Road</location>
+			<picture>http://www.casebook.org/images/victims_fairy.jpg</picture>
+			<features>not recorded
+			</features>
+		</victim>
+		<suspect>
+			<name></name>
+			<picture></picture>
+			<notes></notes>
+		</suspect>
+		<witness>
+			<name></name>
+			<time></time>
+			<appearence></appearence>
+			<diction>.</diction>
+		</witness>
+		<inspector>
+			<name> Inspector Edmund Reid</name>
+			<picture>http://www.casebook.org/images/police_edmund_reid.jpg</picture>
+		</inspector>
+	</scene>
+
+	<scene>
+		<victim>
+			<name>Annie Millwood</name>
+			<date-of-birth>1850</date-of-birth>
+			<length></length>
+			<eyes></eyes>
+			<hair></hair>      
+			<date>1888-02-15</date>
+			<location>White's Row, Spitalfields</location>
+			<picture>http://www.casebook.org/images/victims_millwood.jpg</picture>
+			<features> 
+			</features>
+		</victim>
+		<suspect>
+			<name></name>
+			<picture></picture>
+			<notes></notes>
+		</suspect>
+		<witness>
+			<name>no witnesses</name>
+			<time></time>
+			<appearence></appearence>
+			<diction>.</diction>
+		</witness>
+		<inspector>
+			<name></name>
+			<picture></picture>
+			<case>
+				<victim>    
+				</victim>
+			</case>
+			<suspect>
+				<name></name>
+			</suspect>
+		</inspector>
+	</scene>
+
+	<scene>
+		<victim>
+			<name>Ada Wilson</name>
+			<date-of-birth></date-of-birth>
+			<length></length>
+			<eyes></eyes>
+			<hair></hair>      
+			<date>(survived the attack on 1888-28-03)</date>
+			<location>19 Maidman Street</location>
+			<picture>http://www.casebook.org/images/victims_wilson.jpg</picture>
+			<features> 
+			</features>
+		</victim>
+		<suspect>
+			<name></name>
+			<picture></picture>
+			<notes></notes>
+		</suspect>
+		<witness>
+			<name>Ada Wilson herself</name>
+			<time></time>
+			<appearence>a man of about 30 years of age, 5ft 6ins in height, with a sunburnt face and a fair moustache. He was wearing a dark coat, light trousers and a wideawake hat.</appearence>
+			<diction>.</diction>
+		</witness>
+		<witness>
+			<name>Rose Bierman</name>
+			<time></time>
+			<appearence>a young fair man with a light coat on</appearence>
+			<diction></diction>
+		</witness>
+		<inspector>
+			<name></name>
+			<picture></picture>
+		</inspector>
+	</scene>
+
+	<scene>
+		<victim>
+			<name>Emma Smith</name>
+			<date-of-birth>1843</date-of-birth>
+			<length></length>
+			<eyes></eyes>
+			<hair></hair>      
+			<date>1888-03-03</date>
+			<location>just outside Taylor Brothers Mustard and Cocoa Mill which was on the north-east corner of the Wentworth/Old Montague Street crossroads</location>
+			<picture>http://www.casebook.org/images/victims_smith.jpg</picture>
+			<features> 
+			</features>
+		</victim>
+		<suspect>
+			<name></name>
+			<picture></picture>
+			<notes></notes>
+		</suspect>
+		<witness>
+			<name></name>
+			<time></time>
+			<appearence></appearence>
+			<diction>.</diction>
+		</witness>
+		<inspector>
+			<name></name>
+			<picture></picture>
+			<case>
+				<victim>    
+				</victim>
+			</case>
+			<suspect>
+				<name></name>
+			</suspect>
+		</inspector>
+	</scene>
+
+	<scene>
+		<victim>
+			<name>Martha Tabram</name>
+			<date-of-birth>1849-05-10</date-of-birth>
+			<length></length>
+			<eyes></eyes>
+			<hair></hair>      
+			<date>1888-08-07</date>
+			<location>George Yard, a narrow north-south alley connecting Wentworth Street and Whitechapel High Street</location>
+			<picture>http://www.casebook.org/images/victims_tabram.jpg</picture>
+			<features> 
+			</features>
+		</victim>
+		<suspect>
+			<name></name>
+			<picture></picture>
+			<notes></notes>
+		</suspect>
+		<witness>
+			<name></name>
+			<time></time>
+			<appearence></appearence>
+			<diction>.</diction>
+		</witness>
+		<doctor>
+			<name>Dr. Timothy Robert Killeen</name>
+		</doctor>
+		<inspector>
+			<name> Inspector Edmund Reid</name>
+			<picture>http://www.casebook.org/images/police_edmund_reid.jpg</picture>
+		</inspector>
+	</scene>
+
+	<scene>
+		<victim>
+			<name>Whitehall Mystery</name>
+			<date-of-birth></date-of-birth>
+			<length></length>
+			<eyes></eyes>
+			<hair></hair>      
+			<date>1888-10-03</date>
+			<location>a vault soon to become a section of the cellar of New Scotland Yard</location>
+			<picture>http://www.casebook.org/images/victims_whitehall.jpg</picture>
+			<features> the headless and limbless torso of a woman
+			</features>
+		</victim>
+		<suspect>
+			<name></name>
+			<picture></picture>
+			<notes></notes>
+		</suspect>
+		<witness>
+			<name></name>
+			<time></time>
+			<appearence></appearence>
+			<diction>.</diction>
+		</witness>
+		<inspector>
+			<name></name>
+			<picture></picture>
+			<case>
+				<victim>    
+				</victim>
+			</case>
+			<suspect>
+				<name></name>
+			</suspect>
+		</inspector>
+	</scene>
+
+	<scene>
+		<victim>
+			<name>Annie Farmer</name>
+			<date-of-birth>1848</date-of-birth>
+			<length></length>
+			<eyes></eyes>
+			<hair></hair>      
+			<date>(survived the attack on 1888-11-20)</date>
+			<location></location>
+			<picture>http://www.casebook.org/images/victims_farmer.jpg</picture>
+			<features> 
+			</features>
+		</victim>
+		<suspect>
+			<name></name>
+			<picture></picture>
+			<notes></notes>
+		</suspect>
+		<witness>
+			<name></name>
+			<time></time>
+			<appearence></appearence>
+			<diction>.</diction>
+		</witness>
+		<inspector>
+			<name></name>
+			<picture></picture>
+			<case>
+				<victim>    
+				</victim>
+			</case>
+			<suspect>
+				<name></name>
+			</suspect>
+		</inspector>
+	</scene>
+
+	<scene>
+		<victim>
+			<name>Rose Mylett</name>
+			<date-of-birth>1862</date-of-birth>
+			<length></length>
+			<eyes></eyes>
+			<hair></hair>      
+			<date>1888-12-20</date>
+			<location>the yard between 184 and 186 Poplar High Street, in Clarke's Yard</location>
+			<picture>http://www.casebook.org/images/victims_mylett.jpg</picture>
+			<features> 
+			</features>
+		</victim>
+		<suspect>
+			<name></name>
+			<picture></picture>
+			<notes></notes>
+		</suspect>
+		<witness>
+			<name></name>
+			<time></time>
+			<appearence></appearence>
+			<diction>.</diction>
+		</witness>
+		<doctor>
+			<name>Dr. Matthew Brownfield</name> 
+			<picture></picture>
+		</doctor> 
+		<doctor>
+			<name>Dr. George Baxter Phillips</name> 
+			<picture></picture>
+		</doctor>  
+		<inspector>
+			<name></name>
+			<picture></picture>
+			<case>
+				<victim>    
+				</victim>
+			</case>
+			<suspect>
+				<name></name>
+			</suspect>
+		</inspector>
+	</scene>
+
+	<scene>
+		<victim>
+			<name>Elisabeth Jackson</name>
+			<date-of-birth></date-of-birth>
+			<length></length>
+			<eyes></eyes>
+			<hair></hair>      
+			<date>1889-06</date>
+			<location>the Thames </location>
+			<picture>http://www.casebook.org/images/victims_jackson.jpg</picture>
+			<features> 
+			</features>
+		</victim>
+		<suspect>
+			<name></name>
+			<picture></picture>
+			<notes></notes>
+		</suspect>
+		<witness>
+			<name></name>
+			<time></time>
+			<appearence></appearence>
+			<diction>.</diction>
+		</witness>
+		<inspector>
+			<name></name>
+			<picture></picture>
+			<case>
+				<victim>    
+				</victim>
+			</case>
+			<suspect>
+				<name></name>
+			</suspect>
+		</inspector>
+	</scene>
+
+	<scene>
+		<victim>
+			<name>Alice MacKenzie</name>
+			<date-of-birth>1849</date-of-birth>
+			<length></length>
+			<eyes></eyes>
+			<hair></hair>      
+			<date>1889-07-17</date>
+			<location>Castle Alley</location>
+			<picture>http://www.casebook.org/images/victims_mckenzie.jpg</picture>
+			<features> as a freckle-faced woman with a penchant for both smoke and drink. Her left thumb was also injured in what was no doubt some sort of industrial accident. 
+			</features>
+		</victim>
+		<suspect>
+			<name></name>
+			<picture></picture>
+			<notes></notes>
+		</suspect>
+		<witness>
+			<name></name>
+			<time></time>
+			<appearence></appearence>
+			<diction>.</diction>
+		</witness>
+		<doctor>
+			<name>Dr. George Baxter Phillips</name> 
+			<picture></picture>
+		</doctor>
+		<inspector>
+			<name> Inspector Edmund Reid</name>
+			<picture>http://www.casebook.org/images/police_edmund_reid.jpg</picture>
+		</inspector>
+		<inspector>
+			<name>Sir Robert Anderson</name>
+			<picture>http://www.casebook.org/images/police_and.jpg</picture>
+		</inspector>
+		<inspector>
+			<name> James Monro</name>
+			<picture>http://www.casebook.org/images/police_mon.jpg</picture>
+		</inspector>
+	</scene>
+
+	<scene>
+		<victim>
+			<name>Pinchin Street Murder, possibly Lydia Hart</name>
+			<date-of-birth></date-of-birth>
+			<length></length>
+			<eyes></eyes>
+			<hair></hair>      
+			<date>1889-09-10</date>
+			<location>under a railway arch in Pinchin Street</location>
+			<picture>http://www.casebook.org/images/victims_pinchin.jpg</picture>
+			<features> body, missing both head and legs
+			</features>
+		</victim>
+		<suspect>
+			<name></name>
+			<picture></picture>
+			<notes></notes>
+		</suspect>
+		<witness>
+			<name></name>
+			<time></time>
+			<appearence></appearence>
+			<diction>.</diction>
+		</witness>
+		<witness>
+			<name></name>
+			<time></time>
+			<appearence></appearence>
+			<diction>.</diction>
+		</witness>
+
+		<inspector>
+			<name> James Monro</name>
+			<picture>http://www.casebook.org/images/police_mon.jpg</picture>
+		</inspector>
+		<inspector>
+			<name> Sir Melville Macnaghten</name>
+			<picture>http://www.casebook.org/images/police_mac.jpg</picture>
+		</inspector>
+		<inspector>
+			<name> Chief Inspector Donald Swanson </name>
+			<picture>http://www.casebook.org/images/police_sut.jpg</picture>
+		</inspector>
+	</scene>
+
+	<scene>
+		<victim>
+			<name>Frances Coles</name>
+			<date-of-birth>1865</date-of-birth>
+			<length></length>
+			<eyes></eyes>
+			<hair></hair>      
+			<date>1891-02-13</date>
+			<location>Swallow Gardens  </location>
+			<picture>http://www.casebook.org/images/victims_coles.jpg</picture>
+			<features> is often heralded as the prettiest of all the murder victims
+			</features>
+		</victim>
+		<suspect>
+			<name></name>
+			<picture></picture>
+			<notes></notes>
+		</suspect>
+		<witness>
+			<name>"Jumbo" Friday</name>
+			<time></time>
+			<appearence></appearence>
+			<diction>.</diction>
+		</witness>
+		<witness>
+			<name>Duncan Campnell</name>
+			<time></time>
+			<appearence></appearence>
+			<diction>.</diction>
+		</witness>
+		<doctor>
+			<name>Cornoer Wynne E. Baxter</name>
+		</doctor>
+		<inspector>
+			<name> Sir Melville Macnaghten</name>
+			<picture>http://www.casebook.org/images/police_mac.jpg</picture>
+		</inspector>
+	</scene>
+
+	<scene>
+		<victim>
+			<name>Carrie Brown</name>
+			<date-of-birth></date-of-birth>
+			<length>5'8"</length>
+			<eyes></eyes>
+			<hair></hair>      
+			<date>1891-04-24</date>
+			<location> the room of the East River Hotel on the Manhattan waterfront of New York, U.S.A.</location>
+			<picture>http://www.casebook.org/images/victims_brown.jpg</picture>
+			<features></features>
+		</victim>
+		<suspect>
+			<name>George Chapman</name>
+			<picture></picture>
+			<notes></notes>
+		</suspect>
+		<witness>
+			<name>Mary Miniter</name>
+			<time>between 10:30 and 11:00</time>
+			<appearence>About 32 years of age. Five feet, eight inches tall. Slim build. Long, sharp nose. Heavy moustache of light color. Foreign in appearance, possibly German. Dark-brown cutaway coat. Black trousers. Old black derby hat with dented crown. </appearence>
+			<diction>.</diction>
+		</witness>
+		<doctor>
+			<name>Dr. Jenkins</name>
+		</doctor>
+		<inspector>
+			<name></name>
+			<picture></picture>
+			<case>
+				<victim>    
+				</victim>
+			</case>
+			<suspect>
+				<name></name>
+			</suspect>
+		</inspector>
+	</scene> 
+
+	<suspect>
+		<name>Prince Albert Victor</name>
+		<picture>http://www.casebook.org/images/ed1890b.jpg</picture>
+		<notes>one of the most famous suspects</notes>
+	</suspect>
+
+	<suspect>
+		<name>Joseph Barnett</name>
+		<picture>http://www.casebook.org/images/barnett2.jpg</picture>
+		<victim> Mary Kelly</victim>
+		<notes>was not described as a Ripper suspect until the 1970s</notes>
+	</suspect>
+
+	<suspect>
+		<name> Alfred Napier Blanchard</name>
+		<picture>http://www.casebook.org/images/suspect_lodge.jpg</picture>
+		<notes>made a false confession</notes>
+	</suspect>
+
+	<suspect>
+		<name>William Henry Bury</name>
+		<picture>http://www.casebook.org/images/whbury.jpg</picture>
+		<notes>Police at the time investigated the matter but did not seem to consider Bury a viable suspect</notes>
+		<victim>Polly Nichols </victim>
+	</suspect>
+
+	<suspect>
+		<name>Lewis Carroll</name>
+		<picture>http://www.casebook.org/images/suspect_carroll.jpg</picture>
+		<notes>a very unlikely suspect</notes>
+		<victim></victim>
+	</suspect>
+
+	<suspect>
+		<name>David Cohen</name>
+		<picture>http://www.casebook.org/images/suspect_lodge.jpg</picture>
+		<notes>a poor Polish Jew, living in Whitechapel and who had "homocidal tendensies and a great hatred of women", and was confined to a lunatic asylum at the right time for the murders to stop and died shortly afterwards</notes>
+		<victim>Catherine Eddowes</victim>
+	</suspect>
+
+	<suspect>
+		<name>Dr. Thomas Neill Cream </name>
+		<picture>http://www.casebook.org/suspects/cream.html</picture>
+		<notes>did commit murders, but by poisoning</notes>
+		<victim></victim>
+	</suspect>
+
+	<suspect>
+		<name>Frederick Bailey Deeming</name>
+		<picture>http://www.casebook.org/images/suspect_deem.jpg</picture>
+		<notes>The only two links he may have had with the Whitechapel murders were (1) his insanity and (2) his method of killing his family</notes>
+		<victim></victim>
+	</suspect>
+
+	<suspect>
+		<name>Montague John Druitt </name>
+		<picture>http://www.casebook.org/images/suspect_druitt.jpg</picture>
+		<notes>He is considered by many to be the number one suspect in the case, yet there is little evidence</notes>
+		<victim></victim>
+	</suspect>
+
+	<suspect>
+		<name>Fogelma</name>
+		<picture>http://www.casebook.org/images/suspect_lodge.jpg</picture>
+		<notes>no outside evidence to corroborate the story told by the Empire News</notes>
+		<victim></victim>
+	</suspect>
+
+	<suspect>
+		<name>George Hutchinson (Br.)</name>
+		<picture>http://www.casebook.org/images/suspect_lodge.jpg</picture>
+		<notes>Police at the time interviewed him but did not seem to consider him a suspect</notes>
+		<victim></victim>
+	</suspect>
+
+	<suspect>
+		<name> Mrs. Mary Pearcey </name>
+		<picture>http://www.casebook.org/images/suspect_jill.jpg</picture>
+		<notes>Not very likely "Jill the Ripper"-theory, first published in 1939</notes>
+		<victim>Mary Kelly</victim>
+	</suspect>
+
+	<suspect>
+		<name> James Kelly</name>
+		<picture>http://www.casebook.org/images/suspect_jkell.jpg</picture>
+		<notes>there are some reasons in favour of and some against suspecting him</notes>
+		<victim></victim>
+	</suspect>
+
+	<suspect>
+		<name> Severin Klosowski (George Chapman)</name>
+		<picture>http://www.casebook.org/images/suspect_klos.jpg</picture>
+		<notes>there are some reasons in favour of and some against suspecting him</notes>
+		<victim>Carrie Brown</victim>
+	</suspect>
+
+	<suspect>
+		<name> Aaron Kosminski</name>
+		<picture>http://www.casebook.org/images/suspect_kosm.jpg</picture>
+		<notes>According to Anderson and Swanson, identified by a witness as the Ripper, but no charges were brought against him due to the witness's reluctance to testify against "a fellow Jew." Known to have been insane.</notes>
+		<victim></victim>
+	</suspect>
+
+	<suspect>
+		<name> Jacob Levy</name>
+		<picture>http://www.casebook.org/images/suspect_lodge.jpg</picture>
+		<notes>a butcher, and the cuts inflicted upon Catharine Eddowes were suggestive of a butcher</notes>
+		<victim> Catharine Eddowes</victim>
+	</suspect>
+
+	<suspect>
+		<name>The Lodger (Frances Tumblety)</name>
+		<picture>http://www.casebook.org/images/suspect_lodge.jpg</picture>
+		<notes>a very strong suspect</notes>
+		<victim></victim>
+	</suspect>
+
+	<suspect>
+		<name> James Maybrick</name>
+		<picture>http://www.casebook.org/images/suspect_may.jpg</picture>
+		<notes>The mysterious emergence of the so-called Maybrick journal in 1992 however, immediately thrust him to the forefront of credible Ripper suspects.</notes>
+		<victim></victim>
+	</suspect>
+
+	<suspect>
+		<name> Michael Ostrog</name>
+		<picture>http://www.casebook.org/images/suspect_ost.jpg</picture>
+		<notes>Mentioned for the first time as a suspect in 1894,in 1994 a lot of information was published making him a prime suspect</notes>
+		<victim></victim>
+	</suspect>
+
+	<suspect>
+		<name> Dr. Alexander Pedachenko</name>
+		<picture>http://www.casebook.org/images/suspect_lodge.jpg</picture>
+		<notes>may never have existed</notes>
+		<victim></victim>
+	</suspect>
+
+	<suspect>
+		<name> The Royal Conspiracy</name>
+		<picture>http://www.casebook.org/images/suspec'_royal.jpg</picture>
+		<notes>a fascinating tapestry of conspiracy involving virtually every person who has ever been a Ripper suspect plus a few new ones</notes>
+		<victim></victim>
+	</suspect>
+
+	<suspect>
+		<name>Walter Sickert</name>
+		<picture>http://www.casebook.org/images/suspect_sickert.jpg</picture>
+		<notes>a valid suspect since the 1990s</notes>
+		<victim></victim>
+	</suspect>
+
+
+	<suspect>
+		<name> James Kenneth Stephen</name>
+		<picture>http://www.casebook.org/images/suspect_jkstep.jpg</picture>
+		<notes>Known misogynist and lunatic but no connections with the East End</notes>
+		<victim></victim>
+	</suspect>
+
+	<suspect>
+		<name> R. D´Onston Stephenson</name>
+		<picture>http://www.casebook.org/images/suspect_dons.jpg</picture>
+		<notes>Known to have had an extraordinary interest in the murders. Wrote numerous articles and letters on the matter. Resided in the East End.</notes>
+		<victim></victim>
+	</suspect>
+
+	<suspect>
+		<name> Alois Szemeredy</name>
+		<picture>http://www.casebook.org/images/suspect_szemeredy.jpg</picture>
+		<notes>from Buenos Aires, suspected of the Jack the Ripper- and other murders</notes>
+		<victim></victim>
+	</suspect>
+
+	<suspect>
+		<name>Francis Thompson</name>
+		<picture>http://www.casebook.org/images/suspect_thompson.jpg</picture>
+		<notes>At 29, Thompson was the right age to fit the Ripper descriptions, and we know he had some medical training. He was also said to carry a dissecting scalpel around with him, which he claimed he used to shave</notes>
+		<victim></victim>
+	</suspect>
+
+	<suspect>
+		<name>Frances Tumblety</name>
+		<picture>http://www.casebook.org/images/suspect_tumb.jpg</picture>
+		<notes>There is a strong case to be made that he was indeed the Batty Street Lodger</notes>
+		<victim></victim>
+	</suspect>
+
+	<suspect>
+		<name>Nikolay Vasiliev</name>
+		<picture>http://www.casebook.org/images/suspect_lodge.jpg</picture>
+		<notes>an elusive legend, which probably had some basis in reality, but was mostly embellished by the journalists who wrote it up</notes>
+		<victim></victim>
+	</suspect>
+
+	<suspect>
+		<name>Dr. John Williams</name>
+		<picture>http://www.casebook.org/images/dr-john-williams.jpg</picture>
+		<notes>there is very little to suggest that he was Jack the Ripper</notes>
+		<victim></victim>
+	</suspect>
+
+
+
+	<inspector>
+		<name> Inspector Frederick Abberline</name>
+		<picture>http://www.casebook.org/images/police_abb1.jpg</picture>
+	</inspector>
+
+	<inspector>
+		<name>Sir Robert Anderson</name>
+		<picture>http://www.casebook.org/images/police_and.jpg</picture>
+	</inspector>
+
+	<inspector>
+		<name> Inspector Walter Andrews</name>
+		<picture>http://www.casebook.org/images/police_walter_andrews.jpg</picture>
+	</inspector>
+
+	<inspector>
+		<name> Superintendent Thomas Arnold</name>
+		<picture>http://www.casebook.org/images/police_thomas_arnold.jpg</picture>
+	</inspector>
+
+	<inspector>
+		<name> Detective Constable Walter Dew</name>
+		<picture>http://www.casebook.org/images/police_dew.jpg</picture>
+	</inspector>
+
+	<inspector>
+		<name> Detective Sergeant George Godley</name>
+		<picture>http://www.casebook.org/images/police_god.jpg</picture>
+	</inspector>
+
+	<inspector>
+		<name> P.C. James Harvey</name>
+		<picture>http://www.casebook.org/images/police_sag.jpg</picture>
+	</inspector>
+
+	<inspector>
+		<name> Inspector Joseph Henry Helson</name>
+		<picture>http://www.casebook.org/images/police_helson.jpg</picture>
+	</inspector>
+
+	<inspector>
+		<name> Chief Inspector John George</name>
+		<picture>http://www.casebook.org/images/police_lc.jpg</picture>
+	</inspector>
+
+	<inspector>
+		<name> Sir Melville Macnaghten</name>
+		<picture>http://www.casebook.org/images/police_mac.jpg</picture>
+	</inspector>
+
+	<inspector>
+		<name> James Monro</name>
+		<picture>http://www.casebook.org/images/police_mon.jpg</picture>
+	</inspector>
+
+	<inspector>
+		<name> Chief Inspector Henry Moore</name>
+		<picture>http://www.casebook.org/images/police_henry_moore.jpg</picture>
+	</inspector>
+
+	<inspector>
+		<name> P.C. John Neil</name>
+		<picture>http://www.casebook.org/images/police_john_neil.jpg</picture>
+	</inspector>
+
+	<inspector>
+		<name> Inspector Edmund Reid</name>
+		<picture>http://www.casebook.org/images/police_edmund_reid.jpg</picture>
+	</inspector>
+
+	<inspector>
+		<name> Detective Constable Robert Sagar</name>
+		<picture>http://www.casebook.org/images/police_sag.jpg</picture>
+	</inspector>
+
+	<inspector>
+		<name> Major Henry Smith</name>
+		<picture>http://www.casebook.org/images/police_smi.jpg</picture>
+	</inspector>
+
+	<inspector>
+		<name>P.C. William Smith </name>
+		<picture>http://www.casebook.org/images/police_william_smith.jpg</picture>
+	</inspector>
+
+	<inspector>
+		<name> Inspector John Spratling</name>
+		<picture>http://www.casebook.org/images/police_sag.jpg</picture>
+	</inspector>
+
+	<inspector>
+		<name> Chief Inspector Donald Swanson </name>
+		<picture>http://www.casebook.org/images/police_sut.jpg</picture>
+	</inspector>
+
+	<inspector>
+		<name> Sergeant William Thick</name>
+		<picture>http://www.casebook.org/images/police_thi.jpg</picture>
+	</inspector>
+
+	<inspector>
+		<name> P.C. Ernest Thompson</name>
+		<picture>http://www.casebook.org/images/police_ernest_thompson.jpg</picture>
+	</inspector>
+
+	<inspector>
+		<name> Sir Charles Warren</name>
+		<picture>http://www.casebook.org/images/police_war.jpg</picture>
+	</inspector>
+
+	<inspector>
+		<name>P.C. Edward Watkins</name>
+		<picture>http://www.casebook.org/images/police_edward_watkins.jpg</picture>
+	</inspector>
+
+	<inspector>
+		<name> Sergeant Stephen White</name>
+		<picture>http://www.casebook.org/images/police_steven_white.jpg</picture>
+	</inspector>
+
+	<inspector>
+		<name>Chief Constable Adolphus Frederick Williamson</name>
+		<picture>http://www.casebook.org/images/police_frederick_williamson.jpg</picture>
+	</inspector>
+
+</JackTheRipper>
+
