@@ -91,9 +91,14 @@ command_help(int argc, char *argv[])
 		printf("  Various options control what information\n");
 		printf("  is displayed.\n");
 		printf("Options:\n");
-		printf("  -a         | --all        list status of all databases\n");
-		printf("  -c         | --cycle=#    list status of all databases every # seconds\n");
-		printf("  -b         | --brief      use short one-line listing\n");
+		printf(" -d database | --database=nme  \n");
+		printf(" -l         | --list       list status of all databases [default]\n");
+		printf(" -c         | --cycle=#    list status of all databases every # seconds\n");
+		printf(" -b         | --brief      use short one-line listing\n");
+		printf(" -p         | --pause      suspend new client connections\n");
+		printf(" -r         | --resume     accept new client connections\n");
+		printf(" -s         | --shutdown   bring service down \n");
+		printf(" -a         | --activate   service can be started again \n");
 	} else if (strcmp(argv[1], "create") == 0) {
 		printf("Usage: monetdb create database\n");
 		printf("  Initialises a new database on the (local?) system. \n");
