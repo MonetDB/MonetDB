@@ -704,7 +704,7 @@ str SABAOTHgetUplogInfo(sabuplog* ret, str dbname) {
 				ret->crashavg30 += avg30[i];
 			ret->crashavg30 = ret->crashavg30 / 30.0;
 
-			if (ret->startcntr > 0) {
+			if (ret->stopcntr > 0) {
 				ret->avguptime = (time_t)(((double)up / (double)ret->stopcntr) + 0.5);
 			} else {
 				ret->avguptime = 0;
