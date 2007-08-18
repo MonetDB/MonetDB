@@ -133,10 +133,14 @@ make install \
 #find $RPM_BUILD_ROOT -name .incs.in | xargs rm
 find $RPM_BUILD_ROOT -name \*.la | xargs rm -f
 
+# cleanup stuff we don't want to install
 rm -rf $RPM_BUILD_ROOT%{_libdir}/MonetDB4/Tests/*
 rm -rf $RPM_BUILD_ROOT%{prefix}/lib*/python*/site-packages
 rm -rf $RPM_BUILD_ROOT%{prefix}/include/sql
 rm -rf $RPM_BUILD_ROOT%{_libdir}/pkgconfig/MonetDB-SQL.pc
+rm -rf $RPM_BUILD_ROOT%{prefix}/bin/monetdb-sql-config.bat
+# remove the following line, once we add it to %files devel, below
+rm -rf $RPM_BUILD_ROOT%{prefix}/bin/monetdb-sql-config
 
 # Fixes monet config script
 #perl -p -i -e "s|$RPM_BUILD_ROOT||" $RPM_BUILD_ROOT%{prefix}/bin/monet_config
@@ -173,6 +177,8 @@ rm -rf $RPM_BUILD_ROOT
 # %files devel
 # %defattr(-,root,root) 
 # %{_libdir}/pkgconfig/MonetDB-SQL.pc
+# # when activating the following line, don't remove the file during cleanup above
+# %{prefix}/bin/monetdb-sql-config
 
 %changelog
 * Mon Jun 25 2007 Sjoerd Mullender <sjoerd@acm.org> - @VERSION@-1

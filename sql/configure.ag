@@ -35,7 +35,7 @@ AM_CONFIG_HEADER(sql_config.h:conf/config.h.in)
 CONFIG_H=sql_config.h
 AC_SUBST(CONFIG_H)
 
-# SQL_BUILD and SQL_SOURCE are *only* used for sql-config and RunMserver
+# SQL_BUILD and SQL_SOURCE are *only* used for monetdb-sql-config and RunMserver
 # SQL_SOURCE is the absolute path name of the source directory
 # (srcdir can be relative)
 

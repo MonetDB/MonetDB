@@ -43,7 +43,10 @@ if [ "${uname}" = "AIX"  -a  "${LIBPATH}" ] ; then
 fi
 
 # enhance PATH with Msql and MonetDB binaries
-PATH="${builddir}/compiler:${builddir}/src/tools:$PATH"
+if [ -s "${builddir}/conf/monetdb-xquery-config" ] ; then
+	chmod +x "${builddir}/conf/monetdb-xquery-config"
+fi
+PATH="${builddir}/conf:${builddir}/compiler:${builddir}/src/tools:$PATH"
 libpath="${MOD_PATH}"
 LD_LIBRARY_PATH="${libpath}${LD_LIBRARY_PATH}"
 if [ "${uname}" = "Darwin" ] ; then

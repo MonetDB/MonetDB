@@ -27,6 +27,7 @@ set PATH=@XCLIENTS_PREFIX@\bin;%PATH%
 set PATH=@XMONETDB_PREFIX@\bin;%PATH%
 set PATH=%MOD_PATH%;%PATH%
 set PATH=%builddir%\compiler;%PATH%
+set PATH=%builddir%\conf;%PATH%
 
 set PYTHONPATH=@XMONETDB_PREFIX@\share\MonetDB\python;%PYTHONPATH%
 set PYTHONPATH=@XCLIENTS_PREFIX@\share\MonetDB\python;%PYTHONPATH%

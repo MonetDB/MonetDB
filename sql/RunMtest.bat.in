@@ -28,6 +28,7 @@ set PATH=%builddir%\src\server;%PATH%
 set PATH=%builddir%\src\storage\bat;%PATH%
 set PATH=%builddir%\src\common;%PATH%
 set PATH=%builddir%\src\tools;%PATH%
+set PATH=%builddir%\conf;%PATH%
 
 set PYTHONPATH=@XMONETDB_PREFIX@\share\MonetDB\python;%PYTHONPATH%
 set PYTHONPATH=@XCLIENTS_PREFIX@\share\MonetDB\python;%PYTHONPATH%

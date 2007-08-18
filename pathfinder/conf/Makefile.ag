@@ -27,3 +27,14 @@ EXTRA_DIST = \
 	install-sh missing \
 	ltmain.sh \
 	config.h.in
+
+scripts_sh = {
+	EXT = ""
+	DIR = bindir
+	SOURCES = monetdb-xquery-config.in
+}
+
+scripts_bat = {
+	DIR = bindir
+	SOURCES = monetdb-xquery-config.bat.in 
+}

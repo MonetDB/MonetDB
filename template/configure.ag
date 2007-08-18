@@ -33,6 +33,40 @@ AM_CONFIG_HEADER([template_config.h:conf/config.h.in])
 CONFIG_H=template_config.h
 AC_SUBST(CONFIG_H)
 
+# TEMPLATE_BUILD and TEMPLATE_SOURCE are *only* used for monetdb-template-config and RunMserver
+# TEMPLATE_SOURCE is the absolute path name of the source directory
+# (srcdir can be relative)
+
+# The Q versions of various variables are used in places where \'s
+# need to be escapes with an extra \.  Configure does not support \'s
+# in path names, so there is no need to do anything special here
+# except set the variables.  The command to set them in case we do
+# need to escape the \'s is Qvar=`echo "$var" | sed 's/\\\\/\\\\\\\\/g'`
+TEMPLATE_BUILD=[`pwd`]
+AC_SUBST(TEMPLATE_BUILD)
+
+TEMPLATE_SOURCE=[`(cd $srcdir && pwd)`]
+AC_SUBST(TEMPLATE_SOURCE)
+
+# if no --prefix option, we must set Qprefix to the default value
+# the problem is that prefix is set very late in the process if it
+# wasn't set by --prefix
+if test "${prefix}x" = "NONEx"; then
+	Qprefix="${ac_default_prefix}"
+else
+	Qprefix="${prefix}"
+fi
+Qprefix="`echo "$Qprefix" | sed 's/\\\\/\\\\\\\\/g'`"
+AC_SUBST(Qprefix)
+# exec_prefix is created very late, so let make do the expansion
+if test "${exec_prefix}x" = "NONEx"; then
+	Qexec_prefix='${prefix}'
+else
+	Qexec_prefix="`echo "$exec_prefix" | sed 's/\\\\/\\\\\\\\/g'`"
+fi
+AC_SUBST(Qexec_prefix)
+
+
 dnl Check for Monet
 req_monetdb_ver='1.18.0'
 #                ^^^^^^
@@ -76,6 +110,12 @@ if test "x$have_monetdb4" != xyes -a "x$have_monetdb5" != xyes; then
 		AC_MSG_ERROR([Template requires at least version $req_monetdb4_ver of MonetDB4 (found $MONETDB4VERS) or version $req_monetdb5_ver of MonetDB5 (found $MONETDB5VERS).])
 	fi
 fi
+
+dnl provide different versions of (some of) the paths derived above
+QTEMPLATE_BUILD="$TEMPLATE_BUILD"
+AC_SUBST(QTEMPLATE_BUILD)
+QTEMPLATE_SOURCE="$TEMPLATE_SOURCE"
+AC_SUBST(QTEMPLATE_SOURCE)
 
 dnl  CFLAGS for our code are stricter than what autoconf can cope with.
 CFLAGS="$CFLAGS \$(X_CFLAGS)"
