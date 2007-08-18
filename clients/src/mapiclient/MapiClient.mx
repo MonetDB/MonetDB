@@ -234,6 +234,10 @@ timerEnd(void)
 	}
 }
 
+#define EXPLAINmodifier 1
+#define DEBUGmodifier 2
+#define TRACEmodifier 3
+
 static void
 SQLsetSpecial(const char *command)
 {
@@ -244,11 +248,11 @@ SQLsetSpecial(const char *command)
 		while (*s == ' ' || *s == '\t')
 			s++;
 		if (strncmp(s, "explain", 7) == 0)
-			specials = 1;
+			specials = EXPLAINmodifier;
 		if (strncmp(s, "debug", 5) == 0)
-			specials = 2;
+			specials = DEBUGmodifier;
 		if (strncmp(s, "trace", 5) == 0)
-			specials = 3;
+			specials = TRACEmodifier;
 	}
 }
 
@@ -583,6 +587,7 @@ SQLtraceRenderer(MapiHdl hdl)
 		rows++;
 	}
 	SQLseparator(len, cols, '-');
+	specials = 0;
 }
 
 static void
