@@ -362,6 +362,9 @@ reduce (PFla_op_t *p, int goalnt)
     short            old_state_label;
     unsigned short   i;
 
+    /* guard against too dep recursion */
+    PFrecursion_fence();
+
     do {
         assert (STATE_LABEL (p));
 

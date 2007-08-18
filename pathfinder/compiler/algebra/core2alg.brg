@@ -397,6 +397,9 @@ reduce (PFcnode_t * p, int goalnt)
     PFcnode_t    *kids[MAX_KIDS]; /* leaf nodes of this rule */
     bool          topdown;        /* is this a top-down rule? */
 
+    /* guard against too dep recursion */
+    PFrecursion_fence();
+
     assert(p);
 
     /* determine rule that matches for this non-terminal */

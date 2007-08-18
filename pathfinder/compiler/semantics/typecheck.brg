@@ -357,6 +357,7 @@ reduce (PFcnode_t * p, int goalnt)
                                      the current rule */
     PFcnode_t    *kids[MAX_KIDS]; /* leaf nodes of this rule */
 
+    /* guard against too dep recursion */
     PFrecursion_fence();
 
     /* determine rule that matches for this non-terminal */

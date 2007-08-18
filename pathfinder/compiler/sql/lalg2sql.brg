@@ -1055,6 +1055,7 @@ reduce (PFla_op_t * p, int goalnt)
     PFla_op_t *kids[MAX_KIDS];	/* leaf node of this rule */
     bool topdown;
 
+    /* guard against too dep recursion */
     PFrecursion_fence();
 
     sql_stmt = NULL;

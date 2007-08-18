@@ -430,6 +430,7 @@ reduce (PFcnode_t * p, int goalnt)
     bool          rewritten;
     short         old_state_label;
 
+    /* guard against too dep recursion */
     PFrecursion_fence();
 
     do {

@@ -708,6 +708,7 @@ reduce (PFpnode_t * p, int goalnt, unsigned int *varcount)
     short         old_state_label;
     PFpnode_t *   c;
 
+    /* guard against too dep recursion */
     PFrecursion_fence();
 
     do {

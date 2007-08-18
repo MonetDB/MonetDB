@@ -632,6 +632,7 @@ reduce_border (PFpa_op_t * p, int goalnt, PFarray_t *border_vars)
     /* determine rule that matches for this non-terminal */
     rule = PFmilgen_rule (STATE_LABEL (p), goalnt);
 
+    /* guard against too dep recursion */
     PFrecursion_fence();
 
     /* PFinfo (OOPS_NOTICE, "match for rule %i", rule); */
@@ -716,6 +717,7 @@ reduce1 (PFpa_op_t * p, int goalnt, PFarray_t *border_vars)
     if (p->env)
         return;
 
+    /* guard against too dep recursion */
     PFrecursion_fence();
 
     p->env = new_env ();
@@ -877,6 +879,7 @@ reduce2 (PFpa_op_t * p, int goalnt)
                 "cannot cope with function reduce2 "
                 "as long as reduce1 was not called.");
 
+    /* guard against too dep recursion */
     PFrecursion_fence();
 
     /* determine rule that matches for this non-terminal */
@@ -985,6 +988,7 @@ reduce3 (PFpa_op_t * p, int goalnt)
                 "cannot cope with function reduce3 "
                 "as long as reduce1 was not called.");
 
+    /* guard against too dep recursion */
     PFrecursion_fence();
 
     /* determine rule that matches for this non-terminal */
@@ -1076,6 +1080,7 @@ reduce (PFpa_op_t * p, int goalnt)
     /* PFinfo (OOPS_NOTICE, "match for rule %i", rule); */
     assert(rule);
 
+    /* guard against too dep recursion */
     PFrecursion_fence();
 
     /* initialize the kids[] vector */
