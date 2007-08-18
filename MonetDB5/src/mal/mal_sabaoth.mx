@@ -40,6 +40,8 @@ machine and redirect to each other when necessary.
 #include "mal_sabaoth.h"
 #include <stdio.h> /* fseek, rewind */
 #include <unistd.h>	/* unlink and friends */
+#include <sys/types.h>
+#include <sys/stat.h>
 #include <errno.h>
 #include <string.h> /* for getting error messages */
 #include <assert.h>
@@ -434,6 +436,7 @@ str SABAOTHgetStatus(sabdb** ret, str dbname) {
 	str p;
 	FILE *f;
 	int fd;
+	struct stat statbuf;
 
 	sabdb *sdb, *top;
 	sdb = top = *ret = NULL;
@@ -448,6 +451,12 @@ str SABAOTHgetStatus(sabdb** ret, str dbname) {
 				path, strerror(errno));
 	while ((e = readdir(d)) != NULL) {
 		if (dbname != NULL && strcmp(e->d_name, dbname) != 0)
+			continue;
+		if (strcmp(e->d_name, "..") == 0 || strcmp(e->d_name, ".") == 0)
+			continue;
+
+		snprintf(buf, PATHLENGTH, "%s/%s/%s", path, e->d_name, UPLOGFILE);
+		if (stat(buf, &statbuf) == -1)
 			continue;
 
 		if (sdb == NULL) {
