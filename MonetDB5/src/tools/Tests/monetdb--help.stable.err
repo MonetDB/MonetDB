@@ -1,0 +1,18 @@
+stderr of test 'monetdb--help` in directory 'src/tools` itself:
+
+
+# 11:40:03 >  
+# 11:40:03 >  Mtimeout -timeout 120 ./monetdb--help monetdb--help 
+# 11:40:03 >  
+
+
+# 11:40:03 >  
+# 11:40:03 >  Mtimeout -timeout 60 monetdb --help
+# 11:40:03 >  
+
+! Correct/expected stable output still needs to be provided/approved!
+
+# 11:40:03 >  
+# 11:40:03 >  Done.
+# 11:40:03 >  
+

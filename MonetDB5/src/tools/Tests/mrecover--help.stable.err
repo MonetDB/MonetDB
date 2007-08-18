@@ -1,0 +1,18 @@
+stderr of test 'mrecover--help` in directory 'src/tools` itself:
+
+
+# 11:51:06 >  
+# 11:51:06 >  Mtimeout -timeout 120 ./mrecover--help mrecover--help 
+# 11:51:06 >  
+
+
+# 11:51:06 >  
+# 11:51:06 >  Mtimeout -timeout 60 mrecover --help
+# 11:51:06 >  
+
+= Please remove this line in case mrecover's usage message is supposed to go to stdout instead of stderr (as usually).
+
+# 11:51:06 >  
+# 11:51:06 >  Done.
+# 11:51:06 >  
+

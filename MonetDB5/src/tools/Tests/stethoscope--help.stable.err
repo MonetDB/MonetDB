@@ -1,0 +1,40 @@
+stderr of test 'stethoscope--help` in directory 'src/tools` itself:
+
+
+# 11:40:03 >  
+# 11:40:03 >  Mtimeout -timeout 120 ./stethoscope--help stethoscope--help 
+# 11:40:03 >  
+
+
+# 11:40:03 >  
+# 11:40:03 >  Mtimeout -timeout 60 stethoscope --help
+# 11:40:03 >  
+
+= Please remove this line in case the below usage message of stethoscope is correct.
+stethoscope: option `--help' requires an argument
+stethoscope [options] +[Ttcmipesrwd] {<mod>.<fcn>}
+-d | --dbname=<database_name>
+-u | --user=<user>
+-P | --password=<password>
+-p | --port=<portnr>
+-h | --host=<hostname>
+-g | --gnuplot
+The trace options:
+    a =aggregates
+    e =event
+    f =function 
+    o =operation called
+    T =time
+    t =ticks
+    c =cpu statistics
+    m =memory resources
+    i =io resources
+    b =bytes read/written
+    d =diskspace needed
+    s =statement
+= Please remove this line in case the above usage message of stethoscope is correct.
+
+# 11:40:03 >  
+# 11:40:03 >  Done.
+# 11:40:03 >  
+

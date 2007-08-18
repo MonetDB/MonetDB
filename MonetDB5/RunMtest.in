@@ -35,10 +35,12 @@ if [ "${uname}" = "AIX"  -a  "${LIBPATH}" ] ; then
 fi
 
 # enhance various paths to find our stuff
-if [ -s "${builddir}/src/tools/monetdb5-config" ] ; then
-	chmod +x "${builddir}/src/tools/monetdb5-config"
-fi
-PATH="${builddir}/src/tools:$PATH"
+for x in "${builddir}/src/tools/monetdb5-config"  "${srcdir}/src/tools/mchkpnt"  "${srcdir}/src/tools/mrecover" ; do
+	if [ -s $x ] ; then
+		chmod +x $x
+	fi
+done
+PATH="${builddir}/src/tools:${srcdir}/src/tools:$PATH"
 libpath="${MOD_PATH}:${builddir}/src/mal/.libs"
 LD_LIBRARY_PATH="${libpath}${LD_LIBRARY_PATH}"
 if [ "${uname}" = "Darwin" ] ; then

@@ -1,0 +1,17 @@
+stdout of test 'Mbeddedmal--help` in directory 'src/tools` itself:
+
+
+# 16:36:12 >  
+# 16:36:12 >  Mtimeout -timeout 300 ./Mbeddedmal--help Mbeddedmal--help 
+# 16:36:12 >  
+
+
+# 16:36:12 >  
+# 16:36:12 >  Mtimeout -timeout 60 Mbeddedmal --help
+# 16:36:12 >  
+
+
+# 10:03:11 >  
+# 10:03:11 >  Done.
+# 10:03:11 >  
+
