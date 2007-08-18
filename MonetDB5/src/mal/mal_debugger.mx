@@ -866,6 +866,8 @@ mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
 			b= (char*) (*cntxt->phase[MAL_SCENARIO_READER]) (cntxt);
 			if( b != 0)
 				break;
+			if(cntxt->mode == FINISHING)
+				break;
 		} else {
 			/* switch to mdb streams */
 			r= readConsole(cntxt);
