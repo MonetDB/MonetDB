@@ -1,0 +1,18 @@
+stderr of test 'mjclient--help` in directory 'src/java/scripts` itself:
+
+
+# 16:36:12 >  
+# 16:36:12 >  Mtimeout -timeout 300 ./mjclient--help mjclient--help 
+# 16:36:12 >  
+
+
+# 07:35:51 >  
+# 07:35:51 >  Mtimeout -timeout 60 mjclient --help
+# 07:35:51 >  
+
+= Please remove this line in case mjclient's usage message is supposed to go to stdout instead of stderr (as usually).
+
+# 15:14:07 >  
+# 15:14:07 >  Done.
+# 15:14:07 >  
+

@@ -1,0 +1,39 @@
+stderr of test 'MapiClient.py--help` in directory 'src/python` itself:
+
+
+# 16:36:12 >  
+# 16:36:12 >  Mtimeout -timeout 300 ./MapiClient.py--help MapiClient.py--help 
+# 16:36:12 >  
+
+
+# 16:36:12 >  
+# 16:36:12 >  Mtimeout -timeout 60 MapiClient.py --help
+# 16:36:12 >  
+
+Usage: MapiClient.py [ options ]
+Options are:
+-c or --config config_file
+	read options from the given file
+-? or --help
+	print usage message
+-s or --set option=value
+	set a named option
+--host hostname
+	host to connect to (default: localhost)
+--port port
+	port to connect to (default: 50000)
+--user user
+	login as user (default: monetdb)
+--passwd passwd
+	password (default: monetdb)
+--language language
+	language (default: sql)
+--database database
+	database (default: "")
+--mapi_trace
+	mapi_trace
+
+# 15:14:07 >  
+# 15:14:07 >  Done.
+# 15:14:07 >  
+

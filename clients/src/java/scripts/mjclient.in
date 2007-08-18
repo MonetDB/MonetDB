@@ -22,5 +22,9 @@
 # Future versions might inspect a database of eligible servers
 # to direct the interaction to the proper ports.
 
-prefix=@prefix@
-exec java -jar @datadir@/MonetDB/lib/jdbcclient.jar $*
+jdbcclient_jar="@datadir@/MonetDB/lib/jdbcclient.jar"
+if [ ! -s "$jdbcclient_jar" ] ; then
+	jdbcclient_jar="@QCLIENTS_BUILD@/src/java/jdbcclient.jar"
+fi
+
+exec java -jar "$jdbcclient_jar" $*

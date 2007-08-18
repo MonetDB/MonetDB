@@ -1,0 +1,37 @@
+stderr of test 'MapiClient--help` in directory 'src/mapiclient` itself:
+
+
+# 16:36:12 >  
+# 16:36:12 >  Mtimeout -timeout 300 ./MapiClient--help MapiClient--help 
+# 16:36:12 >  
+
+
+# 16:36:12 >  
+# 16:36:12 >  Mtimeout -timeout 60 MapiClient --help
+# 16:36:12 >  
+
+Usage: MapiClient [ options ]
+Options are:
+ -b t/f      | --blocked=true/false /* blocked mode */
+ -c config   | --config=file    /* config filename */
+ -C colname  | --collection=name /* collection name */
+ -e          | --error          /* exit on error */
+ -H          | --history        /* load/save cmdline history (default off) */
+ -h hostname | --host=hostname  /* host to connect to */
+ -i          | --interactive    /* read stdin after command line args */
+ -l language | --language=lang  /* {mal,sql,mil,xquery} */
+ -P passwd   | --passwd=passwd  /* password */
+ -p portnr   | --port=portnr    /* port to connect to */
+ -d database | --database=database /* database to connect to */
+ -o format   | --output=format  /* output format for xquery (dm (default) or xml) */
+ -q          | --quiet          /* don't print welcome message */
+ -s stmt     | --statement=stmt /* run single statement */
+ -T          | --time           /* time commands */
+ -t          | --trace          /* trace mapi network interaction */
+ -u user     | --user=user      /* user id */
+ -?          | --help           /* show this usage message */
+
+# 15:14:07 >  
+# 15:14:07 >  Done.
+# 15:14:07 >  
+

@@ -23,6 +23,9 @@ sys.path.append(os.path.join(os.environ.get('CLIENTS_PREFIX','@QXprefix@'),
                              'share',
                              'MonetDB',
                              'python'))
+sys.path.append(os.path.join(os.environ.get('CLIENTS_SOURCE','@QXCLIENTS_SOURCE@'),
+                             'src',
+                             'python'))
 sys.path.append(os.path.join(os.environ.get('MONETDB_PREFIX','@QXprefix@'),
                              'share',
                              'MonetDB',

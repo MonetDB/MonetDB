@@ -21,4 +21,7 @@
 @rem Future versions might inspect a database of eligible servers
 @rem to direct the interaction to the proper ports.
 
-call java -jar @datadir@\MonetDB\lib\jdbcclient.jar %*
+@set jdbcclient_jar="@datadir@\MonetDB\lib\jdbcclient.jar"
+@if not exist @jdbcclient_jar@ set jdbcclient_jar="@QCLIENTS_BUILD@\src\java\jdbcclient.jar"
+
+call java -jar @jdbcclient_jar@ %*

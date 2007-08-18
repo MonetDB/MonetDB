@@ -18,8 +18,12 @@ SUBDIRS = src conf
 
 EXTRA_DIST = configure.ag rpm.mk.in \
 		MonetDB-client.spec MonetDB-client.spec.in \
+		RunMtest.in RunMtest.bat.in \
 		RunMapiClient.bat.in
 
 EXTRA_DIST_DIR = NT
 
 #EXTRA_HEADERS = clients_config.h
+
+TESTS = RunMtest
+TESTS_ENVIRONMENT = $(SHELL)

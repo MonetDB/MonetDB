@@ -1,0 +1,28 @@
+stderr of test 'msqldump--help` in directory 'src/mapiclient` itself:
+
+
+# 16:36:12 >  
+# 16:36:12 >  Mtimeout -timeout 300 ./msqldump--help msqldump--help 
+# 16:36:12 >  
+
+
+# 09:44:09 >  
+# 09:44:09 >  Mtimeout -timeout 60 msqldump --help
+# 09:44:09 >  
+
+Usage: msqldump [ options ]
+Options are:
+ -c config   | --config=file    /* config filename */
+ -h hostname | --host=hostname  /* host to connect to */
+ -P passwd   | --passwd=passwd  /* password */
+ -p portnr   | --port=portnr    /* port to connect to */
+ -d database | --database=database /* database to connect to */
+ -q          | --quiet          /* don't print welcome message */
+ -t          | --trace          /* trace mapi network interaction */
+ -u user     | --user=user      /* user id */
+ -?          | --help           /* show this usage message */
+
+# 15:14:07 >  
+# 15:14:07 >  Done.
+# 15:14:07 >  
+

@@ -1,0 +1,28 @@
+stderr of test 'Mbeddedmil--help` in directory 'src/tools` itself:
+
+
+# 16:36:12 >  
+# 16:36:12 >  Mtimeout -timeout 300 ./Mbeddedmil--help Mbeddedmil--help 
+# 16:36:12 >  
+
+
+# 16:36:12 >  
+# 16:36:12 >  Mtimeout -timeout 60 Mbeddedmil --help
+# 16:36:12 >  
+
+= Please remove this line in case the below usage message of Mbeddedmil is correct.
+Usage: Mbeddedmil [ options ] [ script+ ]                   
+Options are:                                        
+ -c <config_file>    | --config=<config_file>       
+ -d<debug_level>     | --debug=<debug_level>        
+ -t                  | --time                       
+                       --dbname=<database_name>     
+                       --dbfarm=<database_directory>
+ -s <option>=<value> | --set <option>=<value>       
+ -?                  | --help                       
+= Please remove this line in case the above usage message of Mbeddedmil is correct.
+
+# 15:14:07 >  
+# 15:14:07 >  Done.
+# 15:14:07 >  
+
