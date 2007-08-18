@@ -339,7 +339,7 @@ def Usage (options) :
          See  %(readme)s
          for details about  %(prog)s.
 """ % {'prog': THISFILE,
-       'readme': os.path.join(GetMonetConfig('--source'),'src','testing','README'),
+       'readme': os.path.join(GetMonetConfig('monetdb','--source'),'src','testing','README'),
        })
     raise
 
@@ -948,28 +948,29 @@ def PerformDir(env, testdir, testlist, BusyPorts) :
 
     if THISFILE in ["Mtest.py", "Mprofile.py"]:
         for LogDBvar in 'GDK_DBFARM', 'SQL_LOGDIR', 'XQUERY_LOGDIR':
-            LogDBdir = os.path.join(env[LogDBvar],TSTDB)
-            if LogDBvar in 'SQL_LOGDIR':
-                LogDBtxt = "sql log directory for "
-            elif LogDBvar in 'XQUERY_LOGDIR':
-                LogDBtxt = "xquery log directory for "
-            else:
-                LogDBtxt = ""
-            if os.path.exists(LogDBdir):
+            if env.has_key(LogDBvar):
+                LogDBdir = os.path.join(env[LogDBvar],TSTDB)
+                if LogDBvar in 'SQL_LOGDIR':
+                    LogDBtxt = "sql log directory for "
+                elif LogDBvar in 'XQUERY_LOGDIR':
+                    LogDBtxt = "xquery log directory for "
+                else:
+                    LogDBtxt = ""
+                if LogDBdir and os.path.exists(LogDBdir):
+                    try:
+                        shutil.rmtree(LogDBdir)
+                    except:
+                        Warn(LogDBtxt+"database '"+TSTDB+"` exists, but destroying it failed; skipping tests in '"+TSTSRCDIR+"`!")
+                        #TODO:
+                        # add "something" to HTML output
+                        return td, elem
                 try:
-                    shutil.rmtree(LogDBdir)
+                    os.makedirs(LogDBdir)
                 except:
-                    Warn(LogDBtxt+"database '"+TSTDB+"` exists, but destroying it failed; skipping tests in '"+TSTSRCDIR+"`!")
+                    Warn("creating "+LogDBtxt+"database '"+TSTDB+" failed; skipping tests in '"+TSTSRCDIR+"`!")
                     #TODO:
                     # add "something" to HTML output
                     return td, elem
-            try:
-                os.makedirs(LogDBdir)
-            except:
-                Warn("creating "+LogDBtxt+"database '"+TSTDB+" failed; skipping tests in '"+TSTSRCDIR+"`!")
-                #TODO:
-                # add "something" to HTML output
-                return td, elem
         if not os.path.exists(TSTTRGDIR):
             #TODO: set mode to umask
             os.makedirs(TSTTRGDIR)
@@ -1167,7 +1168,7 @@ def GetBitsAndOIDsAndModsAndStatic(env) :
     TSTPREF = env['TSTPREF']
     cmd = '%s%s --dbname=%s' % (env['exe']['Mtimeout'][1], env['exe']['Mserver'][1], TSTPREF)
     proc = subprocess.Popen(cmd, shell = True, stdin = subprocess.PIPE, stdout = subprocess.PIPE, stderr = subprocess.PIPE, universal_newlines = True)
-    if env['VERSION'] >= 49900:
+    if par['M5']:
         input = '''\
             clients.quit();
         '''
@@ -1221,7 +1222,7 @@ def GetBitsAndOIDsAndModsAndStatic(env) :
         if not env['TST_OIDS']:
             ErrMsg("Checking for OIDs failed!")
         if not env['TST_MODS']:
-            if env['VERSION'] >= 49900:
+            if par['M5']:
                 Warn("Monet5: Check, whether required modules do exist, is not possible, yet!")
                 env['TST_MODS'].append("")
             else:
@@ -1243,14 +1244,14 @@ def GetBitsAndOIDsAndModsAndStatic(env) :
             STDERR.write("\n")
             STDERR.flush()
     os.environ['TST_MODS'] = str(env['TST_MODS'])
-    if env['VERSION'] >= 49900:
+    if par['M5']:
         env['TST_FIVE'] = "Five"
     return rtrn
 ### GetBitsAndOIDsAndModsAndStatic(env) #
 
 def CheckMods(env, TST, SERVER, CALL) :
     missing = []
-    if env['VERSION'] >= 49900:
+    if par['M5']:
         return missing
     if os.path.isfile(TST+".modules"):
         for m in open(TST+".modules"):
@@ -1279,7 +1280,7 @@ def CheckMods(env, TST, SERVER, CALL) :
 def CheckBATs(env, TST, TSTDB) :
     missing = []
 
-    if env['VERSION'] >= 49900:
+    if par['M5']:
         # Warn("Monet5: Check, whether required BATs do exist, is not possible, yet!")
         return missing
 
@@ -1460,8 +1461,12 @@ def RunTest(env, TST, BusyPorts, COND) :
             ErrMsg("test missing: '"+os.path.join(TSTSRCDIR,TST)+"[.py|.mal|.milM|.milS|.milC|.sql|.xq|.x100]`")
         return TX,Failed,Failed,elem
 
-    MissingMods = CheckMods(env, TST, SERVER, CALL)
-    MissingBATs = CheckBATs(env, TST, TSTDB)
+    if par['PACKAGE'] not in ('monetdb', 'monetdb-clients'):
+        MissingMods = CheckMods(env, TST, SERVER, CALL)
+        MissingBATs = CheckBATs(env, TST, TSTDB)
+    else:
+        MissingMods = []
+        MissingBATs = []
 
     os.chdir(TSTTRGDIR)
 
@@ -1484,7 +1489,7 @@ def RunTest(env, TST, BusyPorts, COND) :
         elem = SkipTest(env, TST, EXT, "as it currently crashes/hangs on WindowsNT.")
     elif sys.platform == "cygwin"  and  url(TSTDIR)+"/"+TST in NotOnCYG:
         elem = SkipTest(env, TST, EXT, "as it currently crashes/hangs on CYGWIN.")
-    elif ( EXT[:4] == ".mil" or SERVER == "MAPI" ) and env['VERSION'] >= 49900:
+    elif ( EXT[:4] == ".mil" or SERVER == "MAPI" ) and par['M5']:
         elem = SkipTest(env, TST, EXT, "as Monet5 does not support MIL.")
     elif EXT == ".milC" and  not env['exe']['Mapi_Client'][0]:
         elem = SkipTest(env, TST, EXT, "as "+env['MAPICLIENT'].split(None, 1)[0]+" is not available.")
@@ -1591,9 +1596,9 @@ def RunTest(env, TST, BusyPorts, COND) :
         PRELUDE = ""
         #if EXT not in  ['.milC','.sql','.xq','.x100']:
         if EXT not in  ['.sql','.xq','.x100']:
-            if os.path.isfile(TST+".prelude")  and  env['VERSION'] < 49900:
+            if os.path.isfile(TST+".prelude")  and  par['M4']:
                 PRELUDE = TST+".prelude"
-            if os.path.isfile(TST+".prelude5")  and  env['VERSION'] >= 49900:
+            if os.path.isfile(TST+".prelude5")  and  par['M5']:
                 PRELUDE = TST+".prelude5"
 
         TIMEOUTED = "Mtimeout"
@@ -2077,7 +2082,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
     elif os.path.isfile(os.path.join(env['TSTSRCDIR'],"All.conf")):
         LOCAL_CONF = ' "--config=%s"' % os.path.join(env['TSTSRCDIR'],"All.conf")
 
-    if env['VERSION'] >= 49900:
+    if par['M5']:
         PRINTF = "io.printf"
     else:
         PRINTF = "printf"
@@ -2100,18 +2105,18 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
         ClntErr = open(ClntErrFile,"w")
 
         PROLOGUE = ""
-        if os.path.isfile(TST+".prologue") and env['VERSION'] < 49900:
+        if os.path.isfile(TST+".prologue") and par['M4']:
             PROLOGUE = " "+TST+".prologue"
-        if os.path.isfile(TST+".prologue5") and env['VERSION'] >= 49900:
+        if os.path.isfile(TST+".prologue5") and par['M5']:
             PROLOGUE = " "+TST+".prologue5"
 
         Srvr = '%s%s %s%s "--dbname=%s"' % (MTO, str(STO), exe['Mserver'][1], LOCAL_CONF, TSTDB)
 
         DBINIT=""
-        if os.path.isfile(TST+".dbinit") and env['VERSION'] < 49900:
+        if os.path.isfile(TST+".dbinit") and par['M4']:
             dbinit = TST+".dbinit"
             DBINIT = open(dbinit).readline().strip()
-        if os.path.isfile(TST+".dbinit5") and env['VERSION'] >= 49900:
+        if os.path.isfile(TST+".dbinit5") and par['M5']:
             dbinit = TST+".dbinit5"
             DBINIT = open(dbinit).readline().strip()
 
@@ -2121,7 +2126,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
             Srvr = '%s --dbinit="%s module(mapi); mil_start();"' % (Srvr, DBINIT)
         if SERVER == "SQL":
             lang="sql"
-            if env['VERSION'] >= 49900:
+            if par['M5']:
                 source = ""
                 if PROLOGUE:
                     source = ' language.source("%s");' % (os.path.join(env['TSTTRGDIR'],PROLOGUE[1:]))
@@ -2131,7 +2136,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
         if SERVER == "XQUERY":
             lang="xquery"
             Srvr = '%s --dbinit="%s module(pathfinder);"' % (Srvr, DBINIT)
-        if SERVER != "SQL"  or  env['VERSION'] < 49900:
+        if SERVER != "SQL"  or  par['M4']:
             Srvr = Srvr+PROLOGUE
         #-background"
         if os.name == "nt":
@@ -2180,7 +2185,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
                 if test.match(f):
                     if CALL == "mal":
                         RunIt(cmd + f, open(devnull), ClntOut, ClntErr)
-                    elif env['VERSION'] >= 49900:
+                    elif par['M5']:
                         RunIt(cmd+" --dbinit=\"include mil_scenario; mil();\" "+f, open(devnull), ClntOut, ClntErr)
                     else:
                         RunIt(cmd, open(f), ClntOut, ClntErr)
@@ -2259,9 +2264,9 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
 
     if SERVER in ["MAPI", "SQL", "XQUERY"]:
         EPILOGUE = None
-        if os.path.isfile(TST+".epilogue") and env['VERSION'] < 49900:
+        if os.path.isfile(TST+".epilogue") and par['M4']:
             EPILOGUE = open(TST+".epilogue",'r')
-        if os.path.isfile(TST+".epilogue5") and env['VERSION'] >= 49900:
+        if os.path.isfile(TST+".epilogue5") and par['M5']:
             EPILOGUE = open(TST+".epilogue5",'r')
         if EPILOGUE:
             EpiFailed = ""
@@ -2283,7 +2288,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
             EPILOGUE.close()
 
         try:
-            if env['VERSION'] >= 49900:
+            if par['M5']:
                 pSrvr.stdin.write('clients.quit();\n')
             else:
                 pSrvr.stdin.write('quit();\n')
@@ -2513,7 +2518,36 @@ URLSUFFIX_F = ''
 ##URLSUFFIX_D = '?cvsroot=Monet-4.3'
 URLSUFFIX_D = ''
 
+_PackageDict = {
+    'clients':    'monetdb-clients',
+    'template':   'monetdb-template',
+    'sql':        'monetdb-sql',
+    'xquery':     'monetdb-xquery',
+    'pathfinder': 'monetdb-xquery',
+    'xml':        'monetdb-xml',
+    'amdb':       'monetdb-amdb',
+    }
+
 par = {}
+# the default; only used for usage information in case -p/---package has not been given
+par['PACKAGE'] = 'monetdb'
+# try to be "smart"
+if os.path.exists(os.path.join('CVS', 'Repository')):
+    repo = open(os.path.join('CVS', 'Repository')).read()[:-1].lower()
+    i = repo.find('/')
+    if i > 0:
+        repo = repo[:i]
+    if repo[:6] != 'monetdb':
+        if _PackageDict.has_key(repo):
+            repo = _PackageDict[repo]
+    par['PACKAGE'] = repo
+    if not CheckExec(par['PACKAGE']+'-config'):
+        if par['PACKAGE'] in ('monetdb', 'monetdb-clients', 'monetdb4', 'monetdb5'):
+            ErrXit('Could not find "%s-config" in your $PATH:\n%s' % (par['PACKAGE'],os.environ['PATH']))
+        else:
+            Warn('Could not find "%s-config" in your $PATH:\n%s' % (par['PACKAGE'],os.environ['PATH']))
+            par['PACKAGE'] = 'monetdb'
+            Warn('Using default package="%s".' % par['PACKAGE'])
 
 def FindCmdLst(env) :
     dirs = [ os.path.join(os.getcwd(),"."), os.path.join(env['TSTSRCBASE'],".") ]
@@ -2527,32 +2561,21 @@ def FindCmdLst(env) :
     return ""
 ### FindCmdLst(env) #
 
-def MonetDBVersion(monetdb_config):
+def GetConfig(cfg, arg) :
+    cmd = CheckExec(cfg)
+    proc = subprocess.Popen([cmd,arg], stdin = subprocess.PIPE, stdout = subprocess.PIPE, universal_newlines = True)
+    qOut, qErr = proc.communicate()
+    return _configure(qOut.split('\n', 1)[0].strip())
+### GetConfig(pkg, arg) #
+
+def GetMonetConfig(pkg, arg) :
+    monetdb_config = pkg+'-config'
     try:
-        cmd = CheckExec(monetdb_config)
-        proc = subprocess.Popen([cmd,'--version'], stdin = subprocess.PIPE, stdout = subprocess.PIPE, universal_newlines = True)
-        qOut, qErr = proc.communicate()
-        res = qOut.split('\n', 1)[0].strip()
-        (x,y,z) = res.split('.',3)[:3]
-        z = z.split('_',1)[0]
-        return ((int(x)*100) + int(y)) * 100 + int(z)
+        return GetConfig(monetdb_config, arg)
     except:
         ErrXit('Could not find "%s" in your $PATH:\n%s' % (monetdb_config,os.environ['PATH']))
-    return 0
-
-_MonetConfigDict = {
-    '--source': '@QXMONETDB_SOURCE@',
-    '--build': '@QXMONETDB_BUILD@',
-    '--prefix': '@QXprefix@',
-    }
-
-def GetMonetConfig(arg) :
-    # this works for arg in ('--source', '--build', '--prefix')
-    return _configure(_MonetConfigDict[arg])
-##    proc = subprocess.Popen('monetdb-config '+arg, shell = True, stdin = subprocess.PIPE, universal_newlines = True)
-##    qOut, qErr = proc.communicate()
-##    return qOut.split('\n', 1)[0].strip()
-### GetMonetConfig(arg) #
+    return ''
+### GetMonetConfig(pkg, arg) #
 
 SQLprefix = ''
 dft = {}
@@ -2561,7 +2584,12 @@ def main(argv) :
     #TODO:
     #signal.signal(signal.SIGALRM, AlarmHandler)
 
-    SQLprefix = os.environ.get('SQL_PREFIX', '')
+    try:
+        SQLprefix = GetConfig('monetdb-sql-config', '--prefix')
+    except:
+        SQLprefix = ''
+    if os.environ.has_key('SQL_PREFIX'):
+        SQLprefix = os.environ['SQL_PREFIX']
 
     vars = ['MONETDB_SOURCE', 'MONETDB_BUILD', 'MONETDB_PREFIX',
             'TSTSRCBASE'  , 'TSTBLDBASE' , 'TSTTRGBASE'  ,
@@ -2574,9 +2602,9 @@ def main(argv) :
     env = {}
 
     # most intuitive (?) default settings
-    dft['MONETDB_SOURCE']   = "GetMonetConfig('--source')"
-    dft['MONETDB_BUILD']    = "GetMonetConfig('--build')"
-    dft['MONETDB_PREFIX']   = "GetMonetConfig('--prefix')"    # or THISPATH ?
+    dft['MONETDB_SOURCE']   = "GetMonetConfig(par['PACKAGE'],'--source')"
+    dft['MONETDB_BUILD']    = "GetMonetConfig(par['PACKAGE'],'--build')"
+    dft['MONETDB_PREFIX']   = "GetMonetConfig(par['PACKAGE'],'--prefix')"    # or THISPATH ?
     dft['SQL_PREFIX']     = "SQLprefix"
     dft['TSTSRCBASE']     = "env['MONETDB_SOURCE']"
     dft['TSTBLDBASE']     = "env['MONETDB_BUILD']"
@@ -2609,20 +2637,22 @@ def main(argv) :
     # commandline options overrule environment
     cmd_options = [
         # long name, short name, GDK option, argument, comment
+        ('package', 'p', 'package', '<package>',
+         "package to be tested, e.g.:\nmonetdb(|4|5), [monetdb-](clients|template|sql|xquery|xml|amdb);\ndefault: %s" % par['PACKAGE']),
         ('MonetDB4', '4', 'MonetDB4', None,
-         "use Mserver of MonetDB Version 4.* (default)"),
+         "use Mserver of MonetDB Version 4 (default with <package> != monetdb5)"),
         ('MonetDB5', '5', 'MonetDB5', None,
-         "use mserver5 of MonetDB Version 5"),
+         "use mserver5 of MonetDB Version 5 (default with <package> == monetdb5)"),
         ('recursive', 'r', 'recursive', None,
          "recurse into subdirectories (implies 'All')"),
         ('MONETDB_SOURCE', None, 'MONETDB_SOURCE', '<path>',
-         'default: "%s"' % GetMonetConfig('--source')),
+         'default: `<package>-config --source` = "%s"' % GetMonetConfig(par['PACKAGE'],'--source')),
         ('MONETDB_BUILD', None, 'MONETDB_BUILD', '<path>',
-         'default: "%s"' % GetMonetConfig('--build')),
+         'default: `<package>-config --build` = "%s"' % GetMonetConfig(par['PACKAGE'],'--build')),
         ('MONETDB_PREFIX', None, 'MONETDB_PREFIX', '<path>',
-         'default: "%s"' % GetMonetConfig('--prefix')),
+         'default: `<package>-config --prefix` = "%s"' % GetMonetConfig(par['PACKAGE'],'--prefix')),
         ('SQL_PREFIX', None, 'SQL_PREFIX', '<path>',
-         'default: "%s"' % SQLprefix),
+         'default: `sql-config --prefix` = "%s"' % SQLprefix),
         ('TSTSRCBASE', None, 'TSTSRCBASE', '<path>',
          'default: <MONETDB_SOURCE>'),
         ('TSTBLDBASE', None, 'TSTBLDBASE', '<path>',
@@ -2679,11 +2709,11 @@ def main(argv) :
              "\t%s\n" % os.path.join(os.getcwd(), '.Mprofile-commands.lst') +
              "\t%s\n" % os.path.join('<TSTSRCBASE>', '.Mprofile-commands.lst') +
              "\t%s\n" % os.path.join(os.environ['HOME'],'.Mprofile-commands.lst') +
-             "\t%s" % os.path.join(GetMonetConfig('--prefix'),'share','MonetDB','Mprofile-commands.lst')
+             "\t%s" % os.path.join(GetMonetConfig(par['PACKAGE'],'--prefix'),'share','MonetDB','Mprofile-commands.lst')
              ),
             ]
     elif THISFILE == 'Mapprove.py':
-        f = os.path.join(GetMonetConfig('--prefix'),dftTSTPREF,'.Mapprove.rc')
+        f = os.path.join(GetMonetConfig(par['PACKAGE'],'--prefix'),dftTSTPREF,'.Mapprove.rc')
         v = ReadMapproveRc(f)
         for i in 'BITS', 'OIDS', 'FIVE', 'STATIC':
             if v[i]:
@@ -2704,13 +2734,65 @@ def main(argv) :
         options = []
 
     try:
-        opts, args = monet_options.parse_options(argv[1:], options, Usage)
+        # let monet_options.parse_options() parse the command line arguments
+        # without setting a --config default in case the is no --config given
+        opts, args = monet_options.parse_options(argv[1:], options, Usage, False)
     except monet_options.Error:
         sys.exit(1)
+
     par['M4'] = opts.get('MonetDB4', 0)
     par['M5'] = opts.get('MonetDB5', 0)
     if par['M4'] and par['M5']:
         ErrXit('Specifying both "-4/--MonetDB4" and "-5/MonetDB5" is not allowed!')
+
+    pkg = opts.get('package')
+    if pkg is None:
+        if par['PACKAGE'] == 'monetdb':
+            if par['M4']:
+                par['PACKAGE'] = 'monetdb4'
+            elif par['M5']:
+                par['PACKAGE'] = 'monetdb5'
+            Warn('No (suitable) ./CVS/Repository found and no -p/--package specified. Using default package="%s". Please use -p/--package to overrule.' % par['PACKAGE'])
+    else:
+        pkg = pkg.lower()
+        if pkg[:6] != 'monetdb':
+            if _PackageDict.has_key(pkg):
+                pkg = _PackageDict[pkg]
+        par['PACKAGE'] = pkg
+    if not CheckExec(par['PACKAGE']+'-config'):
+        if par['PACKAGE'] in ('monetdb', 'monetdb-clients', 'monetdb4', 'monetdb5'):
+            ErrXit('Could not find "%s-config" in your $PATH:\n%s' % (par['PACKAGE'],os.environ['PATH']))
+        else:
+            Warn('Could not find "%s-config" in your $PATH:\n%s' % (par['PACKAGE'],os.environ['PATH']))
+            if par['M4']:
+                par['PACKAGE'] = 'monetdb4'
+            elif par['M5']:
+                par['PACKAGE'] = 'monetdb5'
+            else:
+                par['PACKAGE'] = 'monetdb'
+            Warn('Using default package="%s".' % par['PACKAGE'])
+            
+    if par['M4'] and par['PACKAGE'] == 'monetdb5':
+        ErrXit('"-4/--MonetDB4" conflicts with "--package=monetdb5"!')
+    if par['M5'] and par['PACKAGE'] == 'monetdb4':
+        ErrXit('"-5/--MonetDB5" conflicts with "--package=monetdb4"!')
+    if not par['M4'] and not par['M5']:
+        par['M4'] = par['PACKAGE'] != 'monetdb5'
+        par['M5'] = par['PACKAGE'] == 'monetdb5'
+
+    config = opts.get('config')
+    if config is None and par['PACKAGE'] not in ('monetdb', 'monetdb-clients'):
+        # no --config given on the command line; we assume the M4/M5 default
+        # and have monet_options.parse_options() re-parse the command line arguments
+        if par['M5']:
+            config = os.path.join(GetMonetConfig('monetdb5', '--sysconfdir'), 'monetdb5.conf')
+        else:
+            config = os.path.join(GetMonetConfig('monetdb4', '--sysconfdir'), 'MonetDB.conf')
+        try:
+            opts, args = monet_options.parse_options(['--config='+config] + argv[1:], options, Usage, False)
+        except monet_options.Error:
+            sys.exit(1)
+
     par['RECURSIVE'] = opts.get('recursive', 0)
     par['QUIET'] = opts.get('quiet', 0)
     if THISFILE in ["Mtest.py", "Mprofile.py"]:
@@ -2775,17 +2857,11 @@ def main(argv) :
     STDOUT.flush()
     #env['par'] = par
 
-
-    if par['M5']:
-        env['VERSION'] = MonetDBVersion("monetdb5-config")
-    else:
-        env['VERSION'] = MonetDBVersion("monetdb4-config")
-
     # unknown at compile time, as Mtest.py is compiled with MonetDB(4);
     # hence, we set then at runtime.
     # X == true   =>  @X_TRUE@='',  @X_FALSE@='#'
     # X == false  =>  @X_TRUE@='#', @X_FALSE@=''
-    if env['VERSION'] >= 49900:
+    if par['M5']:
         CONDITIONALS['HAVE_MONETDB5'] = '#'
         CONDITIONALS['HAVE_MONETDB4'] = ''
         CONDITIONALS['MONET4'] = ''
@@ -2950,12 +3026,12 @@ def main(argv) :
     else: # THISFILE == "Mapprove.py"
         vars_ = vars_
     for v in vars_:
-        os.environ[v] = env[v]
-        if not quiet:
-            print "%s = %s" % (v, env[v])
+        if env.has_key(v):
+            os.environ[v] = env[v]
+            if not quiet:
+                print "%s = %s" % (v, env[v])
     if not quiet:
         print "%s = %s" % ('PATH', os.environ['PATH'])
-        print "%s = %s" % ('VERSION', env['VERSION'])
     STDOUT.flush()
 
     # add QUIET par to env
@@ -2997,19 +3073,19 @@ def main(argv) :
     if THISFILE in ["Mtest.py", "Mprofile.py"]:
         exe = {}
         exe['Mtimeout']      = CheckExec('Mtimeout')     , 'Mtimeout -timeout %d ' % par['TIMEOUT']
-        if env['VERSION'] >= 49900:
+        if par['M5']:
             exe['Mserver']       = CheckExec('mserver5')     , '%s mserver5 "--config=%s" --debug=%s %s %s %s %s --set mapi_open=true --set xrpc_open=true --set mapi_port=%s --set xrpc_port=%s --set monet_prompt= --trace' % \
-                                                               (env['setDBG'], opts.config, env['GDK_DEBUG'], env['setMONETDB_MOD_PATH'], env['setGDK_DBFARM'], env['setSQL_LOGDIR'], env['setXQUERY_LOGDIR'], env['MAPIPORT'], env['XRPCPORT'])
+                                                               (env['setDBG'], config, env['GDK_DEBUG'], env['setMONETDB_MOD_PATH'], env['setGDK_DBFARM'], env['setSQL_LOGDIR'], env['setXQUERY_LOGDIR'], env['MAPIPORT'], env['XRPCPORT'])
         else:
             exe['Mserver']       = CheckExec('Mserver')      , '%s Mserver "--config=%s" --debug=%s %s %s %s %s --set mapi_open=true --set xrpc_open=true --set mapi_port=%s --set xrpc_port=%s --set monet_prompt= --trace' % \
-                                                               (env['setDBG'], opts.config, env['GDK_DEBUG'], env['setMONETDB_MOD_PATH'], env['setGDK_DBFARM'], env['setSQL_LOGDIR'], env['setXQUERY_LOGDIR'], env['MAPIPORT'], env['XRPCPORT'])
+                                                               (env['setDBG'], config, env['GDK_DEBUG'], env['setMONETDB_MOD_PATH'], env['setGDK_DBFARM'], env['setSQL_LOGDIR'], env['setXQUERY_LOGDIR'], env['MAPIPORT'], env['XRPCPORT'])
         exe['Mdiff']         = CheckExec('Mdiff')        , 'Mdiff'
         exe['python']        = CheckExec(sys.executable) , sys.executable
-        exe['Mapi_Client']   = CheckExec(env['MAPICLIENT'].split(None, 1)[0])  , '%s -umonetdb -Pmonetdb "--config=%s" --host=%s --port=%s' % (env['MAPICLIENT'], opts.config, HOST, env['MAPIPORT'])
+        exe['Mapi_Client']   = CheckExec(env['MAPICLIENT'].split(None, 1)[0])  , '%s -umonetdb -Pmonetdb "--config=%s" --host=%s --port=%s' % (env['MAPICLIENT'], config, HOST, env['MAPIPORT'])
         exe['SQL_Client']    = CheckExec(env['SQLCLIENT'].split(None, 1)[0])   , '%s -umonetdb -Pmonetdb --host=%s --port=%s %s' % (env['SQLCLIENT'], HOST, env['MAPIPORT'], env['SQL_TRACE'])
         exe['SQL_Dump']      = CheckExec(env['SQLDUMP'].split(None, 1)[0])     , '%s -umonetdb -Pmonetdb --host=%s --port=%s %s' % (env['SQLDUMP'], HOST, env['MAPIPORT'], env['SQL_TRACE'])
         exe['XQuery_Client'] = CheckExec(env['XQUERYCLIENT'].split(None, 1)[0]), '%s -umonetdb -Pmonetdb --host=%s --port=%s' % (env['XQUERYCLIENT'], HOST, env['MAPIPORT'])
-        exe['X100_Client']   = CheckExec(env['X100CLIENT'].split(None, 1)[0])  , '%s -umonetdb -Pmonetdb "--config=%s" --host=%s --port=%s' % (env['X100CLIENT'], opts.config, HOST, env['MAPIPORT'])
+        exe['X100_Client']   = CheckExec(env['X100CLIENT'].split(None, 1)[0])  , '%s -umonetdb -Pmonetdb "--config=%s" --host=%s --port=%s' % (env['X100CLIENT'], config, HOST, env['MAPIPORT'])
         if par['TIMEOUT'] == 0 or not exe['Mtimeout'][0]:
             exe['Mtimeout'] = '', ''
         env['exe'] = exe
@@ -3116,12 +3192,14 @@ def main(argv) :
         if not os.path.exists(env['GDK_DBFARM']):
             #TODO: set mode to umask
             os.makedirs(env['GDK_DBFARM'])
-        if not os.path.exists(env['SQL_LOGDIR']):
-            #TODO: set mode to umask
-            os.makedirs(env['SQL_LOGDIR'])
-        if not os.path.exists(env['XQUERY_LOGDIR']):
-            #TODO: set mode to umask
-            os.makedirs(env['XQUERY_LOGDIR'])
+        if env.has_key('SQL_LOGDIR'):
+            if not os.path.exists(env['SQL_LOGDIR']):
+                #TODO: set mode to umask
+                os.makedirs(env['SQL_LOGDIR'])
+        if env.has_key('XQUERY_LOGDIR'):
+            if not os.path.exists(env['XQUERY_LOGDIR']):
+                #TODO: set mode to umask
+                os.makedirs(env['XQUERY_LOGDIR'])
 
         if os.path.exists(os.path.join(env['GDK_DBFARM'],TSTPREF)):
             try:
@@ -3134,40 +3212,54 @@ def main(argv) :
             ErrXit("Failed to create %s" % os.path.join(env['GDK_DBFARM'],TSTPREF))
 
         os.makedirs(os.path.join(env['TSTTRGBASE'],TSTPREF))
-        if env['VERSION'] >= 49900:
+        if par['M5']:
             QUIT = 'clients.quit();\n'
         else:
             QUIT = 'quit();\n'
-        if Check('%s%s --dbname=%s' % (env['exe']['Mtimeout'][1], env['exe']['Mserver'][1], TSTPREF), QUIT):
-            sys.exit(1)
-        if GetBitsAndOIDsAndModsAndStatic(env):
-            sys.exit(1)
-        STDERR.flush()
-        if not quiet:
-            print "Bits: ", env['TST_BITS']
-            print "OIDs: ", env['TST_OIDS']
-            print "Modules: ", env['TST_MODS']
-        STDOUT.flush()
 
-        is_sql = False
-        am_init_sql = re.compile('AM_INIT_AUTOMAKE\("sql",.*,.*\)', re.MULTILINE)
-        configure_ag = os.path.join(env['TSTSRCBASE'],"configure.ag")
-        if os.path.isfile(configure_ag):
-            for l in open(configure_ag):
-                if am_init_sql.match(l) and not is_sql:
-                    is_sql = True
+        if par['PACKAGE'] not in ('monetdb', 'monetdb-clients'):
+            if Check('%s%s --dbname=%s' % (env['exe']['Mtimeout'][1], env['exe']['Mserver'][1], TSTPREF), QUIT):
+                sys.exit(1)
+            if GetBitsAndOIDsAndModsAndStatic(env):
+                sys.exit(1)
+            STDERR.flush()
+            if not quiet:
+                print "Bits: ", env['TST_BITS']
+                print "OIDs: ", env['TST_OIDS']
+                print "Modules: ", env['TST_MODS']
+            STDOUT.flush()
+        else:
+            env['TST_MODS'] = []
+            env['TST_BITS'] = ""
+            env['TST_OIDS'] = ""
+            env['TST_FIVE'] = ""
+            env['TST_STATIC'] = ""
+
+        is_sql = par['PACKAGE'] == 'monetdb-sql'
+        if not is_sql:
+            # for back-ward compatibility when par['PACKAGE'] is forced back to monetdb(|4|5)
+            # with packages that do not provide a <package>-config script, yet.
+            am_init_sql = re.compile('AM_INIT_AUTOMAKE\("sql",.*,.*\)', re.MULTILINE)
+            configure_ag = os.path.join(env['TSTSRCBASE'],"configure.ag")
+            if os.path.isfile(configure_ag):
+                for l in open(configure_ag):
+                    if am_init_sql.match(l) and not is_sql:
+                        is_sql = True
         if is_sql:
             MissingMods = CheckMods(env, '', 'SQL', '')
             if MissingMods:
                 ErrXit('Stopping SQL testing as modules "%s" are missing!' % str(MissingMods))
 
-        is_pf = False
-        am_init_pf = re.compile('AM_INIT_AUTOMAKE\("pathfinder",.*,.*\)', re.MULTILINE)
-        configure_ag = os.path.join(env['TSTSRCBASE'],"configure.ag")
-        if os.path.isfile(configure_ag):
-            for l in open(configure_ag):
-                if am_init_pf.match(l) and not is_pf:
-                    is_pf = True
+        is_pf = par['PACKAGE'] == 'monetdb-xquery'
+        if not is_pf:
+            # for back-ward compatibility when par['PACKAGE'] is forced back to monetdb(|4|5)
+            # with packages that do not provide a <package>-config script, yet.
+            am_init_pf = re.compile('AM_INIT_AUTOMAKE\("pathfinder",.*,.*\)', re.MULTILINE)
+            configure_ag = os.path.join(env['TSTSRCBASE'],"configure.ag")
+            if os.path.isfile(configure_ag):
+                for l in open(configure_ag):
+                    if am_init_pf.match(l) and not is_pf:
+                        is_pf = True
         if is_pf:
             if not CheckExec('pf'):
                 ErrXit('Stopping Pathfinder testing as XQuery compiler "pf" is not available!')
