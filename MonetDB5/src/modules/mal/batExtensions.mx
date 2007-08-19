@@ -16,7 +16,7 @@
 
 @f batExtensions
 @v 2.0
-@a M.L.Kersten, P. Boncz
+@a M.L.Kersten
 @+ BAT Extensions
 The kernel libraries are unaware of the MAL runtime semantics.
 This calls for declaring some operations in the MAL module section
@@ -73,6 +73,9 @@ pattern bat.pack(h:any_1,t:any_2):bat[:any_1,:any_2]
 address CMDbatpack
 comment "Pack a pair into a BAT";
 
+pattern bat.setBase(b:bat[:any_1,:any_2],c:bat[:any_1,:any_2]...):void
+address CMDsetBase
+comment "Give the non-empty BATs consecutive oid bases";
                                                                                 
 @{
 @{
@@ -111,6 +114,7 @@ be_export str CMDBBPproject(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 be_export str CMDBBPprojectNil(int *ret, int *bid);
 be_export str CMDbatunpack(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 be_export str CMDbatpack(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+be_export str CMDsetBase(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 @-
 Access to a box calls for resolving the first parameter
@@ -195,12 +199,12 @@ CMDBATreduce(int *ret, int *bid)
 }
 
 @+ BAT enhancements
-The code to enhance thekernel
+The code to enhance the kernel.
 @c
 str
 CMDBATclone(MalBlkPtr m, MalStkPtr s, InstrPtr p)
 {
-	BAT *b;
+	BAT *b, *bn;
 	int bid = 0, cap, ht, tt;
 	int *res;
 
@@ -214,8 +218,23 @@ CMDBATclone(MalBlkPtr m, MalStkPtr s, InstrPtr p)
 	ht = getArgType(m, p, 1);
 	tt = getArgType(m, p, 2);
 	cap = BATcount(b) + 64;
+@-
+Cloning should include copying of the properties.
+@c
 	BBPunfix(b->batCacheid);
-	return (str) BKCnewBATint(res, &ht, &tt, &cap);
+	bn= BATnew(ht,tt,cap);
+	if( bn == NULL){
+		BBPunfix(b->batCacheid);
+		throw(MAL,"bat.new","Cannot create BAT");
+	}
+	if( b->hseqbase)
+		BATseqbase(bn, b->hseqbase);
+	bn->hkey= b->hkey;
+	bn->tkey= b->tkey;
+	bn->hsorted= b->hsorted;
+	bn->tsorted= b->tsorted;
+	BBPkeepref(*res = bn->batCacheid);
+	return MAL_SUCCEED;
 }
 
 str
@@ -412,5 +431,23 @@ CMDbatpack(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
 	*ret = b->batCacheid;
 	BBPkeepref(*ret);
+	return MAL_SUCCEED;
+}
+
+str
+CMDsetBase(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	int i;
+	oid o= 0;
+	BAT *b;
+	(void) mb;
+	for( i= pci->retc; i < pci->argc; i++){
+		b= BATdescriptor(*(int*) getArgReference(stk,pci,i));
+		if( b == NULL)
+			throw(MAL,"bat.setBase","Can not access BAT");
+		BATseqbase(b,o);
+		o= o + (oid) BATcount(b);
+		BBPunfix(b->batCacheid);
+	}
 	return MAL_SUCCEED;
 }
