@@ -3561,6 +3561,7 @@ end main;	# 11
 [ "replace",				  "command",	  "bat",	  "(b:bat[:any_1,:any_2],src:bat[:any_1,:any_2]):void ",								  "BKCreplace_bat;"				  ]
 [ "revert",				  "command",	  "bat",	  "(b:bat[:any_1,:any_2]):bat[:any_1,:any_2] ",										  "BKCrevert;"					  ]
 [ "reverse",				  "command",	  "bat",	  "(b:bat[:any_1,:any_2]):bat[:any_2,:any_1] ",										  "BKCreverse;"					  ]
+[ "setBase",				  "pattern",	  "bat",	  "(b:bat[:any_1,:any_2],c:bat[:any_1,:any_2]...):void ",							  "CMDsetBase;"					  ]
 [ "setGarbage",				  "pattern",	  "bat",	  "(b:bat[:any_1,:any_2]):void ",											  "CMDBATsetGarbage;"				  ]
 [ "setHash",				  "command",	  "bat",	  "(b:bat[:any_1,:any_2],prop:bit):bit ",										  "BKCsetHash;"					  ]
 [ "setMemoryAdvise",			  "command",	  "bat",	  "(b:bat[:any_1,:any_2],mode:int):bit ",										  "BKCmadvise2;"				  ]
