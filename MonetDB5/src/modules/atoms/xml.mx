@@ -1,0 +1,79 @@
+@' The contents of this file are subject to the MonetDB Public License
+@' Version 1.1 (the "License"); you may not use this file except in
+@' compliance with the License. You may obtain a copy of the License at
+@' http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+@'
+@' Software distributed under the License is distributed on an "AS IS"
+@' basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+@' License for the specific language governing rights and limitations
+@' under the License.
+@'
+@' The Original Code is the MonetDB Database System.
+@'
+@' The Initial Developer of the Original Code is CWI.
+@' Portions created by CWI are Copyright (C) 1997-2007 CWI.
+@' All Rights Reserved.
+
+@f xml
+@a Sjoerd Mullender, Niels Nes, Martin Kersten
+@v 0.1
+@+ MAL support for XQL
+This module contains the primitives needed in the SQL
+front-end to support SQL/XML.
+@mal
+atom xml:str;	#use a subtype for XML
+
+command xml(s:str):xml
+address XMLstr2xml
+comment "Validate a string as a XML string";
+
+command str(x:xml):str
+address XMLxml2str
+comment "Coerce an XML value to a string";
+@{
+@- Implementation
+The implementation of the XML atomary type is based
+on linking in a portable library, e.g. libxml2 ?
+@h
+#ifndef XML_H
+#define XML_H
+
+#include "mal_config.h"
+#include <gdk.h>
+#include "mal.h"
+#include "mal_instruction.h"
+#include "mal_exception.h"
+
+typedef str xml;
+
+#ifdef WIN32
+#ifndef LIBURL
+#define xml_export extern __declspec(dllimport)
+#else
+#define xml_export extern __declspec(dllexport)
+#endif
+#else
+#define xml_export extern
+#endif
+
+xml_export str XMLxml2str(str *s, xml *x);
+xml_export str XMLstr2xml(xml *x, str *s);
+
+#endif /* XML_H */
+@c
+#include "xml.h"
+
+str 
+XMLxml2str(str *s, xml *x){
+	*s= GDKstrdup(*x);
+	return MAL_SUCCEED;
+}
+
+str
+XMLstr2xml(xml *x, str *s){
+	(void) x;
+	(void) s;
+	if(/* validate string */ 0)
+		throw(MAL,"xml.xml","Invalid xml format");
+	return MAL_SUCCEED;
+}
