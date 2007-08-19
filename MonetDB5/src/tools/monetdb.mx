@@ -39,6 +39,7 @@ information about them are the primary goals of this tool.
 #include <sys/types.h> /* mkdir, readdir */
 #include <dirent.h> /* readdir */
 #include <unistd.h> /* stat, rmdir, unlink */
+#include <time.h> /* strftime */
 #include <alloca.h>
 #include <errno.h>
 
@@ -98,7 +99,7 @@ command_help(int argc, char *argv[])
 		printf("Options:\n");
 		printf("  -f  do not ask for confirmation, destroy right away\n");
 	} else if (strcmp(argv[1], "help") == 0) {
-		printf("Yeah, help on help, how desparate can you be? ;)");
+		printf("Yeah , help on help, how desparate can you be? ;)");
 	} else if (strcmp(argv[1], "version") == 0) {
 		printf("Usage: monetdb version\n");
 		printf("  prints the version of the monetdb toolkit\n");
@@ -114,12 +115,79 @@ command_version()
 }
 
 static void
+printStatus(sabdb *stats, int mode)
+{
+	if (mode == 1) {
+		/* short one-line mode */
+		char *state;
+		char avg[8];
+		char *crash;
+		sabuplog uplog;
+		str e;
+
+		switch (stats->state) {
+			case SABdbRunning:
+				state = "running";
+			break;
+			case SABdbCrashed:
+				state = "crashed";
+			break;
+			case SABdbInactive:
+				state = "stopped";
+			break;
+			default:
+				state = "unknown";
+			break;
+		}
+
+		if ((e = SABAOTHgetUplogInfo(&uplog, stats->dbname)) != MAL_SUCCEED) {
+			fprintf(stderr, "status: internal error: %s\n", e);
+			GDKfree(e);
+			return;
+		}
+		if (uplog.avguptime > 1 * 60 * 60 * 24) {
+			snprintf(avg, 8, "%6dd", (int)(uplog.avguptime / (1 * 60 * 60 * 24)));
+		} else if (uplog.avguptime > 1 * 60 * 60) {
+			snprintf(avg, 8, "%6dh", (int)(uplog.avguptime / (1 * 60 * 60)));
+		} else if (uplog.avguptime > 1 * 60) {
+			snprintf(avg, 8, "%6dm", (int)(uplog.avguptime / (1 * 60)));
+		} else {
+			snprintf(avg, 8, "%6ds", (int)(uplog.avguptime));
+		}
+
+		if (uplog.lastcrash == -1) {
+			crash = "no crash";
+		} else {
+			struct tm *t;
+			crash = alloca(sizeof(char) * 20);
+			t = localtime(&uplog.lastcrash);
+			strftime(crash, 20, "%Y-%m-%d %H:%M:%S", t);
+		}
+
+		/* demo | running | avguptime | start | stop | crash | lastcrash */
+		printf("%-10s  %s %s  %4d %4d  %4d %s\n",
+				stats->dbname,
+				state, avg,
+				uplog.startcntr, uplog.stopcntr,
+				uplog.crashcntr, crash);
+	} else if (mode == 2) {
+		/* long mode */
+	} else {
+		/* this is the default, also for modes that are added but we
+		 * don't understand */
+		printf("%s\n", stats->dbname);
+	}
+}
+
+static void
 command_status(int argc, char *argv[])
 {
 	int doall;
 	int mode = 0;  /* 0=normal, 1=short, 2=long */
 	int i;
 	char *p;
+	str e;
+	sabdb *stats;
 
 	if (argc == 1) {
 		/* print help message for this command */
@@ -154,6 +222,47 @@ command_status(int argc, char *argv[])
 						exit(1);
 					break;
 				}
+			}
+			/* make this option no longer available, for easy use
+			 * lateron */
+			argv[i] = NULL;
+		}
+	}
+
+	if (doall == 1) {
+		sabdb *orig;
+		/* don't even look at the arguments, because we are instructed
+		 * to list all known databases */
+		if ((e = SABAOTHgetStatus(&stats, NULL)) != MAL_SUCCEED) {
+			fprintf(stderr, "status: internal error: %s\n", e);
+			GDKfree(e);
+			exit(2);
+		}
+	
+		orig = stats;
+		while (stats != NULL) {
+			printStatus(stats, mode);
+			stats = stats->next;
+		}
+
+		if (orig != NULL)
+			SABAOTHfreeStatus(&orig);
+		return;
+	}
+
+	for (i = 1; i < argc; i++) {
+		if (argv[i] != NULL) {
+			if ((e = SABAOTHgetStatus(&stats, argv[i])) != MAL_SUCCEED) {
+				fprintf(stderr, "status: internal error: %s\n", e);
+				GDKfree(e);
+				exit(2);
+			}
+
+			if (stats == NULL) {
+				fprintf(stderr, "status: no such database: %s\n", argv[i]);
+			} else {
+				printStatus(stats, mode);
+				SABAOTHfreeStatus(&stats);
 			}
 		}
 	}
