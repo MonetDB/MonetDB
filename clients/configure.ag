@@ -151,6 +151,9 @@ AC_CHECK_HEADERS([crypt.h pwd.h sys/un.h])
 AC_CHECK_FUNCS([crypt ftime getlogin gethostname localtime_r strcasecmp strncasecmp strtod strtof strtoll strtoull])
 AC_CHECK_DECLS([strtof, strtoll, strtoull])
 
+JDBCCLIENT_JAR=jdbcclient-1.6.jar
+AC_SUBST(JDBCCLIENT_JAR)
+
 dnl provide different versions of the paths derived above
 if test "${prefix}x" = "NONEx"; then
 	Xprefix="`$translatepath "$Qprefix"`"
