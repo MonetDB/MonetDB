@@ -52,15 +52,15 @@ command eval(cmd:str):void
 address SQLstatement
 comment "Compile and execute a single sql statement";
 
-command assert(b:bit,msg:str):void
+pattern assert(b:bit,msg:str):void
 address SQLassert
 comment "Generate an exception when b==true";
 
-command assert(b:int,msg:str):void
+pattern assert(b:int,msg:str):void
 address SQLassertInt
 comment "Generate an exception when b!=0";
 
-command assert(b:lng,msg:str):void
+pattern assert(b:lng,msg:str):void
 address SQLassertLng
 comment "Generate an exception when b!=0";
 @-
@@ -527,10 +527,6 @@ function mmath.rand( v:int ) :int;
 	return x;
 end mmath.rand;
 
-function sql_semijoin(b1:bat[:oid,:any_1], b2:bat[:oid,:any_2]) :bat[:oid,:any_1];
-	x := bat.mirror(b2);
-	return algebra.join(x,b1);
-end sql_semijoin;
 @mal
 
 command prelude()

@@ -47,9 +47,9 @@ sql5_export str SQLinitClient(Client c);
 sql5_export str SQLreader(Client c);
 sql5_export str SQLparser(Client c);
 sql5_export str SQLengine(Client c);
-sql5_export str SQLassert(int *ret, bit *flg, str *msg);
-sql5_export str SQLassertInt(int *ret, int *flg, str *msg);
-sql5_export str SQLassertLng(int *ret, lng *flg, str *msg);
+sql5_export str SQLassert(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str SQLassertInt(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str SQLassertLng(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 sql5_export str SQLinitEnvironment(int *ret);
 sql5_export str SQLstatement(int *ret, str *expr);
@@ -83,6 +83,7 @@ we update its context descriptor to denote an SQL scenario.
 #include "bat5.h"
 #include <mtime.h>
 #include "optimizer.h"
+#include "opt_statistics.h"
 
 static int SQLinitialized = 0;
 static int SQLdebug = 0;
@@ -228,11 +229,12 @@ SQLinit(Client c)
 		throw(SQL, "SQLinit", "Catalogue initialization failed");
 	if (debug_str) 
 		SQLdebug = strtol(debug_str,NULL,10);
-	SQLinitialized = TRUE;
+        SQLinitialized = TRUE;
+/*
         if (MT_create_thread(&sqllogthread, (void (*)(void *)) mvc_logmanager, NULL) < 0) {
                 throw(SQL, "SQLinit", "Starting log manager failed");
-
         }
+*/
 	return MAL_SUCCEED;
 }
 
@@ -243,6 +245,7 @@ SQLexit(Client c)
 	stream_printf(GDKout, "#SQLexit\n");
 #endif
 	(void) c;		/* not used */
+	QOTstatisticsExit();
 	if( SQLinitialized == FALSE)
 		throw(SQL, "SQLexit", "Catalogue not available");
 	return MAL_SUCCEED;
@@ -849,13 +852,16 @@ SQLsetTimer(Client c, int onoff)
 	c->itrace='c';
 	q = newStmt(c->curprg->def,"mdb","setTimer");
 	pushBit(c->curprg->def,q,onoff);
+/*
 	q = newStmt(c->curprg->def,"mdb","setFlow");
 	pushBit(c->curprg->def,q,onoff);
+*/
 }
 
 void
 SQLshowPlan(Client c)
 {
+	/* we should determine rendering requirements first */
 	newStmt(c->curprg->def, "mdb", "listMapi");
 }
 
@@ -1109,7 +1115,7 @@ Inspect the variables for post code-generation actions.
 @c
 finalize:
 	if(m->mode== m_explain  && be->q && be->q->code)
-		printFunction(GDKout, ((Symbol)(be->q->code))->def, LIST_MAL_INSTR | LIST_MAL_PROPS | LIST_MAPI);
+		printFunction(GDKout, ((Symbol)(be->q->code))->def, LIST_MAL_INSTR | LIST_MAL_PROPS | LIST_MAPI );
 @-
 Gather the statistics for post analysis. It should preferably
 be stored in an SQL table
@@ -1279,7 +1285,7 @@ cached routine, which may be hidden . For now we take a shortcut.
 			InstrPtr p;
 			p = getInstrPtr(c->curprg->def,1);
 			if (p->blk)
-				printFunction(c->fdout, p->blk, c->listing | LIST_MAPI);
+				printFunction(c->fdout, p->blk, c->listing | LIST_MAPI );
 		}
 		c->curprg->def->errors = -1; /* don;t execute */
 	} 
@@ -1387,32 +1393,42 @@ SQLengine(Client c)
 
 @-
 Assertion errors detected during the execution of a code block
-raises an exception.
+raises an exception. An debugger dump is generated upon request
+to ease debugging.
 @c
 str
-SQLassert(int *ret, bit *flg, str *msg)
-{
-	(void) ret;
-	if (*flg)
+SQLassert(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+	bit *flg = (bit*) getArgReference(stk,pci, 1);
+	str *msg = (str*) getArgReference(stk,pci, 2);
+	(void)mb;
+	if (*flg){
+		/* mdbDump(mb,stk,pci);*/
 		throw(SQL, "assert", *msg);
+	}
 	return MAL_SUCCEED;
 }
 
 str
-SQLassertInt(int *ret, int *flg, str *msg)
-{
-	(void) ret;
-	if (*flg)
+SQLassertInt(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+	int *flg = (int*) getArgReference(stk,pci, 1);
+	str *msg = (str*) getArgReference(stk,pci, 2);
+	(void)mb;
+	if (*flg){
+		/* mdbDump(mb,stk,pci);*/
 		throw(SQL, "assert", *msg);
+	}
 	return MAL_SUCCEED;
 }
 
 str
-SQLassertLng(int *ret, lng *flg, str *msg)
-{
-	(void) ret;
-	if (*flg)
+SQLassertLng(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+	lng *flg = (lng*) getArgReference(stk,pci, 1);
+	str *msg = (str*) getArgReference(stk,pci, 2);
+	(void)mb;
+	if (*flg){
+		/* mdbDump(mb,stk,pci);*/
 		throw(SQL, "assert", *msg);
+	}
 	return MAL_SUCCEED;
 }
 
