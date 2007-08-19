@@ -238,7 +238,7 @@ int main(int argc, char **argv)
         {"password", 1, 0, 'P'},
         {"port", 1, 0, 'p'},
         {"host", 0, 0, 'h'},
-        {"help", 1, 0, '?'},
+        {"help", 0, 0, '?'},
         {"gnuplot", 1, 0, 'g'},
         {0, 0, 0, 0}
     };

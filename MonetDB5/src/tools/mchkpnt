@@ -32,7 +32,7 @@ function diefunc() {
 	local linenr="$1" exitnr="$2"
 	shift 2
 	echo >&2
-	echo "A fatal error occurred at line ${linenr}!" >&2
+	echo "A fatal error detected at line ${linenr}!" >&2
 	echo -e "${*:-(no error message given)}" >&2
 	echo "Exit state: ${exitnr}" >&2
 	echo "Please check your configuration and try again" >&2
