@@ -129,7 +129,7 @@ usage(char *prog)
 void
 usage2(char *prog)
 {
-	fprintf(stderr, "Usage: %s [options] [script]\n", prog);
+	fprintf(stderr, "Usage: %s [options] [scripts]\n", prog);
 	fprintf(stderr, "    --dbname=<database_name> \n");
 	fprintf(stderr, "    --dbfarm=<directory> \n");
 	fprintf(stderr, "    --dbinit=<stmt>           Server prepare statement\n");
