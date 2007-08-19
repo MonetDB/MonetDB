@@ -3119,6 +3119,11 @@ simple_scalar_exp:
 	  		  append_symbol(l, $2);
 	  		  $$ = _symbol_create_list( SQL_UNOP, l ); }
  |  '(' scalar_exp ')' 	{ $$ = $2; }
+ | NOT scalar_exp 	{ dlist *l = L();
+			  append_list(l, 
+			  	append_string(L(), sa_strdup(SA, "not")));
+	  		  append_symbol(l, $2);
+	  		  $$ = _symbol_create_list( SQL_UNOP, l ); }
  ;
 
 scalar_exp:
