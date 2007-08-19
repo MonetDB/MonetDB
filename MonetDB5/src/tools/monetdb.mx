@@ -115,15 +115,36 @@ command_version()
 }
 
 static void
+secondsToString(char *buf, time_t t)
+{
+	if (t > 1 * 60 * 60 * 24) {
+		snprintf(buf, 8, "%dd", (int)(t / (1 * 60 * 60 * 24)));
+	} else if (t > 1 * 60 * 60) {
+		snprintf(buf, 8, "%dh", (int)(t / (1 * 60 * 60)));
+	} else if (t > 1 * 60) {
+		snprintf(buf, 8, "%dm", (int)(t / (1 * 60)));
+	} else {
+		snprintf(buf, 8, "%ds", (int)(t));
+	}
+}
+
+static void
 printStatus(sabdb *stats, int mode)
 {
+	sabuplog uplog;
+	str e;
+
+	if ((e = SABAOTHgetUplogInfo(&uplog, stats->dbname)) != MAL_SUCCEED) {
+		fprintf(stderr, "status: internal error: %s\n", e);
+		GDKfree(e);
+		return;
+	}
+
 	if (mode == 1) {
 		/* short one-line mode */
 		char *state;
 		char avg[8];
 		char *crash;
-		sabuplog uplog;
-		str e;
 
 		switch (stats->state) {
 			case SABdbRunning:
@@ -140,20 +161,7 @@ printStatus(sabdb *stats, int mode)
 			break;
 		}
 
-		if ((e = SABAOTHgetUplogInfo(&uplog, stats->dbname)) != MAL_SUCCEED) {
-			fprintf(stderr, "status: internal error: %s\n", e);
-			GDKfree(e);
-			return;
-		}
-		if (uplog.avguptime > 1 * 60 * 60 * 24) {
-			snprintf(avg, 8, "%6dd", (int)(uplog.avguptime / (1 * 60 * 60 * 24)));
-		} else if (uplog.avguptime > 1 * 60 * 60) {
-			snprintf(avg, 8, "%6dh", (int)(uplog.avguptime / (1 * 60 * 60)));
-		} else if (uplog.avguptime > 1 * 60) {
-			snprintf(avg, 8, "%6dm", (int)(uplog.avguptime / (1 * 60)));
-		} else {
-			snprintf(avg, 8, "%6ds", (int)(uplog.avguptime));
-		}
+		secondsToString(avg, uplog.avguptime);
 
 		if (uplog.lastcrash == -1) {
 			crash = "no crash";
@@ -165,17 +173,48 @@ printStatus(sabdb *stats, int mode)
 		}
 
 		/* demo | running | avguptime | start | stop | crash | lastcrash */
-		printf("%-10s  %s %s  %4d %4d  %4d %s\n",
+		printf("%-10s  %s %7s  %4d %4d  %4d %s\n",
 				stats->dbname,
 				state, avg,
 				uplog.startcntr, uplog.stopcntr,
 				uplog.crashcntr, crash);
 	} else if (mode == 2) {
 		/* long mode */
+		/* path to database */
 	} else {
 		/* this is the default, also for modes that are added but we
 		 * don't understand */
-		printf("%s\n", stats->dbname);
+		char buf[64];
+		char min[8], avg[8], max[8];
+		struct tm *t;
+		/* dbname, status -- since, crash averages */
+
+		switch (stats->state) {
+			case SABdbRunning:
+				t = localtime(&uplog.laststart);
+				strftime(buf, 64, "up since %Y-%m-%d %H:%M:%S", t);
+			break;
+			case SABdbCrashed:
+				t = localtime(&uplog.lastcrash);
+				strftime(buf, 64, "crashed on %Y-%m-%d %H:%M:%S", t);
+			break;
+			case SABdbInactive:
+				snprintf(buf, 64, "not running");
+			break;
+			default:
+				snprintf(buf, 64, "unknown");
+			break;
+		}
+		printf("database %s, %s\n", stats->dbname, buf);
+		printf("  crash average: %d.00 %.2f %.2f (over 1, 15, 30 starts) "
+				"in total %d crashes\n",
+				uplog.crashavg1, uplog.crashavg10, uplog.crashavg30,
+				uplog.crashcntr);
+		secondsToString(min, uplog.minuptime);
+		secondsToString(avg, uplog.avguptime);
+		secondsToString(max, uplog.maxuptime);
+		printf("  uptime stats (min/avg/max): %s/%s/%s over %d runs\n",
+				min, avg, max, uplog.stopcntr);
 	}
 }
 
@@ -227,6 +266,12 @@ command_status(int argc, char *argv[])
 			 * lateron */
 			argv[i] = NULL;
 		}
+	}
+
+	if (mode == 1) {
+		/* print header for short mode */
+		/* demo | running | avguptime | start | stop | crash | lastcrash */
+		printf("   name      state  avgutme  strt stop  crsh crashdate\n");
 	}
 
 	if (doall == 1) {
