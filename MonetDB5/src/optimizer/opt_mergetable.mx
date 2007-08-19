@@ -112,6 +112,7 @@ barrier c:= mat.newIterator(c0,c1);
 exit c;
 exit b;
 @end example
+
 @{
 Also consider the MAT as a variable property. This is needed
 to pass a MAT as an argument to functions. If the function does
@@ -202,9 +203,10 @@ MATcount(InstrPtr p, int *mvar, int mtop){
 
 static int
 OPTmergetableImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
-	InstrPtr *old=0, q,r, mat[256];
-	int oldtop,fm,i,k,m,mtop=0, mvar[256],tpe;
+	InstrPtr *old=0, q,r, *mat;
+	int oldtop,fm,i,k,m,mtop=0, *mvar,tpe;
 	int size,match,actions=0;
+
 #ifdef DEBUG_OPT_MERGETABLE
 	stream_printf(GDKout,"Start MAT optimizer\n");
 	printFunction(GDKout, mb, 0);
@@ -217,6 +219,11 @@ OPTmergetableImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	mb->ssize = size ;
 	mb->stop = 0;
 
+	/* the number of MATs is limited to the variable stack*/
+	mat= (InstrPtr*) alloca(mb->vtop * sizeof(InstrPtr));
+	memset((char*) mat, 0, mb->vtop * sizeof(InstrPtr));
+	mvar= (int*) alloca(mb->vtop * sizeof(int));
+	memset((char*) mvar, 0, mb->vtop * sizeof(InstrPtr));
 
 	for( i=0; i<oldtop; i++){
 		p= old[i];
@@ -298,7 +305,7 @@ Look at the depth of the MAT definition to limit the explosion.
 			break;
 
 		for( k=fm-1; match > 1 && k >= p->retc ; k--)
-		if(	(m=isMATalias(getArg(p,k),mvar,mtop)) >= 0){
+		if(	(m=isMATalias(getArg(p,k),mvar,mtop)) >= 0 ){
 #ifdef DEBUG_OPT_MERGETABLE
 			stream_printf(GDKout,"Pack k=%d\n",k);
 			printInstruction(GDKout,mb,p,0);
@@ -316,6 +323,10 @@ Their semantics should be respected while producing code.
 The insertions are sent to the first component of the MAT.
 Selection of the proper component based on e.g. range descriptors is for
 later.
+
+CAVEAT. The MATs that represent partitions in SQL can not
+be packed to facilitate updates. We assume the first
+partition is dominant. 
 @c
 		if(	getModuleId(p)== batRef && 
 				( getFunctionId(p)== insertRef  ||
@@ -340,11 +351,15 @@ using partitioned input.
 			getFunctionId(p) == deleteRef) ) &&
 			fm == 2 &&
 			(m=isMATalias(getArg(p,fm),mvar,mtop)) >= 0){
+#ifdef DEBUG_OPT_MERGETABLE
+			stream_printf(GDKout,"kdifference resolution fm=%d\n",fm);
+			printInstruction(GDKout,mb,p,0);
+#endif
 
 			tpe= getVarType(mb,getArg(p,0));
 			for(k=1; k< mat[m]->argc; k++){
 				q= copyInstruction(p);
-				if( k < mat[m]->argc-1)
+				if( k == mat[m]->argc-1)
 					getArg(q,0)= getArg(p,0);
 				else{
 					getArg(q,0) = newTmpVariable(mb, tpe);
@@ -352,6 +367,9 @@ using partitioned input.
 				}
 				getArg(q,fm) = getArg(mat[m],k);
 				pushInstruction(mb,q);
+#ifdef DEBUG_OPT_MERGETABLE
+				printInstruction(GDKout,mb,q,0);
+#endif
 			}
 			freeInstruction(p);
 			continue;
