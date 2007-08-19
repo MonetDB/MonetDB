@@ -274,6 +274,7 @@ compileString(Symbol *fcn, Client c, str s){
 		s = n;
 		len++;
 	}
+	if( *s== '"') s++;
 	mal_unquote(qry = GDKstrdup(s));
 	buffer_init(b, qry, len);
 	MCpushClientInput(c, bstream_create(buffer_rastream(b, "compileString"), b->len), 0, "");
@@ -332,6 +333,7 @@ callString(Client c, str s, int listing)
 		s = n;
 		len++;
 	}
+	if( *s=='"') s++;
 	mal_unquote(qry = GDKstrdup(s));
 	buffer_init(b, qry, len);
 	MCpushClientInput(c, bstream_create(buffer_rastream(b, "callString"), b->len), listing, "");

@@ -44,11 +44,6 @@ mal_unquote(char *msg)
 {
 	char *p = msg, *s;
 
-	/* first skip over leading white space */
-	while (*p && isspace((int) *p))
-		p++;
-	/* get quoted string and remove leading bracket first */
-	p++;
 	s = p;
 	while (*p) {
 		if (*p == '\\') {

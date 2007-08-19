@@ -744,11 +744,15 @@ charCst(Client cntxt, ValPtr cst)
 		v++; i++;
 		switch(*v){
 		case 'n':
+			v++; i++;
 			cst->val.cval[0]= '\n';
 			break;
 		case 'r':
+			v++; i++;
 			cst->val.cval[0]= '\r';
+			break;
 		case 't':
+			v++; i++;
 			cst->val.cval[0]= '\t';
 			break;
 		case '\\':
@@ -756,24 +760,22 @@ charCst(Client cntxt, ValPtr cst)
 			cst->val.cval[0]= *v;
 			break;
 		default:
-			if (isdigit(*v)) {
-				i++; v++;
-			}
-			if (isdigit(*v)) {
-				i++; v++;
-			}
-			if (isdigit(*v)) {
-				i++; v++;
-			}
 			cst->val.cval[0]= (char) strtol(v,NULL,0);
+			if (isdigit(*v)) {
+				i++; v++;
+			}
+			if (isdigit(*v)) {
+				i++; v++;
+			}
+			if (isdigit(*v)) {
+				i++; v++;
+			}
 		}
 	} else {
 		cst->val.cval[0]= *v;
-		v++;
+		i++; v++;
 	}
-	if (*v != '\'')
-		return i+1;
-	return i+2;
+	return i+1;
 }
 @+ The Parser
 The client is responsible to collect the
