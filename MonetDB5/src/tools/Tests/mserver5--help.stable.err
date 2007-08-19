@@ -11,7 +11,7 @@ stderr of test 'mserver5--help` in directory 'src/tools` itself:
 # 16:36:12 >  
 
 Usage: mserver5 [options] [scripts]
-                       --dbname=<database_name>     
+    --dbname=<database_name>     
     --dbfarm=<directory> 
     --dbinit=<stmt>           Server prepare statement
     --config=<config_file> 
