@@ -31,7 +31,7 @@ on the port number specified in the parameter file.
 
 @- Usage
 @verbatim
-usage: mserver5 [options] [script]
+usage: mserver5 [options] [scripts]
     --dbname=<database_name>
     --dbfarm=<directory>
     --dbinit=<stmt>           Server prepare statement
@@ -119,7 +119,7 @@ mserver_abort()
 void
 usage(char *prog)
 {
-	fprintf(stderr, "Usage: %s [options] [script]\n", prog);
+	fprintf(stderr, "Usage: %s [options] [scripts]\n", prog);
 	fprintf(stderr, "    --dbname=<database_name> \n");
 	fprintf(stderr, "    --dbfarm=<database_directory> \n");
     fprintf(stderr,"     --version                 \n");
