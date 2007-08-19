@@ -116,7 +116,7 @@ function user.main():void;	# 0  (main:void)
     t3 := "problem signalled before \\\"";	# 33  (t3:str)<-(_27:str)
     ja_a := io.print(t3);	# 34 IOprint_val (ja_a:void)<-(t3:str)
 #	io.print("# character constants\n"); 	# 35  (_40:str)
-    c0 := "\\n";	# 36  (c0:str)<-(_42:str)
+    c0 := "\n";	# 36  (c0:str)<-(_42:str)
     ka_a := io.print(c0);	# 37 IOprint_val (ka_a:void)<-(c0:str)
 #	io.print("var c1:= \"'\"; c1.print();"); 	# 38  (_44:str)
     c1 := "'";	# 39  (c1:str)<-(_46:str)
@@ -159,10 +159,7 @@ end main;	# 64
 [ "got tab \t and single newline \n ." ]
 #var t3:= "problem signalled before \""; t3.print();
 [ "problem signalled before \\\"" ]
-## character constants
-
-[ "\\n" ]
-#var c1:= "'"; c1.print();
+[ "\n" ]
 [ "'" ]
 #var c2:= "\"; c2.print();
 [ "\\" ]
