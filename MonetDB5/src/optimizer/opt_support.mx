@@ -632,6 +632,17 @@ optimizerCheck(MalBlkPtr mb, str name, int actions, lng usec, int flag)
 			printFunction(GDKout, mb, LIST_MAL_ALL);
 		}
 	}
+	/* code to collect all last versions to study code coverage  in SQL
+	{stream *fd;
+	char nme[25];
+	snprintf(nme,25,"/tmp/mal_%d",getpid());
+	fd= open_wastream(nme);
+	if( fd == NULL)
+		printf("Error in %s\n",nme);
+	printFunction(fd,mb,LIST_MAL_ALL);
+	stream_close(fd);
+	}
+	*/
 	return mb->errors;
 }
 @-
@@ -1162,7 +1173,6 @@ int isFragmentGroup(InstrPtr p){
 				getFunctionId(p)==uselectRef ||
 				getFunctionId(p)==likeselectRef ||
 				getFunctionId(p)==markTRef ||
-				getFunctionId(p)==kdifferenceRef ||
 				getFunctionId(p)== joinRef ||
 				getFunctionId(p)== semijoinRef
 			)	)  ||
@@ -1170,9 +1180,7 @@ int isFragmentGroup(InstrPtr p){
 				getFunctionId(p)==reverseRef ||
 				getFunctionId(p)==mirrorRef ||
 				getFunctionId(p)== setAccessRef ||
-				getFunctionId(p)== setWriteModeRef ||
-				getFunctionId(p)== appendRef  ||
-				getFunctionId(p)== deleteRef
+				getFunctionId(p)== setWriteModeRef 
 			) );
 }
 @}
