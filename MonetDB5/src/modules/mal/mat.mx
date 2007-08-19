@@ -38,7 +38,7 @@ comment "Define a Merge Association Table (MAT) ";
 
 pattern pack(b:bat[:any_1,:any_2]...):bat[:any_1,:any_2]
 address MATpack
-comment "Materialize the MAT into a single BAT";
+comment "Materialize the MAT into the first BAT";
 
 pattern print(b:bat[:any_1,:any_2]...):void
 address MATprint;
@@ -129,6 +129,8 @@ MAThasMoreElements(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 @-
 The pack operation could be quite expensive, because it
 may create a really large BAT.
+For the experiments we materialize the BAT in the first
+component. 
 @c
 str
 MATpack(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
@@ -137,14 +139,15 @@ MATpack(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	BAT *b, *bn;
 	tpe= getArgType(mb,p,0);
 
-	bn= BATnew(getHeadType(tpe),getTailType(tpe), 0);
+	bn= BATdescriptor(stk->stk[getArg(p,1)].val.ival);
 	if( bn == NULL)
-		throw(MAL, "mat.pack","Could not allocate storage");
-	for(i=1; i<p->argc; i++){
+		throw(MAL, "mat.pack","Could access BAT");
+	for(i=2; i<p->argc; i++){
 		b= BATdescriptor(stk->stk[getArg(p,i)].val.ival);
 		if( b == NULL)
 			throw(MAL, "mat.pack","Could not access component");
-		BATins(bn,b,FALSE);
+		if( BATcount(b) )
+			BATins(bn,b,FALSE);
 		BBPunfix(b->batCacheid);
 	}
 	(void) mb;
