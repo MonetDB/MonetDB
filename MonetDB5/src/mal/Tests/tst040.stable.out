@@ -31,17 +31,29 @@ function user.main():void;	# 0  (main:void)
     i := true;	# 6  (i:bit)<-(_10:bit)
     w := 32767;	# 7  (w:int)<-(_12:int)
     b := 125;	# 8  (b:int)<-(_14:int)
-# test for coercion errors 	# 9  (_15:str)
-    x0 := 1:int;	# 10  (x0:int)<-(_17:int)
-    io.print(x0);	# 11 IOprint_val (_18:void)<-(x0:int)
-    x1 := 3:int;	# 12  (x1:int)<-(_20:int)
-    io.print(x1);	# 13 IOprint_val (_21:void)<-(x1:int)
-    x2 := "3":str;	# 14  (x2:str)<-(_23:str)
-    io.print(x2);	# 15 IOprint_val (_24:void)<-(x2:str)
-    x3 := nil:bte;	# 16  (x3:bte)<-(_26:bte)
-    x4 := -1:bte;	# 17  (x4:bte)<-(_28:bte)
-    x5 := 0:wrd;	# 18  (x5:wrd)<-(_30:wrd)
-end main;	# 19  
+    c1 := 'a';	# 9  (c1:chr)<-(_16:chr)
+    io.print(c1);	# 10 IOprint_val (_17:void)<-(c1:chr)
+    c2 := '\012';	# 11  (c2:chr)<-(_19:chr)
+    io.print(c2);	# 12 IOprint_val (_20:void)<-(c2:chr)
+    c3 := '\011';	# 13  (c3:chr)<-(_22:chr)
+    io.print(c3);	# 14 IOprint_val (_23:void)<-(c3:chr)
+    c4 := '\012';	# 15  (c4:chr)<-(_19:chr)
+    io.print(c4);	# 16 IOprint_val (_25:void)<-(c4:chr)
+# test for coercion errors 	# 17  (_26:str)
+    x0 := 1:int;	# 18  (x0:int)<-(_28:int)
+    io.print(x0);	# 19 IOprint_val (_29:void)<-(x0:int)
+    x1 := 3:int;	# 20  (x1:int)<-(_31:int)
+    io.print(x1);	# 21 IOprint_val (_32:void)<-(x1:int)
+    x2 := "3":str;	# 22  (x2:str)<-(_34:str)
+    io.print(x2);	# 23 IOprint_val (_35:void)<-(x2:str)
+    x3 := nil:bte;	# 24  (x3:bte)<-(_37:bte)
+    x4 := -1:bte;	# 25  (x4:bte)<-(_39:bte)
+    x5 := 0:wrd;	# 26  (x5:wrd)<-(_41:wrd)
+end main;	# 27  
+[ 'a' ]
+[ '\012' ]
+[ '\011' ]
+[ '\012' ]
 [ 1 ]
 [ 3 ]
 [ "3" ]

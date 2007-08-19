@@ -8,6 +8,11 @@ i   := true;
 w	:= 32767;
 b	:= 125;
 
+c1  :='a';		io.print(c1);
+c2  :='\n';		io.print(c2);
+c3  :='\t';		io.print(c3);
+c4  :='\012';	io.print(c4);
+
 # test for coercion errors
 x0  := "1":int; io.print(x0);
 x1  := 3.2:int; io.print(x1);
