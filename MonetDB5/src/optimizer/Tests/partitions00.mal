@@ -11,7 +11,7 @@ pattern exportResult(b:any...):void
 address MDBdummy;
 
 function query();
-    t1:bat[:oid,:int]:= sql.bind("sys","t","i",0);
+    t1:bat[:oid,:int]:= sql.bind("sys","t","i",1);
     t11:= algebra.markT(t1,0@0);
     t12:= bat.reverse(t11);
     t13:= algebra.join(t12,t1);

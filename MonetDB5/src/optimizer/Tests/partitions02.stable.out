@@ -60,32 +60,23 @@ function user.main():void;	# 0  (main:void)
 end main;	# 6  
 function sql.query(A0:sht):void;
     x1:bat[:oid,:int]{bid=765,rows=0,notnil=true}  := sql.bind("sys","x","i",0);
-    bpm2:bat[:oid,:int]  := bpm.unfold(x1);
     x6:bat[:oid,:int]{bid=769,rows=0,notnil=true}  := sql.bind("sys","x","i",1);
     bpm7:bat[:oid,:int]  := bpm.unfold(x6);
     bpm.emptySet(bpm7);
     x8:bat[:oid,:int]{bid=771,rows=0,notnil=true}  := sql.bind("sys","x","i",2);
     bpm10:bat[:oid,:int]  := bpm.unfold(x8);
     bpm.emptySet(bpm10);
-    _30 := bpm.new(:oid,:oid);
-barrier x1:bat[:oid,:int]{bid=765,rows=0,notnil=true}  := bpm.newIterator(bpm2);
     x11{rows=0} := algebra.markT(x1,0@0);
-    bpm.addPartition(_30,x11);
-    redo x1:bat[:oid,:int]{bid=765,rows=0,notnil=true}  := bpm.hasMoreElements(bpm2);
-exit x1:bat[:oid,:int]{bid=765,rows=0,notnil=true} ;
-    _36 := bpm.new(:oid,:oid);
-barrier x11{rows=0} := bpm.newIterator(_30);
     x12{rows=0} := bat.reverse(x11);
-    bpm.addPartition(_36,x12);
-    redo x11{rows=0} := bpm.hasMoreElements(_30);
-exit x11{rows=0};
-    x13{rows=1} := bpm.count(_36);
+    x13{rows=1} := aggr.count(x12);
     sql.exportValue(1,"sys.","countx","int",32,0,6,x13,"");
-    bpm.garbage(bpm2);
+catch SQLexception;
     bpm.garbage(bpm7);
     bpm.garbage(bpm10);
-    bpm.garbage(_30);
-    bpm.garbage(_36);
+    raise SQLexception;
+exit SQLexception;
+    bpm.garbage(bpm7);
+    bpm.garbage(bpm10);
 end query;
 
 # 22:44:54 >  

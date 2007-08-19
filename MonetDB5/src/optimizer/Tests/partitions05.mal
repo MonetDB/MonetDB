@@ -21,7 +21,7 @@ function query(A0:sht):void;
     constraints.emptySet(x10);
     x12:bat[:oid,:int]{notnil=true,rows=0,bid=2654}  := sql.bind("sys","t","i",2);
     constraints.emptySet(x12);
-    x17:bat[:oid,:int]{notnil=true,rows=1,bid=2201}  := sql.bind("sys","t","j",0);
+    x17:bat[:oid,:int]{notnil=true,rows=1,bid=2201}  := sql.bind("sys","t","j",1);
     x7{rows=1} := algebra.uselect(x1,nil:int,2,false,false);
     x14{rows=1} := algebra.markT(x7,0@0);
     x15{rows=1} := bat.reverse(x14);
