@@ -47,6 +47,12 @@ DBLOGS=$MONETDB5_PREFIX/var/MonetDB5/dblogs
 CHKPNTDIR=$MONETDB5_PREFIX/var/MonetDB5/chkpnt
 TAG=""
 
+case "$1" in
+	--help)
+	usage 
+	;;
+esac
+
 # First perform some sanity checks
 [[ -z "$MONETDB5_PREFIX" ]] && die \
 "The MONETDB5_PREFIX environment variable has not been set.\n\

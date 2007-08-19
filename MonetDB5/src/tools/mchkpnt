@@ -42,6 +42,12 @@ function diefunc() {
 shopt -s expand_aliases
 alias die='diefunc "$LINENO" "$?"'
 
+case "$1" in
+	--help)
+	usage 
+	;;
+esac
+
 DBFARM=$MONETDB5_PREFIX/var/MonetDB5/dbfarm
 DBLOGS=$MONETDB5_PREFIX/var/MonetDB5/dblogs
 CHKPNTDIR=$MONETDB5_PREFIX/var/MonetDB5/chkpnt
