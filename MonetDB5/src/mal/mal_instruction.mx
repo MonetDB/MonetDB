@@ -1710,6 +1710,7 @@ end.
 		 * convert to value will also be nil */
 		if (ATOMcmp(vr->vtype, ATOMnilptr(vr->vtype), VALptr(vr)) == 0) {
 			VALinit(vr, type, ATOMnilptr(type));
+			vr->vtype = type;
 			break;
 		}
 
