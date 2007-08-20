@@ -555,7 +555,8 @@ print_help (int argc, char **argv)
             "       %s -o <filename>  output filename\n"
             "       %s -a             suppress attributes\n"
             "       %s -s             sql encoding supported by pathfinder\n"
-	    "                         \t\t(that is probably what you want)\n",
+	    "                         \t\t(that is probably what you want)\n"
+            "                         Guide node generation.\n",
             argv[0], argv[0], argv[0], argv[0], argv[0], argv[0]);
 }
 
@@ -683,7 +684,7 @@ main (int argc, char **argv)
 
 	    case 's':
 		sql_atts = true;
-		format = "%e, %s, %l, %k, %n, %t";
+		format = "%e, %s, %l, %k, %n, %t, %g";
 		break;
 
             case 'h':
