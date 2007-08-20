@@ -1,0 +1,13 @@
+b:= "Mary Ann Walker";
+
+c:= "brown";
+
+bx:= xml.xml(b);
+cx:= xml.xml(c);
+
+xp:= xml.element("person",nil:bat[:oid,:str],nil:xml,bx);
+xh:= xml.element("hair",nil:bat[:oid,:str],nil:xml,cx);
+
+xx:= xml.element("row",nil:bat[:oid,:str],nil:xml,xp,xh);
+xs:= xml.str(xx);
+io.print(xs);

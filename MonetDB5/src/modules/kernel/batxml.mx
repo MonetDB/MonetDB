@@ -1,0 +1,169 @@
+@' The contents of this file are subject to the MonetDB Public License
+@' Version 1.1 (the "License"); you may not use this file except in
+@' compliance with the License. You may obtain a copy of the License at
+@' http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+@'
+@' Software distributed under the License is distributed on an "AS IS"
+@' basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+@' License for the specific language governing rights and limitations
+@' under the License.
+@'
+@' The Original Code is the MonetDB Database System.
+@'
+@' The Initial Developer of the Original Code is CWI.
+@' Portions created by CWI are Copyright (C) 1997-2007 CWI.
+@' All Rights Reserved.
+
+@f batxml
+@a M.L. Kersten
+@+ XML multiplexes
+[TODO: property propagations]
+The collection of routines provided here are map operations
+for the atom xml primitives. 
+
+In line with the batcalc module, we assume that
+if two bat operands are provided that they are already
+aligned on the head. Moreover, the head of the BATs
+are limited to :oid.
+
+The implementation is focussed on functionality. At a later stage
+we may postpone string contstruction until it is really needed.
+@{
+@mal
+
+command xml.xml(src:bat[:oid,:str]):bat[:oid,:xml]
+address BATXMLstr2xml
+comment "Cast the string to an xml compliant string";
+
+command xml.str(src:bat[:oid,:xml]):bat[:oid,:str]
+address BATXMLxml2str
+comment "Cast the string to an xml compliant string";
+
+command xml.attribute(name:str, val:bat[:oid,:str]):bat[:oid,:xml]
+address BATXMLattribute
+comment "Construct an attribute value pair";
+
+pattern xml.attributes(val:bat[:oid,:xml]... ):bat[:oid,:xml]
+address BATXMLattributes
+comment "Collect the attributes of an element into a single structure";
+
+pattern xml.element(name:str, ns:bat[:oid,:str], attr:bat[:oid,:xml], s:bat[:oid,:xml]... ) :bat[:oid,:xml]
+address BATXMLelement
+comment "The basic building block for XML elements are namespaces, attributes and a sequence
+of xml elements. The name space and the attributes may be left unspecified(=nil:bat).";
+
+pattern xml.concat(val:bat[:oid,:xml]... ):bat[:oid,:xml]
+address BATXMLconcat
+comment "Concatenate the xml values";
+
+command xml.trunk(nme:str, val:bat[:oid,:xml]):bat[:oid,:xml]
+address BATXMLtrunk
+comment "Prepare an element for a forest construction";
+
+pattern xml.forest(val:bat[:oid,:xml]...):bat[:oid,:xml]
+address BATXMLforest
+comment "Construct an element list");
+
+@+ Implementation
+@h
+#ifndef _BATXML_H_
+#define _BATXML_H_
+#include "mal_config.h"
+#include <gdk.h>
+#include "ctype.h"
+#include <string.h>
+#include "mal_exception.h"
+#include "xml.h"
+#ifdef HAVE_LIBXML2
+#include <libxml2.h>
+#endif
+
+
+#ifdef WIN32
+#ifndef LIBBATXML
+#define batxml_export extern __declspec(dllimport)
+#else
+#define batxml_export extern __declspec(dllexport)
+#endif
+#else
+#define batxml_export extern
+#endif
+
+batxml_export str BATXMLxml2str(int *s, int *x);
+batxml_export str BATXMLstr2xml(int *x, int *s);
+batxml_export str BATXMLattribute(int *ret, str *name, int *bid);
+batxml_export str BATXMLattributes(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+batxml_export str BATXMLelement(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+batxml_export str BATXMLconcat(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+batxml_export str BATXMLtrunk(int *ret, str *nme, int *bid);
+batxml_export str BATXMLforest(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+#endif  /* _BATXML_H_ */
+@c
+#include "batxml.h"
+
+str
+BATXMLstr2xml(int *ret, int *bid)
+{
+	*ret= BBPincref(*bid,TRUE);
+	return MAL_SUCCEED;
+}
+
+str
+BATXMLxml2str(int *ret, int *bid)
+{
+	*ret= BBPincref(*bid,TRUE);
+	return MAL_SUCCEED;
+}
+
+str
+BATXMLattribute(int *ret, str *name, int *bid)
+{
+	(void) ret;
+	(void) name;
+	(void) bid;
+	throw(MAL,"xml.attribute","Not yet implemented");
+}
+
+str
+BATXMLattributes(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+{
+	(void) mb;
+	(void) stk;
+	(void) p;
+	throw(MAL,"xml.attributes","Not yet implemented");
+}
+
+str
+BATXMLelement(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+{
+	(void) mb;
+	(void) stk;
+	(void) p;
+	throw(MAL,"xml.element","Not yet implemented");
+}
+
+str
+BATXMLconcat(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+{
+	(void) mb;
+	(void) stk;
+	(void) p;
+	throw(MAL,"xml.element","Not yet implemented");
+}
+
+str
+BATXMLtrunk(int *ret, str *nme, int *bid){
+	(void) ret;
+	(void) nme;
+	(void) bid;
+	throw(MAL,"xml.trunk","Not yet implemented");
+}
+str
+BATXMLforest(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+{
+	(void) mb;
+	(void) stk;
+	(void) p;
+	throw(MAL,"xml.element","Not yet implemented");
+}
+@}

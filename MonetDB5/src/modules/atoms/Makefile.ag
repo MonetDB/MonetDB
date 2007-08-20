@@ -46,7 +46,7 @@ lib__str = {
 
 scripts_mal = {
 	DIR = pkglibdir
-	SOURCES = str.mx blob.mx url.mx mtime.mx streams.mx inet.mx color.mx
+	SOURCES = str.mx blob.mx url.mx mtime.mx streams.mx inet.mx color.mx xml.mx
 }
 
 EXTRA_DIST_DIR = Tests

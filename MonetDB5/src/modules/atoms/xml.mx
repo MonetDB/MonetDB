@@ -23,13 +23,39 @@ front-end to support SQL/XML.
 @mal
 atom xml:str;	#use a subtype for XML
 
-command xml(s:str):xml
+command xml(src:str):xml
 address XMLstr2xml
-comment "Validate a string as a XML string";
+comment "Cast the string to an xml compliant string";
 
-command str(x:xml):str
+command str(src:xml):str
 address XMLxml2str
-comment "Coerce an XML value to a string";
+comment "Cast the string to an xml compliant string";
+
+command xml.attribute(name:str, val:str):xml
+address XMLattribute
+comment "Construct an attribute value pair";
+
+pattern xml.attributes(val:xml... ):xml
+address XMLattributes
+comment "Collect the attributes of an element into a single structure";
+
+pattern xml.element(name:str, ns:bat[:oid,:str], attr:xml, s:xml... ) :xml
+address XMLelement
+comment "The basic building block for XML elements are namespaces, attributes and a sequence
+of xml elements. The name space and the attributes may be left unspecified(=nil:bat).";
+
+pattern xml.concat(val:xml... ):xml
+address XMLconcat
+comment "Concatenate the xml values";
+
+command xml.trunk(nme:str, val:xml):xml
+address XMLtrunk
+comment "Prepare an element for a forest construction";
+
+pattern xml.forest(val:xml...):xml
+address XMLforest
+comment "Construct an element list");
+
 @{
 @- Implementation
 The implementation of the XML atomary type is based
@@ -58,6 +84,10 @@ typedef str xml;
 
 xml_export str XMLxml2str(str *s, xml *x);
 xml_export str XMLstr2xml(xml *x, str *s);
+xml_export str XMLattribute(xml *ret, str *name, str *val);
+xml_export str XMLattributes(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+xml_export str XMLelement(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+xml_export str XMLconcat(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 
 #endif /* XML_H */
 @c
@@ -76,4 +106,59 @@ XMLstr2xml(xml *x, str *s){
 	if(/* validate string */ 0)
 		throw(MAL,"xml.xml","Invalid xml format");
 	return MAL_SUCCEED;
+}
+
+str XMLattribute(xml *ret, str *name, str *val);
+str XMLattributes(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+str XMLelement(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+str XMLconcat(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+str
+XMLattribute(xml *ret, str *name, str *val)
+{
+	(void) ret;
+	(void) name;
+	(void) val;
+	throw(MAL,"xml.attribute","Not yet implemented");
+}
+
+str
+XMLattributes(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+{
+	(void) mb;
+	(void) stk;
+	(void) p;
+	throw(MAL,"xml.attributes","Not yet implemented");
+}
+
+str
+XMLelement(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+{
+	(void) mb;
+	(void) stk;
+	(void) p;
+	throw(MAL,"xml.element","Not yet implemented");
+}
+
+str
+XMLconcat(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+{
+	(void) mb;
+	(void) stk;
+	(void) p;
+	throw(MAL,"xml.element","Not yet implemented");
+}
+str
+XMLtrunk(int *ret, str *nme, str *val){
+	(void) ret;
+	(void) nme;
+	(void) val;
+	throw(MAL,"xml.trunk","Not yet implemented");
+}
+str
+XMLforest(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+{
+	(void) mb;
+	(void) stk;
+	(void) p;
+	throw(MAL,"xml.element","Not yet implemented");
 }
