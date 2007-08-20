@@ -1654,8 +1654,10 @@ def RunTest(env, TST, BusyPorts, COND) :
             FILES = os.path.join(TSTTRGDIR,TST)+" "+os.path.join(TSTTRGDIR,TST)+".*"
             for f in ["bat/\\*", '.gdk_lock']:
                 FILES = FILES+" "+os.path.join(env['GDK_DBFARM'],TSTDB,path(f))
-            FILES = FILES+" "+os.path.join(env['SQL_LOGDIR'],TSTDB,'sql_logs\\*')
-            FILES = FILES+" "+os.path.join(env['XQUERY_LOGDIR'],TSTDB,'xquery_logs\\*')
+            if env.has_key('SQL_LOGDIR'):
+                FILES = FILES+" "+os.path.join(env['SQL_LOGDIR'],TSTDB,'sql_logs\\*')
+            if env.has_key('XQUERY_LOGDIR'):
+                FILES = FILES+" "+os.path.join(env['XQUERY_LOGDIR'],TSTDB,'xquery_logs\\*')
             WHAT0 = os.path.join(THISPATH,"MkillUsers")+" -l"+ME
             WHAT1 = FILES+r" \>\>"+os.path.join(TSTTRGDIR,TST+".KILLED.out")+r" 2\>\>"+os.path.join(TSTTRGDIR,TST+".KILLED.err")
             WHAT = WHAT0+" -p"+ME+" "+WHAT1
