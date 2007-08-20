@@ -221,7 +221,7 @@ printStatus(sabdb *stats, int mode)
 static void
 command_status(int argc, char *argv[])
 {
-	int doall;
+	int doall = 0;
 	int mode = 0;  /* 0=normal, 1=short, 2=long */
 	int i;
 	char *p;
