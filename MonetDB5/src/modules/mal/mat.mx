@@ -135,9 +135,8 @@ component.
 str
 MATpack(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
-	int i,*ret,tpe;
+	int i,*ret;
 	BAT *b, *bn;
-	tpe= getArgType(mb,p,0);
 
 	bn= BATdescriptor(stk->stk[getArg(p,1)].val.ival);
 	if( bn == NULL)
