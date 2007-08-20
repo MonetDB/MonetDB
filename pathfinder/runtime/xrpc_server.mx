@@ -283,6 +283,7 @@ send_err(stream *out,
             "</env:Reason>"
             "</env:Fault></env:Body></env:Envelope>\n",
             SOAP_NS, soap_err, err_reason);
+    stream_flush(out);
 }
 
 /**
