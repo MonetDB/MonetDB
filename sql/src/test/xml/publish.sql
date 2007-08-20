@@ -8,6 +8,8 @@ from victim V;
 -- SQL code snippet
 --    _15 := sql.resultSet(1,1,_14);
 --    sql.rsColumn(_15,"sys.","concat_concat_name","clob",1,0,_14);
+--    sql.exportResult(_15,"");
+
 
 -- SQL/XML code snippet
 --	  _98 := xml.element("victim",_14);
@@ -69,3 +71,7 @@ select xmlelment(name "jtr",
 			xmlelement(name="total", (select count(*) from victim))
 		))
 from victim V;
+
+-- escape to XQuery
+select xmlgen(<person id="{$name"} dob="{$dob}"</person>)
+from victim;
