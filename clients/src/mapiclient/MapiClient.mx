@@ -1264,6 +1264,7 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt)
 					showCommands();
 					continue;
 				}
+				continue;
 			}
 		}
 
@@ -1355,11 +1356,12 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt)
 					}
 			} else {
 			      nononsense:
-				if ((reply = mapi_result_error(hdl)) != NULL) {
+				if ((reply = mapi_result_error(hdl)) != NULL)
 					mapi_explain_result(hdl, stderr);
-				}
-				if (pagewidth >= 0 && (reply = mapi_fetch_line(hdl)) != NULL) {
-					if (*reply == '%') {
+
+				while ((reply = mapi_fetch_line(hdl)) != NULL) {
+					if (pagewidth >= 0 && *reply == '%') {
+						/* should only maybe happen in the first iteration */
 						switch (formatter) {
 						case XMLformatter:
 							XMLrenderer(hdl);
@@ -1371,10 +1373,8 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt)
 							SQLrenderer(hdl);
 							break;
 						}
-					} else
-						fprintf(toConsole, "%s\n", reply);
-				}
-				while ((reply = mapi_fetch_line(hdl)) != NULL && *reply) {
+						break;
+					}
 					if ((mode == XQUERY || mode == MAL) && *reply == '=')
 						reply++;
 					/* we know when the MAL debugger becomes active and finishes */
