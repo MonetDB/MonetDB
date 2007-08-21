@@ -110,7 +110,6 @@ rm -fr $RPM_BUILD_ROOT
 %{prefix}/bin/Mbeddedmal
 %{prefix}/bin/mchkpnt
 %{prefix}/bin/merovingian
-%{prefix}/bin/mguardian
 %{prefix}/bin/monetdb
 %{prefix}/bin/mrecover
 %{prefix}/bin/stethoscope
