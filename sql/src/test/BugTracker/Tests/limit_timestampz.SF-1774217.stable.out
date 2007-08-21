@@ -22,7 +22,7 @@ Over..
 # 23:35:36 >  
 
 [ 5	]
-% sys.t1 # table_name
+% sys.timestamp1 # table_name
 % nr # name
 % int # type
 % 1 # length

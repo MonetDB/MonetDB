@@ -90,23 +90,19 @@ mvc_debug_on(mvc *m, int flg)
 str
 sql_update_var(mvc *m, char *name)
 {
-	char buf[BUFSIZ];
-
 	if (strcmp(name, "debug") == 0) {
 		m->debug = stack_get_number(m, "debug");
 	} else if (strcmp(name, "current_schema") == 0) {
 		char *schema = stack_get_string(m, "current_schema");
 
 		if (!mvc_set_schema(m, schema)) {
-			snprintf(buf, BUFSIZ, "Schema (%s) missing\n", schema);
-			return _strdup(buf);
+			return sql_message( "Schema (%s) missing\n", schema);
 		}
 	} else if (strcmp(name, "current_role") == 0) {
 		char *role = stack_get_string(m, "current_role");
 
 		if (!mvc_set_role(m, role)) {
-			snprintf(buf, BUFSIZ, "Role (%s) missing\n", role);
-			return _strdup(buf);
+			return sql_message( "Role (%s) missing\n", role);
 		}
 	} else if (strcmp(name, "current_timezone") == 0) {
 		m->timezone = stack_get_number(m, "current_timezone") / 60;
@@ -122,8 +118,7 @@ sql_update_var(mvc *m, char *name)
 		else if (strcmp(explain, "trace") == 0)
 			m->explain = m_trace;
 		else {
-			snprintf(buf, BUFSIZ, "Session variable explain can only be set to 'plan', 'profile' or to the empty string\n");
-			return _strdup(buf);
+			return sql_message( "Session variable explain can only be set to 'plan', 'profile' or to the empty string\n");
 		}
 		m->mode = m_explain;
 	} else if (strcmp(name, "cache") == 0) {

@@ -617,7 +617,7 @@ connect_catalog(mvc *sql, dlist *qname)
 	char *server, * db, *db_alias, *user, *lang, *passwd; 
 	int *id = GDKmalloc(sizeof(int)), *port = GDKmalloc(sizeof(int));
 	symbol *user_symb = qname->h->next->next->next->next->data.sym;
-	char default_dbalias[BUFSIZ], default_lang[BUFSIZ];
+	char *default_dbalias;
 	*port = (int) qname->h->next->data.ival;
 	*id = -1;
 	server = GDKstrdup(qname->h->data.sval);
@@ -626,15 +626,14 @@ connect_catalog(mvc *sql, dlist *qname)
 	passwd = GDKstrdup(user_symb->data.lval->h->next->data.sval);
 
 	if (qname->h->next->next->next->data.sval == NULL){
-		snprintf(default_dbalias, BUFSIZ, "%s_%s_%s", server, db, user);
-		db_alias = GDKstrdup(default_dbalias);
+		default_dbalias = sql_message( "%s_%s_%s", server, db, user);
+		db_alias = default_dbalias;
 	} else {
 		db_alias = GDKstrdup(qname->h->next->next->next->data.sval);
 	}
 
 	if (qname->h->next->next->next->next->next->data.sval == NULL){
-		snprintf(default_lang, BUFSIZ, "sql");
-		lang = GDKstrdup(default_lang);
+		lang = GDKstrdup("sql");
 	}
 	else {
 		lang = GDKstrdup(qname->h->next->next->next->next->next->data.sval);
@@ -1255,10 +1254,11 @@ create_column(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 					res = stmt_append(stmt_bat(cs, stmt_basetable(t, t->base.name), INS), stmt_const(stmt_bat(mvc_first_column(sql, t), stmt_basetable(t, t->base.name), RDONLY), stmt_atom(a)));
 			} else {
 				stmt *sq, *val;
-				char buf[BUFSIZ];
+				char *msg = NULL;
 
-				snprintf(buf, BUFSIZ, "select %s;", cs->def);
-				sq = scope_sqlparse(sql, NULL, buf, sql->mode);
+				msg = sql_message("select %s;", cs->def);
+				sq = scope_sqlparse(sql, NULL, msg, sql->mode);
+				_DELETE(msg);
 				if (!sq || sq->type != st_list || list_length(sq->op1.lval) != 1) {
 					cond_stmt_destroy(sq);
 					return NULL;

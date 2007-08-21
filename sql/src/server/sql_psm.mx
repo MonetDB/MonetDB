@@ -504,7 +504,6 @@ create_type_list(dlist *params, int param)
 	
 	for (n = params->h; n; n = n->next) {
 		dnode *an = n;
-		/*char subtype_name[BUFSIZ];*/
 
 		if (param) {
 			an = n->data.lval->h;
@@ -547,34 +546,31 @@ create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_name,
 	
 	if (!instantiate && sql_bind_func_(s, fname, type_list)) {
 		if (params) {
-			char args[BUFSIZ], *arg_list = NULL;
+			char *arg_list = NULL;
 			node *n;
 			
-			if (type_list->cnt > 0) {
-	
-				for (n = type_list->h; n; n = n->next) {
+			for (n = type_list->h; n; n = n->next) {
 				char *tpe =  subtype2string((sql_subtype *) n->data);
 				
-				if (arg_list)	
-					snprintf(args, BUFSIZ, "%s, %s", arg_list, tpe);
-				else
-					snprintf(args, BUFSIZ, "%s", tpe);
-		                arg_list = GDKstrdup(args);
-				_DELETE(tpe);	
+				if (arg_list) {
+					arg_list = sql_message("%s, %s", arg_list, tpe);
+					_DELETE(tpe);	
+				} else {
+					arg_list = tpe;
 				}
-				
-				list_destroy(type_list);
-				
-				return sql_error(sql, 02, "CREATE FUNCTION: name '%s' (%s) already in use", fname, arg_list);
 			}
+			list_destroy(type_list);
 				
-			return sql_error(sql, 02, "DROP FUNCTION: no such function '%s' ()", fname);
-
-		} else
-			return sql_error(sql, 02, "DROP FUNCTION: no such function '%s'", fname);
+			(void)sql_error(sql, 02, "CREATE FUNCTION: name '%s' (%s) already in use", fname, arg_list);
+			_DELETE(arg_list);
+			return NULL;
+		} else {
+			return sql_error(sql, 02, "CREATE FUNCTION: name '%s' already in use", fname);
+		}
 	
 	} else {
-		list_destroy(type_list);
+		if (type_list)
+			list_destroy(type_list);
 	
 		if (!instantiate && !schema_privs(sql->role_id, s)) {
 			return sql_error(sql, 02, "CREATE FUNCTION: insufficient privileges for user '%s' in schema '%s'", stack_get_string(sql, "current_user"), s->base.name);
@@ -671,22 +667,21 @@ drop_func(mvc *sql, dlist *qname, dlist *typelist, int drop_action, int is_func)
 	
 	if (!func) { 
 		if (typelist) {
-			char args[BUFSIZ], *arg_list = NULL;
+			char *arg_list = NULL;
 			node *n;
 			
 			if (type_list->cnt > 0) {
-	
 				for (n = type_list->h; n; n = n->next) {
-				char *tpe =  subtype2string((sql_subtype *) n->data);
+					char *args;
+					char *tpe =  subtype2string((sql_subtype *) n->data);
 				
-				if (arg_list)	
-					snprintf(args, BUFSIZ, "%s, %s", arg_list, tpe);
-				else
-					snprintf(args, BUFSIZ, "%s", tpe);
-		                arg_list = GDKstrdup(args);
-				_DELETE(tpe);	
+					if (arg_list)	
+						args = sql_message( "%s, %s", arg_list, tpe);
+					else
+						args = sql_message( "%s", tpe);
+		                	arg_list = args;
+					_DELETE(tpe);	
 				}
-				
 				list_destroy(type_list);
 				
 				return sql_error(sql, 02, "DROP %s: no such %s '%s' (%s)", F, f, name, arg_list);

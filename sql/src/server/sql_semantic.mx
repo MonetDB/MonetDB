@@ -966,7 +966,6 @@ char * toUpper(char *dest, const char *src)
 	return(dest);
 }
 
-
 char *dlist2string(mvc *sql, dlist *l)
 {
 	char *b = NULL;

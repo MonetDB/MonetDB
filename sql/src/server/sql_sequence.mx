@@ -163,13 +163,12 @@ sql_drop_seq(mvc *sql, sql_schema *ss, dlist *qname)
 char*
 sql_next_seq_name(mvc *m)
 {
-	char buf[BUFSIZ + 1];
+	oid id = store_next_oid();
+	int len = 5 + ((id+7)>>3);
+	char *msg = sa_alloc(m->sa, len);
 
-	snprintf(buf, BUFSIZ, "seq_%d", store_next_oid());
-	buf[BUFSIZ] = '\0';
-
-	/* waring: using sa_strdup here */
-	return(sa_strdup(m->sa, buf));
+	snprintf(msg, len, "seq_%d", store_next_oid());
+	return msg;
 }
 
 stmt *

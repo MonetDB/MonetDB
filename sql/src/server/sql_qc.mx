@@ -242,8 +242,7 @@ qc_match(qc *cache, symbol *s, atom **params, int  plen, int key)
 cq *
 qc_insert(qc *cache, sql_allocator *sa, symbol *s, atom **params, int paramlen, int key, int type, char *cmd)
 {
-	char name[BUFSIZ];
-	int i;
+	int i, namelen;
 	cq *n = NEW(cq);
 
 	n->id = cache->id ++;
@@ -267,8 +266,9 @@ qc_insert(qc *cache, sql_allocator *sa, symbol *s, atom **params, int paramlen, 
 	n->key = key;
 	n->codestring = cmd;
 	n->count = 1;
-	(void) snprintf(name, BUFSIZ, "s%d_%d", n->id, cache->clientid);
-	n->name = sa_strdup(sa, name);
+	namelen = 3 + ((n->id+7)>>3) + ((cache->clientid+7)>>3);
+	n->name = sa_alloc(sa, namelen);
+	(void) snprintf(n->name, namelen, "s%d_%d", n->id, cache->clientid);
 	cache->q = n;
 	return n;
 }
