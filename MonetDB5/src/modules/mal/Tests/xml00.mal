@@ -1,0 +1,9 @@
+b:= bat.new(:oid,:str);
+bat.insert(b,0@0,"Mary Ann Walker");
+bat.insert(b,1@0,"Annie Chapman");
+
+io.print(b);
+
+bc:= xml.comment(b);
+bj:= xml.str(bc);
+io.print(bj);

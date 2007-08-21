@@ -1,0 +1,21 @@
+b:= bat.new(:oid,:str);
+bat.insert(b,0@0,"Mary Ann Walker");
+bat.insert(b,1@0,"Annie Chapman");
+h:= bat.new(:oid,:str);
+bat.insert(h,0@0,"brown");
+bat.insert(h,1@0,"curly dark brown");
+
+io.print(b);
+
+bs:= xml.xml(b);
+hs:= xml.xml(h);
+bc:= xml.element("name",nil:bat[:oid,:str],nil:bat[:oid,:xml],bs);
+bj:= xml.str(bc);
+io.print(bj);
+hc:= xml.element("hair",nil:bat[:oid,:str],nil:bat[:oid,:xml],hs);
+hj:= xml.str(hc);
+io.print(hj);
+
+aa:= xml.element("victim",nil:bat[:oid,:str],nil:bat[:oid,:xml],bc,hc);
+as:= xml.str(aa);
+io.print(as);

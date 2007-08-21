@@ -1,0 +1,49 @@
+stdout of test 'xml00` in directory 'src/modules/mal` itself:
+
+
+# 22:46:59 >  
+# 22:46:59 >  Mtimeout -timeout 60  mserver5 "--config=/ufs/mk/monet5/Linux/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5//Linux/lib/MonetDB5:/ufs/mk/monet5//Linux/lib/MonetDB5/lib:/ufs/mk/monet5//Linux/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/mk/monet5//Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5//Linux/var/MonetDB5/sql_logs" --set "xquery_logdir=/ufs/mk/monet5//Linux/var/MonetDB5/xquery_logs" --set mapi_open=true --set xrpc_open=true --set mapi_port=37863 --set xrpc_port=42558 --set monet_prompt= --trace --dbname=mTests_src_modules_mal  xml00.mal
+# 22:46:59 >  
+
+# MonetDB server v5.1.0, based on kernel v1.19.0
+# Serving database 'mTests_src_modules_mal'
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Copyright (c) 1993-2007 CWI, all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://gio.ins.cwi.nl:37863/
+#b:= bat.new(:oid,:str);
+#bat.insert(b,0@0,"Mary Ann Walker");
+#bat.insert(b,1@0,"Annie Chapman");
+#
+#io.print(b);
+#
+#bc:= xml.comment(b);
+#bj:= xml.str(bc);
+#io.print(bj);
+#
+function user.main():void;	# 0  (main:void)
+    b := bat.new(:oid,:str);	# 1 CMDBATnew (b:bat[:oid,:str])<-(_2:oid)(_3:str)
+    bat.insert(b,0@0,"Mary Ann Walker");	# 2 BKCinsert_bun (_4:void)<-(b:bat[:oid,:str])(_5:oid)(_6:str)
+    bat.insert(b,1@0,"Annie Chapman");	# 3 BKCinsert_bun (_7:void)<-(b:bat[:oid,:str])(_8:oid)(_9:str)
+    io.print(b);	# 4 IOprint_val (_10:void)<-(b:bat[:oid,:str])
+    bc := xml.comment(b);	# 5 BATXMLcomment (bc:bat[:oid,:xml])<-(b:bat[:oid,:str])
+    bj := xml.str(bc);	# 6 BATXMLxml2str (bj:bat[:oid,:str])<-(bc:bat[:oid,:xml])
+    io.print(bj);	# 7 IOprint_val (_13:void)<-(bj:bat[:oid,:str])
+end main;	# 8  
+#---------------------------------#
+# h	t			  # name
+# void	str			  # type
+#---------------------------------#
+[ 0@0,	  "Mary Ann Walker"	  ]
+[ 1@0,	  "Annie Chapman"	  ]
+#-----------------------------------------#
+# h	t				  # name
+# void	str				  # type
+#-----------------------------------------#
+[ 0@0,	  "<!-- Mary Ann Walker -->\n"	  ]
+[ 1@0,	  "<!-- Annie Chapman -->\n"	  ]
+
+# 22:46:59 >  
+# 22:46:59 >  Done.
+# 22:46:59 >  
+
