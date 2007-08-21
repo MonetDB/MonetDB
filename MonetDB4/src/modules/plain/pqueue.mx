@@ -423,7 +423,7 @@ int pqueue_topreplace_any@1(BAT *h, oid *idx, ptr el, int tpe)
 
   if (atom_CMP(BUNtail(h,hbase), el, tpe) @2 0) {
 	BUNinplace(h, hbase, idx, el, 0);
-	*(oid*)hbase = *idx;
+	*(oid*)BUNhloc(h,hbase) = *idx;
 	pqueue_movedowntop_any@1(h);
     	h->hsorted = h->tsorted = FALSE;
   }
