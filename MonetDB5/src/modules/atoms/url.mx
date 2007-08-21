@@ -906,7 +906,7 @@ URLtoString(str *s, int *len, str src)
 	int l;
 
 	if (GDK_STRNIL(src)) {
-		**s = 0;
+		*s = GDKstrdup("nil");
 		return 0;
 	}
 	l = src == 0 ? 3 : strlen(src) + 3;

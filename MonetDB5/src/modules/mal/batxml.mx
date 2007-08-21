@@ -1,0 +1,567 @@
+@' The contents of this file are subject to the MonetDB Public License
+@' Version 1.1 (the "License"); you may not use this file except in
+@' compliance with the License. You may obtain a copy of the License at
+@' http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+@'
+@' Software distributed under the License is distributed on an "AS IS"
+@' basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+@' License for the specific language governing rights and limitations
+@' under the License.
+@'
+@' The Original Code is the MonetDB Database System.
+@'
+@' The Initial Developer of the Original Code is CWI.
+@' Portions created by CWI are Copyright (C) 1997-2007 CWI.
+@' All Rights Reserved.
+
+@f batxml
+@a M.L. Kersten
+@+ XML multiplexes
+The collection of routines provided here are map operations
+for the atom xml primitives. 
+
+In line with the batcalc module, we assume that
+if two bat operands are provided that they are already
+aligned on the head. Moreover, the head of the BATs
+are limited to :oid.
+
+The implementation is focussed on functionality. At a later stage
+we may postpone string contstruction until it is really needed.
+@{
+@mal
+
+command xml.xml(src:bat[:oid,:str]):bat[:oid,:xml]
+address BATXMLstr2xml
+comment "Cast the string to an xml compliant string";
+
+pattern xml.str(src:bat[:oid,:xml]):bat[:oid,:str]
+address BATXMLxml2str
+comment "Cast the string to an xml compliant string";
+
+command xml.comment(val:bat[:oid,:str]):bat[:oid,:xml]
+address BATXMLcomment
+comment "Construct an comment struction ";
+
+command xml.parse(val:bat[:oid,:str]):bat[:oid,:xml]
+address BATXMLparse
+comment "Parse the XML document or element string values ";
+
+command xml.pi(operator:str, ret:bat[:oid,:xml]):bat[:oid,:xml]
+address XMLpi
+comment "Call the processing instruction";
+
+command xml.attribute(name:str, val:bat[:oid,:str]):bat[:oid,:xml]
+address BATXMLattribute
+comment "Construct an attribute value pair";
+
+pattern xml.attributes(val:bat[:oid,:xml]... ):bat[:oid,:xml]
+address BATXMLattributes
+comment "Collect the attributes of an element into a single structure";
+
+pattern xml.element(name:str, ns:bat[:oid,:str], attr:bat[:oid,:xml], s:bat[:oid,:xml]... ) :bat[:oid,:xml]
+address BATXMLelement
+comment "The basic building block for XML elements are namespaces, attributes and a sequence
+of xml elements. The name space and the attributes may be left unspecified(=nil:bat).";
+
+pattern xml.concat(val:bat[:oid,:xml]... ):bat[:oid,:xml]
+address BATXMLconcat
+comment "Concatenate the xml values";
+
+command xml.trunk(nme:str, val:bat[:oid,:xml]):bat[:oid,:xml]
+address BATXMLtrunk
+comment "Prepare an element for a forest construction";
+
+pattern xml.forest(val:bat[:oid,:xml]...):bat[:oid,:xml]
+address BATXMLforest
+comment "Construct an element list");
+
+pattern xml.agg(val:bat[:oid,:xml], order:str...):bat[:oid,:xml]
+address BATXMLagg
+comment "Aggregate the XML values over grouping specified@;
+
+command xml.root(val:bat[:oid,:xml], version:str, standalone:str):bat[:oid,:xml]
+address BATXMLroot
+comment "Contruct the root nodes";
+
+command xml.isdocument(val:bat[:oid,:str]):bat[:oid,:bit]
+address BATXMLisdocument
+comment "Validate the string as a document"
+@{
+@include ../kernel/kprelude.mx
+
+@+ Implementation
+@h
+#ifndef _BATXML_H_
+#define _BATXML_H_
+#include "mal_config.h"
+#include <gdk.h>
+#include "ctype.h"
+#include <string.h>
+#include "mal_interpreter.h"
+#include "mal_function.h"
+#include "xml.h"
+#ifdef HAVE_LIBXML2
+#include <libxml2.h>
+#endif
+
+
+#ifdef WIN32
+#ifndef LIBBATXML
+#define batxml_export extern __declspec(dllimport)
+#else
+#define batxml_export extern __declspec(dllexport)
+#endif
+#else
+#define batxml_export extern
+#endif
+
+batxml_export str BATXMLxml2str(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+batxml_export str BATXMLstr2xml(int *x, int *s);
+batxml_export str BATXMLisdocument(int *x, int *s);
+batxml_export str BATXMLcomment(int *x, int *s);
+batxml_export str BATXMLparse(int *x, int *s);
+batxml_export str BATXMLpi(int *x, str *oper, int *s);
+batxml_export str BATXMLroot(int *ret, int *bid, str *version, str *standalone);
+batxml_export str BATXMLattribute(int *ret, str *name, int *bid);
+batxml_export str BATXMLattributes(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+batxml_export str BATXMLelement(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+batxml_export str BATXMLconcat(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+batxml_export str BATXMLtrunk(int *ret, str *nme, int *bid);
+batxml_export str BATXMLforest(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+batxml_export str BATXMLagg(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+#endif  /* _BATXML_H_ */
+@c
+#include "batxml.h"
+
+#define prepareOperand(X,Y,Z) \
+    if( (X= BATdescriptor(*Y)) == NULL ) \
+        throw(MAL, "batxml." Z, "Cannot access descriptor");
+
+#define prepareResult(X,Y,T,Z) \
+    X= BATnew(Y->htype,T,BATcount(Y)); \
+    if( Y->htype== TYPE_void) \
+        BATseqbase(X, Y->hseqbase); \
+    if( X == NULL){ \
+        BBPreleaseref(Y->batCacheid); \
+        throw(MAL, "batxml." Z, "no space available "); \
+    } \
+    X->hsorted=Y->hsorted; \
+    X->tsorted=0;
+
+#define finalizeResult(X,Y,Z) \
+    if (!((Y)->batDirty&2)) (Y) = BATsetaccess((Y), BAT_READ); \
+    *X = (Y)->batCacheid; \
+    BBPkeepref(*(X));\
+    BBPreleaseref(Z->batCacheid);
+
+str
+BATXMLstr2xml(int *ret, int *bid)
+{
+	*ret= BBPincref(*bid,TRUE);
+	return MAL_SUCCEED;
+}
+@-
+The core of the activity is xml2str, where the actual strings
+are constructed.
+To avoid repeatitive copying we make sure that the garbage
+collector does not remove the xml intermediates. 
+This way, we know that as long as the xml-variables are not
+reused, the complete structure of the xml document(s) are available.
+We merely have to collect the pieces.
+[FOR LATER, FIRST GO FOR THE EASY IMPLEMENTATION
+
+static str
+BATtreeWalker(MalBlkPtr mb, InstrPtr p, str base, int size, int offset){
+	(void)mb;
+	(void) p;
+	snprintf(base+offset,size-offset,"dummy");
+	return MAL_SUCCEED;
+}
+str
+BATXMLxml2str(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	int *ret= (int*) getArgReference(stk,pci,0);
+	int *bid= (int*) getArgReference(stk,pci,1);
+	BAT *b,*bn;
+	ptr p,q;
+	str buf,msg= MAL_SUCCEED;
+
+	@:getBATdescriptor(bid,b,"batxml.str")@
+	bn= BATnew(TYPE_oid,TYPE_str,BATTINY);
+	if( bn == NULL){
+		BBPunfix(b->batCacheid);
+		throw(MAL,"batxml.str","Can not create BAT");
+	}
+	buf= GDKmalloc(BUFSIZ);
+	BATloop(b,p,q){
+		if( (msg= BATtreeWalker(mb,pci,buf,BUFSIZ,0)))
+			break;
+	}
+	BBPkeepref(*ret= bn->batCacheid);
+	(void)mb;
+	return msg;
+}
+@-
+XML values are represented by strings already.
+@c
+str
+BATXMLxml2str(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	int *ret= (int*) getArgReference(stk,pci,0);
+	int *bid= (int*) getArgReference(stk,pci,1);
+	(void) mb;
+	BBPincref(*ret= *bid,TRUE);
+	return MAL_SUCCEED;
+}
+
+str
+BATXMLisdocument(int *x, int *s){
+	(void) x;
+	(void) s;
+	throw(MAL,"xml.isdocument","Not yet implemented");
+}
+
+str
+BATXMLcomment(int *ret, int *bid)
+{
+	BAT *b,*bn;
+	BUN p,q;
+	int xx;
+	str buf= GDKmalloc(BUFSIZ);
+	int len,size= BUFSIZ;
+
+	prepareOperand(b,bid,"comment");
+	prepareResult(bn,b,TYPE_str,"comment");
+	BATloopFast(b,p,q,xx){
+		ptr h= BUNhead(b,p);
+		str t= (str) BUNtail(b,p);
+		if( (len=strlen(t)) >= size){
+			if(buf) GDKfree(buf);
+			buf= GDKmalloc(size+20);
+			size= len+20;
+		}
+		snprintf(buf,size,"<!-- %s -->\n",t);
+		bunfastins(bn,h,buf);
+	}
+	GDKfree(buf);
+	finalizeResult(ret,bn,b);
+	return MAL_SUCCEED;
+bunins_failed:
+	BBPreleaseref(b->batCacheid);
+	BBPunfix(bn->batCacheid);
+	GDKfree(buf);
+	throw(MAL, "batstr.comment", "bunins failed");
+}
+
+str
+BATXMLparse(int *ret, int *bid)
+{
+	BAT *b,*bn;
+	BUN p,q;
+	int xx;
+
+	prepareOperand(b,bid,"parse");
+	prepareResult(bn,b,TYPE_str,"parse");
+	BATloopFast(b,p,q,xx){
+	}
+	finalizeResult(ret,bn,b);
+	throw(MAL,"xml.parse","Not yet implemented");
+}
+
+str
+BATXMLpi(int *ret, str *operator, int *bid)
+{
+	BAT *b,*bn;
+	BUN p,q;
+	int xx;
+
+	(void) operator;
+	prepareOperand(b,bid,"pi");
+	prepareResult(bn,b,TYPE_str,"pi");
+	BATloopFast(b,p,q,xx){
+	}
+	finalizeResult(ret,bn,b);
+	throw(MAL,"xml.pi","Not yet implemented");
+}
+
+str
+BATXMLroot(int *ret, int *bid, str *version, str *standalone)
+{
+	BAT *b,*bn;
+	BUN p,q;
+	int xx;
+
+	prepareOperand(b,bid,"root");
+	prepareResult(bn,b,TYPE_str,"root");
+	BATloopFast(b,p,q,xx){
+	}
+	finalizeResult(ret,bn,b);
+	(void) version;
+	(void) standalone;
+	throw(MAL,"xml.root","Not yet implemented");
+}
+
+str
+BATXMLattribute(int *ret, str *name, int *bid)
+{
+	BAT *b,*bn;
+	BUN p,q;
+	int xx;
+	str buf= GDKmalloc(BUFSIZ);
+	int len,size= BUFSIZ;
+
+	prepareOperand(b,bid,"attribute");
+	prepareResult(bn,b,TYPE_str,"attribute");
+	BATloopFast(b,p,q,xx){
+		ptr h= BUNhead(b,p);
+		str t= (str) BUNtail(b,p);
+		if( (len=strlen(t)) >= size){
+			if(buf) GDKfree(buf);
+			buf= GDKmalloc(size+20);
+			size= len+20;
+		}
+		snprintf(buf,size," %s=\"%s\"\n",*name,t);
+		bunfastins(bn,h,buf);
+	}
+	GDKfree(buf);
+	finalizeResult(ret,bn,b);
+	return MAL_SUCCEED;
+bunins_failed:
+	BBPreleaseref(b->batCacheid);
+	BBPunfix(bn->batCacheid);
+	GDKfree(buf);
+	throw(MAL, "xml.attribute", "bunins failed");
+}
+
+@-
+The attribute lists should be aligned on the oid.
+@c
+str
+BATXMLattributes(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	int *ret= (int*) getArgReference(stk,pci,0);
+	BAT **b,*bn;
+	BUN *p,*q;
+	int *xx;
+	str buf= GDKmalloc(BUFSIZ);
+	int i,offset,len,size= BUFSIZ;
+
+	(void)mb;
+	b= alloca(sizeof(BAT*) * pci->argc);
+	p= alloca(sizeof(BUN) * pci->argc);
+	q= alloca(sizeof(BUN) * pci->argc);
+	xx= alloca(sizeof(int) * pci->argc);
+	
+	for(i=pci->retc; i<pci->argc; i++){
+		if ( (b[i]=  BATdescriptor( *(int*)getArgReference(stk,pci,i)))==NULL)
+			break;
+		p[i]= BUNfirst(b[i]);
+		q[i]= BUNlast(b[i]);
+		xx[i]= BUNsize(b[i]);
+	}
+	/* check for errors */
+	if( i!= pci->argc)
+	for( i--; i>pci->retc; i--){
+		BBPunfix(b[i]->batCacheid);
+		size = -1;
+	}
+	if( size == -1)
+		throw(MAL,"batxml.attributes","Can not access BAT");
+
+	prepareResult(bn,b[pci->retc],TYPE_str,"attribute");
+
+	while(p[pci->retc] < q[pci->retc]){
+		char *t;
+		oid *h;
+		offset=0;
+		for(i= pci->retc; i< pci->argc; i++)
+		{
+			h= (oid*) BUNhead(b[i],p[i]);
+			t= (char*) BUNtail(b[i],p[i]);
+
+			if( (len=strlen(t)) >= size-offset){
+				if(buf) GDKfree(buf);
+				buf= GDKmalloc(size+20);
+				size= len+20;
+			}
+			snprintf(buf+offset,size-offset," %s",t);
+			offset+= strlen(buf+offset);
+			bunfastins(bn,h,buf);
+		}
+		for(i= pci->retc; i< pci->argc; i++)
+			p[i]+= xx[i];
+	}
+	GDKfree(buf);
+	finalizeResult(ret,bn,b[pci->retc]);
+	return MAL_SUCCEED;
+bunins_failed:
+	for(i= pci->retc; i< pci->argc; i++)
+		BBPreleaseref(b[i]->batCacheid);
+	BBPunfix(bn->batCacheid);
+	GDKfree(buf);
+	throw(MAL, "xml.attributes", "bunins failed");
+}
+
+str
+BATXMLelement(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	int *ret= (int*) getArgReference(stk,pci,0);
+	str element= *(str*) getArgReference(stk,pci,1);
+	int *namespace= (int*) getArgReference(stk,pci,2);
+	BAT **b,*bn;
+	BUN *p,*q;
+	int *xx;
+	str buf= GDKmalloc(BUFSIZ);
+	int i,offset,len,size= BUFSIZ;
+
+	(void)namespace;
+	(void)mb;
+	b= alloca(sizeof(BAT*) * pci->argc);
+	p= alloca(sizeof(BUN) * pci->argc);
+	q= alloca(sizeof(BUN) * pci->argc);
+	xx= alloca(sizeof(int) * pci->argc);
+	
+	b[3]=  BATdescriptor( *(int*)getArgReference(stk,pci,3));
+	if(b[3]){
+		p[3]= BUNfirst(b[3]);
+		q[3]= BUNlast(b[3]);
+		xx[3]= BUNsize(b[3]);
+	}
+	for(i=4; i<pci->argc; i++){
+		if ( (b[i]=  BATdescriptor( *(int*)getArgReference(stk,pci,i)))==NULL)
+			break;
+		p[i]= BUNfirst(b[i]);
+		q[i]= BUNlast(b[i]);
+		xx[i]= BUNsize(b[i]);
+	}
+	/* check for errors */
+	if( i!= pci->argc) {
+		for( i--; i>4; i--){
+			BBPunfix(b[i]->batCacheid);
+			size = -1;
+		}
+		if( b[3])
+			BBPunfix(b[3]->batCacheid);
+	}
+	if( size == -1)
+		throw(MAL,"batxml.element","Can not access BAT");
+
+	prepareResult(bn,b[4],TYPE_str,"attribute");
+
+	while(p[4] < q[4]){
+		str t;
+		oid *h;
+		int elm;
+
+		if( b[3]) {
+			t= (str) BUNtail(b[3],p[3]);
+
+			if( (len=strlen(t)) >= size){
+				if(buf) GDKfree(buf);
+				buf= GDKmalloc(len+strlen(element)+BUFSIZ);
+				size= len+strlen(element)+BUFSIZ;
+			}
+			snprintf(buf,size,"<%s %s>",element,t);
+		} else 
+			snprintf(buf,size,"<%s>",element);
+		elm= offset= strlen(buf);
+		for(i= 4; i< pci->argc; i++)
+		{
+			t= (str) BUNtail(b[i],p[i]);
+
+			if( (len=strlen(t)) >= size-offset){
+				if(buf) GDKfree(buf);
+				buf= GDKmalloc(size+2*elm);
+				size= len+2*elm;
+			}
+			snprintf(buf+offset,size-offset," %s",t);
+			offset+= strlen(buf+offset);
+		}
+		snprintf(buf + offset,size-offset, "</%s>\n",element);
+		h= (oid*) BUNhead(b[4],p[4]);
+		bunfastins(bn,h,buf);
+
+		for(i= 3; i< pci->argc; i++)
+		if(b[i])
+			p[i]+= xx[i];
+	}
+	GDKfree(buf);
+	finalizeResult(ret,bn,b[4]);
+	return MAL_SUCCEED;
+bunins_failed:
+	for(i= 4; i< pci->argc; i++)
+	if(b[i])
+		BBPreleaseref(b[i]->batCacheid);
+	BBPunfix(bn->batCacheid);
+	GDKfree(buf);
+	throw(MAL, "xml.element", "bunins failed");
+}
+
+str
+BATXMLconcat(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	int *ret= getArgReference(stk,pci,0);
+	int *bid= getArgReference(stk,pci,1);
+	BAT *b,*bn;
+	BUN p,q;
+	int xx;
+
+	prepareOperand(b,bid,"root");
+	prepareResult(bn,b,TYPE_str,"root");
+	BATloopFast(b,p,q,xx){
+	}
+	finalizeResult(ret,bn,b);
+	(void) mb;
+	(void) stk;
+	(void) pci;
+	throw(MAL,"xml.concat","Not yet implemented");
+}
+
+str
+BATXMLtrunk(int *ret, str *nme, int *bid)
+{
+	BAT *b,*bn;
+	BUN p,q;
+	int xx;
+
+	prepareOperand(b,bid,"root");
+	prepareResult(bn,b,TYPE_str,"root");
+	BATloopFast(b,p,q,xx){
+	}
+	finalizeResult(ret,bn,b);
+	(void) ret;
+	(void) nme;
+	(void) bid;
+	throw(MAL,"xml.trunk","Not yet implemented");
+}
+
+str
+BATXMLforest(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	int *ret= getArgReference(stk,pci,0);
+	int *bid= getArgReference(stk,pci,3);
+	BAT *b,*bn;
+	BUN p,q;
+	int xx;
+
+	prepareOperand(b,bid,"root");
+	prepareResult(bn,b,TYPE_str,"root");
+	BATloopFast(b,p,q,xx){
+	}
+	finalizeResult(ret,bn,b);
+	(void) mb;
+	(void) stk;
+	(void) p;
+	throw(MAL,"xml.forest","Not yet implemented");
+}
+
+str
+BATXMLagg(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+{
+	(void) mb;
+	(void) stk;
+	(void) p;
+	throw(MAL,"xml.agg","Not yet implemented");
+}
+
+@}

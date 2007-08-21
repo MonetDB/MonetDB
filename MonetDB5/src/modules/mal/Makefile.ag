@@ -30,7 +30,7 @@ LIBS = {
 		profiler.mx const.mx algebraExtensions.mx \
 		inspect.mx manual.mx \
 		factory.mx mdb.mx  \
-		urlbox.mx mat.mx \
+		urlbox.mx mat.mx batxml.mx \
 		sabaoth.mx radix.mx remote.mx
 		#datacell.mx 
 
@@ -159,7 +159,7 @@ scripts_mal = {
 		factory.mx mdb.mx pcre.mx  tablet.mx mat.mx \
 		urlbox.mx statistics.mx transaction.mx \
 		mserver.mx sabaoth.mx remote.mx \
-		radix.mx bpm.mx 
+		radix.mx bpm.mx  batxml.mx
 	#datacell.mx 
 }
 
