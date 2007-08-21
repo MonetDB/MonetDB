@@ -1234,8 +1234,9 @@ CMDhttp_post(BAT **res, str options, str dst, str rpc_module,
 
     shredBAT = response2bat(sock, dst, port, b, *updCall,
                                 &time_xrpcClntDeSeria);
+    clean_up(-1, out, bs, b, argcnt, iterc);
+
     if(!shredBAT) {
-        clean_up(sock, out, bs, b, argcnt, iterc);
         return GDK_FAIL;
     }
 
@@ -1251,7 +1252,6 @@ CMDhttp_post(BAT **res, str options, str dst, str rpc_module,
                 time_xrpcClntDeSeria);
     }
 
-    clean_up(-1, out, bs, b, argcnt, iterc);
     *res = shredBAT;
     return GDK_SUCCEED;
 }
