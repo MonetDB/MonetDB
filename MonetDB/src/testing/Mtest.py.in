@@ -1868,6 +1868,8 @@ def CheckPort(port) :
     Serrstr = ""
     S0 = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     S1 = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    S0.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1);
+    S1.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1);
     host = 'localhost'
     try:
         S0.bind((host,port))
