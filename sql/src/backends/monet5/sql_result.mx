@@ -496,6 +496,8 @@ mvc_import_table(mvc *m, bstream *bs, char *tname, char *sep, char *rsep, int sz
 			if (TABLETload_file(&as, bs, out) >= 0)
 				bats = TABLETcollect_bats(&as);
 		}
+		if (as.error)
+			showException(SQL, "sql", as.error);
 		TABLETdestroy_format(&as);
 	}
 	_DELETE(sep);

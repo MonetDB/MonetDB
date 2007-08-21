@@ -67,3 +67,4 @@ predicate_or-sf-1409824
 alter_view
 simple_view
 float2dec
+not
