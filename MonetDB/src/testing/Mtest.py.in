@@ -2604,13 +2604,13 @@ def main(argv) :
     env = {}
 
     # most intuitive (?) default settings
-    dft['MONETDB_SOURCE']   = "GetMonetConfig(par['PACKAGE'],'--source')"
-    dft['MONETDB_BUILD']    = "GetMonetConfig(par['PACKAGE'],'--build')"
-    dft['MONETDB_PREFIX']   = "GetMonetConfig(par['PACKAGE'],'--prefix')"    # or THISPATH ?
+    dft['MONETDB_SOURCE']   = "GetMonetConfig('monetdb','--source')"
+    dft['MONETDB_BUILD']    = "GetMonetConfig('monetdb','--build')"
+    dft['MONETDB_PREFIX']   = "GetMonetConfig('monetdb','--prefix')"    # or THISPATH ?
     dft['SQL_PREFIX']     = "SQLprefix"
-    dft['TSTSRCBASE']     = "env['MONETDB_SOURCE']"
-    dft['TSTBLDBASE']     = "env['MONETDB_BUILD']"
-    dft['TSTTRGBASE']     = "env['MONETDB_PREFIX']"   # or os.getcwd() ?
+    dft['TSTSRCBASE']     = "GetMonetConfig(par['PACKAGE'],'--source')"
+    dft['TSTBLDBASE']     = "GetMonetConfig(par['PACKAGE'],'--build')"
+    dft['TSTTRGBASE']     = "GetMonetConfig(par['PACKAGE'],'--prefix')"   # or os.getcwd() ?
     if THISFILE in ["Mtest.py", "Mprofile.py"]:
         dft['GDK_DEBUG']      = "TSTDBG"
         dft['MONETDB_MOD_PATH'] = "''"   #"os.path.join(env['MONETDB_PREFIX'],'lib')+os.pathsep+os.path.join(env['MONETDB_PREFIX'],'lib','MonetDB')"
@@ -2648,19 +2648,19 @@ def main(argv) :
         ('recursive', 'r', 'recursive', None,
          "recurse into subdirectories (implies 'All')"),
         ('MONETDB_SOURCE', None, 'MONETDB_SOURCE', '<path>',
-         'default: `<package>-config --source` = "%s"' % GetMonetConfig(par['PACKAGE'],'--source')),
+         'default: `monetdb-config --source` = "%s"' % GetMonetConfig('monetdb','--source')),
         ('MONETDB_BUILD', None, 'MONETDB_BUILD', '<path>',
-         'default: `<package>-config --build` = "%s"' % GetMonetConfig(par['PACKAGE'],'--build')),
+         'default: `monetdb-config --build` = "%s"' % GetMonetConfig('monetdb','--build')),
         ('MONETDB_PREFIX', None, 'MONETDB_PREFIX', '<path>',
-         'default: `<package>-config --prefix` = "%s"' % GetMonetConfig(par['PACKAGE'],'--prefix')),
+         'default: `monetdb-config --prefix` = "%s"' % GetMonetConfig('monetdb','--prefix')),
         ('SQL_PREFIX', None, 'SQL_PREFIX', '<path>',
          'default: `sql-config --prefix` = "%s"' % SQLprefix),
         ('TSTSRCBASE', None, 'TSTSRCBASE', '<path>',
-         'default: <MONETDB_SOURCE>'),
+         'default: `<package>-config --source` = "%s"' % GetMonetConfig(par['PACKAGE'],'--source')),
         ('TSTBLDBASE', None, 'TSTBLDBASE', '<path>',
-         'default: <MONETDB_BUILD>'),
+         'default: `<package>-config --build` = "%s"' % GetMonetConfig(par['PACKAGE'],'--build')),
         ('TSTTRGBASE', None, 'TSTTRGBASE', '<path>',
-         'default: <MONETDB_PREFIX>'),
+         'default: `<package>-config --prefix` = "%s"' % GetMonetConfig(par['PACKAGE'],'--prefix')),
         ('quiet', 'q', 'quiet', None,
          "suppress messages on stdout"),
         ]
