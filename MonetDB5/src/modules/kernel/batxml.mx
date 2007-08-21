@@ -39,6 +39,18 @@ command xml.str(src:bat[:oid,:xml]):bat[:oid,:str]
 address BATXMLxml2str
 comment "Cast the string to an xml compliant string";
 
+command xml.comment(val:bat[:oid,:str]):bat[:oid,:xml]
+address BATXMLcomment
+comment "Construct an comment struction ";
+
+command xml.parse(val:bat[:oid,:str]):bat[:oid,:xml]
+address BATXMLparse
+comment "Parse the XML document or element string values ";
+
+command xml.pi(operator:str, ret:bat[:oid,:xml]):bat[:oid,:xml]
+address XMLpi
+comment "Call the processing instruction";
+
 command xml.attribute(name:str, val:bat[:oid,:str]):bat[:oid,:xml]
 address BATXMLattribute
 comment "Construct an attribute value pair";
@@ -64,6 +76,18 @@ pattern xml.forest(val:bat[:oid,:xml]...):bat[:oid,:xml]
 address BATXMLforest
 comment "Construct an element list");
 
+pattern xml.agg(val:bat[:oid,:xml], order:str...):bat[:oid,:xml]
+address BATXMLagg
+comment "Aggregate the XML values over grouping specified@;
+
+command xml.root(val:bat[:oid,:xml], version:str, standalone:str):bat[:oid,:xml]
+address BATXMLroot
+comment "Contruct the root nodes";
+
+command xml.isdocument(val:bat[:oid,:str]):bat[:oid,:bit]
+address BATXMLisdocument
+comment "Validate the string as a document"
+@{
 @+ Implementation
 @h
 #ifndef _BATXML_H_
@@ -91,12 +115,18 @@ comment "Construct an element list");
 
 batxml_export str BATXMLxml2str(int *s, int *x);
 batxml_export str BATXMLstr2xml(int *x, int *s);
+batxml_export str BATXMLisdocument(int *x, int *s);
+batxml_export str BATXMLcomment(int *x, int *s);
+batxml_export str BATXMLparse(int *x, int *s);
+batxml_export str BATXMLpi(int *x, str *oper, int *s);
+batxml_export str BATXMLroot(int *ret, int *bid, str *version, str *standalone);
 batxml_export str BATXMLattribute(int *ret, str *name, int *bid);
 batxml_export str BATXMLattributes(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 batxml_export str BATXMLelement(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 batxml_export str BATXMLconcat(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 batxml_export str BATXMLtrunk(int *ret, str *nme, int *bid);
 batxml_export str BATXMLforest(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+batxml_export str BATXMLagg(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 #endif  /* _BATXML_H_ */
 @c
 #include "batxml.h"
@@ -113,6 +143,48 @@ BATXMLxml2str(int *ret, int *bid)
 {
 	*ret= BBPincref(*bid,TRUE);
 	return MAL_SUCCEED;
+}
+
+str
+BATXMLisdocument(int *x, int *s){
+	(void) x;
+	(void) s;
+	throw(MAL,"xml.isdocument","Not yet implemented");
+}
+
+str
+BATXMLcomment(int *ret, int *bid)
+{
+	(void) ret;
+	(void) bid;
+	throw(MAL,"xml.comment","Not yet implemented");
+}
+
+str
+BATXMLparse(int *ret, int *bid)
+{
+	(void) ret;
+	(void) bid;
+	throw(MAL,"xml.parse","Not yet implemented");
+}
+
+str
+BATXMLpi(int *ret, str *operator, int *bid)
+{
+	(void) ret;
+	(void) operator;
+	(void) bid;
+	throw(MAL,"xml.pi","Not yet implemented");
+}
+
+str
+BATXMLroot(int *ret, int *bid, str *version, str *standalone)
+{
+	(void) ret;
+	(void) version;
+	(void) standalone;
+	(void) bid;
+	throw(MAL,"xml.root","Not yet implemented");
 }
 
 str
@@ -148,7 +220,7 @@ BATXMLconcat(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	(void) mb;
 	(void) stk;
 	(void) p;
-	throw(MAL,"xml.element","Not yet implemented");
+	throw(MAL,"xml.concat","Not yet implemented");
 }
 
 str
@@ -158,12 +230,23 @@ BATXMLtrunk(int *ret, str *nme, int *bid){
 	(void) bid;
 	throw(MAL,"xml.trunk","Not yet implemented");
 }
+
 str
 BATXMLforest(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	(void) mb;
 	(void) stk;
 	(void) p;
-	throw(MAL,"xml.element","Not yet implemented");
+	throw(MAL,"xml.forest","Not yet implemented");
 }
+
+str
+BATXMLagg(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+{
+	(void) mb;
+	(void) stk;
+	(void) p;
+	throw(MAL,"xml.agg","Not yet implemented");
+}
+
 @}

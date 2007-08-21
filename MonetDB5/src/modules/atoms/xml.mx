@@ -31,31 +31,50 @@ command str(src:xml):str
 address XMLxml2str
 comment "Cast the string to an xml compliant string";
 
-command xml.attribute(name:str, val:str):xml
+command comment(val:str):xml
+address XMLcomment
+comment "Construct an comment struction ";
+
+command parse(val:str,option:str):xml
+address XMLparse
+comment "Parse the XML document or element string values ";
+
+command pi(nme:str,val:str):xml
+address XMLpi
+comment "Call the processing instruction";
+
+command root(val:xml, version:str, standalone:str):xml
+address XMLroot
+comment "Contruct the root nodes";
+
+command attribute(name:str, val:str):xml
 address XMLattribute
 comment "Construct an attribute value pair";
 
-pattern xml.attributes(val:xml... ):xml
+pattern attributes(val:xml... ):xml
 address XMLattributes
 comment "Collect the attributes of an element into a single structure";
 
-pattern xml.element(name:str, ns:bat[:oid,:str], attr:xml, s:xml... ) :xml
+pattern element(name:str, ns:bat[:oid,:str], attr:xml, s:xml... ) :xml
 address XMLelement
 comment "The basic building block for XML elements are namespaces, attributes and a sequence
 of xml elements. The name space and the attributes may be left unspecified(=nil:bat).";
 
-pattern xml.concat(val:xml... ):xml
+pattern concat(val:xml... ):xml
 address XMLconcat
 comment "Concatenate the xml values";
 
-command xml.trunk(nme:str, val:xml):xml
+command trunk(nme:str, val:xml):xml
 address XMLtrunk
 comment "Prepare an element for a forest construction";
 
-pattern xml.forest(val:xml...):xml
+pattern forest(val:xml...):xml
 address XMLforest
 comment "Construct an element list");
 
+command isdocument(val:str):bit
+address XMLisdocument
+comment "Validate the string as a document"
 @{
 @- Implementation
 The implementation of the XML atomary type is based
@@ -84,10 +103,17 @@ typedef str xml;
 
 xml_export str XMLxml2str(str *s, xml *x);
 xml_export str XMLstr2xml(xml *x, str *s);
+xml_export str XMLisdcoument(bit *x, str *s);
+xml_export str XMLcomment(xml *x, str *s);
+xml_export str XMLpi(xml *x, str *nme, str *s);
+xml_export str XMLroot(str *x, str *v, str *version, str *standalone);
+xml_export str XMLparse(xml *x, str *s, str *option);
 xml_export str XMLattribute(xml *ret, str *name, str *val);
 xml_export str XMLattributes(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 xml_export str XMLelement(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 xml_export str XMLconcat(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+xml_export str XMLforest(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+xml_export str XMLtrunk(int *ret, str *nme, str *val);
 
 #endif /* XML_H */
 @c
@@ -108,10 +134,46 @@ XMLstr2xml(xml *x, str *s){
 	return MAL_SUCCEED;
 }
 
-str XMLattribute(xml *ret, str *name, str *val);
-str XMLattributes(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-str XMLelement(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-str XMLconcat(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+str
+XMLisdocument(bit *x, str *s){
+	(void) x;
+	(void) s;
+	throw(MAL,"xml.isdocument","Not yet implemented");
+}
+
+str
+XMLcomment(xml *x, str *s){
+	(void) x;
+	(void) s;
+	throw(MAL,"xml.comment","Not yet implemented");
+}
+
+str
+XMLparse(xml *x, str *nme, str *option){
+	(void) x;
+	(void) option;
+	(void) nme;
+	throw(MAL,"xml.parse","Not yet implemented");
+}
+str
+XMLpi(str *ret, str *operator, str *bid)
+{
+	(void) ret;
+	(void) operator;
+	(void) bid;
+	throw(MAL,"xml.pi","Not yet implemented");
+}
+
+str
+XMLroot(str *ret, str *bid, str *version, str *standalone)
+{
+	(void) ret;
+	(void) version;
+	(void) standalone;
+	(void) bid;
+	throw(MAL,"xml.root","Not yet implemented");
+}
+
 str
 XMLattribute(xml *ret, str *name, str *val)
 {
