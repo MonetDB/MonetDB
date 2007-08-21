@@ -1,0 +1,7 @@
+function tst();
+  b:= bat.new(:int,:int);
+  c{keep}:= bat.new(:int,:int);
+  io.print(b);
+end tst;
+optimizer.garbageCollector("user","tst");
+mdb.list("user","tst");

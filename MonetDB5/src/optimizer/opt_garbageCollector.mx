@@ -94,6 +94,7 @@ comment "Garbage collector optimizer";
 #include "mal_interpreter.h"	/* for showErrors() */
 #include "mal_builder.h"
 #include "opt_prelude.h"
+#include "mal_properties.h"
 
 @-
 There are two basic ways to release a BAT. The cheapest one is
@@ -147,6 +148,22 @@ tables.
 	actions++;
 }
 @}
+@-
+Garbage collection is not always required, even unwanted.
+For example, the BATs used to assemble the pieces of
+an XML document should be released after it has been
+consumed in e.g. xml.str().
+
+Keeping variables around beyond their end-of-life-span
+can be marked with the proper 'keep'.
+@c
+static int
+OPTkeepVariable(MalBlkPtr mb, InstrPtr p, int idx){
+	static char *keep=0;
+	if( keep == 0)
+		keep= putName("keep",4);
+	return isPropertyDefined( getProps(mb, getArg(p,idx)),keep);
+}
 @c
 static int
 OPTgarbageCollectorImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
@@ -181,7 +198,7 @@ OPTgarbageCollectorImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					if (getArg(p, j) == getArg(p, k))
 						done++;
 
-				if (done == 0 ){
+				if (done == 0 && !OPTkeepVariable(mb,p,j)){
 #ifdef DEBUG_OPT_GARBAGE
 				printf("remove the variable %s at %d\n", getArgName(mb,p,j),i);
 #endif

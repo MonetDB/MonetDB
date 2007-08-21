@@ -99,7 +99,7 @@ to partially pack elements before proceding. This would be a runtime
 scheduling decision.
 
 Alternative, the system could use MAT iterators to avoid it.
-At the cost of more complex program analysis.
+At the cost of more complex program analysis afterwards.
 
 @example
 	ji:= bat.new(:oid,:int);
@@ -200,6 +200,50 @@ MATcount(InstrPtr p, int *mvar, int mtop){
 	}
 	return cnt;
 }
+@-
+A sql.bind() operation should be trapped to inspect the partition catalog
+for definitions. For now we simulate a partitioned table, comprised
+of the original base and an empty one.
+@c
+static InstrPtr
+MATpartitionTableDummy(MalBlkPtr mb, InstrPtr p)
+{
+			InstrPtr q,r,p2;
+			int v= getArg(p,0);
+
+			freezeVarType(mb,getArg(p,0));
+#ifdef DEBUG_OPT_MERGETABLE
+			stream_printf(GDKout,"found bind\n");
+			printInstruction(GDKout,mb,p,0);
+#endif
+			pushInstruction(mb,p);
+
+			p2= newStmt(mb,batRef,newRef);
+			setVarType(mb,getArg(p2,0),getVarType(mb,v));
+			p2= pushArgument(mb,p2,v);
+
+			q= newStmt(mb,matRef,newRef);
+			setVarType(mb,getArg(q,0),getVarType(mb,v));
+
+			getArg(p,0)= getArg(q,0);
+			getArg(p2,1)= getArg(p,0);
+			getArg(q,0)= v;
+			q= pushArgument(mb, q, getArg(p,0));
+			q= pushArgument(mb, q, getArg(p2,0));
+			
+			/* the oid ranges should be sequentially aligned */
+			r = newStmt(mb,batRef, putName("setBase",7));
+			r= pushArgument(mb, r, getArg(p,0));
+			r= pushArgument(mb, r, getArg(p2,0));
+#ifdef DEBUG_OPT_MERGETABLE
+			stream_printf(GDKout,"new block\n");
+			printInstruction(GDKout,mb,p,0);
+			printInstruction(GDKout,mb,p2,0);
+			printInstruction(GDKout,mb,q,0);
+			printInstruction(GDKout,mb,r,0);
+#endif
+		return q;
+}
 
 static int
 OPTmergetableImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
@@ -235,46 +279,9 @@ OPTmergetableImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 			pushInstruction(mb,p);
 			continue;
 		}
-@-
-A sql.bind() operation should be trapped to inspect the partition catalog
-for definitions. For now we simulate a partitioned table, comprised
-of the original base and an empty one.
-@c
 		if( (getModuleId(p)== sqlRef && getFunctionId(p)==bindRef)){
-			InstrPtr p2;
 			int v= getArg(p,0);
-
-			freezeVarType(mb,getArg(p,0));
-#ifdef DEBUG_OPT_MERGETABLE
-			stream_printf(GDKout,"found bind\n");
-			printInstruction(GDKout,mb,p,0);
-#endif
-			pushInstruction(mb,p);
-
-			p2= newStmt(mb,batRef,newRef);
-			setVarType(mb,getArg(p2,0),getVarType(mb,v));
-			p2= pushArgument(mb,p2,v);
-
-			q= newStmt(mb,matRef,newRef);
-			setVarType(mb,getArg(q,0),getVarType(mb,v));
-
-			getArg(p,0)= getArg(q,0);
-			getArg(p2,1)= getArg(p,0);
-			getArg(q,0)= v;
-			q= pushArgument(mb, q, getArg(p,0));
-			q= pushArgument(mb, q, getArg(p2,0));
-			
-			/* the oid ranges should be sequentially aligned */
-			r = newStmt(mb,batRef, putName("setBase",7));
-			r= pushArgument(mb, r, getArg(p,0));
-			r= pushArgument(mb, r, getArg(p2,0));
-#ifdef DEBUG_OPT_MERGETABLE
-			stream_printf(GDKout,"new block\n");
-			printInstruction(GDKout,mb,p,0);
-			printInstruction(GDKout,mb,p2,0);
-			printInstruction(GDKout,mb,q,0);
-			printInstruction(GDKout,mb,r,0);
-#endif
+			q= MATpartitionTableDummy(mb,p);
 			mat[mtop]= q;
 			mvar[mtop] = v;
 			mtop++;
