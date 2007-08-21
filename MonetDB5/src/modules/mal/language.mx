@@ -295,23 +295,24 @@ CMDevalFile(int *ret, str *fnme)
 {
 	str s = *fnme;
 	Client c = MCgetClient();
-	char buffer[1024];
+	char *msg = NULL;
 
 	(void) ret;		/* fool compiler */
-	if (s == 0) {
+	if (s == 0) 
 		throw(MAL, "mal.setCwd", "File name missing\n");
-	}
-	if (strlen(s) + strlen(c->cwd) + 2 >= 1024) {
-		throw(MAL, "mal.setCwd", "Evaluation buffer too small\n");
-	}
-	buffer[0] = 0;
 
 	if (*s != '/') {
-		strcpy(buffer, c->cwd);
-		strcat(buffer, "/");
+		char *buf = GDKmalloc(strlen(c->cwd) + strlen(s) + 2);
+
+		strcpy(buf, c->cwd);
+		strcat(buf, "/");
+		strcat(buf, s);
+		msg = evalFile(c, buf, 0);
+		GDKfree(buf);
+	} else {
+		msg = evalFile(c, s, 0);
 	}
-	strcat(buffer, s);
-	return evalFile(c, buffer, 0);
+	return msg;
 }
 @-
 Calling a BAT is simply translated into a concatenation of
