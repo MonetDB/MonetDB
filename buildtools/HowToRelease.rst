@@ -102,8 +102,8 @@ Post Release
 ------------
 
 - Set version numbers in the stable branch (e.g. ``vertoo.py -m
-  MonetDB incr release``).  This should set the release to an odd
-  number.
+  MonetDB incr release``) and commit (``cvs commit``).  This should
+  set the release to an odd number.
 - Update the propagation synchronization tags on the stable branch for
   the files that were changed in the previous step (e.g. ``cvs tag -F
   MonetDB_1-16_sync vertoo.data``).
