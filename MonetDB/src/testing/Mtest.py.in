@@ -113,12 +113,16 @@ randomPortRepeat = 9
 F_SKIP = -1
 F_OK = 0
 F_WARN = 1
-F_ERROR = 2
+F_SOCK = 2
+F_TIME = 3
+F_ERROR = 4
 
 FAILURES = {
     F_SKIP  : "F_SKIP",
     F_OK    : "F_OK",
     F_WARN  : "F_WARN",
+    F_SOCK  : "F_SOCK",
+    F_TIME  : "F_TIME",
     F_ERROR : "F_ERROR"
 }
 
@@ -310,8 +314,11 @@ lime = 'lime'                           # #00ff00
 green = '#00aa00'
 darkgreen = '#005500'
 orange = '#ffaa00'
+purple = '#aa00aa'
 stylesheet = Element('style', None, Text('''
 .error   { font-weight: bold; font-style: italic; color: red; }
+.timeout { font-weight: bold; font-style: italic; color: purple; }
+.socket  { font-weight: bold; font-style: italic; color: purple; }
 .warning { font-weight: bold; color: orange; }
 .good    {  }
 .header  { font-family: helvetica, arial; text-align: center; }
@@ -491,7 +498,7 @@ def CreateHtmlIndex (env, *body) :
         os.chdir(BACK)
 ### CreateHtmlIndex (env, *body) #
 
-def CreateTstWhatXhtml (env, TST, stableWHAT, EXT) :
+def CreateTstWhatXhtml (env, TST, stableWHAT, EXT, SockTime) :
     WHAT = stableWHAT[7:11]
     TSTDIR    = env['TSTDIR']
     TSTSRCDIR = env['TSTSRCDIR']
@@ -528,6 +535,13 @@ def CreateTstWhatXhtml (env, TST, stableWHAT, EXT) :
         f.close()
         diffclass = 'error'
         difftext = 'Major differences'
+    if diffclass == 'error' and SockTime in (F_SOCK, F_TIME):
+        if SockTime == F_SOCK:
+            diffclass = 'socket'
+            difftext = difftext + ' (Socket)'
+        if SockTime == F_TIME:
+            diffclass = 'timeout'
+            difftext = difftext + ' (Timeout)'
     SYSTEM = OSVER+":"
     if COMPILER:
         SYSTEM = COMPILER+", "+SYSTEM
@@ -751,9 +765,13 @@ def CreateSrcIndex (env, TST, EXT) :
 ### CreateSrcIndex (env, TST, EXT) #
 
 def AddHref (href, target, linktext, diff) :
-    if   diff == 2:
+    if   diff == F_ERROR:
         klass = 'error'
-    elif diff == 1:
+    elif diff == F_TIME:
+        klass = 'timeout'
+    elif diff == F_SOCK:
+        klass = 'soket'
+    elif diff == F_WARN:
         klass = 'warning'
     else:
         klass = 'good'
@@ -765,43 +783,49 @@ def AddHref (href, target, linktext, diff) :
         return [a]
 ### AddHref (TSTDIR, TST, WHAT, diff) #
 
-def AddTstToHtmlIndex (env, TST, STABLEout, STABLEerr, EXT) :
+def AddTstToHtmlIndex (env, TST, STABLEout, STABLEerr, EXT, SockTime) :
     TSTDIR = env['TSTDIR']
 
-    CreateTstWhatXhtml(env, TST, STABLEout, EXT)
-    CreateTstWhatXhtml(env, TST, STABLEerr, EXT)
+    CreateTstWhatXhtml(env, TST, STABLEout, EXT, F_OK)
+    CreateTstWhatXhtml(env, TST, STABLEerr, EXT, SockTime)
 
     for l in open(TST+".out.diff.html"):
         pass
     if   l[:14] == '<!--NoDiffs-->':
-        o = 0
+        o = F_OK
     elif l[:17] == '<!--MinorDiffs-->':
-        o = 1
+        o = F_WARN
     elif l[:17] == '<!--MajorDiffs-->':
-        o = 2
+        o = F_ERROR
     else:
         Warn("Unexpected last line in %s:\n%s" % (TST+".out.diff.html",l))
         ff = open(TST+WHAT+".out.diff.html","a")
         ff.write("\n<!--MajorDiffs-->\n")
         ff.close()
-        o = 2
+        o = F_ERROR
     for l in open(TST+".err.diff.html"):
         pass
     if   l[:14] == '<!--NoDiffs-->':
-        e = 0
+        e = F_OK
     elif l[:17] == '<!--MinorDiffs-->':
-        e = 1
+        e = F_WARN
     elif l[:17] == '<!--MajorDiffs-->':
-        e = 2
+        e = F_ERROR
     else:
         Warn("Unexpected last line in %s:\n%s" % (TST+".err.diff.html",l))
         ff = open(TST+WHAT+".err.diff.html","a")
         ff.write("\n<!--MajorDiffs-->\n")
         ff.close()
-        e = 2
-    if o == 2 or e == 2:
+        e = F_ERROR
+    if e == F_ERROR and SockTime in (F_SOCK, F_TIME):
+        e = SockTime
+    if o == F_ERROR or e == F_ERROR:
         tstclass = 'error'
-    elif o == 1 or e == 1:
+    elif e == F_TIME:
+        tstclass = 'timeout'
+    elif e == F_SOCK:
+        tstclass = 'socket'
+    elif o == F_WARN or e == F_WARN:
         tstclass = 'warning'
     else:
         tstclass = 'good'
@@ -869,7 +893,7 @@ def SkipTest(env, TST, EXT, REASON) :
     if not env.has_key('_'+TSTDIR+'_BODY_')  or  \
        not env['_'+TSTDIR+'_BODY_'][0]  or  \
        not env['_'+TSTDIR+'_BODY_'][1]:
-        env['_'+TSTDIR+'_BODY_'] = ["."+TST+".SKIPPED", 1]
+        env['_'+TSTDIR+'_BODY_'] = ["."+TST+".SKIPPED", F_SKIP]
     CreateSrcIndex(env, TST, EXT)
     return td
 ### SkipTest(env, TST, EXT, REASON) #
@@ -891,8 +915,8 @@ def find_test_dirs(thisdir) :
 def PerformDir(env, testdir, testlist, BusyPorts) :
     td = 0
     elem = None
-    FdOut = -1
-    FdErr = -1
+    FdOut = F_SKIP
+    FdErr = F_SKIP
     TSTSRCBASE = env['TSTSRCBASE']
     TSTPREF = env['TSTPREF']
     if testdir == TSTSRCBASE:
@@ -1375,9 +1399,9 @@ def StableOutErr(env,par,TST,OS,RELEASE) :
 ### StableOutErr(env,par,TST,OS,RELEASE) #
 
 def RunTest(env, TST, BusyPorts, COND) :
-    Failed = -1
-    FailedOut = -1
-    FailedErr = -1
+    Failed = F_SKIP
+    FailedOut = F_SKIP
+    FailedErr = F_SKIP
     TSTDB = env['TSTDB']
     TSTDIR  = env['TSTDIR']
     TSTSRCDIR = env['TSTSRCDIR']
@@ -1717,8 +1741,9 @@ def RunTest(env, TST, BusyPorts, COND) :
                         killed = 1
                     p.close()
 
-        CheckSocket3(env, "MAPI", TestErrFile)
-        CheckSocket3(env, "XRPC", TestErrFile)
+        sockerr = F_OK
+        sockerr = max(sockerr, CheckSocket3(env, "MAPI", TestErrFile))
+        sockerr = max(sockerr, CheckSocket3(env, "XRPC", TestErrFile))
 
         #TODO:
         ##if [ ! -f $TSTTRGBASE/Tests/.old.left-over.tmp.bats. ] ; then  touch $TSTTRGBASE/Tests/.old.left-over.tmp.bats. ; fi
@@ -1735,13 +1760,13 @@ def RunTest(env, TST, BusyPorts, COND) :
         ##rm -f .new.left-over.tmp.bats. $TSTTRGBASE/Tests/.old.left-over.tmp.bats.
         ##if [ -f .all.left-over.tmp.bats. ] ; then  mv -f .all.left-over.tmp.bats. $TSTTRGBASE/Tests/.old.left-over.tmp.bats. ; fi
 
-        timeout = 0
+        timeout = F_OK
         mto = re.compile("^!(Mtimeout:)? Timeout:", re.MULTILINE)
         for l in open(TestErr.name):
             if mto.match(l):
-                timeout = 1
+                timeout = F_TIME
 
-        if timeout:
+        if timeout == F_TIME:
             if quiet:
                 STDOUT.write("\n%s : Timeout!\n" % TST)
             else:
@@ -1815,7 +1840,7 @@ def RunTest(env, TST, BusyPorts, COND) :
             diff_html.write('<!--MajorDiffs-->\n')
             diff_html.close()
             timedout = 1
-            if timeout: # test run timed out, expect major differences!
+            if timeout == F_TIME: # test run timed out, expect major differences!
                 ACCURACYout = -1
             while timedout and MDIFF == MDIFF1:
                 if ACCURACYout == -1:
@@ -1843,7 +1868,7 @@ def RunTest(env, TST, BusyPorts, COND) :
             diff_html.write('<!--MajorDiffs-->\n')
             diff_html.close()
             timedout = 1
-            if timeout: # test run timed out, expect major differences!
+            if timeout == F_TIME: # test run timed out, expect major differences!
                 ACCURACYerr = -1
             while timedout and MDIFF == MDIFF1:
                 if ACCURACYerr == -1:
@@ -1855,7 +1880,7 @@ def RunTest(env, TST, BusyPorts, COND) :
                     timedout = os.system('%s -q -I"%s" "%s" -A%d -r"%s" "%s%s.FILTERED" "%s.test.err.FILTERED" "%s.err.diff.html"' % (MDIFF, par['IGNORE'], par['CONTEXT'], ACCURACYerr, REVe, TST, STABLEerr, TST, TST))
                 ACCURACYerr = ACCURACYerr - 1
 
-            FailedOut, FailedErr, elem = AddTstToHtmlIndex(env, TST, STABLEout, STABLEerr, EXT)
+            FailedOut, FailedErr, elem = AddTstToHtmlIndex(env, TST, STABLEout, STABLEerr, EXT, max(sockerr, timeout))
 
     return TX,FailedOut,FailedErr,elem
 ### RunTest(env, TST, BusyPorts) #
@@ -1954,11 +1979,13 @@ def CheckSocket2(env,SERVER) :  #,SrvrErr) :
 ### CheckSocket2(env,SERVER)    #,SrvrErr) #
 
 def CheckSocket3(env,SERVER,ErrFileName) :
+    res = F_OK
     port = int(env[SERVER+'PORT'])
     busy, host, Serrno, Serrstr, S = CheckPort(port)
     S[0].close()
     S[1].close()
     if busy:
+        res = F_SOCK
         Smsg = """
 ! Socket-Check failed for %sserver on <%s:%d> with #%d; '%s' !
 ! %sPORT was not properly released by Mserver !
@@ -1969,6 +1996,7 @@ def CheckSocket3(env,SERVER,ErrFileName) :
         ErrFile.write(Smsg)
         ErrFile.flush()
         ErrFile.close()
+    return res
 ### CheckSocket3(env,SERVER,ErrFileName) #
 
 def prompt() :
@@ -3316,14 +3344,14 @@ def main(argv) :
     if THISFILE in ["Mtest.py", "Mprofile.py"]:
         fn = os.path.join(env['TSTTRGBASE'],TSTPREF,"times.")
         fl = open(fn+"lst","w")
-        Failure = [0,0,0,0]
+        Failure = [0,0,0,0,0,0]
         for TSTDIR,TST,tt,ms,FtOut,FtErr in TIMES:
             fl.write(url(os.path.join(TSTDIR,TST))+":\t"+tt+
                         "\t"+FAILURES[FtOut]+
-                        "\t"+FAILURES[FtErr]+"\n")
+                        "\t"+FAILURES[FtErr]+"\t\n")
             if TST != '':
                 Failure[max(FtOut,FtErr)] += 1
-        fl.write(":\t%7.3f\n" % t_)
+        fl.write(":\t%7.3f\t\n" % t_)
         fl.close()
 
         fl = open(fn+"sql","w")
@@ -3361,7 +3389,7 @@ def main(argv) :
 
         # we write in SQL the same codes as testweb uses in the HTML
         # pages, for readability
-        Fcodes = ['o', '-', 'x', 'X']
+        Fcodes = ['o', 'x', 'S', 'T', 'X', '-']
 
         # we are not interested in the compiler, not its path, nor its
         # options.  We do store the options separately, though
@@ -3411,13 +3439,19 @@ VALUES (%s, '%s', '%s', '%s',
         how = ""
         what = ""
         if Failure[F_SKIP]:
-            what += "  %3d out of %3d tests could not be executed\n" % (Failure[-1],num_tests)
+            what += "  %3d out of %3d tests could not be executed\n" % (Failure[F_SKIP],num_tests)
         if Failure[F_WARN]:
             how = "slightly"
-            what += "  %3d out of %3d tests produced %s different output\n" % (Failure[1],num_tests,how)
+            what += "  %3d out of %3d tests produced %s different output\n" % (Failure[F_WARN],num_tests,how)
+        if Failure[F_TIME]:
+            how = "SIGNIFICANTLY"
+            what += "  %3d out of %3d tests ran into timeout\n" % (Failure[F_TIME],num_tests)
+        if Failure[F_SOCK]:
+            how = "SIGNIFICANTLY"
+            what += "  %3d out of %3d tests did not properly release socket(s)\n" % (Failure[F_SOCK],num_tests)
         if Failure[F_ERROR]:
             how = "SIGNIFICANTLY"
-            what += "  %3d out of %3d tests produced %s different output\n" % (Failure[2],num_tests,how)
+            what += "  %3d out of %3d tests produced %s different output\n" % (Failure[F_ERROR],num_tests,how)
         STDERR.flush()
         if Failed:
             print """\
