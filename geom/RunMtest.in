@@ -21,8 +21,16 @@ builddir=`pwd`
 srcdir=`cd '@srcdir@'; pwd`
 uname=`uname`
 
+# set MonetDB-server version: 4 or 5
+V=4
+
+case "$V" in
+4) conffile=MonetDB.conf;;
+5) conffile=monetdb5.conf;;
+esac
+
 # where compiled modules are to be found
-MOD_PATH="${builddir}/src/monetdb4/.libs:${builddir}/src/monetdb4:${srcdir}/src/monetdb4:`monetdb4-config --modpath`"
+MOD_PATH="${builddir}/src/monetdb$V/.libs:${builddir}/src/monetdb$V:${srcdir}/src/monetdb$V:`monetdb$V-config --modpath`:`monetdb-sql-config --modpath$V`"
 
 if [ "${LD_LIBRARY_PATH}" ] ; then
 	LD_LIBRARY_PATH=":${LD_LIBRARY_PATH}"
@@ -59,4 +67,4 @@ cd "$srcdir"
 # if the environment variable MTEST_AT is set (value does not matter),
 # pass the --at flag to Mtest.py so that it uses the at command as a
 # watchdog.
-exec Mtest.py --config="`monetdb4-config --sysconfdir`/MonetDB.conf" --monet_mod_path="$MOD_PATH" --dbfarm="${builddir}/dbfarm" --sql_logdir="${builddir}/sql_logs" --xquery_logdir="${builddir}/xquery_logs" --TSTSRCBASE="$srcdir" --TSTBLDBASE="$builddir" --TSTTRGBASE="${builddir}" ${MTEST_AT+--at} "${@--rq}"
+exec Mtest.py -$V --config="`monetdb$V-config --sysconfdir`/$conffile" --monet_mod_path="$MOD_PATH" --dbfarm="${builddir}/dbfarm" --sql_logdir="${builddir}/sql_logs" --xquery_logdir="${builddir}/xquery_logs" --TSTSRCBASE="$srcdir" --TSTBLDBASE="$builddir" --TSTTRGBASE="${builddir}" ${MTEST_AT+--at} "${@--rq}"
