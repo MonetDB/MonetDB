@@ -6,8 +6,8 @@ REM	set prefix=%~dp0
 REM	set prefix=%prefix:~0,-4%
 
 set pkg=@PACKAGE@
-set source=@MONETDB_SOURCE@
-set build=@MONETDB_BUILD@
+set source=@SQL_SOURCE@
+set build=@SQL_BUILD@
 set prefix=@prefix@
 
 if "%1" == ""	goto usage
