@@ -375,7 +375,7 @@ To run MonetDB5 interactively, just run::
 The disadvantage of running the systems interactively is that you
 don't get readline support (if available on your system).  A more
 pleasant environment can be had by using the system as a server and
-using ``MapiClient`` to interact with the system.  For MonetDB4 use::
+using ``mclient`` to interact with the system.  For MonetDB4 use::
 
  Mserver --dbinit 'module(mapi); mil_start();'
 
@@ -404,28 +404,28 @@ In order to use the SQL back-end with MonetDB5, use::
 
  mserver5 --dbinit 'include sql;'
 
-Once the server is running, you can use ``MapiClient`` to interact
-with the server.  ``MapiClient`` needs to be told which language you
+Once the server is running, you can use ``mclient`` to interact
+with the server.  ``mclient`` needs to be told which language you
 want to use, but it does not need to be told whether you're using
 MonetDB4 or MonetDB5.  In another shell window start::
 
- MapiClient -l<language>
+ mclient -l<language>
 
 where *language* is one of ``mil``, ``mal``, ``sql``, or ``xquery``.
 If no ``-l`` option is given, ``mil`` is the default.
 
-With ``MapiClient``, you get a text-based interface that supports
+With ``mclient``, you get a text-based interface that supports
 command-line editing and a command-line history.  The latter can even
 be stored persistently to be re-used after stopping and restarting
-``MapiClient``; see
+``mclient``; see
 
 ::
 
- MapiClient --help
+ mclient --help
 
 for details.
 
-At the ``MapiClient`` prompt some extra commands are available.  Type
+At the ``mclient`` prompt some extra commands are available.  Type
 a single question mark to get a list of options.  Note that one of the
 options is to read input from a file using ``<``.  This interferes
 with XQuery syntax.  This is a known bug.

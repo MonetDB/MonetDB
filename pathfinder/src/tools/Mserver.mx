@@ -45,7 +45,7 @@ Mserver { [ --dbname <db-name> ]
 
 Since the console has no command-line history nor file name completion,
 you are {\bf recommended} to use the 
-@[<a href="../MapiClient/index.html">MapiClient</a>@ program for interactive sessions
+@[<a href="../MapiClient/index.html">mclient</a>@ program for interactive sessions
 instead.
 
 The options have the following meaning:

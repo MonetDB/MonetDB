@@ -88,7 +88,7 @@ if test "x$have_monetdb" != xyes; then
 		AC_MSG_ERROR([MonetDB4 requires at least version $req_monetdb_ver of MonetDB, but only version $MONETDBVERS was found.])
 	fi
 fi
-req_clients_ver='1.18.0'
+req_clients_ver='1.19.0'
 #                ^^^^^^
 # Maintained via vertoo. Please don't modify by hand!
 # Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.

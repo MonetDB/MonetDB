@@ -18,7 +18,7 @@
 
 PWD=`pwd`
 echo $PWD
-SQL='MapiClient -p500000 -lsql -umonetdb -Pmonetdb'
+SQL='mclient -p500000 -lsql -umonetdb -Pmonetdb'
 M5='mserver5 --dbname=demo --set mapi_port=50000 --dbinit="include sql;"'
 if [ $# -eq 1 ]; then
 	SQL=$1

@@ -17,20 +17,20 @@
 # All Rights Reserved.
 
 # create
-MapiClient -lsql -u monetdb -P monetdb --port=$MAPIPORT < create_tables.flt.sql
+mclient -lsql -u monetdb -P monetdb --port=$MAPIPORT < create_tables.flt.sql
 
 # check0
-MapiClient -lsql -u monetdb -P monetdb --port=$MAPIPORT < Tests/check0.sql
+mclient -lsql -u monetdb -P monetdb --port=$MAPIPORT < Tests/check0.sql
 
 # insert_MODEL
-MapiClient -lsql -u monetdb -P monetdb --port=$MAPIPORT < insert_MODEL.flt.sql
+mclient -lsql -u monetdb -P monetdb --port=$MAPIPORT < insert_MODEL.flt.sql
 
 # insert_ATOM
-MapiClient -lsql -u monetdb -P monetdb --port=$MAPIPORT < insert_ATOM.flt.sql
+mclient -lsql -u monetdb -P monetdb --port=$MAPIPORT < insert_ATOM.flt.sql
 
 # insert_BOND
-MapiClient -lsql -u monetdb -P monetdb --port=$MAPIPORT < insert_BOND.flt.sql
+mclient -lsql -u monetdb -P monetdb --port=$MAPIPORT < insert_BOND.flt.sql
 
 # check1
-MapiClient -lsql -u monetdb -P monetdb --port=$MAPIPORT < Tests/check0.sql
+mclient -lsql -u monetdb -P monetdb --port=$MAPIPORT < Tests/check0.sql
 

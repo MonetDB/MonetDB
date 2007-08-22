@@ -180,7 +180,7 @@ and start the MonetDB SQL front end by calling
 
 ::
 
- MapiClient -lsql -umonetdb -Pmonetdb
+ mclient -lsql -umonetdb -Pmonetdb
 
 
 Documentation

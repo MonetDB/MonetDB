@@ -23,15 +23,15 @@ providing command-line access for its users. It is the preferred
 interface for non-DBAs.
 
 @+ Manual Page
-The @code{MapiClient} program provides a textual
+The @code{mclient} program provides a textual
 interface to the MonetDB server. Unlike the Mserver console, the
-@code{MapiClient} program is intended not only for the database
+@code{mclient} program is intended not only for the database
 administrator, but for all users. It is more comfortable than the
 console, since it provides a command history and automatic file name
 completion. 
 
 @verbatim
-MapiClient [options] [inputfile+]
+mclient [options] [inputfile+]
 @end verbatim
 
 The following options are supported:
@@ -69,7 +69,7 @@ The following options are supported:
 @tab show this usage message 
 @end multitable
 
-Calling "MapiClient -l sql" establishes a SQL connection with an
+Calling "mclient -l sql" establishes a SQL connection with an
 Mserver server running on the local machine. The default user
 'monetdb' is used, which provides administrative rights.
 To protect your database you may want to introduce another DBA name and
@@ -924,7 +924,7 @@ showCommands(void)
 {
 	/* XQuery prelude */
 	if (mode == XQUERY) {
-		fprintf(toConsole, "MapiClient interactive MonetDB/XQuery session: type an XQuery or XQUF update.\n");
+		fprintf(toConsole, "mclient interactive MonetDB/XQuery session: type an XQuery or XQUF update.\n");
 		fprintf(toConsole, "\nSupported document-management XQuery extensions:\n");
 		fprintf(toConsole, " pf:collections() as node()\n");
 		fprintf(toConsole, " pf:documents($collectionName as xs:string) as node()\n");
@@ -967,7 +967,7 @@ showCommands(void)
 		fprintf(toConsole, "\\a      - disable auto commit\n");
 	}
 	fprintf(toConsole, "\\L file - save client/server interaction\n");
-	fprintf(toConsole, "\\X      - trace MapiClient code\n");
+	fprintf(toConsole, "\\X      - trace mclient code\n");
 }
 
 static int

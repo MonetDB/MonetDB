@@ -24,7 +24,7 @@ The implementation described here is focused on using the Mapi library
 for interaction. This provides a simple textual interface to the server
 based on ASCII text.
 
-It is intended to work directly with any of the MapiClient implementations.
+It is intended to work directly with any of the mclient implementations.
 To avoid clashes with the default port settings, we have hardwired a number
 for the time being.
 @m

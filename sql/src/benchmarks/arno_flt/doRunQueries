@@ -16,5 +16,5 @@
 # Portions created by CWI are Copyright (C) 1997-2007 CWI.
 # All Rights Reserved.
 
-MapiClient -lsql -u monetdb -P monetdb --port=$MAPIPORT < queries.sql
+mclient -lsql -u monetdb -P monetdb --port=$MAPIPORT < queries.sql
 

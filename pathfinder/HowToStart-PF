@@ -280,9 +280,9 @@ alternatives:
 
     shred_doc("/MyPath/MyDoc.xml","MyDoc.xml");
 
-2) In a second shell, start a MapiClient by simply calling::
+2) In a second shell, start a mclient by simply calling::
 
-    MapiClient -lmil
+    mclient -lmil
 
    and then give the same MIL command as above::
 
@@ -320,7 +320,7 @@ Security (or the lack thereof)
 As a security restriction, XML documents without an explicitly created
 alias are currently *only* accessible when the requests are issued
 from the same machine where Mserver runs (i.e. either on the Mserver
-console in MIL, or through a MapiClient that runs on the local
+console in MIL, or through a mclient that runs on the local
 machine).
 
 **SECURITY WARNING**: anybody logged into the Mserver machine, who
@@ -338,9 +338,9 @@ authentication and SSL will be added to MonetDB.
 Executing XQuery queries
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-Use the XQuery language setting of MapiClient (-lxquery or short -lx)::
+Use the XQuery language setting of mclient (-lxquery or short -lx)::
 
- MapiClient -lx [files]
+ mclient -lx [files]
 
 This executes a *single* XQuery found in the file (or multiple files,
 which are concatenated), or on standard input (if no file is passed),
@@ -349,9 +349,9 @@ and prints the serialized result.
 In case of standard input, interactive mode is not allowed. You must
 pipe in a script::
 
- MapiClient -lx < file.xq
+ mclient -lx < file.xq
 
-You may request timing information with the MapiClient --time (-T)
+You may request timing information with the mclient --time (-T)
 option, in which case extra lines are appended to the output, that
 split out execution time:
 
@@ -365,11 +365,11 @@ split out execution time:
 The Shred time is zero if the document was already cached on the
 server (or if your query does not involve any documents).  The total
 time may be larger than the sum of the other times; the difference
-then is communication time between MapiClient and the Mserver.
+then is communication time between mclient and the Mserver.
 
 The default mode (``dm``) for XQuery output results are pretty-printed
 sequences. You may enforce all output to be valid XML, with the
-MapiClient option ``-o xml``.  Your output will then be enclosed by
+mclient option ``-o xml``.  Your output will then be enclosed by
 <XQueryResult> root tags.
 
 The output mode (``dm`` or ``xml``) may be set with the

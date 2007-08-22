@@ -12,7 +12,7 @@ FAQ for MonetDB and its SQL server front end
 Once you have installed and set up the SQL module, you have to load it
 in Mserver, for instance using the sql_server.mil script from the
 lib/MonetDB directory.  A SQL console can afterwards be started using
-MapiClient -lsql.  See MapiClient --help for more details.
+mclient -lsql.  See mclient --help for more details.
 
 ========================================================================
 
@@ -23,7 +23,7 @@ sql_server module loaded in your running Mserver.  See above for
 directions on how to do that.  Collect the SQL statements in a file,
 then simply type:
 
-MapiClient -lsql < batchfile
+mclient -lsql < batchfile
 
 ========================================================================
 

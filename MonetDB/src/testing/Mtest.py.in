@@ -1505,7 +1505,7 @@ def RunTest(env, TST, BusyPorts, COND) :
         elem = SkipTest(env, TST, EXT, "as python is not available.")
         #TODO:
         #elif EXT == ".milC":
-        #elem = SkipTest(env, TST, EXT, "as MapiClient-tests are temporary not supported by "+THISFILE+".")
+        #elem = SkipTest(env, TST, EXT, "as mclient-tests are temporary not supported by "+THISFILE+".")
         #TODO:
         #elif [ "$EXT" = "java"  -a  ! "`type -path java`" ] ; then
         #elem = SkipTest(env, TST, EXT, "as java is not in $PATH.")
@@ -1514,7 +1514,7 @@ def RunTest(env, TST, BusyPorts, COND) :
     elif MissingBATs:
         elem = SkipTest(env, TST, EXT, "as BATs '"+str(MissingBATs)+"` are missing in database '"+TSTDB+"`.")
     elif CALL == "milCXp":
-        elem = SkipTest(env, TST, EXT, "as multiple MapiClients in parallel are currently not supported by "+THISFILE+".")
+        elem = SkipTest(env, TST, EXT, "as multiple MIL clients in parallel are currently not supported by "+THISFILE+".")
     elif CALL == "sqlXp":
         elem = SkipTest(env, TST, EXT, "as multiple SQL clients in parallel are currently not supported by "+THISFILE+".")
     elif CALL == "xqXp":
@@ -2622,10 +2622,10 @@ def main(argv) :
         dft['setXQUERY_LOGDIR']     = "'--set \"xquery_logdir='+env['XQUERY_LOGDIR']+'\"'"
         dft['MAPIPORT']       = "str(randomPort(30000,39999))"
         dft['XRPCPORT']       = "str(randomPort(40000,49999))"
-        dft['MAPICLIENT']     = "'MapiClient -lmil'"
-        dft['SQLCLIENT']      = "'MapiClient -lsql'"
+        dft['MAPICLIENT']     = "'mclient -lmil'"
+        dft['SQLCLIENT']      = "'mclient -lsql'"
         dft['SQLDUMP']        = "'msqldump'"
-        dft['XQUERYCLIENT']   = "'MapiClient -lxquery -oxml'"
+        dft['XQUERYCLIENT']   = "'mclient -lxquery -oxml'"
         dft['X100CLIENT']     = "'x100run_mapi'"
     if THISFILE == "Mprofile.py":
         dft['CMDLST']         = "FindCmdLst(env)"

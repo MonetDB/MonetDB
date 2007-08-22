@@ -17,8 +17,8 @@
 # All Rights Reserved.
 
 PWD=`pwd`
-SQL='MapiClient -lsql -umonetdb -Pmonetdb'
-SQL1='MapiClient -lsql -uskyserver -Pskyserver'
+SQL='mclient -lsql -umonetdb -Pmonetdb'
+SQL1='mclient -lsql -uskyserver -Pskyserver'
 if [ $# -eq 1 ]; then
 	SQL=$1
 fi

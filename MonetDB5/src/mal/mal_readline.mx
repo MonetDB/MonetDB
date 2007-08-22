@@ -14,7 +14,7 @@
 @' Portions created by CWI are Copyright (C) 1997-2007 CWI.
 @' All Rights Reserved.
 @- Online help
-The textual interface @value{MapiClient} supports a limited
+The textual interface @value{mclient} supports a limited
 form of online help commands.
 The argument is a (partial) operator call,
 which is looked up in the symbol table.

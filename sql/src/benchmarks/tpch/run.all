@@ -16,7 +16,7 @@
 # Portions created by CWI are Copyright (C) 1997-2007 CWI.
 # All Rights Reserved.
 
-SQL="MapiClient -lsql -umonetdb -Pmonetdb -T "
+SQL="mclient -lsql -umonetdb -Pmonetdb -T "
 if [ $# -eq 1 ]; then
 	SQL="$1"
 fi

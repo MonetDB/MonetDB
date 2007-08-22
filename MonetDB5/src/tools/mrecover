@@ -64,7 +64,7 @@ It should point to where you have installed the build directory"
 # massage the argument list to prepare for calling
 DBNAME=""
 ASCII="no"
-TOOL="MapiClient -lsql"
+TOOL="mclient -lsql"
 while [ $# -gt 0 ];
 do
 	case "$1" in
@@ -90,7 +90,7 @@ do
 			TOOL=${TOOL#--tool=}
 			case "$TOOL" in
 				[Mm]api)
-				TOOL="MapiClient -lsql"
+				TOOL="mclient -lsql"
 				;;
 				[Jj][Dd][Bb][Cc])
 				TOOL="JdbcClient"

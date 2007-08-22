@@ -994,7 +994,7 @@ showHelp(Module m, str txt, stream *fs){
 	}
 }
 @-
-The tags file is used by the MapiClient frontend to
+The tags file is used by the mclient frontend to
 enable language specific word completion.
 @c
 void dumpHelpTable(stream *f, Module s, str text, int flag){

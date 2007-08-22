@@ -25,7 +25,7 @@ it passes the compiler we have to resort to a debugger to
 assess its behavior.
 
 Note, the MAL debugger described here can be used in conjunction
-with the textual interface client @emph{MapiClient} only.
+with the textual interface client @emph{mclient} only.
 The JDBC protocol does not permit passing through information that
 'violates' the protocol.
 @menu
@@ -851,7 +851,7 @@ mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
 
 	if (p != NULL) {
 		if (cntxt != mal_clients) 
-			/* help MapiClients with fake prompt */
+			/* help mclients with fake prompt */
 			stream_printf(out,"mdb>");
 		printTraceCall(out,mb,stk,pc,cntxt->flags);
 	}
@@ -1460,7 +1460,7 @@ mdbStep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 		ch= isBreakpoint(cntxt,mb, p, pc);
 		if( ch == 't'){
 			if (cntxt != mal_clients) 
-				/* help MapiClients with fake prompt */
+				/* help mclients with fake prompt */
 				stream_printf(cntxt->fdout,"mdb>");
 			printTraceCall(cntxt->fdout,mb,stk,pc,cntxt->flags);
 		} else if( ch )

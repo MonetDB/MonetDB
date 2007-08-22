@@ -16,7 +16,7 @@ some notes on the flags:
   -GR- disable  ==>  disable C++ RTTI
   -Qsafeseh-    ==>  disable structured exception handling
 
-  crash would occur when connecting a MIL MapiClient. With these flags: no problem.
+  crash would occur when connecting a MIL mclient. With these flags: no problem.
 
 ========== packages installed ======================================================================
 

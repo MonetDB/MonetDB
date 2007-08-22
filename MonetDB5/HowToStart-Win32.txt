@@ -328,25 +328,25 @@ an you get the "server console", where you can type you MAL commands.
 The server console is mainly meant for administrative use, hence there
 are no conveniences such as commandline editing or command history.
 
-For a more convenient MAL interface, you should use the ``MapiClient``
+For a more convenient MAL interface, you should use the ``mclient``
 with the Mserver. To do so, first start an Mserver with MAPI (MonetDB5
 Application Programmer's Interfaces) support as follows::
 
  Mserver --dbinit="module(mapi); mal_start();"
 
 Then, in a second shell, set up the same environment and start the
-MapiClient::
+mclient::
 
- MapiClient
+ mclient
 
-With MapiClient, you get a text-based MAL interface that supports
+With mclient, you get a text-based MAL interface that supports
 commandline editing and a commandline history.  The latter can even be
 stored persistently to be re-used after stopping and restarting
-MapiClient; see
+mclient; see
 
 ::
 
- MapiClient --help
+ mclient --help
 
 for details.
 

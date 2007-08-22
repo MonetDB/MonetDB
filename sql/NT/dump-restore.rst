@@ -52,4 +52,4 @@ It is also possible to restore from the command line.  Start a SQL
 Server, and then issue the command
 
 ::
-	MapiClient -lsql -umonetdb -Pmonetdb < dump.sql
+	mclient -lsql -umonetdb -Pmonetdb < dump.sql

@@ -39,9 +39,9 @@ have changed since my proposal.
     * a MIL script to be executed by Mserver -single        (TST.milS) (',^,`)
        (-single has been removed, so .milM & .milS are
         treated equally, now)
-    * a MIL script to be executed by MapiClient -lmil       (TST.milC) (",^,`)
-    * a SQL script to be executed by MapiClient -lsql       (TST.sql)  (",^,`)
-    * a XQUERY script to be executed by MapiClient -lxquery (TST.xq)   (",^,`)
+    * a MIL script to be executed by mclient -lmil          (TST.milC) (",^,`)
+    * a SQL script to be executed by mclient -lsql          (TST.sql)  (",^,`)
+    * a XQUERY script to be executed by mclient -lxquery    (TST.xq)   (",^,`)
    (~) In case the name of an arbitrary executable or Python script is
         suffixed with ".MAPI" (i.e., TST.MAPI[.(exe|com|bat|cmd|py)]),
         Mtest.py starts an Mserver with a MAPI-listerner on MAPIPORT
@@ -56,7 +56,7 @@ have changed since my proposal.
    (') For Mserver, if several files are present named
         TST_sXX.mil(M|S) (XX={00,01,...,99})
         these are executed by subsequently calling Mserver
-   (") For MapiClient, if several files are present named
+   (") For mclient, if several files are present named
         (1) TST_sXX.(milC|sql|xq) (XX={00,01,...,99})
             these are executed subsequently using the same Mserver
         (2) TST_pXX.(milC|sql|xq) (XX={00,01,...,99})
@@ -82,23 +82,23 @@ have changed since my proposal.
   + for frontend tests, a MIL script to be used 
      instead of the frontends dbinit script.
      (optional)                                             (TST.dbinit) (^,`)
-  + for MapiClient tests, a MIL script to be used as
+  + for mclient tests, a MIL script to be used as
      prologue for Mserver, i.e., a script that is executed by Mserver after
      dbinit is executed, but before (the first)
-     MapiClient connects to Mserver
+     mclient connects to Mserver
      (optional)                                             (TST.prologue) (^,`)
   + for SQL tests, a MAL script to be used as
      prologue for mserver5, i.e., a script that is executed by mserver5 after
-     "include sql;" is called and before (the first) SQL-MapiClient connects
+     "include sql;" is called and before (the first) SQL-mclient connects
      to mserver5
      (optional)                                             (TST.prologue5)(^,`)
-  + for MapiClient tests, a MIL script to be used as
+  + for mclient tests, a MIL script to be used as
      epilogue for Mserver, i.e., a script that is executed by Mserver after
-     (all) MapiClient(s) have finished
+     (all) mclient(s) have finished
      (optional)                                             (TST.epilogue) (^,`)
-  + for MapiClient tests, a MAL script to be used as
+  + for mclient tests, a MAL script to be used as
      epilogue for mserver5, i.e., a script that is executed by mserver5 after
-     (all) MapiClient(s) have finished
+     (all) mclient(s) have finished
      (optional)                                             (TST.epilogue5)(^,`)
   + a file that contains a list of modules (one per line)
      required by the test  (optional)                       (TST.modules)  (^,`)
@@ -124,15 +124,15 @@ have changed since my proposal.
   * python TST.py [TST.prelude]
   * Mserver --dbname=TSTDB [TST.prelude] < TST.mil(M|S)
   * Mserver --dbname=TSTDB --set mapi_port=$MAPIPORT --set xrpc_port=$XRPCPORT --dbinit="module(mapi); mil_start();" [TST.prologue] &
-         MapiClient -lmil < TST[_(s|p)XX].milC
+         mclient -lmil < TST[_(s|p)XX].milC
      or  TST[.exe|.com|.bat|.cmd] TST [TST.prelude]
      or  python TST.py [TST.prelude]
   * Mserver --dbname=TSTDB --set mapi_port=$MAPIPORT --set xrpc_port=$XRPCPORT --dbinit="module(sql_server);" [TST.prologue] &
-         MapiClient -lsql < TST[_(s|p)XX].sql
+         mclient -lsql < TST[_(s|p)XX].sql
      or  TST[.exe|.com|.bat|.cmd] TST [TST.prelude]
      or  python TST.py [TST.prelude]
   * Mserver --dbname=TSTDB --set mapi_port=$MAPIPORT --set xrpc_port=$XRPCPORT --dbinit="module(pathfinder);" [TST.prologue] &
-         MapiClient -lxquery -oxml < TST[_(s|p)XX].xq
+         mclient -lxquery -oxml < TST[_(s|p)XX].xq
      or  TST[.exe|.com|.bat|.cmd] TST [TST.prelude]
      or  python TST.py [TST.prelude]
 
@@ -148,8 +148,8 @@ have changed since my proposal.
   (Mserver is called with "--config=$MONETDB_CONF --debug=$GDK_DEBUG $setMONETDB_MOD_PATH --set monet_prompt=".
    See below and "Mserver --help" for details.)
 
-  (MapiClient is called with "--port=$MAPIPORT".
-   See "MapiClient --help" for details.)
+  (mclient is called with "--port=$MAPIPORT".
+   See "mclient --help" for details.)
 
 
 - Mtest.py uses three directory trees based at TSTSRCBASE, TSTBLDBASE, and
@@ -227,10 +227,10 @@ have changed since my proposal.
 	TSTSRCBASE	$MONETDB_SOURCE				base of test source tree
 	TSTBLDBASE	$MONETDB_BUILD				base of extracted test tree
 	TSTTRGBASE	$MONETDB_PREFIX				base for test output
-	MAPICLIENT	MapiClient -lmil			mapi-client program	`)
-	SQLCLIENT	MapiClient -lsql			sql-client program	`)
+	MAPICLIENT	mclient -lmil				mil-client program	`)
+	SQLCLIENT	mclient -lsql				sql-client program	`)
 	SQLDUMP	        msqldump				sql-dump program	`)
-	XQUERYCLIENT	MapiClient -lxquery -oxml		xquery-client program	`)
+	XQUERYCLIENT	mclient -lxquery -oxml			xquery-client program	`)
 
     `) Alternative Mapi-, SQL-, & XQUERY- client programs need to accept (or ignore)
        "--config=", "--host=", & "--port=" options.

@@ -19,7 +19,7 @@
 PWD=`pwd`
 echo $PWD
 
-SQL='MapiClient -lsql -umonetdb -Pmonetdb'
+SQL='mclient -lsql -umonetdb -Pmonetdb'
 if [ $# -eq 1 ]; then
 	SQL="$1"
 fi

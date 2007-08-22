@@ -251,7 +251,7 @@ MonetDB/SQL front end by calling
 
 ::
 
- MapiClient -lsql -umonetdb -Pmonetdb
+ mclient -lsql -umonetdb -Pmonetdb
 
 Usage of SQL Front-end with MonetDB5
 -----
@@ -277,7 +277,7 @@ MonetDB/SQL front-end by calling
 
 ::
 
- MapiClient -lsql -umonetdb -Pmonetdb
+ mclient -lsql -umonetdb -Pmonetdb
 
 
 Documentation

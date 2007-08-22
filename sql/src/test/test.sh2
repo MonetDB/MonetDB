@@ -16,12 +16,12 @@
 # Portions created by CWI are Copyright (C) 1997-2007 CWI.
 # All Rights Reserved.
 
-MapiClient <<EOF
+mclient <<EOF
 module(io);
 quit;
 EOF
 
-MapiClient <<EOF
+mclient <<EOF
 module(io);
 quit;
 EOF

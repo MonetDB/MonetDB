@@ -794,7 +794,7 @@ xml_mapi_seqEnd (XqueryCtx* ctx)
     if ( !(ctx->modes & MODE_NO_ROOT) ) {
         dflt_handle_endElement (ctx, NULL, dflt_ws->restag);
     }
-    /* a result sequence in MapiClient always has to end with '\n' */
+    /* a result sequence in mclient always has to end with '\n' */
     stream_write (ctx->out, "\n", 1, 1);
 
     return SUCCESS;

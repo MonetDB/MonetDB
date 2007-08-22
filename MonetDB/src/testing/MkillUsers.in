@@ -93,7 +93,7 @@ if [    "$PLAYPEN_BUILD" ] ; then BINPATH="$BINPATH    $PLAYPEN_BUILD/src/tools 
 if [   "$TEMPLATE_BUILD" ] ; then BINPATH="$BINPATH   $TEMPLATE_BUILD/src/tools   $TEMPLATE_BUILD/src/tools/.libs" ; fi
 if [ "$PATHFINDER_BUILD" ] ; then BINPATH="$BINPATH $PATHFINDER_BUILD/src/tools $PATHFINDER_BUILD/src/tools/.libs" ; fi
 for b in $BINPATH ; do
-	files="$files `ls $b/* 2>/dev/null | egrep '/(mserver5|Mserver|MapiClient|MapiClient\.py|Mdiff|Mlog|Mtimeout|pf)$'`"
+	files="$files `ls $b/* 2>/dev/null | egrep '/(mserver5|Mserver|MapiClient|mclient|MapiClient\.py|Mdiff|Mlog|Mtimeout|pf)$'`"
 done
 
 case `uname` in

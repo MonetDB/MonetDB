@@ -170,7 +170,7 @@ XQUERYreader(Client c)
 	language = be->language;	
 
 @-
-Distinguish between console reading and MapiClient connections.
+Distinguish between console reading and mclient connections.
 The former comes with readline functionality.
 @c
 	while(more) {

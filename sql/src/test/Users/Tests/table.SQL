@@ -16,6 +16,6 @@
 # Portions created by CWI are Copyright (C) 1997-2007 CWI.
 # All Rights Reserved.
 
-SQL="MapiClient -lsql -umy_user -Pp1 -h $HOST -p $MAPIPORT"
+SQL="mclient -lsql -umy_user -Pp1 -h $HOST -p $MAPIPORT"
 
 $SQL < ${RELSRCDIR}/../table.sql

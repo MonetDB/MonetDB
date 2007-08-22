@@ -17,7 +17,7 @@
 # All Rights Reserved.
 
 PWD=`pwd`
-SQL="MapiClient -lsql -umonetdb -Pmonetdb -h $HOST -p $MAPIPORT"
+SQL="mclient -lsql -umonetdb -Pmonetdb -h $HOST -p $MAPIPORT"
 
 #Generate Data...
 

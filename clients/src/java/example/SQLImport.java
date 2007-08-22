@@ -20,7 +20,7 @@ import java.sql.*;
 import java.io.*;
 
 /**
- * This simple example somewhat emulates the MapiClient command. However in
+ * This simple example somewhat emulates the mclient command. However in
  * it's simpleness it only supports SQL queries which entirely are on one line.
  *
  * This program reads a file line by line, and feeds the line into a running

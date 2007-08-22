@@ -11,7 +11,7 @@ function query()
 	do
 		sleep $1
 		echo "fire $$.$i:" `date +"%F %T"`
-		MapiClient -lsql -p50000 <$3
+		mclient -lsql -p50000 <$3
 		echo "done $$.$i";
 		i=`expr $i + 1`
 	done

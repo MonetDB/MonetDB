@@ -17,7 +17,7 @@
 # All Rights Reserved.
 
 PWD=`pwd`
-SQL="MapiClient -lsql -u monetdb -P monetdb"
+SQL="mclient -lsql -u monetdb -P monetdb"
 if [ $# -eq 1 ]; then
 	SQL=$1
 fi

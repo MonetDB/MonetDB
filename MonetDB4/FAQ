@@ -23,7 +23,7 @@ sql_server.mil script in the lib/MonetDB directory.
 The MonetDB source tree contains a section Mapi/clients, where you
 also find sample applications to interact with the server.  For most
 APIs we have included a simple textual monitor to show the basic
-interaction, called MapiClient.  Try this one first before developing
+interaction, called mclient.  Try this one first before developing
 your own applications.
 
 ========================================================================

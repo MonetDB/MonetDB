@@ -739,7 +739,7 @@ Continue processing any left-over input from the previous round.
 		in->pos, in->len, in->eof);
 #endif
 @-
-Distinguish between console reading and MapiClient connections.
+Distinguish between console reading and mclient connections.
 The former comes with readline functionality.
 @c
 	while(more) {

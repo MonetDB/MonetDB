@@ -101,7 +101,7 @@ monet_daemon=no
 #====================================
 # default port to address an Mserver for a MIL session
 mapi_port=50000
-#allow MapiClient sessions from outside the server machine
+#allow mclient sessions from outside the server machine
 mapi_open=false                    
 # show all the MIL output?  (default: no)
 #mapi_noheaders=no

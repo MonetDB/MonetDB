@@ -289,25 +289,25 @@ commands.  The server console is mainly meant for administrative use,
 hence there are no conveniences such as command-line editing or command
 history.
 
-For a more convenient MIL interface, you should use the ``MapiClient``
+For a more convenient MIL interface, you should use the ``mclient``
 with the Mserver.  To do so, first start an Mserver with MAPI (MonetDB
 Application Programmer's Interface) support as follows::
 
  Mserver --dbinit="module(mapi); mil_start();"
 
 Then, in a second shell, set up the same environment and start the
-MapiClient::
+mclient::
 
- MapiClient
+ mclient
 
-With MapiClient, you get a text-based MIL interface that supports
+With mclient, you get a text-based MIL interface that supports
 command-line editing and a command-line history.  The latter can even
 be stored persistently to be re-used after stopping and restarting
-MapiClient; see
+mclient; see
 
 ::
 
- MapiClient --help
+ mclient --help
 
 for details.
 

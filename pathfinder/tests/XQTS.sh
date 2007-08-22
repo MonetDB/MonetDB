@@ -43,13 +43,13 @@ if [ "$TSTSRCBASE" = "$XQTS_SRC" ] ; then
 	XQTS_SRC="${XQTS_SRC}_"
 fi
 
-type -p MapiClient || {
-	echo 'MapiClient not found!'
-	echo 'Please make sure that MapiClient is found in your $PATH.'
+type -p mclient || {
+	echo 'mclient not found!'
+	echo 'Please make sure that mclient is found in your $PATH.'
 	exit 1
 }
 
-echo '1+2' | MapiClient -lx -sxml || {
+echo '1+2' | mclient -lx -oxml || {
 	echo 'MonetDB/XQuery server not running?'
 	echo 'Please start it with (e.g.) `Mserver --dbinit="module(pathfinder);"`.'
 	exit 1
@@ -73,7 +73,7 @@ cat "$THISDIR/XQTS.xq" \
        -e 's|doc("[^")]*XQTS.Errors.xml")|doc("'"$THISDIR"'/XQTS.Errors.xml")|g' \
        -e 's|doc("[^")]*XQTS.missing.xml")|doc("'"$THISDIR"'/XQTS.missing.xml")|g' \
        -e 's|doc("[^")]*XQTS.supported.xml")|doc("'"$THISDIR"'/XQTS.supported.xml")|g' \
- | MapiClient -lx -sxml \
+ | mclient -lx -oxml \
  | grep -v '^<.*>$' \
  | sed -e 's|&lt;|<|g' -e 's|&gt;|>|g' \
  > "$XQTS_DST/.XQTS.sh" || exit 1
