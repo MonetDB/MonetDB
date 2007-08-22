@@ -89,6 +89,8 @@ mkdir -p $RPM_BUILD_ROOT/%{localstatedir}/MonetDB4
 find $RPM_BUILD_ROOT -name .incs.in | xargs rm -f
 
 # cleanup stuff we don't want to install
+rm -r $RPM_BUILD_ROOT%{_libdir}/MonetDB4/lib/*.la
+rm -r $RPM_BUILD_ROOT%{_libdir}/*.la
 rm -rf $RPM_BUILD_ROOT%{_libdir}/MonetDB4/Tests/*
 rm -rf $RPM_BUILD_ROOT%{prefix}/bin/monetdb4-config.bat
 
@@ -106,7 +108,6 @@ rm -fr $RPM_BUILD_ROOT
 %{_libdir}/libmonet.*
 %{_libdir}/libembeddedmil.*
 %{_libdir}/MonetDB4/lib/*.so* 
-%{_libdir}/MonetDB4/lib/*.la* 
 %{_libdir}/MonetDB4/*.mil* 
 
 %attr(770,monetdb,monetdb) %dir %{localstatedir}/MonetDB4

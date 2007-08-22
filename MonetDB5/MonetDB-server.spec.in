@@ -87,6 +87,8 @@ mkdir -p $RPM_BUILD_ROOT/%{localstatedir}/MonetDB5
 find $RPM_BUILD_ROOT -name .incs.in | xargs rm -f
 
 # cleanup stuff we don't want to install
+rm -r $RPM_BUILD_ROOT%{_libdir}/*.la
+rm -r $RPM_BUILD_ROOT%{_libdir}/MonetDB5/lib/*.la
 rm -rf $RPM_BUILD_ROOT%{_libdir}/MonetDB5/Tests/*
 rm -rf $RPM_BUILD_ROOT%{prefix}/bin/monetdb5-config.bat
 
@@ -120,9 +122,7 @@ rm -fr $RPM_BUILD_ROOT
 %{prefix}/bin/monetdb5-config
 %{prefix}/include/MonetDB5/*.h
 %{prefix}/include/MonetDB5/*/*.[hcm]
-%{_libdir}/*.la
 %{_libdir}/*.so 
-%{_libdir}/MonetDB5/lib/*.la
 
 
 %pre 

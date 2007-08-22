@@ -124,6 +124,7 @@ make install \
 
 #find $RPM_BUILD_ROOT -name .incs.in | xargs rm
 
+rm -f $RPM_BUILD_ROOT%{_libdir}/MonetDB?/*.la
 rm -rf $RPM_BUILD_ROOT%{_libdir}/MonetDB4/Tests/*
 rm -rf $RPM_BUILD_ROOT%{prefix}/lib*/python*/site-packages
 rm -rf $RPM_BUILD_ROOT%{prefix}/include/sql
