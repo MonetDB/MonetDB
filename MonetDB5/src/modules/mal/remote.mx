@@ -635,7 +635,7 @@ remote_export str RMTexec(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
  */
 str RMTexec(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	str conn, mod, func, ident, arg, tmp;
-	int argc, i, len;
+	int i, len;
 	connection c;
 	char qbuf[512];	/* FIXME: make this dynamic */
 	MapiHdl mhdl;
@@ -671,8 +671,7 @@ str RMTexec(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	mapi_close_handle(mhdl);
 
 	/* handle the arguments to the function */
-	argc = pci->argc - 3 /* ret, conn, func */;
-	assert(argc >= 0);
+	assert(pci->argc >= 3); /* ret, conn, func, ... */
 
 	/* put the arguments one by one, and dynamically build the
 	 * invocation string */
