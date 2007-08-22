@@ -21,22 +21,21 @@
 @m
 .MODULE geom;
 
-   .PRELUDE = geom_prelude;
-   .EPILOGUE = geom_epilogue;
-   
    .ATOM mbr [16];
      .FROMSTR = mbrFROMSTR;
      .TOSTR   = mbrTOSTR;
      .HASH    = mbrHASH;
      .COMP    = mbrCOMP;
      .NULL    = mbrNULL;
+     .READ     = mbrREAD;
+     .WRITE    = mbrWRITE;
    .END;
 
    .ATOM wkb;
      .TOSTR   = wkbTOSTR;
      .FROMSTR = wkbFROMSTR;
 
-     .NEQUAL   = wkbNEQUAL;
+     .COMP     = wkbCOMP;
      .HASH     = wkbHASH;
      .NULL     = wkbNULL;
      .READ     = wkbREAD;
@@ -64,7 +63,7 @@
     to the coordinate dimension. 
     This specification is restricted to geometries in two-dimensional coordinate space."
 
-   .COMMAND GeometryType(wkb w) : str = wkbGeometryType;
+   .COMMAND GeometryTypeId(wkb w) : int = wkbGeometryTypeId;
    "Returns the name of the instantiable subtype of Geometry of which this 
     Geometry instance is a member. The name of the instantiable subtype of Geometry is returned as string."
 
@@ -120,6 +119,13 @@
          Interior, Boundary and Exterior of the two geometries as specified by the values in the intersectionPatternMatrix."
 
 @+ ogc Spatial Analysis methods
+@m
+
+   .COMMAND Area(wkb g) : dbl = wkbArea;
+    	"Returns the area of the geometry."
+
+   .COMMAND Length(wkb g) : dbl = wkbLength;
+    	"Returns the length of the geometry."
 
    .COMMAND Distance(wkb a, wkb b) : dbl = wkbDistance;
     	"Returns the shortest distance between any two points in the two geometries
@@ -144,31 +150,8 @@
    .COMMAND SymDifference(wkb a, wkb b): wkb = wkbSymDifference;
    	"Returns a geometry that represents the point set semmetric difference of Geometry a with b."
 
-@+
-   .COMMAND interact(mbr, mbr) : bit = mbrINTERACTmbr;
-   "Tests whether 2 mbr's spatially interact (i.e. whether they're not disjoint)."
-
-   .COMMAND interact(wkb, mbr) : bit = wkbINTERACTmbr;
-   "Tests whether a wkb and a mbr spatially interact (i.e. whether they're not disjoint)."
-
-   .COMMAND interact(mbr, wkb) : bit = mbrINTERACTwkb;
-   "Tests whether a mbr and a wkb spatially interact (i.e. whether they're not disjoint)."
-
-   .COMMAND interact(wkb, wkb) : bit = wkbINTERACTwkb;
-   "Tests whether 2 wkbs spatially interact (i.e. whether they're not disjoint)."
-   
-@m
-   .ATOM geom_filter = int;
-   .END;
-   
-   .COMMAND filter(wkb, mbr) : geom_filter = wkbFILTER;
-   "Computes the filter code to use in the primary filter, given a universe that is bounded by the given mbr."
-
-   .COMMAND expand(geom_filter) : BAT[geom_filter, geom_filter] = geom_filterEXPAND;
-   "Returns a set of intervals of filter codes that can be used by the primary_filter procs to quickly select >= all geometries that interact with another geometry, given its filter code."
-
-   .COMMAND geom_select_filter(BAT[void, geom_filter], BAT[geom_filter, geom_filter]) : BAT[void, oid] = geom_select_filterImpl;
-   "Returns the oids of the filter codes from the filter BAT that are within the given set of intervals. The first argument contains the filter BAT of the concerned geometry cluster. The second argument is the set of intervals, as determined by expanding a filter code."
+   .PRELUDE = geom_prelude;
+   .EPILOGUE = geom_epilogue;
    
 .END geom;
 
@@ -324,9 +307,7 @@ mbrCOMP(
    mbr*	r	/* IN: second geom_point. */
 )
 {
-	/* For now, lexicographical ordering on (x,y)
-	// TODO: involve xzEncode() to get an ordering on spatial proximity.
-	*/
+	/* simple lexicographical ordering on (x,y) */
 	int res;
 	if (l->xmin == r->xmin)
 		res = (l->ymin < r->ymin)? -1: (l->ymin == r->ymin)? 0: 1;
@@ -339,6 +320,36 @@ mbrCOMP(
 			res = (l->xmax < r->xmax)? -1: 1;
 	}
 	return res;
+}
+
+mbr *
+mbrREAD(mbr *a, stream *s, size_t cnt)
+{
+	mbr *c;
+	size_t i;
+
+	for(i=0, c = a;i<cnt;i++, c++) {
+		if (!stream_readInt(s, (int*)& c->xmin) ||
+		    !stream_readInt(s, (int*)& c->ymin) ||
+		    !stream_readInt(s, (int*)& c->xmax) ||
+		    !stream_readInt(s, (int*)& c->ymax) ) 
+			return NULL;
+	}
+	return a;
+}
+
+void
+mbrWRITE(mbr *c, stream *s, size_t cnt)
+{
+	size_t i;
+
+	for(i=0;i<cnt;i++, c++) {
+		if (!stream_writeInt(s, c->xmin) ||
+		    !stream_writeInt(s, c->ymin) ||
+		    !stream_writeInt(s, c->xmax) ||
+		    !stream_writeInt(s, c->ymax))
+			break;
+	}
 }
 
 /*
@@ -460,17 +471,17 @@ wkbHASH(wkb *w)
 }
 
 int
-wkbNEQUAL(wkb *l, wkb *r)
+wkbCOMP(wkb *l, wkb *r)
 {
 	int len = l->len;
 
 	if (len != r->len)
-		return (1);
+		return len-r->len;
 
 	if (len == ~(int) 0)
 		return (0);
 
-	return memcmp(l->data, r->data, len) != 0;
+	return memcmp(l->data, r->data, len);
 }
 
 wkb *
@@ -583,130 +594,168 @@ wkbMBR(
 	return GDK_FAIL;
 }
 
-
-/* COMMAND filter
- * Compute the value to use in the primary filter,
- * given a universe stretching from (minX,minY) to (maxX, maxY).
- */
-int
-wkbFILTER(
-	geom_filter* res, /* INOUT: The result. */
-	wkb* geom, /* IN: The geom_geometry to operate on. */
-	mbr* universe /* IN: The universe. */
-)
+wkb *
+geos2wkb( GEOSGeom geosGeometry )
 {
-	*res = xzEncodeWKB(universe, geom);
+	size_t wkbLen = 0; 
+	unsigned char *w = GEOSGeomToWKB_buf(geosGeometry, &wkbLen);
+	wkb *atom = GDKmalloc((int)wkb_size(wkbLen));
 
-	if (*res < 0)
-		return GDK_FAIL;
-
-	return GDK_SUCCEED;
-}
-
-/* COMMAND expand
- * Quickly returns a set of intervals of filter codes that can be used to select 
- * >= all geometries that interact with the one with the given filter code.
- */
-int
-geom_filterEXPAND(
-	BAT** res,
-	geom_filter* filterCode
-)
-{
-	*res = xzOverlap(*filterCode);
-	return GDK_SUCCEED;
-}
-
-/* COMMAND geom_select_filterImpl
- * Returns the oids of the filter codes from the filter BAT that are within the 
- * given set of intervals.
- */
-int
-geom_select_filterImpl(
-	BAT** res,
-	BAT* filters,
-	BAT* intervals
-)
-{
-	BAT *r = NULL;
-	BUN curInt, lstInt, fstFil, curFil, lstFil;
-	int bunSzeInt, bunSzeFil, shift;
-	oid *curRes, oidFil, sqbs;
-	size_t cntRes, capRes;
-	geom_filter fst, lst;
-
-	BATcheck(filters, "geom_select_filter: filters");
-	BATcheck(intervals, "geom_select_filter: intervals");
-	ERRORcheck(!BAThdense(filters), "geom_select_filter: head of filters BAT not dense\n");
-	ERRORcheck(!(BATtordered(filters)&1), "geom_select_filter: tail of filters BAT not sorted\n");
-	ERRORcheck(!(BAThordered(intervals)&1), "geom_select_filter: head of intervals BAT not sorted\n");
-		
-	/* intervals must not overlap; hence, |res| <= |filters| */
-	r = BATnew(TYPE_void, TYPE_oid, BATcount(filters));
-	if (!r) {
-		GDKerror("geom_select_filter: failed to allocate result BAT\n");
-		return GDK_FAIL;
+	if (!w) {
+		*atom = *wkbNULL();
+	} else {
+		atom->len = wkbLen;
+		memcpy(&atom->data, w, wkbLen);
+		free(w);
 	}
-	assert(BUNsize(r) == sizeof(oid));
-	cntRes = 0;
-	capRes = BATcapacity(r);
-	curRes = (oid*) BUNtloc(r, BUNfirst(r));
+	return atom;
+}
 
-	curFil = BUNtloc(filters, BUNfirst(filters));
-	lstFil = BUNtloc(filters, BUNlast(filters));
-	bunSzeFil = BUNsize(filters);
-	fstFil = curFil - filters->hseqbase * bunSzeFil;
-	shift = 1;
-	while (bunSzeFil>>shift) shift++;
-	shift--;
+@= basic
+int
+@1( @2 *out, wkb *geom)
+{
+	int ret = GDK_FAIL;
+	GEOSGeom geosGeometry = wkb2geos(geom);
 
-	lst = geom_filter_nil;
-	BATloopFast(intervals, curInt, lstInt, bunSzeInt) {
-		fst = *(geom_filter*) BUNhloc(intervals, curInt);
-		assert(fst > lst); /* intervals must not overlap */
-		lst = *(geom_filter*) BUNtloc(intervals, curInt);
-		assert(fst <= lst); /* interval consistency */ 
-
-		/* poor man's binary search / exploiting forward scan */
-		while (curFil+1048576 < lstFil && *(geom_filter*) (curFil+1048576) < fst)
-			curFil += 1048576; /* this avoids mmapped I/O */
-		while (curFil+32768 < lstFil && *(geom_filter*) (curFil+32768) < fst)
-			curFil += 32768;
-		while (curFil+1024 < lstFil && *(geom_filter*) (curFil+1024) < fst)
-			curFil += 1024;
-		while (curFil+32 < lstFil && *(geom_filter*) (curFil+32) < fst)
-			curFil += 32;
-		while (curFil < lstFil && *(geom_filter*) curFil < fst)
-			curFil += bunSzeFil;
-		oidFil = ((curFil - fstFil) >> shift);
-
-		/* collect results */
-		while (curFil < lstFil && *(geom_filter*) curFil <= lst) {
-			assert(cntRes < capRes); /* |res| <= |filters| */
-			curRes[cntRes++] = oidFil++;
-			curFil += bunSzeFil;
+	if (geosGeometry) { 
+		if ((*out=@4(@3( geosGeometry))) != @5) {
+			ret = GDK_SUCCEED;
 		}
+		GEOSGeom_destroy(geosGeometry);
 	}
-	
-	/* set result count */
-	r->batBuns->free = cntRes * BUNsize(r);
-	BATsetcount(r, cntRes);
+	return ret;
+}
+@c
+@:basic(wkbDimension,int,GEOSGeom_getDimensions,,0)@
+@:basic(wkbGeometryTypeId,int,GEOSGeomTypeId,,-1)@
+@:basic(wkbSRID,int,GEOSGetSRID,,0)@
+@:basic(wkbEnvelope,wkb*,GEOSEnvelope,geos2wkb,NULL)@
+@:basic(wkbIsEmpty,bit,GEOSisEmpty,,2)@
+@:basic(wkbIsSimple,bit,GEOSisSimple,,2)@
+@:basic(wkbBoundary,wkb*,GEOSBoundary,geos2wkb,NULL)@
 
-	/* set result properties */
-	r->hdense = TRUE;
-	BATseqbase(r, 0);
-	r->hsorted = GDK_SORTED;
-	BATkey(r, TRUE);
-	sqbs = cntRes == 0 ? 0 : *(oid*)BUNtloc(r,BUNfirst(r));
-	r->tdense = (cntRes < 2 && sqbs != oid_nil);
-	if (r->tdense) {
-		BATseqbase(BATmirror(r), sqbs);
+@= spatial
+int
+@1( bit *out, wkb *a, wkb *b)
+{
+	int ret = GDK_FAIL;
+	GEOSGeom ga = wkb2geos(a);
+	GEOSGeom gb = wkb2geos(b);
+
+	if (ga && gb) { 
+		*out= @2( ga, gb);
+		ret = GDK_SUCCEED;
 	}
-	r->tsorted = GDK_SORTED;
-	BATkey(BATmirror(r), TRUE);
+	if (ga)
+		GEOSGeom_destroy(ga);
+	if (gb)
+		GEOSGeom_destroy(gb);
+	return ret;
+}
+@= spatial2
+int
+@1( bit *out, wkb *a, wkb *b, @3 @4)
+{
+	int ret = GDK_FAIL;
+	GEOSGeom ga = wkb2geos(a);
+	GEOSGeom gb = wkb2geos(b);
 
-	*res = r;
-	return GDK_SUCCEED;
+	if (ga && gb) { 
+		*out= @2( ga, gb, @4);
+		ret = GDK_SUCCEED;
+	}
+	if (ga)
+		GEOSGeom_destroy(ga);
+	if (gb)
+		GEOSGeom_destroy(gb);
+	return ret;
+}
+@c
+@:spatial(wkbEquals,GEOSEquals)@
+@:spatial(wkbDisjoint,GEOSDisjoint)@
+@:spatial(wkbIntersect,GEOSIntersects)@
+@:spatial(wkbTouches,GEOSTouches)@
+@:spatial(wkbCrosses,GEOSCrosses)@
+@:spatial(wkbWithin,GEOSWithin)@
+@:spatial(wkbContains,GEOSContains)@
+@:spatial(wkbOverlaps,GEOSOverlaps)@
+@:spatial2(wkbRelate,GEOSRelatePattern,char*,pattern)@
+
+@= analysis
+int
+@1( dbl *out, wkb *a)
+{
+	int ret = GDK_FAIL;
+	GEOSGeom ga = wkb2geos(a);
+
+	if (ga) { 
+		if ( @2( ga, out) != 0)
+			ret = GDK_SUCCEED;
+		GEOSGeom_destroy(ga);
+	}
+	return ret;
+}
+@= analysis2
+int
+@1( dbl *out, wkb *a, wkb *b)
+{
+	int ret = GDK_FAIL;
+	GEOSGeom ga = wkb2geos(a);
+	GEOSGeom gb = wkb2geos(b);
+
+	if (ga && gb) { 
+		if ( @2( ga, gb, out) != 0)
+			ret = GDK_SUCCEED;
+	}
+	if (ga)
+		GEOSGeom_destroy(ga);
+	if (gb)
+		GEOSGeom_destroy(gb);
+	return ret;
+}
+@= analysis3
+int
+@1( @2 *out, wkb *a, wkb *b)
+{
+	int ret = GDK_FAIL;
+	GEOSGeom ga = wkb2geos(a);
+	GEOSGeom gb = wkb2geos(b);
+
+	if (ga && gb) { 
+		if ( (*out=@4(@3( ga, gb))) != NULL)
+			ret = GDK_SUCCEED;
+	}
+	if (ga)
+		GEOSGeom_destroy(ga);
+	if (gb)
+		GEOSGeom_destroy(gb);
+	return ret;
+}
+@c
+@:analysis(wkbArea,GEOSArea)@
+@:analysis(wkbLength,GEOSLength)@
+@:analysis2(wkbDistance,GEOSDistance)@
+@:basic(wkbConvexHull,wkb*,GEOSConvexHull,geos2wkb,NULL)@
+@:analysis3(wkbIntersection,wkb*,GEOSIntersection,geos2wkb)@
+@:analysis3(wkbUnion,wkb*,GEOSUnion,geos2wkb)@
+@:analysis3(wkbDifference,wkb*,GEOSDifference,geos2wkb)@
+@:analysis3(wkbSymDifference,wkb*,GEOSSymDifference,geos2wkb)@
+
+@c
+int
+wkbBuffer( wkb **out, wkb *geom, dbl *distance)
+{
+	int ret = GDK_FAIL;
+	GEOSGeom geosGeometry = wkb2geos(geom);
+
+	if (geosGeometry) { 
+		if ((*out=geos2wkb(GEOSBuffer( geosGeometry, *distance, -1))) != NULL) {
+			ret = GDK_SUCCEED;
+		}
+		GEOSGeom_destroy(geosGeometry);
+	}
+	return ret;
 }
 
 @mil
@@ -718,86 +767,6 @@ const wkbMultiPoint := 4;
 const wkbMultiLineString := 5;
 const wkbMultiPolygon := 6;
 const wkbGeometryCollection := 7;
-
-PROC oids( str cluster) : BAT[void, oid]
-{
-	return bat(cluster + "_geom_oid");
-}
-ADDHELP("oids",
-	"Wouter Scherphof", "November 30 2006",
-	"Returns the 'oid' bat from a geom_cluster.",
-	"geom");
-
-PROC voids( str cluster) : BAT[oid, void]
-{
-	return bat(cluster + "_geom_void");
-}
-ADDHELP("voids",
-	"Wouter Scherphof", "November 30 2006",
-	"Returns the 'void' bat from a geom_cluster.",
-	"geom");
-
-PROC filters( str cluster) : BAT[void, geom_filter]
-{
-	return bat(cluster + "_geom_filter");
-}
-ADDHELP("filters",
-	"Wouter Scherphof", "November 30 2006",
-	"Returns the 'filter' bat from a geom_cluster.",
-	"geom");
-
-PROC geoms( str cluster) : BAT[void, any]
-{
-	return bat(cluster + "_geom_geom");
-}
-ADDHELP("geoms",
-	"Wouter Scherphof", "November 30 2006",
-	"Returns the 'geom' bat from a geom_cluster.",
-	"geom");
-
-PROC mbrs( str cluster) : BAT[void, any]
-{
-	return bat(cluster + "_mbr");
-}
-ADDHELP("mbrs",
-	"Wouter Scherphof", "November 30 2006",
-	"Returns the 'mbr' bat from a geom_cluster.",
-	"geom");
-
-PROC universe( str cluster) : mbr
-{
-	return bat(cluster + "_geom_universe").fetch(0@0);
-}
-ADDHELP("universe",
-	"Wouter Scherphof", "November 30 2006",
-	"Returns the universe mbr from a geom_cluster.",
-	"geom");
-
-PROC geom_cluster( str name, BAT[void, wkb] geoms, mbr universe) : str
-{
-	# Compute filter codes.
-	var filters:= [filter](geoms, universe);
-	# Sort on filter code, i.e. sort on spatial proximity.
-	filters := filters.reverse().sort().reverse();
-	var clusterOids := filters.mark(0@0).reverse().rename(name + "_geom_oid").persists(true).access(BAT_READ);
-	# inverse of clusterOids, to enable positional lookup of geoms with oid.
-	clusterOids.sort().mark(0@0).reverse().rename(name + "_geom_void").persists(true).access(BAT_READ);
-	filters.reverse().mark(0@0).reverse().rename(name + "_geom_filter").persists(true).access(BAT_READ);
-	geoms.fetch(filters).reverse().mark(0@0).reverse().rename(name + "_geom_geom").persists(true).access(BAT_READ);
-	# Compute minimum bounding rectangles.
-	filters.destroy();
-	var clusterUniverse := bat(void, mbr).rename(name + "_geom_universe").persists(true);
-	clusterUniverse.seqbase(0@0);
-	clusterUniverse.append(universe);
-	clusterUniverse.access(BAT_READ);
-	commit();
-	return name;
-}
-ADDHELP("geom_cluster",
-	"Wouter Scherphof", "November 29 2006",
-	"Creates (and saves) the storage structure for a geometry column, given a name for it and the bounds of the universe.\nCreates a number of synced BATs, which can be retrieved with their respective procs: oids(cluster_name), voids(cluster_name), filters(cluster_name), geoms(cluster_name), mbrs(cluster_name) and universe(cluster_name).",
-	"geom"
-);
 
 # Functions prescribed by OGC's SFA standard:
 
@@ -837,139 +806,3 @@ PROC @2( wkb w ): wkb
 @:types(Line,linestring,wkbLineString)@
 @:types(Surface,surface,wkbPolygon)@
 @:types(Poly,polygon,wkbPolygon)@
-
-PROC geom_cluster_print( str cluster) : void
-{
-	print(cluster);
-	print(cluster.universe());
-	print(cluster.oids(), cluster.voids(), cluster.filters(), cluster.mbrs(), cluster.geoms());
-}
-ADDHELP("geom_cluster_print",
-	"Wouter Scherphof", "November 30 2006",
-	"Prints the contents of a geom_cluster.",
-	"geom");
-
-PROC geom_cluster_persists( str cluster, bit mode) : void
-{
-	cluster.oids().persists(mode);
-	cluster.voids().persists(mode);
-	cluster.filters().persists(mode);
-	cluster.geoms().persists(mode);
-	cluster.mbrs().persists(mode);
-}
-ADDHELP("geom_cluster_persists",
-	"Wouter Scherphof", "November 30 2006",
-	"Persists (or not) the contents of a geom_cluster.",
-	"geom");
-
-PROC geom_primary_filter( str cluster, wkb geom) : BAT[void, oid]
-{
-	var filterCode := geom.filter(cluster.universe());
-	# Expand the filter code to a BAT[geom_filter, geom_filter] with [from, to] intervals.
-	var filterIntervals := filterCode.expand();
-	var filterVoids := geom_select_filter(cluster.filters(), filterIntervals);
-	var mbrs := filterVoids.reverse().mirror().join(cluster.mbrs());
-	var interactingMbrs := [interact](mbrs, geom.mbr()).uselect(true);
-	return interactingMbrs.mirror().join(cluster.oids());
-}
-ADDHELP("geom_primary_filter",
-	"Wouter Scherphof", "November 29 2006",
-	"Quickly selects >= all geometries from the cluster that have a spatial interaction with the given @1.\nI.e. a set of 'candidates' is selected.\nReturns the ids from the originating unclustered geometry BAT in the tail and the local cluster oids in the head.\nThe given @1's coordinates must be in the same universe as the cluster geometries.",
-	"geom");
-
-# module(alarm);
-
-PROC geom_primary_filter( str cluster1, str cluster2) : BAT[oid, oid]
-{
-	if (not( cluster1.universe() = cluster2.universe() )) {
-		print("!ERROR: The two geometry clusters are in different universes.");
-		cluster1.geom_cluster_print();
-		cluster2.geom_cluster_print();
-		return nil;
-	}
-	var count1 := cluster1.oids().count();
-	var count2 := cluster2.oids().count();
-	var outerCluster, innerCluster;
-	if (count1 < count2) {
-		outerCluster := cluster1;
-		innerCluster := cluster2;
-	}
-	else {
-		outerCluster := cluster2;
-		innerCluster := cluster1;
-	}
-	var outerType := outerCluster.geoms().ttype();
-	var innerType := innerCluster.geoms().ttype();
-	var innerFilters := innerCluster.filters();
-	var outerMbrs := outerCluster.mbrs();
-	var innerMbrs := innerCluster.mbrs();
-	var res := bat(oid, oid);
-#		var tt, tExpand := 0.0, tSelectFilter := 0.0, tJoinInnerMbrs := 0.0, tInteract := 0.0, tProject := 0.0, tInsert := 0.0, filterCount := 0;
-	outerCluster.filters()@batloop() {
-#			tt := usec();
-		var filterIntervals := $t.expand();
-#			tExpand := tExpand + ((usec() - tt) / 1000000.0);
-#			tt := usec();
-		var matches := geom_select_filter(innerFilters, filterIntervals);  # BAT[void, inner-cluster-oid]
-#			tSelectFilter := tSelectFilter + ((usec() - tt) / 1000000.0);
-#			filterCount := filterCount + matches.count();
-#			tt := usec();
-		matches := matches.reverse().mirror().join(innerMbrs);  # BAT[inner-cluster-oid, inner-mbr]
-#			tJoinInnerMbrs := tJoinInnerMbrs + ((usec() - tt) / 1000000.0);
-#			tt := usec();
-		matches := [interact](matches, outerMbrs.fetch($h)).uselect(true);  # BAT[inner-cluster-oid, void]
-#			tInteract := tInteract + ((usec() - tt) / 1000000.0);
-#			tt := usec();
-		matches := matches.project($h).reverse();  # BAT[outer-cluster-oid, inner-cluster-oid]
-#			tProject := tProject + ((usec() - tt) / 1000000.0);
-#			tt := usec();
-		res.insert(matches);
-#			tInsert := tInsert + ((usec() - tt) / 1000000.0);
-#			tt := usec();
-	}
-	res := res.access(BAT_READ);
-	res := res.join(innerCluster.oids());  # BAT[outer-cluster-oid, inner-original-oid]
-	res := res.reverse().join(outerCluster.oids()).reverse();  # BAT[outer-original-oid, inner-original-oid]
-#		print("cross product count: " + str(cluster1.oids().count() * cluster2.oids().count()));
-#		print("filter count: " + filterCount);
-#		print("res count: " + res.count());
-#		print("tExpand: " + tExpand);
-#		print("tSelectFilter: " + tSelectFilter);
-#		print("tJoinInnerMbrs: " + tJoinInnerMbrs);
-#		print("tInteract: " + tInteract);
-#		print("tProject: " + tProject);
-#		print("tInsert: " + tInsert);
-	if (count1 >= count2)
-		res := res.reverse();
-	return res.sort();
-}
-ADDHELP("geom_primary_filter",
-	"Wouter Scherphof", "November 30 2006",
-	"Quickly selects for each geometry in cluster 1 >= all geometries from cluster2 that have a spatial interaction with it.\nI.e. a set of 'candidate' geometry pairs for a spatial join is selected.\nReturns the ids from the originating unclustered geometry BATs.\nBoth clusters must be in the same universe.",
-	"geom");
-
-
-# utility procs
-
-PROC store_ascii_io( str name, BAT[str, BAT] table, mbr universe) : void
-{
-	var tableName := table.bbpname();
-	table@batloop() {
-		var tp := $t.ttype();
-		if (
-			(tp = geom_point) or
-			(tp = geom_geometry) or
-			(tp = geom_curve) or
-			(tp = geom_linestring) or
-			(tp = geom_surface) or
-			(tp = geom_polygon)
-		) {
-			geom_cluster(name + "_" + $h, $t, universe);
-			$t.destroy();
-		}
-		else {
-			$t.rename(name + "_" + $h).persists(true).access(BAT_READ);
-		}
-	}
-	commit();
-}

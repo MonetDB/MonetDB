@@ -5,27 +5,22 @@ stderr of test 'geom_mbr` in directory 'src/sql` itself:
 # 21:15:16 >  Mtimeout -timeout 180 Mserver "--config=/ufs/niels/scratch/monetdb/Linux-x86_64/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB4:/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB4/lib:/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB4/bin" --set "gdk_dbfarm=/ufs/niels/scratch/monetdb/Linux-x86_64/var/MonetDB4/dbfarm" --set "sql_logdir=/ufs/niels/scratch/monetdb/Linux-x86_64/var/MonetDB4/sql_logs" --set "xquery_logdir=/ufs/niels/scratch/monetdb/Linux-x86_64/var/MonetDB4/xquery_logs" --set mapi_port=36438 --set xrpc_port=48112 --set monet_prompt= --trace "--dbname=mTests_src_sql" --dbinit="module(geom);module(sql_server); module(sql_server);" ; echo ; echo Over..
 # 21:15:16 >  
 
-
-# 21:15:17 >  
-# 21:15:17 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=36438 
-# 21:15:17 >  
-
-MAPI  = monetdb@koala:34403
+MAPI  = monetdb@koala:39306
 QUERY = INSERT INTO mbrs values (mbr('POLYGON((10 10, 10 20, 20 20, 20 15, 10 10), (15 15, 15 20, 10 15, 15 15))'));
-ERROR = !ERROR: wkbFromText: operation failed.
-MAPI  = monetdb@koala:34403
+ERROR = !MALException:wkb.FromText:Geometry type 'Point' not found
+MAPI  = monetdb@koala:39306
 QUERY = INSERT INTO mbrs values (mbr('POINT(10)'));
-ERROR = !ERROR: ParseException: Expected number but encountered ')'
-        !ERROR: wkbFromText: operation failed.
-MAPI  = monetdb@koala:34403
+ERROR = !MALException:wkb.FromText:!ERROR: ParseException: Expected number but encountered ')'
+        !ERROR: ParseException: Expected number but encountered ')'
+MAPI  = monetdb@koala:39306
 QUERY = INSERT INTO mbrs values (mbr('POINT()'));
-ERROR = !ERROR: ParseException: Expected number but encountered ')'
-        !ERROR: wkbFromText: operation failed.
-MAPI  = monetdb@koala:34403
+ERROR = !MALException:wkb.FromText:!ERROR: ParseException: Expected number but encountered ')'
+        !ERROR: ParseException: Expected number but encountered ')'
+MAPI  = monetdb@koala:39306
 QUERY = INSERT INTO mbrs values (mbr('POINT'));
-ERROR = !ERROR: ParseException: Expected word but encountered end of stream
-        !ERROR: wkbFromText: operation failed.
-MAPI  = monetdb@koala:34403
+ERROR = !MALException:wkb.FromText:!ERROR: ParseException: Expected word but encountered end of stream
+        !ERROR: ParseException: Expected word but encountered end of stream
+MAPI  = monetdb@koala:39306
 QUERY = INSERT INTO mbrs values (mbr('');
 ERROR = !syntax error, unexpected SCOLON, expecting ',' or ')' in: "insert into mbrs values (mbr('');"
 

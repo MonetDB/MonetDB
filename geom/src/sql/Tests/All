@@ -6,7 +6,4 @@ geom_linestring
 geom_surface
 geom_polygon
 geom_mbr
-#geom_filter
-#geom_filter_expand
-#geom_cluster
-#geom_primary_filter
+basic
