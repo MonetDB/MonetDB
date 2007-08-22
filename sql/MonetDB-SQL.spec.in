@@ -65,7 +65,7 @@ Summary: MonetDB5 SQL server modules
 Group: System 
 Requires: MonetDB5-server >= 5.0
 # this is only needed due to a faulty packaging of MonetDB5-server/MonetDB5-server-devel
-Requires: %{_libdir}/MonetDB5/lib/lib_bat.so
+Requires: %{_libdir}/MonetDB5/lib/lib_bat5.so
 %if !%{?buildsystem}
 BuildRequires: MonetDB5-server-devel >= 5.0
 %endif
