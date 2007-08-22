@@ -19,3 +19,14 @@ EXTRA_DIST = \
 	install-sh missing \
 	ltmain.sh config.h.in \
 	conf.bash
+
+scripts_sh = {
+	EXT = ""
+	DIR = bindir
+	SOURCES = monetdb-geom-config.in
+}
+
+scripts_bat = {
+	DIR = bindir
+	SOURCES = monetdb-geom-config.bat.in 
+}
