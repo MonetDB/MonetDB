@@ -8,11 +8,11 @@ bat.insert(h,1@0,"curly dark brown");
 io.print(b);
 
 bs:= xml.xml(b);
-bc:= xml.trunk("name",bs);
+bc:= xml.element("name",bs);
 bj:= xml.str(bc);
 io.print(bj);
 hs:= xml.xml(h);
-hc:= xml.trunk("hair",hs);
+hc:= xml.element("hair",hs);
 hj:= xml.str(hc);
 io.print(hj);
 

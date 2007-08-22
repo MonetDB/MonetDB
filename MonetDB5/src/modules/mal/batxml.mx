@@ -39,6 +39,10 @@ pattern xml.str(src:bat[:oid,:xml]):bat[:oid,:str]
 address BATXMLxml2str
 comment "Cast the string to an xml compliant string";
 
+command xml.tag(nme:str,val:bat[:oid,:xml]):bat[:oid,:xml]
+address BATXMLtag
+comment "Routine to put element brackets around an XML value";
+
 command xml.comment(val:bat[:oid,:str]):bat[:oid,:xml]
 address BATXMLcomment
 comment "Construct an comment struction ";
@@ -72,22 +76,21 @@ command xml.attribute(name:str, val:bat[:oid,:str]):bat[:oid,:xml]
 address BATXMLattribute
 comment "Construct an attribute value pair";
 
-pattern xml.attributes(val:bat[:oid,:xml]... ):bat[:oid,:xml]
-address BATXMLattributes
-comment "Collect the attributes of an element into a single structure";
+command xml.element(name:str, s:bat[:oid,:xml]) :bat[:oid,:xml]
+address BATXMLelementSmall
+comment "The basic building block for XML elements are namespaces, 
+attributes and a sequence of xml elements. The name space and 
+the attributes may be left unspecified."; 
 
-pattern xml.element(name:str, ns:bat[:oid,:str], attr:bat[:oid,:xml], s:bat[:oid,:xml]... ) :bat[:oid,:xml]
+command xml.element(name:str, ns:bat[:oid,:str], attr:bat[:oid,:xml], s:bat[:oid,:xml]):bat[:oid,:xml]
 address BATXMLelement
-comment "The basic building block for XML elements are namespaces, attributes and a sequence
-of xml elements. The name space and the attributes may be left unspecified(=nil:bat).";
+comment "The basic building block for XML elements are namespaces, 
+attributes and a sequence of xml elements. The name space and the 
+attributes may be left unspecified(=nil:bat).";
 
-pattern xml.concat(val:bat[:oid,:xml]... ):bat[:oid,:xml]
+command xml.concat(left:bat[:oid,:xml],right:bat[:oid,:xml] ):bat[:oid,:xml]
 address BATXMLconcat
 comment "Concatenate the xml values";
-
-command xml.trunk(nme:str, val:bat[:oid,:xml]):bat[:oid,:xml]
-address BATXMLtrunk
-comment "Prepare an element for a forest construction";
 
 pattern xml.forest(val:bat[:oid,:xml]...):bat[:oid,:xml]
 address BATXMLforest
@@ -136,16 +139,16 @@ comment "Validate the string as a document"
 batxml_export str BATXMLxml2str(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 batxml_export str BATXMLstr2xml(int *x, int *s);
 batxml_export str BATXMLisdocument(int *x, int *s);
+batxml_export str BATXMLtag(int *x, str *name, int *s);
 batxml_export str BATXMLcomment(int *x, int *s);
 batxml_export str BATXMLparse(int *x, int *s);
 batxml_export str BATXMLxquery(int *x, int *s, str *expr);
 batxml_export str BATXMLpi(int *x, str *oper, int *s);
 batxml_export str BATXMLroot(int *ret, int *bid, str *version, str *standalone);
 batxml_export str BATXMLattribute(int *ret, str *name, int *bid);
-batxml_export str BATXMLattributes(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-batxml_export str BATXMLelement(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-batxml_export str BATXMLconcat(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-batxml_export str BATXMLtrunk(int *ret, str *nme, int *bid);
+batxml_export str BATXMLelementSmall(int *ret, str *name, int *bid);
+batxml_export str BATXMLelement(int *ret, str *name, int *ns, int *attr, int *bid);
+batxml_export str BATXMLconcat(int *ret, int *bid, int *rid);
 batxml_export str BATXMLforest(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 batxml_export str BATXMLagg(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 #endif  /* _BATXML_H_ */
@@ -241,6 +244,40 @@ BATXMLisdocument(int *x, int *s){
 }
 
 str
+BATXMLtag(int *ret, str *name, int *bid)
+{
+	BAT *b,*bn;
+	BUN p,q;
+	int xx;
+	str buf= GDKmalloc(BUFSIZ);
+	int tlen= strlen(*name)+2, len, size= BUFSIZ;
+
+	prepareOperand(b,bid,"tag");
+	prepareResult(bn,b,TYPE_str,"tag");
+	snprintf(buf,size,"<%s>",*name);
+
+	BATloopFast(b,p,q,xx){
+		ptr h= BUNhead(b,p);
+		str t= (str) BUNtail(b,p);
+		if( (len=strlen(t) + 2*tlen+10) >= size){
+			if(buf) GDKfree(buf);
+			buf= GDKmalloc(len);
+			snprintf(buf,size,"<%s>",*name);
+			size= len;
+		}
+		snprintf(buf+tlen,size,"%s</%s>",t,*name);
+		bunfastins(bn,h,buf);
+	}
+	GDKfree(buf);
+	finalizeResult(ret,bn,b);
+	return MAL_SUCCEED;
+bunins_failed:
+	BBPreleaseref(b->batCacheid);
+	BBPunfix(bn->batCacheid);
+	GDKfree(buf);
+	throw(MAL, "batstr.comment", "bunins failed");
+}
+str
 BATXMLcomment(int *ret, int *bid)
 {
 	BAT *b,*bn;
@@ -259,7 +296,7 @@ BATXMLcomment(int *ret, int *bid)
 			buf= GDKmalloc(size+20);
 			size= len+20;
 		}
-		snprintf(buf,size,"<!-- %s -->\n",t);
+		snprintf(buf,size,"<!-- %s -->",t);
 		bunfastins(bn,h,buf);
 	}
 	GDKfree(buf);
@@ -339,7 +376,7 @@ BATXMLattribute(int *ret, str *name, int *bid)
 			buf= GDKmalloc(size+20);
 			size= len+20;
 		}
-		snprintf(buf,size," %s=\"%s\"\n",*name,t);
+		snprintf(buf,size," %s=\"%s\"",*name,t);
 		bunfastins(bn,h,buf);
 	}
 	GDKfree(buf);
@@ -352,207 +389,104 @@ bunins_failed:
 	throw(MAL, "xml.attribute", "bunins failed");
 }
 
-@-
-The attribute lists should be aligned on the oid.
-@c
 str
-BATXMLattributes(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+BATXMLelementSmall(int *ret, str *name, int *bid)
 {
-	int *ret= (int*) getArgReference(stk,pci,0);
-	BAT **b,*bn;
-	BUN *p,*q;
-	int *xx;
-	str buf= GDKmalloc(BUFSIZ);
-	int i,offset,len,size= BUFSIZ;
-
-	(void)mb;
-	b= alloca(sizeof(BAT*) * pci->argc);
-	p= alloca(sizeof(BUN) * pci->argc);
-	q= alloca(sizeof(BUN) * pci->argc);
-	xx= alloca(sizeof(int) * pci->argc);
-	
-	for(i=pci->retc; i<pci->argc; i++){
-		if ( (b[i]=  BATdescriptor( *(int*)getArgReference(stk,pci,i)))==NULL)
-			break;
-		p[i]= BUNfirst(b[i]);
-		q[i]= BUNlast(b[i]);
-		xx[i]= BUNsize(b[i]);
-	}
-	/* check for errors */
-	if( i!= pci->argc)
-	for( i--; i>pci->retc; i--){
-		BBPunfix(b[i]->batCacheid);
-		size = -1;
-	}
-	if( size == -1)
-		throw(MAL,"batxml.attributes","Can not access BAT");
-
-	prepareResult(bn,b[pci->retc],TYPE_str,"attribute");
-
-	while(p[pci->retc] < q[pci->retc]){
-		char *t;
-		oid *h;
-		offset=0;
-		for(i= pci->retc; i< pci->argc; i++)
-		{
-			h= (oid*) BUNhead(b[i],p[i]);
-			t= (char*) BUNtail(b[i],p[i]);
-
-			if( (len=strlen(t)) >= size-offset){
-				if(buf) GDKfree(buf);
-				buf= GDKmalloc(size+20);
-				size= len+20;
-			}
-			snprintf(buf+offset,size-offset," %s",t);
-			offset+= strlen(buf+offset);
-			bunfastins(bn,h,buf);
-		}
-		for(i= pci->retc; i< pci->argc; i++)
-			p[i]= (ptr) ( ((char*)p[i])+ xx[i]);
-	}
-	GDKfree(buf);
-	finalizeResult(ret,bn,b[pci->retc]);
-	return MAL_SUCCEED;
-bunins_failed:
-	for(i= pci->retc; i< pci->argc; i++)
-		BBPreleaseref(b[i]->batCacheid);
-	BBPunfix(bn->batCacheid);
-	GDKfree(buf);
-	throw(MAL, "xml.attributes", "bunins failed");
+	return BATXMLtag(ret,name,bid);
 }
-
 str
-BATXMLelement(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+BATXMLelement(int *ret, str *name, int *namespace, int *attributes, int *bid)
 {
-	int *ret= (int*) getArgReference(stk,pci,0);
-	str element= *(str*) getArgReference(stk,pci,1);
-	int *namespace= (int*) getArgReference(stk,pci,2);
-	BAT **b,*bn;
-	BUN *p,*q;
-	int *xx;
+	BAT *b,*a=0, *n=0, *bn;
+	BUN p,q, ap, aq, np, nq;
+	int xx, axx, nxx;
 	str buf= GDKmalloc(BUFSIZ);
-	int i,offset,len,size= BUFSIZ;
+	int offset,len,size= BUFSIZ;
 
-	(void)mb;
-	b= alloca(sizeof(BAT*) * pci->argc);
-	p= alloca(sizeof(BUN) * pci->argc);
-	q= alloca(sizeof(BUN) * pci->argc);
-	xx= alloca(sizeof(int) * pci->argc);
-	
-	/* ignore the namespaces */
-	(void)namespace;
+	/* check the namespaces */
+	if( *namespace && (n=  BATdescriptor( *namespace)) ){
+		np = BUNfirst(n);
+		nq = BUNlast(n);
+		nxx= BUNsize(n);
+	}
 
 	/* check for attributes */
-	b[3]=  BATdescriptor( *(int*)getArgReference(stk,pci,3));
-	if(b[3]){
-		p[3]= BUNfirst(b[3]);
-		q[3]= BUNlast(b[3]);
-		xx[3]= BUNsize(b[3]);
+	if( *attributes && (a=  BATdescriptor( *attributes)) ){
+		ap= BUNfirst(a);
+		aq= BUNlast(a);
+		axx= BUNsize(a);
 	}
 	/* collect the admin for the xml elements */
-	for(i=4; i<pci->argc; i++){
-		if ( (b[i]=  BATdescriptor( *(int*)getArgReference(stk,pci,i)))==NULL)
-			break;
-		p[i]= BUNfirst(b[i]);
-		q[i]= BUNlast(b[i]);
-		xx[i]= BUNsize(b[i]);
+	if ( (b=  BATdescriptor( *bid)) ){
+		p= BUNfirst(b);
+		q= BUNlast(b);
+		xx= BUNsize(b);
 	}
-	/* check for errors */
-	if( i!= pci->argc) {
-		for( i--; i>4; i--)
-			BBPunfix(b[i]->batCacheid);
-		if( b[3])
-			BBPunfix(b[3]->batCacheid);
+
+/* check for errors */
+	if( b== NULL){
+		if(a) BBPunfix(a->batCacheid);
+		if(n) BBPunfix(n->batCacheid);
 		throw(MAL,"batxml.element","Can not access BAT");
 	}
 
-	prepareResult(bn,b[4],TYPE_str,"attribute");
+	prepareResult(bn,b,TYPE_str,"element");
 
-	while(p[4] < q[4]){
+	while(p < q){
 		str t;
 		oid *h;
 		int elm;
 
 		/* include attributes */
-		if( b[3]) {
-			t= (str) BUNtail(b[3],p[3]);
+		if( a) {
+			t= (str) BUNtail(a,ap);
 
 			if( (len=strlen(t)) >= size){
 				if(buf) GDKfree(buf);
-				buf= GDKmalloc(len+strlen(element)+BUFSIZ);
-				size= len+strlen(element)+BUFSIZ;
+				buf= GDKmalloc(len+strlen(*name)+BUFSIZ);
+				size= len+strlen(*name)+BUFSIZ;
 			}
-			snprintf(buf,size,"<%s %s>",element,t);
+			snprintf(buf,size,"<%s %s>",*name,t);
 		} else 
-			snprintf(buf,size,"<%s>",element);
+			snprintf(buf,size,"<%s>",*name);
 		elm= offset= strlen(buf);
 
 		/* fetch the elements */
-		h= (oid*) BUNhead(b[4],p[4]);
-		for(i= 4; i< pci->argc; i++)
-		{
-			t= (str) BUNtail(b[i],p[i]);
+		h= (oid*) BUNhead(b,p);
+		t= (str) BUNtail(b,p);
 
-			if( (len=strlen(t)) >= size-offset){
-				if(buf) GDKfree(buf);
-				buf= GDKmalloc(size+2*elm);
-				size= len+2*elm;
-			}
-			snprintf(buf+offset,size-offset,"%s",t);
-			offset+= strlen(buf+offset);
-		}
-		snprintf(buf + offset,size-offset, "</%s>\n",element);
-		bunfastins(bn,h,buf);
-
-		for(i= 3; i< pci->argc; i++)
-		if(b[i])
-			p[i]= (ptr) ( ((char*)p[i])+ xx[i]);
-	}
-	GDKfree(buf);
-	finalizeResult(ret,bn,b[4]);
-	return MAL_SUCCEED;
-bunins_failed:
-	for(i= 4; i< pci->argc; i++)
-	if(b[i])
-		BBPreleaseref(b[i]->batCacheid);
-	BBPunfix(bn->batCacheid);
-	GDKfree(buf);
-	throw(MAL, "xml.element", "bunins failed");
-}
-
-
-str
-BATXMLtrunk(int *ret, str *nme, int *bid)
-{
-	BAT *b,*bn;
-	BUN p,q;
-	int xx;
-	str buf= GDKmalloc(BUFSIZ);
-	int slen,len,size= BUFSIZ;
-
-	prepareOperand(b,bid,"trunk");
-	prepareResult(bn,b,TYPE_str,"trunk");
-	slen= strlen(*nme)+4;
-	BATloopFast(b,p,q,xx){
-		ptr h= BUNhead(b,p);
-		str t= (str) BUNtail(b,p);
-		if( (len=strlen(t)+2*slen) >= size){
+		if( (len=strlen(t)) >= size-offset){
 			if(buf) GDKfree(buf);
-			buf= GDKmalloc(len);
-			size= len;
+			buf= GDKmalloc(size+2*elm);
+			size= len+2*elm;
 		}
-		snprintf(buf,size,"<%s>%s</%s>\n",*nme,t,*nme);
+		snprintf(buf+offset,size-offset,"%s",t);
+		offset+= strlen(buf+offset);
+	
+		snprintf(buf + offset,size-offset, "</%s>\n",*name);
 		bunfastins(bn,h,buf);
+
+		if(a) 
+			ap= (ptr) ( ((char*)ap)+ axx);
+		if(n) 
+			np= (ptr) ( ((char*)np)+ nxx);
+		if(b) 
+			p= (ptr) ( ((char*)p)+ nxx);
 	}
 	GDKfree(buf);
 	finalizeResult(ret,bn,b);
 	return MAL_SUCCEED;
 bunins_failed:
+	if(a)
+		BBPreleaseref(a->batCacheid);
+	if(n)
+		BBPreleaseref(n->batCacheid);
 	BBPreleaseref(b->batCacheid);
 	BBPunfix(bn->batCacheid);
 	GDKfree(buf);
-	throw(MAL, "batstr.trunk", "bunins failed");
+	throw(MAL, "xml.element", "bunins failed");
 }
+
 
 str
 BATXMLforest(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
@@ -621,14 +555,65 @@ bunins_failed:
 		BBPreleaseref(b[i]->batCacheid);
 	BBPunfix(bn->batCacheid);
 	GDKfree(buf);
-	throw(MAL, "xml.element", "bunins failed");
+	throw(MAL, "xml.forest", "bunins failed");
 }
 
 str
-BATXMLconcat(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+BATXMLconcat(int *ret, int *bid, int *rid)
 {
-	return BATXMLforest(mb,stk,pci);
+	BAT *b,*r=0, *bn;
+	BUN p,q, rp;
+	int xx, rxx;
+	str buf= GDKmalloc(BUFSIZ);
+	int len,size= BUFSIZ;
+
+	if( *rid && (r=  BATdescriptor( *rid)) ){
+		rp= BUNfirst(r);
+		rxx= BUNsize(r);
+	}
+	if(r==0)
+		throw(MAL,"batxml.concat","Can not access BAT");
+
+	/* collect the admin for the xml elements */
+	if ( (b=  BATdescriptor( *bid)) ){
+		p= BUNfirst(b);
+		q= BUNlast(b);
+		xx= BUNsize(b);
+	}
+	if( b== NULL){
+		if(r) BBPunfix(r->batCacheid);
+		throw(MAL,"batxml.concat","Can not access BAT");
+	}
+
+	prepareResult(bn,b,TYPE_str,"concat");
+
+	while(p < q){
+		str t= (str) BUNtail(b,p);
+		oid *h= (oid*) BUNhead(b,p);
+		str v= (str) BUNtail(r,rp);
+		len= strlen(t)+strlen(v)+2;
+
+		if( len >= size){
+			if(buf) GDKfree(buf);
+			buf= GDKmalloc(len);
+			size= len;
+		}
+		snprintf(buf,size,"%s%s",t,v);
+		bunfastins(bn,h,buf);
+		rp= (ptr) ( ((char*)rp)+ rxx);
+		p= (ptr) ( ((char*)p)+ xx);
+	}
+	GDKfree(buf);
+	finalizeResult(ret,bn,b);
+	return MAL_SUCCEED;
+bunins_failed:
+	BBPreleaseref(r->batCacheid);
+	BBPreleaseref(b->batCacheid);
+	BBPunfix(bn->batCacheid);
+	GDKfree(buf);
+	throw(MAL, "xml.element", "bunins failed");
 }
+
 str
 BATXMLagg(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {

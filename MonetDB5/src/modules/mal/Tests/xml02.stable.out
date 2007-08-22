@@ -45,7 +45,7 @@ function user.main():void;	# 0  (main:void)
     hj := xml.str(hc);	# 11 BATXMLxml2str (hj:bat[:oid,:str])<-(hc:bat[:oid,:xml])
     io.print(bj);	# 12 IOprint_val (_22:void)<-(bj:bat[:oid,:str])
     io.print(hj);	# 13 IOprint_val (_23:void)<-(hj:bat[:oid,:str])
-    aa := xml.attributes(bc,hc);	# 14 BATXMLattributes (aa:bat[:oid,:xml])<-(bc:bat[:oid,:xml])(hc:bat[:oid,:xml])
+    aa := xml.concat(bc,hc);	# 14 BATXMLconcat (aa:bat[:oid,:xml])<-(bc:bat[:oid,:xml])(hc:bat[:oid,:xml])
     as := xml.str(aa);	# 15 BATXMLxml2str (as:bat[:oid,:str])<-(aa:bat[:oid,:xml])
     io.print(as);	# 16 IOprint_val (_26:void)<-(as:bat[:oid,:str])
 end main;	# 17  
@@ -59,22 +59,20 @@ end main;	# 17
 # h	t				  # name
 # void	str				  # type
 #-----------------------------------------#
-[ 0@0,	  " name=\"Mary Ann Walker\"\n"	  ]
-[ 1@0,	  " name=\"Annie Chapman\"\n"	  ]
+[ 0@0,	  " name=\"Mary Ann Walker\""	  ]
+[ 1@0,	  " name=\"Annie Chapman\""	  ]
 #-----------------------------------------#
 # h	t				  # name
 # void	str				  # type
 #-----------------------------------------#
-[ 0@0,	  " hair=\"brown\"\n"		  ]
-[ 1@0,	  " hair=\"curly dark brown\"\n"  ]
-#-------------------------------------------------------------------------#
+[ 0@0,	  " hair=\"brown\""		  ]
+[ 1@0,	  " hair=\"curly dark brown\""	  ]
+#-----------------------------------------------------------------#
 # h	t								  # name
 # void	str								  # type
-#-------------------------------------------------------------------------#
-[ 0@0,	  "  name=\"Mary Ann Walker\"\n"				  ]
-[ 1@0,	  "  name=\"Mary Ann Walker\"\n  hair=\"brown\"\n"		  ]
-[ 2@0,	  "  name=\"Annie Chapman\"\n"					  ]
-[ 3@0,	  "  name=\"Annie Chapman\"\n  hair=\"curly dark brown\"\n"	  ]
+#-----------------------------------------------------------------#
+[ 0@0,	  " name=\"Mary Ann Walker\" hair=\"brown\""		  ]
+[ 1@0,	  " name=\"Annie Chapman\" hair=\"curly dark brown\""	  ]
 
 # 22:46:59 >  
 # 22:46:59 >  Done.
