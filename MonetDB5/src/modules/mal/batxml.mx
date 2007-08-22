@@ -56,7 +56,7 @@ address BATXMLxml2str
 comment "Serialize the XQuery object to a string";
 
 command xml.query(val:bat[:oid,:str],expr:str):bat[:oid,:xml]
-address BATXMLquery
+address BATXMLxquery
 comment "Execute the XQuery against the elements";
 
 #todo
