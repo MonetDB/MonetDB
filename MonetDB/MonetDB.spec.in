@@ -25,6 +25,7 @@ BuildRoot: /var/tmp/%{name}-root
 Packager: Niels Nes <Niels.Nes@cwi.nl>
 License:   MPL - http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
 BuildRequires: python 
+BuildRequires: zlib-devel, bzip2-devel, openssl-devel
 
 %{!?buildsystem: %define buildsystem 0}
 
