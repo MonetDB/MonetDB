@@ -1,6 +1,15 @@
+# groups of related archs
+%define all_x86 i386 i586 i686
+
+%ifarch %{all_x86}
+%define bits 32
+%else
+%define bits 64
+%endif
+
 %define name MonetDB
 %define version @VERSION@
-%define release 1_@LINUX_DIST@.oid@oids@
+%define release 1%{?dist}%{?oid32:.oid32}%{!?oid32:.oid%{bits}}
 
 %define prefix /usr
 %define sysconfdir /etc
@@ -18,15 +27,6 @@ License:   MPL - http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
 BuildRequires: python 
 
 %{!?buildsystem: %define buildsystem 0}
-
-# groups of related archs
-%define all_x86 i386 i586 i686
-
-%ifarch %{all_x86}
-%define bits 32
-%else
-%define bits 64
-%endif
 
 %package devel
 Summary: MonetDB development package 
@@ -53,6 +53,7 @@ rm -rf $RPM_BUILD_ROOT
 	--enable-assert=no \
 	--enable-optimize \
 	--enable-bits=%{bits} \
+	%{?oid32:--enable-oid32} \
 	%{?comp_cc:CC="%{comp_cc}"} \
 	--prefix=%{prefix} \
 	--sysconfdir=%{sysconfdir} \

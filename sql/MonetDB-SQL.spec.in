@@ -1,6 +1,15 @@
+# groups of related archs
+%define all_x86 i386 i586 i686
+
+%ifarch %{all_x86}
+%define bits 32
+%else
+%define bits 64
+%endif
+
 %define name MonetDB-SQL
 %define version @VERSION@
-%define release 1_@LINUX_DIST@.oid@oids@
+%define release 1%{?dist}%{?oid32:.oid32}%{!?oid32:.oid%{bits}}
 
 %define prefix /usr
 
@@ -27,15 +36,6 @@ Requires: python
 %if !%{?buildsystem}
 BuildRequires: python, python-devel, swig
 %endif
-%endif
-
-# groups of related archs
-%define all_x86 i386 i586 i686
-
-%ifarch %{all_x86}
-%define bits 32
-%else
-%define bits 64
 %endif
 
 %if %{?_with_monetdb4:1}%{!?_with_monetdb4:0}
@@ -96,6 +96,7 @@ rm -rf $RPM_BUILD_ROOT
 	--enable-assert=no \
 	--enable-optimize \
 	--enable-bits=%{bits} \
+	%{?oid32:--enable-oid32} \
 	%{?comp_cc:CC="%{comp_cc}"} \
 	--prefix=%{prefix} \
 	--libdir=%{_libdir} \
