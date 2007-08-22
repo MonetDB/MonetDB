@@ -244,6 +244,7 @@ SQLsetSpecial(const char *command)
 	if (mode == SQL && command) {
 		/* catch the specials for better rendering */
 		const char *s = command;
+		specials= 0;
 
 		while (*s == ' ' || *s == '\t')
 			s++;
@@ -263,6 +264,9 @@ SQLrow(int *len, int *numeric, char **rest, int fields, int trim)
 	char old;
 	char *t;
 	char separator = ',';
+
+	if (fields && strncmp(rest[0], "mdb>#EOD", 7) == 0) 
+		setPrompt();
 
 	/* trim the text upon need */
 	switch (formatter) {
@@ -297,7 +301,7 @@ SQLrow(int *len, int *numeric, char **rest, int fields, int trim)
 							t = rest[i] + len[i];
 						old = *t;
 						*t = 0;
-						fprintf(toConsole, "%*s |", (first && numeric[i]) ? len[i] : -len[i], rest[i]);
+						fprintf(toConsole, "%*s |", ((first && numeric[i]) ? len[i] : -len[i]), rest[i]);
 						*t = old;
 						if (old) {
 							while (*t && (*t == ' ' || *t == '\n'))
@@ -309,7 +313,7 @@ SQLrow(int *len, int *numeric, char **rest, int fields, int trim)
 							more++;
 						}
 					} else {
-						fprintf(toConsole, "%*s |", (first && numeric[i]) ? len[i] : -len[i], rest[i]);
+						fprintf(toConsole, "%*s |", ((first && numeric[i]) ? len[i] : -len[i]), rest[i]);
 						rest[i] = 0;
 					}
 				}
@@ -403,6 +407,8 @@ RAWrenderer(MapiHdl hdl)
 	char *line;
 
 	while ((line = mapi_fetch_line(hdl)) != 0) {
+		if (strncmp(line, "mdb>#EOD", 7) == 0) 
+			setPrompt();
 		fprintf(toConsole, "%s\n", line);
 	}
 }
@@ -520,6 +526,11 @@ SQLexplainRendering(MapiHdl hdl)
 	while ((fields[0] = mapi_fetch_line(hdl)) != NULL) {
 		if (silent)
 			continue;
+		if( *fields[0] == '%') 
+			continue;
+		if (strncmp(fields[0], "mdb>#EOD", 7) == 0) 
+			setPrompt();
+		fields[0] = fields[0]+1; /* ignore marker */
 		SQLrow(len, numeric, fields, 1, 0);
 		if (ps && rows % ps == ps - 1 && rows != mapi_get_row_count(hdl) && fromConsole)
 			SQLpagemove(len, 1, &ps, &silent);
@@ -553,12 +564,15 @@ SQLtraceRenderer(MapiHdl hdl)
 			continue;
 		if (*fields[0] == '%' && pagewidth >= 0)
 			continue;
+		if (fields && strncmp(fields[0], "mdb>#EOD", 7) == 0) 
+			setPrompt();
 
 		/* simple render */
 		fields[0] = fields[0] + 1;
 		s = strrchr(fields[0], ']');
 		if (s)
 			*s = 0;
+
 
 		if ((s = strchr(fields[0], '#')) != NULL) {
 			*s = 0;
@@ -587,7 +601,6 @@ SQLtraceRenderer(MapiHdl hdl)
 		rows++;
 	}
 	SQLseparator(len, cols, '-');
-	specials = 0;
 }
 
 static void
@@ -607,12 +620,19 @@ SQLrenderer(MapiHdl hdl)
 	while ((fields = mapi_fetch_row(hdl)) != 0) {
 		if (silent)
 			continue;
-		if (len == 0) {
-			len = (int *) alloca(sizeof(int) * fields);
+		if (strncmp(mapi_fetch_field(hdl,0), "mdb>#EOD", 7) == 0) 
+			setPrompt();
+		if (len == 0 || fields!= oldfields) {
+			if(oldfields !=fields){
+				if( len) free(len);
+				if( rest) free(rest);
+				if( numeric) free(numeric);
+				len = (int *) malloc(sizeof(int) * fields);
+				rest = (char **) malloc(sizeof(char *) * fields);
+				numeric = (int *) malloc(sizeof(int) * fields);
+			}
 			memset((char *) len, 0, sizeof(int) * fields);
-			rest = (char **) alloca(sizeof(char *) * fields);
 			memset((char *) rest, 0, sizeof(char *) * fields);
-			numeric = (int *) alloca(sizeof(int) * fields);
 			memset((char *) numeric, 0, sizeof(int) * fields);
 
 			for (i = 0; i < fields; i++) {
@@ -700,6 +720,9 @@ SQLrenderer(MapiHdl hdl)
 		SQLseparator(len, oldfields, '-');
 	snprintf(buf, sizeof(buf), "%d rows", mapi_get_row_count(hdl));
 	mark2 = strdup(buf);
+	if( len) free(len);
+	if( rest) free(rest);
+	if( numeric) free(numeric);
 }
 
 static void
@@ -888,6 +911,8 @@ doFile(Mapi mid, const char *file)
 				fprintf(toConsole, "[ %d\t]\n", mapi_rows_affected(hdl));
 			} else {
 				while ((reply = mapi_fetch_line(hdl)) != NULL) {
+					if (strncmp(reply, "mdb>#EOD", 7) == 0) 
+						setPrompt();
 					if (mode == XQUERY && *reply == '=')
 						reply++;
 					fprintf(toConsole, "%s\n", reply);
@@ -1360,6 +1385,8 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt)
 					mapi_explain_result(hdl, stderr);
 
 				while ((reply = mapi_fetch_line(hdl)) != NULL) {
+					if (strncmp(reply, "mdb>#EOD", 7) == 0) 
+						setPrompt();
 					if (pagewidth >= 0 && *reply == '%') {
 						/* should only maybe happen in the first iteration */
 						switch (formatter) {
@@ -1378,12 +1405,12 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt)
 					if ((mode == XQUERY || mode == MAL) && *reply == '=')
 						reply++;
 					/* we know when the MAL debugger becomes active and finishes */
-					if (strncmp(reply, "mdb>#", 5) == 0)
-						sprintf(promptbuf, "mdb>");
 					if (strncmp(reply, "mdb>#EOD", 7) == 0) {
 						setPrompt();
 						continue;
 					}
+					if (strncmp(reply, "mdb>#", 5) == 0)
+						sprintf(promptbuf, "mdb>");
 #ifdef HAVE_POPEN
 					if (pagerFD)
 						fprintf(pagerFD, "%s\n", reply);
