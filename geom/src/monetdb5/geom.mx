@@ -250,13 +250,17 @@ geom_export wkb * wkbNULL(void);
 #include <math.h>
 #include <time.h>
 
+@(
 static int TYPE_mbr;
+@)
 
 bat*
 geom_prelude(void)
 {
 	libgeom_init();
+@(
 	TYPE_mbr = malAtomSize(sizeof(mbr), sizeof(oid), "mbr");
+@)
 	return NULL;	
 }
 
@@ -899,7 +903,7 @@ wkbBuffer( wkb **out, wkb **geom, dbl *distance)
 	return ret;
 }
 
-@+
+@(
 #define prepareOperand(X,Y,Z) \
 	if( (X= BATdescriptor(*Y)) == NULL ) \
 		throw(MAL, "geom." Z, "Cannot access descriptor");
@@ -947,6 +951,7 @@ bunins_failed:
 	BBPunfix(bn->batCacheid);
 	throw(MAL, "geom.mbr", "bunins failed");
 }
+@)
 
 @mal
 
