@@ -7,3 +7,5 @@ geom_surface
 geom_polygon
 geom_mbr
 basic
+relation
+spatial

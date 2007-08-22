@@ -10,39 +10,39 @@ stderr of test 'geom_geometry` in directory 'src/sql` itself:
 # 21:15:13 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=36438 
 # 21:15:13 >  
 
-MAPI  = monetdb@localhost:31337
+MAPI  = monetdb@koala:35790
 QUERY = INSERT INTO geoms values ('LINESTRING(10 10)');
 ERROR = !ERROR: IllegalArgumentException: point array must contain 0 or >1 elements
         !ERROR: wkbFromText: operation failed.
-MAPI  = monetdb@localhost:31337
+MAPI  = monetdb@koala:35790
 QUERY = INSERT INTO geoms values ('LINESTRING(10)');
 ERROR = !ERROR: ParseException: Expected number but encountered ')'
         !ERROR: wkbFromText: operation failed.
-MAPI  = monetdb@localhost:31337
+MAPI  = monetdb@koala:35790
 QUERY = INSERT INTO geoms values ('LINESTRING()');
 ERROR = !ERROR: ParseException: Expected number but encountered ')'
         !ERROR: wkbFromText: operation failed.
-MAPI  = monetdb@localhost:31337
+MAPI  = monetdb@koala:35790
 QUERY = INSERT INTO geoms values ('LINESTRING');
 ERROR = !ERROR: ParseException: Expected word but encountered end of stream
         !ERROR: wkbFromText: operation failed.
-MAPI  = monetdb@localhost:31337
+MAPI  = monetdb@koala:35790
 QUERY = INSERT INTO geoms values ('');
 ERROR = !ERROR: ParseException: Expected word but encountered end of stream
         !ERROR: wkbFromText: operation failed.
-MAPI  = monetdb@localhost:31337
+MAPI  = monetdb@koala:35790
 QUERY = INSERT INTO geoms values ('POINT(10)');
 ERROR = !ERROR: ParseException: Expected number but encountered ')'
         !ERROR: wkbFromText: operation failed.
-MAPI  = monetdb@localhost:31337
+MAPI  = monetdb@koala:35790
 QUERY = INSERT INTO geoms values ('POINT()');
 ERROR = !ERROR: ParseException: Expected number but encountered ')'
         !ERROR: wkbFromText: operation failed.
-MAPI  = monetdb@localhost:31337
+MAPI  = monetdb@koala:35790
 QUERY = INSERT INTO geoms values ('POINT');
 ERROR = !ERROR: ParseException: Expected word but encountered end of stream
         !ERROR: wkbFromText: operation failed.
-MAPI  = monetdb@localhost:31337
+MAPI  = monetdb@koala:35790
 QUERY = INSERT INTO geoms values ('');
 ERROR = !ERROR: ParseException: Expected word but encountered end of stream
         !ERROR: wkbFromText: operation failed.
