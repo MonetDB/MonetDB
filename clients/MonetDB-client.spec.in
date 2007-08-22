@@ -23,9 +23,8 @@ BuildRoot: /var/tmp/%{name}-root
 Packager: Niels Nes <Niels.Nes@cwi.nl>
 License:   MPL - http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
 Requires: MonetDB >= 1.18
-Requires: readline
 BuildRequires: python
-BuildRequires: readline-devel
+BuildRequires: readline-devel, openssl-devel
 
 %{!?_with_php: %{!?_without_php: %define _with_php --with-php}}
 %{!?_with_python: %{!?_without_python: %define _with_python --with-python}}
