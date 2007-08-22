@@ -2558,6 +2558,7 @@ _PackageDict = {
     'pathfinder': 'monetdb-xquery',
     'xml':        'monetdb-xml',
     'amdb':       'monetdb-amdb',
+    'geom':       'monetdb-geom',
     }
 
 par = {}
@@ -2670,7 +2671,7 @@ def main(argv) :
     cmd_options = [
         # long name, short name, GDK option, argument, comment
         ('package', 'p', 'package', '<package>',
-         "package to be tested, e.g.:\nmonetdb(|4|5), [monetdb-](clients|template|sql|xquery|xml|amdb);\ndefault: %s" % par['PACKAGE']),
+         "package to be tested, e.g.:\nmonetdb(|4|5), [monetdb-](clients|template|sql|xquery|xml|amdb|geom);\ndefault: %s" % par['PACKAGE']),
         ('MonetDB4', '4', 'MonetDB4', None,
          "use Mserver of MonetDB Version 4 (default with <package> != monetdb5)"),
         ('MonetDB5', '5', 'MonetDB5', None,
