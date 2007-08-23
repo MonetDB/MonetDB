@@ -1,6 +1,15 @@
+# groups of related archs
+%define all_x86 i386 i586 i686
+
+%ifarch %{all_x86}
+%define bits 32
+%else
+%define bits 64
+%endif
+
 %define name MonetDB-client
 %define version @VERSION@
-%define release 1_@LINUX_DIST@.oid@oids@
+%define release 1%{?dist}%{?oid32:.oid32}%{!?oid32:.oid%{bits}}
 
 %define prefix /usr
 
@@ -18,6 +27,7 @@ Requires: MonetDB >= 1.18
 #                    ^^^^
 # Maintained via vertoo. Please don't modify by hand!
 # Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
+BuildRequires: readline-devel, openssl-devel
 
 %{!?_with_php: %{!?_without_php: %define _with_php --with-php}}
 %{!?_with_python: %{!?_without_python: %define _with_python --with-python}}
@@ -25,15 +35,6 @@ Requires: MonetDB >= 1.18
 %{!?_with_java: %{!?_without_java: %define _with_java --with-java}}
 %{!?buildsystem: %define buildsystem 0}
 %define builddoc 0
-
-# groups of related archs
-%define all_x86 i386 i586 i686
-
-%ifarch %{all_x86}
-%define bits 32
-%else
-%define bits 64
-%endif
 
 %if !%{?buildsystem}
 BuildRequires: MonetDB-devel >= 1.18
@@ -153,6 +154,7 @@ rm -rf $RPM_BUILD_ROOT
 	--enable-assert=no \
 	--enable-optimize \
 	--enable-bits=%{bits} \
+	%{?oid32:--enable-oid32} \
 	%{?comp_cc:CC="%{comp_cc}"} \
 	--prefix=%{prefix} \
 	--libdir=%{_libdir} \
@@ -169,9 +171,8 @@ rm -rf $RPM_BUILD_ROOT
 make install \
 	DESTDIR=$RPM_BUILD_ROOT 
 
-find $RPM_BUILD_ROOT -name .incs.in -print -o -name \*.la -print | xargs rm -f
-
 # cleanup stuff we don't want to install
+find $RPM_BUILD_ROOT -name .incs.in -print -o -name \*.la -print | xargs rm -f
 rm -rf $RPM_BUILD_ROOT%{_datadir}/MonetDB/Tests/*
 rm -rf $RPM_BUILD_ROOT%{_libdir}/MonetDB/Tests/*
 rm -rf $RPM_BUILD_ROOT%{prefix}/bin/monetdb-clients-config.bat
