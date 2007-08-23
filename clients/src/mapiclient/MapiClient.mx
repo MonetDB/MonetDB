@@ -265,9 +265,6 @@ SQLrow(int *len, int *numeric, char **rest, int fields, int trim)
 	char *t;
 	char separator = ',';
 
-	if (fields && strncmp(rest[0], "mdb>#EOD", 7) == 0) 
-		setPrompt();
-
 	/* trim the text upon need */
 	switch (formatter) {
 	case TABLEformatter:
@@ -370,6 +367,25 @@ XMLprattr(const char *name, const char *val)
 	fputc('"', toConsole);
 }
 
+@-
+The Mapi library eats away the comment lines, which
+we need to detect end of debugging. We overload
+the routine to our liking.
+@c
+int
+fetch_row(MapiHdl hdl)
+{
+	char *reply;
+
+	do {
+		if ((reply = mapi_fetch_line(hdl)) == NULL)
+			return 0;
+		if (strstr(reply, "mdb>#EOD") ) 
+			setPrompt();
+	} while (*reply != '[' && *reply != '=');
+	return mapi_split_line(hdl);
+}
+
 static void
 XMLrenderer(MapiHdl hdl)
 {
@@ -385,7 +401,7 @@ XMLrenderer(MapiHdl hdl)
 	fprintf(toConsole, "<table");
 	XMLprattr("name", mapi_get_table(hdl, 0));
 	fprintf(toConsole, ">\n");
-	while ((fields = mapi_fetch_row(hdl)) != 0) {
+	while ((fields = fetch_row(hdl)) != 0) {
 		fprintf(toConsole, "<row>");
 		for (i = 0; i < fields; i++) {
 			char *data = mapi_fetch_field(hdl, i);
@@ -407,7 +423,7 @@ RAWrenderer(MapiHdl hdl)
 	char *line;
 
 	while ((line = mapi_fetch_line(hdl)) != 0) {
-		if (strncmp(line, "mdb>#EOD", 7) == 0) 
+		if (strstr(line, "mdb>#EOD") ) 
 			setPrompt();
 		fprintf(toConsole, "%s\n", line);
 	}
@@ -528,7 +544,7 @@ SQLexplainRendering(MapiHdl hdl)
 			continue;
 		if( *fields[0] == '%') 
 			continue;
-		if (strncmp(fields[0], "mdb>#EOD", 7) == 0) 
+		if (strstr(fields[0], "mdb>#EOD") ) 
 			setPrompt();
 		fields[0] = fields[0]+1; /* ignore marker */
 		SQLrow(len, numeric, fields, 1, 0);
@@ -564,7 +580,7 @@ SQLtraceRenderer(MapiHdl hdl)
 			continue;
 		if (*fields[0] == '%' && pagewidth >= 0)
 			continue;
-		if (fields && strncmp(fields[0], "mdb>#EOD", 7) == 0) 
+		if (fields[0] && strstr(fields[0], "mdb>#EOD") ) 
 			setPrompt();
 
 		/* simple render */
@@ -617,11 +633,9 @@ SQLrenderer(MapiHdl hdl)
 	if (mark2)
 		free(mark2);
 	mark2 = NULL;
-	while ((fields = mapi_fetch_row(hdl)) != 0) {
+	while ((fields = fetch_row(hdl)) != 0) {
 		if (silent)
 			continue;
-		if (strncmp(mapi_fetch_field(hdl,0), "mdb>#EOD", 7) == 0) 
-			setPrompt();
 		if (len == 0 || fields!= oldfields) {
 			if(oldfields !=fields){
 				if( len) free(len);
@@ -911,7 +925,7 @@ doFile(Mapi mid, const char *file)
 				fprintf(toConsole, "[ %d\t]\n", mapi_rows_affected(hdl));
 			} else {
 				while ((reply = mapi_fetch_line(hdl)) != NULL) {
-					if (strncmp(reply, "mdb>#EOD", 7) == 0) 
+					if (strstr(reply, "mdb>#EOD") ) 
 						setPrompt();
 					if (mode == XQUERY && *reply == '=')
 						reply++;
@@ -1385,7 +1399,7 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt)
 					mapi_explain_result(hdl, stderr);
 
 				while ((reply = mapi_fetch_line(hdl)) != NULL) {
-					if (strncmp(reply, "mdb>#EOD", 7) == 0) 
+					if (strstr(reply, "mdb>#EOD")) 
 						setPrompt();
 					if (pagewidth >= 0 && *reply == '%') {
 						/* should only maybe happen in the first iteration */
@@ -1405,7 +1419,7 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt)
 					if ((mode == XQUERY || mode == MAL) && *reply == '=')
 						reply++;
 					/* we know when the MAL debugger becomes active and finishes */
-					if (strncmp(reply, "mdb>#EOD", 7) == 0) {
+					if (strstr(reply, "mdb>#EOD") ) {
 						setPrompt();
 						continue;
 					}

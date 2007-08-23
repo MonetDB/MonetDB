@@ -1105,6 +1105,7 @@ mapi_export char *mapi_fetch_field(MapiHdl hdl, int fnr);
 mapi_export MapiMsg mapi_store_field(MapiHdl hdl, int fnr, int outtype, void *outparam);
 mapi_export char **mapi_fetch_field_array(MapiHdl hdl);
 mapi_export char *mapi_fetch_line(MapiHdl hdl);
+mapi_export int mapi_split_line(MapiHdl hdl);
 mapi_export char *mapi_get_lang(Mapi mid);
 mapi_export char *mapi_get_dbname(Mapi mid);
 mapi_export char *mapi_get_host(Mapi mid);
@@ -4561,8 +4562,24 @@ mapi_slice_row(struct MapiResultSet *result, int cr)
 
 @-
 The rows presented are broken down into pieces to
-simplify access later on.
+simplify access later on. However, MapiClient may
+first want to check the content of the line for
+usefull information (e.g. #EOD)
 @c
+int
+mapi_split_line(MapiHdl hdl){
+	int n;
+	struct MapiResultSet *result;
+
+	result = hdl->result;
+	assert(result != NULL);
+	if ((n = result->cache.line[result->cache.reader].fldcnt) == 0) {
+		n = mapi_slice_row(result, result->cache.reader);
+		/* no need to call mapi_store_bind since
+		   mapi_fetch_line would have done that if needed */
+	}
+	return n;
+}
 int
 mapi_fetch_row(MapiHdl hdl)
 {
