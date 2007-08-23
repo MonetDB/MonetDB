@@ -33,6 +33,8 @@ BuildRequires: zlib-devel, bzip2-devel, openssl-devel
 Summary: MonetDB development package 
 Group: System 
 Requires: %{name} = %{version}-%{release}
+Requires: python
+Requires: zlib-devel, bzip2-devel, openssl-devel
 
 %description
 MonetDB is a database management system that is developed from a
