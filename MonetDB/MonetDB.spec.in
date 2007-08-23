@@ -1,6 +1,15 @@
+# groups of related archs
+%define all_x86 i386 i586 i686
+
+%ifarch %{all_x86}
+%define bits 32
+%else
+%define bits 64
+%endif
+
 %define name MonetDB
 %define version @VERSION@
-%define release 1_@LINUX_DIST@.oid@oids@
+%define release 1%{?dist}%{?oid32:.oid32}%{!?oid32:.oid%{bits}}
 
 %define prefix /usr
 %define sysconfdir /etc
@@ -16,17 +25,9 @@ BuildRoot: /var/tmp/%{name}-root
 Packager: Niels Nes <Niels.Nes@cwi.nl>
 License:   MPL - http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
 BuildRequires: python 
+BuildRequires: zlib-devel, bzip2-devel, openssl-devel
 
 %{!?buildsystem: %define buildsystem 0}
-
-# groups of related archs
-%define all_x86 i386 i586 i686
-
-%ifarch %{all_x86}
-%define bits 32
-%else
-%define bits 64
-%endif
 
 %package devel
 Summary: MonetDB development package 
@@ -53,6 +54,7 @@ rm -rf $RPM_BUILD_ROOT
 	--enable-assert=no \
 	--enable-optimize \
 	--enable-bits=%{bits} \
+	%{?oid32:--enable-oid32} \
 	%{?comp_cc:CC="%{comp_cc}"} \
 	--prefix=%{prefix} \
 	--sysconfdir=%{sysconfdir} \
@@ -74,6 +76,7 @@ make install \
 find $RPM_BUILD_ROOT -name .incs.in -print -o -name \*.la -print | xargs rm -f
 
 # cleanup stuff we don't want to install
+rm -r $RPM_BUILD_ROOT%{_libdir}/*.la
 rm -rf $RPM_BUILD_ROOT%{prefix}/share/%{name}/Mprofile-commands.lst
 
 rm -rf $RPM_BUILD_ROOT%{prefix}/bin/M*
