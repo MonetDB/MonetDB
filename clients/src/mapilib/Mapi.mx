@@ -4564,7 +4564,7 @@ mapi_slice_row(struct MapiResultSet *result, int cr)
 The rows presented are broken down into pieces to
 simplify access later on. However, MapiClient may
 first want to check the content of the line for
-usefull information (e.g. #EOD)
+useful information (e.g. #EOD)
 @c
 int
 mapi_split_line(MapiHdl hdl){
