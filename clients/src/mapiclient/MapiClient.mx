@@ -785,14 +785,14 @@ doRequest(Mapi mid, const char *buf, int interactive)
 		return 1;
 	}
 
-	if (mode == SQL && (pagewidth >= 0 ||
+	if (mode == SQL && !debugMode() && (pagewidth >= 0 ||
 			    formatter == TABLEformatter ||
 			    formatter == CSVformatter ||
 			    formatter == TABformatter)) {
 		if (pagewidth < 0)
 			pagewidth = 0;
 		SQLrenderer(hdl);
-	} else if (mode == SQL && formatter == XMLformatter)
+	} else if (mode == SQL && !debugMode() && formatter == XMLformatter)
 		XMLrenderer(hdl);
 	else
 		RAWrenderer(hdl);
@@ -1153,7 +1153,7 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt)
 						    mapi_error(mid) == MOK) {
 							if (formatter == XMLformatter)
 								XMLrenderer(hdl);
-							else if (formatter == RAWformatter)
+							else if (debugMode() || formatter == RAWformatter)
 								RAWrenderer(hdl);
 							else
 								SQLrenderer(hdl);
@@ -1303,7 +1303,6 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt)
 					showCommands();
 					continue;
 				}
-				continue;
 			}
 		}
 
@@ -1388,7 +1387,7 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt)
 							goto nononsense;
 						if (formatter == XMLformatter)
 							XMLrenderer(hdl);
-						else if (formatter == RAWformatter)
+						else if (debugMode() || formatter == RAWformatter)
 							RAWrenderer(hdl);
 						else
 							SQLrenderer(hdl);
@@ -1407,12 +1406,13 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt)
 						case XMLformatter:
 							XMLrenderer(hdl);
 							break;
-						case RAWformatter:
-							RAWrenderer(hdl);
-							break;
+						case TABLEformatter:
+							if( !debugMode()){
+								SQLrenderer(hdl);
+								break;
+							}
 						default:
-							SQLrenderer(hdl);
-							break;
+							RAWrenderer(hdl);
 						}
 						break;
 					}
