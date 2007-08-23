@@ -3300,6 +3300,24 @@ def main(argv) :
             if MissingMods:
                 ErrXit('Stopping Pathfinder testing as modules "%s" are missing!' % str(MissingMods))
 
+        if par['PACKAGE'] == 'monetdb-geom':
+            MissingMods = CheckMods(env, '', 'SQL', '')
+            if 'geom' not in env['TST_MODS']:
+                MissingMods.append('geom')
+            if MissingMods:
+                ErrXit('Stopping Geom testing as modules "%s" are missing!' % str(MissingMods))
+
+        if par['PACKAGE'] == 'monetdb-amdb':
+            if not env['exe']['X100_Client'][0]:
+                ErrXit('Stopping X100/AmDB testing as "%s" is not available!' % env['X100CLIENT'].split(None, 1)[0])
+            MissingMods = CheckMods(env, '', '', 'x100')
+            if MissingMods:
+                ErrXit('Stopping X100/AmDB testing as modules "%s" are missing!' % str(MissingMods))
+
+        if par['PACKAGE'][:8] == 'monetdb-' and par['PACKAGE'][8:] in ('sql','geom','xquery','amdb'):
+            if not env['exe']['Mapi_Client'][0]:
+                ErrXit('Stopping %s testing as "%s" is not available!' % (par['PACKAGE'][8:], env['MAPICLIENT'].split(None, 1)[0]))
+
         for SRVR in 'MAPI', 'XRPC':
             port = int(env[SRVR+'PORT'])
             busy, host, Serrno, Serrstr, S = CheckPort(port)
