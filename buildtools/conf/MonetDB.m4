@@ -118,7 +118,7 @@ CLIENTS_MODS=""
 CLIENTS_MOD_PATH=""
 CLIENTS_PREFIX="."
 if test "x$1" = "x"; then
-  CLIENTS_REQUIRED_VERSION="1.18.0"
+  CLIENTS_REQUIRED_VERSION="1.19.0"
   #                         ^^^^^^
   # Maintained via vertoo. Please don't modify by hand!
   # Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
