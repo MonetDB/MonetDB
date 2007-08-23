@@ -3105,7 +3105,7 @@ shttpd_init(const char *fname)
 	}
 #endif /* _WIN32 */
 
-#if WITH_SSL
+#ifdef WITH_SSL
 	if (STROPT(OPT_SSLCERT) != NULL) {
 		/* Initialize SSL crap */
 		SSL_load_error_strings();
