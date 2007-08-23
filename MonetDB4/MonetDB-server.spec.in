@@ -33,7 +33,7 @@ BuildRequires: python
 %{!?buildsystem: %define buildsystem 0}
 %define builddoc 0
 
-Requires: MonetDB-client >= 1.18
+Requires: MonetDB-client >= 1.19
 #                           ^^^^
 # Maintained via vertoo. Please don't modify by hand!
 # Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
@@ -42,7 +42,7 @@ BuildRequires: MonetDB-devel >= 1.19
 #                               ^^^^
 # Maintained via vertoo. Please don't modify by hand!
 # Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
-BuildRequires: MonetDB-client-devel >= 1.18
+BuildRequires: MonetDB-client-devel >= 1.19
 #                                      ^^^^
 # Maintained via vertoo. Please don't modify by hand!
 # Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
@@ -54,11 +54,11 @@ PreReq: %{_sbindir}/groupadd, %{_sbindir}/useradd
 Summary: MonetDB development package 
 Group: System 
 Requires: %{name} = %{version}-%{release}
-Requires: MonetDB-devel >= 1.18
+Requires: MonetDB-devel >= 1.19
 #                          ^^^^
 # Maintained via vertoo. Please don't modify by hand!
 # Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
-Requires: MonetDB-client-devel >= 1.18
+Requires: MonetDB-client-devel >= 1.19
 #                                 ^^^^
 # Maintained via vertoo. Please don't modify by hand!
 # Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
