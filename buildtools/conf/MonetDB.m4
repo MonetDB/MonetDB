@@ -518,6 +518,7 @@ dnl  Only GNU (gcc) and Intel ([ie]cc/[ie]cpc on Linux) are done so far.
 : ${X_CFLAGS=} # initialize to empty if not set
 NO_X_CFLAGS='_NO_X_CFLAGS_'
 NO_INLINE_CFLAGS=""
+GCC_BISON_CFLAGS=""
 ICC_BISON_CFLAGS=""
 CFLAGS_NO_OPT="-O0"
 if test "x$enable_strict" = xyes; then
@@ -553,8 +554,15 @@ yes-*-*)
 	3.[[4-9]].*-*|[[4-9]].*-*)
 	    X_CFLAGS="$X_CFLAGS -Wdeclaration-after-statement";;
 	esac
+	X_CFLAGS="$X_CFLAGS -Wundef"
+	dnl  Some versions of flex & bison seem to generate code
+	dnl  that does not compile with `gcc -Wundef`;
+	dnl  we use GCC_BISON_CFLAGS to disable the respective warning as
+	dnl  locally as possible via "-Wno-undef"
+	dnl  (see also MonetDB4/src/monet/Makefile.ag, sql/src/server/Makefile.ag,
+	dnl   pathfinder/modules/pftijah/Makefile.ag, amdb/src/lang/Makefile.ag).
+	GCC_BISON_CFLAGS="$GCC_BISON_CFLAGS -Wno-undef"
 	dnl  Our code it not (yet?) up to these:
-	dnl X_CFLAGS="$X_CFLAGS -Wundef"
 	dnl X_CFLAGS="$X_CFLAGS -Wshadow"
 	dnl X_CFLAGS="$X_CFLAGS -Wconversion"
 	dnl X_CFLAGS="$X_CFLAGS -Wstrict-prototypes"
@@ -1555,6 +1563,7 @@ if test "x$enable_optim" = xyes; then
 fi
 AC_SUBST(CFLAGS_NO_OPT)
 AC_SUBST(NO_INLINE_CFLAGS)
+AC_SUBST(GCC_BISON_CFLAGS)
 AC_SUBST(ICC_BISON_CFLAGS)
 
 dnl --enable-warning (only gcc & icc/ecc)

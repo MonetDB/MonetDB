@@ -21,6 +21,13 @@ INCLUDES = ../include ../common ../storage $(MONETDB_INCS)
 
 YFLAGS = -d -p sql -v
 
+#  Some versions of flex & bison seem to generate code
+#  that does not compile with `gcc -Wundef`;
+#  we use GCC_BISON_CFLAGS to disable the respective warning as
+#  locally as possible via "-Wno-undef"
+#  (see also MonetDB4/src/monet/Makefile.ag, buildtools/conf/monet.m4,
+#  pathfinder/modules/pftijah/Makefile.ag, amdb/src/lang/Makefile.ag).
+#
 #  (At least on Fedora Core 4,) bison 2.0 seems to generate code
 #  that icc does not like; since the problem only occurs with
 #  sql/src/server/sql_parser.mx & amdb/src/lang/parser.y,
@@ -28,7 +35,7 @@ YFLAGS = -d -p sql -v
 #  to disable the respective warning as locally as possible
 #  via "-wd592" (#592: variable "." is used before its value is set)
 #  (see also MonetDB/conf/monet.m4 & amdb/src/lang/Makefile.ag).
-CFLAGS = $(ICC_BISON_CFLAGS)
+CFLAGS = $(ICC_BISON_CFLAGS) $(GCC_BISON_CFLAGS)
 
 lib_sqlserver = {
 	NOINST

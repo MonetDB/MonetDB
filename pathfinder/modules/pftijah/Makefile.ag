@@ -29,12 +29,19 @@ PF_LIBS = $(LIBXML2_LDADD) $(LIBXML2_LIBS) $(DL_LIBS)
 LFLAGS = -olex.yy.c
 YFLAGS = -d -p nexi
 
+#  Some versions of flex & bison seem to generate code
+#  that does not compile with `gcc -Wundef`;
+#  we use GCC_BISON_CFLAGS to disable the respective warning as
+#  locally as possible via "-Wno-undef"
+#  (see also MonetDB4/src/monet/Makefile.ag, sql/src/server/Makefile.ag,
+#  buildtools/conf/monet.m4, amdb/src/lang/Makefile.ag).
+#
 #  Some versions of flex & bison seem to generate code that icc does not like;
 #  we use ICC_BISON_CFLAGS to disable the respective warning as
 #  locally as possible via "-wd177"
 #  (#177: label "." was declared but never referenced)
 #  (see also MonetDB/conf/monet.m4).
-CFLAGS = $(ICC_BISON_CFLAGS)
+CFLAGS = $(ICC_BISON_CFLAGS) $(GCC_BISON_CFLAGS)
 
 lib__pftijah = {
 	DIR = libdir/MonetDB4
