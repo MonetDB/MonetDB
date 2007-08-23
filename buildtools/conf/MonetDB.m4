@@ -225,7 +225,7 @@ if test "x$have_monetdb4" != xno; then
     MONETDB4_INCS=`$MONETDB4_CONFIG --includes`
     MONETDB4_INCLUDEDIR=`$MONETDB4_CONFIG --pkgincludedir`
     MONETDB4_LIBS=`$MONETDB4_CONFIG --libs`
-    MONETDB4_MODS=`$MONETDB4_CONFIG --mods`
+    MONETDB4_MODS=`$MONETDB4_CONFIG --mods | sed 's/-L\([[^ ]]*\)/& -R\1/g'`
     MONETDB4_MOD_PATH=`$MONETDB4_CONFIG --modpath`
     MONETDB4_PREFIX=`$MONETDB4_CONFIG --prefix`
   fi
@@ -295,7 +295,7 @@ if test "x$have_monetdb5" != xno; then
     MONETDB5_INCS=`$MONETDB5_CONFIG --includes`
     MONETDB5_INCLUDEDIR=`$MONETDB5_CONFIG --pkgincludedir`
     MONETDB5_LIBS=`$MONETDB5_CONFIG --libs`
-    MONETDB5_MODS=`$MONETDB5_CONFIG --mods`
+    MONETDB5_MODS=`$MONETDB5_CONFIG --mods | sed 's/-L\([[^ ]]*\)/& -R\1/g'`
     MONETDB5_MOD_PATH=`$MONETDB5_CONFIG --modpath`
     MONETDB5_PREFIX=`$MONETDB5_CONFIG --prefix`
   fi
@@ -890,6 +890,7 @@ AC_PROG_LD()
 AC_DISABLE_STATIC()
 AC_ENABLE_SHARED()
 
+AC_LIBTOOL_DLOPEN
 AC_LIBTOOL_WIN32_DLL
 AC_LIBTOOL_SETUP()
 AC_PROG_LIBTOOL()

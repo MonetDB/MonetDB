@@ -507,7 +507,11 @@ def am_binary(fd, var, binmap, am):
         fd.write(am_additional_libs(norm_binname, "", "BIN", binmap["LIBS"], am))
 
     if binmap.has_key("LDFLAGS"):
-        fd.write(am_additional_flags(norm_binname, "", "BIN", binmap["LDFLAGS"], am))
+        ldflags = binmap["LDFLAGS"][:]
+    else:
+        ldflags = []
+    ldflags.append('-export-dynamic')
+    fd.write(am_additional_flags(norm_binname, "", "BIN", ldflags, am))
 
     for src in binmap['SOURCES']:
         base, ext = split_filename(src)
@@ -570,7 +574,11 @@ def am_bins(fd, var, binsmap, am):
             fd.write(am_additional_libs(bin, "", "BIN", binsmap["LIBS"], am))
 
         if binsmap.has_key("LDFLAGS"):
-            fd.write(am_additional_flags(bin, "", "BIN", binsmap["LDFLAGS"], am))
+            ldflags = binsmap["LDFLAGS"][:]
+        else:
+            ldflags = []
+        ldflags.append('-export-dynamic')
+        fd.write(am_additional_flags(bin, "", "BIN", ldflags, am))
 
         nsrcs = "nodist_"+am_normalize(bin)+"_SOURCES ="
         srcs = "dist_"+am_normalize(bin)+"_SOURCES ="
