@@ -250,17 +250,13 @@ geom_export wkb * wkbNULL(void);
 #include <math.h>
 #include <time.h>
 
-@(
-static int TYPE_mbr;
-@)
+int TYPE_mbr;
 
 bat*
 geom_prelude(void)
 {
 	libgeom_init();
-@(
 	TYPE_mbr = malAtomSize(sizeof(mbr), sizeof(oid), "mbr");
-@)
 	return NULL;	
 }
 
