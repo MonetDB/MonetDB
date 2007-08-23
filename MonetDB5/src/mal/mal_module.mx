@@ -865,6 +865,7 @@ char **getHelp(Module m, str pat, int completion)
 		for(j=0;j<MAXSCOPE;j++)
 		for(s= m->subscope[j]; s; s= s->peer)
 			if( strncmp(fcnnme,s->name,len2)==0 || *fcnnme=='*') {
+				fnd=1;
 				if( completion ) {
 					snprintf(buf,BUFSIZ," %s.%s", 
 						((*modnme=='*' || *modnme==0)? m->name:modnme),s->name);
@@ -876,11 +877,11 @@ char **getHelp(Module m, str pat, int completion)
 					fcnDefinition(s->def,s->def->stmt[0],buf,FALSE);
 					buf[0]=' ';
 
+					fnd=0;
 					v= strstr(buf,"address");
 					if( v) *v=0;
-					if( tstDuplicate(msg,buf+1) ) continue;
+					if( tstDuplicate(msg,buf+1) ) fnd++;
 
-					fnd=0;
 					for(f=0;f<top;f++)
 					if( msg[f] && strcmp(buf+1, msg[f]) == 0 ) fnd++;
 					if(fnd) continue;
