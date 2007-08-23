@@ -1349,7 +1349,7 @@ signatures satisfying the pattern.
 		case 'h':
 			if (strncmp("help", b, 2) == 0) 
 				mdbHelp(out);
-			/* assume history */
+			continue;
 		case 'o':
 		case 'O':	/* optimizer and scheduler steps */
 		{
