@@ -3302,7 +3302,7 @@ def main(argv) :
 
         if par['PACKAGE'] == 'monetdb-geom':
             MissingMods = CheckMods(env, '', 'SQL', '')
-            if 'geom' not in env['TST_MODS']:
+            if par['M4'] and 'geom' not in env['TST_MODS']:
                 MissingMods.append('geom')
             if MissingMods:
                 ErrXit('Stopping Geom testing as modules "%s" are missing!' % str(MissingMods))
