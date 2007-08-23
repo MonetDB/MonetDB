@@ -1,0 +1,84 @@
+stdout of test 'xml04` in directory 'src/modules/mal` itself:
+
+
+# 23:16:03 >  
+# 23:16:03 >  Mtimeout -timeout 60  mserver5 "--config=/ufs/mk/monet5/Linux/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5//Linux/lib/MonetDB5:/ufs/mk/monet5//Linux/lib/MonetDB5/lib:/ufs/mk/monet5//Linux/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/mk/monet5//Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5//Linux/var/MonetDB5/sql_logs" --set "xquery_logdir=/ufs/mk/monet5//Linux/var/MonetDB5/xquery_logs" --set mapi_open=true --set xrpc_open=true --set mapi_port=35136 --set xrpc_port=41906 --set monet_prompt= --trace --dbname=mTests_src_modules_mal  xml04.mal
+# 23:16:03 >  
+
+# MonetDB server v5.1.0, based on kernel v1.19.0
+# Serving database 'mTests_src_modules_mal'
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Copyright (c) 1993-2007 CWI, all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://gio.ins.cwi.nl:35136/
+#b:= bat.new(:oid,:str);
+#bat.insert(b,0@0,"Mary Ann Walker");
+#bat.insert(b,1@0,"Annie Chapman");
+#h:= bat.new(:oid,:str);
+#bat.insert(h,0@0,"brown");
+#bat.insert(h,1@0,"curly dark brown");
+#
+#io.print(b);
+#
+#bs:= xml.xml(b);
+#bc:= xml.element("name",bs);
+#bj:= xml.str(bc);
+#io.print(bj);
+#hs:= xml.xml(h);
+#hc:= xml.element("hair",hs);
+#hj:= xml.str(hc);
+#io.print(hj);
+#
+#aa:= xml.forest(bc,hc);
+#as:= xml.str(aa);
+#io.print(as);
+#
+function user.main():void;	# 0  (main:void)
+    b := bat.new(:oid,:str);	# 1 CMDBATnew (b:bat[:oid,:str])<-(_2:oid)(_3:str)
+    bat.insert(b,0@0,"Mary Ann Walker");	# 2 BKCinsert_bun (_4:void)<-(b:bat[:oid,:str])(_5:oid)(_6:str)
+    bat.insert(b,1@0,"Annie Chapman");	# 3 BKCinsert_bun (_7:void)<-(b:bat[:oid,:str])(_8:oid)(_9:str)
+    h := bat.new(:oid,:str);	# 4 CMDBATnew (h:bat[:oid,:str])<-(_2:oid)(_3:str)
+    bat.insert(h,0@0,"brown");	# 5 BKCinsert_bun (_11:void)<-(h:bat[:oid,:str])(_5:oid)(_12:str)
+    bat.insert(h,1@0,"curly dark brown");	# 6 BKCinsert_bun (_13:void)<-(h:bat[:oid,:str])(_8:oid)(_14:str)
+    io.print(b);	# 7 IOprint_val (_15:void)<-(b:bat[:oid,:str])
+    bs := xml.xml(b);	# 8 BATXMLstr2xml (bs:bat[:oid,:xml])<-(b:bat[:oid,:str])
+    bc := xml.element("name",bs);	# 9 BATXMLelementSmall (bc:bat[:oid,:xml])<-(_18:str)(bs:bat[:oid,:xml])
+    bj := xml.str(bc);	# 10 BATXMLxml2str (bj:bat[:oid,:str])<-(bc:bat[:oid,:xml])
+    io.print(bj);	# 11 IOprint_val (_20:void)<-(bj:bat[:oid,:str])
+    hs := xml.xml(h);	# 12 BATXMLstr2xml (hs:bat[:oid,:xml])<-(h:bat[:oid,:str])
+    hc := xml.element("hair",hs);	# 13 BATXMLelementSmall (hc:bat[:oid,:xml])<-(_23:str)(hs:bat[:oid,:xml])
+    hj := xml.str(hc);	# 14 BATXMLxml2str (hj:bat[:oid,:str])<-(hc:bat[:oid,:xml])
+    io.print(hj);	# 15 IOprint_val (_25:void)<-(hj:bat[:oid,:str])
+    aa := xml.forest(bc,hc);	# 16 BATXMLforest (aa:bat[:oid,:xml])<-(bc:bat[:oid,:xml])(hc:bat[:oid,:xml])
+    as := xml.str(aa);	# 17 BATXMLxml2str (as:bat[:oid,:str])<-(aa:bat[:oid,:xml])
+    io.print(as);	# 18 IOprint_val (_28:void)<-(as:bat[:oid,:str])
+end main;	# 19  
+#---------------------------------#
+# h	t			  # name
+# void	str			  # type
+#---------------------------------#
+[ 0@0,	  "Mary Ann Walker"	  ]
+[ 1@0,	  "Annie Chapman"	  ]
+#-----------------------------------------#
+# h	t				  # name
+# void	str				  # type
+#-----------------------------------------#
+[ 0@0,	  "<name>Mary Ann Walker</name>"  ]
+[ 1@0,	  "<name>Annie Chapman</name>"	  ]
+#-------------------------------------------------#
+# h	t					  # name
+# void	str					  # type
+#-------------------------------------------------#
+[ 0@0,	  "<hair>brown</hair>"			  ]
+[ 1@0,	  "<hair>curly dark brown</hair>"	  ]
+#-------------------------------------------------------------------------#
+# h	t								  # name
+# void	str								  # type
+#-------------------------------------------------------------------------#
+[ 0@0,	  "<name>Mary Ann Walker</name><hair>brown</hair>"		  ]
+[ 1@0,	  "<name>Annie Chapman</name><hair>curly dark brown</hair>"	  ]
+
+# 23:16:03 >  
+# 23:16:03 >  Done.
+# 23:16:03 >  
+
