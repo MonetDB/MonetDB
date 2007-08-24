@@ -9,6 +9,7 @@ set pkg=@PACKAGE@
 set source=@SQL_SOURCE@
 set build=@SQL_BUILD@
 set prefix=@prefix@
+set exec_prefix=@exec_prefix@
 set libdir=@libdir@
 set M4libdir=%libdir%\MonetDB4
 set M5libdir=%libdir%\MonetDB5

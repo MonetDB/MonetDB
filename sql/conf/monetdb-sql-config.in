@@ -22,6 +22,7 @@ pkg="@PACKAGE@"
 source="@QSQL_SOURCE@"
 build="@QSQL_BUILD@"
 prefix="@Qprefix@"
+exec_prefix="@Qexec_prefix@"
 
 libdir="@Qlibdir@"
 M4libdir="${libdir}/MonetDB4"
