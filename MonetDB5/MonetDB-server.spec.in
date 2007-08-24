@@ -54,6 +54,8 @@ PreReq: %{_sbindir}/groupadd, %{_sbindir}/useradd
 Summary: MonetDB development package 
 Group: System 
 Requires: %{name} = %{version}-%{release}
+Requires: MonetDB-devel
+Requires: MonetDB-client-devel
 
 %description
 MonetDB is a database management system that is developed from a
