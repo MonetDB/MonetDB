@@ -78,7 +78,6 @@ make install \
 find $RPM_BUILD_ROOT -name .incs.in -print -o -name \*.la -print | xargs rm -f
 
 # cleanup stuff we don't want to install
-rm -r $RPM_BUILD_ROOT%{_libdir}/*.la
 rm -rf $RPM_BUILD_ROOT%{prefix}/share/%{name}/Mprofile-commands.lst
 
 rm -rf $RPM_BUILD_ROOT%{prefix}/bin/M*
