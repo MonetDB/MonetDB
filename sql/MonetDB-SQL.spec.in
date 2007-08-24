@@ -70,8 +70,8 @@ Add the MonetDB4 SQL server module description here
 %package server5
 Summary: MonetDB5 SQL server modules
 Group: System 
-Requires: MonetDB5-server = 5.1
-#                           ^^^
+Requires: MonetDB5-server >= 5.1
+#                            ^^^
 # Maintained via vertoo. Please don't modify by hand!
 # Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
 %if !%{?buildsystem}
