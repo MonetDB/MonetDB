@@ -1,0 +1,53 @@
+stderr of test 'relation` in directory 'src/sql` itself:
+
+
+# 22:42:46 >  
+# 22:42:46 >  Mtimeout -timeout 180  Mserver "--config=/ufs/niels/scratch/rc/Linux-x86_64/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB4:/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB4/lib:/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB4/bin" --set "gdk_dbfarm=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB4/dbfarm" --set "sql_logdir=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB4/sql_logs" --set "xquery_logdir=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB4/xquery_logs" --set mapi_open=true --set xrpc_open=true --set mapi_port=32262 --set xrpc_port=47875 --set monet_prompt= --trace "--dbname=mTests_src_sql" --dbinit="module(geom); module(sql_server);" ; echo ; echo Over..
+# 22:42:46 >  
+
+
+# 22:42:46 >  
+# 22:42:46 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=koala --port=32262 
+# 22:42:46 >  
+
+MAPI  = monetdb@koala:31327
+QUERY = INSERT INTO geoms values ('LINESTRING(10 10)');
+ERROR = !MALException:wkb.FromText:!ERROR: IllegalArgumentException: point array must contain 0 or >1 elements
+        !ERROR: IllegalArgumentException: point array must contain 0 or >1 elements
+MAPI  = monetdb@koala:31327
+QUERY = INSERT INTO geoms values ('LINESTRING(10)');
+ERROR = !MALException:wkb.FromText:!ERROR: ParseException: Expected number but encountered ')'
+        !ERROR: ParseException: Expected number but encountered ')'
+MAPI  = monetdb@koala:31327
+QUERY = INSERT INTO geoms values ('LINESTRING()');
+ERROR = !MALException:wkb.FromText:!ERROR: ParseException: Expected number but encountered ')'
+        !ERROR: ParseException: Expected number but encountered ')'
+MAPI  = monetdb@koala:31327
+QUERY = INSERT INTO geoms values ('LINESTRING');
+ERROR = !MALException:wkb.FromText:!ERROR: ParseException: Expected word but encountered end of stream
+        !ERROR: ParseException: Expected word but encountered end of stream
+MAPI  = monetdb@koala:31327
+QUERY = INSERT INTO geoms values ('');
+ERROR = !MALException:wkb.FromText:!ERROR: ParseException: Expected word but encountered end of stream
+        !ERROR: ParseException: Expected word but encountered end of stream
+MAPI  = monetdb@koala:31327
+QUERY = INSERT INTO geoms values ('POINT(10)');
+ERROR = !MALException:wkb.FromText:!ERROR: ParseException: Expected number but encountered ')'
+        !ERROR: ParseException: Expected number but encountered ')'
+MAPI  = monetdb@koala:31327
+QUERY = INSERT INTO geoms values ('POINT()');
+ERROR = !MALException:wkb.FromText:!ERROR: ParseException: Expected number but encountered ')'
+        !ERROR: ParseException: Expected number but encountered ')'
+MAPI  = monetdb@koala:31327
+QUERY = INSERT INTO geoms values ('POINT');
+ERROR = !MALException:wkb.FromText:!ERROR: ParseException: Expected word but encountered end of stream
+        !ERROR: ParseException: Expected word but encountered end of stream
+MAPI  = monetdb@koala:31327
+QUERY = INSERT INTO geoms values ('');
+ERROR = !MALException:wkb.FromText:!ERROR: ParseException: Expected word but encountered end of stream
+        !ERROR: ParseException: Expected word but encountered end of stream
+
+# 22:42:47 >  
+# 22:42:47 >  Done.
+# 22:42:47 >  
+

@@ -21,6 +21,6 @@ SELECT * FROM geoms where g is NOT NULL;
 
 SELECT Area(g), Length(g), Buffer(g, 2.0), ConvexHull(g) FROM geoms where g is not NULL;
 
-SELECT a.g, b.g, Distance(a.g,b.g), Intersection(a.g,b.g), Difference(a.g,b.g), SymDifference(a.g,b.g) FROM geoms a, geoms b where a.g is not NULL and b.g is not NULL;
+SELECT a.g, b.g, Distance(a.g,b.g), Intersection(a.g,b.g), "Union"(a.g,b.g), Difference(a.g,b.g), SymDifference(a.g,b.g) FROM geoms a, geoms b where a.g is not NULL and b.g is not NULL;
 
 DROP TABLE geoms;

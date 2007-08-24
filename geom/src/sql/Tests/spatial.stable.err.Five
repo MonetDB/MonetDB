@@ -74,42 +74,42 @@ Trying with original input.
 # 22:58:03 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=koala --port=35790 
 # 22:58:03 >  
 
-MAPI  = monetdb@koala:31259
+MAPI  = monetdb@koala:35225
 QUERY = INSERT INTO geoms values ('LINESTRING(10 10)');
-ERROR = !ERROR: IllegalArgumentException: point array must contain 0 or >1 elements
-        !ERROR: wkbFromText: operation failed.
-MAPI  = monetdb@koala:31259
+ERROR = !MALException:wkb.FromText:!ERROR: IllegalArgumentException: point array must contain 0 or >1 elements
+        !ERROR: IllegalArgumentException: point array must contain 0 or >1 elements
+MAPI  = monetdb@koala:35225
 QUERY = INSERT INTO geoms values ('LINESTRING(10)');
-ERROR = !ERROR: ParseException: Expected number but encountered ')'
-        !ERROR: wkbFromText: operation failed.
-MAPI  = monetdb@koala:31259
+ERROR = !MALException:wkb.FromText:!ERROR: ParseException: Expected number but encountered ')'
+        !ERROR: ParseException: Expected number but encountered ')'
+MAPI  = monetdb@koala:35225
 QUERY = INSERT INTO geoms values ('LINESTRING()');
-ERROR = !ERROR: ParseException: Expected number but encountered ')'
-        !ERROR: wkbFromText: operation failed.
-MAPI  = monetdb@koala:31259
+ERROR = !MALException:wkb.FromText:!ERROR: ParseException: Expected number but encountered ')'
+        !ERROR: ParseException: Expected number but encountered ')'
+MAPI  = monetdb@koala:35225
 QUERY = INSERT INTO geoms values ('LINESTRING');
-ERROR = !ERROR: ParseException: Expected word but encountered end of stream
-        !ERROR: wkbFromText: operation failed.
-MAPI  = monetdb@koala:31259
+ERROR = !MALException:wkb.FromText:!ERROR: ParseException: Expected word but encountered end of stream
+        !ERROR: ParseException: Expected word but encountered end of stream
+MAPI  = monetdb@koala:35225
 QUERY = INSERT INTO geoms values ('');
-ERROR = !ERROR: ParseException: Expected word but encountered end of stream
-        !ERROR: wkbFromText: operation failed.
-MAPI  = monetdb@koala:31259
+ERROR = !MALException:wkb.FromText:!ERROR: ParseException: Expected word but encountered end of stream
+        !ERROR: ParseException: Expected word but encountered end of stream
+MAPI  = monetdb@koala:35225
 QUERY = INSERT INTO geoms values ('POINT(10)');
-ERROR = !ERROR: ParseException: Expected number but encountered ')'
-        !ERROR: wkbFromText: operation failed.
-MAPI  = monetdb@koala:31259
+ERROR = !MALException:wkb.FromText:!ERROR: ParseException: Expected number but encountered ')'
+        !ERROR: ParseException: Expected number but encountered ')'
+MAPI  = monetdb@koala:35225
 QUERY = INSERT INTO geoms values ('POINT()');
-ERROR = !ERROR: ParseException: Expected number but encountered ')'
-        !ERROR: wkbFromText: operation failed.
-MAPI  = monetdb@koala:31259
+ERROR = !MALException:wkb.FromText:!ERROR: ParseException: Expected number but encountered ')'
+        !ERROR: ParseException: Expected number but encountered ')'
+MAPI  = monetdb@koala:35225
 QUERY = INSERT INTO geoms values ('POINT');
-ERROR = !ERROR: ParseException: Expected word but encountered end of stream
-        !ERROR: wkbFromText: operation failed.
-MAPI  = monetdb@koala:31259
+ERROR = !MALException:wkb.FromText:!ERROR: ParseException: Expected word but encountered end of stream
+        !ERROR: ParseException: Expected word but encountered end of stream
+MAPI  = monetdb@koala:35225
 QUERY = INSERT INTO geoms values ('');
-ERROR = !ERROR: ParseException: Expected word but encountered end of stream
-        !ERROR: wkbFromText: operation failed.
+ERROR = !MALException:wkb.FromText:!ERROR: ParseException: Expected word but encountered end of stream
+        !ERROR: ParseException: Expected word but encountered end of stream
 
 # 22:58:03 >  
 # 22:58:03 >  Done.
