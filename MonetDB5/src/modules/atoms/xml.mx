@@ -215,8 +215,8 @@ XMLelement(xml *ret, str *name, str *nspace, xml *attr, xml *val)
 				strlen(*nspace) + strlen(*attr)+
 				strlen("<></> ")+strlen(*val)+1);
 	if( strNil(*nspace) && strNil(*attr))
-		snprintf(buf,len,"<%s %s %s>%s</%s>",
-			*name, *nspace, *attr, *val, *name);
+		snprintf(buf,len,"<%s>%s</%s>",
+			*name, *val, *name);
 	else
 	if( strNil(*nspace))
 		snprintf(buf,len,"<%s %s>%s</%s>",
@@ -226,8 +226,8 @@ XMLelement(xml *ret, str *name, str *nspace, xml *attr, xml *val)
 		snprintf(buf,len,"<%s %s>%s</%s>",
 			*name, *attr, *val, *name);
 	else
-		snprintf(buf,len,"<%s>%s</%s>",
-			*name, *val, *name);
+		snprintf(buf,len,"<%s %s %s>%s</%s>",
+			*name, *nspace, *attr, *val, *name);
 
 	*ret= buf;
 	return MAL_SUCCEED;

@@ -1,6 +1,10 @@
 b:= "Mary Ann Walker";
-
 c:= "brown";
+
+n:= nil:xml;
+io.print(n);
+ns:= xml.str(n);
+io.print(ns);
 
 bx:= xml.xml(b);
 cx:= xml.xml(c);
