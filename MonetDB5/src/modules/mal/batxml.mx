@@ -59,7 +59,7 @@ command xml.text(val:bat[:oid,:str]):bat[:oid,:xml]
 address BATXMLxml2str
 comment "Serialize the XQuery object to a string";
 
-command xml.query(val:bat[:oid,:str],expr:str):bat[:oid,:xml]
+command xml.xquery(val:bat[:oid,:str],expr:str):bat[:oid,:xml]
 address BATXMLxquery
 comment "Execute the XQuery against the elements";
 
@@ -98,7 +98,7 @@ comment "Construct an element list");
 
 pattern xml.agg(val:bat[:oid,:xml], order:str...):bat[:oid,:xml]
 address BATXMLagg
-comment "Aggregate the XML values over grouping specified@;
+comment "Aggregate the XML values over grouping specified";
 
 command xml.root(val:bat[:oid,:xml], version:str, standalone:str):bat[:oid,:xml]
 address BATXMLroot
@@ -192,16 +192,7 @@ collector does not remove the xml intermediates.
 This way, we know that as long as the xml-variables are not
 reused, the complete structure of the xml document(s) are available.
 We merely have to collect the pieces.
-[FOR LATER, FIRST GO FOR THE EASY IMPLEMENTATION
-
-static str
-BATtreeWalker(MalBlkPtr mb, InstrPtr p, str base, int size, int offset){
-	(void)mb;
-	(void) p;
-	snprintf(base+offset,size-offset,"dummy");
-	return MAL_SUCCEED;
-}
-
+[FOR LATER, FIRST GO FOR THE EASY IMPLEMENTATION]
 @-
 XML values are represented by strings already.
 @c
@@ -387,15 +378,33 @@ BATXMLroot(int *ret, int *bid, str *version, str *standalone)
 	BAT *b,*bn;
 	BUN p,q;
 	int xx;
+	str buf= GDKmalloc(BUFSIZ);
+	int len,size= BUFSIZ;
 
 	prepareOperand(b,bid,"root");
 	prepareResult(bn,b,TYPE_str,"root");
+
+	len= strlen(*version)+strlen(*standalone)+
+			strlen("<? version=\"\" standalone=\"\"?>");
 	BATloopFast(b,p,q,xx){
+		ptr h= BUNhead(b,p);
+		str t= (str) BUNtail(b,p);
+		if( (len=strlen(t)) >= size){
+			buf= GDKrealloc(buf,len+20);
+			size= len+20;
+		}
+		snprintf(buf,size,"<? version=\"%s\" stanalone=\"%s\"?>%s",
+			*version,*standalone,t);
+		bunfastins(bn,h,buf);
 	}
+	GDKfree(buf);
 	finalizeResult(ret,bn,b);
-	(void) version;
-	(void) standalone;
-	throw(MAL,"xml.root","Not yet implemented");
+	return MAL_SUCCEED;
+bunins_failed:
+	BBPreleaseref(b->batCacheid);
+	BBPunfix(bn->batCacheid);
+	GDKfree(buf);
+	throw(MAL, "batstr.comment", "bunins failed");
 }
 
 str
