@@ -22,11 +22,11 @@ Source: clients-%{version}.tar.gz
 BuildRoot: /var/tmp/%{name}-root
 Packager: Niels Nes <Niels.Nes@cwi.nl>
 License:   MPL - http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
-BuildRequires: python
 Requires: MonetDB >= 1.18
 #                    ^^^^
 # Maintained via vertoo. Please don't modify by hand!
 # Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
+BuildRequires: python
 BuildRequires: readline-devel, openssl-devel
 
 %{!?_with_php: %{!?_without_php: %define _with_php --with-php}}
