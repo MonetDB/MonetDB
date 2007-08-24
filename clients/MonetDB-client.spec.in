@@ -51,6 +51,29 @@ Requires: MonetDB-devel >= 1.18
 #                          ^^^^
 # Maintained via vertoo. Please don't modify by hand!
 # Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
+Requires: python
+Requires: readline-devel, openssl-devel
+%if %{?_with_php:1}%{!?_with_php:0}
+Requires: php, php-devel
+%endif
+%if %{?_with_python:1}%{!?_with_python:0}
+Requires: python, python-devel, swig
+%endif
+%if %{?_with_perl:1}%{!?_with_perl:0}
+Requires: perl, swig
+%if %{?fc7:1}%{!?fc7:0}
+# in Fedora Core 6 there is no perl-devel package: everything is in perl;
+# in Fedora 7 there is a perl-devel package which we need.  Presumably this
+# test needs refinement for Fedora > 7.  We may be able to check for the
+# existence of the variable "fedora" since it seems to be present in F7 but
+# not in FC6.
+Requires: perl-devel
+%endif
+%endif
+%if %{?_with_java:1}%{!?_with_java:0}
+Requires: ant, java 
+%endif
+
 
 %package odbc
 Summary: MonetDB SQL odbc
