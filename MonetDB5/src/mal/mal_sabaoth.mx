@@ -620,13 +620,13 @@ typedef struct Ssabuplog {
 	double crashavg30; /* average of crashes in the last 30 start attempts */
 } sabuplog;
 
-mal_export str SABAOTHgetUplogInfo(sabuplog* ret, str dbname);
+mal_export str SABAOTHgetUplogInfo(sabuplog *ret, sabdb *db);
 @c
 /**
  * Parses the .uplog file for the given database, and fills ret with the
  * parsed information.
  */
-str SABAOTHgetUplogInfo(sabuplog* ret, str dbname) {
+str SABAOTHgetUplogInfo(sabuplog *ret, sabdb *db) {
 	str path = alloca(sizeof(char) * (PATHLENGTH + 1));
 	str log = alloca(sizeof(char) * (PATHLENGTH + 1));
 	str tmp;
@@ -656,7 +656,7 @@ str SABAOTHgetUplogInfo(sabuplog* ret, str dbname) {
 		throw(IO, "sabaoth.getUplogInfo", "unable to open directory %s: %s",
 				path, strerror(errno));
 	while ((e = readdir(d)) != NULL) {
-		if (dbname != NULL && strcmp(e->d_name, dbname) != 0)
+		if (strcmp(e->d_name, db->dbname) != 0)
 			continue;
 
 		snprintf(log, PATHLENGTH, "%s/%s/%s", path, e->d_name, UPLOGFILE);
@@ -699,12 +699,12 @@ str SABAOTHgetUplogInfo(sabuplog* ret, str dbname) {
 					break;
 				}
 			}
-			if (start != 0)
+			if (start != 0 && db->state != SABdbRunning)
 				ret->lastcrash = start;
 			memmove(&avg10[0], &avg10[1], sizeof(int) * 9);
 			memmove(&avg30[0], &avg30[1], sizeof(int) * 29);
 			avg10[9] = avg30[29] = ret->crashavg1 =
-				(start != 0 ? 1 : 0);
+				(start != 0 ? (db->state != SABdbRunning ? 1 : 0) : 0);
 			ret->crashcntr = ret->startcntr - ret->stopcntr;
 			for (i = 0; i < 10; i++)
 				ret->crashavg10 += avg10[i];

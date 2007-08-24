@@ -134,7 +134,7 @@ printStatus(sabdb *stats, int mode)
 	sabuplog uplog;
 	str e;
 
-	if ((e = SABAOTHgetUplogInfo(&uplog, stats->dbname)) != MAL_SUCCEED) {
+	if ((e = SABAOTHgetUplogInfo(&uplog, stats)) != MAL_SUCCEED) {
 		fprintf(stderr, "status: internal error: %s\n", e);
 		GDKfree(e);
 		return;

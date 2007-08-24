@@ -386,7 +386,7 @@ forkMserver(str database, sabdb** stats, dpair dp)
 	 * one here. */
 
 	/* retrieve uplog information to print a short conclusion */
-	er = SABAOTHgetUplogInfo(&info, database);
+	er = SABAOTHgetUplogInfo(&info, *stats);
 	if (er != MAL_SUCCEED) {
 		err e = newErr("could not retrieve uplog information: %s", er);
 		GDKfree(er);
