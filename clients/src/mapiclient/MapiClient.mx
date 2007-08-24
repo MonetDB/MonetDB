@@ -118,12 +118,14 @@ extern int chdir(const char *);
 #define getlogin() "win32"
 #endif
 
-#define MAL 1
-#define SQL 2
-#define XQUERY 4
-#define MIL 8
+enum modes{
+	MAL,
+	SQL,
+	XQUERY,
+	MIL
+};
 
-static int mode;
+static enum modes mode;
 static FILE *toConsole;
 static FILE *fromConsole;
 static char *language = NULL;
@@ -1017,6 +1019,7 @@ showCommands(void)
 		fprintf(toConsole, "\\d table- describe the table, or the complete database if none given.\n");
 		fprintf(toConsole, "\\A      - enable auto commit\n");
 		fprintf(toConsole, "\\a      - disable auto commit\n");
+	default: ;
 	}
 	fprintf(toConsole, "\\L file - save client/server interaction\n");
 	fprintf(toConsole, "\\X      - trace mclient code\n");
@@ -1815,13 +1818,11 @@ main(int argc, char **argv)
 #endif
 			/* reading from terminal, prepare prompt */
 			setPrompt();
-
-			/* use default rendering if not overruled at commandline */
-			setWidth();
-
 			prompt = promptbuf;
 			fromConsole = stdin;
 		}
+		/* use default rendering if not overruled at commandline */
+		setWidth();
 		/* stream xml document into the server */
 		if (input && mode == XQUERY) {
 			mapi_stream_into(mid, input, colname);
