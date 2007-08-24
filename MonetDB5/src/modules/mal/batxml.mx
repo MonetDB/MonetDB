@@ -447,8 +447,8 @@ str
 BATXMLelement(int *ret, str *name, int *namespace, int *attributes, int *bid)
 {
 	BAT *b,*a=0, *n=0, *bn;
-	BUN p,q, ap, aq, np, nq;
-	int xx, axx, nxx;
+	BUN p,q, ap=0, aq=0, np=0, nq=0;
+	int xx, axx=0, nxx=0;
 	str buf= GDKmalloc(BUFSIZ);
 	int offset,len,size= BUFSIZ;
 
