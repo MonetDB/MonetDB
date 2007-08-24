@@ -5,9 +5,11 @@ c:= "brown";
 bx:= xml.xml(b);
 cx:= xml.xml(c);
 
-xp:= xml.element("person",nil:bat[:oid,:str],nil:xml,bx);
-xh:= xml.element("hair",nil:bat[:oid,:str],nil:xml,cx);
+xp:= xml.element("person",bx);
+sp:= xml.str(xp); io.print(sp);
+xh:= xml.element("hair",nil:str,nil:str,cx);
+sp:= xml.str(xh); io.print(sp);
 
-xx:= xml.element("row",nil:bat[:oid,:str],nil:xml,xp,xh);
+xx:= xml.forest(xp,xh);
 xs:= xml.str(xx);
 io.print(xs);

@@ -51,22 +51,19 @@ command attribute(name:str, val:str):xml
 address XMLattribute
 comment "Construct an attribute value pair";
 
-pattern attributes(val:xml... ):xml
-address XMLattributes
-comment "Collect the attributes of an element into a single structure";
-
-pattern element(name:str, ns:bat[:oid,:str], attr:xml, s:xml... ) :xml
+command element(name:str, ns:str, attr:str, s:xml) :xml
 address XMLelement
+comment "The basic building block for XML elements are namespaces, attributes and a sequence
+of xml elements. The name space and the attributes may be left unspecified(=nil:bat).";
+
+command element(name:str, s:xml) :xml
+address XMLelementSmall
 comment "The basic building block for XML elements are namespaces, attributes and a sequence
 of xml elements. The name space and the attributes may be left unspecified(=nil:bat).";
 
 pattern concat(val:xml... ):xml
 address XMLconcat
 comment "Concatenate the xml values";
-
-command trunk(nme:str, val:xml):xml
-address XMLtrunk
-comment "Prepare an element for a forest construction";
 
 pattern forest(val:xml...):xml
 address XMLforest
@@ -109,15 +106,15 @@ xml_export str XMLpi(xml *x, str *nme, str *s);
 xml_export str XMLroot(str *x, str *v, str *version, str *standalone);
 xml_export str XMLparse(xml *x, str *s, str *option);
 xml_export str XMLattribute(xml *ret, str *name, str *val);
-xml_export str XMLattributes(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-xml_export str XMLelement(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-xml_export str XMLconcat(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+xml_export str XMLelement(xml *ret, str *name, str *nspace, xml *attr, xml *val);
+xml_export str XMLelementSmall(xml *ret, str *name, xml *val);
+xml_export str XMLconcat(xml *ret, xml *left, xml *right);
 xml_export str XMLforest(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-xml_export str XMLtrunk(int *ret, str *nme, str *val);
 
 #endif /* XML_H */
 @c
 #include "xml.h"
+#include "mal_interpreter.h"
 
 str 
 XMLxml2str(str *s, xml *x){
@@ -126,11 +123,33 @@ XMLxml2str(str *s, xml *x){
 }
 
 str
-XMLstr2xml(xml *x, str *s){
-	(void) x;
-	(void) s;
-	if(/* validate string */ 0)
-		throw(MAL,"xml.xml","Invalid xml format");
+XMLstr2xml(xml *x, str *val){
+	str t= *val;
+	str buf= alloca(6*sizeof(*t)), s=buf;
+	
+	for(; *t; t++)
+	if (*t == '&'){
+		strcat(s,"&amp;"); 
+		while(*s) s++;
+	} else if (*t == '<'){
+		strcat(s,"&lt;"); 
+		while(*s) s++;
+	} else if (*t == '>'){
+		strcat(s,"&gt;");
+		while(*s) s++;
+	}else if (*t == '"'){
+		strcat(s,"&quot;");
+		while(*s) s++;
+	} else if (*t == '\''){
+		strcat(s,"&apos;");
+		while(*s) s++;
+	} else if ((*t & 0xFF) < 0x20){
+		sprintf(s, "&#%d;", *t & 0xFF);
+		while(*s) s++;
+	} else
+		*s++= *t;
+	*s=0;
+	*x= GDKstrdup(buf);
 	return MAL_SUCCEED;
 }
 
@@ -143,9 +162,11 @@ XMLisdocument(bit *x, str *s){
 
 str
 XMLcomment(xml *x, str *s){
-	(void) x;
-	(void) s;
-	throw(MAL,"xml.comment","Not yet implemented");
+	int len;
+	str buf = (str) GDKmalloc(len= strlen(*s)+strlen("<!-- -->"));
+	snprintf(buf,len,"<!-- %s -->",*s);
+	*x= buf;
+	return MAL_SUCCEED;
 }
 
 str
@@ -165,64 +186,89 @@ XMLpi(str *ret, str *operator, str *bid)
 }
 
 str
-XMLroot(str *ret, str *bid, str *version, str *standalone)
+XMLroot(str *ret, str *val, str *version, str *standalone)
 {
-	(void) ret;
-	(void) version;
-	(void) standalone;
-	(void) bid;
-	throw(MAL,"xml.root","Not yet implemented");
+	int len;
+	str buf = (str) GDKmalloc(len= strlen(*val) + 
+		strlen("<? version=\"\" standalone=\"\"?>"));
+	snprintf(buf,len,"<? version=\"%s\" stanalone=\"%s\"?>%s",
+		*version,*standalone,*val);
+	*ret= buf;
+	return MAL_SUCCEED;
 }
 
 str
 XMLattribute(xml *ret, str *name, str *val)
 {
-	(void) ret;
-	(void) name;
-	(void) val;
-	throw(MAL,"xml.attribute","Not yet implemented");
+	int len;
+	str buf= (str) GDKmalloc(len=2*strlen(*name)+strlen(*val)+5);
+	snprintf(buf,len," %s=\"%s\"",*name,*val);
+	*ret = buf;
+	return MAL_SUCCEED;
 }
 
 str
-XMLattributes(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+XMLelement(xml *ret, str *name, str *nspace, xml *attr, xml *val)
 {
-	(void) mb;
-	(void) stk;
-	(void) p;
-	throw(MAL,"xml.attributes","Not yet implemented");
+	int len;
+	str buf= (str) GDKmalloc(len=strlen(*name) +
+				strlen(*nspace) + strlen(*attr)+
+				strlen("<></> ")+strlen(*val)+1);
+	if( strNil(*nspace) && strNil(*attr))
+		snprintf(buf,len,"<%s %s %s>%s</%s>",
+			*name, *nspace, *attr, *val, *name);
+	else
+	if( strNil(*nspace))
+		snprintf(buf,len,"<%s %s>%s</%s>",
+			*name,*nspace, *val, *name);
+	else
+	if( strNil(*attr))
+		snprintf(buf,len,"<%s %s>%s</%s>",
+			*name, *attr, *val, *name);
+	else
+		snprintf(buf,len,"<%s>%s</%s>",
+			*name, *val, *name);
+
+	*ret= buf;
+	return MAL_SUCCEED;
 }
 
 str
-XMLelement(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+XMLelementSmall(xml *ret, str *name, xml *val)
 {
-	(void) mb;
-	(void) stk;
-	(void) p;
-	throw(MAL,"xml.element","Not yet implemented");
+	int len;
+	str buf= (str) GDKmalloc(len=2*strlen(*name) +
+				strlen("<></> ")+strlen(*val));
+	snprintf(buf,len,"<%s>%s</%s>",*name, *val, *name);
+	*ret= buf;
+	return MAL_SUCCEED;
 }
 
 str
-XMLconcat(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+XMLconcat(xml *ret, xml *left, xml *right)
 {
-	(void) mb;
-	(void) stk;
-	(void) p;
-	throw(MAL,"xml.element","Not yet implemented");
-}
-str
-XMLtrunk(int *ret, str *nme, str *val){
-	(void) ret;
-	(void) nme;
-	(void) val;
-	throw(MAL,"xml.trunk","Not yet implemented");
+	int len;
+	str buf= (str) GDKmalloc(len=strlen(*left)+strlen(*right)+1);
+	snprintf(buf,len,"%s%s",*left,*right);
+	*ret= buf;
+	return MAL_SUCCEED;
 }
 str
 XMLforest(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
+	str *ret= (str*) getArgReference(stk,p,0);
+	int i, len=0;
+	str buf;
+
+	for( i=p->retc; i<p->argc; i++)
+		len += strlen(*(str*)getArgReference(stk,p,i));
+	buf= (str) GDKmalloc(len+1);
+	
+	for( i=p->retc; i<p->argc; i++)
+		strcat(buf,*(str*)getArgReference(stk,p,i));
+	*ret= buf;
 	(void) mb;
-	(void) stk;
-	(void) p;
-	throw(MAL,"xml.element","Not yet implemented");
+	return MAL_SUCCEED;
 }
 
 @sql
@@ -237,7 +283,6 @@ CREATE FUNCTION root (val STRING, version STRING, standalone STRING) RETURNS xml
 CREATE FUNCTION attribute (nme STRING, val STRING) RETURNS xml external name xml.attribute;
 CREATE FUNCTION element (nme STRING, ns STRING, attr xml, s xml) RETURNS xml external name xml.element;
 CREATE FUNCTION concat (val1 xml, val2 xml) RETURNS xml external name xml.concat;
-CREATE FUNCTION trunk (nme str, val xml) RETURNS xml external name xml.trunk;
 CREATE FUNCTION forest (val1 xml, val2 xml) RETURNS xml external name xml.forest;
 CREATE FUNCTION isdocument (val STRING) RETURNS xml external name xml.isdocument;
 
