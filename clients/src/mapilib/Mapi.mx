@@ -100,7 +100,7 @@ int main(int argc, char **argv)
 
 The @code{mapi_connect()} operation establishes a communication channel with
 a running server.
-The query language interface is either "sql", "mil" or "xquery".
+The query language interface is one of "sql", "xquery", "mil", or "mal".
 
 Errors on the interaction can be captured using @code{mapi_error()},
 possibly followed by a request to dump a short error message
