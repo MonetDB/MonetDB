@@ -28,6 +28,10 @@ License:   MPL - http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
 %{!?_with_monetdb5: %{!?_without_monetdb5: %define _with_monetdb5 --with-monetdb5}}
 %{!?buildsystem: %define buildsystem 0}
 %if !%{?buildsystem}
+# this should become MonetDB-client-devel
+BuildRequires: %{prefix}/include/MonetDB/mapilib/Mapi.h
+# this only needed due to faulty BuildRequires in MonetDB-client 1.18.0
+BuildRequires: readline-devel, openssl-devel
 # this only needed due to faulty BuildRequires in MonetDB 1.18.0
 BuildRequires: zlib-devel, bzip2-devel
 BuildRequires: MonetDB-devel >= 1.18
@@ -90,11 +94,15 @@ Add the MonetDB5 SQL server module description here
 # Summary: MonetDB SQL development package 
 # Group: System 
 # %if %{?_with_monetdb4:1}%{!?_with_monetdb4:0}
-# Requires: %{name}-server4 = 4.18
-# %else
-# Requires: %{name}-server5 = 5.0
+# Requires: %{name}-server4
+# Requires: MonetDB4-server-devel
 # %endif
-# Requires: MonetDB-devel = 1.18
+# %if %{?_with_monetdb5:1}%{!?_with_monetdb5:0}
+# Requires: %{name}-server5
+# Requires: MonetDB5-server-devel
+# %endif
+# Requires: MonetDB-devel
+# Requires: MonetDB-client-devel
 
 %description
 MonetDB is a database management system that is developed from a
