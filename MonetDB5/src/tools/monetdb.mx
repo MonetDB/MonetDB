@@ -49,6 +49,8 @@ typedef char* err;
 #define getErrMsg(X) X
 #define NO_ERR (err)0
 
+static str dbfarm = NULL;
+
 static str
 replacePrefix(str s)
 {
@@ -115,17 +117,38 @@ command_version()
 }
 
 static void
-secondsToString(char *buf, time_t t)
+secondsToString(char *buf, time_t t, int printlong)
 {
-	if (t > 1 * 60 * 60 * 24) {
-		snprintf(buf, 8, "%dd", (int)(t / (1 * 60 * 60 * 24)));
-	} else if (t > 1 * 60 * 60) {
-		snprintf(buf, 8, "%dh", (int)(t / (1 * 60 * 60)));
-	} else if (t > 1 * 60) {
-		snprintf(buf, 8, "%dm", (int)(t / (1 * 60)));
-	} else {
-		snprintf(buf, 8, "%ds", (int)(t));
+	time_t p;
+	size_t i = 0;
+
+	p = 1 * 60 * 60 * 24;
+	if (t > p) {
+		i += sprintf(buf, "%dd", (int)(t / p));
+		t -= (t / p) * p;
+		if (printlong == 0)
+			return;
+		buf[i++] = ' ';
 	}
+	p = 1 * 60 * 60;
+	if (t > p) {
+		i += sprintf(buf + i, "%dh", (int)(t / p));
+		t -= (t / p) * p;
+		if (printlong == 0)
+			return;
+		buf[i++] = ' ';
+	}
+	p = 1 * 60;
+	if (t > p) {
+		i += sprintf(buf + i, "%dm", (int)(t / p));
+		t -= (t / p) * p;
+		if (printlong == 0)
+			return;
+		buf[i++] = ' ';
+	}
+
+	/* t must be < 60 */
+	sprintf(buf + i, "%ds", (int)(t));
 }
 
 static void
@@ -161,7 +184,7 @@ printStatus(sabdb *stats, int mode)
 			break;
 		}
 
-		secondsToString(avg, uplog.avguptime);
+		secondsToString(avg, uplog.avguptime, 0);
 
 		if (uplog.lastcrash == -1) {
 			crash = "no crash";
@@ -180,8 +203,80 @@ printStatus(sabdb *stats, int mode)
 				uplog.crashcntr, crash);
 	} else if (mode == 2) {
 		/* long mode */
-		/* path to database */
-		printf("Sorry, not yet implemented\n");
+		char *state;
+		sablist *entry;
+		char up[32];
+		struct tm *t;
+
+		switch (stats->state) {
+			case SABdbRunning:
+				state = "running";
+			break;
+			case SABdbCrashed:
+				state = "crashed";
+			break;
+			case SABdbInactive:
+				state = "stopped";
+			break;
+			default:
+				state = "unknown";
+			break;
+		}
+
+		printf("%s:\n", stats->dbname);
+		printf("  location: %s/%s\n", dbfarm, stats->dbname);
+		printf("  database name: %s\n", stats->dbname);
+		printf("  state: %s\n", state);
+		entry = stats->scens;
+		printf("  available scenarios:");
+		if (entry == NULL) {
+			printf(" (none)");
+		} else while (entry != NULL) {
+			printf(" %s", entry->val);
+			entry = entry->next;
+		}
+		printf("\n");
+		entry = stats->conns;
+		printf("  listening connections:");
+		if (entry == NULL) {
+			printf(" (none)");
+		} else while (entry != NULL) {
+			printf(" %s", entry->val);
+			entry = entry->next;
+		}
+		printf("\n");
+		printf("  start count: %d\n  stop count: %d\n  crash count: %d\n",
+				uplog.startcntr, uplog.stopcntr, uplog.crashcntr);
+		if (stats->state == SABdbRunning) {
+			secondsToString(up, time(NULL) - uplog.laststart, 1);
+			printf("  current uptime: %s\n", up);
+		}
+		secondsToString(up, uplog.avguptime, 1);
+		printf("  average uptime: %s\n", up);
+		secondsToString(up, uplog.maxuptime, 1);
+		printf("  maximum uptime: %s\n", up);
+		secondsToString(up, uplog.minuptime, 1);
+		printf("  minimum uptime: %s\n", up);
+		if (uplog.lastcrash != -1) {
+			t = localtime(&uplog.lastcrash);
+			strftime(up, 32, "%Y-%m-%d %H:%M:%S", t);
+		} else {
+			sprintf(up, "(unknown)");
+		}
+		printf("  last crash: %s\n", up);
+		if (uplog.laststart != -1) {
+			t = localtime(&uplog.laststart);
+			strftime(up, 32, "%Y-%m-%d %H:%M:%S", t);
+		} else {
+			sprintf(up, "(unknown)");
+		}
+		printf("  last start: %s\n", up);
+		printf("  average of crashes in the last start attempt: %d\n",
+				uplog.crashavg1);
+		printf("  average of crashes in the last 10 start attempts: %.2f\n",
+				uplog.crashavg10);
+		printf("  average of crashes in the last 30 start attempts: %.2f\n",
+				uplog.crashavg30);
 	} else {
 		/* this is the default, also for modes that are added but we
 		 * don't understand (yet) */
@@ -192,10 +287,10 @@ printStatus(sabdb *stats, int mode)
 
 		switch (stats->state) {
 			case SABdbRunning: {
-				char up[8];
+				char up[32];
 				t = localtime(&uplog.laststart);
 				strftime(buf, 64, "up since %Y-%m-%d %H:%M:%S, ", t);
-				secondsToString(up, time(NULL) - uplog.laststart);
+				secondsToString(up, time(NULL) - uplog.laststart, 1);
 				strcat(buf, up);
 			} break;
 			case SABdbCrashed:
@@ -214,9 +309,9 @@ printStatus(sabdb *stats, int mode)
 				"in total %d crashes\n",
 				uplog.crashavg1, uplog.crashavg10, uplog.crashavg30,
 				uplog.crashcntr);
-		secondsToString(min, uplog.minuptime);
-		secondsToString(avg, uplog.avguptime);
-		secondsToString(max, uplog.maxuptime);
+		secondsToString(min, uplog.minuptime, 0);
+		secondsToString(avg, uplog.avguptime, 0);
+		secondsToString(max, uplog.maxuptime, 0);
 		printf("  uptime stats (min/avg/max): %s/%s/%s over %d runs\n",
 				min, avg, max, uplog.stopcntr);
 	}
@@ -517,7 +612,6 @@ int
 main(int argc, char *argv[])
 {
 	str conf = MONETDBCONFIG;
-	str dbfarm;
 	str p;
 	FILE *cnf = NULL;
 	char buf[1024];
@@ -530,7 +624,6 @@ main(int argc, char *argv[])
 		exit(1);
 	}
 
-	dbfarm = NULL;
 	while (fgets(buf, 1024, cnf) != NULL) {
 		/* eliminate fgets' newline */
 		buf[strlen(buf) - 1] = '\0';
