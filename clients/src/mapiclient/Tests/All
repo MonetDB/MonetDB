@@ -1,3 +1,6 @@
 MapiClient--help
 mclient--help
+mclient--help-sql
+mclient--help-mal
+mclient--help-xquery
 msqldump--help
