@@ -263,6 +263,7 @@ XMLforest(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	for( i=p->retc; i<p->argc; i++)
 		len += strlen(*(str*)getArgReference(stk,p,i));
 	buf= (str) GDKmalloc(len+1);
+	buf[0]=0;
 	
 	for( i=p->retc; i<p->argc; i++)
 		strcat(buf,*(str*)getArgReference(stk,p,i));
