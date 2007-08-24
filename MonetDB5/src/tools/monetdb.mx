@@ -181,19 +181,23 @@ printStatus(sabdb *stats, int mode)
 	} else if (mode == 2) {
 		/* long mode */
 		/* path to database */
+		printf("Sorry, not yet implemented\n");
 	} else {
 		/* this is the default, also for modes that are added but we
-		 * don't understand */
+		 * don't understand (yet) */
 		char buf[64];
 		char min[8], avg[8], max[8];
 		struct tm *t;
 		/* dbname, status -- since, crash averages */
 
 		switch (stats->state) {
-			case SABdbRunning:
+			case SABdbRunning: {
+				char up[8];
 				t = localtime(&uplog.laststart);
-				strftime(buf, 64, "up since %Y-%m-%d %H:%M:%S", t);
-			break;
+				strftime(buf, 64, "up since %Y-%m-%d %H:%M:%S, ", t);
+				secondsToString(up, time(NULL) - uplog.laststart);
+				strcat(buf, up);
+			} break;
 			case SABdbCrashed:
 				t = localtime(&uplog.lastcrash);
 				strftime(buf, 64, "crashed on %Y-%m-%d %H:%M:%S", t);
