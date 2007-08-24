@@ -139,13 +139,14 @@ static int echoquery = 0;
 
 /* some internal formatters */
 enum formatters {
+	NOformatter,
 	RAWformatter,
 	TABLEformatter,
 	CSVformatter,
 	TABformatter,
 	XMLformatter
 };
-static enum formatters formatter = TABLEformatter;
+static enum formatters formatter = NOformatter;
 
 #define DEFWIDTH 80
 
@@ -1372,7 +1373,7 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt)
 			char *reply;
 
 			if (mapi_get_querytype(hdl) == Q_UPDATE) {
-				if (mode == SQL && pagewidth >= 0)
+				if (mode == SQL && pagewidth >= 0 && formatter != RAWformatter)
 					fprintf(toConsole, "Rows affected %d\n", mapi_rows_affected(hdl));
 				else
 					fprintf(toConsole, "[ %d\t]\n", mapi_rows_affected(hdl));
@@ -1380,7 +1381,7 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt)
 				if (specials != NOmodifier && debugMode())
 					SQLdebugRendering(hdl);
 				else if ((reply = mapi_result_error(hdl)) != NULL) {
-					if (pagewidth < 0)
+					if (pagewidth < 0 || formatter == RAWformatter)
 						goto nononsense;
 					fprintf(toConsole, "%s", reply);
 				} else
@@ -1820,7 +1821,11 @@ main(int argc, char **argv)
 			setPrompt();
 			prompt = promptbuf;
 			fromConsole = stdin;
-		}
+			if( formatter== NOformatter)
+				formatter= TABLEformatter;
+		} else
+		if( formatter== NOformatter)
+			formatter= RAWformatter;
 		/* use default rendering if not overruled at commandline */
 		setWidth();
 		/* stream xml document into the server */
