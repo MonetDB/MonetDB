@@ -43,6 +43,15 @@ command pi(nme:str,val:str):xml
 address XMLpi
 comment "Call the processing instruction";
 
+command document(val:str):xml
+address XMLdocument
+comment "Check the value for compliance as XML document";
+
+command content(val:str):xml
+address XMLcontent
+comment "Check the value for compliance as content, i.e.
+it may contain multiple roots and character data.";
+
 command root(val:xml, version:str, standalone:str):xml
 address XMLroot
 comment "Contruct the root nodes";
@@ -100,6 +109,8 @@ typedef str xml;
 
 xml_export str XMLxml2str(str *s, xml *x);
 xml_export str XMLstr2xml(xml *x, str *s);
+xml_export str XMLdocument(xml *x, str *s);
+xml_export str XMLcontent(xml *x, str *s);
 xml_export str XMLisdcoument(bit *x, str *s);
 xml_export str XMLcomment(xml *x, str *s);
 xml_export str XMLpi(xml *x, str *nme, str *s);
@@ -150,6 +161,20 @@ XMLstr2xml(xml *x, str *val){
 		*s++= *t;
 	*s=0;
 	*x= GDKstrdup(buf);
+	return MAL_SUCCEED;
+}
+
+str
+XMLdocument(xml *x, str *val){
+	/* call the libxml2 library to perform the test */
+	*x= (str) GDKstrdup(*val);
+	return MAL_SUCCEED;
+}
+
+str
+XMLcontent(xml *x, str *val){
+	/* call the libxml2 library to perform the test */
+	*x= (str) GDKstrdup(*val);
 	return MAL_SUCCEED;
 }
 

@@ -39,6 +39,14 @@ command xml.str(src:bat[:oid,:xml]):bat[:oid,:str]
 address BATXMLxml2str
 comment "Cast the string to an xml compliant string";
 
+command xml.document(src:bat[:oid,:str]):bat[:oid,:xml]
+address BATXMLdocument
+comment "Parse the string as a document";
+
+command xml.content(src:bat[:oid,:str]):bat[:oid,:xml]
+address BATXMLcontent
+comment "Parse the string as a document";
+
 command xml.tag(nme:str,val:bat[:oid,:xml]):bat[:oid,:xml]
 address BATXMLtag
 comment "Routine to put element brackets around an XML value";
@@ -148,6 +156,8 @@ comment "Validate the string as a document"
 
 batxml_export str BATXMLxml2str(int *ret, int *bid);
 batxml_export str BATXMLstr2xml(int *x, int *s);
+batxml_export str BATXMLdocument(int *x, int *s);
+batxml_export str BATXMLcontent(int *x, int *s);
 batxml_export str BATXMLisdocument(int *x, int *s);
 batxml_export str BATXMLtag(int *x, str *name, int *s);
 batxml_export str BATXMLoptions(int *x, str *name, str *options, int *s);
@@ -280,9 +290,27 @@ bunins_failed:
 	GDKfree(buf);
 	throw(MAL, "batstr.xml", "bunins failed");
 }
+str
+BATXMLdocument(int *ret, int *bid)
+{
+/* ue libxml for validity checkes */
+	(void) ret;
+	(void) bid;
+	throw(MAL, "batstr.document", "Not yet implemented");
+}
+
+str
+BATXMLcontent(int *ret, int *bid)
+{
+	/* ue libxml for validity checkes */
+	(void) ret;
+	(void) bid;
+	throw(MAL, "batstr.content", "Not yet implemented");
+}
 
 str
 BATXMLisdocument(int *x, int *s){
+	/* ue libxml for validity checkes */
 	(void) x;
 	(void) s;
 	throw(MAL,"xml.isdocument","Not yet implemented");
