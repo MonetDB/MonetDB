@@ -82,15 +82,19 @@ comment "The basic building block for XML elements are namespaces,
 attributes and a sequence of xml elements. The name space and 
 the attributes may be left unspecified."; 
 
-command xml.element(name:str, ns:bat[:oid,:str], attr:bat[:oid,:xml], s:bat[:oid,:xml]):bat[:oid,:xml]
+command xml.element(name:str, ns:xml, attr:xml, s:bat[:oid,:xml]):bat[:oid,:xml]
 address BATXMLelement
 comment "The basic building block for XML elements are namespaces, 
 attributes and a sequence of xml elements. The name space and the 
-attributes may be left unspecified(=nil:bat).";
+attributes may be left unspecified(=nilt).";
 
 command xml.concat(left:bat[:oid,:xml],right:bat[:oid,:xml] ):bat[:oid,:xml]
 address BATXMLconcat
 comment "Concatenate the xml values";
+
+command xml.options(option:str,left:bat[:oid,:xml]):bat[:oid,:xml]
+address BATXMLoptions
+comment "Handle the NULLs";
 
 pattern xml.forest(val:bat[:oid,:xml]...):bat[:oid,:xml]
 address BATXMLforest
@@ -145,13 +149,14 @@ batxml_export str BATXMLxml2str(int *ret, int *bid);
 batxml_export str BATXMLstr2xml(int *x, int *s);
 batxml_export str BATXMLisdocument(int *x, int *s);
 batxml_export str BATXMLtag(int *x, str *name, int *s);
+batxml_export str BATXMLoptions(int *x, str *name, int *s);
 batxml_export str BATXMLcomment(int *x, int *s);
 batxml_export str BATXMLparse(int *x, int *s);
 batxml_export str BATXMLxquery(int *x, int *s, str *expr);
 batxml_export str BATXMLpi(int *x, str *oper, int *s);
 batxml_export str BATXMLroot(int *ret, int *bid, str *version, str *standalone);
 batxml_export str BATXMLattribute(int *ret, str *name, int *bid);
-batxml_export str BATXMLelement(int *ret, str *name, int *ns, int *attr, int *bid);
+batxml_export str BATXMLelement(int *ret, str *name, str *ns, str *attr, int *bid);
 batxml_export str BATXMLconcat(int *ret, int *bid, int *rid);
 batxml_export str BATXMLforest(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 batxml_export str BATXMLagg(int *ret, int *grp,int *bid);
@@ -315,6 +320,56 @@ bunins_failed:
 	GDKfree(buf);
 	throw(MAL, "batstr.comment", "bunins failed");
 }
+@-
+The standard supports specific mappings for
+NULL values,i.e. {null,abscent,empty,nil,niloncontent)
+@c
+str
+BATXMLoptions(int *ret, str *options, int *bid)
+{
+	BAT *b,*bn;
+	BUN p,q;
+	int xx;
+	str buf= GDKmalloc(BUFSIZ);
+	int abscent=0,size= BUFSIZ;
+
+	prepareOperand(b,bid,"tag");
+	prepareResult(bn,b,TYPE_str,"tag");
+
+	if( strcmp(*options,"abscent")==0)
+		abscent=1;
+	else
+	if( strcmp(*options,"empty")==0)
+		buf[0]=0;
+	else
+	if( strcmp(*options,"null")==0)
+		snprintf(buf,size,"null");
+	else
+		throw(MAL,"xml.options","Not yet implemented");
+
+	BATloopFast(b,p,q,xx){
+		ptr h= BUNhead(b,p);
+		str t= (str) BUNtail(b,p);
+
+		if( !strNil(t)){
+			bunfastins(bn,h,t);
+			continue;
+		}
+		
+		if( abscent)
+			continue;
+		bunfastins(bn,h,buf);
+	}
+	GDKfree(buf);
+	finalizeResult(ret,bn,b);
+	return MAL_SUCCEED;
+bunins_failed:
+	BBPreleaseref(b->batCacheid);
+	BBPunfix(bn->batCacheid);
+	GDKfree(buf);
+	throw(MAL, "batstr.comment", "bunins failed");
+}
+
 str
 BATXMLcomment(int *ret, int *bid)
 {
@@ -444,60 +499,42 @@ bunins_failed:
 }
 
 str
-BATXMLelement(int *ret, str *name, int *namespace, int *attributes, int *bid)
+BATXMLelement(int *ret, str *name, str *namespace, str *attributes, int *bid)
 {
-	BAT *b,*a=0, *n=0, *bn;
-	BUN p,q, ap=0, aq=0, np=0, nq=0;
-	int xx, axx=0, nxx=0;
+	BAT *b,*bn;
+	BUN p,q;
+	int xx;
 	str buf= GDKmalloc(BUFSIZ);
 	int offset,len,size= BUFSIZ;
 
-	/* check the namespaces */
-	if( *namespace && (n=  BATdescriptor( *namespace)) ){
-		np = BUNfirst(n);
-		nq = BUNlast(n);
-		nxx= BUNsize(n);
-	}
-
-	/* check for attributes */
-	if( *attributes && (a=  BATdescriptor( *attributes)) ){
-		ap= BUNfirst(a);
-		aq= BUNlast(a);
-		axx= BUNsize(a);
-	}
+	(void) namespace;
 	/* collect the admin for the xml elements */
 	b=  BATdescriptor( *bid);
 
 /* check for errors */
-	if( b== NULL){
-		if(a) BBPunfix(a->batCacheid);
-		if(n) BBPunfix(n->batCacheid);
+	if( b== NULL)
 		throw(MAL,"xml.element","Can not access BAT");
-	}
 
 	prepareResult(bn,b,TYPE_str,"element");
 
 	BATloopFast(b,p,q,xx){
-		str t;
-		oid *h;
+		str t= (str) BUNtail(b,p);
+		oid *h= (oid*) BUNhead(b,p);
 		int elm;
 
 		/* include attributes */
-		if( a) {
-			t= (str) BUNtail(a,ap);
+		if( attributes) {
 
 			if( (len=strlen(t)) >= size){
 				buf= GDKrealloc(buf,len+strlen(*name)+BUFSIZ);
 				size= len+strlen(*name)+BUFSIZ;
 			}
-			snprintf(buf,size,"<%s %s>",*name,t);
+			snprintf(buf,size,"<%s %s>",*name,*attributes);
 		} else 
 			snprintf(buf,size,"<%s>",*name);
 		elm= offset= strlen(buf);
 
 		/* fetch the elements */
-		h= (oid*) BUNhead(b,p);
-		t= (str) BUNtail(b,p);
 
 		if( (len=strlen(t)+elm) >= size-offset){
 			buf= GDKrealloc(buf,size+2*elm);
@@ -508,20 +545,11 @@ BATXMLelement(int *ret, str *name, int *namespace, int *attributes, int *bid)
 	
 		snprintf(buf + offset,size-offset, "</%s>\n",*name);
 		bunfastins(bn,h,buf);
-
-		if(a) 
-			ap= (ptr) ( ((char*)ap)+ axx);
-		if(n) 
-			np= (ptr) ( ((char*)np)+ nxx);
 	}
 	GDKfree(buf);
 	finalizeResult(ret,bn,b);
 	return MAL_SUCCEED;
 bunins_failed:
-	if(a)
-		BBPreleaseref(a->batCacheid);
-	if(n)
-		BBPreleaseref(n->batCacheid);
 	BBPreleaseref(b->batCacheid);
 	BBPunfix(bn->batCacheid);
 	GDKfree(buf);
