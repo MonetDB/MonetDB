@@ -77,7 +77,7 @@ address BATXMLattribute
 comment "Construct an attribute value pair";
 
 command xml.element(name:str, s:bat[:oid,:xml]) :bat[:oid,:xml]
-address BATXMLelementSmall
+address BATXMLtag
 comment "The basic building block for XML elements are namespaces, 
 attributes and a sequence of xml elements. The name space and 
 the attributes may be left unspecified."; 
@@ -96,9 +96,14 @@ pattern xml.forest(val:bat[:oid,:xml]...):bat[:oid,:xml]
 address BATXMLforest
 comment "Construct an element list");
 
-pattern xml.agg(val:bat[:oid,:xml], order:str...):bat[:oid,:xml]
+command xml.agg(grp:bat[:oid,:oid],val:bat[:oid,:xml]):bat[:oid,:xml]
 address BATXMLagg
 comment "Aggregate the XML values over grouping specified";
+
+command xml.agg(val:bat[:oid,:xml]):bat[:oid,:xml]
+address BATXMLgroup
+comment "Aggregate the XML values over grouping specified";
+
 
 command xml.root(val:bat[:oid,:xml], version:str, standalone:str):bat[:oid,:xml]
 address BATXMLroot
@@ -146,18 +151,18 @@ batxml_export str BATXMLxquery(int *x, int *s, str *expr);
 batxml_export str BATXMLpi(int *x, str *oper, int *s);
 batxml_export str BATXMLroot(int *ret, int *bid, str *version, str *standalone);
 batxml_export str BATXMLattribute(int *ret, str *name, int *bid);
-batxml_export str BATXMLelementSmall(int *ret, str *name, int *bid);
 batxml_export str BATXMLelement(int *ret, str *name, int *ns, int *attr, int *bid);
 batxml_export str BATXMLconcat(int *ret, int *bid, int *rid);
 batxml_export str BATXMLforest(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-batxml_export str BATXMLagg(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+batxml_export str BATXMLagg(int *ret, int *grp,int *bid);
+batxml_export str BATXMLgroup(int *ret, int *bid);
 #endif  /* _BATXML_H_ */
 @c
 #include "batxml.h"
 
 #define prepareOperand(X,Y,Z) \
     if( (X= BATdescriptor(*Y)) == NULL ) \
-        throw(MAL, "batxml." Z, "Cannot access descriptor");
+        throw(MAL, "xml." Z, "Cannot access descriptor");
 
 #define prepareResult(X,Y,T,Z) \
     X= BATnew(Y->htype,T,BATcount(Y)); \
@@ -165,7 +170,7 @@ batxml_export str BATXMLagg(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
         BATseqbase(X, Y->hseqbase); \
     if( X == NULL){ \
         BBPreleaseref(Y->batCacheid); \
-        throw(MAL, "batxml." Z, "no space available "); \
+        throw(MAL, "xml." Z, "no space available "); \
     } \
     X->hsorted=Y->hsorted; \
     X->tsorted=0;
@@ -180,7 +185,7 @@ str
 BATXMLxml2str(int *ret, int *bid)
 {
 	BAT *b;
-	@:getBATdescriptor(bid,b,"batxml.xml")@
+	@:getBATdescriptor(bid,b,"xml.xml")@
 	BBPkeepref(*ret= b->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -439,11 +444,6 @@ bunins_failed:
 }
 
 str
-BATXMLelementSmall(int *ret, str *name, int *bid)
-{
-	return BATXMLtag(ret,name,bid);
-}
-str
 BATXMLelement(int *ret, str *name, int *namespace, int *attributes, int *bid)
 {
 	BAT *b,*a=0, *n=0, *bn;
@@ -472,7 +472,7 @@ BATXMLelement(int *ret, str *name, int *namespace, int *attributes, int *bid)
 	if( b== NULL){
 		if(a) BBPunfix(a->batCacheid);
 		if(n) BBPunfix(n->batCacheid);
-		throw(MAL,"batxml.element","Can not access BAT");
+		throw(MAL,"xml.element","Can not access BAT");
 	}
 
 	prepareResult(bn,b,TYPE_str,"element");
@@ -556,7 +556,7 @@ BATXMLforest(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if( i!= pci->argc) {
 		for( i--; i>=pci->retc; i--)
 			BBPunfix(b[i]->batCacheid);
-		throw(MAL,"batxml.element","Can not access BAT");
+		throw(MAL,"xml.element","Can not access BAT");
 	}
 
 	prepareResult(bn,b[pci->retc],TYPE_str,"attribute");
@@ -611,7 +611,7 @@ BATXMLconcat(int *ret, int *bid, int *rid)
 		rxx= BUNsize(r);
 	}
 	if(r==0)
-		throw(MAL,"batxml.concat","Can not access BAT");
+		throw(MAL,"xml.concat","Can not access BAT");
 
 	/* collect the admin for the xml elements */
 	if ( (b=  BATdescriptor( *bid)) ){
@@ -621,7 +621,7 @@ BATXMLconcat(int *ret, int *bid, int *rid)
 	}
 	if( b== NULL){
 		if(r) BBPunfix(r->batCacheid);
-		throw(MAL,"batxml.concat","Can not access BAT");
+		throw(MAL,"xml.concat","Can not access BAT");
 	}
 
 	prepareResult(bn,b,TYPE_str,"concat");
@@ -654,14 +654,84 @@ bunins_failed:
 }
 
 str
-BATXMLagg(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+BATXMLagg(int *ret, int *grp,int *bid)
 {
-	(void) mb;
-	(void) stk;
-	(void) p;
-	throw(MAL,"xml.agg","Not yet implemented");
+	BAT *j, *r, *g, *b, *bn;
+	BUN p,q;
+	int xx;
+	oid gid,o=0;
+	int first= 1;
+	str t;
+	str buf= GDKmalloc(BUFSIZ);
+	int len, size=BUFSIZ,offset;
+	
+	@:getBATdescriptor(grp,g,"xml.agg")@
+	@:getBATdescriptor(bid,b,"xml.agg",BBPunfix(g->batCacheid))@
+	
+	bn= BATnew(g->htype, b->ttype,BATcount(g));
+	if( bn== NULL){
+		BBPunfix(b->batCacheid);
+		BBPunfix(g->batCacheid);
+		throw(MAL,"xml.agg","Could not create BAT");
+	}
+
+	j= BATjoin(g,b,oid_nil);
+    r= BATsort(j);
+	/* now we can perform a simple scan and emit the group*/
+
+	buf[0]=0; 
+	offset=0;
+	first=1;
+	BATloopFast(r,p,q,xx){
+		o= *(oid*) BUNhead(r,p);
+		t= (str) BUNtail(r,p);
+		if( gid != o && first==0){
+			/* flush */
+			bunfastins(bn,&gid,buf);
+			buf[0]=0;
+			offset =0;
+		}
+		gid=o;
+		first=0;
+		len= strlen(t)+1;
+		if( len >= size-offset){
+			if(buf) GDKfree(buf);
+			buf= GDKrealloc(buf,size+len);
+			size= size+len;
+		}
+		snprintf(buf+offset,size-offset,"%s",t);
+		offset+= len-1;
+	}
+	/* end the leftover element */
+	if( first ==0)
+		bunfastins(bn,&gid,buf);
+
+	BBPunfix(r->batCacheid);
+	BBPunfix(j->batCacheid);
+	GDKfree(buf);
+	BBPkeepref(*ret=bn->batCacheid);
+	return MAL_SUCCEED;
+bunins_failed:
+	BBPreleaseref(g->batCacheid);
+	BBPreleaseref(b->batCacheid);
+	BBPunfix(bn->batCacheid);
+	GDKfree(buf);
+	throw(MAL, "xml.agg", "bunins failed");
 }
 
+str
+BATXMLgroup(int *ret, int *bid)
+{
+	BAT *b, *g;
+	str msg= MAL_SUCCEED;
+	oid o= oid_nil;
+
+	@:getBATdescriptor(bid,b,"xml.group")@
+	g= BATmirror(BATconst(b,TYPE_oid,(ptr) &o));
+	msg= BATXMLagg(ret,&g->batCacheid,bid);
+	BBPunfix(g->batCacheid);
+	return msg;
+}
 str
 BATXMLxquery(int *ret, int *bid, str *expr)
 {

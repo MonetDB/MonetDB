@@ -1,0 +1,160 @@
+stdout of test 'xml10` in directory 'src/modules/mal` itself:
+
+
+# 09:38:47 >  
+# 09:38:47 >  Mtimeout -timeout 60  mserver5 "--config=/ufs/mk/monet5/Linux/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5//Linux/lib/MonetDB5:/ufs/mk/monet5//Linux/lib/MonetDB5/lib:/ufs/mk/monet5//Linux/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/mk/monet5//Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5//Linux/var/MonetDB5/sql_logs" --set "xquery_logdir=/ufs/mk/monet5//Linux/var/MonetDB5/xquery_logs" --set mapi_open=true --set xrpc_open=true --set mapi_port=37982 --set xrpc_port=42894 --set monet_prompt= --trace --dbname=mTests_src_modules_mal  xml10.mal
+# 09:38:47 >  
+
+# MonetDB server v5.1.0, based on kernel v1.19.0
+# Serving database 'mTests_src_modules_mal'
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Copyright (c) 1993-2007 CWI, all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://gio.ins.cwi.nl:37982/
+## produce a more complex structure
+## such as 
+##<books>
+##  <author> john
+##  <title> spring</title>
+##  <title> summer</title>
+##  </author>
+##  <author> mary
+##  <title> autum</title>
+##  </author>
+##</books>
+#
+## the intermediate tabular result produced by SQL
+#a:= bat.new(:oid,:str);
+#bat.insert(a,0@0,"john");
+#bat.insert(a,1@0,"john");
+#bat.insert(a,2@0,"marie");
+#t:= bat.new(:oid,:str);
+#bat.insert(t,0@0,"spring");
+#bat.insert(t,1@0,"summer");
+#bat.insert(t,2@0,"autum");
+#
+## SQL rendering request
+##xmlelement('books',
+##	xmlelement('author',a,
+##			xmlagg(xmlelement('title',t))
+##   ) )
+## every nesting implies a groupby
+#
+#ax:= xml.xml(a);
+#tx:= xml.xml(t);
+#te:= xml.element("title",tx);
+#g:= bat.new(:oid,:oid);
+#bat.insert(g,0@0,0@0);
+#bat.insert(g,0@0,1@0);
+#bat.insert(g,1@0,2@0);
+#
+#k:= algebra.join(g,te);
+#io.print(k);
+#l:= algebra.sort(k);
+#io.print(l);
+#
+#ag:= xml.agg(g,te);
+#io.print(ag);
+#j2:= algebra.join(g,ax);
+#k2:=algebra.kunique(j2);
+#io.print(k2);
+#cc:= xml.concat(k2,ag);
+#io.print(cc);
+#ae:= xml.element("author",cc);
+#
+#be:= xml.agg(ae);
+#doc:= xml.element("books",be);
+#io.print(doc);
+#
+function user.main():void;	# 0  (main:void)
+# produce a more complex structure 	# 1  (_1:str)
+# such as  	# 2  (_2:str)
+#<books> 	# 3  (_3:str)
+#  <author> john 	# 4  (_4:str)
+#  <title> spring</title> 	# 5  (_5:str)
+#  <title> summer</title> 	# 6  (_6:str)
+#  </author> 	# 7  (_7:str)
+#  <author> mary 	# 8  (_8:str)
+#  <title> autum</title> 	# 9  (_9:str)
+#  </author> 	# 10  (_7:str)
+#</books> 	# 11  (_10:str)
+# the intermediate tabular result produced by SQL 	# 12  (_11:str)
+    a := bat.new(:oid,:str);	# 13 CMDBATnew (a:bat[:oid,:str])<-(_13:oid)(_14:str)
+    bat.insert(a,0@0,"john");	# 14 BKCinsert_bun (_15:void)<-(a:bat[:oid,:str])(_16:oid)(_17:str)
+    bat.insert(a,1@0,"john");	# 15 BKCinsert_bun (_18:void)<-(a:bat[:oid,:str])(_19:oid)(_17:str)
+    bat.insert(a,2@0,"marie");	# 16 BKCinsert_bun (_20:void)<-(a:bat[:oid,:str])(_21:oid)(_22:str)
+    t := bat.new(:oid,:str);	# 17 CMDBATnew (t:bat[:oid,:str])<-(_13:oid)(_24:str)
+    bat.insert(t,0@0,"spring");	# 18 BKCinsert_bun (_25:void)<-(t:bat[:oid,:str])(_16:oid)(_26:str)
+    bat.insert(t,1@0,"summer");	# 19 BKCinsert_bun (_27:void)<-(t:bat[:oid,:str])(_19:oid)(_28:str)
+    bat.insert(t,2@0,"autum");	# 20 BKCinsert_bun (_29:void)<-(t:bat[:oid,:str])(_21:oid)(_30:str)
+# SQL rendering request 	# 21  (_31:str)
+#xmlelement('books', 	# 22  (_32:str)
+#	xmlelement('author',a, 	# 23  (_33:str)
+#			xmlagg(xmlelement('title',t)) 	# 24  (_34:str)
+#   ) ) 	# 25  (_35:str)
+# every nesting implies a groupby 	# 26  (_36:str)
+    ax := xml.xml(a);	# 27 BATXMLstr2xml (ax:bat[:oid,:xml])<-(a:bat[:oid,:str])
+    tx := xml.xml(t);	# 28 BATXMLstr2xml (tx:bat[:oid,:xml])<-(t:bat[:oid,:str])
+    te := xml.element("title",tx);	# 29 BATXMLtag (te:bat[:oid,:xml])<-(_40:str)(tx:bat[:oid,:xml])
+    g := bat.new(:oid,:oid);	# 30 CMDBATnew (g:bat[:oid,:oid])<-(_13:oid)(_13:oid)
+    bat.insert(g,0@0,0@0);	# 31 BKCinsert_bun (_42:void)<-(g:bat[:oid,:oid])(_16:oid)(_16:oid)
+    bat.insert(g,0@0,1@0);	# 32 BKCinsert_bun (_43:void)<-(g:bat[:oid,:oid])(_16:oid)(_19:oid)
+    bat.insert(g,1@0,2@0);	# 33 BKCinsert_bun (_44:void)<-(g:bat[:oid,:oid])(_19:oid)(_21:oid)
+    k := algebra.join(g,te);	# 34 ALGjoin (k:bat[:oid,:xml])<-(g:bat[:oid,:oid])(te:bat[:oid,:xml])
+    io.print(k);	# 35 IOprint_val (_46:void)<-(k:bat[:oid,:xml])
+    l := algebra.sort(k);	# 36 ALGhsort (l:bat[:oid,:xml])<-(k:bat[:oid,:xml])
+    io.print(l);	# 37 IOprint_val (_48:void)<-(l:bat[:oid,:xml])
+    ag := xml.agg(g,te);	# 38 BATXMLagg (ag:bat[:oid,:xml])<-(g:bat[:oid,:oid])(te:bat[:oid,:xml])
+    io.print(ag);	# 39 IOprint_val (_50:void)<-(ag:bat[:oid,:xml])
+    j2 := algebra.join(g,ax);	# 40 ALGjoin (j2:bat[:oid,:xml])<-(g:bat[:oid,:oid])(ax:bat[:oid,:xml])
+    k2 := algebra.kunique(j2);	# 41 ALGkunique (k2:bat[:oid,:xml])<-(j2:bat[:oid,:xml])
+    io.print(k2);	# 42 IOprint_val (_53:void)<-(k2:bat[:oid,:xml])
+    cc := xml.concat(k2,ag);	# 43 BATXMLconcat (cc:bat[:oid,:xml])<-(k2:bat[:oid,:xml])(ag:bat[:oid,:xml])
+    io.print(cc);	# 44 IOprint_val (_55:void)<-(cc:bat[:oid,:xml])
+    ae := xml.element("author",cc);	# 45 BATXMLtag (ae:bat[:oid,:xml])<-(_57:str)(cc:bat[:oid,:xml])
+    be := xml.agg(ae);	# 46 BATXMLgroup (be:bat[:oid,:xml])<-(ae:bat[:oid,:xml])
+    doc := xml.element("books",be);	# 47 BATXMLtag (doc:bat[:oid,:xml])<-(_60:str)(be:bat[:oid,:xml])
+    io.print(doc);	# 48 IOprint_val (_61:void)<-(doc:bat[:oid,:xml])
+end main;	# 49  
+#-----------------------------------------#
+# t	h				  # name
+# oid	str				  # type
+#-----------------------------------------#
+[ 0@0,	  "<title>spring</title>"	  ]
+[ 0@0,	  "<title>summer</title>"	  ]
+[ 1@0,	  "<title>autum</title>"	  ]
+#-----------------------------------------#
+# h	t				  # name
+# oid	str				  # type
+#-----------------------------------------#
+[ 0@0,	  "<title>spring</title>"	  ]
+[ 0@0,	  "<title>summer</title>"	  ]
+[ 1@0,	  "<title>autum</title>"	  ]
+#---------------------------------------------------------#
+# h	t						  # name
+# oid	str						  # type
+#---------------------------------------------------------#
+[ 0@0,	  "<title>spring</title><title>summer</title>"	  ]
+[ 1@0,	  "<title>autum</title>"			  ]
+#-------------------------#
+# h	t		  # name
+# oid	str		  # type
+#-------------------------#
+[ 0@0,	  "john"	  ]
+[ 1@0,	  "marie"	  ]
+#-----------------------------------------------------------------#
+# h	t							  # name
+# oid	str							  # type
+#-----------------------------------------------------------------#
+[ 0@0,	  "john<title>spring</title><title>summer</title>"	  ]
+[ 1@0,	  "marie<title>autum</title>"				  ]
+#-----------------------------------------------------------------------------------------------------------------------------------------#
+# h	t																  # name
+# oid	str																  # type
+#-----------------------------------------------------------------------------------------------------------------------------------------#
+[ nil,	  "<books><author>john<title>spring</title><title>summer</title></author><author>marie<title>autum</title></author></books>"	  ]
+
+# 09:38:47 >  
+# 09:38:47 >  Done.
+# 09:38:47 >  
+
