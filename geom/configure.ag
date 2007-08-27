@@ -126,13 +126,13 @@ if test "x$have_geos" != xno; then
 	esac
 	save_CPPFLAGS="$CPPFLAGS"
 	CPPFLAGS="$CPPFLAGS $GEOS_INCS"
-	AC_CHECK_HEADER(geos_c.h, AC_DEFINE(HAVE_GEOS_C_H, 1, [Define to 1 if you have the <geos_c.h> header file.]), [if test "x$have_geos" != xauto; then AC_MSG_ERROR([geos_c.h not found]); fi; have_geos=no])
+	AC_CHECK_HEADER(geos_c.h, AC_DEFINE(HAVE_GEOS_C_H, 1, [Define to 1 if you have the <geos_c.h> header file.]), [AC_MSG_ERROR([geos_c.h not found]); have_geos=no])
 	CPPFLAGS="$save_CPPFLAGS"
 fi
 if test "x$have_geos" != xno; then
 	save_LIBS="$LIBS"
     	LIBS="$LIBS $GEOS_LIBS"
-    	AC_CHECK_LIB(geos_c, GEOSEnvelope, :, [if test "x$have_geos" != xauto; then AC_MSG_ERROR([-lgeos_c not found]); fi; have_geos=no])
+    	AC_CHECK_LIB(geos_c, GEOSEnvelope, :, [AC_MSG_ERROR([-lgeos_c not found]); have_geos=no])
     	LIBS="$save_LIBS"
 fi
 if test "x$have_geos" != xno; then
