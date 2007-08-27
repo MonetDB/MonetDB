@@ -396,13 +396,18 @@ mbrREAD(mbr *a, stream *s, size_t cnt)
 {
 	mbr *c;
 	size_t i;
+	int xmin, ymin, xmax, ymax;
 
 	for(i=0, c = a;i<cnt;i++, c++) {
-		if (!stream_readInt(s, (int*)& c->xmin) ||
-		    !stream_readInt(s, (int*)& c->ymin) ||
-		    !stream_readInt(s, (int*)& c->xmax) ||
-		    !stream_readInt(s, (int*)& c->ymax) ) 
+		if (!stream_readInt(s, &xmin) ||
+		    !stream_readInt(s, &ymin) ||
+		    !stream_readInt(s, &xmax) ||
+		    !stream_readInt(s, &ymax) ) 
 			return NULL;
+		c->xmin = (flt)xmin;
+		c->ymin = (flt)ymin;
+		c->xmax = (flt)xmax;
+		c->ymax = (flt)ymax;
 	}
 	return a;
 }
