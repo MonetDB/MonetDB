@@ -10,7 +10,6 @@ stderr of test 'mjclient--help` in directory 'src/java/scripts` itself:
 # 07:35:51 >  Mtimeout -timeout 60 mjclient --help
 # 07:35:51 >  
 
-= Please remove this line in case mjclient's usage message is supposed to go to stdout instead of stderr (as usually).
 
 # 15:14:07 >  
 # 15:14:07 >  Done.

@@ -10,7 +10,6 @@ stdout of test 'mjclient--help` in directory 'src/java/scripts` itself:
 # 07:35:51 >  Mtimeout -timeout 60 mjclient --help
 # 07:35:51 >  
 
-= Please remove this line in case the below usage message of mjclient is correct.
 Usage java -jar jdbcclient.jar
                   [-h host[:port]] [-p port] [-f file] [-u user]
                   [-l language] [-b database] [-e] [-d [table]]
@@ -62,7 +61,6 @@ OPTIONS
               given, it is used as batch size.  i.e. 8000 would execute the
               contents on the batch after each 8000 statements read.  Batching
               can greatly speedup the process of restoring a database dump.
-= Please remove this line in case the above usage message of mjclient is correct.
 
 # 09:43:26 >  
 # 09:43:26 >  Done.
