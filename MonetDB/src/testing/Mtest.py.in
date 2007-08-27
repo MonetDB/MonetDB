@@ -770,7 +770,7 @@ def AddHref (href, target, linktext, diff) :
     elif diff == F_TIME:
         klass = 'timeout'
     elif diff == F_SOCK:
-        klass = 'soket'
+        klass = 'socket'
     elif diff == F_WARN:
         klass = 'warning'
     else:
