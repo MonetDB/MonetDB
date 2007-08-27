@@ -251,7 +251,14 @@ public final class MapiSocket {
 			throw new MCLException(err.trim());
 		}
 		if (redirects != null) {
-			close();
+			// avoid the debug log being closed
+			if (debug) {
+				debug = false;
+				close();
+				debug = true;
+			} else {
+				close();
+			}
 			if (followRedirects) {
 				// Ok, server wants us to go somewhere else.  The list
 				// might have multiple clues on where to go.  For now we
