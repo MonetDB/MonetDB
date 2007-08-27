@@ -1590,7 +1590,6 @@ main(int argc, char **argv)
 				language = "mal";
 
 				mode = MAL;
-				formatter= RAWformatter;
 			} else if (strcmp(optarg, "xquery") == 0 ||
 				   strcmp(optarg, "xquer") == 0 ||
 				   strcmp(optarg, "xque") == 0 ||
