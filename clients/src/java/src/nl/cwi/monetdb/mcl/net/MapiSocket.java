@@ -586,6 +586,12 @@ public final class MapiSocket {
 				}
 			}
 		}
+
+		public void close() throws IOException {
+			// we don't want the flush() method to be called (default of
+			// the FilterOutputStream), so we close manually here
+			out.close();
+		}
 	}
 
 
