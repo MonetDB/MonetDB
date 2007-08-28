@@ -108,9 +108,10 @@ based on a known number of partitions:
 is translated to the plan:
 @example
 	bpm.open();
-	R0:bat[:oid,:int]:= bpm.take("myversion", nil:oid,nil:oid, 0,100);
-	R1:bat[:oid,:int]:= bpm.take("myversion", nil:oid,nil:oid, 101,200);
-	R2:bat[:oid,:int]:= bpm.take("myversion", nil:oid,nil:oid, 201,nil:int);
+	R:bat[:oid,:int]:= bpm.take("myversion"); # get the partition alias
+	R0:bat[:oid,:int]:= bpm.take(R,0, nil:oid,nil:oid, 0,100);
+	R1:bat[:oid,:int]:= bpm.take(R,1, nil:oid,nil:oid, 101,200);
+	R2:bat[:oid,:int]:= bpm.take(R,2, nil:oid,nil:oid, 201,nil:int);
 	R:= mat.new(R0,R1,R2);
 	T:= algebra.select(R,0,100);
 	optimizer.multitable();
@@ -335,11 +336,19 @@ address BPMadapt
 comment "Re-organize segment s using the selection (val1,val2) stored in bat rs";
 
 
+command take(pb:int):bat[:any_1,:any_2]
+address BPMtakeIndexed
+comment "Retrieve the partition given the its index ";
 command take(pb:str):bat[:any_1,:any_2]
 address BPMtake
 comment "Retrieve the alias given the name of a partitioned BAT";
+
 command take(nme:str, hl:any_1, hh:any_1, tl:any_2, th:any_2) :bat[:any_1,:any_2]
 address BPMtakePartition
+comment "Retrieve a single component of a partitioned BAT by index";
+
+command take(nme:bat[:any_1,:any_2],idx:int, hl:any_1, hh:any_1, tl:any_2, th:any_2) :bat[:any_1,:any_2]
+address BPMtakePartitionIndexed
 comment "Retrieve a single component of a partitioned BAT by index";
 
 command insert(pb:bat[:any_1,:any_2],b:bat[:any_1,:any_2]) :void
@@ -529,10 +538,12 @@ bpm_export str BPMderived(bat *ret, bat *bid, bat *src);
 bpm_export str BPMadapt(bat *ret, bat *bid, ptr low, ptr hgh, bat *rs, int *pol);
 bpm_export str BPMoracle(bat *ret, bat *bid, ptr low, ptr hgh, bat *rs );
 
+bpm_export str BPMtakeIndexed(bat *ret, int *nme);
 bpm_export str BPMtake(bat *ret, str *nme);
 bpm_export str BPMtakePartition(bat *ret, str *nme, ptr *hl, ptr *hh, ptr *tl, ptr *th);
+bpm_export str BPMtakePartitionIndexed(bat *ret, int *bid, int *idx, ptr *hl, ptr *hh, ptr *tl, ptr *th);
 
-bpm_export str BPMexpand(MalBlkPtr mb, int alias);
+bpm_export str BPMexpand(MalBlkPtr mb, int varid, int bid);
 
 bpm_export str BPMunfold(bat *ret, bat *bid);
 bpm_export str BPMfold(int *ret, bat *src);
@@ -2079,6 +2090,15 @@ str BPMoracle(int *ret, bat *bid, ptr low, ptr hgh, bat *rs )
 Takeing out partitions.
 @c
 str
+BPMtakeIndexed(bat *ret, int *nme)
+{
+	BAT *b= BATdescriptor(*nme);
+	if( b==0 )
+		throw(MAL,"bpm.take","BAT partition  does not exist");
+	BBPkeepref(*ret= b->batCacheid);
+	return MAL_SUCCEED;
+}
+str
 BPMtake(bat *ret, str *nme)
 {
 	Partition p;
@@ -2092,50 +2112,56 @@ BPMtake(bat *ret, str *nme)
 str
 BPMtakePartition(bat *ret, str *nme, ptr *hl, ptr *hh, ptr *tl, ptr *th)
 {
-	int i,j;
 	Partition p;
-	str msg= MAL_SUCCEED;
+	int index=0;
 
 	BPMopen();
 	p= getByName(*nme);
 	if( p== 0)
 		throw(MAL,"bpm.take","Partitioned BAT does not exist");
+	return BPMtakePartitionIndexed(ret,&p->alias, &index,hl,hh,tl,th);
+}
 
-	for(j=1,i=bpmcat[p->alias]->nxt; 
-		i!= p->alias ; 
-		i= bpmcat[i]->nxt){
-			/* determine matching partition */
-			(void) hl;
-			(void) hh;
-			(void) tl;
-			(void) th;
-			if( (msg=materializePartition(bpmcat[i])) )
-				return msg; 
-			j++;
-	}
-	*ret =i;
-	throw(MAL,"bpm.takePartition","not yet implemented");
+str
+BPMtakePartitionIndexed(bat *ret, int *bid, int *idx, ptr *hl, ptr *hh, ptr *tl, ptr *th)
+{
+	/* for the time being assume that the index is correct */
+	BAT *b= BATdescriptor(*bid);
+	if( b== NULL)
+		throw(MAL,"bpm.take","Could not access partition");
+	(void) idx;
+	(void) hl;
+	(void) hh;
+	(void) tl;
+	(void) th;
+	BBPkeepref(*ret= b->batCacheid);
+	return MAL_SUCCEED;
 }
 @-
 The Mergetable optimizer may request a list of fragments
 to be included.
 @c
 str
-BPMexpand(MalBlkPtr mb, int alias){
+BPMexpand(MalBlkPtr mb, int varid, int bid){
 	Partition p;
 	InstrPtr q;
-	int i;
+	int i,fragment=0;
 
-	BPMunfold( &i, &alias);
-	p= getByNumber(alias);
-	if( p==0)
-		return MAL_SUCCEED;
+	/* fake the partitioned version */
+	BPMunfold( &i, &bid);
+	p= getByNumber(bid);
 	
+	if(p)
 	for(i= p->nxt ; i!=p->bid && bpmcat[i] ; i= bpmcat[i]->nxt) {
 		q = newStmt(mb,"bpm","take");
-		setVarType(mb, getArg(q,0), p->type);
-		pushInt(mb,q,alias);
-		pushInt(mb,q,i);
+		q=pushArgument(mb,q,varid);
+		/* add the fragmentation dimension properties */
+		q=pushInt(mb,q,fragment);
+		q=pushValue(mb,q,&p->hlow);
+		q=pushValue(mb,q,&p->hhgh);
+		q=pushValue(mb,q,&p->tlow);
+		q=pushValue(mb,q,&p->thgh);
+		fragment++;
 	}
 	return MAL_SUCCEED;
 }
@@ -3129,6 +3155,7 @@ BPMsplitquant(bat *ret, bat *bid, int *mb)
 	}
 	return MAL_SUCCEED;
 }
+
 str
 BPMprelude(int *ret)
 {
