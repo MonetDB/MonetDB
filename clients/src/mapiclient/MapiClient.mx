@@ -1319,7 +1319,7 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt)
 				case '?':
 					if (mode == MAL || debugMode()) {
 						/* send line from ? to server */
-						strcpy(line, line + 1);
+						line++;
 						break;
 					}
 					showCommands();
