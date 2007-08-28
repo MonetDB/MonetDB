@@ -37,6 +37,10 @@ BuildRequires: readline-devel, openssl-devel
 %define builddoc 0
 
 %if !%{?buildsystem}
+# this only needed due to faulty packaging of MonetDB/MonetDB-devel 1.18.0
+BuildRequires: %{_libdir}/libstream.so
+# this only needed due to faulty BuildRequires in MonetDB 1.18.0
+BuildRequires: zlib-devel, bzip2-devel
 BuildRequires: MonetDB-devel >= 1.18
 #                               ^^^^
 # Maintained via vertoo. Please don't modify by hand!
