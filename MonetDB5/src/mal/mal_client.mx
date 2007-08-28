@@ -774,23 +774,6 @@ int MCreadClient(Client c){
 		}
 		return 0;
 	}
-	if( *CURRENT(c) == '<'){
-		bstream *fdin;
-		str nme= GDKstrdup(CURRENT(c)+1);
-		str err;
-
-		nme[strlen(CURRENT(c)+1)]=0;
-		printf("# loading from file `%s`\n",nme);
-		if ((err = malLoadScript(nme,&fdin)) != MAL_SUCCEED) {
-			fprintf(stderr, "!%s\n", err);
-			GDKfree(err);
-			return 0;
-		}
-		GDKfree(nme);
-		MCpushClientInput(c, fdin, c->listing, c->prompt);
-		in->pos= in->len;
-		return MCreadClient(c);
-	} else 
 	if( *CURRENT(c) == '?'){
 		showHelp(c->nspace, CURRENT(c)+1, c->fdout);
 		in->pos= in->len;
