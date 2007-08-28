@@ -191,14 +191,14 @@ public final class MapiSocket {
 	 * @param port the port number
 	 * @param user the username
 	 * @param pass the password
-	 * @return A String with informational (warning) messages, or null
+	 * @return A List with informational (warning) messages, or null
 	 *         if there aren't any
 	 * @throws IOException if an I/O error occurs when creating the
 	 *         socket
 	 * @throws MCLParseException if bogus data is received
 	 * @throws MCLException if an MCL related error occurs
 	 */
-	public String connect(String host, int port, String user, String pass) 
+	public List connect(String host, int port, String user, String pass) 
 		throws IOException, MCLParseException, MCLException
 	{
 		if (ttl-- <= 0)
@@ -231,7 +231,8 @@ public final class MapiSocket {
 
 		// read monet response till prompt
 		List redirects = null;
-		String err = "", warn = "", tmp;
+		ArrayList warns = new ArrayList();
+		String err = "", tmp;
 		int lineType;
 		do {
 			if ((tmp = reader.readLine()) == null)
@@ -239,7 +240,7 @@ public final class MapiSocket {
 			if ((lineType = reader.getLineType()) == BufferedMCLReader.ERROR) {
 				err += "\n" + tmp.substring(1);
 			} else if (lineType == BufferedMCLReader.INFO) {
-				warn += "\n" + tmp.substring(1);
+				warns.add(tmp.substring(1));
 			} else if (lineType == BufferedMCLReader.REDIRECT) {
 				if (redirects == null)
 					redirects = new ArrayList();
@@ -277,11 +278,10 @@ public final class MapiSocket {
 				}
 
 				int p = u.getPort();
-				String warnings =
-					connect(u.getHost(), p == -1 ? port : p, user, pass);
-				if (warnings == null) warnings = "";
-				warn += "\nRedirect by " + host + ":" + 
-					port + " to " + suri + "\n" + warnings;
+				List w = connect(u.getHost(), p == -1 ? port : p, user, pass);
+				warns.add("Redirect by " + host + ":" + port + " to " + suri);
+				if (w != null)
+					warns.addAll(w);
 			} else {
 				String msg = "The server sent a redirect for this connection:";
 				for (Iterator it = redirects.iterator(); it.hasNext(); ) {
@@ -291,7 +291,7 @@ public final class MapiSocket {
 			}
 		}
 
-		return(warn != "" ? warn.trim() : null);
+		return(warns.size() == 0 ? null : warns);
 	}
 
 	/**

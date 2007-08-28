@@ -200,9 +200,13 @@ public class MonetConnection implements Connection {
 		}
 
 		try {
-			String warning = 
+			List warning = 
 				server.connect(hostname, port, username, password);
-			if (warning != null) addWarning(warning);
+			if (warning != null) {
+				for (Iterator it = warning.iterator(); it.hasNext(); ) {
+					addWarning(it.next().toString());
+				}
+			}
 
 			in = server.getReader();
 			out = server.getWriter();
