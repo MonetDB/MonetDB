@@ -139,6 +139,7 @@ comment "Resolve the multi-table definitions";
 #include "mal_builder.h"
 
 /* #define DEBUG_OPT_MERGETABLE     show partial result */
+#define BPMtest
 @c
 #include "mal_config.h"
 #include "opt_mergetable.h"
@@ -158,18 +159,24 @@ Note that MATs can be defined recursively.
 static InstrPtr 
 MATpackAll(MalBlkPtr mb, InstrPtr  r, int m, InstrPtr *mat, int *mvar, int *mtop){
 	int j,l,k;
-	if( r== NULL){
-		r = newInstruction(mb, ASSIGNsymbol);
-		setModuleId(r,matRef);
-		setFunctionId(r,packRef);
+	r = newInstruction(mb, ASSIGNsymbol);
+	if( mat->argv-mat->retc ==1){
+		/* simple assignment is sufficient */
 		getArg(r,0)= getArg(mat[m],0);
-	}
-	for(l=mat[m]->retc; l< mat[m]->argc; l++){
-		k= isMATalias( getArg(mat[m],l),mvar,*mtop);
-		if( k< 0)
-			r= pushArgument(mb,r, getArg(mat[m],l));
-		else
-			r= MATpackAll(mb,r, k, mat,mvar,mtop);
+		getArg(r,1)= getArg(mat[m],1);
+	} else{
+		if( r== NULL){
+			setModuleId(r,matRef);
+			setFunctionId(r,packRef);
+			getArg(r,0)= getArg(mat[m],0);
+		}
+		for(l=mat[m]->retc; l< mat[m]->argc; l++){
+			k= isMATalias( getArg(mat[m],l),mvar,*mtop);
+			if( k< 0)
+				r= pushArgument(mb,r, getArg(mat[m],l));
+			else
+				r= MATpackAll(mb,r, k, mat,mvar,mtop);
+		}
 	}
 	for(j=m; j < *mtop-1; j++){
 		mat[j]= mat[j+1];
@@ -208,41 +215,70 @@ of the original base and an empty one.
 static InstrPtr
 MATpartitionTableDummy(MalBlkPtr mb, InstrPtr p)
 {
-			InstrPtr q,r,p2;
-			int v= getArg(p,0);
+	int v= getArg(p,0);
+	InstrPtr q;
+#ifndef BPMtest
+	InstrPtr r,p2;
 
-			freezeVarType(mb,getArg(p,0));
+	freezeVarType(mb,getArg(p,0));
 #ifdef DEBUG_OPT_MERGETABLE
-			stream_printf(GDKout,"found bind\n");
-			printInstruction(GDKout,mb,p,0);
+	stream_printf(GDKout,"found bind\n");
+	printInstruction(GDKout,mb,p,0);
 #endif
-			pushInstruction(mb,p);
+	pushInstruction(mb,p);
 
-			p2= newStmt(mb,batRef,newRef);
-			setVarType(mb,getArg(p2,0),getVarType(mb,v));
-			p2= pushArgument(mb,p2,v);
+	p2= newStmt(mb,batRef,newRef);
+	setVarType(mb,getArg(p2,0),getVarType(mb,v));
+	p2= pushArgument(mb,p2,v);
 
-			q= newStmt(mb,matRef,newRef);
-			setVarType(mb,getArg(q,0),getVarType(mb,v));
+	q= newStmt(mb,matRef,newRef);
+	setVarType(mb,getArg(q,0),getVarType(mb,v));
 
-			getArg(p,0)= getArg(q,0);
-			getArg(p2,1)= getArg(p,0);
-			getArg(q,0)= v;
-			q= pushArgument(mb, q, getArg(p,0));
-			q= pushArgument(mb, q, getArg(p2,0));
-			
-			/* the oid ranges should be sequentially aligned */
-			r = newStmt(mb,batRef, putName("setBase",7));
-			r= pushArgument(mb, r, getArg(p,0));
-			r= pushArgument(mb, r, getArg(p2,0));
+	getArg(p,0)= getArg(q,0);
+	getArg(p2,1)= getArg(p,0);
+	getArg(q,0)= v;
+	q= pushArgument(mb, q, getArg(p,0));
+	q= pushArgument(mb, q, getArg(p2,0));
+	
+	/* the oid ranges should be sequentially aligned */
+	r = newStmt(mb,batRef, putName("setBase",7));
+	r= pushArgument(mb, r, getArg(p,0));
+	r= pushArgument(mb, r, getArg(p2,0));
 #ifdef DEBUG_OPT_MERGETABLE
-			stream_printf(GDKout,"new block\n");
-			printInstruction(GDKout,mb,p,0);
-			printInstruction(GDKout,mb,p2,0);
-			printInstruction(GDKout,mb,q,0);
-			printInstruction(GDKout,mb,r,0);
+	stream_printf(GDKout,"new block\n");
+	printInstruction(GDKout,mb,p,0);
+	printInstruction(GDKout,mb,p2,0);
+	printInstruction(GDKout,mb,q,0);
+	printInstruction(GDKout,mb,r,0);
 #endif
-		return q;
+@-
+The SQL optimizer has already deduced the BAT id,
+which we can reuse to access the partitions in the BPM
+catalog.
+@c
+#else
+	int bid;
+	int top;
+
+	pushInstruction(mb,p);
+	if( getProps(mb,getArg(p,0))==0)
+		return NULL;
+	bid = *(int*) getPropertyValue(getProps(mb,getArg(p,0)),"bid");
+#ifdef DEBUG_OPT_MERGETABLE
+	stream_printf(GDKout,"replace bid %d\n");
+#endif
+	top= mb->stop;
+	BPMexpand(mb, v, bid);
+	q = newInstruction(mb, ASSIGNsymbol);
+	setModuleId(q,matRef);
+	setFunctionId(q,newRef);
+	getArg(q,0)= v;
+	for(; top<mb->stop; top++){
+		setVarType(mb,getArg(getInstrPtr(mb,top),0),getVarType(mb,v));
+		q= pushArgument(mb, q, getArg(getInstrPtr(mb,top),0));
+	}
+#endif
+	return q;
 }
 
 static int
@@ -252,8 +288,8 @@ OPTmergetableImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	int size,match,actions=0;
 
 #ifdef DEBUG_OPT_MERGETABLE
-	stream_printf(GDKout,"Start MAT optimizer\n");
-	printFunction(GDKout, mb, 0);
+	tream_printf(GDKout,"Start MAT optimizer\n");
+	
 #endif
 
 	old = mb->stmt;
@@ -282,10 +318,12 @@ OPTmergetableImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 		if( (getModuleId(p)== sqlRef && getFunctionId(p)==bindRef)){
 			int v= getArg(p,0);
 			q= MATpartitionTableDummy(mb,p);
-			mat[mtop]= q;
-			mvar[mtop] = v;
-			mtop++;
-			actions++;
+			if( q){
+				mat[mtop]= q;
+				mvar[mtop] = v;
+				mtop++;
+				actions++;
+			}
 			continue;
 		}
 @-
