@@ -243,6 +243,15 @@ timerEnd(void)
 }
 
 static void
+modeChange(char *reply){
+	if (strstr(reply, "mdb>#EOD")){
+		setPrompt();
+	} else
+	if(strncmp(reply,"mdb>",4)==0)
+		sprintf(promptbuf,"mdb>");
+}
+
+static void
 SQLsetSpecial(const char *command)
 {
 	if (mode == SQL && command) {
@@ -371,6 +380,7 @@ fetch_row(MapiHdl hdl)
 	do {
 		if ((reply = fetch_line(hdl)) == NULL)
 			return 0;
+		modeChange(reply);
 	} while (*reply != '[' && *reply != '=');
 	return mapi_split_line(hdl);
 }
@@ -412,7 +422,8 @@ RAWrenderer(MapiHdl hdl)
 {
 	char *line;
 
-	while ((line = fetch_line(hdl)) != 0) {
+	while ((line = mapi_fetch_line(hdl)) != 0) {
+		modeChange(line);
 		if (*line == '=')
 			line++;
 		fprintf(toConsole, "%s\n", line);
@@ -1310,7 +1321,7 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt)
 					continue;
 				}
 				case '?':
-					if (!isspace((int) line[2]) && mode == MAL) {
+					if (mode==MAL ||debugMode() ){
 						strcpy(line, line + 1);
 						break;
 					}
@@ -1756,7 +1767,8 @@ main(int argc, char **argv)
 
 	/* default formatter depends on whether we're interactive */
 	if (formatter == NOformatter)
-		formatter = interactive && interactive_stdin && mode != XQUERY ? TABLEformatter : RAWformatter;
+		formatter = interactive && interactive_stdin && mode != XQUERY ?
+		(mode==MAL?RAWformatter: TABLEformatter) : RAWformatter;
 
 	if (command) {
 		/* execute from command-line */
