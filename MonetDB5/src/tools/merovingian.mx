@@ -239,6 +239,10 @@ terminateProcess(void *p)
 			fflush(stdout);
 			SABAOTHfreeStatus(&stats);
 			return;
+		case SABdbMaintenance:
+			fprintf(stderr, "database '%s' remains under maintenance, not attempting to shut down\n", d->dbname);
+			SABAOTHfreeStatus(&stats);
+			return;
 		default:
 			fprintf(stderr, "unknown state: %d", stats->state);
 			SABAOTHfreeStatus(&stats);
@@ -275,6 +279,11 @@ terminateProcess(void *p)
 				case SABdbInactive:
 					fprintf(stdout, "database '%s' has shut down\n", d->dbname);
 					fflush(stdout);
+					SABAOTHfreeStatus(&stats);
+					return;
+				case SABdbMaintenance:
+					fprintf(stderr, "database '%s' is under maintenance, "
+							"we shouldn't have killed it!\n", d->dbname);
 					SABAOTHfreeStatus(&stats);
 					return;
 				default:
@@ -351,15 +360,6 @@ newErr(str fmt, ...)
 static err
 forkMserver(str database, sabdb** stats, dpair dp)
 {
-#ifdef NATIVE_WIN32
-	intptr_t rv = 0;
-	/*rv = _spawnv(_P_DETACH, ...); FIXME */ (void) database;
-	if (rv == -1) {
-		/* forking failed somehow */
-		return(newErr(strerror(errno)));
-	}
-	return(NO_ERR);
-#else
 	pid_t pid;
 	str er;
 	sabuplog info;
@@ -428,6 +428,9 @@ forkMserver(str database, sabdb** stats, dpair dp)
 					(lng)info.minuptime, (lng)info.avguptime, (lng)info.maxuptime,
 					info.crashavg1, info.crashavg10, info.crashavg30,
 					info.startcntr, info.stopcntr, info.crashcntr);
+		break;
+		case SABdbMaintenance:
+			merlog("database '%s' is under maintenance", database);
 		break;
 		default:
 			SABAOTHfreeStatus(stats);
@@ -531,6 +534,10 @@ forkMserver(str database, sabdb** stats, dpair dp)
 					return(newErr(
 								"database '%s' appears to cleanly shut down "
 								"itself after starting", database));
+				case SABdbMaintenance:
+					return(newErr(
+								"database '%s' has been put into maintenance "
+								"mode during startup", database));
 				default:
 					return(newErr("unknown state: %d", (*stats)->state));
 			}
@@ -544,7 +551,6 @@ forkMserver(str database, sabdb** stats, dpair dp)
 	close(pfde[0]);
 	close(pfde[1]);
 	return(newErr(strerror(errno)));
-#endif
 }
 
 static err
