@@ -705,7 +705,7 @@ handleClient(int sock, dpair dp)
 		stat = top;
 	}
 
-	/* need to send a redirect */
+	/* if we can't redirect, our mission ends here */
 	if (stat->conns == NULL || stat->conns->val == NULL) {
 		err e = newErr("database '%s' does not allow connections", stat->dbname);
 		stream_printf(fout, "!database '%s' does not allow connections\n", stat->dbname);
@@ -719,6 +719,7 @@ handleClient(int sock, dpair dp)
 	merlog("redirecting client for database '%s' to %s",
 			stat->dbname, stat->conns->val);
 
+	/* need to send a redirect */
 	stream_printf(fout, "^%s%s\n",
 			stat->conns->val, stat->dbname);
 	/* flush redirect and return */
