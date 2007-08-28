@@ -701,7 +701,7 @@ by inspecting the field descriptor returned by @code{mapi_fetch_field()}.
 #include  <string.h>
 #include  <memory.h>
 
-/*additional definitions for date and time/*
+/*additional definitions for date and time*/
 #ifdef HAVE_FTIME
 #include <sys/timeb.h>
 #endif
