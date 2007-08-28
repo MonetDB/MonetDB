@@ -1405,8 +1405,13 @@ MapiMsg
 mapi_log(Mapi mid, const char *nme)
 {
 	mapi_clrError(mid);
-	if (mid->tracelog)
+	if (mid->tracelog) {
 		stream_close(mid->tracelog);
+		stream_destroy(mid->tracelog);
+		mid->tracelog = NULL;
+	}
+	if (nme == NULL)
+		return MOK;
 	mid->tracelog = open_wastream(nme);
 	if (mid->tracelog == NULL || stream_errnr(mid->tracelog)) {
 		if (mid->tracelog)
