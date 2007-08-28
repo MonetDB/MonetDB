@@ -403,15 +403,18 @@ typedef struct Ssablist {
 	struct Ssablist* next;   /* pointer to the next available value*/
 } sablist;
 
-#define SABdbIllegal	0
-#define SABdbRunning	1
-#define SABdbCrashed	2
-#define SABdbInactive	3
+typedef enum {
+	SABdbIllegal = 0,
+	SABdbRunning,
+	SABdbCrashed,
+	SABdbInactive,
+	SABdbMaintenance
+} SABdbState;
 
 typedef struct Ssabdb {
 	str dbname;              /* database name as string */
 	/* str path; */
-	short state;             /* SABdbRunning, SABdbCrashed or SABdbInactive */
+	SABdbState state;        /* current database state */
 	sablist* scens;          /* scenarios available for this database */
 	sablist* conns;          /* connections available for this database */
 	struct Ssabdb* next;     /* next database */
