@@ -77,7 +77,7 @@ command_help(int argc, char *argv[])
 	if (argc != 2) {
 		printf("Usage: monetdb command [command-options-and-arguments]\n");
 		printf("  where command is one of:\n");
-		printf("    status, create, destroy, help, version\n");
+		printf("    status, create, destroy, lock, release, help, version\n");
 		printf("  use the help command to get help for a particular command\n");
 	} else if (strcmp(argv[1], "status") == 0) {
 		printf("Usage: monetdb status [-als] [database ...]\n");
@@ -89,10 +89,12 @@ command_help(int argc, char *argv[])
 		printf("  -l  use long listing\n");
 		printf("  -s  use short one-line listing\n");
 	} else if (strcmp(argv[1], "create") == 0) {
-		printf("Usage: monetdb create database\n");
+		printf("Usage: monetdb create [-m] database\n");
 		printf("  Initialises a new database in the Sabaoth system.  A\n");
 		printf("  database created with this command makes it available\n");
 		printf("  to Merovingian.\n");
+		printf("Options:\n");
+		printf("  -m  put the database in maintenance mode after creation\n");
 	} else if (strcmp(argv[1], "destroy") == 0) {
 		printf("Usage: monetdb destroy [-f] database\n");
 		printf("  Removes the given database, including all its data and\n");
@@ -100,6 +102,18 @@ command_help(int argc, char *argv[])
 		printf("  Be careful when using this command.\n");
 		printf("Options:\n");
 		printf("  -f  do not ask for confirmation, destroy right away\n");
+	} else if (strcmp(argv[1], "lock") == 0) {
+		printf("Usage: monetdb lock database\n");
+		printf("  Puts the given database in maintenance mode.  A database\n");
+		printf("  under maintenance can only be connected to by the DBA.\n");
+		printf("  Merovingian will not start or stop a database which is\n");
+		printf("  under maintenance.  Use the \"release\" command to bring\n");
+		printf("  the database back for normal usage.\n");
+	} else if (strcmp(argv[1], "release") == 0) {
+		printf("Usage: monetdb release database\n");
+		printf("  Brings back a database from maintenance mode.  A released\n");
+		printf("  database is available again for normal use.  Use the\n");
+		printf("  \"lock\" command to take a database under maintenance.\n");
 	} else if (strcmp(argv[1], "help") == 0) {
 		printf("Yeah , help on help, how desparate can you be? ;)");
 	} else if (strcmp(argv[1], "version") == 0) {
@@ -424,16 +438,30 @@ command_status(int argc, char *argv[])
 static void
 command_create(int argc, char *argv[], char *dbfarm)
 {
-	if (argc == 1 || argc >= 3) {
+	if (argc == 1 || argc >= 4) {
 		/* print help message for this command */
 		command_help(2, &argv[-1]);
 		exit(1);
-	} else if (argc == 2) {
+	} else if (argc == 2 || argc == 3) {
 		sabdb *stats;
 		err e;
+		char *dbname;
+		int maintenance = 0;
+
+		if (strcmp(argv[1], "-m") == 0) {
+			maintenance = 1;
+			dbname = argv[2];
+		} else if (strcmp(argv[2], "-m") == 0) {
+			maintenance = 1;
+			dbname = argv[1];
+		} else {
+			command_help(2, &argv[-1]);
+			exit(1);
+		}
+
 		/* the argument is the database to create, see what Sabaoth can
 		 * tell us about it */
-		if ((e = SABAOTHgetStatus(&stats, argv[1])) != MAL_SUCCEED) {
+		if ((e = SABAOTHgetStatus(&stats, dbname)) != MAL_SUCCEED) {
 			fprintf(stderr, "create: internal error: %s\n", e);
 			GDKfree(e);
 			exit(2);
@@ -443,28 +471,36 @@ command_create(int argc, char *argv[], char *dbfarm)
 			char path[8096];
 			FILE *f;
 			/* Sabaoth doesn't know, green light for us! */
-			snprintf(path, 8095, "%s/%s", dbfarm, argv[1]);
+			snprintf(path, 8095, "%s/%s", dbfarm, dbname);
 			path[8095] = '\0';
 			if (mkdir(path, 0755) == -1) {
 				fprintf(stderr, "create: unable to create %s: %s\n",
 						argv[1], strerror(errno));
 				exit(1);
 			}
+			/* if we should put this database in maintenance, make sure
+			 * no race condition ever can happen, by putting it into
+			 * maintenance before it even exists for Merovingian */
+			if (maintenance == 1) {
+				snprintf(path, 8095, "%s/%s/.maintenance", dbfarm, dbname);
+				fclose(fopen(path, "w"));
+			}
 			/* without an .uplog file, Merovingian won't work */
-			snprintf(path, 8095, "%s/%s/.uplog", dbfarm, argv[1]);
+			snprintf(path, 8095, "%s/%s/.uplog", dbfarm, dbname);
 			fclose(fopen(path, "w"));
 			/* avoid GDK from making fugly complaints */
-			snprintf(path, 8095, "%s/%s/.gdk_lock", dbfarm, argv[1]);
+			snprintf(path, 8095, "%s/%s/.gdk_lock", dbfarm, dbname);
 			f = fopen(path, "w");
 			/* to all insanity, .gdk_lock is "valid" if it contains a
 			 * ':', which it does by pure coincidence of a time having a
 			 * ':' in there twice... */
 			fwrite("bla:", 4, 1, f);
 			fclose(f);
-			printf("successfully created database %s\n", argv[1]);
+			printf("successfully created database %s%s\n", dbname,
+					(maintenance == 1 ? " in maintenance mode" : ""));
 		} else {
 			SABAOTHfreeStatus(&stats);
-			fprintf(stderr, "create: database %s already exists\n", argv[1]);
+			fprintf(stderr, "create: database %s already exists\n", dbname);
 			exit(1);
 		}
 	}
@@ -577,11 +613,20 @@ command_destroy(int argc, char *argv[], char *dbfarm)
 			char path[8096];
 			err e;
 
-			if (stats->state == SABdbRunning) {
-				fprintf(stderr, "destroy: database %s is still running, "
-						"stop database first", dbname);
-				SABAOTHfreeStatus(&stats);
-				exit(1);
+			switch (stats->state) {
+				case SABdbRunning:
+					fprintf(stderr, "destroy: database %s is still running, "
+							"stop database first\n", dbname);
+					SABAOTHfreeStatus(&stats);
+					exit(1);
+				case SABdbMaintenance:
+					fprintf(stderr, "destroy: database %s is under maintenance"
+							", release database first\n", dbname);
+					SABAOTHfreeStatus(&stats);
+					exit(1);
+				default:
+					/* make compiler happy */
+				break;
 			}
 			SABAOTHfreeStatus(&stats);
 
@@ -611,6 +656,96 @@ command_destroy(int argc, char *argv[], char *dbfarm)
 			printf("successfully destroyed database %s\n", dbname);
 		} else {
 			fprintf(stderr, "destroy: no such database: %s\n", dbname);
+			exit(1);
+		}
+	}
+}
+
+static void
+command_lock(int argc, char *argv[], char *dbfarm)
+{
+	if (argc == 1 || argc > 2) {
+		/* print help message for this command */
+		command_help(argc + 1, &argv[-1]);
+		exit(1);
+	} else if (argc == 2) {
+		sabdb *stats;
+		err e;
+		char *dbname = argv[1];
+
+		/* the argument is the database to take under maintenance, see
+		 * what Sabaoth can tell us about it */
+		if ((e = SABAOTHgetStatus(&stats, dbname)) != MAL_SUCCEED) {
+			fprintf(stderr, "lock: internal error: %s\n", e);
+			GDKfree(e);
+			exit(2);
+		}
+
+		if (stats != NULL) {
+			char path[8096];
+
+			if (stats->state == SABdbMaintenance) {
+				fprintf(stderr, "lock: database %s already is "
+						"under maintenance\n", dbname);
+				SABAOTHfreeStatus(&stats);
+				exit(1);
+			}
+
+			/* put this database in maintenance mode */
+			snprintf(path, 8095, "%s/%s/.maintenance", dbfarm, dbname);
+			fclose(fopen(path, "w"));
+			printf("database %s is now under maintenance\n", dbname);
+			SABAOTHfreeStatus(&stats);
+		} else {
+			fprintf(stderr, "lock: no such database %s\n", dbname);
+			exit(1);
+		}
+	}
+}
+
+static void
+command_release(int argc, char *argv[], char *dbfarm)
+{
+	if (argc == 1 || argc > 2) {
+		/* print help message for this command */
+		command_help(argc + 1, &argv[-1]);
+		exit(1);
+	} else if (argc == 2) {
+		sabdb *stats;
+		err e;
+		char *dbname = argv[1];
+
+		/* the argument is the database to take under maintenance, see
+		 * what Sabaoth can tell us about it */
+		if ((e = SABAOTHgetStatus(&stats, dbname)) != MAL_SUCCEED) {
+			fprintf(stderr, "release: internal error: %s\n", e);
+			GDKfree(e);
+			exit(2);
+		}
+
+		if (stats != NULL) {
+			char path[8096];
+
+			if (stats->state != SABdbMaintenance) {
+				fprintf(stderr, "release: database %s is not "
+						"under maintenance\n", dbname);
+				SABAOTHfreeStatus(&stats);
+				exit(1);
+			}
+
+			/* put this database in maintenance mode */
+			snprintf(path, 8095, "%s/%s/.maintenance", dbfarm, dbname);
+			if (unlink(path) != 0) {
+				fprintf(stderr, "failed to take database %s out of maintenance"
+						" mode: %s\n", dbname, strerror(errno));
+				SABAOTHfreeStatus(&stats);
+				exit(1);
+			}
+			printf("database %s has been taken out of maintenance mode\n",
+					dbname);
+			SABAOTHfreeStatus(&stats);
+		} else {
+			fprintf(stderr, "release: no such database %s\n", dbname);
 			exit(1);
 		}
 	}
@@ -663,6 +798,10 @@ main(int argc, char *argv[])
 		command_create(argc - 1, &argv[1], dbfarm);
 	} else if (strcmp(argv[1], "destroy") == 0) {
 		command_destroy(argc - 1, &argv[1], dbfarm);
+	} else if (strcmp(argv[1], "lock") == 0) {
+		command_lock(argc - 1, &argv[1], dbfarm);
+	} else if (strcmp(argv[1], "release") == 0) {
+		command_release(argc - 1, &argv[1], dbfarm);
 	} else if (strcmp(argv[1], "help") == 0 || strcmp(argv[1], "-h") == 0) {
 		command_help(argc - 1, &argv[1]);
 	} else if (strcmp(argv[1], "version") == 0 || strcmp(argv[1], "-v") == 0) {
