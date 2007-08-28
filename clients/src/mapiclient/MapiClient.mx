@@ -1228,9 +1228,7 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt)
 				case 'd':
 					if (mode != SQL)
 						break;
-					if (line[length - 1] == '\n')
-						line[--length] = 0;
-					if (line[length - 1] == '\r')
+					while (isspace((int) line[length - 1]))
 						line[--length] = 0;
 					for (line += 2; *line && isspace((int) *line); line++)
 						;
@@ -1255,9 +1253,7 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt)
 				case 'D':
 					if (mode != SQL)
 						break;
-					if (line[length - 1] == '\n')
-						line[--length] = 0;
-					if (line[length - 1] == '\r')
+					while (isspace((int) line[length - 1]))
 						line[--length] = 0;
 					for (line += 2; *line && isspace((int) *line); line++)
 						;
@@ -1270,23 +1266,21 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt)
 					continue;
 				case '<':
 					/* read commands from file */
-					if (line[length - 1] == '\n')
+					while (isspace((int) line[length - 1]))
 						line[--length] = 0;
-					if (line[length - 1] == '\r')
-						line[--length] = 0;
-					doFile(mid, line + 2);
+					for (line += 2; *line && isspace((int) *line); line++)
+						;
+					doFile(mid, line);
 					continue;
 				case '>':
 					/* redirect output to file */
-					line += 2;
-					length -= 2;
-					if (line[length - 1] == '\n')
+					while (isspace((int) line[length - 1]))
 						line[--length] = 0;
-					if (line[length - 1] == '\r')
-						line[--length] = 0;
+					for (line += 2; *line && isspace((int) *line); line++)
+						;
 					if (toConsole != stdout && toConsole != stderr)
 						fclose(toConsole);
-					if (length == 0 || strcmp(line, "stdout") == 0)
+					if (*line == 0 || strcmp(line, "stdout") == 0)
 						toConsole = stdout;
 					else if (strcmp(line, "stderr") == 0)
 						toConsole = stderr;
@@ -1296,26 +1290,20 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt)
 					}
 					continue;
 				case 'L':
-				{
-					char buf[1024];
-
-					line += 2;
-					length -= 2;
-					if (line[length - 1] == '\n')
+					free(logfile);
+					logfile = NULL;
+					while (isspace((int) line[length - 1]))
 						line[--length] = 0;
-					if (line[length - 1] == '\r')
-						line[--length] = 0;
-					for (; *line && isspace((int) *line); line++)
+					for (line += 2; *line && isspace((int) *line); line++)
 						;
 					if (*line == 0) {
-						snprintf(buf, sizeof(buf), "monet_%d", (int) getpid());
-						line = buf;
-					}
-					logfile = optarg ? optarg : strdup(line);
-					if (logfile)
+						/* turn of logging */
+						mapi_log(mid, NULL);
+					} else {
+						logfile = strdup(line);
 						mapi_log(mid, logfile);
+					}
 					continue;
-				}
 				case '?':
 					if (mode == MAL || debugMode()) {
 						/* send line from ? to server */
@@ -1326,23 +1314,19 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt)
 					continue;
 #ifdef HAVE_POPEN
 				case '|':
-				{
-					char *s;
-
 					if (pager)
 						free(pager);
 					pager = NULL;
 					setWidth();	/* reset to system default */
 
-					s = line + 2;
-					while (*s && isspace((int) *s))
-						s++;
-					if (*s == 0)
+					while (isspace((int) line[length - 1]))
+						line[--length] = 0;
+					for (line += 2; *line && isspace((int) *line); line++)
+						;
+					if (*line == 0)
 						continue;
-					s[strlen(s) - 1] = 0;  /* squash final \n */
-					pager = strdup(s);
+					pager = strdup(line);
 					continue;
-				}
 #endif
 #ifdef HAVE_LIBREADLINE
 				case 'h':
@@ -1377,19 +1361,35 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt)
 					echoquery = 1;
 					continue;
 				case 'f':
-				{
-					char *s;
-
-					if (line[length - 1] == '\n')
+					while (isspace((int) line[length - 1]))
 						line[--length] = 0;
-					if (line[length - 1] == '\r')
-						line[--length] = 0;
-					s = line + 2;
-					while (*s && isspace((int) *s))
-						s++;
-					setFormatter(s);
+					for (line += 2; *line && isspace((int) *line); line++)
+						;
+					if (*line == 0) {
+						fprintf(toConsole, "Current formatter: ");
+						switch (formatter) {
+						case RAWformatter:
+							fprintf(toConsole, "raw\n");
+							break;
+						case TABLEformatter:
+							fprintf(toConsole, "sql\n");
+							break;
+						case CSVformatter:
+							fprintf(toConsole, "csv\n");
+							break;
+						case TABformatter:
+							fprintf(toConsole, "tab\n");
+							break;
+						case XMLformatter:
+							fprintf(toConsole, "xml\n");
+							break;
+						default:
+							fprintf(toConsole, "none\n");
+							break;
+						}
+					} else
+						setFormatter(line);
 					continue;
-				}
 				default:
 					showCommands();
 					continue;
@@ -1589,7 +1589,7 @@ main(int argc, char **argv)
 			char buf[32];
 
 			snprintf(buf, sizeof(buf), "monet_%d", (int) getpid());
-			logfile = optarg ? optarg : strdup(buf);
+			logfile = strdup(optarg ? optarg : buf);
 			break;
 		}
 		case 'l':
