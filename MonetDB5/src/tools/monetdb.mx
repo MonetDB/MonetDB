@@ -179,6 +179,9 @@ printStatus(sabdb *stats, int mode)
 			case SABdbInactive:
 				state = "stopped";
 			break;
+			case SABdbMaintenance:
+				state = "mainten";
+			break;
 			default:
 				state = "unknown";
 			break;
@@ -217,6 +220,9 @@ printStatus(sabdb *stats, int mode)
 			break;
 			case SABdbInactive:
 				state = "stopped";
+			break;
+			case SABdbMaintenance:
+				state = "maintenance";
 			break;
 			default:
 				state = "unknown";
@@ -299,6 +305,9 @@ printStatus(sabdb *stats, int mode)
 			break;
 			case SABdbInactive:
 				snprintf(buf, 64, "not running");
+			break;
+			case SABdbMaintenance:
+				snprintf(buf, 64, "under maintenance");
 			break;
 			default:
 				snprintf(buf, 64, "unknown");
