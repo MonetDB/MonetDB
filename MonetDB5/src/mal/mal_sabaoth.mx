@@ -255,6 +255,7 @@ str SABAOTHmarchConnection(int *ret, str *host, int *port, bit *ssl) {
 	FILE *f;
 	str path = alloca(sizeof(char) * (PATHLENGTH + 1));
 	str tmp;
+	sabdb *stats;
 
 	(void)ret;
 
@@ -263,12 +264,19 @@ str SABAOTHmarchConnection(int *ret, str *host, int *port, bit *ssl) {
 	if ((f = fopen(path, "a")) != NULL) {
 		/* append to the file */
 		fprintf(f, "mapi%s:monetdb://%s:%i/\n", *ssl ? "s" : "", *host, *port);
-		/* (some) people tend to like (very) noisy programs, hence to
-		 * please them, announce that we're now available from outside */
-		printf("# Listening for connection requests on mapi%s:monetdb://%s:%i/\n",
-				*ssl ? "s" : "", *host, *port);
 		(void)fflush(f);
 		(void)fclose(f);
+		/* (some) people tend to like (very) noisy programs, hence to
+		 * please them, announce that we're now available from outside */
+		printf("# Listening for connection requests on "
+				"mapi%s:monetdb://%s:%i/\n", *ssl ? "s" : "", *host, *port);
+		/* emit a warning if we are in maintenance mode */
+		rethrow("sabaoth.getMyStatus", tmp,
+				SABAOTHgetMyStatus(&stats));
+		if (stats->state == SABdbMaintenance)
+			fprintf(stderr, "#warning: database is running in "
+					"maintenance mode\n");
+		SABAOTHfreeStatus(&stats);
 		return(MAL_SUCCEED);
 	}
 	throw(IO, "sabaoth.marchConnection",
@@ -420,6 +428,13 @@ typedef struct Ssabdb {
 	struct Ssabdb* next;     /* next database */
 } sabdb;
 
+mal_export str SABAOTHgetMyStatus(sabdb** ret);
+@c
+str SABAOTHgetMyStatus(sabdb** ret) {
+	return(SABAOTHgetStatus(ret, _sabaoth_internal_dbname));
+}
+
+@h
 /* Caching strategies (might be nice) should create a new struct with
  * the last modified time_t of the files involved, such that a stat is
  * sufficient to see if reparsing is necessary.  The gdk_lock always has
@@ -427,6 +442,7 @@ typedef struct Ssabdb {
  */
 
 mal_export str SABAOTHgetStatus(sabdb** ret, str dbname);
+#define MAINTENANCEFILE ".maintenance"
 @c
 /**
  */
@@ -522,6 +538,8 @@ str SABAOTHgetStatus(sabdb** ret, str dbname) {
 		 *   running
 		 * - to distinguish between a crash and proper shutdown, consult
 		 *   the uplog
+		 * the existance of the maintenance file overrules any check and
+		 * puts the server in maintenance mode
 		 */
 		snprintf(buf, PATHLENGTH, "%s/%s/%s", path, e->d_name, ".gdk_lock");
 		fd = MT_lockf(buf, F_TLOCK, 4, 1);
@@ -560,6 +578,12 @@ str SABAOTHgetStatus(sabdb** ret, str dbname) {
 			fd = MT_lockf(buf, F_ULOCK, 4, 1);
 			if (fd >= 0)
 				close(fd);
+		}
+		snprintf(buf, PATHLENGTH, "%s/%s/%s", path, e->d_name, MAINTENANCEFILE);
+		f = fopen(buf, "r");
+		if (f != NULL) {
+			fclose(f);
+			sdb->state = SABdbMaintenance;
 		}
 	}
 	(void) closedir(d);
