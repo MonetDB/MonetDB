@@ -832,9 +832,10 @@ char **getHelp(Module m, str pat, int completion)
 			fcnnme="*";
 	}
 
-	if( fcnnme){
+	if( fcnnme && *fcnnme){
 		len2 = strlen(fcnnme);
-	}
+	} else return msg;
+
 	len1 = strlen(modnme);
 
 	/* display module information if there is no function */
