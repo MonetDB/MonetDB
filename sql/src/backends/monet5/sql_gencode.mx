@@ -1253,7 +1253,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 					fimp= convertMultiplexFcn(fimp);
 					q = newStmt(mb, "mal","multiplex");
 					setVarType(mb,getArg(q,0), 
-						newBatType(TYPE_oid,tail_type(s->op1.stval)->type->localtype));
+						newBatType(TYPE_oid,s->op4.funcval->res.type->localtype));
 					freezeVarType(mb,getArg(q,0));
 					q = pushStr(mb, q, mod);
 					q = pushStr(mb, q, fimp);
@@ -1291,13 +1291,13 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				if (!q) {
 					q = newStmt(mb, "mal","multiplex");
 					setVarType(mb,getArg(q,0), 
-						newBatType(TYPE_oid,tail_type(s->op1.stval)->type->localtype));
+						newBatType(TYPE_oid,s->op4.funcval->res.type->localtype));
 					freezeVarType(mb,getArg(q,0));
 					q = pushStr(mb, q, mod);
 					q = pushStr(mb, q, fimp);
 				} else {
 					setVarType(mb,getArg(q,0), 
-						newBatType(TYPE_any,tail_type(s->op1.stval)->type->localtype));
+						newBatType(TYPE_any,s->op4.funcval->res.type->localtype));
 					freezeVarType(mb,getArg(q,0));
 					_DELETE(fimp);
 				}

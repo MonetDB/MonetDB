@@ -499,21 +499,19 @@ subtype2string(sql_subtype *t)
 sql_subaggr *
 sql_bind_aggr(sql_schema *s, char *sqlaname, sql_subtype *type)
 {
-	char *name = toLower(sqlaname);
 	node *n = aggrs->h;
 
 	(void)s;
 	while (n) {
 		sql_aggr *a = n->data;
 
-		if (strcmp(a->base.name, name) == 0 && (!a->tpe.type ||
+		if (strcmp(a->base.name, sqlaname) == 0 && (!a->tpe.type ||
 		    a->tpe.type->eclass == EC_ANY || 
 		    (type && is_subtype(type, &a->tpe )))) {
 			int scale = 0;
 			int digits = 0;
 			sql_subaggr *ares = NEW(sql_subaggr);
 
-			_DELETE(name);
 			sql_ref_init(&(ares->ref));
 			ares->aggr = a;
 			digits = a->res.digits;
@@ -532,7 +530,6 @@ sql_bind_aggr(sql_schema *s, char *sqlaname, sql_subtype *type)
 		}
 		n = n->next;
 	}
-	_DELETE(name);
 	return NULL;
 }
 
@@ -613,7 +610,6 @@ func_cmp(sql_func *f, char *name, int nrargs)
 sql_subfunc *
 sql_find_func(sql_schema *s, char *sqlfname, int nrargs)
 {
-	char *name = toLower(sqlfname);
 	node *n = funcs->h;
 	sql_subfunc *fres;
 
@@ -623,8 +619,7 @@ sql_find_func(sql_schema *s, char *sqlfname, int nrargs)
 
 		if (!f->res.type)
 			continue;
-		if ((fres = func_cmp(f, name, nrargs )) != NULL) {
-			_DELETE(name);
+		if ((fres = func_cmp(f, sqlfname, nrargs )) != NULL) {
 			return fres;
 		}
 	}
@@ -636,13 +631,11 @@ sql_find_func(sql_schema *s, char *sqlfname, int nrargs)
 
 			if (f->aggr)
 				continue;
-			if ((fres = func_cmp(f, name, nrargs )) != NULL) {
-				_DELETE(name);
+			if ((fres = func_cmp(f, sqlfname, nrargs )) != NULL) {
 				return fres;
 			}
 		}
 	}
-	_DELETE(name);
 	return NULL;
 }
 
@@ -651,7 +644,6 @@ sql_find_func(sql_schema *s, char *sqlfname, int nrargs)
 sql_subfunc *
 sql_bind_member(sql_schema *s, char *sqlfname, sql_subtype *tp, int nrargs)
 {
-	char *name = toLower(sqlfname);
 	node *n;
 
 	(void)s;
@@ -661,7 +653,7 @@ sql_bind_member(sql_schema *s, char *sqlfname, sql_subtype *tp, int nrargs)
 
 		if (!f->res.type)
 			continue;
-		if (strcmp(f->base.name, name) == 0) {
+		if (strcmp(f->base.name, sqlfname) == 0) {
 			if (list_length(f->ops) == nrargs && is_subtype(tp, &((sql_arg *) f->ops->h->data)->type)) {
 
 				unsigned int scale = 0;
@@ -672,7 +664,6 @@ sql_bind_member(sql_schema *s, char *sqlfname, sql_subtype *tp, int nrargs)
 					continue;
 				fres = NEW(sql_subfunc);
 
-				_DELETE(name);
 				sql_ref_init(&(fres->ref));
 				fres->func = f;
 				/* same scale as the input */
@@ -683,7 +674,6 @@ sql_bind_member(sql_schema *s, char *sqlfname, sql_subtype *tp, int nrargs)
 			}
 		}
 	}
-	_DELETE(name);
 	return NULL;
 }
 
@@ -732,7 +722,6 @@ arg_subtype_cmp(sql_arg *a, sql_subtype *t)
 sql_subfunc *
 sql_bind_func_(sql_schema *s, char *sqlfname, list *ops)
 {
-	char *name = toLower(sqlfname);
 	node *n = funcs->h;
 
 	(void)s;
@@ -741,12 +730,11 @@ sql_bind_func_(sql_schema *s, char *sqlfname, list *ops)
 
 		if (f->is_func && !f->res.type)
 			continue;
-		if (strcmp(f->base.name, name) == 0) {
+		if (strcmp(f->base.name, sqlfname) == 0) {
 			if (list_cmp(f->ops, ops, (fcmp) &arg_subtype_cmp) == 0) {
 				unsigned int scale = 0;
 				sql_subfunc *fres = NEW(sql_subfunc);
 
-				_DELETE(name);
 				sql_ref_init(&(fres->ref));
 				fres->func = f;
 				for (n = ops->h; n; n = n->next) {
@@ -783,12 +771,11 @@ sql_bind_func_(sql_schema *s, char *sqlfname, list *ops)
 
 			if (f->is_func && !f->res.type)
 				continue;
-			if (strcmp(f->base.name, name) == 0) {
+			if (strcmp(f->base.name, sqlfname) == 0) {
 				if (list_cmp(f->ops, ops, (fcmp) &arg_subtype_cmp) == 0) {
 					unsigned int scale = 0;
 					sql_subfunc *fres = NEW(sql_subfunc);
 
-					_DELETE(name);
 					sql_ref_init(&(fres->ref));
 					fres->func = f;
 					for (n = ops->h; n; n = n->next) {
@@ -808,7 +795,6 @@ sql_bind_func_(sql_schema *s, char *sqlfname, list *ops)
 			}
 		}
 	}
-	_DELETE(name);
 	return NULL;
 }
 
@@ -850,7 +836,6 @@ sql_bind_func_result3(sql_schema *s, char *sqlfname, sql_subtype *tp1, sql_subty
 sql_subfunc *
 sql_bind_func_result_(sql_schema *s, char *sqlfname, list *ops, sql_subtype *res)
 {
-	char *name = toLower(sqlfname);
 	node *n = funcs->h;
 
 	(void)s;
@@ -859,11 +844,10 @@ sql_bind_func_result_(sql_schema *s, char *sqlfname, list *ops, sql_subtype *res
 
 		if (!f->res.type)
 			continue;
-		if (strcmp(f->base.name, name) == 0 && (is_subtype(&f->res, res) || f->res.type->eclass == EC_ANY) && list_cmp(f->ops, ops, (fcmp) &arg_subtype_cmp) == 0) {
+		if (strcmp(f->base.name, sqlfname) == 0 && (is_subtype(&f->res, res) || f->res.type->eclass == EC_ANY) && list_cmp(f->ops, ops, (fcmp) &arg_subtype_cmp) == 0) {
 			unsigned int scale = 0;
 			sql_subfunc *fres = NEW(sql_subfunc);
 
-			_DELETE(name);
 			sql_ref_init(&(fres->ref));
 			fres->func = f;
 			for (n = ops->h; n; n = n->next) {
@@ -893,14 +877,12 @@ sql_bind_func_result_(sql_schema *s, char *sqlfname, list *ops, sql_subtype *res
 		}
 		n = n->next;
 	}
-	_DELETE(name);
 	return NULL;
 }
 
 sql_subfunc *
 sql_bind_proc(sql_schema *s, char *sqlfname, list *ops)
 {
-	char *name = toLower(sqlfname);
 	node *n = funcs->h;
 
 	(void)s;
@@ -909,10 +891,9 @@ sql_bind_proc(sql_schema *s, char *sqlfname, list *ops)
 
 		if (f->res.type)
 			continue;
-		if (strcmp(f->base.name, name) == 0 && list_cmp(f->ops, ops, (fcmp) &arg_subtype_cmp) == 0) {
+		if (strcmp(f->base.name, sqlfname) == 0 && list_cmp(f->ops, ops, (fcmp) &arg_subtype_cmp) == 0) {
 			sql_subfunc *fres = NEW(sql_subfunc);
 
-			_DELETE(name);
 			sql_ref_init(&(fres->ref));
 			fres->func = f;
 			fres->res.type = NULL;
@@ -920,7 +901,6 @@ sql_bind_proc(sql_schema *s, char *sqlfname, list *ops)
 		}
 		n = n->next;
 	}
-	_DELETE(name);
 	return NULL;
 }
 
@@ -1003,7 +983,7 @@ sql_create_type(char *sqlname, unsigned int digits, unsigned int scale, unsigned
 	sql_type *t = NEW(sql_type);
 
 	base_init(&t->base, store_next_oid(), TR_OLD, name);
-	t->sqlname = toLower(sqlname);
+	t->sqlname = _strdup(sqlname);
 	t->digits = digits;
 	t->scale = scale;
 	t->localtype = ATOMindex(t->base.name);
@@ -1023,10 +1003,8 @@ sql_aggr *
 sql_create_aggr(char *name, char *mod, char *imp, sql_type *tpe, sql_type *res)
 {
 	sql_aggr *t = NEW(sql_aggr);
-	char *n = NULL;
 
-	base_init(&t->base, store_next_oid(), TR_OLD, n=toLower(name));
-	_DELETE(n);
+	base_init(&t->base, store_next_oid(), TR_OLD, name);
 	t->imp = _strdup(imp);
 	t->mod = _strdup(mod);
 	if (tpe) {
@@ -1145,11 +1123,9 @@ sql_func *
 sql_create_func_(char *name, char *mod, char *imp, list *ops, sql_subtype *res, bit side_effect)
 {
 	sql_func *t = NEW(sql_func);
-	char *n = NULL;
 
 	assert(res && ops);
-	base_init(&t->base, store_next_oid(), TR_OLD, n=toLower(name));
-	_DELETE(n);
+	base_init(&t->base, store_next_oid(), TR_OLD, name);
 	t->imp = _strdup(imp);
 	t->mod = _strdup(mod);
 	t->ops = ops;
@@ -1173,11 +1149,9 @@ sql_func *
 sql_create_sqlfunc(char *name, char *imp, list *ops, sql_subtype *res)
 {
 	sql_func *t = NEW(sql_func);
-	char *n = NULL;
 
 	assert(res && ops);
-	base_init(&t->base, store_next_oid(), TR_OLD, n=toLower(name));
-	_DELETE(n);
+	base_init(&t->base, store_next_oid(), TR_OLD, name);
 	t->imp = _strdup(imp);
 	t->mod = _strdup("SQL");
 	t->ops = ops;
