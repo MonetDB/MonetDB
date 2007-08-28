@@ -160,7 +160,7 @@ static InstrPtr
 MATpackAll(MalBlkPtr mb, InstrPtr  r, int m, InstrPtr *mat, int *mvar, int *mtop){
 	int j,l,k;
 	r = newInstruction(mb, ASSIGNsymbol);
-	if( mat->argv-mat->retc ==1){
+	if( mat[m]->argc-mat[m]->retc ==1){
 		/* simple assignment is sufficient */
 		getArg(r,0)= getArg(mat[m],0);
 		getArg(r,1)= getArg(mat[m],1);
