@@ -123,9 +123,9 @@ enum modes {
 	MIL
 };
 
-static enum modes mode;
+static enum modes mode = NOLANGUAGE;
 static FILE *toConsole;
-static FILE *fromConsole;
+static FILE *fromConsole = NULL;
 static char *language = NULL;
 static char *logfile = NULL;
 static int start_with_help = 0;
@@ -260,24 +260,21 @@ SQLsetSpecial(const char *command)
 	}
 }
 
-static void
+static int
 SQLrow(int *len, int *numeric, char **rest, int fields, int trim)
 {
 	int i, more, first = 1;
 	char *t;
+	int rows = 0;		/* return number of output lines printed */
 
-	/* trim the text upon need */
-	for (i = 0; i < fields; i++) {
-		if (rest[i] && (int) strlen(rest[i]) > len[i]) {
-			int cnt = strlen(rest[i]) - len[i];
-
-			/* first remove leading spaces unless requested */
-			for (t = rest[i]; trim && t && *t && cnt; t++)
-				if (*t != ' ' && *t != '\t')
-					break;
-				else
-					cnt--;
-			rest[i] = t;
+	/* trim the text if needed */
+	if (trim) {
+		for (i = 0; i < fields; i++) {
+			if ((t = rest[i]) != NULL && strlen(t) > (size_t) len[i]) {
+				while (*t != 0 && isspace((int) *t))
+					t++;
+				rest[i] = t;
+			}
 		}
 	}
 
@@ -289,14 +286,14 @@ SQLrow(int *len, int *numeric, char **rest, int fields, int trim)
 				fprintf(toConsole, "%*s |", len[i], " ");
 			else {
 				/* break the string into pieces and left-adjust them in the column */
-				if ((int) strlen(rest[i]) > len[i]) {
+				if (strlen(rest[i]) > (size_t) len[i]) {
 					t = rest[i] + len[i];
-					while (t > rest[i] && *t != ' ' && *t != '\t')
+					while (t > rest[i] && !isspace((int) *t))
 						t--;
-					if (t == rest[i] && *t != ' ' && *t != '\t')
+					if (t == rest[i] && !isspace((int) *t))
 						t = rest[i] + len[i];
 					fprintf(toConsole, "%*.*s |", first && numeric[i] ? len[i] : -len[i], (int) (t - rest[i]), rest[i]);
-					while (*t == ' ' || *t == '\n')
+					while (isspace((int) *t))
 						t++;
 					rest[i] = *t ? t : 0;
 					if (rest[i])
@@ -309,7 +306,9 @@ SQLrow(int *len, int *numeric, char **rest, int fields, int trim)
 		}
 		first = 0;
 		fprintf(toConsole, "\n");
+		rows++;
 	} while (more);
+	return rows;
 }
 
 static void
@@ -547,18 +546,21 @@ SQLdebugRendering(MapiHdl hdl)
 		specials = NOmodifier;
 	}
 }
+
 static void
 SQLpagemove(int *len, int fields, int *ps, int *silent)
 {
-	char buf[BUFSIZ];
+	int c;
 
 	SQLseparator(len, fields, '-');
 	fprintf(toConsole, "next page? (continue,quit,next)");
-	fgets(buf, BUFSIZ, fromConsole);
-	if (buf[0] == 'c')
+	c = getc(fromConsole);
+	if (c == 'c')
 		*ps = 0;
-	if (buf[0] == 'q')
+	if (c == 'q')
 		*silent = 1;
+	while (c != EOF && c != '\n')
+		c = getc(fromConsole);
 	if (*silent == 0)
 		SQLseparator(len, fields, '-');
 }
@@ -581,10 +583,15 @@ SQLexplainRendering(MapiHdl hdl)
 		if (*fields[0] == '%')
 			continue;
 		fields[0] = fields[0] + 1;	/* ignore marker */
-		SQLrow(len, numeric, fields, 1, 0);
-		if (ps && rows % ps == ps - 1 && rows != mapi_get_row_count(hdl) && fromConsole)
+
+		if (ps > 0 && rows >= ps && fromConsole != NULL) {
 			SQLpagemove(len, 1, &ps, &silent);
-		rows++;
+			rows = 0;
+			if (silent)
+				continue;
+		}
+
+		rows += SQLrow(len, numeric, fields, 1, 0);
 	}
 	SQLseparator(len, 1, '-');
 	specials = NOmodifier;
@@ -638,10 +645,14 @@ SQLtraceRenderer(MapiHdl hdl)
 			SQLrow(olen, numeric, fields, 1, 0);
 			continue;	/* output should be rendered differently */
 		}
-		SQLrow(len, numeric, fields, cols, 0);
-		if (fromConsole && ps > 0 && rows % ps == ps - 1 && rows != mapi_get_row_count(hdl))
+
+		if (ps > 0 && rows >= ps && fromConsole != NULL) {
 			SQLpagemove(len, cols, &ps, &silent);
-		rows++;
+			rows = 0;
+			if (silent)
+				continue;
+		}
+		rows += SQLrow(len, numeric, fields, cols, 0);
 	}
 	SQLseparator(len, cols, '-');
 }
@@ -650,12 +661,12 @@ static void
 SQLrenderer(MapiHdl hdl)
 {
 	int i, total, fields, oldfields = 0, max = 1;
-	int *len = 0;
-	char **rest = 0;
+	int *len = NULL;
+	char **rest = NULL;
 	char buf[50];
 	char nullstring[5] = "null";
 	int ps = rowsperpage, silent = 0, rows = 0;
-	int *numeric = 0;
+	int *numeric = NULL;
 
 	if (mark2)
 		free(mark2);
@@ -675,10 +686,11 @@ SQLrenderer(MapiHdl hdl)
 				rest = (char **) malloc(sizeof(char *) * fields);
 				numeric = (int *) malloc(sizeof(int) * fields);
 			}
-			memset((char *) len, 0, sizeof(int) * fields);
-			memset((char *) rest, 0, sizeof(char *) * fields);
-			memset((char *) numeric, 0, sizeof(int) * fields);
+			memset(len, 0, sizeof(int) * fields);
+			memset(rest, 0, sizeof(char *) * fields);
+			memset(numeric, 0, sizeof(int) * fields);
 
+			total = 0;
 			for (i = 0; i < fields; i++) {
 				char *s;
 
@@ -694,6 +706,7 @@ SQLrenderer(MapiHdl hdl)
 				s = mapi_get_name(hdl, i);
 				if (s != NULL && (max = strlen(s)) > len[i])
 					len[i] = max;
+				total += len[i];
 				s = mapi_get_type(hdl, i);
 				numeric[i] = s != NULL && (strcmp(s, "int") == 0 ||
 							   strcmp(s, "tinyint") == 0 ||
@@ -701,9 +714,6 @@ SQLrenderer(MapiHdl hdl)
 							   strcmp(s, "double") == 0 ||
 							   strcmp(s, "float") == 0);
 			}
-			total = 0;
-			for (i = 0; i < fields; i++)
-				total += len[i];
 			while (2 * fields + 2 + total >= pagewidth && max) {
 				max = 0;
 				total = 0;
@@ -752,21 +762,14 @@ SQLrenderer(MapiHdl hdl)
 				rest[i] = nullstring;
 		}
 
-		SQLrow(len, numeric, rest, fields, 1);
-		rows++;
-		if (ps > 0 && (rows % ps) == ps - 1 && rows != mapi_get_row_count(hdl) && fromConsole) {
-			char buf[BUFSIZ];
-
-			SQLseparator(len, oldfields, '-');
-			fprintf(toConsole, "next page? (continue,quit,next)");
-			fgets(buf, BUFSIZ, fromConsole);
-			if (buf[0] == 'c')
-				ps = 0;
-			if (buf[0] == 'q')
-				silent = 1;
-			if (silent == 0)
-				SQLheader(hdl, len, fields);
+		if (ps > 0 && rows >= ps && fromConsole != NULL) {
+			SQLpagemove(len, fields, &ps, &silent);
+			rows = 0;
+			if (silent)
+				continue;
 		}
+
+		rows += SQLrow(len, numeric, rest, fields, 1);
 	}
 	if (oldfields)
 		SQLseparator(len, oldfields, '-');
@@ -1092,32 +1095,28 @@ showCommands(void)
 
 	/* shared control options */
 	fprintf(toConsole, "\\?      - show this message\n");
+	if (mode == MAL)
+		fprintf(toConsole, "?pat    - MAL function help. pat=[modnme[.fcnnme][(][)]] wildcard *\n");
 	fprintf(toConsole, "\\<file  - read input from file\n");
 	fprintf(toConsole, "\\>file  - save response in file, or stdout if no file is given\n");
-	fprintf(toConsole, "\\|cmd   - pipe result to process\n");
+	fprintf(toConsole, "\\|cmd   - pipe result to process, or stop when no command is given\n");
 #ifdef HAVE_LIBREADLINE
 	fprintf(toConsole, "\\h      - show the readline history\n");
 #endif
-	fprintf(toConsole, "\\q      - terminate session\n");
 	fprintf(toConsole, "\\t      - toggle timer\n");
-
-	switch (mode) {
-	case MAL:
-		fprintf(toConsole, "\\?pat   - MAL function help. pat=[modnme[.fcnnme][(][)]] wildcard *\n");
-		break;
-	case SQL:
-		fprintf(toConsole, "\\w#     - set maximal page width (-1=raw,0=no limit, >0 max char)\n");
-		fprintf(toConsole, "\\r#     - set maximum rows per page (-1=raw)\n");
-		fprintf(toConsole, "\\e      - echo the query \n");
-		fprintf(toConsole, "\\f      - format using a built-in renderer {csv,tab,raw,sql,xml} \n");
+	fprintf(toConsole, "\\e      - echo the query in sql formatting mode\n");
+	if (mode == SQL) {
 		fprintf(toConsole, "\\D table- dumps the table, or the complete database if none given.\n");
 		fprintf(toConsole, "\\d table- describe the table, or the complete database if none given.\n");
 		fprintf(toConsole, "\\A      - enable auto commit\n");
 		fprintf(toConsole, "\\a      - disable auto commit\n");
-	default: ;
 	}
+	fprintf(toConsole, "\\f      - format using a built-in renderer {csv,tab,raw,sql,xml} \n");
+	fprintf(toConsole, "\\w#     - set maximal page width (-1=raw,0=no limit, >0 max char)\n");
+	fprintf(toConsole, "\\r#     - set maximum rows per page (-1=raw)\n");
 	fprintf(toConsole, "\\L file - save client/server interaction\n");
 	fprintf(toConsole, "\\X      - trace mclient code\n");
+	fprintf(toConsole, "\\q      - terminate session\n");
 }
 
 static int
@@ -1305,11 +1304,6 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt)
 					}
 					continue;
 				case '?':
-					if (mode == MAL || debugMode()) {
-						/* send line from ? to server */
-						line++;
-						break;
-					}
 					showCommands();
 					continue;
 #ifdef HAVE_POPEN
@@ -1680,10 +1674,11 @@ main(int argc, char **argv)
 			save_history = 1;
 			break;
 		case '?':
-			if (language) {
+			if (mode != NOLANGUAGE) {
 				start_with_help = 1;
 				break;
 			}
+			/* fall through */
 		default:
 			usage(argv[0]);
 		}
