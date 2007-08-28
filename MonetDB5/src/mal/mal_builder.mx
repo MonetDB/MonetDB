@@ -330,10 +330,13 @@ pushZero(MalBlkPtr mb, InstrPtr q, int tpe)
 }
 
 InstrPtr
-pushValue(MalBlkPtr mb, InstrPtr q, ValPtr cst)
+pushValue(MalBlkPtr mb, InstrPtr q, ValPtr vr)
 {
 	int _t;
-	_t = defConstant(mb,cst->vtype,cst);
+	ValRecord cst;
+	VALcopy(&cst, vr);
+
+	_t = defConstant(mb,cst.vtype,&cst);
 	return pushArgument(mb, q, _t);
 }
 @}
