@@ -1347,7 +1347,7 @@ signatures satisfying the pattern.
 			continue;
 		}
 		case '?':
-			if( b[1]){
+			if( !isspace((int)b[1])){
 				showHelp(cntxt->nspace,b+1,out);
 				continue;
 			}

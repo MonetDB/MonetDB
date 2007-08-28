@@ -777,6 +777,7 @@ void showModuleStatistics(stream *f,Module s){
 }
 @-
 Some primitives to aid online help and completions.
+Note that pattern matching is on string prefix.
 @c
 int tstDuplicate(char **msg, char *s){
 	int i;
@@ -812,16 +813,24 @@ char **getHelp(Module m, str pat, int completion)
 	if( t) { doc++; *t=0; completion=0; }
 	t= strchr(pat,'(');
 	if( t) { sig++; *t=0; completion=0; }
+
+	/* rudimentary patterns only.
+	 	*.nme  nme.* nme.nme *.*
+	   ignore the rest.
+	*/
 	modnme= pat;
 	if( (fcnnme = strchr(pat,'.')) ){
 		*fcnnme++ = 0;
+		if( strchr(modnme,'*'))
+			modnme="*";
+		if( strchr(fcnnme,'*'))
+			fcnnme="*";
+	} else {
+		modnme="*";
+		fcnnme=pat;
+		if( strchr(fcnnme,'*'))
+			fcnnme="*";
 	}
-	t = modnme;
-	while((isalpha((int) *t) || *t == '_' || *t=='*') && *t) t++;
-	if(t) *t = 0;
-	t = fcnnme;
-	while(t && (isalpha((int) *t) || *t == '_' || *t=='*') && *t) t++;
-	if(t) *t = 0;
 
 	if( fcnnme){
 		len2 = strlen(fcnnme);
