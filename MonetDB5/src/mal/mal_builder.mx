@@ -53,6 +53,7 @@ mal_export InstrPtr pushBit(MalBlkPtr mb, InstrPtr q, int val);
 mal_export InstrPtr pushNil(MalBlkPtr mb, InstrPtr q, int tpe);
 mal_export InstrPtr pushNilType(MalBlkPtr mb, InstrPtr q, char *tpe);
 mal_export InstrPtr pushZero(MalBlkPtr mb, InstrPtr q, int tpe);
+mal_export InstrPtr pushValue(MalBlkPtr mb, InstrPtr q, ValPtr cst);
 
 #endif /* _MAL_BUILDER_ */
 
@@ -313,6 +314,7 @@ pushNilType(MalBlkPtr mb, InstrPtr q, char *tpe)
 
 	return pushArgument(mb, q, _t);
 }
+
 InstrPtr
 pushZero(MalBlkPtr mb, InstrPtr q, int tpe)
 {
@@ -324,6 +326,14 @@ pushZero(MalBlkPtr mb, InstrPtr q, int tpe)
 	convertConstant(tpe, &cst);
 	_t = defConstant(mb,tpe,&cst);
 
+	return pushArgument(mb, q, _t);
+}
+
+InstrPtr
+pushValue(MalBlkPtr mb, InstrPtr q, ValPtr cst)
+{
+	int _t;
+	_t = defConstant(mb,cst->vtype,cst);
 	return pushArgument(mb, q, _t);
 }
 @}

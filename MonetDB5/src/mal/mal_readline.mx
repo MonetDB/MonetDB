@@ -467,11 +467,11 @@ getConsoleInput(const char *prompt, int linemode, int exit_on_error)
 				continue;
 #endif
 			case '?':
-				if( !isspace( (int) line[1]) )
+				if( line[1] && line[1]!='\n'){
 					showHelp( MCgetClient()->nspace,line+1, MCgetClient()->fdout);
-				else
+					line= NULL;
+				} else
 					showCommands();
-				line= NULL;
 				continue;
 			}
 		}
