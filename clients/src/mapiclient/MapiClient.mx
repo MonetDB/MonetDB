@@ -116,7 +116,7 @@ In the SQL mode, a few more convenient commands are available.
 #endif
 
 enum modes {
-	ILLEGALMODE,
+	NOLANGUAGE,
 	MAL,
 	SQL,
 	XQUERY,
@@ -132,7 +132,7 @@ static int start_with_help = 0;
 static char promptbuf[16];
 static int echoquery = 0;
 
-#define setPrompt() sprintf(promptbuf, "%.*s>", (int) sizeof(promptbuf) - 2, language);
+#define setPrompt() sprintf(promptbuf, "%.*s>", (int) sizeof(promptbuf) - 2, language)
 #define debugMode() (strncmp(promptbuf, "mdb", 3) == 0)
 
 /* the internal formatters */
@@ -349,16 +349,28 @@ The Mapi library eats away the comment lines, which
 we need to detect end of debugging. We overload
 the routine to our liking.
 @c
+static char *
+fetch_line(MapiHdl hdl)
+{
+	char *reply;
+
+	if ((reply = mapi_fetch_line(hdl)) == NULL)
+		return NULL;
+	if (strstr(reply, "mdb>#EOD"))
+		setPrompt();
+	else if (strncmp(reply, "mdb>#", 5) == 0)
+		sprintf(promptbuf, "mdb>");
+	return reply;
+}
+
 static int
 fetch_row(MapiHdl hdl)
 {
 	char *reply;
 
 	do {
-		if ((reply = mapi_fetch_line(hdl)) == NULL)
+		if ((reply = fetch_line(hdl)) == NULL)
 			return 0;
-		if (strstr(reply, "mdb>#EOD"))
-			setPrompt();
 	} while (*reply != '[' && *reply != '=');
 	return mapi_split_line(hdl);
 }
@@ -400,9 +412,7 @@ RAWrenderer(MapiHdl hdl)
 {
 	char *line;
 
-	while ((line = mapi_fetch_line(hdl)) != 0) {
-		if (strstr(line, "mdb>#EOD"))
-			setPrompt();
+	while ((line = fetch_line(hdl)) != 0) {
 		if (*line == '=')
 			line++;
 		fprintf(toConsole, "%s\n", line);
@@ -517,7 +527,7 @@ SQLdebugRendering(MapiHdl hdl)
 	int cnt = 0;
 
 	sprintf(promptbuf, "mdb>");
-	while ((reply = mapi_fetch_line(hdl))) {
+	while ((reply = fetch_line(hdl))) {
 		cnt++;
 		fprintf(toConsole, "%s\n", reply);
 		if (strncmp(reply, "mdb>#EOD", 7) == 0) {
@@ -558,13 +568,11 @@ SQLexplainRendering(MapiHdl hdl)
 	len[0] = pagewidth - 4;	/* remove borders */
 	numeric[0] = 0;
 	SQLseparator(len, 1, '-');
-	while ((fields[0] = mapi_fetch_line(hdl)) != NULL) {
+	while ((fields[0] = fetch_line(hdl)) != NULL) {
 		if (silent)
 			continue;
 		if (*fields[0] == '%')
 			continue;
-		if (strstr(fields[0], "mdb>#EOD"))
-			setPrompt();
 		fields[0] = fields[0] + 1;	/* ignore marker */
 		SQLrow(len, numeric, fields, 1, 0);
 		if (ps && rows % ps == ps - 1 && rows != mapi_get_row_count(hdl) && fromConsole)
@@ -590,13 +598,11 @@ SQLtraceRenderer(MapiHdl hdl)
 	numeric[0] = 0;
 	numeric[1] = 0;
 
-	while ((fields[0] = mapi_fetch_line(hdl)) != NULL) {
+	while ((fields[0] = fetch_line(hdl)) != NULL) {
 		if (silent)
 			continue;
 		if (*fields[0] == '%')
 			continue;
-		if (fields[0] && strstr(fields[0], "mdb>#EOD"))
-			setPrompt();
 
 		/* simple render */
 		fields[0] = fields[0] + 1;
@@ -1675,7 +1681,7 @@ main(int argc, char **argv)
 		}
 	}
 	/* language value is mandatory */
-	if (mode == 0) {
+	if (mode == NOLANGUAGE) {
 		fprintf(stderr, "Please specify a language option\n\n");
 		usage(argv[0]);
 	}
