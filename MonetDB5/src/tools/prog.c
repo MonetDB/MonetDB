@@ -77,7 +77,7 @@ usage(char *prog)
 int
 main(int argc, char **av)
 {
-	int curlen = 0, maxlen = BUFSIZ*8;
+	int curlen = 0, maxlen = BUFSIZ * 8;
 	char *prog = *av;
 	opt *set = NULL;
 	int setlen = 0, time = 0;
@@ -101,7 +101,7 @@ main(int argc, char **av)
 	if (!(setlen = mo_builtin_settings(&set)))
 		usage(prog);
 
-	/* needed, to prevent the MonetDB config file from being used */  
+	/* needed to prevent the MonetDB config file from being used */
 	setlen = mo_add_option(&set, setlen, opt_config, "prefix", MONETDBPREFIX);
 	setlen = mo_add_option(&set, setlen, opt_config, "config", MONETDBCONFIG);
 	setlen = mo_system_config(&set, setlen);
@@ -117,11 +117,11 @@ main(int argc, char **av)
 
 		switch (c) {
 		case 0:
-			if (strcmp((char*)long_options[option_index].name, "dbname") == 0) {
+			if (strcmp((char *) long_options[option_index].name, "dbname") == 0) {
 				setlen = mo_add_option(&set, setlen, opt_cmdline, "gdk_dbname", optarg);
 				break;
 			}
-			if (strcmp((char*)long_options[option_index].name, "dbfarm") == 0) {
+			if (strcmp((char *) long_options[option_index].name, "dbfarm") == 0) {
 				setlen = mo_add_option(&set, setlen, opt_cmdline, "gdk_dbfarm", optarg);
 				break;
 			}
@@ -170,21 +170,22 @@ main(int argc, char **av)
 	}
 	if (optind == argc)
 		fp = stdin;
-	while (optind < argc || fp) {
-		if (!fp && (fp=fopen(av[optind],"r")) == NULL){
-			fprintf(stderr,"could no open file %s\n", av[optind]);
+	while (optind < argc || fp != NULL) {
+		if (fp == NULL && (fp = fopen(av[optind], "r")) == NULL) {
+			fprintf(stderr, "could no open file %s\n", av[optind]);
 		}
-		while ((line = fgets(buf+curlen, 1024, fp)) != NULL) {
+		while ((line = fgets(buf + curlen, 1024, fp)) != NULL) {
 			int n = strlen(line);
-            		curlen += n;
-            		if (curlen+1024 > maxlen) {
-               			maxlen += 8*BUFSIZ;
-               			buf = GDKrealloc(buf, maxlen + 1);
+
+			curlen += n;
+			if (curlen + 1024 > maxlen) {
+				maxlen += 8 * BUFSIZ;
+				buf = GDKrealloc(buf, maxlen + 1);
 				if (buf == NULL) {
 					fprintf(stderr, "Cannot allocate memory for query buffer\n");
 					return -1;
 				}
-            		}
+			}
 		}
 		if (fp != stdin) {
 			fclose(fp);
@@ -203,7 +204,7 @@ main(int argc, char **av)
 		} while (mapi_next_result(hdl) == 1);
 		mapi_close_handle(hdl);
 		if (time)
-			printf("Timer: %ld (usec)\n", gettime()-t0);
+			printf("Timer: %ld (usec)\n", gettime() - t0);
 	}
 	GDKfree(buf);
 	return 0;
