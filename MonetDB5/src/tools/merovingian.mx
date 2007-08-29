@@ -358,7 +358,7 @@ newErr(str fmt, ...)
  * forbidden by restart policy. (TODO)
  */
 static err
-forkMserver(str database, sabdb** stats, dpair dp)
+forkMserver(str database, sabdb** stats, dpair dp, int sock)
 {
 	pid_t pid;
 	str er;
@@ -431,6 +431,7 @@ forkMserver(str database, sabdb** stats, dpair dp)
 		break;
 		case SABdbMaintenance:
 			merlog("database '%s' is under maintenance", database);
+			return(NO_ERR);
 		break;
 		default:
 			SABAOTHfreeStatus(stats);
@@ -464,6 +465,9 @@ forkMserver(str database, sabdb** stats, dpair dp)
 		close(pfde[0]);
 		dup2(pfde[1], 2);
 		close(pfde[1]);
+
+		/* we don't want the listening socket of the parent */
+		close(sock);
 
 		/* we don't use stdin, neither should mserver ... */
 		close(0);
@@ -696,7 +700,7 @@ handleClient(int sock, dpair dp)
 			return(newErr("no database running, and no database specified"));
 		}
 	} else {
-		err e = forkMserver(database, &top, dp);
+		err e = forkMserver(database, &top, dp, sock);
 		if (e != NO_ERR) {
 			if (top == NULL) {
 				stream_printf(fout, "!no such database '%s', please create it first\n", database);
@@ -854,10 +858,12 @@ acceptConnections(int sock, dpair dp)
 			freeErr(e);
 		}
 	} while (_keepListening);
+	shutdown(sock, SHUT_RDWR);
 	close(sock);
 	return(NO_ERR);
 
 error:
+	shutdown(sock, SHUT_RDWR);
 	close(sock);
 	return(newErr("accept connection: %s", msg));
 }
@@ -1104,7 +1110,7 @@ main(int argc, char *argv[])
 	e = openConnection(&sock, MEROV_PORT);
 	if (e == NO_ERR) {
 		for (argp = 1; argp < argc; argp++) {
-			e = forkMserver(argv[argp], &stats, d);
+			e = forkMserver(argv[argp], &stats, d, sock);
 			if (e != NO_ERR) {
 				fprintf(stderr, "failed to fork mserver: %s\n", getErrMsg(e));
 				freeErr(e);
