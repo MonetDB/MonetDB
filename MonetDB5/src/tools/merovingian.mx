@@ -244,7 +244,7 @@ terminateProcess(void *p)
 			SABAOTHfreeStatus(&stats);
 			return;
 		default:
-			fprintf(stderr, "unknown state: %d", stats->state);
+			fprintf(stderr, "unknown state: %d", (int)stats->state);
 			SABAOTHfreeStatus(&stats);
 			return;
 	}
@@ -287,7 +287,7 @@ terminateProcess(void *p)
 					SABAOTHfreeStatus(&stats);
 					return;
 				default:
-					fprintf(stderr, "unknown state: %d", stats->state);
+					fprintf(stderr, "unknown state: %d", (int)stats->state);
 				break;
 			}
 		}
@@ -435,7 +435,7 @@ forkMserver(str database, sabdb** stats, dpair dp)
 		default:
 			SABAOTHfreeStatus(stats);
 			*stats = NULL;
-			return(newErr("unknown state: %d", (*stats)->state));
+			return(newErr("unknown state: %d", (int)(*stats)->state));
 	}
 
 	/* create the pipes (filedescriptors) now, such that we and the
@@ -539,7 +539,7 @@ forkMserver(str database, sabdb** stats, dpair dp)
 								"database '%s' has been put into maintenance "
 								"mode during startup", database));
 				default:
-					return(newErr("unknown state: %d", (*stats)->state));
+					return(newErr("unknown state: %d", (int)(*stats)->state));
 			}
 		}
 
