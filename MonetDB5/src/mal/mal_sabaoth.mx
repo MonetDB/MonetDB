@@ -542,8 +542,13 @@ str SABAOTHgetStatus(sabdb** ret, str dbname) {
 		 * puts the server in maintenance mode
 		 */
 		snprintf(buf, PATHLENGTH, "%s/%s/%s", path, e->d_name, ".gdk_lock");
-		fd = MT_lockf(buf, F_TLOCK, 4, 1);
-		if (fd == -2) {
+		if (_sabaoth_internal_dbname != NULL &&
+				strcmp(_sabaoth_internal_dbname, e->d_name) == 0)
+		{
+			/* if we are the mserver that is running this database,
+			 * don't touch the lock! */
+			sdb->state = SABdbRunning;
+		} else if ((fd = MT_lockf(buf, F_TLOCK, 4, 1)) == -2) {
 			/* Locking failed; this can be because the lockfile couldn't
 			 * be created.  Probably there is no Mserver running for
 			 * that case also.
@@ -557,8 +562,6 @@ str SABAOTHgetStatus(sabdb** ret, str dbname) {
 			log[PATHLENGTH] = '\0';
 
 			/* locking succeed, check for a crash in the uplog */
-			close(fd);
-
 			snprintf(log, PATHLENGTH, "%s/%s/%s", path, e->d_name, UPLOGFILE);
 			if ((f = fopen(log, "r")) != NULL) {
 				(void)fseek(f, -1, SEEK_END);
@@ -575,9 +578,9 @@ str SABAOTHgetStatus(sabdb** ret, str dbname) {
 				/* no uplog file? assume no crash */
 				sdb->state = SABdbInactive;
 			}
-			fd = MT_lockf(buf, F_ULOCK, 4, 1);
-			if (fd >= 0)
-				close(fd);
+
+			/* release the lock */
+			close(fd);
 		}
 		snprintf(buf, PATHLENGTH, "%s/%s/%s", path, e->d_name, MAINTENANCEFILE);
 		f = fopen(buf, "r");
