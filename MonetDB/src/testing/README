@@ -31,7 +31,7 @@ have changed since my proposal.
 
 - Each test named TST consists of
   + a test script which is ONE of the following:
-    * an arbitrary executable (e.g., a shell script)        (TST)           (~,^)
+    * an arbitrary executable (e.g., a shell script)        (TST.sh)        (~,^)
        on Windows, executables must be ".(exe|com)"         (TST.(exe|com)) (~,^)
                    and scripts must be ".(bat|cmd)"         (TST.(bat|cmd)) (~,^)
     * a Python script                                       (TST.py)        (~,^)
@@ -43,14 +43,14 @@ have changed since my proposal.
     * a SQL script to be executed by mclient -lsql          (TST.sql)  (",^,`)
     * a XQUERY script to be executed by mclient -lxquery    (TST.xq)   (",^,`)
    (~) In case the name of an arbitrary executable or Python script is
-        suffixed with ".MAPI" (i.e., TST.MAPI[.(exe|com|bat|cmd|py)]),
-        Mtest.py starts an Mserver with a MAPI-listerner on MAPIPORT
+        suffixed with ".MIL" (i.e., TST.MIL[.(sh|exe|com|bat|cmd|py)]),
+        Mtest.py starts an Mserver with a MIL-listerner on MAPIPORT
         in the background before executing the test. The test can then
         connect via MAPI (on MAPIPORT) to that Mserver.
        Similar, with suffix ".SQL", an Mserver with an SQL-listener on
-        SQLPORT is started;
+        MAPIPORT is started;
        and, with suffix ".XQUERY", an Mserver with an XQUERY-listener on
-        XQUERYPORT is started.
+        MAPIPORT is started.
        In both cases, Mtest.py stops the Mserver again, once the test has
         finished.
    (') For Mserver, if several files are present named

@@ -1133,28 +1133,27 @@ def ApproveOutput (env, TST) :
     return sem
 ### ApproveOutput (env, TST) #
 
-def isexecutable(TST) :
+def isexecutable(TST, ext = '.sh') :
     if   os.name == "nt":
         for ext in ".exe", ".com", ".bat", ".cmd":
             if TST.lower().endswith(ext):
-                tst = TST
                 ext = ''
             else:
-                tst = TST + ext
-            if os.path.isfile(tst) or os.path.isfile(tst+".src"):
+                TST = TST + ext
+            if os.path.isfile(TST) or os.path.isfile(TST+".src"):
                 return [ 1, ext ]
     elif os.name == "posix":
         #TODO:
         # check with "file", and set executable
-        if os.path.isfile(TST)  and  os.access(TST,os.X_OK):
-            return [ 1, "" ]
-        if os.path.isfile(TST+".src")  and  os.access(TST+".src",os.X_OK):
-            return [ 1, "" ]
+        TST = TST + ext
+        if ( os.path.isfile(TST       ) and os.access(TST       ,os.X_OK) ) or \
+           ( os.path.isfile(TST+".src") and os.access(TST+".src",os.X_OK) ):
+            return [ 1, ext ]
     #TODO:
     #else:
         # ???
     return [ 0, "" ]
-### isexecutable(TST) #
+### isexecutable(TST, ext = '.sh') #
 
 # this function is a slightly modified copy of the posixpath version
 # the difference is the doubling of \'s in the replacement value
@@ -1282,7 +1281,7 @@ def CheckMods(env, TST, SERVER, CALL) :
             m = m.strip()
             if m  and  m[0] != "#"  and  m not in env['TST_MODS']:
                 missing.append(m)
-    if SERVER == "MAPI":
+    if SERVER == "MIL":
         for m in "streams", "mapi":
             if m not in env['TST_MODS']:
                 missing.append(m)
@@ -1416,23 +1415,25 @@ def RunTest(env, TST, BusyPorts, COND) :
     TX = 0
     EXT = CALL = SERVER = ""
     x  = isexecutable(TST)
+    if not x[0]:
+        x  = isexecutable(TST,'')
+    xI = isexecutable(TST+".MIL")
     xS = isexecutable(TST+".SQL")
-    xM = isexecutable(TST+".MAPI")
     xQ = isexecutable(TST+".XQUERY")
     if   x[0]:
         EXT = x[1]          ; CALL = "other"
+    elif xI[0]:
+        EXT = ".MIL"+xI[1]  ; CALL = "other"  ; SERVER = "MIL"
     elif xS[0]:
         EXT = ".SQL"+xS[1]  ; CALL = "other"  ; SERVER = "SQL"
-    elif xM[0]:
-        EXT = ".MAPI"+xM[1] ; CALL = "other"  ; SERVER = "MAPI"
     elif xQ[0]:
         EXT = ".XQUERY"+xQ[1] ; CALL = "other" ; SERVER = "XQUERY"
     elif os.path.isfile(TST+".py")            or  os.path.isfile(TST+".py.src"):
         EXT = ".py"         ; CALL = "python"
+    elif os.path.isfile(TST+".MIL"+".py")     or  os.path.isfile(TST+".MIL"+".py.src")     or  os.path.isfile(TST+".MIL"+".py.in"):
+        EXT = ".MIL.py"     ; CALL = "python" ; SERVER = "MIL"
     elif os.path.isfile(TST+".SQL"+".py")     or  os.path.isfile(TST+".SQL"+".py.src")     or  os.path.isfile(TST+".SQL"+".py.in"):
         EXT = ".SQL.py"     ; CALL = "python" ; SERVER = "SQL"
-    elif os.path.isfile(TST+".MAPI"+".py")    or  os.path.isfile(TST+".MAPI"+".py.src")    or  os.path.isfile(TST+".MAPI"+".py.in"):
-        EXT = ".MAPI.py"    ; CALL = "python" ; SERVER = "MAPI"
     elif os.path.isfile(TST+".XQUERY"+".py")  or  os.path.isfile(TST+".XQUERY"+".py.src")  or  os.path.isfile(TST+".XQUERY"+".py.in"):
         EXT = ".XQUERY.py"  ; CALL = "python" ; SERVER = "XQUERY"
     elif os.path.isfile(TST+".mal")           or  os.path.isfile(TST+".mal.src")           or  os.path.isfile(TST+".mal.in"):
@@ -1442,15 +1443,15 @@ def RunTest(env, TST, BusyPorts, COND) :
     elif os.path.isfile(TST+".milS")          or  os.path.isfile(TST+".milS.src")          or  os.path.isfile(TST+".milS.in"):
         EXT = ".milS"       ; CALL = "milS"
     elif os.path.isfile(TST+".milC")          or  os.path.isfile(TST+".milC.src")          or  os.path.isfile(TST+".milC.in"):
-        EXT = ".milC"       ; CALL = "milC"   ; SERVER = "MAPI"
+        EXT = ".milC"       ; CALL = "milC"   ; SERVER = "MIL"
     elif os.path.isfile(TST+"_s00.milM")      or  os.path.isfile(TST+"_s00.milM.src")      or  os.path.isfile(TST+"_s00.milM.in"):
         EXT = ".milM"       ; CALL = "milMXs"
     elif os.path.isfile(TST+"_s00.milS")      or  os.path.isfile(TST+"_s00.milS.src")      or  os.path.isfile(TST+"_s00.milS.in"):
         EXT = ".milS"       ; CALL = "milSXs"
     elif os.path.isfile(TST+"_s00.milC")      or  os.path.isfile(TST+"_s00.milC.src")      or  os.path.isfile(TST+"_s00.milC.in"):
-        EXT = ".milC"       ; CALL = "milCXs" ; SERVER = "MAPI"
+        EXT = ".milC"       ; CALL = "milCXs" ; SERVER = "MIL"
     elif os.path.isfile(TST+"_p00.milC")      or  os.path.isfile(TST+"_p00.milC.src")      or  os.path.isfile(TST+"_p00.milC.in"):
-        EXT = ".milC"       ; CALL = "milCXp" ; SERVER = "MAPI"
+        EXT = ".milC"       ; CALL = "milCXp" ; SERVER = "MIL"
     elif os.path.isfile(TST+".sql")           or  os.path.isfile(TST+".sql.src")           or  os.path.isfile(TST+".sql.in"):
         EXT = ".sql"        ; CALL = "sql"    ; SERVER = "SQL"
     elif os.path.isfile(TST+"_s00.sql")       or  os.path.isfile(TST+"_s00.sql.src")       or  os.path.isfile(TST+"_s00.sql.in"):
@@ -1464,9 +1465,9 @@ def RunTest(env, TST, BusyPorts, COND) :
     elif os.path.isfile(TST+"_p00.xq")        or  os.path.isfile(TST+"_p00.xq.src")        or  os.path.isfile(TST+"_p00.xq.in"):
         EXT = ".xq"         ; CALL = "xqXp"   ; SERVER = "XQUERY"
     elif os.path.isfile(TST+".x100")          or  os.path.isfile(TST+".x100.src")          or  os.path.isfile(TST+".x100.in"):
-        EXT = ".x100"       ; CALL = "x100"   ; SERVER = "MAPI"
+        EXT = ".x100"       ; CALL = "x100"   ; SERVER = "MIL"
     elif os.path.isfile(TST+"_s00.x100")      or  os.path.isfile(TST+"_s00.x100.src")      or  os.path.isfile(TST+"_s00.x100.in"):
-        EXT = ".x100"       ; CALL = "x100Xs" ; SERVER = "MAPI"
+        EXT = ".x100"       ; CALL = "x100Xs" ; SERVER = "MIL"
         #TODO:
         #elif [ -f "$TST.java"       ] ; then  EXT="java" ; CALL="Java   "+TST+" "+EXT
         #elif [ -f "${TST}_s00.java" ] ; then  EXT="java" ; CALL="JavaXs "+TST+" "+EXT
@@ -1513,7 +1514,7 @@ def RunTest(env, TST, BusyPorts, COND) :
         elem = SkipTest(env, TST, EXT, "as it currently crashes/hangs on WindowsNT.")
     elif sys.platform == "cygwin"  and  url(TSTDIR)+"/"+TST in NotOnCYG:
         elem = SkipTest(env, TST, EXT, "as it currently crashes/hangs on CYGWIN.")
-    elif ( EXT[:4] == ".mil" or SERVER == "MAPI" ) and par['M5']:
+    elif ( EXT[:4] == ".mil" or SERVER == "MIL" ) and par['M5']:
         elem = SkipTest(env, TST, EXT, "as Monet5 does not support MIL.")
     elif EXT == ".milC" and  not env['exe']['Mapi_Client'][0]:
         elem = SkipTest(env, TST, EXT, "as "+env['MAPICLIENT'].split(None, 1)[0]+" is not available.")
@@ -1543,7 +1544,7 @@ def RunTest(env, TST, BusyPorts, COND) :
         elem = SkipTest(env, TST, EXT, "as multiple SQL clients in parallel are currently not supported by "+THISFILE+".")
     elif CALL == "xqXp":
         elem = SkipTest(env, TST, EXT, "as multiple XQuery clients in parallel are currently not supported by "+THISFILE+".")
-    elif SERVER in ["MAPI", "SQL", "XQUERY"] and "MAPI" in BusyPorts:
+    elif SERVER in ["MIL", "SQL", "XQUERY"] and "MAPI" in BusyPorts:
         elem = SkipTest(env, TST, EXT, "as MAPIPORT=%s is not available." % (env['MAPIPORT']))
     elif SERVER == "XQUERY" and "XRPC" in BusyPorts:
         elem = SkipTest(env, TST, EXT, "as XRPCPORT=%s is not available." % (env['XRPCPORT']))
@@ -1662,7 +1663,7 @@ def RunTest(env, TST, BusyPorts, COND) :
         if  CTIMEOUT < TIMEOUT:
             CTIMEOUT = TIMEOUT
         STIMEOUT = CTIMEOUT
-        if  SERVER in ["MAPI", "SQL", "XQUERY"] and TIMEOUT > 0:
+        if  SERVER in ["MIL", "SQL", "XQUERY"] and TIMEOUT > 0:
             STIMEOUT = STIMEOUT + TIMEOUT + 60
 
         ME = ""
@@ -2126,7 +2127,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
     XRPCsockets[1].close()
 
     ServerReady = True
-    if SERVER in ["MAPI", "SQL", "XQUERY"]:
+    if SERVER in ["MIL", "SQL", "XQUERY"]:
         SrvrOutFile = TST+".server.out"
         SrvrErrFile = TST+".server.err"
         SrvrOut = open(SrvrOutFile,"w")
@@ -2154,7 +2155,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
 
         lang="mil"
 
-        if SERVER == "MAPI":
+        if SERVER == "MIL":
             Srvr = '%s --dbinit="%s module(mapi); mil_start();"' % (Srvr, DBINIT)
         if SERVER == "SQL":
             lang="sql"
@@ -2294,7 +2295,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
     ClntOut.close()
     ClntErr.close()
 
-    if SERVER in ["MAPI", "SQL", "XQUERY"]:
+    if SERVER in ["MIL", "SQL", "XQUERY"]:
         EPILOGUE = None
         if os.path.isfile(TST+".epilogue") and par['M4']:
             EPILOGUE = open(TST+".epilogue",'r')
@@ -2417,7 +2418,7 @@ def Check(command, input) :
 
 def CheckExec(cmd) :
     for p in os.environ['PATH'].split(os.pathsep):
-        x = isexecutable(os.path.join(p,cmd))
+        x = isexecutable(os.path.join(p,cmd),'')
         if x[0]:
             return os.path.join(p, cmd + x[1])
     return ""
@@ -3039,7 +3040,7 @@ def main(argv) :
     #       print v+" = "+str(env[v])
     #STDOUT.flush()
 
-    # find mil script for MAPI and SQL server
+    # find mil script for MIL and SQL server
     if THISFILE in ["Mtest.py", "Mprofile.py"]:
         env['SQL_SERVER'] = "sql_server"
         env['SQL_TRACE'] = ""
