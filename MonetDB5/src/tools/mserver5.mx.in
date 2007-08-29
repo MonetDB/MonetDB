@@ -148,6 +148,7 @@ usage2(char *prog)
 	fprintf(stderr,"     --modules\n");
 	fprintf(stderr,"     --algorithms\n");
 	fprintf(stderr,"     --xproperties\n");
+	fprintf(stderr,"     --performance\n");
 	fprintf(stderr,"     --debug=<bitmask>\n");
 
 	exit(0);
@@ -366,6 +367,7 @@ main(int argc, char **av)
 		{"transaction",0,0,0},
 		{"modules",0,0,0},
 		{"algorithms",0,0,0},
+		{"performance",0,0,0},
 		{"xproperties",0,0,0},
 		{0, 0, 0, 0}
 	};
