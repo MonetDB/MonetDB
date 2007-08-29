@@ -823,12 +823,12 @@ char **getHelp(Module m, str pat, int completion)
 		*fcnnme++ = 0;
 		if( strchr(modnme,'*'))
 			modnme="*";
-		if( strchr(fcnnme,'*'))
+		if( strchr(fcnnme,'*') || *fcnnme==0)
 			fcnnme="*";
 	} else {
 		modnme="*";
 		fcnnme=pat;
-		if( strchr(fcnnme,'*'))
+		if( strchr(fcnnme,'*') || *fcnnme==0)
 			fcnnme="*";
 	}
 
