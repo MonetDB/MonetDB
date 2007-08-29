@@ -15,9 +15,6 @@
 %define sysconfdir /etc
 %define localstatedir /var/lib
 
-%define monetdb_uid    85
-%define monetdb_gid    85
-
 Name: %{name}
 Version: %{version}
 Release: %{release}
@@ -27,7 +24,7 @@ Source: MonetDB5-%{version}.tar.gz
 BuildRoot: /var/tmp/%{name}-root
 Packager: Niels Nes <Niels.Nes@cwi.nl>
 License:   MPL - http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
-BuildRequires: python 
+BuildRequires: python
 
 %{!?_with_python: %{!?_without_python: %define _with_python --with-python}}
 %{!?buildsystem: %define buildsystem 0}
@@ -51,8 +48,8 @@ PreReq: /sbin/chkconfig, /sbin/service, sh-utils
 PreReq: %{_sbindir}/groupadd, %{_sbindir}/useradd
 
 %package devel
-Summary: MonetDB development package 
-Group: System 
+Summary: MonetDB development package
+Group: System
 Requires: %{name} = %{version}-%{release}
 Requires: MonetDB-devel
 Requires: MonetDB-client-devel
@@ -63,8 +60,16 @@ main-memory perspective with use of a fully decomposed storage model,
 automatic index management, extensibility of data types and search
 accellerators, SQL- and XML- frontends.
 
+This package contains the MonetDB5 server component.
+
 %description devel
-Add the MonetDB devel description here
+MonetDB is a database management system that is developed from a
+main-memory perspective with use of a fully decomposed storage model,
+automatic index management, extensibility of data types and search
+accellerators, SQL- and XML- frontends.
+
+This package contains the files that are needed to develop for and
+with MonetDB5.
 
 %prep
 rm -rf $RPM_BUILD_ROOT
@@ -82,7 +87,7 @@ rm -rf $RPM_BUILD_ROOT
 	--prefix=%{prefix} \
 	--sysconfdir=%{sysconfdir} \
 	--localstatedir=%{localstatedir} \
-	--libdir=%{_libdir} 
+	--libdir=%{_libdir}
 
 make
 
@@ -90,7 +95,7 @@ make
 rm -rf $RPM_BUILD_ROOT
 
 make install \
-	DESTDIR=$RPM_BUILD_ROOT 
+	DESTDIR=$RPM_BUILD_ROOT
 
 mkdir -p $RPM_BUILD_ROOT/%{localstatedir}/MonetDB5
 # insert example db here!
@@ -108,8 +113,8 @@ rm -rf $RPM_BUILD_ROOT%{prefix}/bin/monetdb5-config.bat
 rm -fr $RPM_BUILD_ROOT
 
 %files
-%defattr(-,root,root) 
-%{prefix}/bin/mserver5 
+%defattr(-,root,root)
+%{prefix}/bin/mserver5
 %{prefix}/bin/Mbeddedmal
 %{prefix}/bin/mchkpnt
 %{prefix}/bin/merovingian
@@ -119,25 +124,25 @@ rm -fr $RPM_BUILD_ROOT
 
 %{_libdir}/*.so.*
 %{_libdir}/MonetDB5/lib/*.so*
-%{_libdir}/MonetDB5/*.mal 
+%{_libdir}/MonetDB5/*.mal
 
 %attr(770,monetdb,monetdb) %dir %{localstatedir}/MonetDB5
 
 %config(noreplace) %{sysconfdir}/monetdb5.conf
 
 %files devel
-%defattr(-,root,root) 
+%defattr(-,root,root)
 %{prefix}/bin/monetdb5-config
 %{prefix}/include/MonetDB5/*.h
 %{prefix}/include/MonetDB5/*/*.[hcm]
-%{_libdir}/*.so 
+%{_libdir}/*.so
 
 
-%pre 
-%{_sbindir}/groupadd -g %{monetdb_gid} -r monetdb 2>/dev/null || :
-%{_sbindir}/useradd -d %{localstatedir}/MonetDB5 -s /bin/true -g monetdb -M -r -u %{monetdb_uid} monetdb 2>/dev/null || :
+%pre
+%{_sbindir}/groupadd -r monetdb 2>/dev/null || :
+%{_sbindir}/useradd -d %{localstatedir}/MonetDB5 -s /bin/true -g monetdb -M -r monetdb 2>/dev/null || :
 
-%post 
+%post
 umask 022
 
 #create monetdb init script
