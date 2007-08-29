@@ -451,7 +451,7 @@ command_create(int argc, char *argv[], char *dbfarm)
 		if (strcmp(argv[1], "-m") == 0) {
 			maintenance = 1;
 			dbname = argv[2];
-		} else if (strcmp(argv[2], "-m") == 0) {
+		} else if ( argc==3 && strcmp(argv[2], "-m") == 0) {
 			maintenance = 1;
 			dbname = argv[1];
 		} else {
