@@ -69,9 +69,9 @@ server 11 : "module(mapi); mil_start(); module(sql_server);", client 1: SQL
 
 server 11 : "module(mapi); mil_start(); module(sql_server);", client 2: (SQL) SQL
 
-server 11 : "module(mapi); mil_start(); module(sql_server);", client 3: (SQL) (SQL) MAPI
+server 11 : "module(mapi); mil_start(); module(sql_server);", client 3: (SQL) (SQL) MIL
 
-server 11 : "module(mapi); mil_start(); module(sql_server);", client 4: (SQL) (SQL) (MAPI) MAPI
+server 11 : "module(mapi); mil_start(); module(sql_server);", client 4: (SQL) (SQL) (MIL) MIL
 
 server 12 : "module(mapi); mil_start(); module(sql_server);"
 # builtin opt 	config = ${prefix}/etc/MonetDB.conf
@@ -134,11 +134,11 @@ server 12 : "module(mapi); mil_start(); module(sql_server);"
 
 server 12 : "module(mapi); mil_start(); module(sql_server);", client 1: SQL
 
-server 12 : "module(mapi); mil_start(); module(sql_server);", client 2: (SQL) MAPI
+server 12 : "module(mapi); mil_start(); module(sql_server);", client 2: (SQL) MIL
 
-server 12 : "module(mapi); mil_start(); module(sql_server);", client 3: (SQL) (MAPI) SQL
+server 12 : "module(mapi); mil_start(); module(sql_server);", client 3: (SQL) (MIL) SQL
 
-server 12 : "module(mapi); mil_start(); module(sql_server);", client 4: (SQL) (MAPI) (SQL) MAPI
+server 12 : "module(mapi); mil_start(); module(sql_server);", client 4: (SQL) (MIL) (SQL) MIL
 
 server 13 : "module(mapi); mil_start(); module(sql_server);"
 # builtin opt 	config = ${prefix}/etc/MonetDB.conf
@@ -199,13 +199,13 @@ server 13 : "module(mapi); mil_start(); module(sql_server);"
 # cmdline opt 	xquery_port = 55609
 # cmdline opt 	monet_prompt = 
 
-server 13 : "module(mapi); mil_start(); module(sql_server);", client 1: MAPI
+server 13 : "module(mapi); mil_start(); module(sql_server);", client 1: MIL
 
-server 13 : "module(mapi); mil_start(); module(sql_server);", client 2: (MAPI) SQL
+server 13 : "module(mapi); mil_start(); module(sql_server);", client 2: (MIL) SQL
 
-server 13 : "module(mapi); mil_start(); module(sql_server);", client 3: (MAPI) (SQL) SQL
+server 13 : "module(mapi); mil_start(); module(sql_server);", client 3: (MIL) (SQL) SQL
 
-server 13 : "module(mapi); mil_start(); module(sql_server);", client 4: (MAPI) (SQL) (SQL) MAPI
+server 13 : "module(mapi); mil_start(); module(sql_server);", client 4: (MIL) (SQL) (SQL) MIL
 
 server 14 : "module(mapi); mil_start(); module(sql_server);"
 # builtin opt 	config = ${prefix}/etc/MonetDB.conf
@@ -268,11 +268,11 @@ server 14 : "module(mapi); mil_start(); module(sql_server);"
 
 server 14 : "module(mapi); mil_start(); module(sql_server);", client 1: SQL
 
-server 14 : "module(mapi); mil_start(); module(sql_server);", client 2: (SQL) MAPI
+server 14 : "module(mapi); mil_start(); module(sql_server);", client 2: (SQL) MIL
 
-server 14 : "module(mapi); mil_start(); module(sql_server);", client 3: (SQL) (MAPI) MAPI
+server 14 : "module(mapi); mil_start(); module(sql_server);", client 3: (SQL) (MIL) MIL
 
-server 14 : "module(mapi); mil_start(); module(sql_server);", client 4: (SQL) (MAPI) (MAPI) SQL
+server 14 : "module(mapi); mil_start(); module(sql_server);", client 4: (SQL) (MIL) (MIL) SQL
 
 server 15 : "module(mapi); mil_start(); module(sql_server);"
 # builtin opt 	config = ${prefix}/etc/MonetDB.conf
@@ -333,13 +333,13 @@ server 15 : "module(mapi); mil_start(); module(sql_server);"
 # cmdline opt 	xquery_port = 55609
 # cmdline opt 	monet_prompt = 
 
-server 15 : "module(mapi); mil_start(); module(sql_server);", client 1: MAPI
+server 15 : "module(mapi); mil_start(); module(sql_server);", client 1: MIL
 
-server 15 : "module(mapi); mil_start(); module(sql_server);", client 2: (MAPI) SQL
+server 15 : "module(mapi); mil_start(); module(sql_server);", client 2: (MIL) SQL
 
-server 15 : "module(mapi); mil_start(); module(sql_server);", client 3: (MAPI) (SQL) MAPI
+server 15 : "module(mapi); mil_start(); module(sql_server);", client 3: (MIL) (SQL) MIL
 
-server 15 : "module(mapi); mil_start(); module(sql_server);", client 4: (MAPI) (SQL) (MAPI) SQL
+server 15 : "module(mapi); mil_start(); module(sql_server);", client 4: (MIL) (SQL) (MIL) SQL
 
 server 16 : "module(mapi); mil_start(); module(sql_server);"
 # builtin opt 	config = ${prefix}/etc/MonetDB.conf
@@ -400,13 +400,13 @@ server 16 : "module(mapi); mil_start(); module(sql_server);"
 # cmdline opt 	xquery_port = 55609
 # cmdline opt 	monet_prompt = 
 
-server 16 : "module(mapi); mil_start(); module(sql_server);", client 1: MAPI
+server 16 : "module(mapi); mil_start(); module(sql_server);", client 1: MIL
 
-server 16 : "module(mapi); mil_start(); module(sql_server);", client 2: (MAPI) MAPI
+server 16 : "module(mapi); mil_start(); module(sql_server);", client 2: (MIL) MIL
 
-server 16 : "module(mapi); mil_start(); module(sql_server);", client 3: (MAPI) (MAPI) SQL
+server 16 : "module(mapi); mil_start(); module(sql_server);", client 3: (MIL) (MIL) SQL
 
-server 16 : "module(mapi); mil_start(); module(sql_server);", client 4: (MAPI) (MAPI) (SQL) SQL
+server 16 : "module(mapi); mil_start(); module(sql_server);", client 4: (MIL) (MIL) (SQL) SQL
 
 server 21 : "module(mapi);module(sql_server); mil_start();"
 # builtin opt 	config = ${prefix}/etc/MonetDB.conf
@@ -471,9 +471,9 @@ server 21 : "module(mapi);module(sql_server); mil_start();", client 1: SQL
 
 server 21 : "module(mapi);module(sql_server); mil_start();", client 2: (SQL) SQL
 
-server 21 : "module(mapi);module(sql_server); mil_start();", client 3: (SQL) (SQL) MAPI
+server 21 : "module(mapi);module(sql_server); mil_start();", client 3: (SQL) (SQL) MIL
 
-server 21 : "module(mapi);module(sql_server); mil_start();", client 4: (SQL) (SQL) (MAPI) MAPI
+server 21 : "module(mapi);module(sql_server); mil_start();", client 4: (SQL) (SQL) (MIL) MIL
 
 server 22 : "module(mapi);module(sql_server); mil_start();"
 # builtin opt 	config = ${prefix}/etc/MonetDB.conf
@@ -536,11 +536,11 @@ server 22 : "module(mapi);module(sql_server); mil_start();"
 
 server 22 : "module(mapi);module(sql_server); mil_start();", client 1: SQL
 
-server 22 : "module(mapi);module(sql_server); mil_start();", client 2: (SQL) MAPI
+server 22 : "module(mapi);module(sql_server); mil_start();", client 2: (SQL) MIL
 
-server 22 : "module(mapi);module(sql_server); mil_start();", client 3: (SQL) (MAPI) SQL
+server 22 : "module(mapi);module(sql_server); mil_start();", client 3: (SQL) (MIL) SQL
 
-server 22 : "module(mapi);module(sql_server); mil_start();", client 4: (SQL) (MAPI) (SQL) MAPI
+server 22 : "module(mapi);module(sql_server); mil_start();", client 4: (SQL) (MIL) (SQL) MIL
 
 server 23 : "module(mapi);module(sql_server); mil_start();"
 # builtin opt 	config = ${prefix}/etc/MonetDB.conf
@@ -601,13 +601,13 @@ server 23 : "module(mapi);module(sql_server); mil_start();"
 # cmdline opt 	xquery_port = 55609
 # cmdline opt 	monet_prompt = 
 
-server 23 : "module(mapi);module(sql_server); mil_start();", client 1: MAPI
+server 23 : "module(mapi);module(sql_server); mil_start();", client 1: MIL
 
-server 23 : "module(mapi);module(sql_server); mil_start();", client 2: (MAPI) SQL
+server 23 : "module(mapi);module(sql_server); mil_start();", client 2: (MIL) SQL
 
-server 23 : "module(mapi);module(sql_server); mil_start();", client 3: (MAPI) (SQL) SQL
+server 23 : "module(mapi);module(sql_server); mil_start();", client 3: (MIL) (SQL) SQL
 
-server 23 : "module(mapi);module(sql_server); mil_start();", client 4: (MAPI) (SQL) (SQL) MAPI
+server 23 : "module(mapi);module(sql_server); mil_start();", client 4: (MIL) (SQL) (SQL) MIL
 
 server 24 : "module(mapi);module(sql_server); mil_start();"
 # builtin opt 	config = ${prefix}/etc/MonetDB.conf
@@ -670,11 +670,11 @@ server 24 : "module(mapi);module(sql_server); mil_start();"
 
 server 24 : "module(mapi);module(sql_server); mil_start();", client 1: SQL
 
-server 24 : "module(mapi);module(sql_server); mil_start();", client 2: (SQL) MAPI
+server 24 : "module(mapi);module(sql_server); mil_start();", client 2: (SQL) MIL
 
-server 24 : "module(mapi);module(sql_server); mil_start();", client 3: (SQL) (MAPI) MAPI
+server 24 : "module(mapi);module(sql_server); mil_start();", client 3: (SQL) (MIL) MIL
 
-server 24 : "module(mapi);module(sql_server); mil_start();", client 4: (SQL) (MAPI) (MAPI) SQL
+server 24 : "module(mapi);module(sql_server); mil_start();", client 4: (SQL) (MIL) (MIL) SQL
 
 server 25 : "module(mapi);module(sql_server); mil_start();"
 # builtin opt 	config = ${prefix}/etc/MonetDB.conf
@@ -735,13 +735,13 @@ server 25 : "module(mapi);module(sql_server); mil_start();"
 # cmdline opt 	xquery_port = 55609
 # cmdline opt 	monet_prompt = 
 
-server 25 : "module(mapi);module(sql_server); mil_start();", client 1: MAPI
+server 25 : "module(mapi);module(sql_server); mil_start();", client 1: MIL
 
-server 25 : "module(mapi);module(sql_server); mil_start();", client 2: (MAPI) SQL
+server 25 : "module(mapi);module(sql_server); mil_start();", client 2: (MIL) SQL
 
-server 25 : "module(mapi);module(sql_server); mil_start();", client 3: (MAPI) (SQL) MAPI
+server 25 : "module(mapi);module(sql_server); mil_start();", client 3: (MIL) (SQL) MIL
 
-server 25 : "module(mapi);module(sql_server); mil_start();", client 4: (MAPI) (SQL) (MAPI) SQL
+server 25 : "module(mapi);module(sql_server); mil_start();", client 4: (MIL) (SQL) (MIL) SQL
 
 server 26 : "module(mapi);module(sql_server); mil_start();"
 # builtin opt 	config = ${prefix}/etc/MonetDB.conf
@@ -802,13 +802,13 @@ server 26 : "module(mapi);module(sql_server); mil_start();"
 # cmdline opt 	xquery_port = 55609
 # cmdline opt 	monet_prompt = 
 
-server 26 : "module(mapi);module(sql_server); mil_start();", client 1: MAPI
+server 26 : "module(mapi);module(sql_server); mil_start();", client 1: MIL
 
-server 26 : "module(mapi);module(sql_server); mil_start();", client 2: (MAPI) MAPI
+server 26 : "module(mapi);module(sql_server); mil_start();", client 2: (MIL) MIL
 
-server 26 : "module(mapi);module(sql_server); mil_start();", client 3: (MAPI) (MAPI) SQL
+server 26 : "module(mapi);module(sql_server); mil_start();", client 3: (MIL) (MIL) SQL
 
-server 26 : "module(mapi);module(sql_server); mil_start();", client 4: (MAPI) (MAPI) (SQL) SQL
+server 26 : "module(mapi);module(sql_server); mil_start();", client 4: (MIL) (MIL) (SQL) SQL
 
 server 31 : "module(sql_server);module(mapi);"
 # builtin opt 	config = ${prefix}/etc/MonetDB.conf
@@ -873,12 +873,12 @@ server 31 : "module(sql_server);module(mapi);", client 1: SQL
 
 server 31 : "module(sql_server);module(mapi);", client 2: (SQL) SQL
 
-server 31 : "module(sql_server);module(mapi);", client 3: (SQL) (SQL) MAPI
+server 31 : "module(sql_server);module(mapi);", client 3: (SQL) (SQL) MIL
 MAPI  = monetdb@localhost:30463
 ACTION= mapi_start_talking
 ERROR = !xchange_challenge: frontend mil not found
 
-server 31 : "module(sql_server);module(mapi);", client 4: (SQL) (SQL) (MAPI) MAPI
+server 31 : "module(sql_server);module(mapi);", client 4: (SQL) (SQL) (MIL) MIL
 MAPI  = monetdb@localhost:30463
 ACTION= mapi_start_talking
 ERROR = !xchange_challenge: frontend mil not found
@@ -937,14 +937,14 @@ server 32 : "module(sql_server);module(mapi);"
 
 server 32 : "module(sql_server);module(mapi);", client 1: SQL
 
-server 32 : "module(sql_server);module(mapi);", client 2: (SQL) MAPI
+server 32 : "module(sql_server);module(mapi);", client 2: (SQL) MIL
 MAPI  = monetdb@localhost:30463
 ACTION= mapi_start_talking
 ERROR = !xchange_challenge: frontend mil not found
 
-server 32 : "module(sql_server);module(mapi);", client 3: (SQL) (MAPI) SQL
+server 32 : "module(sql_server);module(mapi);", client 3: (SQL) (MIL) SQL
 
-server 32 : "module(sql_server);module(mapi);", client 4: (SQL) (MAPI) (SQL) MAPI
+server 32 : "module(sql_server);module(mapi);", client 4: (SQL) (MIL) (SQL) MIL
 MAPI  = monetdb@localhost:30463
 ACTION= mapi_start_talking
 ERROR = !xchange_challenge: frontend mil not found
@@ -1001,16 +1001,16 @@ server 33 : "module(sql_server);module(mapi);"
 # cmdline opt 	mapi_port = 32522
 # cmdline opt 	monet_prompt = 
 
-server 33 : "module(sql_server);module(mapi);", client 1: MAPI
+server 33 : "module(sql_server);module(mapi);", client 1: MIL
 MAPI  = monetdb@localhost:30463
 ACTION= mapi_start_talking
 ERROR = !xchange_challenge: frontend mil not found
 
-server 33 : "module(sql_server);module(mapi);", client 2: (MAPI) SQL
+server 33 : "module(sql_server);module(mapi);", client 2: (MIL) SQL
 
-server 33 : "module(sql_server);module(mapi);", client 3: (MAPI) (SQL) SQL
+server 33 : "module(sql_server);module(mapi);", client 3: (MIL) (SQL) SQL
 
-server 33 : "module(sql_server);module(mapi);", client 4: (MAPI) (SQL) (SQL) MAPI
+server 33 : "module(sql_server);module(mapi);", client 4: (MIL) (SQL) (SQL) MIL
 MAPI  = monetdb@localhost:30463
 ACTION= mapi_start_talking
 ERROR = !xchange_challenge: frontend mil not found
@@ -1069,17 +1069,17 @@ server 34 : "module(sql_server);module(mapi);"
 
 server 34 : "module(sql_server);module(mapi);", client 1: SQL
 
-server 34 : "module(sql_server);module(mapi);", client 2: (SQL) MAPI
+server 34 : "module(sql_server);module(mapi);", client 2: (SQL) MIL
 MAPI  = monetdb@localhost:30463
 ACTION= mapi_start_talking
 ERROR = !xchange_challenge: frontend mil not found
 
-server 34 : "module(sql_server);module(mapi);", client 3: (SQL) (MAPI) MAPI
+server 34 : "module(sql_server);module(mapi);", client 3: (SQL) (MIL) MIL
 MAPI  = monetdb@localhost:30463
 ACTION= mapi_start_talking
 ERROR = !xchange_challenge: frontend mil not found
 
-server 34 : "module(sql_server);module(mapi);", client 4: (SQL) (MAPI) (MAPI) SQL
+server 34 : "module(sql_server);module(mapi);", client 4: (SQL) (MIL) (MIL) SQL
 
 server 35 : "module(sql_server);module(mapi);"
 # builtin opt 	config = ${prefix}/etc/MonetDB.conf
@@ -1133,19 +1133,19 @@ server 35 : "module(sql_server);module(mapi);"
 # cmdline opt 	mapi_port = 32522
 # cmdline opt 	monet_prompt = 
 
-server 35 : "module(sql_server);module(mapi);", client 1: MAPI
+server 35 : "module(sql_server);module(mapi);", client 1: MIL
 MAPI  = monetdb@localhost:30463
 ACTION= mapi_start_talking
 ERROR = !xchange_challenge: frontend mil not found
 
-server 35 : "module(sql_server);module(mapi);", client 2: (MAPI) SQL
+server 35 : "module(sql_server);module(mapi);", client 2: (MIL) SQL
 
-server 35 : "module(sql_server);module(mapi);", client 3: (MAPI) (SQL) MAPI
+server 35 : "module(sql_server);module(mapi);", client 3: (MIL) (SQL) MIL
 MAPI  = monetdb@localhost:30463
 ACTION= mapi_start_talking
 ERROR = !xchange_challenge: frontend mil not found
 
-server 35 : "module(sql_server);module(mapi);", client 4: (MAPI) (SQL) (MAPI) SQL
+server 35 : "module(sql_server);module(mapi);", client 4: (MIL) (SQL) (MIL) SQL
 
 server 36 : "module(sql_server);module(mapi);"
 # builtin opt 	config = ${prefix}/etc/MonetDB.conf
@@ -1199,19 +1199,19 @@ server 36 : "module(sql_server);module(mapi);"
 # cmdline opt 	mapi_port = 32522
 # cmdline opt 	monet_prompt = 
 
-server 36 : "module(sql_server);module(mapi);", client 1: MAPI
+server 36 : "module(sql_server);module(mapi);", client 1: MIL
 MAPI  = monetdb@localhost:30463
 ACTION= mapi_start_talking
 ERROR = !xchange_challenge: frontend mil not found
 
-server 36 : "module(sql_server);module(mapi);", client 2: (MAPI) MAPI
+server 36 : "module(sql_server);module(mapi);", client 2: (MIL) MIL
 MAPI  = monetdb@localhost:30463
 ACTION= mapi_start_talking
 ERROR = !xchange_challenge: frontend mil not found
 
-server 36 : "module(sql_server);module(mapi);", client 3: (MAPI) (MAPI) SQL
+server 36 : "module(sql_server);module(mapi);", client 3: (MIL) (MIL) SQL
 
-server 36 : "module(sql_server);module(mapi);", client 4: (MAPI) (MAPI) (SQL) SQL
+server 36 : "module(sql_server);module(mapi);", client 4: (MIL) (MIL) (SQL) SQL
 
 # 10:01:58 >  
 # 10:01:58 >  Done.

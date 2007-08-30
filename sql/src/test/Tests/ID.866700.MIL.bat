@@ -1,3 +1,3 @@
 @echo on
 
-call Mlog.bat -x %MAPI_CLIENT% < %1.milC
+call Mlog.bat -x %MIL_CLIENT% < %1.milC

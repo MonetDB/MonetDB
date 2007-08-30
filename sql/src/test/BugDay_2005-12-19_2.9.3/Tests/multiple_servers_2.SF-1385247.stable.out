@@ -26,10 +26,10 @@ server 11 : "module(mapi); mil_start(); module(sql_server);", client 2: (SQL) SQ
 % 3 # length
 [ 112 	]
 
-server 11 : "module(mapi); mil_start(); module(sql_server);", client 3: (SQL) (SQL) MAPI
+server 11 : "module(mapi); mil_start(); module(sql_server);", client 3: (SQL) (SQL) MIL
 [ 113 ]
 
-server 11 : "module(mapi); mil_start(); module(sql_server);", client 4: (SQL) (SQL) (MAPI) MAPI
+server 11 : "module(mapi); mil_start(); module(sql_server);", client 4: (SQL) (SQL) (MIL) MIL
 [ 114 ]
 quit();
 
@@ -46,17 +46,17 @@ server 12 : "module(mapi); mil_start(); module(sql_server);", client 1: SQL
 % 3 # length
 [ 121 	]
 
-server 12 : "module(mapi); mil_start(); module(sql_server);", client 2: (SQL) MAPI
+server 12 : "module(mapi); mil_start(); module(sql_server);", client 2: (SQL) MIL
 [ 122 ]
 
-server 12 : "module(mapi); mil_start(); module(sql_server);", client 3: (SQL) (MAPI) SQL
+server 12 : "module(mapi); mil_start(); module(sql_server);", client 3: (SQL) (MIL) SQL
 % . # table_name
 % single_value # name
 % tinyint # type
 % 3 # length
 [ 123 	]
 
-server 12 : "module(mapi); mil_start(); module(sql_server);", client 4: (SQL) (MAPI) (SQL) MAPI
+server 12 : "module(mapi); mil_start(); module(sql_server);", client 4: (SQL) (MIL) (SQL) MIL
 [ 124 ]
 quit();
 
@@ -66,24 +66,24 @@ server 13 : "module(mapi); mil_start(); module(sql_server);"
 # Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
 
-server 13 : "module(mapi); mil_start(); module(sql_server);", client 1: MAPI
+server 13 : "module(mapi); mil_start(); module(sql_server);", client 1: MIL
 [ 131 ]
 
-server 13 : "module(mapi); mil_start(); module(sql_server);", client 2: (MAPI) SQL
+server 13 : "module(mapi); mil_start(); module(sql_server);", client 2: (MIL) SQL
 % . # table_name
 % single_value # name
 % smallint # type
 % 3 # length
 [ 132 	]
 
-server 13 : "module(mapi); mil_start(); module(sql_server);", client 3: (MAPI) (SQL) SQL
+server 13 : "module(mapi); mil_start(); module(sql_server);", client 3: (MIL) (SQL) SQL
 % . # table_name
 % single_value # name
 % smallint # type
 % 3 # length
 [ 133 	]
 
-server 13 : "module(mapi); mil_start(); module(sql_server);", client 4: (MAPI) (SQL) (SQL) MAPI
+server 13 : "module(mapi); mil_start(); module(sql_server);", client 4: (MIL) (SQL) (SQL) MIL
 [ 134 ]
 quit();
 
@@ -100,13 +100,13 @@ server 14 : "module(mapi); mil_start(); module(sql_server);", client 1: SQL
 % 3 # length
 [ 141 	]
 
-server 14 : "module(mapi); mil_start(); module(sql_server);", client 2: (SQL) MAPI
+server 14 : "module(mapi); mil_start(); module(sql_server);", client 2: (SQL) MIL
 [ 142 ]
 
-server 14 : "module(mapi); mil_start(); module(sql_server);", client 3: (SQL) (MAPI) MAPI
+server 14 : "module(mapi); mil_start(); module(sql_server);", client 3: (SQL) (MIL) MIL
 [ 143 ]
 
-server 14 : "module(mapi); mil_start(); module(sql_server);", client 4: (SQL) (MAPI) (MAPI) SQL
+server 14 : "module(mapi); mil_start(); module(sql_server);", client 4: (SQL) (MIL) (MIL) SQL
 % . # table_name
 % single_value # name
 % smallint # type
@@ -120,20 +120,20 @@ server 15 : "module(mapi); mil_start(); module(sql_server);"
 # Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
 
-server 15 : "module(mapi); mil_start(); module(sql_server);", client 1: MAPI
+server 15 : "module(mapi); mil_start(); module(sql_server);", client 1: MIL
 [ 151 ]
 
-server 15 : "module(mapi); mil_start(); module(sql_server);", client 2: (MAPI) SQL
+server 15 : "module(mapi); mil_start(); module(sql_server);", client 2: (MIL) SQL
 % . # table_name
 % single_value # name
 % smallint # type
 % 3 # length
 [ 152 	]
 
-server 15 : "module(mapi); mil_start(); module(sql_server);", client 3: (MAPI) (SQL) MAPI
+server 15 : "module(mapi); mil_start(); module(sql_server);", client 3: (MIL) (SQL) MIL
 [ 153 ]
 
-server 15 : "module(mapi); mil_start(); module(sql_server);", client 4: (MAPI) (SQL) (MAPI) SQL
+server 15 : "module(mapi); mil_start(); module(sql_server);", client 4: (MIL) (SQL) (MIL) SQL
 % . # table_name
 % single_value # name
 % smallint # type
@@ -147,20 +147,20 @@ server 16 : "module(mapi); mil_start(); module(sql_server);"
 # Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
 
-server 16 : "module(mapi); mil_start(); module(sql_server);", client 1: MAPI
+server 16 : "module(mapi); mil_start(); module(sql_server);", client 1: MIL
 [ 161 ]
 
-server 16 : "module(mapi); mil_start(); module(sql_server);", client 2: (MAPI) MAPI
+server 16 : "module(mapi); mil_start(); module(sql_server);", client 2: (MIL) MIL
 [ 162 ]
 
-server 16 : "module(mapi); mil_start(); module(sql_server);", client 3: (MAPI) (MAPI) SQL
+server 16 : "module(mapi); mil_start(); module(sql_server);", client 3: (MIL) (MIL) SQL
 % . # table_name
 % single_value # name
 % smallint # type
 % 3 # length
 [ 163 	]
 
-server 16 : "module(mapi); mil_start(); module(sql_server);", client 4: (MAPI) (MAPI) (SQL) SQL
+server 16 : "module(mapi); mil_start(); module(sql_server);", client 4: (MIL) (MIL) (SQL) SQL
 % . # table_name
 % single_value # name
 % smallint # type
@@ -188,10 +188,10 @@ server 21 : "module(mapi);module(sql_server); mil_start();", client 2: (SQL) SQL
 % 3 # length
 [ 212 	]
 
-server 21 : "module(mapi);module(sql_server); mil_start();", client 3: (SQL) (SQL) MAPI
+server 21 : "module(mapi);module(sql_server); mil_start();", client 3: (SQL) (SQL) MIL
 [ 213 ]
 
-server 21 : "module(mapi);module(sql_server); mil_start();", client 4: (SQL) (SQL) (MAPI) MAPI
+server 21 : "module(mapi);module(sql_server); mil_start();", client 4: (SQL) (SQL) (MIL) MIL
 [ 214 ]
 quit();
 
@@ -208,17 +208,17 @@ server 22 : "module(mapi);module(sql_server); mil_start();", client 1: SQL
 % 3 # length
 [ 221 	]
 
-server 22 : "module(mapi);module(sql_server); mil_start();", client 2: (SQL) MAPI
+server 22 : "module(mapi);module(sql_server); mil_start();", client 2: (SQL) MIL
 [ 222 ]
 
-server 22 : "module(mapi);module(sql_server); mil_start();", client 3: (SQL) (MAPI) SQL
+server 22 : "module(mapi);module(sql_server); mil_start();", client 3: (SQL) (MIL) SQL
 % . # table_name
 % single_value # name
 % smallint # type
 % 3 # length
 [ 223 	]
 
-server 22 : "module(mapi);module(sql_server); mil_start();", client 4: (SQL) (MAPI) (SQL) MAPI
+server 22 : "module(mapi);module(sql_server); mil_start();", client 4: (SQL) (MIL) (SQL) MIL
 [ 224 ]
 quit();
 
@@ -228,24 +228,24 @@ server 23 : "module(mapi);module(sql_server); mil_start();"
 # Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
 
-server 23 : "module(mapi);module(sql_server); mil_start();", client 1: MAPI
+server 23 : "module(mapi);module(sql_server); mil_start();", client 1: MIL
 [ 231 ]
 
-server 23 : "module(mapi);module(sql_server); mil_start();", client 2: (MAPI) SQL
+server 23 : "module(mapi);module(sql_server); mil_start();", client 2: (MIL) SQL
 % . # table_name
 % single_value # name
 % smallint # type
 % 3 # length
 [ 232 	]
 
-server 23 : "module(mapi);module(sql_server); mil_start();", client 3: (MAPI) (SQL) SQL
+server 23 : "module(mapi);module(sql_server); mil_start();", client 3: (MIL) (SQL) SQL
 % . # table_name
 % single_value # name
 % smallint # type
 % 3 # length
 [ 233 	]
 
-server 23 : "module(mapi);module(sql_server); mil_start();", client 4: (MAPI) (SQL) (SQL) MAPI
+server 23 : "module(mapi);module(sql_server); mil_start();", client 4: (MIL) (SQL) (SQL) MIL
 [ 234 ]
 quit();
 
@@ -262,13 +262,13 @@ server 24 : "module(mapi);module(sql_server); mil_start();", client 1: SQL
 % 3 # length
 [ 241 	]
 
-server 24 : "module(mapi);module(sql_server); mil_start();", client 2: (SQL) MAPI
+server 24 : "module(mapi);module(sql_server); mil_start();", client 2: (SQL) MIL
 [ 242 ]
 
-server 24 : "module(mapi);module(sql_server); mil_start();", client 3: (SQL) (MAPI) MAPI
+server 24 : "module(mapi);module(sql_server); mil_start();", client 3: (SQL) (MIL) MIL
 [ 243 ]
 
-server 24 : "module(mapi);module(sql_server); mil_start();", client 4: (SQL) (MAPI) (MAPI) SQL
+server 24 : "module(mapi);module(sql_server); mil_start();", client 4: (SQL) (MIL) (MIL) SQL
 % . # table_name
 % single_value # name
 % smallint # type
@@ -282,20 +282,20 @@ server 25 : "module(mapi);module(sql_server); mil_start();"
 # Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
 
-server 25 : "module(mapi);module(sql_server); mil_start();", client 1: MAPI
+server 25 : "module(mapi);module(sql_server); mil_start();", client 1: MIL
 [ 251 ]
 
-server 25 : "module(mapi);module(sql_server); mil_start();", client 2: (MAPI) SQL
+server 25 : "module(mapi);module(sql_server); mil_start();", client 2: (MIL) SQL
 % . # table_name
 % single_value # name
 % smallint # type
 % 3 # length
 [ 252 	]
 
-server 25 : "module(mapi);module(sql_server); mil_start();", client 3: (MAPI) (SQL) MAPI
+server 25 : "module(mapi);module(sql_server); mil_start();", client 3: (MIL) (SQL) MIL
 [ 253 ]
 
-server 25 : "module(mapi);module(sql_server); mil_start();", client 4: (MAPI) (SQL) (MAPI) SQL
+server 25 : "module(mapi);module(sql_server); mil_start();", client 4: (MIL) (SQL) (MIL) SQL
 % . # table_name
 % single_value # name
 % smallint # type
@@ -309,20 +309,20 @@ server 26 : "module(mapi);module(sql_server); mil_start();"
 # Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
 
-server 26 : "module(mapi);module(sql_server); mil_start();", client 1: MAPI
+server 26 : "module(mapi);module(sql_server); mil_start();", client 1: MIL
 [ 261 ]
 
-server 26 : "module(mapi);module(sql_server); mil_start();", client 2: (MAPI) MAPI
+server 26 : "module(mapi);module(sql_server); mil_start();", client 2: (MIL) MIL
 [ 262 ]
 
-server 26 : "module(mapi);module(sql_server); mil_start();", client 3: (MAPI) (MAPI) SQL
+server 26 : "module(mapi);module(sql_server); mil_start();", client 3: (MIL) (MIL) SQL
 % . # table_name
 % single_value # name
 % smallint # type
 % 3 # length
 [ 263 	]
 
-server 26 : "module(mapi);module(sql_server); mil_start();", client 4: (MAPI) (MAPI) (SQL) SQL
+server 26 : "module(mapi);module(sql_server); mil_start();", client 4: (MIL) (MIL) (SQL) SQL
 % . # table_name
 % single_value # name
 % smallint # type
@@ -350,9 +350,9 @@ server 31 : "module(sql_server);module(mapi);", client 2: (SQL) SQL
 % 3 # length
 [ 312 	]
 
-server 31 : "module(sql_server);module(mapi);", client 3: (SQL) (SQL) MAPI
+server 31 : "module(sql_server);module(mapi);", client 3: (SQL) (SQL) MIL
 
-server 31 : "module(sql_server);module(mapi);", client 4: (SQL) (SQL) (MAPI) MAPI
+server 31 : "module(sql_server);module(mapi);", client 4: (SQL) (SQL) (MIL) MIL
 quit();
 
 server 32 : "module(sql_server);module(mapi);"
@@ -368,16 +368,16 @@ server 32 : "module(sql_server);module(mapi);", client 1: SQL
 % 3 # length
 [ 321 	]
 
-server 32 : "module(sql_server);module(mapi);", client 2: (SQL) MAPI
+server 32 : "module(sql_server);module(mapi);", client 2: (SQL) MIL
 
-server 32 : "module(sql_server);module(mapi);", client 3: (SQL) (MAPI) SQL
+server 32 : "module(sql_server);module(mapi);", client 3: (SQL) (MIL) SQL
 % . # table_name
 % single_value # name
 % smallint # type
 % 3 # length
 [ 323 	]
 
-server 32 : "module(sql_server);module(mapi);", client 4: (SQL) (MAPI) (SQL) MAPI
+server 32 : "module(sql_server);module(mapi);", client 4: (SQL) (MIL) (SQL) MIL
 quit();
 
 server 33 : "module(sql_server);module(mapi);"
@@ -386,23 +386,23 @@ server 33 : "module(sql_server);module(mapi);"
 # Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
 
-server 33 : "module(sql_server);module(mapi);", client 1: MAPI
+server 33 : "module(sql_server);module(mapi);", client 1: MIL
 
-server 33 : "module(sql_server);module(mapi);", client 2: (MAPI) SQL
+server 33 : "module(sql_server);module(mapi);", client 2: (MIL) SQL
 % . # table_name
 % single_value # name
 % smallint # type
 % 3 # length
 [ 332 	]
 
-server 33 : "module(sql_server);module(mapi);", client 3: (MAPI) (SQL) SQL
+server 33 : "module(sql_server);module(mapi);", client 3: (MIL) (SQL) SQL
 % . # table_name
 % single_value # name
 % smallint # type
 % 3 # length
 [ 333 	]
 
-server 33 : "module(sql_server);module(mapi);", client 4: (MAPI) (SQL) (SQL) MAPI
+server 33 : "module(sql_server);module(mapi);", client 4: (MIL) (SQL) (SQL) MIL
 quit();
 
 server 34 : "module(sql_server);module(mapi);"
@@ -418,11 +418,11 @@ server 34 : "module(sql_server);module(mapi);", client 1: SQL
 % 3 # length
 [ 341 	]
 
-server 34 : "module(sql_server);module(mapi);", client 2: (SQL) MAPI
+server 34 : "module(sql_server);module(mapi);", client 2: (SQL) MIL
 
-server 34 : "module(sql_server);module(mapi);", client 3: (SQL) (MAPI) MAPI
+server 34 : "module(sql_server);module(mapi);", client 3: (SQL) (MIL) MIL
 
-server 34 : "module(sql_server);module(mapi);", client 4: (SQL) (MAPI) (MAPI) SQL
+server 34 : "module(sql_server);module(mapi);", client 4: (SQL) (MIL) (MIL) SQL
 % . # table_name
 % single_value # name
 % smallint # type
@@ -436,18 +436,18 @@ server 35 : "module(sql_server);module(mapi);"
 # Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
 
-server 35 : "module(sql_server);module(mapi);", client 1: MAPI
+server 35 : "module(sql_server);module(mapi);", client 1: MIL
 
-server 35 : "module(sql_server);module(mapi);", client 2: (MAPI) SQL
+server 35 : "module(sql_server);module(mapi);", client 2: (MIL) SQL
 % . # table_name
 % single_value # name
 % smallint # type
 % 3 # length
 [ 352 	]
 
-server 35 : "module(sql_server);module(mapi);", client 3: (MAPI) (SQL) MAPI
+server 35 : "module(sql_server);module(mapi);", client 3: (MIL) (SQL) MIL
 
-server 35 : "module(sql_server);module(mapi);", client 4: (MAPI) (SQL) (MAPI) SQL
+server 35 : "module(sql_server);module(mapi);", client 4: (MIL) (SQL) (MIL) SQL
 % . # table_name
 % single_value # name
 % smallint # type
@@ -461,18 +461,18 @@ server 36 : "module(sql_server);module(mapi);"
 # Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
 
-server 36 : "module(sql_server);module(mapi);", client 1: MAPI
+server 36 : "module(sql_server);module(mapi);", client 1: MIL
 
-server 36 : "module(sql_server);module(mapi);", client 2: (MAPI) MAPI
+server 36 : "module(sql_server);module(mapi);", client 2: (MIL) MIL
 
-server 36 : "module(sql_server);module(mapi);", client 3: (MAPI) (MAPI) SQL
+server 36 : "module(sql_server);module(mapi);", client 3: (MIL) (MIL) SQL
 % . # table_name
 % single_value # name
 % smallint # type
 % 3 # length
 [ 363 	]
 
-server 36 : "module(sql_server);module(mapi);", client 4: (MAPI) (MAPI) (SQL) SQL
+server 36 : "module(sql_server);module(mapi);", client 4: (MIL) (MIL) (SQL) SQL
 % . # table_name
 % single_value # name
 % smallint # type

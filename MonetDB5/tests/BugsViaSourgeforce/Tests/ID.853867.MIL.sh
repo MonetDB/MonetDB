@@ -6,14 +6,14 @@
 #  1582."
 # Hence, we run the script 10 times, and see whether it works...
 
-Mlog -x $MAPI_CLIENT < $1.mil
-Mlog -x $MAPI_CLIENT < $1.mil
-Mlog -x $MAPI_CLIENT < $1.mil
-Mlog -x $MAPI_CLIENT < $1.mil
-Mlog -x $MAPI_CLIENT < $1.mil
-Mlog -x $MAPI_CLIENT < $1.mil
-Mlog -x $MAPI_CLIENT < $1.mil
-Mlog -x $MAPI_CLIENT < $1.mil
-Mlog -x $MAPI_CLIENT < $1.mil
-Mlog -x $MAPI_CLIENT < $1.mil
+Mlog -x $MIL_CLIENT < $1.mil
+Mlog -x $MIL_CLIENT < $1.mil
+Mlog -x $MIL_CLIENT < $1.mil
+Mlog -x $MIL_CLIENT < $1.mil
+Mlog -x $MIL_CLIENT < $1.mil
+Mlog -x $MIL_CLIENT < $1.mil
+Mlog -x $MIL_CLIENT < $1.mil
+Mlog -x $MIL_CLIENT < $1.mil
+Mlog -x $MIL_CLIENT < $1.mil
+Mlog -x $MIL_CLIENT < $1.mil
 

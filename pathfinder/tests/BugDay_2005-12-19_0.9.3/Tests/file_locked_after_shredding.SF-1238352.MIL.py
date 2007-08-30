@@ -7,7 +7,7 @@ def main():
     f.write('<testdoc><content/></testdoc>\n')
     f.close()
     # shred it
-    p = os.popen(os.getenv('MAPI_CLIENT'), 'w')
+    p = os.popen(os.getenv('MIL_CLIENT'), 'w')
     p.write('module("pathfinder");\n')
     p.write('shred_doc("%s", "testdoc.xml");\n' % fn.replace('\\', r'\\'))
     p.close()

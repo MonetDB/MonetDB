@@ -2,9 +2,9 @@
 
 set NAME=%1
 
-call Mlog.bat   "%MAPI_CLIENT% %NAME%.mil"
-call             %MAPI_CLIENT% %NAME%.mil
+call Mlog.bat   "%MIL_CLIENT% %NAME%.mil"
+call             %MIL_CLIENT% %NAME%.mil
 
-call Mlog.bat   "%MAPI_CLIENT% < %NAME%.mil"
-call             %MAPI_CLIENT% < %NAME%.mil
+call Mlog.bat   "%MIL_CLIENT% < %NAME%.mil"
+call             %MIL_CLIENT% < %NAME%.mil
 

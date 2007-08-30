@@ -35,11 +35,13 @@ have changed since my proposal.
        on Windows, executables must be ".(exe|com)"         (TST.(exe|com)) (~,^)
                    and scripts must be ".(bat|cmd)"         (TST.(bat|cmd)) (~,^)
     * a Python script                                       (TST.py)        (~,^)
+    * a MAL script to be executed by mserver5               (TST.mal)  (',^,`)
     * a MIL script to be executed by Mserver                (TST.milM) (',^,`)
     * a MIL script to be executed by Mserver -single        (TST.milS) (',^,`)
        (-single has been removed, so .milM & .milS are
         treated equally, now)
     * a MIL script to be executed by mclient -lmil          (TST.milC) (",^,`)
+    * a MAL script to be executed by mclient -lmal          (TST.malC) (",^,`)
     * a SQL script to be executed by mclient -lsql          (TST.sql)  (",^,`)
     * a XQUERY script to be executed by mclient -lxquery    (TST.xq)   (",^,`)
    (~) In case the name of an arbitrary executable or Python script is
@@ -47,9 +49,12 @@ have changed since my proposal.
         Mtest.py starts an Mserver with a MIL-listerner on MAPIPORT
         in the background before executing the test. The test can then
         connect via MAPI (on MAPIPORT) to that Mserver.
-       Similar, with suffix ".SQL", an Mserver with an SQL-listener on
+       Similar,
+       with suffix ".MAL", an mserver5 with a MAL-listener on
         MAPIPORT is started;
-       and, with suffix ".XQUERY", an Mserver with an XQUERY-listener on
+       with suffix ".SQL", an Mserver/mserver5 with an SQL-listener on
+        MAPIPORT is started;
+       with suffix ".XQUERY", an Mserver with an XQUERY-listener on
         MAPIPORT is started.
        In both cases, Mtest.py stops the Mserver again, once the test has
         finished.
@@ -227,19 +232,20 @@ have changed since my proposal.
 	TSTSRCBASE	$MONETDB_SOURCE				base of test source tree
 	TSTBLDBASE	$MONETDB_BUILD				base of extracted test tree
 	TSTTRGBASE	$MONETDB_PREFIX				base for test output
-	MAPICLIENT	mclient -lmil				mil-client program	`)
+	MILCLIENT	mclient	-lmil				mil-client program	`)
+	MALCLIENT	mclient -lmal				mal-client program	`)
 	SQLCLIENT	mclient -lsql				sql-client program	`)
 	SQLDUMP	        msqldump				sql-dump program	`)
 	XQUERYCLIENT	mclient -lxquery -oxml			xquery-client program	`)
 
-    `) Alternative Mapi-, SQL-, & XQUERY- client programs need to accept (or ignore)
+    `) Alternative MIL-, MAL-, SQL-, & XQUERY- client programs need to accept (or ignore)
        "--config=", "--host=", & "--port=" options.
 
     The following variables are currently still used legacy, but they will disappear soon...
 	MONETDB_MOD_PATH	$MONETDB_PREFIX/lib(64);MONETDB_PREFIX/lib(64)/Monet
 
     The setting of all these environment variables maybe overruled
-    by commandline options with the same names, e.g., "--MAPICLIENT=MapiClient.py".
+    by commandline options with the same names, e.g., "--MILCLIENT=MapiClient.py".
 
     NOTE: 
     All paths must be given as ABSOLUTE PHYSICAL PATHS (see "IMPORTANT NOTE"
@@ -255,7 +261,8 @@ have changed since my proposal.
 	MTIMEOUT	"Mtimeout -timeout $TIMEOUT"
 	MDIFF		"$MTIMEOUT Mdiff"
 	MSERVER		"$MTIMEOUT Mserver --config=$MONETDB_CONF --debug=$GDK_DEBUG $setMONETDB_MOD_PATH $setGDK_DBFARM $setSQL_LOGDIR $setXQUERY_LOGDIR --set mapi_port=$MAPIPORT --set xrpc_port=$XRPCPORT --set monet_prompt= --trace"
-	MAPI_CLIENT	"$MTIMEOUT $MAPICLIENT --config=$MONETDB_CONF --host=$HOST --port=$MAPIPORT"
+	MIL_CLIENT	"$MTIMEOUT $MILCLIENT --config=$MONETDB_CONF --host=$HOST --port=$MAPIPORT"
+	MAL_CLIENT	"$MTIMEOUT $MALCLIENT --config=$MONETDB_CONF --host=$HOST --port=$MAPIPORT"
 	SQL_CLIENT	"$MTIMEOUT $SQLCLIENT -u monetdb -P monetdb --host=$HOST --port=$MAPIPORT --trace"
 	SQL_DUMP	"$MTIMEOUT $SQLDUMP -u monetdb -P monetdb --host=$HOST --port=$MAPIPORT --trace"
 	XQUERY_CLIENT	"$MTIMEOUT $XQUERYCLIENT -u monetdb -P monetdb --host=$HOST --port=$MAPIPORT"

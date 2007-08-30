@@ -2,9 +2,9 @@
 
 NAME="$1"
 
-Mlog   "$MAPI_CLIENT $NAME.mil"
-eval    $MAPI_CLIENT $NAME.mil
+Mlog   "$MIL_CLIENT $NAME.mil"
+eval    $MIL_CLIENT $NAME.mil
 
-Mlog   "$MAPI_CLIENT < $NAME.mil"
-eval    $MAPI_CLIENT < $NAME.mil
+Mlog   "$MIL_CLIENT < $NAME.mil"
+eval    $MIL_CLIENT < $NAME.mil
 

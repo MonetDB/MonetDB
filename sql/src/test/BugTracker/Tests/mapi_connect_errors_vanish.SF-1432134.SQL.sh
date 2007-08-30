@@ -1,3 +1,3 @@
 #!/bin/sh
 
-Mlog -x $MAPI_CLIENT -uinvalid -Pinvalid -lsql
+Mlog -x $SQL_CLIENT -uinvalid -Pinvalid

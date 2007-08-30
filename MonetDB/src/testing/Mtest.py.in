@@ -1418,12 +1418,15 @@ def RunTest(env, TST, BusyPorts, COND) :
     if not x[0]:
         x  = isexecutable(TST,'')
     xI = isexecutable(TST+".MIL")
+    xA = isexecutable(TST+".MAL")
     xS = isexecutable(TST+".SQL")
     xQ = isexecutable(TST+".XQUERY")
     if   x[0]:
         EXT = x[1]          ; CALL = "other"
     elif xI[0]:
         EXT = ".MIL"+xI[1]  ; CALL = "other"  ; SERVER = "MIL"
+    elif xA[0]:
+        EXT = ".MAL"+xA[1]  ; CALL = "other"  ; SERVER = "MAL"
     elif xS[0]:
         EXT = ".SQL"+xS[1]  ; CALL = "other"  ; SERVER = "SQL"
     elif xQ[0]:
@@ -1432,12 +1435,12 @@ def RunTest(env, TST, BusyPorts, COND) :
         EXT = ".py"         ; CALL = "python"
     elif os.path.isfile(TST+".MIL"+".py")     or  os.path.isfile(TST+".MIL"+".py.src")     or  os.path.isfile(TST+".MIL"+".py.in"):
         EXT = ".MIL.py"     ; CALL = "python" ; SERVER = "MIL"
+    elif os.path.isfile(TST+".MAL"+".py")     or  os.path.isfile(TST+".MAL"+".py.src")     or  os.path.isfile(TST+".MAL"+".py.in"):
+        EXT = ".MAL.py"     ; CALL = "python" ; SERVER = "MAL"
     elif os.path.isfile(TST+".SQL"+".py")     or  os.path.isfile(TST+".SQL"+".py.src")     or  os.path.isfile(TST+".SQL"+".py.in"):
         EXT = ".SQL.py"     ; CALL = "python" ; SERVER = "SQL"
     elif os.path.isfile(TST+".XQUERY"+".py")  or  os.path.isfile(TST+".XQUERY"+".py.src")  or  os.path.isfile(TST+".XQUERY"+".py.in"):
         EXT = ".XQUERY.py"  ; CALL = "python" ; SERVER = "XQUERY"
-    elif os.path.isfile(TST+".mal")           or  os.path.isfile(TST+".mal.src")           or  os.path.isfile(TST+".mal.in"):
-        EXT = ".mal"       ; CALL = "mal"
     elif os.path.isfile(TST+".milM")          or  os.path.isfile(TST+".milM.src")          or  os.path.isfile(TST+".milM.in"):
         EXT = ".milM"       ; CALL = "milM"
     elif os.path.isfile(TST+".milS")          or  os.path.isfile(TST+".milS.src")          or  os.path.isfile(TST+".milS.in"):
@@ -1452,6 +1455,16 @@ def RunTest(env, TST, BusyPorts, COND) :
         EXT = ".milC"       ; CALL = "milCXs" ; SERVER = "MIL"
     elif os.path.isfile(TST+"_p00.milC")      or  os.path.isfile(TST+"_p00.milC.src")      or  os.path.isfile(TST+"_p00.milC.in"):
         EXT = ".milC"       ; CALL = "milCXp" ; SERVER = "MIL"
+    elif os.path.isfile(TST+".mal")           or  os.path.isfile(TST+".mal.src")           or  os.path.isfile(TST+".mal.in"):
+        EXT = ".mal"        ; CALL = "mal"
+    elif os.path.isfile(TST+"_s00.mal")       or  os.path.isfile(TST+"_s00.mal.src")       or  os.path.isfile(TST+"_s00.mal.in"):
+        EXT = ".mal"        ; CALL = "malXs"
+    elif os.path.isfile(TST+".malC")          or  os.path.isfile(TST+".malC.src")          or  os.path.isfile(TST+".malC.in"):
+        EXT = ".malC"       ; CALL = "malC"   ; SERVER = "MAL"
+    elif os.path.isfile(TST+"_s00.malC")      or  os.path.isfile(TST+"_s00.malC.src")      or  os.path.isfile(TST+"_s00.malC.in"):
+        EXT = ".malC"       ; CALL = "malCXs" ; SERVER = "MAL"
+    elif os.path.isfile(TST+"_p00.malC")      or  os.path.isfile(TST+"_p00.malC.src")      or  os.path.isfile(TST+"_p00.malC.in"):
+        EXT = ".malC"       ; CALL = "malCXp" ; SERVER = "MAL"
     elif os.path.isfile(TST+".sql")           or  os.path.isfile(TST+".sql.src")           or  os.path.isfile(TST+".sql.in"):
         EXT = ".sql"        ; CALL = "sql"    ; SERVER = "SQL"
     elif os.path.isfile(TST+"_s00.sql")       or  os.path.isfile(TST+"_s00.sql.src")       or  os.path.isfile(TST+"_s00.sql.in"):
@@ -1479,11 +1492,11 @@ def RunTest(env, TST, BusyPorts, COND) :
             return RunTest(env, TST[:i], BusyPorts, COND)
         EXT = CALL = SERVER = ""
         if os.name == "nt":
-            ErrMsg("test missing: '"+os.path.join(TSTSRCDIR,TST)+".(exe|com|bat|cmd|py|mal|milM|milS|milC|sql|xq|x100)`")
+            ErrMsg("test missing: '"+os.path.join(TSTSRCDIR,TST)+".(exe|com|bat|cmd|py|mal|malC|milM|milS|milC|sql|xq|x100)`")
             #TODO:
             #elif os.name == "posix":
         else:
-            ErrMsg("test missing: '"+os.path.join(TSTSRCDIR,TST)+"[.py|.mal|.milM|.milS|.milC|.sql|.xq|.x100]`")
+            ErrMsg("test missing: '"+os.path.join(TSTSRCDIR,TST)+"[.py|.mal|.malC|.milM|.milS|.milC|.sql|.xq|.x100]`")
         return TX,Failed,Failed,elem
 
     if par['PACKAGE'] not in ('monetdb', 'monetdb-clients'):
@@ -1515,9 +1528,13 @@ def RunTest(env, TST, BusyPorts, COND) :
     elif sys.platform == "cygwin"  and  url(TSTDIR)+"/"+TST in NotOnCYG:
         elem = SkipTest(env, TST, EXT, "as it currently crashes/hangs on CYGWIN.")
     elif ( EXT[:4] == ".mil" or SERVER == "MIL" ) and par['M5']:
-        elem = SkipTest(env, TST, EXT, "as Monet5 does not support MIL.")
-    elif EXT == ".milC" and  not env['exe']['Mapi_Client'][0]:
-        elem = SkipTest(env, TST, EXT, "as "+env['MAPICLIENT'].split(None, 1)[0]+" is not available.")
+        elem = SkipTest(env, TST, EXT, "as MonetDB v5 does not support MIL.")
+    elif ( EXT[:4] == ".mal" or SERVER == "MAL" ) and par['M4']:
+        elem = SkipTest(env, TST, EXT, "as MonetDB v4 does not support MAL.")
+    elif EXT == ".milC" and  not env['exe']['MIL_Client'][0]:
+        elem = SkipTest(env, TST, EXT, "as "+env['MILCLIENT'].split(None, 1)[0]+" is not available.")
+    elif EXT == ".malC" and  not env['exe']['MAL_Client'][0]:
+        elem = SkipTest(env, TST, EXT, "as "+env['MALCLIENT'].split(None, 1)[0]+" is not available.")
     elif EXT == ".sql" and  not env['exe']['SQL_Client'][0]:
         elem = SkipTest(env, TST, EXT, "as "+env['SQLCLIENT'].split(None, 1)[0]+" is not available.")
     elif EXT == ".sql" and  not env['exe']['SQL_Dump'][0]:
@@ -1540,11 +1557,13 @@ def RunTest(env, TST, BusyPorts, COND) :
         elem = SkipTest(env, TST, EXT, "as BATs '"+str(MissingBATs)+"` are missing in database '"+TSTDB+"`.")
     elif CALL == "milCXp":
         elem = SkipTest(env, TST, EXT, "as multiple MIL clients in parallel are currently not supported by "+THISFILE+".")
+    elif CALL == "malCXp":
+        elem = SkipTest(env, TST, EXT, "as multiple MAL clients in parallel are currently not supported by "+THISFILE+".")
     elif CALL == "sqlXp":
         elem = SkipTest(env, TST, EXT, "as multiple SQL clients in parallel are currently not supported by "+THISFILE+".")
     elif CALL == "xqXp":
         elem = SkipTest(env, TST, EXT, "as multiple XQuery clients in parallel are currently not supported by "+THISFILE+".")
-    elif SERVER in ["MIL", "SQL", "XQUERY"] and "MAPI" in BusyPorts:
+    elif SERVER in ["MIL", "MAL", "SQL", "XQUERY"] and "MAPI" in BusyPorts:
         elem = SkipTest(env, TST, EXT, "as MAPIPORT=%s is not available." % (env['MAPIPORT']))
     elif SERVER == "XQUERY" and "XRPC" in BusyPorts:
         elem = SkipTest(env, TST, EXT, "as XRPCPORT=%s is not available." % (env['XRPCPORT']))
@@ -1652,18 +1671,18 @@ def RunTest(env, TST, BusyPorts, COND) :
                     else:
                         TOx = 1
                     CTIMEOUT = CTIMEOUT + ( TOx * TIMEOUT )
-        elif CALL in ["milMXs", "milSXs", "milCXs", "sqlXs", "xqXs", "x100Xs"]:
+        elif CALL in ["malXs", "milMXs", "milSXs", "milCXs", "sqlXs", "xqXs", "x100Xs"]:
             test = re.compile("^"+TST+"_s[0-9][0-9]"+EXT+"$", re.MULTILINE)
             d = os.listdir(os.getcwd())
             for f in d:
                 if test.match(f):
                     CTIMEOUT = CTIMEOUT + TIMEOUT
-        elif CALL in ["mal", "milM", "milS", "milC", "sql", "xq", "x100"]:
+        elif CALL in ["mal", "malC", "milM", "milS", "milC", "sql", "xq", "x100"]:
             CTIMEOUT = CTIMEOUT + TIMEOUT
         if  CTIMEOUT < TIMEOUT:
             CTIMEOUT = TIMEOUT
         STIMEOUT = CTIMEOUT
-        if  SERVER in ["MIL", "SQL", "XQUERY"] and TIMEOUT > 0:
+        if  SERVER in ["MIL", "MAL", "SQL", "XQUERY"] and TIMEOUT > 0:
             STIMEOUT = STIMEOUT + TIMEOUT + 60
 
         ME = ""
@@ -1957,13 +1976,15 @@ def CheckSocket2(env,SERVER) :  #,SrvrErr) :
         op = 'port=%d' % port
         np = 'port=%s' % env[SERVER+'PORT']
         env['exe']['Mserver']       = env['exe']['Mserver'][0]       , env['exe']['Mserver'][1].replace(op, np)
-        env['exe']['Mapi_Client']   = env['exe']['Mapi_Client'][0]   , env['exe']['Mapi_Client'][1].replace(op, np)
+        env['exe']['MIL_Client']    = env['exe']['MIL_Client'][0]    , env['exe']['MIL_Client'][1].replace(op, np)
+        env['exe']['MAL_Client']    = env['exe']['MAL_Client'][0]    , env['exe']['MAL_Client'][1].replace(op, np)
         env['exe']['SQL_Client']    = env['exe']['SQL_Client'][0]    , env['exe']['SQL_Client'][1].replace(op, np)
         env['exe']['SQL_Dump']      = env['exe']['SQL_Dump'][0]      , env['exe']['SQL_Dump'][1].replace(op, np)
         env['exe']['XQuery_Client'] = env['exe']['XQuery_Client'][0] , env['exe']['XQuery_Client'][1].replace(op, np)
         env['exe']['X100_Client']   = env['exe']['X100_Client'][0]   , env['exe']['X100_Client'][1].replace(op, np)
         os.environ['MSERVER']       = os.environ['MSERVER'].replace(op, np)
-        os.environ['MAPI_CLIENT']   = os.environ['MAPI_CLIENT'].replace(op, np)
+        os.environ['MIL_CLIENT']    = os.environ['MIL_CLIENT'].replace(op, np)
+        os.environ['MAL_CLIENT']    = os.environ['MAL_CLIENT'].replace(op, np)
         os.environ['SQL_CLIENT']    = os.environ['SQL_CLIENT'].replace(op, np)
         os.environ['SQL_DUMP']      = os.environ['SQL_DUMP'].replace(op, np)
         os.environ['XQUERY_CLIENT'] = os.environ['XQUERY_CLIENT'].replace(op, np)
@@ -2127,7 +2148,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
     XRPCsockets[1].close()
 
     ServerReady = True
-    if SERVER in ["MIL", "SQL", "XQUERY"]:
+    if SERVER in ["MIL", "MAL", "SQL", "XQUERY"]:
         SrvrOutFile = TST+".server.out"
         SrvrErrFile = TST+".server.err"
         SrvrOut = open(SrvrOutFile,"w")
@@ -2153,10 +2174,14 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
             dbinit = TST+".dbinit5"
             DBINIT = open(dbinit).readline().strip()
 
-        lang="mil"
+        lang=""
 
         if SERVER == "MIL":
+            lang="mil"
             Srvr = '%s --dbinit="%s module(mapi); mil_start();"' % (Srvr, DBINIT)
+        if SERVER == "MAL":
+            lang="mal"
+            Srvr = '%s --dbinit="%s"' % (Srvr, DBINIT)
         if SERVER == "SQL":
             lang="sql"
             if par['M5']:
@@ -2205,7 +2230,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
         elif CALL == "python":
             cmd = MTO+str(CTO)+" "+exe['python'][1]+" "+TST+EXT+" "+TST+" "+PRELUDE
             RunIt(cmd, "", ClntOut, ClntErr)
-        elif CALL in ["mal", "milM", "milS", "milMXs", "milSXs"]:
+        elif CALL in ["mal", "malXs", "milM", "milS", "milMXs", "milSXs"]:
             cmd = '%s%s %s%s --dbname=%s %s ' % (MTO, str(TOT), exe['Mserver'][1], LOCAL_CONF, TSTDB, PRELUDE)
             if CALL in ["mal", "milM", "milS"]:
                 X=""
@@ -2222,9 +2247,9 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
                         RunIt(cmd+" --dbinit=\"include mil_scenario; mil();\" "+f, open(devnull), ClntOut, ClntErr)
                     else:
                         RunIt(cmd, open(f), ClntOut, ClntErr)
-        elif CALL in ["milC", "milCXs"]:
+        elif CALL in ["milC", "milCXs", "malC", "malCXs"]:
             TSTs = []
-            if CALL == "milC":
+            if CALL in ("milC", "malC"):
                 X=""
             else:
                 X="_s[0-9][0-9]"
@@ -2235,7 +2260,11 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
                 if test.match(f):
                     TSTs.append(f)
 
-            Clnt = MTO+str(TOT)+" "+exe['Mapi_Client'][1]
+            Clnt = MTO+str(TOT)+" "
+            if CALL[:3] == "mil":
+                Clnt = Clnt+exe['MIL_Client'][1]
+            if CALL[:3] == "mal":
+                Clnt = Clnt+exe['MAL_Client'][1]
             for f in TSTs:
                 RunIt(Clnt, open(f), ClntOut, ClntErr)
 
@@ -2295,7 +2324,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
     ClntOut.close()
     ClntErr.close()
 
-    if SERVER in ["MIL", "SQL", "XQUERY"]:
+    if SERVER in ["MIL", "MAL", "SQL", "XQUERY"]:
         EPILOGUE = None
         if os.path.isfile(TST+".epilogue") and par['M4']:
             EPILOGUE = open(TST+".epilogue",'r')
@@ -2629,7 +2658,7 @@ def main(argv) :
             'TSTSRCBASE'  , 'TSTBLDBASE' , 'TSTTRGBASE'  ,
             'SQL_PREFIX']
     if THISFILE in ["Mtest.py", "Mprofile.py"]:
-        vars = vars + [ 'MAPICLIENT', 'SQLCLIENT', 'SQLDUMP', 'XQUERYCLIENT', 'X100CLIENT']    #, 'MONETDB_MOD_PATH' ]
+        vars = vars + [ 'MILCLIENT', 'MALCLIENT', 'SQLCLIENT', 'SQLDUMP', 'XQUERYCLIENT', 'X100CLIENT']    #, 'MONETDB_MOD_PATH' ]
     if THISFILE == "Mprofile.py":
         vars = vars + ['CMDLST']
 
@@ -2652,7 +2681,8 @@ def main(argv) :
         dft['setXQUERY_LOGDIR']     = "'--set \"xquery_logdir='+env['XQUERY_LOGDIR']+'\"'"
         dft['MAPIPORT']       = "str(randomPort(30000,39999))"
         dft['XRPCPORT']       = "str(randomPort(40000,49999))"
-        dft['MAPICLIENT']     = "'mclient -lmil'"
+        dft['MILCLIENT']      = "'mclient -lmil'"
+        dft['MALCLIENT']      = "'mclient -lmal'"
         dft['SQLCLIENT']      = "'mclient -lsql'"
         dft['SQLDUMP']        = "'msqldump'"
         dft['XQUERYCLIENT']   = "'mclient -lxquery -oxml'"
@@ -2719,8 +2749,10 @@ def main(argv) :
              "override default location of SQL transaction-log directory"),
             ('xquery_logdir', None, 'xquery_logdir', '<directory>',
              "override default location of XQuery transaction-log directory"),
-            ('MAPICLIENT', None, 'MAPICLIENT', '<mapi-client program>',
-             'default: %s' % dft['MAPICLIENT']),
+            ('MILCLIENT', None, 'MILCLIENT', '<mil-client program>',
+             'default: %s' % dft['MILCLIENT']),
+            ('MALCLIENT', None, 'MALCLIENT', '<mal-client program>',
+             'default: %s' % dft['MALCLIENT']),
             ('SQLCLIENT', None, 'SQLCLIENT', '<sql-client program>',
              'default: %s' % dft['SQLCLIENT']),
             ('SQLDUMP', None, 'SQLDUMP', '<sql-dump program>',
@@ -3115,7 +3147,8 @@ def main(argv) :
                                                                (env['setDBG'], config, env['GDK_DEBUG'], env['setMONETDB_MOD_PATH'], env['setGDK_DBFARM'], env['setSQL_LOGDIR'], env['setXQUERY_LOGDIR'], env['MAPIPORT'], env['XRPCPORT'])
         exe['Mdiff']         = CheckExec('Mdiff')        , 'Mdiff'
         exe['python']        = CheckExec(sys.executable) , sys.executable
-        exe['Mapi_Client']   = CheckExec(env['MAPICLIENT'].split(None, 1)[0])  , '%s -umonetdb -Pmonetdb "--config=%s" --host=%s --port=%s' % (env['MAPICLIENT'], config, HOST, env['MAPIPORT'])
+        exe['MIL_Client']    = CheckExec(env['MILCLIENT'].split(None, 1)[0])  , '%s -umonetdb -Pmonetdb "--config=%s" --host=%s --port=%s' % (env['MILCLIENT'], config, HOST, env['MAPIPORT'])
+        exe['MAL_Client']    = CheckExec(env['MALCLIENT'].split(None, 1)[0])  , '%s -umonetdb -Pmonetdb "--config=%s" --host=%s --port=%s' % (env['MALCLIENT'], config, HOST, env['MAPIPORT'])
         exe['SQL_Client']    = CheckExec(env['SQLCLIENT'].split(None, 1)[0])   , '%s -umonetdb -Pmonetdb --host=%s --port=%s %s' % (env['SQLCLIENT'], HOST, env['MAPIPORT'], env['SQL_TRACE'])
         exe['SQL_Dump']      = CheckExec(env['SQLDUMP'].split(None, 1)[0])     , '%s -umonetdb -Pmonetdb --host=%s --port=%s %s' % (env['SQLDUMP'], HOST, env['MAPIPORT'], env['SQL_TRACE'])
         exe['XQuery_Client'] = CheckExec(env['XQUERYCLIENT'].split(None, 1)[0]), '%s -umonetdb -Pmonetdb --host=%s --port=%s' % (env['XQUERYCLIENT'], HOST, env['MAPIPORT'])
@@ -3311,13 +3344,19 @@ def main(argv) :
         if par['PACKAGE'] == 'monetdb-amdb':
             if not env['exe']['X100_Client'][0]:
                 ErrXit('Stopping X100/AmDB testing as "%s" is not available!' % env['X100CLIENT'].split(None, 1)[0])
+            if not env['exe']['MIL_Client'][0]:
+                ErrXit('Stopping X100/AmDB testing as "%s" is not available!' % env['MILCLIENT'].split(None, 1)[0])
             MissingMods = CheckMods(env, '', '', 'x100')
             if MissingMods:
                 ErrXit('Stopping X100/AmDB testing as modules "%s" are missing!' % str(MissingMods))
 
-        if par['PACKAGE'][:8] == 'monetdb-' and par['PACKAGE'][8:] in ('sql','geom','xquery','amdb'):
-            if not env['exe']['Mapi_Client'][0]:
-                ErrXit('Stopping %s testing as "%s" is not available!' % (par['PACKAGE'][8:], env['MAPICLIENT'].split(None, 1)[0]))
+        if par['PACKAGE'][:8] == 'monetdb-' and par['PACKAGE'][8:] in ('sql','geom'):
+            if not env['exe']['SQL_Client'][0]:
+                ErrXit('Stopping %s testing as "%s" is not available!' % (par['PACKAGE'][8:], env['SQLCLIENT'].split(None, 1)[0]))
+
+        if par['PACKAGE'] == 'monetdb-xquery':
+            if not env['exe']['XQuery_Client'][0]:
+                ErrXit('Stopping XQuery testing as "%s" is not available!' % env['XQUERYCLIENT'].split(None, 1)[0])
 
         for SRVR in 'MAPI', 'XRPC':
             port = int(env[SRVR+'PORT'])

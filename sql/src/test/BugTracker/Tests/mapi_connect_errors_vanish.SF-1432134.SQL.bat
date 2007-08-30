@@ -1,3 +1,3 @@
 @echo off
 
-call Mlog.bat -x %MAPI_CLIENT% -uinvalid -Pinvalid -lsql
+call Mlog.bat -x %SQL_CLIENT% -uinvalid -Pinvalid
