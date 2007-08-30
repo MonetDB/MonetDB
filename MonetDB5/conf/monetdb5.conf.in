@@ -23,9 +23,9 @@ exec_prefix=@exec_prefix@
 gdk_dbfarm=@localstatedir@@DIRSEP@@PACKAGE@@DIRSEP@dbfarm
 
 # MonetDB can only handle one database at a time.  You can specify
-# the name of the database to use below.  Note that you can use
-# multiple databases, but that you have to edit the database name
-# and restart MonetDB.
+# the name of the default database to use below.  
+# Often, though, you should use the command line option 
+# to specify the database of interest explicitly.
 gdk_dbname=demo			# default database to open
 
 # The options below deal with various aspects of memory usage behaviour.
@@ -57,29 +57,41 @@ gdk_embedded=no
 gdk_debug=0
 # possible values: (can be a combination of)
 #       1 = thread-specific debug output
-#       2 = property enforcing on new BATs
-#       4 = memory allocation
-#       8 = property checking on all values: tells about wrongly set properties
-#      16 = major IO activity
-#      32 = BAT handling
-#      64 = MIL parser debugging
-#     128 = Thread management
-#     256 = Event management
-#     512 = Transaction management
-#    1024 = Locks and Triggers
-#    2048 = Dynamic loading
-#    4096 = BBP Performance (?)
-#    8192 = Delta debugging (?)
-#   16384 = Module loading
-#   32768 = Yacc specific error messages
-#   65536 = tcpip (??)
-#  131072 = monet_multiplex: setaggr debugging (??)
-#  262144 = \
-#  524288 =   ddbench (???)
-# 1048576 = /
-# 2097152 = show join/select algorithm chosen
-# 4194304 = show result size estimations (for join,select)
-# 8388608 = extended property checking: tells also about not set properties
+#       2 = CHECKMASK = property enforcing on new BATs
+#       4 = MEMMASK   = memory allocation
+#       8 = PROPMASK  = property checking on all values: tells about wrongly set properties
+#      16 = IOMASK    = major IO activity
+#      32 = BATMASK   = BAT handling
+#      64 = PARSEMASK = parser debugging
+#     128 = PARMASK   = Thread management
+#     256 = TRGMASK   = Event management 
+#     512 = TMMASK    = Transaction management
+#    1024 = TEMMASK   = Locks and Triggers
+#    2048 = DLMASK    = Dynamic loading
+#    4096 = PERFMASK  = BBP Performance (?)
+#    8192 = DELTAMASK = Delta debugging (?)
+#   16384 = LOADMASK  = Module loading
+#   32768 = YACCMASK  = Yacc specific error messages
+#   65536 = obsolete  = tcpip (??)
+#  131072 = obsolete  = monet_multiplex: setaggr debugging (??)
+#  262144 = obsolete  = \
+#  524288 = obsolete  =   ddbench (???)
+# 1048576 = obsolete  = /
+# 2097152 = ALGOMASK  = show join/select algorithm chosen
+# 4194304 = ESTIMASK  = show result size estimations (for join,select)
+# 8388608 = XPROPMASK = extended property checking: tells also about not set properties
+# 
+# Mserver 5 recognizes a series of command line names instead:
+# --threads ( 1 | PARMASK)
+# --memory (MEMMASK )
+# --properties (CHECKMASK | PROPMASK | BATMASK )
+# --io (IOMASK | PERFMASK )
+# --transactions ( TMMASK | DELTAMASK | TEMMASK)
+# --modules (DLMASK | LOADMASK)
+# --algorithms (ALGOMASK | ESTIMASK)
+# --xproperties (XPROPMASK )
+# performance (JOINPROPMASK | DEADBEEFMASK)
+
 
 # Monet Section
 #==============
