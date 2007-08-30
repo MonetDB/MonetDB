@@ -48,7 +48,7 @@ materialize the header.
 
 The partition manager also supports hash-based partitioning.
 Its argument is the number of hash bucket bits.
-example
+@example
 	bpm.open();
 	Rrev:= bat.reverse(R:bat[:oid,:int]);
 	Ralias:= bpm.deposit("myHashVersion",Rev);	# creates side effects
