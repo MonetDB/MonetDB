@@ -130,6 +130,7 @@ information should be dealt with separately.[TODO]
 	str     srcFile;	/* NULL for stdin, or file name */
 	void    *state[7], *oldstate[7];
 	MALfcn  phase[7], oldphase[7];
+	sht		stage;		/* keep track of the phase being ran */
 	char    itrace;     /* trace execution using interactive mdb */
 						/* if set to 'S' it will put the process to sleep */
 	short   debugOptimizer,debugScheduler;
@@ -155,8 +156,8 @@ Session structures are currently not saved over network failures.
 Future releases may support a re-connect facility.  [TODO]
 @h
 	time_t      login;  
-	time_t      logout;
-	time_t      delay;
+	time_t      lastcmd;	/* set when input is received */
+	time_t      delay;		/* not yet used */
 @-
 Communication channels for the interconnect are stored here.
 It is perfectly legal to have a client without input stream.
@@ -430,9 +431,10 @@ collect the buffer when in use.
 	c->glb = 0;
 
 	c->father = NULL;
-	c->login = time(0); c->delay= TIMEOUT;
-	c->logout= c->login+c->delay;
+	c->login = c->lastcmd= time(0);
+	c->delay= TIMEOUT;
 	c->mode = AWAITING;
+	c->stage = 0;
 	c->itrace = 0;
 	c->debugOptimizer = c->debugScheduler= 0;
 	c->timer = 0;
@@ -584,7 +586,7 @@ void freeClient(Client c)
 		c->errbuf=0;
 	}
 	c->father = 0;
-	c->login = c->delay = c->logout = 0;
+	c->login = c->delay = c->lastcmd = 0;
 @-
 The threads may not be removed, but should become dormant
 @c

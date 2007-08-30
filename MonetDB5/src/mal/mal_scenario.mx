@@ -550,6 +550,7 @@ between speed and ability to analysis its behavior.
 @-
 @{
 @= runPhase
+	c->stage= @1;
 	if(msg== MAL_SUCCEED && c->phase[@1] && ((msg= (str) (*c->phase[@1])(c)) ||  c->mode <= FINISHING)){
 		/* error occurred */
 #ifdef MAL_SCENARIO_DEBUG
@@ -579,6 +580,7 @@ runScenarioBody(Client c)
 	while (c->mode > FINISHING) {
 		msg = MAL_SUCCEED;
 		@:runPhase(MAL_SCENARIO_READER)@
+		c->lastcmd= time(0);
 		@:runPhase(MAL_SCENARIO_PARSER)@
 		@:runPhase(MAL_SCENARIO_OPTIMIZE)@
 		@:runPhase(MAL_SCENARIO_SCHEDULER)@
