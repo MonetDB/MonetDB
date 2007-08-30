@@ -1,0 +1,49 @@
+stdout of test 'mclient-lsql--help` in directory 'src/tools` itself:
+
+
+# 16:36:12 >  
+# 16:36:12 >  Mtimeout -timeout 300 ./mclient-lsql--help mclient-lsql--help 
+# 16:36:12 >  
+
+
+printf("\nReady.\n");
+
+Ready.
+quit();
+
+Over..
+
+# 23:46:47 >  
+# 23:46:47 >  Mtimeout -timeout 120 ./mclient-lsql--help.SQL.sh mclient-lsql--help 
+# 23:46:47 >  
+
+
+# 23:46:47 >  
+# 23:46:47 >  Mtimeout -timeout 60 mclient -umonetdb -Pmonetdb --config=/net/corona.ins.cwi.nl/export/scratch0/manegold/Monet/Testing/Current/prefix.--enable-strict_--disable-optimize_--enable-debug/etc/MonetDB.conf --host=corona --port=33349 -lsql --help
+# 23:46:47 >  
+
+= Please remove this line in case the below usage message of `mclient -lsql` is correct.
+\?      - show this message
+\<file  - read input from file
+\>file  - save response in file, or stdout if no file is given
+\|cmd   - pipe result to process, or stop when no command is given
+\h      - show the readline history
+\t      - toggle timer
+\e      - echo the query in sql formatting mode
+\D table- dumps the table, or the complete database if none given.
+\d table- describe the table, or the complete database if none given.
+\A      - enable auto commit
+\a      - disable auto commit
+\f      - format using a built-in renderer {csv,tab,raw,sql,xml} 
+\w#     - set maximal page width (-1=raw,0=no limit, >0 max char)
+\r#     - set maximum rows per page (-1=raw)
+\L file - save client/server interaction
+\X      - trace mclient code
+\q      - terminate session
+sql>
+= Please remove this line in case the above usage message of `mclient -lsql` is correct.
+
+# 23:46:47 >  
+# 23:46:47 >  Done.
+# 23:46:47 >  
+

@@ -1,0 +1,54 @@
+stdout of test 'mclient-lxquery--help` in directory 'src/tools` itself:
+
+
+# 16:36:12 >  
+# 16:36:12 >  Mtimeout -timeout 300 ./mclient-lxquery--help mclient-lxquery--help 
+# 16:36:12 >  
+
+
+printf("\nReady.\n");
+
+Ready.
+quit();
+
+Over..
+
+# 23:46:47 >  
+# 23:46:47 >  Mtimeout -timeout 120 ./mclient-lxquery--help.XQUERY.sh mclient-lxquery--help 
+# 23:46:47 >  
+
+
+# 23:46:47 >  
+# 23:46:47 >  Mtimeout -timeout 60 mclient -umonetdb -Pmonetdb --config=/net/corona.ins.cwi.nl/export/scratch0/manegold/Monet/Testing/Current/prefix.--enable-strict_--disable-optimize_--enable-debug/etc/MonetDB.conf --host=corona --port=33349 -lxquery --help
+# 23:46:47 >  
+
+= Please remove this line in case the below usage message of `mclient -lxquery` is correct.
+mclient interactive MonetDB/XQuery session: type an XQuery or XQUF update.
+ 
+Supported document-management XQuery extensions:
+ pf:collections() as node()
+ pf:documents($collectionName as xs:string) as node()
+ pf:del-doc($documentName as xs:string)
+ pf:add-doc($uri as xs:string, $documentName as xs:string
+     [,$collectionName as xs:string [,$freePercentage as xs:integer]])
+ 
+Session commands:
+<>       - send query to server (or CTRL-D)
+\?      - show this message
+\<file  - read input from file
+\>file  - save response in file, or stdout if no file is given
+\|cmd   - pipe result to process, or stop when no command is given
+\h      - show the readline history
+\t      - toggle timer
+\w#     - set maximal page width (-1=raw,0=no limit, >0 max char)
+\r#     - set maximum rows per page (-1=raw)
+\L file - save client/server interaction
+\X      - trace mclient code
+\q      - terminate session
+xquery>
+= Please remove this line in case the above usage message of `mclient -lxquery` is correct.
+
+# 23:46:47 >  
+# 23:46:47 >  Done.
+# 23:46:47 >  
+
