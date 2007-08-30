@@ -211,9 +211,8 @@ rm -fr $RPM_BUILD_ROOT
 
 %files 
 %defattr(-,root,root) 
-%{prefix}/bin/MapiClient* 
+%{prefix}/bin/mclient* 
 %{prefix}/bin/msqldump
-%{prefix}/bin/mclient
 %{_libdir}/libMapi.so.*
 
 

@@ -62,7 +62,7 @@ def main(argv) :
                opt.get("language", "sql"),
                opt.get("database", ""),
                opt.get("mapi_trace", None)!=None)
-    print "#MapiClient (python) connected to %s:%d as %s" % \
+    print "#mclient (python) connected to %s:%d as %s" % \
           (opt.get("host", "localhost"),
            int(opt.get("mapi_port", 50000)),
            opt.get("user", "monetdb"))

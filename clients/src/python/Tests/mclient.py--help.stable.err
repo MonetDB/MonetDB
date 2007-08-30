@@ -1,16 +1,16 @@
-stderr of test 'MapiClient.py--help` in directory 'src/python` itself:
+stderr of test 'mclient.py--help` in directory 'src/python` itself:
 
 
 # 16:36:12 >  
-# 16:36:12 >  Mtimeout -timeout 300 ./MapiClient.py--help MapiClient.py--help 
+# 16:36:12 >  Mtimeout -timeout 300 ./mclient.py--help mclient.py--help 
 # 16:36:12 >  
 
 
 # 16:36:12 >  
-# 16:36:12 >  Mtimeout -timeout 60 MapiClient.py --help
+# 16:36:12 >  Mtimeout -timeout 60 mclient.py --help
 # 16:36:12 >  
 
-Usage: MapiClient.py [ options ]
+Usage: mclient.py [ options ]
 Options are:
 -c or --config config_file
 	read options from the given file

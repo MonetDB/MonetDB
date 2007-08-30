@@ -245,7 +245,7 @@ have changed since my proposal.
 	MONETDB_MOD_PATH	$MONETDB_PREFIX/lib(64);MONETDB_PREFIX/lib(64)/Monet
 
     The setting of all these environment variables maybe overruled
-    by commandline options with the same names, e.g., "--MILCLIENT=MapiClient.py".
+    by commandline options with the same names, e.g., "--MILCLIENT=mclient.py".
 
     NOTE: 
     All paths must be given as ABSOLUTE PHYSICAL PATHS (see "IMPORTANT NOTE"

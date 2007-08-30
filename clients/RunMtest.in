@@ -22,7 +22,7 @@ srcdir=`cd '@Xsrcdir@'; pwd`
 uname=`uname`
 
 # enhance various paths to find our stuff
-for x in "${builddir}/conf/monetdb-clients-config" "${builddir}/src/java/scripts/mjclient" "${builddir}/src/python/MapiClient.py" ; do
+for x in "${builddir}/conf/monetdb-clients-config" "${builddir}/src/java/scripts/mjclient" "${builddir}/src/python/mclient.py" ; do
 	if [ -s $x ] ; then
 		chmod +x $x
 	fi
