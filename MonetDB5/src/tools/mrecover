@@ -23,7 +23,7 @@ function usage()
 	echo "    --dbname=<database_name>"
 	echo "    --ascii=<yes/no> default no"
 	echo "    --tool=<mapi/jdbc> default mapi"
-	echo "    --chkpnt=<directory>"
+	echo "    --dir=<directory>"
 	echo "    --help"
 	exit 0
 }
@@ -102,8 +102,8 @@ do
 		--dbname=*)
 		DBNAME="${1#--dbname=}"
 		;;
-		--chkpnt=*)
-		CHKPNTDIR="${1#--chkpnt=}"
+		--dir=*)
+		CHKPNTDIR="${1#--dir=}"
 		;;
 		--tag=*)
 		TAG="${1#--tag=}"

@@ -555,7 +555,13 @@ faster system start.
 		mo_print_options(set, setlen);
 	if (monet_init(set, setlen) == 0 )
 		return 0;
-	GDKdebug=debug;	/* overruled by command line */
+	/* propagate the debug flag to the environment table */
+	if( debug){
+		char buf[BUFSIZ];
+		snprintf(buf,BUFSIZ,"%d",debug);
+		GDKsetenv("gdk_debug", buf);
+		GDKdebug=debug;	/* overruled by command line */
+	}
 
 	GDKsetenv("monet_version", VERSION);
 

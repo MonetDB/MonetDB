@@ -67,7 +67,7 @@ bin_Mbeddedmal = {
 scripts_sh = {
 	EXT = ""
 	DIR = bindir
-	SOURCES = monetdb5-config.in mchkpnt mrecover
+	SOURCES = monetdb5-config.in mcheckpoint mrecover
 }
 
 scripts_bat = {
