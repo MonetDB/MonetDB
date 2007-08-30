@@ -9,7 +9,7 @@
 
 %define name MonetDB-SQL
 %define version @VERSION@
-%define release 2%{?dist}%{?oid32:.oid32}%{!?oid32:.oid%{bits}}
+%define release 1%{?dist}%{?oid32:.oid32}%{!?oid32:.oid%{bits}}
 
 %define prefix /usr
 
