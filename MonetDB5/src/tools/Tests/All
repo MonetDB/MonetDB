@@ -3,7 +3,7 @@ Mbeddedmal--help
 
 #monetdb--help
 stethoscope--help
-mchkpnt--help
+mcheckpoint--help
 mrecover--help
 
 mclient-lmal--help

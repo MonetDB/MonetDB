@@ -28,6 +28,7 @@ The debug options:
      --modules
      --algorithms
      --xproperties
+     --performance
      --debug=<bitmask>
 
 # 10:03:11 >  

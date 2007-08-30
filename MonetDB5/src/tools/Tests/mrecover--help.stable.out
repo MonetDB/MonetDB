@@ -14,7 +14,7 @@ Usage: mrecover [options]
     --dbname=<database_name>
     --ascii=<yes/no> default no
     --tool=<mapi/jdbc> default mapi
-    --chkpnt=<directory>
+    --dir=<directory>
     --help
 
 # 22:20:29 >  
