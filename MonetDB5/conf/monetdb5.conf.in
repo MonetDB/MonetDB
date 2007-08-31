@@ -80,6 +80,8 @@ gdk_debug=0
 # 2097152 = ALGOMASK  = show join/select algorithm chosen
 # 4194304 = ESTIMASK  = show result size estimations (for join,select)
 # 8388608 = XPROPMASK = extended property checking: tells also about not set properties
+#16777216 = JOINPROPMASK = disable property checking with join & outerjoin (e.g., for performance measurements)
+#33554432 = DEADBEEFMASK = disable "cleaning" of freed memory in GDKfree() (e.g., for performance measurements)
 # 
 # Mserver 5 recognizes a series of command line names instead:
 # --threads ( 1 | PARMASK)
