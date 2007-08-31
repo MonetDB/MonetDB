@@ -313,7 +313,7 @@ def am_scripts(fd, var, scripts, am):
         scriptname = "script_" + script
         if scripts.has_key('COND'):
             condname = string.join(scripts['COND'], '+')
-            mkname = string.replace(script, '.', '_')
+            mkname = am_normalize(string.replace(script, '.', '_'))
             cond = '#' + condname
             s = "$(C_" + mkname + ")"
             scriptname = "$(C_script_" + mkname + ")"

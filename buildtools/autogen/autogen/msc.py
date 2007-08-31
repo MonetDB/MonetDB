@@ -427,7 +427,7 @@ def msc_scripts(fd, var, scripts, msc):
             fd.write('\t$(INSTALL) "$(SRCDIR)\\%s" "%s"\n' % (script, script))
         if scripts.has_key('COND'):
             condname = 'defined(' + ') && defined('.join(scripts['COND']) + ')'
-            mkname = script.replace('.', '_')
+            mkname = script.replace('.', '_').replace('-', '_')
             fd.write('!IF %s\n' % condname)
             fd.write('C_%s = %s\n' % (mkname, script))
             fd.write('!ELSE\n')
