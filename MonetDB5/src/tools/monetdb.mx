@@ -568,7 +568,7 @@ deletedir(char *dir)
 }
 
 static void
-command_destroy(int argc, char *argv[], char *dbfarm)
+command_destroy(int argc, char *argv[])
 {
 	if (argc == 1 || argc >= 4) {
 		/* print help message for this command */
@@ -625,7 +625,6 @@ command_destroy(int argc, char *argv[], char *dbfarm)
 				SABAOTHfreeStatus(&stats);
 				exit(1);
 			}
-			SABAOTHfreeStatus(&stats);
 
 			if (force == 0) {
 				printf("you are about to remove database %s\n", dbname);
@@ -640,16 +639,15 @@ command_destroy(int argc, char *argv[], char *dbfarm)
 				}
 			}
 
-			snprintf(path, 8095, "%s/%s", dbfarm, dbname);
-			path[8095] = '\0';
 			/* annoyingly we have to delete file by file, and
 			 * directories recursively... */
-			if ((e = deletedir(path)) != NULL) {
+			if ((e = deletedir(stats->path)) != NULL) {
 				fprintf(stderr, "destroy: failed to destroy %s: %s\n",
 						argv[1], e);
 				free(e);
 				exit(1);
 			}
+			SABAOTHfreeStatus(&stats);
 			printf("successfully destroyed database %s\n", dbname);
 		} else {
 			fprintf(stderr, "destroy: no such database: %s\n", dbname);
@@ -659,7 +657,7 @@ command_destroy(int argc, char *argv[], char *dbfarm)
 }
 
 static void
-command_lock(int argc, char *argv[], char *dbfarm)
+command_lock(int argc, char *argv[])
 {
 	if (argc == 1 || argc > 2) {
 		/* print help message for this command */
@@ -689,7 +687,7 @@ command_lock(int argc, char *argv[], char *dbfarm)
 			}
 
 			/* put this database in maintenance mode */
-			snprintf(path, 8095, "%s/%s/.maintenance", dbfarm, dbname);
+			snprintf(path, 8095, "%s/.maintenance", stats->path);
 			fclose(fopen(path, "w"));
 			printf("database %s is now under maintenance\n", dbname);
 			SABAOTHfreeStatus(&stats);
@@ -701,7 +699,7 @@ command_lock(int argc, char *argv[], char *dbfarm)
 }
 
 static void
-command_release(int argc, char *argv[], char *dbfarm)
+command_release(int argc, char *argv[])
 {
 	if (argc == 1 || argc > 2) {
 		/* print help message for this command */
@@ -731,7 +729,7 @@ command_release(int argc, char *argv[], char *dbfarm)
 			}
 
 			/* put this database in maintenance mode */
-			snprintf(path, 8095, "%s/%s/.maintenance", dbfarm, dbname);
+			snprintf(path, 8095, "%s/.maintenance", stats->path);
 			if (unlink(path) != 0) {
 				fprintf(stderr, "failed to take database %s out of maintenance"
 						" mode: %s\n", dbname, strerror(errno));
@@ -794,11 +792,11 @@ main(int argc, char *argv[])
 	} else if (strcmp(argv[1], "create") == 0) {
 		command_create(argc - 1, &argv[1], dbfarm);
 	} else if (strcmp(argv[1], "destroy") == 0) {
-		command_destroy(argc - 1, &argv[1], dbfarm);
+		command_destroy(argc - 1, &argv[1]);
 	} else if (strcmp(argv[1], "lock") == 0) {
-		command_lock(argc - 1, &argv[1], dbfarm);
+		command_lock(argc - 1, &argv[1]);
 	} else if (strcmp(argv[1], "release") == 0) {
-		command_release(argc - 1, &argv[1], dbfarm);
+		command_release(argc - 1, &argv[1]);
 	} else if (strcmp(argv[1], "help") == 0 || strcmp(argv[1], "-h") == 0) {
 		command_help(argc - 1, &argv[1]);
 	} else if (strcmp(argv[1], "version") == 0 || strcmp(argv[1], "-v") == 0) {
