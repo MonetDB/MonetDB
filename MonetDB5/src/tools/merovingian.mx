@@ -174,7 +174,8 @@ logListener(void *p)
 			w = w->next;
 		}
 		fflush(fout);
-		fflush(ferr);
+		if (equalouterr == 0)
+			fflush(ferr);
 		/* see if we need to break the loop */
 		if (_keepLogging == 0) {
 			if (hadData == 0) {
@@ -1022,7 +1023,6 @@ main(int argc, char *argv[])
 		}
 		q->dbname = "file";
 	}
-	free(msglog);
 
 	/* where should our err output go to? */
 	if (errlog == NULL) {
@@ -1043,6 +1043,7 @@ main(int argc, char *argv[])
 		}
 		q->dbname = "file";
 	}
+	free(msglog);
 	free(errlog);
 
 	d = q->next = alloca(sizeof(struct _dpair));
@@ -1179,7 +1180,8 @@ main(int argc, char *argv[])
 	}
 
 	fclose(q->fout);
-	fclose(q->ferr);
+	if (q->fout != q->ferr)
+		fclose(q->ferr);
 
 	/* clean up dbpair structs */
 	while (d != NULL) {
