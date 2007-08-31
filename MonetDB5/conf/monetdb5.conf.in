@@ -90,7 +90,7 @@ gdk_debug=0
 # --modules (DLMASK | LOADMASK)
 # --algorithms (ALGOMASK | ESTIMASK)
 # --xproperties (XPROPMASK )
-# performance (JOINPROPMASK | DEADBEEFMASK)
+# --performance (JOINPROPMASK | DEADBEEFMASK)
 
 
 # Monet Section
