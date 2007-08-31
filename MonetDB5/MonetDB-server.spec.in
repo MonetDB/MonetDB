@@ -116,7 +116,7 @@ rm -fr $RPM_BUILD_ROOT
 %defattr(-,root,root)
 %{prefix}/bin/mserver5
 %{prefix}/bin/Mbeddedmal
-%{prefix}/bin/mchkpnt
+%{prefix}/bin/mcheckpoint
 %{prefix}/bin/merovingian
 %{prefix}/bin/monetdb
 %{prefix}/bin/mrecover

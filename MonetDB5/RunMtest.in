@@ -35,7 +35,7 @@ if [ "${uname}" = "AIX"  -a  "${LIBPATH}" ] ; then
 fi
 
 # enhance various paths to find our stuff
-for x in "${builddir}/src/tools/monetdb5-config"  "${srcdir}/src/tools/mchkpnt"  "${srcdir}/src/tools/mrecover" ; do
+for x in "${builddir}/src/tools/monetdb5-config"  "${srcdir}/src/tools/mcheckpoint"  "${srcdir}/src/tools/mrecover" ; do
 	if [ -s $x ] ; then
 		chmod +x $x
 	fi
