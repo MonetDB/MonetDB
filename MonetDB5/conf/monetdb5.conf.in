@@ -118,12 +118,6 @@ monet_welcome=yes
 # If you leave this unset, some default key is used.
 #monet_vault_key=@sysconfdir@@DIRSEP@monetdb.secret
 
-# Mguardian section
-#====================================
-delay=120		#waiting between pinging the server
-# if the guardian process is running, it will automatically
-# restart the server upon failuer and sent an email to the owner
-
 # Merovingian section
 #====================================
 # Merovingian logs messages and errors by default to the stdout and
@@ -132,8 +126,8 @@ delay=120		#waiting between pinging the server
 # to a file instead.  It is legitimate to have both mero_msglog and
 # mero_errlog pointing to the same file, as in the default below.
 # Unsetting below defaults will make merovingian log to the screen.
-#mero_msglog=@prefix@/var/log/merovingian.log
-#mero_errlog=@prefix@/var/log/merovingian.log
+mero_msglog=@prefix@@DIRSEP@var@DIRSEP@log@DIRSEP@merovingian.log
+mero_errlog=@prefix@@DIRSEP@var@DIRSEP@log@DIRSEP@merovingian.log
 #
 # Log messages may not be instantly logged, because the process that
 # writes the message does not flush its buffered stream.  Since
@@ -149,8 +143,8 @@ delay=120		#waiting between pinging the server
 # 10 minutes.
 mero_timeinterval=600
 #
-# mservers that were started by Merovingian are not shut down when the
-# Merovingian is shut down.  This behaviour might be undesirable if the
+# mservers that were started by Merovingian are shut down when the
+# Merovingian is shut down.  This behaviour is desirable if the
 # Merovingian is ran as daemon process that represents MonetDB, such as
 # in an init.d script.  Setting the time-out value below to a positive
 # non-zero value will shut down each mserver that was started with a
@@ -158,7 +152,8 @@ mero_timeinterval=600
 # killed using the SIGKILL signal.  A time-out value of 0 means that no
 # mserver is shut down, meaning they will live on after the Merovingian
 # has shut down.  The default is to shut down all started mservers with
-# a time-out of 7 seconds.
+# a time-out of 7 seconds.  Note that databases under maintenance are
+# never shut down by Merovingian, regardless this setting.
 mero_exittimeout=7
 
 # MAL section
