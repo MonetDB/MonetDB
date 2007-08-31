@@ -25,5 +25,5 @@ scripts_conf = {
 	SOURCES = monetdb5.conf
 }
 
-monetdb_var_logdir=$(localstatedir)/log
+monetdb_var_logdir = $(localstatedir)/log
 monetdb_var_log_DATA = 
