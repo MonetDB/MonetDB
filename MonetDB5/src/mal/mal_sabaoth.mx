@@ -273,7 +273,7 @@ str SABAOTHmarchConnection(int *ret, str *host, int *port, bit *ssl) {
 		/* emit a warning if we are in maintenance mode */
 		rethrow("sabaoth.getMyStatus", tmp,
 				SABAOTHgetMyStatus(&stats));
-		if (stats->state == SABdbMaintenance)
+		if (stats->locked == 1)
 			fprintf(stderr, "#warning: database is running in "
 					"maintenance mode\n");
 		SABAOTHfreeStatus(&stats);
@@ -415,13 +415,13 @@ typedef enum {
 	SABdbIllegal = 0,
 	SABdbRunning,
 	SABdbCrashed,
-	SABdbInactive,
-	SABdbMaintenance
+	SABdbInactive
 } SABdbState;
 
 typedef struct Ssabdb {
-	str dbname;              /* database name as string */
-	/* str path; */
+	str dbname;              /* database name */
+	str path;                /* full path to database */
+	int locked;              /* whether this database is under maintenance */
 	SABdbState state;        /* current database state */
 	sablist* scens;          /* scenarios available for this database */
 	sablist* conns;          /* connections available for this database */
@@ -486,7 +486,9 @@ str SABAOTHgetStatus(sabdb** ret, str dbname) {
 		sdb->next = NULL;
 
 		/* store the database name */
-		sdb->dbname = strdup(e->d_name);
+		snprintf(buf, PATHLENGTH, "%s/%s", path, e->d_name);
+		sdb->path = strdup(buf);
+		sdb->dbname = sdb->path + strlen(sdb->path) - strlen(e->d_name);
 
 		/* add scenarios that are supported */
 		sdb->scens = NULL;
@@ -538,8 +540,6 @@ str SABAOTHgetStatus(sabdb** ret, str dbname) {
 		 *   running
 		 * - to distinguish between a crash and proper shutdown, consult
 		 *   the uplog
-		 * the existance of the maintenance file overrules any check and
-		 * puts the server in maintenance mode
 		 */
 		snprintf(buf, PATHLENGTH, "%s/%s/%s", path, e->d_name, ".gdk_lock");
 		if (_sabaoth_internal_dbname != NULL &&
@@ -586,7 +586,9 @@ str SABAOTHgetStatus(sabdb** ret, str dbname) {
 		f = fopen(buf, "r");
 		if (f != NULL) {
 			fclose(f);
-			sdb->state = SABdbMaintenance;
+			sdb->locked = 1;
+		} else {
+			sdb->locked = 0;
 		}
 	}
 	(void) closedir(d);
@@ -610,7 +612,7 @@ str SABAOTHfreeStatus(sabdb** ret) {
 
 	p = *ret;
 	while (p != NULL) {
-		if (p->dbname != NULL) free(p->dbname);
+		if (p->path != NULL) free(p->path);
 		r = p->scens;
 		while (r != NULL) {
 			if (r->val != NULL)

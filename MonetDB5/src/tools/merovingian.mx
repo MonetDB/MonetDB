@@ -240,10 +240,6 @@ terminateProcess(void *p)
 			fflush(stdout);
 			SABAOTHfreeStatus(&stats);
 			return;
-		case SABdbMaintenance:
-			fprintf(stderr, "database '%s' remains under maintenance, not attempting to shut down\n", d->dbname);
-			SABAOTHfreeStatus(&stats);
-			return;
 		default:
 			fprintf(stderr, "unknown state: %d", (int)stats->state);
 			SABAOTHfreeStatus(&stats);
@@ -280,11 +276,6 @@ terminateProcess(void *p)
 				case SABdbInactive:
 					fprintf(stdout, "database '%s' has shut down\n", d->dbname);
 					fflush(stdout);
-					SABAOTHfreeStatus(&stats);
-					return;
-				case SABdbMaintenance:
-					fprintf(stderr, "database '%s' is under maintenance, "
-							"we shouldn't have killed it!\n", d->dbname);
 					SABAOTHfreeStatus(&stats);
 					return;
 				default:
@@ -396,6 +387,11 @@ forkMserver(str database, sabdb** stats, dpair dp, int sock)
 		return(e);
 	}
 
+	if ((*stats)->locked == 1) {
+		merlog("database '%s' is under maintenance", database);
+		return(NO_ERR);
+	}
+
 	switch ((*stats)->state) {
 		case SABdbRunning:
 			t = localtime(&info.laststart);
@@ -429,10 +425,6 @@ forkMserver(str database, sabdb** stats, dpair dp, int sock)
 					(lng)info.minuptime, (lng)info.avguptime, (lng)info.maxuptime,
 					info.crashavg1, info.crashavg10, info.crashavg30,
 					info.startcntr, info.stopcntr, info.crashcntr);
-		break;
-		case SABdbMaintenance:
-			merlog("database '%s' is under maintenance", database);
-			return(NO_ERR);
 		break;
 		default:
 			SABAOTHfreeStatus(stats);
@@ -539,13 +531,13 @@ forkMserver(str database, sabdb** stats, dpair dp, int sock)
 					return(newErr(
 								"database '%s' appears to cleanly shut down "
 								"itself after starting", database));
-				case SABdbMaintenance:
-					return(newErr(
-								"database '%s' has been put into maintenance "
-								"mode during startup", database));
 				default:
 					return(newErr("unknown state: %d", (int)(*stats)->state));
 			}
+		}
+		if ((*stats)->locked == 1) {
+			merlog("database '%s' has been put into maintenance "
+					"mode during startup", database);
 		}
 
 		return(NO_ERR);

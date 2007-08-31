@@ -192,13 +192,13 @@ printStatus(sabdb *stats, int mode)
 			case SABdbInactive:
 				state = "stopped";
 			break;
-			case SABdbMaintenance:
-				state = "mainten";
-			break;
 			default:
 				state = "unknown";
 			break;
 		}
+		/* override if locked for brevity */
+		if (stats->locked == 1)
+			state = "mainten";
 
 		secondsToString(avg, uplog.avguptime, 0);
 
@@ -234,18 +234,16 @@ printStatus(sabdb *stats, int mode)
 			case SABdbInactive:
 				state = "stopped";
 			break;
-			case SABdbMaintenance:
-				state = "maintenance";
-			break;
 			default:
 				state = "unknown";
 			break;
 		}
 
 		printf("%s:\n", stats->dbname);
-		printf("  location: %s/%s\n", dbfarm, stats->dbname);
+		printf("  location: %s\n", stats->path);
 		printf("  database name: %s\n", stats->dbname);
 		printf("  state: %s\n", state);
+		printf("  under maintenance: %s\n", stats->locked == 1 ? "yes" : "no");
 		entry = stats->scens;
 		printf("  available scenarios:");
 		if (entry == NULL) {
@@ -319,13 +317,12 @@ printStatus(sabdb *stats, int mode)
 			case SABdbInactive:
 				snprintf(buf, 64, "not running");
 			break;
-			case SABdbMaintenance:
-				snprintf(buf, 64, "under maintenance");
-			break;
 			default:
 				snprintf(buf, 64, "unknown");
 			break;
 		}
+		if (stats->locked == 1)
+			strcat(buf, ", under maintenance");
 		printf("database %s, %s\n", stats->dbname, buf);
 		printf("  crash average: %d.00 %.2f %.2f (over 1, 15, 30 starts) "
 				"in total %d crashes\n",
@@ -616,20 +613,17 @@ command_destroy(int argc, char *argv[], char *dbfarm)
 			char path[8096];
 			err e;
 
-			switch (stats->state) {
-				case SABdbRunning:
-					fprintf(stderr, "destroy: database %s is still running, "
-							"stop database first\n", dbname);
-					SABAOTHfreeStatus(&stats);
-					exit(1);
-				case SABdbMaintenance:
-					fprintf(stderr, "destroy: database %s is under maintenance"
-							", release database first\n", dbname);
-					SABAOTHfreeStatus(&stats);
-					exit(1);
-				default:
-					/* make compiler happy */
-				break;
+			if (stats->state == SABdbRunning) {
+				fprintf(stderr, "destroy: database %s is still running, "
+						"stop database first\n", dbname);
+				SABAOTHfreeStatus(&stats);
+				exit(1);
+			}
+			if (stats->locked == 1) {
+				fprintf(stderr, "destroy: database %s is under maintenance"
+						", release database first\n", dbname);
+				SABAOTHfreeStatus(&stats);
+				exit(1);
 			}
 			SABAOTHfreeStatus(&stats);
 
@@ -687,7 +681,7 @@ command_lock(int argc, char *argv[], char *dbfarm)
 		if (stats != NULL) {
 			char path[8096];
 
-			if (stats->state == SABdbMaintenance) {
+			if (stats->locked == 1) {
 				fprintf(stderr, "lock: database %s already is "
 						"under maintenance\n", dbname);
 				SABAOTHfreeStatus(&stats);
@@ -729,7 +723,7 @@ command_release(int argc, char *argv[], char *dbfarm)
 		if (stats != NULL) {
 			char path[8096];
 
-			if (stats->state != SABdbMaintenance) {
+			if (stats->locked != 1) {
 				fprintf(stderr, "release: database %s is not "
 						"under maintenance\n", dbname);
 				SABAOTHfreeStatus(&stats);

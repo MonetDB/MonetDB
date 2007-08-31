@@ -305,7 +305,7 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout)
 			return;
 		}
 
-		if (stats->state == SABdbMaintenance) {
+		if (stats->locked == 1) {
 			if (uid == 0) {
 				stream_printf(fout, "#server is running in "
 						"maintenance mode\n");
