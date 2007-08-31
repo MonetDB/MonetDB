@@ -5,4 +5,4 @@
 @set MONETDB=%MONETDB:~0,-1%
 
 @rem start the real client
-@"%MONETDB%\MapiClient.bat" --language=sql %*
+@"%MONETDB%\mclient.bat" --language=sql %*
