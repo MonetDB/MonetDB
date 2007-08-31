@@ -59,7 +59,7 @@ command attribute(name:str, val:str):xml
 address XMLattribute
 comment "Construct an attribute value pair";
 
-command element(name:str, ns:str, attr:str, s:xml) :xml
+command element(name:str, ns:str, attr:xml, s:xml) :xml
 address XMLelement
 comment "The basic building block for XML elements are namespaces, attributes and a sequence of xml elements. The name space and the attributes may be left unspecified(=nil:bat).";
 
@@ -78,6 +78,11 @@ comment "Construct an element list";
 command isdocument(val:str):bit
 address XMLisdocument
 comment "Validate the string as a document";
+
+command prelude() :void
+address XMLprelude;
+
+xml.prelude();
 
 module calc;
 command xml(src:str):xml address XMLstr2xml;
@@ -108,6 +113,8 @@ typedef str xml;
 #define xml_export extern
 #endif
 
+xml_export int TYPE_xml;
+
 xml_export str XMLxml2str(str *s, xml *x);
 xml_export str XMLstr2xml(xml *x, str *s);
 xml_export str XMLdocument(xml *x, str *s);
@@ -122,6 +129,8 @@ xml_export str XMLelement(xml *ret, str *name, str *nspace, xml *attr, xml *val)
 xml_export str XMLelementSmall(xml *ret, str *name, xml *val);
 xml_export str XMLconcat(xml *ret, xml *left, xml *right);
 xml_export str XMLforest(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+
+xml_export str XMLprelude(void);
 
 #endif /* XML_H */
 @c
@@ -297,6 +306,17 @@ XMLforest(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	(void) mb;
 	return MAL_SUCCEED;
 }
+
+int TYPE_xml;
+
+str
+XMLprelude()
+{
+	TYPE_xml = ATOMindex("xml");
+	return MAL_SUCCEED;
+}
+
+
 
 @sql
 

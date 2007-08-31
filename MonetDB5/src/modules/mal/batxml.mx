@@ -244,7 +244,7 @@ BATXMLstr2xml(int *ret, int *bid)
 	int elm,len,size= BUFSIZ;
 
 	prepareOperand(b,bid,"str");
-	prepareResult(bn,b,TYPE_str,"str");
+	prepareResult(bn,b,TYPE_xml,"str");
 	BATloopFast(b,p,q,xx){
 		ptr h= BUNhead(b,p);
 		str t= (str) BUNtail(b,p);
@@ -324,7 +324,7 @@ BATXMLtag(int *ret, str *name, int *bid)
 	int tlen= strlen(*name)+2, len, size= BUFSIZ;
 
 	prepareOperand(b,bid,"tag");
-	prepareResult(bn,b,TYPE_str,"tag");
+	prepareResult(bn,b,TYPE_xml,"tag");
 	snprintf(buf,size,"<%s>",*name);
 
 	BATloopFast(b,p,q,xx){
@@ -370,7 +370,7 @@ BATXMLoptions(int *ret, str *name, str *options, int *bid)
 	int size= BUFSIZ, len=strlen(*name);
 
 	prepareOperand(b,bid,"options");
-	prepareResult(bn,b,TYPE_str,"options");
+	prepareResult(bn,b,TYPE_xml,"options");
 
 	if( strcmp(*options,"abscent")==0)
 		buf[0]=0;
@@ -422,7 +422,7 @@ BATXMLcomment(int *ret, int *bid)
 	int len,size= BUFSIZ;
 
 	prepareOperand(b,bid,"comment");
-	prepareResult(bn,b,TYPE_str,"comment");
+	prepareResult(bn,b,TYPE_xml,"comment");
 	BATloopFast(b,p,q,xx){
 		ptr h= BUNhead(b,p);
 		str t= (str) BUNtail(b,p);
@@ -451,7 +451,7 @@ BATXMLparse(int *ret, int *bid)
 	int xx;
 
 	prepareOperand(b,bid,"parse");
-	prepareResult(bn,b,TYPE_str,"parse");
+	prepareResult(bn,b,TYPE_xml,"parse");
 	BATloopFast(b,p,q,xx){
 	}
 	finalizeResult(ret,bn,b);
@@ -467,7 +467,7 @@ BATXMLpi(int *ret, str *operator, int *bid)
 
 	(void) operator;
 	prepareOperand(b,bid,"pi");
-	prepareResult(bn,b,TYPE_str,"pi");
+	prepareResult(bn,b,TYPE_xml,"pi");
 	BATloopFast(b,p,q,xx){
 	}
 	finalizeResult(ret,bn,b);
@@ -484,7 +484,7 @@ BATXMLroot(int *ret, int *bid, str *version, str *standalone)
 	int len,size= BUFSIZ;
 
 	prepareOperand(b,bid,"root");
-	prepareResult(bn,b,TYPE_str,"root");
+	prepareResult(bn,b,TYPE_xml,"root");
 
 	len= strlen(*version)+strlen(*standalone)+
 			strlen("<? version=\"\" standalone=\"\"?>");
@@ -519,7 +519,7 @@ BATXMLattribute(int *ret, str *name, int *bid)
 	int len,size= BUFSIZ;
 
 	prepareOperand(b,bid,"attribute");
-	prepareResult(bn,b,TYPE_str,"attribute");
+	prepareResult(bn,b,TYPE_xml,"attribute");
 	BATloopFast(b,p,q,xx){
 		ptr h= BUNhead(b,p);
 		str t= (str) BUNtail(b,p);
@@ -557,7 +557,7 @@ BATXMLelement(int *ret, str *name, str *namespace, str *attributes, int *bid)
 	if( b== NULL)
 		throw(MAL,"xml.element","Can not access BAT");
 
-	prepareResult(bn,b,TYPE_str,"element");
+	prepareResult(bn,b,TYPE_xml,"element");
 
 	BATloopFast(b,p,q,xx){
 		str t= (str) BUNtail(b,p);
@@ -629,7 +629,7 @@ BATXMLforest(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL,"xml.forest","Can not access BAT");
 	}
 
-	prepareResult(bn,b[pci->retc],TYPE_str,"attribute");
+	prepareResult(bn,b[pci->retc],TYPE_xml,"attribute");
 
 	while(p[pci->retc] < q[pci->retc]){
 		str t;
@@ -694,7 +694,7 @@ BATXMLconcat(int *ret, int *bid, int *rid)
 		throw(MAL,"xml.concat","Can not access BAT");
 	}
 
-	prepareResult(bn,b,TYPE_str,"concat");
+	prepareResult(bn,b,TYPE_xml,"concat");
 
 	while(p < q){
 		str t= (str) BUNtail(b,p);
