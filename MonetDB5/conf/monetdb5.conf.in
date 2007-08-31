@@ -126,8 +126,8 @@ monet_welcome=yes
 # to a file instead.  It is legitimate to have both mero_msglog and
 # mero_errlog pointing to the same file, as in the default below.
 # Unsetting below defaults will make merovingian log to the screen.
-mero_msglog=@prefix@@DIRSEP@var@DIRSEP@log@DIRSEP@merovingian.log
-mero_errlog=@prefix@@DIRSEP@var@DIRSEP@log@DIRSEP@merovingian.log
+mero_msglog=@localstatedir@@DIRSEP@log@DIRSEP@merovingian.log
+mero_errlog=@localstatedir@@DIRSEP@log@DIRSEP@merovingian.log
 #
 # Log messages may not be instantly logged, because the process that
 # writes the message does not flush its buffered stream.  Since
