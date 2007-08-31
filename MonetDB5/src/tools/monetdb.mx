@@ -610,7 +610,6 @@ command_destroy(int argc, char *argv[])
 		}
 
 		if (stats != NULL) {
-			char path[8096];
 			err e;
 
 			if (stats->state == SABdbRunning) {
@@ -627,11 +626,12 @@ command_destroy(int argc, char *argv[])
 			}
 
 			if (force == 0) {
+				char answ;
 				printf("you are about to remove database %s\n", dbname);
 				printf("ALL data in this database will get lost, "
 						"are you sure? [y/N] ");
-				scanf("%c", path);
-				if (path[0] == 'y' || path[0] == 'Y') {
+				scanf("%c", &answ);
+				if (answ == 'y' || answ == 'Y') {
 					/* do it! */
 				} else {
 					printf("battle control terminated\n");
