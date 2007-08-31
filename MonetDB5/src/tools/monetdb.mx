@@ -89,12 +89,12 @@ command_help(int argc, char *argv[])
 		printf("  -l  use long listing\n");
 		printf("  -s  use short one-line listing\n");
 	} else if (strcmp(argv[1], "create") == 0) {
-		printf("Usage: monetdb create [-m] database\n");
+		printf("Usage: monetdb create [-l] database\n");
 		printf("  Initialises a new database in the Sabaoth system.  A\n");
 		printf("  database created with this command makes it available\n");
 		printf("  to Merovingian.\n");
 		printf("Options:\n");
-		printf("  -m  put the database in maintenance mode after creation\n");
+		printf("  -l  put the database in maintenance mode after creation\n");
 	} else if (strcmp(argv[1], "destroy") == 0) {
 		printf("Usage: monetdb destroy [-f] database\n");
 		printf("  Removes the given database, including all its data and\n");
@@ -448,14 +448,14 @@ command_create(int argc, char *argv[], char *dbfarm)
 		char *dbname;
 		int maintenance = 0;
 
-		if (strcmp(argv[1], "-m") == 0) {
+		if (strcmp(argv[1], "-l") == 0) {
 			if (argc == 2) {
 				command_help(2, &argv[-1]);
 				exit(1);
 			}
 			maintenance = 1;
 			dbname = argv[2];
-		} else if (argc == 3 && strcmp(argv[2], "-m") == 0) {
+		} else if (argc == 3 && strcmp(argv[2], "-l") == 0) {
 			maintenance = 1;
 			dbname = argv[1];
 		} else {
