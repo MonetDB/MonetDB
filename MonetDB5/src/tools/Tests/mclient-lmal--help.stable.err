@@ -1,22 +1,24 @@
 stderr of test 'mclient-lmal--help` in directory 'src/tools` itself:
 
 
-# 23:46:47 >  
-# 23:46:47 >  Mtimeout -timeout 240  Mserver "--config=/net/corona.ins.cwi.nl/export/scratch0/manegold/Monet/Testing/Current/prefix.--enable-strict_--disable-optimize_--enable-debug/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/net/corona.ins.cwi.nl/export/scratch0/manegold/Monet/Testing/Current/prefix.--enable-strict_--disable-optimize_--enable-debug/lib64/MonetDB4:/net/corona.ins.cwi.nl/export/scratch0/manegold/Monet/Testing/Current/prefix.--enable-strict_--disable-optimize_--enable-debug/lib64/MonetDB4/lib:/net/corona.ins.cwi.nl/export/scratch0/manegold/Monet/Testing/Current/prefix.--enable-strict_--disable-optimize_--enable-debug/lib64/MonetDB4/bin" --set "gdk_dbfarm=/net/corona.ins.cwi.nl/export/scratch0/manegold/Monet/Testing/Current/prefix.--enable-strict_--disable-optimize_--enable-debug/var/MonetDB4/dbfarm" --set "sql_logdir=/net/corona.ins.cwi.nl/export/scratch0/manegold/Monet/Testing/Current/prefix.--enable-strict_--disable-optimize_--enable-debug/var/MonetDB4/sql_logs" --set "xquery_logdir=/net/corona.ins.cwi.nl/export/scratch0/manegold/Monet/Testing/Current/prefix.--enable-strict_--disable-optimize_--enable-debug/var/MonetDB4/xquery_logs" --set mapi_open=true --set xrpc_open=true --set mapi_port=33349 --set xrpc_port=43831 --set monet_prompt= --trace "--dbname=mTests_src_tools" --dbinit=" module(mapi); mal_start();" ; echo ; echo Over..
-# 23:46:47 >  
+# 11:03:02 >  
+# 11:03:02 >  Mtimeout -timeout 240  mserver5 "--config=/ufs/mk/monet5/Linux/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5//Linux/lib/MonetDB5:/ufs/mk/monet5//Linux/lib/MonetDB5/lib:/ufs/mk/monet5//Linux/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/mk/monet5//Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5//Linux/var/MonetDB5/sql_logs" --set "xquery_logdir=/ufs/mk/monet5//Linux/var/MonetDB5/xquery_logs" --set mapi_open=true --set xrpc_open=true --set mapi_port=36261 --set xrpc_port=45929 --set monet_prompt= --trace "--dbname=mTests_src_tools" --dbinit="" ; echo ; echo Over..
+# 11:03:02 >  
+
+#warning: please don't forget to set your vault key!
+#(see /ufs/mk/monet5/Linux/etc/monetdb5.conf)
+
+# 11:03:02 >  
+# 11:03:02 >  Mtimeout -timeout 120 ./mclient-lmal--help.MAL.sh mclient-lmal--help 
+# 11:03:02 >  
 
 
-# 23:46:47 >  
-# 23:46:47 >  Mtimeout -timeout 120 ./mclient-lmal--help.MAL.sh mclient-lmal--help 
-# 23:46:47 >  
+# 11:03:02 >  
+# 11:03:02 >  Mtimeout -timeout 60 mclient -lmal -umonetdb -Pmonetdb --config=/ufs/mk/monet5/Linux/etc/monetdb5.conf --host=gio --port=36261 --help
+# 11:03:02 >  
 
 
-# 23:46:47 >  
-# 23:46:47 >  Mtimeout -timeout 60 mclient -umonetdb -Pmonetdb --config=/net/corona.ins.cwi.nl/export/scratch0/manegold/Monet/Testing/Current/prefix.--enable-strict_--disable-optimize_--enable-debug/etc/MonetDB.conf --host=corona --port=33349 -lmal --help
-# 23:46:47 >  
-
-
-# 23:46:47 >  
-# 23:46:47 >  Done.
-# 23:46:47 >  
+# 11:03:02 >  
+# 11:03:02 >  Done.
+# 11:03:02 >  
 

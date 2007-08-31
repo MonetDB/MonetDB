@@ -1,28 +1,35 @@
 stdout of test 'mclient-lmal--help` in directory 'src/tools` itself:
 
 
-# 16:36:12 >  
-# 16:36:12 >  Mtimeout -timeout 300 ./mclient-lmal--help mclient-lmal--help 
-# 16:36:12 >  
+# 11:03:02 >  
+# 11:03:02 >  Mtimeout -timeout 240  mserver5 "--config=/ufs/mk/monet5/Linux/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5//Linux/lib/MonetDB5:/ufs/mk/monet5//Linux/lib/MonetDB5/lib:/ufs/mk/monet5//Linux/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/mk/monet5//Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5//Linux/var/MonetDB5/sql_logs" --set "xquery_logdir=/ufs/mk/monet5//Linux/var/MonetDB5/xquery_logs" --set mapi_open=true --set xrpc_open=true --set mapi_port=36261 --set xrpc_port=45929 --set monet_prompt= --trace "--dbname=mTests_src_tools" --dbinit="" ; echo ; echo Over..
+# 11:03:02 >  
 
-
-printf("\nReady.\n");
+!WARNING: GDKlockHome: ignoring empty or invalid .gdk_lock.
+!WARNING: BBPdir: initializing BBP.
+# MonetDB server v5.1.0, based on kernel v1.19.0
+# Serving database 'mTests_src_tools'
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Copyright (c) 1993-2007 CWI, all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://gio.ins.cwi.nl:36261/
 
 Ready.
-quit();
+#function user.main():void;
+#    clients.quit();
+#end main;
 
 Over..
 
-# 23:46:47 >  
-# 23:46:47 >  Mtimeout -timeout 120 ./mclient-lmal--help.MAL.sh mclient-lmal--help 
-# 23:46:47 >  
+# 11:03:02 >  
+# 11:03:02 >  Mtimeout -timeout 120 ./mclient-lmal--help.MAL.sh mclient-lmal--help 
+# 11:03:02 >  
 
 
-# 23:46:47 >  
-# 23:46:47 >  Mtimeout -timeout 60 mclient -umonetdb -Pmonetdb --config=/net/corona.ins.cwi.nl/export/scratch0/manegold/Monet/Testing/Current/prefix.--enable-strict_--disable-optimize_--enable-debug/etc/MonetDB.conf --host=corona --port=33349 -lmal --help
-# 23:46:47 >  
+# 11:03:02 >  
+# 11:03:02 >  Mtimeout -timeout 60 mclient -lmal -umonetdb -Pmonetdb --config=/ufs/mk/monet5/Linux/etc/monetdb5.conf --host=gio --port=36261 --help
+# 11:03:02 >  
 
-= Please remove this line in case the below usage message of `mclient -lmal` is correct.
 \?      - show this message
 ?pat    - MAL function help. pat=[modnme[.fcnnme][(][)]] wildcard *
 \<file  - read input from file
@@ -38,9 +45,7 @@ Over..
 \X      - trace mclient code
 \q      - terminate session
 mal>
-= Please remove this line in case the above usage message of `mclient -lmal` is correct.
-
-# 23:46:47 >  
-# 23:46:47 >  Done.
-# 23:46:47 >  
+# 11:03:02 >  
+# 11:03:02 >  Done.
+# 11:03:02 >  
 
