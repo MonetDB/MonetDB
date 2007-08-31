@@ -1840,17 +1840,19 @@ str parseError(Client cntxt, str msg)
 	}
 	*s++= '\n';
 	*s = 0;
-	showException(SYNTAX, "parseError", buf);
-	/* produce the position marker*/
-	s= buf;
-	i = position(cntxt) -1;
-	for(; i > 0; i--) {
-	   *s++ = ((l && *(l+1) && *l++ != '\t'))?' ':'\t';
+	if( s != buf+1 && strlen(buf)<1024){
+		showException(SYNTAX, "parseError", buf);
+		/* produce the position marker*/
+		s= buf;
+		i = position(cntxt) -1;
+		for(; i > 0; i--) {
+		   *s++ = ((l && *(l+1) && *l++ != '\t'))?' ':'\t';
+		}
+		*s++ = '^'; 
+		*s = 0;
 	}
-	*s++ = '^'; 
-	*s = 0;
 
-	if( msg && strlen(msg)+strlen(buf) < 1020)
+	if( msg && strlen(msg))
 		snprintf(s,1020,"%s", msg);
 	skipToEnd(cntxt);
 	showException(SYNTAX, "parseError", buf);

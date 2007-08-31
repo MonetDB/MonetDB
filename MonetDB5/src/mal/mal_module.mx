@@ -784,16 +784,17 @@ int tstDuplicate(char **msg, char *s){
 	size_t len;
 	len= strlen(s);
 	for(i=0; msg[i]; i++)
-		if( strncmp(s, msg[i], MAX(len,strlen(msg[i]))) == 0) 
+		if( strncmp(s, msg[i], MAX(len,strlen(msg[i]))) == 0 && 
+			strlen(s) == strlen(msg[i]) )
 			return 1; 
 	return 0;
 }
-char **getHelp(Module m, str pat, int completion)
+char **getHelp(Module m, str inputpat, int completion)
 {
-	str modnme, fcnnme = 0;
+	str pat, modnme, fcnnme = 0;
 	Module m1;
 	Symbol s;
-	int len1 = 0,len2 = 0,fnd=0,f;
+	int len1 = 0,len2 = 0,fnd=0;
 	char *t, **msg, buf[BUFSIZ];
 	int top=0, i,j,k, sig = 0, doc = 0;
 
@@ -803,9 +804,10 @@ char **getHelp(Module m, str pat, int completion)
 	msg= (char **) GDKmalloc( 1000 * sizeof(str));
 	msg[top]=0;
 
-	if (!pat)
+	if (!inputpat)
 		return msg;
 
+	pat= GDKstrdup(inputpat);
 	t= strchr(pat,'\n');
 	if( t) *t=0;
 
@@ -834,7 +836,10 @@ char **getHelp(Module m, str pat, int completion)
 
 	if( fcnnme && *fcnnme){
 		len2 = strlen(fcnnme);
-	} else return msg;
+	} else {
+		GDKfree(pat);
+		return msg;
+	}
 
 	len1 = strlen(modnme);
 
@@ -847,17 +852,24 @@ char **getHelp(Module m, str pat, int completion)
 				if( strncmp(modnme,m->name,len1) ==0  || *modnme=='*'){
 					msg[top++] = GDKstrdup(m->name);
 					msg[top] =0;
-					if( top == 999) return msg;
+					if( top == 999) {
+						GDKfree(pat);
+						return msg;
+					}
 				}
 				m= m->sibling;
 			}
 		}
+		GDKfree(pat);
 		return msg;
 	}
 
 	/* display module.function */
 	m1 = findModule(m,modnme);
-	if( m1 == 0  && *modnme != '*') return msg;
+	if( m1 == 0  && *modnme != '*') {
+		GDKfree(pat);
+		return msg;
+	}
 	if( m1 ) m = m1;
 	
 #ifdef MAL_SCOPE_DEBUG 
@@ -892,18 +904,17 @@ char **getHelp(Module m, str pat, int completion)
 
 					v= strstr(buf,"address");
 					if( v) *v=0;
-					if( tstDuplicate(msg,buf+1) ) fnd++;
-
-					for(f=0;f<top;f++)
-					if( msg[f] && strcmp(buf+1, msg[f]) == 0 ) fnd++;
+					if( tstDuplicate(msg,buf+1) && s->def->help==0 ) fnd++;
 					if(fnd) continue;
 
 					msg[top++]= GDKstrdup(buf+1);
-					if( top >=998) return msg;
+					if( top >=998) {
+						GDKfree(pat);
+						return msg;
+					}
 					if(v){
 						*v='a';
 						msg[top++]= GDKstrdup(v);
-						if( top >=998) return msg;
 					}
 
 					if( s->def->help) {
@@ -927,12 +938,16 @@ char **getHelp(Module m, str pat, int completion)
 				if( fnd == 0 && buf[1]){
 					msg[top++] = GDKstrdup(buf+1);
 					msg[top] = 0;
-					if( top >=998) return msg;
+				}
+				if( top >=998) {
+					GDKfree(pat);
+					return msg;
 				}
 			}
 			m= m->sibling;
 		}
 	}
+	GDKfree(pat);
 	return msg;
 }
 @-
