@@ -52,3 +52,5 @@ scripts_mal = {
 	DIR = libdir/MonetDB5
 	SOURCES = sql.mx 
 }
+
+EXTRA_DIST_DIR = Tests

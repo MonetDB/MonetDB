@@ -40,3 +40,5 @@ bin_msqldump = {
 }
 
 EXTRA_DIST = msqldump.h mprompt.h
+
+EXTRA_DIST_DIR = Tests

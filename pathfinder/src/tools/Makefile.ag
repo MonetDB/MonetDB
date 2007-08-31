@@ -81,3 +81,5 @@ bin_Mbeddedxq = {
 		libembeddedxq \
 		$(MONETDB_LIBS) -lbat -lmutils -lstream $(MONETDB4_LIBS) -lmonet $(CLIENTS_LIBS) -lMapi
 }
+
+EXTRA_DIST_DIR = Tests

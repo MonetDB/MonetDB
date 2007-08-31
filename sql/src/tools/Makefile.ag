@@ -111,3 +111,5 @@ scripts_py = {
         TARGETS = monetdb.py
         DIR = $(prefix)/$(PYTHON_LIBDIR)
 }
+
+EXTRA_DIST_DIR = Tests

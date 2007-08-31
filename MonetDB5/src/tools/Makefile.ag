@@ -74,3 +74,5 @@ scripts_bat = {
 	DIR = bindir
 	SOURCES = monetdb5-config.bat.in 
 }
+
+EXTRA_DIST_DIR = Tests

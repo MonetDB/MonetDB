@@ -35,3 +35,4 @@ scripts_python = {
 	SOURCES = Mapi.py
 }
 
+EXTRA_DIST_DIR = Tests
