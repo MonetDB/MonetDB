@@ -246,22 +246,20 @@ str
 XMLelement(xml *ret, str *name, str *nspace, xml *attr, xml *val)
 {
 	int len;
-	str buf= (str) GDKmalloc(len=strlen(*name) +
+	str buf= (str) GDKmalloc(len=2*strlen(*name) +
 				strlen(*nspace) + strlen(*attr)+
 				strlen("<></> ")+strlen(*val)+1);
 	if( strNil(*nspace) && strNil(*attr))
-		snprintf(buf,len,"<%s>%s</%s>",
+		snprintf(buf, len,"<%s>%s</%s>",
 			*name, *val, *name);
-	else
-	if( strNil(*nspace))
-		snprintf(buf,len,"<%s %s>%s</%s>",
-			*name,*nspace, *val, *name);
-	else
-	if( strNil(*attr))
-		snprintf(buf,len,"<%s %s>%s</%s>",
+	else if( strNil(*nspace))
+		snprintf(buf, len,"<%s %s>%s</%s>",
 			*name, *attr, *val, *name);
+	else if( strNil(*attr))
+		snprintf(buf, len,"<%s %s>%s</%s>",
+			*name, *nspace, *val, *name);
 	else
-		snprintf(buf,len,"<%s %s %s>%s</%s>",
+		snprintf(buf, len,"<%s %s %s>%s</%s>",
 			*name, *nspace, *attr, *val, *name);
 
 	*ret= buf;
