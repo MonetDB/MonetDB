@@ -57,31 +57,35 @@ gdk_embedded=no
 gdk_debug=0
 # possible values: (can be a combination of)
 #       1 = thread-specific debug output
-#       2 = CHECKMASK = property enforcing on new BATs
-#       4 = MEMMASK   = memory allocation
-#       8 = PROPMASK  = property checking on all values: tells about wrongly set properties
-#      16 = IOMASK    = major IO activity
-#      32 = BATMASK   = BAT handling
-#      64 = PARSEMASK = parser debugging
-#     128 = PARMASK   = Thread management
-#     256 = TRGMASK   = Event management 
-#     512 = TMMASK    = Transaction management
-#    1024 = TEMMASK   = Locks and Triggers
-#    2048 = DLMASK    = Dynamic loading
-#    4096 = PERFMASK  = BBP Performance (?)
-#    8192 = DELTAMASK = Delta debugging (?)
-#   16384 = LOADMASK  = Module loading
-#   32768 = YACCMASK  = Yacc specific error messages
-#   65536 = obsolete  = tcpip (??)
-#  131072 = obsolete  = monet_multiplex: setaggr debugging (??)
-#  262144 = obsolete  = \
-#  524288 = obsolete  =   ddbench (???)
-# 1048576 = obsolete  = /
-# 2097152 = ALGOMASK  = show join/select algorithm chosen
-# 4194304 = ESTIMASK  = show result size estimations (for join,select)
-# 8388608 = XPROPMASK = extended property checking: tells also about not set properties
-#16777216 = JOINPROPMASK = disable property checking with join & outerjoin (e.g., for performance measurements)
-#33554432 = DEADBEEFMASK = disable "cleaning" of freed memory in GDKfree() (e.g., for performance measurements)
+#       2 = CHECKMASK    = property enforcing on new BATs
+#       4 = MEMMASK      = memory allocation
+#       8 = PROPMASK     = property checking on all values: tells about
+#                          wrongly set properties
+#      16 = IOMASK       = major IO activity
+#      32 = BATMASK      = BAT handling
+#      64 = PARSEMASK    = parser debugging
+#     128 = PARMASK      = Thread management
+#     256 = TRGMASK      = Event management 
+#     512 = TMMASK       = Transaction management
+#    1024 = TEMMASK      = Locks and Triggers
+#    2048 = DLMASK       = Dynamic loading
+#    4096 = PERFMASK     = BBP Performance (?)
+#    8192 = DELTAMASK    = Delta debugging (?)
+#   16384 = LOADMASK     = Module loading
+#   32768 = YACCMASK     = Yacc specific error messages
+#   65536 = obsolete     = tcpip (??)
+#  131072 = obsolete     = monet_multiplex: setaggr debugging (??)
+#  262144 = obsolete     = \
+#  524288 = obsolete     =   ddbench (???)
+# 1048576 = obsolete     = /
+# 2097152 = ALGOMASK     = show join/select algorithm chosen
+# 4194304 = ESTIMASK     = show result size estimations (for join,select)
+# 8388608 = XPROPMASK    = extended property checking: tells also about
+#                          not set properties
+#16777216 = JOINPROPMASK = disable property checking with join & outerjoin
+#                          (e.g., for performance measurements)
+#33554432 = DEADBEEFMASK = disable "cleaning" of freed memory in GDKfree()
+#                          (e.g., for performance measurements)
 # 
 # Mserver 5 recognizes a series of command line names instead:
 # --threads ( 1 | PARMASK)
