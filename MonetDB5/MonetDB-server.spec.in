@@ -104,7 +104,6 @@ find $RPM_BUILD_ROOT -name .incs.in -print -o -name \*.la -print | xargs rm -f
 
 # cleanup stuff we don't want to install
 rm -rf $RPM_BUILD_ROOT%{_libdir}/MonetDB5/Tests/*
-rm -rf $RPM_BUILD_ROOT%{prefix}/bin/monetdb5-config.bat
 
 # Fixes monet config script
 #perl -p -i -e "s|$RPM_BUILD_ROOT||" $RPM_BUILD_ROOT%{prefix}/bin/monet_config

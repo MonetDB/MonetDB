@@ -82,7 +82,6 @@ rm -rf $RPM_BUILD_ROOT%{prefix}/share/%{name}/Mprofile-commands.lst
 
 rm -rf $RPM_BUILD_ROOT%{prefix}/bin/M*
 rm -rf $RPM_BUILD_ROOT%{prefix}/bin/prof.py
-rm -rf $RPM_BUILD_ROOT%{prefix}/bin/monetdb-config.bat
 
 # Fixes monet config script
 #perl -p -i -e "s|$RPM_BUILD_ROOT||" $RPM_BUILD_ROOT%{prefix}/bin/monet_config

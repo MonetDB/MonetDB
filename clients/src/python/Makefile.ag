@@ -24,6 +24,7 @@ scripts_py = {
 }
 
 scripts_bat = {
+	COND = NATIVE_WIN32
 	DIR = bindir
 	SOURCES = mclient.py.bat 
 }

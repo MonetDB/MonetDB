@@ -202,8 +202,6 @@ make install \
 find $RPM_BUILD_ROOT -name .incs.in -print -o -name \*.la -print | xargs rm -f
 rm -rf $RPM_BUILD_ROOT%{_datadir}/MonetDB/Tests/*
 rm -rf $RPM_BUILD_ROOT%{_libdir}/MonetDB/Tests/*
-rm -rf $RPM_BUILD_ROOT%{prefix}/bin/monetdb-clients-config.bat
-rm -rf $RPM_BUILD_ROOT%{prefix}/bin/mjclient.bat
 
 
 %clean

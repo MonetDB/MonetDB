@@ -145,7 +145,6 @@ rm -rf $RPM_BUILD_ROOT%{_libdir}/MonetDB4/Tests/*
 rm -rf $RPM_BUILD_ROOT%{prefix}/lib*/python*/site-packages
 rm -rf $RPM_BUILD_ROOT%{prefix}/include/sql
 rm -rf $RPM_BUILD_ROOT%{_libdir}/pkgconfig/MonetDB-SQL.pc
-rm -rf $RPM_BUILD_ROOT%{prefix}/bin/monetdb-sql-config.bat
 # remove the following line, once we add it to %files devel, below
 rm -rf $RPM_BUILD_ROOT%{prefix}/bin/monetdb-sql-config
 

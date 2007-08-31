@@ -65,12 +65,14 @@ bin_Mbeddedmal = {
 
 
 scripts_sh = {
+	COND = NOT_WIN32
 	EXT = ""
 	DIR = bindir
 	SOURCES = monetdb5-config.in mcheckpoint mrecover
 }
 
 scripts_bat = {
+	COND = NATIVE_WIN32
 	DIR = bindir
 	SOURCES = monetdb5-config.bat.in 
 }

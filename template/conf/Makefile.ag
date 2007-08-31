@@ -20,6 +20,7 @@ EXTRA_DIST = \
 	ltmain.sh config.h.in
 
 scripts_sh = {
+	COND = NOT_WIN32
 	EXT = ""
 	DIR = bindir
 	SOURCES = monetdb-template-config.in

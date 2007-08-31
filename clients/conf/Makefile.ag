@@ -20,12 +20,14 @@ EXTRA_DIST = \
 	ltmain.sh
 
 scripts_sh = {
+	COND = NOT_WIN32
 	EXT = ""
 	DIR = bindir
 	SOURCES = monetdb-clients-config.in
 }
 
 scripts_bat = {
+	COND = NATIVE_WIN32
 	DIR = bindir
 	SOURCES = monetdb-clients-config.bat.in 
 }

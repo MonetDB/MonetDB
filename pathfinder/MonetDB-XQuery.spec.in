@@ -93,7 +93,6 @@ find $RPM_BUILD_ROOT -name \*.la | xargs rm -f
 
 # cleanup stuff we don't want to install
 rm -rf $RPM_BUILD_ROOT%{_libdir}/MonetDB5
-rm -rf $RPM_BUILD_ROOT%{prefix}/bin/monetdb-xquery-config.bat
 
 # Fixes monet config script
 #perl -p -i -e "s|$RPM_BUILD_ROOT||" $RPM_BUILD_ROOT%{prefix}/bin/monet_config

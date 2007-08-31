@@ -35,6 +35,7 @@ bin_Mprofile.py = bin_Mtest.py
 bin_Mprofile.py.bat = bin_Mtest.py.bat
 
 scripts_bat = {
+	COND = NATIVE_WIN32
 	DIR = bindir
 	SOURCES = Mlog.bat Mtest.py.bat
 }
@@ -56,6 +57,7 @@ scripts_lst = {
 }
 
 scripts_sh = {
+	COND = NOT_WIN32
 	EXT = ""
 	DIR = bindir
 	SOURCES = Mlog MkillUsers
