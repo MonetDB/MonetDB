@@ -81,18 +81,17 @@ command_help(int argc, char *argv[])
 		printf("  use the help command to get help for a particular command\n");
 	} else if (strcmp(argv[1], "status") == 0) {
 		printf("Usage: monetdb status [-als] [database ...]\n");
-		printf("  Shows the state of a given database as known to the\n");
-		printf("  Sabaoth system.  Various options control what information\n");
-		printf("  is displayed.\n");
+		printf("  Shows the state of a given database.  Various options\n");
+		printf("  control what information is displayed.\n");
 		printf("Options:\n");
 		printf("  -a  list status of all databases\n");
 		printf("  -l  use long listing\n");
 		printf("  -s  use short one-line listing\n");
 	} else if (strcmp(argv[1], "create") == 0) {
 		printf("Usage: monetdb create [-l] database\n");
-		printf("  Initialises a new database in the Sabaoth system.  A\n");
+		printf("  Initialises a new database in the MonetDB Server.  A\n");
 		printf("  database created with this command makes it available\n");
-		printf("  to Merovingian.\n");
+		printf("  for use.\n");
 		printf("Options:\n");
 		printf("  -l  put the database in maintenance mode after creation\n");
 	} else if (strcmp(argv[1], "destroy") == 0) {
@@ -106,8 +105,8 @@ command_help(int argc, char *argv[])
 		printf("Usage: monetdb lock database\n");
 		printf("  Puts the given database in maintenance mode.  A database\n");
 		printf("  under maintenance can only be connected to by the DBA.\n");
-		printf("  Merovingian will not start or stop a database which is\n");
-		printf("  under maintenance.  Use the \"release\" command to bring\n");
+		printf("  A database which is under maintenance is not started\n");
+		printf("  automatically.  Use the \"release\" command to bring\n");
 		printf("  the database back for normal usage.\n");
 	} else if (strcmp(argv[1], "release") == 0) {
 		printf("Usage: monetdb release database\n");
@@ -118,7 +117,7 @@ command_help(int argc, char *argv[])
 		printf("Yeah , help on help, how desparate can you be? ;)");
 	} else if (strcmp(argv[1], "version") == 0) {
 		printf("Usage: monetdb version\n");
-		printf("  prints the version of the monetdb toolkit\n");
+		printf("  prints the version of this monetdb utility\n");
 	} else {
 		printf("help: unknown command: %s\n", argv[1]);
 	}
