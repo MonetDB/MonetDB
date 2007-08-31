@@ -17,7 +17,6 @@ extern int		max_arity;
 
 /*#ifdef __STDC__*/
 #define ARGS(x) x
-#include <stddef.h> /* for size_t */
 /*#else*/
 /*#define ARGS(x) ()*/
 /*#endif*/
