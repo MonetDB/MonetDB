@@ -75,6 +75,12 @@
         }
         "Entry"
         {
+        "MsmKey" = "8:_10AB8DCD4D3D45BB90C8DF897878ABE2"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
         "MsmKey" = "8:_11CB1E338938478894097DC0B65D8899"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -94,6 +100,12 @@
         "Entry"
         {
         "MsmKey" = "8:_1463EE1B22C04587AC36BBB138396168"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_14A0495208064DCA9A6222547E8C9052"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -237,12 +249,6 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_360663D6060443F7B03AD0DBC5105C5A"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
         "MsmKey" = "8:_39FD737767A745D79A092FD51807BE6F"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -268,12 +274,6 @@
         "Entry"
         {
         "MsmKey" = "8:_3BB3996E3E4D4A64B574C39D8398AB69"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_3F6B624F6E6140A8A32CA8728C87E437"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -543,12 +543,6 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_9A97A5686CAF49E5ABD3B0E42F9296D2"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
         "MsmKey" = "8:_9BCE4E788F1C4F4DBBE2F9AEB9A64EC7"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -562,6 +556,12 @@
         "Entry"
         {
         "MsmKey" = "8:_9DE0CA047DA44992AD1B4C10198CA579"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_A18519799C3B4D7DB6FCCBA73F99413D"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -1267,6 +1267,26 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_10AB8DCD4D3D45BB90C8DF897878ABE2"
+            {
+            "SourcePath" = "8:bin\\mclient.exe"
+            "TargetName" = "8:mclient.exe"
+            "Tag" = "8:"
+            "Folder" = "8:_1EC19BD0D849484790DB6A7D69758E24"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_11CB1E338938478894097DC0B65D8899"
             {
             "SourcePath" = "8:lib\\MonetDB4\\lib_mel.dll"
@@ -1333,6 +1353,26 @@
             "TargetName" = "8:bat_arith.mil"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_14A0495208064DCA9A6222547E8C9052"
+            {
+            "SourcePath" = "8:mclient.bat"
+            "TargetName" = "8:mclient.bat"
+            "Tag" = "8:"
+            "Folder" = "8:_D9A7267FC9784D8BBD3CBC6EC1754DBE"
             "Condition" = "8:"
             "Transitive" = "11:FALSE"
             "Vital" = "11:TRUE"
@@ -1807,26 +1847,6 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_360663D6060443F7B03AD0DBC5105C5A"
-            {
-            "SourcePath" = "8:bin\\MapiClient.py"
-            "TargetName" = "8:MapiClient.py"
-            "Tag" = "8:"
-            "Folder" = "8:_1EC19BD0D849484790DB6A7D69758E24"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_39FD737767A745D79A092FD51807BE6F"
             {
             "SourcePath" = "8:lib\\MonetDB4\\iterator.mil"
@@ -1913,26 +1933,6 @@
             "TargetName" = "8:jdbcclient.jar"
             "Tag" = "8:"
             "Folder" = "8:_2E7A7A2A3AA7443EB1803999F76D6C26"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_3F6B624F6E6140A8A32CA8728C87E437"
-            {
-            "SourcePath" = "8:bin\\MapiClient.exe"
-            "TargetName" = "8:MapiClient.exe"
-            "Tag" = "8:"
-            "Folder" = "8:_1EC19BD0D849484790DB6A7D69758E24"
             "Condition" = "8:"
             "Transitive" = "11:FALSE"
             "Vital" = "11:TRUE"
@@ -2827,26 +2827,6 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_9A97A5686CAF49E5ABD3B0E42F9296D2"
-            {
-            "SourcePath" = "8:MapiClient.bat"
-            "TargetName" = "8:MapiClient.bat"
-            "Tag" = "8:"
-            "Folder" = "8:_D9A7267FC9784D8BBD3CBC6EC1754DBE"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_9BCE4E788F1C4F4DBBE2F9AEB9A64EC7"
             {
             "SourcePath" = "8:etc\\MonetDB.conf"
@@ -2893,6 +2873,26 @@
             "TargetName" = "8:counters.mil"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_A18519799C3B4D7DB6FCCBA73F99413D"
+            {
+            "SourcePath" = "8:bin\\mclient.py"
+            "TargetName" = "8:mclient.py"
+            "Tag" = "8:"
+            "Folder" = "8:_1EC19BD0D849484790DB6A7D69758E24"
             "Condition" = "8:"
             "Transitive" = "11:FALSE"
             "Vital" = "11:TRUE"
@@ -4554,13 +4554,13 @@
         {
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:MonetDB4"
-        "ProductCode" = "8:{D43B1D38-E536-4A95-BE74-05D6E2AE08B1}"
-        "PackageCode" = "8:{C9473E72-04E6-4B75-844D-B924AAF671B6}"
+        "ProductCode" = "8:{AF6E1B9F-DDED-4928-9878-A11F5706429A}"
+        "PackageCode" = "8:{E6574170-3760-4122-AAB8-8F4D814CA6B9}"
         "UpgradeCode" = "8:{730C595B-DBA6-48D7-94B8-A98780AC92B6}"
         "RestartWWWService" = "11:FALSE"
         "RemovePreviousVersions" = "11:TRUE"
         "DetectNewerInstalledVersion" = "11:TRUE"
-        "ProductVersion" = "8:0.19.0"
+        "ProductVersion" = "8:7.8.31"
         "Manufacturer" = "8:CWI"
         "ARPHELPTELEPHONE" = "8:"
         "ARPHELPLINK" = "8:http://monetdb.cwi.nl/"

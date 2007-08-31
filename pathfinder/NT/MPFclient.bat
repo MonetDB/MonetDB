@@ -12,7 +12,7 @@ set PATH=%MONETDB%\bin;%MONETDB%\lib;%MONETDB%\lib\bin;%PATH%
 
 rem start the real client
 set XMLFILE=%TEMP%\MonetDB-XQuery-%RANDOM%.xml
-"%MONETDB%\bin\MapiClient.exe"  --set "prefix=%MONETDB%" --set "exec_prefix=%MONETDB%" -lxquery -oxml %* > "%XMLFILE%" && "%XMLFILE%"
+"%MONETDB%\bin\mclient.exe"  --set "prefix=%MONETDB%" --set "exec_prefix=%MONETDB%" -lxquery -oxml %* > "%XMLFILE%" && "%XMLFILE%"
 
 rem add a short sleep to make sure that there was time to open the
 rem file before we delete it

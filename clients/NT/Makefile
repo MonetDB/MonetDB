@@ -11,7 +11,7 @@ prefix = $(MAKEDIR)
 
 UNISTD_H = unistd.h
 
-all: "$(SRCDIR)\Makefile.msc" all-msc $(UNISTD_H) RunMapiClient.bat
+all: "$(SRCDIR)\Makefile.msc" all-msc $(UNISTD_H) Runmclient.bat
 	$(MAKE) /nologo /f "$(SRCDIR)\Makefile.msc" "prefix=$(prefix)" all
 
 check: "$(SRCDIR)\Makefile.msc"
@@ -21,7 +21,7 @@ check: "$(SRCDIR)\Makefile.msc"
 install: targetdirs clients_config.h all
 	$(INSTALL) clients_config.h "$(includedir)"
 	$(MAKE) /nologo /f "$(SRCDIR)\Makefile.msc" "prefix=$(prefix)" install
-	if not "$(MAKEDIR)" == "$(prefix)" $(INSTALL) MapiClient.bat "$(prefix)"
+	if not "$(MAKEDIR)" == "$(prefix)" $(INSTALL) mclient.bat "$(prefix)"
 
 $(SRCDIR)\Makefile.msc: "$(SRCDIR)\Makefile.ag"
         $(CD) "$(SRCDIR)" && autogen.py
@@ -43,8 +43,8 @@ unistd.h:
 	$(ECHO) #define umask _umask >> unistd.h
 	$(ECHO) #endif >> unistd.h
 
-RunMapiClient.bat: "$(SRCDIR)\RunMapiClient.bat.in"
-	$(CONFIGURE) "$(SRCDIR)\RunMapiClient.bat.in" > RunMapiClient.bat
+Runmclient.bat: "$(SRCDIR)\Runmclient.bat.in"
+	$(CONFIGURE) "$(SRCDIR)\Runmclient.bat.in" > Runmclient.bat
 
 targetdirs:
 	if not exist "$(bindir)"		$(MKDIR) "$(bindir)"
