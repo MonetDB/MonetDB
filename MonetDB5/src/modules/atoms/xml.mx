@@ -21,7 +21,7 @@
 This module contains the primitives needed in the SQL
 front-end to support SQL/XML.
 @mal
-atom xml:str;	#use a subtype for XML
+atom xml :str;	
 
 command xml(src:str):xml
 address XMLstr2xml
@@ -49,8 +49,7 @@ comment "Check the value for compliance as XML document";
 
 command content(val:str):xml
 address XMLcontent
-comment "Check the value for compliance as content, i.e.
-it may contain multiple roots and character data.";
+comment "Check the value for compliance as content, i.e.  it may contain multiple roots and character data.";
 
 command root(val:xml, version:str, standalone:str):xml
 address XMLroot
@@ -62,13 +61,11 @@ comment "Construct an attribute value pair";
 
 command element(name:str, ns:str, attr:str, s:xml) :xml
 address XMLelement
-comment "The basic building block for XML elements are namespaces, attributes and a sequence
-of xml elements. The name space and the attributes may be left unspecified(=nil:bat).";
+comment "The basic building block for XML elements are namespaces, attributes and a sequence of xml elements. The name space and the attributes may be left unspecified(=nil:bat).";
 
 command element(name:str, s:xml) :xml
 address XMLelementSmall
-comment "The basic building block for XML elements are namespaces, attributes and a sequence
-of xml elements. The name space and the attributes may be left unspecified(=nil:bat).";
+comment "The basic building block for XML elements are namespaces, attributes and a sequence of xml elements. The name space and the attributes may be left unspecified(=nil:bat).";
 
 pattern concat(val:xml... ):xml
 address XMLconcat
@@ -76,11 +73,15 @@ comment "Concatenate the xml values";
 
 pattern forest(val:xml...):xml
 address XMLforest
-comment "Construct an element list");
+comment "Construct an element list";
 
 command isdocument(val:str):bit
 address XMLisdocument
-comment "Validate the string as a document"
+comment "Validate the string as a document";
+
+module calc;
+command xml(src:str):xml address XMLstr2xml;
+
 @{
 @- Implementation
 The implementation of the XML atomary type is based
@@ -307,7 +308,7 @@ CREATE FUNCTION parse (val STRING, option STRING) RETURNS xml external name xml.
 CREATE FUNCTION pi (nme STRING, val STRING) RETURNS xml external name xml.pi;
 CREATE FUNCTION root (val STRING, version STRING, standalone STRING) RETURNS xml external name xml.root;
 CREATE FUNCTION attribute (nme STRING, val STRING) RETURNS xml external name xml.attribute;
-CREATE FUNCTION element (nme STRING, ns STRING, attr xml, s xml) RETURNS xml external name xml.element;
+CREATE FUNCTION "element" (nme STRING, ns STRING, attr xml, s xml) RETURNS xml external name xml.element;
 CREATE FUNCTION concat (val1 xml, val2 xml) RETURNS xml external name xml.concat;
 CREATE FUNCTION forest (val1 xml, val2 xml) RETURNS xml external name xml.forest;
 CREATE FUNCTION isdocument (val STRING) RETURNS xml external name xml.isdocument;
