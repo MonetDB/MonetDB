@@ -250,34 +250,34 @@ BATXMLstr2xml(int *ret, int *bid)
 		str t= (str) BUNtail(b,p);
 		if( (elm=BATXMLcountEscape(t)) ){
 			if( (len=strlen(t)+6*elm+1) >= size){
+				assert(0);
 				buf= GDKrealloc(buf, len);
 				size= len;
 			}
-			for(s=buf ; *t; t++)
+			for(s=buf, *s=0; *t; t++)
 			if (*t == '&'){
-				strcat(s,"&amp;"); 
-				while(*s) s++;
+				*s++ = '&'; *s++ = 'a'; *s++ = 'm'; *s++ = 'p';
+				*s++ = ';';
 			} else if (*t == '<'){
-				strcat(s,"&lt;"); 
-				while(*s) s++;
+				*s++ = '&'; *s++ = 'l'; *s++ = 't'; *s++ = ';';
 			} else if (*t == '>'){
-				strcat(s,"&gt;");
-				while(*s) s++;
-			}else if (*t == '"'){
-				strcat(s,"&quot;");
-				while(*s) s++;
+				*s++ = '&'; *s++ = 'g'; *s++ = 't'; *s++ = ';';
+			} else if (*t == '"'){
+				*s++ = '&'; *s++ = 'q'; *s++ = 'u'; *s++ = 'o';
+				*s++ = 't'; *s++ = ';';
 			} else if (*t == '\''){
-				strcat(s,"&apos;");
-				while(*s) s++;
+				*s++ = '&'; *s++ = 'a'; *s++ = 'p'; *s++ = 'o';
+				*s++ = 's'; *s++ = ';';
 			} else if ((*t & 0xFF) < 0x20){
-				sprintf(s, "&#%d;", *t & 0xFF);
-				while(*s) s++;
-			} else
+				s+=sprintf(s, "&#%d;", *t & 0xFF);
+			} else {
 				*s++= *t;
+			}
 			*s=0;
 			bunfastins(bn,h,buf);
-		} else 
+		} else {
 			bunfastins(bn,h,t);
+		}
 	}
 	GDKfree(buf);
 	finalizeResult(ret,bn,b);

@@ -23,6 +23,13 @@ front-end to support SQL/XML.
 @mal
 atom xml :str;	
 
+command fromstr():xml 
+address XMLfromString
+	comment "Convert a string to an xml. ";
+command tostr():str 
+address XMLtoString
+	comment "Convert xml to string equivalent";
+
 command xml(src:str):xml
 address XMLstr2xml
 comment "Cast the string to an xml compliant string";
@@ -67,7 +74,7 @@ command element(name:str, s:xml) :xml
 address XMLelementSmall
 comment "The basic building block for XML elements are namespaces, attributes and a sequence of xml elements. The name space and the attributes may be left unspecified(=nil:bat).";
 
-pattern concat(val:xml... ):xml
+command concat(val1:xml, val2:xml):xml
 address XMLconcat
 comment "Concatenate the xml values";
 
@@ -86,6 +93,8 @@ xml.prelude();
 
 module calc;
 command xml(src:str):xml address XMLstr2xml;
+command xml(src:xml):xml address XMLxml2xml;
+
 
 @{
 @- Implementation
@@ -115,8 +124,12 @@ typedef str xml;
 
 xml_export int TYPE_xml;
 
+xml_export int XMLfromString(str src, int *len, xml *x);
+xml_export int XMLtoString(str *s, int *len, str src);
+
 xml_export str XMLxml2str(str *s, xml *x);
 xml_export str XMLstr2xml(xml *x, str *s);
+xml_export str XMLxml2xml(xml *x, xml *s);
 xml_export str XMLdocument(xml *x, str *s);
 xml_export str XMLcontent(xml *x, str *s);
 xml_export str XMLisdcoument(bit *x, str *s);
@@ -146,31 +159,34 @@ XMLxml2str(str *s, xml *x){
 str
 XMLstr2xml(xml *x, str *val){
 	str t= *val;
-	str buf= alloca(6*sizeof(*t)), s=buf;
+	str buf= alloca(6*strlen(t)), s=buf;
 	
-	for(; *t; t++)
-	if (*t == '&'){
-		strcat(s,"&amp;"); 
-		while(*s) s++;
+	for(*s = 0; *t; t++)
+	if (*t == '&') {
+		*s++ = '&'; *s++ = 'a'; *s++ = 'm'; *s++ = 'p'; *s++ = ';';
 	} else if (*t == '<'){
-		strcat(s,"&lt;"); 
-		while(*s) s++;
+		*s++ = '&'; *s++ = 'l'; *s++ = 't'; *s++ = ';';
 	} else if (*t == '>'){
-		strcat(s,"&gt;");
-		while(*s) s++;
+		*s++ = '&'; *s++ = 'g'; *s++ = 't'; *s++ = ';';
 	}else if (*t == '"'){
-		strcat(s,"&quot;");
-		while(*s) s++;
+		*s++ = '&'; *s++ = 'q'; *s++ = 'u'; *s++ = 'o'; *s++ = 't'; 
+		*s++ = ';';
 	} else if (*t == '\''){
-		strcat(s,"&apos;");
-		while(*s) s++;
+		*s++ = '&'; *s++ = 'a'; *s++ = 'p'; *s++ = 'o'; *s++ = 's'; 
+		*s++ = ';';
 	} else if ((*t & 0xFF) < 0x20){
-		sprintf(s, "&#%d;", *t & 0xFF);
-		while(*s) s++;
-	} else
+		s += sprintf(s, "&#%d;", *t & 0xFF);
+	} else {
 		*s++= *t;
+	}
 	*s=0;
 	*x= GDKstrdup(buf);
+	return MAL_SUCCEED;
+}
+
+str 
+XMLxml2xml(xml *s, xml *x){
+	*s= GDKstrdup(*x);
 	return MAL_SUCCEED;
 }
 
@@ -286,6 +302,7 @@ XMLconcat(xml *ret, xml *left, xml *right)
 	*ret= buf;
 	return MAL_SUCCEED;
 }
+
 str
 XMLforest(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
@@ -314,6 +331,32 @@ XMLprelude()
 	return MAL_SUCCEED;
 }
 
+int XMLfromString(str src, int *len, xml *x)
+{
+	if (*x)
+		GDKfree(*x);
+	XMLstr2xml(x, &src);
+	*len = strlen(*x);
+	return *len;
+}
+
+int XMLtoString(str *s, int *len, str src)
+{
+	int l;
+
+	if (GDK_STRNIL(src)) {
+		*s = GDKstrdup("nil");
+		return 0;
+	}
+	l = src == 0 ? 3 : strlen(src) + 1;
+	if (l >= *len) {
+		GDKfree(*s);
+		*s = (str) GDKmalloc(l);
+	}
+	snprintf(*s, l, "%s", src);
+	*len = l - 1;
+	return *len;
+}
 
 
 @sql
