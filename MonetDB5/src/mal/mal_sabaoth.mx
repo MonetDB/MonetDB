@@ -105,13 +105,12 @@ void SABAOTHinit(str dbfarm, str dbname) {
 	assert(dbfarm != NULL);
 
 	if (_sabaoth_internal_dbfarm != NULL)
-		free(_sabaoth_internal_dbfarm);
+		GDKfree(_sabaoth_internal_dbfarm);
 	if (_sabaoth_internal_dbname != NULL)
-		free(_sabaoth_internal_dbname);
+		GDKfree(_sabaoth_internal_dbname);
 
 	len = strlen(dbfarm);
-	_sabaoth_internal_dbfarm = malloc(sizeof(char) * (len + 1));
-	memcpy(_sabaoth_internal_dbfarm, dbfarm, len + 1);
+	_sabaoth_internal_dbfarm = GDKstrdup(dbfarm);
 	/* remove trailing slashes, newlines and spaces */
 	len--;
 	while (len > 0 && (
@@ -126,9 +125,7 @@ void SABAOTHinit(str dbfarm, str dbname) {
 	if (dbname == NULL) {
 		_sabaoth_internal_dbname = NULL;
 	} else {
-		len = strlen(dbname);
-		_sabaoth_internal_dbname = malloc(sizeof(char) * (len + 1));
-		memcpy(_sabaoth_internal_dbname, dbname, len + 1);
+		_sabaoth_internal_dbname = GDKstrdup(dbname);
 	}
 }
 
@@ -479,15 +476,15 @@ str SABAOTHgetStatus(sabdb** ret, str dbname) {
 			continue;
 
 		if (sdb == NULL) {
-			top = sdb = malloc(sizeof(sabdb));
+			top = sdb = GDKmalloc(sizeof(sabdb));
 		} else {
-			sdb = sdb->next = malloc(sizeof(sabdb));
+			sdb = sdb->next = GDKmalloc(sizeof(sabdb));
 		}
 		sdb->next = NULL;
 
 		/* store the database name */
 		snprintf(buf, PATHLENGTH, "%s/%s", path, e->d_name);
-		sdb->path = strdup(buf);
+		sdb->path = GDKstrdup(buf);
 		sdb->dbname = sdb->path + strlen(sdb->path) - strlen(e->d_name);
 
 		/* add scenarios that are supported */
@@ -499,13 +496,13 @@ str SABAOTHgetStatus(sabdb** ret, str dbname) {
 				if (*data != '\0' && data[strlen(data) - 1] == '\n')
 					data[strlen(data) - 1] = '\0';
 				if (sdb->scens == NULL) {
-					sdb->scens = malloc(sizeof(sablist));
-					sdb->scens->val = strdup(data);
+					sdb->scens = GDKmalloc(sizeof(sablist));
+					sdb->scens->val = GDKstrdup(data);
 					sdb->scens->next = NULL;
 					np = sdb->scens;
 				} else {
-					np = np->next = malloc(sizeof(sablist));
-					np->val = strdup(data);
+					np = np->next = GDKmalloc(sizeof(sablist));
+					np->val = GDKstrdup(data);
 					np->next = NULL;
 				}
 			}
@@ -521,13 +518,13 @@ str SABAOTHgetStatus(sabdb** ret, str dbname) {
 				if (*data != '\0' && data[strlen(data) - 1] == '\n')
 					data[strlen(data) - 1] = '\0';
 				if (sdb->conns == NULL) {
-					sdb->conns = malloc(sizeof(sablist));
-					sdb->conns->val = strdup(data);
+					sdb->conns = GDKmalloc(sizeof(sablist));
+					sdb->conns->val = GDKstrdup(data);
 					sdb->conns->next = NULL;
 					np = sdb->conns;
 				} else {
-					np = np->next = malloc(sizeof(sablist));
-					np->val = strdup(data);
+					np = np->next = GDKmalloc(sizeof(sablist));
+					np->val = GDKstrdup(data);
 					np->next = NULL;
 				}
 			}
@@ -612,25 +609,26 @@ str SABAOTHfreeStatus(sabdb** ret) {
 
 	p = *ret;
 	while (p != NULL) {
-		if (p->path != NULL) free(p->path);
+		if (p->path != NULL)
+			GDKfree(p->path);
 		r = p->scens;
 		while (r != NULL) {
 			if (r->val != NULL)
-				free(r->val);
+				GDKfree(r->val);
 			s = r->next;
-			free(r);
+			GDKfree(r);
 			r = s;
 		}
 		r = p->conns;
 		while (r != NULL) {
 			if (r->val != NULL)
-				free(r->val);
+				GDKfree(r->val);
 			s = r->next;
-			free(r);
+			GDKfree(r);
 			r = s;
 		}
 		q = p->next;
-		free(p);
+		GDKfree(p);
 		p = q;
 	}
 
