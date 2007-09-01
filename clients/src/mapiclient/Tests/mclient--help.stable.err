@@ -16,7 +16,7 @@ Options are:
  -c config   | --config=file     config filename
  -d database | --database=database  database to connect to
  -e          | --echo            echo the query
- -f          | --format=kind     use renderer {csv,tab,raw,sql,xml} 
+ -f kind     | --format=kind     use renderer {csv,tab,raw,sql,xml} 
  -H          | --history         load/save cmdline history (default off)
  -h hostname | --host=hostname   host to connect to
  -i          | --interactive     read stdin after command line args

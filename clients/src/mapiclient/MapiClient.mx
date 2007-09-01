@@ -1457,7 +1457,7 @@ usage(const char *prog)
 	fprintf(stderr, " -d database | --database=database  database to connect to\n");
 
 	fprintf(stderr, " -e          | --echo            echo the query\n");
-	fprintf(stderr, " -f          | --format=kind     use renderer {csv,tab,raw,sql,xml} \n");
+	fprintf(stderr, " -f kind     | --format=kind     use renderer {csv,tab,raw,sql,xml} \n");
 	fprintf(stderr, " -H          | --history         load/save cmdline history (default off)\n");
 	fprintf(stderr, " -h hostname | --host=hostname   host to connect to\n");
 	fprintf(stderr, " -i          | --interactive     read stdin after command line args\n");
