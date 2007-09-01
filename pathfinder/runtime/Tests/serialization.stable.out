@@ -13,7 +13,6 @@ module("pathfinder");
 
 # query for all output modes (contains all different kinds)
 var query := "(1, 2.3, attribute attr { \"val\" }, 3E1, \"string\", doc(\"nodekinds.xml\")/descendant-or-self::node())";
-var query_no_attr := "(1, 2.3, 3E1, \"string\", doc(\"nodekinds.xml\")/descendant-or-self::node())";
 
 # current different XML modes
 #
