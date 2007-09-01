@@ -493,6 +493,7 @@ procs();
 [ "preceding(BAT[void,oid], BAT[void,oid], oid, BAT[void,BAT], int, chr) : BAT[void,BAT]"																			  ]
 [ "preceding_sibling(BAT[void,oid], BAT[void,oid], oid, BAT[void,BAT], int, chr) : BAT[void,BAT]"																		  ]
 [ "print(str, BAT[any::1,any], ..BAT[any::1,any]..) : void"												  ]
+[ "prior_logls(BAT[any,any], int, BAT[oid,str]) : BAT[any,any]"																					  ]
 [ "prior_ls(BAT[any,any], int, BAT[oid,str]) : BAT[any,any]"												  ]
 [ "procs() : void"																	  ]
 [ "prod(BAT[any,bte]) : bte"																  ]
