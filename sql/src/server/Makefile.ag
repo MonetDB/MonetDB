@@ -63,6 +63,7 @@ lib_sqlserver = {
 		sql_privileges.mx \  
 		sql_sequence.mx \  
 		sql_psm.mx \  
+		sql_xml.mx \
 		rel_semantic.mx \
 		rel_select.mx \
 		rel_optimizer.mx \

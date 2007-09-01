@@ -157,7 +157,18 @@ typedef enum tokens {
 	SQL_EXPORT,
 	SQL_NEXT,
 	SQL_MULSTMT,
-	SQL_WITH
+	SQL_WITH,
+	SQL_XMLCOMMENT,
+	SQL_XMLCONCAT,
+	SQL_XMLDOCUMENT,
+	SQL_XMLELEMENT,
+	SQL_XMLATTRIBUTES,
+	SQL_XMLFOREST,
+	SQL_XMLPARSE,
+	SQL_XMLPI,
+	SQL_XMLQUERY,
+	SQL_XMLTEXT,
+	SQL_XMLVALIDATE
 } tokens;
 
 typedef enum jt {
@@ -172,7 +183,6 @@ extern char *token2string(int token);
 extern void *sql_error(mvc *sql, int error_code, char *format, ...);
 extern int parse_error(mvc *sql, char *s);
 extern int sqlparse(void *);
-extern char *sql_message(const char *format, ...);
 
 #endif /*_SQL_PARSER_H_*/
 
@@ -241,6 +251,7 @@ extern char *sql_message(const char *format, ...);
 }
 %{
 extern int sqllex( YYSTYPE *yylval, void *m );
+static symbol * str2atom(sql_allocator *sa, str x);
 /* enable to activate debugging support
 int yydebug=1;
 */
@@ -377,6 +388,25 @@ int yydebug=1;
 	window_function_type
 	window_partition_clause
 	window_order_clause
+	XML_value_function
+	XML_comment
+  	XML_concatenation
+  	XML_document
+  	XML_element
+  	XML_forest
+  	XML_parse
+  	XML_PI
+  	XML_query
+  	XML_text
+  	XML_validate
+	XML_namespace_declaration
+	opt_XML_namespace_declaration_and_comma
+	XML_attributes
+	XML_attribute_list
+	XML_attribute
+	XML_attribute_value
+	XML_element_content
+	forest_element_value
 
 %type <type>
 	data_type
@@ -407,6 +437,11 @@ int yydebug=1;
 	opt_begin_label
 	opt_end_label
 	target_specification
+	XML_element_name
+	opt_XML_attribute_name
+	XML_attribute_name
+	opt_forest_element_name
+	forest_element_name
 
 %type <l>
 	passwd_schema
@@ -477,6 +512,11 @@ int yydebug=1;
 	external_function_name
 	with_list
 	window_specification
+	opt_comma_XML_namespace_declaration_attributes_element_content
+	XML_element_content_and_option
+	XML_element_content_list
+	forest_element_list
+	forest_element
 
 %type <ival>
 	opt_port
@@ -521,6 +561,9 @@ int yydebug=1;
 	trigger_action_time
 	opt_for_each
 	row_or_statement
+	opt_XML_content_option
+	XML_content_option
+	opt_XML_returning_clause
 
 %type <bval>
 	opt_brackets
@@ -555,7 +598,7 @@ int yydebug=1;
 
 %token	USER CURRENT_USER SESSION_USER LOCAL
 %token  CURRENT_ROLE sqlSESSION
-%token <sval> sqlDELETE UPDATE SELECT INSERT DATABASE CONNECT DISCONNECT PORT CURRENT
+%token <sval> sqlDELETE UPDATE SELECT INSERT DATABASE CONNECT DISCONNECT PORT 
 %token <sval> LEFT RIGHT FULL OUTER NATURAL CROSS JOIN INNER
 %token <sval> COMMIT ROLLBACK SAVEPOINT RELEASE WORK CHAIN NO PRESERVE ROWS
 %token  START TRANSACTION READ WRITE ONLY ISOLATION LEVEL
@@ -563,7 +606,7 @@ int yydebug=1;
 
 %token <sval> ASYMMETRIC SYMMETRIC ORDER BY
 %token <sval> LIKE BETWEEN
-%token <operation> sqlIN EXISTS ESCAPE HAVING GROUP NULLX
+%token <operation> sqlIN EXISTS ESCAPE HAVING GROUP sqlNULL
 %token <operation> FROM FOR MATCH
 
 %token <operation> EXTRACT
@@ -578,6 +621,13 @@ int yydebug=1;
 
 /* SQL's terminator, the semi-colon */
 %token SCOLON AT
+
+/* SQL/XML tokens */
+%token XMLCOMMENT XMLCONCAT XMLDOCUMENT XMLELEMENT XMLATTRIBUTES XMLFOREST 
+%token XMLPARSE STRIP WHITESPACE XMLPI XMLQUERY PASSING XMLTEXT
+%token NIL REF ABSENT EMPTY DOCUMENT ELEMENT CONTENT XMLNAMESPACES NAMESPACE
+%token XMLVALIDATE RETURNING LOCATION ID ACCORDING XMLSCHEMA URI
+
 
 /* operators */
 %left UNION EXCEPT INTERSECT CORRESPONDING UNIONJOIN
@@ -1025,11 +1075,11 @@ alter_table_element:
 	  append_string(l, $2);
 	  append_symbol(l, $5);
 	  $$ = _symbol_create_list( SQL_DEFAULT, l); }
- |	opt_column ident SET NULLX
+ |	opt_column ident SET sqlNULL
 	{ dlist *l = L();
 	  append_string(l, $2);
 	  $$ = _symbol_create_list( SQL_NULL, l); }
- |	opt_column ident SET NOT NULLX
+ |	opt_column ident SET NOT sqlNULL
 	{ dlist *l = L();
 	  append_string(l, $2);
 	  $$ = _symbol_create_list( SQL_NOT_NULL, l); }
@@ -1449,7 +1499,7 @@ default:
 
 default_value:
     simple_scalar_exp 	{ $$ = $1; }
- |  NULLX 	{ $$ = _newAtomNode( NULL);  }
+ |  sqlNULL 	{ $$ = _newAtomNode( NULL);  }
  ;
 
 column_constraint:
@@ -1570,7 +1620,7 @@ ref_action:
 	NO ACTION		{ $$ = 0; }
  |	CASCADE			{ $$ = 1; }
  |	RESTRICT		{ $$ = 2; }
- |	SET NULLX		{ $$ = 3; }
+ |	SET sqlNULL		{ $$ = 3; }
  |	SET DEFAULT		{ $$ = 4; }
  ;
 
@@ -1603,8 +1653,8 @@ opt_match:
  ;
 
 column_constraint_type:
-    NOT NULLX	{ $$ = _symbol_create( SQL_NOT_NULL, NULL); }
- |  NULLX	{ $$ = _symbol_create( SQL_NULL, NULL); }
+    NOT sqlNULL	{ $$ = _symbol_create( SQL_NOT_NULL, NULL); }
+ |  sqlNULL	{ $$ = _symbol_create( SQL_NULL, NULL); }
  |  UNIQUE	{ $$ = _symbol_create( SQL_UNIQUE, NULL ); }
  |  PRIMARY KEY	{ $$ = _symbol_create( SQL_PRIMARY_KEY, NULL ); }
  |  REFERENCES qname '(' column_ref ')' opt_match opt_ref_action
@@ -1849,7 +1899,7 @@ return_value:
    |  search_condition
    |  TABLE '(' complex_select ')'	
 		{ $$ = _symbol_create_symbol(SQL_TABLE, $3); }
-   |  NULLX 	{ $$ = _newAtomNode( NULL);  }
+   |  sqlNULL 	{ $$ = _newAtomNode( NULL);  }
    ;
 
 case_statement:
@@ -2472,7 +2522,7 @@ atom_commalist:
  ;
 
 null:
-   NULLX
+   sqlNULL
 	 { 
 	   mvc *m = (mvc*)parm;
 
@@ -2529,7 +2579,7 @@ assignment:
 	  append_symbol(l, $3 );
 	  $$ = _symbol_create_list( SQL_ASSIGN, l); }
 
- |  column '=' NULLX
+ |  column '=' sqlNULL
 
 	{ dlist *l = L();
 	  append_string(l, $1);
@@ -3028,9 +3078,9 @@ like_exp:
  ;
 
 test_for_null:
-    column_ref IS NOT NULLX  { symbol *s =_symbol_create_list(SQL_COLUMN, $1);
+    column_ref IS NOT sqlNULL  { symbol *s =_symbol_create_list(SQL_COLUMN, $1);
 			      $$ = _symbol_create_symbol( SQL_NOT_NULL, s ); }
- |  column_ref IS NULLX	     { symbol *s =_symbol_create_list(SQL_COLUMN, $1);
+ |  column_ref IS sqlNULL     { symbol *s =_symbol_create_list(SQL_COLUMN, $1);
 			       $$ = _symbol_create_symbol( SQL_NULL, s ); }
  ;
 
@@ -3148,6 +3198,7 @@ value_exp:
  |  string_funcs
  |  case_exp
  |  cast_exp
+ |  XML_value_function
  |  '?'			
 	{ mvc *m = (mvc*)parm;
 	  int nr = (m->params)?list_length(m->params):0, l = 2 + ((nr+8)>>3);
@@ -3959,7 +4010,7 @@ when_search_list:
 case_opt_else:
     /* empty */	        { $$ = NULL; }
  |  ELSE scalar_exp	{ $$ = $2; }
- |  ELSE NULLX	 	{ $$ = _newAtomNode(NULL); }
+ |  ELSE sqlNULL 	{ $$ = _newAtomNode(NULL); }
  ;
 
 		/* data types, more types to come */
@@ -4314,6 +4365,442 @@ path_specification:
 
 schema_name_list: name_commalist ;
 
+XML_value_expression:
+  XML_primary
+  ;
+
+XML_value_expression_list:
+    XML_value_expression
+  | XML_value_expression ',' XML_value_expression_list
+  ;
+
+XML_primary:
+    value_exp
+  ;
+
+XML_value_function:
+    XML_comment
+  | XML_concatenation
+  | XML_document
+  | XML_element
+  | XML_forest
+  | XML_parse
+  | XML_PI
+  | XML_query
+  | XML_text
+  | XML_validate
+  ;
+
+XML_comment:
+  XMLCOMMENT '(' value_exp /* should be a string */ opt_XML_returning_clause ')' 
+	{ $$ = NULL; }
+ ;
+
+XML_concatenation:
+  XMLCONCAT '(' XML_value_expression_list opt_XML_returning_clause ')'
+	{ $$ = NULL; }
+  ;
+
+XML_document:
+  XMLDOCUMENT '(' XML_value_expression opt_XML_returning_clause ')'
+	{ $$ = NULL; }
+
+XML_element:
+  XMLELEMENT '(' sqlNAME XML_element_name 
+	opt_comma_XML_namespace_declaration_attributes_element_content
+	opt_XML_returning_clause ')'
+
+	{ dlist *l = L();
+	  append_string(l, $4);
+	  append_list(l, $5);
+	  append_int(l, $6);
+	  $$ = _symbol_create_list( SQL_XMLELEMENT, l);
+	}
+  ;
+
+opt_comma_XML_namespace_declaration_attributes_element_content:
+     /* empty */						
+	{ $$ = NULL; }
+  |  ',' XML_namespace_declaration 				
+ 	{ $$ = append_symbol(L(), $2);
+	  $$ = append_symbol($$, NULL);
+	  $$ = append_list($$, NULL); }
+  |  ',' XML_namespace_declaration ',' XML_attributes		
+ 	{ $$ = append_symbol(L(), $2);
+	  $$ = append_symbol($$, $4);
+	  $$ = append_list($$, NULL); }
+  |  ',' XML_attributes					
+ 	{ $$ = append_symbol(L(), NULL);
+	  $$ = append_symbol($$, $2);
+	  $$ = append_list($$, NULL); }
+  |  ',' XML_attributes ',' XML_element_content_and_option 
+ 	{ $$ = append_symbol(L(), NULL);
+	  $$ = append_symbol($$, $2);
+	  $$ = append_list($$, $4); }
+  |  ',' XML_element_content_and_option 			
+ 	{ $$ = append_symbol(L(), NULL);
+	  $$ = append_symbol($$, NULL);
+	  $$ = append_list($$, $2); }
+  ;
+
+XML_element_name: 
+    ident 		
+  ;
+
+XML_attributes:
+  XMLATTRIBUTES '(' XML_attribute_list ')'	{ $$ = $3; }
+  ;
+
+XML_attribute_list:
+    XML_attribute 				{ $$ = $1; }
+  | XML_attribute_list ',' XML_attribute 	
+		{ dlist *l = L();
+		  append_list(l, 
+		  	append_string(L(), sa_strdup(SA, "concat")));
+	  	  append_symbol(l, $1);
+	  	  append_symbol(l, $3);
+	  	  $$ = _symbol_create_list( SQL_BINOP, l ); }
+  ;
+
+XML_attribute:
+  XML_attribute_value opt_XML_attribute_name	
+		{ /* what names to use if these aren't given?? */
+		  dlist *l = L();
+		  append_list(l, 
+		  	append_string(L(), sa_strdup(SA, "attribute")));
+	  	  append_symbol(l, str2atom(SA,$2));
+	  	  append_symbol(l, $1);
+	  	  $$ = _symbol_create_list( SQL_BINOP, l ); }
+  ;
+
+opt_XML_attribute_name:
+     /* empty */ 				{ $$ = NULL; }
+  | AS XML_attribute_name 			{ $$ = $2; }
+  ; 
+
+XML_attribute_value:
+     value_exp
+  ;
+
+XML_attribute_name:
+    ident
+  ;
+
+XML_element_content_and_option:
+    XML_element_content_list opt_XML_content_option
+		{ $$ = L();
+		  $$ = append_list($$, $1);
+		  $$ = append_int($$, $2); 	}
+  ;
+
+XML_element_content_list:
+    XML_element_content
+		{ $$ = append_symbol(L(), $1); }
+  | XML_element_content_list ',' XML_element_content	
+		{ $$ = append_symbol($1, $3); }
+  ;
+
+XML_element_content:
+     value_exp
+  ;
+
+opt_XML_content_option:
+    /* empty */			{ $$ = 0; }
+  | OPTION XML_content_option	{ $$ = $2; }
+  ;
+
+XML_content_option:
+    sqlNULL ON sqlNULL		{ $$ = 0; }
+  | EMPTY ON sqlNULL		{ $$ = 1; }
+  | ABSENT ON sqlNULL		{ $$ = 2; }
+  | NIL ON sqlNULL		{ $$ = 3; }
+  | NIL ON NO CONTENT		{ $$ = 4; }
+  ;
+
+XML_forest:
+    XMLFOREST '(' opt_XML_namespace_declaration_and_comma
+      forest_element_list opt_XML_content_option
+      opt_XML_returning_clause ')'
+	{ dlist *l = L();
+	  append_symbol(l, $3);
+	  append_list(l, $4);
+	  append_int(l, $5);
+	  append_int(l, $6);
+	  $$ = _symbol_create_list( SQL_XMLFOREST, l);
+	}
+  ;
+
+opt_XML_namespace_declaration_and_comma: 
+     /* empty */			{ $$ = NULL; }
+  |  XML_namespace_declaration ','	{ $$ = $1; }
+  ;
+
+forest_element_list:
+     forest_element 				
+		{ $$ = append_list(L(), $1); }
+  |  forest_element_list ',' forest_element
+		{ $$ = append_list($1, $3); }
+  ;
+
+forest_element:
+    forest_element_value opt_forest_element_name
+		{ $$ = append_symbol(L(), $1);
+		  $$ = append_string($$, $2); }
+  ;
+
+forest_element_value:
+    value_exp	{ $$ = $1; }
+  ;
+
+opt_forest_element_name:
+    /* empty */			{ $$ = NULL; }
+  | AS forest_element_name	{ $$ = $2; }
+  ;
+
+forest_element_name:
+    ident			{ $$ = $1; }
+  ;
+
+ /* | XML_value_function */
+XML_parse:
+  XMLPARSE '(' document_or_content value_exp /* should be a string */
+      XML_whitespace_option ')'
+	{ $$ = NULL; }
+
+XML_whitespace_option:
+    PRESERVE WHITESPACE
+  | STRIP WHITESPACE
+  ;
+
+XML_PI:
+  XMLPI '(' sqlNAME XML_PI_target
+	opt_comma_string_value_expression
+	opt_XML_returning_clause ')'
+	{ $$ = NULL; }
+  ;
+
+XML_PI_target:
+    ident
+  ;
+
+opt_comma_string_value_expression:
+	/* empty */
+  | ',' value_exp /* should be a string */
+  ;
+
+XML_query:
+  XMLQUERY '('
+      XQuery_expression
+      opt_XML_query_argument_list
+      opt_XML_returning_clause	/* not correct, ie need to combine with next */
+      opt_XML_query_returning_mechanism
+      XML_query_empty_handling_option
+      ')'
+	{ $$ = NULL; }
+
+XQuery_expression:
+	STRING
+  ;
+
+opt_XML_query_argument_list:
+	/* empty */
+  | PASSING XML_query_default_passing_mechanism XML_query_argument_list
+  ;
+
+XML_query_default_passing_mechanism:
+     XML_passing_mechanism
+  ;
+
+XML_query_argument_list:
+    XML_query_argument
+  | XML_query_argument_list ',' XML_query_argument
+  ;
+
+XML_query_argument:
+    XML_query_context_item
+  | XML_query_variable
+  ;
+
+XML_query_context_item:
+     value_exp opt_XML_passing_mechanism
+  ;
+
+XML_query_variable:
+    value_exp AS ident opt_XML_passing_mechanism
+  ; 
+
+opt_XML_query_returning_mechanism:
+   /* empty */
+ | XML_passing_mechanism
+ ;
+
+XML_query_empty_handling_option:
+    sqlNULL ON EMPTY
+  | EMPTY ON EMPTY
+  ;
+
+XML_text:
+  XMLTEXT '(' value_exp /* should be a string */
+      opt_XML_returning_clause ')'
+	{ $$ = NULL; }
+
+XML_validate:
+  XMLVALIDATE '('
+      document_or_content_or_sequence
+      XML_value_expression
+      opt_XML_valid_according_to_clause
+      ')'
+	{ $$ = NULL; }
+  ;
+
+document_or_content_or_sequence:
+    document_or_content
+  | SEQUENCE
+  ;
+
+document_or_content:
+    DOCUMENT
+  | CONTENT
+  ;
+
+opt_XML_returning_clause:
+   /* empty */			{ $$ = 0; }
+ | RETURNING CONTENT		{ $$ = 0; }
+ | RETURNING SEQUENCE		{ $$ = 1; }
+ ;
+
+/*
+<XML lexically scoped options> ::=
+  <XML lexically scoped option> [ <comma> <XML lexically scoped option> ]
+<XML lexically scoped option> ::=
+    <XML namespace declaration>
+  | <XML binary encoding>
+
+<XML binary encoding> ::=
+  XMLBINARY [ USING ] { BASE64 | HEX }
+*/
+
+
+
+XML_namespace_declaration:
+  XMLNAMESPACES '(' XML_namespace_declaration_item_list ')'
+  ;
+
+XML_namespace_declaration_item_list:
+ 	XML_namespace_declaration_item
+  |     XML_namespace_declaration_item_list ',' XML_namespace_declaration_item
+  ;
+
+XML_namespace_declaration_item:
+    XML_regular_namespace_declaration_item
+  | XML_default_namespace_declaration_item
+  ;
+
+XML_namespace_prefix:
+    ident
+  ;
+
+XML_namespace_URI:
+	STRING
+  ;
+
+XML_regular_namespace_declaration_item:
+    XML_namespace_URI AS XML_namespace_prefix
+  ;
+
+XML_default_namespace_declaration_item:
+    DEFAULT XML_namespace_URI
+  | NO DEFAULT
+  ;
+
+opt_XML_passing_mechanism:
+    /* empty */
+  | XML_passing_mechanism
+  ;
+
+XML_passing_mechanism:
+    BY REF
+  | BY VALUE
+  ;
+
+opt_XML_valid_according_to_clause:
+    /* empty */
+  | XML_valid_according_to_clause
+  ;
+
+XML_valid_according_to_clause:
+    ACCORDING TO XMLSCHEMA XML_valid_according_to_what
+      opt_XML_valid_element_clause
+  ;
+
+XML_valid_according_to_what:
+    XML_valid_according_to_URI
+  | XML_valid_according_to_identifier
+  ;
+
+XML_valid_according_to_URI:
+    URI XML_valid_target_namespace_URI opt_XML_valid_schema_location
+  | NO NAMESPACE opt_XML_valid_schema_location
+  ;
+
+XML_valid_target_namespace_URI:
+    XML_URI
+  ;
+
+XML_URI:
+    STRING
+  ;
+
+opt_XML_valid_schema_location:
+   /* empty */
+ | LOCATION XML_valid_schema_location_URI
+ ;
+
+XML_valid_schema_location_URI:
+   XML_URI
+ ;
+
+XML_valid_according_to_identifier:
+   ID registered_XML_Schema_name
+ ;
+
+registered_XML_Schema_name:
+    ident
+  ;
+
+opt_XML_valid_element_clause:
+    /* empty */
+ |  XML_valid_element_clause
+ ;
+
+XML_valid_element_clause:
+    XML_valid_element_name_specification
+  | XML_valid_element_namespace_specification
+      opt_XML_valid_element_name_specification
+  ;
+
+opt_XML_valid_element_name_specification:
+    /* empty */
+ |  XML_valid_element_name_specification
+ ;
+
+XML_valid_element_name_specification:
+   ELEMENT XML_valid_element_name
+ ;
+
+XML_valid_element_namespace_specification:
+    NO NAMESPACE
+  | NAMESPACE XML_valid_element_namespace_URI
+  ;
+
+XML_valid_element_namespace_URI:
+   XML_URI
+ ;
+
+XML_valid_element_name:
+   ident
+ ;
+
 %%
 char *token2string(int token)
 {
@@ -4443,8 +4930,30 @@ char *token2string(int token)
 	SQL(NEXT);
 	SQL(MULSTMT);
 	SQL(WITH);
+	SQL(XMLCOMMENT);
+	SQL(XMLCONCAT);
+	SQL(XMLDOCUMENT);
+	SQL(XMLELEMENT);
+	SQL(XMLATTRIBUTES);
+	SQL(XMLFOREST);
+	SQL(XMLPARSE);
+	SQL(XMLPI);
+	SQL(XMLQUERY);
+	SQL(XMLTEXT);
+	SQL(XMLVALIDATE);
 	}
 	return "unknown";	/* just needed for broken compilers ! */
+}
+
+static symbol* 
+str2atom(sql_allocator *sa, str x)
+{ 
+	char *s = sql2str(x);
+	int len = _strlen(s);
+	sql_subtype t;
+
+	sql_find_subtype(&t, "char", len, 0 );
+	return newAtomNode( sa,  atom_string(&t, s, 0)); 
 }
 
 void *sql_error( mvc * sql, int error_code, char *format, ... )
@@ -4466,16 +4975,5 @@ int parse_error(mvc * c, char *err)
 		 "!%s in: \"%s\"\n",
 		 err, QUERY(c->scanner));
 	return 1;
-}
-
-char *sql_message( const char *format, ... )
-{
-	char buf[BUFSIZ];
-	va_list	ap;
-
-	va_start (ap,format);
-	(void) vsnprintf( buf, BUFSIZ, format, ap); 
-	va_end (ap);
-	return _strdup(buf);
 }
 

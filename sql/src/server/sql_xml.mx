@@ -1,0 +1,217 @@
+@' The contents of this file are subject to the MonetDB Public License
+@' Version 1.1 (the "License"); you may not use this file except in
+@' compliance with the License. You may obtain a copy of the License at
+@' http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+@'
+@' Software distributed under the License is distributed on an "AS IS"
+@' basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+@' License for the specific language governing rights and limitations
+@' under the License.
+@'
+@' The Original Code is the MonetDB Database System.
+@'
+@' The Initial Developer of the Original Code is CWI.
+@' Portions created by CWI are Copyright (C) 1997-2007 CWI.
+@' All Rights Reserved.
+
+@f sql_xml
+@a N.J. Nes
+@* 
+
+@h
+#ifndef _SQL_XML_H_
+#define _SQL_XML_H_
+
+#include "sql_symbol.h"
+#include "sql_scope.h"
+#include "sql_statement.h"
+
+extern stmt *sql_xml(mvc *sql, scope *scp, symbol *s, group *grp, stmt *subset, int f, exp_kind knd);
+
+#endif /*_SQL_SELECT_H_*/
+@c
+
+#include "sql_config.h"
+#include "sql_select.h"
+#include "sql_xml.h"
+#include "sql_semantic.h"
+#include "sql_parser.h"
+
+static sql_subtype xml_type = { NULL, 0, 0, NULL };
+static sql_subtype str_type = { NULL, 0, 0, NULL };
+
+static stmt *
+sql_xmlelement(mvc *sql, scope *scp, symbol *sym, group *grp, stmt *subset, int f, exp_kind knd ) 
+{
+	dnode *d = sym->data.lval->h;
+	char *tag = d->data.sval; 
+	dlist *ns_attrs_elms = d->next->data.lval; 
+	lng returning = d->next->next->data.ival;
+	stmt *ns_st = NULL, *attr_st = NULL, *res = NULL;
+
+	(void)returning;
+	if (ns_attrs_elms) {
+		symbol *ns = ns_attrs_elms->h->data.sym;
+		symbol *attr = ns_attrs_elms->h->next->data.sym;
+		dlist *content = ns_attrs_elms->h->next->next->data.lval;
+
+		/* loop over the content, create recursive element  */
+		if (content) {
+			dnode *n;
+			dlist *cl = content->h->data.lval;
+			lng content_option = content->h->next->data.ival;
+
+			(void)content_option;
+			for (n=cl->h; n; n = n->next) {
+				symbol *c = n->data.sym;
+			
+				stmt *c_st = sql_value_exp(sql, scp, c, grp, subset, f, knd);
+				sql_subtype *st;
+
+				if (!c_st) 
+					return NULL;
+
+				st = tail_type(c_st);
+				assert(st);
+				if (type_cmp(st->type, xml_type.type) != 0) {
+					/* convert to string first */
+					c_st = check_types(sql, &str_type, c_st, type_equal);
+					/* then to xml */
+					if (!c_st || (c_st = check_types(sql, &xml_type, c_st, type_equal)) == NULL) 
+						return NULL;
+				}
+				
+				/* lets glue the xml content together */
+				if (res) {
+					res = sql_binop_(sql, scp, NULL, "concat", res, c_st); 
+				} else {
+					res = c_st;
+				}
+			}
+		}
+		if (ns) { 
+			ns_st = sql_value_exp(sql, scp, ns, grp, subset, f, knd); 
+			if (!ns_st)
+				return NULL;
+		}
+		if (attr) {
+			attr_st = sql_value_exp(sql, scp, attr, grp, subset, f, knd); 
+			if (!attr_st)
+				return NULL;
+		}
+	}
+
+	if (!ns_st)
+		ns_st = stmt_atom(atom_general(&str_type, NULL, 0));
+	if (!attr_st)
+		attr_st = stmt_atom(atom_general(&xml_type, NULL, 0));
+	if (!res)
+		res = stmt_atom(atom_general(&xml_type, NULL, 0));
+
+	if (!ns_st || !attr_st || !res) {
+		cond_stmt_destroy(ns_st);
+		cond_stmt_destroy(attr_st);
+		cond_stmt_destroy(res);
+		return NULL;
+	}
+	return sql_Nop_(sql, "element", stmt_atom_clob(_strdup(tag)), ns_st, attr_st, res);
+}
+
+static stmt *
+sql_xmlforest(mvc *sql, scope *scp, symbol *sym, group *grp, stmt *subset, int f, exp_kind knd ) 
+{
+	dnode *d = sym->data.lval->h;
+	symbol *ns = d->data.sym;
+	dlist *elms = d->next->data.lval;  
+	lng content_option = d->next->next->data.ival;
+	lng returning = d->next->next->next->data.ival;
+	stmt *ns_st, *attr_st, *res = NULL;
+
+	(void)content_option;
+	(void)returning;
+
+	if (ns) { 
+		ns_st = sql_value_exp(sql, scp, ns, grp, subset, f, knd); 
+	} else {
+		ns_st = stmt_atom(atom_general(&str_type, NULL, 0));
+	}
+	if (!ns_st)
+		return NULL;
+	attr_st = stmt_atom(atom_general(&xml_type, NULL, 0));
+	if (elms) {
+		dnode *e;
+
+		for (e = elms->h; e; e = e->next) {
+			dnode *cc = e->data.lval->h;
+			symbol *c = cc->data.sym;
+			str tag = cc->next->data.sval;
+
+			stmt *c_st = sql_value_exp(sql, scp, c, grp, subset, f, knd);
+			sql_subtype *st;
+			if (!c_st) { 
+				stmt_destroy(ns_st);
+				stmt_destroy(attr_st);
+				cond_stmt_destroy(res);
+				return NULL;
+			}
+
+			st = tail_type(c_st);
+			assert(st);
+			if (type_cmp(st->type, xml_type.type) != 0) {
+				/* convert to string first */
+				c_st = check_types(sql, &str_type, c_st, type_equal);
+				/* then to xml */
+				if (!c_st || (c_st = check_types(sql, &xml_type, c_st, type_equal)) == NULL) {
+					stmt_destroy(ns_st);
+					stmt_destroy(attr_st);
+					cond_stmt_destroy(res);
+					return NULL;
+				}
+			}
+				
+			if (!tag) {
+				tag = column_name(c_st);
+			} else {
+				tag = _strdup(tag);
+			}
+			c_st = sql_Nop_(sql, "element", stmt_atom_clob(tag), 
+				stmt_dup(ns_st), stmt_dup(attr_st), c_st);
+			/* lets glue the xml content together */
+			if (res) {
+				res = sql_binop_(sql, scp, NULL, "concat", res, c_st); 
+			} else {
+				res = c_st;
+			}
+		}
+	}
+	stmt_destroy(ns_st);
+	stmt_destroy(attr_st);
+	return res;
+}
+
+stmt *
+sql_xml(mvc *sql, scope *scp, symbol *s, group *grp, stmt *subset, int f, exp_kind knd)
+{
+	stmt *ret = NULL;
+	sql_type *t = NULL;
+
+	if (!xml_type.type) {
+		if ((t = mvc_bind_type(sql, "xml")) == NULL)
+			return sql_error(sql, 02, "XML: xml type missing, probably the xml module wasn't added");
+		sql_init_subtype(&xml_type, t, 0, 0);
+		sql_find_subtype(&str_type, "clob", 0, 0);
+	}
+
+	switch (s->token) {
+	case SQL_XMLELEMENT: 
+		ret = sql_xmlelement(sql, scp, s, grp, subset, f, knd);
+		break;
+	case SQL_XMLFOREST: 
+		ret = sql_xmlforest(sql, scp, s, grp, subset, f, knd);
+		break;
+	default:
+		return sql_error(sql, 01, "XML statement unknown symbol(%ld)->token = %s", (long) s, token2string(s->token));
+	}
+	return ret;
+}
+

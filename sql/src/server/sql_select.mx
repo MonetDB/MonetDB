@@ -67,7 +67,8 @@ extern stmt *stmt2pivot(scope *scp, stmt *s);
 extern stmt *sql_compare(mvc *sql, scope *scp, stmt *ls, stmt *rs, char *compare_op, int f);
 extern stmt *complex_find_subset(stmt *subset, stmt *t);
 extern stmt *sql_and(mvc *sql, scope *scp, stmt *ls, stmt *rs, int f);
-extern stmt *sql_Nop_(mvc *sql, char *fname, stmt *a1, stmt *a2, stmt *a3);
+extern stmt *sql_binop_(mvc *sql, scope *scp, sql_schema *s, char *fname, stmt *ls, stmt *rs);
+extern stmt *sql_Nop_(mvc *sql, char *fname, stmt *a1, stmt *a2, stmt *a3, stmt *a4);
 
 #endif /*_SQL_SELECT_H_*/
 @c
@@ -80,6 +81,7 @@ extern stmt *sql_Nop_(mvc *sql, char *fname, stmt *a1, stmt *a2, stmt *a3);
 #include "sql_sequence.h"
 #include "sql_privileges.h"
 #include "sql_env.h"
+#include "sql_xml.h"
 
 static stmt *sql_select(mvc *sql, scope *scp, SelectNode *sn, exp_kind ek);
 static stmt *sql_compare_exp(mvc *sql, scope *scp, group *grp, stmt *subset, symbol *lo, symbol *ro, char *compare_op, int f);
@@ -741,7 +743,7 @@ sql_case(mvc *sql, scope *scp, int token, symbol *opt_cond, dlist *when_search_l
 
 		/* handle single values differently ! */
 		if (f == sql_sel && !subset) {
-			res = sql_Nop_(sql, "ifthenelse", cond, result, res);
+			res = sql_Nop_(sql, "ifthenelse", cond, result, res, NULL);
 		} else {
 			/* TODO implement with ifthenelse only */
 			if (result->nrcols <= 0)
@@ -818,7 +820,7 @@ sql_cast(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset, int f)
 }
 
 stmt *
-sql_Nop_(mvc *sql, char *fname, stmt *a1, stmt *a2, stmt *a3)
+sql_Nop_(mvc *sql, char *fname, stmt *a1, stmt *a2, stmt *a3, stmt *a4)
 {
 	list *sl = create_stmt_list();
 	list *tl = list_create(NULL);
@@ -830,6 +832,10 @@ sql_Nop_(mvc *sql, char *fname, stmt *a1, stmt *a2, stmt *a3)
 	list_append(tl, tail_type(a2));
 	list_append(sl, a3);
 	list_append(tl, tail_type(a3));
+	if (a4) {
+		list_append(sl, a4);
+		list_append(tl, tail_type(a4));
+	}
 
 	f = sql_bind_func_(sql->session->schema, fname, tl);
 	list_destroy(tl);
@@ -900,7 +906,7 @@ sql_Nop(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset, int fs)
 	return sql_error(sql, 02, "SELECT: no such operator '%s'", fname);
 }
 
-static stmt *
+stmt *
 sql_binop_(mvc *sql, scope *scp, sql_schema *s, char *fname, stmt *ls, stmt *rs)
 {
 	stmt *res = NULL;
@@ -1766,6 +1772,9 @@ sql_value_exp(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset, int f,
 	case SQL_COALESCE:
 	case SQL_NULLIF:
 		return sql_case_exp(sql, scp, se, grp, subset, f);
+	case SQL_XMLELEMENT:
+	case SQL_XMLFOREST:
+		return sql_xml(sql, scp, se, grp, subset, f, ek);
 	default:
 		return sql_logical_exp(sql, scp, se, grp, subset, f);
 	}

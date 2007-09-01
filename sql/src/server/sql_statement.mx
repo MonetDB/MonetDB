@@ -206,6 +206,7 @@ extern stmt *stmt_delta_table_idxbat(sql_idx * i, int access);
 extern stmt *stmt_temp(sql_subtype *t);
 extern stmt *stmt_atom(atom *op1);
 extern stmt *stmt_atom_string(char *s);
+extern stmt *stmt_atom_clob(char *S);
 extern stmt *stmt_atom_int(int i);
 extern stmt *stmt_atom_lng(lng l);
 extern stmt *stmt_bool(int b);
@@ -415,6 +416,16 @@ stmt_atom_string(char *S)
 	sql_subtype t; 
 
 	sql_find_subtype(&t, "varchar", _strlen(s), 0);
+	return stmt_atom(atom_string(&t, s, 1));
+}
+
+stmt *
+stmt_atom_clob(char *S)
+{
+	char *s = sql2str(S);
+	sql_subtype t; 
+
+	sql_find_subtype(&t, "clob", _strlen(s), 0);
 	return stmt_atom(atom_string(&t, s, 1));
 }
 

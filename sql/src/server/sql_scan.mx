@@ -163,7 +163,6 @@ scanner_init_keywords(void)
 	keywords_insert("CONNECT", CONNECT);
 	keywords_insert("DISCONNECT", DISCONNECT);
 	keywords_insert("DATABASE", DATABASE);
-	keywords_insert("CURRENT", CURRENT);
 	keywords_insert("PORT", PORT);
 	keywords_insert("DELETE", sqlDELETE);
 
@@ -185,7 +184,7 @@ scanner_init_keywords(void)
 	keywords_insert("LOCAL", LOCAL);
 	keywords_insert("NATURAL", NATURAL);
 	keywords_insert("NOT", NOT);
-	keywords_insert("NULL", NULLX);
+	keywords_insert("NULL", sqlNULL);
 	keywords_insert("OFFSET", OFFSET);
 	keywords_insert("ON", ON);
 	keywords_insert("OPTIONS", OPTIONS);
@@ -350,6 +349,37 @@ scanner_init_keywords(void)
 	keywords_insert("OLD", OLD);
 	keywords_insert("EACH", EACH);
 	keywords_insert("REFERENCING", REFERENCING);
+
+	/* special SQL/XML keywords */
+	keywords_insert("XMLCOMMENT", XMLCOMMENT);
+	keywords_insert("XMLCONCAT", XMLCONCAT);
+	keywords_insert("XMLDOCUMENT", XMLDOCUMENT);
+	keywords_insert("XMLELEMENT", XMLELEMENT);
+	keywords_insert("XMLATTRIBUTES", XMLATTRIBUTES);
+	keywords_insert("XMLFOREST", XMLFOREST);
+	keywords_insert("XMLPARSE", XMLPARSE);
+	keywords_insert("STRIP", STRIP);
+	keywords_insert("WHITESPACE", WHITESPACE);
+	keywords_insert("XMLPI", XMLPI);
+	keywords_insert("XMLQUERY", XMLQUERY);
+	keywords_insert("PASSING", PASSING);
+	keywords_insert("XMLTEXT", XMLTEXT);
+	keywords_insert("NIL", NIL);
+	keywords_insert("REF", REF);
+	keywords_insert("ABSENT", ABSENT);
+	keywords_insert("DOCUMENT", DOCUMENT);
+	keywords_insert("ELEMENT", ELEMENT);
+	keywords_insert("CONTENT", CONTENT);
+	keywords_insert("XMLNAMESPACES", XMLNAMESPACES);
+	keywords_insert("NAMESPACE", NAMESPACE);
+	keywords_insert("XMLVALIDATE", XMLVALIDATE);
+	keywords_insert("RETURNING", RETURNING);
+	keywords_insert("LOCATION", LOCATION);
+	keywords_insert("ID", ID);
+	keywords_insert("ACCORDING", ACCORDING);
+	keywords_insert("XMLSCHEMA", XMLSCHEMA);
+	keywords_insert("URI", URI);
+
 }
 
 #define find_keyword_bs(lc, s) find_keyword(lc->rs->buf+lc->rs->pos+s)
@@ -984,7 +1014,7 @@ sqllex(YYSTYPE * yylval, void *parm)
 		stream_write(lc->log, lc->rs->buf+pos, lc->rs->pos + lc->yycur - pos, 1);
 
 	/* Don't include literals in the calculation of the key */
-	if (token != STRING && token != sqlINT && token != INTNUM && token != APPROXNUM && token != NULLX)
+	if (token != STRING && token != sqlINT && token != INTNUM && token != APPROXNUM && token != sqlNULL)
 		lc->key ^= token;
 	lc->started += (token != EOF);
 	return token;

@@ -137,7 +137,7 @@ sql_alter_seq(
 	}
 	ssname = stmt_atom_string(_strdup(seq->s->base.name));
 	seqname = stmt_atom_string(_strdup(name));
-	return sql_Nop_(sql, "restart", ssname, seqname, val);
+	return sql_Nop_(sql, "restart", ssname, seqname, val, NULL);
 }
 
 static stmt *
