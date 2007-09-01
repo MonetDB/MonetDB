@@ -36,6 +36,7 @@ extern char *sql2str(char *s);
 extern char *sql_strdup(char *s);
 extern char *sql_escape_str(char *s);
 extern char *sql_escape_ident(char *s);
+extern char *sql_message(const char *format, ...);
 
 #endif /*_SQL_STRING_H_*/
 
@@ -179,3 +180,15 @@ sql_escape_ident(char *s)
 	*r = '\0';
 	return res;
 }
+
+char *sql_message( const char *format, ... )
+{
+	char buf[BUFSIZ];
+	va_list	ap;
+
+	va_start (ap,format);
+	(void) vsnprintf( buf, BUFSIZ, format, ap); 
+	va_end (ap);
+	return _strdup(buf);
+}
+
