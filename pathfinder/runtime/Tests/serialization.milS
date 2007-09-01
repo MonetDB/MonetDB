@@ -2,6 +2,7 @@ module("pathfinder");
 
 # query for all output modes (contains all different kinds)
 var query := "(1, 2.3, attribute attr { \"val\" }, 3E1, \"string\", doc(\"nodekinds.xml\")/descendant-or-self::node())";
+var query_no_attr := "(1, 2.3, 3E1, \"string\", doc(\"nodekinds.xml\")/descendant-or-self::node())";
 
 # current different XML modes
 #
@@ -25,6 +26,9 @@ xquery("xml-noroot"     ,query , 0).printf();
 # does not work for xml-typed mode
 xquery("xml-root-name"  ,query , 0).printf();
 
+# does not work for xml-typed mode
+xquery("xml-xrpc"       ,query , 0).printf();
+
 
 # data model modes:
 #
@@ -37,6 +41,28 @@ xquery("mapi-dm"        ,query , 0).printf();
 printf("%s",xquery("seq"            ,query , 0));
 
 xquery("seq"            ,query , 0).print();
+
+
+# text mode w/ top-level attribute
+#
+xquery("text"           ,query , 0).print();
+
+xquery("mapi-text"      ,query , 0).print();
+
+# text mode w/o top-level attribute
+#
+xquery("text"           ,query_no_attr , 0).print();
+
+xquery("mapi-text"      ,query_no_attr , 0).print();
+
+
+# sax modes
+#
+xquery("sax"            ,query , 0).print();
+
+xquery("sax-noroot"     ,query , 0).print();
+
+xquery("sax-root-name"  ,query , 0).print();
 
 
 # default mode is xml mode (it also works with mapi
