@@ -76,7 +76,7 @@ FIXME: actually implement that
 #include <fcntl.h>
 #endif
 #include <unistd.h>
-#include <string.h> /* strdup, strerror */
+#include <string.h> /* strerror */
 #include <alloca.h>
 #include <errno.h>
 #include <signal.h> /* handle Ctrl-C, etc. */
@@ -97,7 +97,7 @@ FIXME: actually implement that
 
 typedef char* err;
 
-#define freeErr(X) free(X)
+#define freeErr(X) GDKfree(X)
 #define getErrMsg(X) X
 #define NO_ERR (err)0
 
@@ -337,8 +337,7 @@ newErr(str fmt, ...)
 
 	va_end(ap);
 
-	ret = malloc(sizeof(char) * (len + 1));
-	memcpy(ret, message, len + 1);
+	ret = GDKstrdup(message);
 	return(ret);
 }
 
@@ -483,7 +482,7 @@ forkMserver(str database, sabdb** stats, dpair dp, int sock)
 		/* parent: fine, let's add the pipes for this child */
 		while (dp->next != NULL)
 			dp = dp->next;
-		dp = dp->next = malloc(sizeof(struct _dpair));
+		dp = dp->next = GDKmalloc(sizeof(struct _dpair));
 		dp->fout = fdopen(pfdo[0], "r");
 		fcntl(pfdo[0], F_SETFL, O_NONBLOCK);
 		close(pfdo[1]);
@@ -492,7 +491,7 @@ forkMserver(str database, sabdb** stats, dpair dp, int sock)
 		close(pfde[1]);
 		dp->next = NULL;
 		dp->pid = pid;
-		dp->dbname = strdup(database);
+		dp->dbname = GDKstrdup(database);
 
 		/* wait for the child to open up a communication channel */
 		for (i = 0; i < 20; i++) {	/* wait up to 10 seconds */
@@ -871,13 +870,13 @@ replacePrefix(str s)
 	 * MONETDBPREFIX, which is medieval in this language */
 	p = strstr(s, "${prefix}");
 	if (p != NULL) {
-		buf = malloc(sizeof(char) * (strlen(s) + strlen(MONETDBPREFIX) + 1));
+		buf = GDKmalloc(sizeof(char) * (strlen(s) + strlen(MONETDBPREFIX) + 1));
 		memcpy(buf, s, p - s);
 		memcpy(buf + (p - s), MONETDBPREFIX, strlen(MONETDBPREFIX));
 		memcpy(buf + (p - s) + strlen(MONETDBPREFIX), s + (p - s) + 9, strlen(s) - 9 - (p - s) + 1);
 		return(buf);
 	} else {
-		return(strdup(s));
+		return(GDKstrdup(s));
 	}
 }
 
@@ -926,8 +925,8 @@ childhandler(int sig, siginfo_t *si, void *unused)
 						p->dbname, p->pid);
 			}
 			if (p->dbname)
-				free(p->dbname);
-			free(p);
+				GDKfree(p->dbname);
+			GDKfree(p);
 			break;
 		}
 		q = p;
@@ -1035,8 +1034,8 @@ main(int argc, char *argv[])
 		}
 		q->dbname = "file";
 	}
-	free(msglog);
-	free(errlog);
+	GDKfree(msglog);
+	GDKfree(errlog);
 
 	d = q->next = alloca(sizeof(struct _dpair));
 
@@ -1097,7 +1096,7 @@ main(int argc, char *argv[])
 	merlog("monitoring dbfarm %s", dbfarm);
 
 	SABAOTHinit(dbfarm, NULL);
-	free(dbfarm);
+	GDKfree(dbfarm);
 
 	/* open up a connection */
 	e = openConnection(&sock, MEROV_PORT);
@@ -1179,8 +1178,8 @@ main(int argc, char *argv[])
 	while (d != NULL) {
 		q = d->next;
 		if (d->dbname != NULL)
-			free(d->dbname);
-		free(d);
+			GDKfree(d->dbname);
+		GDKfree(d);
 		d = q;
 	}
 
