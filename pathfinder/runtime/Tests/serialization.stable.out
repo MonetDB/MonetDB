@@ -18,36 +18,36 @@ var query := "(1, 2.3, attribute attr { \"val\" }, 3E1, \"string\", doc(\"nodeki
 #
 xquery("xml"            ,query , 0).printf();
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult attr="val">1 2.300000 30.000000 string<elem>text<!--comment--><?pi_tgt pi_data?></elem><elem>text<!--comment--><?pi_tgt pi_data?></elem>text<!--comment--><?pi_tgt pi_data?></XQueryResult>
+<XQueryResult attr="val">1 2.300000 30.000000 string<elem attr="val">text<!--comment--><?pi_tgt pi_data?></elem><elem attr="val">text<!--comment--><?pi_tgt pi_data?></elem>text<!--comment--><?pi_tgt pi_data?></XQueryResult>
 
 xquery("xml-typed"      ,query , 0).printf();
 <?xml version="1.0" encoding="utf-8"?>
-<result:sequence xmlns:result="http://monetdb.cwi.nl/XQuery/results" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><result:atomic-value xsi:type="xs:integer">1</result:atomic-value><result:atomic-value xsi:type="xs:decimal">2.300000</result:atomic-value><result:attribute attr="val"/><result:atomic-value xsi:type="xs:double">30.000000</result:atomic-value><result:atomic-value xsi:type="xs:string">string</result:atomic-value><result:document><elem>text<!--comment--><?pi_tgt pi_data?></elem></result:document><result:element><elem>text<!--comment--><?pi_tgt pi_data?></elem></result:element><result:text>text</result:text><result:comment><!--comment--></result:comment><result:processing-instruction><?pi_tgt pi_data?></result:processing-instruction></result:sequence>
+<result:sequence xmlns:result="http://monetdb.cwi.nl/XQuery/results" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><result:atomic-value xsi:type="xs:integer">1</result:atomic-value><result:atomic-value xsi:type="xs:decimal">2.300000</result:atomic-value><result:attribute attr="val"/><result:atomic-value xsi:type="xs:double">30.000000</result:atomic-value><result:atomic-value xsi:type="xs:string">string</result:atomic-value><result:document><elem attr="val">text<!--comment--><?pi_tgt pi_data?></elem></result:document><result:element><elem attr="val">text<!--comment--><?pi_tgt pi_data?></elem></result:element><result:text>text</result:text><result:comment><!--comment--></result:comment><result:processing-instruction><?pi_tgt pi_data?></result:processing-instruction></result:sequence>
 
 # ... and their corresponding mapi variants
 xquery("mapi-xml"       ,query , 0).printf();
 =<?xml version="1.0" encoding="utf-8"?>
-=<XQueryResult attr="val">1 2.300000 30.000000 string<elem>text<!--comment--><?pi_tgt pi_data?></elem><elem>text<!--comment--><?pi_tgt pi_data?></elem>text<!--comment--><?pi_tgt pi_data?></XQueryResult>
+=<XQueryResult attr="val">1 2.300000 30.000000 string<elem attr="val">text<!--comment--><?pi_tgt pi_data?></elem><elem attr="val">text<!--comment--><?pi_tgt pi_data?></elem>text<!--comment--><?pi_tgt pi_data?></XQueryResult>
 
 xquery("mapi-xml-typed" ,query , 0).printf();
 =<?xml version="1.0" encoding="utf-8"?>
-=<result:sequence xmlns:result="http://monetdb.cwi.nl/XQuery/results" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><result:atomic-value xsi:type="xs:integer">1</result:atomic-value><result:atomic-value xsi:type="xs:decimal">2.300000</result:atomic-value><result:attribute attr="val"/><result:atomic-value xsi:type="xs:double">30.000000</result:atomic-value><result:atomic-value xsi:type="xs:string">string</result:atomic-value><result:document><elem>text<!--comment--><?pi_tgt pi_data?></elem></result:document><result:element><elem>text<!--comment--><?pi_tgt pi_data?></elem></result:element><result:text>text</result:text><result:comment><!--comment--></result:comment><result:processing-instruction><?pi_tgt pi_data?></result:processing-instruction></result:sequence>
+=<result:sequence xmlns:result="http://monetdb.cwi.nl/XQuery/results" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><result:atomic-value xsi:type="xs:integer">1</result:atomic-value><result:atomic-value xsi:type="xs:decimal">2.300000</result:atomic-value><result:attribute attr="val"/><result:atomic-value xsi:type="xs:double">30.000000</result:atomic-value><result:atomic-value xsi:type="xs:string">string</result:atomic-value><result:document><elem attr="val">text<!--comment--><?pi_tgt pi_data?></elem></result:document><result:element><elem attr="val">text<!--comment--><?pi_tgt pi_data?></elem></result:element><result:text>text</result:text><result:comment><!--comment--></result:comment><result:processing-instruction><?pi_tgt pi_data?></result:processing-instruction></result:sequence>
 
 
 # additional XML mode arguments:
 #
 xquery("xml-noheader"   ,query , 0).printf();
-<XQueryResult attr="val">1 2.300000 30.000000 string<elem>text<!--comment--><?pi_tgt pi_data?></elem><elem>text<!--comment--><?pi_tgt pi_data?></elem>text<!--comment--><?pi_tgt pi_data?></XQueryResult>
+<XQueryResult attr="val">1 2.300000 30.000000 string<elem attr="val">text<!--comment--><?pi_tgt pi_data?></elem><elem attr="val">text<!--comment--><?pi_tgt pi_data?></elem>text<!--comment--><?pi_tgt pi_data?></XQueryResult>
 
 # does not work for xml-typed mode
 xquery("xml-noroot"     ,query , 0).printf();
 <?xml version="1.0" encoding="utf-8"?>
-1 2.300000 30.000000 string<elem>text<!--comment--><?pi_tgt pi_data?></elem><elem>text<!--comment--><?pi_tgt pi_data?></elem>text<!--comment--><?pi_tgt pi_data?>
+1 2.300000 30.000000 string<elem attr="val">text<!--comment--><?pi_tgt pi_data?></elem><elem attr="val">text<!--comment--><?pi_tgt pi_data?></elem>text<!--comment--><?pi_tgt pi_data?>
 
 # does not work for xml-typed mode
 xquery("xml-root-name"  ,query , 0).printf();
 <?xml version="1.0" encoding="utf-8"?>
-<name attr="val">1 2.300000 30.000000 string<elem>text<!--comment--><?pi_tgt pi_data?></elem><elem>text<!--comment--><?pi_tgt pi_data?></elem>text<!--comment--><?pi_tgt pi_data?></name>
+<name attr="val">1 2.300000 30.000000 string<elem attr="val">text<!--comment--><?pi_tgt pi_data?></elem><elem attr="val">text<!--comment--><?pi_tgt pi_data?></elem>text<!--comment--><?pi_tgt pi_data?></name>
 
 
 # data model modes:
@@ -59,9 +59,9 @@ attribute attr { "val" },
 30.000000,
 "string",
 <?xml version="1.0" encoding="utf-8"?>
-<elem>text<!--comment--><?pi_tgt pi_data?></elem>
+<elem attr="val">text<!--comment--><?pi_tgt pi_data?></elem>
 ,
-<elem>text<!--comment--><?pi_tgt pi_data?></elem>,
+<elem attr="val">text<!--comment--><?pi_tgt pi_data?></elem>,
 text {"text"},
 <!--comment-->,
 <?pi_tgt pi_data?>
@@ -73,9 +73,9 @@ xquery("mapi-dm"        ,query , 0).printf();
 =30.000000,
 ="string",
 =<?xml version="1.0" encoding="utf-8"?>
-=<elem>text<!--comment--><?pi_tgt pi_data?></elem>
+=<elem attr="val">text<!--comment--><?pi_tgt pi_data?></elem>
 =,
-=<elem>text<!--comment--><?pi_tgt pi_data?></elem>,
+=<elem attr="val">text<!--comment--><?pi_tgt pi_data?></elem>,
 =text {"text"},
 =<!--comment-->,
 =<?pi_tgt pi_data?>
@@ -93,14 +93,14 @@ printf("%s",xquery("seq"            ,query , 0));
 [ "attribute attr { "val" }"	]
 [ "30.000000"	]
 [ "\"string\""	]
-[ "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<elem>text<!--comment--><?pi_tgt pi_data?></elem>\n"	]
-[ "<elem>text<!--comment--><?pi_tgt pi_data?></elem>"	]
+[ "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<elem attr=\"val\">text<!--comment--><?pi_tgt pi_data?></elem>\n"	]
+[ "<elem attr=\"val\">text<!--comment--><?pi_tgt pi_data?></elem>"	]
 [ "text {\"text\"}"	]
 [ "<!--comment-->"	]
 [ "<?pi_tgt pi_data?>"	]
 
 xquery("seq"            ,query , 0).print();
-[ "&1 0 10 1 10\n% xquery.result\t# table_name\n% xml\t# name\n% varchar\t# type\n% 60\t# length\n[ \"1\"\t]\n[ \"2.300000\"\t]\n[ \"attribute attr { \"val\" }\"\t]\n[ \"30.000000\"\t]\n[ \"\\\"string\\\"\"\t]\n[ \"<?xml version=\\\"1.0\\\" encoding=\\\"utf-8\\\"?>\\n<elem>text<!--comment--><?pi_tgt pi_data?></elem>\\n\"\t]\n[ \"<elem>text<!--comment--><?pi_tgt pi_data?></elem>\"\t]\n[ \"text {\\\"text\\\"}\"\t]\n[ \"<!--comment-->\"\t]\n[ \"<?pi_tgt pi_data?>\"\t]\n" ]
+[ "&1 0 10 1 10\n% xquery.result\t# table_name\n% xml\t# name\n% varchar\t# type\n% 60\t# length\n[ \"1\"\t]\n[ \"2.300000\"\t]\n[ \"attribute attr { \"val\" }\"\t]\n[ \"30.000000\"\t]\n[ \"\\\"string\\\"\"\t]\n[ \"<?xml version=\\\"1.0\\\" encoding=\\\"utf-8\\\"?>\\n<elem attr=\\\"val\\\">text<!--comment--><?pi_tgt pi_data?></elem>\\n\"\t]\n[ \"<elem attr=\\\"val\\\">text<!--comment--><?pi_tgt pi_data?></elem>\"\t]\n[ \"text {\\\"text\\\"}\"\t]\n[ \"<!--comment-->\"\t]\n[ \"<?pi_tgt pi_data?>\"\t]\n" ]
 
 
 # default mode is xml mode (it also works with mapi
@@ -108,11 +108,11 @@ xquery("seq"            ,query , 0).print();
 #
 xquery(""               ,query , 0).printf();
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult attr="val">1 2.300000 30.000000 string<elem>text<!--comment--><?pi_tgt pi_data?></elem><elem>text<!--comment--><?pi_tgt pi_data?></elem>text<!--comment--><?pi_tgt pi_data?></XQueryResult>
+<XQueryResult attr="val">1 2.300000 30.000000 string<elem attr="val">text<!--comment--><?pi_tgt pi_data?></elem><elem attr="val">text<!--comment--><?pi_tgt pi_data?></elem>text<!--comment--><?pi_tgt pi_data?></XQueryResult>
 
 xquery("mapi"           ,query , 0).printf();
 =<?xml version="1.0" encoding="utf-8"?>
-=<XQueryResult attr="val">1 2.300000 30.000000 string<elem>text<!--comment--><?pi_tgt pi_data?></elem><elem>text<!--comment--><?pi_tgt pi_data?></elem>text<!--comment--><?pi_tgt pi_data?></XQueryResult>
+=<XQueryResult attr="val">1 2.300000 30.000000 string<elem attr="val">text<!--comment--><?pi_tgt pi_data?></elem><elem attr="val">text<!--comment--><?pi_tgt pi_data?></elem>text<!--comment--><?pi_tgt pi_data?></XQueryResult>
 quit();
 
 # 13:48:29 >  

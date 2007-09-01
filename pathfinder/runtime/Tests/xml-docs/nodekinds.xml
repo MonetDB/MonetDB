@@ -1,1 +1,1 @@
-<elem>text<!--comment--><?pi_tgt pi_data?></elem>
+<elem attr="val">text<!--comment--><?pi_tgt pi_data?></elem>
