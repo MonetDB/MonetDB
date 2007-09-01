@@ -1,0 +1,42 @@
+stderr of test 'serialization-mclient` in directory 'runtime` itself:
+
+
+# 19:58:59 >  
+# 19:58:59 >  Mtimeout -timeout 420  Mserver "--config=/net/corona.ins.cwi.nl/export/scratch0/manegold/Monet/Testing/Current/prefix.--enable-strict_--disable-debug_--enable-optimize/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/net/corona.ins.cwi.nl/export/scratch0/manegold/Monet/Testing/Current/prefix.--enable-strict_--disable-debug_--enable-optimize/lib64/MonetDB4:/net/corona.ins.cwi.nl/export/scratch0/manegold/Monet/Testing/Current/prefix.--enable-strict_--disable-debug_--enable-optimize/lib64/MonetDB4/lib:/net/corona.ins.cwi.nl/export/scratch0/manegold/Monet/Testing/Current/prefix.--enable-strict_--disable-debug_--enable-optimize/lib64/MonetDB4/bin" --set "gdk_dbfarm=/net/corona.ins.cwi.nl/export/scratch0/manegold/Monet/Testing/Current/prefix.--enable-strict_--disable-debug_--enable-optimize/var/MonetDB4/dbfarm" --set "sql_logdir=/net/corona.ins.cwi.nl/export/scratch0/manegold/Monet/Testing/Current/prefix.--enable-strict_--disable-debug_--enable-optimize/var/MonetDB4/sql_logs" --set "xquery_logdir=/net/corona.ins.cwi.nl/export/scratch0/manegold/Monet/Testing/Current/prefix.--enable-strict_--disable-debug_--enable-optimize/var/MonetDB4/xquery_logs" --set mapi_open=true --set xrpc_open=true --set mapi_port=39161 --set xrpc_port=47285 --set monet_prompt= --trace "--dbname=mTests_runtime" --dbinit=" module(pathfinder);" ; echo ; echo Over..
+# 19:58:59 >  
+
+
+# 19:59:00 >  
+# 19:59:00 >  Mtimeout -timeout 300 /usr/bin/python serialization-mclient.XQUERY.py serialization-mclient 
+# 19:59:00 >  
+
+
+mode="xml"
+
+mode="xml-typed"
+
+mode="xml-noheader"
+
+mode="xml-noroot"
+
+mode="xml-root-name"
+
+mode="dm"
+
+mode="seq"
+
+mode="text"
+= Please remove this line once the below error message has been verified as correct/expected.
+MAPI  = monetdb@corona:39161
+QUERY = (1, 2.3, attribute attr { "val" }, 3E1, "string", doc("nodekinds.xml")/descendant-or-self::node())
+ERROR = !ERROR: xquery_print_result_loop: operation failed.
+= Please remove this line once the above error message has been verified as correct/expected.
+
+mode="text" (w/o top-level attribute)
+
+mode="" (default)
+
+# 19:59:00 >  
+# 19:59:00 >  Done.
+# 19:59:00 >  
+

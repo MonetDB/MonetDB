@@ -31,6 +31,7 @@ printEmptySeq
 printTypedMode
 namespaces
 serialization
+serialization-mclient
 escaped-string
 smack00
 smack01
