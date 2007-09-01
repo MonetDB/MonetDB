@@ -13,6 +13,7 @@ module("pathfinder");
 
 # query for all output modes (contains all different kinds)
 var query := "(1, 2.3, attribute attr { \"val\" }, 3E1, \"string\", doc(\"nodekinds.xml\")/descendant-or-self::node())";
+var query_no_attr := "(1, 2.3, 3E1, \"string\", doc(\"nodekinds.xml\")/descendant-or-self::node())";
 
 # current different XML modes
 #
@@ -101,6 +102,39 @@ printf("%s",xquery("seq"            ,query , 0));
 
 xquery("seq"            ,query , 0).print();
 [ "&1 0 10 1 10\n% xquery.result\t# table_name\n% xml\t# name\n% varchar\t# type\n% 60\t# length\n[ \"1\"\t]\n[ \"2.300000\"\t]\n[ \"attribute attr { \"val\" }\"\t]\n[ \"30.000000\"\t]\n[ \"\\\"string\\\"\"\t]\n[ \"<?xml version=\\\"1.0\\\" encoding=\\\"utf-8\\\"?>\\n<elem attr=\\\"val\\\">text<!--comment--><?pi_tgt pi_data?></elem>\\n\"\t]\n[ \"<elem attr=\\\"val\\\">text<!--comment--><?pi_tgt pi_data?></elem>\"\t]\n[ \"text {\\\"text\\\"}\"\t]\n[ \"<!--comment-->\"\t]\n[ \"<?pi_tgt pi_data?>\"\t]\n" ]
+
+
+# text mode w/ top-level attribute
+#
+xquery("text"           ,query , 0).printf();
+= Please remove this line once the below error message has been verified as correct/expected.
+!ERROR: 12.300000!ERROR: serialize_dflt.mx: unable to print top level attribute nodes in text mode
+!ERROR: xquery_print_result_loop: operation failed.
+!ERROR: interpret: no matching MIL operator to 'printf(void)'.
+!MAYBE YOU MEAN:
+!	printf(str, ..any..) : void
+= Please remove this line once the above error message has been verified as correct/expected.
+
+xquery("mapi-text"      ,query , 0).printf();
+= Please remove this line once the below error message has been verified as correct/expected.
+!ERROR: =12.300000!ERROR: serialize_dflt.mx: unable to print top level attribute nodes in text mode
+!ERROR: xquery_print_result_loop: operation failed.
+!ERROR: interpret: no matching MIL operator to 'printf(void)'.
+!MAYBE YOU MEAN:
+!	printf(str, ..any..) : void
+= Please remove this line once the above error message has been verified as correct/expected.
+
+# text mode w/o top-level attribute
+#
+xquery("text"           ,query_no_attr , 0).printf();
+= Please remove this line once the below text-mode output has been verified as correct/expected.
+12.30000030.000000string<elem attr="val">text<!--comment--><?pi_tgt pi_data?></elem><elem attr="val">text<!--comment--><?pi_tgt pi_data?></elem>text<!--comment--><?pi_tgt pi_data?>
+= Please remove this line once the above text-mode output has been verified as correct/expected.
+
+xquery("mapi-text"      ,query_no_attr , 0).printf();
+= Please remove this line once the below text-mode output has been verified as correct/expected.
+=12.30000030.000000string<elem attr="val">text<!--comment--><?pi_tgt pi_data?></elem><elem attr="val">text<!--comment--><?pi_tgt pi_data?></elem>text<!--comment--><?pi_tgt pi_data?>
+= Please remove this line once the above text-mode output has been verified as correct/expected.
 
 
 # default mode is xml mode (it also works with mapi
