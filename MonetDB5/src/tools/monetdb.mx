@@ -34,7 +34,7 @@ information about them are the primary goals of this tool.
 #include <stdlib.h> /* exit */
 #include <stdarg.h>	/* variadic stuff */
 #include <stdio.h> /* fprintf */
-#include <string.h> /* strdup, strerror */
+#include <string.h> /* strerror */
 #include <sys/stat.h> /* mkdir, stat */
 #include <sys/types.h> /* mkdir, readdir */
 #include <dirent.h> /* readdir */
@@ -45,7 +45,7 @@ information about them are the primary goals of this tool.
 
 typedef char* err;
 
-#define freeErr(X) free(X)
+#define freeErr(X) GDKfree(X)
 #define getErrMsg(X) X
 #define NO_ERR (err)0
 
@@ -61,13 +61,13 @@ replacePrefix(str s)
 	 * MONETDBPREFIX, which is medieval in this language */
 	p = strstr(s, "${prefix}");
 	if (p != NULL) {
-		buf = malloc(sizeof(char) * (strlen(s) + strlen(MONETDBPREFIX) + 1));
+		buf = GDKmalloc(sizeof(char) * (strlen(s) + strlen(MONETDBPREFIX) + 1));
 		memcpy(buf, s, p - s);
 		memcpy(buf + (p - s), MONETDBPREFIX, strlen(MONETDBPREFIX));
 		memcpy(buf + (p - s) + strlen(MONETDBPREFIX), s + (p - s) + 9, strlen(s) - 9 - (p - s) + 1);
 		return(buf);
 	} else {
-		return(strdup(s));
+		return(GDKstrdup(s));
 	}
 }
 
@@ -454,6 +454,8 @@ command_create(int argc, char *argv[], char *dbfarm)
 		} else if (argc == 3 && strcmp(argv[2], "-l") == 0) {
 			maintenance = 1;
 			dbname = argv[1];
+		} else if (argc == 2) {
+			dbname = argv[1];
 		} else {
 			command_help(2, &argv[-1]);
 			exit(1);
@@ -522,7 +524,7 @@ deletedir(char *dir)
 	if (d == NULL) {
 		snprintf(data, 8095, "unable to open directory %s: %s",
 				dir, strerror(errno));
-		return(strdup(data));
+		return(GDKstrdup(data));
 	}
 	while ((e = readdir(d)) != NULL) {
 		snprintf(path, PATHLENGTH, "%s/%s", dir, e->d_name);
@@ -530,7 +532,7 @@ deletedir(char *dir)
 			snprintf(data, 8095, "unable to stat file %s: %s",
 					path, strerror(errno));
 			closedir(d);
-			return(strdup(data));
+			return(GDKstrdup(data));
 		}
 
 		if (S_ISREG(s.st_mode) || S_ISLNK(s.st_mode)) {
@@ -538,7 +540,7 @@ deletedir(char *dir)
 				snprintf(data, 8095, "unable to unlink file %s: %s",
 						path, strerror(errno));
 				closedir(d);
-				return(strdup(data));
+				return(GDKstrdup(data));
 			}
 		} else if (S_ISDIR(s.st_mode)) {
 			err er;
@@ -554,14 +556,14 @@ deletedir(char *dir)
 			/* fifos, block, char devices etc, we don't do */
 			snprintf(data, 8095, "not a regular file: %s", path);
 			closedir(d);
-			return(strdup(data));
+			return(GDKstrdup(data));
 		}
 	}
 	closedir(d);
 	if (rmdir(dir) == -1) {
 		snprintf(data, 8095, "unable to remove directory %s: %s",
 				dir, strerror(errno));
-		return(strdup(data));
+		return(GDKstrdup(data));
 	}
 
 	return(NO_ERR);
@@ -644,7 +646,7 @@ command_destroy(int argc, char *argv[])
 			if ((e = deletedir(stats->path)) != NULL) {
 				fprintf(stderr, "destroy: failed to destroy %s: %s\n",
 						argv[1], e);
-				free(e);
+				GDKfree(e);
 				exit(1);
 			}
 			SABAOTHfreeStatus(&stats);
