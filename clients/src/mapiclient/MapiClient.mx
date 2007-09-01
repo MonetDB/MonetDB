@@ -1471,12 +1471,12 @@ usage(const char *prog)
 	fprintf(stderr, " -u user     | --user=user       user id\n");
 	fprintf(stderr, " -?          | --help            show this usage message\n");
 #ifdef HAVE_POPEN
-	fprintf(stderr, " -|          | --pager=cmd        for pagination\n");
+	fprintf(stderr, " -| cmd      | --pager=cmd        for pagination\n");
 #endif
 
 	fprintf(stderr, "\nSQL specific opions \n");
-	fprintf(stderr, " -r          | --rows=nr          for pagination\n");
-	fprintf(stderr, " -w          | --width=nr         for pagination\n");
+	fprintf(stderr, " -r nr       | --rows=nr          for pagination\n");
+	fprintf(stderr, " -w nr       | --width=nr         for pagination\n");
 	fprintf(stderr, " -d          | --dump             create an SQL dump\n");
 
 	fprintf(stderr, "\nXQuery specific options\n");
