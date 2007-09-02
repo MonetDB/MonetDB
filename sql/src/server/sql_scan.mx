@@ -301,6 +301,7 @@ scanner_init_keywords(void)
 	keywords_insert("TYPE", TYPE);
 	keywords_insert("PROCEDURE", PROCEDURE);
 	keywords_insert("FUNCTION", FUNCTION);
+	keywords_insert("AGGREGATE", AGGREGATE);
 	keywords_insert("RETURNS", RETURNS);
 	keywords_insert("EXTERNAL", EXTERNAL);
 	keywords_insert("NAME", sqlNAME);
@@ -379,6 +380,7 @@ scanner_init_keywords(void)
 	keywords_insert("ACCORDING", ACCORDING);
 	keywords_insert("XMLSCHEMA", XMLSCHEMA);
 	keywords_insert("URI", URI);
+	keywords_insert("XMLAGG", XMLAGG);
 
 }
 

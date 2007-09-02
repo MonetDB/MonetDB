@@ -521,7 +521,7 @@ create_type_list(dlist *params, int param)
 }
 
 static stmt *
-create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_name, dlist *body, int is_func)
+create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_name, dlist *body, int is_func, int is_aggr)
 {
 	char *fname = qname_table(qname);
 	char *sname = qname_schema(qname);
@@ -532,9 +532,10 @@ create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_name,
 	list *id_func_l = NULL, *id_col_l = NULL, *view_id_l = NULL;
 	sql_subtype *restype = NULL;
 	int instantiate = (sql->mode == m_execute);
+	char *F = is_aggr?"AGGREGATE":(is_func?"FUNCTION":"PROCEDURE");
 
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
-		return sql_error(sql, 02, "CREATE FUNCTION: no such schema '%s'", sname);
+		return sql_error(sql, 02, "CREATE %s: no such schema '%s'", F, sname);
 	if(s == NULL)
 		s = cur_schema(sql);
 
@@ -561,11 +562,11 @@ create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_name,
 			}
 			list_destroy(type_list);
 				
-			(void)sql_error(sql, 02, "CREATE FUNCTION: name '%s' (%s) already in use", fname, arg_list);
+			(void)sql_error(sql, 02, "CREATE %s: name '%s' (%s) already in use", F, fname, arg_list);
 			_DELETE(arg_list);
 			return NULL;
 		} else {
-			return sql_error(sql, 02, "CREATE FUNCTION: name '%s' already in use", fname);
+			return sql_error(sql, 02, "CREATE %s: name '%s' already in use", F, fname);
 		}
 	
 	} else {
@@ -602,7 +603,7 @@ create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_name,
 				} else {
 					sql_destroy_params(sql);
 
-					f = mvc_create_func(sql, sql->session->schema, fname, l, restype, TRUE, FALSE, "user", q, is_func);
+					f = mvc_create_func(sql, sql->session->schema, fname, l, restype, TRUE, is_aggr, "user", q, is_func);
 					if (b) {
 						id_col_l = stmt_list_dependencies(b, COLUMN_DEPENDENCY);
 						id_func_l = stmt_list_dependencies(b, FUNC_DEPENDENCY);
@@ -621,7 +622,7 @@ create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_name,
 			} else {
 				char *fmod = qname_module(ext_name);
 				char *fnme = qname_fname(ext_name);
-				mvc_create_func(sql, sql->session->schema, fname, l, restype, FALSE, FALSE, fmod, fnme, is_func );
+				mvc_create_func(sql, sql->session->schema, fname, l, restype, FALSE, is_aggr, fmod, fnme, is_func );
 			}
 		}
 	}
@@ -765,11 +766,13 @@ psm(mvc *sql, symbol *s)
 
 	case SQL_CREATE_PROC:
 	case SQL_CREATE_FUNC:
+	case SQL_CREATE_AGGR:
 	{
 		dlist *l = s->data.lval;
 		int is_func = (s->token == SQL_CREATE_FUNC);
+		int is_aggr = (s->token == SQL_CREATE_AGGR);
 
-		ret = create_func(sql, l->h->data.lval, l->h->next->data.lval, l->h->next->next->data.sym, l->h->next->next->next->data.lval, l->h->next->next->next->next->data.lval, is_func);
+		ret = create_func(sql, l->h->data.lval, l->h->next->data.lval, l->h->next->next->data.sym, l->h->next->next->next->data.lval, l->h->next->next->next->next->data.lval, is_func, is_aggr);
 		sql->type = Q_SCHEMA;
 	} 	break;
 	case SQL_DROP_FUNC:

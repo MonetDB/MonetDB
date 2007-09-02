@@ -1544,7 +1544,7 @@ sql_rankop(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset, int f)
 		aggrstr  = window_function->data.lval->h->data.sval;
 	}
 
-	if (grp) 
+	if (grp && window_specification->h->data.sym) 
 		return sql_error(sql, 02, "OVER: not allowed in combination with GROUP BY");
 
 	if (f == sql_where) 

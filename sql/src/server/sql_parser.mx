@@ -42,6 +42,7 @@ typedef enum tokens {
 	SQL_CREATE_TYPE,
 	SQL_CREATE_PROC,
 	SQL_CREATE_FUNC,
+	SQL_CREATE_AGGR,
 	SQL_CREATE_SEQ,
 	SQL_CREATE_TRIGGER,
 	SQL_DROP_SCHEMA,
@@ -168,7 +169,8 @@ typedef enum tokens {
 	SQL_XMLPI,
 	SQL_XMLQUERY,
 	SQL_XMLTEXT,
-	SQL_XMLVALIDATE
+	SQL_XMLVALIDATE,
+	SQL_XMLNAMESPACES
 } tokens;
 
 typedef enum jt {
@@ -407,6 +409,9 @@ int yydebug=1;
 	XML_attribute_value
 	XML_element_content
 	forest_element_value
+	XML_aggregate
+	XML_value_expression
+	XML_primary
 
 %type <type>
 	data_type
@@ -442,6 +447,8 @@ int yydebug=1;
 	XML_attribute_name
 	opt_forest_element_name
 	forest_element_name
+	XML_namespace_URI
+	XML_namespace_prefix
 
 %type <l>
 	passwd_schema
@@ -517,6 +524,10 @@ int yydebug=1;
 	XML_element_content_list
 	forest_element_list
 	forest_element
+	XML_namespace_declaration_item_list
+	XML_namespace_declaration_item
+	XML_regular_namespace_declaration_item
+	XML_default_namespace_declaration_item
 
 %type <ival>
 	opt_port
@@ -626,7 +637,7 @@ int yydebug=1;
 %token XMLCOMMENT XMLCONCAT XMLDOCUMENT XMLELEMENT XMLATTRIBUTES XMLFOREST 
 %token XMLPARSE STRIP WHITESPACE XMLPI XMLQUERY PASSING XMLTEXT
 %token NIL REF ABSENT EMPTY DOCUMENT ELEMENT CONTENT XMLNAMESPACES NAMESPACE
-%token XMLVALIDATE RETURNING LOCATION ID ACCORDING XMLSCHEMA URI
+%token XMLVALIDATE RETURNING LOCATION ID ACCORDING XMLSCHEMA URI XMLAGG
 
 
 /* operators */
@@ -653,7 +664,7 @@ SQLCODE SQLERROR UNDER WHENEVER
 %token TEMPORARY
 %token<sval> ASC DESC AUTHORIZATION
 %token CHECK CONSTRAINT CREATE
-%token TYPE PROCEDURE FUNCTION RETURNS EXTERNAL sqlNAME DECLARE
+%token TYPE PROCEDURE FUNCTION AGGREGATE RETURNS EXTERNAL sqlNAME DECLARE
 %token CALL LANGUAGE 
 %token SQL_EXPLAIN SQL_PROFILE SQL_DEBUG SQL_TRACE PREPARE EXECUTE
 %token DEFAULT DISTINCT DROP
@@ -1757,6 +1768,17 @@ func_def:
 				append_list(f, $11);
 				append_list(f, NULL);
 			  $$ = _symbol_create_list( SQL_CREATE_FUNC, f ); }
+  | create AGGREGATE qname
+	'(' opt_paramlist ')'
+    RETURNS func_data_type
+    EXTERNAL sqlNAME external_function_name 	
+			{ dlist *f = L();
+				append_list(f, $3);
+				append_list(f, $5);
+				append_symbol(f, $8);
+				append_list(f, $11);
+				append_list(f, NULL);
+			  $$ = _symbol_create_list( SQL_CREATE_AGGR, f ); }
  |
     create FUNCTION qname
 	'(' opt_paramlist ')'
@@ -3494,6 +3516,7 @@ aggr_ref:
   		  append_int(l, FALSE);
   		  append_symbol(l, $3);
 		  $$ = _symbol_create_list( SQL_AGGR, l ); }
+ |  XML_aggregate
  ;
 
 opt_sign:
@@ -4276,7 +4299,23 @@ non_reserved_word:  /* (lexicographically sorted for convenience) */
 |  SQL_DEBUG	{ $$ = sa_strdup(SA, "debug"); }
 |  SQL_TRACE	{ $$ = sa_strdup(SA, "trace"); }
 |  AUTO_COMMIT	{ $$ = sa_strdup(SA, "auto_commit"); }
-
+/* SQL/XML non reserved words */
+|  STRIP	{ $$ = sa_strdup(SA, "strip"); }
+|  WHITESPACE	{ $$ = sa_strdup(SA, "whitespace"); }
+|  PASSING	{ $$ = sa_strdup(SA, "passing"); }
+|  NIL		{ $$ = sa_strdup(SA, "nil"); }
+|  REF		{ $$ = sa_strdup(SA, "ref"); }
+|  ABSENT	{ $$ = sa_strdup(SA, "absent"); }
+|  EMPTY	{ $$ = sa_strdup(SA, "empty"); }
+|  DOCUMENT	{ $$ = sa_strdup(SA, "document"); }
+|  ELEMENT	{ $$ = sa_strdup(SA, "element"); }
+|  CONTENT	{ $$ = sa_strdup(SA, "content"); }
+|  NAMESPACE	{ $$ = sa_strdup(SA, "namespace"); }
+|  RETURNING	{ $$ = sa_strdup(SA, "returning"); }
+|  LOCATION	{ $$ = sa_strdup(SA, "location"); }
+|  ID		{ $$ = sa_strdup(SA, "id"); }
+|  ACCORDING	{ $$ = sa_strdup(SA, "according"); }
+|  URI		{ $$ = sa_strdup(SA, "uri"); }
 ;
 
 name_commalist:
@@ -4375,7 +4414,7 @@ XML_value_expression_list:
   ;
 
 XML_primary:
-    value_exp
+    scalar_exp
   ;
 
 XML_value_function:
@@ -4479,7 +4518,7 @@ opt_XML_attribute_name:
   ; 
 
 XML_attribute_value:
-     value_exp
+     scalar_exp
   ;
 
 XML_attribute_name:
@@ -4501,7 +4540,7 @@ XML_element_content_list:
   ;
 
 XML_element_content:
-     value_exp
+     scalar_exp
   ;
 
 opt_XML_content_option:
@@ -4549,7 +4588,7 @@ forest_element:
   ;
 
 forest_element_value:
-    value_exp	{ $$ = $1; }
+    scalar_exp	{ $$ = $1; }
   ;
 
 opt_forest_element_name:
@@ -4684,11 +4723,14 @@ opt_XML_returning_clause:
 
 XML_namespace_declaration:
   XMLNAMESPACES '(' XML_namespace_declaration_item_list ')'
+	{ $$ = _symbol_create_list(SQL_XMLNAMESPACES, $3); }
   ;
 
 XML_namespace_declaration_item_list:
  	XML_namespace_declaration_item
+		{ $$ = append_list(L(), $1); }
   |     XML_namespace_declaration_item_list ',' XML_namespace_declaration_item
+		{ $$ = append_list($1, $3); }
   ;
 
 XML_namespace_declaration_item:
@@ -4706,11 +4748,14 @@ XML_namespace_URI:
 
 XML_regular_namespace_declaration_item:
     XML_namespace_URI AS XML_namespace_prefix
+				{ $$ = append_string(L(), $1);
+				  $$ = append_string($$, $3); }
   ;
 
 XML_default_namespace_declaration_item:
-    DEFAULT XML_namespace_URI
-  | NO DEFAULT
+    DEFAULT XML_namespace_URI	{ $$ = append_string(L(), $2); 
+				  $$ = append_string($$, NULL); }
+  | NO DEFAULT			{ $$ = NULL; }
   ;
 
 opt_XML_passing_mechanism:
@@ -4801,6 +4846,29 @@ XML_valid_element_name:
    ident
  ;
 
+XML_aggregate:
+  XMLAGG '(' XML_value_expression
+      opt_order_by_clause
+      opt_XML_returning_clause
+      ')'
+	{ dlist *l = L();
+          dlist *aggr = L();
+	  dlist *window_spec = L();
+
+	  append_string(aggr, "xmlagg");
+  	  append_int(aggr, FALSE);
+	  append_symbol(aggr, $3);
+
+	  append_symbol(l, _symbol_create_list( SQL_AGGR, aggr));
+
+	  append_symbol(window_spec, NULL); /* no partiting */
+	  append_symbol(window_spec, $4);   /* just sorting */
+
+	  append_list(l, window_spec);
+	  /* int returning not used */
+	  $$ = _symbol_create_list( SQL_RANK, l); }
+ ;
+
 %%
 char *token2string(int token)
 {
@@ -4814,6 +4882,7 @@ char *token2string(int token)
 	SQL(CREATE_USER);
 	SQL(CREATE_TYPE);
 	SQL(CREATE_FUNC);
+	SQL(CREATE_AGGR);
 	SQL(CREATE_SEQ);
 	SQL(CREATE_TRIGGER);
 	SQL(DROP_SCHEMA);
@@ -4941,6 +5010,7 @@ char *token2string(int token)
 	SQL(XMLQUERY);
 	SQL(XMLTEXT);
 	SQL(XMLVALIDATE);
+	SQL(XMLNAMESPACES);
 	}
 	return "unknown";	/* just needed for broken compilers ! */
 }

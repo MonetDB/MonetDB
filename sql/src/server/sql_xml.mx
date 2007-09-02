@@ -64,12 +64,26 @@ sql_xmlelement(mvc *sql, scope *scp, symbol *sym, group *grp, stmt *subset, int 
 			(void)content_option;
 			for (n=cl->h; n; n = n->next) {
 				symbol *c = n->data.sym;
-			
+				sql_subtype *st; 
 				stmt *c_st = sql_value_exp(sql, scp, c, grp, subset, f, knd);
-				sql_subtype *st;
 
 				if (!c_st) 
 					return NULL;
+
+				if (c->token == SQL_SELECT) {
+					list *sq = c_st->op1.lval;
+					stmt *h, *v, *o; 
+
+					assert (list_length(sq) == 2); 
+
+					v = stmt_dup(sq->h->data);
+					o = stmt_dup(sq->h->next->data);
+					stmt_destroy(c_st);
+					c_st = stmt_join(stmt_reverse(o), v, cmp_equal);
+					h = stmt_dup(c_st->h->t);
+					stmt_destroy(c_st->h);
+					c_st->h = h;
+				}
 
 				st = tail_type(c_st);
 				assert(st);
