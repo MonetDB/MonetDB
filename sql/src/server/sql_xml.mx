@@ -71,18 +71,25 @@ sql_xmlelement(mvc *sql, scope *scp, symbol *sym, group *grp, stmt *subset, int 
 					return NULL;
 
 				if (c->token == SQL_SELECT) {
-					list *sq = c_st->op1.lval;
-					stmt *h, *v, *o; 
+					node *o = c_st->op1.lval->h;
+					stmt *oref = stmt_dup(o->next->data);
+					stmt *sqa = stmt_dup(o->data);
+					stmt *h;
 
-					assert (list_length(sq) == 2); 
-
-					v = stmt_dup(sq->h->data);
-					o = stmt_dup(sq->h->next->data);
+					if (list_length(c_st->op1.lval) > 2 || !oref->t) {
+						stmt_destroy(oref);
+						stmt_destroy(sqa);
+						stmt_destroy(c_st);
+						return sql_error(sql, 02, "SELECT: comparision between incompatible types");
+					}
 					stmt_destroy(c_st);
-					c_st = stmt_join(stmt_reverse(o), v, cmp_equal);
+					c_st = stmt_join(stmt_reverse(oref), sqa, cmp_equal);
+					/* need to fix the c_st head */
 					h = stmt_dup(c_st->h->t);
 					stmt_destroy(c_st->h);
 					c_st->h = h;
+
+					c_st = stmt_join(find_pivot(subset, c_st->h), c_st, cmp_equal);
 				}
 
 				st = tail_type(c_st);

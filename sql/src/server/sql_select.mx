@@ -69,6 +69,7 @@ extern stmt *complex_find_subset(stmt *subset, stmt *t);
 extern stmt *sql_and(mvc *sql, scope *scp, stmt *ls, stmt *rs, int f);
 extern stmt *sql_binop_(mvc *sql, scope *scp, sql_schema *s, char *fname, stmt *ls, stmt *rs);
 extern stmt *sql_Nop_(mvc *sql, char *fname, stmt *a1, stmt *a2, stmt *a3, stmt *a4);
+extern stmt *find_pivot(stmt *subset, stmt *t);
 
 #endif /*_SQL_SELECT_H_*/
 @c
@@ -488,7 +489,7 @@ sql_subquery_optname(mvc *sql, scope *scp, symbol *query)
 	return table_optname(sql, scp, sq, sn->name);
 }
 
-static stmt *
+stmt *
 find_pivot(stmt *subset, stmt *t)
 {
 	assert(subset->type == st_ptable);
