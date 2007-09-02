@@ -991,4 +991,34 @@ tst400e		 0.715/0.675/0.039	1M incr fcn
 
 tst901a		 0.912/0.726/0.186	[+] call
 tst901b		 0.875/0.698/0.176	[+] call
-Conclusion, so far no big difference wrt settrivial properties
+Conclusion, a big discrepancy.
+======================== 2 Sep 2007 ===================
+Setup on Gio version 5.0-beta2 kernel,
+Athlon 64 3000+ converted to X2 3800
+
+The mal_instruction pushArgument contained an error
+The compilation mode for V5 is --ENABLE-DEBUG --DISABLE-OPTIMIZE
+base		 0.190/0.144/0.046					
+tst400a		 0.419/0.364/0.052	1M loop			
+tst400bHuge	 0.755/0.692/0.063	100k count (io)	
+tst400cHuge	 1.005/0.972/0.077	100k insert(io) 
+tst400d		 1.566/1.364/0.182	1M insert tuple 
+tst400e		 1.179/1.127/0.052	1M incr fcn	
+
+tst901a		 1.601/1.428/0.150	[+] call
+tst901b		 3.555/3.326/0.225	[+] call
+======================== 2 Sep 2007 ===================
+Setup on Gio version 5.0-beta2 kernel,
+Athlon 64 3000+ converted to X2 3800
+
+TURN ON OPTIMIZATION AGAIN
+The compilation mode for V5 is --enable-optimize --disable-debug
+base		 0.138/0.10q/0.037					
+tst400a		 0.212/0.163/0.049	1M loop			
+tst400bHuge	 0.390/0.324/0.065	100k count (io)	
+tst400cHuge	 0.494/0.422/0.071	100k insert(io) 
+tst400d		 0.832/0.674/0.156	1M insert tuple 
+tst400e		 0.732/0.687/0.045	1M incr fcn	
+
+tst901a		 0.929/0.746/0.175	[+] call
+tst901b		 1.428/1.271/0.157	[+] call
