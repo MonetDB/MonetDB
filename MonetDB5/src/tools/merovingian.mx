@@ -884,8 +884,11 @@ controlRunner(void *d)
 	 * clients coming in at the same time.  We might need to fix this
 	 * situation sometime. */
 	while (_keepListening == 1) {
-		if (fgets(buf, 256, f) == NULL)
-			continue; /* ignore EOF */
+		if (fgets(buf, 256, f) == NULL) {
+			/* ignore EOF, but don't spin-lock */
+			MT_sleep_ms(1000);
+			continue;
+		}
 		/* format is simple: database<space>command */
 		if ((p = strchr(buf, ' ')) == NULL) {
 			fprintf(stderr, "malformed control signal: %s\n", buf);
