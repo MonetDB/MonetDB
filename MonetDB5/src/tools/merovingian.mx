@@ -876,7 +876,8 @@ controlRunner(void *d)
 
 	while (_keepListening == 1) {
 		if ((f = fopen((char *)d, "r")) == NULL) {
-			fprintf(stderr, "unable to open up control command channel for reading\n");
+			fprintf(stderr, "unable to open up control command channel "
+					"for reading: %s\n", strerror(errno));
 			return;
 		}
 
