@@ -25,7 +25,7 @@ dbfarm.  Creating or deleting databases next to retrieving status
 information about them are the primary goals of this tool.
 
 @h
-#define TOOLKIT_VERSION   "0.1"
+#define TOOLKIT_VERSION   "0.2"
 
 @c
 #include "mal_config.h" /* MONETDBCONFIG, MONETDBPREFIX */
@@ -50,6 +50,7 @@ typedef char* err;
 #define NO_ERR (err)0
 
 static str dbfarm = NULL;
+static int mero_running = 0;
 
 static str
 replacePrefix(str s)
@@ -77,16 +78,10 @@ command_help(int argc, char *argv[])
 	if (argc != 2) {
 		printf("Usage: monetdb command [command-options-and-arguments]\n");
 		printf("  where command is one of:\n");
-		printf("    status, create, destroy, lock, release, help, version\n");
+		printf("    create, destroy, lock, release\n");
+		printf("    status, start, stop\n");
+		printf("    help, version\n");
 		printf("  use the help command to get help for a particular command\n");
-	} else if (strcmp(argv[1], "status") == 0) {
-		printf("Usage: monetdb status [-als] [database ...]\n");
-		printf("  Shows the state of a given database.  Various options\n");
-		printf("  control what information is displayed.\n");
-		printf("Options:\n");
-		printf("  -a  list status of all databases\n");
-		printf("  -l  use long listing\n");
-		printf("  -s  use short one-line listing\n");
 	} else if (strcmp(argv[1], "create") == 0) {
 		printf("Usage: monetdb create [-l] database\n");
 		printf("  Initialises a new database in the MonetDB Server.  A\n");
@@ -113,6 +108,22 @@ command_help(int argc, char *argv[])
 		printf("  Brings back a database from maintenance mode.  A released\n");
 		printf("  database is available again for normal use.  Use the\n");
 		printf("  \"lock\" command to take a database under maintenance.\n");
+	} else if (strcmp(argv[1], "status") == 0) {
+		printf("Usage: monetdb status [-als] [database ...]\n");
+		printf("  Shows the state of a given database.  Various options\n");
+		printf("  control what information is displayed.\n");
+		printf("Options:\n");
+		printf("  -a  list status of all databases\n");
+		printf("  -l  use long listing\n");
+		printf("  -s  use short one-line listing\n");
+	} else if (strcmp(argv[1], "start") == 0) {
+		printf("Usage: monetdb start [-a] [database ...]\n");
+		printf("  Starts the given database, if the MonetDB Database Server\n");
+		printf("  is running.\n");
+	} else if (strcmp(argv[1], "stop") == 0) {
+		printf("Usage: monetdb stop [-a] [database ...]\n");
+		printf("  Stops the given database, if the MonetDB Database Server\n");
+		printf("  is running.\n");
 	} else if (strcmp(argv[1], "help") == 0) {
 		printf("Yeah , help on help, how desparate can you be? ;)");
 	} else if (strcmp(argv[1], "version") == 0) {
@@ -126,7 +137,7 @@ command_help(int argc, char *argv[])
 static void
 command_version()
 {
-	printf("MonetDB Toolkit v%s\n", TOOLKIT_VERSION);
+	printf("MonetDB Database Server Toolkit v%s\n", TOOLKIT_VERSION);
 }
 
 static void
@@ -429,6 +440,216 @@ command_status(int argc, char *argv[])
 			}
 		}
 	}
+}
+
+static void
+command_start(int argc, char *argv[], char *dbfarm)
+{
+	int doall = 0;
+	char path[8096];
+	FILE *f;
+	char buf[256];
+	int i;
+	err e;
+	sabdb *stats;
+
+	snprintf(path, 8095, "%s/.merovingian_control", dbfarm);
+	path[8095] = '\0';
+
+	if (argc == 1) {
+		/* print help message for this command */
+		command_help(2, &argv[-1]);
+		exit(1);
+	} else if (argc == 0) {
+		exit(2);
+	}
+
+	/* time to collect some option flags */
+	for (i = 1; i < argc; i++) {
+		if (argv[i][0] == '-') {
+			if (strcmp(&argv[i][1], "a") == 0) {
+				doall = 1;
+			} else if (strcmp(&argv[i][1], "-") == 0) {
+				i = argc;
+			} else {
+				fprintf(stderr, "start: unknown option: -%c\n", argv[i][1]);
+				command_help(2, &argv[-1]);
+				exit(1);
+			}
+			/* make this option no longer available, for easy use
+			 * lateron */
+			argv[i] = NULL;
+		}
+	}
+
+	/* if Merovingian isn't running, there's not much we can do */
+	if (mero_running == 0) {
+		fprintf(stderr, "start: cannot start: MonetDB Database Server "
+				"(merovingian) is not running\n");
+		exit(1);
+	}
+
+	if ((f = fopen(path, "a")) == NULL) {
+		fprintf(stderr, "start: cannot write command: %s\n",
+				strerror(errno));
+		exit(2);
+	}
+
+	if (doall == 1) {
+		sabdb *orig;
+		/* don't even look at the arguments, because we are instructed
+		 * to start all known databases */
+		if ((e = SABAOTHgetStatus(&stats, NULL)) != MAL_SUCCEED) {
+			fprintf(stderr, "start: internal error: %s\n", e);
+			GDKfree(e);
+			exit(2);
+		}
+	
+		orig = stats;
+		while (stats != NULL && stats->state != SABdbRunning) {
+			snprintf(buf, 256, "%s start\n", stats->dbname);
+			fputs(buf, f);
+			stats = stats->next;
+		}
+
+		fflush(f);
+		fclose(f);
+
+		if (orig != NULL)
+			SABAOTHfreeStatus(&orig);
+		return;
+	}
+
+	for (i = 1; i < argc; i++) {
+		if (argv[i] != NULL) {
+			if ((e = SABAOTHgetStatus(&stats, argv[i])) != MAL_SUCCEED) {
+				fprintf(stderr, "start: internal error: %s\n", e);
+				GDKfree(e);
+				exit(2);
+			}
+
+			if (stats == NULL) {
+				fprintf(stderr, "start: no such database: %s\n", argv[i]);
+			} else {
+				if (stats->state == SABdbRunning) {
+					printf("start: database is already running: %s\n", argv[i]);
+				} else {
+					snprintf(buf, 256, "%s start\n", stats->dbname);
+					fputs(buf, f);
+				}
+
+				SABAOTHfreeStatus(&stats);
+			}
+		}
+	}
+
+	fflush(f);
+	fclose(f);
+}
+
+static void
+command_stop(int argc, char *argv[], char *dbfarm)
+{
+	int doall = 0;
+	char path[8096];
+	FILE *f;
+	char buf[256];
+	int i;
+	err e;
+	sabdb *stats;
+
+	snprintf(path, 8095, "%s/.merovingian_control", dbfarm);
+	path[8095] = '\0';
+
+	if (argc == 1) {
+		/* print help message for this command */
+		command_help(2, &argv[-1]);
+		exit(1);
+	} else if (argc == 0) {
+		exit(2);
+	}
+
+	/* time to collect some option flags */
+	for (i = 1; i < argc; i++) {
+		if (argv[i][0] == '-') {
+			if (strcmp(&argv[i][1], "a") == 0) {
+				doall = 1;
+			} else if (strcmp(&argv[i][1], "-") == 0) {
+				i = argc;
+			} else {
+				fprintf(stderr, "stop: unknown option: -%c\n", argv[i][1]);
+				command_help(2, &argv[-1]);
+				exit(1);
+			}
+			/* make this option no longer available, for easy use
+			 * lateron */
+			argv[i] = NULL;
+		}
+	}
+
+	/* if Merovingian isn't running, there's not much we can do */
+	if (mero_running == 0) {
+		fprintf(stderr, "stop: cannot stop: MonetDB Database Server "
+				"(merovingian) is not running\n");
+		exit(1);
+	}
+
+	if ((f = fopen(path, "a")) == NULL) {
+		fprintf(stderr, "stop: cannot write command: %s\n",
+				strerror(errno));
+		exit(2);
+	}
+
+	if (doall == 1) {
+		sabdb *orig;
+		/* don't even look at the arguments, because we are instructed
+		 * to stop all known databases */
+		if ((e = SABAOTHgetStatus(&stats, NULL)) != MAL_SUCCEED) {
+			fprintf(stderr, "stop: internal error: %s\n", e);
+			GDKfree(e);
+			exit(2);
+		}
+	
+		orig = stats;
+		while (stats != NULL && stats->state == SABdbRunning) {
+			snprintf(buf, 256, "%s stop\n", stats->dbname);
+			fputs(buf, f);
+			stats = stats->next;
+		}
+
+		fflush(f);
+		fclose(f);
+
+		if (orig != NULL)
+			SABAOTHfreeStatus(&orig);
+		return;
+	}
+
+	for (i = 1; i < argc; i++) {
+		if (argv[i] != NULL) {
+			if ((e = SABAOTHgetStatus(&stats, argv[i])) != MAL_SUCCEED) {
+				fprintf(stderr, "stop: internal error: %s\n", e);
+				GDKfree(e);
+				exit(2);
+			}
+
+			if (stats == NULL) {
+				fprintf(stderr, "stop: no such database: %s\n", argv[i]);
+			} else {
+				if (stats->state != SABdbRunning) {
+					printf("stop: database is not running: %s\n", argv[i]);
+				} else {
+					snprintf(buf, 256, "%s stop\n", stats->dbname);
+					fputs(buf, f);
+				}
+
+				SABAOTHfreeStatus(&stats);
+			}
+		}
+	}
+
+	fflush(f);
+	fclose(f);
 }
 
 static void
@@ -756,6 +977,7 @@ main(int argc, char *argv[])
 	str p;
 	FILE *cnf = NULL;
 	char buf[1024];
+	int fd;
 
 	/* hunt for the config file, and read it */
 	snprintf(buf, 1023, "%s%s", MONETDBPREFIX, conf + 9);
@@ -781,6 +1003,17 @@ main(int argc, char *argv[])
 		exit(2);
 	}
 
+	mero_running = 1;
+	snprintf(buf, 1024, "%s/.merovingian_lock", dbfarm);
+	fd = MT_lockf(buf, F_TLOCK, 4, 1);
+	if (fd >= 0 || fd == -2) {
+		if (fd >= 0)
+			close(fd);
+		/* locking succeed or locking was impossible */
+		fprintf(stderr, "warning: MonetDB Database Server is not running\n");
+		mero_running = 0;
+	}
+
 	/* initialise Sabaoth so it knows where to look */
 	SABAOTHinit(dbfarm, NULL);
 
@@ -789,8 +1022,6 @@ main(int argc, char *argv[])
 	 */
 	if (argc <= 1) {
 		command_help(0, NULL);
-	} else if (strcmp(argv[1], "status") == 0) {
-		command_status(argc - 1, &argv[1]);
 	} else if (strcmp(argv[1], "create") == 0) {
 		command_create(argc - 1, &argv[1], dbfarm);
 	} else if (strcmp(argv[1], "destroy") == 0) {
@@ -799,6 +1030,12 @@ main(int argc, char *argv[])
 		command_lock(argc - 1, &argv[1]);
 	} else if (strcmp(argv[1], "release") == 0) {
 		command_release(argc - 1, &argv[1]);
+	} else if (strcmp(argv[1], "status") == 0) {
+		command_status(argc - 1, &argv[1]);
+	} else if (strcmp(argv[1], "start") == 0) {
+		command_start(argc - 1, &argv[1], dbfarm);
+	} else if (strcmp(argv[1], "stop") == 0) {
+		command_stop(argc - 1, &argv[1], dbfarm);
 	} else if (strcmp(argv[1], "help") == 0 || strcmp(argv[1], "-h") == 0) {
 		command_help(argc - 1, &argv[1]);
 	} else if (strcmp(argv[1], "version") == 0 || strcmp(argv[1], "-v") == 0) {

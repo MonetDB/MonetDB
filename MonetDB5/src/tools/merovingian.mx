@@ -50,7 +50,7 @@ as error to the connecting client.
 FIXME: actually implement that
 
 @h
-#define MEROV_VERSION   "0.4"
+#define MEROV_VERSION   "0.5"
 #define MEROV_PORT      50000
 
 @c
@@ -111,13 +111,14 @@ typedef struct _dpair {
 	pthread_t tid;    /* thread id used when terminating this server */
 	struct _dpair* next;
 }* dpair;
+static dpair topdp = NULL;
 
 static int _keepLogging = 1;
 static int _timeInterval = 0;
 static void
 logListener(void *p)
 {
-	dpair d = (dpair)p;
+	dpair d = topdp;
 	dpair w;
 	FILE *fout, *ferr;
 	char buf[8096];
@@ -126,6 +127,8 @@ logListener(void *p)
 	time_t now, lastout, lasterr;
 	struct tm *tmp;
 	int equalouterr;
+
+	(void)p;
 
 	/* the first entry in the list of d is where our output should go to */
 	fout = d->fout;
@@ -199,8 +202,8 @@ logListener(void *p)
 int timeout = 0;
 /**
  * The terminateProcess function tries to let the given mserver process
- * shut down gracefully within a given time-out.  If that fails, it send
- * the deadly SIGKILL signal to the mserver process and returns.
+ * shut down gracefully within a given time-out.  If that fails, it
+ * sends the deadly SIGKILL signal to the mserver process and returns.
  */
 static void
 terminateProcess(void *p)
@@ -346,10 +349,10 @@ newErr(str fmt, ...)
  * this process any more after this function.  Hence, no client pid is
  * maintained or returned.  Before forking off, Sabaoth is consulted to
  * see if forking makes sense, or whether it is necessary at all, or
- * forbidden by restart policy. (TODO)
+ * forbidden by restart policy, e.g. when in maintenance.
  */
 static err
-forkMserver(str database, sabdb** stats, dpair dp, int sock)
+forkMserver(str database, sabdb** stats, int force)
 {
 	pid_t pid;
 	str er;
@@ -358,6 +361,7 @@ forkMserver(str database, sabdb** stats, dpair dp, int sock)
 	char tstr[20];
 	int pfdo[2];
 	int pfde[2];
+	dpair dp = topdp;
 
 	er = SABAOTHgetStatus(stats, database);
 	if (er != MAL_SUCCEED) {
@@ -388,7 +392,8 @@ forkMserver(str database, sabdb** stats, dpair dp, int sock)
 
 	if ((*stats)->locked == 1) {
 		merlog("database '%s' is under maintenance", database);
-		return(NO_ERR);
+		if (force == 0)
+			return(NO_ERR);
 	}
 
 	switch ((*stats)->state) {
@@ -431,6 +436,9 @@ forkMserver(str database, sabdb** stats, dpair dp, int sock)
 			return(newErr("unknown state: %d", (int)(*stats)->state));
 	}
 
+	if ((*stats)->locked == 1 && force == 1)
+		merlog("startup of database under maintenance '%s' forced", database);
+
 	/* create the pipes (filedescriptors) now, such that we and the
 	 * child have the same descriptor set */
 	if (pipe(pfdo) == -1) {
@@ -457,9 +465,6 @@ forkMserver(str database, sabdb** stats, dpair dp, int sock)
 		close(pfde[0]);
 		dup2(pfde[1], 2);
 		close(pfde[1]);
-
-		/* we don't want the listening socket of the parent */
-		close(sock);
 
 		/* we don't use stdin, neither should mserver ... */
 		close(0);
@@ -550,7 +555,7 @@ forkMserver(str database, sabdb** stats, dpair dp, int sock)
 }
 
 static err
-handleClient(int sock, dpair dp)
+handleClient(int sock)
 {
 	stream *fdin, *fout;
 	bstream *fin;
@@ -692,7 +697,7 @@ handleClient(int sock, dpair dp)
 			return(newErr("no database running, and no database specified"));
 		}
 	} else {
-		err e = forkMserver(database, &top, dp, sock);
+		err e = forkMserver(database, &top, 0);
 		if (e != NO_ERR) {
 			if (top == NULL) {
 				stream_printf(fout, "!no such database '%s', please create it first\n", database);
@@ -799,7 +804,7 @@ errno == WSAEADDRINUSE &&
 
 static int _keepListening = 1;
 static str
-acceptConnections(int sock, dpair dp)
+acceptConnections(int sock)
 {
 	str msg;
 	int retval;
@@ -809,6 +814,7 @@ acceptConnections(int sock, dpair dp)
 	err e;
 
 	do {
+		/* handle socket connections */
 		FD_ZERO(&fds);
 		if (sock >= 0)
 			FD_SET(sock, &fds);
@@ -843,8 +849,7 @@ acceptConnections(int sock, dpair dp)
 			}
 		} else
 			continue;
-		/* TODO: maybe do this in a thread */
-		e = handleClient(msgsock, dp);
+		e = handleClient(msgsock);
 		if (e != NO_ERR) {
 			fprintf(stderr, "client error: %s\n", getErrMsg(e));
 			freeErr(e);
@@ -855,9 +860,74 @@ acceptConnections(int sock, dpair dp)
 	return(NO_ERR);
 
 error:
+	_keepListening = 0;
 	shutdown(sock, SHUT_RDWR);
 	close(sock);
 	return(newErr("accept connection: %s", msg));
+}
+
+static void
+controlRunner(void *d)
+{
+	FILE *f;
+	char buf[256];
+	char *p;
+	sabdb *stats;
+
+	while (_keepListening == 1) {
+		if ((f = fopen((char *)d, "r")) == NULL) {
+			fprintf(stderr, "unable to open up control command channel for reading\n");
+			return;
+		}
+
+		/* Try to handle control signals.  We can get race conditions due to
+		 * clients coming in at the same time.  We might need to fix this
+		 * situation sometime. */
+		while (_keepListening == 1 && fgets(buf, 256, f) != NULL) {
+			/* format is simple: database<space>command */
+			if ((p = strchr(buf, ' ')) == NULL) {
+				fprintf(stderr, "malformed control signal: %s\n", buf);
+			} else {
+				*p++ = '\0';
+				if (strcmp(p, "start\n") == 0) {
+					merlog("starting database %s due to control signal",
+							buf);
+					forkMserver(buf, &stats, 1);
+					if (stats != NULL)
+						SABAOTHfreeStatus(&stats);
+				} else if (strcmp(p, "stop\n") == 0 ||
+						strcmp(p, "kill\n") == 0)
+				{
+					/* we need to f ind the right dpair, that is we
+					 * sort of assume the control signal is right */
+					dpair dp = topdp;
+					while (dp != NULL) {
+						if (strcmp(dp->dbname, buf) == 0) {
+							if (strcmp(p, "stop\n") == 0) {
+								merlog("stopping database %s due to control "
+										"signal", buf);
+								kill(dp->pid, SIGTERM);
+							} else {
+								merlog("killing database %s due to control "
+										"signal", buf);
+								kill(dp->pid, SIGKILL);
+							}
+							break;
+						}
+						dp = dp->next;
+					}
+					if (dp == NULL) {
+						fprintf(stderr, "control stop signal for "
+								"non-existing database: %s\n", buf);
+					}
+				} else {
+					fprintf(stderr, "unknown control command: %s", p);
+				}
+			}
+		}
+		fclose(f);
+	}
+	fprintf(stderr, "control channel closed\n");
 }
 
 static str
@@ -945,7 +1015,7 @@ main(int argc, char *argv[])
 	FILE *cnf = NULL;
 	char buf[1024];
 	sabdb* stats = NULL;
-	dpair d, q = alloca(sizeof(struct _dpair));
+	dpair d;
 	int pfd[2];
 	pthread_t tid;
 	struct sigaction sa;
@@ -961,6 +1031,7 @@ main(int argc, char *argv[])
 	cnf = fopen(buf, "r");
 	if (cnf == NULL) {
 		fprintf(stderr, "cannot open config file %s\n", buf);
+		fflush(stderr);
 		exit(1);
 	}
 
@@ -993,51 +1064,72 @@ main(int argc, char *argv[])
 
 	if (dbfarm == NULL) {
 		fprintf(stderr, "cannot find dbfarm via config file\n");
+		fflush(stderr);
 		exit(1);
 	}
 
-	q->pid = 0;
-	q->dbname = NULL;
+	snprintf(buf, 1024, "%s/.merovingian_lock", dbfarm);
+	/* we leak ret, but that doesn't matter as the file needs to remain
+	 * available, otherwise we lose the lock */
+	if ((ret = MT_lockf(buf, F_TLOCK, 4, 1)) < 0) {
+		/* locking failed */
+		fprintf(stderr, "another merovingian is already running\n");
+		fflush(stderr);
+		exit(1);
+	}
+
+	snprintf(buf, 1024, "%s/.merovingian_control", dbfarm);
+	unlink(buf);
+	if ((ret = mkfifo(buf, 0660)) != 0) {
+		fprintf(stderr, "failed to create a control channel %s: %s\n",
+				buf, strerror(errno));
+		fflush(stderr);
+		exit(1);
+	}
+
+	topdp = alloca(sizeof(struct _dpair));
+	topdp->pid = 0;
+	topdp->dbname = NULL;
 
 	/* where should our msg output go to? */
 	if (msglog == NULL) {
 		/* stdout, save it */
 		argp = dup(1);
-		q->fout = fdopen(argp, "w");
+		topdp->fout = fdopen(argp, "w");
 	} else {
 		/* write to the given file */
-		q->fout = fopen(msglog, "a");
-		if (q->fout == NULL) {
+		topdp->fout = fopen(msglog, "a");
+		if (topdp->fout == NULL) {
 			fprintf(stderr, "unable to open '%s': %s\n",
 					msglog, strerror(errno));
 			exit(1);
 		}
-		q->dbname = "file";
+		topdp->dbname = "file";
 	}
 
 	/* where should our err output go to? */
 	if (errlog == NULL) {
 		/* stderr, save it */
 		argp = dup(2);
-		q->ferr = fdopen(argp, "w");
+		topdp->ferr = fdopen(argp, "w");
 	} else {
 		/* write to the given file */
 		if (strcmp(msglog, errlog) == 0) {
-			q->ferr = q->fout;
+			topdp->ferr = topdp->fout;
 		} else {
-			q->ferr = fopen(errlog, "a");
-			if (q->ferr == NULL) {
+			topdp->ferr = fopen(errlog, "a");
+			if (topdp->ferr == NULL) {
 				fprintf(stderr, "unable to open '%s': %s\n",
 						errlog, strerror(errno));
 				exit(1);
 			}
 		}
-		q->dbname = "file";
+		topdp->dbname = "file";
 	}
 	GDKfree(msglog);
 	GDKfree(errlog);
 
-	d = q->next = alloca(sizeof(struct _dpair));
+	d = topdp->next = alloca(sizeof(struct _dpair));
 
 	/* redirect stdout */
 	if (pipe(pfd) == -1) {
@@ -1067,8 +1159,8 @@ main(int argc, char *argv[])
 
 	servers = d;
 
-	if (pthread_create(&tid, NULL, (void *(*)(void *))logListener, (void *)q) < 0) {
-		fprintf(q->ferr, "%s: unable to create logthread, exiting\n", argv[0]);
+	if (pthread_create(&tid, NULL, (void *(*)(void *))logListener, (void *)NULL) < 0) {
+		fprintf(topdp->ferr, "%s: unable to create logthread, exiting\n", argv[0]);
 		return(1);
 	}
 
@@ -1080,7 +1172,7 @@ main(int argc, char *argv[])
 			sigaction(SIGQUIT, &sa, NULL) == -1 ||
 			sigaction(SIGTERM, &sa, NULL) == -1)
 	{
-		fprintf(q->ferr, "%s: unable to create signal handlers\n", argv[0]);
+		fprintf(topdp->ferr, "%s: unable to create signal handlers\n", argv[0]);
 		return(1);
 	}
 
@@ -1088,7 +1180,7 @@ main(int argc, char *argv[])
 	sigemptyset(&sa.sa_mask);
 	sa.sa_sigaction = childhandler;
 	if (sigaction(SIGCHLD, &sa, NULL) == -1) {
-		fprintf(q->ferr, "%s: unable to create signal handlers\n", argv[0]);
+		fprintf(topdp->ferr, "%s: unable to create signal handlers\n", argv[0]);
 		return(1);
 	}
 
@@ -1101,8 +1193,9 @@ main(int argc, char *argv[])
 	/* open up a connection */
 	e = openConnection(&sock, MEROV_PORT);
 	if (e == NO_ERR) {
+		pthread_t ctid;
 		for (argp = 1; argp < argc; argp++) {
-			e = forkMserver(argv[argp], &stats, d, sock);
+			e = forkMserver(argv[argp], &stats, 0);
 			if (e != NO_ERR) {
 				fprintf(stderr, "failed to fork mserver: %s\n", getErrMsg(e));
 				freeErr(e);
@@ -1111,10 +1204,20 @@ main(int argc, char *argv[])
 				SABAOTHfreeStatus(&stats);
 		}
 
+		/* handle control commands */
+		if (pthread_create(&ctid, NULL, (void *(*)(void *))controlRunner, (void *)buf) < 0) {
+			fprintf(stderr, "unable to create control command thread\n");
+			ctid = 0;
+		}
+
 		/* handle external connections main loop */
-		e = acceptConnections(sock, d);
+		e = acceptConnections(sock);
+
+		/* shut down the control runner too */
+		pthread_join(ctid, NULL);
 	}
 
+	unlink(buf);
 	ret = 0;
 
 	if (e != NO_ERR) {
@@ -1123,8 +1226,7 @@ main(int argc, char *argv[])
 		ret = 1;
 	}
 
-	if (_keepListening != 0)
-		merlog("Merovingian %s stopping ...", MEROV_VERSION);
+	merlog("Merovingian %s stopping ...", MEROV_VERSION);
 
 	/* we don't need merovingian itself */
 	d = d->next;
@@ -1145,7 +1247,7 @@ main(int argc, char *argv[])
 			if (pthread_create(&(t->tid), NULL,
 						(void *(*)(void *))terminateProcess, (void *)t) < 0)
 			{
-				fprintf(q->ferr, "%s: unable to create thread to terminate "
+				fprintf(topdp->ferr, "%s: unable to create thread to terminate "
 						"database '%s'\n", argv[0], d->dbname);
 				t->tid = 0;
 				ret = 1;
@@ -1156,7 +1258,7 @@ main(int argc, char *argv[])
 		t = d;
 		while (t != NULL) {
 			if (t->tid != 0 && (argp = pthread_join(t->tid, NULL)) != 0) {
-				fprintf(q->ferr, "failed to wait for termination thread: "
+				fprintf(topdp->ferr, "failed to wait for termination thread: "
 						"%s\n", strerror(argp));
 				ret = 1;
 			}
@@ -1166,21 +1268,21 @@ main(int argc, char *argv[])
 
 	_keepLogging = 0;
 	if ((argp = pthread_join(tid, NULL)) != 0) {
-		fprintf(q->ferr, "failed to wait for logging thread: %s\n", strerror(argp));
+		fprintf(topdp->ferr, "failed to wait for logging thread: %s\n", strerror(argp));
 		ret = 1;
 	}
 
-	fclose(q->fout);
-	if (q->fout != q->ferr)
-		fclose(q->ferr);
+	fclose(topdp->fout);
+	if (topdp->fout != topdp->ferr)
+		fclose(topdp->ferr);
 
 	/* clean up dbpair structs */
 	while (d != NULL) {
-		q = d->next;
+		topdp = d->next;
 		if (d->dbname != NULL)
 			GDKfree(d->dbname);
 		GDKfree(d);
-		d = q;
+		d = topdp;
 	}
 
 	return(ret);
