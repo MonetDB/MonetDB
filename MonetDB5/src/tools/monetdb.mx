@@ -489,7 +489,7 @@ command_start(int argc, char *argv[], char *dbfarm)
 		exit(1);
 	}
 
-	if ((f = fopen(path, "a")) == NULL) {
+	if ((f = fopen(path, "w")) == NULL) {
 		fprintf(stderr, "start: cannot write command: %s\n",
 				strerror(errno));
 		exit(2);
@@ -594,7 +594,7 @@ command_stop(int argc, char *argv[], char *dbfarm)
 		exit(1);
 	}
 
-	if ((f = fopen(path, "a")) == NULL) {
+	if ((f = fopen(path, "w")) == NULL) {
 		fprintf(stderr, "stop: cannot write command: %s\n",
 				strerror(errno));
 		exit(2);
