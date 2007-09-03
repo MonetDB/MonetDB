@@ -599,7 +599,6 @@ bits(size_t i)
 	}
 	if (BATcount(histo) == BATcount(bn)) {
 		BATkey(BATmirror(bn),TRUE);
-		BATkey(BATmirror(histo),TRUE);
 	}
 	ALIGNsetH(bn, b);
 	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
