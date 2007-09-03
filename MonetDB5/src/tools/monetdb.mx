@@ -464,7 +464,7 @@ command_merocom(int argc, char *argv[], char *dbfarm, merocom mode)
 	int i;
 	err e;
 	sabdb *stats;
-	char *type;
+	char *type = NULL;
 
 	snprintf(path, 8095, "%s/.merovingian_control", dbfarm);
 	path[8095] = '\0';
