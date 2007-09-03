@@ -302,7 +302,7 @@ instruction in the source.]
 #endif
 
 #define DEBUG_MAL_INSTR
-#define MAXARG 4
+#define MAXARG 4		/* BEWARE the code depends on this knowledge */
 #define STMT_INCREMENT 32
 #define STMT_MAXIMUM  1<<16
 #define MAXVARS 32
@@ -366,7 +366,7 @@ upon destruction of the definition. They are part of the global namespace.
 	str modname;		/* module context */
 	str fcnname;		/* function name */
 	short argc, retc, maxarg;	/* total and result argument count */
-	short argv[1];		/* at least one entry */
+	short argv[MAXARG];		/* at least a few entries */
 } *InstrPtr, InstrRecord;
 
 @-
@@ -897,7 +897,6 @@ InstrPtr
 newInstruction(MalBlkPtr mb, int kind)
 {
 	InstrPtr p = NULL;
-	int space;
 
 	if (mb && mb->stop <mb->ssize) {
 		p = mb->stmt[mb->stop];
@@ -907,8 +906,7 @@ newInstruction(MalBlkPtr mb, int kind)
 		mb->stmt[mb->stop] = NULL;
 	}
 	if (p == NULL) {
-		space = (MAXARG - 1) * sizeof(int) + sizeof(InstrRecord);
-		p = GDKmalloc(space);
+		p = GDKmalloc(sizeof(InstrRecord));
 		p->maxarg = MAXARG;
 	}
 	p->typechk = TYPE_UNKNOWN;
@@ -954,7 +952,7 @@ InstrPtr
 copyInstruction(InstrPtr p)
 {
 	InstrPtr new;
-	new = (InstrPtr) GDKmalloc(sizeof(InstrRecord) + sizeof(int) * p->maxarg - 1);
+	new = (InstrPtr) GDKmalloc(sizeof(InstrRecord) + sizeof(short) * (p->maxarg - MAXARG));
 	oldmoveInstruction(new, p);
 	return new;
 }
@@ -971,7 +969,7 @@ void
 clrInstruction(InstrPtr p)
 {
 	clrFunction(p);
-	memset((char *) p, 0, sizeof(InstrRecord) + (p->argc - 1) * sizeof(int));
+	memset((char *) p, 0, sizeof(InstrRecord) + (p->maxarg - MAXARG) * sizeof(int));
 }
 
 void
@@ -990,7 +988,7 @@ oldmoveInstruction(InstrPtr new, InstrPtr p)
 {
 	int space;
 
-	space = sizeof(InstrRecord) + sizeof(int) * p->argc;
+	space = sizeof(InstrRecord) + sizeof(short) * (p->maxarg-MAXARG);
 	memcpy((char *) new, (char *) p, space);
 	setFunctionId(new, getFunctionId(p));
 	setModuleId(new, getModuleId(p));
@@ -1830,13 +1828,26 @@ pushArgument(MalBlkPtr mb, InstrPtr p, int varid)
 	p->argv[p->argc++] = varid;
 	if (p->argc == p->maxarg) {
 		InstrPtr pn;
-		int pc = 0;
-		int space = (p->maxarg - 1) * sizeof(int) + sizeof(InstrRecord);
-		pn = GDKmalloc(space + MAXARG * sizeof(int));
+		int pc = 0,pclimit;
+		int space = (p->maxarg - MAXARG) * sizeof(short) + sizeof(InstrRecord);
+		pn = GDKmalloc(space + MAXARG * sizeof(short));
 		memcpy((char *) pn, (char *) p, space);
-		pn->maxarg = p->maxarg + MAXARG;
-		/* most likely the last instruction is affected */
-		for(pc= mb->stop-1; pc >= 0; pc--)
+		pn->maxarg += MAXARG;
+		/* instructions are either created in isolation or
+		   are stored on the program instruction stack already.
+		   In the latter case, we may have to adjust their reference.
+		   It does not make sense to locate it on the complete stack,
+		   because this would jeopardise long MAL program.
+
+		   The alternative to this hack is to change the code in many places
+		   and educate the programmer to not forget updating the stmtblock
+		   after pushing the arguments. In sql_gencode this alone would be
+		   >100 places and in the optimizers > 30. In almost all cases
+	       the instructions have few parameters.
+		 */
+		pclimit= mb->stop-8;
+		pclimit= pclimit<0? 0: pclimit;
+		for(pc= mb->stop-1; pc >= pclimit; pc--)
 		if( mb->stmt[pc]== p){
 			mb->stmt[pc] = pn;
 			break;

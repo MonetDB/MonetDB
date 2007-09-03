@@ -1048,8 +1048,8 @@ during the final phase reshuffle the return values to the beginning (?)
 	} else 
 	if( keyphrase1(cntxt,"(")){ /* deal with compound return */
 		int retc= curInstr->argc, i1,i2=0;
-		int maxarg;
-		int *newarg;
+		int max;
+		short *newarg;
 		/* parse multi-target result */
 		/* skipSpace(cntxt);*/
 		ch= currChar(cntxt);
@@ -1067,16 +1067,16 @@ during the final phase reshuffle the return values to the beginning (?)
 			ch = currChar(cntxt);
 		}
 		/* re-arrange the parameters, results first*/
-		maxarg= curInstr->maxarg;
-		newarg= (int*)GDKmalloc(maxarg*sizeof(int));
+		max= curInstr->maxarg;
+		newarg= (short*)GDKmalloc(max*sizeof(short));
 		for(i1= retc; i1<curInstr->argc; i1++)
 			newarg[i2++]= curInstr->argv[i1];
 		curInstr->retc= curInstr->argc-retc;
 		for(i1= 1; i1<retc; i1++)
 			newarg[i2++]= curInstr->argv[i1];
 		curInstr->argc= i2;
-		for(; i2<maxarg; i2++) newarg[i2]= 0;
-		for(i1=0; i1<maxarg; i1++) 
+		for(; i2<max; i2++) newarg[i2]= 0;
+		for(i1=0; i1<max; i1++) 
 			curInstr->argv[i1] = newarg[i1];
 		GDKfree(newarg);
 		if (currChar(cntxt) != ')') {
