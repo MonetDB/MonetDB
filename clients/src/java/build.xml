@@ -60,7 +60,6 @@ All Rights Reserved.
     <antcall target="jar_jdbc" />
     <antcall target="jar_xmldb" />
     <antcall target="jar_mcl" />
-    <antcall target="jar_util" />
     <antcall target="jar_client" />
     <antcall target="jar_xrpcwrapper" />
 
