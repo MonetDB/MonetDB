@@ -33,6 +33,7 @@ stdout of test 'xml04` in directory 'src/modules/mal` itself:
 #as:= xml.str(aa);
 #io.print(as);
 #
+
 function user.main():void;	# 0  (main:void)
     b := bat.new(:oid,:str);	# 1 CMDBATnew (b:bat[:oid,:str])<-(_2:oid)(_3:str)
     bat.insert(b,0@0,"Mary Ann Walker");	# 2 BKCinsert_bun (_4:void)<-(b:bat[:oid,:str])(_5:oid)(_6:str)
@@ -61,22 +62,22 @@ end main;	# 19
 [ 1@0,	  "Annie Chapman"	  ]
 #-----------------------------------------#
 # h	t				  # name
-# void	str				  # type
+# void	xml				  # type
 #-----------------------------------------#
-[ 0@0,	  "<name>Mary Ann Walker</name>"  ]
-[ 1@0,	  "<name>Annie Chapman</name>"	  ]
-#-------------------------------------------------#
-# h	t					  # name
-# void	str					  # type
-#-------------------------------------------------#
-[ 0@0,	  "<hair>brown</hair>"			  ]
-[ 1@0,	  "<hair>curly dark brown</hair>"	  ]
+[ 0@0,	  <name>Mary Ann Walker</name>	  ]
+[ 1@0,	  <name>Annie Chapman</name>	  ]
+#-----------------------------------------#
+# h	t				  # name
+# void	xml				  # type
+#-----------------------------------------#
+[ 0@0,	  <hair>brown</hair>		  ]
+[ 1@0,	  <hair>curly dark brown</hair>	  ]
 #-------------------------------------------------------------------------#
 # h	t								  # name
-# void	str								  # type
+# void	xml								  # type
 #-------------------------------------------------------------------------#
-[ 0@0,	  "<name>Mary Ann Walker</name><hair>brown</hair>"		  ]
-[ 1@0,	  "<name>Annie Chapman</name><hair>curly dark brown</hair>"	  ]
+[ 0@0,	  <name>Mary Ann Walker</name><hair>brown</hair>		  ]
+[ 1@0,	  <name>Annie Chapman</name><hair>curly dark brown</hair>	  ]
 
 # 23:16:03 >  
 # 23:16:03 >  Done.

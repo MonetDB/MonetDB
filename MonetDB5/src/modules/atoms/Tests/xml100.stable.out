@@ -41,20 +41,18 @@ function user.main():void;	# 0  (main:void)
     bx := xml.xml(b);	# 7 XMLstr2xml (bx:xml)<-(b:str)
     cx := xml.xml(c);	# 8 XMLstr2xml (cx:xml)<-(c:str)
     xp := xml.element("person",bx);	# 9 XMLelementSmall (xp:xml)<-(_13:str)(bx:xml)
-    sp := xml.str(xp);	# 10 XMLxml2str (sp:str)<-(xp:xml)
-    io.print(sp);	# 11 IOprint_val (_15:void)<-(sp:str)
-    xh := xml.element("hair",nil:str,nil:str,cx);	# 12 XMLelement (xh:xml)<-(_17:str)(_18:str)(_18:str)(cx:xml)
-    sp := xml.str(xh);	# 13 XMLxml2str (sp:str)<-(xh:xml)
-    io.print(sp);	# 14 IOprint_val (_19:void)<-(sp:str)
-    xx := xml.forest(xp,xh);	# 15 XMLforest (xx:xml)<-(xp:xml)(xh:xml)
-    xs := xml.str(xx);	# 16 XMLxml2str (xs:str)<-(xx:xml)
-    io.print(xs);	# 17 IOprint_val (_22:void)<-(xs:str)
-end main;	# 18  
+    io.print(xp);	# 10 IOprint_val (_14:void)<-(xp:xml)
+    xh := xml.element("hair",nil:str,nil:xml,cx);	# 11 XMLelement (xh:xml)<-(_16:str)(_17:str)(_6:xml)(cx:xml)
+    io.print(xh);	# 12 IOprint_val (_18:void)<-(xh:xml)
+    xx := xml.forest(xp,xh);	# 13 XMLforest (xx:xml)<-(xp:xml)(xh:xml)
+    xs := xml.str(xx);	# 14 XMLxml2str (xs:str)<-(xx:xml)
+    io.print(xs);	# 15 IOprint_val (_21:void)<-(xs:str)
+end main;	# 16  
+[  ]
 [ nil ]
-[ nil ]
-[ "<person>Mary Ann Walker</person>" ]
-[ "<hair>brown</hair" ]
-[ "<person>Mary Ann Walker</person><hair>brown</hair" ]
+[ <person>Mary Ann Walker</person> ]
+[ <hair>brown</hair> ]
+[ "<person>Mary Ann Walker</person><hair>brown</hair>" ]
 
 # 20:59:49 >  
 # 20:59:49 >  Done.

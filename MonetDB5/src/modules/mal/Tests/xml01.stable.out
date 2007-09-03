@@ -40,8 +40,8 @@ end main;	# 8
 # h	t				  # name
 # void	str				  # type
 #-----------------------------------------#
-[ 0@0,	  " name=\"Mary Ann Walker\""	  ]
-[ 1@0,	  " name=\"Annie Chapman\""	  ]
+[ 0@0,	   name="Mary Ann Walker"	  ]
+[ 1@0,	   name="Annie Chapman"		  ]
 
 # 22:46:59 >  
 # 22:46:59 >  Done.

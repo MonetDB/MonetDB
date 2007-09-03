@@ -64,22 +64,22 @@ end main;	# 20
 [ 1@0,	  "Annie Chapman"	  ]
 #-----------------------------------------#
 # h	t				  # name
-# void	str				  # type
+# void	xml				  # type
 #-----------------------------------------#
-[ 0@0,	  "<name>Mary Ann Walker</name>"  ]
-[ 1@0,	  "<name>Annie Chapman</name>"	  ]
-#-------------------------------------------------#
+[ 0@0,	  <name>Mary Ann Walker</name>	  ]
+[ 1@0,	  <name>Annie Chapman</name>	  ]
+#-----------------------------------------#
 # h	t					  # name
-# void	str					  # type
-#-------------------------------------------------#
-[ 0@0,	  "<hair>brown</hair>"			  ]
-[ 1@0,	  "<hair>curly dark brown</hair>"	  ]
+# void	xml				  # type
+#-----------------------------------------#
+[ 0@0,	  <hair>brown</hair>		  ]
+[ 1@0,	  <hair>curly dark brown</hair>	  ]
 #-----------------------------------------------------------------------------------------#
 # h	t										  # name
 # void	str										  # type
 #-----------------------------------------------------------------------------------------#
-[ 0@0,	  "<victim><name>Mary Ann Walker</name><hair>brown</hair></victim>"		  ]
-[ 1@0,	  "<victim><name>Annie Chapman</name><hair>curly dark brown</hair></victim>"	  ]
+[ 0@0,	  <victim><name>Mary Ann Walker</name><hair>brown</hair></victim>		  ]
+[ 1@0,	  <victim><name>Annie Chapman</name><hair>curly dark brown</hair></victim>	  ]
 
 # 22:58:13 >  
 # 22:58:13 >  Done.

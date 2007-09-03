@@ -59,20 +59,20 @@ end main;	# 17
 # h	t				  # name
 # void	str				  # type
 #-----------------------------------------#
-[ 0@0,	  " name=\"Mary Ann Walker\""	  ]
-[ 1@0,	  " name=\"Annie Chapman\""	  ]
+[ 0@0,	   name="Mary Ann Walker"	  ]
+[ 1@0,	   name="Annie Chapman"		  ]
 #-----------------------------------------#
 # h	t				  # name
 # void	str				  # type
 #-----------------------------------------#
-[ 0@0,	  " hair=\"brown\""		  ]
-[ 1@0,	  " hair=\"curly dark brown\""	  ]
-#-----------------------------------------------------------------#
+[ 0@0,	   hair="brown"			  ]
+[ 1@0,	   hair="curly dark brown"	  ]
+#---------------------------------------------------------#
 # h	t								  # name
-# void	str								  # type
-#-----------------------------------------------------------------#
-[ 0@0,	  " name=\"Mary Ann Walker\" hair=\"brown\""		  ]
-[ 1@0,	  " name=\"Annie Chapman\" hair=\"curly dark brown\""	  ]
+# void	xml						  # type
+#---------------------------------------------------------#
+[ 0@0,	   name="Mary Ann Walker" hair="brown"		  ]
+[ 1@0,	   name="Annie Chapman" hair="curly dark brown"	  ]
 
 # 22:46:59 >  
 # 22:46:59 >  Done.

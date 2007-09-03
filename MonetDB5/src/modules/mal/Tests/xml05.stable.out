@@ -49,10 +49,10 @@ end main;	# 13
 [ 1@0,	  "Annie Chapman"	  ]
 #-----------------------------------------------------------------------------------------#
 # h	t										  # name
-# void	str										  # type
-#-----------------------------------------------------------------------------------------#
-[ 0@0,	  "<? version=\"version1.0\" stanalone=\"no\"?><name>Mary Ann Walker</name>"	  ]
-[ 1@0,	  "<? version=\"version1.0\" stanalone=\"no\"?><name>Annie Chapman</name>"	  ]
+# void	xml									  # type
+#---------------------------------------------------------------------------------#
+[ 0@0,	  <? version="version1.0" stanalone="no"?><name>Mary Ann Walker</name>	  ]
+[ 1@0,	  <? version="version1.0" stanalone="no"?><name>Annie Chapman</name>	  ]
 
 # 07:41:18 >  
 # 07:41:18 >  Done.

@@ -10,9 +10,9 @@ bx:= xml.xml(b);
 cx:= xml.xml(c);
 
 xp:= xml.element("person",bx);
-sp:= xml.str(xp); io.print(sp);
-xh:= xml.element("hair",nil:str,nil:str,cx);
-sp:= xml.str(xh); io.print(sp);
+io.print(xp);
+xh:= xml.element("hair",nil:str,nil:xml,cx);
+io.print(xh);
 
 xx:= xml.forest(xp,xh);
 xs:= xml.str(xx);
