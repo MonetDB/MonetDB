@@ -52,7 +52,7 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 	 * server.  To avoid querying the server over and over again, once a
 	 * value is read, it is kept in a Map for reuse.
 	 */
-	private synchronized String getEnv(String key) throws SQLException {
+	private synchronized String getEnv(String key) {
 		String ret;
 
 		// if due to concurrency on this Class envs is assigned twice, I
@@ -61,12 +61,16 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 		if (menvs == null) {
 			// make the env map, insert all entries from env()
 			menvs = new HashMap();
-			ResultSet env = getStmt().executeQuery(
-					"SELECT \"name\", \"value\" FROM sys.env() as env");
-			while (env.next()) {
-				menvs.put(env.getString("name"), env.getString("value"));
+			try {
+				ResultSet env = getStmt().executeQuery(
+						"SELECT \"name\", \"value\" FROM sys.env() as env");
+				while (env.next()) {
+					menvs.put(env.getString("name"), env.getString("value"));
+				}
+				env.close();
+			} catch (SQLException e) {
+				// ignore
 			}
-			env.close();
 			envs.put(con, menvs);
 		}
 		if ((ret = (String)(menvs.get(key))) == null) {
@@ -77,13 +81,17 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 			// it's only used inside this class.
 			// The effects of caching a variable, might be
 			// undesirable... TODO
-			ResultSet env = getStmt().executeQuery(
-					"SELECT @\"" + key + "\" AS \"value\"");
-			if (env.next()) {
-				ret = env.getString("value");
-				menvs.put(key, ret);
+			try {
+				ResultSet env = getStmt().executeQuery(
+						"SELECT @\"" + key + "\" AS \"value\"");
+				if (env.next()) {
+					ret = env.getString("value");
+					menvs.put(key, ret);
+				}
+				env.close();
+			} catch (SQLException e) {
+				// ignore
 			}
-			env.close();
 		}
 
 		return(ret);

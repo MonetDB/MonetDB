@@ -1,8 +1,8 @@
 RELEASE NOTES
-MonetDB JDBC driver version 1.6 (Steadfast_p9/MCL-1.0)
+MonetDB JDBC driver version 1.6 (Steadfast_p10/MCL-1.0)
 Fabian Groffen <Fabian.Groffen@cwi.nl>
 
-Release date: 2007-08-28
+Release date: 2007-09-03
 
 
 This JDBC driver is designed for use with MonetDB, a main-memory
