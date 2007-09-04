@@ -2014,10 +2014,12 @@ reduce (PFla_op_t * p, int goalnt)
                 /**< fn:abs */
                 case alg_fun_fn_abs:
                     res_expr = abs (expr[0]); break;
-                /**< fn:round */
-                case alg_fun_fn_round:
                 /**< fn:concat */
                 case alg_fun_fn_concat:
+                    /* the algebra ensures that the expressions are strings */
+                    res_expr = concat (expr[0], expr[1]); break;    
+                /**< fn:round */
+                case alg_fun_fn_round:
                 /**< fn:number */
                 case alg_fun_fn_number:
                     /* FIXME: implementation is missing */

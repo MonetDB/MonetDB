@@ -97,6 +97,9 @@
 #define ceil(a)                      PFsql_ceil(a)
 #define modulo(a,b)                  PFsql_modulo(a,b)
 #define abs(a)                       PFsql_abs(a)
+
+/* .......... String Functions ........... */
+#define concat(a,b)                  PFsql_concat(a,b)
                                      
 /* .......... Boolean Operators .......... */
 #define eq(a,b)                      PFsql_eq(a,b)

@@ -719,6 +719,17 @@ PFsql_t * PFsql_abs (const PFsql_t *a)
     return wire1 (sql_abs, a);
 }
 
+/* .......... String Functions .......... */
+
+/**
+ * Create a SQL tree node representing the SQL
+ * concat operator.
+ */
+PFsql_t * PFsql_concat (const PFsql_t *a, const PFsql_t *b)
+{
+     return wire2 (sql_concat, a, b);
+}
+
 /* .......... Boolean Operators .......... */
 
 /**

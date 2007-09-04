@@ -84,6 +84,7 @@ static char *ID[] = {
       [sql_floor]    = "FLOOR",
       [sql_abs]      = "ABS",
       [sql_modulo]   = "MOD",
+      [sql_concat]   = "CONCAT",
 };
 
 /* forward declarations */
@@ -517,6 +518,7 @@ print_statement (PFsql_t *n)
             print_statement (L(n));
             PFprettyprintf (")");
             break;
+        case sql_concat:
         case sql_modulo:
             PFprettyprintf ("%s (", ID[n->kind]);
             print_statement (L(n));

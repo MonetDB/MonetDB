@@ -157,6 +157,8 @@ enum PFsql_kind_t {
     , sql_modulo            /* modulo expression */
     , sql_abs               /* abs expression */
 
+    , sql_concat            /* string concatenation */
+
     , sql_eq                /* = comparison */
     , sql_gt                /* > comparison */
     , sql_gteq              /* >= comparison */
@@ -635,6 +637,14 @@ PFsql_t * PFsql_modulo (const PFsql_t *a, const PFsql_t *b);
  * abs operator.
  */
 PFsql_t * PFsql_abs (const PFsql_t *a);
+
+/* .......... String Functions .......... */
+
+/**
+ * Create a SQL tree node representing the SQL
+ * concat operator.
+ */
+PFsql_t * PFsql_concat (const PFsql_t *a, const PFsql_t *b);
 
 /* .......... Boolean Operators .......... */
 
