@@ -1732,7 +1732,10 @@ main(int argc, char **argv)
 	}
 
 	if (mapi_error(mid)) {
-		mapi_explain(mid, stderr);
+		if( trace)
+			mapi_explain(mid, stderr);
+		else
+			fprintf(stderr,"%s",mapi_error_str(mid));
 		exit(2);
 	}
 	if (dump) {
