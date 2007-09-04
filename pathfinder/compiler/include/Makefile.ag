@@ -92,6 +92,5 @@ EXTRA_DIST = \
 	sql_mnemonic.h \
    	lalg2sql.h \
    	sqlprint.h \
-	prettysql.h \
         load_stats.h
    

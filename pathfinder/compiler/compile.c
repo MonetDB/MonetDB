@@ -28,6 +28,7 @@
  * Universitaet Muenchen, respectively.  All Rights Reserved.
  *
  * $Id$
+ * $Id$
  */
 
 
@@ -58,7 +59,6 @@
 #include "prettyp.h"
 #include "abssynprint.h"
 #include "coreprint.h"
-#include "prettysql.h"
 #include "logdebug.h"
 #include "timer.h"
 #include "fs.h"           /* core mapping (formal semantics) */
@@ -151,7 +151,7 @@ PFstate_t PFstate = {
                                 "}IM__{_[J]OKVCG"
                                 "}IMTS{_[J]OKVCGCG"
                                 "}IMTS{_[J]OKVCG"
-                                "}IMTS{_[J]OKVCGE[]CGP",
+                                "}IMTS{_[J]OKVCGCGP",
                                 /*"}IMTS{_[J]OKVCGE[]CGP",*/
     .opt_sql             = "OIKDCG_VGO_[J]OKVCG"
                                 "}IM__{_[J]OKVCG"
@@ -159,7 +159,7 @@ PFstate_t PFstate = {
                                 "}IM__{_[J]OKVCG"
                                 "}IMTS{_[J]OKVCGUCG"
                                 "}IMTS{_[J]OKVCGU"
-                                "}IMTS{_[J]OKVCGUE[]CGP"
+                                "}IMTS{_[J]OKVCGUCGP"
                                 /*"}IMTS{_[J]OKVCGUE[]CGP"*/
                            "}IQ[J]}IQ[J]IOKVCGQUCGP",
 
@@ -555,16 +555,8 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
        if(laroot) {
             /* this is not the final semantic of this function */
             PFsql_t *sqlroot = PFlalg2sql(laroot);
-            if (sqlroot) {
-                if (status->print_pretty) {
-                    PFsql_pretty(pfout, sqlroot);
-                }
-                else {
-                    PFarray_t *sqlprog = PFsql_serialize( sqlroot );
-                    if( sqlprog )
-                        PFsqlprint(pfout, sqlprog);
-                }
-            }
+            if (sqlroot)
+                PFsql_print (pfout, sqlroot);
             else
                PFinfo(OOPS_NOTICE,
                  "SQL expressions not available at this "

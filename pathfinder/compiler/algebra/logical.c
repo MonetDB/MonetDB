@@ -96,6 +96,7 @@ la_op_leaf (PFla_op_kind_t kind)
         ret->child[i] = NULL;
 
     ret->plans         = NULL;
+    ret->sql_ann       = NULL;
     ret->prop          = PFprop ();
     ret->node_id       = 0;
 
@@ -105,12 +106,6 @@ la_op_leaf (PFla_op_kind_t kind)
     /* bits required to look up proxy nodes */
     ret->bit_in        = 0;
     ret->bit_out       = 0;
-
-    ret->sql_ann       = NULL;
-    ret->dirty         = false;
-    ret->distinct      = false;
-    /* initialize environment */
-    ret->crrltn_cnt       = 0;
 
     return ret;
 }

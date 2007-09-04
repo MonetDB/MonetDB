@@ -1,4 +1,11 @@
-/*
+/**
+ * @file
+ * 
+ * dump SQL language tree in human readable format 
+ *
+ * Copyright Notice:
+ * -----------------
+ *
  * The contents of this file are subject to the Pathfinder Public License
  * Version 1.1 (the "License"); you may not use this file except in
  * compliance with the License.  You may obtain a copy of the License at
@@ -18,1114 +25,782 @@
  * Konstanz and the Technische Universitaet Muenchen are Copyright (C)
  * 2000-2005 University of Konstanz and (C) 2005-2007 Technische
  * Universitaet Muenchen, respectively.  All Rights Reserved.
- */
-
-/**
- * @file
  *
- * Serialize and print SQL tree.
- * 
- * I this file is definitely under construction ;)
- *
- * @verbatim
-
- statements ::=   'WITH' commontable_expressions fullselect
- 
- commontable_expressions ::=  commontable-expressions ','
-                           commontable-expression
-
- commontable-expression  ::=  table-name'('column_list') AS ('
-                           fullselect')'
-
- fullselect ::=   '('fullselect') UNION ('fullselect')'
-              |   '('fullselect') EXCEPT ('fullselect')'
-              |   subselect
-
- subselect  ::=   'SELECT' select-list 'FROM' from-list ['WHERE' where-list]
-
- from-list  ::=   table-reference from-list 
-
- table-reference  ::=   
-
  * $Id$
  */
 
-/* always include pathfinder.h first! */
 #include "pathfinder.h"
 
-#include <stdio.h>
-#include <assert.h>
+#include <stdlib.h>
 #include <string.h>
+#include <assert.h>
 
-#include "mem.h"
-#include "sql.h"
 #include "sqlprint.h"
-
-
-#include "pfstrings.h"
 #include "oops.h"
+#include "prettyp.h"
+
+/*
+ * Easily access subtree parts.
+ */
+/** starting from p, make a left step */
+#define L(p)      ((p)->child[0])
+/** starting from p, make a right step */
+#define R(p)      ((p)->child[1])
+
+/* shortcut for pretty printing */
+#define pretty_dump(f,i) PFprettyp_extended ((f), 70, (i))
+
+/**
+ * Break the current line and indent the next line 
+ * by @a ind characters.
+ *
+ * @param f file to print to
+ * @param ind indentation level
+ */
+static void
+indent (FILE *f, int ind)
+{
+    fputc ('\n', f);
+
+    while (ind-- > 0)
+        fputc (' ', f);
+}
 
 static char *ID[] = {
-  [sql_tbl_name] = "table_name",
-  [sql_add] = "+",
-  [sql_sub] = "-",
-  [sql_mul] = "*",
-  [sql_div] = "/"
+      [sql_add]      = "+",
+      [sql_sub]      = "-",
+      [sql_mul]      = "*",
+      [sql_div]      = "/",
+      
+      [sql_count]    = "COUNT",
+      [sql_max]      = "MAX",
+      [sql_sum]      = "SUM",
+      [sql_min]      = "MIN",
+      [sql_avg]      = "AVG",
+      
+      [sql_and]      = "AND",
+      [sql_or]       = "OR", 
 };
 
-/** The string we print to */
-static PFarray_t *out = NULL;
-
-/* Wrapper to print stuff */
-static void sqlprintf (char *, ...) __attribute__ ((format (printf, 1, 2)));
-
-/* forward declarations for the left site of grammar rules */
-static void print_statements (PFsql_t *);
+/* forward declarations */
 static void print_statement (PFsql_t *);
-static void print_schema_name (PFsql_t *);
-static void print_variable (PFsql_t *);
-static void print_select_list (PFsql_t *);
-static void print_clm_list (PFsql_t *);
-static void print_aggrfunction (PFsql_t *);
-static void print_common_table_expressions (PFsql_t *);
-static void print_common_table_expression (PFsql_t *);
-static void print_sort_key_expressions (PFsql_t *);
-static void print_window_clause (PFsql_t *);
-static void print_table_name (PFsql_t *);
-static void print_subselect (PFsql_t *);
-static void print_from_list (PFsql_t *);
-static void print_tablereference (PFsql_t *);
-static void print_fullselect (PFsql_t *);
-static void print_expr (PFsql_t *);
-static void print_correlation (PFsql_t *);
-static void print_column_name (PFsql_t *);
-static void print_schema_information (PFsql_t *);
-static void print_schema_table (PFsql_t *);
-static void print_schema_relcol (PFsql_t *);
-static void print_join (PFsql_t *);
-static void print_comment (PFsql_t *);
-static void print_lit_list (PFsql_t * n);
+static void print_fullselect (FILE *, PFsql_t *, int);
 
-
-static void
-print_comment (PFsql_t * n)
+static void 
+print_schema_relcol (FILE *f, PFsql_t *n)
 {
-  sqlprintf ("--");
-  sqlprintf ("%s\n", n->sem.comment);
-}
+    assert (n);
+    
+    switch (n->kind) {
+        case sql_column_name:
+            fprintf (f, "%s", PFsql_column_name_str (n->sem.column.name));
+            fprintf (f, ": ");
+            fprintf (f, "%s", PFsql_column_name_str (n->sem.column.name));
+            break;
+            
+        case sql_tbl_def:
+        case sql_tbl_name:
+            fprintf (f, "relation: ");
+            fprintf (f, "%s", PFsql_table_str (n->sem.tbl.name));
+            break;
 
-static void
-print_sequence (PFsql_t * n)
-{
-  assert (n);
-  assert (n->kind == sql_seq);
-
-  print_schema_information (n->child[0]);
-  sqlprintf ("\n");
-  print_statements (n->child[1]);
-}
-
-static void
-print_schema_information (PFsql_t * n)
-{
-  assert (n);
-
-  switch (n->kind)
-    {
-    case sql_schm_inf:
-      print_schema_information (n->child[0]);
-      sqlprintf ("\n");
-      print_schema_information (n->child[1]);
-      break;
-    case sql_schm_cmmnt:
-      sqlprintf ("-- !! ");
-      sqlprintf ("%s", n->sem.comment);
-      sqlprintf (" !!");
-      break;
-    case sql_schm_expr:
-      sqlprintf ("-- ");
-      print_schema_table (n->child[0]);
-      print_schema_relcol (n->child[1]);
-      break;
-    default:
-      PFoops (OOPS_FATAL,
-	      "SQL generation doesn't support this kind "
-	      "of schema information (%u)", n->kind);
-    }
-}
-
-#if 0
-static bool
-boolean (int ident)
-{
-  PFalg_simple_type_t ty = (0x00000001 << (((0x000001E0) & ident) >>
-					   ATT_BITS));
-  if (ty == aat_bln)
-    return true;
-  return false;
-}
-#endif
-
-static void
-print_schema_relcol (PFsql_t * n)
-{
-  assert (n);
-
-  sqlprintf ("-");
-  switch (n->kind)
-    {
-    case sql_clmn_name:
-      sqlprintf ("%s", PFsql_column_name_str (n->sem.column.ident));
-      sqlprintf (": ");
-      sqlprintf ("%s", PFsql_column_name_str (n->sem.column.ident));
-      break;
-    case sql_tbl_name:
-      sqlprintf ("relation: ");
-      sqlprintf ("%s", PFsql_table_str (n->sem.tablename.ident));
-      break;
-    default:
-      PFoops (OOPS_FATAL,
-	      "In schema information is neither a "
-	      "column nor a relation (%u)", n->kind);
+        default:
+            PFoops (OOPS_FATAL,
+                    "SQL grammar conflict. (Expected: schema relation; "
+                    "Got: %u)", n->kind);
     }
 }
 
 static void
-print_schema_table (PFsql_t * n)
+print_schema_table (FILE *f, PFsql_t *n)
 {
-  assert (n);
+    assert (n);
 
-  switch (n->kind)
+    switch (n->kind) {
+        case sql_ser_doc:
+            fprintf (f, "document");
+            break;
+
+        case sql_ser_res:
+            fprintf (f, "result");
+            break;
+
+        default:
+            PFoops (OOPS_FATAL,
+                    "SQL grammar conflict. (Expected: schema table; "
+                    "Got: %u)", n->kind);
+    }
+}
+
+static void
+print_schema_information (FILE *f, PFsql_t *n)
+{
+    assert (n);
+
+    /* stop at the end of the list */
+    if (n->kind == sql_nil) return;
+
+    assert (n->kind == sql_ser_info);
+
+    /* translate left child */
+    switch (L(n)->kind) {
+        case sql_ser_comment:
+            fprintf (f, "-- !! %s !!", L(n)->sem.comment.str);
+            break;
+
+        case sql_ser_mapping:
+            fprintf (f, "-- ");
+            print_schema_table (f, L(L(n)));
+            fprintf (f, "-");
+            print_schema_relcol (f, R(L(n)));
+            break;
+
+        default:
+            PFoops (OOPS_FATAL,
+                    "SQL grammar conflict. (Expected: schema information; "
+                    "Got: %u)", n->kind);
+    }
+
+    /* and then the rest of the list */
+    fprintf (f, "\n");
+    print_schema_information (f, R(n));
+}
+
+static void
+print_column_name (PFsql_t *n)
+{
+    assert (n->kind == sql_column_name);
+    
+    if (n->sem.column.alias != PF_SQL_ALIAS_UNBOUND)
+        PFprettyprintf (
+            "%s.", 
+            PFsql_alias_name_str (n->sem.column.alias));
+    
+    PFprettyprintf (
+        "%s",
+        PFsql_column_name_str (n->sem.column.name));
+}
+
+static void
+print_column_name_list (PFsql_t *n)
+{
+    assert (n);
+
+    switch (n->kind) {
+        case sql_column_list:
+            print_column_name_list (L(n));
+
+            if (R(n)->kind != sql_nil) {
+                PFprettyprintf (", ");
+                print_column_name_list (R(n));
+            }
+            break;
+            
+        case sql_column_name:
+            print_column_name (n);
+            break;
+
+        default:
+            PFoops (OOPS_FATAL,
+                    "SQL grammar conflict. (Expected: column name list; "
+                    "Got: %u)", n->kind);
+    }
+}
+
+static void
+print_table_def (PFsql_t *n)
+{
+    assert (n);
+    assert (n->kind == sql_tbl_def);
+
+    PFprettyprintf ("%s (", PFsql_table_str (n->sem.tbl.name));
+    print_column_name_list (L(n));
+    PFprettyprintf (")");
+}
+
+static void
+print_literal (PFsql_t * n)
+{
+    assert (n);
+
+    switch (n->kind) {
+        case sql_lit_int:
+            PFprettyprintf ("%i", n->sem.atom.val.i);
+            break;
+
+        case sql_lit_str:
+            PFprettyprintf ("'%s'", n->sem.atom.val.s);
+            break;
+
+        case sql_lit_dec:
+            PFprettyprintf ("%g", n->sem.atom.val.dec);
+            break;
+
+        default:
+            PFoops (OOPS_FATAL,
+                    "SQL grammar conflict. (Expected: literal; "
+                    "Got: %u)", n->kind);
+    }
+}
+
+static void
+print_literal_list (PFsql_t * n)
+{
+    assert (n);
+
+    switch (n->kind) {
+        case sql_lit_list:
+            print_literal_list (L(n));
+
+            if (R(n)->kind != sql_nil) {
+                PFprettyprintf (", ");
+                print_literal_list (R(n));
+            }
+            break;
+            
+        case sql_lit_int:
+        case sql_lit_dec:
+        case sql_lit_str:
+            print_literal (n);
+            break;
+
+        default:
+            PFoops (OOPS_FATAL,
+                    "SQL grammar conflict. (Expected: literal list; "
+                    "Got: %u)", n->kind);
+    }
+}
+
+static void
+print_condition (PFsql_t *n)
+{
+    assert (n);
+
+    switch (n->kind)
     {
-    case sql_schm_doc:
-      sqlprintf ("document");
-      break;
-    case sql_schm_res:
-      sqlprintf ("result");
-      break;
-    default:
-      PFoops (OOPS_FATAL,
-	      "SQL generation doesn't support this schema tables");
+        case sql_not:
+            PFprettyprintf ("NOT (");
+            print_condition (L(n));
+            PFprettyprintf (")");
+            break;
+            
+        case sql_and:
+        case sql_or:
+            /* expression : '(' expression 'OP' expression ')' */
+            PFprettyprintf ("(");
+            print_condition (L(n));
+            PFprettyprintf (" %s ", ID[n->kind]);
+            print_condition (R(n));
+            PFprettyprintf (")");
+            break;
+            
+        case sql_eq:
+            PFprettyprintf ("(");
+            print_statement (L(n));
+            PFprettyprintf (" = ");
+            print_statement (R(n));
+            PFprettyprintf (")");
+            break;
+            
+        case sql_gt:
+            /* switch arguments */
+            PFprettyprintf ("(");
+            print_statement (R(n));
+            PFprettyprintf (" < ");
+            print_statement (L(n));
+            PFprettyprintf (")");
+            break;
+
+        case sql_gteq:
+            /* switch arguments */
+            PFprettyprintf ("(");
+            print_statement (R(n));
+            PFprettyprintf (" <= ");
+            print_statement (L(n));
+            PFprettyprintf (")");
+            break;
+            
+    	case sql_like:
+    	    if (R(n)->kind != sql_lit_str)
+                PFoops (OOPS_FATAL, "LIKE only works with constant strings");
+            
+            PFprettyprintf ("(");
+    	    print_statement (L(n));
+    	    /* write the string without beginning and trailing ' */
+    	    PFprettyprintf (" LIKE  '%%%s%%')", R(n)->sem.atom.val.s);
+            break;
+    
+        case sql_in:
+            PFprettyprintf ("(");
+            print_statement (L(n));
+            PFprettyprintf (" IN (");
+            print_literal_list (R(n));
+            PFprettyprintf ("))");
+            break; 
+            
+        default:
+            PFoops (OOPS_FATAL,
+                    "SQL grammar conflict. (Expected: condition; "
+                    "Got: %u)", n->kind);
+    }
+}
+    
+static void
+print_sort_key_expressions (PFsql_t *n)
+{
+    assert( n);
+    
+    switch (n->kind) {
+        case sql_sortkey:
+            print_sort_key_expressions (L(n));
+            if (n->sem.sortkey.dir_asc)
+                PFprettyprintf (" ASC");
+            else
+                PFprettyprintf (" DESC");
+
+            if (R(n)->kind != sql_nil) {
+                PFprettyprintf (", ");
+                print_sort_key_expressions (R(n));
+            }
+            break;
+
+        default:
+            print_statement (n);
+            break;
+    }
+}
+
+static void
+print_window_clause (PFsql_t *n)
+{
+    assert (n);
+    assert (n->kind == sql_wnd_clause);
+
+    if (L(n)) {
+        assert (L(n)->kind == sql_partition);
+
+        PFprettyprintf ("PARTITION BY ");
+        /* prettyprint partition by list */
+        PFprettyprintf ("%c", START_BLOCK);
+        print_column_name_list (L(L(n)));
+        PFprettyprintf ("%c%s", END_BLOCK, R(n) ? " " : "");
+    }
+    if (R(n)) {
+        assert (R(n)->kind == sql_order_by);
+        PFprettyprintf ("ORDER BY ");
+        print_sort_key_expressions (L(R(n)));
+    }
+}
+
+static void
+print_case (PFsql_t *n)
+{
+    assert (n);
+
+    switch (n->kind) {
+        case sql_case:
+            print_case (L(n));
+            print_case (R(n));
+            break;
+            
+        case sql_when:
+            PFprettyprintf ("WHEN ");
+            print_condition (L(n));
+            PFprettyprintf (" THEN ");
+            print_statement (R(n));
+            break;
+            
+        case sql_else:
+            PFprettyprintf (" ELSE ");
+            print_statement (L(n));
+            break;
+            
+        case sql_nil:
+            break;
+            
+        default:
+            PFoops (OOPS_FATAL,
+                    "SQL grammar conflict. (Expected: case statement; "
+                    "Got: %u)", n->kind);
+    }
+}
+
+static void
+print_statement (PFsql_t *n)
+{
+    switch (n->kind) {
+        case sql_coalesce:
+            PFprettyprintf ("COALESCE (");
+            print_statement (L(n));
+            PFprettyprintf (", ");
+            print_statement (R(n));
+            PFprettyprintf(")");
+            break;
+            
+        case sql_case:
+            PFprettyprintf ("CASE ");
+            print_case (n);
+            PFprettyprintf (" END");
+            break;
+
+        case sql_sum:
+        case sql_min:
+        case sql_avg:
+        case sql_max:
+        case sql_count:
+            PFprettyprintf("%s (", ID[n->kind]);
+            print_statement (L(n));
+            PFprettyprintf(")");
+            break;
+
+        case sql_cast:
+            assert (R(n)->kind == sql_type);
+
+            PFprettyprintf ("CAST(");
+            print_statement (L(n));
+            PFprettyprintf (" AS %s)",
+                            PFsql_simple_type_str (R(n)->sem.type.t));
+            break;
+
+        case sql_schema_tbl_name:
+            assert (L(n)->kind == sql_tbl_name);
+
+            PFprettyprintf ("%s.%s",
+                            n->sem.schema.str,
+                            PFsql_table_str (L(n)->sem.tbl.name));
+            break;
+
+        case sql_star:
+            PFprettyprintf ("*");
+            break;
+
+        case sql_over:
+            assert (L(n)->kind == sql_rownumber);
+            
+            PFprettyprintf ("ROW_NUMBER () OVER (%c", START_BLOCK );
+            print_window_clause (R(n));
+            PFprettyprintf ("%c)", END_BLOCK);
+            break;
+    
+        case sql_column_name:
+            print_column_name (n);
+            break;
+
+        case sql_lit_int:
+        case sql_lit_dec:
+        case sql_lit_str:
+            print_literal (n);
+            break;
+
+        case sql_lit_null:
+            PFprettyprintf ("NULL");
+            break;
+            
+        case sql_add:
+        case sql_sub:
+        case sql_mul:
+        case sql_div:
+            PFprettyprintf ("(");
+            print_statement (L(n));
+            PFprettyprintf (" %s ", ID[n->kind]);
+            print_statement (R(n));
+            PFprettyprintf (")");
+            break;
+
+        default:
+            PFoops (OOPS_FATAL,
+                    "SQL grammar conflict. (Expected: statement; "
+                    "Got: %u)", n->kind);
+    }
+}
+
+static void
+print_select_list (PFsql_t *n)
+{
+    assert (n);
+    
+    switch (n->kind) {
+        case sql_select_list:
+            PFprettyprintf("%c", START_BLOCK);
+            print_select_list (L(n));
+            
+            if (R(n)->kind != sql_nil) {
+                PFprettyprintf (",%c %c", END_BLOCK, START_BLOCK);
+                print_select_list (R(n));
+            }
+            PFprettyprintf ("%c", END_BLOCK);
+            break;
+
+        case sql_column_assign:
+            print_statement (L(n));
+            PFprettyprintf (" AS ");
+            print_column_name (R(n));
+            break;
+
+        default:
+            print_statement (n);
+            break;
+    }
+}
+
+static void
+print_conjunctive_list (FILE *f, PFsql_t *n, int i)
+{
+    assert (n);
+
+    switch (n->kind) {
+        case sql_and:
+            if (R(n)->kind != sql_nil) {
+                print_conjunctive_list (f, R(n), i);
+                indent (f, i-4);
+                fprintf (f, "AND ");
+            }
+            print_conjunctive_list (f, L(n), i);
+            break;
+
+        default:
+            /* prettyprint a single expression */
+            PFprettyprintf ("%c", START_BLOCK);
+            print_condition (n);
+            PFprettyprintf ("%c", END_BLOCK);
+            pretty_dump (f, i);
+            break;
+    }
+}
+
+static void
+print_tablereference (FILE *f, PFsql_t* n, int i)
+{
+    assert (n);
+
+    switch (n->kind) {
+        case sql_alias_bind:
+            assert (R(n)->kind == sql_alias);
+            
+            if (L(n)->kind == sql_select || L(n)->kind == sql_union)
+                /* print nested selection */
+                print_fullselect (f, L(n), i);
+            else
+                print_tablereference (f, L(n), i);
+            fprintf (f, " AS %s", PFsql_alias_name_str (R(n)->sem.alias.name));
+            break;
+
+        case sql_tbl_name:
+            /* prettyprint table name */
+            fprintf (f, "%s", PFsql_table_str (n->sem.tbl.name));
+            break;
+
+        case sql_schema_tbl_name:
+            assert (L(n)->kind == sql_tbl_name);
+
+            fprintf (f, "%s.%s", n->sem.schema.str,
+                     PFsql_table_str(L(n)->sem.tbl.name));
+            break;
+
+        default:
+            PFoops (OOPS_FATAL,
+                    "SQL grammar conflict. (Expected: table reference; "
+                    "Got: %u)", n->kind);
+    }
+}
+
+static void
+print_join (FILE *f, PFsql_t *n, int i)
+{
+    assert (n);
+
+    switch (n->kind) {
+        case sql_outer_join:
+            print_tablereference (f, L(n), i);
+            indent (f, i-6);
+            fprintf (f, "RIGHT OUTER JOIN ");
+            print_tablereference (f, R(n), i-6+17);
+            break;
+
+        default:
+            PFoops (OOPS_FATAL,
+                    "SQL grammar conflict. (Expected: join clause; "
+                    "Got: %u)", n->kind);
+    }
+}
+
+static void
+print_from_list (FILE *f, PFsql_t *n, int i)
+{
+    assert (n);
+
+    switch (n->kind) {
+        case sql_from_list:
+            if (R(n)->kind != sql_nil) {
+                print_from_list (f, R(n), i);
+                fprintf (f, ",");
+                indent (f, i);
+            }
+            print_from_list (f, L(n), i);
+            break;
+
+        case sql_alias_bind:
+        case sql_schema_tbl_name:
+        case sql_tbl_name:
+            print_tablereference (f, n, i);
+            break;
+
+        case sql_on:
+            print_join (f, L(n), i);
+            indent (f, i-3);
+            fprintf (f, "ON ");
+            print_conjunctive_list (f, R(n), i);
+            break;
+            
+        default:
+            PFoops (OOPS_FATAL,
+                    "SQL grammar conflict. (Expected: from list; "
+                    "Got: %u)", n->kind);
+    }
+}
+
+static void
+print_fullselect (FILE *f, PFsql_t *n, int i)
+{
+    assert (n);
+    
+    fputc ('(', f);
+    i += 1;
+
+    switch (n->kind) {
+        case sql_select:
+            /* SELECT */
+            fprintf (f, "SELECT %s", n->sem.select.distinct ? "DISTINCT " : "");
+            
+            /* prettyprint selection list */
+            PFprettyprintf ("%c", START_BLOCK);
+            print_select_list (L(n));
+            PFprettyprintf ("%c", END_BLOCK);
+            pretty_dump (f, i+7);
+
+            /* FROM */
+            indent (f, i);
+            fprintf (f, "  FROM ");
+            print_from_list (f, R(n), i+7);
+
+            /* WHERE (optional) */
+            if (n->child[2]) {
+                indent (f, i);
+                fprintf (f, " WHERE ");
+                print_conjunctive_list (f, n->child[2], i+7);
+            }
+
+            /* GROUP BY (optional) */
+            if (n->child[3]) {
+                indent (f, i);
+                fprintf (f, " GROUP BY ");
+
+                /* prettyprint group by list */
+                PFprettyprintf ("%c", START_BLOCK);
+                print_column_name_list (n->child[3]);
+                PFprettyprintf ("%c", END_BLOCK);
+                pretty_dump (f, i+7);
+            }
+            break;
+
+        case sql_union:
+            print_fullselect (f, L(n), i);
+            indent (f, i);
+            fprintf (f, "UNION ALL");
+            indent (f, i);
+            print_fullselect (f, R(n), i);
+            break;
+            
+        case sql_diff:
+            print_fullselect (f, L(n), i);
+            indent (f, i);
+            fprintf (f, "EXCEPT ALL");
+            indent (f, i);
+            print_fullselect (f, R(n), i);
+            break;
+
+        default:
+            PFoops (OOPS_FATAL,
+                    "SQL grammar conflict. (Expected: fullselect; "
+                    "Got: %u)", n->kind);
+    }
+
+    fputc (')', f);
+}
+
+/**
+ * print the list of bindings. For each binding 
+ * a new pretty printing phase is started.
+ */
+static void
+print_binding (FILE* f, PFsql_t *n)
+{
+    /* keep a stack to avoid printing 
+       a comma after the last binding */
+    static unsigned nest = 0;
+
+    /* collect all bindings */
+    switch (n->kind) {
+        case sql_cmmn_tbl_expr:
+            nest++; /* increase nesting */
+            print_binding (f, L(n));
+            print_binding (f, R(n));
+            nest--; /* decrease nesting */
+            break;
+
+        case sql_bind:
+            /* prettyprint the binding name */
+            PFprettyprintf ("%c", START_BLOCK);
+            print_table_def (L(n));
+            PFprettyprintf ("%c", END_BLOCK);
+            pretty_dump (f, 2);
+            
+            fprintf (f, " AS");
+            indent (f, 2);
+            print_fullselect (f, R(n), 2);
+
+            /* this test ('nest > 1') is always true
+               (as we expect a 'calling' query afterwards anyway) */
+            if (nest > 1)
+                fprintf (f, ",\n");
+            fputc ('\n', f);
+            break;
+
+        case sql_comment:
+            fprintf(f, "-- %s\n", n->sem.comment.str);
+            break;
+
+        case sql_nil:
+            break;
+
+        default:
+            PFoops (OOPS_FATAL,
+                    "SQL grammar conflict. (Expected: binding; "
+                    "Got: %u)", n->kind);
     }
 }
 
 /**
- * Print SQL statements.
+ * Dump SQL tree @a n in pretty-printed form
+ * into file @a f.
  *
- * @param n SQL tree node.
+ * @param f file to dump into
+ * @param n root of SQL tree
  */
-static void
-print_statements (PFsql_t * n)
-{
-  switch (n->kind)
-    {
-    case sql_with:
-      {
-	sqlprintf ("WITH \n");
-	print_common_table_expressions (n->child[0]);
-	sqlprintf (" \n");
-      }
-      break;
-    default:
-      {
-	/* TODO print string of node kind in the warning */
-	print_statement (n);
-	sqlprintf ("\n");
-      }
-      break;
-    }
-}
-
-static void
-print_common_table_expressions (PFsql_t * n)
-{
-  assert (n);
-  /* keep stack to avoid printing a comma
-     after last binding */
-  static unsigned int count = 0;
-  switch (n->kind)
-    {
-    case sql_cmmn_tbl_expr:
-      {
-	count++;
-	print_common_table_expressions (n->child[0]);
-	print_common_table_expressions (n->child[1]);
-	count--;
-      }
-      break;
-    case sql_comment:
-      {
-	print_comment (n);
-      }
-      break;
-    case sql_bind:
-      {
-	print_common_table_expression (n);
-	if (count > 1)
-	  sqlprintf (",\n");
-	sqlprintf ("\n");
-      }
-      break;
-    default:
-      {
-	PFoops (OOPS_FATAL, "SQL grammar seems to be incorrect.");
-      }
-      break;
-    }
-}
-
-static void
-print_common_table_expression (PFsql_t * n)
-{
-  assert (n);
-  assert (n->kind == sql_bind);
-
-  print_table_name (n->child[0]);
-  sqlprintf (" AS (");
-  print_fullselect (n->child[1]);
-  sqlprintf (")");
-}
-
-static void
-print_table_name (PFsql_t * n)
-{
-  assert (n);
-  assert (n->kind == sql_tbl_name);
-
-  sqlprintf ("%s", PFsql_table_str (n->sem.tablename.ident));
-  /* the column-list has not to be specified in every case */
-  if (n->child[0])
-    {
-      sqlprintf ("(");
-      print_clm_list (n->child[0]);
-      sqlprintf (")");
-    }
-}
-
-static void
-print_subselect (PFsql_t * n)
-{
-  assert (n);
-  switch (n->kind)
-    {
-    case sql_select:
-      {
-	sqlprintf ("SELECT ");
-	sqlprintf ("%s", (n->sem.select.distinct) ? "DISTINCT " : "");
-	print_select_list (n->child[0]);
-	sqlprintf (" FROM ");
-	print_from_list (n->child[1]);
-	/* where list is optional, we leave the where list
-	   to zero when its not specified */
-	if (n->child[2])
-	  {
-	    sqlprintf (" WHERE ");
-	    print_expr (n->child[2]);
-	  }
-	if (n->child[3])
-	  {
-	    sqlprintf (" GROUP BY ");
-	    print_clm_list (n->child[3]);
-	  }
-      }
-      break;
-    default:
-      {
-	PFoops (OOPS_FATAL,
-		"Fullselect doesnt support this kind of node (%u).", n->kind);
-      }
-      break;
-    }
-}
-
-static void
-print_from_list (PFsql_t * n)
-{
-  assert (n);
-
-  switch (n->kind)
-    {
-    case sql_frm_list:
-      print_from_list (n->child[0]);
-      sqlprintf (", ");
-      print_from_list (n->child[1]);
-      break;
-    case sql_alias:
-    case sql_tb_name:
-    case sql_tbl_name:
-    case sql_select:
-      print_tablereference (n);
-      break;
-    case sql_on:
-      print_join (n);
-      break;
-    default:
-      PFoops (OOPS_FATAL,
-	      "This kind (%u) of statement is not supported by "
-	      "fromlist", n->kind);
-      break;
-    }
-}
-
-static void
-print_tablereference (PFsql_t * n)
-{
-  assert (n);
-
-  switch (n->kind)
-    {
-    case sql_alias:
-      {
-	print_tablereference (n->child[0]);
-	sqlprintf (" AS ");
-	print_correlation (n->child[1]);
-      }
-      break;
-    case sql_tbl_name:
-      {
-	print_table_name (n);
-      }
-      break;
-    case sql_tb_name:
-      {
-	print_schema_name (n->child[0]);
-	sqlprintf (".");
-	print_table_name (n->child[1]);
-      }
-      break;
-    default:
-      {
-	sqlprintf ("(");
-	print_fullselect (n);
-	sqlprintf (")");
-      }
-      break;
-    }
-}
-
-static void
-print_correlation (PFsql_t * n)
-{
-  assert (n);
-  assert (n->kind == sql_crrltn_name);
-
-  sqlprintf ("%s", PFsql_correlation_name_str (n->sem.correlation.ident));
-}
-
-static void
-print_fullselect (PFsql_t * n)
-{
-  assert (n);
-  switch (n->kind)
-    {
-    case sql_union:
-      {
-	sqlprintf ("(");
-	print_fullselect (n->child[0]);
-	sqlprintf (") UNION ALL (");
-	print_fullselect (n->child[1]);
-	sqlprintf (")");
-      }
-      break;
-    case sql_diff:
-      {
-	sqlprintf ("(");
-	print_fullselect (n->child[0]);
-	sqlprintf (") EXCEPT ALL (");
-	print_fullselect (n->child[1]);
-	sqlprintf (")");
-      }
-      break;
-
-    default:
-      {
-	print_subselect (n);
-      }
-      break;
-    }
-}
-
-static void
-print_expr (PFsql_t * n)
-{
-  assert (n);
-
-  switch (n->kind)
-    {
-    case sql_not:
-      sqlprintf ("NOT (");
-      print_expr (n->child[0]);
-      sqlprintf (")");
-      break;
-    case sql_max:
-      {
-	sqlprintf ("MAX (");
-	print_expr (n->child[0]);
-	sqlprintf (")");
-      }
-      break;
-    case sql_and:
-      {
-	sqlprintf ("(");
-	print_expr (n->child[0]);
-	sqlprintf (" AND ");
-	print_expr (n->child[1]);
-	sqlprintf (")");
-      }
-      break;
-    case sql_or:
-      {
-	sqlprintf ("(");
-	print_expr (n->child[0]);
-	sqlprintf (" OR ");
-	print_expr (n->child[1]);
-	sqlprintf (")");
-      }
-      break;
-    case sql_eq:
-      {
-	sqlprintf ("(");
-	print_expr (n->child[0]);
-	sqlprintf (" = ");
-	print_expr (n->child[1]);
-	sqlprintf (")");
-      }
-      break;
-    case sql_gt:
-      {
-	sqlprintf ("(");
-	print_expr (n->child[0]);
-	sqlprintf (" > ");
-	print_expr (n->child[1]);
-	sqlprintf (")");
-      }
-      break;
-    case sql_gteq:
-      {
-	sqlprintf ("(");
-	print_expr (n->child[0]);
-	sqlprintf (" >= ");
-	print_expr (n->child[1]);
-	sqlprintf (")");
-      }
-      break;
-    case sql_clmn_name:
-      {
-	if (n->crrlname != PF_SQL_CORRELATION_UNBOUNDED)
-	  {
-	    sqlprintf ("%s", PFsql_correlation_name_str (n->crrlname));
-	    sqlprintf (".");
-	  }
-	sqlprintf ("%s", PFsql_column_name_str (n->sem.column.ident));
-      }
-      break;
-    case sql_lit_int:
-      {
-	sqlprintf ("%i", n->sem.atom.val.i);
-      }
-      break;
-    case sql_lit_str:
-      {
-	sqlprintf ("'%s'", n->sem.atom.val.s);
-      }
-      break;
-    case sql_cst:
-      sqlprintf ("CAST(");
-      print_statement (n->child[0]);
-      sqlprintf (" AS ");
-      print_statement (n->child[1]);
-      sqlprintf (")");
-      break;
-      /* expression : '(' expression '+' expression ')' */
-    case sql_add:
-    case sql_sub:
-    case sql_mul:
-    case sql_div:
-      {
-	sqlprintf ("(");
-	print_statement (n->child[0]);
-	sqlprintf (" %s ", ID[n->kind]);
-	print_statement (n->child[1]);
-	sqlprintf (")");
-      }
-      break;
-    case sql_like:
-      {
-	sqlprintf ("(");
-	print_statement (n->child[0]);
-	sqlprintf (" LIKE  '%%");
-	/* write the string without beginning and 
-	   trailing ' */
-	assert (n->child[1]->kind == sql_lit_str);
-	sqlprintf ("%s", n->child[1]->sem.atom.val.s);
-	sqlprintf ("%%')");
-      }
-      break;
-
-    case sql_in:
-        sqlprintf("(");
-        print_statement(n->child[0]);
-        sqlprintf(" IN (");
-        print_lit_list(n->child[1]);
-        sqlprintf("))");
-        break;
-    default:
-      {
-	PFoops (OOPS_FATAL, "expression screwed up (%u)", n->kind);
-      }
-      break;
-    }
-}
-
-static void
-print_select_list (PFsql_t * n)
-{
-  assert (n);
-
-  switch (n->kind)
-    {
-    case sql_slct_list:
-      print_select_list (n->child[0]);
-      sqlprintf (", ");
-      print_select_list (n->child[1]);
-      break;
-    default:
-      print_statement (n);
-      break;
-    }
-}
-
-static void
-print_part_expression (PFsql_t * n)
-{
-  assert (n);
-
-  if (!((n->kind == sql_prt_expr) || (n->kind == sql_list_terminator)))
-    {
-      PFoops (OOPS_FATAL, "Pathfinder failed to print partition list");
-    }
-
-  if ((n->kind == sql_list_terminator) &&
-      (n->child[0] == NULL) && (n->child[1] == NULL))
-    return;
-
-  print_statement (n->child[0]);
-  if (!(n->child[1]->kind == sql_list_terminator))
-    sqlprintf (",");
-  sqlprintf (" ");
-  print_part_expression (n->child[1]);
-}
-
-static void
-print_join (PFsql_t * n)
-{
-  assert (n);
-
-  switch (n->kind)
-    {
-    case sql_on:
-      print_join (n->child[0]);
-      sqlprintf (" ON ");
-      print_expr (n->child[1]);
-      break;
-    case sql_innr_join:
-      print_join (n->child[0]);
-      sqlprintf (" INNER JOIN ");
-      print_join (n->child[1]);
-      break;
-    case sql_outr_join:
-      print_join (n->child[0]);
-      sqlprintf (" RIGHT OUTER JOIN ");
-      print_join (n->child[1]);
-      break;
-    case sql_alias:
-    case sql_tb_name:
-    case sql_tbl_name:
-    case sql_select:
-      print_tablereference (n);
-      break;
-    default:
-      PFoops (OOPS_FATAL,
-	      "SQL genereation doesn't support this kind "
-	      "of join attribute (%u)", n->kind);
-    }
-}
-
-static void
-print_sort_key_expressions (PFsql_t * n)
-{
-  assert (n);
-
-  switch (n->kind)
-    {
-    case sql_srtky_expr:
-      print_sort_key_expressions (n->child[0]);
-      sqlprintf (", ");
-      print_sort_key_expressions (n->child[1]);
-      break;
-    default:
-      print_statement (n);
-      break;
-    }
-}
-
-static void
-print_window_clause (PFsql_t * n)
-{
-  assert (n);
-  assert (n->kind == sql_wnd_clause);
-
-  if (n->child[0])
-    {
-      print_statement (n->child[0]);
-    }
-  if (n->child[1])
-    {
-      print_statement (n->child[1]);
-    }
-}
-
-static void
-print_clm_list (PFsql_t * n)
-{
-  assert (n);
-
-  switch (n->kind)
-    {
-    case sql_clmn_list:
-      print_clm_list (n->child[0]);
-      sqlprintf (", ");
-      print_clm_list (n->child[1]);
-      break;
-    default:
-      print_column_name (n);
-    }
-}
-
-static void
-print_column_name (PFsql_t * n)
-{
-  assert (n);
-  assert (n->kind == sql_clmn_name);
-
-  if (n->crrlname != PF_SQL_CORRELATION_UNBOUNDED)
-    {
-      sqlprintf ("%s", PFsql_correlation_name_str (n->crrlname));
-      sqlprintf (".");
-    }
-  sqlprintf ("%s", PFsql_column_name_str (n->sem.column.ident));
-
-}
-
-static void
-print_case (PFsql_t * n)
-{
-  assert (n);
-
-  switch (n->kind)
-    {
-    case sql_case:
-      print_case (n->child[0]);
-      print_case (n->child[1]);
-      break;
-    case sql_when:
-      sqlprintf ("WHEN ");
-      print_expr (n->child[0]);
-      sqlprintf (" THEN ");
-      print_statement (n->child[1]);
-      break;
-    case sql_else:
-      sqlprintf (" ELSE ");
-      print_statement (n->child[0]);
-      break;
-    default:
-      PFoops (OOPS_FATAL, "Sqlgen: Pathfinder doesn't support this"
-	      " kind of node (%i) in case statement", n->kind);
-    }
-}
-
-static void
-print_statement (PFsql_t * n)
-{
-  switch (n->kind)
-    {
-    case sql_clsc:
-      sqlprintf ("COALESCE (");
-      print_statement (n->child[0]);
-      sqlprintf (", ");
-      print_statement (n->child[1]);
-      sqlprintf (")");
-      break;
-    case sql_case:
-      sqlprintf ("CASE ");
-      print_case (n);
-      sqlprintf (" END");
-      break;
-    case sql_asc:
-      sqlprintf ("ASC");
-      break;
-    case sql_desc:
-      sqlprintf ("DESC");
-      break;
-    case sql_order:
-      print_statement (n->child[0]);
-      sqlprintf (" ");
-      print_statement (n->child[1]);
-      break;
-    case sql_sum:
-      sqlprintf ("SUM(");
-      print_statement (n->child[0]);
-      sqlprintf (")");
-      break;
-    case sql_max:
-      sqlprintf ("MAX (");
-      print_statement (n->child[0]);
-      sqlprintf (")");
-      break;
-    case sql_min:
-      sqlprintf ("MIN (");
-      print_statement (n->child[0]);
-      sqlprintf (")");
-      break;
-    case sql_avg:
-      sqlprintf ("AVG (");
-      print_statement (n->child[0]);
-      sqlprintf (")");
-      break;
-    case sql_count:
-      sqlprintf ("COUNT (");
-      sqlprintf ("%s", (n->sem.count.distinct) ? "DISTINCT " : "");
-      print_statement (n->child[0]);
-      sqlprintf (")");
-      break;
-    case sql_eq:
-      sqlprintf ("(");
-      print_statement (n->child[0]);
-      sqlprintf (" = ");
-      print_statement (n->child[1]);
-      sqlprintf (")");
-      break;
-    case sql_prttn:
-      sqlprintf ("PARTITION BY ");
-      print_part_expression (n->child[0]);
-      break;
-    case sql_ordr_by:
-      sqlprintf ("ORDER BY ");
-      print_sort_key_expressions (n->child[0]);
-      break;
-    case sql_cst:
-      sqlprintf ("CAST(");
-      print_statement (n->child[0]);
-      sqlprintf (" AS ");
-      print_statement (n->child[1]);
-      sqlprintf (")");
-      break;
-    case sql_type:
-      sqlprintf ("%s", PFsql_simple_type_str (n->sem.type.t));
-      break;
-    case sql_tb_name:
-      print_schema_name (n->child[0]);
-      sqlprintf (".");
-      print_table_name (n->child[1]);
-      break;
-    case sql_star:
-      sqlprintf ("*");
-      break;
-    case sql_union:
-      sqlprintf ("(");
-      print_statement (n->child[0]);
-      sqlprintf (") UNION ALL (");
-      print_statement (n->child[1]);
-      sqlprintf (")");
-      break;
-    case sql_diff:
-      sqlprintf ("(");
-      print_statement (n->child[0]);
-      sqlprintf (") EXCEPT ALL (");
-      print_statement (n->child[1]);
-      sqlprintf (")");
-      break;
-    case sql_alias:
-      if (n->child[0]->kind != sql_tbl_name)
-	{
-	  sqlprintf ("(");
-	}
-      print_statement (n->child[0]);
-      if (n->child[0]->kind != sql_tbl_name)
-	{
-	  sqlprintf (")");
-	}
-      sqlprintf (" ");
-      break;
-    case sql_dot:
-      sqlprintf (".");
-      print_statement (n->child[1]);
-      break;
-    case sql_over:
-      print_aggrfunction (n->child[0]);
-      sqlprintf (" OVER (");
-      print_window_clause (n->child[1]);
-      sqlprintf (")");
-      break;
-    case sql_bind:
-      print_variable (n->child[0]);
-      sqlprintf (" AS (");
-      print_statement (n->child[1]);
-      sqlprintf (")");
-      break;
-    case sql_clmn_name:
-      if (n->crrlname != PF_SQL_CORRELATION_UNBOUNDED)
-	{
-	  sqlprintf ("%s", PFsql_correlation_name_str (n->crrlname));
-	  sqlprintf (".");
-	}
-      sqlprintf ("%s", PFsql_column_name_str (n->sem.column.ident));
-      break;
-    case sql_tbl_name:
-      print_variable (n);
-      break;
-    case sql_clmn_assign:
-      print_statement (n->child[0]);
-      sqlprintf (" AS ");
-      print_statement (n->child[1]);
-      break;
-    case sql_lit_dec:
-      sqlprintf ("%g", n->sem.atom.val.dec);
-      break;
-    case sql_lit_int:
-      sqlprintf ("%i", n->sem.atom.val.i);
-      break;
-    case sql_lit_null:
-      sqlprintf ("NULL");
-      break;
-    case sql_lit_str:
-      sqlprintf ("'%s'", n->sem.atom.val.s);
-      break;
-    case sql_table_ref:
-      sqlprintf ("%s", n->sem.table);
-      break;
-    case sql_select:
-      sqlprintf ("SELECT ");
-      if (n->sem.select.distinct)
-	sqlprintf ("DISTINCT ");
-      print_select_list (n->child[0]);
-      if (n->child[1])
-	{
-	  sqlprintf (" FROM ");
-	}
-      break;
-      /* expression : '(' expression '+' expression ')' */
-    case sql_add:
-    case sql_sub:
-    case sql_mul:
-    case sql_div:
-      sqlprintf ("(");
-      print_statement (n->child[0]);
-      sqlprintf (" %s ", ID[n->kind]);
-      print_statement (n->child[1]);
-      sqlprintf (")");
-      break;
-    case sql_like:
-      sqlprintf ("(");
-      print_statement (n->child[0]);
-      sqlprintf (" LIKE  '%%");
-      /* write the string without beginning and 
-         trailing ' */
-      assert (n->child[1]->kind == sql_lit_str);
-      sqlprintf ("%s", n->child[1]->sem.atom.val.s);
-      sqlprintf ("%%')");
-      break;
-    default:
-      PFoops (OOPS_FATAL,
-	      "Pathfinder doesn't support this kind "
-	      "of SQL tree node (%i)", n->kind);
-      break;
-    }
-}
-
-static void
-print_schema_name (PFsql_t * n)
-{
-  assert (n);
-  assert (n->kind == sql_schm);
-
-  sqlprintf ("%s", n->sem.schema.str);
-}
-
-static void
-print_aggrfunction (PFsql_t * n)
-{
-  switch (n->kind)
-    {
-    case sql_rownumber:
-      {
-	sqlprintf ("ROWNUMBER()");
-      }
-      break;
-    default:
-      {
-	PFoops (OOPS_FATAL,
-		"Pathfinder doesn't support this kind "
-		"of aggregat function");
-      }
-      break;
-    }
-}
-
-static void
-print_expression (PFsql_t * n)
-{
-  assert (n);
-  switch (n->kind)
-    {
-    case sql_expr_list:
-      {
-	print_expression (n->child[0]);
-	sqlprintf (", ");
-	print_expression (n->child[1]);
-      }
-      break;
-    case sql_tbl_name:
-      {
-	print_variable (n);
-      }
-      break;
-    case sql_sum:
-      {
-	sqlprintf ("(");
-	print_statement (n->child[0]);
-	sqlprintf (" %s ", ID[n->kind]);
-	print_statement (n->child[1]);
-	sqlprintf (")");
-      }
-      break;
-    default:
-      {
-	/* TODO insert NDEBUG */
-	PFinfo (OOPS_NOTICE, "node: %s", ID[n->kind]);
-	PFoops (OOPS_FATAL,
-		"Illegal SQL tree. SQL printer screwed up "
-		"(kind: %u).", n->kind);
-      }
-      break;
-    }
-}
-
-static void
-print_variable (PFsql_t * n)
-{
-  assert (n);
-  assert (n->kind == sql_tbl_name);
-
-  sqlprintf ("%s", PFsql_table_str (n->sem.tablename.ident));
-  if (n->child[0])
-    {
-      sqlprintf ("(");
-      print_clm_list (n->child[0]);
-      sqlprintf (")");
-    }
-}
-
-static void
-print_lit_list (PFsql_t * n)
-{
-  assert (n);
-
-  switch (n->kind)
-    {
-    case sql_lit_list:
-      print_lit_list (n->child[0]);
-      sqlprintf (", ");
-      print_lit_list (n->child[1]);
-      break;
-    default:
-      print_statement (n);
-    }
-}
-
-#if 0
-gcc:defined but never used static void
-print_loc_variable (PFsql_t * n)
-{
-  assert (n);
-  assert (n->kind == sql_crrltn_name);
-
-  sqlprintf ("%s", PFsql_loc_var_str (n->sem.correlation.ident));
-}
-#endif
-
-static void
-sqlprintf (char *fmt, ...)
-{
-  va_list args;
-
-  assert (out);
-
-  /* print string */
-  va_start (args, fmt);
-
-  if (PFarray_vprintf (out, fmt, args) == -1)
-    PFoops (OOPS_FATAL, "unable to print SQL output");
-
-  va_end (args);
-}
-
-PFarray_t *
-PFsql_serialize (PFsql_t * s)
-{
-  out = PFarray (sizeof (char));
-
-  /* `statements' is the top rule of the grammar */
-  print_sequence (s);
-
-  return out;
-}
-
 void
-PFsqlprint (FILE * stream, PFarray_t * sqlprog)
+PFsql_print (FILE *f, PFsql_t *n)
 {
-  char c;
-  unsigned int pos;
-  unsigned int spaces = 0;
-  unsigned int indent = 0;
+    /* make sure that we have the sql root in our hands */
+    assert (n);
+    assert (n->kind == sql_root);
+    
+    /* first print all schema information */
+    print_schema_information (f, L(n));
 
-  for (pos = 0; (c = *((char *) PFarray_at (sqlprog, pos))) != '\0'; pos++)
-    {
-      switch (c)
-	{
-	case '\n':
-	  {
-	    fputc ('\n', stream);
-	    spaces = indent;
-	  }
-	  break;
-	case ' ':
-	  {
-	    spaces++;
-	    break;
-	  }
-	  break;
-	case '}':
-	  {
-	    spaces = spaces > INDENT_WIDTH ? spaces - INDENT_WIDTH : 0;
-	    indent -= 2 * INDENT_WIDTH;
-	  }
-	case '{':
-	  {
-	    indent += INDENT_WIDTH;
-	  }
-	default:
-	  {
-	    while (spaces > 0)
-	      {
-		spaces--;
-		fputc (' ', stream);
-	      }
-	    fputc (c, stream);
-	  }
-	  break;
-	}
-    }
+    /* ... and then print the query */
+    assert (R(n)->kind == sql_with);
+    fprintf(f, "\nWITH\n");
+    print_binding (f, L(R(n)));
 }
 
-/* vim:set shiftwidth=4 expandtab filetype=c: */
+/* vim:set shiftwidth=4 expandtab: */

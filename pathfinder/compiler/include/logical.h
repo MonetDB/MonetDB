@@ -38,6 +38,7 @@
 #include "variable.h"
 #include "algebra.h"
 #include "physical.h"
+#include "sql.h"
 #include "ordering.h"
 #include "mem.h"
 #include "load_stats.h"
@@ -428,6 +429,8 @@ struct PFla_op_t {
 
     PFplanlist_t      *plans;      /**< Physical algebra plans that implement
                                         this logical algebra subexpression. */
+    PFsql_alg_ann_t   *sql_ann;    /**< SQL annotations used during SQL code
+                                        generation. */
     PFprop_t          *prop;       /**< Properties derived for this expression*/
 
     struct PFla_op_t  *child[PFLA_OP_MAXCHILD];
@@ -435,17 +438,6 @@ struct PFla_op_t {
     int                node_id;    /**< specifies the id of this operator
                                         node; required exclusively to
                                         create dot output. */
-                                        
-    /* SQL specific node information */
-    struct PFsql_alg_ann_t    *sql_ann;  /**< SQL annotations used during code
-                                             generation. */
-    unsigned int        delta_pre;       /**< delta pre value */
-    unsigned int        delta_level;     /**< delta level value */
-    unsigned            dirty:1;         /**< indicates nested SQL statements */
-    unsigned 		distinct:1;	 /**< checks if we should set the
-					      distinct flag in SQL select*/
-    unsigned int        crrltn_cnt;      /**< count correlation
-                                              names */
 };
 
 /**

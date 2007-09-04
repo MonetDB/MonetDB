@@ -33,14 +33,13 @@
  * $Id$
  */
 
-#ifndef __SQLPRINT_H__
-#define __SQLPRINT_H__
+#ifndef SQLPRINT_H
+#define SQLPRINT_H
+
+#include <stdio.h>
 
 #include "sql.h"
 
-#define INDENT_WIDTH 4
+void PFsql_print (FILE *f, PFsql_t *n);
 
-PFarray_t *PFsql_serialize (PFsql_t *);
-void PFsqlprint(FILE *, PFarray_t *);
-
-#endif /* __SQLPRINT_H__ */
+#endif /* SQLPRINT_H */
