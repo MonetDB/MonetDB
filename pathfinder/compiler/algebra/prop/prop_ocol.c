@@ -75,7 +75,7 @@ PFprop_ocol (const PFla_op_t *n, PFalg_att_t attr)
 /**
  * Return the type of @a attr in the list of ocol columns
  */
-PFalg_type_t
+PFalg_simple_type_t
 PFprop_type_of (const PFla_op_t *n, PFalg_att_t attr)
 {
     assert (n);

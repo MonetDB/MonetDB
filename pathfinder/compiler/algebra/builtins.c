@@ -99,12 +99,12 @@ sel_type (const PFla_op_t *n, PFalg_simple_type_t ty)
 static PFla_op_t *
 typeswitch (PFla_op_t *n,
             unsigned int count,
-            const PFalg_type_t *types,
-            PFla_op_t *(*cnst) (PFla_op_t *n, PFalg_type_t, void *),
+            const PFalg_simple_type_t *types,
+            PFla_op_t *(*cnst) (PFla_op_t *n, PFalg_simple_type_t, void *),
             void *params)
 {
     PFla_op_t *res = NULL;
-    PFalg_type_t item_types = 0;
+    PFalg_simple_type_t item_types = 0;
     bool found = false;
     
     for (unsigned int i = 0; i < n->schema.count; i++) {
@@ -123,7 +123,7 @@ typeswitch (PFla_op_t *n,
        on the tuples that match that type (selection is done with 
        sel_type ()).  */
     for (unsigned int i = 0; i < count; i++) {
-        PFalg_type_t ty = item_types & types[i];        
+        PFalg_simple_type_t ty = item_types & types[i];        
         if (ty == item_types) {
             res = cnst (n, types[i], params);
             break;
@@ -142,16 +142,17 @@ typeswitch (PFla_op_t *n,
 
 struct typeswitch2_params {
     PFla_op_t *n;
-    PFalg_type_t t;
+    PFalg_simple_type_t t;
     int count;
-    const PFalg_type_t *types;
+    const PFalg_simple_type_t *types;
     void *params;
     PFla_op_t *(*cnst) (PFla_op_t *n1, PFla_op_t *n2,
-                        PFalg_type_t, PFalg_type_t, void *);
+                        PFalg_simple_type_t, PFalg_simple_type_t, void *);
 };
 
 static PFla_op_t *
-typeswitch2_callback_snd_arg (PFla_op_t *n2, PFalg_type_t t2, void *params) {
+typeswitch2_callback_snd_arg (PFla_op_t *n2,
+                              PFalg_simple_type_t t2, void *params) {
     struct typeswitch2_params *p = (struct typeswitch2_params *) params;
     
     return p->cnst (p->n,
@@ -162,7 +163,8 @@ typeswitch2_callback_snd_arg (PFla_op_t *n2, PFalg_type_t t2, void *params) {
 }
 
 static PFla_op_t *
-typeswitch2_callback_fst_arg (PFla_op_t *n1, PFalg_type_t t1, void *params) {
+typeswitch2_callback_fst_arg (PFla_op_t *n1,
+                              PFalg_simple_type_t t1, void *params) {
     struct typeswitch2_params *p = (struct typeswitch2_params *) params;
     
     return typeswitch (p->n,
@@ -198,11 +200,11 @@ static PFla_op_t *
 typeswitch2 (PFla_op_t *n1,
              PFla_op_t *n2,
              unsigned int count, 
-             const PFalg_type_t *types, 
+             const PFalg_simple_type_t *types, 
              PFla_op_t *(*cnst) (PFla_op_t *n1,
                                  PFla_op_t *n2,
-                                 PFalg_type_t,
-                                 PFalg_type_t,
+                                 PFalg_simple_type_t,
+                                 PFalg_simple_type_t,
                                  void *),
              void *params)
 {
@@ -637,12 +639,12 @@ PFbui_fn_data (const PFla_op_t *loop,
 static PFla_op_t *
 bin_arith_callback (PFla_op_t *n1,
                     PFla_op_t *n2,
-                    PFalg_type_t t1,
-                    PFalg_type_t t2,
+                    PFalg_simple_type_t t1,
+                    PFalg_simple_type_t t2,
                     void *params)
 {
     /* get the correct type */
-    PFalg_type_t t;
+    PFalg_simple_type_t t;
     if (t1 == t2)
         t = t1;
     else if (t1 == aat_dec || t2 == aat_dec) 
@@ -681,7 +683,7 @@ bin_arith (struct PFla_pair_t *args,
     PFla_op_t *res = typeswitch2 (args[0].rel,
                                   args[1].rel,
                                   3,
-                                  (PFalg_type_t [3])
+                                  (PFalg_simple_type_t [3])
                                       { aat_int, aat_dbl, aat_dec },
                                   bin_arith_callback,
                                   OP);
@@ -728,13 +730,13 @@ PFbui_op_numeric_multiply (const PFla_op_t *loop, bool ordering,
 static PFla_op_t *
 divide_callback (PFla_op_t *n1,
                  PFla_op_t *n2,
-                 PFalg_type_t t1,
-                 PFalg_type_t t2,
+                 PFalg_simple_type_t t1,
+                 PFalg_simple_type_t t2,
                  void *params)
 {
     (void) params;
 
-    PFalg_type_t t;
+    PFalg_simple_type_t t;
     if (t1 == t2 && t1 == aat_int)
         t = aat_dec;
     else if (t1 == aat_dec || t2 == aat_dec) 
@@ -769,7 +771,7 @@ PFbui_op_numeric_divide (const PFla_op_t *loop, bool ordering,
     PFla_op_t *res = typeswitch2 (args[0].rel,
                                   args[1].rel,
                                   3,
-                                  (PFalg_type_t [3])
+                                  (PFalg_simple_type_t [3])
                                     { aat_int, aat_dbl, aat_dec, },
                                   divide_callback,
                                   NULL);
@@ -1875,7 +1877,7 @@ fn_boolean_node (PFla_op_t *n)
 }
 
 static PFla_op_t *
-fn_boolean_callback (PFla_op_t *n, PFalg_type_t type, void *params)
+fn_boolean_callback (PFla_op_t *n, PFalg_simple_type_t type, void *params)
 {
     (void) params;
 
@@ -1920,7 +1922,7 @@ PFbui_fn_boolean_item (const PFla_op_t *loop, bool ordering,
     /* Typeswitch, for helper functions see above. */ 
     PFla_op_t *res  = typeswitch (args[0].rel, 
                                   8,
-                                  (PFalg_type_t [8])
+                                  (PFalg_simple_type_t [8])
                                     { aat_node,
                                       aat_bln,
                                       aat_nat,

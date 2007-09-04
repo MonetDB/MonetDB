@@ -76,6 +76,7 @@
 #define aat_pfrag 0x0100 /**< ...and a node fragment */
 
 #define aat_charseq 0x1000  /**< this type represents the CHAR type in SQL */
+
 /** Simple atomic types in our algebra */
 typedef unsigned int PFalg_simple_type_t;
 
@@ -88,14 +89,6 @@ typedef unsigned int PFalg_simple_type_t;
                         || ((a) == 0))
 
 typedef unsigned int nat;
-
-/**
- * The types we use for attributes are combinations of the simple
- * types, represented as a bit-vector. For now, 16 bits suffice by
- * far, but we may extend this vector if desired.
- */
-typedef unsigned short PFalg_type_t;
-
 
 /** atomic algebra values */
 union PFalg_atom_val_t {
@@ -184,8 +177,8 @@ typedef struct PFalg_attlist_t PFalg_attlist_t;
 
 /** An algebra schema item is a (name, type) pair */
 struct PFalg_schm_item_t {
-    PFalg_att_t     name;
-    PFalg_type_t    type;
+    PFalg_att_t         name;
+    PFalg_simple_type_t type;
 };
 typedef struct PFalg_schm_item_t PFalg_schm_item_t;
 

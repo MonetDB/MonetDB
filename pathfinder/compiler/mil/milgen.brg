@@ -7384,9 +7384,9 @@ aggr_function (PFmil_t * (*op) (const PFmil_t *),
      PFalg_att_t att = p->sem.aggr.att;
      PFalg_att_t res = p->sem.aggr.res;
      bool has_part = part != att_NULL;
-     PFalg_type_t poly_att_type = 0;
-     PFalg_type_t poly_part_type = 0;
-     PFalg_type_t poly_res_type = 0;
+     PFalg_simple_type_t poly_att_type = 0;
+     PFalg_simple_type_t poly_part_type = 0;
+     PFalg_simple_type_t poly_res_type = 0;
      /* determine res type */
      for (unsigned int i = 0; i < p->schema.count; i++) {
           if (p->schema.items[i].name == res) {
