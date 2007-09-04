@@ -430,6 +430,7 @@ command_status(int argc, char *argv[])
 		return;
 	}
 
+	doall = 0;  /* temporarily misuse this as db counter */
 	for (i = 1; i < argc; i++) {
 		if (argv[i] != NULL) {
 			if ((e = SABAOTHgetStatus(&stats, argv[i])) != MAL_SUCCEED) {
@@ -444,7 +445,13 @@ command_status(int argc, char *argv[])
 				printStatus(stats, mode);
 				SABAOTHfreeStatus(&stats);
 			}
+			doall++;
 		}
+	}
+
+	if (doall == 0) {
+		command_help(2, &argv[-1]);
+		exit(1);
 	}
 }
 
@@ -648,11 +655,11 @@ command_create(int argc, char *argv[], char *dbfarm)
 			 * ':' in there twice... */
 			fwrite("bla:", 4, 1, f);
 			fclose(f);
-			printf("successfully created database %s%s\n", dbname,
+			printf("successfully created database '%s'%s\n", dbname,
 					(maintenance == 1 ? " in maintenance mode" : ""));
 		} else {
 			SABAOTHfreeStatus(&stats);
-			fprintf(stderr, "create: database %s already exists\n", dbname);
+			fprintf(stderr, "create: database '%s' already exists\n", dbname);
 			exit(1);
 		}
 	}
@@ -765,13 +772,13 @@ command_destroy(int argc, char *argv[])
 			err e;
 
 			if (stats->state == SABdbRunning) {
-				fprintf(stderr, "destroy: database %s is still running, "
+				fprintf(stderr, "destroy: database '%s' is still running, "
 						"stop database first\n", dbname);
 				SABAOTHfreeStatus(&stats);
 				exit(1);
 			}
 			if (stats->locked == 1) {
-				fprintf(stderr, "destroy: database %s is under maintenance"
+				fprintf(stderr, "destroy: database '%s' is under maintenance"
 						", release database first\n", dbname);
 				SABAOTHfreeStatus(&stats);
 				exit(1);
@@ -779,7 +786,7 @@ command_destroy(int argc, char *argv[])
 
 			if (force == 0) {
 				char answ;
-				printf("you are about to remove database %s\n", dbname);
+				printf("you are about to remove database '%s'\n", dbname);
 				printf("ALL data in this database will get lost, "
 						"are you sure? [y/N] ");
 				scanf("%c", &answ);
@@ -794,13 +801,13 @@ command_destroy(int argc, char *argv[])
 			/* annoyingly we have to delete file by file, and
 			 * directories recursively... */
 			if ((e = deletedir(stats->path)) != NULL) {
-				fprintf(stderr, "destroy: failed to destroy %s: %s\n",
+				fprintf(stderr, "destroy: failed to destroy '%s': %s\n",
 						argv[1], e);
 				GDKfree(e);
 				exit(1);
 			}
 			SABAOTHfreeStatus(&stats);
-			printf("successfully destroyed database %s\n", dbname);
+			printf("successfully destroyed database '%s'\n", dbname);
 		} else {
 			fprintf(stderr, "destroy: no such database: %s\n", dbname);
 			exit(1);
@@ -832,7 +839,7 @@ command_lock(int argc, char *argv[])
 			char path[8096];
 
 			if (stats->locked == 1) {
-				fprintf(stderr, "lock: database %s already is "
+				fprintf(stderr, "lock: database '%s' already is "
 						"under maintenance\n", dbname);
 				SABAOTHfreeStatus(&stats);
 				exit(1);
@@ -844,7 +851,7 @@ command_lock(int argc, char *argv[])
 			printf("database %s is now under maintenance\n", dbname);
 			SABAOTHfreeStatus(&stats);
 		} else {
-			fprintf(stderr, "lock: no such database %s\n", dbname);
+			fprintf(stderr, "lock: no such database: %s\n", dbname);
 			exit(1);
 		}
 	}
@@ -874,7 +881,7 @@ command_release(int argc, char *argv[])
 			char path[8096];
 
 			if (stats->locked != 1) {
-				fprintf(stderr, "release: database %s is not "
+				fprintf(stderr, "release: database '%s' is not "
 						"under maintenance\n", dbname);
 				SABAOTHfreeStatus(&stats);
 				exit(1);
@@ -883,16 +890,16 @@ command_release(int argc, char *argv[])
 			/* put this database in maintenance mode */
 			snprintf(path, 8095, "%s/.maintenance", stats->path);
 			if (unlink(path) != 0) {
-				fprintf(stderr, "failed to take database %s out of maintenance"
-						" mode: %s\n", dbname, strerror(errno));
+				fprintf(stderr, "failed to take database '%s' out of "
+						" maintenance mode: %s\n", dbname, strerror(errno));
 				SABAOTHfreeStatus(&stats);
 				exit(1);
 			}
-			printf("database %s has been taken out of maintenance mode\n",
+			printf("database '%s' has been taken out of maintenance mode\n",
 					dbname);
 			SABAOTHfreeStatus(&stats);
 		} else {
-			fprintf(stderr, "release: no such database %s\n", dbname);
+			fprintf(stderr, "release: no such database: %s\n", dbname);
 			exit(1);
 		}
 	}
