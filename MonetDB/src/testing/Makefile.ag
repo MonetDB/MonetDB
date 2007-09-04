@@ -30,9 +30,9 @@ bin_Mtimeout = {
 }
 
 bin_Mapprove.py = bin_Mtest.py
-bin_Mapprove.py.bat = bin_Mtest.py.bat
+bin_Mapprove.py.bat = NATIVE_WIN32?bin_Mtest.py.bat
 bin_Mprofile.py = bin_Mtest.py
-bin_Mprofile.py.bat = bin_Mtest.py.bat
+bin_Mprofile.py.bat = NATIVE_WIN32?bin_Mtest.py.bat
 
 scripts_bat = {
 	COND = NATIVE_WIN32
