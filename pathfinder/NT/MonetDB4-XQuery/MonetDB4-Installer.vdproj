@@ -4384,7 +4384,7 @@
                 {
                     "{F27BD5C5-A65D-4608-96D4-7C5DA1F76302}:_38127E40D5154983A56ED4DED9B77213"
                     {
-                    "Name" = "8:MonetDB"
+                    "Name" = "8:MonetDB4"
                     "AlwaysCreate" = "11:FALSE"
                     "Condition" = "8:"
                     "Transitive" = "11:FALSE"
