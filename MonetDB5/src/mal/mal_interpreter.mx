@@ -403,8 +403,8 @@ str runMALsequence( Client cntxt, MalBlkPtr mb, int startpc,
 	int exceptionVar, exceptionPC;
 	str ret=0;
 	int stamp= -1;
-	int backup[MAXARG];
-	str sbackup[MAXARG];
+	short *backup= (short*) alloca(mb->maxarg * sizeof(short));
+	str *sbackup= (str*) alloca(mb->maxarg * sizeof(str));
 	lng oldtimer=0;
 	struct mallinfo oldMemory;
 #ifdef HAVE_SYS_RESOURCE_H
@@ -569,8 +569,8 @@ str runMALdataflow( Client cntxt, MalBlkPtr mb, int startpc,
 	int exceptionVar, exceptionPC;
 	str ret=0;
 	int stamp= -1;
-	int backup[MAXARG];
-	str sbackup[MAXARG];
+	short *backup= (short*) alloca(mb->maxarg * sizeof(short));
+	str *sbackup= (str*) alloca(mb->maxarg * sizeof(str));
 	lng oldtimer=0;
 	struct mallinfo oldMemory;
 #ifdef HAVE_SYS_RESOURCE_H
@@ -935,6 +935,7 @@ the bind(namespace, batname, mode) operation. [todo]
 	printInstruction(GDKout,mb,pci, LIST_MAL_ALL);
 #endif
 	if( needsCleanup(pci) ){ 
+		assert(pci->retc <= mb->maxarg); 
 		for(i=0; i<pci->retc; i++) {
 			sbackup[i]= 0;  
 			backup[i]= 0;  

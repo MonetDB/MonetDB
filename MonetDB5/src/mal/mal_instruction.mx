@@ -366,7 +366,7 @@ upon destruction of the definition. They are part of the global namespace.
 	str modname;		/* module context */
 	str fcnname;		/* function name */
 	short argc, retc, maxarg;	/* total and result argument count */
-	short argv[MAXARG];		/* at least a few entries */
+	short argv[];		/* at least a few entries */
 } *InstrPtr, InstrRecord;
 
 @-
@@ -407,6 +407,7 @@ typedef struct MALBLK {
 	struct MALBLK *history;/* of optimizer actions */
 	int keephistory;	/* do we need the history at all */
 	str marker;			/* history points are marked for backtracking */
+	int maxarg;			/* keep track on the maximal arguments used */
 } *MalBlkPtr, MalBlkRecord;
 
 @-
@@ -644,6 +645,7 @@ newMalBlk(int maxvars, int maxstmts)
 	mb->history = NULL;
 	mb->keephistory = 0;
 	mb->marker = 0;
+	mb->maxarg = MAXARG; /* the minimum for each instruction */
 	mb->typefixed = 0;
 	mb->flowfixed = 0;
 	mb->profiler = NULL;
@@ -746,6 +748,7 @@ copyMalBlk(MalBlkPtr old)
 	mb->errors = old->errors;
 	mb->typefixed = old->typefixed;
 	mb->flowfixed = old->flowfixed;
+	mb->maxarg= old->maxarg;
 	/* copy the properties as well */
 	if (mb->props)
 		mb->props = cpyPropertySet(old->props);
@@ -906,7 +909,7 @@ newInstruction(MalBlkPtr mb, int kind)
 		mb->stmt[mb->stop] = NULL;
 	}
 	if (p == NULL) {
-		p = GDKmalloc(sizeof(InstrRecord));
+		p = GDKmalloc(MAXARG * sizeof(short) + sizeof(InstrRecord));
 		p->maxarg = MAXARG;
 	}
 	p->typechk = TYPE_UNKNOWN;
@@ -952,7 +955,7 @@ InstrPtr
 copyInstruction(InstrPtr p)
 {
 	InstrPtr new;
-	new = (InstrPtr) GDKmalloc(sizeof(InstrRecord) + sizeof(short) * (p->maxarg - MAXARG));
+	new = (InstrPtr) GDKmalloc(sizeof(InstrRecord) + p->maxarg * sizeof(short));
 	oldmoveInstruction(new, p);
 	return new;
 }
@@ -969,7 +972,7 @@ void
 clrInstruction(InstrPtr p)
 {
 	clrFunction(p);
-	memset((char *) p, 0, sizeof(InstrRecord) + (p->maxarg - MAXARG) * sizeof(int));
+	memset((char *) p, 0, sizeof(InstrRecord) + p->maxarg * sizeof(short));
 }
 
 void
@@ -988,7 +991,7 @@ oldmoveInstruction(InstrPtr new, InstrPtr p)
 {
 	int space;
 
-	space = sizeof(InstrRecord) + sizeof(short) * (p->maxarg-MAXARG);
+	space = sizeof(InstrRecord) + p->maxarg * sizeof(short);
 	memcpy((char *) new, (char *) p, space);
 	setFunctionId(new, getFunctionId(p));
 	setModuleId(new, getModuleId(p));
@@ -1829,7 +1832,7 @@ pushArgument(MalBlkPtr mb, InstrPtr p, int varid)
 	if (p->argc == p->maxarg) {
 		InstrPtr pn;
 		int pc = 0,pclimit;
-		int space = (p->maxarg - MAXARG) * sizeof(short) + sizeof(InstrRecord);
+		int space = p->maxarg * sizeof(short) + sizeof(InstrRecord);
 		pn = GDKmalloc(space + MAXARG * sizeof(short));
 		memcpy((char *) pn, (char *) p, space);
 		pn->maxarg += MAXARG;
@@ -1852,6 +1855,10 @@ pushArgument(MalBlkPtr mb, InstrPtr p, int varid)
 			mb->stmt[pc] = pn;
 			break;
 		}
+		/* we have to keep track on the maximal arguments/block
+		  because it is needed by the interpreter */
+		if( mb->maxarg < pn->maxarg)
+			mb->maxarg= pn->maxarg;
 		GDKfree(p);
 		p = pn;
 	}
