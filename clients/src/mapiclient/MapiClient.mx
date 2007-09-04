@@ -1084,7 +1084,7 @@ showCommands(void)
 		fprintf(toConsole, " pf:add-doc($uri as xs:string, $documentName as xs:string\n");
 		fprintf(toConsole, "     [,$collectionName as xs:string [,$freePercentage as xs:integer]])\n");
 		fprintf(toConsole, "\nSession commands:\n");
-		fprintf(toConsole, "<>       - send query to server (or %s)\n",
+		fprintf(toConsole, "<>      - send query to server (or %s)\n",
 #ifdef WIN32
 			"CTRL-Z"
 #else
