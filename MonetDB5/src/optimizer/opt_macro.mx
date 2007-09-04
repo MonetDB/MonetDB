@@ -185,9 +185,9 @@ malFcnMatch(MalBlkPtr mc, MalBlkPtr mb, int pc)
 	if (mb->stop - pc < mc->stop - 2)
 		return 0;
 
-	cvar = (int *) alloca(mc->vtop * MAXARG);
+	cvar = (int *) alloca(mc->vtop * mc->maxarg);
 
-	mvar = (int *) alloca(mb->vtop * MAXARG);
+	mvar = (int *) alloca(mb->vtop * mc->maxarg);
 	/* also trim the return statement */
 	lim = pc + mc->stop - 3;
 	k = 1;
@@ -397,9 +397,9 @@ replaceMALblock(MalBlkPtr mb, int pc, MalBlkPtr mc)
 	int ctop = 0, mtop = 0;
 
 	/* collect variable map */
-	cvar = (int *) alloca(mc->vtop * MAXARG);
+	cvar = (int *) alloca(mc->vtop * mc->maxarg);
 
-	mvar = (int *) alloca(mb->vtop * MAXARG);
+	mvar = (int *) alloca(mb->vtop * mc->maxarg);
 	lim = pc + mc->stop - 2;
 	k = 1;
 	for (i = pc; i < lim; i++, k++) {
@@ -407,7 +407,7 @@ replaceMALblock(MalBlkPtr mb, int pc, MalBlkPtr mc)
 		q = getInstrPtr(mc, k);
 		for (j = 0; j < p->argc; j++)
 			cvar[ctop++] = getArg(q, j);
-		assert(ctop < mc->vtop *MAXARG);
+		assert(ctop < mc->vtop *mc->maxarg);
 
 		for (j = 0; j < p->argc; j++)
 			mvar[mtop++] = getArg(p, j);
