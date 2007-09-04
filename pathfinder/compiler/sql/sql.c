@@ -1146,6 +1146,7 @@ PFsql_column_name_str (PFsql_col_t *name)
             case sql_col_iter:     return "iter";
             case sql_col_pos:      return "pos";
             case sql_col_guide:    return "guide";
+            case sql_col_max:      return "max";
         }
     else {
         char  *attstr = PFatt_str (name->att);

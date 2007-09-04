@@ -433,6 +433,7 @@ special_col (PFsql_special_t spc)
 #define ITER_       column_name (special_col (sql_col_iter))
 #define POS_        column_name (special_col (sql_col_pos))
 #define TAG_        column_name (special_col (sql_col_tag))
+#define MAX_        column_name (special_col (sql_col_max))
 
 #define PRE(n)      ext_column_name (n, special_col (sql_col_pre))
 #define SIZE(n)     ext_column_name (n, special_col (sql_col_size))
@@ -444,6 +445,7 @@ special_col (PFsql_special_t spc)
 #define TWIG_PRE(n) ext_column_name (n, special_col (sql_col_twig_pre))
 #define ITER(n)     ext_column_name (n, special_col (sql_col_iter))
 #define POS(n)      ext_column_name (n, special_col (sql_col_pos))
+#define MAX(n)      ext_column_name (n, special_col (sql_col_max))
 
 /**
  * Returns a new column name
@@ -1131,7 +1133,7 @@ construct_twig_generic (PFla_op_t *p,
                                                citer, type_of (LL(p), citer)),
                                column_name (iter_col)),
                            column_assign (
-                               add (PRE (max),
+                               add (MAX(max),
                                     over (rownumber (),
                                           window_clause (NULL, NULL))),
                                PRE_),
@@ -1142,7 +1144,7 @@ construct_twig_generic (PFla_op_t *p,
                            column_assign (name, NAME_)),
                        from_list (
                            alias_bind (select (
-                                           max (PRE_),
+                                           column_assign (max (PRE_), MAX_),
                                            from_list (max_pre_frag),
                                            NULL,
                                            NULL),
@@ -1156,7 +1158,7 @@ construct_twig_generic (PFla_op_t *p,
                                ITER(content),
                                column_name (iter_col)),
                            column_assign (
-                               add (PRE (max),
+                               add (MAX(max),
                                     over (rownumber (),
                                           window_clause (
                                               NULL,
@@ -1169,7 +1171,7 @@ construct_twig_generic (PFla_op_t *p,
                            NAME(content)),
                        from_list (
                            alias_bind (select (
-                                           max (PRE_),
+                                           column_assign (max (PRE_), MAX_),
                                            from_list (max_pre_frag),
                                            NULL,
                                            NULL),
@@ -1377,7 +1379,7 @@ collect_frag_worker (PFla_op_t * p, PFarray_t *frags)
 
 #define frag_select(f) select (                                             \
                            select_list (PRE_, SIZE_, LEVEL_, KIND_, VALUE_, \
-                                        lit_str ("unused"), NAME_),         \
+                                        NAME_ , NAME_),         \
                            f, NULL, NULL)
 
 static PFsql_t *
@@ -2340,7 +2342,7 @@ reduce (PFla_op_t * p, int goalnt)
             selectlist = select_list (selectlist,
                                       column_assign (
                                           coalesce (
-                                              count (star ()),
+                                              count (part_expr),
                                               literal (
                                                   R(p)->sem.attach.value)),
                                           column_name (res_col)));
@@ -2910,8 +2912,8 @@ reduce (PFla_op_t * p, int goalnt)
                 }
 
                 name_from   = from_list_at (FROMLIST(L(p)), 0);
-                iter_col    = EXT_COLUMN_NAME (
-                                  name_from.alias,
+                iter_col    = col_env_lookup (
+                                  COLMAP(L(p)),
                                   iter,
                                   type_of (L(p), iter));
                 
@@ -3059,10 +3061,10 @@ reduce (PFla_op_t * p, int goalnt)
                 frag = *(PFsql_t **) PFarray_at (frags, i);
                 
                 sel = select (select_list (
+                                  column_assign (iter_expr, ITER_),
                                   column_assign (
-                                      add (SIZE(doc), lit_int (1)),
-                                      SIZE_),
-                                  column_assign (iter_expr, ITER_)),
+                                      add (SIZE(ctx), lit_int (1)),
+                                      SIZE_)),
                               transform_frommap_ext (p, frag),
                               transform_wheremap (p),
                               NULL);

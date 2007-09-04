@@ -51,6 +51,7 @@ enum PFsql_special_t {
     , sql_col_iter
     , sql_col_pos
     , sql_col_guide
+    , sql_col_max
 };
 typedef enum PFsql_special_t PFsql_special_t;
 
