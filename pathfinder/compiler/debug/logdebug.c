@@ -1680,7 +1680,10 @@ la_xml (PFarray_t *xml, PFla_op_t *n)
                                     n->sem.step.guides[i]->guide);
                     first = false;
                 }
+                PFarray_printf (xml, "\"");
             }
+            if (n->sem.step.level >= 0)
+                PFarray_printf (xml, " level=\"%i\"", n->sem.step.level);
             
             if (n->kind == la_step || n->kind == la_guide_step)
                 PFarray_printf (xml,
