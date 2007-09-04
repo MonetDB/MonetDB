@@ -737,7 +737,7 @@ print_binding (FILE* f, PFsql_t *n)
 {
     /* keep a stack to avoid printing 
        a comma after the last binding */
-    static unsigned nest = 0;
+    static unsigned int nest = 0;
 
     /* collect all bindings */
     switch (n->kind) {
@@ -759,9 +759,8 @@ print_binding (FILE* f, PFsql_t *n)
             indent (f, 2);
             print_fullselect (f, R(n), 2);
 
-            /* this test ('nest > 1') is always true
-               (as we expect a 'calling' query afterwards anyway) */
-            if (nest > 1)
+            /* avoid printing a ',' after the last binding */
+            if (nest > 2)
                 fprintf (f, ",\n");
             fputc ('\n', f);
             break;
