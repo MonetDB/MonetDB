@@ -869,26 +869,23 @@ error:
 static void
 controlRunner(void *d)
 {
-	FILE *f;
 	char buf[256];
 	char *p;
 	sabdb *stats;
-
-	if ((f = fopen((char *)d, "r")) == NULL) {
-		fprintf(stderr, "unable to open up control command channel "
-				"for reading: %s\n", strerror(errno));
-		return;
-	}
+	int fd = *((int *)d);
+	int len;
 
 	/* Try to handle control signals.  We can get race conditions due to
 	 * clients coming in at the same time.  We might need to fix this
 	 * situation sometime. */
 	while (_keepListening == 1) {
-		if (fgets(buf, 256, f) == NULL) {
+		if ((len = read(fd, buf, 255)) == 0) {
 			/* ignore EOF, but don't spin-lock */
 			MT_sleep_ms(1000);
 			continue;
 		}
+		buf[len] = '\0';
+
 		/* format is simple: database<space>command */
 		if ((p = strchr(buf, ' ')) == NULL) {
 			fprintf(stderr, "malformed control signal: %s\n", buf);
@@ -930,7 +927,7 @@ controlRunner(void *d)
 			}
 		}
 	}
-	fclose(f);
+	close(fd);
 	fprintf(stderr, "control channel closed\n");
 }
 
@@ -1197,7 +1194,8 @@ main(int argc, char *argv[])
 	/* open up a connection */
 	e = openConnection(&sock, MEROV_PORT);
 	if (e == NO_ERR) {
-		pthread_t ctid;
+		pthread_t ctid = 0;
+		int comfd = -1;
 		for (argp = 1; argp < argc; argp++) {
 			e = forkMserver(argv[argp], &stats, 0);
 			if (e != NO_ERR) {
@@ -1209,7 +1207,8 @@ main(int argc, char *argv[])
 		}
 
 		/* handle control commands */
-		if (pthread_create(&ctid, NULL, (void *(*)(void *))controlRunner, (void *)buf) < 0) {
+		comfd = open(buf, O_RDONLY);
+		if (pthread_create(&ctid, NULL, (void *(*)(void *))controlRunner, (void *)&comfd) < 0) {
 			fprintf(stderr, "unable to create control command thread\n");
 			ctid = 0;
 		}
@@ -1218,7 +1217,9 @@ main(int argc, char *argv[])
 		e = acceptConnections(sock);
 
 		/* shut down the control runner too */
-		pthread_join(ctid, NULL);
+		close(comfd);
+		if (ctid != 0)
+			pthread_join(ctid, NULL);
 	}
 
 	unlink(buf);
