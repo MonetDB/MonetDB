@@ -1,2 +1,0 @@
-z:= str.split("foo","");
-io.print(z);

@@ -1,7 +1,0 @@
-#define the generic addition operator
-# this should be sufficient to determine outcome
-
-function + (L:any_1, R:any_1):int ; return s :=1; end +;
-a:=3+1;
-b:=3.5+2.7;
-c:= 7+8;
