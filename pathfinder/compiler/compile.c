@@ -28,7 +28,6 @@
  * Universitaet Muenchen, respectively.  All Rights Reserved.
  *
  * $Id$
- * $Id$
  */
 
 
