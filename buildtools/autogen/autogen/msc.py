@@ -492,16 +492,28 @@ def msc_binary(fd, var, binmap, msc):
                     fd.write('\t$(INSTALL) "$(SRCDIR)\\%s" "%s"\n' % (i, i))
                 msc['INSTALL'][i] = i, '', '$(bindir)', '', ''
         else: # link
-            src = binmap[0][4:]
+            binmap = binmap[0]
+            if '?' in binmap:
+                cond, binmap = binmap.split('?', 1)
+                condname = 'defined(%s)' % cond
+            else:
+                cond = condname = ''
+            src = binmap[4:]
+            if cond:
+                fd.write('!IF %s\n' % condname)
             fd.write('%s: "%s"\n' % (name, src))
             fd.write('\t$(CP) "%s" "%s"\n\n' % (src, name))
+            if cond:
+                fd.write('!ELSE\n')
+                fd.write('%s:\n' % name)
+                fd.write('!ENDIF\n')
             n_nme, n_ext = split_filename(name)
             s_nme, s_ext = split_filename(src)
             if n_ext  and  s_ext  and  n_ext == s_ext:
                 ext = ''
             else:
                 ext = '.exe'
-            msc['INSTALL'][name] = src + ext, ext, '$(bindir)', '', ''
+            msc['INSTALL'][name] = src + ext, ext, '$(bindir)', '', condname
             msc['SCRIPTS'].append(name)
         return
 
