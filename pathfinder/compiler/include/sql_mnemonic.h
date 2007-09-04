@@ -91,6 +91,12 @@
 #define sub(a,b)                     PFsql_sub(a,b)
 #define mul(a,b)                     PFsql_mul(a,b)
 #define div(a,b)                     PFsql_div(a,b)
+
+/* .......... Integer Functions ............. */
+#define floor(a)                     PFsql_floor(a)
+#define ceil(a)                      PFsql_ceil(a)
+#define modulo(a,b)                  PFsql_modulo(a,b)
+#define abs(a)                       PFsql_abs(a)
                                      
 /* .......... Boolean Operators .......... */
 #define eq(a,b)                      PFsql_eq(a,b)

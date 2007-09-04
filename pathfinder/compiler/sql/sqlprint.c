@@ -80,6 +80,10 @@ static char *ID[] = {
       
       [sql_and]      = "AND",
       [sql_or]       = "OR", 
+      [sql_ceil]     = "CEIL",
+      [sql_floor]    = "FLOOR",
+      [sql_abs]      = "ABS",
+      [sql_modulo]   = "MOD",
 };
 
 /* forward declarations */
@@ -506,7 +510,20 @@ print_statement (PFsql_t *n)
             print_statement (R(n));
             PFprettyprintf (")");
             break;
-
+        case sql_floor:
+        case sql_ceil:
+        case sql_abs:
+            PFprettyprintf ("%s (", ID[n->kind]);
+            print_statement (L(n));
+            PFprettyprintf (")");
+            break;
+        case sql_modulo:
+            PFprettyprintf ("%s (", ID[n->kind]);
+            print_statement (L(n));
+            PFprettyprintf (", ");
+            print_statement (R(n));
+            PFprettyprintf(")");
+            break;
         default:
             PFoops (OOPS_FATAL,
                     "SQL grammar conflict. (Expected: statement; "

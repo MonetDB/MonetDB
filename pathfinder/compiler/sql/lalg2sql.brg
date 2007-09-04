@@ -2002,15 +2002,18 @@ reduce (PFla_op_t * p, int goalnt)
                 case alg_fun_fn_contains:
                     /* FIXME: this only works with constant expr[1] */
                     res_expr = like (expr[0], expr[1]); break;
-
-                /**< arithmetic modulo operator */
-                case alg_fun_num_modulo:
-                /**< fn:abs */
-                case alg_fun_fn_abs:
                 /**< fn:ceiling */
                 case alg_fun_fn_ceiling:
+                    res_expr = ceil (expr[0]); break;
                 /**< fn:floor */
                 case alg_fun_fn_floor:
+                    res_expr = floor (expr[0]); break;
+                /**< arithmetic modulo operator */
+                case alg_fun_num_modulo:
+                    res_expr = modulo (expr[0], expr[1]); break;
+                /**< fn:abs */
+                case alg_fun_fn_abs:
+                    res_expr = abs (expr[0]); break;
                 /**< fn:round */
                 case alg_fun_fn_round:
                 /**< fn:concat */
@@ -2833,8 +2836,8 @@ reduce (PFla_op_t * p, int goalnt)
                 }
 
                 name_from   = from_list_at (FROMLIST(L(p)), 0);
-                iter_col    = EXT_COLUMN_NAME (
-                                  name_from.alias,
+                iter_col    = col_env_lookup (
+                                  COLMAP(L(p)),
                                   iter,
                                   type_of (L(p), iter));
 

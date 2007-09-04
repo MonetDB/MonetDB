@@ -152,6 +152,11 @@ enum PFsql_kind_t {
     , sql_mul               /* multiplication expression */
     , sql_div               /* divide expression */
 
+    , sql_floor             /* floor expression */
+    , sql_ceil              /* ceil expression */
+    , sql_modulo            /* modulo expression */
+    , sql_abs               /* abs expression */
+
     , sql_eq                /* = comparison */
     , sql_gt                /* > comparison */
     , sql_gteq              /* >= comparison */
@@ -604,6 +609,32 @@ PFsql_t * PFsql_mul (const PFsql_t *a, const PFsql_t *b);
  * @param   b  The quotient.
  */
 PFsql_t * PFsql_div (const PFsql_t *a, const PFsql_t *b);
+
+/* ........... Integer Functions ................ */
+
+/**
+ * Create a SQL tree node representing the SQL
+ * floor operator.
+ */
+PFsql_t * PFsql_floor (const PFsql_t *a);
+
+/**
+ * Create a SQL tree node representing the SQL
+ * ceil operator.
+ */
+PFsql_t * PFsql_ceil (const PFsql_t *a);
+
+/**
+ * Create a SQL tree node representing the SQL
+ * modulo operator.
+ */
+PFsql_t * PFsql_modulo (const PFsql_t *a, const PFsql_t *b);
+
+/**
+ * Create a SQL tree node representing the SQL
+ * abs operator.
+ */
+PFsql_t * PFsql_abs (const PFsql_t *a);
 
 /* .......... Boolean Operators .......... */
 

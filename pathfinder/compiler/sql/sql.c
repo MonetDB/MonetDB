@@ -681,7 +681,43 @@ PFsql_div (const PFsql_t *a, const PFsql_t *b)
     return wire2 (sql_div, a, b);
 }
 
+/* ............ Integer Functions ............. */
 
+/**
+ * Create a SQL tree node representing the SQL
+ * floor operator.
+ */
+PFsql_t * PFsql_floor (const PFsql_t *a)
+{
+    return wire1 (sql_floor, a);
+}
+
+/**
+ * Create a SQL tree node representing the SQL
+ * ceil operator.
+ */
+PFsql_t * PFsql_ceil (const PFsql_t *a)
+{
+    return wire1 (sql_ceil, a);
+}
+
+/**
+ * Create a SQL tree node representing the SQL
+ * modulo operator.
+ */
+PFsql_t * PFsql_modulo (const PFsql_t *a, const PFsql_t *b)
+{
+    return wire2 (sql_modulo, a, b);
+}
+
+/**
+ * Create a SQL tree node representing the SQL
+ * abs operator.
+ */
+PFsql_t * PFsql_abs (const PFsql_t *a)
+{
+    return wire1 (sql_abs, a);
+}
 
 /* .......... Boolean Operators .......... */
 
