@@ -459,6 +459,7 @@ def am_binary(fd, var, binmap, am):
             src = binmap[4:]
             if cond:
                 fd.write('if %s\n' % cond)
+                cond = '#'+cond
             fd.write("install-exec-local-%s: %s\n" % (name, src))
             fd.write("\t-mkdir -p $(DESTDIR)$(bindir)\n")
             fd.write("\t-$(RM) $(DESTDIR)$(bindir)/%s\n" % name)
@@ -467,7 +468,7 @@ def am_binary(fd, var, binmap, am):
             fd.write("\t$(RM) $(DESTDIR)$(bindir)/%s\n\n" % name)
             am['INSTALL'].append(name)
             am['UNINSTALL'].append(name)
-            am['InstallList'].append("\t$(bindir)/"+name+"\n")
+            am['InstallList'].append("\t$(bindir)/"+name+cond+"\n")
 
             fd.write("all-local-%s: %s\n" % (name, src))
             fd.write("\t-$(RM) %s\n" % name)
