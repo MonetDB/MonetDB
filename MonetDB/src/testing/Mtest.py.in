@@ -1860,8 +1860,19 @@ def RunTest(env, TST, BusyPorts, COND) :
             diff_html.write('<!--MajorDiffs-->\n')
             diff_html.close()
             timedout = 1
-            if timeout == F_TIME: # test run timed out, expect major differences!
+            if timeout == F_TIME:
+                # test run timed out => expect major differences!
                 ACCURACYout = -1
+            else:
+                fs = open("%s%s.FILTERED" % (TST, STABLEout))
+                ft = open("%s.test.out.FILTERED" % TST)
+                szs = os.fstat(fs.fileno())[6]
+                szt = os.fstat(ft.fileno())[6]
+                fs.close()
+                ft.close()
+                if szt < szs*0.5 or szt > szs*1.5:
+                    # filesizes differ significantly => expect major differences!
+                    ACCURACYout = -1
             while timedout and MDIFF == MDIFF1:
                 if ACCURACYout == -1:
                     MDIFF = MDIFF0
@@ -1888,8 +1899,19 @@ def RunTest(env, TST, BusyPorts, COND) :
             diff_html.write('<!--MajorDiffs-->\n')
             diff_html.close()
             timedout = 1
-            if timeout == F_TIME: # test run timed out, expect major differences!
+            if timeout == F_TIME:
+                # test run timed out => expect major differences!
                 ACCURACYerr = -1
+            else:
+                fs = open("%s%s.FILTERED" % (TST, STABLEerr))
+                ft = open("%s.test.err.FILTERED" % TST)
+                szs = os.fstat(fs.fileno())[6]
+                szt = os.fstat(ft.fileno())[6]
+                fs.close()
+                ft.close()
+                if szt < szs*0.5 or szt > szs*1.5:
+                    # filesizes differ significantly => expect major differences!
+                    ACCURACYerr = -1
             while timedout and MDIFF == MDIFF1:
                 if ACCURACYerr == -1:
                     MDIFF = MDIFF0
