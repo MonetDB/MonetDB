@@ -475,6 +475,7 @@ forkMserver(str database, sabdb** stats, int force)
 				_merovingian_mserver, database);
 		execl(_merovingian_mserver, _merovingian_mserver,
 				"--set", "daemon=yes",
+				"--set", "mapi_open=true",
 				dbname,
 				"--dbinit=include sql;", /* yes, this IS correct */
 				(char *)NULL);
@@ -866,26 +867,22 @@ error:
 	return(newErr("accept connection: %s", msg));
 }
 
-int _merovingian_comfd = -1;
 static void
 controlRunner(void *d)
 {
 	char buf[256];
 	char *p;
 	sabdb *stats;
+	int fd = *((int *)d);
 	int len;
-
-	/* we need to do this call in this thread, since it blocks as long
-	 * as there is no writer */
-	_merovingian_comfd = open((char *)d, O_RDONLY);
 
 	/* Try to handle control signals.  We can get race conditions due to
 	 * clients coming in at the same time.  We might need to fix this
 	 * situation sometime. */
 	while (_keepListening == 1) {
-		if ((len = read(_merovingian_comfd, buf, 255)) == 0) {
+		if ((len = read(fd, buf, 255)) == 0) {
 			/* ignore EOF, but don't spin-lock */
-			MT_sleep_ms(1000);
+			MT_sleep_ms(500);
 			continue;
 		}
 		buf[len] = '\0';
@@ -931,7 +928,7 @@ controlRunner(void *d)
 			}
 		}
 	}
-	close(_merovingian_comfd);
+	close(fd);
 	merlog("control channel closed");
 }
 
@@ -1199,6 +1196,7 @@ main(int argc, char *argv[])
 	e = openConnection(&sock, MEROV_PORT);
 	if (e == NO_ERR) {
 		pthread_t ctid = 0;
+		int comfd = -1;
 		for (argp = 1; argp < argc; argp++) {
 			e = forkMserver(argv[argp], &stats, 0);
 			if (e != NO_ERR) {
@@ -1210,7 +1208,8 @@ main(int argc, char *argv[])
 		}
 
 		/* handle control commands */
-		if (pthread_create(&ctid, NULL, (void *(*)(void *))controlRunner, (void *)buf) < 0) {
+		comfd = open(buf, O_RDONLY | O_NONBLOCK);
+		if (pthread_create(&ctid, NULL, (void *(*)(void *))controlRunner, (void *)&comfd) < 0) {
 			fprintf(stderr, "unable to create control command thread\n");
 			ctid = 0;
 		}
@@ -1219,8 +1218,8 @@ main(int argc, char *argv[])
 		e = acceptConnections(sock);
 
 		/* shut down the control runner too */
-		if (_merovingian_comfd > -1)
-			close(_merovingian_comfd);
+		if (comfd > -1)
+			close(comfd);
 		if (ctid != 0)
 			pthread_join(ctid, NULL);
 	}
