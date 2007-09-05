@@ -21,31 +21,202 @@
 
 #include "sql_catalog.h"
 
-extern list* table_select_column( sql_trans *tr, sql_column *val, sql_column *key, void *key_value, ...);
-extern list* table_select_column_multi_values( sql_trans *tr, sql_column *val, sql_column *key1 , void *key_value1, sql_column *key2,list *values);
+#define COLSIZE	1024
 
-extern ssize_t
- column_find_row(sql_trans *tr, sql_column *c, void *value, ...);
+#define isNew(x)  (x->base.flag == TR_NEW)
+#define isTemp(x) (isNew(x)||x->t->persistence!=SQL_PERSIST)
+#define isTempTable(x)   (x->persistence!=SQL_PERSIST)
+#define isGlobalTable(x) (x->persistence!=SQL_LOCAL_TEMP)
+#define isGlobalTemp(x) (x->persistence==SQL_GLOBAL_TEMP)
+#define isTempSchema(x)  (strcmp(x->base.name,"tmp") == 0)
 
-extern void *column_find_value(sql_trans *tr, sql_column *c, ssize_t rid);
+typedef enum store_type {
+	store_bat,
+	store_bpm
+} store_type;
+
+extern sql_trans *gtrans;
+extern int store_nr_active;
+
+/* relational interface */
+typedef ssize_t (*column_find_row_fptr)(sql_trans *tr, sql_column *c, void *value, ...);
+typedef void *(*column_find_value_fptr)(sql_trans *tr, sql_column *c, ssize_t rid);
+typedef int (*column_update_value_fptr)(sql_trans *tr, sql_column *c, ssize_t rid, void *value);
+typedef int (*table_insert_fptr)(sql_trans *tr, sql_table *t, ...);
+typedef int (*table_delete_fptr)(sql_trans *tr, sql_table *t, ssize_t rid);
+
+typedef struct rids {
+	size_t cur;
+	void *data;
+} rids;
+
+/* returns table rids, for the given select ranges */
+typedef rids *(*rids_select_fptr)( sql_trans *tr, sql_column *key, void *key_value_low, void *key_value_high, ...);
+
+/* order rids by orderby_column values */
+typedef rids *(*rids_orderby_fptr)( sql_trans *tr, rids *r, sql_column *orderby_col);
+
+typedef rids *(*rids_join_fptr)( sql_trans *tr, rids *l, sql_column *lc, rids *r, sql_column *rc);
+
+/* return table rids from result of table_select, return (-1) when done */
+typedef ssize_t (*rids_next_fptr)(rids *r);
+
+/* clean up the resources taken by the result of table_select */
+typedef void (*rids_destroy_fptr)(rids *r);
+
+typedef struct table_functions {
+	column_find_row_fptr column_find_row;
+	column_find_value_fptr column_find_value;
+	column_update_value_fptr column_update_value;
+	table_insert_fptr table_insert;
+	table_delete_fptr table_delete;
+
+	rids_select_fptr rids_select;
+	rids_orderby_fptr rids_orderby;
+	rids_join_fptr rids_join;
+	rids_next_fptr rids_next;
+	rids_destroy_fptr rids_destroy;
+} table_functions; 
+
+extern table_functions table_funcs;
+
+/* delta table setup (ie readonly col + ins + upd + del)
+-- binds for column,idx (rdonly, inserts, updates) and delets
+*/
+typedef void *(*bind_col_fptr) (sql_trans *tr, sql_column *c, int access);
+typedef void *(*bind_idx_fptr) (sql_trans *tr, sql_idx *i, int access);
+typedef void *(*bind_del_fptr) (sql_trans *tr, sql_table *t, int access);
+
+/*
+-- append to columns and indices 
+*/
+typedef void *(*append_col_fptr) (sql_trans *tr, sql_column *c, int access, void *data);
+typedef void *(*append_idx_fptr) (sql_trans *tr, sql_idx *i, int access, void *data);
+
+/*
+-- create the necessary storage resources for columns, indices and tables
+-- returns LOG_OK, LOG_ERR
+*/
+typedef int (*create_col_fptr) (sql_trans *tr, sql_column *c); 
+typedef int (*create_idx_fptr) (sql_trans *tr, sql_idx *i); 
+typedef int (*create_del_fptr) (sql_trans *tr, sql_table *t); 
+
+/*
+-- duplicate the necessary storage resources for columns, indices and tables
+-- returns LOG_OK, LOG_ERR
+*/
+typedef int (*dup_col_fptr) (sql_trans *tr, sql_column *oc, sql_column *c);
+typedef int (*dup_idx_fptr) (sql_trans *tr, sql_idx *oi, sql_idx *i ); 
+typedef int (*dup_del_fptr) (sql_trans *tr, sql_table *ot, sql_table *t); 
+
+/*
+-- free the storage resources for columns, indices and tables
+-- returns LOG_OK, LOG_ERR
+*/
+typedef int (*destroy_col_fptr) (sql_trans *tr, sql_column *c); 
+typedef int (*destroy_idx_fptr) (sql_trans *tr, sql_idx *i); 
+typedef int (*destroy_del_fptr) (sql_trans *tr, sql_table *t); 
+
+/*
+-- clear any storage resources for columns, indices and tables
+-- returns number of removed tuples
+*/
+typedef size_t (*clear_col_fptr) (sql_trans *tr, sql_column *c); 
+typedef size_t (*clear_idx_fptr) (sql_trans *tr, sql_idx *i); 
+typedef size_t (*clear_del_fptr) (sql_trans *tr, sql_table *t); 
+
+/*
+-- update_table rollforward the changes made from table ft to table tt 
+-- returns LOG_OK, LOG_ERR
+*/
+typedef int (*update_table_fptr) (sql_trans *tr, sql_table *ft, sql_table *tt); 
+
+/*
+-- handle inserts and updates of columns and indices
+-- returns LOG_OK, LOG_ERR
+*/
+typedef int (*col_ins_fptr) (sql_trans *tr, sql_column *c, void *data);
+typedef int (*col_upd_fptr) (sql_trans *tr, sql_column *c, void *rows, void *data);
+typedef int (*idx_ins_fptr) (sql_trans *tr, sql_idx *c, void *data);
+typedef int (*idx_upd_fptr) (sql_trans *tr, sql_idx *c, void *rows, void *data);
+/*
+-- handle deletes
+-- returns LOG_OK, LOG_ERR
+*/
+typedef int (*del_fptr) (sql_trans *tr, sql_table *c, void *rows);
+
+/* backing struct for this interface */
+typedef struct store_functions {
+
+	bind_col_fptr bind_col;
+	bind_idx_fptr bind_idx;
+	bind_del_fptr bind_del;
+
+	append_col_fptr append_col;
+	append_idx_fptr append_idx;
+
+	create_col_fptr create_col;
+	create_idx_fptr create_idx;
+	create_del_fptr create_del;
+	
+	dup_col_fptr dup_col;
+	dup_idx_fptr dup_idx;
+	dup_del_fptr dup_del;
+
+	destroy_col_fptr destroy_col;
+	destroy_idx_fptr destroy_idx;
+	destroy_del_fptr destroy_del;
+
+	clear_col_fptr clear_col;
+	clear_idx_fptr clear_idx;
+	clear_del_fptr clear_del;
+
+	update_table_fptr update_table;
+
+	col_ins_fptr col_ins;
+	col_upd_fptr col_upd;
+
+	idx_ins_fptr idx_ins;
+	idx_upd_fptr idx_upd;
+
+	del_fptr del;
+} store_functions;
+
+extern store_functions store_funcs;
+
+typedef int (*logger_create_fptr) (char *logdir, char *dbname, int catalog_version);
+
+typedef void (*logger_destroy_fptr) (void);
+typedef int (*logger_restart_fptr) (void);
+typedef int (*logger_cleanup_fptr) (void);
+
+typedef int (*logger_changes_fptr)(void);
+typedef int (*logger_get_sequence_fptr) (int seq, lng *id);
+
+typedef int (*log_isnew_fptr)(void);
+typedef int (*log_tstart_fptr) (void);
+typedef int (*log_tend_fptr) (void);
+typedef int (*log_sequence_fptr) (int seq, lng id);
+
+typedef struct logger_functions {
+	logger_create_fptr create;
+	logger_destroy_fptr destroy;
+	logger_restart_fptr restart;
+	logger_cleanup_fptr cleanup;
+
+	logger_changes_fptr changes;
+	logger_get_sequence_fptr get_sequence;
+
+	log_isnew_fptr log_isnew;
+	log_tstart_fptr log_tstart;
+	log_tend_fptr log_tend;
+	log_sequence_fptr log_sequence;
+} logger_functions;
+
+extern logger_functions logger_funcs;
 
 extern int
- column_update_value(sql_trans *tr, sql_column *c, ssize_t rid, void *value);
-
-extern int
- table_insert(sql_trans *tr, sql_table *t, ...);
-
-extern int
- table_delete(sql_trans *tr, sql_table *t, ssize_t rid);
-
-extern int
- table_dump(sql_trans *tr, sql_table *t);
-
-extern int
- table_check(sql_trans *tr, sql_table *t);
-
-extern int
- store_init(int debug, char *logdir, char *dbname, backend_stack stk);
+ store_init(int debug, store_type store, char *logdir, char *dbname, backend_stack stk);
 extern void
  store_exit(void);
 

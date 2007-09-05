@@ -21,3 +21,13 @@
 EXTRA_DIST = sql_storage.h
 
 SUBDIRS = bat
+
+INCLUDES = ../include ../common $(MONETDB_INCS)
+
+lib_store = {
+	NOINST
+	DIR = libdir
+	SOURCES = \
+		store_dependency.mx store_connections.mx store_sequence.mx \
+		store.mx sql_catalog.mx 
+}
