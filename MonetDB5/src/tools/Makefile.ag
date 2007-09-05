@@ -79,4 +79,5 @@ scripts_bat = {
 	SOURCES = monetdb5-config.bat.in 
 }
 
-EXTRA_DIST_DIR = Tests $(man_MANS)
+EXTRA_DIST = $(man_MANS)
+EXTRA_DIST_DIR = Tests
