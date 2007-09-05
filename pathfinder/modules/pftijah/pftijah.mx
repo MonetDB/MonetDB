@@ -2010,20 +2010,24 @@ PROC _getTermDocLHs1(oid tid, BAT[void,oid] docs, str cName, bit nested) : bat[o
      return extended.sort();
 }
 
-#             ___          
-# LM(d|q) =   | |    qCnt(t) * dLH(t)  
+#             ___          qCnt(t) 
+# LM(d|q) =   | |    dLH(t) 
 #            t in q           
 #
 # where qCnt(t) = count of term t in query q
 # where dLH(t) = likelihood of term t in doc d
 #
 PROC _score_LM(int term_qCnt, int qSize, dbl term_cLH, BAT[oid,dbl] term_dLHs, dbl cLambda) : bat[oid,dbl] := {
-    var term_dScores := [*](term_dLHs, term_qCnt);
+    var term_dScores := term_dLHs;
+    while (term_qCnt > 1) {
+        term_dScores [:*=] term_dLHs;
+	term_qCnt :-= 1;
+    }
     return term_dScores;
 }
 
-#              ___          
-# LMs(d|q) =   | |    qCnt(t) ( (1-lambda) dLH(t) + lambda cLH(t) ) 
+#              ___                                         qCnt(t)      
+# LMs(d|q) =   | |    ( (1-lambda) dLH(t) + lambda cLH(t) ) 
 #             t in q           
 #
 # where qCnt(t) = count of term t in query q
@@ -2031,11 +2035,16 @@ PROC _score_LM(int term_qCnt, int qSize, dbl term_cLH, BAT[oid,dbl] term_dLHs, d
 # where cLH(t) = likelihood of term t in (background) collection c
 #
 PROC _score_LMs(int term_qCnt, int qSize, dbl term_cLH, BAT[oid,dbl] term_dLHs, dbl cLambda) : bat[oid,dbl] := {
-    var tmp1 := dbl(term_qCnt) * cLambda * term_cLH;
-    var tmp2 := dbl(term_qCnt) * (dbl(1) - cLambda);
+    var tmp1 := cLambda * term_cLH;
+    var tmp2 := dbl(1) - cLambda;
     var term_dScores := term_dLHs.tmark(0@0).access(BAT_WRITE);
     term_dScores [:*=] tmp2;
     term_dScores [:+=] tmp1;
+    tmp1 := term_dScores;
+    while (term_qCnt > 1) {
+        term_dScores [:*=] tmp1;
+	term_qCnt :-= 1;
+    }
     return term_dLHs.mark(0@0).leftfetchjoin(term_dScores);
 }
 
