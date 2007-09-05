@@ -1,5 +1,7 @@
 /* $Id$ */
 
+#include <stdlib.h>
+
 #define MAX_ARITY	2
 
 typedef int ItemSetNum;
@@ -308,5 +310,3 @@ extern void doStart ARGS((char *));
 extern int fatal ARGS((char *, int));
 extern void yyerror ARGS((char *));
 extern void yyerror1 ARGS((char *));
-
-#include <stdlib.h>
