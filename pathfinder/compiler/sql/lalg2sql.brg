@@ -517,6 +517,23 @@ col_env_add_full (PFarray_t * env, PFalg_att_t att,
 #define col_env_at(env,i) (*(sql_column_env_t *) PFarray_at (env, i))
 
 /**
+ * Add a given fromlist @a src to another fromlist @a dest.
+ */
+static void
+col_env_copy (PFarray_t * dest, PFarray_t * src)
+{
+    /* copy all existing expressions */
+    for (unsigned int i = 0; i < PFarray_last (src); i++) {
+        sql_column_env_t entry = col_env_at (src, i);
+        col_env_add_full (dest,
+                          entry.att,
+                          entry.type,
+                          entry.expression,
+                          entry.step_alias);
+    }
+}
+
+/**
  * Returns the expression associated with a given attribute/type
  * pair. If there doesn't exist an expression, simply return NULL.
  */
@@ -589,10 +606,10 @@ col_env_lookup_step (const PFarray_t * env, PFalg_att_t att,
 }
 
 /**
- * Transform a list of expressions into a selection list.
+ * Transforms an expression into a selectlist statement.
  */
 static PFsql_t *
-transform_select (PFsql_t *n, PFsql_t *col)
+transform_expression (PFsql_t *n, PFsql_t *col)
 {
     assert (col->kind == sql_column_name &&
             col->sem.column.name->id != PF_SQL_COLUMN_SPECIAL);
@@ -607,7 +624,55 @@ transform_select (PFsql_t *n, PFsql_t *col)
         return column_assign (n, col);
 }
 
+/**
+ * Transform a column environment in a column-list
+ */
+static PFsql_t *
+transform_columnlist (PFarray_t *col_env)
+{
+    PFsql_t * collist = NULL;
+    for (unsigned int i = 0; i < PFarray_last (col_env); i++) {
+        sql_column_env_t colitem = col_env_at (col_env, i);
+        collist = column_list (collist, 
+                           column_name (new_col (colitem.att, colitem.type))); 
+    }
+    return collist;
+}
 
+/**
+ * Transform a column environment in a select-list
+ */
+static PFsql_t *
+transform_selectlist (PFarray_t *col_env)
+{
+    PFsql_t * sellist = NULL;
+    for (unsigned int i = 0; i < PFarray_last (col_env); i++) {
+        sql_column_env_t colitem = col_env_at (col_env, i);
+        sellist = select_list (sellist,
+                       transform_expression (colitem.expression,
+                          column_name (new_col (colitem.att, colitem.type))));
+    }
+    return sellist;
+}
+
+/**
+ * Bind every column in the environment list to 
+ * a new alias @a ident.
+ */
+static void
+transform_colenv (PFarray_t *col_env, PFsql_aident_t ident)
+{
+    for (unsigned int i = 0; i < PFarray_last (col_env); i++) {
+        sql_column_env_t * colitem =
+            (sql_column_env_t *) PFarray_at (col_env, i);
+        if (colitem->expression->kind == sql_column_name)
+            colitem->expression =
+                       ext_column_name (
+                              ident,
+                              colitem->expression->sem.column.name
+                              );
+    }
+}
 
 /* .......... FROM List Helper Functions .......... */
 
@@ -1261,16 +1326,8 @@ construct_node (PFla_op_t *p, PFalg_att_t iter, int kind,
 static void
 copy_cols_from_where (PFla_op_t *p, PFla_op_t *c)
 {
-    /* copy all existing expressions */
-    for (unsigned int i = 0; i < PFarray_last (COLMAP(c)); i++) {
-        sql_column_env_t entry = col_env_at (COLMAP(c), i);
-        col_env_add_full (COLMAP(p),
-                          entry.att,
-                          entry.type,
-                          entry.expression,
-                          entry.step_alias);
-    }
-
+    /* copy the existing environment */
+    col_env_copy (COLMAP(p), COLMAP(c)); 
     /* copy the existing frommap */
     from_list_copy (FROMLIST(p), FROMLIST(c));
     /* copy the existing wheremap */
@@ -1311,7 +1368,7 @@ bind_operator (PFla_op_t *p, bool distinct)
         /* add the sql operation to the select list */
         selectlist = select_list (
                          selectlist,
-                         transform_select (
+                         transform_expression (
                              entry.expression,
                              column_name (colname)));
 
@@ -1399,6 +1456,30 @@ collect_fragments (PFla_op_t * p)
     }
     else
         return frag_select (table_name (PF_SQL_TABLE_FRAG));
+}
+
+static PFsql_t *
+cast_ (PFsql_t * expr, PFalg_simple_type_t ty, PFalg_simple_type_t res_ty)
+{
+    #define NUM_TYPE(t)    ((t == aat_nat) || \
+                            (t == aat_int) || \
+                            (t == aat_dec) || \
+                            (t == aat_dbl))
+    #define CHAR_TYPE(t)   ((t == aat_str) || \
+                            (t == aat_uA))
+    #define NUM_NOTEXPR(t) ((t == aat_int))
+
+    /* if we cast a numeric type to varchar we have to
+       first cast it to CHAR and then to varchar */
+    if (NUM_TYPE (ty) && CHAR_TYPE (res_ty))
+        expr = cast (expr, type (aat_charseq));
+    /* if we cast a string to a less expressive type
+       like numeric, we have to first cast it to DECIMAL
+       and then to the less expressive type */
+    else if (CHAR_TYPE (ty) && NUM_NOTEXPR (res_ty))
+        expr = cast (expr, type (aat_dbl));
+
+    return cast (expr, type (res_ty)); 
 }
 
 
@@ -1492,7 +1573,7 @@ reduce (PFla_op_t * p, int goalnt)
             /* add the sql operation to the select list */
             selectlist = select_list (
                              selectlist,
-                             transform_select (
+                             transform_expression (
                                  col_env_lookup (
                                      COLMAP(R(p)),
                                      p->sem.serialize.pos,
@@ -1515,7 +1596,7 @@ reduce (PFla_op_t * p, int goalnt)
                     /* add the sql operation to the select list */
                     selectlist = select_list (
                                      selectlist,
-                                     transform_select (
+                                     transform_expression (
                                          entry.expression,
                                          colname));
                 }
@@ -1910,7 +1991,7 @@ reduce (PFla_op_t * p, int goalnt)
                         else
                             selectlist1 = select_list (
                                               selectlist1,
-                                              transform_select (
+                                              transform_expression (
                                                   col_env_lookup (
                                                       COLMAP(L(p)), att, t),
                                                   column_name (colname)));
@@ -1926,7 +2007,7 @@ reduce (PFla_op_t * p, int goalnt)
                         else
                             selectlist2 = select_list (
                                               selectlist2,
-                                              transform_select (
+                                              transform_expression (
                                                   col_env_lookup (
                                                       COLMAP(R(p)), att, t),
                                                   column_name (colname)));
@@ -2110,38 +2191,74 @@ reduce (PFla_op_t * p, int goalnt)
             PFalg_simple_type_t res_ty = p->sem.type.ty;
             PFsql_t *expr;
 
+
+            /* copy all existing column, from, and where lists */
             if (monomorphic (ty)) {
-                /* copy all existing column, from, and where lists */
                 copy_cols_from_where (p, L(p));
 
                 expr = col_env_lookup (COLMAP(L(p)), att, ty);
 
-#define NUM_TYPE(t)    ((t == aat_nat) || \
-                        (t == aat_int) || \
-                        (t == aat_dec) || \
-                        (t == aat_dbl))
-#define CHAR_TYPE(t)   ((t == aat_str) || \
-                        (t == aat_uA))
-#define NUM_NOTEXPR(t) ((t == aat_int))
-
-                /* if we cast a numeric type to varchar we have to
-                   first cast it to CHAR and then to varchar */
-                if (NUM_TYPE (ty) && CHAR_TYPE (res_ty))
-                    expr = cast (expr, type (aat_charseq));
-                /* if we cast a string to a less expressive type
-                   like numeric, we have to first cast it to DECIMAL
-                   and then to the less expressive type */
-                else if (CHAR_TYPE (ty) && NUM_NOTEXPR (res_ty))
-                    expr = cast (expr, type (aat_dbl));
-
                 col_env_add (COLMAP(p), res_att, res_ty,
-                             cast (expr, type (res_ty)));
+                             cast_ (expr, ty, res_ty));
             }
-            else
-                /* FIXME: polymorphic implementation
-                   (probably using a union) is missing */
-                assert (!"missing");
+            else {
+                /* if the type is polymorphic we have to dump
+                 * the query immediatly */
+                PFsql_t * selectlist,
+                        * columnlist;
 
+                /* create a new table name for binding */
+                PFsql_tident_t newtable = new_table_name ();
+                /* new correlation name for bounded table */
+                PFsql_aident_t newalias = new_alias ();
+
+                PFsql_col_t *res_col = new_col (res_att, res_ty);
+
+                PFsql_t * query = NULL;
+
+                /* prepare columnlist and selectlist,
+                 * be careful that both are aligned */
+                columnlist = transform_columnlist (COLMAP(L(p)));
+                selectlist = transform_selectlist (COLMAP(L(p)));
+
+                /* we can add the resulting attribute already
+                 * here  to columnlist and environment. */
+                columnlist = column_list (columnlist,
+                                      column_name (res_col));
+
+                col_env_copy (COLMAP(p), COLMAP(L(p)));
+                /* bind every column to a new alias */
+                transform_colenv (COLMAP(p), newalias);
+                col_env_add (COLMAP(p), res_att, res_ty,
+                             ext_column_name (newalias, res_col));
+
+                /* prepare fromlist */
+                from_list_add (FROMLIST(p), table_name(newtable), newalias);
+                
+                /* run over the possible types */
+                for (PFalg_simple_type_t t = 1; t; t <<= 1)
+                    if (t & ty) {
+                         expr = col_env_lookup (COLMAP(L(p)), att, t);
+
+                         /* prepare statement */
+                         PFsql_t * temp = 
+                            select (
+                                select_list (selectlist,
+                                    transform_expression (cast_ (expr, t, res_ty),
+                                      column_name (res_col))),
+                                transform_frommap (L(p)),
+                                transform_wheremap (L(p)),
+                                NULL);
+
+                         query = (query)?union_(query,temp):temp; 
+                    }
+
+                execute (comment ("bind due to polymorphic cast"),
+                         bind (table_def (newtable, columnlist),
+                               query));
+
+                BOUND(p) = true;
+            }
         }   break;
 
         /* Rel:    avg (Rel) */
@@ -2199,7 +2316,7 @@ reduce (PFla_op_t * p, int goalnt)
 
                 /* create selectlist for the table name */
                 selectlist = select_list (selectlist,
-                                          transform_select (
+                                          transform_expression (
                                               part_expr,
                                               column_name (part_col)));
 
@@ -2223,7 +2340,7 @@ reduce (PFla_op_t * p, int goalnt)
 
             /* add the aggregation to the selection list */
             selectlist = select_list (selectlist,
-                                      transform_select (
+                                      transform_expression (
                                           expr,
                                           column_name (res_col)));
 
