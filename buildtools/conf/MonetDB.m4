@@ -555,6 +555,8 @@ yes-*-*)
 	    X_CFLAGS="$X_CFLAGS -Wdeclaration-after-statement";;
 	esac
 	X_CFLAGS="$X_CFLAGS -Wundef"
+	dnl  The default configure invocation when doing an rpmbuild also uses this
+	X_CFLAGS="$X_CFLAGS -Wp,-D_FORTIFY_SOURCE=2"
 	dnl  Some versions of flex & bison seem to generate code
 	dnl  that does not compile with `gcc -Wundef`;
 	dnl  we use GCC_BISON_CFLAGS to disable the respective warning as

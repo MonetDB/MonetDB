@@ -685,8 +685,11 @@ parsesecondintervalstring(char **svalp, SQLINTEGER *slenp, SQL_INTERVAL_STRUCT *
 		return SQL_ERROR;
 	if (*sval == '+' || *sval == '-')
 		return SQL_ERROR;
-	(void) strtol(sval, &eptr, 10);	/* we parse the actual value again later */
-	if (eptr == sval)
+	/* note that the first bit is a bogus comparison (sval does
+	   not start with '-', so is not negative) but this keeps the
+	   compiler happy */
+	if (strtol(sval, &eptr, 10) < 0 || /* we parse the actual value again later */
+	    eptr == sval)
 		return SQL_ERROR;
 	leadingprecision = (int) (eptr - sval);
 

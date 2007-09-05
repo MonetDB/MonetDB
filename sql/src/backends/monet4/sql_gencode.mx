@@ -105,7 +105,7 @@ write_part(backend *sql, char *buf, size_t len)
 	stream_write(sql->out, buf, 1, len);
 
 	if (mvc_debug_on(sql->mvc, 8))
-		 fwrite(buf, 1, len, stderr);
+		fprintf(stderr, "%.*s", (int) len, buf);
 }
 
 static void

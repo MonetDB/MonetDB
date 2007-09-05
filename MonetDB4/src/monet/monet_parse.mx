@@ -82,6 +82,8 @@ LEXNAME(int Y)
 	}
 }
 
+#define ECHO	/* empty -- don't echo anything (we shouldn't get there anyway */
+
 #define RETURN(Y)							\
 	do {								\
 		ll_lastval = Y;						\

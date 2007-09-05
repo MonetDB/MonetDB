@@ -355,7 +355,10 @@ copy_heap(int storage, char *dst, char *dir, char *src, char *ext)
 	}
 	buf = GDKmalloc(64*BUFSIZ);
 	while( (res = fread(buf, 1, 64*BUFSIZ, srcfp)) > 0) {
-		fwrite(buf, 1, res, dstfp);
+		if (fwrite(buf, 1, res, dstfp) < res) {
+			GDKerror("error writing %s\n", dstpath);
+			return -1;
+		}
 		if (res < (64*BUFSIZ))
 			break;
 	}

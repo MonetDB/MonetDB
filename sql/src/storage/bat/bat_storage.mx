@@ -241,6 +241,7 @@ append_ucol(sql_trans *tr, sql_column *c, int access, BAT *i)
 {
 	sql_bat *bat = c->data;
 
+	(void) access;
 	assert(access == UPD);
 	c->t->s->base.rtime = c->t->base.rtime = c->base.rtime = tr->stime;
 	c->base.wtime = c->t->base.wtime = c->t->s->base.wtime = tr->wtime = tr->stime;
@@ -252,6 +253,7 @@ append_uidx(sql_trans *tr, sql_idx * i, int access, BAT *ib)
 {
 	sql_bat *bat = i->data;
 
+	(void) access;
 	assert(access == UPD);
 	i->base.wtime = i->t->base.wtime = i->t->s->base.wtime = tr->wtime = tr->stime;
 	i->base.rtime = i->t->base.rtime = i->t->s->base.rtime = tr->rtime = tr->stime;

@@ -1593,7 +1593,8 @@ We have the lock, are the only process currently allowed in this section.
 Print the new process list in the global lock file.
 @c
 	fseek(GDKlockFile, 0, SEEK_SET);
-	ftruncate(fileno(GDKlockFile), 0);
+	if (ftruncate(fileno(GDKlockFile), 0) < 0)
+		GDKfatal("GDKlockHome: Could not truncate %s\n", GDKLOCK);
 	fflush(GDKlockFile);
 	GDKlog(GDKLOGON);
 @-

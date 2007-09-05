@@ -50,6 +50,8 @@ static char *c, *e;
 		YY_FATAL_ERROR( "input in flex scanner failed" );
 #endif
 
+#define ECHO	/* empty -- don't echo anything (we shouldn't get there anyway */
+
 %}
 
 /* XML Character Classes (http://www.w3.org/TR/REC-xml/#CharClasses) */

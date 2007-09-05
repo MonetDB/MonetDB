@@ -205,6 +205,8 @@ static char instring;
      } while (level > 0);                                                \
  }
 
+#define ECHO	/* empty -- don't echo anything (we shouldn't get there anyway */
+
 /**
  * define DEBUG_SCANNER to activate debugging output in parser
  * (if set, every token received is printed to stderr)

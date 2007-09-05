@@ -1136,7 +1136,8 @@ SERVERexit(){
 	int ret;
 	SERVERstop(&ret);
 	/* remove any port identity file */
-	system("rm -rf .*_port");
+	ret = system("rm -rf .*_port");
+	(void) ret;
 }
 @+ Remote Processing
 The remainder of the file contains the wrappers around

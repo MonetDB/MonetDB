@@ -1085,8 +1085,8 @@ open_rstream(const char *filename)
 		return NULL;
 	s->type = ST_BIN;
 	if (s->errnr == NO__ERROR) {
-		fread((void *) &s->byteorder, sizeof(s->byteorder), 1, (FILE *) s->stream_data.p);
-		if (ferror((FILE *) s->stream_data.p))
+		if (fread((void *) &s->byteorder, sizeof(s->byteorder), 1, (FILE *) s->stream_data.p) < 1 ||
+		    ferror((FILE *) s->stream_data.p))
 			s->errnr = OPEN_ERROR;
 	}
 	return s;
@@ -1125,8 +1125,9 @@ open_wstream_(const char *filename, char *mode)
 		return NULL;
 	s->access = ST_WRITE;
 	s->type = ST_BIN;
-	if (s->errnr == NO__ERROR)
-		fwrite((void *) &s->byteorder, sizeof(s->byteorder), 1, (FILE *) s->stream_data.p);
+	if (s->errnr == NO__ERROR &&
+	    fwrite((void *) &s->byteorder, sizeof(s->byteorder), 1, (FILE *) s->stream_data.p) < 1)
+		s->errnr = OPEN_ERROR;
 	return s;
 }
 
@@ -2123,8 +2124,8 @@ file_rstream(FILE *fp, const char *name)
 	s->stream_data.p = (void *) fp;
 
 	if (s->errnr == NO__ERROR) {
-		fread((void *) &s->byteorder, sizeof(s->byteorder), 1, fp);
-		if (ferror(fp))
+		if (fread((void *) &s->byteorder, sizeof(s->byteorder), 1, fp) < 1 ||
+		    ferror(fp))
 			s->errnr = OPEN_ERROR;
 	}
 	return s;
@@ -2147,8 +2148,8 @@ file_wstream(FILE *fp, const char *name)
 	s->stream_data.p = (void *) fp;
 
 	if (s->errnr == NO__ERROR) {
-		fwrite((void *) &s->byteorder, sizeof(s->byteorder), 1, fp);
-		if (ferror(fp))
+		if (fwrite((void *) &s->byteorder, sizeof(s->byteorder), 1, fp) < 1 ||
+		    ferror(fp))
 			s->errnr = OPEN_ERROR;
 	}
 	return s;

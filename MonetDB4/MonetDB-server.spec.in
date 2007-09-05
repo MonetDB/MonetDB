@@ -1,3 +1,7 @@
+%define name MonetDB4-server
+%define version @VERSION@
+%define release 1%{?dist}%{?oid32:.oid32}%{!?oid32:.oid%{bits}}
+
 # groups of related archs
 %define all_x86 i386 i586 i686
 
@@ -7,30 +11,29 @@
 %define bits 64
 %endif
 
-%define name MonetDB4-server
-%define version @VERSION@
-%define release 1%{?dist}%{?oid32:.oid32}%{!?oid32:.oid%{bits}}
-
-%define prefix /usr
-%define sysconfdir /etc
-%define localstatedir /var/lib
-
-%define monetdb_uid    85
-%define monetdb_gid    85
+# buildsystem is set to 1 when building an rpm from within the build
+# directory; it should be set to 0 (or not set) when building a proper
+# rpm
+%{!?buildsystem: %define buildsystem 0}
 
 Name: %{name}
 Version: %{version}
 Release: %{release}
 Summary: MonetDB - Monet Database Management System
-Group: System
-Source: MonetDB4-%{version}.tar.gz
-BuildRoot: /var/tmp/%{name}-root
-Packager: Niels Nes <Niels.Nes@cwi.nl>
+
+Group: Applications/Databases
 License:   MPL - http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
-BuildRequires: python 
+URL: http://monetdb.cwi.nl/
+Source: http://downloads.sourceforge.net/monetdb/MonetDB4-%{version}.tar.gz
+BuildRoot: %(mktemp -ud %{_tmppath}/%{name}-%{version}-%{release}-XXXXXX)
+
+Requires(pre): shadow-utils
+# Requires(post): chkconfig
+BuildRequires: python
+BuildRequires: pcre-devel
 
 %{!?_with_python: %{!?_without_python: %define _with_python --with-python}}
-%{!?buildsystem: %define buildsystem 0}
+
 %define builddoc 0
 
 Requires: MonetDB-client >= 1.19
@@ -47,12 +50,10 @@ BuildRequires: MonetDB-client-devel >= 1.19
 # Maintained via vertoo. Please don't modify by hand!
 # Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
 %endif
-PreReq: /sbin/chkconfig, /sbin/service, sh-utils
-PreReq: %{_sbindir}/groupadd, %{_sbindir}/useradd
 
 %package devel
-Summary: MonetDB development package 
-Group: System 
+Summary: MonetDB development package
+Group: Applications/Databases
 Requires: %{name} = %{version}-%{release}
 Requires: MonetDB-devel >= 1.19
 #                          ^^^^
@@ -69,8 +70,18 @@ main-memory perspective with use of a fully decomposed storage model,
 automatic index management, extensibility of data types and search
 accellerators, SQL- and XML- frontends.
 
+This package contains the MonetDB4 server component.  You need this
+package if you want to work using the MIL language, or if you want to
+use the XQuery frontend (in which case you need MonetDB4-XQuery as
+well).
+
 %description devel
-Add the MonetDB devel description here
+MonetDB is a database management system that is developed from a
+main-memory perspective with use of a fully decomposed storage model,
+automatic index management, extensibility of data types and search
+accellerators, SQL- and XML- frontends.
+
+This package contains the files needed to develop with MonetDB4.
 
 %prep
 rm -rf $RPM_BUILD_ROOT
@@ -79,73 +90,72 @@ rm -rf $RPM_BUILD_ROOT
 
 %build
 
-./configure \
+%configure \
 	--enable-assert=no \
 	--enable-optimize \
 	--enable-bits=%{bits} \
 	%{?oid32:--enable-oid32} \
-	%{?comp_cc:CC="%{comp_cc}"} \
-	--prefix=%{prefix} \
-	--sysconfdir=%{sysconfdir} \
-	--localstatedir=%{localstatedir} \
-	--libdir=%{_libdir} 
+	%{?comp_cc:CC="%{comp_cc}"}
 
 make
 
 %install
 rm -rf $RPM_BUILD_ROOT
 
-make install \
-	DESTDIR=$RPM_BUILD_ROOT 
+make install DESTDIR=$RPM_BUILD_ROOT
 
-mkdir -p $RPM_BUILD_ROOT/%{localstatedir}/MonetDB4
+mkdir -p $RPM_BUILD_ROOT/%{_localstatedir}/MonetDB
+mkdir -p $RPM_BUILD_ROOT/%{_localstatedir}/MonetDB4
 # insert example db here!
 
-find $RPM_BUILD_ROOT -name .incs.in -print -o -name \*.la -print | xargs rm -f
-
 # cleanup stuff we don't want to install
+find $RPM_BUILD_ROOT -name .incs.in -print -o -name \*.la -print | xargs rm -f
 rm -rf $RPM_BUILD_ROOT%{_libdir}/MonetDB4/Tests/*
 
-# Fixes monet config script
-#perl -p -i -e "s|$RPM_BUILD_ROOT||" $RPM_BUILD_ROOT%{prefix}/bin/monet_config
+%pre
+getent group monetdb >/dev/null || groupadd -r monetdb
+getent passwd monetdb >/dev/null || \
+useradd -r -g monetdb -d %{_localstatedir}/MonetDB -s /sbin/nologin \
+    -c "MonetDB Server" monetdb
+exit 0
+
+%post -p /sbin/ldconfig
+
+#create monetdb init script
+#/sbin/chkconfig --add monetdb
+
+%postun -p /sbin/ldconfig
 
 %clean
 rm -fr $RPM_BUILD_ROOT
 
 %files
-%defattr(-,root,root) 
-%{prefix}/bin/Mserver 
-%{prefix}/bin/Mbeddedmil 
+%defattr(-,root,root)
+%{_bindir}/Mserver
+%{_bindir}/Mbeddedmil
 
 %{_libdir}/libmonet.so.*
 %{_libdir}/libembeddedmil.so.*
+%dir %{_libdir}/MonetDB4
+%dir %{_libdir}/MonetDB4/lib
 %{_libdir}/MonetDB4/lib/*.so*
 %{_libdir}/MonetDB4/*.mil
 
-%attr(770,monetdb,monetdb) %dir %{localstatedir}/MonetDB4
+%attr(770,monetdb,monetdb) %dir %{_localstatedir}/MonetDB
+%attr(770,monetdb,monetdb) %dir %{_localstatedir}/MonetDB4
 
-%config(noreplace) %{sysconfdir}/MonetDB.conf 
+%config(noreplace) %{_sysconfdir}/MonetDB.conf
 
 %files devel
-%defattr(-,root,root) 
-%{prefix}/bin/monetdb4-config
-%{prefix}/bin/calibrator
+%defattr(-,root,root)
+%{_bindir}/monetdb4-config
+%{_bindir}/calibrator
 %{_libdir}/pkgconfig/MonetDB.pc
-%{prefix}/include/MonetDB4/*.h
-%{prefix}/include/MonetDB4/*/*.[hcm]
+%dir %{_includedir}/MonetDB4
+%{_includedir}/MonetDB4/*.h
+%{_includedir}/MonetDB4/*/*.[hcm]
 %{_libdir}/libmonet.so
 %{_libdir}/libembeddedmil.so
-
-
-%pre 
-%{_sbindir}/groupadd -g %{monetdb_gid} -r monetdb 2>/dev/null || :
-%{_sbindir}/useradd -d %{localstatedir}/MonetDB4 -s /bin/true -g monetdb -M -r -u %{monetdb_uid} monetdb 2>/dev/null || :
-
-%post 
-umask 022
-
-#create monetdb init script
-#/sbin/chkconfig --add monetdb
 
 %changelog
 * Mon Jun 25 2007 Sjoerd Mullender <sjoerd@acm.org> - @VERSION@-1

@@ -388,7 +388,8 @@ int main(int argc, char **argv)
 				else 
 					sprintf(cmd,"cp stet.dat stet_cur.dat");
 			/*	printf("%s \n",cmd);*/
-				system(cmd); 
+				if (system(cmd) != 0)
+					fprintf(stderr, "command `%s' failed\n", cmd);
 			}
 			response = e+1;
 		}

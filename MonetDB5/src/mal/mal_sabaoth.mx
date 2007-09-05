@@ -183,7 +183,7 @@ mal_export str SABAOTHretreatScenario(int *ret, str *lang);
 str SABAOTHretreatScenario(int *ret, str *lang) {
 	FILE *f;
 	str buf = alloca(sizeof(char) * 256);	/* should be enough for now */
-	int len;
+	size_t len;
 	str path = alloca(sizeof(char) * (PATHLENGTH + 1));
 	str tmp;
 	(void)ret;
@@ -215,7 +215,8 @@ str SABAOTHretreatScenario(int *ret, str *lang) {
 				fflush(tmp);
 				rewind(tmp);
 				len = fread(buf, 1, 256, tmp);
-				fwrite(buf, 1, len, f);
+				if (fwrite(buf, 1, len, f) < len)
+					throw(IO, "sabaoth.retreatScenario", "error while writing");
 				fflush(f);
 				fclose(f);
 				fclose(tmp); /* this should remove it automagically */

@@ -122,8 +122,9 @@ def am_extra_dist_dir(fd, var, values, am):
     fd.write("dist-hook:\n")
     for i in values:
         fd.write("\tmkdir -p $(distdir)/%s\n" % i)
-        fd.write("\tcp -R $(srcdir)/%s/* $(distdir)/%s\n" % (i, i))
+        fd.write("\tcp -pR $(srcdir)/%s/* $(distdir)/%s\n" % (i, i))
         fd.write("\trm -rf `find $(distdir)/%s -name CVS -print`\n" % i)
+        fd.write("\tfind $(distdir)/%s -perm -0111 -type f ! -name \\*.bat ! -name \\*.sh ! -exec grep -q '^#!' {} \\; -print | xargs --no-run-if-empty chmod -x\n" % i)
 
 def am_extra_headers(fd, var, values, am):
     for i in values:
@@ -1124,8 +1125,9 @@ endif
 if HAVE_EXTRA_MK
   include $(top_builddir)/extra.mk
 endif
-include $(top_builddir)/rpm.mk
 ''')
+    if cwd == topdir:
+        fd.write('include $(top_builddir)/rpm.mk\n')
     fd.close()
 
     return am['InstallList'], am['DocList'], am['OutList']

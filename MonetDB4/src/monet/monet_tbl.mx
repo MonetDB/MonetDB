@@ -1404,20 +1404,23 @@ Most dictionary tables are created once and loaded upon system
 restart. By keeping the reference count at one we are assured that
 they remain fixed in memory for the duration of the session.
 @c
-static void tbl_rename(Client client, BAT* b, str nme) 
+static void
+tbl_rename(Client client, BAT* b, str nme) 
 {
 	/* the batname is prefixed with the client user name to make in easy to spot
 	 * in the BBP dir list. Note that this rename may fail if such a bat already
 	 * exists (very rare and contrived though)
 	 */
 	char buf[256];
+
         strncpy(buf, client->user ? client->user : "monet", 128);
         if (client->stk) {
-            int len = strlen(buf);
-            snprintf(buf+len, 256-len, "_%d", client->stk);     
+		size_t len = strlen(buf);
+
+		snprintf(buf + len, sizeof(buf) - len, "_%d", client->stk);
         }
-        strncat(buf, "_",  256); 
-        strncat(buf, nme,  256); 
+        strncat(buf, "_",  sizeof(buf) - 1);
+        strncat(buf, nme,  sizeof(buf) - 1);
 	BBPrename(b->batCacheid, buf);
 }
 

@@ -93,6 +93,8 @@ extern int char_number;
 		YY_FATAL_ERROR( "input in flex scanner failed" );
 #endif
 
+#define ECHO	/* empty -- don't echo anything (we shouldn't get there anyway */
+
 %}
 
 LETTER [a-zA-Z]

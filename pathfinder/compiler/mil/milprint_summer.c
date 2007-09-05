@@ -11333,8 +11333,8 @@ get_var_usage (opt_t *f, PFcnode_t *c,  PFarray_t *way, PFarray_t *counter)
             LR(args)->sem.var->used = 0;
 
             if (first == 0) first = vid;
-            strncat(sig, ",", 1024);
-            strncat(sig, buf, 1024);
+            strncat(sig, ",", sizeof(sig) - 1);
+            strncat(sig, buf, sizeof(sig) - 1);
 
             args = R(args);
         }

@@ -1,3 +1,7 @@
+%define name MonetDB4-XQuery
+%define version @VERSION@
+%define release 1%{?dist}%{?oid32:.oid32}%{!?oid32:.oid%{bits}}
+
 # groups of related archs
 %define all_x86 i386 i586 i686
 
@@ -7,21 +11,17 @@
 %define bits 64
 %endif
 
-%define name MonetDB4-XQuery
-%define version @VERSION@
-%define release 1%{?dist}%{?oid32:.oid32}%{!?oid32:.oid%{bits}}
-
-%define prefix /usr
-
 Name: %{name}
 Version: %{version}
 Release: %{release}
 Summary: MonetDB XQuery - Monet Database Management System
-Group: System
-Source: pathfinder-%{version}.tar.gz
-BuildRoot: /var/tmp/%{name}-root
-Packager: Niels Nes <Niels.Nes@cwi.nl>
+
+Group: Applications/Databases
 License:   MPL - http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+URL: http://monetdb.cwi.nl/
+Source: http://downloads.sourceforge.net/monetdb/pathfinder-%{version}.tar.gz
+BuildRoot: %(mktemp -ud %{_tmppath}/%{name}-%{version}-%{release}-XXXXXX)
+
 Requires: MonetDB4-server >= 4.18
 #                            ^^^^
 # Maintained via vertoo. Please don't modify by hand!
@@ -46,9 +46,11 @@ main-memory perspective with use of a fully decomposed storage model,
 automatic index management, extensibility of data types and search
 accellerators, SQL- and XQuery- frontends.
 
+This package contains the XQuery frontend.
+
 %package devel
-Summary: MonetDB XQuery development package 
-Group: System 
+Summary: MonetDB XQuery development package
+Group: Applications/Databases
 Requires: %{name} = %{version}-%{release}
 Requires: MonetDB-devel >= 1.18
 #                          ^^^^
@@ -61,7 +63,13 @@ Requires: MonetDB4-server-devel >= 4.18
 Requires: libxml2-devel
 
 %description devel
-Add the MonetDB devel description here
+MonetDB is a database management system that is developed from a
+main-memory perspective with use of a fully decomposed storage model,
+automatic index management, extensibility of data types and search
+accellerators, SQL- and XQuery- frontends.
+
+This package contains the files needed to develop with
+MonetDB4-XQuery.
 
 %prep
 rm -rf $RPM_BUILD_ROOT
@@ -70,53 +78,54 @@ rm -rf $RPM_BUILD_ROOT
 
 %build
 
-./configure \
+%configure \
 	--enable-assert=no \
 	--enable-optimize \
 	--enable-bits=%{bits} \
 	%{?oid32:--enable-oid32} \
 	%{?comp_cc:CC="%{comp_cc}"} \
-	--prefix=%{prefix} \
-	--libdir=%{_libdir} \
-	--with-monet=%{prefix}
+	--with-monet=%{_prefix}
 
 make
 
 %install
 rm -rf $RPM_BUILD_ROOT
 
-make install \
-	DESTDIR=$RPM_BUILD_ROOT 
-
-#find $RPM_BUILD_ROOT -name .incs.in | xargs rm
-find $RPM_BUILD_ROOT -name \*.la | xargs rm -f
+make install DESTDIR=$RPM_BUILD_ROOT
 
 # cleanup stuff we don't want to install
+find $RPM_BUILD_ROOT -name \*.la | xargs rm -f
 rm -rf $RPM_BUILD_ROOT%{_libdir}/MonetDB5
 
-# Fixes monet config script
-#perl -p -i -e "s|$RPM_BUILD_ROOT||" $RPM_BUILD_ROOT%{prefix}/bin/monet_config
+%post -p /sbin/ldconfig
+
+%postun -p /sbin/ldconfig
 
 %clean
 rm -rf $RPM_BUILD_ROOT
 
 %files
-%defattr(-,root,root) 
-%{prefix}/bin/pf
+%defattr(-,root,root)
+%{_bindir}/pf
 %{_libdir}/MonetDB4/lib/lib_*
 %{_libdir}/MonetDB4/*.mil
-%{prefix}/bin/Mbeddedxq
+%{_bindir}/Mbeddedxq
 %{_libdir}/libembeddedxq.so.*
+%dir %{_datadir}/doc/MonetDB-XQuery-%{version}
 %{_datadir}/doc/MonetDB-XQuery-%{version}/*
 #%{_datadir}/doc/%{name}-%{version}/*
+%dir %{_datadir}/MonetDB/xrpc
+%dir %{_datadir}/MonetDB/xrpc/admin
+%dir %{_datadir}/MonetDB/xrpc/export
 %{_datadir}/MonetDB/xrpc/admin/*
 %{_datadir}/MonetDB/xrpc/export/*
 
 %files devel
-%defattr(-,root,root) 
-%{prefix}/include/pathfinder/*.h
+%defattr(-,root,root)
+%dir %{_includedir}/pathfinder
+%{_includedir}/pathfinder/*.h
 %{_libdir}/libembeddedxq.so
-%{prefix}/bin/monetdb-xquery-config
+%{_bindir}/monetdb-xquery-config
 
 %changelog
 * Mon Jun 25 2007 Sjoerd Mullender <sjoerd@acm.org> - @VERSION@-1

@@ -922,7 +922,7 @@ u_diff2html(int mindiff, int LWC, char *u_diff_fn, char *html_fn, char *caption,
 
 	if (!u_diff2lwc_diff(mindiff, LWC, u_diff_fn, lwc_diff_fn))
 		/* { UNLINK(lwc_diff_fn); ERRHNDL(0,"u_diff2lwc_diff returns 0 in u_diff2html","",1); } */
-		system(strconcat("touch ", lwc_diff_fn));
+		SYSTEM(strconcat("touch ", lwc_diff_fn));
 
 	rtrn = lwc_diff2html(u_diff_fn, (char *) 0, lwc_diff_fn, html_fn, caption, revision);
 
@@ -945,7 +945,7 @@ oldnew2html(int mindiff, int LWC, int context, char *ignore, char *old_fn, char 
 
 	if (!oldnew2lwc_diff(mindiff, LWC, context, ignore, old_fn, new_fn, lwc_diff_fn))
 		/* { UNLINK(lwc_diff_fn); ERRHNDL(0,"oldnew2lwc_diff returns 0 in oldnew2html","",1); } */
-		 system(strconcat("touch ", lwc_diff_fn));
+		 SYSTEM(strconcat("touch ", lwc_diff_fn));
 
 	rtrn = lwc_diff2html(old_fn, new_fn, lwc_diff_fn, html_fn, caption, revision);
 
