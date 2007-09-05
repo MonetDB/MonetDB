@@ -183,24 +183,6 @@ typedef struct sql_subtype {
 	struct sql_table *comp_type;	
 } sql_subtype;
 
-typedef struct sql_aggr {
-	sql_base base;
-
-	char *imp;
-	char *mod;
-	sql_subtype tpe;
-	sql_subtype res;
-	int nr;
-	sql_schema *s;
-} sql_aggr;
-
-typedef struct sql_subaggr {
-	sql_ref ref;
-
-	sql_aggr *aggr;
-	sql_subtype res;
-} sql_subaggr;
-
 /* sql_func need type transform rules types are equal if underlying
  * types are equal + scale is equal if types do not mach we try type
  * conversions which means for simple 1 arg functions
@@ -247,26 +229,12 @@ typedef struct sql_subfunc {
 	sql_subtype res;
 } sql_subfunc;
 
-typedef struct pbat {
-	/* TODO merge name and uname into one string 
-	 * name  = pb->nme+2 (skip U_) 
-	 * uname = pb->nme
-	 */
-	char *nme;
-	oid  base; 	/* hseqbase, columns aren't dense ranges */
-	int  clustered; /* stable bats could be clustered */
-	int  bid;  
+typedef struct sql_subaggr {
+	sql_ref ref;
 
-	int  ubid; /* updates per pbat ? */
-} pbat;
-
-typedef struct sql_bat {
-	char *name;		/* name of the main bat */
-	char *uname;		/* name of updates bat */
-	int bid;
-	int ibid;		/* bat with inserts */
-	int ubid;		/* bat with updates */
-} sql_bat;
+	sql_func *aggr;
+	sql_subtype res;
+} sql_subaggr;
 
 typedef enum key_type {
 	pkey,
@@ -291,7 +259,7 @@ typedef struct sql_idx {
 	struct list *columns;	/* list of sql_kc */
 	struct sql_table *t;
 	struct sql_key *key;	/* key */
-	sql_bat bat;
+	void *data;
 } sql_idx;
 
 /* fkey consists of two of these */
@@ -388,8 +356,7 @@ typedef struct sql_column {
 	char unique; 		/* NOT UNIQUE, UNIQUE, SUB_UNIQUE */
 
 	struct sql_table *t;
-	sql_bat bat;
-
+	void *data;
 } sql_column;
 
 typedef enum table_types {
@@ -423,9 +390,7 @@ typedef struct sql_table {
 	changeset triggers;
 
 	int cleared;		/* cleared in the current transaction */
-	char *dname;		/* name of the persistent deletes bat */
-	int dbid;		/* bat with deletes */
-
+	void *data;
 	struct sql_schema *s;
 } sql_table;
 
