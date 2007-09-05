@@ -28,3 +28,16 @@ select xmlelement(name project,
 from Customers c, Projects p
 where c.CustId = p.CustId
 order by c.CustId;
+
+
+select 
+  xmlelement(name "Customer",
+    xmlattributes(c.CustId as "id"), 
+    xmlforest(c.Name as "name", c.City as city),
+    xmlelement(name projects, 
+      (select xmlagg(xmlelement(name project, 
+         xmlattributes(p.ProjId as "id"),
+         xmlforest(p.Name as name)))
+        from Projects p
+       where p.CustId = c.CustId) )) as "customer_projects"
+from Customers c;

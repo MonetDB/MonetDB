@@ -37,76 +37,76 @@ Over..
 | mal                                                                          |
 +==============================================================================+
 | function user.s1_1():void;                                                   |
-|     _1:bat[:oid,:int]{notnil=true,rows=0:lng,bid=12861}  := sql.bind("tmp","_tables","id",0); |
+|     _1:bat[:oid,:int]{notnil=true,rows=0:lng,bid=15424}  := sql.bind("tmp","_tables","id",0); |
 |     constraints.emptySet(_1);                                                |
-|     _10:bat[:oid,:sht]{notnil=true,rows=0:lng,bid=12865}  := sql.bind("tmp","_tables","type",0); |
-|     _13:bat[:oid,:int]{notnil=true,rows=127:lng,bid=848}  := sql.bind("sys","_tables","id",0); |
-|     _15:bat[:oid,:int]{notnil=true,rows=0:lng,bid=12711}  := sql.bind("sys","_tables","id",1); |
+|     _10:bat[:oid,:sht]{notnil=true,rows=0:lng,bid=15428}  := sql.bind("tmp","_tables","type",0); |
+|     _13:bat[:oid,:int]{notnil=true,rows=139:lng,bid=758}  := sql.bind("sys","_tables","id",0); |
+|     _15:bat[:oid,:int]{notnil=true,rows=0:lng,bid=15302}  := sql.bind("sys","_tables","id",1); |
 |     constraints.emptySet(_15);                                               |
-|     _15:bat[:oid,:int]{notnil=true,rows=0:lng,bid=12711}  := nil;            |
-|     _16:bat[:oid,:int]{notnil=true,rows=0:lng,bid=12712}  := sql.bind("sys","_tables","id",2); |
+|     _15:bat[:oid,:int]{notnil=true,rows=0:lng,bid=15302}  := nil;            |
+|     _16:bat[:oid,:int]{notnil=true,rows=0:lng,bid=15303}  := sql.bind("sys","_tables","id",2); |
 |     constraints.emptySet(_16);                                               |
-|     _16:bat[:oid,:int]{notnil=true,rows=0:lng,bid=12712}  := nil;            |
-|     _18:bat[:oid,:oid]{rows=94:lng,bid=12710}  := sql.bind_dbat("sys","_tables",1); |
-|     _23:bat[:oid,:sht]{notnil=true,rows=127:lng,bid=854}  := sql.bind("sys","_tables","type",0); |
-|     _41:bat[:oid,:str]{notnil=true,rows=0:lng,bid=12862}  := sql.bind("tmp","_tables","name",0); |
-|     _44:bat[:oid,:str]{notnil=true,rows=127:lng,bid=850}  := sql.bind("sys","_tables","name",0); |
+|     _16:bat[:oid,:int]{notnil=true,rows=0:lng,bid=15303}  := nil;            |
+|     _18:bat[:oid,:oid]{rows=107:lng,bid=15301}  := sql.bind_dbat("sys","_tables",1); |
+|     _23:bat[:oid,:sht]{notnil=true,rows=139:lng,bid=764}  := sql.bind("sys","_tables","type",0); |
+|     _41:bat[:oid,:str]{notnil=true,rows=0:lng,bid=15425}  := sql.bind("tmp","_tables","name",0); |
+|     _44:bat[:oid,:str]{notnil=true,rows=139:lng,bid=760}  := sql.bind("sys","_tables","name",0); |
 |     _8{rows=0:lng} := algebra.markT(_1,0@0);                                 |
 |     _9{rows=0:lng} := bat.reverse(_8);                                       |
 |     _8{rows=0:lng} := nil;                                                   |
 |     _12{rows=0:lng} := algebra.join(_9,_10);                                 |
-|     _10:bat[:oid,:sht]{notnil=true,rows=0:lng,bid=12865}  := nil;            |
-|     _19{rows=94:lng} := bat.reverse(_18);                                    |
-|     _18:bat[:oid,:oid]{rows=94:lng,bid=12710}  := nil;                       |
-|     _20{rows=34:lng} := algebra.kdifference(_13,_19);                        |
-|     _19{rows=94:lng} := nil;                                                 |
-|     _21{rows=34:lng} := algebra.markT(_20,0@0);                              |
-|     _20{rows=34:lng} := nil;                                                 |
-|     _22{rows=34:lng} := bat.reverse(_21);                                    |
-|     _21{rows=34:lng} := nil;                                                 |
-|     _24{rows=34:lng} := algebra.join(_22,_23);                               |
-|     _23:bat[:oid,:sht]{notnil=true,rows=127:lng,bid=854}  := nil;            |
-|     _25{rows=35:lng} := bat.setWriteMode(_24);                               |
-|     _24{rows=34:lng} := nil;                                                 |
+|     _10:bat[:oid,:sht]{notnil=true,rows=0:lng,bid=15428}  := nil;            |
+|     _19{rows=107:lng} := bat.reverse(_18);                                   |
+|     _18:bat[:oid,:oid]{rows=107:lng,bid=15301}  := nil;                      |
+|     _20{rows=33:lng} := algebra.kdifference(_13,_19);                        |
+|     _19{rows=107:lng} := nil;                                                |
+|     _21{rows=33:lng} := algebra.markT(_20,0@0);                              |
+|     _20{rows=33:lng} := nil;                                                 |
+|     _22{rows=33:lng} := bat.reverse(_21);                                    |
+|     _21{rows=33:lng} := nil;                                                 |
+|     _24{rows=33:lng} := algebra.join(_22,_23);                               |
+|     _23:bat[:oid,:sht]{notnil=true,rows=139:lng,bid=764}  := nil;            |
+|     _25{rows=34:lng} := bat.setWriteMode(_24);                               |
+|     _24{rows=33:lng} := nil;                                                 |
 |     bat.append(_25,_12,true);                                                |
 |     _12{rows=0:lng} := nil;                                                  |
-|     _29{rows=35:lng} := algebra.uselect(_25,nil:sht,2,false,false);          |
-|     _25{rows=35:lng} := nil;                                                 |
-|     _32{rows=35:lng} := algebra.markT(_29,0@0);                              |
-|     _29{rows=35:lng} := nil;                                                 |
-|     _33{rows=35:lng} := bat.reverse(_32);                                    |
-|     _32{rows=35:lng} := nil;                                                 |
+|     _29{rows=34:lng} := algebra.uselect(_25,nil:sht,2,false,false);          |
+|     _25{rows=34:lng} := nil;                                                 |
+|     _32{rows=34:lng} := algebra.markT(_29,0@0);                              |
+|     _29{rows=34:lng} := nil;                                                 |
+|     _33{rows=34:lng} := bat.reverse(_32);                                    |
+|     _32{rows=34:lng} := nil;                                                 |
 |     _34{rows=0:lng} := algebra.join(_9,_1);                                  |
-|     _1:bat[:oid,:int]{notnil=true,rows=0:lng,bid=12861}  := nil;             |
-|     _35{rows=34:lng} := algebra.join(_22,_13);                               |
-|     _13:bat[:oid,:int]{notnil=true,rows=127:lng,bid=848}  := nil;            |
-|     _36{rows=35:lng} := bat.setWriteMode(_35);                               |
-|     _35{rows=34:lng} := nil;                                                 |
+|     _1:bat[:oid,:int]{notnil=true,rows=0:lng,bid=15424}  := nil;             |
+|     _35{rows=33:lng} := algebra.join(_22,_13);                               |
+|     _13:bat[:oid,:int]{notnil=true,rows=139:lng,bid=758}  := nil;            |
+|     _36{rows=34:lng} := bat.setWriteMode(_35);                               |
+|     _35{rows=33:lng} := nil;                                                 |
 |     bat.append(_36,_34,true);                                                |
 |     _34{rows=0:lng} := nil;                                                  |
-|     _38{rows=35:lng} := algebra.join(_33,_36);                               |
-|     _36{rows=35:lng} := nil;                                                 |
-|     _39{rows=35:lng} := algebra.markT(_38,0@0);                              |
-|     _38{rows=35:lng} := nil;                                                 |
-|     _40{rows=35:lng} := bat.reverse(_39);                                    |
-|     _39{rows=35:lng} := nil;                                                 |
+|     _38{rows=34:lng} := algebra.join(_33,_36);                               |
+|     _36{rows=34:lng} := nil;                                                 |
+|     _39{rows=34:lng} := algebra.markT(_38,0@0);                              |
+|     _38{rows=34:lng} := nil;                                                 |
+|     _40{rows=34:lng} := bat.reverse(_39);                                    |
+|     _39{rows=34:lng} := nil;                                                 |
 |     _43{rows=0:lng} := algebra.join(_9,_41);                                 |
 |     _9{rows=0:lng} := nil;                                                   |
-|     _41:bat[:oid,:str]{notnil=true,rows=0:lng,bid=12862}  := nil;            |
-|     _45{rows=34:lng} := algebra.join(_22,_44);                               |
-|     _22{rows=34:lng} := nil;                                                 |
-|     _44:bat[:oid,:str]{notnil=true,rows=127:lng,bid=850}  := nil;            |
-|     _46{rows=35:lng} := bat.setWriteMode(_45);                               |
-|     _45{rows=34:lng} := nil;                                                 |
+|     _41:bat[:oid,:str]{notnil=true,rows=0:lng,bid=15425}  := nil;            |
+|     _45{rows=33:lng} := algebra.join(_22,_44);                               |
+|     _22{rows=33:lng} := nil;                                                 |
+|     _44:bat[:oid,:str]{notnil=true,rows=139:lng,bid=760}  := nil;            |
+|     _46{rows=34:lng} := bat.setWriteMode(_45);                               |
+|     _45{rows=33:lng} := nil;                                                 |
 |     bat.append(_46,_43,true);                                                |
 |     _43{rows=0:lng} := nil;                                                  |
-|     _48{rows=35:lng} := algebra.joinPath(_40,_33,_46);                       |
-|     _40{rows=35:lng} := nil;                                                 |
-|     _33{rows=35:lng} := nil;                                                 |
-|     _46{rows=35:lng} := nil;                                                 |
+|     _48{rows=34:lng} := algebra.joinPath(_40,_33,_46);                       |
+|     _40{rows=34:lng} := nil;                                                 |
+|     _33{rows=34:lng} := nil;                                                 |
+|     _46{rows=34:lng} := nil;                                                 |
 |     _49 := sql.resultSet(1,1,_48);                                           |
 |     sql.rsColumn(_49,"sys.tables","name","varchar",1024,0,_48);              |
-|     _48{rows=35:lng} := nil;                                                 |
+|     _48{rows=34:lng} := nil;                                                 |
 |     sql.exportResult(_49,"");                                                |
 | end s1_1;                                                                    |
 +------------------------------------------------------------------------------+

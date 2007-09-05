@@ -27,7 +27,7 @@ Over..
 % 4,	3,	4 # length
 [ "int",	"int",	0	]
 [ "int",	"lng",	2	]
-[ "int",	"str",	307	]
+[ "int",	"str",	221	]
 [ "oid",	"bit",	0	]
 [ "oid",	"bit",	0	]
 [ "oid",	"bit",	0	]
@@ -251,7 +251,7 @@ Over..
 % single_value,	count_ # name
 % char,	int # type
 % 9,	3 # length
-[ "transient",	574	]
+[ "transient",	488	]
 % .,	. # table_name
 % single_value,	count_ # name
 % char,	int # type
