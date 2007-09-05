@@ -183,6 +183,10 @@ mal_export void updateScenario(str nme, MALfcn fcn);
 #include "mal_authorize.h"
 #include "mal_exception.h"
 
+#ifdef HAVE_SYS_TIMES_H
+# include <sys/times.h>
+#endif
+
 struct SCENARIO scenarioRec[MAXSCEN] = {
 	{"mal", "mal",
 	 0, 0,			/* hardwired MALinit*/
@@ -576,15 +580,31 @@ str
 runScenarioBody(Client c)
 {
 	str msg= MAL_SUCCEED;
+	lng start;
+	struct tms t0,t1;
 
 	while (c->mode > FINISHING) {
 		msg = MAL_SUCCEED;
 		@:runPhase(MAL_SCENARIO_READER)@
 		c->lastcmd= time(0);
+		start= GDKusec();
+#ifdef HAVE_TIMES
+		times(&t0);
+#endif
 		@:runPhase(MAL_SCENARIO_PARSER)@
 		@:runPhase(MAL_SCENARIO_OPTIMIZE)@
 		@:runPhase(MAL_SCENARIO_SCHEDULER)@
 		@:runPhase(MAL_SCENARIO_ENGINE)@
+		start= GDKusec()-start;
+		c->actions++;
+		c->totaltime += start;
+#ifdef HAVE_TIMES
+		times(&t1);
+		c->workload.tms_utime += t1.tms_utime-t0.tms_utime;
+		c->workload.tms_cutime += t1.tms_cutime-t0.tms_cutime;
+		c->workload.tms_stime += t1.tms_stime-t0.tms_stime;
+		c->workload.tms_cstime += t1.tms_cstime-t0.tms_cstime;
+#endif
 	}
 	return msg;
 }

@@ -66,6 +66,14 @@ command getLogins( ):bat[:int,:str]
 address CLTLogin
 comment "Pseudo bat of client login time.";
 
+command getActions( ):bat[:int,:int] 
+address CLTActions
+comment "Pseudo bat of client command counts.";
+
+command getTime( ):bat[:int,:lng] 
+address CLTTime
+comment "Pseudo bat of client total time usage(in usec).";
+
 command getUsers( ):bat[:int,:str] 
 address CLTusers
 comment "Pseudo bat of users logged in.";
@@ -78,6 +86,13 @@ the awake bit has been set in its descriptor";
 command wakeup(id:int):void
 address CLTwakeup
 comment "Wakeup a client process";
+
+command shutdown(forced:bit):void
+address CLTshutdown
+comment "Close all client connections. If forced=false the
+clients are moved into FINISHING mode, which means that
+the process stops at the next cycle of the scenario.
+If forced=true all client processes are immediately killed";
 @-
 @{
 @include prelude.mx
@@ -110,6 +125,8 @@ clients_export str CLTsetHistory(int *ret, str *fname);
 clients_export str CLTexit(int *ret);
 clients_export str CLTquit(int *ret);
 clients_export str CLTLogin(int *ret);
+clients_export str CLTActions(int *ret);
+clients_export str CLTTime(int *ret);
 clients_export str CLTInfo(int *ret);
 
 clients_export str CLTsuspend(int *ret, int *id);
@@ -123,6 +140,7 @@ clients_export str CLTcheckPermission(int *ret, str *usr, str *pw, str *sc);
 clients_export str CLTaddScenario(int *ret, str *usr, str *sc);
 clients_export str CLTremoveScenario(int *ret, str *usr, str *sc);
 clients_export str CLTgetUsers(bat *ret, bat *scens);
+clients_export str CLTshutdown(int *ret, bit *forced);
 
 #endif /* _CLIENTS_H */
 @c
@@ -268,6 +286,42 @@ CLTLogin(int *ret)
 	}
 	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
 	@:Pseudo(client,login,)@
+	return MAL_SUCCEED;
+}
+str
+CLTActions(int *ret)
+{
+	BAT *b = BATnew(TYPE_int, TYPE_int, 12);
+	int i;
+
+	if (b == 0)
+		throw(MAL, "clients.getActions", "failed to create BAT");
+	for (i = 0; i < MAL_MAXCLIENTS; i++) {
+		Client c = mal_clients+i;
+		if (c->mode >= CLAIMED && c->user != oid_nil) {
+			BUNins(b, &i, &c->actions, FALSE);
+		}
+	}
+	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
+	@:Pseudo(client,actions,)@
+	return MAL_SUCCEED;
+}
+str
+CLTTime(int *ret)
+{
+	BAT *b = BATnew(TYPE_int, TYPE_lng, 12);
+	int i;
+
+	if (b == 0)
+		throw(MAL, "clients.getTime", "failed to create BAT");
+	for (i = 0; i < MAL_MAXCLIENTS; i++) {
+		Client c = mal_clients+i;
+		if (c->mode >= CLAIMED && c->user != oid_nil) {
+			BUNins(b, &i, &c->totaltime, FALSE);
+		}
+	}
+	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
+	@:Pseudo(client,usec,)@
 	return MAL_SUCCEED;
 }
 
@@ -467,5 +521,11 @@ str CLTgetUsers(bat *ret, bat *scens) {
 
 	rethrow("getUsers", tmp, AUTHgetUsers(ret, scens));
 	return(MAL_SUCCEED);
+}
+
+str CLTshutdown(int *ret, bit *forced) {
+	(void) ret;
+	(void) forced;
+	throw(MAL,"clients.shutdown","not yet implemented");
 }
 @}

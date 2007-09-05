@@ -89,6 +89,10 @@ are located in mal\_startup.
 # include <sys/resource.h>
 #endif
 
+#ifdef HAVE_SYS_TIMES_H
+# include <sys/times.h>
+#endif
+
 @-
 The prompt structure is designed to simplify recognition
 of the language framework for interaction. For direct console
@@ -226,6 +230,18 @@ to keep track of critical elements.
 	Symbol      curprg;     /* focus of parser */
 	Symbol      backup;     /* save parsing context */
 	MalStkPtr   glb;        /* global variable stack */
+@-
+Some statistics on client behavior becomes relevant
+for server maintenance. The scenario loop is used as
+a frame of reference. We measure the elapsed time after
+a request has been received and we have to wait for
+the next one. 
+@h
+	int			actions;
+	lng			totaltime;	/* sum of elapsed processing times */
+#ifdef HAVE_TIMES
+	struct tms	workload;
+#endif
 } *Client, ClientRec;
 
 mal_export ClientRec mal_clients[MAL_MAXCLIENTS+1];
@@ -446,6 +462,9 @@ collect the buffer when in use.
 	prompt = !fin? GDKgetenv("monet_prompt"): PROMPT1;
 	c->prompt= GDKstrdup(prompt);
 	c->promptlength= strlen(prompt);
+
+	c->actions =0;
+	c->totaltime= 0;
 	return c;
 }
 @-
