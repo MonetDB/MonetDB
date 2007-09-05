@@ -22,8 +22,5 @@ lib_batstore = {
 	NOINST
 	DIR = libdir
 	SOURCES = \
-		bat_dependency.mx bat_connections.mx bat_store.mx bat_table.mx bat_bm.mx \
-		bat_sequence.mx \
-		sql_catalog.mx \
-		res_table.mx
+		bat_table.mx bat_storage.mx bat_logger.mx res_table.mx
 }

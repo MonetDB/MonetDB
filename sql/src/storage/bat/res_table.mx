@@ -22,8 +22,8 @@
 
 #include "sql_catalog.h"
 
-extern res_table *res_table_create(sql_trans *tr, int res_id, int nr_cols, int querytype, res_table *next);
-extern res_col *res_col_create(sql_trans *tr, res_table *t, char *tn, char *name, char *typename, int digits, int scale);
+extern res_table *res_table_create(sql_trans *tr, int res_id, int nr_cols, int querytype, res_table *next, void *order);
+extern res_col *res_col_create(sql_trans *tr, res_table *t, char *tn, char *name, char *typename, int digits, int scale, int mtype, void *v);
 
 extern void res_table_destroy(res_table *t);
 
@@ -37,11 +37,24 @@ extern res_table *res_tables_find(res_table *results, int res_id);
 #include "sql_config.h"
 #include "res_table.h"
 #include "sql_types.h"
-#include "bat_bm.h"
+
+static void
+bat_incref(bat bid)
+{
+	BBPincref(bid, TRUE);
+}
+
+static void
+bat_decref(bat bid)
+{
+	BBPdecref(bid, TRUE);
+}
+
 
 res_table *
-res_table_create(sql_trans *tr, int res_id, int nr_cols, int type, res_table *next)
+res_table_create(sql_trans *tr, int res_id, int nr_cols, int type, res_table *next, void *O)
 {
+	BAT *order = (BAT*)O;
 	res_table *t = NEW(res_table);
 
 	(void) tr;
@@ -53,12 +66,16 @@ res_table_create(sql_trans *tr, int res_id, int nr_cols, int type, res_table *ne
 	t->cols = NEW_ARRAY(res_col, nr_cols);
 
 	t->order = 0;
+	if (order) {
+		t->order = order->batCacheid;
+		bat_incref(t->order);
+	} 
 	t->next = next;
 	return t;
 }
 
 res_col *
-res_col_create(sql_trans *tr, res_table *t, char *tn, char *name, char *typename, int digits, int scale)
+res_col_create(sql_trans *tr, res_table *t, char *tn, char *name, char *typename, int digits, int scale, int mtype, void *val)
 {
 	res_col *c = t->cols + t->cur_col;
 	
@@ -68,7 +85,15 @@ res_col_create(sql_trans *tr, res_table *t, char *tn, char *name, char *typename
 	c->name = _strdup(name);
 	c->b = 0;
 	c->p = NULL;
-	c->mtype = TYPE_bat;
+	c->mtype = mtype;
+	if (mtype == TYPE_bat) {
+		BAT *b = (BAT*)val;
+
+		c->b = b->batCacheid;
+		bat_incref(c->b);
+	} else {
+		c->p = ATOMdup(mtype, val);
+	}
 	t->cur_col++;
 	return c;
 }
@@ -77,7 +102,7 @@ void
 res_col_destroy(res_col *c)
 {
 	if (c->b) {
-		bat_decref(c->b, TRUE);
+		bat_decref(c->b);
 	} else {
 		_DELETE(c->p);
 	}
@@ -97,7 +122,7 @@ res_table_destroy(res_table *t)
 		res_col_destroy(c);
 	}
 	if (t->order)
-		bat_decref(t->order, TRUE);
+		bat_decref(t->order);
 	_DELETE(t->cols);
 	_DELETE(t);
 }
