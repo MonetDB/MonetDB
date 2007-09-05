@@ -24,7 +24,7 @@
 
 #include "sql_symbol.h"
 #include <sql_statement.h>
-#include <bat/bat_sequence.h>
+#include <store_sequence.h>
 
 extern stmt *sequences(mvc *sql, symbol *s);
 extern char* sql_next_seq_name(mvc *sql);

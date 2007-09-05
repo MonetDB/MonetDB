@@ -109,7 +109,7 @@ typedef struct mvc {
 	sql_column *last; 	/* last accessed column */
 } mvc;
 
-extern int mvc_init(int debug, backend_stack stk);
+extern int mvc_init(int debug, store_type store, backend_stack stk);
 extern void mvc_exit(void);
 extern void mvc_logmanager(void);
 
@@ -228,7 +228,7 @@ extern void stack_set_number(mvc *sql, char *name, lng v);
 static int mvc_debug = 0;
 
 int
-mvc_init(int debug, backend_stack stk)
+mvc_init(int debug, store_type store, backend_stack stk)
 {
 	int first = 0;
 	char *logdir = GDKgetenv("sql_logdir");
@@ -242,7 +242,7 @@ mvc_init(int debug, backend_stack stk)
 	keyword_init();
 	scanner_init_keywords();
 
-	if ((first = store_init(debug, logdir, dbname, stk)) < 0) {
+	if ((first = store_init(debug, store, logdir, dbname, stk)) < 0) {
 		fprintf(stderr, "!mvc_init: unable to create system tables\n");
 		return -1;
 	}
