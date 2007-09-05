@@ -256,7 +256,7 @@ table(1, order, htpe, ttpe, cnt);
 [ 33@0,	  "void", "int",  188	  ]
 [ 33@0,	  "void", "int",  188	  ]
 [ 34@0,	  "void", "str",  188	  ]
-[ 35@0,	  "int",  "str",  338	  ]
+[ 35@0,	  "int",  "str",  252	  ]
 [ 36@0,	  "void", "bit",  953	  ]
 [ 36@0,	  "void", "bit",  953	  ]
 [ 36@0,	  "void", "bit",  953	  ]
