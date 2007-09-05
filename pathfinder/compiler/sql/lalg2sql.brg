@@ -556,7 +556,7 @@ col_env_lookup_ (const PFarray_t * env, PFalg_att_t att,
         sql_column_env_t entry =
             *(sql_column_env_t *) PFarray_at ((PFarray_t *) env, i);
 
-        fprintf (stderr, "  att: %s, type: 0x%X, sql-op kind: %i\n",
+        fprintf (stderr, "  att: %s, type: 0x%X, sql-op kind: %u\n",
                  PFatt_str (entry.att), entry.type,
                  entry.expression->kind);
     }
@@ -1079,7 +1079,7 @@ step_guide (PFla_op_t *p, PFsql_aident_t step,
     PFsql_t **list = PFmalloc (count * sizeof (PFsql_t *));
 
     for (unsigned int i = 0; i < count; i++)
-        list[i] = lit_int(guides[i]->guide);
+        list[i] = lit_int (guides[i]->guide);
 
     where_list_add (WHERELIST(p),
                     in (GUIDE(step),
@@ -1379,7 +1379,7 @@ collect_frag_worker (PFla_op_t * p, PFarray_t *frags)
 
 #define frag_select(f) select (                                             \
                            select_list (PRE_, SIZE_, LEVEL_, KIND_, VALUE_, \
-                                        NAME_ , NAME_),         \
+                                        NAME_, NAME_),                      \
                            f, NULL, NULL)
 
 static PFsql_t *
@@ -1416,8 +1416,8 @@ reduce (PFla_op_t * p, int goalnt)
     bool       bind     = false;
     bool       distinct = false;
 
-    /* guard against too dep recursion */
-    PFrecursion_fence();
+    /* guard against too deep recursion */
+    PFrecursion_fence ();
 
     if (SEEN(p)) {
         substitute_aliases (p);
@@ -1522,7 +1522,7 @@ reduce (PFla_op_t * p, int goalnt)
             }
 
             /* create a special result relation */
-            PFsql_t *result = table_def(PF_SQL_TABLE_RESULT, clmnlist);
+            PFsql_t *result = table_def (PF_SQL_TABLE_RESULT, clmnlist);
 
             /* construct schema information for serialization */
             ser_info =
@@ -3058,9 +3058,7 @@ reduce (PFla_op_t * p, int goalnt)
             /* add the document relation */
             ctx = new_alias ();
             from_list_add (FROMLIST(p), NULL, ctx);
-            where_list_add (WHERELIST(p),
-                            eq (col_env_lookup (COLMAP(p), item, item_ty),
-                                PRE(ctx)));
+            where_list_add (WHERELIST(p), eq (item_expr, PRE(ctx)));
             
             for (unsigned int i = 0; i < PFarray_last (frags); i++) {
                 frag = *(PFsql_t **) PFarray_at (frags, i);
