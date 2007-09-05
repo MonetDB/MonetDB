@@ -22,6 +22,7 @@
 
 
 prefix="@prefix@"
+datarootdir="@datarootdir@"
 CONFDIR="-I @datadir@/@PACKAGE@"
 
 AUTOGEN=`type -p autogen.py`
