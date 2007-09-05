@@ -866,20 +866,24 @@ error:
 	return(newErr("accept connection: %s", msg));
 }
 
+int _merovingian_comfd = -1;
 static void
 controlRunner(void *d)
 {
 	char buf[256];
 	char *p;
 	sabdb *stats;
-	int fd = *((int *)d);
 	int len;
+
+	/* we need to do this call in this thread, since it blocks as long
+	 * as there is no writer */
+	_merovingian_comfd = open((char *)d, O_RDONLY);
 
 	/* Try to handle control signals.  We can get race conditions due to
 	 * clients coming in at the same time.  We might need to fix this
 	 * situation sometime. */
 	while (_keepListening == 1) {
-		if ((len = read(fd, buf, 255)) == 0) {
+		if ((len = read(_merovingian_comfd, buf, 255)) == 0) {
 			/* ignore EOF, but don't spin-lock */
 			MT_sleep_ms(1000);
 			continue;
@@ -927,8 +931,8 @@ controlRunner(void *d)
 			}
 		}
 	}
-	close(fd);
-	fprintf(stderr, "control channel closed\n");
+	close(_merovingian_comfd);
+	merlog("control channel closed");
 }
 
 static str
@@ -1195,7 +1199,6 @@ main(int argc, char *argv[])
 	e = openConnection(&sock, MEROV_PORT);
 	if (e == NO_ERR) {
 		pthread_t ctid = 0;
-		int comfd = -1;
 		for (argp = 1; argp < argc; argp++) {
 			e = forkMserver(argv[argp], &stats, 0);
 			if (e != NO_ERR) {
@@ -1207,8 +1210,7 @@ main(int argc, char *argv[])
 		}
 
 		/* handle control commands */
-		comfd = open(buf, O_RDONLY);
-		if (pthread_create(&ctid, NULL, (void *(*)(void *))controlRunner, (void *)&comfd) < 0) {
+		if (pthread_create(&ctid, NULL, (void *(*)(void *))controlRunner, (void *)buf) < 0) {
 			fprintf(stderr, "unable to create control command thread\n");
 			ctid = 0;
 		}
@@ -1217,7 +1219,8 @@ main(int argc, char *argv[])
 		e = acceptConnections(sock);
 
 		/* shut down the control runner too */
-		close(comfd);
+		if (_merovingian_comfd > -1)
+			close(_merovingian_comfd);
 		if (ctid != 0)
 			pthread_join(ctid, NULL);
 	}
