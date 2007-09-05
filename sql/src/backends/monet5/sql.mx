@@ -775,9 +775,9 @@ First introduce the routines to be called by the front-end.
 #include "sql.h"
 #include "sql_result.h"
 #include "sql_gencode.h"
-#include <bat/bat_store.h>
+#include <sql_storage.h>
+#include <store_sequence.h>
 #include <bat/res_table.h>
-#include <bat/bat_sequence.h>
 #include <sql_datetime.h>
 #include <rel_optimizer.h>
 #include <rel_bin.h>
@@ -1149,25 +1149,19 @@ mvc_bind(mvc *m, char *sname, char *tname, char *cname, int access)
 	sql_table *t = mvc_bind_table(m, s, tname);
 	sql_column *c = mvc_bind_column(m, t, cname);
 
-	if (access == UPD || access == RD_UPD)
-		b = bind_ubat(tr, c, access);
-	else
-		b = bind_bat(tr, c, access);
+	b = store_funcs.bind_col(tr, c, access);
 	return b;
 }
 
 int 
-mvc_append(BAT **b, mvc *m, str sname, str tname, str cname, int *access, BAT *i)
+mvc_append(BAT **b, mvc *m, str sname, str tname, str cname, int *access, BAT *ins)
 {
 	sql_trans *tr = m->session->tr;
 	sql_schema *s = mvc_bind_schema(m, sname);
 	sql_table *t = mvc_bind_table(m, s, tname);
 	sql_column *c = mvc_bind_column(m, t, cname);
 
-	if (*access == UPD || *access == RD_UPD)
-		*b = append_ubat(tr, c, *access, i);
-	else
-		*b = append_bat(tr, c, *access, i);
+	*b = store_funcs.append_col(tr, c, *access, ins);
 	return GDK_SUCCEED;
 }
 
@@ -1180,7 +1174,7 @@ mvc_bind_dbat(mvc *m, char *sname, char *tname, int access)
 	sql_schema *s = mvc_bind_schema(m, sname);
 	sql_table *t = mvc_bind_table(m, s, tname);
 
-	b = bind_dbat(tr, t, access);
+	b = store_funcs.bind_del(tr, t, access);
 	return b;
 }
 
@@ -1193,25 +1187,19 @@ mvc_bind_idxbat(mvc *m, char *sname, char *tname, char *iname, int access)
 	sql_idx *i = mvc_bind_idx(m, s, iname);
 
 	(void) tname;
-	if (access == UPD || access == RD_UPD)
-		b = bind_uidx(tr, i, access);
-	else
-		b = bind_idx(tr, i, access);
+	b = store_funcs.bind_idx(tr, i, access);
 	return b;
 }
 
 int
-mvc_append_idxbat(BAT **b, mvc *m, char *sname, char *tname, char *iname, int *access, BAT *ib)
+mvc_append_idxbat(BAT **b, mvc *m, char *sname, char *tname, char *iname, int *access, BAT *ins)
 {
 	sql_trans *tr = m->session->tr;
 	sql_schema *s = mvc_bind_schema(m, sname);
 	sql_idx *i = mvc_bind_idx(m, s, iname);
 
 	(void) tname;
-	if (*access == UPD || *access == RD_UPD)
-		*b = append_uidx(tr, i, *access, ib);
-	else
-		*b = append_idx(tr, i, *access, ib);
+	*b = store_funcs.append_idx(tr, i, *access, ins);
 	return GDK_SUCCEED;
 }
 
@@ -1368,7 +1356,7 @@ mvc_clear_table_wrap(lng *res, str *sname, str *tname)
 static int
 mvc_result_row(mvc *m, int nr_cols, int qtype)
 {
-	m->results = res_table_create(m->session->tr, m->result_id++, nr_cols, qtype, m->results);
+	m->results = res_table_create(m->session->tr, m->result_id++, nr_cols, qtype, m->results, NULL);
 	return m->results->id;
 }
 
@@ -2008,6 +1996,8 @@ SQLstr_cast(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 	if (tpe != TYPE_str) {
 		r = GDKmalloc(sz);
+		if (ATOMvarsized(tpe)) 
+			p = *(ptr*)p;
 		sz = convert2str(m, eclass, d, s, has_tz, p, tpe, &r, len);
 	} else {
 		str v = *(str*)p; 

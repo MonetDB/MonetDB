@@ -77,6 +77,7 @@ we update its context descriptor to denote an SQL scenario.
 #include "mal_parser.h"
 #include "mal_builder.h"
 #include <bat/res_table.h>
+#include <bat/bat_storage.h>
 #include "mal_namespace.h"
 #include "mal_sabaoth.h"
 #include "mal_debugger.h"
@@ -207,7 +208,6 @@ SQLinit(Client c)
 	char *debug_str = GDKgetenv("sql_debug");
 	char *gmt = "GMT";
 	tzone tz;
-	backend_functions *be_funcs;
 
 	(void) c;		/* not used */
 #ifdef _SQL_SCENARIO_DEBUG
@@ -215,17 +215,15 @@ SQLinit(Client c)
 #endif
 	if (SQLinitialized)
 		return MAL_SUCCEED;
-	/* SQLinitialized == FALSE; */
 
-	be_funcs = GDKzalloc(sizeof(backend_functions));
-	be_funcs->fstack		= &monet5_freestack;
-	be_funcs->fcode			= &monet5_freecode;
-	monet5_user_init(be_funcs);
-	backend_init(be_funcs); /* be_funcs probably leaks */
+	memset((char*)&be_funcs, 0, sizeof(backend_functions));
+	be_funcs.fstack		= &monet5_freestack;
+	be_funcs.fcode		= &monet5_freecode;
+	monet5_user_init(&be_funcs);
 
 	MTIMEtimezone(&tz, &gmt);
 	(void) tz;
-	if (mvc_init(FALSE, 0) < 0) 
+	if (mvc_init(FALSE, store_bat, 0) < 0) 
 		throw(SQL, "SQLinit", "Catalogue initialization failed");
 	if (debug_str) 
 		SQLdebug = strtol(debug_str,NULL,10);
