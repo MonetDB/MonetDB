@@ -326,6 +326,7 @@ dump_3(backend *sql, stmt *s, char *name, int *nr)
 static int
 backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 {
+	size_t buflen = SMALLBUFSIZ;
 	char *buf = NULL;
 	size_t len = 0;
 	node *n;
@@ -344,7 +345,7 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 
 		switch (s->type) {
 		case st_none:{
-			size_t buflen = SMALLBUFSIZ;
+			buflen = SMALLBUFSIZ;
 			buf = NEW_ARRAY(char, buflen + 1);
 
 			strcpy(buf, "var none := \"none\";\n");
@@ -356,7 +357,7 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 			break;
 		case st_var:{
 			if (s->op1.sval) {
-				size_t buflen = strlen(s->op1.sval) + 64;
+				buflen = strlen(s->op1.sval) + 64;
 				buf = NEW_ARRAY(char, buflen + 1);
 
 				if (VAR_GLOBAL(s->flag)) { /* globals */
@@ -375,7 +376,7 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 				}
 				assert(len <= buflen);
 			} else {
-				size_t buflen = 32;
+				buflen = 32;
 				buf = NEW_ARRAY(char, buflen + 1);
 
 				len = snprintf(buf, buflen, "var s%d := A%d;\n", -s->nr, s->flag);
@@ -386,7 +387,7 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 			break;
 		}
 		case st_temp:{
-			size_t buflen = strlen(s->op4.typeval.type->base.name) + SMALLBUFSIZ;
+			buflen = strlen(s->op4.typeval.type->base.name) + SMALLBUFSIZ;
 			buf = NEW_ARRAY(char, buflen + 1);
 
 			len = snprintf(buf, buflen, "var s%d := new(void,%s).seqbase(oid(0));\n", -s->nr, s->op4.typeval.type->base.name);
@@ -400,7 +401,7 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 			backend_dec_nr2(s->op1.stval);
 			break;
 		case st_bat: {
-			size_t buflen = 128 + strlen(s->op1.cval->t->s->base.name) + strlen(s->op1.cval->t->base.name) + strlen(s->op1.cval->base.name);
+			buflen = 128 + strlen(s->op1.cval->t->s->base.name) + strlen(s->op1.cval->t->base.name) + strlen(s->op1.cval->base.name);
 
 			buf = NEW_ARRAY(char, buflen + 1);
 
@@ -411,7 +412,7 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 			break;
 		}
 		case st_dbat:{
-			size_t buflen = 128 + strlen(s->op1.tval->s->base.name) + strlen(s->op1.tval->base.name);
+			buflen = 128 + strlen(s->op1.tval->s->base.name) + strlen(s->op1.tval->base.name);
 			buf = NEW_ARRAY(char, buflen + 1);
 
 			len = snprintf(buf, buflen, "var s%d := mvc_bind_dbat(myc, \"%s\", \"%s\", %d);\n", -s->nr, s->op1.tval->s->base.name, s->op1.tval->base.name, s->flag);
@@ -421,7 +422,7 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 			break;
 		}
 		case st_idxbat:{
-			size_t buflen = 128 + strlen(s->op1.idxval->t->s->base.name) + strlen(s->op1.idxval->t->base.name) + strlen(s->op1.idxval->base.name);
+			buflen = 128 + strlen(s->op1.idxval->t->s->base.name) + strlen(s->op1.idxval->t->base.name) + strlen(s->op1.idxval->base.name);
 			buf = NEW_ARRAY(char, buflen + 1);
 
 			len = snprintf(buf, buflen, "var s%d := mvc_bind_idxbat(myc, \"%s\", \"%s\", \"%s\", %d);\n", -s->nr, s->op1.idxval->t->s->base.name, s->op1.idxval->t->base.name, s->op1.idxval->base.name, s->flag);
@@ -748,7 +749,7 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 			char *convert = s->op4.typeval.type->base.name;
 			/* convert types and make sure they are rounded up correctly */
 			int l = backend_dumpstmt_(s->op1.stval, nr, sql);
-			size_t buflen = SMALLBUFSIZ;
+			buflen = SMALLBUFSIZ;
 
 			/* external types have sqlname convert functions,
 			   these can generate errors (fromstr cannot) */
@@ -811,8 +812,8 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 		}
 		case st_op:{
 			char *fimp = sql_func_imp(s->op4.funcval->func);
-			size_t buflen = strlen(fimp) + 32;
 
+			buflen = strlen(fimp) + 32;
 			backend_create_func(sql, s->op4.funcval->func); 
 			buf = NEW_ARRAY(char, buflen + 1);
 			len = snprintf(buf, buflen, "var s%d := %s();\n", -s->nr, fimp);
@@ -824,7 +825,6 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 		case st_unop:{
 			char *fimp = sql_func_imp(s->op4.funcval->func);
 			int l = backend_dumpstmt_(s->op1.stval, nr, sql);
-			size_t buflen;
 
 			backend_create_func(sql, s->op4.funcval->func); 
 			if (s->op1.stval->nrcols) {
@@ -852,9 +852,9 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 			int l = backend_dumpstmt_(s->op1.stval, nr, sql);
 			int r = backend_dumpstmt_(s->op2.stval, nr, sql);
 			char dec_func[SMALLBUFSIZ];
-			size_t buflen = strlen(fimp) + SMALLBUFSIZ;
-			buf = NEW_ARRAY(char, buflen + 1);
 
+			buflen = strlen(fimp) + SMALLBUFSIZ;
+			buf = NEW_ARRAY(char, buflen + 1);
 			dec_func[0] = 0;
 			backend_create_func(sql, s->op4.funcval->func); 
 			if (strcmp(fimp, "round")==0 &&
@@ -880,7 +880,6 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 			int opslen = 0;
 			char *ops;
 			node *n;
-			size_t buflen;
 			int cnt = list_length(s->op1.stval->op1.lval);
 
 			backend_create_func(sql, s->op4.funcval->func); 
@@ -951,10 +950,11 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 		case st_aggr:{
 			int output_type_needed = 0;
 			int l = backend_dumpstmt_(s->op1.stval, nr, sql);
-			size_t buflen = strlen(s->op4.aggrval->aggr->imp) + SMALLBUFSIZ;
+
 			char *aggrfunc = s->op4.aggrval->aggr->imp;
 			sql_subtype *tpe = tail_type(s);
 
+			buflen = strlen(aggrfunc) + SMALLBUFSIZ;
 			buf = NEW_ARRAY(char, buflen + 1);
 
 			/* some aggr functions require bigger outputs types */
@@ -1033,7 +1033,7 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 			    s->op2.stval->nrcols) {
 				stmt *c = s->op1.stval; 
 
-				size_t buflen = 128 + strlen(c->op1.cval->t->s->base.name) + strlen(c->op1.cval->t->base.name) + strlen(c->op1.cval->base.name);
+				buflen = 128 + strlen(c->op1.cval->t->s->base.name) + strlen(c->op1.cval->t->base.name) + strlen(c->op1.cval->base.name);
 
 				buf = NEW_ARRAY(char, buflen + 1);
 				len = snprintf(buf, buflen, "var s%d := mvc_append(myc, \"%s\", \"%s\", \"%s\", %d, s%d);\n", -s->nr, c->op1.cval->t->s->base.name, c->op1.cval->t->base.name, c->op1.cval->base.name, c->flag, r);
@@ -1043,7 +1043,7 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 			    	   s->op2.stval->nrcols) {
 				stmt *c = s->op1.stval; 
 
-				size_t buflen = 128 + strlen(c->op1.idxval->t->s->base.name) + strlen(c->op1.idxval->t->base.name) + strlen(c->op1.idxval->base.name);
+				buflen = 128 + strlen(c->op1.idxval->t->s->base.name) + strlen(c->op1.idxval->t->base.name) + strlen(c->op1.idxval->base.name);
 
 				buf = NEW_ARRAY(char, buflen + 1);
 				len = snprintf(buf, buflen, "var s%d := mvc_append_idxbat(myc, \"%s\", \"%s\", \"%s\", %d, s%d);\n", -s->nr, c->op1.idxval->t->s->base.name, c->op1.idxval->t->base.name, c->op1.idxval->base.name, c->flag, r);
@@ -1082,7 +1082,8 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 		}
 		case st_table_clear:{
 			sql_table *t = s->op1.tval;
-			size_t buflen = strlen(t->base.name) + strlen(t->s->base.name) + SMALLBUFSIZ;
+
+			buflen = strlen(t->base.name) + strlen(t->s->base.name) + SMALLBUFSIZ;
 			buf = NEW_ARRAY(char, buflen + 1);
 
 			len = snprintf(buf, buflen, "var s%d := mvc_clear_table(myc, \"%s\", \"%s\");\n", -s->nr, t->s->base.name, t->base.name);
@@ -1107,7 +1108,8 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 		}
 		case st_alias: {
 			int l = backend_dumpstmt_(s->op1.stval, nr, sql);
-			int buflen = 32;
+
+			buflen = 32;
 			buf = NEW_ARRAY(char, buflen + 1);
 			len = snprintf(buf, buflen, "var s%d := s%d;\n", -s->nr, l);
 			write_command(sql, buf);
@@ -1142,8 +1144,8 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 			char *tname = s->op1.stval->op1.tval->base.name;
 			int sep = backend_dumpstmt_(s->op2.stval, nr, sql);
 			int rsep = backend_dumpstmt_(s->op3.stval, nr, sql);
-			size_t buflen = strlen(tname) + 512;
 
+			buflen = strlen(tname) + 512;
 			buf = NEW_ARRAY(char, buflen + 1);
 
 			if (s->op4.stval) {
@@ -1197,11 +1199,11 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 		case st_output:{
 			stmt *order = NULL;
 			stmt *lst = s->op1.stval;
-			size_t buflen = BUFSIZ;
 
 			backend_dumpstmt_(lst, nr, sql);
 
 			write_head(sql, -s->nr);
+			buflen = BUFSIZ;
 			buf = NEW_ARRAY(char, buflen + 1);
 
 			buf[0] = 0;
@@ -1319,11 +1321,11 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 
 		case st_table: {
 			stmt *lst = s->op1.stval;
-			size_t buflen = BUFSIZ;
 
 			backend_dumpstmt_(lst, nr, sql);
 
 			write_head(sql, -s->nr);
+			buflen = BUFSIZ;
 			buf = NEW_ARRAY(char, buflen + 1);
 
 			buf[0] = 0;
@@ -1413,9 +1415,9 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 		} 	break;
 		case st_assign: {
 			int v = backend_dumpstmt_(s->op2.stval, nr, sql);
-			size_t buflen = strlen(s->op1.sval) + 32;
-			buf = NEW_ARRAY(char, buflen + 1);
 
+			buflen = strlen(s->op1.sval) + 32;
+			buf = NEW_ARRAY(char, buflen + 1);
 			if (VAR_GLOBAL(s->flag)) { /* globals */
 				int vn = backend_dumpstmt_(s->op1.stval, nr, sql);
 				len = snprintf(buf, buflen, "setVariable(myc, s%d, s%d);\n", vn, v);

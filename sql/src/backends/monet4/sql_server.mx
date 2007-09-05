@@ -293,10 +293,9 @@ handles and returns proper error messages upon failure.
 #include <sql_datetime.h>
 #include <sql_env.h>
 #include <algebra.h>
-#include <bat/bat_store.h>
+#include "sql_storage.h"
+#include <store_sequence.h>
 #include <bat/res_table.h>
-#include <bat/bat_bm.h>
-#include <bat/bat_sequence.h>
 
 @-
 The code heavily depends on the (complex) data structures for
@@ -338,16 +337,14 @@ int
 sql_frontend_wrap(Cntxt stk, YYSTREE lt, ValPtr res)
 {
 	Client father = NULL;
-	backend_functions *be_funcs = GDKmalloc(sizeof(backend_functions));
 
 	if (lt->cnt != 0) 
 		return handle_argerror(res, lt->cnt, 0);
 
-	memset((char *)be_funcs, '\0', sizeof(backend_functions));
-	be_funcs->fstack = &monet4_freestack;
-	be_funcs->fcode = &monet4_freecode;
-	monet4_user_init(be_funcs);
-	backend_init(be_funcs);	/* we probably leak be_funcs here */
+	memset((char *)&be_funcs, '\0', sizeof(backend_functions));
+	be_funcs.fstack = &monet4_freestack;
+	be_funcs.fcode = &monet4_freecode;
+	monet4_user_init(&be_funcs);
 	CNTXTclient(stk, &father);
 	if (father && father->father >= 0) {
 		/* if the father itself is a temporary client, let
@@ -358,7 +355,7 @@ sql_frontend_wrap(Cntxt stk, YYSTREE lt, ValPtr res)
 	}
 	if (father)
 		stk = father->stk;
-	if (mvc_init(0, (backend_stack) stk) < 0) {
+	if (mvc_init(0/*debug*/, store_bat, (backend_stack) stk) < 0) {
 		return GDK_FAIL;
 	}
 	res->vtype = TYPE_ptr;
@@ -545,19 +542,12 @@ mvc_bind(mvc *m, char *sname, char *tname, char *cname, int access)
 	sql_table *t = mvc_bind_table(m, s, tname);
 	sql_column *c = mvc_bind_column(m, t, cname);
 
-	if (access == UPD || access == RD_UPD)
-		b = bind_ubat(tr, c, access);
-/*
-	else if (access == RDONLY)
-		b = bind_bats(tr, c);
-*/
-	else
-		b = bind_bat(tr, c, access);
+	b = store_funcs.bind_col(tr, c, access);
 	return b;
 }
 
 int 
-mvc_append(BAT **b, mvc *M, str sname, str tname, str cname, int *access, BAT *i)
+mvc_append(BAT **b, mvc *M, str sname, str tname, str cname, int *access, BAT *ins)
 {
 	mvc *m = *(mvc**)M;
 	sql_trans *tr = m->session->tr;
@@ -565,10 +555,7 @@ mvc_append(BAT **b, mvc *M, str sname, str tname, str cname, int *access, BAT *i
 	sql_table *t = mvc_bind_table(m, s, tname);
 	sql_column *c = mvc_bind_column(m, t, cname);
 
-	if (*access == UPD || *access == RD_UPD)
-		*b = append_ubat(tr, c, *access, i);
-	else
-		*b = append_bat(tr, c, *access, i);
+	*b = store_funcs.append_col(tr, c, *access, ins);
 	return GDK_SUCCEED;
 }
 
@@ -581,7 +568,7 @@ mvc_bind_dbat(mvc *m, char *sname, char *tname, int access)
 	sql_schema *s = mvc_bind_schema(m, sname);
 	sql_table *t = mvc_bind_table(m, s, tname);
 
-	b = bind_dbat(tr, t, access);
+	b = store_funcs.bind_del(tr, t, access);
 	return b;
 }
 
@@ -593,20 +580,13 @@ mvc_bind_idxbat(mvc *m, char *sname, char *tname, char *iname, int access)
 	sql_schema *s = mvc_bind_schema(m, sname);
 	sql_idx *i = mvc_bind_idx(m, s, iname);
 
-	(void) tname;
-	if (access == UPD || access == RD_UPD)
-		b = bind_uidx(tr, i, access);
-/* 
-	else if (access == RDONLY)
-		b = bind_idxs(tr, i);
-*/
-	else
-		b = bind_idx(tr, i, access);
+	(void)tname;
+	b = store_funcs.bind_idx(tr, i, access);
 	return b;
 }
 
 int
-mvc_append_idxbat(BAT **b, mvc *M, char *sname, char *tname, char *iname, int *access, BAT *ib)
+mvc_append_idxbat(BAT **b, mvc *M, char *sname, char *tname, char *iname, int *access, BAT *ins)
 {
 	mvc *m = *(mvc**)M;
 	sql_trans *tr = m->session->tr;
@@ -614,10 +594,7 @@ mvc_append_idxbat(BAT **b, mvc *M, char *sname, char *tname, char *iname, int *a
 	sql_idx *i = mvc_bind_idx(m, s, iname);
 
 	(void) tname;
-	if (*access == UPD || *access == RD_UPD)
-		*b = append_uidx(tr, i, *access, ib);
-	else
-		*b = append_idx(tr, i, *access, ib);
+	*b = store_funcs.append_idx(tr, i, *access, ins);
 	return GDK_SUCCEED;
 }
 
@@ -667,7 +644,7 @@ mvc_clear_table_wrap(lng *res, mvc *c, str sname, str tname)
 static int
 mvc_result_row(mvc *m, int nr_cols, int qtype)
 {
-	m->results = res_table_create(m->session->tr, m->result_id++, nr_cols, qtype, m->results);
+	m->results = res_table_create(m->session->tr, m->result_id++, nr_cols, qtype, m->results, NULL);
 	return m->results->id;
 }
 

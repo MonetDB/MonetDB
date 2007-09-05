@@ -51,7 +51,6 @@ extern int convert2str( mvc *m, int eclass, int d, int sc, int has_tz, ptr p, in
 #include <monettime.h>
 #include <sql_scope.h>
 #include <bat/res_table.h>
-#include <bat/bat_bm.h>
 
 @= dec_tostr
 	char buf[32];
@@ -1116,10 +1115,7 @@ mvc_export_chunk(mvc *m, stream *s, int res_id, size_t offset, size_t nr)
 int
 mvc_result_table(mvc *m, int nr_cols, int type, BAT *order)
 {
-	res_table *t = res_table_create(m->session->tr, m->result_id++, nr_cols, type, m->results);
-
-	t->order = order->batCacheid;
-	bat_incref(t->order, TRUE, "mvc_result_table");
+	res_table *t = res_table_create(m->session->tr, m->result_id++, nr_cols, type, m->results, order);
 	m->results = t;
 	return t->id;
 }
@@ -1127,20 +1123,14 @@ mvc_result_table(mvc *m, int nr_cols, int type, BAT *order)
 int
 mvc_result_column(mvc *m, char *tn, char *name, char *typename, int digits, int scale, BAT *b)
 {
-	res_col *c = res_col_create(m->session->tr, m->results, tn, name, typename, digits, scale);
-
-	c->b = b->batCacheid;
-	bat_incref(c->b, TRUE, "mvc_result_column");
+	(void)res_col_create(m->session->tr, m->results, tn, name, typename, digits, scale, TYPE_bat, b);
 	return 0;
 }
 
 int
 mvc_result_value(mvc *m, char *tn, char *name, char *typename, int digits, int scale, ptr *p, int mtype)
 {
-	res_col *c = res_col_create(m->session->tr, m->results, tn, name, typename, digits, scale);
-
-	c->mtype = mtype;
-	c->p = ATOMdup(mtype, p);
+	(void)res_col_create(m->session->tr, m->results, tn, name, typename, digits, scale, mtype, p);
 	return 0;
 }
 

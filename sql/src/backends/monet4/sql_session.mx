@@ -63,7 +63,7 @@ extern ptr sql_frontend(void);
 #include <sql_qc.h>
 #include <sql_parser.h>		/* for sqlparse() */
 #include <sql_env.h>		/* explain,debug,reply_size,auto_commit etc */
-#include <bat/bat_store.h>
+#include <sql_storage.h>
 #include <bat/res_table.h>
 #include <mapi.h>
 
@@ -804,13 +804,13 @@ mvc_login(mvc *m, char *user, char *passwd)
 	users = find_sql_table(sys, "db_users");
 	users_name = find_sql_column(users, "name");
 
-	if ((rid = column_find_row(m->session->tr, users_name, user, NULL)) >= 0) {
+	if ((rid = table_funcs.column_find_row(m->session->tr, users_name, user, NULL)) >= 0) {
 		sql_column *users_passwd = find_sql_column(users, "passwd");
-		char *pwd = column_find_value(m->session->tr, users_passwd, rid);
+		char *pwd = table_funcs.column_find_value(m->session->tr, users_passwd, rid);
 
 		if (pwd && strcmp(passwd, pwd) == 0) {
 			sql_column *users_schema = find_sql_column(users, "default_schema");
-			void *p = column_find_value(m->session->tr, users_schema, rid);
+			void *p = table_funcs.column_find_value(m->session->tr, users_schema, rid);
 			unsigned int schema_id = *(unsigned int *)p;
 			sql_table *schemas = find_sql_table(sys, "schemas");
 			sql_column *schemas_name = find_sql_column(schemas, "name");
@@ -819,14 +819,14 @@ mvc_login(mvc *m, char *user, char *passwd)
 			sql_column *auths_name = find_sql_column(auths, "name");
 
 			_DELETE(p);
-			if ((rid = column_find_row(m->session->tr, schemas_id, &schema_id, NULL)) >= 0)
-				schema = column_find_value(m->session->tr, schemas_name, rid);
+			if ((rid = table_funcs.column_find_row(m->session->tr, schemas_id, &schema_id, NULL)) >= 0)
+				schema = table_funcs.column_find_value(m->session->tr, schemas_name, rid);
 
 			/* only set schema if user is found */
-			rid = column_find_row(m->session->tr, auths_name, user, NULL);
+			rid = table_funcs.column_find_row(m->session->tr, auths_name, user, NULL);
 			if (rid >= 0) {
 				sql_column *auths_id = find_sql_column(auths, "id");
-				void *p = column_find_value(m->session->tr, auths_id, rid);
+				void *p = table_funcs.column_find_value(m->session->tr, auths_id, rid);
 				int id = *(int *) p;
 
 				_DELETE(p);
