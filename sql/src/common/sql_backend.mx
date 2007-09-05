@@ -49,7 +49,7 @@ typedef int  (*find_user_fptr) (ptr m, char *user);
 typedef void (*create_privileges_fptr) (ptr mvc, sql_schema *s);
 typedef int  (*schema_has_user_fptr) (ptr mvc, sql_schema *s);
 typedef int  (*alter_user_fptr) (ptr mvc, str user, str passwd, sqlid schema_id);
-typedef list*  (*schema_user_dependencies) (ptr mvc, int schema_id);
+typedef void*  (*schema_user_dependencies) (ptr mvc, int schema_id);
 
 /* backing struct for this interface */
 typedef struct _backend_functions {
@@ -64,7 +64,6 @@ typedef struct _backend_functions {
 	schema_user_dependencies fschuserdep;
 } backend_functions;
 
-extern void backend_init(backend_functions *funcs);
 extern void backend_freestack(backend_stack stk);
 extern void backend_freecode(backend_code code, backend_stack stk, int nr, char *name);
 
@@ -74,7 +73,9 @@ extern int  backend_find_user(ptr mp, char *user);
 extern void backend_create_privileges(ptr mvc, sql_schema *s);
 extern int  backend_schema_has_user(ptr mvc, sql_schema *s);
 extern int	backend_alter_user(ptr mvc, str user, str passwd, sqlid schema_id);
-extern list*	backend_schema_user_dependencies(ptr trans, int schema_id);
+extern void*	backend_schema_user_dependencies(ptr trans, int schema_id);
+
+extern backend_functions be_funcs;
 
 #endif /* _SQL_BACKEND_H_ */
 @c
@@ -82,91 +83,74 @@ extern list*	backend_schema_user_dependencies(ptr trans, int schema_id);
 #include "sql_config.h"
 #include "sql_backend.h"
 
-static backend_functions *be_funcs = NULL;
-
-void
-backend_init(backend_functions *funcs)
-{
-	/* copy over, assume the caller doesn't modify the struct and that
-	 * it is alloced appropriately */
-	be_funcs = funcs;
-}
+backend_functions be_funcs;
 
 void
 backend_freestack(backend_stack stk)
 {
-	assert(be_funcs != NULL);
-	if (be_funcs->fstack != NULL)
-		be_funcs->fstack(stk);
+	if (be_funcs.fstack != NULL)
+		be_funcs.fstack(stk);
 }
 
 void
 backend_freecode(backend_code code, backend_stack stk, int nr, char *name)
 {
-	assert(be_funcs != NULL);
-	if (be_funcs->fcode != NULL)
-		be_funcs->fcode(code, stk, nr, name);
+	if (be_funcs.fcode != NULL)
+		be_funcs.fcode(code, stk, nr, name);
 }
 
 char *
 backend_create_user(list *l, char *user, char *passwd, char *fullname, sqlid defschemid, sqlid grantor)
 {
-	assert(be_funcs != NULL);
-	if (be_funcs->fcuser != NULL)
-		return(be_funcs->fcuser(l, user, passwd, fullname, defschemid, grantor));
+	if (be_funcs.fcuser != NULL)
+		return(be_funcs.fcuser(l, user, passwd, fullname, defschemid, grantor));
 	return(NULL);
 }
 
 int
 backend_drop_user(ptr mvc, char *user)
 {
-	assert(be_funcs != NULL);
-	if (be_funcs->fduser != NULL)
-		return(be_funcs->fduser(mvc,user));
+	if (be_funcs.fduser != NULL)
+		return(be_funcs.fduser(mvc,user));
 	return FALSE;
 }
 
 int
 backend_find_user(ptr m, char *user)
 {
-	assert(be_funcs != NULL);
-	if (be_funcs->ffuser != NULL)
-		return(be_funcs->ffuser(m, user));
+	if (be_funcs.ffuser != NULL)
+		return(be_funcs.ffuser(m, user));
 	return(0);
 }
 
 void
 backend_create_privileges(ptr mvc, sql_schema *s)
 {
-	assert(be_funcs != NULL);
-	if (be_funcs->fcrpriv != NULL)
-		be_funcs->fcrpriv(mvc, s);
+	if (be_funcs.fcrpriv != NULL)
+		be_funcs.fcrpriv(mvc, s);
 }
 
 int
 backend_schema_has_user(ptr mvc, sql_schema *s)
 {
-	assert(be_funcs != NULL);
-	if (be_funcs->fshuser != NULL)
-		return(be_funcs->fshuser(mvc, s));
+	if (be_funcs.fshuser != NULL)
+		return(be_funcs.fshuser(mvc, s));
 	return(FALSE);
 }
 
 int
 backend_alter_user(ptr mvc, str user, str passwd, sqlid schema_id)
 {
-	assert(be_funcs != NULL);
-	if (be_funcs->fauser != NULL)
-		return(be_funcs->fauser(mvc, user, passwd, schema_id));
+	if (be_funcs.fauser != NULL)
+		return(be_funcs.fauser(mvc, user, passwd, schema_id));
 	return(FALSE);
 }
 
-list*
+void*
 backend_schema_user_dependencies(ptr trans, int schema_id)
 {
-	assert(be_funcs != NULL);
-	if (be_funcs->fschuserdep != NULL)
-		return(be_funcs->fschuserdep(trans, schema_id));
+	if (be_funcs.fschuserdep != NULL)
+		return(be_funcs.fschuserdep(trans, schema_id));
 	return NULL;
 }
 @}

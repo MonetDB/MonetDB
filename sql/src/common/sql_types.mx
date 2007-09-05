@@ -99,7 +99,7 @@ extern sql_arg *arg_dup(sql_arg *a);
 extern void arg_destroy(sql_arg *a);
 
 extern sql_subaggr *sql_bind_aggr(sql_schema *s, char *name, sql_subtype *type);
-extern sql_aggr *sql_create_aggr(char *name, char *mod, char *imp, sql_type *tpe, sql_type *res);
+extern sql_func *sql_create_aggr(char *name, char *mod, char *imp, sql_type *tpe, sql_type *res);
 extern sql_subaggr *sql_dup_aggr(sql_subaggr *a);
 extern void sql_subaggr_destroy(sql_subaggr *f);
 
@@ -122,7 +122,7 @@ extern sql_func *sql_create_funcSE(char *name, char *mod, char *imp, sql_type *t
 extern sql_func *sql_create_func3(char *name, char *mod, char *imp, sql_type *tpe1, sql_type *tpe2, sql_type *tpe3, sql_type *res, int scale_fixing);
 extern sql_func *sql_create_func4(char *name, char *mod, char *imp, sql_type *tpe1, sql_type *tpe2, sql_type *tpe3, sql_type *tpe4, sql_type *res, int scale_fixing);
 
-extern sql_func *sql_create_func_(char *name, char *mod, char *imp, list *ops, sql_subtype *res, bit side_effect);
+extern sql_func *sql_create_func_(char *name, char *mod, char *imp, list *ops, sql_subtype *res, bit side_effect, bit aggr);
 
 extern sql_func *sql_create_sqlfunc(char *name, char *imp, list *ops, sql_subtype *res);
 
@@ -503,11 +503,15 @@ sql_bind_aggr(sql_schema *s, char *sqlaname, sql_subtype *type)
 
 	(void)s;
 	while (n) {
-		sql_aggr *a = n->data;
+		sql_func *a = n->data;
+		sql_arg *arg = NULL;
 
-		if (strcmp(a->base.name, sqlaname) == 0 && (!a->tpe.type ||
-		    a->tpe.type->eclass == EC_ANY || 
-		    (type && is_subtype(type, &a->tpe )))) {
+		if (a->ops->h)
+			arg = a->ops->h->data;
+
+		if (strcmp(a->base.name, sqlaname) == 0 && (!arg ||
+		    arg->type.type->eclass == EC_ANY || 
+		    (type && is_subtype(type, &arg->type )))) {
 			int scale = 0;
 			int digits = 0;
 			sql_subaggr *ares = NEW(sql_subaggr);
@@ -530,17 +534,45 @@ sql_bind_aggr(sql_schema *s, char *sqlaname, sql_subtype *type)
 		}
 		n = n->next;
 	}
-	return NULL;
-}
+	if (s) {
+		node *n;
 
-void
-aggr_destroy(sql_aggr *t)
-{
-	base_destroy(&t->base);
-	_DELETE(t->imp);
-	if (t->mod)
-		_DELETE(t->mod);
-	_DELETE(t);
+		if (s->funcs.set) for (n=s->funcs.set->h; n; n = n->next) {
+			sql_func *a = n->data;
+			sql_arg *arg = NULL;
+
+			if ((a->is_func && !a->res.type) || !a->aggr)
+				continue;
+
+			if (a->ops->h)
+				arg = a->ops->h->data;
+
+			if (strcmp(a->base.name, sqlaname) == 0 && (!arg ||
+		    	 	arg->type.type->eclass == EC_ANY || 
+		    		(type && is_subtype(type, &arg->type )))) {
+				int scale = 0;
+				int digits = 0;
+				sql_subaggr *ares = NEW(sql_subaggr);
+		
+				sql_ref_init(&(ares->ref));
+				ares->aggr = a;
+				digits = a->res.digits;
+				scale = a->res.scale;
+				/* same scale as the input */
+				if (type) {
+					digits = type->digits;
+					scale = type->scale;
+				}
+				/* same type as the input */
+				if (a->res.type->eclass == EC_ANY) 
+					sql_init_subtype(&ares->res, type->type, digits, scale);
+				else
+					sql_init_subtype(&ares->res, a->res.type, digits, scale);
+				return ares;
+			}
+		}
+	}
+	return NULL;
 }
 
 sql_subaggr *
@@ -999,25 +1031,13 @@ sql_create_type(char *sqlname, unsigned int digits, unsigned int scale, unsigned
 	return t;
 }
 
-sql_aggr *
-sql_create_aggr(char *name, char *mod, char *imp, sql_type *tpe, sql_type *res)
+static sql_arg *
+create_arg(char *name, sql_subtype *t)
 {
-	sql_aggr *t = NEW(sql_aggr);
+	sql_arg *a = sql_create_arg(name, t);
 
-	base_init(&t->base, store_next_oid(), TR_OLD, name);
-	t->imp = _strdup(imp);
-	t->mod = _strdup(mod);
-	if (tpe) {
-		sql_init_subtype(&t->tpe, tpe, 0, 0);
-	} else {
-		t->tpe.type = NULL;
-	}
-	assert(res);
-	sql_init_subtype(&t->res, res, 0, 0);
-	t->nr = list_length(aggrs);
-	t->s = NULL;
-	list_append(aggrs, t);
-	return t;
+	sql_subtype_destroy(t);
+	return a;
 }
 
 sql_arg *
@@ -1029,16 +1049,6 @@ sql_create_arg(char *name, sql_subtype *t)
 	a->type = *t;
 	return a;
 }
-
-static sql_arg *
-create_arg(char *name, sql_subtype *t)
-{
-	sql_arg *a = sql_create_arg(name, t);
-
-	sql_subtype_destroy(t);
-	return a;
-}
-
 
 sql_arg *
 arg_dup(sql_arg *oa)
@@ -1059,6 +1069,19 @@ arg_destroy(sql_arg *a)
 }
 
 sql_func *
+sql_create_aggr(char *name, char *mod, char *imp, sql_type *tpe, sql_type *res)
+{
+	list *l = list_create((fdestroy) &arg_destroy);
+	sql_subtype sres;
+
+	if (tpe)
+		list_append(l, create_arg(NULL, sql_create_subtype(tpe, 0, 0)));
+	assert(res);
+	sql_init_subtype(&sres, res, 0, 0);
+	return sql_create_func_(name, mod, imp, l, &sres, FALSE, TRUE);
+}
+
+sql_func *
 sql_create_func(char *name, char *mod, char *imp, sql_type *tpe1, sql_type *tpe2, sql_type *res, int scale_fixing)
 {
 	list *l = list_create((fdestroy) &arg_destroy);
@@ -1070,7 +1093,7 @@ sql_create_func(char *name, char *mod, char *imp, sql_type *tpe1, sql_type *tpe2
 		list_append(l,create_arg(NULL, sql_create_subtype(tpe2, 0, 0)));
 
 	sql_init_subtype(&sres, res, 0, scale_fixing);
-	return sql_create_func_(name, mod, imp, l, &sres, FALSE);
+	return sql_create_func_(name, mod, imp, l, &sres, FALSE, FALSE);
 }
 
 sql_func *
@@ -1085,7 +1108,7 @@ sql_create_funcSE(char *name, char *mod, char *imp, sql_type *tpe1, sql_type *tp
 		list_append(l,create_arg(NULL, sql_create_subtype(tpe2, 0, 0)));
 
 	sql_init_subtype(&sres, res, 0, scale_fixing);
-	return sql_create_func_(name, mod, imp, l, &sres, TRUE);
+	return sql_create_func_(name, mod, imp, l, &sres, TRUE, FALSE);
 }
 
 
@@ -1100,7 +1123,7 @@ sql_create_func3(char *name, char *mod, char *imp, sql_type *tpe1, sql_type *tpe
 	list_append(l, create_arg(NULL, sql_create_subtype(tpe3, 0, 0)));
 
 	sql_init_subtype(&sres, res, 0, scale_fixing);
-	return sql_create_func_(name, mod, imp, l, &sres, FALSE);
+	return sql_create_func_(name, mod, imp, l, &sres, FALSE, FALSE);
 }
 
 sql_func *
@@ -1115,12 +1138,12 @@ sql_create_func4(char *name, char *mod, char *imp, sql_type *tpe1, sql_type *tpe
 	list_append(l, create_arg(NULL, sql_create_subtype(tpe4, 0, 0)));
 
 	sql_init_subtype(&sres, res, 0, scale_fixing);
-	return sql_create_func_(name, mod, imp, l, &sres, FALSE);
+	return sql_create_func_(name, mod, imp, l, &sres, FALSE, FALSE);
 }
 
 
 sql_func *
-sql_create_func_(char *name, char *mod, char *imp, list *ops, sql_subtype *res, bit side_effect)
+sql_create_func_(char *name, char *mod, char *imp, list *ops, sql_subtype *res, bit side_effect, bit aggr)
 {
 	sql_func *t = NEW(sql_func);
 
@@ -1138,10 +1161,13 @@ sql_create_func_(char *name, char *mod, char *imp, list *ops, sql_subtype *res, 
 	}
 	t->nr = list_length(funcs);
 	t->sql = 0;
-	t->aggr = 0;
+	t->aggr = aggr;
 	t->side_effect = side_effect;
 	t->s = NULL;
-	list_append(funcs, t);
+	if (aggr)
+		list_append(aggrs, t);
+	else
+		list_append(funcs, t);
 	return t;
 }
 
@@ -1177,7 +1203,7 @@ types_init(int debug)
 	aliases = list_create((fdestroy) &alias_destroy);
 	types = list_create((fdestroy) &type_destroy);
 	localtypes = list_create((fdestroy) &sql_subtype_destroy);
-	aggrs = list_create((fdestroy) &aggr_destroy);
+	aggrs = list_create((fdestroy) &func_destroy);
 	funcs = list_create((fdestroy) &func_destroy);
 	sqltypeinit();
 }
@@ -1499,7 +1525,7 @@ sqltypeinit(void)
 		{ sql_subtype sres;
 		sql_init_subtype(&sres, *t, 0, 0);
 		sql_create_func_("levenshtein", "calc", "levenshtein",
-				 list_append(list_append (list_append (list_append(list_append(list_create((fdestroy) &arg_destroy), create_arg(NULL, sql_create_subtype(*t, 0, 0))), create_arg(NULL, sql_create_subtype(*t, 0, 0))), create_arg(NULL, sql_create_subtype(INT, 0, 0))), create_arg(NULL, sql_create_subtype(INT, 0, 0))), create_arg(NULL, sql_create_subtype(INT, 0, 0))), &sres, FALSE);
+				 list_append(list_append (list_append (list_append(list_append(list_create((fdestroy) &arg_destroy), create_arg(NULL, sql_create_subtype(*t, 0, 0))), create_arg(NULL, sql_create_subtype(*t, 0, 0))), create_arg(NULL, sql_create_subtype(INT, 0, 0))), create_arg(NULL, sql_create_subtype(INT, 0, 0))), create_arg(NULL, sql_create_subtype(INT, 0, 0))), &sres, FALSE, FALSE);
 		}
 	}
 }
