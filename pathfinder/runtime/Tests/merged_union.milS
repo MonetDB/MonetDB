@@ -34,7 +34,7 @@ print(b,d);
 
 var x := merged_union(a,b,c,d);
 
-print(x);
+print(x.project(nil));
 print(fetch(x,0),fetch(x,1));
 
 
@@ -49,6 +49,6 @@ print(b,d);
 
 var x := merged_union(a,b,c,d);
 
-print(x);
+print(x.project(nil));
 print(fetch(x,0),fetch(x,1));
 

@@ -74,13 +74,13 @@ print(b,d);
 
 var x := merged_union(a,b,c,d);
 
-print(x);
-#-------------------------#
-# h	tmp_32		  # name
-# void	BAT		  # type
-#-------------------------#
-[ 0@0,	  <tmp_164>	  ]
-[ 1@0,	  <tmp_165>	  ]
+print(x.project(nil));
+#-----------------#
+# h	t	  # name
+# void	void	  # type
+#-----------------#
+[ 0@0,	  nil	  ]
+[ 1@0,	  nil	  ]
 print(fetch(x,0),fetch(x,1));
 #-------------------------#
 # h	tmp_33	tmp_34	  # name
@@ -147,13 +147,13 @@ print(b,d);
 
 var x := merged_union(a,b,c,d);
 
-print(x);
-#-------------------------#
-# h	tmp_32		  # name
-# void	BAT		  # type
-#-------------------------#
-[ 0@0,	  <tmp_164>	  ]
-[ 1@0,	  <tmp_165>	  ]
+print(x.project(nil));
+#-----------------#
+# h	t	  # name
+# void	void	  # type
+#-----------------#
+[ 0@0,	  nil	  ]
+[ 1@0,	  nil	  ]
 print(fetch(x,0),fetch(x,1));
 #-------------------------#
 # h	tmp_29	tmp_28	  # name
