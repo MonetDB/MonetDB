@@ -229,9 +229,6 @@ function doDbEnvCallback(response){
     var dTable = top.content.document.getElementById("div1");
     dTable.innerHTML = 
         '<h2>MonetDB environment variables:</h2>\n' +
-        '<p>You can change these values by modifying the MonetDB configuration file <a href="' 
-            + configPath + '">MonetDB.conf</a> followed by a DB restart.' +
-        '</p>\n' +
         '<table width="30%" border="1">\n' +
         '<tr>\n' +
         '<th>Variable Name</th>\n' +
@@ -274,7 +271,6 @@ function doDocuments(colName)
 function doAllDocuments() { myXRPC('documents',  0, XRPC_CALL(), doAllDocumentsCallback); }
 function doDbStats()      { myXRPC('db-stats',   0, XRPC_CALL(), doDbStatsCallback); }
 function doDbEnv()        { myXRPC('db-env',     0, XRPC_CALL(), doDbEnvCallback); }
-function doDbRestart()    { myXRPC('db-restart', 0, XRPC_CALL(), reportCallback);  }
 
 function doBackupCol()    { alert("Sorry, function doBackupCol() not implemented yet"); }
 function doRestoreCol()   { alert("Sorry, function doRestoreCol() not implemented yet"); }

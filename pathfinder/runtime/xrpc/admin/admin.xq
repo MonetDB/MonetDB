@@ -91,9 +91,6 @@ declare function admin:db-stats()
 declare function admin:db-env() 
 { pf:mil('return environment().copy().access(BAT_WRITE).delete("exec_prefix").delete("prefix").delete("gdk_debug").delete("gdk_embedded").delete("gdk_vm_minsize").delete("mapi_debug").delete("mapi_noheaders").delete("monet_daemon").delete("monet_mod_path").delete("monet_pid").delete("monet_prompt").delete("monet_welcome").delete("sql_debug").delete("sql_logdir").insert("gdk_mem_maxsize", str(mem_maxsize())).sort();') };
 
-declare function admin:db-restart() 
-{ pf:mil('fork({ sleep(5); exit();}); return "Mserver will restart in 5 seconds..";') };
-
 (: =================== HTTP =================== :)
 
 declare function admin:GET($uri as xs:string) 

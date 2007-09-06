@@ -89,7 +89,8 @@ proc get_xrpc_port() : int {
     var xrpc_port := int_nil;
 
     if (monet_environment.exist("xrpc_port"))
-       xrpc_port := int(monet_environment.find("xrpc_port"));
+      if (length(monet_environment.find("xrpc_port")) > 0)
+        xrpc_port := int(monet_environment.find("xrpc_port"));
 
     if (isnil(xrpc_port)) {
         var mapi_port := int_nil;
