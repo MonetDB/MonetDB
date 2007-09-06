@@ -728,6 +728,11 @@ sqlstmt:
 		  	  m->sym = $$ = $3; YYACCEPT; 
 			}
  | SQL_DEBUG 		{ mvc *m = (mvc*)parm;
+			  if (m->scanner.mode == LINE_1) {
+				$$ = NULL;
+				yyerror("We only support debugging SQL in interactive mode");
+				YYABORT;
+			  }
 		  	  m->mode = m_debug;
 			  m->scanner.as = m->scanner.yycur; 
 			  m->scanner.key = 0;
@@ -736,6 +741,11 @@ sqlstmt:
 		  	  m->sym = $$ = $3; YYACCEPT; 
 			}
  | SQL_TRACE 		{ mvc *m = (mvc*)parm;
+			  if (m->scanner.mode == LINE_1) {
+				$$ = NULL;
+				yyerror("We do not support tracing SQL in interactive mode");
+				YYABORT;
+			  }
 		  	  m->mode = m_trace;
 			  m->scanner.as = m->scanner.yycur; 
 			  m->scanner.key = 0;

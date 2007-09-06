@@ -28,7 +28,7 @@
 #include <stream.h>
 #include <stdio.h>
 
-typedef enum { LINE_1, LINE_N, BLOCKED } prot;
+typedef enum { LINE_1, LINE_N } prot;
 
 struct scanner {
 	bstream *rs;
