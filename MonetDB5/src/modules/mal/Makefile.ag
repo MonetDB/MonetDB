@@ -35,7 +35,7 @@ LIBS = {
 		#datacell.mx 
 
 	HEADERS = h 
-	LIBS = ../../mal/libmal $(MONETDB_LIBS) -lbat -lstream $(MATH_LIBS) \
+	LIBS = ../../mal/libmal ../atoms/lib_xml $(MONETDB_LIBS) -lbat -lstream $(MATH_LIBS) \
                 $(CLIENTS_LIBS) -lMapi \
                 $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
                 $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)

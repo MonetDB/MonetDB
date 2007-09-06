@@ -729,7 +729,7 @@ BATXMLagg(int *ret, int *grp,int *bid)
 	BAT *j, *r, *g, *b, *bn;
 	BUN p,q;
 	int xx;
-	oid gid,o=0;
+	oid gid = 0,o=0;
 	int first= 1;
 	str t;
 	str buf= GDKmalloc(BUFSIZ);
