@@ -9,18 +9,18 @@ WHILE (i < n) {
 }
 b.access(BAT_READ);
 
-print(rangesplit(b,0));
-print(rangesplit(b,-1));
-print(rangesplit(b,1));
-print(rangesplit(b,2));
-print(rangesplit(b,5));
-print(rangesplit(b,n));
-print(rangesplit(b,n + 1));
+print([count](rangesplit(b,0)));
+print([count](rangesplit(b,-1)));
+print([count](rangesplit(b,1)));
+print([count](rangesplit(b,2)));
+print([count](rangesplit(b,5)));
+print([count](rangesplit(b,n)));
+print([count](rangesplit(b,n + 1)));
 
-print(hashsplit(b,0));
-print(hashsplit(b,-1));
-print(hashsplit(b,2));
-print(hashsplit(b,5));
-print(hashsplit(b,1));
-print(hashsplit(b,n));
-print(hashsplit(b,n + 1));
+print([count](hashsplit(b,0)));
+print([count](hashsplit(b,-1)));
+print([count](hashsplit(b,2)));
+print([count](hashsplit(b,5)));
+print([count](hashsplit(b,1)));
+print([count](hashsplit(b,n)));
+print([count](hashsplit(b,n + 1)));
