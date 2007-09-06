@@ -730,7 +730,44 @@ PFsql_t * PFsql_concat (const PFsql_t *a, const PFsql_t *b)
      return wire2 (sql_concat, a, b);
 }
 
+/* ......... Table Functions ........... */
+
+PFsql_t *
+PFsql_values (const PFsql_t *list)
+{
+    return wire1 (sql_values, list);
+}
+
+PFsql_t *
+PFsql_list_list_ (unsigned int count, const PFsql_t **list)
+{
+    return sql_list (sql_list_list,  count, list);
+}
+
+
 /* .......... Boolean Operators .......... */
+
+/**
+ * Create a SQL tree node representing a boolean
+ * `IS' operator.
+ */
+PFsql_t *
+PFsql_is (const PFsql_t *a, const PFsql_t *b)
+{
+    PFsql_t *ret = wire2 (sql_is, a, b);
+    return ret; 
+}
+
+/**
+ * Create a SQL tree node representing a boolean
+ * `IS NOT' operator.
+ */
+PFsql_t *
+PFsql_is_not (const PFsql_t *a, const PFsql_t *b)
+{
+    PFsql_t *ret = wire2 (sql_is_not, a, b);
+    return ret; 
+}
 
 /**
  * Create a SQL tree node representing a boolean
@@ -792,9 +829,9 @@ PFsql_in (const PFsql_t *column, const PFsql_t *list)
 }
 
 PFsql_t *
-PFsql_lit_list_ (unsigned int count, const PFsql_t **list) 
+PFsql_stmt_list_ (unsigned int count, const PFsql_t **list) 
 {
-    return sql_list (sql_lit_list, count, list);
+    return sql_list (sql_stmt_list, count, list);
 }
 
 /**

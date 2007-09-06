@@ -100,14 +100,20 @@
 
 /* .......... String Functions ........... */
 #define concat(a,b)                  PFsql_concat(a,b)
+
+/* .......... Table Functions ............ */
+#define values(a)                    PFsql_values(a)
+#define list_list(...)               PFsql_list_list(__VA_ARGS__)
                                      
 /* .......... Boolean Operators .......... */
+#define is(a, b)                     PFsql_is(a, b)
+#define is_not(a, b)                 PFsql_is_not(a, b)
 #define eq(a,b)                      PFsql_eq(a,b)
 #define gt(a,b)                      PFsql_gt(a,b)
 #define gteq(a,b)                    PFsql_gteq(a,b)
 #define like(a,b)                    PFsql_like(a,b)
 #define in(a,b)                      PFsql_in(a,b)
-#define lit_list(...)                PFsql_lit_list(__VA_ARGS__)
+#define stmt_list(...)               PFsql_stmt_list(__VA_ARGS__)
 #define not_(a)                      PFsql_not(a)
 #define and_(a,b)                    PFsql_and(a,b)
 #define or_(a,b)                     PFsql_or(a,b)

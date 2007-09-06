@@ -159,13 +159,16 @@ enum PFsql_kind_t {
 
     , sql_concat            /* string concatenation */
 
+    , sql_is                /* IS predicate */
+    , sql_is_not            /* IS NOT predicate */
     , sql_eq                /* = comparison */
     , sql_gt                /* > comparison */
     , sql_gteq              /* >= comparison */
     , sql_like              /* like comparison */
     , sql_in                /* in comparison */
-    , sql_lit_list          /* an item of a list of literals
+    , sql_stmt_list          /* an item of a list of statments 
                                (second argument of a sql_in operator) */
+    , sql_list_list         /* list of lists */
     , sql_not               /* negation */
     , sql_and               /* AND expression */
     , sql_or                /* OR expression */
@@ -195,6 +198,7 @@ enum PFsql_kind_t {
     , sql_case              /* case operator */
     , sql_when              /* WHEN .. THEN .. clause */
     , sql_else              /* ELSE .. clause */
+    , sql_values            /* Table Functions */
 };
 /* SQL operator kinds. */
 typedef enum PFsql_kind_t PFsql_kind_t;
@@ -329,8 +333,15 @@ typedef struct PFsql_alg_ann_t PFsql_alg_ann_t;
 /**
  * A sequence of in_list-expressions.
  */
-#define PFsql_lit_list(...) \
-            PFsql_generic_list (PFsql_lit_list_, __VA_ARGS__)
+#define PFsql_stmt_list(...) \
+            PFsql_generic_list (PFsql_stmt_list_, __VA_ARGS__)
+
+/**
+ * A sequence of lists
+ */
+#define PFsql_list_list(...) \
+            PFsql_generic_list (PFsql_list_list, __VA_ARGS__)
+
 /**
  * A sequence of case-expressions.
  */
@@ -646,7 +657,25 @@ PFsql_t * PFsql_abs (const PFsql_t *a);
  */
 PFsql_t * PFsql_concat (const PFsql_t *a, const PFsql_t *b);
 
+/* .......... Table Functions ........... */
+PFsql_t *PFsql_values (const PFsql_t *a);
+PFsql_t *PFsql_list_list_ (unsigned int count, const PFsql_t **list);
+
 /* .......... Boolean Operators .......... */
+
+/**
+ * Create a SQL tree node representing a boolean
+ * `IS' operator.
+ */
+PFsql_t *
+PFsql_is (const PFsql_t *a, const PFsql_t *b);
+
+/**
+ * Create a SQL tree node representing a boolean
+ * `IS' operator.
+ */
+PFsql_t *
+PFsql_is_not (const PFsql_t *a, const PFsql_t *b);
 
 /**
  * Create a SQL tree node representing a boolean
@@ -682,7 +711,8 @@ PFsql_t * PFsql_like (const PFsql_t *a, const PFsql_t *b);
  * Create a SQL tree node representing the in operator
  */
 PFsql_t * PFsql_in (const PFsql_t *column, const PFsql_t *list);
-PFsql_t * PFsql_lit_list_ (unsigned int count, const PFsql_t **list); 
+PFsql_t * PFsql_stmt_list_ (unsigned int count, const PFsql_t **list); 
+
 /**
  * Create a SQL tree node representing a boolean
  * negation operator.

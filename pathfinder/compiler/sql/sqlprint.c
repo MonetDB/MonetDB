@@ -85,6 +85,8 @@ static char *ID[] = {
       [sql_abs]      = "ABS",
       [sql_modulo]   = "MOD",
       [sql_concat]   = "CONCAT",
+      [sql_is]       = "IS",
+      [sql_is_not]   = "IS NOT",
 };
 
 /* forward declarations */
@@ -249,30 +251,54 @@ print_literal (PFsql_t * n)
 }
 
 static void
-print_literal_list (PFsql_t * n)
+print_stmt_list (PFsql_t * n)
 {
     assert (n);
 
     switch (n->kind) {
-        case sql_lit_list:
-            print_literal_list (L(n));
+
+        case sql_stmt_list:
+            print_stmt_list (L(n));
 
             if (R(n)->kind != sql_nil) {
                 PFprettyprintf (", ");
-                print_literal_list (R(n));
+                print_stmt_list (R(n));
             }
             break;
             
-        case sql_lit_int:
-        case sql_lit_dec:
-        case sql_lit_str:
-            print_literal (n);
+        default:
+            print_statement (n);
+            break;
+    }
+}
+
+static void
+print_list_list (FILE *f, PFsql_t * n, int i)
+{
+    assert (n);
+
+    switch (n->kind) {
+        case sql_list_list:
+            print_list_list (f, L(n), i);
+
+            if (R(n)->kind != sql_nil) {
+                fprintf (f, ",");
+                indent (f, i);
+                print_list_list (f, R(n), i);
+            }
             break;
 
-        default:
-            PFoops (OOPS_FATAL,
-                    "SQL grammar conflict. (Expected: literal list; "
-                    "Got: %u)", n->kind);
+         case sql_stmt_list:
+            PFprettyprintf ("(%c", START_BLOCK);
+            print_stmt_list (n);
+            PFprettyprintf ("%c)", END_BLOCK);
+            pretty_dump (f, i+1);
+            break;
+
+         default:
+             PFoops (OOPS_FATAL,
+                     "SQL grammar conflict. (Expected: list of list; "
+                     "Got: %u)", n->kind);
     }
 }
 
@@ -283,6 +309,15 @@ print_condition (PFsql_t *n)
 
     switch (n->kind)
     {
+        case sql_is:
+        case sql_is_not:
+            PFprettyprintf ("(");
+            print_statement (L(n));
+            PFprettyprintf(" %s ", ID[n->kind]);
+            print_statement (R(n));
+            PFprettyprintf (")");
+            break;
+
         case sql_not:
             PFprettyprintf ("NOT (");
             print_condition (L(n));
@@ -339,7 +374,7 @@ print_condition (PFsql_t *n)
             PFprettyprintf ("(");
             print_statement (L(n));
             PFprettyprintf (" IN (");
-            print_literal_list (R(n));
+            print_stmt_list (R(n));
             PFprettyprintf ("))");
             break; 
             
@@ -721,6 +756,12 @@ print_fullselect (FILE *f, PFsql_t *n, int i)
                 pretty_dump (f, i+7);
             }
             break;
+        case sql_values:
+            /* TABLE */
+            fprintf (f, "VALUES ");
+            print_list_list (f, L(n), i+7); 
+            break;
+
 
         case sql_union:
             print_fullselect (f, L(n), i);

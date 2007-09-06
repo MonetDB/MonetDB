@@ -1148,7 +1148,7 @@ step_guide (PFla_op_t *p, PFsql_aident_t step,
 
     where_list_add (WHERELIST(p),
                     in (GUIDE(step),
-                        PFsql_lit_list_ (count, (const PFsql_t **) list)));
+                        PFsql_stmt_list_ (count, (const PFsql_t **) list)));
 }
 
 
@@ -1461,6 +1461,7 @@ collect_fragments (PFla_op_t * p)
 static PFsql_t *
 cast_ (PFsql_t * expr, PFalg_simple_type_t ty, PFalg_simple_type_t res_ty)
 {
+    if (ty == res_ty) return expr;
     #define NUM_TYPE(t)    ((t == aat_nat) || \
                             (t == aat_int) || \
                             (t == aat_dec) || \
@@ -1674,11 +1675,7 @@ reduce (PFla_op_t * p, int goalnt)
 
         /* Rel:    lit_tbl */
         case 3:
-            /* FIXME: there has to be an union to support tables with
-               more than one row. */
-            assert (p->sem.lit_tbl.count == 1);
-
-            for (unsigned int row = 0; row < p->sem.lit_tbl.count; row++)
+            if (p->sem.lit_tbl.count == 1) {
                 for (unsigned int col = 0; col < p->schema.count; col++)
                     for (PFalg_simple_type_t t = 1; t; t <<= 1)
                         if (t & TYPE_MASK (p->schema.items[col].type)) {
@@ -1687,18 +1684,95 @@ reduce (PFla_op_t * p, int goalnt)
                                 p->schema.items[col].name,
                                 t,
                                 (t == p->sem.lit_tbl
-                                            .tuples[row]
+                                            .tuples[0]
                                             .atoms[col].type)
-                                ? literal (p->sem.lit_tbl.tuples[row]
+                                ? literal (p->sem.lit_tbl.tuples[0]
                                                          .atoms[col])
                                 : cast (null (), type (t)));
                         }
 
-            from_list_add (FROMLIST(p),
-                           schema_table_name (
-                               "sysibm",
-                               table_name (PF_SQL_TABLE_SYSDUMMY1)),
-                           new_alias ());
+                from_list_add (FROMLIST(p),
+                               schema_table_name (
+                                   "sysibm",
+                                   table_name (PF_SQL_TABLE_SYSDUMMY1)),
+                               new_alias ());
+            } else {
+                /* literal table has more than one row */
+                PFsql_tident_t      newtable = new_table_name ();
+                PFsql_aident_t      newalias = new_alias ();
+
+                PFsql_t *valuesquery = NULL;
+                PFsql_t **list = NULL;
+                PFsql_t **l_list = NULL;
+                PFsql_t *columnlist = NULL;
+
+                unsigned int ccount = 0,
+                             rcount = p->sem.lit_tbl.count;
+                unsigned int colcount = 0;
+                unsigned int col = 0;
+
+                /* calculate the size of the list and additionally
+                 * prepare the column list and even the column
+                 * environment. */
+                for (unsigned int col = 0; col < p->schema.count; col++)
+                     for (PFalg_simple_type_t t = 1; t; t <<= 1)
+                          if (t & TYPE_MASK (p->schema.items[col].type)) {
+                               /* found another literal */
+                               ccount ++;
+                               columnlist = column_list (columnlist,
+                                                column_name (new_col (
+                                                     p->schema.items[col]
+                                                              .name, t)));
+                               col_env_add (COLMAP (p),
+                                            p->schema.items[col].name,
+                                            t,
+                                            ext_column_name (newalias,
+                                                new_col (p->schema.items[col]
+                                                            .name, t)));
+                          }
+
+                /* prepare the fromlist */
+                from_list_add (FROMLIST(p),
+                               table_name (newtable),
+                               newalias);
+
+                /* initialize the list */
+                list  = PFmalloc (ccount * sizeof (PFsql_t *));
+                l_list = PFmalloc (rcount * sizeof (PFsql_t *));
+
+                /* run over all columns */
+                for (unsigned int row = 0; row < p->sem.lit_tbl.count; row++) {
+                    colcount = 0;
+                    for (col = 0; col < p->schema.count; col++)
+                        for (PFalg_simple_type_t t = 1; t; t <<= 1)
+                            if (t & TYPE_MASK (p->schema.items[col].type)) {
+                                /* found another literal */
+                                list[colcount] = (t == p->sem.lit_tbl.tuples[row]
+                                                      .atoms[col].type) ?
+                                          literal (p->sem.lit_tbl.tuples[row]
+                                                                 .atoms[col])
+                                          : cast (null (), type (t));
+
+                                /* increment the countvariable */
+                                colcount++;
+                            }
+
+                    /* generate the list and add it to our list of lists */
+                    l_list[row] = PFsql_stmt_list_ (ccount, (const PFsql_t **) list); 
+                }
+
+                valuesquery = values (PFsql_list_list_(rcount, 
+                                             (const PFsql_t **) l_list)); 
+
+                execute (comment ("Binding due to multi value literal table"),
+                         bind (table_def (
+                                   newtable,
+                                   columnlist),
+                                   valuesquery));
+
+                BOUND(p) = true;
+            }
+                   
             break;
 
         /* Rel:    attach (Rel) */
@@ -1859,7 +1933,7 @@ reduce (PFla_op_t * p, int goalnt)
                                            expr,
                                            column_name (colname))),
                                    transform_frommap (R(p)),
-                                   transform_wheremap (R(p)),
+                                   transform_wheremap (R(p)), 
                                    NULL)));
 
                 /* prepare a new sql annotation
@@ -2247,7 +2321,8 @@ reduce (PFla_op_t * p, int goalnt)
                                     transform_expression (cast_ (expr, t, res_ty),
                                       column_name (res_col))),
                                 transform_frommap (L(p)),
-                                transform_wheremap (L(p)),
+                                where_list (transform_wheremap (L(p)),
+                                             is_not (expr, null ())),
                                 NULL);
 
                          query = (query)?union_(query,temp):temp; 
