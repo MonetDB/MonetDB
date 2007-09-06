@@ -124,7 +124,7 @@ def am_extra_dist_dir(fd, var, values, am):
         fd.write("\tmkdir -p $(distdir)/%s\n" % i)
         fd.write("\tcp -pR $(srcdir)/%s/* $(distdir)/%s\n" % (i, i))
         fd.write("\trm -rf `find $(distdir)/%s -name CVS -print`\n" % i)
-        fd.write("\tfind $(distdir)/%s -perm -0111 -type f ! -name \\*.bat ! -name \\*.sh ! -exec grep -q '^#!' {} \\; -print | xargs --no-run-if-empty chmod -x\n" % i)
+        fd.write("\tfind $(distdir)/%s -perm -0111 -type f ! -name \\*.bat ! -name \\*.sh ! -exec grep -q '^#!' {} \\; -print | xargs --no-run-if-empty chmod a-x\n" % i)
 
 def am_extra_headers(fd, var, values, am):
     for i in values:

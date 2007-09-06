@@ -64,7 +64,7 @@ srpm:	MonetDB-server.spec $(top_builddir)/$(distdir).tar.gz $(rpmtopdir)/rpmmacr
 	done
 
 cleanup_distr:
-	find MonetDB4-* -perm -0111 -type f ! -name \*.bat ! -name \*.sh ! -exec grep -q '^#!' {} \; -print | xargs --no-run-if-empty chmod -x
+	find MonetDB4-* -perm -0111 -type f ! -name \*.bat ! -name \*.sh ! -exec grep -q '^#!' {} \; -print | xargs --no-run-if-empty chmod a-x
 	find MonetDB4-* -name \*.in ! -name configure.in ! -name \*.spec.in -print | while read i; do test -f $${i%.in} && rm -f $${i%.in}; done || true
 
 dist-hook: cleanup_distr
