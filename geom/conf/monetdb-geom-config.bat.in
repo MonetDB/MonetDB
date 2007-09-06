@@ -26,7 +26,7 @@ if "%1" == "--prefix"		echo %prefix%		& goto shift
 
 :usage
 	echo.
-	echo Usage: monetdb-config [OPTION]
+	echo Usage: monetdb-geom-config [OPTION]
 	echo.
 	echo Known values for OPTION are:
 	echo.

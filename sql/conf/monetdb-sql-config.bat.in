@@ -34,7 +34,7 @@ if "%1" == "--modpath5"		echo %modpath5%		& goto shift
 
 :usage
 	echo.
-	echo Usage: monetdb-config [OPTION]
+	echo Usage: monetdb-sql-config [OPTION]
 	echo.
 	echo Known values for OPTION are:
 	echo.
