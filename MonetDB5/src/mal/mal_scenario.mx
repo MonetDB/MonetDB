@@ -581,7 +581,9 @@ runScenarioBody(Client c)
 {
 	str msg= MAL_SUCCEED;
 	lng start;
+#ifdef HAVE_TIMES
 	struct tms t0,t1;
+#endif
 
 	while (c->mode > FINISHING) {
 		msg = MAL_SUCCEED;
