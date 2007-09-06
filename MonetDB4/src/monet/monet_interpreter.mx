@@ -1560,8 +1560,12 @@ interpret_batcast(str atom, int argc, ValPtr val, ValPtr res)
 
 			assert(b->ttype != TYPE_void && tpe != TYPE_void);
 			assert(b->ttype != TYPE_oid);
-#if SIZEOF_OID != SIZEOF_INT
-			assert(tpe != TYPE_oid);
+#if SIZEOF_OID == SIZEOF_LNG
+			assert(tpe != TYPE_oid || (b->ttype >= TYPE_flt && b->ttype <= TYPE_dbl));
+#elif SIZEOF_OID == SIZEOF_WRD /* < SIZEOF_LNG */
+			assert(tpe != TYPE_oid || (b->ttype >= TYPE_flt && b->ttype <= TYPE_lng));
+#else /* SIZEOF_OID < SIZEOF_WRD */
+			assert(tpe != TYPE_oid || (b->ttype >= TYPE_wrd && b->ttype <= TYPE_lng));
 #endif
 			/* assert(b->ttype > tpe && ... ); */
 @= interpret_batcast_source_switch

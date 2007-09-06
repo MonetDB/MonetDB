@@ -33,8 +33,10 @@ quit();
 # Visit http://monetdb.cwi.nl/ for further information.
 
 module(tcpip);
+module(unix);
+VAR host := getenv("HOST");
 VAR mapiport := monet_environment.find("mapi_port");
-VAR c := open("localhost:"+mapiport);
+VAR c := open(host+":"+mapiport);
 
 var res := rpc(c, "g();"); # caused crash
 print(count(res));

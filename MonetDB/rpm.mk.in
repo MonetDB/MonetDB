@@ -23,8 +23,7 @@ rpmtopdir = $(shell cd $(top_builddir) && pwd)/rpm
 $(top_builddir)/$(distdir).tar.gz:
 	$(MAKE) $(AM_MAKEFLAGS) dist
 
-rpm:	MonetDB.spec $(top_builddir)/$(distdir).tar.gz
-
+$(rpmtopdir)/rpmmacros:
 	mkdir -p $(rpmtopdir)/RPMS
 	mkdir -p $(rpmtopdir)/SRPMS
 	mkdir -p $(rpmtopdir)/SPECS
@@ -38,10 +37,19 @@ rpm:	MonetDB.spec $(top_builddir)/$(distdir).tar.gz
 	echo "%tmpdir            %{_tmppath}"         >> $(rpmtopdir)/rpmmacros
 	echo "%rpmcflags         -O2 "                >> $(rpmtopdir)/rpmmacros
 	echo "#%top_builddirroot %{_topdir}/INSTALL/" >> $(rpmtopdir)/rpmmacros
+	echo "%dist              _@LINUX_DIST@"       >> $(rpmtopdir)/rpmmacros
+	if test "@oids@" -eq 32; then echo "%oid32 1" >> $(rpmtopdir)/rpmmacros; fi
 
-	$(RPMBUILD) -ta --target `uname -m` --rcfile $(rpmtopdir)/rpmrc $(top_builddir)/$(distdir).tar.gz
+rpm:	MonetDB.spec $(top_builddir)/$(distdir).tar.gz $(rpmtopdir)/rpmmacros
+	$(RPMBUILD) --rcfile $(rpmtopdir)/rpmrc -ta --target `uname -m` --define="comp_cc @CC@" $(top_builddir)/$(distdir).tar.gz
 	for i in rpm/SRPMS/*_@LINUX_DIST@.oid@oids@* ; do \
 		mv "$$i" "`echo "$$i" | sed 's|_@LINUX_DIST@.oid@oids@||'`" ; \
 	done
 
 	rm -rf $(rpmtopdir)/BUILD
+
+srpm:	MonetDB.spec $(top_builddir)/$(distdir).tar.gz $(rpmtopdir)/rpmmacros
+	$(RPMBUILD) --rcfile $(rpmtopdir)/rpmrc -ts $(top_builddir)/$(distdir).tar.gz
+	for i in rpm/SRPMS/*_@LINUX_DIST@.oid@oids@* ; do \
+		mv "$$i" "`echo "$$i" | sed 's|_@LINUX_DIST@.oid@oids@||'`" ; \
+	done

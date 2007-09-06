@@ -261,11 +261,15 @@ gdk_export int gettimeofday(struct timeval *tv, int *ignore_zone);
 #endif
 gdk_export int win_stat(const char *, struct stat *);
 gdk_export int win_rmdir(const char *);
+gdk_export int win_rename(const char *, const char *);
+gdk_export int win_unlink(const char *);
 gdk_export int win_mkdir(const char *, const int mode);
 
 #define stat(x,y)	win_stat(x,y)
 #define mkdir		win_mkdir
 #define rmdir		win_rmdir
+#define rename		win_rename
+#define unlink		win_unlink
 #if _WIN32_WINNT >= 0x500
 #define link		win_link
 #endif
@@ -1728,8 +1732,49 @@ win_rmdir(const char *pathname)
 	char buf[128], *p = reduce_dir_name(pathname, buf, sizeof(buf));
 	int ret = _rmdir(p);
 
+	if (ret < 0) {
+		/* it could be the <expletive deleted> indexing
+		 * service which prevents us from doing what we have a
+		 * right to do, so try again (once) */
+		IODEBUG THRprintf(GDKout, "#retry rmdir %s\n", pathname);
+		MT_sleep_ms(100); /* wait a little */
+		ret = _rmdir(p);
+	}
 	if (p != buf)
 		free(p);
+	return ret;
+}
+
+int
+win_unlink(const char *pathname)
+{
+	int ret = _unlink(pathname);
+
+	if (ret < 0) {
+		/* it could be the <expletive deleted> indexing
+		 * service which prevents us from doing what we have a
+		 * right to do, so try again (once) */
+		IODEBUG THRprintf(GDKout, "#retry unlink %s\n", pathname);
+		MT_sleep_ms(100); /* wait a little */
+		ret = _unlink(pathname);
+	}
+	return ret;
+}
+
+#undef rename
+int
+win_rename(const char *old, const char *new)
+{
+	int ret = rename(old, new);
+
+	if (ret < 0) {
+		/* it could be the <expletive deleted> indexing
+		 * service which prevents us from doing what we have a
+		 * right to do, so try again (once) */
+		IODEBUG THRprintf(GDKout, "#retry rename %s %s\n", old, new);
+		MT_sleep_ms(100); /* wait a little */
+		ret = rename(old, new);
+	}
 	return ret;
 }
 

@@ -43,6 +43,7 @@ easy to find something akin you intend to enter.
 #define EC_CHAR 	3
 #define EC_STRING 	4
 #define EC_BLOB		5
+#define EC_VARCHAR(e)	(e==EC_CHAR||e==EC_STRING)
 
 #define EC_NUM 		6
 #define EC_INTERVAL 	7
@@ -198,8 +199,8 @@ static int convert_matrix[EC_MAX][EC_MAX] = {
 /* EC_ANY */	{ 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
 /* EC_TABLE */	{ 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
 /* EC_BIT */	{ 0, 0, 1, 1, 1, 0, 2, 2, 2, 0, 0, 0, 0, 0 },
-/* EC_CHAR */	{ 2, 2, 2, 1, 1, 0, 2, 2, 2, 2, 2, 2, 2, 0 },
-/* EC_STRING */	{ 2, 2, 2, 1, 1, 0, 2, 2, 2, 2, 2, 2, 2, 0 },
+/* EC_CHAR */	{ 2, 2, 2, 1, 1, 0, 2, 2, 2, 2, 2, 2, 2, 2 },
+/* EC_STRING */	{ 2, 2, 2, 1, 1, 0, 2, 2, 2, 2, 2, 2, 2, 2 },
 /* EC_BLOB */	{ 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0 },
 /* EC_NUM */	{ 0, 0, 0, 1, 1, 0, 1, 1, 1, 1, 0, 1, 0, 0 },
 /* EC_INTERVAL*/{ 0, 0, 0, 1, 1, 0, 1, 0, 0, 0, 1, 1, 1, 0 },
@@ -1386,10 +1387,8 @@ sqltypeinit(void)
 		}
 	}
 
-	for (t = decimals; t < dates; t++) {
-		sql_create_func("truncate", "sql", "trunc", *t, INT, *t, SCALE_NONE);
+	for (t = decimals; t < dates; t++) 
 		sql_create_func("round", "sql", "round", *t, SHT, *t, SCALE_NONE);
-	}
 
 	for (t = numerical; t < end; t++) {
 		sql_type **u;

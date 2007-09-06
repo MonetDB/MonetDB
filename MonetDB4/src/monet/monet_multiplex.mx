@@ -1430,7 +1430,7 @@ interpret_setaggr(str name, int argc, ValPtr argv, ValPtr res, YYSTREE tt, int s
 	BAT *b, *nested, *nested_rev, *histo = 0, *extent = 0, *ret = 0;
 	size_t minpos;
 	int ret_val = -1, varsize, head_type, hidden_vartype = 0;
-	int prop_key, prop_sorted = 0;
+	int prop_key, prop_sorted = 0, restore = 1;
 	GDKfcn direct_call = NULL, packed_call = NULL;
 	ValRecord argv_bak;
 	BUN p, q, r, s;
@@ -1688,6 +1688,7 @@ a temporary BAT 'nested'; in which we insert all tail values.
 		assert(batbuns->base!=(ptr)1);
 		nested->batDeleted = nested->batInserted = batbuns->base;
 
+		restore = 0;
 		if (direct_call == NULL) {
 			if (GDKdebug & 131072)
 				THRprintf(GDKout, "setaggr impl: non-optimized hash\n");
@@ -1814,8 +1815,19 @@ but rather discard the complete result and return an error.
 	argv[1] = argv_bak;
 
 	/* undo all our hacks in nested before freeing it */
-	*(BATstore*) nested = nested_bak;
-	*(BAT*) nested_rev = nested_rev_bak;
+	if (restore) {
+		*(BATstore*) nested = nested_bak;
+		*(BAT*) nested_rev = nested_rev_bak;
+	} else {
+		BATstore *n = (BATstore*)nested;
+		nested->H = &n->H;
+		nested->T = &n->T;
+		nested_rev->H = &n->T;
+		nested_rev->T = &n->H;
+		nested_rev->dims = nested_rev_bak.dims;
+		nested->dims = nested_bak.B.dims;
+		nested->hheap = NULL;
+	}
 	BBPreclaim(nested);
 
 	if (ret_val < 0) {

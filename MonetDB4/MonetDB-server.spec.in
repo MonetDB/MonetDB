@@ -1,6 +1,15 @@
+# groups of related archs
+%define all_x86 i386 i586 i686
+
+%ifarch %{all_x86}
+%define bits 32
+%else
+%define bits 64
+%endif
+
 %define name MonetDB4-server
 %define version @VERSION@
-%define release 1_@LINUX_DIST@.oid@oids@
+%define release 1%{?dist}%{?oid32:.oid32}%{!?oid32:.oid%{bits}}
 
 %define prefix /usr
 %define sysconfdir /etc
@@ -22,34 +31,31 @@ BuildRequires: python
 
 %{!?_with_python: %{!?_without_python: %define _with_python --with-python}}
 %{!?buildsystem: %define buildsystem 0}
-%define comp_cc @CC@
 %define builddoc 0
 
-# groups of related archs
-%define all_x86 i386 i586 i686
-
-%ifarch %{all_x86}
-%define bits 32
-%else
-%define bits 64
+Requires: MonetDB-client >= 1.18
+%if !%{?buildsystem}
+BuildRequires: MonetDB-devel >= 1.18
+BuildRequires: MonetDB-client-devel >= 1.18
 %endif
+PreReq: /sbin/chkconfig, /sbin/service, sh-utils
+PreReq: %{_sbindir}/groupadd, %{_sbindir}/useradd
 
 %package devel
 Summary: MonetDB development package 
 Group: System 
+Requires: %{name} = %{version}-%{release}
+Requires: MonetDB-devel >= 1.18
+Requires: MonetDB-client-devel >= 1.18
 
 %description
 MonetDB is a database management system that is developed from a
 main-memory perspective with use of a fully decomposed storage model,
 automatic index management, extensibility of data types and search
 accellerators, SQL- and XML- frontends.
-Requires: MonetDB-client
-PreReq: /sbin/chkconfig, /sbin/service, sh-utils
-PreReq: %{_sbindir}/groupadd, %{_sbindir}/useradd
 
 %description devel
 Add the MonetDB devel description here
-Requires: %{name}
 
 %prep
 rm -rf $RPM_BUILD_ROOT
@@ -62,7 +68,8 @@ rm -rf $RPM_BUILD_ROOT
 	--enable-assert=no \
 	--enable-optimize \
 	--enable-bits=%{bits} \
-	CC="%{comp_cc}" \
+	%{?oid32:--enable-oid32} \
+	%{?comp_cc:CC="%{comp_cc}"} \
 	--prefix=%{prefix} \
 	--sysconfdir=%{sysconfdir} \
 	--localstatedir=%{localstatedir} \
@@ -76,12 +83,14 @@ rm -rf $RPM_BUILD_ROOT
 make install \
 	DESTDIR=$RPM_BUILD_ROOT 
 
-mkdir -p $RPM_BUILD_ROOT/%{localstatedir}/MonetDB4/dbfarm
+mkdir -p $RPM_BUILD_ROOT/%{localstatedir}/MonetDB4
 # insert example db here!
 
 find $RPM_BUILD_ROOT -name .incs.in | xargs rm -f
 
 # cleanup stuff we don't want to install
+rm -r $RPM_BUILD_ROOT%{_libdir}/MonetDB4/lib/*.la
+rm -r $RPM_BUILD_ROOT%{_libdir}/*.la
 rm -rf $RPM_BUILD_ROOT%{_libdir}/MonetDB4/Tests/*
 rm -rf $RPM_BUILD_ROOT%{prefix}/bin/monetdb4-config.bat
 
@@ -99,10 +108,9 @@ rm -fr $RPM_BUILD_ROOT
 %{_libdir}/libmonet.*
 %{_libdir}/libembeddedmil.*
 %{_libdir}/MonetDB4/lib/*.so* 
-%{_libdir}/MonetDB4/lib/*.la* 
 %{_libdir}/MonetDB4/*.mil* 
 
-%dir %{localstatedir}/MonetDB4
+%attr(770,monetdb,monetdb) %dir %{localstatedir}/MonetDB4
 
 %config(noreplace) %{sysconfdir}/MonetDB.conf 
 
@@ -124,4 +132,8 @@ umask 022
 
 #create monetdb init script
 #/sbin/chkconfig --add monetdb
+
+%changelog
+* Mon Jun 25 2007 Sjoerd Mullender <sjoerd@acm.org> - @VERSION@-1
+- Built.
 

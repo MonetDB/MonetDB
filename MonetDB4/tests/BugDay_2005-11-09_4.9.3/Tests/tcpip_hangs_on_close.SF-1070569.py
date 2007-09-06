@@ -38,13 +38,15 @@ y.print();
 prelude_2 = '''
 module(tcpip);
 module(alarm);
+module(unix);
+VAR host := getenv("HOST");
 VAR mapiport := monet_environment.find("mapi_port");
 '''
 
 script_2 = '''
 {
 sleep(2); # waiting for first server to start listening
-VAR c := open("localhost:"+(int(mapiport)+%d));
+VAR c := open(host+":"+(int(mapiport)+%d));
 var x := bat(oid, oid);
 x.insert(0@0, 0@0);
 x.insert(1@0, 0@0);

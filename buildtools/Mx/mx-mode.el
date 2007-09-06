@@ -52,7 +52,7 @@
   (modify-syntax-entry ?\n ">" mx-mode-syntax-table))
 
 (defvar mx-mode-map ()
-  "Keymap used in Java mode.")
+  "Keymap used in Mx mode.")
 
 (if mx-mode-map
     ()

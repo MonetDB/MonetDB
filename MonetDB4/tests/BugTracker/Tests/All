@@ -19,3 +19,4 @@ gold_crash.1411919
 leftfetchjoin_crash.SF-1705726
 outerjoin_bug.SF-1704972
 delete_from_persistent_dense_BAT.SF-1713584
+sum_double_free

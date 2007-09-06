@@ -16,18 +16,19 @@
 
 EXTRA_DIST = \
 		Test_Cautocommit.java \
+		Test_Clargequery.java \
+		Test_Cmanycon.java \
+		Test_Creplysize.java \
 		Test_Csavepoints.java \
 		Test_Ctransaction.java \
 		Test_PStimedate.java \
+		Test_PStimezone.java \
+		Test_PStypes.java \
 		Test_Rbooleans.java \
+		Test_Rmetadata.java \
 		Test_Rpositioning.java \
 		Test_Rtimedate.java \
 		Test_Sbatching.java \
-		Test_Rmetadata.java \
-		Test_Creplysize.java \
-		Test_PStimezone.java \
-		Test_PStypes.java \
-		Test_Cmanycon.java \
 		BugConcurrent_clients_SF_1504657.java \
 		build.xml build.properties
 
@@ -35,17 +36,18 @@ ant_compile = {
 	DIR = datadir/MonetDB/Tests
 	FILES = \
 		Test_Cautocommit.class \
+		Test_Clargequery.class \
+		Test_Cmanycon.class \
+		Test_Creplysize.class \
 		Test_Csavepoints.class \
 		Test_Ctransaction.class \
 		Test_PStimedate.class \
+		Test_PStimezone.class \
+		Test_PStypes.class \
 		Test_Rbooleans.class \
+		Test_Rmetadata.class \
 		Test_Rpositioning.class \
 		Test_Rtimedate.class \
 		Test_Sbatching.class \
-		Test_Rmetadata.class \
-		Test_Creplysize.class \
-		Test_PStimezone.class \
-		Test_PStypes.class \
-		BugConcurrent_clients_SF_1504657.class \
-		Test_Cmanycon.class
+		BugConcurrent_clients_SF_1504657.class
 }
