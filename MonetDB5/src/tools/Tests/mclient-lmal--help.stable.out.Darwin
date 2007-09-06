@@ -1,0 +1,50 @@
+stdout of test 'mclient-lmal--help` in directory 'src/tools` itself:
+
+
+# 11:03:02 >  
+# 11:03:02 >  Mtimeout -timeout 240  mserver5 "--config=/ufs/mk/monet5/Linux/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5//Linux/lib/MonetDB5:/ufs/mk/monet5//Linux/lib/MonetDB5/lib:/ufs/mk/monet5//Linux/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/mk/monet5//Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5//Linux/var/MonetDB5/sql_logs" --set "xquery_logdir=/ufs/mk/monet5//Linux/var/MonetDB5/xquery_logs" --set mapi_open=true --set xrpc_open=true --set mapi_port=36261 --set xrpc_port=45929 --set monet_prompt= --trace "--dbname=mTests_src_tools" --dbinit="" ; echo ; echo Over..
+# 11:03:02 >  
+
+!WARNING: GDKlockHome: ignoring empty or invalid .gdk_lock.
+!WARNING: BBPdir: initializing BBP.
+# MonetDB server v5.1.0, based on kernel v1.19.0
+# Serving database 'mTests_src_tools'
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Copyright (c) 1993-2007 CWI, all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://gio.ins.cwi.nl:36261/
+
+Ready.
+#function user.main():void;
+#    clients.quit();
+#end main;
+
+Over..
+
+# 11:03:02 >  
+# 11:03:02 >  Mtimeout -timeout 120 ./mclient-lmal--help.MAL.sh mclient-lmal--help 
+# 11:03:02 >  
+
+
+# 11:03:02 >  
+# 11:03:02 >  Mtimeout -timeout 60 mclient -lmal -umonetdb -Pmonetdb --config=/ufs/mk/monet5/Linux/etc/monetdb5.conf --host=gio --port=36261 --help
+# 11:03:02 >  
+
+\?      - show this message
+?pat    - MAL function help. pat=[modnme[.fcnnme][(][)]] wildcard *
+\<file  - read input from file
+\>file  - save response in file, or stdout if no file is given
+\|cmd   - pipe result to process, or stop when no command is given
+\t      - toggle timer
+\e      - echo the query in sql formatting mode
+\f      - format using a built-in renderer {csv,tab,raw,sql,xml} 
+\w#     - set maximal page width (-1=raw,0=no limit, >0 max char)
+\r#     - set maximum rows per page (-1=raw)
+\L file - save client/server interaction
+\X      - trace mclient code
+\q      - terminate session
+mal>
+# 11:03:02 >  
+# 11:03:02 >  Done.
+# 11:03:02 >  
+
