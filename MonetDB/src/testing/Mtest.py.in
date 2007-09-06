@@ -429,12 +429,12 @@ def CreateHtmlIndex (env, *body) :
             if URLPREFIX:
                 header = Element('a',
                                  {'href': '%s%s/%s' % (URLPREFIX, url(TSTDIR), TSTSUFF),
-                                  'target': '%s%s_%s_body' % (URLSUFFIX_D, OSVER, TSTDIR),
+                                  'target': '%s%s_%s_body' % (URLSUFFIX_D, DISTVER, TSTDIR),
                                   'class': 'black'},
                                  header)
         else:
             header = Element('span', {'class': 'black'},
-                             Text(OSVER))
+                             Text(DISTVER))
         tr = Element('tr', {},
                      Element('th', {'class': 'header'},
                              header))
@@ -478,7 +478,7 @@ def CreateHtmlIndex (env, *body) :
                                Element('frame',
                                        {'src': '%s.head.html' % INDEX,
                                         'scrolling': 'auto',
-                                        'name': '%s_%s_head' % (OSVER, TSTDIR),
+                                        'name': '%s_%s_head' % (DISTVER, TSTDIR),
                                         'frameborder': 'yes',
                                         'bordercolor': white,
                                         'marginwidth': '0',
@@ -486,7 +486,7 @@ def CreateHtmlIndex (env, *body) :
                                Element('frame',
                                        {'src': url(env['_'+TSTDIR+'_BODY_'][0]),
                                         'scrolling': 'auto',
-                                        'name': '%s_%s_body' % (OSVER, TSTDIR),
+                                        'name': '%s_%s_body' % (DISTVER, TSTDIR),
                                         'frameborder': 'yes',
                                         'bordercolor': white,
                                         'marginwidth': '0',
@@ -542,7 +542,7 @@ def CreateTstWhatXhtml (env, TST, stableWHAT, EXT, SockTime) :
         if SockTime == F_TIME:
             diffclass = 'timeout'
             difftext = difftext + ' (Timeout)'
-    SYSTEM = OSVER+":"
+    SYSTEM = DISTVER+":"
     if COMPILER:
         SYSTEM = COMPILER+", "+SYSTEM
 
@@ -601,7 +601,7 @@ def CreateTstWhatXhtml (env, TST, stableWHAT, EXT, SockTime) :
                            Element('frame',
                                    {'src': '.%s%s.head.html' % (TST, WHAT),
                                     'scrolling': 'auto',
-                                    'name': '%s_%s_%s_%s_head' % (OSVER, TSTDIR, TST, WHAT[1:]),
+                                    'name': '%s_%s_%s_%s_head' % (DISTVER, TSTDIR, TST, WHAT[1:]),
                                     'frameborder': 'yes',
                                     'bordercolor': white,
                                     'marginwidth': '0',
@@ -609,7 +609,7 @@ def CreateTstWhatXhtml (env, TST, stableWHAT, EXT, SockTime) :
                            Element('frame',
                                    {'src': '%s%s.diff.html' % (TST, xWHAT),
                                     'scrolling': 'auto',
-                                    'name': '%s_%s_%s_%s_body' % (OSVER, TSTDIR, TST, WHAT[1:]),
+                                    'name': '%s_%s_%s_%s_body' % (DISTVER, TSTDIR, TST, WHAT[1:]),
                                     'frameborder': 'yes',
                                     'bordercolor': white,
                                     'marginwidth': '0',
@@ -618,7 +618,7 @@ def CreateTstWhatXhtml (env, TST, stableWHAT, EXT, SockTime) :
     html.write(f, True)
     f.close()
     f = open(".%s%s.head.html" % (TST, WHAT),"w")
-    target = '%s_%s_%s_%s_body' % (OSVER, TSTDIR, TST, WHAT[1:])
+    target = '%s_%s_%s_%s_body' % (DISTVER, TSTDIR, TST, WHAT[1:])
     cvs = Text('cvs')
     if URLPREFIX:
         cvs = Element('a', {'href': '%s%s/%s%s' % (URLPREFIX, url(TSTDIR), TSTSUFF, URLSUFFIX_D),
@@ -673,7 +673,7 @@ def CreateTstWhatXhtml (env, TST, stableWHAT, EXT, SockTime) :
     html.write(f, True)
     f.close()
 #TODO?
-# <A HREF='.Mtest.Slave.Log.OutErr' TARGET='"""+OSVER+"_"+TSTDIR+"_"+TST+"_"+WHAT[1:]+"""_body'>LOG</A>).
+# <A HREF='.Mtest.Slave.Log.OutErr' TARGET='"""+DISTVER+"_"+TSTDIR+"_"+TST+"_"+WHAT[1:]+"""_body'>LOG</A>).
 ### CreateTstWhatXhtml (env, TST, stableWHAT, EXT) #
 
 def CreateSrcIndex (env, TST, EXT) :
@@ -711,7 +711,7 @@ def CreateSrcIndex (env, TST, EXT) :
                            Element('frame',
                                    {'src': '.%s.src.index.head.html' % TST,
                                     'scrolling': 'auto',
-                                    'name': '%s_%s_%s_head' % (OSVER, TSTDIR, TST),
+                                    'name': '%s_%s_%s_head' % (DISTVER, TSTDIR, TST),
                                     'frameborder': 'yes',
                                     'bordercolor': white,
                                     'marginwidth': '0',
@@ -719,7 +719,7 @@ def CreateSrcIndex (env, TST, EXT) :
                            Element('frame',
                                    {'src': framesrc,
                                     'scrolling': 'auto',
-                                    'name': '%s_%s_%s_body' % (OSVER, TSTDIR, TST),
+                                    'name': '%s_%s_%s_body' % (DISTVER, TSTDIR, TST),
                                     'frameborder': 'yes',
                                     'bordercolor': white,
                                     'marginwidth': '0',
@@ -737,7 +737,7 @@ def CreateSrcIndex (env, TST, EXT) :
             if URLPREFIX:
                 slink = Element('a',
                                 {'href': '%s%s/%s/%s%s' % (URLPREFIX, url(TSTDIR), TSTSUFF, s, URLSUFFIX_F),
-                                 'target': '%s_%s_%s_body' % (OSVER, TSTDIR, TST)},
+                                 'target': '%s_%s_%s_body' % (DISTVER, TSTDIR, TST)},
                                 slink)
             tr.addchild(Element('td', {'class': 'header'},
                                 slink))
@@ -832,16 +832,16 @@ def AddTstToHtmlIndex (env, TST, STABLEout, STABLEerr, EXT, SockTime) :
 
     td = Element('td', {'class': 'header'},
                  Element('a', {'href': '.%s.src.index.html' % TST,
-                               'target': '%s_%s_body' % (OSVER, TSTDIR),
+                               'target': '%s_%s_body' % (DISTVER, TSTDIR),
                                'class': tstclass},
                          Text(TST)),
                  Element('br'))
     td.addchildren(AddHref('.%s%s.html' % (TST, '.out'),
-                           '%s_%s_body' % (OSVER, TSTDIR),
+                           '%s_%s_body' % (DISTVER, TSTDIR),
                            'out', o))
     td.addchild(Text("&nbsp;|&nbsp;", raw = True))
     td.addchildren(AddHref('.%s%s.html' % (TST, '.err'),
-                           '%s_%s_body' % (OSVER, TSTDIR),
+                           '%s_%s_body' % (DISTVER, TSTDIR),
                            'err', e))
     if not env.has_key('_'+TSTDIR+'_BODY_')  or  \
        not env['_'+TSTDIR+'_BODY_'][0]  or  \
@@ -861,7 +861,7 @@ def AddSubToHtmlIndex (env, TSTDIR, diff) :
     TSTPREF = env['TSTPREF']
 
     td = Element('td', {'class': 'header'})
-    td.addchildren(AddHref('%s/.index.html' % url(TSTDIR), '%s__body' % OSVER,
+    td.addchildren(AddHref('%s/.index.html' % url(TSTDIR), '%s__body' % DISTVER,
                            TSTDIR, diff))
     if not env.has_key('__BODY_')  or  \
        not env['__BODY_'][0]  or  \
@@ -880,7 +880,7 @@ def SkipTest(env, TST, EXT, REASON) :
     f = open("."+TST+".SKIPPED","w")
     f.write("\n%s  Warning:  %s\n\n" % (THISFILE, TEXT))
     f.close()
-    target = '%s_%s_body' % (OSVER, TSTDIR)
+    target = '%s_%s_body' % (DISTVER, TSTDIR)
     td = Element('td', {'class': 'header'},
                  Element('a', {'href': '.%s.src.index.html' % TST,
                                'target': target,
@@ -1061,7 +1061,7 @@ def ApproveOutput (env, TST) :
                 w = 0
             else: # WHAT == 'err'
                 w = 1
-            stableOUTPUT = TSTSRCDIRTST+StableOutErr(env,par,TSTSRCDIRTST,OS,RELEASE)[w]
+            stableOUTPUT = TSTSRCDIRTST+StableOutErr(env,par,TSTSRCDIRTST,OS,RELEASE,DIST,VERSION)[w]
             SYSTEM = stableOUTPUT.split(WHAT)[-1]
 
         if os.path.isfile(testOUTPUT):
@@ -1365,7 +1365,7 @@ def StopAt(ATJOB,ME) :
     #LOG1x at -l >&2
 ### StopAt(ATJOB,ME) #
 
-def StableOutErr(env,par,TST,OS,RELEASE) :
+def StableOutErr(env,par,TST,OS,RELEASE,DIST,VERSION) :
     BITS = env['TST_BITS']
     OIDS = env['TST_OIDS']
     FIVE = env['TST_FIVE']
@@ -1375,7 +1375,7 @@ def StableOutErr(env,par,TST,OS,RELEASE) :
     if STATIC:
         STATIC = "(\.STATIC)?"
     dir,file = os.path.split(TST)
-    outre = re.compile('^'+re.escape(file)+'\.stable\.(?P<tp>out|err)(\.%s(%s)?)?(\.%s)?(\.%s)?%s%s$' % (re.escape(OS), re.escape(RELEASE), BITS, OIDS, FIVE, STATIC))
+    outre = re.compile('^'+re.escape(file)+'\.stable\.(?P<tp>out|err)(\.(%s(%s)?|%s(%s)?))?(\.%s)?(\.%s)?%s%s$' % (re.escape(OS), re.escape(RELEASE), re.escape(DIST), re.escape(VERSION), BITS, OIDS, FIVE, STATIC))
     bestout = besterr = ''
     for f in os.listdir(dir or os.curdir):
         res = outre.match(f)
@@ -1395,7 +1395,7 @@ def StableOutErr(env,par,TST,OS,RELEASE) :
     else:
         STABLEerr = '.stable.err'
     return STABLEout, STABLEerr
-### StableOutErr(env,par,TST,OS,RELEASE) #
+### StableOutErr(env,par,TST,OS,RELEASE,DIST,VERSION) #
 
 def RunTest(env, TST, BusyPorts, COND) :
     Failed = F_SKIP
@@ -1629,7 +1629,7 @@ def RunTest(env, TST, BusyPorts, COND) :
 
         ACCURACYout = par['ACCURACY']
         ACCURACYerr = par['ACCURACY']
-        STABLEout,STABLEerr = StableOutErr(env,par,TST,OS,RELEASE)
+        STABLEout,STABLEerr = StableOutErr(env,par,TST,OS,RELEASE,DIST,VERSION)
         if not os.path.isfile(TST+STABLEout):
             open(TST+STABLEout,"w").close()
             ACCURACYout = 0
@@ -2500,6 +2500,8 @@ def ReadMapproveRc(f) :
     v = {}
     v['OS'] = OS
     v['RELEASE'] = RELEASE
+    v['DIST'] = DIST
+    v['VERSION'] = VERSION
     v['BITS'] = ''
     v['OIDS'] = ''
     v['FIVE'] = ''
@@ -2569,10 +2571,75 @@ if sys.platform == 'linux2' and CONDITIONALS['CROSS_COMPILING']:
     HOST = "WINE"
     RELEASE = "5.2"
 
+if OS == "Linux":
+    #testT = re.compile("^/"+TST+EXT+"/([^/]*)/", re.MULTILINE)
+    #mT = testT.match(l)
+    #  Please keep this aligned / in sync with buildtools/conf/MonetDB.m4 & TestTools/.Mconfig.rc & TestTools/MdoServer !
+    if os.path.isfile('/etc/fedora-release'):
+        l = open('/etc/fedora-release').readline()
+        x = re.compile('^.*(Fedora).* release ([0-9][^ \n]*)( .*)*$').match(l)
+        if x:
+            LINUX_DIST = '%s:%s' % (x.group(1),x.group(2))
+    elif os.path.isfile('/etc/centos-release'):
+        l = open('/etc/centos-release').readline()
+        x = re.compile('^(CentOS) release ([0-9][^ \n]*)( .*)*$').match(l)
+        if x:
+            LINUX_DIST = '%s:%s' % (x.group(1),x.group(2))
+    elif os.path.isfile('/etc/yellowdog-release'):
+        l = open('/etc/yellowdog-release').readline()
+        x = re.compile('^(Yellow) Dog Linux release ([0-9][^ \n]*)( .*)*$').match(l)
+        if x:
+            LINUX_DIST = '%s:%s' % (x.group(1),x.group(2))
+    elif os.path.isfile('/etc/redhat-release'):
+        l = open('/etc/redhat-release').readline()
+    	x0 = re.compile('^.*(Red) (Hat).* Linux *([A-Z]*) release ([0-9][^ \n]*)( .*)*$').match(l)
+    	x1 = re.compile('^Red Hat Enterprise Linux ([AW]S) release ([0-9][^ \n]*)( .*)*$').match(l)
+    	x2 = re.compile('^(CentOS) release ([0-9][^ \n]*)( .*)*$').match(l)
+    	x3 = re.compile('^(Scientific) Linux SL release ([0-9][^ \n]*)( .*)*$').match(l)
+        if x0:
+            LINUX_DIST = '%s%s:%s%s' % (x0.group(1),x0.group(2),x0.group(4),x0.group(3))
+        elif x1:
+            LINUX_DIST = 'RHEL:%s%s' % (x1.group(2),x1.group(1))
+        elif x2:
+            LINUX_DIST = '%s:%s' % (x2.group(1),x2.group(2))
+        elif x3:
+            LINUX_DIST = '%s:%s' % (x3.group(1),x3.group(2))
+    elif os.path.isfile('/etc/SuSE-release'):
+        l = open('/etc/SuSE-release').readline()
+    	x0 = re.compile('^.*(SUSE) LINUX Enterprise ([SD])[ervsktop]* ([0-9][^ \n]*)( .*)*$').match(l)
+    	x1 = re.compile('^SUSE LINUX Enterprise ([SD])[ervsktop]* ([0-9][^ \n]*)( .*)*$').match(l)
+    	x2 = re.compile('^.*(SuSE) Linux.* ([0-9][^ \n]*)( .*)*$').match(l)
+    	x3 = re.compile('^open(SUSE) ([0-9][^ \n]*)( .*)*$').match(l)
+        if x0:
+            LINUX_DIST = '%s:%sE%s' % (x0.group(1),x0.group(3),x0.group(2))
+        elif x1:
+            LINUX_DIST = 'SLE%s:%s' % (x1.group(1),x1.group(2))
+        elif x2:
+            LINUX_DIST = '%s:%s' % (x2.group(1),x2.group(2))
+        elif x3:
+            LINUX_DIST = '%s:%s' % (x3.group(1),x3.group(2))
+    elif os.path.isfile('/etc/gentoo-release'):
+        l = open('/etc/gentoo-release').readline()
+        x = re.compile('^.*(Gentoo) Base System.* [versionrelease]* ([0-9][^ \n]*)( .*)*$').match(l)
+        if x:
+            LINUX_DIST = '%s:%s' % (x.group(1),x.group(2))
+    elif os.path.isfile('/etc/debian_version'):
+    	LINUX_DIST = "Debian:"+open('/etc/debian_version').readline().strip()
+    else:
+        LINUX_DIST = OS+':'+re.compile('^([0-9\.]*)([^0-9\.].*)$').match(RELEASE).group(1)
+    DIST,VERSION = LINUX_DIST.split(':', 1)
+else:
+    DIST = OS
+    VERSION = RELEASE
+
 OSVER = OS+RELEASE
+DISTVER = DIST+VERSION
 os.environ['OS'] = OS
 os.environ['OSVER'] = OSVER
 os.environ['RELEASE'] = RELEASE
+os.environ['DIST'] = DIST
+os.environ['DISTVER'] = DISTVER
+os.environ['VERSION'] = VERSION
 
 if os.environ.has_key('COMPILER'):
     COMPILER = os.environ['COMPILER']
@@ -2585,7 +2652,7 @@ else:
     HTMLTITLE = ""
     if COMPILER:
         HTMLTITLE = " for "+COMPILER
-    HTMLTITLE = ""+THISFILE+" results"+HTMLTITLE+" on "+OSVER       #"+ ("`date`")"
+    HTMLTITLE = ""+THISFILE+" results"+HTMLTITLE+" on "+DISTVER       #"+ ("`date`")"
 
 URLPREFIXMAP = {
     'MonetDB': 'http://monetdb.cvs.sourceforge.net/monetdb/MonetDB/',
@@ -2813,9 +2880,9 @@ def main(argv) :
              "(default: <ext> = 'out' & 'err')"),
             (None, 'S', 'sys', '<sys>',
              "approve specific output *.<ext><sys>\n"
-             "(<sys> = '[.<OS>[<RELEASE>]][.(32|64)bit][.oid(32|64)][.Five][.STATIC]',\n"
-             "(default: longest match for <sys> = '[.%s[%s]]%s%s%s%s')"
-              % (v['OS'], v['RELEASE'], v['BITS'], v['OIDS'], v['FIVE'], v['STATIC'])),
+             "(<sys> = '[.(<OS>[<RELEASE>]|<DIST>[<VERSION>])][.(32|64)bit][.oid(32|64)][.Five][.STATIC]',\n"
+             "(default: longest match for <sys> = '[.(%s[%s]|%s[%s])]%s%s%s%s')"
+              % (v['OS'], v['RELEASE'], v['DIST'], v['VERSION'], v['BITS'], v['OIDS'], v['FIVE'], v['STATIC'])),
             (None, 'f', 'force', None,
              "force approval of error messages (i.e., lines starting with '!')"),
             ]
@@ -3059,11 +3126,17 @@ def main(argv) :
         OS = v['OS']
         RELEASE = v['RELEASE']
         OSVER = OS+RELEASE
+        DIST = v['DIST']
+        VERSION = v['VERSION']
+        DISTVER = DIST+VERSION
         os.environ['OS'] = OS
         os.environ['OSVER'] = OSVER
         os.environ['RELEASE'] = RELEASE
+        os.environ['DIST'] = DIST
+        os.environ['DISTVER'] = DISTVER
+        os.environ['VERSION'] = VERSION
         w = {}
-        for i in 'OS', 'RELEASE', 'BITS', 'OIDS', 'FIVE', 'STATIC':
+        for i in 'OS', 'RELEASE', 'DIST', 'VERSION', 'BITS', 'OIDS', 'FIVE', 'STATIC':
             w[i] = re.escape(v[i])
         for i in 'BITS', 'OIDS', 'FIVE', 'STATIC':
             j = 'TST_'+i
@@ -3072,8 +3145,8 @@ def main(argv) :
             if v[i]:
                 v[i] = '(.%s)?' % v[i]
                 w[i] = '(\.%s)?' % w[i]
-        sv = '^(.%s(%s)?)?%s%s%s%s$' % (v['OS'], v['RELEASE'], v['BITS'], v['OIDS'], v['FIVE'], v['STATIC'])
-        sw = '^(\.%s(%s)?)?%s%s%s%s$' % (w['OS'], w['RELEASE'], w['BITS'], w['OIDS'], w['FIVE'], w['STATIC'])
+        sv = '^(.(%s(%s)?|%s(%s)?))?%s%s%s%s$' % (v['OS'], v['RELEASE'], v['DIST'], v['VERSION'], v['BITS'], v['OIDS'], v['FIVE'], v['STATIC'])
+        sw = '^(\.(%s(%s)?|%s(%s)?))?%s%s%s%s$' % (w['OS'], w['RELEASE'], w['DIST'], w['VERSION'], w['BITS'], w['OIDS'], w['FIVE'], w['STATIC'])
         r = re.compile(sw)
         if not r.match(par['SYSTEM']):
             ErrXit("System (-S) must match '"+sv+"' !")
@@ -3393,9 +3466,11 @@ def main(argv) :
         # create '.Mapprove.rc'
         env['OS'] = os.environ['OS']
         env['RELEASE'] = os.environ['RELEASE']
+        env['DIST'] = os.environ['DIST']
+        env['VERSION'] = os.environ['VERSION']
         n = os.path.join(env['TSTTRGBASE'],TSTPREF,'.Mapprove.rc')
         f = open(n, 'w')
-        for v in 'OS', 'RELEASE', 'TST_BITS', 'TST_OIDS', 'TST_FIVE', 'TST_STATIC':
+        for v in 'OS', 'RELEASE', 'DIST', 'VERSION', 'TST_BITS', 'TST_OIDS', 'TST_FIVE', 'TST_STATIC':
             w = v.replace('TST_','')
             f.write('%s = "%s"\n' % (w, env[v]))
         f.close()

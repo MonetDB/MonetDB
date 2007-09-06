@@ -421,7 +421,7 @@ LINUX_DIST=''
 case "$host_os" in
     linux*)
 	AC_MSG_CHECKING(which Linux distribution we're using) 
-	dnl  Please keep this aligned / in sync with TestTools/.Mconfig.rc & TestTools/MdoServer !
+	dnl  Please keep this aligned / in sync with TestTools/.Mconfig.rc & TestTools/MdoServer & MonetDB/src/testing/Mtest.py.in !
 	if test -s /etc/fedora-release ; then
 		LINUX_DIST="`cat /etc/fedora-release | head -n1 \
 			| sed 's|^.*\(Fedora\).* release \([[0-9]][[^ \n]]*\)\( .*\)*$|\1:\2|'`" 
