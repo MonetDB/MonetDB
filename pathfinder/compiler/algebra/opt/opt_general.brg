@@ -149,18 +149,22 @@ Query:  serialize (Frag, Rel)                     =   1 (10);
 
 Rel:    lit_tbl                                   =   2 (10);
 Rel:    attach (Rel)                              =   3 (10);
-Rel:    cross (Rel, Rel)                          =   4 (10);
-Rel:    cross (Rel, lit_tbl)                      =   5 (10);
-Rel:    cross (lit_tbl, Rel)                      =   6 (10);
-Rel:    eqjoin (Rel, Rel)                         =   8 (10);
-Rel:    semijoin (Rel, Rel)                       =   9 (10);
-Rel:    semijoin (distinct (Rel), Rel)            =  10 (10);
-Rel:    thetajoin (Rel, Rel)                      =  11 (10);
-Rel:    project (Rel)                             =  12 (10);
-Rel:    project (attach (Rel))                    =  13 (10);
-Rel:    project (project (Rel))                   =  14  (1);
-Rel:    select_ (Rel)                             =  19 (10);
-Rel:    disjunion (Rel, Rel)                      =  20 (10);
+Rel:    attach (lit_tbl)                          =   4 (10);
+Rel:    cross (Rel, Rel)                          =   5 (10);
+Rel:    cross (lit_tbl, lit_tbl)                  =   6 (10);
+Rel:    cross (Rel, lit_tbl)                      =   7 (10);
+Rel:    cross (lit_tbl, Rel)                      =   8 (10);
+Rel:    eqjoin (Rel, Rel)                         =   9 (10);
+Rel:    semijoin (Rel, Rel)                       =  10 (10);
+Rel:    semijoin (distinct (Rel), Rel)            =  11 (10);
+Rel:    thetajoin (Rel, Rel)                      =  12 (10);
+Rel:    project (Rel)                             =  13 (10);
+Rel:    project (attach (Rel))                    =  14 (10);
+Rel:    project (project (Rel))                   =  15  (1);
+Rel:    project (lit_tbl)                         =  16 (10);
+Rel:    select_ (Rel)                             =  18 (10);
+Rel:    disjunion (Rel, Rel)                      =  19 (10);
+Rel:    disjunion (lit_tbl, lit_tbl)              =  20 (10);
 Rel:    disjunion (EmptyRel, Rel)                 =  21  (5);
 Rel:    disjunion (Rel, EmptyRel)                 =  22  (5);
 Rel:    intersect (Rel, Rel)                      =  23 (10);
@@ -433,14 +437,47 @@ reduce (PFla_op_t *p, int goalnt)
 
     /* action code */
     switch (rule) {
+        /* Rel:    attach (lit_tbl) */
+        case 4:
+        {
+            unsigned int   i, j,
+                           acount = p->schema.count,
+                           tcount = L(p)->sem.lit_tbl.count;
+            PFalg_att_t   *atts   = PFmalloc (acount * sizeof (PFalg_att_t));
+            PFalg_tuple_t *tuples = PFmalloc (tcount * sizeof (PFalg_tuple_t));
+            PFalg_tuple_t  tuple;
+            PFalg_atom_t   value  = p->sem.attach.value;
 
+            /* copy the tuples and attach the value 
+               of the new column to every tuple */
+            for (i = 0; i < tcount; i++) {
+                tuple = L(p)->sem.lit_tbl.tuples[i];
+                tuples[i].count = acount;
+                tuples[i].atoms = PFmalloc (acount * sizeof (PFalg_atom_t));
+                for (j = 0; j < acount - 1; j++)
+                    tuples[i].atoms[j] = tuple.atoms[j];
+                tuples[i].atoms[j] = value;
+            }
+            /* copy the aligned column names */
+            for (j = 0; j < acount - 1; j++)
+                atts[j] = L(p)->schema.items[j].name;
+            atts[j] = p->sem.attach.res;
+
+            *p = *PFla_lit_tbl_ (PFalg_attlist_ (acount, atts), tcount, tuples);
+            SEEN(p) = false;
+        }   break;
+
+        /* Rel:    cross (lit_tbl, lit_tbl) */
+        case 6:
+        
         /* Rel:    cross (Rel, lit_tbl) */
-        case 5:
+        case 7:
             /* replace cross product with a literal table that contains
                only one row by a number of attach operators (one for each
                tuple). */
             if (R(p)->sem.lit_tbl.count == 1) {
                 PFla_op_t *ret = L(p);
+                SEEN(ret) = false;
                 for (unsigned int i = 0; i < R(p)->schema.count; i++)
                     ret = PFla_attach (ret, R(p)->schema.items[i].name,
                                        R(p)->sem.lit_tbl.tuples[0].atoms[i]);
@@ -449,15 +486,19 @@ reduce (PFla_op_t *p, int goalnt)
                 relabel (p, kids);
                 break;
             }
-            break;
+            /* continue for rule 6 */
+            if (rule == 7)
+                break;
+        /* Rel:    cross (lit_tbl, lit_tbl) */
 
         /* Rel:    cross (lit_tbl, Rel) */
-        case 6:
+        case 8:
             /* replace cross product with a literal table that contains
                only one row by a number of attach operators (one for each
                tuple). */
             if (L(p)->sem.lit_tbl.count == 1) {
                 PFla_op_t *ret = R(p);
+                SEEN(ret) = false;
                 for (unsigned int i = 0; i < L(p)->schema.count; i++)
                     ret = PFla_attach (ret, L(p)->schema.items[i].name,
                                        L(p)->sem.lit_tbl.tuples[0].atoms[i]);
@@ -469,7 +510,7 @@ reduce (PFla_op_t *p, int goalnt)
             break;
 
         /* Rel:    semijoin (distinct (Rel), Rel) */
-        case 10:
+        case 11:
             /* push down semijoin operator 
                underneath the distinct operator as 
                the semijoin hopefully is more selective
@@ -487,7 +528,7 @@ reduce (PFla_op_t *p, int goalnt)
             break;
 
         /* Rel:    project (Rel) */
-        case 12:
+        case 13:
         {   /**
              * we can skip every project operator that is not needed.
              * Therefore it has to fulfill two conditions:
@@ -515,7 +556,7 @@ reduce (PFla_op_t *p, int goalnt)
         }   break;
 
         /* Rel:    project (attach (Rel)) */
-        case 13:
+        case 14:
             /* only rewrite if there are more than one columns */
             if (p->schema.count > 1) {
                 bool found = false, rewrite = true;
@@ -551,7 +592,7 @@ reduce (PFla_op_t *p, int goalnt)
             break;
             
         /* Rel:    project (project (Rel)) */
-        case 14:
+        case 15:
         {   /* combine two projections */            
             PFalg_proj_t *proj = PFmalloc (p->schema.count *
 	                                       sizeof (PFalg_proj_t));
@@ -584,8 +625,45 @@ reduce (PFla_op_t *p, int goalnt)
             relabel (p, kids);
         } break;
 
+        /* Rel:    project (lit_tbl) */
+        case 16:
+        {
+            unsigned int   i, j, index,
+                           acount  = p->schema.count,
+                           tcount  = L(p)->sem.lit_tbl.count;
+            PFalg_att_t   *atts    = PFmalloc (acount * sizeof (PFalg_att_t));
+            PFalg_tuple_t *tuples  = PFmalloc (tcount * sizeof (PFalg_tuple_t)),
+                          *ltuples = L(p)->sem.lit_tbl.tuples;
+
+            /* allocate memory for the tuples */
+            for (j = 0; j < tcount; j++) {
+                tuples[j].count = acount; 
+                tuples[j].atoms = PFmalloc (acount * sizeof (PFalg_atom_t));
+            }
+            
+            /* iterate over all columns */
+            for (i = 0; i < acount; i++) {
+                /* copy the column names */
+                atts[i] = p->sem.proj.items[i].new;
+                
+                /* find the corresponding column index in the table */
+                for (j = 0; j < acount; j++)
+                    if (p->sem.proj.items[i].old == L(p)->schema.items[j].name)
+                        break;
+                assert (j < acount);
+                index = j;
+
+                /* copy all values from the table */
+                for (j = 0; j < tcount; j++)
+                    tuples[j].atoms[i] = ltuples[j].atoms[index];
+            }
+
+            *p = *PFla_lit_tbl_ (PFalg_attlist_ (acount, atts), tcount, tuples);
+            SEEN(p) = false;
+        }   break;
+        
         /* Rel:    select_ (Rel) */
-        case 19:
+        case 18:
         {
             /**
              *  introduce thetajoin based on 
@@ -776,6 +854,57 @@ reduce (PFla_op_t *p, int goalnt)
             }
         }   break;
 
+        /* Rel:    disjunion (lit_tbl, lit_tbl) */
+        case 20:
+        {
+            unsigned int   i, j, index,
+                           acount  = p->schema.count,
+                           lcount  = L(p)->sem.lit_tbl.count,
+                           rcount  = R(p)->sem.lit_tbl.count,
+                           tcount  = lcount + rcount;
+            PFalg_att_t   *atts    = PFmalloc (acount * sizeof (PFalg_att_t));
+            PFalg_tuple_t *tuples  = PFmalloc (tcount * sizeof (PFalg_tuple_t)),
+                          *ltuples = L(p)->sem.lit_tbl.tuples,
+                          *rtuples = R(p)->sem.lit_tbl.tuples;
+
+            /* allocate memory for the tuples */
+            for (j = 0; j < tcount; j++) {
+                tuples[j].count = acount; 
+                tuples[j].atoms = PFmalloc (acount * sizeof (PFalg_atom_t));
+            }
+            
+            /* iterate over all columns */
+            for (i = 0; i < acount; i++) {
+                /* copy the column names */
+                atts[i] = p->schema.items[i].name;
+                
+                /* find the corresponding column index in the left table */
+                for (j = 0; j < acount; j++)
+                    if (atts[i] == L(p)->schema.items[j].name)
+                        break;
+                assert (j < acount);
+                index = j;
+
+                /* copy all values from the left table */
+                for (j = 0; j < lcount; j++)
+                    tuples[j].atoms[i] = ltuples[j].atoms[index];
+                
+                /* find the corresponding column index in the right table */
+                for (j = 0; j < acount; j++)
+                    if (atts[i] == R(p)->schema.items[j].name)
+                        break;
+                assert (j < acount);
+                index = j;
+
+                /* copy all values from the right table */
+                for (j = 0; j < rcount; j++)
+                    tuples[j+lcount].atoms[i] = rtuples[j].atoms[index];
+            }
+
+            *p = *PFla_lit_tbl_ (PFalg_attlist_ (acount, atts), tcount, tuples);
+            SEEN(p) = false;
+        }   break;
+        
         /* Rel:    disjunion (EmptyRel, Rel) */
         case 21:
             /* return right child */
