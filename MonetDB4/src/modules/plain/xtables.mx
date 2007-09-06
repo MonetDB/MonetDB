@@ -656,7 +656,6 @@ bits(size_t i)
 	}
 	if (BATcount(histo) == BATcount(bn)) {
 		BATkey(BATmirror(bn),TRUE);
-		BATkey(BATmirror(histo),TRUE);
 	}
 	ALIGNsetH(bn, b);
 	return grp_new(g, bn, histo);
