@@ -64,10 +64,9 @@ available again for normal use by any client, and is started on demand.
 Use the
 .B lock
 command to take a database under maintenance.
-.IP "status [\-als] [database ...]"
-Shows the state of the given database(s) or, when
-.I \-a
-is supplied, all known databases.  Three modes control the level of
+.IP "status [\-ls] [database ...]"
+Shows the state of the given database(s) or, when none given, all known
+databases.  Three modes control the level of
 detail in the displayed output.  By default the most used properties of
 a database are being shown.  This includes the state of the database
 (running, crashed, stopped), whether it is under maintenance or not, the
@@ -87,9 +86,7 @@ flag produces a short, one-line output per database.  This output
 resembles pretty much the output of various
 .B XXXstat
 functions, and is ideal for quickly gaining an overview of the system
-state in combination with the
-.I \-a
-flag.
+state.
 .IP "start [\-a] [database ...]"
 .IP "stop [\-a] [database ...]"
 .IP "kill [\-a] [database ...]"

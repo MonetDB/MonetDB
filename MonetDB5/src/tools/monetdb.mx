@@ -109,11 +109,11 @@ command_help(int argc, char *argv[])
 		printf("  database is available again for normal use.  Use the\n");
 		printf("  \"lock\" command to take a database under maintenance.\n");
 	} else if (strcmp(argv[1], "status") == 0) {
-		printf("Usage: monetdb status [-als] [database ...]\n");
-		printf("  Shows the state of a given database.  Various options\n");
+		printf("Usage: monetdb status [-ls] [database ...]\n");
+		printf("  Shows the state of a given database, or all known if none\n");
+		printf("  given.  Instead of the normal mode, a long and short mode\n");
 		printf("  control what information is displayed.\n");
 		printf("Options:\n");
-		printf("  -a  list status of all databases\n");
 		printf("  -l  use long listing\n");
 		printf("  -s  use short one-line listing\n");
 	} else if (strcmp(argv[1], "start") == 0) {
@@ -356,18 +356,14 @@ printStatus(sabdb *stats, int mode)
 static void
 command_status(int argc, char *argv[])
 {
-	int doall = 0;
+	int doall = 1; /* we default to showing all */
 	int mode = 0;  /* 0=normal, 1=short, 2=long */
 	int i;
 	char *p;
 	str e;
 	sabdb *stats;
 
-	if (argc == 1) {
-		/* print help message for this command */
-		command_help(2, &argv[-1]);
-		exit(1);
-	} else if (argc == 0) {
+	if (argc == 0) {
 		exit(2);
 	}
 
@@ -376,9 +372,6 @@ command_status(int argc, char *argv[])
 		if (argv[i][0] == '-') {
 			for (p = argv[i] + 1; *p != '\0'; p++) {
 				switch (*p) {
-					case 'a':
-						doall = 1;
-					break;
 					case 's':
 						mode = 1;
 					break;
@@ -387,6 +380,8 @@ command_status(int argc, char *argv[])
 					break;
 					case '-':
 						if (p[1] == '\0') {
+							if (argc - 1 > i) 
+								doall = 0;
 							i = argc;
 							break;
 						}
@@ -400,6 +395,8 @@ command_status(int argc, char *argv[])
 			/* make this option no longer available, for easy use
 			 * lateron */
 			argv[i] = NULL;
+		} else {
+			doall = 0;
 		}
 	}
 
@@ -430,7 +427,6 @@ command_status(int argc, char *argv[])
 		return;
 	}
 
-	doall = 0;  /* temporarily misuse this as db counter */
 	for (i = 1; i < argc; i++) {
 		if (argv[i] != NULL) {
 			if ((e = SABAOTHgetStatus(&stats, argv[i])) != MAL_SUCCEED) {
@@ -445,13 +441,7 @@ command_status(int argc, char *argv[])
 				printStatus(stats, mode);
 				SABAOTHfreeStatus(&stats);
 			}
-			doall++;
 		}
-	}
-
-	if (doall == 0) {
-		command_help(2, &argv[-1]);
-		exit(1);
 	}
 }
 
