@@ -2611,6 +2611,7 @@ _PackageDict = {
     'xml':        'monetdb-xml',
     'amdb':       'monetdb-amdb',
     'geom':       'monetdb-geom',
+    'datacell':   'monetdb-datacell',
     }
 
 par = {}
@@ -2724,11 +2725,11 @@ def main(argv) :
     cmd_options = [
         # long name, short name, GDK option, argument, comment
         ('package', 'p', 'package', '<package>',
-         "package to be tested, e.g.:\nmonetdb(|4|5), [monetdb-](clients|template|sql|xquery|xml|amdb|geom);\ndefault: %s" % par['PACKAGE']),
+         "package to be tested, e.g.:\nmonetdb(|4|5), [monetdb-](clients|template|sql|xquery|xml|amdb|geom|datacell);\ndefault: %s" % par['PACKAGE']),
         ('MonetDB4', '4', 'MonetDB4', None,
-         "use Mserver of MonetDB Version 4 (default with <package> != monetdb5)"),
+         "use Mserver of MonetDB Version 4 (default with <package> not in {monetdb5, monetdb-datacell})"),
         ('MonetDB5', '5', 'MonetDB5', None,
-         "use mserver5 of MonetDB Version 5 (default with <package> == monetdb5)"),
+         "use mserver5 of MonetDB Version 5 (default with <package> in {monetdb5, monetdb-datacell})"),
         ('recursive', 'r', 'recursive', None,
          "recurse into subdirectories (implies 'All')"),
         ('MONETDB_SOURCE', None, 'MONETDB_SOURCE', '<path>',
@@ -2865,8 +2866,8 @@ def main(argv) :
     if par['M5'] and par['PACKAGE'] == 'monetdb4':
         ErrXit('"-5/--MonetDB5" conflicts with "--package=monetdb4"!')
     if not par['M4'] and not par['M5']:
-        par['M4'] = par['PACKAGE'] != 'monetdb5'
-        par['M5'] = par['PACKAGE'] == 'monetdb5'
+        par['M4'] = par['PACKAGE'] not in ['monetdb5', 'monetdb-datacell']
+        par['M5'] = par['PACKAGE']     in ['monetdb5', 'monetdb-datacell']
 
     config = opts.get('config')
     if config is None and par['PACKAGE'] not in ('monetdb', 'monetdb-clients'):
