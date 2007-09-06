@@ -2572,8 +2572,6 @@ if sys.platform == 'linux2' and CONDITIONALS['CROSS_COMPILING']:
     RELEASE = "5.2"
 
 if OS == "Linux":
-    #testT = re.compile("^/"+TST+EXT+"/([^/]*)/", re.MULTILINE)
-    #mT = testT.match(l)
     #  Please keep this aligned / in sync with buildtools/conf/MonetDB.m4 & TestTools/.Mconfig.rc & TestTools/MdoServer !
     if os.path.isfile('/etc/fedora-release'):
         l = open('/etc/fedora-release').readline()
