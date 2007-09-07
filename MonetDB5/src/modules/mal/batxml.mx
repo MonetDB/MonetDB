@@ -104,7 +104,11 @@ pattern xml.forest(val:bat[:oid,:xml]...):bat[:oid,:xml]
 address BATXMLforest
 comment "Construct an element list";
 
-command xml.agg(grp:bat[:oid,:oid],val:bat[:oid,:xml]):bat[:oid,:xml]
+command xml.agg(val:bat[:oid,:xml],grp:bat[:oid,:oid],e:bat[:oid,:any_1]):bat[:oid,:xml]
+address BATXMLagg3
+comment "Aggregate the XML values over grouping specified";
+
+command xml.agg(val:bat[:oid,:xml],grp:bat[:oid,:oid]):bat[:oid,:xml]
 address BATXMLagg
 comment "Aggregate the XML values over grouping specified";
 
@@ -168,7 +172,8 @@ batxml_export str BATXMLattribute(int *ret, str *name, int *bid);
 batxml_export str BATXMLelement(int *ret, str *name, str *ns, str *attr, int *bid);
 batxml_export str BATXMLconcat(int *ret, int *bid, int *rid);
 batxml_export str BATXMLforest(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-batxml_export str BATXMLagg(int *ret, int *grp,int *bid);
+batxml_export str BATXMLagg(int *ret, int *bid, int *grp);
+batxml_export str BATXMLagg3(int *ret, int *bid, int *grp, int *e);
 batxml_export str BATXMLgroup(int *ret, int *bid);
 #endif  /* _BATXML_H_ */
 @c
@@ -724,7 +729,79 @@ bunins_failed:
 }
 
 str
-BATXMLagg(int *ret, int *grp,int *bid)
+BATXMLagg3(int *ret, int *bid,int *grp, int *ext)
+{
+	BAT *j, *r, *g, *b, *bn, *e;
+	BUN p,q;
+	int xx;
+	oid gid = 0,o=0;
+	int first= 1;
+	str t;
+	str buf= GDKmalloc(BUFSIZ);
+	int len, size=BUFSIZ,offset;
+	
+	@:getBATdescriptor(ext,e,"xml.agg")@
+	@:getBATdescriptor(grp,g,"xml.agg",BBPunfix(e->batCacheid))@
+	@:getBATdescriptor(bid,b,"xml.agg",BBPunfix(e->batCacheid);BBPunfix(g->batCacheid))@
+	
+	bn= BATnew(TYPE_oid, b->ttype,BATcount(e));
+	if( bn== NULL){
+		BBPunfix(b->batCacheid);
+		BBPunfix(g->batCacheid);
+		BBPunfix(e->batCacheid);
+		throw(MAL,"xml.agg","Could not create BAT");
+	}
+
+	/* this will not work as it will corrupt the order of the column, ie
+	   the order in which the data will be generated */
+	j= BATjoin(VIEWcombine(BATmirror(g)),b,oid_nil);
+	r= BATsort(j);
+
+	/* now we can perform a simple scan and emit the group*/
+
+	buf[0]=0; 
+	offset=0;
+	first=1;
+	BATloopFast(r,p,q,xx){
+		o= *(oid*) BUNhead(r,p);
+		t= (str) BUNtail(r,p);
+
+		if( gid != o && first==0){
+			/* flush */
+			bunfastins(bn,&gid,buf);
+			buf[0]=0;
+			offset =0;
+		}
+		gid=o;
+		first=0;
+		len= strlen(t)+1;
+		if( len >= size-offset){
+			if(buf) GDKfree(buf);
+			buf= GDKrealloc(buf,size+len);
+			size= size+len;
+		}
+		snprintf(buf+offset,size-offset,"%s",t);
+		offset+= len-1;
+	}
+	/* end the leftover element */
+	if( first ==0)
+		bunfastins(bn,&gid,buf);
+
+	BBPunfix(r->batCacheid);
+	BBPunfix(j->batCacheid);
+	GDKfree(buf);
+	BBPkeepref(*ret=bn->batCacheid);
+	return MAL_SUCCEED;
+bunins_failed:
+	BBPreleaseref(g->batCacheid);
+	BBPreleaseref(b->batCacheid);
+	BBPunfix(bn->batCacheid);
+	GDKfree(buf);
+	throw(MAL, "xml.agg", "bunins failed");
+}
+
+str
+BATXMLagg(int *ret, int *bid,int *grp)
 {
 	BAT *j, *r, *g, *b, *bn;
 	BUN p,q;
@@ -746,7 +823,8 @@ BATXMLagg(int *ret, int *grp,int *bid)
 	}
 
 	j= BATjoin(g,b,oid_nil);
-    r= BATsort(j);
+	r= BATsort(j);
+
 	/* now we can perform a simple scan and emit the group*/
 
 	buf[0]=0; 
@@ -755,6 +833,7 @@ BATXMLagg(int *ret, int *grp,int *bid)
 	BATloopFast(r,p,q,xx){
 		o= *(oid*) BUNhead(r,p);
 		t= (str) BUNtail(r,p);
+
 		if( gid != o && first==0){
 			/* flush */
 			bunfastins(bn,&gid,buf);
@@ -813,3 +892,6 @@ BATXMLxquery(int *ret, int *bid, str *expr)
 }
 
 @}
+
+@sql
+CREATE AGGREGATE "xmlagg"( x xml ) RETURNS xml external name xml.agg;
