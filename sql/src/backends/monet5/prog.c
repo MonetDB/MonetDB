@@ -100,7 +100,6 @@ main(int argc, char **av)
 	/* needed, to prevent the MonetDB config file to be used */  
 	setlen = mo_add_option(&set, setlen, opt_config, "prefix", MONETDBPREFIX);
 	setlen = mo_add_option(&set, setlen, opt_config, "config", MONETDBCONFIG);
-	setlen = mo_system_config(&set, setlen);
 
 	for (;;) {
 		int option_index = 0;
@@ -153,6 +152,8 @@ main(int argc, char **av)
 			usage(prog);
 		}
 	}
+
+	setlen = mo_system_config(&set, setlen);
 
 	mid = embedded_sql(set, setlen);
 

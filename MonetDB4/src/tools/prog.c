@@ -104,7 +104,6 @@ main(int argc, char **av)
 	/* needed, to prevent the MonetDB/4 config file from being used */  
 	setlen = mo_add_option(&set, setlen, opt_config, "prefix", MONETDBPREFIX);
 	setlen = mo_add_option(&set, setlen, opt_config, "config", MONETDBCONFIG);
-	setlen = mo_system_config(&set, setlen);
 
 	for (;;) {
 		int option_index = 0;
