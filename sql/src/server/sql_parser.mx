@@ -729,7 +729,6 @@ sqlstmt:
 			}
  | SQL_DEBUG 		{ mvc *m = (mvc*)parm;
 			  if (m->scanner.mode == LINE_1) {
-				$$ = NULL;
 				yyerror("We only support debugging SQL in interactive mode");
 				YYABORT;
 			  }
@@ -742,7 +741,6 @@ sqlstmt:
 			}
  | SQL_TRACE 		{ mvc *m = (mvc*)parm;
 			  if (m->scanner.mode == LINE_1) {
-				$$ = NULL;
 				yyerror("We do not support tracing SQL in interactive mode");
 				YYABORT;
 			  }
@@ -4863,6 +4861,7 @@ XML_aggregate:
       ')'
 	{ dlist *l = L();
           dlist *aggr = L();
+
 	  dlist *window_spec = L();
 
 	  append_string(aggr, "xmlagg");
