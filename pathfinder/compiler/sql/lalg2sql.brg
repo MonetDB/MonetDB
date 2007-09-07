@@ -1151,6 +1151,40 @@ step_guide (PFla_op_t *p, PFsql_aident_t step,
                         PFsql_stmt_list_ (count, (const PFsql_t **) list)));
 }
 
+static void 
+step_guide_join (PFla_op_t *p, PFsql_aident_t step,
+                unsigned int count, PFguide_tree_t **guides)
+{
+    assert (p);
+
+    PFsql_tident_t newtable = new_table_name ();
+    PFsql_aident_t newalias = new_alias ();
+
+    PFsql_t **list = PFmalloc (count * sizeof (PFsql_t *));
+
+    for (unsigned int i = 0; i < count; i++)
+        list[i] = stmt_list (lit_int (guides[i]->guide));
+
+    /* prepare table to dump */
+    execute (comment (""),
+             bind (table_def (
+                       newtable,
+                       column_list (GUIDE_)),
+                   values (PFsql_list_list_ (count, (const PFsql_t **) list))));
+
+    /* prepare step node */
+    from_list_add (FROMLIST(p), table_name (newtable),
+                   newalias);
+                   
+
+    where_list_add (WHERELIST(p),
+                    eq
+                    (
+                      GUIDE(step),
+                      GUIDE(newalias)
+                    ));
+}
+
 
 
 /* .......... Twig Constructor Helper Functions .......... */
@@ -2751,10 +2785,21 @@ reduce (PFla_op_t * p, int goalnt)
             } else {
                 assert (p->kind == la_guide_step ||
                         p->kind == la_guide_step_join);
-                step_guide (p,
-                            stepalias,
-                            p->sem.step.guide_count,
-                            p->sem.step.guides);
+
+                #define GUIDE_BARRIER 5
+
+                if (p->sem.step.guide_count > GUIDE_BARRIER) {
+                    step_guide_join (p,
+                                     stepalias,
+                                     p->sem.step.guide_count,
+                                     p->sem.step.guides);
+                }
+                else {
+                    step_guide (p,
+                                stepalias,
+                                p->sem.step.guide_count,
+                                p->sem.step.guides);
+                }
             }
 
             if (p->kind == la_step || p->kind == la_guide_step) {
