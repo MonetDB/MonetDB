@@ -50,6 +50,7 @@ typedef char* err;
 #define NO_ERR (err)0
 
 static str dbfarm = NULL;
+static str logdir = NULL;
 static int mero_running = 0;
 
 static str
@@ -452,7 +453,7 @@ typedef enum {
 } merocom;
 
 static void
-command_merocom(int argc, char *argv[], char *dbfarm, merocom mode)
+command_merocom(int argc, char *argv[], merocom mode)
 {
 	int doall = 0;
 	char path[8096];
@@ -579,7 +580,7 @@ command_merocom(int argc, char *argv[], char *dbfarm, merocom mode)
 }
 
 static void
-command_create(int argc, char *argv[], char *dbfarm)
+command_create(int argc, char *argv[])
 {
 	if (argc == 1 || argc >= 4) {
 		/* print help message for this command */
@@ -761,6 +762,7 @@ command_destroy(int argc, char *argv[])
 
 		if (stats != NULL) {
 			err e;
+			char buf[8096];
 
 			if (stats->state == SABdbRunning) {
 				fprintf(stderr, "destroy: database '%s' is still running, "
@@ -791,8 +793,18 @@ command_destroy(int argc, char *argv[])
 			/* annoyingly we have to delete file by file, and
 			 * directories recursively... */
 			if ((e = deletedir(stats->path)) != NULL) {
-				fprintf(stderr, "destroy: failed to destroy '%s': %s\n",
-						argv[1], e);
+				fprintf(stderr, "destroy: failed to destroy '%s': %s %s\n",
+						argv[1], stats->path, e);
+				GDKfree(e);
+				exit(1);
+			}
+			/* this is annoying, but till the time we have something
+			 * better, we should do it like this; the logdir is a
+			 * separate directory */
+			snprintf(buf, 8096, "%s/%s", logdir, argv[1]);
+			if ((e = deletedir(buf)) != NULL) {
+				fprintf(stderr, "destroy: failed to destroy '%s': %s %s\n",
+						argv[1], buf, e);
 				GDKfree(e);
 				exit(1);
 			}
@@ -919,13 +931,20 @@ main(int argc, char *argv[])
 		if (*buf && strncmp(buf, "gdk_dbfarm=", 11) == 0) {
 			p = strchr(buf, '=');
 			dbfarm = replacePrefix(++p);
+		} else if (*buf && strncmp(buf, "sql_logdir=", 11) == 0) {
+			p = strchr(buf, '=');
+			logdir = replacePrefix(++p);
 		}
 	}
 
 	fclose(cnf);
 
 	if (dbfarm == NULL) {
-		fprintf(stderr, "%s: cannot find dbfarm via config file\n", argv[0]);
+		fprintf(stderr, "%s: cannot find gdk_dbfarm in config file\n", argv[0]);
+		exit(2);
+	}
+	if (logdir == NULL) {
+		fprintf(stderr, "%s: cannot find sql_logdir in config file\n", argv[0]);
 		exit(2);
 	}
 
@@ -949,7 +968,7 @@ main(int argc, char *argv[])
 	if (argc <= 1) {
 		command_help(0, NULL);
 	} else if (strcmp(argv[1], "create") == 0) {
-		command_create(argc - 1, &argv[1], dbfarm);
+		command_create(argc - 1, &argv[1]);
 	} else if (strcmp(argv[1], "destroy") == 0) {
 		command_destroy(argc - 1, &argv[1]);
 	} else if (strcmp(argv[1], "lock") == 0) {
@@ -959,11 +978,11 @@ main(int argc, char *argv[])
 	} else if (strcmp(argv[1], "status") == 0) {
 		command_status(argc - 1, &argv[1]);
 	} else if (strcmp(argv[1], "start") == 0) {
-		command_merocom(argc - 1, &argv[1], dbfarm, START);
+		command_merocom(argc - 1, &argv[1], START);
 	} else if (strcmp(argv[1], "stop") == 0) {
-		command_merocom(argc - 1, &argv[1], dbfarm, STOP);
+		command_merocom(argc - 1, &argv[1], STOP);
 	} else if (strcmp(argv[1], "kill") == 0) {
-		command_merocom(argc - 1, &argv[1], dbfarm, KILL);
+		command_merocom(argc - 1, &argv[1], KILL);
 	} else if (strcmp(argv[1], "help") == 0 || strcmp(argv[1], "-h") == 0) {
 		command_help(argc - 1, &argv[1]);
 	} else if (strcmp(argv[1], "version") == 0 || strcmp(argv[1], "-v") == 0) {
