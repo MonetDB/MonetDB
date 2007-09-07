@@ -31,12 +31,37 @@
 #include <stdlib.h>
 #include "pf_config.h"
 
+/* boolean type `bool' and constants `true', `false' */
+#ifdef HAVE_STDBOOL_H
+#include <stdbool.h>
+#elif !defined(HAVE_BOOL)
+#define bool    char
+#define true    (char)1
+#define false   (char)0
+#endif
+
+
 #if ! HAVE_STRDUP
 char * strdup (const char * s);
 #endif
 
 #if ! HAVE_STRNDUP
-char * strndup (const char * s);
+char * strndup (const char * s, size_t *n);
 #endif
 
+/* global state of the shredder */
+struct shred_state_t {
+    bool quiet;
+	bool suppress_attributes;
+	bool outfile_given;
+    bool infile_given;
+	bool sql_atts;
+	char *outfile;
+	char *infile;
+	char *format;
+};
+typedef struct shred_state_t shred_state_t;
+
 #endif /* SHRED_H__ */
+/* vim:set shiftwidth=4 expandtab: */
+
