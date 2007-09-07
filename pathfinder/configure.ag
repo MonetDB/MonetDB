@@ -588,7 +588,10 @@ fi
 dnl The Burg code requires strdup(). We test here if strdup() is
 dnl available on the system. If not, we will define it ourselves
 dnl in burg/main.c
-AC_CHECK_HEADERS([string.h], [AC_CHECK_FUNCS([strdup strtok_r])])
+dnl The xmlshredder requires strndup(). We test here if strndup() is
+dnl available on the system. If not, we will define it ourselves
+dnl in shred_helpers.c
+AC_CHECK_HEADERS([string.h], [AC_CHECK_FUNCS([strdup strtok_r strndup])])
 
 AC_CHECK_HEADERS(time.h sys/time.h utime.h sys/utime.h sys/times.h)
 AC_HEADER_TIME()
