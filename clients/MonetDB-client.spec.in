@@ -64,12 +64,9 @@ Requires: python, python-devel, swig
 %endif
 %if %{?_with_perl:1}%{!?_with_perl:0}
 Requires: perl, swig
-%if %{?fc7:1}%{!?fc7:0}
+%if 0%{?fedora} >= 7
 # in Fedora Core 6 there is no perl-devel package: everything is in perl;
-# in Fedora 7 there is a perl-devel package which we need.  Presumably this
-# test needs refinement for Fedora > 7.  We may be able to check for the
-# existence of the variable "fedora" since it seems to be present in F7 but
-# not in FC6.
+# in Fedora 7 there is a perl-devel package which we need.
 Requires: perl-devel
 %endif
 %endif
@@ -116,12 +113,9 @@ Requires: perl
 %define perl_libdir %(perl -MConfig -e '$x=$Config{installvendorarch}; $x =~ s|$Config{vendorprefix}/||; print $x;')
 %if !%{?buildsystem}
 BuildRequires: perl, swig
-%if %{?fc7:1}%{!?fc7:0}
+%if 0%{?fedora} >= 7
 # in Fedora Core 6 there is no perl-devel package: everything is in perl;
-# in Fedora 7 there is a perl-devel package which we need.  Presumably this
-# test needs refinement for Fedora > 7.  We may be able to check for the
-# existence of the variable "fedora" since it seems to be present in F7 but
-# not in FC6.
+# in Fedora 7 there is a perl-devel package which we need.
 BuildRequires: perl-devel
 %endif
 %endif
@@ -248,7 +242,7 @@ rm -fr $RPM_BUILD_ROOT
 
 %files
 %defattr(-,root,root)
-%{_bindir}/mclient*
+%{_bindir}/mclient
 %{_bindir}/msqldump
 %{_libdir}/libMapi.so.*
 
@@ -283,6 +277,9 @@ rm -fr $RPM_BUILD_ROOT
 %if %{?_with_python:1}%{!?_with_python:0}
 %files python
 %defattr(-,root,root)
+%{_bindir}/mclient.py
+%exclude %{_bindir}/mclient.pyc
+%exclude %{_bindir}/mclient.pyo
 %{_prefix}/%{python_libdir}/*
 %dir %{_datadir}/MonetDB/python
 %{_datadir}/MonetDB/python/Mapi.py*
