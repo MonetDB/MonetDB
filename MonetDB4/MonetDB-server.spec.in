@@ -28,9 +28,16 @@ Source: http://downloads.sourceforge.net/monetdb/MonetDB4-%{version}.tar.gz
 BuildRoot: %(mktemp -ud %{_tmppath}/%{name}-%{version}-%{release}-XXXXXX)
 
 Requires(pre): shadow-utils
-# Requires(post): chkconfig
 BuildRequires: python
 BuildRequires: pcre-devel
+
+# when we want MonetDB to run as system daemon, we need this
+# also see the scriptlets below
+# the init script should implement start, stop, restart, condrestart, status
+# Requires(post): /sbin/chkconfig
+# Requires(preun): /sbin/chkconfig
+# Requires(preun): /sbin/service
+# Requires(postun): /sbin/service
 
 %{!?_with_python: %{!?_without_python: %define _with_python --with-python}}
 
@@ -119,12 +126,26 @@ useradd -r -g monetdb -d %{_localstatedir}/MonetDB -s /sbin/nologin \
     -c "MonetDB Server" monetdb
 exit 0
 
-%post -p /sbin/ldconfig
+%post
+/sbin/ldconfig
 
-#create monetdb init script
-#/sbin/chkconfig --add monetdb
+# when we want MonetDB to run as system daemon, we need this
+# # This adds the proper /etc/rc*.d links for the script
+# /sbin/chkconfig --add monetdb4
 
-%postun -p /sbin/ldconfig
+# %preun
+# if [ $1 = 0 ]; then
+# 	/sbin/service monetdb4 stop >/dev/null 2>&1
+# 	/sbin/chkconfig --del monetdb4
+# fi
+
+%postun
+/sbin/ldconfig
+
+# when we want MonetDB to run as system daemon, we need this
+# if [ "$1" -ge "1" ]; then
+# 	/sbin/service monetdb4 condrestart >/dev/null 2>&1 || :
+# fi
 
 %clean
 rm -fr $RPM_BUILD_ROOT
