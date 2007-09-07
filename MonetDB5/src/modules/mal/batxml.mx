@@ -754,7 +754,7 @@ BATXMLagg3(int *ret, int *bid,int *grp, int *ext)
 
 	/* this will not work as it will corrupt the order of the column, ie
 	   the order in which the data will be generated */
-	j= BATjoin(VIEWcombine(BATmirror(g)),b,oid_nil);
+	j= BATjoin(BATmirror(g),b,oid_nil);
 	r= BATsort(j);
 
 	/* now we can perform a simple scan and emit the group*/
@@ -790,11 +790,15 @@ BATXMLagg3(int *ret, int *bid,int *grp, int *ext)
 	BBPunfix(r->batCacheid);
 	BBPunfix(j->batCacheid);
 	GDKfree(buf);
+	BBPunfix(e->batCacheid);
+	BBPunfix(g->batCacheid);
+	BBPunfix(b->batCacheid);
 	BBPkeepref(*ret=bn->batCacheid);
 	return MAL_SUCCEED;
 bunins_failed:
-	BBPreleaseref(g->batCacheid);
-	BBPreleaseref(b->batCacheid);
+	BBPunfix(e->batCacheid);
+	BBPunfix(g->batCacheid);
+	BBPunfix(b->batCacheid);
 	BBPunfix(bn->batCacheid);
 	GDKfree(buf);
 	throw(MAL, "xml.agg", "bunins failed");
@@ -822,7 +826,7 @@ BATXMLagg(int *ret, int *bid,int *grp)
 		throw(MAL,"xml.agg","Could not create BAT");
 	}
 
-	j= BATjoin(g,b,oid_nil);
+	j= BATjoin(BATmirror(g),b,oid_nil);
 	r= BATsort(j);
 
 	/* now we can perform a simple scan and emit the group*/
