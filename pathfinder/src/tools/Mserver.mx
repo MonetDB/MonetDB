@@ -386,6 +386,8 @@ capabilities depend on the malloc implementation used at run time.
 	if (!c)
 		usage(prog,debug, set, setlen);
 
+	GDKsetenv("monet_version", (str)MonetDBversion());
+
 	monet_hello(NULL);
 	static_module_init();
 @-

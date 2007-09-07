@@ -335,10 +335,22 @@ Ideally, they are all removed.
 #define monet_unset_lock(X,Y) if(GDKprotected) MT_unset_lock(X,Y)
 #define monet_up_sema(X,Y)    if(GDKprotected) MT_up_sema(X,Y)
 #define monet_down_sema(X,Y)  if(GDKprotected) MT_down_sema(X,Y)
+
+m_export const char *MonetDBversion(void);
 #endif /* _MONET_H_ */
 @c
 #include "monetdb4_config.h"
 #include "monet.h"
+
+static char *_MonetDB_version_string = VERSION;
+/**
+ * Returns the MonetDB version as internally allocated string.  Hence the
+ * string does not have to (and should not) be freed.  Do not inline
+ * this function or the wrong VERSION will be used.
+ */
+const char *MonetDBversion(void) {
+	return(_MonetDB_version_string);
+}
 
 int monet_nostalgic = 0;
 int monet_running = 0;
