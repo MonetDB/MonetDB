@@ -152,8 +152,7 @@ mero_timeinterval=600
 # killed using the SIGKILL signal.  A time-out value of 0 means that no
 # mserver is shut down, meaning they will live on after the Merovingian
 # has shut down.  The default is to shut down all started mservers with
-# a time-out of 7 seconds.  Note that databases under maintenance are
-# never shut down by Merovingian, regardless this setting.
+# a time-out of 7 seconds.
 mero_exittimeout=7
 
 # MAL section
