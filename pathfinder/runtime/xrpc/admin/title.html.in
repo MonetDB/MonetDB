@@ -28,10 +28,7 @@ Universitaet Muenchen, respectively.  All Rights Reserved.
 <!--                                  ^^^^^^                                         -->
 <!-- Maintained via vertoo. Please don't modify by hand!                             -->
 <!-- Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance. -->
-and <a href="http://monetdb.cwi.nl" title="MonetDB is a high-performance, main-memory oriented database kernel developed by the INS1 research group of CWI" target="_blank">MonetDB 4.18.0</a>.</p>
-<!--                                                                                                                                                                                ^^^^^^ -->
-<!-- Maintained via vertoo. Please don't modify by hand!                             -->
-<!-- Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance. -->
+and <a href="http://monetdb.cwi.nl" title="MonetDB is a high-performance, main-memory oriented database kernel developed by the INS1 research group of CWI" target="_blank">MonetDB @MONETDB4_VERSION@</a>.</p>
 <a href="http://sf.net/projects/monetdb" title="The open-source effort for developing MonetDB is hosted at sourceforge.net" target="_blank"><img src="sf.bmp" border="0"/></a>
     </body>
 </html>

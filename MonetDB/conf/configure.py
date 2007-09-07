@@ -42,11 +42,29 @@ subs = [("@bindir@", r'${exec_prefix}\bin'),
         ("@NOT_WIN32_FALSE@", ''),
         ("@PATHSEP@", ';')]
 
+packages = {
+    'MONETDB':  'monetdb',
+    'CLIENTS':  'monetdb-clients',
+    'MONETDB4': 'monetdb4',
+    'MONETDB5': 'monetdb5',
+}
+
 while len(sys.argv) > 2 and '=' in sys.argv[1]:
     arg = sys.argv[1]
     i = arg.find('=')
     subs.append(('@'+arg[:i]+'@', arg[i+1:]))
     del sys.argv[1]
+    if arg[i-7:i] == '_PREFIX' and packages.has_key(arg[:i-7]):
+        config = os.path.join(arg[i+1:], 'bin', packages[arg[:i-7]])
+        try:
+            p = os.popen('"%s-config.bat" --version' % config, 'r')
+            val = p.read().strip()
+            if val:
+                key = '@%s_VERSION@' % arg[:i-7]
+                subs.append((key, val))
+            p.close()
+        except:
+            pass
 
 for key, val in subs[:]:
     subs.insert(0, ('@X'+key[1:], val))

@@ -75,13 +75,13 @@ if test "x$have_monetdb" != xno; then
 
   if test "x$MONETDB_CONFIG" != x; then
     AC_MSG_CHECKING(whether MonetDB Common version $MONETDB_REQUIRED_VERSION or newer is installed) 
-    MONETDBVERS=`$MONETDB_CONFIG --version`
-    if test MONETDB_VERSION_TO_NUMBER(echo $MONETDBVERS) -ge MONETDB_VERSION_TO_NUMBER(echo $MONETDB_REQUIRED_VERSION); then
+    MONETDB_VERSION=`$MONETDB_CONFIG --version`
+    if test MONETDB_VERSION_TO_NUMBER(echo $MONETDB_VERSION) -ge MONETDB_VERSION_TO_NUMBER(echo $MONETDB_REQUIRED_VERSION); then
       have_monetdb=yes
-      AC_MSG_RESULT($have_monetdb: found version $MONETDBVERS)
+      AC_MSG_RESULT($have_monetdb: found version $MONETDB_VERSION)
     else
       have_monetdb=no
-      AC_MSG_RESULT($have_monetdb: found only version $MONETDBVERS)
+      AC_MSG_RESULT($have_monetdb: found only version $MONETDB_VERSION)
     fi
   fi
 
@@ -104,6 +104,7 @@ AC_SUBST(MONETDB_INCLUDEDIR)
 AC_SUBST(MONETDB_LIBS)
 AC_SUBST(MONETDB_PREFIX)
 AC_SUBST(MONETDB_CONFDIR)
+AC_SUBST(MONETDB_VERSION)
 AM_CONDITIONAL(HAVE_MONETDB,test x$have_monetdb = xyes)
 ]) dnl AC_DEFUN AM_MONETDB_COMMON
 
@@ -137,13 +138,13 @@ if test "x$have_clients" != xno; then
 
   if test "x$CLIENTS_CONFIG" != x; then
     AC_MSG_CHECKING(whether MonetDB Clients version $CLIENTS_REQUIRED_VERSION or newer is installed) 
-    CLIENTSVERS=`$CLIENTS_CONFIG --version`
-    if test MONETDB_VERSION_TO_NUMBER(echo $CLIENTSVERS) -ge MONETDB_VERSION_TO_NUMBER(echo $CLIENTS_REQUIRED_VERSION); then
+    CLIENTS_VERSION=`$CLIENTS_CONFIG --version`
+    if test MONETDB_VERSION_TO_NUMBER(echo $CLIENTS_VERSION) -ge MONETDB_VERSION_TO_NUMBER(echo $CLIENTS_REQUIRED_VERSION); then
       have_clients=yes
-      AC_MSG_RESULT($have_clients: found version $CLIENTSVERS)
+      AC_MSG_RESULT($have_clients: found version $CLIENTS_VERSION)
     else
       have_clients=no
-      AC_MSG_RESULT($have_clients: found only version $CLIENTSVERS)
+      AC_MSG_RESULT($have_clients: found only version $CLIENTS_VERSION)
     fi
   fi
 
@@ -169,6 +170,7 @@ AC_SUBST(CLIENTS_INCLUDEDIR)
 AC_SUBST(CLIENTS_LIBS)
 AC_SUBST(CLIENTS_PREFIX)
 AC_SUBST(CLIENTS_CONFDIR)
+AC_SUBST(CLIENTS_VERSION)
 AM_CONDITIONAL(HAVE_CLIENTS,test x$have_clients = xyes)
 ]) dnl AC_DEFUN AM_MONETDB_CLIENTS
 
@@ -202,13 +204,13 @@ if test "x$have_monetdb4" != xno; then
 
   if test "x$MONETDB4_CONFIG" != x; then
     AC_MSG_CHECKING(whether MonetDB4 version $MONETDB4_REQUIRED_VERSION or newer is installed) 
-    MONETDB4VERS=`$MONETDB4_CONFIG --version`
-    if test MONETDB_VERSION_TO_NUMBER(echo $MONETDB4VERS) -ge MONETDB_VERSION_TO_NUMBER(echo $MONETDB4_REQUIRED_VERSION); then
+    MONETDB4_VERSION=`$MONETDB4_CONFIG --version`
+    if test MONETDB_VERSION_TO_NUMBER(echo $MONETDB4_VERSION) -ge MONETDB_VERSION_TO_NUMBER(echo $MONETDB4_REQUIRED_VERSION); then
       have_monetdb4=yes
-      AC_MSG_RESULT($have_monetdb4: found version $MONETDB4VERS)
+      AC_MSG_RESULT($have_monetdb4: found version $MONETDB4_VERSION)
     else
       have_monetdb4=no
-      AC_MSG_RESULT($have_monetdb4: found only version $MONETDB4VERS)
+      AC_MSG_RESULT($have_monetdb4: found only version $MONETDB4_VERSION)
     fi
   fi
 
@@ -237,6 +239,7 @@ AC_SUBST(MONETDB4_LIBS)
 AC_SUBST(MONETDB4_MODS)
 AC_SUBST(MONETDB4_MOD_PATH)
 AC_SUBST(MONETDB4_PREFIX)
+AC_SUBST(MONETDB4_VERSION)
 AC_SUBST(CLASSPATH)
 AM_MONETDB_MEL("NO ABORT")
 AM_CONDITIONAL(HAVE_MONETDB4,test x$have_monetdb4 = xyes -a x$have_mel = xyes)
@@ -272,13 +275,13 @@ if test "x$have_monetdb5" != xno; then
 
   if test "x$MONETDB5_CONFIG" != x; then
     AC_MSG_CHECKING(whether MonetDB5 version $MONETDB5_REQUIRED_VERSION or newer is installed) 
-    MONETDB5VERS=`$MONETDB5_CONFIG --version`
-    if test MONETDB_VERSION_TO_NUMBER(echo $MONETDB5VERS) -ge MONETDB_VERSION_TO_NUMBER(echo $MONETDB5_REQUIRED_VERSION); then
+    MONETDB5_VERSION=`$MONETDB5_CONFIG --version`
+    if test MONETDB_VERSION_TO_NUMBER(echo $MONETDB5_VERSION) -ge MONETDB_VERSION_TO_NUMBER(echo $MONETDB5_REQUIRED_VERSION); then
       have_monetdb5=yes
-      AC_MSG_RESULT($have_monetdb5: found version $MONETDB5VERS)
+      AC_MSG_RESULT($have_monetdb5: found version $MONETDB5_VERSION)
     else
       have_monetdb5=no
-      AC_MSG_RESULT($have_monetdb5: found only version $MONETDB5VERS)
+      AC_MSG_RESULT($have_monetdb5: found only version $MONETDB5_VERSION)
     fi
   fi
 
@@ -307,6 +310,7 @@ AC_SUBST(MONETDB5_LIBS)
 AC_SUBST(MONETDB5_MODS)
 AC_SUBST(MONETDB5_MOD_PATH)
 AC_SUBST(MONETDB5_PREFIX)
+AC_SUBST(MONETDB5_VERSION)
 AM_CONDITIONAL(HAVE_MONETDB5,test x$have_monetdb5 = xyes)
 ]) dnl AC_DEFUN AM_MONETDB5
 

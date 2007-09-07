@@ -23,6 +23,8 @@
 # Universitaet Muenchen, respectively.  All Rights Reserved.
 #
 
+EXTRA_DIST = title.html.in
+
 scripts_html = {
 	EXT = html png gif bmp
 	DIR = datadir/MonetDB/xrpc/admin
