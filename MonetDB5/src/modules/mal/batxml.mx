@@ -883,13 +883,13 @@ BATXMLgroup(int *ret, int *bid)
 
 	@:getBATdescriptor(bid,b,"xml.group")@
 
-    g= BATnew(BAThtype(b),TYPE_oid,BATcount(b));
-    BATloopFast(b, p, q, xx) {
-        ptr v = BUNhead(b,p);
-        bunfastins(g,v, &o);
-    }
+	g= BATnew(BAThtype(b),TYPE_oid,BATcount(b));
+	BATloopFast(b, p, q, xx) {
+		ptr v = BUNhead(b,p);
+		bunfastins(g,v, &o);
+	}
 	msg= BATXMLagg(ret,bid,&g->batCacheid);
-bunins_failed:
+	bunins_failed:
 	BBPunfix(g->batCacheid);
 	BBPunfix(b->batCacheid);
 	return msg;
