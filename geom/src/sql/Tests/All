@@ -5,6 +5,7 @@ geom_curve
 geom_linestring
 geom_surface
 geom_polygon
+geom_multi
 geom_mbr
 basic
 relation
