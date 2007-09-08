@@ -17,7 +17,7 @@
 # All Rights Reserved.
 
 pkg=monetdb-geom
-builddir=`pwd`
+builddir=@QGEOM_BUILD@
 # make sure srcdir contains absolute path name
 srcdir=`cd '@srcdir@'; pwd`
 uname=`uname`

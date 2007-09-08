@@ -17,7 +17,7 @@
 # All Rights Reserved.
 
 pkg=monetdb-clients
-builddir=`pwd`
+builddir=@QCLIENTS_BUILD@
 # make sure srcdir contains absolute path name
 srcdir=`cd '@srcdir@'; pwd`
 uname=`uname`
