@@ -39,7 +39,8 @@ end main;	# 11
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 [ "main",				  "function",	  "user",	  "():void;",														  "nil"						  ]
 [ "agg",				  "command",	  "xml",	  "(val:bat[:oid,:xml]):bat[:oid,:xml] ",									  "BATXMLgroup;"				  ]
-[ "agg",				  "command",	  "xml",	  "(grp:bat[:oid,:oid],val:bat[:oid,:xml]):bat[:oid,:xml] ",							  "BATXMLagg;"					  ]
+[ "agg",			  "command",	  "xml",	  "(val:bat[:oid,:xml],grp:bat[:oid,:oid]):bat[:oid,:xml] ",										  "BATXMLagg;"					  ]
+[ "agg",			  "command",	  "xml",	  "(val:bat[:oid,:xml],grp:bat[:oid,:oid],e:bat[:oid,:any_1]):bat[:oid,:xml] ",								  "BATXMLagg3;"					  ]
 [ "attribute",			  "command",	  "xml",	  "(name:str,val:bat[:oid,:str]):bat[:oid,:xml] ",									  "BATXMLattribute;"				  ]
 [ "attribute",			  "command",	  "xml",	  "(name:str,val:str):xml ",												  "XMLattribute;"				  ]
 [ "concat",			  "command",	  "xml",	  "(left:bat[:oid,:xml],right:bat[:oid,:xml]):bat[:oid,:xml] ",								  "BATXMLconcat;"				  ]
