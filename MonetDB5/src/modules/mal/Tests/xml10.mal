@@ -55,5 +55,6 @@ io.print(ae);
 
 io.print("book construction");
 be:= xml.agg(ae);
+io.print(be);
 doc:= xml.element("books",be);
 io.print(doc);

@@ -98,63 +98,48 @@ function user.main():void;	# 0  (main:void)
     te := xml.element("title",tx);	# 29 BATXMLtag (te:bat[:oid,:xml])<-(_40:str)(tx:bat[:oid,:xml])
     g := bat.new(:oid,:oid);	# 30 CMDBATnew (g:bat[:oid,:oid])<-(_13:oid)(_13:oid)
     bat.insert(g,0@0,0@0);	# 31 BKCinsert_bun (_42:void)<-(g:bat[:oid,:oid])(_16:oid)(_16:oid)
-    bat.insert(g,0@0,1@0);	# 32 BKCinsert_bun (_43:void)<-(g:bat[:oid,:oid])(_16:oid)(_19:oid)
-    bat.insert(g,1@0,2@0);	# 33 BKCinsert_bun (_44:void)<-(g:bat[:oid,:oid])(_19:oid)(_21:oid)
+    bat.insert(g,1@0,0@0);	# 32 BKCinsert_bun (_43:void)<-(g:bat[:oid,:oid])(_19:oid)(_16:oid)
+    bat.insert(g,2@0,1@0);	# 33 BKCinsert_bun (_44:void)<-(g:bat[:oid,:oid])(_21:oid)(_19:oid)
     k := algebra.join(g,te);	# 34 ALGjoin (k:bat[:oid,:xml])<-(g:bat[:oid,:oid])(te:bat[:oid,:xml])
     io.print(k);	# 35 IOprint_val (_46:void)<-(k:bat[:oid,:xml])
     l := algebra.sort(k);	# 36 ALGhsort (l:bat[:oid,:xml])<-(k:bat[:oid,:xml])
     io.print(l);	# 37 IOprint_val (_48:void)<-(l:bat[:oid,:xml])
-    ag := xml.agg(g,te);	# 38 BATXMLagg (ag:bat[:oid,:xml])<-(g:bat[:oid,:oid])(te:bat[:oid,:xml])
+    ag := xml.agg(te,g);	# 38 BATXMLagg (ag:bat[:oid,:xml])<-(te:bat[:oid,:xml])(g:bat[:oid,:oid])
     io.print(ag);	# 39 IOprint_val (_50:void)<-(ag:bat[:oid,:xml])
-    j2 := algebra.join(g,ax);	# 40 ALGjoin (j2:bat[:oid,:xml])<-(g:bat[:oid,:oid])(ax:bat[:oid,:xml])
-    k2 := algebra.kunique(j2);	# 41 ALGkunique (k2:bat[:oid,:xml])<-(j2:bat[:oid,:xml])
-    io.print(k2);	# 42 IOprint_val (_53:void)<-(k2:bat[:oid,:xml])
-    cc := xml.concat(k2,ag);	# 43 BATXMLconcat (cc:bat[:oid,:xml])<-(k2:bat[:oid,:xml])(ag:bat[:oid,:xml])
-    io.print(cc);	# 44 IOprint_val (_55:void)<-(cc:bat[:oid,:xml])
-    ae := xml.element("author",cc);	# 45 BATXMLtag (ae:bat[:oid,:xml])<-(_57:str)(cc:bat[:oid,:xml])
-    be := xml.agg(ae);	# 46 BATXMLgroup (be:bat[:oid,:xml])<-(ae:bat[:oid,:xml])
-    doc := xml.element("books",be);	# 47 BATXMLtag (doc:bat[:oid,:xml])<-(_60:str)(be:bat[:oid,:xml])
-    io.print(doc);	# 48 IOprint_val (_61:void)<-(doc:bat[:oid,:xml])
-end main;	# 49  
-#-----------------------------------------#
-# t	h				  # name
-# oid	str				  # type
-#-----------------------------------------#
-[ 0@0,	  "<title>spring</title>"	  ]
-[ 0@0,	  "<title>summer</title>"	  ]
-[ 1@0,	  "<title>autum</title>"	  ]
-#-----------------------------------------#
-# h	t				  # name
-# oid	str				  # type
-#-----------------------------------------#
-[ 0@0,	  "<title>spring</title>"	  ]
-[ 0@0,	  "<title>summer</title>"	  ]
-[ 1@0,	  "<title>autum</title>"	  ]
-#---------------------------------------------------------#
-# h	t						  # name
-# oid	str						  # type
-#---------------------------------------------------------#
-[ 0@0,	  "<title>spring</title><title>summer</title>"	  ]
-[ 1@0,	  "<title>autum</title>"			  ]
-#-------------------------#
-# h	t		  # name
-# oid	str		  # type
-#-------------------------#
-[ 0@0,	  "john"	  ]
-[ 1@0,	  "marie"	  ]
-#-----------------------------------------------------------------#
+    gr := bat.reverse(g);	# 40 BKCreverse (gr:bat[:oid,:oid])<-(g:bat[:oid,:oid])
+    j2 := algebra.join(gr,ax);	# 41 ALGjoin (j2:bat[:oid,:xml])<-(gr:bat[:oid,:oid])(ax:bat[:oid,:xml])
+    k2 := algebra.kunique(j2);	# 42 ALGkunique (k2:bat[:oid,:xml])<-(j2:bat[:oid,:xml])
+    io.print(k2);	# 43 IOprint_val (_54:void)<-(k2:bat[:oid,:xml])
+    cc := xml.concat(k2,ag);	# 44 BATXMLconcat (cc:bat[:oid,:xml])<-(k2:bat[:oid,:xml])(ag:bat[:oid,:xml])
+    io.print(cc);	# 45 IOprint_val (_56:void)<-(cc:bat[:oid,:xml])
+    io.print("author construction");	# 46 IOprint_val (_57:void)<-(_58:str)
+    ae := xml.element("author",cc);	# 47 BATXMLtag (ae:bat[:oid,:xml])<-(_60:str)(cc:bat[:oid,:xml])
+    io.print(ae);	# 48 IOprint_val (_61:void)<-(ae:bat[:oid,:xml])
+    io.print("book construction");	# 49 IOprint_val (_62:void)<-(_63:str)
+    be := xml.agg(ae);	# 50 BATXMLgroup (be:bat[:oid,:xml])<-(ae:bat[:oid,:xml])
+    io.print(be);	# 51 IOprint_val (_65:void)<-(be:bat[:oid,:xml])
+    doc := xml.element("books",be);	# 52 BATXMLtag (doc:bat[:oid,:xml])<-(_67:str)(be:bat[:oid,:xml])
+    io.print(doc);	# 53 IOprint_val (_68:void)<-(doc:bat[:oid,:xml])
+end main;	# 54  
+#---------------------------------#
 # h	t							  # name
-# oid	str							  # type
-#-----------------------------------------------------------------#
-[ 0@0,	  "john<title>spring</title><title>summer</title>"	  ]
-[ 1@0,	  "marie<title>autum</title>"				  ]
-#-----------------------------------------------------------------------------------------------------------------------------------------#
+# void	xml			  # type
+#---------------------------------#
+[ 0@0,	  <title>spring</title>	  ]
+[ 1@0,	  <title>spring</title>	  ]
+[ 2@0,	  <title>summer</title>	  ]
+#---------------------------------#
 # h	t																  # name
-# oid	str																  # type
-#-----------------------------------------------------------------------------------------------------------------------------------------#
-[ nil,	  "<books><author>john<title>spring</title><title>summer</title></author><author>marie<title>autum</title></author></books>"	  ]
+# void	xml			  # type
+#---------------------------------#
+[ 0@0,	  <title>spring</title>	  ]
+[ 1@0,	  <title>spring</title>	  ]
+[ 2@0,	  <title>summer</title>	  ]
 
-# 09:38:47 >  
-# 09:38:47 >  Done.
-# 09:38:47 >  
+
+
+
+# 11:07:41 >  
+# 11:07:41 >  Done.
+# 11:07:41 >  
 
