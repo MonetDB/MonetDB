@@ -212,7 +212,7 @@ printStatus(sabdb *stats, int mode, int len)
 
 	if (mode == 1) {
 		/* short one-line mode */
-		char avg[8];
+		char avg[8],uptime[20];
 		char *crash;
 
 		/* override if locked for brevity */
@@ -222,7 +222,7 @@ printStatus(sabdb *stats, int mode, int len)
 		secondsToString(avg, uplog.avguptime, 0);
 
 		if (uplog.lastcrash == -1) {
-			crash = "no crash";
+			crash = "";
 		} else {
 			struct tm *t;
 			crash = alloca(sizeof(char) * 20);
@@ -230,12 +230,21 @@ printStatus(sabdb *stats, int mode, int len)
 			strftime(crash, 20, "%Y-%m-%d %H:%M:%S", t);
 		}
 
-		/* demo | running | avguptime | start | stop | crash | lastcrash */
-		printf("%*s  %s %7s  %4d %4d  %4d %s\n",
-				-len, stats->dbname,
-				state, avg,
-				uplog.startcntr, uplog.stopcntr,
-				uplog.crashcntr, crash);
+		if (uplog.laststart == -1) {
+			uptime[0]= 0;
+		} else {
+			time_t now;
+			time(&now);
+			now -= uplog.laststart;
+			secondsToString(uptime,(int) now,0);
+		}
+
+		if(stats->state== SABdbInactive)
+			uptime[0]=0;
+
+		/* demo | running | uptime | crashes */
+		printf("%*s  %s %6s %4d %s\n",
+				-len, stats->dbname, state, uptime, uplog.crashcntr, crash);
 	} else if (mode == 2) {
 		/* long mode */
 		sablist *entry;
@@ -246,9 +255,9 @@ printStatus(sabdb *stats, int mode, int len)
 		printf("  location: %s\n", stats->path);
 		printf("  database name: %s\n", stats->dbname);
 		printf("  state: %s\n", state);
-		printf("  under maintenance: %s\n", stats->locked == 1 ? "yes" : "no");
+		printf("  maintenance mode: %s\n", stats->locked == 1 ? "yes" : "no");
 		entry = stats->scens;
-		printf("  available scenarios:");
+		printf("  scenarios:");
 		if (entry == NULL) {
 			printf(" (none)");
 		} else while (entry != NULL) {
@@ -257,7 +266,7 @@ printStatus(sabdb *stats, int mode, int len)
 		}
 		printf("\n");
 		entry = stats->conns;
-		printf("  listening connections:");
+		printf("  connections:");
 		if (entry == NULL) {
 			printf(" (none)");
 		} else while (entry != NULL) {
@@ -405,11 +414,10 @@ command_status(int argc, char *argv[])
 			stats= stats->next;
 		}
 
-		if (mode == 1) {
+		if (mode == 1 && orig) {
 			/* print header for short mode */
-			/* demo | running | avguptime | start | stop | crash | lastcrash */
-			printf("%*s  state   avgutme  strt stop  crsh crashdate\n",
-				-len,"name");
+			/* demo | running | uptime | crash */
+			printf("%*s  state   uptime  crashes \n", -len,"name");
 		}
 
 		stats= orig;
@@ -436,9 +444,8 @@ command_status(int argc, char *argv[])
 
 	if (mode == 1) {
 		/* print header for short mode */
-		/* demo | running | avguptime | start | stop | crash | lastcrash */
-		printf("%*s  state   avgutme  strt stop  crsh crashdate\n",
-			-len,"name");
+		/* demo | running | uptime | crash */
+		printf("%*s  state   uptime  crashes \n", -len,"name");
 	}
 
 	for (i = 1; i < argc; i++) {
