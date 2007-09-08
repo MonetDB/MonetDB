@@ -32,23 +32,28 @@ tx:= xml.xml(t);
 te:= xml.element("title",tx);
 g:= bat.new(:oid,:oid);
 bat.insert(g,0@0,0@0);
-bat.insert(g,0@0,1@0);
-bat.insert(g,1@0,2@0);
+bat.insert(g,1@0,0@0);
+bat.insert(g,2@0,1@0);
 
 k:= algebra.join(g,te);
 io.print(k);
 l:= algebra.sort(k);
 io.print(l);
 
-ag:= xml.agg(g,te);
+ag:= xml.agg(te,g);
 io.print(ag);
-j2:= algebra.join(g,ax);
+
+gr:= bat.reverse(g);
+j2:= algebra.join(gr,ax);
 k2:=algebra.kunique(j2);
 io.print(k2);
 cc:= xml.concat(k2,ag);
 io.print(cc);
+io.print("author construction");
 ae:= xml.element("author",cc);
+io.print(ae);
 
+io.print("book construction");
 be:= xml.agg(ae);
 doc:= xml.element("books",be);
 io.print(doc);
