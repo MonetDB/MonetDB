@@ -877,12 +877,21 @@ BATXMLgroup(int *ret, int *bid)
 {
 	BAT *b, *g;
 	str msg= MAL_SUCCEED;
-	oid o= oid_nil;
+	oid o= 0;
+	BUN p,q;
+	int xx;
 
 	@:getBATdescriptor(bid,b,"xml.group")@
-	g= BATmirror(BATconst(b,TYPE_oid,(ptr) &o));
-	msg= BATXMLagg(ret,&g->batCacheid,bid);
+
+    g= BATnew(BAThtype(b),TYPE_oid,BATcount(b));
+    BATloopFast(b, p, q, xx) {
+        ptr v = BUNhead(b,p);
+        bunfastins(g,v, &o);
+    }
+	msg= BATXMLagg(ret,bid,&g->batCacheid);
+bunins_failed:
 	BBPunfix(g->batCacheid);
+	BBPunfix(b->batCacheid);
 	return msg;
 }
 str
