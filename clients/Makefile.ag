@@ -19,6 +19,7 @@ SUBDIRS = src conf
 EXTRA_DIST = configure.ag rpm.mk.in \
 		MonetDB-client.spec MonetDB-client.spec.in \
 		RunMtest.in RunMtest.bat.in \
+		RunMapprove.in \
 		Runmclient.bat.in
 
 EXTRA_DIST_DIR = NT
