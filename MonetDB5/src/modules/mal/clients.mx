@@ -66,13 +66,17 @@ command getLogins( ):bat[:int,:str]
 address CLTLogin
 comment "Pseudo bat of client login time.";
 
+command getLastCommand( ):bat[:int,:str] 
+address CLTLastCommand
+comment "Pseudo bat of client's last command time.";
+
 command getActions( ):bat[:int,:int] 
 address CLTActions
-comment "Pseudo bat of client command counts.";
+comment "Pseudo bat of client's command counts.";
 
 command getTime( ):bat[:int,:lng] 
 address CLTTime
-comment "Pseudo bat of client total time usage(in usec).";
+comment "Pseudo bat of client's total time usage(in usec).";
 
 command getUsers( ):bat[:int,:str] 
 address CLTusers
@@ -125,6 +129,7 @@ clients_export str CLTsetHistory(int *ret, str *fname);
 clients_export str CLTexit(int *ret);
 clients_export str CLTquit(int *ret);
 clients_export str CLTLogin(int *ret);
+clients_export str CLTLastCommand(int *ret);
 clients_export str CLTActions(int *ret);
 clients_export str CLTTime(int *ret);
 clients_export str CLTInfo(int *ret);
@@ -288,6 +293,28 @@ CLTLogin(int *ret)
 	@:Pseudo(client,login,)@
 	return MAL_SUCCEED;
 }
+
+str
+CLTLastCommand(int *ret)
+{
+	BAT *b = BATnew(TYPE_int, TYPE_str, 12);
+	int i;
+	char s[26];
+
+	if (b == 0)
+		throw(MAL, "clients.getLastCommand", "failed to create BAT");
+	for (i = 0; i < MAL_MAXCLIENTS; i++) {
+		Client c = mal_clients+i;
+		if (c->mode >= CLAIMED && c->user != oid_nil) {
+			CLTtimeConvert((time_t) c->lastcmd,s);
+			BUNins(b, &i, s, FALSE);
+		}
+	}
+	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
+	@:Pseudo(client,lastcommand,)@
+	return MAL_SUCCEED;
+}
+
 str
 CLTActions(int *ret)
 {

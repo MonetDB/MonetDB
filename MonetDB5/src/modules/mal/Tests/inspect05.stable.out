@@ -1036,6 +1036,7 @@ end main;	# 11
 [ "getUsers",				  "command",	  "clients",	  "():bat[:int,:str] ",													  "CLTusers;"					  ]
 [ "getTime",			  "command",	  "clients",	  "():bat[:int,:lng] ",															  "CLTTime;"					  ]
 [ "getActions",			  "command",	  "clients",	  "():bat[:int,:int] ",															  "CLTActions;"					  ]
+[ "getLastCommand",			  "command",	  "clients",	  "():bat[:int,:str] ",												  "CLTLastCommand;"				  ]
 [ "getLogins",				  "command",	  "clients",	  "():bat[:int,:str] ",													  "CLTLogin;"					  ]
 [ "getScenario",			  "command",	  "clients",	  "():str ",														  "CLTgetScenario;"				  ]
 [ "getInfo",				  "command",	  "clients",	  "():bat[:str,:str] ",													  "CLTInfo;"					  ]
