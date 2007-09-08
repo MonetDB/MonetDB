@@ -16,65 +16,71 @@
 # Portions created by CWI are Copyright (C) 1997-2007 CWI.
 # All Rights Reserved.
 
+pkg=monetdb-sql
 builddir=`pwd`
 # make sure srcdir contains absolute path name
 srcdir=`cd '@srcdir@'; pwd`
 uname=`uname`
 
-# default in MonetDB4
-version=4
-conf=MonetDB.conf
-
+# default back-end is MonetDB4
+V=4
 for arg
 do
     case "$arg" in
-    -4)
-        version=4
-        conf=MonetDB.conf;;
-    -5)
-        version=5
-        conf=monetdb5.conf;;
+    -4) V=4;;
+    -5) V=5;;
     esac
 done
 
 # where compiled modules are to be found
-MOD_PATH="${builddir}/src/backends/monet$version/.libs:${builddir}/src/backends/monet$version:${srcdir}/src/backends/monet$version:`monetdb$version-config --modpath`"
+for d in src/backends/monet$V
+do
+	MOD_PATH="${MOD_PATH}${builddir}/$d/.libs:${builddir}/$d:${srcdir}/$d:"
+done
+MOD_PATH="${MOD_PATH}`monetdb$V-config --modpath`"
+
+# make sure scripts are executable
+for x in "${builddir}/conf/${pkg}-config"
+do
+	if [ -s $x ] ; then
+		chmod +x $x
+	fi
+done
+
+# enhance various paths to find our stuff
+binpath="${builddir}/conf:${builddir}/src/tools"
+libpath="${MOD_PATH}:${builddir}/src/server/.libs"
+
+PATH="${binpath}:$PATH"
+export PATH
 
 if [ "${LD_LIBRARY_PATH}" ] ; then
 	LD_LIBRARY_PATH=":${LD_LIBRARY_PATH}"
 fi
-if [ "${uname}" = "Darwin"  -a  "${DYLD_LIBRARY_PATH}" ] ; then
-	DYLD_LIBRARY_PATH=":${DYLD_LIBRARY_PATH}"
-fi
-if [ "${uname}" = "AIX"  -a  "${LIBPATH}" ] ; then
-	LIBPATH=":${LIBPATH}"
-fi
-
-# enhance PATH with Msql and MonetDB binaries
-if [ -s "${builddir}/conf/monetdb-sql-config" ] ; then
-	chmod +x "${builddir}/conf/monetdb-sql-config"
-fi
-PATH="${builddir}/conf:${builddir}/src/tools:$PATH"
-libpath="${MOD_PATH}:${builddir}/src/server/.libs"
 LD_LIBRARY_PATH="${libpath}${LD_LIBRARY_PATH}"
+export LD_LIBRARY_PATH
+
 if [ "${uname}" = "Darwin" ] ; then
+	if [ "${DYLD_LIBRARY_PATH}" ] ; then
+		DYLD_LIBRARY_PATH=":${DYLD_LIBRARY_PATH}"
+	fi
 	DYLD_LIBRARY_PATH="${libpath}${DYLD_LIBRARY_PATH}"
 	export DYLD_LIBRARY_PATH
 fi
 if [ "${uname}" = "AIX" ] ; then
+	if [ "${LIBPATH}" ] ; then
+		LIBPATH=":${LIBPATH}"
+	fi
 	LIBPATH="${libpath}${LIBPATH}"
 	export LIBPATH
 fi
-export PATH LD_LIBRARY_PATH
 
 # execute Mtest.py in the source directory
 cd "$srcdir"
 
-# execute the script
+# execute the script.
 # if no arguments, do a recursive test (Mtest.py -r), else pass on the
 # arguments.
-# if the environment variable MTEST_AT is set (value does not matter),
-# pass the --at flag to Mtest.py so that it uses the at command as a
-# watchdog.
-exec Mtest.py --config="`monetdb$version-config --sysconfdir`/$conf" --monet_mod_path="$MOD_PATH" --dbfarm="${builddir}/dbfarm" --sql_logdir="${builddir}/sql_logs" --xquery_logdir="${builddir}/xquery_logs" --TSTSRCBASE="$srcdir" --TSTBLDBASE="$builddir" --TSTTRGBASE="${builddir}" ${MTEST_AT+--at} "${@--rq}"
-# --SQL_PREFIX="${builddir}/src/tools"
+# if the environment variable MTEST_AT is set (value does not matter), pass
+# the --at flag to Mtest.py so that it uses the at command as a watchdog.
+exec Mtest.py -$V --package=${pkg} --monet_mod_path="${MOD_PATH}" --dbfarm="${builddir}/dbfarm" --sql_logdir="${builddir}/sql_logs" --xquery_logdir="${builddir}/xquery_logs" --TSTTRGBASE="${builddir}" ${MTEST_AT+--at} "${@--rq}"
