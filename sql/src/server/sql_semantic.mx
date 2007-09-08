@@ -710,11 +710,11 @@ check_table_types(mvc *sql, sql_table *ct, stmt *s, check_type tpe)
 	int temp = 0;
 
 	if (s->type != st_table) {
+		char *t = (ct->type==tt_generated)?"table":"unknown";
 		stmt_destroy(s);
 		return sql_error(
 			sql, 03,
-			"single value and complex type '%s' are not equal",
-			(ct->type==tt_generated)?"table":"unknown");
+			"single value and complex type '%s' are not equal", t);
 	}
 	tab = s->op1.stval;
 	temp = s->flag;
@@ -833,6 +833,7 @@ supertype(sql_subtype *super, sql_subtype *r, sql_subtype *i)
 	int rdigits = r->digits;
 	unsigned int scale = sql_max(i->scale, r->scale);
 
+	*super = *r;
 	if (i->type->base.id >r->type->base.id) {
 		tpe = i->type->sqlname;
 		radix = i->type->radix;
