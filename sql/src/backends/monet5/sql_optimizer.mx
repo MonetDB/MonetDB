@@ -490,7 +490,7 @@ addOptimizers(Client c,MalBlkPtr mb, str optimizer)
 			nxt++;
 		}
 		if (strcmp(optimizer,"default")==0){
-			str base= GDKstrdup(defaultPlan);
+			str base= GDKstrdup(defaultPlan? defaultPlan:minimalPlan);
 			addOptimizers(c,mb,base);
 			GDKfree(base);
 		} else if ((nme = getName(optimizer,strlen(optimizer))) == 0) {
@@ -543,7 +543,7 @@ to allow inspection.
 	}
 	optimizer = stack_get_string(be->mvc, "optimizer");
 	if( optimizer == 0 ) 
-		optimizer= defaultPlan;
+		optimizer= defaultPlan? defaultPlan:minimalPlan;
 #ifdef _SQL_OPTIMIZER_DEBUG
 	if( optimizer)
 	stream_printf(c->fdout,"optimizer:%s:\n",optimizer?optimizer:"unknown");
@@ -557,10 +557,10 @@ expand the macros (unless this has already been taken
 care of.
 @c
 	if( strcmp(optimizer,"on")==0 || strcmp(optimizer,"default")==0 ){ 
-		str base = GDKstrdup(defaultPlan);
+		str base = GDKstrdup(defaultPlan? defaultPlan:minimalPlan);
 
 		stack_set_var(be->mvc, "optimizer", 
-			VALset(&src, TYPE_str, defaultPlan));
+			VALset(&src, TYPE_str, defaultPlan? defaultPlan:minimalPlan));
 		addOptimizers(c,mb, base);
 		optimizeMALBlock(mb);
 		GDKfree(base);

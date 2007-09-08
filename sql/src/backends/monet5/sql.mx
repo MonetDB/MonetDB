@@ -221,6 +221,21 @@ function sql_environment():bat[:str,:bat];
 	return b;
 end sql_environment;
 
+function clients():bat[:str,:bat];
+	b := bat.new(:str,:bat,5);
+	u:= bbp.getUsers();
+	bat.inser(b,"user",u);
+	l:= bbp.getLogins();
+	bat.inser(b,"login",l);
+	c:= bbp.getLastCommand();
+	bat.inser(b,"lastcommand",c);
+	a:= bbp.getActions();
+	bat.inser(b,"actions",a);
+	t:= bbp.getTime();
+	bat.inser(b,"seconds",t);
+	return b;
+end clients;
+
 function bbp():bat[:str,:bat];
 	b := bat.new(:str,:bat,12);
 	ns := bbp.getNames();
