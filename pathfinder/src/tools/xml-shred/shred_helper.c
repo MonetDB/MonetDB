@@ -27,6 +27,9 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
+#include <assert.h>
+#include "shred_helper.h"
 
 char *
 strdup (const char * s)
@@ -49,3 +52,4 @@ strndup (const char * s, size_t n)
 	    return NULL;
     return (char *)memcpy (new, s, len);
 }
+
