@@ -1069,10 +1069,21 @@ main(int argc, char *argv[])
 		fflush(stderr);
 		exit(1);
 	}
+	if (access(dbfarm,F_OK) == -1 ){
+		GDKcreatedir(dbfarm); /* it doesn't necessarily create all */
+		mkdir(dbfarm,0755);
+		if(access(dbfarm,F_OK) == 0 )
+			fprintf(stderr, "created dbfarm '%s'\n",dbfarm);
+		else {
+			fprintf(stderr, "cannot access dbfarm '%s'\n",dbfarm);
+			fflush(stderr);
+			exit(1);
+		}
+	}
 
 	snprintf(buf, 1024, "%s/.merovingian_lock", dbfarm);
 	/* we leak ret, but that doesn't matter as the file needs to remain
-	 * available, otherwise we lose the lock */
+	 * available, otherwise we loose the lock */
 	if ((ret = MT_lockf(buf, F_TLOCK, 4, 1)) < 0) {
 		/* locking failed */
 		fprintf(stderr, "another merovingian is already running\n");
