@@ -217,7 +217,7 @@ printStatus(sabdb *stats, int mode, int len)
 
 		/* override if locked for brevity */
 		if (stats->locked == 1)
-			state = "mainten";
+			state = "locked";
 
 		secondsToString(avg, uplog.avguptime, 0);
 
@@ -255,7 +255,7 @@ printStatus(sabdb *stats, int mode, int len)
 		printf("  location: %s\n", stats->path);
 		printf("  database name: %s\n", stats->dbname);
 		printf("  state: %s\n", state);
-		printf("  maintenance mode: %s\n", stats->locked == 1 ? "yes" : "no");
+		printf("  locked: %s\n", stats->locked == 1 ? "yes" : "no");
 		entry = stats->scens;
 		printf("  scenarios:");
 		if (entry == NULL) {
@@ -334,7 +334,7 @@ printStatus(sabdb *stats, int mode, int len)
 			break;
 		}
 		if (stats->locked == 1)
-			strcat(buf, ", under maintenance");
+			strcat(buf, ", locked");
 		printf("database %s, %s\n", stats->dbname, buf);
 		printf("  crash average: %d.00 %.2f %.2f (over 1, 15, 30 starts) "
 				"in total %d crashes\n",
@@ -438,7 +438,7 @@ command_status(int argc, char *argv[])
 				GDKfree(e);
 				exit(2);
 			}
-			if( (int) strlen(stats->dbname) >len)
+			if( stats && stats->dbname && (int) strlen(stats->dbname) >len)
 				len = (int) strlen(stats->dbname);
 		}
 
