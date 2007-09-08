@@ -1,10 +1,18 @@
 -- make sure you load the geom module before loading this sql module
-CREATE TYPE Geometry EXTERNAL NAME wkb;
 CREATE TYPE Point EXTERNAL NAME wkb;
 CREATE TYPE Curve EXTERNAL NAME wkb;
 CREATE TYPE LineString EXTERNAL NAME wkb;
 CREATE TYPE Surface EXTERNAL NAME wkb;
 CREATE TYPE Polygon EXTERNAL NAME wkb;
+
+CREATE TYPE MultiPoint EXTERNAL NAME wkb;
+CREATE TYPE MultiCurve EXTERNAL NAME wkb;
+CREATE TYPE MultiLineString EXTERNAL NAME wkb;
+CREATE TYPE MultiSurface EXTERNAL NAME wkb;
+CREATE TYPE MultiPolygon EXTERNAL NAME wkb;
+
+CREATE TYPE Geometry EXTERNAL NAME wkb;
+CREATE TYPE GeomCollection EXTERNAL NAME wkb;
 
 CREATE TYPE mbr EXTERNAL NAME mbr;
 
@@ -17,13 +25,23 @@ CREATE FUNCTION mbr (c Curve) RETURNS mbr external name geom.mbr;
 CREATE FUNCTION mbr (l LineString) RETURNS mbr external name geom.mbr;
 CREATE FUNCTION mbr (s Surface) RETURNS mbr external name geom.mbr;
 CREATE FUNCTION mbr (p Polygon) RETURNS mbr external name geom.mbr;
+CREATE FUNCTION mbr (m multipoint) RETURNS mbr external name geom.mbr;
+CREATE FUNCTION mbr (m multicurve) RETURNS mbr external name geom.mbr;
+CREATE FUNCTION mbr (m multilinestring) RETURNS mbr external name geom.mbr;
+CREATE FUNCTION mbr (m multisurface) RETURNS mbr external name geom.mbr;
+CREATE FUNCTION mbr (m multipolygon) RETURNS mbr external name geom.mbr;
 CREATE FUNCTION mbr (g Geometry) RETURNS mbr external name geom.mbr;
+CREATE FUNCTION mbr (g GeomCollection) RETURNS mbr external name geom.mbr;
 
 -- The srid in the *FromText Functions is currently not used
 CREATE FUNCTION GeomFromText(wkt string, srid SMALLINT) RETURNS Geometry external name geom."GeomFromText";
 CREATE FUNCTION PointFromText(wkt string, srid SMALLINT) RETURNS Point external name geom."PointFromText";
 CREATE FUNCTION LineFromText(wkt string, srid SMALLINT) RETURNS LineString external name geom."LineFromText";
 CREATE FUNCTION PolyFromText(wkt string, srid SMALLINT) RETURNS Polygon external name geom."PolyFromText";
+CREATE FUNCTION MPointFromText(wkt string, srid SMALLINT) RETURNS MultiPoint external name geom."MultiPointFromText";
+CREATE FUNCTION MLineFromText(wkt string, srid SMALLINT) RETURNS MultiLineString external name geom."MultiLineFromText";
+CREATE FUNCTION MPolyFromText(wkt string, srid SMALLINT) RETURNS MultiPolygon external name geom."MultiPolyFromText";
+CREATE FUNCTION GeomCollectionFromText(wkt string, srid SMALLINT) RETURNS MultiPolygon external name geom."GeomCollectionFromText";
 -- alias
 CREATE FUNCTION PolygonFromText(wkt string, srid SMALLINT) RETURNS Polygon external name geom."PolyFromText";
 
@@ -32,6 +50,11 @@ CREATE FUNCTION AsText(c Curve) RETURNS STRING external name geom."AsText";
 CREATE FUNCTION AsText(l LineString) RETURNS STRING external name geom."AsText";
 CREATE FUNCTION AsText(s Surface) RETURNS STRING external name geom."AsText";
 CREATE FUNCTION AsText(p Polygon) RETURNS STRING external name geom."AsText";
+CREATE FUNCTION AsText(p MultiPoint) RETURNS STRING external name geom."AsText";
+CREATE FUNCTION AsText(c MultiCurve) RETURNS STRING external name geom."AsText";
+CREATE FUNCTION AsText(l MultiLineString) RETURNS STRING external name geom."AsText";
+CREATE FUNCTION AsText(s MultiSurface) RETURNS STRING external name geom."AsText";
+CREATE FUNCTION AsText(p MultiPolygon) RETURNS STRING external name geom."AsText";
 CREATE FUNCTION AsText(g Geometry) RETURNS STRING external name geom."AsText";
 
 CREATE FUNCTION Point(g Geometry) RETURNS Point external name geom.point;

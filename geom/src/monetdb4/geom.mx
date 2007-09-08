@@ -161,11 +161,18 @@
 
 #include "libgeom.h"
 
+/*
 #define point wkb
 #define curve wkb
 #define line wkb
 #define surface wkb
 #define poly wkb
+#define multipoint wkb
+#define multicurve wkb
+#define multiline wkb
+#define multisurface wkb
+#define multipoly wkb
+*/
 
 #include "geom.proto.h"
 
@@ -805,9 +812,15 @@ PROC @2( wkb w ): wkb
 }
 
 @mil
-@:types(Geom,geometry,wkbGeometryCollection)@
 @:types(Point,point,wkbPoint)@
 @:types(Curve,curve,wkbLineString)@
 @:types(Line,linestring,wkbLineString)@
 @:types(Surface,surface,wkbPolygon)@
 @:types(Poly,polygon,wkbPolygon)@
+@:types(MultiPoint,multipoint,wkbMultiPoint)@
+@:types(MultiCurve,multicurve,wkbMultiLineString)@
+@:types(MultiLine,multilinestring,wkbMultiLineString)@
+@:types(MultiSurface,multisurface,wkbMultiPolygon)@
+@:types(MultiPoly,multipolygon,wkbMultiPolygon)@
+@:types(Geom,geometry,wkbGeometryCollection)@
+@:types(GeomCollection,geomcollection,wkbGeometryCollection)@

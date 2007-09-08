@@ -58,13 +58,18 @@ function @1FromText( wkt:str ) :wkb;
 end @1FromText;
 
 @mal
-@:types(Geom,geometry,7)@
 @:types(Point,point,1)@
 @:types(Curve,curve,2)@
 @:types(Line,linestring,2)@
 @:types(Surface,surface,3)@
 @:types(Poly,polygon,3)@
-
+@:types(MultiPoint,multipoint,4)@
+@:types(MultiCurve,multicurve,5)@
+@:types(MultiLine,multilinestring,5)@
+@:types(MultiSurface,multisurface,6)@
+@:types(MultiPoly,multipolygon,6)@
+@:types(Geom,geometry,7)@
+@:types(GeomCollection,geomcollection,7)@
 
 module geom;
 
@@ -209,12 +214,18 @@ function @2( wkt:str ) :wkb;
 	return x;
 end @2;
 @mal
-@:ctypes(Geom,geometry,7)@
 @:ctypes(Point,point,1)@
 @:ctypes(Curve,curve,2)@
 @:ctypes(Line,linestring,2)@
 @:ctypes(Surface,surface,3)@
 @:ctypes(Poly,polygon,3)@
+@:ctypes(MultiPoint,multipoint,4)@
+@:ctypes(MultiCurve,multicurve,5)@
+@:ctypes(MultiLine,multilinestring,5)@
+@:ctypes(MultiSurface,multisurface,6)@
+@:ctypes(MultiPoly,multipolygon,6)@
+@:ctypes(Geom,geometry,7)@
+@:ctypes(GeomCollection,geometrycollection,7)@
 
 @h
 #ifndef GEOM_H
