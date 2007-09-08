@@ -714,13 +714,13 @@ SQLrenderer(MapiHdl hdl)
 							   strcmp(s, "double") == 0 ||
 							   strcmp(s, "float") == 0);
 			}
+			/* punish the column headers first until you cannot squeeze  */
 			while (2 * fields + 2 + total >= pagewidth && max) {
 				max = 0;
 				total = 0;
 				for (i = 0; i < fields; i++)
 					total += len[i];
 
-				/* punish the column headers first */
 				for (i = 0; i < fields; i++) {
 					char *name = mapi_get_name(hdl, i);
 
@@ -735,7 +735,11 @@ SQLrenderer(MapiHdl hdl)
 					}
 				}
 			}
-			/* punish the long value fields */
+			/* punish the long value fields, first the multi-lines */
+			for (i = 0; i < fields; i++)
+				if( len[i] >= pagewidth-2*fields)
+					len[i]= pagewidth-2*fields;
+			/* finetune the long value fields */
 			while (2 * fields + 2 + total >= pagewidth) {
 				total = 0;
 				max = 0;
@@ -748,6 +752,7 @@ SQLrenderer(MapiHdl hdl)
 				/* penalty for largest field */
 				len[max]--;
 				total--;
+				/* no more squeezing possible */
 				if (len[max] == 1)
 					break;
 			}
