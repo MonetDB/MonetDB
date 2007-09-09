@@ -215,6 +215,17 @@ typedef struct logger_functions {
 
 extern logger_functions logger_funcs;
 
+/* we need to add an interface for result_tables later */
+
+extern res_table *res_table_create(sql_trans *tr, int res_id, int nr_cols, int querytype, res_table *next, void *order);
+extern res_col *res_col_create(sql_trans *tr, res_table *t, char *tn, char *name, char *typename, int digits, int scale, int mtype, void *v);
+
+extern void res_table_destroy(res_table *t);
+
+extern res_table *res_tables_remove(res_table *results, res_table *t);
+extern void res_tables_destroy(res_table *results);
+extern res_table *res_tables_find(res_table *results, int res_id);
+
 extern int
  store_init(int debug, store_type store, char *logdir, char *dbname, backend_stack stk);
 extern void
