@@ -41,3 +41,10 @@ select
         from Projects p
        where p.CustId = c.CustId) )) as "customer_projects"
 from Customers c;
+
+select 
+  xmlelement(name "Customer",
+  xmlattributes(c.CustId as "id"), 
+  xmlcomment('simple comment test'))
+from Customers c;
+
