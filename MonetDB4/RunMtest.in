@@ -30,7 +30,7 @@ done
 MOD_PATH="${MOD_PATH}${srcdir}/scripts/tools"
 
 # make sure scripts are executable
-for x in "${builddir}/conf/${pkg}-config"
+for x in "${builddir}/src/tools/${pkg}-config"
 do
 	if [ -s $x ] ; then
 		chmod +x $x
