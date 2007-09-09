@@ -51,7 +51,8 @@
 
 #define NAME_ID 0
 
-typedef long int nat;
+typedef long unsigned int nat;
+typedef int pre_t;
 
 enum kind_t {
       elem
@@ -133,17 +134,17 @@ void hashtable_insert(bucket_t **hash_table, char *key, int id);
 void free_hash(bucket_t **hash_table);
 
 /* return a brand new name_id */
-int new_nameid();
+int new_nameid(void);
 
 typedef struct node_t node_t;
 struct node_t {
-    nat       pre;
-    nat       apre;
+    pre_t     pre;
+    pre_t     apre;
     nat       post;
     nat       pre_stretched;
     nat       post_stretched;
     nat       size;
-    int       level;
+    unsigned int       level;
     int       name_id;
     node_t   *parent;
     kind_t    kind;
@@ -154,7 +155,7 @@ struct node_t {
 static node_t stack[STACK_MAX];
 static int level;
 static int max_level;
-static nat pre;
+static pre_t pre;
 static nat post;
 static nat rank;
 static nat att_id;
@@ -253,7 +254,7 @@ static void
 end_document (void *ctx)
 {
     /* calling convention */
-	(void)ctx;
+        (void)ctx;
 
     flush_buffer ();
 
@@ -286,11 +287,11 @@ start_element (void *ctx, const xmlChar *tagname, const xmlChar **atts)
 
     /* check if tagname is larger than TAG_SIZE characters */
     if ( strlen((char*)tagname) > TAG_SIZE) {
-    	fprintf(stderr, "We support only tagnames with length <= %i\n", 
+        fprintf(stderr, "We support only tagnames with length <= %i\n", 
             TAG_SIZE);
 
-	free_hash (hash_table);
-	exit(1);
+        free_hash (hash_table);
+        exit(1);
     }
      
     flush_buffer ();
@@ -308,31 +309,31 @@ start_element (void *ctx, const xmlChar *tagname, const xmlChar **atts)
      * hashtable */
     int name_id = -1; 
     if(sql_atts) { 
-	name_id = find_element(hash_table, (char*)tagname);
+        name_id = find_element(hash_table, (char*)tagname);
 
-	/* key not found */
-	if (NOKEY(name_id)) {
+        /* key not found */
+        if (NOKEY(name_id)) {
 
-	    /* create a new id */
-	    name_id = new_nameid();	
+            /* create a new id */
+            name_id = new_nameid();     
 
-	    hashtable_insert(hash_table, (char*)tagname, name_id);
+            hashtable_insert(hash_table, (char*)tagname, name_id);
 
-	    fprintf (out_attr, "%i, \"%s\"\n", name_id, 
+            fprintf (out_attr, "%i, \"%s\"\n", name_id, 
                 strndup((char*)tagname,PROPSIZE));
-	}
+        }
     }
 
     stack[level] = (node_t) {
         .pre            = pre,
-	.apre           = -1,
+        .apre           = -1,
         .post           = 0,
         .pre_stretched  = rank,
         .post_stretched = 0,
         .size           = 0,
         .level          = level,
         .parent         = stack + level - 1,
-	.name_id        = name_id, 
+        .name_id        = name_id, 
         .kind           = elem,
         .prop           = (!sql_atts)?(xmlChar*)strndup((const char*)tagname, (size_t)TAG_SIZE):(xmlChar*)NULL,
         .guide          = current_guide_node->guide
@@ -341,55 +342,55 @@ start_element (void *ctx, const xmlChar *tagname, const xmlChar **atts)
 
     if (!suppress_attributes && atts) {
         if (!sql_atts)
-	        while (*atts) {
+                while (*atts) {
                     attr_guide_node = insert_guide_node((char*)atts_back[0],
                         current_guide_node, attr);
 
-		fprintf (out_attr, "%lu, %lu, \"%s\", \"%s\", %lu\n", 
-                    att_id++, pre, atts[0], atts[1], attr_guide_node->guide);
+                fprintf (out_attr, "%lu, %i, \"%s\", \"%s\", %lu\n", 
+                    att_id++, pre, (char*)atts[0], (char*)atts[1], attr_guide_node->guide);
 
-		atts += 2;
-	    }
+                atts += 2;
+            }
     }
-	/* handle attributes as we need for sql generation */
-	else
-	   while (*atts) {
-	     	/* check if tagname is larger than TEXT_SIZE characters */
-	     	if ( strlen((char*)atts[1]) > TEXT_SIZE) {
-	     	    fprintf(stderr, "We support only attribute content"
+        /* handle attributes as we need for sql generation */
+        else
+           while (*atts) {
+                /* check if tagname is larger than TEXT_SIZE characters */
+                if ( strlen((char*)atts[1]) > TEXT_SIZE) {
+                    fprintf(stderr, "We support only attribute content"
                              " with length <= %i\n", TEXT_SIZE);
 
-	     	    free_hash(hash_table);
-	                 exit(1);
-	     	}
-	             /* check if tagname is larger than TAG_SIZE characters */
-	     	if ( strlen((char*)atts[0]) > TAG_SIZE) {
+                    free_hash(hash_table);
+                         exit(1);
+                }
+                     /* check if tagname is larger than TAG_SIZE characters */
+                if ( strlen((char*)atts[0]) > TAG_SIZE) {
                           fprintf(stderr, "We support only attributes with "
                               "length <= %i\n", TAG_SIZE);
 
-	     	     free_hash(hash_table);
-	                  exit(1);
-	     	}
+                     free_hash(hash_table);
+                          exit(1);
+                }
  
-	     	/* try to find the tagname in the
-	     	 * hashtable */
-	     	name_id = find_element(hash_table, (char*)atts[0]);
+                /* try to find the tagname in the
+                 * hashtable */
+                name_id = find_element(hash_table, (char*)atts[0]);
 
-	     	/* key not found */
-	     	if(NOKEY(name_id)) {
+                /* key not found */
+                if(NOKEY(name_id)) {
 
-	     	    /* create a new id */
-	     	    name_id = new_nameid();	
+                    /* create a new id */
+                    name_id = new_nameid();     
 
-	     	    hashtable_insert(hash_table, (char*)atts[0], name_id);
-	     	    fprintf (out_attr, "%i, \"%s\"\n", name_id, strndup((char*)atts[0],PROPSIZE));
-	     	}
+                    hashtable_insert(hash_table, (char*)atts[0], name_id);
+                    fprintf (out_attr, "%i, \"%s\"\n", name_id, strndup((char*)atts[0],PROPSIZE));
+                }
 
              attr_guide_node = insert_guide_node((char*)atts_back[0], 
                  current_guide_node, attr);
 
-	     	pre++;
-	        	print_tuple ((node_t) {
+                pre++;
+                        print_tuple ((node_t) {
                               .pre = pre,
                               .apre = -1,
                               .post = 0,
@@ -403,8 +404,8 @@ start_element (void *ctx, const xmlChar *tagname, const xmlChar **atts)
                               .prop = (xmlChar*)atts[1],
                               .guide = attr_guide_node->guide,
                            });
-	     	atts += 2;
-	   }
+                atts += 2;
+           }
 }
 
 static void
@@ -435,7 +436,7 @@ void
 characters (void *ctx, const xmlChar *chars, int n)
 {
     /* calling convention */
-	(void)ctx;
+        (void)ctx;
 
     if (bufpos < PROPSIZE) {
         snprintf ((char*)buf + bufpos, MIN (n, PROPSIZE - bufpos) + 1, "%s", (char *)chars);
@@ -452,8 +453,8 @@ processing_instruction (void *ctx, const xmlChar *target,  const xmlChar *chars)
 {
     /* calling convention */
     (void)ctx;
-	(void)chars;
-	
+        (void)chars;
+        
     leaf_guide_node = insert_guide_node((char*)target, current_guide_node, pi);
 
     if (bufpos < PROPSIZE) {
@@ -471,7 +472,7 @@ void
 comment (void *ctx,  const xmlChar *chars)
 {
     /* calling convention */
-	(void)ctx;
+        (void)ctx;
 
     leaf_guide_node = insert_guide_node(NULL, current_guide_node, comm);
 
@@ -491,10 +492,10 @@ flush_buffer (void)
 {
     /* check if tagname is larger than TEXT_SIZE characters */
     if ( strlen((char*)buf) > TEXT_SIZE) {
-    	fprintf(stderr, "We support text with length <= %i\n", TEXT_SIZE);
+        fprintf(stderr, "We support text with length <= %i\n", TEXT_SIZE);
 
         free_hash(hash_table); 
-	exit(1);
+        exit(1);
     }
 
     if (buf[0]) {
@@ -507,14 +508,14 @@ flush_buffer (void)
         
         stack[level] = (node_t) {
             .pre            = pre,
-	    .apre           = -1,
+            .apre           = -1,
             .post           = post,
             .pre_stretched  = rank - 1,
             .post_stretched = rank,
             .size           = 0,
             .level          = level,
             .parent         = stack + level - 1,
-	    .name_id        = -1,
+            .name_id        = -1,
             .kind           = leaf_guide_node->kind,
             .prop           = buf,
             .guide          = leaf_guide_node->guide,
@@ -572,7 +573,7 @@ print_help (int argc, char **argv)
             "       %s -o <filename>  output filename\n"
             "       %s -a             suppress attributes\n"
             "       %s -s             sql encoding supported by pathfinder\n"
-	    "                         \t\t(that is probably what you want)\n"
+            "                         \t\t(that is probably what you want)\n"
             "                         Guide node generation.\n",
             argv[0], argv[0], argv[0], argv[0], argv[0], argv[0]);
 }
@@ -597,60 +598,67 @@ print_tuple (node_t tuple)
     for (i = 0; format[i]; i++)
         if (format[i] == '%') {
             i++;
-			switch (format[i]) {
-					case 'e':  if(tuple.pre != -1)
-								   fprintf (out, "%lu", tuple.pre);
-							   break;
-					case 'o':  fprintf (out, "%lu", tuple.post); break;
-					case 'E':  fprintf (out, "%lu", tuple.pre_stretched); break;
-					case 'O':  fprintf (out, "%lu", tuple.post_stretched); break;
-					case 's':  fprintf (out, "%lu", tuple.size); break;
-					case 'l':  fprintf (out, "%u",  tuple.level); break;
+	    switch (format[i]) {
+		    case 'e':  if(tuple.pre != -1)
+				       fprintf (out, "%i", tuple.pre);
+			       break;
+		    case 'o':  fprintf (out, "%lu", tuple.post); break;
+		    case 'E':  fprintf (out, "%lu", tuple.pre_stretched); break;
+		    case 'O':  fprintf (out, "%lu", tuple.post_stretched); break;
+		    case 's':  fprintf (out, "%lu", tuple.size); break;
+		    case 'l':  fprintf (out, "%u",  tuple.level); break;
 
-					case 'p':  if (tuple.parent)
-									   fprintf (out, "%lu", tuple.parent->pre);
-							   else
-									   fprintf (out, "NULL");
-							   break;
+		    case 'p':  
+			       if (tuple.parent)
+				       fprintf (out, "%i", tuple.parent->pre);
+			       else
+				       fprintf (out, "NULL");
+			       break;
+		    case 'P':
+			       if (tuple.parent)
+				       fprintf (out, "%lu",tuple.parent->pre_stretched);
+			       else
+				       fprintf (out, "NULL");
+			       break;
+		    case 'k': 
+			       print_kind (out, tuple.kind);
+			       break;
+		    case 'n':
+			       if (tuple.name_id != -1)
+				       fprintf(out, "%i", tuple.name_id);
+			       break;
+		    case 'a':
+			       if (tuple.apre != -1)
+				       fprintf(out, "%i", tuple.apre);
+			       break;
+		    case 't':
+			       if(tuple.prop) {
+				       unsigned int i;
+				       putc ('"', out);
+				       for (i = 0; i < PROPSIZE && tuple.prop[i]; i++)
+					       switch (tuple.prop[i]) {
+						       case '\n': 
+							       putc (' ', out); 
+							       break; 
+						       case '"':  
+							       putc ('"', out); 
+							       putc ('"', out); 
+							       break;
+						       default:   
+							       putc (tuple.prop[i], out); 
+					       }
+				       putc ('"', out);
+			       }
+			       else {
+				       fprintf(out, "NULL");
+			       }
+	     break;    
+                                        case 'g':  fprintf (out, "%lu", tuple.guide); break;
 
-					case 'P':  if (tuple.parent)
-									   fprintf (out, "%lu",tuple.parent->pre_stretched);
-							   else
-									   fprintf (out, "NULL");
-							   break;
-					case 'k': 
-							   print_kind (out, tuple.kind);
-							   break;
-					case 'n':
-							   if (tuple.name_id != -1)
-									fprintf(out, "%i", tuple.name_id); break;
-					case 'a':
-							   if (tuple.apre != -1)
-								    fprintf(out, "%lu", tuple.apre); break;
-					case 't':
-							   {
-									   if(tuple.prop) {
-											   unsigned int i;
-											   putc ('"', out);
-											   for (i = 0; i < PROPSIZE && tuple.prop[i]; i++)
-													   switch (tuple.prop[i]) {
-															   case '\n': putc (' ', out); break;
-															   case '"':  putc ('"', out); putc ('"', out);
-																		  break;
-															   default:   putc (tuple.prop[i], out);
-													   }
-											   putc ('"', out);
-									   }
-									   else {
-											   fprintf(out, "NULL");
-									   }
-							   } break;    
-					case 'g':  fprintf (out, "%lu", tuple.guide); break;
-
-					default:   putc (format[i], out); break;
-			}
-	    }
-	    else
+                                        default:   putc (format[i], out); break;
+                        }
+            }
+            else
             putc (format[i], out);
 
     putc ('\n', out);
@@ -693,10 +701,10 @@ main (int argc, char **argv)
                 outfile_given = true;
                 break;
 
-	    case 's':
-		sql_atts = true;
-		format = "%e, %s, %l, %k, %n, %t, %g";
-		break;
+            case 's':
+                sql_atts = true;
+                format = "%e, %s, %l, %k, %n, %t, %g";
+                break;
 
             case 'h':
                 print_help (argc, argv);
@@ -707,7 +715,7 @@ main (int argc, char **argv)
 
     /* if we need sql encoding we need to initialize the hashtable */
     if(sql_atts)
-	hash_table = (bucket_t**) malloc (HASHTABLE_SIZE * sizeof(bucket_t));
+        hash_table = (bucket_t**) malloc (HASHTABLE_SIZE * sizeof(bucket_t));
 
     if (!outfile_given && !suppress_attributes) {
         fprintf (stderr, "Attribute generation requires output filename.\n");
@@ -746,8 +754,8 @@ main (int argc, char **argv)
 
     if (! ctx->wellFormed) {
         fprintf (stderr, "XML input not well-formed\n");
-	if (sql_atts)
-	    free_hash(hash_table);
+        if (sql_atts)
+            free_hash(hash_table);
         exit (EXIT_FAILURE);
     }
 
@@ -757,7 +765,7 @@ main (int argc, char **argv)
             "the document\n", new_nameid());
 
     if (sql_atts)
-	free_hash(hash_table);
+        free_hash(hash_table);
 
     /* Open the file */
     if(outfile_given) {
@@ -806,11 +814,11 @@ int find_bucket(bucket_t *bucket, char *key)
     while (actbucket)
     {
         if (strcmp(actbucket->key, key)==0)
-	{
-	   return actbucket->id;
-	}
-	else
-	    actbucket = actbucket->next;
+        {
+           return actbucket->id;
+        }
+        else
+            actbucket = actbucket->next;
     }
     return NO_KEY;
 }
@@ -822,7 +830,7 @@ int find_element(bucket_t **hash_table, char *key)
 }
 
 /* return a brand new name_id */
-int new_nameid()
+int new_nameid(void)
 {
     static unsigned int name = NAME_ID;
     return name++;
@@ -835,15 +843,15 @@ bucket_t *bucket_insert(bucket_t *bucket,  char *key, int id)
     bucket_t *actbucket = NULL;
     /* no key found */
     if( ident == -1) {
-    	actbucket = (bucket_t*) malloc(sizeof(bucket_t));
-	actbucket->id = id;
-	actbucket->key = strndup(key,strlen(key));
-	/* add actbucket to the front of list */
-	actbucket->next = bucket;
-	return actbucket;
+        actbucket = (bucket_t*) malloc(sizeof(bucket_t));
+        actbucket->id = id;
+        actbucket->key = strndup(key,strlen(key));
+        /* add actbucket to the front of list */
+        actbucket->next = bucket;
+        return actbucket;
     }
     else {
-    	return bucket;
+        return bucket;
     }
     /* satisfy picky compilers */
     return NULL;
