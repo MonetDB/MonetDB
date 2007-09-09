@@ -48,7 +48,7 @@ do
 done
 
 # enhance various paths to find our stuff
-binpath="${builddir}/conf:${builddir}/src/tools"
+binpath="${builddir}/conf:${builddir}/src/tools:${builddir}/src/backends/monet5"
 libpath="${MOD_PATH}:${builddir}/src/server/.libs"
 
 PATH="${binpath}:$PATH"
