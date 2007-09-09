@@ -115,8 +115,9 @@ command_help(int argc, char *argv[])
 		printf("  given.  Instead of the normal mode, a long and short mode\n");
 		printf("  control what information is displayed.\n");
 		printf("Options:\n");
+		printf("  -s  use short one-line listing [default]\n");
 		printf("  -l  use long listing\n");
-		printf("  -s  use short one-line listing\n");
+		printf("  -c  crash statistics listing\n");
 	} else if (strcmp(argv[1], "start") == 0) {
 		printf("Usage: monetdb start [-a] [database ...]\n");
 		printf("  Starts the given database, if the MonetDB Database Server\n");
@@ -352,7 +353,7 @@ static void
 command_status(int argc, char *argv[])
 {
 	int doall = 1; /* we default to showing all */
-	int mode = 0;  /* 0=normal, 1=short, 2=long */
+	int mode = 1;  /* 0=normal, 1=short, 2=long */
 	int i, len = 10;
 	char *p;
 	str e;
@@ -369,6 +370,9 @@ command_status(int argc, char *argv[])
 				switch (*p) {
 					case 's':
 						mode = 1;
+					break;
+					case 'c':
+						mode = 0;
 					break;
 					case 'l':
 						mode = 2;

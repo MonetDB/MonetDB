@@ -50,7 +50,7 @@ esac
 
 DBFARM=$MONETDB5_PREFIX/var/MonetDB5/dbfarm
 DBLOGS=$MONETDB5_PREFIX/var/MonetDB5/dblogs
-CHKPNTDIR=$MONETDB5_PREFIX/var/MonetDB5/chkpnt
+CHKPNTDIR=$MONETDB5_PREFIX/var/MonetDB5/dbarchive
 TAG=`date +%F-%H%M%S`
 
 # First perform some sanity checks
