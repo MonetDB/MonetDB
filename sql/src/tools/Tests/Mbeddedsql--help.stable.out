@@ -1,0 +1,17 @@
+stdout of test 'Mbeddedsql--help` in directory 'src/tools` itself:
+
+
+# 16:36:12 >  
+# 16:36:12 >  Mtimeout -timeout 300 ./Mbeddedsql--help Mbeddedsql--help 
+# 16:36:12 >  
+
+
+# 16:36:12 >  
+# 16:36:12 >  Mtimeout -timeout 60 Mbeddedsql --help
+# 16:36:12 >  
+
+
+# 16:36:12 >  
+# 16:36:12 >  Done.
+# 16:36:12 >  
+
