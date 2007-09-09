@@ -412,6 +412,7 @@ int yydebug=1;
 	XML_aggregate
 	XML_value_expression
 	XML_primary
+	opt_comma_string_value_expression
 
 %type <type>
 	data_type
@@ -449,6 +450,7 @@ int yydebug=1;
 	forest_element_name
 	XML_namespace_URI
 	XML_namespace_prefix
+	XML_PI_target
 
 %type <l>
 	passwd_schema
@@ -528,6 +530,7 @@ int yydebug=1;
 	XML_namespace_declaration_item
 	XML_regular_namespace_declaration_item
 	XML_default_namespace_declaration_item
+	XML_value_expression_list
 
 %type <ival>
 	opt_port
@@ -4413,12 +4416,14 @@ path_specification:
 schema_name_list: name_commalist ;
 
 XML_value_expression:
-  XML_primary
+  XML_primary	
   ;
 
 XML_value_expression_list:
-    XML_value_expression
-  | XML_value_expression ',' XML_value_expression_list
+    XML_value_expression	
+		{ $$ = append_symbol(L(), $1); }
+  | XML_value_expression_list ',' XML_value_expression
+		{ $$ = append_symbol($1, $3); }
   ;
 
 XML_primary:
@@ -4439,18 +4444,27 @@ XML_value_function:
   ;
 
 XML_comment:
-  XMLCOMMENT '(' value_exp /* should be a string */ opt_XML_returning_clause ')' 
-	{ $$ = NULL; }
+  XMLCOMMENT '(' value_exp /* should be a string */ opt_XML_returning_clause ')'
+	{ dlist *l = L();
+	  append_symbol(l, $3);
+	  append_int(l, $4);
+	  $$ = _symbol_create_list( SQL_XMLCOMMENT, l); }
  ;
 
 XML_concatenation:
   XMLCONCAT '(' XML_value_expression_list opt_XML_returning_clause ')'
-	{ $$ = NULL; }
+	{ dlist *l = L();
+	  append_list(l, $3);
+	  append_int(l, $4);
+	  $$ = _symbol_create_list( SQL_XMLCONCAT, l); } 
   ;
 
 XML_document:
   XMLDOCUMENT '(' XML_value_expression opt_XML_returning_clause ')'
-	{ $$ = NULL; }
+	{ dlist *l = L();
+	  append_symbol(l, $3);
+	  append_int(l, $4);
+	  $$ = _symbol_create_list( SQL_XMLDOCUMENT, l); } 
 
 XML_element:
   XMLELEMENT '(' sqlNAME XML_element_name 
@@ -4623,7 +4637,11 @@ XML_PI:
   XMLPI '(' sqlNAME XML_PI_target
 	opt_comma_string_value_expression
 	opt_XML_returning_clause ')'
-	{ $$ = NULL; }
+	{ dlist *l = L();
+	  append_string(l, $4);
+	  append_symbol(l, $5);
+	  append_int(l, $6);
+	  $$ = _symbol_create_list( SQL_XMLPI, l); }
   ;
 
 XML_PI_target:
@@ -4631,8 +4649,9 @@ XML_PI_target:
   ;
 
 opt_comma_string_value_expression:
-	/* empty */
+	/* empty */ 	{ $$ = NULL; }
   | ',' value_exp /* should be a string */
+			{ $$ = $2; }
   ;
 
 XML_query:
@@ -4689,7 +4708,10 @@ XML_query_empty_handling_option:
 XML_text:
   XMLTEXT '(' value_exp /* should be a string */
       opt_XML_returning_clause ')'
-	{ $$ = NULL; }
+	{ dlist *l = L();
+	  append_symbol(l, $3);
+	  append_int(l, $4);
+	  $$ = _symbol_create_list( SQL_XMLTEXT, l); } 
 
 XML_validate:
   XMLVALIDATE '('
@@ -4726,8 +4748,6 @@ opt_XML_returning_clause:
 <XML binary encoding> ::=
   XMLBINARY [ USING ] { BASE64 | HEX }
 */
-
-
 
 XML_namespace_declaration:
   XMLNAMESPACES '(' XML_namespace_declaration_item_list ')'

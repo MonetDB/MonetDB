@@ -67,6 +67,7 @@ extern stmt *stmt2pivot(scope *scp, stmt *s);
 extern stmt *sql_compare(mvc *sql, scope *scp, stmt *ls, stmt *rs, char *compare_op, int f);
 extern stmt *complex_find_subset(stmt *subset, stmt *t);
 extern stmt *sql_and(mvc *sql, scope *scp, stmt *ls, stmt *rs, int f);
+extern stmt *sql_unop_(mvc *sql, scope *scp, sql_schema *s, char *fname, stmt *rs);
 extern stmt *sql_binop_(mvc *sql, scope *scp, sql_schema *s, char *fname, stmt *ls, stmt *rs);
 extern stmt *sql_Nop_(mvc *sql, char *fname, stmt *a1, stmt *a2, stmt *a3, stmt *a4);
 extern stmt *find_pivot(stmt *subset, stmt *t);
@@ -1131,24 +1132,13 @@ sql_op(mvc *sql, symbol *se)
 	return NULL;
 }
 
-static stmt *
-sql_unop(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset, int fs)
+stmt *
+sql_unop_(mvc *sql, scope *scp, sql_schema *s, char *fname, stmt *rs)
 {
-	dnode *l = se->data.lval->h;
-	char *fname = qname_fname(l->data.lval); 
-	char *sname = qname_schema(l->data.lval);
-	sql_subfunc *f = NULL;
-	sql_subtype *rt = NULL;
-	exp_kind ek = {type_value, card_column, FALSE};
-	stmt *rs = sql_value_exp(sql, scp, l->next->data.sym, grp, subset, fs, ek);
-	sql_schema *s = sql->session->schema;
+	sql_subtype *rt = tail_type(rs);
+	sql_subfunc *f = sql_bind_func(s, fname, rt, NULL);
 
-	if (!rs)
-		return NULL;
-	rt = tail_type(rs);
-	if (sname) 
-		s = mvc_bind_schema(sql, sname);
-	f = sql_bind_func(s, fname, rt, NULL);
+	(void)scp;
 	/* try to find the function without a type, and convert
 	 * the value to the type needed by this function!
 	 */
@@ -1174,6 +1164,23 @@ sql_unop(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset, int fs)
 		return sql_error(sql, 02, "SELECT: no such unary operator '%s(%s)'", fname, type);
 	}
 	return NULL;
+}
+
+static stmt *
+sql_unop(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset, int fs)
+{
+	dnode *l = se->data.lval->h;
+	char *fname = qname_fname(l->data.lval); 
+	char *sname = qname_schema(l->data.lval);
+	exp_kind ek = {type_value, card_column, FALSE};
+	stmt *rs = sql_value_exp(sql, scp, l->next->data.sym, grp, subset, fs, ek);
+	sql_schema *s = sql->session->schema;
+
+	if (!rs)
+		return NULL;
+	if (sname) 
+		s = mvc_bind_schema(sql, sname);
+	return sql_unop_(sql, scp, s, fname, rs);
 }
 
 static stmt *
@@ -1775,6 +1782,11 @@ sql_value_exp(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset, int f,
 		return sql_case_exp(sql, scp, se, grp, subset, f);
 	case SQL_XMLELEMENT:
 	case SQL_XMLFOREST:
+	case SQL_XMLCOMMENT:
+	case SQL_XMLCONCAT:
+	case SQL_XMLDOCUMENT:
+	case SQL_XMLPI:
+	case SQL_XMLTEXT:
 		return sql_xml(sql, scp, se, grp, subset, f, ek);
 	default:
 		return sql_logical_exp(sql, scp, se, grp, subset, f);

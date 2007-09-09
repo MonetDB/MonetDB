@@ -210,6 +210,98 @@ sql_xmlforest(mvc *sql, scope *scp, symbol *sym, group *grp, stmt *subset, int f
 	return res;
 }
 
+static stmt *
+sql_xmlcomment(mvc *sql, scope *scp, symbol *sym, group *grp, stmt *subset, int f, exp_kind knd ) 
+{
+	dnode *d = sym->data.lval->h;
+	symbol *comment = d->data.sym;
+	lng returning = d->next->data.ival;
+	stmt *comment_st;
+
+	(void)returning;
+	comment_st = sql_value_exp(sql, scp, comment, grp, subset, f, knd); 
+	if (!comment_st)
+		return NULL;
+	return sql_unop_(sql, scp, NULL, "comment", comment_st); 
+}
+
+static stmt *
+sql_xmlconcat(mvc *sql, scope *scp, symbol *sym, group *grp, stmt *subset, int f, exp_kind knd ) 
+{
+	dnode *d = sym->data.lval->h;
+	dnode *en = d->data.lval->h;
+	lng returning = d->next->data.ival;
+	stmt *concat_st, *res = NULL;
+
+	(void)returning;
+	for (; en; en = en->next) {
+		symbol *c = en->data.sym;
+		concat_st = sql_value_exp(sql, scp, c, grp, subset, f, knd); 
+		if (!concat_st) {
+			cond_stmt_destroy(res);
+			return NULL;
+		}
+		if (res) 
+			res = sql_binop_(sql, scp, NULL, "concat", res, concat_st); 
+		else
+			res = concat_st;
+	}	
+	return res;
+}
+
+static stmt *
+sql_xmldocument(mvc *sql, scope *scp, symbol *sym, group *grp, stmt *subset, int f, exp_kind knd ) 
+{
+	dnode *d = sym->data.lval->h;
+	symbol *val = d->data.sym;
+	lng returning = d->next->data.ival;
+	stmt *val_st;
+
+	(void)returning;
+	val_st = sql_value_exp(sql, scp, val, grp, subset, f, knd); 
+	if (!val_st)
+		return NULL;
+	return sql_unop_(sql, scp, NULL, "document", val_st); 
+}
+
+static stmt *
+sql_xmlpi(mvc *sql, scope *scp, symbol *sym, group *grp, stmt *subset, int f, exp_kind knd ) 
+{
+	dnode *d = sym->data.lval->h;
+	char *target = d->data.sval;
+	symbol *val = d->next->data.sym;
+	lng returning = d->next->next->data.ival;
+	stmt *target_st, *val_st;
+
+	(void)returning;
+	target_st = stmt_atom_string(_strdup(target));
+	if (!val)
+		val_st = sql_value_exp(sql, scp, val, grp, subset, f, knd); 
+	else
+		val_st = stmt_atom(atom_general(&str_type, NULL, 0));
+	if (!val_st) {
+		cond_stmt_destroy(target_st);
+		return NULL;
+	}
+	return sql_binop_(sql, scp, NULL, "pi", target_st, val_st); 
+}
+
+/* cast string too xml */
+static stmt *
+sql_xmltext(mvc *sql, scope *scp, symbol *sym, group *grp, stmt *subset, int f, exp_kind knd ) 
+{
+	dnode *d = sym->data.lval->h;
+	symbol *text = d->data.sym;
+	lng returning = d->next->data.ival;
+	stmt *text_st;
+
+	(void)returning;
+	text_st = sql_value_exp(sql, scp, text, grp, subset, f, knd); 
+	if (!text_st || (text_st = check_types(sql, &xml_type, text_st, type_equal)) == NULL) 
+		return NULL;
+	return text_st;
+}
+
 stmt *
 sql_xml(mvc *sql, scope *scp, symbol *s, group *grp, stmt *subset, int f, exp_kind knd)
 {
@@ -229,6 +321,21 @@ sql_xml(mvc *sql, scope *scp, symbol *s, group *grp, stmt *subset, int f, exp_ki
 		break;
 	case SQL_XMLFOREST: 
 		ret = sql_xmlforest(sql, scp, s, grp, subset, f, knd);
+		break;
+	case SQL_XMLCOMMENT: 
+		ret = sql_xmlcomment(sql, scp, s, grp, subset, f, knd);
+		break;
+	case SQL_XMLCONCAT: 
+		ret = sql_xmlconcat(sql, scp, s, grp, subset, f, knd);
+		break;
+	case SQL_XMLDOCUMENT: 
+		ret = sql_xmldocument(sql, scp, s, grp, subset, f, knd);
+		break;
+	case SQL_XMLPI: 
+		ret = sql_xmlpi(sql, scp, s, grp, subset, f, knd);
+		break;
+	case SQL_XMLTEXT: 
+		ret = sql_xmltext(sql, scp, s, grp, subset, f, knd);
 		break;
 	default:
 		return sql_error(sql, 01, "XML statement unknown symbol(%ld)->token = %s", (long) s, token2string(s->token));
