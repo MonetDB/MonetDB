@@ -81,18 +81,6 @@ Afopen(char *name)
 /* Afopen */
 
 
-char *
-strconcat(char *a, char *b)
-{
-	char *s = (char *) malloc(strlen(a) + strlen(b) + 1);
-
-	sprintf(s, "%s%s", a, b);
-	return s;
-}
-
-/* strconcat */
-
-
 int
 isalpha_(int c)
 {
