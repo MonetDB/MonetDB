@@ -1,0 +1,17 @@
+stdout of test 'Mbeddedxq--help` in directory 'src/tools` itself:
+
+
+# 16:36:12 >  
+# 16:36:12 >  Mtimeout -timeout 300 ./Mbeddedxq--help Mbeddedxq--help 
+# 16:36:12 >  
+
+
+# 16:36:12 >  
+# 16:36:12 >  Mtimeout -timeout 60 Mbeddedxq --help
+# 16:36:12 >  
+
+
+# 16:36:12 >  
+# 16:36:12 >  Done.
+# 16:36:12 >  
+
