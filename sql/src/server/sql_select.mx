@@ -1139,6 +1139,8 @@ sql_unop_(mvc *sql, scope *scp, sql_schema *s, char *fname, stmt *rs)
 	sql_subfunc *f = sql_bind_func(s, fname, rt, NULL);
 
 	(void)scp;
+	if (!s)
+		s = sql->session->schema;
 	/* try to find the function without a type, and convert
 	 * the value to the type needed by this function!
 	 */

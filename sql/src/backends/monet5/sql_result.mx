@@ -800,6 +800,7 @@ export_length( stream *s, int mtype, int eclass, int digits, int scale, bat bid,
 	int ok = 1;
 	size_t count = 0;
 
+	mtype = ATOMstorage(mtype);
 	if (mtype == TYPE_str) {
 		if (eclass == EC_CHAR) {
 			ok = mvc_send_int(s, digits);
