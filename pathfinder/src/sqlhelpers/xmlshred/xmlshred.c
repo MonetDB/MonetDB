@@ -51,8 +51,7 @@
 
 #define NAME_ID 0
 
-typedef long unsigned int nat;
-typedef int pre_t;
+typedef ssize_t nat;
 
 enum kind_t {
       elem
@@ -138,8 +137,8 @@ int new_nameid(void);
 
 typedef struct node_t node_t;
 struct node_t {
-    pre_t     pre;
-    pre_t     apre;
+    nat     pre;
+    nat     apre;
     nat       post;
     nat       pre_stretched;
     nat       post_stretched;
@@ -155,7 +154,7 @@ struct node_t {
 static node_t stack[STACK_MAX];
 static int level;
 static int max_level;
-static pre_t pre;
+static nat pre;
 static nat post;
 static nat rank;
 static nat att_id;
@@ -346,7 +345,7 @@ start_element (void *ctx, const xmlChar *tagname, const xmlChar **atts)
                     attr_guide_node = insert_guide_node((char*)atts_back[0],
                         current_guide_node, attr);
 
-                fprintf (out_attr, "%lu, %i, \"%s\", \"%s\", %lu\n", 
+                fprintf (out_attr, "%i, %i, \"%s\", \"%s\", %i\n", 
                     att_id++, pre, (char*)atts[0], (char*)atts[1], attr_guide_node->guide);
 
                 atts += 2;
@@ -602,10 +601,10 @@ print_tuple (node_t tuple)
 		    case 'e':  if(tuple.pre != -1)
 				       fprintf (out, "%i", tuple.pre);
 			       break;
-		    case 'o':  fprintf (out, "%lu", tuple.post); break;
-		    case 'E':  fprintf (out, "%lu", tuple.pre_stretched); break;
-		    case 'O':  fprintf (out, "%lu", tuple.post_stretched); break;
-		    case 's':  fprintf (out, "%lu", tuple.size); break;
+		    case 'o':  fprintf (out, "%i", tuple.post); break;
+		    case 'E':  fprintf (out, "%i", tuple.pre_stretched); break;
+		    case 'O':  fprintf (out, "%i", tuple.post_stretched); break;
+		    case 's':  fprintf (out, "%i", tuple.size); break;
 		    case 'l':  fprintf (out, "%u",  tuple.level); break;
 
 		    case 'p':  
@@ -616,7 +615,7 @@ print_tuple (node_t tuple)
 			       break;
 		    case 'P':
 			       if (tuple.parent)
-				       fprintf (out, "%lu",tuple.parent->pre_stretched);
+				       fprintf (out, "%i",tuple.parent->pre_stretched);
 			       else
 				       fprintf (out, "NULL");
 			       break;
@@ -653,7 +652,7 @@ print_tuple (node_t tuple)
 				       fprintf(out, "NULL");
 			       }
 	     break;    
-                                        case 'g':  fprintf (out, "%lu", tuple.guide); break;
+                                        case 'g':  fprintf (out, "%i", tuple.guide); break;
 
                                         default:   putc (format[i], out); break;
                         }
@@ -966,7 +965,7 @@ print_guide_tree(guide_tree_t *root, int tree_depth)
     /* print the node self */
     fprintf (
         guide_out, 
-        "<node guide=\"%lu\" count=\"%lu\" kind=\"",
+        "<node guide=\"%i\" count=\"%i\" kind=\"",
         root->guide,
         root->count);
     print_kind (guide_out, root->kind);
