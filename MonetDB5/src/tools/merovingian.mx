@@ -871,48 +871,70 @@ static void
 controlRunner(void *d)
 {
 	char buf[256];
-	char *p;
+	char *p, *q;
 	sabdb *stats;
 	int fd = *((int *)d);
-	int len;
+	int pos = 0;
 
 	/* Try to handle control signals.  We can get race conditions due to
 	 * clients coming in at the same time.  We might need to fix this
 	 * situation sometime. */
 	while (_keepListening == 1) {
-		if ((len = read(fd, buf, 255)) == 0) {
-			/* ignore EOF, but don't spin-lock */
-			MT_sleep_ms(500);
+		if (pos == 0) {
+			if ((pos = read(fd, buf, 255)) == 0) {
+				/* ignore EOF, but don't spin-lock */
+				MT_sleep_ms(500);
+				continue;
+			} else if (pos == -1) {
+				/* hmmm error ... give up */
+				fprintf(stderr, "error reading from control channel: %s\n",
+						strerror(errno));
+				break;
+			} else {
+				buf[pos] = '\0';
+				pos = 0;
+			}
+		}
+		q = buf + pos;
+		p = strchr(q, '\n');
+		if (p == NULL) {
+			/* skip, must be garbage */
+			fprintf(stderr, "skipping garbage on control channel: %s\n", buf);
+			pos = 0;
 			continue;
 		}
-		buf[len] = '\0';
+		*p++ = '\0';
+		if (*p == '\0') {
+			pos = 0;
+		} else {
+			pos = p - buf;
+		}
 
 		/* format is simple: database<space>command */
-		if ((p = strchr(buf, ' ')) == NULL) {
-			fprintf(stderr, "malformed control signal: %s\n", buf);
+		if ((p = strchr(q, ' ')) == NULL) {
+			fprintf(stderr, "malformed control signal: %s\n", q);
 		} else {
 			*p++ = '\0';
-			if (strcmp(p, "start\n") == 0) {
-				merlog("starting database %s due to control signal",
-						buf);
-				forkMserver(buf, &stats, 1);
+			if (strcmp(p, "start") == 0) {
+				merlog("starting database %s due to control signal", q);
+				forkMserver(q, &stats, 1);
 				if (stats != NULL)
 					SABAOTHfreeStatus(&stats);
-			} else if (strcmp(p, "stop\n") == 0 ||
-					strcmp(p, "kill\n") == 0)
+			} else if (strcmp(p, "stop") == 0 ||
+					strcmp(p, "kill") == 0)
 			{
-				/* we need to f ind the right dpair, that is we
+				/* we need to find the right dpair, that is we
 				 * sort of assume the control signal is right */
 				dpair dp = topdp;
 				while (dp != NULL) {
-					if (strcmp(dp->dbname, buf) == 0) {
-						if (strcmp(p, "stop\n") == 0) {
+					if (strcmp(dp->dbname, q) == 0) {
+						if (strcmp(p, "stop") == 0) {
 							merlog("stopping database %s due to control "
-									"signal", buf);
+									"signal", q);
 							kill(dp->pid, SIGTERM);
 						} else {
 							merlog("killing database %s due to control "
-									"signal", buf);
+									"signal", q);
 							kill(dp->pid, SIGKILL);
 						}
 						break;
@@ -920,9 +942,9 @@ controlRunner(void *d)
 					dp = dp->next;
 				}
 				if (dp == NULL) {
-					fprintf(stderr, "control stop signal for "
+					fprintf(stderr, "received control stop signal for "
 							"database not under merovingian control: %s\n",
-							buf);
+							q);
 				}
 			} else {
 				fprintf(stderr, "unknown control command: %s", p);
