@@ -17,6 +17,8 @@
 MTSAFE
 INCLUDES = $(LIBXML2_CFLAGS) ./include
 
+EXTRA_DIST_DIR = include
+
 bin_xmlshred = {
     SOURCES = xmlshred.c shred_helper.c
 	LIBS = $(LIBXML2_LDADD) $(LIBXML2_LIBS) 
