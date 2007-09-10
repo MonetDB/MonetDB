@@ -223,16 +223,16 @@ end sql_environment;
 
 function clients():bat[:str,:bat];
 	b := bat.new(:str,:bat,5);
-	u:= bbp.getUsers();
-	bat.inser(b,"user",u);
-	l:= bbp.getLogins();
-	bat.inser(b,"login",l);
-	c:= bbp.getLastCommand();
-	bat.inser(b,"lastcommand",c);
-	a:= bbp.getActions();
-	bat.inser(b,"actions",a);
-	t:= bbp.getTime();
-	bat.inser(b,"seconds",t);
+	u:= clients.getUsers();
+	bat.insert(b,"user",u);
+	l:= clients.getLogins();
+	bat.insert(b,"login",l);
+	c:= clients.getLastCommand();
+	bat.insert(b,"lastcommand",c);
+	a:= clients.getActions();
+	bat.insert(b,"actions",a);
+	t:= clients.getTime();
+	bat.insert(b,"seconds",t);
 	return b;
 end clients;
 
@@ -792,7 +792,6 @@ First introduce the routines to be called by the front-end.
 #include "sql_gencode.h"
 #include <sql_storage.h>
 #include <store_sequence.h>
-#include <bat/res_table.h>
 #include <sql_datetime.h>
 #include <rel_optimizer.h>
 #include <rel_bin.h>
