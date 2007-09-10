@@ -26,11 +26,9 @@ mode="dm"
 mode="seq"
 
 mode="text"
-= Please remove this line once the below error message has been verified as correct/expected.
 MAPI  = monetdb@corona:39161
 QUERY = (1, 2.3, attribute attr { "val" }, 3E1, "string", doc("nodekinds.xml")/descendant-or-self::node())
 ERROR = !ERROR: xquery_print_result_loop: operation failed.
-= Please remove this line once the above error message has been verified as correct/expected.
 
 mode="text" (w/o top-level attribute)
 

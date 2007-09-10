@@ -107,34 +107,26 @@ xquery("seq"            ,query , 0).print();
 # text mode w/ top-level attribute
 #
 xquery("text"           ,query , 0).printf();
-= Please remove this line once the below error message has been verified as correct/expected.
 !ERROR: 12.300000!ERROR: serialize_dflt.mx: unable to print top level attribute nodes in text mode
 !ERROR: xquery_print_result_loop: operation failed.
 !ERROR: interpret: no matching MIL operator to 'printf(void)'.
 !MAYBE YOU MEAN:
 !	printf(str, ..any..) : void
-= Please remove this line once the above error message has been verified as correct/expected.
 
 xquery("mapi-text"      ,query , 0).printf();
-= Please remove this line once the below error message has been verified as correct/expected.
 !ERROR: =12.300000!ERROR: serialize_dflt.mx: unable to print top level attribute nodes in text mode
 !ERROR: xquery_print_result_loop: operation failed.
 !ERROR: interpret: no matching MIL operator to 'printf(void)'.
 !MAYBE YOU MEAN:
 !	printf(str, ..any..) : void
-= Please remove this line once the above error message has been verified as correct/expected.
 
 # text mode w/o top-level attribute
 #
 xquery("text"           ,query_no_attr , 0).printf();
-= Please remove this line once the below text-mode output has been verified as correct/expected.
 12.30000030.000000string<elem attr="val">text<!--comment--><?pi_tgt pi_data?></elem><elem attr="val">text<!--comment--><?pi_tgt pi_data?></elem>text<!--comment--><?pi_tgt pi_data?>
-= Please remove this line once the above text-mode output has been verified as correct/expected.
 
 xquery("mapi-text"      ,query_no_attr , 0).printf();
-= Please remove this line once the below text-mode output has been verified as correct/expected.
 =12.30000030.000000string<elem attr="val">text<!--comment--><?pi_tgt pi_data?></elem><elem attr="val">text<!--comment--><?pi_tgt pi_data?></elem>text<!--comment--><?pi_tgt pi_data?>
-= Please remove this line once the above text-mode output has been verified as correct/expected.
 
 
 # default mode is xml mode (it also works with mapi
