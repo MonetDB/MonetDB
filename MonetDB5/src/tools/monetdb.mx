@@ -110,13 +110,12 @@ command_help(int argc, char *argv[])
 		printf("  database is available again for normal use.  Use the\n");
 		printf("  \"lock\" command to take a database under maintenance.\n");
 	} else if (strcmp(argv[1], "status") == 0) {
-		printf("Usage: monetdb status [-ls] [database ...]\n");
+		printf("Usage: monetdb status [-lc] [database ...]\n");
 		printf("  Shows the state of a given database, or all known if none\n");
-		printf("  given.  Instead of the normal mode, a long and short mode\n");
+		printf("  given.  Instead of the normal mode, a long and crash mode\n");
 		printf("  control what information is displayed.\n");
 		printf("Options:\n");
-		printf("  -s  use short one-line listing [default]\n");
-		printf("  -l  use long listing\n");
+		printf("  -l  extended information listing\n");
 		printf("  -c  crash statistics listing\n");
 	} else if (strcmp(argv[1], "start") == 0) {
 		printf("Usage: monetdb start [-a] [database ...]\n");
@@ -180,15 +179,18 @@ secondsToString(char *buf, time_t t, int printlong)
 	}
 
 	/* t must be < 60 */
-	sprintf(buf + i, "%ds", (int)(t));
+	if (printlong == 0 || !(i > 0 && t == 0)) {
+		sprintf(buf + i, "%ds", (int)(t));
+	} else {
+		buf[--i] = '\0';
+	}
 }
 
 static void
-printStatus(sabdb *stats, int mode, int len)
+printStatus(sabdb *stats, int mode)
 {
 	sabuplog uplog;
 	str e;
-	char *state;
 
 	if ((e = SABAOTHgetUplogInfo(&uplog, stats)) != MAL_SUCCEED) {
 		fprintf(stderr, "status: internal error: %s\n", e);
@@ -196,31 +198,29 @@ printStatus(sabdb *stats, int mode, int len)
 		return;
 	}
 
-	switch (stats->state) {
-		case SABdbRunning:
-			state = "running";
-		break;
-		case SABdbCrashed:
-			state = "crashed";
-		break;
-		case SABdbInactive:
-			state = "stopped";
-		break;
-		default:
-			state = "unknown";
-		break;
-	}
-
 	if (mode == 1) {
-		/* short one-line mode */
-		char avg[8],uptime[20];
+		/* short one-line (default) mode */
+		char *state;
+		char uptime[12];
 		char *crash;
 
+		switch (stats->state) {
+			case SABdbRunning:
+				state = "running";
+			break;
+			case SABdbCrashed:
+				state = "crashed";
+			break;
+			case SABdbInactive:
+				state = "stopped";
+			break;
+			default:
+				state = "unknown";
+			break;
+		}
 		/* override if locked for brevity */
 		if (stats->locked == 1)
-			state = "locked";
-
-		secondsToString(avg, uplog.avguptime, 0);
+			state = "locked ";
 
 		if (uplog.lastcrash == -1) {
 			crash = "";
@@ -231,26 +231,38 @@ printStatus(sabdb *stats, int mode, int len)
 			strftime(crash, 20, "%Y-%m-%d %H:%M:%S", t);
 		}
 
-		if (uplog.laststart == -1) {
-			uptime[0]= 0;
+		if (stats->state != SABdbRunning) {
+			uptime[0]= '\0';
 		} else {
-			time_t now;
-			time(&now);
-			now -= uplog.laststart;
-			secondsToString(uptime,(int) now,0);
+			secondsToString(uptime, time(NULL) - uplog.laststart, 1);
 		}
 
-		if(stats->state== SABdbInactive)
-			uptime[0]=0;
-
-		/* demo | running | uptime | crashes */
-		printf("%*s  %s %6s %4d %s\n",
-				-len, stats->dbname, state, uptime, uplog.crashcntr, crash);
+		/* demo | state | uptime | crash */
+		printf("%-10s  %s %12s  %4d %s\n",
+				stats->dbname,
+				state, uptime,
+				uplog.crashcntr, crash);
 	} else if (mode == 2) {
 		/* long mode */
+		char *state;
 		sablist *entry;
 		char up[32];
 		struct tm *t;
+
+		switch (stats->state) {
+			case SABdbRunning:
+				state = "running";
+			break;
+			case SABdbCrashed:
+				state = "crashed";
+			break;
+			case SABdbInactive:
+				state = "stopped";
+			break;
+			default:
+				state = "unknown";
+			break;
+		}
 
 		printf("%s:\n", stats->dbname);
 		printf("  location: %s\n", stats->path);
@@ -353,8 +365,8 @@ static void
 command_status(int argc, char *argv[])
 {
 	int doall = 1; /* we default to showing all */
-	int mode = 1;  /* 0=normal, 1=short, 2=long */
-	int i, len = 10;
+	int mode = 1;  /* 0=crash, 1=short, 2=long */
+	int i;
 	char *p;
 	str e;
 	sabdb *stats;
@@ -368,9 +380,6 @@ command_status(int argc, char *argv[])
 		if (argv[i][0] == '-') {
 			for (p = argv[i] + 1; *p != '\0'; p++) {
 				switch (*p) {
-					case 's':
-						mode = 1;
-					break;
 					case 'c':
 						mode = 0;
 					break;
@@ -399,6 +408,12 @@ command_status(int argc, char *argv[])
 		}
 	}
 
+	if (mode == 1) {
+		/* print header for short mode */
+		/* demo | state uptime | crash lastcrash */
+		printf("   name      state     uptime    crashes\n");
+	}
+
 	if (doall == 1) {
 		sabdb *orig;
 		/* don't even look at the arguments, because we are instructed
@@ -410,46 +425,14 @@ command_status(int argc, char *argv[])
 		}
 	
 		orig = stats;
-		i= 0;
-		while( stats != NULL){
-			i++;
-			if( (int) strlen(stats->dbname) > len)
-				len= (int) strlen(stats->dbname);
-			stats= stats->next;
-		}
-
-		if (mode == 1 && orig) {
-			/* print header for short mode */
-			/* demo | running | uptime | crash */
-			printf("%*s  state   uptime  crashes \n", -len,"name");
-		}
-
-		stats= orig;
 		while (stats != NULL) {
-			printStatus(stats, mode,len);
+			printStatus(stats, mode);
 			stats = stats->next;
 		}
 
 		if (orig != NULL)
 			SABAOTHfreeStatus(&orig);
 		return;
-	}
-
-	for (i = 1; i < argc; i++)
-		if (argv[i] != NULL) {
-			if ((e = SABAOTHgetStatus(&stats, argv[i])) != MAL_SUCCEED) {
-				fprintf(stderr, "status: internal error: %s\n", e);
-				GDKfree(e);
-				exit(2);
-			}
-			if( stats && stats->dbname && (int) strlen(stats->dbname) >len)
-				len = (int) strlen(stats->dbname);
-		}
-
-	if (mode == 1) {
-		/* print header for short mode */
-		/* demo | running | uptime | crash */
-		printf("%*s  state   uptime  crashes \n", -len,"name");
 	}
 
 	for (i = 1; i < argc; i++) {
@@ -463,7 +446,7 @@ command_status(int argc, char *argv[])
 			if (stats == NULL) {
 				fprintf(stderr, "status: no such database: %s\n", argv[i]);
 			} else {
-				printStatus(stats, mode, 10);
+				printStatus(stats, mode);
 				SABAOTHfreeStatus(&stats);
 			}
 		}
