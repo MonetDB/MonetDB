@@ -678,9 +678,9 @@ deletedir(char *dir)
 	buf[PATHLENGTH] = '\0';
 	d = opendir(dir);
 	if (d == NULL) {
-		snprintf(data, 8095, "unable to open directory %s: %s",
-				dir, strerror(errno));
-		return(GDKstrdup(data));
+		/* silently return if we cannot find the directory; it's
+		 * probably already deleted */
+		return(NO_ERR);
 	}
 	while ((e = readdir(d)) != NULL) {
 		snprintf(path, PATHLENGTH, "%s/%s", dir, e->d_name);
@@ -800,22 +800,23 @@ command_destroy(int argc, char *argv[])
 			/* annoyingly we have to delete file by file, and
 			 * directories recursively... */
 			if ((e = deletedir(stats->path)) != NULL) {
-				fprintf(stderr, "destroy: failed to destroy '%s': %s %s\n",
-						argv[1], stats->path, e);
+				fprintf(stderr, "destroy: failed to destroy '%s': %s\n",
+						argv[1], e);
 				GDKfree(e);
+				SABAOTHfreeStatus(&stats);
 				exit(1);
 			}
+			SABAOTHfreeStatus(&stats);
 			/* this is annoying, but till the time we have something
 			 * better, we should do it like this; the logdir is a
 			 * separate directory */
 			snprintf(buf, 8096, "%s/%s", logdir, argv[1]);
 			if ((e = deletedir(buf)) != NULL) {
-				fprintf(stderr, "destroy: failed to destroy '%s': %s %s\n",
-						argv[1], buf, e);
+				fprintf(stderr, "destroy: failed to destroy '%s': %s\n",
+						argv[1], e);
 				GDKfree(e);
 				exit(1);
 			}
-			SABAOTHfreeStatus(&stats);
 			printf("successfully destroyed database '%s'\n", dbname);
 		} else {
 			fprintf(stderr, "destroy: no such database: %s\n", dbname);
