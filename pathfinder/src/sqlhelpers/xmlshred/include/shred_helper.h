@@ -25,18 +25,14 @@
  * $Id$
  */
 
-#ifndef SHRED_HELPER_H_
+#ifndef SHRED_HELPER_H__
 #define SHRED_HELPER_H__
 
 #include <stdlib.h>
 #include <stdio.h>
 #include "pf_config.h"
 
-#if ! HAVE_STRDUP
-char * strdup (const char * s);
-#endif
-
-#if ! HAVE_STRNDUP
+#if !(HAVE_STRING_H && HAVE_STRDUP)
 char * strndup (const char * s, size_t n);
 #endif
 

@@ -31,16 +31,7 @@
 #include <assert.h>
 #include "shred_helper.h"
 
-char *
-strdup (const char * s)
-{
-    size_t len = strlen (s) + 1;
-	void * new = malloc (len * sizeof(char));
-	if (new == NULL)
-	    return NULL;
-    return (char *)memcpy (new , s, len);
-}
-
+#if !(HAVE_STRING_H && HAVE_STRDUP)
 char *
 strndup (const char * s, size_t n)
 {
@@ -52,4 +43,4 @@ strndup (const char * s, size_t n)
 	    return NULL;
     return (char *)memcpy (new, s, len);
 }
-
+#endif
