@@ -736,7 +736,9 @@ str SABAOTHgetUplogInfo(sabuplog *ret, sabdb *db) {
 			memmove(&avg30[0], &avg30[1], sizeof(int) * 29);
 			avg10[9] = avg30[29] = ret->crashavg1 =
 				(start != 0 ? (db->state != SABdbRunning ? 1 : 0) : 0);
-			ret->crashcntr = ret->startcntr - ret->stopcntr;
+			ret->crashcntr =
+				ret->startcntr - (db->state == SABdbRunning ? 1 : 0) -
+				ret->stopcntr;
 			for (i = 0; i < 10; i++)
 				ret->crashavg10 += avg10[i];
 			ret->crashavg10 = ret->crashavg10 / 10.0;
