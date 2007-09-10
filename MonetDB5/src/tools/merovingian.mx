@@ -921,7 +921,8 @@ controlRunner(void *d)
 				}
 				if (dp == NULL) {
 					fprintf(stderr, "control stop signal for "
-							"non-existing database: %s\n", buf);
+							"database not under merovingian control: %s\n",
+							buf);
 				}
 			} else {
 				fprintf(stderr, "unknown control command: %s", p);

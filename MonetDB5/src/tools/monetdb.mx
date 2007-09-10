@@ -571,7 +571,7 @@ command_merocom(int argc, char *argv[], merocom mode)
 					printf("%s: database is not running: %s\n", type, argv[i]);
 				} else if (mode == START && stats->state == SABdbRunning) {
 					printf("%s: database is already running: %s\n",
-							type, argv[1]);
+							type, argv[i]);
 				} else {
 					snprintf(buf, 256, "%s %s\n", stats->dbname, type);
 					fputs(buf, f);
