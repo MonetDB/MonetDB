@@ -23,7 +23,7 @@ Over..
 # 17:06:48 >  
 
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>xstart xend name xid</XQueryResult>
+<XQueryResult>xid name xend xstart</XQueryResult>
 
 # 17:06:48 >  
 # 17:06:48 >  Done.
