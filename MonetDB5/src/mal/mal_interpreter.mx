@@ -1576,13 +1576,10 @@ if( cntxt->flags && stk->cmd != 't' && stk->cmd != 'C'){
 	if( cntxt-> flags & ioFlag){
 		struct  rusage resource;
 		getrusage(RUSAGE_SELF, &resource);
-		if(	resource.ru_inblock - oldinblock 
-		 ||	resource.ru_oublock - oldoublock ) {
-			stream_printf(cntxt->fdout," %3d R",
-				resource.ru_inblock- oldinblock);
-			stream_printf(cntxt->fdout," %3d W ",
-				resource.ru_oublock- oldoublock);
-		}
+		stream_printf(cntxt->fdout," %3d R",
+			resource.ru_inblock- oldinblock);
+		stream_printf(cntxt->fdout," %3d W ",
+			resource.ru_oublock- oldoublock);
 	}
 #endif
 	if( cntxt->flags & memoryFlag){
