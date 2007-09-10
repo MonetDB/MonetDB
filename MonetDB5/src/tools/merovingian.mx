@@ -1099,11 +1099,6 @@ main(int argc, char *argv[])
 		argp = dup(1);
 		topdp->fout = fdopen(argp, "w");
 	} else {
-		/* check the log directory */
-		if (access(msglog,F_OK) == -1 ){
-			GDKcreatedir(msglog); /* it doesn't necessarily create all */
-			fprintf(stderr, "log directory created '%s'\n", msglog);
-		}
 		/* write to the given file */
 		topdp->fout = fopen(msglog, "a");
 		if (topdp->fout == NULL) {
