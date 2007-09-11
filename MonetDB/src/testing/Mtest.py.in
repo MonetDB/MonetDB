@@ -98,7 +98,16 @@ def _configure(str):
             str = nstr
     return str
 
-from MonetDB import monet_options
+try:
+    from MonetDB import monet_options
+except ImportError:
+    import distutils.sysconfig
+    p = _configure(os.path.join('@QXprefix@',distutils.sysconfig.get_python_lib(1,0,"")))
+    sys.path.insert(0, p)
+    from MonetDB import monet_options
+    if os.environ.has_key('PYTHONPATH'):
+        p = p + os.pathsep + os.environ['PYTHONPATH']
+    os.environ['PYTHONPATH'] = p
 try:
     import subprocess
 except ImportError:
