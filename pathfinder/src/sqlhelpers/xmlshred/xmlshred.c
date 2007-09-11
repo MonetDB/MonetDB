@@ -833,25 +833,28 @@ insert_guide_node(const char *tag_name, guide_tree_t *parent, kind_t kind)
            characteristics already exists */
         child_list = parent->child_list;
             
-        while(child_list != NULL) {
-            child_node = child_list->node;
-            
-            /* identical characteristics:
-             * (1) same kind
-             * (2) same tag name/attr name/pi content (if applicable)
-             */
-            if (child_node->kind == kind) {
-              if (HAS_TAG (kind) &&
-                  strcmp (child_node->tag_name, tag_name) != 0)
-                /* node characteristics not identical, do nothing */
-                ;
-              else { 
-                child_node->count++;
-                return child_node;
-              }
-            }
-            
-            child_list = child_list->next_element;
+        for (child_list = parent->child_list;
+             child_list != NULL;
+             child_list = child_list->next_element) {
+        
+          child_node = child_list->node;
+          
+          /* identical characteristics:
+           * (1) same kind
+           * (2) same tag name/attr name/pi content (if applicable)
+           */
+          assert (child_node);
+          if (child_node->kind != kind) 
+            continue;
+          if (HAS_TAG (kind)) {
+            assert (child_node->tag_name);
+            assert (tag_name);
+            if (strcmp (child_node->tag_name, tag_name) != 0)
+              continue;
+          }
+                
+          child_node->count++;
+          return child_node;
         }
     }
 
