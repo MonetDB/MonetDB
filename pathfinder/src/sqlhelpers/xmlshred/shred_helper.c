@@ -33,14 +33,29 @@
 
 #if !(HAVE_STRING_H && HAVE_STRDUP)
 char *
+strdup (const char * s)
+{
+    size_t len = strlen (s);
+
+    char* new = malloc ((len + 1) * sizeof(char));
+    if (new == NULL)
+        return NULL;
+    new[len] = '\0' 
+    return (char *)memcpy (new, s, len);
+}
+#endif
+
+#if !(HAVE_STRING_H && HAVE_STRNDUP)
+char *
 strndup (const char * s, size_t n)
 {
-    size_t len = strlen (s) + 1;
-	len = (len > n)?n:len;
+    size_t len = strlen (s);
+    len = (len > n)?n:len;
 
-	void * new = malloc (len * sizeof(char));
-	if (new == NULL)
-	    return NULL;
+    char * new = malloc ((len + 1) * sizeof(char));
+    if (new == NULL)
+        return NULL;
+    new[len] = '\0';
     return (char *)memcpy (new, s, len);
 }
 #endif

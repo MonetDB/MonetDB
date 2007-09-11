@@ -15,7 +15,7 @@
 # All Rights Reserved.
 
 MTSAFE
-INCLUDES = $(LIBXML2_CFLAGS) ./include
+INCLUDES = $(MONETDB_INCS) $(LIBXML2_CFLAGS) ./include ../../../compiler/include
 
 EXTRA_DIST_DIR = include
 

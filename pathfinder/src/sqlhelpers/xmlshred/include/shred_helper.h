@@ -32,7 +32,38 @@
 #include <stdio.h>
 #include "pf_config.h"
 
+/* define printf formats for printing size_t and ssize_t variables */
+#if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901 && !defined(__svr4__) && !defined(WIN32) && !defined(__sgi) && (!defined(__APPLE_CC__) || __GNUC__ > 3)
+#define SZFMT "%zu"
+#define SSZFMT "%zd"
+#elif defined(__MINGW32__)
+#define SZFMT "%u"
+#define SSZFMT "%ld"
+#elif defined(__APPLE_CC__) /* && __GNUC__ <= 3 */
+#define SZFMT "%zu"
+	#if SIZEOF_SIZE_T == SIZEOF_INT
+	#define SSZFMT "%d"
+	#else
+	#define SSZFMT "%ld"
+	#endif
+#elif SIZEOF_SIZE_T == SIZEOF_INT
+#define SZFMT "%u"
+#define SSZFMT "%d"
+#elif SIZEOF_SIZE_T == SIZEOF_LONG
+#define SZFMT "%lu"
+#define SSZFMT "%ld"
+#elif SIZEOF_SIZE_T == SIZEOF_LONG_LONG || SIZEOF_SIZE_T == SIZEOF___INT64
+#define SZFMT ULLFMT
+#define SSZFMT LLFMT
+#else
+#error no definition for SZFMT/SSZFMT
+#endif
+
 #if !(HAVE_STRING_H && HAVE_STRDUP)
+char * strndup (const char * s);
+#endif
+
+#if !(HAVE_STRING_H && HAVE_STRNDUP)
 char * strndup (const char * s, size_t n);
 #endif
 
