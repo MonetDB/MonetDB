@@ -18,8 +18,6 @@
 MTSAFE
 INCLUDES = -I../mal $(CLIENTS_INCS) $(MONETDB_INCS) $(OPENSSL_INCS) $(PCRE_CFLAGS)
 
-man_MANS = monetdb.1 merovingian.1
-
 bin_mserver5 = {
 	SOURCES = mserver5.mx.in
 	LIBS = ../mal/libmal @SHARED_LIBS@ $(MONETDB_LIBS) \
@@ -27,20 +25,6 @@ bin_mserver5 = {
                 $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
                 $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) \
                 $(PCRE_LIBS) $(OPENSSL_LIBS)
-}
-
-bin_merovingian = {
-	COND = NOT_WIN32
-	SOURCES = merovingian.mx
-	LIBS = ../mal/libmal @SHARED_LIBS@ $(MONETDB_LIBS) -lstream \
-		   $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
-		   $(MALLOC_LIBS)
-}
-
-bin_monetdb = {
-	COND = NOT_WIN32
-	SOURCES = monetdb.mx
-	LIBS = ../mal/libmal @SHARED_LIBS@ $(MONETDB_LIBS) $(MALLOC_LIBS)
 }
 
 bin_stethoscope = {

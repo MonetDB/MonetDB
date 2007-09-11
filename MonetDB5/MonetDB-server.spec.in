@@ -149,8 +149,6 @@ rm -fr $RPM_BUILD_ROOT
 %{_bindir}/mserver5
 %{_bindir}/Mbeddedmal
 %{_bindir}/mcheckpoint
-%{_bindir}/merovingian
-%{_bindir}/monetdb
 %{_bindir}/mrecover
 %{_bindir}/stethoscope
 
@@ -159,9 +157,6 @@ rm -fr $RPM_BUILD_ROOT
 %dir %{_libdir}/MonetDB5/lib
 %{_libdir}/MonetDB5/lib/*.so*
 %{_libdir}/MonetDB5/*.mal
-
-%{_mandir}/man1/monetdb.1.gz
-%{_mandir}/man1/merovingian.1.gz
 
 %attr(770,monetdb,monetdb) %dir %{_localstatedir}/MonetDB
 %attr(770,monetdb,monetdb) %dir %{_localstatedir}/MonetDB5
