@@ -831,8 +831,6 @@ insert_guide_node(const char *tag_name, guide_tree_t *parent, kind_t kind)
     if (parent != NULL) {
         /* Search all children and check if a node with identical
            characteristics already exists */
-        child_list = parent->child_list;
-            
         for (child_list = parent->child_list;
              child_list != NULL;
              child_list = child_list->next_element) {
@@ -849,7 +847,7 @@ insert_guide_node(const char *tag_name, guide_tree_t *parent, kind_t kind)
           if (HAS_TAG (kind)) {
             assert (child_node->tag_name);
             assert (tag_name);
-            if (strcmp (child_node->tag_name, tag_name) != 0)
+            if (strcmp (child_nod g_name, tag_name) != 0)
               continue;
           }
                 
