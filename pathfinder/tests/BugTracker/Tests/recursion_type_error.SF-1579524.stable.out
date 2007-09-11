@@ -18,7 +18,7 @@ quit();
 Over..
 
 # 00:03:48 >  
-# 00:03:48 >  Mtimeout -timeout 60 MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=localhost --port=35145 recursion_type_error.SF-1579524.xq
+# 00:03:48 >  Mtimeout -timeout 60 MapiClient -lxquery -fxml -umonetdb -Pmonetdb --host=localhost --port=35145 recursion_type_error.SF-1579524.xq
 # 00:03:48 >  
 
 <?xml version="1.0" encoding="utf-8"?>

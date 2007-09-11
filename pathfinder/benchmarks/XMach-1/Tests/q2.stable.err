@@ -58,7 +58,7 @@ stderr of test 'q2` in directory 'benchmarks/XMach-1` itself:
 # cmdline opt 	gdk_dbname = mTests_benchmarks_XMach-1
 
 # 00:17:45 >  
-# 00:17:45 >  Mtimeout -timeout 60 MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=localhost --port=37658 q2.xq
+# 00:17:45 >  Mtimeout -timeout 60 MapiClient -lxquery -fxml -umonetdb -Pmonetdb --host=localhost --port=37658 q2.xq
 # 00:17:45 >  
 
 

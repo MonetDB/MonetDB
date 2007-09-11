@@ -77,7 +77,7 @@ stderr of test 'default_ns.SF-1511195` in directory 'tests/BugTracker` itself:
 # cmdline opt 	gdk_dbname = mTests_tests_BugTracker
 
 # 16:21:24 >  
-# 16:21:24 >  Mtimeout -timeout 60 MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=localhost --port=31827 default_ns.SF-1511195.xq
+# 16:21:24 >  Mtimeout -timeout 60 MapiClient -lxquery -fxml -umonetdb -Pmonetdb --host=localhost --port=31827 default_ns.SF-1511195.xq
 # 16:21:24 >  
 
 

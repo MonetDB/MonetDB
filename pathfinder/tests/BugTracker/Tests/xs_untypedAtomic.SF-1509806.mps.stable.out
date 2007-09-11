@@ -18,7 +18,7 @@ quit();
 Over..
 
 # 12:49:47 >  
-# 12:49:47 >  Mtimeout -timeout 60 MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=localhost --port=39191 xs_untypedAtomic.SF-1509806.mps.xq
+# 12:49:47 >  Mtimeout -timeout 60 MapiClient -lxquery -fxml -umonetdb -Pmonetdb --host=localhost --port=39191 xs_untypedAtomic.SF-1509806.mps.xq
 # 12:49:47 >  
 
 ! correct/expected output has not been provided, yet !

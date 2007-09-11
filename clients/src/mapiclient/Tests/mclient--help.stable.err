@@ -15,7 +15,7 @@ Usage: /ufs/sjoerd/src/MonetDB/virgin/clients/x86_64-unknown-linux-gnu/src/mapic
 Options are:
  -d database | --database=database  database to connect to
  -e          | --echo            echo the query
- -f kind     | --format=kind     use renderer {csv,tab,raw,sql,xml} 
+ -f kind     | --format=kind      specify output format {dm,xml} for Xquery, or {csv,tab,raw,sql,xml}
  -H          | --history         load/save cmdline history (default off)
  -h hostname | --host=hostname   host to connect to
  -i          | --interactive     read stdin after command line args
@@ -37,7 +37,6 @@ SQL specific opions
 
 XQuery specific options
  -C colname  | --collection=name  collection name
- -o format   | --output=format   output format (dm (default) or xml)
 
 # 13:46:19 >  
 # 13:46:19 >  Done.

@@ -19,17 +19,17 @@ quit();
 Over..
 
 # 17:33:07 >  
-# 17:33:07 >  Mtimeout -timeout 60 MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=localhost --port=39869 corrupt_after_update.SF-1706640_s00.xq
+# 17:33:07 >  Mtimeout -timeout 60 MapiClient -lxquery -fxml -umonetdb -Pmonetdb --host=localhost --port=39869 corrupt_after_update.SF-1706640_s00.xq
 # 17:33:07 >  
 
 
 # 17:33:07 >  
-# 17:33:07 >  Mtimeout -timeout 60 MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=localhost --port=39869 corrupt_after_update.SF-1706640_s01.xq
+# 17:33:07 >  Mtimeout -timeout 60 MapiClient -lxquery -fxml -umonetdb -Pmonetdb --host=localhost --port=39869 corrupt_after_update.SF-1706640_s01.xq
 # 17:33:07 >  
 
 
 # 17:33:46 >  
-# 17:33:46 >  Mtimeout -timeout 60 MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=localhost --port=39869 corrupt_after_update.SF-1706640_s02.xq
+# 17:33:46 >  Mtimeout -timeout 60 MapiClient -lxquery -fxml -umonetdb -Pmonetdb --host=localhost --port=39869 corrupt_after_update.SF-1706640_s02.xq
 # 17:33:46 >  
 
 <?xml version="1.0" encoding="utf-8"?>

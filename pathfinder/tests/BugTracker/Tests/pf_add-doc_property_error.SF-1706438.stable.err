@@ -7,7 +7,7 @@ stderr of test 'pf_add-doc_property_error.SF-1706438` in directory 'tests/BugTra
 
 
 # 12:48:06 >  
-# 12:48:06 >  Mtimeout -timeout 60 MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=localhost --port=33399 pf_add-doc_property_error.SF-1706438.xq
+# 12:48:06 >  Mtimeout -timeout 60 MapiClient -lxquery -fxml -umonetdb -Pmonetdb --host=localhost --port=33399 pf_add-doc_property_error.SF-1706438.xq
 # 12:48:06 >  
 
 

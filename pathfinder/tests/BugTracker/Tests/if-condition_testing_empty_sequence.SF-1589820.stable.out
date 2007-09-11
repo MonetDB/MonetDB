@@ -18,7 +18,7 @@ quit();
 Over..
 
 # 11:56:41 >  
-# 11:56:41 >  Mtimeout -timeout 60 MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=localhost --port=38410 if-condition_testing_empty_sequence.SF-1589820.xq
+# 11:56:41 >  Mtimeout -timeout 60 MapiClient -lxquery -fxml -umonetdb -Pmonetdb --host=localhost --port=38410 if-condition_testing_empty_sequence.SF-1589820.xq
 # 11:56:41 >  
 
 <?xml version="1.0" encoding="utf-8"?>

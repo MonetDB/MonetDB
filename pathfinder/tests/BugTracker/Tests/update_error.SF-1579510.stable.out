@@ -18,7 +18,7 @@ quit();
 Over..
 
 # 21:59:50 >  
-# 21:59:50 >  Mtimeout -timeout 60 MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=localhost --port=32435 update_error.SF-1579510.xq
+# 21:59:50 >  Mtimeout -timeout 60 MapiClient -lxquery -fxml -umonetdb -Pmonetdb --host=localhost --port=32435 update_error.SF-1579510.xq
 # 21:59:50 >  
 
 

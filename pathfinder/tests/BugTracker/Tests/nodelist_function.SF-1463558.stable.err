@@ -77,7 +77,7 @@ stderr of test 'nodelist_function.SF-1463558` in directory 'tests/BugTracker` it
 # cmdline opt 	gdk_dbname = mTests_tests_BugTracker
 
 # 16:35:03 >  
-# 16:35:03 >  Mtimeout -timeout 60 MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=localhost --port=32084 nodelist_function.SF-1463558.xq
+# 16:35:03 >  Mtimeout -timeout 60 MapiClient -lxquery -fxml -umonetdb -Pmonetdb --host=localhost --port=32084 nodelist_function.SF-1463558.xq
 # 16:35:03 >  
 
 

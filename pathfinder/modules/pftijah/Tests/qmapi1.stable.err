@@ -65,7 +65,7 @@ stderr of test 'qmapi1` in directory 'modules/pftijah` itself:
 # cmdline opt 	gdk_dbname = mTests_modules_pftijah
 
 # 16:05:50 >  
-# 16:05:50 >  Mtimeout -timeout 60 MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=localhost --port=31781 qmapi1.xq
+# 16:05:50 >  Mtimeout -timeout 60 MapiClient -lxquery -fxml -umonetdb -Pmonetdb --host=localhost --port=31781 qmapi1.xq
 # 16:05:50 >  
 
 

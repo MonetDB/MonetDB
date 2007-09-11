@@ -58,7 +58,7 @@ stderr of test 'count_nodes` in directory 'benchmarks/XBench/DC/MD` itself:
 # cmdline opt 	gdk_dbname = mTests_benchmarks_XBench/DC/MD
 
 # 00:17:42 >  
-# 00:17:42 >  Mtimeout -timeout 60 MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=localhost --port=37658 count_nodes.xq
+# 00:17:42 >  Mtimeout -timeout 60 MapiClient -lxquery -fxml -umonetdb -Pmonetdb --host=localhost --port=37658 count_nodes.xq
 # 00:17:42 >  
 
 

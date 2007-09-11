@@ -63,7 +63,7 @@ stderr of test 'merged_union-bug.SF-1626306` in directory 'tests/BugTracker` its
 # cmdline opt 	gdk_dbname = mTests_tests_BugTracker
 
 # 22:26:31 >  
-# 22:26:31 >  Mtimeout -timeout 60 MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=localhost --port=31580 merged_union-bug.SF-1626306.xq
+# 22:26:31 >  Mtimeout -timeout 60 MapiClient -lxquery -fxml -umonetdb -Pmonetdb --host=localhost --port=31580 merged_union-bug.SF-1626306.xq
 # 22:26:31 >  
 
 

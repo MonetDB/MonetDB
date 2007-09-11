@@ -18,7 +18,7 @@ quit();
 Over..
 
 # 11:12:09 >  
-# 11:12:09 >  Mtimeout -timeout 60 MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=localhost --port=36869 call2builtin_function_crashes_XRPC_client.SF-1655857.xq
+# 11:12:09 >  Mtimeout -timeout 60 MapiClient -lxquery -fxml -umonetdb -Pmonetdb --host=localhost --port=36869 call2builtin_function_crashes_XRPC_client.SF-1655857.xq
 # 11:12:09 >  
 
 

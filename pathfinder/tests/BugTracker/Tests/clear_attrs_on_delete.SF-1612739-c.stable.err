@@ -63,7 +63,7 @@ stderr of test 'clear_attrs_on_delete.SF-1612739-c` in directory 'tests/BugTrack
 # cmdline opt 	gdk_dbname = mTests_tests_BugTracker
 
 # 09:52:41 >  
-# 09:52:41 >  Mtimeout -timeout 60 MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=localhost --port=37208 clear_attrs_on_delete.SF-1612739-c.xq
+# 09:52:41 >  Mtimeout -timeout 60 MapiClient -lxquery -fxml -umonetdb -Pmonetdb --host=localhost --port=37208 clear_attrs_on_delete.SF-1612739-c.xq
 # 09:52:41 >  
 
 

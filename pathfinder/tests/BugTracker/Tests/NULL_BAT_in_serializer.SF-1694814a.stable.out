@@ -19,12 +19,12 @@ quit();
 Over..
 
 # 17:37:19 >  
-# 17:37:19 >  Mtimeout -timeout 60 MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=localhost --port=34627 NULL_BAT_in_serializer.SF-1694814a_s00.xq
+# 17:37:19 >  Mtimeout -timeout 60 MapiClient -lxquery -fxml -umonetdb -Pmonetdb --host=localhost --port=34627 NULL_BAT_in_serializer.SF-1694814a_s00.xq
 # 17:37:19 >  
 
 
 # 17:37:20 >  
-# 17:37:20 >  Mtimeout -timeout 60 MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=localhost --port=34627 NULL_BAT_in_serializer.SF-1694814a_s01.xq
+# 17:37:20 >  Mtimeout -timeout 60 MapiClient -lxquery -fxml -umonetdb -Pmonetdb --host=localhost --port=34627 NULL_BAT_in_serializer.SF-1694814a_s01.xq
 # 17:37:20 >  
 
 <?xml version="1.0" encoding="utf-8"?>

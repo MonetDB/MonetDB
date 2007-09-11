@@ -7,7 +7,7 @@ stderr of test 'error_in_preceeding_axis.SF-1731850` in directory 'tests/BugTrac
 
 
 # 12:54:57 >  
-# 12:54:57 >  Mtimeout -timeout 60 MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=corona --port=34719 error_in_preceeding_axis.SF-1731850.xq
+# 12:54:57 >  Mtimeout -timeout 60 MapiClient -lxquery -fxml -umonetdb -Pmonetdb --host=corona --port=34719 error_in_preceeding_axis.SF-1731850.xq
 # 12:54:57 >  
 
 

@@ -18,7 +18,7 @@ quit();
 Over..
 
 # 16:43:45 >  
-# 16:43:45 >  Mtimeout -timeout 60 MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=localhost --port=37619 wrong_result_duplication.SF-1549292.xq
+# 16:43:45 >  Mtimeout -timeout 60 MapiClient -lxquery -fxml -umonetdb -Pmonetdb --host=localhost --port=37619 wrong_result_duplication.SF-1549292.xq
 # 16:43:45 >  
 
 <?xml version="1.0" encoding="utf-8"?>

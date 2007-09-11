@@ -7,12 +7,12 @@ stderr of test '32_docs.SF-1730617` in directory 'tests/BugTracker` itself:
 
 
 # 18:01:19 >  
-# 18:01:19 >  Mtimeout -timeout 60 MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=corona --port=36410 32_docs.SF-1730617_s00.xq
+# 18:01:19 >  Mtimeout -timeout 60 MapiClient -lxquery -fxml -umonetdb -Pmonetdb --host=corona --port=36410 32_docs.SF-1730617_s00.xq
 # 18:01:19 >  
 
 
 # 18:01:20 >  
-# 18:01:20 >  Mtimeout -timeout 60 MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=corona --port=36410 32_docs.SF-1730617_s01.xq
+# 18:01:20 >  Mtimeout -timeout 60 MapiClient -lxquery -fxml -umonetdb -Pmonetdb --host=corona --port=36410 32_docs.SF-1730617_s01.xq
 # 18:01:20 >  
 
 

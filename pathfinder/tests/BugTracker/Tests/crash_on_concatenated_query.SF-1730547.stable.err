@@ -7,7 +7,7 @@ stderr of test 'crash_on_concatenated_query.SF-1730547` in directory 'tests/BugT
 
 
 # 20:40:34 >  
-# 20:40:34 >  Mtimeout -timeout 60 MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=corona --port=38359 crash_on_concatenated_query.SF-1730547.xq
+# 20:40:34 >  Mtimeout -timeout 60 MapiClient -lxquery -fxml -umonetdb -Pmonetdb --host=corona --port=38359 crash_on_concatenated_query.SF-1730547.xq
 # 20:40:34 >  
 
 MAPI  = monetdb@corona:38359

@@ -58,7 +58,7 @@ stderr of test 'complex-XQuery-batbat_lng_add_inplace-error-KO2.SF-1562868` in d
 # cmdline opt 	gdk_dbname = mTests_tests_BugTracker
 
 # 20:27:48 >  
-# 20:27:48 >  Mtimeout -timeout 60 MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=localhost --port=31524 complex-XQuery-batbat_lng_add_inplace-error-KO2.SF-1562868.xq
+# 20:27:48 >  Mtimeout -timeout 60 MapiClient -lxquery -fxml -umonetdb -Pmonetdb --host=localhost --port=31524 complex-XQuery-batbat_lng_add_inplace-error-KO2.SF-1562868.xq
 # 20:27:48 >  
 
 

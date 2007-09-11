@@ -10,7 +10,7 @@ for mode in ['xml', 'xml-typed', 'xml-noheader', 'xml-noroot', 'xml-root-name', 
     sys.stderr.write('\nmode="%s"\n' % mode)
     sys.stdout.flush()
     sys.stderr.flush()
-    os.system('%s -o%s %s' % (XQUERY_CLIENT, mode, query))
+    os.system('%s -f%s %s' % (XQUERY_CLIENT, mode, query))
     sys.stdout.flush()
     sys.stderr.flush()
 
@@ -19,7 +19,7 @@ sys.stdout.write('\nmode="%s" (w/o top-level attribute)\n' % mode)
 sys.stderr.write('\nmode="%s" (w/o top-level attribute)\n' % mode)
 sys.stdout.flush()
 sys.stderr.flush()
-os.system('%s -o%s %s' % (XQUERY_CLIENT, mode, query_no_attr))
+os.system('%s -f%s %s' % (XQUERY_CLIENT, mode, query_no_attr))
 sys.stdout.flush()
 sys.stderr.flush()
 

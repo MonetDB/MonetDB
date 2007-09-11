@@ -77,7 +77,7 @@ stderr of test 'test_lms_manyqueries` in directory 'modules/pftijah` itself:
 # cmdline opt 	gdk_dbname = mTests_modules_pftijah
 
 # 11:06:10 >  
-# 11:06:10 >  Mtimeout -timeout 60 MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=localhost --port=33137 test_lms_manyqueries.xq
+# 11:06:10 >  Mtimeout -timeout 60 MapiClient -lxquery -fxml -umonetdb -Pmonetdb --host=localhost --port=33137 test_lms_manyqueries.xq
 # 11:06:10 >  
 
 

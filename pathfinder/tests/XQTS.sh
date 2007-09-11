@@ -49,7 +49,7 @@ type -p mclient || {
 	exit 1
 }
 
-echo '1+2' | mclient -lx -oxml || {
+echo '1+2' | mclient -lx -fxml || {
 	echo 'MonetDB/XQuery server not running?'
 	echo 'Please start it with (e.g.) `Mserver --dbinit="module(pathfinder);"`.'
 	exit 1
@@ -73,7 +73,7 @@ cat "$THISDIR/XQTS.xq" \
        -e 's|doc("[^")]*XQTS.Errors.xml")|doc("'"$THISDIR"'/XQTS.Errors.xml")|g' \
        -e 's|doc("[^")]*XQTS.missing.xml")|doc("'"$THISDIR"'/XQTS.missing.xml")|g' \
        -e 's|doc("[^")]*XQTS.supported.xml")|doc("'"$THISDIR"'/XQTS.supported.xml")|g' \
- | mclient -lx -oxml \
+ | mclient -lx -fxml \
  | grep -v '^<.*>$' \
  | sed -e 's|&lt;|<|g' -e 's|&gt;|>|g' \
  > "$XQTS_DST/.XQTS.sh" || exit 1

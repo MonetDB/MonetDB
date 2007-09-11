@@ -60,7 +60,7 @@ stderr of test 'xs_untypedAtomic.SF-1509806.alg` in directory 'tests/BugTracker`
 # cmdline opt 	gdk_dbname = mTests_tests_BugTracker
 
 # 12:49:47 >  
-# 12:49:47 >  Mtimeout -timeout 60 MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=localhost --port=39191 xs_untypedAtomic.SF-1509806.alg.xq
+# 12:49:47 >  Mtimeout -timeout 60 MapiClient -lxquery -fxml -umonetdb -Pmonetdb --host=localhost --port=39191 xs_untypedAtomic.SF-1509806.alg.xq
 # 12:49:47 >  
 
 

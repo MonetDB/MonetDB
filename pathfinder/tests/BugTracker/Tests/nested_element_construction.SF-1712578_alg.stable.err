@@ -7,7 +7,7 @@ stderr of test 'nested_element_construction.SF-1712578_alg` in directory 'tests/
 
 
 # 17:24:37 >  
-# 17:24:37 >  Mtimeout -timeout 60 MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=localhost --port=31409 nested_element_construction.SF-1712578_alg.xq
+# 17:24:37 >  Mtimeout -timeout 60 MapiClient -lxquery -fxml -umonetdb -Pmonetdb --host=localhost --port=31409 nested_element_construction.SF-1712578_alg.xq
 # 17:24:37 >  
 
 

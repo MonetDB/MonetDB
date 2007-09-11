@@ -63,12 +63,12 @@ stderr of test 'pf_add-doc.SF-1617681` in directory 'tests/BugTracker` itself:
 # cmdline opt 	gdk_dbname = mTests_tests_BugTracker
 
 # 18:41:57 >  
-# 18:41:57 >  Mtimeout -timeout 60 MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=localhost --port=36142 pf_add-doc.SF-1617681_s00.xq
+# 18:41:57 >  Mtimeout -timeout 60 MapiClient -lxquery -fxml -umonetdb -Pmonetdb --host=localhost --port=36142 pf_add-doc.SF-1617681_s00.xq
 # 18:41:57 >  
 
 
 # 18:41:57 >  
-# 18:41:57 >  Mtimeout -timeout 60 MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=localhost --port=36142 pf_add-doc.SF-1617681_s01.xq
+# 18:41:57 >  Mtimeout -timeout 60 MapiClient -lxquery -fxml -umonetdb -Pmonetdb --host=localhost --port=36142 pf_add-doc.SF-1617681_s01.xq
 # 18:41:57 >  
 
 

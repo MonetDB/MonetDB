@@ -60,7 +60,7 @@ stderr of test 'if-condition_testing_empty_sequence.SF-1589820` in directory 'te
 # cmdline opt 	gdk_dbname = mTests_tests_BugTracker
 
 # 11:55:08 >  
-# 11:55:08 >  Mtimeout -timeout 60 MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=localhost --port=35363 if-condition_testing_empty_sequence.SF-1589820.xq
+# 11:55:08 >  Mtimeout -timeout 60 MapiClient -lxquery -fxml -umonetdb -Pmonetdb --host=localhost --port=35363 if-condition_testing_empty_sequence.SF-1589820.xq
 # 11:55:08 >  
 
 

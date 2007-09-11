@@ -19,7 +19,7 @@ quit();
 Over..
 
 # 00:15:58 >  
-# 00:15:58 >  Mtimeout -timeout 60 MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=corona --port=32535 wrong_use_of_leftfetchjoin.d0.SF-1760168.xq
+# 00:15:58 >  Mtimeout -timeout 60 MapiClient -lxquery -fxml -umonetdb -Pmonetdb --host=corona --port=32535 wrong_use_of_leftfetchjoin.d0.SF-1760168.xq
 # 00:15:58 >  
 
 <?xml version="1.0" encoding="utf-8"?>

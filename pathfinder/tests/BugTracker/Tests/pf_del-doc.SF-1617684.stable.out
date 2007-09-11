@@ -22,17 +22,17 @@ quit();
 Over..
 
 # 19:51:59 >  
-# 19:51:59 >  Mtimeout -timeout 60 MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=localhost --port=33399 pf_del-doc.SF-1617684_s00.xq
+# 19:51:59 >  Mtimeout -timeout 60 MapiClient -lxquery -fxml -umonetdb -Pmonetdb --host=localhost --port=33399 pf_del-doc.SF-1617684_s00.xq
 # 19:51:59 >  
 
 
 # 19:51:59 >  
-# 19:51:59 >  Mtimeout -timeout 60 MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=localhost --port=33399 pf_del-doc.SF-1617684_s01.xq
+# 19:51:59 >  Mtimeout -timeout 60 MapiClient -lxquery -fxml -umonetdb -Pmonetdb --host=localhost --port=33399 pf_del-doc.SF-1617684_s01.xq
 # 19:51:59 >  
 
 
 # 19:51:59 >  
-# 19:51:59 >  Mtimeout -timeout 60 MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=localhost --port=33399 pf_del-doc.SF-1617684_s02.xq
+# 19:51:59 >  Mtimeout -timeout 60 MapiClient -lxquery -fxml -umonetdb -Pmonetdb --host=localhost --port=33399 pf_del-doc.SF-1617684_s02.xq
 # 19:51:59 >  
 
 

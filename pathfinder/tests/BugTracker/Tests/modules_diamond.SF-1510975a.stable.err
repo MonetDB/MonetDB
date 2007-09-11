@@ -58,7 +58,7 @@ stderr of test 'modules_diamond.SF-1510975a` in directory 'tests/BugTracker` its
 # cmdline opt 	gdk_dbname = mTests_tests_BugTracker
 
 # 19:42:56 >  
-# 19:42:56 >  Mtimeout -timeout 60 MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=localhost --port=37721 modules_diamond.SF-1510975a.xq
+# 19:42:56 >  Mtimeout -timeout 60 MapiClient -lxquery -fxml -umonetdb -Pmonetdb --host=localhost --port=37721 modules_diamond.SF-1510975a.xq
 # 19:42:56 >  
 
 

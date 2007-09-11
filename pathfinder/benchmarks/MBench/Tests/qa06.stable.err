@@ -58,7 +58,7 @@ stderr of test 'qa06` in directory 'benchmarks/MBench` itself:
 # cmdline opt 	gdk_dbname = mTests_benchmarks_MBench
 
 # 20:22:45 >  
-# 20:22:45 >  Mtimeout -timeout 60 MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=localhost --port=38912 qa06.xq
+# 20:22:45 >  Mtimeout -timeout 60 MapiClient -lxquery -fxml -umonetdb -Pmonetdb --host=localhost --port=38912 qa06.xq
 # 20:22:45 >  
 
 

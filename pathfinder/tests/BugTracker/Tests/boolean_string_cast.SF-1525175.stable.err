@@ -77,7 +77,7 @@ stderr of test 'boolean_string_cast.SF-1525175` in directory 'tests/BugTracker` 
 # cmdline opt 	gdk_dbname = mTests_tests_BugTracker
 
 # 16:02:34 >  
-# 16:02:34 >  Mtimeout -timeout 60 MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=localhost --port=31419 boolean_string_cast.SF-1525175.xq
+# 16:02:34 >  Mtimeout -timeout 60 MapiClient -lxquery -fxml -umonetdb -Pmonetdb --host=localhost --port=31419 boolean_string_cast.SF-1525175.xq
 # 16:02:34 >  
 
 

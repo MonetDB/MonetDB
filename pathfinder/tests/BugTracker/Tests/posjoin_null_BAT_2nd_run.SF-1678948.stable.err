@@ -7,12 +7,12 @@ stderr of test 'posjoin_null_BAT_2nd_run.SF-1678948` in directory 'tests/BugTrac
 
 
 # 15:14:26 >  
-# 15:14:26 >  Mtimeout -timeout 60 MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=localhost --port=39431 posjoin_null_BAT_2nd_run.SF-1678948_s00.xq
+# 15:14:26 >  Mtimeout -timeout 60 MapiClient -lxquery -fxml -umonetdb -Pmonetdb --host=localhost --port=39431 posjoin_null_BAT_2nd_run.SF-1678948_s00.xq
 # 15:14:26 >  
 
 
 # 15:14:29 >  
-# 15:14:29 >  Mtimeout -timeout 60 MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=localhost --port=39431 posjoin_null_BAT_2nd_run.SF-1678948_s01.xq
+# 15:14:29 >  Mtimeout -timeout 60 MapiClient -lxquery -fxml -umonetdb -Pmonetdb --host=localhost --port=39431 posjoin_null_BAT_2nd_run.SF-1678948_s01.xq
 # 15:14:29 >  
 
 

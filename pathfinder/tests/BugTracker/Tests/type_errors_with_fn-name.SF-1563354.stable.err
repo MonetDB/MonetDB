@@ -58,7 +58,7 @@ stderr of test 'type_errors_with_fn-name.SF-1563354` in directory 'tests/BugTrac
 # cmdline opt 	gdk_dbname = mTests_tests_BugTracker
 
 # 19:23:48 >  
-# 19:23:48 >  Mtimeout -timeout 60 MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=localhost --port=32302 type_errors_with_fn-name.SF-1563354.xq
+# 19:23:48 >  Mtimeout -timeout 60 MapiClient -lxquery -fxml -umonetdb -Pmonetdb --host=localhost --port=32302 type_errors_with_fn-name.SF-1563354.xq
 # 19:23:48 >  
 
 

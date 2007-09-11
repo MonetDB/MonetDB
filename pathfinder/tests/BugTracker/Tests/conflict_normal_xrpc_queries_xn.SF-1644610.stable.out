@@ -18,14 +18,14 @@ quit();
 Over..
 
 # 11:25:35 >  
-# 11:25:35 >  Mtimeout -timeout 60 MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=localhost --port=34519 conflict_normal_xrpc_queries_xn.SF-1644610_s00.xq
+# 11:25:35 >  Mtimeout -timeout 60 MapiClient -lxquery -fxml -umonetdb -Pmonetdb --host=localhost --port=34519 conflict_normal_xrpc_queries_xn.SF-1644610_s00.xq
 # 11:25:35 >  
 
 <?xml version="1.0" encoding="utf-8"?>
 <XQueryResult>27</XQueryResult>
 
 # 11:25:36 >  
-# 11:25:36 >  Mtimeout -timeout 60 MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=localhost --port=34519 conflict_normal_xrpc_queries_xn.SF-1644610_s01.xq
+# 11:25:36 >  Mtimeout -timeout 60 MapiClient -lxquery -fxml -umonetdb -Pmonetdb --host=localhost --port=34519 conflict_normal_xrpc_queries_xn.SF-1644610_s01.xq
 # 11:25:36 >  
 
 <?xml version="1.0" encoding="utf-8"?>

@@ -60,7 +60,7 @@ stderr of test 'shredding-remap-error.SF-1487156.cache_doc` in directory 'tests/
 # cmdline opt 	gdk_dbname = mTests_tests_BugTracker
 
 # 14:06:11 >  
-# 14:06:11 >  Mtimeout -timeout 60 MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=localhost --port=30719 shredding-remap-error.SF-1487156.cache_doc.xq
+# 14:06:11 >  Mtimeout -timeout 60 MapiClient -lxquery -fxml -umonetdb -Pmonetdb --host=localhost --port=30719 shredding-remap-error.SF-1487156.cache_doc.xq
 # 14:06:11 >  
 
 

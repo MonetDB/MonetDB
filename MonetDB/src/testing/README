@@ -137,7 +137,7 @@ have changed since my proposal.
      or  TST[.exe|.com|.bat|.cmd] TST [TST.prelude]
      or  python TST.py [TST.prelude]
   * Mserver --dbname=TSTDB --set mapi_port=$MAPIPORT --set xrpc_port=$XRPCPORT --dbinit="module(pathfinder);" [TST.prologue] &
-         mclient -lxquery -oxml < TST[_(s|p)XX].xq
+         mclient -lxquery -fxml < TST[_(s|p)XX].xq
      or  TST[.exe|.com|.bat|.cmd] TST [TST.prelude]
      or  python TST.py [TST.prelude]
 
@@ -236,7 +236,7 @@ have changed since my proposal.
 	MALCLIENT	mclient -lmal				mal-client program	`)
 	SQLCLIENT	mclient -lsql				sql-client program	`)
 	SQLDUMP	        msqldump				sql-dump program	`)
-	XQUERYCLIENT	mclient -lxquery -oxml			xquery-client program	`)
+	XQUERYCLIENT	mclient -lxquery -fxml			xquery-client program	`)
 
     `) Alternative MIL-, MAL-, SQL-, & XQUERY- client programs need to accept (or ignore)
        "--config=", "--host=", & "--port=" options.

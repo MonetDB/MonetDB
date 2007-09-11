@@ -60,7 +60,7 @@ stderr of test 'update_error.SF-1579510` in directory 'tests/BugTracker` itself:
 # cmdline opt 	gdk_dbname = mTests_tests_BugTracker
 
 # 21:59:50 >  
-# 21:59:50 >  Mtimeout -timeout 60 MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=localhost --port=32435 update_error.SF-1579510.xq
+# 21:59:50 >  Mtimeout -timeout 60 MapiClient -lxquery -fxml -umonetdb -Pmonetdb --host=localhost --port=32435 update_error.SF-1579510.xq
 # 21:59:50 >  
 
 MAPI  = monetdb@localhost:32140

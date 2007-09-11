@@ -63,12 +63,12 @@ stderr of test 'pf_del-doc.SF-1617684` in directory 'tests/BugTracker` itself:
 # cmdline opt 	gdk_dbname = mTests_tests_BugTracker
 
 # 20:24:58 >  
-# 20:24:58 >  Mtimeout -timeout 60 MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=localhost --port=37952 pf_del-doc.SF-1617684_s00.xq
+# 20:24:58 >  Mtimeout -timeout 60 MapiClient -lxquery -fxml -umonetdb -Pmonetdb --host=localhost --port=37952 pf_del-doc.SF-1617684_s00.xq
 # 20:24:58 >  
 
 
 # 20:24:58 >  
-# 20:24:58 >  Mtimeout -timeout 60 MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=localhost --port=37952 pf_del-doc.SF-1617684_s01.xq
+# 20:24:58 >  Mtimeout -timeout 60 MapiClient -lxquery -fxml -umonetdb -Pmonetdb --host=localhost --port=37952 pf_del-doc.SF-1617684_s01.xq
 # 20:24:58 >  
 
 MAPI  = monetdb@localhost:37952
@@ -81,7 +81,7 @@ ERROR = !ERROR: [shred_url]: 1 times inserted nil due to errors at tuples 0@0.
 
 
 # 20:24:58 >  
-# 20:24:58 >  Mtimeout -timeout 60 MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=localhost --port=37952 pf_del-doc.SF-1617684_s02.xq
+# 20:24:58 >  Mtimeout -timeout 60 MapiClient -lxquery -fxml -umonetdb -Pmonetdb --host=localhost --port=37952 pf_del-doc.SF-1617684_s02.xq
 # 20:24:58 >  
 
 MAPI  = monetdb@localhost:37952

@@ -58,7 +58,7 @@ stderr of test 'q14` in directory 'benchmarks/XBench/DC/SD` itself:
 # cmdline opt 	gdk_dbname = mTests_benchmarks_XBench_DC_SD
 
 # 22:49:21 >  
-# 22:49:21 >  Mtimeout -timeout 60 MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=localhost --port=30140 q14.xq
+# 22:49:21 >  Mtimeout -timeout 60 MapiClient -lxquery -fxml -umonetdb -Pmonetdb --host=localhost --port=30140 q14.xq
 # 22:49:21 >  
 
 

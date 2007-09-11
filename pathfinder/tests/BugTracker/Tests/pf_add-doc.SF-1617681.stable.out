@@ -18,12 +18,12 @@ quit();
 Over..
 
 # 20:08:39 >  
-# 20:08:39 >  Mtimeout -timeout 60 MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=localhost --port=39716 pf_add-doc.SF-1617681_s00.xq
+# 20:08:39 >  Mtimeout -timeout 60 MapiClient -lxquery -fxml -umonetdb -Pmonetdb --host=localhost --port=39716 pf_add-doc.SF-1617681_s00.xq
 # 20:08:39 >  
 
 
 # 20:08:39 >  
-# 20:08:39 >  Mtimeout -timeout 60 MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=localhost --port=39716 pf_add-doc.SF-1617681_s01.xq
+# 20:08:39 >  Mtimeout -timeout 60 MapiClient -lxquery -fxml -umonetdb -Pmonetdb --host=localhost --port=39716 pf_add-doc.SF-1617681_s01.xq
 # 20:08:39 >  
 
 <?xml version="1.0" encoding="utf-8"?>

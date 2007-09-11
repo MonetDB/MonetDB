@@ -19,7 +19,7 @@ quit();
 Over..
 
 # 20:40:34 >  
-# 20:40:34 >  Mtimeout -timeout 60 MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=corona --port=38359 crash_on_concatenated_query.SF-1730547.xq
+# 20:40:34 >  Mtimeout -timeout 60 MapiClient -lxquery -fxml -umonetdb -Pmonetdb --host=corona --port=38359 crash_on_concatenated_query.SF-1730547.xq
 # 20:40:34 >  
 
 

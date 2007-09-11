@@ -7,7 +7,7 @@ stderr of test 'insert_large_doc.SF-1726954` in directory 'tests/BugTracker` its
 
 
 # 17:30:37 >  
-# 17:30:37 >  Mtimeout -timeout 60 MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=hirundo --port=36437 insert_large_doc.SF-1726954.xq
+# 17:30:37 >  Mtimeout -timeout 60 MapiClient -lxquery -fxml -umonetdb -Pmonetdb --host=hirundo --port=36437 insert_large_doc.SF-1726954.xq
 # 17:30:37 >  
 
 

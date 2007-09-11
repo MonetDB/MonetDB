@@ -60,7 +60,7 @@ stderr of test 'constructor_with_computed_QName.SF-1548043.mps` in directory 'te
 # cmdline opt 	gdk_dbname = mTests_tests_BugTracker
 
 # 18:28:14 >  
-# 18:28:14 >  Mtimeout -timeout 60 MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=localhost --port=32225 constructor_with_computed_QName.SF-1548043.mps.xq
+# 18:28:14 >  Mtimeout -timeout 60 MapiClient -lxquery -fxml -umonetdb -Pmonetdb --host=localhost --port=32225 constructor_with_computed_QName.SF-1548043.mps.xq
 # 18:28:14 >  
 
 

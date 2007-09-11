@@ -1467,20 +1467,20 @@ usage(const char *prog)
 	fprintf(stderr, "\nOptions are:\n");
 	fprintf(stderr, " -d database | --database=database  database to connect to\n");
 
-	fprintf(stderr, " -e          | --echo            echo the query\n");
-	fprintf(stderr, " -f kind     | --format=kind     use renderer {csv,tab,raw,sql,xml} \n");
-	fprintf(stderr, " -H          | --history         load/save cmdline history (default off)\n");
-	fprintf(stderr, " -h hostname | --host=hostname   host to connect to\n");
-	fprintf(stderr, " -i          | --interactive     read stdin after command line args\n");
-	fprintf(stderr, " -l language | --language=lang   {sql,xquery,mal,mil}\n");
-	fprintf(stderr, " -L logfile  | --log=logfile     save client/server interaction\n");
-	fprintf(stderr, " -P passwd   | --passwd=passwd   password\n");
-	fprintf(stderr, " -p portnr   | --port=portnr     port to connect to\n");
-	fprintf(stderr, " -s stmt     | --statement=stmt  run single statement\n");
-	fprintf(stderr, " -t          | --time            time commands\n");
-	fprintf(stderr, " -X          | --Xdebug          trace mapi network interaction\n");
-	fprintf(stderr, " -u user     | --user=user       user id\n");
-	fprintf(stderr, " -?          | --help            show this usage message\n");
+	fprintf(stderr, " -e          | --echo             echo the query\n");
+	fprintf(stderr, " -f kind     | --format=kind      specify output format {dm,xml} for Xquery, or {csv,tab,raw,sql,xml}\n");
+	fprintf(stderr, " -H          | --history          load/save cmdline history (default off)\n");
+	fprintf(stderr, " -h hostname | --host=hostname    host to connect to\n");
+	fprintf(stderr, " -i          | --interactive      read stdin after command line args\n");
+	fprintf(stderr, " -l language | --language=lang    {sql,xquery,mal,mil}\n");
+	fprintf(stderr, " -L logfile  | --log=logfile      save client/server interaction\n");
+	fprintf(stderr, " -P passwd   | --passwd=passwd    password\n");
+	fprintf(stderr, " -p portnr   | --port=portnr      port to connect to\n");
+	fprintf(stderr, " -s stmt     | --statement=stmt   run single statement\n");
+	fprintf(stderr, " -t          | --time             time commands\n");
+	fprintf(stderr, " -X          | --Xdebug           trace mapi network interaction\n");
+	fprintf(stderr, " -u user     | --user=user        user id\n");
+	fprintf(stderr, " -?          | --help             show this usage message\n");
 #ifdef HAVE_POPEN
 	fprintf(stderr, " -| cmd      | --pager=cmd        for pagination\n");
 #endif
@@ -1492,7 +1492,6 @@ usage(const char *prog)
 
 	fprintf(stderr, "\nXQuery specific options\n");
 	fprintf(stderr, " -C colname  | --collection=name  collection name\n");
-	fprintf(stderr, " -o format   | --output=format   output format (dm (default) or xml)\n");
 	exit(-1);
 }
 
@@ -1530,7 +1529,6 @@ main(int argc, char **argv)
 		{"host", 1, 0, 'h'},
 		{"log", 2, 0, 'L'},
 		{"language", 1, 0, 'l'},
-		{"output", 1, 0, 'o'},
 #ifdef HAVE_POPEN
 		{"pager", 1, 0, '|'},
 #endif
@@ -1556,7 +1554,7 @@ main(int argc, char **argv)
 	mark = NULL;
 	mark2 = NULL;
 
-	while ((c = getopt_long(argc, argv, "C:d::ef:i::h:L::l:o:"
+	while ((c = getopt_long(argc, argv, "C:d::ef:i::h:L::l:"
 #ifdef HAVE_POPEN
 				"|:"
 #endif
@@ -1575,9 +1573,6 @@ main(int argc, char **argv)
 			break;
 		case 'e':
 			echoquery = 1;
-			break;
-		case 'f':
-			setFormatter(optarg);
 			break;
 		case 'L':
 		{
@@ -1620,6 +1615,9 @@ main(int argc, char **argv)
 			guest = 0;
 			passwd = optarg;	/* can be NULL */
 			break;
+		case 'f':
+			output = optarg;  /* output format */
+			break;
 		case 'i':
 			interactive = 1;
 			if (optarg)
@@ -1627,9 +1625,6 @@ main(int argc, char **argv)
 			break;
 		case 'h':
 			host = optarg;
-			break;
-		case 'o':
-			output = optarg;
 			break;
 		case 'p':
 			port = atoi(optarg);
@@ -1718,8 +1713,13 @@ main(int argc, char **argv)
 
 	mapi_profile(mid, mark != NULL);
 	mapi_trace(mid, trace);
-	if (output)
-		mapi_output(mid, output);
+	if (output) {
+		if (mode == XQUERY)
+			mapi_output(mid, output);
+		else
+			setFormatter(output);
+	}
+
 
 	c = 0;
 

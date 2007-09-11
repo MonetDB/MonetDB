@@ -7,7 +7,7 @@ stderr of test 'pf_pow` in directory 'runtime` itself:
 
 
 # 13:31:52 >  
-# 13:31:52 >  Mtimeout -timeout 60 MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=localhost --port=30462 pf_pow.xq
+# 13:31:52 >  Mtimeout -timeout 60 MapiClient -lxquery -fxml -umonetdb -Pmonetdb --host=localhost --port=30462 pf_pow.xq
 # 13:31:52 >  
 
 

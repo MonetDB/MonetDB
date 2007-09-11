@@ -7,7 +7,7 @@ stderr of test 'attr-entity-bug.SF-1743433` in directory 'tests/BugTracker` itse
 
 
 # 14:08:42 >  
-# 14:08:42 >  Mtimeout -timeout 60 MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=hirundo --port=31755 attr-entity-bug.SF-1743433.xq
+# 14:08:42 >  Mtimeout -timeout 60 MapiClient -lxquery -fxml -umonetdb -Pmonetdb --host=hirundo --port=31755 attr-entity-bug.SF-1743433.xq
 # 14:08:42 >  
 
 

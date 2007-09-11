@@ -18,7 +18,7 @@ quit();
 Over..
 
 # 10:11:18 >  
-# 10:11:18 >  Mtimeout -timeout 60 MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=localhost --port=38491 complex-XQuery-batbat_lng_add_inplace-error-OK.SF-1562868.xq
+# 10:11:18 >  Mtimeout -timeout 60 MapiClient -lxquery -fxml -umonetdb -Pmonetdb --host=localhost --port=38491 complex-XQuery-batbat_lng_add_inplace-error-OK.SF-1562868.xq
 # 10:11:18 >  
 
 <?xml version="1.0" encoding="utf-8"?>

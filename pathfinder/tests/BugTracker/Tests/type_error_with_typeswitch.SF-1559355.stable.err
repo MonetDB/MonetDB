@@ -58,7 +58,7 @@ stderr of test 'type_error_with_typeswitch.SF-1559355` in directory 'tests/BugTr
 # cmdline opt 	gdk_dbname = mTests_tests_BugTracker
 
 # 19:23:47 >  
-# 19:23:47 >  Mtimeout -timeout 60 MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=localhost --port=32302 type_error_with_typeswitch.SF-1559355.xq
+# 19:23:47 >  Mtimeout -timeout 60 MapiClient -lxquery -fxml -umonetdb -Pmonetdb --host=localhost --port=32302 type_error_with_typeswitch.SF-1559355.xq
 # 19:23:47 >  
 
 

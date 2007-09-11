@@ -18,7 +18,7 @@ quit();
 Over..
 
 # 17:16:06 >  
-# 17:16:06 >  Mtimeout -timeout 60 MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=localhost --port=37299 predicate_selects_too_few_nodes.SF-1636588_ws.xq
+# 17:16:06 >  Mtimeout -timeout 60 MapiClient -lxquery -fxml -umonetdb -Pmonetdb --host=localhost --port=37299 predicate_selects_too_few_nodes.SF-1636588_ws.xq
 # 17:16:06 >  
 
 <?xml version="1.0" encoding="utf-8"?>

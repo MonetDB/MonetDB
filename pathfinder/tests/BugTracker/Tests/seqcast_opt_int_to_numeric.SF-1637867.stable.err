@@ -65,7 +65,7 @@ stderr of test 'seqcast_opt_int_to_numeric.SF-1637867` in directory 'tests/BugTr
 # cmdline opt 	gdk_dbname = mTests_tests_BugTracker
 
 # 17:05:46 >  
-# 17:05:46 >  Mtimeout -timeout 60 MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=localhost --port=31806 seqcast_opt_int_to_numeric.SF-1637867.xq
+# 17:05:46 >  Mtimeout -timeout 60 MapiClient -lxquery -fxml -umonetdb -Pmonetdb --host=localhost --port=31806 seqcast_opt_int_to_numeric.SF-1637867.xq
 # 17:05:46 >  
 
 # 17:06:44 >  

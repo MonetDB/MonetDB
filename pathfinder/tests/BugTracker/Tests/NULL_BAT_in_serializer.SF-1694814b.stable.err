@@ -7,12 +7,12 @@ stderr of test 'NULL_BAT_in_serializer.SF-1694814b` in directory 'tests/BugTrack
 
 
 # 17:48:42 >  
-# 17:48:42 >  Mtimeout -timeout 60 MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=localhost --port=33191 NULL_BAT_in_serializer.SF-1694814b_s00.xq
+# 17:48:42 >  Mtimeout -timeout 60 MapiClient -lxquery -fxml -umonetdb -Pmonetdb --host=localhost --port=33191 NULL_BAT_in_serializer.SF-1694814b_s00.xq
 # 17:48:42 >  
 
 
 # 17:48:42 >  
-# 17:48:42 >  Mtimeout -timeout 60 MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=localhost --port=33191 NULL_BAT_in_serializer.SF-1694814b_s01.xq
+# 17:48:42 >  Mtimeout -timeout 60 MapiClient -lxquery -fxml -umonetdb -Pmonetdb --host=localhost --port=33191 NULL_BAT_in_serializer.SF-1694814b_s01.xq
 # 17:48:42 >  
 
 

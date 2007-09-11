@@ -19,14 +19,14 @@ quit();
 Over..
 
 # 18:01:19 >  
-# 18:01:19 >  Mtimeout -timeout 60 MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=corona --port=36410 32_docs.SF-1730617_s00.xq
+# 18:01:19 >  Mtimeout -timeout 60 MapiClient -lxquery -fxml -umonetdb -Pmonetdb --host=corona --port=36410 32_docs.SF-1730617_s00.xq
 # 18:01:19 >  
 
 <?xml version="1.0" encoding="utf-8"?>
 <XQueryResult><result><result id="1"/><result id="2"/><result id="3"/><result id="4"/><result id="5"/><result id="6"/><result id="7"/><result id="8"/><result id="9"/><result id="10"/><result id="11"/><result id="12"/><result id="13"/><result id="14"/><result id="15"/><result id="16"/><result id="17"/><result id="18"/><result id="19"/><result id="20"/><result id="21"/><result id="22"/><result id="23"/><result id="24"/><result id="25"/><result id="26"/><result id="27"/><result id="28"/><result id="29"/><result id="30"/><result id="31"/></result></XQueryResult>
 
 # 18:01:20 >  
-# 18:01:20 >  Mtimeout -timeout 60 MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=corona --port=36410 32_docs.SF-1730617_s01.xq
+# 18:01:20 >  Mtimeout -timeout 60 MapiClient -lxquery -fxml -umonetdb -Pmonetdb --host=corona --port=36410 32_docs.SF-1730617_s01.xq
 # 18:01:20 >  
 
 <?xml version="1.0" encoding="utf-8"?>

@@ -7,7 +7,7 @@ stderr of test 'attribute_access_mposjoin_error.SF-1726928` in directory 'tests/
 
 
 # 17:06:48 >  
-# 17:06:48 >  Mtimeout -timeout 60 MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=localhost --port=36230 attribute_access_mposjoin_error.SF-1726928.xq
+# 17:06:48 >  Mtimeout -timeout 60 MapiClient -lxquery -fxml -umonetdb -Pmonetdb --host=localhost --port=36230 attribute_access_mposjoin_error.SF-1726928.xq
 # 17:06:48 >  
 
 

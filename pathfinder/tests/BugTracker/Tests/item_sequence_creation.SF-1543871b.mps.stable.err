@@ -60,7 +60,7 @@ stderr of test 'item_sequence_creation.SF-1543871b.mps` in directory 'tests/BugT
 # cmdline opt 	gdk_dbname = mTests_tests_BugTracker
 
 # 17:12:53 >  
-# 17:12:53 >  Mtimeout -timeout 60 MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=localhost --port=32821 item_sequence_creation.SF-1543871b.mps.xq
+# 17:12:53 >  Mtimeout -timeout 60 MapiClient -lxquery -fxml -umonetdb -Pmonetdb --host=localhost --port=32821 item_sequence_creation.SF-1543871b.mps.xq
 # 17:12:53 >  
 
 

@@ -19,7 +19,7 @@ quit();
 Over..
 
 # 11:47:48 >  
-# 11:47:48 >  Mtimeout -timeout 60 MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=localhost --port=34605 pf_docname.xq
+# 11:47:48 >  Mtimeout -timeout 60 MapiClient -lxquery -fxml -umonetdb -Pmonetdb --host=localhost --port=34605 pf_docname.xq
 # 11:47:48 >  
 
 <?xml version="1.0" encoding="utf-8"?>

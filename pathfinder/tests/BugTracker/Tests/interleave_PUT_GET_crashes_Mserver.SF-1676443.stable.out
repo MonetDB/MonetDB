@@ -17,24 +17,24 @@ Ready.
 Over..
 
 # 14:58:59 >  
-# 14:58:59 >  Mtimeout -timeout 60 MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=localhost --port=35620 interleave_PUT_GET_crashes_Mserver.SF-1676443_s00.xq
+# 14:58:59 >  Mtimeout -timeout 60 MapiClient -lxquery -fxml -umonetdb -Pmonetdb --host=localhost --port=35620 interleave_PUT_GET_crashes_Mserver.SF-1676443_s00.xq
 # 14:58:59 >  
 
 
 # 14:58:59 >  
-# 14:58:59 >  Mtimeout -timeout 60 MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=localhost --port=35620 interleave_PUT_GET_crashes_Mserver.SF-1676443_s01.xq
+# 14:58:59 >  Mtimeout -timeout 60 MapiClient -lxquery -fxml -umonetdb -Pmonetdb --host=localhost --port=35620 interleave_PUT_GET_crashes_Mserver.SF-1676443_s01.xq
 # 14:58:59 >  
 
 <?xml version="1.0" encoding="utf-8"?>
 <XQueryResult><bladieboe/></XQueryResult>
 
 # 14:58:59 >  
-# 14:58:59 >  Mtimeout -timeout 60 MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=localhost --port=35620 interleave_PUT_GET_crashes_Mserver.SF-1676443_s03.xq
+# 14:58:59 >  Mtimeout -timeout 60 MapiClient -lxquery -fxml -umonetdb -Pmonetdb --host=localhost --port=35620 interleave_PUT_GET_crashes_Mserver.SF-1676443_s03.xq
 # 14:58:59 >  
 
 
 # 14:58:59 >  
-# 14:58:59 >  Mtimeout -timeout 60 MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=localhost --port=35620 interleave_PUT_GET_crashes_Mserver.SF-1676443_s04.xq
+# 14:58:59 >  Mtimeout -timeout 60 MapiClient -lxquery -fxml -umonetdb -Pmonetdb --host=localhost --port=35620 interleave_PUT_GET_crashes_Mserver.SF-1676443_s04.xq
 # 14:58:59 >  
 
 <?xml version="1.0" encoding="utf-8"?>

@@ -18,7 +18,7 @@ quit();
 Over..
 
 # 15:23:49 >  
-# 15:23:49 >  Mtimeout -timeout 60 MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=localhost --port=34652 document_handling.SF-1618802.a_s00.xq
+# 15:23:49 >  Mtimeout -timeout 60 MapiClient -lxquery -fxml -umonetdb -Pmonetdb --host=localhost --port=34652 document_handling.SF-1618802.a_s00.xq
 # 15:23:49 >  
 
 # Elapsed time = 001ms 011us [252us/node]
@@ -35,7 +35,7 @@ Over..
 <XQueryResult></XQueryResult>
 
 # 15:23:50 >  
-# 15:23:50 >  Mtimeout -timeout 60 MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=localhost --port=34652 document_handling.SF-1618802.a_s01.xq
+# 15:23:50 >  Mtimeout -timeout 60 MapiClient -lxquery -fxml -umonetdb -Pmonetdb --host=localhost --port=34652 document_handling.SF-1618802.a_s01.xq
 # 15:23:50 >  
 
 <?xml version="1.0" encoding="utf-8"?>

@@ -7,7 +7,7 @@ stderr of test 'comment-print-bug.SF-1755466` in directory 'tests/BugTracker` it
 
 
 # 15:12:03 >  
-# 15:12:03 >  Mtimeout -timeout 60 MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=hirundo --port=30410 comment-print-bug.SF-1755466.xq
+# 15:12:03 >  Mtimeout -timeout 60 MapiClient -lxquery -fxml -umonetdb -Pmonetdb --host=hirundo --port=30410 comment-print-bug.SF-1755466.xq
 # 15:12:03 >  
 
 

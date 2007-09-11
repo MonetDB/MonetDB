@@ -19,7 +19,7 @@ quit();
 Over..
 
 # 13:14:21 >  
-# 13:14:21 >  Mtimeout -timeout 240 MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=hirundo --port=32335 swizzle-bug.SF-1760811.xq
+# 13:14:21 >  Mtimeout -timeout 240 MapiClient -lxquery -fxml -umonetdb -Pmonetdb --host=hirundo --port=32335 swizzle-bug.SF-1760811.xq
 # 13:14:21 >  
 
 <?xml version="1.0" encoding="utf-8"?>

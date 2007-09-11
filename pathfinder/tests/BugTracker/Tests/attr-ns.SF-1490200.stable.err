@@ -62,7 +62,7 @@ stderr of test 'attr-ns.SF-1490200` in directory 'tests/BugTracker` itself:
 # cmdline opt 	gdk_dbname = mTests_tests_BugTracker
 
 # 17:39:09 >  
-# 17:39:09 >  Mtimeout -timeout 60 MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=localhost --port=31772 attr-ns.SF-1490200.xq
+# 17:39:09 >  Mtimeout -timeout 60 MapiClient -lxquery -fxml -umonetdb -Pmonetdb --host=localhost --port=31772 attr-ns.SF-1490200.xq
 # 17:39:09 >  
 
 

@@ -62,7 +62,7 @@ stderr of test 'pf_del-doc.SF-1617684_check` in directory 'tests/BugTracker` its
 # cmdline opt 	gdk_dbname = mTests_tests_BugTracker
 
 # 12:44:56 >  
-# 12:44:56 >  Mtimeout -timeout 60 MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=localhost --port=31699 pf_del-doc.SF-1617684_check.xq
+# 12:44:56 >  Mtimeout -timeout 60 MapiClient -lxquery -fxml -umonetdb -Pmonetdb --host=localhost --port=31699 pf_del-doc.SF-1617684_check.xq
 # 12:44:56 >  
 
 

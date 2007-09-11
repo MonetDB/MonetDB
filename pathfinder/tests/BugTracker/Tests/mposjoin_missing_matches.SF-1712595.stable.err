@@ -7,7 +7,7 @@ stderr of test 'mposjoin_missing_matches.SF-1712595` in directory 'tests/BugTrac
 
 
 # 19:30:15 >  
-# 19:30:15 >  Mtimeout -timeout 60 MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=localhost --port=34503 mposjoin_missing_matches.SF-1712595.xq
+# 19:30:15 >  Mtimeout -timeout 60 MapiClient -lxquery -fxml -umonetdb -Pmonetdb --host=localhost --port=34503 mposjoin_missing_matches.SF-1712595.xq
 # 19:30:15 >  
 
 

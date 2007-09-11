@@ -7,7 +7,7 @@ stderr of test 'replace-corrupts.SF-1758902` in directory 'tests/BugTracker` its
 
 
 # 13:02:10 >  
-# 13:02:10 >  Mtimeout -timeout 60 MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=hirundo --port=36134 replace-corrupts.SF-1758902.xq
+# 13:02:10 >  Mtimeout -timeout 60 MapiClient -lxquery -fxml -umonetdb -Pmonetdb --host=hirundo --port=36134 replace-corrupts.SF-1758902.xq
 # 13:02:10 >  
 
 
