@@ -60,7 +60,7 @@
 #endif
 
 #if !(HAVE_STRING_H && HAVE_STRDUP)
-char * strndup (const char * s);
+char * strdup (const char * s);
 #endif
 
 #if !(HAVE_STRING_H && HAVE_STRNDUP)
