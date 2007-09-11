@@ -567,6 +567,11 @@ ns_resolve (PFpnode_t *n)
             ns_add (PFns_pf);
             ns_add (PFns_xdt);
             ns_add (PFns_local);
+            ns_add (PFns_lib);
+            ns_add (PFns_tijah);
+#ifdef HAVE_PROBXML
+            ns_add (PFns_pxmlsup);
+#endif
             ns_add (PFns_fn);
 
             fns = PFns_fn;
