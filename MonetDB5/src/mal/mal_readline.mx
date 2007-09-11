@@ -154,28 +154,7 @@ static void mal_help_display(char **msg, int a, int b){
 	(void) msg; (void) a; (void) b;
 	for(i=0;i<a; i++)
 		stream_printf(GDKout,"%s\n",msg[i]);
-	stream_printf(GDKout,"%s",rl_line_buffer);
-}
-static int mal_help(int a, int b){
-    char **msg,*c;
-	int i;
-
-    (void) a;
-    (void) b;
-
-    c = rl_line_buffer + strlen(rl_line_buffer);
-    while( c > (rl_line_buffer+1) && isspace(*c))
-        c--;
-    while( c > (rl_line_buffer+1) && !isspace(*c))
-        c--;
-	msg= getHelp(MCgetClient()->nspace,c,0);
-	stream_printf(GDKout,"\n");
-	for(i=0; msg[i]; i++){
-		stream_printf(GDKout,"%s\n",msg[i]);
-		GDKfree(msg[i]);
-	}
-	GDKfree(msg);
-	return 0;
+	/* stream_printf(GDKout,"%s",rl_line_buffer); */
 }
 @-
 @= tst
@@ -192,17 +171,7 @@ mal_command_generator(const char *text, int state)
 	static int index, len, last;
 	static char **msg =0;
 	const char *name;
-	char buf[BUFSIZ];
 	int i;
-
-	/* we pick our own portion of the linebuffer  */
-	text = rl_line_buffer + strlen(rl_line_buffer);
-	while( text > (rl_line_buffer+1) && ! isspace((int) *text))
-		text--;
-	if (strlen(text) < BUFSIZ) {
-		strcpy(buf,text);
-		text= buf;
-	}
 
 #ifdef _MAL_READLINE_DEBUG
 	printf("expand:%d [%d] %s \n",state,(int)strlen(text),text);
@@ -217,6 +186,10 @@ mal_command_generator(const char *text, int state)
 			GDKfree(msg);
 		}
 		msg = 0;
+	} else
+	if( last >0){
+		mal_unquote(msg[--last]);
+		return strdup(msg[last]);
 	}
 	if( mdbSession() ){
 		while ( (name = mdb_commands[index++]) ){
@@ -229,14 +202,21 @@ mal_command_generator(const char *text, int state)
 			if( @:tst(name,text,len)@ ) 
 				return strdup(name);
 	}
-	if( msg == 0){
-		msg= getHelp(MCgetClient()->nspace,(str)(text),1);
-		last =0;
+	if( msg == 0 && *text){
+		char cmd[BUFSIZ], *c;
+		c= strchr(text,'.');
+		if( c== NULL) {
+			snprintf(cmd,BUFSIZ,"%s.*",text);
+			c= cmd;
+		} else
+			c= (char *) text;
+		msg= getHelp(MCgetClient()->nspace,(str)c,1);
+		for(last=0; msg[last]; last++) 
+			;
 	}
-	if( msg[last]){
-		last++;
-		mal_unquote(msg[last-1]);
-		return strdup(msg[last-1]);
+	if(msg && last && msg[--last]){
+		mal_unquote(msg[last]);
+		return strdup(msg[last]);
 	}
 	return NULL;
 }
@@ -273,9 +253,6 @@ init_readline(void)
 
 	/* Allow conditional parsing of the ~/.inputrc file. */
 	rl_readline_name = "MonetDB";
-
-	/* recognize the help function, should react to <FCN-2> */
-	rl_bind_key('\033',mal_help);
 
 	/* Tell the completer that we want to try our own completion before std completion (filename) kicks in. */
 	rl_attempted_completion_function = mal_completion;
@@ -338,7 +315,6 @@ getConsoleInput(const char *prompt, int linemode, int exit_on_error)
 	do {
 #ifdef HAVE_LIBREADLINE
 		if (prompt) {
-			/* rl_completion_func_t *func = NULL;*/
 
 			if (buf)
 				free(buf);
