@@ -76,10 +76,7 @@ Bootstrap, Configure and Make
 Before executing the following steps, make sure that your
 shell-environment (especially variables like ``PATH`` and
 ``LD_LIBRARY_PATH``) is set up, thus that the tools listed above as
-well as MonetDB can be found.  (Bash users at CWI and DD can simply
-``source conf/conf.bash``.  This sets the proper environment and even
-provides aliases ``configure_sql`` and ``Mtest_sql`` for convenience.
-See ``conf/conf.bash`` for more details.)
+well as MonetDB can be found.
 
 In case you checked out the CVS version, you have to run ``bootstrap``
 first; in case you downloaded the pre-packaged source distribution,
@@ -200,24 +197,11 @@ Make sure that ``/usr/local/bin`` (respectively
 with ``--prefix`` when calling ``configure`` for MonetDB and
 MonetDB/SQL, respectively) is in your PATH.
 
-In case you started your compilation with ``source conf/conf.bash``
-(see `Bootstrap, Configure and Make`_ above), you can use the
-``Mtest_sql`` alias, now.  In the ``sql`` top-level directory issue
-the command
+In the top-level source directory of sql, simply issue the command
 
- Mtest_sql  -r
+ Mtest.py --package=sql -r
 
 It will run a large number of SQL tests to assure correct installation.
-
-In case you did not use ``source conf/conf.bash``, you need to type
-more.  Let <sql-source>, <sql-build>, and <sql-prefix> denote the
-absolute or relative paths to the ``sql`` top-level source directory,
-the directory where you called ``configure`` for ``sql``, and the
-directory you specified as ``--prefix`` with ``sql``'s ``configure``,
-respectively.  Then, the test runs as follows from the ``sql``
-top-level directory::
-
- Mtest.py --monet_mod_path=`monetdb-config --modpath`:<sql-prefix>/lib(64)/MonetDB:<sql-prefix>/lib(64)/MonetDB/lib --SQL_PREFIX=<sql-prefix> --TSTSRCBASE=<sql-source> --TSTBLDBASE=<sql-build> --TSTTRGBASE=<sql-prefix> -r
 
 You need write permissions on part of the installation directory for
 this command: it will create subdirectories ``var/dbfarm`` and ``Tests``.

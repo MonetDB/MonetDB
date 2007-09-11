@@ -91,10 +91,7 @@ Bootstrap, Configure and Make
 Before executing the following steps, make sure that your
 shell-environment (especially variables like ``PATH`` and
 ``LD_LIBRARY_PATH``) is set up, thus that the tools listed above as
-well as MonetDB can be found.  (Bash users at CWI and DD can simply
-``source conf/conf.bash``.  This sets the proper environment and even
-provides aliases ``configure_pathfinder`` and ``Mtest_pathfinder`` for
-convenience.  See ``conf/conf.bash`` for more details.)
+well as MonetDB can be found.
 
 In case you checked out the CVS version, you have to run ``bootstrap``
 first; in case you downloaded the pre-packaged source distribution,
@@ -215,25 +212,11 @@ Make sure that ``/usr/local/bin`` (respectively
 specified with ``--prefix`` when calling ``configure`` for MonetDB and
 MonetDB/XQuery, respectively) is in your PATH.
 
-In case you started your compilation with ``source conf/conf.bash``
-(see `Bootstrap, Configure and Make`_ above), you can use the
-``Mtest_pathfinder`` alias, now.  In the ``pathfinder`` top-level
-directory issue the command
+In the top-level source directory of pathfinder, simply issue the command
 
- Mtest_pathfinder  -r
+ Mtest.py --package=pathfinder -r
 
 It will run a large number of XQuery tests to assure correct installation.
-
-In case you did not use ``source conf/conf.bash``, you need to type
-more.  Let <pathfinder-source>, <pathfinder-build>, and
-<pathfinder-prefix> denote the absolute or relative paths to the
-``pathfinder`` top-level source directory, the directory where you
-called ``configure`` for ``pathfinder``, and the directory you
-specified as ``--prefix`` with ``pathfinder``'s ``configure``,
-respectively.  Then, the test runs as follows from the ``pathfinder``
-top-level directory::
-
- Mtest.py --monet_mod_path=`monetdb-config --modpath`:<pathfinder-prefix>/lib(64)/MonetDB:<pathfinder-prefix>/lib(64)/MonetDB/lib --TSTSRCBASE=<pathfinder-source> --TSTBLDBASE=<pathfinder-build> --TSTTRGBASE=<pathfinder-prefix> -r
 
 You need write permissions on part of the installation directory for
 this command: it will create subdirectories ``var/dbfarm`` and ``Tests``.

@@ -9,25 +9,22 @@ do
     if fgrep "$dir/$f" > /dev/null 2>&1 <<\EOF
 MonetDB/bootstrap
 MonetDB/de-bootstrap
-MonetDB/conf/conf.bash
 MonetDB4/bootstrap
 MonetDB4/de-bootstrap
-MonetDB4/conf/conf.bash
+MonetDB5/bootstrap
+MonetDB5/de-bootstrap
 clients/bootstrap
 clients/de-bootstrap
-clients/conf/conf.bash
 template/bootstrap
 template/de-bootstrap
-template/conf/conf.bash
 sql/bootstrap
 sql/de-bootstrap
-sql/conf/conf.bash
-xml/bootstrap
-xml/de-bootstrap
-xml/conf/conf.bash
 pathfinder/bootstrap
 pathfinder/de-bootstrap
-pathfinder/conf/conf.bash
+xml/bootstrap
+xml/de-bootstrap
+geom/bootstrap
+geom/de-bootstrap
 EOF
     then
 	cat <<EOF
@@ -35,7 +32,7 @@ EOF
 WARNING:
 
 The file "$dir/$f" should be kept identical in
-MonetDB, MonetDB4, monet5, clients, template, sql, pathfinder, amdb, xml, pruning !
+MonetDB, MonetDB4, MonetDB5, clients, template, sql, pathfinder, xml, geom, amdb, datacell, pruning !
 
 (If necessary, please contact Stefan.Manegold@cwi.nl for details.)
 

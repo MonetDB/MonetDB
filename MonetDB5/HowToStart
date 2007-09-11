@@ -96,11 +96,6 @@ Before executing the following steps, make sure that your
 shell-environment (especially variables like "PATH" and
 "LD_LIBRARY_PATH") is setup, thus that the tools listed above can be
 found. 
-("Bash"-users at CWI and DD are welcome to simply 
-  "source conf/conf.bash".
- This sets the proper environment and even provides aliases
- "configure_MonetDB" & "Mtest_MonetDB" for convenience.
- See conf/conf.bash itself for more details.)
 
 In case you did checkout the CVS version, you have to run "bootstrap", first;
 in case you did download the pre-packaged source distribution, you must skip

@@ -137,10 +137,7 @@ Bootstrap, Configure and Make
 Before executing the following steps, make sure that your
 shell-environment (especially variables like ``PATH`` and
 ``LD_LIBRARY_PATH``) is set up, thus that the tools listed above can
-be found.  (Bash users at CWI and DD can simply ``source
-conf/conf.bash``.  This sets the proper environment and even provides
-aliases ``configure_MonetDB`` and ``Mtest_MonetDB`` for convenience.
-See ``conf/conf.bash`` for more details.)
+be found.
 
 In case you checked out the CVS version, you have to run ``bootstrap``
 first; in case you downloaded the pre-packaged source distribution,
