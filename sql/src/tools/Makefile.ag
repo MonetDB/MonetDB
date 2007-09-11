@@ -56,7 +56,7 @@ smallTOC_SHARED_MODS =	\
 	\
 	../backends/monet4/lib_sql_server
 
-EXTRA_DIST = static_modules.mx mysqldump2bulkload.py
+EXTRA_DIST = static_modules.mx mysqldump2bulkload.py $(man_MANS)
 
 lib_initmodules = {
 	NOINST
