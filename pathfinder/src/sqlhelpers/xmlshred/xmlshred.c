@@ -696,124 +696,6 @@ print_tuple (node_t tuple)
     putc ('\n', out);
 }
 
-int
-main (int argc, char **argv)
-{
-    xmlParserCtxtPtr  ctx;
-
-    suppress_attributes = false;
-    outfile_given = false;
-
-    
-
-    /* parse command line using getopt library */
-    while (true) {
-        int c = getopt (argc, argv, "F:af:ho:s");
-
-        if (c == -1)
-            break;
-
-        switch (c) {
-
-            case 'a':
-                suppress_attributes = true;
-                break;
-
-            case 'F':
-                format = strdup (optarg);
-                break;
-
-            case 'f':
-                strncpy (filename, optarg, FILENAME_MAX);
-                filename_given = true;
-                break;
-
-            case 'o':
-                strncpy (outfile, optarg, FILENAME_MAX);
-                outfile_given = true;
-                break;
-
-            case 's':
-                sql_atts = true;
-                format = "%e, %s, %l, %k, %n, %t, %g";
-                break;
-
-            case 'h':
-                print_help (argc, argv);
-                exit (0);
-
-        }
-    }
-
-    /* if we need sql encoding we need to initialize the hashtable */
-    if(sql_atts)
-        hash_table = (bucket_t**) malloc (HASHTABLE_SIZE * sizeof(bucket_t));
-
-    if (!outfile_given && !suppress_attributes) {
-        fprintf (stderr, "Attribute generation requires output filename.\n");
-        print_help (argc, argv);
-        exit (EXIT_FAILURE);
-    }
-
-    if (outfile_given) {
-
-        out = fopen (outfile, "w");
-        snprintf (outfile_atts, FILENAME_MAX, (!sql_atts)?"%s_atts":"%s_names", outfile);
-        out_attr =  fopen (outfile_atts, "w");
-
-        if (!out || !out_attr) {
-            fprintf (stderr, "error opening output file(s).\n");
-            exit (EXIT_FAILURE);
-        }
-    }
-    else
-        out = stdout;
-
-    /* did we get a filename? */
-    if (!filename_given) {
-        fprintf (stderr, "No filename given.\n");
-        print_help (argc, argv);
-        exit (EXIT_FAILURE);
-    }
-
-    /* start XML parsing */
-    ctx = xmlCreateFileParserCtxt (filename);
-    ctx->sax = &saxhandler;
-
-    (void) xmlParseDocument (ctx);
-
-    if (! ctx->wellFormed) {
-        fprintf (stderr, "XML input not well-formed\n");
-        if (sql_atts)
-            free_hash(hash_table);
-        exit (EXIT_FAILURE);
-    }
-
-    fprintf (stderr, "tree height was %i\n", max_level);
-    if (sql_atts)
-        fprintf(stderr, "There are %i tagnames and attribute names in "
-            "the document\n", new_nameid());
-
-    if (sql_atts)
-        free_hash(hash_table);
-
-    /* Open the file */
-    if(outfile_given) {
-        snprintf (outfile_guide, FILENAME_MAX, "%s_guide.xml", outfile);
-        guide_out = fopen(outfile_guide, "w");
-        if (!guide_out) {
-            fprintf (stderr, "error opening output file(s).\n");
-            exit (EXIT_FAILURE);
-        }
-
-    } else 
-        guide_out = stdout;
-    
-
-    print_guide_tree(current_guide_node, 0);
-    
-    return 0;
-}
 
 /**
  * Hashfunction
@@ -938,29 +820,39 @@ add_guide_child(guide_tree_t *parent, guide_tree_t *child)
 guide_tree_t* 
 insert_guide_node(const char *tag_name, guide_tree_t *parent, kind_t kind)
 {
+  
+#define HAS_TAG(k) \
+  (((k) == doc) || ((k) == elem) || ((k) == pi) || ((k) == attr))
+  
     child_list_t *child_list = NULL;
     guide_tree_t *child_node = NULL;
     guide_tree_t *new_guide_node = NULL;
 
     if (parent != NULL) {
-        /* Search all children and check if the node already exist */
+        /* Search all children and check if a node with identical
+           characteristics already exists */
         child_list = parent->child_list;
             
         while(child_list != NULL) {
             child_node = child_list->node;
-            #define TAG(k) \
-                  (((k) == (doc)) || ((k) == (elem)) \
-                   || ((k) == (pi)) || ((k) == (attr))) 
-
-            if (((!TAG(kind)) && child_node->kind==kind) ||
-                 (TAG(kind) && (child_node->kind == kind) &&
-                  strcmp (child_node->tag_name, tag_name)==0)) {
-
-                child_node->count = child_node->count + 1;
+            
+            /* identical characteristics:
+             * (1) same kind
+             * (2) same tag name/attr name/pi content (if applicable)
+             */
+            if (child_node->kind == kind) {
+              if (HAS_TAG (kind) &&
+                  strcmp (child_node->tag_name, tag_name) != 0)
+                /* node characteristics not identical, do nothing */
+                ;
+              else { 
+                child_node->count++;
                 return child_node;
+              }
             }
+            
             child_list = child_list->next_element;
-        } 
+        }
     }
 
     /* create a new guide node */
@@ -1029,6 +921,124 @@ print_guide_tree(guide_tree_t *root, int tree_depth)
     root = NULL;
 }
 
+int
+main (int argc, char **argv)
+{
+    xmlParserCtxtPtr  ctx;
+
+    suppress_attributes = false;
+    outfile_given = false;
+
+    
+
+    /* parse command line using getopt library */
+    while (true) {
+        int c = getopt (argc, argv, "F:af:ho:s");
+
+        if (c == -1)
+            break;
+
+        switch (c) {
+
+            case 'a':
+                suppress_attributes = true;
+                break;
+
+            case 'F':
+                format = strdup (optarg);
+                break;
+
+            case 'f':
+                strncpy (filename, optarg, FILENAME_MAX);
+                filename_given = true;
+                break;
+
+            case 'o':
+                strncpy (outfile, optarg, FILENAME_MAX);
+                outfile_given = true;
+                break;
+
+            case 's':
+                sql_atts = true;
+                format = "%e, %s, %l, %k, %n, %t, %g";
+                break;
+
+            case 'h':
+                print_help (argc, argv);
+                exit (0);
+
+        }
+    }
+
+    /* if we need sql encoding we need to initialize the hashtable */
+    if(sql_atts)
+        hash_table = (bucket_t**) malloc (HASHTABLE_SIZE * sizeof(bucket_t));
+
+    if (!outfile_given && !suppress_attributes) {
+        fprintf (stderr, "Attribute generation requires output filename\n");
+        print_help (argc, argv);
+        exit (EXIT_FAILURE);
+    }
+
+    if (outfile_given) {
+
+        out = fopen (outfile, "w");
+        snprintf (outfile_atts, FILENAME_MAX, (!sql_atts)?"%s_atts":"%s_names", outfile);
+        out_attr =  fopen (outfile_atts, "w");
+
+        if (!out || !out_attr) {
+            fprintf (stderr, "Error opening output file(s)\n");
+            exit (EXIT_FAILURE);
+        }
+    }
+    else
+        out = stdout;
+
+    /* did we get a filename? */
+    if (!filename_given) {
+        fprintf (stderr, "No filename given\n");
+        print_help (argc, argv);
+        exit (EXIT_FAILURE);
+    }
+
+    /* start XML parsing */
+    ctx = xmlCreateFileParserCtxt (filename);
+    ctx->sax = &saxhandler;
+
+    (void) xmlParseDocument (ctx);
+
+    if (! ctx->wellFormed) {
+        fprintf (stderr, "XML input not well-formed\n");
+        if (sql_atts)
+            free_hash(hash_table);
+        exit (EXIT_FAILURE);
+    }
+
+    fprintf (stderr, "XML document tree height is %i\n", max_level);
+    if (sql_atts)
+        fprintf(stderr, "There are %i distinct tag and attribute names in "
+            "the document\n", new_nameid());
+
+    if (sql_atts)
+        free_hash(hash_table);
+
+    /* Open the file */
+    if(outfile_given) {
+        snprintf (outfile_guide, FILENAME_MAX, "%s_guide.xml", outfile);
+        guide_out = fopen(outfile_guide, "w");
+        if (!guide_out) {
+            fprintf (stderr, "Error opening output file(s)\n");
+            exit (EXIT_FAILURE);
+        }
+
+    } else 
+        guide_out = stdout;
+    
+
+    print_guide_tree(current_guide_node, 0);
+    
+    return 0;
+}
 
 
 
