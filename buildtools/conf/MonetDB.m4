@@ -293,6 +293,8 @@ if test "x$have_monetdb5" != xno; then
     MONETDB5_MODS=""
     MONETDB5_MOD_PATH=""
     MONETDB5_PREFIX=""
+    # can't use MONETDB5_CONFIG: already in use, MONETDBCONFIG is out of line
+    MONETDB5_CONFFILE=""
   else
     MONETDB5_CFLAGS=`$MONETDB5_CONFIG --cflags`
     MONETDB5_INCS=`$MONETDB5_CONFIG --includes`
@@ -301,6 +303,7 @@ if test "x$have_monetdb5" != xno; then
     MONETDB5_MODS=`$MONETDB5_CONFIG --mods | sed 's/-L\([[^ ]]*\)/& -R\1/g'`
     MONETDB5_MOD_PATH=`$MONETDB5_CONFIG --modpath`
     MONETDB5_PREFIX=`$MONETDB5_CONFIG --prefix`
+    MONETDB5_CONFFILE=`$MONETDB_CONFIG --sysconfdir`/monetdb5.conf
   fi
 fi
 AC_SUBST(MONETDB5_CFLAGS)
