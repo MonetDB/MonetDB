@@ -262,16 +262,25 @@ infer_ckey (PFla_op_t *n)
                     r_list = *(PFalg_att_t *) PFarray_at (R(n)->prop->ckeys, j);
                     union_ (n->prop->ckeys, l_list | r_list);
                 }
+
+            for (i = 0; i < PFarray_last (L(n)->prop->keys); i++)
+                for (j = 0; j < PFarray_last (R(n)->prop->keys); j++) {
+                    l_list = *(PFalg_att_t *) PFarray_at (L(n)->prop->keys, i);
+                    r_list = *(PFalg_att_t *) PFarray_at (R(n)->prop->keys, j);
+                    union_ (n->prop->ckeys, l_list | r_list);
+                }
         }   break;
 
         case la_eqjoin:
         case la_eqjoin_unq:
+        {
+            PFalg_att_t l_list, r_list;
+            unsigned int i, j;
+
             /* only a key-join retains all key properties */
             if (PFprop_key (L(n)->prop, n->sem.eqjoin.att1) &&
                 PFprop_key (R(n)->prop, n->sem.eqjoin.att2)) {
                 PFarray_t *left, *right;
-                PFalg_att_t l_list, r_list;
-                unsigned int i, j;
                 
                 /* copy composite keys from the non-key join argument */
                 copy (n->prop->ckeys, L(n)->prop->ckeys);
@@ -296,8 +305,6 @@ infer_ckey (PFla_op_t *n)
             }
             else if (PFprop_key (L(n)->prop, n->sem.eqjoin.att1)) {
                 PFarray_t *left, *right;
-                PFalg_att_t l_list, r_list;
-                unsigned int i, j;
                 
                 /* copy composite keys from the non-key join argument */
                 copy (n->prop->ckeys, R(n)->prop->ckeys);
@@ -317,8 +324,6 @@ infer_ckey (PFla_op_t *n)
                     }
             } else if (PFprop_key (R(n)->prop, n->sem.eqjoin.att2)) {
                 PFarray_t *left, *right;
-                PFalg_att_t l_list, r_list;
-                unsigned int i, j;
                 
                 /* copy composite keys from the non-key join argument */
                 copy (n->prop->ckeys, L(n)->prop->ckeys);
@@ -336,8 +341,28 @@ infer_ckey (PFla_op_t *n)
                             union_ (n->prop->ckeys, 
                                     (l_list & (~n->sem.eqjoin.att1)) | r_list);
                     }
+            } else {
+                PFarray_t *left, *right;
+                
+                /* combine all keys of the left argument
+                   with all keys of the right argument */
+                left  = L(n)->prop->ckeys;
+                right = R(n)->prop->ckeys;
+                for (i = 0; i < PFarray_last (L(n)->prop->ckeys); i++)
+                    for (j = 0; j < PFarray_last (R(n)->prop->ckeys); j++) {
+                        l_list = *(PFalg_att_t *) PFarray_at (left, i);
+                        r_list = *(PFalg_att_t *) PFarray_at (right, j);
+                        union_ (n->prop->ckeys, l_list | r_list);
+                    }
             }
-            break;
+            
+            for (i = 0; i < PFarray_last (L(n)->prop->keys); i++)
+                for (j = 0; j < PFarray_last (R(n)->prop->keys); j++) {
+                    l_list = *(PFalg_att_t *) PFarray_at (L(n)->prop->keys, i);
+                    r_list = *(PFalg_att_t *) PFarray_at (R(n)->prop->keys, j);
+                    union_ (n->prop->ckeys, l_list | r_list);
+                }
+        }   break;
 
         case la_semijoin:
             copy (n->prop->ckeys, L(n)->prop->ckeys);
@@ -360,74 +385,35 @@ infer_ckey (PFla_op_t *n)
 
             /* only a key-join retains all key properties */
             if (key_left && key_right) {
-                PFarray_t *left, *right;
-                PFalg_att_t l_list, r_list;
-                unsigned int i, j;
-                
                 /* copy composite keys from the non-key join argument */
                 copy (n->prop->ckeys, L(n)->prop->ckeys);
                 union_list (n->prop->ckeys, R(n)->prop->ckeys);
-                
-                /* combine all composite keys from the non-key join argument
-                   without the join argument with the keys from the key join
-                   argument: (x.keys - x.join_att + y.keys) */
-                left  = L(n)->prop->ckeys;
-                right = R(n)->prop->ckeys;
-                for (i = 0; i < PFarray_last (left); i++)
-                    for (j = 0; j < PFarray_last (right); j++) {
-                        l_list = *(PFalg_att_t *) PFarray_at (left, i);
-                        r_list = *(PFalg_att_t *) PFarray_at (right, j);
-                        if (l_list & n->sem.eqjoin.att1)
-                            union_ (n->prop->ckeys, 
-                                    (l_list & (~n->sem.eqjoin.att1)) | r_list);
-                        if (r_list & n->sem.eqjoin.att2)
-                            union_ (n->prop->ckeys, 
-                                    (r_list & (~n->sem.eqjoin.att2)) | l_list);
-                    }
             }
             else if (key_left) {
-                PFarray_t *left, *right;
-                PFalg_att_t l_list, r_list;
-                unsigned int i, j;
-                
                 /* copy composite keys from the non-key join argument */
                 copy (n->prop->ckeys, R(n)->prop->ckeys);
-                
-                /* combine all composite keys from the non-key join argument
-                   without the join argument with the keys from the key join
-                   argument: (r.keys - r.join_att + l.keys) */
-                left  = L(n)->prop->ckeys;
-                right = R(n)->prop->ckeys;
-                for (i = 0; i < PFarray_last (left); i++)
-                    for (j = 0; j < PFarray_last (right); j++) {
-                        l_list = *(PFalg_att_t *) PFarray_at (left, i);
-                        r_list = *(PFalg_att_t *) PFarray_at (right, j);
-                        if (r_list & n->sem.eqjoin.att2)
-                            union_ (n->prop->ckeys, 
-                                    (r_list & (~n->sem.eqjoin.att2)) | l_list);
-                    }
             } else if (key_right) {
-                PFarray_t *left, *right;
-                PFalg_att_t l_list, r_list;
-                unsigned int i, j;
-                
                 /* copy composite keys from the non-key join argument */
                 copy (n->prop->ckeys, L(n)->prop->ckeys);
-                
-                /* combine all composite keys from the non-key join argument
-                   without the join argument with the keys from the key join
-                   argument: (l.keys - l.join_att + r.keys) */
-                left  = L(n)->prop->ckeys;
-                right = R(n)->prop->ckeys;
-                for (i = 0; i < PFarray_last (left); i++)
-                    for (j = 0; j < PFarray_last (right); j++) {
-                        l_list = *(PFalg_att_t *) PFarray_at (left, i);
-                        r_list = *(PFalg_att_t *) PFarray_at (right, j);
-                        if (l_list & n->sem.eqjoin.att1)
-                            union_ (n->prop->ckeys, 
-                                    (l_list & (~n->sem.eqjoin.att1)) | r_list);
-                    }
             }
+            
+            PFalg_att_t l_list, r_list;
+            unsigned int i, j;
+            /* combine all keys of the left argument
+               with all keys of the right argument */
+            for (i = 0; i < PFarray_last (L(n)->prop->ckeys); i++)
+                for (j = 0; j < PFarray_last (R(n)->prop->ckeys); j++) {
+                    l_list = *(PFalg_att_t *) PFarray_at (L(n)->prop->ckeys, i);
+                    r_list = *(PFalg_att_t *) PFarray_at (R(n)->prop->ckeys, j);
+                    union_ (n->prop->ckeys, l_list | r_list);
+                }
+
+            for (i = 0; i < PFarray_last (L(n)->prop->keys); i++)
+                for (j = 0; j < PFarray_last (R(n)->prop->keys); j++) {
+                    l_list = *(PFalg_att_t *) PFarray_at (L(n)->prop->keys, i);
+                    r_list = *(PFalg_att_t *) PFarray_at (R(n)->prop->keys, j);
+                    union_ (n->prop->ckeys, l_list | r_list);
+                }
         }   break;
             
         case la_project:
