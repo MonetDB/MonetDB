@@ -69,7 +69,7 @@ Requires: MonetDB-client-devel
 MonetDB is a database management system that is developed from a
 main-memory perspective with use of a fully decomposed storage model,
 automatic index management, extensibility of data types and search
-accellerators, SQL- and XML- frontends.
+accelerators, SQL- and XML- frontends.
 
 This package contains the MonetDB5 server component.  You need this
 package if you want to work using the MAL language, or if you want to
@@ -80,7 +80,7 @@ well).
 MonetDB is a database management system that is developed from a
 main-memory perspective with use of a fully decomposed storage model,
 automatic index management, extensibility of data types and search
-accellerators, SQL- and XML- frontends.
+accelerators, SQL- and XML- frontends.
 
 This package contains the files needed to develop with MonetDB5.
 

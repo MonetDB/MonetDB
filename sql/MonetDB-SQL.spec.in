@@ -52,7 +52,7 @@ BuildRequires: python, python-devel, swig
 MonetDB is a database management system that is developed from a
 main-memory perspective with use of a fully decomposed storage model,
 automatic index management, extensibility of data types and search
-accellerators, SQL- and XML- frontends.
+accelerators, SQL- and XML- frontends.
 
 This package contains some common files for the %{name}-server4 and
 %{name}-server5 packages.
@@ -76,7 +76,7 @@ BuildRequires: MonetDB4-server-devel >= 4.19
 MonetDB is a database management system that is developed from a
 main-memory perspective with use of a fully decomposed storage model,
 automatic index management, extensibility of data types and search
-accellerators, SQL- and XML- frontends.
+accelerators, SQL- and XML- frontends.
 
 This package contains the SQL frontend for MonetDB4.
 
@@ -101,7 +101,7 @@ BuildRequires: MonetDB5-server-devel >= 5.1
 MonetDB is a database management system that is developed from a
 main-memory perspective with use of a fully decomposed storage model,
 automatic index management, extensibility of data types and search
-accellerators, SQL- and XML- frontends.
+accelerators, SQL- and XML- frontends.
 
 This package contains the SQL frontend for MonetDB5.
 
@@ -125,7 +125,7 @@ Requires: MonetDB-client-devel
 MonetDB is a database management system that is developed from a
 main-memory perspective with use of a fully decomposed storage model,
 automatic index management, extensibility of data types and search
-accellerators, SQL- and XML- frontends.
+accelerators, SQL- and XML- frontends.
 
 This package contains the files needed to develop with %{name}.
 

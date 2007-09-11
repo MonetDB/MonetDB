@@ -136,7 +136,7 @@ BuildRequires: ant, java
 MonetDB is a database management system that is developed from a
 main-memory perspective with use of a fully decomposed storage model,
 automatic index management, extensibility of data types and search
-accellerators, SQL- and XML- frontends.
+accelerators, SQL- and XML- frontends.
 
 This package contains mclient, the main client program to communicate
 with the database server, and msqldump, a program to dump the SQL
@@ -146,7 +146,7 @@ database so that it can be loaded back later.
 MonetDB is a database management system that is developed from a
 main-memory perspective with use of a fully decomposed storage model,
 automatic index management, extensibility of data types and search
-accellerators, SQL- and XML- frontends.
+accelerators, SQL- and XML- frontends.
 
 This package contains the files needed to develop with
 MonetDB-clients.
@@ -155,7 +155,7 @@ MonetDB-clients.
 MonetDB is a database management system that is developed from a
 main-memory perspective with use of a fully decomposed storage model,
 automatic index management, extensibility of data types and search
-accellerators, SQL- and XML- frontends.
+accelerators, SQL- and XML- frontends.
 
 This package contains the ODBC driver.
 
@@ -164,7 +164,7 @@ This package contains the ODBC driver.
 MonetDB is a database management system that is developed from a
 main-memory perspective with use of a fully decomposed storage model,
 automatic index management, extensibility of data types and search
-accellerators, SQL- and XML- frontends.
+accelerators, SQL- and XML- frontends.
 
 This package contains the files needed to use MonetDB from a PHP
 program.
@@ -175,7 +175,7 @@ program.
 MonetDB is a database management system that is developed from a
 main-memory perspective with use of a fully decomposed storage model,
 automatic index management, extensibility of data types and search
-accellerators, SQL- and XML- frontends.
+accelerators, SQL- and XML- frontends.
 
 This package contains the files needed to use MonetDB from a Python
 program.
@@ -186,7 +186,7 @@ program.
 MonetDB is a database management system that is developed from a
 main-memory perspective with use of a fully decomposed storage model,
 automatic index management, extensibility of data types and search
-accellerators, SQL- and XML- frontends.
+accelerators, SQL- and XML- frontends.
 
 This package contains the files needed to use MonetDB from a Perl
 program.
@@ -197,7 +197,7 @@ program.
 MonetDB is a database management system that is developed from a
 main-memory perspective with use of a fully decomposed storage model,
 automatic index management, extensibility of data types and search
-accellerators, SQL- and XML- frontends.
+accelerators, SQL- and XML- frontends.
 
 This package contains the JDBC driver and mjclient, a client program
 written in Java that uses the JDBC driver to communicate with the

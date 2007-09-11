@@ -44,7 +44,7 @@ BuildRequires: libxml2-devel
 MonetDB is a database management system that is developed from a
 main-memory perspective with use of a fully decomposed storage model,
 automatic index management, extensibility of data types and search
-accellerators, SQL- and XQuery- frontends.
+accelerators, SQL- and XQuery- frontends.
 
 This package contains the XQuery frontend.
 
@@ -66,7 +66,7 @@ Requires: libxml2-devel
 MonetDB is a database management system that is developed from a
 main-memory perspective with use of a fully decomposed storage model,
 automatic index management, extensibility of data types and search
-accellerators, SQL- and XQuery- frontends.
+accelerators, SQL- and XQuery- frontends.
 
 This package contains the files needed to develop with
 MonetDB4-XQuery.

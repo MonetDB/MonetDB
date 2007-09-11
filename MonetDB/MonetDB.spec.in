@@ -36,7 +36,7 @@ BuildRequires: zlib-devel, bzip2-devel, openssl-devel
 MonetDB is a database management system that is developed from a
 main-memory perspective with use of a fully decomposed storage model,
 automatic index management, extensibility of data types and search
-accellerators, SQL- and XML- frontends.
+accelerators, SQL- and XML- frontends.
 
 This package contains the core components of MonetDB.  If you want to
 use MonetDB, you will certainly need this package.
@@ -52,7 +52,7 @@ Requires: zlib-devel, bzip2-devel, openssl-devel
 MonetDB is a database management system that is developed from a
 main-memory perspective with use of a fully decomposed storage model,
 automatic index management, extensibility of data types and search
-accellerators, SQL- and XML- frontends.
+accelerators, SQL- and XML- frontends.
 
 This package contains the files needed to develop with MonetDB.
 
@@ -66,7 +66,7 @@ Requires: python
 MonetDB is a database management system that is developed from a
 main-memory perspective with use of a fully decomposed storage model,
 automatic index management, extensibility of data types and search
-accellerators, SQL- and XML- frontends.
+accelerators, SQL- and XML- frontends.
 
 This package contains Python support files.
 
@@ -80,7 +80,7 @@ Requires: %{name}-python
 MonetDB is a database management system that is developed from a
 main-memory perspective with use of a fully decomposed storage model,
 automatic index management, extensibility of data types and search
-accellerators, SQL- and XML- frontends.
+accelerators, SQL- and XML- frontends.
 
 This package contains the programs and files needed for testing the
 MonetDB packages.  You probably don't need this, unless you are a
