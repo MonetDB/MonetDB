@@ -680,7 +680,7 @@ PROC _tj_init_collection(str ftiName, BAT[str,str] param, BAT[void,str] v_pfc, b
         modify_pfc_fti(ftiName,v_pfc);
       }
       if ( rebuild ) {
-	if (view_bbp_name().reverse().exist("tj_" + ftiName + "_TermIndex")) {
+	if (isnil(CATCH(bat("tj_" + ftiName + "_TermIndex").count()))) {
 		bat("tj_" + ftiName + "_TermIndex").persists(false);
 		bat("tj_" + ftiName + "_Terms").persists(false);
 		bat("tj_" + ftiName + "_TagIndex").persists(false);

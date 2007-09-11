@@ -241,7 +241,7 @@ int old_main(BAT* optbat, char* startNodes_name)
     /* startup of argument options */
     if ( use_startNodes ) {
         MILPRINTF(MILOUT, "var startNodes := new(void,oid);\n");
-        MILPRINTF(MILOUT, "if ( view_bbp_name().reverse().exist(\"%s\") ) {\n", startNodes_name );
+        MILPRINTF(MILOUT, "if (isnil(CATCH(bat(\"%s\").count()))) {\n", startNodes_name );
         MILPRINTF(MILOUT, "  startNodes := bat(\"%s\");\n", startNodes_name);
         MILPRINTF(MILOUT, "  bat(\"%s\").persists(false);\n", startNodes_name);
         if ( TDEBUG(98) ) {
