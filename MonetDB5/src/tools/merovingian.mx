@@ -1047,11 +1047,12 @@ main(int argc, char *argv[])
 	int ret;
 	int sock = 0;
 
-	/* hunt for the config file, and read it */
+	/* where is the binary we call? */
 	snprintf(buf, 1023, "%s/bin/mserver5", MONETDBPREFIX);
 	_merovingian_mserver = alloca(sizeof(char) * (strlen(buf) + 1));
 	memcpy(_merovingian_mserver, buf, strlen(buf) + 1);
 
+	/* hunt for the config file, and read it */
 	snprintf(buf, 1023, "%s%s", MONETDBPREFIX, conf + 9);
 	cnf = fopen(buf, "r");
 	if (cnf == NULL) {
@@ -1096,9 +1097,15 @@ main(int argc, char *argv[])
 	snprintf(buf, 1024, "%s/.merovingian_lock", dbfarm);
 	/* we leak ret, but that doesn't matter as the file needs to remain
 	 * available, otherwise we loose the lock */
-	if ((ret = MT_lockf(buf, F_TLOCK, 4, 1)) < 0) {
+	if ((ret = MT_lockf(buf, F_TLOCK, 4, 1)) == -1) {
 		/* locking failed */
 		fprintf(stderr, "another merovingian is already running\n");
+		fflush(stderr);
+		exit(1);
+	} else if (ret == -2) {
+		/* directory or something doesn't exist */
+		fprintf(stderr, "unable to create .merovingian_lock file in %s: %s\n",
+				dbfarm, strerror(errno));
 		fflush(stderr);
 		exit(1);
 	}
