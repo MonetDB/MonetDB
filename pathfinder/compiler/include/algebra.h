@@ -95,7 +95,7 @@ union PFalg_atom_val_t {
     nat           nat_;    /**< value for natural number atoms (#aat_nat) */
     long long int int_;    /**< value for integer atoms (#aat_int) */
     char         *str;     /**< value for string and untyped atoms (#aat_str)  */
-    float         dec_;     /**< value for decimal atoms (#aat_dec) */
+    double        dec_;     /**< value for decimal atoms (#aat_dec) */
     double        dbl;     /**< value for double atoms (#aat_dbl) */
     bool          bln;     /**< value for boolean atoms (#aat_bln) */
     PFqname_t     qname;

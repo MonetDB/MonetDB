@@ -166,14 +166,14 @@ struct PFloc_t {
 
 /**
  * We currently do not really implement the XQuery type xs:decimal.
- * For now, it is implemented as a C float (which actually way off
+ * For now, it is implemented as a C double (which actually way off
  * the XQuery specification).
  *
  * @warning Only few compiler phases actually use this typedef here!
- *          Most phases explicitly use float, so you have to change
+ *          Most phases explicitly use double, so you have to change
  *          those first before you dare to change this typedef!
  */
-typedef float dec;
+typedef double dec;
 
 /** XQuery `order by' modifier (see W3C XQuery, 3.8.3) */
 typedef struct PFsort_t PFsort_t;
