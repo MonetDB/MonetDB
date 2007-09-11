@@ -250,8 +250,6 @@ opt_guide(PFla_op_t *n)
                               n->sem.step.level, 
                               n->sem.step.iter, n->sem.step.item, 
                               n->sem.step.item_res);
-
-                    merge_guide_steps(ret);
                 } else {
                     ret = PFla_guide_step_join (
                               L(n), R(n), n->sem.step.axis,
@@ -259,10 +257,6 @@ opt_guide(PFla_op_t *n)
                               n->sem.step.level,
                               n->sem.step.item, 
                               n->sem.step.item_res);
-
-                    if (PFprop_set (n->prop) &&
-                        !PFprop_icol (n->prop, n->sem.step.item))
-                        merge_guide_steps(ret);
                 }
             }
         
