@@ -2135,11 +2135,14 @@ if test "x$have_hwcounters" != xno; then
 	;;
    solaris*)
 	AC_CHECK_HEADERS( libcpc.h ,
-	 AC_CHECK_LIB( cpc, cpc_access , 
-	  [ HWCOUNTERS_LIBS="$HWCOUNTERS_LIBS -lcpc" 
-	    AC_DEFINE(HAVE_LIBCPC, 1, [Define if you have the cpc library])
-	    have_hwcounters=yes
-	  ]
+	 AC_CHECK_TYPE( cpc_event_t, 
+	  AC_CHECK_LIB( cpc, cpc_access , 
+	   [ HWCOUNTERS_LIBS="$HWCOUNTERS_LIBS -lcpc" 
+	     AC_DEFINE(HAVE_LIBCPC, 1, [Define if you have the cpc library])
+	     have_hwcounters=yes
+	   ]
+	  )
+	  , , [#include <libcpc.h>]
 	 )
 	)
 	if test "x$have_hwcounters" != xyes; then
