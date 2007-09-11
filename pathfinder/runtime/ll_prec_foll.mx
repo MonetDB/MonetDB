@@ -24,7 +24,7 @@
 @' $Id$
 
 @f ll_prec_foll
-@a Stefan Manegold, Peter Boncz, Jenni Zhang 
+@a Stefan Manegold, Peter Boncz, Jennie Zhang 
 @t ll_prec_foll
 
 @c
@@ -142,12 +142,21 @@ PFll_following(BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *doc_pre, BAT *pre
         GDKerror("%s: ctx_bat must be ordered on tail.\n", name);
         return GDK_FAIL;
     }
+    if (ctx_bat->ttype == TYPE_void)
+    {
+        GDKerror("%s: ctx_bat cannot have a void tail.\n", name);
+        return GDK_FAIL;
+    }
+    if (iter_bat->ttype == TYPE_void)
+    {
+        GDKerror("%s: iter_bat cannot have a void tail.\n", name);
+        return GDK_FAIL;
+    }
     if (one_ctx && !(BATtordered(iter_bat) & 1))
     {
         GDKerror("%s: iter_bat must be ordered on tail.\n", name);
         return GDK_FAIL;
     }
-
     if (!(BATtordered(doc_pre) & 1))
     {
         GDKerror("%s: doc_pre must be ordered on tail.\n", name);

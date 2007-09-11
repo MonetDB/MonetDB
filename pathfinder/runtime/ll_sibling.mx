@@ -157,7 +157,16 @@ PFll_following_sibling(BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size,
         GDKerror("%s: iter_bat must be ordered on tail.\n", name);
         return GDK_FAIL;
     }
-
+    if (ctx_bat->ttype == TYPE_void)
+    {
+        GDKerror("%s: ctx_bat cannot have a void tail.\n", name);
+        return GDK_FAIL;
+    }
+    if (iter_bat->ttype == TYPE_void)
+    {
+        GDKerror("%s: iter_bat cannot have a void tail.\n", name);
+        return GDK_FAIL;
+    }
     if (!BAThdense(pre_size))
     {
         GDKerror("%s: head of pre_size must be dense.\n", name);
