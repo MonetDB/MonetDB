@@ -14,7 +14,11 @@
 # Portions created by CWI are Copyright (C) 1997-2007 CWI.
 # All Rights Reserved.
 
-import MapiLib
+try:
+    from MonetDB import MapiLib
+except ImportError:
+    # if run from the build directory, MapiLib is not in the MonetDB module
+    import MapiLib
 
 class Mapi:
     def __init__(self, host = None, port = 0, username = None, password = None, lang = None):

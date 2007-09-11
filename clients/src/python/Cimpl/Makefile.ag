@@ -31,14 +31,14 @@ lib_MapiLib = {
 	NAME = _MapiLib
 	SOURCES = MapiLib.py.i
 	LIBS = ../../mapilib/libMapi $(PYTHON_LIBS) $(MATH_LIBS) $(DL_LIBS) $(PTHREAD_LIBS)
-	DIR = $(prefix)/$(PYTHON_LIBDIR)
+	DIR = $(prefix)/$(PYTHON_LIBDIR)/MonetDB
 }
 
 headers_py = {
 	HEADERS = py
 	SOURCES = MapiLib.py.i CMapi.py
 	TARGETS = MapiLib.py CMapi.py
-	DIR = $(prefix)/$(PYTHON_LIBDIR)
+	DIR = $(prefix)/$(PYTHON_LIBDIR)/MonetDB
 }
 
 EXTRA_DIST = MapiLib.py

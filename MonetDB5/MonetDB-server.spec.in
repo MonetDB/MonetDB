@@ -161,6 +161,7 @@ rm -fr $RPM_BUILD_ROOT
 %{_libdir}/MonetDB5/*.mal
 
 %{_mandir}/man1/monetdb.1.gz
+%{_mandir}/man1/merovingian.1.gz
 
 %attr(770,monetdb,monetdb) %dir %{_localstatedir}/MonetDB
 %attr(770,monetdb,monetdb) %dir %{_localstatedir}/MonetDB5
@@ -171,7 +172,13 @@ rm -fr $RPM_BUILD_ROOT
 %defattr(-,root,root)
 %{_bindir}/monetdb5-config
 %dir %{_includedir}/MonetDB5
-%dir %{_includedir}/MonetDB5/*
+%dir %{_includedir}/MonetDB5/atoms
+%dir %{_includedir}/MonetDB5/compiler
+%dir %{_includedir}/MonetDB5/crackers
+%dir %{_includedir}/MonetDB5/kernel
+%dir %{_includedir}/MonetDB5/mal
+%dir %{_includedir}/MonetDB5/optimizer
+%dir %{_includedir}/MonetDB5/scheduler
 %{_includedir}/MonetDB5/*.h
 %{_includedir}/MonetDB5/*/*.[hcm]
 %{_libdir}/*.so

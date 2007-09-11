@@ -12,7 +12,7 @@ try:
 except:
     pass
 
-import Mapi
+from MonetDB import Mapi
 
 
 def main(argv) :

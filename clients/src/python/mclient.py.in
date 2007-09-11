@@ -17,22 +17,13 @@
 # All Rights Reserved.
 
 import sys
-import os
 
-sys.path.append(os.path.join(os.environ.get('CLIENTS_PREFIX','@QXprefix@'),
-                             'share',
-                             'MonetDB',
-                             'python'))
-sys.path.append(os.path.join(os.environ.get('CLIENTS_SOURCE','@QXCLIENTS_SOURCE@'),
-                             'src',
-                             'python'))
-sys.path.append(os.path.join(os.environ.get('MONETDB_PREFIX','@QXprefix@'),
-                             'share',
-                             'MonetDB',
-                             'python'))
-
-import monet_options
-from Mapi import server
+from MonetDB import monet_options
+try:
+    from MonetDB.Mapi import server
+except ImportError:
+    # if running from the build directory Mapi is not in MonetDB module
+    from Mapi import server
 
 import fileinput
 
@@ -86,7 +77,11 @@ def main(argv) :
 if __name__ == "__main__":
     if '--trace' in sys.argv:
         sys.argv.remove('--trace')
-        import trace
+        try:
+            from MonetDB import trace
+        except ImportError:
+            # if running from the build directory trace is not in MonetDB module
+            import trace
         t = trace.Trace(trace=1, count=0)
         t.runfunc(main, sys.argv)
     else:

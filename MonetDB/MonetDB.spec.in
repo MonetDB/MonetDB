@@ -30,6 +30,8 @@ BuildRoot: %(mktemp -ud %{_tmppath}/%{name}-%{version}-%{release}-XXXXXX)
 BuildRequires: python
 BuildRequires: zlib-devel, bzip2-devel, openssl-devel
 
+%{!?python_sitearch: %define python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print get_python_lib(1)")}
+
 %description
 MonetDB is a database management system that is developed from a
 main-memory perspective with use of a fully decomposed storage model,
@@ -54,10 +56,25 @@ accellerators, SQL- and XML- frontends.
 
 This package contains the files needed to develop with MonetDB.
 
+%package python
+Summary: MonetDB development package
+Group: Applications/Databases
+Requires: %{name} = %{version}-%{release}
+Requires: python
+
+%description python
+MonetDB is a database management system that is developed from a
+main-memory perspective with use of a fully decomposed storage model,
+automatic index management, extensibility of data types and search
+accellerators, SQL- and XML- frontends.
+
+This package contains Python support files.
+
 %package testing
 Summary: MonetDB testing package
 Group: Applications/Databases
 Requires: %{name} = %{version}-%{release}
+Requires: %{name}-python
 
 %description testing
 MonetDB is a database management system that is developed from a
@@ -114,7 +131,6 @@ rm -fr $RPM_BUILD_ROOT
 %files devel
 %defattr(-,root,root)
 %{_bindir}/monetdb-config
-%{_datadir}/%{name}/python/*
 
 %dir %{_includedir}/%{name}
 %dir %{_includedir}/%{name}/*
@@ -123,6 +139,10 @@ rm -fr $RPM_BUILD_ROOT
 %{_libdir}/libmutils.so
 %{_libdir}/libstream.so
 %{_libdir}/libbat.so
+
+%files python
+%dir %{python_sitearch}/%{name}
+%{python_sitearch}/%{name}/*
 
 %files testing
 %{_bindir}/Mtest.py*

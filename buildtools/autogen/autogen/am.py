@@ -691,7 +691,8 @@ def am_library(fd, var, libmap, am):
         scripts_ext = libmap['SCRIPTS']
 
     ld = am_translate_dir(ld, am)
-    if sep == '_':
+    if sep == '_' and pref:
+        # if no prefix, also don't put in subdirectory
         ld = ld + '/lib'
     fd.write("%sdir = %s\n" % (libname, ld))
     if libmap.has_key('NOINST'):

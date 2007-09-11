@@ -98,15 +98,12 @@ def _configure(str):
             str = nstr
     return str
 
-# add dir where monet_options, trace & subprocess26 are installed to sys.path
-# we must expand configure variables in the process
-sys.path.append(_configure(os.path.join('@QXdatadir@','@PACKAGE@','python')))
-import monet_options
+from MonetDB import monet_options
 try:
     import subprocess
 except ImportError:
     # use private copy for old Python versions
-    import subprocess26 as subprocess
+    import MonetDB.subprocess26 as subprocess
 
 randomPortRepeat = 9
 

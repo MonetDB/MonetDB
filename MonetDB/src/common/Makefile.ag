@@ -36,7 +36,7 @@ lib_stream  =  {
 }
 
 scripts_py = {
-	DIR = pkgdatadir/python
-	SOURCES = monet_options.py.in
+	DIR = $(prefix)/$(PYTHON_LIBDIR)/MonetDB
+	SOURCES = monet_options.py.in __init__.py
 }
 

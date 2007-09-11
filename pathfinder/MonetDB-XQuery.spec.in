@@ -94,8 +94,8 @@ rm -rf $RPM_BUILD_ROOT
 make install DESTDIR=$RPM_BUILD_ROOT
 
 # cleanup stuff we don't want to install
-find $RPM_BUILD_ROOT -name \*.la | xargs rm -f
 rm -rf $RPM_BUILD_ROOT%{_libdir}/MonetDB5
+find $RPM_BUILD_ROOT -name \*.la | xargs rm -f
 
 %post -p /sbin/ldconfig
 
@@ -107,6 +107,7 @@ rm -rf $RPM_BUILD_ROOT
 %files
 %defattr(-,root,root)
 %{_bindir}/pf
+%{_bindir}/xmlshred
 %{_libdir}/MonetDB4/lib/lib_*
 %{_libdir}/MonetDB4/*.mil
 %{_bindir}/Mbeddedxq

@@ -60,7 +60,7 @@ Requires: readline-devel, openssl-devel
 Requires: php, php-devel
 %endif
 %if %{?_with_python:1}%{!?_with_python:0}
-Requires: python, python-devel, swig
+Requires: python-devel, swig
 %endif
 %if %{?_with_perl:1}%{!?_with_perl:0}
 Requires: perl, swig
@@ -98,9 +98,10 @@ Summary: MonetDB python interface
 Group: Applications/Databases
 Requires: %{name} = %{version}-%{release}
 Requires: python
-%define python_libdir %(python -c 'import distutils.sysconfig; print distutils.sysconfig.get_python_lib(1,0,"")')
+Requires: MonetDB-python
+%{!?python_sitearch: %define python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print get_python_lib(1)")}
 %if !%{?buildsystem}
-BuildRequires: python, python-devel, swig
+BuildRequires: python-devel, swig
 %endif
 %endif
 
@@ -280,9 +281,9 @@ rm -fr $RPM_BUILD_ROOT
 %{_bindir}/mclient.py
 %exclude %{_bindir}/mclient.pyc
 %exclude %{_bindir}/mclient.pyo
-%{_prefix}/%{python_libdir}/*
-%dir %{_datadir}/MonetDB/python
-%{_datadir}/MonetDB/python/Mapi.py*
+%{python_sitearch}/MonetDB/*
+%dir %{python_sitearch}/MonetSQLdb
+%{python_sitearch}/MonetSQLdb/*
 %endif
 
 %if %{?_with_perl:1}%{!?_with_perl:0}
