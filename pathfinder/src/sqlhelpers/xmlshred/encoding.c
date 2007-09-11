@@ -228,7 +228,7 @@ start_element (void *ctx, const xmlChar *tagname, const xmlChar **atts)
             while (*atts) {
                 attr_guide_node = insert_guide_node(atts[0],
                     current_guide_node, attr);
-                fprintf (out_attr, "%lu, %lu, \"%s\", \"%s\", %lu\n", 
+                fprintf (out_attr, SSZFMT ", " SSZFMT ", \"%s\", \"%s\"," SSZFMT "\n", 
                          att_id++, pre, atts[0], atts[1], attr_guide_node->guide);
                 atts += 2;
             }
@@ -424,28 +424,28 @@ print_tuple (node_t tuple, const char * format)
              i++;
              switch (format[i]) {
                  case 'e':
-                                     if (tuple.pre != -1)
-                         fprintf (out, "%lu", tuple.pre);
+                     if (tuple.pre != -1)
+                     fprintf (out, SSZFMT, tuple.pre);
                      break;
                  case 'o':  
-                                         fprintf (out, "%lu", tuple.post); break;
+                     fprintf (out, SSZFMT, tuple.post); break;
                  case 'E':
-                                     fprintf (out, "%lu", tuple.pre_stretched); break;
+                     fprintf (out, SSZFMT, tuple.pre_stretched); break;
                  case 'O':
-                                     fprintf (out, "%lu", tuple.post_stretched); break;
+                     fprintf (out, SSZFMT, tuple.post_stretched); break;
                  case 's':
-                                     fprintf (out, "%lu", tuple.size); break;
+                     fprintf (out, SSZFMT, tuple.size); break;
                  case 'l':
-                                     fprintf (out, "%u",  tuple.level); break;
+                     fprintf (out, SSZFMT,  tuple.level); break;
                  case 'p':
-                                     if (tuple.parent)
-                         fprintf (out, "%lu", tuple.parent->pre);
+                     if (tuple.parent)
+                         fprintf (out, SSZFMT, tuple.parent->pre);
                      else
                          fprintf (out, "NULL");
                      break;
                  case 'P':
-                                     if (tuple.parent)
-                         fprintf (out, "%lu",tuple.parent->pre_stretched);
+                     if (tuple.parent)
+                         fprintf (out, SSZFMT,tuple.parent->pre_stretched);
                      else
                          fprintf (out, "NULL");
                      break;
@@ -455,11 +455,11 @@ print_tuple (node_t tuple, const char * format)
                  case 'n':
                      if (tuple.name_id != -1)
                          fprintf(out, "%i", tuple.name_id);
-                                     break;
+                     break;
                  case 'a':
                      if (tuple.apre != -1)
-                         fprintf(out, "%lu", tuple.apre);
-                                     break;
+                         fprintf(out, SSZFMT, tuple.apre);
+                     break;
                  case 't':
                      if (tuple.prop) {
                          unsigned int i;
@@ -467,11 +467,11 @@ print_tuple (node_t tuple, const char * format)
                          for (i = 0; i < PROPSIZE && tuple.prop[i]; i++)
                              switch (tuple.prop[i]) {
                                  case '\n': 
-                                                                     putc (' ', out); break;
+                                     putc (' ', out); break;
                                  case '"':
-                                                                     putc ('"', out); putc ('"', out); break;
+                                     putc ('"', out); putc ('"', out); break;
                                  default:
-                                                                     putc (tuple.prop[i], out);
+                                     putc (tuple.prop[i], out);
                              }
                              putc ('"', out);
                       }
@@ -479,7 +479,7 @@ print_tuple (node_t tuple, const char * format)
                           fprintf(out, "NULL");
                       }
                       break;    
-                   case 'g':  fprintf (out, "%lu", tuple.guide); break;
+                   case 'g':  fprintf (out, SSZFMT, tuple.guide); break;
                    default:   putc (format[i], out); break;
              }
          }

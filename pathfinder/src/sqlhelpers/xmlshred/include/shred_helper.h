@@ -29,6 +29,7 @@
 #define SHRED_HELPER_H__
 
 #include "pf_config.h"
+#include <unistd.h>
 #include <stdlib.h>
 #include <stdio.h>
 
@@ -70,7 +71,7 @@
 #define false   (char)0
 #endif
 
-typedef long int nat;
+typedef ssize_t nat;
 
 /**
  * Alternative definition of strdup. It just duplicates a string

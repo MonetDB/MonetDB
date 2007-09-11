@@ -107,7 +107,7 @@ print_guide_tree(FILE *guide_out, guide_tree_t *root, int tree_depth)
     /* print the node self */
     fprintf (
         guide_out, 
-        "<node guide=\"%lu\" count=\"%lu\" kind=\"",
+        "<node guide=\"" SSZFMT "\" count=\"" SSZFMT "\" kind=\"",
         root->guide,
         root->count);
     print_kind (guide_out, root->kind);
