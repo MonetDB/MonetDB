@@ -28,9 +28,11 @@
 #ifndef SHRED_HELPER_H__
 #define SHRED_HELPER_H__
 
+#include "pf_config.h"
 #include <stdlib.h>
 #include <stdio.h>
-#include "pf_config.h"
+
+#define STACK_MAX 100
 
 /* define printf formats for printing size_t and ssize_t variables */
 #if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901 && !defined(__svr4__) && !defined(WIN32) && !defined(__sgi) && (!defined(__APPLE_CC__) || __GNUC__ > 3)
@@ -41,11 +43,11 @@
 #define SSZFMT "%ld"
 #elif defined(__APPLE_CC__) /* && __GNUC__ <= 3 */
 #define SZFMT "%zu"
-	#if SIZEOF_SIZE_T == SIZEOF_INT
-	#define SSZFMT "%d"
-	#else
-	#define SSZFMT "%ld"
-	#endif
+        #if SIZEOF_SIZE_T == SIZEOF_INT
+        #define SSZFMT "%d"
+        #else
+        #define SSZFMT "%ld"
+        #endif
 #elif SIZEOF_SIZE_T == SIZEOF_INT
 #define SZFMT "%u"
 #define SSZFMT "%d"
@@ -59,13 +61,65 @@
 #error no definition for SZFMT/SSZFMT
 #endif
 
-#ifndef HAVE_STRDUP
-char * strdup (const char * s);
+/* boolean type `bool' and constants `true', `false' */
+#ifdef HAVE_STDBOOL_H
+#include <stdbool.h>
+#elif !defined(HAVE_BOOL)
+#define bool    char
+#define true    (char)1
+#define false   (char)0
 #endif
 
-#ifndef HAVE_STRNDUP
+typedef long int nat;
+
+/**
+ * Alternative definition of strdup. It just duplicates a string
+ * given by @a s.
+ *
+ * @param s  String to duplicate.
+ */
+char * strdup (const char * s);
+
+/**
+ * Alternative definition of strdup. It just duplicates a string
+ * given by @a s.
+ * If the length exceeds n duplicate only the first @a n characters.
+ *
+ * @param s  String to duplicate.
+ * @param n  Copy only the first n characters.
+ */
 char * strndup (const char * s, size_t n);
-#endif
+
+/* global state of the shredder */
+struct shred_state_t {
+    bool quiet;               /** < shredder gives no addtional information. */
+	bool suppress_attributes; /** < suppress the attributes                  */
+	bool outfile_given;       /** < we have a file to place the generated 
+                                    stuff                                    */
+    bool infile_given;        /** < we have a file we can parse              */
+	bool sql;                 /** < format supported by sql generation       */
+	char *outfile;            /** < path of the out-file                     */
+	char *infile;             /** < path of file to parse                    */
+	char *format;             /** < format string                            */
+};
+typedef struct shred_state_t shred_state_t;
+
+/**
+ * Test if we have the right to
+ * read the given @a filename.
+ */
+bool SHreadable (const char *path);
+
+/**
+ * Test if the given @a filename
+ * exists.
+ */
+bool SHexists (const char *path);
+
+/**
+ * Open file @a path for writing.
+ */
+FILE * SHopen_write (const char *path);
 
 #endif /* SHRED_H__ */
 /* vim:set shiftwidth=4 expandtab: */
