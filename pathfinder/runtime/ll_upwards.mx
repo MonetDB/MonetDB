@@ -171,6 +171,9 @@ ll_upwards_@1(                            /* OUTPUT: */
    (void) min_iter;
    (void) iter_stack;
 
+    /* if the collection node is passed in, skip it */
+    while(cur < context_size && context[cur].pre == 0) cur++;
+
     /* we perform a forwards scan with skipping, that carries out an *optimal* 
      * depth-first DOM tree traversal (where we visit nodes only if needed)
      */ 
@@ -371,7 +374,7 @@ ll_upwards(               /* RESULT: */
      * - duple.iter is (mis)used to contain the position in context[] of
      *              the previous node (for that same iter, that is).
      */
-    prune = (duple*) GDKmalloc(niters*sizeof(duple));
+    prune = (duple*) GDKmalloc(MAX(1,niters)*sizeof(duple));
     if (prune == NULL) {
         GDKfree(context);
         return status;
@@ -386,7 +389,7 @@ ll_upwards(               /* RESULT: */
         oid pre = context[i].pre;
         oid iter = context[i].iter - min_iter;
 
-        if (pre < prune[iter].pre) { 
+        if (pre > 0 && pre < prune[iter].pre) { 
             context[prune[iter].iter].pre = killed; /* prune it */ 
         }
         /* set the new bound */
@@ -424,7 +427,7 @@ ll_upwards(               /* RESULT: */
     if (axis == LL_UPWARDS_PARENT) {
         /* iter_stack contains for each depth an array[iter], allocated in bulk */
         oid *iter_stack[XML_DEPTH_MAX];
-        oid *buf = (oid*) GDKmalloc((m=XML_DEPTH_MAX*niters)*sizeof(oid)); 
+        oid *buf = (oid*) GDKmalloc(MAX(1,(m=XML_DEPTH_MAX*niters))*sizeof(oid)); 
         if (buf) {
              /* initialize it, filled will all nil */
              for(i=0; i<(size_t) XML_DEPTH_MAX; i++) iter_stack[i] = buf + i*niters;
@@ -463,7 +466,7 @@ ll_upwards(               /* RESULT: */
             }
             GDKfree(buf);
         }
-    } else if ((context_result=GDKzalloc(n*sizeof(duple))) != NULL) {
+    } else if ((context_result=GDKzalloc(MAX(1,n)*sizeof(duple))) != NULL) {
         /* in first pass, bounds contains a partitioning bound (=0 < root) */
         if (ll_upwards_ancestor_cnt(
                  context_result, n, 
