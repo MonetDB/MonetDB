@@ -566,5 +566,10 @@ PFabssyn_pretty (FILE *f, PFpnode_t *t, bool qnames_resolved)
     fputc ('\n', f);
 }
 
+void
+PFabssyn_stdout (PFpnode_t *t)
+{
+    PFabssyn_pretty (stdout, t, 0);
+}
 
 /* vim:set shiftwidth=4 expandtab: */

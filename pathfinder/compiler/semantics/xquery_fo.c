@@ -1850,26 +1850,27 @@ PFfun_xquery_fo (void)
       { .ns = PFns_lib, .loc = "collections-unsafe",
         .arity = 0, .sig_count = 1, .sigs = { {
             .ret_ty = PFty_star( PFty_xs_anyElement ()) } } }
-    ,  /* pf:attribute (node()*, string) as element()* */
+    ,  /* pf:attribute (node()*, string, string, string, string, string) as node()* */
       { .ns = PFns_lib, .loc = "attribute",
-        .arity = 2, .sig_count = 1, .sigs = { {
-            .par_ty = (PFty_t[]) { PFty_star( PFty_xs_anyNode ()),
-                                   PFty_xs_string () },
-            .ret_ty = PFty_star( PFty_xs_anyElement ()) } } }
-    ,  /* pf:attribute (node()*, string, string, string) as element()* */
-      { .ns = PFns_lib, .loc = "attribute",
-        .arity = 4, .sig_count = 1, .sigs = { {
+        .arity = 6, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_star( PFty_xs_anyNode ()),
                                    PFty_xs_string (),
                                    PFty_xs_string (),
+                                   PFty_xs_string (),
+                                   PFty_xs_string (),
                                    PFty_xs_string () },
-            .ret_ty = PFty_star( PFty_xs_anyElement ()) } } }
-    ,  /* pf:text (node()*, string) as text()* */
+            .ret_ty = PFty_star( PFty_xs_anyNode ()) } } }
+    ,  /* pf:text (node()*, string) as node()* */
       { .ns = PFns_lib, .loc = "text",
         .arity = 2, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_star( PFty_xs_anyNode ()),
                                    PFty_xs_string () },
-            .ret_ty = PFty_star( PFty_text()) } } }
+            .ret_ty = PFty_star( PFty_xs_anyNode()) } } }
+    ,  /* pf:supernode (node()*) as node()* */
+      { .ns = PFns_lib, .loc = "supernode",
+        .arity = 1, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_star( PFty_xs_anyNode ()) },
+            .ret_ty = PFty_star( PFty_xs_anyNode ()) } } }
     ,  /* pf:add-doc (string, string) as docmgmt */
       { .ns = PFns_lib, .loc = "add-doc",
         .arity = 2, .sig_count = 1, .sigs = { {
@@ -2215,6 +2216,7 @@ PFfun_xquery_fo (void)
             .par_ty = (PFty_t[]) { PFty_xs_integer () },
             .ret_ty = PFty_xs_integer () } } }
 #endif
+
 #ifdef HAVE_PROBXML
     , /* pxmlsup:val_except (str*, str*) as str* */
       { .ns = PFns_pxmlsup, .loc = "val_except",

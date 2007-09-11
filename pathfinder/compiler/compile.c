@@ -49,6 +49,7 @@
 #include "abssyn.h"
 #include "varscope.h"     /* variable scoping */
 #include "normalize.h"    /* parse tree normalization */
+#include "heuristic.h"    /* selection pushdown for MonetDB */
 #include "qname.h"        /* Pathfinder's QName handling */
 #include "ns.h"           /* namespaces */
 #include "nsres.h"        /* namespace resolution */
@@ -358,6 +359,12 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
     /* Abstract syntax tree normalization 
      */
     proot = PFnormalize_abssyn (proot);
+
+    /* Heuristic path-reversal rewrites to start evaluation with indexable expressions
+     */
+    if (status->summer_branch) { /* NOTE: algebra MIL/MAL generation could/should also use it.. */
+        proot = PFheuristic_index (proot);
+    }
 
     tm = PFtimer_stop (tm);
     if (status->timing)
@@ -791,6 +798,9 @@ PFcompile_MonetDB (char *xquery, char* url, char** prologue, char** query, char*
         num_fun = PFparse (xquery, &proot);
         module_base = PFparse_modules (proot);
         proot = PFnormalize_abssyn (proot);
+        if (PFstate.summer_branch) { /* algebra MIL/MAL generation could/should also use it.. */
+             proot = PFheuristic_index (proot);
+        }
         PFqname_init ();
         PFns_resolve (proot);
         PFextract_options (proot);

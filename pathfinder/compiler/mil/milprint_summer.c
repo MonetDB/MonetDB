@@ -56,6 +56,7 @@
 #define USE_DEPRECATED_ACCESS_TO_TYPE_SYSTEM 1
 
 #include "pathfinder.h"
+#include "monet_utils.h"
 
 #include <stdio.h>
 #include <assert.h>
@@ -1838,7 +1839,7 @@ translateTypeswitch (opt_t *f, int cur_level, PFty_t input_type, PFty_t seq_type
         milprintf(f,
                 "var single_iters := histogram(iter).[=](1).select(true).mirror();\n"
                 "single_iters := single_iters.leftjoin(iter.reverse());\n"
-                "var matching_iters := single_iters.leftfetchjoin(kind).[=](%s).select(true);\n"
+                "var matching_iters := single_iters.leftfetchjoin(kind).[=](%s);\n"
                 "single_iters := nil;\n",
                 kind);
     else
@@ -1847,10 +1848,13 @@ translateTypeswitch (opt_t *f, int cur_level, PFty_t input_type, PFty_t seq_type
                 "var iter_kind := iter.reverse().leftfetchjoin(kind);\n"
                 "var kind_count := histogram(iter_kind.[=](%s).select(true).reverse());\n"
                 "iter_kind := nil;\n"
-                "var matching_iters := iter_count.[=](kind_count).select(true);\n"
+                "var matching_iters := iter_count.[=](kind_count);\n"
                 "iter_count := nil;\n"
                 "kind_count := nil;\n",
                 kind);
+    milprintf(f,
+        "if (type(matching_iters) = bat) { matching_iters := matching_iters.select(true); }\n"
+        "else { matching_iters := matching_iters.ifthenelse(iter,bat(void,oid).seqbase(0@0)); }\n");
 
     /* create result for empty iterations */
     if (qualifier == 0 || qualifier == 2)
@@ -4702,12 +4706,9 @@ translateAggregates (opt_t *f, int code, int rc,
     else 
         addValues (f, t_co, "iter_aggr", "item");
 
-    milprintf(f,
-            "} else {\n"
-            "item%s := empty%s_bat;\n"
-            "} # end of fn:%s\n",
-            item_ext, item_ext,
-            op);
+    milprintf(f, "} else {\n");
+    translateEmpty_(f, rcode);
+    milprintf(f, "} # end of fn:%s\n", op);
 
     return (code)?rcode:NORMAL;
 }
@@ -4743,8 +4744,10 @@ fn_abs (opt_t *f, int code, int rc, char *op)
         addValues (f, t_co, "res", "item");
 
     item_ext = (code)?item_ext:"";
-    milprintf(f, "} # end of fn:%s\n", op);
 
+    milprintf(f, "} else {\n");
+    translateEmpty_(f, rc);
+    milprintf(f, "} # end of fn:%s\n", op);
 }
 
 /**
@@ -6585,22 +6588,18 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                 "  pos  := tmark_grp_unique(iter,ipik);\n"
                 "} # end of translate pf:collections () as string*\n", cur_level, consistent);
         return NORMAL;
-    } else if (fun->arity == 2 && ((PFqname_eq(fnQname,PFqname (PFns_lib,"text")) == 0) ||
-               (rc = 2, PFqname_eq(fnQname,PFqname (PFns_lib,"attribute")) == 0))) 
+    } else if (PFqname_eq(fnQname,PFqname (PFns_lib,"text")) == 0) 
     {
-        char *fcn = (rc == 2)?"attribute":"text";
-
         /* index-powered element lookup by attribute or text-child on equal value (string) 
-         * - pf:text(NODES, VALUE) 
-         *   delivers all text nodes from the fragments in NODES with a VALUE as text value
-         * - pf:attribute(NODES, VALUE) 
-         *   delivers all elemeny nodes from the fragments in NODES with a VALUE as attribute value
-         * within each iter, the returned pre-sequence is unique and in doc-order
+         * - pf:text(NODES, HASHVALUE) 
+         *   delivers all text nodes from the fragments in NODES with a text value that hashes on HASHVALUE
          */
 
         /* NODES that solely identify the XML fragment(s) of interest */ 
         rc = translate2MIL (f, NORMAL, cur_level, counter, L(args));
-        milprintf(f, "iter := iter.materialize(ipik);\nkind := kind.materialize(ipik);\n");
+        milprintf(f, "iter := iter.materialize(ipik);\n"
+                     "item := item.materialize(ipik);\n"
+                     "kind := kind.materialize(ipik);\n");
 
         /* VALUES to look for */
         saveResult_ (f, ++counter, NORMAL);
@@ -6608,57 +6607,95 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         milprintf(f, "item_str_ := item%s.materialize(ipik);\n",  (rc == NORMAL)?val_join(STR):"_str_");
 
         milprintf(f,
-                "{ # translate pf:%s () as string*\n"
-                "  var id_pre := vx_lookup(ws, iter%03u, kind%03u, item_str_, str_nil, str_nil, %s);\n"
+                "{ # translate pf:text($ctx as node()*, $hash as string) as element()*\n"
+                "  var id_pre := vx_lookup(ws, iter%03u, item%03u, kind%03u, item_str_, \"*\", \"*\", \"*\", \"*\", false);\n"
                 "  iter := id_pre.hmark(0@0).leftfetchjoin(iter%03u);\n"
-                "  kind := id_pre.hmark(0@0).leftfetchjoin(kind%03u);\n"
+                "  kind := set_kind(get_container(id_pre.hmark(0@0).leftfetchjoin(kind%03u)),ELEM);\n"
                 "  item := id_pre.tmark(0@0);\n"
                 "  ipik := item;\n"
                 "  pos  := tmark_grp_unique(iter,ipik);\n"
-                "} # end of translate pf:%s () as element()*\n", 
-                    fcn, counter, counter, (*fcn=='a')?"false":"true", counter, counter, fcn);
+                "} # end of translate pf:text () as element()*\n", counter, counter, counter, counter, counter);
 
         deleteResult_ (f, counter, NORMAL);
         return NORMAL;
     } else if (PFqname_eq(fnQname,PFqname (PFns_lib,"attribute")) == 0)
     {
-        /* index-powered element lookup by attribute or text-child on equal value (string) 
-         * - pf:attribute(NODES, VALUE, URI, LOC) 
-         *   all elements (any qname) from the fragments in NODES with a URI:LOC attribute with value "VALUE"
-         * within each iter, the returned pre-sequence is unique and in doc-order
+        /* index-powered element lookup by attribute on equal value (string) 
+         * - pf:attribute(NODES,URI,LOC,HASHVALUE) 
+         *   delivers all elemeny nodes from the fragments in NODES with a URI:LOC attribute value that hashes on HASHVALUE
          */
 
         /* NODES that solely identify the XML fragment(s) of interest */ 
         rc = translate2MIL (f, NORMAL, cur_level, counter, L(args));
-        milprintf(f, "iter := iter.materialize(ipik);\nkind := kind.materialize(ipik);\n");
-
-        /* VALUES to look for */
+        milprintf(f, "iter := iter.materialize(ipik);\n"
+                     "item := item.materialize(ipik);\n"
+                     "kind := kind.materialize(ipik);\n");
         saveResult_ (f, ++counter, NORMAL);
-        rc = translate2MIL (f, VALUES, cur_level, counter, RL(args));
-        milprintf(f, "item_str_ := item%s.materialize(ipik);\n",  (rc == NORMAL)?val_join(STR):"_str_");
 
         /* attribute URI and LOC parameters are assumed to be constant value (no support for computed qnames) */
+        rc = translate2MIL (f, VALUES, cur_level, counter, RL(args));
+        milprintf(f, "item_str_ := item%s.fetch(0)%s;\n", (rc == NORMAL)?"":"_str_", (rc == NORMAL)?val_join(STR):"");
         saveResult_ (f, ++counter, STR);
         rc = translate2MIL (f, VALUES, cur_level, counter, RRL(args));
         milprintf(f, "item_str_ := item%s.fetch(0)%s;\n", (rc == NORMAL)?"":"_str_", (rc == NORMAL)?val_join(STR):"");
         saveResult_ (f, ++counter, STR);
-        rc = translate2MIL (f, VALUES, cur_level, counter, RRRL(args));
+        rc = translate2MIL (f, VALUES, cur_level, counter, RL(RR(args)));
         milprintf(f, "item_str_ := item%s.fetch(0)%s;\n", (rc == NORMAL)?"":"_str_", (rc == NORMAL)?val_join(STR):"");
+        saveResult_ (f, ++counter, STR);
+        rc = translate2MIL (f, VALUES, cur_level, counter, RL(RRR(args)));
+        milprintf(f, "item_str_ := item%s.fetch(0)%s;\n", (rc == NORMAL)?"":"_str_", (rc == NORMAL)?val_join(STR):"");
+        saveResult_ (f, ++counter, STR);
+
+        /* VALUES to look for */
+        rc = translate2MIL (f, VALUES, cur_level, counter, RRL(RRR(args)));
+        milprintf(f, "item_str_ := item%s.materialize(ipik);\n",  (rc == NORMAL)?val_join(STR):"_str_");
 
         milprintf(f,
-                "{ # translate pf:attribute() as string*\n"
-                "  var id_pre := vx_lookup(ws, iter%03u, kind%03u, item_str_%03u, item_str_%03u, item_str_, false);\n"
+                "{ # translate pf:attribute($ctx as node()*, $elt_ns as xs:string, $elt_loc as xs:string, $attr_ns as xs:string, $attr_loc as xs:string, $hash as xs:double) as element()*\n"
+                "  var id_pre := vx_lookup(ws, iter%03u, item%03u, kind%03u, item_str_, item_str_%03u, item_str_%03u, item_str_%03u, item_str_%03u, true);\n"
                 "  iter := id_pre.hmark(0@0).leftfetchjoin(iter%03u);\n"
-                "  kind := id_pre.hmark(0@0).leftfetchjoin(kind%03u);\n"
+                "  kind := set_kind(get_container(id_pre.hmark(0@0).leftfetchjoin(kind%03u)),ELEM);\n"
                 "  item := id_pre.tmark(0@0);\n"
                 "  ipik := item;\n"
                 "  pos  := tmark_grp_unique(iter,ipik);\n"
                 "} # end of translate pf:attribute () as element()*\n",
-                   counter-2, counter-2, counter-1, counter, counter-2, counter-2);
+                   counter-4, counter-4, counter-4, counter-3, counter-2, counter-1, counter, counter-4, counter-4);
 
         deleteResult_ (f, counter--, STR);
         deleteResult_ (f, counter--, STR);
+        deleteResult_ (f, counter--, STR);
+        deleteResult_ (f, counter--, STR);
         deleteResult_ (f, counter, NORMAL);
+        return NORMAL;
+    } else if (PFqname_eq(fnQname,PFqname (PFns_lib,"supernode")) == 0) 
+    {
+        /* pf:supernode() returns the input sequence, but adds the collection super-root (0@0) for each collection 
+         * for which at least one document node is present (function is loop-lifted). Respects item (sub)-ordering.
+         * It is used in the post-filter of the automatic selection pushdown, and mitigates for the fact that
+         * the upwards axes do not produce collection super-roots, by re-introducing it artificially.
+         */
+        rc = translate2MIL (f, NORMAL, cur_level, counter, L(args));
+        milprintf(f, 
+                "{ # translate pf:supernode (node()*) as node()*\n"
+                "  item := item.materialize(ipik);\n"
+                "  var cont := kind.get_container();\n"
+                "  var docnodes := mposjoin(item, cont, ws.fetch(PRE_LEVEL)).ord_select(chr(-1));\n"
+                "  if (count(docnodes) > 0) {\n"
+                "     var tmp := docnodes.hmark(0@0);\n"
+                "     var tmp_iter := tmp.leftfetchjoin(iter).materialize(tmp);\n"
+                "     var tmp_cont := tmp.leftfetchjoin(cont).materialize(tmp);\n"
+                "     tmp := docnodes.fetch(CThistogram(CTgroup(tmp_iter, tmp_cont)));\n"
+                "     tmp := tmp.nlthetajoin(bat(chr,oid).insert(chr(-1),0@0).insert(chr(-1),oid_nil),EQ,2LL*lng(count(tmp)));\n"
+                "     tmp := outerjoin(mirror(item),tmp);\n"
+                "    iter := tmp.hmark(0@0).leftfetchjoin(iter);\n"
+                "    kind := tmp.hmark(0@0).leftfetchjoin(kind);\n"
+                "    item := tmp.hmark(0@0).leftfetchjoin(item);\n"
+                "     tmp := tmp.tmark(0@0).ord_select(0@0);\n"
+                "    item := item.access(BAT_WRITE).inplace(tmp).access(BAT_READ);\n"
+                "    pos  := tmark_grp_unique(iter,item);\n"
+                "    ipik := item;\n"
+                "  }\n"
+                "} # end of translate pf:supernode (node()*) as node()*\n");
         return NORMAL;
     } else if (PFqname_eq(fnQname,PFqname (PFns_lib,"docname")) == 0) {
         rc = translate2MIL (f, NORMAL, cur_level, counter, L(args));
@@ -7643,14 +7680,16 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                 /* FIXME: in theory this should work (in practise it also
                           does with some examples), but it is assumed,
                           that the iter columns are dense and aligned */
-                "var cont_before := kind%03u.[<](kind);\n"
-                "var cont_equal := kind%03u.[=](kind);\n"
+                "var cont1 := get_container(kind%03u);\n"
+                "var cont2 := get_container(kind);\n"
+                "var cont_before := cont1.[<](cont2);\n"
+                "var cont_equal := cont1.[=](cont2);\n"
                 "var pre_before := item%03u.[<](item);\n"
                 "var node_before := cont_before.[or](cont_equal.[and](pre_before));\n"
                 "item := node_before.[oid]().tmark(0@0);\n"
                 "kind := BOOL;\n"
                 "} # end of translate op:node-before (node, node) as boolean\n",
-                counter, counter, counter);
+                counter, counter);
         deleteResult (f, counter);
         return NORMAL;
     }
@@ -7665,8 +7704,10 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                 /* FIXME: in theory this should work (in practise it also
                           does with some examples), but it is assumed,
                           that the iter columns are dense and aligned */
-                "var cont_after := kind%03u.[>](kind);\n"
-                "var cont_equal := kind%03u.[=](kind);\n"
+                "var cont1 := get_container(kind%03u);\n"
+                "var cont2 := get_container(kind);\n"
+                "var cont_after := cont1.[>](cont2);\n"
+                "var cont_equal := cont1.[=](cont2);\n"
                 "var pre_after := item%03u.[>](item);\n"
                 "var node_after := cont_after[or](cont_equal[and](pre_after));\n"
                 "cont_after := nil;\n"
@@ -7675,7 +7716,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                 "item := node_after.[oid]().tmark(0@0);\n"
                 "kind := BOOL;\n"
                 "} # end of translate op:node-after (node, node) as boolean\n",
-                counter, counter, counter);
+                counter, counter);
         deleteResult (f, counter);
         return NORMAL;
     }
@@ -7690,7 +7731,9 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                 /* FIXME: in theory this should work (in practise it also
                           does with some examples), but it is assumed,
                           that the iter columns are dense and aligned */
-                "var cont_equal := kind%03u.[=](kind);\n"
+                "var cont1 := get_container(kind%03u);\n"
+                "var cont2 := get_container(kind);\n"
+                "var cont_equal := cont1.[=](cont2);\n"
                 "var pre_equal := item%03u.[=](item);\n"
                 "var node_equal := cont_equal[and](pre_equal);\n"
                 "cont_equal := nil;\n"
@@ -8644,6 +8687,8 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
             addValues (f, t_co, "res", "item");
     
         item_ext = (code)?item_ext:"";
+        milprintf(f, "} else {\n");
+        translateEmpty_(f, rc);
         milprintf(f, "} # end of tijah:resultsize\n");
         return rc;
     }
@@ -8726,6 +8771,8 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
 		addValues (f, t_co, "res", "item");
 
         item_ext = (code)?item_ext:"";
+        milprintf(f, "} else {\n");
+        translateEmpty_(f, rc);
         milprintf(f, "} # end of fn:newid\n");
         return rc;
     }
@@ -8763,7 +8810,6 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
  * @param c the Core node containing the rest of the subtree
  * @result the kind indicating, which result interface is chosen
  */
-
 static int
 translate2MIL (opt_t *f, int code, int cur_level, int counter, PFcnode_t *c)
 {
@@ -8847,24 +8893,26 @@ translate2MIL (opt_t *f, int code, int cur_level, int counter, PFcnode_t *c)
         case c_lit_dec:
             if (code == VALUES)
             {
+                char* b = (char*) &c->sem.dec;
                 rc = DEC;
                 milprintf(f,
                         "iter := loop%03u.tmark(0@0);\n"
                         "ipik := iter;\n"
                         "pos := 1@0;\n"
-                        "item%s := dbl(%gLL);\n"
+                        "item%s := dbl(%d,%d,%d,%d,%d,%d,%d,%d);\n"
                         "kind := DEC;\n",
-                        cur_level, kind_str(rc), 
-                        c->sem.dec);
+                        cur_level, kind_str(rc), b[0],b[1],b[2],b[3],b[4],b[5],b[6],b[7]);
             }
             else
             {
+                char* b = (char*) &c->sem.dec;
                 rc = NORMAL;
                 milprintf(f,
                         "{\n"
-                        "dec_values.append(dbl(%gLL));\n"
-                        "var itemID := dec_values.reverse().find(dbl(%gLL));\n",
-                        c->sem.dec, c->sem.dec);
+                        "dec_values.append(dbl(%d,%d,%d,%d,%d,%d,%d,%d));\n"
+                        "var itemID := dec_values.reverse().find(dbl(%d,%d,%d,%d,%d,%d,%d,%d));\n", 
+                            b[0],b[1],b[2],b[3],b[4],b[5],b[6],b[7], 
+                            b[0],b[1],b[2],b[3],b[4],b[5],b[6],b[7]);
                 /* translateConst needs a bound variable itemID */
                 translateConst(f, cur_level, "DEC");
                 milprintf(f, 
@@ -8874,24 +8922,26 @@ translate2MIL (opt_t *f, int code, int cur_level, int counter, PFcnode_t *c)
         case c_lit_dbl:
             if (code == VALUES)
             {
+                char* b = (char*) &c->sem.dbl;
                 rc = DBL;
                 milprintf(f,
                         "iter := loop%03u.tmark(0@0);\n"
                         "ipik := iter;\n"
                         "pos := 1@0;\n"
-                        "item%s := dbl(%gLL);\n"
+                        "item%s := dbl(%d,%d,%d,%d,%d,%d,%d,%d);\n"
                         "kind := DBL;\n",
-                        cur_level, kind_str(rc), 
-                        c->sem.dbl);
+                        cur_level, kind_str(rc), b[0],b[1],b[2],b[3],b[4],b[5],b[6],b[7]);
             }
             else
             {
+                char* b = (char*) &c->sem.dbl;
                 rc = NORMAL;
                 milprintf(f,
                         "{\n"
-                        "dbl_values.append(dbl(%gLL));\n"
-                        "var itemID := dbl_values.reverse().find(dbl(%gLL));\n",
-                        c->sem.dbl, c->sem.dbl);
+                        "dec_values.append(dbl(%d,%d,%d,%d,%d,%d,%d,%d));\n"
+                        "var itemID := dec_values.reverse().find(dbl(%d,%d,%d,%d,%d,%d,%d,%d));\n", 
+                            b[0],b[1],b[2],b[3],b[4],b[5],b[6],b[7], 
+                            b[0],b[1],b[2],b[3],b[4],b[5],b[6],b[7]);
                 /* translateConst needs a bound variable itemID */
                 translateConst(f, cur_level, "DBL");
                 milprintf(f, 
@@ -8980,6 +9030,8 @@ translate2MIL (opt_t *f, int code, int cur_level, int counter, PFcnode_t *c)
             
             mapBack (f, cur_level);
             cleanUpLevel (f, cur_level);
+            milprintf(f, "} else {\n");
+            translateEmpty_(f, rc);
             milprintf(f, "}  # end of for-translation\n");
             break;
         case c_if:

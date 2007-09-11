@@ -70,13 +70,12 @@ const XQUERY_STATUS_INITIALIZING := 0;
 const XQUERY_STATUS_RECOVERING   := 1; 
 const XQUERY_STATUS_GARBAGECOLL  := 2; 
 const XQUERY_STATUS_READY        := 3; 
-var xquery_status := XQUERY_STATUS_INITIALIZING;
 
-proc tj_is_indexed(str name) : bit { return false; } # dummy function in case we have no tijah
+proc tj_is_indexed(str name) : bit { return false; }
 
-var CATCH_module_pftiah := CATCH(module("pftijah")); # load pftijah only if available
-if (not(isnil(CATCH_module_pftiah))) {
-    if (trim(CATCH_module_pftiah) != "!ERROR: moduleClient: module(pftijah) load error.") {
+var CATCH_module_pftijah := CATCH(module("pftijah")); # load pftijah only if available
+if (not(isnil(CATCH_module_pftijah))) {
+    if (trim(CATCH_module_pftijah) != "!ERROR: moduleClient: module(pftijah) load error.") {
         ERROR("pathfinder: when trying to load module 'pftijah':\n" + CATCH_module_pftiah);
     }
 }
@@ -1371,13 +1370,13 @@ PROC ws_create(int update) : BAT[void,bat]
     ws.fetch(REGION_END).append(empty_bat);
 
     # add a (bogus) collection root pre=0@0 to the temporary document container
-    ws.fetch(PRE_SIZE).fetch(WS).append(int_nil);
-    ws.fetch(PRE_LEVEL).fetch(WS).append(chr(-2));
-    ws.fetch(PRE_PROP).fetch(WS).append(oid_nil);
-    ws.fetch(PRE_KIND).fetch(WS).append(COLLECTION);
-    ws.fetch(PRE_NID).fetch(WS).append(oid_nil);
-    ws.fetch(PRE_CONT).fetch(WS).append(oid_nil);
-    ws.fetch(NID_RID).fetch(WS).append(0@0);
+    ws.fetch(PRE_SIZE).fetch(WS).append(int_nil).append(0);
+    ws.fetch(PRE_LEVEL).fetch(WS).append(chr(-2)).append(chr(-1));
+    ws.fetch(PRE_PROP).fetch(WS).append(oid_nil).append(oid_nil);
+    ws.fetch(PRE_KIND).fetch(WS).append(COLLECTION).append(DOCUMENT);
+    ws.fetch(PRE_NID).fetch(WS).append(oid_nil).append(oid_nil);
+    ws.fetch(PRE_CONT).fetch(WS).append(oid_nil).append(oid_nil);
+    ws.fetch(NID_RID).fetch(WS).append(0@0).append(1@0);
     ws.fetch(FRAG_ROOT).fetch(WS).insert(0@0,1@0); # first root is 1@0
 
     # add identical bat references as 'master' bats just to make the transient container complete  
@@ -1907,14 +1906,32 @@ QN_NID master.
 The VX index is used for attribute-value and text-value indexing. It only 
 supports equality tests on string values. It indexes *all* text nodes and
 attribute values, linking those to a parent element. It does not replicate
-the string values (could be huge), rather stores a hash value. This hash-value
-also combines a qname-id (for attributes, the attribute-qname, for text-nodes
-the parent element qname).
+the string values (could be huge), rather stores a hash value. For attributes,
+this hash-value also combines a qname-id for the attribute as well as the
+parent element (for text nodes, no such info is available).
 
-The VX index is exploited by the new pf:attr() and pf:text() builtins.
-It is *also* used to power ID/IDREF access. The shredder marks in the qn_* table
-all QNames of ID/IDREF attributes, using a |id| and |idref| suffix in the
-prefix_uri_loc bat.. By joining against all such marked QNames, we can use
+The VX index is exploited by the new pf:attributes() and pf:text() builtins
+that return node candidates based on attribute and text-value equality.
+
+The VX index is not guaranteed to be complete. The rationale is that it
+tends not be be very useful to use index access for highly frequent values,
+while on the other hand those frequent values may occupy the majority of the 
+index memory. Therefore, such frequent values are omitted.  
+An [hash,1@0] entry called "tombstone" signals the fact that values with 
+hash code 'hash' have been omitted from the index. The 1@0 PRE-id is a document-node 
+(in all containers). It was chosen as the special value because it can 
+never be returned (normally) by pf:attribute() and pf:text(), which 
+return element and text nodes, respectively *and* in XQuery queries we can 
+test whether a returned candidate is a document node:
+
+ some $x in pf:text(..) satisfies $x instance of document-node()
+
+This construct is used in the generated XQuery to make a run-time decision
+whether to use an indexed access path or not.
+
+The VX index is *also* used to power ID/IDREF access. The shredder marks in the 
+qn_* table all QNames of ID/IDREF attributes, using a |id| and |idref| suffix in 
+the prefix_uri_loc bat.. By joining against all such marked QNames, we can use
 the attribute indes to service ID/IDREF calls. Thus, the VX index has
 replaced the previous mechanism, that could not handle updates.
 
@@ -1954,29 +1971,21 @@ PROC _runtime_get(str colname) : BAT[lock,bat]
     return colname_runtime.find(colname);
 }
 
+const IDX_MAGICAL_CONST := 1024;
 
-PROC vx_reduce(BAT[oid,int] vxt, BAT[void,oid] vxp) : BAT[oid,oid]
+PROC vx_reduce(BAT[void,int] vxt, BAT[void,oid] vxp) : BAT[oid,oid]
 {
     # sort on hash code, to make next stap bearable
-        vxt := vxt.tsort();
-        vxp := vxt.hmark(0@0).leftfetchjoin(vxp);
-        if ( ( vxp.head() = "void" ) and ( vxp.tail() = "void" ) ) {
-            # in case of [void,void] BATs, access(BAT_WRITE) materializes the head,
-            # which the inplace() later on does not like;
-            # adding a copy() that materializes the tail seems to help ...
-            vxp := vxp.copy().access(BAT_WRITE);
-        } else {
-            vxp := vxp.access(BAT_WRITE);
-        }
-        vxt := vxt.tmark(0@0);
+    vxt := vxt.tsort();
+    vxp := vxt.hmark(0@0).leftfetchjoin(vxp).copy().access(BAT_WRITE);
+    vxt := vxt.tmark(0@0);
 
     # eliminate too frequent values from the index
-    var lim := 2048; 
-    var sel := histogram(vxt);
-        sel := [<](sel, lim);
+    var lim := IDX_MAGICAL_CONST; 
+    var sel := histogram(vxt).[<](lim);
         sel := vxt.leftjoin(sel).tmark(0@0).access(BAT_WRITE); # true for infrequent values
     var tmp := reverse(kunique(reverse(vxt))).project(true);   # true for first frequent value only
-        vxp := vxp.inplace(mirror(tmp).leftfetchjoin(sel).ord_uselect(false).project(oid_nil));
+        vxp := vxp.inplace(mirror(tmp).leftfetchjoin(sel).ord_uselect(false).project(1@0));
         sel := sel.inplace(tmp).ord_uselect(true).mirror(); tmp := nil; # select first hsh occurrence anyway 
 
     return reverse(sel.leftfetchjoin(vxt)).leftfetchjoin(vxp); 
@@ -2020,8 +2029,9 @@ PROC __runtime_index(oid coll_oid,
     var vxp := vxm.leftfetchjoin(nid);
     var vxt := vxm.leftfetchjoin(prp); vxm := nil;
         vxt := vxt.leftfetchjoin(prp_txt);
-        vxt := [hash](vxt);
-        vxm := vx_reduce(vxt, vxp); vxp := nil; vxt := nil;
+        vxt := [xquery_hash](vxt);
+        vxm := vx_reduce(vxt, vxp);
+        vxp := nil; vxt := nil;
 
     # add the newly shredded attributes. The new attributes are >att and have an attr_own > pre
         tmp := attr_own.reverse().ord_select(att,oid_nil).reverse();
@@ -2031,11 +2041,15 @@ PROC __runtime_index(oid coll_oid,
         tmp := tmp.ord_select(oid_nil,oid_nil);
         tmp := tmp.[swizzle](map_pid); 
     }
-        tmp := tmp.ord_uselect(pre,oid_nil).hmark(0@0);
-        vxt := [int](tmp.leftfetchjoin(attr_qn)).access(BAT_WRITE);
-        vxt := [:rotate_xor_hash=](vxt, 13, tmp.leftfetchjoin(attr_prp).leftfetchjoin(prp_val));
+        vxp := tmp.ord_select(pre,oid_nil);
+        tmp := vxp.hmark(0@0);
+        vxp := [int](vxp.tmark(0@0).leftfetchjoin(prp)).access(BAT_WRITE); 
+        vxp := [:rotate_xor_hash=](vxp, 13, tmp.leftfetchjoin(attr_qn));
+        vxt := [xquery_hash](tmp.leftfetchjoin(attr_prp).leftfetchjoin(prp_val)).access(BAT_WRITE);
+        vxt := [:rotate_xor_hash=](vxt, 13, vxp);
         vxp := tmp.leftfetchjoin(attr_own); tmp := nil;
-        tmp := vx_reduce(vxt, vxp); vxp := nil; vxt := nil;
+        tmp := vx_reduce(vxt, vxp);
+        vxp := nil; vxt := nil;
 
     if (updatable or (coll_oid < DOCID_MIN)) { # hash-index, created here each time document is first used
         (idx := bat(oid, oid, (count(idx)*8)/7).insert(idx)).accbuild("hash");
@@ -2043,8 +2057,7 @@ PROC __runtime_index(oid coll_oid,
     } else { # persistent read-only case. indices are sorted (binary search) 
         # idx [qn,pre] lexico-ordered (thanks to stable-sort)
         idx := idx.access(BAT_WRITE).sorder().access(BAT_READ).rename(nme).mmap(1).persists(true);
-        tmp := merged_union(vxm.hmark(0@0), tmp.hmark(0@0), vxm.tmark(0@0), tmp.tmark(0@0)); vxm := nil; 
-        vxm := reverse(tmp.fetch(0)).leftfetchjoin(tmp.fetch(1)).rename(vx_nme).mmap(1).persists(true); 
+        vxm.access(BAT_WRITE).insert(tmp).order().access(BAT_READ).rename(vx_nme).mmap(1).persists(true); 
         if (pre = 1@0) CATCH(pf_checkpoint(bat(void,str).append(nme).append(vx_nme))); # immediate commit
     }
     return new(void,bat).insert(nil,idx).insert(nil,vxm);
@@ -2108,7 +2121,7 @@ PROC __runtime_maintain(lng wsid,
         idx.accbuild("hash"); # the hash table on qn ensures fast nsloc lookup
 
         # do the same for value index
-        var ignores := vxm.uselect(oid_nil);
+        var ignores := vxm.uselect(1@0);
         vxi.delete(ignores); # ignore hash-codes marked nil (too frequent)
         vxd.delete(ignores); # idem
         vxm.insert(vxi);
@@ -2268,132 +2281,109 @@ PROC ws_lookup(BAT[void,bat] ws,
         # avoid doing this when ins/del are empty: res maybe a view on idx (readonly case)
         res := res.access(BAT_WRITE).insert(ins).deleteBuns(del).access(BAT_READ);
     }
-
     # SCJ must catch error and use sequential post-filter instead.
-    return ws_docfilter(ws, sort(res).hmark(oid_nil), cont);
+    return ws_docfilter(ws, sort(res).hmark(oid_nil), cont).tmark(0@0);
+}
+
+
+# figure out the set of qualifying qnames for attribute access (matching on uri/loc)
+PROC vx_lookup_qns(BAT[void,bat] ws, oid cont, str uri, str loc) : BAT[oid,oid]
+{
+    var prefix_uri_loc := ws.fetch(QN_PREFIX_URI_LOC).fetch(cont);
+    var uri_loc        := ws.fetch(QN_URI_LOC).fetch(cont);
+    var qns;
+    if (isnil(uri)) { # ID access: get any qname that is marked as ID
+        qns := prefix_uri_loc.[endsWith](NS_ACCEL_SEP+"id"+NS_ACCEL_SEP).ord_uselect(true);
+    } else if (isnil(loc)) { # IDREF access: get any qname that is marked as IDREF
+        qns := prefix_uri_loc.[endsWith](NS_ACCEL_SEP+"idref"+NS_ACCEL_SEP).ord_uselect(true);
+    } else if ((uri = "*") and (loc = "*")) { 
+        qns := uri_loc;
+    } else if (uri = "*") {
+        qns := [endsWith](uri_loc, NS_ACCEL_SEP + loc).ord_uselect(true);
+    } else if (loc = "*") { 
+        qns := [startsWith](uri_loc, uri + NS_ACCEL_SEP).ord_uselect(true);
+    } else {
+        qns := uri_loc.ord_uselect(uri + NS_ACCEL_SEP + loc);
+    }
+    return mirror(qns);
+}
+
+PROC vx_lookup_qns(BAT[void,bat] ws, oid cont, str elt_uri, str elt_loc, str attr_uri, str attr_loc) : BAT[oid,int]
+{
+    var elt_qns  := vx_lookup_qns(ws, cont, elt_uri, elt_loc);
+    var attr_qns := vx_lookup_qns(ws, cont, attr_uri, attr_loc);
+    var pivot    := cross(reverse(elt_qns), attr_qns);
+    var attr     := pivot.tmark(0@0); 
+    return reverse(attr).leftfetchjoin([int](pivot.hmark(0@0)).access(BAT_WRITE).[:rotate_xor_hash=](13, attr));
 }
 
 # loop-lifted (attr/text) key lookup, with iteration dependent 'val': thus can also power joins!  
-PROC vx_lookup(BAT[void,bat] ws, oid cont, BAT[void,str] iter_val, str uri, str loc, bit gettext) : BAT[oid,oid] 
+PROC vx_lookup(BAT[void,bat] ws, oid cont, BAT[void,int] iter_val, BAT[oid,int] qns, bit getattr) : BAT[oid,oid] 
 {
     var nid_rid        := ws.fetch(NID_RID).fetch(cont);
-    var pre_kind       := ws.fetch(PRE_KIND).fetch(cont);
-    var pre_size       := ws.fetch(PRE_SIZE).fetch(cont);
-    var pre_prop       := ws.fetch(PRE_PROP).fetch(cont);
-    var prop_text      := ws.fetch(PROP_TEXT).fetch(cont);
-    var prop_val       := ws.fetch(PROP_VAL).fetch(cont);
-    var attr_prop      := ws.fetch(ATTR_PROP).fetch(cont);
-    var attr_qn        := ws.fetch(ATTR_QN).fetch(cont);
     var vx_hsh_nid     := ws.fetch(VX_HSH_NID).fetch(cont);
     var vx_hsh_nid_ins := ws.fetch(VX_HSH_NID_INS).fetch(cont);
     var vx_hsh_nid_del := ws.fetch(VX_HSH_NID_DEL).fetch(cont);
     var map_pid        := ws.fetch(MAP_PID).fetch(cont);
-    var uri_loc        := ws.fetch(QN_URI_LOC).fetch(cont);
-    var prefix_uri_loc := ws.fetch(QN_PREFIX_URI_LOC).fetch(cont);
-    var qns            := uri_loc;
-    var use_index      := (cont != WS);
     var iter_cand;
  
-    # lookup whether we know uri:loc in this collection
-    if (isnil(uri) and isnil(loc)) { 
-        if (gettext) qns := reverse(bat(void,int).append(0)); # matches single dummy qn
-    } else if (isnil(uri)) { # ID access: get any qname that is marked as ID
-        qns := prefix_uri_loc.[endsWith](NS_ACCEL_SEP+"id"+NS_ACCEL_SEP).uselect(true);
-    } else if (isnil(loc)) { # IDREF access: get any qname that is marked as IDREF
-        qns := prefix_uri_loc.[endsWith](NS_ACCEL_SEP+"idref"+NS_ACCEL_SEP).uselect(true);
-    } else {
-        qns := uri_loc.uselect(uri + NS_ACCEL_SEP + loc);
-    }
-    qns := mirror(qns);
     if (count(qns) = 0) return empty_bat; # qn not present in the document, so there cannot be any matches
+    if (cont = WS)      return iter_val.project(1@0); # give up, temporary doc container has no index
+
+    # for each iter, create a hash number (for each tuple in qns -- usually one of course)
+    var iter_hsh  := cross(iter_val, qns);
+    var key_iter  := iter_hsh.hmark(0@0);
+    var key_hsh   := key_iter.leftjoin(iter_val).tmark(0@0).access(BAT_WRITE);
+    if (getattr)
+        key_hsh   := [:rotate_xor_hash=](key_hsh, 13, iter_hsh.tmark(0@0)); 
+        iter_hsh  := reverse(key_iter).leftfetchjoin(key_hsh);
 
     # now we are going to assemble a list of candidate NIDs (of the elements we are looking for)
-    if (use_index) {
-        # for each iter, create a hash number (for each tuple in qns -- usually one of course)
-        var iter_hsh  := cross(iter_val, [int](qns));
-        var key_iter  := iter_hsh.hmark(0@0);
-        var key_hsh   := iter_hsh.tmark(0@0).copy().access(BAT_WRITE);
-            key_hsh   := [:rotate_xor_hash=](key_hsh, 13, key_iter.leftjoin(iter_val).tmark(0@0));
-            iter_hsh  := reverse(key_iter).leftfetchjoin(key_hsh);
+        iter_cand := iter_hsh.leftjoin(vx_hsh_nid); # main lookup
 
-        # ins/del data structures are private to the transaction (no lock needed)
-            iter_cand := iter_hsh.leftjoin(vx_hsh_nid); # main lookup
-        var iter_ins  := empty_bat;
-        var iter_del  := empty_bat;
-        if (count(vx_hsh_nid_ins) > 0) iter_ins := iter_hsh.leftjoin(vx_hsh_nid_ins);
-        if (count(vx_hsh_nid_del) > 0) iter_del := sintersect(iter_hsh.leftjoin(vx_hsh_nid_del), iter_cand);
-        if (bit(count(iter_ins) + count(iter_del))) {
-           # avoid doing this when ins/del are empty: res maybe a view on idx (readonly case)
-           iter_cand.access(BAT_WRITE).insert(iter_ins).deleteBuns(iter_del).access(BAT_READ);
-        }
-        # without any candidate NIDs, we are sure to find no matches 
-        if (count(iter_cand) = 0) return empty_bat;
-
-        # check against finding nil NIDs. These indicate attribute values ommitted from the index
-        if (isnil(min(iter_cand))) use_index := false; # was omitted, we have to scan
+    # ins/del data structures are private to the transaction (no lock needed)
+    var iter_ins  := empty_bat;
+    var iter_del  := empty_bat;
+    if (count(vx_hsh_nid_ins) > 0) iter_ins := iter_hsh.leftjoin(vx_hsh_nid_ins);
+    if (count(vx_hsh_nid_del) > 0) iter_del := sintersect(iter_hsh.leftjoin(vx_hsh_nid_del), iter_cand);
+    if (bit(count(iter_ins) + count(iter_del))) {
+        # avoid doing this when ins/del are empty: res maybe a view on idx (readonly case)
+        iter_cand.access(BAT_WRITE).insert(iter_ins).deleteBuns(iter_del).access(BAT_READ);
     }
-    if (not(use_index)) { # everything is a candidate
-        iter_cand := cross(iter_val,reverse(nid_rid.ord_uselect(oid_nil, oid_nil)));
-    }
-
-    # we always have to check against false hits
-    if (gettext) {
-        # convert the nids into pre-s and sort them 
-        var my_iter   := iter_cand.hmark(0@0);
-        var tmp       := iter_cand.tmark(0@0).leftfetchjoin(nid_rid).[swizzle](map_pid).tsort();
-            my_iter   := tmp.hmark(0@0).leftfetchjoin(my_iter); # my_iter and my_pre synced
-        var my_pre    := tmp.tmark(0@0);
-
-        # check if the candidates are indeed text nodes
-            tmp       := my_pre.leftfetchjoin(pre_kind).ord_uselect(TEXT).hmark(0@0);
-        if (count(tmp) < count(my_pre)) {
-            my_pre    := tmp.leftfetchjoin(my_pre);
-            my_iter   := tmp.leftfetchjoin(my_iter);
-        }
-
-        { # check whether string value actually matches something in 'iter_val'
-        var my_text   := my_pre.leftfetchjoin(pre_prop).leftfetchjoin(prop_text);
-        var my_val    := my_iter.leftfetchjoin(iter_val).tmark(0@0);
-            tmp       := [=](my_val, my_text).ord_uselect(true); }
-            iter_cand := reverse(mirror(tmp).leftfetchjoin(my_iter)).leftfetchjoin(my_pre);
-    } else { 
-        # attribute lookup, use get_attr_own to get the attr-ids of the nids in iter_cand
-        var my_cand   := iter_cand.tmark(0@0);
-        var my_iter   := iter_cand.hmark(0@0);
-        var tmp       := get_attr_own(ws, my_cand, cont); 
-        var chk_attr  := tmp.tmark(0@0);
-        var chk_my    := tmp.hmark(0@0);
-
-        # we have all attributes now, but only select the one we want
-            tmp       := chk_attr.leftfetchjoin(attr_qn).leftjoin(qns).hmark(0@0);
-        if (count(tmp) < count(chk_attr)) {
-            chk_attr  := tmp.leftfetchjoin(chk_attr);
-            chk_my    := tmp.leftfetchjoin(chk_my);
-        }
-        { # check whether string value actually matches something in 'iter_val'
-        var chk_text  := chk_attr.leftfetchjoin(attr_prop).leftfetchjoin(prop_val);
-        var chk_val   := chk_my.leftfetchjoin(my_iter).leftjoin(iter_val).tmark(0@0);
-            tmp       := [=](chk_val, chk_text).ord_uselect(true).hmark(0@0).leftfetchjoin(chk_my); }
-            iter_cand := iter_cand.fetch(reverse(tmp)).leftfetchjoin(nid_rid).[swizzle](map_pid).tsort();
-    }
-    return iter_cand; # [iter,pre], sorted on pre
+    return iter_cand; # [iter,pre]
 }
 
 PROC vx_lookup(bat[void,bat] ws,
                bat[void,oid] id_iter,
+               bat[void,oid] id_item,
                bat[void,int] id_kind,
                bat[void,str] iter_val,
-               str uri, str loc, bit gettext) : BAT[oid,oid]
+               str elt_uri, str elt_loc, str attr_uri, str attr_loc, bit getattr) : BAT[oid,oid]
 {
-    var id_pre  := bat(oid,oid,10000);
-    var id_cont := get_container(id_kind);
+    # if the average context XML tree is small index access should be avoided
+    var id_cont     := get_container(id_kind);
+    var avg_size := avg(mposjoin(id_item.tmark(0@0), id_cont, ws.fetch(PRE_SIZE)));
+    if (isnil(avg_size) or (avg_size < dbl(IDX_MAGICAL_CONST)) or (count(iter_val) > IDX_MAGICAL_CONST)) 
+        return id_iter.project(1@0);
+ 
+    # hash the strings, loop over the containers, and perform the lookups.
+    var qns     := bat(oid,int).insert(0@0,0);
+    var id_pre  := bat(oid,oid,count(iter_val));
+       iter_val := [xquery_hash](iter_val);
 
     id_cont.tunique().sort()@batloop() {
-        var key_val := id_cont.ord_uselect($h).hmark(0@0).leftfetchjoin(id_iter).leftfetchjoin(iter_val.tmark(1@0));
-        var key_pre := vx_lookup(ws, $h, key_val, uri, loc, gettext);
-        id_pre.insert(ws_docfilter(ws, key_pre, $h));
+        if (getattr) qns := vx_lookup_qns(ws, $h, elt_uri, elt_loc, attr_uri, attr_loc);
+        var id_val  := id_cont.ord_uselect($h).mirror().leftfetchjoin(id_iter).leftfetchjoin(iter_val.tmark(1@0));
+        var key_id  := id_val.hmark(0@0);
+        var key_val := id_val.tmark(0@0);
+        var key_nid := vx_lookup(ws, $h, key_val, qns, getattr);
+        if ((count(id_pre) + count(key_nid)) > (10*count(iter_val))) {
+            id_pre := id_iter.project(1@0); break;
+        }
+        var key_pre := ws_docfilter(ws, key_nid, $h);
+        id_pre.insert(reverse(reverse(key_pre).leftfetchjoin(key_id)));
     }
-    return id_pre; # sorted on pre 
+    return id_pre;
 }
 
 # routine that filters out pre-s that belong to deleted collection documents 
@@ -2404,6 +2394,24 @@ PROC ws_docfilter(bat[void,bat] ws,
 {
     # problem that collection may contain deleted documents is ony relevant for mult-doc collections
     var frag_root := ws.fetch(FRAG_ROOT).fetch(cont);
+
+    # GRR.. have to eliminate 1@0, tombstones from the below algorithm (1@0 is bogus its doc may have been deleted)
+    var tombstones := any_pre.select(1@0);
+    if (count(tombstones) > 0) any_pre := any_pre.select(2@0,oid_nil);
+
+    # another thing.. time to convert the NIDs in any_pre into real PREs (and sort) 
+    var map_pid  := ws.fetch(MAP_PID).fetch(cont);
+    var isolate := (ttype(map_pid) = oid);
+    if (isolate) {
+        var nid_rid  := ws.fetch(NID_RID).fetch(cont);
+        if (any_pre.htype() = void) {
+            any_pre := any_pre.leftfetchjoin(nid_rid).[swizzle](map_pid).tsort();
+        } else {
+            var any_nid := any_pre.tmark(0@0).leftfetchjoin(nid_rid).[swizzle](map_pid).tsort();
+            any_pre := reverse(reverse(any_nid).leftfetchjoin(any_pre.hmark(0@0)));
+        }
+    }
+
     if (count(frag_root) > 1) {
         # find out via the root which documents were accessed; find the new docs among them
         var open_cont := ws.fetch(OPEN_CONT);
@@ -2414,8 +2422,8 @@ PROC ws_docfilter(bat[void,bat] ws,
         var pre_level := ws.fetch(PRE_LEVEL).fetch(cont);
 
         # quickest way to get document nodes is ancestor-or-self, then getting first for each input ({min})
-        var res_docid := any_pre.tmark(0@0);
-            res_docid := ll_ancestor_or_self(mirror(res_docid), res_docid, pre_size, pre_level).{min}().tmark(0@0);
+        var res_docid := any_pre.tmark(0@0).tsort(); # must tsort on pre (for ll_anc), and then re-sort on void..
+            res_docid := ll_ancestor_or_self(mirror(res_docid), res_docid, pre_size, pre_level).{min}().sort().tmark(0@0);
             res_docid := res_docid.leftfetchjoin(pre_nid).leftjoin(reverse(frag_root)).tmark(0@0);
         var new_docid := res_docid.tdiff(open_docid).tunique().hmark(0@0);
 
@@ -2437,6 +2445,8 @@ PROC ws_docfilter(bat[void,bat] ws,
             open_docid.append(new_name.hmark(0@0).leftfetchjoin(new_docid));
         }
     }
+    if (count(tombstones) > 0) # re-insert the 1@0 tombstones (at the start, respecting pre order)
+        any_pre := bat(any_pre.htype(),oid,count(tombstones)+count(any_pre)).insert(tombstones).insert(any_pre);
     return any_pre;
 }
 
@@ -2451,9 +2461,9 @@ PROC ws_docfilter(bat[void,bat] ws,
 PROC ws_findnodes(BAT[void,bat] ws, 
                   BAT[void,oid] id_iter, any id_item, any id_kind, any id_cont, any id_tokens, bit isid) : BAT[oid,oid] 
 {
-    var loc := str_nil, uri := ""; # nil loc/uri tells vx_lookup to look for *all* ID/IDREF attributes
+    var loc := str_nil, uri := "*"; # nil loc/uri tells vx_lookup to look for *all* ID/IDREF attributes
 
-    if (count(id_iter) = 0) return bat(oid,oid); 
+    if (count(id_iter) = 0) return bat(oid,oid);
 
     # get root nids, which identify the XML fragment in which we must look
     var id_root := get_root(ws, id_item, id_kind, id_cont).mposjoin(id_cont, ws.fetch(PRE_NID));
@@ -2472,7 +2482,7 @@ PROC ws_findnodes(BAT[void,bat] ws,
         var split_sel     := split_nids.ord_uselect(oid_nil).mirror();
             split_tokens  := split_sel.leftfetchjoin(split_tokens);
             split_nids    := split_nids.ord_select(oid_nil,oid_nil);
-        loc := ""; uri := str_nil;
+        loc := "*"; uri := str_nil;
     }
 
     # process all containers one-by-one, putting [split,pre]-s into the result 
@@ -2482,17 +2492,46 @@ PROC ws_findnodes(BAT[void,bat] ws,
         var cont          := $h;
         var nid_rid       := ws.fetch(NID_RID).fetch(cont);
         var map_pid       := ws.fetch(MAP_PID).fetch(cont);
+        var pre_kind      := ws.fetch(PRE_KIND).fetch(cont);
         var pre_size      := ws.fetch(PRE_SIZE).fetch(cont);
+        var pre_prop      := ws.fetch(PRE_PROP).fetch(cont);
+        var pre_nid       := ws.fetch(PRE_NID).fetch(cont);
+        var attr_cont     := ws.fetch(ATTR_CONT).fetch(cont);
+        var attr_prop     := ws.fetch(ATTR_PROP).fetch(cont);
+        var attr_qn       := ws.fetch(ATTR_QN).fetch(cont);
+        var vx_hsh_nid    := ws.fetch(VX_HSH_NID).fetch(cont);
         var split         := split_cont.ord_uselect(cont).mirror();
         var id_split      := reverse(split.leftfetchjoin(split_id));
         var split_rootpre := split.leftfetchjoin(split_root).leftfetchjoin(nid_rid).[swizzle](map_pid);
 
-        # use vx_lookup() to get the element nodes holding any ID/IDREF attribute
+        # use vx_lookup() to get the candidate nodes holding any ID/IDREF attribute
         var id_pre;
-      { var id__val := id_split.leftjoin(split_tokens);
+      { var qns     := vx_lookup_qns(ws, cont, "*", "*", uri, loc);
+        var id__val := id_split.leftjoin(split_tokens);
         var key_val := id__val.tmark(0@0);
         var key_id  := id__val.hmark(0@0);
-        var key_pre := vx_lookup(ws, cont, key_val, uri, loc, false);
+        var key_pre := vx_lookup(ws, cont, [xquery_hash](key_val), qns, true);
+        if (key_pre.texist(1@0)) # if the index gave up, every elt is a candidate
+            key_pre := cross(key_val, reverse(pre_kind.uselect(ELEMENT)).leftfetchjoin(pre_nid));
+
+        # confirm matches. use get_attr_own to get the attr-ids of the nids in key_pre
+        var my_cand   := key_pre.tmark(0@0);
+        var my_key    := key_pre.hmark(0@0);
+        var tmp       := get_attr_own(ws, my_cand, cont); 
+        var chk_attr  := tmp.tmark(0@0);
+        var chk_my    := tmp.hmark(0@0);
+
+        # we have all attributes now, but only select the one we want
+            tmp       := chk_attr.leftfetchjoin(attr_qn).leftjoin(mirror(qns)).hmark(0@0);
+        if (count(tmp) < count(chk_attr)) {
+            chk_attr  := tmp.leftfetchjoin(chk_attr);
+            chk_my    := tmp.leftfetchjoin(chk_my);
+        }
+        { # check whether string value actually matches something in 'key_val'
+        var chk_text  := chk_attr.leftfetchjoin(attr_prop).mposjoin(chk_attr.leftfetchjoin(attr_cont), ws.fetch(PROP_VAL));
+        var chk_val   := chk_my.leftfetchjoin(my_key).leftjoin(key_val).tmark(0@0);
+            tmp       := [=](chk_val, chk_text).ord_uselect(true).hmark(0@0).leftfetchjoin(chk_my); }
+            key_pre   := key_pre.fetch(reverse(tmp)).leftfetchjoin(nid_rid).[swizzle](map_pid).tsort();
 
         if (isid) { # for ID() we also perform NID access; merging with IDs, conserves pre-order
             id_pre  := id_split.leftjoin(split_nids).leftjoin(nid_rid).ord_select(oid_nil,oid_nil).[swizzle](map_pid).tsort();
@@ -2689,17 +2728,18 @@ PROC __ws_isolate(BAT[void,BAT] ws,
 
 # helper to compute [hsh,nid] combinations for the VX index
 PROC vx_maintain(BAT[oid,oid] nid,
-                 BAT[oid,oid] elemqn, # not yet used
+                 BAT[oid,oid] elemqn, 
                  BAT[oid,oid] attrqn,
                  BAT[oid,str] val) : BAT[int,oid]
 {
-    return reverse([:rotate_xor_hash=]([int](attrqn).access(BAT_WRITE), 13, val)).leftfetchjoin(nid);
+    return reverse([:rotate_xor_hash=]([xquery_hash](val).access(BAT_WRITE), 13, 
+                   [:rotate_xor_hash=]([int](elemqn).access(BAT_WRITE), 13, attrqn))).leftfetchjoin(nid);
 }
 
 PROC vx_maintain(BAT[oid,oid] nid,
                  BAT[oid,str] val) : BAT[int,oid]
 {
-    return reverse([hash](val)).leftfetchjoin(nid);
+    return reverse([xquery_hash](val)).leftfetchjoin(nid);
 }
 
 
@@ -3377,11 +3417,8 @@ PROC __shred_into_docBAT(BAT[str,bat] docBAT,
                                                   docBAT.fetch(PROP_TEXT),
                                                   docBAT.fetch(MAP_PID), pre, att, updatable);
         if (not(isnil(commitbat))) {
-		if ( not(view_bbp_name().reverse().exist(commitbat + "_qn_nid"))) {
-		    ERROR("__shred_into_docBAT:bat(%s) does not exist!!!!\n",commitbat + "_qn_nid");
-		}
-		docBAT.insert(commitbat + "_qn_nid", bat(commitbat + "_qn_nid"))
-                                         .insert(commitbat + "_vx_hsh_nid", bat(commitbat + "_vx_hsh_nid")); 
+		docBAT.insert(commitbat + "_qn_nid", 
+                              bat(commitbat + "_qn_nid")).insert(commitbat + "_vx_hsh_nid", bat(commitbat + "_vx_hsh_nid")); 
         }
     }
 }
@@ -3886,15 +3923,12 @@ ADDHELP("xmldb_print", "boncz", "May 2005",
 # start the query cache 
 xquery_start_query_cache(lng(monet_environment.find("xquery_procMB")) * 1024LL * 1024LL);
 
-xquery_status := XQUERY_STATUS_RECOVERING;
 var pf_logger := logger_create(0, "xquery", monet_environment.find("xquery_logdir"), 
                                             monet_environment.find("gdk_dbname"), LOGGER_VERSION);
 
-xquery_status := XQUERY_STATUS_GARBAGECOLL;
 cleantmpdir(msec() / 1000LL);              # delete tmp files in DBFARM/DBNAME/tmp
 collection_cleanup(_collection_cleanup()); # silently clean up the repository
 
-xquery_status := XQUERY_STATUS_READY;
 mapi_register(xquery_frontend()); # open up mapi client access
 if (monet_environment.find("monet_welcome") = "yes") 
     printf("%c MonetDB/XQuery module v0.19.0 loaded\n", int(35));

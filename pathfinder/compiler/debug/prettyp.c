@@ -446,7 +446,7 @@ PFprettyp (FILE *f)
         init (&S);
         init (&S1);
     
-        margin    = 60;
+        margin    = 6;
         indent_by = 2;
         offset    = 0;
 
