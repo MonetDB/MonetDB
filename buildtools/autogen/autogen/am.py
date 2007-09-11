@@ -328,10 +328,12 @@ def am_scripts(fd, var, scripts, am):
         if cond:
             fd.write("uninstall-local-:\n");
             fd.write("install-exec-local-:\n");
-            fd.write("if %s\n" % (condname))
+            for condname in scripts['COND']:
+                fd.write("if %s\n" % condname)
             fd.write(" C_%s = %s\n" % (mkname,script))
             fd.write(" C_script_%s = script_%s\n" % (mkname, script))
-            fd.write("endif\n")
+            for condname in scripts['COND']:
+                fd.write("endif\n")
             if not os.path.exists(script):
                 am['BUILT_SOURCES'].append("$(C_" +mkname+ ")")
             am['EXTRA_DIST'].append(script)
@@ -503,12 +505,13 @@ def am_binary(fd, var, binmap, am):
     cname = name
     cond = ''
     if binmap.has_key('COND'):
-        condname = string.join(binmap['COND'], '+')
-        cond = '#' + condname
-        fd.write("if %s\n" % (condname))
+        for condname in binmap['COND']:
+            fd.write("if %s\n" % condname)
+        cond = '#' + string.join(binmap['COND'], '+')
         fd.write(" C_%s = %s\n" % (name,name))
         fd.write(" %s_PROGRAMS =%s\n" % (norm_binname,  binname))
-        fd.write("endif\n")
+        for condname in binmap['COND']:
+            fd.write("endif\n")
         cname = "$(C_" + name + ")"
     else:
         fd.write("%s_PROGRAMS =%s\n" % (norm_binname,  binname))
@@ -671,11 +674,11 @@ def am_library(fd, var, libmap, am):
     cond = ''
     condname = ''
     if libmap.has_key('COND'):
-        condname = string.join(libmap['COND'], '+')
-        cond = '#' + condname
-        fd.write("if %s\n" % condname)
+        for condname in libmap['COND']:
+            fd.write("if %s\n" % condname)
         fd.write(" C_%s = %s\n" % (libname, libname))
         cname = "$(C_" + libname + ")"
+        cond = '#' + condname
 
     if name[0] == '_':
         name = name[1:]
@@ -698,7 +701,7 @@ def am_library(fd, var, libmap, am):
     if libmap.has_key('NOINST'):
         am['NLIBS'].append((pref, libname, sep))
     else:
-        am['LIBS'].append((pref, libname, sep, condname))
+        am['LIBS'].append((pref, libname, sep, libmap.get('COND', ())))
         am['InstallList'].append("\t%s/%s%s%s.so%s\n" % (ld, pref, sep, libname, cond))
 
     if libmap.has_key('MTSAFE'):
@@ -721,7 +724,8 @@ def am_library(fd, var, libmap, am):
             am['EXTRA_DIST'].append(src)
 
     if cond:
-        fd.write("endif\n")
+        for condname in libmap['COND']:
+            fd.write("endif\n")
 
     fullpref = pref+sep+libname+'_la'
     nsrcs = "nodist_"+fullpref+"_SOURCES ="
@@ -1066,10 +1070,12 @@ endif
         libs = am_sort_libs(am['LIBS'], tree)
         s = ""
         for (pref, lib, sep, cond) in am['LIBS']:
-            if cond != '':
-                fd.write("if %s\n" % (cond))
+            if cond:
+                for condname in cond:
+                    fd.write("if %s\n" % condname)
                 fd.write("%s_LTLIBRARIES = %s%s%s.la\n" % (lib, pref, sep, lib))
-                fd.write("endif\n")
+                for condname in cond:
+                    fd.write("endif\n")
             else:
                 fd.write("%s_LTLIBRARIES = %s%s%s.la\n" % (lib, pref, sep, lib))
 
