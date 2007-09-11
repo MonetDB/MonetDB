@@ -175,6 +175,13 @@ opt_key (PFla_op_t *p)
             p->sem.rank.sortby = sortby;
         }   break;
         
+        case la_string_join:
+            if (PFprop_key_left (p->prop, p->sem.string_join.iter)) {
+                *p = *PFla_dummy (L(p));
+                break;
+            }
+            break;
+        
         default:
             break;
     }
