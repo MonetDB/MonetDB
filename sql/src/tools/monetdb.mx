@@ -203,6 +203,8 @@ printStatus(sabdb *stats, int mode)
 		char *state;
 		char uptime[12];
 		char *crash;
+		char *dbname;
+		int len;
 
 		switch (stats->state) {
 			case SABdbRunning:
@@ -237,9 +239,17 @@ printStatus(sabdb *stats, int mode)
 			secondsToString(uptime, time(NULL) - uplog.laststart, 1);
 		}
 
+		/* cut too long database names */
+		if ((len = strlen(stats->dbname)) > 14) {
+			dbname = alloca(sizeof(char) * (14 + 1));
+			stats->dbname[6] = '\0';
+			snprintf(dbname, 15, "%s...%s", stats->dbname, stats->dbname + len - 5);
+		} else {
+			dbname = stats->dbname;
+		}
 		/* demo | state | uptime | crash */
-		printf("%-10s  %s %12s  %4d %s\n",
-				stats->dbname,
+		printf("%-14s  %s %12s  %d %s\n",
+				dbname,
 				state, uptime,
 				uplog.crashcntr, crash);
 	} else if (mode == 2) {
@@ -411,7 +421,7 @@ command_status(int argc, char *argv[])
 	if (mode == 1) {
 		/* print header for short mode */
 		/* demo | state uptime | crash lastcrash */
-		printf("   name      state     uptime    crashes\n");
+		printf("     name        state     uptime     crashes\n");
 	}
 
 	if (doall == 1) {
