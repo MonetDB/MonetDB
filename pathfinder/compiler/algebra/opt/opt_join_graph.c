@@ -131,7 +131,8 @@ opt_join_graph (PFla_op_t *p)
            of a distinct operator if some columns are not required 
            while the remaining columns still provide a composite key. */
         case la_distinct:
-            if (PFprop_set (p->prop))
+            if (PFprop_set (p->prop) ||
+                PFprop_ckey (L(p)->prop, p->schema))
                 *p = *PFla_dummy (L(p));
             else {
                 PFalg_schema_t schema;
@@ -233,13 +234,13 @@ opt_join_graph (PFla_op_t *p)
            of unnecessary eqjoin and number operators */
         case la_step:
             if ((PFprop_set (p->prop)) ||
-                    
                 (PFprop_key_right (p->prop, p->sem.step.item) &&
-                 PFprop_level_right (p->prop, p->sem.step.item) >= 0 &&
                  (p->sem.step.axis == alg_attr ||
                   p->sem.step.axis == alg_chld ||
-                  p->sem.step.axis == alg_self ||
-                  p->sem.step.axis == alg_desc ||
+                  p->sem.step.axis == alg_self)) ||
+                (PFprop_key_right (p->prop, p->sem.step.item) &&
+                 PFprop_level_right (p->prop, p->sem.step.item) >= 0 &&
+                 (p->sem.step.axis == alg_desc ||
                   p->sem.step.axis == alg_desc_s))) {
                 
                 PFalg_att_t item_res;
@@ -270,13 +271,13 @@ opt_join_graph (PFla_op_t *p)
            to get rid of unnecessary eqjoin and number operators */
         case la_guide_step:
             if ((PFprop_set (p->prop)) ||
-                    
                 (PFprop_key_right (p->prop, p->sem.step.item) &&
-                 PFprop_level_right (p->prop, p->sem.step.item) >= 0 &&
                  (p->sem.step.axis == alg_attr ||
                   p->sem.step.axis == alg_chld ||
-                  p->sem.step.axis == alg_self ||
-                  p->sem.step.axis == alg_desc ||
+                  p->sem.step.axis == alg_self)) ||
+                (PFprop_key_right (p->prop, p->sem.step.item) &&
+                 PFprop_level_right (p->prop, p->sem.step.item) >= 0 &&
+                 (p->sem.step.axis == alg_desc ||
                   p->sem.step.axis == alg_desc_s))) {
                 
                 PFalg_att_t item_res;
