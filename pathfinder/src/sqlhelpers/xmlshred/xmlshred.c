@@ -495,7 +495,7 @@ flush_buffer (const char *tagname, kind_t kind)
     
     if (kind == comm || kind == pi) {
         leaf_guide_node = 
-            insert_guide_node(strdup(tagname), current_guide_node, kind);
+            insert_guide_node(tagname, current_guide_node, kind);
         pre++;
         rank += 2;
         level++;
@@ -528,7 +528,7 @@ flush_buffer (const char *tagname, kind_t kind)
       if (buf[0]) {
           /* insert leaf guide node */
           leaf_guide_node = 
-                insert_guide_node(strdup(tagname), current_guide_node, kind);
+                insert_guide_node(tagname, current_guide_node, kind);
 
           pre++;
           rank += 2;
@@ -861,7 +861,7 @@ insert_guide_node(const char *tag_name, guide_tree_t *parent, kind_t kind)
     /* create a new guide node */
     new_guide_node = (guide_tree_t*)malloc(sizeof(guide_tree_t));
     *new_guide_node = (guide_tree_t) {
-        .tag_name = strdup (tag_name),
+        .tag_name = (char*)tag_name,
         .count = 1,
         .parent = parent,
         .child_list = NULL, 
