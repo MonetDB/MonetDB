@@ -173,7 +173,7 @@ bool  suppress_attributes = false;
 bool  sql_atts = false;
 
 static void print_tuple (node_t tuple);
-static void flush_buffer (const xmlChar *tagname, kind_t kind);
+static void flush_buffer (const char *tagname, kind_t kind);
 
 static xmlChar buf[PROPSIZE + 1];
 static int bufpos;
@@ -214,7 +214,7 @@ guide_tree_t *leaf_guide_node = NULL;
 void add_guide_child(guide_tree_t *parent, guide_tree_t *child);
 
 /* insert a node in the guide tree */
-guide_tree_t* insert_guide_node(char *tag_name, guide_tree_t 
+guide_tree_t* insert_guide_node(const char *tag_name, guide_tree_t 
     *parent, kind_t kind);
 
 /* print the guide tree */
@@ -342,7 +342,6 @@ start_element (void *ctx, const xmlChar *tagname, const xmlChar **atts)
     if (!suppress_attributes && atts) {
         if (!sql_atts)
             while (*atts) {
-                fprintf (stderr, "foo1\n");
                 attr_guide_node = insert_guide_node((char*)atts[0],
                         current_guide_node, attr);
 
@@ -463,7 +462,7 @@ processing_instruction (void *ctx, const xmlChar *target,  const xmlChar *chars)
 
     buf[PROPSIZE] = '\0';
 
-    flush_buffer (target, pi);
+    flush_buffer ((char*)target, pi);
 }
 
 void
@@ -484,7 +483,7 @@ comment (void *ctx,  const xmlChar *chars)
 }
 
 static void
-flush_buffer (const xmlChar *tagname, kind_t kind)
+flush_buffer (const char *tagname, kind_t kind)
 {
     /* check if tagname is larger than TEXT_SIZE characters */
     if (strlen((char*)buf) > TEXT_SIZE) {
@@ -496,7 +495,7 @@ flush_buffer (const xmlChar *tagname, kind_t kind)
     
     if (kind == comm || kind == pi) {
         leaf_guide_node = 
-            insert_guide_node(xmlStrdup (tagname), current_guide_node, kind);
+            insert_guide_node(strdup(tagname), current_guide_node, kind);
         pre++;
         rank += 2;
         level++;
@@ -529,7 +528,7 @@ flush_buffer (const xmlChar *tagname, kind_t kind)
       if (buf[0]) {
           /* insert leaf guide node */
           leaf_guide_node = 
-                insert_guide_node(xmlStrdup (tagname), current_guide_node, kind);
+                insert_guide_node(strdup(tagname), current_guide_node, kind);
 
           pre++;
           rank += 2;
@@ -937,7 +936,7 @@ add_guide_child(guide_tree_t *parent, guide_tree_t *child)
 }
 
 guide_tree_t* 
-insert_guide_node(char *tag_name, guide_tree_t *parent, kind_t kind)
+insert_guide_node(const char *tag_name, guide_tree_t *parent, kind_t kind)
 {
     child_list_t *child_list = NULL;
     guide_tree_t *child_node = NULL;
@@ -967,7 +966,7 @@ insert_guide_node(char *tag_name, guide_tree_t *parent, kind_t kind)
     /* create a new guide node */
     new_guide_node = (guide_tree_t*)malloc(sizeof(guide_tree_t));
     *new_guide_node = (guide_tree_t) {
-        .tag_name = tag_name,
+        .tag_name = (char*)xmlStrdup (tag_name),
         .count = 1,
         .parent = parent,
         .child_list = NULL, 
@@ -1001,7 +1000,7 @@ print_guide_tree(guide_tree_t *root, int tree_depth)
     /* print the node self */
     fprintf (
         guide_out, 
-        "<node guide=\"%i\" count=\"%i\" kind=\"",
+        "<node guide=\"" SSZFMT "\" count=\"" SSZFMT "\" kind=\"",
         root->guide,
         root->count);
     print_kind (guide_out, root->kind);

@@ -59,11 +59,11 @@
 #error no definition for SZFMT/SSZFMT
 #endif
 
-#if !(HAVE_STRING_H && HAVE_STRDUP)
+#ifndef HAVE_STRDUP
 char * strdup (const char * s);
 #endif
 
-#if !(HAVE_STRING_H && HAVE_STRNDUP)
+#ifndef HAVE_STRNDUP
 char * strndup (const char * s, size_t n);
 #endif
 
