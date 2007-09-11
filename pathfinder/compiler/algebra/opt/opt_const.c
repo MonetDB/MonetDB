@@ -106,12 +106,14 @@ opt_const (PFla_op_t *p, bool no_attach)
             case la_disjunion:
             case la_difference:
             case la_distinct:
+            case la_num_eq:
             case la_avg:
             case la_max:
             case la_min:
             case la_rownum:
             case la_rank:
             case la_number:
+            case la_cond_err:
                 /* these rules apply a 'real rewrite'
                    and therefore continue */
                 break;
@@ -542,6 +544,19 @@ opt_const (PFla_op_t *p, bool no_attach)
             break;
 
         case la_num_eq:
+            if (PFprop_const (p->prop, p->sem.binary.att1) &&
+                PFprop_const (p->prop, p->sem.binary.att2)) {
+                PFalg_atom_t val1, val2;
+                val1 = PFprop_const_val (p->prop, p->sem.binary.att1);
+                val2 = PFprop_const_val (p->prop, p->sem.binary.att2);
+                if (val1.type == val2.type && val1.type == aat_int) {
+                    *p = *PFla_attach (L(p), p->sem.binary.res,
+                                       PFalg_lit_bln (
+                                           val1.val.int_ == val2.val.int_));
+                    break;
+                }
+            }
+            if (no_attach) break; /* else continue */
         case la_num_gt:   /* possible extensions for 'and' and 'or': */
         case la_bool_and: /* if one arg is const && false replace by project */
         case la_bool_or:  /* if one arg is const && true replace by project */
@@ -751,6 +766,15 @@ opt_const (PFla_op_t *p, bool no_attach)
             }
             break;
 
+        case la_cond_err:
+            if (PFprop_const_right (p->prop, p->sem.err.att) &&
+                PFprop_type_of (R(p), p->sem.err.att) == aat_bln &&
+                PFprop_const_val_right (p->prop, p->sem.err.att).val.bln) {
+                *p = *PFla_dummy (L(p));
+                break;
+            }
+            break;
+            
         default:
             break;
     }
