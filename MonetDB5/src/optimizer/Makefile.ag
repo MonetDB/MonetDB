@@ -33,7 +33,7 @@ lib_optimizer = {
 		opt_remoteQueries.mx opt_joinselect.mx opt_partitions.mx \
 		opt_evaluate.mx opt_inline.mx opt_pushranges.mx \
 		opt_accessmode.mx opt_joinpath.mx opt_heuristics.mx opt_remap.mx \
-		opt_statistics.mx
+		opt_statistics.mx opt_trace.mx
 
 	HEADERS = h 
 	#SCRIPTS = mal
@@ -54,7 +54,7 @@ scripts_mal = {
 		opt_remoteQueries.mx opt_joinselect.mx opt_partitions.mx \
 		opt_evaluate.mx opt_inline.mx opt_pushranges.mx \
 		opt_accessmode.mx opt_joinpath.mx opt_heuristics.mx opt_remap.mx \
-		opt_statistics.mx
+		opt_statistics.mx opt_trace.mx
 }
 
 EXTRA_DIST_DIR = Tests
