@@ -2058,14 +2058,13 @@ BKCdelete_bat_bun(int *r, int *bid, int *sid)
 		throw(MAL, "bat.delete", "Cannot access descriptor");
 	}
 
-	bn=BATdel(b, s,FALSE);
-	if(bn==NULL )
-		BBPreleaseref(b->batCacheid);
-	else
-		BBPreleaseref(bn->batCacheid);
+	bn=BATdel(b, s, FALSE);
 	BBPreleaseref(s->batCacheid);
-	if(bn && bn->batCacheid != b->batCacheid)
+	if( bn ==0){
+		BBPreleaseref(b->batCacheid);
 		throw(MAL, "bat.delete_bat_buns", "GDKerror, different BAT returned");
+	}
+	BBPkeepref(*r= bn->batCacheid);
 	return MAL_SUCCEED;
 }
 
