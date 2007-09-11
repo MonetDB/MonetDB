@@ -1551,7 +1551,7 @@ PFcore_fs_convert_op_by_expr (const PFcnode_t *e1, const PFcnode_t *e2)
                             PFcore_var (v1),
                             v2, v1, PFty_xs_decimal ()),
                         v2, v1, PFty_xs_double ()),
-                    v2, v1, PFty_xs_integer ()),
+                    v2, v1, PFty_xs_double ()),
                 v2, v1, PFty_xs_boolean ()),
             v2, v1, PFty_xs_string ());
 
