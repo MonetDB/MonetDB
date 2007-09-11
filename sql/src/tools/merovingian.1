@@ -1,0 +1,138 @@
+.\" Process this file with
+.\" groff -man -Tascii foo.1
+.\"
+.TH MONETDB 1 "SEPTEMBER 2007" Application "MonetDB Applications"
+.SH NAME
+merovingian \- the MonetDB Database Server daemon
+.SH SYNOPSIS
+.B merovingian
+[database ...]
+.SH DESCRIPTION
+.B merovingian
+is the MonetDB Database Server daemon.  It is not meant to be used in
+interactive environments, and hence has no help or version commands nor
+flags.  The typical use of
+.B merovingian
+is to be started from a startup script, such as from
+.I /etc/init.d/
+on Linux systems or
+.BR smf (5)
+on Solaris systems, as part of a system startup.
+.P
+A
+.B merovingian
+instance manages one local cluster based on the dbfarm specified in the
+.I /etc/monetdb5.conf
+config file.  Within this local cluster
+.B merovingian
+takes care of starting up databases when necessary, and stopping them
+either upon request via
+.BR monetdb (1)
+or when being shut down.  Client connections initially are made against
+.B merovingian
+which redirects the client to the appropriate database process, started
+on the fly when necessary.
+.P
+When started,
+.B merovingian
+runs in the foreground, sending log messages to
+.I /var/log/merovingian.log
+, until being sent a stop, terminate or interrupt signal.  All arguments
+given when starting
+.B merovingian
+are considered to be databases to be pre-started.  Pre-started databases
+are started as part of the startup of
+.B merovingian
+, which means their startup is not delayed until the first client
+requests for them.
+.SH CONFIGURATION
+.B merovingian
+uses the default configuration file for its behaviour.  The following
+options can be found under the 
+.I Merovingian
+section in the configuration file.
+.IP mero_msglog
+.IP mero_errlog
+When both options are unset,
+.B merovingian
+logs messages and errors to the stdout and stderr channels on the
+caller's console.  By setting one or both of the
+.B mero_msglog
+and
+.B mero_errlog
+variables, one can specify messages and/or errors to be logged to a file
+instead.  It is legitimate to have both
+.B mero_msglog
+and
+.B mero_errlog
+pointing to the same file.
+.IP mero_timeinterval
+Log messages from started databases may not be instantly logged, because
+that database process that writes the message does not flush its
+buffered stream.  Since
+.B merovingian
+cannot force other processes to flush their output, the time when
+.B merovingian
+receives the message need not to be (close) to the actual time the
+message was generated.  For this reason it makes not much sense to tag
+each line with the time it is logged by
+.B merovingian
+either to file or the console.  Instead,
+.B merovingian
+does a rough time indication by inserting TME records in the log output.
+The seconds interval in which.
+.B merovingian
+should print such TME record can be specified in the
+.B mero_timeinterval
+option.  Note that an interval of 
+.B 0
+makes Merovingian print a TME record for every log record, which is the
+default of this option when unset.
+.IP mero_exittimeout
+All database servers that were started by
+.B merovingian
+are shut down when
+.B merovingian
+is shut down.  This behaviour is desirable if the
+.B merovingian
+process is ran from a start script that represents the MonetDB Database
+Server.  Setting the
+.B mero_exittimeout
+option to a positive
+non-zero value, causes each started database server to be shut down by
+.B merovingian
+when it shuts doen itself with a given time-out in seconds.  If the
+time-out expires, the database server is killed using the SIGKILL
+signal.  A time-out value of
+.B 0
+means that no attempt is made to shut down started database servers.  As
+a result, database servers will remain active after
+.B merovingian
+is stopped.  This situation may yield in confusing scenarios, hence you
+are strongly adviced to set the
+.B mero_exittimeout
+option as to override the
+.B 0
+default.
+.SH "RETURN VALUE"
+.B merovingian
+returns exit code
+.B 0
+if it successfully stopped after a stop signal.  When an error occurs
+during startup that prevents
+.B merovingian
+from functioning properly, an exit code
+.B 1
+is returned.
+.SH FILES
+.I /etc/monetdb5.conf
+.RS
+The configuration file for MonetDB, located in the system configuration
+directory.
+.RE
+.I /var/log/merovingian.log
+.RS
+The configuration file default location to write log output to.
+.SH "SEE ALSO"
+.BR monetdb (1)
+.\".BR mserver5 (1)

@@ -223,6 +223,11 @@ AC_SUBST(QXinfodir)
 
 dnl AC_CHECK_HEADERS(limits.h malloc.h pwd.h)
 
+dnl  stuff required for merovingian and monetdb
+AC_CHECK_HEADERS(fcntl.h)
+AC_DEFINE_UNQUOTED(MONETDB5_CONFFILE, "$MONETDB5_CONFFILE", [MonetDB5 config file location])
+AC_DEFINE_UNQUOTED(MONETDB5_PREFIX, "$MONETDB5_PREFIX", [MonetDB5 configured prefix])
+
 dnl  CFLAGS for our code are stricter than what autoconf can cope with.
 CFLAGS="$CFLAGS \$(X_CFLAGS)"
 

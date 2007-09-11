@@ -191,6 +191,10 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/libembeddedsql5.so.*
 %{_libdir}/MonetDB5/lib/lib_sql*
 %{_libdir}/MonetDB5/*.mal
+%{_bindir}/merovingian
+%{_bindir}/monetdb
+%{_mandir}/man1/monetdb.1.gz
+%{_mandir}/man1/merovingian.1.gz
 %endif
 
 %files devel
