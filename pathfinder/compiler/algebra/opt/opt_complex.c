@@ -1250,6 +1250,18 @@ opt_complex (PFla_op_t *p)
             }
             break;
 
+        case la_string_join:
+            if (PFprop_key_left (p->prop, p->sem.string_join.iter) &&
+                PFprop_subdom (p->prop,
+                               PFprop_dom_right (p->prop,
+                                                 p->sem.string_join.iter_sep),
+                               PFprop_dom_left (p->prop,
+                                                p->sem.string_join.iter))) {
+                *p = *PFla_dummy (L(p));
+                break;
+            }
+            break;
+        
         default:
             break;
     }
