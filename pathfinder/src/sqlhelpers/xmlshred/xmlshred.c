@@ -514,7 +514,7 @@ flush_buffer (const char *tagname, kind_t kind)
             .parent         = stack + level - 1,
             .name_id        = -1,
             .kind           = leaf_guide_node->kind,
-            .prop           = xmlStrdup (tagname),
+            .prop           = (xmlChar*)tagname,
             .guide          = leaf_guide_node->guide,
         };
 
@@ -966,7 +966,7 @@ insert_guide_node(const char *tag_name, guide_tree_t *parent, kind_t kind)
     /* create a new guide node */
     new_guide_node = (guide_tree_t*)malloc(sizeof(guide_tree_t));
     *new_guide_node = (guide_tree_t) {
-        .tag_name = (char*)xmlStrdup (tag_name),
+        .tag_name = strdup (tag_name),
         .count = 1,
         .parent = parent,
         .child_list = NULL, 
