@@ -4934,7 +4934,7 @@ XQUERY_HASH(" foo bar ")       = XQUERY_HASH("foo")
        hash_t _hsh;                                  \
        XQUERY_STRHASH(_val, _hsh);                   \
        _tmp = (dbl) _hsh;                            \
-    } *_dst = ((((int*) &_tmp)[0] ^ ((int*) &_tmp)[1]) & 0x7fffffff); \
+    } *_dst = ((((int*) (void*)&_tmp)[0] ^ ((int*) (void*)&_tmp)[1]) & 0x7fffffff); \
 }
 
 int CMDxquery_hash(int *dst, char* val) {
