@@ -56,7 +56,6 @@
 #define USE_DEPRECATED_ACCESS_TO_TYPE_SYSTEM 1
 
 #include "pathfinder.h"
-#include "monet_utils.h"
 
 #include <stdio.h>
 #include <assert.h>
