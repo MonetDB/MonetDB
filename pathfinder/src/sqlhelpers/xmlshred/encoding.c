@@ -160,14 +160,12 @@ end_document (void *ctx)
 static void
 start_element (void *ctx, const xmlChar *tagname, const xmlChar **atts)
 {
-
-
     /* calling convention */
     (void)ctx;
 
     guide_tree_t *attr_guide_node = NULL;
     current_guide_node = insert_guide_node(tagname,
-	                             current_guide_node, elem);
+                                     current_guide_node, elem);
 
     /* check if tagname is larger than TAG_SIZE characters */
     if (xmlStrlen(tagname) > TAG_SIZE) {
@@ -264,7 +262,7 @@ start_element (void *ctx, const xmlChar *tagname, const xmlChar **atts)
 
                             hashtable_insert(hash_table, (char*)atts[0], name_id);
                             fprintf (out_attr, "%i, \"%s\"\n", name_id,
-	    	    			         strndup((char*)atts[0],PROPSIZE));
+                                                 strndup((char*)atts[0],PROPSIZE));
                         }
 
                      attr_guide_node = insert_guide_node(atts [0], 
@@ -325,7 +323,7 @@ processing_instruction (void *ctx, const xmlChar *target,  const xmlChar *chars)
 
     if (bufpos < PROPSIZE) {
         snprintf ((char*)buf + bufpos, MIN ((int)strlen((char*)target),
-		          PROPSIZE - bufpos) + 1, 
+                          PROPSIZE - bufpos) + 1, 
                   "%s", (char*)target);
         bufpos += MIN ((int)strlen((char*)target), PROPSIZE - bufpos);
     }
@@ -345,7 +343,7 @@ comment (void *ctx,  const xmlChar *chars)
 
     if (bufpos < PROPSIZE) {
         snprintf ((char*)buf + bufpos, MIN ((int)strlen((char*)chars),
-		          PROPSIZE - bufpos) + 1, 
+                          PROPSIZE - bufpos) + 1, 
             "%s", (char*)chars);
         bufpos += MIN ((int)strlen((char*)chars), PROPSIZE - bufpos);
     }
@@ -436,7 +434,7 @@ print_tuple (node_t tuple, const char * format)
                  case 's':
                      fprintf (out, SSZFMT, tuple.size); break;
                  case 'l':
-                     fprintf (out, SSZFMT,  tuple.level); break;
+                     fprintf (out, "%i",  tuple.level); break;
                  case 'p':
                      if (tuple.parent)
                          fprintf (out, SSZFMT, tuple.parent->pre);
@@ -542,26 +540,25 @@ static xmlSAXHandler saxhandler = {
 int
 SHshredder (const char *s, 
             FILE *shout,
-			FILE *attout,
+                        FILE *attout,
             FILE *guideout,
-			shred_state_t *status)
+                        shred_state_t *status)
 {
     assert (s);
-	assert (shout);
-	assert (attout);
-    assert (guideout);
+    assert (shout);
+    assert (attout);
 
     /* XML parser context */
     xmlParserCtxtPtr  ctx;
     shredstate = *status;
 
-	/* output should be given in parameterlist,
-	 * instead creating within this module */
-	out = shout;
-	out_attr = attout;
+    /* output should be given in parameterlist,
+     * instead creating within this module */
+    out = shout;
+    out_attr = attout;
 
     /* if we need sql encoding we need to initialize
-	 * the hashtable */
+         * the hashtable */
     if (shredstate.sql)
         hash_table = new_hashtable (); 
 
