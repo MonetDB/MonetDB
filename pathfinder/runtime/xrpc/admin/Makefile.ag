@@ -25,20 +25,23 @@
 
 EXTRA_DIST = title.html.in
 
-scripts_html = {
-	HEADERS = html png gif bmp
+headers_html = {
+	HEADERS = bmp gif html js png xq
 	DIR = datadir/MonetDB/xrpc/admin
-	SOURCES = index.html title.html menu.html content.html ctit.png cwi_logo.png multimedian_logo.png ctit.gif cwi.bmp monetdb_med_abstract.png sf.bmp tum-logo.gif
-}
-
-headers_js = {
-	HEADERS = js
-	DIR = datadir/MonetDB/xrpc/admin
-	SOURCES = admin.js xrpcwebclient.js
-}
-
-headers_xq = {
-	HEADERS = xq
-	DIR = datadir/MonetDB/xrpc/admin
-	SOURCES = admin.xq
+	SOURCES = \
+		admin.js \
+		admin.xq \
+		content.html \
+		ctit.gif \
+		ctit.png \
+		cwi.bmp \
+		cwi_logo.png \
+		index.html \
+		menu.html \
+		monetdb_med_abstract.png \
+		multimedian_logo.png \
+		sf.bmp \
+		title.html \
+		tum-logo.gif \
+		xrpcwebclient.js
 }
