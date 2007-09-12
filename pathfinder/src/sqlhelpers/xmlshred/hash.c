@@ -39,7 +39,7 @@
  * Create a new Hashtable.
  */
 hashtable_t
-new_hashtable ()
+new_hashtable (void)
 {
     return (hashtable_t)
 	    malloc (HASHTABLE_SIZE * sizeof (bucket_t));

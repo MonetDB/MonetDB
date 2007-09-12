@@ -79,7 +79,7 @@ typedef struct bucket_t** hashtable_t;
 /**
  * Create a new Hashtable.
  */
-hashtable_t new_hashtable ();
+hashtable_t new_hashtable (void);
 
 /**
  * Hashfunction
