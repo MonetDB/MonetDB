@@ -25,6 +25,7 @@
  * $Id$
  */
 
+#include "pf_config.h"
 #include <assert.h>
 #include <stdio.h>
 #include <stdbool.h>

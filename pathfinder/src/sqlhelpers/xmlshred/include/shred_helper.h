@@ -28,7 +28,6 @@
 #ifndef SHRED_HELPER_H__
 #define SHRED_HELPER_H__
 
-#include "pf_config.h"
 #include <unistd.h>
 #include <stdlib.h>
 #include <stdio.h>

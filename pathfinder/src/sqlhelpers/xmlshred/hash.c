@@ -25,6 +25,7 @@
  * $Id$
  */
 
+#include "pf_config.h"
 #include "hash.h"
 #include "shred_helper.h"
 #include <string.h>
