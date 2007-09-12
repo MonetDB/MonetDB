@@ -29,7 +29,6 @@
 #   contains(<file>,<string>)
 # - do multi-level prompting?
 # - normalize all path's used
-# - remove one of milM, milS
 
 try:
     True
@@ -1404,14 +1403,10 @@ def RunTest(env, TST, BusyPorts, COND) :
         EXT = ".SQL.py"     ; CALL = "python" ; SERVER = "SQL"
     elif os.path.isfile(TST+".XQUERY"+".py")  or  os.path.isfile(TST+".XQUERY"+".py.src")  or  os.path.isfile(TST+".XQUERY"+".py.in"):
         EXT = ".XQUERY.py"  ; CALL = "python" ; SERVER = "XQUERY"
-    elif os.path.isfile(TST+".milM")          or  os.path.isfile(TST+".milM.src")          or  os.path.isfile(TST+".milM.in"):
-        EXT = ".milM"       ; CALL = "milM"
     elif os.path.isfile(TST+".milS")          or  os.path.isfile(TST+".milS.src")          or  os.path.isfile(TST+".milS.in"):
         EXT = ".milS"       ; CALL = "milS"
     elif os.path.isfile(TST+".milC")          or  os.path.isfile(TST+".milC.src")          or  os.path.isfile(TST+".milC.in"):
         EXT = ".milC"       ; CALL = "milC"   ; SERVER = "MIL"
-    elif os.path.isfile(TST+"_s00.milM")      or  os.path.isfile(TST+"_s00.milM.src")      or  os.path.isfile(TST+"_s00.milM.in"):
-        EXT = ".milM"       ; CALL = "milMXs"
     elif os.path.isfile(TST+"_s00.milS")      or  os.path.isfile(TST+"_s00.milS.src")      or  os.path.isfile(TST+"_s00.milS.in"):
         EXT = ".milS"       ; CALL = "milSXs"
     elif os.path.isfile(TST+"_s00.milC")      or  os.path.isfile(TST+"_s00.milC.src")      or  os.path.isfile(TST+"_s00.milC.in"):
@@ -1455,11 +1450,11 @@ def RunTest(env, TST, BusyPorts, COND) :
             return RunTest(env, TST[:i], BusyPorts, COND)
         EXT = CALL = SERVER = ""
         if os.name == "nt":
-            ErrMsg("test missing: '"+os.path.join(TSTSRCDIR,TST)+".(exe|com|bat|cmd|py|mal|malC|milM|milS|milC|sql|xq|x100)`")
+            ErrMsg("test missing: '"+os.path.join(TSTSRCDIR,TST)+".(exe|com|bat|cmd|py|mal|malC|milS|milC|sql|xq|x100)`")
             #TODO:
             #elif os.name == "posix":
         else:
-            ErrMsg("test missing: '"+os.path.join(TSTSRCDIR,TST)+"[.py|.mal|.malC|.milM|.milS|.milC|.sql|.xq|.x100]`")
+            ErrMsg("test missing: '"+os.path.join(TSTSRCDIR,TST)+"[.py|.mal|.malC|.milS|.milC|.sql|.xq|.x100]`")
         return TX,Failed,Failed,elem
 
     if par['PACKAGE'] not in ('monetdb', 'monetdb-clients'):
@@ -1621,13 +1616,13 @@ def RunTest(env, TST, BusyPorts, COND) :
                     else:
                         TOx = 1
                     CTIMEOUT = CTIMEOUT + ( TOx * TIMEOUT )
-        elif CALL in ["malXs", "milMXs", "milSXs", "milCXs", "sqlXs", "xqXs", "x100Xs"]:
+        elif CALL in ["malXs", "milSXs", "milCXs", "sqlXs", "xqXs", "x100Xs"]:
             test = re.compile("^"+TST+"_s[0-9][0-9]"+EXT+"$", re.MULTILINE)
             d = os.listdir(os.getcwd())
             for f in d:
                 if test.match(f):
                     CTIMEOUT = CTIMEOUT + TIMEOUT
-        elif CALL in ["mal", "malC", "milM", "milS", "milC", "sql", "xq", "x100"]:
+        elif CALL in ["mal", "malC", "milS", "milC", "sql", "xq", "x100"]:
             CTIMEOUT = CTIMEOUT + TIMEOUT
         if  CTIMEOUT < TIMEOUT:
             CTIMEOUT = TIMEOUT
@@ -2199,9 +2194,9 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
         elif CALL == "python":
             cmd = MTO+str(CTO)+" "+exe['python'][1]+" "+TST+EXT+" "+TST+" "+PRELUDE
             RunIt(cmd, "", ClntOut, ClntErr)
-        elif CALL in ["mal", "malXs", "milM", "milS", "milMXs", "milSXs"]:
+        elif CALL in ["mal", "malXs", "milS", "milSXs"]:
             cmd = '%s%s %s%s --dbname=%s %s ' % (MTO, str(TOT), exe['Mserver'][1], LOCAL_CONF, TSTDB, PRELUDE)
-            if CALL in ["mal", "milM", "milS"]:
+            if CALL in ["mal", "milS"]:
                 X=""
             else:
                 X="_s[0-9][0-9]"

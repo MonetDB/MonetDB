@@ -34,10 +34,7 @@ have changed since my proposal.
                    and scripts must be ".(bat|cmd)"         (TST.(bat|cmd)) (~,^)
     * a Python script                                       (TST.py)        (~,^)
     * a MAL script to be executed by mserver5               (TST.mal)  (',^,`)
-    * a MIL script to be executed by Mserver                (TST.milM) (',^,`)
-    * a MIL script to be executed by Mserver -single        (TST.milS) (',^,`)
-       (-single has been removed, so .milM & .milS are
-        treated equally, now)
+    * a MIL script to be executed by Mserver                (TST.milS) (',^,`)
     * a MIL script to be executed by mclient -lmil          (TST.milC) (",^,`)
     * a MAL script to be executed by mclient -lmal          (TST.malC) (",^,`)
     * a SQL script to be executed by mclient -lsql          (TST.sql)  (",^,`)
@@ -69,7 +66,7 @@ have changed since my proposal.
 	TST[.*].src  exists instead of  TST[.*],
 	TST[.*].src  is expected to contain a single line
 	giving the original location of the test file to be used.
-	E.g.,  src/modules/plain/Tests/arith.milM.src  contains
+	E.g.,  src/modules/plain/Tests/arith.milS.src  contains
 		$TSTBLDBASE/$TSTDIR/arith.mil
 	in order to use the MIL script extracted from
 	src/modules/plain/arith.mx  as test script.
