@@ -49,7 +49,6 @@ import select
 #import signal
 #import getpass
 import Mfilter
-import prof
 
 def _configure(str):
     # expand configure variables in str and return result
@@ -552,48 +551,6 @@ def CreateTstWhatXhtml (env, TST, stableWHAT, EXT, SockTime) :
     if COMPILER:
         SYSTEM = COMPILER+", "+SYSTEM
 
-    xWHAT = WHAT
-    if THISFILE == "Mprofile.py":
-        test = re.compile("^"+TST+"(_[sp][0-9][0-9])?\..*mil.*\.prof\.diff\.html$", re.MULTILINE)
-        d = os.listdir(os.getcwd())
-        d.sort()
-        rows = ""
-        frames = ""
-        frameset = Element('frameset',
-                           {'frameborder': 'yes',
-                            'border': '1',
-                            'bordercolor': white,
-                            'marginwidth': '0',
-                            'marginheight': '0'})
-        for f in d:
-            if test.match(f):
-                rows = rows+",*"
-                frameset.addchild(Element('frame',
-                                          {'src': f,
-                                           'scrolling': 'auto',
-                                           'frameborder': 'yes',
-                                           'bordercolor': white,
-                                           'marginwidth': '0',
-                                           'marginheight': '0'}))
-        if rows:
-            xWHAT = ".prof-"+WHAT[1:]
-            rows = "*"+rows
-            frameset.inschild(0, Element('frame',
-                                         {'src': TST+WHAT+'.diff.html',
-                                          'scrolling': 'auto',
-                                          'frameborder': 'yes',
-                                          'bordercolor': white,
-                                          'marginwidth': '0',
-                                          'marginheight': '0'}))
-            frameset.attrdict['rows'] = rows
-            html = Element('html', {},
-                           Element('head', {}.
-                                   Element('title', {}, Text(HTMLTITLE))),
-                           frameset)
-            f = open(TST+xWHAT+".diff.html","w")
-            html.write(f, True)
-            f.close()
-
     html = Element('html', {},
                    Element('head', {},
                            Element('title', {}, Text(HTMLTITLE)),
@@ -613,7 +570,7 @@ def CreateTstWhatXhtml (env, TST, stableWHAT, EXT, SockTime) :
                                     'marginwidth': '0',
                                     'marginheight': '0'}),
                            Element('frame',
-                                   {'src': '%s%s.diff.html' % (TST, xWHAT),
+                                   {'src': '%s%s.diff.html' % (TST, WHAT),
                                     'scrolling': 'auto',
                                     'name': '%s_%s_%s_%s_body' % (DISTVER, TSTDIR, TST, WHAT[1:]),
                                     'frameborder': 'yes',
@@ -633,7 +590,7 @@ def CreateTstWhatXhtml (env, TST, stableWHAT, EXT, SockTime) :
     text = Element('div', {'class': 'header'},
                    Text(SYSTEM),
                    Text(' '),
-                   Element('a', {'href': '%s%s.diff.html' % (TST, xWHAT),
+                   Element('a', {'href': '%s%s.diff.html' % (TST, WHAT),
                                  'target': target,
                                  'class': diffclass},
                            Text(difftext)),
@@ -933,7 +890,7 @@ def PerformDir(env, testdir, testlist, BusyPorts) :
     TSTBLDDIR = os.path.normpath(os.path.join(env['TSTBLDBASE'],TSTDIR,TSTSUFF))
     TSTTRGDIR = os.path.normpath(os.path.join(env['TSTTRGBASE'],TSTPREF,TSTDIR))
 
-    if THISFILE in ["Mtest.py", "Mprofile.py"]:
+    if THISFILE == "Mtest.py":
         TSTDB = TSTPREF+"_"+TSTDIR.replace(os.sep, '_')
     else: # THISFILE == "Mapprove.py"
         TSTDB = ""
@@ -976,7 +933,7 @@ def PerformDir(env, testdir, testlist, BusyPorts) :
     #       print v+" = "+str(env[v])
     #STDOUT.flush()
 
-    if THISFILE in ["Mtest.py", "Mprofile.py"]:
+    if THISFILE == "Mtest.py":
         for LogDBvar in 'GDK_DBFARM', 'SQL_LOGDIR', 'XQUERY_LOGDIR':
             if env.has_key(LogDBvar):
                 LogDBdir = os.path.join(env[LogDBvar],TSTDB)
@@ -1021,7 +978,7 @@ def PerformDir(env, testdir, testlist, BusyPorts) :
                 body.append(bodyline)
         TIMES.append([TSTDIR,'',"%7.3f" % td,td,FdOut,FdErr])
 
-        if THISFILE in ["Mtest.py", "Mprofile.py"]:
+        if THISFILE == "Mtest.py":
             CreateHtmlIndex(env, *body)
             elem = AddSubToHtmlIndex(env, TSTDIR, max(FdOut,FdErr))
 
@@ -1620,19 +1577,6 @@ def RunTest(env, TST, BusyPorts, COND) :
                     f.write(expandvars(l))
                 f.close()
 
-        if THISFILE == "Mprofile.py":
-            test = re.compile("^"+TST+"(_[sp][0-9][0-9])?\..*mil.*$", re.MULTILINE)
-            d = os.listdir(os.getcwd())
-            for f in d:
-                if test.match(f)  and  f != TST+EXT+".src":
-                    prof.prof(f, env['CMDLST'])
-                    os.rename(f,f+".no_prof")
-                    os.rename("prof_"+f,f)
-                    if not quiet:
-                        os.system('%s -I"%s" "%s" -A%d "%s.no_prof" "%s" "%s.prof.diff.html"' % (env['exe']['Mdiff'][1],par['IGNORE'],par['CONTEXT'],par['ACCURACY'],f,f,f))
-                    else:
-                        os.system('%s -q -I"%s" "%s" -A%d "%s.no_prof" "%s" "%s.prof.diff.html"' % (env['exe']['Mdiff'][1],par['IGNORE'],par['CONTEXT'],par['ACCURACY'],f,f,f))
-
         ACCURACYout = par['ACCURACY']
         ACCURACYerr = par['ACCURACY']
         STABLEout,STABLEerr = StableOutErr(env,par,TST,OS,RELEASE,DIST,VERSION)
@@ -1724,9 +1668,6 @@ def RunTest(env, TST, BusyPorts, COND) :
         TestErrFile = TST+".test.err"
         TestOut = open(TestOutFile,"w")
         TestErr = open(TestErrFile,"w")
-        #else:  # THISFILE == "Mprofile.py"
-        #       TestOut = open(TST+".profile.out","w")
-        #       TestErr = open(TST+".profile.err","w")
         TestOut.write("stdout of test '"+TST+"` in directory '"+url(TSTDIR)+"` itself:\n\n")
         TestErr.write("stderr of test '"+TST+"` in directory '"+url(TSTDIR)+"` itself:\n\n")
         TestOut.close()
@@ -1816,7 +1757,7 @@ def RunTest(env, TST, BusyPorts, COND) :
             env['exe']['Mtimeout'] = env['exe']['Mtimeout'][0], 'Mtimeout -timeout %s ' % str(par['TIMEOUT'])
             SetExecEnv(env['exe'],0)
 
-        if THISFILE in ["Mtest.py", "Mprofile.py"]:
+        if THISFILE == "Mtest.py":
             try:
                 Mfilter.mFilter(TST+STABLEout,par['IGNORE'])
                 Mfilter.mFilter(TST+STABLEerr,par['IGNORE'])
@@ -2526,14 +2467,9 @@ def ReadMapproveRc(f) :
 
 THISFILE = os.path.basename(sys.argv[0])
 THISPATH = os.path.abspath(os.path.dirname(sys.argv[0]))
-if THISFILE == "Mprofile.py":
-    dftTSTPREF = "mProfiles"
-    TSTDBG = str(0)
-    dftIGNORE = '^[#~]'
-else: # THISFILE in ["Mtest.py", "Mapprove.py"]
-    dftIGNORE = '^#'
-    TSTDBG = str(2+8)
-    dftTSTPREF = "mTests"
+dftIGNORE = '^#'
+TSTDBG = str(2+8)
+dftTSTPREF = "mTests"
 TSTSUFF = "Tests"
 
 if hasattr(os,"symlink"):
@@ -2706,18 +2642,6 @@ if os.path.exists(os.path.join('CVS', 'Repository')):
             par['PACKAGE'] = 'monetdb'
             Warn('Using default package="%s".' % par['PACKAGE'])
 
-def FindCmdLst(env) :
-    dirs = [ os.path.join(os.getcwd(),"."), os.path.join(env['TSTSRCBASE'],".") ]
-    if os.environ.has_key('HOME'):
-        dirs.append(os.path.join(os.environ['HOME'],"."))
-    dirs.append(path(env['MONETDB_PREFIX']+"/share/MonetDB/"))
-    for d in dirs:
-        f = d+'Mprofile-commands.lst'
-        if os.path.isfile(f):
-            return f
-    return ""
-### FindCmdLst(env) #
-
 def GetConfig(cfg, arg) :
     cmd = CheckExec(cfg)
     proc = subprocess.Popen([cmd,arg], stdin = subprocess.PIPE, stdout = subprocess.PIPE, universal_newlines = True)
@@ -2751,10 +2675,8 @@ def main(argv) :
     vars = ['MONETDB_SOURCE', 'MONETDB_BUILD', 'MONETDB_PREFIX',
             'TSTSRCBASE'  , 'TSTBLDBASE' , 'TSTTRGBASE'  ,
             'SQL_PREFIX']
-    if THISFILE in ["Mtest.py", "Mprofile.py"]:
+    if THISFILE == "Mtest.py":
         vars = vars + [ 'MILCLIENT', 'MALCLIENT', 'SQLCLIENT', 'SQLDUMP', 'XQUERYCLIENT', 'X100CLIENT']    #, 'MONETDB_MOD_PATH' ]
-    if THISFILE == "Mprofile.py":
-        vars = vars + ['CMDLST']
 
     env = {}
 
@@ -2766,7 +2688,7 @@ def main(argv) :
     dft['TSTSRCBASE']     = "GetMonetConfig(par['PACKAGE'],'--source')"
     dft['TSTBLDBASE']     = "GetMonetConfig(par['PACKAGE'],'--build')"
     dft['TSTTRGBASE']     = "GetMonetConfig(par['PACKAGE'],'--prefix')"   # or os.getcwd() ?
-    if THISFILE in ["Mtest.py", "Mprofile.py"]:
+    if THISFILE == "Mtest.py":
         dft['GDK_DEBUG']      = "TSTDBG"
         dft['MONETDB_MOD_PATH'] = "''"   #"os.path.join(env['MONETDB_PREFIX'],'lib')+os.pathsep+os.path.join(env['MONETDB_PREFIX'],'lib','MonetDB')"
         dft['setMONETDB_MOD_PATH'] = "'--set \"monet_mod_path='+env['MONETDB_MOD_PATH']+'\"'"
@@ -2781,8 +2703,6 @@ def main(argv) :
         dft['SQLDUMP']        = "'msqldump'"
         dft['XQUERYCLIENT']   = "'mclient -lxquery -fxml'"
         dft['X100CLIENT']     = "'x100run_mapi'"
-    if THISFILE == "Mprofile.py":
-        dft['CMDLST']         = "FindCmdLst(env)"
 
     #par = {}
     # get current environment
@@ -2821,7 +2741,7 @@ def main(argv) :
          "suppress messages on stdout"),
         ]
 
-    if THISFILE in ["Mtest.py", "Mprofile.py"]:
+    if THISFILE == "Mtest.py":
         common_options = cmd_options + [
             (None, 'I', 'ignore', '<exp>',
              "ignore lines matching <exp> during diff (default: '%s')" % dftIGNORE),
@@ -2862,16 +2782,6 @@ def main(argv) :
 
     if THISFILE == 'Mtest.py':
         options = common_options # + []
-    elif THISFILE == "Mprofile.py":
-        options = common_options + [
-            ('CMDLIST', None, 'cmdlist', '<path>',
-             "location of .Mprofile-commands.lst file; default is the first of\n" +
-             "\t%s\n" % os.path.join(os.getcwd(), '.Mprofile-commands.lst') +
-             "\t%s\n" % os.path.join('<TSTSRCBASE>', '.Mprofile-commands.lst') +
-             "\t%s\n" % os.path.join(os.environ['HOME'],'.Mprofile-commands.lst') +
-             "\t%s" % os.path.join(GetMonetConfig(par['PACKAGE'],'--prefix'),'share','MonetDB','Mprofile-commands.lst')
-             ),
-            ]
     elif THISFILE == 'Mapprove.py':
         f = os.path.join(GetMonetConfig(par['PACKAGE'],'--prefix'),dftTSTPREF,'.Mapprove.rc')
         v = ReadMapproveRc(f)
@@ -2955,7 +2865,7 @@ def main(argv) :
 
     par['RECURSIVE'] = opts.get('recursive', 0)
     par['QUIET'] = opts.get('quiet', 0)
-    if THISFILE in ["Mtest.py", "Mprofile.py"]:
+    if THISFILE == "Mtest.py":
         par['IGNORE'] = opts.get('ignore', dftIGNORE)
         par['CONTEXT'] = '-C%d' % int(opts.get('context', 1))
         a = int(opts.get('accuracy', (os.name != 'nt' and 1) or 0))
@@ -3047,7 +2957,7 @@ def main(argv) :
         #os.environ['PATH'] = bp
 
     # tidy-up and fall-back to defaults where necessary
-    if THISFILE in ["Mtest.py", "Mprofile.py"]:
+    if THISFILE == "Mtest.py":
         vars_ = vars + ['MAPIPORT', 'XRPCPORT', 'GDK_DEBUG', 'MONETDB_MOD_PATH']
     else: # THISFILE == "Mapprove.py"
         vars_ = vars
@@ -3056,7 +2966,7 @@ def main(argv) :
             env[v] = eval(dft[v])
             #TODO:
             # make sure, that PATHs are absolute
-    if THISFILE in ["Mtest.py", "Mprofile.py"]:
+    if THISFILE == "Mtest.py":
         if env['MONETDB_MOD_PATH']:
             env['setMONETDB_MOD_PATH'] = eval(dft['setMONETDB_MOD_PATH'])
         else:
@@ -3077,13 +2987,6 @@ def main(argv) :
             env['setDBG'] = env['DBG']
         else:
             env['setDBG'] = ''
-
-    if THISFILE == "Mprofile.py"  and  not env['CMDLST']:
-        try:
-            Usage(options)
-        except monet_options.Error:
-            pass
-        ErrXit("No .Mprofile-commands.lst found!")
 
     #TODO:
     ## in case of inconsistencies, try to fallback to "save" settings
@@ -3173,7 +3076,7 @@ def main(argv) :
     #STDOUT.flush()
 
     # find mil script for MIL and SQL server
-    if THISFILE in ["Mtest.py", "Mprofile.py"]:
+    if THISFILE == "Mtest.py":
         env['SQL_SERVER'] = "sql_server"
         env['SQL_TRACE'] = ""
 
@@ -3187,7 +3090,7 @@ def main(argv) :
         URLPREFIX = URLPREFIXMAP.get(repo) # None if unknown
     # export and display env
     STDERR.flush()
-    if THISFILE in ["Mtest.py", "Mprofile.py"]:
+    if THISFILE == "Mtest.py":
         vars_ = vars_ + ['XQUERY_LOGDIR','SQL_LOGDIR','GDK_DBFARM','setMONETDB_MOD_PATH','SQL_SERVER']
     else: # THISFILE == "Mapprove.py"
         vars_ = vars_
@@ -3205,7 +3108,7 @@ def main(argv) :
 
     ## set/extend PATH & LD_LIBRARY_PATH
     #bp = ""        #os.path.join(env['MONETDB_PREFIX'],"bin")
-    #if THISFILE in ["Mtest.py", "Mprofile.py"]:
+    #if THISFILE == "Mtest.py":
     #       lp = env['MONETDB_MOD_PATH']
     #else: # THISFILE == "Mapprove.py"
     #       lp = ""
@@ -3236,7 +3139,7 @@ def main(argv) :
         os.chdir(env['TSTSRCBASE'])
 
     # check for executables, set their standard options and export them
-    if THISFILE in ["Mtest.py", "Mprofile.py"]:
+    if THISFILE == "Mtest.py":
         exe = {}
         exe['Mtimeout']      = CheckExec('Mtimeout')     , 'Mtimeout -timeout %d ' % par['TIMEOUT']
         if par['M5']:
@@ -3342,7 +3245,7 @@ def main(argv) :
 
     BusyPorts = []
 
-    if THISFILE in ["Mtest.py", "Mprofile.py"]:
+    if THISFILE == "Mtest.py":
 
         if os.name == "nt":
             n = os.path.join(THISPATH,"MkillNT.")
@@ -3502,7 +3405,7 @@ def main(argv) :
             if elem is not None:
                 body.append(elem)
 
-    if THISFILE in ["Mtest.py", "Mprofile.py"]:
+    if THISFILE == "Mtest.py":
         fn = os.path.join(env['TSTTRGBASE'],TSTPREF,"times.")
         fl = open(fn+"lst","w")
         Failure = [0,0,0,0,0,0]
@@ -3586,7 +3489,7 @@ VALUES (%s, '%s', '%s', '%s',
                 fl.write(sql)
         fl.close()
 
-    if THISFILE in ["Mtest.py", "Mprofile.py"]:
+    if THISFILE == "Mtest.py":
         env['TSTDIR'] = ""
         env['TSTTRGDIR'] = os.path.join(env['TSTTRGBASE'],TSTPREF)
         CreateHtmlIndex(env, *body)

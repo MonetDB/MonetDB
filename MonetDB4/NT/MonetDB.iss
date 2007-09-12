@@ -29,14 +29,10 @@ Source: "bin\Mlog"; DestDir: "{app}\bin";
 Source: "bin\Mlog.bat"; DestDir: "{app}\bin";
 Source: "bin\monetdb-config"; DestDir: "{app}\bin";
 Source: "bin\monetdb-config.bat"; DestDir: "{app}\bin";
-Source: "bin\Mprofile.py"; DestDir: "{app}\bin"; 
-Source: "bin\Mprofile.py.bat"; DestDir: "{app}\bin"; 
 Source: "bin\Mserver"; DestDir: "{app}\bin"; 
 Source: "bin\Mserver.exe"; DestDir: "{app}\bin"; 
 Source: "bin\Mtest.py"; DestDir: "{app}\bin"; 
 Source: "bin\Mtest.py.bat"; DestDir: "{app}\bin"; 
-Source: "bin\prof.py"; DestDir: "{app}\bin"; 
-Source: "bin\prof.pyc"; DestDir: "{app}\bin"; 
 
 [Messages]
 AboutSetupNote=MonetDB home page:%nhttp://www.monetdb.com/

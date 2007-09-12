@@ -113,7 +113,6 @@ make install DESTDIR=$RPM_BUILD_ROOT
 
 # cleanup stuff we don't want to have installed
 find $RPM_BUILD_ROOT -name .incs.in -delete -o -name \*.la -delete
-rm -rf $RPM_BUILD_ROOT%{_datadir}/%{name}/Mprofile-commands.lst
 
 %post -p /sbin/ldconfig
 
@@ -147,13 +146,11 @@ rm -fr $RPM_BUILD_ROOT
 %files testing
 %{_bindir}/Mtest.py*
 %{_bindir}/Mapprove.py*
-%{_bindir}/Mprofile.py*
 %{_bindir}/Mdiff
 %{_bindir}/Mfilter.py*
 %{_bindir}/MkillUsers
 %{_bindir}/Mlog
 %{_bindir}/Mtimeout
-%{_bindir}/prof.py*
 
 %changelog
 * Mon Jun 25 2007 Sjoerd Mullender <sjoerd@acm.org> - @VERSION@-1%{?dist}%{?oid32:.oid32}%{!?oid32:.oid%{bits}}

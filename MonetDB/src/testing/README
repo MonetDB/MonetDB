@@ -6,8 +6,6 @@ have changed since my proposal.
 
 - The testing environment consists of the following tools:
   + Mtest.py	a python script to run tests
-  + Mprofile.py	a python script to run tests and collect profiling information
-		(see below)
   + Mfilter.py	a python script to filter the test output before running Mdiff 
 		(see below)
   + Mdiff	a C program to show the differences of two files as HTML document
@@ -371,19 +369,6 @@ have changed since my proposal.
 	run  Mapprove.py <names...>
 	# checkin all correct new stuff to cvs
 	run  cvs ci
-
-
-- Mprofile.py:
-   Mprofile.py works just like Mtest.py, only it uses "prof.py" to add some
-   mprof-commands to all TST*.*mil* files before actually running the test.
-   Thus, profiling information is collected.
-   prof.py reads a list of mil commands from a .Mprofile-commands.lst file
-   (specified by Mprofile.py's "--CMDLST" parameter) and wraps all
-   occurances of these commands in a mil script in
-	pmB("<command>");
-	<command>; 
-	pmE("<command>");
-   Further, prof.py adds a "pmSummary();" at the end of the mil script.
 
 
 --
