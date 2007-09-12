@@ -1526,6 +1526,7 @@ PFcore_fs_convert_op_by_expr (const PFcnode_t *e1, const PFcnode_t *e2)
 {
     PFvar_t *v1 = PFcore_new_var (0);
     PFvar_t *v2 = PFcore_new_var (0);
+    PFfun_t *fn_number = PFcore_function (PFqname (PFns_fn, "number"));
 
     /*
      * let $v2 := [[ e2 ]] return
@@ -1536,22 +1537,20 @@ PFcore_fs_convert_op_by_expr (const PFcnode_t *e1, const PFcnode_t *e2)
      *           case xdt:untypedAtomic return cast $v1 as xs:string
      *           case xs:string return cast $v1 as xs:string
      *           case xs:boolean return cast $v1 as xs:boolean
-     *           case xs:integer return cast $v1 as xs:integer
-     *           case xs:double return cast $v1 as xs:double
-     *           case xs:decimal return cast $v1 as xs:decimal
+     *           case numeric return fn:number ($v1)
      *           default return $v1 // should not happen
      *       default return $v1
      */
     PFcnode_t *type_conv = 
         add_conversion_case (
             add_conversion_case (
-                add_conversion_case (
-                    add_conversion_case (
-                        add_conversion_case (
-                            PFcore_var (v1),
-                            v2, v1, PFty_xs_decimal ()),
-                        v2, v1, PFty_xs_double ()),
-                    v2, v1, PFty_xs_double ()),
+                PFcore_typeswitch (
+                    PFcore_var (v2),
+                    PFcore_cases (
+                        PFcore_case (
+                            PFcore_seqtype (PFty_numeric ()),
+                            APPLY (fn_number, PFcore_var (v1))),
+                        PFcore_default (PFcore_var (v1)))),
                 v2, v1, PFty_xs_boolean ()),
             v2, v1, PFty_xs_string ());
 
