@@ -73,6 +73,13 @@
 
 typedef ssize_t nat;
 
+#ifdef HAVE_STRING_H
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE /* enable strndup prototype (on Linux, only?) */
+#endif
+#include <string.h>
+#endif
+
 #ifndef HAVE_STRDUP
 /**
  * Alternative definition of strdup. It just duplicates a string
@@ -81,6 +88,10 @@ typedef ssize_t nat;
  * @param s  String to duplicate.
  */
 char * strdup (const char * s);
+#else
+#if !HAVE_DECL_STRDUP
+extern char *strdup(const char *);
+#endif
 #endif
 
 #ifndef HAVE_STRNDUP
@@ -93,6 +104,10 @@ char * strdup (const char * s);
  * @param n  Copy only the first n characters.
  */
 char * strndup (const char * s, size_t n);
+#else
+#if !HAVE_DECL_STRNDUP
+extern char *strndup(const char *, size_t);
+#endif
 #endif
 
 /* global state of the shredder */

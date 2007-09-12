@@ -585,15 +585,22 @@ then
                       as arguments for --with-default-backend.])
 fi
 
-dnl The Burg code requires strdup(). We test here if strdup() is
-dnl available on the system. If not, we will define it ourselves
-dnl in burg/main.c
-dnl The xmlshredder requires strndup(). We test here if strndup() is
-dnl available on the system. If not, we will define it ourselves
-dnl in shred_helpers.c
-AC_CHECK_HEADERS([string.h], [AC_CHECK_FUNCS([strdup strtok_r strndup])])
+AC_CHECK_HEADERS(time.h sys/time.h utime.h sys/utime.h sys/times.h string.h)
 
-AC_CHECK_HEADERS(time.h sys/time.h utime.h sys/utime.h sys/times.h)
+dnl The xmlshredder requires strdup() & strndup(). We test here if both are
+dnl available on the system. If not, we will define them ourselves
+dnl in shred_helpers.h & shred_helpers.c
+AC_CHECK_FUNCS([strdup strndup],
+	AC_CHECK_DECLS([strdup, strndup],,[
+		#ifdef HAVE_STRING_H
+		#ifndef _GNU_SOURCE
+		#define _GNU_SOURCE /* enable strndup prototype (on Linux, only?) */
+		#endif
+		#include <string.h>
+		#endif
+	])
+)
+
 AC_HEADER_TIME()
 AC_STRUCT_TM()
 AC_STRUCT_TIMEZONE()
