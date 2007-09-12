@@ -16,8 +16,8 @@
 
 MTSAFE
 
-scripts_perl = {
-	EXT = pm
+headers_perl = {
+	HEADERS = pm
 	DIR = $(prefix)/$(PERL_LIBDIR)/MonetDB
 	SOURCES = CLI.pm
 }

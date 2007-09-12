@@ -34,7 +34,8 @@ LIBS = {
                 $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
 }
 
-scripts_mal = {
+headers_mal = {
+	HEADERS = mal
 	DIR = pkglibdir
 	SOURCES = mal_compiler.mx 
 }

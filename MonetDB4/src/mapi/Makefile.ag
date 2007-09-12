@@ -33,7 +33,8 @@ lib__mapi = {
 
 }
 
-scripts_mil = {
+headers_mil = {
+	HEADERS = mil
 	DIR = pkglibdir
 	SOURCES = mapi.mx
 }

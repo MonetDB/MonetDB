@@ -30,8 +30,8 @@ scripts_bat = {
 }
 
 
-scripts_python = {
-	EXT = py
+headers_python = {
+	HEADERS = py
 	DIR = $(prefix)/$(PYTHON_LIBDIR)/MonetDB
 	SOURCES = Mapi.py
 }

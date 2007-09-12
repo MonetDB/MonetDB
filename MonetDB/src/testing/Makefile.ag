@@ -43,8 +43,8 @@ scripts_py = {
 	SOURCES = Mtest.py Mfilter.py 
 }
 
-scripts_python = {
-	EXT = py
+headers_python = {
+	HEADERS = py
 	DIR = $(prefix)/$(PYTHON_LIBDIR)/MonetDB
 	SOURCES = trace.py subprocess26.py
 }

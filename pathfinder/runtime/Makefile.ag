@@ -130,7 +130,8 @@ lib__xrpc_server = {
 			   $(MONETDB4_MODS) -l_mapi -l_streams -l_builtin -l_ascii_io
 }
 
-scripts_mil = {
+headers_mil = {
+	HEADERS = mil
         DIR = libdir/MonetDB4
         SOURCES = pathfinder.mx pf_support.mx pf_standoff.mx xrpc_client.mx xrpc_server.mx
 }

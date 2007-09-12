@@ -20,7 +20,8 @@ EXTRA_DIST = \
 	ltmain.sh config.h.in \
 	monetdb5.conf.in
 
-scripts_conf = {
+headers_conf = {
+	HEADERS = conf
 	DIR = sysconfdir
 	SOURCES = monetdb5.conf
 }

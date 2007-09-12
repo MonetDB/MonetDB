@@ -150,7 +150,8 @@ lib__statistics = {
                 $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
 }
 
-scripts_mal = {
+headers_mal = {
+	HEADERS = mal
 	DIR = pkglibdir
 	SOURCES = language.mx constraints.mx mal_init.mx box.mx bbp.mx \
 		profiler.mx const.mx batExtensions.mx algebraExtensions.mx \

@@ -14,8 +14,8 @@
 # Portions created by CWI are Copyright (C) 1997-2007 CWI.
 # All Rights Reserved.
 
-scripts_sql = {
-	EXT = sql
+headers_sql = {
+	HEADERS = sql
 	DIR = datadir/MonetDB/sql
 	SOURCES = \
 		bbp.sql stats.sql cache.sql math.sql \

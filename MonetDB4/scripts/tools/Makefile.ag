@@ -16,7 +16,8 @@
 
 EXTRA_DIST  = backup.mil restore.mil
 
-scripts_mil = {
+headers_mil = {
+	HEADERS = mil
 	DIR = pkglibdir
 	SOURCES = backup.mil restore.mil
 }

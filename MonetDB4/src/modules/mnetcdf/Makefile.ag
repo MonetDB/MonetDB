@@ -32,8 +32,8 @@ LIB_mnetcdf = {
 		$(NETCDF_LIBS) $(MATH_LIBS)
 }
 
-scripts_mnetcdf = {
-	EXT = mil
+headers_mnetcdf = {
+	HEADERS = mil
 	DIR = pkglibdir
 	COND = HAVE_NETCDF
 	SOURCES = mnetcdf.mx 

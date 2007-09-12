@@ -18,14 +18,14 @@ MTSAFE
 
 EXTRA_DIST_DIR = phpdbwrapper
 
-scripts_php = {
-	EXT = php
+headers_php = {
+	HEADERS = php
 	DIR = datadir/MonetDB/php
 	SOURCES = monetdb_query_demo.php
 }
 
-scripts_ini = {
-	EXT = ini
+headers_ini = {
+	HEADERS = ini
 	DIR = datadir/MonetDB/php
 	SOURCES = php.ini.in
 }

@@ -115,7 +115,8 @@ lib__pcre = {
 		$(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) $(PCRE_LIBS)
 }
 
-scripts_mil = {
+headers_mil = {
+	HEADERS = mil
 	DIR = pkglibdir
 	SOURCES = streams.mx str.mx xtables.mx constant.mx \
          	algebra.mx arith.mx bat.mx builtin.mx sys.mx trans.mx \

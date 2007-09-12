@@ -35,7 +35,8 @@ LIBS = {
                 $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
 }
 
-scripts_mal = {
+headers_mal = {
+	HEADERS = mal
 	DIR = pkglibdir
 	SOURCES = mal_isolation.mx mal_scheduler.mx mal_mes.mx mal_memorun.mx
 }

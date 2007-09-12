@@ -48,7 +48,8 @@ bin_Mbeddedsql5 = {
 }
 
 
-scripts_mal = {
+headers_mal = {
+	HEADERS = mal
 	DIR = libdir/MonetDB5
 	SOURCES = sql.mx 
 }

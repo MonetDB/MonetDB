@@ -104,7 +104,8 @@ lib__logger = {
 		
 }
 
-scripts_mal = {
+headers_mal = {
+	HEADERS = mal
 	DIR = pkglibdir
 	SOURCES = calc.mx bat5.mx algebra.mx status.mx unix.mx \
 		mapi.mx mmath.mx lock.mx sema.mx alarm.mx batstr.mx batmtime.mx \

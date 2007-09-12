@@ -29,18 +29,20 @@ headers_pc = {
 	DIR = libdir/pkgconfig
 }
 
-scripts_txt = {
+headers_txt = {
+	HEADERS = txt
 	SOURCES = HowToStart-SQL-Win32.txt dump-restore.txt 
 	DIR = datadir/doc/MonetDB-SQL-$(VERSION)
 }
 
-scripts_html = {
+headers_html = {
+	HEADERS = html
 	SOURCES = dump-restore.html
 	DIR = datadir/doc/MonetDB-SQL-$(VERSION)
 }
 
-scripts_docs = {
-	EXT = ""
+headers_docs = {
+	HEADERS = ""
 	SOURCES = HowToStart-SQL 
 	DIR = datadir/doc/MonetDB-SQL-$(VERSION)
 }

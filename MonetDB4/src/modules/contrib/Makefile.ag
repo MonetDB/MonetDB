@@ -48,14 +48,15 @@ LIB_mprof = {
 		$(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) $(MATH_LIBS)
 }
 
-scripts_mprof = {
-	EXT = mil
+headers_mprof = {
+	HEADERS = mil
 	DIR = pkglibdir
 	COND = NOT_WIN32
 	SOURCES = mprof.mx 
 }
 
-scripts_mil = {
+headers_mil = {
+	HEADERS = mil
 	DIR = pkglibdir
 	SOURCES = \
 		bitset.mx bitvector.mx iterator.mx malalgebra.mx \

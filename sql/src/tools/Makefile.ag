@@ -106,8 +106,8 @@ bin_embeddedExample = {
 		$(MONETDB_LIBS) -lbat -lmutils -lstream $(MONETDB4_LIBS) -lmonet $(CLIENTS_LIBS) -lMapi
 }
 
-scripts_h = {
-	EXT = h
+headers_h = {
+	HEADERS = h
 	DIR = includedir
 	SOURCES = embeddedclient.mx
 }
@@ -121,12 +121,12 @@ lib_monetdb = {
 	DIR = $(prefix)/$(PYTHON_LIBDIR)
 }
 
-scripts_py = {
+headers_py = {
 	COND = HAVE_PYTHON_SWIG
-        EXT = py
-        SOURCES = monetdb.py.i
-        TARGETS = monetdb.py
-        DIR = $(prefix)/$(PYTHON_LIBDIR)
+	HEADERS = py
+	SOURCES = monetdb.py.i
+	TARGETS = monetdb.py
+	DIR = $(prefix)/$(PYTHON_LIBDIR)
 }
 
 EXTRA_DIST_DIR = Tests

@@ -32,13 +32,14 @@ EXTRA_DIST_DIR = NT tests benchmarks
 
 EXTRA_HEADERS = pf_config.h
 
-scripts_txt = {
+headers_txt = {
+	HEADERS = txt
 	SOURCES = HowToStart-MinGW.txt
 	DIR = datadir/doc/MonetDB-XQuery-$(VERSION)
 }
 
-scripts_docs = {
-	EXT = ""
+headers_docs = {
+	HEADERS = ""
 	SOURCES = HowToStart-PF 
 	DIR = datadir/doc/MonetDB-XQuery-$(VERSION)
 }

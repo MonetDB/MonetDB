@@ -23,14 +23,14 @@
 # Universitaet Muenchen, respectively.  All Rights Reserved.
 #
 
-scripts_html = {
-	EXT = html
+headers_html = {
+	HEADERS = html
 	DIR = datadir/MonetDB/xrpc/export
 	SOURCES = index.html
 }
 
-scripts_xq = {
-	EXT = xq
+headers_xq = {
+	HEADERS = xq
 	DIR = datadir/MonetDB/xrpc/export
 	SOURCES = export.xq
 }

@@ -18,8 +18,8 @@ MTSAFE
 
 SUBDIRS = monetdb
 
-scripts_perl = {
-	EXT = pl pm
+headers_perl = {
+	HEADERS = pl pm
 	DIR = $(prefix)/$(PERL_LIBDIR)/DBD
 	SOURCES = monetdb.pm
 }

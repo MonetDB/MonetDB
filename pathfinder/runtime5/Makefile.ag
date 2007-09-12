@@ -39,7 +39,8 @@ lib__xquery = {
 		$(MONETDB_LIBS) $(MONETDB5_LIBS) -lmal -lbat -lstream $(READLINE_LIBS) $(PTHREAD_LIBS)
 }
 
-scripts_mal = {
+headers_mal = {
+	HEADERS = mal
 	DIR = libdir/MonetDB5
 	SOURCES = xquery.mx
 }

@@ -31,7 +31,8 @@ lib__sql_server = {
 		$(PTHREAD_LIBS)
 }
 
-scripts_mil = {
+headers_mil = {
+	HEADERS = mil
 	DIR = libdir/MonetDB4
 	SOURCES = sql_server.mx 
 }

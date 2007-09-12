@@ -37,7 +37,8 @@ BINS = {
 	LIBS = $(MATH_LIBS)
 }
 
-scripts_mil = {
+headers_mil = {
+	HEADERS = mil
 	DIR = pkglibdir
 	SOURCES = calib.mx
 }

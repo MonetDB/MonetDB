@@ -35,7 +35,8 @@ lib_stream  =  {
 	LIBS = libmutils $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) $(OPENSSL_LIBS) $(CURL_LIBS)
 }
 
-scripts_py = {
+headers_py = {
+	HEADERS = py
 	DIR = $(prefix)/$(PYTHON_LIBDIR)/MonetDB
 	SOURCES = monet_options.py.in __init__.py
 }

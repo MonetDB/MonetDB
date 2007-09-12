@@ -85,7 +85,8 @@ lib__pftijah = {
 		$(MONETDB4_MODS) -l_streams -l_builtin -l_ascii_io -l_algebra -l_constant
 }
 
-scripts_mil = {
+headers_mil = {
+	HEADERS = mil
 	DIR = libdir/MonetDB4
 	SOURCES = pftijah.mx
 }

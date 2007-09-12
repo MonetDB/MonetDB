@@ -42,7 +42,8 @@ lib_optimizer = {
                 $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) 
 }
 
-scripts_mal = {
+headers_mal = {
+	HEADERS = mal
 	DIR = pkglibdir
 	SOURCES =  opt_prelude.mx \
 		opt_support.mx  opt_crack.mx optimizer.mx  opt_factorize.mx \
