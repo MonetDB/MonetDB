@@ -25,7 +25,8 @@ lib__example = {
 	LIBS = $(MONETDB4_MODS) 
 }
 
-scripts_mil = {
+headers_mil = {
+	HEADERS = mil
 	DIR = libdir/MonetDB4
 	SOURCES = example.mx
 }
