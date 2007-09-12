@@ -71,7 +71,7 @@ stderr of test 'illegal-delete` in directory 'tests/Update` itself:
 # cmdline opt 	gdk_dbname = mTests_tests_Update
 
 # 23:35:44 >  
-# 23:35:44 >  Mtimeout -timeout 60 MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=localhost --port=36738 illegal-delete.xq
+# 23:35:44 >  Mtimeout -timeout 60 MapiClient -lxquery -fxml -umonetdb -Pmonetdb --host=localhost --port=36738 illegal-delete.xq
 # 23:35:44 >  
 
 MAPI  = monetdb@hirundo:34885

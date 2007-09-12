@@ -7,7 +7,7 @@ stderr of test 'ID.1652527` in directory 'tests/BugsViaSourgeforce` itself:
 
 
 # 11:55:20 >  
-# 11:55:20 >  Mtimeout -timeout 60 MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=localhost --port=30815 ID.1652527.xq
+# 11:55:20 >  Mtimeout -timeout 60 MapiClient -lxquery -fxml -umonetdb -Pmonetdb --host=localhost --port=30815 ID.1652527.xq
 # 11:55:20 >  
 
 MAPI  = monetdb@localhost:30815

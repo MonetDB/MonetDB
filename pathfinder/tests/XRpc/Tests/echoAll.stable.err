@@ -63,7 +63,7 @@ stderr of test 'echoAll` in directory 'tests/XRpc` itself:
 # cmdline opt 	gdk_dbname = mTests_tests_XRpc
 
 # 11:13:04 >  
-# 11:13:04 >  Mtimeout -timeout 60 MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=localhost --port=30808 echoAll.xq
+# 11:13:04 >  Mtimeout -timeout 60 MapiClient -lxquery -fxml -umonetdb -Pmonetdb --host=localhost --port=30808 echoAll.xq
 # 11:13:04 >  
 
 

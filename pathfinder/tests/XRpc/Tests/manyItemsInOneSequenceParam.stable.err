@@ -7,7 +7,7 @@ stderr of test 'manyItemsInOneSequenceParam` in directory 'tests/XRpc` itself:
 
 
 # 18:57:17 >  
-# 18:57:17 >  Mtimeout -timeout 60 MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=andorea --port=33989 manyItemsInOneSequenceParam.xq
+# 18:57:17 >  Mtimeout -timeout 60 MapiClient -lxquery -fxml -umonetdb -Pmonetdb --host=andorea --port=33989 manyItemsInOneSequenceParam.xq
 # 18:57:17 >  
 
 

@@ -58,7 +58,7 @@ stderr of test 'good-007` in directory 'tests/i18n` itself:
 # cmdline opt 	gdk_dbname = mTests_tests_i18n
 
 # 12:34:13 >  
-# 12:34:13 >  Mtimeout -timeout 60 MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=localhost --port=35551 good-007.xq
+# 12:34:13 >  Mtimeout -timeout 60 MapiClient -lxquery -fxml -umonetdb -Pmonetdb --host=localhost --port=35551 good-007.xq
 # 12:34:13 >  
 
 

@@ -65,7 +65,7 @@ stderr of test 'invisible_error_messages.SF-1409122` in directory 'tests/BugsVia
 # cmdline opt 	gdk_dbname = mTests_tests_BugsViaSourgeforce
 
 # 11:37:45 >  
-# 11:37:45 >  Mtimeout -timeout 60 MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=localhost --port=35613 invisible_error_messages.SF-1409122.xq
+# 11:37:45 >  Mtimeout -timeout 60 MapiClient -lxquery -fxml -umonetdb -Pmonetdb --host=localhost --port=35613 invisible_error_messages.SF-1409122.xq
 # 11:37:45 >  
 
 MAPI  = monetdb@localhost:34248

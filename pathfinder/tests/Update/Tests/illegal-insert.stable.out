@@ -21,7 +21,7 @@ quit();
 Over..
 
 # 23:35:44 >  
-# 23:35:44 >  Mtimeout -timeout 60 MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=localhost --port=36738 illegal-insert.xq
+# 23:35:44 >  Mtimeout -timeout 60 MapiClient -lxquery -fxml -umonetdb -Pmonetdb --host=localhost --port=36738 illegal-insert.xq
 # 23:35:44 >  
 
 <?xml version="1.0" encoding="utf-8"?>

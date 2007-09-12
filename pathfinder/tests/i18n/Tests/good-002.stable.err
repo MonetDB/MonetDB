@@ -7,7 +7,7 @@ stderr of test 'good-002` in directory 'tests/i18n` itself:
 
 
 # 22:24:17 >  
-# 22:24:17 >  Mtimeout -timeout 60 MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=localhost --port=30263 good-002.xq
+# 22:24:17 >  Mtimeout -timeout 60 MapiClient -lxquery -fxml -umonetdb -Pmonetdb --host=localhost --port=30263 good-002.xq
 # 22:24:17 >  
 
 

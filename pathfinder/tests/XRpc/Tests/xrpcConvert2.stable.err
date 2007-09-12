@@ -71,7 +71,7 @@ stderr of test 'xrpcConvert2` in directory 'tests/XRpc` itself:
 # cmdline opt 	gdk_dbname = mTests_tests_XRpc
 
 # 17:19:27 >  
-# 17:19:27 >  Mtimeout -timeout 60 MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=localhost --port=36864 xrpcConvert2.xq
+# 17:19:27 >  Mtimeout -timeout 60 MapiClient -lxquery -fxml -umonetdb -Pmonetdb --host=localhost --port=36864 xrpcConvert2.xq
 # 17:19:27 >  
 
 

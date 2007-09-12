@@ -23,7 +23,7 @@ Over..
 
 
 # 01:36:04 >  
-# 01:36:04 >  Mtimeout -timeout 60 MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=localhost --port=35921 -lxquery -oxml /data/home/boncz/gcc-64-32-debug/mTests/tests/BugsViaSourgeforce/ID.1600704-a.xquery
+# 01:36:04 >  Mtimeout -timeout 60 MapiClient -lxquery -fxml -umonetdb -Pmonetdb --host=localhost --port=35921 -lxquery -fxml /data/home/boncz/gcc-64-32-debug/mTests/tests/BugsViaSourgeforce/ID.1600704-a.xquery
 # 01:36:04 >  
 
 # Elapsed time = 003ms 870us [002us/node]

@@ -60,7 +60,7 @@ stderr of test 'cast2` in directory 'tests/XQuery` itself:
 # cmdline opt 	gdk_dbname = mTests_tests_XQuery
 
 # 11:45:25 >  
-# 11:45:25 >  Mtimeout -timeout 60 MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=localhost --port=35613 cast2.xq
+# 11:45:25 >  Mtimeout -timeout 60 MapiClient -lxquery -fxml -umonetdb -Pmonetdb --host=localhost --port=35613 cast2.xq
 # 11:45:25 >  
 
 MAPI  = monetdb@localhost:35613

@@ -60,7 +60,7 @@ stderr of test 'typeswitch` in directory 'tests/XQuery` itself:
 # cmdline opt 	gdk_dbname = mTests_tests_XQuery
 
 # 11:46:07 >  
-# 11:46:07 >  Mtimeout -timeout 60 MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=localhost --port=35613 typeswitch.xq
+# 11:46:07 >  Mtimeout -timeout 60 MapiClient -lxquery -fxml -umonetdb -Pmonetdb --host=localhost --port=35613 typeswitch.xq
 # 11:46:07 >  
 
 MAPI  = monetdb@localhost:35613

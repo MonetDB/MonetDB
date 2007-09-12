@@ -60,7 +60,7 @@ stderr of test 'check_doc` in directory 'tests/W3C_use_cases/XQUF/Namespaces` it
 # cmdline opt 	gdk_dbname = mTests_tests_W3C_use_cases_XQUF_Namespaces
 
 # 23:21:57 >  
-# 23:21:57 >  Mtimeout -timeout 60 MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=localhost --port=31493 check_doc.xq
+# 23:21:57 >  Mtimeout -timeout 60 MapiClient -lxquery -fxml -umonetdb -Pmonetdb --host=localhost --port=31493 check_doc.xq
 # 23:21:57 >  
 
 

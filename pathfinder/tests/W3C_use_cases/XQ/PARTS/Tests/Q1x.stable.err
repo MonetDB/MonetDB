@@ -60,7 +60,7 @@ stderr of test 'Q1x` in directory 'tests/W3C_use_cases/XQ/PARTS` itself:
 # cmdline opt 	gdk_dbname = mTests_tests_W3C_use_cases_XQ_PARTS
 
 # 19:32:47 >  
-# 19:32:47 >  Mtimeout -timeout 60 MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=localhost --port=35343 Q1x.xq
+# 19:32:47 >  Mtimeout -timeout 60 MapiClient -lxquery -fxml -umonetdb -Pmonetdb --host=localhost --port=35343 Q1x.xq
 # 19:32:47 >  
 
 

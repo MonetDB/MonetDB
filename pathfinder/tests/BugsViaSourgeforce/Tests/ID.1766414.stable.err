@@ -62,7 +62,7 @@ stderr of test 'ID.1766414` in directory 'tests/BugsViaSourgeforce` itself:
 # cmdline opt 	gdk_dbname = mTests_tests_BugsViaSourgeforce
 
 # 08:33:56 >  
-# 08:33:56 >  Mtimeout -timeout 60 MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=localhost --port=34248 -lxquery -oxml /Win/MonetDB/.GNU.32.32.d.--disable-optimize_--enable-debug_--enable-assert.PREFIX./mTests/tests/BugsViaSourgeforce/ID.1766414.xquery
+# 08:33:56 >  Mtimeout -timeout 60 MapiClient -lxquery -fxml -umonetdb -Pmonetdb --host=localhost --port=34248 -lxquery -fxml /Win/MonetDB/.GNU.32.32.d.--disable-optimize_--enable-debug_--enable-assert.PREFIX./mTests/tests/BugsViaSourgeforce/ID.1766414.xquery
 # 08:33:56 >  
 
 

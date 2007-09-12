@@ -4,7 +4,7 @@ stderr of test 'operator-precedence-1` in directory 'tests/XQuery` itself:
 
 
 # 16:02:11 >  
-# 16:02:11 >  Mtimeout -timeout 60 MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=localhost --port=32216 operator-precedence-1.xq
+# 16:02:11 >  Mtimeout -timeout 60 MapiClient -lxquery -fxml -umonetdb -Pmonetdb --host=localhost --port=32216 operator-precedence-1.xq
 # 16:02:11 >  
 
 

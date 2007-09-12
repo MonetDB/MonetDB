@@ -60,7 +60,7 @@ stderr of test 'Q4` in directory 'tests/W3C_use_cases/XQ/STRING` itself:
 # cmdline opt 	gdk_dbname = mTests_tests_W3C_use_cases_XQ_STRING
 
 # 22:27:27 >  
-# 22:27:27 >  Mtimeout -timeout 60 MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=localhost --port=33461 Q4.xq
+# 22:27:27 >  Mtimeout -timeout 60 MapiClient -lxquery -fxml -umonetdb -Pmonetdb --host=localhost --port=33461 Q4.xq
 # 22:27:27 >  
 
 

@@ -7,7 +7,7 @@ stderr of test 'symm` in directory 'tests/Update` itself:
 
 
 # 11:30:17 >  
-# 11:30:17 >  Mtimeout -timeout 60 MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=hirundo --port=31348 symm.xq
+# 11:30:17 >  Mtimeout -timeout 60 MapiClient -lxquery -fxml -umonetdb -Pmonetdb --host=hirundo --port=31348 symm.xq
 # 11:30:17 >  
 
 
