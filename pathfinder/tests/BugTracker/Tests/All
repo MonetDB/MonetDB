@@ -129,4 +129,5 @@ swizzle-bug.SF-1760811
 swizzle-bug2.SF-1763495
 wrong_use_of_leftfetchjoin.SF-1760168
 wrong_use_of_leftfetchjoin.d0.SF-1760168
+wrong_numeric_cast_in_general_comparison.SF-1731555
 pf-O0_produces_wrong_MIL.SF-1771532
