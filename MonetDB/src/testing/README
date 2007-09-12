@@ -1,7 +1,9 @@
-Hi all Monet and DS hackers,
 
-here comes the new version of the testing environment. Only a few details
-have changed since my proposal.
+This is the documentation of the MonetDB regression testing environment.
+
+For futher information about the automatic nightly multi-platform regression
+testing of MonetDB, please also see
+http://monetdb.cwi.nl/Development/TestWeb/index.html
 
 
 - The testing environment consists of the following tools:
@@ -16,8 +18,11 @@ have changed since my proposal.
 		(used "fuser" to detect such processes)
   (Mtimeout and MkillUsers are currently available on Unix, only)
 
+  When called with command-line option "--help", each of these tools
+  provides the respective usage information.
 
-- In each directory of the current Monet and/or DS source tree tests may be
+
+- In each directory of all MonetDB-related source trees, tests may be
   provided in a subdirectory called "Tests". Of course, the tests should
   deal with the part/modules where they are located and they should be
   provided and maintained by the respective developer (see also below).
@@ -53,14 +58,14 @@ have changed since my proposal.
         MAPIPORT is started.
        In both cases, Mtest.py stops the Mserver again, once the test has
         finished.
-   (') For Mserver, if several files are present named
-        TST_sXX.mil(M|S) (XX={00,01,...,99})
-        these are executed by subsequently calling Mserver
+   (') For Mserver/mserver5, if several files are present named
+        TST_sXX.(milS|mal) (XX={00,01,...,99})
+        these are executed by subsequently calling Mserver/mserver5
    (") For mclient, if several files are present named
-        (1) TST_sXX.(milC|sql|xq) (XX={00,01,...,99})
-            these are executed subsequently using the same Mserver
-        (2) TST_pXX.(milC|sql|xq) (XX={00,01,...,99})
-            these are executed cuncurrently using the same Mserver
+        (1) TST_sXX.(milC|malC|sql|xq) (XX={00,01,...,99})
+            these are executed subsequently using the same Mserver/mserver5
+        (2) TST_pXX.(milC|malC|sql|xq) (XX={00,01,...,99})
+            these are executed concurrently using the same Mserver/mserver5
    (^) For each test file TST[.*] involved,
         if a file called
 	TST[.*].src  exists instead of  TST[.*],
@@ -79,9 +84,12 @@ have changed since my proposal.
      (optional)                                             (TST.prelude)  (^,`)
   + a MAL script to be used as prelude for mserver5
      (optional)                                             (TST.prelude5) (^,`)
-  + for frontend tests, a MIL script to be used 
-     instead of the frontends dbinit script.
+  + for frontend tests with MonetDB4 (Mserver), a MIL script to be executed
+     by the server before stating the frontend
      (optional)                                             (TST.dbinit) (^,`)
+  + for frontend tests with MonetDB5 (mserver5), a MAL script to be executed
+     by the server before stating the frontend
+     (optional)                                             (TST.dbinit5) (^,`)
   + for mclient tests, a MIL script to be used as
      prologue for Mserver, i.e., a script that is executed by Mserver after
      dbinit is executed, but before (the first)
@@ -101,10 +109,10 @@ have changed since my proposal.
      (all) mclient(s) have finished
      (optional)                                             (TST.epilogue5)(^,`)
   + a file that contains a list of modules (one per line)
-     required by the test  (optional)                       (TST.modules)  (^,`)
+     required by the test  (optional; MonetDB4, only)       (TST.modules)  (^,`)
   + a file that contains a list of BATs (one per line)
      (created by previous tests within the same directory)
-     required by the test  (optional)                       (TST.BATs)     (^,`)
+     required by the test  (optional; MonetDB4, only)       (TST.BATs)     (^,`)
   + a set of files used by the arbitrary executable
      (optinal)                                              (TST.*)        (^,`)
   + stable (i.e. correct) versions of stdout and stderr
@@ -120,21 +128,30 @@ have changed since my proposal.
   Using this naming conventions, the test environment can automatically
   decide what to do when called as "Mtest.py TST" (see below), i.e. execute
   one of the following:
-  * TST[.exe|.com|.bat|.cmd] TST [TST.prelude]
+  * TST[.sh|.exe|.com|.bat|.cmd] TST [TST.prelude]
   * python TST.py [TST.prelude]
-  * Mserver --dbname=TSTDB [TST.prelude] < TST.mil(M|S)
-  * Mserver --dbname=TSTDB --set mapi_port=$MAPIPORT --set xrpc_port=$XRPCPORT --dbinit="module(mapi); mil_start();" [TST.prologue] &
+  * Mserver --dbname=TSTDB [TST.prelude] < TST.milS
+  * mserver5 --dbname=TSTDB [TST.prelude] < TST.mal
+  * Mserver --dbname=TSTDB --set mapi_port=$MAPIPORT --set xrpc_port=$XRPCPORT --dbinit="[<TST.dbinit] module(mapi); mil_start();" [TST.prologue] &
          mclient -lmil < TST[_(s|p)XX].milC
-     or  TST[.exe|.com|.bat|.cmd] TST [TST.prelude]
-     or  python TST.py [TST.prelude]
-  * Mserver --dbname=TSTDB --set mapi_port=$MAPIPORT --set xrpc_port=$XRPCPORT --dbinit="module(sql_server);" [TST.prologue] &
+     or  TST.MIL.(sh|exe|com|bat|cmd) TST [TST.prelude]
+     or  python TST.MIL.py [TST.prelude]
+  * mserver5 --dbname=TSTDB --set mapi_port=$MAPIPORT --set xrpc_port=$XRPCPORT --dbinit="[<TST.dbinit5]" [TST.prologue5] &
+         mclient -lmal < TST[_(s|p)XX].malC
+     or  TST.MAL.(sh|exe|com|bat|cmd) TST
+     or  python TST.MAL.py
+  * Mserver --dbname=TSTDB --set mapi_port=$MAPIPORT --set xrpc_port=$XRPCPORT --dbinit="[<TST.dbinit] module(sql_server);" [TST.prologue] &
          mclient -lsql < TST[_(s|p)XX].sql
-     or  TST[.exe|.com|.bat|.cmd] TST [TST.prelude]
-     or  python TST.py [TST.prelude]
-  * Mserver --dbname=TSTDB --set mapi_port=$MAPIPORT --set xrpc_port=$XRPCPORT --dbinit="module(pathfinder);" [TST.prologue] &
+     or  TST.SQL.(sh|exe|com|bat|cmd) TST
+     or  python TST.SQL.py
+  * mserver5 --dbname=TSTDB --set mapi_port=$MAPIPORT --set xrpc_port=$XRPCPORT --dbinit="[<TST.dbinit5] include sql;" [TST.prologue5] &
+         mclient -lsql < TST[_(s|p)XX].sql
+     or  TST.SQL.(sh|exe|com|bat|cmd) TST
+     or  python TST..SQL.py
+  * Mserver --dbname=TSTDB --set mapi_port=$MAPIPORT --set xrpc_port=$XRPCPORT --dbinit="[<TST.dbinit] module(pathfinder);" [TST.prologue] &
          mclient -lxquery -fxml < TST[_(s|p)XX].xq
-     or  TST[.exe|.com|.bat|.cmd] TST [TST.prelude]
-     or  python TST.py [TST.prelude]
+     or  TST.XQUERY.(sh|exe|com|bat|cmd) TST
+     or  python TST.XQUERY.py
 
   (On Unix, all M<tool>'s are started with "Mtimeout -timeout TIMEOUT
    M<tool> ..." to kill (probably) hanging M<tool>'s after a certain
@@ -154,13 +171,13 @@ have changed since my proposal.
 
 - Mtest.py uses three directory trees based at TSTSRCBASE, TSTBLDBASE, and
   TSTTRGBASE, respectively. These trees have similar purpose as the SOURCE,
-  BUILD, and PREFIX trees when configuring and compiling Monet: the original
+  BUILD, and PREFIX trees when configuring and compiling MonetDB: the original
   tests are found in TSTSRCBASE, tests extracted from .mx or .in files
   during testing are fould in TSTBLDBASE, and Mtest.py writes the test
   output to TSTTRGBASE. The default settings are as follows:
-	TSTSRCBASE=$MONETDB_SOURCE  (where you cecked out Monet's source tree)
+	TSTSRCBASE=$MONETDB_SOURCE  (where you cecked out MonetDB's source tree)
 	TSTBLDBASE=$MONETDB_BUILD   (where you called configure and make)
-	TSTTRGBASE=$MONETDB_PREFIX  (where you told configure to put Monet)
+	TSTTRGBASE=$MONETDB_PREFIX  (where you told configure to put MonetDB)
   You can over rule any of these defaults by setting the respective
   environment variable, or by giving, e.g., --TSTTRGBASE=/tmp as command
   line option to Mtest.py. 
@@ -173,7 +190,7 @@ have changed since my proposal.
   The latter is a restiction that might be released in the future, but for
   the time being, using paths that contain symbolic links will cause
   problems with Mtest.py.
-  Hence, if you compiled Monet in a path that contains a symbolic link,
+  Hence, if you compiled MonetDB in a path that contains a symbolic link,
   e.g., ~/dev/monet -> /net/myhost/export/scratch1/myname/monet,
   you should either
   a) overrule the initial setting of MONETDB_SOURCE, MONETDB_BUILD,
@@ -221,9 +238,9 @@ have changed since my proposal.
     default settings:
 	name		default					description
 	----		-------					-----------
-	MONETDB_SOURCE	(where you checked out Monet)		base of Monet's source tree
+	MONETDB_SOURCE	(where you checked out MonetDB)		base of MonetDB's source tree
 	MONETDB_BUILD	(where you called configure & make)	base of extracted source tree
-	MONETDB_PREFIX	(where you installed Monet to)		base of Monet distribution
+	MONETDB_PREFIX	(where you installed MonetDB to)	base of MonetDB distribution
 	TSTSRCBASE	$MONETDB_SOURCE				base of test source tree
 	TSTBLDBASE	$MONETDB_BUILD				base of extracted test tree
 	TSTTRGBASE	$MONETDB_PREFIX				base for test output
@@ -237,7 +254,7 @@ have changed since my proposal.
        "--config=", "--host=", & "--port=" options.
 
     The following variables are currently still used legacy, but they will disappear soon...
-	MONETDB_MOD_PATH	$MONETDB_PREFIX/lib(64);MONETDB_PREFIX/lib(64)/Monet
+	MONETDB_MOD_PATH	$MONETDB_PREFIX/lib(64);MONETDB_PREFIX/lib(64)/MonetDB
 
     The setting of all these environment variables maybe overruled
     by commandline options with the same names, e.g., "--MILCLIENT=mclient.py".
@@ -356,7 +373,7 @@ have changed since my proposal.
 			# approve new/modified correct output of your tests
 			run  Mapprove.py <names...>
 		endloop
-		# run all Monet tests...
+		# run all MonetDB tests...
 		cd $TSTSRCBASE
 		run  Mtest.py -r
 		# ... and check their results
