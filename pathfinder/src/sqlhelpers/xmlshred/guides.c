@@ -1,6 +1,8 @@
+#include <stdio.h>
+#include <assert.h>
+
 #include "guides.h"
 #include "encoding.h"
-#include <stdio.h>
 
 /* SAX parser interface (libxml2) */
 #include "libxml/parser.h"
@@ -49,25 +51,36 @@ insert_guide_node(const xmlChar *tag_name, guide_tree_t *parent, kind_t kind)
     guide_tree_t *new_guide_node = NULL;
 
 
+#define HAS_TAG(k) \
+  (((k) == doc) || ((k) == elem) || ((k) == attr) || ((k) == pi))
+  
     if (parent != NULL) {
-        /* Search all children and check if the node already exist */
-        child_list = parent->child_list;
-            
-        while(child_list != NULL) {
-            child_node = child_list->node;
+      /* search all children to find a node with 
+         identical characteristics */
+      for (child_list = parent->child_list;
+           child_list != NULL;
+           child_list = child_list->next_element) {
+        child_node = child_list->node;
 
-            #define TAG(k) \
-                  (((k) == (doc)) || ((k) == (elem)) \
-                   || ((k) == (pi)) || ((k) == (attr))) 
+        assert (child_node);
+        
+        /* identical characteristics:
+           (1) same kind
+           (2) same tag name (if applicable) */
+        if (child_node->kind != kind)      
+          continue;
 
-            if (((!TAG(kind)) && child_node->kind==kind) ||
-                 (TAG(kind) && (child_node->kind == kind) &&
-                  xmlStrcmp (child_node->tag_name, tag_name)==0)) {
-                child_node->count = child_node->count + 1;
-                return child_node;
-            }
-            child_list = child_list->next_element;
+        if (HAS_TAG (kind)) {
+          assert (child_node->tag_name);
+          assert (tag_name);        
+          if (xmlStrcmp (child_node->tag_name, tag_name) != 0)
+            continue;
         } 
+           
+        /* node with identical charactistics found */
+        child_node->count++;    
+        return child_node;
+      }
     }
 
     /* create a new guide node */

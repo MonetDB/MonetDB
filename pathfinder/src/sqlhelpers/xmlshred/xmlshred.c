@@ -132,9 +132,9 @@ shred_state_t *status;
 static void
 print_help (char *progname)
 {
-    printf ("Pathfinder XML-Shredder\n");
-    printf ("encode XML-Documents in different encodings.\n");
+    printf ("Pathfinder XML Shredder\n");
     printf ("(c) Database Group, Technische Universitaet Muenchen\n\n");
+    printf ("Produces relational encodings of XML input documents\n\n");
 
     printf ("Usage: %s [OPTION] -f [FILE] -o [FILE]\n\n", progname);            
 
