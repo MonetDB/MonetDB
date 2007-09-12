@@ -33,6 +33,7 @@
 #include "shred_helper.h"
 #include "oops.h"
 
+#ifndef HAVE_STRDUP
 /**
  * Alternative definition of strdup. It just duplicates a string
  * given by @a s.
@@ -50,7 +51,9 @@ strdup (const char * s)
     new[len+1] = '\0';
     return (char *)memcpy (new, s, len);
 }
+#endif
 
+#ifndef HAVE_STRNDUP
 /**
  * Alternative definition of strdup. It just duplicates a string
  * given by @a s.
@@ -71,6 +74,7 @@ strndup (const char * s, size_t n)
     new[len+1] = '\0';
     return (char *)memcpy (new, s, len);
 }
+#endif
 
 /**
  * Test if we have the right to read the given path.

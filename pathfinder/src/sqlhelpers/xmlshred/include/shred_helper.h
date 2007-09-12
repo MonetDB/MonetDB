@@ -73,6 +73,7 @@
 
 typedef ssize_t nat;
 
+#ifndef HAVE_STRDUP
 /**
  * Alternative definition of strdup. It just duplicates a string
  * given by @a s.
@@ -80,7 +81,9 @@ typedef ssize_t nat;
  * @param s  String to duplicate.
  */
 char * strdup (const char * s);
+#endif
 
+#ifndef HAVE_STRNDUP
 /**
  * Alternative definition of strdup. It just duplicates a string
  * given by @a s.
@@ -90,6 +93,7 @@ char * strdup (const char * s);
  * @param n  Copy only the first n characters.
  */
 char * strndup (const char * s, size_t n);
+#endif
 
 /* global state of the shredder */
 struct shred_state_t {
