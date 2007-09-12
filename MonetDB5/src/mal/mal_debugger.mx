@@ -1476,6 +1476,9 @@ mdbStep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 		p = getInstrPtr(mb, pc);
 		mdbCommand(cntxt, mb, stk, p, pc);
 		break;
+	case 't':
+		printTraceCall(cntxt->fdout,mb,stk,pc,cntxt->flags);
+		break;
 	case 'C':
 		mdbSessionActive= 0; /* for name completion */
 	}
