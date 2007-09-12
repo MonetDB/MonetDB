@@ -622,9 +622,12 @@ dynamically created and should be freed after use.
 
 Set the output format for results send by the server.
 
-@item MapiMsg  mapi_stream_into(Mapi mid, char *docname, char *colname)
+@item MapiMsg  mapi_stream_into(Mapi mid, char *docname, char *colname, FILE *fp)
 
-Stream a document into the server.
+Stream a document into the server.  The name of the document is
+specified in docname, the collection is optionally specified in
+colname (if NULL, it defaults to docname), and the content of the
+document comes from fp.
 
 @item MapiMsg  mapi_profile(Mapi mid, int flag)
 
@@ -1055,7 +1058,7 @@ mapi_export MapiMsg mapi_explain(Mapi mid, FILE *fd);
 mapi_export MapiMsg mapi_explain_query(MapiHdl hdl, FILE *fd);
 mapi_export MapiMsg mapi_explain_result(MapiHdl hdl, FILE *fd);
 mapi_export MapiMsg mapi_output(Mapi mid, char *output);
-mapi_export MapiMsg mapi_stream_into(Mapi mid, char *docname, char *colname);
+mapi_export MapiMsg mapi_stream_into(Mapi mid, char *docname, char *colname, FILE *fp);
 mapi_export MapiMsg mapi_profile(Mapi mid, int flag);
 mapi_export MapiMsg mapi_trace(Mapi mid, int flag);
 mapi_export int mapi_get_trace(Mapi mid);
@@ -2787,7 +2790,7 @@ mapi_timeout(Mapi mid, int timeout)
 	return mapi_setError(mid, "Operation not yet implemented", "mapi_timeout", MERROR);
 }
 
-static int
+static MapiMsg
 mapi_Xcommand(Mapi mid, char *cmdname, char *cmdvalue)
 {
 	MapiHdl hdl;
@@ -3137,23 +3140,42 @@ mapi_output(Mapi mid, char *output)
 }
 
 MapiMsg
-mapi_stream_into(Mapi mid, char *docname, char *colname)
+mapi_stream_into(Mapi mid, char *docname, char *colname, FILE *fp)
 {
-	mapi_clrError(mid);
-	if (mid->languageId == LANG_XQUERY) {
-		char buf[BUFSIZ];
-		int i;
+	char buf[BUFSIZ];
+	int i;
+	size_t length;
+	MapiMsg rc;
+	MapiHdl hdl;
+	char *err;
 
-		/* HACK alert, switch to mil to lose the extra 'S' */
-		mid->languageId = LANG_MIL;
-		if (!colname)
-			return mapi_Xcommand(mid, "copy", docname);
-		i = snprintf(buf, BUFSIZ, "%s %s", docname, colname);
-		if (i < 0)
-			return MERROR;
-		return mapi_Xcommand(mid, "copy", buf);
+	mapi_clrError(mid);
+	if (mid->languageId != LANG_XQUERY)
+		mapi_setError(mid, "only allowed in XQuery mode", "mapi_stream_into", MERROR);
+
+	i = snprintf(buf, sizeof(buf), "%s%s%s", docname, colname ? " " : "", colname ? colname : "");
+	if (i < 0)
+		return MERROR;
+	rc = mapi_Xcommand(mid, "copy", buf);
+	if (rc != MOK)
+		return rc;
+	while ((length = fread(buf, 1, sizeof(buf), fp)) > 0) {
+		stream_write(mid->to, buf, 1, length);
+		check_stream(mid, mid->to, "write error on stream", "mapi_stream_into", mid->error);
 	}
-	return MOK;
+	stream_flush(mid->to);
+	check_stream(mid, mid->to, "write error on stream", "mapi_stream_into", mid->error);
+	hdl = mapi_new_handle(mid);
+	mid->active = hdl;
+	rc = read_into_cache(hdl, 0);
+	if ((err = mapi_result_error(hdl)) != NULL)
+		err = strdup(err);
+	mapi_close_handle(hdl);
+	if (err != NULL) {
+		mapi_setError(mid, err, "mapi_stream_into", rc);
+		free(err);
+	}
+	return rc;
 }
 
 MapiMsg
@@ -3863,7 +3885,7 @@ mapi_query_done(MapiHdl hdl)
 To speed up interaction with a terminal front-end,
 the user can issue the quick_*() variants.
 They will not analyze the result for errors or
-header information, but simply through the output
+header information, but simply throw the output
 received from the server to the stream indicated.
 @c
 MapiHdl

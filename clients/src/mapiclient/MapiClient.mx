@@ -155,8 +155,6 @@ static enum formatters formatter = NOformatter;
 
 #define DEFWIDTH 80
 
-char *command = NULL;
-
 static long t0, t1;		/* used for timing */
 static char *mark, *mark2;
 
@@ -1488,10 +1486,11 @@ usage(const char *prog)
 	fprintf(stderr, "\nSQL specific opions \n");
 	fprintf(stderr, " -r nr       | --rows=nr          for pagination\n");
 	fprintf(stderr, " -w nr       | --width=nr         for pagination\n");
-	fprintf(stderr, " -d          | --dump             create an SQL dump\n");
+	fprintf(stderr, " -D          | --dump             create an SQL dump\n");
 
 	fprintf(stderr, "\nXQuery specific options\n");
-	fprintf(stderr, " -C colname  | --collection=name  collection name\n");
+	fprintf(stderr, " -C colname  | --collection=colname  collection name\n");
+	fprintf(stderr, " -I docname  | --input=docname    document name, XML document on standard input\n");
 	exit(-1);
 }
 
@@ -1505,6 +1504,7 @@ main(int argc, char **argv)
 	char *user = NULL;
 	char *passwd = NULL;
 	char *host = NULL;
+	char *command = NULL;
 	char *dbname = NULL;
 	char *output = NULL;
 	char *input = NULL;
@@ -1520,14 +1520,14 @@ main(int argc, char **argv)
 	struct stat statb;
 	static struct option long_options[] = {
 		{"collection", 1, 0, 'C'},
-		{"dump", 0, 0, 'd'},
+		{"dump", 0, 0, 'D'},
 		{"database", 1, 0, 'd'},
 		{"echo", 0, 0, 'e'},
 		{"format", 1, 0, 'f'},
+		{"input", 1, 0, 'I'},
 		{"interactive", 0, 0, 'i'},
-		{"input", 1, 0, 'i'},
 		{"host", 1, 0, 'h'},
-		{"log", 2, 0, 'L'},
+		{"log", 1, 0, 'L'},
 		{"language", 1, 0, 'l'},
 #ifdef HAVE_POPEN
 		{"pager", 1, 0, '|'},
@@ -1538,7 +1538,7 @@ main(int argc, char **argv)
 		{"port", 1, 0, 'p'},
 		{"statement", 1, 0, 's'},
 		{"time", 0, 0, 't'},
-		{"Xdebug", 2, 0, 'X'},
+		{"Xdebug", 0, 0, 'X'},
 		{"user", 2, 0, 'u'},
 		{"history", 0, 0, 'H'},
 		{"help", 0, 0, '?'},
@@ -1554,11 +1554,11 @@ main(int argc, char **argv)
 	mark = NULL;
 	mark2 = NULL;
 
-	while ((c = getopt_long(argc, argv, "C:d::ef:i::h:L::l:"
+	while ((c = getopt_long(argc, argv, "C:Dd:ef:I:ih:L:l:"
 #ifdef HAVE_POPEN
 				"|:"
 #endif
-				"w:r:P::p:s:tX::u::H?", long_options, &option_index)) != -1) {
+				"w:r:P::p:s:tXu::H?", long_options, &option_index)) != -1) {
 		switch (c) {
 		case 0:
 #ifdef HAVE_POPEN
@@ -1575,13 +1575,8 @@ main(int argc, char **argv)
 			echoquery = 1;
 			break;
 		case 'L':
-		{
-			char buf[32];
-
-			snprintf(buf, sizeof(buf), "monet_%d", (int) getpid());
-			logfile = strdup(optarg ? optarg : buf);
+			logfile = strdup(optarg);
 			break;
-		}
 		case 'l':
 			/* accept unambiguous prefix of language */
 			if (strcmp(optarg, "sql") == 0 || strcmp(optarg, "sq") == 0 || strcmp(optarg, "s") == 0) {
@@ -1618,10 +1613,11 @@ main(int argc, char **argv)
 		case 'f':
 			output = optarg;  /* output format */
 			break;
+		case 'I':
+			input = optarg;
+			break;
 		case 'i':
 			interactive = 1;
-			if (optarg)
-				input = optarg;
 			break;
 		case 'h':
 			host = optarg;
@@ -1629,11 +1625,11 @@ main(int argc, char **argv)
 		case 'p':
 			port = atoi(optarg);
 			break;
+		case 'D':
+			dump = 1;
+			break;
 		case 'd':
-			if (optarg == NULL && strcmp(long_options[option_index].name, "dump") == 0)
-				dump = 1;
-			else
-				dbname = optarg;
+			dbname = optarg;
 			break;
 		case 's':
 			command = optarg;
@@ -1673,6 +1669,14 @@ main(int argc, char **argv)
 		fprintf(stderr, "Please specify a language option\n\n");
 		usage(argv[0]);
 	}
+	if (input != NULL && mode != XQUERY) {
+		fprintf(stderr, "--input (-I) option only with XQuery\n\n");
+		usage(argv[0]);
+	}
+	if (input != NULL && interactive) {
+		fprintf(stderr, "--input (-I) and --interactive (-i) cannot both be specified\n\n");
+		usage(argv[0]);
+	}
 
 	/* default to administrator account (eeks) when being called without
 	 * any arguments, default to the current user if -u flag is given */
@@ -1704,8 +1708,10 @@ main(int argc, char **argv)
 		if (mode == SQL) {
 			dump_tables(mid, toConsole);
 			exit(0);
-		} else
+		} else {
 			fprintf(stderr, "Dump only supported for SQL\n");
+			exit(1);
+		}
 	}
 
 	if (logfile)
@@ -1731,12 +1737,25 @@ main(int argc, char **argv)
 	if (formatter == NOformatter)
 		formatter = interactive && interactive_stdin && mode != XQUERY && mode != MAL ? TABLEformatter : RAWformatter;
 
-	if (command) {
+	if (input != NULL && mode == XQUERY) {
+		/* stream xml document into the server */
+		MapiMsg rc;
+
+		rc = mapi_stream_into(mid, input, colname, stdin);
+		if (rc != MOK) {
+			mapi_explain(mid, stderr);
+			exit(1);
+		}
+		/* we just read stdin, so can't be interactive */
+		interactive = 0;
+	}
+
+	if (command != NULL) {
 		/* execute from command-line */
 		setWidth();
 		c = doRequest(mid, command, interactive);
-		command = NULL;
 	}
+
 	if (optind < argc) {
 		/* execute from file(s) */
 		while (optind < argc) {
@@ -1744,6 +1763,7 @@ main(int argc, char **argv)
 			optind++;
 		}
 	}
+
 	if (interactive) {
 		char *prompt = NULL;
 
@@ -1762,12 +1782,7 @@ main(int argc, char **argv)
 		}
 		/* use default rendering if not overruled at commandline */
 		setWidth();
-		/* stream xml document into the server */
-		if (input && mode == XQUERY) {
-			mapi_stream_into(mid, input, colname);
-			c = doFile(mid, NULL);
-		} else
-			c = doFileByLines(mid, stdin, prompt);
+		c = doFileByLines(mid, stdin, prompt);
 
 #ifdef HAVE_LIBREADLINE
 		if (interactive_stdin) {
