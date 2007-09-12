@@ -650,28 +650,29 @@ static void relabel (PFpnode_t *p,  PFpnode_t **kids);
 
 static PFpnode_t * varref (PFqname_raw_t q, PFloc_t loc);
 static PFqname_raw_t new_varname (char *prefix, unsigned int* varcount);
-static bool contains_last_pos_or_nonstepdot(PFpnode_t *p);
+static bool contains_last_pos_or_nonstepdot(PFpnode_t *p, bool dots_allowed);
                 
 /**
  * The pull-predicate-up rewrite (169) can only be done if the predicate
  * does not contain position/last/dot; as checked by this function.
  */
 static bool
-contains_last_pos_or_nonstepdot(PFpnode_t *p) 
+contains_last_pos_or_nonstepdot(PFpnode_t *p, bool dots_allowed) 
 {
     while(p) {
         if (p->kind != p_locpath || L(p)->kind != p_step || R(p)->kind != p_dot) {
             /* we excluded the only legitimate use of dot (in R(p)); now check for it */
-            if (p->kind == p_dot) return true;
+            if (p->kind == p_dot && !dots_allowed) return true;
    
             /* check for the forbidden special functions */ 
             if (p->kind == p_fun_ref) {
                 if (strcmp(p->sem.qname_raw.loc, "position") == 0) return true;
                 if (strcmp(p->sem.qname_raw.loc, "last") == 0) return true;
+                if (strcmp(p->sem.qname_raw.loc, "first") == 0 && dots_allowed) return true;
             }
             /* allow the forbidden elements inside nested predicates (i.e. do not check R(p) then) */
             if (p->kind != p_pred && R(p)) {
-                if (contains_last_pos_or_nonstepdot(R(p))) return true; /* recurse */ 
+                if (contains_last_pos_or_nonstepdot(R(p), dots_allowed)) return true; /* recurse */ 
             }
         }
         p = L(p); /* tail recurse rewritten into loop */
@@ -679,8 +680,8 @@ contains_last_pos_or_nonstepdot(PFpnode_t *p)
     return false;
 }
 
-static bool
-pull_predicate_up(PFpnode_t *p) 
+bool
+PFposition_safe_predicate(PFpnode_t *p, bool dots_allowed) 
 {
     /* allow obvious boolean expressions */
     if (p->kind != p_eq && p->kind != p_ne && p->kind != p_or && p->kind != p_and &&
@@ -690,7 +691,7 @@ pull_predicate_up(PFpnode_t *p)
         if (p->kind != p_pred && (p->kind != p_locpath || L(p)->kind != p_step)) 
             return false; /* it may be positional, sorry (no type info here yet) */
     }
-    return !contains_last_pos_or_nonstepdot(p); /* further check against forbidden elements */
+    return !contains_last_pos_or_nonstepdot(p, dots_allowed); /* further check against forbidden elements */
 }
 
 /**
@@ -955,7 +956,7 @@ reduce (PFpnode_t * p, int goalnt, unsigned int *varcount)
                 /* rule 168 introduces this always (check for sanity): */
                 LL(p)->kind == p_locpath && R(LL(p))->kind == p_dot && 
                 /* only rewrite certain "safe" predicates: */
-                LR(p)->kind == p_exprseq && pull_predicate_up(L(LR(p))))  
+                LR(p)->kind == p_exprseq && PFposition_safe_predicate(L(LR(p)), false))  
             {
                 /*         locpath                  pred 
                  *        /       \                /    \

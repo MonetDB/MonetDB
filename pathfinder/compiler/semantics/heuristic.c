@@ -234,6 +234,7 @@
  */ 
 
 #include "pathfinder.h"
+#include "normalize.h"
 #include <assert.h>
 #include <stdio.h>
 #include <string.h>
@@ -288,7 +289,7 @@ var_(PFloc_t loc, int varnum)
 { 
     PFpnode_t *r = p_leaf(p_varref, loc);  
     if (r) {
-        r->sem.qname_raw.prefix = "pf";
+        r->sem.qname_raw.prefix = "#pf";
         r->sem.qname_raw.loc = (char*) PFmalloc(8);
         if (r->sem.qname_raw.loc)
             snprintf(r->sem.qname_raw.loc, 8, "heur%03d", varnum);
@@ -353,7 +354,7 @@ seq_ty_(PFloc_t loc, PFpnode_t *a) {
 #define subst(cur,src,dst)  cpy_subst(cur,src,dst,NULL)
 #define dot2var(cur,dst)    cpy_subst(cur,NULL,dst,NULL)
 
-/* copy a abssyn tree, performing (possibly) some substutions 
+/* copy a abssyn tree, performing (possibly) some substitutions 
  */
 static PFpnode_t *cpy_subst(PFpnode_t*, PFpnode_t *, PFpnode_t *, int*);
 static PFpnode_t *
@@ -470,6 +471,9 @@ revert_locpath(PFpnode_t **root, PFpnode_t* ctx, int gen_preds)
 
     while(p && L(p)) {
         if (c == NULL && p->kind == p_pred) {
+            /* cannot use indices in case of positional predicates!*/
+            if (!PFposition_safe_predicate(R(p), true)) return NULL; 
+
             c = R(p); /* save condition in c */
             p = skip_over_emptyseq(L(p)); 
             continue;
@@ -509,18 +513,21 @@ revert_locpath(PFpnode_t **root, PFpnode_t* ctx, int gen_preds)
     return locpath(step(axis, node_ty (gen_preds?p_kind_node:p_kind_elem, nil)), r);
 }
 
-/* check whether an expression does not use a variable (directly)
+/* check whether an expression does not use certain variables (directly)
  */
-static int var_independent(PFpnode_t *p, PFpnode_t *ignore, PFqname_raw_t qn);
+static int var_independent(PFpnode_t *p, PFpnode_t *ignore, PFpnode_t* binds);
 static int
-var_independent(PFpnode_t *p, PFpnode_t *ignore, PFqname_raw_t qn) 
+var_independent(PFpnode_t *p, PFpnode_t *ignore, PFpnode_t *binds) 
 {
-    if (p != ignore && 
-        p != NULL && p->kind == p_varref &&
-        PFqname_raw_eq(p->sem.qname_raw, qn)) return 0;
-
-    if (L(p) && !var_independent(L(p), ignore, qn)) return 0;
-    if (R(p) && !var_independent(R(p), ignore, qn)) return 0;
+    if (p != ignore && p->kind == p_varref) {
+        PFpnode_t* b;
+        for(b = binds; b->kind == p_binds; b = R(b)) {
+            PFpnode_t *v = (L(b)->kind == p_let)?LL(L(b)):LL(LL(b));
+            if (!PFqname_raw_eq(p->sem.qname_raw, v->sem.qname_raw)) return 0;
+        }
+    }
+    if (L(p) && !var_independent(L(p), ignore, binds)) return 0;
+    if (R(p) && !var_independent(R(p), ignore, binds)) return 0;
     return 1;
 }
 
@@ -598,16 +605,15 @@ try_rewrite(PFpnode_t *p, PFpnode_t **stack, int depth, int curvar)
     {
         EXPR0 = L(stack[depth-2]);
         EXPR2 = var(curvar+9);
-        COND = dot2var(COND, VAR9);
+        COND = dot2var(COND, VAR9); /* replace occurrences of '.' by VAR9 */
     } else if (EXPR2->kind == p_varref && /* matches pattern (2) */
                stack[depth-1]->kind == p_where && 
-               stack[depth-2]->kind == p_flwr &&
-               var_independent(COND, EXPR1, EXPR2->sem.qname_raw))
+               stack[depth-2]->kind == p_flwr) 
     {
         /* for-loop may introduce other var bindings, look for ours (EXPR2) */
         BINDS = L(stack[depth-2]);
         VBIND = var_findbind(BINDS, EXPR2);
-        if (VBIND) {
+        if (VBIND && var_independent(stack[depth], EXPR2, VBIND)) {
             /* instead of $var9 use the original for-loop var $x (EXPR2) */
             VAR9->sem = EXPR2->sem;
             EXPR0 = LR(VBIND);
@@ -644,17 +650,10 @@ try_rewrite(PFpnode_t *p, PFpnode_t **stack, int depth, int curvar)
         }
  
         /* create the bindings of our new enclosing flwr block */
-        if (VBIND) {
-            /* eliminate the index-loop variable from the existing bindings */
-            if (R(VBIND)->kind == p_nil) *VBIND = *nil;
-            else R(VBIND) = RR(VBIND);
-        }
+        h = VBIND?VBIND:BINDS;         /* h points into the BIND list at $x */
+        if (VBIND) VBIND = cpy(VBIND); /* VBIND contains all bindings from $x on */
 
-        /* move to last binding */
-        for(VBIND=BINDS; VBIND->kind != p_nil; VBIND=R(VBIND)); 
-
-        /* append the new variables after any existing ones */
-        *VBIND = 
+        *h = /* overwrite $x, thus replace it and further binds by our new vars */
         *binds(
            let(var_type(cpy(VAR0)),EXPR0),
           binds(
@@ -684,6 +683,17 @@ try_rewrite(PFpnode_t *p, PFpnode_t **stack, int depth, int curvar)
                                args(apply("fn", "string", args(cpy(VAR5), nil)),
                                     arg)))))), nil)));
 
+        /* make BINDS independent of the original plan */
+        BINDS = cpy(BINDS); 
+
+        /* put in VBIND any remaining variable bindings after $x */
+        if (VBIND) { /* pattern (2) */
+            *L(stack[depth-2]) = *VBIND; /* replace binds in orig plan to $x and beyond only */
+            VBIND = cpy(R(VBIND));
+        } else {    /* pattern (1) */
+            VBIND = nil;
+        }
+
         /* creatively edited 'pf -Pas10' of target pattern */
         *stack[depth-2] =
         *flwr(
@@ -706,7 +716,8 @@ try_rewrite(PFpnode_t *p, PFpnode_t **stack, int depth, int curvar)
                                           some(binds(bind(vars(cpy(VAR8)),
                                                      cpy(VAR0)), nil),
                                           is(cpy(VAR7), cpy(VAR8)))), 
-                                  empty_seq()))), nil),
+                                  empty_seq()))), 
+                             VBIND), /* rest of binds-chain, after $x */
                   where(COND,
                   ord_ret(cpy(EXPR3), cpy(EXPR2)))))))));
 
@@ -721,7 +732,7 @@ try_rewrite(PFpnode_t *p, PFpnode_t **stack, int depth, int curvar)
  * The heuristic index selection push-down rewrite.
  *
  * We look leftdeep from the root for a string equality predicate.
- * To maintain context,we keep a traversal stack (node + child pointer). 
+ * To maintain context, we keep a traversal stack (node + child pointer). 
  *
  * The single left-deep traversal ensures that *if* we substitute a predicate 
  * using our heuristics,the pasted-in result pattern will not be checked again 

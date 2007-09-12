@@ -42,6 +42,11 @@
  */
 PFpnode_t *PFnormalize_abssyn (PFpnode_t *);
 
+/**
+ * Analyze predicates for positional semantics with a simple syntax check
+ */
+bool PFposition_safe_predicate(PFpnode_t *p, bool dots_allowed);
+
 #endif   /* NORMALIZE_H */
 
 /* vim:set shiftwidth=4 expandtab: */
