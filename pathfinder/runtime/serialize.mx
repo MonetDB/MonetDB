@@ -90,7 +90,9 @@
 #define MODE_XML       (1 << 0)
 #define MODE_DM        (1 << 1)
 #define MODE_TEXT      (1 << 2)
+#if 0
 #define MODE_SAX       (1 << 3)
+#endif
 #define MODE_MAPI      (1 << 4)
 #define MODE_SEQ       (1 << 5)
 #define MODE_NO_ROOT   (1 << 6)
@@ -212,7 +214,9 @@ typedef struct serializeFunStruct {
 /* list of all available callback routines */
 extern struct serializeFunStruct
     nullSerializeFun,
+#if 0
     saxSerializeFun,
+#endif
     dmSerializeFun,
     mapi_dmSerializeFun,
     textSerializeFun,
@@ -1363,6 +1367,7 @@ createWsContext (XqueryCtx*        ctx,
         ctx->modes = MODE_DM;
     else if (match(mode,"text"))
         ctx->modes = MODE_TEXT;
+#if 0
     else if (match(mode,"sax")) {
         ctx->modes = MODE_SAX;
 
@@ -1378,6 +1383,7 @@ createWsContext (XqueryCtx*        ctx,
         if (match(mode,"noroot"))
             ctx->modes = ctx->modes | MODE_NO_ROOT;
     }
+#endif
     else {
         /* no format chosen - use xml (with default root tag) */
         ctx->modes = MODE_XML;
@@ -1394,9 +1400,11 @@ createWsContext (XqueryCtx*        ctx,
     if (driverFun) {
         ctx->driverFun = driverFun;
     }
+#if 0
     else if ( ctx->modes & MODE_SAX ) {
         ctx->driverFun = & saxSerializeFun;
     }
+#endif
     /* list seq mode before dm mode as it might be used a subclass */
     else if ( ctx->modes & MODE_SEQ ) {
         ctx->driverFun = & seqSerializeFun;
@@ -1708,7 +1716,7 @@ xquery_print_result_driver (
 
         /* some serialization modes may print all attributes up front
            (here xml and sax mode, where xml mode is not typed) */
-        if (ctx->modes & (MODE_XML | MODE_SAX) && 
+        if (ctx->modes & (MODE_XML /* | MODE_SAX*/ ) && 
             /* TYPED and XRPC modes take care of attribute themselves */
             !(ctx->modes & MODE_TYPED) && !(ctx->modes & MODE_XRPC) &&
             /* forget top-level attributes if we have no root nodes */
@@ -1769,7 +1777,7 @@ xquery_print_result_driver (
                 case ATTR:
                     /* print attributes for all modes that were skipped
                        before */
-                    if (!(ctx->modes & (MODE_XML | MODE_SAX)) ||
+                    if (!(ctx->modes & (MODE_XML /*|MODE_SAX*/ )) ||
                         (ctx->modes & MODE_TYPED) ||
                         (ctx->modes & MODE_XRPC)) {
                         cont = XTRACT_CONT(cmbn_cont_kind);
@@ -1876,7 +1884,7 @@ xquery_print_result_driver (
             /* this avoids the separator printing for attributes
                in the XML mode (without the typed xml mode) that
                have been removed from the result sequence */
-            if (!(ctx->modes & (MODE_XML | MODE_SAX)) ||
+            if (!(ctx->modes & (MODE_XML /* | MODE_SAX */ )) ||
                 ctx->modes & MODE_TYPED ||
                 cur_kind != ATTR)
                 /* the kind value in 'cur_kind' 

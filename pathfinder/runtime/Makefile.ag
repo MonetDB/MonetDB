@@ -37,8 +37,7 @@ lib_serialize = {
 	NOINST
 	SOURCES = serialize_null.mx \
                   serialize.mx \
-                  serialize_dflt.mx \
-                  serialize_sax.mx 
+                  serialize_dflt.mx
 }
 
 lib_pf = {
