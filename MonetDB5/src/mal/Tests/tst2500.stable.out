@@ -25,15 +25,16 @@ stdout of test 'tst2500` in directory 'src/mal` itself:
 #	return random:= 0;
 #end;
 factory user.random(seed:int):int;	# 0  (random:int)<-(seed:int)
-    i := seed;	# 1  (i:int)<-(seed:int)
-barrier always := true;	# 2  (always:bit)<-(_4:bit) jump 7
-    i := calc.*(125,i);	# 3 CALCbinaryMULintint (i:int)<-(_5:int)(i:int)
-    i := calc.%(i,32767);	# 4 CALCbinarycheckMODintint (i:int)<-(i:int)(_6:int)
-    yield i;	# 5  (i:int)
-    redo always;	# 6  (always:bit) jump 3
-exit always;	# 7  (always:bit)
-    return random := 0;	# 8  (random:int)<-(_7:int)
-end random;	# 9  
+    mdb.setTrace(true);	# 1 MDBsetTrace (_2:void)<-(_3:bit)
+    i := seed;	# 2  (i:int)<-(seed:int)
+barrier always := true;	# 3  (always:bit)<-(_3:bit) jump 8
+    i := calc.*(125,i);	# 4 CALCbinaryMULintint (i:int)<-(_6:int)(i:int)
+    i := calc.%(i,32767);	# 5 CALCbinarycheckMODintint (i:int)<-(i:int)(_7:int)
+    yield i;	# 6  (i:int)
+    redo always;	# 7  (always:bit) jump 4
+exit always;	# 8  (always:bit)
+    return random := 0;	# 9  (random:int)<-(_8:int)
+end random;	# 10  
 #
 #r1:= random(1);
 #print(r1);
@@ -49,6 +50,8 @@ function user.main():void;	# 0  (main:void)
 end main;	# 6  
 [ 125 ]
 [ 15625 ]
+#end main;
+mdb>#EOD
 
 # 08:01:04 >  
 # 08:01:04 >  Done.

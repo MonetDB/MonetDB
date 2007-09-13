@@ -1,6 +1,7 @@
 # The prototypical factory construct
 
 factory random(seed:int):int;
+	mdb.setTrace(true);
 	i:= seed;
 barrier always:= true;
 	i:= 125 *i;
