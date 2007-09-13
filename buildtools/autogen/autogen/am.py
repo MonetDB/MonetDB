@@ -387,6 +387,7 @@ def am_headers(fd, var, headers, am):
             fd.write("\t$(RM) $(DESTDIR)%s/%s\n\n" % (sd, header))
             am['INSTALL'].append(header)
             am['UNINSTALL'].append(header)
+            am['BUILT_SOURCES'].append(header)
             cond = ''
             if headers.has_key('COND'):
                 cond = '#' + string.join(headers['COND'], '+')
