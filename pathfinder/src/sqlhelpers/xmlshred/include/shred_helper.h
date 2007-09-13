@@ -111,15 +111,14 @@ extern char *strndup(const char *, size_t);
 
 /* global state of the shredder */
 struct shred_state_t {
-    bool quiet;               /** < shredder gives no addtional information. */
-	bool suppress_attributes; /** < suppress the attributes                  */
-	bool outfile_given;       /** < we have a file to place the generated 
-                                    stuff                                    */
-    bool infile_given;        /** < we have a file we can parse              */
-	bool sql;                 /** < format supported by sql generation       */
-	char *outfile;            /** < path of the out-file                     */
-	char *infile;             /** < path of file to parse                    */
-	char *format;             /** < format string                            */
+    char *infile;              /** < path of file to parse                    */
+    char *outfile;             /** < path of the out-file                     */
+    char *doc_name;            /** < name of the document                     */
+    bool  quiet;               /** < shredder gives no addtional information. */
+    bool  attributes_separate; /** < print attributes into a separate file    */
+    bool  names_separate;      /** < print names into a separate file         */
+    bool  statistics;          /** < print guides into a separate file        */
+    char *format;              /** < format string                            */
 };
 typedef struct shred_state_t shred_state_t;
 
@@ -141,5 +140,5 @@ bool SHexists (const char *path);
 FILE * SHopen_write (const char *path);
 
 #endif /* SHRED_H__ */
-/* vim:set shiftwidth=4 expandtab: */
 
+/* vim:set shiftwidth=4 expandtab: */

@@ -41,7 +41,6 @@
 #include "shred_helper.h"
 /* hashtable support */
 #include "hash.h"
-/* guides */
 /* main shredding */
 #include "encoding.h"
 /* ... SHoops */
@@ -50,7 +49,6 @@
 /* SAX parser interface (libxml2) */
 #include "libxml/parser.h"
 #include "libxml/parserInternals.h"
-
 
 #if HAVE_GETOPT_H && HAVE_GETOPT_LONG
 #include <getopt.h>
@@ -61,19 +59,19 @@
  * order of one-character option names.
  */
 static struct option long_options[] = {
-    { "suppress_attributes", no_argument,       NULL, 'a' },
+    { "attributes-separate", no_argument,       NULL, 'a' },
     { "in-file",             required_argument, NULL, 'f' },
-    { "out-file",            required_argument, NULL, 'o' },
-    { "format",              required_argument, NULL, 'F' },
-    { "sql",                 no_argument,       NULL, 's' },
     { "help",                no_argument,       NULL, 'h' },
+    { "names-separate",      optional_argument, NULL, 'n' },
+    { "out-file",            required_argument, NULL, 'o' },
+    { "format",              required_argument, NULL, 'F' }
 };
 
 /**
  * character buffer large enough to hold longest
  * command line option plus some extra formatting space
  */
-static char opt_buf[sizeof ("print-abstract-syntax-tree") + 8];
+static char opt_buf[32];
 
 static int 
 cmp_opt (const void *o1, const void *o2) 
@@ -145,11 +143,10 @@ print_help (char *progname)
             long_option (opt_buf, ", --%s=filename", 'f'));
     printf ("  -o filename%s: writes output to this file(s)\n",
             long_option (opt_buf, ", --%s=filename", 'o'));
-    printf ("  -a%s: suppress attributes\n",
+    printf ("  -a%s: attributes separate\n",
             long_option (opt_buf, ", --%s", 'a'));
-    printf ("  -s%s: sql encoding supported by pathfinder\n"
-                "\t\t(that is probably what you want)\n",
-                long_option (opt_buf, ", --%s", 's'));
+    printf ("  -n%s: names separate\n",
+            long_option (opt_buf, ", --%s=yes|no", 'n'));
 }
 
 #define MAIN_EXIT(rtn) \
@@ -163,9 +160,10 @@ main (int argc, char **argv)
 
     status = malloc (sizeof (shred_state_t));
 
-	FILE * shout    = NULL;
-	FILE * attout   = NULL;
-	FILE * guideout = NULL;
+    FILE *shout    = NULL;
+    FILE *attout   = NULL;
+    FILE *namesout = NULL;
+    FILE *guideout = NULL;
 
     /*
      * Determine basename(argv[0]) and dirname(argv[0]) on
@@ -177,7 +175,7 @@ main (int argc, char **argv)
     while (true) {
         int c; 
 
-        #define OPT_STRING "af:o:F:sh"
+        #define OPT_STRING "af:hn:o:F:"
 
 #if HAVE_GETOPT_H && HAVE_GETOPT_LONG
         int option_index = 0;
@@ -187,15 +185,35 @@ main (int argc, char **argv)
         c = getopt (argc, argv, OPT_STRING);
 #endif
         status->format = SQL_FORMAT; 
+        status->statistics = true;
+        status->names_separate = true;
 
         if (c == -1)
             break;
         switch (c) {
             case 'a':
-                status->suppress_attributes = true;
+                status->attributes_separate = true;
+                break;
+            case 'n':
+                if (!optarg)
+                    status->names_separate = true;
+                else if (!strcmp ("yes", optarg))
+                    status->names_separate = true;
+                else if (!strcmp ("no", optarg))
+                    status->names_separate = false;
+                else
+                    SHoops (SH_FATAL, "Option -n: 'yes' and 'no'"
+                                      " are valid only.\n");
                 break;
             case 'F':
                 status->format = strdup (optarg);
+                
+                for (unsigned int i = 0; status->format[i+1]; i++)
+                    if (status->format[i] == '%' &&
+                        status->format[i+1] == 'g') {
+                        status->statistics = true;
+                        break;
+                    }
                 break;
             case 'f':
                 status->infile = strndup (optarg, FILENAME_MAX);
@@ -205,15 +223,13 @@ main (int argc, char **argv)
                                       "to read it.\n");
                     goto failure;
                 }
-                status->infile_given = (status->infile != NULL);
+                if (status->infile)
+                    status->doc_name = status->infile;
+                else
+                    status->doc_name = "";
                 break;
             case 'o':
                 status->outfile = strndup (optarg, FILENAME_MAX);
-                status->outfile_given = (status->outfile != NULL);
-                break;
-            case 's':
-                status->sql = true;
-                status->format = "%e, %s, %l, %k, %n, %t, %g";
                 break;
             case 'h':
                 print_help (progname);
@@ -221,43 +237,50 @@ main (int argc, char **argv)
         }
     }
 
-    if (!status->infile_given) {
-        SHoops (SH_FATAL, "Input filename required.\n");
-        print_help (progname);
-        goto failure;
-    }
-
-    if (!status->outfile_given) {
+    if (!status->outfile &&
+        (status->attributes_separate ||
+         status->names_separate ||
+         status->statistics)) {
         SHoops (SH_FATAL, "Output filename required.\n");
         print_help (progname);
         goto failure;
     }
-
-
-    /* attribute file */
-	char attoutfile[FILENAME_MAX];
-	snprintf (attoutfile, FILENAME_MAX,
-	          (!status->sql)?"%s_atts":"%s_names",
-			  status->outfile);
-
-    /* guide file */
-    char guideoutfile[FILENAME_MAX];
-    snprintf (guideoutfile, FILENAME_MAX,
-              "%s_guide.xml", status->outfile);
-
+    
     /* Open files */ 
-	shout = SHopen_write (status->outfile);
-	attout = SHopen_write (attoutfile);
+    if (status->outfile)
+        shout = SHopen_write (status->outfile);
+    else
+        shout = stdout;
 
-    if (status->sql) guideout = SHopen_write (guideoutfile);
+    if (status->attributes_separate) {
+        /* attribute file */
+        char attoutfile[FILENAME_MAX];
+        snprintf (attoutfile, FILENAME_MAX, "%s_atts", status->outfile);
+	attout = SHopen_write (attoutfile);
+    }
+    if (status->names_separate) {
+        /* names file */
+        char namesoutfile[FILENAME_MAX];
+        snprintf (namesoutfile, FILENAME_MAX, "%s_names", status->outfile);
+	namesout = SHopen_write (namesoutfile);
+    }
+    if (status->statistics) {
+        /* guide file */
+        char guideoutfile[FILENAME_MAX];
+        snprintf (guideoutfile, FILENAME_MAX, "%s_guide.xml", status->outfile);
+        guideout = SHopen_write (guideoutfile);
+    }
 
     /* shred the files */
-    if (SHshredder (status->infile, shout, attout, guideout, status) < 0)
+    if (SHshredder (status->infile,
+                    shout, attout, namesout, guideout,
+                    status) < 0)
         goto failure;
 
-    fclose (shout);
-	fclose (attout);
-	if (status->sql) fclose (guideout);
+    if (status->outfile)             fclose (shout);
+    if (status->attributes_separate) fclose (attout);
+    if (status->names_separate)      fclose (namesout);
+    if (status->statistics)          fclose (guideout);
 
     free (status);
 

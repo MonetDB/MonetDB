@@ -4,24 +4,19 @@
 
 #include "guides.h"
 #include "encoding.h"
+#include <stdio.h>
+#include <assert.h>
 
 /* SAX parser interface (libxml2) */
 #include "libxml/parser.h"
 #include "libxml/parserInternals.h"
 
-
 /* current guide count */
 nat guide_count = GUIDE_INIT;
-
-/** current guide node in the guide tree */
-guide_tree_t *current_guide_node = NULL;
-/** current leaf in guide_tree */
-guide_tree_t *leaf_guide_node = NULL;
 
 void 
 add_guide_child(guide_tree_t *parent, guide_tree_t *child)
 {
-
      if((parent == NULL) || (child == NULL))
          return;
 
@@ -80,6 +75,7 @@ insert_guide_node(const xmlChar *tag_name, guide_tree_t *parent, kind_t kind)
            
         /* node with identical charactistics found */
         child_node->count++;    
+        child_node->rel_count++;
         return child_node;
       }
     }
@@ -89,6 +85,9 @@ insert_guide_node(const xmlChar *tag_name, guide_tree_t *parent, kind_t kind)
     *new_guide_node = (guide_tree_t) {
         .tag_name = xmlStrdup (tag_name),
         .count = 1,
+        .rel_count = 1,
+        .min       = parent ? (parent->rel_count > 1 ? 0 : 1) : 1,
+        .max       = 0,
         .parent = parent,
         .child_list = NULL, 
         .last_child = NULL,
@@ -104,6 +103,34 @@ insert_guide_node(const xmlChar *tag_name, guide_tree_t *parent, kind_t kind)
     return new_guide_node;
 }
 
+void
+adjust_guide_min_max (guide_tree_t *guide)
+{
+    if (guide) {
+        /* Adjust the minimum and maximum value of all children */
+        child_list_t *child_list = guide->child_list;
+        guide_tree_t *node = NULL;
+            
+        while(child_list != NULL) {
+            node = child_list->node;
+            /* if this is the first min/max assignement and the
+               node was not missing before (node->min != 0)
+               we can use the relative count as the minimum value */
+            if (!node->max && node->min)
+                node->min = node->rel_count;
+            else
+                /* use the minimum */
+                node->min = node->min < node->rel_count
+                            ? node->min : node->rel_count;
+            /* use the maximum */
+            node->max = node->max>node->rel_count ? node->max:node->rel_count;
+            /* reset the relative count */
+            node->rel_count = 0;
+            child_list = child_list->next_element;
+        } 
+    }
+}
+
 void 
 print_guide_tree(FILE *guide_out, guide_tree_t *root, int tree_depth)
 {
@@ -111,6 +138,8 @@ print_guide_tree(FILE *guide_out, guide_tree_t *root, int tree_depth)
     child_list_t  *child_list_free = NULL;
     bool           print_end_tag = true;
     int            i;
+
+    assert (guide_out);
 
     /* print the padding */
     for(i = 0; i < tree_depth * GUIDE_PADDING_COUNT; i++)
@@ -121,9 +150,9 @@ print_guide_tree(FILE *guide_out, guide_tree_t *root, int tree_depth)
     /* print the node self */
     fprintf (
         guide_out, 
-        "<node guide=\"" SSZFMT "\" count=\"" SSZFMT "\" kind=\"",
-        root->guide,
-        root->count);
+        "<node guide=\"" SSZFMT "\" count=\"" SSZFMT "\""
+             " min=\"" SSZFMT "\" max=\"" SSZFMT "\" kind=\"",
+        root->guide, root->count, root->min, root->max);
     print_kind (guide_out, root->kind);
     fprintf (guide_out, "\"");
     if (root->tag_name != NULL)

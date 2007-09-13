@@ -49,29 +49,31 @@
 
 #define NAME_ID 0
 
-FILE * out;
-FILE * out_attr;
-FILE * guide_out;
+#define BAILOUT(...) do { SHoops (SH_FATAL, __VA_ARGS__); \
+                          free_hash (hash_table);         \
+                          exit(1);                        \
+                        } while (0)
+
+FILE *out;
+FILE *out_attr;
+FILE *out_names;
+FILE *guide_out;
 
 typedef struct node_t node_t;
 struct node_t {
-    nat        pre;
-    nat        apre;
-    nat        post;
-    nat        pre_stretched;
-    nat        post_stretched;
-    nat        size;
-    int        level;
-    int        name_id;
-    node_t   * parent;
-    kind_t     kind;
-    xmlChar  * prop;
-    nat        guide;
+    nat           pre;
+    nat           post;
+    nat           pre_stretched;
+    nat           post_stretched;
+    node_t       *parent;
+    nat           size;
+    int           level;
+    kind_t        kind;
+    xmlChar      *name;
+    int           name_id;
+    xmlChar      *value;
+    guide_tree_t *guide;
 };
-
-/* print a tuple */
-static void print_tuple (node_t tuple, const char *format);
-static void flush_buffer (void);
 
 static shred_state_t shredstate;
 
@@ -88,404 +90,6 @@ static nat pre;
 static nat post;
 static nat rank;
 static nat att_id;
-
-/* return a brand new name_id */
-static int new_nameid(void)
-{
-    static unsigned int name = NAME_ID;
-    return name++;
-}
-
-static void
-start_document (void *ctx)
-{
-    /* calling convention */
-    (void)ctx;
-
-    /* initialize everything with zero */
-    pre       = 0;
-    post      = 0;
-    rank      = 0;
-    level     = 0;
-    max_level = 0;
-    att_id    = 0;
-
-    /* insert guide node */
-    current_guide_node = insert_guide_node (xmlCharStrndup (shredstate.infile,
-                                                    FILENAME_MAX),
-                                            NULL, doc);
-
-    /* create a new node */
-    stack[level] = (node_t) {
-          .pre            = pre
-        , .post           = 0
-        , .pre_stretched  = rank
-        , .post_stretched = 0
-        , .size           = 0
-        , .level          = level
-        , .parent         = NULL
-        , .kind           = doc
-        , .prop           = (shredstate.infile_given)? 
-                            xmlCharStrndup(shredstate.infile,
-                                           (size_t)PROPSIZE) :
-                            xmlCharStrndup("",strlen(""))
-        , .guide          = current_guide_node->guide
-    };
-
-}
-
-static void
-end_document (void *ctx)
-{
-    /* calling convention */
-        (void)ctx;
-
-    flush_buffer ();
-
-    assert (level == 0);
-
-    post++;
-    rank++;
-
-    stack[level].post           = post;
-    stack[level].post_stretched = rank;
-    stack[level].size           = pre - stack[level].pre;
-
-    print_tuple (stack[level], shredstate.format);
-
-    free (stack[level].prop);
-
-    assert (current_guide_node->guide == GUIDE_INIT);
-}
-
-static void
-start_element (void *ctx, const xmlChar *tagname, const xmlChar **atts)
-{
-    /* calling convention */
-    (void)ctx;
-
-    guide_tree_t *attr_guide_node = NULL;
-    current_guide_node = insert_guide_node(tagname,
-                                     current_guide_node, elem);
-
-    /* check if tagname is larger than TAG_SIZE characters */
-    if (xmlStrlen(tagname) > TAG_SIZE) {
-        SHoops (SH_FATAL, "We support only tagnames with length <= %i\n", 
-                          TAG_SIZE);
-        free_hash (hash_table);
-        exit(1);
-    }
-     
-    flush_buffer ();
-
-    pre++;
-    rank++;
-    level++;
-
-    if (level > max_level)
-        max_level = level;
-
-    assert (level < STACK_MAX);
-
-    /* try to find the tagname in the
-     * hashtable */
-    int name_id = -1; 
-
-    if(shredstate.sql) { 
-        name_id = find_element(hash_table, (char*)tagname);
-
-        /* key not found */
-        if (NOKEY(name_id)) {
-            /* create a new id */
-            name_id = new_nameid();     
-            hashtable_insert(hash_table, (char*)tagname, name_id);
-            fprintf (out_attr, "%i, \"%s\"\n", name_id, 
-                     strndup((char*)tagname, PROPSIZE));
-        }
-    }
-
-
-    stack[level] = (node_t) {
-        .pre            = pre,
-        .apre           = -1,
-        .post           = 0,
-        .pre_stretched  = rank,
-        .post_stretched = 0,
-        .size           = 0,
-        .level          = level,
-        .parent         = stack + level - 1,
-        .name_id        = name_id, 
-        .kind           = elem,
-        .prop           = (!shredstate.sql)?
-                          xmlStrndup (tagname, (size_t)TAG_SIZE):
-                          (xmlChar *)NULL,
-        .guide          = current_guide_node->guide
-    };
-
-    if (!shredstate.suppress_attributes && atts) {
-        if (!shredstate.sql)
-            while (*atts) {
-                attr_guide_node = insert_guide_node(atts[0],
-                    current_guide_node, attr);
-                fprintf (out_attr, SSZFMT ", " SSZFMT ", \"%s\", \"%s\"," SSZFMT "\n", 
-                         att_id++, pre, atts[0], atts[1], attr_guide_node->guide);
-                atts += 2;
-            }
-        /* handle attributes as we need for sql generation */
-        else
-            while (*atts) {
-
-                    /* check if tagname is larger than TEXT_SIZE characters */
-                    if (xmlStrlen(atts[1]) > TEXT_SIZE) {
-                        SHoops (SH_FATAL, "We support only attribute content"
-                                          " with length <= %i\n", TEXT_SIZE);
-                        free_hash(hash_table);
-                        exit(1);
-                    }
-                    /* check if tagname is larger than TAG_SIZE characters */
-                    if (strlen((char*)atts[0]) > TAG_SIZE) {
-                        fprintf(stderr, "We support only attributes with "
-                                        "length <= %i\n", TAG_SIZE);
-
-                             free_hash(hash_table);
-                                  exit(1);
-                        }
- 
-                        /* try to find the tagname in the
-                         * hashtable */
-                        name_id = find_element(hash_table, (char*)atts[0]);
-
-                        /* key not found */
-                        if(NOKEY(name_id)) {
-
-                            /* create a new id */
-                            name_id = new_nameid();     
-
-                            hashtable_insert(hash_table, (char*)atts[0], name_id);
-                            fprintf (out_attr, "%i, \"%s\"\n", name_id,
-                                                 strndup((char*)atts[0],PROPSIZE));
-                        }
-
-                     attr_guide_node = insert_guide_node(atts [0], 
-                                                         current_guide_node, attr);
-
-                     pre++;
-                     print_tuple ((node_t) {
-                                      .pre = pre,
-                                      .apre = -1,
-                                      .post = 0,
-                                      .pre_stretched = 0,
-                                      .post_stretched = 0,
-                                      .size = 0,
-                                      .level = level + 1,
-                                      .parent = 0,
-                                      .name_id = name_id,
-                                      .kind = attr,
-                                      .prop = (xmlChar*)atts[1],
-                                      .guide = attr_guide_node->guide,
-                                   }, shredstate.format);
-                     atts += 2;
-                }
-     }
-}
-
-static void
-end_element (void *ctx, const xmlChar *name)
-{
-    (void) ctx;
-    (void) name;
-
-    flush_buffer ();
-
-    rank++;
-
-    stack[level].post           = post;
-    stack[level].post_stretched = rank;
-    stack[level].size           = pre - stack[level].pre;
-
-    print_tuple (stack[level], shredstate.format);
-
-    post++;
-    free (stack[level].prop);
-    level--;
-    assert (level >= 0);
-
-    current_guide_node = current_guide_node->parent;
-}
-
-static void
-processing_instruction (void *ctx, const xmlChar *target,  const xmlChar *chars)
-{
-    /* calling convention */
-    (void)ctx;
-    (void)chars;
-        
-    leaf_guide_node = insert_guide_node(target, current_guide_node, pi);
-
-    if (bufpos < PROPSIZE) {
-        snprintf ((char*)buf + bufpos, MIN ((int)strlen((char*)target),
-                          PROPSIZE - bufpos) + 1, 
-                  "%s", (char*)target);
-        bufpos += MIN ((int)strlen((char*)target), PROPSIZE - bufpos);
-    }
-
-    buf[PROPSIZE] = '\0';
-
-    flush_buffer();
-}
-
-void
-comment (void *ctx,  const xmlChar *chars)
-{
-    /* calling convention */
-        (void)ctx;
-
-    leaf_guide_node = insert_guide_node(NULL, current_guide_node, comm);
-
-    if (bufpos < PROPSIZE) {
-        snprintf ((char*)buf + bufpos, MIN ((int)strlen((char*)chars),
-                          PROPSIZE - bufpos) + 1, 
-            "%s", (char*)chars);
-        bufpos += MIN ((int)strlen((char*)chars), PROPSIZE - bufpos);
-    }
-
-    buf[PROPSIZE] = '\0';
-
-    flush_buffer();
-}
-
-void
-characters (void *ctx, const xmlChar *chars, int n)
-{
-    /* calling convention */
-    (void)ctx;
-
-    if (bufpos < PROPSIZE) {
-        snprintf ((char*)buf + bufpos, MIN (n, PROPSIZE - bufpos) + 1, "%s", (char *)chars);
-        bufpos += MIN (n, PROPSIZE - bufpos);
-    }
-
-    buf[PROPSIZE] = '\0';
-
-    leaf_guide_node = insert_guide_node(NULL, current_guide_node, text);
-}
-
-static void
-flush_buffer (void)
-{
-    /* check if tagname is larger than TEXT_SIZE characters */
-    if (xmlStrlen (buf) > TEXT_SIZE) {
-        free_hash (hash_table); 
-        SHoops (SH_FATAL, "We support text with length <= %i\n", TEXT_SIZE);
-        exit(1);
-    }
-
-    if (buf[0]) {
-        pre++;
-        rank += 2;
-        level++;
-
-        if (level > max_level)
-            max_level = level;
-        
-        stack[level] = (node_t) {
-            .pre            = pre,
-            .apre           = -1,
-            .post           = post,
-            .pre_stretched  = rank - 1,
-            .post_stretched = rank,
-            .size           = 0,
-            .level          = level,
-            .parent         = stack + level - 1,
-            .name_id        = -1,
-            .kind           = leaf_guide_node->kind,
-            .prop           = buf,
-            .guide          = leaf_guide_node->guide,
-        };
-
-        post++;
-
-        print_tuple (stack[level], shredstate.format);
-
-        level--;
-    }
-
-    buf[0] = '\0';
-    bufpos = 0;
-}
-
-static void
-print_tuple (node_t tuple, const char * format)
-{
-    unsigned int i;
-    for (i = 0; format[i]; i++)
-         if (format[i] == '%') {
-             i++;
-             switch (format[i]) {
-                 case 'e':
-                     if (tuple.pre != -1)
-                     fprintf (out, SSZFMT, tuple.pre);
-                     break;
-                 case 'o':  
-                     fprintf (out, SSZFMT, tuple.post); break;
-                 case 'E':
-                     fprintf (out, SSZFMT, tuple.pre_stretched); break;
-                 case 'O':
-                     fprintf (out, SSZFMT, tuple.post_stretched); break;
-                 case 's':
-                     fprintf (out, SSZFMT, tuple.size); break;
-                 case 'l':
-                     fprintf (out, "%i",  tuple.level); break;
-                 case 'p':
-                     if (tuple.parent)
-                         fprintf (out, SSZFMT, tuple.parent->pre);
-                     else
-                         fprintf (out, "NULL");
-                     break;
-                 case 'P':
-                     if (tuple.parent)
-                         fprintf (out, SSZFMT,tuple.parent->pre_stretched);
-                     else
-                         fprintf (out, "NULL");
-                     break;
-                 case 'k': 
-                     print_kind (out, tuple.kind);
-                     break;
-                 case 'n':
-                     if (tuple.name_id != -1)
-                         fprintf(out, "%i", tuple.name_id);
-                     break;
-                 case 'a':
-                     if (tuple.apre != -1)
-                         fprintf(out, SSZFMT, tuple.apre);
-                     break;
-                 case 't':
-                     if (tuple.prop) {
-                         unsigned int i;
-                         putc ('"', out);
-                         for (i = 0; i < PROPSIZE && tuple.prop[i]; i++)
-                             switch (tuple.prop[i]) {
-                                 case '\n': 
-                                     putc (' ', out); break;
-                                 case '"':
-                                     putc ('"', out); putc ('"', out); break;
-                                 default:
-                                     putc (tuple.prop[i], out);
-                             }
-                             putc ('"', out);
-                      }
-                      else {
-                          fprintf(out, "NULL");
-                      }
-                      break;    
-                   case 'g':  fprintf (out, SSZFMT, tuple.guide); break;
-                   default:   putc (format[i], out); break;
-             }
-         }
-         else
-             putc (format[i], out);
-    putc ('\n', out);
-}
 
 /**
  * Print the encoded kind.
@@ -504,6 +108,359 @@ print_kind (FILE *f, kind_t kind)
     }
 }
 
+static void
+print_tuple (node_t tuple)
+{
+    const char *format = shredstate.format;
+    
+    unsigned int i;
+    for (i = 0; format[i]; i++)
+         if (format[i] == '%') {
+             i++;
+             assert (format[i]);
+             switch (format[i]) {
+                 case 'e': fprintf (out, SSZFMT, tuple.pre); break;
+                 case 'o': fprintf (out, SSZFMT, tuple.post); break;
+                 case 'E': fprintf (out, SSZFMT, tuple.pre_stretched); break;
+                 case 'O': fprintf (out, SSZFMT, tuple.post_stretched); break;
+                 case 's': fprintf (out, SSZFMT, tuple.size); break;
+                 case 'l': fprintf (out, SSZFMT, tuple.level); break;
+                 case 'k': print_kind (out, tuple.kind); break;
+                 case 'p':
+                     if (tuple.parent)
+                         fprintf (out, SSZFMT, tuple.parent->pre);
+                     break;
+                 case 'P':
+                     if (tuple.parent)
+                         fprintf (out, SSZFMT,tuple.parent->pre_stretched);
+                     break;
+                 case 'n':
+                     if (tuple.name_id != -1) {
+                         if (shredstate.names_separate)
+                             fprintf(out, "%i", tuple.name_id);
+                         else
+                             fprintf(out, "%s", tuple.name);
+                     }
+                     break;
+                 case 't':
+                     if (tuple.value) {
+                         unsigned int j;
+                         putc ('"', out);
+                         for (j = 0; j < PROPSIZE && tuple.value[j]; j++)
+                             switch (tuple.value[j]) {
+                                 case '\n': 
+                                     putc (' ', out); break;
+                                 case '"':
+                                     putc ('"', out); putc ('"', out); break;
+                                 default:
+                                     putc (tuple.value[j], out);
+                             }
+                             putc ('"', out);
+                      }
+                      break;    
+                   case 'g':  fprintf (out, SSZFMT, tuple.guide->guide); break;
+                   default:   putc (format[i], out); break;
+             }
+         }
+         else
+             putc (format[i], out);
+    putc ('\n', out);
+}
+
+static int
+generate_name_id (const xmlChar *name)
+{
+    static unsigned int global_name_id = NAME_ID;
+    int name_id;
+   
+    if (!name)
+        return -1;
+
+    name_id = find_element (hash_table, (char *) name);
+
+    /* key not found */
+    if (NOKEY(name_id)) {
+        /* create a new id */
+        name_id = global_name_id++;
+        /* add the pair into the hashtable */
+        hashtable_insert (hash_table, (char *) name, name_id);
+        /* print the name binding if necessary */
+        if (shredstate.names_separate)
+            fprintf (out_names, "%i, \"%s\"\n", name_id, name);
+    }
+
+    return name_id;
+}
+
+static void
+flush_node (kind_t kind, const xmlChar *name, const xmlChar *value)
+{
+    pre++;
+    rank += 2;
+    level++;
+
+    if (level > max_level)
+        max_level = level;
+    
+    stack[level] = (node_t) {
+        .pre            = pre,
+        .post           = post,
+        .pre_stretched  = rank - 1,
+        .post_stretched = rank,
+        .parent         = stack + level - 1,
+        .size           = 0,
+        .level          = level,
+        .kind           = kind,
+        .name           = (xmlChar *) name,
+        .name_id        = generate_name_id (name),
+        .value          = (xmlChar *) value,
+        .guide          = insert_guide_node (name,
+                                             stack[level-1].guide,
+                                             kind)
+    };
+
+    post++;
+
+    print_tuple (stack[level]);
+
+    level--;
+}
+
+static void
+flush_buffer (void)
+{
+    /* check if text is larger than TEXT_SIZE characters */
+    if (xmlStrlen (buf) > TEXT_SIZE)
+        BAILOUT ("We support text with length <= %i", TEXT_SIZE);
+
+    if (buf[0])
+        flush_node (text, NULL, buf);
+
+    buf[0] = '\0';
+    bufpos = 0;
+}
+
+static void
+start_document (void *ctx)
+{
+    /* calling convention */
+    (void) ctx;
+
+    /* initialize everything with zero */
+    pre       = 0;
+    post      = 0;
+    rank      = 0;
+    level     = 0;
+    max_level = 0;
+    att_id    = 0;
+
+    /* create a new node */
+    stack[level] = (node_t) {
+          .pre            = pre
+        , .post           = 0
+        , .pre_stretched  = rank
+        , .post_stretched = 0
+        , .parent         = NULL
+        , .size           = 0
+        , .level          = level
+        , .kind           = doc
+        , .name           = NULL
+        , .name_id        = -1
+        , .value          = xmlStrdup ((xmlChar *) shredstate.doc_name)
+        , .guide          = insert_guide_node (
+                                xmlCharStrndup (
+                                    shredstate.doc_name,
+                                    FILENAME_MAX),
+                                NULL,
+                                doc)
+    };
+
+}
+
+static void
+end_document (void *ctx)
+{
+    /* calling convention */
+    (void) ctx;
+
+    flush_buffer ();
+
+    assert (level == 0);
+
+    post++;
+    rank++;
+
+    stack[level].post           = post;
+    stack[level].post_stretched = rank;
+    stack[level].size           = pre - stack[level].pre;
+
+    print_tuple (stack[level]);
+
+    assert (stack[level].guide->guide == GUIDE_INIT);
+
+    adjust_guide_min_max (stack[level].guide);
+    stack[level].guide->max = 1;
+}
+
+static void
+start_element (void *ctx, const xmlChar *tagname, const xmlChar **atts)
+{
+    /* calling convention */
+    (void) ctx;
+
+    /* check if tagname is larger than TAG_SIZE characters */
+    if (xmlStrlen(tagname) > TAG_SIZE)
+        BAILOUT ("We support only tagnames with length <= %i", TAG_SIZE);
+     
+    flush_buffer ();
+
+    pre++;
+    rank++;
+    level++;
+
+    if (level > max_level)
+        max_level = level;
+
+    assert (level < STACK_MAX);
+
+    stack[level] = (node_t) {
+        .pre            = pre,
+        .post           = 0,
+        .pre_stretched  = rank,
+        .post_stretched = 0,
+        .parent         = stack + level - 1,
+        .size           = 0,
+        .level          = level,
+        .kind           = elem,
+        .name           = xmlStrdup (tagname),
+        .name_id        = generate_name_id (tagname), 
+        .value          = (xmlChar *) NULL,
+        .guide          = insert_guide_node (
+                              tagname,
+                              stack[level-1].guide,
+                              elem)
+    };
+
+    if (atts) {
+        if (shredstate.attributes_separate) {
+            if (shredstate.names_separate)
+                while (*atts) {
+                    fprintf (out_attr,
+                             SSZFMT ", " SSZFMT ", \"" SSZFMT "\", \"%s\","
+                             SSZFMT "\n",
+                             att_id++, pre, generate_name_id (atts[0]), atts[1],
+                             insert_guide_node (atts[0],
+                                                stack[level].guide,
+                                                attr)->guide);
+                    atts += 2;
+                }
+            else
+                while (*atts) {
+                    fprintf (out_attr,
+                             SSZFMT ", " SSZFMT ", \"%s\", \"%s\"," SSZFMT "\n",
+                             att_id++, pre, atts[0], atts[1],
+                             insert_guide_node (atts[0],
+                                                stack[level].guide,
+                                                attr)->guide);
+                    atts += 2;
+                }
+        } else /* handle attributes like children */
+            while (*atts) {
+                /* check if tagname is larger than TAG_SIZE characters */
+                if (xmlStrlen (atts[0]) > TAG_SIZE)
+                    BAILOUT ("We support only attributes with "
+                             "length <= %i", TAG_SIZE);
+
+                /* check if value is larger than TEXT_SIZE characters */
+                if (xmlStrlen (atts[1]) > TEXT_SIZE)
+                    BAILOUT ("We support only attribute content"
+                             " with length <= %i", TEXT_SIZE);
+
+                flush_node (attr, atts[0], atts[1]);
+                atts += 2;
+            }
+     }
+}
+
+static void
+end_element (void *ctx, const xmlChar *name)
+{
+    (void) ctx;
+    (void) name;
+
+    flush_buffer ();
+
+    rank++;
+
+    stack[level].post           = post;
+    stack[level].post_stretched = rank;
+    stack[level].size           = pre - stack[level].pre;
+
+    print_tuple (stack[level]);
+
+    adjust_guide_min_max (stack[level].guide);
+
+    post++;
+    level--;
+    assert (level >= 0);
+}
+
+static void
+processing_instruction (void *ctx, const xmlChar *target, const xmlChar *chars)
+{
+    /* calling convention */
+    (void) ctx;
+        
+    flush_buffer ();
+
+    flush_node (pi, target, chars);
+}
+
+void
+comment (void *ctx, const xmlChar *chars)
+{
+    /* calling convention */
+    (void) ctx;
+
+    flush_buffer ();
+
+    flush_node (comm, NULL, chars);
+}
+
+void
+characters (void *ctx, const xmlChar *chars, int n)
+{
+    /* calling convention */
+    (void) ctx;
+
+    if (bufpos < PROPSIZE) {
+        snprintf ((char *) buf + bufpos,
+                  MIN (n, PROPSIZE - bufpos) + 1,
+                  "%s",
+                  (char *) chars);
+        bufpos += MIN (n, PROPSIZE - bufpos);
+    }
+
+    buf[bufpos] = '\0';
+}
+
+static void
+error (void *ctx, const char *msg, ...)
+{
+    va_list az;
+    int buf_size = 4096;
+    char buf[buf_size];
+        
+    (void) ctx;
+
+    va_start (az, msg);
+    vsnprintf (buf, buf_size, msg, az);
+    fprintf (stderr, "%s", buf);
+    va_end (az);
+
+    BAILOUT ("libxml error");
+}
+
 static xmlSAXHandler saxhandler = {
       .startDocument         = start_document
     , .endDocument           = end_document 
@@ -511,8 +468,8 @@ static xmlSAXHandler saxhandler = {
     , .endElement            = end_element 
     , .characters            = characters
     , .processingInstruction = processing_instruction
-    , .comment               = NULL 
-    , .error                 = NULL
+    , .comment               = comment
+    , .error                 = error
     , .cdataBlock            = NULL
     , .internalSubset        = NULL
     , .isStandalone          = NULL
@@ -541,27 +498,24 @@ static xmlSAXHandler saxhandler = {
 int
 SHshredder (const char *s, 
             FILE *shout,
-                        FILE *attout,
+            FILE *attout,
+            FILE *namesout,
             FILE *guideout,
-                        shred_state_t *status)
+            shred_state_t *status)
 {
-    assert (s);
-    assert (shout);
-    assert (attout);
-
     /* XML parser context */
-    xmlParserCtxtPtr  ctx;
+    xmlParserCtxtPtr ctx;
     shredstate = *status;
 
-    /* output should be given in parameterlist,
-     * instead creating within this module */
-    out = shout;
-    out_attr = attout;
+    assert (shout);
 
-    /* if we need sql encoding we need to initialize
-         * the hashtable */
-    if (shredstate.sql)
-        hash_table = new_hashtable (); 
+    /* bind the different output files to global variables
+       to make them accessible inside the callback functions */
+    out       = shout;
+    out_attr  = attout;
+    out_names = namesout;
+
+    hash_table = new_hashtable (); 
 
     /* start XML parsing */
     ctx = xmlCreateFileParserCtxt (s);
@@ -573,8 +527,11 @@ SHshredder (const char *s,
         SHoops (SH_FATAL, "XML input not well-formed\n");
     }
 
-    if (shredstate.sql)
-        print_guide_tree (guideout, current_guide_node, 0);
+    /* print statistics if required */
+    if (shredstate.statistics)
+        print_guide_tree (guideout, stack[0].guide, 0);
+
+    free_hash (hash_table);
 
     return 0;
 }

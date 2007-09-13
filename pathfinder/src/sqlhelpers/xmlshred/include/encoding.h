@@ -52,7 +52,7 @@ void print_kind (FILE *f, kind_t kind);
 
 
 /* Main shredding procedure */
-int SHshredder (const char * s, FILE * shout, FILE *attout, 
+int SHshredder (const char * s, FILE * shout, FILE *attout, FILE *namesout, 
                 FILE * guideout, shred_state_t *status);
 
 #endif
