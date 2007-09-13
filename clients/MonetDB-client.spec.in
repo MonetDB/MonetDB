@@ -246,7 +246,7 @@ rm -fr $RPM_BUILD_ROOT
 %{_bindir}/mclient
 %{_bindir}/msqldump
 %{_libdir}/libMapi.so.*
-
+%{_mandir}/man1/mclient.1.gz
 
 %files devel
 %defattr(-,root,root)

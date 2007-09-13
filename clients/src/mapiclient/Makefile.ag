@@ -39,6 +39,8 @@ bin_msqldump = {
 		$(ICONV_LIBS)
 }
 
-EXTRA_DIST = msqldump.h mprompt.h
+man_MANS = mclient.1
+
+EXTRA_DIST = msqldump.h mprompt.h $(man_MANS)
 
 EXTRA_DIST_DIR = Tests

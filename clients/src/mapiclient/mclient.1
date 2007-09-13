@@ -1,0 +1,173 @@
+.TH MCLIENT 1 MonetDB
+.SH NAME
+mclient \- the MonetDB command-line tool
+.SH SYNOPSIS
+.B mclient
+.BI \-\-language= language
+[
+.I options
+] [
+.I file
+\&... ]
+.br
+.B mclient
+.B \-\-help
+.SH DESCRIPTION
+MonetDB is a database management system that is developed from a
+main-memory perspective with use of a fully decomposed storage model,
+automatic index management, extensibility of data types and search
+accelerators, SQL- and XML- frontends.
+.PP
+.I Mclient
+is the command-line interface to the MonetDB server.
+.PP
+If the
+.BI \-\-statement= query
+.RB ( \-s
+.IR query)
+option is given, the query is executed.
+If any files are listed after the options, queries are read from the
+files and executed.
+In either case,
+.I mclient
+exits after executing the query or queries, unless the
+.B \-\-interactive
+.RB ( \-i )
+option is given, in which case it continues reading queries from
+standard input.
+If
+.I mclient
+is started without any non-option arguments and without the
+.B \-\-statement
+.RB ( \-s )
+option, it reads queries from standard input.
+.SH
+OPTIONS
+.SS
+General Options
+.TP
+\fB\-\-language=\fP\fIlanguage\fP (\fB\-l\fP \fIlanguage\fP)
+Specify the query language.  The following languages are recognized:
+.BR mil ,
+.BR mal ,
+.BR sql ,
+and
+.BR xquery .
+A unique prefix suffices.
+The
+.B \-\-language
+option is required unless the
+.B \-\-help
+option is given.
+.TP
+\fB\-\-help\fP (\fB\-?\fP)
+Print usage information and exit.  If preceded by the
+.B \-\-language
+option, give language-specific help and continue.
+.TP
+\fB\-\-database=\fP\fIdatabase\fP (\fB\-d\fP \fIdatabase\fP)
+Specify the name of the database to connect to.
+.TP
+\fB\-\-host=\fP\fIhostname\fP (\fB\-h\fP \fIhostname\fP)
+Specify the name of the host on which the server runs (default:
+localhost).
+.TP
+\fB\-\-port=\fP\fIportnr\fP (\fB\-p\fP \fIportnr\fP)
+Specify the portnumber of the server (default: 50000).
+.TP
+\fB\-\-interactive\fP (\fB\-i\fP)
+After executing the queries from the
+.B \-\-statement
+option and any file specified on the command
+line, read queries from standard input.
+.TP
+\fB\-\-user\fP[\fB=\fP\fIuser\fP] (\fB\-u\fP[\fIuser\fP])
+Specify the user to connect as.  If
+.I user
+is missing, ask for a user name.  Note that
+.I user
+must follow immediately after the option.
+.TP
+\fB\-\-passwd\fP[\fB=\fP\fIpassword\fP] (\fB\-P\fP[\fIpassword\fP])
+Specify the password to use.  If
+.I password
+is missing, ask for a password.  Note that
+.I password
+must follow immediately after the option.
+.TP
+\fB\-\-format=\fP\fIformat\fP (\fB\-f\fP \fIformat\fP)
+Specify the output format.  For XQuery, the possible values include
+.BR dm ,
+.BR xml ,
+and a number of variations.
+For the other (table-oriented) languages, the possible values are
+.BR sql ,
+.BR csv ,
+.BR tab ,
+.BR raw ,
+and
+.BR xml .
+.TP
+\fB\-\-echo\fP (\fB\-e\fP)
+Echo the query.
+.TP
+\fB\-\-history\fP (\fB\-H\fP)
+Load and save the command line history (default off).
+.TP
+\fB\-\-log=\fP\fIlogfile\fP (\fB\-L\fP \fIlogfile\fP)
+Save client/server interaction in the specified file.
+.TP
+\fB\-\-statement=\fP\fIstmt\fP (\fB\-s\fP \fIstmt\fP)
+Execute the specified query.  The query is run before any queries from
+files specified on the command line are run, and before the
+interactive session is started (if the \fB\-\-interactive\fP option is
+given).
+.TP
+\fB\-\-time\fP (\fB\-t\fP)
+Print timing information.
+.TP
+\fB\-\-Xdebug\fP (\fB\-X\fP)
+Trace network interaction between
+.I mclient
+and the server.
+.TP
+\fB\-\-pager=\fP\fIcmd\fP (\fB\-|\fP \fIcmd\fP)
+Send query output through the specified
+.IR cmd .
+One
+.I cmd
+is started for each query.
+Note that the
+.B |
+will have to be quoted or else the shell will interpret it.
+.SS
+SQL Options
+.TP
+\fB\-\-rows=\fP\fInr\fP (\fB\-r\fP \fInr\fP)
+If specified, query results will be paged by an internal pager at the
+specified number of lines.
+.TP
+\fB\-\-width=\fP\fInr\fP (\fB\-w\fP \fInr\fP)
+Specify the width of the screen.  The default is the (initial) width
+of the terminal.
+.TP
+\fB\-\-dump\fP (\fB\-D\fP)
+Create an SQL dump.
+.SS
+XQuery Options
+.TP
+\fB\-\-collection=\fP\fIcolname\fP (\fB\-C\fP \fIcolname\fP)
+Specify the collection name for the XML document shredded with the
+.B \-\-input
+option.
+.TP
+\fB\-\-input=\fP\fIdocname\fP (\fB\-I\fP \fIdocname\fP)
+The standard input is an XML document which is shredded (added to the
+database).  The name of the document is specified using this option.
+The collection name for the document defaults to the name of the
+document but can be specified explicitly with the
+.B \-\-collection
+option.
+Shredding is done before any queries specified with the
+.B \-\-statement
+option or in files specified on the command line are executed.
