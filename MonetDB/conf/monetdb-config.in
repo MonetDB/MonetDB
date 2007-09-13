@@ -36,6 +36,7 @@ includedir="@Qincludedir@"
 pkglibdir="${libdir}/${pkg}"
 pkgdatadir="${datadir}/${pkg}"
 pkgincludedir="${includedir}/${pkg}"
+pythonlibdir="${prefix}/@PYTHON_LIBDIR@"
 
 usage()
 {
@@ -55,6 +56,7 @@ Install directories ${pkg} was configured to
   --prefix  --exec-prefix  --bindir  --libexecdir  --datarootdir
   --datadir  --sysconfdir  --localstatedir  --libdir  --infodir
   --mandir  --includedir --pkgdatadir --pkglibdir --pkgincludedir
+  --pythonlibdir
 
 EOF
 
