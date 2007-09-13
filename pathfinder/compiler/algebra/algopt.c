@@ -256,7 +256,7 @@ PFalgopt (PFla_op_t *root, bool timing, PFguide_tree_t* guide_tree)
 
                 tm = PFtimer_start ();
 
-                root = PFalgopt_join_graph (root);
+                root = PFalgopt_join_graph (root, guide_tree);
                 
                 tm = PFtimer_stop (tm);
                 if (timing)

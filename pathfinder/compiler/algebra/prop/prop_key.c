@@ -187,16 +187,55 @@ find_guide_max (unsigned int count, PFguide_tree_t **guides)
     assert (count);
     max = guides[0]->max;
     for (unsigned int i = 1; i < count; i++)
-       max = max > guides[i]->max ? max : guides[i]->max;
+        max = max > guides[i]->max ? max : guides[i]->max;
 
-   return max; 
+    return max; 
+}
+
+/**
+ * For a single guide recursively find the biggest occurrence indicator.
+ */
+static unsigned int
+find_guide_max_rec_worker (PFguide_tree_t *guide,
+                           unsigned int ctx_count,
+                           PFguide_tree_t **ctx_guides)
+{
+    unsigned int max;
+    PFguide_tree_t *parent = guide->parent;
+    
+    assert (parent);
+    for (unsigned int i = 0; i < ctx_count; i++)
+        if (ctx_guides[i] == parent)
+            return guide->max;
+
+    max = find_guide_max_rec_worker (parent, ctx_count, ctx_guides);
+    return max > guide->max ? max : guide->max;
+}
+
+/**
+ * For a list of guides recursively find the biggest occurrence indicator.
+ */
+static unsigned int
+find_guide_max_rec (unsigned int count, PFguide_tree_t **guides,
+                    unsigned int ctx_count, PFguide_tree_t **ctx_guides)
+{
+    unsigned int max, overall_max;
+   
+    assert (count);
+    overall_max = find_guide_max_rec_worker (guides[0], ctx_count, ctx_guides);
+    for (unsigned int i = 1; i < count; i++) {
+        max = find_guide_max_rec_worker (guides[i], ctx_count, ctx_guides);
+        overall_max = overall_max > max ? overall_max : max;
+    }
+
+    return overall_max; 
 }
 
 /**
  * Infer key property of a given node @a n; worker for prop_infer().
  */
 static void
-infer_key (PFla_op_t *n)
+infer_key (PFla_op_t *n, bool with_guide_info)
 {
     /* copy key properties of children into current node */
     if (L(n)) copy (n->prop->l_keys, L(n)->prop->keys);
@@ -469,7 +508,9 @@ infer_key (PFla_op_t *n)
             break;
 
         case la_guide_step:
-            if (n->sem.step.axis == alg_chld &&
+            if ((n->sem.step.axis == alg_chld ||
+                 n->sem.step.axis == alg_attr ||
+                 n->sem.step.axis == alg_self) &&
                 find_guide_max (n->sem.step.guide_count,
                                 n->sem.step.guides) <= 1)
                 union_ (n->prop->keys, n->sem.step.iter);
@@ -491,9 +532,22 @@ infer_key (PFla_op_t *n)
             break;
 
         case la_guide_step_join:
-            if (n->sem.step.axis == alg_chld &&
+            if ((n->sem.step.axis == alg_chld ||
+                 n->sem.step.axis == alg_attr ||
+                 n->sem.step.axis == alg_self) &&
                 find_guide_max (n->sem.step.guide_count,
                                 n->sem.step.guides) <= 1)
+                copy (n->prop->keys, R(n)->prop->keys);
+            if (with_guide_info &&
+                PFprop_level_right (n->prop, n->sem.step.item) >= 0 &&
+                (n->sem.step.axis == alg_desc ||
+                 n->sem.step.axis == alg_desc_s) &&
+                PFprop_guide_count (R(n)->prop, n->sem.step.item) &&
+                find_guide_max_rec (
+                    n->sem.step.guide_count,
+                    n->sem.step.guides,
+                    PFprop_guide_count (R(n)->prop, n->sem.step.item),
+                    PFprop_guide_elements (R(n)->prop, n->sem.step.item)) <= 1)
                 copy (n->prop->keys, R(n)->prop->keys);
         case la_step_join:
             if ((key_worker (R(n)->prop->keys, n->sem.step.item) &&
@@ -628,7 +682,7 @@ infer_key (PFla_op_t *n)
 
 /* worker for PFprop_infer_key */
 static void
-prop_infer (PFla_op_t *n)
+prop_infer (PFla_op_t *n, bool with_guide_info)
 {
     assert (n);
 
@@ -638,7 +692,7 @@ prop_infer (PFla_op_t *n)
 
     /* infer properties for children */
     for (unsigned int i = 0; i < PFLA_OP_MAXCHILD && n->child[i]; i++)
-        prop_infer (n->child[i]);
+        prop_infer (n->child[i], with_guide_info);
 
     n->bit_dag = true;
 
@@ -661,14 +715,15 @@ prop_infer (PFla_op_t *n)
         n->prop->r_keys = PFarray (sizeof (PFalg_att_t));
 
     /* infer information on key columns */
-    infer_key (n);
+    infer_key (n, with_guide_info);
 }
 
 /**
  * Infer key property for a DAG rooted in root
  */
 void
-PFprop_infer_key (PFla_op_t *root) {
+PFprop_infer_key (PFla_op_t *root)
+{
     /* infer cardinalities and constant column to
        discover more key columns */
     PFprop_infer_card (root);
@@ -678,7 +733,26 @@ PFprop_infer_key (PFla_op_t *root) {
     PFprop_infer_nat_dom (root);
     PFprop_infer_level (root);
 
-    prop_infer (root);
+    prop_infer (root, false);
+    PFla_dag_reset (root);
+}
+
+/**
+ * Infer key property for a DAG rooted in root
+ */
+void
+PFprop_infer_key_with_guide (PFla_op_t *root)
+{
+    /* infer cardinalities and constant column to
+       discover more key columns */
+    PFprop_infer_card (root);
+    PFprop_infer_const (root);
+    /* use the cheaper domain inference that only infers
+       domains for columns of the native type */
+    PFprop_infer_nat_dom (root);
+    PFprop_infer_level (root);
+    
+    prop_infer (root, true);
     PFla_dag_reset (root);
 }
 

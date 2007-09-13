@@ -270,12 +270,14 @@ opt_join_graph (PFla_op_t *p)
            operators to allow a following optimization phase
            to get rid of unnecessary eqjoin and number operators */
         case la_guide_step:
-            if ((PFprop_set (p->prop)) ||
-                (PFprop_key_right (p->prop, p->sem.step.item) &&
+            if (PFprop_set (p->prop) ||
+                ((PFprop_key_right (p->prop, p->sem.step.item) ||
+                  PFprop_ckey (R(p)->prop, p->schema)) &&
                  (p->sem.step.axis == alg_attr ||
                   p->sem.step.axis == alg_chld ||
                   p->sem.step.axis == alg_self)) ||
-                (PFprop_key_right (p->prop, p->sem.step.item) &&
+                ((PFprop_key_right (p->prop, p->sem.step.item) ||
+                  PFprop_ckey (R(p)->prop, p->schema)) &&
                  PFprop_level_right (p->prop, p->sem.step.item) >= 0 &&
                  (p->sem.step.axis == alg_desc ||
                   p->sem.step.axis == alg_desc_s))) {
@@ -321,7 +323,7 @@ opt_join_graph (PFla_op_t *p)
  * Invoke algebra optimization.
  */
 PFla_op_t *
-PFalgopt_join_graph (PFla_op_t *root)
+PFalgopt_join_graph (PFla_op_t *root, PFguide_tree_t *guide_tree)
 {
     /* Infer key, icols, set, and composite key
        properties first */
@@ -329,7 +331,9 @@ PFalgopt_join_graph (PFla_op_t *root)
     /* PFprop_infer_key (root); */
     PFprop_infer_icol (root);
     PFprop_infer_set (root);
-    PFprop_infer_key (root);
+    PFprop_infer_guide (root, guide_tree);
+    /* as a prerequisite infer the guides */
+    PFprop_infer_key_with_guide (root);
     /* level is already inferred by key */
     /* PFprop_infer_level (root); */
 

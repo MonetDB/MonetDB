@@ -402,6 +402,11 @@ unsigned int PFprop_keys_count (const PFprop_t *prop);
  */
 PFalg_attlist_t PFprop_keys_to_attlist (const PFprop_t *prop);
 
+/**
+ * Infer the key properties assuming that guides have been already inferred.
+ */
+void PFprop_infer_key_with_guide (PFla_op_t *root);
+
 /* ------------------------ ocol property accessors ------------------------ */
 
 /**
