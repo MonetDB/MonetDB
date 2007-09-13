@@ -1,17 +1,8 @@
 import sys
 import os
-import popen2
 
-try:
-    pOut,pIn = popen2.popen2('monetdb-clients-config --pkgdatadir')
-    pIn.close()
-    pdd = pOut.readlines()[0]
-    pdd = pdd.strip()
-    pOut.close()
-    sys.path.append(os.path.join(pdd,'python'))
-except:
-    pass
-
+# assume module MonetDB is in Python's default search path,
+# or `monetdb-clients-config --pythonlibdir` is in PYTHONPATH
 from MonetDB import Mapi
 
 
