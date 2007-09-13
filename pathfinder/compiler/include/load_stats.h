@@ -29,10 +29,10 @@
  * Universitaet Muenchen, respectively.  All Rights Reserved.
  *
  */
-#include "ordering.h"
-
 #ifndef LOAD_STATS_H
 #define LOAD_STATS_H
+
+#include "ordering.h"
 
 /* Kind of a guide node */
 enum PFguide_kind_t {
@@ -48,12 +48,15 @@ typedef enum PFguide_kind_t PFguide_kind_t;
 /* The guide tree */
 typedef struct PFguide_tree_t PFguide_tree_t;
 struct PFguide_tree_t {
-    unsigned int            guide;          /* unique guide number */
-    unsigned int            count;          /* count of the same node */
-    PFguide_kind_t          kind;           /* kind of the ndoe */
-    char                   *tag_name;       /* name of the node */
-    PFguide_tree_t         *parent;         /* parent of the node */
-    PFarray_t              *child_list;     /* all childs of the node */
+    unsigned int    guide;      /* unique guide number */
+    unsigned int    count;      /* count of the same node */
+    unsigned int    min;        /* miniumum number of occurrences */
+    unsigned int    max;        /* maximum number of occurrences */
+    int             level;      /* level of the node */
+    PFguide_kind_t  kind;       /* kind of the node */
+    char           *tag_name;   /* name of the node */
+    PFguide_tree_t *parent;     /* parent of the node */
+    PFarray_t      *child_list; /* all childs of the node */
 };
 
 /* Maps a list of guides to a column */

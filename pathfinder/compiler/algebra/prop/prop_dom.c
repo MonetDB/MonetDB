@@ -499,6 +499,22 @@ bulk_add_dom (PFprop_t *prop, PFla_op_t *child)
 }
 
 /**
+ * For a list of guides find the smallest occurrence indicator.
+ */
+static unsigned int
+find_guide_min (unsigned int count, PFguide_tree_t **guides)
+{
+    unsigned int min;
+   
+    assert (count);
+    min = guides[0]->min;
+    for (unsigned int i = 1; i < count; i++)
+       min = min < guides[i]->min ? min : guides[i]->min;
+
+   return min; 
+}
+
+/**
  * Infer domain properties; worker for prop_infer().
  */
 static unsigned int
@@ -933,7 +949,6 @@ infer_dom (PFla_op_t *n, unsigned int id)
             break;
 
         case la_step:
-        case la_guide_step:
             /* create new subdomain for attribute iter */
             add_subdom (n->prop, PFprop_dom (R(n)->prop,
                                              n->sem.step.iter), id);
@@ -942,8 +957,24 @@ infer_dom (PFla_op_t *n, unsigned int id)
             add_dom (n->prop, n->sem.step.item_res, id++);
             break;
 
+        case la_guide_step:
+            if (n->sem.step.axis == alg_chld &&
+                find_guide_min (n->sem.step.guide_count,
+                                n->sem.step.guides) > 0)
+                add_dom (n->prop, 
+                         n->sem.step.iter,
+                         PFprop_dom (R(n)->prop, n->sem.step.iter));
+            else {
+                /* create new subdomain for attribute iter */
+                add_subdom (n->prop, PFprop_dom (R(n)->prop,
+                                                 n->sem.step.iter), id);
+                add_dom (n->prop, n->sem.step.iter, id++);
+            }
+            /* create new domain for attribute item */
+            add_dom (n->prop, n->sem.step.item_res, id++);
+            break;
+
         case la_step_join:
-        case la_guide_step_join:
             for (unsigned int i = 0; i < R(n)->schema.count; i++) {
                 add_subdom (n->prop, PFprop_dom (R(n)->prop,
                                                  R(n)->schema.items[i].name), id);
@@ -952,6 +983,21 @@ infer_dom (PFla_op_t *n, unsigned int id)
             add_dom (n->prop, n->sem.step.item_res, id++);
             break;
 
+        case la_guide_step_join:
+            if (n->sem.step.axis == alg_chld &&
+                find_guide_min (n->sem.step.guide_count,
+                                n->sem.step.guides) > 0)
+                bulk_add_dom (n->prop, R(n));
+            else
+                for (unsigned int i = 0; i < R(n)->schema.count; i++) {
+                    add_subdom (n->prop,
+                                PFprop_dom (R(n)->prop,
+                                            R(n)->schema.items[i].name), id);
+                    add_dom (n->prop, R(n)->schema.items[i].name, id++);
+                }
+            add_dom (n->prop, n->sem.step.item_res, id++);
+            break;
+            
         case la_id:
         case la_idref:
             /* create new subdomain for attribute iter */

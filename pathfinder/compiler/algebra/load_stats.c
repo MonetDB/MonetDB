@@ -7,6 +7,8 @@
  *      <!ELEMENT node (EMPTY | node*)>
  *      <!ATTLIST node guide CDATA #REQUIRED>
  *      <!ATTLIST node count CDATA #REQUIRED>
+ *      <!ATTLIST node min CDATA #REQUIRED>
+ *      <!ATTLIST node max CDATA #REQUIRED>
  *      <!ATTLIST node kind (1|2|3|4|5|6) #REQUIRED>
  *      <!ATTLIST node name CDATA #IMPLIED>
  *
@@ -62,6 +64,8 @@ PFguide_tree_t  *current_guide_node;
 /* Root guide node in the XML file */
 PFguide_tree_t  *root_guide_node;
 
+int level;
+
 /* start of a XML element */
 static void
 start_element (void *ctx, const xmlChar *tagname, const xmlChar **atts)
@@ -70,6 +74,10 @@ start_element (void *ctx, const xmlChar *tagname, const xmlChar **atts)
 
     unsigned int   guide    = 0;    /* the guide number of the node */
     unsigned int   count    = 0;    /* count of same nodes */
+    unsigned int   min      = 0;    /* miniumum number of occurrences
+                                       of the same nodes */
+    unsigned int   max      = 0;    /* maximum number of occurrences
+                                       of the same nodes */
     unsigned int   kind_int = 0;    /* read kind as integer */
     PFguide_kind_t kind     = text; /* kind if the guide node */
     char          *tag_name = NULL; /* tag name of the guide node */
@@ -89,6 +97,12 @@ start_element (void *ctx, const xmlChar *tagname, const xmlChar **atts)
     
             if (strcmp (attribute_name, "count") == 0)
                 count = (unsigned int) atoi((char *)atts[1]); 
+    
+            if (strcmp (attribute_name, "min") == 0)
+                min = (unsigned int) atoi((char *)atts[1]); 
+    
+            if (strcmp (attribute_name, "max") == 0)
+                max = (unsigned int) atoi((char *)atts[1]); 
     
             if (strcmp (attribute_name, "kind") == 0) {
                 kind_int = (unsigned int) atoi ((char *) atts[1]);
@@ -128,6 +142,9 @@ start_element (void *ctx, const xmlChar *tagname, const xmlChar **atts)
     *new_guide_node = (PFguide_tree_t) {
         .guide = guide,
         .count = count,
+        .min   = min,
+        .max   = max,
+        .level = level,
         .kind  = kind,
         .tag_name = tag_name != NULL ? 
             (char*)PFmalloc(sizeof(char)*(strlen(tag_name)+1)) : 
@@ -160,6 +177,8 @@ start_element (void *ctx, const xmlChar *tagname, const xmlChar **atts)
 
     /* set actual node as current node */
     current_guide_node = new_guide_node;        
+    /* increase level */
+    level++;
 }
 
 /* end of a XML element */
@@ -171,6 +190,8 @@ end_element (void *ctx, const xmlChar *name)
 
     /* go a level higher in the tree */
     current_guide_node = current_guide_node->parent;
+    /* decrease level */
+    level--;
 }
 
 static xmlSAXHandler saxhandler = {
@@ -229,6 +250,8 @@ PFguide_tree()
     char *dtd = "<!ELEMENT node (EMPTY | node*)>"
                 "<!ATTLIST node guide CDATA #REQUIRED>"
                 "<!ATTLIST node count CDATA #REQUIRED>"
+                "<!ATTLIST node min CDATA #REQUIRED>"
+                "<!ATTLIST node max CDATA #REQUIRED>"
                 "<!ATTLIST node kind (1|2|3|4|5|6) #REQUIRED>"
                 "<!ATTLIST node name CDATA #IMPLIED>";
 
@@ -271,6 +294,7 @@ PFguide_tree()
 
     current_guide_node = NULL;
     root_guide_node    = NULL;
+    level              = 0;
 
     (void) xmlParseDocument (ctx);
 

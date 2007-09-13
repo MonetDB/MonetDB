@@ -177,6 +177,22 @@ copy (PFarray_t *base, PFarray_t *content)
 }
 
 /**
+ * For a list of guides find the biggest occurrence indicator.
+ */
+static unsigned int
+find_guide_max (unsigned int count, PFguide_tree_t **guides)
+{
+    unsigned int max;
+   
+    assert (count);
+    max = guides[0]->max;
+    for (unsigned int i = 1; i < count; i++)
+       max = max > guides[i]->max ? max : guides[i]->max;
+
+   return max; 
+}
+
+/**
  * Infer key property of a given node @a n; worker for prop_infer().
  */
 static void
@@ -452,34 +468,52 @@ infer_key (PFla_op_t *n)
                 union_ (n->prop->keys, n->sem.type.res);
             break;
 
-        case la_step:
         case la_guide_step:
             if (n->sem.step.axis == alg_chld &&
-                PFprop_key (R(n)->prop, n->sem.step.iter) &&
+                find_guide_max (n->sem.step.guide_count,
+                                n->sem.step.guides) <= 1)
+                union_ (n->prop->keys, n->sem.step.iter);
+        case la_step:
+            if (n->sem.step.axis == alg_chld &&
                 PFprop_key (R(n)->prop, n->sem.step.item))
                 union_ (n->prop->keys, n->sem.step.item_res);
 
-            /*
+            /* if attribute step is only a 'filter' (at most a single
+               attribute for each context node) we can copy all keys */
             if (n->sem.step.axis == alg_attr &&
                 ! (PFQNAME_NS_WILDCARD (n->sem.step.ty.name)
                    || PFQNAME_LOC_WILDCARD (n->sem.step.ty.name)) &&
-                PFprop_key (R(n)->prop, n->sem.step.iter))
+                PFprop_key (R(n)->prop, n->sem.step.item))
                 union_ (n->prop->keys, n->sem.step.iter);
-            else */ if (PFprop_const (n->prop, n->sem.step.iter))
+            
+            if (PFprop_const (n->prop, n->sem.step.iter))
                 union_ (n->prop->keys, n->sem.step.item_res);
             break;
 
-        case la_step_join:
         case la_guide_step_join:
-            if (PFprop_level_right (n->prop, n->sem.step.item) >= 0 &&
-                key_worker (R(n)->prop->keys, n->sem.step.item) &&
-                (n->sem.step.axis == alg_attr ||
-                 n->sem.step.axis == alg_chld ||
-                 n->sem.step.axis == alg_self ||
-                 n->sem.step.axis == alg_desc ||
-                 n->sem.step.axis == alg_desc_s)) {
+            if (n->sem.step.axis == alg_chld &&
+                find_guide_max (n->sem.step.guide_count,
+                                n->sem.step.guides) <= 1)
+                copy (n->prop->keys, R(n)->prop->keys);
+        case la_step_join:
+            if ((key_worker (R(n)->prop->keys, n->sem.step.item) &&
+                 (n->sem.step.axis == alg_attr ||
+                  n->sem.step.axis == alg_chld ||
+                  n->sem.step.axis == alg_self)) ||
+                (PFprop_level_right (n->prop, n->sem.step.item) >= 0 &&
+                 key_worker (R(n)->prop->keys, n->sem.step.item) &&
+                 (n->sem.step.axis == alg_desc ||
+                  n->sem.step.axis == alg_desc_s))) {
                 union_ (n->prop->keys, n->sem.step.item_res);
             }
+            
+            /* if attribute step is only a 'filter' (at most a single
+               attribute for each context node) we can copy all keys */
+            if (n->sem.step.axis == alg_attr &&
+                ! (PFQNAME_NS_WILDCARD (n->sem.step.ty.name)
+                   || PFQNAME_LOC_WILDCARD (n->sem.step.ty.name)) &&
+                PFprop_key (R(n)->prop, n->sem.step.item))
+                copy (n->prop->keys, R(n)->prop->keys);
 
             if (PFprop_card (R(n)->prop) == 1)
                 union_ (n->prop->keys, n->sem.step.item_res);

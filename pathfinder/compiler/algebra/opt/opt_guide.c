@@ -200,6 +200,22 @@ merge_guide_steps (PFla_op_t *n)
     AXIS(step1) = new_axis;
 }
 
+/**
+ * For a list of guides find the biggest occurrence indicator.
+ */
+static unsigned int
+find_guide_max (unsigned int count, PFguide_tree_t **guides)
+{
+    unsigned int max;
+   
+    assert (count);
+    max = guides[0]->max;
+    for (unsigned int i = 1; i < count; i++)
+       max = max > guides[i]->max ? max : guides[i]->max;
+
+   return max; 
+}
+
 /* worker for PFalgopt_guide */
 static void 
 opt_guide(PFla_op_t *n)
@@ -269,7 +285,12 @@ opt_guide(PFla_op_t *n)
             break;
             
         case la_guide_step_join:
-            if (PFprop_set (n->prop) &&
+            if ((PFprop_set (n->prop) ||
+                ((n->sem.step.axis == alg_chld ||
+                  n->sem.step.axis == alg_attr ||
+                  n->sem.step.axis == alg_self) &&
+                 find_guide_max (n->sem.step.guide_count,
+                                 n->sem.step.guides) <= 1)) &&
                 !PFprop_icol (n->prop, n->sem.step.item))
                 merge_guide_steps (n);
             break;

@@ -1161,6 +1161,13 @@ opt_complex (PFla_op_t *p)
             if (p->sem.step.level < 0)
                 p->sem.step.level = PFprop_level (p->prop,
                                                   p->sem.step.item_res);
+            
+            if ((p->sem.step.axis == alg_desc ||
+                 p->sem.step.axis == alg_desc_s) &&
+                p->sem.step.level >= 1 &&
+                p->sem.step.level - 1 == PFprop_level (R(p)->prop,
+                                                       p->sem.step.item))
+                p->sem.step.axis = alg_chld;
 
             if (R(p)->kind == la_project &&
                 RL(p)->kind == la_step) {
@@ -1205,12 +1212,35 @@ opt_complex (PFla_op_t *p)
             }
             break;
 
-        case la_step_join:
         case la_guide_step:
         case la_guide_step_join:
+            if (p->sem.step.level < 0 && p->sem.step.guide_count) {
+                int level = p->sem.step.guides[0]->level;
+                for (unsigned int i = 1; i < p->sem.step.guide_count; i++)
+                    if (level != p->sem.step.guides[i]->level)
+                        break;
+                p->sem.step.level = level;
+            }
+
+            if ((p->sem.step.axis == alg_desc ||
+                 p->sem.step.axis == alg_desc_s) &&
+                p->sem.step.level >= 1 &&
+                p->sem.step.level - 1 == PFprop_level (R(p)->prop,
+                                                       p->sem.step.item))
+                p->sem.step.axis = alg_chld;
+            break;
+                
+        case la_step_join:
             if (p->sem.step.level < 0)
                 p->sem.step.level = PFprop_level (p->prop,
                                                   p->sem.step.item_res);
+
+            if ((p->sem.step.axis == alg_desc ||
+                 p->sem.step.axis == alg_desc_s) &&
+                p->sem.step.level >= 1 &&
+                p->sem.step.level - 1 == PFprop_level (R(p)->prop,
+                                                       p->sem.step.item))
+                p->sem.step.axis = alg_chld;
             break;
 
         case la_fcns:
@@ -1257,9 +1287,42 @@ opt_complex (PFla_op_t *p)
                                                  p->sem.string_join.iter_sep),
                                PFprop_dom_left (p->prop,
                                                 p->sem.string_join.iter))) {
-                *p = *PFla_dummy (L(p));
+                *p = *PFla_project (L(p),
+                                    PFalg_proj (p->sem.string_join.iter_res,
+                                                p->sem.string_join.iter),
+                                    PFalg_proj (p->sem.string_join.item_res,
+                                                p->sem.string_join.item));
                 break;
             }
+            break;
+        
+        case la_roots:
+            if (L(p)->kind == la_merge_adjacent &&
+                PFprop_key_right (L(p)->prop,
+                                  L(p)->sem.merge_adjacent.iter_in)) {
+                *p = *PFla_project (
+                          LR(p),
+                          PFalg_proj (L(p)->sem.merge_adjacent.iter_res,
+                                      L(p)->sem.merge_adjacent.iter_in),
+                          PFalg_proj (L(p)->sem.merge_adjacent.pos_res,
+                                      L(p)->sem.merge_adjacent.pos_in),
+                          PFalg_proj (L(p)->sem.merge_adjacent.item_res,
+                                      L(p)->sem.merge_adjacent.item_in));
+                break;
+            }
+            break;
+
+        case la_frag_union:
+            if (L(p)->kind == la_fragment &&
+                LL(p)->kind == la_merge_adjacent &&
+                PFprop_key_right (LL(p)->prop,
+                                  LL(p)->sem.merge_adjacent.iter_in))
+                *p = *PFla_dummy (R(p));
+            else if (R(p)->kind == la_fragment &&
+                RL(p)->kind == la_merge_adjacent &&
+                PFprop_key_right (RL(p)->prop,
+                                  RL(p)->sem.merge_adjacent.iter_in))
+                *p = *PFla_dummy (L(p));
             break;
         
         default:
