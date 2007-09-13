@@ -154,7 +154,6 @@ static void mal_help_display(char **msg, int a, int b){
 	(void) msg; (void) a; (void) b;
 	for(i=0;i<a; i++)
 		stream_printf(GDKout,"%s\n",msg[i]);
-	/* stream_printf(GDKout,"%s",rl_line_buffer); */
 }
 @-
 @= tst
@@ -205,12 +204,11 @@ mal_command_generator(const char *text, int state)
 	if( msg == 0 && *text){
 		char cmd[BUFSIZ], *c;
 		c= strchr(text,'.');
-		if( c== NULL) {
-			snprintf(cmd,BUFSIZ,"%s.*",text);
-			c= cmd;
-		} else
-			c= (char *) text;
-		msg= getHelp(MCgetClient()->nspace,(str)c,1);
+		if( c== NULL)
+			snprintf(cmd,BUFSIZ,"%s.*(",text);
+		else
+			snprintf(cmd,BUFSIZ,"%s(",text);
+		msg= getHelp(MCgetClient()->nspace,(str)cmd,1);
 		for(last=0; msg[last]; last++) 
 			;
 	}
@@ -219,6 +217,29 @@ mal_command_generator(const char *text, int state)
 		return strdup(msg[last]);
 	}
 	return NULL;
+}
+
+int rl_complete(int ignore, int key){
+	char *msg[1000];
+	int i,top=0;
+
+	putchar('\n');
+	while( (msg[top]= mal_command_generator(rl_line_buffer,top)) )
+		if( ++top== 1000) break;
+	for(i=0;i<top; i++)	{
+		char *c= strchr(msg[i],' ');
+		if(c)
+			printf("%s\n",c+1);
+		else
+			printf("%s\n",msg[i]);
+	}
+
+	printf("%s%s",rl_prompt,rl_line_buffer);
+	for( top--;top>=0; top--)
+		free(msg[top]);
+	(void) ignore;
+	(void) key;
+	return 0;
 }
 
 static char **
