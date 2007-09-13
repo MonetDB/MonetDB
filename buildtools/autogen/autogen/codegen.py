@@ -213,9 +213,10 @@ def do_code_extract(f,base,ext, targets, deps, cwd):
         for pat,newext in code_extract[ext]:
             if pat.search(b) is not None:
                 extracted = base + newext
-                targets.append( extracted )
+                if extracted not in targets:
+                    targets.append( extracted )
                 deps[extracted] = [ f ]
-    else:
+    elif f not in targets:
         targets.append(f)
 
 # In the code generation phase targets are generated using input files
@@ -234,13 +235,14 @@ def do_code_gen(targets, deps, code_map):
                 changes = 1
                 for newext in code_map[ext]:
                     newtarget = base + newext
-                    ntargets.append(newtarget)
+                    if newtarget not in ntargets:
+                        ntargets.append(newtarget)
                     if deps.has_key(newtarget):
                         if (f not in deps[newtarget]):
                             deps[newtarget].append(f)
                     else:
                         deps[newtarget] = [ f ]
-            else:
+            elif f not in ntargets:
                 ntargets.append(f)
         targets = ntargets
     return targets
