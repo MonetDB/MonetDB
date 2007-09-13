@@ -3,13 +3,11 @@
 
 #include "shred_helper.h"
 #include "encoding.h"
-#include <stdio.h>
 
 /* SAX parser interface (libxml2) */
 #include "libxml/parser.h"
 #include "libxml/parserInternals.h"
 
-#define GUIDE_PADDING_COUNT 4
 #define GUIDE_INIT 1
 
 typedef struct guide_tree_t guide_tree_t;
@@ -32,9 +30,6 @@ struct guide_tree_t {
     nat           guide;
     kind_t        kind;
 };
-
-/* add a guide child to the parent */
-void add_guide_child(guide_tree_t *parent, guide_tree_t *child);
 
 /* insert a node in the guide tree */
 guide_tree_t* insert_guide_node(const xmlChar *tag_name, guide_tree_t 
