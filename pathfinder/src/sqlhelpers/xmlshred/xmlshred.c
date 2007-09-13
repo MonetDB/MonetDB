@@ -130,7 +130,7 @@ static const char
 
 shred_state_t status;  
 
-/* Print help message */
+/* print help message */
 static void
 print_help (char *progname)
 {
@@ -149,7 +149,7 @@ print_help (char *progname)
             "\t%%e: node preorder rank\n"
             "\t%%o: node postorder rank\n"
             "\t%%E: node preorder rank in stretched pre/post plane\n"
-            "\t%%O: node postorder rank in streteched pre/post plane\n"
+            "\t%%O: node postorder rank in stretched pre/post plane\n"
             "\t%%s: size of subtree below node\n"
             "\t%%l: length of path from root to node (level)\n"
             "\t%%k: node kind\n"
@@ -157,7 +157,7 @@ print_help (char *progname)
             "\t%%P: preorder rank of parent node in stretched pre/post plane\n"
             "\t%%n: element/attribute name\n"
             "\t%%t: text node content\n"
-            "\t%%g: guide node for node\n",
+            "\t%%g: guide node for node (also writes dataguide to file <prefix>_guide.xml)\n",
             long_option (opt_buf, ", --%s=format", 'F'), SQL_FORMAT);
     printf ("  -a%s: attributes separate (default: attributes inline)\n"
             "\twrites attribute encoding to file <prefix>_atts.csv\n",
