@@ -76,9 +76,15 @@ proc tj_is_indexed(str name) : bit { return false; }
 var CATCH_module_pftijah := CATCH(module("pftijah")); # load pftijah only if available
 if (not(isnil(CATCH_module_pftijah))) {
     if (trim(CATCH_module_pftijah) != "!ERROR: moduleClient: module(pftijah) load error.") {
-        ERROR("pathfinder: when trying to load module 'pftijah':\n" + CATCH_module_pftiah);
+        ERROR("pathfinder: when trying to load module 'pftijah':\n" + CATCH_module_pftijah);
     }
 }
+else {
+    if (monet_environment.find("monet_welcome") = "yes")
+        printf("%c PF/Tijah module v0.3.0 loaded. http://dbappl.cs.utwente.nl/pftijah\n", int
+(35));
+}
+
 
 module(mapi);       # remote client access
 module(pf_support);
