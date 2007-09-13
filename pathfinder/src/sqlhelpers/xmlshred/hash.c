@@ -32,9 +32,78 @@
 #include <unistd.h>
 #include <assert.h>
 
-#define MIN(a,b) ((a) < (b) ? (a) : (b))
+/* We use a seperate chaining strategy to
+ * mantain our hash_table,
+ * So each bucket is a chained list itself,
+ * to handle possible collisions.
+ */
+struct bucket_t {
+    char *key;      /**< key as string */
+    int id;         /**< name_id */
+    bucket_t* next; /**< next bucket in our list */
+};
 
-#define NAME_ID 0
+/* size of the hashtable */
+#define PRIME 113
+
+/**
+ * Lookup an id in a given bucket using it associated key.
+ */
+static int
+find_id (bucket_t *bucket, char *key)
+{
+    bucket_t *cur_bucket = bucket;
+    
+    assert (key);
+
+    while (cur_bucket)
+        if (strcmp (cur_bucket->key, key) == 0)
+            return cur_bucket->id;
+        else
+            cur_bucket = cur_bucket->next;
+
+    return NO_KEY;
+}
+
+/**
+ * Attach an (id, key) pair to a given bucket list.
+ */
+static bucket_t *
+bucket_insert(bucket_t *bucket, char *key, int id)
+{
+    int ident = find_id (bucket, key);
+    
+    /* no key found */
+    if (NOKEY (ident)) {
+        bucket_t *newbucket = (bucket_t*) malloc (sizeof (bucket_t));
+
+        newbucket->id = id;
+        newbucket->key = strndup (key, strlen(key));
+
+        /* add new bucket to the front of list */
+        newbucket->next = bucket;
+        return newbucket;
+    }
+    else
+        return bucket;
+
+    /* satisfy picky compilers */
+    return NULL;
+}
+
+/**
+ * Create the hash value for a given key.
+ */
+static int
+find_hash_bucket (char *key)
+{
+    size_t len = strlen (key);
+    /* keys have at least length 1 */
+    assert (len > 0);
+    /* build a hash out of the first and the last character
+       and the length of the key */
+    return (key[0] * key[len-1] * len) % PRIME;
+}
 
 /**
  * Create a new Hashtable.
@@ -42,71 +111,7 @@
 hashtable_t
 new_hashtable (void)
 {
-    return (hashtable_t)
-	    malloc (HASHTABLE_SIZE * sizeof (bucket_t));
-}
-
-/**
- * Hashfunction
- * You should use the macro #HASHFUNCTON to apply the the function only to a
- * fragment of the string.
- */
-int
-hashfunc(char *str)
-{
-    assert (str);
-    /* applying horners rule */
-    int x;
-    int k = strlen(str);
-    k--; 
-    x = (int)str[k]-'a';
-	str[k] = '\0';
-	assert (k >= 0);
-    if(k <= 0) {
-        return x % PRIME;
-    }
-    return (x + POLY_A * hashfunc(str)) % PRIME; 
-}
-
-/* find element in bucket */
-static int
-find_bucket(bucket_t *bucket, char *key)
-{
-    assert (key);
-
-    bucket_t *actbucket = bucket;
-    while (actbucket)
-    {
-        if (strcmp(actbucket->key, key)==0)
-	       return actbucket->id;
-	    else
-	        actbucket = actbucket->next;
-    }
-    return NO_KEY;
-}
-
-/* add id and key to the bucket list */
-static bucket_t *
-bucket_insert(bucket_t *bucket, char *key, int id)
-{
-    int ident = find_bucket(bucket, key);
-    bucket_t *actbucket = NULL;
-    /* no key found */
-    if( ident == -1) {
-    	actbucket = (bucket_t*) malloc(sizeof(bucket_t));
-
-	    actbucket->id = id;
-	    actbucket->key = strndup(key,strlen(key));
-
-	    /* add actbucket to the front of list */
-	    actbucket->next = bucket;
-	    return actbucket;
-    }
-    else {
-    	return bucket;
-    }
-    /* satisfy picky compilers */
-    return NULL;
+    return (hashtable_t) malloc (PRIME * sizeof (bucket_t));
 }
 
 /**
@@ -115,11 +120,13 @@ bucket_insert(bucket_t *bucket, char *key, int id)
 void
 hashtable_insert(hashtable_t hash_table, char *key, int id)
 {
-     assert (hash_table != NULL);
-     int hashkey = HASHFUNCTION(key);
-     hash_table[hashkey] = 
-	         bucket_insert(hash_table[hashkey], key, id); 
-     return;
+    int hashkey;
+    
+    assert (hash_table && key);
+    
+    hashkey = find_hash_bucket (key);
+    hash_table[hashkey] = bucket_insert (hash_table[hashkey], key, id);
+    return;
 }
 
 /**
@@ -129,7 +136,7 @@ int
 find_element(hashtable_t hash_table, char *key)
 {
     assert (key);
-    return find_bucket(hash_table[HASHFUNCTION(key)],key);
+    return find_id (hash_table[find_hash_bucket (key)], key);
 }
 
 /**
@@ -138,10 +145,18 @@ find_element(hashtable_t hash_table, char *key)
 void
 free_hash(hashtable_t hash_table)
 {
-   assert (hash_table != NULL);
-   int i = 0;
-   if(!hash_table) return;
+    bucket_t *bucket, *free_bucket;
+    
+    assert (hash_table);
+    if (!hash_table) return;
 
-   for(i = 0; i < HASHTABLE_SIZE; i++)
-        free(hash_table[i]);
+    for (int i = 0; i < PRIME; i++) {
+        bucket = hash_table[i];
+        while (bucket) {
+            free_bucket = bucket;
+            bucket = bucket->next;
+            free (free_bucket);
+        }
+   }
+   free(hash_table);
 }

@@ -43,7 +43,6 @@
 
 #define MIN(a,b) ((a) < (b) ? (a) : (b))
 
-#define PROPSIZE 32000 
 #define TEXT_SIZE 32000
 #define TAG_SIZE 32 
 
@@ -80,7 +79,7 @@ static shred_state_t shredstate;
 /* hash table */
 static hashtable_t hash_table;
 
-static xmlChar buf[PROPSIZE + 1];
+static xmlChar buf[TEXT_SIZE + 1];
 static int bufpos;
 
 static node_t stack[STACK_MAX];
@@ -146,7 +145,7 @@ print_tuple (node_t tuple)
                      if (tuple.value) {
                          unsigned int j;
                          putc ('"', out);
-                         for (j = 0; j < PROPSIZE && tuple.value[j]; j++)
+                         for (j = 0; j < TEXT_SIZE && tuple.value[j]; j++)
                              switch (tuple.value[j]) {
                                  case '\n': 
                                      putc (' ', out); break;
@@ -433,12 +432,12 @@ characters (void *ctx, const xmlChar *chars, int n)
     /* calling convention */
     (void) ctx;
 
-    if (bufpos < PROPSIZE) {
+    if (bufpos < TEXT_SIZE) {
         snprintf ((char *) buf + bufpos,
-                  MIN (n, PROPSIZE - bufpos) + 1,
+                  MIN (n, TEXT_SIZE - bufpos) + 1,
                   "%s",
                   (char *) chars);
-        bufpos += MIN (n, PROPSIZE - bufpos);
+        bufpos += MIN (n, TEXT_SIZE - bufpos);
     }
 
     buf[bufpos] = '\0';

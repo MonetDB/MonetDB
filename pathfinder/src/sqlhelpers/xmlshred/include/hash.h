@@ -34,44 +34,8 @@
 /* returns true if no such key is found */
 #define NOKEY(k) (k == NO_KEY)
 
-/* size of the hashtable */
-#define HASHTABLE_SIZE 2000 
-
-/* prime number due to bertrands theorem:
- * there exists a prime number p that satisfy,
- * the following condition
- *     HASHTABLE_SIZE < p <= 2 HASHTABLE_SIZE
- */
-#define PRIME 2011
-
-/**
- * Compression function
- * We use a universal hash function
- */
-#define MAD(key) (((123 * key + 593) % PRIME) % HASHTABLE_SIZE)
-
-/* 33 has proved  to be a good choice
- * for polynomial hash functions
- */
-#define POLY_A 33
-
-/* HASHFUNCTION appylied to the first ten characters of a string */
-#define HASHFUNCTION(str) MAD(hashfunc(strndup(str, MIN(strlen(str), 10))))
-
-#define MIN(a,b) ((a) < (b) ? (a) : (b))
-
-/* We use a seperate chaining strategy to
- * mantain our hash_table,
- * So each bucket is a chained list itself,
- * to handle possible collisions.
- */
+/* a hashtable bucket */
 typedef struct bucket_t bucket_t;
-struct bucket_t
-{
-    char *key;      /**< key as string */
-    int id;         /**< name_id */
-    bucket_t* next; /**< next bucket in our list */
-};
 
 /* definition for hashtable_t */
 typedef struct bucket_t** hashtable_t;
@@ -80,11 +44,6 @@ typedef struct bucket_t** hashtable_t;
  * Create a new Hashtable.
  */
 hashtable_t new_hashtable (void);
-
-/**
- * Hashfunction
- */
-int hashfunc (char *str); 
 
 /**
  * Find element in hashtable.
