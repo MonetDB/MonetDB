@@ -34,6 +34,9 @@ done
 PATH="${builddir}/conf:${builddir}/src/java/scripts:${builddir}/src/mapiclient:${builddir}/src/python:$PATH"
 export PATH
 
+PYTHONPATH="${srcdir}/src/python:${PYTHONPATH}"
+export PYTHONPATH
+
 # execute Mtest.py in the source directory
 cd "$srcdir"
 
