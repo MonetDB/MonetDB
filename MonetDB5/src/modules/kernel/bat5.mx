@@ -1850,7 +1850,7 @@ BKCinsert_bun_oid_str(int *r, int *bid, ptr h, ptr t)
 str
 BKCinsert_bat(int *r, int *bid, int *sid)
 {
-	BAT *b, *bn, *s;
+	BAT *b, *s;
 
 	(void) r;
 	if ((b = BATdescriptor(*bid)) == NULL) {
@@ -1860,21 +1860,20 @@ BKCinsert_bat(int *r, int *bid, int *sid)
 		BBPreleaseref(b->batCacheid);
 		throw(MAL, "bat.insert", "Cannot access descriptor");
 	}
-	bn= BATins(b, s, FALSE);
-	BBPreleaseref(s->batCacheid);
-	if(bn == NULL) {
+	if (BATins(b, s,FALSE) == NULL) {
 		BBPreleaseref(b->batCacheid);
-		throw(MAL, "bat.insert", "GDKerror, different BAT returned");
+		BBPreleaseref(s->batCacheid);
+		throw(MAL, "bat.insert", "Failed");
 	}
-	assert(b->batCacheid==bn->batCacheid);
-	BBPkeepref(*r=bn->batCacheid);
+	BBPreleaseref(b->batCacheid);
+	BBPreleaseref(s->batCacheid);
 	return MAL_SUCCEED;
 }
 
 str
 BKCinsert_bat_force(int *r, int *bid, int *sid, bit *force)
 {
-	BAT *bn,*b, *s;
+	BAT *b, *s;
 
 	(void) r;
 	if ((b = BATdescriptor(*bid)) == NULL) {
@@ -1884,14 +1883,13 @@ BKCinsert_bat_force(int *r, int *bid, int *sid, bit *force)
 		BBPreleaseref(b->batCacheid);
 		throw(MAL, "bat.insert", "Cannot access descriptor");
 	}
-	bn= BATins(b, s, *force);
-	BBPreleaseref(s->batCacheid);
-	if(bn == NULL) {
+	if (BATins(b, s, *force) == NULL) {
 		BBPreleaseref(b->batCacheid);
-		throw(MAL, "bat.insert", "GDKerror, different BAT returned");
+		BBPreleaseref(s->batCacheid);
+		throw(MAL, "bat.insert", "Failed");
 	}
-	assert(b->batCacheid==bn->batCacheid);
-	BBPkeepref(*r=bn->batCacheid);
+	BBPreleaseref(b->batCacheid);
+	BBPreleaseref(s->batCacheid);
 	return MAL_SUCCEED;
 }
 
@@ -1930,12 +1928,12 @@ BKCreplace_bat(int *r, int *bid, int *sid)
 	}
 	bn=BATreplace(b, s, 0);
 	BBPreleaseref(s->batCacheid);
-	if(bn==NULL){
+	if(bn==NULL )
 		BBPreleaseref(b->batCacheid);
+	else
+		BBPreleaseref(bn->batCacheid);
+	if(bn && bn->batCacheid != b->batCacheid)
 		throw(MAL, "bat.replace", "GDKerror, different BAT returned");
-	}
-	assert(b->batCacheid==bn->batCacheid);
-	BBPkeepref(*r=bn->batCacheid);
 	return MAL_SUCCEED;
 }
 
@@ -1975,12 +1973,12 @@ BKCreplace_bat_force(int *r, int *bid, int *sid, bit *force)
 	}
 	bn= BATreplace(b, s, *force);
 	BBPreleaseref(s->batCacheid);
-	if(bn==NULL ){
+	if(bn==NULL )
 		BBPreleaseref(b->batCacheid);
+	else
+		BBPreleaseref(bn->batCacheid);
+	if(bn && bn->batCacheid != b->batCacheid)
 		throw(MAL, "bat.replace_bat", "GDKerror, different BAT returned");
-	}
-	assert(b->batCacheid==bn->batCacheid);
-	BBPkeepref(*r=bn->batCacheid);
 	return MAL_SUCCEED;
 }
 
@@ -2060,14 +2058,14 @@ BKCdelete_bat_bun(int *r, int *bid, int *sid)
 		throw(MAL, "bat.delete", "Cannot access descriptor");
 	}
 
-	bn=BATdel(b, s, FALSE);
-	BBPreleaseref(s->batCacheid);
-	if( bn ==0){
+	bn=BATdel(b, s,FALSE);
+	if(bn==NULL )
 		BBPreleaseref(b->batCacheid);
+	else
+		BBPreleaseref(bn->batCacheid);
+	BBPreleaseref(s->batCacheid);
+	if(bn && bn->batCacheid != b->batCacheid)
 		throw(MAL, "bat.delete_bat_buns", "GDKerror, different BAT returned");
-	}
-	assert(b->batCacheid==bn->batCacheid);
-	BBPkeepref(*r= bn->batCacheid);
 	return MAL_SUCCEED;
 }
 
