@@ -171,11 +171,11 @@ def am_find_hdrs_r(am, target, deps, hdrs, hdrs_ext, map):
         tdeps = deps[target]
         for dtarget in tdeps:
             t, ext = split_filename(dtarget)
-            if ext not in automake_ext and dtarget not in am['EXTRA_DIST']:
+            if ext not in automake_ext and ext != 'tmpmil' and dtarget not in am['EXTRA_DIST'] and '/' not in dtarget:
                 am['EXTRA_DIST'].append(dtarget)
             org = find_org(deps, dtarget)
             if org in map['SOURCES']:
-                if ext in hdrs_ext and not dtarget in hdrs:
+                if ext in hdrs_ext and dtarget not in hdrs and ext != 'tmpmil' and '/' not in dtarget:
                     hdrs.append(dtarget)
                 am_find_hdrs_r(am, dtarget, deps, hdrs, hdrs_ext, map)
 
