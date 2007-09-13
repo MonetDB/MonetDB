@@ -124,7 +124,7 @@ print_tuple (node_t tuple)
                  case 'E': fprintf (out, SSZFMT, tuple.pre_stretched); break;
                  case 'O': fprintf (out, SSZFMT, tuple.post_stretched); break;
                  case 's': fprintf (out, SSZFMT, tuple.size); break;
-                 case 'l': fprintf (out, SSZFMT, tuple.level); break;
+                 case 'l': fprintf (out, "%i",   tuple.level); break;
                  case 'k': print_kind (out, tuple.kind); break;
                  case 'p':
                      if (tuple.parent)
@@ -346,7 +346,7 @@ start_element (void *ctx, const xmlChar *tagname, const xmlChar **atts)
             if (shredstate.names_separate)
                 while (*atts) {
                     fprintf (out_attr,
-                             SSZFMT ", " SSZFMT ", \"" SSZFMT "\", \"%s\","
+                             SSZFMT ", " SSZFMT ", %i, \"%s\"," 
                              SSZFMT "\n",
                              att_id++, pre, generate_name_id (atts[0]), atts[1],
                              insert_guide_node (atts[0],
@@ -535,3 +535,6 @@ SHshredder (const char *s,
 
     return 0;
 }
+
+/* vim:set shiftwidth=4 expandtab: */
+

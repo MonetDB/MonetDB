@@ -59,19 +59,22 @@
  * order of one-character option names.
  */
 static struct option long_options[] = {
+    { "format",              required_argument, NULL, 'F' },
     { "attributes-separate", no_argument,       NULL, 'a' },
     { "in-file",             required_argument, NULL, 'f' },
     { "help",                no_argument,       NULL, 'h' },
-    { "names-separate",      optional_argument, NULL, 'n' },
+    { "names-inline",        no_argument,       NULL, 'n' },
     { "out-file",            required_argument, NULL, 'o' },
-    { "format",              required_argument, NULL, 'F' }
+    { NULL,                  no_argument,       NULL, 0   }
 };
+
+#define OPT_STRING "F:af:hno:"
 
 /**
  * character buffer large enough to hold longest
  * command line option plus some extra formatting space
  */
-static char opt_buf[32];
+static char opt_buf[sizeof ("attributes-separate") + 8];
 
 static int 
 cmp_opt (const void *o1, const void *o2) 
@@ -123,9 +126,9 @@ static const char
 
 #endif
 
-#define SQL_FORMAT "%e, %s, %l, %k, %n, %t, %g";
+#define SQL_FORMAT "%e, %s, %l, %k, %n, %t, %g"
 
-shred_state_t *status;  
+shred_state_t status;  
 
 /* Print help message */
 static void
@@ -139,14 +142,14 @@ print_help (char *progname)
 
     printf ("  -h%s: print this help message\n",
             long_option (opt_buf, ", --%s", 'h'));
-    printf ("  -f filename%s: parse this XML-Document\n",
+    printf ("  -f filename%s: encode given input XML document\n",
             long_option (opt_buf, ", --%s=filename", 'f'));
-    printf ("  -o filename%s: writes output to this file(s)\n",
+    printf ("  -o filename%s: writes encoding to given file\n",
             long_option (opt_buf, ", --%s=filename", 'o'));
-    printf ("  -a%s: attributes separate\n",
+    printf ("  -a%s: attributes separate (default: inline)\n",
             long_option (opt_buf, ", --%s", 'a'));
-    printf ("  -n%s: names separate\n",
-            long_option (opt_buf, ", --%s=yes|no", 'n'));
+    printf ("  -n%s: tag/attribute names inline (default: names separate)\n",
+            long_option (opt_buf, ", --%s", 'n'));
 }
 
 #define MAIN_EXIT(rtn) \
@@ -156,9 +159,7 @@ print_help (char *progname)
 int
 main (int argc, char **argv)
 {
-    static char *progname = NULL;
-
-    status = malloc (sizeof (shred_state_t));
+    char *progname = NULL;
 
     FILE *shout    = NULL;
     FILE *attout   = NULL;
@@ -171,122 +172,119 @@ main (int argc, char **argv)
      */
     progname = strndup (argv[0], FILENAME_MAX);
 
+    status.format = SQL_FORMAT; 
+    status.infile = NULL;
+    status.outfile = NULL;
+    status.statistics = true;
+    status.names_separate = true;
+    status.attributes_separate = false;
+
     /* parse command line using getopt library */
     while (true) {
         int c; 
 
-        #define OPT_STRING "af:hn:o:F:"
-
 #if HAVE_GETOPT_H && HAVE_GETOPT_LONG
         int option_index = 0;
+        opterr = 1;
         c = getopt_long (argc, argv, OPT_STRING, 
                          long_options, &option_index);
 #else
         c = getopt (argc, argv, OPT_STRING);
 #endif
-        status->format = SQL_FORMAT; 
-        status->statistics = true;
-        status->names_separate = true;
 
         if (c == -1)
             break;
         switch (c) {
             case 'a':
-                status->attributes_separate = true;
+                status.attributes_separate = true;
                 break;
             case 'n':
-                if (!optarg)
-                    status->names_separate = true;
-                else if (!strcmp ("yes", optarg))
-                    status->names_separate = true;
-                else if (!strcmp ("no", optarg))
-                    status->names_separate = false;
-                else
-                    SHoops (SH_FATAL, "Option -n: 'yes' and 'no'"
-                                      " are valid only.\n");
+                status.names_separate = false;
                 break;
             case 'F':
-                status->format = strdup (optarg);
+                status.format = strdup (optarg);
+                status.statistics = false;
                 
-                for (unsigned int i = 0; status->format[i+1]; i++)
-                    if (status->format[i] == '%' &&
-                        status->format[i+1] == 'g') {
-                        status->statistics = true;
+                for (unsigned int i = 0; status.format[i+1]; i++)
+                    if (status.format[i] == '%' &&
+                        status.format[i+1] == 'g') {
+                        status.statistics = true;
                         break;
                     }
                 break;
             case 'f':
-                status->infile = strndup (optarg, FILENAME_MAX);
-                if (!SHreadable (status->infile)) {
+                status.infile = strndup (optarg, FILENAME_MAX);
+                if (!SHreadable (status.infile)) {
                     SHoops (SH_FATAL, "This file doesn't exists or "
                                       "you don't have the permission "
                                       "to read it.\n");
                     goto failure;
                 }
-                if (status->infile)
-                    status->doc_name = status->infile;
+                if (status.infile)
+                    status.doc_name = status.infile;
                 else
-                    status->doc_name = "";
+                    status.doc_name = "";
                 break;
             case 'o':
-                status->outfile = strndup (optarg, FILENAME_MAX);
+                status.outfile = strndup (optarg, FILENAME_MAX);
                 break;
             case 'h':
                 print_help (progname);
                 exit (0);
+            default:
+                SHoops (SH_FATAL, "try `%s -h'\n", progname);
         }
     }
 
-    if (!status->outfile &&
-        (status->attributes_separate ||
-         status->names_separate ||
-         status->statistics)) {
+    if (!status.outfile &&
+        (status.attributes_separate ||
+         status.names_separate ||
+         status.statistics)) {
         SHoops (SH_FATAL, "Output filename required.\n");
         print_help (progname);
         goto failure;
     }
     
     /* Open files */ 
-    if (status->outfile)
-        shout = SHopen_write (status->outfile);
+    if (status.outfile)
+        shout = SHopen_write (status.outfile);
     else
         shout = stdout;
 
-    if (status->attributes_separate) {
+    if (status.attributes_separate) {
         /* attribute file */
         char attoutfile[FILENAME_MAX];
-        snprintf (attoutfile, FILENAME_MAX, "%s_atts", status->outfile);
+        snprintf (attoutfile, FILENAME_MAX, "%s_atts", status.outfile);
 	attout = SHopen_write (attoutfile);
     }
-    if (status->names_separate) {
+    
+    if (status.names_separate) {
         /* names file */
         char namesoutfile[FILENAME_MAX];
-        snprintf (namesoutfile, FILENAME_MAX, "%s_names", status->outfile);
+        snprintf (namesoutfile, FILENAME_MAX, "%s_names", status.outfile);
 	namesout = SHopen_write (namesoutfile);
     }
-    if (status->statistics) {
+    
+    if (status.statistics) {
         /* guide file */
         char guideoutfile[FILENAME_MAX];
-        snprintf (guideoutfile, FILENAME_MAX, "%s_guide.xml", status->outfile);
+        snprintf (guideoutfile, FILENAME_MAX, "%s_guide.xml", status.outfile);
         guideout = SHopen_write (guideoutfile);
     }
 
     /* shred the files */
-    if (SHshredder (status->infile,
+    if (SHshredder (status.infile,
                     shout, attout, namesout, guideout,
-                    status) < 0)
+                    &status) < 0)
         goto failure;
 
-    if (status->outfile)             fclose (shout);
-    if (status->attributes_separate) fclose (attout);
-    if (status->names_separate)      fclose (namesout);
-    if (status->statistics)          fclose (guideout);
-
-    free (status);
+    if (status.outfile)             fclose (shout);
+    if (status.attributes_separate) fclose (attout);
+    if (status.names_separate)      fclose (namesout);
+    if (status.statistics)          fclose (guideout);
 
     MAIN_EXIT (EXIT_SUCCESS);
-failure:
-    free (status);
 
+failure:
     MAIN_EXIT (EXIT_FAILURE);
 }
