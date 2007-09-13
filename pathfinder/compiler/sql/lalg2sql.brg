@@ -1945,7 +1945,9 @@ reduce (PFla_op_t * p, int goalnt)
 
             /* If we need to ensure the correct cardinality
                we first need to bind the right argument. */
-            if (!PFprop_set (p->prop)) {
+            if (!PFprop_set (p->prop) &&
+                !(PFprop_key_left (p->prop, att1) &&
+                  PFprop_key_right (p->prop, att2))) {
                 PFsql_t            *expr     = col_env_lookup (
                                                    COLMAP(R(p)), att2, ty);
                 PFsql_col_t        *colname  = new_col (att2, ty);
