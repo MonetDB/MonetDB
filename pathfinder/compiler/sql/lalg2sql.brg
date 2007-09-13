@@ -2207,18 +2207,19 @@ reduce (PFla_op_t * p, int goalnt)
                 case alg_fun_fn_concat:
                     /* the algebra ensures that the expressions are strings */
                     res_expr = concat (expr[0], expr[1]); break;    
-                /**< fn:round */
-                case alg_fun_fn_round:
                 /**< fn:number */
                 case alg_fun_fn_number:
+                    res_expr = cast_ (expr[0], ty[0], aat_dbl); break;
+                /**< fn:round */
+                case alg_fun_fn_round:
                     /* FIXME: implementation is missing */
+
                     assert (!"missing");
                     break;
             }
             col_env_add (COLMAP(p), res_att, res_ty, res_expr);
 
         }   break;
-
         /* Rel:    num_eq (Rel) */
         case 21:
         /* Rel:    num_gt (Rel) */
@@ -2786,7 +2787,7 @@ reduce (PFla_op_t * p, int goalnt)
                 assert (p->kind == la_guide_step ||
                         p->kind == la_guide_step_join);
 
-                #define GUIDE_BARRIER 5
+                #define GUIDE_BARRIER 10 
 
                 if (p->sem.step.guide_count > GUIDE_BARRIER) {
                     step_guide_join (p,
