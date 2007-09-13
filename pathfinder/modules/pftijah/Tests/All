@@ -27,6 +27,8 @@ test_downprop
 test_union
 test_nllr_allfeatures
 test_lms_allfeatures
+test_lm_allfeatures
+test_okapi_allfeatures
 test_nllr_manyqueries
 test_lms_manyqueries
 cleanup

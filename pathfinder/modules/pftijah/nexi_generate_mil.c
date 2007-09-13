@@ -736,7 +736,7 @@ int SRA_to_MIL(TijahParserContext* parserCtx, int query_num, int use_startNodes,
 
         case MODEL_OKAPI :
 
-          MILPRINTF(MILOUT, "R%d := R%d.p_containing_t_Okapi(R%d, %f, %f, %d,qenv);\n", com_num, com_nr_left, com_nr_right, txt_retr_model->param1, txt_retr_model->param2, txt_retr_model->size_type);
+          MILPRINTF(MILOUT, "R%d := R%d.p_containing_q_OKAPI%s(terms%s,qenv);\n", com_num, com_nr_left, parserCtx->ffPfx, parserCtx->flastPfx);
 
           break;
 

@@ -258,7 +258,9 @@ int old_main(BAT* optbat, char* startNodes_name)
     char* qenv_prox_val  = NULL;
     char* qenv_fb_val    = NULL;
     char* qenv_scorebase = "0"; //default setting
-    char* qenv_c_lambda = "0.8"; //default setting
+    char* qenv_c_lambda  = "0.8"; //default setting
+    char* qenv_okapi_k1  = "1.2"; //default
+    char* qenv_okapi_b   = "0.75"; //default
 
     BUN p, q;
     BATloop(optbat, p, q) {
@@ -380,17 +382,21 @@ int old_main(BAT* optbat, char* startNodes_name)
                 txt_retr_model->down_prop = DOWN_WSUMA;
             }
             
-        } else if ( strcmp(optName,"collection-lambda") == 0 || 
-                    strcmp(optName,"ir-model-param1") == 0) {
+        } else if ( strcmp(optName,"ir-model-param1") == 0) {
+            txt_retr_model->param1 = atof( optVal );
+        } else if ( strcmp(optName,"ir-model-param2") == 0) {
+            txt_retr_model->param2 = atof( optVal );
+        } else if ( strcmp(optName,"ir-model-param3") == 0) {
+            txt_retr_model->param3 = atof( optVal );
+        } else if ( strcmp(optName,"collection-lambda") == 0) { 
             txt_retr_model->param1 = atof( optVal );
 	    qenv_c_lambda = optVal;
-
-        } else if ( strcmp(optName,"ir-model-param2") == 0 ) {
+        } else if ( strcmp(optName,"okapi-k1") == 0 ) {
+            txt_retr_model->param1 = atof( optVal );
+            qenv_okapi_k1 = optVal;
+        } else if ( strcmp(optName,"okapi-b") == 0 ) {
             txt_retr_model->param2 = atof( optVal );
-            
-        } else if ( strcmp(optName,"ir-model-param3") == 0 ) {
-            txt_retr_model->param3 = atof( optVal );
-        
+            qenv_okapi_b = optVal;
         } else if ( strcmp(optName,"txtmodel_returnall") == 0 ) {
             if ( strcasecmp(optVal,"TRUE") == 0 ) {
                 return_all = TRUE;
@@ -517,6 +523,9 @@ int old_main(BAT* optbat, char* startNodes_name)
     MILPRINTF(MILOUT, "modify_qenv(qenv,QENV_SCOREBASE,\"%s\");\n",qenv_scorebase);
     MILPRINTF(MILOUT, "modify_qenv(qenv,QENV_C_LAMBDA,\"%s\");\n",qenv_c_lambda);
     MILPRINTF(MILOUT, "modify_qenv(qenv,QENV_RECURSIVE_TAGS,\"%s\");\n","0");
+    MILPRINTF(MILOUT, "modify_qenv(qenv,QENV_OKAPI_K1,\"%s\");\n",qenv_okapi_k1);
+    MILPRINTF(MILOUT, "modify_qenv(qenv,QENV_OKAPI_B,\"%s\");\n",qenv_okapi_b);
+
     // ensure the hash tables are hashed
     MILPRINTF(MILOUT, "tj_chk_dict_hash(bat(_tj_TagBat(\"%s\")),bat(_tj_TermBat(\"%s\")));\n",parserCtx->collection,parserCtx->collection);
 

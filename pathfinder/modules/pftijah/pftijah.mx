@@ -166,7 +166,7 @@ The function calculates NLLR scores for all elements in e and all terms in tid_c
 #
 # Based on code by the TIJAH team (Vojkan, Thijs)
 #
-# Additional retrieval models by Henning Rode 
+# Additional retrieval models by Henning Rode and Djoerd Hiemstra
 #
 # Authors: Roel van Os <roel.van.os@glacimonto.nl>
 #          Henning Rode <h.rode@cs.utwente.nl>
@@ -232,6 +232,8 @@ const QENV_C_LAMBDA       := 3@0;
 const QENV_TERM_PROXIMITY := 4@0;
 const QENV_FEEDBACK_DOCS  := 5@0;
 const QENV_RECURSIVE_TAGS := 6@0;
+const QENV_OKAPI_K1       := 7@0;
+const QENV_OKAPI_B        := 8@0;
 
 # create a query environment bat
 PROC create_qenv() : BAT[oid,str]
@@ -2017,6 +2019,9 @@ PROC _getTermDocLHs1(oid tid, BAT[void,oid] docs, str cName, bit nested) : bat[o
 # where qCnt(t) = count of term t in query q
 # where dLH(t) = likelihood of term t in doc d
 #
+# NOTE by Djoerd: The current implementation of LM might retrieve
+# documents if one or more terms have zero frequency in background-col
+# which should not happen
 PROC _score_LM(int term_qCnt, int qSize, dbl term_cLH, BAT[oid,dbl] term_dLHs, dbl cLambda) : bat[oid,dbl] := {
     var term_dScores := term_dLHs;
     while (term_qCnt > 1) {
@@ -2048,8 +2053,8 @@ PROC _score_LMs(int term_qCnt, int qSize, dbl term_cLH, BAT[oid,dbl] term_dLHs, 
     return term_dLHs.mark(0@0).leftfetchjoin(term_dScores);
 }
 
-#               ___    qCnt(t)       /  (1 - lambda) * dLH(t)       \  
-# NLLR(d|q) =   | |    ------- * log |  ----------------------  + 1 |  
+#               __     qCnt(t)       /  (1 - lambda) * dLH(t)       \  
+# NLLR(d|q) =   >_     ------- * log |  ----------------------  + 1 |  
 #              t in q   qSize        \      lambda * cLH(t)         /  
 #
 # where qCnt(t) = count of term t in query q
@@ -2067,6 +2072,56 @@ PROC _score_NLLR(int term_qCnt, int qSize, dbl term_cLH, BAT[oid,dbl] term_dLHs,
     term_dScores [:*=] term_qLH;
     return term_dLHs.mark(0@0).leftfetchjoin(term_dScores);
 }
+
+#             __                /  cNdoc  \            (cK1 + 1) tf(t)
+# OKAPI(q) =  >_  qCnt(t) * log | ------- | * -------------------------------------
+#            t in q             \ cIDF(t) /   cK1*((1-cB) + b*(DL / cAvgDL)) + tf(t)
+#
+# where cNdoc    = number of elements that is scored
+# where cAvgDL   = average element length
+# where DL       = element length
+# where cIDF(t)  = idf instead of the Robertson/Sparck-Jones weight (variation on idf)
+# where tf(t)    = term frequency (number of occurences of term t in element)
+# where cK1      = tuning parameter k1
+# where cB       = tuning parameter b
+#
+PROC _score_OKAPI(oid tid, BAT[void, oid] docs, str cName, dbl cK1, dbl cB, int cNdoc, dbl cAvgDL) : bat[oid,dbl] := {
+    var nested := false;
+    if (qenv.find(QENV_RECURSIVE_TAGS) = "1") { nested := true; }
+
+    var pre_size := bat("tj_" + cName + "_size1");
+
+     # get term positions in the entire collection
+     var termPREs := _getTermPositions(tid, cName);
+
+     # get doc - term relation
+     var doc_termPRE;
+     if (nested) { doc_termPRE := treemergejoin_sort(docs, pre_size, termPREs); }
+     else { doc_termPRE := treemergejoin_sort_unnested(docs, pre_size, termPREs); }
+     termPREs := nil;
+
+     # res contains term frequencies
+     var res := doc_termPRE.reverse().histogram().sort();
+     doc_termPRE := nil;
+
+     # cIDF contains Robertson/Sparck-Jones relevance weight
+     var cIDF := res.count(); # df
+     cIDF  := log((cNdoc + 0.5) / (cIDF + 0.5));
+
+     # cK contains length normalization 
+     var cK := res.mirror().join(pre_size); # document lengths
+     cK := [/](cK, cAvgDL / cB);
+     cK := [+](cK, 1 - cB);
+     cK := [*](cK, cK1);
+     cK := [+](cK, res);
+
+     res := [dbl](res).access(BAT_WRITE);
+     res := [*](res, cK1 + 1);
+     res := [/](res, cK);
+
+     return res.access(BAT_READ);
+}
+
 
 # parameters: score_method, aggregation_method, base_score
 @:p_containing_q_all(NLLR,add,0,+,0)@
@@ -2115,7 +2170,7 @@ PROC p_containing_q_@1(bat[oid,dbl] left, bat[void,str] Qterms, str ind, BAT[oid
 	t_dLHs :-= time();
 	var term_dLHs := _getTermDocLHs@3($h, res.hmark(0@0), cName, nested);
 	t_dLHs :+= time();
-	
+
 	# BEGIN RETRIEVAL MODEL DEPENDENT CODE
 	t_score :-= time();
 	var term_dScores := _score_@1($t, qSize, term_cLH, term_dLHs, cLambda);
@@ -2144,6 +2199,57 @@ PROC p_containing_q_@1(bat[oid,dbl] left, bat[void,str] Qterms, str ind, BAT[oid
 }
 
 @mil
+
+# We cannot implement OKAPI weighting with standard implementation above, sorry
+
+PROC p_containing_q_OKAPI(bat[oid,dbl] left, bat[void,str] Qterms, str ind, BAT[oid,str] qenv) : bat[oid,dbl] :=
+{
+    if ( trace ) tj_trace( "BEGIN p_containing_q" );
+
+    var t_total := 0;
+    var cName := qenv.find(QENV_FTINAME);
+    var bg_cName := qenv.find(QENV_FTIBGNAME);
+    t_total :-= time();
+
+    # get term ids and drop all terms with zero frq in background-col and calculate query tf
+    var terms := _terms2void_tid( Qterms, bg_cName );
+    var t_qCnt := terms.histogram();
+
+    # init further variables
+    var cK1 := dbl(qenv.find(QENV_OKAPI_K1));
+    var cB := dbl(qenv.find(QENV_OKAPI_B));
+    var res := left.sort();
+    var dScores := res.project(dbl(0)).access(BAT_WRITE);
+    var cNdoc := res.count();
+    var cAvgDL := res.mirror().join(bat("tj_" + cName + "_size1")).sum() / dbl(cNdoc); # average document length
+
+    # loop over query terms
+    t_qCnt@batloop()
+    {
+	# get likelihoods per term
+	var term_dScores := _score_OKAPI($h, res.hmark(0@0), cName, cK1, cB, cNdoc, cAvgDL);
+ 	term_dScores := [*](term_dScores, $t);
+
+	# aggregate term scores: dScores := [+](dScores, term_dScores);
+        dScores := dScores.left_add(term_dScores);
+    } 
+    dScores.access(BAT_READ);
+
+    # delete all docs from the result list that do not match any query term
+    if ( not( returnAllElements )) {
+        var unchanged := dScores.uselect(dbl(0));
+        dScores := dScores.kdiff(unchanged);
+    }
+
+    # combine new doc scores with prior ones 
+    res := [+](res, dScores);
+    t_total :+= time();
+    if (timing) printf("# okapi timing: total: %d\n", t_total);
+    return res;
+}
+
+
+
 PROC collTermCount(str col, bat[oid,int] terms) : bat[oid,int] :=
 {
      var tids := terms.mirror();
