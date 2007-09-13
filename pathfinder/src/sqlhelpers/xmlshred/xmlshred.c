@@ -136,7 +136,7 @@ print_help (char *progname)
 {
     printf ("Pathfinder XML Shredder\n");
     printf ("(c) Database Group, Technische Universitaet Muenchen\n\n");
-    printf ("Produces relational encodings of XML input documents\n\n");
+    printf ("Produces relational encodings of XML input documents, one node/tuple\n\n");
 
     printf ("Usage: %s [OPTION] -f [FILE] -o [PREFIX]\n\n", progname);            
 
@@ -144,6 +144,21 @@ print_help (char *progname)
             long_option (opt_buf, ", --%s=filename", 'f'));
     printf ("  -o prefix%s: writes encoding to file <prefix>.csv\n",
             long_option (opt_buf, ", --%s=prefix", 'o'));
+    printf ("  -F format%s: format selected encoding components\n"
+            "\t(default: '%s')\n"
+            "\t%%e: node preorder rank\n"
+            "\t%%o: node postorder rank\n"
+            "\t%%E: node preorder rank in stretched pre/post plane\n"
+            "\t%%O: node postorder rank in streteched pre/post plane\n"
+            "\t%%s: size of subtree below node\n"
+            "\t%%l: length of path from root to node (level)\n"
+            "\t%%k: node kind\n"
+            "\t%%p: preorder rank of parent node\n"
+            "\t%%P: preorder rank of parent node in stretched pre/post plane\n"
+            "\t%%n: element/attribute name\n"
+            "\t%%t: text node content\n"
+            "\t%%g: guide node for node\n",
+            long_option (opt_buf, ", --%s=format", 'F'), SQL_FORMAT);
     printf ("  -a%s: attributes separate (default: attributes inline)\n"
             "\twrites attribute encoding to file <prefix>_atts.csv\n",
             long_option (opt_buf, ", --%s", 'a'));
@@ -216,12 +231,8 @@ main (int argc, char **argv)
                 break;
             case 'f':
                 status.infile = strndup (optarg, FILENAME_MAX);
-                if (!SHreadable (status.infile)) {
-                    SHoops (SH_FATAL, "This file doesn't exists or "
-                                      "you don't have the permission "
-                                      "to read it.\n");
-                    goto failure;
-                }
+                if (!SHreadable (status.infile)) 
+                    SHoops (SH_FATAL, "input XML file not readable\n");
                 if (status.infile)
                     status.doc_name = status.infile;
                 else
@@ -242,39 +253,40 @@ main (int argc, char **argv)
         (status.attributes_separate ||
          status.names_separate ||
          status.statistics)) {
-        SHoops (SH_FATAL, "Output filename required.\n");
+        SHoops (SH_FATAL, "output filename required\n");
         print_help (progname);
         goto failure;
     }
     
-    /* Open files */ 
     if (status.outfile) {
+        /* open files */ 
+        if (status.attributes_separate) {
+            /* attribute file */
+            char attoutfile[FILENAME_MAX];
+            snprintf (attoutfile, FILENAME_MAX, "%s_atts.csv", status.outfile);
+            attout = SHopen_write (attoutfile);
+        }
+    
+        if (status.names_separate) {
+            /* names file */
+            char namesoutfile[FILENAME_MAX];
+            snprintf (namesoutfile, FILENAME_MAX, "%s_names.csv", status.outfile);
+            namesout = SHopen_write (namesoutfile);
+        }
+    
+        if (status.statistics) {
+            /* guide file */
+            char guideoutfile[FILENAME_MAX];
+            snprintf (guideoutfile, FILENAME_MAX, "%s_guide.xml", status.outfile);
+            guideout = SHopen_write (guideoutfile);
+        }
+
         snprintf (status.outfile, FILENAME_MAX, "%s.csv", status.outfile);
         shout = SHopen_write (status.outfile);
     }
     else
         shout = stdout;
 
-    if (status.attributes_separate) {
-        /* attribute file */
-        char attoutfile[FILENAME_MAX];
-        snprintf (attoutfile, FILENAME_MAX, "%s_atts.csv", status.outfile);
-        attout = SHopen_write (attoutfile);
-    }
-    
-    if (status.names_separate) {
-        /* names file */
-        char namesoutfile[FILENAME_MAX];
-        snprintf (namesoutfile, FILENAME_MAX, "%s_names.csv", status.outfile);
-        namesout = SHopen_write (namesoutfile);
-    }
-    
-    if (status.statistics) {
-        /* guide file */
-        char guideoutfile[FILENAME_MAX];
-        snprintf (guideoutfile, FILENAME_MAX, "%s_guide.xml", status.outfile);
-        guideout = SHopen_write (guideoutfile);
-    }
 
     /* shred the files */
     if (SHshredder (status.infile,
