@@ -9,6 +9,12 @@ set pkg=@PACKAGE@
 set source=@GEOM_SOURCE@
 set build=@GEOM_BUILD@
 set prefix=@prefix@
+set exec_prefix=@exec_prefix@
+set libdir=@libdir@
+set M4libdir=%libdir%\MonetDB4
+set M5libdir=%libdir%\MonetDB5
+set modpath4=%M4libdir%
+set modpath5=%M5libdir%
 
 if "%1" == ""	goto usage
 
@@ -23,6 +29,8 @@ if "%1" == "--help"		goto usage
 if "%1" == "--source"		echo %source%		& goto shift
 if "%1" == "--build"		echo %build%		& goto shift
 if "%1" == "--prefix"		echo %prefix%		& goto shift
+if "%1" == "--modpath4"		echo %modpath4%		& goto shift
+if "%1" == "--modpath5"		echo %modpath5%		& goto shift
 
 :usage
 	echo.
@@ -32,6 +40,8 @@ if "%1" == "--prefix"		echo %prefix%		& goto shift
 	echo.
 	echo   --build		print %pkg% build directory
 	echo   --source		print %pkg% source directory
+	echo   --modpath4	print default %pkg% module directory (for M4)
+	echo   --modpath5	print default %pkg% module directory (for M5)
 	echo   --help		display this help and exit
 	echo.
 	echo Install directories %pkg% was configured to

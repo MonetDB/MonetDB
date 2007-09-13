@@ -22,6 +22,11 @@ pkg="@PACKAGE@"
 source="@QTEMPLATE_SOURCE@"
 build="@QTEMPLATE_BUILD@"
 prefix="@Qprefix@"
+exec_prefix="@Qexec_prefix@"
+
+libdir="@Qlibdir@"
+M4libdir="${libdir}/MonetDB4"
+M5libdir="${libdir}/MonetDB5"
 
 usage()
 {
@@ -32,6 +37,8 @@ Known values for OPTION are:
 
   --build		print ${pkg} build directory
   --source		print ${pkg} source directory
+  --modpath4		print default ${pkg} module path (for M4)
+  --modpath5		print default ${pkg} module path (for M5)
   --help		display this help and exit
 
 Install directories ${pkg} was configured to
@@ -65,6 +72,14 @@ while test $# -gt 0; do
     --source)
 	echo $source
 	;;
+
+    --modpath4)
+        echo 	$M4libdir:$M4libdir/lib:$M4libdir/bin
+        ;;
+
+    --modpath5)
+        echo 	$M5libdir:$M5libdir/lib:$M5libdir/bin
+        ;;
 
     --help)
 	usage 0

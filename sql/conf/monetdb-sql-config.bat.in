@@ -40,8 +40,8 @@ if "%1" == "--modpath5"		echo %modpath5%		& goto shift
 	echo.
 	echo   --build		print %pkg% build directory
 	echo   --source		print %pkg% source directory
-	echo   --modpath4	print default %pkg%/4 module directory
-	echo   --modpath5	print default %pkg%/5 module directory
+	echo   --modpath4	print default %pkg% module directory (for M4)
+	echo   --modpath5	print default %pkg% module directory (for M5)
 	echo   --help		display this help and exit
 	echo.
 	echo Install directories %pkg% was configured to

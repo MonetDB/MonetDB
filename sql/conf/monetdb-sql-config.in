@@ -37,8 +37,8 @@ Known values for OPTION are:
 
   --build		print ${pkg} build directory
   --source		print ${pkg} source directory
-  --modpath4		print default ${pkg}/4 module path
-  --modpath5		print default ${pkg}/5 module path
+  --modpath4		print default ${pkg} module path (for M4)
+  --modpath5		print default ${pkg} module path (for M5)
   --help		display this help and exit
 
 Install directories ${pkg} was configured to
