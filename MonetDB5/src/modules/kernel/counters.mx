@@ -99,7 +99,6 @@ address CNTRSinit
 comment "Initialize counters module (to be used on initial load, only)";
 
 counters.init();
-@mil
 @+ Implementation
 @h
 #include "gdk.h"

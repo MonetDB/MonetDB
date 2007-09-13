@@ -604,7 +604,7 @@ command uhashsplit ( b:bat[:any_1,:any_2], buckets:int ) :bat[:int,:bat]
 address ALGuhashsplit
 comment "Same as hashsplit, but only collect the head values in the fragments";
 @- Range Split
-@mil
+@mal
 command rangesplit ( b:bat[:any_1,:any_2], ranges:int ) 
 		:bat[:any_2,bat[:any_1,:any_2]] 
 address ALGrangesplit

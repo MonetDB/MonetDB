@@ -107,18 +107,6 @@ command sqlblob(b:sqlblob):sqlblob address BLOBblob_blob;
 command sqlblob(s:str):sqlblob address BLOBsqlblob_fromstr;
 
 @{
-@* Example MAL Script
-The following test should be moved to the test section.
-@mil
-#import blob;
-#v1 := setoid(oid(20000000));
-bl := "(5:11 FC E2 A0 0A)":blob;
-err:= print(bl);
-b2 := blob.toblob("Hello World");
-err:= print(b2);
-v1 := blob.tostring(b2);
-err:= print(v1);
-
 @* Implementation Code
 @h
 #ifndef __BLOB_H__

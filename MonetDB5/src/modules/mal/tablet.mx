@@ -1936,34 +1936,6 @@ CMDtablet_output(int *ret, int *nameid, int *sepid, int *bids, void **s)
 }
 
 
-@mil
-
-PROC test_tablet() : void := {
-
-	#tablet_debug(1);
-
-	fp := fopen ( "format", "w+" );
-	fputs( "key,\",\",str\n", fp);
-	fputs( "a_io_test,\"\\n\",dbl\n", fp);
-	fclose( fp );
-
-	fp := fopen ( "data", "w+" );
-	fputs( "test, 0.12345\n", fp);
-	fputs( "second line, 9.0\n", fp);
-	fclose( fp );
-
-	bats := load_data(load_format("format"),"data",10);
-	bats.print;
-	a := bats.find("key").reverse().join( bats.find("a_io_test") );
-	a.print;
-	dump_data(load_format("format"), bats, "data", -1);
-
-	fp := fopen ( "data", "r" );
-	s := fgets( fp ); 
-	s.print();
-	fclose( fp );
-}
-
 @+ Tablet report
 The routines to manage the table descriptor
 @c

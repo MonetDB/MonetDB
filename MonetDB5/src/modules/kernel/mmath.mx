@@ -203,27 +203,6 @@ comment "return an important mathematical value";
 
 @-
 The constants defined in math.h are defined in const.mx
-@mil
-module(mmath);
-# these tests are disabled: they're in mmath2 test
-setoid(oid(20000000));
-#asin(sin(M_PI)).print;
-#acos(cos(M_PI)).print;
-#atan(tan(M_PI_2)).print;
-#atan(tan(M_PI_4)).print;
-#tan(atan2(dbl(0.1),dbl(1.0))).print;
-#sqrt(pow(dbl(2),dbl(2))).print;
-
-#exp(dbl(10)).print;
-#log(dbl(10)).print;
-#log10(dbl(10)).print;
-
-#ceil(dbl(1.2)).print;
-#fabs(dbl(1.2)).print;
-#floor(dbl(1.2)).print;
-#fmod(dbl(15.2),dbl(2.5)).print;
-
-quit;
 @h
 #ifndef __MMATH_H__
 #define __MMATH_H__

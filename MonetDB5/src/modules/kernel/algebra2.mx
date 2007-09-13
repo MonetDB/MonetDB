@@ -116,23 +116,6 @@ comment "grouped tail sum";
 @:sum(flt)@
 @:sum(dbl)@
 
-@= milsum
-  PROC {csum}( BAT[oid,@1] b): BAT[oid,@1] {
-	IF ( b.ordered() )
-	  RETURN {_csum}( b );
-	ELSE
-	  RETURN {sum}( b );
-  }
-  ADDHELP("{csum}", "arjen", "Jul 18 2000",
-	  "Choose a different implementation if b is sorted on head.", 
-	  mod());
-
-@:milsum(sht)@
-@:milsum(int)@
-@:milsum(lng)@
-@:milsum(flt)@
-@:milsum(dbl)@
-
 @* Implementation Code
 @h
 #ifndef __MALALGEBRA_H__
@@ -508,48 +491,3 @@ IF( not( isnil(@1result_@2) ) ) {
   }
 }
 @
-@mil
-
-PROC test_malalgebra() : void {   
-	#
-	# Simple test of some algorithms against the baseline
-	#
-	VAR Ndiff, l, r;
-
-	var dj := new( void, oid ); var tf := new( void, int );
-	dj.insert( nil, 0@0 );  tf.insert( nil, 10 );
-	dj.insert( nil, 0@0 );  tf.insert( nil, 20 );
-	dj.insert( nil, 0@0 );  tf.insert( nil, 30 );
-	dj.insert( nil, 1@0 );  tf.insert( nil, 30 );
-	dj.insert( nil, 1@0 );  tf.insert( nil, 20 );
-	dj.insert( nil, 1@0 );  tf.insert( nil, 10 );
-	dj.insert( nil, 2@0 );  tf.insert( nil, 20 );
-	dj.insert( nil, 2@0 );  tf.insert( nil, 30 );
-	dj.insert( nil, 2@0 );  tf.insert( nil, 10 );
-	dj.seqbase(0@0);        tf.seqbase(0@0);
-
-	l := dj.reverse();
-	r := tf;
-
-	var Ntestfailed := 0;
-
-	@:jointest_oid()@
-	@:compresults(hash,oid)@
-	@:compresults(fetch,oid)@
-	@:compresults(merge,oid)@
-	@:compresults(left,oid)@
-	@:compresults(lefthash,oid)@
-	@:compresults(leftfetch,oid)@
-	@:compresults(leftmerge,oid)@
-
-	@:jointest_void()@
-	@:compresults(hash,void)@
-	@:compresults(fetch,void)@
-	@:compresults(merge,void)@
-	@:compresults(left,void)@
-	@:compresults(lefthash,void)@
-	@:compresults(leftfetch,void)@
-	@:compresults(leftmerge,void)@
-
-	printf( "RESULT: %d tests failed.\n", Ntestfailed );
-}

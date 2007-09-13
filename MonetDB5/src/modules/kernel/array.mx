@@ -564,22 +564,3 @@ exit_err_none:
 }
 
 /*============================================================================*/
-@mil
-
-PROC cons(int n,any::1 v) : bat[void,any::1] {
-	return project(grid(1,n,1,0),v);
-}
-ADDHELP("cons", "A.R. van Ballegooij", "Sep 20 2003",
-"generates a bat with a constant column", "array");
-
-PROC concat(bat[oid,any::1] a,bat[oid,any::1] b,int o) : bat[oid,any::1] {
-	return access(insert(access(copy(a),BAT_WRITE),
-			reverse([oid]([+]([int](reverse(b)),o)))) ,
-			BAT_READ);
-}
-ADDHELP("concat", "A.R. van Ballegooij", "Sep 20 2003",
-"Adds 'offset' two second arrays indexes and merges tables", "array");
-
-if (mod() = "main"){
-	print("Array module loaded...");
-}

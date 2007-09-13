@@ -108,7 +108,7 @@ headers_mal = {
 	HEADERS = mal
 	DIR = pkglibdir
 	SOURCES = calc.mx bat5.mx algebra.mx status.mx unix.mx \
-		mapi.mx mmath.mx lock.mx sema.mx alarm.mx batstr.mx batmtime.mx \
+		mmath.mx lock.mx sema.mx alarm.mx batstr.mx batmtime.mx \
 		batcolor.mx batifthen.mx batcast.mx batcalc.mx batmath.mx \
 		group.mx aggr.mx array.mx \
 		counters.mx logger.mx pqueue.mx mkey.mx microbenchmark.mx
