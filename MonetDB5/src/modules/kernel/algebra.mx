@@ -606,7 +606,7 @@ comment "Same as hashsplit, but only collect the head values in the fragments";
 @- Range Split
 @mal
 command rangesplit ( b:bat[:any_1,:any_2], ranges:int ) 
-		:bat[:any_2,bat[:any_1,:any_2]] 
+		:bat[:any_2,:bat] 
 address ALGrangesplit
 comment "Split a BAT on tail column in 'ranges' equally sized consecutive 
 		ranges. Returns a recursive BAT, containing the fragments in the tail, 
@@ -614,7 +614,7 @@ comment "Split a BAT on tail column in 'ranges' equally sized consecutive
 	range is 'nil'.";
 
 command urangesplit( b:bat[:any_1,:any_2], ranges:int ) 
-		:bat[:any_2,bat[:any_1,:oid]] 
+		:bat[:any_2,:bat] 
 address ALGurangesplit
 comment "Same as rangesplit, but only collect the head values in the fragments" ;
 
