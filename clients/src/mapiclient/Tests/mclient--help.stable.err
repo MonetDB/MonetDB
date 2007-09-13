@@ -10,7 +10,7 @@ stderr of test 'mclient--help` in directory 'src/mapiclient` itself:
 # 13:46:19 >  Mtimeout -timeout 60 mclient --help
 # 13:46:19 >  
 
-Usage: /ufs/sjoerd/src/MonetDB/virgin/clients/x86_64-unknown-linux-gnu/src/mapiclient/.libs/lt-mclient --language=(sql|xquery|mal|mil) [ options ]
+Usage: mclient --language=(sql|xquery|mal|mil) [ options ]
 
 Options are:
  -d database | --database=database  database to connect to
@@ -33,10 +33,11 @@ Options are:
 SQL specific opions 
  -r nr       | --rows=nr          for pagination
  -w nr       | --width=nr         for pagination
- -d          | --dump             create an SQL dump
+ -D          | --dump             create an SQL dump
 
 XQuery specific options
- -C colname  | --collection=name  collection name
+ -C colname  | --collection=colname  collection name
+ -I docname  | --input=docname    document name, XML document on standard input
 
 # 13:46:19 >  
 # 13:46:19 >  Done.
