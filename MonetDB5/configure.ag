@@ -45,6 +45,24 @@ if test x"$target_os" = xcygwin; then
 	AC_DEFINE(WIN32, 1, [Define on MS Windows (also under Cygwin)])
 fi
 
+# MONETDB5_BUILD and MONETDB5_SOURCE are *only* used for monetdb5-config
+# MONETDB5_SOURCE is the absolute path name of the source directory
+# (srcdir can be relative)
+
+# The Q versions of various variables are used in places where \'s
+# need to be escapes with an extra \.  Configure does not support \'s
+# in path names, so there is no need to do anything special here
+# except set the variables.  The command to set them in case we do
+# need to escape the \'s is Qvar=`echo "$var" | sed 's/\\\\/\\\\\\\\/g'`
+MONETDB5_BUILD=[`pwd`]
+AC_SUBST(MONETDB5_BUILD)
+
+MONETDB5_SOURCE=[`(cd $srcdir && pwd)`]
+AC_SUBST(MONETDB5_SOURCE)
+
+AM_MONETDB_XQ_VARS_1()
+
+
 dnl Check for Monet
 # Check for Monet 
 req_monetdb_ver='1.19.0'
@@ -119,128 +137,27 @@ AC_TRY_LINK([$ac_includes_default
 [AC_DEFINE(HAVE_CTIME_R3, 1, [Define if you have ctime_r(time_t*,char *buf,size_t s)])], [ctime_r3=no])
 AC_MSG_RESULT($ctime_r3)
 
-# MONETDB5_BUILD and MONETDB5_SOURCE are *only* used for monetdb5-config
-# MONETDB5_SOURCE is the absolute path name of the source directory
-# (srcdir can be relative)
 
-# The Q versions of various variables are used in places where \'s
-# need to be escapes with an extra \.  Configure does not support \'s
-# in path names, so there is no need to do anything special here
-# except set the variables.  The command to set them in case we do
-# need to escape the \'s is Qvar=`echo "$var" | sed 's/\\\\/\\\\\\\\/g'`
-MONETDB5_BUILD=[`pwd`]
-AC_SUBST(MONETDB5_BUILD)
+dnl provide different versions of the paths derived above
+AM_MONETDB_XQ_VARS_2()
+AC_DEFINE_UNQUOTED(MONETDB5_PREFIX,"$QXprefix",[architecture-independent files])
+AC_DEFINE_UNQUOTED(MONETDB5_EXEC_PREFIX,"$QXexec_prefix",[architecture-dependent files])
 QMONETDB5_BUILD="$MONETDB5_BUILD"
 XMONETDB5_BUILD="`$translatepath "$MONETDB5_BUILD"`"
 QXMONETDB5_BUILD="`echo "$XMONETDB5_BUILD" | sed 's/\\\\/\\\\\\\\/g'`"
 AC_SUBST(QMONETDB5_BUILD)
 AC_SUBST(XMONETDB5_BUILD)
 AC_SUBST(QXMONETDB5_BUILD)
-MONETDB5_SOURCE=[`(cd $srcdir && pwd)`]
-AC_SUBST(MONETDB5_SOURCE)
 QMONETDB5_SOURCE="$MONETDB5_SOURCE"
+XMONETDB5_SOURCE="`$translatepath "$MONETDB5_SOURCE"`"
+QXMONETDB5_SOURCE="`echo "$XMONETDB5_SOURCE" | sed 's/\\\\/\\\\\\\\/g'`"
 AC_SUBST(QMONETDB5_SOURCE)
+AC_SUBST(XMONETDB5_SOURCE)
+AC_SUBST(QXMONETDB5_SOURCE)
+AC_DEFINE_UNQUOTED(MONETDB5_LOCALSTATEDIR,"$QXlocalstatedir",[modifiable single-machine data])
+AC_DEFINE_UNQUOTED(MONETDB5_LIBDIR,"$QXlibdir",[object code libraries])
+AC_DEFINE_UNQUOTED(MONETDB5_SYSCONFDIR,"$QXsysconfdir",[read-only single-machine data])
 
-# if no --prefix option, we must set Qprefix to the default value
-# the problem is that prefix is set very late in the process if it
-# wasn't set by --prefix
-if test "${prefix}x" = "NONEx"; then
-	Qprefix="${ac_default_prefix}"
-	Xprefix="`$translatepath "$Qprefix"`"
-	QXprefix="`echo "$Xprefix" | sed 's/\\\\/\\\\\\\\/g'`"
-else
-	Qprefix="${prefix}"
-	Xprefix="`$translatepath "$prefix"`"
-	QXprefix="`echo "$Xprefix" | sed 's/\\\\/\\\\\\\\/g'`"
-fi
-AC_SUBST(Xprefix)
-AC_SUBST(Qprefix)
-AC_SUBST(QXprefix)
-# exec_prefix is created very late, so let make do the expansion
-if test "${exec_prefix}x" = "NONEx"; then
-	Qexec_prefix='${prefix}'
-	Xexec_prefix="`$translatepath "$Qexec_prefix"`"
-	QXexec_prefix="`echo "$Xexec_prefix" | sed 's/\\\\/\\\\\\\\/g'`"
-else
-	Qexec_prefix="${exec_prefix}"
-	Xexec_prefix="`$translatepath "$exec_prefix"`"
-	QXexec_prefix="`echo "$Xexec_prefix" | sed 's/\\\\/\\\\\\\\/g'`"
-fi
-AC_SUBST(Xexec_prefix)
-AC_SUBST(Qexec_prefix)
-AC_SUBST(QXexec_prefix)
-Qsrcdir="$srcdir"
-Xsrcdir="`$translatepath "$srcdir"`"
-QXsrcdir="`echo "$Xsrcdir" | sed 's/\\\\/\\\\\\\\/g'`"
-AC_SUBST(Qsrcdir)
-AC_SUBST(Xsrcdir)
-AC_SUBST(QXsrcdir)
-Qlocalstatedir="$localstatedir"
-Xlocalstatedir="`$translatepath "$localstatedir"`"
-QXlocalstatedir="`echo "$Xlocalstatedir" | sed 's/\\\\/\\\\\\\\/g'`"
-AC_DEFINE_UNQUOTED(MONETDB4_LOCALSTATEDIR,"$QXlocalstatedir",[modifiable single-machine data])
-AC_SUBST(Qlocalstatedir)
-AC_SUBST(Xlocalstatedir)
-AC_SUBST(QXlocalstatedir)
-Qlibdir="$libdir"
-Xlibdir="`$translatepath "$libdir"`"
-QXlibdir="`echo "$Xlibdir" | sed 's/\\\\/\\\\\\\\/g'`"
-AC_SUBST(Qlibdir)
-AC_SUBST(Xlibdir)
-AC_SUBST(QXlibdir)
-AC_DEFINE_UNQUOTED(MONETDB4_LIBDIR,"$QXlibdir",[object code libraries])
-Qsysconfdir="$sysconfdir"
-Xsysconfdir="`$translatepath "$sysconfdir"`"
-QXsysconfdir="`echo "$Xsysconfdir" | sed 's/\\\\/\\\\\\\\/g'`"
-AC_DEFINE_UNQUOTED(MONETDB4_SYSCONFDIR,"$QXsysconfdir",[read-only single-machine data])
-AC_SUBST(Qsysconfdir)
-AC_SUBST(Xsysconfdir)
-AC_SUBST(QXsysconfdir)
-Qbindir="$bindir"
-Xbindir="`$translatepath "$bindir"`"
-QXbindir="`echo "$Xbindir" | sed 's/\\\\/\\\\\\\\/g'`"
-AC_SUBST(Qbindir)
-AC_SUBST(Xbindir)
-AC_SUBST(QXbindir)
-Qlibexecdir="$libexecdir"
-Xlibexecdir="`$translatepath "$libexecdir"`"
-QXlibexecdir="`echo "$Xlibexecdir" | sed 's/\\\\/\\\\\\\\/g'`"
-AC_SUBST(Qlibexecdir)
-AC_SUBST(Xlibexecdir)
-AC_SUBST(QXlibexecdir)
-Qdatarootdir="$datarootdir"
-Xdatarootdir="`$translatepath "$datarootdir"`"
-QXdatarootdir="`echo "$Xdatarootdir" | sed 's/\\\\/\\\\\\\\/g'`"
-AC_SUBST(Qdatarootdir)
-AC_SUBST(Xdatarootdir)
-AC_SUBST(QXdatarootdir)
-if test "${datadir}" = '${datarootdir}'; then
-	datadir="${datarootdir}"
-fi
-Qdatadir="$datadir"
-Xdatadir="`$translatepath "$datadir"`"
-QXdatadir="`echo "$Xdatadir" | sed 's/\\\\/\\\\\\\\/g'`"
-AC_SUBST(Qdatadir)
-AC_SUBST(Xdatadir)
-AC_SUBST(QXdatadir)
-Qmandir="$mandir"
-Xmandir="`$translatepath "$mandir"`"
-QXmandir="`echo "$Xmandir" | sed 's/\\\\/\\\\\\\\/g'`"
-AC_SUBST(Qmandir)
-AC_SUBST(Xmandir)
-AC_SUBST(QXmandir)
-Qincludedir="$includedir"
-Xincludedir="`$translatepath "$includedir"`"
-QXincludedir="`echo "$Xincludedir" | sed 's/\\\\/\\\\\\\\/g'`"
-AC_SUBST(Qincludedir)
-AC_SUBST(Xincludedir)
-AC_SUBST(QXincludedir)
-Qinfodir="$infodir"
-Xinfodir="`$translatepath "$infodir"`"
-QXinfodir="`echo "$Xinfodir" | sed 's/\\\\/\\\\\\\\/g'`"
-AC_SUBST(Qinfodir)
-AC_SUBST(Xinfodir)
-AC_SUBST(QXinfodir)
 
 dnl allow to keep track of how we are going to build this thing
 compilercall="$CC $CFLAGS $X_CFLAGS"

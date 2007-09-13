@@ -53,23 +53,7 @@ AC_SUBST(PATHFINDER_BUILD)
 PATHFINDER_SOURCE=[`(cd $srcdir && pwd)`]
 AC_SUBST(PATHFINDER_SOURCE)
 
-# if no --prefix option, we must set Qprefix to the default value
-# the problem is that prefix is set very late in the process if it
-# wasn't set by --prefix
-if test "${prefix}x" = "NONEx"; then
-	Qprefix="${ac_default_prefix}"
-else
-	Qprefix="${prefix}"
-fi
-Qprefix="`echo "$Qprefix" | sed 's/\\\\/\\\\\\\\/g'`"
-AC_SUBST(Qprefix)
-# exec_prefix is created very late, so let make do the expansion
-if test "${exec_prefix}x" = "NONEx"; then
-	Qexec_prefix='${prefix}'
-else
-	Qexec_prefix="`echo "$exec_prefix" | sed 's/\\\\/\\\\\\\\/g'`"
-fi
-AC_SUBST(Qexec_prefix)
+AM_MONETDB_XQ_VARS_1()
 
 
 dnl Check for Monet
@@ -168,7 +152,11 @@ fi
 AM_CONDITIONAL(HAVE_MONETDB4, test "x$have_monetdb4" = xyes)
 AM_CONDITIONAL(HAVE_MONETDB5, test "x$have_monetdb5" = xyes)
 
+
 dnl provide different versions of the paths derived above
+AM_MONETDB_XQ_VARS_2()
+AC_DEFINE_UNQUOTED(PATHFINDER_PREFIX,"$QXprefix",[architecture-independent files])
+AC_DEFINE_UNQUOTED(PATHFINDER_EXEC_PREFIX,"$QXexec_prefix",[architecture-dependent files])
 QPATHFINDER_BUILD="$PATHFINDER_BUILD"
 XPATHFINDER_BUILD="`$translatepath "$PATHFINDER_BUILD"`"
 QXPATHFINDER_BUILD="`echo "$XPATHFINDER_BUILD" | sed 's/\\\\/\\\\\\\\/g'`"
@@ -181,12 +169,10 @@ QXPATHFINDER_SOURCE="`echo "$XPATHFINDER_SOURCE" | sed 's/\\\\/\\\\\\\\/g'`"
 AC_SUBST(QPATHFINDER_SOURCE)
 AC_SUBST(XPATHFINDER_SOURCE)
 AC_SUBST(QXPATHFINDER_SOURCE)
-QMONETDB4_PREFIX="$MONETDB4_PREFIX"
-XMONETDB4_PREFIX="`$translatepath "$MONETDB4_PREFIX"`"
-QXMONETDB4_PREFIX="`echo "$XMONETDB4_PREFIX" | sed 's/\\\\/\\\\\\\\/g'`"
-AC_SUBST(QMONETDB4_PREFIX)
-AC_SUBST(XMONETDB4_PREFIX)
-AC_SUBST(QXMONETDB4_PREFIX)
+AC_DEFINE_UNQUOTED(PATHFINDER_LOCALSTATEDIR,"$QXlocalstatedir",[modifiable single-machine data])
+AC_DEFINE_UNQUOTED(PATHFINDER_LIBDIR,"$QXlibdir",[object code libraries])
+AC_DEFINE_UNQUOTED(PATHFINDER_SYSCONFDIR,"$QXsysconfdir",[read-only single-machine data])
+
 
 AM_PROG_CC_C_O
 

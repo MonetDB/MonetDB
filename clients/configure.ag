@@ -54,23 +54,8 @@ AC_SUBST(CLIENTS_BUILD)
 CLIENTS_SOURCE=[`(cd $srcdir && pwd)`]
 AC_SUBST(CLIENTS_SOURCE)
 
-# if no --prefix option, we must set Qprefix to the default value
-# the problem is that prefix is set very late in the process if it
-# wasn't set by --prefix
-if test "${prefix}x" = "NONEx"; then
-	Qprefix="${ac_default_prefix}"
-else
-	Qprefix="${prefix}"
-fi
-Qprefix="`echo "$Qprefix" | sed 's/\\\\/\\\\\\\\/g'`"
-AC_SUBST(Qprefix)
-# exec_prefix is created very late, so let make do the expansion
-if test "${exec_prefix}x" = "NONEx"; then
-	Qexec_prefix='${prefix}'
-else
-	Qexec_prefix="`echo "$exec_prefix" | sed 's/\\\\/\\\\\\\\/g'`"
-fi
-AC_SUBST(Qexec_prefix)
+AM_MONETDB_XQ_VARS_1()
+
 
 # Check for Monet 
 req_monetdb_ver='1.19.0'
@@ -157,26 +142,10 @@ AC_CHECK_HEADERS([crypt.h pwd.h sys/ioctl.h sys/un.h])
 AC_CHECK_FUNCS([crypt ftime getlogin gethostname localtime_r popen strcasecmp strncasecmp strtod strtof strtoll strtoull])
 AC_CHECK_DECLS([strtof, strtoll, strtoull])
 
+
 dnl provide different versions of the paths derived above
-if test "${prefix}x" = "NONEx"; then
-	Xprefix="`$translatepath "$Qprefix"`"
-	QXprefix="`echo "$Xprefix" | sed 's/\\\\/\\\\\\\\/g'`"
-else
-	Xprefix="`$translatepath "$prefix"`"
-	QXprefix="`echo "$Xprefix" | sed 's/\\\\/\\\\\\\\/g'`"
-fi
-if test "${exec_prefix}x" = "NONEx"; then
-	Xexec_prefix="`$translatepath "$Qexec_prefix"`"
-	QXexec_prefix="`echo "$Xexec_prefix" | sed 's/\\\\/\\\\\\\\/g'`"
-else
-	Xexec_prefix="`$translatepath "$exec_prefix"`"
-	QXexec_prefix="`echo "$Xexec_prefix" | sed 's/\\\\/\\\\\\\\/g'`"
-fi
-AC_SUBST(Xprefix)
-AC_SUBST(QXprefix)
+AM_MONETDB_XQ_VARS_2()
 AC_DEFINE_UNQUOTED(CLIENTS_PREFIX,"$QXprefix",[architecture-independent files])
-AC_SUBST(Xexec_prefix)
-AC_SUBST(QXexec_prefix)
 AC_DEFINE_UNQUOTED(CLIENTS_EXEC_PREFIX,"$QXexec_prefix",[architecture-dependent files])
 QCLIENTS_BUILD="$CLIENTS_BUILD"
 XCLIENTS_BUILD="`$translatepath "$CLIENTS_BUILD"`"
@@ -190,75 +159,10 @@ QXCLIENTS_SOURCE="`echo "$XCLIENTS_SOURCE" | sed 's/\\\\/\\\\\\\\/g'`"
 AC_SUBST(QCLIENTS_SOURCE)
 AC_SUBST(XCLIENTS_SOURCE)
 AC_SUBST(QXCLIENTS_SOURCE)
-Qsrcdir="$srcdir"
-Xsrcdir="`$translatepath "$srcdir"`"
-QXsrcdir="`echo "$Xsrcdir" | sed 's/\\\\/\\\\\\\\/g'`"
-AC_SUBST(Qsrcdir)
-AC_SUBST(Xsrcdir)
-AC_SUBST(QXsrcdir)
-Qlocalstatedir="$localstatedir"
-Xlocalstatedir="`$translatepath "$localstatedir"`"
-QXlocalstatedir="`echo "$Xlocalstatedir" | sed 's/\\\\/\\\\\\\\/g'`"
 AC_DEFINE_UNQUOTED(CLIENTS_LOCALSTATEDIR,"$QXlocalstatedir",[modifiable single-machine data])
-AC_SUBST(Qlocalstatedir)
-AC_SUBST(Xlocalstatedir)
-AC_SUBST(QXlocalstatedir)
-Qlibdir="$libdir"
-Xlibdir="`$translatepath "$libdir"`"
-QXlibdir="`echo "$Xlibdir" | sed 's/\\\\/\\\\\\\\/g'`"
-AC_SUBST(Qlibdir)
-AC_SUBST(Xlibdir)
-AC_SUBST(QXlibdir)
 AC_DEFINE_UNQUOTED(CLIENTS_LIBDIR,"$QXlibdir",[object code libraries])
-Qsysconfdir="$sysconfdir"
-Xsysconfdir="`$translatepath "$sysconfdir"`"
-QXsysconfdir="`echo "$Xsysconfdir" | sed 's/\\\\/\\\\\\\\/g'`"
 AC_DEFINE_UNQUOTED(CLIENTS_SYSCONFDIR,"$QXsysconfdir",[read-only single-machine data])
-AC_SUBST(Qsysconfdir)
-AC_SUBST(Xsysconfdir)
-AC_SUBST(QXsysconfdir)
-Qbindir="$bindir"
-Xbindir="`$translatepath "$bindir"`"
-QXbindir="`echo "$Xbindir" | sed 's/\\\\/\\\\\\\\/g'`"
-AC_SUBST(Qbindir)
-AC_SUBST(Xbindir)
-AC_SUBST(QXbindir)
-Qlibexecdir="$libexecdir"
-Xlibexecdir="`$translatepath "$libexecdir"`"
-QXlibexecdir="`echo "$Xlibexecdir" | sed 's/\\\\/\\\\\\\\/g'`"
-AC_SUBST(Qlibexecdir)
-AC_SUBST(Xlibexecdir)
-AC_SUBST(QXlibexecdir)
-Qdatarootdir="$datarootdir"
-Xdatarootdir="`$translatepath "$datarootdir"`"
-QXdatarootdir="`echo "$Xdatarootdir" | sed 's/\\\\/\\\\\\\\/g'`"
-AC_SUBST(Qdatarootdir)
-AC_SUBST(Xdatarootdir)
-AC_SUBST(QXdatarootdir)
-Qdatadir="$datadir"
-Xdatadir="`$translatepath "$datadir"`"
-QXdatadir="`echo "$Xdatadir" | sed 's/\\\\/\\\\\\\\/g'`"
-AC_SUBST(Qdatadir)
-AC_SUBST(Xdatadir)
-AC_SUBST(QXdatadir)
-Qmandir="$mandir"
-Xmandir="`$translatepath "$mandir"`"
-QXmandir="`echo "$Xmandir" | sed 's/\\\\/\\\\\\\\/g'`"
-AC_SUBST(Qmandir)
-AC_SUBST(Xmandir)
-AC_SUBST(QXmandir)
-Qincludedir="$includedir"
-Xincludedir="`$translatepath "$includedir"`"
-QXincludedir="`echo "$Xincludedir" | sed 's/\\\\/\\\\\\\\/g'`"
-AC_SUBST(Qincludedir)
-AC_SUBST(Xincludedir)
-AC_SUBST(QXincludedir)
-Qinfodir="$infodir"
-Xinfodir="`$translatepath "$infodir"`"
-QXinfodir="`echo "$Xinfodir" | sed 's/\\\\/\\\\\\\\/g'`"
-AC_SUBST(Qinfodir)
-AC_SUBST(Xinfodir)
-AC_SUBST(QXinfodir)
+
 
 case "$host_os" in
 mac*)	DIRSEP=':'

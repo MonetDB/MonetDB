@@ -48,23 +48,7 @@ AC_SUBST(TEMPLATE_BUILD)
 TEMPLATE_SOURCE=[`(cd $srcdir && pwd)`]
 AC_SUBST(TEMPLATE_SOURCE)
 
-# if no --prefix option, we must set Qprefix to the default value
-# the problem is that prefix is set very late in the process if it
-# wasn't set by --prefix
-if test "${prefix}x" = "NONEx"; then
-	Qprefix="${ac_default_prefix}"
-else
-	Qprefix="${prefix}"
-fi
-Qprefix="`echo "$Qprefix" | sed 's/\\\\/\\\\\\\\/g'`"
-AC_SUBST(Qprefix)
-# exec_prefix is created very late, so let make do the expansion
-if test "${exec_prefix}x" = "NONEx"; then
-	Qexec_prefix='${prefix}'
-else
-	Qexec_prefix="`echo "$exec_prefix" | sed 's/\\\\/\\\\\\\\/g'`"
-fi
-AC_SUBST(Qexec_prefix)
+AM_MONETDB_XQ_VARS_1()
 
 
 dnl Check for Monet
@@ -111,11 +95,26 @@ if test "x$have_monetdb4" != xyes -a "x$have_monetdb5" != xyes; then
 	fi
 fi
 
-dnl provide different versions of (some of) the paths derived above
+
+dnl provide different versions of the paths derived above
+AM_MONETDB_XQ_VARS_2()
+AC_DEFINE_UNQUOTED(TEMPLATE_PREFIX,"$QXprefix",[architecture-independent files])
+AC_DEFINE_UNQUOTED(TEMPLATE_EXEC_PREFIX,"$QXexec_prefix",[architecture-dependent files])
 QTEMPLATE_BUILD="$TEMPLATE_BUILD"
+XTEMPLATE_BUILD="`$translatepath "$TEMPLATE_BUILD"`"
+QXTEMPLATE_BUILD="`echo "$XTEMPLATE_BUILD" | sed 's/\\\\/\\\\\\\\/g'`"
 AC_SUBST(QTEMPLATE_BUILD)
+AC_SUBST(XTEMPLATE_BUILD)
+AC_SUBST(QXTEMPLATE_BUILD)
 QTEMPLATE_SOURCE="$TEMPLATE_SOURCE"
+XTEMPLATE_SOURCE="`$translatepath "$TEMPLATE_SOURCE"`"
+QXTEMPLATE_SOURCE="`echo "$XTEMPLATE_SOURCE" | sed 's/\\\\/\\\\\\\\/g'`"
 AC_SUBST(QTEMPLATE_SOURCE)
+AC_SUBST(XTEMPLATE_SOURCE)
+AC_SUBST(QXTEMPLATE_SOURCE)
+AC_DEFINE_UNQUOTED(TEMPLATE_LOCALSTATEDIR,"$QXlocalstatedir",[modifiable single-machine data])
+AC_DEFINE_UNQUOTED(TEMPLATE_LIBDIR,"$QXlibdir",[object code libraries])
+AC_DEFINE_UNQUOTED(TEMPLATE_SYSCONFDIR,"$QXsysconfdir",[read-only single-machine data])
 
 dnl  CFLAGS for our code are stricter than what autoconf can cope with.
 CFLAGS="$CFLAGS \$(X_CFLAGS)"

@@ -42,6 +42,123 @@ esac
 
 ])
 
+
+dnl  setting various path-variables; part 1
+AC_DEFUN([AM_MONETDB_XQ_VARS_1],
+[
+# if no --prefix option, we must set Qprefix to the default value
+# the problem is that prefix is set very late in the process if it
+# wasn't set by --prefix
+if test "${prefix}x" = "NONEx"; then
+	Qprefix="${ac_default_prefix}"
+else
+	Qprefix="${prefix}"
+fi
+Qprefix="`echo "$Qprefix" | sed 's/\\\\/\\\\\\\\/g'`"
+AC_SUBST(Qprefix)
+# exec_prefix is created very late, so let make do the expansion
+if test "${exec_prefix}x" = "NONEx"; then
+	Qexec_prefix='${prefix}'
+else
+	Qexec_prefix="`echo "$exec_prefix" | sed 's/\\\\/\\\\\\\\/g'`"
+fi
+AC_SUBST(Qexec_prefix)
+])
+
+dnl  setting various path-variables; part 2
+AC_DEFUN([AM_MONETDB_XQ_VARS_2],
+[
+dnl provide different versions of the paths derived above
+if test "${prefix}x" = "NONEx"; then
+	Xprefix="`$translatepath "$Qprefix"`"
+	QXprefix="`echo "$Xprefix" | sed 's/\\\\/\\\\\\\\/g'`"
+else
+	Xprefix="`$translatepath "$prefix"`"
+	QXprefix="`echo "$Xprefix" | sed 's/\\\\/\\\\\\\\/g'`"
+fi
+if test "${exec_prefix}x" = "NONEx"; then
+	Xexec_prefix="`$translatepath "$Qexec_prefix"`"
+	QXexec_prefix="`echo "$Xexec_prefix" | sed 's/\\\\/\\\\\\\\/g'`"
+else
+	Xexec_prefix="`$translatepath "$exec_prefix"`"
+	QXexec_prefix="`echo "$Xexec_prefix" | sed 's/\\\\/\\\\\\\\/g'`"
+fi
+AC_SUBST(Xprefix)
+AC_SUBST(QXprefix)
+AC_SUBST(Xexec_prefix)
+AC_SUBST(QXexec_prefix)
+Qsrcdir="$srcdir"
+Xsrcdir="`$translatepath "$srcdir"`"
+QXsrcdir="`echo "$Xsrcdir" | sed 's/\\\\/\\\\\\\\/g'`"
+AC_SUBST(Qsrcdir)
+AC_SUBST(Xsrcdir)
+AC_SUBST(QXsrcdir)
+Qlocalstatedir="$localstatedir"
+Xlocalstatedir="`$translatepath "$localstatedir"`"
+QXlocalstatedir="`echo "$Xlocalstatedir" | sed 's/\\\\/\\\\\\\\/g'`"
+AC_SUBST(Qlocalstatedir)
+AC_SUBST(Xlocalstatedir)
+AC_SUBST(QXlocalstatedir)
+Qlibdir="$libdir"
+Xlibdir="`$translatepath "$libdir"`"
+QXlibdir="`echo "$Xlibdir" | sed 's/\\\\/\\\\\\\\/g'`"
+AC_SUBST(Qlibdir)
+AC_SUBST(Xlibdir)
+AC_SUBST(QXlibdir)
+Qsysconfdir="$sysconfdir"
+Xsysconfdir="`$translatepath "$sysconfdir"`"
+QXsysconfdir="`echo "$Xsysconfdir" | sed 's/\\\\/\\\\\\\\/g'`"
+AC_SUBST(Qsysconfdir)
+AC_SUBST(Xsysconfdir)
+AC_SUBST(QXsysconfdir)
+Qbindir="$bindir"
+Xbindir="`$translatepath "$bindir"`"
+QXbindir="`echo "$Xbindir" | sed 's/\\\\/\\\\\\\\/g'`"
+AC_SUBST(Qbindir)
+AC_SUBST(Xbindir)
+AC_SUBST(QXbindir)
+Qlibexecdir="$libexecdir"
+Xlibexecdir="`$translatepath "$libexecdir"`"
+QXlibexecdir="`echo "$Xlibexecdir" | sed 's/\\\\/\\\\\\\\/g'`"
+AC_SUBST(Qlibexecdir)
+AC_SUBST(Xlibexecdir)
+AC_SUBST(QXlibexecdir)
+Qdatarootdir="$datarootdir"
+Xdatarootdir="`$translatepath "$datarootdir"`"
+QXdatarootdir="`echo "$Xdatarootdir" | sed 's/\\\\/\\\\\\\\/g'`"
+AC_SUBST(Qdatarootdir)
+AC_SUBST(Xdatarootdir)
+AC_SUBST(QXdatarootdir)
+if test "${datadir}" = '${datarootdir}'; then
+	datadir="${datarootdir}"
+fi
+Qdatadir="$datadir"
+Xdatadir="`$translatepath "$datadir"`"
+QXdatadir="`echo "$Xdatadir" | sed 's/\\\\/\\\\\\\\/g'`"
+AC_SUBST(Qdatadir)
+AC_SUBST(Xdatadir)
+AC_SUBST(QXdatadir)
+Qmandir="$mandir"
+Xmandir="`$translatepath "$mandir"`"
+QXmandir="`echo "$Xmandir" | sed 's/\\\\/\\\\\\\\/g'`"
+AC_SUBST(Qmandir)
+AC_SUBST(Xmandir)
+AC_SUBST(QXmandir)
+Qincludedir="$includedir"
+Xincludedir="`$translatepath "$includedir"`"
+QXincludedir="`echo "$Xincludedir" | sed 's/\\\\/\\\\\\\\/g'`"
+AC_SUBST(Qincludedir)
+AC_SUBST(Xincludedir)
+AC_SUBST(QXincludedir)
+Qinfodir="$infodir"
+Xinfodir="`$translatepath "$infodir"`"
+QXinfodir="`echo "$Xinfodir" | sed 's/\\\\/\\\\\\\\/g'`"
+AC_SUBST(Qinfodir)
+AC_SUBST(Xinfodir)
+AC_SUBST(QXinfodir)
+])
+
+
 dnl VERSION_TO_NUMBER macro (copied from libxslt)
 AC_DEFUN([MONETDB_VERSION_TO_NUMBER],
 [`$1 | sed 's|[[_\-]][[a-zA-Z0-9]]*$||' | awk 'BEGIN { FS = "."; } { printf "%d", ([$]1 * 1000 + [$]2) * 1000 + [$]3;}'`])
