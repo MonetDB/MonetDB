@@ -138,18 +138,20 @@ print_help (char *progname)
     printf ("(c) Database Group, Technische Universitaet Muenchen\n\n");
     printf ("Produces relational encodings of XML input documents\n\n");
 
-    printf ("Usage: %s [OPTION] -f [FILE] -o [FILE]\n\n", progname);            
+    printf ("Usage: %s [OPTION] -f [FILE] -o [PREFIX]\n\n", progname);            
 
-    printf ("  -h%s: print this help message\n",
-            long_option (opt_buf, ", --%s", 'h'));
     printf ("  -f filename%s: encode given input XML document\n",
             long_option (opt_buf, ", --%s=filename", 'f'));
-    printf ("  -o filename%s: writes encoding to given file\n",
-            long_option (opt_buf, ", --%s=filename", 'o'));
-    printf ("  -a%s: attributes separate (default: inline)\n",
+    printf ("  -o prefix%s: writes encoding to file <prefix>.csv\n",
+            long_option (opt_buf, ", --%s=prefix", 'o'));
+    printf ("  -a%s: attributes separate (default: attributes inline)\n"
+            "\twrites attribute encoding to file <prefix>_atts.csv\n",
             long_option (opt_buf, ", --%s", 'a'));
-    printf ("  -n%s: tag/attribute names inline (default: names separate)\n",
+    printf ("  -n%s: tag/attribute names inline (default: names separate)\n"
+            "\twrites name encoding to file <prefix>_names.csv\n",
             long_option (opt_buf, ", --%s", 'n'));
+    printf ("  -h%s: print this help message\n",
+            long_option (opt_buf, ", --%s", 'h'));
 }
 
 #define MAIN_EXIT(rtn) \
@@ -246,23 +248,25 @@ main (int argc, char **argv)
     }
     
     /* Open files */ 
-    if (status.outfile)
+    if (status.outfile) {
+        snprintf (status.outfile, FILENAME_MAX, "%s.csv", status.outfile);
         shout = SHopen_write (status.outfile);
+    }
     else
         shout = stdout;
 
     if (status.attributes_separate) {
         /* attribute file */
         char attoutfile[FILENAME_MAX];
-        snprintf (attoutfile, FILENAME_MAX, "%s_atts", status.outfile);
-	attout = SHopen_write (attoutfile);
+        snprintf (attoutfile, FILENAME_MAX, "%s_atts.csv", status.outfile);
+        attout = SHopen_write (attoutfile);
     }
     
     if (status.names_separate) {
         /* names file */
         char namesoutfile[FILENAME_MAX];
-        snprintf (namesoutfile, FILENAME_MAX, "%s_names", status.outfile);
-	namesout = SHopen_write (namesoutfile);
+        snprintf (namesoutfile, FILENAME_MAX, "%s_names.csv", status.outfile);
+        namesout = SHopen_write (namesoutfile);
     }
     
     if (status.statistics) {
