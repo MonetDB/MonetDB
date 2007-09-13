@@ -283,7 +283,7 @@ main (int argc, char **argv)
 
 
         char outfile[FILENAME_MAX];
-        snprintf (status.outfile, FILENAME_MAX, "%s.csv", status.outfile);
+        snprintf (outfile, FILENAME_MAX, "%s.csv", status.outfile);
         shout = SHopen_write (outfile);
     }
     else
