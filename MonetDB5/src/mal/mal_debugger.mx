@@ -468,6 +468,7 @@ typedef struct MDBSTATE{
 } MdbState;
 
 mal_export void mdbSetBreakpoint(Client cntxt, MalBlkPtr mb, int pc, char cmd);
+mal_export void mdbSetBreakRequest(Client cntxt, MalBlkPtr mb, str request, char cmd);
 mal_export void mdbClrBreakRequest(Client cntxt, str name);
 mal_export void mdbShowBreakpoints(Client cntxt);
 mal_export void mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc);
