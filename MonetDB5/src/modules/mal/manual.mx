@@ -54,10 +54,10 @@ comment "Produces an overview of all names grouped by module.";
 command summary():void
 address MANUALcreateSummary
 comment "Produces a manual with help lines grouped by module.";
-@-
-#command completion(text:str)
-#address MANUALcompletion
-#comment "Produces the wordcompletion table.";
+
+command completion(pat:str):bat[:int,:str]
+address MANUALcompletion
+comment "Produces the wordcompletion table.";
 @{
 @+ Implementation
 @include prelude.mx
