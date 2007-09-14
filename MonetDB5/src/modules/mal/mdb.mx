@@ -69,6 +69,10 @@ pattern setTrace(b:bit):void
 address MDBsetTrace
 comment "Turn on/off tracing of current routine";
 
+pattern setTrace(b:str):void
+address MDBsetVarTrace
+comment "Turn on/off tracing of a variable ";
+
 pattern setCatch(b:bit):void
 address MDBsetCatch
 comment "Turn on/off catching exceptions";
@@ -205,6 +209,7 @@ mdb_export str MDBstartFactory(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mdb_export str MDBstop(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mdb_export str MDBinspect(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mdb_export str MDBsetTrace(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+mdb_export str MDBsetVarTrace(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mdb_export str MDBgetDebug(int *ret);
 mdb_export str MDBsetDebug(int *ret, int *flg);
 mdb_export str MDBsetDebugStr(int *ret, str *nme);
@@ -341,6 +346,16 @@ MDBsetTrace(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	(void) mb;		/* still unused */
 	b = *(chr *) getArgReference(stk, p, 1);
 	MDBtraceFlag(MCgetClient(), stk, (b? (int) 't':0));
+	return MAL_SUCCEED;
+}
+str
+MDBsetVarTrace(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+{
+	str v;
+	v = *(str *) getArgReference(stk, p, 1);
+	mdbSetBreakRequest(MCgetClient(), mb, v, 't');
+	stk->cmd = 'c';
+	MCgetClient()->itrace = 'c';
 	return MAL_SUCCEED;
 }
 

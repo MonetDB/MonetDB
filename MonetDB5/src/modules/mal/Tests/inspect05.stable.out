@@ -807,6 +807,7 @@ end main;	# 11
 [ "register",				  "command",	  "language",	  "(m:str,f:str,code:str,help:str):void ",										  "CMDregisterFunction;"			  ]
 [ "raise",				  "command",	  "language",	  "(msg:str):str ",													  "CMDraise;"					  ]
 [ "source",				  "command",	  "language",	  "(f:str):void ",													  "CMDevalFile;"				  ]
+[ "completion",				  "command",	  "manual",	  "(pat:str):bat[:int,:str] ",										  "MANUALcompletion;"				  ]
 [ "createXML",				  "command",	  "manual",	  "():void ",														  "MANUALcreate0;"				  ]
 [ "createXML",				  "command",	  "manual",	  "(mod:str):void ",													  "MANUALcreate1;"				  ]
 [ "help",				  "command",	  "manual",	  "(text:str):void ",													  "MANUALhelp;"					  ]
