@@ -203,6 +203,9 @@ mal_command_generator(const char *text, int state)
 	}
 	if( msg == 0 && *text){
 		char cmd[BUFSIZ], *c;
+		c= strstr(text,":=");
+		if(c) text=c+2;
+		while(isspace((int)*text) ) text++;
 		c= strchr(text,'.');
 		if( c== NULL)
 			snprintf(cmd,BUFSIZ,"%s.*(",text);
