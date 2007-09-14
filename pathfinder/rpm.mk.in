@@ -34,7 +34,7 @@ $(rpmtopdir)/rpmmacros:
 	mkdir -p $(rpmtopdir)/BUILD
 	mkdir -p $(rpmtopdir)/INSTALL
 
-	echo "macrofiles: /usr/lib/rpm/macros:/usr/lib/rpm/%{_target}/macros:/etc/rpm/macros.specspo:/etc/rpm/macros.prelink:/etc/rpm/macros.solve:/etc/rpm/macros.up2date:/etc/rpm/macros:/etc/rpm/%{_target}/macros:$(rpmtopdir)/rpmmacros" > $(rpmtopdir)/rpmrc
+	echo "macrofiles: /usr/lib/rpm/macros:/usr/lib/rpm/%{_target}/macros:/usr/lib/rpm/redhat/macros:/etc/rpm/macros.specspo:/etc/rpm/macros.prelink:/etc/rpm/macros.solve:/etc/rpm/macros.up2date:/etc/rpm/macros:/etc/rpm/%{_target}/macros:$(rpmtopdir)/rpmmacros" > $(rpmtopdir)/rpmrc
 
 	echo "%_tmppath          /tmp"                >  $(rpmtopdir)/rpmmacros
 	echo "%_topdir           $(rpmtopdir)"        >> $(rpmtopdir)/rpmmacros
