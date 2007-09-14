@@ -138,7 +138,7 @@ print_tuple (node_t tuple)
                          if (shredstate.names_separate)
                              fprintf(out, "%i", tuple.name_id);
                          else
-                             fprintf(out, "%s", tuple.name);
+                             fprintf(out, "%s", (char*)tuple.name);
                      }
                      break;
                  case 't':
@@ -185,7 +185,7 @@ generate_name_id (const xmlChar *name)
         hashtable_insert (hash_table, (char *) name, name_id);
         /* print the name binding if necessary */
         if (shredstate.names_separate)
-            fprintf (out_names, "%i, \"%s\"\n", name_id, name);
+            fprintf (out_names, "%i, \"%s\"\n", name_id, (char*)name);
     }
 
     return name_id;
@@ -347,7 +347,7 @@ start_element (void *ctx, const xmlChar *tagname, const xmlChar **atts)
                     fprintf (out_attr,
                              SSZFMT ", " SSZFMT ", %i, \"%s\"," 
                              SSZFMT "\n",
-                             att_id++, pre, generate_name_id (atts[0]), atts[1],
+                             att_id++, pre, generate_name_id (atts[0]), (char*)atts[1],
                              insert_guide_node (atts[0],
                                                 stack[level].guide,
                                                 attr)->guide);
@@ -357,7 +357,7 @@ start_element (void *ctx, const xmlChar *tagname, const xmlChar **atts)
                 while (*atts) {
                     fprintf (out_attr,
                              SSZFMT ", " SSZFMT ", \"%s\", \"%s\"," SSZFMT "\n",
-                             att_id++, pre, atts[0], atts[1],
+                             att_id++, pre, (char*)atts[0], (char*)atts[1],
                              insert_guide_node (atts[0],
                                                 stack[level].guide,
                                                 attr)->guide);
