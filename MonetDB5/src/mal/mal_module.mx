@@ -789,6 +789,8 @@ int tstDuplicate(char **msg, char *s){
 			return 1; 
 	return 0;
 }
+
+#define MAXHELP 500
 char **getHelp(Module m, str inputpat, int completion)
 {
 	str pat, modnme, fcnnme = 0;
@@ -797,11 +799,12 @@ char **getHelp(Module m, str inputpat, int completion)
 	int len1 = 0,len2 = 0,fnd=0;
 	char *t, **msg, buf[BUFSIZ];
 	int top=0, i,j,k, sig = 0, doc = 0;
+	int maxhelp= MAXHELP;
 
 #ifdef MAL_SCOPE_DEBUG 
 	printf("showHelp: %s",pat);
 #endif
-	msg= (char **) GDKmalloc( 1000 * sizeof(str));
+	msg= (char **) GDKmalloc( MAXHELP * sizeof(str));
 	msg[top]=0;
 
 	if (!inputpat)
@@ -852,9 +855,9 @@ char **getHelp(Module m, str inputpat, int completion)
 				if( strncmp(modnme,m->name,len1) ==0  || *modnme=='*'){
 					msg[top++] = GDKstrdup(m->name);
 					msg[top] =0;
-					if( top == 999) {
-						GDKfree(pat);
-						return msg;
+					if( top == maxhelp-1) {
+						msg= (char **) GDKrealloc(msg,sizeof(str)* maxhelp);
+						maxhelp+= MAXHELP;
 					}
 				}
 				m= m->sibling;
@@ -908,10 +911,6 @@ char **getHelp(Module m, str inputpat, int completion)
 					if(fnd) continue;
 
 					msg[top++]= GDKstrdup(buf+1);
-					if( top >=998) {
-						GDKfree(pat);
-						return msg;
-					}
 					if(v){
 						*v='a';
 						msg[top++]= GDKstrdup(v);
@@ -940,9 +939,9 @@ char **getHelp(Module m, str inputpat, int completion)
 					msg[top++] = GDKstrdup(buf+1);
 					msg[top] = 0;
 				}
-				if( top >=998) {
-					GDKfree(pat);
-					return msg;
+				if( top >= maxhelp-3){
+					msg= (char **) GDKrealloc(msg,sizeof(str)* (maxhelp+MAXHELP));
+					maxhelp+= MAXHELP;
 				}
 			}
 			m= m->sibling;
@@ -961,8 +960,9 @@ char **getHelpMatch(char *pat){
 	Module m;
 	Symbol s;
 	int top = 0, i,j,k;
+	int maxhelp= MAXHELP;
 
-	msg= (char **) GDKmalloc( 2000 * sizeof(str));
+	msg= (char **) GDKmalloc( maxhelp * sizeof(str));
 	msg[top]=0;
 
 	if (!pat)
@@ -1002,7 +1002,10 @@ char **getHelpMatch(char *pat){
 					}
 					msg[top++] = GDKstrdup(buf);
 					msg[top] = 0;
-					if( top == 1999) return msg;
+					if( top == maxhelp-1){
+						msg= (char **) GDKrealloc(msg,sizeof(str)* (maxhelp+MAXHELP));
+						maxhelp+= MAXHELP;
+					}
 				}
 			m= m->sibling;
 		}
