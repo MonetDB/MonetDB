@@ -49,7 +49,7 @@ function XRPC_ATOM(type, value) {
     if (type == 'string') value = value.xmlEscape(1);
     return  '<xrpc:atomic-value xsi:type="xs:' + type + '">' + value + '</xrpc:atomic-value>';
 }
-function XRPC_ELEMENT(type, value) {
+function XRPC_ELEMENT(value) {
     return  '<xrpc:element>' + value + '</xrpc:element>';
 }
 /* omitted: document, attribute, comment and PI-typed values (*is* also possible!)*/
