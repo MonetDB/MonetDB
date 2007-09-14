@@ -14,8 +14,6 @@
 # Portions created by CWI are Copyright (C) 1997-2007 CWI.
 # All Rights Reserved.
 
-EXTRA_DIST_DIR = Tests
-
 MTSAFE
 INCLUDES = $(MONETDB_INCS) $(MONETDB5_INCS) $(GEOS_INCS) -I../lib
 
