@@ -1,9 +1,10 @@
 import sys
 import os
 
-# assume module MonetDB is in Python's default search path,
+# assume MonetDB-Clients destination PYTHON_LIBDIR 
+# is in Python's default search path,
 # or `monetdb-clients-config --pythonlibdir` is in PYTHONPATH
-from MonetDB import Mapi
+from MonetDB.Mapi import server
 
 
 def main(argv) :
@@ -22,7 +23,7 @@ def main(argv) :
         STDOUT.write("%d:\n" % i)
         STDERR.write("%d:\n" % i)
 
-        s = Mapi.server( "localhost", int(os.environ['MAPIPORT']), 'Mtest.py')
+        s = server( "localhost", int(os.environ['MAPIPORT']), 'Mtest.py')
         print( s.cmd( "print(%d);\n" % i ) )
         s.disconnect()
     STDOUT.write("done: %d\n" % i)
