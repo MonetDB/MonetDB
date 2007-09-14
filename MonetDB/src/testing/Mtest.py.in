@@ -1265,6 +1265,10 @@ def CheckMods(env, TST, SERVER, CALL) :
 def CheckBATs(env, TST, TSTDB) :
     missing = []
 
+    if not os.path.isfile(TST+".BATs"):
+        # no BATs required => no check required
+        return missing
+
     if par['M5']:
         # Warn("Monet5: Check, whether required BATs do exist, is not possible, yet!")
         return missing
