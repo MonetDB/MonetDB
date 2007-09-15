@@ -288,9 +288,19 @@ mal_command_generator(const char *text, int state)
 	}
 	/* try the server to answer */
 	if (!state) {
+		char cmd[BUFSIZ], *c;
+		c= strstr(text,":=");
+		if(c) text= c+2;
+		while(isspace((int)*text) )
+			text++;
+		c= strchr(text,'.');
+		if( c == NULL)
+			snprintf(cmd,BUFSIZ,"%s.*(",text);
+		else
+			snprintf(cmd,BUFSIZ,"%s(",text);
 		seekpos = 0;
-		len = strlen(text);
-		snprintf(buf,BUFSIZ, "manual.completion(\"%s\");", text);
+		len = strlen(cmd);
+		snprintf(buf,BUFSIZ, "manual.completion(\"%s\");", cmd);
 		if ((table_hdl = mapi_query(_mid, buf)) == NULL || mapi_error(_mid)) {
 			if (table_hdl) {
 				mapi_explain_query(table_hdl, stderr);
