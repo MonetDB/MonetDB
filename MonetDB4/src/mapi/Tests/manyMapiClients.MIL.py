@@ -1,10 +1,18 @@
 import sys
 import os
 
-# assume MonetDB-Clients destination PYTHON_LIBDIR 
-# is in Python's default search path,
-# or `monetdb-clients-config --pythonlibdir` is in PYTHONPATH
-from MonetDB.Mapi import server
+try:
+    # assume MonetDB & MonetDB-Clients share the same prefix,
+    # and their hence shared destination PYTHON_LIBDIR
+    # is in Python's default search path,
+    # or `monetdb-config --pythonlibdir` is in PYTHONPATH
+    from MonetDB.Mapi import server
+except ImportError:
+    # assume MonetDB-Clients uses a different prefix than MonetDB,
+    # and MonetDB-Clients' destination PYTHON_LIBDIR/MonetDB
+    # is in Python's default search path,
+    # or `monetdb-clients-config --pythonlibdir`/MonetDB is in PYTHONPATH
+    from Mapi import server
 
 
 def main(argv) :
