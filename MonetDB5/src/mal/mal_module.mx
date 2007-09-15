@@ -915,6 +915,7 @@ char **getHelp(Module m, str inputpat, int completion)
 						*v='a';
 						msg[top++]= GDKstrdup(v);
 					}
+					msg[top] = 0;
 
 					if( s->def->help) {
 						char *w;
@@ -925,7 +926,7 @@ char **getHelp(Module m, str inputpat, int completion)
 							/*ignore */
 						} else *v++ = *w;
 						*v = 0;
-					}
+					} else fnd = 1; /* ignore non-existing comment */
 					*v++ ='\n';
 					*v=0;
 				} else if( strncmp(fcnnme,s->name,strlen(fcnnme))==0 ||

@@ -229,13 +229,8 @@ int rl_complete(int ignore, int key){
 	putchar('\n');
 	while( (msg[top]= mal_command_generator(rl_line_buffer,top)) )
 		if( ++top== 1000) break;
-	for(i=0;i<top; i++)	{
-		char *c= strchr(msg[i],' ');
-		if(c)
-			printf("%s\n",c+1);
-		else
-			printf("%s\n",msg[i]);
-	}
+	for(i=0;i<top; i++)
+		printf("%s\n",msg[i]);
 
 	printf("%s%s",rl_prompt,rl_line_buffer);
 	for( top--;top>=0; top--)
