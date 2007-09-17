@@ -2398,62 +2398,82 @@ PROC ws_docfilter(bat[void,bat] ws,
                   bat[any::1,oid] any_pre,
                   oid cont) : bat[any::1,oid]
 {
-    # problem that collection may contain deleted documents is ony relevant for mult-doc collections
+    var cont_coll := ws.fetch(CONT_COLL);
+    var open_cont := ws.fetch(OPEN_CONT);
+    var open_docid:= ws.fetch(OPEN_DOCID);
+    var open_name := ws.fetch(OPEN_NAME);
+    var pre_size  := ws.fetch(PRE_SIZE).fetch(cont);
+    var pre_level := ws.fetch(PRE_LEVEL).fetch(cont);
+    var pre_nid   := ws.fetch(PRE_NID).fetch(cont);
+    var nid_rid   := ws.fetch(NID_RID).fetch(cont);
+    var map_pid   := ws.fetch(MAP_PID).fetch(cont);
     var frag_root := ws.fetch(FRAG_ROOT).fetch(cont);
 
-    # GRR.. have to eliminate 1@0, tombstones from the below algorithm (1@0 is bogus its doc may have been deleted)
-    var tombstones := any_pre.select(1@0);
-    if (count(tombstones) > 0) any_pre := any_pre.select(2@0,oid_nil);
-
-    # another thing.. time to convert the NIDs in any_pre into real PREs (and sort) 
-    var map_pid  := ws.fetch(MAP_PID).fetch(cont);
+    # first, ensure sorted PREs
     var isolate := (ttype(map_pid) = oid);
-    if (isolate) {
-        var nid_rid  := ws.fetch(NID_RID).fetch(cont);
-        if (any_pre.htype() = void) {
-            any_pre := any_pre.leftfetchjoin(nid_rid).[swizzle](map_pid).tsort();
-        } else {
-            var any_nid := any_pre.tmark(0@0).leftfetchjoin(nid_rid).[swizzle](map_pid).tsort();
-            any_pre := reverse(reverse(any_nid).leftfetchjoin(any_pre.hmark(0@0)));
-        }
+    if (not(isolate)) {
+        any_pre := any_pre.tsort(); # no-op for read-only nsloc element index
+    } else if (any_pre.htype() = void) {
+        any_pre := any_pre.leftfetchjoin(nid_rid).[swizzle](map_pid).tsort();
+    } else {
+        # headache: can only swizzle with a void head column..
+        var any_nid := any_pre.tmark(0@0).leftfetchjoin(nid_rid).[swizzle](map_pid).tsort();
+        any_pre := reverse(reverse(any_nid).leftfetchjoin(any_pre.hmark(0@0)));
     }
 
-    if (count(frag_root) > 1) {
-        # find out via the root which documents were accessed; find the new docs among them
-        var open_cont := ws.fetch(OPEN_CONT);
-        var open_docid:= ws.fetch(OPEN_DOCID);
-        var open_name := ws.fetch(OPEN_NAME);
-        var pre_nid   := ws.fetch(PRE_NID).fetch(cont);
-        var pre_size  := ws.fetch(PRE_SIZE).fetch(cont);
-        var pre_level := ws.fetch(PRE_LEVEL).fetch(cont);
+    var one := any_pre.ord_select(1@0); # never returned by index, except special 'give-up' case
+    var cur := count(one); # ignore bogus nodes 
+    var tot := count(any_pre);
+    var res := bat(any_pre.htype(), oid, tot).insert(one); # final result (copied excluding deleted docs)
+    var opt := true;
+    var anc := bat(void,oid).append(1@0); # start opportunistically with first (potential) doc 1@0
 
-        # quickest way to get document nodes is ancestor-or-self, then getting first for each input ({min})
-        var res_docid := any_pre.tmark(0@0).tsort(); # must tsort on pre (for ll_anc), and then re-sort on void..
-            res_docid := ll_ancestor_or_self(mirror(res_docid), res_docid, pre_size, pre_level).{min}().sort().tmark(0@0);
-            res_docid := res_docid.leftfetchjoin(pre_nid).leftjoin(reverse(frag_root)).tmark(0@0);
-        var new_docid := res_docid.tdiff(open_docid).tunique().hmark(0@0);
+    while(cur < tot) {
+        var doc_bat := bat(oid,bat); 
+        anc@batloop() {
+            # get all any_pre tuples in this document. any_pre is tsorted, ord_select => SLICE VIEW.
+            var new_bat := any_pre.slice(cur,tot).ord_select(oid_nil, oid(lng($t) + pre_size.fetch($t))); 
 
-        if (count(new_docid) > 0) {
-            # have to access the meta tables to check whether the doc still exists
+            # fill bat-of-bats, note that it is limited to max IDX_MAGICAL_CONST bats
+            var cnt := count(new_bat); 
+            if (cnt > 0) doc_bat.insert(reverse(frag_root).find($t), new_bat); 
+            cur :+= cnt; # skips document (nice if any_pre has >> IDX_MAGICAL_CONST nodes from it!)
+        }
+
+        # only if we saw a yet unopened document, check its continued existence
+        var doc_new := doc_bat.kdiff(reverse(open_docid));
+        if (count(doc_new) > 0) {
+            # have to access the meta tables to check whether the docs still exists
             lock_set(pf_short);
-            var new_name, err := CATCH(new_name := new_docid.outerjoin(doc_name));
+            var doc_nme, err := CATCH(doc_nme := mirror(doc_bat).leftjoin(doc_name));
             lock_unset(pf_short);
             if (not(isnil(err))) ERROR(err);
 
-            # keep only the any_pre entries that do not correspond to deleted documents
-            var del_docid := new_name.ord_uselect(str_nil).hmark(0@0).leftfetchjoin(new_docid);
-            if (count(del_docid) > 0) any_pre := any_pre.fetch(res_docid.tdiff(del_docid));
-
             # add new documents as open in working set 
-            new_name := new_name.ord_select(str_nil,str_nil);
-            open_name.append(new_name.tmark(0@0));
-            open_cont.append(new_name.tmark(0@0).project(cont));
-            open_docid.append(new_name.hmark(0@0).leftfetchjoin(new_docid));
+            doc_nme := doc_nme.ord_select(str_nil,str_nil);
+            doc_new := mirror(doc_new).leftjoin(doc_nme);
+            open_name.append(doc_new.tmark(0@0));
+            open_cont.append(doc_new.tmark(0@0).project(cont));
+            open_docid.append(doc_new.hmark(0@0));
+
+            if (count(doc_nme) < count(doc_bat)) { # some documents did not exist!
+                doc_bat := mirror(doc_nme).leftjoin(doc_bat);
+                opt := false;
+            }
         }
+        # if in the first ancestor batch, we found everything: no res construction is needed
+        if (opt and (cur = tot)) return any_pre; # most code should get here
+
+        # add all 'ok' any_pre tuples to the result
+        [insert](const res, doc_bat); 
+        if (count(res) > 0) opt := false;
+
+        # give *multiple* next tuples to ancestor (nice if we have nodes from many docs)
+        anc := any_pre.slice(cur,cur+IDX_MAGICAL_CONST).tmark(0@0); 
+        anc := ll_ancestor(mirror(anc), anc, pre_size, pre_level);
+        anc := {min}(anc).tunique().mirror().leftfetchjoin(pre_nid); # reduce to unique doc nodes
     }
-    if (count(tombstones) > 0) # re-insert the 1@0 tombstones (at the start, respecting pre order)
-        any_pre := bat(any_pre.htype(),oid,count(tombstones)+count(any_pre)).insert(tombstones).insert(any_pre);
-    return any_pre;
+    return res.access(BAT_READ);
 }
 
 
