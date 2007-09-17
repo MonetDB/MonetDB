@@ -139,6 +139,7 @@ enum PFsql_kind_t {
                                (left child of sql_from_list operator) */
     , sql_right_outer_join  /* RIGHT OUTER JOIN clause */
     , sql_left_outer_join   /* LEFT OUTER JOIN clause */
+    , sql_inner_join        /* INNER JOIN clause */
 
     , sql_union             /* UNION ALL expression */
     , sql_diff              /* EXCEPT ALL expression */
