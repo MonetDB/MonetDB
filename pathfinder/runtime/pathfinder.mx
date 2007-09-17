@@ -2386,7 +2386,7 @@ PROC vx_lookup(bat[void,bat] ws,
         if ((count(id_pre) + count(key_nid)) > (10*count(iter_val))) {
             id_pre := id_iter.project(1@0); break;
         }
-        var key_pre := ws_docfilter(ws, key_nid, $h);
+        var key_pre := ws_docfilter(ws, key_nid, $h).ssort(); # sort on [iter,pre]
         id_pre.insert(reverse(reverse(key_pre).leftfetchjoin(key_id)));
     }
     return id_pre;
