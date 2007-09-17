@@ -378,20 +378,31 @@ def am_headers(fd, var, headers, am):
     hdrs_ext = headers['HEADERS']
     for header in headers['TARGETS']:
         h, ext = split_filename(header)
-        if ext in hdrs_ext:
-            fd.write("install-exec-local-%s: %s\n" % (header, header))
-            fd.write("\t-mkdir -p $(DESTDIR)%s\n" % sd)
-            fd.write("\t-$(RM) $(DESTDIR)%s/%s\n" % (sd, header))
-            fd.write("\t$(INSTALL_DATA) $< $(DESTDIR)%s/%s\n\n" % (sd, header))
-            fd.write("uninstall-local-%s: \n" % header)
-            fd.write("\t$(RM) $(DESTDIR)%s/%s\n\n" % (sd, header))
-            am['INSTALL'].append(header)
-            am['UNINSTALL'].append(header)
-            am['BUILT_SOURCES'].append(header)
-            cond = ''
-            if headers.has_key('COND'):
-                cond = '#' + string.join(headers['COND'], '+')
-            am['InstallList'].append("\t"+sd+"/"+header+cond+"\n")
+        if ext not in hdrs_ext:
+            continue
+        cond = ''
+        h = header
+        if headers.has_key('COND'):
+            mkname = am_normalize(string.replace(header, '.', '_'))
+            for condname in headers['COND']:
+                fd.write('if %s\n' % condname)
+            fd.write('C_%s = %s\n' % (mkname, header))
+            h = '$(C_%s)' % mkname
+            for condname in headers['COND']:
+                fd.write('endif\n')
+        fd.write("install-exec-local-%s: %s\n" % (header, header))
+        fd.write("\t-mkdir -p $(DESTDIR)%s\n" % sd)
+        fd.write("\t-$(RM) $(DESTDIR)%s/%s\n" % (sd, header))
+        fd.write("\t$(INSTALL_DATA) $< $(DESTDIR)%s/%s\n\n" % (sd, header))
+        fd.write("uninstall-local-%s: \n" % header)
+        fd.write("\t$(RM) $(DESTDIR)%s/%s\n\n" % (sd, header))
+        am['INSTALL'].append(h)
+        am['UNINSTALL'].append(h)
+        am['BUILT_SOURCES'].append(h)
+        cond = ''
+        if headers.has_key('COND'):
+            cond = '#' + string.join(headers['COND'], '+')
+        am['InstallList'].append("\t"+sd+"/"+header+cond+"\n")
 
     am_find_ins(am, headers)
     am_deps(fd, headers['DEPS'], "\.o", am)
