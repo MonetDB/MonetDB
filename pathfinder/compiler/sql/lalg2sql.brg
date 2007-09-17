@@ -307,9 +307,9 @@ static PFsql_t *sql_stmts = NULL;
 /* The execute is used to construct the sequence
  * of `common table expressions'.
  */
-#define execute(c) sql_stmts = (sql_stmts == NULL)? \
-    common_table_expr(nil(),(c)):\
-    common_table_expr(sql_stmts,(c))
+#define execute(c) sql_stmts = (sql_stmts == NULL)?     \
+                        common_table_expr(nil(),(c)):   \
+                        common_table_expr(sql_stmts,(c))
 
 /**
  * We define the fragment with the maximum pre value here.
@@ -745,16 +745,12 @@ transform_frommap_ext (PFla_op_t *p, PFsql_t *tbl)
 }
 #define transform_frommap(p) transform_frommap_ext(p,NULL)
 
-
-
 /* .......... WHERE List Helper Functions .......... */
 
 /**
  * Returns a new wherelist.
  */
 #define where_list_new() (PFarray (sizeof (PFsql_t *)))
-
-
 
 /**
  * Add a predicate to the wherelist.
@@ -1825,9 +1821,16 @@ reduce (PFla_op_t * p, int goalnt)
         case 43:
         /* Rel:    cond_err (Rel, Rel) */
         case 99:
+        /* Rel:    cross (Rel, Rel) */
+        case 5:
+        /* Rel:    eqjoin (Rel, Rel) */
+        case 6:
+        /* Rel:    thetajoin (Rel, Rel) */
+        case 8:
+        /* Rel:    semijoin (Rel, Rel) */
+        case 7:
             /* top-down translation */
             break;
-
         default:
             /* bottom-up translation */
             for (unsigned short i = 0; i < PFLA_OP_MAXCHILD && nts[i]; i++)
@@ -1943,9 +1946,69 @@ reduce (PFla_op_t * p, int goalnt)
                                                     PRE_),
                                          NULL);
                 }
-                /* inner join */ 
                 else {
-                    finalquery = serialize_ (p, PFsql_inner_join, selectlist);
+                    PFsql_t *document = NULL;
+                    PFsql_aident_t docalias1 = new_alias();
+                    PFsql_aident_t docalias2 = new_alias();
+
+
+                    /* if fragments does not consists of 
+                     * select clause bind them */
+                    PFsql_t *t = collect_fragments (L(p));
+                    if (t->kind != sql_select) {
+                        PFsql_tident_t documenttable = new_table_name ();
+
+                        execute (bind (table_def (documenttable,
+                                              column_list (
+                                                        PRE_,
+                                                        SIZE_,
+                                                        KIND_,
+                                                        VALUE_,
+                                                        NAME_)),
+                                                        t));
+                        document = table_name (documenttable);
+                    }
+                    else {
+                        document = t;
+                    }
+
+                    from_list_copy (FROMLIST(p), FROMLIST(R(p)));
+                    from_list_add  (FROMLIST(p),
+                                    document, docalias1);
+                    from_list_add  (FROMLIST(p),
+                                    document, docalias2);
+
+                    where_list_copy (WHERELIST(p), WHERELIST(R(p)));
+                    where_list_add  (WHERELIST(p), 
+                                     eq (col_env_lookup (COLMAP(R(p)), item, item_ty),
+                                         PRE(docalias1)));
+                    where_list_add  (WHERELIST(p),
+                                     between (PRE(docalias2), PRE(docalias1),
+                                              add(PRE(docalias1),SIZE(docalias1))));
+
+                    finalquery = select (select_list (
+                                                column_assign (
+                                                    PRE(docalias2),
+                                                    PRE_),
+                                                column_assign (
+                                                    SIZE(docalias2),
+                                                    SIZE_),
+                                                column_assign (
+                                                    KIND(docalias2),
+                                                    KIND_),
+                                                column_assign (
+                                                    VALUE(docalias2),
+                                                    VALUE_),
+                                                column_assign (
+                                                    NAME(docalias2),
+                                                    NAME_),
+                                                column_assign (
+                                                    NAME(docalias2),
+                                                    TAG_)),
+                                          transform_frommap (p),
+                                          transform_wheremap (p),
+                                          NULL,
+                                          NULL);
                 }
             }
             /* the result contains nodes and atomic values */
@@ -2114,10 +2177,16 @@ reduce (PFla_op_t * p, int goalnt)
         case 6:
         /* Rel:    thetajoin (Rel, Rel) */
         case 8:
+            assert (kids[0] && nts[0]);
+            assert (kids[1] && nts[1]);
+            /* reduce the first child */
+            reduce (kids[0], nts[0]);
+
             /* copy all existing column, from, and where lists
                of the left child */
             copy_cols_from_where (p, L(p));
 
+            reduce (kids[1], nts[1]);
             /* copy all existing expression from right child */
             for (unsigned int i = 0; i < PFarray_last (COLMAP(R(p))); i++) {
                 sql_column_env_t entry = col_env_at (COLMAP(R(p)), i);
@@ -2214,9 +2283,12 @@ reduce (PFla_op_t * p, int goalnt)
             }
             break;
 
-        /* Rel:    semijoin (Rel, Rel) */
-        case 7:
+    /* Rel:    semijoin (Rel, Rel) */
+    case 7:
         {
+            assert (kids[0] && nts[0]);
+            assert (kids[1] && nts[0]);
+
             PFalg_att_t         att1 = p->sem.eqjoin.att1,
                                 att2 = p->sem.eqjoin.att2;
             PFalg_simple_type_t ty   = type_of (L(p), att1);
@@ -2224,11 +2296,17 @@ reduce (PFla_op_t * p, int goalnt)
 
             assert (type_of (R(p), att2) == ty);
 
+            /* reduce the first child */
+            reduce (kids[0], nts[0]);
+
             /* for the semijoin we only need the attributes of
              * the left relation */
             /* copy all existing column, from, and where lists
                of the left child */
             copy_cols_from_where (p, L(p));
+
+            /* reduce the second child */
+            reduce (kids[1], nts[1]);
 
             /* If we need to ensure the correct cardinality
                we first need to bind the right argument. */
@@ -2942,6 +3020,7 @@ reduce (PFla_op_t * p, int goalnt)
         case 50:
         {
             PFsql_t *srtbylist = nil ();
+            PFsql_t *orderby  = NULL;
             PFsql_t *partlist = NULL;
             PFalg_att_t ord;
             bool asc;
@@ -2962,7 +3041,7 @@ reduce (PFla_op_t * p, int goalnt)
                                 srtbylist);
             }
 
-            /* creat partition criterion if present */
+            /* creatr partition criterion if present */
             if (p->sem.rownum.part)
                 partlist = partition (
                                column_list (
@@ -2971,13 +3050,15 @@ reduce (PFla_op_t * p, int goalnt)
                                        p->sem.rownum.part,
                                        type_of (L(p), p->sem.rownum.part))));
 
+            orderby = (srtbylist->kind == sql_nil)?NULL:order_by(srtbylist);
+
             col_env_add (COLMAP(p),
                          p->sem.rownum.res,
                          aat_nat,
                          over (rownumber (),
                                window_clause (
                                    partlist,
-                                   order_by (srtbylist))));
+                                   orderby)));
 
             bind = true;
             execute (comment ("binding due to rownumber operator"));

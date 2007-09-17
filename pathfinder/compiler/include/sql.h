@@ -139,7 +139,6 @@ enum PFsql_kind_t {
                                (left child of sql_from_list operator) */
     , sql_right_outer_join  /* RIGHT OUTER JOIN clause */
     , sql_left_outer_join   /* LEFT OUTER JOIN clause */
-    , sql_inner_join        /* INNER JOIN clause */
 
     , sql_union             /* UNION ALL expression */
     , sql_diff              /* EXCEPT ALL expression */
@@ -551,11 +550,6 @@ PFsql_t * PFsql_right_outer_join (PFsql_t *tblref1, PFsql_t *tblref2);
  * Join two relations with `Left Outer Join'.
  */
 PFsql_t * PFsql_left_outer_join (PFsql_t *tblref1, PFsql_t *tblref2);
-
-/**
- * Join two relations with `Inner Join'.
- */
-PFsql_t * PFsql_inner_join (PFsql_t *tblref1, PFsql_t *tblref2);
 
 /**
  * A sequence of where_list-expressions.

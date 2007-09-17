@@ -73,7 +73,6 @@
 #define on(jn,ex)                       PFsql_on(jn, ex)
 #define right_outer_join(tbl1, tbl2)    PFsql_right_outer_join(tbl1, tbl2)
 #define left_outer_join(tbl1, tbl2)     PFsql_left_outer_join(tbl1, tbl2)
-#define inner_join(tbl1, tbl2)          PFsql_inner_join(tbl1, tbl2)
 #define where_list(...)                 PFsql_where_list(__VA_ARGS__)
 
 /* .......... Union .......... */

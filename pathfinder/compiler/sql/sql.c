@@ -387,6 +387,7 @@ PFsql_t *
 PFsql_bind (PFsql_t *table_name, PFsql_t *query)
 {
     assert (table_name->kind == sql_tbl_def);
+    assert (query);
     return wire2 (sql_bind, table_name, query);
 }
 
@@ -523,15 +524,6 @@ PFsql_t *
 PFsql_left_outer_join (PFsql_t *tblref1, PFsql_t *tblref2)
 {
     return wire2 (sql_left_outer_join, tblref1, tblref2);
-}
-
-/**
- * Join two relations with a `Inner Join'.
- */
-PFsql_t *
-PFsql_inner_join (PFsql_t *tblref1, PFsql_t *tblref2)
-{
-    return wire2 (sql_inner_join, tblref1, tblref2);
 }
 
 /**
