@@ -2700,7 +2700,7 @@ def main(argv) :
         dft['MALCLIENT']      = "'mclient -lmal'"
         dft['SQLCLIENT']      = "'mclient -lsql'"
         dft['SQLDUMP']        = "'msqldump'"
-        dft['XQUERYCLIENT']   = "'mclient -lxquery -fxml'"
+        dft['XQUERYCLIENT']   = "'mclient -lxquery -oxml'"
         dft['X100CLIENT']     = "'x100run_mapi'"
 
     #par = {}
