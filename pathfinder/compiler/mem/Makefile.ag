@@ -24,7 +24,8 @@
 # Universitaet Muenchen, respectively.  All Rights Reserved.
 #
 
-INCLUDES = ../include $(MONETDB_INCS)
+INCLUDES = ../include $(MONETDB_INCS) 
+CFLAGS = $(LIBGC_CFLAGS)
 
 lib_mem = {
 	NOINST

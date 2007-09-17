@@ -24,7 +24,8 @@
 # Universitaet Muenchen, respectively.  All Rights Reserved.
 #
 
-INCLUDES = ../include $(MONETDB_INCS) $(LIBXML2_CFLAGS)
+INCLUDES = ../include $(MONETDB_INCS) 
+CFLAGS = $(LIBXML2_CFLAGS)
 
 lib_schema = {
 	NOINST
