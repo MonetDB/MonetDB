@@ -7311,7 +7311,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                     "var cast_val := [dbl](item);\n");
         else
             milprintf(f,
-                    "var cast_val := [dbl](item%s);\n", kind_str(get_kind(TY(L(args)))));
+                    "var cast_val := [dbl](item%s);\n", val_join(get_kind(TY(L(args)))));
 
         milprintf(f,
                 "if (iter.count() != loop%03u.count())\n"
