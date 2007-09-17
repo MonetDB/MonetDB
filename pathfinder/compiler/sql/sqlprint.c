@@ -67,31 +67,35 @@ indent (FILE *f, int ind)
 }
 
 static char *ID[] = {
-      [sql_add]      = "+",
-      [sql_sub]      = "-",
-      [sql_mul]      = "*",
-      [sql_div]      = "/",
+      [sql_add]              = "+",
+      [sql_sub]              = "-",
+      [sql_mul]              = "*",
+      [sql_div]              = "/",
       
-      [sql_count]    = "COUNT",
-      [sql_max]      = "MAX",
-      [sql_sum]      = "SUM",
-      [sql_min]      = "MIN",
-      [sql_avg]      = "AVG",
+      [sql_count]            = "COUNT",
+      [sql_max]              = "MAX",
+      [sql_sum]              = "SUM",
+      [sql_min]              = "MIN",
+      [sql_avg]              = "AVG",
       
-      [sql_and]      = "AND",
-      [sql_or]       = "OR", 
-      [sql_ceil]     = "CEIL",
-      [sql_floor]    = "FLOOR",
-      [sql_abs]      = "ABS",
-      [sql_modulo]   = "MOD",
-      [sql_concat]   = "CONCAT",
-      [sql_is]       = "IS",
-      [sql_is_not]   = "IS NOT",
+      [sql_and]              = "AND",
+      [sql_or]               = "OR", 
+      [sql_ceil]             = "CEIL",
+      [sql_floor]            = "FLOOR",
+      [sql_abs]              = "ABS",
+      [sql_modulo]           = "MOD",
+      [sql_concat]           = "CONCAT",
+      [sql_is]               = "IS",
+      [sql_is_not]           = "IS NOT",
+      [sql_right_outer_join] = "RIGHT OUTER JOIN ",
+      [sql_left_outer_join]  = "LEFT OUTER JOIN ",
+      [sql_inner_join]       = "INNER JOIN ",
 };
 
 /* forward declarations */
 static void print_statement (PFsql_t *);
 static void print_fullselect (FILE *, PFsql_t *, int);
+static void print_literal (PFsql_t *);
 
 static void 
 print_schema_relcol (FILE *f, PFsql_t *n)
@@ -151,6 +155,12 @@ print_schema_information (FILE *f, PFsql_t *n)
 
     /* translate left child */
     switch (L(n)->kind) {
+        case sql_ser_type:
+            fprintf (f, "-- ");
+            fprintf (f, L(L(n))->sem.atom.val.s);
+            fprintf (f, ": ");
+            fprintf (f, R(L(n))->sem.atom.val.s);
+            break;
         case sql_ser_comment:
             fprintf (f, "-- !! %s !!", L(n)->sem.comment.str);
             break;
@@ -366,6 +376,7 @@ print_condition (PFsql_t *n)
             PFprettyprintf (" BETWEEN ");
             print_statement (n->child[1]);
             PFprettyprintf (" AND ");
+            assert (n->child[2]);
             print_statement (n->child[2]);        
             PFprettyprintf (")");
             break;
@@ -669,18 +680,33 @@ print_tablereference (FILE *f, PFsql_t* n, int i)
 }
 
 static void
+print_from_list (FILE *f, PFsql_t *n, int i);
+
+static void
 print_join (FILE *f, PFsql_t *n, int i)
 {
     assert (n);
 
     switch (n->kind) {
-        case sql_outer_join:
-            print_tablereference (f, L(n), i);
+        case sql_inner_join:
+        case sql_left_outer_join:
+        case sql_right_outer_join:
+            print_join (f, L(n), i);
             indent (f, i-6);
-            fprintf (f, "RIGHT OUTER JOIN ");
-            print_tablereference (f, R(n), i-6+17);
+            fprintf (f, ID[n->kind]);
+            print_join (f, R(n), i-6+17);
             break;
-
+        case sql_on:
+            print_join (f, L(n), i);
+            indent (f, i-3);
+            fprintf (f, "ON ");
+            print_conjunctive_list (f, R(n), i);
+            break;
+        case sql_alias_bind:
+        case sql_tbl_name:
+        case sql_schema_tbl_name:
+            print_tablereference (f, n, i);
+            break;
         default:
             PFoops (OOPS_FATAL,
                     "SQL grammar conflict. (Expected: join clause; "
@@ -710,10 +736,7 @@ print_from_list (FILE *f, PFsql_t *n, int i)
             break;
 
         case sql_on:
-            print_join (f, L(n), i);
-            indent (f, i-3);
-            fprintf (f, "ON ");
-            print_conjunctive_list (f, R(n), i);
+            print_join (f, n, i+3);
             break;
             
         default:
@@ -754,14 +777,26 @@ print_fullselect (FILE *f, PFsql_t *n, int i)
                 print_conjunctive_list (f, n->child[2], i+7);
             }
 
-            /* GROUP BY (optional) */
+            /* ORDER BY (optional) */
             if (n->child[3]) {
+                indent (f, i);
+                fprintf (f, " ORDER BY ");
+
+                /* prettyprint group by list */
+                PFprettyprintf ("%c", START_BLOCK);
+                print_stmt_list (n->child[3]);
+                PFprettyprintf ("%c", END_BLOCK);
+                pretty_dump (f, i+7);
+            }
+
+            /* GROUP BY (optional) */
+            if (n->child[4]) {
                 indent (f, i);
                 fprintf (f, " GROUP BY ");
 
                 /* prettyprint group by list */
                 PFprettyprintf ("%c", START_BLOCK);
-                print_column_name_list (n->child[3]);
+                print_column_name_list (n->child[4]);
                 PFprettyprintf ("%c", END_BLOCK);
                 pretty_dump (f, i+7);
             }
@@ -788,6 +823,13 @@ print_fullselect (FILE *f, PFsql_t *n, int i)
             indent (f, i);
             print_fullselect (f, R(n), i);
             break;
+        case sql_alias_bind:
+        case sql_tbl_name:
+        case sql_schema_tbl_name:
+            print_tablereference (f, n, i);
+            break;
+
+
 
         default:
             PFoops (OOPS_FATAL,
@@ -803,19 +845,13 @@ print_fullselect (FILE *f, PFsql_t *n, int i)
  * a new pretty printing phase is started.
  */
 static void
-print_binding (FILE* f, PFsql_t *n)
+print_binding_ (FILE* f, PFsql_t *n, char *comma)
 {
-    /* keep a stack to avoid printing 
-       a comma after the last binding */
-    static unsigned int nest = 0;
-
     /* collect all bindings */
     switch (n->kind) {
         case sql_cmmn_tbl_expr:
-            nest++; /* increase nesting */
-            print_binding (f, L(n));
-            print_binding (f, R(n));
-            nest--; /* decrease nesting */
+            print_binding_ (f, L(n), comma);
+            print_binding_ (f, R(n), comma);
             break;
 
         case sql_bind:
@@ -829,10 +865,7 @@ print_binding (FILE* f, PFsql_t *n)
             indent (f, 2);
             print_fullselect (f, R(n), 2);
 
-            /* avoid printing a ',' after the last binding */
-            if (nest > 2)
-                fprintf (f, ",\n");
-            fputc ('\n', f);
+            fprintf (f, "%s\n", comma);
             break;
 
         case sql_comment:
@@ -848,6 +881,8 @@ print_binding (FILE* f, PFsql_t *n)
                     "Got: %u)", n->kind);
     }
 }
+#define print_binding(f,n) print_binding_(f,n,",\n")
+#define print_last_binding(f,n) print_binding_(f,n,"")
 
 /**
  * Dump SQL tree @a n in pretty-printed form
@@ -869,7 +904,18 @@ PFsql_print (FILE *f, PFsql_t *n)
     /* ... and then print the query */
     assert (R(n)->kind == sql_with);
     fprintf(f, "\nWITH\n");
-    print_binding (f, L(R(n)));
+    
+    if (R(L(R(n)))->kind == sql_comment)
+        PFoops (OOPS_FATAL,
+                "SQL grammar conflict. (Expected: last binding; "
+                "Got: %u)", R(L(R(n)))->kind);
+
+    print_binding (f, L(L(R(n))));
+    print_last_binding (f, R(L(R(n))));
+
+    fputc('\n', f);
+    print_fullselect (f, R(R(n)), 0);
+    fprintf (f, ";\n");
 }
 
 /* vim:set shiftwidth=4 expandtab: */

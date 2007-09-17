@@ -140,12 +140,14 @@ wire3 (PFsql_kind_t k,
  *             set to @c NULL.
  */
 static PFsql_t *
-wire4 (PFsql_kind_t k,
+wire5 (PFsql_kind_t k,
        const PFsql_t * n1, const PFsql_t * n2,
-       const PFsql_t * n3, const PFsql_t * n4)
+       const PFsql_t * n3, const PFsql_t * n4,
+       const PFsql_t * n5)
 {
     PFsql_t *ret  = wire3 (k, n1, n2, n3);
     ret->child[3] = (PFsql_t *) n4;
+    ret->child[4] = (PFsql_t *) n5;
     return ret;
 }
 
@@ -188,6 +190,12 @@ PFsql_t *
 PFsql_serialization_info_item (const PFsql_t *info, const PFsql_t *list)
 {
     return wire2 (sql_ser_info, info, list);
+}
+
+PFsql_t *
+PFsql_serialization_type (const PFsql_t *type, const PFsql_t *qtype)
+{
+    return wire2 (sql_ser_type, type, qtype);
 }
 
 /**
@@ -328,9 +336,9 @@ PFsql_star (void)
  * Create a SQL tree node representing the SQL `WITH' operator.
  */
 PFsql_t *
-PFsql_with (const PFsql_t *a)
+PFsql_with (const PFsql_t *a, const PFsql_t *fs)
 {
-    return wire1 (sql_with, a);
+    return wire2 (sql_with, a, fs);
 }
 
 /**
@@ -338,9 +346,9 @@ PFsql_with (const PFsql_t *a)
  * `common table expressions'.
  */
 PFsql_t *
-PFsql_common_table_expr_ (int count, const PFsql_t **stmts)
+PFsql_common_table_expr (const PFsql_t *old, const PFsql_t *new)
 {
-    return sql_list (sql_cmmn_tbl_expr, count, stmts);
+    return wire2 (sql_cmmn_tbl_expr, old, new); 
 }
 
 /**
@@ -407,10 +415,12 @@ PFsql_select (bool distinct,
               const PFsql_t *selectlist,
               const PFsql_t *fromlist,
               const PFsql_t *wherelist,
+              const PFsql_t *orderbylist,
               const PFsql_t *groupbylist)
 {
-    PFsql_t *ret = wire4 (sql_select,
-                          selectlist, fromlist, wherelist, groupbylist);
+    PFsql_t *ret = wire5 (sql_select,
+                          selectlist, fromlist, wherelist,
+                          orderbylist, groupbylist);
     ret->sem.select.distinct = distinct;
     return ret;
 }
@@ -501,9 +511,27 @@ PFsql_on (PFsql_t *join, PFsql_t *expr)
  * Join two relations with a `Right Outer Join'.
  */
 PFsql_t *
-PFsql_outer_join (PFsql_t *tblref1, PFsql_t *tblref2)
+PFsql_right_outer_join (PFsql_t *tblref1, PFsql_t *tblref2)
 {
-    return wire2 (sql_outer_join, tblref1, tblref2);
+    return wire2 (sql_right_outer_join, tblref1, tblref2);
+}
+
+/**
+ * Join two relations with a `Left Outer Join'.
+ */
+PFsql_t *
+PFsql_left_outer_join (PFsql_t *tblref1, PFsql_t *tblref2)
+{
+    return wire2 (sql_left_outer_join, tblref1, tblref2);
+}
+
+/**
+ * Join two relations with a `Inner Join'.
+ */
+PFsql_t *
+PFsql_inner_join (PFsql_t *tblref1, PFsql_t *tblref2)
+{
+    return wire2 (sql_inner_join, tblref1, tblref2);
 }
 
 /**
@@ -814,6 +842,9 @@ PFsql_gteq (const PFsql_t *a, const PFsql_t *b)
  */
 PFsql_t * PFsql_between(const PFsql_t *clmn, const PFsql_t *a, const PFsql_t *b)
 {
+    assert (clmn);
+    assert (a);
+    assert (b);
     return wire3 (sql_between, clmn, a, b); 
 }
 
@@ -1108,7 +1139,8 @@ PFsql_op_duplicate (PFsql_t *expr)
                                  duplicate(expr->child[0]),
                                  duplicate(expr->child[1]),
                                  duplicate(expr->child[2]),
-                                 duplicate(expr->child[3]));
+                                 duplicate(expr->child[3]),
+                                 duplicate(expr->child[4]));
             
         case sql_lit_int:
         case sql_lit_lng:
@@ -1128,6 +1160,12 @@ PFsql_op_duplicate (PFsql_t *expr)
         case sql_type:
             return type (expr->sem.type.t);
             
+        case sql_between:
+            return wire3 (expr->kind,
+                          duplicate(expr->child[0]),
+                          duplicate(expr->child[1]),
+                          duplicate(expr->child[2]));
+
         default:
             /* translate SQL node constructors that
                have at most two children */

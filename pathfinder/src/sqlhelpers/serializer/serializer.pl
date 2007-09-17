@@ -15,7 +15,6 @@ use DBI;
 my $DSN = 'DBI:DB2:XML';
 
 my $input_query = "";    # SQL code as received from PF
-my $final_query = "";    # actual query sent to DBMS
 my %schema;              # schema information we got from PF
 
 # read query from stdin or a file
@@ -48,20 +47,11 @@ sub read_query {
         elsif ($state eq 'IN_SCHEMA_INFORMATION') {
 
             # these are the strings we look for
-            if ($line =~ /\b(document-relation|
-                             document-pre|
-                             document-size|
-                             document-kind|
-			     document-value|
-			     document-name|
-                             document-tag|
-                             result-relation|
-                             result-pos_nat|
-                             result-item_pre|
+            if ($line =~ /\b(Type|
                              result-item_int|
                              result-item_str|
-                             result-item_dbl|
-                             result-item_dec):\s+
+                             result-item_dec|
+                             result-item_dbl):\s+
                              \b(\w+)\b/x) {
                 $schema{$1} = $2;
             }
@@ -80,17 +70,24 @@ sub read_query {
     die "No schema information found in query.\n"
         unless $state eq 'DONE_SCHEMA_INFORMATION';
 
-    die "Schema information on document relation incomplete.\n"
-        unless ($schema{'document-relation'} && $schema{'document-pre'}
-                && $schema{'document-size'} && $schema{'document-kind'}
-                && $schema{'document-value'} && $schema{'document-tag'})
-		&& $schema{'document-name'};
+#    die "Schema information on document relation incomplete.\n"
+#        unless ($schema{'document-pre'}
+#                && $schema{'document-size'} && $schema{'document-kind'}
+#                && $schema{'document-value'} && $schema{'document-tag'})
+#                && $schema{'document-name'};
 
+    # if Type is NODES_ONLY then only Type has to be defined
+    # if Type is ATOM_ONLY or ATOMIC_AND_NODES one of the
+    # result items has to be defined
     die "Schema information on result relation incomplete.\n"
-        unless ($schema{'result-relation'} && $schema{'result-pos_nat'}
-                && ($schema{'result-item_pre'} || $schema{'result-item_int'}
-                    || $schema{'result-item_str'} || $schema{'result-item_dbl'}
-                    || $schema{'result-item_dec'}));
+        unless (defined $schema{'Type'}
+                && (($schema{'Type'} eq 'NODES_ONLY')
+                    || ($schema{'Type'} eq 'ATOMIC_ONLY'
+                       || $schema{'Type'} eq 'ATOMIC_AND_NODES')
+                         && (defined $schema{'result-item_int'}
+                            || defined $schema{'result-item_str'}
+                            || defined $schema{'result-item_dec'}
+                            || defined $schema{'result-item_dbl'})))
 }
 
 # read user input
@@ -101,97 +98,48 @@ my %idx;          # in which of the return columns can we find all of
                   # the values we are interested in?
 
 # set up the query we want to send to the database
-if (defined $schema{'result-item_pre'}
-    && (defined $schema{'result-item_int'} || defined $schema{'result-item_str'}
-        || defined $schema{'result-item_dbl'}
-        || defined $schema{'result-item_dec'})) {
+if (defined $schema{'Type'}
+    && $schema{'Type'} eq 'ATOMIC_AND_NODES') {
 
     # This query contains atomic values AND nodes
     $query_type = 'ATOMIC_AND_NODES';
 
-    $final_query = "$input_query\nSELECT ";
-
     my $cur = 0;
 
     foreach my $t ('int', 'str', 'dbl', 'dec') {
 
         if (defined $schema{"result-item_$t"}) {
-            if ($cur) { $final_query.= ',' }
             $idx{$t} = $cur;
             $cur++;
-            $final_query.= "\nr.".$schema{"result-item_$t"}." AS $t";
         }
     }
 
     $idx{'pre'} = $cur;
-
-    $final_query.= ',';
-    $final_query.= <<"EOT";
-             d2.$schema{'document-pre'} AS pre,
-             d2.$schema{'document-size'} AS size,
-             d2.$schema{'document-kind'} AS kind,
-             d2.$schema{'document-value'} AS value,
-	     d2.$schema{'document-name'} AS name,
-             d2.$schema{'document-tag'} AS tag
-        FROM $schema{'result-relation'} AS r
-             LEFT OUTER JOIN $schema{'document-relation'} AS d1
-               ON d1.pre = r.$schema{'result-item_pre'}
-             LEFT OUTER JOIN $schema{'document-relation'} AS d2
-               ON d2.pre >= d1.pre AND d2.pre <= d1.pre + d1.size
-       ORDER BY r.pos_nat, d2.pre;
-EOT
-
 }
-elsif (defined $schema{'result-item_pre'}) {
+elsif (defined $schema{'Type'}
+       && $schema{'Type'} eq 'NODES_ONLY') {
 
     # This query returns nodes, only
     $query_type = 'NODES_ONLY';
 
-    $final_query = <<"EOT";
-      $input_query
-      SELECT d2.$schema{'document-pre'} AS pre,
-             d2.$schema{'document-size'} AS size,
-             d2.$schema{'document-kind'} AS kind,
-             d2.$schema{'document-value'} AS value,
-	     d2.$schema{'document-name'} AS name,
-             d2.$schema{'document-tag'} AS tag
-        FROM $schema{'result-relation'} AS r
-             INNER JOIN $schema{'document-relation'} AS d1
-               ON d1.pre = r.$schema{'result-item_pre'}
-             INNER JOIN $schema{'document-relation'} AS d2
-               ON d2.pre >= d1.pre AND d2.pre <= d1.pre + d1.size
-       ORDER BY r.pos_nat, d2.pre;
-EOT
-
     $idx{'pre'} = 0; 
-
 }
 else {
-
     # This query returns atomic values, only
     $query_type = 'ATOMIC_ONLY';
-
-    $final_query = "$input_query\nSELECT ";
 
     my $cur = 0;
 
     foreach my $t ('int', 'str', 'dbl', 'dec') {
-
         if (defined $schema{"result-item_$t"}) {
-            if ($cur) { $final_query.= ',' }
             $idx{$t} = $cur;
             $cur++;
-            $final_query.= "\nr.".$schema{"result-item_$t"}." AS $t";
         }
     }
-
-    $final_query .= <<"EOT";
-        FROM $schema{'result-relation'} AS r
-       ORDER BY r.pos_nat;
-EOT
-
 }
 
+my $final_query = "";    # actual query sent to DBMS
+$final_query = "$input_query";
 #print $final_query;
 
 # connect to the database
@@ -205,6 +153,8 @@ $sth->execute () or die "Could not execute query: " . DBI->errstr;
 
 # print XML header for result
 print "<?xml version=\"1.0\" encoding=\"UTF-8\"?>";
+# print a root node to make a valid XQuery document
+print "\n<XQuery>";
 
 my @stack = ();       # stack to print all the closing tags
 my $last = 'ELEM';    # assume the last thing we printed was an element
@@ -216,11 +166,11 @@ while (my @data = $sth->fetchrow_array ()) {
         || ($query_type eq 'ATOMIC_AND_NODES' && defined $data[$idx{'pre'}])) {
 
         # print trailing > to close an element
-	if (($last eq 'ATTR') && ($data[$idx{'pre'} + 2] != 2)) {
-	    print '>';
-	    $last = 'ELEM';
-	}
-	    
+        if (($last eq 'ATTR') && ($data[$idx{'pre'} + 2] != 2)) {
+            print '>';
+            $last = 'ELEM';
+        }
+            
 
         if ($data[$idx{'pre'} + 2] == 1) {           # kind == elem
 
@@ -238,10 +188,10 @@ while (my @data = $sth->fetchrow_array ()) {
                            $data[$idx{'pre'} + 5] ]; # tag
             $last = 'ATTR';
         }
-	elsif ($data[$idx{'pre'} + 2] == 2) {        #kind == attr
-	    print " ".$data[$idx{'pre'} + 4]."=\"".$data[$idx{'pre'} + 3]."\"";
-	    $last = 'ATTR';
-	}
+        elsif ($data[$idx{'pre'} + 2] == 2) {        #kind == attr
+            print " ".$data[$idx{'pre'} + 4]."=\"".$data[$idx{'pre'} + 3]."\"";
+            $last = 'ATTR';
+        }
         elsif ($data[$idx{'pre'} + 2] == 3) {        # kind == text
             # remove trailing spaces as they are returned by DB2
             $data[$idx{'pre'} + 3] =~ s/ +$//;
@@ -286,6 +236,7 @@ while (my @data = $sth->fetchrow_array ()) {
         }
     }
 }
+print "\n</XQuery>";
 print "\n";
 # close database connection
 $dbh->disconnect;

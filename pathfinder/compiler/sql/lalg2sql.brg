@@ -307,9 +307,9 @@ static PFsql_t *sql_stmts = NULL;
 /* The execute is used to construct the sequence
  * of `common table expressions'.
  */
-#define execute(...) sql_stmts = (sql_stmts == NULL)? \
-    common_table_expr( __VA_ARGS__ ):\
-    common_table_expr(sql_stmts, __VA_ARGS__)
+#define execute(c) sql_stmts = (sql_stmts == NULL)? \
+    common_table_expr(nil(),(c)):\
+    common_table_expr(sql_stmts,(c))
 
 /**
  * We define the fragment with the maximum pre value here.
@@ -319,6 +319,12 @@ static PFsql_t *max_pre_frag = NULL;
 /* we "mask out" the flags regarding the generation of attributes,
  * up to now we don't support attributes */
 #define TYPE_MASK(t) ((t) & ~(aat_afrag | aat_pfrag))
+
+/* reference counter */
+#define REFCTR(p)    ((p)->refctr)
+
+/* serialization report */
+#define SER_REPORT(p)    ((p)->sql_ann->ser_report)
 
 #define BOUND(p)     ((p)->sql_ann->bound)
 #define COLMAP(p)    ((p)->sql_ann->colmap)
@@ -810,6 +816,7 @@ sql_alg_ann_new (void)
     ret->wheremap     = where_list_new ();
     ret->fragment     = NULL;
     ret->content_size = NULL;
+    ret->ser_report   = ser_no;
 
     return ret;
 }
@@ -1161,8 +1168,7 @@ step_guide_join (PFla_op_t *p, PFsql_aident_t step,
         list[i] = stmt_list (lit_int (guides[i]->guide));
 
     /* prepare table to dump */
-    execute (comment (""),
-             bind (table_def (
+    execute (bind (table_def (
                        newtable,
                        column_list (GUIDE_)),
                    values (PFsql_list_list_ (count, (const PFsql_t **) list))));
@@ -1241,10 +1247,12 @@ construct_twig_generic (PFla_op_t *p,
                                            column_assign (max (PRE_), MAX_),
                                            from_list (max_pre_frag),
                                            NULL,
+                                           NULL,
                                            NULL),
                                        alias (max)),
                            transform_frommap (LL(p))),
                        transform_wheremap (LL(p)),
+                       NULL,
                        NULL);
     else
         twig = select (select_list (
@@ -1268,16 +1276,18 @@ construct_twig_generic (PFla_op_t *p,
                                            column_assign (max (PRE_), MAX_),
                                            from_list (max_pre_frag),
                                            NULL,
+                                           NULL,
                                            NULL),
                                        alias (max)),
                            alias_bind (FRAG(L(p)), alias (content))),
                        NULL,
+                       NULL,
                        NULL);
 
-    execute (comment ("===================="),
-             comment ("= TWIG CONSTRUCTOR ="),
-             comment ("===================="),
-             bind (table_def (
+    execute (comment ("===================="));
+    execute (comment ("= TWIG CONSTRUCTOR ="));
+    execute (comment ("===================="));
+    execute (bind (table_def (
                        twig_tbl,
                        column_list (
                            column_name (iter_col),
@@ -1300,10 +1310,17 @@ construct_twig_generic (PFla_op_t *p,
                  iter_ty,
                  EXT_COLUMN_NAME (new_root, iter, iter_ty));
 
-    col_env_add (COLMAP(p),
-                 p->sem.iter_item.item,
-                 type_of (p, p->sem.iter_item.item),
-                 PRE(new_root));
+    if (SER_REPORT (p) == ser_yes)
+        col_env_add_full(COLMAP(p),
+                         p->sem.iter_item.item,
+                         type_of (p, p->sem.iter_item.item),
+                         PRE(new_root),
+                         new_root);
+    else
+        col_env_add (COLMAP(p),
+                     p->sem.iter_item.item,
+                     type_of (p, p->sem.iter_item.item),
+                     PRE(new_root));
 
     from_list_add (FROMLIST(p),
                    table_name (twig_tbl),
@@ -1340,6 +1357,7 @@ construct_node (PFla_op_t *p, PFalg_att_t iter, int kind,
                        column_assign (name, NAME_)),
                    transform_frommap (L(p)),
                    transform_wheremap (L(p)),
+                   NULL,
                    NULL);
 }
 
@@ -1364,7 +1382,7 @@ copy_cols_from_where (PFla_op_t *p, PFla_op_t *c)
 }
 
 /**
- * bind_operator creates a selec-from-where binding
+ * bind_operator creates a select-from-where binding
  * for a given operator @a p. The additional boolean
  * flag distinct triggers the generation of the SQL
  * DISTINCT keyword.
@@ -1416,6 +1434,7 @@ bind_operator (PFla_op_t *p, bool distinct)
                                  selectlist,
                                  transform_frommap (p),
                                  transform_wheremap (p),
+                                 NULL,
                                  NULL)));
 
     /* clear the from and the where list */
@@ -1432,6 +1451,169 @@ bind_operator (PFla_op_t *p, bool distinct)
 }
 
 /**
+ * Collect a list of the logical operators of all
+ * referenced fragments.
+ *
+ * Returns true if there are
+ */
+static bool 
+collect_twigs (PFla_op_t * p, PFarray_t *frags)
+{
+    assert (p);
+    assert (frags);
+
+    switch (p->kind) {
+
+        case la_frag_union:
+            return ((collect_twigs (L(p), frags)) &&
+                    (collect_twigs (R(p), frags)));
+
+        case la_fragment:
+        {
+            PFla_op_t * fragment = NULL;
+            unsigned int i;
+            assert (L(p));
+
+            /* if kind is not a twig operator return false */
+            if (L(p)->kind != la_twig) {
+                return false;
+            }
+
+            /* add fragment if we haven't collected it so far */
+            for (i = 0; i < PFarray_last (frags); i++) {
+                fragment = *(PFla_op_t **) PFarray_at (frags, i);
+                if (fragment == L(p))
+                    break;
+            }
+
+            /* add fragment to the list */
+            if (i == PFarray_last (frags))
+                *(PFla_op_t **) PFarray_add (frags) = L(p);  
+            return true;
+        }
+        case la_empty_frag:
+            return true;
+
+        default:
+            assert (0);
+            return false;
+    }
+
+    /* we should never reach this point */
+    assert (0);
+    return false;
+}
+
+#define IS_LEAF(p) (!L(p) && !R(p))
+#define MIN(a,b) (((a) < (b))?(a):(b))
+#define SER_OPERATORS(p) (((p)->kind == la_project)       \
+                          || ((p)->kind == la_roots)      \
+                          || ((p)->kind == la_attach)     \
+                          || ((p)->kind == la_serialize))
+
+static void 
+ser_info_worker (PFla_op_t * p, PFarray_t *frags)
+{
+    assert (p);
+    assert (frags);
+
+    ser_report_t status = ser_yes;
+    /* descend only once */
+    if (SEEN(p))
+        return;
+
+    SEEN(p) = true;
+
+    /* check if we find one of the collected
+     * twigs */
+    PFla_op_t *twig;
+    unsigned int i;
+    for (i = 0; i < PFarray_last (frags); i++) {
+         twig = *(PFla_op_t **)PFarray_at (frags, i);   
+         if (twig == p)
+             break;
+    }
+    if (i < PFarray_last (frags) && twig) {
+         SER_REPORT(p) = ser_tc;
+         return;
+    }
+
+    /* if we find a leaf return yes */
+    if (IS_LEAF(p)) {
+        SER_REPORT(p) = ser_yes;
+        return;
+    }
+
+    /* DAG walk */
+    for (i = 0;
+         i < PFLA_OP_MAXCHILD && p->child[i]; i++) {
+         ser_info_worker(p->child[i], frags);
+         status = MIN(status, SER_REPORT(p->child[i])); 
+    }
+
+    switch (status) {
+        /* if we cannot serialize by expanding the schema
+         * there is no reason to move on */
+        case ser_no:
+            SER_REPORT (p) = ser_no;
+            return;
+        /* if we found a twig in one of the descending
+         * operators we must take care if the
+         * ancestors do not  */
+        case ser_tc:
+            if (!SER_OPERATORS(p)
+                || (REFCTR(p) > 1)) {
+                SER_REPORT (p) = ser_no;
+                return;
+            }
+            SER_REPORT (p) = ser_tc;
+            return;
+        /* No constructors involved until now */
+        case ser_yes:
+            SER_REPORT (p) = ser_yes; 
+            return;
+        default:
+            assert (!"Serialization report status unknown");
+    }
+    /* we should never reach this point */ 
+    assert (0);
+}
+
+/* Infer serialization information, so we
+ * can avoid an expensive join. */
+static void
+infer_ser_info (PFla_op_t * p)
+{
+    assert (R(p));
+    PFarray_t *frags = PFarray (sizeof (PFla_op_t*)); 
+    bool twig_only = false;
+
+
+    /* collect the twigs referenced in this query */
+    twig_only = collect_twigs (L(p), frags);
+
+    if (!twig_only) 
+        return;
+
+    /* infer the serialization info */
+    ser_info_worker (R(p), frags);
+
+    SER_REPORT (p) = SER_REPORT (R(p));
+
+    if (SER_REPORT (p) == ser_no)
+       return; 
+
+    /* set all collected twigs to ser_yes to indicate we can
+     * omit the level check */
+    for (unsigned int i = 0; i < PFarray_last (frags); i++) {
+         PFla_op_t * twig = *(PFla_op_t **)PFarray_at (frags, i);
+         assert (twig);
+         assert (twig->kind == la_twig);
+         SER_REPORT (twig) = ser_yes;
+    }
+}
+
+/**
  * Collect a union of all referenced fragments.
  *
  * worker for collect_fragments.
@@ -1440,6 +1622,7 @@ static void
 collect_frag_worker (PFla_op_t * p, PFarray_t *frags)
 {
     assert (p);
+    assert (frags);
  
     if (p->kind == la_frag_union) {
         collect_frag_worker (L(p), frags);
@@ -1454,7 +1637,7 @@ collect_frag_worker (PFla_op_t * p, PFarray_t *frags)
         name = FRAG(p)->sem.tbl.name;
         /* add fragment if we haven't collected it so far */
         for (i = 0; i < PFarray_last (frags); i++) {
-            frag = *(PFsql_t **) PFarray_at (frags, 0);
+            frag = *(PFsql_t **) PFarray_at (frags, i);
             if (frag->sem.tbl.name == name)
                 break;
         }
@@ -1465,8 +1648,8 @@ collect_frag_worker (PFla_op_t * p, PFarray_t *frags)
 
 #define frag_select(f) select (                                             \
                            select_list (PRE_, SIZE_, LEVEL_, KIND_, VALUE_, \
-                                        NAME_, NAME_),                      \
-                           f, NULL, NULL)
+                                        NAME_),                      \
+                           f, NULL, NULL, NULL)
 
 static PFsql_t *
 collect_fragments (PFla_op_t * p)
@@ -1479,7 +1662,7 @@ collect_fragments (PFla_op_t * p)
         PFsql_t *res = frag_select (*(PFsql_t **) PFarray_at (frags, 0));
         
         for (unsigned int i = 1; i < PFarray_last (frags); i++)
-            res = union_ (res, *(PFsql_t **) PFarray_at (frags, i));
+            res = union_ (res, frag_select (*(PFsql_t **) PFarray_at (frags, i)));
         
         return res;
     }
@@ -1512,7 +1695,94 @@ cast_ (PFsql_t * expr, PFalg_simple_type_t ty, PFalg_simple_type_t res_ty)
     return cast (expr, type (res_ty)); 
 }
 
+static PFsql_t *
+serialize_(PFla_op_t * p, PFsql_t * (*join)(PFsql_t* a, PFsql_t *b), PFsql_t *selectlist)
+{
+    assert (p);
+    assert (p->kind == la_serialize);
 
+    PFsql_t *document = NULL; 
+    PFsql_t *result   = NULL;
+    PFsql_t *finalquery = NULL;
+
+
+    PFsql_t *item_pre = NULL;
+    PFalg_att_t pos = p->sem.serialize.pos;
+    PFalg_simple_type_t pos_ty = type_of (p, p->sem.serialize.pos);
+
+    PFsql_aident_t docalias1 = new_alias ();
+    PFsql_aident_t docalias2 = new_alias ();
+
+    
+    assert (PFarray_last (FROMLIST(R(p))));
+
+    /* if fragments does not consists of 
+     * select clause bind them */
+    PFsql_t *t = collect_fragments (L(p));
+    if (t->kind != sql_select) {
+        PFsql_tident_t documenttable = new_table_name ();
+
+        execute (bind (table_def (documenttable,
+                                  column_list (
+                                        PRE_,
+                                        SIZE_,
+                                        LEVEL_,
+                                        KIND_,
+                                        VALUE_,
+                                        NAME_)),
+                        t));
+        document = table_name (documenttable);
+    }
+    else {
+        document = t;
+    }
+
+    /* if the right child has more than on table
+     * or it contains a where-clause bind it */
+    if ((!(PFarray_last (FROMLIST(R(p))) == 1)
+        || (PFarray_last(WHERELIST(R(p))))))
+        bind_operator (R(p), false);
+
+    sql_from_list_t fromclause = *(sql_from_list_t *) PFarray_at (FROMLIST(R(p)), 0);
+    result = alias_bind (fromclause.table, alias(fromclause.alias)); 
+
+    item_pre = col_env_lookup (COLMAP(R(p)), p->sem.serialize.item, aat_pre);
+
+    finalquery = select (select_list (
+                             selectlist,
+                             column_assign (
+                                 PRE(docalias2),
+                                 PRE_),
+                             column_assign (
+                                 SIZE(docalias2),
+                                 SIZE_),
+                             column_assign (
+                                 KIND(docalias2),
+                                 KIND_),
+                             column_assign (
+                                 VALUE(docalias2),
+                                 VALUE_),
+                             column_assign (
+                                 NAME(docalias2),
+                                 NAME_),
+                             column_assign (
+                                 NAME(docalias2),
+                                 TAG_)),
+                         from_list (
+                            on (join (
+                                on (join (result, alias_bind(document, alias (docalias1))),
+                                    eq (PRE(docalias1), item_pre)),
+                                    alias_bind (document, alias (docalias2))),
+                                and_ (
+                                     gteq (PRE(docalias2), PRE(docalias1)),
+                                     gteq (add (PRE(docalias1), SIZE(docalias1)),
+                                         PRE(docalias2))))),
+                         NULL,
+                         stmt_list (col_env_lookup (COLMAP (R(p)), pos, pos_ty),
+                                    PRE(docalias2)),
+                         NULL);
+    return finalquery;
+}
 
 /**
  * Reduce function. This is the core of this source file, containing
@@ -1569,6 +1839,11 @@ reduce (PFla_op_t * p, int goalnt)
         /* Query:  serialize (Frag, Rel) */
         case 1:
         {
+            PFalg_att_t item = p->sem.serialize.item;
+            PFalg_att_t pos  = p->sem.serialize.pos;
+            PFalg_simple_type_t item_ty = type_of (p, p->sem.serialize.item);
+            PFalg_simple_type_t pos_ty =  type_of (p, p->sem.serialize.pos);
+
             PFsql_t *colname;
 
             /* We conflate the schema information needed by the
@@ -1591,7 +1866,7 @@ reduce (PFla_op_t * p, int goalnt)
 
             /* first collect the position information ... */
             colname = COLUMN_NAME (att_pos, aat_nat);
-            assert (monomorphic (type_of (p, p->sem.serialize.pos)));
+            assert (monomorphic (pos_ty));
 
             ser_info = ser_info_item (
                            ser_map (ser_res (), colname),
@@ -1600,20 +1875,11 @@ reduce (PFla_op_t * p, int goalnt)
             /* align column name and selection list */
             clmnlist = column_list (clmnlist, colname);
 
-            /* add the sql operation to the select list */
-            selectlist = select_list (
-                             selectlist,
-                             transform_expression (
-                                 col_env_lookup (
-                                     COLMAP(R(p)),
-                                     p->sem.serialize.pos,
-                                     type_of (p, p->sem.serialize.pos)),
-                                 colname));
-
             /* ... and then the item information */
             for (unsigned int i = 0; i < PFarray_last (COLMAP(R(p))); i++) {
                 sql_column_env_t entry = col_env_at (COLMAP(R(p)), i);
-                if (entry.att == p->sem.serialize.item) {
+                if (((entry.att == item) && !(entry.type & aat_node)
+                    && (entry.type & ~aat_node)) && (entry.att != pos)) {
                     colname = COLUMN_NAME (att_item, entry.type);
 
                     ser_info = ser_info_item (
@@ -1623,77 +1889,103 @@ reduce (PFla_op_t * p, int goalnt)
                     /* align column name and selection list */
                     clmnlist = column_list (clmnlist, colname);
 
-                    /* add the sql operation to the select list */
-                    selectlist = select_list (
-                                     selectlist,
-                                     transform_expression (
-                                         entry.expression,
-                                         colname));
+
+                        /* add the sql operation to the select list */
+                        selectlist = select_list (
+                                         selectlist,
+                                         transform_expression (
+                                             entry.expression,
+                                             colname));
                 }
             }
 
-            /* create a special result relation */
-            PFsql_t *result = table_def (PF_SQL_TABLE_RESULT, clmnlist);
+     
+            PFsql_t *finalquery = NULL;
+            /* in the result are only nodes */
+            if ((item_ty & aat_node) && !(item_ty & ~aat_node)) {
+                
+                ser_info =
+                    ser_info_item (
+                        ser_type (lit_str("Type"),lit_str("NODES_ONLY")),
+                        ser_info);
+                        
+                /* we we do not need a join to serialize,
+                 * so we eturn just the values we get */ 
+                if (SER_REPORT(p) != ser_no) {
+                    PFsql_aident_t twig_alias =
+                        col_env_lookup_step (COLMAP(R(p)), item, item_ty);
+
+                    assert (twig_alias != PF_SQL_ALIAS_UNBOUND);
+
+                    finalquery = select (select_list (
+                                                column_assign (
+                                                    PRE(twig_alias),
+                                                    PRE_),
+                                                column_assign (
+                                                    SIZE(twig_alias),
+                                                    SIZE_),
+                                                column_assign (
+                                                    KIND(twig_alias),
+                                                    KIND_),
+                                                column_assign (
+                                                    VALUE(twig_alias),
+                                                    VALUE_),
+                                                column_assign (
+                                                    NAME(twig_alias),
+                                                    NAME_),
+                                                column_assign (
+                                                    NAME(twig_alias),
+                                                    TAG_)),
+                                         transform_frommap (R(p)),
+                                         transform_wheremap (R(p)),
+                                         stmt_list (col_env_lookup(
+                                                        COLMAP(R(p)), pos, pos_ty),
+                                                    PRE_),
+                                         NULL);
+                }
+                /* inner join */ 
+                else {
+                    finalquery = serialize_ (p, PFsql_inner_join, selectlist);
+                }
+            }
+            /* the result contains nodes and atomic values */
+            else if ((item_ty & aat_node)) {
+                ser_info =
+                    ser_info_item (
+                        ser_type (lit_str("Type"),lit_str("ATOMIC_AND_NODES")),
+                        ser_info);
+                finalquery = serialize_ (p, PFsql_left_outer_join, selectlist);
+            }
+            /* our result contains only atomic values */
+            else {
+                ser_info =
+                    ser_info_item (
+                        ser_type (lit_str("Type"), lit_str("ATOMIC_ONLY")),
+                        ser_info);
+                finalquery = select (select_list (
+                                            selectlist),
+                                     transform_frommap (R(p)),
+                                     transform_wheremap (R(p)),
+                                     stmt_list (col_env_lookup(
+                                                    COLMAP(R(p)), pos, pos_ty)),
+                                     NULL);
+            }
 
             /* construct schema information for serialization */
             ser_info =
                 ser_info_item (
                     ser_comment (
                         "START SCHEMA INFORMATION ** DO NOT EDIT THESE LINES"),
-                ser_info_item (
-                    ser_map (ser_doc (), table_name (PF_SQL_TABLE_DOC)),
-                ser_info_item (
-                    ser_map (ser_doc (), PRE_),
-                ser_info_item (
-                    ser_map (ser_doc (), SIZE_),
-                ser_info_item (
-                    ser_map (ser_doc (), LEVEL_),
-                ser_info_item (
-                    ser_map (ser_doc (), KIND_),
-                ser_info_item (
-                    ser_map (ser_doc (), VALUE_),
-                ser_info_item (
-                    ser_map (ser_doc (), NAME_),
-                ser_info_item (
-                    ser_map (ser_doc (), TAG_),
-                ser_info_item (
-                    ser_map (ser_res (), result),
-                    ser_info))))))))));
+                    ser_info
+                    );
 
-            /* the result relation is the same query as in the right underlying node.
-             * We only get rid of the attributes that are different to those
-             * referenced by the serialize semantics.
-             * All what we have to do is to copy everything from the right child.
-             */
-            execute (comment ("===================="),
-                     comment ("= RESULT RELATIONS ="),
-                     comment ("===================="),
-                     bind (result,
-                           select (selectlist,
-                                   transform_frommap (R(p)),
-                                   transform_wheremap (R(p)),
-                                   NULL)));
-
-            /* the reason why we need those special relations 'document' and
-             * 'result' is that the externalized serializer expects those
-             * special relation names to construct a query
-             */
-            execute (bind (table_def (PF_SQL_TABLE_DOC,
-                                      column_list (
-                                          PRE_,
-                                          SIZE_,
-                                          LEVEL_,
-                                          KIND_,
-                                          VALUE_,
-                                          TAG_,
-                                          NAME_)),
-                           collect_fragments (L(p))));
 
             /* the final query consists of the schema information needed
              * by the serializer and the with clause conflating all queries
              * translated to this point.
              */
-            sql_stmts = root (ser_info, with (sql_stmts));
+            assert (finalquery);
+            sql_stmts = root (ser_info, with (sql_stmts, finalquery));
         }   break;
 
         /* Query:  serialize (Frag, empty_tbl) */
@@ -1793,8 +2085,8 @@ reduce (PFla_op_t * p, int goalnt)
                 valuesquery = values (PFsql_list_list_(rcount, 
                                              (const PFsql_t **) l_list)); 
 
-                execute (comment ("Binding due to multi value literal table"),
-                         bind (table_def (
+                execute (comment ("Binding due to multi value literal table"));
+                execute (bind (table_def (
                                    newtable,
                                    columnlist),
                                    valuesquery));
@@ -1953,8 +2245,8 @@ reduce (PFla_op_t * p, int goalnt)
 
                 /* bind the right side and ensure the distinct
                    is evaluated on the join attribute only */
-                execute (comment ("binding due to semijoin"),
-                         bind (table_def (
+                execute (comment ("binding due to semijoin"));
+                execute (bind (table_def (
                                    newtable,
                                    column_list (
                                        column_name (colname))),
@@ -1965,6 +2257,7 @@ reduce (PFla_op_t * p, int goalnt)
                                            column_name (colname))),
                                    transform_frommap (R(p)),
                                    transform_wheremap (R(p)), 
+                                   NULL,
                                    NULL)));
 
                 /* prepare a new sql annotation
@@ -2125,15 +2418,17 @@ reduce (PFla_op_t * p, int goalnt)
                 op = PFsql_difference;
 
             /* dump the operator binding */
-            execute (comment ("binding due to set operation"),
-                     bind (table_def (newtable, columnlist),
+            execute (comment ("binding due to set operation"));
+            execute (bind (table_def (newtable, columnlist),
                            op (select (selectlist1,
                                        transform_frommap (L(p)),
                                        transform_wheremap (L(p)),
+                                       NULL,
                                        NULL),
                                select (selectlist2,
                                        transform_frommap (R(p)),
                                        transform_wheremap (R(p)),
+                                       NULL,
                                        NULL))));
 
             /* mark node p as bound */
@@ -2355,13 +2650,14 @@ reduce (PFla_op_t * p, int goalnt)
                                 transform_frommap (L(p)),
                                 where_list (transform_wheremap (L(p)),
                                              is_not (expr, null ())),
+                                NULL,
                                 NULL);
 
                          query = (query)?union_(query,temp):temp; 
                     }
 
-                execute (comment ("bind due to polymorphic cast"),
-                         bind (table_def (newtable, columnlist),
+                execute (comment ("bind due to polymorphic cast"));
+                execute (bind (table_def (newtable, columnlist),
                                query));
 
                 BOUND(p) = true;
@@ -2452,11 +2748,12 @@ reduce (PFla_op_t * p, int goalnt)
                                           column_name (res_col)));
 
             /* dump the operator binding */
-            execute (comment ("binding due to aggregate"),
-                     bind (table_def (newtable, columnlist),
+            execute (comment ("binding due to aggregate"));
+            execute (bind (table_def (newtable, columnlist),
                            select (selectlist,
                                    transform_frommap (L(p)),
                                    transform_wheremap (L(p)),
+                                   NULL,
                                    groupbylist)));
 
             /* mark node p as bound */
@@ -2590,13 +2887,14 @@ reduce (PFla_op_t * p, int goalnt)
             groupbylist = column_list (groupbylist, loop);
 
             /* DUMP THE OPERATOR BINDING */
-            execute (comment ("binding due to count aggregate"),
-                     bind (table_def (newtable, columnlist),
+            execute (comment ("binding due to count aggregate"));
+            execute (bind (table_def (newtable, columnlist),
                            select (selectlist,
                                    from_list (
-                                       on (outer_join (part_from, loop_from),
+                                       on (right_outer_join (part_from, loop_from),
                                            eq (part_expr, loop))),
                                    transform_wheremap (LL(p)),
+                                   NULL,
                                    groupbylist)));
 
             /* mark node p as bound */
@@ -2959,9 +3257,10 @@ reduce (PFla_op_t * p, int goalnt)
 
             /* call a helper function that does the 'real' job */
             construct_twig (p, content, new_root, sortkey_list);
-
-            where_list_add (WHERELIST(p),
-                            eq (LEVEL(new_root), lit_int (0)));
+            
+            if (SER_REPORT(p) != ser_yes)
+                where_list_add (WHERELIST(p),
+                                eq (LEVEL(new_root), lit_int (0)));
         }   break;
 
         /* Constr: twig (docnode (Rel, fcns (nil, nil))) */
@@ -3025,12 +3324,12 @@ reduce (PFla_op_t * p, int goalnt)
                 if (l_csize->kind != sql_union) {
                     assert (l_csize->kind == sql_tbl_name);
                     l_csize = select (select_list (ITER_, SIZE_),
-                                      l_csize, NULL, NULL);
+                                      l_csize, NULL, NULL, NULL);
                 }
                 if (r_csize->kind != sql_union) {
                     assert (r_csize->kind == sql_tbl_name);
                     r_csize = select (select_list (ITER_, SIZE_),
-                                      r_csize, NULL, NULL);
+                                      r_csize, NULL, NULL, NULL);
                 }
 
                 CSIZE(p) = union_ (l_csize, r_csize);
@@ -3095,7 +3394,7 @@ reduce (PFla_op_t * p, int goalnt)
                                    column_assign (lit_str (""), VALUE_),
                                    column_assign (lit_str (""), NAME_)),
                                from_list (
-                                   on (outer_join (
+                                   on (right_outer_join (
                                            alias_bind (
                                                CSIZE(R(p)),
                                                alias (csize_alias)),
@@ -3104,6 +3403,7 @@ reduce (PFla_op_t * p, int goalnt)
                                                alias (name_from.alias))),
                                        eq (ITER(csize_alias),
                                            iter_col))),
+                               NULL,
                                NULL,
                                column_list (iter_col));
 
@@ -3189,7 +3489,7 @@ reduce (PFla_op_t * p, int goalnt)
                                    column_assign (lit_str (""), VALUE_),
                                    column_assign (item_col, NAME_)),
                                from_list (
-                                   on (outer_join (
+                                   on (right_outer_join (
                                            alias_bind (
                                                CSIZE(R(p)),
                                                alias (csize_alias)),
@@ -3198,6 +3498,7 @@ reduce (PFla_op_t * p, int goalnt)
                                                alias (name_from.alias))),
                                        eq (ITER(csize_alias),
                                            iter_col))),
+                               NULL,
                                NULL,
                                grpbylist);
 
@@ -3305,15 +3606,16 @@ reduce (PFla_op_t * p, int goalnt)
                                       SIZE_)),
                               transform_frommap_ext (p, frag),
                               transform_wheremap (p),
+                              NULL,
                               NULL);
                 iter_size = (i == 0) ? sel : union_ (iter_size, sel);
             }
             
             iter_size_tbl = new_table_name (), 
-            execute (comment ("====================="),
-                     comment ("= CONSTRUCTOR SIZES ="),
-                     comment ("====================="),
-                     bind (table_def (iter_size_tbl,
+            execute (comment ("====================="));
+            execute (comment ("= CONSTRUCTOR SIZES ="));
+            execute (comment ("====================="));
+            execute (bind (table_def (iter_size_tbl,
                                       column_list (ITER_, SIZE_)),
                            iter_size));
 
@@ -3347,15 +3649,16 @@ reduce (PFla_op_t * p, int goalnt)
                 sel = select (selectlist,
                               transform_frommap_ext (p, frag),
                               transform_wheremap (p),
+                              NULL,
                               NULL);
                 content = (i == 0) ? sel : union_ (content, sel);
             }
 
             content_tbl = new_table_name (); 
-            execute (comment ("======================="),
-                     comment ("= CONSTRUCTOR CONTENT ="),
-                     comment ("======================="),
-                     bind (table_def (
+            execute (comment ("======================="));
+            execute (comment ("= CONSTRUCTOR CONTENT ="));
+            execute (comment ("======================="));
+            execute (bind (table_def (
                                content_tbl,
                                column_list (
                                    ITER_, TWIG_PRE_, POS_, PRE_,
@@ -3366,6 +3669,7 @@ reduce (PFla_op_t * p, int goalnt)
                                   ITER_, TWIG_PRE_, POS_, PRE_,
                                   SIZE_, LEVEL_, KIND_, VALUE_, NAME_),
                               table_name (content_tbl),
+                              NULL,
                               NULL, NULL);
         }   break;
 
@@ -3447,7 +3751,7 @@ reduce (PFla_op_t * p, int goalnt)
        as many operators as possible into one SQL statement.  */
     if (bind)
         bind_operator (p, distinct);
-    else if (p->refctr > 1 && !FRAG_OP(p)) {
+    else if (REFCTR(p) > 1 && !FRAG_OP(p)) {
         execute (comment ("binding due to multiple references"));
         bind_operator (p, distinct);
     }
@@ -3569,6 +3873,16 @@ PFlalg2sql (PFla_op_t * n)
   /* Label and annotate the complete DAG. */
   label (n);
   PFla_dag_reset (n);
+
+  /* check if serialize returns a node* */
+  PFalg_simple_type_t ser_ty = PFprop_type_of (n, n->sem.serialize.item);
+  /* check if ser_ty has no other type */
+  if ((ser_ty & aat_node) && !(ser_ty & ~aat_node)) {
+      /* infer the serialization information */
+      infer_ser_info (n);
+
+      PFla_dag_reset (n);
+  }
 
   /* Assign the delta-pre, level, and size value for node constructors */
   assign_twig_info (n, 0, 0);

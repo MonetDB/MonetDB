@@ -41,6 +41,7 @@
 #define ser_res()                    PFsql_serialization_result()
 #define ser_doc()                    PFsql_serialization_document()
 #define ser_comment(str)             PFsql_serialization_comment((str))
+#define ser_type(t,q)                PFsql_serialization_type((t),(q))
 
 /* .......... Tables .......... */
 #define schema_table_name(s,t)       PFsql_schema_table_name(s,t)
@@ -55,23 +56,25 @@
 #define star()                       PFsql_star()
 
 /* .......... Top Level Query Constructs .......... */
-#define with(a)                      PFsql_with(a)
-#define common_table_expr(...)       PFsql_common_table_expr(__VA_ARGS__)
+#define with(a,f)                    PFsql_with(a,f)
+#define common_table_expr(o,n)       PFsql_common_table_expr(o,n)
 #define comment(...)                 PFsql_comment(__VA_ARGS__)
 #define bind(t,e)                    PFsql_bind(t,e)
 #define nil()                        PFsql_nil()
 
 /* .......... Select .......... */
-#define select_distinct(sl,fl,wl,gl) PFsql_select(true,sl,fl,wl,gl)
-#define select(sl,fl,wl,gl)          PFsql_select(false,sl,fl,wl,gl)
-#define select_list(...)             PFsql_select_list(__VA_ARGS__)
-#define column_assign(e,c)           PFsql_column_assign(e,c)
-#define from_list(...)               PFsql_from_list(__VA_ARGS__)
-#define add_from(list,item)          PFsql_add_from(list,item)
-#define alias_bind(t,a)              PFsql_alias_bind((t),(a))
-#define on(jn,ex)                    PFsql_on(jn, ex)
-#define outer_join(tbl1, tbl2)       PFsql_outer_join(tbl1, tbl2)
-#define where_list(...)              PFsql_where_list(__VA_ARGS__)
+#define select_distinct(sl,fl,wl,ol,gl) PFsql_select(true,sl,fl,wl,ol,gl)
+#define select(sl,fl,wl,ol,gl)          PFsql_select(false,sl,fl,wl,ol,gl)
+#define select_list(...)                PFsql_select_list(__VA_ARGS__)
+#define column_assign(e,c)              PFsql_column_assign(e,c)
+#define from_list(...)                  PFsql_from_list(__VA_ARGS__)
+#define add_from(list,item)             PFsql_add_from(list,item)
+#define alias_bind(t,a)                 PFsql_alias_bind((t),(a))
+#define on(jn,ex)                       PFsql_on(jn, ex)
+#define right_outer_join(tbl1, tbl2)    PFsql_right_outer_join(tbl1, tbl2)
+#define left_outer_join(tbl1, tbl2)     PFsql_left_outer_join(tbl1, tbl2)
+#define inner_join(tbl1, tbl2)          PFsql_inner_join(tbl1, tbl2)
+#define where_list(...)                 PFsql_where_list(__VA_ARGS__)
 
 /* .......... Union .......... */
 #define union_(a,b)                  PFsql_union(a,b)

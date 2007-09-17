@@ -109,6 +109,7 @@ enum PFsql_kind_t {
                                (required by serialization) */
     , sql_ser_res           /* identifier for the schema of the result sequence
                                (required by serialization) */
+    , sql_ser_type          /* type */
 
     , sql_tbl_def           /* a table name definition */
     , sql_schema_tbl_name   /* a database table reference (schema+tablename) */
@@ -136,7 +137,9 @@ enum PFsql_kind_t {
                                (left child of sql_from_list operator) */
     , sql_on                /* a join expression
                                (left child of sql_from_list operator) */
-    , sql_outer_join        /* RIGHT OUTER JOIN clause */
+    , sql_right_outer_join  /* RIGHT OUTER JOIN clause */
+    , sql_left_outer_join   /* LEFT OUTER JOIN clause */
+    , sql_inner_join        /* INNER JOIN clause */
 
     , sql_union             /* UNION ALL expression */
     , sql_diff              /* EXCEPT ALL expression */
@@ -204,6 +207,17 @@ enum PFsql_kind_t {
 /* SQL operator kinds. */
 typedef enum PFsql_kind_t PFsql_kind_t;
 
+enum ser_report_t {
+       ser_no      = 0      /*< no serialization possible
+                                just by expanding the schema.*/
+    ,  ser_tc      = 1      /*< serialization by expanding schema is
+                                possible but we have to take care, if
+                                ancestors are willing to let us do this. */
+    ,  ser_yes     = 2      /*< serialization is possible, there are no
+                                constructors involved. */
+};
+typedef enum ser_report_t ser_report_t;
+
 /**
  * Semantic content in SQL operators.
  */
@@ -258,7 +272,7 @@ union PFsql_sem_t {
 typedef union PFsql_sem_t PFsql_sem_t;
 
 /** Each node has at most for childs */
-#define PFSQL_OP_MAXCHILD  4
+#define PFSQL_OP_MAXCHILD  5
 
 /**
  * SQL operator node.
@@ -297,6 +311,7 @@ struct PFsql_alg_ann_t {
                                     with the twig-constructor */
     unsigned int twig_level;   /**< local level value for constructions
                                     with the twig-constructor */
+    ser_report_t ser_report;       /**< serialization report */
 };
 typedef struct PFsql_alg_ann_t PFsql_alg_ann_t;
 
@@ -309,8 +324,8 @@ typedef struct PFsql_alg_ann_t PFsql_alg_ann_t;
 /**
  * A sequence of `common table expression'.
  */
-#define PFsql_common_table_expr(...) \
-            PFsql_generic_list (PFsql_common_table_expr_, __VA_ARGS__)
+PFsql_t* PFsql_common_table_expr(const PFsql_t *old, const PFsql_t *new);
+
 /**
  * A sequence of columns.
  */
@@ -365,6 +380,10 @@ PFsql_t * PFsql_root (const PFsql_t *ser_info, const PFsql_t *query);
  */
 PFsql_t * PFsql_serialization_info_item (const PFsql_t *info,
                                          const PFsql_t *list);
+
+PFsql_t * PFsql_serialization_type (const PFsql_t *type,
+                                    const PFsql_t *qtype);
+
 /**
  * Some specific schema information used by the serializer.
  * We communicate to the serializer the document and 
@@ -431,7 +450,7 @@ PFsql_t * PFsql_star (void);
 /**
  * Create a SQL tree node representing the SQL `WITH' operator.
  */
-PFsql_t * PFsql_with (const PFsql_t *a);
+PFsql_t * PFsql_with (const PFsql_t *a, const PFsql_t *fs);
 /**
  * Create a SQL tree representing a list of SQL
  * `common table expressions'.
@@ -469,6 +488,7 @@ PFsql_t * PFsql_select (bool distinct,
                         const PFsql_t *selectlist,
                         const PFsql_t *fromlist,
                         const PFsql_t *wherelist,
+                        const PFsql_t *orderbylist,
                         const PFsql_t *groupbylist);
 /**
  * A sequence of select_list-expressions.
@@ -525,7 +545,18 @@ PFsql_t * PFsql_on (PFsql_t *join, PFsql_t *expr);
 /**
  * Join two relations with a `Right Outer Join'.
  */
-PFsql_t * PFsql_outer_join (PFsql_t *tblref1, PFsql_t *tblref2);
+PFsql_t * PFsql_right_outer_join (PFsql_t *tblref1, PFsql_t *tblref2);
+
+/**
+ * Join two relations with `Left Outer Join'.
+ */
+PFsql_t * PFsql_left_outer_join (PFsql_t *tblref1, PFsql_t *tblref2);
+
+/**
+ * Join two relations with `Inner Join'.
+ */
+PFsql_t * PFsql_inner_join (PFsql_t *tblref1, PFsql_t *tblref2);
+
 /**
  * A sequence of where_list-expressions.
  *
