@@ -911,17 +911,16 @@ step_sibling (PFla_op_t *p, PFsql_aident_t ctx, PFsql_aident_t step,
     from_list_add (FROMLIST(p), fragment, par);
 
     /* parent step */
+    /* ctx.pre > par.pre and par.pre + par.size >= ctx.pre */
     where_list_add (WHERELIST(p),
-                    gt (PRE(ctx), PRE(par)));
-    where_list_add (WHERELIST(p),
-                    gteq (add (PRE(par), SIZE(par)), PRE(ctx)));
+                    between (PRE(ctx), add (PRE(par), lit_int (1)),
+                             add(PRE(par), SIZE(par))));
     where_list_add (WHERELIST(p),
                     eq (add (LEVEL(par), lit_int (1)), LEVEL(ctx)));
     /* child step */
     where_list_add (WHERELIST(p),
-                    gt (PRE(step), PRE(par)));
-    where_list_add (WHERELIST(p),
-                    gteq (add (PRE(par), SIZE(par)), PRE(step)));
+                    between (PRE(step), add (PRE(par), lit_int (1)),
+                             add (PRE(par), SIZE(par))));
     where_list_add (WHERELIST(p),
                     eq (LEVEL(ctx), LEVEL(step)));
 }
@@ -936,17 +935,15 @@ step_axis (PFla_op_t *p, PFsql_aident_t ctx, PFsql_aident_t step,
         /* parent axis */
         case alg_par:
             where_list_add (WHERELIST(p),
-                            gt (PRE(ctx), PRE(step)));
-            where_list_add (WHERELIST(p),
-                            gteq (add (PRE(step), SIZE(step)), PRE(ctx)));
+                            between (PRE(ctx), add (PRE(step), lit_int (1)),
+                                     add (PRE(step), SIZE(step))));
             break;
 
         /* ancestor-or-self axis */
         case alg_anc_s:
             where_list_add (WHERELIST(p),
-                            gteq (PRE(ctx), PRE(step)));
-            where_list_add (WHERELIST(p),
-                            gteq (add (PRE(step), SIZE(step)), PRE(ctx)));
+                            between (PRE(ctx), PRE(step),
+                                     add (PRE(step), SIZE(step))));
             break;
 
         /* descendant axis */
@@ -956,17 +953,15 @@ step_axis (PFla_op_t *p, PFsql_aident_t ctx, PFsql_aident_t step,
         /* attribute axis */
         case alg_attr:
             where_list_add (WHERELIST(p),
-                            gt (PRE(step), PRE(ctx)));
-            where_list_add (WHERELIST(p),
-                            gteq (add (PRE(ctx), SIZE(ctx)), PRE(step)));
+                            between (PRE(step), add (PRE(ctx), lit_int (1)),
+                                     add (PRE(ctx), SIZE(ctx))));
             break;
 
         /* descendant-or-self axis */
         case alg_desc_s:
             where_list_add (WHERELIST(p),
-                            gteq (PRE(step), PRE(ctx)));
-            where_list_add (WHERELIST(p),
-                            gteq (add (PRE(ctx), SIZE(ctx)), PRE(step)));
+                            between (PRE(step), PRE(ctx),
+                                     add (PRE(ctx), SIZE(ctx))));
             break;
 
         /* following-sibling axis */
@@ -2789,7 +2784,7 @@ reduce (PFla_op_t * p, int goalnt)
                 assert (p->kind == la_guide_step ||
                         p->kind == la_guide_step_join);
 
-                #define GUIDE_BARRIER 10 
+                #define GUIDE_BARRIER 1 
 
                 if (p->sem.step.guide_count > GUIDE_BARRIER) {
                     step_guide_join (p,

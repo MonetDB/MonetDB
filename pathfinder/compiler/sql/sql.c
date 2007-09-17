@@ -808,6 +808,15 @@ PFsql_gteq (const PFsql_t *a, const PFsql_t *b)
     return wire2 (sql_gteq, a, b);
 }
 
+/*
+ * Create a SQL tree node representing a 
+ * `between' predicate.
+ */
+PFsql_t * PFsql_between(const PFsql_t *clmn, const PFsql_t *a, const PFsql_t *b)
+{
+    return wire3 (sql_between, clmn, a, b); 
+}
+
 /**
  * Create a tree node representing the SQL
  * `like' statement to compare a string

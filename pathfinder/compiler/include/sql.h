@@ -164,6 +164,7 @@ enum PFsql_kind_t {
     , sql_eq                /* = comparison */
     , sql_gt                /* > comparison */
     , sql_gteq              /* >= comparison */
+    , sql_between           /* range predicate */
     , sql_like              /* like comparison */
     , sql_in                /* in comparison */
     , sql_stmt_list          /* an item of a list of statments 
@@ -701,6 +702,13 @@ PFsql_t * PFsql_gt (const PFsql_t *a, const PFsql_t *b);
  * @param   b
  */
 PFsql_t * PFsql_gteq (const PFsql_t *a, const PFsql_t *b);
+
+/*
+ * Create a SQL tree node representing a 
+ * `between' predicate.
+ */
+PFsql_t * PFsql_between(const PFsql_t *clmn, const PFsql_t *a, const PFsql_t *b);
+
 /**
  * Create a tree node representing the SQL
  * `like' statement to compare a string

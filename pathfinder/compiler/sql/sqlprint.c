@@ -359,6 +359,16 @@ print_condition (PFsql_t *n)
             print_statement (L(n));
             PFprettyprintf (")");
             break;
+        
+        case sql_between:
+            PFprettyprintf ("(");
+            print_statement (n->child[0]);
+            PFprettyprintf (" BETWEEN ");
+            print_statement (n->child[1]);
+            PFprettyprintf (" AND ");
+            print_statement (n->child[2]);        
+            PFprettyprintf (")");
+            break;
             
     	case sql_like:
     	    if (R(n)->kind != sql_lit_str)

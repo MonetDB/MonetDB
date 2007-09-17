@@ -111,6 +111,7 @@
 #define eq(a,b)                      PFsql_eq(a,b)
 #define gt(a,b)                      PFsql_gt(a,b)
 #define gteq(a,b)                    PFsql_gteq(a,b)
+#define between(c,a,b)               PFsql_between(c,a,b)
 #define like(a,b)                    PFsql_like(a,b)
 #define in(a,b)                      PFsql_in(a,b)
 #define stmt_list(...)               PFsql_stmt_list(__VA_ARGS__)
