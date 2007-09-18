@@ -1,9 +1,19 @@
 #!/usr/bin/perl -w
+# The contents of this file are subject to the MonetDB Public License
+# Version 1.1 (the "License"); you may not use this file except in
+# compliance with the License. You may obtain a copy of the License at
+# http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
 #
-# Run a loop-lifted XQuery SQL expression and serialize the
-# result into the XQuery Data Model.
+# Software distributed under the License is distributed on an "AS IS"
+# basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+# License for the specific language governing rights and limitations
+# under the License.
 #
-# (c) 2007 Jens Teubner, TU Muenchen, Database Systems Group
+# The Original Code is the MonetDB Database System.
+#
+# The Initial Developer of the Original Code is CWI.
+# Portions created by CWI are Copyright (C) 1997-2007 CWI.
+# All Rights Reserved.
 
 use strict;
 
@@ -140,7 +150,7 @@ else {
 
 my $final_query = "";    # actual query sent to DBMS
 $final_query = "$input_query";
-print $final_query;
+#print $final_query;
 
 # connect to the database
 my $dbh = DBI->connect ($DSN)
