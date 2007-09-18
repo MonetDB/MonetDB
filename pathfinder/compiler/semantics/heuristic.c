@@ -562,8 +562,8 @@ try_rewrite(PFpnode_t *p, PFpnode_t **stack, int depth, int curvar)
     /* I do support conjunctions in PRED, EXPR1 */
     while(depth > 0 && stack[depth-1]->kind == p_and) depth--;
 
-    /* right-hand side cannot refer to position(), first(), last() */
-    if (!PFposition_safe_predicate(R(p), true)) return 0; 
+    /* predicate cannot do position()/first()/last() (in RHS or conjunctions) */
+    if (!PFposition_safe_predicate(stack[depth], true)) return 0; 
 
     /* text steps need to go upwards from the text-nodes given by the idx */
     PFpnode_t *UP  = cpy(VAR4); 
