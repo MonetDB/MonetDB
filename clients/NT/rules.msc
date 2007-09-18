@@ -26,7 +26,7 @@ MONETDB_LIBS=/libpath:"$(MONETDB_PREFIX)\lib"
 
 pkg = MonetDB
 CONFIG_H=clients_config.h
-VERSION=1.19.0
+VERSION=1.21.0
 #       ^^^^^^
 # Maintained via vertoo. Please don't modify by hand!
 # Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.

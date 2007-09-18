@@ -2873,7 +2873,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_667BD650736E43C9A8B6899179FA0CAA"
             {
-            "SourcePath" = "8:share\\doc\\MonetDB-SQL-2.19.0\\dump-restore.txt"
+            "SourcePath" = "8:share\\doc\\MonetDB-SQL-2.21.0\\dump-restore.txt"
             "TargetName" = "8:dump-restore.txt"
             "Tag" = "8:"
             "Folder" = "8:_6C21CE578F0941D09FDD9951A229FF37"
@@ -4073,7 +4073,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_A9DB6CF8297A4BEEAF7A6D4958A4B0D6"
             {
-            "SourcePath" = "8:share\\doc\\MonetDB-SQL-2.19.0\\dump-restore.html"
+            "SourcePath" = "8:share\\doc\\MonetDB-SQL-2.21.0\\dump-restore.html"
             "TargetName" = "8:dump-restore.html"
             "Tag" = "8:"
             "Folder" = "8:_6C21CE578F0941D09FDD9951A229FF37"
@@ -5444,7 +5444,7 @@
                                 {
                                     "{F27BD5C5-A65D-4608-96D4-7C5DA1F76302}:_6C21CE578F0941D09FDD9951A229FF37"
                                     {
-                                    "Name" = "8:MonetDB-SQL-2.19.0"
+                                    "Name" = "8:MonetDB-SQL-2.21.0"
                                     "AlwaysCreate" = "11:FALSE"
                                     "Condition" = "8:"
                                     "Transitive" = "11:FALSE"

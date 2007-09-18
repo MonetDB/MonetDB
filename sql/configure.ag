@@ -18,7 +18,7 @@
 
 dnl Process this file with autoconf to produce a configure script.
 AC_PREREQ(2.53)
-AC_INIT([MonetDB SQL Server], [2.19.0], [monet@cwi.nl], [sql])
+AC_INIT([MonetDB SQL Server], [2.21.0], [monet@cwi.nl], [sql])
 #                              ^^^^^^
 # Maintained via vertoo. Please don't modify by hand!
 # Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
@@ -54,7 +54,7 @@ AM_MONETDB_XQ_VARS_1()
 
 
 dnl Check for Monet
-req_monetdb_ver='1.18.0'
+req_monetdb_ver='1.20.0'
 #                ^^^^^^
 # Maintained via vertoo. Please don't modify by hand!
 # Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
@@ -66,7 +66,7 @@ if test "x$have_monetdb" != xyes; then
 		AC_MSG_ERROR([MonetDB/SQL requires at least version $req_monetdb_ver of MonetDB, but only version $MONETDBVERS was found.])
 	fi
 fi
-req_clients_ver='1.19.0'
+req_clients_ver='1.20.0'
 #                ^^^^^^
 # Maintained via vertoo. Please don't modify by hand!
 # Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
@@ -77,12 +77,12 @@ AM_MONETDB_TOOLS()
 AM_MONETDB_OPTIONS()
 AM_MONETDB_LIBS()
 AM_MONETDB_UTILS()
-req_monetdb4_ver='4.19.0'
+req_monetdb4_ver='4.20.0'
 #                 ^^^^^^
 # Maintained via vertoo. Please don't modify by hand!
 # Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
 AM_MONETDB4($req_monetdb4_ver)
-req_monetdb5_ver='5.1.0'
+req_monetdb5_ver='5.2.0'
 #                 ^^^^^
 # Maintained via vertoo. Please don't modify by hand!
 # Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
