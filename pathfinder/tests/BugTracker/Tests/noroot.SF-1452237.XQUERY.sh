@@ -1,1 +1,1 @@
-echo 1 | $XQUERY_CLIENT -o xml-noroot
+echo 1 | $XQUERY_CLIENT -f xml-noroot
