@@ -336,6 +336,13 @@ static PFsql_t *max_pre_frag = NULL;
 #define TSIZE(p)     ((p)->sql_ann->twig_size)
 #define TLEVEL(p)    ((p)->sql_ann->twig_level)
 
+/* check if sql_statement is a literal */
+#define IS_LITERAL(s)     (s->kind == sql_lit_int \
+                         || s->kind == sql_lit_lng \
+                         || s->kind == sql_lit_dec \
+                         || s->kind == sql_lit_str)
+
+
 /* .......... Generic Helper Functions .......... */
 
 /**
@@ -1682,7 +1689,7 @@ cast_ (PFsql_t * expr, PFalg_simple_type_t ty, PFalg_simple_type_t res_ty)
 }
 
 static PFsql_t *
-serialize_ (PFla_op_t * p, PFsql_t * (*join)(PFsql_t* a, PFsql_t *b), PFsql_t *selectlist)
+serialize_ (PFla_op_t * p, PFsql_t *selectlist)
 {
     assert (p);
     assert (p->kind == la_serialize);
@@ -1734,6 +1741,8 @@ serialize_ (PFla_op_t * p, PFsql_t * (*join)(PFsql_t* a, PFsql_t *b), PFsql_t *s
 
     item_pre = col_env_lookup (COLMAP(R(p)), p->sem.serialize.item, aat_pre);
 
+    PFsql_t *cpos = col_env_lookup (COLMAP (R(p)), pos, pos_ty);
+
     finalquery = PFsql_select (
                           false,
                           select_list (
@@ -1757,8 +1766,8 @@ serialize_ (PFla_op_t * p, PFsql_t * (*join)(PFsql_t* a, PFsql_t *b), PFsql_t *s
                                   NAME(docalias2),
                                   TAG_)),
                           from_list (
-                             on (join (
-                                 on (join (result,
+                             on (left_outer_join (
+                                 on (left_outer_join (result,
                                      alias_bind(document, alias (docalias1))),
                                      eq (PRE(docalias1), item_pre)),
                                      alias_bind (document, alias (docalias2))),
@@ -1767,6 +1776,8 @@ serialize_ (PFla_op_t * p, PFsql_t * (*join)(PFsql_t* a, PFsql_t *b), PFsql_t *s
                                       gteq (add (PRE(docalias1), SIZE(docalias1)),
                                           PRE(docalias2))))),
                           NULL,
+                          (IS_LITERAL(cpos))?
+                          stmt_list (PRE(docalias2)):
                           stmt_list (col_env_lookup (COLMAP (R(p)), pos, pos_ty),
                                      PRE(docalias2)),
                           NULL);
@@ -1897,6 +1908,10 @@ reduce (PFla_op_t * p, int goalnt)
 
      
             PFsql_t *finalquery = NULL;
+
+            PFsql_t *cpos = col_env_lookup(
+                                COLMAP(R(p)), pos, pos_ty);
+
             /* in the result are only nodes */
             if ((item_ty & aat_node) && !(item_ty & ~aat_node)) {
                 
@@ -1936,8 +1951,10 @@ reduce (PFla_op_t * p, int goalnt)
                                                     TAG_)),
                                          transform_frommap (R(p)),
                                          transform_wheremap (R(p)),
+                                         IS_LITERAL(cpos)?
+                                         stmt_list (PRE(twig_alias)):
                                          stmt_list (col_env_lookup(
-                                                        COLMAP(R(p)), pos, pos_ty),
+                                                     COLMAP(R(p)), pos, pos_ty),
                                                     PRE_),
                                          NULL);
                 }
@@ -1981,7 +1998,9 @@ reduce (PFla_op_t * p, int goalnt)
                                      between (PRE(docalias2), PRE(docalias1),
                                               add(PRE(docalias1),SIZE(docalias1))));
 
-                    finalquery = select (select_list (
+                    finalquery = PFsql_select (
+                                          false,
+                                          select_list (
                                                 column_assign (
                                                     PRE(docalias2),
                                                     PRE_),
@@ -2001,7 +2020,14 @@ reduce (PFla_op_t * p, int goalnt)
                                                     NAME(docalias2),
                                                     TAG_)),
                                           transform_frommap (p),
-                                          transform_wheremap (p));
+                                          transform_wheremap (p),
+                                          IS_LITERAL(cpos)?
+                                          stmt_list (PRE(docalias2)):
+                                          stmt_list (col_env_lookup(
+                                                        COLMAP(R(p)), pos, pos_ty),
+                                                     PRE_),
+                                          NULL
+                                          );
                 }
             }
             /* the result contains nodes and atomic values */
@@ -2010,7 +2036,7 @@ reduce (PFla_op_t * p, int goalnt)
                     ser_info_item (
                         ser_type (lit_str("Type"),lit_str("ATOMIC_AND_NODES")),
                         ser_info);
-                finalquery = serialize_ (p, PFsql_left_outer_join, selectlist);
+                finalquery = serialize_ (p, selectlist);
             }
             /* our result contains only atomic values */
             else {
@@ -2024,8 +2050,9 @@ reduce (PFla_op_t * p, int goalnt)
                                          selectlist),
                                      transform_frommap (R(p)),
                                      transform_wheremap (R(p)),
-                                     stmt_list (col_env_lookup(
-                                                    COLMAP(R(p)), pos, pos_ty)),
+                                     IS_LITERAL(cpos)?
+                                     NULL:
+                                     stmt_list (cpos),
                                      NULL);
             }
 

@@ -140,7 +140,7 @@ else {
 
 my $final_query = "";    # actual query sent to DBMS
 $final_query = "$input_query";
-#print $final_query;
+print $final_query;
 
 # connect to the database
 my $dbh = DBI->connect ($DSN)
