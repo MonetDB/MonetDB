@@ -532,8 +532,10 @@ var_findbind(PFpnode_t *v, PFpnode_t *EXPR2) {
 /* main rewrite function
  */
 static int
-try_rewrite(PFpnode_t *p, PFpnode_t **stack, int depth, int curvar)
+try_rewrite(PFpnode_t **stack, int depth, int curvar)
 {
+    PFpnode_t *p = stack[depth];
+
     /* my rewrite introduces 9 temporary variables */
     PFpnode_t *VAR1 = var(curvar+1);
     PFpnode_t *VAR2 = var(curvar+2);
@@ -720,14 +722,12 @@ PFheuristic_index (PFpnode_t *root)
 
     while(depth >= 0 && depth < HEURISTIC_MAXDEPTH) {
         int next_child = child[depth]++;
-        PFpnode_t *r = stack[depth]; 
-
-        if (r && next_child < 2) { /* PUSH child left-deep-first */
-            stack[++depth] = r->child[next_child]; 
-            child[depth] = 0; 
+        if (next_child < 2 && stack[depth]->child[next_child]) { /* PUSH child left-deep-first */
+            stack[depth+1] = stack[depth]->child[next_child]; 
+            child[++depth] = 0; 
         } else {
-            if (r && r->kind == p_eq && depth > 2) { /* now try to rewrite */
-                int rewritten = try_rewrite(r, stack, depth, curvar);
+            if (stack[depth]->kind == p_eq && depth > 2) { /* now try to rewrite */
+                int rewritten = try_rewrite(stack, depth, curvar);
                 if (rewritten) { depth = rewritten; curvar += 9; }
             } 
             depth--; /* POP */
