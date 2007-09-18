@@ -542,10 +542,6 @@ PFsql_t * PFsql_alias_bind (const PFsql_t *expr, const PFsql_t *alias);
  * where you can define the join predicate.
  */
 PFsql_t * PFsql_on (PFsql_t *join, PFsql_t *expr);
-/**
- * Join two relations with a `Right Outer Join'.
- */
-PFsql_t * PFsql_right_outer_join (PFsql_t *tblref1, PFsql_t *tblref2);
 
 /**
  * Join two relations with `Left Outer Join'.

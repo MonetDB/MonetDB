@@ -87,9 +87,7 @@ static char *ID[] = {
       [sql_concat]           = "CONCAT",
       [sql_is]               = "IS",
       [sql_is_not]           = "IS NOT",
-      [sql_right_outer_join] = "RIGHT OUTER JOIN ",
       [sql_left_outer_join]  = "LEFT OUTER JOIN ",
-      [sql_inner_join]       = "INNER JOIN ",
 };
 
 /* forward declarations */
@@ -688,7 +686,6 @@ print_join (FILE *f, PFsql_t *n, int i)
     assert (n);
 
     switch (n->kind) {
-        case sql_inner_join:
         case sql_left_outer_join:
         case sql_right_outer_join:
             print_join (f, L(n), i);
@@ -761,6 +758,7 @@ print_fullselect (FILE *f, PFsql_t *n, int i)
             
             /* prettyprint selection list */
             PFprettyprintf ("%c", START_BLOCK);
+            assert (L(n));
             print_select_list (L(n));
             PFprettyprintf ("%c", END_BLOCK);
             pretty_dump (f, i+7);
@@ -768,6 +766,7 @@ print_fullselect (FILE *f, PFsql_t *n, int i)
             /* FROM */
             indent (f, i);
             fprintf (f, "  FROM ");
+            assert (R(n));
             print_from_list (f, R(n), i+7);
 
             /* WHERE (optional) */

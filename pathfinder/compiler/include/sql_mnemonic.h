@@ -63,15 +63,14 @@
 #define nil()                        PFsql_nil()
 
 /* .......... Select .......... */
-#define select_distinct(sl,fl,wl,ol,gl) PFsql_select(true,sl,fl,wl,ol,gl)
-#define select(sl,fl,wl,ol,gl)          PFsql_select(false,sl,fl,wl,ol,gl)
+#define select_distinct(sl,fl,wl)       PFsql_select(true,sl,fl,wl,NULL,NULL)
+#define select(sl,fl,wl)                PFsql_select(false,sl,fl,wl,NULL,NULL)
 #define select_list(...)                PFsql_select_list(__VA_ARGS__)
 #define column_assign(e,c)              PFsql_column_assign(e,c)
 #define from_list(...)                  PFsql_from_list(__VA_ARGS__)
 #define add_from(list,item)             PFsql_add_from(list,item)
 #define alias_bind(t,a)                 PFsql_alias_bind((t),(a))
 #define on(jn,ex)                       PFsql_on(jn, ex)
-#define right_outer_join(tbl1, tbl2)    PFsql_right_outer_join(tbl1, tbl2)
 #define left_outer_join(tbl1, tbl2)     PFsql_left_outer_join(tbl1, tbl2)
 #define where_list(...)                 PFsql_where_list(__VA_ARGS__)
 

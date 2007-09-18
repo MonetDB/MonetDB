@@ -1242,14 +1242,10 @@ construct_twig_generic (PFla_op_t *p,
                            alias_bind (select (
                                            column_assign (max (PRE_), MAX_),
                                            from_list (max_pre_frag),
-                                           NULL,
-                                           NULL,
                                            NULL),
                                        alias (max)),
                            transform_frommap (LL(p))),
-                       transform_wheremap (LL(p)),
-                       NULL,
-                       NULL);
+                       transform_wheremap (LL(p)));
     else
         twig = select (select_list (
                            column_assign (
@@ -1271,13 +1267,9 @@ construct_twig_generic (PFla_op_t *p,
                            alias_bind (select (
                                            column_assign (max (PRE_), MAX_),
                                            from_list (max_pre_frag),
-                                           NULL,
-                                           NULL,
                                            NULL),
                                        alias (max)),
                            alias_bind (FRAG(L(p)), alias (content))),
-                       NULL,
-                       NULL,
                        NULL);
 
     execute (comment ("===================="));
@@ -1352,9 +1344,7 @@ construct_node (PFla_op_t *p, PFalg_att_t iter, int kind,
                        column_assign (value, VALUE_),
                        column_assign (name, NAME_)),
                    transform_frommap (L(p)),
-                   transform_wheremap (L(p)),
-                   NULL,
-                   NULL);
+                   transform_wheremap (L(p)));
 }
 
 
@@ -1645,7 +1635,7 @@ collect_frag_worker (PFla_op_t * p, PFarray_t *frags)
 #define frag_select(f) select (                                             \
                            select_list (PRE_, SIZE_, LEVEL_, KIND_, VALUE_, \
                                         NAME_),                      \
-                           f, NULL, NULL, NULL)
+                           f, NULL)
 
 static PFsql_t *
 collect_fragments (PFla_op_t * p)
@@ -1744,39 +1734,42 @@ serialize_(PFla_op_t * p, PFsql_t * (*join)(PFsql_t* a, PFsql_t *b), PFsql_t *se
 
     item_pre = col_env_lookup (COLMAP(R(p)), p->sem.serialize.item, aat_pre);
 
-    finalquery = select (select_list (
-                             selectlist,
-                             column_assign (
-                                 PRE(docalias2),
-                                 PRE_),
-                             column_assign (
-                                 SIZE(docalias2),
-                                 SIZE_),
-                             column_assign (
-                                 KIND(docalias2),
-                                 KIND_),
-                             column_assign (
-                                 VALUE(docalias2),
-                                 VALUE_),
-                             column_assign (
-                                 NAME(docalias2),
-                                 NAME_),
-                             column_assign (
-                                 NAME(docalias2),
-                                 TAG_)),
-                         from_list (
-                            on (join (
-                                on (join (result, alias_bind(document, alias (docalias1))),
-                                    eq (PRE(docalias1), item_pre)),
-                                    alias_bind (document, alias (docalias2))),
-                                and_ (
-                                     gteq (PRE(docalias2), PRE(docalias1)),
-                                     gteq (add (PRE(docalias1), SIZE(docalias1)),
-                                         PRE(docalias2))))),
-                         NULL,
-                         stmt_list (col_env_lookup (COLMAP (R(p)), pos, pos_ty),
-                                    PRE(docalias2)),
-                         NULL);
+    finalquery = PFsql_select (
+                          false,
+                          select_list (
+                              selectlist,
+                              column_assign (
+                                  PRE(docalias2),
+                                  PRE_),
+                              column_assign (
+                                  SIZE(docalias2),
+                                  SIZE_),
+                              column_assign (
+                                  KIND(docalias2),
+                                  KIND_),
+                              column_assign (
+                                  VALUE(docalias2),
+                                  VALUE_),
+                              column_assign (
+                                  NAME(docalias2),
+                                  NAME_),
+                              column_assign (
+                                  NAME(docalias2),
+                                  TAG_)),
+                          from_list (
+                             on (join (
+                                 on (join (result,
+                                     alias_bind(document, alias (docalias1))),
+                                     eq (PRE(docalias1), item_pre)),
+                                     alias_bind (document, alias (docalias2))),
+                                 and_ (
+                                      gteq (PRE(docalias2), PRE(docalias1)),
+                                      gteq (add (PRE(docalias1), SIZE(docalias1)),
+                                          PRE(docalias2))))),
+                          NULL,
+                          stmt_list (col_env_lookup (COLMAP (R(p)), pos, pos_ty),
+                                     PRE(docalias2)),
+                          NULL);
     return finalquery;
 }
 
@@ -1920,7 +1913,9 @@ reduce (PFla_op_t * p, int goalnt)
 
                     assert (twig_alias != PF_SQL_ALIAS_UNBOUND);
 
-                    finalquery = select (select_list (
+                    finalquery = PFsql_select (
+                                          false,
+                                          select_list (
                                                 column_assign (
                                                     PRE(twig_alias),
                                                     PRE_),
@@ -2006,9 +2001,7 @@ reduce (PFla_op_t * p, int goalnt)
                                                     NAME(docalias2),
                                                     TAG_)),
                                           transform_frommap (p),
-                                          transform_wheremap (p),
-                                          NULL,
-                                          NULL);
+                                          transform_wheremap (p));
                 }
             }
             /* the result contains nodes and atomic values */
@@ -2025,8 +2018,10 @@ reduce (PFla_op_t * p, int goalnt)
                     ser_info_item (
                         ser_type (lit_str("Type"), lit_str("ATOMIC_ONLY")),
                         ser_info);
-                finalquery = select (select_list (
-                                            selectlist),
+                finalquery = PFsql_select (
+                                     false,
+                                     select_list (
+                                         selectlist),
                                      transform_frommap (R(p)),
                                      transform_wheremap (R(p)),
                                      stmt_list (col_env_lookup(
@@ -2334,9 +2329,7 @@ reduce (PFla_op_t * p, int goalnt)
                                            expr,
                                            column_name (colname))),
                                    transform_frommap (R(p)),
-                                   transform_wheremap (R(p)), 
-                                   NULL,
-                                   NULL)));
+                                   transform_wheremap (R(p)))));
 
                 /* prepare a new sql annotation
                    for the rest of the translation */
@@ -2500,14 +2493,10 @@ reduce (PFla_op_t * p, int goalnt)
             execute (bind (table_def (newtable, columnlist),
                            op (select (selectlist1,
                                        transform_frommap (L(p)),
-                                       transform_wheremap (L(p)),
-                                       NULL,
-                                       NULL),
+                                       transform_wheremap (L(p))),
                                select (selectlist2,
                                        transform_frommap (R(p)),
-                                       transform_wheremap (R(p)),
-                                       NULL,
-                                       NULL))));
+                                       transform_wheremap (R(p))))));
 
             /* mark node p as bound */
             BOUND(p) = true;
@@ -2727,9 +2716,7 @@ reduce (PFla_op_t * p, int goalnt)
                                       column_name (res_col))),
                                 transform_frommap (L(p)),
                                 where_list (transform_wheremap (L(p)),
-                                             is_not (expr, null ())),
-                                NULL,
-                                NULL);
+                                             is_not (expr, null ())));
 
                          query = (query)?union_(query,temp):temp; 
                     }
@@ -2828,11 +2815,12 @@ reduce (PFla_op_t * p, int goalnt)
             /* dump the operator binding */
             execute (comment ("binding due to aggregate"));
             execute (bind (table_def (newtable, columnlist),
-                           select (selectlist,
-                                   transform_frommap (L(p)),
-                                   transform_wheremap (L(p)),
-                                   NULL,
-                                   groupbylist)));
+                           PFsql_select (false,
+                                         selectlist,
+                                         transform_frommap (L(p)),
+                                         transform_wheremap (L(p)),
+                                         NULL,
+                                         groupbylist)));
 
             /* mark node p as bound */
             BOUND(p) = true;
@@ -2967,13 +2955,16 @@ reduce (PFla_op_t * p, int goalnt)
             /* DUMP THE OPERATOR BINDING */
             execute (comment ("binding due to count aggregate"));
             execute (bind (table_def (newtable, columnlist),
-                           select (selectlist,
-                                   from_list (
-                                       on (right_outer_join (part_from, loop_from),
-                                           eq (part_expr, loop))),
-                                   transform_wheremap (LL(p)),
-                                   NULL,
-                                   groupbylist)));
+                           PFsql_select (
+                                    false,
+                                    selectlist,
+                                    from_list (
+                                        on (left_outer_join (
+                                               loop_from, part_from),
+                                            eq (part_expr, loop))),
+                                    transform_wheremap (LL(p)),
+                                    NULL,
+                                    groupbylist)));
 
             /* mark node p as bound */
             BOUND(p) = true;
@@ -3405,12 +3396,12 @@ reduce (PFla_op_t * p, int goalnt)
                 if (l_csize->kind != sql_union) {
                     assert (l_csize->kind == sql_tbl_name);
                     l_csize = select (select_list (ITER_, SIZE_),
-                                      l_csize, NULL, NULL, NULL);
+                                      l_csize, NULL);
                 }
                 if (r_csize->kind != sql_union) {
                     assert (r_csize->kind == sql_tbl_name);
                     r_csize = select (select_list (ITER_, SIZE_),
-                                      r_csize, NULL, NULL, NULL);
+                                      r_csize, NULL);
                 }
 
                 CSIZE(p) = union_ (l_csize, r_csize);
@@ -3458,7 +3449,8 @@ reduce (PFla_op_t * p, int goalnt)
                                   iter,
                                   type_of (L(p), iter));
 
-                FRAG (p) = select (
+                FRAG (p) = PFsql_select (
+                               false,
                                select_list (
                                    column_assign (iter_col, ITER_),
                                    column_assign (lit_int (TPRE(p)), TWIG_PRE_),
@@ -3475,13 +3467,13 @@ reduce (PFla_op_t * p, int goalnt)
                                    column_assign (lit_str (""), VALUE_),
                                    column_assign (lit_str (""), NAME_)),
                                from_list (
-                                   on (right_outer_join (
-                                           alias_bind (
-                                               CSIZE(R(p)),
-                                               alias (csize_alias)),
+                                   on (left_outer_join (
                                            alias_bind (
                                                name_from.table,
-                                               alias (name_from.alias))),
+                                               alias (name_from.alias)),
+                                           alias_bind (
+                                               CSIZE(R(p)),
+                                               alias (csize_alias))),
                                        eq (ITER(csize_alias),
                                            iter_col))),
                                NULL,
@@ -3553,7 +3545,8 @@ reduce (PFla_op_t * p, int goalnt)
                     grpbylist = column_list (iter_col, item_col);
                 }
 
-                FRAG (p) = select (
+                FRAG (p) = PFsql_select (
+                               false,
                                select_list (
                                    column_assign (iter_col, ITER_),
                                    column_assign (lit_int (TPRE(p)), TWIG_PRE_),
@@ -3570,13 +3563,13 @@ reduce (PFla_op_t * p, int goalnt)
                                    column_assign (lit_str (""), VALUE_),
                                    column_assign (item_col, NAME_)),
                                from_list (
-                                   on (right_outer_join (
-                                           alias_bind (
-                                               CSIZE(R(p)),
-                                               alias (csize_alias)),
+                                   on (left_outer_join (
                                            alias_bind (
                                                name_from.table,
-                                               alias (name_from.alias))),
+                                               alias (name_from.alias)),
+                                           alias_bind (
+                                               CSIZE(R(p)),
+                                               alias (csize_alias))),
                                        eq (ITER(csize_alias),
                                            iter_col))),
                                NULL,
@@ -3686,9 +3679,7 @@ reduce (PFla_op_t * p, int goalnt)
                                       add (SIZE(ctx), lit_int (1)),
                                       SIZE_)),
                               transform_frommap_ext (p, frag),
-                              transform_wheremap (p),
-                              NULL,
-                              NULL);
+                              transform_wheremap (p));
                 iter_size = (i == 0) ? sel : union_ (iter_size, sel);
             }
             
@@ -3729,9 +3720,7 @@ reduce (PFla_op_t * p, int goalnt)
                 
                 sel = select (selectlist,
                               transform_frommap_ext (p, frag),
-                              transform_wheremap (p),
-                              NULL,
-                              NULL);
+                              transform_wheremap (p));
                 content = (i == 0) ? sel : union_ (content, sel);
             }
 
@@ -3750,8 +3739,7 @@ reduce (PFla_op_t * p, int goalnt)
                                   ITER_, TWIG_PRE_, POS_, PRE_,
                                   SIZE_, LEVEL_, KIND_, VALUE_, NAME_),
                               table_name (content_tbl),
-                              NULL,
-                              NULL, NULL);
+                              NULL);
         }   break;
 
         /* Constr: merge_adjacent (Frag, Rel) */

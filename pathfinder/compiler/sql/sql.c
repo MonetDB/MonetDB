@@ -509,15 +509,6 @@ PFsql_on (PFsql_t *join, PFsql_t *expr)
 }
 
 /**
- * Join two relations with a `Right Outer Join'.
- */
-PFsql_t *
-PFsql_right_outer_join (PFsql_t *tblref1, PFsql_t *tblref2)
-{
-    return wire2 (sql_right_outer_join, tblref1, tblref2);
-}
-
-/**
  * Join two relations with a `Left Outer Join'.
  */
 PFsql_t *
