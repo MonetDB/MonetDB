@@ -2214,11 +2214,77 @@ reduce (PFla_op_t * p, int goalnt)
             /* reduce the first child */
             reduce (kids[0], nts[0]);
 
+            PFarray_t *left_args = PFarray (sizeof(PFsql_t*));
+            if (p->kind == la_eqjoin) {
+                PFalg_simple_type_t l_ty;
+
+                l_ty = type_of (L(p), p->sem.eqjoin.att1);
+                assert (l_ty && monomorphic(l_ty));
+
+                *(PFsql_t **)
+                PFarray_add (left_args) = col_env_lookup (
+                                        COLMAP(L(p)),
+                                        p->sem.eqjoin.att1,
+                                        l_ty);
+            }
+            /* join predicates for the theta-join operator */
+            else if (p->kind == la_thetajoin) {
+                PFalg_att_t left;
+                PFalg_simple_type_t l_ty;
+                PFsql_t *l_expr;
+
+                /* iterate over all predicates and add them to the wherelist */
+                for (unsigned int i = 0; i < p->sem.thetajoin.count; i++) {
+                    left   = p->sem.thetajoin.pred[i].left;
+                    l_ty   = type_of (L(p), left);
+
+                    assert (l_ty && monomorphic (l_ty));
+
+                    l_expr = col_env_lookup (COLMAP(L(p)), left, l_ty);
+                    
+                    *(PFsql_t **)
+                    PFarray_add (left_args) = l_expr;
+                }
+            }
+
             /* copy all existing column, from, and where lists
                of the left child */
             copy_cols_from_where (p, L(p));
 
             reduce (kids[1], nts[1]);
+
+            PFarray_t *right_args = PFarray (sizeof(PFsql_t*));
+            if (p->kind == la_eqjoin) {
+                PFalg_simple_type_t r_ty;
+
+                r_ty = type_of (R(p), p->sem.eqjoin.att2);
+                assert (r_ty && monomorphic(r_ty));
+                *(PFsql_t **)
+                PFarray_add (right_args) = col_env_lookup (
+                                        COLMAP(R(p)),
+                                        p->sem.eqjoin.att2,
+                                        r_ty);
+            }
+            /* join predicates for the theta-join operator */
+            else if (p->kind == la_thetajoin) {
+                PFalg_att_t right;
+                PFalg_simple_type_t r_ty;
+                PFsql_t *r_expr;
+
+                /* iterate over all predicates and add them to the wherelist */
+                for (unsigned int i = 0; i < p->sem.thetajoin.count; i++) {
+                    right  = p->sem.thetajoin.pred[i].right;
+                    r_ty   = type_of (R(p), right);
+
+                    assert (r_ty && monomorphic (r_ty));
+
+                    r_expr = col_env_lookup (COLMAP(R(p)), right, r_ty);
+                    
+                    *(PFsql_t **)
+                    PFarray_add (right_args) = r_expr;
+                }
+            }
+
             /* copy all existing expression from right child */
             for (unsigned int i = 0; i < PFarray_last (COLMAP(R(p))); i++) {
                 sql_column_env_t entry = col_env_at (COLMAP(R(p)), i);
@@ -2256,35 +2322,36 @@ reduce (PFla_op_t * p, int goalnt)
 
             /* join predicate for the equi-join operator */
             if (p->kind == la_eqjoin) {
-                PFalg_simple_type_t l_ty, r_ty;
 
-                l_ty = type_of (L(p), p->sem.eqjoin.att1);
-                r_ty = type_of (R(p), p->sem.eqjoin.att2);
+                assert (PFarray_last (left_args) == 1);
+                assert (PFarray_last (left_args) 
+                        == PFarray_last (right_args));
 
-                assert (l_ty == r_ty && monomorphic (l_ty));
+                PFsql_t *left  = *(PFsql_t **)PFarray_at (left_args, 0);
+                PFsql_t *right = *(PFsql_t **)PFarray_at (right_args, 0);
 
                 /* add the constraint that comes from the equijoin semantics */
                 where_list_add (WHERELIST(p),
-                                eq (col_env_lookup (
-                                        COLMAP(L(p)),
-                                        p->sem.eqjoin.att1,
-                                        l_ty),
-                                    col_env_lookup (
-                                        COLMAP(R(p)),
-                                        p->sem.eqjoin.att2,
-                                        r_ty)));
+                                eq (left, right));
             }
             /* join predicates for the theta-join operator */
             else if (p->kind == la_thetajoin) {
                 PFalg_att_t left, right;
-                PFalg_simple_type_t l_ty, r_ty;
                 PFsql_t *l_expr, *r_expr;
+                PFalg_simple_type_t l_ty, r_ty;
                 PFsql_t *cond;
+                
+                assert (PFarray_last (left_args) == p->sem.thetajoin.count);
+                assert (PFarray_last (right_args) == PFarray_last (left_args));
 
                 /* iterate over all predicates and add them to the wherelist */
                 for (unsigned int i = 0; i < p->sem.thetajoin.count; i++) {
                     left   = p->sem.thetajoin.pred[i].left;
                     right  = p->sem.thetajoin.pred[i].right;
+
+                    l_expr = *(PFsql_t**) PFarray_at (left_args, i);
+                    r_expr = *(PFsql_t**) PFarray_at (right_args, i);
+
                     l_ty   = type_of (L(p), left);
                     r_ty   = type_of (R(p), right);
 
