@@ -177,6 +177,7 @@ find_join_worker (PFla_op_t *n,
         case la_cross:
         case la_semijoin:
         case la_select:
+        case la_pos_select:
         case la_disjunion:
         case la_intersect:
         case la_difference:

@@ -246,6 +246,7 @@ infer_const (PFla_op_t *n)
         case la_thetajoin:
         case la_eqjoin_unq:
         case la_select:
+        case la_pos_select:
         case la_distinct:
         case la_fun_1to1:
         case la_num_eq:
@@ -705,6 +706,7 @@ infer_const (PFla_op_t *n)
         case la_eqjoin:
         case la_thetajoin:
         case la_eqjoin_unq:
+        case la_pos_select:
         case la_distinct:
         /* we also might calculate some result constants.
            Leave it out as it isn't a common case */

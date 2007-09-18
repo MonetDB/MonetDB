@@ -59,6 +59,7 @@ static char *a_id[]  = {
     , [la_thetajoin]        = "ThetaJoin"
     , [la_project]          = "Project"
     , [la_select]           = "Select"
+    , [la_pos_select]       = "PosSelect"
     , [la_disjunion]        = "UNION"
     , [la_intersect]        = "INTERSECT"
     , [la_difference]       = "DIFF"
@@ -133,6 +134,7 @@ static char *xml_id[]  = {
     , [la_thetajoin]        = "thetajoin"
     , [la_project]          = "project"
     , [la_select]           = "select"
+    , [la_pos_select]       = "pos_select"
     , [la_disjunion]        = "union"
     , [la_intersect]        = "intersect"
     , [la_difference]       = "difference"
@@ -322,6 +324,7 @@ la_dot (PFarray_t *dot, PFla_op_t *n)
         , [la_thetajoin]       = "#00AA00"
         , [la_project]         = "#EEEEEE"
         , [la_select]          = "#00DDDD"
+        , [la_pos_select]      = "#CC2222"
         , [la_disjunion]       = "#909090"
         , [la_intersect]       = "#FFA500"
         , [la_difference]      = "#FFA500"
@@ -492,6 +495,39 @@ la_dot (PFarray_t *dot, PFla_op_t *n)
         case la_select:
             PFarray_printf (dot, "%s (%s)", a_id[n->kind],
                             PFatt_str (n->sem.select.att));
+            break;
+
+        case la_pos_select:
+            PFarray_printf (dot, "%s (%i, <", a_id[n->kind],
+                            n->sem.pos_sel.pos);
+
+            if (PFord_count (n->sem.pos_sel.sortby))
+                PFarray_printf (dot, "%s%s", 
+                                PFatt_str (
+                                    PFord_order_col_at (
+                                        n->sem.pos_sel.sortby, 0)),
+                                PFord_order_dir_at (
+                                    n->sem.pos_sel.sortby, 0) == DIR_ASC
+                                ? "" : " (desc)");
+
+            for (c = 1; c < PFord_count (n->sem.pos_sel.sortby); c++)
+                PFarray_printf (dot, ", %s%s", 
+                                PFatt_str (
+                                    PFord_order_col_at (
+                                        n->sem.pos_sel.sortby, c)),
+                                PFord_order_dir_at (
+                                    n->sem.pos_sel.sortby, c) == DIR_ASC
+                                ? "" : " (desc)");
+
+            PFarray_printf (dot, ">");
+
+            if (n->sem.pos_sel.part != att_NULL)
+                PFarray_printf (dot, "/%s", 
+                                PFatt_str (n->sem.pos_sel.part));
+
+            PFarray_printf (dot, ")");
+            break;
+
             break;
 
         case la_fun_1to1:
@@ -1431,6 +1467,33 @@ la_xml (PFarray_t *xml, PFla_op_t *n)
                             "    </content>\n",
                             PFatt_str (n->sem.select.att));
             break;
+            
+        case la_pos_select:
+            PFarray_printf (xml, 
+                            "    <content>\n" 
+                            "      <position>%i</position>\n",
+                            n->sem.pos_sel.pos);
+
+            for (c = 0; c < PFord_count (n->sem.pos_sel.sortby); c++)
+                PFarray_printf (xml, 
+                                "      <column name=\"%s\" function=\"sort\""
+                                        " position=\"%u\" direction=\"%s\""
+                                        " new=\"false\"/>\n",
+                                PFatt_str (
+                                    PFord_order_col_at (
+                                        n->sem.pos_sel.sortby, c)),
+                                c+1,
+                                PFord_order_dir_at (
+                                    n->sem.pos_sel.sortby, c) == DIR_ASC
+                                ? "ascending" : "descending");
+
+            if (n->sem.pos_sel.part != att_NULL)
+                PFarray_printf (xml,
+                                "      <column name=\"%s\" function=\"partition\""
+                                        " new=\"false\"/>\n",
+                                PFatt_str (n->sem.pos_sel.part));
+
+            PFarray_printf (xml, "    </content>\n");
 
         case la_fun_1to1:
             PFarray_printf (xml,

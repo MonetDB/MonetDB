@@ -391,7 +391,6 @@ replace_pos_predicate (PFla_op_t *p)
     /* row# */
     if (op->kind != la_rownum ||
         op->sem.rownum.res != cast ||
-        !op->sem.rownum.part ||
         PFord_count (op->sem.rownum.sortby) != 1 ||
         PFord_order_dir_at (op->sem.rownum.sortby, 0) != DIR_ASC)
         return;
@@ -406,6 +405,8 @@ replace_pos_predicate (PFla_op_t *p)
     item = PFord_order_col_at (op->sem.rownum.sortby, 0);
 
     if (!pos) {
+        if (!part) return;
+
         /* find the base operator and update the columns in
            variables: item, part and map */
         base = find_last_base (base, &item, &part, last, map, count);
@@ -413,6 +414,14 @@ replace_pos_predicate (PFla_op_t *p)
         pos = -1;
     }
 
+    *p = *PFla_project_ (
+              PFla_pos_select (
+                  base,
+                  pos,
+                  PFord_refine (PFordering (), item, DIR_ASC),
+                  part),
+              count,
+              map);
     /* replace pattern here:
     fprintf(stderr,"pos %lli;", pos);
     fprintf(stderr," sort by %s; partition by %s;",

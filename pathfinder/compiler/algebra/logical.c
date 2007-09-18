@@ -920,6 +920,64 @@ PFla_select (const PFla_op_t *n, PFalg_att_t att)
 
 
 /**
+ * Positional selection at position @a pos for each partition @a p
+ * based on the ordering @a s.
+ */
+PFla_op_t *
+PFla_pos_select (const PFla_op_t *n, int pos, PFord_ordering_t s, PFalg_att_t p)
+{
+    PFla_op_t    *ret = la_op_wire1 (la_pos_select, n);
+    unsigned int  i;
+    unsigned int  j;
+
+    assert (s);
+
+    /* copy parameters into semantic content of return node */
+    ret->sem.pos_sel.pos = pos;
+    ret->sem.pos_sel.sortby = s;
+    ret->sem.pos_sel.part = p;
+
+    /* result schema is input schema plus the new attribute */
+    ret->schema.count = n->schema.count;
+    ret->schema.items
+        = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
+    
+    for (i = 0; i < n->schema.count; i++)
+        ret->schema.items[i] = n->schema.items[i];
+    
+    /* see if we can find all sort specifications */
+    for (i = 0; i < PFord_count (ret->sem.pos_sel.sortby); i++) {
+
+        for (j = 0; j < n->schema.count; j++)
+            if (n->schema.items[j].name ==
+                         PFord_order_col_at (ret->sem.pos_sel.sortby, i))
+                break;
+
+        if (j == n->schema.count)
+            PFoops (OOPS_FATAL,
+                    "could not find sort attribute `%s'",
+                    PFatt_str (PFord_order_col_at (
+                                   ret->sem.pos_sel.sortby, i)));
+
+        if (!monomorphic (n->schema.items[j].type))
+            PFoops (OOPS_FATAL,
+                    "sort criterion for pos_sel must be monomorphic, "
+                    "type: %i, name: %s",
+                    n->schema.items[j].type,
+                    PFatt_str (n->schema.items[j].name));
+
+        if (ret->sem.pos_sel.part
+            && PFord_order_col_at (ret->sem.pos_sel.sortby, i)
+               == ret->sem.pos_sel.part)
+            PFoops (OOPS_FATAL,
+                    "partitioning attribute must not appear in sort clause");
+    }
+
+    return ret;
+}
+
+
+/**
  * worker for PFla_disjunion, PFla_intersect, and PFla_difference;
  */
 static PFla_op_t *
@@ -3689,6 +3747,12 @@ PFla_op_duplicate (PFla_op_t *n, PFla_op_t *left, PFla_op_t *right)
 
         case la_select:
             return PFla_select (left, n->sem.select.att);
+
+        case la_pos_select:
+            return PFla_pos_select (left,
+                                    n->sem.pos_sel.pos,
+                                    n->sem.pos_sel.sortby,
+                                    n->sem.pos_sel.part);
 
         case la_disjunion:
         case la_intersect:

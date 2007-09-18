@@ -353,6 +353,7 @@ infer_ori_names (PFla_op_t *n, PFarray_t *par_np_list)
             break;
 
         case la_select:
+        case la_pos_select:
         case la_distinct:
             n->prop->l_name_pairs = PFarray_copy (np_list);
             break;

@@ -363,6 +363,26 @@ map_unq_names (PFla_op_t *p, PFarray_t *map)
             res = select_ (U(L(p)), UNAME(p, p->sem.select.att));
             break;
 
+        case la_pos_select:
+        {
+            PFord_ordering_t sortby = PFordering ();
+
+            for (unsigned int i = 0;
+                 i < PFord_count (p->sem.pos_sel.sortby);
+                 i++)
+                sortby = PFord_refine (
+                             sortby,
+                             UNAME(p, PFord_order_col_at (
+                                          p->sem.pos_sel.sortby, i)),
+                             PFord_order_dir_at (
+                                 p->sem.pos_sel.sortby, i));
+                                                   
+            res = pos_select (U(L(p)),
+                              p->sem.pos_sel.pos,
+                              sortby,
+                              UNAME(p, p->sem.pos_sel.part));
+        }   break;
+
         case la_disjunion:
         case la_intersect:
         case la_difference:

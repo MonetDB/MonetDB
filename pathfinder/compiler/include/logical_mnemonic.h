@@ -65,6 +65,9 @@
 /* selection operator */
 #define select_(a,b)      PFla_select ((a),(b))
 
+/* positional selection operator */
+#define pos_select(a,b,c,d) PFla_pos_select ((a),(b),(c),(d))
+
 /** disjoint union (where both argument must have the same schema) */
 #define disjunion(a,b)    PFla_disjunion ((a),(b))
 

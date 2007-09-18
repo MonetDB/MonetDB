@@ -85,10 +85,11 @@ typedef struct PFla_op_t *NODEPTR_TYPE;
                                 predicates) */
 %term project         =  9 /**< algebra projection and renaming operator */
 %term select_         = 10 /**< selection of rows where column value != 0 */
-%term disjunion       = 11 /**< union two relations with same schema */
-%term intersect       = 12 /**< intersect two relations with same schema */
-%term difference      = 13 /**< difference of two relations w/ same schema */
-%term distinct        = 14 /**< duplicate elimination operator */
+%term pos_select      = 11 /**< positional selection of rows */
+%term disjunion       = 12 /**< union two relations with same schema */
+%term intersect       = 13 /**< intersect two relations with same schema */
+%term difference      = 14 /**< difference of two relations w/ same schema */
+%term distinct        = 15 /**< duplicate elimination operator */
 %term fun_1to1        = 20 /**< generic operator that extends the schema with
                                 a new column where each value is determined
                                 by the values of a single row (cardinality
@@ -182,6 +183,7 @@ Rel:    semijoin (Rel, Rel)                          =   7 (10);
 Rel:    thetajoin (Rel, Rel)                         =   8 (10);
 Rel:    project (Rel)                                =   9 (10);
 Rel:    select_ (Rel)                                =  10 (10);
+Rel:    pos_select (Rel)                             =  11 (10);
 
 Rel:    disjunion (Rel, Rel)                         =  15 (10);
 Rel:    intersect (Rel, Rel)                         =  16 (10);
@@ -2512,6 +2514,183 @@ reduce (PFla_op_t * p, int goalnt)
 
         }   break;
 
+        /* Rel:    pos_select (Rel) */
+        case 11:
+            /* create a special translation for the positional
+               predicates [1] and [last()] */
+            if (p->schema.count <= 2 &&
+                (p->sem.pos_sel.pos == 1 || p->sem.pos_sel.pos == -1) &&
+                PFord_count (p->sem.pos_sel.sortby) == 1 &&
+                PFord_order_dir_at (p->sem.pos_sel.sortby, 0) == DIR_ASC) {
+                PFalg_att_t         att,
+                                    part;
+                PFalg_simple_type_t ty,
+                                    part_ty;
+                PFsql_t            *expr,
+                                   *part_expr;
+                PFsql_col_t        *part_col,
+                                   *col;
+                PFsql_t            *selectlist = NULL;
+                PFsql_t            *columnlist = NULL;
+                PFsql_t            *groupbylist = NULL;
+                PFsql_tident_t      newtable;
+                PFsql_aident_t      newalias;
+
+                part = p->sem.pos_sel.part;
+                
+                /* Bind the input of the aggregate if the group by 
+                   criterion is not a column reference. */
+                if (part &&
+                    (col_env_lookup (
+                         COLMAP(L(p)),
+                         part,
+                         type_of (p, part)))->kind != sql_column_name) {
+#ifndef NDEBUG
+                    if (!BOUND(L(p)))
+                        execute (comment ("bind as a column reference "
+                                          "is needed in the following "
+                                          "positional predicate"));
+#endif
+                    bind_operator (L(p), false);
+                }
+
+                /* create a new table name for binding */
+                newtable = new_table_name ();
+                /* new correlation name for bounded table */
+                newalias = new_alias ();
+                
+                /* start a new from list as a newtable will be bound */
+                from_list_add (FROMLIST(p),
+                               table_name (newtable),
+                               newalias);
+
+                /* add the partition criterion to all lists and environments */
+                if (part) {
+                    part_ty   = type_of (p, part);
+                    part_col  = new_col (part, part_ty);
+                    part_expr = col_env_lookup (COLMAP(L(p)), part, part_ty);
+
+                    col_env_add (COLMAP(p), part, part_ty,
+                                 ext_column_name (newalias, part_col));
+
+                    /* create columnlist for the table name */
+                    columnlist = column_list (columnlist,
+                                              column_name (part_col));
+
+                    /* create selectlist for the table name */
+                    selectlist = select_list (selectlist,
+                                              transform_expression (
+                                                  part_expr,
+                                                  column_name (part_col)));
+
+                    groupbylist = column_list (groupbylist, part_expr);
+                }
+
+                att  = PFord_order_col_at (p->sem.pos_sel.sortby, 0);
+                ty   = type_of (p, att);
+                col  = new_col (att, ty);
+                expr = col_env_lookup (COLMAP(L(p)), att, ty);
+                
+                /* generate the aggregation */
+                expr = p->sem.pos_sel.pos > 0 ? min (expr) : max (expr);
+
+                col_env_add (COLMAP(p), att, ty,
+                             ext_column_name (newalias, col));
+
+                columnlist = column_list (columnlist, column_name (col));
+
+                /* add the aggregation to the selection list */
+                selectlist = select_list (selectlist,
+                                          transform_expression (
+                                              expr,
+                                              column_name (col)));
+
+                /* dump the operator binding */
+                execute (comment ("binding due to positional aggregate"));
+                execute (bind (table_def (newtable, columnlist),
+                               PFsql_select (false,
+                                             selectlist,
+                                             transform_frommap (L(p)),
+                                             transform_wheremap (L(p)),
+                                             NULL,
+                                             groupbylist)));
+
+                /* mark node p as bound */
+                BOUND(p) = true;
+            }
+            /* we need to translate the positional predicate
+               with a ROW_NUMBER clause. */
+            else {
+                bool             change_order = p->sem.pos_sel.pos < 0;
+                int              pos          = (change_order ? -1 : 1)
+                                                * p->sem.pos_sel.pos;
+                PFalg_att_t      used_cols    = 0,
+                                 num;
+                PFsql_t         *srtbylist    = nil ();
+                PFsql_t         *partlist     = NULL;
+                PFord_ordering_t sortby       = p->sem.pos_sel.sortby;
+                PFalg_att_t      ord;
+                bool             asc;
+
+                /* get ourselves a new attribute name */
+                for (unsigned int i = 0; i < p->schema.count; i++)
+                    used_cols |= p->schema.items[i].name;
+
+                num = PFalg_ori_name (PFalg_unq_name (att_pos, 0), ~used_cols);
+                          
+                /* copy all existing column, from, and where lists */
+                copy_cols_from_where (p, L(p));
+                
+                /* collect all sorting criteria */
+                for (int i = PFord_count (sortby) - 1; i >= 0; i--) {
+                    ord = PFord_order_col_at (sortby, i);
+                    asc = PFord_order_dir_at (sortby, i) == DIR_ASC;
+                    srtbylist = sortkey (
+                                    col_env_lookup (
+                                        COLMAP(L(p)),
+                                        ord,
+                                        type_of (L(p), ord)),
+                                    change_order ? !asc : asc,
+                                    srtbylist);
+                }
+
+                /* creat partition criterion if present */
+                if (p->sem.pos_sel.part)
+                    partlist = partition (
+                                   column_list (
+                                       col_env_lookup (
+                                           COLMAP(L(p)),
+                                           p->sem.pos_sel.part,
+                                           type_of (
+                                               L(p),
+                                               p->sem.pos_sel.part))));
+
+                /* calculate the position values */
+                col_env_add (COLMAP(p),
+                             num,
+                             aat_int,
+                             over (rownumber (),
+                                   window_clause (
+                                       partlist,
+                                       PFord_count (sortby)
+                                       ? order_by (srtbylist) : NULL)));
+
+                /* create a binding to make the positions accessible */
+                bind_operator (p, false);
+
+                /* add the positional predicate */
+                where_list_add (
+                    WHERELIST(p),
+                    eq (col_env_lookup (COLMAP(p), num, aat_int),
+                        lit_int (pos)));
+
+                /* remove the num variable from the column list */
+                assert ((*(sql_column_env_t *)
+                            PFarray_top (COLMAP(p))).att == num);
+                PFarray_del (COLMAP(p));
+            }
+            break;
+
         /* Rel:    disjunion (Rel, Rel) */
         case 15:
         /* Rel:    difference (Rel, Rel) */
@@ -2843,6 +3022,20 @@ reduce (PFla_op_t * p, int goalnt)
         case 38:
         /* Rel:    count (Rel) */
         case 39:
+            /* Bind the input of the aggregate if the group by 
+               criterion is not a column reference. */
+            if (p->sem.aggr.part &&
+                (col_env_lookup (
+                     COLMAP(L(p)),
+                     p->sem.aggr.part,
+                     type_of (p, p->sem.aggr.part)))->kind != sql_column_name) {
+#ifndef NDEBUG
+                if (!BOUND(L(p)))
+                    execute (comment ("bind as a column reference "
+                                      "is needed in the following aggregate"));
+#endif
+                bind_operator (L(p), false);
+            }
         {
             PFalg_att_t att = p->sem.aggr.att,
                         part = p->sem.aggr.part,

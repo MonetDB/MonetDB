@@ -295,6 +295,7 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
             case la_thetajoin:
             case la_project:
             case la_select:
+            case la_pos_select:
             case la_disjunion:
             case la_intersect:
             case la_difference:
@@ -1118,6 +1119,83 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
                 next_join = L(p);
                 break;
 
+            case la_pos_select:
+                if (!PFprop_key (rp->prop, ratt) ||
+                    !PFprop_subdom (rp->prop,
+                                    PFprop_dom (lp->prop, latt),
+                                    PFprop_dom (rp->prop, ratt)))
+                    /* Ensure that the values of the left join argument
+                       are a subset of the values of the right join argument
+                       and that the right join argument is keyed. These
+                       two tests make sure that we have exactly one match per
+                       tuple in the left relation and thus the result of the
+                       positional select operator stays stable. */
+                    break;
+
+                {
+                    PFalg_proj_t *proj_list;
+                    PFord_ordering_t sortby;
+                    PFalg_att_t cur;
+                    unsigned int count = 0;
+                    /* create projection list */
+                    proj_list = PFmalloc (lp->schema.count *
+                                          sizeof (*(proj_list)));
+                                          
+                    for (unsigned int i = 0; i < lp->schema.count; i++) {
+                        cur = lp->schema.items[i].name;
+                        if (cur != latt)
+                            proj_list[count++] = proj (cur, cur);
+                    }
+                    /* add join column with original name
+                       the projection list */
+                    proj_list[count++] = proj (latt,
+                                               p->sem.eqjoin_unq.res);
+                                               
+                    /* copy sortby criteria and change name of
+                       sort column to equi-join result if it is
+                       also a join argument */
+                    sortby = PFordering ();
+                    
+                    for (unsigned int i = 0;
+                         i < PFord_count (lp->sem.pos_sel.sortby);
+                         i++) {
+                        cur = PFord_order_col_at (
+                                  lp->sem.pos_sel.sortby,
+                                  i);
+                        if (cur == latt)
+                            cur = p->sem.eqjoin_unq.res;
+
+                        sortby = PFord_refine (
+                                     sortby,
+                                     cur,
+                                     PFord_order_dir_at (
+                                         lp->sem.pos_sel.sortby,
+                                         i));
+                    }
+                                            
+                    /* make sure that frag and roots see
+                       the new attribute node */
+                    *p = *(pos_select (eqjoin_unq (L(lp), rp, latt, ratt,
+                                                   p->sem.eqjoin_unq.res),
+                                       lp->sem.pos_sel.pos,
+                                       sortby,
+                                       lp->sem.pos_sel.part
+                                           ? is_join_att(p,
+                                                         lp->sem.pos_sel.part)
+                                                 ? p->sem.eqjoin_unq.res
+                                                 : lp->sem.pos_sel.part
+                                           : att_NULL));
+                    /* the schema of the new positional selection operator
+                       has to be pruned to maintain the schema
+                       of the original positional selection operator
+                       -- its pointer is replaced */
+                    *lp = *(PFla_project_ (p, count, proj_list));
+                    
+                    next_join = L(p);
+                    break;
+                }
+                
+                break;
             case la_disjunion:
             {
                 /* In situations where we apply actions on the
@@ -1673,6 +1751,7 @@ map_name (PFla_op_t *p, PFalg_att_t att)
             
         case la_cross:
         case la_select:
+        case la_pos_select:
         case la_disjunion:
         case la_eqjoin_unq:
         case la_semijoin:

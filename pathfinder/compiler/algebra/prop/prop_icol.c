@@ -289,6 +289,22 @@ prop_infer_icols (PFla_op_t *n, PFalg_att_t icols)
             n->prop->l_icols = union_ (n->prop->icols, n->sem.select.att);
             break;
 
+        case la_pos_select:
+            n->prop->l_icols = n->prop->icols;
+
+            for (unsigned int i = 0;
+                 i < PFord_count (n->sem.pos_sel.sortby);
+                 i++)
+                n->prop->l_icols = union_ (n->prop->l_icols,
+                                           PFord_order_col_at (
+                                               n->sem.pos_sel.sortby, i));
+
+            /* only infer part if available */
+            if (n->sem.pos_sel.part != att_NULL)
+                n->prop->l_icols = union_ (n->prop->l_icols,
+                                           n->sem.pos_sel.part);
+            break;
+
         case la_disjunion:
             n->prop->l_icols = n->prop->icols;
 

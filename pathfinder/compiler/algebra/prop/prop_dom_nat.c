@@ -501,6 +501,7 @@ infer_dom (PFla_op_t *n, unsigned int id)
             break;
 
         case la_select:
+        case la_pos_select:
             /* create new subdomains for all attributes */
             for (unsigned int i = 0; i < L(n)->schema.count; i++)
                 if (L(n)->schema.items[i].type == aat_nat) {

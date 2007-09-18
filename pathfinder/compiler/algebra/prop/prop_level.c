@@ -183,6 +183,7 @@ infer_level (PFla_op_t *n)
         case la_attach:
         case la_semijoin:
         case la_select:
+        case la_pos_select:
         case la_difference:
         case la_distinct:
         case la_fun_1to1:

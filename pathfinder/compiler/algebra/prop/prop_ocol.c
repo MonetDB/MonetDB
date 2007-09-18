@@ -187,6 +187,7 @@ infer_ocol (PFla_op_t *n)
         } break;
 
         case la_select:
+        case la_pos_select:
             ocols (n) = copy_ocols (ocols (L(n)), ocols_count (L(n)));
             break;
 

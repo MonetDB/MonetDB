@@ -455,6 +455,7 @@ infer_ckey (PFla_op_t *n)
         }   break;
 
         case la_select:
+        case la_pos_select:
         case la_difference:
         case la_type_assert:
         case la_roots:

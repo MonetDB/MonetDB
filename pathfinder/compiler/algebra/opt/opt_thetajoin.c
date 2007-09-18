@@ -877,6 +877,80 @@ opt_mvd (PFla_op_t *p)
             }
             break;
 
+        case la_pos_select:
+            /* An expression that does not contain any sorting column
+               required by the positional select operator, but contains
+               the partitioning attribute is independent of the positional
+               select. The translation thus moves the expression above 
+               the positional selection and removes its partitioning column. */ 
+            if (is_tj (L(p)) &&
+                p->sem.pos_sel.part) {
+                bool lpart = false,
+                     rpart = false;
+                unsigned int lsortby = 0,
+                             rsortby = 0;
+
+                /* first check for the required columns
+                   in the left thetajoin input */
+                for (unsigned int i = 0; i < LL(p)->schema.count; i++) {
+                    if (LL(p)->schema.items[i].name == p->sem.pos_sel.part)
+                        lpart = true;
+                    for (unsigned int j = 0;
+                         j < PFord_count (p->sem.pos_sel.sortby);
+                         j++)
+                        if (LL(p)->schema.items[i].name 
+                            == PFord_order_col_at (
+                                   p->sem.pos_sel.sortby,
+                                   j)) {
+                            lsortby++;
+                            break;
+                        }
+                }
+                /* and then check for the required columns
+                   in the right thetajoin input */
+                for (unsigned int i = 0; i < LR(p)->schema.count; i++) {
+                    if (LR(p)->schema.items[i].name == p->sem.pos_sel.part)
+                        rpart = true;
+                    for (unsigned int j = 0;
+                         j < PFord_count (p->sem.pos_sel.sortby);
+                         j++)
+                        if (LR(p)->schema.items[i].name 
+                            == PFord_order_col_at (
+                                   p->sem.pos_sel.sortby,
+                                   j)) {
+                            rsortby++;
+                            break;
+                        }
+                }
+                
+                if (lpart && rsortby == PFord_count (p->sem.pos_sel.sortby)) {
+                    *p = *(thetajoin_opt (
+                              LL(p),
+                              pos_select (
+                                  LR(p),
+                                  p->sem.pos_sel.pos,
+                                  p->sem.pos_sel.sortby,
+                                  att_NULL),
+                              L(p)->sem.thetajoin_opt.pred));
+                    modified = true;
+                    break;
+                }
+
+                if (rpart && lsortby == PFord_count (p->sem.pos_sel.sortby)) {
+                    *p = *(thetajoin_opt (
+                              pos_select (
+                                  LL(p),
+                                  p->sem.pos_sel.pos,
+                                  p->sem.pos_sel.sortby,
+                                  att_NULL),
+                              LR(p),
+                              L(p)->sem.thetajoin_opt.pred));
+                    modified = true;
+                    break;
+                }
+            }
+            break;
+
         case la_disjunion:
             /* If the children of the union operator are both thetajoin 
                operators which reference the same subexpression, we move

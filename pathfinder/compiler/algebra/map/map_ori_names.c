@@ -379,6 +379,26 @@ map_ori_names (PFla_op_t *p, PFarray_t *map)
             res = select_ (PROJ(LEFT, p), ONAME(p, p->sem.select.att));
             break;
 
+        case la_pos_select:
+        {
+            PFord_ordering_t sortby = PFordering ();
+
+            for (unsigned int i = 0;
+                 i < PFord_count (p->sem.pos_sel.sortby);
+                 i++)
+                sortby = PFord_refine (
+                             sortby,
+                             ONAME(p, PFord_order_col_at (
+                                          p->sem.pos_sel.sortby, i)),
+                             PFord_order_dir_at (
+                                 p->sem.pos_sel.sortby, i));
+                                                   
+            res = pos_select (PROJ(LEFT, p),
+                              p->sem.pos_sel.pos,
+                              sortby,
+                              ONAME(p, p->sem.pos_sel.part));
+        }   break;
+
         case la_disjunion:
             res = disjunion (PROJ(LEFT, p), PROJ(RIGHT, p));
             break;

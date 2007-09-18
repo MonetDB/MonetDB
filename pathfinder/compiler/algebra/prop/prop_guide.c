@@ -1026,6 +1026,7 @@ infer_guide(PFla_op_t *n, PFguide_tree_t *guide)
         case la_attach: 
         case la_semijoin: 
         case la_select: 
+        case la_pos_select:
         case la_difference: 
         case la_distinct: 
         case la_fun_1to1: 

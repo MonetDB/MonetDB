@@ -85,10 +85,11 @@ typedef struct PFla_op_t *NODEPTR_TYPE;
 %term  thetajoin       =   8
 %term  project         =   9
 %term  select_         =  10
-%term  disjunion       =  11
-%term  intersect       =  12
-%term  difference      =  13
-%term  distinct        =  14
+%term  pos_select      =  11
+%term  disjunion       =  12
+%term  intersect       =  13
+%term  difference      =  14
+%term  distinct        =  15
 %term  fun_1to1        =  20
 %term  num_eq          =  25
 %term  num_gt          =  26
@@ -162,7 +163,8 @@ Rel:    project (Rel)                             =  13 (10);
 Rel:    project (attach (Rel))                    =  14 (10);
 Rel:    project (project (Rel))                   =  15  (1);
 Rel:    project (lit_tbl)                         =  16 (10);
-Rel:    select_ (Rel)                             =  18 (10);
+Rel:    select_ (Rel)                             =  17 (10);
+Rel:    pos_select (Rel)                          =  18 (10);
 Rel:    disjunion (Rel, Rel)                      =  19 (10);
 Rel:    disjunion (lit_tbl, lit_tbl)              =  20 (10);
 Rel:    disjunion (EmptyRel, Rel)                 =  21  (5);
@@ -647,10 +649,10 @@ reduce (PFla_op_t *p, int goalnt)
                 atts[i] = p->sem.proj.items[i].new;
                 
                 /* find the corresponding column index in the table */
-                for (j = 0; j < acount; j++)
+                for (j = 0; j < L(p)->schema.count; j++)
                     if (p->sem.proj.items[i].old == L(p)->schema.items[j].name)
                         break;
-                assert (j < acount);
+                assert (j < L(p)->schema.count);
                 index = j;
 
                 /* copy all values from the table */
@@ -663,7 +665,7 @@ reduce (PFla_op_t *p, int goalnt)
         }   break;
         
         /* Rel:    select_ (Rel) */
-        case 18:
+        case 17:
         {
             /**
              *  introduce thetajoin based on 

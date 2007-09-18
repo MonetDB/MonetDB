@@ -230,6 +230,27 @@ subexp_eq (PFla_op_t *a, PFla_op_t *b)
             return a->sem.select.att == b->sem.select.att;
             break;
 
+        case la_pos_select:
+            if (a->sem.pos_sel.pos != b->sem.pos_sel.pos)
+                return false;
+
+            for (unsigned int i = 0;
+                 i < PFord_count (a->sem.pos_sel.sortby);
+                 i++)
+                if (PFord_order_col_at (a->sem.pos_sel.sortby, i) !=
+                    PFord_order_col_at (b->sem.pos_sel.sortby, i) ||
+                    PFord_order_dir_at (a->sem.pos_sel.sortby, i) !=
+                    PFord_order_dir_at (b->sem.pos_sel.sortby, i))
+                    return false;
+
+            /* either both positional selection are partitioned or none */
+            /* partitioning attribute must be equal (if available) */
+            if (a->sem.pos_sel.part != b->sem.pos_sel.part)
+                return false;
+
+            return true;
+            break;
+
         case la_fun_1to1:
             if (a->sem.fun_1to1.kind        != b->sem.fun_1to1.kind      ||
                 a->sem.fun_1to1.res         != b->sem.fun_1to1.res       ||

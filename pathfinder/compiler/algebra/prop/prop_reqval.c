@@ -212,16 +212,7 @@ prop_infer_reqvals (PFla_op_t *n, reqval_t reqvals)
             prop_infer_reqvals (L(n), rv);
             break;
 
-        case la_semijoin:
-        case la_difference:
-        case la_cond_err:
-            prop_infer_reqvals (L(n), rv);
-
-            rv.name = 0;
-            rv.val = 0;
-            prop_infer_reqvals (R(n), rv);
-            break;
-
+        case la_pos_select:
         case la_distinct:
         case la_rownum: /* in rownum, rank, and number */
         case la_rank:   /* type of res is != boolean and */
@@ -233,6 +224,16 @@ prop_infer_reqvals (PFla_op_t *n, reqval_t reqvals)
         case la_dummy:
             /* propagate required values list to left subtree */
             prop_infer_reqvals (L(n), rv);
+            break;
+
+        case la_semijoin:
+        case la_difference:
+        case la_cond_err:
+            prop_infer_reqvals (L(n), rv);
+
+            rv.name = 0;
+            rv.val = 0;
+            prop_infer_reqvals (R(n), rv);
             break;
 
         case la_fun_1to1:

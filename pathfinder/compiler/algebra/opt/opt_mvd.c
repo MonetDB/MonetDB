@@ -532,6 +532,76 @@ opt_mvd (PFla_op_t *p)
         }
         break;
 
+    case la_pos_select:
+        /* An expression that does not contain any sorting column
+           required by the positional select operator, but contains
+           the partitioning attribute is independent of the positional
+           select. The translation thus moves the expression above 
+           the positional selection and removes its partitioning column. */ 
+        if (is_cross (L(p)) &&
+            p->sem.pos_sel.part) {
+            bool part, sortby;
+
+            /* first check the dependencies of the left cross product input */
+            part = false;
+            sortby = false;
+            for (unsigned int i = 0; i < LL(p)->schema.count; i++) {
+                if (LL(p)->schema.items[i].name == p->sem.pos_sel.part)
+                    part = true;
+                for (unsigned int j = 0;
+                     j < PFord_count (p->sem.pos_sel.sortby);
+                     j++)
+                    if (LL(p)->schema.items[i].name 
+                        == PFord_order_col_at (
+                               p->sem.pos_sel.sortby,
+                               j)) {
+                        sortby = true;
+                        break;
+                    }
+            }
+            if (part && !sortby) {
+                *p = *(cross_can (
+                          LL(p),
+                          pos_select (
+                              LR(p),
+                              p->sem.pos_sel.pos,
+                              p->sem.pos_sel.sortby,
+                              att_NULL)));
+                modified = true;
+                break;
+            }
+
+            /* then check the dependencies of the right cross product input */
+            part = false;
+            sortby = false;
+            for (unsigned int i = 0; i < LR(p)->schema.count; i++) {
+                if (LR(p)->schema.items[i].name == p->sem.pos_sel.part)
+                    part = true;
+                for (unsigned int j = 0;
+                     j < PFord_count (p->sem.pos_sel.sortby);
+                     j++)
+                    if (LR(p)->schema.items[i].name 
+                        == PFord_order_col_at (
+                               p->sem.pos_sel.sortby,
+                               j)) {
+                        sortby = true;
+                        break;
+                    }
+            }
+            if (part && !sortby) {
+                *p = *(cross_can (
+                          LR(p),
+                          pos_select (
+                              LL(p),
+                              p->sem.pos_sel.pos,
+                              p->sem.pos_sel.sortby,
+                              att_NULL)));
+                modified = true;
+                break;
+            }
+        }
+        break;
+
     case la_disjunion:
         /* If the children of the union operator are independent
            expressions (both attach operator or cross product) which

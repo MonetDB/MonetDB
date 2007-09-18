@@ -334,6 +334,7 @@ infer_unq_names (PFla_op_t *n, unsigned int id)
             break;
 
         case la_select:
+        case la_pos_select:
         case la_distinct:
             bulk_add_name_pairs (np_list, L(n));
             break;

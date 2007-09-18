@@ -128,6 +128,23 @@ prop_infer_set (PFla_op_t *n, bool set)
             r_set = n->prop->set;
             break;
 
+        case la_pos_select:
+        case la_to:
+        case la_avg:
+        case la_sum:
+        case la_count:
+        case la_rownum:
+        case la_rank:
+        case la_number:
+        case la_twig:
+        case la_docnode:
+        case la_attribute:
+        case la_textnode:
+        case la_comment:
+        case la_processi:
+            l_set = false;
+            break;
+
         case la_intersect:
             l_set = true;
             r_set = true;
@@ -145,22 +162,6 @@ prop_infer_set (PFla_op_t *n, bool set)
         case la_seqty1:
         case la_all:
             l_set = true;
-            break;
-
-        case la_to:
-        case la_avg:
-        case la_sum:
-        case la_count:
-        case la_rownum:
-        case la_rank:
-        case la_number:
-        case la_twig:
-        case la_docnode:
-        case la_attribute:
-        case la_textnode:
-        case la_comment:
-        case la_processi:
-            l_set = false;
             break;
 
         case la_step:

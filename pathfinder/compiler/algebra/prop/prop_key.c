@@ -395,6 +395,7 @@ infer_key (PFla_op_t *n, bool with_guide_info)
             break;
 
         case la_select:
+        case la_pos_select:
         case la_difference:
         case la_type_assert:
         case la_roots:

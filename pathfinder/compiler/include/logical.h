@@ -64,10 +64,11 @@ enum PFla_op_kind_t {
                                    predicates) */
     , la_project         =  9 /**< algebra projection and renaming operator */
     , la_select          = 10 /**< selection of rows where column value != 0 */
-    , la_disjunion       = 11 /**< union two relations with same schema */
-    , la_intersect       = 12 /**< intersect two relations with same schema */
-    , la_difference      = 13 /**< difference of two relations w/ same schema */
-    , la_distinct        = 14 /**< duplicate elimination operator */
+    , la_pos_select      = 11 /**< positional selection of rows */
+    , la_disjunion       = 12 /**< union two relations with same schema */
+    , la_intersect       = 13 /**< intersect two relations with same schema */
+    , la_difference      = 14 /**< difference of two relations w/ same schema */
+    , la_distinct        = 15 /**< duplicate elimination operator */
     , la_fun_1to1        = 20 /**< generic operator that extends the schema with
                                    a new column where each value is determined 
                                    by the values of a single row (cardinality 
@@ -209,6 +210,15 @@ union PFla_op_sem_t {
     struct {
         PFalg_att_t     att;     /**< name of selected attribute */
     } select;
+
+    /* semantic content for positional selection operator */
+    struct {
+        int             pos;      /**< position to select */
+        PFord_ordering_t sortby;  /**< sort crit. (list of attribute names
+                                       and direction) */
+        PFalg_att_t     part;     /**< optional partitioning attribute,
+                                       otherwise NULL */
+    } pos_sel;
 
     /* semantic content for generic (row based) function operator */
     struct {
@@ -594,6 +604,10 @@ PFla_op_t *PFla_project_ (const PFla_op_t *n,
 
 /** Constructor for selection of not-0 column values. */
 PFla_op_t * PFla_select (const PFla_op_t *n, PFalg_att_t att);
+
+/** Constructor for positional selection. */
+PFla_op_t * PFla_pos_select (const PFla_op_t *n, int pos,
+                             PFord_ordering_t s, PFalg_att_t p);
 
 /**
  * Disjoint union of two relations.

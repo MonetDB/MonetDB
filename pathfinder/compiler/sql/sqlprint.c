@@ -67,27 +67,79 @@ indent (FILE *f, int ind)
 }
 
 static char *ID[] = {
-      [sql_add]              = "+",
-      [sql_sub]              = "-",
-      [sql_mul]              = "*",
-      [sql_div]              = "/",
-      
-      [sql_count]            = "COUNT",
-      [sql_max]              = "MAX",
-      [sql_sum]              = "SUM",
-      [sql_min]              = "MIN",
-      [sql_avg]              = "AVG",
-      
-      [sql_and]              = "AND",
-      [sql_or]               = "OR", 
-      [sql_ceil]             = "CEIL",
-      [sql_floor]            = "FLOOR",
-      [sql_abs]              = "ABS",
-      [sql_modulo]           = "MOD",
-      [sql_concat]           = "CONCAT",
-      [sql_is]               = "IS",
-      [sql_is_not]           = "IS NOT",
-      [sql_left_outer_join]  = "LEFT OUTER JOIN ",
+      [sql_root]              = "root",
+      [sql_ser_info]          = "ser_info",
+      [sql_ser_comment]       = "ser_comment",
+      [sql_ser_mapping]       = "ser_mapping",
+      [sql_ser_doc]           = "ser_doc",
+      [sql_ser_res]           = "ser_res",
+      [sql_ser_type]          = "ser_type",
+      [sql_tbl_def]           = "tbl_def",
+      [sql_schema_tbl_name]   = "schema_tbl_name",
+      [sql_tbl_name]          = "tbl_name",
+      [sql_alias]             = "alias",
+      [sql_column_list]       = "column_list",
+      [sql_column_name]       = "column_name",
+      [sql_star]              = "star",
+      [sql_with]              = "with",
+      [sql_cmmn_tbl_expr]     = "cmmn_tbl_expr",
+      [sql_comment]           = "comment",
+      [sql_bind]              = "bind",
+      [sql_nil]               = "nil",
+      [sql_select]            = "select",
+      [sql_select_list]       = "select_list",
+      [sql_column_assign]     = "column_assign",
+      [sql_from_list]         = "from_list",
+      [sql_alias_bind]        = "alias_bind",
+      [sql_on]                = "on",
+      [sql_left_outer_join]   = "left_outer_join",
+      [sql_union]             = "union",
+      [sql_diff]              = "diff",
+      [sql_lit_int]           = "lit_int",
+      [sql_lit_lng]           = "lit_lng",
+      [sql_lit_dec]           = "lit_dec",
+      [sql_lit_str]           = "lit_str",
+      [sql_lit_null]          = "lit_null",
+      [sql_add]    /* used */ = "+",
+      [sql_sub]    /* used */ = "-",
+      [sql_mul]    /* used */ = "*",
+      [sql_div]    /* used */ = "/",
+      [sql_floor]  /* used */ = "FLOOR",
+      [sql_ceil]   /* used */ = "CEIL",
+      [sql_modulo] /* used */ = "MOD",
+      [sql_abs]    /* used */ = "ABS",
+      [sql_concat] /* used */ = "CONCAT",
+      [sql_is]     /* used */ = "IS",
+      [sql_is_not] /* used */ = "IS NOT",
+      [sql_eq]                = "eq",
+      [sql_gt]                = "gt",
+      [sql_gteq]              = "gteq",
+      [sql_between]           = "between",
+      [sql_like]              = "like",
+      [sql_in]                = "in",
+      [sql_stmt_list]          = "stmt_list",
+      [sql_list_list]         = "list_list",
+      [sql_not]               = "not",
+      [sql_and]    /* used */ = "AND",
+      [sql_or]     /* used */ = "OR", 
+      [sql_count]  /* used */ = "COUNT",
+      [sql_max]    /* used */ = "MAX",
+      [sql_sum]    /* used */ = "SUM",
+      [sql_min]    /* used */ = "MIN",
+      [sql_avg]    /* used */ = "AVG",
+      [sql_over]              = "over",
+      [sql_rownumber]         = "rownumber",
+      [sql_wnd_clause]        = "wnd_clause",
+      [sql_order_by]          = "order_by",
+      [sql_sortkey]           = "sortkey",
+      [sql_partition]         = "partition",
+      [sql_cast]              = "cast",
+      [sql_type]              = "type",
+      [sql_coalesce]          = "coalesce",
+      [sql_case]              = "case",
+      [sql_when]              = "when",
+      [sql_else]              = "else",
+      [sql_values]            = "values",
 };
 
 /* forward declarations */
@@ -116,7 +168,7 @@ print_schema_relcol (FILE *f, PFsql_t *n)
         default:
             PFoops (OOPS_FATAL,
                     "SQL grammar conflict. (Expected: schema relation; "
-                    "Got: %u)", n->kind);
+                    "Got: %s)", ID[n->kind]);
     }
 }
 
@@ -137,7 +189,7 @@ print_schema_table (FILE *f, PFsql_t *n)
         default:
             PFoops (OOPS_FATAL,
                     "SQL grammar conflict. (Expected: schema table; "
-                    "Got: %u)", n->kind);
+                    "Got: %s)", ID[n->kind]);
     }
 }
 
@@ -173,7 +225,7 @@ print_schema_information (FILE *f, PFsql_t *n)
         default:
             PFoops (OOPS_FATAL,
                     "SQL grammar conflict. (Expected: schema information; "
-                    "Got: %u)", n->kind);
+                    "Got: %s)", ID[n->kind]);
     }
 
     /* and then the rest of the list */
@@ -218,7 +270,7 @@ print_column_name_list (PFsql_t *n)
         default:
             PFoops (OOPS_FATAL,
                     "SQL grammar conflict. (Expected: column name list; "
-                    "Got: %u)", n->kind);
+                    "Got: %s)", ID[n->kind]);
     }
 }
 
@@ -254,7 +306,7 @@ print_literal (PFsql_t * n)
         default:
             PFoops (OOPS_FATAL,
                     "SQL grammar conflict. (Expected: literal; "
-                    "Got: %u)", n->kind);
+                    "Got: %s)", ID[n->kind]);
     }
 }
 
@@ -306,7 +358,7 @@ print_list_list (FILE *f, PFsql_t * n, int i)
          default:
              PFoops (OOPS_FATAL,
                      "SQL grammar conflict. (Expected: list of list; "
-                     "Got: %u)", n->kind);
+                     "Got: %s)", ID[n->kind]);
     }
 }
 
@@ -379,14 +431,14 @@ print_condition (PFsql_t *n)
             PFprettyprintf (")");
             break;
             
-    	case sql_like:
-    	    if (R(n)->kind != sql_lit_str)
+        case sql_like:
+            if (R(n)->kind != sql_lit_str)
                 PFoops (OOPS_FATAL, "LIKE only works with constant strings");
             
             PFprettyprintf ("(");
-    	    print_statement (L(n));
-    	    /* write the string without beginning and trailing ' */
-    	    PFprettyprintf (" LIKE  '%%%s%%')", R(n)->sem.atom.val.s);
+            print_statement (L(n));
+            /* write the string without beginning and trailing ' */
+            PFprettyprintf (" LIKE  '%%%s%%')", R(n)->sem.atom.val.s);
             break;
     
         case sql_in:
@@ -400,7 +452,7 @@ print_condition (PFsql_t *n)
         default:
             PFoops (OOPS_FATAL,
                     "SQL grammar conflict. (Expected: condition; "
-                    "Got: %u)", n->kind);
+                    "Got: %s)", ID[n->kind]);
     }
 }
     
@@ -480,7 +532,7 @@ print_case (PFsql_t *n)
         default:
             PFoops (OOPS_FATAL,
                     "SQL grammar conflict. (Expected: case statement; "
-                    "Got: %u)", n->kind);
+                    "Got: %s)", ID[n->kind]);
     }
 }
 
@@ -583,7 +635,7 @@ print_statement (PFsql_t *n)
         default:
             PFoops (OOPS_FATAL,
                     "SQL grammar conflict. (Expected: statement; "
-                    "Got: %u)", n->kind);
+                    "Got: %s)", ID[n->kind]);
     }
 }
 
@@ -673,7 +725,7 @@ print_tablereference (FILE *f, PFsql_t* n, int i)
         default:
             PFoops (OOPS_FATAL,
                     "SQL grammar conflict. (Expected: table reference; "
-                    "Got: %u)", n->kind);
+                    "Got: %s)", ID[n->kind]);
     }
 }
 
@@ -687,10 +739,9 @@ print_join (FILE *f, PFsql_t *n, int i)
 
     switch (n->kind) {
         case sql_left_outer_join:
-        case sql_right_outer_join:
             print_join (f, L(n), i);
             indent (f, i-6);
-            fprintf (f, ID[n->kind]);
+            fprintf (f, "LEFT OUTER JOIN ");
             print_join (f, R(n), i-6+17);
             break;
         case sql_on:
@@ -707,7 +758,7 @@ print_join (FILE *f, PFsql_t *n, int i)
         default:
             PFoops (OOPS_FATAL,
                     "SQL grammar conflict. (Expected: join clause; "
-                    "Got: %u)", n->kind);
+                    "Got: %s)", ID[n->kind]);
     }
 }
 
@@ -739,7 +790,7 @@ print_from_list (FILE *f, PFsql_t *n, int i)
         default:
             PFoops (OOPS_FATAL,
                     "SQL grammar conflict. (Expected: from list; "
-                    "Got: %u)", n->kind);
+                    "Got: %s)", ID[n->kind]);
     }
 }
 
@@ -833,7 +884,7 @@ print_fullselect (FILE *f, PFsql_t *n, int i)
         default:
             PFoops (OOPS_FATAL,
                     "SQL grammar conflict. (Expected: fullselect; "
-                    "Got: %u)", n->kind);
+                    "Got: %s)", ID[n->kind]);
     }
 
     fputc (')', f);
@@ -877,7 +928,7 @@ print_binding_ (FILE* f, PFsql_t *n, char *comma)
         default:
             PFoops (OOPS_FATAL,
                     "SQL grammar conflict. (Expected: binding; "
-                    "Got: %u)", n->kind);
+                    "Got: %s)", ID[n->kind]);
     }
 }
 #define print_binding(f,n) print_binding_(f,n,",\n")
