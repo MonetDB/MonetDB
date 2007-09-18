@@ -52,7 +52,7 @@ smallTOC_SHARED_MODS =	\
 	\
 	-l_txtsim	\
 	\
-	./lib_sql_server
+	lib_sql_server
 
 EXTRA_DIST = static_modules.mx mysqldump2bulkload.py
 
