@@ -650,14 +650,15 @@ static void relabel (PFpnode_t *p,  PFpnode_t **kids);
 
 static PFpnode_t * varref (PFqname_raw_t q, PFloc_t loc);
 static PFqname_raw_t new_varname (char *prefix, unsigned int* varcount);
-static bool contains_last_pos_or_nonstepdot(PFpnode_t *p, bool dots_allowed);
+static bool nonpos_predicate(PFpnode_t *p);
+static bool has_pos_or_nonstepdot(PFpnode_t *p, bool dots_allowed);
                 
 /**
  * The pull-predicate-up rewrite (169) can only be done if the predicate
  * does not contain position/last/dot; as checked by this function.
  */
 static bool
-contains_last_pos_or_nonstepdot(PFpnode_t *p, bool dots_allowed) 
+has_pos_or_nonstepdot(PFpnode_t *p, bool dots_allowed) 
 {
     while(p) {
         if (p->kind != p_locpath || L(p)->kind != p_step || R(p)->kind != p_dot) {
@@ -671,27 +672,29 @@ contains_last_pos_or_nonstepdot(PFpnode_t *p, bool dots_allowed)
                 if (strcmp(p->sem.qname_raw.loc, "first") == 0 && dots_allowed) return true;
             }
             /* allow the forbidden elements inside nested predicates (i.e. do not check R(p) then) */
-            if (p->kind != p_pred && R(p)) {
-                if (contains_last_pos_or_nonstepdot(R(p), dots_allowed)) return true; /* recurse */ 
-            }
+            if (p->kind != p_pred && R(p) && has_pos_or_nonstepdot(R(p), dots_allowed)) return true; 
         }
         p = L(p); /* tail recurse rewritten into loop */
     }
     return false;
 }
 
+static bool 
+nonpos_predicate(PFpnode_t *p) 
+{
+    if (p->kind == p_exprseq) /* sequence construction may be ok */
+        return nonpos_predicate(L(p)) && nonpos_predicate(R(p));
+    return /* allow obvious boolean expressions, (), [] and locpaths */
+       (p->kind == p_eq   || p->kind == p_ne || p->kind == p_or || 
+        p->kind == p_and  || p->kind == p_gt || p->kind == p_ge ||  
+        p->kind == p_lt   || p->kind == p_le || p->kind == p_empty_seq || 
+        p->kind == p_pred ||(p->kind == p_locpath && L(p)->kind == p_step));
+}
+
 bool
 PFposition_safe_predicate(PFpnode_t *p, bool dots_allowed) 
 {
-    /* allow obvious boolean expressions */
-    if (p->kind != p_eq && p->kind != p_ne && p->kind != p_or && p->kind != p_and &&
-        p->kind != p_gt && p->kind != p_ge && p->kind != p_lt && p->kind != p_le)
-    {
-        /* also allow locations paths (end in a true step, or in a predicate) */
-        if (p->kind != p_pred && (p->kind != p_locpath || L(p)->kind != p_step)) 
-            return false; /* it may be positional, sorry (no type info here yet) */
-    }
-    return !contains_last_pos_or_nonstepdot(p, dots_allowed); /* further check against forbidden elements */
+    return nonpos_predicate(p) && !has_pos_or_nonstepdot(p, dots_allowed); 
 }
 
 /**
