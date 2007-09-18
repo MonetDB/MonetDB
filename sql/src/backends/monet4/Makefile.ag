@@ -50,9 +50,7 @@ smallTOC_SHARED_MODS =	\
 	-l_unix	\
 	-l_xtables	\
 	\
-	-l_txtsim	\
-	\
-	lib_sql_server
+	-l_txtsim
 
 EXTRA_DIST = static_modules.mx mysqldump2bulkload.py
 
@@ -87,19 +85,19 @@ lib_initmodules = {
 bin_Mserver = {
 	COND = LINK_STATIC
 	SOURCES = Mserver.mx
-	LIBS = libinitmodules STATIC_MODS @SHARED_LIBS@ $(EXTRA_LIBS) \
+	LIBS = libinitmodules STATIC_MODS @SHARED_LIBS@ lib_sql_server $(EXTRA_LIBS) \
 		$(MONETDB_LIBS) -lbat -lmutils -lstream $(MONETDB4_LIBS) -lmonet
 }
 
 lib_embeddedsql = {
 	SOURCES = embeddedclient.mx
-	LIBS = libinitmodules STATIC_MODS @SHARED_LIBS@ $(EXTRA_LIBS) \
+	LIBS = libinitmodules STATIC_MODS @SHARED_LIBS@ lib_sql_server $(EXTRA_LIBS) \
 		$(MONETDB_LIBS) -lbat -lmutils -lstream $(MONETDB4_LIBS) -lmonet $(CLIENTS_LIBS) -lMapi
 }
 
 bin_Mbeddedsql = {
 	SOURCES = prog.c
-	LIBS = libinitmodules STATIC_MODS @SHARED_LIBS@ $(EXTRA_LIBS) \
+	LIBS = libinitmodules STATIC_MODS @SHARED_LIBS@ lib_sql_server $(EXTRA_LIBS) \
 		libembeddedsql \
 		$(MONETDB_LIBS) -lbat -lmutils -lstream $(MONETDB4_LIBS) -lmonet $(CLIENTS_LIBS) -lMapi
 }
@@ -107,7 +105,7 @@ bin_Mbeddedsql = {
 bin_embeddedExample = {
 	SOURCES = embeddedExample.c
 	DIR = libdir/MonetDB4/Tests
-	LIBS = libinitmodules STATIC_MODS @SHARED_LIBS@ $(EXTRA_LIBS) \
+	LIBS = libinitmodules STATIC_MODS @SHARED_LIBS@ lib_sql_server $(EXTRA_LIBS) \
 		libembeddedsql \
 		$(MONETDB_LIBS) -lbat -lmutils -lstream $(MONETDB4_LIBS) -lmonet $(CLIENTS_LIBS) -lMapi
 }
