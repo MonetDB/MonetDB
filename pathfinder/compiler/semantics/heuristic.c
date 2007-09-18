@@ -71,8 +71,8 @@
  *   such that even if at runtime the index is not used, we did not waste effort 
  *   on atomizing node values in EXPR1 twice ($var2 contains atomized values).
  * - UP = . for attribute tests. For PRED($x)/text() = EXPR1 tests, 
- *   UP = parent::nsloc, to go from text nodes to element nodses. Finally, 
- *   UP = ancestor::nsloc, for PRED(x) = EXPP1 tests (ie on fn:data).
+ *   UP = parent::nsloc, to go from text nodes to element nodes. Finally, 
+ *   UP = ancestor::nsloc, for PRED(x) = EXPR1 tests (ie on fn:data).
  *   Last match is tricky: the first non-space text node will produce
  *   the match.
  *
@@ -536,7 +536,7 @@ var_findbind(PFpnode_t *v, PFpnode_t *EXPR2) {
 static int
 try_rewrite(PFpnode_t *p, PFpnode_t **stack, int depth, int curvar)
 {
-    /* my rewrite introduces 11 temporary variables */
+    /* my rewrite introduces 9 temporary variables */
     PFpnode_t *VAR1 = var(curvar+1);
     PFpnode_t *VAR2 = var(curvar+2);
     PFpnode_t *VAR3 = var(curvar+3);
