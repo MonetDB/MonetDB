@@ -307,9 +307,9 @@ static PFsql_t *sql_stmts = NULL;
 /* The execute is used to construct the sequence
  * of `common table expressions'.
  */
-#define execute(c) sql_stmts = (sql_stmts == NULL)?     \
-                        common_table_expr(nil(),(c)):   \
-                        common_table_expr(sql_stmts,(c))
+#define execute(c)      sql_stmts = (sql_stmts == NULL)?  \
+                        common_table_expr(nil(),(c)):     \
+                        common_table_expr(sql_stmts,(c));
 
 /**
  * We define the fragment with the maximum pre value here.
@@ -1682,7 +1682,7 @@ cast_ (PFsql_t * expr, PFalg_simple_type_t ty, PFalg_simple_type_t res_ty)
 }
 
 static PFsql_t *
-serialize_(PFla_op_t * p, PFsql_t * (*join)(PFsql_t* a, PFsql_t *b), PFsql_t *selectlist)
+serialize_ (PFla_op_t * p, PFsql_t * (*join)(PFsql_t* a, PFsql_t *b), PFsql_t *selectlist)
 {
     assert (p);
     assert (p->kind == la_serialize);
@@ -2042,8 +2042,18 @@ reduce (PFla_op_t * p, int goalnt)
              * by the serializer and the with clause conflating all queries
              * translated to this point.
              */
+            assert (ser_info);
             assert (finalquery);
-            sql_stmts = root (ser_info, with (sql_stmts, finalquery));
+
+            assert (finalquery);
+
+            /* Check if there are already common-table expressions
+             * or we have a standalone query */
+            if (sql_stmts)
+                sql_stmts = root (ser_info, with (sql_stmts, finalquery));
+            else
+                sql_stmts = root (ser_info, finalquery);
+
         }   break;
 
         /* Query:  serialize (Frag, empty_tbl) */

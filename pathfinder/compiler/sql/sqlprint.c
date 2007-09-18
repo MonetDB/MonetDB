@@ -883,6 +883,32 @@ print_binding_ (FILE* f, PFsql_t *n, char *comma)
 #define print_binding(f,n) print_binding_(f,n,",\n")
 #define print_last_binding(f,n) print_binding_(f,n,"")
 
+static void
+PFsql_print_with (FILE *f, PFsql_t *n)
+{
+    /* ... and then print the query */
+    assert (n->kind == sql_with);
+
+    PFsql_t *binding = L(n);
+    fprintf (f, "WITH\n"); 
+    
+    if (binding  && R(binding) 
+       && (R(binding)->kind == sql_comment))
+        PFoops (OOPS_FATAL,
+                "SQL grammar conflict. (Expected: last binding; "
+                "Got: %u)", R(L(R(n)))->kind);
+
+    if (binding && R(binding) && L(binding))  {
+        print_binding (f, L(binding));
+        print_last_binding (f, R(binding));
+    }
+
+    fputc('\n', f);
+    assert (R(n));
+    print_fullselect (f, R(n), 0);
+
+}
+
 /**
  * Dump SQL tree @a n in pretty-printed form
  * into file @a f.
@@ -896,24 +922,18 @@ PFsql_print (FILE *f, PFsql_t *n)
     /* make sure that we have the sql root in our hands */
     assert (n);
     assert (n->kind == sql_root);
-    
+
+    assert (L(n));
+    assert (R(n));    
+
     /* first print all schema information */
     print_schema_information (f, L(n));
 
-    /* ... and then print the query */
-    assert (R(n)->kind == sql_with);
-    fprintf(f, "\nWITH\n");
-    
-    if (R(L(R(n)))->kind == sql_comment)
-        PFoops (OOPS_FATAL,
-                "SQL grammar conflict. (Expected: last binding; "
-                "Got: %u)", R(L(R(n)))->kind);
+    if (R(n)->kind == sql_with)
+        PFsql_print_with (f, R(n));
+    else
+        print_fullselect (f, R(n), 0);
 
-    print_binding (f, L(L(R(n))));
-    print_last_binding (f, R(L(R(n))));
-
-    fputc('\n', f);
-    print_fullselect (f, R(R(n)), 0);
     fprintf (f, ";\n");
 }
 
