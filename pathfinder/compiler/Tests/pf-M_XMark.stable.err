@@ -5,6 +5,16 @@ stderr of test 'pf-M_XMark` in directory 'compiler` itself:
 # 16:36:51 >  Mtimeout -timeout 60 ./pf-M_XMark pf-M_XMark 
 # 16:36:51 >  
 
+"pf -M ff.xq >/dev/null"
+error in function application: at (13,64-13,89): reference to undefined function `pf:hash'
+# halted in /data/home/boncz/monet4/src/pathfinder/compiler/semantics/functions.c (check_fun_usage), line 296
+"pf -M f.xq >/dev/null"
+"pf -M g.xq >/dev/null"
+"pf -M id01.xq >/dev/null"
+"pf -M id04.xq >/dev/null"
+"pf -M or01.xq >/dev/null"
+"pf -M or04.xq >/dev/null"
+"pf -M or10.xq >/dev/null"
 "pf -M q01.xq >/dev/null"
 "pf -M q02.xq >/dev/null"
 "pf -M q03.xq >/dev/null"
@@ -25,6 +35,13 @@ stderr of test 'pf-M_XMark` in directory 'compiler` itself:
 "pf -M q18.xq >/dev/null"
 "pf -M q19.xq >/dev/null"
 "pf -M q20.xq >/dev/null"
+"pf -M tst2.xq >/dev/null"
+error in function application: at (1,3-1,22): reference to undefined function `pf:hash'
+# halted in /data/home/boncz/monet4/src/pathfinder/compiler/semantics/functions.c (check_fun_usage), line 296
+"pf -M tst.xq >/dev/null"
+error in function application: at (1,71-1,92): reference to undefined function `pf:hash'
+# halted in /data/home/boncz/monet4/src/pathfinder/compiler/semantics/functions.c (check_fun_usage), line 296
+"pf -M t.xq >/dev/null"
 "pf -M upd.xq >/dev/null"
 
 # 16:36:55 >  

@@ -68,16 +68,16 @@ stderr of test 'invisible_error_messages.SF-1409122` in directory 'tests/BugsVia
 # 11:37:45 >  Mtimeout -timeout 60 MapiClient -lxquery -fxml -umonetdb -Pmonetdb --host=localhost --port=35613 invisible_error_messages.SF-1409122.xq
 # 11:37:45 >  
 
-MAPI  = monetdb@localhost:34248
+MAPI  = monetdb@sn-1:31203
 QUERY = for    $b in doc("auction.xml")/site/open_auctions/open_auction
         where  $b/bidder/personref[@person="person18829"] <<
                $b/bidder/personref[@person="person10487"]
                return <history> {$b/reserve/text()} </history>
-ERROR = !type error: no variant of function op:node-before accepts the given argument type(s): (element personref { item* } | ())*; (element personref { item* } | ())*
+ERROR = !type error: no variant of function op:node-before accepts the given argument type(s): (element personref { item* } | ())* | (element { item* } | ())*; (element personref { item* } | ())* | (element { item* } | ())*
         !type error: maybe you meant:
         !type error:   op:node-before (node, node) as boolean
         !type error: illegal arguments for function op:node-before
-        !# halted in /home/manegold/MonetDB/Stable/pathfinder/compiler/semantics/typecheck.brg (fun_not_found), line 1316
+        !# halted in /data/home/boncz/monet4/src/pathfinder/compiler/semantics/typecheck.brg (fun_not_found), line 1349
 
 # 11:37:45 >  
 # 11:37:45 >  Done.
