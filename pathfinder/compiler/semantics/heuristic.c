@@ -259,8 +259,6 @@
 #define var_type(a)       p_wire2(p_var_type, p->loc, a, nil)
 #define req_ty(a,b)       p_wire2(p_req_ty, p->loc, a, b)
 #define args(a,b)         p_wire2(p_args, p->loc, a, b)
-#define empty_seq()       p_leaf (p_empty_seq, p->loc)
-#define exprseq(a,b)      p_wire2(p_exprseq, p->loc, a, b)  
 #define where(a,b)        p_wire2(p_where, p->loc, a, b)  
 #define locpath(a,b)      p_wire2(p_locpath, p->loc, a, b) 
 #define if_then(a,b)      p_wire2(p_if, p->loc, a, b)  
@@ -647,19 +645,16 @@ try_rewrite(PFpnode_t *p, PFpnode_t **stack, int depth, int curvar)
            let(var_type(cpy(VAR2)),
                flwr(binds(bind(vars(cpy(VAR3)),EXPR1), nil),
                where(nil, ord_ret(nil,
-                     if_then(exprseq(instof(cpy(VAR3),
-                                            seq_ty(node_ty(p_kind_node, nil))),
-                                     empty_seq()),
-                     then_else(apply("fn", "data",
-                                     args(cpy(VAR3), nil)),
+                     if_then(instof(cpy(VAR3), seq_ty(node_ty(p_kind_node, nil))),
+                     then_else(apply("fn", "data", args(cpy(VAR3), nil)),
                                cpy(VAR3))))))),
           binds(
            let(var_type(cpy(VAR4)),
                flwr(binds(bind(vars(cpy(VAR5)), cpy(VAR2)), nil),
                where(nil, ord_ret(nil,
                      apply("pf",(tst == TST_ATTR)?"attribute":"text", 
-                               args(apply("fn", "string", args(cpy(VAR5), nil)),
-                                    arg)))))), nil)));
+                           args(apply("fn", "string", args(cpy(VAR5), nil)),
+                                arg)))))), nil)));
 
 
         /* pattern(2): put in VBIND any remaining variable bindings after $x */
@@ -671,28 +666,25 @@ try_rewrite(PFpnode_t *p, PFpnode_t **stack, int depth, int curvar)
 
         /* creatively edited 'pf -Pas10' of target pattern */
         *stack[depth-2] =
-        *flwr(
-          BINDS,
-          where(nil, ord_ret(nil,
-              if_then(
-                  exprseq(some(binds(bind(vars(cpy(VAR6)), cpy(VAR4)), nil),
-                          instof(cpy(VAR6), seq_ty(node_ty(p_kind_doc, nil)))),
-                          empty_seq()),
+        *flwr(BINDS,
+         where(nil, 
+         ord_ret(nil,
+              if_then(some(binds(bind(vars(cpy(VAR6)), cpy(VAR4)), nil),
+                      instof(cpy(VAR6), seq_ty(node_ty(p_kind_doc, nil)))),
               then_else(
                   /* original plan */
                   subst(stack[depth-2], R(p), cpy(VAR2)),
                   /* index plan */
                   flwr(binds(bind(vars(cpy(VAR9)),
-                             pred(exprseq(PATH2_REV, empty_seq()),
-                                  exprseq(some(binds(bind(vars(cpy(VAR7)),
-                                                     apply("pf", "supernode",
-                                                         args(PATH1_REV, nil))), 
+                             pred(PATH2_REV,
+                                  some(binds(bind(vars(cpy(VAR7)),
+                                                  apply("pf", "supernode",
+                                                         args(PATH1_REV, nil))),
                                                      nil),
-                                          some(binds(bind(vars(cpy(VAR8)),
-                                                     cpy(VAR1)), nil),
-                                          is(cpy(VAR7), cpy(VAR8)))), 
-                                  empty_seq()))), 
-                             VBIND?VBIND:nil), /* rest of binds-chain, after $x */
+                                  some(binds(bind(vars(cpy(VAR8)),
+                                                  cpy(VAR1)), nil),
+                                  is(cpy(VAR7), cpy(VAR8)))))), 
+                             VBIND?VBIND:nil), /* rest of binds, after $x */
                   where(COND,
                   ord_ret(cpy(EXPR3), cpy(EXPR2)))))))));
 
