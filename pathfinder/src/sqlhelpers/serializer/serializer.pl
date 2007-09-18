@@ -153,7 +153,7 @@ $final_query = "$input_query";
 #print $final_query;
 
 # connect to the database
-my $dbh = DBI->connect ($DSN)
+my $dbh = DBI->connect_cached ($DSN)
     or die "Could not connect to database with DSN `$DSN': " . DBI->errstr;
 
 # prepare and execute the query
