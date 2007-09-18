@@ -5,14 +5,6 @@ stdout of test 'pf-A_XMark` in directory 'compiler` itself:
 # 16:36:51 >  Mtimeout -timeout 60 ./pf-A_XMark pf-A_XMark 
 # 16:36:51 >  
 
-"pf -A ff.xq >/dev/null"
-"pf -A f.xq >/dev/null"
-"pf -A g.xq >/dev/null"
-"pf -A id01.xq >/dev/null"
-"pf -A id04.xq >/dev/null"
-"pf -A or01.xq >/dev/null"
-"pf -A or04.xq >/dev/null"
-"pf -A or10.xq >/dev/null"
 "pf -A q01.xq >/dev/null"
 "pf -A q02.xq >/dev/null"
 "pf -A q03.xq >/dev/null"
@@ -33,9 +25,6 @@ stdout of test 'pf-A_XMark` in directory 'compiler` itself:
 "pf -A q18.xq >/dev/null"
 "pf -A q19.xq >/dev/null"
 "pf -A q20.xq >/dev/null"
-"pf -A tst2.xq >/dev/null"
-"pf -A tst.xq >/dev/null"
-"pf -A t.xq >/dev/null"
 "pf -A upd.xq >/dev/null"
 
 # 16:36:55 >  
