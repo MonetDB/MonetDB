@@ -2422,6 +2422,7 @@ PROC ws_docfilter(bat[void,bat] ws,
     }
 
     var one := any_pre.ord_select(1@0); # never returned by index, except special 'give-up' case
+    if (count(any_pre) = count(one)) return any_pre;
     var cur := count(one); # ignore bogus nodes 
     var tot := count(any_pre);
     var res := bat(any_pre.htype(), oid, tot).insert(one); # final result (copied excluding deleted docs)
