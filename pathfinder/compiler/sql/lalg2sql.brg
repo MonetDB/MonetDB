@@ -1735,7 +1735,8 @@ reduce (PFla_op_t * p, int goalnt)
                             bind (table_def (
                                       newtable,
                                       column_list (
-                                          PRE_, SIZE_, KIND_, VALUE_, NAME_)),
+                                          PRE_, SIZE_, LEVEL_,
+                                          KIND_, VALUE_, NAME_)),
                                   frags));
                         frags = table_name (newtable);
                     }
