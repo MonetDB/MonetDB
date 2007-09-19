@@ -35,7 +35,7 @@
 #include <sql_keyword.h>
 #include <sql_atom.h>
 
-#include <Mapi.h>
+#include <mapilib/Mapi.h>
 
 #define ERRSIZE 8192
 
