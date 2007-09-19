@@ -10,9 +10,7 @@ stderr of test 'unknown_user` in directory 'src/test/Users` itself:
 # 14:12:51 >  Mtimeout -timeout 120 /usr/bin/python unknown_user.SQL.py unknown_user 
 # 14:12:51 >  
 
-MAPI  = this_user_does_not_exist@koala:37038
-ACTION= mapi_start_talking
-ERROR = !InvalidCredentialsException:checkCredentials:Invalid credentials for user 'this_user_does_not_exist'
+!InvalidCredentialsException:checkCredentials:Invalid credentials for user 'this_user_does_not_exist'
 
 # 14:12:51 >  
 # 14:12:51 >  Done.
