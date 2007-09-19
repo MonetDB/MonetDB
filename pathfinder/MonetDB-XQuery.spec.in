@@ -108,6 +108,7 @@ rm -rf $RPM_BUILD_ROOT
 %defattr(-,root,root)
 %{_bindir}/pf
 %{_bindir}/xmlshred
+%{_bindir}/serializer.pl
 %{_libdir}/MonetDB4/lib/lib_*
 %{_libdir}/MonetDB4/*.mil
 %{_bindir}/Mbeddedxq
