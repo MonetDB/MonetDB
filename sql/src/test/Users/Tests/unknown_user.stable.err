@@ -10,9 +10,7 @@ stderr of test 'unknown_user` in directory 'src/test/Users` itself:
 # 14:12:51 >  Mtimeout -timeout 120 /usr/bin/python unknown_user.SQL.py unknown_user 
 # 14:12:51 >  
 
-MAPI  = this_user_does_not_exist@localhost:31117
-ACTION= mapi_start_talking
-ERROR = !schema authorization error
+!schema authorization error
 
 # 14:12:51 >  
 # 14:12:51 >  Done.
