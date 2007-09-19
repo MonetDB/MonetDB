@@ -76,8 +76,6 @@ we update its context descriptor to denote an SQL scenario.
 #include "mal_io.h"
 #include "mal_parser.h"
 #include "mal_builder.h"
-#include <bat/res_table.h>
-#include <bat/bat_storage.h>
 #include "mal_namespace.h"
 #include "mal_sabaoth.h"
 #include "mal_debugger.h"
@@ -341,7 +339,7 @@ SQLinitClient(Client c)
 			bstream_next(fdin);
 			MCpushClientInput(c, fdin, 0, "");
 		}
-		m = mvc_create((c-mal_clients), 0, SQLdebug, c->fdin, c->fdout);
+		m = mvc_create(c->idx, 0, SQLdebug, c->fdin, c->fdout);
 
 		global_variables(m, "monetdb", "sys");
 		if (isAdministrator(c))  /* console should return everything */
@@ -357,7 +355,7 @@ SQLinitClient(Client c)
 		if (keep_trace && !m->scanner.log) {
 			char fn[BUFSIZ];
 
-			snprintf(fn, BUFSIZ, "sql.%d", (int)(c - mal_clients));
+			snprintf(fn, BUFSIZ, "sql.%d", c->idx);
 			m->scanner.log = open_wastream(fn);
 		}
 		c->state[MAL_SCENARIO_PARSER] = (void *) backend_create(m, c);
@@ -907,6 +905,8 @@ SQLparser(Client c)
 	if (be->language == 's') {
 		be->language = 'S';
 		m->scanner.mode = LINE_1;
+	} else {
+		m->scanner.mode = LINE_N;
 	}
 	if (be->language == 'X') {
 		int n = 0, v, off, len;
