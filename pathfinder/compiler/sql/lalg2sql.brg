@@ -482,6 +482,8 @@ new_col (PFalg_att_t att, PFalg_simple_type_t ty)
 #define EXT_COLUMN_NAME(alias,att,ty) (ext_column_name ( \
                                            (alias), new_col ((att),(ty))))
 
+
+
 /* .......... Column Environment Helper Functions .......... */
 
 struct sql_column_env_t
@@ -1521,18 +1523,14 @@ ser_info_worker (PFla_op_t * p, PFarray_t *frags)
      * twigs */
     PFla_op_t *twig;
     unsigned int i;
-
-    if (p->kind == la_twig) {
-        for (i = 0; i < PFarray_last (frags); i++) {
-             twig = *(PFla_op_t **)PFarray_at (frags, i);   
-             if (twig == p)
-                 break;
-        }
-
-        if (i < PFarray_last (frags) && twig) {
-             SER_REPORT(p) = ser_tc;
-             return;
-        }
+    for (i = 0; i < PFarray_last (frags); i++) {
+         twig = *(PFla_op_t **)PFarray_at (frags, i);   
+         if (twig == p)
+             break;
+    }
+    if (i < PFarray_last (frags) && twig) {
+         SER_REPORT(p) = ser_tc;
+         return;
     }
 
     /* if we find a leaf return yes */
@@ -1775,8 +1773,10 @@ serialize_ (PFla_op_t * p, PFsql_t *selectlist)
                                      alias_bind(document, alias (docalias1))),
                                      eq (PRE(docalias1), item_pre)),
                                      alias_bind (document, alias (docalias2))),
-                                  between (PRE(docalias2), PRE(docalias1),
-                                        add (PRE(docalias1), SIZE(docalias1))))),
+                                 and_ (
+                                      gteq (PRE(docalias2), PRE(docalias1)),
+                                      gteq (add (PRE(docalias1), SIZE(docalias1)),
+                                          PRE(docalias2))))),
                           NULL,
                           (IS_LITERAL(cpos))?
                           stmt_list (PRE(docalias2)):
@@ -2211,14 +2211,12 @@ reduce (PFla_op_t * p, int goalnt)
         case 6:
         /* Rel:    thetajoin (Rel, Rel) */
         case 8:
-        {
             assert (kids[0] && nts[0]);
             assert (kids[1] && nts[1]);
             /* reduce the first child */
             reduce (kids[0], nts[0]);
 
             PFarray_t *left_args = PFarray (sizeof(PFsql_t*));
-            /* left join predicate for the equijoin */
             if (p->kind == la_eqjoin) {
                 PFalg_simple_type_t l_ty;
 
@@ -2231,7 +2229,7 @@ reduce (PFla_op_t * p, int goalnt)
                                         p->sem.eqjoin.att1,
                                         l_ty);
             }
-            /* left join predicates for the theta-join operator */
+            /* join predicates for the theta-join operator */
             else if (p->kind == la_thetajoin) {
                 PFalg_att_t left;
                 PFalg_simple_type_t l_ty;
@@ -2258,7 +2256,6 @@ reduce (PFla_op_t * p, int goalnt)
             reduce (kids[1], nts[1]);
 
             PFarray_t *right_args = PFarray (sizeof(PFsql_t*));
-            /* left join predicate for the equi-join operator */
             if (p->kind == la_eqjoin) {
                 PFalg_simple_type_t r_ty;
 
@@ -2385,7 +2382,7 @@ reduce (PFla_op_t * p, int goalnt)
                     where_list_add (WHERELIST(p), cond);
                 }
             }
-    }       break;
+            break;
 
     /* Rel:    semijoin (Rel, Rel) */
     case 7:
