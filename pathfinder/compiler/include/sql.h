@@ -105,11 +105,7 @@ enum PFsql_kind_t {
     , sql_ser_mapping       /* a mapping between relation and column names
                                and the hard-coded names the serialization
                                expects (required by serialization) */
-    , sql_ser_doc           /* identifier for the schema of document nodes
-                               (required by serialization) */
-    , sql_ser_res           /* identifier for the schema of the result sequence
-                               (required by serialization) */
-    , sql_ser_type          /* type */
+    , sql_ser_type          /* the type of the result */
 
     , sql_tbl_def           /* a table name definition */
     , sql_schema_tbl_name   /* a database table reference (schema+tablename) */
@@ -379,19 +375,13 @@ PFsql_t * PFsql_root (const PFsql_t *ser_info, const PFsql_t *query);
 PFsql_t * PFsql_serialization_info_item (const PFsql_t *info,
                                          const PFsql_t *list);
 
-PFsql_t * PFsql_serialization_type (const PFsql_t *type,
-                                    const PFsql_t *qtype);
-
 /**
  * Some specific schema information used by the serializer.
- * We communicate to the serializer the document and 
- * result relation.
- * Further we communicate some of the special attributes,
- * the serializer needs. 
+ * We communicate the special attributes, the serializer needs. 
  */
-PFsql_t * PFsql_serialization_name_mapping (PFsql_t *schema, PFsql_t *column);
-PFsql_t * PFsql_serialization_document (void);
-PFsql_t * PFsql_serialization_result (void);
+PFsql_t * PFsql_serialization_name_mapping (const PFsql_t *column,
+                                            const PFsql_t *name);
+PFsql_t * PFsql_serialization_type (const PFsql_t *type, const PFsql_t *qtype);
 /**
  * Construct a comment in the serialization information.
  */

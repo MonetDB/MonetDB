@@ -192,35 +192,20 @@ PFsql_serialization_info_item (const PFsql_t *info, const PFsql_t *list)
     return wire2 (sql_ser_info, info, list);
 }
 
+/**
+ * Some specific schema information used by the serializer.
+ * We communicate the special attributes, the serializer needs. 
+ */
+PFsql_t *
+PFsql_serialization_name_mapping (const PFsql_t *column, const PFsql_t *name)
+{
+    return wire2 (sql_ser_mapping, column, name);
+}
+
 PFsql_t *
 PFsql_serialization_type (const PFsql_t *type, const PFsql_t *qtype)
 {
     return wire2 (sql_ser_type, type, qtype);
-}
-
-/**
- * Some specific schema information used by the serializer.
- * We communicate to the serializer the document and 
- * result relation.
- * Further we communicate some of the special attributes,
- * the serializer needs. 
- */
-PFsql_t *
-PFsql_serialization_name_mapping (PFsql_t *schema, PFsql_t *column)
-{
-    return wire2 (sql_ser_mapping, schema, column);
-}
-
-PFsql_t *
-PFsql_serialization_document (void)
-{
-    return leaf (sql_ser_doc);
-}
-
-PFsql_t *
-PFsql_serialization_result (void)
-{
-    return leaf (sql_ser_res);
 }
 
 /**
