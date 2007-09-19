@@ -65,7 +65,7 @@ extern ptr sql_frontend(void);
 #include <sql_env.h>		/* explain,debug,reply_size,auto_commit etc */
 #include <sql_storage.h>
 #include <bat/res_table.h>
-#include <mapi.h>
+#include <mapi/mapi.h>
 
 static int SQLdebug = 0;
 static int keep_trace = 0;
