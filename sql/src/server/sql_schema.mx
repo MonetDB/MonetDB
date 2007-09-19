@@ -998,7 +998,7 @@ column_constraint_type(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_tabl
 				sql_fkey *fk;
 				list *cols;
 				sql_table *rt = mvc_bind_table(sql, cur_schema(sql), rtname);
-				sql_key *rk;
+				sql_key *rk = NULL;
 
 				if (!rt) {
 					(void) sql_error(sql, 02, "CONSTRAINT FOREIGN KEY: no such table table '%s'\n", rtname);
