@@ -68,14 +68,14 @@ stderr of test 'mixed_type.SF-917372` in directory 'src/test/BugDay_2005-10-06_2
 # 14:38:32 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=40118  < mixed_type.SF-917372.sql
 # 14:38:32 >  
 
-MAPI  = monetdb@localhost:35781
+MAPI  = monetdb@koala:36963
 QUERY = select 'a'+1;
-ERROR = !ERROR: sht: conversion of string 'a' failed
-        !ERROR: str_2_sht: operation failed.
-MAPI  = monetdb@localhost:35781
+ERROR = !ERROR: bte: conversion of string 'a' failed
+        !ERROR: str_2_bte: operation failed.
+MAPI  = monetdb@koala:36963
 QUERY = select 1-'a';
-ERROR = !ERROR: sht: conversion of string 'a' failed
-        !ERROR: str_2_sht: operation failed.
+ERROR = !ERROR: bte: conversion of string 'a' failed
+        !ERROR: str_2_bte: operation failed.
 
 
 # 14:38:32 >  
