@@ -383,6 +383,7 @@ def am_headers(fd, var, headers, am):
         cond = ''
         h = header
         if headers.has_key('COND'):
+            cond = '#' + string.join(headers['COND'], '+')
             mkname = am_normalize(string.replace(header, '.', '_'))
             for condname in headers['COND']:
                 fd.write('if %s\n' % condname)
@@ -390,6 +391,9 @@ def am_headers(fd, var, headers, am):
             h = '$(C_%s)' % mkname
             for condname in headers['COND']:
                 fd.write('endif\n')
+        if cond:
+            fd.write("uninstall-local-:\n");
+            fd.write("install-exec-local-:\n");
         fd.write("install-exec-local-%s: %s\n" % (header, header))
         fd.write("\t-mkdir -p $(DESTDIR)%s\n" % sd)
         fd.write("\t-$(RM) $(DESTDIR)%s/%s\n" % (sd, header))
@@ -399,9 +403,6 @@ def am_headers(fd, var, headers, am):
         am['INSTALL'].append(h)
         am['UNINSTALL'].append(h)
         am['BUILT_SOURCES'].append(h)
-        cond = ''
-        if headers.has_key('COND'):
-            cond = '#' + string.join(headers['COND'], '+')
         am['InstallList'].append("\t"+sd+"/"+header+cond+"\n")
 
     am_find_ins(am, headers)
