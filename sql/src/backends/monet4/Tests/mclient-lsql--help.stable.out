@@ -22,7 +22,6 @@ Over..
 # 23:46:47 >  Mtimeout -timeout 60 mclient -umonetdb -Pmonetdb --config=/net/corona.ins.cwi.nl/export/scratch0/manegold/Monet/Testing/Current/prefix.--enable-strict_--disable-optimize_--enable-debug/etc/MonetDB.conf --host=corona --port=33349 -lsql --help
 # 23:46:47 >  
 
-= Please remove this line in case the below usage message of `mclient -lsql` is correct.
 \?      - show this message
 \<file  - read input from file
 \>file  - save response in file, or stdout if no file is given
@@ -41,7 +40,6 @@ Over..
 \X      - trace mclient code
 \q      - terminate session
 sql>
-= Please remove this line in case the above usage message of `mclient -lsql` is correct.
 
 # 23:46:47 >  
 # 23:46:47 >  Done.
