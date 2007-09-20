@@ -1,14 +1,14 @@
 stdout of test 'usage` in directory 'compiler` itself:
 
 
-# 15:32:19 >  
-# 15:32:19 >  Mtimeout -timeout 120 ./usage usage 
-# 15:32:19 >  
+# 13:16:47 >  
+# 13:16:47 >  Mtimeout -timeout 120 ./usage usage 
+# 13:16:47 >  
 
 
-# 15:47:29 >  
-# 15:47:29 >  Mtimeout -timeout 60 pf -h
-# 15:47:29 >  
+# 13:16:47 >  
+# 13:16:47 >  Mtimeout -timeout 60 pf -h
+# 13:16:47 >  
 
 Pathfinder XQuery Compiler ($Revision$, $Date$)
 (c) Database Group, Technische Universitaet Muenchen
@@ -17,14 +17,19 @@ Usage: pf [OPTION] [FILE]
 
   Reads from standard input if FILE is omitted.
 
+= -A, --mil: generate MIL code
+= -M, --mil_2004: generate MIL code (directly from XQuery Core) (default)
+= -S, --sql: generate SQL code
+= -X, --xml: generate XML representation of algebraic plan
+
+= -T, --timing: print elapsed times for compiler phases
+
 = -h, --help: print this help message
 = -H, --fullhelp: print help message for advanced options
-= -T, --timing: print elapsed times for compiler phases
-= -O[0-3], --optimize: select optimization level (default=1)
 
 Enjoy.
 
-# 15:32:19 >  
-# 15:32:19 >  Done.
-# 15:32:19 >  
+# 13:16:47 >  
+# 13:16:47 >  Done.
+# 13:16:47 >  
 
