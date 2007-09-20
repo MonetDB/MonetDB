@@ -48,6 +48,15 @@
 #include "pfstrings.h"
 
 #include "prettyp.h"
+#include <assert.h>
+
+/*
+ * Easily access subtree parts.
+ */
+/** starting from p, make a left step */
+#define L(p)      ((p)->child[0])
+/** starting from p, make a right step */
+#define R(p)      ((p)->child[1])
 
 /** Node names to print out for all the abstract syntax tree nodes. */
 char *c_id[]  = {
@@ -146,7 +155,7 @@ static char    *child;
 static char     label[32];
 
 /** Print node with no content */
-#define L(t)           snprintf (label, 32, (t))
+#define L0(t)           snprintf (label, 32, (t))
 /** Print node with single content */
 #define L2(l1, l2)     snprintf (label, 32, "%s [%s]",    (l1), (l2))
 /** Print node with two content parts */
@@ -205,7 +214,7 @@ core_dot (FILE *f, PFcnode_t *n, char *node)
         break;
 
     default:          
-        L (c_id[n->kind]);
+        L0 (c_id[n->kind]);
         break;
     }
     
@@ -242,58 +251,205 @@ PFcore_dot (FILE *f, PFcnode_t *root)
 }
 
 /**
+ * Break the current line and indent the next line 
+ * by @a ind characters.
+ *
+ * @param f file to print to
+ * @param ind indentation level
+ */
+static void
+indent (FILE *f, int ind, bool nl)
+{
+    if (!nl) return;
+    
+    fputc ('\n', f);
+
+    while (ind-- > 0)
+        fputc (' ', f);
+}
+
+/**
  * Recursively walk the core language tree @a n and prettyprint
  * the query it represents.
  *
  * @param n core language tree to prettyprint
  */
 static void
-core_pretty (PFcnode_t *n)
+core_pretty (FILE *f, PFcnode_t *n, int i, bool nl)
 {
     int c;
+    bool topdown = false;
     bool comma;
     
     if (!n)
         return;
     
-    PFprettyprintf ("%s (%c", c_id[n->kind], START_BLOCK);
+    switch (n->kind) {
+        case c_for:
+            indent (f, i - 5, nl);
+            fprintf (f, "%s (", c_id[n->kind]);
+            break;
+
+        case c_let:
+            indent (f, i - 5, nl);
+            fprintf (f, "%s (", c_id[n->kind]);
+            break;
+
+        case c_typesw:
+            indent (f, i, nl);
+            fprintf (f, "%s  (", c_id[n->kind]);
+            break;
+
+        case c_case:
+            indent (f, i - 4, nl);
+            fprintf (f, "%s (", c_id[n->kind]);
+            break;
+            
+        case c_default:
+            indent (f, i - 7, nl);
+            fprintf (f, "%s (", c_id[n->kind]);
+            break;
+            
+        default:
+            indent (f, i, nl);
+            fprintf (f, "%s (", c_id[n->kind]);
+            break;
+    }
     
     comma = true;
     
     switch (n->kind) {
     case c_var:         
-        PFprettyprintf ("%s", PFqname_str (n->sem.var->qname));
+        fprintf (f, "%s", PFqname_str (n->sem.var->qname));
         break;
     case c_lit_str:     
-        PFprettyprintf ("\"%s\"", PFesc_string (n->sem.str));
+        fprintf (f, "\"%s\"", PFesc_string (n->sem.str));
         break;
     case c_lit_int:     
-        PFprettyprintf (LLFMT, n->sem.num);
+        fprintf (f, LLFMT, n->sem.num);
         break;
     case c_lit_dec:     
-        PFprettyprintf ("%.5g", n->sem.dec);
+        fprintf (f, "%.5g", n->sem.dec);
         break;
     case c_lit_dbl:     
-        PFprettyprintf ("%.5g", n->sem.dbl);
+        fprintf (f, "%.5g", n->sem.dbl);
         break;
     case c_apply:       
-        PFprettyprintf ("%s", PFqname_str (n->sem.fun->qname));
+        fprintf (f, "%s", PFqname_str (n->sem.fun->qname));
         break;
     case c_seqtype:        
-        PFprettyprintf ("%s", PFty_str (n->sem.type));
+        fprintf (f, "%s", PFty_str (n->sem.type));
         break;
     case c_tag:       
-        PFprettyprintf ("%s", PFqname_str (n->sem.qname));
+        fprintf (f, "%s", PFqname_str (n->sem.qname));
         break;
     case c_orderby:
-        PFprettyprintf ("%s", n->sem.tru ? "stable" : "unstable");
+        fprintf (f, "%s", n->sem.tru ? "stable" : "unstable");
         break;
     case c_orderspecs:
-        PFprettyprintf ("%s,%c %c%s", n->sem.mode.dir == p_desc ?
+        fprintf (f, "%s,%c %c%s", n->sem.mode.dir == p_desc ?
                                       "descending" : "ascending",
                                       END_BLOCK, START_BLOCK,
                                       n->sem.mode.empty == p_greatest ?
                                       "greatest" : "least");
+        break;
+        
+    case c_flwr:
+        core_pretty (f, n->child[0], i+6, L(n)->kind != c_nil);
+        fprintf (f, ",");
+        core_pretty (f, n->child[1], i+6, true);
+        topdown = true;
+        break;
+
+    case c_let:
+        core_pretty (f, L(n), i, false);
+        fprintf (f, ",");
+        core_pretty (f, R(n), i, true);
+        topdown = true;
+        break;
+
+    case c_letbind:
+        core_pretty (f, L(n), i+2, true);
+        fprintf (f, ",");
+        core_pretty (f, R(n), i+2, true);
+        topdown = true;
+        break;
+
+    case c_for:
+        core_pretty (f, L(n), i, false);
+        fprintf (f, ",");
+        core_pretty (f, R(n), i, true);
+        topdown = true;
+        break;
+
+    case c_forbind:
+        core_pretty (f, L(n), i+2, true);
+        fprintf (f, ",");
+        core_pretty (f, R(n), i+2, true);
+        topdown = true;
+        break;
+
+    case c_forvars:
+        core_pretty (f, L(n), i, false);
+        fprintf (f, ", ");
+        core_pretty (f, R(n), i, false);
+        topdown = true;
+        break;
+        
+    case c_ancestor:
+    case c_ancestor_or_self:
+    case c_attribute:
+    case c_child:
+    case c_descendant:
+    case c_descendant_or_self:
+    case c_following:
+    case c_following_sibling:
+    case c_parent:
+    case c_preceding:
+    case c_preceding_sibling:
+    case c_self:
+    case c_select_narrow:
+    case c_select_wide:
+    case c_reject_narrow:
+    case c_reject_wide:
+        core_pretty (f, L(n), i, false);
+        topdown = true;
+        break;
+
+    case c_arg:
+        core_pretty (f, n->child[0], i+5, false);
+        fprintf (f, ",");
+        core_pretty (f, n->child[1], i, true);
+        topdown = true;
+        break;
+
+    case c_typesw:
+        core_pretty (f, L(n), i, false);
+        fprintf (f, ",");
+        core_pretty (f, R(n), i+2, true);
+        topdown = true;
+        break;
+
+    case c_cases:
+        core_pretty (f, n->child[0], i+5, true);
+        fprintf (f, ",");
+        core_pretty (f, n->child[1], i+5, true);
+        topdown = true;
+        break;
+
+    case c_case:
+        core_pretty (f, L(n), i+2, false);
+        fprintf (f, ",");
+        core_pretty (f, R(n), i+2, true);
+        topdown = true;
+        break;
+
+    case c_default:
+        if (L(n)->kind == c_typesw)
+            core_pretty (f, L(n), i-7, true);
+        else
+            core_pretty (f, L(n), i+2, false);
+        topdown = true;
         break;
 
     default:            
@@ -301,20 +457,21 @@ core_pretty (PFcnode_t *n)
         break;
     }
     
-    for (c = 0;
-         c < PFCNODE_MAXCHILD && n->child[c] != 0;
-         c++) {
-        if (comma)
-            PFprettyprintf (",%c %c", END_BLOCK, START_BLOCK);
-        comma = true;
-        
-        core_pretty (n->child[c]);
-    }
+    if (!topdown)
+        for (c = 0;
+             c < PFCNODE_MAXCHILD && n->child[c] != 0;
+             c++) {
+            if (comma)
+                fprintf (f, ",");
+            comma = true;
+            
+            core_pretty (f, n->child[c], i+2, true);
+        }
     
     if (PFstate.print_types)
-        PFprettyprintf ("%c) {%s}", END_BLOCK, PFty_str (n->type));
+        fprintf (f, ") {%s}", PFty_str (n->type));
     else
-        PFprettyprintf ("%c)", END_BLOCK);
+        fprintf (f, ")");
 }
 
 /**
@@ -327,13 +484,7 @@ core_pretty (PFcnode_t *n)
 void
 PFcore_pretty (FILE *f, PFcnode_t *t)
 {
-    PFprettyprintf ("%c", START_BLOCK);
-    core_pretty (t);
-    PFprettyprintf ("%c", END_BLOCK);
-    
-    (void) PFprettyp (f);
-    
-    fputc ('\n', f);
+    core_pretty (f, t, 0, false);
 }
 
 void
