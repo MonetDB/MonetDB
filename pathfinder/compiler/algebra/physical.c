@@ -1025,6 +1025,34 @@ PFpa_select (const PFpa_op_t *n, PFalg_att_t att)
     return ret;
 }
 
+PFpa_op_t *
+PFpa_value_select (const PFpa_op_t *n, PFalg_att_t att, PFalg_atom_t value)
+{
+    PFpa_op_t *ret = wire1 (pa_val_select, n);
+
+    /* allocate memory for the result schema */
+    ret->schema.count = n->schema.count;
+    ret->schema.items
+        = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
+
+    /* copy schema from n */
+    for (unsigned int i = 0; i < n->schema.count; i++)
+        ret->schema.items[i] = n->schema.items[i];
+
+    /* keep the ordering we got in the `ord' argument */
+    ret->sem.attach.attname = att;
+    ret->sem.attach.value   = value;
+
+    /* ---- Select: orderings ---- */
+    for (unsigned int i = 0; i < PFord_set_count (n->orderings); i++)
+        PFord_set_add (ret->orderings, PFord_set_at (n->orderings, i));
+
+    /* ---- Select: costs ---- */
+    ret->cost = DEFAULT_COST + n->cost;
+
+    return ret;
+}
+
 /**
  * AppendUnion: This variant of the Union operator is always
  * applicable, regardless of the input order.

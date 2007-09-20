@@ -758,6 +758,109 @@ plan_select (const PFla_op_t *n)
 }
 
 /**
+ * Generate physical plan for the logical `positional select' operator.
+ *
+ * There's just one physical operator for `select' that we
+ * call from here.  The resulting plans will contain all
+ * orderings of @a n.
+ */
+static PFplanlist_t *
+plan_pos_select (const PFla_op_t *n)
+{
+    PFalg_att_t      att,
+                     used_cols     = 0,
+                     num,          
+                     cast;         
+    PFplanlist_t    *ret           = new_planlist (),
+                    *sorted        = new_planlist ();
+    PFord_ordering_t ord_asc,
+                     ord_desc,
+                     ord_wo_part;
+    bool             dir,
+                     switch_order;
+    unsigned int     count         = n->schema.count;
+    PFalg_proj_t    *proj          = PFmalloc (count * sizeof (PFalg_proj_t));
+
+    assert (n); assert (n->kind == la_pos_select);
+    assert (L(n)); assert (L(n)->plans);
+
+    /* Build up the ordering that we require for the positional predicate */
+    ord_asc     = PFordering ();
+    ord_desc    = PFordering ();
+    ord_wo_part = PFordering ();
+
+    /* the partitioning attribute must be the primary ordering */
+    if (n->sem.pos_sel.part) {
+        ord_asc  = PFord_refine (ord_asc, n->sem.pos_sel.part, DIR_ASC);
+        ord_desc = PFord_refine (ord_desc, n->sem.pos_sel.part, DIR_DESC);
+    }
+
+    switch_order = n->sem.pos_sel.pos < 0;
+    
+    /* then we refine by all the attributes in the sortby parameter */
+    for (unsigned int i = 0;
+         i < PFord_count (n->sem.pos_sel.sortby);
+         i++) {
+        att = PFord_order_col_at (n->sem.pos_sel.sortby, i);
+        dir = PFord_order_dir_at (n->sem.pos_sel.sortby, i);
+        dir = switch_order ? !dir : dir; 
+        
+        ord_asc     = PFord_refine (ord_asc, att, dir);
+        ord_desc    = PFord_refine (ord_desc, att, dir);
+        ord_wo_part = PFord_refine (ord_wo_part, att, dir);
+    }
+
+    /* ensure correct input ordering for positional predicate */
+    for (unsigned int i = 0; i < PFarray_last (L(n)->plans); i++) {
+        add_plans (sorted,
+                   ensure_ordering (
+                       *(plan_t **) PFarray_at (L(n)->plans, i), ord_asc));
+        add_plans (sorted,
+                   ensure_ordering (
+                       *(plan_t **) PFarray_at (L(n)->plans, i), ord_desc));
+        add_plans (sorted,
+                   ensure_ordering (
+                       *(plan_t **) PFarray_at (L(n)->plans, i), ord_wo_part));
+    }
+
+    /* throw out those plans that are too expensive */
+    sorted = prune_plans (sorted);
+
+    /* get ourselves a new attribute name */
+    for (unsigned int i = 0; i < n->schema.count; i++)
+        used_cols |= n->schema.items[i].name;
+
+    num = PFalg_ori_name (PFalg_unq_name (att_pos, 0), ~used_cols);
+    used_cols |= num;
+    cast = PFalg_ori_name (PFalg_unq_name (att_pos, 0), ~used_cols);
+    
+    for (unsigned int i = 0; i < count; i++)
+        proj[i] = PFalg_proj (n->schema.items[i].name,
+                              n->schema.items[i].name);
+    
+    /* for each remaining plan, generate a MergeRowNumber 
+       and a value selection operator */
+    for (unsigned int i = 0; i < PFarray_last (sorted); i++)
+        add_plan (ret,
+                  project (
+                      val_select (
+                          cast (
+                              number (*(plan_t **) PFarray_at (sorted, i),
+                                      num,
+                                      n->sem.pos_sel.part),
+                              cast,
+                              num,
+                              aat_int),
+                          cast,
+                          PFalg_lit_int (
+                              (switch_order ? -1 : 1) * n->sem.pos_sel.pos)),
+                      count,
+                      proj));
+
+    return ret;
+}
+
+/**
  * Generate physical plans for disjoint union.
  *
  * Available implementations are MergeUnion and AppendUnion.
@@ -2570,6 +2673,7 @@ plan_subexpression (PFla_op_t *n)
             break;
 
         case la_select:         plans = plan_select (n);       break;
+        case la_pos_select:     plans = plan_pos_select (n);   break;
         case la_disjunion:      plans = plan_disjunion (n);    break;
         case la_intersect:      plans = plan_intersect (n);    break;
         case la_difference:     plans = plan_difference (n);   break;

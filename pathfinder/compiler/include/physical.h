@@ -64,7 +64,8 @@ enum PFpa_op_kind_t {
     , pa_unq2_thetajoin =  17 /**< Thetajoin implementation */
     , pa_unq1_thetajoin =  18 /**< Thetajoin implementation */
     , pa_project        =  19 /**< Project */
-    , pa_select         =  20 /**< Select: filter rows by value in given att */
+    , pa_select         =  20 /**< Select: filter true rows in given att */
+    , pa_val_select     =  21 /**< Select: filter rows by value in given att */
     , pa_append_union   =  23 /**< AppendUnion */
     , pa_merge_union    =  24 /**< MergeUnion */
     , pa_intersect      =  25 /**< Intersect */
@@ -486,6 +487,12 @@ PFpa_op_t *PFpa_project (const PFpa_op_t *n, unsigned int count,
  * Select: Filter rows by Boolean value in attribute @a att
  */
 PFpa_op_t *PFpa_select (const PFpa_op_t *n, PFalg_att_t att);
+
+/**
+ * Select: Filter rows by given value @a value in attribute @a att
+ */
+PFpa_op_t *PFpa_value_select (const PFpa_op_t *n,
+                              PFalg_att_t att, PFalg_atom_t value);
 
 /**
  * Construct AppendUnion operator node.

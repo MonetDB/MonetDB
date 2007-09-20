@@ -91,6 +91,7 @@ typedef struct PFpa_op_t *NODEPTR_TYPE;
 %term unq1_thetajoin =  18
 %term project        =  19
 %term select         =  20
+%term val_select     =  21
 %term append_union   =  23
 %term merge_union    =  24
 %term intersect      =  25
@@ -173,14 +174,15 @@ Rel:      unq2_thetajoin (Rel, Rel)                                =  18 (10);
 Rel:      unq1_thetajoin (Rel, Rel)                                =  19 (10);
 Rel:      project (Rel)                                            =  20 (10);
 Rel:      select (Rel)                                             =  21 (10);
-Rel:      append_union (Rel, Rel)                                  =  22 (10);
+Rel:      val_select (Rel)                                         =  22 (10);
+Rel:      append_union (Rel, Rel)                                  =  23 (10);
 Rel:      append_union (hash_count (Rel),
                         attach (difference 
                                     (Rel, 
-                                     project (hash_count (Rel))))) =  23 (40);
-Rel:      merge_union (Rel, Rel)                                   =  24 (10);
-Rel:      intersect (Rel, Rel)                                     =  25 (10);
-Rel:      difference (Rel, Rel)                                    =  26 (10);
+                                     project (hash_count (Rel))))) =  24 (40);
+Rel:      merge_union (Rel, Rel)                                   =  25 (10);
+Rel:      intersect (Rel, Rel)                                     =  26 (10);
+Rel:      difference (Rel, Rel)                                    =  27 (10);
 Rel:      sort_distinct (Rel)                                      =  30 (10);
 Rel:      sort_distinct (std_sort (Rel))                           =  31 (10);
 Rel:      sort_distinct (refine_sort (Rel))                        =  32 (10);
@@ -1080,7 +1082,7 @@ reduce (PFpa_op_t * p, int goalnt)
     /* PFinfo (OOPS_NOTICE, "match for rule %i", rule); */
     assert(rule);
 
-    /* guard against too dep recursion */
+    /* guard against too deep recursion */
     PFrecursion_fence();
 
     /* initialize the kids[] vector */
@@ -1831,6 +1833,34 @@ reduce (PFpa_op_t * p, int goalnt)
             if (!env_count (L(p)->env) || !env_count (R(p)->env))
                 PFoops (OOPS_FATAL, "Cross does not cope with empty schemas");
 
+            /* The cross product of two relations with cardinality 1
+               requires no MIL code. */
+            if (PFprop_card (L(p)->prop) == 1 &&
+                PFprop_card (R(p)->prop) == 1) {
+                /* copy all the existing variables */
+                for (unsigned int i = 0; i < PFarray_last (L(p)->env); i++) {
+
+                    env_t entry = env_at (L(p)->env, i);
+
+                    env_add (p->env, entry.att, entry.ty, entry.mvar);
+
+                    pin (entry.mvar, p->refctr);
+                }
+                /* copy all the existing variables */
+                for (unsigned int i = 0; i < PFarray_last (R(p)->env); i++) {
+
+                    env_t entry = env_at (R(p)->env, i);
+
+                    env_add (p->env, entry.att, entry.ty, entry.mvar);
+
+                    pin (entry.mvar, p->refctr);
+                }
+                unpin (v, 1);
+                unpin (v1, 1);
+                unpin (v2, 1);
+                break;
+            }
+
             execute (
                 assgn (var (v->name),
                        cross (
@@ -2537,8 +2567,59 @@ reduce (PFpa_op_t * p, int goalnt)
 
         } break;
 
-        /* Rel:      append_union (Rel, Rel) */
+        /* Rel:      val_select (Rel) */
         case 22:
+        {
+            mvar_t *v = new_var (1);
+
+            assert (type_of (p, p->sem.attach.attname) ==
+                    p->sem.attach.value.type);
+            /*
+             * For the predicate column c do
+             *
+             *  v := c.select (atom).mark (0@0).reverse ();
+             */
+            execute (
+                assgn (
+                    var (v->name),
+                    reverse (
+                        mark (
+                            uselect (VAR (L(p)->env,
+                                          p->sem.attach.attname,
+                                          type_of (p, p->sem.attach.attname)),
+                                     literal (p->sem.attach.value)),
+                            lit_oid (0)))));
+
+            /*
+             * Then join any BAT in L(p)'s environment with v
+             */
+            for (unsigned int i = 0; i < env_count (L(p)->env); i++) {
+                mvar_t *w = new_var (p->refctr);
+
+                execute (
+                    assgn (var (w->name),
+                           leftjoin (var (v->name),
+                                     var (env_at (L(p)->env, i).mvar->name))),
+                    /* because leftjoin does not know that we have 
+                       exactly one match for each tuple in v,
+                       we need to make the heads void ourselves */
+                    assgn (var (w->name),
+                           reverse (mark (reverse (var (w->name)),
+                                          lit_oid (0)))));
+
+                env_add (p->env,
+                         env_at (L(p)->env, i).att,
+                         env_at (L(p)->env, i).ty,
+                         w);
+            }
+
+            /* release v */
+            unpin (v, 1);
+
+        } break;
+
+        /* Rel:      append_union (Rel, Rel) */
+        case 23:
 
             for (unsigned int i = 0; i < p->schema.count; i++)
                 for (PFalg_simple_type_t t = 1; t; t <<= 1)
@@ -2606,7 +2687,7 @@ reduce (PFpa_op_t * p, int goalnt)
                                    attach (
                                        diff (Rel, 
                                              project (hash_count (Rel))))) */
-        case 23:
+        case 24:
         {
             if (L(p) == RLRL(p) && 
                 R(p)->sem.attach.attname == L(p)->sem.count.res &&
@@ -2675,7 +2756,7 @@ reduce (PFpa_op_t * p, int goalnt)
         } break;
 
         /* Rel:      merge_union (Rel, Rel) */
-        case 24:
+        case 25:
         {
             PFmil_t *grouping[2];
             PFmil_t *args;
@@ -2855,7 +2936,7 @@ reduce (PFpa_op_t * p, int goalnt)
         } break;
 
         /* Rel:      intersect (Rel, Rel) */
-        case 25:
+        case 26:
         {
             mvar_t **res, **r;
             mvar_t *is;
@@ -2916,7 +2997,7 @@ reduce (PFpa_op_t * p, int goalnt)
         } break;
 
         /* Rel:      difference (Rel, Rel) */
-        case 26:
+        case 27:
         {
             mvar_t **l, *r = NULL;
             unsigned int shared_cols;
@@ -4286,6 +4367,14 @@ reduce (PFpa_op_t * p, int goalnt)
                        reverse (mark (reverse (var (ret_iter->name)),
                                       lit_oid (0)))));
 
+            /* The implementation of the attribute path step has to be
+               checked in respect to the input and output orderings.
+               As long as the check has not be done we choose the safe
+               variant of using chk_order instead of assert_order. */
+            if (PFord_implies (p->sem.scjoin.out, sortby (p->sem.scjoin.iter)))
+                execute (
+                    assgn (var (ret_iter->name),
+                           chk_order (var (ret_iter->name))));
 
             env_add (p->env, p->sem.scjoin.iter, aat_nat, ret_iter);
 
