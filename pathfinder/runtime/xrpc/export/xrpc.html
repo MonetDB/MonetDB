@@ -1,0 +1,102 @@
+<html>
+<head>
+ <title>MonetDB/XQuery XRPC Test Page</title>
+ <script type="text/javascript" src="../admin/xrpcwebclient.js"></script>
+ <script type="text/javascript">
+  var clnt = new XRPCWebClient(); 
+
+  function getParam(tpe, val) {
+    return XRPC_SEQ((tpe == "element")?XRPC_ELEMENT(val):XRPC_ATOM(tpe,val));
+  }
+
+  function sendRequest(form)  {
+    var params = "";
+    /* XRPCDEBUG makes you get an alert for each SOAP message sent/received */
+    XRPCDEBUG = form.debug.checked;
+    if (form.arity.value >= 1) 
+      params = params + getParam(form.type1.value, form.param1.value); 
+    if (form.arity.value >= 2) 
+      params = params + getParam(form.type2.value, form.param2.value); 
+    if (form.arity.value >= 3) 
+      params = params + getParam(form.type3.value, form.param3.value); 
+
+    XRPC(form.postUrl.value, form.module.value, form.moduleUrl.value, 
+         form.method.value,  form.arity.value, XRPC_CALL(params), showResponse);
+  }
+
+  function showResponse(response)  {
+    /* sorry, we only show the first item of the result sequence */
+    document.form.result.value =  serializeXML(getnodesXRPC(response,"sequence")[0].firstChild.firstChild); 
+  }
+ </script>
+</head>
+
+<body>
+ <a href="http://monetdb.cwi.nl" title="MonetDB is a high-performance open-source SQL and XQuery database system, developed by CWI" target="_blank"><img src="../admin/monetdb_med_abstract.png" border="0"/></a>
+ <a href="http://www.cwi.nl" title="CWI is the national center for Computer Science and Mathematics Research" target="_blank"><img src="../admin/cwi.bmp" border="0"/></a>
+ <br clear="all"/>
+ The page provides a live test for XRPC SOAP remote query execution on a running Mserver. 
+
+ For more information on XRPC, check the following sources:
+ <ul>
+ <li> the XRPC <a href="http://monetdb.cwi.nl/XQuery/QuickTour">tutorial</a>
+ <li> the XRPC <a href="http://monetdb.cwi.nl/XQuery/Documentation/xrpc/">reference manual</a>
+ <li> the XRPC <a href="http://www.cwi.nl/htbin/ins1/publications?request=intabstract&key=ZhBo:VLDB:07">VLDB Paper</a>
+ </ul>
+
+ <h4>Ready for Action? Fill in the parameters, and submit your XRPC SOAP request via JavaScript</h4>
+ <form name="form">
+  <table>
+   <tr><td>postUrl</td>
+       <td colspan="2"><input name="postUrl" size="65" value="http://localhost:50001"></td> </tr>
+   <tr><td></td><td colspan="2"><i>your XRPC server </i></td></tr>
+   <tr><td>module</td>
+       <td colspan="2"><input name="module" size="65" value="xrpc-test-function"></td></tr>
+   <tr><td></td><td colspan="2"><i>module namespace (logical) URL. Must match XQuery module definition!</i></td></tr>
+   <tr><td>moduleUrl</td>
+       <td colspan="2"><input name="moduleUrl" size="65" value="http://localhost:50001/export/xrpc-mod.xq"></td></tr>
+   <tr><td></td><td colspan="2"><i>module (physical) at-hint URL. Module file must be here!</i></td></tr>
+   <tr><td>method</td>
+       <td colspan="2"><input name="method" size="65" value="add"></td></tr>
+   <tr><td></td><td colspan="2"><i>method name (matches function name in module)</i></td></tr>
+   <tr><td>arity</td>
+       <td colspan="2"><input name="arity" size="65" value="2"></td></tr>
+   <tr><td></td><td colspan="2"><i>number of function parameters</i></td></tr>
+   <tr><td>param1</td>
+       <td><select name="type1">
+            <option value="boolean">boolean</option>
+            <option selected="true" value="integer">integer</option>
+            <option value="decimal">decimal</option>
+            <option value="float">float</option>
+            <option value="double">double</option>
+            <option value="string">string</option>
+            <option value="element">XML</option></select></td>
+       <td><input name="param1" value="100"></td></td></tr>
+   <tr><td>param2</td>
+       <td><select name="type2">
+            <option value="boolean">boolean</option>
+            <option selected="true" value="integer">integer</option>
+            <option value="decimal">decimal</option>
+            <option value="float">float</option>
+            <option value="double">double</option>
+            <option value="string">string</option>
+            <option value="element">XML</option></select></td>
+       <td><input name="param2" value="200"></td></td></tr>
+   <tr><td>param3</td>
+       <td><select name="type3">
+            <option value="boolean">boolean</option>
+            <option selected="true" value="integer">integer</option>
+            <option value="decimal">decimal</option>
+            <option value="float">float</option>
+            <option value="double">double</option>
+            <option value="string">string</option>
+            <option value="element">XML</option></select></td>
+       <td><input name="param3"></td></td></tr>
+  <tr><td><b>result:</b></td>
+      <td colspan="2"><textarea rows="15" cols="50" name="result"></textarea>
+  <tr><td><input type="button" value="submit" onClick="sendRequest(this.form)"></td>
+      <td><input type="checkbox" name="debug" checked="yes"> show SOAP messages</td></tr>
+  </table>
+ </form>
+</body>
+</html>
