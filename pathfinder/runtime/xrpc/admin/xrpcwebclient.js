@@ -7,7 +7,7 @@ function XRPC(posturl,    /* Your XRPC server. Usually: "http://yourhost:yourpor
               call,       /* one or more XRPC_CALL() parameter specs (concatenated strings) */ 
               callback)   /* callback function to call with the XML response */
 {
-    clnt.sendReceive(posturl, method, XRPC_REQUEST(module,moduleurl,method,arity,call), callback);
+    clnt.sendReceive(posturl+"/xrpc", method, XRPC_REQUEST(module,moduleurl,method,arity,call), callback);
 }
 
 /**********************************************************************
@@ -61,14 +61,22 @@ function XRPC_ELEMENT(value) {
 
 function serializeXML(xml) {
     try {
-        return xml.xml;
+        var xmlSerializer = new XMLSerializer();
+        return xmlSerializer.serializeToString(xml);
     } catch(e){
         try {
-            var xmlSerializer = new XMLSerializer();
-            return xmlSerializer.serializeToString(xml);
+            return xml.xml;
         } catch(e){
             alert("Failed to create xmlSerializer or to serialize XML document:\n" + e);
         }
+    }
+}
+
+function getnodesXRPC(node,tagname) {
+    try {
+        return node.getElementsByTagNameNS("http://monetdb.cwi.nl/XQuery",tagname);
+    } catch(e){ /* stupid internet explorer again */
+        return node.getElementsByTagName("xrpc:" + tagname);
     }
 }
 
@@ -87,6 +95,7 @@ XRPCWebClient = function () {
 XRPCWebClient.prototype.sendReceive = function(posturl, method, request, callback) {
     try {
         this.xmlhttp.open("POST", posturl, true);
+        if (XRPCDEBUG) alert(request); 
         this.xmlhttp.send(request);
 
         var app = this;
@@ -96,6 +105,7 @@ XRPCWebClient.prototype.sendReceive = function(posturl, method, request, callbac
                     app.xmlhttp.responseText.indexOf("!ERROR") < 0 && 
                     app.xmlhttp.responseText.indexOf("<env:Fault>") < 0) 
                 {
+                    if (XRPCDEBUG) alert(serializeXML(app.xmlhttp.responseXML)); 
                     callback(app.xmlhttp.responseXML);
                 } else {
                     var errmsg =
@@ -178,3 +188,5 @@ String.prototype.xmlEscape = function(direction)
   }
   return newString;
 }
+
+var XRPCDEBUG = false;
