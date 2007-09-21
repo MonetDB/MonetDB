@@ -981,7 +981,7 @@ main (int argc, char *argv[])
         if (!status->print_la_tree && !status->print_pa_tree)
             status->print_la_tree = true;
 
-        status->output_format == PFoutput_format_sql;
+        status->output_format = PFoutput_format_sql;
     }
 
     if (optind < argc)
