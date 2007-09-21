@@ -403,7 +403,7 @@ str runMALsequence( Client cntxt, MalBlkPtr mb, int startpc,
 	int exceptionVar, exceptionPC;
 	str ret=0;
 	int stamp= -1;
-	short *backup= (short*) alloca(mb->maxarg * sizeof(short));
+	bat *backup= (bat*) alloca(mb->maxarg * sizeof(bat));
 	str *sbackup= (str*) alloca(mb->maxarg * sizeof(str));
 	lng oldtimer=0;
 	struct mallinfo oldMemory;
@@ -569,7 +569,7 @@ str runMALdataflow( Client cntxt, MalBlkPtr mb, int startpc,
 	int exceptionVar, exceptionPC;
 	str ret=0;
 	int stamp= -1;
-	short *backup= (short*) alloca(mb->maxarg * sizeof(short));
+	bat *backup= (bat*) alloca(mb->maxarg * sizeof(bat));
 	str *sbackup= (str*) alloca(mb->maxarg * sizeof(str));
 	lng oldtimer=0;
 	struct mallinfo oldMemory;
