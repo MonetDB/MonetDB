@@ -68,3 +68,5 @@ alter_view
 simple_view
 float2dec
 not
+references-bug
+redirect

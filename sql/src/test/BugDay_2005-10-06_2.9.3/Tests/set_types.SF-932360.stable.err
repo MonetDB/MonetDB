@@ -68,12 +68,12 @@ stderr of test 'set_types.SF-932360` in directory 'src/test/BugDay_2005-10-06_2.
 # 13:52:38 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=36531  < set_types.SF-932360.sql
 # 13:52:38 >  
 
-MAPI  = monetdb@beo-13:37051
+MAPI  = monetdb@koala:31874
 QUERY = set current_timezone = 60;
-ERROR = !ERROR: second_interval_sht: operation failed.
-MAPI  = monetdb@beo-13:37051
+ERROR = !ERROR: second_interval_bte: operation failed.
+MAPI  = monetdb@koala:31874
 QUERY = set current_timezone = 0;
-ERROR = !ERROR: second_interval_sht: operation failed.
+ERROR = !ERROR: second_interval_bte: operation failed.
 
 
 

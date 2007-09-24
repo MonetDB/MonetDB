@@ -64,8 +64,7 @@ extern ptr sql_frontend(void);
 #include <sql_parser.h>		/* for sqlparse() */
 #include <sql_env.h>		/* explain,debug,reply_size,auto_commit etc */
 #include <sql_storage.h>
-#include <bat/res_table.h>
-#include <mapi.h>
+#include <mapi/mapi.h>
 
 static int SQLdebug = 0;
 static int keep_trace = 0;
@@ -362,7 +361,7 @@ sqlclient(backend *sql, bstream *in, stream *out)
 {
 	mvc *m = sql->mvc;
 	int err, go = TRUE;
-	int language = 'S';
+	int language = (m->scanner.mode == LINE_N)?'S':'s';
 
 	in->eof = 1;		/* force prompt on first iteration */
 	while (go) {
@@ -420,8 +419,15 @@ sqlclient(backend *sql, bstream *in, stream *out)
 				go = FALSE;
 				break;
 			}
-			if (go && !sql->console && language == 0)
+			if (go && !sql->console && language == 0) {
 				language = in->buf[in->pos++];
+				if (language == 's') {
+					language = 'S';
+					m->scanner.mode = LINE_1;
+				} else if (language == 'S') {
+					m->scanner.mode = LINE_N;
+				}
+			}
 		}
 		if (sql->console && strncmp(in->buf + in->pos, "quit", 4) == 0) {
 			in->pos = in->len;	/* HACK: should use parsed lenght */
@@ -440,10 +446,6 @@ query string with "M".
 			continue;
 		}
 @c
-		if (language == 's') {
-			language = 'S';
-			m->scanner.mode = LINE_1;
-		}
 		if (language != 'S' && language != 'X') {
 			error(out, "!unrecognized language prefix");
 			break;

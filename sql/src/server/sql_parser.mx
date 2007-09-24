@@ -1679,13 +1679,13 @@ column_constraint_type:
  |  sqlNULL	{ $$ = _symbol_create( SQL_NULL, NULL); }
  |  UNIQUE	{ $$ = _symbol_create( SQL_UNIQUE, NULL ); }
  |  PRIMARY KEY	{ $$ = _symbol_create( SQL_PRIMARY_KEY, NULL ); }
- |  REFERENCES qname '(' column_ref ')' opt_match opt_ref_action
+ |  REFERENCES qname opt_column_list opt_match opt_ref_action
 
 			{ dlist *l = L();
 			  append_list(l, $2 );
-			  append_list(l, $4 );
-			  append_int(l, $6 );
-			  append_int(l, $7 );
+			  append_list(l, $3 );
+			  append_int(l, $4 );
+			  append_int(l, $5 );
 			  $$ = _symbol_create_list( SQL_FOREIGN_KEY, l); }
  /*TODO: Implemente domain_constraint_type*/
  ;

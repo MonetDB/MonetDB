@@ -994,12 +994,11 @@ column_constraint_type(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_tabl
 			{
 				dnode *n = s->data.lval->h;
 				char *rtname = qname_table(n->data.lval);
-				char *rcname = n->next->data.lval->h->data.sval;
 				int ref_actions = n->next->next->next->data.ival; 
 				sql_fkey *fk;
 				list *cols;
 				sql_table *rt = mvc_bind_table(sql, cur_schema(sql), rtname);
-				sql_key *rk;
+				sql_key *rk = NULL;
 
 				if (!rt) {
 					(void) sql_error(sql, 02, "CONSTRAINT FOREIGN KEY: no such table table '%s'\n", rtname);
@@ -1010,11 +1009,19 @@ column_constraint_type(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_tabl
 					return res;
 				}
 
-				cols = list_append(list_create(NULL), rcname);
-				rk = mvc_bind_ukey(rt, cols);
-				list_destroy(cols);
+
+				/* find unique referenced key */
+				if (n->next->data.lval) {	
+					char *rcname = n->next->data.lval->h->data.sval;
+					cols = list_append(list_create(NULL), rcname);
+					rk = mvc_bind_ukey(rt, cols);
+					list_destroy(cols);
+				} else if (rt->pkey) {
+					/* no columns specified use rt.pkey */
+					rk = &rt->pkey->k;
+				}
 				if (!rk) {
-					(void) sql_error(sql, 02, "CONSTRAINT FOREIGN KEY: could not find referenced PRIMARY KEY in table %s.%s\n", rtname, rcname);
+					(void) sql_error(sql, 02, "CONSTRAINT FOREIGN KEY: could not find referenced PRIMARY KEY in table %s\n", rtname);
 					return res;
 				}
 				fk = mvc_create_fkey(sql, t, name, fkey, rk, ref_actions & 255, (ref_actions>>8) & 255);
@@ -1323,8 +1330,8 @@ table_foreign_key(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_table *t,
 			/* find key in ft->keys */
 			rk = mvc_bind_ukey(ft, cols);
 			list_destroy(cols);
-		} else {	/* no list of columns to find referenced unique key ie
-				   use ft.pkey */
+		} else if (ft->pkey) {	
+			/* no columns specified use ft.pkey */
 			rk = &ft->pkey->k;
 		}
 		if (!rk) {

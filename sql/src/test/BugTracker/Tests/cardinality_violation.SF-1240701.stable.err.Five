@@ -12,10 +12,10 @@ stderr of test 'cardinality_violation.SF-1240701` in directory 'src/test/BugTrac
 # 23:15:14 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=corona --port=36535 
 # 23:15:14 >  
 
-MAPI  = monetdb@corona:36535
+MAPI  = monetdb@koala:35889
 QUERY = select * from env() as env where name = ( select 'prefix' from env() as env );
-ERROR = !SQLException:zero_or_one:cardinality violation (46>1)
-MAPI  = monetdb@corona:36535
+ERROR = !SQLException:zero_or_one:cardinality violation (43>1)
+MAPI  = monetdb@koala:35889
 QUERY = select * from columns where name = (select columns.name from _tables, columns where _tables.id = columns.table_id);
 ERROR = !SQLException:zero_or_one:cardinality violation (171>1)
 
