@@ -78,6 +78,7 @@
 #define project(a,b,c)    PFpa_project ((a), (b), (c))
 
 #define select_(a,b)      PFpa_select ((a), (b))
+#define val_select(a,b,c) PFpa_value_select ((a), (b), (c))
 
 #define append_union(a,b) PFpa_append_union ((a), (b))
 #define merge_union(a,b,c) PFpa_merge_union ((a), (b), (c))

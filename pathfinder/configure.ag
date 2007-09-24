@@ -531,13 +531,14 @@ fi
 
 AM_CONDITIONAL(HAVE_PROBXML, test "x$enable_probxml" == xyes)
 
-dnl Pathfinder has two different code generators: The
+dnl Pathfinder has three different code generators: The
 dnl "milprint_summer" back-end directly translates XQuery Core
 dnl code into MIL, while the "algebra" back-end uses an intermediate
 dnl representation.  The former is more feature complete, and we use
 dnl it as the default if the user does not specify another default
-dnl with --with-default-backend=....  Note that users can ALWAYS
-dnl select each of the back-ends with the -A or -M switches on the
+dnl with --with-default-backend=....  In addition we have a "sql"
+dnl backend that generates a SQL query plan. Note that users can ALWAYS
+dnl select each of the back-ends with the -A, -M or -S switches on the
 dnl compiler command line.
 dnl This configure setting is primarily meant to ease debugging and
 dnl testing.  If you invoke configure with --with-default-backend=algebra,
@@ -545,7 +546,7 @@ dnl Mtest will also use the algebraic back-end.
 AC_ARG_WITH(default-backend,
             AC_HELP_STRING(
                [--with-default-backend=BACKEND],
-               [select a default back-end (milprint_summer/algebra)
+               [select a default back-end (milprint_summer/algebra/sql)
                 for Pathfinder (default=milprint_summer)]),
             default_backend="$withval",
             default_backend='milprint_summer')
@@ -555,6 +556,8 @@ then
                   [Use algebra back-end by default?])
         AC_DEFINE(MILPRINT_SUMMER_IS_DEFAULT, 1,
                   [Use milprint_summer back-end by default?])
+        AC_DEFINE(SQL_IS_DEFAULT, 0,
+                  [Use sql back-end by default?])
         DEFAULT_BACKEND=milprint_summer
 fi
 if test "x$default_backend" = xalgebra
@@ -563,11 +566,23 @@ then
                   [Use algebra back-end by default?])
         AC_DEFINE(MILPRINT_SUMMER_IS_DEFAULT, 0,
                   [Use milprint_summer back-end by default?])
+        AC_DEFINE(SQL_IS_DEFAULT, 0,
+                  [Use sql back-end by default?])
         DEFAULT_BACKEND=algebra
+fi
+if test "x$default_backend" = xsql
+then
+        AC_DEFINE(ALGEBRA_IS_DEFAULT, 0,
+                  [Use algebra back-end by default?])
+        AC_DEFINE(MILPRINT_SUMMER_IS_DEFAULT, 0,
+                  [Use milprint_summer back-end by default?])
+        AC_DEFINE(SQL_IS_DEFAULT, 1,
+                  [Use sql back-end by default?])
+        DEFAULT_BACKEND=sql
 fi
 if test "x$DEFAULT_BACKEND" = x
 then
-        AC_MSG_ERROR([Only 'milprint_summer' and 'algebra' are allowed
+        AC_MSG_ERROR([Only 'milprint_summer', 'algebra', and 'sql' are allowed
                       as arguments for --with-default-backend.])
 fi
 

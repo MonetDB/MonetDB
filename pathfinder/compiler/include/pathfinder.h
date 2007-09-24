@@ -77,6 +77,14 @@ enum PFinvocation_t {
     , invoke_monetdb
 };
 
+enum PFoutput_format_t {
+      PFoutput_format_not_specified
+    , PFoutput_format_milprint_summer
+    , PFoutput_format_mil
+    , PFoutput_format_sql
+    , PFoutput_format_xml
+};
+
 /** componentes of global compiler state */
 struct PFstate_t {
     bool quiet;               /**< command line switch: -q */
@@ -91,7 +99,8 @@ struct PFstate_t {
     bool print_core_tree;     /**< command line switch: -c */
     bool print_la_tree;       /**< command line switch: -l */
     bool print_pa_tree;       /**< command line switch: -a */
-    bool summer_branch;       /**< command line switch: -M */
+    enum PFoutput_format_t output_format; /**< command line switches:
+                                               -A, -M, and -S */
     bool dead_code_el;        /**< command line switch: -e */
 
     bool standoff_axis_steps; /**< command line switch: -b */
@@ -113,7 +122,6 @@ struct PFstate_t {
                                    (command line option `-d subtyping') */
     } debug;
 #endif
-   bool generate_sql;
 };
 
 

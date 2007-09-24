@@ -37,9 +37,7 @@
 
 /* .......... Serialization information .......... */
 #define ser_info_item(i,l)           PFsql_serialization_info_item((i),(l))
-#define ser_map(s,c)                 PFsql_serialization_name_mapping((s),(c))
-#define ser_res()                    PFsql_serialization_result()
-#define ser_doc()                    PFsql_serialization_document()
+#define ser_map(c,n)                 PFsql_serialization_name_mapping((c),(n))
 #define ser_comment(str)             PFsql_serialization_comment((str))
 #define ser_type(t,q)                PFsql_serialization_type((t),(q))
 

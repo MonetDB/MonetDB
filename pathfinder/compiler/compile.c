@@ -115,7 +115,7 @@ static char *phases[] = {
     [16]  = "after the Core tree has been translated to the logical algebra",
     [17]  = "after the logical algebra tree has been rewritten/optimized",
     [18]  = "after the CSE on the logical algebra tree",
-    [19]  = "after compiling logical into the physical algebra",
+    [19]  = "after compiling logical algebra into the physical algebra (or SQL)",
     [20]  = "after introducing recursion boundaries",
     [21]  = "after compiling the physical algebra into MIL code",
     [22]  = "after the MIL program has been serialized"
@@ -136,11 +136,7 @@ PFstate_t PFstate = {
     .print_core_tree     = false,
     .print_la_tree       = false,
     .print_pa_tree       = false,
-#if MILPRINT_SUMMER_IS_DEFAULT
-    .summer_branch       = true,
-#else
-    .summer_branch       = false,
-#endif
+    .output_format       = PFoutput_format_not_specified,
     .dead_code_el        = true,
 
     .standoff_axis_steps = false,
@@ -170,7 +166,6 @@ PFstate_t PFstate = {
         .subtyping       = false
     },
 #endif
-   .generate_sql         = false
 };
 
 jmp_buf PFexitPoint;
@@ -360,15 +355,21 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
      */
     proot = PFnormalize_abssyn (proot);
 
-    /* Heuristic path-reversal rewrites to start evaluation with indexable expressions
-     */
-    if (status->summer_branch) { /* NOTE: algebra MIL/MAL generation could/should also use it.. */
-        proot = PFheuristic_index (proot);
-    }
-
     tm = PFtimer_stop (tm);
     if (status->timing)
         PFlog ("normalization:\t\t\t\t %s", PFtimer_str (tm));
+
+    /* Heuristic path-reversal rewrites to start evaluation
+       with indexable expressions. */
+    if (status->output_format == PFoutput_format_milprint_summer) {
+        /* NOTE: algebra MIL/MAL generation could/should also use it.. */
+        tm = PFtimer_start ();
+        proot = PFheuristic_index (proot);
+        tm = PFtimer_stop (tm);
+        if (status->timing)
+            PFlog ("path heuristics:\t\t\t %s", PFtimer_str (tm));
+
+    }
 
     STOP_POINT(3);
     
@@ -500,7 +501,7 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
      * generate temporary MIL Code (summer branch version)
      */
 
-    if (status->summer_branch) {
+    if (status->output_format == PFoutput_format_milprint_summer) {
         char *prologue = NULL, *query = NULL, *epilogue = NULL;
         tm = PFtimer_start ();
         if (PFprintMILtemp (croot, status->optimize, module_base, -1, tm_first, 
@@ -556,14 +557,22 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
         PFlog ("CSE in logical algebra tree:\t\t %s",
                PFtimer_str (tm));
 
-   /* generate SQL code if requested */
-   if (status->generate_sql) {
-       if(laroot) {
+    STOP_POINT(18);
+
+    /* generate SQL code if requested */
+    if (status->output_format == PFoutput_format_sql) {
+        if (laroot) {
             /* this is not the final semantic of this function */
             PFsql_t *sqlroot = PFlalg2sql(laroot);
-            if (sqlroot)
+            if (sqlroot) {
+                tm = PFtimer_start ();
                 PFsql_print (pfout, sqlroot);
-            else
+                tm = PFtimer_stop (tm);
+
+                if (status->timing)
+                    PFlog ("SQL Code generation:\t\t\t %s",
+                           PFtimer_str (tm));
+            } else
                PFinfo(OOPS_NOTICE,
                  "SQL expressions not available at this "
                  "point of compilation");
@@ -574,8 +583,6 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
              "point of compilation");
         goto bailout;
     }
-
-    STOP_POINT(18);
 
     /* Compile algebra into physical algebra */
     tm = PFtimer_start ();
@@ -767,6 +774,12 @@ PFcompile_MonetDB (char *xquery, char* url, char** prologue, char** query, char*
         PFmil_t    *mroot  = NULL;
         PFarray_t  *serialized_mil_code = NULL;
 #endif
+#if SQL_IS_DEFAULT /* inside MonetDB use the algebra variant */
+        PFla_op_t  *laroot = NULL;
+        PFpa_op_t  *paroot = NULL;
+        PFmil_t    *mroot  = NULL;
+        PFarray_t  *serialized_mil_code = NULL;
+#endif
 #if MILPRINT_SUMMER_IS_DEFAULT
         char *intern_prologue = NULL,
              *intern_query = NULL,
@@ -778,9 +791,9 @@ PFcompile_MonetDB (char *xquery, char* url, char** prologue, char** query, char*
         PFstate.invocation = invoke_monetdb;
 
 #if MILPRINT_SUMMER_IS_DEFAULT
-        PFstate.summer_branch = true;
+        PFstate.output_format = PFoutput_format_milprint_summer;
 #else
-        PFstate.summer_branch = false;
+        PFstate.output_format = PFoutput_format_mil;
 #endif
 
         /* the state of the standoff_axis_steps support should be 
@@ -798,8 +811,9 @@ PFcompile_MonetDB (char *xquery, char* url, char** prologue, char** query, char*
         num_fun = PFparse (xquery, &proot);
         module_base = PFparse_modules (proot);
         proot = PFnormalize_abssyn (proot);
-        if (PFstate.summer_branch) { /* algebra MIL/MAL generation could/should also use it.. */
-             proot = PFheuristic_index (proot);
+        if (PFstate.output_format == PFoutput_format_milprint_summer) {
+            /* algebra MIL/MAL generation could/should also use it.. */
+            proot = PFheuristic_index (proot);
         }
         PFqname_init ();
         PFns_resolve (proot);

@@ -65,6 +65,7 @@ static char *a_id[]  = {
     , [pa_unq1_thetajoin]  = "dep_unique_thetajoin"
     , [pa_project]         = "¶ "
     , [pa_select]          = "SEL"
+    , [pa_val_select]      = "VAL SEL"
     , [pa_append_union]    = "APPEND_UNION"
     , [pa_merge_union]     = "MERGE_UNION"
     , [pa_intersect]       = "INTERSECT"        /* \"#FFA500\" */
@@ -146,6 +147,7 @@ static char *xml_id[]  = {
     , [pa_unq1_thetajoin]  = "dep_unique_thetajoin"
     , [pa_project]         = "project"
     , [pa_select]          = "select"
+    , [pa_val_select]      = "val_select"
     , [pa_append_union]    = "append_union"
     , [pa_merge_union]     = "merge_union"
     , [pa_intersect]       = "intersect"
@@ -341,6 +343,7 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, unsigned int node_id)
         , [pa_unq1_thetajoin]  = "\"#00FF00\""
         , [pa_project]         = "\"#EEEEEE\""
         , [pa_select]          = "\"#00DDDD\""
+        , [pa_val_select]      = "\"#00BBBB\""
         , [pa_append_union]    = "\"#909090\""
         , [pa_merge_union]     = "\"#909090\""
         , [pa_intersect]       = "\"#FFA500\""
@@ -454,6 +457,7 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, unsigned int node_id)
             break;
 
         case pa_attach:
+        case pa_val_select:
             PFarray_printf (dot, "%s (%s), val: %s", a_id[n->kind],
                             PFatt_str (n->sem.attach.attname),
                             literal (n->sem.attach.value));
@@ -1074,6 +1078,17 @@ pa_xml (PFarray_t *xml, PFpa_op_t *n, unsigned int node_id)
                             PFatt_str (n->sem.select.att));
             break;
 
+        case pa_val_select:
+            PFarray_printf (xml, 
+                            "    <content>\n"
+                            "      <column name=\"%s\" new=\"false\">\n"
+                            "        %s\n"
+                            "      </column>\n"
+                            "    </content>\n",
+                            PFatt_str (n->sem.attach.attname),
+                            xml_literal (n->sem.attach.value));
+            break;
+            
         case pa_std_sort:
         case pa_refine_sort:
         {

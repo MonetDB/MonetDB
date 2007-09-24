@@ -470,42 +470,41 @@
  * order of one-character option names.
  */
 static struct option long_options[] = {
-    { "enable-algebra",               no_argument,    NULL, 'A' },
-    { "print-att-dot",                no_argument,    NULL, 'D' },
-/*  { "read-haskell-output",          no_argument,    NULL, 'H' }, */
-    { "fullhelp",                     no_argument,    NULL, 'H' },
-    { "print-mil_summer",             no_argument,    NULL, 'M' },
+    { "mil",                       no_argument,       NULL, 'A' },
+    { "dot",                       no_argument,       NULL, 'D' },
+    { "fullhelp",                  no_argument,       NULL, 'H' },
+    { "mil_2004",                  no_argument,       NULL, 'M' },
     { "optimize",                  optional_argument, NULL, 'O' },
-    { "print-human-readable",         no_argument,    NULL, 'P' },
-    { "timing",                       no_argument,    NULL, 'T' },
-    { "print-XML",                    no_argument,    NULL, 'X' },
-    { "print-abstract-syntax-tree",   no_argument,    NULL, 'a' },
+    { "text",                      no_argument,       NULL, 'P' },
+    { "timing",                    no_argument,       NULL, 'T' },
+    { "xml",                       no_argument,       NULL, 'X' },
+    { "abstract-syntax-tree",      no_argument,       NULL, 'a' },
 /* Wouter: enable-standoff  (with the short-option b (Burkowski ;)
    sorry for the confusion, but I'm afraid all other letters
    have been picked by now... */
-    { "enable-standoff",              no_argument,    NULL, 'b' },
-    { "print-core-tree",              no_argument,    NULL, 'c' },
+    { "enable-standoff",           no_argument,       NULL, 'b' },
+    { "core-tree",                 no_argument,       NULL, 'c' },
 #ifndef NDEBUG
     { "debug",                     required_argument, NULL, 'd' },
 #endif
-    { "dead-code-elimination",     required_argument, NULL, 'e' },
+    { "mil-dead-code-elimination", required_argument, NULL, 'e' },
     { "format",                    required_argument, NULL, 'f' },
-    { "sql",                       no_argument,    NULL, 'g' },
-    { "help",                         no_argument,    NULL, 'h' },
-    { "print-logical-algebra",        no_argument,    NULL, 'l' },
+    { "sql",                       no_argument,       NULL, 'g' },
+    { "help",                      no_argument,       NULL, 'h' },
+    { "logical-algebra-plan",      no_argument,       NULL, 'l' },
     { "optimize-algebra",          required_argument, NULL, 'o' },
-    { "print-physical-algebra",       no_argument,    NULL, 'p' },
-    { "quiet",                        no_argument,    NULL, 'q' },
+    { "physical-algebra-plan",     no_argument,       NULL, 'p' },
+    { "quiet",                     no_argument,       NULL, 'q' },
     { "stop-after",                required_argument, NULL, 's' },
-    { "typing",                       no_argument,    NULL, 't' },
-    { NULL,                           no_argument,    NULL, 0 }
+    { "typing",                    no_argument,       NULL, 't' },
+    { NULL,                        no_argument,       NULL, 0 }
 };
 
 /**
  * character buffer large enough to hold longest
  * command line option plus some extra formatting space
  */
-static char opt_buf[sizeof ("print-abstract-syntax-tree") + 8];
+static char opt_buf[sizeof ("mil-dead-code-elimination") + 10];
 
 static int 
 cmp_opt (const void *o1, const void *o2) 
@@ -579,7 +578,7 @@ static char *phases[] = {
     [16]  = "after the Core tree has been translated to the logical algebra",
     [17]  = "after the logical algebra tree has been rewritten/optimized",
     [18]  = "after the CSE on the logical algebra tree",
-    [19]  = "after compiling logical into the physical algebra",
+    [19]  = "after compiling logical algebra into the physical algebra (or SQL)",
     [20]  = "after introducing recursion boundaries",
     [21]  = "after compiling the physical algebra into MIL code",
     [22]  = "after the MIL program has been serialized"
@@ -660,18 +659,12 @@ main (int argc, char *argv[])
             break;            /* end of command line */
         switch (c) {
             case 'A':
-                status->summer_branch = false;
+                status->output_format = PFoutput_format_mil;
                 break;
 
             case 'D':
                 status->print_dot = true;
                 break;
-
-                /*
-                   case 'H':
-                   status->parse_hsk = true;
-                   break;
-                   */
 
             case 'H':
                 printf ("Pathfinder XQuery Compiler "
@@ -679,76 +672,69 @@ main (int argc, char *argv[])
                 printf ("(c) Database Group, Technische Universitaet Muenchen\n\n");
                 printf ("Usage: %s [OPTION] [FILE]\n\n", argv[0]);            
                 printf ("  Reads from standard input if FILE is omitted.\n\n");
-                printf ("  -h%s: print short help message\n",
-                        long_option (opt_buf, ", --%s", 'h'));
-                printf ("  -H%s: print this help message for advanced options\n",
-                        long_option (opt_buf, ", --%s", 'H'));
-                printf ("  -q%s: do not print informational messages to log file\n",
-                        long_option (opt_buf, ", --%s", 'q'));
-                /*
-                   printf ("  -H%s: read algebra code from Teggy's Haskell prototype"
-                   "\n        (will not read XQuery input then)\n",
-                   long_option (opt_buf, ", --%s", 'H'));
-                */
-                printf ("  -A%s: turn on internal algebra code"
+                printf ("  -A%s: generate MIL code"
 #if ALGEBRA_IS_DEFAULT
                         " (default)"
 #endif
                         "\n",
                         long_option (opt_buf, ", --%s", 'A'));
-                printf ("  -M%s: print MIL code (summer version)"
+                printf ("  -M%s: generate MIL code (directly from XQuery Core)"
 #if MILPRINT_SUMMER_IS_DEFAULT
                         " (default)"
 #endif
                         "\n",
                         long_option (opt_buf, ", --%s", 'M'));
-                printf ("  -P%s: print internal tree structure human-readable\n",
-                        long_option (opt_buf, ", --%s", 'P'));
+                printf ("  -S%s: generate SQL code"
+#if SQL_IS_DEFAULT
+                        " (default)"
+#endif
+                        "\n",
+                        long_option (opt_buf, ", --%s", 'g'));
+                printf ("\n");
+                
                 printf ("  -D%s: print internal tree structure in AT&T dot notation\n",
                         long_option (opt_buf, ", --%s", 'D'));
-                printf ("  -X%s: print internal tree structure in XML notation\n"
-                        "        (only works for logical algebra tree)\n",
+                printf ("  -P%s: print internal tree structure in "
+                        "human-readable notation\n"
+                        "              (can be used in combination with"
+                        " options -a or -c)\n",
+                        long_option (opt_buf, ", --%s", 'P'));
+                printf ("  -X%s: print internal algebraic plan "
+                        "in XML notation\n             "
+                        "(if options -A, -M, and -S are not used "
+                        "this option\n              implicitly "
+                        "extends options with -S, -l, and -s18)\n\n",
                         long_option (opt_buf, ", --%s", 'X'));
-                printf ("  -T%s: print elapsed times for compiler phases\n",
-                        long_option (opt_buf, ", --%s", 'T'));
-                printf ("  -O[0-3]%s: select optimization level (default=1)\n",
-                        long_option (opt_buf, ", --%s", 'O'));
-                printf ("  -t%s: print static types (in {...}) for Core\n",
-                        long_option (opt_buf, ", --%s", 't'));
-                printf ("  -s%s: stop processing after certain phase:\n",
-                        long_option (opt_buf, ", --%s", 's'));
-
-                for (i = 1; i < (sizeof (phases) / sizeof (char *)); i++)
-                    printf ("        %2u  %s\n", i, phases[i]);
-
-                printf ("  -S%s: generate SQL code\n",
-                        long_option (opt_buf, ", --%s", 'g'));
-
-#ifndef NDEBUG
-                printf ("  -d TEST%s: call internall debugging function TEST\n",
-                        long_option (opt_buf, ", --%s=TEST", 'd'));
-#endif
-
-                printf ("  -a%s: print abstract syntax tree\n",
+                printf ("  -a%s: enable generation of abstract syntax tree\n",
                         long_option (opt_buf, ", --%s", 'a'));
-                printf ("  -c%s: print internal Core language\n",
+                printf ("  -c%s: enable generation of internal Core language\n",
                         long_option (opt_buf, ", --%s", 'c'));
-                printf ("  -l%s: print logical algebra tree\n",
+                printf ("  -t%s: enable generation of static types in "
+                        "internal Core language\n                using {...}"
+                        " (can be used in combination with option -c)\n",
+                        long_option (opt_buf, ", --%s", 't'));
+                printf ("  -l%s: enable generation of logical algebra plan\n",
                         long_option (opt_buf, ", --%s", 'l'));
-                printf ("  -p%s: print physical algebra tree\n",
+                printf ("  -p%s: enable generation of physical algebra plan\n",
                         long_option (opt_buf, ", --%s", 'p'));
-                printf ("  -f format%s: print optional information in algebra "
-                                            "dot output:\n",
-                        long_option (opt_buf, ", --%s=format", 'f'));
-
+                printf ("  -f<format>%s: enable generation of algebra "
+                        "properties\n",
+                        long_option (opt_buf, ", --%s=<format>", 'f'));
                 printf ("         +  print all available properties (logical/"
                                      "physical algebra)\n");
                 printf ("         c  print cost value (physical algebra)\n");
-                printf ("         o  print orderings (physical algebra)\n");
+                printf ("         o  print orderings (physical algebra)\n\n");
 
-                printf ("  -o options%s: optimize algebra according to "
+                printf ("  -s<phase>%s: stop processing after certain phase:\n",
+                        long_option (opt_buf, ", --%s=<phase>", 's'));
+
+                for (i = 1; i < (sizeof (phases) / sizeof (char *)); i++)
+                    printf ("        %2u  %s\n", i, phases[i]);
+                printf ("\n");
+
+                printf ("  -o<options>%s: optimize algebra according to "
                                             "options:\n",
-                        long_option (opt_buf, ", --%s=options", 'o'));
+                        long_option (opt_buf, ", --%s=<options>", 'o'));
 
                 printf ("         O  apply optimization based on constant "
                                             "property\n");
@@ -760,8 +746,8 @@ main (int argc, char *argv[])
                                             "property\n");
                 printf ("         C  apply optimization using multiple "
                                             "properties (complex)\n");
-                printf ("            - icols based optimization will be "
-                                            "applied afterwards\n");
+                printf ("            (and icols based optimization will be "
+                                            "applied afterwards)\n");
                 printf ("         G  apply general optimization (without "
                                             "properties)\n");
                 printf ("         V  apply optimization based on required "
@@ -780,26 +766,47 @@ main (int argc, char *argv[])
                                             "operator groups\n");
                 printf ("         {  remove proxy operators\n");
                 printf ("         P  infer all properties\n");
-                printf ("            (used for debug output and physical "
-                                            "algebra\n");
                 printf ("         _  does nothing (used for structuring "
                                             "the options)\n");
-                printf ("         (algebra default is: '-o %s')\n",
+                printf ("            (default for option -A is: '-o %s')\n",
                         status->opt_alg);
-                printf ("         (SQL default is:     '-o %s')\n",
+                printf ("            (default for option -S is: '-o %s')\n\n",
                         status->opt_sql);
-                printf ("  -e[0|1]%s: dead code elimination:\n"
-                        "         0 disable dead code elimination\n"
-                        "         1 enable dead code elimination (default)\n",
+
+                printf ("  -e[0|1]%s: dead code elimination"
+                        " (on the MIL level):\n"
+                        "         0  disable dead code elimination\n"
+                        "         1  enable dead code elimination (default)\n",
                         long_option (opt_buf, ", --%s=[0|1]", 'e'));
+                printf ("  -O[0-3]%s: select optimization level (default=1)\n"
+                        "                       (only works in combination "
+                        "with option -M)\n",
+                        long_option (opt_buf, ", --%s", 'O'));
+#ifndef NDEBUG
+                printf ("  -d TEST%s: call internall debugging function TEST\n",
+                        long_option (opt_buf, ", --%s=TEST", 'd'));
+#endif
                 printf ("  -b%s: enable StandOff axis steps\n",
                         long_option (opt_buf, ", --%s", 'b'));
+                printf ("  -q%s: do not print informational messages "
+                        "to log file\n",
+                        long_option (opt_buf, ", --%s", 'q'));
+
+                printf ("\n");
+                printf ("  -T%s: print elapsed times for compiler phases\n",
+                        long_option (opt_buf, ", --%s", 'T'));
+
+                printf ("\n");
+                printf ("  -h%s: print short help message\n",
+                        long_option (opt_buf, ", --%s", 'h'));
+                printf ("  -H%s: print this help message for advanced options\n",
+                        long_option (opt_buf, ", --%s", 'H'));
                 printf ("\n");
                 printf ("Enjoy.\n");
                 exit (0);
 
             case 'M':
-                status->summer_branch = true;
+                status->output_format = PFoutput_format_milprint_summer;
                 break;
 
             case 'O':
@@ -810,11 +817,22 @@ main (int argc, char *argv[])
                 status->print_pretty = true;
                 break;
 
+            case 'S':
+                status->output_format = PFoutput_format_sql;
+                if (!status->stop_after)
+                    status->stop_after = 19;
+                if (!explicit_opt)
+                    status->opt_alg = status->opt_sql;
+                break;
+                
             case 'T':
                 status->timing = true;
                 break;
 
             case 'X':
+                if (status->output_format == PFoutput_format_not_specified)
+                    status->output_format = PFoutput_format_xml;
+                
                 status->print_xml = true;
                 break;
 
@@ -872,14 +890,35 @@ main (int argc, char *argv[])
                 printf ("(c) Database Group, Technische Universitaet Muenchen\n\n");
                 printf ("Usage: %s [OPTION] [FILE]\n\n", argv[0]);            
                 printf ("  Reads from standard input if FILE is omitted.\n\n");
+                printf ("  -A%s: generate MIL code"
+#if ALGEBRA_IS_DEFAULT
+                        " (default)"
+#endif
+                        "\n",
+                        long_option (opt_buf, ", --%s", 'A'));
+                printf ("  -M%s: generate MIL code (directly from XQuery Core)"
+#if MILPRINT_SUMMER_IS_DEFAULT
+                        " (default)"
+#endif
+                        "\n",
+                        long_option (opt_buf, ", --%s", 'M'));
+                printf ("  -S%s: generate SQL code"
+#if SQL_IS_DEFAULT
+                        " (default)"
+#endif
+                        "\n",
+                        long_option (opt_buf, ", --%s", 'g'));
+                printf ("  -X%s: generate XML representation "
+                        "of algebraic plan\n",
+                        long_option (opt_buf, ", --%s", 'X'));
+                printf ("\n");
+                printf ("  -T%s: print elapsed times for compiler phases\n",
+                        long_option (opt_buf, ", --%s", 'T'));
+                printf ("\n");
                 printf ("  -h%s: print this help message\n",
                         long_option (opt_buf, ", --%s", 'h'));
                 printf ("  -H%s: print help message for advanced options\n",
                         long_option (opt_buf, ", --%s", 'H'));
-                printf ("  -T%s: print elapsed times for compiler phases\n",
-                        long_option (opt_buf, ", --%s", 'T'));
-                printf ("  -O[0-3]%s: select optimization level (default=1)\n",
-                        long_option (opt_buf, ", --%s", 'O'));
                 printf ("\n");
                 printf ("Enjoy.\n");
                 exit (0);
@@ -914,20 +953,36 @@ main (int argc, char *argv[])
             case 't':
                 status->print_types = true;
                 break;
-            case 'S':
-                status->summer_branch = false;
-                status->generate_sql = true;
-                if (!status->stop_after)
-                    status->stop_after = 19;
-                if (!explicit_opt)
-                    status->opt_alg = status->opt_sql;
-                break;
+
             default:
                 PFoops (OOPS_CMDLINEARGS, "try `%s -h'", progname);
                 break;
 
         }           /* end of switch */
     }           /* end of while */
+
+    if (status->output_format == PFoutput_format_not_specified)
+#if MILPRINT_SUMMER_IS_DEFAULT
+        status->output_format = PFoutput_format_milprint_summer;
+#endif
+#if ALGEBRA_IS_DEFAULT
+        status->output_format = PFoutput_format_mil;
+#endif
+#if SQL_IS_DEFAULT
+        status->output_format = PFoutput_format_sql;
+#endif
+    else if (status->output_format == PFoutput_format_xml) {
+        if (!status->stop_after)
+            status->stop_after = 18;
+
+        if (!explicit_opt)
+            status->opt_alg = status->opt_sql;
+
+        if (!status->print_la_tree && !status->print_pa_tree)
+            status->print_la_tree = true;
+
+        status->output_format = PFoutput_format_sql;
+    }
 
     if (optind < argc)
         url = argv[optind];

@@ -71,8 +71,6 @@ static char *ID[] = {
       [sql_ser_info]          = "ser_info",
       [sql_ser_comment]       = "ser_comment",
       [sql_ser_mapping]       = "ser_mapping",
-      [sql_ser_doc]           = "ser_doc",
-      [sql_ser_res]           = "ser_res",
       [sql_ser_type]          = "ser_type",
       [sql_tbl_def]           = "tbl_def",
       [sql_schema_tbl_name]   = "schema_tbl_name",
@@ -147,52 +145,6 @@ static void print_statement (PFsql_t *);
 static void print_fullselect (FILE *, PFsql_t *, int);
 static void print_literal (PFsql_t *);
 
-static void 
-print_schema_relcol (FILE *f, PFsql_t *n)
-{
-    assert (n);
-    
-    switch (n->kind) {
-        case sql_column_name:
-            fprintf (f, "%s", PFsql_column_name_str (n->sem.column.name));
-            fprintf (f, ": ");
-            fprintf (f, "%s", PFsql_column_name_str (n->sem.column.name));
-            break;
-            
-        case sql_tbl_def:
-        case sql_tbl_name:
-            fprintf (f, "relation: ");
-            fprintf (f, "%s", PFsql_table_str (n->sem.tbl.name));
-            break;
-
-        default:
-            PFoops (OOPS_FATAL,
-                    "SQL grammar conflict. (Expected: schema relation; "
-                    "Got: %s)", ID[n->kind]);
-    }
-}
-
-static void
-print_schema_table (FILE *f, PFsql_t *n)
-{
-    assert (n);
-
-    switch (n->kind) {
-        case sql_ser_doc:
-            fprintf (f, "document");
-            break;
-
-        case sql_ser_res:
-            fprintf (f, "result");
-            break;
-
-        default:
-            PFoops (OOPS_FATAL,
-                    "SQL grammar conflict. (Expected: schema table; "
-                    "Got: %s)", ID[n->kind]);
-    }
-}
-
 static void
 print_schema_information (FILE *f, PFsql_t *n)
 {
@@ -216,10 +168,11 @@ print_schema_information (FILE *f, PFsql_t *n)
             break;
 
         case sql_ser_mapping:
-            fprintf (f, "-- ");
-            print_schema_table (f, L(L(n)));
-            fprintf (f, "-");
-            print_schema_relcol (f, R(L(n)));
+            assert (L(L(n))->kind == sql_column_name);
+            assert (R(L(n))->kind == sql_column_name);
+            fprintf (f, "-- Column (%s): %s",
+                     PFsql_column_name_str (L(L(n))->sem.column.name),
+                     PFsql_column_name_str (R(L(n))->sem.column.name));
             break;
 
         default:
@@ -740,7 +693,7 @@ print_join (FILE *f, PFsql_t *n, int i)
     switch (n->kind) {
         case sql_left_outer_join:
             print_join (f, L(n), i);
-            indent (f, i-6);
+            indent (f, i-5);
             fprintf (f, "LEFT OUTER JOIN ");
             print_join (f, R(n), i-6+17);
             break;
@@ -784,7 +737,7 @@ print_from_list (FILE *f, PFsql_t *n, int i)
             break;
 
         case sql_on:
-            print_join (f, n, i+3);
+            print_join (f, n, i);
             break;
             
         default:
