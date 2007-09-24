@@ -43,7 +43,6 @@ enum PFsql_special_t {
     , sql_col_size
     , sql_col_kind
     , sql_col_prop
-    , sql_col_tag
     , sql_col_nameid
     , sql_col_value
     , sql_col_name
@@ -184,7 +183,8 @@ enum PFsql_kind_t {
                                (second argument of a sql_over operator) */
     , sql_order_by          /* ORDER BY clause
                                (first argument of a sql_wnd_clause operator) */
-    , sql_sortkey           /* an item of a list of order criteria */
+    , sql_sortkey_list      /* an item of a list of order criteria */
+    , sql_sortkey_item      /* sort key item */
     , sql_partition         /* PARTITION BY clause
                                (second argument of a sql_wnd_clause operator) */
 
@@ -296,6 +296,7 @@ struct PFsql_alg_ann_t {
     PFarray_t   *wheremap;     /**< contains references to the boolean
                                     in colmap */
     
+    /* annotations needed to translate twig constructors (and path steps) */
     PFsql_t     *fragment;     /**< a fragment reference */
     PFsql_t     *content_size; /**< a reference to a content-size binding */
 
@@ -305,7 +306,16 @@ struct PFsql_alg_ann_t {
                                     with the twig-constructor */
     unsigned int twig_level;   /**< local level value for constructions
                                     with the twig-constructor */
-    ser_report_t ser_report;       /**< serialization report */
+
+    /* annotations needed to improve the query-part that provides the
+       result relation for the serialization */
+    ser_report_t ser_report;   /**< serialization report */
+    PFalg_att_t  ser_list1;    /**< a list of columns to check further
+                                    constraints */
+    PFalg_att_t  ser_list2;    /**< a list of columns to check further
+                                    constraints */
+    PFarray_t   *rank_map;     /**< an internal representation of all
+                                    ignored rank operators. */
 };
 typedef struct PFsql_alg_ann_t PFsql_alg_ann_t;
 
@@ -345,6 +355,12 @@ PFsql_t* PFsql_common_table_expr(const PFsql_t *old, const PFsql_t *new);
  */
 #define PFsql_stmt_list(...) \
             PFsql_generic_list (PFsql_stmt_list_, __VA_ARGS__)
+
+/**
+ * A sequence of sortkey-expressions.
+ */
+#define PFsql_sortkey_list(...) \
+            PFsql_generic_list (PFsql_sortkey_list_, __VA_ARGS__)
 
 /**
  * A sequence of lists
@@ -807,7 +823,13 @@ PFsql_t * PFsql_order_by (const PFsql_t *sortkey_list);
  * The sortkey expressions are used in OLAP-functions
  * to provide an ordering among the tuples in a relation.
  */
-PFsql_t * PFsql_sortkey (PFsql_t *sortkey, bool dir_asc, PFsql_t *sort_list);
+PFsql_t * PFsql_sortkey_list_ (unsigned int count, const PFsql_t ** list);
+
+/**
+ * Sort key item
+ */
+PFsql_t * PFsql_sortkey_item (PFsql_t *expr, bool dir);
+
 /**
  * We mainly use this to express the partition keyword
  * used by some OLAP-functions.

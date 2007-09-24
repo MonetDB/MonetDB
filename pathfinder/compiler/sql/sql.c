@@ -980,10 +980,19 @@ PFsql_order_by (const PFsql_t *sortkey_list)
  * to provide an ordering among the tuples in a relation.
  */
 PFsql_t *
-PFsql_sortkey (PFsql_t *sortkey, bool dir_asc, PFsql_t *sort_list)
+PFsql_sortkey_list_ (unsigned int count, const PFsql_t **list)
 {
-    PFsql_t *ret = wire2 (sql_sortkey, sortkey, sort_list);
-    ret->sem.sortkey.dir_asc = dir_asc;
+    return sql_list (sql_sortkey_list, count, list);
+}
+
+/**
+ * Sort key item
+ */
+PFsql_t *
+PFsql_sortkey_item (PFsql_t *expr, bool dir)
+{
+    PFsql_t *ret = wire1 (sql_sortkey_item, expr);
+    ret->sem.sortkey.dir_asc = dir;
     return ret;
 }
 
@@ -1120,11 +1129,10 @@ PFsql_op_duplicate (PFsql_t *expr)
             return ret;
         }
         
-        case sql_sortkey:
-            return sortkey (duplicate(expr->child[0]),
-                            expr->sem.sortkey.dir_asc,
-                            duplicate(expr->child[1]));
-            
+        case sql_sortkey_item:
+            return sortkey_item (duplicate (expr->child[0]),
+                                 expr->sem.sortkey.dir_asc);
+
         case sql_type:
             return type (expr->sem.type.t);
             
@@ -1237,7 +1245,6 @@ PFsql_column_name_str (PFsql_col_t *name)
             case sql_col_size:     return "size";
             case sql_col_kind:     return "kind";
             case sql_col_prop:     return "prop";
-            case sql_col_tag:      return "tag";
             case sql_col_nameid:   return "nameid";
             case sql_col_value:    return "value";
             case sql_col_name:     return "name";
