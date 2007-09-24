@@ -10,8 +10,8 @@ stdout of test 'type_names_are_not_keywords.SF-1227464` in directory 'tests/BugD
 # Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
 var int := 1 ;
-printf("int=%d\n",int);
-int=1
+printf("= int=%d\n",int);
+= int=1
 quit();
 
 # 11:45:00 >  

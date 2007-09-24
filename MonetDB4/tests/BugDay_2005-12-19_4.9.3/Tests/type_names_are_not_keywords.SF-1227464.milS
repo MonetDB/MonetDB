@@ -1,2 +1,2 @@
 var int := 1 ;
-printf("int=%d\n",int);
+printf("= int=%d\n",int);
