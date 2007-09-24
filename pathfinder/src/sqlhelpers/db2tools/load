@@ -1,0 +1,80 @@
+#!/bin/sh
+
+THIS=${0}
+THISDIR=${0%/*}
+THISFILE=${0##*/}
+DB2=`which db2`
+
+source common.inc
+
+################################################
+# FUNCTIONS
+
+function load_table {
+    #check parameter list
+    if [ ${#} -ne 3 ]; then
+       error "Usage: ${0} <file> <schema> <table>"
+    fi
+
+    SCHEMA=${2}
+    FILE=${1}
+    TABLE=${3}
+    
+    # set schema to ours 
+    ${DB2} "set current schema ${SCHEMA}"
+
+    # create the names-table 
+    ${DB2} -t<<EOT
+LOAD FROM ${FILE} OF DEL
+    MODIFIED BY DELPRIORITYCHAR 
+    REPLACE INTO ${TABLE} 
+    NONRECOVERABLE
+    INDEXING MODE rebuild;
+EOT
+
+    ${DB2} "SET INTEGRITY FOR ${TABLE} IMMEDIATE CHECKED" 
+    EFLAG=${?}
+    return ${EFLAG}
+}
+
+function print_help () {
+    out    "Pathfinder XQuery"
+    out    "(c) Database Group, Technische Universitaet Muenchen"
+    out    "" 
+    out    "Usage: ${THISFILE} (create|drop) <db> <schema> <file>"
+    out    ""
+    out -e "\t<db>:\t\tName of the Database the content should be placed/removed."
+    out -e "\t<schema>:\tName of the Schema the content should be placed/removed."
+    out -e "\t<names_file>:\tNames file"
+    out -e "\t<file>:\tEncoded document"
+}
+
+################################################
+# MAIN
+
+if [ $# -ne 4 ]; then
+    print_help;
+    exit 0;
+fi     
+
+DATABASE=${1}
+SCHEMA=${2}
+NFILE=${3}
+LFILE=${4}
+
+${DB2} "connect to ${DATABASE}"
+
+EFLAG=${?}
+out -ne "Connecting to database ${DATABASE} ... "; fail $EFLAG; 
+
+test ${EFLAG} -ne 0 && exit 1;
+
+load_table "${NFILE}" "${SCHEMA}" "${TAB_NAMES}";
+EFLAG=${?};
+out -ne "Loading ${SCHEMA}.${TAB_NAMES} ... "; fail ${EFLAG};
+
+load_table ${LFILE} "${SCHEMA}" "${TAB_DOC}";
+EFLAG=${?};
+out -ne "Loading ${SCHEMA}.${TAB_DOC} ... "; fail ${EFLAG};
+
+${DB2} "terminate"
