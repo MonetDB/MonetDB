@@ -97,6 +97,11 @@ make install DESTDIR=$RPM_BUILD_ROOT
 rm -rf $RPM_BUILD_ROOT%{_libdir}/MonetDB5
 find $RPM_BUILD_ROOT -name \*.la | xargs rm -f
 
+# even remove DB2 specific stuff
+rm -rf $RPM_BUILD_ROOT%{_bindir}/pfserializer.pl
+rm -rf $RPM_BUILD_ROOT%{_bindir}/pfloadtables.sh
+rm -rf $RPM_BUILD_ROOT%{_bindir}/pfcreatetables.sh
+
 %post -p /sbin/ldconfig
 
 %postun -p /sbin/ldconfig
@@ -107,8 +112,7 @@ rm -rf $RPM_BUILD_ROOT
 %files
 %defattr(-,root,root)
 %{_bindir}/pf
-%{_bindir}/xmlshred
-%{_bindir}/serializer.pl
+%{_bindir}/pfshred
 %{_libdir}/MonetDB4/lib/lib_*
 %{_libdir}/MonetDB4/*.mil
 %{_bindir}/Mbeddedxq
