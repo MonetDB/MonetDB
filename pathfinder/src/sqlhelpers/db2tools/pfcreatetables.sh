@@ -106,6 +106,7 @@ CREATE TABLE ${TABNAME}(pre INT NOT NULL PRIMARY KEY,
                  nameid INT,
                  value VARCHAR(100),
                  guide INT NOT NULL,
+                 pre_plus_size INT GENERATED ALWAYS AS (pre + size),
                  FOREIGN KEY (nameid) references ${NAMESNAME}(nameid));
 EOT
     EFLAG=${?}
