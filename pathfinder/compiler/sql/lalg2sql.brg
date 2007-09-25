@@ -1920,12 +1920,6 @@ reduce (PFla_op_t * p, int goalnt)
          */ 
         case 2:
         {
-            PFalg_att_t         ser_pos     = p->sem.serialize.pos;
-            PFalg_att_t         ser_item    = p->sem.serialize.item;
-
-            PFalg_att_t         twig_iter   = RL(p)->sem.iter_item.iter; 
-            PFalg_att_t         twig_item   = RL(p)->sem.iter_item.item;
-
             PFsql_aident_t      content      = new_alias ();
             PFsql_t            *sortkey_list = NULL;
 
@@ -1934,8 +1928,8 @@ reduce (PFla_op_t * p, int goalnt)
             
             assert (L(LR(p)) == RL(p));
 
-            assert (ser_item == twig_item);
-            assert (ser_pos  == twig_iter); 
+            assert (p->sem.serialize.item == RL(p)->sem.iter_item.item);
+            assert (p->sem.serialize.pos == RL(p)->sem.iter_item.iter); 
 
             /* construct schema information for serialization */
             ser_info = ser_info_item (
@@ -4317,10 +4311,9 @@ ser_info_worker (PFla_op_t *p, PFarray_t *twigs, PFarray_t *ranks)
     switch (p->kind) {
         case la_project:
         {
-            unsigned int i, j;
-            PFalg_att_t  old, new;
+            PFalg_att_t old, new;
             /* projection has the ability to omit and change names */
-            for (i = 0; i < p->sem.proj.count; i++) {
+            for (unsigned int i = 0; i < p->sem.proj.count; i++) {
                 old = p->sem.proj.items[i].old;
                 new = p->sem.proj.items[i].new;
                 
