@@ -17,8 +17,6 @@
 
 use strict;
 use warnings;
-use Getopt::Long; # support options+arguments
-use Pod::Usage;
 
 # we require Perl's database interfaces
 use DBI;
@@ -90,7 +88,6 @@ sub build_result_map {
         $result_map->{"kind"}  = $schema->{"kind"};
         $result_map->{"value"} = $schema->{"value"};
         $result_map->{"name"}  = $schema->{"name"};
-        $result_map->{"tag"}   = $schema->{"tag"};
     }
 
     return $result_map;
@@ -154,7 +151,7 @@ sub read_query {
             # these are the strings we look for
             if ($line =~ /\b(Type|
                              Column\s+\((pre|size|kind|
-                                 value|name|tag|item_(int|dec|dbl|str))\)):\s+
+                                 value|name|item_(int|dec|dbl|str))\)):\s+
                              \b(\w+)\b/x) {
 
 
@@ -242,12 +239,12 @@ sub print_xml {
                 }
 
                 # remove trailing spaces as they are returned by DB2
-                $row->{'tag'} =~ s/ +$//;
+                $row->{'name'} =~ s/ +$//;
 
-                print '<'.$row->{'tag'} . '';    # print .tag
+                print '<'.$row->{'name'} . '';    # print .tag
                 push @stack, [ $row->{'pre'},   # pre
                                $row->{'size'},  # size
-                               $row->{'tag'}];   # tag
+                               $row->{'name'}];   # tag
                 $last = 'ATTR';
             }
             elsif ($row->{'kind'} == 2) {         #kind == attr
