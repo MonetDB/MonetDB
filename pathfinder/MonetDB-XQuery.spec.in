@@ -98,7 +98,7 @@ rm -rf $RPM_BUILD_ROOT%{_libdir}/MonetDB5
 find $RPM_BUILD_ROOT -name \*.la | xargs rm -f
 
 # even remove DB2 specific stuff
-rm -rf $RPM_BUILD_ROOT%{_bindir}/pfserializer.pl
+rm -rf $RPM_BUILD_ROOT%{_bindir}/pfserialize.pl
 rm -rf $RPM_BUILD_ROOT%{_bindir}/pfloadtables.sh
 rm -rf $RPM_BUILD_ROOT%{_bindir}/pfcreatetables.sh
 
