@@ -21,9 +21,9 @@
 # 2000-2005 University of Konstanz and (C) 2005-2007 Technische
 # Universitaet Muenchen, respectively.  All Rights Reserved.
 
-EXTRA_DIST = pfserializer.pl
+EXTRA_DIST = pfserialize.pl
 
 scripts_pl = {
     DIR = bindir
-	SOURCES = pfserializer.pl
+    SOURCES = pfserialize.pl
 }
