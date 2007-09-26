@@ -147,8 +147,6 @@ print_tuple (node_t tuple)
                          putc ('"', out);
                          for (j = 0; j < TEXT_SIZE && tuple.value[j]; j++)
                              switch (tuple.value[j]) {
-                                 case '\n': 
-                                     putc (' ', out); break;
                                  case '"':
                                      putc ('"', out); putc ('"', out); break;
                                  default:

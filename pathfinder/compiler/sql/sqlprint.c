@@ -129,7 +129,8 @@ static char *ID[] = {
       [sql_rownumber]         = "rownumber",
       [sql_wnd_clause]        = "wnd_clause",
       [sql_order_by]          = "order_by",
-      [sql_sortkey]           = "sortkey",
+      [sql_sortkey_list]      = "sortkey_list",
+      [sql_sortkey_item]      = "sortkey_item",
       [sql_partition]         = "partition",
       [sql_cast]              = "cast",
       [sql_type]              = "type",
@@ -415,12 +416,8 @@ print_sort_key_expressions (PFsql_t *n)
     assert( n);
     
     switch (n->kind) {
-        case sql_sortkey:
+        case sql_sortkey_list:
             print_sort_key_expressions (L(n));
-            if (n->sem.sortkey.dir_asc)
-                PFprettyprintf (" ASC");
-            else
-                PFprettyprintf (" DESC");
 
             if (R(n)->kind != sql_nil) {
                 PFprettyprintf (", ");
@@ -493,6 +490,13 @@ static void
 print_statement (PFsql_t *n)
 {
     switch (n->kind) {
+        case sql_sortkey_item:
+            print_statement (L(n));
+            if (n->sem.sortkey.dir_asc)
+                PFprettyprintf (" ASC");
+            else 
+                PFprettyprintf (" DESC");
+            break;
         case sql_coalesce:
             PFprettyprintf ("COALESCE (");
             print_statement (L(n));
@@ -787,7 +791,7 @@ print_fullselect (FILE *f, PFsql_t *n, int i)
 
                 /* prettyprint group by list */
                 PFprettyprintf ("%c", START_BLOCK);
-                print_stmt_list (n->child[3]);
+                print_sort_key_expressions (n->child[3]);
                 PFprettyprintf ("%c", END_BLOCK);
                 pretty_dump (f, i+7);
             }
@@ -910,7 +914,6 @@ PFsql_print_with (FILE *f, PFsql_t *n)
     fputc('\n', f);
     assert (R(n));
     print_fullselect (f, R(n), 0);
-
 }
 
 /**

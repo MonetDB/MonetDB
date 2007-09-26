@@ -61,9 +61,6 @@ stderr of test 'attr_err2` in directory 'tests/XQuery` itself:
 # 20:59:55 >  Mtimeout -timeout 60 MapiClient -lxquery -sxml -umonetdb -Pmonetdb --host=localhost --port=39653 attr_err2.xq
 # 20:59:55 >  
 
-MAPI  = monetdb@localhost:35613
-QUERY = doc("foo.xml")//@*/child::*
-ERROR = !ERROR: path steps are only supported starting from non-attribute nodes
 
 # 20:59:55 >  
 # 20:59:55 >  Done.

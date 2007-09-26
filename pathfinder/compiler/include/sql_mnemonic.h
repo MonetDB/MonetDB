@@ -130,7 +130,9 @@
 #define rownumber()                  PFsql_rownumber()
 #define window_clause(p,o)           PFsql_window_clause(p,o)
 #define order_by(a)                  PFsql_order_by(a)
-#define sortkey(sk,dir,sl)           PFsql_sortkey(sk,dir,sl)
+
+#define sortkey_list(...)            PFsql_sortkey_list(__VA_ARGS__)
+#define sortkey_item(i,d)            PFsql_sortkey_item(i,d)
 #define partition(cl)                PFsql_partition(cl)
                                      
 /* .......... Remaining Operators .......... */

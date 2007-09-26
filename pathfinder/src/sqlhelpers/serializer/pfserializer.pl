@@ -17,8 +17,7 @@
 
 use strict;
 use warnings;
-use Getopt::Long; # support options+arguments
-use Pod::Usage;
+use Getopt::Long; # support long options
 
 # we require Perl's database interfaces
 use DBI;
@@ -90,7 +89,6 @@ sub build_result_map {
         $result_map->{"kind"}  = $schema->{"kind"};
         $result_map->{"value"} = $schema->{"value"};
         $result_map->{"name"}  = $schema->{"name"};
-        $result_map->{"tag"}   = $schema->{"tag"};
     }
 
     return $result_map;
@@ -116,6 +114,16 @@ sub bind_result_columns {
           }
      }
      return $bound_fields;
+}
+
+# set the current schema
+sub set_schema {
+    my $dbh = shift;
+    my $db_schema = shift; 
+    
+    my $set_schema = "SET CURRENT SCHEMA $db_schema"; 
+    $dbh->do ($set_schema)
+       or die "set schema not successful";
 }
 
 ############################### Utils #####################################
@@ -154,7 +162,7 @@ sub read_query {
             # these are the strings we look for
             if ($line =~ /\b(Type|
                              Column\s+\((pre|size|kind|
-                                 value|name|tag|item_(int|dec|dbl|str))\)):\s+
+                                 value|name|item_(int|dec|dbl|str))\)):\s+
                              \b(\w+)\b/x) {
 
 
@@ -242,12 +250,12 @@ sub print_xml {
                 }
 
                 # remove trailing spaces as they are returned by DB2
-                $row->{'tag'} =~ s/ +$//;
+                $row->{'name'} =~ s/ +$//;
 
-                print '<'.$row->{'tag'} . '';    # print .tag
+                print '<'.$row->{'name'} . '';    # print .tag
                 push @stack, [ $row->{'pre'},   # pre
                                $row->{'size'},  # size
-                               $row->{'tag'}];   # tag
+                               $row->{'name'}];   # tag
                 $last = 'ATTR';
             }
             elsif ($row->{'kind'} == 2) {         #kind == attr
@@ -300,6 +308,34 @@ sub print_xml {
     }
 }
 
+
+sub print_help {
+    print "Pathfinder XML Serializer\n";
+    print "(c) Database Group, Technische Universitaet Muenchen\n\n";
+
+    print "pfserialize.pl -- A simple tool to transform an encoded XML-Document\n";
+    print "                  from DB2 to an XML-Document.\n\n";
+
+    print "Usage: pfserialize.pl [options]\n\n";
+    print "Options:\n\n";
+    print "    --help      Display help\n";
+    print "    --schema    To set the schema name in which the docuemnt is stored\n";
+
+    exit 0;
+}
+
+#get get options for schema and help 
+sub get_options { 
+    my $dbschema = shift;
+    my $help     = shift;
+
+    # get the options
+    GetOptions (
+        'help|?' =>   $help,
+        'schema=s' => $dbschema
+    ) or print_help;
+}
+
 #################################################################
 #                            Main                               # 
 #################################################################
@@ -318,8 +354,19 @@ my $result_map;
 my $DSN = 'DBI:DB2:XML';
 
 my $final_query;
+
 # schema information we got from PF
 my $schema = {};
+
+# schema we want to use execute our query
+my $db_schema;
+my $help;
+
+#get options
+get_options (\$db_schema, \$help);
+
+# determine if the user wants help and print it, if it is so
+if ($help) { print_help; }
 
 # read user input
 read_query ($schema, \$final_query);
@@ -335,6 +382,7 @@ $query_type = $schema->{'Type'};
 # connect to the datase 
 db_connect (\$dbh, $DSN);
 
+if ($db_schema) { set_schema ($dbh, $db_schema); }
 stmt_prepare ($dbh, \$stmt, $final_query);
 stmt_execute ($stmt);
 
@@ -348,3 +396,4 @@ print_xml_footer ();
 print "\n";
 # close database connection
 $dbh->disconnect;
+

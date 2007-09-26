@@ -172,18 +172,21 @@ typedef struct PFla_op_t *NODEPTR_TYPE;
 %%
 
 Query:  serialize (Frag, Rel)                        =   1 (10);
-Query:  serialize (Frag, empty_tbl)                  =   2 (10);
+Query:  serialize (
+            frag_union (
+                empty_frag, fragment (twig (Twig))),
+            roots_ (twig (Twig)))                    =   2 (10);
+Query:  serialize (Frag, empty_tbl)                  =   3 (10);
+Rel:    lit_tbl                                      =   4 (10);
+Rel:    attach (Rel)                                 =   5 (10);
 
-Rel:    lit_tbl                                      =   3 (10);
-Rel:    attach (Rel)                                 =   4 (10);
-
-Rel:    cross (Rel, Rel)                             =   5 (10);
-Rel:    eqjoin (Rel, Rel)                            =   6 (10);
-Rel:    semijoin (Rel, Rel)                          =   7 (10);
-Rel:    thetajoin (Rel, Rel)                         =   8 (10);
-Rel:    project (Rel)                                =   9 (10);
-Rel:    select_ (Rel)                                =  10 (10);
-Rel:    pos_select (Rel)                             =  11 (10);
+Rel:    cross (Rel, Rel)                             =   6 (10);
+Rel:    eqjoin (Rel, Rel)                            =   7 (10);
+Rel:    semijoin (Rel, Rel)                          =   8 (10);
+Rel:    thetajoin (Rel, Rel)                         =   9 (10);
+Rel:    project (Rel)                                =  10 (10);
+Rel:    select_ (Rel)                                =  11 (10);
+Rel:    pos_select (Rel)                             =  12 (10);
 
 Rel:    disjunion (Rel, Rel)                         =  15 (10);
 Rel:    intersect (Rel, Rel)                         =  16 (10);
@@ -336,6 +339,7 @@ static PFsql_t *max_pre_frag = NULL;
 #define TLEVEL(p)     ((p)->sql_ann->twig_level)
 /* serialization report */
 #define SER_REPORT(p) ((p)->sql_ann->ser_report)
+#define RANK_MAP(p)   ((p)->sql_ann->rank_map)
 
 /* check if sql_statement is a literal */
 #define IS_LITERAL(s) (s->kind == sql_lit_int \
@@ -446,7 +450,6 @@ special_col (PFsql_special_t spc)
 #define TWIG_PRE_   column_name (special_col (sql_col_twig_pre))
 #define ITER_       column_name (special_col (sql_col_iter))
 #define POS_        column_name (special_col (sql_col_pos))
-#define TAG_        column_name (special_col (sql_col_tag))
 #define MAX_        column_name (special_col (sql_col_max))
 
 #define PRE(n)      ext_column_name (n, special_col (sql_col_pre))
@@ -839,6 +842,9 @@ sql_alg_ann_new (void)
     ret->fragment     = NULL;
     ret->content_size = NULL;
     ret->ser_report   = ser_no;
+    ret->ser_list1    = att_NULL;
+    ret->ser_list2    = att_NULL;
+    ret->rank_map     = NULL;
 
     return ret;
 }
@@ -1547,6 +1553,18 @@ cast_ (PFsql_t * expr, PFalg_simple_type_t ty, PFalg_simple_type_t res_ty)
     return cast (expr, type (res_ty));
 }
 
+/**
+ * The rank mapping stores the order of a rank operator
+ * associated with its result name. (Rank operators that are
+ * recorded in this structure occur between a twig node 
+ * and the serialize node and are collected for the special
+ * serialization report (SER_REPORT).
+ */
+struct rank_map_t {
+    PFalg_att_t name;
+    PFarray_t  *sort_list;
+};
+typedef struct rank_map_t rank_map_t;
 
 /**
  * Reduce function. This is the core of this source file, containing
@@ -1585,18 +1603,18 @@ reduce (PFla_op_t * p, int goalnt)
     PFlalg2sql_kids (p, rule, kids);
 
     switch (rule) {
+        /* Rel:    cross (Rel, Rel) */
+        case 6:
+        /* Rel:    eqjoin (Rel, Rel) */
+        case 7:
+        /* Rel:    semijoin (Rel, Rel) */
+        case 8:
+        /* Rel:    thetajoin (Rel, Rel) */
+        case 9:
         /* Rel:    string_join (Rel, Rel) */
         case 43:
         /* Rel:    cond_err (Rel, Rel) */
         case 99:
-        /* Rel:    cross (Rel, Rel) */
-        case 5:
-        /* Rel:    eqjoin (Rel, Rel) */
-        case 6:
-        /* Rel:    thetajoin (Rel, Rel) */
-        case 8:
-        /* Rel:    semijoin (Rel, Rel) */
-        case 7:
             /* top-down translation */
             break;
         default:
@@ -1616,7 +1634,7 @@ reduce (PFla_op_t * p, int goalnt)
             PFalg_simple_type_t pos_ty     = type_of (p, p->sem.serialize.pos);
             PFsql_t            *sername, *colname, *colexpr,
                                *selectlist = NULL,
-                               *orderby,
+                               *orderby    = NULL, 
                                *ser_info,
                                *finalquery = NULL;
 
@@ -1625,7 +1643,8 @@ reduce (PFla_op_t * p, int goalnt)
             assert (monomorphic (pos_ty));
 
             orderby = col_env_lookup (COLMAP(R(p)), pos, pos_ty);
-            orderby = IS_LITERAL(orderby) ? NULL : stmt_list (orderby);
+            orderby = IS_LITERAL(orderby)
+                      ? NULL : sortkey_list (sortkey_item (orderby, true));
 
             /* construct schema information for serializer */
             ser_info = ser_info_item (
@@ -1651,9 +1670,7 @@ reduce (PFla_op_t * p, int goalnt)
                                ser_map (VALUE_, VALUE_),
                            ser_info_item (
                                ser_map (NAME_, NAME_),
-                           ser_info_item (
-                               ser_map (TAG_, NAME_),
-                           ser_info))))));
+                           ser_info)))));
 
             /* the item information */
             for (unsigned int i = 0; i < PFarray_last (COLMAP(R(p))); i++) {
@@ -1703,14 +1720,36 @@ reduce (PFla_op_t * p, int goalnt)
 
                 /* we we do not need a join to serialize,
                    so we return just the values we get */
-                if (SER_REPORT(p) != ser_no) {
+                if (SER_REPORT(p) == ser_yes) {
                     PFsql_aident_t twig = col_env_lookup_step (
                                               COLMAP(R(p)),
                                               item,
                                               item_ty);
 
                     assert (twig != PF_SQL_ALIAS_UNBOUND);
+                    
+                    if (RANK_MAP(R(p)) &&
+                        PFarray_last (RANK_MAP(R(p))) >= 1) {
+                        PFarray_t *list;
+                        PFsql_t *sort_item;
+                        rank_map_t *rank_map;
+                        /* ignore dummy orderby */
+                        orderby = NULL;
 
+                        rank_map = *(rank_map_t **)
+                                       PFarray_at (RANK_MAP(R(p)), 0);
+
+                        assert (rank_map->name == p->sem.serialize.pos);
+                        assert (rank_map->sort_list);
+                        
+                        list = rank_map->sort_list;
+                        for (int i = PFarray_last (list) - 1;
+                             i >= 0;
+                             i--) {
+                            sort_item = *(PFsql_t **) PFarray_at (list, i);
+                            orderby = sortkey_list (sort_item, orderby);
+                        }
+                    }
                     finalquery = PFsql_select (
                                      false,
                                      select_list (
@@ -1721,7 +1760,7 @@ reduce (PFla_op_t * p, int goalnt)
                                          NAME(twig)),
                                      transform_frommap (R(p)),
                                      transform_wheremap (R(p)),
-                                     stmt_list (orderby, PRE(twig)),
+                                     orderby,
                                      NULL);
                 } else {
                     PFsql_t *frags = FRAG(L(p));
@@ -1766,7 +1805,8 @@ reduce (PFla_op_t * p, int goalnt)
                                          between (PRE(doc2),
                                                   PRE(doc1),
                                                   add (PRE(doc1), SIZE(doc1))));
-                        orderby = stmt_list (orderby, PRE(doc2));
+                        orderby = sortkey_list (orderby,
+                                                sortkey_item (PRE(doc2), true));
                     }
 
                     finalquery = PFsql_select (
@@ -1816,7 +1856,9 @@ reduce (PFla_op_t * p, int goalnt)
 
                 item_expr = col_env_lookup (COLMAP(R(p)), item, aat_pre);
                 orderby   = col_env_lookup (COLMAP(R(p)), pos, pos_ty);
-                orderby   = IS_LITERAL(orderby) ? NULL : stmt_list (orderby);
+                orderby   = IS_LITERAL(orderby)
+                            ? NULL
+                            : sortkey_list (sortkey_item (orderby, true));
                 doc1      = new_alias ();
                 doc2      = new_alias ();
                 from      = from_list_at (FROMLIST(R(p)), 0);
@@ -1845,7 +1887,8 @@ reduce (PFla_op_t * p, int goalnt)
                                                   add (PRE(doc1),
                                                        SIZE(doc1))))),
                                  NULL,
-                                 stmt_list (orderby, PRE(doc2)),
+                                 sortkey_list (orderby,
+                                               sortkey_item (PRE(doc2), true)),
                                  NULL);
             }
 
@@ -1871,14 +1914,102 @@ reduce (PFla_op_t * p, int goalnt)
 
         }   break;
 
-        /* Query:  serialize (Frag, empty_tbl) */
+        /* Query:  serialize (                           
+         *              frag_union (empty_frag, Frag),
+         *              roots_ (twig (Twig)))
+         */ 
         case 2:
+        {
+            PFsql_aident_t      content      = new_alias ();
+            PFsql_t            *sortkey_list = NULL;
+
+            PFsql_t            *ser_info;
+            PFsql_t            *final_query;
+            
+            assert (L(LR(p)) == RL(p));
+
+            assert (p->sem.serialize.item == RL(p)->sem.iter_item.item);
+            assert (p->sem.serialize.pos == RL(p)->sem.iter_item.iter); 
+
+            /* construct schema information for serialization */
+            ser_info = ser_info_item (
+                           ser_comment ("START SCHEMA INFORMATION **"
+                                        " DO NOT EDIT THESE LINES"),
+                       ser_info_item (
+                           ser_type (lit_str("Type"),
+                                     lit_str("ATOMIC_ONLY")),
+                       ser_info_item (
+                           ser_map (PRE_, PRE_),
+                       ser_info_item (
+                           ser_map (SIZE_, SIZE_),
+                       ser_info_item (
+                           ser_map (KIND_, KIND_),
+                       ser_info_item (
+                           ser_map (VALUE_, VALUE_),
+                       ser_info_item (
+                           ser_map (NAME_, NAME_),
+                       ser_info_item (
+                           ser_comment ("END SCHEMA INFORMATION **"
+                                        " DO NOT EDIT THESE LINES"),
+                       nil ()))))))));
+
+            /* We only need to sort by <pos, pre> if we have a variable
+               part (content operator) in the twig constructor. */
+            if (CSIZE(L(RL(p))))
+                sortkey_list = sortkey_list (
+                                        sortkey_item (POS(content), true),
+                                        sortkey_item (PRE(content), true),
+                                        sortkey_list);
+
+            /* Always sort first by <iter, twig_pre>. */
+            sortkey_list = sortkey_list (
+                                    sortkey_item (ITER(content), true),
+                                    sortkey_item (TWIG_PRE(content), true),
+                                    sortkey_list);
+
+            /* call a helper function that does the 'real' job */
+            final_query = PFsql_select (
+                              false,
+                              select_list (
+                                  column_assign (
+                                      over (rownumber (),
+                                            window_clause (NULL, NULL)),
+                                      PRE_),
+                                  SIZE(content),
+                                  LEVEL(content),
+                                  KIND(content),
+                                  VALUE(content),
+                                  NAME(content)),
+                              from_list (
+                                  alias_bind (FRAG(L(RL(p))), alias (content))),
+                              NULL,
+                              sortkey_list,
+                              NULL);
+
+            /* the final query consists of the schema information needed
+             * by the serializer and the with clause conflating all queries
+             * translated to this point.
+             */
+            assert (ser_info);
+            assert (final_query);
+
+            /* Check if there are already common-table expressions
+             * or we have a standalone query */
+            if (sql_stmts)
+                sql_stmts = root (ser_info, with (sql_stmts, final_query));
+            else
+                sql_stmts = root (ser_info, final_query);
+
+        }   break;
+
+        /* Query:  serialize (Frag, empty_tbl) */
+        case 3:
             /* FIXME: implementation is missting */
             assert (!"missing");
             break;
 
         /* Rel:    lit_tbl */
-        case 3:
+        case 4:
             if (p->sem.lit_tbl.count == 1) {
                 for (unsigned int col = 0; col < p->schema.count; col++)
                     for (PFalg_simple_type_t t = 1; t; t <<= 1)
@@ -1951,18 +2082,21 @@ reduce (PFla_op_t * p, int goalnt)
                         for (PFalg_simple_type_t t = 1; t; t <<= 1)
                             if (t & TYPE_MASK (p->schema.items[col].type)) {
                                 /* found another literal */
-                                list[colcount] = (t == p->sem.lit_tbl.tuples[row]
-                                                      .atoms[col].type) ?
-                                          literal (p->sem.lit_tbl.tuples[row]
-                                                                 .atoms[col])
-                                          : cast (null (), type (t));
+                                list[colcount] = (t == p->sem.lit_tbl
+                                                             .tuples[row]
+                                                             .atoms[col].type)
+                                                  ? literal (p->sem.lit_tbl
+                                                                   .tuples[row]
+                                                                   .atoms[col])
+                                                  : cast (null (), type (t));
 
                                 /* increment the countvariable */
                                 colcount++;
                             }
 
                     /* generate the list and add it to our list of lists */
-                    l_list[row] = PFsql_stmt_list_ (ccount, (const PFsql_t **) list);
+                    l_list[row] = PFsql_stmt_list_ (ccount,
+                                                    (const PFsql_t **) list);
                 }
 
                 valuesquery = values (PFsql_list_list_(rcount,
@@ -1980,7 +2114,7 @@ reduce (PFla_op_t * p, int goalnt)
             break;
 
         /* Rel:    attach (Rel) */
-        case 4:
+        case 5:
             /* copy all existing column, from, and where lists */
             copy_cols_from_where (p, L(p));
 
@@ -1992,11 +2126,11 @@ reduce (PFla_op_t * p, int goalnt)
             break;
 
         /* Rel:    cross (Rel, Rel) */
-        case 5:
-        /* Rel:    eqjoin (Rel, Rel) */
         case 6:
+        /* Rel:    eqjoin (Rel, Rel) */
+        case 7:
         /* Rel:    thetajoin (Rel, Rel) */
-        case 8:
+        case 9:
         {
             assert (kids[0] && nts[0]);
             assert (kids[1] && nts[1]);
@@ -2105,10 +2239,10 @@ reduce (PFla_op_t * p, int goalnt)
                     where_list_add (WHERELIST(p), cond);
                 }
             }
-    }       break;
+        }       break;
 
-    /* Rel:    semijoin (Rel, Rel) */
-    case 7:
+        /* Rel:    semijoin (Rel, Rel) */
+        case 8:
         {
             assert (kids[0] && nts[0]);
             assert (kids[1] && nts[0]);
@@ -2188,7 +2322,7 @@ reduce (PFla_op_t * p, int goalnt)
         }   break;
 
         /* Rel:    project (Rel) */
-        case 9:
+        case 10:
         {
             sql_column_env_t entry;
 
@@ -2214,7 +2348,7 @@ reduce (PFla_op_t * p, int goalnt)
         }   break;
 
         /* Rel:    select_ (Rel) */
-        case 10:
+        case 11:
         {
             PFsql_t *sqlnode;
 
@@ -2239,7 +2373,7 @@ reduce (PFla_op_t * p, int goalnt)
         }   break;
 
         /* Rel:    pos_select (Rel) */
-        case 11:
+        case 12:
             /* create a special translation for the positional
                predicates [1] and [last()] */
             if (p->schema.count <= 2 &&
@@ -2350,7 +2484,7 @@ reduce (PFla_op_t * p, int goalnt)
                                                 * p->sem.pos_sel.pos;
                 PFalg_att_t      used_cols    = 0,
                                  num;
-                PFsql_t         *srtbylist    = nil ();
+                PFsql_t         *srtbylist    = NULL;
                 PFsql_t         *partlist     = NULL;
                 PFord_ordering_t sortby       = p->sem.pos_sel.sortby;
                 PFalg_att_t      ord;
@@ -2369,12 +2503,13 @@ reduce (PFla_op_t * p, int goalnt)
                 for (int i = PFord_count (sortby) - 1; i >= 0; i--) {
                     ord = PFord_order_col_at (sortby, i);
                     asc = PFord_order_dir_at (sortby, i) == DIR_ASC;
-                    srtbylist = sortkey (
-                                    col_env_lookup (
-                                        COLMAP(L(p)),
-                                        ord,
-                                        type_of (L(p), ord)),
-                                    change_order ? !asc : asc,
+                    srtbylist = sortkey_list (
+                                    sortkey_item (
+                                        col_env_lookup (
+                                            COLMAP(L(p)),
+                                            ord,
+                                            type_of (L(p), ord)),
+                                        change_order ? !asc : asc),
                                     srtbylist);
                 }
 
@@ -2722,11 +2857,13 @@ reduce (PFla_op_t * p, int goalnt)
                          PFsql_t * temp =
                             select (
                                 select_list (selectlist,
-                                    transform_expression (cast_ (expr, t, res_ty),
-                                      column_name (res_col))),
+                                    transform_expression (
+                                        cast_ (expr, t, res_ty),
+                                        column_name (res_col))),
                                 transform_frommap (L(p)),
-                                where_list (transform_wheremap (L(p)),
-                                             is_not (expr, null ())));
+                                where_list (
+                                    transform_wheremap (L(p)),
+                                    is_not (expr, null ())));
 
                          query = (query)?union_(query,temp):temp;
                     }
@@ -3036,7 +3173,7 @@ reduce (PFla_op_t * p, int goalnt)
         /* Rel:    rownum (Rel) */
         case 50:
         {
-            PFsql_t *srtbylist = nil ();
+            PFsql_t *srtbylist = NULL;
             PFsql_t *orderby  = NULL;
             PFsql_t *partlist = NULL;
             PFalg_att_t ord;
@@ -3049,16 +3186,17 @@ reduce (PFla_op_t * p, int goalnt)
             for (int i = PFord_count (p->sem.rownum.sortby) - 1; i >= 0; i--) {
                 ord = PFord_order_col_at (p->sem.rownum.sortby, i);
                 asc = PFord_order_dir_at (p->sem.rownum.sortby, i) == DIR_ASC;
-                srtbylist = sortkey (
-                                col_env_lookup (
-                                    COLMAP(L(p)),
-                                    ord,
-                                    type_of (L(p), ord)),
-                                asc,
+                srtbylist = sortkey_list (
+                                sortkey_item (
+                                    col_env_lookup (
+                                        COLMAP(L(p)),
+                                        ord,
+                                        type_of (L(p), ord)),
+                                    asc),
                                 srtbylist);
             }
 
-            /* creatr partition criterion if present */
+            /* create partition criterion if present */
             if (p->sem.rownum.part)
                 partlist = partition (
                                column_list (
@@ -3098,36 +3236,99 @@ reduce (PFla_op_t * p, int goalnt)
 
         /* Rel:    rank (Rel) */
         case 52:
-        {
-            PFsql_t *srtbylist = nil ();
-            PFalg_att_t ord;
-            bool asc;
-
             /* copy all existing column, from, and where lists */
             copy_cols_from_where (p, L(p));
 
-            /* collect all sorting criteria */
-            for (int i = PFord_count (p->sem.rank.sortby) - 1; i >= 0; i--) {
-                ord = PFord_order_col_at (p->sem.rank.sortby, i);
-                asc = PFord_order_dir_at (p->sem.rank.sortby, i) == DIR_ASC;
-                srtbylist = sortkey (
-                                col_env_lookup (
-                                    COLMAP(L(p)),
-                                    ord,
-                                    type_of (L(p), ord)),
-                                asc,
-                                srtbylist);
+            if (SER_REPORT(p) == ser_yes) {
+                /* Ignore the result of the rank operator in the normal
+                   translation process and only add it to the special
+                   rank map environment. */
+                PFord_ordering_t sortby = p->sem.rank.sortby;
+                unsigned int     i, j, k;
+                PFalg_att_t      ord;
+                PFarray_t       *srtbylist = PFarray (sizeof (PFsql_t *));
+                bool             asc, cols_added;
+                rank_map_t      *rank_map;
+
+                for (i = 0; i < PFord_count (sortby); i++) {
+                    ord = PFord_order_col_at (sortby, i);
+                    asc = PFord_order_dir_at (sortby, i) == DIR_ASC;
+
+                    cols_added = false;
+                    if (RANK_MAP(L(p)))
+                        for (j = 0; j < PFarray_last (RANK_MAP(L(p))); j++) {
+                            rank_map = *(rank_map_t **) 
+                                           PFarray_at (RANK_MAP(L(p)), j);
+                            if (rank_map->name == ord) {
+                                /* copy all sort criteria of the rank mapping */
+                                for (k = 0; 
+                                     k < PFarray_last(rank_map->sort_list);
+                                     k++)
+                                    *(PFsql_t **) PFarray_add (srtbylist)
+                                        = *(PFsql_t **) PFarray_at (
+                                                            rank_map->sort_list,
+                                                            k);
+                                cols_added = true;
+                                break;
+                            }
+                        }
+                    if (!cols_added)
+                        *(PFsql_t **) PFarray_add (srtbylist)
+                            = sortkey_item (
+                                  col_env_lookup (
+                                      COLMAP(L(p)),
+                                      ord,
+                                      type_of (L(p), ord)),
+                                  asc);
+                }
+
+                /* initialize rankmap */
+                if (!RANK_MAP(p))
+                    RANK_MAP(p) = PFarray (sizeof (rank_map_t *)); 
+
+                /* add new entry to the rank map */
+                rank_map = PFmalloc (sizeof (rank_map_t));
+                *rank_map = (rank_map_t) { .name = p->sem.rank.res,
+                                           .sort_list = srtbylist };
+                *(rank_map_t **) PFarray_add (RANK_MAP(p)) = rank_map; 
+
+                /* add a dummy for the rank operator */
+                col_env_add (COLMAP(p),
+                             p->sem.rank.res,
+                             aat_nat,
+                             lit_int(0));
+            } else {
+                /* Normal translation of rank operator (using a ROW_NUMBER
+                   operator). */
+                PFord_ordering_t sortby = p->sem.rank.sortby;
+                PFsql_t *srtbylist = NULL;
+                PFalg_att_t ord;
+                bool asc;
+
+                /* collect all sorting criteria */
+                for (int i = PFord_count (sortby) - 1; i >= 0; i--) {
+                    ord = PFord_order_col_at (sortby, i);
+                    asc = PFord_order_dir_at (sortby, i) == DIR_ASC;
+                    srtbylist = sortkey_list (
+                                    sortkey_item (
+                                        col_env_lookup (
+                                            COLMAP(L(p)),
+                                            ord,
+                                            type_of (L(p), ord)),
+                                        asc),
+                                    srtbylist);
+
+                }
+                col_env_add (COLMAP(p),
+                             p->sem.rank.res,
+                             aat_nat,
+                             over (rownumber (),
+                                   window_clause (NULL, order_by (srtbylist))));
+               
+                bind = true;
+                execute (comment ("binding due to rank operator"));
             }
-
-            col_env_add (COLMAP(p),
-                         p->sem.rank.res,
-                         aat_nat,
-                         over (rownumber (),
-                               window_clause (NULL, order_by (srtbylist))));
-
-            bind = true;
-            execute (comment ("binding due to rank operator"));
-        }   break;
+            break;
 
         /* Rel:    step (Frag, Rel) */
         case 55:
@@ -3220,7 +3421,7 @@ reduce (PFla_op_t * p, int goalnt)
                     distinct = true;
                     bind = true;
                     execute (comment ("binding due to %sstep operator",
-                                      p->kind == la_step ? "" : "guide "));
+                                      p->kind == la_step ? "" : "guide_"));
                 }
             }
             col_env_add_full (COLMAP(p), item_res, item_res_ty,
@@ -3345,23 +3546,21 @@ reduce (PFla_op_t * p, int goalnt)
         {
             PFsql_aident_t      content      = new_alias ();
             PFsql_aident_t      new_root     = new_alias ();
-            PFsql_t            *sortkey_list = nil ();
+            PFsql_t            *sortkey_list = NULL;
 
             /* We only need to sort by <pos, pre> if we have a variable
                part (content operator) in the twig constructor. */
             if (CSIZE(L(p)))
-                sortkey_list = sortkey (POS(content),
-                                        true,
-                                        sortkey (PRE(content),
-                                                 true,
-                                                 sortkey_list));
+                sortkey_list = sortkey_list (
+                                        sortkey_item (POS(content), true),
+                                        sortkey_item (PRE(content), true),
+                                        sortkey_list);
 
             /* Always sort first by <iter, twig_pre>. */
-            sortkey_list = sortkey (ITER(content),
-                                    true,
-                                    sortkey (TWIG_PRE(content),
-                                             true,
-                                             sortkey_list));
+            sortkey_list = sortkey_list (
+                                    sortkey_item (ITER(content), true),
+                                    sortkey_item (TWIG_PRE(content), true),
+                                    sortkey_list);
 
             /* call a helper function that does the 'real' job */
             construct_twig (p, content, new_root, sortkey_list);
@@ -3831,12 +4030,76 @@ reduce (PFla_op_t * p, int goalnt)
         case 113:
         /* Rel:    cross_mvd (Rel, Rel) */
         case 114:
+
         default:
             PFoops (OOPS_FATAL,
                     "SQLgen: Logical algebra operator "
                     "(%s) is not allowed here.",
                     PFlalg2sql_string[rule]);
             break;
+    }
+
+    /* Just copy the rankmaps to another operator */
+#define COPY_RANK_MAP(dest,src)                                               \
+            do {                                                              \
+                unsigned int i;                                               \
+                if (RANK_MAP(src)) {                                          \
+                    if (!RANK_MAP(dest))                                      \
+                        RANK_MAP(dest) = PFarray (sizeof (rank_map_t *));     \
+                    for (i = 0; i < PFarray_last (RANK_MAP(src)); i++)        \
+                        *(rank_map_t **) PFarray_add (RANK_MAP(dest))         \
+                            = *(rank_map_t **) PFarray_at (RANK_MAP(src), i); \
+                }                                                             \
+            } while (0)
+
+    /* propagate the special rank mapping information */
+    switch (p->kind) {
+        case la_project:
+        {
+            unsigned int i, j;
+            
+            COPY_RANK_MAP(p, L(p));
+
+            if (RANK_MAP(p))
+                /* Adjust the names and remove a rank mapping 
+                   if it is not referenced anymore. */
+                for (i = 0; i < PFarray_last (RANK_MAP(p)); i++) {
+                    for (j = 0; j < p->sem.proj.count; j++)
+                        if ((*(rank_map_t **) PFarray_at (RANK_MAP(p), i))->name
+                                == p->sem.proj.items[j].old) {
+                            (*(rank_map_t **) PFarray_at (RANK_MAP(p), i))->name
+                                = p->sem.proj.items[j].new;
+                            break;
+                        }
+                    
+                    if (j == p->sem.proj.count) {
+                        *(rank_map_t **) PFarray_at (RANK_MAP(p), i)
+                            = *(rank_map_t **) PFarray_top (RANK_MAP(p));
+                        PFarray_del (RANK_MAP(p));
+                        i--;
+                    }
+                }
+        }   break;
+        
+        case la_attach:
+        case la_rank:
+            COPY_RANK_MAP(p, L(p));
+            break;
+
+        case la_step_join:
+        case la_guide_step_join:
+        case la_doc_access:
+            COPY_RANK_MAP(p, R(p));
+            break;
+            
+        case la_eqjoin:
+        case la_thetajoin: 
+            COPY_RANK_MAP(p, L(p));
+            COPY_RANK_MAP(p, R(p));
+            break;
+            
+        default:
+           break;
     }
 
 #define FRAG_OP(p) (/* fragment related operators */ \
@@ -3962,28 +4225,45 @@ collect_twigs (PFla_op_t * p, PFarray_t *frags)
 
 #define IS_LEAF(p) (!L(p) && !R(p))
 #define MIN(a,b) (((a) < (b))?(a):(b))
-#define SER_OPERATORS(p) (((p)->kind == la_project)       \
-                          || ((p)->kind == la_roots)      \
-                          || ((p)->kind == la_attach))
-
+#define SER_OPERATORS(p) (((p)->kind == la_project)            \
+                          || ((p)->kind == la_roots)           \
+                          || ((p)->kind == la_attach)          \
+                          || ((p)->kind == la_step_join)       \
+                          || ((p)->kind == la_guide_step_join) \
+                          || ((p)->kind == la_doc_access)      \
+                          || ((p)->kind == la_rank)            \
+                          || ((p)->kind == la_eqjoin)          \
+                          || ((p)->kind == la_thetajoin))
+/* item list */
+#define ITEM_LIST(p)  ((p)->sql_ann->ser_list1)
+/* rank list */
+#define RANK_LIST(p)  ((p)->sql_ann->ser_list2)
+                                   
 static void
-ser_info_worker (PFla_op_t * p, PFarray_t *frags)
+ser_info_worker (PFla_op_t *p, PFarray_t *twigs, PFarray_t *ranks)
 {
     assert (p);
-    assert (frags);
+    assert (twigs);
 
     ser_report_t status = ser_yes;
+    
     /* descend only once */
     if (SEEN(p))
         return;
 
     SEEN(p) = true;
 
-    /* check if we find one of the collected
-     * twigs */
+    /* check if we find one of the collected twigs */
     if (p->kind == la_twig)
-        for (unsigned int i = 0; i < PFarray_last (frags); i++)
-            if (*(PFla_op_t **) PFarray_at (frags, i) == p) {
+        for (unsigned int i = 0; i < PFarray_last (twigs); i++)
+            if (*(PFla_op_t **) PFarray_at (twigs, i) == p) {
+                /* if we found a twig operator we have to store
+                   the item in the item_list to avoid the item
+                   to be abused in the above operators */ 
+
+                /* add the item column */ 
+                ITEM_LIST(p) |= p->sem.iter_item.item;
+
                 SER_REPORT(p) = ser_tc;
                 return;
             }
@@ -3996,7 +4276,7 @@ ser_info_worker (PFla_op_t * p, PFarray_t *frags)
 
     /* DAG walk */
     for (unsigned int i = 0; i < PFLA_OP_MAXCHILD && p->child[i]; i++) {
-         ser_info_worker (p->child[i], frags);
+         ser_info_worker (p->child[i], twigs, ranks);
          status = MIN(status, SER_REPORT(p->child[i]));
     }
 
@@ -4005,25 +4285,148 @@ ser_info_worker (PFla_op_t * p, PFarray_t *frags)
          * there is no reason to move on */
         case ser_no:
             SER_REPORT (p) = ser_no;
-            break;
+            return;
 
         /* if we found a twig in one of the descending
          * operators we must take care if the
          * ancestors do not  */
         case ser_tc:
-            if (!SER_OPERATORS(p) || (REFCTR(p) > 1))
+            if (!SER_OPERATORS(p) || (REFCTR(p) > 1)) {
                 SER_REPORT (p) = ser_no;
-            else
-                SER_REPORT (p) = ser_tc;
+                return;
+            }
+            /* it is not sure the operator is 'clean' so go on */
             break;
 
         /* No constructors involved until now */
         case ser_yes:
             SER_REPORT (p) = ser_yes;
-            break;
+            return;
 
         default:
             assert (!"Serialization report status unknown");
+    }
+
+    /* maintain item and rank information */
+    switch (p->kind) {
+        case la_project:
+        {
+            PFalg_att_t old, new;
+            /* projection has the ability to omit and change names */
+            for (unsigned int i = 0; i < p->sem.proj.count; i++) {
+                old = p->sem.proj.items[i].old;
+                new = p->sem.proj.items[i].new;
+                
+                if (ITEM_LIST(L(p)) & old) ITEM_LIST(p) |= new;
+                if (RANK_LIST(L(p)) & old) RANK_LIST(p) |= new;
+            }
+        }   break;
+        
+        case la_rank:
+            RANK_LIST(p) = p->sem.rank.res;
+        case la_roots:
+        case la_attach:
+            ITEM_LIST(p) = ITEM_LIST(L(p));
+            RANK_LIST(p) |= RANK_LIST(L(p));
+            break;
+            
+        case la_step_join:
+        case la_guide_step_join:
+        case la_doc_access:
+            ITEM_LIST(p) = ITEM_LIST(R(p));
+            RANK_LIST(p) = RANK_LIST(R(p));
+            break;
+            
+        case la_eqjoin:
+        case la_thetajoin:
+            ITEM_LIST(p) = ITEM_LIST(L(p));
+            RANK_LIST(p) = RANK_LIST(L(p));
+            ITEM_LIST(p) |= ITEM_LIST(R(p));
+            RANK_LIST(p) |= RANK_LIST(R(p));
+            break;
+            
+        default:
+            PFoops (OOPS_FATAL, "Have not expected this operator");
+            break;
+    }
+
+    /* check if operators are save */
+    switch (p->kind) {
+        /* just return, this operators are save */
+        case la_project:
+        case la_roots:
+        case la_attach:
+            SER_REPORT(p) = ser_tc;
+            return;
+            
+        case la_step:
+        case la_step_join:
+        case la_guide_step:
+        case la_guide_step_join:
+            if (ITEM_LIST(p) & p->sem.step.item ||
+                RANK_LIST(p) & p->sem.step.item) {
+                SER_REPORT(p) = ser_no;
+                return;
+            }
+            SER_REPORT(p) = ser_tc; 
+            break;
+            
+        case la_doc_access:
+            if (ITEM_LIST(p) & p->sem.doc_access.att ||
+                RANK_LIST(p) & p->sem.doc_access.att) {
+               SER_REPORT(p) = ser_no;
+               return;
+             }
+             SER_REPORT(p) = ser_tc;
+             break;
+             
+        case la_rank:
+        {
+            PFalg_att_t ord;
+            /* if the sort criterion contains an item in the list
+             * the rank is not save.
+             * Except the case where item is the last sort criterion
+             * but we don't handle this. */
+            for (int i = PFord_count (p->sem.rank.sortby) - 1; i >= 0; i--) {
+                ord = PFord_order_col_at (p->sem.rank.sortby, i);
+                if (ITEM_LIST(p) & ord) {
+                    SER_REPORT(p) = ser_no;
+                    return;
+                }
+            }
+            
+            /* add the rank to the ranks list */
+            *(PFla_op_t **) PFarray_add (ranks) = p; 
+
+            SER_REPORT(p) = ser_tc;
+        }   break;
+        
+        case la_eqjoin:
+            if (ITEM_LIST(p) & p->sem.eqjoin.att1 ||
+                ITEM_LIST(p) & p->sem.eqjoin.att2 ||
+                RANK_LIST(p) & p->sem.eqjoin.att1 ||
+                RANK_LIST(p) & p->sem.eqjoin.att2) {
+                SER_REPORT(p) = ser_no;
+                return;
+            }
+            SER_REPORT(p) = ser_tc;
+            break;
+             
+        case la_thetajoin:
+            for (unsigned int i = 0; i < p->sem.thetajoin.count; i++)
+                if (ITEM_LIST(p) & p->sem.thetajoin.pred[i].left  ||
+                    ITEM_LIST(p) & p->sem.thetajoin.pred[i].right ||
+                    RANK_LIST(p) & p->sem.thetajoin.pred[i].left  ||
+                    RANK_LIST(p) & p->sem.thetajoin.pred[i].right) {
+                    SER_REPORT(p) = ser_no;
+                    return;
+                }
+            SER_REPORT(p) = ser_tc;
+            break;
+
+        default:
+            PFoops (OOPS_FATAL, "Have not expected this operator");
+            break;
     }
 }
 
@@ -4032,32 +4435,47 @@ ser_info_worker (PFla_op_t * p, PFarray_t *frags)
 static void
 infer_ser_info (PFla_op_t * p)
 {
-    PFarray_t *frags = PFarray (sizeof (PFla_op_t*));
+    PFarray_t *twigs = PFarray (sizeof (PFla_op_t*)),
+              *ranks;
     bool twig_only = false;
 
     assert (p->kind == la_serialize);
 
     /* collect the twigs referenced in this query */
-    twig_only = collect_twigs (L(p), frags);
+    twig_only = collect_twigs (L(p), twigs);
 
     if (!twig_only)
         return;
 
+    /* prepare a list for the rank operators */
+    ranks = PFarray (sizeof(PFla_op_t*));
+    
     /* infer the serialization info */
-    ser_info_worker (R(p), frags);
+    ser_info_worker (R(p), twigs, ranks);
 
-    SER_REPORT(p) = SER_REPORT(R(p));
+    /* the serialize operator either contains yes or no */
+    SER_REPORT(p) = (SER_REPORT(R(p)) != ser_no) ? ser_yes : ser_no;
 
     if (SER_REPORT(p) == ser_no)
-       return;
+        return;
 
     /* set all collected twigs to ser_yes to indicate we can
-     * omit the level check */
-    for (unsigned int i = 0; i < PFarray_last (frags); i++) {
-         PFla_op_t *twig = *(PFla_op_t **) PFarray_at (frags, i);
+       omit the level check */
+    for (unsigned int i = 0; i < PFarray_last (twigs); i++) {
+         PFla_op_t *twig = *(PFla_op_t **) PFarray_at (twigs, i);
          assert (twig);
          assert (twig->kind == la_twig);
          SER_REPORT(twig) = ser_yes;
+    }
+
+    /* in a second step assign to all collected rank operators
+       ser_yes to store its result in a special rank mapping
+       environment. */
+    for (unsigned int i = 0; i < PFarray_last (ranks); i++) {
+         PFla_op_t *rank = *(PFla_op_t **) PFarray_at (ranks, i);
+         assert (rank);
+         assert (rank->kind == la_rank);
+         SER_REPORT(rank) = ser_yes;
     }
 }
 
@@ -4103,9 +4521,9 @@ assign_twig_info (PFla_op_t *n, unsigned int twig_pre, unsigned int level)
         TSIZE(n) = TSIZE(R(n));
         return twig_pre;
     } else if (n->kind == la_attribute ||
-               n->kind == la_textnode ||
-               n->kind == la_comment ||
-               n->kind == la_processi ||
+               n->kind == la_textnode  ||
+               n->kind == la_comment   ||
+               n->kind == la_processi  ||
                n->kind == la_content) {
         TPRE(n)   = twig_pre++;
         TSIZE(n)  = n->kind == la_content ? -1 : 0;

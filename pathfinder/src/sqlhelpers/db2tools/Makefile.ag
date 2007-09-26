@@ -21,9 +21,10 @@
 # 2000-2005 University of Konstanz and (C) 2005-2007 Technische
 # Universitaet Muenchen, respectively.  All Rights Reserved.
 
-EXTRA_DIST = pfserializer.pl
+MTSAFE
 
-scripts_pl = {
+scripts_sh = {
+    COND = NOT_WIN32
     DIR = bindir
-	SOURCES = pfserializer.pl
+	SOURCES = pfcreatetables.sh pfloadtables.sh
 }

@@ -19,7 +19,7 @@ INCLUDES = $(MONETDB_INCS) $(LIBXML2_CFLAGS) ./include ../../../compiler/include
 
 EXTRA_DIST_DIR = include
 
-bin_xmlshred = {
-    SOURCES = xmlshred.c shred_helper.c hash.c guides.c encoding.c oops.c
+bin_pfshred = {
+    SOURCES = main.c shred_helper.c hash.c guides.c encoding.c oops.c
 	LIBS = $(LIBXML2_LDADD) $(LIBXML2_LIBS) 
 }
