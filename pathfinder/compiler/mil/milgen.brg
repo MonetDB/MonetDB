@@ -5468,7 +5468,16 @@ reduce (PFpa_op_t * p, int goalnt)
             twig_state->pre++;
             twig_state->size = 0;
             twig_state->level++;
-            twig_state->loop = iter;
+            /* Use the iter column of the root twig operator
+               as loop relation for the content operator.
+               
+               NOTE: We have to use the root twig operator 
+               (the one the content operator is nested in)
+               as otherwise the variable stored in twig_state->loop
+               might not be pinned anymore before the content operator
+               can use it. */
+            if (!twig_state->loop)
+                twig_state->loop = iter;
             
             /* translate the children */
             reduce(kids[1], nts[1]);
@@ -5629,7 +5638,16 @@ reduce (PFpa_op_t * p, int goalnt)
             twig_state->pre++;
             twig_state->size = 0;
             twig_state->level++;
-            twig_state->loop = iter;
+            /* Use the iter column of the root twig operator
+               as loop relation for the content operator.
+               
+               NOTE: We have to use the root twig operator 
+               (the one the content operator is nested in)
+               as otherwise the variable stored in twig_state->loop
+               might not be pinned anymore before the content operator
+               can use it. */
+            if (!twig_state->loop)
+                twig_state->loop = iter;
             
             /* translate the children */
             reduce(kids[1], nts[1]);
