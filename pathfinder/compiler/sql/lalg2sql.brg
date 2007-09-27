@@ -1532,6 +1532,7 @@ static PFsql_t *
 cast_ (PFsql_t * expr, PFalg_simple_type_t ty, PFalg_simple_type_t res_ty)
 {
     if (ty == res_ty) return expr;
+
     #define NUM_TYPE(t)    ((t == aat_nat) || \
                             (t == aat_int) || \
                             (t == aat_dec) || \
@@ -1539,6 +1540,12 @@ cast_ (PFsql_t * expr, PFalg_simple_type_t ty, PFalg_simple_type_t res_ty)
     #define CHAR_TYPE(t)   ((t == aat_str) || \
                             (t == aat_uA))
     #define NUM_NOTEXPR(t) ((t == aat_int))
+
+    /* Since we handle untypedAtomic and Strings the same
+     * way in SQL, its obvious we don't have to
+     * perform a cast if res_ty is a CHAR_TYPE and 
+     * and input type is a CHAR_TYPE */
+    if (CHAR_TYPE(ty) && CHAR_TYPE(res_ty)) return expr;
 
     /* if we cast a numeric type to varchar we have to
        first cast it to CHAR and then to varchar */
