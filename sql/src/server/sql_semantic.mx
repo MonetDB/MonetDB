@@ -272,6 +272,9 @@ scope_sqlparse(mvc *m, scope *scp, char *query, modes_t mode)
 	int len = _strlen(query);
 	stream *buf;
 
+ 	if (THRhighwater())
+		return sql_error(m, 10, "SELECT: too many nested operators");
+
 	o = NEW(mvc);
 	if (!o)
 		return NULL;
