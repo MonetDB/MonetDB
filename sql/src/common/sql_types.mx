@@ -1449,6 +1449,8 @@ sqltypeinit(void)
 	sql_create_func("sql_add", "mtime", "addmonths", DTE, MONINT, DTE, SCALE_FIX);
 	sql_create_func("sql_add", "mtime", "timestamp_add_sec_interval", TMESTAMP, SECINT, TMESTAMP, SCALE_FIX);
 	sql_create_func("sql_add", "mtime", "addmonths", TMESTAMP, MONINT, TMESTAMP, SCALE_FIX);
+	sql_create_func("sql_add", "mtime", "timestamp_add_sec_interval", TMESTAMPTZ, SECINT, TMESTAMPTZ, SCALE_FIX);
+	sql_create_func("sql_add", "mtime", "addmonths", TMESTAMPTZ, MONINT, TMESTAMPTZ, SCALE_FIX);
 	sql_create_func("sql_add", "mtime", "time_add_sec_interval", TME, SECINT, TME, SCALE_FIX);
 	sql_create_func("local_timezone", "mtime", "local_timezone", NULL, NULL, SECINT, SCALE_FIX);
 
