@@ -99,7 +99,7 @@ static void QOTstatisticsInit(){
 	BATseqbase(qotStat[QOTcalls],o);
 	qotStat[QOTactions]= QOT_create("opt","actions",TYPE_void,TYPE_int);
 	BATseqbase(qotStat[QOTactions],o);
-	qotStat[QOTtimings]= QOT_create("opt","timings",TYPE_void,TYPE_int);
+	qotStat[QOTtimings]= QOT_create("opt","timings",TYPE_void,TYPE_lng);
 	BATseqbase(qotStat[QOTtimings],o);
 
 	/* save them at least once */
@@ -127,7 +127,7 @@ QOTupdateStatistics(str nme, int actions, lng val)
 		BUNappend(qotStat[QOTnames], nme, FALSE);
 		BUNappend(qotStat[QOTcalls],  &ival, FALSE);
 		BUNappend(qotStat[QOTactions], &ival, FALSE);
-		BUNappend(qotStat[QOTtimings], &ival, FALSE);
+		BUNappend(qotStat[QOTtimings], &lval, FALSE);
 		p= BUNfnd(BATmirror(qotStat[QOTnames]),(ptr)nme);
 		if(p==0){
 #ifdef _Q_STATISTICS_DEBUG
