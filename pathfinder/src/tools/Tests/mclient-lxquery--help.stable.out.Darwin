@@ -22,7 +22,6 @@ Over..
 # 23:46:47 >  Mtimeout -timeout 60 mclient -umonetdb -Pmonetdb --config=/net/corona.ins.cwi.nl/export/scratch0/manegold/Monet/Testing/Current/prefix.--enable-strict_--disable-optimize_--enable-debug/etc/MonetDB.conf --host=corona --port=33349 -lxquery --help
 # 23:46:47 >  
 
-= Please remove this line in case the below usage message of `mclient -lxquery` is correct.
 mclient interactive MonetDB/XQuery session: type an XQuery or XQUF update.
  
 Supported document-management XQuery extensions:
@@ -47,7 +46,6 @@ Session commands:
 \X      - trace mclient code
 \q      - terminate session
 xquery>
-= Please remove this line in case the above usage message of `mclient -lxquery` is correct.
 
 # 23:46:47 >  
 # 23:46:47 >  Done.
