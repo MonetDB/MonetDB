@@ -23,7 +23,8 @@ module 'pf_support'
 #-----------------------------------------------------------------------------------------#
 # signature										  # name
 # str											  # type
-#---------------------------------------------------------------------------------------------------------------------------------------------------------#
+#-----------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ "[xquery_hash](BAT[void,str]) : BAT[void,int]"														  ]
 [ "add_qname(str, str, str, BAT[void,BAT]) : oid"													  ]
 [ "add_qnames(BAT[void,str], BAT[void,str], BAT[void,str], BAT[void,BAT]) : BAT[void,oid]"								  ]
 [ "append(BAT[any::1,BAT], any) : BAT[any::1,BAT]"													  ]
@@ -35,6 +36,7 @@ module 'pf_support'
 [ "combine_text_string(BAT[void,oid], BAT[void,oid], BAT[void,str], int) : BAT[oid,str]"						  ]
 [ "constant2bat(any) : BAT[any,any]"															  ]
 [ "correct_sizes(BAT[void,oid], BAT[void,oid], BAT[void,int]) : BAT[void,int]"								  ]
+[ "dbl(int, int, int, int, int, int, int, int) : dbl"														  ]
 [ "descendant(BAT[oid,oid], BAT[oid,oid], BAT[oid,oid], oid, BAT[oid,BAT], int, BAT[void,any], chr) : BAT[void,BAT]"						  ]
 [ "descendant(BAT[oid,oid], BAT[oid,oid], oid, BAT[oid,BAT], int, BAT[void,any], chr) : BAT[void,BAT]"							  ]
 [ "descendant_or_self(BAT[oid,oid], BAT[oid,oid], BAT[oid,oid], oid, BAT[oid,BAT], int, BAT[void,any], chr) : BAT[void,BAT]"					  ]
@@ -45,6 +47,7 @@ module 'pf_support'
 [ "elem_constr_empty(BAT[void,oid], BAT[void,BAT]) : BAT[void,BAT]"											  ]
 [ "enumerate(BAT[void,lng], BAT[void,lng]) : BAT[oid,lng]"										  ]
 [ "fetch(BAT[any,BAT], int) : any"															  ]
+[ "fetch(BAT[any,BAT], oid) : any"																  ]
 [ "insert(BAT[any::1,BAT], any::1, any) : BAT[any::1,BAT]"												  ]
 [ "invalid_qname(BAT[any,str]) : str"															  ]
 [ "is_constant(any) : bit"																  ]
@@ -92,6 +95,7 @@ module 'pf_support'
 [ "string_join(BAT[oid,str], BAT[oid,str]) : BAT[oid,str]"										  ]
 [ "text_constr(BAT[void,str], BAT[void,BAT]) : BAT[void,BAT]"												  ]
 [ "ws_bat(lng) : BAT[void,BAT]"																  ]
+[ "xquery_hash(str) : int"																	  ]
 module 'pathfinder'
 #-------------------------------------------------#
 # signature					  # name
