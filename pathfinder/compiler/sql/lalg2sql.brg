@@ -1170,20 +1170,6 @@ step_name (PFla_op_t *p, PFsql_aident_t step, PFty_t ty)
 }
 
 static void
-step_guide (PFla_op_t *p, PFsql_aident_t step,
-            unsigned int count, PFguide_tree_t **guides)
-{
-    PFsql_t **list = PFmalloc (count * sizeof (PFsql_t *));
-
-    for (unsigned int i = 0; i < count; i++)
-        list[i] = lit_int (guides[i]->guide);
-
-    where_list_add (WHERELIST(p),
-                    in (GUIDE(step),
-                        PFsql_stmt_list_ (count, (const PFsql_t **) list)));
-}
-
-static void
 step_guide_join (PFla_op_t *p, PFsql_aident_t step,
                 unsigned int count, PFguide_tree_t **guides)
 {
@@ -3389,19 +3375,21 @@ reduce (PFla_op_t * p, int goalnt)
                 assert (p->kind == la_guide_step ||
                         p->kind == la_guide_step_join);
 
-                #define GUIDE_BARRIER 1
-
-                if (p->sem.step.guide_count > GUIDE_BARRIER) {
+                /* if there is more than one guide node
+                 * we represent the guides as a seperate table and
+                 * perform a join. */
+                if (p->sem.step.guide_count > 1) {
                     step_guide_join (p,
                                      stepalias,
                                      p->sem.step.guide_count,
                                      p->sem.step.guides);
-                }
-                else {
-                    step_guide (p,
-                                stepalias,
-                                p->sem.step.guide_count,
-                                p->sem.step.guides);
+                } else {
+                    assert (p->sem.step.guide_count);
+
+                    where_list_add (WHERELIST(p),
+                                    eq (GUIDE(stepalias),
+                                        lit_int (
+                                            p->sem.step.guides[0]->guide)));
                 }
 
                 if (p->sem.step.guide_count)
