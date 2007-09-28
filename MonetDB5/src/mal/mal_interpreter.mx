@@ -743,13 +743,15 @@ elements in the value stack.
 	case ENDsymbol: 
 		if( getInstrPtr(mb,0)->token == FACTORYsymbol)
 			ret= shutdownFactory(mb);
-		if( @1 && oldtimer)
+#ifdef @1
+		if( oldtimer)
 			cntxt->timer= oldtimer;
+#endif
 		if( pcicaller && garbageControl(getInstrPtr(mb,0)) )
 			garbageCollector(mb, stk, TRUE);
-		if(@1){
-			@:endProfile@
-		}
+#ifdef @1
+		@:endProfile@
+#endif
 		stkpc= mb->stop;
 		continue;
 	default:
@@ -759,9 +761,9 @@ elements in the value stack.
 		}
 		ret = createScriptException(mb, stkpc,MAL,
 				NULL, "unkown operation");
-		if( @1){
-			@:endProfile@
-		}
+#ifdef @1
+		@:endProfile@
+#endif
 		stkpc= mb->stop;
 		continue;
 	}
@@ -1027,7 +1029,8 @@ to the operators.
 		} 
 	}
 	/* Provide debugging support */
-	if( @1 && (GDKdebug & 10) ){
+#ifdef @1
+	if( GDKdebug & 10 ){
 		BAT *b;
 		str oldmsg =0;
 
@@ -1061,6 +1064,7 @@ to the operators.
 			}
 		}
 	}
+#endif
 @-
 @= commandcall
 {	
@@ -1599,7 +1603,8 @@ See @url{The MAL Profiler} for more details.
 #endif
 
 @= timingHndlr
-if( @1 && cntxt->flags && stk->cmd != 't' && stk->cmd != 'C'){
+#ifdef @1
+if( cntxt->flags && stk->cmd != 't' && stk->cmd != 'C'){
 	if( cntxt->flags & timerFlag)
 		stream_printf(cntxt->fdout,"[%6d usec ",GDKusec()-cntxt->timer);
 #ifdef HAVE_SYS_RESOURCE_H
@@ -1641,6 +1646,7 @@ if( @1 && cntxt->flags && stk->cmd != 't' && stk->cmd != 'C'){
 	if( cntxt->flags & timerFlag)
 		cntxt->timer = GDKusec();
 }
+#endif
 @-
 The bigfoot memory tracker keeps track on the space
 occupancy of BATs. It ignores for the time being the heaps.
