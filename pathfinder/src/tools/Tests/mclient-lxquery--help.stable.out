@@ -23,16 +23,16 @@ Over..
 # 23:46:47 >  
 
 mclient interactive MonetDB/XQuery session: type an XQuery or XQUF update.
- 
+
 Supported document-management XQuery extensions:
  pf:collections() as node()
  pf:documents($collectionName as xs:string) as node()
  pf:del-doc($documentName as xs:string)
  pf:add-doc($uri as xs:string, $documentName as xs:string
      [,$collectionName as xs:string [,$freePercentage as xs:integer]])
- 
+
 Session commands:
-<>       - send query to server (or CTRL-D)
+<>      - send query to server (or CTRL-D)
 \?      - show this message
 \<file  - read input from file
 \>file  - save response in file, or stdout if no file is given
@@ -47,7 +47,6 @@ Session commands:
 \X      - trace mclient code
 \q      - terminate session
 xquery>
-
 # 23:46:47 >  
 # 23:46:47 >  Done.
 # 23:46:47 >  
