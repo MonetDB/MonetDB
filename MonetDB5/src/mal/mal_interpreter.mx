@@ -70,6 +70,9 @@ mal_export ptr getArgReference(MalStkPtr stk, InstrPtr pci, int k);
 #include "mal_debugger.h"   /* for mdbStep() */
 #include "mal_type.h"
 
+#define SLOW 1
+#define FAST 0
+
 static str runMALsequence( Client cntxt, MalBlkPtr mb, int startpc, 
 		int stoppc, MalStkPtr stk, MalStkPtr env, InstrPtr pcicaller);
 static str setDynamicType(MalBlkPtr mb, VarPtr v, int tpe, int pc);
@@ -421,8 +424,27 @@ str runMALsequence( Client cntxt, MalBlkPtr mb, int startpc,
 	stkpc = startpc;
 	exceptionVar = exceptionPC = -1;
 	(void)exceptionPC; /* TODO maybe we should use this variable somewhere*/
+@-
+From this point onwards we should differentiate fast processing
+against monitored processing. Fast processing is possible if there is
+no call to the debugger statically/dynamically set. Same holds for
+performance control statements.
+The code currently does not statically checks the mode change.
+Preferrably we should introduce a itrace flag PROFILE
+We rely on optimizing compilers to remove the redundant code.
+@c
+	if( malProfileMode == 0 && cntxt->itrace==0){
+		while(stkpc < mb->stop && stkpc != stoppc ){
+			pci = getInstrPtr(mb,stkpc);
+			if( malProfileMode + cntxt->itrace)
+				goto workslow;
+			@:MALinterpret(FAST)@
+			@:MALflowofcontrol(FAST)@
+		}
+	} else
 	while(stkpc < mb->stop && stkpc != stoppc ){
 		pci = getInstrPtr(mb,stkpc);
+workslow:
 		if( cntxt->itrace  ) {
 			lng t=0;
 			if( stk->cmd== 0) stk->cmd= cntxt->itrace;
@@ -445,8 +467,8 @@ str runMALsequence( Client cntxt, MalBlkPtr mb, int startpc,
 		}
 
 		@:beginProfile@
-		@:MALinterpret@
-		@:MALflowofcontrol@
+		@:MALinterpret(SLOW)@
+		@:MALflowofcontrol(SLOW)@
 		@:endProfile@
 	}
 	@:MALwrapup@
@@ -639,11 +661,11 @@ The number of instructions allowed is severely
 limited.
 @c
 		switch( pci->token){
-		case ASSIGNsymbol: @:assignStmt@ break;
-		case PATcall: @:patterncall@ break;
-		case CMDcall: @:commandcall@ break;
-		case FACcall: @:factorycall@ break;
-		case FCNcall: @:functioncall@ break;
+		case ASSIGNsymbol: @:assignStmt(SLOW)@ break;
+		case PATcall: @:patterncall(SLOW)@ break;
+		case CMDcall: @:commandcall(SLOW)@ break;
+		case FACcall: @:factorycall(SLOW)@ break;
+		case FCNcall: @:functioncall(SLOW)@ break;
 		}
 		/* we don't allow sequential flow control here */
 		dropMALflowStep(flow,stkpc,n,pending,mb,stk);
@@ -710,22 +732,24 @@ elements in the value stack.
 @= MALinterpret
 	ret = 0;
 	switch( pci->token){
-	case ASSIGNsymbol: @:assignStmt@ break;
-	case PATcall: @:patterncall@ break;
-	case CMDcall: @:commandcall@ break;
-	case FACcall: @:factorycall@ break;
-	case FCNcall: @:functioncall@ break;
+	case ASSIGNsymbol: @:assignStmt(@1)@ break;
+	case PATcall: @:patterncall(@1)@ break;
+	case CMDcall: @:commandcall(@1)@ break;
+	case FACcall: @:factorycall(@1)@ break;
+	case FCNcall: @:functioncall(@1)@ break;
 	case NOOPsymbol:
 	case REMsymbol:
 		break;
 	case ENDsymbol: 
 		if( getInstrPtr(mb,0)->token == FACTORYsymbol)
 			ret= shutdownFactory(mb);
-		if( oldtimer)
+		if( @1 && oldtimer)
 			cntxt->timer= oldtimer;
 		if( pcicaller && garbageControl(getInstrPtr(mb,0)) )
 			garbageCollector(mb, stk, TRUE);
-		@:endProfile@
+		if(@1){
+			@:endProfile@
+		}
 		stkpc= mb->stop;
 		continue;
 	default:
@@ -735,7 +759,9 @@ elements in the value stack.
 		}
 		ret = createScriptException(mb, stkpc,MAL,
 				NULL, "unkown operation");
-		@:endProfile@
+		if( @1){
+			@:endProfile@
+		}
 		stkpc= mb->stop;
 		continue;
 	}
@@ -886,9 +912,10 @@ cause errors in multi-assignment statements.
 		if( lhs->vtype == TYPE_bat)
 			BBPincref(lhs->val.br.id, TRUE);
 	}
-	@:restoreTarget@
+	@:restoreTarget(@1)@
 	ret = 0;
-	@:exceptionHndlr@
+	@:exceptionHndlr(@1)@
+	@:timingHndlr(@1)@
 }
 @}
 @-
@@ -1000,7 +1027,7 @@ to the operators.
 		} 
 	}
 	/* Provide debugging support */
-	if( GDKdebug & 10 ){
+	if( @1 && (GDKdebug & 10) ){
 		BAT *b;
 		str oldmsg =0;
 
@@ -1146,8 +1173,9 @@ to the operators.
 		ret = createScriptException(mb, stkpc, MAL, NULL,
 				"too many arguments for command call");
 	}
-	@:restoreTarget@
-	@:exceptionHndlr@
+	@:restoreTarget(@1)@
+	@:exceptionHndlr(@1)@
+	@:timingHndlr(@1)@
 }
 @-
 @= patterncall
@@ -1157,8 +1185,9 @@ to the operators.
 	else {
 		@:safeTarget@
 		ret = (str) (*pci->fcn)(mb,stk,pci);
-		@:restoreTarget@
-		@:exceptionHndlr@
+		@:restoreTarget(@1)@
+		@:exceptionHndlr(@1)@
+		@:timingHndlr(@1)@
 	}
 @-
 MAL function calls are relatively expensive, because they have to assemble
@@ -1171,8 +1200,9 @@ non-returned values.
 	stk->pcup = stkpc;
 	@:safeTarget@
 	ret= runMAL(cntxt,pci->blk,1,mb,stk,pci);
-	@:restoreTarget@
-	@:exceptionHndlr@
+	@:restoreTarget(@1)@
+	@:exceptionHndlr(@1)@
+	@:timingHndlr(@1)@
 }
 @-
 Factory calls are more involved. At this stage it is a synchrononous
@@ -1184,7 +1214,8 @@ Factory calls should deal with the reference counting.
 				"reference to MAL function missing");
 	else
 		ret= runFactory(cntxt,pci->blk,mb,stk,pci);
-	@:exceptionHndlr@
+	@:exceptionHndlr(@1)@
+	@:timingHndlr(SLOW)@
 @-
 The type dispatching table in getArgValue can be removed if we 
 determine at compile time the address offset within a ValRecord. 
@@ -1323,7 +1354,6 @@ starts with the exception identifer, followed by contextual details.
 @{
 
 @= exceptionHndlr
-	@:timingHndlr@
 if( ret != MAL_SUCCEED ) {
 	str msg = 0, nxt;
 	if( stk->cmd  ) {
@@ -1569,7 +1599,7 @@ See @url{The MAL Profiler} for more details.
 #endif
 
 @= timingHndlr
-if( cntxt->flags && stk->cmd != 't' && stk->cmd != 'C'){
+if( @1 && cntxt->flags && stk->cmd != 't' && stk->cmd != 'C'){
 	if( cntxt->flags & timerFlag)
 		stream_printf(cntxt->fdout,"[%6d usec ",GDKusec()-cntxt->timer);
 #ifdef HAVE_SYS_RESOURCE_H
