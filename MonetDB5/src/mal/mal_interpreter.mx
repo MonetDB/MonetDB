@@ -743,13 +743,13 @@ elements in the value stack.
 	case ENDsymbol: 
 		if( getInstrPtr(mb,0)->token == FACTORYsymbol)
 			ret= shutdownFactory(mb);
-#ifdef @1
+#if @1
 		if( oldtimer)
 			cntxt->timer= oldtimer;
 #endif
 		if( pcicaller && garbageControl(getInstrPtr(mb,0)) )
 			garbageCollector(mb, stk, TRUE);
-#ifdef @1
+#if @1
 		@:endProfile@
 #endif
 		stkpc= mb->stop;
@@ -761,7 +761,7 @@ elements in the value stack.
 		}
 		ret = createScriptException(mb, stkpc,MAL,
 				NULL, "unkown operation");
-#ifdef @1
+#if @1
 		@:endProfile@
 #endif
 		stkpc= mb->stop;
@@ -1029,7 +1029,7 @@ to the operators.
 		} 
 	}
 	/* Provide debugging support */
-#ifdef @1
+#if @1
 	if( GDKdebug & 10 ){
 		BAT *b;
 		str oldmsg =0;
@@ -1603,7 +1603,7 @@ See @url{The MAL Profiler} for more details.
 #endif
 
 @= timingHndlr
-#ifdef @1
+#if @1
 if( cntxt->flags && stk->cmd != 't' && stk->cmd != 'C'){
 	if( cntxt->flags & timerFlag)
 		stream_printf(cntxt->fdout,"[%6d usec ",GDKusec()-cntxt->timer);
