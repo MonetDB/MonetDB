@@ -12,18 +12,18 @@ io.print(-2147483647);
 io.print(-2147483648);
 io.print(-2147483649);
 
-io.printf("# from bit\n");
+io.printf("# int from bit\n");
 bi:= true:int; io.print(bi);
 bi:= false:int; io.print(bi);
 
-io.printf("# from chr\n");
+io.printf("# int from chr\n");
 io.print('a':int);
 
-io.printf("# from sht\n");
+io.printf("# int from sht\n");
 sh:= 1:sht; si:= calc.int(sh); io.print(si);
 sh:= 32767:sht; si:= calc.int(sh); io.print(si);
 
-io.printf("# from int\n");
+io.printf("# int from int\n");
 io.print(1:int);
 io.print(32767:int);
 io.print(32768:int);
@@ -41,7 +41,7 @@ io.printf("# should this produce nil (overflow)?\n");
 z:= -2147483647:int - 2:int;
 io.print(z);
 
-io.printf("# from lng\n");
+io.printf("# int from lng\n");
 io.print(1LL:int);
 io.print(2147483647LL:int);
 io.print(2147483648LL:int);
@@ -50,7 +50,7 @@ io.print(-2147483647LL:int);
 io.print(-2147483648LL:int);
 io.print(-2147483649LL:int);
 
-io.printf("# from flt\n");
+io.printf("# int from flt\n");
 io.print(0.0:int);
 io.print(0.1:int);
 io.print(0.5:int);
@@ -67,7 +67,7 @@ io.print(-2147483647.0:int);
 io.print(-2147483648.0:int);
 io.print(-2147483649.0:int);
 
-io.printf("# from dbl\n");
+io.printf("# int from dbl\n");
 io.print(0.0LL:int);
 io.print(0.1LL:int);
 io.print(0.5LL:int);
@@ -84,14 +84,14 @@ io.print(-2147483647.0LL:int);
 io.print(-2147483648.0LL:int);
 io.print(-2147483649.0LL:int);
 
-io.printf("# from oid\n");
+io.printf("# int from oid\n");
 io.print(2@0:int);
 io.print(2@1:int);
 io.print(2147483647@0:int);
 io.print(2147483648@0:int);
 io.print(2147483649@0:int);
 
-io.printf("# from str\n");
+io.printf("# int from str\n");
 io.print("0":int);
 io.print("32767":int);
 io.print("2147483647":int);
@@ -105,35 +105,35 @@ io.print("random string":int);
 
 io.printf("# to bit\n");
 
-io.printf("# from bit\n");
+io.printf("# bit from bit\n");
 io.print(true:bit);
 io.print(false:bit);
 
-io.printf("# from chr\n");
+io.printf("# bit from chr\n");
 io.print('a':bit);
 c:= 0:chr;
 b:= calc.bit(c);
 io.print(b);
 
-io.printf("# from sht\n");
+io.printf("# bit from sht\n");
 j:= 0:sht; b:= calc.bit(j); io.print(b);
 j:= 1:sht; b:= calc.bit(j); io.print(b);
 j:= -1:sht; b:= calc.bit(j); io.print(b);
 j:= 4096:sht; b:= calc.bit(j); io.print(b);
 
-io.printf("# from int\n");
+io.printf("# bit from int\n");
 io.print(0:bit);
 io.print(1:bit);
 io.print(-1:bit);
 io.print(4096:bit);
 
-io.printf("# from lng\n");
+io.printf("# bit from lng\n");
 io.print(0LL:bit);
 io.print(1LL:bit);
 io.print(-1LL:bit);
 io.print(4096LL:bit);
 
-io.printf("# from flt\n");
+io.printf("# bit from flt\n");
 io.print(0.0:bit);
 io.print(0.1:bit);
 io.print(1.0:bit);
@@ -141,7 +141,7 @@ io.print(-0.1:bit);
 io.print(-1.0:bit);
 io.print(4096.0:bit);
 
-io.printf("# from dbl\n");
+io.printf("# bit from dbl\n");
 io.print(0.0LL:bit);
 io.print(0.1LL:bit);
 io.print(1.0LL:bit);
@@ -149,14 +149,14 @@ io.print(-0.1LL:bit);
 io.print(-1.0LL:bit);
 io.print(4096.0LL:bit);
 
-io.printf("# from oid\n");
+io.printf("# bit from oid\n");
 io.print(0@0:bit);
 io.print(1@0:bit);
 io.print(4096@0:bit);
 io.print(1073741824@0:bit);
 io.print(2147483647@0:bit);
 
-io.printf("# from str\n");
+io.printf("# bit from str\n");
 io.print("true":bit);
 io.print("false":bit);
 io.print("0":bit);
@@ -166,15 +166,15 @@ io.print("":bit);
 
 io.printf("# to sht\n");
 
-io.printf("# from bit\n");
+io.printf("# sht from bit\n");
 io.print(true:sht);
 io.print(false:sht);
 
-io.printf("# from chr\n");
+io.printf("# sht from chr\n");
 io.print('a':sht);
 c:= 0:chr; cs:= calc.sht(c); io.print(cs);
 
-io.printf("# from int\n");
+io.printf("# sht from int\n");
 io.print(0:sht);
 io.print(32767:sht);
 io.print(32768:sht);
@@ -184,7 +184,7 @@ io.print(-32768:sht);
 io.print(-32769:sht);
 io.print(2147483647:sht);
 
-io.printf("# from lng\n");
+io.printf("# sht from lng\n");
 io.print(0LL:sht);
 io.print(32767LL:sht);
 io.print(32768LL:sht);
@@ -194,7 +194,7 @@ io.print(-32768LL:sht);
 io.print(-32769LL:sht);
 io.print(2147483647LL:sht);
 
-io.printf("# from flt\n");
+io.printf("# sht from flt\n");
 io.print(0.0:sht);
 io.print(0.1:sht);
 io.print(0.5:sht);
@@ -211,7 +211,7 @@ io.print(-32767.0:sht);
 io.print(-32768.0:sht);
 io.print(-32769.0:sht);
 
-io.printf("# from dbl\n");
+io.printf("# sht from dbl\n");
 io.print(0.0LL:sht);
 io.print(0.1LL:sht);
 io.print(0.5LL:sht);
@@ -228,14 +228,14 @@ io.print(-32767.0LL:sht);
 io.print(-32768.0LL:sht);
 io.print(-32769.0LL:sht);
 
-io.printf("# from oid\n");
+io.printf("# sht from oid\n");
 io.print(0@0:sht);
 io.print(1@0:sht);
 io.print(4096@0:sht);
 io.print(1073741824@0:sht);
 io.print(2147483647@0:sht);
 
-io.printf("# from str\n");
+io.printf("# sht from str\n");
 io.print("0":sht);
 io.print("32767":sht);
 io.print("32768":sht);
@@ -266,18 +266,18 @@ io.print(-9223372036854775807LL);
 io.print(-9223372036854775808LL);
 io.print(-9223372036854775809LL);
 
-io.printf("# from bit\n");
+io.printf("# lng from bit\n");
 io.print(true:lng);
 io.print(false:lng);
 
-io.printf("# from chr\n");
+io.printf("# lng from chr\n");
 io.print('a':lng);
 
-io.printf("# from sht\n");
+io.printf("# lng from sht\n");
 ls:= 1:sht; ll:= calc.lng(ls); io.print(ll);
 lk:= 32767:sht; ll:= calc.lng(lk); io.print(ll);
 
-io.printf("# from int\n");
+io.printf("# lng from int\n");
 io.print(1:lng);
 io.print(32767:lng);
 io.print(32768:lng);
@@ -296,8 +296,8 @@ io.printf("# should this produce nil (overflow)?\n");
 lb:= -2147483647 -2;
 io.print(lb);
 
-io.printf("# from lng\n");
-io.printf("# from flt\n");
+io.printf("# lng from lng\n");
+io.printf("# lng from flt\n");
 io.print(0.0:lng);
 io.print(0.1:lng);
 io.print(0.5:lng);
@@ -320,7 +320,7 @@ io.print(-9223372036854775807.0:lng);
 io.print(-9223372036854775808.0:lng);
 io.print(-9223372036854775809.0:lng);
 
-io.printf("# from dbl\n");
+io.printf("# lng from dbl\n");
 io.print(0.0LL:lng);
 io.print(0.1LL:lng);
 io.print(0.5LL:lng);
@@ -343,7 +343,7 @@ io.print(-9223372036854775807.0LL:lng);
 io.print(-9223372036854775808.0LL:lng);
 io.print(-9223372036854775809.0LL:lng);
 
-io.printf("# from oid\n");
+io.printf("# lng from oid\n");
 io.print(2@0:lng);
 io.print(2@1:lng);
 io.print(2147483647@0:lng);
@@ -353,7 +353,7 @@ io.print(9223372036854775807@0:lng);
 io.print(9223372036854775808@0:lng);
 io.print(9223372036854775809@0:lng);
 
-io.printf("# from str\n");
+io.printf("# lng from str\n");
 io.print("0":lng);
 io.print("32767":lng);
 io.print("2147483647":lng);
@@ -373,18 +373,18 @@ io.print("-9223372036854775809":lng);
 
 io.printf("# to flt\n");
 
-io.printf("# from bit\n");
+io.printf("# flt from bit\n");
 io.print(true:flt);
 io.print(false:flt);
 
-io.printf("# from chr\n");
+io.printf("# flt from chr\n");
 io.print('a':flt);
 
-io.printf("# from sht\n");
+io.printf("# flt from sht\n");
 s1:= 1:sht; f1:= calc.flt(s1); io.print(f1);
 s1:= 32767:sht; f1:= calc.flt(s1); io.print(f1);
 
-io.printf("# from int\n");
+io.printf("# flt from int\n");
 io.print(1:flt);
 io.print(32767:flt);
 io.print(32768:flt);
@@ -405,7 +405,7 @@ fg:= -2147483647 -2;
 f:= calc.flt(fg);
 io.print(f);
 
-io.printf("# from lng\n");
+io.printf("# flt from lng\n");
 io.print(1LL:flt);
 io.print(2147483647LL:flt);
 io.print(2147483648LL:flt);
@@ -420,7 +420,7 @@ io.print(-9223372036854775807LL:flt);
 io.print(-9223372036854775808LL:flt);
 io.print(-9223372036854775809LL:flt);
 
-io.printf("# from dbl\n");
+io.printf("# flt from dbl\n");
 io.print(0.0LL:flt);
 io.print(0.1LL:flt);
 io.print(0.5LL:flt);
@@ -437,14 +437,14 @@ io.print(-2147483647.0LL:flt);
 io.print(-2147483648.0LL:flt);
 io.print(-2147483649.0LL:flt);
 
-io.printf("# from oid\n");
+io.printf("# flt from oid\n");
 io.print(2@0:flt);
 io.print(2@1:flt);
 io.print(2147483647@0:flt);
 io.print(2147483648@0:flt);
 io.print(2147483649@0:flt);
 
-io.printf("# from str\n");
+io.printf("# flt from str\n");
 io.print("0":flt);
 io.print("32767":flt);
 io.print("2147483647":flt);
@@ -540,11 +540,11 @@ io.print("random string":flt);
 
 io.printf("# to dbl\n");
 
-io.printf("# from bit\n");
+io.printf("# dbl from bit\n");
 io.print(true:dbl);
 io.print(false:dbl);
 
-io.printf("# from chr\n");
+io.printf("# dbl from chr\n");
 io.print('a':dbl);
 
 io.printf("# from sht\n");
@@ -555,7 +555,7 @@ a:= 32767:sht;
 d1:= calc.dbl(a);
 io.print(d1);
 
-io.printf("# from int\n");
+io.printf("# dbl from int\n");
 io.print(1:dbl);
 io.print(32767:dbl);
 io.print(32768:dbl);
@@ -576,7 +576,7 @@ zk:= -2147483647 - 2l;
 d:= calc.dbl(zk);
 io.print(d);
 
-io.printf("# from lng\n");
+io.printf("# dbl from lng\n");
 io.print(1LL:dbl);
 io.print(2147483647LL:dbl);
 io.print(2147483648LL:dbl);
@@ -591,7 +591,7 @@ io.print(-9223372036854775807LL:dbl);
 io.print(-9223372036854775808LL:dbl);
 io.print(-9223372036854775809LL:dbl);
 
-io.printf("# from flt\n");
+io.printf("# dbl from flt\n");
 io.print(0.0:dbl);
 io.print(0.1:dbl);
 io.print(0.5:dbl);
@@ -608,14 +608,14 @@ io.print(-2147483647.0:dbl);
 io.print(-2147483648.0:dbl);
 io.print(-2147483649.0:dbl);
 
-io.printf("# from oid\n");
+io.printf("# dbl from oid\n");
 io.print(2@0:dbl);
 io.print(2@1:dbl);
 io.print(2147483647@0:dbl);
 io.print(2147483648@0:dbl);
 io.print(2147483649@0:dbl);
 
-io.printf("# from str\n");
+io.printf("# dbl from str\n");
 io.print("0":dbl);
 io.print("32767":dbl);
 io.print("2147483647":dbl);
