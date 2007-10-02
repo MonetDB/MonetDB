@@ -139,7 +139,7 @@ Start XPRC receiver using the default values as specified in \
 #define XRPC_SERVER_H
 
 #include <gdk.h>
-#include <mapi.h>
+#include <mapi/mapi.h>
 #include <time.h>
 
 #ifdef _WIN32   /* Windows specific */

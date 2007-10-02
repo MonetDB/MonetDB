@@ -50,7 +50,15 @@ between 25-50%.
 #include <streams.h>
 #include <mserver.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 embeddedclient_export Mapi embedded_sql(opt *set, int len);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _EMBEDDEDCLIENT_H_ */
 @c

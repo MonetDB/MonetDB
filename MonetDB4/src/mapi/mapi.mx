@@ -139,7 +139,7 @@ This module contains a simple interface for network connections.
 
 #include <streams.h>
 #include <monet_context.h>
-#include <mapi.proto.h>
+#include <mapi/mapi.proto.h>
 
 #define NEW_ARRAY( type, size )	(type*)GDKmalloc((size)*sizeof(type))
 #define STREQ(a, b) 		(strcmp(a, b)==0)

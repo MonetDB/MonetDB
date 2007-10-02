@@ -124,27 +124,27 @@ PHP
 	Download the Windows binaries in a zip package (i.e. not the
 	Windows installer) and the source package of PHP 5 from
 	http://www.php.net/.  Unzip the binaries into
-	e.g. ``C:\php-5`` (for PHP-5, the zip file does not contain a
-	top-level directory, so create a new directory,
-	e.g. ``C:\php-5``, and unzip the files there--for PHP-4, the
+	e.g. ``C:\php-524`` (for PHP-5, the zip file does not contain
+	a top-level directory, so create a new directory,
+	e.g. ``C:\php-524``, and unzip the files there--for PHP-4, the
 	zip file does contain a top-level directory, so you can unzip
 	directly into ``C:\``).  In any case, make sure there are no
 	spaces in the path chosen.  Also extract the sources
-	somewhere, e.g. in a directory parallel to MonetDB.  If you
-	don't use ``C:\php-5`` for the binaries or you don't extract
-	the sources into ``php-5.1.4`` in the same directory where
-	MonetDB is extracted, you will have to edit MonetDB's
-	``NT\rules.msc`` to change the cariables ``PHP_SRCDIR`` and
-	``PHP_INSTDIR`` to reflect this.  Make sure there are no
-	spaces in these two path names.  Also note that the paths are
-	only used from inside the ``NT\src\mapi\clients\php`` folder,
-	so if they are relative, they have to be relative from there.
-	In order to get MonetDB to compile with these sources, it was
-	necessary to remove the line ``#include "arpa/inet.h"`` from
-	the file ``main\php_network.h``.  When compiling MonetDB, add
-	the flag ``HAVE_PHP=1`` to the ``nmake`` command line.  Note
-	that only PHP versions 5.1.4 and 5.2.1 have been tried
-	recently.
+	somewhere, e.g. inside the directory where you extracted the
+	binaries (so you get e.g. ``C:\php-524\php-5.2.4``).  If you
+	don't use ``C:\php-524`` for the binaries or you don't extract
+	the sources into ``php-5.2.4`` there, you will have to edit
+	MonetDB's ``NT\winrules.msc`` to change the cariables
+	``PHP_SRCDIR`` and ``PHP_INSTDIR`` to reflect this.  Make sure
+	there are no spaces in these two path names.  Also note that
+	the paths are only used from inside the
+	``NT\src\mapi\clients\php`` folder, so if they are relative,
+	they have to be relative from there.  In order to get MonetDB
+	to compile with these sources, it was necessary to remove the
+	line ``#include "arpa/inet.h"`` from the file
+	``main\php_network.h``.  When compiling MonetDB, add the flag
+	``HAVE_PHP=1`` to the ``nmake`` command line.  Note that only
+	PHP versions 5.1.4 and 5.2.1 have been tried recently.
 
 Java:
 	The Java SDK (JDK) can be found at http://java.sun.com/.

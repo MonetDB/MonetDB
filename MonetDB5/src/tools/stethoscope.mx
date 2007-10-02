@@ -69,7 +69,7 @@ information needed for a descent post-mortem analysis.
 #include "mal_config.h"
 #include "monet_options.h"
 #include <gdk.h>
-#include <Mapi.h>
+#include <mapilib/Mapi.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>

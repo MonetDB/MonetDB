@@ -19,7 +19,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <Mapi.h>
+#include <mapilib/Mapi.h>
 #ifdef _MSC_VER
 #if _MSC_VER >= 1400
 /* this happens to work in this file */

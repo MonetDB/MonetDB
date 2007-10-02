@@ -18,7 +18,7 @@
 
 #include "clients_config.h"
 #include <monet_options.h>
-#include "Mapi.h"
+#include "mapilib/Mapi.h"
 #include <unistd.h>
 #include <stdlib.h>
 #include <errno.h>

@@ -3978,7 +3978,7 @@ fork(pf_logmanager());            # start checkpointing thread
 #include <monet_context.h>
 #include <monet_interpreter.h>
 #include <streams.h>
-#include <mapi.h>
+#include <mapi/mapi.h>
 #include <sys.h>
 #include <pathfinder.proto.h>
 #include <pf_support.proto.h>

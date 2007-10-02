@@ -25,7 +25,7 @@
 #  include "getopt.h"
 # endif
 #endif
-#include "Mapi.h"
+#include "mapilib/Mapi.h"
 #include <unistd.h>
 #include <stdlib.h>
 #include <string.h>

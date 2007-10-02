@@ -242,7 +242,7 @@ comment "Bind a remote variable to a local one";
 #include "mal_interpreter.h"
 #include "mal_authorize.h"
 #include "mal_sabaoth.h"
-#include <Mapi.h>
+#include <mapilib/Mapi.h>
 
 #ifdef WIN32
 #ifndef LIBMFLEET

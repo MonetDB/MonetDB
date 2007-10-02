@@ -16,7 +16,7 @@
 
 INCLUDES = \
 	../include \
-	../../mapilib \
+	../.. \
 	$(MONETDB_INCS) \
 	$(ODBC_INCS)
 

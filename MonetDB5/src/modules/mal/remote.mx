@@ -120,7 +120,7 @@ remote_export str RMTepilogue(int *ret);
 #include <mal_exception.h>
 #include <mal_interpreter.h>
 #include <mal_function.h> /* for printFunction */
-#include <Mapi.h>
+#include <mapilib/Mapi.h>
 #include "remote.h"	/* for the implementation of the functions */
 
 typedef struct _connection {

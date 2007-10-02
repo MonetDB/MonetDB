@@ -48,7 +48,7 @@ between 25-50%.
 #endif
 
 #include <streams.h>
-#include <Mapi.h>
+#include <mapilib/Mapi.h>
 
 embeddedclient_export Mapi embedded_xquery(opt *set, int len);
 

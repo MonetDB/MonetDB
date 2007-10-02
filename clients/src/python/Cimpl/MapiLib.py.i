@@ -19,7 +19,7 @@
 %include "exception.i"
 
 %{
-#include "Mapi.h"
+#include "mapilib/Mapi.h"
 %}
 
 // don't care for the guard symbol
@@ -131,4 +131,4 @@
 	}
 }
 
-%include "Mapi.h"
+%include "mapilib/Mapi.h"

@@ -21,8 +21,8 @@
 PTHREAD = C:\Pthreads
 PTHREAD_INCS = "-I$(PTHREAD)\include"
 PTHREAD_LIBS = "$(PTHREAD)\lib\pthreadVC2.lib"
-PHP_SRCDIR = $(TOPDIR)\..\..\php-5.2.1
-PHP_INSTDIR = C:\php-5
+PHP_INSTDIR = C:\php-524
+PHP_SRCDIR = $(PHP_INSTDIR)\php-5.2.4
 # for these, also see configure.py
 PHP_EXTENSIONDIR = lib\php5
 
