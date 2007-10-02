@@ -77,6 +77,13 @@ strndup (const char * s, size_t n)
 }
 #endif
 
+#ifndef R_OK
+#define R_OK 4
+#define W_OK 2
+#define X_OK 1
+#define F_OK 0
+#endif
+
 /**
  * Test if we have the right to read the given path.
  */
