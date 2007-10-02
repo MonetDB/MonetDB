@@ -1100,9 +1100,7 @@ def isexecutable(TST, ext = '.sh') :
         for ext in ".exe", ".com", ".bat", ".cmd":
             if TST.lower().endswith(ext):
                 ext = ''
-            else:
-                TST = TST + ext
-            if os.path.isfile(TST) or os.path.isfile(TST+".src"):
+            if os.path.isfile(TST+ext) or os.path.isfile(TST+ext+".src"):
                 return [ 1, ext ]
     elif os.name == "posix":
         #TODO:
