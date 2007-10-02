@@ -1,0 +1,331 @@
+(: Tue Sep 25 11:05:14 CEST 2007 :)
+
+1+1
+<>
+
+count(pf:collections()[.="test10_log.xml"])
+<>
+
+pf:add-doc("$TSTSRCDIR/immune_for_updates.SF-1766259.1.xml","test10.xml","test10.xml",10)
+<>
+
+do insert ("
+", <device name="pc01" type="unknown"/>, "
+") into doc("test10.xml")/XIRAF
+<>
+
+pf:add-doc("$TSTSRCDIR/immune_for_updates.SF-1766259.2.xml","projinit49725.xml","projinit49725.xml")
+<>
+(: Tue Sep 25 11:05:16 CEST 2007 :)
+
+count((doc("projinit49725.xml")/XIRAF/*)/descendant-or-self::*), count((doc("test10.xml")/XIRAF/device[@name="pc01"])//*)
+<>
+
+for $i in doc("projinit49725.xml")/XIRAF/*
+return do insert $i 
+       into doc("test10.xml")/XIRAF/device[@name="pc01"]
+
+<>
+(: Tue Sep 25 11:05:16 CEST 2007 :)
+
+count((doc("test10.xml")/XIRAF/device[@name="pc01"])//*)
+<>
+
+let $max := max((for $j in doc("test10.xml")//*/@xid
+			return $j cast as xs:integer))
+for $i at $k in doc("test10.xml")//*
+where not($i/@xid)
+return
+  do insert attribute { "xid" } { ($k + $max) }
+  into $i
+<>
+
+count(pf:collections()[.="test10_log.xml"])
+<>
+
+(: storeLargeXQueryResultFile :)
+element { "job" } {
+	  attribute { "tool" } { "general-purpose/magic-tool" },
+	  attribute { "project" } { "test10" },
+	  for $xirafNode in subsequence( for $i in 
+	            doc("test10.xml")//file[@xstart and @xend]
+	        
+	where $i/@xid and not($i/container/@tool[.="general-purpose/magic-tool"])
+	return $i, 1, 16384)
+	
+	where $xirafNode/@xid
+	order by zero-or-one($xirafNode/@xstart)
+	return element { "item" } {
+	  attribute { "xid" } { $xirafNode/@xid },   if (exists($xirafNode/@xpoint)) then	  ($xirafNode/@xpoint, $xirafNode/../../@xstart, $xirafNode/../../@xend)  else	  ($xirafNode/@xstart, $xirafNode/@xend)  
+	}
+	}
+	
+<>
+
+count(pf:collections()[.="test10_log.xml"])
+<>
+
+(: storeLargeXQueryResultFile :)
+element { "job" } {
+	  attribute { "tool" } { "general-purpose/nsrl-tool" },
+	  attribute { "project" } { "test10" },
+	  for $xirafNode in subsequence( for $i in 
+	            doc("test10.xml")//*[container/sha1]
+	        
+	where $i/@xid and not($i/container/@tool[.="general-purpose/nsrl-tool"])
+	return $i, 1, 16384)
+	
+	where $xirafNode/@xid
+	order by zero-or-one($xirafNode/@xstart)
+	return element { "item" } {
+	  attribute { "xid" } { $xirafNode/@xid },   if (exists($xirafNode/@xpoint)) then	  ($xirafNode/@xpoint, $xirafNode/../../@xstart, $xirafNode/../../@xend)  else	  ($xirafNode/@xstart, $xirafNode/@xend),  
+	  element { "content" } { element { "result" } { 
+	                  $xirafNode/container/sha1,
+	                  element { "filename" } { 
+	                  	zero-or-one($xirafNode/@name) cast as xs:string? 
+	                  }
+	                  }
+	                } 
+	}
+	}
+	
+<>
+
+count(pf:collections()[.="test10_log.xml"])
+<>
+
+(: storeLargeXQueryResultFile :)
+element { "job" } {
+	  attribute { "tool" } { "general-purpose/emailaddress-tool" },
+	  attribute { "project" } { "test10" },
+	  for $xirafNode in subsequence( for $i in 
+	            doc("test10.xml")//file[@name[lower-case(.) ="win386.swp"]]
+	            union
+				doc("test10.xml")//file[@name[lower-case(.) ="pagefile.sys"]] 
+	            union
+				doc("test10.xml")//unallocated
+				union
+				doc("test10.xml")//volume[not(container/@tool[.="fs/fs-tool"])]
+	        
+	where $i/@xid and not($i/container/@tool[.="general-purpose/emailaddress-tool"])
+	return $i, 1, 16384)
+	
+	where $xirafNode/@xid
+	order by zero-or-one($xirafNode/@xstart)
+	return element { "item" } {
+	  attribute { "xid" } { $xirafNode/@xid },   if (exists($xirafNode/@xpoint)) then	  ($xirafNode/@xpoint, $xirafNode/../../@xstart, $xirafNode/../../@xend)  else	  ($xirafNode/@xstart, $xirafNode/@xend)  
+	}
+	}
+	
+<>
+
+count(pf:collections()[.="test10_log.xml"])
+<>
+
+(: storeLargeXQueryResultFile :)
+element { "job" } {
+	  attribute { "tool" } { "general-purpose/mark0-tool" },
+	  attribute { "project" } { "test10" },
+	  for $xirafNode in subsequence( for $i in 
+	            doc("test10.xml")//slack[size]
+	        
+	where $i/@xid and not($i/container/@tool[.="general-purpose/mark0-tool"])
+	return $i, 1, 16384)
+	
+	where $xirafNode/@xid
+	order by zero-or-one($xirafNode/@xstart)
+	return element { "item" } {
+	  attribute { "xid" } { $xirafNode/@xid },   if (exists($xirafNode/@xpoint)) then	  ($xirafNode/@xpoint, $xirafNode/../../@xstart, $xirafNode/../../@xend)  else	  ($xirafNode/@xstart, $xirafNode/@xend)  
+	}
+	}
+	
+<>
+
+count(pf:collections()[.="test10_log.xml"])
+<>
+
+(: storeLargeXQueryResultFile :)
+element { "job" } {
+	  attribute { "tool" } { "general-purpose/hash-tool" },
+	  attribute { "project" } { "test10" },
+	  for $xirafNode in subsequence( for $i in 
+	            doc("test10.xml")//file[@xstart and @xend]
+	        
+	where $i/@xid and not($i/container/@tool[.="general-purpose/hash-tool"])
+	return $i, 1, 16384)
+	
+	where $xirafNode/@xid
+	order by zero-or-one($xirafNode/@xstart)
+	return element { "item" } {
+	  attribute { "xid" } { $xirafNode/@xid },   if (exists($xirafNode/@xpoint)) then	  ($xirafNode/@xpoint, $xirafNode/../../@xstart, $xirafNode/../../@xend)  else	  ($xirafNode/@xstart, $xirafNode/@xend)  
+	}
+	}
+	
+<>
+
+pf:add-doc("$TSTSRCDIR/immune_for_updates.SF-1766259.3.xml","prepared49734.data","prepared49734.data")
+<>
+(: Tue Sep 25 11:05:33 CEST 2007 :)
+
+count(	let $s := doc("test10.xml")//*/@xid 	for $item in doc("prepared49734.data")/XIRAF/item 	where some $k in $s satisfies $k = $item/@xid 	return 1)
+<>
+
+let $todo := subsequence(doc("prepared49734.data")/XIRAF/item[*], 1,256)
+let $dest := for $i in doc("test10.xml")//*[@xid]
+             where some $k in $todo/@xid satisfies $k = $i/@xid
+             return $i
+for $item in $todo 
+return 
+  do insert $item/* 
+  into exactly-one($dest[@xid[. = $item/@xid]])
+<>
+
+let $todo := subsequence(doc("prepared49734.data")/XIRAF/item[*], 257,256)
+let $dest := for $i in doc("test10.xml")//*[@xid]
+             where some $k in $todo/@xid satisfies $k = $i/@xid
+             return $i
+for $item in $todo 
+return 
+  do insert $item/* 
+  into exactly-one($dest[@xid[. = $item/@xid]])
+<>
+
+let $todo := subsequence(doc("prepared49734.data")/XIRAF/item[*], 513,256)
+let $dest := for $i in doc("test10.xml")//*[@xid]
+             where some $k in $todo/@xid satisfies $k = $i/@xid
+             return $i
+for $item in $todo 
+return 
+  do insert $item/* 
+  into exactly-one($dest[@xid[. = $item/@xid]])
+<>
+
+pf:add-doc("$TSTSRCDIR/immune_for_updates.SF-1766259.4.xml","prepared49736.data","prepared49736.data")
+<>
+(: Tue Sep 25 11:05:38 CEST 2007 :)
+
+count(	let $s := doc("test10.xml")//*/@xid 	for $item in doc("prepared49736.data")/XIRAF/item 	where some $k in $s satisfies $k = $item/@xid 	return 1)
+<>
+
+let $todo := subsequence(doc("prepared49736.data")/XIRAF/item[*], 1,256)
+let $dest := for $i in doc("test10.xml")//*[@xid]
+             where some $k in $todo/@xid satisfies $k = $i/@xid
+             return $i
+for $item in $todo 
+return 
+  do insert $item/* 
+  into exactly-one($dest[@xid[. = $item/@xid]])
+<>
+
+let $todo := subsequence(doc("prepared49734.data")/XIRAF/item[*], 769,256)
+let $dest := for $i in doc("test10.xml")//*[@xid]
+             where some $k in $todo/@xid satisfies $k = $i/@xid
+             return $i
+for $item in $todo 
+return 
+  do insert $item/* 
+  into exactly-one($dest[@xid[. = $item/@xid]])
+<>
+
+let $todo := subsequence(doc("prepared49734.data")/XIRAF/item[*], 1025,256)
+let $dest := for $i in doc("test10.xml")//*[@xid]
+             where some $k in $todo/@xid satisfies $k = $i/@xid
+             return $i
+for $item in $todo 
+return 
+  do insert $item/* 
+  into exactly-one($dest[@xid[. = $item/@xid]])
+<>
+
+let $todo := subsequence(doc("prepared49736.data")/XIRAF/item[*], 257,256)
+let $dest := for $i in doc("test10.xml")//*[@xid]
+             where some $k in $todo/@xid satisfies $k = $i/@xid
+             return $i
+for $item in $todo 
+return 
+  do insert $item/* 
+  into exactly-one($dest[@xid[. = $item/@xid]])
+<>
+
+let $todo := subsequence(doc("prepared49734.data")/XIRAF/item[*], 1281,256)
+let $dest := for $i in doc("test10.xml")//*[@xid]
+             where some $k in $todo/@xid satisfies $k = $i/@xid
+             return $i
+for $item in $todo 
+return 
+  do insert $item/* 
+  into exactly-one($dest[@xid[. = $item/@xid]])
+<>
+
+let $todo := subsequence(doc("prepared49736.data")/XIRAF/item[*], 513,256)
+let $dest := for $i in doc("test10.xml")//*[@xid]
+             where some $k in $todo/@xid satisfies $k = $i/@xid
+             return $i
+for $item in $todo 
+return 
+  do insert $item/* 
+  into exactly-one($dest[@xid[. = $item/@xid]])
+<>
+
+let $todo := subsequence(doc("prepared49734.data")/XIRAF/item[*], 1537,256)
+let $dest := for $i in doc("test10.xml")//*[@xid]
+             where some $k in $todo/@xid satisfies $k = $i/@xid
+             return $i
+for $item in $todo 
+return 
+  do insert $item/* 
+  into exactly-one($dest[@xid[. = $item/@xid]])
+<>
+
+let $todo := subsequence(doc("prepared49736.data")/XIRAF/item[*], 769,256)
+let $dest := for $i in doc("test10.xml")//*[@xid]
+             where some $k in $todo/@xid satisfies $k = $i/@xid
+             return $i
+for $item in $todo 
+return 
+  do insert $item/* 
+  into exactly-one($dest[@xid[. = $item/@xid]])
+<>
+
+let $todo := subsequence(doc("prepared49734.data")/XIRAF/item[*], 1793,256)
+let $dest := for $i in doc("test10.xml")//*[@xid]
+             where some $k in $todo/@xid satisfies $k = $i/@xid
+             return $i
+for $item in $todo 
+return 
+  do insert $item/* 
+  into exactly-one($dest[@xid[. = $item/@xid]])
+<>
+
+count(pf:collections()[.="test10_log.xml"])
+<>
+
+let $todo := subsequence(doc("prepared49736.data")/XIRAF/item[*], 1025,256)
+let $dest := for $i in doc("test10.xml")//*[@xid]
+             where some $k in $todo/@xid satisfies $k = $i/@xid
+             return $i
+for $item in $todo 
+return 
+  do insert $item/* 
+  into exactly-one($dest[@xid[. = $item/@xid]])
+<>
+
+let $todo := subsequence(doc("prepared49736.data")/XIRAF/item[*], 1281,256)
+let $dest := for $i in doc("test10.xml")//*[@xid]
+             where some $k in $todo/@xid satisfies $k = $i/@xid
+             return $i
+for $item in $todo 
+return 
+  do insert $item/* 
+  into exactly-one($dest[@xid[. = $item/@xid]])
+<>
+
+let $todo := subsequence(doc("prepared49736.data")/XIRAF/item[*], 1537,256)
+let $dest := for $i in doc("test10.xml")//*[@xid]
+             where some $k in $todo/@xid satisfies $k = $i/@xid
+             return $i
+for $item in $todo 
+return 
+  do insert $item/* 
+  into exactly-one($dest[@xid[. = $item/@xid]])
+
