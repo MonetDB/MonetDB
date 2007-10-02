@@ -682,7 +682,8 @@ public final class MapiSocket {
 				throw new IOException("End of stream reached");
 			if (size != blockLen) {
 				if (debug) {
-					logRd("the following incomplete block was received:");
+					logRd("the following incomplete block (" + size +
+							" bytes) was received:");
 					logRx(new String(block, 0, size, "UTF-8"));
 				}
 				throw new IOException("Incomplete block read from stream");
