@@ -28,7 +28,9 @@
 #include "pf_config.h"
 #include <assert.h>
 #include <stdio.h>
+#ifdef HAVE_STDBOOL_H
 #include <stdbool.h>
+#endif
 #include <unistd.h>
 #include <string.h>
 #include <sys/types.h>
@@ -67,8 +69,7 @@ static struct option long_options[] = {
     { "out-file",            required_argument, NULL, 'o' },
     { NULL,                  no_argument,       NULL, 0   }
 };
-
-#define OPT_STRING "F:af:hno:"
+/* also see definition of OPT_STRING below */
 
 /**
  * character buffer large enough to hold longest
@@ -125,6 +126,8 @@ static const char
 #define opt_buf 0
 
 #endif
+
+#define OPT_STRING "F:af:hno:"
 
 #define SQL_FORMAT "%e, %s, %l, %k, %n, %t, %g"
 
