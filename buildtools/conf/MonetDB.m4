@@ -1085,6 +1085,7 @@ AC_CHECK_PROG(MV,mv,mv -f)
 AC_CHECK_PROG(LOCKFILE,lockfile,lockfile -r 2,echo)
 AC_PATH_PROG(BASH,bash, /usr/bin/bash, $PATH)
 AC_CHECK_PROGS(RPMBUILD,rpmbuild rpm)
+AC_CHECK_PROG(READLINK,readlink,readlink -f,echo)
 
 SOPREF=lib
 case "$host_os" in
@@ -1473,22 +1474,24 @@ esac
 
 AC_DEFUN([AM_MONETDB_OPTIONS],
 [
-dnl --with-translatepath
 translatepath=echo
+anttranslatepath=$READLINK
+
+dnl --with-translatepath
 AC_ARG_WITH(translatepath,
 	AC_HELP_STRING([--with-translatepath=PROG],
 		[program to translate paths from configure-time format to execute-time format.  Take care that this program can be given paths like ${prefix}/etc which should be translated carefully.]),
-	translatepath="$withval",
+	[translatepath="$withval"
+	 anttranslatepath="$withval"],
 	[if test $cross_compiling = yes; then
 		AC_MSG_WARN([Cross compiling, but no --with-translatepath option given])
 	fi])
 AC_SUBST(translatepath)
 
 dnl --with-anttranslatepath
-anttranslatepath="$translatepath"
 AC_ARG_WITH(anttranslatepath,
 	AC_HELP_STRING([--with-anttranslatepath=PROG],
-		[program to translate paths from configure-time format to a format that can be given to the ant program [default: value for --with-translatepath]]),
+		[program to translate paths from configure-time format to a format that can be given to the ant program [default: 'readlink -f' or value for --with-translatepath]]),
 	anttranslatepath="$withval")
 AC_SUBST(anttranslatepath)
 
