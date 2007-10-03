@@ -18,7 +18,7 @@ SUBDIRS = conf src
 EXTRA_DIST = RunMtest.in RunMtest.bat.in \
 		RunMapprove.in RunMapprove.bat.in \
 		RunMserver.in RunMserver.bat.in \
-		RunMserver5.in RunMserver5.bat.in \
+		RunMserver5.in RunMserver5.bat \
 		MonetDB-SQL.spec.in MonetDB-SQL.spec \
 		rpm.mk.in RunMserver.bat.in
 EXTRA_DIST_DIR = NT
