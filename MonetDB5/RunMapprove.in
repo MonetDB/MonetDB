@@ -22,7 +22,7 @@ builddir=@QMONETDB5_BUILD@
 srcdir=`cd '@srcdir@'; pwd`
 
 # enhance PATH to find ${pkg}-config
-PATH="${builddir}/src/tools:$PATH"
+PATH="${builddir}/conf:$PATH"
 export PATH
 
 # execute Mapprove.py in the source directory

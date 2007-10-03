@@ -29,7 +29,7 @@ do
 done
 
 # make sure scripts are executable
-for x in "${builddir}/src/tools/${pkg}-config"  "${srcdir}/src/tools/mcheckpoint"  "${srcdir}/src/tools/mrecover"
+for x in "${builddir}/conf/${pkg}-config"  "${srcdir}/src/tools/mcheckpoint"  "${srcdir}/src/tools/mrecover"
 do
 	if [ -s $x ] ; then
 		chmod +x $x
@@ -37,7 +37,7 @@ do
 done
 
 # enhance various paths to find our stuff
-binpath="${builddir}/src/tools:${srcdir}/src/tools"
+binpath="${builddir}/conf:${builddir}/src/tools:${srcdir}/src/tools"
 libpath="${MOD_PATH}:${builddir}/src/mal/.libs"
 
 PATH="${binpath}:$PATH"

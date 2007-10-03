@@ -26,5 +26,18 @@ headers_conf = {
 	SOURCES = monetdb5.conf
 }
 
+scripts_sh = {
+	COND = NOT_WIN32
+	EXT = ""
+	DIR = bindir
+	SOURCES = monetdb5-config.in
+}
+
+scripts_bat = {
+	COND = NATIVE_WIN32
+	DIR = bindir
+	SOURCES = monetdb5-config.bat.in 
+}
+
 monetdb_var_logdir = $(localstatedir)/log
 monetdb_var_log_DATA = 

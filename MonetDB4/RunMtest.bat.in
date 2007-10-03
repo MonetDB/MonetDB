@@ -29,6 +29,7 @@ set MOD_PATH=%MOD_PATH%;%builddir%\scripts\tools
 set PATH=%MOD_PATH%;%PATH%
 set PATH=%builddir%\src\monet;%PATH%
 set PATH=%builddir%\src\tools;%PATH%
+set PATH=%builddir%\conf;%PATH%
 
 set PYTHONPATH=@XMONETDB_PREFIX@\share\MonetDB\python;%PYTHONPATH%
 set PYTHONPATH=@XCLIENTS_PREFIX@\share\MonetDB\python;%PYTHONPATH%
