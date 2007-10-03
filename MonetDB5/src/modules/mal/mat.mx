@@ -81,7 +81,7 @@ comment "retrieve the definition from the partition catalogue";
 mat_export str MATnew(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mat_export str MATpack(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mat_export str MATnewIterator(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-mat_export str MATharMoreElements(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+mat_export str MAThasMoreElements(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mat_export str MATdummy(int *ret, str *grp);
 mat_export str MATinfo(int *ret, str *grp, str *elm);
 mat_export str MATprint(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);

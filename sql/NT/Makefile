@@ -66,8 +66,8 @@ RunMapprove.bat: "$(SRCDIR)\RunMapprove.bat.in"
 RunMserver.bat: "$(SRCDIR)\RunMserver.bat.in"
 	$(CONFIGURE) "$(SRCDIR)\RunMserver.bat.in" > RunMserver.bat
 
-RunMserver5.bat: "$(SRCDIR)\RunMserver5.bat.in"
-	$(CONFIGURE) "$(SRCDIR)\RunMserver5.bat.in" > RunMserver5.bat
+RunMserver5.bat: "$(SRCDIR)\RunMserver5.bat"
+	$(INSTALL) "$(SRCDIR)\RunMserver5.bat" .
 
 targetdirs:
 	if not exist "$(bindir)"		$(MKDIR) "$(bindir)"

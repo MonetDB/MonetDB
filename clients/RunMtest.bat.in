@@ -8,21 +8,19 @@ goto end
 
 setlocal
 
+set pkg=monetdb-clients
 set builddir=@XCLIENTS_BUILD@
 set srcdir=@XCLIENTS_SOURCE@
 
-set PATH=@XMONETDB_PREFIX@\bin;%PATH%
 set PATH=%builddir%\conf;%PATH%
 set PATH=%builddir%\src\java\scripts;%PATH%
 set PATH=%builddir%\src\mapiclient;%PATH%
 set PATH=%builddir%\src\python;%PATH%
 
-set PYTHONPATH=@XMONETDB_PREFIX@\share\MonetDB\python;%PYTHONPATH%
-
 REM execute Mtest.py in the source directory
 pushd %srcdir%
 
-call Mtest.py "--TSTSRCBASE=%srcdir%" "--TSTBLDBASE=%builddir%" "--TSTTRGBASE=%builddir%" %*
+call Mtest.py --package=%pkg% "--TSTTRGBASE=%builddir%" %*
 
 popd
 endlocal

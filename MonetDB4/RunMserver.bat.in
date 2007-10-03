@@ -4,8 +4,21 @@ setlocal
 
 set builddir=@XMONETDB4_BUILD@
 
-set MOD_PATH=%builddir%\src\modules\plain\.libs;%builddir%\src\modules\plain;%builddir%\src\modules\contrib\.libs;%builddir%\src\modules\contrib;%builddir%\src\modules\calibrator\.libs;%builddir%\src\modules\calibrator;%builddir%\src\mapi\.libs;%builddir%\src\mapi;%builddir%\src\modules\mnetcdf\.libs;%builddir%\src\modules\mnetcdf
-set PATH=%MOD_PATH%;%builddir%\src\monet;%PATH%
+set MOD_PATH=%builddir%\src\modules\plain\.libs
+set MOD_PATH=%MOD_PATH%;%builddir%\src\modules\plain
+set MOD_PATH=%MOD_PATH%;%builddir%\src\modules\contrib\.libs
+set MOD_PATH=%MOD_PATH%;%builddir%\src\modules\contrib
+set MOD_PATH=%MOD_PATH%;%builddir%\src\modules\calibrator\.libs
+set MOD_PATH=%MOD_PATH%;%builddir%\src\modules\calibrator
+set MOD_PATH=%MOD_PATH%;%builddir%\src\mapi\.libs
+set MOD_PATH=%MOD_PATH%;%builddir%\src\mapi
+set MOD_PATH=%MOD_PATH%;%builddir%\src\modules\mnetcdf\.libs
+set MOD_PATH=%MOD_PATH%;%builddir%\src\modules\mnetcdf
+set MOD_PATH=%MOD_PATH%;%builddir%\scripts
+set MOD_PATH=%MOD_PATH%;%builddir%\scripts\tools
+
+set PATH=%MOD_PATH%;%PATH%
+set PATH=%builddir%\src\monet;%PATH%
 set PATH=%builddir%\src\tools;%PATH%
 
 Mserver.exe "--config=%builddir%\conf\MonetDB.conf" --set "monet_mod_path=%MOD_PATH%" %*

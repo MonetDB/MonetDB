@@ -3,11 +3,21 @@
 setlocal
 
 set monetdb4_prefix=@XMONETDB4_PREFIX@
+
+call "%monetdb4_prefix%\bin\monetdb4-config.bat" --internal
+
 set builddir=@XPATHFINDER_BUILD@
 
-set MOD_PATH=%builddir%\runtime\.libs;%builddir%\runtime;%monetdb4_prefix%\lib\MonetDB4
-set PATH=%MOD_PATH%;@LIBXML2@\bin;@LIBICONV@\bin;@LIBZLIB@\bin;%PATH%
+set MOD_PATH=%modpath%
+set MOD_PATH=%builddir%\modules\pftijah;%MOD_PATH%
+set MOD_PATH=%builddir%\modules\pftijah\.libs;%MOD_PATH%
+set MOD_PATH=%builddir%\runtime;%MOD_PATH%
+set MOD_PATH=%builddir%\runtime\.libs;%MOD_PATH%
 
-Mserver.exe "--config=%monetdb4_prefix%\etc\MonetDB.conf" --set "monet_mod_path=%MOD_PATH%" %*
+set PATH=%MOD_PATH%;%PATH%
+set PATH=%builddir%\compiler;%PATH%
+set PATH=%builddir%\conf;%PATH%
+
+Mserver.exe --set "monet_mod_path=%MOD_PATH%" "--dbfarm=%builddir%\dbfarm" %*
 
 endlocal

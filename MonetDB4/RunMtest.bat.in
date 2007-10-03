@@ -31,9 +31,6 @@ set PATH=%builddir%\src\monet;%PATH%
 set PATH=%builddir%\src\tools;%PATH%
 set PATH=%builddir%\conf;%PATH%
 
-set PYTHONPATH=@XMONETDB_PREFIX@\share\MonetDB\python;%PYTHONPATH%
-set PYTHONPATH=@XCLIENTS_PREFIX@\share\MonetDB\python;%PYTHONPATH%
-
 REM execute Mtest.py in the source directory
 pushd %srcdir%
 
