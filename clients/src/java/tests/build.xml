@@ -86,19 +86,20 @@ All Rights Reserved.
   <!-- Run tests -->
   <target name="test">
     <antcall target="Test_Cautocommit" />
-    <antcall target="Test_Csavepoints" />
     <antcall target="Test_Clargequery" />
     <antcall target="Test_Cmanycon" />
-    <antcall target="Test_Ctransaction" />
     <antcall target="Test_Creplysize" />
-    <antcall target="Test_Sbatching" />
+    <antcall target="Test_Csavepoints" />
+    <antcall target="Test_Ctransaction" />
+    <antcall target="Test_PSlargeresponse" />
     <antcall target="Test_PStimedate" />
     <antcall target="Test_PStimezone" />
     <antcall target="Test_PStypes" />
     <antcall target="Test_Rbooleans" />
+    <antcall target="Test_Rmetadata" />
     <antcall target="Test_Rpositioning" />
     <antcall target="Test_Rtimedate" />
-    <antcall target="Test_Rmetadata" />
+    <antcall target="Test_Sbatching" />
     <antcall target="BugConcurrent_clients_SF_1504657" />
   </target>
 
@@ -155,6 +156,12 @@ All Rights Reserved.
   <target name="Test_Sbatching">
     <antcall target="test_class">
       <param name="test.class" value="Test_Sbatching" />
+    </antcall>
+  </target>
+
+  <target name="Test_PSlargeresponse">
+    <antcall target="test_class">
+      <param name="test.class" value="Test_PSlargeresponse" />
     </antcall>
   </target>
 
