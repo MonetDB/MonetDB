@@ -21,7 +21,7 @@
 %{
 #include "clients_config.h"
 #include <stream.h>
-#include "Mapi.h"
+#include "mapilib/Mapi.h"
 %}
 
 // don't care for the guard symbol
@@ -105,4 +105,4 @@
     $1 = IoIFP(sv_2io($input));
 }
 
-%include "Mapi.h"
+%include "mapilib/Mapi.h"

@@ -33,7 +33,7 @@ void continue_completion(rl_completion_func_t * func);
  */
 #include "clients_config.h"
 #include <monet_options.h>
-#include "Mapi.h"
+#include "mapilib/Mapi.h"
 
 #ifdef HAVE_LIBREADLINE
 

@@ -44,7 +44,7 @@
 #include "ODBCGlobal.h"
 #include "ODBCEnv.h"
 #include "ODBCError.h"
-#include "Mapi.h"
+#include "mapilib/Mapi.h"
 
 
 typedef struct tODBCDRIVERDBC {

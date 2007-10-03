@@ -15,7 +15,7 @@
 # All Rights Reserved.
 
 MTSAFE
-INCLUDES = $(MONETDB_INCS) ../../mapilib $(READLINE_INCS)
+INCLUDES = $(MONETDB_INCS) ../.. $(READLINE_INCS)
 
 MAPI_LIBS = $(SOCKET_LIBS) 
 

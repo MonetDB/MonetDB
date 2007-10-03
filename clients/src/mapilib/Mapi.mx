@@ -43,7 +43,7 @@ operations.
 
 @example
 @verbatim
-#include <Mapi.h>
+#include <mapilib/Mapi.h>
 #include <stdio.h>
 
 #define die(dbh,hdl) (hdl?mapi_explain_query(hdl,stderr):		\
