@@ -772,23 +772,20 @@ int MCreadClient(Client c){
 		}
 		while ((rd = bstream_next(in)) > 0 && !in->eof) {
 			sum += rd;
-			if (!in->mode) {/* read one line at a time in line mode */
+			if (!in->mode) /* read one line at a time in line mode */
 				break;
-			} else { /* find last new line */
-				char *p = in->buf+in->len-1;
+		}
+		if (in->mode) { /* find last new line */
+			char *p = in->buf+in->len-1;
 
-				while(p > in->buf && *p != '\n') {
-					*(p+1) = *p;
-					p--;
-				}
-				if (p > in->buf) {
-					*(p+1) = 0;
-				} else {
-					in->pos++;
-				}
-				if (p != in->buf+ in->len -1)
-					in->len++;
+			while(p > in->buf && *p != '\n') {
+				*(p+1) = *p;
+				p--;
 			}
+			if (p > in->buf)
+				*(p+1) = 0;
+			if (p != in->buf + in->len -1)
+				in->len++;
 		}
 		if (sum == 0 && in->eof && isa_block_stream(in->s)) {
 			/* we hadn't seen the EOF before, so just try again

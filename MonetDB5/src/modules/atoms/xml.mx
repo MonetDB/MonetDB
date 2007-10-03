@@ -132,7 +132,7 @@ xml_export str XMLstr2xml(xml *x, str *s);
 xml_export str XMLxml2xml(xml *x, xml *s);
 xml_export str XMLdocument(xml *x, str *s);
 xml_export str XMLcontent(xml *x, str *s);
-xml_export str XMLisdcoument(bit *x, str *s);
+xml_export str XMLisdocument(bit *x, str *s);
 xml_export str XMLcomment(xml *x, str *s);
 xml_export str XMLpi(xml *x, str *nme, str *s);
 xml_export str XMLroot(str *x, str *v, str *version, str *standalone);

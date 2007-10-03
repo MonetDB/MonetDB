@@ -64,14 +64,14 @@ between 25-50%.
 #define embeddedclient_export extern
 #endif
 
-#include <Mapi.h>
+#include <mapilib/Mapi.h>
 
 embeddedclient_export Mapi embedded_mal(opt *set, int len);
 
 #endif /* _EMBEDDEDCLIENT_H_ */
 @c
 #include "embeddedclient.h"
-#include "Mapi.h"
+#include "mapilib/Mapi.h"
 #include "mal_authorize.h"
 
 static void

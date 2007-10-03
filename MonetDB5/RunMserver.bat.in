@@ -1,13 +1,34 @@
 @echo off
 
+if not "%1"=="" goto skip
+call %0 -rq
+goto end
+
+:skip
+
 setlocal
 
 set builddir=@XMONETDB5_BUILD@
 
-set MOD_PATH=%builddir%\src\compiler\.libs;%builddir%\src\compiler;%builddir%\src\optimizer\.libs;%builddir%\src\optimizer;%builddir%\src\scheduler\.libs;%builddir%\src\scheduler;%builddir%\src\modules\atoms\.libs;%builddir%\src\modules\atoms;%builddir%\src\modules\kernel\.libs;%builddir%\src\modules\kernel;%builddir%\src\modules\mal\.libs;%builddir%\src\modules\mal
-set PATH=%MOD_PATH%;%builddir%\src\mal;%PATH%
+set MOD_PATH=%builddir%\src\compiler\.libs
+set MOD_PATH=%MOD_PATH%;%builddir%\src\compiler
+set MOD_PATH=%MOD_PATH%;%builddir%\src\optimizer\.libs
+set MOD_PATH=%MOD_PATH%;%builddir%\src\optimizer
+set MOD_PATH=%MOD_PATH%;%builddir%\src\scheduler\.libs
+set MOD_PATH=%MOD_PATH%;%builddir%\src\scheduler
+set MOD_PATH=%MOD_PATH%;%builddir%\src\modules\atoms\.libs
+set MOD_PATH=%MOD_PATH%;%builddir%\src\modules\atoms
+set MOD_PATH=%MOD_PATH%;%builddir%\src\modules\kernel\.libs
+set MOD_PATH=%MOD_PATH%;%builddir%\src\modules\kernel
+set MOD_PATH=%MOD_PATH%;%builddir%\src\modules\mal\.libs
+set MOD_PATH=%MOD_PATH%;%builddir%\src\modules\mal
+
+set PATH=%MOD_PATH%;%PATH%
+set PATH=%builddir%\src\mal;%PATH%
 set PATH=%builddir%\src\tools;%PATH%
 
 mserver5.exe "--config=%builddir%\conf\monetdb5.conf" --set "monet_mod_path=%MOD_PATH%" %*
 
 endlocal
+
+:end
