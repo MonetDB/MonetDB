@@ -782,12 +782,9 @@ int MCreadClient(Client c){
 				*(p+1) = *p;
 				p--;
 			}
-			if (p > in->buf) {
+			if (p > in->buf)
 				*(p+1) = 0;
-			} else {
-				in->pos++;
-			}
-			if (p != in->buf+ in->len -1)
+			if (p != in->buf + in->len -1)
 				in->len++;
 		}
 		if (sum == 0 && in->eof && isa_block_stream(in->s)) {
