@@ -107,17 +107,4 @@ bin_Mbeddedmil = {
 		../monet/libmonet $(MONETDB_LIBS) $(CLIENTS_LIBS) -lbat -lmutils -lMapi -lstream
 }
 
-scripts_sh = {
-	COND = NOT_WIN32
-	EXT = ""
-	DIR = bindir
-	SOURCES = monetdb4-config.in
-}
-
-scripts_bat = {
-	COND = NATIVE_WIN32
-	DIR = bindir
-	SOURCES = monetdb4-config.bat.in 
-}
-
 EXTRA_DIST_DIR = Tests

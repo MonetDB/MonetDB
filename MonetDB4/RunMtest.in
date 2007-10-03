@@ -30,7 +30,7 @@ done
 MOD_PATH="${MOD_PATH}${srcdir}/scripts/tools"
 
 # make sure scripts are executable
-for x in "${builddir}/src/tools/${pkg}-config"
+for x in "${builddir}/conf/${pkg}-config"
 do
 	if [ -s $x ] ; then
 		chmod +x $x
@@ -38,7 +38,7 @@ do
 done
 
 # enhance various paths to find our stuff
-binpath="${builddir}/src/tools"
+binpath="${builddir}/conf:${builddir}/src/tools"
 libpath="${MOD_PATH}:${builddir}/src/monet/.libs"
 
 PATH="${binpath}:$PATH"
