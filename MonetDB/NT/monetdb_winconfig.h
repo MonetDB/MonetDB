@@ -208,6 +208,7 @@
 /* #undef HAVE_LIBPCL */
 
 /* Define if you have the pcre library */
+/* This is actually defined in the appropriate rules.msc file */
 /* #undef HAVE_LIBPCRE */
 
 /* Define if you have the perfctr library */
@@ -305,11 +306,8 @@
 /* #undef HAVE_PERFMON_PFMLIB_H */
 
 /* Define to 1 if you have the `pipe' function. */
-/* #undef HAVE_PIPE */
-/* this might also work (untested):
 #define HAVE_PIPE 1
-#define pipe(p)		_pipe(p, 4096, O_BINARY)
-*/
+#define pipe(p)		_pipe(p, 8192, O_BINARY)
 
 /* Define to 1 if you have the `posix_fadvise' function. */
 /* #undef HAVE_POSIX_FADVISE */
@@ -376,6 +374,7 @@
 #define HAVE_SOCKLEN_T 1
 
 /* Define to 1 if the system has the type `ssize_t'. */
+/* see below */
 /* #undef HAVE_SSIZE_T */
 
 /* Define to 1 if you have the <stdint.h> header file. */
@@ -655,6 +654,8 @@
 
 /* The size of a `size_t', as computed by sizeof. */
 #define SIZEOF_SIZE_T 8
+typedef __int64 ssize_t;
+#define HAVE_SSIZE_T 1
 
 /* The size of a `void *', as computed by sizeof. */
 #define SIZEOF_VOID_P 8
@@ -671,6 +672,8 @@
 
 /* The size of a `ssize_t', as computed by sizeof. */
 #define SIZEOF_SSIZE_T SIZEOF_SIZE_T
+typedef int ssize_t;
+#define HAVE_SSIZE_T 1
 
 /* The size of a `__int64', as computed by sizeof. */
 #define SIZEOF___INT64 8

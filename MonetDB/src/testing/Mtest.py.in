@@ -155,8 +155,6 @@ CONDITIONALS = {
     # hence, we set them at runtime in main() below
     'HAVE_MONETDB5'    : "@HAVE_MONETDB5_FALSE@",
     'HAVE_MONETDB4'    : "@HAVE_MONETDB4_FALSE@",
-    'MONET4'           : "@MONET4_FALSE@",
-    'MONET5'           : "@MONET5_FALSE@",
 }
 
 # a bunch of classes to help with generating (X)HTML files
@@ -1100,9 +1098,7 @@ def isexecutable(TST, ext = '.sh') :
         for ext in ".exe", ".com", ".bat", ".cmd":
             if TST.lower().endswith(ext):
                 ext = ''
-            else:
-                TST = TST + ext
-            if os.path.isfile(TST) or os.path.isfile(TST+".src"):
+            if os.path.isfile(TST+ext) or os.path.isfile(TST+ext+".src"):
                 return [ 1, ext ]
     elif os.name == "posix":
         #TODO:
@@ -2934,13 +2930,9 @@ def main(argv) :
     if par['M5']:
         CONDITIONALS['HAVE_MONETDB5'] = '#'
         CONDITIONALS['HAVE_MONETDB4'] = ''
-        CONDITIONALS['MONET4'] = ''
-        CONDITIONALS['MONET5'] = '#'
     else:
         CONDITIONALS['HAVE_MONETDB5'] = ''
         CONDITIONALS['HAVE_MONETDB4'] = '#'
-        CONDITIONALS['MONET4'] = '#'
-        CONDITIONALS['MONET5'] = ''
 
     #if env.has_key('MONETDB_PREFIX'):
         #bp = os.path.join(env['MONETDB_PREFIX'],"bin")
