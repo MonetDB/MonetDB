@@ -1,0 +1,24 @@
+stdout of test 'bad_sql_logdir.SF-927371` in directory 'src/test/BugDay_2005-10-06_2.9.3` itself:
+
+
+# 12:38:56 >  
+# 12:38:56 >  Mtimeout -timeout 60 ./bad_sql_logdir.SF-927371 bad_sql_logdir.SF-927371 
+# 12:38:56 >  
+
+
+# 12:38:56 >  
+# 12:38:56 >  echo loaded(); quit(); | eval Mserver --set monet_mod_path=/ufs/fabian/scratch/monetdb/current/program-x86_64/lib/MonetDB:/ufs/fabian/scratch/monetdb/current/program-x86_64/lib/bin --set monet_prompt='' --set sql_logdir=/xyz --dbinit='module(sql_server); loaded(); sql_server_start();'
+# 12:38:56 >  
+
+# MonetDB Server v4.20.0
+# based on GDK   v1.20.0
+# Copyright (c) 1993-2007, CWI. All rights reserved.
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; statically linked.
+# Visit http://monetdb.cwi.nl/ for further information.
+!ERROR: mapi_open is not set
+!ERROR: logger could not create log directory /xyz/tst/
+
+# 12:38:57 >  
+# 12:38:57 >  Done.
+# 12:38:57 >  
+
