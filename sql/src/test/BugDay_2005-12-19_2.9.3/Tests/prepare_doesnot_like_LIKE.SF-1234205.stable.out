@@ -22,7 +22,7 @@ Over..
 # 09:15:18 >  
 
 [ 3	]
-% prepare,	prepare,	prepare # table_name
+% .prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale # name
 % varchar,	int,	int # type
 % 0,	0,	0 # length
@@ -34,7 +34,7 @@ Over..
 [ "niels"	]
 [ "fabian"	]
 [ "martin"	]
-% prepare,	prepare,	prepare # table_name
+% .prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale # name
 % varchar,	int,	int # type
 % 0,	0,	0 # length

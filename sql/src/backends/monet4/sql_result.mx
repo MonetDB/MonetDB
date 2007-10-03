@@ -505,7 +505,7 @@ mvc_export_prepare(mvc *c, stream *out, cq *q, str w)
 	/* write header, query type: Q_PREPARE */
 	if (stream_printf(out,
 		"&5 %d %d 3 %d\n" /* TODO: add type here: r(esult) or u(pdate) */
-		"%% prepare,	prepare,	prepare # table_name\n"
+		"%% .prepare,	.prepare,	.prepare # table_name\n"
 		"%% type,	digits,	scale # name\n"
 		"%% varchar,	int,	int # type\n"
 		"%% 0,	0,	0 # length\n",
