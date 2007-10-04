@@ -2,7 +2,7 @@ mserver5--help
 Mbeddedmal--help
 
 stethoscope--help
-mcheckpoint--help
-mrecover--help
+NOT_WIN32?mcheckpoint--help
+NOT_WIN32?mrecover--help
 
 mclient-lmal--help
