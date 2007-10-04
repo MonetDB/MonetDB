@@ -1022,3 +1022,18 @@ tst400e		 0.732/0.687/0.045	1M incr fcn
 
 tst901a		 0.929/0.746/0.175	[+] call
 tst901b		 1.428/1.271/0.157	[+] call
+======================== 2 Sep 2007 ===================
+Setup on Gio version 5.0-beta2 kernel,
+Athlon 64 3000+ converted to X2 3800
+After introduction of SLOW/FAST mal_interpreter modes
+and no energy saver mode.
+The compilation mode for V5 is --enable-optimize --disable-debug
+base		 0.075/0.055/0.019					
+tst400a		 0.110/0.087/0.022	1M loop			
+tst400bHuge	 0.214/0.175/0.037	100k count (io)	
+tst400cHuge	 0.xxx/0.xxx/0.xxx	100k insert(io) 
+tst400d		 0.398/0.293/0.095	1M insert tuple 
+tst400e		 0.361/0.335/0.042	1M incr fcn	
+
+tst901a		 0.479/0.348/0.126	[+] call
+tst901b		 1.369/1.202/0.161	[+] call
