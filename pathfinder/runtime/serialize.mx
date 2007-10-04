@@ -2364,12 +2364,12 @@ CMDprobxml_deep_eq(BAT** resbat, BAT* ws, BAT* litem, BAT* lkind, BAT* ritem, BA
     BATseqbase(*resbat,0);
 
     BUN lp, lq;
-    int dummy;
-    BATloopFast(litem, lp, lq, dummy) {
+    BATiter litemi = bat_iterator(litem);
+    BATloop(litem, lp, lq) {
         ptr res;
-        oid index = *(oid*)BUNhead(litem, lp);
+        oid index = *(oid*)BUNhead(litemi, lp);
 
-        oid loid  = *(oid*)BUNtail(litem, lp);
+        oid loid  = *(oid*)BUNtail(litemi, lp);
 
         findTailValue(res, ctx, ritem, index);
 	oid roid = *(oid*)res;
