@@ -613,6 +613,7 @@ through is the "isnil" predicate). So we implement it here.
 	}
 @= stringselect
 	if (strElimDoubles(b->hheap)) {
+		BUN p;
 		size_t j;
 
 		HASHloop_fstr(bi, b->H->hash, p, j, tl) {
@@ -621,6 +622,8 @@ through is the "isnil" predicate). So we implement it here.
 			q++;
 		}
 	} else {
+		BUN p;
+
 		HASHloop_str(bi, b->H->hash, p, tl) {
 			if (q < r)
 				bunfastins_nocheck(bn, q, BUNt@1(bi, p), tl, hs, ts);
