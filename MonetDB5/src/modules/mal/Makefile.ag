@@ -31,8 +31,8 @@ LIBS = {
 		inspect.mx manual.mx \
 		factory.mx mdb.mx  \
 		urlbox.mx mat.mx \
-		sabaoth.mx remote.mx
-		#datacell.mx radix.mx batxml.mx 
+		sabaoth.mx remote.mx batxml.mx 
+		#radix.mx 
 
 	HEADERS = h 
 	LIBS = ../../mal/libmal ../atoms/lib_xml $(MONETDB_LIBS) -lbat -lstream $(MATH_LIBS) \
@@ -160,8 +160,8 @@ headers_mal = {
 		factory.mx mdb.mx pcre.mx  tablet.mx mat.mx \
 		urlbox.mx statistics.mx transaction.mx \
 		mserver.mx sabaoth.mx remote.mx \
-		radix.mx bpm.mx 
-	#datacell.mx #batxml.mx
+		bpm.mx batxml.mx
+	#radix.mx
 }
 
 EXTRA_DIST_DIR = Tests
