@@ -19,7 +19,7 @@ Over..
 # 20:14:57 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=30296  < large_prepare.SF-1363729.sql
 # 20:14:57 >  
 
-% prepare,	prepare,	prepare # table_name
+% .prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale # name
 % varchar,	int,	int # type
 % 0,	0,	0 # length
