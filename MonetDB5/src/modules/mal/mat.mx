@@ -141,6 +141,11 @@ MATpack(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	bn= BATdescriptor(stk->stk[getArg(p,1)].val.ival);
 	if( bn == NULL)
 		throw(MAL, "mat.pack","Could access BAT");
+	if (BAThrestricted(bn) || BATtrestricted(bn)) {
+		b = BATcopy(bn, bn->htype, bn->ttype, 1);
+		BBPunfix(bn->batCacheid);
+		bn = b;
+	}
 	for(i=2; i<p->argc; i++){
 		b= BATdescriptor(stk->stk[getArg(p,i)].val.ival);
 		if( b == NULL)
