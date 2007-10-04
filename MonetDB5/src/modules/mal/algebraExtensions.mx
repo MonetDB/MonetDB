@@ -24,10 +24,10 @@ module.
 @mal
 
 pattern algebra.project( b:bat[:any_1,:any_3], val:any_2) :bat[:any_1,:any_2] 	
-address CMDBBPproject
+address ALGprojectCst
 comment "Fill the tail column with a newly typed constant.";
 pattern algebra.project(b:bat[:any_1,:any_3], val:bat[:any_1,:any_2]) :bat[:any_1,:any_2]
-address CMDBBPproject
+address ALGprojectCst
 comment "Fill the tail column with a constant.";
                                                                                 
 @{
@@ -54,20 +54,13 @@ with a BAT descriptor. Upon failure we can simply abort the function.
 #define ae_export extern
 #endif
 
-ae_export str CMDBBPproject(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-ae_export str CMDBBPprojectNil(int *ret, int *bid);
+ae_export str ALGprojectCst(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+ae_export str ALGprojectCstBody(int *result, int *bid, ptr *p, int tt);
 
 str
-CMDBBPproject(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	int *result, *bid, tt;
-	ptr *p;
+ALGprojectCstBody(int *result, int *bid, ptr *p, int tt){
 	BAT *b, *bn;
 
-	result = (int *) getArgReference(stk, pci, 0);
-	bid = (int *) getArgReference(stk, pci, 1);
-	p = (ptr *) getArgReference(stk, pci, 2);
-	tt = getArgType(mb, pci, 2);
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "bbp.project", "Cannot access descriptor");
 	}
@@ -87,3 +80,14 @@ CMDBBPproject(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	throw(MAL, "bbp.project", "Cannot create the constant BAT");
 }
+
+str
+ALGprojectCst(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	int *result = (int *) getArgReference(stk, pci, 0);
+	int *bid = (int *) getArgReference(stk, pci, 1);
+	ptr *p = (ptr *) getArgReference(stk, pci, 2);
+	int tt = getArgType(mb, pci, 2);
+	return ALGprojectCstBody(result, bid, p, tt);
+}
+@}
