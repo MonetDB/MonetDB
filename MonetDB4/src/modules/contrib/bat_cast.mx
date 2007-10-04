@@ -55,9 +55,8 @@ cast functions ([dbl],[oid],...) on void-headed BATs.
 @c
 @= implementation
 int batcast_@1_@2(BAT **ret, BAT *b) {
-	REGISTER chr *bp, *bq;
-	REGISTER @2 *bnp;
-	REGISTER int bs = BUNsize(b);
+	@1 *bp, *bq;
+	@2 *bnp;
 	BAT *bn;
 
         ALGODEBUG THRprintf(GDKout, "batcast_@1_@2(b=%s);\n",BATgetId(b));
@@ -67,16 +66,15 @@ int batcast_@1_@2(BAT **ret, BAT *b) {
 	bn = BATnew(TYPE_void, TYPE_@2, BATcount(b));
 	BATseqbase(bn,b->hseqbase);
 	bn->tsorted = 0;
-	bq = (chr*)BUNtloc(b,BUNlast(b));
-	bp = (chr*)BUNtloc(b,BUNfirst(b));
-	bnp = (@2*)BUNtloc(bn,BUNlast(bn));
-	for (; bp < bq; bp+=bs) {
+	bq = (@1*)Tloc(b,BUNlast(b));
+	bp = (@1*)Tloc(b,BUNfirst(b));
+	bnp = (@2*)Tloc(bn,BUNlast(bn));
+	for (; bp < bq; bp++) {
 		REGISTER @1 bv = *(@1*)bp;
 		*bnp = (bv != @1_nil) ? (@2)bv : @2_nil;
 		bnp++;
 	}
-        bn->batBuns->free = (BUN)bnp - bn->batBuns->base;
-        BATsetcount(bn, bn->batBuns->free/BUNsize(bn));
+        BATsetcount(bn, ((char*)bnp - bn->T->heap.base)/Tsize(bn));
         if (!bn->batDirty) bn->batDirty = TRUE;
 
         *ret = bn;

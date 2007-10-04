@@ -2952,10 +2952,11 @@ MTIMEtimezone(tzone *z, str *name)
 	BUN p;
 	str s = *name;
 
-	if (BUNfnd(timezones, s) == 0)
+	if (BUNfnd(timezones, s) == BUN_NONE)
 		s = "GMT";
-	if ((p = BUNfnd(timezones, s)) != NULL){
-		z = (tzone*)BUNtail(timezones,p);
+	if ((p = BUNfnd(timezones, s)) != BUN_NONE){
+		BATiter tzi = bat_iterator(timezones);
+		z = (tzone*)BUNtail(tzi,p);
 		tzone_set_local(z);
 	}
 	return MAL_SUCCEED;
@@ -3806,10 +3807,10 @@ speed.
 @= Extract
 str MTIME@1_extract_@2_bulk(int *ret, int *bid)
 {       BAT *b,*bn;
-	int xx;
 	@3 v;
 	date d;
 	BUN p,q;
+	BATiter bi;
 
 	if( (b= BATdescriptor(*bid)) == NULL ){
 		 throw(MAL, "bbp.get@1", "Cannot access descriptor");
@@ -3818,10 +3819,11 @@ str MTIME@1_extract_@2_bulk(int *ret, int *bid)
 
 	bn= BATnew(BAThtype(b),TYPE_@3, BATcount(b));
 
-	BATloopFast(b,p,q,xx){
-		d= *(date*) BUNtail(b,p);
+	bi = bat_iterator(b);
+	BATloop(b,p,q){
+		d= *(date*) BUNtail(bi,p);
 		MTIME@1_extract_@2(&v,&d);
-		BUNfastins(bn,BUNhead(b,p),&v);
+		BUNfastins(bn,BUNhead(bi,p),&v);
 	}
 	BBPkeepref(*ret = bn->batCacheid);
 	bn->tsorted = FALSE;

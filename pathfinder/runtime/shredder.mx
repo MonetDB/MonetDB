@@ -407,7 +407,6 @@ shredBAT_setcount(shredBAT *sb,
                   oid n)
 {
     BAT *b = sb->bat;
-    b->batBuns->free = n*BUNsize(b);
     BATsetcount(b, n);
     if (b->ttype) {
         b->tsorted = 0;
@@ -455,7 +454,7 @@ shredBAT_extend(shredBAT *sb,
         GDKerror("shredBAT_extend: BATextend[\"%s\"](%d to %d) fails\n", sb->def->name, sb->size, newsize);
         return GDK_FAIL;
     }
-    sb->cast.voidCAST =(void*)BUNfirst(sb->bat);
+    sb->cast.voidCAST =(void*)Tloc(sb->bat, BUNfirst(sb->bat));
     return GDK_SUCCEED;
 }
 
@@ -472,10 +471,11 @@ shredBAT_append_str(shredCtxStruct *shredCtx,
         v = (str)str_nil;
     if (sb->def->compress) {
         BAT *mb = BBP_cache(-(sb->bat->batCacheid));
+        BATiter mbi = bat_iterator(mb);
         BUN bun;
-        HASHfnd_str(bun, mb, v);
-        if (bun) {
-            oid fo = *(oid*)BUNtail(mb, bun);
+        HASHfnd_str(bun, mbi, v);
+        if (bun != BUN_NONE) {
+            oid fo = *(oid*)BUNtail(mbi, bun);
             sb->dupl++;
             return fo;
         }
@@ -483,17 +483,17 @@ shredBAT_append_str(shredCtxStruct *shredCtx,
 #ifdef DEBUG
     stream_printf(GDKout, "APPEND-STR[%s](%s)\n", sb->def->name, v);
 #endif
-    if (sb->def->compress && BATcount(sb->bat) > 4 * sb->bat->thash->mask) {
+    if (sb->def->compress && BATcount(sb->bat) > 4 * sb->bat->T->hash->mask) {
         HASHdestroy(sb->bat); /* keeps hash performance in check */
         BAThash(BATmirror(sb->bat), 2*BATcount(sb->bat));
     }
 
-    oldsize = sb->bat->batBuns->free & (REMAP_PAGE_MAXSIZE-1);
+    oldsize = sb->bat->T->heap.free & (REMAP_PAGE_MAXSIZE-1);
     if (!BUNappend(sb->bat,(ptr)v, TRUE)) {
         GDKerror("shredBAT_append_str: APPEND-STR[%s](%s), BUNappend fails\n", sb->def->name, v);
         return oid_nil;
     }
-    newsize = sb->bat->batBuns->free & (REMAP_PAGE_MAXSIZE-1);
+    newsize = sb->bat->T->heap.free & (REMAP_PAGE_MAXSIZE-1);
     if (oldsize > newsize) { /* try to use mmap() */
         BATmmap(sb->bat, STORE_MMAP, 0, GDK_ELIMDOUBLES(sb->bat->theap)?STORE_MEM:STORE_MMAP);
     }
@@ -532,13 +532,13 @@ emit_tuple(shredCtxStruct* shredCtx,
             MT_lock_unset(shredCtx->coll_lock, "shredder_yield"); 
             sched_yield();
             MT_lock_set(shredCtx->coll_lock, "shredder_yield"); 
-        } while (BUNfnd(shredCtx->lock_barrier, &shredCtx->coll_lock));
+        } while (BUNfnd(shredCtx->lock_barrier, &shredCtx->coll_lock) != BUN_NONE);
 #else
         if ((shredCtx->nnode_pre&16383) == 0) do {
             MT_lock_unset(shredCtx->coll_lock, "shredder_yield"); 
             MT_sleep_ms(1); 
             MT_lock_set(shredCtx->coll_lock, "shredder_yield"); 
-        } while (BUNfnd(shredCtx->lock_barrier, &shredCtx->coll_lock));
+        } while (BUNfnd(shredCtx->lock_barrier, &shredCtx->coll_lock) != BUN_NONE);
 #endif
     }
 
@@ -716,8 +716,8 @@ handle_pfx_uri_loc(shredCtxStruct *shredCtx,
     {
         return BUNappend(histo, &cnt, TRUE)?res:oid_nil;
     } else if (res != oid_nil) {
-        BUN p = BUNlast(histo) - BUNsize(histo);
-        cnt = 1 + *(lng*) BUNtloc(histo,p);
+        BUN p = BUNlast(histo) - 1;
+        cnt = 1 + *(lng*) Tloc(histo,p);
         return BUNinplace(histo, p, NULL, &cnt, TRUE)?res:oid_nil;
     }
     return oid_nil;
@@ -1584,23 +1584,23 @@ shredder_create(char *location,
     /* init the idref attribute database */
     attrDB_init(&shredCtx->idrefAttrDB);
 
-    int xx = BUNsize(docBAT);
     BUN p = BUNfirst(docBAT);
-    for(i=0; i<SHRED_BATS; i++, p+=xx) {
+    for(i=0; i<SHRED_BATS; i++, p++) {
         shredBAT *sb = &shredCtx->dstBAT[i];
         sb->def = &shredbatdef[i];
         sb->dupl = 0;
         sb->size = 0;
 
         if (shredCtx->incremental) {
+            BATiter docBATi = bat_iterator(docBAT);
             /* be very picky with the BATs in docBAT: check, check and check  */
-            str name = strchr(BUNhead(docBAT,p), '_');
+            str name = strchr(BUNhead(docBATi,p), '_');
             if (strcmp(name, shredbatdef[i].name)) {
                 GDKerror("shredder_create: name suffix of %s does not match %s\n", name, shredbatdef[i].name);
                 return shredder_free(shredCtx, 0);
             }
             /* get and pin the bats in docBAT  */
-            bat bid = *(bat*) BUNtloc(docBAT,p);
+            bat bid = *(bat*) Tloc(docBAT,p);
             sb->bat = BATdescriptor(bid);
             if (sb->bat == NULL) { 
                 GDKerror("shredder_create: docBAT (batid %d) contains illegal bat.\n", bid);
@@ -1612,11 +1612,6 @@ shredder_create(char *location,
                 GDKerror("shredder_create: %s[%s,%s] (batid %d) should have types [%s,%s].\n", 
                     sb->def->name, ATOMname(sb->bat->htype), ATOMname(sb->bat->htype), sb->bat->batCacheid,
                                    ATOMname(shredbatdef[i].headType), ATOMname(shredbatdef[i].tailType));
-                return shredder_free(shredCtx, 0);
-            }
-            if (shredbatdef[i].headType == TYPE_void && sb->bat->ttype && BUNsize(sb->bat) != ATOMsize(sb->bat->ttype)) { 
-                GDKerror("shredder_create: %s[void,%s] (batid %d) is not really void (i.e. a view on %d).\n", 
-                    sb->def->name, ATOMname(sb->bat->htype), sb->bat->batCacheid, sb->bat->batParentid);
                 return shredder_free(shredCtx, 0);
             }
             if ((shredbatdef[i].headType == TYPE_void && sb->bat->hseqbase) ||
@@ -1631,7 +1626,7 @@ shredder_create(char *location,
             if (!sb->def->compress) {
                 HASHremove(sb->bat); /* we don't maintain accelerators other than those explicity needed for compress */
             }
-            sb->size = ((sb->bat->batBuns->base + sb->bat->batBuns->size) - BUNfirst(sb->bat))/BUNsize(sb->bat);
+            sb->size = BUNlast(sb->bat);
 
             /* record information on the current size. To be used in case of aborts (shred errors) */ 
             sb->abortSize = BATcount(sb->bat);
@@ -1674,12 +1669,12 @@ shredder_create(char *location,
                tab_size = (((tab_size - 1) >> REMAP_PAGE_BITS) + 1) << REMAP_PAGE_BITS;
         }
         /* make sure the bat is at least as big as its leader (that is later used to check overflow) */
-        oid cur_size = ((sb->bat->batBuns->base + sb->bat->batBuns->size) - BUNfirst(sb->bat))/BUNsize(sb->bat);
+        oid cur_size = BUNlast(sb->bat);
         if (cur_size < tab_size) {
             sb->size = BATcount(sb->bat);
             if (!shredBAT_extend(sb, tab_size)) return shredder_free(shredCtx, 0);
         }
-        sb->cast.voidCAST =(void*)BUNfirst(sb->bat);
+        sb->cast.voidCAST =(void*)Tloc(sb->bat, BUNfirst(sb->bat));
     }
     BAT* map_pid = shredCtx->dstBAT[MAP_PID].bat;
     shredCtx->updatable = (map_pid->ttype == TYPE_oid);
@@ -1742,11 +1737,11 @@ shredder_create(char *location,
         oid pre_min = 1;
         if (shredCtx->updatable) {
             /* go back over unused nodes inside the last strech of *used* pages */ 
-            size_t  off = BUNindex(map_pid, BUNfirst(map_pid));
+            size_t  off = BUNfirst(map_pid);
             ssize_t pos = BATcount(map_pid);
             while(pos-- > 0) {
-                BUN p = BUNptr(map_pid, off+pos); 
-                if (*(oid*) BUNtloc(map_pid, p) == oid_nil) { /* nil = unused */
+                BUN p = off+pos; 
+                if (*(oid*) Tloc(map_pid, p) == oid_nil) { /* nil = unused */
                     pre_min = (1+pos) << REMAP_PAGE_BITS;
                     break;
                 }

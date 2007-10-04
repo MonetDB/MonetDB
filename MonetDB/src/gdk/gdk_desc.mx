@@ -15,7 +15,7 @@
 @' All Rights Reserved.
 
 @f gdk_desc
-@a Peter Boncz
+@a Peter Boncz, Niels Nes
 @v 1.0
 @+ BAT Descriptor Versions
 Changes to the BAT descriptors cause problems, as persistent
@@ -35,7 +35,7 @@ introduced to the atom ADT (atomConvert and atomHeapConvert).
 @+ BAT versions
 Three BAT formats are currently supported:
 @h
-#define GDKversionOK(x)	((x)>=GDKLIBRARY_OLD && (x)<=GDKLIBRARY)
+#define GDKversionOK(x)	((x)==GDKLIBRARY)
 
 @
 If BATs need to be added to an old BBP directory, we might need
@@ -109,7 +109,6 @@ BATsavedesc(BAT *b, str nme)
 	BATstore *bs = (BATstore *) b;
 	int ret = 0, fd = -1;
 
-	DELTAsave(b);
 	if (b->GDKversion == GDKLIBRARY) {
 		char *hatm = (b->htype >= 0) ? ATOMname(b->htype) : ATOMunknown_name(b->htype);
 		char *tatm = (b->ttype >= 0) ? ATOMname(b->ttype) : ATOMunknown_name(b->ttype);
@@ -131,8 +130,6 @@ BATsavedesc(BAT *b, str nme)
 		if (fd >= 0)
 			close(fd);
 	}
-	/* a saved bat could still be used so reset the delta status */
-	DELTAload(b);
 	return (ret < 0) ? ret : 0;
 }
 
@@ -178,10 +175,9 @@ BATloaddesc(str nme)
 	b->U = &dst->U;
 	b->hident = b->tident = NULL;
 	BATroles(b, NULL, NULL);
-	b->batBuns = &b->U->buns;
-	b->batBuns->base = NULL;
-	b->batBuns->filename = NULL;
-	b->hheap = b->theap = NULL;
+	b->H->heap.base = b->T->heap.base = NULL;
+	b->H->heap.filename = b->T->heap.filename = NULL;
+	b->H->vheap = b->T->vheap = NULL;
 
 	hvar = b->hvarsized && (b->htype != TYPE_void);
 	tvar = b->tvarsized && (b->ttype != TYPE_void);
@@ -249,10 +245,11 @@ BATloaddesc(str nme)
 
 	/* probably need to allocate heaps here */
 	b->batCopiedtodisk = 1;
-	b->batElmshift = BATelmshift(b);
+	b->H->shift = ATOMelmshift(Hsize(b));
+	b->T->shift = ATOMelmshift(Tsize(b));
 	b->H->props = NULL;
 	b->T->props = NULL;
-	b->hhash = b->thash = NULL;
+	b->H->hash = b->T->hash = NULL;
 	return b;
 }
 
@@ -272,7 +269,7 @@ batswap(BAT *b, int direction)
 {
 	void (*fcn) (ptr, int) = BATatoms[b->htype].atomConvert;
 	BUN p, q;
-	int xx;
+	BATiter bi = bat_iterator(b);
 
 	switch (ATOMstorage(b->htype)) {
 	case TYPE_void:
@@ -280,38 +277,38 @@ batswap(BAT *b, int direction)
 	case TYPE_bte:
 		break;
 	case TYPE_sht:
-		DELloop(b, p, q, xx)
-			@:swap(short_int,sht,BUNhloc(b,p))@
-		BATloopFast(b, p, q, xx)
-			@:swap(short_int,sht,BUNhloc(b,p))@
+		DELloop(b, p, q)
+			@:swap(short_int,sht,BUNhloc(bi,p))@
+		BATloop(b, p, q)
+			@:swap(short_int,sht,BUNhloc(bi,p))@
 		break;
 	case TYPE_int:
 	case TYPE_flt:
-		DELloop(b, p, q, xx)
-			@:swap(normal_int,int,BUNhloc(b,p))@
-		BATloopFast(b, p, q, xx)
-			@:swap(normal_int,int,BUNhloc(b,p))@
+		DELloop(b, p, q)
+			@:swap(normal_int,int,BUNhloc(bi,p))@
+		BATloop(b, p, q)
+			@:swap(normal_int,int,BUNhloc(bi,p))@
 		break;
 	case TYPE_lng:
 	case TYPE_dbl:
-		DELloop(b, p, q, xx)
-			@:swap(long_long,lng,BUNhloc(b,p))@
-		BATloopFast(b, p, q, xx)
-			@:swap(long_long,lng,BUNhloc(b,p))@
+		DELloop(b, p, q)
+			@:swap(long_long,lng,BUNhloc(bi,p))@
+		BATloop(b, p, q)
+			@:swap(long_long,lng,BUNhloc(bi,p))@
 		break;
 	default:
 		ATOMheapConvert(b->htype, b->hheap, direction);
-		DELloop(b, p, q, xx) {
-			@:swap(normal_int,int,BUNhloc(b,p))@
+		DELloop(b, p, q) {
+			@:swap(normal_int,int,BUNhloc(bi,p))@
 
 			if (fcn != NULL)
-				(*fcn) (BUNhead(b, p), direction);
+				(*fcn) (BUNhead(bi, p), direction);
 		}
-		BATloopFast(b, p, q, xx) {
-			@:swap(normal_int,int,BUNhloc(b,p))@
+		BATloop(b, p, q) {
+			@:swap(normal_int,int,BUNhloc(bi,p))@
 
 			if (fcn != NULL)
-				(*fcn) (BUNhead(b, p), direction);
+				(*fcn) (BUNhead(bi, p), direction);
 		}
 	}
 	return TRUE;

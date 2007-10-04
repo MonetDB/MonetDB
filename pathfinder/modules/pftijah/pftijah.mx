@@ -3138,7 +3138,7 @@ int CMDtj_log(str format, int* i) {
 
 int CMDtj_chk_dict_hash(BAT* b_tag, BAT* b_term)
 {
-	if ( b_tag->thash == NULL ) {
+	if ( b_tag->T->hash == NULL ) {
 	     // stream_printf(GDKout,"C[]: ADD HASHTABLE TO TAG DICTIONARY\n");
 #ifdef TJ_TRACE
 	     if ( TJ_TRACE ) stream_printf(GDKout,"C[]: CREATE NEW HASHTABLE ON TAG DICTIONARY\n");
@@ -3148,7 +3148,7 @@ int CMDtj_chk_dict_hash(BAT* b_tag, BAT* b_term)
 	         return GDK_FAIL;
 	     }
 	}
-	if ( b_term->thash == NULL ) {
+	if ( b_term->T->hash == NULL ) {
 	     // stream_printf(GDKout,"C[]: ADD HASHTABLE TO TERM DICTIONARY\n");
 #ifdef TJ_TRACE
 	     if ( TJ_TRACE ) stream_printf(GDKout,"C[]: CREATE NEW HASHTABLE ON TERM DICTIONARY\n");
@@ -3255,7 +3255,7 @@ int CMDtijah_tokenize (str* res, str arg)
  *
  */
 
-#define FIND_OID(FOID,BBAT,BSIZE,BPTR,BTAIL) \
+#define FIND_OID(FOID,BBAT,BPTR,BTAIL) \
         /* use peter's poor mans binary search here */ \
         while (BPTR+1048576 < BTAIL && (*(oid*)BUNhead(BBAT,BPTR+1048576)) < FOID) \
             BPTR += 1048576; \
@@ -3266,32 +3266,29 @@ int CMDtijah_tokenize (str* res, str arg)
         while (BPTR+32 < BTAIL && (*(oid*)BUNhead(BBAT,BPTR+32)) < FOID) \
             BPTR += 32; \
         do { \
-                BPTR += BSIZE; \
+                BPTR++; \
         } while ( (BPTR < BTAIL) && ((*(oid*)BUNhead(BBAT,BPTR))<FOID) );
  
-#define FIND_OID_SCAN(FOID,BBAT,BSIZE,BPTR,BTAIL) \
-        do { \
-                BPTR += BSIZE; \
-        } while ( (BPTR < BTAIL) && ((*(oid*)BUNhead(BBAT,BPTR))<FOID) );
-
 #define INPLACE_OID_CALC_HEADER \
+        BATiter li = bat_iterator(l);   \
+        BATiter ri = bat_iterator(r);   \
         if ( !bat_oid_sort_chck(l) || !bat_oid_sort_chck(r) ) \
             return  GDK_FAIL; \
         *res = BATsetaccess(l,BAT_WRITE); \
-        BUN lp = BUNfirst(l); BUN ll = BUNlast(l); int lbsz = BUNsize(l); \
-        BUN rp = BUNfirst(r); BUN rl = BUNlast(r); int rbsz = BUNsize(r); \
+        BUN lp = BUNfirst(l), ll = BUNlast(l); \
+        BUN rp = BUNfirst(r), rl = BUNlast(r); \
         while ( (lp < ll) && (rp < rl) ) { \
-                oid lv = *(oid*)BUNhead(l,lp); \
-                oid rv = *(oid*)BUNhead(r,rp); \
+                oid lv = *(oid*)BUNhead(li,lp); \
+                oid rv = *(oid*)BUNhead(ri,rp); \
                 if ( lv == rv ) { \
-                    dbl* dres = (dbl*)BUNtail(l,lp);
+                    dbl* dres = (dbl*)Tloc(l,lp);
 
 #define INPLACE_OID_CALC_FOOTER \
-                    lp += lbsz; rp += rbsz; \
+                    lp++; rp++; \
                 } else if ( lv < rv ) { \
-                    FIND_OID(rv,l,lbsz,lp,ll); \
+                    FIND_OID(rv,li,lp,ll); \
                 } else /* lv > rv */ { \
-                    FIND_OID(lv,r,rbsz,rp,rl); \
+                    FIND_OID(lv,ri,rp,rl); \
                 } \
         } \
         BBPfix(BBPcacheid(*res)); \
@@ -3314,31 +3311,31 @@ static int bat_oid_sort_chck(BAT* b) {
 
 int CMDleft_add_dbl(BAT** res, BAT*l, BAT*r) {
         INPLACE_OID_CALC_HEADER;
-        *dres += *(dbl*)BUNtail(r,rp);
+        *dres += *(dbl*)Tloc(r,rp);
         INPLACE_OID_CALC_FOOTER;
 }
 
 int CMDleft_sub_dbl(BAT** res, BAT*l, BAT*r) {
         INPLACE_OID_CALC_HEADER;
-	*dres -= *(dbl*)BUNtail(r,rp);
+	*dres -= *(dbl*)Tloc(r,rp);
         INPLACE_OID_CALC_FOOTER;
 }
 
 int CMDleft_mul_dbl(BAT** res, BAT*l, BAT*r) {
         INPLACE_OID_CALC_HEADER;
-	*dres *= *(dbl*)BUNtail(r,rp);
+	*dres *= *(dbl*)Tloc(r,rp);
         INPLACE_OID_CALC_FOOTER;
 }
 
 int CMDleft_div_dbl(BAT** res, BAT*l, BAT*r) {
         INPLACE_OID_CALC_HEADER;
-	*dres /= *(dbl*)BUNtail(r,rp);
+	*dres /= *(dbl*)Tloc(r,rp);
         INPLACE_OID_CALC_FOOTER;
 }
 
 int CMDleft_div_dbl_int(BAT** res, BAT*l, BAT*r) {
         INPLACE_OID_CALC_HEADER;
-	*dres = (dbl)(*dres / *(int*)BUNtail(r,rp));
+	*dres = (dbl)(*dres / *(int*)Tloc(r,rp));
         INPLACE_OID_CALC_FOOTER;
 }
 
@@ -3349,12 +3346,10 @@ int CMDleft_log_dbl(BAT** res, BAT*l) {
 	*res = BATsetaccess(l,BAT_WRITE);
 	(*res)->batDirty = TRUE;
  
-	BUN lp = BUNfirst(l); BUN lq = BUNlast(l); int lx = BUNsize(l);
+	dbl *lp = (dbl*)Tloc(l, BUNfirst(l)), *lq = (dbl*)Tloc(l, BUNlast(l)); 
 
-	while ( (lp < lq) ) {
-		dbl* dres = (dbl*)BUNtail(l,lp);
-		*dres = log(*dres);
-		lp += lx;
+	for (; lp < lq; lp++ ) {
+		*lp = log(*lp);
 	}
 	BBPfix(BBPcacheid(*res));
 	(*res)->tsorted = FALSE;
@@ -3367,35 +3362,37 @@ int CMDleft_log_dbl(BAT** res, BAT*l) {
  *
  */
 
-#define UNION_FIND_OID(FOID,BBAT,BSIZE,BPTR,BTAIL,RESBAT) \
+#define UNION_FIND_OID(FOID,BBAT,BPTR,BTAIL,RESBAT) \
         do { \
 		if (!BUNins(RESBAT,(oid*)BUNhead(BBAT,BPTR),(dbl*)BUNtail(BBAT,BPTR), FALSE) ) \
 		    return GDK_FAIL; \
-                BPTR += BSIZE; \
+                BPTR++; \
         } while ( (BPTR < BTAIL) && ((*(oid*)BUNhead(BBAT,BPTR))<FOID) );
 
 #define UNION_OID_CALC_HEADER \
+        BATiter li = bat_iterator(l);   \
+        BATiter ri = bat_iterator(r);   \
         if ( !bat_oid_sort_chck(l) || !bat_oid_sort_chck(r) ) \
             return  GDK_FAIL; \
         *res = BATnew(TYPE_oid,TYPE_dbl,0); \
-        BUN lp = BUNfirst(l); BUN ll = BUNlast(l); int lbsz = BUNsize(l); \
-        BUN rp = BUNfirst(r); BUN rl = BUNlast(r); int rbsz = BUNsize(r); \
+        BUN lp = BUNfirst(l), ll = BUNlast(l); \
+        BUN rp = BUNfirst(r), rl = BUNlast(r); \
         while ( (lp < ll) || (rp < rl) ) { \
 		oid lv, rv; \
-                lv = (lp < ll) ? *(oid*)BUNhead(l,lp) : oid_nil; \
-                rv = (rp < rl) ? *(oid*)BUNhead(r,rp) : oid_nil; \
+                lv = (lp < ll) ? *(oid*)BUNhead(li,lp) : oid_nil; \
+                rv = (rp < rl) ? *(oid*)BUNhead(ri,rp) : oid_nil; \
                 if ( lv == rv ) { \
-                    dbl* dres = (dbl*)BUNtail(l,lp); \
+                    dbl* dres = (dbl*)Tloc(l,lp); \
 		    dbl  newdbl;
 
 #define UNION_OID_CALC_FOOTER \
 		    if ( !BUNins(*res, &lv, &newdbl, FALSE) ) \
 		        return GDK_FAIL; \
-                    lp += lbsz; rp += rbsz; \
+                    lp++; rp++; \
                 } else if ( (rv==oid_nil) || (lv < rv) ) { \
-                    UNION_FIND_OID(rv,l,lbsz,lp,ll,*res); \
+                    UNION_FIND_OID(rv,li,lp,ll,*res); \
                 } else /* (lv==oid_nil) || (lv > rv) */ { \
-                    UNION_FIND_OID(lv,r,rbsz,rp,rl,*res); \
+                    UNION_FIND_OID(lv,ri,rp,rl,*res); \
                 } \
         } \
         BBPfix(BBPcacheid(*res)); \
@@ -3405,24 +3402,24 @@ int CMDleft_log_dbl(BAT** res, BAT*l) {
 
 int CMDunion_add_dbl(BAT** res, BAT*l, BAT*r) {
         UNION_OID_CALC_HEADER;
-        newdbl = *dres + *(dbl*)BUNtail(r,rp);
+        newdbl = *dres + *(dbl*)Tloc(r,rp);
         UNION_OID_CALC_FOOTER;
 }
 
 int CMDunion_sub_dbl(BAT** res, BAT*l, BAT*r) {
         UNION_OID_CALC_HEADER;
-        newdbl = *dres - *(dbl*)BUNtail(r,rp);
+        newdbl = *dres - *(dbl*)Tloc(r,rp);
         UNION_OID_CALC_FOOTER;
 }
 
 int CMDunion_mul_dbl(BAT** res, BAT*l, BAT*r) {
         UNION_OID_CALC_HEADER;
-        newdbl = *dres * *(dbl*)BUNtail(r,rp);
+        newdbl = *dres * *(dbl*)Tloc(r,rp);
         UNION_OID_CALC_FOOTER;
 }
 int CMDunion_div_dbl(BAT** res, BAT*l, BAT*r) {
         UNION_OID_CALC_HEADER;
-        newdbl = *dres / *(dbl*)BUNtail(r,rp);
+        newdbl = *dres / *(dbl*)Tloc(r,rp);
         UNION_OID_CALC_FOOTER;
 }
 
@@ -3460,20 +3457,19 @@ int CMDpf2tijah_node(BAT** res, BAT* doc_name, BAT* doc_firstpre, BAT* doc_pfpre
 	    BATprintf(GDKout,doc_pfpre);
 	}
 
-	int x;
 	BUN p,q;
-	BATloopFast(item, p, q, x) {
-	    oid idx      = *(oid*) BUNhead(item, p);
-	    ptr itemTAIL = BUNtail(item, p);
+        BATiter itemi = bat_iterator(item);
+	BATloop(item, p, q) {
+	    oid idx      = *(oid*) BUNhead(itemi, p);
+	    ptr itemTAIL = BUNtail(itemi, p);
 	    oid pfpre    = *(oid*) itemTAIL;
 
 	    BUN kindBUN = BUNfnd(kind,&idx);
-	    if ( !kindBUN ) {
+	    if ( kindBUN == BUN_NONE ) {
 	        stream_printf(GDKout,"READ KIND failed\n");
 		return GDK_FAIL;
 	    }
-	    ptr kindTAIL = BUNtail(kind, kindBUN);
-	    int kval = *(int*)kindTAIL;
+	    int kval = *(int*)Tloc(kind, kindBUN);
 	    if ( XTRACT_KIND(kval) != ELEM ) {
 	        stream_printf(GDKout,"CMDpf2tijah_node: startNodes: no node\n");
 		return GDK_FAIL;
@@ -3485,35 +3481,37 @@ int CMDpf2tijah_node(BAT** res, BAT* doc_name, BAT* doc_firstpre, BAT* doc_pfpre
 	    if ( rangeBAT[myindex] == NULL ) {
 
 	      BAT* docs_in_cont = BATselect(BATmirror(doc_loaded),&container,&container);
-	      int x_dic;
+              BATiter docs_in_conti = bat_iterator(docs_in_cont);
 	      BUN p_dic,q_dic;
-	      BATloopFast(docs_in_cont, p_dic, q_dic, x_dic) {
+	      BATloop(docs_in_cont, p_dic, q_dic) {
 	        oid doc_start;
 		oid doc_end;
 
-	        str docname = (str) BUNhead(docs_in_cont, p_dic);
+	        str docname = (str) BUNhead(docs_in_conti, p_dic);
 		BAT* b = BATmirror(doc_name);
 	        BUN yy = BUNfnd(b,docname);
-		if ( yy ) {
+		if ( yy != BUN_NONE ) {
+                    BATiter bi = bat_iterator(b);
 		    if ( debug ) stream_printf(GDKout,"* pf2tijah_index: preparing doc(%s)[] nodes for translation\n",docname);	
-		    oid tj_docIndex = *(oid*)BUNtail(b,yy);
+		    oid tj_docIndex = *(oid*)BUNtail(bi,yy);
 
 		    BUN r;
 		    r = BUNfnd(doc_firstpre,&tj_docIndex);
-		    if ( ! r ) {
+		    if ( r == BUN_NONE ) {
 	    	        stream_printf(GDKout,"Cannot find tijah-firstpre @  %d.\n",tj_docIndex);
 		        return GDK_FAIL;
 		    }
 
-	            doc_start = *(oid*)BUNtail(doc_firstpre,r);
+                    bi.b = doc_firstpre;
+	            doc_start = *(oid*)BUNtail(bi,r);
 		    oid tj_nextIndex = tj_docIndex +  1;
 		    if ( BATcount(doc_firstpre) > tj_nextIndex ) {
 		        r = BUNfnd(doc_firstpre,&tj_nextIndex);
-			if ( !r ) {
+			if ( r == BUN_NONE ) {
 	    	            stream_printf(GDKout,"Cannot do range for tijah-firstpre @  %d.\n",tj_docIndex);
 			    return GDK_FAIL;
 			}
-	                doc_end = *(oid*)BUNtail(doc_firstpre,r) - 1;
+	                doc_end = *(oid*)BUNtail(bi,r) - 1;
 		    } else {
 	                doc_end = oid_nil;
 		    }
@@ -3530,9 +3528,10 @@ int CMDpf2tijah_node(BAT** res, BAT* doc_name, BAT* doc_firstpre, BAT* doc_pfpre
 		} } }
 	        if ( rangeBAT[myindex] ) {
 		    BUN range_bun = BUNfnd(rangeBAT[myindex],&pfpre);
-		    if ( range_bun ) {
+		    if ( range_bun != BUN_NONE ) {
 			/* found the tijah index value */
-		        oid tj_index = *(oid*)BUNtail(rangeBAT[myindex],range_bun);
+                        BATiter bi = bat_iterator(rangeBAT[myindex]);
+		        oid tj_index = *(oid*)BUNtail(bi,range_bun);
 			BUNappend(*res,&tj_index,1);
 			if ( debug ) stream_printf(GDKout,"* pf2tijah_index: pre(%d@0) @ cont(%d) = tijah(%d@0).\n", pfpre, container,tj_index);
 		    } else {
@@ -3565,9 +3564,9 @@ int CMDoffsetindex ( BAT** result, BAT* tid, int* res_size)
 {
 	char *name = "TJoffsetindex";
 	BAT *res = NULL;
-        BUN p, q, dst = NULL;
+        BUN p, q;
+        oid *dst = NULL, *sdst = NULL;
 	oid t, s;
-	int bs_res, x;
 
 	/* --------------------------- checks ---------------------------------- */
 
@@ -3592,39 +3591,36 @@ int CMDoffsetindex ( BAT** result, BAT* tid, int* res_size)
             	GDKerror("%s: could not allocate a result BAT[void,oid] of size %d.\n", name, *res_size);
             	return(GDK_FAIL);
         }
-	bs_res = BUNsize(res);
-	dst = BUNlast(res);
+	sdst = dst = (oid*)Tloc(res, BUNlast(res));
     
 	t = (oid)0;
 	*(oid*)dst = (oid)0;
-	dst += bs_res;
+	dst++;
 	
 	/* ----------------------------- main ---------------------------------- */
 
-	BATloopFast(tid, p, q, x)
+        BATiter tidi = bat_iterator(tid);
+	BATloop(tid, p, q)
 	{
-		s = *(oid*) BUNtail(tid, p);
+		s = *(oid*) BUNtail(tidi, p);
 		if (t != s)
 		{
-			for(; t < s; t++)
+			for(; t < s; t++, dst++)
 			{
-				*(oid*)dst = BUNindex(tid, p);
-				dst += bs_res; 
+				*(oid*)dst = p;
 			}
 		}
 	}
 
 	s = (oid) (*res_size - 1);
-	for(; t < s; t++)
+	for(; t < s; t++, dst++)
 	{
-		*(oid*)dst = BUNindex(tid, p);
-		dst += bs_res; 
+		*dst = p;
 	}
 	
 	/* ---------------------------- tidy up --------------------------------- */
 	
-	res->batBuns->free = dst - res->batBuns->base;
-	BATsetcount(res, res->batBuns->free / bs_res);
+	BATsetcount(res, dst - sdst);
     	res->batDirty = TRUE;
         res->tsorted = GDK_SORTED;
         BATkey (res, TRUE);
@@ -3637,13 +3633,14 @@ int CMDoffsetindex ( BAT** result, BAT* tid, int* res_size)
 
 int CMDmergeindex ( BAT** result, BAT* tidpre, BAT* oldindex, BAT* oldpre, int* indsize )
 {
+        BATiter tidprei, oldindexi, oldprei;
 	char *name = "TJmergeindex";
 	BAT *res = NULL;
 	BAT *newindex = NULL;
 	BAT *newpre = NULL;
-	int bs_tidpre, bs_oldindex, bs_oldpre, bs_newindex, bs_newpre, bs_res;
 	int i,j, ressize = 0;
-        BUN lst_tidpre, lst_oldindex, lst_copy, lst_newindex, lst_newpre, lst_res, cur_tidpre, cur_oldindex, cur_oldpre;
+        BUN lst_tidpre, lst_oldindex, lst_copy, lst_res, cur_tidpre, cur_oldindex, cur_oldpre;
+        oid *s_newindex, *lst_newindex, *s_newpre, *lst_newpre;
 	oid tid;
 	
 	/* --------------------------- checks ---------------------------------- */
@@ -3684,61 +3681,53 @@ int CMDmergeindex ( BAT** result, BAT* tidpre, BAT* oldindex, BAT* oldpre, int* 
             	return(GDK_FAIL);
         }
 	
-	bs_tidpre = BUNsize(tidpre);
-	bs_oldindex = BUNsize(oldindex);
-	bs_oldpre = BUNsize(oldpre);
-        bs_newindex = BUNsize(newindex);
-        bs_newpre = BUNsize(newpre);
-	bs_res = BUNsize(res);
-	
 	lst_tidpre = BUNlast(tidpre);
-	lst_oldindex = BUNlast(oldindex) - bs_oldindex; /* last index is not a real term */
-	lst_newindex = BUNlast(newindex);
-	lst_newpre = BUNlast(newpre);
+	lst_oldindex = BUNlast(oldindex) - 1; /* last index is not a real term */
+	s_newindex = lst_newindex = (oid*)Tloc(newindex, BUNlast(newindex));
+	s_newpre = lst_newpre = (oid*)Tloc(newpre, BUNlast(newpre));
 	lst_res = BUNlast(res);
 	
 	cur_tidpre = BUNfirst(tidpre);
 	cur_oldindex = BUNfirst(oldindex);
 	cur_oldpre = BUNfirst(oldpre);
 	
+        tidprei = bat_iterator(tidpre);
+        oldindexi = bat_iterator(oldindex);
+        oldprei = bat_iterator(oldpre);
 	/* ----------------------------- main ---------------------------------- */
 	
 	j = *indsize - 1;
 	for(i = 0; i < j; i++)
         {
 	        tid = (oid) i;
-		*(oid*)lst_newindex = BUNindex(newpre,lst_newpre);
-		lst_newindex += bs_newindex;
+		*lst_newindex++ = lst_newpre - s_newpre;
                
                 /* copy old nodes to new index */
-                if (cur_oldindex < lst_oldindex && tid == *(oid*)BUNhead(oldindex, cur_oldindex))
+                if (cur_oldindex < lst_oldindex && tid == *(oid*)BUNhead(oldindexi, cur_oldindex))
                 {
-		        lst_copy = BUNptr(oldpre, *(int*) BUNtail(oldindex, cur_oldindex + bs_oldindex));
+		        lst_copy = *(int*) BUNtail(oldindexi, cur_oldindex + 1);
 		        while (cur_oldpre < lst_copy)
 		        {
-			        *(oid*)lst_newpre = *(oid*)BUNtail(oldpre, cur_oldpre);
-			        lst_newpre += bs_newpre;
-			        cur_oldpre += bs_oldpre;
+			        *lst_newpre++ = *(oid*)BUNtail(oldprei, cur_oldpre);
+			        cur_oldpre++;
 		        }
-                        cur_oldindex += bs_oldindex;
+                        cur_oldindex++;
                 }
                 /* merge-in new nodes */
-                while(cur_tidpre < lst_tidpre && tid == *(oid*)BUNhead(tidpre, cur_tidpre))
+                while(cur_tidpre < lst_tidpre && tid == *(oid*)BUNhead(tidprei, cur_tidpre))
                 {
-                        *(oid*)lst_newpre = *(oid*)BUNtail(tidpre, cur_tidpre);
-			lst_newpre += bs_newpre;
-	        	cur_tidpre += bs_tidpre;
+                        *lst_newpre++ = *(oid*)BUNtail(tidprei, cur_tidpre);
+	        	cur_tidpre++;
                 }
         }
 
 	/* write limit of index as last item to index bat */
-	*(oid*)lst_newindex = BUNindex(newpre,lst_newpre);
-	lst_newindex += bs_newindex;
+	*lst_newindex = lst_newpre - s_newpre;
+	lst_newindex++;
 
 	/* ---------------------------- tidy up --------------------------------- */
 
-	newindex->batBuns->free = lst_newindex - newindex->batBuns->base;
-	BATsetcount(newindex, newindex->batBuns->free / bs_newindex);
+	BATsetcount(newindex, lst_newindex - s_newindex);
     	newindex->batDirty = TRUE;
         newindex->hsorted = GDK_SORTED;
         newindex->tsorted = GDK_SORTED;
@@ -3746,8 +3735,7 @@ int CMDmergeindex ( BAT** result, BAT* tidpre, BAT* oldindex, BAT* oldpre, int* 
         BATkey(BATmirror(newindex), FALSE);
 	BATseqbase(newindex, (oid)0);
 
-	newpre->batBuns->free = lst_newpre - newpre->batBuns->base;
-	BATsetcount(newpre, newpre->batBuns->free / bs_newpre);
+	BATsetcount(newpre, lst_newpre - s_newpre);
     	newpre->batDirty = TRUE;
         newpre->hsorted = GDK_SORTED;
         newpre->tsorted = FALSE;
@@ -3757,15 +3745,14 @@ int CMDmergeindex ( BAT** result, BAT* tidpre, BAT* oldindex, BAT* oldpre, int* 
 	
         /* insert bats in result */		
 	BATseqbase(res, (oid)0);
-	voidany_bunfastins_nocheck_noinc(res, lst_res, 0, &newindex->batCacheid);
+	voidfix_bunfastins_nocheck_noinc(res, lst_res, 0, &newindex->batCacheid);
 	BBPunfix(newindex->batCacheid);	
-	lst_res += bs_res;
-	voidany_bunfastins_nocheck_noinc(res, lst_res, 0, &newpre->batCacheid); 
+	lst_res++;
+	voidfix_bunfastins_nocheck_noinc(res, lst_res, 0, &newpre->batCacheid); 
 	BBPunfix(newpre->batCacheid);	
-	lst_res += bs_res;
+	lst_res++;
 	
-	res->batBuns->free = lst_res - res->batBuns->base;
-	BATsetcount(res, res->batBuns->free / bs_res);
+	BATsetcount(res, 2);
 	res->batDirty = TRUE;
 	BATkey(res, TRUE);
 	BATkey(BATmirror(res), TRUE);
@@ -3774,25 +3761,18 @@ int CMDmergeindex ( BAT** result, BAT* tidpre, BAT* oldindex, BAT* oldpre, int* 
 	
 	*result = res;
 	return GDK_SUCCEED;
-
-bunins_failed:
-        GDKerror("%s: BUN insert failed.\n", name);
-        return(GDK_FAIL);
-	
 }
 
 int CMDindexfetchjoin ( BAT** result, BAT* tid, BAT* index, BAT* pre )
 {
 	char *name = "TJindexfetchjoin";
 	BAT *res = NULL;
-        BUN dst = NULL;
-	int bs_pre = BUNsize(pre);
-	int bs_res;
+        oid *sdst = NULL, *hdst = NULL, *tdst = NULL;
 
 	int ressize = 0;
 	oid t, *ind;
 	BUN p, q;
-        int x, j, i = 0;
+        int j, i = 0;
 	/* bit one_tid = FALSE; */
     
 	/* --------------------------- checks ---------------------------------- */
@@ -3811,18 +3791,19 @@ int CMDindexfetchjoin ( BAT** result, BAT* tid, BAT* index, BAT* pre )
 
 	/* ---------------------------- inits ---------------------------------- */
 
-	ind = GDKmalloc(sizeof(oid) * BATcount(tid) * 3);
+	ind = (oid*)GDKmalloc(sizeof(oid) * BATcount(tid) * 3);
         if (ind == NULL) 
         { 
             	GDKerror("%s: could not allocate a offset stack of size %d.\n", name, BATcount(tid));
             	return(GDK_FAIL);
         }
 	
-	BATloopFast(tid, p, q, x) {
-		t = *(oid*) BUNtail(tid, p);
+        BATiter tidi = bat_iterator(tid);
+	BATloop(tid, p, q) {
+		t = *(oid*) BUNtail(tidi, p);
 		ind[i++] = t;
-		ind[i++] = *(oid*) BUNtloc(index, BUNptr(index, (int)t));
-		ind[i++] = *(oid*) BUNtloc(index, BUNptr(index, (int)t + 1));
+		ind[i++] = *(oid*) Tloc(index, (int)t);
+		ind[i++] = *(oid*) Tloc(index, (int)t + 1);
 		ressize += (ind[i - 1] - ind[i - 2]);
 	}
 	
@@ -3832,28 +3813,26 @@ int CMDindexfetchjoin ( BAT** result, BAT* tid, BAT* index, BAT* pre )
             	GDKerror("%s: could not allocate a result BAT[oid,oid] of size %d.\n", name, ressize);
             	return(GDK_FAIL);
         }
-	bs_res = BUNsize(res);
-	dst = BUNlast(res);
+	sdst = hdst = (oid*)Hloc(res, BUNlast(res));
+               tdst = (oid*)Tloc(res, BUNlast(res));
 	
 	/* ----------------------------- main ---------------------------------- */
 
 	j = 0;
 	while (j < i) {
         	t = ind[j++];
-		p = BUNptr(pre, ind[j++]);
-		q = BUNptr(pre, ind[j++]);
-		for (; p < q; p += bs_pre) {
-			*(oid*)dst = t;
-			*(oid*)(dst + SIZEOF_OID) = *(oid*)p;
-			dst += bs_res;
+		p = ind[j++];
+		q = ind[j++];
+		for (; p < q; p++) {
+			*hdst++ = t;
+			*tdst++ = *(oid*)Tloc(pre,p);
 		}
 	}
 
 	/* ---------------------------- tidy up --------------------------------- */
 
 	GDKfree(ind);
-	res->batBuns->free = dst - res->batBuns->base;
-	BATsetcount(res, res->batBuns->free / bs_res);
+	BATsetcount(res, hdst - sdst);
     	res->batDirty = TRUE;
         res->hsorted = GDK_SORTED;
         res->tsorted = FALSE;
@@ -3867,17 +3846,15 @@ int CMDindexfetchjoin ( BAT** result, BAT* tid, BAT* index, BAT* pre )
 @= init_result
 {
 	REGISTER BUN _p = BUNlast(bn);
-	REGISTER int _bunsize = BUNsize(bn);
 
 	bn->tsorted = bn->hsorted = 0;
 	ALIGNsetH(bn, e);
-	BATloopFast(e, p, q, xx) {
-		oiddbl_bunfastins_nocheck_noinc(bn, _p, BUNhloc(e,p), &zero);
-		_p += _bunsize;
+	BATloop(e, p, q) {
+		oiddbl_bunfastins_nocheck_noinc(bn, _p, Hloc(e,p), &zero);
+		_p++;
 	}
 	ALGODEBUG THRprintf(GDKout, "#init_result(dbl): BAThordered(e)&1, \n");
-	bn->batBuns->free = _p - bn->batBuns->base;
-	BATsetcount(bn, bn->batBuns->free/_bunsize);
+	BATsetcount(bn, _p - BUNfirst(bn));
 	if ( !BATprepareHash(bn) ) {
 	    /* do nothing yet */;	
 	}
@@ -3893,11 +3870,8 @@ int CMDscore_NLLR ( BAT** result, BAT* elem_tid, BAT* pre_size, BAT* tid_cnt, BA
 	dbl zero = (dbl)0;
 	dbl score = (dbl)0; 
 	BUN p, q, r, t;
-	int xx, i;
-	int term_cnt = (int)BATcount(tid_frq);
-	int est;
-	int *size = ((int*) BUNtloc(pre_size, BUNfirst(pre_size))) - (int)pre_size->hseqbase;
-        int bs_x, bs_t;
+	int est, i, term_cnt = (int)BATcount(tid_frq);
+	int *size = ((int*) Tloc(pre_size, BUNfirst(pre_size))) - (int)pre_size->hseqbase;
 	int tid_sum = 0;
 
 	oid* terms = (oid*) GDKmalloc(term_cnt * sizeof(oid));
@@ -3920,11 +3894,12 @@ int CMDscore_NLLR ( BAT** result, BAT* elem_tid, BAT* pre_size, BAT* tid_cnt, BA
 	/* ---------------------------- main ----------------------------------- */
 
 	i = 0;
-	BATloopFast(tid_frq, p, q, xx) {
-		int frq = *(int*) BUNtail(tid_frq, p);
+        BATiter tid_frqi = bat_iterator(tid_frq);
+	BATloop(tid_frq, p, q) {
+		int frq = *(int*) Tloc(tid_frq, p);
 		tid_sum += frq;
 		facs[i] = *_lmbd / (dbl)frq;
-		terms[i] = *(oid*) BUNhead(tid_frq, p);
+		terms[i] = *(oid*) BUNhead(tid_frqi, p);
 		bfrees[i] = frq;
 		/* printf("fac term: %f, _lambda %f, frq %d\n", facs[i], *_lmbd, *(int*) BUNtail(tid_frq, p)); */
 		i++;
@@ -3939,7 +3914,6 @@ int CMDscore_NLLR ( BAT** result, BAT* elem_tid, BAT* pre_size, BAT* tid_cnt, BA
 		dsts[i] = BUNlast(bats[i]);
 		bfrees[i] = (int)est2;
 	}
-        bs_x = BUNsize(bats[0]);
 	
         /* init result */
  	bn = BATnew(e->htype, TYPE_dbl, BATcount(e));
@@ -3948,22 +3922,22 @@ int CMDscore_NLLR ( BAT** result, BAT* elem_tid, BAT* pre_size, BAT* tid_cnt, BA
 	@:init_result@
 	
 
-	BATloopFast(elem_tid, p, q, xx) {
-		oid *h = (oid*) BUNhead(elem_tid, p);
-		oid *t = (oid*) BUNtail(elem_tid, p);
+        BATiter elem_tidi = bat_iterator(elem_tid);
+	BATloop(elem_tid, p, q) {
+		oid *h = (oid*) BUNhead(elem_tidi, p);
+		oid *t = (oid*) BUNtail(elem_tidi, p);
 		
 		for(i = 0; i < term_cnt; i++)  
 			if (terms[i] == *t) { 
 				if (!bfrees[i]) {
-					bats[i]->batBuns->free = dsts[i] - bats[i]->batBuns->base;
-	        			BATsetcount(bats[i], (bats[i]->batBuns->free+Bunbase(bats[i])-BUNfirst(bats[i]))/bs_x);
+	        			BATsetcount(bats[i], dsts[i]-BUNfirst(bats[i]));
 				        int sz = BATcount(bats[i]);
 					BATextend(bats[i],2*sz); 
 					dsts[i] = BUNlast(bats[i]);
 					bfrees[i] = sz;
 				}
-				*(oid*)dsts[i] = *h;
-				dsts[i] += bs_x;
+				*(oid*)Tloc(bats[i], dsts[i]) = *h;
+				dsts[i]++;
 				bfrees[i]--;
 				break;
 			}
@@ -3973,28 +3947,27 @@ int CMDscore_NLLR ( BAT** result, BAT* elem_tid, BAT* pre_size, BAT* tid_cnt, BA
 	}
 
         t = BUNfirst(tid_cnt);
-        bs_t = BUNsize(tid_cnt);
 	for(i = 0; i < term_cnt; i++) {
-		dbl fac = *(int*) BUNtail(tid_cnt, t) / (dbl)*q_cnt;
+		dbl fac = *(int*) Tloc(tid_cnt, t) / (dbl)*q_cnt;
 		/*printf("fac: %f\n", fac); */
-		t += bs_t;
-		bats[i]->batBuns->free = dsts[i] - bats[i]->batBuns->base;
-	        BATsetcount(bats[i], (bats[i]->batBuns->free+Bunbase(bats[i])-BUNfirst(bats[i]))/bs_x);
+		t++;
+	        BATsetcount(bats[i], dsts[i]-BUNfirst(bats[i]));
 		BAT *tmp = BAThistogram(bats[i]);
-		BATloopFast(tmp, p, q, xx) {
-			oid *h = (oid*) BUNhloc(tmp, p);
-			int *t = (int*) BUNtloc(tmp, p);
+                BATiter bni = bat_iterator(bn);
+		BATloop(tmp, p, q) {
+			oid *h = (oid*) Hloc(tmp, p);
+			int *t = (int*) Tloc(tmp, p);
 			score = (dbl)*t / (dbl)size[*h];
 			score *= facs[i];
 			score++;
 			score = log(score);
 			score *= fac;
-			HASHfnd_oid(r, bn, h);
-			if (r) {
-					dbl *dst = (dbl*) BUNtloc(bn,r);
-					(*dst) += score;
-			       } 
-			else GDKerror("%s: jan was right again.\n",name);     
+			HASHfnd_oid(r, bni, h);
+			if (r != BUN_NONE) {
+				dbl *dst = (dbl*) Tloc(bn,r);
+				(*dst) += score;
+			} else 
+                                GDKerror("%s: jan was right again.\n",name);     
 		}
 		BBPreclaim(tmp);
 		BBPreclaim(bats[i]);
@@ -4040,12 +4013,9 @@ int CMDtreemergejoin_sort(BAT **result, BAT *Astart, BAT *pre_size, BAT *Dstart)
     si *stack; 
     int stack_top = 0, i;
 	
-    int SAs;
-    int SDs;
-    int SRs;
     int *size;
     int free;	
-    BUN dst = NULL;
+    oid *sdst = NULL, *hdst = NULL, *tdst = NULL;
     
     /* ------------------------------- checks ---------------------------------------- */
     if (!(BATtordered(Astart)&1)) { 
@@ -4079,15 +4049,13 @@ int CMDtreemergejoin_sort(BAT **result, BAT *Astart, BAT *pre_size, BAT *Dstart)
        return(GDK_FAIL);
     }
     
-    SAs = BUNsize(Astart) / SIZEOF_OID;
-    SDs = BUNsize(Dstart) / SIZEOF_OID;
-    SRs = BUNsize(res);
-    size = ((int*) BUNtloc(pre_size, BUNfirst(pre_size))) - (int)pre_size->hseqbase;
-    D_cur_start = (oid *) BUNtail(Dstart, BUNfirst(Dstart));
-    D_last_start = (oid *) BUNtail(Dstart, BUNlast(Dstart));  
-    A_cur_start = (oid *) BUNtail(Astart, BUNfirst(Astart));
-    A_last_start = (oid *) BUNtail(Astart, BUNlast(Astart));
-    dst = BUNlast(res);
+    size = ((int*) Tloc(pre_size, BUNfirst(pre_size))) - (int)pre_size->hseqbase;
+    D_cur_start = (oid *) Tloc(Dstart, BUNfirst(Dstart));
+    D_last_start = (oid *) Tloc(Dstart, BUNlast(Dstart));  
+    A_cur_start = (oid *) Tloc(Astart, BUNfirst(Astart));
+    A_last_start = (oid *) Tloc(Astart, BUNlast(Astart));
+    sdst = hdst = (oid*)Hloc(res, BUNlast(res));
+           tdst = (oid*)Tloc(res, BUNlast(res));
 
     /* -------------------------------- main ---------------------------------------- */
     while(D_cur_start < D_last_start) {
@@ -4106,7 +4074,7 @@ int CMDtreemergejoin_sort(BAT **result, BAT *Astart, BAT *pre_size, BAT *Dstart)
 	if (*D_cur_start <= (*A_cur_start + size[*A_cur_start])) {
 	   @:push@
 	}
-	A_cur_start += SAs;
+	A_cur_start++;
       }
       
       /* output everything that is on the stack (the ancestors) */
@@ -4115,32 +4083,31 @@ int CMDtreemergejoin_sort(BAT **result, BAT *Astart, BAT *pre_size, BAT *Dstart)
       free -= stack_top;
       if (free < 0)
       {
-	res->batBuns->free = dst - res->batBuns->base;
-     	BATsetcount(res, (res->batBuns->free+Bunbase(res)-BUNfirst(res))/SRs);
+     	BATsetcount(res, hdst - sdst);
 	size_t sz = BATgrows(res);
 	if (BATextend(res, sz) == NULL)
     	{ 
        	  GDKerror("%s: could not extend result BAT.\n", name);
           return(GDK_FAIL);
     	}
-	dst = BUNlast(res);
+        sdst = (oid*)Hloc(res, BUNfirst(res));
+        hdst = (oid*)Hloc(res, BUNlast(res));
+        tdst = (oid*)Tloc(res, BUNlast(res));
 	free = sz - BATcount(res) - stack_top;
       }
      
       for (i=0;i<stack_top;i++) {
         /* printf("3. anc/desc: (%d/%d)\n", stack[i].ctx, *D_cur_start); */
-        *(oid*)dst              = stack[i].ctx;
-        *(oid*)(dst+SIZEOF_OID) = *D_cur_start;
-        dst += SRs;
+        *hdst++ = stack[i].ctx;
+        *tdst++ = *D_cur_start;
       }
-      D_cur_start += SDs;
+      D_cur_start++;
     }
     
     /* ----------------------------- tidy up -------------------------------------- */
      GDKfree(stack); 
 	
-     res->batBuns->free = dst - res->batBuns->base;
-     BATsetcount(res, (res->batBuns->free+Bunbase(res)-BUNfirst(res))/SRs);
+     BATsetcount(res, hdst - sdst);
      res->batDirty = TRUE;
      res->tsorted = GDK_SORTED;
      res->hsorted = FALSE;
@@ -4159,12 +4126,9 @@ int CMDtreemergejoin_sort_unnested(BAT **result, BAT *Astart, BAT *pre_size, BAT
     BAT *res = *result;
     oid *D_cur_start, *D_last_start, 
         *A_cur_start, *A_last_start;
-    int SAs;
-    int SDs;
-    int SRs;
     int *size;
     int free;	
-    BUN dst = NULL;
+    oid *sdst = NULL, *hdst = NULL, *tdst = NULL;
     
     /* ------------------------------- checks ---------------------------------------- */
     if (!(BATtordered(Astart)&1)) { 
@@ -4192,21 +4156,19 @@ int CMDtreemergejoin_sort_unnested(BAT **result, BAT *Astart, BAT *pre_size, BAT
        return(GDK_FAIL);
     }
     
-    SAs = BUNsize(Astart) / SIZEOF_OID;
-    SDs = BUNsize(Dstart) / SIZEOF_OID;
-    SRs = BUNsize(res);
-    size = ((int*) BUNtloc(pre_size, BUNfirst(pre_size))) - (int)pre_size->hseqbase;
-    D_cur_start = (oid *) BUNtail(Dstart, BUNfirst(Dstart));
-    D_last_start = (oid *) BUNtail(Dstart, BUNlast(Dstart));  
-    A_cur_start = (oid *) BUNtail(Astart, BUNfirst(Astart));
-    A_last_start = (oid *) BUNtail(Astart, BUNlast(Astart));
-    dst = BUNlast(res);
+    size = ((int*) Tloc(pre_size, BUNfirst(pre_size))) - (int)pre_size->hseqbase;
+    D_cur_start = (oid *) Tloc(Dstart, BUNfirst(Dstart));
+    D_last_start = (oid *) Tloc(Dstart, BUNlast(Dstart));  
+    A_cur_start = (oid *) Tloc(Astart, BUNfirst(Astart));
+    A_last_start = (oid *) Tloc(Astart, BUNlast(Astart));
+    sdst = hdst = (oid*)Hloc(res, BUNlast(res));
+           tdst = (oid*)Tloc(res, BUNlast(res));
 
     /* -------------------------------- main ---------------------------------------- */
     
     /* skip descendant candidates before the for ancestor candidate */
     while(*D_cur_start <= *A_cur_start)
-      D_cur_start += SDs;
+      D_cur_start++;
     
     while(D_cur_start < D_last_start) {
       /* poor man's binary search / exploiting forward scan */
@@ -4218,19 +4180,17 @@ int CMDtreemergejoin_sort_unnested(BAT **result, BAT *Astart, BAT *pre_size, BAT
           A_cur_start += 1024; 
       while (A_cur_start+32 < A_last_start && *(oid*)(A_cur_start+32) < *D_cur_start)
           A_cur_start += 32; 
-      while (A_cur_start+SAs < A_last_start && *(oid*)(A_cur_start+SAs) < *D_cur_start)
-          A_cur_start += SAs; 
+      while (A_cur_start+1 < A_last_start && *(oid*)(A_cur_start+1) < *D_cur_start)
+          A_cur_start++; 
       if (*D_cur_start <= (*A_cur_start + size[*A_cur_start])) {
-          *(oid*)dst              = *A_cur_start;
-          *(oid*)(dst+SIZEOF_OID) = *D_cur_start;
-          dst += SRs;
+          *hdst++ = *A_cur_start;
+          *tdst++ = *D_cur_start;
       }  
-      D_cur_start += SDs;
+      D_cur_start++;
     }
     
     /* ----------------------------- tidy up -------------------------------------- */
-    res->batBuns->free = dst - res->batBuns->base;
-    BATsetcount(res, (res->batBuns->free+Bunbase(res)-BUNfirst(res))/SRs);
+    BATsetcount(res, hdst - sdst);
     res->batDirty = TRUE;
     res->tsorted = GDK_SORTED;
     res->hsorted = FALSE;

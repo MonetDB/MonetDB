@@ -263,9 +263,10 @@ int old_main(BAT* optbat, char* startNodes_name)
     char* qenv_okapi_b   = "0.75"; //default
 
     BUN p, q;
+    BATiter optbati = bat_iterator(optbat);
     BATloop(optbat, p, q) {
-        str optName = (str)BUNhead(optbat,p);
-        str optVal  = (str)BUNtail(optbat,p);
+        str optName = (str)BUNhead(optbati,p);
+        str optVal  = (str)BUNtail(optbati,p);
 
         if ( strcmp(optName,"debug") == 0 ) {
 	    if ( 0 ) {
@@ -595,9 +596,9 @@ int old_main(BAT* optbat, char* startNodes_name)
     char batName[100]; 
     sprintf( batName, "tj_%s_param", parserCtx->collection );
     BAT* collOptBat = BATdescriptor( BBPindex(batName) );
-	
+    BATiter collOptBati = bat_iterator(collOptBat);
     BUN bun = BUNfnd( collOptBat, (str)"stemmer" );
-    char *stemmer = (char *)BUNtail( collOptBat, bun );
+    char *stemmer = (char *)BUNtail( collOptBati, bun );
 
     /* processing original query plans: stemming and stop word removal */
     plan_ret = process(stemmer, stem_stop_query, FALSE);

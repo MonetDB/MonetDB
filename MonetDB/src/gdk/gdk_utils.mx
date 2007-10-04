@@ -15,7 +15,7 @@
 @' All Rights Reserved.
 
 @f gdk_utils
-@a M. L. Kersten, P. Boncz
+@a M. L. Kersten, P. Boncz, N. Nes
 
 @* Utilities
 The utility section contains functions to initialize the Monet database
@@ -135,8 +135,10 @@ GDKgetenv(const char *name)
 {
 	BUN b = BUNfnd(GDKenv, (ptr) name);
 
-	if (b)
-		return BUNtail(GDKenv, b);
+	if (b != BUN_NONE) {
+		BATiter GDKenvi = bat_iterator(GDKenv);
+		return BUNtail(GDKenvi, b);
+	}
 	return NULL;
 }
 

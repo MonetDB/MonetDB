@@ -14,7 +14,7 @@
 # Portions created by CWI are Copyright (C) 1997-2007 CWI.
 # All Rights Reserved.
 
-SUBDIRS = crackers
+SUBDIRS = #crackers
 
 INCLUDES = -I../atoms -I../kernel \
         -I../../mal $(MONETDB_INCS) $(CLIENTS_INCS) \
@@ -30,9 +30,9 @@ LIBS = {
 		profiler.mx const.mx algebraExtensions.mx \
 		inspect.mx manual.mx \
 		factory.mx mdb.mx  \
-		urlbox.mx mat.mx batxml.mx \
-		sabaoth.mx radix.mx remote.mx
-		#datacell.mx 
+		urlbox.mx mat.mx \
+		sabaoth.mx remote.mx
+		#datacell.mx radix.mx batxml.mx 
 
 	HEADERS = h 
 	LIBS = ../../mal/libmal ../atoms/lib_xml $(MONETDB_LIBS) -lbat -lstream $(MATH_LIBS) \
@@ -160,8 +160,8 @@ headers_mal = {
 		factory.mx mdb.mx pcre.mx  tablet.mx mat.mx \
 		urlbox.mx statistics.mx transaction.mx \
 		mserver.mx sabaoth.mx remote.mx \
-		radix.mx bpm.mx  batxml.mx
-	#datacell.mx 
+		radix.mx bpm.mx 
+	#datacell.mx #batxml.mx
 }
 
 EXTRA_DIST_DIR = Tests

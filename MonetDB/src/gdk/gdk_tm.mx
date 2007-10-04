@@ -156,10 +156,11 @@ TMsubcommit(BAT *b)
 	int xx, ret = -1, cnt = 1;	/* BBP artifact: slot 0 in the array will be ignored */
 	bat *subcommit = (bat *) alloca((BATcount(b) + 1) * sizeof(bat));
 	BUN p, q;
+	BATiter bi = bat_iterator(b);
 
 	/* collect the list and save the new bats outside any locking */
-	BATloopFast(b, p, q, xx) {
-		bat bid = BBPindex((str) BUNtail(b, p));
+	BATloop(b, p, q) {
+		bat bid = BBPindex((str) BUNtail(bi, p));
 
 		if (bid < 0)
 			bid = -bid;
@@ -167,7 +168,7 @@ TMsubcommit(BAT *b)
 			subcommit[cnt++] = bid;
 	}
 	/* sort the list on BAT id */
-	GDKqsort(subcommit + 1, NULL, cnt - 1, sizeof(bat), TYPE_bat, 0);
+	GDKqsort(subcommit + 1, NULL, NULL, cnt - 1, sizeof(bat), 0, TYPE_bat);
 
 	if (prelude(cnt, subcommit) == 0) {	/* save the new bats outside the lock */
 		/* lock just prevents BBPtrims, and other global (sub-)commits */

@@ -20,9 +20,9 @@ i.find("head").print();
 [ "void" ]
 i.find("tail").print();
 [ "void" ]
-i.find("hloc").print();
+i.find("htop").print();
 [ "0" ]
-i.find("tloc").print();
+i.find("ttop").print();
 [ "0" ]
 i.find("hseqbase").print();
 [ "0@0" ]
@@ -38,9 +38,9 @@ i.find("head").print();
 [ "void" ]
 i.find("tail").print();
 [ "void" ]
-i.find("hloc").print();
+i.find("htop").print();
 [ "0" ]
-i.find("tloc").print();
+i.find("ttop").print();
 [ "0" ]
 i.find("hseqbase").print();
 [ "0@0" ]

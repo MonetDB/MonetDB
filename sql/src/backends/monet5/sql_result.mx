@@ -249,9 +249,10 @@ bat_max_strlength(BAT *b)
 	BUN p, q;
 	size_t max = 0;
 	size_t l = 0;
+	BATiter bi = bat_iterator(b);
 
 	BATloop(b, p, q) {
-		char *s = BUNtail(b, p);
+		char *s = BUNtail(bi, p);
 		l = strlen(s);
 
 		if (l > max)
@@ -268,9 +269,10 @@ bat_max_@1length(BAT *b)
 	lng max = 0;
 	lng min = 0;
 	size_t ret = 0;
+	BATiter bi = bat_iterator(b);
 
 	BATloop(b, p, q) {
-		@1 l = *((@1 *)BUNtail(b, p));
+		@1 l = *((@1 *)BUNtail(bi, p));
 		if (l == @1_nil) l = 4;
 		if (l > max) max = l;
 		if (l < min) min = l;
@@ -750,6 +752,7 @@ mvc_export_table(mvc *m, stream *s, res_table *t, BAT *order, size_t offset, siz
 			break;
 
 		fmt[i].c = BATdescriptor(c->b);
+		fmt[i].ci = bat_iterator(fmt[i].c);
 		fmt[i].name = NULL;
 		fmt[i].sep = ((i - 1) < (t->nr_cols - 1)) ? _strdup(sep) : _strdup(rsep);
 		fmt[i].seplen = _strlen(fmt[i].sep);

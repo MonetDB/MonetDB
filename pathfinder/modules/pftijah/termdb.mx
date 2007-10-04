@@ -130,11 +130,12 @@ INLINE static char* hashbatName(char* format, int i) {
 
 
 INLINE static oid tdb_findOid(BAT* void_oid_bat, oid idx) {
+        BATiter void_oid_bati = bat_iterator(void_oid_bat);
 	BUN bun;
 
-	BUNfndVOID(bun,void_oid_bat,&idx);
-	if ( bun ) {
-	    return *(oid*)BUNtail(void_oid_bat,bun);
+	BUNfndVOID(bun,void_oid_bati,&idx);
+	if ( bun != BUN_NONE ) {
+	    return *(oid*)BUNtail(void_oid_bati,bun);
 	} else {
 	    return oid_nil;
 	}
@@ -149,11 +150,12 @@ INLINE static int tdb_replaceOid(BAT* void_oid_bat, oid idx, oid v) {
 }
 
 BAT* tdb_findBat(BAT* void_bat_bat, oid idx) {
+        BATiter void_bat_bati = bat_iterator(void_bat_bat);
 	BUN bun;
 
-	BUNfndVOID(bun,void_bat_bat,&idx);
-	if ( bun ) {
-	    bat resbat = *(bat*)BUNtail(void_bat_bat,bun);
+	BUNfndVOID(bun,void_bat_bati,&idx);
+	if ( bun != BUN_NONE ) {
+	    bat resbat = *(bat*)BUNtail(void_bat_bati,bun);
     	    return BBPdescriptor(resbat);
 	} else {
 	    return NULL;
@@ -309,7 +311,7 @@ int CMDtj_dispose_termdb() {
  */
 
 int tdb_checkHashTable(BAT* b) {
-    if ( b->hhash == NULL ) {
+    if ( b->H->hash == NULL ) {
          if ( !BAThash(b,0) ) {
                  stream_printf(GDKout,"#termdb:tdb_checkHashTable: fail to creat hashtable on [oid,str] bat.\n");
              return 0;
@@ -532,9 +534,10 @@ int tdb_splitBucket(termDbCtx* tdb, int frag) {
      *
      */
     BUN p, q;
+    BATiter old_fragi = bat_iterator(old_frag);
     BATloop(old_frag, p, q) {
-	str h = (str) BUNhead(old_frag, p);
-	oid t = *(oid*)BUNtail(old_frag, p);
+	str h = (str) BUNhead(old_fragi, p);
+	oid t = *(oid*)BUNtail(old_fragi, p);
 
 	if ( !tdb_insertTerm(tdb,h,t,1 /*incomplete, should be 0 */ ) )
 	    return 0;
@@ -554,7 +557,7 @@ int tdb_insertTerm(termDbCtx* tdb, char* term, oid o, int check) {
 
     if ( ! fragTerm )
     	return 0;
-    if ( check && BUNfnd(fragTerm,term) ) {
+    if ( check && BUNfnd(fragTerm,term) != BUN_NONE ) {
         stream_printf(GDKout,"#tdb_insertTerm:frag[%d]: duplicate term \"%s\".\n",frag,term);
         return 0;
     } else {
@@ -583,11 +586,12 @@ oid tdb_lookupTerm(termDbCtx* tdb, char* term) {
     if ( ! fragTerm )
     	return oid_nil;
     BUN bun;
-    if ( (bun = BUNfnd(fragTerm,term)) ) {
+    if ( (bun = BUNfnd(fragTerm,term)) != BUN_NONE ) {
+        BATiter fragTermi = bat_iterator(fragTerm);
 #ifdef TDB_SHOWLOOKUP
-        TDB_DEBUG(TDB_OUT,"#termdb:tdb_lookupTerm[%d](\"%s\") = " OIDFMT "\n",frag,term,*(oid*)BUNtail(fragTerm,bun));
+        TDB_DEBUG(TDB_OUT,"#termdb:tdb_lookupTerm[%d](\"%s\") = " OIDFMT "\n",frag,term,*(oid*)BUNtail(fragTermi,bun));
 #endif
-        return *(oid*)BUNtail(fragTerm,bun);
+        return *(oid*)BUNtail(fragTermi,bun);
     } else {
     	if ( !BUNins(fragTerm, (str)term, &tdb->curOid, FALSE)){
     	    GDKerror("tdb_lookup: insert \"%s\" in termbat fails.\n");
@@ -608,11 +612,12 @@ oid tdb_lookupTerm(termDbCtx* tdb, char* term) {
 oid tdb_lookupTag(termDbCtx* tdb, char* tag) {
     BUN bun;
 	
-    if ( (bun = BUNfnd(tdb->tags,tag)) ) {
+    if ( (bun = BUNfnd(tdb->tags,tag)) != BUN_NONE ) {
+        BATiter ti = bat_iterator(tdb->tags);
 #ifdef TDB_SHOWLOOKUP
-        TDB_DEBUG(TDB_OUT,"#termdb:tdb_lookupTag(\"%s\") = " OIDFMT "\n",tag,*(oid*)BUNtail(tdb->tags,bun));
+        TDB_DEBUG(TDB_OUT,"#termdb:tdb_lookupTag(\"%s\") = " OIDFMT "\n",tag,*(oid*)BUNtail(ti,bun));
 #endif
-        return *(oid*)BUNtail(tdb->tags,bun);
+        return *(oid*)BUNtail(ti,bun);
     } else {
     	if ( !BUNins(tdb->tags, (str)tag, &tdb->curTagOid, FALSE)){
     	    GDKerror("tdb_lookupTag: insert \"%s\" in tagbat fails.\n");

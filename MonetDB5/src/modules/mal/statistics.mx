@@ -329,22 +329,23 @@ STATexit()
 	STAT_id_max_lng= NULL;
 	STAT_id_histogram= NULL;
 
-	TMcommit();
 	mal_unset_lock(mal_contextLock, "statistics");
 }
 
 str
 STATdrop(str nme)
 {
-	ptr p;
+	BATiter STAT_id_nmei;
+	BUN p;
 	int idx;
 
 	if(STAT_id_inuse ==0) 
 		throw(MAL, "statistics.drop","Statistics not initialized");
 	p = BUNfnd(BATmirror(STAT_id_nme), nme);
-	if (p == 0)
+	if (p == BUN_NONE)
 		throw(MAL, "statistics.drop", "BAT not enrolled");
-	idx = *(int *) BUNhead(STAT_id_nme,p);
+	STAT_id_nmei = bat_iterator(STAT_id_nme);
+	idx = *(int *) BUNhead(STAT_id_nmei,p);
 	BUNdelHead(STAT_id_nme, &idx, FALSE);
 	BUNdelHead(STAT_id_expire, &idx, FALSE);
 	BUNdelHead(STAT_id_stamp, &idx, FALSE);
@@ -385,29 +386,30 @@ STATupdateAll(int *ret, int forced)
 	str name;
 	int i;
 
-	if (STAT_id_nme)
+	if (STAT_id_nme) {
+		BATiter STAT_id_nmei = bat_iterator(STAT_id_nme);
 		BATloop(STAT_id_nme, p, q) {
-		name = (str) BUNtail(STAT_id_nme, p);
+			name = (str) BUNtail(STAT_id_nmei, p);
 #ifdef DEBUG_STATISTICS
-		stream_printf(GDKout, "update statistics of %d\n", name);
+			stream_printf(GDKout, "update statistics of %d\n", name);
 #endif
-		i = BBPindex(name);
-		if (i == 0)
-			continue;
-		if (forced == FALSE && BUNfnd(STAT_id_inuse, &i) == 0)
-			continue;
-		b = BATdescriptor(i);
-		if (b == 0) {
-			/* BAT disappeared */
-			STATdiscard2(ret, &i);
-			continue;
+			i = BBPindex(name);
+			if (i == 0)
+				continue;
+			if (forced == FALSE && BUNfnd(STAT_id_inuse, &i) == BUN_NONE)
+				continue;
+			b = BATdescriptor(i);
+			if (b == 0) {
+				/* BAT disappeared */
+				STATdiscard2(ret, &i);
+				continue;
+			}
+			/* check the modification time with histogram */
+			/* if BBPolder(i,j) ) */  {
+				STATforceUpdate(ret, &name);
+			}
 		}
-		/* check the modification time with histogram */
-		/* if BBPolder(i,j) ) */  {
-			STATforceUpdate(ret, &name);
-		}
-		}
-
+	}
 	return MAL_SUCCEED;
 }
 
@@ -432,7 +434,7 @@ STATforceUpdate(int *ret, str *nme)
 {
 	BAT *b, *h;
 	char buf[PATHLENGTH];
-	ptr p;
+	BUN p;
 	lng cnt;
 	int idx;
 
@@ -442,26 +444,26 @@ STATforceUpdate(int *ret, str *nme)
 	if (b == 0)
 		throw(MAL, "statistics.forceUpdate", "Could not find BAT");
 	p = BUNfnd(STAT_id_nme, &idx);
-	if (p)
+	if (p != BUN_NONE)
 		BUNdelete(STAT_id_nme, p, FALSE);
 	BUNins(STAT_id_nme, &idx, *nme, FALSE);
 	cnt = BATcount(b);
 	p = BUNfnd(STAT_id_count, &idx);
-	if (p)
+	if (p != BUN_NONE)
 		BUNdelete(STAT_id_count, p, FALSE);
 	BUNins(STAT_id_count, &idx, &cnt, FALSE);
 
 	cnt = BATmemsize(b, 0);
 	p = BUNfnd(STAT_id_size, &idx);
-	if (p)
+	if (p != BUN_NONE)
 		BUNdelete(STAT_id_size, p, FALSE);
 	BUNins(STAT_id_size, &idx, &cnt, FALSE);
 
 	p = BUNfnd(STAT_id_min_lng, &idx);
-	if (p)
+	if (p != BUN_NONE)
 		BUNdelete(STAT_id_min_lng, p, FALSE);
 	p = BUNfnd(STAT_id_max_lng, &idx);
-	if (p)
+	if (p != BUN_NONE)
 		BUNdelete(STAT_id_max_lng, p, FALSE);
 
 	if (b->ttype == TYPE_int) {
@@ -484,12 +486,12 @@ STATforceUpdate(int *ret, str *nme)
 	BATcommit(h);
 
 	p = BUNfnd(STAT_id_histogram, &idx);
-	if (p)
+	if (p != BUN_NONE)
 		BUNdelete(STAT_id_histogram, p, FALSE);
 	BUNins(STAT_id_histogram, &idx, BATgetId(h), FALSE);
 
 	p = BUNfnd(STAT_id_inuse, &idx);
-	if (p)
+	if (p != BUN_NONE)
 		BUNdelete(STAT_id_inuse, p, FALSE);
 	BUNins(STAT_id_inuse, &idx, &idx, FALSE);
 	STATcommit();
@@ -610,14 +612,14 @@ STATdepositStr(int *ret, str *nme)
 	ValRecord val;
 	int idx;
 	str bnme;
-	ptr p;
+	BUN p;
 
 	b = BATdescriptor(idx = BBPindex(*nme));
 	if (b == NULL)
 		throw(MAL, "statistics.deposit", "BAT unknown");
 	OpenBox("deposit");
 	p= BUNfnd(BATmirror(STAT_id_nme),*nme);
-	if( p) return MAL_SUCCEED;
+	if (p != BUN_NONE) return MAL_SUCCEED;
 	val.val.bval = idx;
 	val.vtype = TYPE_bat;
 	if (depositBox(box, *nme, &val))
@@ -819,19 +821,22 @@ STATgetObjects(int *bid)
 @= stat
 s_export str STATget@1(lng *ret, str *nme);
 str
-STATget@1(lng *ret, str *nme){
+STATget@1(lng *ret, str *nme)
+{
+	BATiter STAT_id_nmei;
 	Box box;
-	ptr p;
+	BUN p;
 	int i;
 	OpenBox("get@1");
 	p= BUNfnd(BATmirror(STAT_id_nme),*nme);
-	if( p == NULL)
+	if (p == BUN_NONE)
 		throw(MAL, "statistics.get@1","Object not known");
-	i= *(int*) BUNhead(STAT_id_nme,p);
+	STAT_id_nmei = bat_iterator(STAT_id_nme);
+	i= *(int*) BUNhead(STAT_id_nmei,p);
 	p= BUNfnd(STAT_id_@2, &i );
-	if( p == NULL)
+	if (p == BUN_NONE)
 		throw(MAL, "statistics.get@1","Not known");
-	*ret = *(lng*)BUNtail(STAT_id_@2,p);
+	*ret = *(lng*)Tloc(STAT_id_@2,p);
 	return MAL_SUCCEED;
 }
 @c
@@ -844,20 +849,23 @@ STATget@1(lng *ret, str *nme){
 str
 STATgetHistogram(int *ret, str *nme)
 {
-	ptr p;
+	BATiter STAT_id_nmei, STAT_id_histogrami;
+	BUN p;
 	int i;
 	BAT *h;
 	Box box;
 
 	OpenBox("getHistogram");
 	p = BUNfnd(BATmirror(STAT_id_nme), *nme);
-	if (p == NULL)
+	if (p == BUN_NONE)
 		throw(MAL, "statistics.getHistogram", "BAT not known");
-	i= *(int*) BUNhead(STAT_id_nme,p);
+	STAT_id_nmei = bat_iterator(STAT_id_nme);
+	STAT_id_histogrami = bat_iterator(STAT_id_histogram);
+	i= *(int*) BUNhead(STAT_id_nmei,p);
 	p = BUNfnd(STAT_id_histogram, &i);
-	if (p == NULL)
+	if (p == BUN_NONE)
 		throw(MAL, "statistics.getHistogram", "Histogram not known");
-	i = BBPindex((str) BUNtail(STAT_id_histogram, p));
+	i = BBPindex((str) BUNtail(STAT_id_histogrami, p));
 	if (i == 0)
 		throw(MAL, "statistics.getHistogram", "Histogram disappeared");
 	h = BATdescriptor(i);

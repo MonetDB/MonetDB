@@ -339,9 +339,10 @@ request2bat(stream *out, char *reqmsg)
 static int 
 isAllowed(BAT *allowed, char* key)
 {
+    BATiter allowedi = bat_iterator(allowed);
     BUN p,q;
     BATloop(allowed, p, q) {
-        char* prefix = BUNhead(allowed,p);
+        char* prefix = BUNhead(allowedi,p);
         if (strncmp(key, prefix, strlen(prefix)) == 0)  
             return 1;
     }
@@ -362,8 +363,9 @@ isTrusted(stream *out, char *location)
         size_t len_x = 0, pos = 0;
         char * err;
         BUN p,q;
+        BATiter xrpc_trustedi = bat_iterator(xrpc_trusted);
         BATloop(xrpc_trusted, p, q) {
-            char* prefix = BUNhead(xrpc_trusted, p);
+            char* prefix = BUNhead(xrpc_trustedi, p);
             len_x += strlen(prefix) + 4;
         }
         err = alloca(len + len_x);
@@ -380,7 +382,7 @@ isTrusted(stream *out, char *location)
         } else {
             pos += snprintf(err+pos, len-pos, "\n'%s' not in", location);
             BATloop(xrpc_trusted, p, q) {
-                char* prefix = BUNhead(xrpc_trusted, p);
+                char* prefix = BUNhead(xrpc_trustedi, p);
                 pos += snprintf(err+pos, len-pos, "\n'%s',", prefix);
             }
             err[pos-1] = '.';
@@ -412,9 +414,11 @@ count_node(char *node_name,
 
     for (i = start_pre; i <= end_pre; i++) {
         if (pre_kind[i] == ELEMENT) {
-            char *qname = BUNtail(qn_loc,
+            BATiter qn_loci = bat_iterator(qn_loc);
+            BATiter qn_urii = bat_iterator(qn_uri);
+            char *qname = BUNtail(qn_loci,
                             BUNfnd(qn_loc, &(pre_prop[i])));
-            char *qname_uri = BUNtail(qn_uri,
+            char *qname_uri = BUNtail(qn_urii,
                                 BUNfnd(qn_uri, &(pre_prop[i])));
             if(strcmp(qname, node_name) == 0 &&
                strcmp(qname_uri, ns)== 0)
@@ -468,9 +472,11 @@ get_elem_pre_by_name(char *node_name,
 
     for (i = start_pre; i <= end_pre; i++) {
         if (pre_kind[i] == elem_kind) {
-            char *qname = BUNtail(qn_loc,
+            BATiter qn_loci = bat_iterator(qn_loc);
+            BATiter qn_urii = bat_iterator(qn_uri);
+            char *qname = BUNtail(qn_loci,
                             BUNfnd(qn_loc, &(pre_prop[i])));
-            char *qname_uri = BUNtail(qn_uri,
+            char *qname_uri = BUNtail(qn_urii,
                                 BUNfnd(qn_uri, &(pre_prop[i])));
             if(strcmp(qname, node_name) == 0 &&
                strcmp(qname_uri, ns)== 0)
@@ -529,7 +535,8 @@ get_attr_val(stream *out,
         BBPreclaim(match);
         return NULL;
     } else if (i == 1) {
-        qn = *(oid*) BUNhead(match, BUNfirst(match));
+        BATiter matchi = bat_iterator(match), prop_vali = bat_iterator(prop_val);
+        qn = *(oid*) BUNhead(matchi, BUNfirst(match));
 
         BBPreclaim(qns);
         BBPreclaim(nss);
@@ -539,10 +546,8 @@ get_attr_val(stream *out,
         for (i = 0; i < nattrs; i++) {
             if (attr_own[i] > pre) break;
             if (attr_own[i] == pre && attr_qn[i] == qn) {
-                first = BUNindex(prop_val, BUNfirst(prop_val)) +
-                    attr_prop[i];
-                return (char*) BUNtail(prop_val,
-                        BUNptr(prop_val, first));
+                first = BUNfirst(prop_val) + attr_prop[i];
+                return (char*) BUNtail(prop_vali, first);
             }
         }
     }
@@ -570,8 +575,8 @@ get_type(oid  tpe_node_pre,
          oid *pre_prop,
          BAT *qn_loc)
 {
-    char *loc = (char*)BUNtail(qn_loc,
-                    BUNptr(qn_loc, pre_prop[tpe_node_pre]));
+    BATiter qn_loci = bat_iterator(qn_loc);
+    char *loc = (char*)BUNtail(qn_loci, pre_prop[tpe_node_pre]);
     char *prefix = "xs";
     if(strcmp(loc, "atomic-value") == 0){
         prefix = "xrpc";
@@ -687,6 +692,7 @@ getCallValues(stream *out,
     lng max_args = MAX_NR_PARAMS;
     char errstr[1024];
 
+    BATiter bi;
     BAT *frag_root = NULL, *pre_size = NULL;
     BAT *pre_level = NULL, *pre_kind = NULL,  *pre_prop = NULL;
     BAT *qn_loc   = NULL,  *qn_uri = NULL;
@@ -712,29 +718,30 @@ getCallValues(stream *out,
     char level_diff = 0; /* indicates how many levels each pre_level
                             value of a node should be reduced. */
 
-    i = BUNindex(shredBAT,BUNfirst(shredBAT));
-    pre_size   = BBP_cache(*(bat*)BUNtail(shredBAT,BUNptr(shredBAT,i+PRE_SIZE) ));
-    pre_level  = BBP_cache(*(bat*)BUNtail(shredBAT,BUNptr(shredBAT,i+PRE_LEVEL)));
-    pre_prop   = BBP_cache(*(bat*)BUNtail(shredBAT,BUNptr(shredBAT,i+PRE_PROP) ));
-    pre_kind   = BBP_cache(*(bat*)BUNtail(shredBAT,BUNptr(shredBAT,i+PRE_KIND) ));
-    prop_text  = BBP_cache(*(bat*)BUNtail(shredBAT,BUNptr(shredBAT,i+PROP_TEXT)));
-    text_base  = BBP_cache(*(bat*)BUNtail(shredBAT,BUNptr(shredBAT,i+PROP_TEXT)))->theap->base;
-    prop_val   = BBP_cache(*(bat*)BUNtail(shredBAT,BUNptr(shredBAT,i+PROP_VAL) ));
-    qn_loc     = BBP_cache(*(bat*)BUNtail(shredBAT,BUNptr(shredBAT,i+QN_LOC)   ));
-    qn_uri     = BBP_cache(*(bat*)BUNtail(shredBAT,BUNptr(shredBAT,i+QN_URI)   ));
-    frag_root  = BBP_cache(*(bat*)BUNtail(shredBAT,BUNptr(shredBAT,i+FRAG_ROOT)));
-    attr_own   = BBP_cache(*(bat*)BUNtail(shredBAT,BUNptr(shredBAT,i+ATTR_OWN) ));
-    attr_qn    = BBP_cache(*(bat*)BUNtail(shredBAT,BUNptr(shredBAT,i+ATTR_QN)  ));
-    attr_prop  = BBP_cache(*(bat*)BUNtail(shredBAT,BUNptr(shredBAT,i+ATTR_PROP)));
+    i = BUNfirst(shredBAT);
+    bi = bat_iterator(shredBAT);
+    pre_size   = BBP_cache(*(bat*)BUNtail(bi,i+PRE_SIZE) );
+    pre_level  = BBP_cache(*(bat*)BUNtail(bi,i+PRE_LEVEL));
+    pre_prop   = BBP_cache(*(bat*)BUNtail(bi,i+PRE_PROP) );
+    pre_kind   = BBP_cache(*(bat*)BUNtail(bi,i+PRE_KIND) );
+    prop_text  = BBP_cache(*(bat*)BUNtail(bi,i+PROP_TEXT));
+    text_base  = BBP_cache(*(bat*)BUNtail(bi,i+PROP_TEXT))->theap->base;
+    prop_val   = BBP_cache(*(bat*)BUNtail(bi,i+PROP_VAL) );
+    qn_loc     = BBP_cache(*(bat*)BUNtail(bi,i+QN_LOC)   );
+    qn_uri     = BBP_cache(*(bat*)BUNtail(bi,i+QN_URI)   );
+    frag_root  = BBP_cache(*(bat*)BUNtail(bi,i+FRAG_ROOT));
+    attr_own   = BBP_cache(*(bat*)BUNtail(bi,i+ATTR_OWN) );
+    attr_qn    = BBP_cache(*(bat*)BUNtail(bi,i+ATTR_QN)  );
+    attr_prop  = BBP_cache(*(bat*)BUNtail(bi,i+ATTR_PROP));
 
-    pre_sizeT  = (int*)  BUNfirst(pre_size);
-    pre_levelT = (char*) BUNfirst(pre_level);
-    pre_propT  = (oid*)  BUNfirst(pre_prop);
-    pre_kindT  = (char*) BUNfirst(pre_kind);
-    prop_textT = (var_t*)BUNfirst(prop_text);
-    attr_ownT  = (oid*)  BUNfirst(attr_own);
-    attr_qnT   = (oid*)  BUNfirst(attr_qn);
-    attr_propT = (oid*)  BUNfirst(attr_prop);
+    pre_sizeT  = (int*)  Tloc(pre_size, BUNfirst(pre_size));
+    pre_levelT = (char*) Tloc(pre_level, BUNfirst(pre_level));
+    pre_propT  = (oid*)  Tloc(pre_prop, BUNfirst(pre_prop));
+    pre_kindT  = (char*) Tloc(pre_kind, BUNfirst(pre_kind));
+    prop_textT = (var_t*)Tloc(prop_text, BUNfirst(prop_text));
+    attr_ownT  = (oid*)  Tloc(attr_own, BUNfirst(attr_own));
+    attr_qnT   = (oid*)  Tloc(attr_qn, BUNfirst(attr_qn));
+    attr_propT = (oid*)  Tloc(attr_prop, BUNfirst(attr_prop));
 
     pre_level  = BATsetaccess(pre_level, BAT_WRITE);
     frag_root  = BATsetaccess(frag_root, BAT_APPEND);

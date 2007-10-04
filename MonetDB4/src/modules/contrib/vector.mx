@@ -989,8 +989,9 @@ typedef struct {
 
 @= varsized_meanvector_c
     int cmd_@1s_meanvector(@2s **res, BAT *b, int *dim) {
+	BATiter bi = bat_iterator(b);
         BUN p, q;
-        int i, m;
+        int i;
 
         if(b->ttype != TYPE_@1s) {
             GDKerror("[cmd_@1s_meanvector]: BAT has wrong tail datatype (need @1s). (%d) (%d) (%d)\n", b->ttype,TYPE_@1s, ATOMindex("dbls"));
@@ -999,8 +1000,8 @@ typedef struct {
 
         *res = @2screate(*dim);
         for(i = 0; i < (*res)->dimension; i++) (*res)->data[i] = 0;
-        BATloopFast(b, p, q, m) {
-            @1s *val = (@1s *)BUNtvar(b, p);
+        BATloop(b, p, q) {
+            @1s *val = (@1s *)BUNtvar(bi, p);
             for(i = 0; i < (*res)->dimension; i++) {
                 (*res)->data[i] += (@2)val->data[i];
             }
@@ -1016,8 +1017,9 @@ typedef struct {
 
 @= fixedsize_meanvector_c
     int cmd_@1_vector@3_meanvector(@2_vector@3 *res, BAT *b) {
+	BATiter bi = bat_iterator(b);
         BUN p, q;
-        int i, m;
+        int i;
 
         if(b->ttype != TYPE_@1_vector@3) {
             GDKerror("[cmd_@1_vector@3_meanvector]: BAT has wrong tail datatype (need @1_vector@3).\n");
@@ -1025,8 +1027,8 @@ typedef struct {
         }
 
         for(i = 0; i < @3; i++) res->data[i] = 0;
-        BATloopFast(b, p, q, m) {
-            @1_vector@3 *val = (@1_vector@3 *)BUNtail(b, p);
+        BATloop(b, p, q) {
+            @1_vector@3 *val = (@1_vector@3 *)BUNtail(bi, p);
             for(i = 0; i < @3; i++) {
                 res->data[i] += val->data[i];
             }
@@ -1042,10 +1044,11 @@ typedef struct {
     
 @= varsized_aggregate_c
     int cmd_@1s_@2range(@1s **rval, BAT *vecs) {
-        int  i,xx, first = 1;
+	BATiter vecsi = bat_iterator(vecs);
+        int  i,first = 1;
         BUN  p,q;
         BUN  firstbun = BUNfirst(vecs);
-        @1s* vec      = (@1s*)(BUNtvar(vecs, firstbun));
+        @1s* vec      = (@1s*)(BUNtvar(vecsi, firstbun));
         int  dim      = vec->dimension;
 
         
@@ -1058,9 +1061,9 @@ typedef struct {
         }
 
         /* Compute aggregate */
-        BATloopFast(vecs, p, q, xx) {
+        BATloop(vecs, p, q) {
             if(first) { first = 0; continue; }
-            vec = (@1s *)BUNtvar(vecs, p);
+            vec = (@1s *)BUNtvar(vecsi, p);
             if(vec->dimension != dim) {
                 GDKerror( "[cmd_@1s_@2range]: Cannot compute @2range for vectors of different lengths.\n");
                 return(GDK_FAIL);
@@ -1074,10 +1077,11 @@ typedef struct {
 
 @= fixedsize_aggregate_c
     int cmd_@1_vector@2_@3range(@1_vector@2 *rval, BAT *vecs) {
-        int  i,xx, first = 1;
+	BATiter vecsi = bat_iterator(vecs);
+        int  i,first = 1;
         BUN  p,q;
         BUN  firstbun = BUNfirst(vecs);
-        @1_vector@2 *vec      = (@1_vector@2 *)(BUNtloc(vecs, firstbun));
+        @1_vector@2 *vec      = (@1_vector@2 *)(BUNtloc(vecsi, firstbun));
         int  dim      = vec->dimension;
 
         /* Make Copy... */
@@ -1088,9 +1092,9 @@ typedef struct {
         }
 
         /* Compute aggregate */
-        BATloopFast(vecs, p, q, xx) {
+        BATloop(vecs, p, q) {
             if(first) { first = 0; continue; }
-            vec = (@1_vector@2 *)BUNtvar(vecs, p);
+            vec = (@1_vector@2 *)BUNtvar(vecsi, p);
             if(vec->dimension != dim) {
                 GDKerror( "[cmd_@1_vector@2_@3range]: Cannot compute @3range for vectors of different lengths.\n");
                 return(GDK_FAIL);

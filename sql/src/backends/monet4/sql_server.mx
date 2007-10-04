@@ -451,12 +451,12 @@ int
 mvc_bat_next_value(BAT **res, mvc *C, BAT *snames, str seqname)
 {
 	mvc *c = *(mvc**)C;
-	int xx;
 	BAT *r;
 	BUN p,q;
 	sql_schema *s = NULL;
 	sql_sequence *seq = NULL;
 	seqbulk *sb = NULL;
+	BATiter snamesi = bat_iterator(snames);
 
 	r = BATnew(snames->htype, TYPE_lng, BATcount(snames));
 	if (!r) {
@@ -470,8 +470,8 @@ mvc_bat_next_value(BAT **res, mvc *C, BAT *snames, str seqname)
 		return GDK_SUCCEED;
 	}
 
-	BATloopFast(snames,p,q,xx){
-		str sname = BUNtail(snames,BUNfirst(snames));
+	BATloop(snames,p,q){
+		str sname = BUNtail(snamesi,BUNfirst(snames));
 		lng l;
 
 		if (!s || strcmp(s->base.name, sname) != 0) {
@@ -493,7 +493,7 @@ mvc_bat_next_value(BAT **res, mvc *C, BAT *snames, str seqname)
 			GDKerror("sql.next_value error");
 			return GDK_FAIL;
 		}
-		BUNins(r, BUNhead(snames,p), &l, FALSE);
+		BUNins(r, BUNhead(snamesi,p), &l, FALSE);
 	}
 	if (sb) 
 		seqbulk_destroy(sb);
@@ -1346,7 +1346,8 @@ zero_or_one(ptr ret, BAT* b)
 	if (c == 0) {
 		p = ATOMnilptr(b->ttype);
 	} else if (c == 1) {
-		p = BUNtail(b,BUNfirst(b));
+		BATiter bi = bat_iterator(b);
+		p = BUNtail(bi,BUNfirst(b));
 	} else {
 		p = NULL;
 		GDKerror("zero_or_one: cardinality violation (%d>1)", c);
@@ -1379,12 +1380,10 @@ int not_unique(bit *ret, BAT* b)
 		return GDK_SUCCEED;
 	} else if (b->tsorted&1) {
 		BUN p,q;
-		int sz;
 
-		oid c = *(oid*)BUNtloc(b, BUNfirst(b)); 
-		sz = BUNsize(b);
-		for(p=BUNfirst(b)+sz, q=BUNlast(b);p<q;p+=sz) {
-			oid v = *(oid*)BUNtloc(b,p);
+		oid c = *(oid*)Tloc(b, BUNfirst(b)); 
+		for(p=BUNfirst(b)+1, q=BUNlast(b); p<q; p++) {
+			oid v = *(oid*)Tloc(b,p);
 			if (v<=c) {
 				*ret = TRUE;
 				break;

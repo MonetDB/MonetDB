@@ -229,21 +229,25 @@ batstr_export str STRbatsubstring(int *ret, int *bid, int *start, int *length);
 @= BATint
 batstr_export str STRbat@1(int *ret, int *l);
 str STRbat@1(int *ret, int *l)
-{   BAT *bn, *b;
+{   
+	BATiter bi;
+	BAT *bn, *b;
 	BUN p,q;
-	int xx;
 	@3 x;
 	int y, *yp = &y;
 
 	prepareOperand(b,l,"@1");
 	prepareResult(bn,b,TYPE_int,"@1");
 
-	BATloopFast(b, p, q, xx) {
-		ptr h = BUNhead(b,p);
-		x= (@3) BUNtail(b,p);
-		if(x== 0 || *x == 0 || strcmp(x,@3_nil)== 0)
+	bi = bat_iterator(b);
+
+	BATloop(b, p, q) {
+		ptr h = BUNhead(bi,p);
+		x = (@3) BUNtail(bi,p);
+		if (x== 0 || *x == 0 || strcmp(x,@3_nil)== 0)
 			y= int_nil;
-		else @2(yp,x);
+		else 
+			@2(yp,x);
 		bunfastins(bn, h, yp);
 	}
 	finalizeResult(ret,bn,b);
@@ -261,21 +265,26 @@ bunins_failed:
 @= BATstr
 batstr_export str STRbat@1(int *ret, int *l);
 str STRbat@1(int *ret, int *l)
-{   BAT *bn, *b;
+{   
+	BATiter bi;
+	BAT *bn, *b;
 	BUN p,q;
-	int xx;
 	@3 x;
 	@4 y, *yp = &y;
 
 	prepareOperand(b,l,"@1");
 	prepareResult(bn,b,TYPE_@4,"@1");
 
-	BATloopFast(b, p, q, xx) {
-		ptr h = BUNhead(b,p);
-		x= (@3) BUNtail(b,p);
-		if(x== 0 || *x == 0 || strcmp(x,@3_nil)== 0)
+	bi = bat_iterator(b);
+
+	BATloop(b, p, q) {
+		ptr h = BUNhead(bi,p);
+
+		x = (@3) BUNtail(bi,p);
+		if (x== 0 || *x == 0 || strcmp(x,@3_nil)== 0)
 			y = (@4)@4_nil;
-		else @2(yp,x);
+		else 
+			@2(yp,x);
 		bunfastins(bn, h, *yp);
 	}
 	finalizeResult(ret,bn,b);
@@ -299,18 +308,21 @@ batstr_export str STRbat@2Cst(int *ret, int *l, str *cst);
 str
 STRbat@2Cst(int *ret, int *l, str *cst)
 {
+	BATiter bi;
 	BAT *bn, *b;
 	BUN p, q;
-	int xx;
 	str x;
 	bit y;
 
 	prepareOperand(b, l, "@1");
 	prepareResult(bn, b, TYPE_bit, "@1");
-	BATloopFast(b, p, q, xx) {
-		ptr h = BUNhead(b, p);
 
-		x = (str) BUNtail(b, p);
+	bi = bat_iterator(b);
+	
+	BATloop(b, p, q) {
+		ptr h = BUNhead(bi, p);
+
+		x = (str) BUNtail(bi, p);
 		if (x == 0 || *x == 0 || strcmp(x, str_nil) == 0)
 			y = bit_nil;
 		else
@@ -342,30 +354,26 @@ batstr_export str STRbat@2(int *ret, int *l, int *r);
 str
 STRbat@2(int *ret, int *l, int *r)
 {
+	BATiter lefti, righti;
 	BAT *bn, *left, *right;
-	BUN o, p, q;
-	int xx, yy;
+	BUN p, q;
 
 	prepareOperand2(left, l, right, r, "@1");
 	@:chkSize(left,right,CMDcompare@1)@
 	prepareResult2(bn, left, right, TYPE_bit, "@1");
 
-	o = BUNfirst(left);
-	p = BUNfirst(right);
-	q = BUNlast(right);
-	xx = BUNsize(left);
-	yy = BUNsize(right);
-	while (p < q) {
+	lefti = bat_iterator(left);
+	righti = bat_iterator(right);
+
+	BATloop(left, p, q) {
 		bit y = TRUE;
-		ptr h = BUNhead(left, o);
-		ptr tl = BUNtail(left, o);
-		ptr tr = BUNtail(right, p);
+		ptr h = BUNhead(lefti, p);
+		ptr tl = BUNtail(lefti, p);
+		ptr tr = BUNtail(righti, p);
 
 		if (tl == 0 || tr == 0 || !(strcmp(tl, tr) @1 0))
 			y = FALSE;
 		bunfastins(bn, h, &y);
-		o += xx;
-		p += yy;
 	}
 	BBPreleaseref(right->batCacheid);
 	bn->tsorted = (BATtordered(left)&BATtordered(right)&1)?@3:0;
@@ -385,28 +393,25 @@ bunins_failed:
 @= binarySTR
 batstr_export str STRbat@1(int *ret, int *l, int *r);
 str STRbat@1(int *ret, int *l, int *r)
-{   BAT *bn, *left, *right;
-	BUN o,p,q;
-	int xx,yy;
+{   
+	BATiter lefti, righti;
+	BAT *bn, *left, *right;
+	BUN p,q;
 	@2 v, *vp= &v;
 
 	prepareOperand2(left,l,right,r,@5);
 	@:chkSize(left,right,CMDcompare@1)@
 	prepareResult2(bn,left,right,TYPE_@2,@5);
 
-	o = BUNfirst(left);
-	p = BUNfirst(right);
-	q = BUNlast(right);
-	xx = BUNsize(left);
-	yy = BUNsize(right);
-	while(p<q) {
-		ptr h = BUNhead(left,o);
-		ptr tl = BUNtail(left,o);
-		ptr tr = BUNtail(right,p);
+	lefti = bat_iterator(left);
+	righti = bat_iterator(right);
+
+	BATloop(left, p, q) {
+		ptr h = BUNhead(lefti,p);
+		ptr tl = BUNtail(lefti,p);
+		ptr tr = BUNtail(righti,p);
 		@4(vp, tl, tr);
 		bunfastins(bn, h, vp);
-		o += xx;
-		p += yy;
 	}
 	BBPreleaseref(right->batCacheid);
 	finalizeResult(ret,bn,left);
@@ -421,23 +426,22 @@ bunins_failed:
 
 batstr_export str STRbat@1cst(int *ret, int *l, @3 *cst);
 str STRbat@1cst(int *ret, int *l, @3 *cst)
-{   BAT *bn, *left;
+{   
+	BATiter lefti;
+	BAT *bn, *left;
 	BUN p,q;
-	int xx;
 	@2 v, *vp= &v;
 
 	prepareOperand(left,l,@5);
 	prepareResult(bn,left,TYPE_@2,@5);
 
-	p = BUNfirst(left);
-	q = BUNlast(left);
-	xx = BUNsize(left);
-	while(p<q) {
-		ptr h = BUNhead(left,p);
-		ptr tl = BUNtail(left,p);
+	lefti = bat_iterator(left);
+
+	BATloop(left, p, q) {
+		ptr h = BUNhead(lefti,p);
+		ptr tl = BUNtail(lefti,p);
 		@4(vp, tl, cst);
 		bunfastins(bn, h, vp);
-		p += xx;
 	}
 	finalizeResult(ret,bn,left);
 	return MAL_SUCCEED;
@@ -450,28 +454,25 @@ bunins_failed:
 @= binarySTRstr
 batstr_export str STRbat@1(int *ret, int *l, int *r);
 str STRbat@1(int *ret, int *l, int *r)
-{   BAT *bn, *left, *right;
-	BUN o,p,q;
-	int xx,yy;
+{   
+	BATiter lefti, righti;
+	BAT *bn, *left, *right;
+	BUN p,q;
 	@2 v, *vp= &v;
 
 	prepareOperand2(left,l,right,r,@5);
 	@:chkSize(left,right,CMDcompare@1)@
 	prepareResult2(bn,left,right,TYPE_@2,@5);
 
-	o = BUNfirst(left);
-	p = BUNfirst(right);
-	q = BUNlast(right);
-	xx = BUNsize(left);
-	yy = BUNsize(right);
-	while(p<q) {
-		ptr h = BUNhead(left,o);
-		str tl = (str) BUNtail(left,o);
-		str tr = (str) BUNtail(right,p);
+	lefti = bat_iterator(left);
+	righti = bat_iterator(right);
+
+	BATloop(left, p, q) {
+		ptr h = BUNhead(lefti,p);
+		str tl = (str) BUNtail(lefti,p);
+		str tr = (str) BUNtail(righti,p);
 		@4(vp, &tl, &tr);
 		bunfastins(bn, h, @6);
-		o += xx;
-		p += yy;
 	}
 	BBPreleaseref(right->batCacheid);
 	finalizeResult(ret,bn,left);
@@ -486,23 +487,22 @@ bunins_failed:
 
 batstr_export str STRbat@1cst(int *ret, int *l, @3 *cst);
 str STRbat@1cst(int *ret, int *l, @3 *cst)
-{   BAT *bn, *left;
+{   
+	BATiter lefti;
+	BAT *bn, *left;
 	BUN p,q;
-	int xx;
 	@2 v, *vp= &v;
 
 	prepareOperand(left,l,@5);
 	prepareResult(bn,left,TYPE_@2,@5);
 
-	p = BUNfirst(left);
-	q = BUNlast(left);
-	xx = BUNsize(left);
-	while(p<q) {
-		ptr h = BUNhead(left,p);
-		str tl = (str) BUNtail(left,p);
+	lefti = bat_iterator(left);
+
+	BATloop(left, p, q) {
+		ptr h = BUNhead(lefti,p);
+		str tl = (str) BUNtail(lefti,p);
 		@4(vp, &tl, cst);
 		bunfastins(bn, h, @6);
-		p += xx;
 	}
 	finalizeResult(ret,bn,left);
 	return MAL_SUCCEED;
@@ -515,23 +515,22 @@ bunins_failed:
 
 batstr_export str STRcst@1bat(int *ret, @3 *cst, int *r);
 str STRcst@1bat(int *ret, @3 *cst, int *r)
-{   BAT *bn, *right;
+{   
+	BATiter righti;
+	BAT *bn, *right;
 	BUN p,q;
-	int xx;
 	@2 v, *vp= &v;
 
 	prepareOperand(right,r,@5);
 	prepareResult(bn,right,TYPE_@2,@5);
 
-	p = BUNfirst(right);
-	q = BUNlast(right);
-	xx = BUNsize(right);
-	while(p<q) {
-		ptr h = BUNhead(right,p);
-		str tr = (str) BUNtail(right,p);
+	righti = bat_iterator(right);
+
+	BATloop(right, p, q) {
+		ptr h = BUNhead(righti,p);
+		str tr = (str) BUNtail(righti,p);
 		@4(vp, cst, &tr);
 		bunfastins(bn, h, @6);
-		p += xx;
 	}
 	finalizeResult(ret,bn,right);
 	return MAL_SUCCEED;
@@ -555,19 +554,21 @@ batstr_export str STRbatSubstitutecst(int *ret, int *l, str *arg2, str *arg3, bi
 str
 STRbatSubstitutecst(int *ret, int *l, str *arg2, str *arg3, bit *rep)
 {
+	BATiter bi;
 	BAT *bn, *b;
 	BUN p, q;
-	int xx;
 	str x, *xp = &x;
 	str y, *yp = &y;
 
 	prepareOperand(b, l, "subString");
 	prepareResult(bn, b, TYPE_int, "subString");
 
-	BATloopFast(b, p, q, xx) {
-		ptr h = BUNhead(b, p);
+	bi = bat_iterator(b);
 
-		x = (str) BUNtail(b, p);
+	BATloop(b, p, q) {
+		ptr h = BUNhead(bi, p);
+
+		x = (str) BUNtail(bi, p);
 		if (x == 0 || *x == 0 || strcmp(x, str_nil) == 0)
 			y = (str)str_nil;
 		else
@@ -588,8 +589,9 @@ STRbatmatchCst(int *ret, int *bid, str *pat)
 {
 #ifdef HAVE_REGEX_H
 	regex_t prg;
+	BATiter bi;
 	BAT *b, *bn;
-	int tpe, xx;
+	int tpe;
 	BUN p, q;
 	bit bnil = bit_nil;
 	ptr nilptr;
@@ -603,9 +605,10 @@ STRbatmatchCst(int *ret, int *bid, str *pat)
 
 	tpe = BATttype(b);
 	nilptr = ATOMnilptr(tpe);
-	BATloopFast(b, p, q, xx) {
-		ptr h = BUNhead(b, p);
-		ptr t = BUNtail(b, p);
+	bi = bat_iterator(b);
+	BATloop(b, p, q) {
+		ptr h = BUNhead(bi, p);
+		ptr t = BUNtail(bi, p);
 
 		if (ATOMcmp(tpe, t, nilptr) == 0) {
 			bunfastins(bn, h, &bnil);
@@ -637,11 +640,12 @@ The pattern matching routine is optimized for SQL pattern structures.
 #define underscore "\002"
 batstr_export str STRbatlike(int *ret, int *bid, str *pat, str *esc);
 str
-STRbatlike(int *ret, int *bid, str *pat, str *esc){
+STRbatlike(int *ret, int *bid, str *pat, str *esc)
+{
+	BATiter bi;
 	BAT *b,*bn;
 	BUN p, q;
-	int xx;
-	oid o= oid_nil;
+	oid o = oid_nil;
 	if( (b= BATdescriptor(*bid)) == NULL)
 		throw(MAL, "batstr.like","Can not find BAT");
 	bn= BATnew(BAThtype(b),TYPE_void, BATcount(b)/10+5);
@@ -649,9 +653,11 @@ STRbatlike(int *ret, int *bid, str *pat, str *esc){
 	bn->hsorted = b->hsorted;
 	bn->tsorted = b->tsorted;
 
-	BATloopFast(b, p, q, xx) {
-		ptr h = BUNhead(b, p);
-		ptr t = BUNtail(b, p);
+	bi = bat_iterator(b);
+
+	BATloop(b, p, q) {
+		ptr h = BUNhead(bi, p);
+		ptr t = BUNtail(bi, p);
 
 		if ( STRlike((str) t, *pat, *esc) )
 			bunfastins(bn, h,&o);
@@ -665,7 +671,8 @@ bunins_failed:
 }
 batstr_export str STRbatlike2(int *ret, int *bid, str *pat);
 str
-STRbatlike2(int *ret, int *bid, str *pat){
+STRbatlike2(int *ret, int *bid, str *pat)
+{
 	str esc="";
 	return STRbatlike(ret,bid,pat,&esc);
 }
@@ -674,10 +681,11 @@ The substring functions require slightly different arguments
 @c
 batstr_export str STRbatsubstringcst(int *ret, int *bid, int *start, int *length);
 str
-STRbatsubstringcst(int *ret, int *bid, int *start, int *length){
+STRbatsubstringcst(int *ret, int *bid, int *start, int *length)
+{
+	BATiter bi;
 	BAT *b,*bn;
 	BUN p, q;
-	int xx;
 	str res;
 	oid o=oid_nil;
 
@@ -688,9 +696,10 @@ STRbatsubstringcst(int *ret, int *bid, int *start, int *length){
 	bn->hsorted = b->hsorted;
 	bn->tsorted = b->tsorted;
 
-	BATloopFast(b, p, q, xx) {
-		ptr h = BUNhead(b, p);
-		str t =  (str) BUNtail(b, p);
+	bi = bat_iterator(b);
+	BATloop(b, p, q) {
+		ptr h = BUNhead(bi, p);
+		str t =  (str) BUNtail(bi, p);
 
 		if ( STRsubstring(&res, &t, start, length) )
 			bunfastins(bn, h, (ptr)&res);
@@ -704,9 +713,10 @@ bunins_failed:
 }
 batstr_export str STRbatsubstring(int *ret, int *l, int *r, int *t);
 str STRbatsubstring(int *ret, int *l, int *r, int *t)
-{   BAT *bn, *left, *start, *length;
-	BUN os,ol,ps,qs;
-	int xx,yy,zz;
+{   
+	BATiter lefti, starti, lengthi;
+	BAT *bn, *left, *start, *length;
+	BUN p,q;
 	str v, *vp= &v;
 
 	if( (left= BATdescriptor(*l)) == NULL ) 
@@ -734,23 +744,16 @@ str STRbatsubstring(int *ret, int *l, int *r, int *t)
 	bn->hsorted= left->hsorted; 
 	bn->tsorted=0; 
 
-	ps = BUNfirst(left);
-	qs = BUNlast(left);
-	os = BUNfirst(start);
-	ol = BUNfirst(length);
-	xx = BUNsize(left);
-	yy = BUNsize(start);
-	zz = BUNsize(length);
-	while(ps<qs) {
-		ptr h = BUNhead(left,ol);
-		str tl = (str) BUNtail(left,ps);
-		int *t1 = (int *) BUNtail(start,os);
-		int *t2 = (int *) BUNtail(length,ol);
+	lefti = bat_iterator(left);
+	starti = bat_iterator(start);
+	lengthi = bat_iterator(length);
+	BATloop(left, p, q) {
+		ptr h = BUNhead(lefti,p);
+		str tl = (str) BUNtail(lefti,p);
+		int *t1 = (int *) BUNtail(starti,p);
+		int *t2 = (int *) BUNtail(lengthi,p);
 		STRsubstring(vp, &tl, t1, t2);
 		bunfastins(bn, h, vp);
-		ps += xx;
-		os += yy;
-		ol += zz;
 	}
 	BBPreleaseref(start->batCacheid);
 	BBPreleaseref(length->batCacheid);

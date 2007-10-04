@@ -65,10 +65,8 @@ BATuniform(BAT **bn, oid *base, int *size, int *domain)
 {
 	size_t n = (size_t) * size, i, r;
 	BAT *b = NULL;
-	char *firstbun;
-	int bunsize;		/* initialized in BATloopFast */
+	BUN firstbun, p, q;
 	int j = 0;
-	BUN p, q;
 
 	if (*size < 0) {
 		GDKerror("BATuniform: size must not be negative");
@@ -90,26 +88,25 @@ BATuniform(BAT **bn, oid *base, int *size, int *domain)
 		return GDK_SUCCEED;
 	}
 
-	firstbun = (char *) BUNfirst(b);
-	/* preset b->batBuns->free to make BATloopFast work */
-	b->batBuns->free = n * BUNsize(b);
-	BATsetcount(b, n);
+	firstbun = BUNfirst(b);
 	/* create BUNs with uniform distribution */
-	BATloopFast(b, p, q, bunsize) {
-		*(int *) BUNtloc(b, p) = j;
+	BATloop(b, p, q) {
+		*(int *) Tloc(b, p) = j;
 		if (++j >= *domain)
 			j = 0;
 	}
+	BATsetcount(b, n);
+
 	/* mix BUNs randomly */
 	for (r = i = 0; i < n; i++) {
 		size_t idx = i + ((r += rand()) % (n - i));
 		int val;
 
-		p = (BUN) (firstbun + i * bunsize);	/* fast version of BUNptr */
-		q = (BUN) (firstbun + idx * bunsize);
-		val = *(int *) BUNtloc(b, p);
-		*(int *) BUNtloc(b, p) = *(int *) BUNtloc(b, q);
-		*(int *) BUNtloc(b, q) = val;
+		p = (BUN) (firstbun + i);
+		q = (BUN) (firstbun + idx);
+		val = *(int *) Tloc(b, p);
+		*(int *) Tloc(b, p) = *(int *) Tloc(b, q);
+		*(int *) Tloc(b, q) = val;
 	}
 	b->hsorted = GDK_SORTED;
 	b->hdense = TRUE;
@@ -138,9 +135,7 @@ BATnormal(BAT **bn, oid *base, int *size, int *domain, int *stddev, int *mean)
 	unsigned int r = (unsigned int) n;
 	size_t d = (size_t) * domain;
 	BAT *b = NULL;
-	char *firstbun;
-	int bunsize;
-	BUN p, q;
+	BUN firstbun, p, q;
 	int m = *mean, s = *stddev;
 	int *itab;
 	flt *ftab, tot = 0.0;
@@ -165,7 +160,7 @@ BATnormal(BAT **bn, oid *base, int *size, int *domain, int *stddev, int *mean)
 		return GDK_SUCCEED;
 	}
 
-	firstbun = (char *) BUNfirst(b);
+	firstbun = BUNfirst(b);
 	itab = (int *) GDKmalloc(d * sizeof(int));
 	ftab = (flt *) itab;
 
@@ -185,16 +180,14 @@ BATnormal(BAT **bn, oid *base, int *size, int *domain, int *stddev, int *mean)
 	}
 	itab[m] += r;
 
-	/* preset b->batBuns->free to make BATloopFast work */
-	b->batBuns->free = n * BUNsize(b);
-	BATsetcount(b, n);
 	/* create BUNs with normal distribution */
-	BATloopFast(b, p, q, bunsize) {
+	BATloop(b, p, q) {
 		while (itab[r] == 0)
 			r++;
 		itab[r]--;
-		*(int *) BUNtloc(b, p) = (int) r;
+		*(int *) Tloc(b, p) = (int) r;
 	}
+	BATsetcount(b, n);
 	GDKfree(itab);
 
 	/* mix BUNs randomly */
@@ -202,11 +195,11 @@ BATnormal(BAT **bn, oid *base, int *size, int *domain, int *stddev, int *mean)
 		size_t idx = i + ((r += rand()) % (n - i));
 		int val;
 
-		p = (BUN) (firstbun + i * bunsize);	/* fast version of BUNptr */
-		q = (BUN) (firstbun + idx * bunsize);
-		val = *(int *) BUNtloc(b, p);
-		*(int *) BUNtloc(b, p) = *(int *) BUNtloc(b, q);
-		*(int *) BUNtloc(b, q) = val;
+		p = firstbun + i;
+		q = firstbun + idx;
+		val = *(int *) Tloc(b, p);
+		*(int *) Tloc(b, p) = *(int *) Tloc(b, q);
+		*(int *) Tloc(b, q) = val;
 	}
 	b->hsorted = GDK_SORTED;
 	b->hdense = TRUE;

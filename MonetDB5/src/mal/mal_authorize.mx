@@ -295,6 +295,7 @@ AUTHcheckCredentials(
 	BAT *b;
 	BUN p, q;
 	oid *id;
+	BATiter useri, passi;
 
 	rethrow("checkCredentials", tmp, AUTHrequireAdminOrUser(username));
 	assert(user);
@@ -305,12 +306,13 @@ AUTHcheckCredentials(
 		throw(INVCRED, "checkCredentials", "Invalid credentials for unknown user");
 
 	p = BUNfnd(BATmirror(user), *username);
-	if (p == NULL) {
+	if (p == BUN_NONE) {
 		/* DO NOT reveal that the user doesn't exist here! */
 		throw(INVCRED, "checkCredentials", "Invalid credentials for user '%s'",
 				*username);
 	}
-	id = (oid*)(BUNhead(user, p));
+	useri = bat_iterator(user);
+	id = (oid*)(BUNhead(useri, p));
 
 	/* a NULL password is impossible (since we should be dealing with
 	 * hashes here) so we can bail out immediately
@@ -323,8 +325,9 @@ AUTHcheckCredentials(
 
 	/* find the corresponding password to the user */
 	q = BUNfnd(pass, id);
-	assert (q != NULL);
-	tmp = (str)BUNtail(pass, q);
+	assert (q != BUN_NONE);
+	passi = bat_iterator(pass);
+	tmp = (str)BUNtail(passi, q);
 	assert (tmp != NULL);
 	/* decypher the password (we lose the original tmp here) */
 	rethrow("checkCredentials", tmp, AUTHdecypherValue(&pwd, &tmp));
@@ -342,6 +345,8 @@ AUTHcheckCredentials(
 	 */
 	b = BATselect(scen, id, id);
 	if (b && BATcount(b) > 0) {
+		BATiter bi = bat_iterator(b);
+
 		if (*scenario == NULL || strNil(*scenario)) {
 			/* of course we DO NOT tell the exact reason here again */
 			throw(INVCRED, "checkCredentials", "Invalid credentials for user '%s'",
@@ -350,7 +355,7 @@ AUTHcheckCredentials(
 
 		/* ok, there are some tuples that we have to consider */
 		BATloop(b, p, q) {
-			tmp = (str)BUNtail(b, p);
+			tmp = (str)BUNtail(bi, p);
 			assert (tmp != NULL);
 			if (strcmp(*scenario, tmp) == 0) {
 				/* YAY!  fun!  party!  We are granted access! */
@@ -382,6 +387,7 @@ AUTHaddUser(oid *uid, str *username, str *passwd, bat *scenarios) {
 	oid *id;
 	str tmp;
 	str hash;
+	BATiter useri;
 
 	rethrow("addUser", tmp, AUTHrequireAdmin());
 	assert(user);
@@ -396,7 +402,7 @@ AUTHaddUser(oid *uid, str *username, str *passwd, bat *scenarios) {
 
 	/* ensure that the username is not already there */
 	p = BUNfnd(BATmirror(user), *username);
-	if (p != NULL)
+	if (p != BUN_NONE)
 		throw(MAL, "addUser", "user '%s' already exists", *username);
 	
 	/* we assume the BATs are still aligned */
@@ -406,8 +412,9 @@ AUTHaddUser(oid *uid, str *username, str *passwd, bat *scenarios) {
 	BUNappend(pass, hash, FALSE);	/* should always be private! */
 	/* retrieve the oid of the just inserted user */
 	p = BUNfnd(BATmirror(user), *username);
-	assert (p != NULL);
-	id = (oid*)(BUNhead(user, p));
+	assert (p != BUN_NONE);
+	useri = bat_iterator(user);
+	id = (oid*)(BUNhead(useri, p));
 
 	if (*scenarios != bat_nil) {
 		b = BATdescriptor(*scenarios);
@@ -424,9 +431,11 @@ AUTHaddUser(oid *uid, str *username, str *passwd, bat *scenarios) {
 
 		/* associate scenarios given in the BAT with the user */
 		if (BATcount(b) > 0) {
+			BATiter bi = bat_iterator(b);
+			
 			BATloop(b, p, q) {
 				/* needs force, as sql makes a view over it */
-				BUNins(scen, id, BUNhead(b, p), TRUE);
+				BUNins(scen, id, BUNhead(bi, p), TRUE);
 			}
 		}
 	}
@@ -448,6 +457,7 @@ AUTHremoveUser(str *username) {
 	BAT *b;
 	oid id;
 	str tmp;
+	BATiter useri;
 
 	rethrow("removeUser", tmp, AUTHrequireAdmin());
 	assert(user);
@@ -460,9 +470,10 @@ AUTHremoveUser(str *username) {
 
 	/* ensure that the username exists */
 	p = BUNfnd(BATmirror(user), *username);
-	if (p == NULL)
+	if (p == BUN_NONE)
 		throw(MAL, "removeUser", "no such user: '%s'", *username);
-	id = *(oid*)(BUNhead(user, p));
+	useri = bat_iterator(user);
+	id = *(oid*)(BUNhead(useri, p));
 
 	/* find the name of the administrator and see if it equals username */
 	if (id == MCgetClient()->user)
@@ -490,9 +501,11 @@ AUTHremoveUser(str *username) {
  * is modified.
  */
 str
-AUTHchangeUsername(str *olduser, str *newuser) {
+AUTHchangeUsername(str *olduser, str *newuser) 
+{
 	BUN p, q;
 	str tmp;
+	BATiter useri;
 
 	rethrow("addUser", tmp, AUTHrequireAdminOrUser(olduser));
 
@@ -504,15 +517,16 @@ AUTHchangeUsername(str *olduser, str *newuser) {
 
 	/* see if the olduser is valid */
 	p = BUNfnd(BATmirror(user), *olduser);
-	if (p == NULL)
+	if (p == BUN_NONE)
 		throw(MAL, "changeUsername", "user '%s' does not exist", *olduser);
 	/* ... and if the newuser is not there yet */
 	q = BUNfnd(BATmirror(user), *newuser);
-	if (q != NULL)
+	if (q != BUN_NONE)
 		throw(MAL, "changeUsername", "user '%s' already exists", *newuser);
 
 	/* ok, just do it! (with force, because sql makes view over it) */
-	BUNinplace(BATmirror(user), p, *newuser, BUNhead(user, p), TRUE);
+	useri = bat_iterator(user);
+	BUNinplace(BATmirror(user), p, *newuser, BUNhead(useri, p), TRUE);
 	AUTHcommit();
 
 	return(MAL_SUCCEED);
@@ -529,6 +543,7 @@ AUTHchangePassword(str *oldpass, str *passwd) {
 	str tmp;
 	str hash;
 	oid id;
+	BATiter passi;
 
 	/* precondition checks */
 	if (*oldpass == NULL || strNil(*oldpass))
@@ -539,8 +554,9 @@ AUTHchangePassword(str *oldpass, str *passwd) {
 	/* check the old password */
 	id = MCgetClient()->user;
 	p = BUNfnd(pass, &id);
-	assert(p != NULL);
-	tmp = BUNtail(pass, p);
+	assert(p != BUN_NONE);
+	passi = bat_iterator(pass);
+	tmp = BUNtail(passi, p);
 	assert (tmp != NULL);
 	if (strcmp(tmp, *oldpass) != 0)
 		throw(INVCRED, "changePassword", "Access denied");
@@ -548,7 +564,7 @@ AUTHchangePassword(str *oldpass, str *passwd) {
 	/* cypher the password */
 	rethrow("setPassword", tmp, AUTHcypherValue(&hash, passwd));
 	/* ok, just overwrite the password field for this user */
-	BUNinplace(pass, p, BUNhead(pass, p), &hash, FALSE);
+	BUNinplace(pass, p, BUNhead(passi, p), &hash, FALSE);
 	AUTHcommit();
 
 	return(MAL_SUCCEED);
@@ -566,6 +582,7 @@ AUTHsetPassword(str *username, str *passwd) {
 	str tmp;
 	str hash;
 	oid id;
+	BATiter useri, passi;
 
 	rethrow("setPassword", tmp, AUTHrequireAdmin());
 
@@ -578,24 +595,26 @@ AUTHsetPassword(str *username, str *passwd) {
 	id = MCgetClient()->user;
 	/* find the name of the administrator and see if it equals username */
 	p = BUNfnd(user, &id);
-	assert (p != NULL);
-	tmp = BUNtail(user, p);
+	assert (p != BUN_NONE);
+	useri = bat_iterator(user);
+	tmp = BUNtail(useri, p);
 	assert (tmp != NULL);
 	if (strcmp(tmp, *username) == 0)
 		throw(INVCRED, "setPassword", "The administrator cannot set its own password, use changePassword instead");
 
 	/* see if the user is valid */
 	p = BUNfnd(BATmirror(user), *username);
-	if (p == NULL)
+	if (p == BUN_NONE)
 		throw(MAL, "setPassword", "no such user '%s'", *username);
-	id = *(oid*)BUNhead(user, p);
+	id = *(oid*)BUNhead(useri, p);
 
 	/* cypher the password */
 	rethrow("setPassword", tmp, AUTHcypherValue(&hash, passwd));
 	/* ok, just overwrite the password field for this user */
 	p = BUNfnd(pass, &id);
-	assert (p != NULL);
-	BUNinplace(pass, p, BUNhead(pass, p), &hash, FALSE);
+	assert (p != BUN_NONE);
+	passi = bat_iterator(pass);
+	BUNinplace(pass, p, BUNhead(passi, p), &hash, FALSE);
 	AUTHcommit();
 
 	return(MAL_SUCCEED);
@@ -613,6 +632,7 @@ AUTHaddScenario(str *username, str *scenario) {
 	str tmp;
 	oid *id;
 	BAT *b;
+	BATiter useri;
 
 	rethrow("addScenario", tmp, AUTHrequireAdmin());
 
@@ -624,9 +644,10 @@ AUTHaddScenario(str *username, str *scenario) {
 
 	/* see if the user is valid */
 	p = BUNfnd(BATmirror(user), *username);
-	if (p == NULL)
+	if (p == BUN_NONE)
 		throw(MAL, "addScenario", "user '%s' does not exist", *username);
-	id = (oid*)BUNhead(user, p);
+	useri = bat_iterator(user);
+	id = (oid*)BUNhead(useri, p);
 
 	/* see if this scenario is not already there */
 	b = BATselect(BATmirror(scen), id, id);
@@ -637,7 +658,7 @@ AUTHaddScenario(str *username, str *scenario) {
 		throw(MAL, "addScenario", "inconsistent authorisation administration, scenario '%s' multiple times defined", *scenario);
 
 	/* add the scenario for this user, use force as sql makes view over it */
-	BUNins(scen, BUNhead(user, p), *scenario, TRUE);
+	BUNins(scen, BUNhead(useri, p), *scenario, TRUE);
 	AUTHcommit();
 
 	return(MAL_SUCCEED);
@@ -654,6 +675,7 @@ AUTHremoveScenario(str *username, str *scenario) {
 	BAT *b;
 	oid *id;
 	str tmp;
+	BATiter useri;
 
 	rethrow("removeScenario", tmp, AUTHrequireAdmin());
 
@@ -665,9 +687,10 @@ AUTHremoveScenario(str *username, str *scenario) {
 
 	/* see if the user is valid */
 	p = BUNfnd(BATmirror(user), *username);
-	if (p == NULL)
+	if (p == BUN_NONE)
 		throw(MAL, "removeScenario", "user '%s' does not exist", *username);
-	id = (oid*)BUNhead(user, p);
+	useri = bat_iterator(user);
+	id = (oid*)BUNhead(useri, p);
 
 	/* see if the scenario is valid for this user */
 	b = BATselect(BATmirror(scen), id, id);
@@ -692,22 +715,25 @@ AUTHremoveScenario(str *username, str *scenario) {
  * allocated buffer, it is supposed to be of size BUFSIZ.
  */
 str
-AUTHresolveUser(str *username, oid *uid) {
+AUTHresolveUser(str *username, oid *uid) 
+{
 	BUN p;
+	BATiter useri;
 
 	if (uid == NULL || *uid == oid_nil)
 		throw(ILLARG, "resolveUser", "userid should not be nil");
 	
 	p = BUNfnd(user, uid);
-	if (p == NULL)
+	if (p == BUN_NONE)
 		throw(MAL, "resolveUser", "No such user with id: " OIDFMT, *uid);
 
 	assert (username != NULL);
 
+	useri = bat_iterator(user);
 	if (*username == NULL) {
-		*username = GDKstrdup((str)(BUNtail(user, p)));
+		*username = GDKstrdup((str)(BUNtail(useri, p)));
 	} else {
-		snprintf(*username, BUFSIZ, "%s", (str)(BUNtail(user, p)));
+		snprintf(*username, BUFSIZ, "%s", (str)(BUNtail(useri, p)));
 	}
 
 	return(MAL_SUCCEED);
@@ -720,15 +746,17 @@ str
 AUTHgetUsername(str *username) {
 	BUN p;
 	oid id;
+	BATiter useri;
 
 	id = MCgetClient()->user;
 	p = BUNfnd(user, &id);
-	if (p == NULL) {
+	if (p == BUN_NONE) {
 		GDKfatal("Internal error: user id that doesn't exist: " OIDFMT,
 				MCgetClient()->user);
 	}
 
-	*username = BUNtail(user, p);
+	useri = bat_iterator(user);
+	*username = BUNtail(useri, p);
 	return(MAL_SUCCEED);
 }
 

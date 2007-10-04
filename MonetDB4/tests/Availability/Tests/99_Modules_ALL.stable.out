@@ -33,26 +33,20 @@ All_mods@batloop() {
      wisc: loading... done.
    vector: loading... done.
       url: loading... done.
-  upgrade: loading... done.
      unix: loading... done.
      uchr: loading... done.
    txtsim: loading... done.
     trans: loaded.
-    tcpip: loading... done.
       sys: loaded.
   streams: loading... done.
       str: loaded.
     stats: loading... done.
  salgebra: loading... done.
   restore: loading... done.
-    radix: loading... done.
-       qt: loading... done.
  profiler: loading... done.
    pqueue: loading... done.
      pcre: loading... done.
       pcl: loading... done.
-      oo7: loading... done.
-    mprof: loading... done.
 monettime: loading... done.
     mmath: loaded.
      mkey: loading... done.
@@ -61,18 +55,15 @@ monettime: loading... done.
 malalgebra: loading... done.
    logger: loading... done.
      lock: loading... done.
- iterator: loading... done.
     image: loading... done.
      enum: loading... done.
   decimal: loading... done.
-  ddbench: loading... done.
  counters: loading... done.
  constant: loaded.
     color: loading... done.
     calib: loading... done.
   builtin: loaded.
      blob: loading... done.
-bitvector: loaded.
    bitset: loading... done.
 bat_mmath: loading... done.
  bat_cast: loading... done.
@@ -104,18 +95,15 @@ table(mmn().reverse().sort().reverse().col_name(sprintf("%i modules",mmn().count
 [ "bat_cast"	  ]
 [ "bat_mmath"	  ]
 [ "bitset"	  ]
-[ "bitvector"	  ]
 [ "blob"	  ]
 [ "builtin"	  ]
 [ "calib"	  ]
 [ "color"	  ]
 [ "constant"	  ]
 [ "counters"	  ]
-[ "ddbench"	  ]
 [ "decimal"	  ]
 [ "enum"	  ]
 [ "image"	  ]
-[ "iterator"	  ]
 [ "lock"	  ]
 [ "logger"	  ]
 [ "main"	  ]
@@ -125,26 +113,20 @@ table(mmn().reverse().sort().reverse().col_name(sprintf("%i modules",mmn().count
 [ "mkey"	  ]
 [ "mmath"	  ]
 [ "monettime"	  ]
-[ "mprof"	  ]
-[ "oo7"		  ]
 [ "pcl"		  ]
 [ "pcre"	  ]
 [ "pqueue"	  ]
 [ "profiler"	  ]
-[ "qt"		  ]
-[ "radix"	  ]
 [ "restore"	  ]
 [ "salgebra"	  ]
 [ "stats"	  ]
 [ "str"		  ]
 [ "streams"	  ]
 [ "sys"		  ]
-[ "tcpip"	  ]
 [ "trans"	  ]
 [ "txtsim"	  ]
 [ "uchr"	  ]
 [ "unix"	  ]
-[ "upgrade"	  ]
 [ "url"		  ]
 [ "vector"	  ]
 [ "wisc"	  ]

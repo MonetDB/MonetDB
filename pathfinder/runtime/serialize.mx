@@ -755,11 +755,11 @@ initWsMatrix(XqueryCtx* ctx)
     oid first = 0;
     BUN bun;
     BAT* batbat = NULL;
-    if ( !(bun = BUNfnd(ctx->ws,&first)) ) {
+    if ( (bun = BUNfnd(ctx->ws,&first)) == BUN_NONE ) {
         fatal_err(ctx,"initWsMatrix: cannot find ws-bat[0]");
         return PROBLEM;
     }
-    if ( !( batbat = BATdescriptor(*(bat*)bun)) ) {
+    if ( !( batbat = BATdescriptor(*(bat*)Tloc(ctx->ws, bun))) ) {
         fatal_err(ctx,"initWsMatrix: cannot find ws-bat[0]");
         return PROBLEM;
     }
@@ -816,12 +816,12 @@ fetchWsBaseBAT(XqueryCtx* ctx, BAT* ws, int batID)
     BUN bun;
     oid BATid = (oid)batID;
 
-    if ( !(bun = BUNfnd(ws,&BATid)) ) {
+    if ( (bun = BUNfnd(ws,&BATid)) == BUN_NONE ) {
         fatal_err(ctx,"fetchWsContextBAT: NOT FOUND BAT[%d]",batID);
         return NULL;
     }
     BAT* batbat;
-    if ( !( batbat = BATdescriptor(*(bat*)bun)) ) {
+    if ( !( batbat = BATdescriptor(*(bat*)Tloc(ws, bun))) ) {
         fatal_err(ctx,
                   "fetchWsBaseBAT:FETCH BASEBAT for WS[%d] FAILED\n",
                   batID);
@@ -842,12 +842,12 @@ fetchWsContextBAT (XqueryCtx* ctx, BAT* ws, int contID, int batID)
         fatal_err(ctx,"fetchWsContextBAT: NO contID CONTEXT SELECTED");
         return NULL;
     }
-    if ( !(bun = BUNfnd(ws,&BATid)) ) {
+    if ( (bun = BUNfnd(ws,&BATid)) == BUN_NONE ) {
         fatal_err(ctx,"fetchWsContextBAT: NOT FOUND BAT[%d]",batID);
         return NULL;
     }
     BAT* batbat;
-    if ( !( batbat = BATdescriptor(*(bat*)bun)) ) {
+    if ( !( batbat = BATdescriptor(*(bat*)Tloc(ws, bun))) ) {
         fatal_err(ctx,
                   "fetchWsContextBAT:FETCH BATBAT for WS[%d][%d] FAILED\n",
                   batID, contID);
@@ -855,14 +855,14 @@ fetchWsContextBAT (XqueryCtx* ctx, BAT* ws, int contID, int batID)
     }
     BUN bbun = BUNfnd(batbat,&CONTid);
     BAT *res = NULL;
-    if ( !bbun ) {
+    if ( bbun == BUN_NONE ) {
         BBPunfix( BBPcacheid( batbat ) );
         fatal_err(ctx,
                   "fetchWsContextBAT:NOT FOUND BAT[%d][%d] in WS!!!!\n",
                   batID, contID);
         return NULL;
     } else {
-        if ( !(res = BATdescriptor(*(bat*)bbun)) ) {
+        if ( !(res = BATdescriptor(*(bat*)Tloc(batbat, bbun))) ) {
             BBPunfix( BBPcacheid( batbat ) );
             fatal_err(ctx,
                       "fetchWsContextBAT:FETCH WS[%d][%d] FAILED\n",
@@ -895,7 +895,8 @@ getMatrixBATrecord (XqueryCtx* ctx, int contID, int batID)
          return NULL;
         }
         if ( IS_FAKE_PROJECT(bd->bat) ) {
-             bd->fake_prj = BUNtail(bd->bat,BUNfirst(bd->bat));
+	     BATiter bi = bat_iterator(bd->bat);
+             bd->fake_prj = BUNtail(bi,BUNfirst(bd->bat));
         } else
              bd->fake_prj = 0;
      
@@ -920,12 +921,13 @@ getMatrixBAT (XqueryCtx* ctx, int contID, int batID)
  * The getWsBAT() function is responsible for the BAT with index
  * 'batID from container' contID in the working set
  */
-#define getWsBAT(_b, ctx, contID, batID) {                            \
+#define getWsBAT(_b, bi, ctx, contID, batID) {                        \
     _b = getMatrixBAT(ctx,contID,batID);                              \
     if ( _b == NULL ) {                                               \
         fatal_err(ctx, "getWsBAT(id=%d,cont=%d) fails",batID,contID); \
         return GDK_FAIL;                                              \
     }                                                                 \
+    bi = bat_iterator(_b); (void)bi;				      \
 }
 
 static int
@@ -958,15 +960,16 @@ idxTVerror3 (XqueryCtx* ctx, BAT *b, oid oid_index)
  * [void,any] BAT indexed by oid_index.
  */
 #define findTailValue(res, ctx, b, oid_index) {                 \
-    /* fprintf(stderr,"** idxTV()\n");*/               \
+    BATiter bi = bat_iterator(b);				\
+    /* fprintf(stderr,"** idxTV()\n");*/               		\
     if (IS_FAKE_PROJECT(b)) {                                   \
-        res = BUNtail(b,BUNfirst(b)); /* fake project */        \
+        res = BUNtail(bi,BUNfirst(b)); /* fake project */       \
     } else if (b->batCount) {                                   \
-        BUN _bun = NULL;                                        \
-        BUNfndVOID(_bun, b, &oid_index);                        \
-        if (_bun == NULL)                                       \
+        BUN _bun = BUN_NONE;                                    \
+        BUNfndVOID(_bun, bi, &oid_index);                       \
+        if (_bun == BUN_NONE)                                   \
             return idxTVerror1(ctx,b,oid_index);                \
-        res = BUNtail(b,_bun);                                  \
+        res = BUNtail(bi,_bun);                                 \
     } else                                                      \
         return idxTVerror2(ctx,b);                              \
     if (res == NULL)                                            \
@@ -974,11 +977,12 @@ idxTVerror3 (XqueryCtx* ctx, BAT *b, oid oid_index)
 }
 
 #define findTailValue2(fun, res, b, oid_index) {                \
-    BUN _bun = NULL;                                            \
+    BATiter bi = bat_iterator(b);				\
+    BUN _bun = BUN_NONE;                                        \
     _bun = fun (b, oid_index);                                  \
-    if (_bun == NULL)                                           \
+    if (_bun == BUN_NONE)                                       \
         return idxTVerror1 (ctx, b, oid_index);                 \
-    res = BUNtail (b, _bun);                                    \
+    res = BUNtail (bi, _bun);                                    \
     if (res == NULL)                                            \
         return idxTVerror3(ctx,b,oid_index);                    \
 }
@@ -999,15 +1003,16 @@ readWsValue (XqueryCtx* ctx, int contID, int batID, oid oid_index)
           return mr->fake_prj;
         else {
             BAT* b = mr->bat;
+            BATiter bi = bat_iterator(b);
 
             if (b->batCount) {
-                BUN _bun = NULL;
-                BUNfndVOID(_bun, b, &oid_index);
-                if (_bun == NULL) {
+                BUN _bun = BUN_NONE;
+                BUNfndVOID(_bun, bi, &oid_index);
+                if (_bun == BUN_NONE) {
                     idxTVerror1(ctx,b,oid_index);
                     return NULL;
                 }
-                return BUNtail(b,_bun);
+                return BUNtail(bi,_bun);
             } else {
                 idxTVerror2(ctx,b);
                 return NULL;
@@ -1059,20 +1064,21 @@ process_@1attr (XqueryCtx* ctx, int cont, oid id)
  */
 static bool
 process_node_attr (XqueryCtx* ctx, int cont, oid pre) {
-    BAT *pre_nid, *attr_own_shr, *attr_own_prv, *attr_own_chk;
+    BAT     *pre_nid, *attr_own_shr, *attr_own_prv, *attr_own_chk;
+    BATiter pre_nidi, attr_own_shri, attr_own_prvi, attr_own_chki;
     hash_t idx;
     oid base, nid = oid_nil, *attr_own;
-    BUN p, r;
+    BUN p;
     
     /* translate pre value into nid value */
-    getWsBAT(pre_nid, ctx,cont,PRE_NID);
-    BUNfndVOID(p, pre_nid, &pre);
-    if ( p ) {
-        nid = *(oid*)BUNtail(pre_nid,p);
+    getWsBAT(pre_nid, pre_nidi, ctx,cont,PRE_NID);
+    BUNfndVOID(p, pre_nidi, &pre);
+    if ( p != BUN_NONE ) {
+        nid = *(oid*)BUNtail(pre_nidi,p);
     } else {
         fatal_err(ctx,"process_node_attr: "SZFMT" not within ["SZFMT","SZFMT"]", 
-                  (size_t)pre, (size_t)(*(oid*)BUNhead(pre_nid,BUNfirst(pre_nid))), 
-                  (size_t)(*(oid*)BUNhead(pre_nid,BUNlast(pre_nid)-BUNsize(pre_nid))));
+                  (size_t)pre, (size_t)(*(oid*)BUNhead(pre_nidi,BUNfirst(pre_nid))), 
+                  (size_t)(*(oid*)BUNhead(pre_nidi,BUNlast(pre_nid)-1)));
         return PROBLEM;
     }
 
@@ -1083,14 +1089,14 @@ process_node_attr (XqueryCtx* ctx, int cont, oid pre) {
      */
 
     /* first probe the private (i.e. last) part of the attr table */
-    getWsBAT(attr_own_prv, ctx, cont, ATTR_OWN_PRIVATE);
-    base = attr_own_prv->hseqbase - BUNindex(attr_own_prv, BUNfirst(attr_own_prv));
-    attr_own_prv = BATmirror(attr_own_prv);
+    getWsBAT(attr_own_prv, attr_own_prvi, ctx, cont, ATTR_OWN_PRIVATE);
+    base = attr_own_prv->hseqbase - BUNfirst(attr_own_prv);
+    attr_own_prvi.b = attr_own_prv = BATmirror(attr_own_prv);
     if (BATprepareHash(attr_own_prv)) {
         fatal_err(ctx,"process_node_attr: hash table creation\n");
         return PROBLEM;
     }
-    HASHloop_oid(attr_own_prv, attr_own_prv->hhash, idx, (ptr)&nid, r) {
+    HASHloop_oid(attr_own_prvi, attr_own_prv->H->hash, idx, (ptr)&nid) {
         oid id = base + idx;
         if ( ! process_attr (ctx, cont, id) )
             return PROBLEM;
@@ -1099,16 +1105,16 @@ process_node_attr (XqueryCtx* ctx, int cont, oid pre) {
     /* then check the old shared part that has a hash table. 
      * results need to be checked against the current version and nils filtered out.
      */
-    getWsBAT(attr_own_chk, ctx, cont, ATTR_OWN);
-    getWsBAT(attr_own_shr, ctx, cont, ATTR_OWN_SHARED);
-    base = attr_own_shr->hseqbase - BUNindex(attr_own_shr, BUNfirst(attr_own_shr));
-    attr_own = ((oid*) BUNfirst(attr_own_chk)) - base;
-    attr_own_shr = BATmirror(attr_own_shr);
+    getWsBAT(attr_own_chk, attr_own_chki, ctx, cont, ATTR_OWN);
+    getWsBAT(attr_own_shr, attr_own_shri, ctx, cont, ATTR_OWN_SHARED);
+    base = attr_own_shr->hseqbase - BUNfirst(attr_own_shr);
+    attr_own = ((oid*) Tloc(attr_own_chk, BUNfirst(attr_own_chk))) - base;
+    attr_own_shri.b = attr_own_shr = BATmirror(attr_own_shr);
     if (BATprepareHash(attr_own_shr)) {
         fatal_err(ctx,"process_node_attr: hash table creation\n");
         return PROBLEM;
     }
-    HASHloop_oid(attr_own_shr, attr_own_shr->hhash, idx, (ptr)&nid, r) {
+    HASHloop_oid(attr_own_shri, attr_own_shr->H->hash, idx, (ptr)&nid) {
         oid id = base + idx;
         if ( attr_own[id] != oid_nil && !process_attr (ctx, cont, id) )
             return PROBLEM;
@@ -1465,10 +1471,10 @@ wsADMbat (BAT* ws, oid o)
     BAT* res = NULL;
     BUN b = BUNfnd(ws,&o);
 
-    if ( !b ) {
+    if ( b == BUN_NONE ) {
         fatal_err(0,"wsADMbat: unable to find bat[%d@0] in WS",o);
     } else {
-        res = BATdescriptor(*(bat*)b);
+        res = BATdescriptor(*(bat*)Tloc(ws,b));
     }
     return res;
 }
@@ -1490,13 +1496,14 @@ ws_documentIndex (BAT* ws, str docName)
     }
     open_name = BATmirror(open_name);
     if (!BATprepareHash(open_name)) {
+	BATiter open_namei = bat_iterator(open_name), open_conti = bat_iterator(open_cont);
         BUN p;
-        HASHfnd_str(p, open_name, docName);
-        if (p) {
-            size_t idx = BUNindex(open_name, p) - BUNindex(open_name, BUNfirst(open_name));
-            p = BUNptr(open_cont, BUNindex(open_cont, BUNfirst(open_cont)) + idx);
+        HASHfnd_str(p, open_namei, docName);
+        if (p != BUN_NONE) {
+            size_t idx = p - BUNfirst(open_name);
+            p = BUNfirst(open_cont) + idx;
             if (p < BUNlast(open_cont)) {
-                res = *(oid*) BUNtail(open_cont, p); 
+                res = *(oid*) BUNtail(open_conti, p); 
             }
         }
     }
@@ -1515,21 +1522,23 @@ oid doc_startOid(XqueryCtx* ctx, oid docIndex) {
     if ( 0 ) BATprintf(GDKout,open_docid);
 
     oid bloody_guess = 1;
-    if ( !(bun = BUNfnd(open_docid,&bloody_guess)) ) {
+    if ( (bun = BUNfnd(open_docid,&bloody_guess)) == BUN_NONE) {
             fatal_err(ctx,"doc_startOid: cannot find startOid for doc[" OIDFMT "]",docIndex);
 	          return oid_nil;
     }
-    oid icdocId = *(oid*)BUNtail(open_docid,bun);
+    BATiter open_docidi = bat_iterator(open_docid);
+    oid icdocId = *(oid*)BUNtail(open_docidi,bun);
     /* stream_printf(GDKout,"# icdocId = " OIDFMT ".\n",icdocId); */
     BAT* frag_root;
-    getWsBAT(frag_root, ctx, docIndex,FRAG_ROOT);
+    BATiter frag_rooti;
+    getWsBAT(frag_root, frag_rooti, ctx, docIndex,FRAG_ROOT);
     if ( 0 ) BATprintf(GDKout,frag_root);
     /* */
-    if ( !(bun = BUNfnd(frag_root,&icdocId)) ) {
+    if ( (bun = BUNfnd(frag_root,&icdocId)) == BUN_NONE ) {
             fatal_err(ctx,"doc_startOid: cannot find startOid for doc[" OIDFMT "]",docIndex);
 	    return oid_nil;
     }
-    return *(oid*)BUNtail(frag_root,bun);
+    return *(oid*)BUNtail(frag_rooti,bun);
 }
 
 int
@@ -1596,8 +1605,9 @@ fake_lookup_bun (BAT *b, oid offset)
 static BUN
 lookup_bun (BAT *b, oid offset)
 {
+    BATiter bi = bat_iterator(b);
     BUN res;
-    BUNfndVOID(res, b, &offset);
+    BUNfndVOID(res, bi, &offset);
 
     return res;
 }
@@ -1606,10 +1616,8 @@ lookup_bun (BAT *b, oid offset)
    the kind values with the node kind */
 #define COMBN_NKIND_KIND(X,Y) SET_CONT_KIND(X,Y)
 
-#define BATloop_off(b,p,q,w,o,s)\
-        for(w=BUNsize(b), p=BUNptr(b,BUNindex(b,BUNfirst(b))+o), q=p+s*w; \
-            p<q; \
-            p+=w) 
+#define BATloop_off(b,p,q,o,s)\
+        for(p=BUNfirst(b)+o, q=p+s; p<q; p++) 
 
 /**
  * Main XQUERY/Pathfinder result sequence printing routine. 
@@ -1649,7 +1657,9 @@ xquery_print_result_driver (
 {
     TIMER_START();
 
-    size_t bs, yy, curcnt, maxcnt, buncnt;
+    BATiter loopi = bat_iterator(loop), iteri = bat_iterator(iter);
+    BATiter itemi = bat_iterator(item);
+    size_t yy, curcnt, maxcnt, buncnt;
     XqueryCtx ctx_struct, *ctx = &ctx_struct;
     static BUN (*fun_k) (BAT *, oid);
 
@@ -1674,11 +1684,7 @@ xquery_print_result_driver (
 
     /* loop over the iterations (usually only 1) */
     for(yy=0; yy < niters; yy++, curcnt += buncnt, maxcnt -= buncnt) {
-        oid cur_iter = *(oid*) BUNhead(
-                                   loop, 
-                                   BUNptr(
-                                       loop, 
-                                       BUNindex (loop, BUNfirst(loop)) + yy));
+        oid cur_iter = *(oid*) BUNhead(loopi, BUNfirst(loop) + yy);
         oid index, valoid;
         BUN p, q;
         ptr res;
@@ -1689,16 +1695,16 @@ xquery_print_result_driver (
         if (niters > 1) {
             if (IS_FAKE_PROJECT(iter)) {
                 /* iterations do not match */
-                if (*(oid*) BUNtail(iter, BUNfirst(iter)) != cur_iter)
+                if (*(oid*) BUNtail(iteri, BUNfirst(iter)) != cur_iter)
                     buncnt = 0;
                 else
                     buncnt = maxcnt;
             } else {
                 /* in case of a non-constant iter bat, find out how many
                  * items we have in this iteration */
-                BATloop_off (iter, p, q, bs, curcnt, maxcnt) 
-                    if (*(oid*) BUNtail(iter, p) != cur_iter) break;
-                buncnt = ((p - BUNfirst(iter)) / bs) - curcnt;
+                BATloop_off (iter, p, q, curcnt, maxcnt) 
+                    if (*(oid*) BUNtail(iteri, p) != cur_iter) break;
+                buncnt = (p - BUNfirst(iter)) - curcnt;
             }
         }
 
@@ -1724,9 +1730,9 @@ xquery_print_result_driver (
 
             /* scan of all attributes here and generate the appropriate
                calls to connect them to the head tag of the result document */
-            BATloop_off (item, p, q, bs, curcnt, buncnt) { 
-                index = *(oid*)BUNhead(item, p);
-                valoid = *(oid*)BUNtail(item, p);
+            BATloop_off (item, p, q, curcnt, buncnt) { 
+                index = *(oid*)BUNhead(itemi, p);
+                valoid = *(oid*)BUNtail(itemi, p);
                 findTailValue2 (fun_k, res, kind, index);
                 cmbn_cont_kind = *(int*) res;
 
@@ -1744,9 +1750,9 @@ xquery_print_result_driver (
         /* process item sequence */
         old_kind = 0;
 
-        BATloop_off (item, p, q, bs, curcnt, buncnt) {
-            index = *(oid*)BUNhead(item, p);
-            valoid = *(oid*)BUNtail(item, p);
+        BATloop_off (item, p, q, curcnt, buncnt) {
+            index = *(oid*)BUNhead(itemi, p);
+            valoid = *(oid*)BUNtail(itemi, p);
             findTailValue2 (fun_k, res, kind, index);
             cmbn_cont_kind = *(int*) res;
             cur_kind = XTRACT_KIND(cmbn_cont_kind);
@@ -1824,7 +1830,8 @@ xquery_print_result_driver (
                                     return GDK_FAIL;
 
                             BAT *b;
-                            getWsBAT(b, ctx, cont, PRE_CONT);
+			    BATiter bi;
+                            getWsBAT(b, bi, ctx, cont, PRE_CONT);
                             if ( !emitNodesInRange (ctx, 
                                                     pre,
                                                     pre_size, 
@@ -2303,13 +2310,15 @@ probxml_deep_eq_node(XqueryCtx* ctx, int lcont, oid loid, int rcont, oid roid) {
             getWsValue(res, ctx, lcont, PRE_SIZE, lpre);
             lpre_size = lpre + *(int*) res;
             BAT *lb;
-            getWsBAT(lb, ctx, lcont, PRE_CONT);
+	    BATiter lbi;
+            getWsBAT(lb, lbi, ctx, lcont, PRE_CONT);
 
             oid rpre = roid, rpre_size;
             getWsValue(res, ctx, rcont, PRE_SIZE, rpre);
             rpre_size = rpre + *(int*) res;
             BAT *rb;
-            getWsBAT(rb, ctx, rcont, PRE_CONT);
+	    BATiter rbi;
+            getWsBAT(rb, rbi, ctx, rcont, PRE_CONT);
 
             return probxml_deep_eq_range(
 	    		ctx, 

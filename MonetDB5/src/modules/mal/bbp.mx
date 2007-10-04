@@ -238,8 +238,6 @@ bbp_export str CMDbbpRefCount(int *ret);
 bbp_export str CMDbbpLRefCount(int *ret);
 bbp_export str CMDgetBATrefcnt(int *res, int *bid);
 bbp_export str CMDgetBATlrefcnt(int *res, int *bid);
-bbp_export str CMDbatunpack(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-bbp_export str CMDbatpack(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 @-
 Access to a box calls for resolving the first parameter
@@ -1049,55 +1047,3 @@ str CMDbbp@2( int *ret){
 @c
 @:headtailProperty(htype,HeadType)@
 @:headtailProperty(ttype,TailType)@
-
-str
-CMDbatunpack(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	BAT *b;
-	int bid;
-	ptr p;
-	ValPtr head, tail;
-
-	bid = *(int *) getArgValue(stk, pci, 2);
-
-	if ((b = BATdescriptor(bid)) == NULL) {
-		throw(MAL, "bbp.unpack", "Cannot access descriptor");
-	}
-
-	head = &stk->stk[pci->argv[0]];
-	tail = &stk->stk[pci->argv[1]];
-	p = BUNfirst(b);
-	if (p) {
-		VALinit(head, getArgType(mb, pci, 0), BUNhead(b, p));
-		VALinit(tail, getArgType(mb, pci, 1), BUNtail(b, p));
-	}
-
-	BBPunfix(b->batCacheid);
-	return MAL_SUCCEED;
-}
-
-str
-CMDbatpack(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	BAT *b;
-	int *ret;
-	int ht, tt;
-	size_t cap = 0;
-
-	ht = getArgType(mb, pci, 1);
-	tt = getArgType(mb, pci, 2);
-	ret = (int *) getArgReference(stk, pci, 0);
-
-	if (ht == TYPE_any || tt == TYPE_any)
-		throw(MAL, "bbp.new", "Explicit type required");
-	if (isaBatType(ht))
-		ht = TYPE_bat;
-	if (isaBatType(tt))
-		tt = TYPE_bat;
-	b = BATnew(ht, tt, cap);
-	BUNins(b, (ptr) getArgValue(stk, pci, 1), getArgValue(stk, pci, 2), FALSE);
-	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
-	*ret = b->batCacheid;
-	BBPkeepref(*ret);
-	return MAL_SUCCEED;
-}

@@ -592,8 +592,8 @@ CMDwhack(int stk, YYSTREE lt, ValPtr res)
 		bat bid = res->val.ival;
 
 		res->vtype = TYPE_ptr;
-		res->val.pval = (ptr) BBP_cache(bid)->batBuns->base;
-		BBP_cache(bid)->batBuns->base = NULL;
+		res->val.pval = (ptr) BBP_cache(bid)->H->heap.base;
+		BBP_cache(bid)->H->heap.base = NULL;
 		BBP_cache(bid) = BBP_cache(-bid) = 0;
 		return 0;
 	}
@@ -1111,19 +1111,22 @@ CMDraise(Cntxt stk, YYSTREE lt, ValPtr res)
 int
 CMDcall(Cntxt stk, YYSTREE lt, ValPtr res)
 {
-	int xx, bid, i = 0;
+	BATiter bi;
+	int bid, i = 0;
 	YYSTREE t, child;
 	ValRecord v;
 	BUN p, q;
+	ptr STR, BID;
 	BAT *b;
 
 	@:builtin_args(2)@
-	@:builtin_operand(0,TYPE_str,p)@
+	@:builtin_operand(0,TYPE_str,STR)@
 	v = *res;
-	@:builtin_operand(1,TYPE_bat,q)@
-	bid = *(bat *) q;
+	@:builtin_operand(1,TYPE_bat,BID)@
+	bid = *(bat *) BID;
 
 	b = BATdescriptor(bid);
+	bi = bat_iterator(b);
 	if (b == NULL) {
 		GDKerror("CMDcall: wrong BAT parameter %s.\n", BATgetId(b));
 		BBPunfix(bid);
@@ -1134,28 +1137,28 @@ CMDcall(Cntxt stk, YYSTREE lt, ValPtr res)
 	Myyexpand(t, Myynode(0, TYPE_int));
 	t->yysons[1]->yyval.val.ival = sizeof(ValRecord);
 	t->yyval = v;
-	BATloopFast(b, p, q, xx) {
+	BATloop(b, p, q) {
 		child = Myynode(TOK_CONSTANT, 0);
 		if (b->htype == TYPE_str) {
-			i = ATOMindex(BUNhvar(b, p));
+			i = ATOMindex(BUNhvar(bi, p));
 			if (i < 0) {
-				GDKerror("CMDcall: wrong type %s.\n", BUNhvar(b, p));
+				GDKerror("CMDcall: wrong type %s.\n", BUNhvar(bi, p));
 				break;
 			}
 			v.vtype = TYPE_str;
-			v.len = strLen(v.val.sval = (str) BUNtvar(b, p));
-			i = interpret_cast(BUNhvar(b, p), 2, &v, res);
+			v.len = strLen(v.val.sval = (str) BUNtvar(bi, p));
+			i = interpret_cast(BUNhvar(bi, p), 2, &v, res);
 			if (i < 0) {
-				GDKerror("CMDcall: wrong value %s(%s).\n", BUNhvar(b, p), BUNtvar(b, p));
+				GDKerror("CMDcall: wrong value %s(%s).\n", BUNhvar(bi, p), BUNtvar(bi, p));
 				break;
 			}
 		} else {
 			v.vtype = BATttype(b);
 			if (ATOMextern(v.vtype)) {
-				i = ATOMlen(v.vtype, BUNtail(b, p));
-				memcpy(v.val.pval = GDKmalloc(i), BUNtail(b, p), i);
+				i = ATOMlen(v.vtype, BUNtail(bi, p));
+				memcpy(v.val.pval = GDKmalloc(i), BUNtail(bi, p), i);
 			} else {
-				VALset(&v, v.vtype, BUNtail(b, p));
+				VALset(&v, v.vtype, BUNtail(bi, p));
 			}
 		}
 		child->yyval = *res;
@@ -1242,19 +1245,19 @@ CMDprint_table(BAT *b, ...)
 int
 CMDprint_multitable(BAT *b)
 {
+	BATiter bi = bat_iterator(b);
 	BAT *piv[MAXPARAMS];
 	int nbats = 0;
 	BUN p, q;
-	int xx;
 
-	BATloopFast(b, p, q, xx) {
-		piv[nbats++] = BATdescriptor(*(bat *) BUNtail(b, p));
+	BATloop(b, p, q) {
+		piv[nbats++] = BATdescriptor(*(bat *) BUNtail(bi, p));
 	}
 
 	BATmultiprintf(GDKout, nbats + 1, piv, FALSE, 0, 1);
 
-	BATloopFast(b, p, q, xx) {
-		BBPunfix(*(bat *) BUNtail(b, p));
+	BATloop(b, p, q) {
+		BBPunfix(*(bat *) BUNtail(bi, p));
 	}
 
 	return GDK_SUCCEED;

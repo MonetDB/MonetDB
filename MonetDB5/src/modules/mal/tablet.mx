@@ -387,8 +387,8 @@ typedef struct Column_t {
 	char *type;
 	int adt;		/* type index */
 	BAT *c;			/* set to NULL when scalar is meant */
-	ptr p;
-	int base;		/* of first tuple */
+	BATiter ci;
+	BUN p;
 	unsigned int tabs;	/* field size in tab positions */
 	str lbrk, rbrk;		/* column brackets */
 	str nullstr;		/* null representation */
@@ -874,9 +874,10 @@ TABgetPageCnt(int *ret)
 static ptr
 bun_tail(BAT *b, size_t nr)
 {
-	REGISTER size_t _i = BUNindex((b), BUNfirst((b)));
+	BATiter bi = bat_iterator(b);
+	REGISTER size_t _i = BUNfirst(b);
 
-	return (ptr) BUNtail(b, BUNptr(b, _i + nr));
+	return (ptr) BUNtail(bi, _i + nr);
 }
 
 
@@ -1093,6 +1094,7 @@ TABLETassign_BATs(Tablet * as, BAT *bats)
 		BAT *b = (BAT *) BATdescriptor(*(bat *) bun_tail(bats, i));
 
 		fmt[i].c = (b);
+		fmt[i].ci = bat_iterator(b);
 		if (res == ~(size_t) 0 || BATcount(fmt[i].c) < res)
 			res = BATcount(fmt[i].c);
 	}
@@ -1123,12 +1125,12 @@ check_BATs(Tablet * as)
 		b = fmt[i].c;
 		if (b == NULL)
 			continue;
-		offset = BUNindex(b, BUNfirst(b)) + as->offset;
+		offset = BUNfirst(b) + as->offset;
 
 		if (BATcount(b) != cnt || !BAThdense(b) || b->hseqbase != base)
 			return oid_nil;
 
-		fmt[i].p = BUNptr(b, offset);
+		fmt[i].p = offset;
 	}
 	return base;
 }
@@ -1141,6 +1143,7 @@ TABLETcreate_bats(Tablet * as, size_t est)
 
 	for (i = 0; i < as->nr_attrs; i++) {
 		fmt[i].c = void_bat_create(fmt[i].adt, est);
+		fmt[i].ci = bat_iterator(fmt[i].c);
 		if (!fmt[i].c) {
 			GDKerror("TABLETcreate_bats: Failed to create bat of size " SZFMT "\n", as->nr);
 			return -1;
@@ -1163,6 +1166,7 @@ TABLETcollect_bats(Tablet * as)
 		BUNins(bats, (ptr) fmt[i].name, (ptr) &fmt[i].c->batCacheid, FALSE);
 		BATsetaccess(fmt[i].c, BAT_READ);
 		BATpropcheck(fmt[i].c, BATPROPS_ALL);
+		BATpropcheck(BATmirror(fmt[i].c), BATPROPS_ALL);
 		if (cnt != BATcount(fmt[i].c)) {
 			GDKerror("Error: counts are not equal\n");
 			return NULL;
@@ -1232,7 +1236,7 @@ insert_val(Column * fmt, char *s, char *e, char quote, ptr key, str *err)
 		s = lstrip(s);
 		e = rstrip(e);
 	}
-	if (e < s) 
+	if (e < s)
 		e = s;
 	adt = fmt->frstr(fmt->extra, fmt->adt, s, e, quote);
 	*end = bak;
@@ -1380,7 +1384,7 @@ output_line(char **buf, int *len, Column * fmt, stream *fd, size_t nr_attrs, ptr
 			continue;
 		fmt[i].p = BUNfnd(fmt[i].c, id);
 
-		if (fmt[i].p == 0)
+		if (fmt[i].p == BUN_NONE)
 			break;
 	}
 	lbuf[k]=0;
@@ -1392,7 +1396,7 @@ output_line(char **buf, int *len, Column * fmt, stream *fd, size_t nr_attrs, ptr
 
 			f = fmt + i;
 			if (f->c) {
-				p = BUNtail(f->c, f->p);
+				p = BUNtail(f->ci, f->p);
 				l = f->tostr(f->extra, buf, len, f->adt, p);
 			}
 			if( k+f->seplen+l+1 >=MB){
@@ -1420,12 +1424,12 @@ output_line_dense(char **buf, int *len, Column * fmt, stream *fd, size_t nr_attr
 		Column *f = fmt + i;
 
 		if (f->c) {
-			char *p = BUNtail(f->c, f->p);
+			char *p = BUNtail(f->ci, f->p);
 			int l = f->tostr(f->extra, buf, len, f->adt, p);
 
 			if (stream_write(fd, *buf, 1, l) != l)
 				return TABLET_error(fd);
-			f->p = BUNnext(f->c, f->p);
+			f->p++;
 		}
 		if (stream_write(fd, f->sep, 1, f->seplen) != f->seplen)
 			return TABLET_error(fd);
@@ -1442,8 +1446,7 @@ output_line_lookup(char **buf, int *len, Column * fmt, stream *fd, size_t nr_att
 		Column *f = fmt + i;
 
 		if (f->c) {
-			char *p = BUNtail(f->c, BUNptr(f->c,
-						   id +BUNindex(f->c, BUNfirst(f->c))));
+			char *p = BUNtail(f->ci, id + BUNfirst(f->c));
 			int l = f->tostr(f->extra, buf, len, f->adt, p);
 
 			if (stream_write(fd, *buf, 1, l) != l)
@@ -1590,10 +1593,11 @@ output_file_default(Tablet * as, BAT *order, stream *fd)
 	char *buf = GDKmalloc(len);
 	BUN p, q;
 	size_t i = 0;
-	size_t offset = BUNindex(order, BUNfirst(order)) + as->offset;
+	size_t offset = BUNfirst(order) + as->offset;
+	BATiter orderi = bat_iterator(order);
 
-	for (q = BUNptr(order, offset + as->nr), p = BUNptr(order, offset); p < q; p = BUNnext(order, p)) {
-		ptr h = BUNhead(order, p);
+	for (q = offset + as->nr, p = offset; p < q; p++) {
+		ptr h = BUNhead(orderi, p);
 
 		if ((res = output_line(&buf, &len, as->format, fd, as->nr_attrs, h)) < 0) {
 			GDKfree(buf);
@@ -1633,10 +1637,11 @@ output_file_ordered(Tablet * as, BAT *order, stream *fd, oid base)
 	char *buf = GDKmalloc(len);
 	BUN p, q;
 	size_t i = 0;
-	size_t offset = BUNindex(order, BUNfirst(order)) + as->offset;
+	size_t offset = BUNfirst(order) + as->offset;
+	BATiter orderi = bat_iterator(order);
 
-	for (q = BUNptr(order, offset + as->nr), p = BUNptr(order, offset); p < q; p = BUNnext(order, p)) {
-		size_t h = *(oid *) BUNhead(order, p) - base;
+	for (q = offset + as->nr, p = offset; p < q; p++) {
+		size_t h = *(oid *) BUNhead(orderi, p) - base;
 
 		if ((res = output_line_lookup(&buf, &len, as->format, fd, as->nr_attrs, h)) < 0) {
 			GDKfree(buf);
@@ -1947,7 +1952,8 @@ clearColumn(Column * c)
 	CLEAR(c->sep);
 	c->width = 0;
 	c->tabs = 0;
-	c->c = c->p = 0;
+	c->c = NULL;
+	c->p = 0;
 	/* keep nullstr and brackets */
 }
 static void
@@ -2063,6 +2069,7 @@ bindVariable(Tablet * t, unsigned int anr, str nme, int tpe, ptr val, int *k)
 		}
 
 		c->c = b;
+		c->ci = bat_iterator(b);
 		/* the first column should take care of leader text size */
 		if (c->c)
 			setTabwidth(c);
@@ -2078,7 +2085,7 @@ bindVariable(Tablet * t, unsigned int anr, str nme, int tpe, ptr val, int *k)
 	}
 	GDKfree(buf);
 
-	c->p = val;
+	c->data = val;
 	if (c->scale)
 		c->width = c->scale + 2;	/* decimal point  and '-' */
 	c->width += (c->rbrk ? strlen(c->rbrk) : 0) + (c->lbrk ? strlen(c->lbrk) : 0);
@@ -2243,8 +2250,8 @@ TABshowRow(Tablet * t)
 		c = t->columns + i;
 		u = 0;
 		v = 0;
-		if (c->p)
-			(*BATatoms[c->adt].atomToStr) (&buf, &zero, c->p);
+		if (c->data)
+			(*BATatoms[c->adt].atomToStr) (&buf, &zero, c->data);
 		m= (unsigned int) zero;
 		if (strcmp(buf, "nil") == 0 && c->nullstr && strlen(c->nullstr) < m)
 			strcpy(buf, c->nullstr);
@@ -2255,7 +2262,7 @@ TABshowRow(Tablet * t)
 				switch (c->adt) {
 				case TYPE_int:
 				{
-					int vi = *(int *) c->p, vj = vi, m = 1;
+					int vi = *(int *) c->data, vj = vi, m = 1;
 					int k;
 
 					for (k = c->precision; k > 0; k--) {
@@ -2295,6 +2302,7 @@ TABshowRange(Tablet * t, lng first, lng last)
 	lng i;
 	size_t j;
 	oid k;
+	BATiter pi;
 
 	i = BATcount(t->columns[0].c);
 	if (last < 0 || last > i)
@@ -2302,16 +2310,14 @@ TABshowRange(Tablet * t, lng first, lng last)
 	if (first <= 0)
 		first = 0;
 
+	pi = bat_iterator(t->pivot);
 	for (i = first; i < last; i++) {
 		if (t->pivot) {
-			k = *(oid *) BUNtail(t->pivot, BUNptr(t->pivot, t->pivot->hseqbase + i));
+			k = *(oid *) BUNtail(pi, i);
 		} else
 			k = (oid) i;
 		for (j = 0; j < t->nr_attrs; j++) {
-			BAT *b = t->columns[j].c;
-			int base = t->columns[j].base;
-
-			t->columns[j].p = BUNtail(b, BUNptr(b, base + k));
+			t->columns[j].data = BUNtail(t->columns[j].ci, k);
 		}
 		TABshowRow(t);
 	}
@@ -2363,7 +2369,6 @@ setTabwidth(Column * c)
 		title = GDKmalloc(strlen(BATgetId(c->c)) + 7);
 		snprintf(title, 20, "%s", BATgetId(c->c));
 	}
-	c->base = BUNindex(c->c, BUNfirst(c->c));
 	c->type = GDKstrdup(ATOMname(c->c->ttype));
 	c->adt = c->c->ttype;
 	buf = (char *) GDKmalloc(ret = strLen(title));
@@ -2376,14 +2381,14 @@ setTabwidth(Column * c)
 		max += strlen(c->rbrk);
 
 	if (t >= 0 && t < GDKatomcnt && tostr) {
-		size_t off = BUNindex(c->c, BUNfirst(c->c));
+		size_t off = BUNfirst(c->c);
 		size_t j, i, probe = MIN(10000, MAX(200, cnt / 100));
 
 		for (i = 0; i < probe; i++) {
 			if (i >= cnt)
 				break;
 			j = off + ((cnt < probe) ? i : (rand() % cnt));
-			(*tostr) (&buf, &ret, BUNtail(c->c, BUNptr(c->c, j)));
+			(*tostr) (&buf, &ret, BUNtail(c->ci, j));
 			max = MAX(max, strlen(buf));
 		}
 	}

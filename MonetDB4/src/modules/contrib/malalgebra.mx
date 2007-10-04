@@ -167,8 +167,8 @@ BATmalleftfetchjoin(BAT *l, BAT *r)
 static BAT *
 BATmalhashjoin(BAT *l, BAT *r)
 {
-	size_t lsize = l->batBuns->size + (l->hheap ? l->hheap->size : 0) + (l->theap ? l->theap->size : 0);
-	size_t rsize = r->batBuns->size + (r->hheap ? r->hheap->size : 0) + (r->theap ? r->theap->size : 0);
+	size_t lsize = l->H->heap.size + l->T->heap.size + (l->hheap ? l->hheap->size : 0) + (l->theap ? l->theap->size : 0);
+	size_t rsize = r->H->heap.size + r->T->heap.size + (r->hheap ? r->hheap->size : 0) + (r->theap ? r->theap->size : 0);
 
 	if (rsize < lsize) {
 		return BATmirror(BAThashjoin(BATmirror(r), BATmirror(l), oid_nil));
@@ -267,19 +267,19 @@ int CMDord_@1select_(BAT **result, BAT *b, ptr low, ptr high, bit* l_in, bit* h_
 
 @= sumcmd
 int CMDclustered_sum_@1(BAT **ret, BAT *b ) {
+	BATiter bi = bat_iterator(b);
 	BAT *bn = BATnew(b->htype, BATttype(b), BATcount(b));	
 	BUN p, q;
-	int xx;
 	oid cur;
 	@1 sum = 0;
 
 	bn->hsorted = b->hsorted;
 	bn->tsorted = 0;
 	if (BATcount(b))
- 		cur = *(oid*)BUNhead(b,BUNfirst(b));
-	BATloopFast(b, p, q, xx) {
-		oid *h = (oid*) BUNhead(b,p);
-		@1 *t = (@1*) BUNtail(b,p);
+ 		cur = *(oid*)BUNhead(bi,BUNfirst(b));
+	BATloop(b, p, q) {
+		oid *h = (oid*) BUNhead(bi,p);
+		@1 *t = (@1*) BUNtail(bi,p);
 
 		if (cur != *h){
 			BUNfastins(bn, &cur, &sum );

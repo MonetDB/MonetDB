@@ -227,7 +227,7 @@ static ITER *
 ITERinit(ITER *input, str name, NEXTfcn next, FREEfcn freefcn, GUESSfcn guess, BAT *b, BAT *h, BAT *t)
 {
 	ITER *it = (ITER *) GDKmalloc(sizeof(ITER));
-	BAT *v = VIEWcreate_(b, TRUE);
+	BAT *v = VIEWcreate_(b, b, TRUE);
 	oid hseq = BAThdense(v) ? v->hseqbase - chunksize : oid_nil;
 	oid tseq = BATtdense(v) ? v->tseqbase - chunksize : oid_nil;
 

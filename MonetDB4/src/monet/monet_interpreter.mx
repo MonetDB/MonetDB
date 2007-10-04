@@ -319,7 +319,7 @@ were appropiate. The below macro is called after execution and
 cleans up the created views.
 @c
 static BAT *
-interpret_pin(batrec *r, int force, str s)
+interpret_pin(batrec *r, str s)
 {
 	BAT *b;
 	BATDEBUG THRprintf(GDKerr, "interpret_pin(%s) on bat(%d) refcnt = %d\n", s, (int) r->id, BBPrefs(r->id) + 1);
@@ -327,29 +327,8 @@ interpret_pin(batrec *r, int force, str s)
 
 	if (b == NULL) {
 		return NULL;
-	} else if ((b->htype == TYPE_void) | (b->ttype == TYPE_void)) {
-                bat bid = ABS(r->id);
-		BAT *_b = BBP_cache(bid);
-		int tid = THRgettid();
-
-		monet_set_lock(GDKhashLock(bid & BBP_BATMASK), "pin");
-		if (_b->void_cnt & (force | (_b->void_tid != tid))) {
-			BAT *v = VIEWcreate(b);
-			BBPunfix(r->id);
-
-			v->batStamp = b->batCacheid;
-			BATDEBUG THRprintf(GDKerr, "interpret_pin(%s) create %d[1,%d] on %d[%d,%d]\n", s, (int) v->batCacheid, tid, (int) b->batCacheid, _b->void_cnt, _b->void_tid);
-
-			_b = b = v;
-		} else {
-			BATDEBUG THRprintf(GDKerr, "interpret_pin(%s) => %d[%d,%d]\n", s, b->batCacheid, _b->void_cnt + 1, _b->void_tid);
-		}
-		_b->void_cnt++;
-		_b->void_tid = tid;
-		monet_unset_lock(GDKhashLock(bid & BBP_BATMASK), "pin");
 	}
 	r->id = b->batCacheid;
-
 	r->stamp = b->batStamp;
 	return b;
 }
@@ -363,19 +342,6 @@ interpret_unpin(batrec *r, str s)
 	if (b) {
 		if (b->batStamp != r->stamp) {
 			GDKerror("interpret_unpin: %s bat=%d,stamp=%d OVERWRITTEN\n", s, r->id, r->stamp);
-		} else if (b->htype == TYPE_void || b->ttype == TYPE_void) {
-                        bat bid = ABS(r->id);
-			BAT *_b = BBPdescriptor(bid);
-
-		        monet_set_lock(GDKhashLock(bid & BBP_BATMASK), "unpin");
-			if (--(_b->void_cnt) == 0) {
-				BATDEBUG THRprintf(GDKerr, "interpret_unpin(%s) => kill %d[%d,%d]\n", s, (int) b->batCacheid, _b->void_cnt, _b->void_tid);
-
-				_b->void_tid = 0;
-			} else {
-				BATDEBUG THRprintf(GDKerr, "interpret_unpin(%s) => %d[%d,%d]\n", s, (int) b->batCacheid, _b->void_cnt, _b->void_tid);
-			}
-		        monet_unset_lock(GDKhashLock(bid & BBP_BATMASK), "unpin");
 		}
 	}
 	BBPunfix(r->id);
@@ -460,20 +426,11 @@ interpret_params_unpin(int argc, ValPtr argv, str op_name)
 static int
 interpret_params_pin(int argc, ValPtr argv, str op_name)
 {
-	int i, j;
+	int i;
 
 	for (i=1; i < argc; i++)
 		if (argv[i].vtype == TYPE_bat) {
-			bat bi = ABS(argv[i].val.bval);
-			for (j=1; j < i; j++) {
-				bat bj = ABS(argv[j].val.bval);
-				if ((argv[j].vtype == TYPE_bat) & (bi == bj)) {
-					BAT *b = BBP_cache(argv[i].val.bval);
-					if ((b->htype == TYPE_void) | (b->ttype == TYPE_void)) 
-						break; /* danger: same void bat passed twice! */ 
-				}
-			}
-			if (interpret_pin(&argv[i].val.br, j<i, op_name) == NULL) break;
+			if (interpret_pin(&argv[i].val.br, op_name) == NULL) break;
 		}
 	if (i < argc) {
 		interpret_params_unpin(i, argv, op_name);
@@ -1120,7 +1077,7 @@ add it to the expansion cache.
 			{	/* PETER: temporary hack to monitor proc instantiation (2/2) */
 				BUN pp = BUNfnd(yysubst, fcn_nme);
 				lng add = (LL_CONSTANT(1) << 32) + argv[0].val.ival;
-				if (pp == NULL) {
+				if (pp == BUN_NONE) {
 					BUNins(yysubst, fcn_nme, &add, FALSE);
 				} else {
 					*((lng *) BUNtloc(yysubst, pp)) += add;
@@ -1467,7 +1424,7 @@ interpret_batcast(str atom, int argc, ValPtr val, ValPtr res)
 
 	(void) argc;
 
-	if (trivial_cast(tpe, b->ttype)) {
+	if (trivial_cast(tpe, b->ttype) && !isVIEWCOMBINE(b)) {
 		/* trivial conversion, e.g. int => int */
 		int dense_bak = b->T->dense;
 
@@ -1488,12 +1445,14 @@ interpret_batcast(str atom, int argc, ValPtr val, ValPtr res)
 		ALIGNsetH(bn, b);
                 if (tpe == TYPE_oid && b->htype == TYPE_void && BATtdense(b)) {
                         /* fast special case: materialize and oid column */
-                        oid *dst = (oid*) bn->batBuns->base;
+                        oid *dst = (oid*) bn->T->heap.base;
                         oid *lim = dst + BATcount(b);
                         oid cur = b->tseqbase;
-                        while(dst < lim) *dst++ = cur++;
-                        bn->batBuns->free = ((BUN) dst) - bn->batBuns->base;
+                        while(dst < lim) 
+				*dst++ = cur++;
+                        BATseqbase(bn, b->hseqbase);
                         BATsetcount(bn, BATcount(b));
+                        bn->T->heap.free = tailsize(bn, BATcount(b));
 		        ALIGNsetT(bn, b);
                         ok = 1;
                         goto bunins_failed;
@@ -1535,7 +1494,8 @@ interpret_batcast(str atom, int argc, ValPtr val, ValPtr res)
 		} else if ((b->ttype == TYPE_void || b->ttype == TYPE_oid) /* && tpe < TYPE_int */ ) {
 			/* oid's are >= 0, hence we only need to check for overflows */
 			bit overflow = FALSE;
-			oid max_val = *(oid *) BUNtail(b, BUNlast(b) - BUNsize(b));
+			BATiter bi = bat_iterator(b);
+			oid max_val = *(oid *) BUNtail(bi, BUNlast(b) - 1);
 
 			switch (tpe) {
 @= interpret_batcast_overflow_case
@@ -1612,8 +1572,9 @@ interpret_batcast(str atom, int argc, ValPtr val, ValPtr res)
 		}
 @= interpret_batcast_source_case
 		case TYPE_@1: {
-			@1 min_val = *(@1*)BUNtail(b,BUNfirst(b));
-			@1 max_val = *(@1*)BUNtail(b,BUNlast(b)-BUNsize(b));
+			BATiter bi = bat_iterator(b);
+			@1 min_val = *(@1*)BUNtail(bi,BUNfirst(b));
+			@1 max_val = *(@1*)BUNtail(bi,BUNlast(b)-1);
 			if ( min_val == @1_nil ) {
 				overflow = TRUE;
 			} else {
@@ -1638,22 +1599,22 @@ interpret_batcast(str atom, int argc, ValPtr val, ValPtr res)
 
 
 		if (BATcount(b)) {
+			BATiter bi = bat_iterator(b);
 			int len = ATOMsize(ATOMtype(BATttype(b)));
 			BUN q = BUNlast(b);
 			BUN p = BUNfirst(b);
 			BUN r = BUNfirst(bn);
-			int xx = BUNsize(b);
-			int yy = BUNsize(bn);
+			size_t hs = Hsize(bn), ts = Tsize(bn);
 
 			if (tpe == TYPE_oid && b->ttype == TYPE_void) {
 				/* void => oid materialization is a special case */
 				oid curid = b->tseqbase;
+				oid inc = (curid != oid_nil);
 
-				BATloopFast(b, p, q, xx) {
-					bunfastins_nocheck(bn, r, BUNhead(b, p), &curid, yy);
-					r += yy;
-					if (curid != oid_nil)
-						curid++;
+				BATloop(b, p, q) {
+					bunfastins_nocheck(bn, r, BUNhead(bi, p), &curid, hs, ts);
+					r++;
+					curid += inc;
 				}
 				ALIGNsetT(bn, b);
 			} else if (tpe == TYPE_str || b->ttype == TYPE_str) {
@@ -1663,8 +1624,8 @@ interpret_batcast(str atom, int argc, ValPtr val, ValPtr res)
 					/* str => chr: just get first character */
 					chr *s, c;
 
-					BATloopFast(b, p, q, xx) {
-						s = (chr *) BUNtvar(b, p);
+					BATloop(b, p, q) {
+						s = (chr *) BUNtvar(bi, p);
 						if (*s & 0x80) {
 #ifndef ASCII_CHR
 							/* check whether the first UTF-8 char fits in an 8-bit value */
@@ -1675,19 +1636,19 @@ interpret_batcast(str atom, int argc, ValPtr val, ValPtr res)
 								c = chr_nil;
 						} else
 							c = *s;
-						bunfastins_nocheck(bn, r, BUNhead(b, p), &c, yy);
-						r += yy;
+						bunfastins_nocheck(bn, r, BUNhead(bi, p), &c, hs, ts);
+						r++;
 					}
 					reduce = 1; /* first character might be identical for several strings */
 				} else if (tpe != TYPE_str) {
 					/* str => any: use fromstr ADT routine */
 					int (*fromstr) (str, int *, ptr *) = BATatoms[tpe].atomFromStr;
 
-					BATloopFast(b, p, q, xx) {
+					BATloop(b, p, q) {
 						/* nil str value will produce a nil atom value */
-						(*fromstr) (BUNtvar(b, p), &len, &v);
-						bunfastins_nocheck(bn, r, BUNhead(b, p), v, yy);
-						r += yy;
+						(*fromstr) (BUNtvar(bi, p), &len, &v);
+						bunfastins_nocheck(bn, r, BUNhead(bi, p), v, hs, ts);
+						r++;
 					}
 					reduce = 1; /* strings might only differ by (ignored) whitespace */
 				} else if (b->ttype == TYPE_chr) {
@@ -1697,9 +1658,9 @@ interpret_batcast(str atom, int argc, ValPtr val, ValPtr res)
 					s[1] = 0;
 					s[2] = 0;
 					/*reduce = 0;*/ /* be optimistic... */
-					BATloopFast(b, p, q, xx) {
+					BATloop(b, p, q) {
 						/* also works well on NILs */
-						s[0] = *(chr *) BUNtloc(b, p);
+						s[0] = *(chr *) BUNtloc(bi, p);
 						s[1] = 0;
 						if ((*s & 0x80) && *s != chr_nil) {
 							/* non-ASCII chr */
@@ -1711,8 +1672,8 @@ interpret_batcast(str atom, int argc, ValPtr val, ValPtr res)
 							s[0] = 0xC0 | ((s[0] >> 6) & 0x03);
 #endif
 						}
-						bunfastins_nocheck(bn, r, BUNhead(b, p), s, yy);
-						r += yy;
+						bunfastins_nocheck(bn, r, BUNhead(bi, p), s, hs, ts);
+						r++;
 					}
 				} else {
 					/* any => str: use tostr ADT routine */
@@ -1721,16 +1682,16 @@ interpret_batcast(str atom, int argc, ValPtr val, ValPtr res)
 					ptr nilptr = ATOMnilptr(b->ttype);
 
 					/*reduce = 0;*/ /* be optimistic... */
-					BATloopFast(b, p, q, xx) {
-						ptr t = BUNtail(b, p);
+					BATloop(b, p, q) {
+						ptr t = BUNtail(bi, p);
 
 						if ((*cmp) (t, nilptr)) {
 							(*tostr) ((str *) (ptr) &v, &len, t);
-							bunfastins_nocheck(bn, r, BUNhead(b, p), v, yy);
-							r += yy;
+							bunfastins_nocheck(bn, r, BUNhead(bi, p), v, hs, ts);
+							r++;
 						} else {
-							bunfastins_nocheck(bn, r, BUNhead(b, p), str_nil, yy);
-							r += yy;
+							bunfastins_nocheck(bn, r, BUNhead(bi, p), str_nil, hs, ts);
+							r++;
 							reduce = 1; /* NILs destroy keyness */
 						}
 					}
@@ -1741,10 +1702,10 @@ interpret_batcast(str atom, int argc, ValPtr val, ValPtr res)
 				/* misc conversions by VALconvert are expensive */
 				res->vtype = BATttype(b);
 				if (ATOMextern(res->vtype)) {
-					res->val.pval = BUNtail(b, p);
+					res->val.pval = BUNtail(bi, p);
 					reduce = 1;	/* extern atoms are suspicious */
 				} else {
-					memcpy(&res->val.ival, BUNtail(b, p), len);
+					memcpy(&res->val.ival, BUNtail(bi, p), len);
 					reduce = 0;
 				}
 				/* reduce is set when conversion loses precision */
@@ -1759,31 +1720,31 @@ interpret_batcast(str atom, int argc, ValPtr val, ValPtr res)
 					GDKerror("interpret_batcast: impossible to convert '%s' into '%s'.\n", ATOMname(b->ttype), ATOMname(tpe));
 					goto bunins_failed;
 				}
-				bunfastins_nocheck(bn, r, BUNhead(b, p), s, yy);
-				r += yy;
+				bunfastins_nocheck(bn, r, BUNhead(bi, p), s, hs, ts);
+				r++;
 				if (ATOMextern(BATttype(b))) {
-					for (p += xx; p < q; p += xx) {
+					for (p++; p < q; p++) {
 						res->vtype = BATttype(b);
-						res->val.pval = BUNtail(b, p);
+						res->val.pval = BUNtail(bi, p);
 						s = VALconvert1(tpe, res, res);
 						if (s == ILLEGALVALUE) {
 							GDKerror("interpret_batcast: impossible to convert '%s' into '%s'.\n", ATOMname(b->ttype), ATOMname(tpe));
 							goto bunins_failed;
 						}
-						bunfastins_nocheck(bn, r, BUNhead(b, p), s, yy);
-						r += yy;
+						bunfastins_nocheck(bn, r, BUNhead(bi, p), s, hs, ts);
+						r++;
 					}
 				} else {
-					for (p += xx; p < q; p += xx) {
+					for (p++; p < q; p++) {
 						res->vtype = BATttype(b);
-						memcpy(&res->val.ival, BUNtail(b, p), len);
+						memcpy(&res->val.ival, BUNtail(bi, p), len);
 						s = VALconvert1(tpe, res, res);
 						if (s == ILLEGALVALUE) {
 							GDKerror("interpret_batcast: impossible to convert '%s' into '%s'.\n", ATOMname(b->ttype), ATOMname(tpe));
 							goto bunins_failed;
 						}
-						bunfastins_nocheck(bn, r, BUNhead(b, p), s, yy);
-						r += yy;
+						bunfastins_nocheck(bn, r, BUNhead(bi, p), s, hs, ts);
+						r++;
 					}
 				}
 			}	/* different kind of conversions */
@@ -2601,22 +2562,22 @@ onlineProfilerEvent(char *caller, lng clk, lng ticks, struct tms *timer, YYSTREE
 		if (tstFilter(caller, namebuf)) {
 			BUN cnt = BUNfnd(profilerCount, namebuf);
 
-			if (cnt == NULL)
+			if (cnt == BUN_NONE)
 				BUNins(profilerCount, namebuf, &one, FALSE);
 			else {
-				cnt = BUNtail(profilerCount, cnt);
-				*(int *) cnt = *(int *) cnt + 1;
+				BATiter pci = bat_iterator(profilerCount);
+				int *c = (int*)BUNtail(pci, cnt);
+				*c = *(int *)c + 1;
 				profilerCount->batDirty = TRUE;
 			}
 			cnt = BUNfnd(profilerTicks, namebuf);
-			if (cnt == NULL) {
+			if (cnt == BUN_NONE) {
 				lng zero = 0;
 
 				BUNins(profilerTicks, namebuf, &zero, FALSE);
 			} else {
-				lng *tik;
-
-				tik = (lng *) BUNtail(profilerTicks, cnt);
+				BATiter pti = bat_iterator(profilerTicks);
+				lng *tik = (lng*)BUNtail(pti, cnt);
 				*tik = *tik + ticks;
 				profilerTicks->batDirty = TRUE;
 			}

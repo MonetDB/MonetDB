@@ -92,7 +92,7 @@ QOT_create(str hnme, str tnme, int ht, int tt)
 static void QOTstatisticsInit(){
 	oid o=0;
 
-	if( qotStat[QOTnames]) return;
+	if (qotStat[QOTnames]) return;
 	qotStat[QOTnames]= QOT_create("opt","names",TYPE_void,TYPE_str);
 	BATseqbase(qotStat[QOTnames],o);
 	qotStat[QOTcalls]= QOT_create("opt","calls",TYPE_void,TYPE_int);
@@ -109,6 +109,7 @@ static void QOTstatisticsInit(){
 void
 QOTupdateStatistics(str nme, int actions, lng val)
 {
+	BATiter bi;
 	BUN p;
 	oid idx;
 	int ival=0, *ip= &ival;
@@ -118,8 +119,8 @@ QOTupdateStatistics(str nme, int actions, lng val)
 #ifdef _Q_STATISTICS_DEBUG
 	stream_printf(GDKout,"update optimizer statistics\n");
 #endif
-	p= BUNfnd(BATmirror(qotStat[QOTnames]),(ptr)nme);
-	if( p == 0) {
+	p = BUNfnd(BATmirror(qotStat[QOTnames]),(ptr)nme);
+	if (p == BUN_NONE) {
 #ifdef _Q_STATISTICS_DEBUG
 		stream_printf(GDKout,"initialized? %d\n",qotStat[QOTnames]==0);
 		stream_printf(GDKout,"insert optimizer statistics %s\n",nme);
@@ -128,34 +129,37 @@ QOTupdateStatistics(str nme, int actions, lng val)
 		BUNappend(qotStat[QOTcalls],  &ival, FALSE);
 		BUNappend(qotStat[QOTactions], &ival, FALSE);
 		BUNappend(qotStat[QOTtimings], &lval, FALSE);
-		p= BUNfnd(BATmirror(qotStat[QOTnames]),(ptr)nme);
-		if(p==0){
+		p = BUNfnd(BATmirror(qotStat[QOTnames]),(ptr)nme);
+		if (p == BUN_NONE){
 #ifdef _Q_STATISTICS_DEBUG
 			stream_printf(GDKout,"not found\n");
 #endif
 			return;
 		}
 	} 
-	idx= *(oid*) BUNhead(qotStat[QOTnames],p);
+	bi = bat_iterator(qotStat[QOTnames]);
+	idx = *(oid*) BUNhead(bi,p);
 
-	p= BUNfnd(qotStat[QOTcalls],&idx);
-	if( p== NULL)
+	p = BUNfnd(qotStat[QOTcalls],&idx);
+	if (p == BUN_NONE)
 		stream_printf(GDKout,"#Could not access 'calls'\n");
+	bi = bat_iterator(qotStat[QOTcalls]);
+	ip = (int*) BUNtail(bi,p);
+	*ip = *ip+1;
 
-	ip= (int*) BUNtail(qotStat[QOTcalls],p);
-	*ip= *ip+1;
-
-	p= BUNfnd(qotStat[QOTactions],&idx);
-	if( p== NULL)
+	p = BUNfnd(qotStat[QOTactions],&idx);
+	if (p == BUN_NONE)
 		stream_printf(GDKout,"#Could not access 'actions'\n");
-	ip= (int*) BUNtail(qotStat[QOTactions],p);
-	*ip= *ip+ actions;
+	bi = bat_iterator(qotStat[QOTactions]);
+	ip = (int*) BUNtail(bi,p);
+	*ip = *ip+ actions;
 
-	p= BUNfnd(qotStat[QOTtimings],&idx);
-	if( p== NULL)
+	p = BUNfnd(qotStat[QOTtimings],&idx);
+	if (p == BUN_NONE)
 		stream_printf(GDKout,"#Could not access 'timings'\n");
-	lp= (lng*) BUNtail(qotStat[QOTtimings],p);
-	*lp= *lp+ val;
+	bi = bat_iterator(qotStat[QOTtimings]);
+	lp = (lng*) BUNtail(bi,p);
+	*lp = *lp+ val;
 }
 
 void

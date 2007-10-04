@@ -569,12 +569,11 @@ Then retrieve variable specific information.
 		return GDK_FAIL;
 	}
 	BATseqbase(*out, 0);
-	(*out)->batBuns->free = size * BUNsize(*out);
 	BATsetcount(*out, size);
 	BATkey(BATmirror(*out), 0);
 	if (size > 1)
 		(*out)->tsorted = 0;
-	p = (void *) BUNfirst(*out);
+	p = (void *) Tloc(*out,BUNfirst(*out));
 
 	switch (xtype) {
 	case NC_BYTE:
@@ -643,7 +642,8 @@ int
 _nc_export(int *ncid, str varname, BAT *data, ...)
 {
 	va_list ap;
-	BAT *tmp, *batptr[NC_MAX_DIMS];
+	BAT *tmp;
+	BATiter bi[NC_MAX_DIMS], datai = bat_iterator(data);
 	int dimid[NC_MAX_DIMS];
 	int dims, varid, nc_status, i;
 	int minvector[NC_MAX_DIMS];
@@ -667,14 +667,14 @@ just produce an array of bat pointers.
 			GDKerror("dimensionality too high");
 			return GDK_FAIL;
 		}
-		batptr[dims++] = tmp;
+		bi[dims++].b = tmp;
 	}
 	va_end(ap);
 
 	cnt = 1;
 	for (i = 0; i < dims; i++) {
-		BATmin(batptr[i], &(minvector[i]));
-		BATmax(batptr[i], &(maxvector[i]));
+		BATmin(bi[i].b, &(minvector[i]));
+		BATmax(bi[i].b, &(maxvector[i]));
 		lenvector[i] = maxvector[i] - minvector[i] + 1;
 		cnt *= lenvector[i];
 	}
@@ -721,25 +721,25 @@ just produce an array of bat pointers.
 	{
 		register BUN p, q;
 
-		p = BUNfirst(batptr[0]);
-		q = BUNlast(batptr[0]);
+		p = BUNfirst(bi[0].b);
+		q = BUNlast(bi[0].b);
 		while (p < q) {
-			register oid *o = (oid *) BUNhead(batptr[0], p);
+			register oid *o = (oid *) BUNhead(bi[0], p);
 			register int offset;
 
-			offset = *((int *) BUNtail(batptr[0], p)) - minvector[0];
+			offset = *((int *) BUNtail(bi[0], p)) - minvector[0];
 			for (i = 1; i < dims; i++) {
-				register ptr p = BUNfnd(batptr[i], o);
+				register BUN p = BUNfnd(bi[i].b, o);
 
-				if (p == NULL) {
+				if (p == BUN_NONE) {
 					GDKerror("index %d missing for oid %d.", i, *o);
 					GDKfree(arrayindex);
 					return GDK_FAIL;
 				}
-				offset = (offset * lenvector[i]) + ((*((int *) p)) - minvector[i]);
+				offset = (offset * lenvector[i]) + ((*((int *) BUNtail(bi[i],p))) - minvector[i]);
 			}
 			arrayindex[offset] = *o;
-			p = BUNnext(batptr[0], p);
+			p++;
 		}
 	}
 
@@ -748,7 +748,7 @@ just produce an array of bat pointers.
 	ASSERT_STATUS_arrayindex;
 
 	for (i = 0; i < dims; i++) {
-		nc_status = nc_def_dim(*ncid, BBPname(BBPcacheid(batptr[i])), lenvector[i], &dimid[i]);
+		nc_status = nc_def_dim(*ncid, BBPname(BBPcacheid(bi[i].b)), lenvector[i], &dimid[i]);
 		ASSERT_STATUS_arrayindex;
 	}
 	nc_status = nc_def_var(*ncid, varname, xtype, dims, dimid, &varid);
@@ -794,28 +794,28 @@ just produce an array of bat pointers.
 			offset = (offset * lenvector[i]) + idxvector[i];
 		}
 		{
-			register ptr p = BUNfnd(data, &arrayindex[offset]);
+			register BUN p = BUNfnd(data, &arrayindex[offset]);
 
-			if (p == NULL) {
+			if (p == BUN_NONE) {
 				GDKerror("value missing for oid %d.", arrayindex[offset]);
 				GDKfree(arrayindex);
 				return GDK_FAIL;
 			}
 			switch (xtype) {
 			case NC_BYTE:
-				nc_status = nc_put_var1_schar(*ncid, varid, idxvector, (signed char *) BUNtail(data, p));
+				nc_status = nc_put_var1_schar(*ncid, varid, idxvector, (signed char *) BUNtail(datai, p));
 				break;
 			case NC_SHORT:
-				nc_status = nc_put_var1_short(*ncid, varid, idxvector, (short *) BUNtail(data, p));
+				nc_status = nc_put_var1_short(*ncid, varid, idxvector, (short *) BUNtail(datai, p));
 				break;
 			case NC_INT:
-				nc_status = nc_put_var1_int(*ncid, varid, idxvector, (int *) BUNtail(data, p));
+				nc_status = nc_put_var1_int(*ncid, varid, idxvector, (int *) BUNtail(datai, p));
 				break;
 			case NC_FLOAT:
-				nc_status = nc_put_var1_float(*ncid, varid, idxvector, (float *) BUNtail(data, p));
+				nc_status = nc_put_var1_float(*ncid, varid, idxvector, (float *) BUNtail(datai, p));
 				break;
 			case NC_DOUBLE:
-				nc_status = nc_put_var1_double(*ncid, varid, idxvector, (double *) BUNtail(data, p));
+				nc_status = nc_put_var1_double(*ncid, varid, idxvector, (double *) BUNtail(datai, p));
 				break;
 			default:
 				GDKerror("should not occur, must be serious...");
@@ -949,7 +949,7 @@ just produce an array of bat pointers.
 	nc_status = nc_enddef(*ncid);
 	ASSERT_STATUS;
 
-	p = (void *) BUNfirst(data);
+	p = (void *) Tloc(data, BUNfirst(data));
 	switch (xtype) {
 	case NC_BYTE:
 		nc_status = nc_put_var_schar(*ncid, varid, (signed char *) p);

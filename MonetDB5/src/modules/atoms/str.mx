@@ -1371,9 +1371,9 @@ strEpilogue(void)
 {
 	BUN UTF8_CONV_r;
 	int UTF8_CONV_v = (@1);
-	HASHfnd_int(UTF8_CONV_r, UTF8_@2Bat, &UTF8_CONV_v);
-	if (UTF8_CONV_r)
-		(@1) = *(int*) BUNtloc(UTF8_@2Bat, UTF8_CONV_r);
+	HASHfnd_int(UTF8_CONV_r, UTF8_@2Bati, &UTF8_CONV_v);
+	if (UTF8_CONV_r != BUN_NONE)
+		(@1) = *(int*) BUNtloc(UTF8_@2Bati, UTF8_CONV_r);
 }
 @= UTF8_GETCHAR
 	if (*@2 < 0x80) {
@@ -1810,6 +1810,7 @@ strSuffix(bit *res, str s, str suffix)
 int
 strLower(str *res, str s)
 {
+	BATiter UTF8_tolowerBati = bat_iterator(UTF8_tolowerBat);
 	size_t len = strlen(s);
 	unsigned char *dst, *src = (unsigned char *) s, *end = (unsigned char *) (src + len);
 
@@ -1838,6 +1839,7 @@ strLower(str *res, str s)
 int
 strUpper(str *res, str s)
 {
+	BATiter UTF8_toupperBati = bat_iterator(UTF8_toupperBat);
 	size_t len = strlen(s);
 	unsigned char *dst, *src = (unsigned char *) s, *end = (unsigned char *) (src + len);
 

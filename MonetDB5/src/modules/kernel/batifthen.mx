@@ -115,77 +115,91 @@ definitoin.
 @= ifthencstImpl
 batifthen_export str CMDifThen_@1(int *ret, int *bid, int *tid);
 str
-CMDifThen_@1(int *ret, int *bid, int *tid) {
+CMDifThen_@1(int *ret, int *bid, int *tid) 
+{
+	BATiter bi, tbi;
 	BAT *b, *tb, *bn;
 	@1 nilval=  (@1) @1_nil, *val;
 	BUN p,q;
-	size_t xx;
+	bit *t;
 
 	@:getBATdescriptor(bid,b,"batcalc.ifThen")@
 	@:getBATdescriptor(tid,tb,"batcalc.ifThen",BBPreleaseref(b->batCacheid))@
 	@:chkSize(b,tb,CMDifThen)@
-	if( BAThvoid(b))
-		bn= BATnew(TYPE_oid,TYPE_@1,BATcount(b));
-	else{
-		bn= BATnew(b->htype,TYPE_@1,BATcount(b));
-	}
+
+	bn= BATnew(ATOMtype(b->htype),TYPE_@1,BATcount(b));
 	if( bn == 0 )
 		throw(MAL, "batcalc.ifThen","Can not create BAT");
 	bn->hsorted= b->hsorted;
 	bn->tsorted= b->tsorted;
 
-	BATloopFast(b, p, q, xx) {
-		bit *t= (bit*) BUNtail(b,p);
-		if( *(bit *) t == bit_nil) 
-			BUNfastins(bn, BUNhead(b,p), (ptr) & nilval);
-		else if( *(bit *) t ) {
-			val = (@1*) BUNtail(tb,BUNptr(tb,BUNindex(b,p)));
-			BUNfastins(bn, BUNhead(b,p), val);
+	bi = bat_iterator(b);
+	tbi = bat_iterator(tb);
+
+	t = (bit*)Tloc(b,BUNfirst(b));
+
+	BATloop(b, p, q) {
+		if (*t == bit_nil) 
+			BUNfastins(bn, BUNhead(bi,p), (ptr) & nilval);
+		else if (*t) {
+			val = (@1*) BUNtail(tbi,p);
+			BUNfastins(bn, BUNhead(bi,p), val);
 		}
+		t++;
 	}
 	BBPreleaseref(tb->batCacheid);
 	@:wrapup@
 }
 
 batifthen_export str CMDifThenCst_@1(int *ret, int *bid, @1 *tid);
-str CMDifThenCst_@1(int *ret, int *bid, @1 *tid){
+str CMDifThenCst_@1(int *ret, int *bid, @1 *tid)
+{
+	BATiter bi;
 	BAT *b, *bn;
 	@1 nilval= (@1) @1_nil;
 	BUN p,q;
-	size_t xx;
+	bit *t;
 
 	@:getBATdescriptor(bid,b,"batcalc.ifThen")@
 	@:resBAT(@1,"batcalc.ifThen")@
 	bn->hsorted= b->hsorted;
 	bn->tsorted= b->tsorted;
 
-	BATloopFast(b, p, q, xx) {
-		ptr t = BUNtail(b,p);
-		if( *(bit*) t== bit_nil) 
-			BUNfastins(bn,BUNhead(b,p), (ptr) & nilval);
-		else if( *(bit*) t ) 
-			BUNfastins(bn,BUNhead(b,p),(ptr) tid);
+	bi = bat_iterator(b);
+	t = (bit*)Tloc(b,BUNfirst(b));
+
+	BATloop(b, p, q) {
+		if (*t == bit_nil) 
+			BUNfastins(bn, BUNhead(bi,p), (ptr) & nilval);
+		else if (*t) 
+			BUNfastins(bn, BUNhead(bi,p), (ptr) tid);
+		t++;
 	}
 	@:wrapup@
 }
 batifthen_export str CMDifThenElseCst_@1(int *ret, int *bid, @1 *tid, @1 *eid);
-str CMDifThenElseCst_@1(int *ret, int *bid, @1 *tid, @1 *eid){
+str CMDifThenElseCst_@1(int *ret, int *bid, @1 *tid, @1 *eid)
+{
+	BATiter bi;
 	BAT *b, *bn;
-	@1 nilval= (@1) @1_nil;
 	BUN p,q;
-	size_t xx;
+	@1 nilval= (@1) @1_nil;
+	bit *t;
 
 	@:getBATdescriptor(bid,b,"batcalc.ifThenElse")@
 	@:resBAT(@1,"batcalc.ifThenElse")@
 
-	BATloopFast(b, p, q, xx) {
-		bit t = *(bit*)BUNtail(b,p);
-		if( t== bit_nil) 
-			BUNfastins(bn, BUNhead(b,p), (ptr) & nilval);
-		else if( t ) 
-			BUNfastins(bn, BUNhead(b,p), (ptr) tid);
+	bi = bat_iterator(b);
+	t = (bit*)Tloc(b,BUNfirst(b));
+
+	BATloop(b, p, q) {
+		if (*t == bit_nil) 
+			BUNfastins(bn, BUNhead(bi,p), (ptr) & nilval);
+		else if (*t) 
+			BUNfastins(bn, BUNhead(bi,p), (ptr) tid);
 		else
-			BUNfastins(bn, BUNhead(b,p), (ptr) eid);
+			BUNfastins(bn, BUNhead(bi,p), (ptr) eid);
+		t++;
 	}
 	@:wrapup@
 }
@@ -194,10 +208,11 @@ batifthen_export str CMDifThenElse_@1(int *ret, int *bid, int *tid, int *eid);
 str
 CMDifThenElse_@1(int *ret, int *bid, int *tid, int *eid)
 {
+	BATiter bi, tbi, ebi;
 	BAT *b, *tb, *eb, *bn;
 	@1 nilval= (@1) @1_nil;
 	BUN p,q;
-	size_t xx;
+	bit *t;
 
 	@:getBATdescriptor(bid,b,"batcalc.ifThenElse")@
 	@:getBATdescriptor(tid,tb,"batcalc.ifThenElse",BBPreleaseref(b->batCacheid);)@
@@ -206,16 +221,20 @@ CMDifThenElse_@1(int *ret, int *bid, int *tid, int *eid)
 	@:chkSize(b,eb,ifThenElse)@
 	@:resBAT(@1,"batcalc.ifThenElse")@
 
-	BATloopFast(b, p, q, xx) {
-		bit t = *(bit*) BUNtail(b,p);
-		int idx = BUNindex(b, p);
+	bi = bat_iterator(b);
+	tbi = bat_iterator(tb);
+	ebi = bat_iterator(eb);
 
-		if( t== bit_nil) 
-			BUNfastins(bn, BUNhead(b,p), (ptr) &nilval);
-		else if( t ) 
-			BUNfastins(bn, BUNhead(b,p), BUNtail(tb, BUNptr(tb, idx)));
+	t = (bit*) Tloc(b, BUNfirst(b));
+
+	BATloop(b, p, q) {
+		if (*t == bit_nil) 
+			BUNfastins(bn, BUNhead(bi,p), (ptr) &nilval);
+		else if (*t) 
+			BUNfastins(bn, BUNhead(bi,p), BUNtail(tbi, p));
 		else
-			BUNfastins(bn, BUNhead(b,p), BUNtail(eb, BUNptr(eb, idx)));
+			BUNfastins(bn, BUNhead(bi,p), BUNtail(ebi, p));
+		t++;
 	}
 	BBPreleaseref(tb->batCacheid);
 	BBPreleaseref(eb->batCacheid);
@@ -226,28 +245,32 @@ batifthen_export str CMDifThenElseCst1_@1(int *ret, int *bid, @1 *val, int *eid)
 str
 CMDifThenElseCst1_@1(int *ret, int *bid, @1 *val, int *eid)
 {
+	BATiter bi, ebi;
 	BAT *b, *eb, *bn;
 	@1 nilval= (@1) @1_nil;
 	BUN p,q;
-	size_t xx;
+	bit *t;
 
 	@:getBATdescriptor(bid,b,"batcalc.ifThenElse")@
 	@:getBATdescriptor(eid,eb,"batcalc.ifThenElse", BBPreleaseref(b->batCacheid);)@
 	@:chkSize(b,eb,ifThenElse)@
 	@:resBAT(@1,"batcalc.ifThenElse")@
 
+	bi = bat_iterator(b);
+	ebi = bat_iterator(eb);
+
+	t = (bit*) Tloc(b,BUNfirst(b));
+
 	if (ATOMvarsized(TYPE_@1))
 		val = *(@1**)val;
-	BATloopFast(b, p, q, xx) {
-		bit t = *(bit*) BUNtail(b,p);
-		int idx = BUNindex(b, p);
-
-		if( t== bit_nil) 
-			BUNfastins(bn, BUNhead(b,p), (ptr) &nilval);
-		else if( t ) 
-			BUNfastins(bn, BUNhead(b,p), (ptr) val);
+	BATloop(b, p, q) {
+		if (*t == bit_nil) 
+			BUNfastins(bn, BUNhead(bi,p), (ptr) &nilval);
+		else if (*t) 
+			BUNfastins(bn, BUNhead(bi,p), (ptr) val);
 		else
-			BUNfastins(bn, BUNhead(b,p), BUNtail(eb, BUNptr(eb, idx)));
+			BUNfastins(bn, BUNhead(bi,p), BUNtail(ebi, p));
+		t++;
 	}
 	BBPreleaseref(eb->batCacheid);
 	@:wrapup@
@@ -257,10 +280,11 @@ batifthen_export str CMDifThenElseCst2_@1(int *ret, int *bid, int *tid, @1 *val)
 str
 CMDifThenElseCst2_@1(int *ret, int *bid, int *tid, @1 *val)
 {
+	BATiter bi, tbi;
 	BAT *b, *tb, *bn;
 	@1 nilval= (@1) @1_nil;
 	BUN p,q;
-	size_t xx;
+	bit *t;
 
 	@:getBATdescriptor(bid,b,"batcalc.ifThenElse")@
 	@:getBATdescriptor(tid,tb,"batcalc.ifThenElse",BBPreleaseref(b->batCacheid);)@
@@ -269,16 +293,19 @@ CMDifThenElseCst2_@1(int *ret, int *bid, int *tid, @1 *val)
 
 	if (ATOMvarsized(TYPE_@1))
 		val = *(@1**)val;
-	BATloopFast(b, p, q, xx) {
-		bit t = *(bit*) BUNtail(b,p);
-		int idx = BUNindex(b, p);
+	bi = bat_iterator(b);
+	tbi = bat_iterator(tb);
 
-		if(  t== bit_nil) 
-			BUNfastins(bn, BUNhead(b,p), (ptr) &nilval);
-		else if( t ) 
-			BUNfastins(bn, BUNhead(b,p), BUNtail(tb, BUNptr(tb, idx)));
+	t = (bit*) Tloc(b,BUNfirst(b));
+
+	BATloop(b, p, q) {
+		if (*t == bit_nil) 
+			BUNfastins(bn, BUNhead(bi,p), (ptr) &nilval);
+		else if (*t) 
+			BUNfastins(bn, BUNhead(bi,p), BUNtail(tbi, p));
 		else
-			BUNfastins(bn, BUNhead(b,p), val);
+			BUNfastins(bn, BUNhead(bi,p), val);
+		t++;
 	}
 	BBPreleaseref(tb->batCacheid);
 	@:wrapup@

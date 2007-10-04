@@ -165,7 +165,7 @@ monet5_find_user(ptr mp, str user)
 	BBPunfix(users->batCacheid);
 
 	/* yeah, I would prefer to return something different too */
-	return(p == NULL ? -1 : 1);
+	return(p == BUN_NONE ? -1 : 1);
 }
 
 str

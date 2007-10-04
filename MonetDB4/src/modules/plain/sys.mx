@@ -1001,6 +1001,7 @@ view_client_tree(BAT **retval)
 int
 view_client_size(BAT **retval, int *clientid)
 {
+	BATiter fcntbli, fti = bat_iterator(TBL_fcn_tpe), fii = bat_iterator(TBL_fcn_imp);
 	BAT *b, *fcntbl;
 	lng tot, vars = 0, nvars = 0;
 	lng cntxts = 0, ncntxts = 0;
@@ -1016,15 +1017,16 @@ view_client_size(BAT **retval, int *clientid)
 
 	/* look at the size of all procs */
 	fcntbl = monet_clients[stk].fcntbl;
-        BATloopFast(fcntbl, p, q, xx) {
-		oid pid = *(oid*) BUNtloc(fcntbl, p);
-		str nme = (str) BUNhead(fcntbl, p);
+	fcntbli = bat_iterator(fcntbl);
+        BATloop(fcntbl, p, q) {
+		oid pid = *(oid*) BUNtloc(fcntbli, p);
+		str nme = (str) BUNhead(fcntbli, p);
 		size_t cnt = 0;
 		r = BUNfnd(TBL_fcn_tpe, &pid);
-		if (r == NULL || *(int*) BUNtloc(TBL_fcn_tpe,r) != TOK_PROC) continue;
+		if (r == BUN_NONE || *(int*) BUNtloc(fti,r) != TOK_PROC) continue;
 		r = BUNfnd(TBL_fcn_imp, &pid);
-		if (r == NULL) continue;
-		tot = Myysize(*(YYSTREE*) BUNtloc(TBL_fcn_imp,r), &cnt);
+		if (r == BUN_NONE) continue;
+		tot = Myysize(*(YYSTREE*) BUNtloc(fii,r), &cnt);
 		procs += tot;
 		procnodes += cnt;
 		if (tot > 65536) BUNins(b, nme, &tot, FALSE);  
@@ -1555,12 +1557,13 @@ get_mem_usage(BAT **ret, lng *minsize)
 		}
 		tot += (lng) sz;
 
-		if (b == NULL || VIEWparent(b)) {
+		if (b == NULL || isVIEW(b)) {
 			continue;
 		}
-		@:heap(mem,1,b->batBuns,buns)@
-		@:heap(mem,b->hhash,b->hhash->heap,hhsh)@
-		@:heap(mem,b->thash,b->thash->heap,thsh)@
+		@:heap(mem,1,(&b->H->heap),head)@
+		@:heap(mem,1,(&b->T->heap),tail)@
+		@:heap(mem,b->H->hash,b->H->hash->heap,hhsh)@
+		@:heap(mem,b->T->hash,b->T->hash->heap,thsh)@
 		@:heap(mem,b->hheap,b->hheap,head)@
 		@:heap(mem,b->theap,b->theap,tail)@
 	}
@@ -1633,12 +1636,13 @@ get_vm_usage(BAT **ret, lng *minsize)
 
 		s = BBPname(i);
  		b = BBP_cache(i);
-		if (b == NULL || VIEWparent(b)) {
+		if (b == NULL || isVIEW(b)) {
 			continue;
 		}
-		@:heap(vm,1,b->batBuns,buns)@
-		@:heap(vm,b->hhash,b->hhash->heap,hhsh)@
-		@:heap(vm,b->thash,b->thash->heap,thsh)@
+		@:heap(vm,1,(&b->H->heap),head)@
+		@:heap(vm,1,(&b->T->heap),tail)@
+		@:heap(vm,b->H->hash,b->H->hash->heap,hhsh)@
+		@:heap(vm,b->T->hash,b->T->hash->heap,thsh)@
 		@:heap(vm,b->hheap,b->hheap,head)@
 		@:heap(vm,b->theap,b->theap,tail)@
 	}

@@ -286,8 +286,9 @@ la_bat_clear(logger *lg, logaction *la)
 	if (BATcount(lg->snapshots)) {
 		BUN p = BUNfnd(lg->snapshots, &bid);
 
-		if (p) {
-			int tid = *(int *) BUNtloc(lg->snapshots, p);
+		if (p != BUN_NONE) {
+			BATiter i = bat_iterator(lg->snapshots);
+			int tid = *(int *) BUNtloc(i, p);
 
 			if (lg->tid <= tid)
 				return;
@@ -310,7 +311,7 @@ log_read_seq(logger *lg, logformat *l)
 	if (!stream_readLng(lg->log, &id))
 		 return LOG_ERR;
 
-	if (BUNfnd(lg->seqs, &seq)) {
+	if (BUNfnd(lg->seqs, &seq) != BUN_NONE) {
 		BUNdelHead(lg->seqs, &seq, FALSE);
 	}
 	BUNins(lg->seqs, &seq, &id, FALSE);
@@ -430,8 +431,9 @@ la_bat_updates(logger *lg, logaction *la)
 	if (BATcount(lg->snapshots)) {
 		BUN p = BUNfnd(lg->snapshots, &bid);
 
-		if (p) {
-			int tid = *(int *) BUNtloc(lg->snapshots, p);
+		if (p != BUN_NONE) {
+			BATiter i = bat_iterator(lg->snapshots);
+			int tid = *(int *) BUNtloc(i, p);
 
 			if (lg->tid <= tid)
 				return;
@@ -449,13 +451,14 @@ la_bat_updates(logger *lg, logaction *la)
 			else if (la->type == LOG_DELETE)
 				BATdel(b, la->b, TRUE);
 			else if (la->type == LOG_UPDATE) {
+				BATiter bi = bat_iterator(la->b);
 				BUN p, q;
 
 				BATloop(la->b, p, q) {
-					ptr h = BUNhead(la->b, p);
-					ptr t = BUNtail(la->b, p);
+					ptr h = BUNhead(bi, p);
+					ptr t = BUNtail(bi, p);
 
-					if (BUNfnd(b, h) == NULL) {
+					if (BUNfnd(b, h) == BUN_NONE) {
 						/* if value doesn't exist, insert it
 						   if b void headed, maintain that by inserting nils */
 						if (b->htype == TYPE_void) {
@@ -879,25 +882,30 @@ check_version(logger *lg, FILE *fp)
 }
 
 static int
-bm_subcommit(BAT *list, BAT *catalog)
+bm_subcommit(BAT *list, BAT *catalog, int debug)
 {
 	BUN p, q;
 	BAT *n = logbat_new(TYPE_void, TYPE_str, BATcount(list) * 2);
 	BAT *b = list;
+	BATiter bi = bat_iterator(b);
 	int res;
 
 	BATseqbase(n, 0);
 	/* first loop over deleted then over current and new */
-	for (p = b->batDeleted; p < b->batFirst; p = BUNnext(b, p)) {
-		bat col = *(log_bid *) BUNhead(b, p);
+	for (p = b->batDeleted; p < b->batFirst; p++) {
+		bat col = *(log_bid *) BUNhead(bi, p);
 		str name = BBPname(col);
 
+		if (debug & 1)
+			fprintf(stderr, "commit deleted %s (%d)\n", name, col);
 		BUNappend(n, name, FALSE);
 	}
 	BATloop(b, p, q) {
-		bat col = *(log_bid *) BUNhead(b, p);
+		bat col = *(log_bid *) BUNhead(bi, p);
 		str name = BBPname(col);
 
+		if (debug & 1)
+			fprintf(stderr, "commit new %s (%d)\n", name, col);
 		BUNappend(n, name, FALSE);
 	}
 	BUNappend(n, BBPname(catalog->batCacheid), FALSE);
@@ -951,7 +959,7 @@ logger_new(int debug, char *fn, char *logdir, char *dbname, int version)
 		BATmode(lg->catalog, PERSISTENT);
 		BBPrename(lg->catalog->batCacheid, bak);
 
-		if (bm_subcommit(lg->catalog, lg->catalog) != 0)
+		if (bm_subcommit(lg->catalog, lg->catalog, lg->debug) != 0)
 			return NULL;
 	} else {
 		/* find the persistent catalog. As non persistent bats
@@ -959,10 +967,11 @@ logger_new(int debug, char *fn, char *logdir, char *dbname, int version)
 		   reference for the persistent bats */
 		BUN p, q;
 		BAT *b = BATdescriptor(catalog);
+		BATiter bi = bat_iterator(b);
 
 		lg->catalog = b;
 		BATloop(b, p, q) {
-			bat bid = *(log_bid *) BUNhead(b, p);
+			bat bid = *(log_bid *) BUNhead(bi, p);
 
 			BBPincref(bid, TRUE);
 		}
@@ -982,13 +991,14 @@ logger_new(int debug, char *fn, char *logdir, char *dbname, int version)
 		snprintf(bak, BUFSIZ, "%s_snapshots", fn);
 		BBPrename(lg->snapshots->batCacheid, bak);
 		logger_add_bat(lg, lg->snapshots, "snapshots");
-		bm_subcommit(lg->catalog, lg->catalog);
+		bm_subcommit(lg->catalog, lg->catalog, lg->debug);
 	} else {
 		bat snapshots = logger_find_bat(lg, "snapshots");
 
 		lg->seqs = BATdescriptor(seqs);
 		if (BATcount(lg->seqs)) {
-			lg->id = *(lng *) BUNtail(lg->seqs, BUNfnd(lg->seqs, &id));
+			BATiter seqsi = bat_iterator(lg->seqs);
+			lg->id = *(lng *) BUNtail(seqsi, BUNfnd(lg->seqs, &id));
 		} else {
 			BUNins(lg->seqs, &id, &lg->id, FALSE);
 		}
@@ -1063,12 +1073,13 @@ logger_destroy(logger *lg)
 	if (lg->catalog) {
 		BUN p, q;
 		BAT *b = lg->catalog;
+		BATiter bi = bat_iterator(b);
 
 		logger_cleanup(lg);
 
 		/* destroy the deleted */
 /* would be an error ....
-		for (p = b->batDeleted; p < b->batFirst; p = BUNnext(b, p)) {
+		for (p = b->batDeleted; p < b->batFirst; p++) {
 			bat bid = *(log_bid *) BUNhead(b, p);
 
 			BBPdecref(bid, TRUE);
@@ -1076,7 +1087,7 @@ logger_destroy(logger *lg)
 */
 		/* free resources */
 		BATloop(b, p, q) {
-			bat bid = *(log_bid *) BUNhead(b, p);
+			bat bid = *(log_bid *) BUNhead(bi, p);
 
 			BBPdecref(bid, TRUE);
 		}
@@ -1181,10 +1192,11 @@ logger_changes(logger *lg)
 int
 logger_sequence(logger *lg, int seq, lng *id)
 {
-	ptr p = BUNfnd(lg->seqs, &seq);
+	BUN p = BUNfnd(lg->seqs, &seq);
 
-	if (p) {
-		*id = *(lng *) BUNtail(lg->seqs, p);
+	if (p != BUN_NONE) {
+		BATiter i = bat_iterator(lg->seqs);
+		*id = *(lng *) BUNtail(i, p);
 
 		return 1;
 	}
@@ -1217,7 +1229,7 @@ log_bat_persists(logger *lg, BAT *b, char *name)
 		return LOG_ERR;
 
 	if (flag == LOG_USE) {
-		if (BUNfnd(lg->snapshots, &b->batCacheid)) {
+		if (BUNfnd(lg->snapshots, &b->batCacheid) != BUN_NONE) {
 			BUNdelHead(lg->snapshots, &b->batCacheid, FALSE);
 		} else {
 			BBPincref(b->batCacheid, TRUE);
@@ -1258,7 +1270,7 @@ log_bat_transient(logger *lg, char *name)
 	lg->changes++;
 
 	/* if this is a snapshot bat, we need to skip all changes */
-	if (BUNfnd(lg->snapshots, &bid)) {
+	if (BUNfnd(lg->snapshots, &bid) != BUN_NONE) {
 		BUNdelHead(lg->snapshots, &bid, FALSE);
 		BUNins(lg->snapshots, &bid, &lg->tid, FALSE);
 	}
@@ -1285,10 +1297,11 @@ log_delta(logger *lg, BAT *b, char *name)
 	}
 
 	l.tid = lg->tid;
-	l.nr = (int) (BUNindex(b, BUNlast(b)) - BUNindex(b, BUNfirst(b)));
+	l.nr = (BUNlast(b) - BUNfirst(b));
 	lg->changes += l.nr;
 
 	if (l.nr) {
+		BATiter bi = bat_iterator(b);
 		int (*wh) (ptr, stream *, size_t) = b->htype == TYPE_void ? BATatoms[TYPE_oid].atomWrite : BATatoms[b->htype].atomWrite;
 		int (*wt) (ptr, stream *, size_t) = BATatoms[b->ttype].atomWrite;
 
@@ -1297,9 +1310,9 @@ log_delta(logger *lg, BAT *b, char *name)
 		    log_write_string(lg, name) == LOG_ERR)
 			return LOG_ERR;
 
-		for (p = BUNfirst(b); p < BUNlast(b) && ok == GDK_SUCCEED; p = BUNnext(b, p)) {
-			ptr h = BUNhead(b, p);
-			ptr t = BUNtail(b, p);
+		for (p = BUNfirst(b); p < BUNlast(b) && ok == GDK_SUCCEED; p++){
+			ptr h = BUNhead(bi, p);
+			ptr t = BUNtail(bi, p);
 
 			ok = wh(h, lg->log, 1);
 			ok = (ok == GDK_FAIL) ? ok : wt(t, lg->log, 1);
@@ -1324,10 +1337,11 @@ log_bat(logger *lg, BAT *b, char *name)
 	}
 
 	l.tid = lg->tid;
-	l.nr = (int) (BUNindex(b, BUNlast(b)) - BUNindex(b, b->batInserted));
+	l.nr = (int) (BUNlast(b) - b->batInserted);
 	lg->changes += l.nr;
 
 	if (l.nr) {
+		BATiter bi = bat_iterator(b);
 		int (*wh) (ptr, stream *, size_t) = BATatoms[b->htype].atomWrite;
 		int (*wt) (ptr, stream *, size_t) = BATatoms[b->ttype].atomWrite;
 
@@ -1336,14 +1350,14 @@ log_bat(logger *lg, BAT *b, char *name)
 		    log_write_string(lg, name) == LOG_ERR)
 			return LOG_ERR;
 
-		if (b->htype == TYPE_void && b->ttype < TYPE_str && !VIEWparent(b)) {
-			ptr t = BUNtail(b, b->batInserted);
+		if (b->htype == TYPE_void && b->ttype < TYPE_str && !isVIEW(b)){
+			ptr t = BUNtail(bi, b->batInserted);
 
 			ok = wt(t, lg->log, l.nr);
 		} else {
-			for (p = b->batInserted; p < BUNlast(b) && ok == GDK_SUCCEED; p = BUNnext(b, p)) {
-				ptr h = BUNhead(b, p);
-				ptr t = BUNtail(b, p);
+			for (p = b->batInserted; p < BUNlast(b) && ok == GDK_SUCCEED; p++) {
+				ptr h = BUNhead(bi, p);
+				ptr t = BUNtail(bi, p);
 
 				ok = wh(h, lg->log, 1);
 				ok = (ok == GDK_FAIL) ? ok : wt(t, lg->log, 1);
@@ -1353,10 +1367,11 @@ log_bat(logger *lg, BAT *b, char *name)
 		if (lg->debug)
 			fprintf(stderr, "Logged %s %d inserts\n", name, l.nr);
 	}
-	l.nr = (int) (BUNindex(b, b->batFirst) - BUNindex(b, b->batDeleted));
+	l.nr = (int) (b->batFirst - b->batDeleted);
 	lg->changes += l.nr;
 
 	if (l.nr && ok == GDK_SUCCEED) {
+		BATiter bi = bat_iterator(b);
 		int (*wh) (ptr, stream *, size_t) = BATatoms[b->htype].atomWrite;
 		int (*wt) (ptr, stream *, size_t) = BATatoms[b->ttype].atomWrite;
 
@@ -1365,9 +1380,9 @@ log_bat(logger *lg, BAT *b, char *name)
 		    log_write_string(lg, name) == LOG_ERR)
 			return LOG_ERR;
 
-		for (p = b->batDeleted; p < b->batFirst && ok == GDK_SUCCEED; p = BUNnext(b, p)) {
-			ptr h = BUNhead(b, p);
-			ptr t = BUNtail(b, p);
+		for (p = b->batDeleted; p < b->batFirst && ok == GDK_SUCCEED; p++) {
+			ptr h = BUNhead(bi, p);
+			ptr t = BUNtail(bi, p);
 
 			ok = wh(h, lg->log, 1);
 			ok = (ok == GDK_FAIL) ? ok : wt(t, lg->log, 1);
@@ -1467,7 +1482,7 @@ log_tend(logger *lg)
 		/* sub commit all new snapshots */
 		BAT *b = BATselect(lg->snapshots, &lg->tid, &lg->tid);
 
-		res = bm_subcommit(b, lg->snapshots);
+		res = bm_subcommit(b, lg->snapshots, lg->debug);
 		BBPunfix(b->batCacheid);
 	}
 	l.flag = LOG_END;
@@ -1513,7 +1528,7 @@ log_sequence(logger *lg, int seq, lng id)
 	if (lg->debug)
 		fprintf(stderr, "log_sequence %d" LLFMT "\n", seq, id);
 
-	if (BUNfnd(lg->seqs, &seq)) {
+	if (BUNfnd(lg->seqs, &seq) != BUN_NONE) {
 		BUNdelHead(lg->seqs, &seq, FALSE);
 	}
 	BUNins(lg->seqs, &seq, &id, FALSE);
@@ -1533,10 +1548,11 @@ bm_commit(logger *lg)
 {
 	BUN p;
 	BAT *b = lg->catalog;
+	BATiter bi = bat_iterator(b);
 
 	/* remove the destroyed bats */
-	for (p = b->batDeleted; p < b->batFirst; p = BUNnext(b, p)) {
-		bat bid = *(log_bid *) BUNhead(b, p);
+	for (p = b->batDeleted; p < b->batFirst; p++) {
+		bat bid = *(log_bid *) BUNhead(bi, p);
 		BAT *lb = BATdescriptor(bid);
 
 		BATmode(lb, TRANSIENT);
@@ -1544,8 +1560,8 @@ bm_commit(logger *lg)
 		logbat_destroy(lb);
 	}
 
-	for (p = b->batInserted; p < BUNlast(b); p = BUNnext(b, p)) {
-		log_bid bid = *(log_bid *) BUNhead(b, p);
+	for (p = b->batInserted; p < BUNlast(b); p++) {
+		log_bid bid = *(log_bid *) BUNhead(bi, p);
 		BAT *lb = BATdescriptor(bid);
 
 		BATmode(lb, PERSISTENT);
@@ -1553,7 +1569,7 @@ bm_commit(logger *lg)
 			BATmmap(lb, STORE_MMAP, STORE_MMAP, STORE_MMAP);
 		logbat_destroy(lb);
 	}
-	if (bm_subcommit(lg->catalog, lg->catalog) != 0)
+	if (bm_subcommit(lg->catalog, lg->catalog, lg->debug) != 0)
 		return LOG_ERR;
 	return LOG_OK;
 }
@@ -1590,8 +1606,10 @@ logger_find_bat(logger *lg, char *name)
 	log_bid res = 0;
 	BUN p = BUNfnd(r_catalog, name);
 
-	if (p)
-		res = *(log_bid *) BUNtail(r_catalog, p);
+	if (p != BUN_NONE) {
+		BATiter i = bat_iterator(r_catalog);
+		res = *(log_bid *) BUNtail(i, p);
+	}
 	return res;
 }
 

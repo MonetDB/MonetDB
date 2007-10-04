@@ -549,6 +549,8 @@ ADDHELP("doLoopLiftedRPC", "zhang", "April 2006",
 static int
 value2buf(buffer *b, BAT *fun_item, oid offset, int valueType, BAT *valueContainer, char *begin_tag, char *end_tag)
 {
+    BATiter fun_itemi = bat_iterator(fun_item);
+    BATiter valueContaineri = bat_iterator(valueContainer);
     int len;
     char *strptr;
     oid i;
@@ -556,9 +558,9 @@ value2buf(buffer *b, BAT *fun_item, oid offset, int valueType, BAT *valueContain
     str2buf(b, begin_tag);
     len = (b->len - b->pos) < GDK_int_max ? (b->len - b->pos) : GDK_int_max;
     strptr = b->buf + b->pos;
-    i = *(oid*)BUNtail(fun_item, BUNptr(fun_item, offset));
+    i = *(oid*)BUNtail(fun_itemi, offset);
     b->pos += BATatoms[valueType].atomToStr(&strptr, &len,
-                BUNtail(valueContainer, BUNptr(valueContainer, i)));
+                BUNtail(valueContaineri, i));
     str2buf(b, end_tag);
     return GDK_SUCCEED;
 }
@@ -665,7 +667,7 @@ static BAT *
 getWsBAT(BAT *ws, int contID, int batID)
 {
     BAT *b = NULL, *batbat = NULL;
-    BUN bun = NULL, bbun = NULL;
+    BUN bun = BUN_NONE, bbun = BUN_NONE;
     oid CONTid = (oid)contID;
     oid BATid  = (oid)batID;
 
@@ -674,23 +676,23 @@ getWsBAT(BAT *ws, int contID, int batID)
         return NULL;
     }
 
-    if ( !(bun = BUNfnd(ws,&BATid)) ) {
+    if ( (bun = BUNfnd(ws,&BATid)) == BUN_NONE ) {
         GDKerror("getWsBAT: NOT FOUND BAT[%d]",batID);
         return NULL;
     }
-    if ( !( batbat = BATdescriptor(*(bat*)bun)) ) {
+    if ( !( batbat = BATdescriptor(*(bat*)Tloc(ws,bun))) ) {
         GDKerror("getWsBAT:FETCH BATBAT for WS[%d][%d] FAILED\n",
                  batID, contID);
         return NULL;
     }
     bbun = BUNfnd(batbat,&CONTid);
-    if ( !bbun ) {
+    if ( bbun == BUN_NONE ) {
         BBPunfix( BBPcacheid( batbat ) );
         GDKerror("getWsBAT:NOT FOUND BAT[%d][%d] in WS!!!!\n",
                  batID, contID);
         return NULL;
     } else {
-        if ( !(b = BATdescriptor(*(bat*)bbun)) ) {
+        if ( !(b = BATdescriptor(*(bat*)Tloc(batbat,bbun))) ) {
             BBPunfix( BBPcacheid( batbat ) );
             GDKerror("getWsBAT:FETCH WS[%d][%d] FAILED\n",
                      batID, contID);
@@ -714,8 +716,9 @@ getWsBAT(BAT *ws, int contID, int batID)
 static chr
 getELEMkind(BAT *ws, int contID, oid item_index)
 {
+    BATiter bi;
     BAT *b  = NULL;
-    BUN bun = NULL;
+    BUN bun = BUN_NONE;
     chr ret;
 
     if(!(b = getWsBAT(ws, contID, PRE_KIND)))
@@ -726,15 +729,16 @@ getELEMkind(BAT *ws, int contID, oid item_index)
                 b?BBP_logical(b->batCacheid):"NULL");
         return GDK_chr_min;
     }
-    BUNfndVOID(bun, b, &item_index);
-    if (!bun){
+    bi.b = b;
+    BUNfndVOID(bun, bi, &item_index);
+    if (bun == BUN_NONE){
         GDKerror("%s BAT does not contain value " OIDFMT
                  " in its head column.\n",
                  b?BBP_logical(b->batCacheid):"NULL", item_index);
         return GDK_chr_min;
     }
 
-    ret = *(chr*)BUNtail(b,bun);
+    ret = *(chr*)BUNtail(bi,bun);
     BBPunfix( BBPcacheid(b));
     return ret;
 }
@@ -913,6 +917,7 @@ CMDhttp_post(BAT **res, str options, str dst, str rpc_module,
         BAT *fun_item, BAT *fun_kind, BAT *int_values, BAT *dbl_values,
         BAT *dec_values, BAT *str_values)
 {
+    BATiter fun_iteri, fun_vidi, fun_itemi, fun_kindi, bi;
     int sock = -1, port = -1;
     buffer *b = NULL;
     str str_val = NULL;
@@ -987,19 +992,20 @@ CMDhttp_post(BAT **res, str options, str dst, str rpc_module,
     /* Calculate the number of values contained by every parameter of
      * every iteration. */
     i = a = 0; /* i: iter counter; a: arg counter */
+    fun_itemi = bat_iterator(fun_item);
+    fun_iteri = bat_iterator(fun_iter);
+    fun_vidi = bat_iterator(fun_vid);
+    fun_kindi = bat_iterator(fun_kind);
     for (p_vid  = BUNfirst(fun_vid),  p_iter = BUNfirst(fun_iter),
          p_item = BUNfirst(fun_item), p_kind = BUNfirst(fun_kind);
 
          p_vid  < BUNlast(fun_vid)  && p_iter < BUNlast(fun_iter) &&
          p_item < BUNlast(fun_item) && p_kind < BUNlast(fun_kind);
 
-         p_vid  = BUNnext(fun_vid, p_vid),
-         p_iter = BUNnext(fun_iter, p_iter),
-         p_item = BUNnext(fun_item, p_item),
-         p_kind = BUNnext(fun_kind, p_kind)) {
+         p_vid++, p_iter++, p_item++, p_kind++) {
 
-        i = *(oid*) BUNtail(fun_iter, p_iter);
-        a = *(oid*) BUNtail(fun_vid,  p_vid);
+        i = *(oid*) BUNtail(fun_iteri, p_iter);
+        a = *(oid*) BUNtail(fun_vidi,  p_vid);
         argcnt[i-1][a]++;
         nr_args++;
     }
@@ -1051,8 +1057,8 @@ CMDhttp_post(BAT **res, str options, str dst, str rpc_module,
                 }
 
                 a = arg_offset + k; /* index into fun_item|fun_kind */
-                item= *(oid*)BUNtail(fun_item, BUNptr(fun_item, a));
-                cmbn_cont_kind = *(int*)BUNtail(fun_kind, BUNptr(fun_kind, a));
+                item = *(oid*)BUNtail(fun_itemi, a);
+                cmbn_cont_kind = *(int*)BUNtail(fun_kindi, a);
                 cur_kind = XTRACT_KIND(cmbn_cont_kind);
 
                 switch (cur_kind) {
@@ -1077,15 +1083,17 @@ CMDhttp_post(BAT **res, str options, str dst, str rpc_module,
                                 "</xrpc:atomic-value>");
                         break;
                     case STR:
-                        i = *(oid*)BUNtail(fun_item, BUNptr(fun_item, a));
-                        str_val = BUNtail(str_values, BUNptr(str_values, i));
+                        i = *(oid*)BUNtail(fun_itemi, a);
+                        bi.b = str_values;
+                        str_val = BUNtail(bi, i);
                         b->pos += snprintf((b->buf + b->pos), (b->len - b->pos),
                                         "<xrpc:atomic-value xsi:type=\"xs:string\">%s"
                                         "</xrpc:atomic-value>", str_val);
                         break;
                     case U_A:
-                        i = *(oid*)BUNtail(fun_item, BUNptr(fun_item, a));
-                        str_val = BUNtail(str_values, BUNptr(str_values, i));
+                        i = *(oid*)BUNtail(fun_itemi, a);
+                        bi.b = str_values;
+                        str_val = BUNtail(bi, i);
                         b->pos += snprintf((b->buf + b->pos), (b->len - b->pos),
                                         "<xrpc:atomic-value "
                                         "xsi:type=\"xs:string\">"
@@ -1107,13 +1115,19 @@ CMDhttp_post(BAT **res, str options, str dst, str rpc_module,
                             clean_up(sock, out, bs, b, argcnt, iterc);
                             return GDK_FAIL;
                         }
+
+                        BATiter attr_qni = bat_iterator(attr_qn);
+                        BATiter qn_prefixi = bat_iterator(qn_prefix);
+                        BATiter qn_loci = bat_iterator(qn_loc);
+                        BATiter attr_propi = bat_iterator(attr_prop);
+                        BATiter prop_vali = bat_iterator(prop_val);
                         
-                        i = *(oid*)BUNtail(fun_item, BUNptr(fun_item, a));
-                        a = *(oid*)BUNtail(attr_qn, BUNptr(attr_qn, i));
-                        char *prefix = (char*)BUNtail(qn_prefix, BUNptr(qn_prefix, a));
-                        char *loc    = (char*)BUNtail(qn_loc,    BUNptr(qn_loc, a));
-                        a = *(oid*)BUNtail(attr_prop, BUNptr(attr_prop,i));
-                        char *attr_val = (char*)BUNtail(prop_val, BUNptr(prop_val, a));
+                        i = *(oid*)BUNtail(fun_itemi, a);
+                        a = *(oid*)BUNtail(attr_qni, i);
+                        char *prefix = (char*)BUNtail(qn_prefixi, a);
+                        char *loc    = (char*)BUNtail(qn_loci,    a);
+                        a = *(oid*)BUNtail(attr_propi, i);
+                        char *attr_val = (char*)BUNtail(prop_vali, a);
 
                         str2buf(b, " ");
                         if (prefix && *prefix){
@@ -1149,11 +1163,11 @@ CMDhttp_post(BAT **res, str options, str dst, str rpc_module,
                         }
                         /* print body of the node */
                         node_item = BUNins( BATnew(TYPE_void, TYPE_oid, 1),
-                                            BUNhead(fun_item, BUNptr(fun_item, a)),
-                                            BUNtail(fun_item, BUNptr(fun_item, a)), FALSE );
+                                            BUNhead(fun_itemi, a),
+                                            BUNtail(fun_itemi, a), FALSE );
                         node_kind = BUNins( BATnew(TYPE_void, TYPE_int, 1),
-                                            BUNhead(fun_kind, BUNptr(fun_kind, a)),
-                                            BUNtail(fun_kind, BUNptr(fun_kind, a)), FALSE );
+                                            BUNhead(fun_kindi, a),
+                                            BUNtail(fun_kindi, a), FALSE );
                         if (!(bs = buffer_wastream(b, "shred_element"))) {
                             GDKerror("CMDhttp_post: failed to create buffer_wastream to "
                                     "shred element parameter\n");

@@ -227,6 +227,7 @@ static INLINE str RMTinternalput(str *ret, Mapi mconn, int type, ptr value) {
 		throw(MAL, "remote.put", "cannot deal with '%s' type",
 				getTypeName(type));
 	} else if (isaBatType(type)) {
+		BATiter bi;
 		/* naive approach using bat.new() and bat.insert() calls */
 		char head[10], tail[10];
 		char qbuf[512]; /* FIXME: this should be dynamic */
@@ -262,9 +263,10 @@ static INLINE str RMTinternalput(str *ret, Mapi mconn, int type, ptr value) {
 		mapi_close_handle(mhdl);
 
 		headv = tailv = NULL;
+		bi = bat_iterator(b);
 		BATloop(b, p, q) {
-			ATOMformat(getHeadType(type), BUNhead(b, p), &headv);
-			ATOMformat(getTailType(type), BUNtail(b, p), &tailv);
+			ATOMformat(getHeadType(type), BUNhead(bi, p), &headv);
+			ATOMformat(getTailType(type), BUNtail(bi, p), &tailv);
 			snprintf(qbuf, 511, "bat.insert(%s, %s:%s, %s:%s);",
 					ident, headv, head, tailv, tail);
 			rethrow("remote.put", tmp, RMTquery(&mhdl, "remote.put", mconn, qbuf));

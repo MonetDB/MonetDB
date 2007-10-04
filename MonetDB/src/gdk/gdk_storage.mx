@@ -15,7 +15,7 @@
 @' All Rights Reserved.
 
 @f gdk_storage
-@a M. L. Kersten, P. Boncz
+@a M. L. Kersten, P. Boncz, N. Nes
 
 @* Database Storage Management
 Contains routines for writing and reading GDK data to and from disk.
@@ -429,8 +429,7 @@ DESCload(int i)
 	}
 	b->htype = ht;
 	b->ttype = tt;
-	b->hhash = b->thash = NULL;
-	b->void_cnt = 0;
+	b->H->hash = b->T->hash = NULL;
 	/* mil shouldn't mess with just loaded bats */
 	if (b->batStamp > 0)
 		b->batStamp = -b->batStamp;
@@ -449,7 +448,8 @@ DESCsetmodes(BAT *b, BAT *img)
 {
 	/* propagate the proposed modes to the separate img of the bat (so concurrent execution on this bat is not affected) */
 	if (b->batMapbuns != STORE_UNSET) {
-		img->batBuns->storage = b->batMapbuns;
+		img->H->heap.storage = b->batMapbuns;
+		img->T->heap.storage = b->batMapbuns;
 	}
 	if (img->hheap && b->batMaphheap != STORE_UNSET) {
 		/* elimdoubles string heaps (small, double-eliminated) cannot be memory mapped */
@@ -460,7 +460,7 @@ DESCsetmodes(BAT *b, BAT *img)
 		img->theap->storage = GDK_ELIMDOUBLES(img->theap) ? STORE_MEM : b->batMaptheap;
 	}
 
-	/* change modes in img into legal modes, and reset b's mapdity if something had to be corrected */
+	/* change modes in img into legal modes, and reset b's mapdirty if something had to be corrected */
 	b->batMapdirty |= BATcheckmodes(img, BBP_status(b->batCacheid) & BBPEXISTING, FALSE);
 }
 
@@ -470,11 +470,13 @@ DESCclean(BAT *b)
 	b->batDirtyflushed = DELTAdirty(b) ? TRUE : FALSE;
 	b->batDirty = 0;
 	b->batDirtydesc = 0;
-	b->batDirtybuns = 0;
-	b->hheapdirty = 0;
-	b->theapdirty = 0;
+	b->H->heap.dirty = 0;
+	b->T->heap.dirty = 0;
+	if (b->H->vheap)
+		b->H->vheap->dirty = 0;
+	if (b->T->vheap)
+		b->T->vheap->dirty = 0;
 }
-
 
 BAT *
 BATsave(BAT *bd)
@@ -487,8 +489,10 @@ BATsave(BAT *bd)
 	BATcheck(b, "BATsave");
 
 	/* views cannot be saved, but make an exception for force-remapped views */
-	if (VIEWparent(b) && !(b->batBuns->copied && b->batBuns->storage == STORE_MMAP)) {
-		GDKerror("BATsave: %s is a view on %s; cannot be saved\n", BATgetId(b), BBPname(VIEWparent(b)));
+	if (isVIEW(b) && 
+		!(b->H->heap.copied && b->H->heap.storage == STORE_MMAP) &&
+		!(b->T->heap.copied && b->T->heap.storage == STORE_MMAP)) {
+		GDKerror("BATsave: %s is a view on %s; cannot be saved\n", BATgetId(b), VIEWhparent(b)?BBPname(VIEWhparent(b)):BBPname(VIEWtparent(b)));
 		return NULL;
 	}
 	if (!BATdirty(b)) {
@@ -513,8 +517,6 @@ BATsave(BAT *bd)
 	b->H = &bs.H;
 	b->T = &bs.T;
 
-	b->batBuns = &b->U->buns;
-
 	if (b->hheap) {
 		b->hheap = (Heap *) GDKmalloc(sizeof(Heap));
 		*b->hheap = *bd->hheap;
@@ -526,17 +528,18 @@ BATsave(BAT *bd)
 
 	/* start saving data */
 	nme = BBP_physical(b->batCacheid);
-	if ((b->batCopiedtodisk == 0 || b->batDirty || b->batDirtybuns) &&
-	    (b->htype != TYPE_void || b->ttype != TYPE_void)) {
-		if (err == 0)
-			err = HEAPsave(b->batBuns, nme, "buns");
-	}
-	if (b->hheap && (b->batCopiedtodisk == 0 || b->batDirty || b->hheapdirty))
+	if (b->batCopiedtodisk == 0 || b->batDirty || b->H->heap.dirty) 
+		if (err == 0 && b->htype)
+			err = HEAPsave(&b->H->heap, nme, "head");
+	if (b->batCopiedtodisk == 0 || b->batDirty || b->T->heap.dirty) 
+		if (err == 0 && b->ttype)
+			err = HEAPsave(&b->T->heap, nme, "tail");
+	if (b->hheap && (b->batCopiedtodisk == 0 || b->batDirty || b->H->vheap->dirty))
 		if (b->htype && b->hvarsized) {
 			if (err == 0)
 				err = HEAPsave(b->hheap, nme, "hheap");
 		}
-	if (b->theap && (b->batCopiedtodisk == 0 || b->batDirty || b->theapdirty))
+	if (b->theap && (b->batCopiedtodisk == 0 || b->batDirty || b->T->vheap->dirty))
 		if (b->ttype && b->tvarsized) {
 			if (err == 0)
 				err = HEAPsave(b->theap, nme, "theap");
@@ -549,7 +552,7 @@ BATsave(BAT *bd)
 			DESCclean(b);
 			b->batCopiedtodisk = 1;
 			err = BATsavedesc(b, nme);
-			IODEBUG THRprintf(GDKout, "#BATsavedesc(%s,free=" SZFMT ") = %d\n", nme, b->batBuns->free, err);
+			IODEBUG THRprintf(GDKout, "#BATsavedesc(%s,free=" SZFMT "," SZFMT ") = %d\n", nme, b->H->heap.free, b->T->heap.free, err);
 		}
 
 	if (b->hheap)
@@ -582,21 +585,45 @@ BATload_intern(bat i)
 		return NULL;
 	}
 	/* LOAD bun heap */
-	if (b->htype != TYPE_void || b->ttype != TYPE_void) {
+	if (b->htype != TYPE_void) {
 		vv = 0;
-		ret = HEAPload(b->batBuns, nme, "buns", b->batRestricted == BAT_READ);
+		ret = HEAPload(&b->H->heap, nme, "head", b->batRestricted == BAT_READ);
 		if (ret < 0) {
 			return NULL;
 		}
+		b->batCapacity = b->H->heap.size >> b->H->shift;
 	} else {
-		b->batBuns->base = (char *) 1;
+		b->H->heap.base = NULL;
+	}
+	if (b->ttype != TYPE_void) {
+		vv = 0;
+		ret = HEAPload(&b->T->heap, nme, "tail", b->batRestricted == BAT_READ);
+		if (ret < 0) {
+			HEAPfree(&b->H->heap);
+			return NULL;
+		}
+		if (b->htype == TYPE_void)
+			b->batCapacity = b->T->heap.size >> b->T->shift;
+		if (b->batCapacity != (b->T->heap.size >> b->T->shift)) {
+			size_t cap = b->batCapacity;
+			if (cap < (b->T->heap.size >> b->T->shift)) {
+				cap = b->T->heap.size >> b->T->shift;
+				HEAPextend(&b->H->heap, headsize(b,cap));
+				b->batCapacity = cap;
+			} else {
+				HEAPextend(&b->T->heap, tailsize(b,cap));
+			}
+		}
+	} else {
+		b->T->heap.base = NULL;
 	}
 
 	/* LOAD head heap */
 	if (ATOMvarsized(b->htype) && ret >= 0) {
 		ret |= HEAPload(b->hheap, nme, "hheap", b->batRestricted == BAT_READ);
 		if (ret < 0) {
-			HEAPfree(b->batBuns);
+			HEAPfree(&b->H->heap);
+			HEAPfree(&b->T->heap);
 			return NULL;
 		}
 		if (BATatoms[b->htype].atomHeapCheck == HEAP_check) {
@@ -612,7 +639,8 @@ BATload_intern(bat i)
 		if (ret < 0) {
 			if (b->hheap)
 				HEAPfree(b->hheap);
-			HEAPfree(b->batBuns);
+			HEAPfree(&b->H->heap);
+			HEAPfree(&b->T->heap);
 			return NULL;
 		}
 		if (BATatoms[b->ttype].atomHeapCheck == HEAP_check) {
@@ -624,8 +652,10 @@ BATload_intern(bat i)
 
 	/* handle fatal errors */
 	if (ret < 0) {
-		if (!vv)
-			HEAPfree(b->batBuns);
+		if (!vv) {
+			HEAPfree(&b->H->heap);
+			HEAPfree(&b->T->heap);
+		}
 		if (b->hheap)
 			HEAPfree(b->hheap);
 		if (b->theap)
@@ -640,9 +670,8 @@ BATload_intern(bat i)
 	/* initialize descriptor */
 	b->batMapdirty = ret;	/* heap mode changed during load? */
 	b->batDirtydesc = FALSE;
-	b->batParentid = 0;
+	b->H->parentid = b->T->parentid = 0;
 	b->batSharecnt = 0;
-	DELTAload(b);
 
 	/* load succeeded; register it in BBP */
 	BBPcacheit(b);
@@ -651,7 +680,9 @@ BATload_intern(bat i)
 		ALIGNcommit(b);
 	}
 	b->batDirtydesc |= b->batMapdirty;	/* if some heap mode changed, make desc dirty */
-	b->batMapbuns = b->batBuns->storage;
+	b->batMapbuns = b->H->heap.storage;
+	b->batMapbuns = b->T->heap.storage;
+
 	if (b->hheap)
 		b->batMaphheap = b->hheap->storage;
 	if (b->theap)
@@ -714,13 +745,20 @@ BATdelete(BAT *b)
 			GDKwarning("BATdelete(%s): descriptor\n", BATgetId(b));
 		}
 	}
-	if (b->batCopiedtodisk || (b->batBuns->storage & STORE_MMAP)) {
-		if ((b->htype != TYPE_void || b->ttype != TYPE_void) &&
-		    HEAPdelete(b->batBuns, o, "buns") &&
+	assert(!b->H->heap.base || !b->T->heap.base || b->H->heap.base != b->T->heap.base);
+	if (b->batCopiedtodisk || (b->H->heap.storage & STORE_MMAP)) {
+		if (b->htype != TYPE_void && HEAPdelete(&b->H->heap, o, "head") &&
 		    b->batCopiedtodisk)
 			GDKwarning("BATdelete(%s): bun heap\n", BATgetId(b));
-	} else if (b->batBuns->base && !vv) {
-		HEAPfree(b->batBuns);
+	} else if (b->H->heap.base && !vv) {
+		HEAPfree(&b->H->heap);
+	}
+	if (b->batCopiedtodisk || (b->T->heap.storage & STORE_MMAP)) {
+		if (b->htype != TYPE_void && HEAPdelete(&b->T->heap, o, "tail") &&
+		    b->batCopiedtodisk)
+			GDKwarning("BATdelete(%s): bun heap\n", BATgetId(b));
+	} else if (b->T->heap.base && !vv) {
+		HEAPfree(&b->T->heap);
 	}
 	if (b->hheap) {
 		if (b->batCopiedtodisk || (b->hheap->storage & STORE_MMAP)) {
@@ -853,13 +891,14 @@ print_tabwidth(BAT *b, str title, col_format_t *c)
 	max = (int) MAX((2 + strlen(c->tpe)), strlen(title));
 
 	if (t >= 0 && t < GDKatomcnt && tostr) {
-		size_t off = BUNindex(b, BUNfirst(b));
+		BATiter bi = bat_iterator(b);
+		size_t off = BUNfirst(b);
 		int k;
 		size_t j, i, probe = MIN(cnt, MAX(200, MIN(1024, cnt / 100)));
 
 		for (i = 0; i < probe; i++) {
 			j = off + ((probe == cnt) ? i : (rand() % MIN(16384, cnt)));
-			k = (*tostr) (&c->buf, &c->size, BUNtail(b, BUNptr(b, j)));
+			k = (*tostr) (&c->buf, &c->size, BUNtail(bi, j));
 			if (k > max)
 				max = k;
 		}
@@ -1038,10 +1077,11 @@ Print the table header and then the multijoin.
 	else if (argc == 1) {
 		BAT *b = argv[0];
 		BUN p, q;
+		BATiter bi = bat_iterator(b);
 
 		BATloop(b, p, q) {
-			print_format(cp[0], BUNhead(b, p));
-			print_format(cp[1], BUNtail(b, p));
+			print_format(cp[0], BUNhead(bi, p));
+			print_format(cp[1], BUNtail(bi, p));
 			print_line(s, cp);
 			if (stream_errnr(s))
 				goto cleanup;

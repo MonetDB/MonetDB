@@ -144,7 +144,7 @@ most value-based operators work on the tail, while counting groups
 is focussed on the head.
 @= grpSignature
 command sum(b:bat[:any_2,:@1], e:bat[:any_2,:any_1]) :bat[:any_2,:@1] 
-address GRPsum_@1
+address GRPsum_@1_@1
 comment "grouped tail sum";
 
 command sum(b:bat[:any_2,:@1], size:int) :bat[:any_2,:@1] 
@@ -168,11 +168,14 @@ Not used yet
 #address GRPwindowmax@1
 #comment "Tail minimum of groups of a fixed size";
 @mal
+	@:grpSignature(bte)@
 	@:grpSignature(sht)@
 	@:grpSignature(int)@
 	@:grpSignature(lng)@
+	@:grpSignature(wrd)@
 	@:grpSignature(flt)@
 	@:grpSignature(dbl)@
+	@:grpSignature(oid)@
 
 command min(b:bat[:any_2,:any_1], e:bat[:any_2,:any_3]) :bat[:any_2,:any_1] 
 address GRPmin
@@ -184,7 +187,7 @@ comment "Grouped tail maximum";
 command count(b:bat[:any_2,:any_1], e:bat[:any_2,:any_3], nonils:bit) :bat[:any_2,:int] 
 address GRPaggr_count
 comment "Grouped count";
-command size(b:bat[:any_2,:bit], e:bat[:any_2,:any_1]) :bat[:any_2,:int] 
+command size(b:bat[:any_2,:bit], e:bat[:any_2,:any_1]) :bat[:any_2,:wrd] 
 address GRPsize
 comment "Grouped count of true values";
 
@@ -205,9 +208,11 @@ comment "Select the minimum element of each group";
 
 @mal
  @:xqMinMaxDef(oid)@
+ @:xqMinMaxDef(bte)@
  @:xqMinMaxDef(sht)@
  @:xqMinMaxDef(int)@
  @:xqMinMaxDef(lng)@
+ @:xqMinMaxDef(wrd)@
  @:xqMinMaxDef(flt)@
  @:xqMinMaxDef(dbl)@
 
@@ -280,8 +285,8 @@ hashing.
 #define HASH_lng(p) ((hash_t)(((unsigned int*)(p))[0]^((unsigned int*)(p))[1]))
 #define HASH_any(p) ((*hashfcn)(p))
 
-#define match_sync(b,p,r) r += yy
-#define match_hash(b,p,r) BUNfndOID(r,b,p); if (r == NULL) continue;
+#define match_sync(bi,p,r) r++
+#define match_hash(bi,p,r) BUNfndOID(r,bi,p); if (r == BUN_NONE) continue;
 
 #define declare_atom int any = b->ttype; hash_t (*hashfcn)(ptr) = BATatoms[any].atomHash;
 #define declare_simple	/* any and hash would otherwise give unused variable warning */
@@ -344,51 +349,54 @@ typedef struct {
 	if (m) {							\
 		map = m->map; hash = m->hash; mask = m->mask;		\
 	} else {							\
-		hash_t yy;						\
+		hash_t _yy;						\
 		map = BATnew(TYPE_mapentry, tailtype(b,TRUE), @3);	\
 		hash = (hash_t*) GDKmalloc((int)(sizeof(hash_t)*((mask=@2)+1))); \
-		for (yy=0; yy<=@2; yy++) {				\
-			hash[yy] = HASH_MAX;				\
+		for (_yy=0; _yy<=@2; _yy++) {				\
+			hash[_yy] = HASH_MAX;				\
 		}							\
 	}								\
 	entry.cnt = 1;							\
-	mapsize = BUNindex(map, BUNlast(map));
+	mapsize = BUNlast(map);
 @c
-void
+#if 0
+static void
 map_free(map_T m)
 {
 	BBPreclaim(m.map);
 	HEAPfree(&m.hp);
 }
+#endif
 
 #ifndef offsetof
 #define offsetof(type, member)	((size_t) &((type *) 0)->member)
 #endif
 
-BAT *
+static BAT *
 map2histo(BAT *map)
 {
-	if (map == NULL || map->htype != TYPE_mapentry || VIEWparent(map) || map->batSharecnt > 1 || BATgetaccess(map) != BAT_WRITE) {
+	BUN p, q;
+	BAT *bn;
+	int sz;
+
+	if (map == NULL || map->htype != TYPE_mapentry || isVIEW(map) || map->batSharecnt > 1 || BATgetaccess(map) != BAT_WRITE) {
 		if (map)
 			BBPreclaim(map);
 		return NULL;
 	}
-	/* trickily transform a bat[mapentry,any] into bat[oid,int] */
-	map->htype = BATmirror(map)->ttype = TYPE_oid;
-	map->ttype = BATmirror(map)->htype = TYPE_int;
-	if (map->tvarsized && map->theap) {
-		HEAPfree(map->theap);
-		GDKfree(map->theap);
-		map->theap = NULL;
+	sz = BATcount(map);
+	bn = BATnew(TYPE_oid,TYPE_int,sz);
+	BATloop(map, p, q) {
+		bunfastins(bn, 
+			&((mapentry_t*)Hloc(map, p))->gid, 
+			&((mapentry_t*)Hloc(map, p))->cnt);
 	}
-	BATmirror(map)->hvarsized = map->tvarsized = 0;
-	/* do these in the right order: map->dims.headloc is used, so
-	 * change it at end
-	 */
-	BATmirror(map)->dims.headloc = map->dims.tailloc = map->dims.headloc + (int) offsetof(mapentry_t, cnt);
-	BATmirror(map)->dims.tailloc = map->dims.headloc = map->dims.headloc + (int) offsetof(mapentry_t, gid);
-
-	return map;
+	BATkey(BATmirror(bn),FALSE);
+	bn->tsorted = 0;
+bunins_failed:
+	if (map)
+		BBPreclaim(map);
+	return bn;
 }
 @}
 @-
@@ -428,8 +436,9 @@ settings differ significantly from the original datamining application.
 BAT *
 CTgroup_@1_@4_@5(group_params_@5 BAT *b, BAT *bn, map_T *m)
 {
-	oid *dst = (oid*) BUNfirst(bn);
-	hash_t xx=0, *hash, mask;
+	BATiter bi = bat_iterator(b), mapi;
+	oid *hdst = (oid*) Hloc(bn, BUNfirst(bn)), *dst = (oid*) Tloc(bn, BUNfirst(bn));
+	hash_t *hash, mask;
 	size_t zz, mapsize;
 	mapentry_t entry, *e;
 	BUN p, q, r;
@@ -440,18 +449,19 @@ CTgroup_@1_@4_@5(group_params_@5 BAT *b, BAT *bn, map_T *m)
 	if (map == NULL)
 		return NULL;
 
+	mapi = bat_iterator(map);
 	/* core hash grouping algorithm */
-	BATloopFast(b, p, q, xx) {
+	BATloop(b, p, q) {
 		declare_@4
-		ptr tcur = BUN@2(b,p);
+		ptr tcur = BUN@2(bi,p);
 
 		/* hash-lookup of 'tcur' in map */
 		hash_t c = HASH_@1(tcur);
 		c = mix_int(c) & mask;
 		chain_@4 {
-			r = BUNptr(map,zz);
-			e = (mapentry_t*) BUNhloc(map,r);
-			if (tst_grp_@4(@3_EQ, BUN@2(map,r), @1)) {
+			r = zz;
+			e = (mapentry_t*) BUNhloc(mapi,r);
+			if (tst_grp_@4(@3_EQ, BUN@2(mapi,r), @1)) {
 				if (m == NULL)
 					e->cnt++;
 				goto found;
@@ -462,20 +472,20 @@ CTgroup_@1_@4_@5(group_params_@5 BAT *b, BAT *bn, map_T *m)
 		if (m) {
 			zz = mapsize;
 		} else {
-			entry.gid = *(oid*) BUNhead(b,p);
+			entry.gid = *(oid*) BUNhead(bi,p);
 		}
 		entry.link = hash[c];
 		hash[c] = mapsize++;
 		bunfastins(map, &entry, tcur);
 		e = &entry;
 
+		/* TODO fix head by a column copy */
 found:		/* ultra-fast 'insert' of [oid,gid] into ct */
 		if (bn->htype)
-			*dst++ = *(oid*) BUNhead(b,p);
+			*hdst++ = *(oid*) BUNhead(bi,p);
 		*dst++ = m?zz:e->gid;
 	}
-	bn->batBuns->free = ((BUN) dst) - bn->batBuns->base;
-	BATsetcount(bn, bn->batBuns->free/BUNsize(bn));
+	BATsetcount(bn, BATcount(b));
 	bn->tsorted = 0;
 	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
 	ALIGNsetH(bn,b);
@@ -648,12 +658,13 @@ bits(size_t i)
 
 @= derive
 static BAT *
-CTderive_@1_@2_@5(BAT* ct_histo, BAT *ct_map, BAT *b, BAT *bn, map_T *m)
+CTderive_@1_@2_@5(BAT* ct_map, BAT *ct_histo, BAT *b, BAT *bn, map_T *m)
 {
-	oid *dst = (oid*) BUNfirst(bn);
-	size_t yy = BUNsize(ct_map), zz, mapsize;
-	hash_t xx, *hash;
-	BUN p, q, r, cp = BUNfirst(ct_map) - yy;
+	BATiter bi = bat_iterator(b), mapi, ct_mapi = bat_iterator(ct_map);
+	oid *hdst = (oid*) Hloc(bn, BUNfirst(bn)), *dst = (oid*) Tloc(bn, BUNfirst(bn));
+	size_t zz, mapsize;
+	hash_t *hash;
+	BUN p, q, r, cp = BUNfirst(ct_map) - 1;
 	mapentry_t entry, *e;
 	BAT *map;
 	int n = bits(BATcount(ct_histo)), *N = &n;
@@ -666,24 +677,25 @@ CTderive_@1_@2_@5(BAT* ct_histo, BAT *ct_map, BAT *b, BAT *bn, map_T *m)
 	if (map == NULL)
 		return NULL;
 
+	mapi = bat_iterator(map);
 	/* core hash grouping algorithm */
-	BATloopFast(b, p, q, xx) {
-		ptr tcur = BUN@3(b,p);
+	BATloop(b, p, q) {
+		ptr tcur = BUN@3(bi,p);
 		hash_t c;
 		oid hcur;
 		declare_@5
 
 		/* find corresponding value in 'ct_map' */
-		match_@1(ct_map, BUNhead(b,p), cp);
-		hcur = *(oid*) BUNtloc(ct_map,cp);
+		match_@1(ct_mapi, BUNhead(bi,p), cp);
+		hcur = *(oid*) BUNtloc(ct_mapi,cp);
 
 		/* hash-lookup of [hcur,tcur] in map */
 		c = (((hash_t) hcur) ^ HASH_@2(tcur));
 		c = mix_int(c) & mask;
 		chain_@5 {
-			r = BUNptr(map,zz);
-			e = (mapentry_t*) BUNhloc(map,r);
-			if (tst_derive_@5(@4_EQ, BUN@3(map,r), @2)) {
+			r = zz;
+			e = (mapentry_t*) Hloc(map,r);
+			if (tst_derive_@5(@4_EQ, BUN@3(mapi,r), @2)) {
 				if (m == NULL)
 					e->cnt++;
 				goto found;
@@ -693,7 +705,7 @@ CTderive_@1_@2_@5(BAT* ct_histo, BAT *ct_map, BAT *b, BAT *bn, map_T *m)
 		if (m) {
 			zz = mapsize;
 		} else {
-			entry.gid = *(oid*) BUNhead(b,p);
+			entry.gid = *(oid*) BUNhead(bi,p);
 		}
 		entry.hcur = hcur;
 		entry.link = hash[c];
@@ -701,13 +713,13 @@ CTderive_@1_@2_@5(BAT* ct_histo, BAT *ct_map, BAT *b, BAT *bn, map_T *m)
 		bunfastins(map, &entry, tcur);
 		e = &entry;
 
+		/* TODO fix head by a column copy */
 found:		/* ultra-fast 'insert' of [oid,gid] into result ct */
 		if (bn->htype)
-			*dst++ = *(oid*) BUNhead(b,p);
+			*hdst++ = *(oid*) BUNhead(bi,p);
 		*dst++ = m?zz:e->gid;
 	}
-	bn->batBuns->free = ((BUN) dst) - bn->batBuns->base;
-	BATsetcount(bn, bn->batBuns->free/BUNsize(bn));
+	BATsetcount(bn, (dst-(oid*)bn->T->heap.base)); 
 	if (hash && !m)
 		GDKfree(hash);
 	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
@@ -741,19 +753,19 @@ bunins_failed:
 	/* Choose appropriate (@1 && @2) CTderive implementation */
 	switch(tt) {
 	case TYPE_bte:
-		histo = CTderive_@1_bte_@2(ct_histo,ct_map,b,bn,m);
+		histo = CTderive_@1_bte_@2(ct_map,ct_histo,b,bn,m);
 		break;
 	case TYPE_sht:
-		histo = CTderive_@1_sht_@2(ct_histo,ct_map,b,bn,m);
+		histo = CTderive_@1_sht_@2(ct_map,ct_histo,b,bn,m);
 		break;
 	case TYPE_int:
-		histo = CTderive_@1_int_@2(ct_histo,ct_map,b,bn,m);
+		histo = CTderive_@1_int_@2(ct_map,ct_histo,b,bn,m);
 		break;
 	case TYPE_lng:
-		histo = CTderive_@1_lng_@2(ct_histo,ct_map,b,bn,m);
+		histo = CTderive_@1_lng_@2(ct_map,ct_histo,b,bn,m);
 		break;
 	default:
-		histo = CTderive_@1_any_@2(ct_histo,ct_map,b,bn,m);
+		histo = CTderive_@1_any_@2(ct_map,ct_histo,b,bn,m);
 		break;
 	}
 @c
@@ -831,36 +843,39 @@ The routine CThistosum takes an grouping and a histogram and produces
 a new histogram by summing the old values within the same group.
 @c
 int
-CThistosum(BAT **retval,	/* put pointer to BAT[oid,int] record here. */
-	   BAT *b,		/* pointer to BAT[oid,oid] record. */
-	   BAT *c		/* pointer to BAT[oid,int] record. */
+CThistosum(
+	BAT**	retval,	/* put pointer to BAT[oid,int] record here. */
+	BAT*	b,	/* pointer to BAT[oid,oid] record. */
+	BAT*	c	/* pointer to BAT[oid,int] record. */
 )
 {
+	BATiter bi = bat_iterator(b), resi;
 	BAT *res = BATnew(TYPE_oid, TYPE_int, BATcount(b));
 	BUN p, q, qb;
-	int xx, i, *z;
+	int i, *z;
 	oid *ot, *oh;
 
 	(void) c;
 	if (res == NULL) {
 		return GDK_FAIL;
 	}
-	BATloopFast(b, p, q, xx) {
-		oh = (oid *) BUNhloc(b, p);
-		i = *(int *) BUNtloc(b, p);
+	resi = bat_iterator(res);
+	BATloop(b, p, q) {
+		oh = (oid *) BUNhloc(bi, p);
+		i = *(int *) BUNtloc(bi, p);
 
-		BUNfndOID(qb, b, oh);
-		if (qb == NULL) {
+		BUNfndOID(qb, bi, oh);
+		if (qb == BUN_NONE) {
 			GDKerror("CThistosum: Matching count entry not found\n");
 			continue;
 		}
-		ot = (oid *) BUNtloc(b, qb);
+		ot = (oid *) BUNtloc(bi, qb);
 
-		BUNfndOID(qb, res, ot);
-		if (qb == NULL) {
+		BUNfndOID(qb, resi, ot);
+		if (qb == BUN_NONE) {
 			BUNins(res, ot, &i, FALSE);
 		} else {
-			z = (int *) BUNtloc(res, qb);
+			z = (int *) BUNtloc(resi, qb);
 			*z += i;
 		}
 	}
@@ -873,9 +888,9 @@ CThistosum(BAT **retval,	/* put pointer to BAT[oid,int] record here. */
 int
 CTsubhisto(BAT **ret, BAT *sel, BAT *grp, BAT *dom)
 {
-	bit *filter = (bit *) BUNtloc(sel, BUNfirst(sel));
+	BATiter seli = bat_iterator(sel);
+	bit *filter = (bit *) BUNtloc(seli, BUNfirst(sel));
 	size_t size = BATcount(dom);
-	int xx, zz;
 	hash_t yy, mask, *hash = NULL;
 	BUN r, p, q;
 	BAT *bn = BATnew(TYPE_idxentry, TYPE_int, size);
@@ -901,40 +916,38 @@ CTsubhisto(BAT **ret, BAT *sel, BAT *grp, BAT *dom)
 	/* insert all values in the hash table, and in bn with count zero */
 	r = BUNfirst(bn);
 	yy = 0;
-	BATloopFast(dom, p, q, xx) {
-		oid v = *(oid *) BUNhloc(dom, p);
+	BATloop(dom, p, q) {
+		oid v = *(oid *) Hloc(dom, p);
 		hash_t c = v & mask;
 
-		((idxentry_t *) BUNhloc(bn, r))->hcur = v;
-		((idxentry_t *) BUNhloc(bn, r))->link = hash[c];
-		*(int *) BUNtloc(bn, r) = 0;
-		r = BUNnext(bn, r);
+		((idxentry_t *) Hloc(bn, r))->hcur = v;
+		((idxentry_t *) Hloc(bn, r))->link = hash[c];
+		*(int *) Tloc(bn, r) = 0;
+		r++;
 		hash[c] = yy;
 		yy++;
 	}
-	bn->batBuns->free = (char *) r - (char *) Bunbase(bn);
-	BATsetcount(bn, bn->batBuns->free/BUNsize(bn));
+	BATsetcount(bn, r);
 	bn->tsorted = 0;
 	bn->htype = BATmirror(bn)->ttype = TYPE_oid;
 	/* assert(offsetof(idxentry_t,hcur) == 0);
 	ALIGNsetH(bn, dom); */
 
 	/* add the counts for this selection using the hash table */
-	zz = BUNsize(sel);
-	BATloopFast(grp, p, q, xx) {
+	BATloop(grp, p, q) {
 		if (*filter == TRUE) {
-			oid v = *(oid *) BUNtloc(grp, p);
+			oid v = *(oid *) Tloc(grp, p);
 			hash_t c = v & mask;
 
-			for (yy = hash[c]; yy != HASH_MAX; yy = ((idxentry_t *) BUNhloc(bn, r))->link) {
-				r = BUNptr(bn, yy);
-				if (((idxentry_t *) BUNhloc(bn, r))->hcur == v) {
-					*(int *) BUNtloc(bn, r) += 1;
+			for (yy = hash[c]; yy != HASH_MAX; yy = ((idxentry_t *) Hloc(bn, r))->link) {
+				r = yy;
+				if (((idxentry_t *) Hloc(bn, r))->hcur == v) {
+					*(int *) Tloc(bn, r) += 1;
 					break;
 				}
 			}
 		}
-		filter += zz;
+		filter++;
 
 	}
 	GDKfree(hash);
@@ -947,44 +960,37 @@ CTsubhisto(BAT **ret, BAT *sel, BAT *grp, BAT *dom)
 @c
 #define DEFAULT_SIZE 10000
 
-struct refine {
-	var_t off;
-	oid o;
-};
-
-static INLINE oid *
-sort_flush(struct refine *buf, size_t size, int tpe, BUN base, oid *dst, oid *idp, int reverse)
+static INLINE int 
+sort_flush(var_t *off, oid *o, size_t size, int tpe, char *base, oid *hdst, oid *tdst, oid *idp, int reverse)
 {
 	int (*cmp) (ptr, ptr) = BATatoms[tpe].atomCmp;
-	struct refine *end = buf + size;
 	oid id = *idp + 1;
 	ptr cur, val;
+	size_t i;
 
 	/* StM: we don't need to sort voids, do we??? */
 	if (tpe != TYPE_void) {
 		/* qsort works fine for small amount of tuples; with few duplicates */
 		if (reverse) {
-			GDKqsort_rev(buf, base, size, (int) sizeof(struct refine), tpe, offsetof(struct refine, off));
+			GDKqsort_rev(off, o, base, size, sizeof(var_t), sizeof(oid), tpe);
 		} else {
-			GDKqsort(buf, base, size, (int) sizeof(struct refine), tpe, offsetof(struct refine, off));
+			GDKqsort(off, o, base, size, sizeof(var_t), sizeof(oid), tpe);
 		}
 	}
 
-	cur = base + buf->off;
-	while (buf < end) {
-		val = base + buf->off;
+	cur = base + off[0];
+	for (i=0; i < size; i++) {
+		val = base + off[i];
 		if ((*cmp) (cur, val)) {
 			cur = val;
 			id++;
 		}
-		*dst++ = buf->o;
-		*dst++ = id;
-
-		buf++;
+		*hdst++ = o[i];
+		*tdst++ = id;
 	}
 	*idp = id;
 
-	return dst;
+	return i;
 }
 
 static int
@@ -1018,13 +1024,17 @@ refine(BAT **res, BAT *b, BAT *a, int rv)
 	if (b->tkey) {		/* if key, no further refinements can take place */
 		bn = BATmark(b, 0);
 	} else {
-		int (*cmp) (ptr, ptr) = BATatoms[b->ttype].atomCmp;
-		BUN p, q, r, last = BUNfirst(b), base = a->theap ? NULL : a->batBuns->base, this = NULL;
-		struct refine *buf, *cur, *end;
+		int (*cmp) (ptr, ptr) = BATatoms[b->ttype].atomCmp, cnt = 0;
+		BUN p, q, r, last = BUNfirst(b);
+		char *base = a->theap ? NULL : a->T->heap.base, *this = NULL;
+		size_t cur, end, off;
+		var_t *offp;
+		oid *ids;
 		bit a_void = (a->ttype == TYPE_void);
 		int xx, tpe = a_void ? TYPE_oid : a->ttype;
 		size_t size = DEFAULT_SIZE;
-		oid *dst, o, *op = &o, id = 0;
+		oid *hdst, *tdst, o, *op = &o, id = 0;
+		BATiter ai = bat_iterator(a), bi = bat_iterator(b);
 
 		/* create tmp BAT that holds one cluster; estimate required size using sampling */
 		if (BATcount(b) > DEFAULT_SIZE) {
@@ -1044,14 +1054,20 @@ refine(BAT **res, BAT *b, BAT *a, int rv)
 				return GDK_FAIL;
 		}
 		/* create a temporary BAT of the estimated size holding pointers to the a tail atoms */
-		buf = cur = (struct refine *) GDKmalloc(size * sizeof(struct refine));
-		end = buf + size;
-		if (buf == NULL)
+		cur = 0;
+		end = size;
+		offp = (var_t*) GDKmalloc(size * sizeof(var_t));
+		ids = (oid*) GDKmalloc(size * sizeof(oid));
+		if (offp == NULL || ids == NULL) {
+			if (offp) GDKfree(offp);
+			if (ids) GDKfree(ids);
 			return GDK_FAIL;
+		}
 		if (a_void) {
-			base = this = (BUN) GDKmalloc(size * sizeof(oid));
+			base = this = (char*) GDKmalloc(size * sizeof(oid));
 			if (base == NULL) {
-				GDKfree(buf);
+				GDKfree(offp);
+				GDKfree(ids);
 				return GDK_FAIL;
 			}
 		}
@@ -1059,68 +1075,73 @@ refine(BAT **res, BAT *b, BAT *a, int rv)
 		/* create result BAT */
 		bn = BATnew(TYPE_oid, TYPE_oid, BATcount(b));
 		if (bn == NULL) {
-			GDKfree(buf);
+			GDKfree(offp);
+			GDKfree(ids);
 			if (a_void)
 				GDKfree(base);
 			return GDK_FAIL;
 		}
 		bn->hsorted = bn->tsorted = FALSE;
-		dst = (oid *) BUNfirst(bn);
+		hdst = (oid *) Hloc(bn,BUNfirst(bn));
+		tdst = (oid *) Tloc(bn,BUNfirst(bn));
 
 		if (a_void) {
 			@:refine_loop(@:refine_void_1@,@:refine_void_2@,GDKfree(base);,this = base;)@
 		} else {
-			@:refine_loop(r += a->tloc;)@
+			@:refine_loop()@
 		}
 @= refine_void_2
 	off = (size_t) (this - base);
-	base = (BUN) GDKrealloc(base, size * sizeof(oid));
+	base = (char*) GDKrealloc(base, size * sizeof(oid));
 	this = base + off;
 @= refine_void_1
-	/* TYPE_void: BUNtail(b,p) = (BUN)BUNtpos(b,p) */
-	*(oid*)this = *(oid*)(BUN)BUNtpos(a, r);
-	r = this;
+	*(oid*)this = a->tseqbase+r;
+	r = this - base;
 @= refine_loop
 		/* merge-scan tail of b, finding chunks with equal values; then sort each chunk on a */
-		BATloopFast(b, p, q, xx) {
-			if ((*cmp) (BUNtail(b, last), BUNtail(b, p))) {
-				dst = sort_flush(buf, (size_t) (cur - buf), tpe, base ? base : a->theap->base, dst, &id, rv);
+		BATloop(b, p, q) {
+			if ((*cmp) (BUNtail(bi, last), BUNtail(bi, p))) {
+				cnt = sort_flush(offp, ids, cur, tpe, base ? base : a->theap->base, hdst, tdst, &id, rv);
+				hdst += cnt;
+				tdst += cnt;
 
 				last = p;
-				cur = buf;
+				cur = 0;
 				@4
 			}
-			o = *(oid *) BUNhead(b, p);
-			BUNfndOID(r, a, op);
-			if (r == NULL) {
+			o = *(oid *) BUNhead(bi, p);
+			BUNfndOID(r, ai, op);
+			if (r == BUN_NONE) {
 				GDKerror("CTrefine%s: value "SZFMT"@0 not found in head of second BAT;\n"
-					 "CTrefine%s: heads of both BATs do not form a 1-1 match.\n", rev, o, rev);
+					 "CTrefine%s: heads of both BATs do not form a 1-1 match.\n", rev, (size_t) o, rev);
 				BBPreclaim(bn);
-				GDKfree(buf);
+				GDKfree(offp);
+				GDKfree(ids);
 				@3
 				return GDK_FAIL;
 			}
 			if (cur >= end) {
-				size_t off = (size_t) (cur - buf);
-				buf = (struct refine *) GDKrealloc(buf, (size *= 2) * sizeof(struct refine));
-				end = buf + size;
-				cur = buf + off;
+				offp = (var_t*) GDKrealloc(offp, (size *= 2) * sizeof(var_t));
+				ids = (oid*) GDKrealloc(ids, size * sizeof(oid));
+				end = size;
 				@2
 			}
 			@1
-			cur->off = base ? (var_t) (r - base) : *(var_t *) r;
-			cur->o = o;
+			offp[cur] = (base) ? r<<a->T->shift : ((var_t*)a->T->heap.base)[r];
+			ids[cur] = o;
 			cur++;
 			this += sizeof(oid);
 		}
 @c
-		dst = sort_flush(buf, (size_t) (cur - buf), tpe, base ? base : a->theap->base, dst, &id, rv);
+		cnt = sort_flush(offp, ids, cur, tpe, base ? base : a->theap->base, hdst, tdst, &id, rv);
+		hdst += cnt;
+		tdst += cnt;
 
-		GDKfree(buf);
+		GDKfree(offp);
+		GDKfree(ids);
 		if (a_void)
 			GDKfree(base);
-		bn->batBuns->free = ((BUN) dst) - bn->batBuns->base;
-		BATsetcount(bn, bn->batBuns->free/BUNsize(bn));
+		BATsetcount(bn, (((char*) hdst) - bn->H->heap.base)/Tsize(bn));
 		bn->tsorted = GDK_SORTED;
 	}
 	*res = bn;
@@ -1361,10 +1382,11 @@ GRPrefine_rev(int *retid, int *bid, int *aid)
 	@:chkHeader(a,GRPrefine_rev)@
 
 	CTrefine_rev(&bn, b, a);
-	*retid = bn->batCacheid;
-	BBPkeepref(*retid);
 	BBPreleaseref(b->batCacheid);
 	BBPreleaseref(a->batCacheid);
+	if (!bn)
+		throw(MAL, "group.refine", "Failed");
+	BBPkeepref(*retid = bn->batCacheid);
 	return MAL_SUCCEED;
 }
 
@@ -1384,414 +1406,768 @@ bytes, we stay below 16 KBytes, i.e., within (almost) any L1 cache
 
 @-
 @= large_aggr_sum
-		(void) BATprepareHash(bn);
-		BATloopFast(b, p, q, xx) {
-				oid *h = (oid*) BUNhead(b,p);
-				@1 *t = (@1*) BUN@2(b,p);
+	if (BATprepareHash(bn)) {
+		BBPreclaim(bn);
+		return GDK_FAIL;
+	}
+	BATloop(b, p, q) {
+		oid *h = (oid*) BUNhead(bi,p);
+		@1 *t = (@1*) BUN@2(bi,p);
 
-				BUNfndOID(r, bn, h);
-				if (r) {
-						@1 *dst = (@1*) BUN@2(bn, r);
-						if (*dst != @1_nil) {
-								if (*t == @1_nil) {
-										*dst = @1_nil;
-								} else {
-										*dst += *t;
-								}
-						}
+		BUNfndOID(r, bni, h);
+		if (r != BUN_NONE) {
+			@3 *dst = (@3*) BUN@2(bni, r);
+			if (*dst != @3_nil) {
+				if (*t == @1_nil) {
+					*dst = @3_nil;
+				} else {
+					*dst += *t;
 				}
+			}
 		}
+	}
 @-
 @= small_aggr_sum
-		sums = (@1*) GDKmalloc(range*sizeof(@1));
-		for (i = 0; i < range; i++) sums[i] = zero;
-		BATloopFast(b, p, q, xx) {
-				int h = (int)(*(oid*) BUNhead(b,p)) - min;
-				@1 *t = (@1*) BUN@2(b,p);
+	sums = (@3*) GDKmalloc(range*sizeof(@3));
+	for (i = 0; i < range; i++) 
+		sums[i] = zero;
+	BATloop(b, p, q) {
+		oid h = (*(oid*) BUNhead(bi,p)) - min;
+		@1 *t = (@1*) BUN@2(bi,p);
 
-				if (h >= 0 && h < range) {
-						@1 *dst = sums + h;
-						if (*dst != @1_nil) {
-								if (*t == @1_nil) {
-										*dst = @1_nil;
-								} else {
-										*dst += *t;
-								}
-						}
-				}
-		}
-		BATloopFast(bn, p, q, xx) {
-				int h = (int)(*(oid*) BUNhead(bn,p)) - min;
-				*(@1*)BUN@2(bn, p) = sums[h];
-		}
-		GDKfree(sums);
-@-
-@= large_aggr_avg
-		cnt  = (int*) GDKmalloc(BATcount(e)*sizeof(int));
-		memset(cnt, 0, BATcount(e)*sizeof(int));
-		(void) BATprepareHash(bn);
-		BATloopFast(b, p, q, xx) {
-				oid *h = (oid*) BUNhead(b,p);
-				@1 *t = (@1*) BUN@2(b,p);
-
-				BUNfndOID(r,bn,h);
-				if (r) {
-						@1 *dst = (@1*) BUN@2(bn, r);
-						if (*dst != @1_nil) {
-								if (*t == @1_nil) {
-										*dst = @1_nil;
-								} else {
-										*dst += *t;
-								}
-								cnt[BUNindex(bn,r)-off]++;
-						}
-				}
-		}
-		/* postprocess by dividing sums by counts */
-		BATloopFast(bn, p, q, xx) {
-				@1 *dst = (@1*) BUN@2(bn, p);
-				if (cnt[yy] == 0) {
-						*dst = @1_nil;
-				} else if (*dst != @1_nil) {
-						*dst /= cnt[yy];
-				} yy++;
-		}
-		GDKfree(cnt);
-
-@-
-@= small_aggr_avg
-		sums = (@1*) GDKmalloc(range*sizeof(@1));
-		cnt  = (int*) GDKmalloc(range*sizeof(int));
-		for (i = 0; i < range; i++) sums[i] = zero;
-		memset(cnt, 0, range*sizeof(int));
-		BATloopFast(b, p, q, xx) {
-				int h = (int)(*(oid*) BUNhead(b,p)) - min;
-				@1 *t = (@1*) BUN@2(b,p);
-
-				if (h >= 0 && h < range) {
-						@1 *dst = sums + h;
-						if (*dst != @1_nil) {
-								if (*t == @1_nil) {
-										*dst = @1_nil;
-								} else {
-										*dst += *t;
-								}
-								cnt[h]++;
-						}
-				}
-		}
-		/* postprocess by dividing sums by counts */
-		BATloopFast(bn, p, q, xx) {
-				int h = (int)(*(oid*) BUNhead(bn,p)) - min;
-				@1 *dst = (@1*) BUN@2(bn, p);
-				if (cnt[h] == 0 || sums[h] == @1_nil) {
-						*dst = @1_nil;
+		if (h < range) {
+			@3 *dst = sums + h;
+			if (*dst != @3_nil) {
+				if (*t == @1_nil) {
+					*dst = @3_nil;
 				} else {
-						*dst = sums[h]/cnt[h];
+					*dst += *t;
 				}
+			}
 		}
-		GDKfree(sums);
-		GDKfree(cnt);
+	}
+	BATloop(bn, p, q) {
+		oid h = (*(oid*) BUNhead(bni,p)) - min;
+		*(@3*)BUN@2(bni, p) = sums[h];
+	}
+	GDKfree(sums);
+@= large_aggr_prod
+	if (BATprepareHash(bn)) {
+		BBPreclaim(bn);
+		return GDK_FAIL;
+	}
+	BATloop(b, p, q) {
+		oid *h = (oid*) BUNhead(bi,p);
+		@1 *t = (@1*) BUN@2(bi,p);
 
-@= arithpump
-group_export str GRPsum_@1(int *retval, int *bid,int  *eid, bit *ignore_nils);
-str GRPsum_@1(int *retval, int *bid,int  *eid, bit *ignore_nils){
-		BAT *b = NULL, *e = NULL;
-		BAT *bn = BATnew(e->htype, BATttype(b), BATcount(e));
-		@1 zero = (@1) 0, *sums;
-		BUN p, q, r;
-		int xx,i,range,min,max;
-
-		(void) ignore_nils; /* fool compiler */
-		if( (b= BATdescriptor(*bid)) == NULL ){
-			throw(MAL, "group.sum", "Cannot access descriptor");
-		}
-
-		@:chkHeader(b,GRPsum_@1)@
-		if( (e= BATdescriptor(*eid)) == NULL ){
-			BBPreleaseref(b->batCacheid);
-			throw(MAL, "group.sum", "Cannot access descriptor");
-		}
-		@:chkHeader(e,GRPsum_@1)@
-		/* init: set all sums to zero */
-		bn->tsorted = bn->hsorted = 0;
-		ALIGNsetH(bn, e);
-		if (BAThordered(e)&1) {
-				min = (int)(*(oid*)BUNhead(e, BUNfirst(e)));
-				BATloopFast(e, p, q, xx) {
-						BUNfastins(bn, BUNhead(e,p), &zero);
+		BUNfndOID(r, bni, h);
+		if (r != BUN_NONE) {
+			@3 *dst = (@3*) BUN@2(bni, r);
+			if (*dst != @3_nil) {
+				if (*t == @1_nil) {
+					*dst = @3_nil;
+				} else {
+					*dst *= *t;
 				}
-				max = (int)(*(oid*)BUNhead(e, BUNlast(e)-BUNsize(e)));
-		} else {
-				min = max = (int)(*(oid*)BUNhead(e, BUNfirst(e)));
-				BATloopFast(e, p, q, xx) {
-						BUNfastins(bn, BUNhead(e,p), &zero);
-						i = (int)(*(oid*)BUNhead(e, p));
-						if (i < min) min = i;
-						else
-						if (i > max) max = i;
-				}
+			}
 		}
-		range = max - min + 1;
-
-		/* scan b, and add values to sums in-place */
-		if (range > SMALL_AGGR_MAX) {
-				ALGODEBUG THRprintf(GDKout, "#GRPsum_@1: range(=%d) > SMALL_AGGR_MAX(=%d)  =>  large_aggr_sum\n",range,SMALL_AGGR_MAX);
-				@:large_aggr_sum(@1,@2)@
-		} else {
-				ALGODEBUG THRprintf(GDKout, "#GRPsum_@1: range(=%d) <= SMALL_AGGR_MAX(=%d)  =>  small_aggr_sum\n",range,SMALL_AGGR_MAX);
-				@:small_aggr_sum(@1,@2)@
-		}
-		*retval= bn->batCacheid;
-		BBPkeepref(*retval);
-		BBPreleaseref(b->batCacheid);
-		BBPreleaseref(e->batCacheid);
-		return MAL_SUCCEED;
-}
-
-group_export str GRPavg_@1(int *retval, int *bid,int  *eid);
-str GRPavg_@1(int *retval, int *bid,int  *eid){
-		BAT *b = NULL, *e = NULL;
-		BAT *bn = BATnew(e->htype, BATttype(b), BATcount(e));
-		int xx, yy = 0, off = BUNindex(bn,BUNfirst(bn));
-		int *cnt = (int*) GDKmalloc(BATcount(e)*sizeof(int));
-		@1 zero = (@1) 0;
-		BUN p, q, r;
-
-		if( (b= BATdescriptor(*bid)) == NULL ){
-			throw(MAL, "group.@1", "Cannot access descriptor");
-		}
-		@:chkHeader(b,GRPsum_@1)@
-		if( (e= BATdescriptor(*eid)) == NULL ){
-			BBPreleaseref(b->batCacheid);
-			throw(MAL, "group.@1", "Cannot access descriptor");
-		}
-		@:chkHeader(e,GRPsum_@1)@
-		/* init sums and counts to zero */
-		bn->tsorted = bn->hsorted = 0;
-		ALIGNsetH(bn, e);
-		memset(cnt, 0, BATcount(e)*sizeof(int));
-		BATloopFast(e, p, q, xx) {
-				BUNfastins(bn, BUNhead(e,p), &zero);
-		}
-		/* scan b, adding sums, and incrementing counts */
-		(void) BATprepareHash(bn);
-		BATloopFast(b, p, q, xx) {
-				oid *h = (oid*) BUNhead(b,p);
-				@1 *t = (@1*) BUNtail(b,p);
-
-				BUNfndOID(r,bn,h);
-				if (r) {
-						@1 *dst = (@1*) BUNtloc(bn, r);
-						if (*dst != @1_nil) {
-								if (*t == @1_nil) {
-										*dst = @1_nil;
-								} else {
-										*dst += *t;
-								}
-								cnt[BUNindex(bn,r)-off]++;
-						}
-				}
-		}
-		/* postprocess by dividing sums by counts */
-		BATloopFast(bn, p, q, xx) {
-				@1 *dst = (@1*) BUNtail(bn, p);
-				if (cnt[yy] == 0) {
-						*dst = @1_nil;
-				} else if (*dst != @1_nil) {
-						*dst /= cnt[yy];
-				} yy++;
-		}
-		GDKfree(cnt);
-		*retval= bn->batCacheid;
-		BBPkeepref(*retval);
-		BBPreleaseref(b->batCacheid);
-		BBPreleaseref(e->batCacheid);
-		return MAL_SUCCEED;
-}
-
+	}
 @c
-@:arithpump(sht,tloc)@
-@:arithpump(int,tloc)@
-@:arithpump(lng,tloc)@
-@:arithpump(flt,tloc)@
-@:arithpump(dbl,tloc)@
+@= small_aggr_prod
+	prods = (@3*) GDKmalloc(range*sizeof(@3));
+	for (i = 0; i < range; i++)
+		prods[i] = one;
+	BATloop(b, p, q) {
+		oid h = (*(oid*) BUNhead(bi,p)) - min;
+		@1 *t = (@1*) BUN@2(bi,p);
+
+		if (h < range) {
+			@3 *dst = prods + h;
+			if (*dst != @3_nil) {
+				if (*t == @1_nil) {
+					*dst = @3_nil;
+				} else {
+					*dst *= *t;
+				}
+			}
+		}
+	}
+	BATloop(bn, p, q) {
+		oid h = (*(oid*) BUNhead(bni,p)) - min;
+		*(@3*)BUN@2(bni, p) = prods[h];
+	}
+        GDKfree(prods);
+@= large_aggr_avg
+	cnt  = (size_t*) GDKmalloc(BATcount(e)*sizeof(size_t));
+	memset(cnt, 0, BATcount(e)*sizeof(size_t));
+	if (BATprepareHash(bn)) {
+		GDKfree(cnt);
+		BBPreclaim(bn);
+		return GDK_FAIL;
+	}
+	BATloop(b, p, q) {
+		oid *h = (oid*) BUNhead(bi,p);
+		@1 *t = (@1*) BUN@2(bi,p);
+
+		BUNfndOID(r,bni,h);
+		if (r != BUN_NONE) {
+			dbl *dst = (dbl*) BUN@2(bni, r);
+			if (*dst != dbl_nil) {
+				if (*t == @1_nil) {
+					*dst = dbl_nil;
+				} else {
+					*dst += *t;
+				}
+				cnt[r-off]++;
+			}
+		}
+	}
+	/* postprocess by dividing sums by counts */
+	BATloop(bn, p, q) {
+		dbl *dst = (dbl*) BUN@2(bni, p);
+		if (cnt[yy] == 0) {
+			*dst = dbl_nil;
+		} else if (*dst != dbl_nil) {
+			*dst = (dbl) (*dst / cnt[yy]);
+		} yy++;
+	}
+	GDKfree(cnt);
+@c
+@= small_aggr_avg
+	sums = (dbl*) GDKmalloc(range*sizeof(dbl));
+	cnt  = (size_t*) GDKmalloc(range*sizeof(size_t));
+	for (i = 0; i < range; i++)
+		sums[i] = zero;
+	memset(cnt, 0, range*sizeof(size_t));
+	BATloop(b, p, q) {
+		oid h = (*(oid*) BUNhead(bi,p)) - min;
+		@1 *t = (@1*) BUN@2(bi,p);
+
+		if (h < range) {
+			dbl *dst = sums + h;
+			if (*dst != dbl_nil) {
+				if (*t == @1_nil) {
+					*dst = dbl_nil;
+				} else {
+					*dst += *t;
+				}
+				cnt[h]++;
+			}
+		}
+	}
+	/* postprocess by dividing sums by counts */
+	BATloop(bn, p, q) {
+		oid h = (*(oid*) BUNhead(bni,p)) - min;
+		dbl *dst = (dbl*) BUN@2(bni, p);
+		if (cnt[h] == 0 || sums[h] == dbl_nil) {
+			*dst = dbl_nil;
+		} else {
+			*dst = (dbl) (sums[h]/cnt[h]);
+		}
+	}
+        GDKfree(sums);
+	GDKfree(cnt);
+
+@= arithsumprod
+group_export str GRPsum_@1_@3(int *retval, int *bid, int  *eid, bit *ignore_nils);
+str GRPsum_@1_@3(int *retval, int *bid, int  *eid, bit *ignore_nils)
+{
+	BAT *b = NULL, *e = NULL;
+	BAT *bn = BATnew(e->htype, BATttype(b), BATcount(e));
+	BATiter ei, bi, bni;
+	@3 zero = (@3) 0, *sums;
+	BUN p, q, r;
+	oid i, range, min, max;
+
+	if (bn == NULL)
+		throw(MAL, "group.sum", "Cannot create descriptor");
+
+	(void) ignore_nils; /* fool compiler */
+	if( (b= BATdescriptor(*bid)) == NULL ){
+		throw(MAL, "group.sum", "Cannot access descriptor");
+	}
+
+	@:chkHeader(b,GRPsum_@1_@3)@
+	if( (e= BATdescriptor(*eid)) == NULL ){
+		BBPreleaseref(b->batCacheid);
+		throw(MAL, "group.sum", "Cannot access descriptor");
+	}
+	@:chkHeader(e,GRPsum_@1_@3)@
+	/* init: set all sums to zero */
+	bn->tsorted = bn->hsorted = 0;
+	ALIGNsetH(bn, e);
+	ei = bat_iterator(e);
+	bi = bat_iterator(b);
+	bni = bat_iterator(bn);
+
+	if (BAThordered(e)&1) {
+		min = *(oid*)BUNhead(ei, BUNfirst(e));
+		BATloop(e, p, q) {
+			if (BUNfastins(bn, BUNhead(ei,p), &zero) == NULL) {
+				BBPreclaim(bn);
+				return GDK_FAIL;
+			}
+		}
+		max = *(oid*)BUNhead(ei, BUNlast(e)-1);
+	} else {
+		min = max = *(oid*)BUNhead(ei, BUNfirst(e));
+		BATloop(e, p, q) {
+			if (BUNfastins(bn, BUNhead(ei,p), &zero) == NULL) {
+				BBPreclaim(bn);
+				return GDK_FAIL;
+			}
+			i = *(oid*)BUNhead(ei, p);
+			if (i < min)
+				min = i;
+			else if (i > max)
+				max = i;
+		}
+	}
+	range = max - min + 1;
+
+	/* scan b, and add values to sums in-place */
+	if (range > SMALL_AGGR_MAX) {
+		ALGODEBUG THRprintf(GDKout, "#CMDaggr_sum_@1_@3: range(=" SZFMT ") > SMALL_AGGR_MAX(=%d)  => large_aggr_sum\n",(size_t) range,SMALL_AGGR_MAX);
+		@:large_aggr_sum(@1,@2,@3)@
+	} else {
+		ALGODEBUG THRprintf(GDKout, "#CMDaggr_sum_@1_@3: range(=" SZFMT ") <= SMALL_AGGR_MAX(=%d)  => small_aggr_sum\n",(size_t) range,SMALL_AGGR_MAX);
+		@:small_aggr_sum(@1,@2,@3)@
+	}
+	BBPkeepref(*retval = bn->batCacheid);
+	BBPreleaseref(b->batCacheid);
+	BBPreleaseref(e->batCacheid);
+	return MAL_SUCCEED;
+}
+
+group_export str GRPprod_@1_@3(int *retval, int *bid, int  *eid, bit *ignore_nils);
+str GRPprod_@1_@3(int *retval, int *bid, int  *eid, bit *ignore_nils)
+{
+	BAT *bn, *b, *e;
+	BATiter ei, bi, bni;
+	@3 one = (@3) 1, *prods;
+	BUN p, q, r;
+	oid i, range, min, max;
+
+	(void) ignore_nils; /* fool compiler */
+	if( (b= BATdescriptor(*bid)) == NULL ){
+		throw(MAL, "group.prod", "Cannot access descriptor");
+	}
+
+	@:chkHeader(b,GRPprod_@1_@3)@
+	if( (e= BATdescriptor(*eid)) == NULL ){
+		BBPreleaseref(b->batCacheid);
+		throw(MAL, "group.prod", "Cannot access descriptor");
+	}
+ 	bn = BATnew(e->htype, TYPE_@3, BATcount(e));
+	if (bn == NULL)
+		throw(MAL, "group.prod", "Cannot create descriptor");
+
+	@:chkHeader(e,GRPprod_@1_@3)@
+	/* init: set all prods to one */
+	bn->tsorted = bn->hsorted = 0;
+	ALIGNsetH(bn, e);
+	ei = bat_iterator(e);
+	bi = bat_iterator(b);
+	bni = bat_iterator(bn);
+
+	if (BAThordered(e)&1) {
+		min = *(oid*)BUNhead(ei, BUNfirst(e));
+		BATloop(e, p, q) {
+			if (BUNfastins(bn, BUNhead(ei,p), &one) == NULL) {
+				BBPreclaim(bn);
+				return GDK_FAIL;
+			}
+		}
+		max = *(oid*)BUNhead(ei, BUNlast(e)-1);
+	} else {
+		min = max = *(oid*)BUNhead(ei, BUNfirst(e));
+		BATloop(e, p, q) {
+			if (BUNfastins(bn, BUNhead(ei,p), &one) == NULL) {
+				BBPreclaim(bn);
+				return GDK_FAIL;
+			}
+			i = *(oid*)BUNhead(ei, p);
+			if (i < min)
+				min = i;
+			else if (i > max)
+				max = i;
+		}
+	}
+	range = max - min + 1;
+
+	/* scan b, and mul values to prods in-place */
+	if (range > SMALL_AGGR_MAX) {
+		ALGODEBUG THRprintf(GDKout, "#CMDaggr_prod_@1_@3: range(=" SZFMT ") > SMALL_AGGR_MAX(=%d)  => large_aggr_prod\n",(size_t) range,SMALL_AGGR_MAX);
+		@:large_aggr_prod(@1,@2,@3)@
+	} else {
+		ALGODEBUG THRprintf(GDKout, "#CMDaggr_prod_@1_@3: range(=" SZFMT ") <= SMALL_AGGR_MAX(=%d)  => small_aggr_prod\n",(size_t) range,SMALL_AGGR_MAX);
+		@:small_aggr_prod(@1,@2,@3)@
+	}
+	BBPkeepref(*retval = bn->batCacheid);
+	BBPreleaseref(b->batCacheid);
+	BBPreleaseref(e->batCacheid);
+	return MAL_SUCCEED;
+}
+@c
+@:arithsumprod(bte,tloc,bte)@
+@:arithsumprod(bte,tloc,sht)@
+@:arithsumprod(bte,tloc,int)@
+@:arithsumprod(bte,tloc,wrd)@
+@:arithsumprod(bte,tloc,lng)@
+@:arithsumprod(sht,tloc,sht)@
+@:arithsumprod(sht,tloc,int)@
+@:arithsumprod(sht,tloc,wrd)@
+@:arithsumprod(sht,tloc,lng)@
+@:arithsumprod(int,tloc,int)@
+@:arithsumprod(int,tloc,wrd)@
+@:arithsumprod(int,tloc,lng)@
+@:arithsumprod(wrd,tloc,wrd)@
+@:arithsumprod(wrd,tloc,lng)@
+@:arithsumprod(lng,tloc,lng)@
+@:arithsumprod(oid,tloc,oid)@
+@:arithsumprod(flt,tloc,flt)@
+@:arithsumprod(flt,tloc,dbl)@
+@:arithsumprod(dbl,tloc,dbl)@
+
+@= arithavg
+group_export str GRPavg_@1(int *ret, int *bid, int *eid);
+str GRPavg_@1(int *ret, int *bid, int *eid)
+{
+	BAT *b = NULL, *e = NULL;
+	BAT *bn = BATnew(e->htype, BATttype(b), BATcount(e));
+	BATiter ei, bi, bni;
+	size_t yy = 0, off;
+	size_t *cnt;
+	oid i, range, min, max;
+	dbl zero = (dbl) 0, *sums;
+	BUN p, q, r;
+
+	if (bn == NULL)
+		throw(MAL, "group.avg", "Cannot create descriptor");
+
+	if ((b = BATdescriptor(*bid)) == NULL ){
+		throw(MAL, "group.avg", "Cannot access descriptor");
+	}
+	@:chkHeader(b,GRPavg_@1)@
+	if( (e= BATdescriptor(*eid)) == NULL ){
+		BBPreleaseref(b->batCacheid);
+		throw(MAL, "group.@1", "Cannot access descriptor");
+	}
+	@:chkHeader(e,GRPavg_@1)@
+	off = BUNfirst(bn);
+	/* init sums and counts to zero */
+	bn->tsorted = bn->hsorted = 0;
+	ALIGNsetH(bn, e);
+	ei = bat_iterator(e);
+	bi = bat_iterator(b);
+	bni = bat_iterator(bn);
+
+	if (BAThordered(e)&1) {
+		min = *(oid*)BUNhead(ei, BUNfirst(e));
+		BATloop(e, p, q) {
+			if (BUNfastins(bn, BUNhead(ei,p), &zero) == NULL) {
+				BBPreclaim(bn);
+				return GDK_FAIL;
+			}
+		}
+		max = *(oid*)BUNhead(ei, BUNlast(e)-1);
+	} else {
+		min = max = *(oid*)BUNhead(ei, BUNfirst(e));
+		BATloop(e, p, q) {
+			if (BUNfastins(bn, BUNhead(ei,p), &zero) == NULL) {
+				BBPreclaim(bn);
+				return GDK_FAIL;
+			}
+			i = *(oid*)BUNhead(ei, p);
+			if (i < min)
+				min = i;
+			else if (i > max)
+				max = i;
+		}
+	}
+	range = max - min + 1;
+
+	/* scan b, adding sums, and incrementing counts */
+	if (range > SMALL_AGGR_MAX) {
+		ALGODEBUG THRprintf(GDKout, "#CMDaggr_avg_@1: range(=" SZFMT ") > SMALL_AGGR_MAX(=%d)  =>  large_aggr_avg\n",(size_t) range,SMALL_AGGR_MAX);
+		@:large_aggr_avg(@1,@2)@
+	} else {
+		ALGODEBUG THRprintf(GDKout, "#CMDaggr_avg_@1: range(=" SZFMT ") <= SMALL_AGGR_MAX(=%d)  =>  small_aggr_avg\n",(size_t) range,SMALL_AGGR_MAX);
+		@:small_aggr_avg(@1,@2)@
+	}
+	BBPkeepref(*ret= bn->batCacheid);
+	BBPreleaseref(b->batCacheid);
+	BBPreleaseref(e->batCacheid);
+	return MAL_SUCCEED;
+}
+@c
+@:arithavg(bte,tloc)@
+@:arithavg(sht,tloc)@
+@:arithavg(int,tloc)@
+@:arithavg(wrd,tloc)@
+@:arithavg(oid,tloc)@
+@:arithavg(lng,tloc)@
+@:arithavg(flt,tloc)@
+@:arithavg(dbl,tloc)@
+
+@= arithvar
+int
+CMDaggr_variance_@1(BAT **ret, BAT *b, BAT *e)
+{
+	size_t nElements = BATcount(e);
+	BAT *bn = *ret = BATnew(e->htype, BATttype(b), nElements);
+	BATiter ei = bat_iterator(e), bi = bat_iterator(b);
+	size_t off, idx = 0;
+	int *cnt ;
+	dbl *sum ;
+	dbl *sumsquares ;
+	@1 zero = (@1) 0;
+	BUN p, q, r;
+	oid previousOid = oid_nil;
+
+	if (bn == NULL)
+		return GDK_FAIL;
+	off = BUNfirst(e);
+	cnt = (int*) GDKmalloc(nElements*sizeof(int));
+	if (cnt == NULL) {
+		BBPreclaim(bn);
+		return GDK_FAIL;
+	}
+	sum = (dbl*) GDKmalloc(nElements*sizeof(dbl));
+	if (sum == NULL) {
+		BBPreclaim(bn);
+		GDKfree(cnt);
+		return GDK_FAIL;
+	}
+	sumsquares = (dbl*) GDKmalloc(nElements*sizeof(dbl));
+	if (sumsquares == NULL) {
+		BBPreclaim(bn);
+		GDKfree(cnt);
+		GDKfree(sum);
+		return GDK_FAIL;
+	}
+
+	/* scan b, adding sums, and incrementing counts */
+	if (BATprepareHash(bn)) {
+		BBPreclaim(bn);
+		GDKfree(cnt);
+		GDKfree(sum);
+		GDKfree(sumsquares);
+		return GDK_FAIL;
+	}
+
+	/* init sums and counts to zero */
+	memset(cnt, 0, nElements*sizeof(int));
+	memset(sum, 0, nElements*sizeof(dbl));
+	memset(sumsquares, 0, nElements*sizeof(dbl));
+
+	BATloop(b, p, q) {
+		oid *h = (oid*) BUNhead(bi,p);
+		if (*h != previousOid) {
+			previousOid = *h;
+			BUNfndOID(r,ei,h);
+			if (r == BUN_NONE)
+				continue;
+			idx = r-off;
+		}
+
+		if (cnt[idx] != int_nil) {
+			@1 v = *(@1*) BUNtloc(bi,p);
+			if (v == @1_nil) {
+				cnt[idx] = int_nil;
+			} else {
+				cnt[idx]++;
+				sum[idx] += v;
+				sumsquares[idx] += (v * v);
+			}
+		}
+	}
+
+	/* postprocess by dividing sumsquares and sum by counts and
+	   substracting square of the averages from the average sum of
+	   squares */
+	idx = 0;
+	BATloop(e, p, q) {
+		if (cnt[idx] == int_nil) {
+			@1 _nil = @1_nil;
+			if (BUNfastins(bn, BUNhead(ei,p), (ptr)&_nil) == NULL) {
+				*ret = NULL;
+				break;
+			}
+		} else if (cnt[idx] <= 1) {
+			if (BUNfastins(bn, BUNhead(ei,p), &zero) == NULL) {
+				*ret = NULL;
+				break;
+			}
+		} else {
+			dbl avg = (sum[idx] / cnt[idx]);
+			@1 variance = (@1) (sumsquares[idx] / cnt[idx] - (avg * avg));
+			if (BUNfastins(bn, BUNhead(ei,p), &variance) == NULL) {
+				*ret = NULL;
+				break;
+			}
+		}
+		idx++;
+	}
+	GDKfree(cnt);
+	GDKfree(sum);
+	if (!*ret) {
+		BBPreclaim(bn);
+		return GDK_FAIL;
+	}
+	bn->hsorted = bn->tsorted = 0;
+	ALIGNsetH(bn, e);
+	return GDK_SUCCEED;
+}
+@c
+@:arithvar(bte)@
+@:arithvar(sht)@
+@:arithvar(int)@
+@:arithvar(wrd)@
+@:arithvar(lng)@
+@:arithvar(flt)@
+@:arithvar(dbl)@
 
 @= extreme
-group_export str GRP@1(int *retval, int *bid,int  *eid);
-str GRP@1(int *retval, int *bid,int  *eid){
-		BAT *b = NULL, *e = NULL;
-		BAT *bn;
-		int (*cmp)(ptr,ptr);
-		ptr nil;
-		int xx, yy, off;
-		ptr *extremes;
-		BUN p, q, r;
+static int 
+CMDaggr_@1_@3(BAT **ret, BAT *b, BAT *e)
+{
+	BAT *bn = *ret = BATnew(e->htype, BATttype(b), BATcount(e));
+	BATiter ei = bat_iterator(e), bi = bat_iterator(b);
+	int (*cmp)(ptr,ptr);
+	ptr nil;
+	size_t yy = 0, off;
+	@3 *extremes;
+	BUN p, q, r;
 
-		if( (b= BATdescriptor(*bid)) == NULL ){
-			throw(MAL, "group.@1", "Cannot access descriptor");
-		}
+	if (bn == NULL)
+		return GDK_FAIL;
+	cmp = BATatoms[bn->ttype].atomCmp;
+	nil = ATOMnilptr(bn->ttype);
+	off = BUNfirst(e);
+	extremes = (@3*) GDKmalloc(BATcount(e)*sizeof(@3));
+	if (extremes == NULL) {
+		BBPreclaim(bn);
+		return GDK_FAIL;
+	}
 
-		@:chkHeader(b,GRP@1)@
-		if( (e= BATdescriptor(*eid)) == NULL ){
-			BBPreleaseref(b->batCacheid);
-			throw(MAL, "group.@1", "Cannot access descriptor");
-		}
-		@:chkHeader(e,GRP@1)@
+	/* init: set all extremes to the zero pointer */
+	@:extreme_init_@3(@4)@
 
-		bn = BATnew(e->htype, BATttype(b), BATcount(e));
-		cmp = BATatoms[bn->ttype].atomCmp;
-		nil = ATOMnilptr(bn->ttype);
-		yy = 0; off = BUNindex(e,BUNfirst(e));
-		extremes = (ptr*) GDKmalloc(BATcount(e)*sizeof(ptr));
-
-		/* init: set all extremes to the zero pointer */
-		memset(extremes, 0, BATcount(e)*sizeof(ptr));
-
-		/* scan b and replace totals by the extreme value (just pointers to vals in b) */
-		(void) BATprepareHash(e);
-		BATloopFast(b, p, q, xx) {
-				oid *h = (oid*) BUNhead(b,p);
-				ptr t =  BUNtail(b,p);
-
-				BUNfndOID(r,e,h);
-				if (r) {
-						ptr *val = extremes + (BUNindex(e,r) - off);
-						if (*val != nil) {
-								if ((*cmp)(t,nil) == 0) {
-										*val = nil;
-								} else if (*val == NULL || (*cmp)(t,*val) @2 0) {
-										*val = t;
-								}
-						}
-				}
-		}
-		/* insert the extreme values into the result */
-		BATloopFast(e, p, q, xx) {
-				ptr val = extremes[yy++];
-				BUNfastins(bn, BUNhead(e,p), val?val:nil);
-		}
-		bn->tsorted = bn->hsorted = 0;
-		ALIGNsetH(bn, e);
+	/* scan b and replace totals by the extreme value (just pointers to vals in b) */
+	if (BATprepareHash(e)) {
+		BBPreclaim(bn);
 		GDKfree(extremes);
-		*retval= bn->batCacheid;
-		BBPkeepref(*retval);
+		return GDK_FAIL;
+	}
+	BATloop(b, p, q) {
+		oid *h = (oid*) BUNhead(bi,p);
+		ptr t =  BUNtail(bi,p);
+
+		BUNfndOID(r,ei,h);
+		if (r != BUN_NONE) {
+			@:extreme_body_@3(@2)@
+		}
+	}
+	/* insert the extreme values into the result */
+	yy = 0;
+	BATloop(e, p, q) {
+		@3 val = extremes[yy++];
+		if (BUNfastins(bn, BUNhead(ei,p), @:extreme_tail_@3@) == NULL) {
+			ret = NULL;
+			break;
+		}
+	}
+	GDKfree(extremes);
+	if (!ret) {
+		BBPreclaim(bn);
+		return GDK_FAIL;
+	}
+	bn->tsorted = bn->hsorted = 0;
+	ALIGNsetH(bn, e);
+	return GDK_SUCCEED;
+}
+@= extreme_init_oid
+	for (yy = 0 ; yy < BATcount(e) ; yy++) extremes[yy] = GDK_oid_@1;
+@= extreme_init_ptr
+	memset(extremes, 0, BATcount(e)*sizeof(ptr));
+@= extreme_body_oid
+			oid *val = extremes + r - off;
+			if (*val != *(oid*)nil) {
+				if ((*cmp)(t,nil) == 0) {
+					*val = *(oid*)nil;
+				} else if ((*cmp)(t,val) @1 0) {
+					*val = *(oid*)t;
+				}
+			}
+@= extreme_body_ptr
+			ptr *val = extremes + r - off;
+			if (*val != nil) {
+				if ((*cmp)(t,nil) == 0) {
+					*val = nil;
+				} else if (*val == NULL || (*cmp)(t,*val) @1 0) {
+					*val = t;
+				}
+			}
+@= extreme_tail_oid
+	&val
+@= extreme_tail_ptr
+	val?val:nil
+@= extreme_
+@:extreme(@1,@2,oid,@3)@
+@:extreme(@1,@2,ptr,@3)@
+str
+GRP@1(int *retval, int *bid, int *eid)
+{
+	BAT *b = NULL, *e = NULL, *bn;
+	int res = 0;
+
+	if ((b = BATdescriptor(*bid)) == NULL ){
+		throw(MAL, "group.@1", "Cannot access descriptor");
+	}
+	@:chkHeader(b,GRP@1)@
+	if ((e = BATdescriptor(*eid)) == NULL ){
 		BBPreleaseref(b->batCacheid);
-		BBPreleaseref(e->batCacheid);
-		return MAL_SUCCEED;
+		throw(MAL, "group.@1", "Cannot access descriptor");
+	}
+	@:chkHeader(e,GRP@1)@
+
+	if (b->ttype == TYPE_void) {
+		res = CMDaggr_@1_oid(&bn, b, e);
+	} else {
+		res = CMDaggr_@1_ptr(&bn, b, e);
+	}
+	BBPreleaseref(b->batCacheid);
+	BBPreleaseref(e->batCacheid);
+	if (!res)
+		throw(MAL, "group.@1", "Cannot access descriptor");
+	BBPkeepref(*retval = bn->batCacheid);
+	return MAL_SUCCEED;
 }
 @c
-@:extreme(min,<)@
-@:extreme(max,>)@
+@:extreme_(min,<,max)@
+@:extreme_(max,>,min)@
+
 @-
 The simple extreme operations exploit the grouping and order
 properties to speed up the process.
 @= xqMinMaxImpl
 group_export str GRP@1_oid_@2(int *retval, int *bid);
-str GRP@1_oid_@2(int *retval, int *bid){
-		BAT *b;
-		BAT *bn;
-		oid grp= oid_nil;
-		@2 *val= 0;
-		int xx;
-		BUN p, q;
+str GRP@1_oid_@2(int *retval, int *bid)
+{
+	BATiter bi, bni;
+	BAT *b;
+	BAT *bn;
+	oid grp= oid_nil;
+	@2 *val= 0;
+	BUN p, q;
 
-		if( (b= BATdescriptor(*bid)) == NULL ){
-			throw(MAL, "group.@1", "Cannot access descriptor");
-		}
-		/* use expensive operation when the BAT is not ordered on the head */
-		if( !(b->hsorted&1) ){
-			/* determine groups first */
-			BBPreleaseref(b->batCacheid);
-			throw(MAL, "group","not yet implemented");
-		}
-
-		@:chkHeader(b,GRP@1_oid_@2)@
-
-		bn = BATnew(BAThtype(b), BATttype(b), BATcount(b));
-
-		BATloopFast(b, p, q, xx) {
-				oid h = *(oid*) BUNhead(b,p);
-				@2 t =  *(@2*) BUNtail(b,p);
-
-				if( h != grp){
-					/* switch to a new group */
-					BUNins(bn, &h, &t, FALSE);
-					grp= h;
-					val = (@2*) BUNtail(bn,BUNlast(bn)-xx);
-				} else
-				if( t @3 *val )
-						*val = t;
-		}
-		bn->hsorted = b->hsorted ;
-		bn->tsorted = b->tsorted ;
-		BBPkeepref(*retval= bn->batCacheid);
+	if( (b= BATdescriptor(*bid)) == NULL ){
+		throw(MAL, "group.@1", "Cannot access descriptor");
+	}
+	/* use expensive operation when the BAT is not ordered on the head */
+	if( !(b->hsorted&1) ){
+		/* determine groups first */
 		BBPreleaseref(b->batCacheid);
-		return MAL_SUCCEED;
+		throw(MAL, "group","not yet implemented");
+	}
+
+	@:chkHeader(b,GRP@1_oid_@2)@
+
+	bn = BATnew(BAThtype(b), BATttype(b), BATcount(b));
+
+	bi = bat_iterator(b);
+	bni = bat_iterator(bn);
+	BATloop(b, p, q) {
+		oid h = *(oid*) BUNhead(bi,p);
+		@2 t =  *(@2*) BUNtail(bi,p);
+
+		if( h != grp){
+			/* switch to a new group */
+			BUNins(bn, &h, &t, FALSE);
+			grp= h;
+			val = (@2*) BUNtail(bni,BUNlast(bn)-1);
+		} else if( t @3 *val )
+			*val = t;
+	}
+	bn->hsorted = b->hsorted ;
+	bn->tsorted = b->tsorted ;
+	BBPkeepref(*retval= bn->batCacheid);
+	BBPreleaseref(b->batCacheid);
+	return MAL_SUCCEED;
 }
 @c
  @:xqMinMaxImpl(min,oid,<)@
+ @:xqMinMaxImpl(min,bte,<)@
  @:xqMinMaxImpl(min,sht,<)@
  @:xqMinMaxImpl(min,int,<)@
  @:xqMinMaxImpl(min,lng,<)@
+ @:xqMinMaxImpl(min,wrd,<)@
  @:xqMinMaxImpl(min,flt,<)@
  @:xqMinMaxImpl(min,dbl,<)@
  @:xqMinMaxImpl(max,oid,>)@
+ @:xqMinMaxImpl(max,bte,>)@
  @:xqMinMaxImpl(max,sht,>)@
  @:xqMinMaxImpl(max,int,>)@
  @:xqMinMaxImpl(max,lng,>)@
+ @:xqMinMaxImpl(max,wrd,>)@
  @:xqMinMaxImpl(max,flt,>)@
  @:xqMinMaxImpl(max,dbl,>)@
 
-@-
+@c
 @= large_aggr_count
-		(void) BATprepareHash(bn);
-		BATloopFast(b, p, q, xx) {
-				oid *h = (oid*) BUNhead(b,p);
+	if (BATprepareHash(bn)) {
+		BBPreclaim(bn);
+		return GDK_FAIL;
+	}
+	BATloop(b, p, q) {
+		oid *h = (oid*) BUNhead(bi,p);
 
-				BUNfndOID(r, bn, h);
-				if (r) {
-						 ptr t = BUNtail(b,p);
-						 (void) t ; /* fool compiler */
-						  /*if (ATOMcmp(btt,t,bt_nil)) {*/
-						@1 {
-								int *dst = (int*) BUNtloc(bn, r);
-								(*dst)++;
-						}
-				}
+		BUNfndOID(r, bni, h);
+		if (r != BUN_NONE) {
+			ptr t = BUNtail(bi,p);
+			(void) t; /* silence compiler about unused variable */
+			@1 {
+				int *dst = (int*) BUNtloc(bni, r);
+				(*dst)++;
+			}
 		}
+	}
+@c
 @= small_aggr_count
-		cnt  = (int*) GDKmalloc(range*sizeof(int));
-		memset(cnt, 0, range*sizeof(int));
-		BATloopFast(b, p, q, xx) {
-				int h = (int)(*(oid*) BUNhead(b,p)) - min;
+	cnt  = (int*) GDKmalloc(range*sizeof(int));
+	memset(cnt, 0, range*sizeof(int));
+	BATloop(b, p, q) {
+		oid h = (*(oid*) BUNhead(bi,p)) - min;
 
-				if (h >= 0 && h < range) {
-						 ptr t = BUNtail(b,p);
-						(void)t; /* fool compiler */
-						/* if (ATOMcmp(btt,t,bt_nil)) {*/
-						@1 {
-								cnt[h]++;
-						}
-				}
+		if (h < range) {
+			ptr t = BUNtail(bi,p);
+			(void) t; /* silence compiler about unused variable */
+			@1 {
+				cnt[h]++;
+			}
 		}
-		BATloopFast(bn, p, q, xx) {
-				int h = (int)(*(oid*) BUNhead(bn,p)) - min;
-				*(int*)BUNtloc(bn, p) = cnt[h];
-		}
-		GDKfree(cnt);
-
+	}
+	BATloop(bn, p, q) {
+		oid h = (*(oid*) BUNhead(bni,p)) - min;
+		*(int*)BUNtloc(bni, p) = cnt[h];
+	}
+        GDKfree(cnt);
 @c
 
 group_export str GRPaggr_count(int *retval, int *bid, int *eid, bit *ignore_nils);
 str
 GRPaggr_count(int *retval, int *bid, int *eid, bit *ignore_nils)
 {
-	BAT *b = NULL, *e = NULL;
-	BAT *bn;
+/* XXX in a large BAT, it is conceivable that there are head elements
+   that occur more often than fits in an "int", so the return BAT
+   should really have a tail type of size_t.
+ */
+	BAT *bn, *b = NULL, *e = NULL;
+	BATiter ei, bi, bni;
 	int zero = 0, *cnt;
 	BUN p, q, r;
-	int xx, i, range, min, max;
+	oid i, range, min, max;
 	int btt;
 	ptr bt_nil;
 
@@ -1807,23 +2183,34 @@ GRPaggr_count(int *retval, int *bid, int *eid, bit *ignore_nils)
 	@:chkHeader(e,GRPaggr_count)@
 
 	bn = BATnew(e->htype, TYPE_int, BATcount(e));
+	if (bn == NULL)
+		throw(MAL, "group.count", "Cannot create descriptor");
 	btt = b->ttype;
 	bt_nil = ATOMnilptr(b->ttype);
 
 	/* init: set all sums to zero */
 	bn->tsorted = bn->hsorted = 0;
 	ALIGNsetH(bn, e);
+	ei = bat_iterator(e);
+	bi = bat_iterator(b);
+	bni = bat_iterator(bn);
 	if (BAThordered(e) & 1) {
-		min = (int) (*(oid *) BUNhead(e, BUNfirst(e)));
-		BATloopFast(e, p, q, xx) {
-			BUNfastins(bn, BUNhead(e, p), &zero);
+		min = *(oid *) BUNhead(ei, BUNfirst(e));
+		BATloop(e, p, q) {
+			if (BUNfastins(bn, BUNhead(ei, p), &zero) == NULL) {
+				BBPreclaim(bn);
+				throw(MAL, "group.count", "Insert Failed");
+			}
 		}
-		max = (int) (*(oid *) BUNhead(e, BUNlast(e) - BUNsize(e)));
+		max = *(oid *) BUNhead(ei, BUNlast(e) - 1);
 	} else {
-		min = max = (int) (*(oid *) BUNhead(e, BUNfirst(e)));
-		BATloopFast(e, p, q, xx) {
-			BUNfastins(bn, BUNhead(e, p), &zero);
-			i = (int) (*(oid *) BUNhead(e, p));
+		min = max = *(oid *) BUNhead(ei, BUNfirst(e));
+		BATloop(e, p, q) {
+			if (BUNfastins(bn, BUNhead(ei, p), &zero) == NULL) {
+				BBPreclaim(bn);
+				throw(MAL, "group.count", "Insert Failed");
+			}
+			i = *(oid *) BUNhead(ei, p);
 			if (i < min)
 				min = i;
 			else if (i > max)
@@ -1835,30 +2222,26 @@ GRPaggr_count(int *retval, int *bid, int *eid, bit *ignore_nils)
 	/* scan b, and add increment totals for true values */
 	if (range > SMALL_AGGR_MAX) {
 		if (*ignore_nils) {
-			ALGODEBUG THRprintf(GDKout, "#CMDaggr_count: range(=%lu) > SMALL_AGGR_MAX(=%d)  =>  large_aggr_count(if (ATOMcmp(btt,t,bt_nil)))\n", (unsigned long) range, SMALL_AGGR_MAX);
+			ALGODEBUG THRprintf(GDKout, "#CMDaggr_count: range(=" SZFMT ") > SMALL_AGGR_MAX(=%d)  =>  large_aggr_count(if (ATOMcmp(btt,t,bt_nil)))\n", (size_t) range, SMALL_AGGR_MAX);
 
-			@:large_aggr_count(if (ATOMcmp(btt, t, bt_nil)))@
+			@:large_aggr_count(if(ATOMcmp(btt,t,bt_nil)))@
 		} else {
-			ALGODEBUG THRprintf(GDKout, "#CMDaggr_count: range(=%lu) > SMALL_AGGR_MAX(=%d)  =>  large_aggr_count()\n", (unsigned long) range, SMALL_AGGR_MAX);
+			ALGODEBUG THRprintf(GDKout, "#CMDaggr_count: range(=" SZFMT ") > SMALL_AGGR_MAX(=%d)  =>  large_aggr_count()\n", (size_t) range, SMALL_AGGR_MAX);
 
 			@:large_aggr_count()@
 		}
-
 	} else {
 		if (*ignore_nils) {
-			ALGODEBUG THRprintf(GDKout, "#CMDaggr_count: range(=%lu) <= SMALL_AGGR_MAX(=%d)  =>  small_aggr_count(if (ATOMcmp(btt,t,bt_nil)))\n", (unsigned long) range, SMALL_AGGR_MAX);
+			ALGODEBUG THRprintf(GDKout, "#CMDaggr_count: range(=" SZFMT ") <= SMALL_AGGR_MAX(=%d)  =>  small_aggr_count(if (ATOMcmp(btt,t,bt_nil)))\n", (size_t) range, SMALL_AGGR_MAX);
 
-			@:small_aggr_count(if (ATOMcmp(btt, t, bt_nil)))@
+			@:small_aggr_count(if(ATOMcmp(btt,t,bt_nil)))@
 		} else {
-			ALGODEBUG THRprintf(GDKout, "#CMDaggr_count: range(=%lu) <= SMALL_AGGR_MAX(=%d)  =>  small_aggr_count()\n", (unsigned long) range, SMALL_AGGR_MAX);
+			ALGODEBUG THRprintf(GDKout, "#CMDaggr_count: range(=" SZFMT ") <= SMALL_AGGR_MAX(=%d)  =>  small_aggr_count()\n", (size_t) range, SMALL_AGGR_MAX);
 
 			@:small_aggr_count()@
 		}
-
 	}
-
-	*retval = bn->batCacheid;
-	BBPkeepref(*retval);
+	BBPkeepref(*retval = bn->batCacheid);
 	BBPreleaseref(b->batCacheid);
 	BBPreleaseref(e->batCacheid);
 	return MAL_SUCCEED;
@@ -1868,11 +2251,10 @@ group_export str GRPsize(int *retval, int *bid, int *eid);
 str
 GRPsize(int *retval, int *bid, int *eid)
 {
-	BAT *b = NULL, *e = NULL;
-	BAT *bn;
-	int zero = 0;
+	BAT *bn, *b = NULL, *e = NULL;
+	BATiter ei, bi, bni;
+	wrd zero = 0;
 	BUN p, q, r;
-	int xx;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "group.size", "Cannot access descriptor");
@@ -1885,29 +2267,39 @@ GRPsize(int *retval, int *bid, int *eid)
 	}
 	@:chkHeader(e,GRPsize)@
 
-	bn = BATnew(e->htype, TYPE_int, BATcount(e));
+	bn = BATnew(e->htype, TYPE_wrd, BATcount(e));
+	if (bn == NULL)
+		throw(MAL, "group.size", "Cannot create descriptor");
 	/* init: set all sums to zero */
 	bn->tsorted = bn->hsorted = 0;
 	ALIGNsetH(bn, e);
-	BATloopFast(e, p, q, xx) {
-		BUNfastins(bn, BUNhead(e, p), &zero);
+	ei = bat_iterator(e);
+	bi = bat_iterator(b);
+	bni = bat_iterator(bn);
+	BATloop(e, p, q) {
+		if (BUNfastins(bn, BUNhead(ei, p), &zero) == NULL) {
+			BBPreclaim(bn);
+			throw(MAL, "group.count", "Insert Failed");
+		}
 	}
 	/* scan b, and add increment totals for true values */
-	(void) BATprepareHash(bn);
-	BATloopFast(b, p, q, xx) {
-		if (*(bit *) BUNtloc(b, p) == TRUE) {
-			oid *h = (oid *) BUNhead(b, p);
+	if (BATprepareHash(bn)) {
+		BBPreclaim(bn);
+		return GDK_FAIL;
+	}
+	BATloop(b, p, q) {
+		if (*(bit *) BUNtloc(bi, p) == TRUE) {
+			oid *h = (oid *) BUNhead(bi, p);
 
-			BUNfndOID(r, bn, h);
-			if (r) {
-				int *dst = (int *) BUNtloc(bn, r);
+			BUNfndOID(r, bni, h);
+			if (r != BUN_NONE) {
+				wrd *dst = (wrd *) BUNtloc(bni, r);
 
 				(*dst)++;
 			}
 		}
 	}
-	*retval = bn->batCacheid;
-	BBPkeepref(*retval);
+	BBPkeepref(*retval = bn->batCacheid);
 	BBPreleaseref(b->batCacheid);
 	BBPreleaseref(e->batCacheid);
 	return MAL_SUCCEED;
@@ -1917,57 +2309,63 @@ GRPsize(int *retval, int *bid, int *eid)
 The window aggregate functions
 @= windowsum
 group_export str GRPslidingsum_@1(int *retval, int *bid, int  *size, int *shift);
-str GRPslidingsum_@1(int *retval, int *bid, int  *size, int *shift){
-		BAT *b, *bn;
-		@2 sum;
-		oid o= oid_nil;
-		BUN p, q;
-		int xx,i;
+str GRPslidingsum_@1(int *retval, int *bid, int  *size, int *shift)
+{
+	BATiter bi;
+	BAT *b, *bn;
+	@2 sum;
+	oid o= oid_nil;
+	BUN p, q;
+	int i;
 
-		if( *shift <=0){
-			throw(MAL, "group.sum", "Illegal shift value");
-		}
-			
-		if( (b= BATdescriptor(*bid)) == NULL ){
-			throw(MAL, "group.sum", "Cannot access descriptor");
-		}
-		@:chkHeader(b,GRPwindowsum_@1)@
+	if( *shift <=0){
+		throw(MAL, "group.sum", "Illegal shift value");
+	}
+		
+	if( (b= BATdescriptor(*bid)) == NULL ){
+		throw(MAL, "group.sum", "Cannot access descriptor");
+	}
+	@:chkHeader(b,GRPwindowsum_@1)@
 
-		/* init: set all sums to zero */
-		bn= BATnew( TYPE_void, TYPE_@2, BATcount(b)/ *size +1);
-		bn->tsorted = bn->hsorted = 0;
-		BATseqbase(bn,0);
+	/* init: set all sums to zero */
+	bn= BATnew( TYPE_void, TYPE_@2, BATcount(b)/ *size +1);
+	bn->tsorted = bn->hsorted = 0;
+	BATseqbase(bn,0);
 
-		i= *size;
-		sum =0;
-		BATloopFast(b, p, q, xx) {
-				sum += *(@1*) BUNtail(b,p);
-				if( --i == 0){
-					BUNfastins(bn, &o, &sum);
-					/* slide here */
-					if( *size != *shift ){
-						p-= (*size-*shift)*xx;
-					}
-					i= *size;
-					sum =0;
-				}
-		}
-		if(i != *size)
+	i = *size;
+	sum =0;
+	bi = bat_iterator(b);
+	BATloop(b, p, q) {
+		sum += *(@1*) BUNtail(bi,p);
+		if (--i == 0){
 			BUNfastins(bn, &o, &sum);
+			/* slide here */
+			if (*size != *shift ){
+				p -= (*size-*shift);
+			}
+			i = *size;
+			sum =0;
+		}
+	}
+	if(i != *size)
+		BUNfastins(bn, &o, &sum);
 
-		*retval= bn->batCacheid;
-		BBPkeepref(*retval);
-		BBPreleaseref(b->batCacheid);
-		return MAL_SUCCEED;
+	*retval= bn->batCacheid;
+	BBPkeepref(*retval);
+	BBPreleaseref(b->batCacheid);
+	return MAL_SUCCEED;
 }
 group_export str GRPwindowsum_@1(int *retval, int *bid, int  *size);
 str GRPwindowsum_@1(int *retval, int *bid, int  *size){
 	return GRPslidingsum_@1(retval,bid,size,size);
 }
 @c
+@:windowsum(bte,lng)@
 @:windowsum(sht,lng)@
 @:windowsum(int,lng)@
 @:windowsum(lng,lng)@
+@:windowsum(oid,lng)@
+@:windowsum(wrd,lng)@
 @:windowsum(flt,dbl)@
 @:windowsum(dbl,dbl)@
 @}

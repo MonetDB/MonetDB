@@ -182,7 +182,7 @@ CMDBATreduce(int *ret, int *bid)
 
 	/* reduce memory footprint by dropping hashes 
 	of non-persistent bats */
-	if( !VIEWparent(b) && b->batSharecnt==0){
+	if( !isVIEW(b) && b->batSharecnt==0){
 #ifdef TRACE_ADVICE
 		if(b->hhash)
 			printf("found hhash %s %d\n",BBP_logical(b->batCacheid), (int)(BATcount(b) * sizeof(hash_t)));
@@ -387,7 +387,7 @@ CMDbatunpack(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BAT *b;
 	int bid;
-	ptr p;
+	BUN p;
 	ValPtr head, tail;
 
 	bid = *(int *) getArgValue(stk, pci, 2);
@@ -399,9 +399,10 @@ CMDbatunpack(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	head = &stk->stk[pci->argv[0]];
 	tail = &stk->stk[pci->argv[1]];
 	p = BUNfirst(b);
-	if (p) {
-		VALinit(head, getArgType(mb, pci, 0), BUNhead(b, p));
-		VALinit(tail, getArgType(mb, pci, 1), BUNtail(b, p));
+	if (p < BUNlast(b)) {
+		BATiter bi = bat_iterator(b);
+		VALinit(head, getArgType(mb, pci, 0), BUNhead(bi, p));
+		VALinit(tail, getArgType(mb, pci, 1), BUNtail(bi, p));
 	}
 
 	BBPunfix(b->batCacheid);

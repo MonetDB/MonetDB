@@ -198,8 +198,8 @@ Module: "aggr"
 
 Module: "aggrX3"
 
-[ 129 ]
-[ 129 ]
+[ 133 ]
+[ 133 ]
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function			type		signature									help								  # name
 # str			str		str										str								  # type
@@ -264,6 +264,8 @@ Module: "aggrX3"
 [ "{prod_wrd}",		  "COMMAND:   ",  "{prod_wrd}(BAT[oid,bte], BAT[oid,oid], BAT[oid,any]) : BAT[oid,wrd]",	  "grouped tail prod on bte"					  ]
 [ "{prod_wrd}",		  "COMMAND:   ",  "{prod_wrd}(BAT[oid,int], BAT[oid,any]) : BAT[oid,wrd]",			  "grouped tail prod on int"					  ]
 [ "{prod_wrd}",		  "COMMAND:   ",  "{prod_wrd}(BAT[oid,int], BAT[oid,oid], BAT[oid,any]) : BAT[oid,wrd]",	  "grouped tail prod on int"					  ]
+[ "{prod_wrd}",		  "COMMAND:   ",  "{prod_wrd}(BAT[oid,lng], BAT[oid,any]) : BAT[oid,wrd]",			  "grouped tail prod on lng"					  ]
+[ "{prod_wrd}",		  "COMMAND:   ",  "{prod_wrd}(BAT[oid,lng], BAT[oid,oid], BAT[oid,any]) : BAT[oid,wrd]",	  "grouped tail prod on lng"					  ]
 [ "{prod_wrd}",		  "COMMAND:   ",  "{prod_wrd}(BAT[oid,sht], BAT[oid,any]) : BAT[oid,wrd]",			  "grouped tail prod on sht"					  ]
 [ "{prod_wrd}",		  "COMMAND:   ",  "{prod_wrd}(BAT[oid,sht], BAT[oid,oid], BAT[oid,any]) : BAT[oid,wrd]",	  "grouped tail prod on sht"					  ]
 [ "{prod_wrd}",		  "COMMAND:   ",  "{prod_wrd}(BAT[oid,wrd], BAT[oid,any]) : BAT[oid,wrd]",			  "grouped tail prod on wrd"					  ]
@@ -315,6 +317,8 @@ Module: "aggrX3"
 [ "{sum_wrd}",		  "COMMAND:   ",  "{sum_wrd}(BAT[oid,bte], BAT[oid,oid], BAT[oid,any]) : BAT[oid,wrd]",		  "grouped tail sum on bte"					  ]
 [ "{sum_wrd}",		  "COMMAND:   ",  "{sum_wrd}(BAT[oid,int], BAT[oid,any]) : BAT[oid,wrd]",			  "grouped tail sum on int"					  ]
 [ "{sum_wrd}",		  "COMMAND:   ",  "{sum_wrd}(BAT[oid,int], BAT[oid,oid], BAT[oid,any]) : BAT[oid,wrd]",		  "grouped tail sum on int"					  ]
+[ "{sum_wrd}",		  "COMMAND:   ",  "{sum_wrd}(BAT[oid,lng], BAT[oid,any]) : BAT[oid,wrd]",			  "grouped tail sum on lng"					  ]
+[ "{sum_wrd}",		  "COMMAND:   ",  "{sum_wrd}(BAT[oid,lng], BAT[oid,oid], BAT[oid,any]) : BAT[oid,wrd]",		  "grouped tail sum on lng"					  ]
 [ "{sum_wrd}",		  "COMMAND:   ",  "{sum_wrd}(BAT[oid,sht], BAT[oid,any]) : BAT[oid,wrd]",			  "grouped tail sum on sht"					  ]
 [ "{sum_wrd}",		  "COMMAND:   ",  "{sum_wrd}(BAT[oid,sht], BAT[oid,oid], BAT[oid,any]) : BAT[oid,wrd]",		  "grouped tail sum on sht"					  ]
 [ "{sum_wrd}",		  "COMMAND:   ",  "{sum_wrd}(BAT[oid,wrd], BAT[oid,any]) : BAT[oid,wrd]",			  "grouped tail sum on wrd"					  ]

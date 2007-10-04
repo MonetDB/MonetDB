@@ -15,7 +15,7 @@
 @' All Rights Reserved.
 
 @f gdk_search
-@a M. L. Kersten, P. Boncz
+@a M. L. Kersten, P. Boncz, N. Nes
 
 @* Search Accelerators
 
@@ -99,30 +99,29 @@ gdk_export hash_t HASHlist(Hash *h, size_t i);
 @= hashfnd
 #define HASHfnd_@1(x,y,z)	{					\
 	hash_t _i;							\
-	BUN _v;								\
-	(x) = NULL;							\
-	if ((y)->hhash || BAThash((y), 0) || GDKfatal("HASHfnd_@1: hash build failed on %s.\n", BATgetId((y)))) \
-		HASHloop_@1((y), (y)->hhash, _i, (z), _v) {		\
-			(x) = _v;					\
+	(x) = BUN_NONE;							\
+	if ((y).b->H->hash || BAThash((y).b, 0) || GDKfatal("HASHfnd_@1: hash build failed on %s.\n", BATgetId((y).b))) \
+		HASHloop_@1((y), (y).b->H->hash, _i, (z)) {		\
+			(x) = _i;					\
 			break;						\
 		}							\
 }
 @h
 #define HASHfnd_str(x,y,z)	{					\
 	hash_t _i;							\
-	(x) = NULL;							\
-	if ((y)->hhash || BAThash((y), 0) || GDKfatal("HASHfnd_str: hash build failed on %s.\n", BATgetId((y)))) \
-		HASHloop_str((y), (y)->hhash, _i, (z)) {		\
-			(x) = BUNptr((y),_i);				\
+	(x) = BUN_NONE;							\
+	if ((y).b->H->hash || BAThash((y).b, 0) || GDKfatal("HASHfnd_str: hash build failed on %s.\n", BATgetId((y).b))) \
+		HASHloop_str((y), (y).b->H->hash, _i, (z)) {		\
+			(x) = _i;					\
 			break;						\
 		}							\
 }
 #define HASHfnd(x,y,z)	{						\
 	size_t _i;							\
-	x=NULL;								\
-	if ((y)->hhash || BAThash((y), 0) || GDKfatal("HASHfnd: hash build failed on %s.\n", BATgetId((y)))) \
-		HASHloop((y), (y)->hhash, _i, (z)) {			\
-			(x) = BUNptr((y),_i);				\
+	(x) = BUN_NONE;							\
+	if ((y).b->H->hash || BAThash((y).b, 0) || GDKfatal("HASHfnd: hash build failed on %s.\n", BATgetId((y).b))) \
+		HASHloop((y), (y).b->H->hash, _i, (z)) {			\
+			(x) = _i;					\
 			break;						\
 		}							\
 }
@@ -174,7 +173,7 @@ and a pointer to the value to be stored. An entry is removed by @%HASdel@.
 /* HASHins now receives a BAT* param and has become adaptive; killing wrongly configured hash tables */
 /* use HASHins_any or HASHins_<tpe> instead if you know what you're doing or want to keep the hash whatever */
 #define HASHins(b,i,v) \
-	do if (((i) & 1023) == 1023 && HASHgonebad((b),(v))) { HASHremove(b); } else  { HASHins_any((b)->hhash,(i),(v)); } while (0)
+	do if (((i) & 1023) == 1023 && HASHgonebad((b),(v))) { HASHremove(b); } else  { HASHins_any((b)->H->hash,(i),(v)); } while (0)
 
 #if SIZEOF_VOID_P == SIZEOF_INT
 #define HASHins_ptr(h,i,v)	HASHins_int(h,i,v)
@@ -302,8 +301,8 @@ HASHnew(Heap *hp, int tpe, size_t size, hash_t mask)
 }
 
 @= starthash
-	for (xx = BUNsize(b); r < p; r += xx) {
-		ptr v = BUN@2(b, r);
+	for (; r < p; r++) {
+		ptr v = BUN@2(bi, r);
 		hash_t c = hash_@1(h, v);
 
 		if (h->hash[c] == HASH_MAX && nslots-- == 0) {
@@ -314,8 +313,8 @@ HASHnew(Heap *hp, int tpe, size_t size, hash_t mask)
 	}
 	break;
 @= finishhash
-	for (xx = BUNsize(b); p < q; p += xx) {
-		ptr v = BUN@2(b, p);
+	for (; p < q; p++) {
+		ptr v = BUN@2(bi, p);
 		hash_t c = hash_@1(h, v);
 
 		h->link[i] = h->hash[c];
@@ -331,14 +330,15 @@ BAT *
 BAThash(BAT *b, size_t masksize)
 {
 	gdk_set_lock(GDKhashLock(ABS(b->batCacheid) & BBP_BATMASK), "BAThash");
-	if (b->hhash == NULL) {
-		unsigned int xx, tpe = ATOMstorage(b->htype);
+	if (b->H->hash == NULL) {
+		unsigned int tpe = ATOMstorage(b->htype);
 		size_t i, cnt = BATcount(b);
 		hash_t mask;
 		BUN p = BUNfirst(b), q = BUNlast(b), r;
 		Hash *h = NULL;
 		Heap *hp = NULL;
 		str nme = BBP_physical(b->batCacheid);
+		BATiter bi = bat_iterator(b);
 
 		/* cnt = 0, hopefully there is a proper capacity from which
 		 * we can derive enough information */
@@ -359,7 +359,7 @@ BAThash(BAT *b, size_t masksize)
 			/* dynamic hash: we start with HASHmask(cnt/64); if there are too many collisions
 			 * we try HASHmask(cnt/16), then HASHmask(cnt/4), and finally HASHmask(cnt).  */
 			mask = HASHmask(cnt >> 6);
-			p += (cnt >> 2) * BUNsize(b);	/* try out on first 25% of b */
+			p += (cnt >> 2);	/* try out on first 25% of b */
 			if (p > q)
 				p = q;
 		}
@@ -368,8 +368,7 @@ BAThash(BAT *b, size_t masksize)
 		do {
 			size_t nslots = mask >> 3;	/* 1/2 full is too full */
 
-			r = BUNfirst(b);
-			i = BUNindex(b, r);
+			i = r = BUNfirst(b);
 			if (hp) {
 				HEAPfree(hp);
 				GDKfree(hp);
@@ -445,7 +444,7 @@ BAThash(BAT *b, size_t masksize)
 		default:
 			@:finishhash(any,head)@
 		}
-		b->hhash = BATmirror(b)->thash = h;
+		b->H->hash = h;
 	}
 	gdk_unset_lock(GDKhashLock(ABS(b->batCacheid) & BBP_BATMASK), "BAThash");
 	return b;
@@ -489,6 +488,7 @@ HASHprobe(Hash *h, ptr v)
 BAT *
 HASHprint(BAT *b)
 {
+	BATiter bi = bat_iterator(b);
 #if SIZEOF_OID == SIZEOF_INT
 	BAT *bn = BATnew(BAThtype(b), TYPE_int, BATcount(b));
 #else
@@ -498,12 +498,12 @@ HASHprint(BAT *b)
 
 	if (bn == NULL)
 		return NULL;
-	if (!(b && b->hhash))
+	if (!(b && b->H->hash))
 		return 0;
 	BATloop(b, p, q) {
-		size_t i = HASHprobe(b->hhash, BUNhead(b, p));
+		size_t i = HASHprobe(b->H->hash, BUNhead(bi, p));
 
-		bunfastins(bn, BUNhead(b, p), &i);
+		bunfastins(bn, BUNhead(bi, p), &i);
 	}
 	bn->hsorted = BAThordered(b);
 	bn->tsorted = FALSE;
@@ -533,23 +533,24 @@ HASHlist(Hash *h, size_t i)
 void
 HASHremove(BAT *b)
 {
-	if (b->hhash) {
-		BAT *p = BBP_cache(VIEWparent(b));
-		BAT *m = BATmirror(b);
+	if (b->H->hash) {
+		bat p = VIEWhparent(b);
+		BAT *hp = NULL;
 
-		if (p && b->hhash == p->hhash) {
+		if (p)
+			hp = BBP_cache(p);
+
+		if (hp && b->H->hash == hp->H->hash) {
 			GDKerror("HASHremove: view-bat cannot remove parent hash-table\n");
 			assert(0);
 		} else {
-			HEAPfree(b->hhash->heap);
-			if (b->hhash->heap->storage & STORE_MMAP)
-				HEAPdelete(b->hhash->heap, BBP_physical(b->batCacheid), (b->batCacheid > 0) ? "hhash" : "thash");
-			GDKfree(b->hhash->heap);
-			GDKfree(b->hhash);
+			HEAPfree(b->H->hash->heap);
+			if (b->H->hash->heap->storage & STORE_MMAP)
+				HEAPdelete(b->H->hash->heap, BBP_physical(b->batCacheid), (b->batCacheid > 0) ? "hhash" : "thash");
+			GDKfree(b->H->hash->heap);
+			GDKfree(b->H->hash);
 		}
-		if (m)
-			m->thash = NULL;
-		b->hhash = NULL;
+		b->H->hash = NULL;
 	}
 }
 
@@ -564,7 +565,8 @@ HASHdestroy(BAT *b)
 int
 HASHgonebad(BAT *b, ptr v)
 {
-	Hash *h = b->hhash;
+	Hash *h = b->H->hash;
+	BATiter bi = bat_iterator(b);
 
 	if (h == NULL)
 		return 1;	/* no hash is bad hash? */
@@ -574,7 +576,7 @@ HASHgonebad(BAT *b, ptr v)
 		hash_t cnt, hit, i = h->hash[HASHprobe(h, v)];
 
 		for (cnt = hit = 1; i != HASH_MAX; i = h->link[i], cnt++)
-			hit += ((*cmp) (v, BUNhead(b, BUNptr(b, i))) == 0);
+			hit += ((*cmp) (v, BUNhead(bi, i)) == 0);
 
 		if (cnt / hit > 4)
 			return 1;	/* linked list too long */
@@ -666,10 +668,11 @@ BUN
 SORTfndfirst_@2(BAT *b, ptr v)
 {
 	BUN end = BUNfirst(b), cur = end;
-	size_t lo = BUNindex(b, end), hi = BUNindex(b, BUNlast(b));
-	int cmp = 1, bunsize = BUNsize(b);
+	size_t lo = end, hi = BUNlast(b);
+	int cmp = 1;
+	BATiter bi = bat_iterator(b);
 
-        if (lo >= hi || @3_CMP(BUNt@1(b, cur), v, @4)>=0) {
+        if (lo >= hi || @3_CMP(BUNt@1(bi, cur), v, @4)>=0) {
 		/* shortcut: if BAT is empty or first (and hence all) tail
 		 * value is >= v, we're done. */
 		return cur;
@@ -677,11 +680,11 @@ SORTfndfirst_@2(BAT *b, ptr v)
 	while (lo < hi) {
 		size_t mid = (lo + hi) >> 1;
 
-		cur = BUNptr(b, mid);
-		cmp = @3_CMP(BUNt@1(b, cur), v, @4);
+		cur = mid;
+		cmp = @3_CMP(BUNt@1(bi, cur), v, @4);
 		if (cmp < 0) {
 			lo = ++mid;
-			cur += bunsize;
+			cur++;
 		} else if (cmp > 0) {
 			hi = mid;
 		} else {
@@ -689,11 +692,11 @@ SORTfndfirst_@2(BAT *b, ptr v)
 		}
 	}
 	if (cmp == 0 && b->tkey == 0) {  /* shift over multiple equals */
-		while((cur -= bunsize) >= end) {
-			if (!@3_EQ(BUNt@1(b, cur), v, @4))
+		while((cur--) >= end) {
+			if (!@3_EQ(BUNt@1(bi, cur), v, @4))
 				break;
 		}
-		cur += bunsize;
+		cur++;
 	}
 	return cur;
 }
@@ -702,21 +705,22 @@ BUN
 SORTfndlast_@2(BAT *b, ptr v)
 {
 	BUN end = BUNlast(b), cur = end;
-	size_t lo = BUNindex(b, BUNfirst(b)), hi = BUNindex(b, end);
-	int cmp = 1, bunsize = BUNsize(b);
+	size_t lo = BUNfirst(b), hi = end;
+	int cmp = 1;
+	BATiter bi = bat_iterator(b);
 
-        if (lo >= hi || @3_CMP(BUNt@1(b, cur - bunsize), v, @4)<=0) {
+        if (lo >= hi || @3_CMP(BUNt@1(bi, cur - 1), v, @4)<=0) {
 		/* shortcut: if BAT is empty or last (and hence all) tail
 		 * value is <= v, we're done. */
 		return cur;
 	}
 	while (lo < hi) {
 		size_t mid = (lo + hi) >> 1;
-		cur = BUNptr(b, mid);
-		cmp = @3_CMP(BUNt@1(b, cur), v, @4);
+		cur = mid;
+		cmp = @3_CMP(BUNt@1(bi, cur), v, @4);
 		if (cmp < 0) {
 			lo = ++mid;
-			cur += bunsize;
+			cur++;
 		} else if (cmp > 0) {
 			hi = mid;
 		} else {
@@ -724,12 +728,12 @@ SORTfndlast_@2(BAT *b, ptr v)
 		}
 	}
 	if (cmp == 0 && b->tkey == 0) {  /* shift over multiple equals */
-		while((cur += bunsize) < end) {
-			if (!@3_EQ(BUNt@1(b, cur), v, @4))
+		while((cur++) < end) {
+			if (!@3_EQ(BUNt@1(bi, cur), v, @4))
 				break;
 		}
 	} else if (cmp == 0) {
-		cur += bunsize;
+		cur++;
 	}
 	return cur;
 }
@@ -738,24 +742,25 @@ BUN
 SORTfnd_@2(BAT *m, ptr v)
 {
 	BAT *b = BATmirror(m);
-	size_t lo = BUNindex(b, BUNfirst(b)), hi = BUNindex(b, BUNlast(b));
-	int cmp = 1, bunsize = BUNsize(b);
-	BUN cur = NULL;
+	size_t lo = BUNfirst(b), hi = BUNlast(b);
+	int cmp = 1;
+	BUN cur = BUN_NONE;
+	BATiter bi = bat_iterator(b);
 
 	while (lo < hi) {
 		size_t mid = (lo + hi) >> 1;
-		cur = BUNptr(b, mid);
-		cmp = @3_CMP(BUNt@1(b, cur), v, @4);
+		cur = mid;
+		cmp = @3_CMP(BUNt@1(bi, cur), v, @4);
 		if (cmp < 0) {
 			lo = ++mid;
-			cur += bunsize;
+			cur++;
 		} else if (cmp > 0) {
 			hi = mid;
 		} else {
 			break;
 		}
 	}
-	return cmp ? NULL : cur;
+	return cmp ? BUN_NONE : cur;
 }
 
 @= SORTfnd_switch
@@ -800,7 +805,7 @@ SORTfnd@2(BAT *b, ptr v)
 			}
 		}
 	}
-	return NULL;
+	return BUN_NONE;
 }
 @c
 @:SORTfnd(loc,chr,simple,chr)@

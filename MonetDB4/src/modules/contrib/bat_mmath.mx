@@ -80,9 +80,8 @@ Only the dbl type is supported.
 int
 bat_@1_@2(BAT **ret, BAT *b)
 {
-	REGISTER chr *bp, *bq;
-	REGISTER @1 *bnp;
-	REGISTER int bs = BUNsize(b);
+	@1 *bp, *bq;
+	@1 *bnp;
 	BAT *bn;
 
         ALGODEBUG THRprintf(GDKout, "bat_@1_@2(b=%s);\n",BATgetId(b));
@@ -93,19 +92,17 @@ bat_@1_@2(BAT **ret, BAT *b)
 	bn = BATnew(TYPE_void, b->ttype, BATcount(b));
 	BATseqbase(bn,b->hseqbase);
 	bn->tsorted = 0;
-	bq = (chr*)BUNtloc(b,BUNlast(b));
-	bp = (chr*)BUNtloc(b,BUNfirst(b));
-	bnp = (@1*)BUNtloc(bn,BUNlast(bn));
-	for (; bp < bq; bp+=bs) {
+	bq = (@1*)Tloc(b,BUNlast(b));
+	bp = (@1*)Tloc(b,BUNfirst(b));
+	bnp = (@1*)Tloc(bn,BUNlast(bn));
+	for (; bp < bq; bp++) {
 		REGISTER @1 bv = *(@1*)bp;
 		if (bv != @1_nil) {
 			bv = @2(bv);
 		}
-		*bnp = bv;
-		bnp++;
+		*bnp++ = bv;
 	}
-        bn->batBuns->free = (BUN)bnp - bn->batBuns->base;
-        BATsetcount(bn, bn->batBuns->free/BUNsize(bn));
+        BATsetcount(bn, ((char*)bnp - bn->T->heap.base)/Tsize(bn));
         if (!bn->batDirty) bn->batDirty = TRUE;
 
         *ret = bn;
@@ -116,7 +113,7 @@ bat_@1_@2(BAT **ret, BAT *b)
 int
 batbat_@1_@2(BAT **ret, BAT *l, BAT *r)
 {
-	REGISTER @1 *bnp;
+	@1 *bnp, *lp, *lq, *rp;
 	BAT *bn;
 
         ALGODEBUG THRprintf(GDKout, "batbat_@1_@2(l=%s,r=%s);\n",BATgetId(l),BATgetId(r));
@@ -127,81 +124,20 @@ batbat_@1_@2(BAT **ret, BAT *l, BAT *r)
 	BATseqbase(bn,l->hseqbase);
 	bn->tsorted = 0;
 
-	if ((BUNsize(l)==sizeof(@1))&&(BUNsize(r)==sizeof(@1))) {
-		REGISTER @1 *lp, *lq, *rp;
-		REGISTER int cnt = 4096/(int)sizeof(@1);
-		@1* lbuf = GDKmalloc(2*cnt*sizeof(@1));
-		@1* rbuf = lbuf+cnt;
-
-		lq = (@1*)BUNtloc(l,BUNlast(l));
-		lp = (@1*)BUNtloc(l,BUNfirst(l));
-		rp = (@1*)BUNtloc(r,BUNfirst(r));
-		bnp = (@1*)BUNtloc(bn,BUNlast(bn));
-		for (; lp < lq; lp+=cnt, rp+=cnt) {
-			/* 0 <= cnt <= 4096, so cast to int is safe */
-			REGISTER int x = (int) (lq - lp < cnt ? lq - lp : cnt);
-			REGISTER int y = x*(int)sizeof(@1);
-			REGISTER int i;
-			memcpy(lbuf,lp,y);
-			memcpy(rbuf,rp,y);
-			for (i=0; i<x; i++) {
-				if ((lbuf[i] != @1_nil) && (rbuf[i] != @1_nil)) {
-					*bnp = @2(lbuf[i], rbuf[i]);
-				} else {
-					*bnp = @1_nil;
-				}
-				bnp++;
-			}
+	lq = (@1*)Tloc(l,BUNlast(l));
+	lp = (@1*)Tloc(l,BUNfirst(l));
+	rp = (@1*)Tloc(r,BUNfirst(r));
+	bnp = (@1*)Tloc(bn,BUNlast(bn));
+	for (; lp < lq; lp++, rp++) {
+		if ((*lp != @1_nil) && (*rp != @1_nil)) {
+			*bnp = @2(*lp, *rp);
+		} else {
+			*bnp = @1_nil;
 		}
-	        GDKfree(lbuf);
-	} else if ((BUNsize(l)==BUNsize(r))) {
-		REGISTER chr *lp, *lq, *rp;
-		REGISTER int bs = BUNsize(l);
-		REGISTER int sze = (4096/bs)*bs;
-		chr* lbuf = GDKmalloc(2*sze);
-		chr* rbuf = lbuf+sze;
-
-		lq = (chr*)BUNtloc(l,BUNlast(l));
-		lp = (chr*)BUNtloc(l,BUNfirst(l));
-		rp = (chr*)BUNtloc(r,BUNfirst(r));
-		bnp = (@1*)BUNtloc(bn,BUNlast(bn));
-		for (; lp < lq; lp+=sze, rp+=sze) {
-			/* 0 <= sze <= 4096, so cast to int is safe */
-			REGISTER int z = (int) (lq - lp < sze ? lq - lp : sze);
-			REGISTER chr *lbp=lbuf, *lbq=lbuf+z, *rbp=rbuf;
-			memcpy(lbuf,lp,z);
-			memcpy(rbuf,rp,z);
-			for (; lbp < lbq; lbp+=bs, rbp+=bs) {
-				if ((*(@1*)lbp != @1_nil) && (*(@1*)rbp != @1_nil)) {
-					*bnp = @2(*(@1*)lbp, *(@1*)rbp);
-				} else {
-					*bnp = @1_nil;
-				}
-				bnp++;
-			}
-		}
-	        GDKfree(lbuf);
-	} else {
-		REGISTER chr *lp, *lq, *rp;
-		REGISTER int ls = BUNsize(l);
-		REGISTER int rs = BUNsize(r);
-
-		lq = (chr*)BUNtloc(l,BUNlast(l));
-		lp = (chr*)BUNtloc(l,BUNfirst(l));
-		rp = (chr*)BUNtloc(r,BUNfirst(r));
-		bnp = (@1*)BUNtloc(bn,BUNlast(bn));
-		for (; lp < lq; lp+=ls, rp+=rs) {
-			if ((*(@1*)lp != @1_nil) && (*(@1*)rp != @1_nil)) {
-				*bnp = @2(*(@1*)lp, *(@1*)rp);
-			} else {
-				*bnp = @1_nil;
-			}
-			bnp++;
-		}
+		bnp++;
 	}
 
-        bn->batBuns->free = (BUN)bnp - bn->batBuns->base;
-        BATsetcount(bn, bn->batBuns->free/BUNsize(bn));
+        BATsetcount(bn, ((char*)bnp - bn->T->heap.base)/Tsize(bn));
         if (!bn->batDirty) bn->batDirty = TRUE;
 
         *ret = bn;
@@ -210,10 +146,8 @@ batbat_@1_@2(BAT **ret, BAT *l, BAT *r)
 int
 valbat_@1_@2(BAT **ret, @1 *v, BAT *b)
 {
-	REGISTER chr *bp, *bq;
-	REGISTER @1 *bnp;
-	REGISTER @1 vv = (((*v)!=@1_nil)?(*v):@1_nil);
-	REGISTER int bs = BUNsize(b);
+	@1 *bp, *bq, *bnp;
+	@1 vv = (((*v)!=@1_nil)?(*v):@1_nil);
 	BAT *bn;
 
         ALGODEBUG THRprintf(GDKout, "valbat_@1_@2(v,b=%s);\n",BATgetId(b));
@@ -224,12 +158,12 @@ valbat_@1_@2(BAT **ret, @1 *v, BAT *b)
 	bn = BATnew(TYPE_void, b->ttype, BATcount(b));
 	BATseqbase(bn,b->hseqbase);
 	bn->tsorted = 0;
-	bq = (chr*)BUNtloc(b,BUNlast(b));
-	bp = (chr*)BUNtloc(b,BUNfirst(b));
-	bnp = (@1*)BUNtloc(bn,BUNlast(bn));
+	bq = (@1*)Tloc(b,BUNlast(b));
+	bp = (@1*)Tloc(b,BUNfirst(b));
+	bnp = (@1*)Tloc(bn,BUNlast(bn));
 	if (vv != @1_nil) {
-		for (; bp < bq; bp+=bs) {
-			REGISTER @1 bv = *(@1*)bp;
+		for (; bp < bq; bp++) {
+			@1 bv = *(@1*)bp;
 			if (bv != @1_nil) {
 				bv = @2(vv,bv);
 			}
@@ -237,13 +171,12 @@ valbat_@1_@2(BAT **ret, @1 *v, BAT *b)
 			bnp++;
 		}
 	} else {
-		for (; bp < bq; bp+=bs) {
+		for (; bp < bq; bp++) {
 			*bnp = vv;
 			bnp++;
 		}
 	}
-        bn->batBuns->free = (BUN)bnp - bn->batBuns->base;
-        BATsetcount(bn, bn->batBuns->free/BUNsize(bn));
+        BATsetcount(bn, ((char*)bnp - bn->T->heap.base)/Tsize(bn));
         if (!bn->batDirty) bn->batDirty = TRUE;
 
         *ret = bn;
@@ -252,10 +185,8 @@ valbat_@1_@2(BAT **ret, @1 *v, BAT *b)
 int
 batval_@1_@2(BAT **ret, BAT *b, @1 *v)
 {
-	REGISTER chr *bp, *bq;
-	REGISTER @1 *bnp;
-	REGISTER @1 vv = (((*v)!=@1_nil)?(*v):@1_nil);
-	REGISTER int bs = BUNsize(b);
+	@1 *bp, *bq, *bnp;
+	@1 vv = (((*v)!=@1_nil)?(*v):@1_nil);
 	BAT *bn;
 
         ALGODEBUG THRprintf(GDKout, "batval_@1_@2(v,b=%s);\n",BATgetId(b));
@@ -265,12 +196,12 @@ batval_@1_@2(BAT **ret, BAT *b, @1 *v)
 	bn = BATnew(TYPE_void, b->ttype, BATcount(b));
 	BATseqbase(bn,b->hseqbase);
 	bn->tsorted = 0;
-	bq = (chr*)BUNtloc(b,BUNlast(b));
-	bp = (chr*)BUNtloc(b,BUNfirst(b));
-	bnp = (@1*)BUNtloc(bn,BUNlast(bn));
+	bq = (@1*)Tloc(b,BUNlast(b));
+	bp = (@1*)Tloc(b,BUNfirst(b));
+	bnp = (@1*)Tloc(bn,BUNlast(bn));
 	if (vv != @1_nil) {
-		for (; bp < bq; bp+=bs) {
-			REGISTER @1 bv = *(@1*)bp;
+		for (; bp < bq; bp++) {
+			@1 bv = *(@1*)bp;
 			if (bv != @1_nil) {
 				bv = @2(bv,vv);
 			}
@@ -278,13 +209,12 @@ batval_@1_@2(BAT **ret, BAT *b, @1 *v)
 			bnp++;
 		}
 	} else {
-		for (; bp < bq; bp+=bs) {
+		for (; bp < bq; bp++) {
 			*bnp = vv;
 			bnp++;
 		}
 	}
-        bn->batBuns->free = (BUN)bnp - bn->batBuns->base;
-        BATsetcount(bn, bn->batBuns->free/BUNsize(bn));
+        BATsetcount(bn, ((char*)bnp - bn->T->heap.base)/Tsize(bn));
         if (!bn->batDirty) bn->batDirty = TRUE;
 
         *ret = bn;

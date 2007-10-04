@@ -95,7 +95,7 @@ full_column(sql_column *c, BAT *d, BAT *s )
 	if (d) {
 		r = BATkdiff(b,BATmirror(d)); bat_destroy(b); b = r;
 	}
-	assert(r->thash == NULL);
+	assert(r->T->hash == NULL);
 	return r;
 }
 
@@ -132,8 +132,10 @@ column_find_row(sql_trans *tr, sql_column *c, void *value, ...)
 
 	r = BATmirror(b);
 	p = BUNfnd(r, value);
-	if (p)
-		rid = *(oid *) BUNtail(r, p);
+	if (p != BUN_NONE) {
+		BATiter ri = bat_iterator(r);
+		rid = *(oid *) BUNtail(ri, p);
+	}
 	bat_destroy(b);
 	return rid;
 }
@@ -153,11 +155,12 @@ column_find_value(sql_trans *tr, sql_column *c, ssize_t rid)
 		bat_destroy(d);
 
 	p = BUNfnd(b, (ptr) &rid);
-	if (p) {
+	if (p != BUN_NONE) {
+		BATiter bi = bat_iterator(b);
 		void *r;
 		int sz;
 
-		res = BUNtail(b, p);
+		res = BUNtail(bi, p);
                 sz = ATOMlen(b->ttype, res);
                 r = GDKmalloc(sz);
 		memcpy(r,res,sz);
@@ -178,7 +181,7 @@ column_update_value(sql_trans *tr, sql_column *c, ssize_t rid, void *value)
 
 	if (bat->ubid) {
 		b = temp_descriptor(bat->ubid);
-		if (BUNfnd(b, &rid)) {
+		if (BUNfnd(b, &rid) != BUN_NONE) {
 			BUNreplace(b, (ptr) &rid, value, TRUE);
 		} else {
 			bat_set_access(b, BAT_WRITE);
@@ -369,8 +372,8 @@ ssize_t
 rids_next(rids *r)
 {
 	if (r->cur < BATcount(r->data)) {
-		BAT *b = r->data;
-		return *(oid*)BUNhead(b, BUNptr(b, r->cur++));
+		BATiter bi = bat_iterator(r->data);
+		return *(oid*)BUNhead(bi, r->cur++);
 	}
 	return -1;
 }

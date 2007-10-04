@@ -254,13 +254,13 @@ bytes, we stay below 16 KBytes, i.e., within (almost) any L1 cache
 		BBPreclaim(bn);
 		return GDK_FAIL;
 	}
-	BATloopFast(b, p, q, xx) {
-		oid *h = (oid*) BUNhead(b,p);
-		@1 *t = (@1*) BUN@2(b,p);
+	BATloop(b, p, q) {
+		oid *h = (oid*) BUNhead(bi,p);
+		@1 *t = (@1*) BUN@2(bi,p);
 
-		BUNfndOID(r, bn, h);
-		if (r) {
-			@3 *dst = (@3*) BUN@2(bn, r);
+		BUNfndOID(r, bni, h);
+		if (r != BUN_NONE) {
+			@3 *dst = (@3*) BUN@2(bni, r);
 			if (*dst != @3_nil) {
 				if (*t == @1_nil) {
 					*dst = @3_nil;
@@ -275,9 +275,9 @@ bytes, we stay below 16 KBytes, i.e., within (almost) any L1 cache
 	sums = (@3*) GDKmalloc(range*sizeof(@3));
 	for (i = 0; i < range; i++)
 		sums[i] = zero;
-	BATloopFast(b, p, q, xx) {
-		oid h = (*(oid*) BUNhead(b,p)) - min;
-		@1 *t = (@1*) BUN@2(b,p);
+	BATloop(b, p, q) {
+		oid h = (*(oid*) BUNhead(bi,p)) - min;
+		@1 *t = (@1*) BUN@2(bi,p);
 
 		if (h < range) {
 			@3 *dst = sums + h;
@@ -290,9 +290,9 @@ bytes, we stay below 16 KBytes, i.e., within (almost) any L1 cache
 			}
 		}
 	}
-	BATloopFast(bn, p, q, xx) {
-		oid h = (*(oid*) BUNhead(bn,p)) - min;
-		*(@3*)BUN@2(bn, p) = sums[h];
+	BATloop(bn, p, q) {
+		oid h = (*(oid*) BUNhead(bni,p)) - min;
+		*(@3*)BUN@2(bni, p) = sums[h];
 	}
         GDKfree(sums);
 @c
@@ -301,13 +301,13 @@ bytes, we stay below 16 KBytes, i.e., within (almost) any L1 cache
 		BBPreclaim(bn);
 		return GDK_FAIL;
 	}
-	BATloopFast(b, p, q, xx) {
-		oid *h = (oid*) BUNhead(b,p);
-		@1 *t = (@1*) BUN@2(b,p);
+	BATloop(b, p, q) {
+		oid *h = (oid*) BUNhead(bi,p);
+		@1 *t = (@1*) BUN@2(bi,p);
 
-		BUNfndOID(r, bn, h);
-		if (r) {
-			@3 *dst = (@3*) BUN@2(bn, r);
+		BUNfndOID(r, bni, h);
+		if (r != BUN_NONE) {
+			@3 *dst = (@3*) BUN@2(bni, r);
 			if (*dst != @3_nil) {
 				if (*t == @1_nil) {
 					*dst = @3_nil;
@@ -322,9 +322,9 @@ bytes, we stay below 16 KBytes, i.e., within (almost) any L1 cache
 	prods = (@3*) GDKmalloc(range*sizeof(@3));
 	for (i = 0; i < range; i++)
 		prods[i] = one;
-	BATloopFast(b, p, q, xx) {
-		oid h = (*(oid*) BUNhead(b,p)) - min;
-		@1 *t = (@1*) BUN@2(b,p);
+	BATloop(b, p, q) {
+		oid h = (*(oid*) BUNhead(bi,p)) - min;
+		@1 *t = (@1*) BUN@2(bi,p);
 
 		if (h < range) {
 			@3 *dst = prods + h;
@@ -337,9 +337,9 @@ bytes, we stay below 16 KBytes, i.e., within (almost) any L1 cache
 			}
 		}
 	}
-	BATloopFast(bn, p, q, xx) {
-		oid h = (*(oid*) BUNhead(bn,p)) - min;
-		*(@3*)BUN@2(bn, p) = prods[h];
+	BATloop(bn, p, q) {
+		oid h = (*(oid*) BUNhead(bni,p)) - min;
+		*(@3*)BUN@2(bni, p) = prods[h];
 	}
         GDKfree(prods);
 @c
@@ -351,26 +351,26 @@ bytes, we stay below 16 KBytes, i.e., within (almost) any L1 cache
 		BBPreclaim(bn);
 		return GDK_FAIL;
 	}
-	BATloopFast(b, p, q, xx) {
-		oid *h = (oid*) BUNhead(b,p);
-		@1 *t = (@1*) BUN@2(b,p);
+	BATloop(b, p, q) {
+		oid *h = (oid*) BUNhead(bi,p);
+		@1 *t = (@1*) BUN@2(bi,p);
 
-		BUNfndOID(r,bn,h);
-		if (r) {
-			dbl *dst = (dbl*) BUN@2(bn, r);
+		BUNfndOID(r,bni,h);
+		if (r != BUN_NONE) {
+			dbl *dst = (dbl*) BUN@2(bni, r);
 			if (*dst != dbl_nil) {
 				if (*t == @1_nil) {
 					*dst = dbl_nil;
 				} else {
 					*dst += *t;
 				}
-				cnt[BUNindex(bn,r)-off]++;
+				cnt[r-off]++;
 			}
 		}
 	}
 	/* postprocess by dividing sums by counts */
-	BATloopFast(bn, p, q, xx) {
-		dbl *dst = (dbl*) BUN@2(bn, p);
+	BATloop(bn, p, q) {
+		dbl *dst = (dbl*) BUN@2(bni, p);
 		if (cnt[yy] == 0) {
 			*dst = dbl_nil;
 		} else if (*dst != dbl_nil) {
@@ -385,9 +385,9 @@ bytes, we stay below 16 KBytes, i.e., within (almost) any L1 cache
 	for (i = 0; i < range; i++)
 		sums[i] = zero;
 	memset(cnt, 0, range*sizeof(size_t));
-	BATloopFast(b, p, q, xx) {
-		oid h = (*(oid*) BUNhead(b,p)) - min;
-		@1 *t = (@1*) BUN@2(b,p);
+	BATloop(b, p, q) {
+		oid h = (*(oid*) BUNhead(bi,p)) - min;
+		@1 *t = (@1*) BUN@2(bi,p);
 
 		if (h < range) {
 			dbl *dst = sums + h;
@@ -402,9 +402,9 @@ bytes, we stay below 16 KBytes, i.e., within (almost) any L1 cache
 		}
 	}
 	/* postprocess by dividing sums by counts */
-	BATloopFast(bn, p, q, xx) {
-		oid h = (*(oid*) BUNhead(bn,p)) - min;
-		dbl *dst = (dbl*) BUN@2(bn, p);
+	BATloop(bn, p, q) {
+		oid h = (*(oid*) BUNhead(bni,p)) - min;
+		dbl *dst = (dbl*) BUN@2(bni, p);
 		if (cnt[h] == 0 || sums[h] == dbl_nil) {
 			*dst = dbl_nil;
 		} else {
@@ -420,9 +420,9 @@ int
 CMDaggr_sum_@1_@3(BAT **ret, BAT *b, BAT *e)
 {
 	BAT *bn = BATnew(e->htype, TYPE_@3, BATcount(e));
+	BATiter ei = bat_iterator(e), bi = bat_iterator(b), bni = bat_iterator(bn);
 	@3 zero = (@3) 0, *sums;
 	BUN p, q, r;
-	int xx;
 	oid i, range, min, max;
 
 	if (bn == NULL)
@@ -431,22 +431,22 @@ CMDaggr_sum_@1_@3(BAT **ret, BAT *b, BAT *e)
 	bn->tsorted = bn->hsorted = 0;
 	ALIGNsetH(bn, e);
 	if (BAThordered(e)&1) {
-		min = *(oid*)BUNhead(e, BUNfirst(e));
-		BATloopFast(e, p, q, xx) {
-			if (BUNfastins(bn, BUNhead(e,p), &zero) == NULL) {
+		min = *(oid*)BUNhead(ei, BUNfirst(e));
+		BATloop(e, p, q) {
+			if (BUNfastins(bn, BUNhead(ei,p), &zero) == NULL) {
 				BBPreclaim(bn);
 				return GDK_FAIL;
 			}
 		}
-		max = *(oid*)BUNhead(e, BUNlast(e)-BUNsize(e));
+		max = *(oid*)BUNhead(ei, BUNlast(e)-1);
 	} else {
-		min = max = *(oid*)BUNhead(e, BUNfirst(e));
-		BATloopFast(e, p, q, xx) {
-			if (BUNfastins(bn, BUNhead(e,p), &zero) == NULL) {
+		min = max = *(oid*)BUNhead(ei, BUNfirst(e));
+		BATloop(e, p, q) {
+			if (BUNfastins(bn, BUNhead(ei,p), &zero) == NULL) {
 				BBPreclaim(bn);
 				return GDK_FAIL;
 			}
-			i = *(oid*)BUNhead(e, p);
+			i = *(oid*)BUNhead(ei, p);
 			if (i < min)
 				min = i;
 			else if (i > max)
@@ -471,9 +471,9 @@ int
 CMDaggr_prod_@1_@3(BAT **ret, BAT *b, BAT *e)
 {
 	BAT *bn = BATnew(e->htype, TYPE_@3, BATcount(e));
+	BATiter ei = bat_iterator(e), bi = bat_iterator(b), bni = bat_iterator(bn);
 	@3 one = (@3) 1, *prods;
 	BUN p, q, r;
-	int xx;
 	oid i, range, min, max;
 
 	if (bn == NULL)
@@ -482,22 +482,22 @@ CMDaggr_prod_@1_@3(BAT **ret, BAT *b, BAT *e)
 	bn->tsorted = bn->hsorted = 0;
 	ALIGNsetH(bn, e);
 	if (BAThordered(e)&1) {
-		min = *(oid*)BUNhead(e, BUNfirst(e));
-		BATloopFast(e, p, q, xx) {
-			if (BUNfastins(bn, BUNhead(e,p), &one) == NULL) {
+		min = *(oid*)BUNhead(ei, BUNfirst(e));
+		BATloop(e, p, q) {
+			if (BUNfastins(bn, BUNhead(ei,p), &one) == NULL) {
 				BBPreclaim(bn);
 				return GDK_FAIL;
 			}
 		}
-		max = *(oid*)BUNhead(e, BUNlast(e)-BUNsize(e));
+		max = *(oid*)BUNhead(ei, BUNlast(e)-1);
 	} else {
-		min = max = *(oid*)BUNhead(e, BUNfirst(e));
-		BATloopFast(e, p, q, xx) {
-			if (BUNfastins(bn, BUNhead(e,p), &one) == NULL) {
+		min = max = *(oid*)BUNhead(ei, BUNfirst(e));
+		BATloop(e, p, q) {
+			if (BUNfastins(bn, BUNhead(ei,p), &one) == NULL) {
 				BBPreclaim(bn);
 				return GDK_FAIL;
 			}
-			i = *(oid*)BUNhead(e, p);
+			i = *(oid*)BUNhead(ei, p);
 			if (i < min)
 				min = i;
 			else if (i > max)
@@ -542,8 +542,8 @@ int
 CMDaggr_avg_@1(BAT **ret, BAT *b, BAT *e)
 {
 	BAT *bn = BATnew(e->htype, TYPE_dbl, BATcount(e));
-	int xx;
-	size_t yy = 0, off ;
+	BATiter ei = bat_iterator(e), bi = bat_iterator(b), bni = bat_iterator(bn);
+	size_t yy = 0, off;
 	size_t *cnt;
 	oid i, range, min, max;
 	dbl zero = (dbl) 0, *sums;
@@ -551,27 +551,27 @@ CMDaggr_avg_@1(BAT **ret, BAT *b, BAT *e)
 
 	if (bn == NULL)
 		return GDK_FAIL;
-	off = BUNindex(bn,BUNfirst(bn));
+	off = BUNfirst(bn);
 	/* init sums and counts to zero */
 	bn->tsorted = bn->hsorted = 0;
 	ALIGNsetH(bn, e);
 	if (BAThordered(e)&1) {
-		min = *(oid*)BUNhead(e, BUNfirst(e));
-		BATloopFast(e, p, q, xx) {
-			if (BUNfastins(bn, BUNhead(e,p), &zero) == NULL) {
+		min = *(oid*)BUNhead(ei, BUNfirst(e));
+		BATloop(e, p, q) {
+			if (BUNfastins(bn, BUNhead(ei,p), &zero) == NULL) {
 				BBPreclaim(bn);
 				return GDK_FAIL;
 			}
 		}
-		max = *(oid*)BUNhead(e, BUNlast(e)-BUNsize(e));
+		max = *(oid*)BUNhead(ei, BUNlast(e)-1);
 	} else {
-		min = max = *(oid*)BUNhead(e, BUNfirst(e));
-		BATloopFast(e, p, q, xx) {
-			if (BUNfastins(bn, BUNhead(e,p), &zero) == NULL) {
+		min = max = *(oid*)BUNhead(ei, BUNfirst(e));
+		BATloop(e, p, q) {
+			if (BUNfastins(bn, BUNhead(ei,p), &zero) == NULL) {
 				BBPreclaim(bn);
 				return GDK_FAIL;
 			}
-			i = *(oid*)BUNhead(e, p);
+			i = *(oid*)BUNhead(ei, p);
 			if (i < min)
 				min = i;
 			else if (i > max)
@@ -610,7 +610,7 @@ CMDaggr_variance_@1(BAT **ret, BAT *b, BAT *e)
 {
 	size_t nElements = BATcount(e);
 	BAT *bn = *ret = BATnew(e->htype, BATttype(b), nElements);
-	int xx;
+	BATiter ei = bat_iterator(e), bi = bat_iterator(b);
 	size_t off, idx = 0;
 	int *cnt ;
 	dbl *sum ;
@@ -621,7 +621,7 @@ CMDaggr_variance_@1(BAT **ret, BAT *b, BAT *e)
 
 	if (bn == NULL)
 		return GDK_FAIL;
-	off = BUNindex(e,BUNfirst(e));
+	off = BUNfirst(e);
 	cnt = (int*) GDKmalloc(nElements*sizeof(int));
 	if (cnt == NULL) {
 		BBPreclaim(bn);
@@ -655,18 +655,18 @@ CMDaggr_variance_@1(BAT **ret, BAT *b, BAT *e)
 	memset(sum, 0, nElements*sizeof(dbl));
 	memset(sumsquares, 0, nElements*sizeof(dbl));
 
-	BATloopFast(b, p, q, xx) {
-		oid *h = (oid*) BUNhead(b,p);
+	BATloop(b, p, q) {
+		oid *h = (oid*) BUNhead(bi,p);
 		if (*h != previousOid) {
 			previousOid = *h;
-			BUNfndOID(r,e,h);
-			if (!r)
+			BUNfndOID(r,ei,h);
+			if (r == BUN_NONE)
 				continue;
-			idx = BUNindex(e,r)-off;
+			idx = r-off;
 		}
 
 		if (cnt[idx] != int_nil) {
-			@1 v = *(@1*) BUNtloc(b,p);
+			@1 v = *(@1*) BUNtloc(bi,p);
 			if (v == @1_nil) {
 				cnt[idx] = int_nil;
 			} else {
@@ -681,22 +681,22 @@ CMDaggr_variance_@1(BAT **ret, BAT *b, BAT *e)
 	   substracting square of the averages from the average sum of
 	   squares */
 	idx = 0;
-	BATloopFast(e, p, q, xx) {
+	BATloop(e, p, q) {
 		if (cnt[idx] == int_nil) {
 			@1 _nil = @1_nil;
-			if (BUNfastins(bn, BUNhead(e,p), (ptr)&_nil) == NULL) {
+			if (BUNfastins(bn, BUNhead(ei,p), (ptr)&_nil) == NULL) {
 				*ret = NULL;
 				break;
 			}
 		} else if (cnt[idx] <= 1) {
-			if (BUNfastins(bn, BUNhead(e,p), &zero) == NULL) {
+			if (BUNfastins(bn, BUNhead(ei,p), &zero) == NULL) {
 				*ret = NULL;
 				break;
 			}
 		} else {
 			dbl avg = (sum[idx] / cnt[idx]);
 			@1 variance = (@1) (sumsquares[idx] / cnt[idx] - (avg * avg));
-			if (BUNfastins(bn, BUNhead(e,p), &variance) == NULL) {
+			if (BUNfastins(bn, BUNhead(ei,p), &variance) == NULL) {
 				*ret = NULL;
 				break;
 			}
@@ -728,9 +728,9 @@ static int
 CMDaggr_@1_@3(BAT **ret, BAT *b, BAT *e)
 {
 	BAT *bn = *ret = BATnew(e->htype, BATttype(b), BATcount(e));
+	BATiter ei = bat_iterator(e), bi = bat_iterator(b);
 	int (*cmp)(ptr,ptr);
 	ptr nil;
-	int xx;
 	size_t yy = 0, off;
 	@3 *extremes;
 	BUN p, q, r;
@@ -739,7 +739,7 @@ CMDaggr_@1_@3(BAT **ret, BAT *b, BAT *e)
 		return GDK_FAIL;
 	cmp= BATatoms[bn->ttype].atomCmp;
 	nil = ATOMnilptr(bn->ttype);
-	off = BUNindex(e,BUNfirst(e));
+	off = BUNfirst(e);
 	extremes = (@3*) GDKmalloc(BATcount(e)*sizeof(@3));
 	if (extremes == NULL) {
 		BBPreclaim(bn);
@@ -755,20 +755,20 @@ CMDaggr_@1_@3(BAT **ret, BAT *b, BAT *e)
 		GDKfree(extremes);
 		return GDK_FAIL;
 	}
-	BATloopFast(b, p, q, xx) {
-		oid *h = (oid*) BUNhead(b,p);
-		ptr t =  BUNtail(b,p);
+	BATloop(b, p, q) {
+		oid *h = (oid*) BUNhead(bi,p);
+		ptr t =  BUNtail(bi,p);
 
-		BUNfndOID(r,e,h);
-		if (r) {
+		BUNfndOID(r,ei,h);
+		if (r != BUN_NONE) {
 			@:extreme_body_@3(@2)@
 		}
 	}
 	/* insert the extreme values into the result */
 	yy = 0;
-	BATloopFast(e, p, q, xx) {
+	BATloop(e, p, q) {
 		@3 val = extremes[yy++];
-		if (BUNfastins(bn, BUNhead(e,p), @:extreme_tail_@3@) == NULL) {
+		if (BUNfastins(bn, BUNhead(ei,p), @:extreme_tail_@3@) == NULL) {
 			*ret = NULL;
 			break;
 		}
@@ -787,7 +787,7 @@ CMDaggr_@1_@3(BAT **ret, BAT *b, BAT *e)
 @= extreme_init_ptr
 	memset(extremes, 0, BATcount(e)*sizeof(ptr));
 @= extreme_body_oid
-			oid *val = extremes + (BUNindex(e,r) - off);
+			oid *val = extremes + r - off;
 			if (*val != *(oid*)nil) {
 				if ((*cmp)(t,nil) == 0) {
 					*val = *(oid*)nil;
@@ -796,7 +796,7 @@ CMDaggr_@1_@3(BAT **ret, BAT *b, BAT *e)
 				}
 			}
 @= extreme_body_ptr
-			ptr *val = extremes + (BUNindex(e,r) - off);
+			ptr *val = extremes + r - off;
 			if (*val != nil) {
 				if ((*cmp)(t,nil) == 0) {
 					*val = nil;
@@ -829,15 +829,15 @@ CMDaggr_@1(BAT **ret, BAT *b, BAT *e)
 		BBPreclaim(bn);
 		return GDK_FAIL;
 	}
-	BATloopFast(b, p, q, xx) {
-		oid *h = (oid*) BUNhead(b,p);
+	BATloop(b, p, q) {
+		oid *h = (oid*) BUNhead(bi,p);
 
-		BUNfndOID(r, bn, h);
-		if (r) {
-			ptr t = BUNtail(b,p);
+		BUNfndOID(r, bni, h);
+		if (r != BUN_NONE) {
+			ptr t = BUNtail(bi,p);
 			(void) t; /* silence compiler about unused variable */
 			@1 {
-				int *dst = (int*) BUNtloc(bn, r);
+				int *dst = (int*) BUNtloc(bni, r);
 				(*dst)++;
 			}
 		}
@@ -846,20 +846,20 @@ CMDaggr_@1(BAT **ret, BAT *b, BAT *e)
 @= small_aggr_count
 	cnt  = (int*) GDKmalloc(range*sizeof(int));
 	memset(cnt, 0, range*sizeof(int));
-	BATloopFast(b, p, q, xx) {
-		oid h = (*(oid*) BUNhead(b,p)) - min;
+	BATloop(b, p, q) {
+		oid h = (*(oid*) BUNhead(bi,p)) - min;
 
 		if (h < range) {
-			ptr t = BUNtail(b,p);
+			ptr t = BUNtail(bi,p);
 			(void) t; /* silence compiler about unused variable */
 			@1 {
 				cnt[h]++;
 			}
 		}
 	}
-	BATloopFast(bn, p, q, xx) {
-		oid h = (*(oid*) BUNhead(bn,p)) - min;
-		*(int*)BUNtloc(bn, p) = cnt[h];
+	BATloop(bn, p, q) {
+		oid h = (*(oid*) BUNhead(bni,p)) - min;
+		*(int*)BUNtloc(bni, p) = cnt[h];
 	}
         GDKfree(cnt);
 @c
@@ -872,9 +872,9 @@ CMDaggr_count(BAT **ret, BAT *b, BAT *e, bit *ignore_nils)
    should really have a tail type of size_t.
  */
 	BAT *bn = BATnew(e->htype, TYPE_int, BATcount(e));
+	BATiter ei = bat_iterator(e), bi = bat_iterator(b), bni = bat_iterator(bn);
 	int zero = 0, *cnt;
 	BUN p, q, r;
-	int xx;
 	oid i, range, min, max;
 	int btt;
 	ptr bt_nil;
@@ -888,22 +888,22 @@ CMDaggr_count(BAT **ret, BAT *b, BAT *e, bit *ignore_nils)
 	bn->tsorted = bn->hsorted = 0;
 	ALIGNsetH(bn, e);
 	if (BAThordered(e) & 1) {
-		min = *(oid *) BUNhead(e, BUNfirst(e));
-		BATloopFast(e, p, q, xx) {
-			if (BUNfastins(bn, BUNhead(e, p), &zero) == NULL) {
+		min = *(oid *) BUNhead(ei, BUNfirst(e));
+		BATloop(e, p, q) {
+			if (BUNfastins(bn, BUNhead(ei, p), &zero) == NULL) {
 				BBPreclaim(bn);
 				return GDK_FAIL;
 			}
 		}
-		max = *(oid *) BUNhead(e, BUNlast(e) - BUNsize(e));
+		max = *(oid *) BUNhead(ei, BUNlast(e) - 1);
 	} else {
-		min = max = *(oid *) BUNhead(e, BUNfirst(e));
-		BATloopFast(e, p, q, xx) {
-			if (BUNfastins(bn, BUNhead(e, p), &zero) == NULL) {
+		min = max = *(oid *) BUNhead(ei, BUNfirst(e));
+		BATloop(e, p, q) {
+			if (BUNfastins(bn, BUNhead(ei, p), &zero) == NULL) {
 				BBPreclaim(bn);
 				return GDK_FAIL;
 			}
-			i = *(oid *) BUNhead(e, p);
+			i = *(oid *) BUNhead(ei, p);
 			if (i < min)
 				min = i;
 			else if (i > max)
@@ -942,17 +942,17 @@ int
 CMDaggr_size(BAT **ret, BAT *b, BAT *e)
 {
 	BAT *bn = BATnew(e->htype, TYPE_wrd, BATcount(e));
+	BATiter ei = bat_iterator(e), bi = bat_iterator(b), bni = bat_iterator(bn);
 	wrd zero = 0;
 	BUN p, q, r;
-	int xx;
 
 	if (bn == NULL)
 		return GDK_FAIL;
 	/* init: set all sums to zero */
 	bn->tsorted = bn->hsorted = 0;
 	ALIGNsetH(bn, e);
-	BATloopFast(e, p, q, xx) {
-		if (BUNfastins(bn, BUNhead(e, p), &zero) == NULL) {
+	BATloop(e, p, q) {
+		if (BUNfastins(bn, BUNhead(ei, p), &zero) == NULL) {
 			BBPreclaim(bn);
 			return GDK_FAIL;
 		}
@@ -962,13 +962,13 @@ CMDaggr_size(BAT **ret, BAT *b, BAT *e)
 		BBPreclaim(bn);
 		return GDK_FAIL;
 	}
-	BATloopFast(b, p, q, xx) {
-		if (*(bit *) BUNtloc(b, p) == TRUE) {
-			oid *h = (oid *) BUNhead(b, p);
+	BATloop(b, p, q) {
+		if (*(bit *) BUNtloc(bi, p) == TRUE) {
+			oid *h = (oid *) BUNhead(bi, p);
 
-			BUNfndOID(r, bn, h);
-			if (r) {
-				wrd *dst = (wrd *) BUNtloc(bn, r);
+			BUNfndOID(r, bni, h);
+			if (r != BUN_NONE) {
+				wrd *dst = (wrd *) BUNtloc(bni, r);
 
 				(*dst)++;
 			}
@@ -983,12 +983,12 @@ CMDsize(wrd *ret, BAT *b)
 {
 	*ret = BATgetprop_wrd(b, GDK_AGGR_SIZE);
 	if (*ret < 0) {
-		bit *cur = (bit *) BUNtail(b, BUNfirst(b));
-		bit *end = (bit *) BUNtail(b, BUNlast(b));
+		BATiter bi = bat_iterator(b);
+		bit *cur = (bit *) BUNtail(bi, BUNfirst(b));
+		bit *end = (bit *) BUNtail(bi, BUNlast(b));
 		wrd cnt;
-		int xx = BUNsize(b);
 
-		for (cnt = 0; cur < end; cur += xx)
+		for (cnt = 0; cur < end; cur++)
 			cnt += (*cur == TRUE);
 		BATsetprop_wrd(b, GDK_AGGR_SIZE, *ret = cnt);
 	}
@@ -1001,10 +1001,10 @@ CMDsize(wrd *ret, BAT *b)
 @= card_bound_tpe
 	if (BATtordered(b)&1) {
 		/* the sorted algorithm: scan */
-		ptr prev =  (ptr) BUNt@2(b, BUNfirst(b));
+		ptr prev =  (ptr) BUNt@2(bi, BUNfirst(b));
 		cursize = 1; /* start counting unique elements... (at one) */
-		BATloopFast(b, p, q, xx) {
-			ptr cur =  (ptr) BUNt@2(b, p);
+		BATloop(b, p, q) {
+			ptr cur =  (ptr) BUNt@2(bi, p);
 			if (!@1_EQ(prev, cur, @3)) {
 				CARD_INC_@4(cursize, maxsize);
 				prev = cur;
@@ -1012,24 +1012,25 @@ CMDsize(wrd *ret, BAT *b)
 		}
 	} else {
 		/* default algorithm is hash based */
-		size_t yy = BUNindex(b, BUNfirst(b));
-		BAT *v = VIEWcreate(BATmirror(b));
+		BUN yy = BUNfirst(b);
+		BAT *v = VIEWcreate(BATmirror(b), BATmirror(b));
+		BATiter vi = bat_iterator(v);
 		Heap *hp = (Heap*) GDKmalloc(sizeof(Heap));
 		str nme = BBP_physical(v->batCacheid);
 		hp->filename = (str) GDKmalloc(strlen(nme)+12);
 		sprintf(hp->filename, "%s.%chash", nme, v->batCacheid>0?'h':'t');
-		if ((v->hhash = HASHnew(hp, any, BATcapacity(b), HASHmask(BATcount(b)))) == NULL) {
+		if ((v->H->hash = HASHnew(hp, any, BATcapacity(b), HASHmask(BATcount(b)))) == NULL) {
 			BBPreclaim(v);
 			return GDK_FAIL;
 		}
-		BATmirror(v)->thash = v->hhash; 
+		BATmirror(v)->T->hash = v->H->hash; 
 		cursize = 0; /* start counting unique elements... (at zero) */
-		BATloopFast(b, p, q, xx) {
-			ptr cur =  (ptr) BUNt@2(b, p);
-			HASHfnd_@3(r, v, cur);
-			if (r == NULL) {
+		BATloop(b, p, q) {
+			ptr cur =  (ptr) BUNt@2(bi, p);
+			HASHfnd_@3(r, vi, cur);
+			if (r == BUN_NONE) {
 				CARD_INC_@4(cursize, maxsize);
-				HASHins_@3(v->hhash, yy, cur);
+				HASHins_@3(v->H->hash, yy, cur);
 			}
 			yy++;
 		}
@@ -1075,6 +1076,7 @@ CMDsize(wrd *ret, BAT *b)
 int
 CMDcard(wrd *result, BAT *b, wrd *maxelements)
 {
+	BATiter bi = bat_iterator(b);
 	wrd maxsize = *maxelements, cursize = BATcount(b);
 
 	if (b->ttype == TYPE_void && b->tseqbase == oid_nil) {
@@ -1093,7 +1095,7 @@ CMDcard(wrd *result, BAT *b, wrd *maxelements)
 		}
 		if (cursize == wrd_nil) {
 			BUN p, q, r;	/* if we could not figure out the cardinality by now, we must do real work.. :( */
-			int xx, tpe = b->ttype;
+			int tpe = b->ttype;
 
 			if (tpe == TYPE_str && strElimDoubles(b->theap)) {
 				tpe = TYPE_var;	/* use offsets only in case of a double-eliminated string heap */

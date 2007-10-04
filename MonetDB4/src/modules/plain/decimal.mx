@@ -1880,6 +1880,7 @@ decimal_divide_default(decimal **ret, decimal *num, decimal *dv)
 int
 decimal_bulkdivide(BAT **ret, BAT *b, decimal *dv, int *prec)
 {
+	BATiter bi = bat_iterator(b);
 	size_t xx = BATcount(b);
 	int yy = 10;
 	BAT *bn = *ret = BATnew(b->htype, TYPE_var, xx);
@@ -1896,7 +1897,7 @@ decimal_bulkdivide(BAT **ret, BAT *b, decimal *dv, int *prec)
 	if (prec) {
 		yy = MIN(PREC(dv) + MAX(1, *prec) - 1, PRECISION_MAX) + 1;
 	} else if (xx) {
-		decimal *d = (decimal *) BUNtvar(b, BUNfirst(b));
+		decimal *d = (decimal *) BUNtvar(bi, BUNfirst(b));
 
 		yy = TOTLEN(PREC(d) + 1);
 	}
@@ -1907,8 +1908,8 @@ decimal_bulkdivide(BAT **ret, BAT *b, decimal *dv, int *prec)
 	decimal_mult_table(dv, mult);
 
 	bn->tsorted = 0;
-	BATloopFast(b, p, q, xx) {
-		decimal *src = (decimal *) BUNtvar(b, p);
+	BATloop(b, p, q) {
+		decimal *src = (decimal *) BUNtvar(bi, p);
 		int divprc = prec ? yy : PREC(src);
 		int zero = ISZERO(src);
 		int nil = ISNIL(src);
@@ -1916,7 +1917,7 @@ decimal_bulkdivide(BAT **ret, BAT *b, decimal *dv, int *prec)
 		var_t idx = HEAP_malloc(&hp, len);
 		decimal *dst = (decimal *) (hp.base + idx);
 
-		if (BUNfastins(bn, BUNhead(b, p), &idx) == NULL) {
+		if (BUNfastins(bn, BUNhead(bi, p), &idx) == NULL) {
 			*ret = NULL;
 			break;
 		}

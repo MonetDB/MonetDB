@@ -258,6 +258,7 @@ typedef struct ascii_io_t {
 	char *type;
 	int adt;
 	BAT *c;
+	BATiter ci;
 	BUN p;
 	toStr tostr;
 	frStr frstr;
@@ -309,9 +310,10 @@ static int ascii_io_debug = 0;
 static ptr
 bun_tail(BAT *b, size_t nr)
 {
-	REGISTER size_t _i = BUNindex((b), BUNfirst((b)));
+	BATiter bi = bat_iterator(b);
+	REGISTER size_t _i = BUNfirst(b);
 
-	return (ptr) BUNtail(b, BUNptr(b, _i + nr));
+	return (ptr) BUNtail(bi, _i + nr);
 }
 
 
@@ -446,7 +448,7 @@ create_loadformat(ascii *as, BAT *names, BAT *seps, BAT *types)
 }
 
 static
-    size_t
+size_t
 create_dumpformat(ascii *as, BAT *names, BAT *seps, BAT *bats)
 {
 	size_t p;
@@ -506,6 +508,7 @@ ASCIIassign_BATs(ascii *as, BAT *bats)
 		BAT *b = (BAT *) BATdescriptor(*(bat *) bun_tail(bats, i));
 
 		fmt[i].c = (b);
+		fmt[i].ci = bat_iterator(b);
 		if (res == ~(size_t) 0 || BATcount(fmt[i].c) < res)
 			res = BATcount(fmt[i].c);
 	}
@@ -536,12 +539,12 @@ check_BATs(ascii *as)
 		b = fmt[i].c;
 		if (b == NULL)
 			continue;
-		offset = BUNindex(b, BUNfirst(b)) + as->offset;
+		offset = BUNfirst(b) + as->offset;
 
 		if (BATcount(b) != cnt || !BAThdense(b) || b->hseqbase != base)
 			return oid_nil;
 
-		fmt[i].p = BUNptr(b, offset);
+		fmt[i].p = offset;
 	}
 	return base;
 }
@@ -557,6 +560,7 @@ ASCIIcreate_bats(ascii *as)
 		nr = as->nr;
 	for (i = 0; i < as->nr_attrs; i++) {
 		fmt[i].c = void_bat_create(fmt[i].adt, nr);
+		fmt[i].ci = bat_iterator(fmt[i].c);
 		if (!fmt[i].c) {
 			GDKerror("ASCIIcreate_bats: Failed to create bat of size " SZFMT "\n", as->nr);
 			return -1;
@@ -579,6 +583,7 @@ ASCIIcollect_bats(ascii *as)
 		BUNins(bats, (ptr) fmt[i].name, (ptr) &fmt[i].c->batCacheid, FALSE);
 		BATsetaccess(fmt[i].c, BAT_READ);
 		BATpropcheck(fmt[i].c, BATPROPS_ALL);
+		BATpropcheck(BATmirror(fmt[i].c), BATPROPS_ALL);
 		if (cnt != BATcount(fmt[i].c)) {
 			GDKerror("Error: counts are not equal\n");
 			return NULL;
@@ -784,7 +789,7 @@ output_line(char **buf, int *len, ascii_io *fmt, stream *fd, size_t nr_attrs, pt
 			continue;
 		fmt[i].p = BUNfnd(fmt[i].c, id);
 
-		if (fmt[i].p == 0)
+		if (fmt[i].p == BUN_NONE)
 			break;
 	}
 	if (i == nr_attrs) {
@@ -795,7 +800,7 @@ output_line(char **buf, int *len, ascii_io *fmt, stream *fd, size_t nr_attrs, pt
 
 			f = fmt + i;
 			if (f->c) {
-				p = BUNtail(f->c, f->p);
+				p = BUNtail(f->ci, f->p);
 				l = f->tostr(f->extra, buf, len, f->adt, p);
 				if (stream_write(fd, *buf, 1, l) != l)
 					return ascii_io_error(fd);
@@ -816,12 +821,12 @@ output_line_dense(char **buf, int *len, ascii_io *fmt, stream *fd, size_t nr_att
 		ascii_io *f = fmt + i;
 
 		if (f->c) {
-			char *p = BUNtail(f->c, f->p);
+			char *p = BUNtail(f->ci, f->p);
 			int l = f->tostr(f->extra, buf, len, f->adt, p);
 
 			if (stream_write(fd, *buf, 1, l) != l)
 				return ascii_io_error(fd);
-			f->p = BUNnext(f->c, f->p);
+			f->p++;
 		}
 		if (stream_write(fd, f->sep, 1, f->seplen) != f->seplen)
 			return ascii_io_error(fd);
@@ -838,8 +843,7 @@ output_line_lookup(char **buf, int *len, ascii_io *fmt, stream *fd, size_t nr_at
 		ascii_io *f = fmt + i;
 
 		if (f->c) {
-			char *p = BUNtail(f->c, BUNptr(f->c,
-						   id +BUNindex(f->c, BUNfirst(f->c))));
+			char *p = BUNtail(f->ci, id + BUNfirst(f->c));
 			int l = f->tostr(f->extra, buf, len, f->adt, p);
 
 			if (stream_write(fd, *buf, 1, l) != l)
@@ -982,10 +986,11 @@ output_file_default(ascii *as, BAT *order, stream *fd)
 	char *buf = GDKmalloc(len);
 	BUN p, q;
 	size_t i = 0;
-	size_t offset = BUNindex(order, BUNfirst(order)) + as->offset;
+	size_t offset = BUNfirst(order) + as->offset;
+	BATiter orderi = bat_iterator(order);
 
-	for (q = BUNptr(order, offset + as->nr), p = BUNptr(order, offset); p < q; p = BUNnext(order, p)) {
-		ptr h = BUNhead(order, p);
+	for (q = offset + as->nr, p = offset; p < q; p++) {
+		ptr h = BUNhead(orderi, p);
 
 		if ((res = output_line(&buf, &len, as->format, fd, as->nr_attrs, h)) < 0) {
 			GDKfree(buf);
@@ -1025,10 +1030,11 @@ output_file_ordered(ascii *as, BAT *order, stream *fd, oid base)
 	char *buf = GDKmalloc(len);
 	BUN p, q;
 	size_t i = 0;
-	size_t offset = BUNindex(order, BUNfirst(order)) + as->offset;
+	size_t offset = BUNfirst(order) + as->offset;
+	BATiter orderi = bat_iterator(order);
 
-	for (q = BUNptr(order, offset + as->nr), p = BUNptr(order, offset); p < q; p = BUNnext(order, p)) {
-		size_t h = *(oid *) BUNhead(order, p) - base;
+	for (q = offset + as->nr, p = offset; p < q; p++) {
+		size_t h = *(oid *) BUNhead(orderi, p) - base;
 
 		if ((res = output_line_lookup(&buf, &len, as->format, fd, as->nr_attrs, h)) < 0) {
 			GDKfree(buf);

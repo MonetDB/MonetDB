@@ -49,14 +49,13 @@
  */
 
 /* check, if result buffer is big enough; otherwise extend it */
-#define PFll_check_BAT_capacity(b,grow,res_cur) \
+#define PFll_check_BAT_capacity(b,grow,res_scur,res_hcur,res_tcur) \
 {\
-	size_t _oldcap, _reqcap, _bunsize = BUNsize(b);\
+	size_t _oldcap, _reqcap, _bunsize = Hsize(b) + Tsize(b);\
         /* mark the end point of the BUNs section in the BUNheap */\
-        res->batBuns->free = ((BUN)res_cur) - res->batBuns->base;\
-        BATsetcount(res, (res->batBuns->free+Bunbase(res)-BUNfirst(res))/BUNsize(res));\
+        BATsetcount(res, res_hcur - res_scur);\
         /* check BAT capacity and extend if required */\
-        _oldcap = BATbuncount(b);\
+        _oldcap = BATcapacity(b);\
         _reqcap = BATcount(b) + grow;\
         if (_oldcap < _reqcap) {\
             size_t _newcap = MAX(_reqcap, BATgrows(b));\
@@ -68,7 +67,7 @@
                 BBPreclaim(b);\
                 return GDK_FAIL;\
             }\
-            _newcap = BATbuncount(b);\
+            _newcap = BATcapacity(b);\
             if (_newcap < _reqcap) {\
                 GDKerror("%s: BATextend of BAT '%s' (#%d) failed: "\
                          "required " SZFMT " buns (" SZFMT " bytes), "\
@@ -79,7 +78,9 @@
                 BBPreclaim(b);\
                 return GDK_FAIL;\
             }\
-            res_cur = (oid*) BUNhead(res, BUNlast(res));\
+            res_scur = (oid*) Hloc(res, BUNfirst(res));\
+            res_hcur = (oid*) Hloc(res, BUNlast(res));\
+            res_tcur = (oid*) Tloc(res, BUNlast(res));\
         }\
 }
 
@@ -98,6 +99,7 @@ PFll_following_sibling(BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size,
     @:init(following_sibling)@
 
 @= init
+    BATiter iter_bati = bat_iterator(iter_bat), ctx_bati = bat_iterator(ctx_bat);
     char *name = "PFll_@1";
     const int sz_msk = ~(1<<31);
     int *size = 0, sz = 0;
@@ -106,8 +108,8 @@ PFll_following_sibling(BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size,
 
     size_t res_size = 0, grow = 0;
     BAT *res = 0;
-    oid *iter_cur = 0, *iter_end = 0, *ctx_cur = 0, *ctx_end = 0, *res_cur = 0;
-    int iter_nxt = 0, ctx_nxt = 0;
+    oid *iter_cur = 0, *iter_end = 0, *ctx_cur = 0, *ctx_end = 0;
+    oid *res_scur = 0, *res_hcur = 0, *res_tcur = 0;
     bit one_ctx = 0;
     oid min_iter = 0, max_iter = 0, num_iter = 0, ctx_max = 0, doc_max = 0;
     oid cur_sib;
@@ -121,14 +123,12 @@ PFll_following_sibling(BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size,
     BATcheck(pre_level, name);
     BATcheck(pre_kind, name);
 
-    iter_cur = (oid*) BUNtail(iter_bat, BUNfirst(iter_bat)); 
-    iter_end = (oid*) BUNtail(iter_bat, BUNlast(iter_bat));
-    iter_nxt = BUNsize(iter_bat)/sizeof(oid);
+    iter_cur = (oid*) BUNtail(iter_bati, BUNfirst(iter_bat)); 
+    iter_end = (oid*) BUNtail(iter_bati, BUNlast(iter_bat));
 
-    ctx_cur = (oid*) BUNtail(ctx_bat, BUNfirst(ctx_bat)); 
-    ctx_end = (oid*) BUNtail(ctx_bat, BUNlast(ctx_bat));
-    ctx_nxt = BUNsize(ctx_bat)/sizeof(oid);
-    ctx_max = *(ctx_end - ctx_nxt);
+    ctx_cur = (oid*) BUNtail(ctx_bati, BUNfirst(ctx_bat)); 
+    ctx_end = (oid*) BUNtail(ctx_bati, BUNlast(ctx_bat));
+    ctx_max = *(ctx_end - 1);
     one_ctx = *ctx_cur == ctx_max;
     
     doc_max = pre_size->hseqbase + BATcount(pre_size);
@@ -177,7 +177,7 @@ PFll_following_sibling(BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size,
         GDKerror("%s: tail of pre_size must be type INT.\n", name);
         return GDK_FAIL;
     }
-    if (BUNsize(pre_size) != sizeof(int))
+    if (pre_size->htype != TYPE_void)
     {
         GDKerror("%s: head (oid) of pre_size must NOT be materialized.\n", name);
         return GDK_FAIL;
@@ -187,7 +187,7 @@ PFll_following_sibling(BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size,
         GDKerror("%s: context nodes exceed collection range.\n", name);
         return GDK_FAIL;
     }
-    size = ((int*) BUNtloc(pre_size, BUNfirst(pre_size))) - (int)pre_size->hseqbase;
+    size = ((int*) Tloc(pre_size, BUNfirst(pre_size))) - (int)pre_size->hseqbase;
 
     if (!BAThdense(pre_level))
     {
@@ -199,7 +199,7 @@ PFll_following_sibling(BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size,
         GDKerror("%s: tail of pre_level must be type CHR.\n", name);
         return GDK_FAIL;
     }
-    if (BUNsize(pre_level) != sizeof(chr))
+    if (pre_level->htype != TYPE_void)
     {
         GDKerror("%s: head (oid) of pre_level must NOT be materialized.\n", name);
         return GDK_FAIL;
@@ -209,7 +209,7 @@ PFll_following_sibling(BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size,
         GDKerror("%s: heads of pre_level & pre_size must be aligned (i.e., same seqbase and same length).\n", name);
         return GDK_FAIL;
     }
-    level = ((chr*) BUNtloc(pre_level, BUNfirst(pre_level))) - (int)pre_level->hseqbase;
+    level = ((chr*) Tloc(pre_level, BUNfirst(pre_level))) - (int)pre_level->hseqbase;
 
     if (kind_test != chr_nil) {
         if (!BAThdense(pre_kind))
@@ -227,12 +227,12 @@ PFll_following_sibling(BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size,
             GDKerror("%s: tail of pre_kind must be type CHR.\n", name);
             return GDK_FAIL;
         }
-        if (BUNsize(pre_kind) != sizeof(chr))
+        if (pre_kind->htype != TYPE_void)
         {
             GDKerror("%s: head (oid) of pre_kind must NOT be materialized.\n", name);
             return GDK_FAIL;
         }
-        kind = ((chr*) BUNtloc(pre_kind, BUNfirst(pre_kind))) - (int)pre_kind->hseqbase;
+        kind = ((chr*) Tloc(pre_kind, BUNfirst(pre_kind))) - (int)pre_kind->hseqbase;
     }
 
     /* --------------------------- empty result ---------------------------- */
@@ -258,12 +258,12 @@ PFll_following_sibling(BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size,
     if (BATtordered(iter_bat) & 1)
     {
         min_iter = *iter_cur;
-        max_iter = *(iter_end - iter_nxt);
+        max_iter = *(iter_end - 1);
     } else {
         oid *cur_iter = iter_cur;
         min_iter = GDK_oid_max;
         max_iter = GDK_oid_min;
-        for (; cur_iter < iter_end; cur_iter += iter_nxt) {
+        for (; cur_iter < iter_end; cur_iter++) {
             oid iter = *cur_iter;
             if (iter < min_iter) min_iter = iter;
             if (iter > max_iter) max_iter = iter;
@@ -285,9 +285,8 @@ PFll_following_sibling(BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size,
         GDKerror("%s: could not allocate a result BAT of size "SZFMT".\n", name, res_size);
         return GDK_FAIL;
     }
-    assert(BUNsize(res) == 2 * sizeof(oid));
-    assert((res->hloc == 0) && (res->tloc == sizeof(oid)));
-    res_cur = (oid*) BUNhead(res, BUNlast(res)); 
+    res_scur = res_hcur = (oid*) Hloc(res, BUNlast(res)); 
+    res_tcur =            (oid*) Tloc(res, BUNlast(res)); 
 @
 @c
     /* ------------------------- actual algorithm -------------------------- */
@@ -314,14 +313,14 @@ PFll_following_sibling(BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size,
         if (num_sib > 0) {
             cur_sib = *ctx_cur + size[*ctx_cur] + 1;
             /* check, if result buffer is big enough; otherwise extend it */
-            PFll_check_BAT_capacity(res, grow, res_cur);
+            PFll_check_BAT_capacity(res, grow, res_scur, res_hcur, res_tcur);
             if (num_iter == 1) {
                 ALGODEBUG THRprintf(GDKout, "%s: 1 ctx, 1 iter\n", name);
                 while (cur_sib <= doc_max && ((sz = size[cur_sib]) < 0 || level[cur_sib] == cur_lev)) {
                     if (sz >= 0) {
                         @1 {
-                            *res_cur++ = min_iter;
-                            *res_cur++ = cur_sib;
+                            *res_hcur++ = min_iter;
+                            *res_tcur++ = cur_sib;
                         }
                     }
                     cur_sib += 1 + (sz & sz_msk); 
@@ -336,13 +335,13 @@ PFll_following_sibling(BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size,
 #ifndef NDEBUG
                             oid prev_iter = oid_nil;
 #endif
-                            for (; cur_iter < iter_end; cur_iter += iter_nxt) {
+                            for (; cur_iter < iter_end; cur_iter++) {
 #ifndef NDEBUG
                                 assert(*cur_iter != prev_iter);
                                 prev_iter = *cur_iter;
 #endif
-                                *res_cur++ = *cur_iter;
-                                *res_cur++ = cur_sib;
+                                *res_hcur++ = *cur_iter;
+                                *res_tcur++ = cur_sib;
                             }
                         }
                     }
@@ -365,14 +364,14 @@ PFll_following_sibling(BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size,
         stack[stack_top] = @1;
 @
 @= next_oid
-        ctx_cur += ctx_nxt;
+        ctx_cur++;
 @
 @= pop_oid
         ctx = stack[stack_top];
 @
 @= result_oid
-        *res_cur++ = min_iter;
-        *res_cur++ = cur_sib;
+        *res_hcur++ = min_iter;
+        *res_tcur++ = cur_sib;
 @
 @= push_st_el
         stack[stack_top].ctx = @1;
@@ -381,8 +380,8 @@ PFll_following_sibling(BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size,
         stack[stack_top].fst_iter = iter_cur;
         while (ctx_cur < ctx_end && *ctx_cur == stack[stack_top].ctx) {
             stack[stack_top].lst_iter = iter_cur;
-            ctx_cur += ctx_nxt;
-            iter_cur += iter_nxt;
+            ctx_cur++;
+            iter_cur++;
         }
 @
 @= pop_st_el
@@ -394,13 +393,13 @@ PFll_following_sibling(BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size,
 #ifndef NDEBUG
         oid prev_iter = oid_nil;
 #endif
-        for (; cur_iter <= stack[stack_top].lst_iter; cur_iter += iter_nxt) {
+        for (; cur_iter <= stack[stack_top].lst_iter; cur_iter++) {
 #ifndef NDEBUG
             assert(*cur_iter != prev_iter);
             prev_iter = *cur_iter;
 #endif
-            *res_cur++ = *cur_iter;
-            *res_cur++ = cur_sib;
+            *res_hcur++ = *cur_iter;
+            *res_tcur++ = cur_sib;
         }
 }
 @
@@ -433,7 +432,7 @@ PFll_following_sibling(BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size,
                 if (sz >= 0) {
                     @1 {
                         /* check, if result buffer is big enough; otherwise extend it */
-                        PFll_check_BAT_capacity(res, grow, res_cur);
+                        PFll_check_BAT_capacity(res, grow, res_scur, res_hcur, res_tcur);
                         @:result_@2()@
                     }
                 }
@@ -478,7 +477,7 @@ PFll_following_sibling(BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size,
                 if (sz >= 0) {
                     @1 {
                         /* check, if result buffer is big enough; otherwise extend it */
-                        PFll_check_BAT_capacity(res, grow, res_cur);
+                        PFll_check_BAT_capacity(res, grow, res_scur, res_hcur, res_tcur);
                         @:result_@2()@
                     }
                 }
@@ -495,13 +494,12 @@ PFll_following_sibling(BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size,
 
 @= end
     /* mark the end point of the BUNs section in the BUNheap */
-    res->batBuns->free = ((BUN)res_cur) - res->batBuns->base;
-    BATsetcount(res, (res->batBuns->free+Bunbase(res)-BUNfirst(res))/BUNsize(res));
+    BATsetcount(res, res_hcur - res_scur);
     /* -------------------- set result properties ---------------------- */
 {
     bit trivial  = (BATcount(res) < 2);
-    oid fst_item = *(oid*)BUNtail(res, BUNfirst(res));
-    oid lst_item = *(oid*)BUNtail(res, BUNlast(res) - BUNsize(res));
+    oid fst_item = *(oid*)Tloc(res, BUNfirst(res));
+    oid lst_item = *(oid*)Tloc(res, BUNlast(res) - 1);
     bit one_item = (fst_item == lst_item);
     bit one_iter = (num_iter == 1);
 
@@ -511,7 +509,7 @@ PFll_following_sibling(BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size,
         if (BATcount(res) == 0) {
             BATseqbase (res, (oid)0); /* does not really matter */
         } else {
-            BATseqbase (res, *(oid*)BUNhead(res, BUNfirst(res)));
+            BATseqbase (res, *(oid*)Hloc(res, BUNfirst(res)));
         }
     }
     res->hsorted = ((one_iter||one_item) ? GDK_SORTED : 0); /* might be TRUE in some more cases... */
@@ -521,7 +519,7 @@ PFll_following_sibling(BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size,
         if (BATcount(res) == 0) {
             BATseqbase (BATmirror(res), (oid)0); /* does not really matter */
         } else {
-            BATseqbase (BATmirror(res), *(oid*)BUNtail(res, BUNfirst(res)));
+            BATseqbase (BATmirror(res), *(oid*)Tloc(res, BUNfirst(res)));
         }
     }
     res->tsorted = GDK_SORTED;

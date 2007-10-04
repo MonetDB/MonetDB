@@ -29,10 +29,10 @@ the fast execution of expanded code blocks.
 The common set of math functions is supported.
 @= scienceFcn
 	command @1(x:bat[:oid,:dbl])  :bat[:oid,:dbl] 
-	address CMDsciencevoid_@1;
+	address CMDscience_bat_@1;
 @= scienceFcnBinary
 	command @1(x:bat[:oid,:dbl],y:@2):bat[:oid,:dbl] 
-	address CMDscience_@1;
+	address CMDscience_bat_cst_@1;
 @-
 @mal
 module batmath;
@@ -59,7 +59,10 @@ module batmath;
 	@:scienceFcnBinary(fmod,dbl)@
 	@:scienceFcnBinary(atan2,dbl)@
 	@:scienceFcnBinary(pow,dbl)@
+
 @- Implementation
+@include kprelude.mx
+
 @h
 #ifdef _BATMATH_H
 #define _BATMATH_H
@@ -84,85 +87,70 @@ module batmath;
 #define batmath_export extern
 #endif
 
-BAT *
-BATMATHresult(BAT *b, int tpe)
-{
-	BAT *bn;
-
-	if (BAThvoid(b)) {
-		bn = BATnew(TYPE_void, tpe, BATcount(b));
-		BATseqbase(bn, b->hseqbase);
-	} else
-		bn = BATnew(b->htype, tpe, BATcount(b));
-	return bn;
-}
-
 @-
 @= scienceFcnImpl
-batmath_export str CMDsciencevoid_@1(int *ret, int *bid);
-str CMDsciencevoid_@1(int *ret, int *bid){
+batmath_export str CMDscience_bat_@1(int *ret, int *bid);
+str CMDscience_bat_@1(int *ret, int *bid)
+{
 	BAT *b,*bn;
-	@2 *o;
-	BUN p,q;
-	size_t xx;
+	@2 *o, *p, *q;
 
-	if( (b= BATdescriptor(*bid)) == NULL ){
-		throw(MAL, "batcalc.@1", "Cannot access descriptor");
+	@:getBATdescriptor(bid,b,"batcalc.@1")@
+	@:voidresultBAT(TYPE_dbl,"batcalc.@1")@
+
+	o = (@2*) Tloc(bn, BUNfirst(bn));
+	p = (@2*) Tloc(b, BUNfirst(b));
+	q = (@2*) Tloc(b, BUNlast(b));
+
+	for(;p<q; o++, p++){
+		*o = *p == dbl_nil? dbl_nil: @1(*p);
 	}
-	if( BUNsize(b) != sizeof(@2)){
-		BBPreleaseref(b->batCacheid);
-		throw(MAL, "batcalc.@1","Unexpected type");
+	BATsetcount(bn, BATcount(b));
+	bn->tsorted = 0;
+	BATkey(BATmirror(bn),0);           
+	
+	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); 
+
+	if (b->htype != bn->htype) {
+		BAT *r = VIEWcreate(b,bn);
+
+		BBPreleaseref(bn->batCacheid);
+		bn = r;
 	}
-
-	bn= BATMATHresult(b, TYPE_dbl);
-	@:tstBat(CMDscience_@1)@
-	o = (@2*) BUNtail(bn, BUNfirst(bn));
-
-	xx= BUNsize(b);
-	p = BUNtail(b, BUNfirst(b));
-	q = BUNtail(b, BUNlast(b));
-
-	while(p<q){
-		*o++ = *(@2*)p== dbl_nil? dbl_nil: @1(*(@2*)p);
-		p+= xx;
-	}
-	*ret= bn->batCacheid;
-	BBPkeepref(*ret);
+	BBPkeepref(*ret = bn->batCacheid);
 	BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
 }
 @= scienceBinaryImpl
-batmath_export str CMDscience_@1(int *ret, int *bid, @2 *d);
-str CMDscience_@1(int *ret, int *bid, @2 *d){
+batmath_export str CMDscience_bat_cst_@1(int *ret, int *bid, @2 *d);
+str CMDscience_bat_cst_@1(int *ret, int *bid, @2 *d)
+{
 	BAT *b,*bn;
-	@2 *o;
-	BUN p,q;
-	size_t xx;
+	@2 *o, *p, *q;
 
-	if( (b= BATdescriptor(*bid)) == NULL ){
-		throw(MAL, "batcalc.@1", "Cannot access descriptor");
+	@:getBATdescriptor(bid,b,"batcalc.@1")@
+	@:voidresultBAT(TYPE_dbl,"batcalc.@1")@
+
+	o = (@2*) Tloc(bn, BUNfirst(bn));
+	p = (@2*) Tloc(b, BUNfirst(b));
+	q = (@2*) Tloc(b, BUNlast(b));
+
+	for(;p<q; o++, p++){
+		*o = *p == dbl_nil? dbl_nil: @1(*p,*d);
 	}
-	if( BUNsize(b) != sizeof(@2)){
-		BBPreleaseref(b->batCacheid);
-		throw(MAL, "batcalc.@1","Unexpected type");
-	}
-
-	bn= BATMATHresult(b, TYPE_dbl);
-	@:tstBat(CMDscience_@1)@
-	o = (@2*) BUNtail(bn, BUNfirst(bn));
-
-	xx= BUNsize(b);
-	p = BUNtail(b, BUNfirst(b));
-	q = BUNtail(b, BUNlast(b));
-
-	while(p<q){
-		*o++ = *(@2*)p== dbl_nil? dbl_nil: @1(*(@2*)p,*d);
-		p+=xx;
-	}
+	BATsetcount(bn, BATcount(b));
+	bn->tsorted = 0;
+	BATkey(BATmirror(bn),0);           
 
 	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); 
-	*ret= bn->batCacheid;
-	BBPkeepref(*ret);
+
+	if (b->htype != bn->htype) {
+		BAT *r = VIEWcreate(b,bn);
+
+		BBPreleaseref(bn->batCacheid);
+		bn = r;
+	}
+	BBPkeepref(*ret = bn->batCacheid);
 	BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
 }

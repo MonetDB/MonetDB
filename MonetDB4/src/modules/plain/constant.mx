@@ -372,7 +372,8 @@ CMDconstjoinLeftCopy(ptr ret, ptr val, int res, BAT *b)
         		GDKerror("join(const,%s): const should match exactly once.\n",
                                 BBP_logical(b->batCacheid));
 		} else {
-        		res = CMDconstCopy(ret, BUNhead(bn,BUNfirst(bn)), ATOMtype(b->ttype));
+			BATiter bni = bat_iterator(bn);
+        		res = CMDconstCopy(ret, BUNhead(bni,BUNfirst(bn)), ATOMtype(b->ttype));
 		}
 		BBPreclaim(bn);
 	}
@@ -387,7 +388,8 @@ CMDconstouterjoinLeftCopy(ptr ret, ptr val, int res, BAT *b)
         if (bn) {
 		val = ATOMnilptr(b->ttype);
 		if (BATcount(bn) == 1) {
-			val = BUNhead(bn,BUNfirst(bn));
+			BATiter bni = bat_iterator(bn);
+			val = BUNhead(bni,BUNfirst(bn));
 		} else if (BATcount(bn) > 1) {
 			val = NULL;
         		GDKerror("outerjoin(const,%s): const should match exactly once.\n",
@@ -403,13 +405,14 @@ CMDconstouterjoinLeftCopy(ptr ret, ptr val, int res, BAT *b)
 int 
 CMDconstDiff(BAT **res, BAT *l, ptr val) 
 {
-	int xx, (*cmp)(ptr, ptr) = BATatoms[l->ttype].atomCmp;
+	int (*cmp)(ptr, ptr) = BATatoms[l->ttype].atomCmp;
 	BAT *bn = BATnew(ATOMtype(l->htype), ATOMtype(l->ttype), BATcount(l));
 	BUN p, q;
 	if (bn) {
-		BATloopFast(l, p, q, xx) {
-			ptr v = BUNtail(l,p);
-			if ((*cmp)(v, val)) bunfastins(bn, BUNhead(l,p), v);    
+		BATiter li = bat_iterator(l);
+		BATloop(l, p, q) {
+			ptr v = BUNtail(li,p);
+			if ((*cmp)(v, val)) bunfastins(bn, BUNhead(li,p), v);    
 		}
 		bn->hsorted = l->hsorted;
 		bn->tsorted = l->tsorted;

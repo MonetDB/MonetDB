@@ -131,129 +131,112 @@ routines in the GDK kernel.
 
 @= Idempotent
 batcast_export str CMDconvert_@1(int *ret, int *bid);
-str CMDconvert_@1(int *ret, int *bid){
+str CMDconvert_@1(int *ret, int *bid)
+{
 	BAT *b, *bn;
-	@:getBATdescriptor(bid, b, "batcalc.@1")@
 
-	bn= BATcopy(b, b->htype, b->ttype, 2);
+	@:getBATdescriptor(bid, b, "batcalc.@1")@
+	bn = BATcopy(b, b->htype, b->ttype, 2);
 	@:tstBAT("batcalc.@1")@
-	*ret= bn->batCacheid;
-	BBPkeepref(*ret);
+	BBPkeepref(*ret = bn->batCacheid);
 	BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
 }
 @= wrapup
 	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
-	*ret= bn->batCacheid;
 	BATkey(BATmirror(bn), FALSE);
 	bn->tsorted = 0;
-	BBPkeepref(*ret);
+
+	if (b->htype != bn->htype) {
+		BAT *r = VIEWcreate(b,bn);
+
+		BBPreleaseref(bn->batCacheid);
+		bn = r;
+	}
+	BBPkeepref(*ret = bn->batCacheid);
 	BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
 @-
 @= GeneralFixed
 batcast_export str CMDconvert_@1_@2(int *ret, int *bid);
-str CMDconvert_@1_@2(int *ret, int *bid){
+str CMDconvert_@1_@2(int *ret, int *bid)
+{
 	BAT *b,*bn;
-	size_t xx;
-	char *p, *q;
+	@2 *o;
 
 	@:getBATdescriptor(bid, b, "batcalc.@2")@
-	@:resultBAT(@2,"batcalc.@2")@
-	p= (char*) BUNfirst(b);
-	q= (char*) BUNlast(b);
-	xx= BUNsize(b);
+	@:voidresultBAT(TYPE_@2,"batcalc.@2")@
+	o = (@2*)Tloc(bn,BUNfirst(bn));
 
-	if( b->htype == TYPE_void){
-		@2 *o = (@2*)BUNtail(bn,BUNfirst(bn));
+	if (b->ttype == TYPE_void) {
+		oid t = b->tseqbase;
+		size_t i, cnt = BATcount(b);
 
-		if (b->ttype == TYPE_void) {
-			oid t = b->tseqbase;
-			size_t i, cnt = BATcount(b);
-
-			for(i=0; i<cnt; i++) 
-				*o++ = (@2)t++;
-		} else {
-			@1 *p= (@1*) BUNtail(b, BUNfirst(b));
-			@1 *q= (@1*) BUNtail(b, BUNlast(b));
-	
-			while(p<q) {
-				*o++ = *p== @1_nil ?  @2_nil: (@2) *p;
-				p= (@1 *) (((char*)p)+xx); 
-			}
-		}
-		(bn)->batBuns->free += BATcount(b)*sizeof(@2);
-		BATsetcount(bn, BATcount(b));
+		for(i=0; i<cnt; i++) 
+			*o++ = (@2)t++;
 	} else {
-		char *h= (char*) BUNhead(b,BUNfirst(b));
-		while(p<q){
-			@1 *r = (@1*)BUNtail(b,p);
-			@2 y = (*r == @1_nil) ? @2_nil: (@2)(*r);
+		@1 *p = (@1*)Tloc(b, BUNfirst(b));
+		@1 *q = (@1*)Tloc(b, BUNlast(b));
 
-			bunfastins(bn, h, &y);
-			p+= xx; h+=xx;
+		for(; p<q; o++, p++) {
+			*o = *p == @1_nil ?  @2_nil: (@2) *p;
 		}
 	}
-bunins_failed:
+	BATsetcount(bn, BATcount(b));
 	@:wrapup@
 }
-@-
-Handling string coercion
-		ATOMfromstr( TYPE_@1, &v, &len, (char*)Tbase(b)+*(var_t*)p);
-@= ConvertToStr
-		@1ToStr(&dst,&len, (ptr) r);
-		bunfastins(bn, h, (ptr)dst);
-		if( dst) GDKfree(dst);
-@= ConvertFromStr
-		v= NULL; len=0;
-		ATOMfromstr( TYPE_@1, &v, &len, (char*)Tbase(b)+*(var_t*)p);
-		bunfastins(bn, h, v);
-		if(ATOMextern(TYPE_@1) )
-			GDKfree(v);
 @= GeneralStr
 batcast_export str CMDconvert_@1_str(int *ret, int *bid);
-str CMDconvert_@1_str(int *ret, int *bid){
+str CMDconvert_@1_str(int *ret, int *bid)
+{
+	BATiter bi;
 	BAT *b,*bn;
-	size_t xx;
-	char *p,*q,*h;
-	str dst=0;
-	int len=0;
+	BUN p,q,r;
 
 	@:getBATdescriptor(bid, b, "batcalc.@2")@
-	@:resultBAT(str,"batcalc.@2")@
-	h= (char*) BUNhead(b,BUNfirst(b));
-	p= (char*) BUNfirst(b);
-	q= (char*) BUNlast(b);
-	xx= BUNsize(b);
+	@:voidresultBAT(TYPE_str,"batcalc.@2")@
+	r= BUNfirst(bn);
+	p= BUNfirst(b);
+	q= BUNlast(b);
+	bi = bat_iterator(b);
 
-	while(p<q){
-		@1 *r = (@1*)BUNtail(b,p);
-		@:ConvertToStr(@1)@
-		p+=xx; h+= xx;
+	for(; p<q; p++, r++) {
+		str dst=0;
+		int len=0;
+		@1 *v = (@1*)BUNtail(bi,p);
+
+		@1ToStr(&dst,&len, (ptr) v);
+		ATOMput(TYPE_@1, bn->T->vheap, Tloc(bn,r), dst);
+		if (dst) 
+			GDKfree(dst);
 	}
+	BATsetcount(bn, BATcount(b));
 bunins_failed:
 	@:wrapup@
 }
 
 batcast_export str CMDconvert_str_@1(int *ret, int *bid);
-str CMDconvert_str_@1(int *ret, int *bid){
+str CMDconvert_str_@1(int *ret, int *bid)
+{
 	BAT *b,*bn;
-	int xx;
-	char *p,*q,*h;
-	ptr v;
-	int len;
+	var_t *p,*q;
+	BUN r = 0;
 
 	@:getBATdescriptor(bid, b, "batcalc.@1")@
-	@:resultBAT(@1,"batcalc.@1")@
-	h= (char *) BUNhead(b,BUNfirst(b));
-	p= (ptr) BUNtloc(b,BUNfirst(b));
-	q= (char *) BUNtloc(b,BUNlast(b));
-	xx= BUNsize(b);
+	@:voidresultBAT(TYPE_@1,"batcalc.@1")@
+	p = (var_t*) Tloc(b,BUNfirst(b));
+	q = (var_t*) Tloc(b,BUNlast(b));
 
-	while(p<q){
-		@:ConvertFromStr(@1)@
-		p+=xx; h+= xx;
+	for(; p<q; p++, r++){
+		ptr v = NULL; 
+		int len=0;
+
+		ATOMfromstr (TYPE_@1, &v, &len, (char*)Tbase(b)+*p);
+		ATOMput(TYPE_@1, bn->T->vheap, Tloc(bn,r), v);
+		if (ATOMextern(TYPE_@1) )
+			GDKfree(v);
 	}
+	BATsetcount(bn, BATcount(b));
 bunins_failed:
 	@:wrapup@
 }

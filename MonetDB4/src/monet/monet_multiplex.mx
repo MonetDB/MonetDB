@@ -665,7 +665,6 @@ bunins_failed:
         if (desc->b->htype || desc->b->ttype) {
 	    bunfastins(desc->b, @1, @2);
         } else {
-            desc->b->batBuns->free++;
             BATsetcount(desc->b, desc->b->batCount+1);
         }
 	if (desc->unfix)
@@ -732,15 +731,19 @@ in this implementation.
 
 @= BUNins_array_special
 	{
-		ptr _h = (buntrick==-1)?BUNhpos(bh,ph):@2;
-		bunfastins_nocheck(@1, dst, _h, *(ptr*)@3, bunsize);
-		dst += bunsize;
+		ptr _h = (buntrick==-1)?BUNhpos(bhi,ph):BUNhloc(bhi,ph);
+		bunfastins_nocheck(@1, d, _h, *(ptr*)@3, hs, ts);
+		d++;
+		(void) dst; /* only used in "multiplex" case below */
 	}
 
 @= BUNins_array_multiplex
+	(void) bhi; /* only used in "special" case above */
+	(void) hs;  /* only used in "special" case above */
+	(void) ts;  /* only used in "special" case above */
 	switch (buntrick) {
-	case 0:	   /* non-void head column */
-		bunfastins_nocheck(@1, dst, @2, @3, bunsize);
+	case 0:	  
+		goto bunins_failed;
 		break;
 	case 1:
 		*(bte*) dst = *(bte*) @3;
@@ -758,37 +761,38 @@ in this implementation.
 		memcpy(dst, @3, buntrick);
 		break;
 	}
-	dst += bunsize;
+	dst += buntrick;
 
 @= arrayloop1
 	while(ph < hend) {
 		int retval = (*addr)(tptr,@2);
-		@:check_@1(name, (ph - ah)/sh - hdff)@
+		@:check_@1(name, ph)@
 		@:BUNins_array_@1(retb, ph, tptr)@
-		p1 += s1; ph += sh;
+		p1 += s1; ph++;
 	}
 
 @= arrayloop2
 	while(ph < hend) {
 		int retval = (*addr)(tptr,@2,@3);
-		@:check_@1(name, (ph - ah)/sh - hdff)@
+		@:check_@1(name, ph)@
 		@:BUNins_array_@1(retb, ph, tptr)@
-		p1 += s1; p2 += s2; ph += sh;
+		p1 += s1; p2 += s2; ph++;
 	}
 
 @= arrayloop3
 	while(ph < hend) {
 		int retval = (*addr)(tptr,@2,@3,@4);
-		@:check_@1(name, (ph - ah)/sh - hdff)@
+		@:check_@1(name, ph)@
 		@:BUNins_array_@1(retb, ph, tptr)@
-		p1 += s1; p2 += s2; p3 += s3; ph += sh;
+		p1 += s1; p2 += s2; p3 += s3; ph++;
 	}
 
 @= batinit
 	b@1 = BBPdescriptor(@2);
+	b@1i = bat_iterator(b@1);
 	a@1 = ATOMvarsized(b@1->ttype)?b@1->theap->base:0;
-	s@1 = BUNsize(b@1);
-	p@1 = (char*) (BUNfirst(b@1)+b@1->tloc);
+	p@1 = Tloc(b@1,BUNfirst(b@1));
+	s@1 = Tsize(b@1);
 	if (htpe != TYPE_void)
 		htpe = (special>1)?ATOMtype(b@1->htype):BAThstore(b@1);
 	if (htpe == TYPE_void) {
@@ -796,10 +800,9 @@ in this implementation.
 			hseq = b@1->hseqbase;
 		}
 	}
-	ph = (char*) (BUNfirst(b@1)+b@1->hloc);
-	hend = (char*) BUNlast(b@1);
-	hdff = BUNindex(b@1,BUNfirst(b@1));
-	ah = a@1; sh = s@1; bh = b@1;
+	ph = BUNfirst(b@1);
+	hend = BUNlast(b@1);
+	ah = a@1; bh = b@1; bhi = b@1i;
 	hsrt |= b@1->hsorted;
 	hky |= b@1->hkey;
 @= arrayinit
@@ -822,23 +825,23 @@ static int
 interpret_@1_array(str name, int argc, ValPtr argv, ValPtr res, GDKfcn addr,
 		   size_t size, int ret_tpe, int assignop, int special)
 {
+	BATiter b1i, b2i, b3i, bhi;
 	str  a1, a2 = NULL, a3 = NULL, ah = NULL; /* heap bases */
-	int  s1, s2 = 0,    s3 = 0,    sh = 0;    /* bun sizes */
-	str  p1, p2 = NULL, p3 = NULL, ph = NULL, hend = NULL; /* bun pointers */
+	int s1 = 0, s2 = 0, s3 = 0;
+	char *p1, *p2 = NULL, *p3 = NULL; /* direct pointers */
+	BUN ph = 0, hend = 0, d = 0; 
 	int  hky=0, hsrt=0, htpe=-1, ok = 0;
 	oid  hseq = oid_nil;
-	size_t hdff;
 	BAT  *b1, *b2, *b3=0, *retb, *bh=0;
 	int ret_sze = ATOMsize(ret_tpe);
 	ptr  tptr = (ptr) GDKmalloc(ret_sze+8);
 	ptr  tnil = ATOMnilptr(ret_tpe);
-	int replace = FALSE, bunsize, buntrick = 0;
+	int replace = FALSE, hs, ts, buntrick = 0;
 	bulkerror_t bulkerror;
-	BUN dst;
+	char *dst;
 
 	/* keep compilers happy */
-	ah = 0; (void) ah;
-	hdff = 0; (void) hdff;
+	ah = 0; (void) ah; (void)d;
 
 	@:arrayinit(1)@
 	if (argc>=3) {
@@ -851,20 +854,44 @@ interpret_@1_array(str name, int argc, ValPtr argv, ValPtr res, GDKfcn addr,
 		replace = TRUE;
 		buntrick = ATOMsize(b1->ttype);
 		HASHdestroy(retb = b1);
-		dst = BUNtloc(retb, BUNfirst(retb));
+		dst = Tloc(retb, BUNfirst(retb));
 	} else {
 		retb = BATnew(htpe, ret_tpe, size);
 		BATseqbase(retb, hseq);
 		if (htpe == TYPE_void && special == 0 && !ATOMvarsized(ret_tpe)) {
-			buntrick = BUNsize(retb);
-			retb->batBuns->free = BATcount(bh)*buntrick;
+			buntrick = Tsize(retb);
+			retb->H->heap.free = headsize(retb,BATcount(bh));
+			retb->T->heap.free = tailsize(retb,BATcount(bh));
 			BATsetcount(retb, BATcount(bh));
 		} else if (special > 1 && bh->htype == TYPE_void) {
 			buntrick = -1;
 		}
-		dst = BUNfirst(retb);
+		/* lets copy the head */
+		if (special <= 1 && retb->htype) {
+			buntrick = Tsize(retb);
+			memcpy(retb->H->heap.base, bh->H->heap.base, headsize(bh,BATcount(bh)));
+			retb->H->heap.free = headsize(retb,BATcount(bh));
+			/* for var sized also copy heap */
+			if (retb->hvarsized) {
+				Heap hhp;
+
+				memset(&hhp, 0, sizeof(Heap));
+			    	if (bh->hheap && HEAPcopy(&hhp, bh->hheap) < 0){
+					BBPreclaim(retb);
+					return GDK_FAIL;
+				}
+				if (hhp.filename == NULL) {
+					hhp.filename = retb->hheap->filename;
+					retb->hheap->filename = NULL;
+				}
+				HEAPfree(retb->hheap);
+				*retb->hheap = hhp;
+			}
+		}
+		dst = Tloc(retb, BUNfirst(retb));
 	}
-	bunsize = BUNsize(retb);
+	hs = Hsize(retb);
+	ts = Tsize(retb);
 	bulkerror_init(&bulkerror);
 
 	if (argc == 2) {
@@ -924,6 +951,10 @@ interpret_@1_array(str name, int argc, ValPtr argv, ValPtr res, GDKfcn addr,
 			}
 		}
 	}
+	if (!special) 
+		BATsetcount(retb,BATcount(bh));
+	retb->H->heap.free = headsize(retb,BATcount(retb));
+	retb->T->heap.free = tailsize(retb,BATcount(retb));
 	ok = TRUE;
 bunins_failed:
 	bulkerror_finish(&bulkerror, name);
@@ -1002,67 +1033,67 @@ return a simple type.
 	}
 @= mergeloop2
 	while (p1 < e1 && p2 < e2) {
-		oid o1 = *(oid*) BUNhloc(b1, p1), o2 = *(oid*) BUNhloc(b2, p2);
+		oid o1 = *(oid*) BUNhloc(b1i, p1), o2 = *(oid*) BUNhloc(b2i, p2);
 		if (o1 < o2) {
-			p1 += s1;
+			p1++;
 		} else if (o1 > o2) {
-			p2 += s2;
+			p2++;
 		} else {
-			int retval = (*addr)(tptr,BUNt@2(b1,p1),BUNt@3(b2,p2));
-			@:check_@1(name, BUNindex(b1,p1)-BUNindex(b1,BUNfirst(b1)))@
-			@:BUNins_merge_@1(retb,BUNhloc(b1,p1),tptr,BUNtloc(b1,p1))@
-			p1 += s1; p2 += s2;
+			int retval = (*addr)(tptr,BUNt@2(b1i,p1),BUNt@3(b2i,p2));
+			@:check_@1(name, p1-BUNfirst(b1))@
+			@:BUNins_merge_@1(retb,BUNhloc(b1i,p1),tptr,BUNtloc(b1i,p1))@
+			p1++; p2++;
 		}
 	}
 
 @= mergeloop3
 	if (p1 < e1 && p2 < e2 && p3 < e3) {
-		oid o1 = *(oid*) BUNhloc(b1, p1), o2 = *(oid*) BUNhloc(b2, p2);
+		oid o1 = *(oid*)BUNhloc(b1i, p1), o2 = *(oid*) BUNhloc(b2i, p2);
 		for (;;) {
 			if (o1 < o2) {
-				p1 += s2;
+				p1++;
 				if (p1 >= e1)
 					goto xit;
 			} else if (o1 > o2) {
-				p2 += s2;
+				p2++;
 				if (p2 >= e2)
 					goto xit;
 			} else {
 				for (;;) {
-					o1 = *(oid*) BUNhloc(b2, p2);
-					o2 = *(oid*) BUNhloc(b3, p3);
+					o1 = *(oid*) BUNhloc(b2i, p2);
+					o2 = *(oid*) BUNhloc(b3i, p3);
 					if (o1 < o2) {
-						p2 += s2;
+						p2++;
 						if (p2 >= e2)
 							goto xit;
 					} else if (o1 > o2) {
-						p3 += s3;
+						p3++;
 						if (p3 >= e3)
 							goto xit;
 					} else {
 						break;
 					}
 				}
-				o1 = *(oid*) BUNhloc(b1, p1);
-				o2 = *(oid*) BUNhloc(b2, p2);
+				o1 = *(oid*) BUNhloc(b1i, p1);
+				o2 = *(oid*) BUNhloc(b2i, p2);
 				if (o1 == o2) {
-					int retval = (*addr)(tptr, BUNt@2(b1,p1), BUNt@3(b2,p2), BUNt@4(b3,p3));
-					@:check_@1(name, BUNindex(b1,p1)-BUNindex(b1,BUNfirst(b1)))@
-					@:BUNins_merge_@1(retb,BUNhloc(b1,p1),tptr,BUNtloc(b1,p1))@
-					p1 += s2;
+					int retval = (*addr)(tptr, BUNt@2(b1i,p1), BUNt@3(b2i,p2), BUNt@4(b3i,p3));
+					@:check_@1(name, p1-BUNfirst(b1))@
+					@:BUNins_merge_@1(retb,BUNhloc(b1i,p1),tptr,BUNtloc(b1i,p1))@
+					p1++;
 					if (p1 >= e1)
 						goto xit;
-					p2 += s2;
+					p2++;
 					if (p2 >= e2)
 						goto xit;
-					p3 += s3;
+					p3++;
 					if (p3 >= e3)
 						goto xit;
 				} else
 					continue;
 			}
-			o1 = *(oid*) BUNhloc(b1, p1);
-			o2 = *(oid*) BUNhloc(b2, p2);
+			o1 = *(oid*) BUNhloc(b1i, p1);
+			o2 = *(oid*) BUNhloc(b2i, p2);
 		}
 	}
 
@@ -1072,9 +1103,9 @@ return a simple type.
 		if (htpe == TYPE_void)
 			htpe = (special>1)?ATOMtype(bn->htype):bn->htype;
 		b@1 = bn;
-		s@1 = BUNsize(bn);
 		p@1 = BUNfirst(bn);
 		e@1 = BUNlast(bn);
+		b@1i = bat_iterator(bn);
 	}
 
 @= mergealign
@@ -1093,10 +1124,10 @@ static int
 interpret_@1_merge(str name, int argc, ValPtr argv, ValPtr res, GDKfcn addr,
 		   size_t size, int ret_tpe, int assignop, int special)
 {
+	BATiter b1i, b2i, b3i;
 	BAT *b1, *b2, *b3 = NULL; /* BATs */
-	int  s1, s2, s3 = 0;      /* bun sizes */
-	BUN  p1, p2, p3 = NULL;   /* bun pointers */
-	BUN  e1, e2, e3 = NULL;   /* bun pointers */
+	BUN  p1, p2, p3 = BUN_NONE;   /* bun pointers */
+	BUN  e1, e2, e3 = BUN_NONE;   /* bun pointers */
 	int ret_sze = ATOMsize(ret_tpe), ok = 0;
 	ptr  tptr = GDKmalloc(MAX(1,ret_sze));
 	ptr  tnil = ATOMnilptr(ret_tpe);
@@ -1366,7 +1397,7 @@ Note that the varsized result produced by the execution must be freed.
 Note also that result atoms with an unfix ADT routine must be unfixed (odSet, e.g.).
 
 @= exec_cleanup
-	if (nested->hhash || nested->thash) {
+	if (nested->H->hash || nested->T->hash) {
 		HASHdestroy(nested);
 	}
 	nested->halign = nested->talign = 0;
@@ -1400,7 +1431,7 @@ Note also that result atoms with an unfix ADT routine must be unfixed (odSet, e.
 		/* terrible+true; we must check for views (on nested) */
 		BAT *_b = BBP_cache(argv->val.bval);
 
-		if (VIEWparent(_b))
+		if (isVIEW(_b))
 			VIEWreset(_b);
 		if (BUNfastins(ret, @1, _p = VALptr(argv)) == 0)
 			ret_val = -1;
@@ -1434,13 +1465,13 @@ interpret_setaggr(str name, int argc, ValPtr argv, ValPtr res, YYSTREE tt, int s
 	GDKfcn direct_call = NULL, packed_call = NULL;
 	ValRecord argv_bak;
 	BUN p, q, r, s;
-	int xx, yy;
 	size_t zz;
 	hash_t hh;
 	str buf = NULL;
 	bulkerror_t bulkerror;
 	BATstore nested_bak;
 	BAT nested_rev_bak;
+	BATiter extenti, bi;
 
 	(void) name;
 
@@ -1457,7 +1488,7 @@ head values only (no empty sets possible).
 	if ((argc == 3) && !(extent = BBPdescriptor(argv[2].val.bval))) {
 		return -1;
 	}
-	minpos = BUNindex(b, (p = BUNfirst(b)));
+	minpos = p = BUNfirst(b);
 
 	/* try to establish whether we can use the non-packed direct implementation */
 	if ((GDKfcn) sig->pack_fcn != sig->fast_fcn) {	/* {Y} with Y is not TOK_PROC */
@@ -1506,8 +1537,8 @@ there are the {strings, polygons, images, etc}!
 
 	/* TRICK: on varsized types we reuse the heaps from 'b' in 'nested' */
 	if (hidden_vartype) {
-		nested_rev->ttype = nested->htype = hidden_vartype;
-		nested_rev->tvarsized = nested->hvarsized = TRUE;
+		nested->htype = hidden_vartype;
+		nested->hvarsized = TRUE;
 		nested->hheap = (Heap*) alloca(sizeof(Heap));
 		*nested->hheap = *b->theap;
 	}
@@ -1515,24 +1546,18 @@ there are the {strings, polygons, images, etc}!
 	/* TRICK: for sorted aggregation, we let 'nested' point into 'b' */
 	if (BAThordered(b) & 1) {
 		nested->hsorted = nested->tsorted = BATtordered(b);
-		nested->dims = BATmirror(b)->dims;
-		nested_rev->dims = b->dims;
-		*nested->batBuns = *b->batBuns;
-		nested_rev->batFirst = nested->batFirst = b->batFirst;
-		nested_rev->T = nested->H;
 		*nested->H = *b->T;
+		*nested->T = *b->T;
+		nested->H->props = nested->T->props = NULL;
 		nested->halign = 0;
+		nested->H->hash = nested->T->hash = NULL;
 		prop_sorted = BATtordered(b) & 1;
 	} else {
 		nested->hsorted = nested->tsorted = 0;
 	}
 
 	/* TRICK: let the tail column of 'nested' point to the head column */
-	nested_rev->hloc = nested->tloc = nested->hloc;
-	nested_rev->H = nested->T = nested->H;
-	nested_rev->htype = nested->ttype = nested->htype;
-	nested_rev->hvarsized = nested->tvarsized = nested->hvarsized;
-	nested_rev->hseqbase = nested->tseqbase = nested->hseqbase;
+	nested->T = nested->H;
 
 @- non-tricky? initializations
 @c
@@ -1560,13 +1585,15 @@ the below is a merge-semijoin of 'extent' and 'b'. For each element in 'extent'
 let 'nested' point (by manipulating its BUNheap pointers) to the matching
 range in 'b' (possibly empty). We then call the execution function on 'nested'.
 @c
+	bi = bat_iterator(b);
+	extenti = bat_iterator(extent);
 	if (BAThordered(b) & 1) {
 		BAT *m = BATmirror(b);
 		int (*cmp) (ptr, ptr) = BATatoms[b->htype].atomCmp;
 		oid minoid = b->hseqbase;
 		oid maxoid = minoid + BATcount(b);
 		oid sqb = 0;
-		BUN pp = NULL;
+		BUN pp = BUN_NONE;
 
 		if (!(BAThordered(extent) & 1)) {
 			BAT *n = BATsort(extent);
@@ -1579,8 +1606,6 @@ range in 'b' (possibly empty). We then call the execution function on 'nested'.
 		r = BUNfirst(extent);
 		q = BUNlast(b);
 		s = BUNlast(extent);
-		xx = BUNsize(b);
-		yy = BUNsize(extent);
 
 		if (direct_call == NULL) {
 @-
@@ -1591,23 +1616,26 @@ it with the generic hashimpl anyway.
 			if (b->ttype == TYPE_void) {
 				pp = p;
 				sqb = nested->hseqbase;
-				@:non_opt_sort((void),nested->hseqbase=nested->tseqbase=sqb+((p-pp)/xx))@
+				@:non_opt_sort((void),nested->hseqbase=nested->tseqbase=sqb+p)@
 			} else {
 				@:non_opt_sort(,)@
 			}
 @= non_opt_sort
 		if (GDKdebug&131072)
 			THRprintf(GDKout, "setaggr impl: non-optimized sort @1\n");
-		for (; r < s; r += yy) {	   /* loop on extent */
-			ptr last = BUNhead(extent,r);
-			if (p < q && (*cmp)(BUNhead(b, p), last) < 0) {
+		for (; r < s; r++) {	   /* loop on extent */
+			ptr last = BUNhead(extenti,r);
+			if (p < q && (*cmp)(BUNhead(bi, p), last) < 0) {
 				 p = SORTfndfirst(m, last);
 			}
-			nested->batBuns->base = nested->batDeleted = nested->batInserted = nested->batFirst = p;
+			nested->batDeleted = nested->batInserted = nested->batFirst = 0;
+			nested->H->heap.base = nested->T->heap.base = Hloc(m,p); 
 			@2;
+			pp = p;
 			p = SORTfndlast(m, last);
-			nested->batBuns->size = nested->batBuns->free = p - nested->batBuns->base;
-			BATsetcount(nested, nested->batBuns->free/xx);
+			nested->H->heap.size = nested->H->heap.free = headsize(nested,p-pp);
+			nested->T->heap.size = nested->T->heap.free = tailsize(nested,p-pp);
+			BATsetcount(nested, p-pp);
 			@:exec_interpret(last)@
 			nested->hdense = 0;
 		}
@@ -1631,20 +1659,21 @@ optimized cases that use exec_opt and hence optimize_call
 				if (GDKdebug & 131072)
 					THRprintf(GDKout, "setaggr impl: void-optimized sort\n");
 				sqb = nested->hseqbase;
-				for (; r < s; r += yy) {
-					oid last = *(oid *) BUNhead(extent, r);
+				for (; r < s; r++) {
+					oid last = *(oid *) BUNhead(extenti, r);
 
 					if (last >= minoid && last < maxoid) {
 						zz = minpos + (last - minoid);
-						q = BUNptr(b, zz);
-						p = q + xx;
+						q = zz;
+						p = q+1;
 						nested->hseqbase = nested->tseqbase = sqb + zz;
 					} else {
 						q = p;
 					}
-					nested->batBuns->base = nested->batDeleted = nested->batInserted = nested->batFirst = q;
-					nested->batBuns->size = nested->batBuns->free = p - nested->batBuns->base;
-					BATsetcount(nested, nested->batBuns->free/xx);
+					nested->batDeleted = nested->batInserted = nested->batFirst = 0;
+					nested->T->heap.base = Tloc(b,q); 
+					nested->T->heap.size = nested->T->heap.free = tailsize(nested,p-q);
+					BATsetcount(nested, p-q);
 					@:exec_opt(&last)@
 				}
 				break;
@@ -1654,23 +1683,26 @@ optimized cases that use exec_opt and hence optimize_call
 	if (b->ttype == TYPE_void) {
 		pp = p;
 		sqb = nested->hseqbase;
-		@:getset_int_(@1,-void,nested->hseqbase = nested->tseqbase = sqb + ((p-pp)/xx))@
+		@:getset_int_(@1,-void,nested->hseqbase = nested->tseqbase = sqb + p)@
 	} else {
 		@:getset_int_(@1,,)@
 	}
 @= getset_int_
 	if (GDKdebug&131072)
 		THRprintf(GDKout, "setaggr impl: @1@2-optimized sort\n");
-	for (; r < s; r += yy) {
-		@1 last = *(@1*) BUNhead(extent,r);
-		if (*(@1*) BUNhloc(b,p) < last) {
+	for (; r < s; r++) {
+		@1 last = *(@1*) BUNhead(extenti,r);
+		if (*(@1*) BUNhloc(bi,p) < last) {
 			p = SORTfndfirst_@1(m, &last);
 		}
-		nested->batBuns->base = nested->batDeleted = nested->batInserted = nested->batFirst = p;
+		nested->batDeleted = nested->batInserted = nested->batFirst = 0;
+		nested->H->heap.base = nested->T->heap.base = Hloc(m,p);
 		@3;
+		pp = p;
 		p = SORTfndlast_@1(m, &last);
-		nested->batBuns->size = nested->batBuns->free = p-nested->batBuns->base;
-		BATsetcount(nested, nested->batBuns->free/xx);
+		nested->H->heap.size = nested->H->heap.free = headsize(nested,p-pp);
+		nested->T->heap.size = nested->T->heap.free = tailsize(nested,p-pp);
+		BATsetcount(nested, p-pp);
 		@:exec_opt(&last)@
 		nested->hdense = 0;
 	}
@@ -1682,30 +1714,28 @@ a temporary BAT 'nested'; in which we insert all tail values.
 @c
 	} else {
 		oid voiddelta = b->tseqbase - minpos;
-		int bunsize = BUNsize(nested);
-		Heap *batbuns = nested->batBuns;
+		int hs = Hsize(nested);
+		Heap *head = &nested->H->heap;
 
-		assert(batbuns->base!=(ptr)1);
-		nested->batDeleted = nested->batInserted = batbuns->base;
+		nested->batDeleted = nested->batInserted = 0;
 
 		restore = 0;
 		if (direct_call == NULL) {
 			if (GDKdebug & 131072)
 				THRprintf(GDKout, "setaggr impl: non-optimized hash\n");
-			BATloopFast(extent, p, q, yy) {
+			BATloop(extent, p, q) {
 
-				ptr last = BUNhead(extent, p);
+				ptr last = BUNhead(extenti, p);
 
 				/* make nested empty and writeable */
-				nested->batDeleted = nested->batFirst = nested->batInserted = batbuns->base;
+				nested->batDeleted = nested->batFirst = nested->batInserted = 0;
 				BATsetcount(nested, 0);
-				batbuns->free = 0;
+				head->free = 0;
 
 				if (BATprepareHash(b))
 					goto bunins_failed;
-				HASHloop(b, b->hhash, hh, last) {
-					r = BUNptr(b, hh);
-					@:bunins_unary(r,hh)@
+				HASHloop(bi, b->H->hash, hh, last) {
+					@:bunins_unary(hh)@
 				}
 				@:exec_interpret(last)@
 				nested->hsorted = 0;
@@ -1742,14 +1772,14 @@ we know that the head is oid (or a small version) here..
 @= getset_ins_imp
 	if (GDKdebug&131072)
 		THRprintf(GDKout, "setaggr impl: @1-optimized @2\n");
-	BATloopFast(extent, p, q, yy) {
-		ptr last = BUNhead(extent,p);
+	BATloop(extent, p, q) {
+		ptr last = BUNhead(extenti,p);
 		@1 cur = *(@1*) last;
 
 		/* make 'nested' empty and writeable */
-		nested->batFirst = batbuns->base;
+		nested->batFirst = 0;
 		BATsetcount(nested, 0);
-		batbuns->free = 0;
+		head->free = 0;
 
 		/* get all elements for this id and insert them in 'nested' */
 		@:getset_ins_@2(@1)@
@@ -1758,15 +1788,14 @@ we know that the head is oid (or a small version) here..
 		@:exec_opt(last)@
 	}
 @= getset_ins_hash
-	HASHloop_@1(b, b->hhash, hh, (&cur), r) {
-		@:bunins_unary(r,hh)@
+	HASHloop_@1(bi, b->H->hash, hh, (&cur)) {
+		@:bunins_unary(hh)@
 	}
 @= getset_ins_loop
-	zz = minpos;
-	BATloopFast(b, r, s, xx) {
-		if (cur == *(@1*) BUNhloc(b,r)) {
-			@:bunins_unary(r,zz)@
-		} zz++;
+	BATloop(b, r, s) {
+		if (cur == *(@1*) BUNhloc(bi,r)) {
+			@:bunins_unary(r)@
+		} 
 	}
 
 @+ epilogue
@@ -1824,9 +1853,9 @@ but rather discard the complete result and return an error.
 		nested->T = &n->T;
 		nested_rev->H = &n->T;
 		nested_rev->T = &n->H;
-		nested_rev->dims = nested_rev_bak.dims;
-		nested->dims = nested_bak.B.dims;
-		nested->hheap = NULL;
+		nested->H->type = nested_bak.B.H->type;
+		nested->H->varsized = 0;
+		nested->H->vheap = NULL;
 	}
 	BBPreclaim(nested);
 
@@ -1845,37 +1874,35 @@ call and we have the additional knowledge (through the atom heap trick) that:
 - its atomic content is fixed size
 
 @= bunins_unary
-	if (batbuns->free >= batbuns->size) {
+	if (head->free >= head->size) {
 		int err;
 
-		DELTAsave(nested);
-		err = HEAPextend(batbuns, batbuns->size*2);
-		DELTAload(nested);
+		err = HEAPextend(head, head->size*2);
 		if (err < 0)
 			goto bunins_failed;
-		nested->batDeleted = nested->batDeleted = nested->batFirst = batbuns->base;
+		nested->batDeleted = nested->batDeleted = nested->batFirst = 0;
 	}
-	if (bunsize == SIZEOF_OID) {
+	if (hs == SIZEOF_OID) {
 		if (b->ttype == TYPE_void) {
-			*(oid*) (batbuns->base + batbuns->free) = voiddelta + @2;
+			*(oid*) (head->base + head->free) = voiddelta + @1;
 		} else {
 #if SIZEOF_OID == SIZEOF_INT
-		        *(int*) (batbuns->base + batbuns->free) = *(int*) BUNtloc(b,@1);
+		        *(int*) (head->base + head->free) = *(int*) BUNtloc(bi,@1);
 #else
-		        *(lng*) (batbuns->base + batbuns->free) = *(lng*) BUNtloc(b,@1);
+		        *(lng*) (head->base + head->free) = *(lng*) BUNtloc(bi,@1);
 #endif
 		}
 #if SIZEOF_OID != SIZEOF_INT
-	} else if (bunsize == SIZEOF_INT) {
-	        *(int*) (batbuns->base + batbuns->free) = *(int*) BUNtloc(b,@1);
+	} else if (hs == SIZEOF_INT) {
+	        *(int*) (head->base + head->free) = *(int*) BUNtloc(bi,@1);
 #endif
-	} else if (bunsize > SIZEOF_INT) {
-		memcpy(batbuns->base + batbuns->free, BUNtloc(b,@1), bunsize);
-	} else if (bunsize == 1) {
-		*(bte*) (batbuns->base + batbuns->free) = *(bte*) BUNtloc(b,@1);
+	} else if (hs > SIZEOF_INT) {
+		memcpy(head->base + head->free, BUNtloc(bi,@1), hs);
+	} else if (hs == 1) {
+		*(bte*) (head->base + head->free) = *(bte*) BUNtloc(bi,@1);
 	} else {
-		*(sht*) (batbuns->base + batbuns->free) = *(sht*) BUNtloc(b,@1);
+		*(sht*) (head->base + head->free) = *(sht*) BUNtloc(bi,@1);
 	}
-	batbuns->free += bunsize;
+	head->free += hs;
 	nested->batCount++;
 @}

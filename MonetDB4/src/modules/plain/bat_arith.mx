@@ -116,7 +116,8 @@ Only the standard types {\tt bte}, {\tt sht}, {\tt int}, {\tt wrd}, {\tt lng}, {
 int
 batbat_@1_@3(BAT **ret, BAT *l, BAT *r)
 {
-	REGISTER @1 *bnp;
+	REGISTER @1 *lp, *lq, *rp;
+	REGISTER @1 *bnp = NULL, *s = NULL;
 	BAT *bn;
 
 	ALGODEBUG THRprintf(GDKout, "#batbat_@1_@3[@7@2,@5](l=%s,r=%s);\n", 
@@ -130,95 +131,24 @@ batbat_@1_@3(BAT **ret, BAT *l, BAT *r)
 	BATseqbase(bn,l->hseqbase);
 	bn->tsorted = 0;
 
-	if ((BUNsize(l)==sizeof(@1))&&(BUNsize(r)==sizeof(@1))) {
-		REGISTER @1 *lp, *lq, *rp;
-		REGISTER int cnt = 4096/(int)sizeof(@1);
-		@1* lbuf = GDKmalloc(2*cnt*sizeof(@1));
-		@1* rbuf = lbuf+cnt;
-
-		lq = (@1*)BUNtloc(l,BUNlast(l));
-		lp = (@1*)BUNtloc(l,BUNfirst(l));
-		rp = (@1*)BUNtloc(r,BUNfirst(r));
-		bnp = (@1*)BUNtloc(bn,BUNlast(bn));
-		for (; lp < lq; lp+=cnt, rp+=cnt) {
-			/* 0 <= cnt <= 4096, so cast to int is safe */
-			REGISTER int x = (int) (lq - lp < cnt ? lq - lp : cnt);
-			REGISTER int y = x*(int)sizeof(@1);
-			REGISTER int i;
-			memcpy(lbuf,lp,y);
-			memcpy(rbuf,rp,y);
-			for (i=0; i<x; i++) {
-				if (@5 && (rbuf[i] == 0)) {
-					GDKerror("[@7@2] (batbat_@1_@3): Division by Zero!");
-					GDKfree(lbuf);
-					BBPreclaim(bn);
-					return GDK_FAIL;
-				} else if ((lbuf[i] != @1_nil) && (rbuf[i] != @1_nil)) {
-					*bnp = (@1) OP(lbuf[i],@2,rbuf[i]);
-				} else {
-					*bnp = @1_nil;
-				}
-				bnp++;
-			}
+	lq = (@1*)Tloc(l,BUNlast(l));
+	lp = (@1*)Tloc(l,BUNfirst(l));
+	rp = (@1*)Tloc(r,BUNfirst(r));
+	s = bnp = (@1*)Tloc(bn,BUNlast(bn));
+	for (; lp < lq; lp++, rp++) {
+		if (@5 && (*rp == 0)) {
+			GDKerror("[@7@2] (batbat_@1_@3): Division by Zero!");
+			BBPreclaim(bn);
+			return GDK_FAIL;
+		} else if ((*lp != @1_nil) && (*rp != @1_nil)) {
+			*bnp = (@1) OP(*lp,@2,*rp);
+		} else {
+			*bnp = @1_nil;
 		}
-		GDKfree(lbuf);
-	} else if ((BUNsize(l)==BUNsize(r))) {
-		REGISTER chr *lp, *lq, *rp;
-		REGISTER int bs = BUNsize(l);
-		REGISTER int sze = (4096/bs)*bs;
-		chr* lbuf = GDKmalloc(2*sze);
-		chr* rbuf = lbuf+sze;
-
-		lq = (chr*)BUNtloc(l,BUNlast(l));
-		lp = (chr*)BUNtloc(l,BUNfirst(l));
-		rp = (chr*)BUNtloc(r,BUNfirst(r));
-		bnp = (@1*)BUNtloc(bn,BUNlast(bn));
-		for (; lp < lq; lp+=sze, rp+=sze) {
-			/* 0 <= sze <= 4096, so cast to int is safe */
-			REGISTER int z = (int) (lq - lp < sze ? lq - lp : sze);
-			REGISTER chr *lbp=lbuf, *lbq=lbuf+z, *rbp=rbuf;
-			memcpy(lbuf,lp,z);
-			memcpy(rbuf,rp,z);
-			for (; lbp < lbq; lbp+=bs, rbp+=bs) {
-				if (@5 && (*(@1*)rbp == 0)) {
-					GDKerror("[@7@2] (batbat_@1_@3): Division by Zero!");
-					GDKfree(lbuf);
-					BBPreclaim(bn);
-					return GDK_FAIL;
-				} else if ((*(@1*)lbp != @1_nil) && (*(@1*)rbp != @1_nil)) {
-					*bnp = (@1) OP(*(@1*)lbp,@2,*(@1*)rbp);
-				} else {
-					*bnp = @1_nil;
-				}
-				bnp++;
-			}
-		}
-		GDKfree(lbuf);
-	} else {
-		REGISTER chr *lp, *lq, *rp;
-		REGISTER int ls = BUNsize(l);
-		REGISTER int rs = BUNsize(r);
-
-		lq = (chr*)BUNtloc(l,BUNlast(l));
-		lp = (chr*)BUNtloc(l,BUNfirst(l));
-		rp = (chr*)BUNtloc(r,BUNfirst(r));
-		bnp = (@1*)BUNtloc(bn,BUNlast(bn));
-		for (; lp < lq; lp+=ls, rp+=rs) {
-			if (@5 && (*(@1*)rp == 0)) {
-                                GDKerror("[@7@2] (batbat_@1_@3): Division by Zero!");
-                                BBPreclaim(bn);
-                                return GDK_FAIL;
-			} else if ((*(@1*)lp != @1_nil) && (*(@1*)rp != @1_nil)) {
-				*bnp = (@1) OP(*(@1*)lp,@2,*(@1*)rp);
-			} else {
-				*bnp = @1_nil;
-			}
-			bnp++;
-		}
+		bnp++;
 	}
 
-	bn->batBuns->free = (BUN)bnp - bn->batBuns->base;
-	BATsetcount(bn, bn->batBuns->free/BUNsize(bn));
+	BATsetcount(bn, bnp-s);
 	if (!bn->batDirty) bn->batDirty = TRUE;
 
 	*ret = bn;
@@ -227,9 +157,7 @@ batbat_@1_@3(BAT **ret, BAT *l, BAT *r)
 int
 batbat_@1_@3_inplace(BAT **ret, BAT *l, BAT *r)
 {
-	REGISTER chr *lp, *lq, *rp;
-	REGISTER int ls = BUNsize(l);
-	REGISTER int rs = BUNsize(r);
+	REGISTER @1 *lp, *lq, *rp;
 
 	ALGODEBUG THRprintf(GDKout, "#batbat_@1_@3_inplace[@7@2,@5](l=%s,r=%s);\n",
 		BATgetId(l),BATgetId(r));
@@ -237,17 +165,17 @@ batbat_@1_@3_inplace(BAT **ret, BAT *l, BAT *r)
 		   "batbat_@1_@3_inplace: BATs l & r must be void-headed and head-aligned.\n");
 
 	l->tsorted = 0;
-	lq = (chr*)BUNtloc(l,BUNlast(l));
-	lp = (chr*)BUNtloc(l,BUNfirst(l));
-	rp = (chr*)BUNtloc(r,BUNfirst(r));
-	for (; lp < lq; lp+=ls, rp+=rs) {
-		if (@5 && (*(@1*)rp == 0)) {
+	lq = (@1*)Tloc(l,BUNlast(l));
+	lp = (@1*)Tloc(l,BUNfirst(l));
+	rp = (@1*)Tloc(r,BUNfirst(r));
+	for (; lp < lq; lp++, rp++) {
+		if (@5 && (*rp == 0)) {
                         GDKerror("[:@7@2=] (batbat_@1_@3_inplace): Division by Zero!");
                         return GDK_FAIL;
-		} else if ((*(@1*)lp != @1_nil) && (*(@1*)rp != @1_nil)) {
-			*(@1*)lp = (@1) OP(*(@1*)lp,@2,*(@1*)rp);
+		} else if ((*lp != @1_nil) && (*rp != @1_nil)) {
+			*lp = (@1) OP(*lp,@2,*rp);
 		} else {
-			*(@1*)lp = @1_nil;
+			*lp = @1_nil;
 		}
 	}
 	if (!l->batDirty) l->batDirty = TRUE;
@@ -259,10 +187,9 @@ batbat_@1_@3_inplace(BAT **ret, BAT *l, BAT *r)
 int
 valbat_@1_@3(BAT **ret, @1 *v, BAT *b)
 {
-	REGISTER chr *bp, *bq;
-	REGISTER @1 *bnp;
+	REGISTER @1 *bp, *bq;
+	REGISTER @1 *bnp, *s;
 	REGISTER @1 vv = (((*v)!=@1_nil)?(*v):@1_nil);
-	REGISTER int bs = BUNsize(b);
 	BAT *bn;
 
 	ALGODEBUG THRprintf(GDKout, "#valbat_@1_@3[@7@2,@5](v,b=%s);\n",BATgetId(b));
@@ -275,12 +202,12 @@ valbat_@1_@3(BAT **ret, @1 *v, BAT *b)
 		 return GDK_FAIL;
 	BATseqbase(bn,b->hseqbase);
 	bn->tsorted = 0;
-	bq = (chr*)BUNtloc(b,BUNlast(b));
-	bp = (chr*)BUNtloc(b,BUNfirst(b));
-	bnp = (@1*)BUNtloc(bn,BUNlast(bn));
+	bq = (@1*)Tloc(b,BUNlast(b));
+	bp = (@1*)Tloc(b,BUNfirst(b));
+	s = bnp = (@1*)Tloc(bn,BUNlast(bn));
 	if (vv != @1_nil) {
-		for (; bp < bq; bp+=bs) {
-			REGISTER @1 bv = *(@1*)bp;
+		for (; bp < bq; bp++, bnp++) {
+			REGISTER @1 bv = *bp;
 			if (@5 && (bv == 0)) {
                                 GDKerror("[@7@2] (valbat_@1_@3): Division by Zero!");
                                 BBPreclaim(bn);
@@ -289,16 +216,13 @@ valbat_@1_@3(BAT **ret, @1 *v, BAT *b)
 				bv = (@1) OP(vv,@2,bv);
 			}
 			*bnp = bv;
-			bnp++;
 		}
 	} else {
-		for (; bp < bq; bp+=bs) {
+		for (; bp < bq; bp++, bnp++) {
 			*bnp = vv;
-			bnp++;
 		}
 	}
-	bn->batBuns->free = (BUN)bnp - bn->batBuns->base;
-	BATsetcount(bn, bn->batBuns->free/BUNsize(bn));
+	BATsetcount(bn, bnp-s);
 	if (!bn->batDirty) bn->batDirty = TRUE;
 
 	if (@6 == 2) 
@@ -308,9 +232,8 @@ valbat_@1_@3(BAT **ret, @1 *v, BAT *b)
 	return GDK_SUCCEED;
 }
 int valbat_@1_@3_inplace(BAT **ret, @1 *v, BAT *b) {
-	REGISTER chr *bp, *bq;
+	REGISTER @1 *bp, *bq;
 	REGISTER @1 vv = (((*v)!=@1_nil)?(*v):@1_nil);
-	REGISTER int bs = BUNsize(b);
 
 	ALGODEBUG THRprintf(GDKout, "#valbat_@1_@3_inplace[@7@2,@5](v,b=%s);\n",BATgetId(b));
 	ERRORcheck((b->htype!=TYPE_void),
@@ -318,20 +241,20 @@ int valbat_@1_@3_inplace(BAT **ret, @1 *v, BAT *b) {
 	/* todo for commutative operators call batval (ie. for * and /) */
 
 	b->tsorted = 0;
-	bq = (chr*)BUNtloc(b,BUNlast(b));
-	bp = (chr*)BUNtloc(b,BUNfirst(b));
+	bq = (@1*)Tloc(b,BUNlast(b));
+	bp = (@1*)Tloc(b,BUNfirst(b));
 	if (vv != @1_nil) {
-		for (; bp < bq; bp+=bs) {
-			if (@5 && (*(@1*)bp == 0)) {
+		for (; bp < bq; bp++) {
+			if (@5 && (*bp == 0)) {
                                 GDKerror("[:@7@2=] (valbat_@1_@3_inplace): Division by Zero!");
                                 return GDK_FAIL;
-			} else if (*(@1*)bp != @1_nil) {
-				*(@1*)bp = (@1) OP(vv,@2,*(@1*)bp);
+			} else if (*bp != @1_nil) {
+				*bp = (@1) OP(vv,@2,*bp);
 			}
 		}
 	} else {
-		for (; bp < bq; bp+=bs) {
-			*(@1*)bp = vv;
+		for (; bp < bq; bp++) {
+			*bp = vv;
 		}
 	}
 	if (!b->batDirty) b->batDirty = TRUE;
@@ -346,10 +269,9 @@ int valbat_@1_@3_inplace(BAT **ret, @1 *v, BAT *b) {
 int
 batval_@1_@3(BAT **ret, BAT *b, @1 *v)
 {
-	REGISTER chr *bp, *bq;
-	REGISTER @1 *bnp;
+	REGISTER @1 *bp, *bq;
+	REGISTER @1 *bnp, *s;
 	REGISTER @1 vv = (((*v)!=@1_nil)?(*v):@1_nil);
-	REGISTER int bs = BUNsize(b);
 	BAT *bn;
 
 	ALGODEBUG THRprintf(GDKout, "#batval_@1_@3[@7@2,@5](v,b=%s);\n",BATgetId(b));
@@ -361,30 +283,27 @@ batval_@1_@3(BAT **ret, BAT *b, @1 *v)
 		return GDK_FAIL;
 	BATseqbase(bn,b->hseqbase);
 	bn->tsorted = 0;
-	bq = (chr*)BUNtloc(b,BUNlast(b));
-	bp = (chr*)BUNtloc(b,BUNfirst(b));
-	bnp = (@1*)BUNtloc(bn,BUNlast(bn));
+	bq = (@1*)Tloc(b,BUNlast(b));
+	bp = (@1*)Tloc(b,BUNfirst(b));
+	s = bnp = (@1*)Tloc(bn,BUNlast(bn));
 	if (@5 && (vv == 0)) {
                 GDKerror("[@7@2] (batval_@1_@3): Division by Zero!");
                 BBPreclaim(bn);
                 return GDK_FAIL;
 	} else if (vv != @1_nil) {
-		for (; bp < bq; bp+=bs) {
-			REGISTER @1 bv = *(@1*)bp;
+		for (; bp < bq; bp++, bnp++) {
+			REGISTER @1 bv = *bp;
 			if (bv != @1_nil) {
 				bv = (@1) OP(bv,@2,vv);
 			}
 			*bnp = bv;
-			bnp++;
 		}
 	} else {
-		for (; bp < bq; bp+=bs) {
+		for (; bp < bq; bp++, bnp++) {
 			*bnp = vv;
-			bnp++;
 		}
 	}
-	bn->batBuns->free = (BUN)bnp - bn->batBuns->base;
-	BATsetcount(bn, bn->batBuns->free/BUNsize(bn));
+	BATsetcount(bn, bnp-s);
 	if (!bn->batDirty) bn->batDirty = TRUE;
 	if (@6) 
 		bn->tsorted = BATtordered(b);
@@ -395,29 +314,28 @@ batval_@1_@3(BAT **ret, BAT *b, @1 *v)
 int
 batval_@1_@3_inplace(BAT **ret, BAT *b, @1 *v)
 {
-	REGISTER chr *bp, *bq;
+	REGISTER @1 *bp, *bq;
 	REGISTER @1 vv = (((*v)!=@1_nil)?(*v):@1_nil);
-	REGISTER int bs = BUNsize(b);
 
 	ALGODEBUG THRprintf(GDKout, "#batval_@1_@3_inplace[@7@2,@5](v,b=%s);\n",BATgetId(b));
 	ERRORcheck((b->htype!=TYPE_void),
 		   "batval_@1_@3_inplace: BAT b must be void-headed.\n");
 
 	b->tsorted = 0;
-	bq = (chr*)BUNtloc(b,BUNlast(b));
-	bp = (chr*)BUNtloc(b,BUNfirst(b));
+	bq = (@1*)Tloc(b,BUNlast(b));
+	bp = (@1*)Tloc(b,BUNfirst(b));
 	if (@5 && (vv == 0)) {
                 GDKerror("[:@7@2=] (batval_@1_@3_inplace): Division by Zero!");
                 return GDK_FAIL;
 	} else if (vv != @1_nil) {
-		for (; bp < bq; bp+=bs) {
-			if (*(@1*)bp != @1_nil) {
-				*(@1*)bp = (@1) OP(*(@1*)bp,@2,vv);
+		for (; bp < bq; bp++) {
+			if (*bp != @1_nil) {
+				*bp = (@1) OP(*bp,@2,vv);
 			}
 		}
 	} else {
-		for (; bp < bq; bp+=bs) {
-			*(@1*)bp = vv;
+		for (; bp < bq; bp++) {
+			*bp = vv;
 		}
 	}
 	if (!b->batDirty) b->batDirty = TRUE;

@@ -1660,9 +1660,12 @@ void updateBigFoot(Client cntxt, int bid, int add)
 		if( b==0) return;
 		/* count it once ! */
 		if( add){
-			cntxt->vmfoot += BATcount(b) * BUNsize(b);
-		} else
-			cntxt->vmfoot -= BATcount(b) * BUNsize(b);
+			cntxt->vmfoot += headsize(b,BATcount(b));
+			cntxt->vmfoot += tailsize(b,BATcount(b));
+		} else {
+			cntxt->vmfoot -= headsize(b,BATcount(b));
+			cntxt->vmfoot -= tailsize(b,BATcount(b));
+		}
 		if( cntxt->vmfoot > cntxt->bigfoot)
 			cntxt->bigfoot= cntxt->vmfoot;
 		BBPunfix(b->batCacheid);
@@ -1685,7 +1688,8 @@ int getVolume(MalStkPtr stk, InstrPtr pci, int rd)
 	if( stk->stk[getArg(pci,i)].vtype == TYPE_bat){
 		b= BATdescriptor( stk->stk[getArg(pci,i)].val.br.id);
 		if( b==0) continue;
-		vol += BATcount(b) * BUNsize(b);
+		vol += headsize(b,BATcount(b));
+		vol += tailsize(b,BATcount(b));
 		BBPunfix(b->batCacheid);
 	}
 	return vol;

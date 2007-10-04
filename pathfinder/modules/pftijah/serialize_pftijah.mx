@@ -98,7 +98,7 @@ int dbat_init(const char* name, dbat* dbat, BAT* b) {
         dbat->seqbase = (oid)b->hseqbase;
 	dbat->raw_max = (oid)BATcount(dbat->bat);
 	dbat->seq_max = dbat->raw_max + dbat->seqbase;
-	dbat->cast.voidCAST = (void*)BUNfirst(dbat->bat);
+        dbat->cast.voidCAST = (void*)Tloc(dbat->bat,BUNfirst(dbat->bat));
 	/* */
 	return 1;
 }
@@ -121,8 +121,7 @@ int dbat_finalize(dbat* dbat, int topidx) {
                 GDKerror("dbat_finalize: bad ttype\n");
                 return -1;
         }
-        b->batBuns->free = ((BUN)top) - BUNfirst(b);
-        BATsetcount(b, (b->batBuns->free+Bunbase(b)-BUNfirst(b))/BUNsize(b));
+        BATsetcount(b, (((char*)top)-b->T->heap.base)/Tsize(b) - BUNfirst(b));
         b->tsorted  = 0;
 	b->batDirty = TRUE; /* VERY important this one */
 	/* */
@@ -166,7 +165,7 @@ int dbat_extend(dbat* dbat, oid min_i /*raw-index*/, size_t forced_size) {
         GDKerror("dbat_extend: BATextend[\"%s\"](to %d) fails\n","incomplete",newsize);
         return -1;
     }
-    dbat->cast.voidCAST = (void*)BUNfirst(dbat->bat);
+    dbat->cast.voidCAST = (void*)Tloc(dbat->bat,BUNfirst(dbat->bat));
     return 1;
 }
 
@@ -281,10 +280,11 @@ tj_tagOid(tjCtx* tjctx, str t) {
     BUN bun;
 
     // stream_printf(GDKout,"tj_tagOid(\"%s\"): start\n",t);
-    HASHfnd_str(bun, tjctx->hm_globalTag, (str)t);
-    if ( bun ) {
-        // stream_printf(GDKout,"tj_tagOid(\"%s\"): bun found @ %d\n",t,BUNindex(tjctx->hm_globalTag,bun));
-        return (oid)BUNindex(tjctx->hm_globalTag,bun);
+    BATiter bi = bat_iterator(tjctx->hm_globalTag);
+    HASHfnd_str(bun, bi, (str)t);
+    if ( bun != BUN_NONE ) {
+        // stream_printf(GDKout,"tj_tagOid(\"%s\"): bun found @ %d\n",t,bun);
+        return (oid)bun;
         // return *(oid*)BUNtail(tjctx->hm_globalTag,bun);
     } else {
         // stream_printf(GDKout,"tj_tagOid(\"%s\"): bun not found\n",t);
@@ -315,9 +315,10 @@ tj_checkTerm(tjCtx* tjctx, char *t) {
 #endif
    BUN bun;
 
-   HASHfnd_str(bun, tjctx->hm_globalTerm, (str)t);
-   // return ( bun ? *(oid*)BUNtail(tjctx->hm_globalTerm,bun) : oid_nil );
-   oid res = ( bun ? (oid)BUNindex(tjctx->hm_globalTerm,bun) : oid_nil );
+   BATiter bi = bat_iterator(tjctx->hm_globalTerm);
+   HASHfnd_str(bun, bi, (str)t);
+   // return ( (bun != BUN_NONE) ? *(oid*)BUNtail(tjctx->hm_globalTerm,bun) : oid_nil );
+   oid res = ( (bun != BUN_NONE) ? (oid)bun : oid_nil );
    return (res < tjctx->lastStopWord) ? 0 : res;
 }
 
@@ -328,9 +329,10 @@ tj_termOid(tjCtx* tjctx, char *t) {
 #else
     BUN bun;
 
-    HASHfnd_str(bun, tjctx->hm_globalTerm, (str)t);
-    if ( bun ) {
-        oid res = (oid)BUNindex(tjctx->hm_globalTerm,bun);
+    BATiter bi = bat_iterator(tjctx->hm_globalTerm);
+    HASHfnd_str(bun, bi, (str)t);
+    if ( bun != BUN_NONE ) {
+        oid res = (oid)bun;
 
 	if ( 0 && res < tjctx->lastStopWord ) stream_printf(GDKout,"SKIP STOPWORD[\"%s\"]\n",t);
 	return (res < tjctx->lastStopWord) ? 0 : res;
@@ -453,8 +455,9 @@ static int loadSelectionTagList(tjCtx* tjctx, char *l) {
 static str readCollParam(tjCtx* tjctx, str param) {
 	BUN bun;
         bun = BUNfnd(tjctx->b_collParam,param);
-	if ( bun ) {
-	    return (str)BUNtail(tjctx->b_collParam,bun);
+	if ( bun != BUN_NONE ) {
+            BATiter bi = bat_iterator(tjctx->b_collParam);
+	    return (str)BUNtail(bi,bun);
 	} else
 	    return (str)str_nil;
 }
@@ -470,11 +473,12 @@ static int replaceCollParam(tjCtx* tjctx, str param, str val) {
 static BAT*
 getBAT(BAT* batbat, str bname) {
 	BUN bun;
-	if ( !(bun=BUNfnd(batbat,bname)) ) {
+	if ( (bun=BUNfnd(batbat,bname)) == BUN_NONE ) {
 	    stream_printf(GDKerr,"getBAT:BUNfnd(%s) failed.\n",bname);
 	    return NULL;
 	}
-	BAT* res = BATdescriptor( *(bat*)BUNtail(batbat,bun));
+        BATiter batbati = bat_iterator(batbat);
+	BAT* res = BATdescriptor( *(bat*)BUNtail(batbati,bun));
 	if ( !res )
 	    stream_printf(GDKerr,"getBAT:BATdescriptor() for %s failed.\n",bname);
 	return res;
@@ -709,7 +713,7 @@ loadTijahContext(BAT* tjCtx_BAT, char* selTagList) {
 	             return 0;
 	     }
 	}
-	if ( res->b_globalTerm->thash == NULL ) {
+	if ( res->b_globalTerm->T->hash == NULL ) {
 #ifdef TJ_TRACE
 	     if ( TJ_TRACE ) stream_printf(GDKout,"C[%s]:CREATE NEW HASHTABLE ON GLOBALTERM\n",res->name);
 #endif
@@ -719,7 +723,7 @@ loadTijahContext(BAT* tjCtx_BAT, char* selTagList) {
 	     }
 	}
 	res->hm_globalTag = BATmirror(res->b_globalTag);
-	if ( res->b_globalTag->thash == NULL ) {
+	if ( res->b_globalTag->T->hash == NULL ) {
 #ifdef TJ_TRACE
 	     if ( TJ_TRACE ) stream_printf(GDKout,"C[%s]:CREATE NEW HASHTABLE ON GLOBALTAG\n",res->name);
 #endif
@@ -729,7 +733,7 @@ loadTijahContext(BAT* tjCtx_BAT, char* selTagList) {
 	     }
 	}
 
-	if ( ! (res->hm_globalTerm->hhash && res->hm_globalTag->hhash) )
+	if ( ! (res->hm_globalTerm->H->hash && res->hm_globalTag->H->hash) )
 	   stream_printf(GDKout,"# WARNING: MISSING HASH ON TAG/TERM DICTIONARY\n");
 	return res;
 }
@@ -742,7 +746,7 @@ freeTijahContext(tjCtx* tjctx) {
 	for(int i=0; i<tjctx->tagswitch_sz; i++) {
 	    if ( tjctx->tagswitch[i] == 2) {
 		oid store = (oid)i;
-		if ( !BUNfnd(tjctx->b_globalRTag,&store) ) {
+		if ( BUNfnd(tjctx->b_globalRTag,&store) == BUN_NONE ) {
 		    if ( !BUNins(tjctx->b_globalRTag, &store,&store, 0)) {
 	    	        GDKerror("error writing recursive tagbat");
 		        return GDK_FAIL;
@@ -810,8 +814,9 @@ tijahDocIndex(tjCtx* ctx, str docName) {
 
         BUN bun;
         bun = BUNfnd(mb,docName);
-        if ( bun ) {
-               return *(oid*)BUNtail(mb,bun);
+        if ( bun != BUN_NONE ) {
+               BATiter mbi = bat_iterator(mb);
+               return *(oid*)BUNtail(mbi,bun);
         }
 	return oid_nil;
 }
@@ -920,7 +925,7 @@ static int checkSelectTag(tjCtx* tjctx, str t, int plusormin) {
 
         BUN bun;
         bun = BUNfnd(mb,t);
-        if ( bun ) { /* found */
+        if ( bun != BUN_NONE ) { /* found */
     		tjctx->selTagDepth += plusormin;
     	}
         return 1;

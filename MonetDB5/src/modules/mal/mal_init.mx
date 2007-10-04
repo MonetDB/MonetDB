@@ -95,7 +95,7 @@ library mal_isolation;
 library mal_memorun;
 
 library xml;
-library batxml;
+#library batxml;
 @-
 The remainder interprets the signatures and resolves the
 address bindings.
@@ -210,10 +210,10 @@ include mal_memorun;
 include opt_crack;
 include opt_joinselect;
 include opt_remoteQueries;
-include crackers; 
+#include crackers; 
 
 include xml;
-include batxml;
+#include batxml;
 @-
 In practice, we have to introduce different startup for each
 client group or database.

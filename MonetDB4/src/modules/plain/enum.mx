@@ -159,6 +159,7 @@ int enum_sht_shift = -(GDK_sht_min+1);	/* GDK_sht_min == GDK_sht_nil == -32768 *
 
 #define ENUM_CHK(x,y)									\
 		BAT *b;									\
+		BATiter bi;								\
 		int xx;									\
 		for(xx=0; xx<MAX_ENUM; xx++)						\
 			if (enum_tpe[xx] == (x))					\
@@ -167,7 +168,8 @@ int enum_sht_shift = -(GDK_sht_min+1);	/* GDK_sht_min == GDK_sht_nil == -32768 *
 			GDKerror("ENUM_CHK: %s illegal enum type.\n", (y));			\
 			return GDK_FAIL;						\
 		}									\
-		(void) b;	/* keep compilers happy */
+ 		bi = bat_iterator(b);							\
+		(void) bi;	/* keep compilers happy */
 
 #define MAX_ENUM 80
 
@@ -359,9 +361,10 @@ tostr@1@2(char** dst, int* len, ptr src)
 	if (*(@2*)src == @2_nil) {
 		v = ATOMnilptr(b->htype);
 	} else {
+		BATiter bi = bat_iterator(b);
 		/* shift (GDK_@2_min+1)..GDK_@2_max back to 0..(2*GDK_@2_max) */
-		BUN p = BUNptr(b, *(@2*)src + enum_@2_shift);
-		v = BUNhead(b,p);
+		BUN p = *(@2*)src + enum_@2_shift;
+		v = BUNhead(bi,p);
 	}
 	if (b->htype != TYPE_str) {
 		int (*tostr)(str*, int*, ptr) = BATatoms[b->htype].atomToStr;
@@ -394,9 +397,9 @@ fromstr@1@2(str src, int* len, ptr* dst)
 	if (*len < (int) sizeof(@2)) {
 		*(@2**)dst = (@2*) GDKmalloc(*len = sizeof(@2));
 	}
-	if ((p = SORTfnd(b, v)) != NULL) {
+	if ((p = SORTfnd(b, v)) != BUN_NONE) {
 		/* shift 0..(2*GDK_@2_max) to (GDK_@2_min+1)..GDK_@2_max */
-		**(@2**) dst = (@2) (BUNindex(b,p) - enum_@2_shift);
+		**(@2**) dst = (@2) (p - enum_@2_shift);
 	} else {
 		**(@2**)dst = @2_nil;
 	}
@@ -482,20 +485,20 @@ enum_encode(ptr dst, int *dsttpe, int *enum_t, ptr src, int srctpe)
 	*dsttpe = *enum_t;
 	p = BUNfnd(b, src);
 	if (ATOMstorage(*enum_t) == TYPE_bte) {
-		if (p == NULL) {
+		if (p == BUN_NONE) {
 			/* bte_nil = -128 */
 			*(bte *) dst = bte_nil;
 		} else {
 			/* shift 0..254 to -127..127 (bte is signed!) */ 
-			*(bte *) dst = (bte) (BUNindex(b, p) - enum_bte_shift);
+			*(bte *) dst = (bte) (p - enum_bte_shift);
 		}
 	} else {
-		if (p == NULL) {
+		if (p == BUN_NONE) {
 			/* sht_nil = -32767 */
 			*(sht *) dst = sht_nil;
 		} else {
 			/* shift 0..65534 to -32767..32767 (sht is signed!) */
-			*(sht *) dst = (sht) (BUNindex(b, p) - enum_sht_shift);
+			*(sht *) dst = (sht) (p - enum_sht_shift);
 		}
 	}
 	return GDK_SUCCEED;
@@ -514,29 +517,29 @@ enum_lower(ptr dst, int *dsttpe, int *enum_t, ptr src, int srctpe)
 	*dsttpe = *enum_t;
 	if (BAThordered(b) & 1) {
 		p = SORTfndlast(BATmirror(b), src);
-		if (p && p > BUNfirst(b))
-			p -= BUNsize(b);
+		if (p != BUN_NONE && p > BUNfirst(b))
+			p -= 1;
 		else
-			p = NULL;
+			p = BUN_NONE;
 	} else {
 		/* only sorted enum's are supported */
 		return GDK_FAIL;
 	}
 	if (ATOMstorage(*enum_t) == TYPE_bte) {
-		if (p == NULL) {
+		if (p == BUN_NONE) {
 			/* bte_nil = -128 */
 			*(bte *) dst = bte_nil;
 		} else {
 			/* shift 0..254 to -127..127 (bte is signed!) */ 
-			*(bte *) dst = (bte) (BUNindex(b, p) - enum_bte_shift);
+			*(bte *) dst = (bte) (p - enum_bte_shift);
 		}
 	} else {
-		if (p == NULL) {
+		if (p == BUN_NONE) {
 			/* sht_nil = -32767 */
 			*(sht *) dst = sht_nil;
 		} else {
 			/* shift 0..65534 to -32767..32767 (sht is signed!) */
-			*(sht *) dst = (sht) (BUNindex(b, p) - enum_sht_shift);
+			*(sht *) dst = (sht) (p - enum_sht_shift);
 		}
 	}
 	return GDK_SUCCEED;
@@ -560,20 +563,20 @@ enum_upper(ptr dst, int *dsttpe, int *enum_t, ptr src, int srctpe)
 		return GDK_FAIL;
 	}
 	if (ATOMstorage(*enum_t) == TYPE_bte) {
-		if (p == NULL) {
+		if (p == BUN_NONE) {
 			/* bte_nil = -128 */
 			*(bte *) dst = bte_nil;
 		} else {
 			/* shift 0..254 to -127..127 (bte is signed!) */ 
-			*(bte *) dst = (bte) (BUNindex(b, p) - enum_bte_shift);
+			*(bte *) dst = (bte) (p - enum_bte_shift);
 		}
 	} else {
-		if (p == NULL) {
+		if (p == BUN_NONE) {
 			/* sht_nil = -32767 */
 			*(sht *) dst = sht_nil;
 		} else {
 			/* shift 0..65534 to -32767..32767 (sht is signed!) */
-			*(sht *) dst = (sht) (BUNindex(b, p) - enum_sht_shift);
+			*(sht *) dst = (sht) (p - enum_sht_shift);
 		}
 	}
 	return GDK_SUCCEED;
@@ -595,14 +598,14 @@ enum_decode(ptr xdst, int *dsttpe, int *enum_t, ptr src, int srctpe)
 			v = ATOMnilptr(b->htype);
 		} else {
 			/* shift -127..127 back to 0..254 */
-			v = BUNhead(b, BUNptr(b, *(bte*)src + enum_bte_shift));
+			v = BUNhead(bi, *(bte*)src + enum_bte_shift);
 		}
 	} else {
 		if (*(sht *) src == sht_nil) {
 			v = ATOMnilptr(b->htype);
 		} else {
 			/* shift -32767..32767 back to 0..65534 */
-			v = BUNhead(b, BUNptr(b, *(sht*)src + enum_sht_shift));
+			v = BUNhead(bi, *(sht*)src + enum_sht_shift);
 		}
 	}
 	if (b->hvarsized) {
@@ -617,41 +620,42 @@ enum_decode(ptr xdst, int *dsttpe, int *enum_t, ptr src, int srctpe)
 	return GDK_SUCCEED;
 }
 
-#define HASHfnd_loc(r,b,p) r = BUNfnd(b,p)
-#define HASHfnd_var(r,b,p) r = BUNfnd(b,p)
+#define HASHfnd_loc(r,bi,p) r = BUNfnd(bi.b,p)
+#define HASHfnd_var(r,bi,p) r = BUNfnd(bi.b,p)
 
 @= encode
 	{
 		BAT *bn = BATnew(src->htype, *enum_t, BATcount(src));
-		BUN p,q,r; int _xx;
+		BATiter srci = bat_iterator(src);
+		BUN p,q,r; 
 		@1 idx;
 
 		if (bn == NULL)
 			return GDK_FAIL;
 		if (BAThordered(b)&1) {
-			BATloopFast(src, p, q, _xx) {
-				r = (BUN) SORTfnd@3(b, BUNt@2(src,p));
-				if (r == NULL) {
+			BATloop(src, p, q) {
+				r = SORTfnd@3(b, BUNt@2(srci,p));
+				if (r == BUN_NONE) {
 					idx = @1_nil;
 				} else {
 					/* shift 0..(2*GDK_@1_max) to (GDK_@1_min+1)..GDK_@1_max */
-					idx = (@1) (BUNindex(b,r) - enum_@1_shift);
+					idx = (@1) (r - enum_@1_shift);
 				}
-				if (BUNfastins(bn, BUNhead(src,p), &idx) == NULL) {
+				if (BUNfastins(bn, BUNhead(srci,p), &idx) == NULL) {
 					BBPreclaim(bn);
 					return GDK_FAIL;
 				}
 			}
 		} else {
-			BATloopFast(src, p, q, _xx) {
-				HASHfnd@3(r, b, BUNt@2(src,p));
-				if (r == NULL) {
+			BATloop(src, p, q) {
+				HASHfnd@3(r, bi, BUNt@2(srci,p));
+				if (r == BUN_NONE) {
 					idx = @1_nil;
 				} else {
 					/* shift 0..(2*GDK_@1_max) to (GDK_@1_min+1)..GDK_@1_max */
-					idx = (@1) (BUNindex(b,r) - enum_@1_shift);
+					idx = (@1) (r - enum_@1_shift);
 				}
-				if (BUNfastins(bn, BUNhead(src,p), &idx) == NULL) {
+				if (BUNfastins(bn, BUNhead(srci,p), &idx) == NULL) {
 					BBPreclaim(bn);
 					return GDK_FAIL;
 				}
@@ -745,20 +749,21 @@ enum_encode_multi(BAT **dst, int *enum_t, BAT *src)
 @= decode
 {
 	BAT *bn = BATnew(src->htype, b->htype, BATcount(src));
-	BUN p,q; int _xx;
+	BATiter srci = bat_iterator(src);
+	BUN p,q; 
 	ptr w,nil = ATOMnilptr(b->htype);
 
 	if (bn == NULL)
 		return GDK_FAIL;
-	BATloopFast(src, p, q, _xx) {
-		@1 *idx = (@1*) BUNtloc(src,p);
+	BATloop(src, p, q) {
+		@1 *idx = (@1*) BUNtloc(srci,p);
 		if (*(@1*) idx == @1_nil) {
 			w = nil;
 		} else {
 			/* shift (GDK_@1_min+1)..GDK_@1_max back to 0..(2*GDK_@1_max) */
-			w = BUNhead(b, BUNptr(b, *idx + enum_@1_shift));
+			w = BUNhead(bi, *idx + enum_@1_shift);
 		}
-		if (BUNfastins(bn, BUNhead(src,p), w) == NULL) {
+		if (BUNfastins(bn, BUNhead(srci,p), w) == NULL) {
 			BBPreclaim(bn);
 			return GDK_FAIL;
 		}
@@ -912,16 +917,14 @@ enum_print1(Stream *fp, BAT *b2, BAT *b1)
 static size_t
 enum_print_@1(str p, str q, BAT* b1, BAT* e1, BAT* b2)
 {
-	int s1 = BUNsize(b1)/(int)sizeof(@1);
-	int s2 = BUNsize(b2)/(int)sizeof(int);
-	unsigned @1* p1 = (unsigned @1*) BUNtloc(b1,BUNfirst(b1));
-	int *p2 = (int*) BUNtloc(b2,BUNfirst(b2));
-	int *end = (int*) BUNtloc(b2,BUNlast(b2));
-	int *h1 = (int*) BUNhloc(e1,BUNfirst(e1));
+	unsigned @1* p1 = (unsigned @1*) Tloc(b1,BUNfirst(b1));
+	int *p2 = (int*) Tloc(b2,BUNfirst(b2));
+	int *end = (int*) Tloc(b2,BUNlast(b2));
+	int *h1 = (int*) Hloc(e1,BUNfirst(e1));
 	str t1 = (str) e1->hheap->base;
 	str src, dst=p;
 
-	for(q -= 1000; p2<end; p1+=s1, p2+=s2) {
+	for(q -= 1000; p2<end; p1++, p2++) {
 		int i = *p2;
 		if (dst > q) {
 			GDKerror("enum_print: running out of buffer\n");
@@ -994,20 +997,17 @@ enum_print2(Stream *fp, BAT *b3, BAT *b2, BAT *b1)
 static size_t
 enum_print_@1_@2(str p, str q, BAT* b1, BAT* e1, BAT* b2, BAT* e2, BAT* b3)
 {
-	int s1 = BUNsize(b1)/(int)sizeof(@1);
-	int s2 = BUNsize(b2)/(int)sizeof(@2);
-	int s3 = BUNsize(b3)/(int)sizeof(int);
-	unsigned @1* p1 = (unsigned @1*) BUNtloc(b1,BUNfirst(b1));
-	unsigned @2* p2 = (unsigned @2*) BUNtloc(b2,BUNfirst(b2));
-	int *p3 = (int*) BUNtloc(b3,BUNfirst(b3));
-	int *end = (int*) BUNtloc(b3,BUNlast(b3));
-	int *h1 = (int*) BUNhloc(e1,BUNfirst(e1));
-	int *h2 = (int*) BUNhloc(e2,BUNfirst(e2));
+	unsigned @1* p1 = (unsigned @1*) Tloc(b1,BUNfirst(b1));
+	unsigned @2* p2 = (unsigned @2*) Tloc(b2,BUNfirst(b2));
+	int *p3 = (int*) Tloc(b3,BUNfirst(b3));
+	int *end = (int*) Tloc(b3,BUNlast(b3));
+	int *h1 = (int*) Hloc(e1,BUNfirst(e1));
+	int *h2 = (int*) Hloc(e2,BUNfirst(e2));
 	str t1 = (str) e1->hheap->base;
 	str t2 = (str) e2->hheap->base;
 	str src, dst = p;
 
-	for (q -= 1000; p3<end; p1+=s1, p2+=s2, p3+=s3) {
+	for (q -= 1000; p3<end; p1++, p2++, p3++) {
 		int i = *p3;
 		if (dst > q) {
 			GDKerror("enum_print: running out of buffer\n");

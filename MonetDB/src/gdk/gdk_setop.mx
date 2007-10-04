@@ -74,7 +74,7 @@ The @emph{kintersect(l,r)} is used also as implementation for the @emph{semijoin
 #define MISSintersect(h,t)
 #define MISSdiff(h,t)           bunfastins(bn,h,t)
 #define ENDintersect(h,t)
-#define ENDdiff(h,t)            for(;p1<q1;p1+=s1) bunfastins(bn,h,t)
+#define ENDdiff(h,t)            for(;p1<q1;p1++) bunfastins(bn,h,t)
 #define RALIGNdiff(bn,l,r)      FALSE
 #define RALIGNintersect(bn,l,r) ((BAThordered(l)&BAThordered(r)&1) && l->hkey\
 				 && BATcount(bn)==BATcount(r))
@@ -89,28 +89,28 @@ The @emph{kintersect(l,r)} is used also as implementation for the @emph{semijoin
 Comes in two flavors: looking at one column, or at two at-a-time.
 Implementation is either merge- or hash-based.
 @= mergeelim
-	BATloopFast(b, p, q, xx) {
-		ptr h = BUNh@2(b,p);
-		ptr t = BUNt@3(b,p);
+	BATloop(b, p, q) {
+		ptr h = BUNh@2(bi,p);
+		ptr t = BUNt@3(bi,p);
 
-		for (r = p + xx; r < q && @4 == 0; r += xx) {
-			if (HIT@1(t, BUNt@3(b, r)))
+		for (r = p + 1; r < q && @4 == 0; r++) {
+			if (HIT@1(t, BUNt@3(bi, r)))
 				goto next@2@3@5;
 		}
 		bunfastins(bn, h, t);
   next@2@3@5:;
 	}
 @= hashelim
-	zz = BUNindex(bn, BUNfirst(bn));
-	if (!bn->hhash) {
-		if (BAThash(bn, BATcapacity(bn) / 2) == NULL) {
+	zz = BUNfirst(bn);
+	if (!bn->H->hash) {
+		if (BAThash(bn, BATcapacity(bn)) == NULL) {
 			BBPreclaim(bn);
 			return NULL;
 		}
 	}
-	BATloopFast(b, p, q, xx) {
-		ptr h = BUNh@2(b, p);
-		ptr t = BUNt@3(b, p);
+	BATloop(b, p, q) {
+		ptr h = BUNh@2(bi, p);
+		ptr t = BUNt@3(bi, p);
 		int ins = 1;
 		hash_t yy;
 
@@ -118,22 +118,22 @@ Implementation is either merge- or hash-based.
 			BBPreclaim(bn);
 			return NULL;
 		}
-		HASHloop@4(bn, bn->hhash, yy, h, r) {
-			if (HIT@1(t, BUNt@3(bn, r))) {
+		HASHloop@4(bni, bn->H->hash, yy, h) {
+			if (HIT@1(t, BUNt@3(bni, yy))) {
 				ins = 0;
 				break;
 			}
 		}
 		if (ins) {
 			bunfastins(bn, h, t);
-			if (bn->hhash)
-				HASHins@4(bn->hhash, (hash_t) zz, h);
+			if (bn->H->hash)
+				HASHins@4(bn->H->hash, (hash_t) zz, h);
 			zz++;
 		}
 	}
 @= elim
 	{
-		int xx, (*cmp)(ptr, ptr) = BATatoms[b->ttype].atomCmp;
+		int (*cmp)(ptr, ptr) = BATatoms[b->ttype].atomCmp;
 		size_t zz;
 		BUN p, q, r;
 
@@ -155,40 +155,40 @@ Implementation is either merge- or hash-based.
 	switch (ATOMstorage(b->htype)) {
 #ifndef NOEXPAND_CHR
 	case TYPE_chr:
-		@:elim(@1,loc,_chr,simple_CMP(h,BUNhloc(b,r),chr))@
+		@:elim(@1,loc,_chr,simple_CMP(h,BUNhloc(bi,r),chr))@
 #endif
 #ifndef NOEXPAND_BTE
 	case TYPE_bte:
-		@:elim(@1,loc,_bte,simple_CMP(h,BUNhloc(b,r),bte))@
+		@:elim(@1,loc,_bte,simple_CMP(h,BUNhloc(bi,r),bte))@
 #endif
 #ifndef NOEXPAND_SHT
 	case TYPE_sht:
-		@:elim(@1,loc,_sht,simple_CMP(h,BUNhloc(b,r),sht))@
+		@:elim(@1,loc,_sht,simple_CMP(h,BUNhloc(bi,r),sht))@
 #endif
 #ifndef NOEXPAND_INT
 	case TYPE_int:
-		@:elim(@1,loc,_int,simple_CMP(h,BUNhloc(b,r),int))@
+		@:elim(@1,loc,_int,simple_CMP(h,BUNhloc(bi,r),int))@
 #endif
 #ifndef NOEXPAND_FLT
 	case TYPE_flt:
-		@:elim(@1,loc,_flt,simple_CMP(h,BUNhloc(b,r),flt))@
+		@:elim(@1,loc,_flt,simple_CMP(h,BUNhloc(bi,r),flt))@
 #endif
 #ifndef NOEXPAND_DBL
 	case TYPE_dbl:
-		@:elim(@1,loc,_dbl,simple_CMP(h,BUNhloc(b,r),dbl))@
+		@:elim(@1,loc,_dbl,simple_CMP(h,BUNhloc(bi,r),dbl))@
 #endif
 #ifndef NOEXPAND_LNG
 	case TYPE_lng:
-		@:elim(@1,loc,_lng,simple_CMP(h,BUNhloc(b,r),lng))@
+		@:elim(@1,loc,_lng,simple_CMP(h,BUNhloc(bi,r),lng))@
 #endif
 	default:
 		{
 			int (*merge)(ptr, ptr) = BATatoms[b->htype].atomCmp;
 
 			if (b->hvarsized) {
-				@:elim(@1,var,var,((*merge)(h,BUNhvar(b,r))))@
+				@:elim(@1,var,var,((*merge)(h,BUNhvar(bi,r))))@
 			} else {
-				@:elim(@1,loc,loc,((*merge)(h,BUNhloc(b,r))))@
+				@:elim(@1,loc,loc,((*merge)(h,BUNhloc(bi,r))))@
 			}
 		}
 	}
@@ -197,6 +197,8 @@ BAT *
 BATins_kunique(BAT *bn, BAT *b)
 {
 	bit unique = FALSE;
+	BATiter bi = bat_iterator(b);
+	BATiter bni = bat_iterator(bn);
 
 	BATcheck(b, "BATins_kunique: src BAT");
 	BATcheck(bn, "BATins_kunique: dst BAT");
@@ -218,6 +220,8 @@ BATins_sunique(BAT *bn, BAT *b)
 {
 	bit unique = FALSE;
 	BUN fst1, fst2, last1, last2;
+	BATiter bi = bat_iterator(b);
+	BATiter bni = bat_iterator(bn);
 
 	BATcheck(b, "BATins_sunique: src BAT");
 	BATcheck(bn, "BATins_sunique: dst BAT");
@@ -227,24 +231,24 @@ BATins_sunique(BAT *bn, BAT *b)
 	fst1 = BUNfirst(bn);
 	fst2 = BUNfirst(b);
 
-	last1 = (BUNlast(bn) - BUNsize(bn));
-	last2 = (BUNlast(b) - BUNsize(b));
+	last1 = (BUNlast(bn) - 1);
+	last2 = (BUNlast(b) - 1);
 
-	if (BATcount(b) && (BAThordered(b) & 1) && ATOMcmp(b->htype, BUNhead(b, fst2), BUNhead(b, last2)) == 0 &&
-	    (BATcount(bn) == 0 || (ATOMcmp(bn->htype, BUNhead(bn, fst1), BUNhead(b, fst2)) == 0 &&
+	if (BATcount(b) && (BAThordered(b) & 1) && ATOMcmp(b->htype, BUNhead(bi, fst2), BUNhead(bi, last2)) == 0 &&
+	    (BATcount(bn) == 0 || (ATOMcmp(bn->htype, BUNhead(bni, fst1), BUNhead(bi, fst2)) == 0 &&
 				   (BAThordered(bn) & 1) &&
-				   ATOMcmp(bn->htype, BUNhead(bn, fst1), BUNhead(bn, last1)) == 0))) {
+				   ATOMcmp(bn->htype, BUNhead(bni, fst1), BUNhead(bni, last1)) == 0))) {
 		return BATins_kunique(BATmirror(bn), BATmirror(b));
 	}
-	if (BATcount(b) && (BATtordered(b) & 1) && ATOMcmp(b->ttype, BUNtail(b, fst2), BUNtail(b, last2)) == 0 &&
-	    (BATcount(bn) == 0 || (ATOMcmp(bn->ttype, BUNtail(bn, fst1), BUNtail(b, fst2)) == 0 &&
+	if (BATcount(b) && (BATtordered(b) & 1) && ATOMcmp(b->ttype, BUNtail(bi, fst2), BUNtail(bi, last2)) == 0 &&
+	    (BATcount(bn) == 0 || (ATOMcmp(bn->ttype, BUNtail(bni, fst1), BUNtail(bi, fst2)) == 0 &&
 				   (BATtordered(bn) & 1) &&
-				   ATOMcmp(bn->ttype, BUNtail(bn, fst1), BUNtail(bn, last1)) == 0))) {
+				   ATOMcmp(bn->ttype, BUNtail(bni, fst1), BUNtail(bni, last1)) == 0))) {
 		return BATins_kunique(bn, b);
 	}
 	if ((BATtordered(b) & 1) && ATOMstorage(b->ttype) < TYPE_str) {
-		bn = BATmirror(bn);
-		b = BATmirror(b);
+		bni.b = bn = BATmirror(bn);
+		bi.b = b = BATmirror(b);
 	}
 	@:elim_doubles(s)@
 	if (unique && bn->batSet == FALSE) {
@@ -378,19 +382,20 @@ TODO synced/key case..
 @= mergecheck
 	BUN p1 = BUNfirst(l), p2 = BUNfirst(r);
 	BUN q1 = BUNlast(l),  q2 = BUNlast(r);
-	int s1 = BUNsize(l),  s2 = BUNsize(r);
+	BATiter li = bat_iterator(l);
+	BATiter ri = bat_iterator(r);
 
 	ALGODEBUG THRprintf(GDKout, "#BATins_@1@2: mergecheck[@1, @2, @3, @4, @5];\n");
 	if (p2 < q2)
-		BATloopFast(l, p1, q1, s1) {
-			ptr  h = BUNh@2(l, p1);
-			ptr  t = BUNtail(l, p1);
-			ptr h2 = BUNh@2(r, p2);
+		BATloop(l, p1, q1) {
+			ptr  h = BUNh@2(li, p1);
+			ptr  t = BUNtail(li, p1);
+			ptr h2 = BUNh@2(ri, p2);
 			int c;
 			while ((c = @4) > 0) {
-				if ((p2 += s2) >= q2)
+				if ((++p2) >= q2)
 					goto end@2@3;
-				h2 = BUNh@2(r, p2);
+				h2 = BUNh@2(ri, p2);
 			}
 			if (c == 0) {
 				h2 = hnil;
@@ -398,15 +403,15 @@ TODO synced/key case..
 					BUN pb = p2;
 
 					for (;;) {
-						if (EQUAL@5(t, BUNtail(r, pb))) {
+						if (EQUAL@5(t, BUNtail(ri, pb))) {
 							HIT@1(h, t);
 							break;
 						}
-						if ((pb += s2) >= q2) {
+						if ((++pb) >= q2) {
 							MISS@1(h, t);
 							break;
 						}
-						h2 = BUNh@2(r, pb);
+						h2 = BUNh@2(ri, pb);
 						if (@4) {
 							MISS@1(h, t);
 							break;
@@ -418,25 +423,27 @@ TODO synced/key case..
 			MISS@1(h, t);
 		}
   end@2@3:;
-	END@1(BUNh@2(l, p1), BUNtail(l, p1));
+	END@1(BUNh@2(li, p1), BUNtail(li, p1));
 @= hashcheck
-	BUN p1, q1, w;
-	int ins, s1;
+	BUN p1, q1;
+	int ins;
 	hash_t s2;
 	ptr h, t, t2 = NULL, h2 = hnil;
+	BATiter li = bat_iterator(l);
+	BATiter ri = bat_iterator(r);
 
 	ALGODEBUG THRprintf(GDKout, "#BATins_@1@2: hashcheck[@1, @2, @3, @4, @5];\n");
 	pin = 1;
 	BATmmap_pin(r);
 	if (BATprepareHash(r))
 		goto bunins_failed;
-	BATloopFast(l, p1, q1, s1) {
-		h = BUNh@2(l, p1);
-		t = BUNtail(l, p1);
+	BATloop(l, p1, q1) {
+		h = BUNh@2(li, p1);
+		t = BUNtail(li, p1);
 		ins = TRUE;
 		if (@6) /* check for not-nil (nils don't match anyway) */
-			HASHloop@4(r, r->hhash, s2, h, w) {
-				t2 = BUNtail(r, w);
+			HASHloop@4(ri, r->H->hash, s2, h) {
+				t2 = BUNtail(ri, s2);
 				if (EQUAL@5(t, t2)) {
 					HIT@1(h, t);
 					ins = FALSE;
@@ -453,8 +460,10 @@ TODO synced/key case..
 
 @= voidcheck
 	{
+		BATiter li = bat_iterator(l);
+		BATiter ri = bat_iterator(r);
 		BUN p1 = BUNfirst(r), q1 = BUNlast(r);
-		oid rl = * (oid *) BUNhead(r, p1);
+		oid rl = * (oid *) BUNhead(ri, p1);
 		oid rh = rl + BATcount(r);
 		ptr h, t = NULL, t2 = NULL;
 
@@ -462,62 +471,59 @@ TODO synced/key case..
 
 		ALGODEBUG THRprintf(GDKout, "#BATins_@1@2: voidcheck[@1, @2];\n");
 		if (BAThdense(l)) {
-			oid ll = * (oid *) BUNhead(l, (p1 = BUNfirst(l)));
+			oid ll = * (oid *) BUNhead(li, (p1 = BUNfirst(l)));
 			oid lh = ll + BATcount(l);
 			BUN hit_start = (q1 = BUNlast(l)), hit_end = q1, w = BUNfirst(r);
-			int s1 = BUNsize(l);
-			int s2 = BUNsize(r);
-			size_t off = BUNindex(l,p1);
+			size_t off = p1;
 
 			h = (ptr) &ll;
 
 			if (rl >= ll && rl < lh) {
-				hit_start = BUNptr(l, off + (rl - ll));
+				hit_start = off + (rl - ll);
 			} else if (rl < ll && rh > ll) {
 				hit_start = p1;
-				w += s2 * (ll - rl);
+				w += (ll - rl);
 			}
 			if (rh >= ll && rh < lh) {
-				hit_end = BUNptr(l, off + (rh - ll));
+				hit_end = off + (rh - ll);
 			}
 			while(p1 < hit_start) {
-				t = BUNtail(l, p1);
+				t = BUNtail(li, p1);
 				MISS@1(h, t);
 				ll++;
-				p1 += s1;
+				p1++;
 			}
 			while(p1 < hit_end) {
-				t = BUNtail(l, p1);
-				t2 = BUNtail(r, w);
+				t = BUNtail(li, p1);
+				t2 = BUNtail(ri, w);
 				if (EQUAL@2(t, t2)) {
 					HIT@1(h, t);
 				} else {
 					MISS@1(h, t);
 				}
 				ll++;
-				p1 += s1;
-				w += s2;
+				p1++;
+				w++;
 			}
 			while (p1 < q1) {
-				t = BUNtail(l, p1);
+				t = BUNtail(li, p1);
 				MISS@1(h, t);
 				ll++;
-				p1 += s1;
+				p1++;
 			}
 		} else {
-			int s1;
-			size_t off = BUNindex(r, p1);
+			size_t off = p1;
 
-			BATloopFast(l, p1, q1, s1) {
-				oid o = * (oid *) BUNhloc(l, p1);
+			BATloop(l, p1, q1) {
+				oid o = * (oid *) BUNhloc(li, p1);
 
 				h = (ptr) &o;
-				t = BUNtail(l, p1);
+				t = BUNtail(li, p1);
 
 				if (o >= rl && o < rh) {
-					BUN w = BUNptr(r, off + (o - rl));
+					BUN w = off + (o - rl);
 
-					t2 = BUNtail(r, w);
+					t2 = BUNtail(ri, w);
 					if (EQUAL@2(t, t2)) {
 						HIT@1(h, t);
 						continue;
@@ -555,10 +561,9 @@ BATins_@1@2(BAT *bn, BAT *l, BAT *r)
 		if (flip) {
 			hash = FALSE;
 		} else {
-			flip = r->hhash == NULL && r->thash != NULL;
+			flip = r->H->hash == NULL && r->T->hash != NULL;
 		}
 		if (flip) {
-			merge = BATatoms[l->ttype].atomCmp;
 			r = BATmirror(r);
 			l = BATmirror(l);
 			bn = BATmirror(bn);
@@ -695,19 +700,19 @@ BATmaterialize_(BAT *b, size_t size)
 {
 	BAT *bn = BATnew(TYPE_oid, b->ttype, size);
 	BUN p, q;
-	int xx;
 	oid base;
+	BATiter bi = bat_iterator(b);
 
 	if (bn == NULL)
 		return NULL;
 	base = b->hseqbase;
 	if (base == oid_nil) {
-		BATloopFast(b, p, q, xx) {
-			bunfastins(bn, &base, BUNtail(b, p));
+		BATloop(b, p, q) {
+			bunfastins(bn, &base, BUNtail(bi, p));
 		}
 	} else {
-		BATloopFast(b, p, q, xx) {
-			bunfastins(bn, &base, BUNtail(b, p));
+		BATloop(b, p, q) {
+			bunfastins(bn, &base, BUNtail(bi, p));
 			base++;
 		}
 	}
@@ -725,7 +730,7 @@ BATmaterialize_(BAT *b, size_t size)
 @= bndense
 	/* r and l may be void */
 	bn@1dense = (BAT@1dense(r) & BAT@1dense(l) & 1) && @1disjunct &&
-			((* (@3 *) BUN@2(r, BUNfirst(r)) - * (@3 *) BUN@2(l, BUNlast(l) - BUNsize(l))) == (@3) 1);
+			((* (@3 *) BUN@2(ri, BUNfirst(r)) - * (@3 *) BUN@2(li, BUNlast(l) - 1)) == (@3) 1);
 	break;
 @= union
 BAT *
@@ -734,7 +739,7 @@ BAT@1union(BAT *l, BAT *r)
 	int hdisjunct, tdisjunct, bnhdense, bntdense;
 	BAT *bn, *b=0;
 	BUN p,q;
-	int xx;
+	BATiter li, ri;
 
 	BATcompatible(l, r);
 	if (BATcount(l) == 0) {
@@ -743,6 +748,8 @@ BAT@1union(BAT *l, BAT *r)
 		l = r;
 		r = swap;
 	}
+	li = bat_iterator(l);
+ 	ri = bat_iterator(r);
 	if (BATcount(r) == 0) {
 		return BATcopy(l, l->htype, l->ttype, FALSE);
 	}
@@ -757,9 +764,9 @@ BAT@1union(BAT *l, BAT *r)
 		return NULL;
 
 	hdisjunct = (BAThordered(r) & BAThordered(l) & 1) &&
-		    ATOMcmp(l->htype, BUNhead(l, BUNlast(l) - BUNsize(l)), BUNhead(r, BUNfirst(r))) < 0;
+		    ATOMcmp(l->htype, BUNhead(li, BUNlast(l) - 1), BUNhead(ri, BUNfirst(r))) < 0;
 	tdisjunct = (BATtordered(r) & BATtordered(l) & 1) &&
-		    ATOMcmp(l->ttype, BUNtail(l, BUNlast(l) - BUNsize(l)), BUNtail(r, BUNfirst(r))) < 0;
+		    ATOMcmp(l->ttype, BUNtail(li, BUNlast(l) - 1), BUNtail(ri, BUNfirst(r))) < 0;
 
 	/* for now, only oid can be dense;
 	   later, bte, sht, int, wrd, lng might become dense, too */
@@ -779,17 +786,20 @@ BAT@1union(BAT *l, BAT *r)
 	}
 
 	if (!hdisjunct) {
-		b = r = BAT@1diff(r, bn);
-		if (b == NULL) {
+		b = r;
+		ri.b = r = BAT@1diff(r, bn);
+		if (r == NULL) {
 			BBPreclaim(bn);
 			return NULL;
 		}
 	}
-	BATloopFast(r, p, q, xx) {
-		bunfastins(bn, BUNhead(r, p), BUNtail(r, p));
+	BATloop(r, p, q) {
+		bunfastins(bn, BUNhead(ri, p), BUNtail(ri, p));
 	}
-	if (b)
-		BBPreclaim(b);
+	if (b) {
+		BBPreclaim(r);
+		r = b;
+	}
 	HASHdestroy(bn);
 
 	/* set alignment info */

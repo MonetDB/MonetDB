@@ -15,7 +15,7 @@
 @' All Rights Reserved.
 
 @f gdk_delta
-@a M. L. Kersten, P. Boncz
+@a M. L. Kersten, P. Boncz, N. Nes
 @* Delta management
 The basis for transaction management is to keep track of
 elements inserted, deleted, and replaced.
@@ -39,54 +39,29 @@ item of e.g. a BAT[void,bit] is (at least) integer aligned.
 This optimizes processing on such BATs (DDBENCH).
 @h
 #define DELTAprintf DELTADEBUG printf
-#define DELTAinit(P1)	do {						      \
-	BATsetcount((P1), 0);						      \
-	(P1)->batBuns->free = 0;					      \
-	(P1)->batDeleted = (P1)->batInserted = (P1)->batFirst = 	      \
-		(BUN) Bunbase(P1);      	                              \
-	(P1)->batElmshift = BATelmshift((P1));				      \
-	DELTAprintf(							      \
-	 	"#DELTAinit %s free " SZFMT " ins " PTRFMT " del " PTRFMT " first " PTRFMT " base " PTRFMT "\n", \
+#define DELTAinit(P1)	do {					      \
+	BATsetcount((P1), 0);					      \
+	(P1)->H->heap.free = 0;					      \
+	(P1)->T->heap.free = 0;					      \
+	(P1)->batDeleted = (P1)->batInserted = (P1)->batFirst = 0;    \
+	(P1)->H->shift = ATOMelmshift(Hsize(P1));		      \
+	(P1)->T->shift = ATOMelmshift(Tsize(P1));		      \
+	DELTAprintf(						      \
+	 	"#DELTAinit %s free " SZFMT "," SZFMT " ins " OIDFMT " del " OIDFMT " first " OIDFMT " base " PTRFMT "," PTRFMT "\n", \
 		BATgetId(P1),				      \
-		(P1)->batBuns->free,			      \
-		PTRFMTCAST (P1)->batInserted,		      \
-		PTRFMTCAST (P1)->batDeleted,		      \
-		PTRFMTCAST (P1)->batFirst,		      \
-		PTRFMTCAST (P1)->batBuns->base );	      \
+		(P1)->H->heap.free,			      \
+		(P1)->T->heap.free,			      \
+		(P1)->batInserted,			      \
+		(P1)->batDeleted,			      \
+		(P1)->batFirst,				      \
+		PTRFMTCAST (P1)->H->heap.base,		      \
+		PTRFMTCAST (P1)->T->heap.base);	      	      \
 } while (0)
 @
 
 Upon saving a BAT, we should convert the delta marker BUN pointers into indexes
 and convert them back into pointers upon reload.
 
-@h
-#define DELTAsave(P1)	do {						\
-	(P1)->batInserted = (BUN) BUNindex((P1), (P1)->batInserted);	\
-	(P1)->batDeleted = (BUN) BUNindex((P1), (P1)->batDeleted);	\
-	(P1)->batFirst = (BUN) BUNindex((P1), (P1)->batFirst);		\
-	DELTAprintf(							\
-	 	"#DELTAsave %s free " SZFMT " ins " PTRFMT " del " PTRFMT " first " PTRFMT " base " PTRFMT "\n", \
-		BATgetId(P1),						\
-		(P1)->batBuns->free,					\
-		PTRFMTCAST (P1)->batInserted,				\
-		PTRFMTCAST (P1)->batDeleted,				\
-		PTRFMTCAST (P1)->batFirst,				\
-		PTRFMTCAST (P1)->batBuns->base );			\
-} while (0)
-
-#define DELTAload(P1)	do {						\
-	DELTAprintf(							\
-		"#DELTAload %s free " SZFMT " ins " PTRFMT " del " PTRFMT " first " PTRFMT " base " PTRFMT "\n", \
-		BATgetId(P1),						\
-		(P1)->batBuns->free,					\
-		PTRFMTCAST (P1)->batInserted,				\
-		PTRFMTCAST (P1)->batDeleted,				\
-		PTRFMTCAST (P1)->batFirst,				\
-		PTRFMTCAST (P1)->batBuns->base );			\
-	(P1)->batInserted = BUNptr((P1), (size_t) (P1)->batInserted);	\
-	(P1)->batDeleted = BUNptr((P1), (size_t) (P1)->batDeleted);	\
-	(P1)->batFirst = BUNptr((P1), (size_t) (P1)->batFirst);		\
-} while (0)
 @	
 @}
 @-
@@ -97,8 +72,8 @@ transaction-dirty). For this we have @%DELTAdirty(b)@.
 @-
 @{
 @h
-#define DELTAdirty(b)	(((b)->batDeleted != (b)->batFirst) ||\
-	((b)->batInserted < (b)->batBuns->base+(b)->batBuns->free))
+#define DELTAdirty(b)	(((b)->batDeleted != BUNfirst(b)) ||\
+	((b)->batInserted < BUNlast(b)))
 
 #endif /* _GDK_DELTA_H_ */
 @
@@ -118,32 +93,32 @@ BAT *
 BATcommit(BAT *b)
 {
 	BATcheck(b, "BATcommit");
-	DELTAprintf("#BATcommit1 %s free " SZFMT " ins " PTRFMT " del " PTRFMT " first " PTRFMT " base " PTRFMT "\n", BATgetId(b), b->batBuns->free, PTRFMTCAST b->batInserted, PTRFMTCAST b->batDeleted, PTRFMTCAST b->batFirst, PTRFMTCAST b->batBuns->base);
+	DELTAprintf("#BATcommit1 %s free " SZFMT "," SZFMT " ins " OIDFMT " del " OIDFMT " first " OIDFMT " base " PTRFMT "," PTRFMT "\n", BATgetId(b), b->H->heap.free, b->T->heap.free, b->batInserted, b->batDeleted, b->batFirst, PTRFMTCAST b->H->heap.base, PTRFMTCAST b->T->heap.base);
 	ALIGNcommit(b);
 	if (b->batDeleted < b->batFirst && BBP_cache(b->batCacheid)) {
+		BATiter bi = bat_iterator(b);
 		int (*hunfix) (ptr) = BATatoms[b->htype].atomUnfix;
 		int (*tunfix) (ptr) = BATatoms[b->ttype].atomUnfix;
 		void (*hatmdel) (Heap *, var_t *) = BATatoms[b->htype].atomDel;
 		void (*tatmdel) (Heap *, var_t *) = BATatoms[b->ttype].atomDel;
 		BUN p, q;
-		int xx;
 
 		if (hatmdel || hunfix || tatmdel || tunfix) {
-			DELloop(b, p, q, xx) {
-				ptr h = BUNhead(b, p);
-				ptr t = BUNtail(b, p);
+			DELloop(b, p, q) {
+				ptr h = BUNhead(bi, p);
+				ptr t = BUNtail(bi, p);
 
 				if (hunfix) {
 					(*hunfix) (h);
 				}
 				if (hatmdel) {
-					(*hatmdel) (b->hheap, (var_t *) (p + b->hloc));
+					(*hatmdel) (b->hheap, (var_t*)BUNhloc(bi,p));
 				}
 				if (tunfix) {
 					(*tunfix) (t);
 				}
 				if (tatmdel) {
-					(*tatmdel) (b->theap, (var_t *) (p + b->tloc));
+					(*tatmdel) (b->theap, (var_t*)BUNtloc(bi,p));
 				}
 			}
 		}
@@ -155,12 +130,8 @@ BATcommit(BAT *b)
 		b->batDirtydesc = 1;
 	}
 	b->batDeleted = b->batFirst;
-	if (b->batBuns->base) {
-		b->batInserted = BUNlast(b);
-	} else {
-		b->batInserted = (BUN) (b->batBuns->free / BUNsize(b));
-	}
-	DELTAprintf("#BATcommit2 %s free " SZFMT " ins " PTRFMT " del " PTRFMT " first " PTRFMT " base " PTRFMT "\n", BATgetId(b), b->batBuns->free, PTRFMTCAST b->batInserted, PTRFMTCAST b->batDeleted, PTRFMTCAST b->batFirst, PTRFMTCAST b->batBuns->base);
+	b->batInserted = BUNlast(b);
+	DELTAprintf("#BATcommit2 %s free " SZFMT "," SZFMT " ins " OIDFMT " del " OIDFMT " first " OIDFMT " base " PTRFMT "," PTRFMT "\n", BATgetId(b), b->H->heap.free, b->T->heap.free, b->batInserted, b->batDeleted, b->batFirst, PTRFMTCAST b->H->heap.base, PTRFMTCAST b->T->heap.base);
 	return b;
 }
 
@@ -173,8 +144,11 @@ BATfakeCommit(BAT *b)
 	if (b) {
 		BATcommit(b);
 		b->batDirty = 0;
-		b->batDirtydesc = b->batDirtybuns = 0;
-		b->hheapdirty = b->theapdirty = 0;
+		b->batDirtydesc = b->H->heap.dirty = b->T->heap.dirty = 0;
+		if (b->H->vheap)
+			b->H->vheap->dirty = 0;
+		if (b->T->vheap)
+			b->T->vheap->dirty = 0;
 	}
 	return b;
 }
@@ -192,60 +166,64 @@ inserted into the accelerators.
 BAT *
 BATundo(BAT *b)
 {
-	int bunsize = BUNsize(b);
+	BATiter bi = bat_iterator(b);
 	BUN p, bunlast, bunfirst;
 
 	BATcheck(b, "BATundo");
 	DELTAprintf("#BATundo %s \n", BATgetId(b));
 	ALIGNundo(b);
 	if (b->batDirtyflushed) {
-		b->batDirtydesc = b->batDirtybuns = 1;
+		b->batDirtydesc = b->H->heap.dirty = b->T->heap.dirty = 1;
 	} else {
 		b->batDirty = 0;
-		b->batDirtydesc = b->batDirtybuns = 0;
-		b->hheapdirty = b->theapdirty = 0;
+		b->batDirtydesc = b->H->heap.dirty = b->T->heap.dirty = 0;
+		if (b->H->vheap)
+			b->H->vheap->dirty = 0;
+		if (b->T->vheap)
+			b->T->vheap->dirty = 0;
 	}
 	bunfirst = b->batInserted;
-	bunlast = BUNlast(b) - BUNsize(b);
+	bunlast = BUNlast(b) - 1;
 	if (bunlast >= b->batInserted) {
-		size_t i = BUNindex(b, bunfirst);
+		size_t i = bunfirst;
 		int (*hunfix) (ptr) = BATatoms[b->htype].atomUnfix;
 		int (*tunfix) (ptr) = BATatoms[b->ttype].atomUnfix;
 		void (*hatmdel) (Heap *, var_t *) = BATatoms[b->htype].atomDel;
 		void (*tatmdel) (Heap *, var_t *) = BATatoms[b->ttype].atomDel;
 
-		if (hunfix || tunfix || hatmdel || tatmdel || b->hhash || b->thash) {
-			for (p = bunfirst; p <= bunlast; p += bunsize, i++) {
-				ptr h = BUNhead(b, p);
-				ptr t = BUNtail(b, p);
+		if (hunfix || tunfix || hatmdel || tatmdel || b->H->hash || b->T->hash) {
+			for (p = bunfirst; p <= bunlast; p++, i++) {
+				ptr h = BUNhead(bi, p);
+				ptr t = BUNtail(bi, p);
 
-				if (b->hhash) {
-					HASHdel(b->hhash, i, h, p < bunlast);
+				if (b->H->hash) {
+					HASHdel(b->H->hash, i, h, p < bunlast);
 				}
 				if (hunfix) {
 					(*hunfix) (h);
 				}
 				if (hatmdel) {
-					(*hatmdel) (b->hheap, (var_t *) (p + b->hloc));
+					(*hatmdel) (b->hheap, (var_t*)BUNhloc(bi,p));
 				}
-				if (b->thash) {
-					HASHdel(b->thash, i, t, p < bunlast);
+				if (b->T->hash) {
+					HASHdel(b->T->hash, i, t, p < bunlast);
 				}
 				if (tunfix) {
 					(*tunfix) (t);
 				}
 				if (tatmdel) {
-					(*tatmdel) (b->theap, (var_t *) (p + b->tloc));
+					(*tatmdel) (b->theap, (var_t*)BUNtloc(bi,p));
 				}
 			}
 		}
 	}
-	b->batBuns->free = (char *) b->batInserted - (char *) Bunbase(b);
+	b->H->heap.free = headsize(b,b->batInserted);
+	b->T->heap.free = tailsize(b,b->batInserted);
 
 	bunfirst = b->batDeleted;
 	bunlast = b->batFirst;
 	if (bunlast > b->batDeleted) {
-		size_t i = BUNindex(b, bunfirst);
+		size_t i = bunfirst;
 		BAT *bm = BBP_cache(-b->batCacheid);
 
 		/* elements are 'inserted' => zap properties */
@@ -258,20 +236,20 @@ BATundo(BAT *b)
 		if (b->tkey)
 			BATkey(BATmirror(b), FALSE);
 
-		for (p = bunfirst; p < bunlast; p += bunsize, i++) {
-			ptr h = BUNhead(b, p);
-			ptr t = BUNtail(b, p);
+		for (p = bunfirst; p < bunlast; p++, i++) {
+			ptr h = BUNhead(bi, p);
+			ptr t = BUNtail(bi, p);
 
-			if (b->hhash) {
+			if (b->H->hash) {
 				HASHins(b, i, h);
 			}
-			if (b->thash) {
+			if (b->T->hash) {
 				HASHins(bm, i, t);
 			}
 		}
 	}
 	b->batFirst = b->batDeleted;
-	BATsetcount(b, (BUNlast(b) - BUNfirst(b)) / BUNsize(b));
+	BATsetcount(b, b->batInserted);
 	return b;
 }
 
@@ -287,14 +265,14 @@ BATprev(BAT *b)
 {
 	BUN p;
 	BAT *bn;
+	BATiter bi = bat_iterator(b);
 
 	BATcheck(b, "BATprev");
 	if (b->batRestricted == BAT_READ) {
-		bn = VIEWcreate(b);
+		bn = VIEWcreate(b, b);
 		if (bn) {
-			bn->batBuns->free = bn->batInserted - bn->batBuns->base;
 			bn->batInserted = bn->batFirst = bn->batDeleted;
-			BATsetcount(bn, (BUNlast(bn) - BUNfirst(bn)) / BUNsize(bn));
+			BATsetcount(bn, (BUNlast(bn) - BUNfirst(bn)));
 		}
 		return bn;
 	}
@@ -302,8 +280,8 @@ BATprev(BAT *b)
 	if (bn == NULL) {
 		return bn;
 	}
-	for (p = b->batDeleted; p < b->batInserted; p = BUNnext(b, p)) {
-		if (BUNins(bn, BUNhead(b, p), BUNtail(b, p), FALSE) == NULL) {
+	for (p = b->batDeleted; p < b->batInserted; p++) {
+		if (BUNins(bn, BUNhead(bi, p), BUNtail(bi, p), FALSE) == NULL) {
 			BBPreclaim(bn);
 			return NULL;
 		}
@@ -316,13 +294,14 @@ BATalpha(BAT *b)
 {
 	BUN p;
 	BAT *bn;
+	BATiter bi = bat_iterator(b);
 
 	BATcheck(b, "BATalpha");
 	if (b->batRestricted == BAT_READ) {
-		bn = VIEWcreate(b);
+		bn = VIEWcreate(b, b);
 		if (bn) {
 			bn->batDeleted = bn->batFirst = bn->batInserted;
-			BATsetcount(bn, (BUNlast(bn) - BUNfirst(bn)) / BUNsize(bn));
+			BATsetcount(bn, BUNlast(bn) - BUNfirst(bn));
 		}
 		return bn;
 	}
@@ -330,8 +309,8 @@ BATalpha(BAT *b)
 	if (bn == NULL) {
 		return bn;
 	}
-	for (p = b->batInserted; p < BUNlast(b); p = BUNnext(b, p)) {
-		if (BUNins(bn, BUNhead(b, p), BUNtail(b, p), FALSE) == NULL) {
+	for (p = b->batInserted; p < BUNlast(b); p++) {
+		if (BUNins(bn, BUNhead(bi, p), BUNtail(bi, p), FALSE) == NULL) {
 			BBPreclaim(bn);
 			return NULL;
 		}
@@ -344,14 +323,14 @@ BATdelta(BAT *b)
 {
 	BUN p;
 	BAT *bn;
+	BATiter bi = bat_iterator(b);
 
 	BATcheck(b, "BATdelta");
 	if (b->batRestricted == BAT_READ) {
-		bn = VIEWcreate(b);
+		bn = VIEWcreate(b, b);
 		if (bn) {
-			bn->batBuns->free = bn->batFirst - bn->batBuns->base;
 			bn->batFirst = bn->batInserted = bn->batDeleted;
-			BATsetcount(bn, (BUNlast(bn) - BUNfirst(bn)) / BUNsize(bn));
+			BATsetcount(bn, BUNlast(bn) - BUNfirst(bn));
 		}
 		return bn;
 	}
@@ -359,8 +338,8 @@ BATdelta(BAT *b)
 	if (bn == NULL) {
 		return bn;
 	}
-	for (p = b->batDeleted; p < b->batFirst; p = BUNnext(b, p)) {
-		if (BUNins(bn, BUNhead(b, p), BUNtail(b, p), FALSE) == NULL) {
+	for (p = b->batDeleted; p < b->batFirst; p++) {
+		if (BUNins(bn, BUNhead(bi, p), BUNtail(bi, p), FALSE) == NULL) {
 			BBPreclaim(bn);
 			return NULL;
 		}

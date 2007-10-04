@@ -15,7 +15,7 @@
 @' All Rights Reserved.
 
 @f gdk_scanselect
-@a S. Manegold, M. L. Kersten, P. Boncz
+@a S. Manegold, N. J. Nes, M. L. Kersten, P. Boncz
 @* Fast sequential scan
 @-
 This module provides BAT_scanselect, used by gdk_batop.mx's BAT_select to do
@@ -39,7 +39,7 @@ time and ~13% memory access time.
 The idea to solve the problem was to expand the function's code also for the
 type being store in the result, both head & tail. Thinking about it, we
 thought why not completely eliminate all branches (except the actual
-predicate, of course) from the inner loop (BATloopFast) --- we do have Mx,
+predicate, of course) from the inner loop (BATloop) --- we do have Mx,
 so let's (ab?)use it!
 This means
 
@@ -48,8 +48,7 @@ This means
 Expanding on whether we created the result BAT (at least) as big as
 	the input BAT, or not (see BAT_select in gdk_batop.mx). In the first
 	case ("nocheck"), we do not have to check for a "BAT overflow" in
-	the inner loop.  Further, we need to set bn->batBuns->free only once
-	we're done.
+	the inner loop.  
 @item
 Expanding on the output-tail-type which is either identical to
 	input-tail-type or TYPE_void (uselect).
@@ -76,7 +75,7 @@ idea":
 The toplevel BAT_scanselect get expanded by a set of cascading levels of Mx
 macros that dispatch to the different alternatives. To give the compiler a
 chance to "concentrate on the important parts", only branches are created,
-here. The actual working block (i.e., the inner BATloopFast) are enclosed in
+here. The actual working block (i.e., the inner BATloop) are enclosed in
 a separate function each. Each leaf of the decision tree calls the
 respective function, and each function is called by exactly on leaf.
 
@@ -150,71 +149,83 @@ VOIDput & SIMPLEput should go to gdk_atoms where ATOMput is defined.
 #endif
 
 #if defined(NOEXPAND_CHR) || defined(SKIP_TYPE_EXPANSIONS)
-#define ATOM_PUT_CHR(tpe,hp,dst,src)		\
+#define ATOM_PUT_CHR(tpe,hp,dst,p,src)		\
 	if (tpe == TYPE_chr) {			\
-		*(chr*) dst = *(chr*) src;	\
+		((chr*) dst)[p] = *(chr*) src;	\
 	} else
 #else
-#define ATOM_PUT_CHR(tpe,hp,dst,src)
+#define ATOM_PUT_CHR(tpe,hp,dst,p,src)
 #endif
 #if defined(NOEXPAND_BTE) || defined(SKIP_TYPE_EXPANSIONS)
-#define ATOM_PUT_BTE(tpe,hp,dst,src)		\
+#define ATOM_PUT_BTE(tpe,hp,dst,p,src)		\
 	if (tpe == TYPE_bte) {			\
 		*(bte*) dst = *(bte*) src;	\
 	} else
 #else
-#define ATOM_PUT_BTE(tpe,hp,dst,src)
+#define ATOM_PUT_BTE(tpe,hp,dst,p,src)
 #endif
 #if defined(NOEXPAND_SHT) || defined(SKIP_TYPE_EXPANSIONS)
-#define ATOM_PUT_SHT(tpe,hp,dst,src)		\
+#define ATOM_PUT_SHT(tpe,hp,dst,p,src)		\
 	if (tpe == TYPE_sht) {			\
-		*(sht*) dst = *(sht*) src;	\
+		((sht*) dst)[p] = *(sht*) src;	\
 	} else
 #else
-#define ATOM_PUT_SHT(tpe,hp,dst,src)
+#define ATOM_PUT_SHT(tpe,hp,dst,p,src)
 #endif
 #if defined(NOEXPAND_INT) || defined(SKIP_TYPE_EXPANSIONS)
-#define ATOM_PUT_INT(tpe,hp,dst,src)		\
+#define ATOM_PUT_INT(tpe,hp,dst,p,src)		\
 	if (tpe == TYPE_int) {			\
-		*(int*) dst = *(int*) src;	\
+		((int*) dst)[p] = *(int*) src;	\
 	} else
 #else
-#define ATOM_PUT_INT(tpe,hp,dst,src)
+#define ATOM_PUT_INT(tpe,hp,dst,p,src)
 #endif
 #if defined(NOEXPAND_LNG) || defined(SKIP_TYPE_EXPANSIONS)
-#define ATOM_PUT_LNG(tpe,hp,dst,src)		\
+#define ATOM_PUT_LNG(tpe,hp,dst,p,src)		\
 	if (tpe == TYPE_lng) {			\
-		*(lng*) dst = *(lng*) src;	\
+		((lng*) dst)[p] = *(lng*) src;	\
 	} else
 #else
-#define ATOM_PUT_LNG(tpe,hp,dst,src)
+#define ATOM_PUT_LNG(tpe,hp,dst,p,src)
 #endif
 
-#define ATOM_PUT(tpe,hp,dst,src)					\
-	ATOM_PUT_CHR(tpe,hp,dst,src)					\
-	ATOM_PUT_SHT(tpe,hp,dst,src)					\
-	ATOM_PUT_INT(tpe,hp,dst,src)					\
-	ATOM_PUT_LNG(tpe,hp,dst,src)					\
+#define FIXEDATOM_PUT(tpe,hp,dst,p,src)					\
+	ATOM_PUT_CHR(tpe,hp,dst,p,src)					\
+	ATOM_PUT_SHT(tpe,hp,dst,p,src)					\
+	ATOM_PUT_INT(tpe,hp,dst,p,src)					\
+	ATOM_PUT_LNG(tpe,hp,dst,p,src)					\
 	if (tpe == TYPE_bat) {						\
 		BBPincref(*(bat*) src, TRUE);				\
-		*(bat*) dst = *(bat*) src;				\
-	} else if (tpe == TYPE_str) {					\
-		if (strPut(hp, (var_t*) dst, (str) src) == 0) {		\
+		((bat*) dst)[p] = *(bat*) src;				\
+	} else {							\
+		/* TODO needs atom shift */			\
+		memcpy(dst+p, src, (size_t) ATOMsize(tpe));	\
+	}								
+
+#define VARATOM_PUT(tpe,hp,dst,p,src)					\
+	if (tpe == TYPE_str) {						\
+		if (strPut(hp, ((var_t*) dst)+(p), (str) (src)) == 0) {	\
+				goto bunins_failed;			\
+		}							\
+	}
+
+@-
+#define VARATOM_PUT(tpe,hp,dst,p,src)					\
+	if (tpe == TYPE_str) {						\
+		if (strPut(hp, ((var_t*) dst)+p, (str) src) == 0) {	\
 				goto bunins_failed;			\
 		}							\
 	} else {							\
 		if (BATatoms[tpe].atomPut) {				\
-			if ((*BATatoms[tpe].atomPut)(hp, (var_t*) dst, (str) src) == 0) { \
+			if ((*BATatoms[tpe].atomPut)(hp, ((var_t*) dst)+p, (str) src) == 0) { \
 				goto bunins_failed;			\
 			}						\
-		} else {						\
-			memcpy(dst, src, (size_t) ATOMsize(tpe));	\
 		}							\
 		ATOMfix(tpe, src);					\
 	}
 @h
-#define SIMPLE_PUT(tpe,hp,dst,src) { *(tpe*) (ptr) (dst) = *(tpe*) (ptr) (src); }
-#define VOID_PUT(tpe,hp,dst,src)   {}
+#define SIMPLE_PUT(tpe,hp,dst,p,src) { ((tpe*)(dst))[p] = *(tpe*) (ptr) (src); }
+#define VOID_PUT(tpe,hp,dst,p,src)   {}
 
 @-
 Type-specific
@@ -227,26 +238,26 @@ replacing their generic versions there.
 @= T_BUNfastins
 #define @1@4_bunfastins_nocheck_noinc(b, p, h, t)		\
 	do {							\
-		@2_PUT(@3, (b)->hheap, BUNhloc(b, p), h);	\
-		@5_PUT(@6, (b)->theap, BUNtloc(b, p), t);	\
+		@2_PUT(@3, (b)->H->vheap, (b)->H->heap.base, p, h);	\
+		@5_PUT(@6, (b)->T->vheap, (b)->T->heap.base, p, t);	\
 	} while (0)
-#define @1@4_bunfastins_nocheck(b, p, h, t, s)			\
+#define @1@4_bunfastins_nocheck(b, p, h, t, hs, ts)		\
 	do {							\
-		(b)->batBuns->free += s;			\
+		(b)->H->heap.free += hs;			\
+		(b)->T->heap.free += ts;			\
 		(b)->batCount ++;				\
 		@1@4_bunfastins_nocheck_noinc(b, p, h, t);	\
 	} while (0)
 #define @1@4_bunfastins(b, h, t)					\
 	do {								\
 		REGISTER BUN _p = BUNlast(b);				\
-		REGISTER int _bunsize = BUNsize(b);			\
-		if ((b)->batBuns->free + _bunsize > (b)->batBuns->size) { \
-			if (BATextend((b), BATgrows(b)) == NULL) {	\
-				goto bunins_failed;			\
-			}						\
-			_p = BUNlast(b);				\
+		REGISTER size_t _hsize = Hsize(b);			\
+		REGISTER size_t _tsize = Tsize(b);			\
+		if (BATcount(b) + 1 > BATcapacity(b)){			\
+			if (BATextend(b, BATgrows(b)) == NULL)  	\
+				goto bunins_failed; 			\
 		}							\
-		@1@4_bunfastins_nocheck(b, _p, h, t, _bunsize);		\
+		@1@4_bunfastins_nocheck(b, _p, h, t, _hsize, _tsize);	\
 	} while (0)
 
 @-
@@ -258,7 +269,8 @@ Expand on tail type
 	@:T_BUNfastins(@1,@2,@3,sht,SIMPLE,sht)@
 	@:T_BUNfastins(@1,@2,@3,int,SIMPLE,int)@
 	@:T_BUNfastins(@1,@2,@3,lng,SIMPLE,lng)@
-	@:T_BUNfastins(@1,@2,@3,any,ATOM,(b)->ttype)@
+	@:T_BUNfastins(@1,@2,@3,fix,FIXEDATOM,(b)->ttype)@
+	@:T_BUNfastins(@1,@2,@3,var,VARATOM,(b)->ttype)@
 @-
 Expand on head type
 @h
@@ -268,16 +280,17 @@ Expand on head type
 @:H_BUNfastins(sht,SIMPLE,sht)@
 @:H_BUNfastins(int,SIMPLE,int)@
 @:H_BUNfastins(lng,SIMPLE,lng)@
-@:H_BUNfastins(any,ATOM,(b)->htype)@
+@:H_BUNfastins(fix,FIXEDATOM,(b)->htype)@
+@:H_BUNfastins(var,VARATOM,(b)->htype)@
 
 @-
 Type-mappers for convenience
 @= HT_bunfastins_typemap
 #define @1@2_bunfastins_nocheck_noinc(b, p, h, t) @1@3_bunfastins_nocheck_noinc(b, p, h, t)
-#define @1@2_bunfastins_nocheck(b, p, h, t, s)    @1@3_bunfastins_nocheck(b, p, h, t, s)
+#define @1@2_bunfastins_nocheck(b, p, h, t, hs, ts)    @1@3_bunfastins_nocheck(b, p, h, t, hs, ts)
 #define @1@2_bunfastins(b, h, t)                  @1@3_bunfastins(b, h, t)
 #define @2@1_bunfastins_nocheck_noinc(b, p, h, t) @3@1_bunfastins_nocheck_noinc(b, p, h, t)
-#define @2@1_bunfastins_nocheck(b, p, h, t, s)    @3@1_bunfastins_nocheck(b, p, h, t, s)
+#define @2@1_bunfastins_nocheck(b, p, h, t, hs, ts)    @3@1_bunfastins_nocheck(b, p, h, t, hs, ts)
 #define @2@1_bunfastins(b, h, t)                  @3@1_bunfastins(b, h, t)
 @h
 @:HT_bunfastins_typemap(void,flt,int)@
@@ -285,13 +298,15 @@ Type-mappers for convenience
 @:HT_bunfastins_typemap(sht,flt,int)@
 @:HT_bunfastins_typemap(int,flt,int)@
 @:HT_bunfastins_typemap(lng,flt,int)@
-@:HT_bunfastins_typemap(any,flt,int)@
+@:HT_bunfastins_typemap(fix,flt,int)@
+@:HT_bunfastins_typemap(var,flt,int)@
 @:HT_bunfastins_typemap(void,dbl,lng)@
 @:HT_bunfastins_typemap(chr,dbl,lng)@
 @:HT_bunfastins_typemap(sht,dbl,lng)@
 @:HT_bunfastins_typemap(int,dbl,lng)@
 @:HT_bunfastins_typemap(lng,dbl,lng)@
-@:HT_bunfastins_typemap(any,dbl,lng)@
+@:HT_bunfastins_typemap(fix,dbl,lng)@
+@:HT_bunfastins_typemap(var,dbl,lng)@
 
 #if SIZEOF_OID == SIZEOF_INT
 @:HT_bunfastins_typemap(void,oid,int)@
@@ -303,7 +318,8 @@ Type-mappers for convenience
 @:HT_bunfastins_typemap(lng,oid,int)@
 @:HT_bunfastins_typemap(flt,oid,int)@
 @:HT_bunfastins_typemap(dbl,oid,int)@
-@:HT_bunfastins_typemap(any,oid,int)@
+@:HT_bunfastins_typemap(fix,oid,int)@
+@:HT_bunfastins_typemap(var,oid,int)@
 #define oidoid_bunfastins_nocheck_noinc(b,p,h,t) intint_bunfastins_nocheck_noinc(b,p,h,t);
 #else
 @:HT_bunfastins_typemap(void,oid,lng)@
@@ -315,7 +331,8 @@ Type-mappers for convenience
 @:HT_bunfastins_typemap(lng,oid,lng)@
 @:HT_bunfastins_typemap(flt,oid,lng)@
 @:HT_bunfastins_typemap(dbl,oid,lng)@
-@:HT_bunfastins_typemap(any,oid,lng)@
+@:HT_bunfastins_typemap(fix,oid,lng)@
+@:HT_bunfastins_typemap(var,oid,lng)@
 #define oidoid_bunfastins_nocheck_noinc(b,p,h,t) lnglng_bunfastins_nocheck_noinc(b,p,h,t);
 #endif /* SIZEOF_OID == SIZEOF_INT */
 
@@ -328,7 +345,8 @@ Type-mappers for convenience
 @:HT_bunfastins_typemap(lng,wrd,int)@
 /*@:HT_bunfastins_typemap(flt,wrd,int)@*/
 /*@:HT_bunfastins_typemap(dbl,wrd,int)@*/
-@:HT_bunfastins_typemap(any,wrd,int)@
+@:HT_bunfastins_typemap(fix,wrd,int)@
+@:HT_bunfastins_typemap(var,wrd,int)@
 #else
 @:HT_bunfastins_typemap(void,wrd,lng)@
 @:HT_bunfastins_typemap(chr,wrd,lng)@
@@ -338,7 +356,8 @@ Type-mappers for convenience
 @:HT_bunfastins_typemap(lng,wrd,lng)@
 /*@:HT_bunfastins_typemap(flt,wrd,lng)@*/
 /*@:HT_bunfastins_typemap(dbl,wrd,lng)@*/
-@:HT_bunfastins_typemap(any,wrd,lng)@
+@:HT_bunfastins_typemap(fix,wrd,lng)@
+@:HT_bunfastins_typemap(var,wrd,lng)@
 #endif /* SIZEOF_WRD == SIZEOF_INT */
 @-
 For backward compatibility:
@@ -381,7 +400,7 @@ Hence, we skip some type-expansions in this very case.
 
 @= seqscanPrologue
 	BUN p,q;
-	int xx, t = b->ttype;
+	int t = b->ttype;
 	ptr nil = ATOMnilptr(t);
 
 	(void) nil;
@@ -412,7 +431,6 @@ The templates for the inner loops that do the actual work.
 Expanding on whether we created the result BAT (at least) as big as the
 input BAT, or not (see BAT_select in gdk_batop.mx). In the first case
 ("nocheck"), we do not have to check for a "BAT overflow" in the inner loop.
-Further, we need to set bn->batBuns->free only once we're done.
 
 @c
 /*	@1: input-tail-type for working function name,
@@ -424,7 +442,7 @@ Further, we need to set bn->batBuns->free only once we're done.
 	    or in case of equi-str-select the search string ("tl")
 	@6: input-head-type for working function name
 	@7: output-head-type for bunfastins macro name
-	@8: how to access the head-input: "BUNhloc(b,p)", "BUNhvar(b,p)",
+	@8: how to access the head-input: "BUNhloc(bi,p)", "BUNhvar(bi,p)",
 	    or the oid counter ("&oid_ctr") in case we generate a void/oid
 	    output-head from a void input-head
 	@9: in case we generate a void/oid output-head from a void
@@ -432,6 +450,7 @@ Further, we need to set bn->batBuns->free only once we're done.
 	    ("oid_ctr++;"),
 	    otherwise it's empty
 */
+
 @= DEFseqscan
 /* Parameter "oid_ctr" is only used to hand-over the base oid in case we
  * generate a oid head from a void head.
@@ -441,33 +460,34 @@ Further, we need to set bn->batBuns->free only once we're done.
 static BAT *
 seqscan_@1_@2_@3_@6_@7_nocheck_noinc(BAT* b, BAT* bn, ptr tl, ptr th, oid oid_ctr, var_t str_idx)
 {
+	BATiter bi = bat_iterator(b);
 	REGISTER BUN _p = BUNlast(bn);
-	REGISTER int _bunsize = BUNsize(bn);
 	@:seqscanPrologue@
 	ALGODEBUG THRprintf(GDKout, "#seqscan_@1_@2_@3_@6_@7_nocheck_noinc[@4,@5,@8,@9](b=%s, bn=%s, tl, th, oid_ctr=" SZFMT ", str_idx=" SZFMT ");\n",
 				    BATgetId(b), BATgetId(bn), (size_t) oid_ctr, (size_t) str_idx);
-	BATloopFast(b, p, q, xx) {
-		ptr v = BUN@3(b, p);
+	BATloop(b, p, q) {
+		ptr v = BUN@3(bi, p);
 
 		@4 {
 			@7@2_bunfastins_nocheck_noinc(bn, _p, (void *) (@8), @5);
-			_p += _bunsize;
+			_p++;
 		}
 		@9
 	}
-	bn->batBuns->free = _p - bn->batBuns->base;
-	BATsetcount(bn, bn->batBuns->free / _bunsize);
+	BATsetcount(bn, _p);
 	@:seqscanEpilogue@
 }
 
 static BAT *
 seqscan_@1_@2_@3_@6_@7(BAT* b, BAT* bn, ptr tl, ptr th, oid oid_ctr, var_t str_idx)
 {
+	BATiter bi = bat_iterator(b);
 	@:seqscanPrologue@
 	ALGODEBUG THRprintf(GDKout, "#seqscan_@1_@2_@3_@6_@7[@4,@5,@8,@9](b=%s, bn=%s, tl, th, oid_ctr=" SZFMT ", str_idx=" SZFMT ");\n",
 			    BATgetId(b), BATgetId(bn), (size_t) oid_ctr, (size_t) str_idx);
-	BATloopFast(b, p, q, xx) {
-		ptr v = BUN@3(b, p);;
+	BATloop(b, p, q) {
+		ptr v = BUN@3(bi, p);
+
 		@4 {
 			@7@2_bunfastins(bn, (void *) (@8), @5);
 		}
@@ -496,7 +516,7 @@ Output-tail-type is either identical to input-tail-type or TYPE_void
 	    or in case of equi-str-select the search string ("tl")
 	@6: input-head-type for working function name
 	@7: output-head-type for bunfastins macro name
-	@8: how to access the head-input: "BUNhloc(b,p)", "BUNhvar(b,p)",
+	@8: how to access the head-input: "BUNhloc(bi,p)", "BUNhvar(bi,p)",
 	    or the oid counter ("&oid_ctr") in case we generate a void/oid
 	    output-head from a void input-head
 	@9: in case we generate a void/oid output-head from a void
@@ -527,7 +547,7 @@ Expand on output-head-type; usually inherited from input-head-type.
 	    or in case of equi-str-select the search string ("tl")
 	@6: input-head-type for working function name
 	@7: output-head-type for bunfastins macro name
-	@8: how to access the head-input: "BUNhloc(b,p)", "BUNhvar(b,p)",
+	@8: how to access the head-input: "BUNhloc(bi,p)", "BUNhvar(bi,p)",
 	    or the oid counter ("&oid_ctr") in case we generate a void/oid
 	    output-head from a void input-head
 	@9: in case we generate a void/oid output-head from a void
@@ -538,56 +558,56 @@ Expand on output-head-type; usually inherited from input-head-type.
 @= DEFseqscanHTput
 #ifndef SKIP_TYPE_EXPANSIONS
 #ifndef NOEXPAND_CHR
-	@:DEFseqscanTTput(@1,@2,@3,@4,@5,chr,chr,BUNhloc(b,p),)@
+	@:DEFseqscanTTput(@1,@2,@3,@4,@5,chr,chr,BUNhloc(bi,p),)@
 #endif	/* NOEXPAND_CHR */
 #ifndef NOEXPAND_BTE
-	@:DEFseqscanTTput(@1,@2,@3,@4,@5,bte,bte,BUNhloc(b,p),)@
+	@:DEFseqscanTTput(@1,@2,@3,@4,@5,bte,bte,BUNhloc(bi,p),)@
 #endif	/* NOEXPAND_CHR */
 #ifndef NOEXPAND_SHT
-	@:DEFseqscanTTput(@1,@2,@3,@4,@5,sht,sht,BUNhloc(b,p),)@
+	@:DEFseqscanTTput(@1,@2,@3,@4,@5,sht,sht,BUNhloc(bi,p),)@
 #endif	/* NOEXPAND_SHT */
 #ifndef NOEXPAND_INT
-	@:DEFseqscanTTput(@1,@2,@3,@4,@5,int,int,BUNhloc(b,p),)@
+	@:DEFseqscanTTput(@1,@2,@3,@4,@5,int,int,BUNhloc(bi,p),)@
 #endif	/* NOEXPAND_INT */
 #ifndef NOEXPAND_LNG
-	@:DEFseqscanTTput(@1,@2,@3,@4,@5,lng,lng,BUNhloc(b,p),)@
+	@:DEFseqscanTTput(@1,@2,@3,@4,@5,lng,lng,BUNhloc(bi,p),)@
 #endif	/* NOEXPAND_LNG */
 #endif	/* SKIP_TYPE_EXPANSIONS */
-	@:DEFseqscanTTput(@1,@2,@3,@4,@5,fix,any,BUNhloc(b,p),)@
-	@:DEFseqscanTTput(@1,@2,@3,@4,@5,var,any,BUNhvar(b,p),)@
+	@:DEFseqscanTTput(@1,@2,@3,@4,@5,fix,fix,BUNhloc(bi,p),)@
+	@:DEFseqscanTTput(@1,@2,@3,@4,@5,var,var,BUNhvar(bi,p),)@
 @= seqscanHTput
 #ifndef SKIP_TYPE_EXPANSIONS
 #ifndef NOEXPAND_CHR
 	if (AsHt == TYPE_chr) {
-		@:seqscanTTput(@1,@2,@3,@4,@5,chr,chr,BUNhloc(b,p),)@
+		@:seqscanTTput(@1,@2,@3,@4,@5,chr,chr,BUNhloc(bi,p),)@
 	} else
 #endif	/* NOEXPAND_CHR */
 #ifndef NOEXPAND_BTE
 	if (AsHt == TYPE_bte) {
-		@:seqscanTTput(@1,@2,@3,@4,@5,bte,bte,BUNhloc(b,p),)@
+		@:seqscanTTput(@1,@2,@3,@4,@5,bte,bte,BUNhloc(bi,p),)@
 	} else
 #endif	/* NOEXPAND_BTE */
 #ifndef NOEXPAND_SHT
 	if (AsHt == TYPE_sht) {
-		@:seqscanTTput(@1,@2,@3,@4,@5,sht,sht,BUNhloc(b,p),)@
+		@:seqscanTTput(@1,@2,@3,@4,@5,sht,sht,BUNhloc(bi,p),)@
 	} else
 #endif	/* NOEXPAND_SHT */
 #ifndef NOEXPAND_INT
 	if (bn->htype != TYPE_bat && (AsHt == TYPE_int || AsHt == TYPE_flt)) {
 		/* ensure use of ATOMput for TYPE_bat */
-		@:seqscanTTput(@1,@2,@3,@4,@5,int,int,BUNhloc(b,p),)@
+		@:seqscanTTput(@1,@2,@3,@4,@5,int,int,BUNhloc(bi,p),)@
 	} else
 #endif	/* NOEXPAND_INT */
 #ifndef NOEXPAND_LNG
 	if (AsHt == TYPE_dbl || AsHt == TYPE_lng) {
-		@:seqscanTTput(@1,@2,@3,@4,@5,lng,lng,BUNhloc(b,p),)@
+		@:seqscanTTput(@1,@2,@3,@4,@5,lng,lng,BUNhloc(bi,p),)@
 	} else
 #endif	/* NOEXPAND_LNG */
 #endif	/* SKIP_TYPE_EXPANSIONS */
 	if (b->hvarsized) {
-		@:seqscanTTput(@1,@2,@3,@4,@5,var,any,BUNhvar(b,p),)@
+		@:seqscanTTput(@1,@2,@3,@4,@5,var,var,BUNhvar(bi,p),)@
 	} else {
-		@:seqscanTTput(@1,@2,@3,@4,@5,fix,any,BUNhloc(b,p),)@
+		@:seqscanTTput(@1,@2,@3,@4,@5,fix,fix,BUNhloc(bi,p),)@
 	}
 @-
 
@@ -610,7 +630,7 @@ Taking special care of void/oid.
 #elif SIZEOF_OID == SIZEOF_LNG && !defined(NOEXPAND_LNG)
 	@:DEFseqscanTTput(@1,@2,@3,@4,@5,oid,lng,&oid_ctr,oid_ctr++;)@
 #else
-	@:DEFseqscanTTput(@1,@2,@3,@4,@5,oid,any,&oid_ctr,oid_ctr++;)@
+	@:DEFseqscanTTput(@1,@2,@3,@4,@5,oid,fix,&oid_ctr,oid_ctr++;)@
 #endif	/* SIZEOF_OID == SIZEOF_INT */
 	@:DEFseqscanHTput(@1,@2,@3,@4,@5)@
 @= seqscanHTget
@@ -630,7 +650,7 @@ Taking special care of void/oid.
 #elif SIZEOF_OID == SIZEOF_LNG && !defined(NOEXPAND_LNG)
 			@:seqscanTTput(@1,@2,@3,@4,@5,oid,lng,&oid_ctr,oid_ctr++;)@
 #else
-			@:seqscanTTput(@1,@2,@3,@4,@5,oid,any,&oid_ctr,oid_ctr++;)@
+			@:seqscanTTput(@1,@2,@3,@4,@5,oid,fix,&oid_ctr,oid_ctr++;)@
 #endif
 		}
 	} else {
@@ -730,9 +750,9 @@ Adding test for v != nil for types where nil != MIN.
 	@:DEFseqscanIF(lng,lng,tloc,simple,lng,)@
 #endif
 #endif	/* SKIP_TYPE_EXPANSIONS */
-	@:DEFseqscanHTget(eq_str,any,tloc,if(*(var_t*)v==str_idx),tl)@
-	@:DEFseqscanIF(fix,any,tloc,atom,t,&&!atom_EQ(nil,v,t))@
-	@:DEFseqscanIF(var,any,tvar,atom,t,&&!atom_EQ(nil,v,t))@
+	@:DEFseqscanHTget(eq_str,var,tloc,if(*(var_t*)v==str_idx),tl)@
+	@:DEFseqscanIF(fix,fix,tloc,atom,t,&&!atom_EQ(nil,v,t))@
+	@:DEFseqscanIF(var,var,tvar,atom,t,&&!atom_EQ(nil,v,t))@
 @= seqscanTTget
 #ifndef SKIP_TYPE_EXPANSIONS
 #ifndef NOEXPAND_CHR
@@ -780,12 +800,12 @@ Adding test for v != nil for types where nil != MIN.
 			 * This is an equi select, so we assemble the
 			 * predicate here and skip seqscanIF. */
 			str_idx = strLocate(b->theap, tl);
-			@:seqscanHTget(eq_str,any,tloc,if((*(var_t*)v)==str_idx),tl)@
+			@:seqscanHTget(eq_str,var,tloc,if((*(var_t*)v)==str_idx),tl)@
 		} else {
-			@:seqscanIF(var,any,tvar,atom,t,&&!atom_EQ(nil,v,t))@
+			@:seqscanIF(var,var,tvar,atom,t,&&!atom_EQ(nil,v,t))@
 		}
 	} else {
-		@:seqscanIF(fix,any,tloc,atom,t,&&!atom_EQ(nil,v,t))@
+		@:seqscanIF(fix,fix,tloc,atom,t,&&!atom_EQ(nil,v,t))@
 	}
 @-
 

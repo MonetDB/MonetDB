@@ -105,35 +105,49 @@ pqueue_init(BAT **h, BAT *b, wrd *maxsize)
   	return GDK_SUCCEED;
 }
 
+#define ht_swap(tpe,cur,ins) {					\
+	  oid htmp = *(oid*)BUNhloc(hi,cur); 			\
+	  tpe ttmp = *(tpe*)BUNtloc(hi,cur);			\
+	  *(oid*)BUNhloc(hi,cur) = *(oid*)BUNhloc(hi,ins);	\
+	  *(tpe*)BUNtloc(hi,cur) = *(tpe*)BUNtloc(hi,ins);	\
+	  *(oid*)BUNhloc(hi,ins) = htmp; 			\
+	  *(tpe*)BUNtloc(hi,ins) = ttmp;			\
+}
+
+#define any_swap(cur,ins,ts) {					\
+	  unsigned int i;					\
+	  char ch;						\
+          /* only swap the locations (ie var_t's) */		\
+	  char *c1 = BUNtloc(hi,cur), *c2 = BUNtloc(hi,ins);	\
+	  oid htmp = *(oid*)BUNhloc(hi,cur); 			\
+	  *(oid*)BUNhloc(hi,cur) = *(oid*)BUNhloc(hi,ins);	\
+	  *(oid*)BUNhloc(hi,ins) = htmp; 			\
+	  for(i=0;i<ts;i++) {					\
+		ch= c1[i]; c1[i]=c2[i]; c2[i]=ch;		\
+	  }							\
+}
+
 @= pqueueimpl_minmax
 /*enqueue an element*/
 int pqueue_enqueue_@1@2(BAT *h,
 		 oid *idx, 
 		 @3 *el)
 {
-  BUN hbase;
+  BATiter hi = bat_iterator(h);
   BUN ins,cur;
-  int hBUNsize;
 
-  size_t p, posel;
-  char ch;
-  int i;
-
-  hbase = BUNfirst(h);
-  hBUNsize = BUNsize(h);
-
-  posel = BATcount(h); /*last position*/
+  BUN hbase = BUNfirst(h);
+  size_t p, posel = BATcount(h); /*last position*/
+ 
   BUNins(h, (ptr)idx, (ptr)el, FALSE);
-  ins = hbase+posel*hBUNsize;
+  ins = hbase+posel;
   
   while(posel >0) {
 	p=parent(posel);
-	cur = hbase+p*hBUNsize;
-	if (*(@3 *)BUNtloc(h,ins) @4 *(@3 *)BUNtloc(h,cur)) {
+	cur = hbase+p;
+	if (*(@3 *)BUNtloc(hi,ins) @4 *(@3 *)BUNtloc(hi,cur)) {
 	  /* swap element with its parent */
-	  for(i=0; i<hBUNsize; i++){
-		ch= cur[i]; cur[i]= ins[i]; ins[i]= ch;
-	  }
+	  ht_swap(@3,cur,ins);
 	  ins = cur;
 	  posel = parent(posel);
 	}
@@ -148,41 +162,29 @@ int pqueue_enqueue_@1@2(BAT *h,
 /* used by dequeue (see below) */
 static int pqueue_movedowntop_@1@2(BAT *h)
 {
-  BUN hbase;
-  BUN swp,cur;
-  int hBUNsize;
-
-  size_t swap, num_elems;
-
-  size_t posel;
-  char ch;
-  int i;
-
-  hbase = BUNfirst(h);
-  hBUNsize = BUNsize(h);
+  BATiter hi = bat_iterator(h);
+  BUN swp, cur, hbase = BUNfirst(h);
+  size_t swap, num_elems = BATcount(h);
+  size_t posel = 0;
 
   cur = hbase;
-  num_elems = BATcount(h);
-  posel = 0;
   
   /*while posel is not a leaf and pqueue[posel].tail > any of childen*/
   while (posel*2+1 < num_elems) { /*there exists a left son*/
 	if (posel*2+2< num_elems) { /*there exists a right son*/
-	  if (*(@3 *)BUNtloc(h,hbase+(posel*2+1)*hBUNsize) @4
-	      *(@3 *)BUNtloc(h,hbase+(posel*2+2)*hBUNsize))
+	  if (*(@3 *)BUNtloc(hi,hbase+(posel*2+1)) @4
+	      *(@3 *)BUNtloc(hi,hbase+(posel*2+2)))
 		swap = posel*2+1;
 	  else
 		swap = posel*2+2;
 	} else
 		swap = posel*2+1;
 
-	swp = hbase+swap*hBUNsize;
+	swp = hbase+swap;
 
-	if (*(@3 *)BUNtloc(h,swp) @4 *(@3 *)BUNtloc(h,cur)) {
+	if (*(@3 *)BUNtloc(hi,swp) @4 *(@3 *)BUNtloc(hi,cur)) {
 	  /*swap elements*/
-	  for(i=0; i<hBUNsize; i++){
-		ch= cur[i]; cur[i]= swp[i]; swp[i]= ch;
-	  }
+	  ht_swap(@3,cur,swp);
 	  cur = swp;
 	  posel = swap;
 	} else 
@@ -195,9 +197,8 @@ static int pqueue_movedowntop_@1@2(BAT *h)
 /* removes the root element, puts the last element as root and moves it down */
 int pqueue_dequeue_@1@2(BAT *h)
 {
+  BATiter hi = bat_iterator(h);
   BUN hbase;
-  int hBUNsize;
-
   size_t num_elements;
 
   if (!(num_elements = BATcount(h))) {
@@ -206,13 +207,12 @@ int pqueue_dequeue_@1@2(BAT *h)
   }
 
   hbase = BUNfirst(h);
-  hBUNsize = BUNsize(h);
 
   /* copy last element to the first position*/
-  memcpy(hbase, hbase+(num_elements-1)*hBUNsize, hBUNsize);
+  ht_swap(@1,hbase, hbase+(num_elements-1));
 
   /*delete last element*/
-  BUNdelete(h, hbase+(num_elements-1)*hBUNsize, FALSE);
+  BUNdelete(h, hbase+(num_elements-1), FALSE);
 
   pqueue_movedowntop_@1@2(h);
   return GDK_SUCCEED;
@@ -224,13 +224,14 @@ int pqueue_topreplace_@1@2(BAT *h,
 		 oid *idx,
 		 @3 *el)
 {
+  BATiter hi = bat_iterator(h);
   BUN hbase;
 
   hbase = BUNfirst(h);
 
-  if (*(@3 *)BUNtloc(h,hbase) @4 *el) {
-	memcpy(BUNhloc(h,hbase), idx, sizeof(oid));
-	memcpy(BUNtloc(h,hbase), el, sizeof(@3));
+  if (*(@3 *)BUNtloc(hi,hbase) @4 *el) {
+	*(oid*)BUNhloc(hi,hbase) = *idx;
+	*(@3*)BUNtloc(hi,hbase) = *el;
 	pqueue_movedowntop_@1@2(h);
   }
   
@@ -241,6 +242,7 @@ int pqueue_topreplace_@1@2(BAT *h,
 
 int pqueue_topn_void@1@2(BAT **H, BAT *t, int *N)
 {
+  BATiter ti = bat_iterator(t);
   @1 *v;
   size_t i, n = BATcount(t);
   oid idx = t->hseqbase;
@@ -248,7 +250,7 @@ int pqueue_topn_void@1@2(BAT **H, BAT *t, int *N)
   if ((size_t) *N < n)
 	  n = (size_t) *N;
   do_pqueue_init(H,t,n);
-  v = (@1*)BUNtail(t,BUNfirst(t));
+  v = (@1*)BUNtail(ti,BUNfirst(t));
 
   for(i=0; i<n; i++, idx++, v++) {
 	pqueue_enqueue_@1@2(*H, &idx, v); 
@@ -262,20 +264,20 @@ int pqueue_topn_void@1@2(BAT **H, BAT *t, int *N)
 
 int pqueue_topn_@1@2(BAT **H, BAT *t, int *N)
 {
+  BATiter ti = bat_iterator(t);
   size_t i, n = BATcount(t);
-  int bs = BUNsize(t);
-  char *p = BUNfirst(t);
+  BUN p = BUNfirst(t);
 
   if ((size_t) *N < n)
 	  n = (size_t) *N;
   do_pqueue_init(H,t,n);
 
-  for(i=0; i<n; i++, p+=bs) {
-	pqueue_enqueue_@1@2(*H, (oid*)BUNhloc(t,p), (@1*)BUNtloc(t,p)); 
+  for(i=0; i<n; i++, p++) {
+	pqueue_enqueue_@1@2(*H, (oid*)BUNhloc(ti,p), (@1*)BUNtloc(ti,p)); 
   }
   n = BATcount(t);
-  for(; i<n; i++, p+=bs) {
-	pqueue_topreplace_@1@2(*H, (oid*)BUNhloc(t,p), (@1*)BUNtloc(t,p)); 
+  for(; i<n; i++, p++) {
+	pqueue_topreplace_@1@2(*H, (oid*)BUNhloc(ti,p), (@1*)BUNtloc(ti,p)); 
   }
   return GDK_SUCCEED;
 }
@@ -302,29 +304,23 @@ int pqueue_topn_@1@2(BAT **H, BAT *t, int *N)
 /*enqueue an element*/
 int pqueue_enqueue_any@1(BAT *h, oid *idx, ptr el, int tpe)
 {
+  BATiter hi = bat_iterator(h);
   BUN hbase;
   BUN ins,cur;
-  int hBUNsize;
-
-  size_t p, posel;
-  char ch;
-  int i;
+  size_t p, posel, ts = Tsize(h);
 
   hbase = BUNfirst(h);
-  hBUNsize = BUNsize(h);
 
   posel = BATcount(h); /*last position*/
   BUNins(h, (ptr)idx, (ptr)el, FALSE);
-  ins = hbase+posel*hBUNsize;
+  ins = hbase+posel;
   
   while(posel >0) {
 	p=parent(posel);
-	cur = hbase+p*hBUNsize;
-	if (atom_CMP(BUNtail(h,ins), BUNtail(h,cur), tpe) @2 0 ) {
+	cur = hbase+p;
+	if (atom_CMP(BUNtail(hi,ins), BUNtail(hi,cur), tpe) @2 0 ) {
 	  /* swap element with its parent */
-	  for(i=0; i<hBUNsize; i++){
-		ch= cur[i]; cur[i]=ins[i]; ins[i]=ch;
-	  }
+	  any_swap(cur,ins,ts);
 	  ins = cur;
 	  posel = parent(posel);
 	}
@@ -339,19 +335,14 @@ int pqueue_enqueue_any@1(BAT *h, oid *idx, ptr el, int tpe)
 /* used by dequeue (see below) */
 static int pqueue_movedowntop_any@1(BAT *h)
 {
+  BATiter hi = bat_iterator(h);
   BUN hbase;
   BUN swp,cur;
-  int hBUNsize;
-
   int tpe = BATttype(h);
   size_t swap, num_elems;
-
-  size_t posel;
-  char ch;
-  int i;
+  size_t posel, ts = Tsize(h);
 
   hbase = BUNfirst(h);
-  hBUNsize = BUNsize(h);
 
   cur = hbase;
   num_elems = BATcount(h);
@@ -361,8 +352,8 @@ static int pqueue_movedowntop_any@1(BAT *h)
   while (posel*2+1 < num_elems) { /*there exists a left son*/
 	if (posel*2+2< num_elems) { /*there exists a right son*/
 	  if (atom_CMP(
-		BUNtail(h,hbase+(posel*2+1)*hBUNsize),
-		BUNtail(h,hbase+(posel*2+2)*hBUNsize), tpe) @2 0 ) {
+		BUNtail(hi,hbase+(posel*2+1)),
+		BUNtail(hi,hbase+(posel*2+2)), tpe) @2 0 ) {
 		swap = posel*2+1;
 	  } else {
 		swap = posel*2+2;
@@ -370,15 +361,13 @@ static int pqueue_movedowntop_any@1(BAT *h)
 	} else
 		swap = posel*2+1;
 
-	swp = hbase+swap*hBUNsize;
+	swp = hbase+swap;
 
-	if (atom_CMP( BUNtail(h,swp), BUNtail(h,cur), tpe) @2 0 ) {
+	if (atom_CMP( BUNtail(hi,swp), BUNtail(hi,cur), tpe) @2 0 ) {
 		/*swap elements*/
-		for(i=0;i<hBUNsize; i++){
-			ch= cur[i]; cur[i]=swp[i]; swp[i]=ch;
-		}
-	  cur = swp;
-	  posel = swap;
+		any_swap(cur,swp,ts);
+	  	cur = swp;
+	  	posel = swap;
 	} else 
 		break;
   }
@@ -390,10 +379,10 @@ static int pqueue_movedowntop_any@1(BAT *h)
 /* removes the root element, puts the last element as root and moves it down */
 int pqueue_dequeue_any@1(BAT *h)
 {
+  BATiter hi = bat_iterator(h);
   BUN hbase;
-  int hBUNsize;
-
   size_t num_elements;
+  size_t ts = Tsize(h);
 
   if (!(num_elements = BATcount(h))) {
 	GDKerror("pqueue_dequeue: Cannot dequeue from empty queue\n");
@@ -401,13 +390,12 @@ int pqueue_dequeue_any@1(BAT *h)
   }
 
   hbase = BUNfirst(h);
-  hBUNsize = BUNsize(h);
 
   /* copy last element to the first position*/
-  memcpy(hbase, hbase+(num_elements-1)*hBUNsize, hBUNsize);
+  any_swap(hbase, hbase+(num_elements-1), ts);
 
   /*delete last element*/
-  BUNdelete(h, hbase+(num_elements-1)*hBUNsize, FALSE);
+  BUNdelete(h, hbase+(num_elements-1), FALSE);
 
   pqueue_movedowntop_any@1(h);
   return GDK_SUCCEED;
@@ -417,13 +405,12 @@ int pqueue_dequeue_any@1(BAT *h)
  * updates the heap */
 int pqueue_topreplace_any@1(BAT *h, oid *idx, ptr el, int tpe)
 {
-  BUN hbase;
+  BATiter hi = bat_iterator(h);
+  BUN hbase = BUNfirst(h);
 
-  hbase = BUNfirst(h);
-
-  if (atom_CMP(BUNtail(h,hbase), el, tpe) @2 0) {
+  if (atom_CMP(BUNtail(hi,hbase), el, tpe) @2 0) {
 	BUNinplace(h, hbase, idx, el, 0);
-	*(oid*)BUNhloc(h,hbase) = *idx;
+	* (oid *) BUNhloc(hi, hbase) = *idx;
 	pqueue_movedowntop_any@1(h);
     	h->hsorted = h->tsorted = FALSE;
   }
@@ -433,43 +420,43 @@ int pqueue_topreplace_any@1(BAT *h, oid *idx, ptr el, int tpe)
 
 int pqueue_topn_voidany@1(BAT **H, BAT *t, int *N)
 {
+  BATiter ti = bat_iterator(t);
   size_t i, n = BATcount(t);
   oid idx = t->hseqbase;
-  int bs = BUNsize(t);
-  char *p = BUNfirst(t);
+  BUN p = BUNfirst(t);
   int tpe = BATttype(t);
 
   if ((size_t) *N < n)
    	n = (size_t) *N;
   do_pqueue_init(H,t,n);
 
-  for(i=0; i<n; i++, idx++, p+=bs) {
-	pqueue_enqueue_any@1(*H, &idx, BUNtail(t,p), tpe); 
+  for(i=0; i<n; i++, idx++, p++) {
+	pqueue_enqueue_any@1(*H, &idx, BUNtail(ti,p), tpe); 
   }
   n = BATcount(t);
-  for(; i<n; i++, idx++, p+=bs) {
-	pqueue_topreplace_any@1(*H, &idx, BUNtail(t,p), tpe); 
+  for(; i<n; i++, idx++, p++) {
+	pqueue_topreplace_any@1(*H, &idx, BUNtail(ti,p), tpe); 
   }
   return GDK_SUCCEED;
 }
 
 int pqueue_topn_any@1(BAT **H, BAT *t, int *N)
 {
+  BATiter ti = bat_iterator(t);
   size_t i, n = BATcount(t);
-  int bs = BUNsize(t);
-  char *p = BUNfirst(t);
+  BUN p = BUNfirst(t);
   int tpe = BATttype(t);
 
   if ((size_t) *N < n)
    	n = (size_t) *N;
   do_pqueue_init(H,t,n);
 
-  for(i=0; i<n; i++, p+=bs) {
-	pqueue_enqueue_any@1(*H, (oid*)BUNhloc(t,p), BUNtail(t,p), tpe); 
+  for(i=0; i<n; i++, p++) {
+	pqueue_enqueue_any@1(*H, (oid*)BUNhloc(ti,p), BUNtail(ti,p), tpe); 
   }
   n = BATcount(t);
-  for(; i<n; i++, p+=bs) {
-	pqueue_topreplace_any@1(*H, (oid*)BUNhloc(t,p), BUNtail(t,p), tpe); 
+  for(; i<n; i++, p++) {
+	pqueue_topreplace_any@1(*H, (oid*)BUNhloc(ti,p), BUNtail(ti,p), tpe); 
   }
   return GDK_SUCCEED;
 }

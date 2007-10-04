@@ -298,6 +298,7 @@ pcre_exec_wrap(bit *res, pcre * pattern, str s)
 str
 pcre_select(BAT **res, str pattern, BAT *strs)
 {
+	BATiter strsi = bat_iterator(strs);
 	const char err[BUFSIZ], *err_p = err;
 	int errpos = 0;
 	BAT *r;
@@ -313,10 +314,10 @@ pcre_select(BAT **res, str pattern, BAT *strs)
 			pattern, errpos, err_p);
 	}
 	BATloop(strs, p, q) {
-		str s = BUNtail(strs, p);
+		str s = BUNtail(strsi, p);
 
 		if (pcre_exec(re, NULL, s, strlen(s), 0, 0, NULL, 0) >= 0) {
-			BUNins(r, BUNhead(strs, p), s, FALSE);
+			BUNins(r, BUNhead(strsi, p), s, FALSE);
 		}
 	}
 	if (!(r->batDirty&2)) r = BATsetaccess(r, BAT_READ);
@@ -328,6 +329,7 @@ pcre_select(BAT **res, str pattern, BAT *strs)
 str
 pcre_uselect(BAT **res, str pattern, BAT *strs)
 {
+	BATiter strsi = bat_iterator(strs);
 	const char err[BUFSIZ], *err_p = err;
 	int errpos = 0;
 	BAT *r;
@@ -343,10 +345,10 @@ pcre_uselect(BAT **res, str pattern, BAT *strs)
 			pattern, errpos, err_p);
 	}
 	BATloop(strs, p, q) {
-		str s = BUNtail(strs, p);
+		str s = BUNtail(strsi, p);
 
 		if (pcre_exec(re, NULL, s, strlen(s), 0, 0, NULL, 0) >= 0) {
-			BUNins(r, BUNhead(strs, p), NULL, FALSE);
+			BUNins(r, BUNhead(strsi, p), NULL, FALSE);
 		}
 	}
 	my_pcre_free(re);
@@ -465,6 +467,7 @@ pcre_replace(str *res, str origin_str, str pattern, str replacement, str flags)
 str
 pcre_replace_bat(BAT **res, BAT *origin_strs, str pattern, str replacement, str flags)
 {
+	BATiter origin_strsi = bat_iterator(origin_strs);
 	const char err[BUFSIZ], *err_p = err, *err_p2 = err;
 	int i, j, k, len, errpos = 0, offset = 0;
 	int compile_options = PCRE_UTF8, exec_options = PCRE_NOTEMPTY;
@@ -512,7 +515,7 @@ pcre_replace_bat(BAT **res, BAT *origin_strs, str pattern, str replacement, str 
 	
 	tmpbat = BATnew(origin_strs->htype, TYPE_str, BATcount(origin_strs));
 	BATloop(origin_strs, p, q) {
-		origin_str = BUNtail(origin_strs, p);
+		origin_str = BUNtail(origin_strsi, p);
 		len_origin_str = strlen(origin_str);
 		i = ncaptures = len_del = offset = 0;
 		do {
@@ -562,10 +565,10 @@ pcre_replace_bat(BAT **res, BAT *origin_strs, str pattern, str replacement, str 
 			strncpy(replaced_str+k, origin_str+capture_offsets[j], len);
 			k += len;
 			replaced_str[k] = '\0';
-			BUNins(tmpbat, BUNhead(origin_strs, p), replaced_str, FALSE);
+			BUNins(tmpbat, BUNhead(origin_strsi, p), replaced_str, FALSE);
 			GDKfree(replaced_str);
 		} else { /* no captured substrings, copy the original string into new bat */
-			BUNins(tmpbat, BUNhead(origin_strs, p), origin_str, FALSE);
+			BUNins(tmpbat, BUNhead(origin_strsi, p), origin_str, FALSE);
 		}
 	}
 
@@ -653,7 +656,7 @@ pcre_quote(str *res, str s)
 
 	*res = p = GDKmalloc(strlen(s) * 2 + 1); /* certainly long enough */
 	if (p == NULL)
-		return -1;
+		return GDK_FAIL;
 	/* quote all non-alphanumeric ASCII characters (i.e. leave
 	   non-ASCII and alphanumeric alone) */
 	while (*s) {
@@ -665,7 +668,7 @@ pcre_quote(str *res, str s)
 		*p++ = *s++;
 	}
 	*p = 0;
-	return 0;
+	return GDK_SUCCEED;
 }
 
 int
@@ -674,16 +677,16 @@ pcre_tostr(str *tostr, int *l, pcre * p)
 	(void) tostr;
 	(void) l;
 	(void) p;
-	return GDK_FAIL;	/* don't generate */
+	return GDK_FAIL;
 }
 
 int
 pcre_fromstr(str instr, int *l, pcre ** val)
 {
-	(void) l;
 	(void) instr;
+	(void) l;
 	(void) val;
-	return GDK_FAIL;	/* don't parse */
+	return GDK_FAIL;
 }
 
 int
@@ -712,9 +715,9 @@ pcre_null(void)
 }
 
 void
-pcre_del(Heap *h, var_t *index)
+pcre_del(Heap *h, var_t *idx)
 {
-	HEAP_free(h, *index);
+	HEAP_free(h, *idx);
 }
 
 #define pcresize(val) ((sht*)val)[0]
@@ -806,12 +809,12 @@ sql2pcre(str *r, str pat, str esc_str)
 		GDKfree(*r);
 		*r = GDKstrdup(str_nil);
 		if (escaped)
-			return -1; 
+			return GDK_FAIL; 
 	} else {
 		*ppat++ = '$';
 		*ppat = 0;
 	}
-	return 0; 
+	return GDK_SUCCEED; 
 }
 @+ Wrapping
 @c

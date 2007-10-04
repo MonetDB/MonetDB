@@ -844,8 +844,8 @@ of BATs.
 	if ((b = BATdescriptor(idx)) == NULL) 
 		throw(MAL, "bpm.loadCatalog", "Cannot access descriptor");
 	BATloop(b, p, q) {
-		i = *(int *)BUNhead(b,p);
-		k = *(@2 *) BUNtail(b,p);
+		i = *(int *)Hloc(b,p);
+		k = *(@2 *) Tloc(b,p);
 		newPartition(i)->@1 = k;	
 		bpmcat[i]->bid = k;
 	}
@@ -855,6 +855,7 @@ of BATs.
 	idx= BBPindex("bpm_@2");
         if ((@1 = BATdescriptor(idx)) == NULL) 
                 throw(MAL, "bpm.loadCatalog", "Cannot access descriptor");
+	@1i = bat_iterator(@1);
 
 @= BPMunfix
 	BBPunfix(nxt->batCacheid);
@@ -866,8 +867,8 @@ of BATs.
 
 @= getPartitionBound
 	r= BUNfnd(@3,&i); 
-	if (r){
-	   val= BUNtail(@3,r);
+	if (r != BUN_NONE){
+	   val= BUNtail(@3i,r);
 	   vl= * (@5 *) val;	
 	   @2= (@1) vl;
 	   VALset(&bpmcat[i]->@4, tp, &@2); 
@@ -888,6 +889,7 @@ BPMloadCatalog(){
 	int i,k,tp,vi;
 	bat idx;
 	BAT *b, *pb;
+	BATiter nxti, prvi, cnti, bldi, blli, bhdi, bhli;
 	BAT *nxt, *prv, *cnt, *bld, *bll, *bhd, *bhl;
 	BUN p,q,r;
 	str nm;
@@ -896,14 +898,16 @@ BPMloadCatalog(){
 	flt vf;
 	dbl vd;
 	lng vl;
+	BATiter bi;
 
 	assureSpace();
 	idx= BBPindex("bpm_name");
 	if ((b = BATdescriptor(idx)) == NULL) 
 		throw(MAL, "bpm.loadCatalog", "Cannot access descriptor");
+	bi = bat_iterator(b);
 	BATloop(b, p, q) {
-		i = *(int *)BUNhead(b,p);
-		nm = (str) BUNtail(b,p);
+		i = *(int *)BUNhead(bi,p);
+		nm = (str) BUNtail(bi,p);
 		newPartition(i)->name = GDKstrdup(nm);	
 		bpmcat[i]->type= newBatType(b->htype, b->ttype);
 		bpmcat[i]->bid = i;
@@ -933,8 +937,8 @@ BPMloadCatalog(){
 @-
 @= getPartitionField
 		r= BUNfnd(@1,&i);
-		if (r)
-			bpmcat[i]->@1= *(int *) BUNtail(@1,r);
+		if (r != BUN_NONE)
+			bpmcat[i]->@1= *(int *) BUNtail(@1i,r);
 		else {	
 			@:BPMunfix@
 			throw(MAL, "bpm.loadCatalog", "Broken partition scheme:@1");
@@ -1205,6 +1209,7 @@ The vector approach is simply a list of split points.
 str
 BPMrangeVector(bat *ret, bat *bid, bat *pv)
 {
+	BATiter bpvi;
 	BAT *b, *bpv;
 	BUN cur,q;
 	ptr val;
@@ -1214,14 +1219,14 @@ BPMrangeVector(bat *ret, bat *bid, bat *pv)
 	if( bpmcat[*bid] == 0)
 		throw(MAL,"bpm.rangeVector","Partitioned BAT not found");
 	@:getBATdescriptor(bid,b,"bpm.rangeVector");
-
 	@:getBATdescriptor(pv,bpv,"bpm.range")@
 	if( bpv == 0){
 		BBPunfix(b->batCacheid);
 		throw(MAL,"bpm.range","Cannot access BAT");
 	}
+	bpvi = bat_iterator(bpv);
 	BATloop(bpv,cur,q){
-		val= BUNtail(bpv,cur);
+		val= BUNtail(bpvi,cur);
 		BPMsplitpartition(ret,bid,val);
 	}
 	*ret= 0;
@@ -1574,16 +1579,15 @@ It is the candidate split value.
 @c
 static void findMedian(ValPtr vp, BAT * b)
 {
-	BUN p; 
-	int c, tpe;
+	BUN c; 
 	BAT *bh, *bs;
+	BATiter bsi;
 
-	tpe = b->ttype;
 	bh = BATsample(b,100);
 	bs = BATtsort(bh);
 	c = BATcount(bh)/2;
-	p = BUNptr(bs,c);
-	VALset(vp,tpe, BUNtail(bs,p));
+	bsi = bat_iterator(bs);
+	VALset(vp, b->ttype, BUNtail(bsi,c));
 
 	BBPunfix(bs->batCacheid);
 	BBPunfix(bh->batCacheid);
@@ -1645,8 +1649,8 @@ BPMsizePolicy( BAT *b, BAT *bs, int ov)
 	int cs=0;
 	lng space, space1, space2=0;
 
-	space = BATcount(b)* (BUNsize(b) + sizeof(hash_t)) + sizeof(BATstore);
-	space1 = BATcount(bs)* (BUNsize(b) + sizeof(hash_t)) + sizeof(BATstore);
+	space = BATcount(b)* (Hsize(b) + Tsize(b) + sizeof(hash_t)) + sizeof(BATstore);
+	space1 = BATcount(bs)* (Hsize(b) + Tsize(b) + sizeof(hash_t)) + sizeof(BATstore);
 
 /*	stream_printf(GDKout,"tuples %d size  %d selection %d \n", BATcount(b),space, space1); */
 	if(ov <3) {
@@ -1693,8 +1697,8 @@ BPMhybridPolicy( BAT *b, BAT *bs, int ov)
 	int cs=0, or, cnt=0;
 	lng space, space1, space2=0;
 
-	space = BATcount(b)* (BUNsize(b) + sizeof(hash_t)) + sizeof(BATstore);
-	space1 = BATcount(bs)* (BUNsize(b) + sizeof(hash_t)) + sizeof(BATstore);
+	space = BATcount(b)* (Hsize(b) + Tsize(b) + sizeof(hash_t)) + sizeof(BATstore);
+	space1 = BATcount(bs)* (Hsize(b) + Tsize(b) + sizeof(hash_t)) + sizeof(BATstore);
 
 	if(ov <3) {
 		space2 = space -space1;
@@ -1735,7 +1739,8 @@ BPMhybridPolicy( BAT *b, BAT *bs, int ov)
 
 static int 
 spread( bat *ret, int *cnt, BAT *b, ValPtr sep, int n, int skip)
-{	int xx, k=n-2, i;
+{	
+	int k=n-2, i;
 	BUN p,q;
 	BAT **bs = alloca(sizeof(*bs) * (n-1)); /* Visual Studio doesn't accept BAT *bs[n-1] */
 	ptr val;
@@ -1748,17 +1753,17 @@ spread( bat *ret, int *cnt, BAT *b, ValPtr sep, int n, int skip)
 			bs[i] = BATnew(b->htype, b->ttype, (size_t) BATcount(b)/k );
 	}
 
-	BATloopFast(b, p, q, xx) {
-		val = BUNtloc(b, p);
+	BATloop(b, p, q) {
+		val = Tloc(b, p);
 		for(i=0; i<k; i++) {
 			if( ((*cmp)(val,(ptr) &sep[i+1]) <0) && (i!= skip)) {
-				BUNins(bs[i], BUNhloc(b, p), val, TRUE);
+				BUNins(bs[i], Hloc(b, p), val, TRUE);
 				break;
 			}	
 		} 
 		if( (i == k) && (i!=skip) &&
 		    ((*cmp)(val,(ptr) &sep[i]) >0) )
-			BUNins(bs[k], BUNhloc(b, p), val, TRUE);
+			BUNins(bs[k], Hloc(b, p), val, TRUE);
 	}		
 	
 	for(i=0; i<=k; i++)
@@ -1794,7 +1799,7 @@ BPMadaptImpl(bat *ret, bat *bid, ptr low, ptr hgh, bat *rs, int policy )
 	tpe = rngType(b->ttype);
 
 /* baseline size, too small BATs are never broken*/
-	space = BATcount(b)* (BUNsize(b) + sizeof(hash_t)) + sizeof(BATstore);
+	space = BATcount(b)* (Hsize(b) + Tsize(b) + sizeof(hash_t)) + sizeof(BATstore);
 	if (space < Mmin) { /* no re-org.*/
 		BBPkeepref(*ret = b->batCacheid);
 		return MAL_SUCCEED;
@@ -3026,6 +3031,7 @@ void findQuantHisto(ValPtr vp, BAT * b, lng sp, int msz, int maxno)
 {
 	BUN p, pprev, stop; 
 	int c, tpe, quan, pertpl, s=0, cn, it =0;
+	BATiter bsi;
 	BAT *bh, *bs;
 	ValPtr v = vp;
 
@@ -3040,12 +3046,13 @@ void findQuantHisto(ValPtr vp, BAT * b, lng sp, int msz, int maxno)
 
 	/* iterate on the sorted histogram */
 	pprev = BUNfirst(bs);
+	bsi = bat_iterator(bs);
 	BATloop(bs, p, stop) {
-		cn = * (int *) BUNtail(bs,p);
+		cn = * (int *) BUNtail(bsi,p);
 		if (s + cn <quan) 
 			s += cn;
 		else {
-			VALset(v,tpe, BUNhead(bs,pprev));
+			VALset(v,tpe, BUNhead(bsi,pprev));
 			v++; it++;
 			s = cn;
 			if (it >= maxno) break;
@@ -3093,7 +3100,7 @@ BPMsplitquant(bat *ret, bat *bid, int *mb)
 	/*	materializePartition(bpmcat[i]); */
 		@:getBATdescriptor(&bpmcat[i]->bid,b,"bpm.splitquantile");
 		
-		space = BATcount(b)* (BUNsize(b) + sizeof(hash_t)) + sizeof(BATstore);
+		space = BATcount(b)* (Hsize(b) + Tsize(b) + sizeof(hash_t)) + sizeof(BATstore);
 		if ((b->htype == TYPE_void) || (b->ttype == TYPE_void))
 			space += BATcount(b)* sizeof(oid);
 	#ifdef _DEBUG_BPM_

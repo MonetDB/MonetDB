@@ -235,12 +235,12 @@ var region_end_attr_tag := monet_environment.find("standoff_end");
 @
 @= reject_outside
             /* insert nodes which are not contained */
-            index = BUNindex(region_start,iter_start);
+            index = iter_start - iter_s;
             BUNappend(bn, (ptr)(&index), FALSE);
 @
 @= select_inside
             /* insert nodes which are contained */
-            index = BUNindex(region_start,iter_start);
+            index = iter_start - iter_s;
             BUNappend(bn, (ptr)(&index), FALSE);
 @
 @= reject_inside
@@ -255,7 +255,7 @@ var region_end_attr_tag := monet_environment.find("standoff_end");
         /* loop through the not strictly contained region */
         while(iter_start < last_start && *iter_start < *outer_iter_start) {
             @:@1_outside@
-            iter_start+=Srs; iter_end+=Sre;
+            iter_start++; iter_end++;
         }
 
         /* loop through the strictly contained regions */
@@ -265,14 +265,14 @@ var region_end_attr_tag := monet_environment.find("standoff_end");
             } else {
               @:@1_outside@
             }
-            iter_start+=Srs; iter_end+=Sre;
+            iter_start++; iter_end++;
         }
 @
 @= wide
         /* loop through the not even contained regions */
         while(iter_start < last_start && *iter_end < *outer_iter_start) {
             @:@1_outside@
-            iter_start+=Srs; iter_end+=Sre;
+            iter_start++; iter_end++;
         }
 
         /* loop through the partly contained regions */
@@ -282,7 +282,7 @@ var region_end_attr_tag := monet_environment.find("standoff_end");
             } else {
               @:@1_outside@
             }
-            iter_start+=Srs; iter_end+=Sre;
+            iter_start++; iter_end++;
         }
 @
 
@@ -296,13 +296,12 @@ var region_end_attr_tag := monet_environment.find("standoff_end");
 int
 CMD@1_@2_join_sort_@3(BAT **result, BAT *source_start, BAT *source_end, BAT *region_start, BAT *region_end) {
 
-    @4 *iter_start, *iter_end, *last_start,
+    @4 *iter_s, *iter_start, *iter_end, *last_start,
         *outer_iter_start, *outer_iter_end, *outer_last_start,
         *outer_iter_start_next, *outer_iter_end_next;
 
     @:region_jump_decl_@2(@4)@
-        oid index;
-    int Sss,Sse,Srs,Sre;
+    oid index;
     BAT * bn = NULL;
 
     *result=NULL;
@@ -329,26 +328,20 @@ CMD@1_@2_join_sort_@3(BAT **result, BAT *source_start, BAT *source_end, BAT *reg
         return(GDK_FAIL);
     }
 
-    iter_start = (@4 *) BUNtail(region_start, BUNfirst(region_start));
-    iter_end = (@4 *) BUNtail(region_end, BUNfirst(region_end));
-    last_start = (@4 *) BUNtail(region_start, BUNlast(region_start));
-    outer_iter_start = (@4 *) BUNtail(source_start, BUNfirst(source_start));
-    outer_iter_end = (@4 *) BUNtail(source_end, BUNfirst(source_end));
-    outer_last_start = (@4 *) BUNtail(source_start, BUNlast(source_start));
-
-    /* todo: what if size is not a multiple of sizeof(@4)  (BUNsize(...) % sizeof(@4) != 0) */
-    Srs = BUNsize(region_start) / sizeof(@4);
-    Sre = BUNsize(region_end) / sizeof(@4);
-    Sss = BUNsize(source_start) / sizeof(@4);
-    Sse = BUNsize(source_end) / sizeof(@4);
+    iter_s = iter_start = (@4 *) Tloc(region_start, BUNfirst(region_start));
+    iter_end = (@4 *) Tloc(region_end, BUNfirst(region_end));
+    last_start = (@4 *) Tloc(region_start, BUNlast(region_start));
+    outer_iter_start = (@4 *) Tloc(source_start, BUNfirst(source_start));
+    outer_iter_end = (@4 *) Tloc(source_end, BUNfirst(source_end));
+    outer_last_start = (@4 *) Tloc(source_start, BUNlast(source_start));
 
     while (outer_iter_start < outer_last_start) {
-        outer_iter_start_next = outer_iter_start+Sss; outer_iter_end_next = outer_iter_end+Sse;
+        outer_iter_start_next = outer_iter_start+1; outer_iter_end_next = outer_iter_end+1;
 
         /* skip overlapping region in the source  */
         while(outer_iter_start_next < outer_last_start
                 && *(outer_iter_end_next) <= *(outer_iter_end)) {
-            outer_iter_start_next+=Sss; outer_iter_end_next+=Sse;
+            outer_iter_start_next++; outer_iter_end_next++;
         }
 
         @:@2(@1,@3)@
@@ -365,12 +358,12 @@ CMD@1_@2_join_sort_@3(BAT **result, BAT *source_start, BAT *source_end, BAT *reg
 @= ll_reject_outside
             /* insert nodes which are not contained */
             // FIXME: we need to include the iters not on the heap...
-            index = BUNindex(region_start,iter_start) - BUNindex(region_start, BUNfirst(region_start));
+            index = iter_start - iter_s;
             BUNins(bn, (ptr)(&(heap[i].iter)), (ptr)(&index), FALSE);
 @
 @= ll_select_inside
             /* insert nodes which are contained */
-            index = BUNindex(region_start,iter_start) - BUNindex(region_start, BUNfirst(region_start));
+            index = iter_start - iter_s;
             BUNins(bn, (ptr)(&(heap[i].iter)), (ptr)(&index), FALSE);
 @
 @= ll_reject_inside
@@ -385,7 +378,7 @@ CMD@1_@2_join_sort_@3(BAT **result, BAT *source_start, BAT *source_end, BAT *reg
             for (i=0;i<heap_size;i++) {
               @:ll_@1_outside@
             }
-            iter_start+=Srs; iter_end+=Sre;
+            iter_start++; iter_end++;
         }
 
         /* loop through the strictly contained regions */
@@ -409,7 +402,7 @@ CMD@1_@2_join_sort_@3(BAT **result, BAT *source_start, BAT *source_end, BAT *reg
                 @:ll_@1_outside@
               }
             }
-            iter_start+=Srs; iter_end+=Sre;
+            iter_start++; iter_end++;
         }
         /* by now, we should be ready to push a new item on the heap
            we processed as much as possible without this new item... */
@@ -424,7 +417,7 @@ CMD@1_@2_join_sort_@3(BAT **result, BAT *source_start, BAT *source_end, BAT *reg
             for (i=0;i<heap_size;i++) {
               @:ll_@1_outside@
             }
-            iter_start+=Srs; iter_end+=Sre;
+            iter_start++; iter_end++;
         }
 
         /* loop through the partly contained regions
@@ -445,7 +438,7 @@ CMD@1_@2_join_sort_@3(BAT **result, BAT *source_start, BAT *source_end, BAT *reg
                 @:ll_@1_outside@
               }
             }
-            iter_start+=Srs; iter_end+=Sre;
+            iter_start++; iter_end++;
         }
         /* by now, we should be ready to push a new item on the heap
            we processed as much as possible without this new item... */
@@ -461,7 +454,7 @@ CMD@1_@2_join_sort_@3(BAT **result, BAT *source_start, BAT *source_end, BAT *reg
 int
 CMDll_@1_@2_join_sort_@3(BAT **result, BAT *source_start, BAT *source_end, BAT *region_start, BAT *region_end) {
 
-    @4 *iter_start, *iter_end, *last_start,
+    @4 *iter_s, *iter_start, *iter_end, *last_start,
         *outer_iter_start, *outer_iter_end, *outer_last_start,
         *outer_iter_start_next, *outer_iter_end_next,
         nearest_end = MIN_@3, nearest_next_start = MAX_@3, nearest_start = MAX_@3;
@@ -471,7 +464,6 @@ CMDll_@1_@2_join_sort_@3(BAT **result, BAT *source_start, BAT *source_end, BAT *
     int heap_size = 0, i;
     oid index;
     oid *outer_iter_iter, *outer_iter_iter_next;
-    int Sss,Sse,Srs,Sre, Ssi;
     BAT * bn = NULL;
 
     *result=NULL;
@@ -520,21 +512,15 @@ CMDll_@1_@2_join_sort_@3(BAT **result, BAT *source_start, BAT *source_end, BAT *
         return(GDK_FAIL);
     }
 
-    iter_start = (@4 *) BUNtail(region_start, BUNfirst(region_start));
-    iter_end = (@4 *) BUNtail(region_end, BUNfirst(region_end));
-    last_start = (@4 *) BUNtail(region_start, BUNlast(region_start));
-    outer_iter_iter = (oid *) BUNhead(source_start, BUNfirst(source_start));
-    outer_iter_start = (@4 *) BUNtail(source_start, BUNfirst(source_start));
-    outer_iter_end = (@4 *) BUNtail(source_end, BUNfirst(source_end));
-    outer_last_start = (@4 *) BUNtail(source_start, BUNlast(source_start));
+    iter_s = iter_start = (@4 *) Tloc(region_start, BUNfirst(region_start));
+    iter_end = (@4 *) Tloc(region_end, BUNfirst(region_end));
+    last_start = (@4 *) Tloc(region_start, BUNlast(region_start));
+    outer_iter_iter = (oid *) Hloc(source_start, BUNfirst(source_start));
+    outer_iter_start = (@4 *) Tloc(source_start, BUNfirst(source_start));
+    outer_iter_end = (@4 *) Tloc(source_end, BUNfirst(source_end));
+    outer_last_start = (@4 *) Tloc(source_start, BUNlast(source_start));
 
     /* todo: do we have to check for var-sized bats? */
-    /* todo: what if size is not a multiple of sizeof(@4)  (BUNsize(...) % sizeof(@4) != 0) */
-    Srs = BUNsize(region_start) / sizeof(@4);
-    Sre = BUNsize(region_end) / sizeof(@4);
-    Sss = BUNsize(source_start) / sizeof(@4);
-    Sse = BUNsize(source_end) / sizeof(@4);
-    Ssi = BUNsize(source_start) / sizeof(oid);
 
     heap_size = replace_in_heap_@3(heap,heap_size,
             *outer_iter_iter,
@@ -542,9 +528,9 @@ CMDll_@1_@2_join_sort_@3(BAT **result, BAT *source_start, BAT *source_end, BAT *
             *outer_iter_end);
 
     while (@:more_target_regions@) {
-        outer_iter_start_next = outer_iter_start+Sss;
-        outer_iter_end_next = outer_iter_end+Sse;
-        outer_iter_iter_next = outer_iter_iter+Ssi;
+        outer_iter_start_next = outer_iter_start+1;
+        outer_iter_end_next = outer_iter_end+1;
+        outer_iter_iter_next = outer_iter_iter+1;
 
         /* skip (completely) overlapping regions (in same iter) in the source
            this is NOT an optimization, it is neccessary to capture all the regions */
@@ -555,9 +541,9 @@ CMDll_@1_@2_join_sort_@3(BAT **result, BAT *source_start, BAT *source_end, BAT *
                and the region is contained in the current region on the heap. */
             if (i < heap_size && heap[i].end > *(outer_iter_end_next)) {
                 /* skip region */
-                outer_iter_start_next+=Sss;
-                outer_iter_end_next+=Sse;
-                outer_iter_iter_next+=Ssi;
+                outer_iter_start_next++;
+                outer_iter_end_next++;
+                outer_iter_iter_next++;
             } else {
                 /* otherwise we've got a candidate */
                 goto endofskipping;
@@ -672,7 +658,7 @@ CMDfetch_standoff_data_@1(BAT ** result, BAT * region_start, BAT * region_end, c
     // regions should be sorted by start
     // non-loop-lifted
     // result is BAT[VOID,STR]
-    @2 *iter_start, *iter_end, start_inc, end_inc, *start_next;
+    @2 *iter_start, *iter_end, *start_next;
     @2 count, blob_pos, *last_iter_start, next_stop, min_end;
     int c =0;
     int heap_size, i, j;
@@ -689,17 +675,15 @@ CMDfetch_standoff_data_@1(BAT ** result, BAT * region_start, BAT * region_end, c
     *result = BATnew(TYPE_void, TYPE_str, BATcount(region_start));
 
     // initialize vars
-    iter_start =  (@2 *) BUNtail(region_start, BUNfirst(region_start));
-    start_inc = BUNsize(region_start) / sizeof(@2);
-    iter_end =  (@2 *) BUNtail(region_end, BUNfirst(region_end));
-    end_inc = BUNsize(region_end) / sizeof(@2);
-    start_next = iter_start + start_inc;
-    last_iter_start =  (@2 *) BUNtail(region_start, BUNlast(region_start));
+    iter_start =  (@2 *) Tloc(region_start, BUNfirst(region_start));
+    iter_end =  (@2 *) Tloc(region_end, BUNfirst(region_end));
+    start_next = iter_start + 1;
+    last_iter_start =  (@2 *) Tloc(region_start, BUNlast(region_start));
     count = 0;
     blob_pos =0;
     heap_size = 0;
     while (iter_start < last_iter_start) {
-        start_next = iter_start + start_inc;
+        start_next = iter_start + 1;
         //  fast-forward if heap is empty
         if (heap_size==0) {
 		fseek(blob,*iter_start,SEEK_SET);
@@ -761,7 +745,7 @@ CMDfetch_standoff_data_@1(BAT ** result, BAT * region_start, BAT * region_end, c
                     heap[i].end = heap[heap_size].end;
                 }
         // move to next item
-        iter_start+=start_inc; iter_end+=end_inc; start_next+=start_inc; count++;
+        iter_start++; iter_end++; start_next++; count++;
     }
     // return result
     fclose(blob);

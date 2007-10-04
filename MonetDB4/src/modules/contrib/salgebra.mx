@@ -177,10 +177,6 @@ query BATs.
 
 \begin{verbatim}
 TODO: 
-  * loading module in both server and client does not work
-      it can hang in BBPtrim if you access 
-        ch_cache.info().find("batCacheid").print;
-      in client and server and load module in both
   * use of local_itoa implementation causes memory leak in info
 \end{verbatim}
   
@@ -419,17 +415,18 @@ clusterhashNull(void)
 static str
 clusterhashName(int batId)
 {
+	BATiter sni = bat_iterator(salgebra_namecache);
 	BUN bun;
 	str result;
 
 	/* find ch in dictionary */
 	MT_set_lock(salgebra_cacheLock, "clusterhashName");
-	if (!(bun = BUNfnd(salgebra_namecache, &batId))) {
+	if ((bun = BUNfnd(salgebra_namecache, &batId)) == BUN_NONE) {
 		MT_unset_lock(salgebra_cacheLock, "clusterhashName");
 		GDKwarning("Inconsistency in clusterhash repository...\n");
 		return NULL;
 	}
-	result = (str) BUNtail(salgebra_namecache, bun);
+	result = (str) BUNtail(sni, bun);
 	MT_unset_lock(salgebra_cacheLock, "clusterhashName");
 	return result;
 }
@@ -468,14 +465,14 @@ clusterhashByName(clusterhash *res, char *chname)
 
 	/* find ch in dictionary */
 	MT_set_lock(salgebra_cacheLock, "clusterhashByName");
-	if (!(bun = BUNfnd(ncrev, chname))) {
+	if ((bun = BUNfnd(ncrev, chname) == BUN_NONE)) {
 		MT_unset_lock(salgebra_cacheLock, "clusterhashByName");
 		GDKwarning("Clusterhash does not exist.\n");
 		(void) clusterhashNil(res);
 		return GDK_FAIL;
 	}
-	batId = *(int *) BUNtail(ncrev, bun);
-	if (!(ch = (clusterhash *) BUNtail(salgebra_cache, BUNfnd(salgebra_cache, &batId)))) {
+	batId = *(int *) Tloc(ncrev, bun);
+	if (!(ch = (clusterhash *) Tloc(salgebra_cache, BUNfnd(salgebra_cache, &batId)))) {
 		MT_unset_lock(salgebra_cacheLock, "clusterhashByName");
 		GDKerror("clusterhashByName: Inconsistency in clusterhash repository...\n");
 		(void) clusterhashNil(res);
@@ -630,7 +627,7 @@ salgebra_isCached(int batId)
 	int bid = ABS(batId);
 	BUN chbun = BUNfnd(salgebra_cache, &bid);
 
-	return chbun ? TRUE : FALSE;
+	return (chbun != BUN_NONE) ? TRUE : FALSE;
 }
 
 /* pre: !isNil( ch ) */
@@ -639,11 +636,11 @@ int
 salgebra_@1RefCnt( clusterhash *ch ) {
   int refCnt = 0;
   int batId = ABS( ch->b );
-  BUN chbun = NULL;
+  BUN chbun = BUN_NONE;
   MT_set_lock( salgebra_refcntLock, "@1RefCnt" );
   chbun = BUNfnd( salgebra_refcnt, &batId );
-  ERRORcheck( !chbun, "Inconsistency in clusterhash repository...\n" );
-  refCnt = @2*( (int *) BUNtail( salgebra_refcnt, chbun ) );
+  ERRORcheck(chbun == BUN_NONE, "Inconsistency in clusterhash repository...\n");
+  refCnt = @2*( (int *) Tloc( salgebra_refcnt, chbun ) );
   MT_unset_lock( salgebra_refcntLock, "@1RefCnt" );
   return refCnt;
 }
@@ -661,6 +658,7 @@ defined for b.
 static int
 salgebra_CHbuild(clusterhash *ch, BAT *b)
 {
+	BATiter bi = bat_iterator(b);
 	Hash *h = NULL;
 	BAT *bt = NULL, *hv = NULL, *tv = NULL;
 	dict_entry *dict = NULL;
@@ -681,9 +679,9 @@ salgebra_CHbuild(clusterhash *ch, BAT *b)
 	ch->bttype = BATttype(b);
 	/* build a hash if it does not yet exist */
 	bt = BATmirror(b);
-	if (!(bt->hhash))
+	if (!(bt->H->hash))
 		BAThash(bt, 0);
-	h = bt->hhash;
+	h = bt->H->hash;
 	ch->bhash = (Hash *) GDKmalloc(sizeof(Hash));
 	memcpy(ch->bhash, h, sizeof(Hash));
 
@@ -711,9 +709,8 @@ salgebra_CHbuild(clusterhash *ch, BAT *b)
 	/* NOTE: htype == void; 
 	   the idea should however extend to other ordered types as well (?) */
 	hv = BATnew(TYPE_oid, TYPE_void, xx = BATcount(b));
-	hv->batBuns->free = xx * sizeof(oid);
 	BATsetcount(hv, xx);
-	hvs = (oid *) BUNfirst(hv);
+	hvs = (oid *)Hloc(hv, BUNfirst(hv));
 
 	/* Read the unique ch's from the hash (i.e., do a k-cluster-unique) */
 	for (cur = 0; cur < chlen; cur++) {
@@ -749,7 +746,7 @@ salgebra_CHbuild(clusterhash *ch, BAT *b)
 				continue;
 			}
 			/* check if still perfect */
-			tl = BUNtail(b, BUNptr(b, hb));	/* will be obsolete if isPerfect */
+			tl = BUNtail(bi, hb);/* will be obsolete if isPerfect */
 			if (cc++ == 0) {
 				/* cache tail value of first bun */
 				cur_tl = tl;
@@ -812,14 +809,15 @@ salgebra_mergesort_matches(oid *res, oid *a, int na, oid *b, int nb)
    Find matching buns using clusterhash ch.
    Returns the number of matching values
 
-   TODO: can we easily get the <hvs = BUNfirst> statement out of the loop?
+   TODO: can we easily get the <hvs = Hloc/BUNfirst> statement out of the loop?
 */
 
 static int
 salgebra_collect_matches_imperfect(oid *res, clusterhash *ch, hash_t bucket, ptr v)
 {
 	BAT *hv = BBPdescriptor(ch->hv), *tv = BBPdescriptor(ch->tv);
-	oid *hvs = (oid *) BUNfirst(hv);
+	BATiter tvi = bat_iterator(tv);
+	oid *hvs = (oid *) Hloc(hv, BUNfirst(hv));
 	int i = 0, j = DICTentry(ch, bucket).s, n = DICTentry(ch, bucket).e - j + 1, nres = 0;
 
 #ifdef DEBUG
@@ -829,7 +827,7 @@ salgebra_collect_matches_imperfect(oid *res, clusterhash *ch, hash_t bucket, ptr
 		return 0;	/* no matches */
 	for (i = 0; i < n; i++) {
 		/* Inner loop over q; check tails since the hash is imperfect */
-		if (!(ATOMcmp(ch->bttype, BUNhead(tv, BUNptr(tv, j + 1)), v))) {
+		if (!(ATOMcmp(ch->bttype, BUNhead(tvi, j + 1), v))) {
 			*res++ = hvs[j];
 			nres++;
 		}
@@ -842,7 +840,7 @@ static int
 salgebra_collect_matches_perfect(oid *res, clusterhash *ch, hash_t bucket)
 {
 	BAT *hv = BBPdescriptor(ch->hv);
-	oid *hvs = (oid *) BUNfirst(hv);
+	oid *hvs = (oid *)Hloc(hv, BUNfirst(hv));
 	int i = 0, j = DICTentry(ch, bucket).s, n = DICTentry(ch, bucket).e - j + 1;
 
 #ifdef DEBUG
@@ -902,7 +900,7 @@ salgebra_CMDclusterhash(clusterhash *res, BAT *b)
 	}
 	/* retrieve ch from the dictionary */
 	MT_set_lock(salgebra_cacheLock, "CMDclusterhash");
-	ch = (clusterhash *) BUNtail(salgebra_cache, BUNfnd(salgebra_cache, &batId));
+	ch = (clusterhash *) Tloc(salgebra_cache, BUNfnd(salgebra_cache, &batId));
 	memcpy(res, ch, clusterhash_size());
 	MT_unset_lock(salgebra_cacheLock, "CMDclusterhash");
 	clusterhashFix(res);
@@ -951,7 +949,7 @@ salgebra_CMDrename(clusterhash *ch, str name)
 
 	MT_set_lock(salgebra_cacheLock, "rename");
 	ncrev = BATmirror(salgebra_namecache);
-	if (BUNfnd(ncrev, name)) {
+	if (BUNfnd(ncrev, name) != BUN_NONE) {
 		GDKerror("salgebra_CMDrename: A clusterhash with name %s already exists.\n", name);
 		MT_unset_lock(salgebra_cacheLock, "rename");
 		return GDK_FAIL;
@@ -973,10 +971,10 @@ salgebra_CMDuselect(BAT **res, clusterhash *ch, ptr v, int v_type)
 	@:CHECKnil(error,FAIL)@
 	nmaxres = DICTclustersize(ch, v);
 	result = BATnew(TYPE_oid, TYPE_void, nmaxres);
-	result->batBuns->free = nmaxres * sizeof(oid);
 	BATsetcount(result, nmaxres);
-	nres = salgebra_collect_matches((oid *) BUNfirst(result), ch, v);
-	result->batBuns->free -= (nmaxres - nres) * sizeof(oid);
+	nres = salgebra_collect_matches((oid *) Hloc(result, BUNfirst(result)), ch, v);
+	result->H->heap.free -= headsize(result,(nmaxres - nres));
+	result->T->heap.free -= tailsize(result,(nmaxres - nres));
 	result->batCount -= (nmaxres - nres);
 	*res = result;
 	return GDK_SUCCEED;
@@ -985,6 +983,7 @@ salgebra_CMDuselect(BAT **res, clusterhash *ch, ptr v, int v_type)
 int
 salgebra_CMDujoin(BAT **res, clusterhash *ch, BAT *b)
 {
+	BATiter bi = bat_iterator(b);
 	BUN p, q;
 	BAT *result = NULL;
 	oid *matches = NULL;
@@ -996,19 +995,19 @@ salgebra_CMDujoin(BAT **res, clusterhash *ch, BAT *b)
 
 	/* determine result size if perfect hash */
 	BATloop(b, p, q)
-	    nmaxres += (DICTclustersize(ch, BUNhead(b, p)));
+	    nmaxres += (DICTclustersize(ch, BUNhead(bi, p)));
 
 	/* create result BAT */
 	result = BATnew(TYPE_oid, TYPE_void, nmaxres);
 	result->hsorted = 0;
-	result->batBuns->free = nmaxres * sizeof(oid);
 	BATsetcount(result, nmaxres);
 
 	/* construct result */
-	matches = (oid *) BUNfirst(result);
+	matches = (oid *) Hloc(result, BUNfirst(result));
 	BATloop(b, p, q)
-	    nres += salgebra_collect_matches(&matches[nres], ch, BUNhead(b, p));
-	result->batBuns->free -= (nmaxres - nres) * sizeof(oid);
+	    nres += salgebra_collect_matches(&matches[nres], ch, BUNhead(bi, p));
+	result->H->heap.free -= headsize(result, (nmaxres - nres));
+	result->T->heap.free -= tailsize(result, (nmaxres - nres));
 	result->batCount -= (nmaxres - nres);
 
 	/* return the result */
@@ -1019,6 +1018,7 @@ salgebra_CMDujoin(BAT **res, clusterhash *ch, BAT *b)
 int
 salgebra_CMDusortedjoin(BAT **res, clusterhash *ch, BAT *b)
 {
+	BATiter bi = bat_iterator(b);
 	BUN p, q;
 	BAT *result = NULL, *hbuf = NULL;
 	oid *cur = NULL, *prev = NULL, *matches = NULL;
@@ -1030,30 +1030,29 @@ salgebra_CMDusortedjoin(BAT **res, clusterhash *ch, BAT *b)
 
 	/* determine result size if perfect hash */
 	BATloop(b, p, q)
-	    nmaxres += (DICTclustersize(ch, BUNhead(b, p)));
+	    nmaxres += (DICTclustersize(ch, BUNhead(bi, p)));
 
 	/* create result BAT, and a temporary buffer for mergesorting */
 	result = BATnew(TYPE_oid, TYPE_void, nmaxres);
-	result->batBuns->free = nmaxres * sizeof(oid);
 	BATsetcount(result, nmaxres);
 
 	hbuf = BATnew(TYPE_oid, TYPE_void, nmaxres);
-	hbuf->batBuns->free = nmaxres * sizeof(oid);
 	BATsetcount(hbuf, nmaxres);
 
 	/* construct sorted result */
-	prev = (oid *) BUNfirst(result);
-	matches = (oid *) BUNfirst(hbuf);
+	prev = (oid *) Hloc(result, BUNfirst(result));
+	matches = (oid *) Hloc(hbuf, BUNfirst(hbuf));
 	BATloop(b, p, q) {
 		cur = &prev[nres];
-		ncur = salgebra_collect_matches(cur, ch, BUNhead(b, p));
+		ncur = salgebra_collect_matches(cur, ch, BUNhead(bi, p));
 		salgebra_mergesort_matches(matches, cur, ncur, prev, nres);
 		nres += ncur;
 		SWAPoidptr(&prev, &matches);
 		SWAPBATptr(&result, &hbuf);
 	}
 	BBPreclaim(hbuf);
-	result->batBuns->free -= (nmaxres - nres) * sizeof(oid);
+	result->H->heap.free -= headsize(result, (nmaxres - nres));
+	result->T->heap.free -= tailsize(result, (nmaxres - nres));
 	result->batCount -= (nmaxres - nres);
 
 	/* return the result */

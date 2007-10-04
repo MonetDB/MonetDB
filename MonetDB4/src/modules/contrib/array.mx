@@ -45,11 +45,11 @@
 @= grid_hdefs
 #define new_@1_bat(b,s) {(b)=BATnew(TYPE_void,TYPE_@1,(size_t) (s)); \
                          BATseqbase((b),0);                 }
-#define add_@1s(b,n)    {(b)->batBuns->free+=(size_t)(n)*sizeof(@1);\
+#define add_@1s(b,n)    {(b)->T->heap.free+=(size_t)(n)*sizeof(@1);\
 			                   (b)->batCount+=(size_t)n;\
                          BATkey(BATmirror((b)),0);          \
                          (b)->tsorted = 0;                  }
-#define get_@1_ptr(b)   ((@1*)(BUNfirst((b))))
+#define get_@1_ptr(b)   ((@1*)(Tloc(b,BUNfirst((b)))))
 @h
 @:grid_hdefs(int)@
 @:grid_hdefs(lng)@
@@ -67,26 +67,25 @@
 #include <time.h>
 
 @= grid_impl
+array_export str ARRAYgrid_@1(@1 *ret, @1 *groups, @1 *groupsize, @1 *clustersize, @1 *offset);
+array_export str ARRAYgridShift_@1(@1 *ret, @1 *groups, @1 *groupsize, @1 *clustersize, @1 *offset, @1 *shift);
+array_export str ARRAYgridBAT_@1(@1 *ret, @1 *bid, @1 *groups, @1 *groupsize, @1 *clustersize, @1 *offset);
+array_export str ARRAYgridBATshift_@1(@1 *ret, @1 *bid, @1 *groups, @1 *groupsize, @1 *clustersize, @1 *offset, @1 *shift);
+
 int
-grid_@1(BAT **out, @1 *groups, @1 *groupsize, @1 *clustersize, @1 *offset)
+fillgrid_@1(BAT **out, @1 *groups, @1 *groupsize, @1 *clustersize, @1 *offset, @1 *shift)
 {
 	register @1 *ptr;
 	@1 i = *groups;
 	@1 n = *groupsize + *offset;
 	@1 r = *clustersize;
 	@1 o = *offset;
+	@1 s = *shift;
 
 #ifdef EXCESSIVE_DEBUGGING
 	fprintf(stderr, "[grid] (%d,%d,%d,%d)", i, n, r, o);
 #endif
 
-	new_@1_bat(*out, (i * (n - o) * r));
-  if (out == NULL) {
-    GDKerror("grid: cannot create the bat (%ld BUNs)\n", (i * (n - o) * r));
-    return GDK_FAIL;
-  }
-  
-	add_@1s(*out, (i * (n - o) * r));
 	ptr = get_@1_ptr(*out);
 
 	while (i--) {
@@ -96,7 +95,7 @@ grid_@1(BAT **out, @1 *groups, @1 *groupsize, @1 *clustersize, @1 *offset)
 			register @1 ri = r;
 
 			while (ri--)
-				(*(ptr ++)) = ni;
+				(*(ptr ++)) = ni * s;
 			ni++;
 		}
 	}
@@ -107,6 +106,48 @@ grid_@1(BAT **out, @1 *groups, @1 *groupsize, @1 *clustersize, @1 *offset)
 
 	return GDK_SUCCEED;
 }
+
+int
+grid_@1(BAT **out, @1 *groups, @1 *groupsize, @1 *clustersize, @1 *offset)
+{
+	@1 i = *groups;
+	@1 n = *groupsize + *offset;
+	@1 r = *clustersize;
+	@1 o = *offset;
+	@1 s = 1;
+
+#ifdef EXCESSIVE_DEBUGGING
+	fprintf(stderr, "[grid] (%d,%d,%d,%d)", i, n, r, o);
+#endif
+
+	new_@1_bat(*out, (i * (n - o) * r));
+	if (out == NULL) {
+		GDKerror("grid: cannot create the bat (%ld BUNs)\n", (i * (n - o) * r));
+		return GDK_FAIL;
+	}
+	add_@1s(*out, (i * (n - o) * r));
+	return fillgrid_@1(out, groups, groupsize, clustersize, offset, &s);
+}
+
+int
+gridShift_@1(BAT **out, @1 *groups, @1 *groupsize, @1 *clustersize, @1 *offset, @1 *shift)
+{
+	@1 i = *groups;
+	@1 n = *groupsize + *offset;
+	@1 r = *clustersize;
+	@1 o = *offset;
+
+#ifdef EXCESSIVE_DEBUGGING
+	fprintf(stderr, "[grid] (%d,%d,%d,%d)", i, n, r, o);
+#endif
+
+	new_@1_bat(*out, (i * (n - o) * r));
+	if (*out == 0)
+		return GDK_FAIL;
+	add_@1s(*out, (i * (n - o) * r));
+	return fillgrid_@1(out, groups, groupsize, clustersize, offset, shift);
+}
+
 @c
 @:grid_impl(int)@
 @:grid_impl(lng)@
@@ -121,6 +162,7 @@ grid_@1(BAT **out, @1 *groups, @1 *groupsize, @1 *clustersize, @1 *offset)
 int
 print_array(BAT *val, ...)
 {
+	BATiter vali = bat_iterator(val);
 	va_list ap;
 	BAT *tmp, *batptr[MAX_ARRAY_DIM];
 	int *minvector;
@@ -188,26 +230,27 @@ print_array(BAT *val, ...)
 	/* And fetch additional indices (for a given oid) */
 	/* building the full M-D structure (of oid's).    */
 	{
+		BATiter b0i = bat_iterator(batptr[0]);
 		register BUN p, q;
 
 		p = BUNfirst(batptr[0]);
 		q = BUNlast(batptr[0]);
 		while (p < q) {
-			register oid *o = (oid *) BUNhead(batptr[0], p);
+			register oid *o = (oid *) BUNhead(b0i, p);
 			register int offset;
 
-			offset = *((int *) BUNtail(batptr[0], p)) - minvector[0];
+			offset = *((int *) BUNtail(b0i, p)) - minvector[0];
 			for (i = 1; i < dims; i++) {
 				register BUN p = BUNfnd(batptr[i], o);
 
-				if (p == NULL) {
+				if (p == BUN_NONE) {
 					GDKerror("print_array: Index %d missing for oid %d.\n", i, *o);
 					goto exit_err_full;
 				}
-				offset = (offset * lenvector[i]) + ((*((int *) p)) - minvector[i]);
+				offset = (offset * lenvector[i]) + ((*((int *) Tloc(batptr[i],p))) - minvector[i]);
 			}
 			arrayindex[offset] = *o;
-			p = BUNnext(batptr[0], p);
+			p++;
 		}
 	}
 
@@ -246,14 +289,14 @@ print_array(BAT *val, ...)
 		{
 			register BUN p = BUNfnd(val, &arrayindex[offset]);
 
-			if (p == NULL) {
+			if (p == BUN_NONE) {
 				GDKerror("print_array: Value missing for oid %d.\n", arrayindex[offset]);
 				goto exit_err_full;
 			}
 #ifdef EXCESSIVE_DEBUGGING
 			fprintf(stderr, "%d\@0", arrayindex[offset]);
 #endif
-			ATOMprint(type_id, BUNtail(val, p), st);
+			ATOMprint(type_id, BUNtail(vali, p), st);
 			if (stream_errnr(st))
 				goto exit_err_full;
 		}

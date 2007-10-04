@@ -121,8 +121,8 @@ skipholes(oid pre, unsigned int *pre_size) {
     if (pos >= result_size) break; /* SANITY */
 
     iter_stack[depth-1][idx] = parent;
-    result[pos].pre = (iter_parent == parent)?oid_nil:parent; /* nils are later filtered out */
-    result[pos].iter = iter;
+    result_pre[pos] = (iter_parent == parent)?oid_nil:parent; /* nils are later filtered out */
+    result_iter[pos] = iter;
 
 @= found_ancestor_cnt
 
@@ -131,27 +131,31 @@ skipholes(oid pre, unsigned int *pre_size) {
     int i = depth;
     while(i > 0 && stack[i-1] > bounds[iter-min_iter]) i--;
     bounds[iter-min_iter] = stack[depth-1]; /* biggest ancestor so far for this iter */
-    result[cur].iter = depth-i;             /* #new ancestors generated for this context node */
+    result_iter[cur] = depth-i;             /* #new ancestors generated for this context node */
 
 @= found_ancestor_gen
 
     /* anc pass2: generate the precomputed number of (unique) ancestors for this iter 
      */
-    duple* final_result = (duple*) bounds; /* HACK, result was passed as bounds  */
-    int hitcnt = (int) result[cur].iter; 
-    oid pos = result[cur].pre;
+    oid* final_result_iter = bounds; /* HACK, result was passed as bounds  */
+    oid* final_result_pre  = bounds_t; /* HACK, result was passed as bounds  */
+    int hitcnt = (int) result_iter[cur]; 
+    oid pos = result_pre[cur];
     if (pos > result_size || hitcnt > depth) break; /* SANITY */
     while(hitcnt > 0) {
-        final_result[pos].pre = stack[depth-hitcnt];    
-        final_result[pos].iter = iter;
+        final_result_pre[pos] = stack[depth-hitcnt];    
+        final_result_iter[pos] = iter;
         hitcnt--; pos++;
     }
 
 @= upwards_core
 static int 
 ll_upwards_@1(                            /* OUTPUT: */
-        duple* result, oid result_size,   /* - pre-allocated result array */
-        oid* bounds, oid** iter_stack,    /* - per iter bound */ 
+	oid *result_iter,
+        oid *result_pre, 
+	oid result_size,   /* - pre-allocated result array */
+        oid* bounds, oid *bounds_t,
+	oid** iter_stack,    /* - per iter bound */ 
                                           /* DOCUMENT: */
         unsigned int* pre_size,           /* - pre_size column */
         unsigned char* pre_level,         /* - pre_level column */
@@ -167,6 +171,8 @@ ll_upwards_@1(                            /* OUTPUT: */
     int depth = 0;  
 
     *stack++ = oid_nil; /* bogus parent, filtered out later */
+   (void) bounds_t;
+   (void) result_pre;
    (void) result_size;
    (void) min_iter;
    (void) iter_stack;
@@ -279,13 +285,14 @@ ll_upwards(               /* RESULT: */
 { 
     oid killed = (axis == LL_UPWARDS_ANCESTOR_SELF)?oid_nil:1; /* 1=root of first fragment */
     oid *bounds, niters=1, min_iter = LL_CONSTANT(1)<<(8*sizeof(oid)-1), max_iter = 0; 
-    oid i=0, k = BUNsize(iter_bat), n = BUNsize(ctx_bat), m = BATcount(ctx_bat);
+    oid i=0, n=0, m = BATcount(ctx_bat);
     BUN p = BUNfirst(iter_bat), q = BUNlast(iter_bat), r = BUNfirst(ctx_bat);
-    unsigned int *pre_size = (unsigned int*) BUNfirst(size_bat);
-    unsigned char *pre_level = (unsigned char*) BUNfirst(level_bat);
-    duple *context, *context_result, *prune;
+    unsigned int *pre_size = (unsigned int*) Tloc(size_bat, BUNfirst(size_bat));
+    unsigned char *pre_level = (unsigned char*) Tloc(level_bat, BUNfirst(level_bat));
+    duple *context, *prune;
     int status = GDK_FAIL;
     BAT *bn = NULL;
+    oid *context_result_pre, *context_result_iter;
 
     if (!ALIGNsynced(iter_bat,ctx_bat)) {
         GDKerror("%s: iter and context bat should be in sync.\n", axis);
@@ -296,11 +303,11 @@ ll_upwards(               /* RESULT: */
         GDKerror("%s: context bat must be ordered on tail.\n", axis);
         return status;
     }
-    if (BUNsize(size_bat) != sizeof(int) || size_bat->hseqbase || !BAThdense(size_bat)) {
+    if (size_bat->hseqbase || !BAThdense(size_bat)) {
         GDKerror("%s: illegal size bat passed in.\n", axis);
         return status;
     }
-    if (BUNsize(level_bat) != sizeof(chr) || level_bat->hseqbase || !BAThdense(level_bat)) {
+    if (level_bat->hseqbase || !BAThdense(level_bat)) {
         GDKerror("%s: illegal level bat passed in.\n", axis);
         return status;
     }
@@ -319,7 +326,7 @@ ll_upwards(               /* RESULT: */
                 context[i].iter = @1;
                 context[i].pre  = @2;
                 @3
-  	        i++; p += k; r += n;
+  	        i++; p++; r++;
             }
 @
 @c
@@ -332,14 +339,14 @@ ll_upwards(               /* RESULT: */
 	    } else
 	    if (BATtdense(iter_bat) && ctx_bat->ttype == TYPE_oid) {
 	        oid iter = iter_bat->tseqbase;
-	        @:ll_upwards_copy(iter++, *(oid*) BUNtloc(ctx_bat,r), @:ll_upwards_min_max@)@
+	        @:ll_upwards_copy(iter++, *(oid*) Tloc(ctx_bat,r), @:ll_upwards_min_max@)@
 	    } else
 	    if (iter_bat->ttype == TYPE_oid && BATtdense(ctx_bat)) {
 	        oid pre  = ctx_bat->tseqbase;
-	        @:ll_upwards_copy(*(oid*) BUNtloc(iter_bat,p), pre++, @:ll_upwards_min_max@)@
+	        @:ll_upwards_copy(*(oid*) Tloc(iter_bat,p), pre++, @:ll_upwards_min_max@)@
 	    } else
 	    if (iter_bat->ttype == TYPE_oid  && ctx_bat->ttype == TYPE_oid) {
-	        @:ll_upwards_copy(*(oid*) BUNtloc(iter_bat,p), *(oid*) BUNtloc(ctx_bat,r), @:ll_upwards_min_max@)@
+	        @:ll_upwards_copy(*(oid*) Tloc(iter_bat,p), *(oid*) Tloc(ctx_bat,r), @:ll_upwards_min_max@)@
 	    } else {
 	        assert(0); /* should never happen */
 	    }
@@ -352,14 +359,14 @@ ll_upwards(               /* RESULT: */
 	    } else
 	    if (BATtdense(iter_bat) && ctx_bat->ttype == TYPE_oid) {
 	        oid iter = iter_bat->tseqbase;
-	        @:ll_upwards_copy(iter++, *(oid*) BUNtloc(ctx_bat,r),)@
+	        @:ll_upwards_copy(iter++, *(oid*) Tloc(ctx_bat,r),)@
 	    } else
 	    if (iter_bat->ttype == TYPE_oid && BATtdense(ctx_bat)) {
 	        oid pre  = ctx_bat->tseqbase;
-	        @:ll_upwards_copy(*(oid*) BUNtloc(iter_bat,p), pre++,)@
+	        @:ll_upwards_copy(*(oid*) Tloc(iter_bat,p), pre++,)@
 	    } else
 	    if (iter_bat->ttype == TYPE_oid && ctx_bat->ttype == TYPE_oid) {
-	        @:ll_upwards_copy(*(oid*) BUNtloc(iter_bat,p), *(oid*) BUNtloc(ctx_bat,r),)@
+	        @:ll_upwards_copy(*(oid*) Tloc(iter_bat,p), *(oid*) Tloc(ctx_bat,r),)@
 	    } else {
 	        assert(0); /* should never happen */
 	    }
@@ -442,18 +449,20 @@ ll_upwards(               /* RESULT: */
             bn = BATnew(TYPE_oid, TYPE_oid, n);
             if (bn) {
                 if (ll_upwards_parent(
-                    context_result = (duple*) BUNfirst(bn), n, 
-                    bounds, iter_stack+1, 
+                    context_result_iter = (oid*) Hloc(bn, BUNfirst(bn)),
+                    context_result_pre  = (oid*) Tloc(bn, BUNfirst(bn)),
+		    n, 
+                    bounds, NULL, iter_stack+1, 
                     pre_size, pre_level,
                     BATcount(size_bat), 
                     min_iter, context, n))
                 {
                     /* filter out duplicates and non-existing fragment roots (represented by oid_nils) */
                     for(m=i=0; i<n; i++) {
-                        oid pre = context_result[i].pre;
-                        oid iter = context_result[i].iter;
-                        context_result[m].pre = pre;
-                        context_result[m].iter = iter;
+                        oid pre = context_result_pre[i];
+                        oid iter = context_result_iter[i];
+                        context_result_pre[m] = pre;
+                        context_result_iter[m] = iter;
                         m += (pre != oid_nil);
                     }
                     status = GDK_SUCCEED;
@@ -466,25 +475,28 @@ ll_upwards(               /* RESULT: */
             }
             GDKfree(buf);
         }
-    } else if ((context_result=GDKzalloc(MAX(1,n)*sizeof(duple))) != NULL) {
+    } else if ( (context_result_pre=GDKzalloc(MAX(1,n)*sizeof(oid))) != NULL &&
+		(context_result_iter=GDKzalloc(MAX(1,n)*sizeof(oid))) != NULL ) {
         /* in first pass, bounds contains a partitioning bound (=0 < root) */
         if (ll_upwards_ancestor_cnt(
-                 context_result, n, 
-                 bounds, NULL,
+                 context_result_iter, 
+                 context_result_pre, 
+		 n, 
+                 bounds, NULL, NULL,
                  pre_size, pre_level,
                  BATcount(size_bat), 
                  min_iter, context, n))
         {
-            /* count the hits per-iter, by examining hitcnt (context_result.iter) of each context node.
-             * while doing so, put in context_result.pre the absolute position of self in the result 
+            /* count the hits per-iter, by examining hitcnt (context_result_iter) of each context node.
+             * while doing so, put in context_result_pre the absolute position of self in the result 
              */
             for(i=0; i <= niters; i++)
                 bounds[i] = 0; /* reset iter-bounds, now use it for counting again */
 
             for(i=0; i<n; i++) {
                 oid iter = context[i].iter - min_iter; 
-                oid hitcnt = context_result[i].iter;
-                context_result[i].pre = bounds[iter+1]; /* offset within the iter block */
+                oid hitcnt = context_result_iter[i];
+                context_result_pre[i] = bounds[iter+1]; /* offset within the iter block */
                 bounds[iter+1] += hitcnt + (axis == LL_UPWARDS_ANCESTOR_SELF); /* per-iter result size */
             }
             for(i=1; i<=niters; i++) 
@@ -493,24 +505,29 @@ ll_upwards(               /* RESULT: */
 
             for(i=0; i<n; i++) {
                 oid iter = context[i].iter - min_iter; 
-                context_result[i].pre += bounds[iter]; /* add iter-start to get absolute offset */
+                context_result_pre[i] += bounds[iter]; /* add iter-start to get absolute offset */
             }
 
             /* second pass, generating the results, knowing the final result size m */
             bn = BATnew(TYPE_oid, TYPE_oid, m);
             if (bn) {
                 if (axis == LL_UPWARDS_ANCESTOR_SELF) { /* insert the self nodes beforehand */ 
-                    duple *result = (duple*) BUNfirst(bn);
+                    oid *result_iter = (oid*) Hloc(bn, BUNfirst(bn));
+                    oid *result_pre  = (oid*) Tloc(bn, BUNfirst(bn));
                     for(i=0; i<n; i++) {
-                        int hitcnt = (int) context_result[i].iter; /* hitcnt */
-                        oid pos = context_result[i].pre + hitcnt;
-                        result[pos].pre = context[i].pre;
-                        result[pos].iter = context[i].iter;
+                        int hitcnt = (int) context_result_iter[i]; /* hitcnt */
+                        oid pos = context_result_pre[i] + hitcnt;
+                        result_pre[pos] = context[i].pre;
+                        result_iter[pos] = context[i].iter;
                     }
                 }
 		if (ll_upwards_ancestor_gen(
-                        context_result, m,
-                        (oid*) BUNfirst(bn), NULL, /* HACK, pass result as bounds */ 
+                        context_result_iter, 
+                        context_result_pre, 
+			m,
+                        (oid*) Hloc(bn, BUNfirst(bn)), /* HACK, pass result as bounds */ 
+                        (oid*) Tloc(bn, BUNfirst(bn)), /* HACK, pass result as bounds */ 
+			NULL,
                         pre_size, pre_level,
                         BATcount(size_bat), 
                         min_iter, context, n)) 
@@ -523,14 +540,14 @@ ll_upwards(               /* RESULT: */
         } else {
             GDKerror("%s: illegal data in size column or context list.\n", axis);
         }
-        GDKfree(context_result);
+        GDKfree(context_result_pre);
+        GDKfree(context_result_iter);
     }
     GDKfree(bounds);
     GDKfree(context);
 
     if (status == GDK_SUCCEED) {
         BATsetcount(bn, m);
-        bn->batBuns->free = m*sizeof(duple);
         bn->hsorted = 1;
         bn->tsorted = 0;
         if (niters == 1) {

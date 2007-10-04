@@ -1160,18 +1160,19 @@ getDiskSpace()
 			b= BATdescriptor(i);
 			if( b){
 				size += sizeof(BAT);
-				if (!VIEWparent(b)) {
+				if (!isVIEW(b)) {
 					size_t cnt = BATcount(b);
 
-					size += cnt * BUNsize(b);
+					size += headsize(b,cnt);
+					size += tailsize(b,cnt);
 					/* the upperbound is used for the heaps */
 					if (b->hheap)
 						size += b->hheap->size;
 					if (b->theap)
 						size += b->theap->size;
-					if (b->hhash)
+					if (b->H->hash)
 						size += sizeof(hash_t) * cnt;
-					if (b->thash)
+					if (b->T->hash)
 						size += sizeof(hash_t) * cnt;
 				}
 				BBPunfix(i);

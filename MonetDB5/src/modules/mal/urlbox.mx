@@ -235,11 +235,12 @@ URLBOXchop(str url, str *parts){
 	return depth;
 }
 str
-URLBOXinsert(char *tuple){
+URLBOXinsert(char *tuple)
+{
 	str parts[MAXURLDEPTH];
 	int i=0,depth;
 	BAT *b;
-	ptr p;
+	BUN p;
 	int idx= 0,prv=0;
 	char buf[128];
 
@@ -271,12 +272,13 @@ URLBOXinsert(char *tuple){
 Find the common prefix first
 @c
 	p= BUNfnd(BATmirror(urlBAT[0]),parts[0]);
-	if( p ) 
+	if (p != BUN_NONE) 
 		for( i=1; i<depth; i++){
 			/* printf("search [%d]:%s\n",i,parts[i]);*/
-			p= BUNfnd(BATmirror(urlBAT[i]),parts[i]);
-			if( p == 0) break;
-			prv= *(int*) p;
+			p = BUNfnd(BATmirror(urlBAT[i]),parts[i]);
+			if (p == BUN_NONE) 
+				break;
+			prv = *(int*)Hloc(urlBAT[i], p);
 		}
 	else i = 0;
 @-
@@ -585,17 +587,18 @@ URLBOXgetSize(int *r){
 	for(i=0; i<urlDepth; i++){
 		bn= urlBAT[i];
 		size = ROUND_UP(sizeof(BATstore), blksize);
-		if (!VIEWparent(bn)) {
+		if (!isVIEW(bn)) {
 			size_t cnt = BATcapacity(bn);
 
-			size += ROUND_UP(bn->batBuns->size, blksize);
+			size += ROUND_UP(bn->H->heap.size, blksize);
+			size += ROUND_UP(bn->T->heap.size, blksize);
 			if (b->hheap)
 				size += ROUND_UP(bn->hheap->size, blksize);
 			if (b->theap)
 				size += ROUND_UP(bn->theap->size, blksize);
-			if (bn->hhash)
+			if (bn->H->hash)
 				size += ROUND_UP(sizeof(hash_t) * cnt, blksize);
-			if (bn->thash)
+			if (bn->T->hash)
 				size += ROUND_UP(sizeof(hash_t) * cnt, blksize);
 		}
 		tot = size;

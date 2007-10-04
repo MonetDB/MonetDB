@@ -154,26 +154,26 @@ unsorted l with a sorted r; in that case it always uses binary search.
 	    ((!BAThvoid(r)) || r->hseqbase != oid_nil || nil_on_miss)) {
 		assert(r->htype != TYPE_void);
 		while (l_start < l_last) {
-			ptr v2, v1 = BUNt@2(l, l_start);
+			ptr v2, v1 = BUNt@2(li, l_start);
 			int neq = 1;
 
 			/* lookup range in l */
 			l_end = l_start;
 			if (l_key) {
-				l_end += l_next;
+				l_end++;
 			} else
 				do {
-					if ((l_end += l_next) >= l_last)
+					if ((++l_end) >= l_last)
 						break;
-					v2 = BUNt@2(l, l_end);
+					v2 = BUNt@2(li, l_end);
 				} while (@1_EQ(v1, v2, @4));
 
 			/* lookup value in r (if not nil, that is) */
 			if (!@1_EQ(v1, nil, @4)) {
 				if (r_scan > 0) {
 					/* first try scanning; but give up after a while */
-					for (r_lim = MIN(r_last, r_end + r_scan); r_end < r_lim; r_end += r_next) {
-						v2 = BUNh@3(r, r_end);
+					for (r_lim = MIN(r_last, r_end + r_scan); r_end < r_lim; r_end++) {
+						v2 = BUNh@3(ri, r_end);
 						neq = @1_CMP(v1, v2, @4);
 						if (neq <= 0)
 							break;
@@ -187,7 +187,7 @@ unsorted l with a sorted r; in that case it always uses binary search.
 						r_start = (BUN) SORTfndfirst_@4(rr, v1);
 					}
 					if (r_start < r_last) {
-						v2 = BUNh@3(r, r_start);
+						v2 = BUNh@3(ri, r_start);
 						neq = !@1_EQ(v1, v2, @4);
 					} else if (r_scan >= 0) {
 						/* r is already at end => break off merge join */
@@ -197,23 +197,23 @@ unsorted l with a sorted r; in that case it always uses binary search.
 			}
 			if (neq == 0) {
 				/* lookup range in r */
-				r_end = r_start + r_next;
+				r_end = r_start+1;
 				if (r_key == 0)
 					while (r_end < r_last) {
-						v2 = BUNh@3(r, r_end);
+						v2 = BUNh@3(ri, r_end);
 						if (!@1_EQ(v1, v2, @4))
 							break;
-						r_end += r_next;
+						r_end++ ;
 					}
 				/* generate match-product as join result */
-				for (; l_start < l_end; l_start += l_next)
-					for (r_cur = r_start; r_cur < r_end; r_cur += r_next)
-						bunfastins(bn, BUNhead(l, l_start), BUNtail(r, r_cur));
+				for (; l_start < l_end; l_start++)
+					for (r_cur = r_start; r_cur < r_end; r_cur++)
+						bunfastins(bn, BUNhead(li, l_start), BUNtail(ri, r_cur));
 			} else if (nil_on_miss) {
 				/* outerjoin inserts nils on a miss */
 				hasnils = 1;
-				for (; l_start < l_end; l_start += l_next)
-					bunfastins(bn, BUNhead(l, l_start), nil_on_miss);
+				for (; l_start < l_end; l_start++)
+					bunfastins(bn, BUNhead(li, l_start), nil_on_miss);
 			} else {
 				l_start = l_end;	/* no match found in equi-join */
 			}
@@ -230,12 +230,12 @@ mergejoin(BAT *l, BAT *r, BAT *bn, ptr nil_on_miss, size_t estimate)
 	BUN l_last, r_last;	/* last BUN of the BAT */
 	BUN l_start, r_start;	/* start of current chunk  */
 	BUN l_end, r_end;	/* end of current chunk */
-	int r_next = BUNsize(r);
-	int l_next = BUNsize(l);
 	int l_key = l->tkey;
 	int r_key = r->hkey;
 	BUN r_cur, r_lim;
 	int loc, var, hasnils = 0;
+	BATiter li = bat_iterator(l);
+	BATiter ri = bat_iterator(r);
 
 	if (BATtordered(l) & 1) {
 		size_t i;
@@ -244,7 +244,7 @@ mergejoin(BAT *l, BAT *r, BAT *bn, ptr nil_on_miss, size_t estimate)
 		/* 4*log2(r.count) = estimation of the cost of binary search in units of scan comparisons */
 		for (i = BATcount(r); i > 0; logr++)
 			i >>= 1;
-		r_scan = logr * BUNsize(r);	/* opportunistic scan window in r */
+		r_scan = logr;	/* opportunistic scan window in r */
 	}
 	if (!(BAThordered(r) & 1)) {
 		GDKerror("mergejoin: right input is not sorted.\n");
@@ -321,8 +321,8 @@ mergejoin(BAT *l, BAT *r, BAT *bn, ptr nil_on_miss, size_t estimate)
 
 	if (nil_on_miss && l_start < l_last) {
 		hasnils = 1;
-		for (; l_start < l_last; l_start += l_next)
-			bunfastins(bn, BUNhead(l, l_start), nil_on_miss);
+		for (; l_start < l_last; l_start++)
+			bunfastins(bn, BUNhead(li, l_start), nil_on_miss);
 	}
 
 	/* propagate properties */
@@ -393,16 +393,15 @@ the fast inner loops, optimized towards their type.
 
 @= hashjoin
 	{
-		int xx;
 		hash_t yy;
 
-		BATloopFast(l, p, q, xx) {
-			v = BUN@3(l, p);
+		BATloop(l, p, q) {
+			v = BUN@3(li, p);
 			if (@1_EQ(v, nil, @2)) {
 				continue; /* skip nil */
 			}
-			HASHloop_@2(r, r->hhash, yy, v, w) {
-				bunfastins(bn, BUNhead(l, p), BUNtail(r, w));
+			HASHloop_@2(ri, r->H->hash, yy, v) {
+				bunfastins(bn, BUNhead(li, p), BUNtail(ri, yy));
 			}
 		}
 		/* set sorted flags by hand, because we used BUNfastins() */
@@ -415,9 +414,11 @@ BAT *
 BAThashjoin(BAT *l, BAT *r, size_t estimate)
 {
 	ptr v, nil = ATOMnilptr(r->htype);
-	BUN p, q, w;
+	BUN p, q;
 	int any;
 	BAT *bn = NULL;
+	BATiter li = bat_iterator(l);
+	BATiter ri = bat_iterator(r);
 
 	@:joincheck(BAThashjoin,l->ttype,r->htype)@
 	@:joinbat(JOIN_EQ,BAThashjoin(l,r,oid_nil),estimate)@
@@ -491,14 +492,14 @@ on-the-fly to the non-dense implementation.
 The aftermath -- property setting -- is relatively straightforward here.
 @{
 @c
-#define HLATOMput(bn, dst) ATOMput(bn->htype, bn->hheap, dst, BUNhloc(l,l_cur))
-#define HVATOMput(bn, dst) ATOMput(bn->htype, bn->hheap, dst, BUNhvar(l,l_cur))
-#define TLATOMput(bn, dst) ATOMput(bn->ttype, bn->theap, dst, BUNtloc(r,r_cur))
-#define TVATOMput(bn, dst) ATOMput(bn->ttype, bn->theap, dst, BUNtvar(r,r_cur))
+#define HLATOMput(bn, dst) ATOMput(bn->htype, bn->hheap, dst, BUNhloc(li,l_cur))
+#define HVATOMput(bn, dst) ATOMput(bn->htype, bn->hheap, dst, BUNhvar(li,l_cur))
+#define TLATOMput(bn, dst) ATOMput(bn->ttype, bn->theap, dst, BUNtloc(ri,r_cur))
+#define TVATOMput(bn, dst) ATOMput(bn->ttype, bn->theap, dst, BUNtvar(ri,r_cur))
 
 @= SIMPLEput
-#define H@1put(bn,dst)	*(@1*) (dst) = *(@1*) (BUNhloc(l,l_cur))
-#define T@1put(bn,dst)	*(@1*) (dst) = *(@1*) (BUNtloc(r,r_cur))
+#define H@1put(bn,dst)	*(@1*) (dst) = *(@1*) (BUNhloc(li,l_cur))
+#define T@1put(bn,dst)	*(@1*) (dst) = *(@1*) (BUNtloc(ri,r_cur))
 @c
 @:SIMPLEput(chr)@
 @:SIMPLEput(bte)@
@@ -507,8 +508,8 @@ The aftermath -- property setting -- is relatively straightforward here.
 @:SIMPLEput(lng)@
 
 @= bunfastins_nocheck_
-	H@1put(bn, BUNhloc(bn, dst));
-	T@2put(bn, BUNtloc(bn, dst));
+	H@1put(bn, BUNhloc(bni, dst));
+	T@2put(bn, BUNtloc(bni, dst));
 @c
 @= fetchjoin
 static BAT *
@@ -516,29 +517,28 @@ densefetchjoin_@1_@2(BAT *bn, BAT *l, BAT *r)
 {
 	BUN l_cur, l_end, r_cur, dst;
 	ssize_t offset;
-	size_t base, xx;
-	int yy, zz;
+	size_t base;
 	BAT *ret = NULL;
+	BATiter bni = bat_iterator(bn);
+	BATiter li = bat_iterator(l);
+	BATiter ri = bat_iterator(r);
 
-	zz = BUNsize(bn);
-	yy = BUNsize(r);
 	dst = BUNfirst(bn);
-	base = BUNindex(r, BUNfirst(r));
+	base = BUNfirst(r);
 	offset = (ssize_t) (base - r->hseqbase);
-	r_cur = BUNptr(r, offset + *(oid *) BUNtail(l, BUNfirst(l)));
+	r_cur = offset + *(oid *) BUNtail(li, BUNfirst(l));
 
 	ALGODEBUG THRprintf(GDKout, "#BATfetchjoin: densefetchjoin(@1,@2);\n");
 
-	BATloopFast(l, l_cur, l_end, xx) {
+	BATloop(l, l_cur, l_end) {
 		@:bunfastins_nocheck_(@1,@2)@
-		r_cur += yy;
-		dst += zz;
+		r_cur++;
+		dst++;
 	}
 	ret = bn;
       goto bunins_failed;
       bunins_failed:
- 	bn->batBuns->free = dst - bn->batBuns->base;
-	BATsetcount(bn, bn->batBuns->free / zz);
+	BATsetcount(bn, dst);
 	if (!ret)
 		BBPreclaim(bn);
 	return ret;
@@ -549,28 +549,28 @@ orderedfetchjoin_@1_@2(BAT *bn, BAT *l, BAT *r)
 {
 	BUN l_cur, l_end, r_cur, dst;
 	ssize_t offset;
-	size_t base, xx, yy;
-	int zz;
+	size_t base, yy;
 	BAT *ret = NULL;
+	BATiter bni = bat_iterator(bn);
+	BATiter li = bat_iterator(l);
+	BATiter ri = bat_iterator(r);
 
-	zz = BUNsize(bn);
 	dst = BUNfirst(bn);
-	base = BUNindex(r, BUNfirst(r));
+	base = BUNfirst(r);
 	offset = (ssize_t) (base - r->hseqbase);
 
 	ALGODEBUG THRprintf(GDKout, "#BATfetchjoin: orderedfetchjoin(@1,@2);\n");
 
-	BATloopFast(l, l_cur, l_end, xx) {
-		yy = offset + *(oid *) BUNtail(l, l_cur);
-		r_cur = BUNptr(r, yy);
+	BATloop(l, l_cur, l_end) {
+		yy = offset + *(oid *) BUNtail(li, l_cur);
+		r_cur = yy;
 		@:bunfastins_nocheck_(@1,@2)@
-		dst += zz;
+		dst++;
 	}
 	ret = bn;
       goto bunins_failed;
       bunins_failed:
-	bn->batBuns->free = dst - bn->batBuns->base;
-	BATsetcount(bn, bn->batBuns->free / zz);
+	BATsetcount(bn, dst);
 	if (!ret)
 		BBPreclaim(bn);
 	return ret;
@@ -581,36 +581,36 @@ defaultfetchjoin_@1_@2(BAT *bn, BAT *l, BAT *r)
 {
 	BUN l_cur, l_end, r_cur, dst;
 	ssize_t offset;
-	size_t xx, yy, base, end;
-	int zz;
+	size_t yy, base, end;
 	BAT *ret = NULL;
+	BATiter bni = bat_iterator(bn);
+	BATiter li = bat_iterator(l);
+	BATiter ri = bat_iterator(r);
 
-	zz = BUNsize(bn);
 
 	dst = BUNfirst(bn);
-	base = BUNindex(r, BUNfirst(r));
+	base = BUNfirst(r);
 	offset = (ssize_t) (base - r->hseqbase);
 	end = base + BATcount(r);
 
 	BATmmap_pin(r);
 	ALGODEBUG THRprintf(GDKout, "#BATfetchjoin: defaultfetchjoin(@1,@2);\n");
 
-	BATloopFast(l, l_cur, l_end, xx) {
-		yy = offset + *(oid *) BUNtail(l, l_cur);
+	BATloop(l, l_cur, l_end) {
+		yy = offset + *(oid *) BUNtail(li, l_cur);
 		if (yy < base || yy >= end) {
 			continue;
 		}
-		r_cur = BUNptr(r, yy);
+		r_cur = yy;
 		@:bunfastins_nocheck_(@1,@2)@
-		dst += zz;
+		dst++;
 	}
 	BATmmap_unpin(r);
 	ret = bn;
       goto bunins_failed;
       bunins_failed:
 	BATmmap_unpin(r);
-	bn->batBuns->free = dst - bn->batBuns->base;
-	BATsetcount(bn, bn->batBuns->free / zz);
+	BATsetcount(bn, dst);
 	if (!ret)
 		BBPreclaim(bn);
 	return ret;
@@ -691,59 +691,61 @@ defaultfetchjoin_@1_@2(BAT *bn, BAT *l, BAT *r)
 @c
 @= densevoidfetchjoin
 	ALGODEBUG THRprintf(GDKout, "#BATfetchjoin: densevoidfetchjoin(@1,@2,@3);\n");
-	r_cur = BUNptr(r, offset + * (oid *) BUNtloc(l, BUNfirst(l)));
-	yy = BUNsize(r);
-	BATloopFast(l, l_cur, l_end, xx) {
-		@3put(@2, bn->theap, dst, BUN@1(r, r_cur));
-		r_cur += yy;
-		dst += zz;
+	r_cur = offset + * (oid *) BUNtloc(li, BUNfirst(l));
+	BATloop(l, l_cur, l_end) {
+		@3put(@2, bn->theap, dst, BUN@1(ri, r_cur));
+		r_cur++;
+		dst+=ts;
 	}
 @c
 @= orderedvoidfetchjoin
 	ALGODEBUG THRprintf(GDKout, "#BATfetchjoin: orderedvoidfetchjoin(@1,@2,@3);\n");
-	BATloopFast(l, l_cur, l_end, xx) {
-		size_t _yy = offset + * (oid *) BUNtloc(l, l_cur);
+	BATloop(l, l_cur, l_end) {
+		size_t _yy = offset + * (oid *) BUNtloc(li, l_cur);
 
-		r_cur = BUNptr(r, _yy);
-		@3put(@2, bn->theap, dst, BUN@1(r, r_cur));
-		dst += zz;
+		r_cur = _yy;
+		@3put(@2, bn->theap, dst, BUN@1(ri, r_cur));
+		dst+=ts;
 	}
 @c
 @= defaultvoidfetchjoin
 	ALGODEBUG THRprintf(GDKout, "#BATfetchjoin: defaultvoidfetchjoin(@1,@2,@3);\n");
-	BATloopFast(l, l_cur, l_end, xx) {
-		size_t _yy = offset + * (oid *) BUNtloc(l, l_cur);
+	BATloop(l, l_cur, l_end) {
+		size_t _yy = offset + * (oid *) BUNtloc(li, l_cur);
 
 		if (_yy < base || _yy >= end) {
-			bn->batBuns->free = dst - bn->batBuns->base;
-			BATsetcount(bn, bn->batBuns->free / zz);
+			size_t cnt = (dst - bn->T->heap.base)>>bn->T->shift;
+			BATsetcount(bn, cnt);
 			BBPreclaim(bn);
 			nondense = 1;
 			break;
 		}
-		r_cur = BUNptr(r, _yy);
-		@3put(@2, bn->theap, dst, BUN@1(r, r_cur));
-		dst += zz;
+		r_cur = _yy;
+		@3put(@2, bn->theap, dst, BUN@1(ri, r_cur));
+		dst+=ts;
 	}
 	if (nondense) {
+		BUN dstbun;
+		BATiter bni; 
 		/* not (yet?) completely typ-optimized ! */
 		ALGODEBUG THRprintf(GDKout, "#BATfetchjoin: defaultvoidfetchjoin(@1,@2,@3): discovered non-density, resuming with non-void head\n");
 		bn = BATnew(BAThtype(l), ATOMtype(tpe), BATcount(l));
 		if (bn == NULL)
 			return bn;
-		dst = BUNfirst(bn);
-		zz = BUNsize(bn);
-		BATloopFast(l, l_cur, l_end, xx) {
-			size_t _yy = offset + * (oid *) BUNtail(l, l_cur);
+		dstbun = BUNfirst(bn);
+		bni = bat_iterator(bn);
+		BATloop(l, l_cur, l_end) {
+			size_t _yy = offset + * (oid *) BUNtail(li, l_cur);
 
 			if (_yy < base || _yy >= end) {
 				continue;
 			}
-			r_cur = BUNptr(r, _yy);
-			ATOMput(bn->htype, bn->hheap, BUNhloc(bn, dst), BUNhead(l, l_cur));
-			@3put(@2, bn->theap, BUNtloc(bn, dst), BUN@1(r, r_cur));
-			dst += zz;
+			r_cur = _yy;
+			ATOMput(bn->htype, bn->hheap, BUNhloc(bni, dstbun), BUNhead(li, l_cur));
+			@3put(@2, bn->theap, BUNtloc(bni, dstbun), BUN@1(ri, r_cur));
+			dstbun++;
 		}
+		dst = Tloc(bn, dstbun);
 	}
 @c
 @= voidfetchjoin
@@ -766,14 +768,16 @@ defaultfetchjoin_@1_@2(BAT *bn, BAT *l, BAT *r)
 static BAT *
 batfetchjoin(BAT *l, BAT *r, size_t estimate, bit swap, bit hitalways)
 {
-	int xx, yy, zz, lht, rtt;
+	int lht, rtt;
 	size_t base, end;
 	ssize_t offset;
 	size_t lcount, rcount;
-	BUN r_cur, l_cur, l_end, dst;
+	BUN r_cur, l_cur, l_end;
 	oid seqbase;
 	BAT *ret = NULL, *bn = NULL, *l_orig = l;
 	bit hitalways_check = FALSE;
+	BATiter li = bat_iterator(l);
+	BATiter ri = bat_iterator(r);
 
 	BATcheck(l, "BATfetchjoin: l");
 	BATcheck(r, "BATfetchjoin: r");
@@ -828,16 +832,16 @@ batfetchjoin(BAT *l, BAT *r, size_t estimate, bit swap, bit hitalways)
 @c
 	} else if (hitalways && BAThdense(r) && BATtdense(r) && r->hseqbase == r->tseqbase) {
 		/* idempotent join: always hit and substitute tail with the same value */
-		ALGODEBUG THRprintf(GDKout, "#BATfetchjoin: VIEWcreate(l)\n");
+		ALGODEBUG THRprintf(GDKout, "#BATfetchjoin: VIEWcreate(l,r)\n");
 
-		return VIEWcreate(l);
+		return VIEWcreate(l,l);
 	} else if ((BATtordered(l) & 1)) {
 		/* optimization to be able to carry over more void head columns */
 		/* (only needed if neither operand is empty) */
-		oid r_lo = *(oid *) BUNhead(r, BUNfirst(r));
-		oid r_hi = *(oid *) BUNhead(r, BUNlast(r) - BUNsize(r));
-		oid l_lo = *(oid *) BUNtail(l, BUNfirst(l));
-		oid l_hi = *(oid *) BUNtail(l, BUNlast(l) - BUNsize(l));
+		oid r_lo = *(oid *) BUNhead(ri, BUNfirst(r));
+		oid r_hi = *(oid *) BUNhead(ri, BUNlast(r) - 1);
+		oid l_lo = *(oid *) BUNtail(li, BUNfirst(l));
+		oid l_hi = *(oid *) BUNtail(li, BUNlast(l) - 1);
 		int empty = (r_lo > l_hi || r_hi < l_lo);
 		ALGODEBUG THRprintf(GDKout, "#BATfetchjoin: BATtordered(l)&1\n");
 		ALGODEBUG THRprintf(GDKout, "#r_lo=" OIDFMT ", r_hi=" OIDFMT ", l_lo=" OIDFMT ", l_hi=" OIDFMT ".\n", r_lo, r_hi, l_lo, l_hi);
@@ -846,7 +850,7 @@ batfetchjoin(BAT *l, BAT *r, size_t estimate, bit swap, bit hitalways)
 			ALGODEBUG THRprintf(GDKout, "#shrinking!\n");
 			ALGODEBUG THRprintf(GDKout, "#BATfetchjoin: l = BATselect(l, &r_lo, &r_hi);\n");
 
-			l = BATselect(l, &r_lo, &r_hi);	/* sorted, so it will be a slice */
+			li.b = l = BATselect(l, &r_lo, &r_hi);	/* sorted, so it will be a slice */
 			if (l == NULL)
 				return NULL;
 			if (BATcount(l) == 0) {
@@ -866,7 +870,7 @@ batfetchjoin(BAT *l, BAT *r, size_t estimate, bit swap, bit hitalways)
 	}
 	ALGODEBUG THRprintf(GDKout, "#BATfetchjoin: 1\n");
 
-	base = BUNindex(r, BUNfirst(r));
+	base = BUNfirst(r);
 	offset = (ssize_t) (base - r->hseqbase);
 	end = base + rcount;
 	/* only BUNhead crashes on empty bats with TYPE != virtual oid */
@@ -874,11 +878,11 @@ batfetchjoin(BAT *l, BAT *r, size_t estimate, bit swap, bit hitalways)
 		  l->hseqbase :
 		  (lcount ?
 		   (l->htype == TYPE_int ?
-		    (oid) *(int *) BUNhead(l, BUNfirst(l)) :
+		    (oid) *(int *) BUNhead(li, BUNfirst(l)) :
 		    (l->htype == TYPE_oid ?
-		     *(oid *) BUNhead(l, BUNfirst(l)) :
+		     *(oid *) BUNhead(li, BUNfirst(l)) :
 		     (l->htype == TYPE_lng ?
-		      (oid) *(lng *) BUNhead(l, BUNfirst(l)) :
+		      (oid) *(lng *) BUNhead(li, BUNfirst(l)) :
 		      oid_nil))) :
 		   oid_nil);
 
@@ -900,8 +904,6 @@ batfetchjoin(BAT *l, BAT *r, size_t estimate, bit swap, bit hitalways)
 			goto ready;
 		ESTIDEBUG THRprintf(GDKout, "#BATfetchjoin: estimated resultsize: " SZFMT "\n", lcount);
 
-		dst = BUNfirst(bn);
-		zz = BUNsize(bn);
 		/* TODO: apply the "string trick" (see below) here too */
 		if (BATtdense(l)) {
 			/* dense => ordered, i.e., we did check the bounderies already above */
@@ -921,8 +923,6 @@ batfetchjoin(BAT *l, BAT *r, size_t estimate, bit swap, bit hitalways)
 		}
 		/* handle string trick */
 		if (rtt == TYPE_var && ATOMstorage(r->ttype) == TYPE_str) {
-			BAT *bm = BATmirror(bn);
-
 			bn->theap = (Heap *) GDKzalloc(sizeof(Heap));
 			if (bn->theap && r->theap->filename) {
 				char *nme = BBP_physical(bn->batCacheid);
@@ -934,14 +934,15 @@ batfetchjoin(BAT *l, BAT *r, size_t estimate, bit swap, bit hitalways)
 				BBPreclaim(bn);
 				goto ready;
 			}
-			bn->ttype = bm->htype = r->ttype;
-			bn->tvarsized = bm->hvarsized = 1;
+			bn->ttype = r->ttype;
+			bn->tvarsized = 1;
 		}
 		bn->hsorted = (BATtordered(l) & BAThordered(r) & 1) ? BAThordered(l) : 0;
 	} else if (!BATtvoid(l)) {
 		/* propagation of void columns in the result */
 		int nondense = 0;
-		int tpe = r->ttype;
+		int tpe = r->ttype, ts;
+		char *dst;
 
 		ALGODEBUG THRprintf(GDKout, "#BATfetchjoin: BAThvoid(l) && !BATtvoid(l)\n");
 
@@ -954,8 +955,8 @@ batfetchjoin(BAT *l, BAT *r, size_t estimate, bit swap, bit hitalways)
 			goto ready;
 		ESTIDEBUG THRprintf(GDKout, "#BATfetchjoin: estimated resultsize: " SZFMT "\n", lcount);
 
-		dst = BUNfirst(bn);
-		zz = BUNsize(bn);
+		dst = Tloc(bn,BUNfirst(bn));
+ 		ts = Tsize(bn);
 
 		if (ATOMstorage(tpe) == TYPE_chr) {
 			@:voidfetchjoin(tloc,chr,SIMPLE)@
@@ -976,16 +977,13 @@ batfetchjoin(BAT *l, BAT *r, size_t estimate, bit swap, bit hitalways)
 		ret = bn;
 		goto bunins_failed;
 	      bunins_failed:
-		bn->batBuns->free = dst - bn->batBuns->base;
-		BATsetcount(bn, bn->batBuns->free / zz);
+		BATsetcount(bn, (dst - bn->T->heap.base)>>bn->T->shift);
 		if (ret == NULL) {
 			BBPreclaim(bn);
 			goto ready;
 		}
 		/* handle string trick */
 		if (tpe == TYPE_var && ATOMstorage(r->ttype) == TYPE_str) {
-			BAT *bm = BATmirror(bn);
-
 			bn->theap = (Heap *) GDKzalloc(sizeof(Heap));
 			if (bn->theap && r->theap->filename) {
 				char *nme = BBP_physical(bn->batCacheid);
@@ -998,8 +996,8 @@ batfetchjoin(BAT *l, BAT *r, size_t estimate, bit swap, bit hitalways)
 				ret = NULL;
 				goto ready;
 			}
-			bn->ttype = bm->htype = r->ttype;
-			bn->tvarsized = bm->hvarsized = 1;
+			bn->ttype = r->ttype;
+			bn->tvarsized = 1;
 		}
 		if (nondense) {
 			bn->hsorted = (BATtordered(l) & BAThordered(r) & 1) ? BAThordered(l) : 0;
@@ -1108,8 +1106,8 @@ batjoin(BAT *l, BAT *r, size_t estimate, bit swap)
 @-
 collect statistics that help us decide what to do
 @c
-	lsize = l->batBuns->size + (l->hheap ? l->hheap->size : 0) + (l->theap ? l->theap->size : 0);
-	rsize = r->batBuns->size + (r->hheap ? r->hheap->size : 0) + (r->theap ? r->theap->size : 0);
+	lsize = l->H->heap.size + l->T->heap.size + (l->hheap ? l->hheap->size : 0) + (l->theap ? l->theap->size : 0);
+	rsize = r->H->heap.size + r->T->heap.size + (r->hheap ? r->hheap->size : 0) + (r->theap ? r->theap->size : 0);
 	for (logr = 4, i = rcount; i > 0; logr++)
 		i >>= 1;
 	for (logl = 4, i = lcount; i > 0; logl++)
@@ -1124,7 +1122,7 @@ collect statistics that help us decide what to do
 		if (swap && BATtvoid(r) && !BAThvoid(l))
 			rfetch = 0;
 	}
-	must_hash = (swap && (rsize < lsize)) ? l->thash == NULL : r->hhash == NULL;
+	must_hash = (swap && (rsize < lsize)) ? l->T->hash == NULL : r->H->hash == NULL;
 @-
 In special cases (equal join columns, void join columns, or ordered
 join columns), we take special action.
@@ -1211,21 +1209,20 @@ if no match can be found.
 {
 	ptr v, nilh = ATOMnilptr(r->htype), nilt = ATOMnilptr(r->ttype);
 	hash_t xx;
-	int yy;
-	BUN p, q, w;
+	BUN p, q;
 	@4
 
-	BATloopFast(l, p, q, yy) {
+	BATloop(l, p, q) {
 		size_t i = 0;
 
-		v = (ptr) BUNtail(l, p);
+		v = (ptr) BUNtail(li, p);
 		if (!@1_EQ(v, nilh, @2))
-			HASHloop_@2(r, r->hhash, xx, v, w) {
-				@3(bn, s, BUNhead(l, p), BUNtail(r, w), zz);
+			HASHloop_@2(ri, r->H->hash, xx, v) {
+				@3(bn, s, BUNhead(li, p), BUNtail(ri, xx));
 				i++;
 			}
 		if (i == 0) {
-			@3(bn, s, BUNhead(l, p), nilt, zz);
+			@3(bn, s, BUNhead(li, p), nilt);
 		}
 	}
 }
@@ -1239,6 +1236,8 @@ BAT *
 BATouterjoin(BAT *l, BAT *r, size_t estimate)
 {
 	BAT *bn = NULL;
+	BATiter li = bat_iterator(l);
+	BATiter ri = bat_iterator(r);
 
 	@:joincheck(BATouterjoin,l->ttype,r->htype)@
 	if (BAThkey(r) && (estimate == oid_nil || estimate < BATcount(l)))
@@ -1278,20 +1277,20 @@ BATouterjoin(BAT *l, BAT *r, size_t estimate)
 		ptr nilt = ATOMnilptr(r->ttype);
 		bit nonil = TRUE;
 		BUN p, q, w, s = BUNfirst(bn);
-		int yy, xx = BUNsize(bn);
+		size_t hs = Hsize(bn), ts = Tsize(bn);
 
-		BATloopFast(l, p, q, yy) {
-			oid v = *(oid *) BUNtail(l, p);
+		BATloop(l, p, q) {
+			oid v = *(oid *) BUNtail(li, p);
 			ptr t = nilt;
 
 			if (v != oid_nil) {
-				BUNfndVOID(w, r, &v);
-				if (w)
-					t = BUNtail(r, w);
+				BUNfndVOID(w, ri, &v);
+				if (w != BUN_NONE)
+					t = BUNtail(ri, w);
 			}
 			nonil &= (t != nilt);
-			bunfastins_nocheck(bn, s, BUNhead(l, p), t, xx);
-			s += xx;
+			bunfastins_nocheck(bn, s, BUNhead(li, p), t, hs, ts);
+			s++;
 		}
 		bn->tsorted = ((BATtordered(l) & BATtordered(r) & 1) && nonil) ? GDK_SORTED : 0;
 	} else {
@@ -1303,7 +1302,7 @@ BATouterjoin(BAT *l, BAT *r, size_t estimate)
 			return NULL;
 		}
 		if (BAThkey(r)) {
-			@:outerjoinswitch(bunfastins_nocheck_inc, BUN s = BUNfirst(bn); int zz = BUNsize(bn);)@
+			@:outerjoinswitch(bunfastins_nocheck_inc, BUN s = BUNfirst(bn);)@
 		} else {
 			@:outerjoinswitch(bunfastins_check,)@
 		}
@@ -1431,34 +1430,50 @@ BATleftthetajoin(BAT *l, BAT *r, int op, size_t estimate)
 
 /* nested loop join; finally MonetDB can enjoy the virtues of this algorithm as well! */
 @= nlthetajoin_unroll8
-	@:nlthetajoin_@2(@1)@ ri += rsz; @:nlthetajoin_@2(@1)@ ri += rsz;
-	@:nlthetajoin_@2(@1)@ ri += rsz; @:nlthetajoin_@2(@1)@ ri += rsz;
-	@:nlthetajoin_@2(@1)@ ri += rsz; @:nlthetajoin_@2(@1)@ ri += rsz;
-	@:nlthetajoin_@2(@1)@ ri += rsz; @:nlthetajoin_@2(@1)@ ri += rsz;
+	@:nlthetajoin_@2(@1)@
+	ri++;
+	@:nlthetajoin_@2(@1)@
+	ri++;
+	@:nlthetajoin_@2(@1)@
+	ri++;
+	@:nlthetajoin_@2(@1)@
+	ri++;
+	@:nlthetajoin_@2(@1)@
+	ri++;
+	@:nlthetajoin_@2(@1)@
+	ri++;
+	@:nlthetajoin_@2(@1)@
+	ri++;
+	@:nlthetajoin_@2(@1)@
+	ri++;
 @= nlthetajoin_void
 	{
-		cur->r = off++;
+		tdst[cur] = off++;
 		cur += v @1 ra[ri];
 	} 
 @= nlthetajoin_oid
 	{
-		cur->r = * (oid *) (((BUN) (ra + ri)) + off);
+		tdst[cur] = rt[ri];
 		cur += v @1 ra[ri];
 	}
 @= nlthetajoin_impl
 static int
 nlthetajoin_@2_@1(BAT *bn, BAT *l, BAT *r)
 {
-	dst_t *cur = (dst_t *) (bn->batBuns->base + bn->batBuns->free);
-	dst_t *lim = (dst_t *) (bn->batBuns->base + bn->batBuns->size);
-	size_t li = 0, lsz = BUNsize(l) / sizeof(@1), lhi = BATcount(l) * lsz;
-	size_t ri = 0, rsz = BUNsize(r) / sizeof(@1), rhi = (MAX(8, BATcount(r)) - 8) * rsz;
-	@1 *la = (@1 *) BUNtloc(l, BUNfirst(l));
-	@1 *ra = (@1 *) BUNhloc(r, BUNfirst(r));
+	BATiter lbi = bat_iterator(l);
+	BATiter rbi = bat_iterator(r);
+	oid *hdst = (oid *) Hloc(bn, BUNfirst(bn)), *tdst = (oid *) Tloc(bn, BUNfirst(bn));
+	BUN cur = BUNfirst(bn);
+	BUN lim = BATcapacity(bn);
+	BUN li = BUNfirst(l), lhi = BUNlast(l);
+	BUN ri = BUNfirst(r), rhi = MAX(ri + 8, BUNlast(r)) - 8;
+	@1 *la = (@1 *) BUNtloc(lbi, li);
+	@1 *ra = (@1 *) BUNhloc(rbi, ri);
+	oid *rt = (oid *) (r->ttype == TYPE_void ? 0 : BUNtloc(rbi, ri));
 
-	for (ri = li = 0; li < lhi; li += lsz, ri = 0) {
-		ssize_t off = r->ttype == TYPE_void ? (ssize_t) r->tseqbase : r->tloc - r->hloc;
-		ssize_t len = cur - (dst_t *) bn->batBuns->base;
+	for (ri = li = 0; li < lhi; li++, ri = 0) {
+		ssize_t off = r->ttype == TYPE_void ? 0 : (ssize_t) r->tseqbase;
+		BUN len = cur;
 		@1 v = la[li];
 		oid o;
 
@@ -1468,12 +1483,12 @@ nlthetajoin_@2_@1(BAT *bn, BAT *l, BAT *r)
 		/* unroll 8 times, factor out cur->l and memory re-allocation checking */
 		while (1) {
 			if (cur + 8 >= lim) {
-				bn->batBuns->free = ((BUN) cur) - bn->batBuns->base;
-				BATsetcount(bn, bn->batBuns->free / BUNsize(bn));
+				BATsetcount(bn, cur);
 				if (BATextend(bn, 8 + (size_t) (BATcount(bn) * (((dbl) lhi) / (li + 1)))) == NULL)
 					return 1;
-				cur = (dst_t *) (bn->batBuns->base + bn->batBuns->free);
-				lim = (dst_t *) (bn->batBuns->base + bn->batBuns->size);
+				lim = BATcapacity(bn);
+				hdst = (oid *) Hloc(bn, BUNfirst(bn));
+				tdst = (oid *) Tloc(bn, BUNfirst(bn));
 			}
 			if (ri >= rhi)
 				break;
@@ -1485,26 +1500,23 @@ nlthetajoin_@2_@1(BAT *bn, BAT *l, BAT *r)
 		}
 		/* do rest in more expensive loop */
 		if (r->ttype == TYPE_void) {
-			size_t cnt = BATcount(r) * rsz;
+			size_t cnt = BATcount(r);
 
-			for (; ri < cnt; ri += rsz)
+			for (; ri < cnt; ri++)
 				@:nlthetajoin_void(@3)@
 		} else {
-			size_t cnt = BATcount(r) * rsz;
+			size_t cnt = BATcount(r);
 
-			for (; ri < cnt; ri += rsz)
+			for (; ri < cnt; ri++)
 				@:nlthetajoin_oid(@3)@
 		}
 
 		/* fill in the left oids for the generated result tuples */
- 		o = * (oid *) BUNhead(l, ((BUN) (la + li)) - l->tloc);
-		len -= cur - (dst_t *) bn->batBuns->base;
-		while (len < 0)
-			cur[len++].l = o;
-
-		bn->batBuns->free = ((BUN) cur) - bn->batBuns->base;
+ 		o = * (oid *) BUNhead(lbi, li);
+		while (len < cur)
+			hdst[len++] = o;
 	}
-	BATsetcount(bn, bn->batBuns->free / BUNsize(bn));
+	BATsetcount(bn, cur);
 	return 0;
 }
 @= nlthetajoin_call
@@ -1535,10 +1547,6 @@ nlthetajoin_@2_@1(BAT *bn, BAT *l, BAT *r)
 	@:nlthetajoin_@1(dbl,@2,@3)@
 #endif
 @c
-typedef struct {
-	oid l, r;
-} dst_t;
-
 @:nlthetajoin_tpe(impl,gt,>)@
 @:nlthetajoin_tpe(impl,ge,>=)@
 @:nlthetajoin_tpe(impl,lt,<)@
@@ -1603,22 +1611,24 @@ BATnlthetajoin(BAT *l, BAT *r, int op, size_t estimate)
 
 	}
 	if (!optimize) {
-		int lx, rx, (*cmp) (ptr, ptr) = BATatoms[l->ttype].atomCmp;
+		BATiter li = bat_iterator(l);
+		BATiter ri = bat_iterator(r);
+		int (*cmp) (ptr, ptr) = BATatoms[l->ttype].atomCmp;
 		ptr nil = ATOMnilptr(l->ttype);
 		BUN rp, rq, lp, lq;
 
-		BATloopFast(l, lp, lq, lx) {
-			ptr v = (ptr) BUNtail(l, lp);
+		BATloop(l, lp, lq) {
+			ptr v = (ptr) BUNtail(li, lp);
 
 			if ((*cmp) (v, nil) == 0) {
 				continue;
 			}
-			BATloopFast(r, rp, rq, rx) {
-				ptr w = (ptr) BUNhead(r, rp);
+			BATloop(r, rp, rq) {
+				ptr w = (ptr) BUNhead(ri, rp);
 				int c = (*cmp) (v, w);
 
 				if ((c >= lo) & (c <= hi)) {
-					bunfastins(bn, BUNhead(l, lp), BUNtail(r, rp));
+					bunfastins(bn, BUNhead(li, lp), BUNtail(ri, rp));
 				}
 			}
 		}
@@ -1704,17 +1714,18 @@ result.
 @{
 @= bandjoin
 {
-	int xx, yy;
+	BATiter li = bat_iterator(l);
+	BATiter ri = bat_iterator(r);
 	@1 *x1;
 	@1 *x2;
 
-	BATloopFast(l, p, q, xx) {
-		x1 = (@1 *) BUNtloc(l, p);
-		BATloopFast(r, v, w, yy) {
-			x2 = (@1 *) BUNhloc(r, v);
+	BATloop(l, p, q) {
+		x1 = (@1 *) BUNtloc(li, p);
+		BATloop(r, v, w) {
+			x2 = (@1 *) BUNhloc(ri, v);
 			if ((*x1 >= *x2 -  *(@1 *) c1) &&
 			    (*x1 <= *x2 + *(@1 *) c2)) {
-				if (BUNfastins(bn, BUNhead(l, p), BUNtail(r, v)) == NULL) {
+				if (BUNfastins(bn, BUNhead(li, p), BUNtail(ri, v)) == NULL) {
 					BBPreclaim(bn);
 					return NULL;
 				}
@@ -1757,28 +1768,27 @@ differ significantly.
 @{
 @= binsemijoin
 {
+	BATiter li = bat_iterator(l);
+	BATiter ri = bat_iterator(r);
 	BUN lp, lq;
-	int xx;
 	ptr nil = ATOMnilptr(l->htype);
 
 	if (cpy == l) {
-		BATloopFast(l, lp, lq, xx) {
-			ptr v = BUNh@1(l, lp);
+		BATloop(l, lp, lq) {
+			ptr v = BUNh@1(li, lp);
 
-			if (!@3_EQ(v, nil, @2) && SORTfnd_@2(r, v)) {
-				bunfastins(bn, v, BUNtail(l, lp));
+			if (!@3_EQ(v, nil, @2) && SORTfnd_@2(r, v) != BUN_NONE) {
+				bunfastins(bn, v, BUNtail(li, lp));
 			}
 		}
 	} else {
-		BATloopFast(l, lp, lq, xx) {
+		BATloop(l, lp, lq) {
 			BUN rp, rq;
-			ptr v = BUNh@1(l, lp);
+			ptr v = BUNh@1(li, lp);
 
 			if (!@3_EQ(v, nil, @2)) {
-				int yy;
-
-				SORTloop_@2(BATmirror(r), rp, rq, v, v, yy) {
-					bunfastins(bn, v, BUNtail(r, rp));
+				SORTloop_@2(BATmirror(r), rp, rq, v, v) {
+					bunfastins(bn, v, BUNtail(ri, rp));
 				}
 			}
 		}
@@ -1877,44 +1887,45 @@ iff BAThkey(r) and one on l to find the matching tuples.
 @{
 @= revsemijoin
 {
-	int xx;
+	BATiter li = bat_iterator(l);
+	BATiter ri = bat_iterator(r);
 	hash_t yy;
-	BUN lp = 0, rp = 0, rq = 0, rr = 0;
+	BUN rp = 0, rq = 0;
 	ptr nil = ATOMnilptr(l->htype);
 
 	if (merge) {
 		ALGODEBUG THRprintf(GDKout, "#BATrevsemijoin: merge\n");
-		BATloopFast(r, rp, rq, xx) {
-			ptr v = BUN@3(r, rp);
+		BATloop(r, rp, rq) {
+			ptr v = BUN@3(ri, rp);
 
-			rr = rp + xx;
-			if (rr < rq && @1_EQ(v, BUN@3(r, rr), @2))
+			yy = rp+1;
+			if (yy < rq && @1_EQ(v, BUN@3(ri, yy), @2))
 				continue;
 			if (!@1_EQ(v, nil, @2)) {
-				HASHloop_@2(l, l->hhash, yy, v, lp)
-					bunfastins(bn, v, BUNtail(l, lp));
+				HASHloop_@2(li, l->H->hash, yy, v)
+					bunfastins(bn, v, BUNtail(li, yy));
 			}
 		}
 	} else if (rdoubles) {
 		ALGODEBUG THRprintf(GDKout, "#BATrevsemijoin: rdoubles\n");
-		BATloopFast(r, rp, rq, xx) {
-			ptr v = BUN@3(r, rp);
+		BATloop(r, rp, rq) {
+			ptr v = BUN@3(ri, rp);
 
-			HASHloop_@2(r, r->hhash, yy, v, rr)
+			HASHloop_@2(ri, r->H->hash, yy, v)
 				break;
-			if (rr != rp)
+			if (yy != rp)
 				continue;
 			if (!@1_EQ(v, nil, @2)) {
-				HASHloop_@2(l, l->hhash, yy, v, lp)
-					bunfastins(bn, v, BUNtail(l, lp));
+				HASHloop_@2(li, l->H->hash, yy, v)
+					bunfastins(bn, v, BUNtail(li, yy));
 			}
 		}
 	} else {
-		BATloopFast(r, rp, rq, xx) {
-			ptr v = BUN@3(r, rp);
+		BATloop(r, rp, rq) {
+			ptr v = BUN@3(ri, rp);
 			if (!@1_EQ(v, nil, @2)) {
-				HASHloop_@2(l, l->hhash, yy, v, lp)
-					bunfastins(bn, v, BUNtail(l, lp));
+				HASHloop_@2(li, l->H->hash, yy, v)
+					bunfastins(bn, v, BUNtail(li, yy));
 			}
 		}
 	}
@@ -1986,7 +1997,8 @@ hard integer positions, rather than oid matching on a dense-oid column.
 static BAT *
 BATfetchsemijoin(BAT *l, BAT *r, BAT *cpy, int denselookup)
 {
-	int xx;
+	BATiter li = bat_iterator(l);
+	BATiter ri = bat_iterator(r);
 	size_t base, end, yy;
 	ssize_t offset;
 	BUN l_cur, l_end, r_cur;
@@ -2016,7 +2028,7 @@ BATfetchsemijoin(BAT *l, BAT *r, BAT *cpy, int denselookup)
 		}
 		return BATslice(cpy, min, max);
 	}
-	base = BUNindex(r, BUNfirst(r));
+	base = BUNfirst(r);
 	end = base + BATcount(r);
 	bn = BATnew(BAThtype(cpy), BATttype(cpy), MIN(BATcount(r), BATcount(l)));
 	if (bn == NULL)
@@ -2035,16 +2047,16 @@ BATfetchsemijoin(BAT *l, BAT *r, BAT *cpy, int denselookup)
 	/* iterate l; positional fetch in r */
 	if (!BAThordered(l))	/* StM: (!(BAThordered(l)&1)) ? */
 		BATmmap_pin(r);
-	BATloopFast(l, l_cur, l_end, xx) {
-		yy = offset + *(oid *) BUNhloc(l, l_cur);
+	BATloop(l, l_cur, l_end) {
+		yy = offset + *(oid *) BUNhloc(li, l_cur);
 		if (yy < base || yy >= end) {
 			continue;
 		}
-		r_cur = BUNptr(r, yy);
+		r_cur = yy;
 		if (cpy == r) {
-			bunfastins(bn, BUNhead(r, r_cur), BUNtail(r, r_cur));
+			bunfastins(bn, BUNhead(ri, r_cur), BUNtail(ri, r_cur));
 		} else {
-			bunfastins(bn, BUNhead(r, r_cur), BUNtail(l, l_cur));
+			bunfastins(bn, BUNhead(ri, r_cur), BUNtail(li, l_cur));
 		}
 	}
 	if (!BAThordered(l))	/* StM: (!(BAThordered(l)&1)) ? */
@@ -2136,7 +2148,7 @@ To do that r should be unique. To that end, doubles may sometimes be eliminated 
 		ALGODEBUG THRprintf(GDKout, "#BATsemijoin: BATfetchsemijoin(r, l, l);\n");
 
 		bn = BATfetchsemijoin(r, l, l, TRUE);
-	} else if (l->hhash && reverse1) {
+	} else if (l->H->hash && reverse1) {
 		ALGODEBUG THRprintf(GDKout, "#BATsemijoin: BATrevsemijoin(l,r);\n");
 
 		bn = BATrevsemijoin(l, r);
@@ -2175,29 +2187,27 @@ provided the tail-head pair do not (!) match.
 static BAT *
 antijoin_@1_@2(BAT *bn, BAT *l, BAT *r)
 {
+	BATiter li = bat_iterator(l);
+	BATiter ri = bat_iterator(r);
+	BATiter bni = bat_iterator(bn);
 	BUN l_cur, l_end, r_cur, r_end, dst;
-	int l_sz, r_sz, bn_sz;
 	int (*cmp) (ptr, ptr) = BATatoms[l->ttype].atomCmp;
 	ptr nil = ATOMnilptr(l->ttype);
 
-
-	bn_sz = BUNsize(bn);
 	dst = BUNfirst(bn);
-
 	ALGODEBUG THRprintf(GDKout, "#BATantijoin: antijoin_@1_@2();\n");
-	BATloopFast(l, l_cur, l_end, l_sz) {
-		ptr v = (ptr) BUNtail(l, l_cur);
-		BATloopFast(r, r_cur, r_end, r_sz) {
-			ptr w = (ptr) BUNhead(r, r_cur);
+	BATloop(l, l_cur, l_end) {
+		ptr v = (ptr) BUNtail(li, l_cur);
+		BATloop(r, r_cur, r_end) {
+			ptr w = (ptr) BUNhead(ri, r_cur);
 			int c = (*cmp)(v, w);
 			if ((*cmp)(v, nil) != 0 && (*cmp)(w, nil) != 0 && c != 0 ) {
 				@:bunfastins_nocheck_(@1,@2)@
-				dst += bn_sz;
+				dst++;
 			}
 		}
 	}
-	bn->batBuns->free = dst - bn->batBuns->base;
-	BATsetcount(bn, bn->batBuns->free / bn_sz);
+	BATsetcount(bn, dst);
 
 	/* Just to silence compilers (Intel's icc) that otherwise might
 	 * complain about "declared but never referenced" labels
@@ -2309,11 +2319,14 @@ BATantijoin(BAT *l, BAT *r)
 	sz = lc * rc;
 
 	if (sz > 0) {
+		BATiter li = bat_iterator(l);
+		BATiter ri = bat_iterator(r);
+
 		/* try to keep void columns where possible */
 		if (rc == 1)
-			return BATconst(l, BATttype(r), BUNtail(r, BUNfirst(r)));
+			return BATconst(l, BATttype(r), BUNtail(ri, BUNfirst(r)));
 		if (lc == 1)
-			return BATmirror(BATconst(BATmirror(r), BAThtype(l), BUNhead(l, BUNfirst(l))));
+			return BATmirror(BATconst(BATmirror(r), BAThtype(l), BUNhead(li, BUNfirst(l))));
 	}
 
 	bn = BATnew(BAThtype(l), BATttype(r), sz);
@@ -2350,21 +2363,20 @@ operand.
 static BAT *
 cross_@1_@2(BAT *bn, BAT *l, BAT *r)
 {
+	BATiter li = bat_iterator(l);
+	BATiter ri = bat_iterator(r);
+	BATiter bni = bat_iterator(bn);
 	BUN l_cur, l_end, r_cur, r_end, dst;
-	int l_sz, r_sz, bn_sz;
 
-	bn_sz = BUNsize(bn);
 	dst = BUNfirst(bn);
-
 	ALGODEBUG THRprintf(GDKout, "#BATcross: cross_@1_@2();\n");
-	BATloopFast(l, l_cur, l_end, l_sz) {
-		BATloopFast(r, r_cur, r_end, r_sz) {
+	BATloop(l, l_cur, l_end) {
+		BATloop(r, r_cur, r_end) {
 			@:bunfastins_nocheck_(@1,@2)@
-			dst += bn_sz;
+			dst++;
 		}
 	}
-	bn->batBuns->free = dst - bn->batBuns->base;
-	BATsetcount(bn, bn->batBuns->free / bn_sz);
+	BATsetcount(bn, dst);
 
 	/* Just to silence compilers (Intel's icc) that otherwise might
 	 * complain about "declared but never referenced" labels
@@ -2476,11 +2488,14 @@ BATcross(BAT *l, BAT *r)
 	sz = lc * rc;
 
 	if (sz > 0) {
+		BATiter li = bat_iterator(l);
+		BATiter ri = bat_iterator(r);
+
 		/* try to keep void columns where possible */
 		if (rc == 1)
-			return BATconst(l, BATttype(r), BUNtail(r, BUNfirst(r)));
+			return BATconst(l, BATttype(r), BUNtail(ri, BUNfirst(r)));
 		if (lc == 1)
-			return BATmirror(BATconst(BATmirror(r), BAThtype(l), BUNhead(l, BUNfirst(l))));
+			return BATmirror(BATconst(BATmirror(r), BAThtype(l), BUNhead(li, BUNfirst(l))));
 	}
 
 	bn = BATnew(BAThtype(l), BATttype(r), sz);
@@ -2528,6 +2543,7 @@ The below structures are used for keeping track of the matching process.
 @c
 typedef struct _column_t {
 	BAT *b;			/* BAT of this column */
+	BATiter bi;		
 	BUN cur;		/* current BUN in b */
 	size_t nhits;		/* number of matched BUNs */
 
@@ -2568,13 +2584,13 @@ column_result(table_t *t, int i)
 		size_t j;
 
 		if (p == NULL) {	/* clustered */
-			for (q = c->lo; q < c->hi; q += BUNsize(c->b)) {
-				t->value_fcn[i] (t->value_data[i], BUNtail(c->b, q));
+			for (q = c->lo; q < c->hi; q++) {
+				t->value_fcn[i] (t->value_data[i], BUNtail(c->bi, q));
 				column_result(t, i);
 			}
 		} else {
 			for (j = 0; j < c->nhits; j++, p++) {
-				t->value_fcn[i] (t->value_data[i], BUNtail(c->b, *p));
+				t->value_fcn[i] (t->value_data[i], BUNtail(c->bi, *p));
 				column_result(t, i);
 			}
 		}
@@ -2637,7 +2653,7 @@ BATmultijoin(int argc, BAT *argv[], RowFcn tuple_fcn, ptr tuple_data, ColFcn val
 	column_t **reorder = (column_t **) alloca(argc * (int) sizeof(column_t *));
 	int status = 0, algo = LEAD_TRAVERSE_SEQ;
 	int i, k;
-	BUN p, q, r;
+	BUN p, q;
 	table_t t;
 
 @-
@@ -2657,8 +2673,9 @@ order columns by their size (smallest first)
 		int j;
 
 		c[i].b = argv[i];
+		c[i].bi = bat_iterator(c[i].b);
 		c[i].nhits = 1;	/* default value */
-		c[i].offset = (ssize_t) BUNindex(c[i].b, BUNfirst(c[i].b));
+		c[i].offset = BUNfirst(c[i].b);
 		c[i].size = BATcount(c[i].b);
 
 		/* positional lookup possible => ignore other alternatives */
@@ -2867,7 +2884,7 @@ overhead.
 		p = lead_col->hi;
 		if (p >= q)
 			break;
-		h = BUNhead(lead_col->b, p);
+		h = BUNhead(lead_col->bi, p);
 
 		/* FIND MATCHING COLUMN RANGES
 		 * For each column, find all matches for this head value
@@ -2875,16 +2892,17 @@ overhead.
 		for (i = 0; i < argc; i++) {
 			column_t *m, *n = reorder[i];	/* use BATcount() order */
 			BAT *b = n->b;
+			BATiter bi = n->bi;
 
 			/* one-by-one traversal of the lead column? => no matching done.
 			 */
 			if (n == lead_col) {
 				if (argc > 1 && ATOMcmp(b->htype, h, ATOMnilptr(b->htype)) == 0) {
-					n->lo = n->hi = p + BUNsize(b);
+					n->lo = n->hi = p+1;
 					break;
 				} else if (algo <= LEAD_TRAVERSE_SEQ) {
 					n->lo = p;
-					n->hi = p + BUNsize(b);
+					n->hi = p+1;
 					continue;
 				}
 			}
@@ -2898,19 +2916,18 @@ overhead.
 
 					REALLOCBUNS(n, m->nhits);
 					for (j = 0; j < m->nhits; j++) {
-						n->hit[j] = BUNptr(n->b, n->offset + BUNindex(m->b, m->hit[j]));
+						n->hit[j] = n->offset + m->hit[j];
 					}
 					n->nhits = m->nhits;
 				} else {
-					n->lo = BUNptr(n->b, n->offset + BUNindex(m->b, m->lo));
-					n->hi = BUNptr(n->b, n->offset + BUNindex(m->b, m->hi));
+					n->lo = n->offset + m->lo;
+					n->hi = n->offset + m->hi;
 				}
 				/* Sorted lookup
 				 * We perform a merge scan over the tail column.
 				 */
 			} else if (n->ordered) {
 				BUN last = BUNlast(b);
-				int xx = BUNsize(b);
 
 				if (n->binsearch) {
 					n->cur = (BUN) SORTfndfirst@4(BATmirror(b), h);
@@ -2919,16 +2936,16 @@ overhead.
 				} else {
 					int yy = 1;
 
-					for (; n->cur < last; n->cur += xx)
-						if ((yy = @2cmp(BUN@1(b, n->cur), h)) >= 0)
+					for (; n->cur < last; n->cur++)
+						if ((yy = @2cmp(BUN@1(bi, n->cur), h)) >= 0)
 							 break;
 
 					if (yy != 0)
 						break;	/* NOT FOUND */
 				}
 				n->lo = n->cur;
-				for (n->nhits = 1; (n->cur += xx) < last; n->nhits++) {
-					if (@2cmp(BUN@1(b, n->cur), h))
+				for (n->nhits = 1; (++n->cur) < last; n->nhits++) {
+					if (@2cmp(BUN@1(bi, n->cur), h))
 						 break;
 				}
 				if (n->cur >= last && (algo & LEAD_INTERRUPT_END))
@@ -2937,20 +2954,20 @@ overhead.
 				/* Single Hash lookup
 				 */
 			} else if (BAThkey(n->b)) {
-				BUNfnd@2(n->cur, b, h);
-				if (!n->cur)
+				BUNfnd@2(n->cur, bi, h);
+				if (n->cur == BUN_NONE)
 					break;	/* NOT FOUND */
 				n->lo = n->cur;
-				n->hi = n->cur + BUNsize(b);
+				n->hi = n->cur+1;
 				/* Multiple Hash lookup
 				 */
 			} else {
 				hash_t j;
 
 				n->nhits = 0;
-				HASHloop@3(b, b->hhash, j, h, r) {
+				HASHloop@3(bi, b->H->hash, j, h) {
 					REALLOCBUNS(n, n->nhits + 1);
-					n->hit[n->nhits++] = r;
+					n->hit[n->nhits++] = j;
 				}
 				if (n->nhits == 0)
 					break;	/* NOT FOUND */

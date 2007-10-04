@@ -1054,12 +1054,12 @@ mvc_bat_next_value(int *res, int *sid, str *seqname)
 {
 	mvc *m = NULL;
 	str msg = getContext(&m, NULL);
-	int xx;
 	BAT *b, *r;
 	BUN p,q;
 	sql_schema *s = NULL;
 	sql_sequence *seq = NULL;
 	seqbulk *sb = NULL;
+	BATiter bi;
 
 	if (msg)
 		return msg;
@@ -1080,8 +1080,9 @@ mvc_bat_next_value(int *res, int *sid, str *seqname)
 		return MAL_SUCCEED;
 	}
 
-	BATloopFast(b,p,q,xx){
-		str sname = BUNtail(b,BUNfirst(b));
+	bi = bat_iterator(b);
+	BATloop(b,p,q){
+		str sname = BUNtail(bi,BUNfirst(b));
 		lng l;
 
 		if (!s || strcmp(s->base.name, sname) != 0) {
@@ -1103,7 +1104,7 @@ mvc_bat_next_value(int *res, int *sid, str *seqname)
 			seqbulk_destroy(sb);
 			throw(SQL, "sql.next_value", "error");
 		}
-		BUNins(r, BUNhead(b,p), &l, FALSE);
+		BUNins(r, BUNhead(bi,p), &l, FALSE);
 	}
 	if (sb) 
 		seqbulk_destroy(sb);
@@ -1281,13 +1282,15 @@ mvc_bind_single_wrap(int *ret, int *bid, str *name)
 {
 	BAT *b, *bn;
 	int r;
-	ptr p;
+	BUN p;
+	BATiter bni;
 
 	if( (bn= BATdescriptor(*bid)) == NULL)
 		throw(SQL, "sql.bind","Cannot access descriptor");
 
 	p = BUNfnd(bn, *name);
-	r = *(int *) BUNtail(bn, p);
+	bni = bat_iterator(bn);
+	r = *(int *) BUNtail(bni, p);
 	if( (b= BATdescriptor(r)) == NULL)
 		throw(SQL, "sql.bind","Cannot access descriptor");
 	BBPkeepref(*ret= b->batCacheid);
@@ -1595,7 +1598,8 @@ zero_or_one(ptr ret, int *bid)
 	if (c == 0) {
 		p = ATOMnilptr(b->ttype);
 	} else if (c == 1) {
-		p = BUNtail(b,BUNfirst(b));
+		BATiter bi = bat_iterator(b);
+		p = BUNtail(bi,BUNfirst(b));
 	} else {
 		char buf[BUFSIZ];
 
@@ -1640,12 +1644,10 @@ str not_unique(bit *ret, int* bid)
 		return MAL_SUCCEED;
 	} else if (b->tsorted&1) {
 		BUN p,q;
-		int sz;
+		oid c = *(oid*)Tloc(b, BUNfirst(b)); 
 
-		oid c = *(oid*)BUNtloc(b, BUNfirst(b)); 
-		sz = BUNsize(b);
-		for(p=BUNfirst(b)+sz, q=BUNlast(b);p<q;p+=sz) {
-			oid v = *(oid*)BUNtloc(b,p);
+		for(p=BUNfirst(b)+1, q=BUNlast(b);p<q;p++) {
+			oid v = *(oid*)Tloc(b,p);
 			if (v<=c) {
 				*ret = TRUE;
 				break;
@@ -1666,6 +1668,7 @@ voidbathash(int *res, BAT *b )
 	BAT *dst;
 	hash_t (*hash)(ptr v); 
 	int *r, *f;
+	BATiter bi, dsti;
 
 	dst= BATnew(TYPE_void,TYPE_int, BATcount(b));
 	if (!dst) {
@@ -1674,26 +1677,26 @@ voidbathash(int *res, BAT *b )
 	}
 	BATseqbase(dst, b->hseqbase);
 
- 	r = (int*)BUNtail(dst, BUNfirst(dst));
+	dsti = bat_iterator(dst);
+	bi = bat_iterator(b);
+ 	r = (int*)BUNtail(dsti, BUNfirst(dst));
 	f = r;
 	hash = BATatoms[b->ttype].atomHash;
 	if (ATOMvarsized(b->ttype)) { /* ugh */
 		BUN p,q;
-		int xx;
 
-		BATloopFast(b,p,q,xx){
-			ptr v = BUNtail(b,p);
+		BATloop(b,p,q){
+			ptr v = BUNtail(bi,p);
 			*r++ = (hash(v)) & 0xEFFFFFFF;
 		}
 	} else {
-		char *v = BUNtail(b,BUNfirst(b)), *e = BUNtail(b,BUNlast(b));
-		int sz = BUNsize(b);
+		char *v = BUNtail(bi,BUNfirst(b)), *e = BUNtail(bi,BUNlast(b));
+		int sz = Tsize(b);
 
 		for(; v < e; v+=sz) {
 			*r++ = (hash(v)) & 0xEFFFFFFF;
 		}
 	}
-	dst->batBuns->free = ((r-f)*BUNsize(dst));
 	BATsetcount(dst, r-f);
 	BATkey(BATmirror(dst), 0);
 	dst->tsorted = 0;
@@ -1708,6 +1711,7 @@ bathash_wrap(int *res, int *bid )
 {
 	BAT *b, *dst;
 	hash_t (*hash)(ptr v); 
+	BATiter bi;
 
 	if( (b = BATdescriptor(*bid)) == NULL ){
 		throw(SQL, "bathash", "Cannot access descriptor");
@@ -1723,23 +1727,22 @@ bathash_wrap(int *res, int *bid )
 	}
 
 	hash = BATatoms[b->ttype].atomHash;
+	bi = bat_iterator(b);
 	if (ATOMvarsized(b->ttype)) { /* ugh */
 		BUN p,q;
-		int xx;
 
-		BATloopFast(b,p,q,xx){
-			ptr v = BUNtail(b,p);
+		BATloop(b,p,q){
+			ptr v = BUNtail(bi,p);
 			int h = (hash(v)) & 0xEFFFFFFF;
-			BUNins(dst, BUNhead(b,p), &h, FALSE);
+			BUNins(dst, BUNhead(bi,p), &h, FALSE);
 		}
 	} else {
 		BUN p,q;
-		int xx;
 
-		BATloopFast(b,p,q,xx){
-			ptr v = BUNtail(b,p);
+		BATloop(b,p,q){
+			ptr v = BUNtail(bi,p);
 			int h = (hash(v)) & 0xEFFFFFFF;
-			BUNins(dst, BUNhead(b,p), &h, FALSE);
+			BUNins(dst, BUNhead(bi,p), &h, FALSE);
 		}
 	}
 

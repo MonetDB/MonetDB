@@ -34,7 +34,14 @@ vice versa.
 
 #include <assert.h>
 
-#define BUNtailfnd(tp,  bt, bn, vl)	((bn=BUNfnd(bt, vl))?(tp *) BUNtail(bt,bn):0)
+INLINE static void *
+BUNtailfnd( BAT *b, ptr v) 
+{
+	BATiter bi = bat_iterator(b);
+	BUN bn = BUNfnd(b, v);
+
+	return (bn != BUN_NONE)?(void*) BUNtail(bi,bn):NULL;
+}
 
 #ifdef __cplusplus
 extern "C" {
@@ -597,18 +604,16 @@ TBL_openmod(Client client, str module)
 ptr
 TBL_module_handle(oid mid)
 {
-	char *p;
+	BUN p;
 
-	return (p = BUNfnd(TBL_mod_hdl, &mid)) ? *(int **) BUNtloc(TBL_mod_hdl, p) : 0;
+	return ((p = BUNfnd(TBL_mod_hdl, &mid)) != BUN_NONE ) ? *(int **) Tloc(TBL_mod_hdl, p) : 0;
 }
 
 
 oid
 TBL_module_lookup(str module)
 {
-	BUN bun;		/* stupid temp storage? */
-	oid *midp = BUNtailfnd(oid, BATmirror(TBL_mod_nme), bun, module);
-
+	oid *midp = BUNtailfnd(BATmirror(TBL_mod_nme), module);
 	return midp ? *midp : 0;
 }
 
@@ -617,7 +622,7 @@ TBL_M_cinstalled(Client client, oid mid)
 {
 	int cid = (int) (client - monet_clients);
 
-	return (!!(BUNlocate(BATmirror(TBL_mod_use), &cid, &mid)));
+	return (BUNlocate(BATmirror(TBL_mod_use), &cid, &mid) != BUN_NONE);
 }
 
 #define BATfakeAbort(b)	((b) && ((b)->batInserted = BUNfirst(b)))
@@ -706,15 +711,14 @@ ptr
 TBL_unpacked(ptr imp)
 {
 	BAT *b = BATmirror(TBL_fcn_imp);
-	BUN bun;
 	oid *fid;
 	ptr *s = 0;
 
 	TBL_set_readlock();
-	fid = BUNtailfnd(oid, b, bun, &imp);
+	fid = BUNtailfnd(b, &imp);
 
 	if (fid)
-		s = BUNtailfnd(ptr, TBL_fcn_fcn, bun, fid);
+		s = BUNtailfnd(TBL_fcn_fcn, fid);
 
 	TBL_unset_readlock();
 	return (s) ? *s : 0;
@@ -732,13 +736,13 @@ getparams(oid fid, str argv[])
 	str *s = argv, *t = s;
 	hash_t i;
 	int j = 0;
-	BUN p;
 	oid *fidp = &fid;
+	BATiter fpi = bat_iterator(TBL_fcn_pro);
 
 	if (BATprepareHash(TBL_fcn_pro))
 		assert(0);
-	HASHloop_oid(TBL_fcn_pro, TBL_fcn_pro->hhash, i, fidp, p) {
-		*(t++) = (str) BUNtvar(TBL_fcn_pro, p);
+	HASHloop_oid(fpi, TBL_fcn_pro->H->hash, i, fidp) {
+		*(t++) = (str) BUNtvar(fpi, i);
 		j++;
 	}
 	while (++s < --t) {
@@ -754,11 +758,10 @@ int
 TBL_getparams(ptr imp, str argv[])
 {
 	BAT *b = BATmirror(TBL_fcn_imp);
-	BUN p;
 	int nparams;
 
 	TBL_set_readlock();
-	nparams = getparams(*BUNtailfnd(oid, b, p, &imp), argv);
+	nparams = getparams(*(oid*)BUNtailfnd(b, &imp), argv);
 
 	TBL_unset_readlock();
 
@@ -817,13 +820,13 @@ typedef struct {
 /* for built-in types use BATatoms and not atomtbl because finding
    TYPE_bat is not reliable otherwise (there is both "bat" and "BAT"
    in atomtbl) */
-#define ATOM_LOOKUP(nme, tpe, atomtbl) {			\
+#define ATOM_LOOKUP(nme, tpe, atomtbl, at_iter) {		\
 	int _tpe = tpe;						\
 	if (_tpe <= TYPE_str) nme = BATatoms[_tpe].name;	\
 	else {							\
 		BUN _p = BUNfnd(atomtbl, &_tpe);		\
-		if (_p == NULL) return TBL_RESOLVE_NOTPE;	\
-			nme = (str) BUNtail(atomtbl, _p);	\
+		if (_p == BUN_NONE) return TBL_RESOLVE_NOTPE;	\
+		nme = (str) BUNtail(at_iter, _p);		\
 	}							\
 }
 
@@ -831,11 +834,12 @@ static int
 TBL_checkparams_init(paramcheck_t *pt, int argc, ValPtr argv, BAT *atomtbl)
 {
 	int i;
+	BATiter atiter = bat_iterator(atomtbl);
 
 	pt->argc = argc;
 	pt->argv = argv;
 	for (i = 1; i < argc; i++) {
-		ATOM_LOOKUP(pt->tps[i], argv[i].vtype, atomtbl);
+		ATOM_LOOKUP(pt->tps[i], argv[i].vtype, atomtbl, atiter);
 
 		pt->htps[i] = pt->ttps[i] = NULL;
 
@@ -858,14 +862,14 @@ TBL_checkparams_init(paramcheck_t *pt, int argc, ValPtr argv, BAT *atomtbl)
 			}
 			BBPunfix(bid);
 			if (b) {
-				ATOM_LOOKUP(pt->htps[i], htpe, atomtbl);
+				ATOM_LOOKUP(pt->htps[i], htpe, atomtbl, atiter);
 				pt->htpsl[i] = pt->htps[i];
 				if (hvid)
-					ATOM_LOOKUP(pt->htpsl[i], ATOMtype(htpe), atomtbl);
-				ATOM_LOOKUP(pt->ttps[i], ttpe, atomtbl);
+					ATOM_LOOKUP(pt->htpsl[i], ATOMtype(htpe), atomtbl, atiter);
+				ATOM_LOOKUP(pt->ttps[i], ttpe, atomtbl, atiter);
 				pt->ttpsl[i] = pt->ttps[i];
 				if (tvid)
-					ATOM_LOOKUP(pt->ttpsl[i], ATOMtype(ttpe), atomtbl);
+					ATOM_LOOKUP(pt->ttpsl[i], ATOMtype(ttpe), atomtbl, atiter);
 			}
 		}
 	}
@@ -987,14 +991,13 @@ str
 TBL_getname(ptr imp)
 {
 	BAT *b = BATmirror(TBL_fcn_imp);
-	BUN bun;
 	oid *fid;
 	str s = 0;
 
 	TBL_set_readlock();
-	if ((fid = BUNtailfnd(oid, b, bun, &imp)) == 0) {
+	if ((fid = BUNtailfnd(b, &imp)) == 0) {
 		GDKerror("TBL_getname: non-existing function %p.\n", imp);
-	} else if ((s = BUNtailfnd(char, TBL_fcn_nme, bun, fid)) == 0) {
+	} else if ((s = BUNtailfnd(TBL_fcn_nme, fid)) == 0) {
 		GDKerror("TBL_getname: no name for function %lu.\n", *fid);
 	}
 	TBL_unset_readlock();
@@ -1006,14 +1009,13 @@ str
 TBL_fndname(ptr imp)
 {
 	BAT *b = BATmirror(TBL_fcn_imp);
-	BUN bun;
 	oid *fid;
 	str s = 0;
 
 	TBL_set_readlock();
-	if ((fid = BUNtailfnd(oid, b, bun, &imp)) == 0) {
+	if ((fid = BUNtailfnd(b, &imp)) == 0) {
 		;
-	} else if ((s = BUNtailfnd(char, TBL_fcn_nme, bun, fid)) == 0) {
+	} else if ((s = BUNtailfnd(TBL_fcn_nme, fid)) == 0) {
 		;
 	}
 	TBL_unset_readlock();
@@ -1168,7 +1170,7 @@ gets this proc as expected.
 static void
 TBL_incproc(oid pid)
 {
-	int cnt = *(int *) BUNtail(TBL_fcn_cnt, BUNfnd(TBL_fcn_cnt, &pid));
+	int cnt = *(int *) Tloc(TBL_fcn_cnt, BUNfnd(TBL_fcn_cnt, &pid));
 
 	cnt++;
 	if (BUNreplace(TBL_fcn_cnt, &pid, &cnt, 0) == NULL)
@@ -1178,7 +1180,7 @@ TBL_incproc(oid pid)
 static void
 TBL_decproc(oid pid)
 {
-	int cnt = *(int *) BUNtail(TBL_fcn_cnt, BUNfnd(TBL_fcn_cnt, &pid));
+	int cnt = *(int *) Tloc(TBL_fcn_cnt, BUNfnd(TBL_fcn_cnt, &pid));
 
 	if (cnt > 1) {
 		cnt--;
@@ -1186,7 +1188,7 @@ TBL_decproc(oid pid)
 			assert(0);
 	} else {
 		/* remove last reference: free MIL tree, remove from TBL structures */
-		YYSTREE *x = (YYSTREE *) BUNtloc(TBL_fcn_imp, BUNfnd(TBL_fcn_imp, &pid));
+		YYSTREE *x = (YYSTREE *) Tloc(TBL_fcn_imp, BUNfnd(TBL_fcn_imp, &pid));
 
 		if (x && *x) {
 			GDKfree((*x)->yyval.val.pval);	/* free disguised name */
@@ -1381,18 +1383,20 @@ and for the module it was defined in.
 void
 TBL_delproc(Client client, str nme)
 {
+	BATiter cfi = bat_iterator(client->fcntbl);
+	BATiter fti = bat_iterator(TBL_fcn_tpe);
 	hash_t i;
 
 	TBL_M_lock(client);
 	if (BATprepareHash(client->fcntbl))
 		assert(0);
-	HASHloop_str(client->fcntbl, client->fcntbl->hhash, i, nme) {
-		BUN p = BUNptr(client->fcntbl, i);
-		oid pid = *(oid *) BUNtloc(client->fcntbl, p);
+	HASHloop_str(cfi, client->fcntbl->H->hash, i, nme) {
+		BUN p = i;
+		oid pid = *(oid *) BUNtloc(cfi, p);
 
-		if (*(int *) BUNtloc(TBL_fcn_tpe, BUNfnd(TBL_fcn_tpe, &pid)) == TOK_PROC) {
+		if (*(int *) BUNtloc(fti, BUNfnd(TBL_fcn_tpe, &pid)) == TOK_PROC) {
 			TBL_decproc(pid);
-			if (BUNdelete(client->fcntbl, p, FALSE) == NULL)
+			if (BUNdelete(client->fcntbl, p, FALSE) == BUN_NONE)
 				assert(0);
 		}
 	}
@@ -1613,7 +1617,8 @@ TBL_M_client_install(Client client, oid mid)
 	int aid, j;
 	oid fid;
 	oid *midp = &mid;
-	BUN r;
+	BATiter mai = bat_iterator(TBL_mod_atm);
+	BATiter fmi = bat_iterator(fcn_mid);
 
 	dlPRINT("  TBL_M_client_install");
 
@@ -1621,8 +1626,8 @@ TBL_M_client_install(Client client, oid mid)
 	 */
 	if (BATprepareHash(TBL_mod_atm))
 		assert(0);
-	HASHloop_oid(TBL_mod_atm, TBL_mod_atm->hhash, i, midp, r) {
-		nme = (char *) BUNtail(TBL_mod_atm, r);
+	HASHloop_oid(mai, TBL_mod_atm->H->hash, i, midp) {
+		nme = (char *) BUNtail(mai, i);
 		for (j = 0; nme[j] && nme[j] != '='; j++)
 			s[j] = nme[j];
 		s[j] = 0;
@@ -1638,10 +1643,10 @@ TBL_M_client_install(Client client, oid mid)
 	 */
 	if (BATprepareHash(fcn_mid))
 		assert(0);
-	assert(fcn_mid->hhash);
-	HASHloop_oid(fcn_mid, fcn_mid->hhash, i, midp, r) {
-		fid = *(oid *) BUNtail(fcn_mid, r);
-		if (BUNins(client->fcntbl, BUNtailfnd(char, TBL_fcn_nme, r, &fid), &fid, FALSE) == NULL)
+	assert(fcn_mid->H->hash);
+	HASHloop_oid(fmi, fcn_mid->H->hash, i, midp) {
+		fid = *(oid *) BUNtail(fmi, i);
+		if (BUNins(client->fcntbl, BUNtailfnd(TBL_fcn_nme, &fid), &fid, FALSE) == NULL)
 			assert(0);
 	}
 	return 1;
@@ -1650,11 +1655,11 @@ TBL_M_client_install(Client client, oid mid)
 static int
 countusage(Client client, oid mid)
 {
-	int xx, yy = 0, cid = (int) (client - monet_clients);
+	int yy = 0, cid = (int) (client - monet_clients);
 	BUN p, q;
 
-	BATloopFast(TBL_mod_use, p, q, xx)
-	    if (*(oid *) BUNhloc(TBL_mod_use, p) == mid && *(int *) BUNtloc(TBL_mod_use, p) == cid)
+	BATloop(TBL_mod_use, p, q)
+	    if (*(oid *) Hloc(TBL_mod_use, p) == mid && *(int *) Tloc(TBL_mod_use, p) == cid)
 		yy++;
 	return yy;
 }
@@ -1662,16 +1667,17 @@ countusage(Client client, oid mid)
 static int
 TBL_M_directloaded(Client client, oid mid, str module)
 {
-	int xx, yy = 0, zz = 0;
+	int yy = 0, zz = 0;
 	BUN p, q;
+	BATiter mdi = bat_iterator(TBL_mod_dep);
 
 	/* count the number of times we reference the module */
 	zz = countusage(client, mid);
 
 	/* count the number of references stemming from dependencies */
-	BATloopFast(TBL_mod_dep, p, q, xx)
-	    if (strCmp(module, BUNtvar(TBL_mod_dep, p)) == 0)
-		yy += countusage(client, *(oid *) BUNhloc(TBL_mod_dep, p));
+	BATloop(TBL_mod_dep, p, q)
+	    if (strCmp(module, BUNtvar(mdi, p)) == 0)
+		yy += countusage(client, *(oid *) BUNhloc(mdi, p));
 
 	if (zz > yy)
 		return TRUE;
@@ -1684,11 +1690,11 @@ TBL_M_directloaded(Client client, oid mid, str module)
 static int
 TBL_M_clientrefs(oid mid, Client c)
 {
-	int xx, yy = 0, cid = (int) (c - monet_clients);
+	int yy = 0, cid = (int) (c - monet_clients);
 	BUN p, q;
 
-	BATloopFast(TBL_mod_use, p, q, xx)
-	    if (*(oid *) BUNhloc(TBL_mod_use, p) == mid && *(int *) BUNtloc(TBL_mod_use, p) == cid)
+	BATloop(TBL_mod_use, p, q)
+	    if (*(oid *) Hloc(TBL_mod_use, p) == mid && *(int *) Tloc(TBL_mod_use, p) == cid)
 		yy++;
 	return yy;
 }
@@ -1700,11 +1706,11 @@ TBL_M_countref(oid mid)
 	BUN p, q;
 
 	/*debug */
-	BATloopFast(TBL_mod_use, p, q, xx)
-	    if (*(oid *) BUNhloc(TBL_mod_use, p) == mid)
+	BATloop(TBL_mod_use, p, q)
+	    if (*(oid *) Hloc(TBL_mod_use, p) == mid)
 		yy++;
 
-	xx = *BUNtailfnd(int, TBL_mod_cnt, p, &mid);
+	xx = *(int*)BUNtailfnd(TBL_mod_cnt, &mid);
 
 	/*debug */
 	if (xx != yy)
@@ -1740,8 +1746,8 @@ TBL_M_decref(Client client, oid mid)
 	} else {
 		BUN p = BUNlocate(TBL_mod_use, &mid, &cid);
 
-		assert(p);
-		if (BUNdelete(TBL_mod_use, p, FALSE) == NULL)
+		assert(p != BUN_NONE);
+		if (BUNdelete(TBL_mod_use, p, FALSE) == BUN_NONE)
 			assert(0);
 		if (--i == 0) {
 			if (BUNdelHead(TBL_mod_nme, &mid, FALSE) == NULL)
@@ -1763,11 +1769,10 @@ TBL_inc_mod_use(Client client, Client father)
 	int cid = (int) (father - monet_clients);
 	BAT *modules_used;
 	BUN p, q;
-	int xx;
 
 	modules_used = BATselect(TBL_mod_use, &cid, &cid);
-	BATloopFast(modules_used, p, q, xx) {
-		oid mid = *(oid *) BUNhloc(modules_used, p);
+	BATloop(modules_used, p, q) {
+		oid mid = *(oid *) Hloc(modules_used, p);
 
 		TBL_M_incref(client, mid);
 	}
@@ -1844,10 +1849,11 @@ Lets do the things in the right order, see above!
 	} else {
 		/* load the (already known) dependency modules, just to add fcns and atoms to the parsing tables */
 		BAT *b = BAT_select(BATmirror(TBL_mod_dep), &mid, &mid, FALSE);
+		BATiter bi = bat_iterator(b);
 		BUN p, q;
 
 		BATloop(b, p, q) {
-			TBL_loadmod(client, (str) BUNhvar(b, p), module, level + 1, initstr);
+			TBL_loadmod(client, (str) BUNhvar(bi, p), module, level + 1, initstr);
 		}
 		BBPreclaim(b);
 	}
@@ -1892,14 +1898,14 @@ unloadmod_exit(int ret, Client father, int *tpes)
 static int
 unloadmod_bat(BAT *b, oid mid)
 {
-	int xx, yy = 0;
+	int yy = 0;
 	int refs = BBP_refs(b->batCacheid);
 
 	if (refs > 0) {
 		BUN p, q;
 
-		BATloopFast(TBL_mod_drop, p, q, xx) {
-			if (*(oid *) BUNhloc(TBL_mod_drop, p) == mid && ABS(*(bat *) BUNtloc(TBL_mod_drop, p)) == ABS(b->batCacheid)) {
+		BATloop(TBL_mod_drop, p, q) {
+			if (*(oid *) Hloc(TBL_mod_drop, p) == mid && ABS(*(bat *) Tloc(TBL_mod_drop, p)) == ABS(b->batCacheid)) {
 				yy++;
 			}
 		}
@@ -1963,8 +1969,8 @@ unloadmod_check_use(oid mid, str module, int ntpes, int *tpes )
 		BATatoms[tpes[i]].deleting = 1;	/* block BAT loads of these atoms */
 	/* start unload for all prologue bats such that they cannot receive new refcounts */
 	BATloop(TBL_mod_drop, p, q) {
-		if (*(oid *) BUNhloc(TBL_mod_drop, p) == mid) {
-			bat bid = ABS(*(bat *) BUNtloc(TBL_mod_drop, p));
+		if (*(oid *) Hloc(TBL_mod_drop, p) == mid) {
+			bat bid = ABS(*(bat *) Tloc(TBL_mod_drop, p));
 			BBP_status_on(bid, BBPDELETING, "TBL_unloadmod");
 		}
 	}
@@ -1983,19 +1989,22 @@ TBL_module_atoms(Client client, oid mid, int **Tpes)
 	int mtpes = MAXATOMS, ntpes = 0;
 	int *tpes = (int *) GDKmalloc(mtpes * sizeof(int));
 	oid *midp = &mid;
-	char s[80], *nme, *r;
+	char s[80], *nme;
+	BUN r;
+	BATiter mai = bat_iterator(TBL_mod_atm);
+	BATiter ati = bat_iterator(client->atomtbl);
 
 	/* find out which atoms belong to it */
 	if (BATprepareHash(TBL_mod_atm))
 		assert(0);
-	HASHloop_oid(TBL_mod_atm, TBL_mod_atm->hhash, i, midp, r) {
-		nme = (char *) BUNtail(TBL_mod_atm, r);
+	HASHloop_oid(mai, TBL_mod_atm->H->hash, i, midp) {
+		nme = (char *) BUNtail(mai, i);
 		for (j = 0; nme[j] && nme[j] != '='; j++)
 			s[j] = nme[j];
 		s[j] = 0;
-		r = (char *) BUNfnd(client->atomtbl, s);
-		assert(r);
-		tpes[ntpes++] = *(int *) BUNtloc(client->atomtbl, r);
+		r = BUNfnd(client->atomtbl, s);
+		assert(r!=BUN_NONE);
+		tpes[ntpes++] = *(int *) BUNtloc(ati, r);
 	}
 	*Tpes = tpes;
 	return ntpes;
@@ -2004,6 +2013,7 @@ TBL_module_atoms(Client client, oid mid, int **Tpes)
 int
 TBL_unloadmod(Client client, str module, int level)
 {
+	BATiter bi;
 	BAT *fcn_mid = BATmirror(TBL_fcn_mid);
 	BAT *b, *fcntbl = BATmirror(client->fcntbl);
 	int refcnt = 0, (*addr) (void), ntpes, *tpes;
@@ -2012,7 +2022,7 @@ TBL_unloadmod(Client client, str module, int level)
 	int i;
 	ptr hdl = NULL;
 	BUN p, q;
-	char *r;
+	BUN r;
 
 	/* identify as father
 	 */
@@ -2032,7 +2042,7 @@ Look up the module.
 
 		snprintf(s, sizeof(s), "_%s", module);
 		mid = TBL_module_lookup(s);
-		if (mid && BUNlocate(TBL_mod_use, &mid, &cid))
+		if (mid && BUNlocate(TBL_mod_use, &mid, &cid) != BUN_NONE)
 			GDKerror("TBL_unloadmod: module %s does not exist (maybe you mean %s?).\n", module, s);
 		else
 			GDKerror("TBL_unloadmod: module %s does not exist.\n", module);
@@ -2046,7 +2056,7 @@ Check if it is in use already.
 		int cid = (int) (client - monet_clients);
 
 		r = BUNlocate(TBL_mod_use, &mid, &cid);
-		if (r == NULL) {
+		if (r == BUN_NONE) {
 			GDKerror("TBL_unloadmod: %s was not loaded.\n", module);
 			return unloadmod_exit(0, client, NULL);
 		}
@@ -2073,58 +2083,66 @@ decrease the refount of the module. we are ready if it isn't zero (LOGICAL DROP)
 drop will go through;
 @c
 	if (TBL_M_clientrefs(mid, client) == 0) {
+		BATiter fcntbli = bat_iterator(fcntbl);
 		/* LOGICAL DROP */
 		if (*module != '_') {
+			BATiter mpi = bat_iterator(TBL_mod_proc);
 			/* decrease references to MIL procs and remove from client fcntbl */
 			if (BATprepareHash(TBL_mod_proc))
 				assert(0);
-			HASHloop_str(TBL_mod_proc, TBL_mod_proc->hhash, j, module) {
-				fid = *(oid *) BUNtloc(TBL_mod_proc, BUNptr(TBL_mod_proc, j));
-				BUNfndOID(r, fcntbl, fidp);
-				if (r) {
+			HASHloop_str(mpi, TBL_mod_proc->H->hash, j, module) {
+				fid = *(oid *) BUNtloc(mpi, j);
+				BUNfndOID(r, fcntbli, fidp);
+				if (r != BUN_NONE) {
 					TBL_decproc(fid);
-					if (BUNdelete(fcntbl, r, FALSE) == NULL)
+					if (BUNdelete(fcntbl, r, FALSE) == BUN_NONE)
 						assert(0);
 				}
 			}
 		} else {
+			BATiter fmi = bat_iterator(fcn_mid);
 			/* delete all the C-modules's atoms and functions */
 			for (i = 0; i < ntpes; i++)
 				if (BUNdelHead(BATmirror(client->atomtbl), tpes + i, FALSE) == NULL)
 					assert(0);
 			if (BATprepareHash(fcn_mid))
 				assert(0);
-			HASHloop_oid(fcn_mid, fcn_mid->hhash, j, midp, r) {
-				fid = *(oid *) BUNtail(fcn_mid, r);
-				BUNfndOID(r, fcntbl, fidp);
-				if (r && BUNdelete(fcntbl, r, FALSE) == NULL)
+			HASHloop_oid(fmi, fcn_mid->H->hash, j, midp) {
+				fid = *(oid *) BUNtail(fmi, j);
+				BUNfndOID(r, fcntbli, fidp);
+				if (r != BUN_NONE && BUNdelete(fcntbl, r, FALSE) == BUN_NONE)
 					assert(0);
 			}
 		}
 	}
 	b = BAT_select(BATmirror(TBL_mod_dep), &mid, &mid, FALSE);
+	bi = bat_iterator(b);
 	if (refcnt == 0) {
 		/* PHYSICAL DROP */
 		if (*module != '_') {
+			BATiter mpi = bat_iterator(TBL_mod_proc);
+			BATiter fci = bat_iterator(TBL_fcn_cnt);
+			BATiter mvi = bat_iterator(TBL_mod_var);
 			/* MIL-modules kill the procs they introduced as well as the load-script variables */
 			if (BATprepareHash(TBL_mod_proc))
 				assert(0);
-			HASHloop_str(TBL_mod_proc, TBL_mod_proc->hhash, j, module) {
-				oid pid = *(oid *) BUNtloc(TBL_mod_proc, BUNptr(TBL_mod_proc, j));
+			HASHloop_str(mpi, TBL_mod_proc->H->hash, j, module) {
+				oid pid = *(oid *) BUNtloc(mpi, j);
 
-				if ((r = BUNfnd(TBL_fcn_nme, &pid)) != NULL) {
-					int cnt = *(int *) BUNtail(TBL_fcn_cnt, BUNfnd(TBL_fcn_cnt, &pid));
+				if ((r = BUNfnd(TBL_fcn_nme, &pid)) != BUN_NONE) {
+					int cnt = *(int *) BUNtail(fci, BUNfnd(TBL_fcn_cnt, &pid));
 
-					if (cnt != 1)
-						GDKwarning("drop(%s): MIL proc '%s' has %d dangling references.\n", module, BUNtail(TBL_fcn_nme, r), cnt - 1);
+					if (cnt != 1) {
+						BATiter fni = bat_iterator(TBL_fcn_nme);
+						GDKwarning("drop(%s): MIL proc '%s' has %d dangling references.\n", module, BUNtail(fni, r), cnt - 1);
+					}
 					TBL_decproc(pid);
 				}
 			}
 			if (BATprepareHash(TBL_mod_var))
 				assert(0);
-			HASHloop_str(TBL_mod_var, TBL_mod_var->hhash, j, module) {
-				p = BUNptr(TBL_mod_var, j);
-				VARdel(client->stk, *(ptr *) BUNtloc(TBL_mod_var, p));
+			HASHloop_str(mvi, TBL_mod_var->H->hash, j, module) {
+				VARdel(client->stk, *(ptr *) BUNtloc(mvi, j));
 			}
 			if (BUNdelHead(TBL_mod_proc, module, FALSE) == NULL)
 				assert(0);
@@ -2133,10 +2151,12 @@ drop will go through;
 		} else {
 			/* C-module: call C epilogue, dlcose, drop dependencies and deinstall it */
 			BAT *b2 = BAT_select(TBL_fcn_mid, &mid, &mid, FALSE);
+			BATiter mhi = bat_iterator(TBL_mod_hdl);
+			BATiter b2i = bat_iterator(b2);
 
-			BUNfndOID(p, TBL_mod_hdl, midp);
-			if (p != NULL)
-				hdl = *(ptr *) BUNtloc(TBL_mod_hdl, p);
+			BUNfndOID(p, mhi, midp);
+			if (p != BUN_NONE)
+				hdl = *(ptr *) BUNtloc(mhi, p);
 
 			/* Call the internal deletion routine, and dlclose.  */
 			if (hdl != NULL) {
@@ -2146,14 +2166,14 @@ drop will go through;
 				addr = (int (*)(void)) DL_sym(hdl, mod_del_name);
 				if (addr != NULL)
 					(*addr) ();
-				if (BUNdelete(TBL_mod_hdl, p, FALSE) == NULL)
+				if (BUNdelete(TBL_mod_hdl, p, FALSE) == BUN_NONE)
 					assert(0);
 				DL_close(hdl);
 			}
 
 			/* delete all function references in the TBL_ bats */
 			BATloop(b2, p, q) {
-				TBL_Deinstall_Function(*(oid *) BUNhloc(b2, p));
+				TBL_Deinstall_Function(*(oid *) BUNhloc(b2i, p));
 			}
 			BBPreclaim(b2);
 		}
@@ -2163,7 +2183,7 @@ drop will go through;
 
 	/* drop all dependency modules */
 	BATloop(b, p, q) {
-		if (TBL_unloadmod(client, BUNhead(b, p), level + 1) == 0)
+		if (TBL_unloadmod(client, BUNhead(bi, p), level + 1) == 0)
 			GDKwarning("TBL_unloadmod: module %s: dependencies.\n", module);
 	}
 	BBPreclaim(b);
@@ -2180,14 +2200,16 @@ of an identifier.
 char *
 TBL_search(str s, int *t, int guess_if_notfound, int cur_is_ident, int no_command, int next_is_ident)
 {
-	char *assignop = NULL, *p, *v, *name = s, *ret = 0;
+	char *assignop = NULL, *name = s, *ret = 0;
 	Client c = ll_client;
+	BUN p;
 
 	TBL_set_readlock();
 	if (name != NULL) {
 		p = BUNfnd(c->atomtbl, name);
-		if (p != NULL) {
-			int tpe = *((int *) BUNtail(c->atomtbl, p));
+		if (p != BUN_NONE) {
+			BATiter atomtbli = bat_iterator(c->atomtbl);
+			int tpe = *((int *) BUNtail(atomtbli, p));
 			str atm = BATatoms[tpe].name;
 
 			strcpy(s, atm);
@@ -2196,8 +2218,8 @@ TBL_search(str s, int *t, int guess_if_notfound, int cur_is_ident, int no_comman
 			return atm;
 		}
 #ifdef MKMODS
-		p = (char *) TEMsearch(t);
-		if (p != NULL) {
+		p = TEMsearch(t);
+		if (p != BUN_NONE) {
 			*t = TOK_TRG;
 			TBL_unset_readlock();
 			return s;
@@ -2207,17 +2229,19 @@ TBL_search(str s, int *t, int guess_if_notfound, int cur_is_ident, int no_comman
 
       again:
 	if (name != NULL) {
+		BATiter cfi = bat_iterator(c->fcntbl);
+
 		p = BUNfnd(c->fcntbl, name);
-		if (p != NULL) {
-			oid fid = *((oid *) BUNtail(c->fcntbl, p));
-			*t = *BUNtailfnd(int, TBL_fcn_tpe, v, &fid);
+		if (p != BUN_NONE) {
+			oid fid = *((oid *) BUNtail(cfi, p));
+			*t = *(int*)BUNtailfnd(TBL_fcn_tpe, &fid);
 
 			if (*t == TOK_BUILTIN) {
-				ret = (char *) *BUNtailfnd(ptr, TBL_fcn_imp, v, &fid);
+				ret = (char *) *(ptr*)BUNtailfnd(TBL_fcn_imp, &fid);
 			} else if (no_command == 0 && (cur_is_ident == 0 || (next_is_ident == 0 || *t == TOK_OPERATOR0 || *t == TOK_OPERATOR || *t == TOK_OPERATOR1))) {
 				/* we refuse only if we know the following cannot be a command
 				   or if we see a command followed by an identifier */
-				ret = BUNhvar(c->fcntbl, p);
+				ret = BUNhvar(cfi, p);
 			}
 		}
 	}
@@ -2263,9 +2287,13 @@ TBL_normal_resolve(str name, int argc, ValPtr argv, monet_sig_t *sig, Cntxt stk)
 	paramcheck_t pt;
 	Client c;
 	BAT *atomtbl, *fcntbl;
+	BATiter fi, fti = bat_iterator(TBL_fcn_tpe);
+	BATiter fpi = bat_iterator(TBL_fcn_pro), fii = bat_iterator(TBL_fcn_imp);
+	BATiter ffi = bat_iterator(TBL_fcn_fcn);
 
 	CNTXTclient(stk, &c);
 	fcntbl = c->fcntbl;
+	fi = bat_iterator(fcntbl);
 	atomtbl = BATmirror(c->atomtbl);
 @-
 Try to resolve the function to an address.
@@ -2277,42 +2305,43 @@ Try to resolve the function to an address.
 		TBL_unset_readlock();
 		return TBL_RESOLVE_NOTPE;
 	}
-	HASHloop_str(fcntbl, fcntbl->hhash, i, name) {
+	HASHloop_str(fi, fcntbl->H->hash, i, name) {
 		int j = 0, tpe;
-		BUN p = BUNptr(fcntbl, i);
-		oid fid = *(oid *) BUNtail(fcntbl, p);
+		BUN p = i;
+		oid fid = *(oid *) BUNtail(fi, p);
 		oid *fidp = &fid;
 
-		BUNfndOID(p, TBL_fcn_tpe, fidp);
-		tpe = *(int *) BUNtloc(TBL_fcn_tpe, p);
+		BUNfndOID(p, fti, fidp);
+		tpe = *(int *) BUNtloc(fti, p);
 
 		if (tpe == TOK_ITERATOR) {
 			continue;
 		}
 
-		BUNfndOID(p, TBL_fcn_pro, fidp);
-		if (p && (j = TBL_checkparams(&pt, fid)) < TBL_RESOLVE_RUN) {
+		BUNfndOID(p, fpi, fidp);
+		if (p != BUN_NONE && 
+		   (j = TBL_checkparams(&pt, fid)) < TBL_RESOLVE_RUN) {
 			if (j == TBL_RESOLVE_NOSIG)
 				ret = TBL_RESOLVE_NOSIG;
 			continue;
 		}
-		if (j > 0 && BUNfnd(atomtbl, &j) == NULL)
+		if (j > 0 && BUNfnd(atomtbl, &j) == BUN_NONE)
 			break;	/* matches, but return type not allowed */
 @-
 Found IT: substitute name by address.
 @c
-		BUNfndOID(p, TBL_fcn_imp, fidp);
-		sig->pack_fcn = *(PackFcn *) BUNtloc(TBL_fcn_imp, p);
+		BUNfndOID(p, fii, fidp);
+		sig->pack_fcn = *(PackFcn *) BUNtloc(fii, p);
 		sig->ret_tpe = j;
 
 		if (tpe == TOK_PROC) {
 			sig->fast_fcn = (GDKfcn) sig->pack_fcn;
 		} else {
-			BUNfndOID(p, TBL_fcn_fcn, fidp);
-			if (p == NULL) {
+			BUNfndOID(p, ffi, fidp);
+			if (p == BUN_NONE) {
 				sig->fast_fcn = NULL;
 			} else {
-				sig->fast_fcn = *(GDKfcn *) BUNtloc(TBL_fcn_fcn, p);
+				sig->fast_fcn = *(GDKfcn *) BUNtloc(ffi, p);
 			}
 		}
 		TBL_unset_readlock();
@@ -2365,7 +2394,7 @@ TBL_multiplex_resolve(str name, int argc, ValPtr argv, monet_sig_t *sig, Cntxt s
 
 			/* we might need a real value for function resolution! */
 			if (b->ttype == TYPE_bat) {
-				p = (BATcount(b) <= 0) ? ((ptr) &z) : BUNtloc(b, BUNfirst(b));
+				p = (BATcount(b) <= 0) ? ((ptr) &z) : Tloc(b, BUNfirst(b));
 			}
 			VALset(argv + i, b->ttype == TYPE_void && b->tseqbase != oid_nil ? TYPE_oid : b->ttype, p);
 
@@ -2564,17 +2593,18 @@ formatsig(str s, str nme, oid fid)
 	str src = s;
 	BUN p;
 	oid *fidp = &fid;
+	BATiter fsi = bat_iterator(TBL_fcn_sig), fpi = bat_iterator(TBL_fcn_pro);
 
-	BUNfndOID(p, TBL_fcn_sig, fidp);
-	if (p) {
+	BUNfndOID(p, fsi, fidp);
+	if (p != BUN_NONE) {
 		/* precooked */
-		strcpy(s, BUNtvar(TBL_fcn_sig, p));
+		strcpy(s, BUNtvar(fsi, p));
 	} else {
-		BUNfndOID(p, TBL_fcn_pro, fidp);
+		BUNfndOID(p, fpi, fidp);
 		strcpy(s, nme);
 		s += strlen(s);
 		*s++ = '(';
-		if (p == NULL) {
+		if (p == BUN_NONE) {
 			/* no signature restrictions */
 			strcpy(s, "..any..) : any");
 			s += strlen(s);
@@ -2620,23 +2650,25 @@ TBL_printsigs(str s, int stk, str nme)
 	int j = 0;
 	BAT *b;
 	Client c;
+	BATiter bi;
 
 	CNTXTclient(stk, &c);
 	b = c->fcntbl;
+	bi = bat_iterator(b);
 	TBL_set_readlock();
 	if (BATprepareHash(b) == 0)
-		HASHloop_str(b, b->hhash, i, nme) {
-		BUN p = BUNptr(b, i);
-		oid fid = *(oid *) BUNtloc(b, p);
-
-		if (j++ == 0) {
-			sprintf(s, "!MAYBE YOU MEAN:\n");
-			s += strlen(s);
-		}
-		*s++ = '!';
-		*s++ = '\t';
-		s += formatsig(s, nme, fid);
-		*s++ = '\n';
+		HASHloop_str(bi, b->H->hash, i, nme) {
+			BUN p = i;
+			oid fid = *(oid *) BUNtloc(bi, p);
+	
+			if (j++ == 0) {
+				sprintf(s, "!MAYBE YOU MEAN:\n");
+				s += strlen(s);
+			}
+			*s++ = '!';
+			*s++ = '\t';
+			s += formatsig(s, nme, fid);
+			*s++ = '\n';
 		}
 	*s++ = 0;
 	TBL_unset_readlock();
@@ -2647,16 +2679,17 @@ TBL_printsigs(str s, int stk, str nme)
 int
 TBL_formatsig(str s, oid fid)
 {
+	BATiter fni = bat_iterator(TBL_fcn_nme);
 	BUN p;
 	oid *fidp = &fid;
 
 	TBL_set_readlock();
-	BUNfndOID(p, TBL_fcn_nme, fidp);
-	if (p == NULL) {
+	BUNfndOID(p, fni, fidp);
+	if (p == BUN_NONE) {
 		TBL_unset_readlock();
 		return FALSE;
 	}
-	(void) formatsig(s, BUNtvar(TBL_fcn_nme, p), fid);
+	(void) formatsig(s, BUNtvar(fni, p), fid);
 	TBL_unset_readlock();
 	return TRUE;
 }
@@ -2671,23 +2704,25 @@ TBL_iterator(Cntxt stk, str name, int argc, ValPtr argv)
 	paramcheck_t pt;
 	Client c;
 	hash_t i;
+	BATiter cfi;
 
 	CNTXTclient(stk, &c);
 
 	TBL_set_readlock();
+ 	cfi = bat_iterator(c->fcntbl);
 	if (BATprepareHash(c->fcntbl) == 0)
 		if (TBL_checkparams_init(&pt, argc, argv, BATmirror(c->atomtbl)) >= 0)
-			HASHloop_str(c->fcntbl, c->fcntbl->hhash, i, name) {
-			        char *v = BUNptr(c->fcntbl, i);
-			        oid fid = *(oid *) BUNtail(c->fcntbl, v);
-			        int tpe = *BUNtailfnd(int, TBL_fcn_tpe, v, &fid);
+			HASHloop_str(cfi, c->fcntbl->H->hash, i, name) {
+			        BUN v = i;
+			        oid fid = *(oid *) BUNtail(cfi, v);
+			        int tpe = *(int*)BUNtailfnd(TBL_fcn_tpe, &fid);
 
 			        if (tpe != TOK_ITERATOR)
 			        	continue;
 
 			        if (TBL_checkparams(&pt, fid) > TBL_RESOLVE_RUN) {
 			        	TBL_unset_readlock();
-			        	return *BUNtailfnd(void *, TBL_fcn_imp, v, &fid);
+			        	return *(void**)BUNtailfnd(TBL_fcn_imp, &fid);
 			        }
 			}
 	TBL_unset_readlock();
@@ -2776,19 +2811,23 @@ void
 TBL_initclient(Client client, Client father)
 {
 	BUN p, q;
-	int i, xx;
+	int i;
 
 	client->fcntbl = client->atomtbl = NULL;
 	TBL_M_lock(client);
 	if (monet_clients != client) {
+		BATiter cfi, fti;
+
 		client->fcntbl = TBL_fathercopy(client, father, "fcntbl");
 		client->atomtbl = TBL_fathercopy(client, father, "atomtbl");
 
+		cfi = bat_iterator(client->fcntbl);
+		fti = bat_iterator(TBL_fcn_tpe);
 		/* for all procs in the client fcntbl, increment their refcnt */
-		BATloopFast(client->fcntbl, p, q, xx) {
-			oid pid = *(oid *) BUNtloc(client->fcntbl, p);
+		BATloop(client->fcntbl, p, q) {
+			oid pid = *(oid *) BUNtloc(cfi, p);
 
-			if (*(int *) BUNtail(TBL_fcn_tpe, BUNfnd(TBL_fcn_tpe, &pid)) == TOK_PROC) {
+			if (*(int *) BUNtail(fti, BUNfnd(TBL_fcn_tpe, &pid)) == TOK_PROC) {
 				TBL_incproc(pid);
 			}
 		}
@@ -2867,9 +2906,10 @@ it will not execute the drop scripts again.
 void
 TBL_exitclient(Client client)
 {
+	BATiter bi, cfi, fti;
 	BAT *b, *bn;
-	BUN p, q, r;
-	int xx, cid = (int) (client - monet_clients);
+	BUN p, q;
+	int cid = (int) (client - monet_clients);
 
 #ifdef MKMODS
 	TEM_exitclient(client);
@@ -2885,11 +2925,12 @@ TBL_exitclient(Client client)
 	assert(b);
 	b = BATrevert(b);
 	assert(b);
-	BATloopFast(b, p, q, xx) {
-		oid mid = *(oid *) BUNhloc(b, p);
+	bi = bat_iterator(b);
+	BATloop(b, p, q) {
+		oid mid = *(oid *) BUNhloc(bi, p);
 
-		if (BUNlocate(TBL_mod_use, BUNhloc(b, p), &cid)) {
-			str module = BUNtailfnd(char, TBL_mod_nme, r, &mid);
+		if (BUNlocate(TBL_mod_use, BUNhloc(bi, p), &cid) != BUN_NONE) {
+			str module = BUNtailfnd(TBL_mod_nme, &mid);
 
 			if (TBL_M_directloaded(client, mid, module))
 				TBL_unloadmod(client, module, 1);
@@ -2899,11 +2940,13 @@ TBL_exitclient(Client client)
 	BBPreclaim(bn);
 
 	/* Unload any remaining procs in your fcn table.  */
-	BATloopFast(client->fcntbl, p, q, xx) {
-		oid pid = *(oid *) BUNtloc(client->fcntbl, p);
+	cfi = bat_iterator(client->fcntbl);
+	fti = bat_iterator(TBL_fcn_tpe);
+	BATloop(client->fcntbl, p, q) {
+		oid pid = *(oid *) BUNtloc(cfi, p);
 
-		if (*(int *) BUNtail(TBL_fcn_tpe, BUNfnd(TBL_fcn_tpe, &pid)) == TOK_PROC) {
-			TBL_decproc(*(oid *) BUNtloc(client->fcntbl, p));
+		if (*(int *) BUNtail(fti, BUNfnd(TBL_fcn_tpe, &pid)) == TOK_PROC) {
+			TBL_decproc(*(oid *) BUNtloc(cfi, p));
 		}
 	}
 
@@ -2922,7 +2965,7 @@ It is called one time for each module that it is dependent on.
 static void
 TBL_Insert_Depend(oid mid, str name)
 {
-	if (BUNlocate(TBL_mod_dep, &mid, name) == NULL) {
+	if (BUNlocate(TBL_mod_dep, &mid, name) == BUN_NONE) {
 		if (BUNins(TBL_mod_dep, &mid, name, FALSE) == NULL)
 			assert(0);
 	}
@@ -3065,17 +3108,17 @@ TBL_Deinstall_Function(oid pid)
 	/* periodically clean up TBL_fcn_pro */
 	if (BATcount(TBL_fcn_nme) + 100 < TBL_fcn_pro_size) {
 		BAT *b = BATcopy(TBL_fcn_pro, TYPE_oid, TYPE_str, FALSE);
+		BATiter bi = bat_iterator(b), fni = bat_iterator(TBL_fcn_nme);
 		BUN p, q, r;
-		int xx;
 
 		if (BATclear(TBL_fcn_pro) == NULL) {
 			assert(0);
 		}
-		BATloopFast(b, p, q, xx) {
-			oid *pidp = (oid *) BUNhead(b, p);
+		BATloop(b, p, q) {
+			oid *pidp = (oid *) BUNhead(bi, p);
 
-			BUNfndOID(r, TBL_fcn_nme, pidp);
-			if (r && BUNfastins(TBL_fcn_pro, pidp, BUNtvar(b, p)) == NULL)
+			BUNfndOID(r, fni, pidp);
+			if (r != BUN_NONE && BUNfastins(TBL_fcn_pro, pidp, BUNtvar(bi, p)) == NULL)
 				assert(0);
 		}
 		TBL_fcn_pro->hsorted = TBL_fcn_pro->tsorted = 0;

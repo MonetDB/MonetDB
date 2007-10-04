@@ -7,8 +7,8 @@ a2 := a0.sintersect(a1);
 var i := a2.info();
 i.find("head").print();
 i.find("tail").print();
-i.find("hloc").print();
-i.find("tloc").print();
+i.find("htop").print();
+i.find("ttop").print();
 i.find("hseqbase").print();
 i.find("tseqbase").print();
 
@@ -19,8 +19,8 @@ a2 := a0.sintersect(a1);
 var i := a2.info();
 i.find("head").print();
 i.find("tail").print();
-i.find("hloc").print();
-i.find("tloc").print();
+i.find("htop").print();
+i.find("ttop").print();
 i.find("hseqbase").print();
 i.find("tseqbase").print();
 

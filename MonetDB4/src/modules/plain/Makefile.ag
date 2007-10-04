@@ -73,7 +73,8 @@ LIBS = {
 		mkey.mx profiler.mx constant.mx \
 		aggr.mx aggrX3.mx alarm.mx ascii_io.mx bat_arith.mx blob.mx \
 		decimal.mx enum.mx lock.mx mmath.mx monettime.mx \
-		radix.mx stats.mx tcpip.mx unix.mx url.mx pqueue.mx upgrade.mx
+		stats.mx unix.mx url.mx pqueue.mx 
+		#radix.mx tcpip.mx upgrade.mx
 	HEADERS = h proto.h m
 	#SCRIPTS = mil ""
 	LIBS = $(MONETDB_LIBS) -lstream -lbat \
@@ -123,9 +124,10 @@ headers_mil = {
                 mkey.mx profiler.mx \
                 aggr.mx aggrX3.mx alarm.mx ascii_io.mx bat_arith.mx \
 		blob.mx decimal.mx enum.mx lock.mx mmath.mx \
-		monettime.mx radix.mx stats.mx tcpip.mx \
-		unix.mx url.mx counters.mx pcl.mx pcre.mx pqueue.mx upgrade.mx \
+		monettime.mx stats.mx \
+		unix.mx url.mx counters.mx pcl.mx pcre.mx pqueue.mx \
 		logger.mx
+		# radix.mx tcpip.mx upgrade.mx
 }
 
 EXTRA_DIST_DIR = Tests

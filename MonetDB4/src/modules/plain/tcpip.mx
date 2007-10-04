@@ -492,7 +492,7 @@ cache_find(str name)
 {
 	BUN q = BUNfnd(cache_idx, name);
 
-	if (q)
+	if (q != BUN_NONE)
 		return *(cache_t **) BUNtloc(cache_idx, q);
 	return cache_new(name);
 }

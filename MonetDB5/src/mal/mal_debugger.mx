@@ -1719,9 +1719,12 @@ printBatProperties(stream *f, VarPtr n, ValPtr v, str props)
 				return;
 			}
 			p= BUNfnd(b,props);
-			if( p) {
-				stream_printf(f," %s\n", (str) BUNtail(b,p));
-			} else stream_printf(f," not found\n");
+			if (p != BUN_NONE) {
+				BATiter bi = bat_iterator(b);
+				stream_printf(f," %s\n", (str) BUNtail(bi,p));
+			} else {
+				stream_printf(f," not found\n");
+			}
 			BBPunfix(b->batCacheid);
 		}
 	}
@@ -1731,14 +1734,14 @@ printBatProperties(stream *f, VarPtr n, ValPtr v, str props)
 The memory positions for the BATs is useful information to
 asses for memory fragmentation.
 @= heapinfo
-hp= b->@1;
+hp= @1;
 if(hp && hp->base){
-	stream_printf(GDKout,"\t@1=%d size=%d\n",hp->base, hp->size);}
+	stream_printf(GDKout,"\t@2=%d size=%d\n",hp->base, hp->size);}
 @= hashinfo
-h= b->@1;
+h= @1;
 if(h && h->mask){
-	    stream_printf(GDKout,"\t@1=%d size=%d\n",h, sizeof(*h));
-	    stream_printf(GDKout,"\t@1link=%d size=%d\n",h->link,
+	    stream_printf(GDKout,"\t@2=%d size=%d\n",h, sizeof(*h));
+	    stream_printf(GDKout,"\t@2link=%d size=%d\n",h->link,
 	            (h->mask+h->lim+1)*sizeof(int));
 }
 @-
@@ -1786,8 +1789,8 @@ memProfileVector(int cells)
 #endif
 
 			stream_printf(GDKout, "\tdesc=%d size=%d\n", b, sizeof(*b));
-			hp = b->batBuns;
-			stream_printf(GDKout, "\tbuns=%d size=%d\n", hp->base, hp->size);
+			@:heapinfo(&b->H->heap,tail)@
+			@:heapinfo(&b->T->heap,head)@
 #ifdef HAVE_SBRK
 			if (min == 0) {
 				min = (long) b;
@@ -1799,10 +1802,10 @@ memProfileVector(int cells)
 			@:setVector(hp->base, hp->size)@
 #endif
 
-			@:heapinfo(hheap)@
-			@:heapinfo(theap)@
-			@:hashinfo(hhash)@
-			@:hashinfo(thash)@
+			@:heapinfo(b->H->vheap,hheap)@
+			@:heapinfo(b->T->vheap,theap)@
+			@:hashinfo(b->H->hash,hhash)@
+			@:hashinfo(b->T->hash,thash)@
 			BBPunfix(b->batCacheid);
 		}
 	return v;

@@ -345,8 +345,8 @@ hashing.
 #define HASH_lng(p) ((hash_t)(((unsigned int*)(p))[0]^((unsigned int*)(p))[1]))
 #define HASH_any(p) ((*hashfcn)(p))
 
-#define match_sync(b,p,r) r += yy
-#define match_hash(b,p,r) BUNfndOID(r,b,p); if (r == NULL) continue;
+#define match_sync(bi,p,r) r++
+#define match_hash(bi,p,r) BUNfndOID(r,bi,p); if (r == BUN_NONE) continue;
 
 #define declare_atom int any = b->ttype; hash_t (*hashfcn)(ptr) = BATatoms[any].atomHash;
 #define declare_simple	/* any and hash would otherwise give unused variable warning */
@@ -417,7 +417,7 @@ typedef struct {
 		}							\
 	}								\
 	entry.cnt = 1;							\
-	mapsize = BUNindex(map, BUNlast(map));
+	mapsize = BUNlast(map);
 @c
 #if 0
 static void
@@ -435,27 +435,28 @@ map_free(map_T m)
 static BAT *
 map2histo(BAT *map)
 {
-	if (map == NULL || map->htype != TYPE_mapentry || VIEWparent(map) || map->batSharecnt > 1 || BATgetaccess(map) != BAT_WRITE) {
+	BUN p, q;
+	BAT *bn;
+	int sz;
+
+	if (map == NULL || map->htype != TYPE_mapentry || isVIEW(map) || map->batSharecnt > 1 || BATgetaccess(map) != BAT_WRITE) {
 		if (map)
 			BBPreclaim(map);
 		return NULL;
 	}
-	/* trickily transform a bat[mapentry,any] into bat[oid,int] */
-	map->htype = BATmirror(map)->ttype = TYPE_oid;
-	map->ttype = BATmirror(map)->htype = TYPE_int;
-	if (map->tvarsized && map->theap) {
-		HEAPfree(map->theap);
-		GDKfree(map->theap);
-		map->theap = NULL;
+	sz = BATcount(map);
+	bn = BATnew(TYPE_oid,TYPE_int,sz);
+	BATloop(map, p, q) {
+		bunfastins(bn, 
+			&((mapentry_t*)Hloc(map, p))->gid, 
+			&((mapentry_t*)Hloc(map, p))->cnt);
 	}
-	BATmirror(map)->hvarsized = map->tvarsized = 0;
-	/* do these in the right order: map->dims.headloc is used, so
-	 * change it at end
-	 */
-	BATmirror(map)->dims.headloc = map->dims.tailloc = map->dims.headloc + (int) offsetof(mapentry_t, cnt);
-	BATmirror(map)->dims.tailloc = map->dims.headloc = map->dims.headloc + (int) offsetof(mapentry_t, gid);
-
-	return map;
+	BATkey(BATmirror(bn),FALSE);
+	bn->tsorted = 0;
+bunins_failed:
+	if (map)
+		BBPreclaim(map);
+	return bn;
 }
 
 @T
@@ -488,8 +489,9 @@ settings differ significantly from the original datamining application.
 static BAT *
 CTgroup_@1_@4_@5(group_params_@5 BAT *b, BAT *bn, map_T *m)
 {
-	oid *dst = (oid*) BUNfirst(bn);
-	hash_t xx=0, *hash, mask;
+	BATiter bi = bat_iterator(b), mapi;
+	oid *hdst = (oid*) Hloc(bn, BUNfirst(bn)), *dst = (oid*) Tloc(bn, BUNfirst(bn));
+	hash_t *hash, mask;
 	size_t zz, mapsize;
 	mapentry_t entry, *e;
 	BUN p, q, r;
@@ -500,18 +502,19 @@ CTgroup_@1_@4_@5(group_params_@5 BAT *b, BAT *bn, map_T *m)
 	if (map == NULL)
 		return NULL;
 
+	mapi = bat_iterator(map);
 	/* core hash grouping algorithm */
-	BATloopFast(b, p, q, xx) {
+	BATloop(b, p, q) {
 		declare_@4
-		ptr tcur = BUN@2(b,p);
+		ptr tcur = BUN@2(bi,p);
 
 		/* hash-lookup of 'tcur' in map */
 		hash_t c = HASH_@1(tcur);
 		c = mix_int(c) & mask;
 		chain_@4 {
-			r = BUNptr(map,zz);
-			e = (mapentry_t*) BUNhloc(map,r);
-			if (tst_grp_@4(@3_EQ, BUN@2(map,r), @1)) {
+			r = zz;
+			e = (mapentry_t*) BUNhloc(mapi,r);
+			if (tst_grp_@4(@3_EQ, BUN@2(mapi,r), @1)) {
 				if (m == NULL)
 					e->cnt++;
 				goto found;
@@ -522,20 +525,20 @@ CTgroup_@1_@4_@5(group_params_@5 BAT *b, BAT *bn, map_T *m)
 		if (m) {
 			zz = mapsize;
 		} else {
-			entry.gid = *(oid*) BUNhead(b,p);
+			entry.gid = *(oid*) BUNhead(bi,p);
 		}
 		entry.link = hash[c];
 		hash[c] = mapsize++;
 		bunfastins(map, &entry, tcur);
 		e = &entry;
 
+		/* TODO fix head by a column copy */
 found:		/* ultra-fast 'insert' of [oid,gid] into ct */
 		if (bn->htype)
-			*dst++ = *(oid*) BUNhead(b,p);
+			*hdst++ = *(oid*) BUNhead(bi,p);
 		*dst++ = m?zz:e->gid;
 	}
-	bn->batBuns->free = ((BUN) dst) - bn->batBuns->base;
-	BATsetcount(bn, bn->batBuns->free/BUNsize(bn));
+	BATsetcount(bn, BATcount(b));
 	bn->tsorted = 0;
 	ALIGNsetH(bn,b);
 	if (hash && !m)
@@ -704,10 +707,11 @@ bits(size_t i)
 static BAT *
 CTderive_@1_@2_@5(BAT* ct_map, BAT *ct_histo, BAT *b, BAT *bn, map_T *m)
 {
-	oid *dst = (oid*) BUNfirst(bn);
-	size_t yy = BUNsize(ct_map), zz, mapsize;
-	hash_t xx, *hash;
-	BUN p, q, r, cp = BUNfirst(ct_map) - yy;
+	BATiter bi = bat_iterator(b), mapi, ct_mapi = bat_iterator(ct_map);
+	oid *hdst = (oid*) Hloc(bn, BUNfirst(bn)), *dst = (oid*) Tloc(bn, BUNfirst(bn));
+	size_t zz, mapsize;
+	hash_t *hash;
+	BUN p, q, r, cp = BUNfirst(ct_map) - 1;
 	mapentry_t entry, *e;
 	BAT *map;
 	int n = bits(BATcount(ct_histo)), *N = &n;
@@ -720,24 +724,25 @@ CTderive_@1_@2_@5(BAT* ct_map, BAT *ct_histo, BAT *b, BAT *bn, map_T *m)
 	if (map == NULL)
 		return NULL;
 
+	mapi = bat_iterator(map);
 	/* core hash grouping algorithm */
-	BATloopFast(b, p, q, xx) {
-		ptr tcur = BUN@3(b,p);
+	BATloop(b, p, q) {
+		ptr tcur = BUN@3(bi,p);
 		hash_t c;
 		oid hcur;
 		declare_@5
 
 		/* find corresponding value in 'ct_map' */
-		match_@1(ct_map, BUNhead(b,p), cp);
-		hcur = *(oid*) BUNtloc(ct_map,cp);
+		match_@1(ct_mapi, BUNhead(bi,p), cp);
+		hcur = *(oid*) BUNtloc(ct_mapi,cp);
 
 		/* hash-lookup of [hcur,tcur] in map */
 		c = (((hash_t) hcur) ^ HASH_@2(tcur));
 		c = mix_int(c) & mask;
 		chain_@5 {
-			r = BUNptr(map,zz);
-			e = (mapentry_t*) BUNhloc(map,r);
-			if (tst_derive_@5(@4_EQ, BUN@3(map,r), @2)) {
+			r = zz;
+			e = (mapentry_t*) Hloc(map,r);
+			if (tst_derive_@5(@4_EQ, BUN@3(mapi,r), @2)) {
 				if (m == NULL)
 					e->cnt++;
 				goto found;
@@ -747,7 +752,7 @@ CTderive_@1_@2_@5(BAT* ct_map, BAT *ct_histo, BAT *b, BAT *bn, map_T *m)
 		if (m) {
 			zz = mapsize;
 		} else {
-			entry.gid = *(oid*) BUNhead(b,p);
+			entry.gid = *(oid*) BUNhead(bi,p);
 		}
 		entry.hcur = hcur;
 		entry.link = hash[c];
@@ -755,13 +760,13 @@ CTderive_@1_@2_@5(BAT* ct_map, BAT *ct_histo, BAT *b, BAT *bn, map_T *m)
 		bunfastins(map, &entry, tcur);
 		e = &entry;
 
+		/* TODO fix head by a column copy */
 found:		/* ultra-fast 'insert' of [oid,gid] into result ct */
 		if (bn->htype)
-			*dst++ = *(oid*) BUNhead(b,p);
+			*hdst++ = *(oid*) BUNhead(bi,p);
 		*dst++ = m?zz:e->gid;
 	}
-	bn->batBuns->free = ((BUN) dst) - bn->batBuns->base;
-	BATsetcount(bn, bn->batBuns->free/BUNsize(bn));
+	BATsetcount(bn, (dst-(oid*)bn->T->heap.base)); 
 	if (hash && !m)
 		GDKfree(hash);
 	return m?NULL:map2histo(map);
@@ -893,31 +898,33 @@ CThistosum(
 	BAT*	c	/* pointer to BAT[oid,int] record. */
 )
 {
+	BATiter bi = bat_iterator(b), resi;
 	BAT *res = BATnew(TYPE_oid, TYPE_int, BATcount(b));
 	BUN p, q, qb;
-	int xx, i, *z;
+	int i, *z;
 	oid *ot, *oh;
 
 	(void) c;
 	if (res == NULL) {
 		return GDK_FAIL;
 	}
-	BATloopFast(b, p, q, xx) {
-		oh = (oid *) BUNhloc(b, p);
-		i = *(int *) BUNtloc(b, p);
+	resi = bat_iterator(res);
+	BATloop(b, p, q) {
+		oh = (oid *) BUNhloc(bi, p);
+		i = *(int *) BUNtloc(bi, p);
 
-		BUNfndOID(qb, b, oh);
-		if (qb == NULL) {
+		BUNfndOID(qb, bi, oh);
+		if (qb == BUN_NONE) {
 			GDKerror("CThistosum: Matching count entry not found\n");
 			continue;
 		}
-		ot = (oid *) BUNtloc(b, qb);
+		ot = (oid *) BUNtloc(bi, qb);
 
-		BUNfndOID(qb, res, ot);
-		if (qb == NULL) {
+		BUNfndOID(qb, resi, ot);
+		if (qb == BUN_NONE) {
 			BUNins(res, ot, &i, FALSE);
 		} else {
-			z = (int *) BUNtloc(res, qb);
+			z = (int *) BUNtloc(resi, qb);
 			*z += i;
 		}
 	}
@@ -929,9 +936,9 @@ CThistosum(
 int
 CTsubhisto(BAT **ret, BAT *sel, BAT *grp, BAT *dom)
 {
-	bit *filter = (bit *) BUNtloc(sel, BUNfirst(sel));
+	BATiter seli = bat_iterator(sel);
+	bit *filter = (bit *) BUNtloc(seli, BUNfirst(sel));
 	size_t size = BATcount(dom);
-	int xx, zz;
 	hash_t yy, mask, *hash = NULL;
 	BUN r, p, q;
 	BAT *bn = BATnew(TYPE_idxentry, TYPE_int, size);
@@ -957,40 +964,38 @@ CTsubhisto(BAT **ret, BAT *sel, BAT *grp, BAT *dom)
 	/* insert all values in the hash table, and in bn with count zero */
 	r = BUNfirst(bn);
 	yy = 0;
-	BATloopFast(dom, p, q, xx) {
-		oid v = *(oid *) BUNhloc(dom, p);
+	BATloop(dom, p, q) {
+		oid v = *(oid *) Hloc(dom, p);
 		hash_t c = v & mask;
 
-		((idxentry_t *) BUNhloc(bn, r))->hcur = v;
-		((idxentry_t *) BUNhloc(bn, r))->link = hash[c];
-		*(int *) BUNtloc(bn, r) = 0;
-		r = BUNnext(bn, r);
+		((idxentry_t *) Hloc(bn, r))->hcur = v;
+		((idxentry_t *) Hloc(bn, r))->link = hash[c];
+		*(int *) Tloc(bn, r) = 0;
+		r++;
 		hash[c] = yy;
 		yy++;
 	}
-	bn->batBuns->free = (char *) r - (char *) Bunbase(bn);
-	BATsetcount(bn, bn->batBuns->free/BUNsize(bn));
+	BATsetcount(bn, r);
 	bn->tsorted = 0;
 	bn->htype = BATmirror(bn)->ttype = TYPE_oid;
 	/* assert(offsetof(idxentry_t,hcur) == 0);
 	ALIGNsetH(bn, dom); */
 
 	/* add the counts for this selection using the hash table */
-	zz = BUNsize(sel);
-	BATloopFast(grp, p, q, xx) {
+	BATloop(grp, p, q) {
 		if (*filter == TRUE) {
-			oid v = *(oid *) BUNtloc(grp, p);
+			oid v = *(oid *) Tloc(grp, p);
 			hash_t c = v & mask;
 
-			for (yy = hash[c]; yy != HASH_MAX; yy = ((idxentry_t *) BUNhloc(bn, r))->link) {
-				r = BUNptr(bn, yy);
-				if (((idxentry_t *) BUNhloc(bn, r))->hcur == v) {
-					*(int *) BUNtloc(bn, r) += 1;
+			for (yy = hash[c]; yy != HASH_MAX; yy = ((idxentry_t *) Hloc(bn, r))->link) {
+				r = yy;
+				if (((idxentry_t *) Hloc(bn, r))->hcur == v) {
+					*(int *) Tloc(bn, r) += 1;
 					break;
 				}
 			}
 		}
-		filter += zz;
+		filter++;
 
 	}
 	GDKfree(hash);
@@ -1002,44 +1007,37 @@ CTsubhisto(BAT **ret, BAT *sel, BAT *grp, BAT *dom)
 @c
 #define DEFAULT_SIZE 10000
 
-struct refine {
-	var_t off;
-	oid o;
-};
-
-static INLINE oid *
-sort_flush(struct refine *buf, size_t size, int tpe, BUN base, oid *dst, oid *idp, int reverse)
+static INLINE int 
+sort_flush(var_t *off, oid *o, size_t size, int tpe, char *base, oid *hdst, oid *tdst, oid *idp, int reverse)
 {
 	int (*cmp) (ptr, ptr) = BATatoms[tpe].atomCmp;
-	struct refine *end = buf + size;
 	oid id = *idp + 1;
 	ptr cur, val;
+	size_t i;
 
 	/* StM: we don't need to sort voids, do we??? */
 	if (tpe != TYPE_void) {
 		/* qsort works fine for small amount of tuples; with few duplicates */
 		if (reverse) {
-			GDKqsort_rev(buf, base, size, (int) sizeof(struct refine), tpe, offsetof(struct refine, off));
+			GDKqsort_rev(off, o, base, size, sizeof(var_t), sizeof(oid), tpe);
 		} else {
-			GDKqsort(buf, base, size, (int) sizeof(struct refine), tpe, offsetof(struct refine, off));
+			GDKqsort(off, o, base, size, sizeof(var_t), sizeof(oid), tpe);
 		}
 	}
 
-	cur = base + buf->off;
-	while (buf < end) {
-		val = base + buf->off;
+	cur = base + off[0];
+	for (i=0; i < size; i++) {
+		val = base + off[i];
 		if ((*cmp) (cur, val)) {
 			cur = val;
 			id++;
 		}
-		*dst++ = buf->o;
-		*dst++ = id;
-
-		buf++;
+		*hdst++ = o[i];
+		*tdst++ = id;
 	}
 	*idp = id;
 
-	return dst;
+	return i;
 }
 
 static int
@@ -1073,13 +1071,17 @@ refine(BAT **res, BAT *b, BAT *a, int rv)
 	if (b->tkey) {		/* if key, no further refinements can take place */
 		bn = BATmark(b, 0);
 	} else {
-		int (*cmp) (ptr, ptr) = BATatoms[b->ttype].atomCmp;
-		BUN p, q, r, last = BUNfirst(b), base = a->theap ? NULL : a->batBuns->base, this = NULL;
-		struct refine *buf, *cur, *end;
+		int (*cmp) (ptr, ptr) = BATatoms[b->ttype].atomCmp, cnt = 0;
+		BUN p, q, r, last = BUNfirst(b);
+		char *base = a->theap ? NULL : a->T->heap.base, *this = NULL;
+		size_t cur, end, off;
+		var_t *offp;
+		oid *ids;
 		bit a_void = (a->ttype == TYPE_void);
 		int xx, tpe = a_void ? TYPE_oid : a->ttype;
 		size_t size = DEFAULT_SIZE;
-		oid *dst, o, *op = &o, id = 0;
+		oid *hdst, *tdst, o, *op = &o, id = 0;
+		BATiter ai = bat_iterator(a), bi = bat_iterator(b);
 
 		/* create tmp BAT that holds one cluster; estimate required size using sampling */
 		if (BATcount(b) > DEFAULT_SIZE) {
@@ -1099,14 +1101,20 @@ refine(BAT **res, BAT *b, BAT *a, int rv)
 				return GDK_FAIL;
 		}
 		/* create a temporary BAT of the estimated size holding pointers to the a tail atoms */
-		buf = cur = (struct refine *) GDKmalloc(size * sizeof(struct refine));
-		end = buf + size;
-		if (buf == NULL)
+		cur = 0;
+		end = size;
+		offp = (var_t*) GDKmalloc(size * sizeof(var_t));
+		ids = (oid*) GDKmalloc(size * sizeof(oid));
+		if (offp == NULL || ids == NULL) {
+			if (offp) GDKfree(offp);
+			if (ids) GDKfree(ids);
 			return GDK_FAIL;
+		}
 		if (a_void) {
-			base = this = (BUN) GDKmalloc(size * sizeof(oid));
+			base = this = (char*) GDKmalloc(size * sizeof(oid));
 			if (base == NULL) {
-				GDKfree(buf);
+				GDKfree(offp);
+				GDKfree(ids);
 				return GDK_FAIL;
 			}
 		}
@@ -1114,68 +1122,73 @@ refine(BAT **res, BAT *b, BAT *a, int rv)
 		/* create result BAT */
 		bn = BATnew(TYPE_oid, TYPE_oid, BATcount(b));
 		if (bn == NULL) {
-			GDKfree(buf);
+			GDKfree(offp);
+			GDKfree(ids);
 			if (a_void)
 				GDKfree(base);
 			return GDK_FAIL;
 		}
 		bn->hsorted = bn->tsorted = FALSE;
-		dst = (oid *) BUNfirst(bn);
+		hdst = (oid *) Hloc(bn,BUNfirst(bn));
+		tdst = (oid *) Tloc(bn,BUNfirst(bn));
 
 		if (a_void) {
 			@:refine_loop(@:refine_void_1@,@:refine_void_2@,GDKfree(base);,this = base;)@
 		} else {
-			@:refine_loop(r += a->tloc;)@
+			@:refine_loop()@
 		}
 @= refine_void_2
 	off = (size_t) (this - base);
-	base = (BUN) GDKrealloc(base, size * sizeof(oid));
+	base = (char*) GDKrealloc(base, size * sizeof(oid));
 	this = base + off;
 @= refine_void_1
-	/* TYPE_void: BUNtail(b,p) = (BUN)BUNtpos(b,p) */
-	*(oid*)this = *(oid*)(BUN)BUNtpos(a, r);
-	r = this;
+	*(oid*)this = a->tseqbase+r;
+	r = this - base;
 @= refine_loop
 		/* merge-scan tail of b, finding chunks with equal values; then sort each chunk on a */
-		BATloopFast(b, p, q, xx) {
-			if ((*cmp) (BUNtail(b, last), BUNtail(b, p))) {
-				dst = sort_flush(buf, (size_t) (cur - buf), tpe, base ? base : a->theap->base, dst, &id, rv);
+		BATloop(b, p, q) {
+			if ((*cmp) (BUNtail(bi, last), BUNtail(bi, p))) {
+				cnt = sort_flush(offp, ids, cur, tpe, base ? base : a->theap->base, hdst, tdst, &id, rv);
+				hdst += cnt;
+				tdst += cnt;
 
 				last = p;
-				cur = buf;
+				cur = 0;
 				@4
 			}
-			o = *(oid *) BUNhead(b, p);
-			BUNfndOID(r, a, op);
-			if (r == NULL) {
+			o = *(oid *) BUNhead(bi, p);
+			BUNfndOID(r, ai, op);
+			if (r == BUN_NONE) {
 				GDKerror("CTrefine%s: value "SZFMT"@0 not found in head of second BAT;\n"
 					 "CTrefine%s: heads of both BATs do not form a 1-1 match.\n", rev, (size_t) o, rev);
 				BBPreclaim(bn);
-				GDKfree(buf);
+				GDKfree(offp);
+				GDKfree(ids);
 				@3
 				return GDK_FAIL;
 			}
 			if (cur >= end) {
-				size_t off = (size_t) (cur - buf);
-				buf = (struct refine *) GDKrealloc(buf, (size *= 2) * sizeof(struct refine));
-				end = buf + size;
-				cur = buf + off;
+				offp = (var_t*) GDKrealloc(offp, (size *= 2) * sizeof(var_t));
+				ids = (oid*) GDKrealloc(ids, size * sizeof(oid));
+				end = size;
 				@2
 			}
 			@1
-			cur->off = base ? (var_t) (r - base) : *(var_t *) r;
-			cur->o = o;
+			offp[cur] = (base) ? r<<a->T->shift : ((var_t*)a->T->heap.base)[r];
+			ids[cur] = o;
 			cur++;
 			this += sizeof(oid);
 		}
 @c
-		dst = sort_flush(buf, (size_t) (cur - buf), tpe, base ? base : a->theap->base, dst, &id, rv);
+		cnt = sort_flush(offp, ids, cur, tpe, base ? base : a->theap->base, hdst, tdst, &id, rv);
+		hdst += cnt;
+		tdst += cnt;
 
-		GDKfree(buf);
+		GDKfree(offp);
+		GDKfree(ids);
 		if (a_void)
 			GDKfree(base);
-		bn->batBuns->free = ((BUN) dst) - bn->batBuns->base;
-		BATsetcount(bn, bn->batBuns->free/BUNsize(bn));
+		BATsetcount(bn, (((char*) tdst) - bn->T->heap.base)/Tsize(bn));
 		bn->tsorted = GDK_SORTED;
 	}
 	*res = bn;

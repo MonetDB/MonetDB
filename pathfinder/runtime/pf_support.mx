@@ -4944,19 +4944,19 @@ int CMDxquery_hash(int *dst, char* val) {
 int CMDxquery_hash_bat(BAT **res, BAT* b) {
     size_t cnt = BATcount(b);
     BAT *bn = *res = BATnew(TYPE_void, TYPE_int, cnt);
-    int *dst = (int*) BUNfirst(bn);
+    int *dst = (int*) Tloc(bn, BUNfirst(bn));
     BUN p, q;
-    int xx;
+    BATiter bi;
 
     if (bn == NULL) return GDK_FAIL;
-    BATloopFast(b,p,q,xx) {
-        str val = (str) BUNtvar(b,p);
+    bi = bat_iterator(b);
+    BATloop(b,p,q) {
+        str val = (str) BUNtvar(bi,p);
         XQUERY_HASH(dst, val);
         dst++;
     }
     ALIGNsetH(bn, b);
     BATsetcount(bn, cnt);
-    bn->batBuns->free += cnt * sizeof(int);
     bn->tsorted = 0;
     return GDK_SUCCEED;
 }
@@ -4994,13 +4994,15 @@ CMDdeFakeProject(ptr ret, int *tpe, ptr val, int t)
 {
 	if (t == TYPE_bat) {
 		BAT *b = (BAT*) val;
+		BATiter bi;
 		if (!is_fake_project(b)) {
 			*tpe = TYPE_bat;
 			*(BAT**) ret = b;
 			BBPfix(b->batCacheid);
 			return GDK_SUCCEED;
 		}
-		val = BUNtail(b, BUNfirst(b));
+		bi = bat_iterator(b);
+		val = BUNtail(bi, BUNfirst(b));
 		t = ATOMtype(b->ttype);
 	} 
 	return CMDconstCopy(ret, val, *tpe = t);
@@ -5012,14 +5014,16 @@ CMDfetchConvert_@1(ptr res, int *tpe, BAT* b, @1* pos)
 {
 	int ret = GDK_FAIL;
 	if (@2 ((size_t) *pos) < BATcount(b)) {
-		bat bid = *(bat*) BUNtail(b, BUNptr(b, BUNindex(b, BUNfirst(b))+*pos));
+		BATiter bi = bat_iterator(b);
+		bat bid = *(bat*) BUNtail(bi, BUNfirst(b)+*pos);
 		int fix = BBPfix(bid);
 		BAT *bn = NULL;
 		if (fix == 0 || (bn=BBPdescriptor(bid)) == NULL) {
 			if (fix) BBPunfix(bid);
 			GDKerror("fetch(%s) illegal BAT at position %d.\n", BBP_logical(b->batCacheid), *pos); 
 		} else if (is_fake_project(bn)) {
-			ret = CMDconstCopy(res, BUNfirst(bn), *tpe = ATOMtype(bn->ttype));
+			BATiter bni = bat_iterator(bn);
+			ret = CMDconstCopy(res, BUNtail(bni, BUNfirst(bn)), *tpe = ATOMtype(bn->ttype));
 			BBPunfix(bid);
 		} else {
 			ret = GDK_SUCCEED;
@@ -5079,19 +5083,19 @@ merged_union( BAT** res, int ntabs, int ncols, BAT ***b)
 {
 	BAT *bn[ncols], *BN, *temp, *tmp[2], *tgt;
 	BUN cur[ntabs][ncols], dst[ncols], DST;
-	bte bs[ntabs][ncols], bns[ncols], BS;
+	bte bs[ntabs][ncols];
 	bit mat[ntabs];
 	int ttpe[ncols];	/* sht / bte ? */
 	oid hsqb[ntabs];
 	size_t Bcnt[ntabs], inc[2];
-	int t, c, any, non_empty[ntabs+1];
+	int t, c, var, fix, non_empty[ntabs+1];
 	bit concat01 = FALSE, concat10 = FALSE, void_fix = FALSE;
 	bte *w = NULL, *ww[2], *wt, *ws[2];
 	size_t res_count = 0, h = 0;
 
 	BAT *src[2];
+	BATiter srci[2];
 	BUN csr[2];
-	bte sze[2];
 	size_t idx[2], cnt[2], hs[2], ht;
 	
 	assert(ncols > 0);
@@ -5200,7 +5204,6 @@ merged_union( BAT** res, int ntabs, int ncols, BAT ***b)
 	/* do the merged_union */
 
 	for (c=0; c<ncols; c++) {
-		bns[c] = (bte)BUNsize(bn[c]);
 		dst[c] = BUNlast(bn[c]);
 	}
 	for (t=0; t<ntabs; t++) {
@@ -5208,14 +5211,14 @@ merged_union( BAT** res, int ntabs, int ncols, BAT ***b)
 		if (is_fake_project(b[t][c])) {
 			bs[t][c] = (bte)0;
 		} else {
-			bs[t][c] = (bte)BUNsize(b[t][c]);
+			bs[t][c] = (bte)1;
 		}
 		cur[t][c] = BUNfirst(b[t][c]);
 	    }
 	}
 @
 @= merged_union_0
-	/*  @1: ATOMstorage(ttpe[0]) (chr, bte, sht, int, flt, lng, dbl, any=ATOMstorage(ttpe[0]))
+	/*  @1: ATOMstorage(ttpe[0]) (chr, bte, sht, int, flt, lng, dbl, var/fix=ATOMstorage(ttpe[0]))
 	 *  @2: tloc, tvar, tail
 	 *  @3: 0 1
 	 *  @4: tail value comparison,
@@ -5225,11 +5228,11 @@ merged_union( BAT** res, int ntabs, int ncols, BAT ***b)
 	/* copy tails from BAT @3 to the results; 
 	   for each BUN, remember in w, whether it came from BAT 0 or BAT 1 */
 	while ((idx[@3] < cnt[@3]) && (@4)) {
-		void@1_bunfastins_nocheck_noinc(tgt,dst[0],0,BUN@2(src[@3],csr[@3]));
+		void@1_bunfastins_nocheck_noinc(tgt,dst[0],0,BUN@2(srci[@3],csr[@3]));
 		wt[ht] = ws[@3][hs[@3]];
 		idx[@3]++;
-		csr[@3] += sze[@3];
-		dst[0] += bns[0];
+		csr[@3]++;
+		dst[0]++;
 		hs[@3] += inc[@3];
 		ht++;
 	}
@@ -5237,7 +5240,7 @@ merged_union( BAT** res, int ntabs, int ncols, BAT ***b)
 	/* sucessively pair-wise merge-union the first BAT/column of all tables */
 @
 @= merged_union_1
-	/*  @1: ATOMstorage(ttpe[0]) (chr, bte, sht, int, flt, lng, dbl, any=ATOMstorage(ttpe[0]))
+	/*  @1: ATOMstorage(ttpe[0]) (chr, bte, sht, int, flt, lng, dbl, var/fix=ATOMstorage(ttpe[0]))
 	 *  @2: tloc, tvar, tail (for BAT 0)
 	 *  @3: tloc, tvar, tail (for BAT 1)
 	 *  @4: simple, atom
@@ -5247,17 +5250,17 @@ merged_union( BAT** res, int ntabs, int ncols, BAT ***b)
 	concat10 = FALSE;
 	if (BATtordered(src[0])&BATtordered(src[1])&1 || (BATtordered(src[0])&1 && cnt[1]==1) || (cnt[0]==1 && BATtordered(src[1])&1) ) {
 		if (!concat01) {
-			concat01 = @4_LE(BUN@2(src[0],BUNlast(src[0])-BUNsize(src[0])),BUN@3(src[1],BUNfirst(src[1])),@1);
+			concat01 = @4_LE(BUN@2(srci[0],BUNlast(src[0])-1),BUN@3(srci[1],BUNfirst(src[1])),@1);
 		}
 		if (!concat01) {
-			concat10 = @4_LT(BUN@3(src[1],BUNlast(src[1])-BUNsize(src[1])),BUN@2(src[0],BUNfirst(src[0])),@1);
+			concat10 = @4_LT(BUN@3(srci[1],BUNlast(src[1])-1),BUN@2(srci[0],BUNfirst(src[0])),@1);
 		}
 	}
 	if (!concat01 && !concat10) {
 		while ((idx[0] < cnt[0]) && (idx[1] < cnt[1])) {
-			@:merged_union_0(@1,@2,0,@4_LE(BUN@2(src[0],csr[0]),BUN@3(src[1],csr[1]),@1))@
+			@:merged_union_0(@1,@2,0,@4_LE(BUN@2(srci[0],csr[0]),BUN@3(srci[1],csr[1]),@1))@
 			if (idx[0] < cnt[0]) {
-				@:merged_union_0(@1,@3,1,@4_GT(BUN@2(src[0],csr[0]),BUN@3(src[1],csr[1]),@1))@
+				@:merged_union_0(@1,@3,1,@4_GT(BUN@2(srci[0],csr[0]),BUN@3(srci[1],csr[1]),@1))@
 			}
 		}
 	}
@@ -5269,7 +5272,7 @@ merged_union( BAT** res, int ntabs, int ncols, BAT ***b)
 	@:merged_union_0(@1,@2,0,TRUE)@
 @
 @= merged_union_2
-	/*  @1: ATOMstorage(ttpe[0]) (chr, bte, sht, int, flt, lng, dbl, any=ATOMstorage(ttpe[0]))
+	/*  @1: ATOMstorage(ttpe[0]) (chr, bte, sht, int, flt, lng, dbl, var, fix)
 	 *  @2: tloc, tvar, tail (for BAT 0)
 	 *  @3: simple, atom
 	 */
@@ -5277,12 +5280,10 @@ merged_union( BAT** res, int ntabs, int ncols, BAT ***b)
 	break;
 @
 @= merged_union_3
-		if ((void_fix = (src[0] == src[1] && src[0]->ttype==TYPE_void && src[1]->ttype==TYPE_void))) {
+		//if ((void_fix = (src[0] == src[1] && src[0]->ttype==TYPE_void && src[1]->ttype==TYPE_void))) {
 			/* create an artifical view (i.e., new BATdescriptor) to avoid concurrent void access problem */
-			src[0] = VIEWcreate(src[0]);
-		}
-		sze[0] = BUNsize(src[0]);
-		sze[1] = BUNsize(src[1]);
+			//src[0] = VIEWcreate(src[0], src[0]);
+		//}
 		csr[0] = BUNfirst(src[0]);
 		csr[1] = BUNfirst(src[1]);
 		cnt[0] = BATcount(src[0]);
@@ -5312,8 +5313,8 @@ merged_union( BAT** res, int ntabs, int ncols, BAT ***b)
 			@:merged_union_1(lng,tloc,tloc,simple)@
 #endif
 		} else {
-			any = ATOMstorage(src[0]->ttype);
-			switch(any) {
+			var = fix = ATOMstorage(src[0]->ttype);
+			switch(var) {
 			case TYPE_chr:	@:merged_union_2(chr,tloc,simple)@
 			case TYPE_bte:	@:merged_union_2(bte,tloc,simple)@
 			case TYPE_sht:	@:merged_union_2(sht,tloc,simple)@
@@ -5323,15 +5324,14 @@ merged_union( BAT** res, int ntabs, int ncols, BAT ***b)
 			case TYPE_dbl:	@:merged_union_2(dbl,tloc,simple)@
 			default:
 				if (src[0]->tvarsized) {
-					@:merged_union_2(any,tvar,atom)@
+					@:merged_union_2(var,tvar,atom)@
 				} else {
-					@:merged_union_2(any,tloc,atom)@
+					@:merged_union_2(fix,tloc,atom)@
 				}
 			}
 		}
 		
-		tgt->batBuns->free = dst[0] - tgt->batBuns->base;
-		BATsetcount(tgt, tgt->batBuns->free/bns[0]);
+		BATsetcount(tgt, (dst[0] - BUNfirst(tgt)));
 		if (!tgt->batDirty) tgt->batDirty = TRUE;
 		BATkey(BATmirror(tgt),FALSE);
 		tgt->tsorted = GDK_SORTED;
@@ -5348,16 +5348,16 @@ merged_union( BAT** res, int ntabs, int ncols, BAT ***b)
 	inc[0] = inc [1] = 0;
 
 	if (non_empty[ntabs] == 1) {
-		src[0] = b[non_empty[0]][0];
-		src[1] = b[non_empty[0] == 0][0];
+		srci[0].b = src[0] = b[non_empty[0]][0];
+		srci[1].b = src[1] = b[non_empty[0] == 0][0];
 		ws[0][0] = non_empty[0];
 		ws[1][0] = (non_empty[0] == 0);
 
 		@:merged_union_3@
 	} else
 	  if (non_empty[ntabs] == 2) {
-		src[0] = b[non_empty[0]][0];
-		src[1] = b[non_empty[1]][0];
+		srci[0].b = src[0] = b[non_empty[0]][0];
+		srci[1].b = src[1] = b[non_empty[1]][0];
 		ws[0][0] = non_empty[0];
 		ws[1][0] = non_empty[1];
 
@@ -5372,8 +5372,8 @@ merged_union( BAT** res, int ntabs, int ncols, BAT ***b)
 		wt[0] = t;
 		tgt = b[t--][0];
 		for (; t >= 0; t--) {
-			src[0] = b[t][0];
-			src[1] = tgt;
+			srci[0].b = src[0] = b[t][0];
+			srci[1].b = src[1] = tgt;
 			tgt = tmp[t&1];
 			ws[0][0] = t;
 			ws[1] = wt;
@@ -5388,20 +5388,24 @@ merged_union( BAT** res, int ntabs, int ncols, BAT ***b)
 	/* merge-union the remaining BATs/columns of all tables */
 @
 @= merged_union_4
-	/*  @1: ATOMstorage(ttpe[c]) (chr, bte, sht, int, flt, lng, dbl, any)
+	/*  @1: ATOMstorage(ttpe[c]) (chr, bte, sht, int, flt, lng, dbl, var/fix)
 	 *  @2: tloc, tvar, tail
 	 */
 	/* merge-union the remaining BATs/columns of all tables:
 	   w tell us, from which table we need to get the next BUN */
+    {
+	BATiter bi;
 	for (h=0; h<res_count; h++) {
 		t = w[h];
-		void@1_bunfastins_nocheck_noinc(bn[c],dst[c],0,BUN@2(b[t][c],cur[t][c]));
+		bi.b = b[t][c];
+		void@1_bunfastins_nocheck_noinc(bn[c],dst[c],0,BUN@2(bi,cur[t][c]));
 		cur[t][c] += bs[t][c];
-		dst[c] += bns[c];
+		dst[c]++;
 	}
+    }
 @
 @= merged_union_5
-	/*  @1: ATOMstorage(ttpe[c]) (chr, bte, sht, int, flt, lng, dbl, any)
+	/*  @1: ATOMstorage(ttpe[c]) (chr, bte, sht, int, flt, lng, dbl, var/fix)
 	 *  @2: tloc, tvar, tail
 	 */
 	@:merged_union_4(@1,@2)@
@@ -5426,9 +5430,9 @@ merged_union( BAT** res, int ntabs, int ncols, BAT ***b)
 			case TYPE_dbl:	@:merged_union_5(dbl,tloc)@
 			default:
 				if (b[0][c]->tvarsized) {
-					@:merged_union_5(any,tvar)@
+					@:merged_union_5(var,tvar)@
 				} else {
-					@:merged_union_5(any,tloc)@
+					@:merged_union_5(fix,tloc)@
 				}
 			}
 		}
@@ -5437,8 +5441,7 @@ merged_union( BAT** res, int ntabs, int ncols, BAT ***b)
 	/* set BAT properties */
 	for (c=0; c<ncols; c++) {
 		BATseqbase(bn[c], (oid)0);
-		bn[c]->batBuns->free = dst[c] - bn[c]->batBuns->base;
-		BATsetcount(bn[c], bn[c]->batBuns->free/bns[c]);
+		BATsetcount(bn[c], dst[c]-BUNfirst(bn[c]));
 		assert(BATcount(bn[c]) == res_count);
 		if (!bn[c]->batDirty) bn[c]->batDirty = TRUE;
 		BATkey(bn[c],TRUE);
@@ -5451,11 +5454,14 @@ merged_union( BAT** res, int ntabs, int ncols, BAT ***b)
 			bn[c]->tsorted = (BATtordered(b[non_empty[0]][c])&1 ? GDK_SORTED : FALSE);
 		} else
 		  if (non_empty[ntabs] == 2) {
+			BATiter b0i, b1i;
 			BAT *b0 = b[non_empty[0]][c];
 			BAT *b1 = b[non_empty[1]][c];
+			b0i.b = b0;
+			b1i.b = b1;
 			if ( ( BATtordered(b0)&BATtordered(b1)&1 || (BATtordered(b0)&1 && BATcount(b1)==1) || (BATcount(b0)==1 && BATtordered(b1)&1) ) && \
-			     ( ( concat01 && atom_LE(BUNtail(b0,BUNlast(b0)-BUNsize(b0)),BUNtail(b1,BUNfirst(b1)),ATOMstorage(ATOMtype(ttpe[c]))) ) || \
-			       ( concat10 && atom_LE(BUNtail(b1,BUNlast(b1)-BUNsize(b1)),BUNtail(b0,BUNfirst(b0)),ATOMstorage(ATOMtype(ttpe[c]))) ) ) ) {
+			     ( ( concat01 && atom_LE(BUNtail(b0i,BUNlast(b0)-1),BUNtail(b1i,BUNfirst(b1)),ATOMstorage(ATOMtype(ttpe[c]))) ) || \
+			       ( concat10 && atom_LE(BUNtail(b1i,BUNlast(b1)-1),BUNtail(b0i,BUNfirst(b0)),ATOMstorage(ATOMtype(ttpe[c]))) ) ) ) {
 				bn[c]->tsorted = GDK_SORTED;
 			} else {
 				bn[c]->tsorted = FALSE;
@@ -5470,15 +5476,12 @@ merged_union( BAT** res, int ntabs, int ncols, BAT ***b)
 	/* insert bn[] BATs in BN BAT */
 
 	DST = BUNlast(BN);
-	BS = (bte)BUNsize(BN);
 	BATseqbase(BN, (oid)0);
-	for (c=0; c<ncols; c++) {
-		voidany_bunfastins_nocheck_noinc(BN,DST,0,&bn[c]->batCacheid);
+	for (c=0; c<ncols; c++, DST++) {
+		voidfix_bunfastins_nocheck_noinc(BN,DST,0,&bn[c]->batCacheid);
 		BBPunfix(bn[c]->batCacheid);
-		DST += BS;
 	}
-	BN->batBuns->free = DST - BN->batBuns->base;
-	BATsetcount(BN, BN->batBuns->free/BS); 
+	BATsetcount(BN, ncols); 
 	if (!BN->batDirty) BN->batDirty = TRUE;
 	BATkey(BN,TRUE);
 	BATkey(BATmirror(BN),TRUE);
@@ -5599,7 +5602,7 @@ int CMDmulti_merged_union( BAT** res, BAT *Bt)
 	}
 
 	for (t=0; t<ntabs; t++) {
-		Bc[t] = BATdescriptor(*(bat*)BUNtloc(Bt, BUNptr(Bt,t)));
+		Bc[t] = BATdescriptor(*(bat*)Tloc(Bt, t));
 		if (Bc[t]->ttype != TYPE_bat) {
 			GDKerror("multi_merged_union: tail-type of BAT holding table %d must be BAT, not %s.\n", t+1, ATOMname(Bc[t]->ttype));
 			ret = GDK_FAIL;
@@ -5646,7 +5649,7 @@ int CMDmulti_merged_union( BAT** res, BAT *Bt)
 
 	for (t=0; t<ntabs; t++) {
 		for (c=0; c<ncols; c++) {
-			b[t][c] = BATdescriptor(*(bat*)BUNtloc(Bc[t], BUNptr(Bc[t],c)));
+			b[t][c] = BATdescriptor(*(bat*)Tloc(Bc[t], c));
 		}
 		BBPunfix(Bc[t]->batCacheid);
 	}
@@ -5665,9 +5668,9 @@ int CMDmulti_merged_union( BAT** res, BAT *Bt)
 int
 CMDll_strSplit(BAT **res, BAT *strs, BAT *seps)
 {
+	BATiter strsi = bat_iterator(strs), sepsi = bat_iterator(seps);
         BAT *bn;
         BUN p_str, p_sep, last_str_row;
-        int bs_str, bs_sep;
         size_t cnt, seplen;
         oid base;
         char *actual_str;
@@ -5695,19 +5698,16 @@ CMDll_strSplit(BAT **res, BAT *strs, BAT *seps)
 
         /* do the ll_strSplit */
 
-        bs_str = BUNsize(strs);
-        bs_sep = BUNsize(seps);
-
         p_str = BUNfirst(strs);
         p_sep = BUNfirst(seps);
 
         for (last_str_row = BUNlast(strs) ;
              p_str < last_str_row ;
-             p_str += bs_str, p_sep += bs_sep) {
+             p_str++, p_sep++) {
 
-                str sep = (str)BUNtvar(seps, p_sep);
+                str sep = (str)BUNtvar(sepsi, p_sep);
                 seplen = strlen(sep);
-                actual_str = GDKstrdup((str)BUNtvar(strs, p_str));
+                actual_str = GDKstrdup((str)BUNtvar(strsi, p_str));
 
                 if (!seplen)
                 {
@@ -5745,7 +5745,7 @@ CMDll_strSplit(BAT **res, BAT *strs, BAT *seps)
         if (BATcount(bn) == 0) {
                 BATseqbase(bn, (oid)0);
         } else if (BATcount(bn) == 1) {
-                BATseqbase(bn, *(oid*)BUNhloc(bn,BUNfirst(bn)));
+                BATseqbase(bn, *(oid*)Hloc(bn,BUNfirst(bn)));
         }
         *res = bn;
         return GDK_SUCCEED;
@@ -5828,9 +5828,9 @@ math_unary_up_ROUND(dbl *res, dbl *x)
 
 int CMDcombine_text_string( BAT** res, BAT *iter, BAT *kind, BAT *str_value, int *result_size )
 {
+	BATiter iteri = bat_iterator(iter), kindi = bat_iterator(kind), str_valuei = bat_iterator(str_value);
 	BAT *bn;
 	BUN qi, pi, pk, ps;
-	int bsi, bsk, bss;
 	size_t cnt, len, strsize = 1024;
 	oid base0, base, i0, k0;
 	str actual_str = NULL;
@@ -5863,10 +5863,6 @@ int CMDcombine_text_string( BAT** res, BAT *iter, BAT *kind, BAT *str_value, int
 
 	/* do the combine_text_string */
 
-	bsi = BUNsize(iter);
-	bsk = BUNsize(kind);
-	bss = BUNsize(str_value);
-
 	pi = BUNfirst(iter);
 	pk = BUNfirst(kind);
 	ps = BUNfirst(str_value);
@@ -5880,13 +5876,13 @@ int CMDcombine_text_string( BAT** res, BAT *iter, BAT *kind, BAT *str_value, int
 	len = 0;
 	actual_str[0] = '\0';
 	k0 = oid_nil;
-	i0 = *(oid*)BUNtail(iter,pi); /* FIXME: "tvar" (void) vs. "tloc" (oid) */
+	i0 = *(oid*)BUNtail(iteri,pi); /* FIXME: "tvar" (void) vs. "tloc" (oid) */
 	base0 = oid_nil;
 
-	for (qi = BUNlast(iter) ; pi < qi ; pi += bsi, pk += bsk, ps += bss) {
-		oid i = *(oid*)BUNtail(iter,pi); /* FIXME: "tvar" (void) vs. "tloc" (oid) */
-		oid k = *(oid*)BUNtail(kind,pk); /* FIXME: "tvar" (void) vs. "tloc" (oid) */
-		str s = (str)BUNtvar(str_value,ps);
+	for (qi = BUNlast(iter) ; pi < qi ; pi++, pk++, ps++) {
+		oid i = *(oid*)BUNtail(iteri,pi); /* FIXME: "tvar" (void) vs. "tloc" (oid) */
+		oid k = *(oid*)BUNtail(kindi,pk); /* FIXME: "tvar" (void) vs. "tloc" (oid) */
+		str s = (str)BUNtvar(str_valuei,ps);
 		size_t l = strlen(s) + 1;
 		if ( i0 < i || k == KIND_NODE ) {
 			/* new iter or new node */
@@ -5941,7 +5937,7 @@ int CMDcombine_text_string( BAT** res, BAT *iter, BAT *kind, BAT *str_value, int
 	if (BATcount(bn) == 0) {
 		BATseqbase(bn, (oid)0);
 	} else if (BATcount(bn) == 1) {
-		BATseqbase(bn, *(oid*)BUNhloc(bn,BUNfirst(bn)));
+		BATseqbase(bn, *(oid*)Hloc(bn,BUNfirst(bn)));
 	}
 	*res = bn;
 
@@ -5956,9 +5952,9 @@ cleanup:
 
 int CMDstring_join ( BAT** res, BAT *iter_str, BAT *separator  )
 {
+	BATiter iter_stri = bat_iterator(iter_str), separatori = bat_iterator(separator);
 	BAT *bn;
 	BUN bun_iter_str, bun_sep, last_iter_str, last_sep;
-	int bs_iter_str, bs_sep;
 	size_t len, sep_len, strsize = 1024;
 	oid i, i0, sep_oid, sep0;
 	str s, sep, actual_str = NULL;
@@ -5986,9 +5982,6 @@ int CMDstring_join ( BAT** res, BAT *iter_str, BAT *separator  )
 
 	/* do the string_join */
 
-	bs_iter_str = BUNsize(iter_str);
-	bs_sep = BUNsize(separator);
-
 	bun_iter_str = BUNfirst(iter_str);
 	last_iter_str = BUNlast(iter_str);
 	bun_sep = BUNfirst(separator);
@@ -6012,12 +6005,12 @@ int CMDstring_join ( BAT** res, BAT *iter_str, BAT *separator  )
 	else if (bun_sep == last_sep) {
 		GDKerror("string_join: expected oid %i@0 in iter_str "
                          "is missing in separator (0 rows).",
-                         *(oid*)BUNhead(iter_str,bun_iter_str)); /* FIXME: "hvar" (void) vs. "hloc" (oid) */
+                         *(oid*)BUNhead(iter_stri,bun_iter_str)); /* FIXME: "hvar" (void) vs. "hloc" (oid) */
 		goto cleanup;
 	}
 	else if (bun_iter_str == last_iter_str) {
 		sep0 = oid_nil;
-		sep_oid = *(oid*)BUNhead(separator,bun_sep); /* FIXME: "hvar" (void) vs. "hloc" (oid) */
+		sep_oid = *(oid*)BUNhead(separatori,bun_sep); /* FIXME: "hvar" (void) vs. "hloc" (oid) */
 		@:append_sep_and_set_props@
  	       	return GDK_SUCCEED;
 	}
@@ -6031,7 +6024,7 @@ int CMDstring_join ( BAT** res, BAT *iter_str, BAT *separator  )
 	len = 0;
 	actual_str[0] = '\0';
 
-	i0 = *(oid*)BUNhead(iter_str,bun_iter_str); /* FIXME: "hvar" (void) vs. "hloc" (oid) */
+	i0 = *(oid*)BUNhead(iter_stri,bun_iter_str); /* FIXME: "hvar" (void) vs. "hloc" (oid) */
 	first_string = 1;
 	sep0 = oid_nil;
 
@@ -6039,7 +6032,7 @@ int CMDstring_join ( BAT** res, BAT *iter_str, BAT *separator  )
 	/* - goes to the next row in the separator bat
 	     to get the separator for the next iter value
 	   - produces an error if oids are not aligned */
-	sep_oid = *(oid*)BUNhead(separator,bun_sep); /* FIXME: "hvar" (void) vs. "hloc" (oid) */
+	sep_oid = *(oid*)BUNhead(separatori,bun_sep); /* FIXME: "hvar" (void) vs. "hloc" (oid) */
 
 	while (i0 > sep_oid && bun_sep != last_sep) {
 		if (sep0 == sep_oid) {
@@ -6048,11 +6041,11 @@ int CMDstring_join ( BAT** res, BAT *iter_str, BAT *separator  )
 		}
 		bunfastins(bn, &sep_oid, "");
 		sep0 = sep_oid;
-		bun_sep += bs_sep;
-	        sep_oid = *(oid*)BUNhead(separator,bun_sep); /* FIXME: "hvar" (void) vs. "hloc" (oid) */
+		bun_sep++;
+	        sep_oid = *(oid*)BUNhead(separatori,bun_sep); /* FIXME: "hvar" (void) vs. "hloc" (oid) */
 	}
 	if (i0 == sep_oid && bun_sep != last_sep) {
-		sep = (str)BUNtvar(separator,bun_sep);
+		sep = (str)BUNtvar(separatori,bun_sep);
 		sep_len = strlen(sep);
 	}
 	else {
@@ -6064,9 +6057,9 @@ int CMDstring_join ( BAT** res, BAT *iter_str, BAT *separator  )
 @c
 	@:get_next_separator@
 
-	for (; bun_iter_str < last_iter_str ; bun_iter_str += bs_iter_str) {
-		i = *(oid*)BUNhead(iter_str,bun_iter_str); /* FIXME: "hvar" (void) vs. "hloc" (oid) */
-		s = (str)BUNtvar(iter_str,bun_iter_str);
+	for (; bun_iter_str < last_iter_str ; bun_iter_str++) {
+		i = *(oid*)BUNhead(iter_stri,bun_iter_str); /* FIXME: "hvar" (void) vs. "hloc" (oid) */
+		s = (str)BUNtvar(iter_stri,bun_iter_str);
 
 		size_t l;
 
@@ -6078,7 +6071,7 @@ int CMDstring_join ( BAT** res, BAT *iter_str, BAT *separator  )
 			first_string = 1;
 
 			sep0 = sep_oid;
-			bun_sep += bs_sep;
+			bun_sep++;
 			@:get_next_separator@
 		}
 
@@ -6115,19 +6108,19 @@ int CMDstring_join ( BAT** res, BAT *iter_str, BAT *separator  )
 	if (len > 0) {
 		bunfastins(bn, &i0, actual_str);
 		sep0 = sep_oid;
-		bun_sep += bs_sep;
+		bun_sep++;
 	}
 
 @= append_sep_and_set_props
 	while (bun_sep != last_sep) {
-	        sep_oid = *(oid*)BUNhead(separator,bun_sep); /* FIXME: "hvar" (void) vs. "hloc" (oid) */
+	        sep_oid = *(oid*)BUNhead(separatori,bun_sep); /* FIXME: "hvar" (void) vs. "hloc" (oid) */
 		if (sep0 == sep_oid) {
 			GDKerror("string_join: the head of separator has to be keyed.");
 			goto cleanup;
 		}
 		bunfastins(bn, &sep_oid, "");
 		sep0 = sep_oid;
-		bun_sep += bs_sep;
+		bun_sep++;
 	}
 
 	GDKfree(actual_str);
@@ -6145,7 +6138,7 @@ int CMDstring_join ( BAT** res, BAT *iter_str, BAT *separator  )
 	if (BATcount(bn) == 0) {
 		BATseqbase(bn, (oid)0);
 	} else if (BATcount(bn) == 1) {
-		BATseqbase(bn, *(oid*)BUNhloc(bn,BUNfirst(bn)));
+		BATseqbase(bn, *(oid*)Hloc(bn,BUNfirst(bn)));
 	}
 	*res = bn;
 @c
@@ -6164,10 +6157,11 @@ int CMDenumerate ( BAT** res, BAT *startval, BAT *length )
 {
         BAT *bn;
         BUN cur_bun, length_bun, bun_last;
-        lng bs_startval, bs_length, number, counter, result_size;
+	lng number, counter, result_size;
         size_t cnt;
         oid base, head_oid;
         bit triv_prop;
+	BATiter startvali = bat_iterator(startval);
 
         /* check arguments */
 
@@ -6196,14 +6190,13 @@ int CMDenumerate ( BAT** res, BAT *startval, BAT *length )
         /* do the enumerate */
 
         for (cur_bun = BUNfirst(startval), length_bun = BUNfirst(length),
-             bun_last = BUNlast(startval),
-             bs_startval = BUNsize(startval), bs_length = BUNsize(length);
+             bun_last = BUNlast(startval);
              cur_bun < bun_last;
-             cur_bun += bs_startval, length_bun += bs_length)
+             cur_bun++, length_bun++)
         {
-	        head_oid = *(oid*)BUNhead(startval,cur_bun); /* FIXME: "hvar" (void) vs. "hloc" (oid) */
-                number = *(lng*) BUNtloc (startval, cur_bun);
-                counter = *(lng*) BUNtloc (length, length_bun);
+	        head_oid = *(oid*)BUNhead(startvali,cur_bun); /* FIXME: "hvar" (void) vs. "hloc" (oid) */
+                number = *(lng*) Tloc (startval, cur_bun);
+                counter = *(lng*) Tloc (length, length_bun);
                 while (counter)
                 {
 		        bunfastins(bn, &head_oid, &number);
@@ -6223,7 +6216,7 @@ int CMDenumerate ( BAT** res, BAT *startval, BAT *length )
 	if (BATcount(bn) == 0) {
 		BATseqbase(bn, (oid)0);
 	} else if (BATcount(bn) == 1) {
-		BATseqbase(bn, *(oid*)BUNhloc(bn,BUNfirst(bn)));
+		BATseqbase(bn, *(oid*)Hloc(bn,BUNfirst(bn)));
 	}
 	*res = bn;
 
@@ -6236,9 +6229,11 @@ bunins_failed:
 
 int CMDmposjoin ( BAT** res, BAT* pre, BAT* cont, BAT* ws_item )
 {
+	BATiter prei = bat_iterator(pre);
+	BATiter conti = bat_iterator(cont), ws_itemi = bat_iterator(ws_item);
 	BAT *bn, **batlist = NULL, *the_cont_bat = NULL;
 	BUN q, pp, pf, pw, dst;
-	int bs, bsp, bsf, ii = 0, tt = 0;
+	int bsf = 0, ii = 0, tt = 0;
 	size_t cnt, len;
 	oid base, wl, wh;
 	bit triv_prop;
@@ -6272,7 +6267,7 @@ int CMDmposjoin ( BAT** res, BAT* pre, BAT* cont, BAT* ws_item )
 	ERRORcheck(len==0,
 		"mposjoin: third input BAT (ws_item) must not be empty.\n");
 
-	the_cont_bat = BATdescriptor(*(bat*)BUNtloc(ws_item, BUNfirst(ws_item)));
+	the_cont_bat = BATdescriptor(*(bat*)Tloc(ws_item, BUNfirst(ws_item)));
 	tt = the_cont_bat->ttype;
 	BBPunfix(the_cont_bat->batCacheid);
 	the_cont_bat = NULL;
@@ -6284,11 +6279,11 @@ int CMDmposjoin ( BAT** res, BAT* pre, BAT* cont, BAT* ws_item )
 	ii = 0;
 	
 	if (fake_cont) {
-		oid the_cont_id = *(oid*)BUNtail(cont, BUNfirst(cont));
+		oid the_cont_id = *(oid*)BUNtail(conti, BUNfirst(cont));
 		len = 1;
 		batlist = &the_cont_bat;
-		BUNfndVOID(pw, ws_item, &the_cont_id);
-		if (pw==NULL) {
+		BUNfndVOID(pw, ws_itemi, &the_cont_id);
+		if (pw==BUN_NONE) {
 			@:mpos_res_empty@
 		}
 
@@ -6310,7 +6305,7 @@ int CMDmposjoin ( BAT** res, BAT* pre, BAT* cont, BAT* ws_item )
 			GDKerror("mposjoin: GDKmalloc(" SZFMT ") failed.\n", len * sizeof(BAT*));
 			return GDK_FAIL;
 		}
-		BATloopFast(ws_item, pw, q, bs) {
+		BATloop(ws_item, pw, q) {
 			@:mpos_init_batlist@
 		}
 	}
@@ -6318,7 +6313,7 @@ int CMDmposjoin ( BAT** res, BAT* pre, BAT* cont, BAT* ws_item )
 @= mpos_init_batlist
 {
 		bit fake_item = FALSE;
-		bat bid = *(bat*)BUNtloc(ws_item, pw);
+		bat bid = *(bat*)Tloc(ws_item, pw);
 		batlist[ii] = BATdescriptor(bid);
 		fake_item = is_fake_project(batlist[ii]);
 		fake_ws_item |= fake_item;
@@ -6358,7 +6353,6 @@ int CMDmposjoin ( BAT** res, BAT* pre, BAT* cont, BAT* ws_item )
 	BATseqbase(bn, base);
 @c
 	@:mpos_res_create@
-	bs = BUNsize(bn);
 	dst = BUNlast(bn);
 
 	/* do the mposjoin */
@@ -6366,18 +6360,17 @@ int CMDmposjoin ( BAT** res, BAT* pre, BAT* cont, BAT* ws_item )
 	wl = ws_item->hseqbase;
 	wh = wl + len - 1;
 
-	bsp = BUNsize(pre);
 	if (fake_cont) {
 		bsf = 0;
 	} else {
-		bsf = BUNsize(cont);
+		bsf = 1;
 	}
 
 	pp = BUNfirst(pre);
 	pf = BUNfirst(cont);
 
 @= mposjoin
-	/*  @1: ATOMstorage(ATOMtype(batlist[0]->ttype)) (chr, sht, int, flt, lng, dbl, any)
+	/*  @1: ATOMstorage(ATOMtype(batlist[0]->ttype)) (chr, sht, int, flt, lng, dbl, var, fix)
 	 *  @2: tloc, tvar, tail
 	 */
 	 if (fake_cont) {
@@ -6397,10 +6390,10 @@ int CMDmposjoin ( BAT** res, BAT* pre, BAT* cont, BAT* ws_item )
 	 *  @2: tloc, tvar, tail
 	 */
 	BAT *b = batlist[0];
-	ptr  w = BUN@2(b, BUNfirst(b));
-	for (q = BUNlast(pre) ; pp < q ; pp += bsp) {
+	BATiter bi = bat_iterator(b);
+	ptr  w = BUN@2(bi, BUNfirst(b));
+	for (q = BUNlast(pre) ; pp < q ; pp++, dst++) {
 		void@1_bunfastins_nocheck_noinc(bn,dst,0,w);
-		dst += bs;
 	}
 @
 @= mposjoin_
@@ -6408,21 +6401,22 @@ int CMDmposjoin ( BAT** res, BAT* pre, BAT* cont, BAT* ws_item )
 	 *  @2: tloc, tvar, tail
 	 *  @3: FALSE / is_fake_project(b)
 	 */
-	for (q = BUNlast(pre) ; pp < q ; pp += bsp, pf += bsf) {
-		oid p = *(oid*)BUNtail(pre,pp);  /* FIXME: "tvar" (void) vs. "tloc" (oid) */
-		oid f = *(oid*)BUNtail(cont,pf); /* FIXME: "tvar" (void) vs. "tloc" (oid) */
+	for (q = BUNlast(pre) ; pp < q ; pp++, pf += bsf) {
+		oid p = *(oid*)BUNtail(prei,pp);  /* FIXME: "tvar" (void) vs. "tloc" (oid) */
+		oid f = *(oid*)BUNtail(conti,pf); /* FIXME: "tvar" (void) vs. "tloc" (oid) */
 		if (f >= wl && f <= wh) {
 			BAT *b = batlist[f - wl];
+			BATiter bi = bat_iterator(b);
 			if (@3) {
-				void@1_bunfastins_nocheck_noinc(bn,dst,0,BUN@2(b,BUNfirst(b)));
-				dst += bs;
+				void@1_bunfastins_nocheck_noinc(bn,dst,0,BUN@2(bi,BUNfirst(b)));
+				dst++;
 			} else {
 				oid l = b->hseqbase;
 				oid h = l + BATcount(b) - 1;
 				if (p >= l && p <= h) {
-					oid b0 = BUNindex(b,BUNfirst(b));
-					void@1_bunfastins_nocheck_noinc(bn,dst,0,BUN@2(b,BUNptr(b,p-l+b0)));
-					dst += bs;
+					oid b0 = BUNfirst(b);
+					void@1_bunfastins_nocheck_noinc(bn,dst,0,BUN@2(bi,p-l+b0));
+					dst++;
 				} 
 			}
 		}
@@ -6448,13 +6442,12 @@ int CMDmposjoin ( BAT** res, BAT* pre, BAT* cont, BAT* ws_item )
 	case TYPE_dbl:	@:mposjoin(dbl,tloc,simple)@
 	default:
 		if (batlist[0]->tvarsized) {
-			@:mposjoin(any,tvar,atom)@
+			@:mposjoin(var,tvar,atom)@
 		} else {
-			@:mposjoin(any,tloc,atom)@
+			@:mposjoin(fix,tloc,atom)@
 		}
 	}
-	bn->batBuns->free = dst - bn->batBuns->base;
-	BATsetcount(bn, bn->batBuns->free/BUNsize(bn));
+	BATsetcount(bn, dst - BUNfirst(bn));
 
 @= mpos_res_prop
     /* check result size */
@@ -6506,9 +6499,11 @@ bunins_failed:
 
 int CMDmvaljoin ( BAT** res, BAT* pre, BAT* cont, BAT* ws_item )
 {
+	BATiter prei = bat_iterator(pre);
+	BATiter conti = bat_iterator(cont), ws_itemi = bat_iterator(ws_item);
 	BAT *bn, **batlist = NULL, *the_cont_bat = NULL;
 	BUN q, pp, pf, pw;
-	int bsp, bsf, bsw, ii = 0;
+	int ii = 0;
 	size_t cnt, len, sze;
 	oid base, wl, wh;
 	bit triv_prop, all_hash, all_sort, some_hash, some_sort, all_key, fake_cont = FALSE;
@@ -6547,11 +6542,11 @@ int CMDmvaljoin ( BAT** res, BAT* pre, BAT* cont, BAT* ws_item )
 		@:mval_res_empty@
 	}
 	if (fake_cont) {
-		oid the_cont_id = *(oid*)BUNtail(cont, BUNfirst(cont));
+		oid the_cont_id = *(oid*)BUNtail(conti, BUNfirst(cont));
 		len = 1;
 		batlist = &the_cont_bat;
-		BUNfndVOID(pw, ws_item, &the_cont_id);
-		if (pw==NULL) {
+		BUNfndVOID(pw, ws_itemi, &the_cont_id);
+		if (pw==BUN_NONE) {
 			@:mval_res_empty@
 		}
 
@@ -6571,7 +6566,7 @@ int CMDmvaljoin ( BAT** res, BAT* pre, BAT* cont, BAT* ws_item )
 			GDKerror("mvaljoin: GDKmalloc(" SZFMT ") failed.\n", len * sizeof(BAT*));
 			return GDK_FAIL;
 		}
-		BATloopFast(ws_item, pw, q, bsw) {
+		BATloop(ws_item, pw, q) {
 			@:mval_init_batlist@
 		}
 	}
@@ -6581,27 +6576,17 @@ int CMDmvaljoin ( BAT** res, BAT* pre, BAT* cont, BAT* ws_item )
 
 @= mval_init_batlist
 {
-	bit hsh=0, srt, view;
-	bat bid = *(bat*)BUNtloc(ws_item, pw);
+	bit hsh=0, srt;
+	bat bid = *(bat*)Tloc(ws_item, pw);
 	batlist[ii] = BATdescriptor(bid);
- 	view = (batlist[ii]->htype == TYPE_void && batlist[ii]->hseqbase != oid_nil);
 	srt = (BATtordered(batlist[ii])&1);
-	if (batlist[ii]->ttype == TYPE_void && batlist[ii]->tseqbase != oid_nil) {
-		view = 1; /* do not create the hash table on a void column */
-	} else {
-		hsh = (BAThash(BATmirror(batlist[ii]), 0) != NULL);
-		if (batlist[ii]->ttype != TYPE_oid) {
-			GDKerror("mvaljoin: all BATs in the tail of the third input BAT (ws_item) must have tail type OID.\n");
-			ii++;
-			@:mval_free_batlist@
-			return GDK_FAIL;
-		}
-	}
-	if (view && !VIEWparent(batlist[ii])) { 
-                /* avoid BUNhead()/BUNtail() corruption due to multi-threading */
-		batlist[ii] = VIEWcreate(batlist[ii]);  /* view shares master hash table */
-		BBPunfix(VIEWparent(batlist[ii])); /* release the fix of BATdescriptor */
-	}
+        hsh = (BAThash(BATmirror(batlist[ii]), 0) != NULL);
+        if (batlist[ii]->ttype != TYPE_oid) {
+                GDKerror("mvaljoin: all BATs in the tail of the third input BAT (ws_item) must have tail type OID.\n");
+                ii++;
+                @:mval_free_batlist@
+                return GDK_FAIL;
+        }
 	all_hash &= hsh;
 	all_sort &= srt;
 	some_hash |= hsh;
@@ -6635,35 +6620,32 @@ int CMDmvaljoin ( BAT** res, BAT* pre, BAT* cont, BAT* ws_item )
 	wl = ws_item->hseqbase;
 	wh = wl + len - 1;
 
-	bsp = BUNsize(pre);
-	bsf = BUNsize(cont);
-
 	pp = BUNfirst(pre);
 	pf = BUNfirst(cont);
 
 @= hash_only
 	hash_t h;
-	BUN r;
-	b = BATmirror(b);
-	HASHloop_oid(b, b->hhash, h, (ptr)(&p), r) {
-		oidoid_bunfastins(bn,&base,BUNtail(b,r)); /* FIXME: "tvar" (void) vs. "tloc" (oid) */
+	BATiter bi;
+	bi.b = b = BATmirror(b);
+	HASHloop_oid(bi, b->H->hash, h, (ptr)(&p)) {
+		oidoid_bunfastins(bn,&base,BUNtail(bi,h)); /* FIXME: "tvar" (void) vs. "tloc" (oid) */
 	}
 @= sort_only
+	BATiter bi = bat_iterator(b);
 	BUN rp, rq;
-	int bs;
-	SORTloop_oid(b, rp, rq, (ptr)(&p), (ptr)(&p), bs) {
-		oidoid_bunfastins(bn,&base,BUNhead(b,rp)); /* FIXME: "hvar" (void) vs. "hloc" (oid) */
+	SORTloop_oid(b, rp, rq, (ptr)(&p), (ptr)(&p)) {
+		oidoid_bunfastins(bn,&base,BUNhead(bi,rp)); /* FIXME: "hvar" (void) vs. "hloc" (oid) */
 	}
 @= scan_only
+	BATiter bi = bat_iterator(b);
 	BUN rp, rq;
-	int bs;
-	BATloopFast(b, rp, rq, bs) {
-		if (p == *(oid*)BUNtail(b,rp)) { /* FIXME: "tvar" (void) vs. "tloc" (oid) */
-			oidoid_bunfastins(bn,&base,BUNhead(b,rp)); /* FIXME: "hvar" (void) vs. "hloc" (oid) */
+	BATloop(b, rp, rq) {
+		if (p == *(oid*)BUNtail(bi,rp)) { /* FIXME: "tvar" (void) vs. "tloc" (oid) */
+			oidoid_bunfastins(bn,&base,BUNhead(bi,rp)); /* FIXME: "hvar" (void) vs. "hloc" (oid) */
 		}
 	}
 @= hash_scan
-	if (b->thash) {
+	if (b->T->hash) {
 		@:hash_only@
 	} else {
 		@:scan_only@
@@ -6675,7 +6657,7 @@ int CMDmvaljoin ( BAT** res, BAT* pre, BAT* cont, BAT* ws_item )
 		@:scan_only@
 	}
 @= hash_sort_scan
-	if (b->thash) {
+	if (b->T->hash) {
 		@:hash_only@
 	} else if (BATtordered(b)&1) {
 		@:sort_only@
@@ -6683,9 +6665,9 @@ int CMDmvaljoin ( BAT** res, BAT* pre, BAT* cont, BAT* ws_item )
 		@:scan_only@
 	}
 @= mvaljoin
-	for (q = BUNlast(pre) ; pp < q ; pp += bsp, pf += bsf) {
-		oid p = *(oid*)BUNtail(pre,pp); /* FIXME: "tvar" (void) vs. "tloc" (oid) */
-		oid f = *(oid*)BUNtail(cont,pf); /* FIXME: "tvar" (void) vs. "tloc" (oid) */
+	for (q = BUNlast(pre) ; pp < q ; pp++, pf++) {
+		oid p = *(oid*)BUNtail(prei,pp); /* FIXME: "tvar" (void) vs. "tloc" (oid) */
+		oid f = *(oid*)BUNtail(conti,pf); /* FIXME: "tvar" (void) vs. "tloc" (oid) */
 		if (f >= wl && f <= wh) {
 			BAT *b = batlist[f - wl];
 			@1
@@ -6723,8 +6705,8 @@ int CMDmvaljoin ( BAT** res, BAT* pre, BAT* cont, BAT* ws_item )
 		BATseqbase(bn, (oid)0);
 		BATseqbase(BATmirror(bn), (oid)0);
 	} else if (BATcount(bn) == 1) {
-		BATseqbase(bn, *(oid*)BUNhloc(bn,BUNfirst(bn)));
-		BATseqbase(BATmirror(bn), *(oid*)BUNtloc(bn,BUNfirst(bn)));
+		BATseqbase(bn, *(oid*)Hloc(bn,BUNfirst(bn)));
+		BATseqbase(BATmirror(bn), *(oid*)Tloc(bn,BUNfirst(bn)));
 	}
 
 	*res = bn;
@@ -6764,7 +6746,6 @@ BATebv (BAT *b)
 {
     BAT *ret = NULL;    /* return value */
     BUN p = 0, q = 0;   /* BUN variables for iteration */
-    int bunsz;          /* BUN size used for iteration (BATloopFast) */
     oid old;            /* Last head value we had seen */
     bit val;            /* Boolean result value that belongs to `old' */
     size_t cnt = 0;     /* "guess" of result cardinality */
@@ -6816,21 +6797,20 @@ BATebv (BAT *b)
      */
 
     /* Initialize, ... */
-    bunsz = BUNsize (b);
     p = BUNfirst (b);
-    old = *(oid *) BUNhloc (b, p);
-    val = *(bit *) BUNtloc (b, p);
+    old = *(oid *) Hloc (b, p);
+    val = *(bit *) Tloc (b, p);
     /* ... skip first, ... */
-    p += bunsz;
+    p++;
     /* ... and process the rest. */
-    for(q = BUNlast(b); p < q; p += bunsz) {
-    	oid *head = (oid *) BUNhloc (b, p);
+    for(q = BUNlast(b); p < q; p++) {
+    	oid *head = (oid *) Hloc (b, p);
         if (*head == old)
             val = FALSE;
         else {
             bunfastins (ret, &old, &val);
             old = *head;
-            val = *(bit *) BUNtloc (b, p);
+            val = *(bit *) Tloc (b, p);
         }
     }
     /* Don't forget to produce the last BUN. */
@@ -6874,19 +6854,19 @@ CMDebv (BAT **result, BAT *b)
 int
 CMDinvalid_qname(str *ret, BAT *b) 
 {
+	BATiter bi = bat_iterator(b);
         str s = ATOMnilptr(TYPE_str);
 	BUN p, q;
-	int xx;
 
-	BATloopFast(b,p,q,xx) {
-            char *r = BUNtail(b,p);
+	BATloop(b,p,q) {
+            char *r = BUNtail(bi,p);
 	    if ((*r >= 'a' && *r <= 'z') || (*r >= 'A' && *r <= 'Z') || *(unsigned char*) r >= 128) {
                 r++;
                 while((*r >= 'a' && *r <= 'z') || (*r >= 'A' && *r <= 'Z') || (*(unsigned char*) r >= 128) ||
                       (*r == '_') || (*r == '.') || (*r == '-') || (*r >= '0' && *r <= '9')) r++;
                 if (*r == 0) continue; /* ok */
             }
-	    s = (str) BUNtail(b,p); break;
+	    s = (str) BUNtail(bi,p); break;
 	}
 	*ret = GDKstrdup(s);
         return GDK_SUCCEED;
@@ -6948,9 +6928,12 @@ struct stack_item {
  */
 int
 CMDcorrect_sizes(BAT **ret, BAT *bat_iter, BAT *bat_item, BAT *bat_size) {
+	BATiter bat_iteri = bat_iterator(bat_iter);
+	BATiter bat_itemi = bat_iterator(bat_item);
+	BATiter bat_sizei = bat_iterator(bat_size);
 	BUN cur_iter, cur_item, cur_size;
 	BUN fst_size, lst_size;
-	int bs_iter, bs_item, bs_size;
+	int bs_iter;
 	size_t cnt;
 	oid base;
 	oid prev_iter, prev_item, pre;
@@ -6982,9 +6965,7 @@ CMDcorrect_sizes(BAT **ret, BAT *bat_iter, BAT *bat_item, BAT *bat_size) {
 	}
 	stack_top = -1;
 
-	bs_iter = (fake_iter?0:BUNsize(bat_iter));
-	bs_item = BUNsize(bat_item);
-	bs_size = BUNsize(bat_size);
+	bs_iter = (fake_iter?0:1);
 	cur_iter = BUNfirst(bat_iter);
 	cur_item = BUNfirst(bat_item);
 	fst_size = BUNfirst(bat_size);
@@ -6993,12 +6974,12 @@ CMDcorrect_sizes(BAT **ret, BAT *bat_iter, BAT *bat_item, BAT *bat_size) {
 	prev_iter = oid_nil;
 	prev_item = oid_nil;
 	pre = oid_nil;
-	for (cur_size = fst_size ; cur_size < lst_size ; cur_size += bs_size, cur_item += bs_item, cur_iter += bs_iter) {
-		oid iter = *(oid*)BUNtail(bat_iter, cur_iter);
-		oid item = *(oid*)BUNtail(bat_item, cur_item);
-		int *sze =  (int*)BUNtail(bat_size, cur_size);
+	for (cur_size = fst_size ; cur_size < lst_size ; cur_size++, cur_item++, cur_iter += bs_iter) {
+		oid iter = *(oid*)BUNtail(bat_iteri, cur_iter);
+		oid item = *(oid*)BUNtail(bat_itemi, cur_item);
+		int *sze =  (int*)BUNtail(bat_sizei, cur_size);
 		int size = *sze;
-		    pre  = *(oid*)BUNhead(bat_size, cur_size);
+		    pre  = *(oid*)BUNhead(bat_sizei, cur_size);
 		while (stack_top >= 0 && ( iter != prev_iter || item > stack[stack_top].limit || item < prev_item )) {
 			POP(stack, s);
 			if (s.limit > prev_item) {
@@ -7034,7 +7015,8 @@ CMDcorrect_sizes(BAT **ret, BAT *bat_iter, BAT *bat_item, BAT *bat_size) {
 int
 CMDSplitBat(BAT **res, BAT *b, str sep)
 {
-	BAT **bn;
+	BATiter bi = bat_iterator(b);
+	BATiter *bn;
 	size_t nbats = 0;
 	size_t maxbats = 16;
 	BUN p, q, r;
@@ -7053,12 +7035,12 @@ CMDSplitBat(BAT **res, BAT *b, str sep)
 	ERRORcheck(seplen == 0, "splitbat: separator must not be empty.\n");
 
 	o = base = b->hseqbase;
-	bn = GDKmalloc(maxbats * sizeof(BAT *));
+	bn = GDKmalloc(maxbats * sizeof(BATiter));
 	if (bn == NULL)
 		goto bunins_failed;
-	memset(bn, 0, maxbats * sizeof(BAT *));
+	memset(bn, 0, maxbats * sizeof(BATiter));
 	BATloop(b, p, q) {
-		s = (str) BUNtail(b, p);
+		s = (str) BUNtail(bi, p);
 		l = strlen(s);
 		if (l >= buflen) {
 			while (l >= (buflen += BUFSIZ))
@@ -7077,24 +7059,24 @@ CMDSplitBat(BAT **res, BAT *b, str sep)
 				size_t j;
 
 				if (nbats >= maxbats) {
-					bn = GDKrealloc(bn, maxbats + 16);
+					bn = GDKrealloc(bn, maxbats + 16*sizeof(BATiter));
 					if (bn == NULL)
 						goto bunins_failed;
-					memset(&bn[maxbats], 0, 16 * sizeof(BAT *));
+					memset(&bn[maxbats], 0, 16 * sizeof(BATiter));
 					maxbats += 16;
 				}
-				bn[i] = BATnew(TYPE_void, TYPE_str, bs);
-				if (bn[i] == NULL)
+				bn[i].b = BATnew(TYPE_void, TYPE_str, bs);
+				if (bn[i].b == NULL)
 					goto bunins_failed;
-				bn[i] = BATseqbase(bn[i], base);
-				BATkey(BATmirror(bn[i]), FALSE);
-				bn[i]->tsorted = 0;
+				bn[i].b = BATseqbase(bn[i].b, base);
+				BATkey(BATmirror(bn[i].b), FALSE);
+				bn[i].b->tsorted = 0;
 				for (j = 0; j < bs; j++)
-					bunfastins(bn[i], NULL, str_nil);
+					bunfastins(bn[i].b, NULL, str_nil);
 				nbats++;
 			}
 			BUNfndVOID(r, bn[i], &o);
-			ATOMreplace(TYPE_str, bn[i]->theap, BUNtloc(bn[i], r), s);
+			ATOMreplace(TYPE_str, bn[i].b->theap, Tloc(bn[i].b, r), s);
 			i++;
 			s = e ? e + seplen : NULL;
 		}
@@ -7108,8 +7090,8 @@ CMDSplitBat(BAT **res, BAT *b, str sep)
 	BATkey(BATmirror(*res), FALSE);
 	(*res)->tsorted = 0;
 	for (i = 0; i < nbats; i++) {
-		bunfastins(*res, NULL, &bn[i]->batCacheid);
-		BBPunfix(bn[i]->batCacheid);
+		bunfastins(*res, NULL, &bn[i].b->batCacheid);
+		BBPunfix(bn[i].b->batCacheid);
 	}
 	GDKfree(bn);
 	return GDK_SUCCEED;
@@ -7117,8 +7099,8 @@ CMDSplitBat(BAT **res, BAT *b, str sep)
   bunins_failed:
 	if (bn) {
 		for (i = 0; i < nbats; i++)
-			if (bn[i])
-				BBPreclaim(bn[i]);
+			if (bn[i].b)
+				BBPreclaim(bn[i].b);
 		GDKfree(bn);
 	}
 	if (buf)
@@ -7145,11 +7127,11 @@ CMDSplitKind(BAT **res, BAT *b)
 		bn[i]->tsorted = 0;
 		bn[i]->hsorted = b->hsorted;
 		BATkey(bn[i], b->hkey & 1);
-		cur[i] = (oid*) BUNfirst(bn[i]);
+		cur[i] = (oid*) Hloc(bn[i], BUNfirst(bn[i]));
 	}
-	if (BAThdense(b) && BUNsize(b) == sizeof(chr)) {
+	if (BAThdense(b)) {
 		/* fast split-select with direct oid-inserts and predication */
-		chr *v = ((chr*) BUNfirst(b)) - b->hseqbase;	
+		chr *v = ((chr*) Tloc(b,BUNfirst(b))) - b->hseqbase;	
 		for(i=b->hseqbase, n+=b->hseqbase; i<n; i++) {
 			int val = v[i];
 			if ((val >= 0) & (val < MAXKIND))
@@ -7157,15 +7139,15 @@ CMDSplitKind(BAT **res, BAT *b)
 		}
 	} else {
 		BUN p, q;
-		BATloopFast(b, p, q, i) {
-			int val = *(chr*) BUNtloc(b, p);
+		assert(b->htype == TYPE_void);
+		BATloop(b, p, q) {
+			int val = *(chr*) Tloc(b, p);
 			if ((val >= 0) & (val < MAXKIND))
-				*cur[val]++ = *(oid*) BUNhead(b,p);
+				*cur[val]++ = *(oid*) Hloc(b,p);
 		}
 	}
 	for(i=0; i<MAXKIND; i++) {
-		bn[i]->batBuns->free = ((BUN) cur[i]) - bn[i]->batBuns->base;
-		BATsetcount(bn[i], bn[i]->batBuns->free/sizeof(oid));
+		BATsetcount(bn[i], cur[i] - (oid*)bn[i]->H->heap.base);
 	}
 	*res = BATnew(TYPE_void, TYPE_bat, MAXKIND);
 	if (*res == NULL)
@@ -7340,7 +7322,7 @@ int CMDpflock_end(lng *wsid)
         self_passed = BUNlocate(ws_overlaps_ws, wsid, &nil);
         BUNdelHead(ws_overlaps_ws, wsid, FALSE); /* release all active info on this query */
         others_passed = BUNfnd(BATmirror(ws_overlaps_ws), &nil);
-        if (self_passed && !others_passed) {
+        if (self_passed != BUN_NONE && others_passed == BUN_NONE) {
             MT_up_sema(PF_META_BARRIER, "pflock_end: metaBarrier");
         }
 
@@ -7366,13 +7348,10 @@ int CMDpflock_meta(lng *wsid)
 {
     int mode = ((*wsid) & (3LL << 30)) >> 30;
     lng nil = lng_nil;
-    BUN self_passed; /* this query uses meta-information functions? */
     BUN others_passed; /* there are multiple such queries active? */
 
     MT_set_lock(PF_SHORT_LOCK, "pflock_meta: shortLock precheck");
-    self_passed = BUNlocate(ws_overlaps_ws, wsid, &nil);
-    if (*wsid == pf_special) self_passed = (BUN) wsid;
-    if (self_passed) {
+    if (*wsid == pf_special || BUNlocate(ws_overlaps_ws, wsid, &nil) != BUN_NONE) {
         MT_unset_lock(PF_SHORT_LOCK, "pflock_meta: shortLock precheck");
         return GDK_SUCCEED; /* already got permission to proceed */
     }
@@ -7398,7 +7377,7 @@ int CMDpflock_meta(lng *wsid)
     others_passed = BUNfnd(BATmirror(ws_overlaps_ws), &nil);
     BUNins(ws_overlaps_ws, wsid, &nil, FALSE);
     MT_unset_lock(PF_SHORT_LOCK, "pflock_meta: shortLock insert");
-    if (!others_passed) {
+    if (others_passed == BUN_NONE) {
         /* first query with meta function: get barrier */
         MT_down_sema(PF_META_BARRIER, "pflock_meta: metaBarrier");
     }
@@ -7412,7 +7391,7 @@ int CMDpflock_free(bit *res, bit* doCommit) {
     if (*doCommit == TRUE) {
         /* only OK if no active query called a meta-information function */
         lng nil = lng_nil;
-        *res = (BUNfnd(BATmirror(ws_overlaps_ws), &nil) == NULL);
+        *res = (BUNfnd(BATmirror(ws_overlaps_ws), &nil) == BUN_NONE);
     }
     return GDK_SUCCEED;
 }
@@ -7424,7 +7403,7 @@ int CMDws_bat(BAT **ret, lng* wsid)
     *ret = 0;
     if (BBPfix(bid)) {
         BAT *v = 0, *b = BBPdescriptor(bid);
-        if (b) *ret = v = VIEWcreate(b);
+        if (b) *ret = v = VIEWcreate(b,b);
         BBPunfix(bid);
 	if (v) {
             /* give the view a name such that lng(bbname(v)) = lng(bbpname(b)) */

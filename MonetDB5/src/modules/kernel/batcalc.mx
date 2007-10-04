@@ -304,108 +304,92 @@ comment "Return a BAT with the negated tail";
 The accumulator operators are relatively straight forward,
 when the target BAT is known and we only have to deal with
 fixed-sized types. 
-@= batinit
-	s@1= BUNsize(@2);
-	p@1= (str) (BUNfirst(@2)+@2->tloc);
 @-
 @= accum
-	while( p1 < hend ){
+{
+	@1 *o = (@1*)Tloc(bn, BUNfirst(bn));
+	@3 *p = (@3*)Tloc(b, BUNfirst(b));
+	@3 *q = (@3*)Tloc(b, BUNlast(b));
+	@4 *r = (@4*)Tloc(right, BUNfirst(right));
+
+	for (; p<q; o++, p++, r++){
 		/* this code is better as x?nil:y  */
 #ifdef NULLTST
-		if(*(@3 *)p2 == @3_nil || *(@4*)p3 == @4_nil)
-			*(@1*)p1= @1_nil;
+		if(*p == @3_nil || *r == @4_nil)
+			*o = @1_nil;
 		else 
 #endif
-			*(@1*)p1= (@1) (* (@3*) p2 @2 *(@4 *) p3);
-		p1= (ptr)( ((char*)p1) + s1);
-		p2= (ptr)( ((char*)p2) + s2);
-		p3= (ptr)( ((char*)p3) + s3);
+			*o = (@1) (*p @2 *r);
 	}
-@= accumDIV
-	while( p1 < hend ){
-		/* this code is better as x?nil:y  */
-		if (*(@4*)p3 == 0) {
-				res = createException(ARITH, "batcalc.@1", "Division by zero");
-			break;
-		} else
-#ifdef NULLTST
-		if (*(@3 *)p2 == @3_nil || *(@4*)p3 == @4_nil)
-			*(@1*)p1= @1_nil;
-		else 
-#endif
-			*(@1*)p1= (@1)(* (@3*) p2 @2 *(@4 *) p3);
-		p1= (ptr)( ((char*)p1) + s1);
-		p2= (ptr)( ((char*)p2) + s2);
-		p3= (ptr)( ((char*)p3) + s3);
-	}
-@-
-This code could be further improved by factoring
-out occurrences of the nil-tst on the constant provided.
-This has been left out.
+}
 @= accumCst
+{
+	@1 *o = (@1*)Tloc(bn, BUNfirst(bn)); 
+	@3 *p = (@3*)Tloc(b, BUNfirst(b));
+	@3 *q = (@3*)Tloc(b, BUNlast(b));
+	@4 c  = *(@4*)cst;
 #ifdef NULLTST
-	if( *(@4*) cst == @4_nil){
-		while( p1 < hend ){
-			*(@1*)p1= @1_nil;
-			p1= (ptr)( ((char *)p1) + s1);
-			p2= (ptr)( ((char *)p2) + s2);
+	if( c == @4_nil){
+		for (;p<q; o++, p++) {
+			*o = @1_nil;
 		}
 	} else
-	while( p1 < hend ){
-		if(*(@3 *)p2 == @3_nil )
-			*(@1*)p1= @1_nil;
+	for (;p<q; o++, p++) {
+		if (*p == @3_nil )
+			*o = @1_nil;
 		else 
-			*(@1*)p1 = *(@3*) p2 @2 *(@4 *) cst;
-		p1= (ptr)( ((char *)p1) + s1);
-		p2= (ptr)( ((char *)p2) + s2);
+			*o = *p @2 c;
 	}
 #else
-	while( p1 < hend ){
-		*(@1*)p1 = *(@3*) p2 @2 *(@4 *) cst;
-		p1= (ptr)( ((char *)p1) + s1);
-		p2= (ptr)( ((char *)p2) + s2);
+	for (;p<q; o++, p++) {
+		*o = *p @2 c;
 	}
 #endif
-
+}
 @= accumCstLeft
+{
+	@1 *o = (@1*)Tloc(bn, BUNfirst(bn)); 
+	@3 c  = *(@3*)cst;
+	@4 *p = (@4*)Tloc(b, BUNfirst(b));
+	@4 *q = (@4*)Tloc(b, BUNlast(b));
 #ifdef NULLTST
-	if( *(@4*) cst == @4_nil)
-		while( p1 < hend ){
-			*(@1*)p1= @1_nil;
-			p1= (ptr)( ((char *)p1) + s1);
-			p2= (ptr)( ((char *)p2) + s2);
+	if (c == @3_nil)
+		for (; p<q; o++, p++) {
+			*o = @1_nil;
 		}
 	else
-	while( p1 < hend ){
-		if(*(@3 *)p2 == @3_nil )
-			*(@1*)p1= @1_nil;
+	for (; p<q; o++, p++) {
+		if (*p == @4_nil )
+			*o = @1_nil;
 		else 
-			*(@1*)p1 = *(@3*) cst @2 *(@4 *) p2;
-		p1= (ptr)( ((char *)p1) + s1);
-		p2= (ptr)( ((char *)p2) + s2);
+			*o = c @2 *p;
 	}
 #else
-	while( p1 < hend ){
-		*(@1*)p1 = *(@3*) cst @2 *(@4 *) p2;
-		p1= (ptr)( ((char *)p1) + s1);
-		p2= (ptr)( ((char *)p2) + s2);
+	for (; p<q; o++, p++) {
+		*o = c @2 *p;
 	}
 #endif
+}
 @= accumCstDIV
-	while( p1 < hend ){
-		if(*(@3*)cst == 0) { 
-				res = createException(ARITH, "batcalc.@1", "Division by zero");
+{
+	@1 *o = (@1*)Tloc(bn, BUNfirst(bn)); 
+	@3 c  = *(@3*)cst;
+	@4 *p = (@4*)Tloc(b, BUNfirst(b));
+	@4 *q = (@4*)Tloc(b, BUNlast(b));
+
+	for (; p<q; o++, p++) {
+		if (c == 0) { 
+			res = createException(ARITH, "batcalc.@1", "Division by zero");
 			break;
 		} else 
 #ifdef NULLTST
-		if(*(@3*)cst == @3_nil || *(@4 *)p2 == @4_nil)
-			*(@1*)p1 = @1_nil;
+		if (c == @3_nil || *p == @4_nil)
+			*o = @1_nil;
 		else 
 #endif
-			*(@1*)p1 = *(@3 *) cst @2 *(@4*) p2;
-		p1= (ptr)( ((char *)p1) + s1);
-		p2= (ptr)( ((char *)p2) + s2);
+			*o = c @2 *p;
 	}
+}
 @-
 A general assumption in all cases is the bats are synchronized on their
 head column. This is not checked and may be mis-used to deploy the
@@ -424,131 +408,104 @@ collected in bataccum<operator>. Initialization of the
 two primary command structures are dealt with in the CMD* alternatives.
 The similar code base is produced for dealing with a constant argument. 
 @= loopImpl
-{	size_t s1,s2,s3;
-	ptr p1,p2,p3, hend;
+{	
+	@3 *o = (@3*)Tloc(bn, BUNfirst(bn));
+	@4 *p = (@4*)Tloc(b, BUNfirst(b));
+	@4 *q = (@4*)Tloc(b, BUNlast(b));
+	@5 *r = (@5*)Tloc(right, BUNfirst(right));
 
-	@:batinit(1,bn)@
-	@:batinit(2,left)@
-	@:batinit(3,right)@
-	hend = (str) BUNlast(bn);
 	if( '@1' == '/'){ 
-		while( p1 < hend ){
+		for(; p<q; o++, p++, r++) {
 			/* this code is better as x?nil:y  */
-			if (*(@5*)p3== 0) {
-					res = createException(ARITH, "batcalc.@1", "Division by zero");
+			if (*r == 0) {
+				res = createException(ARITH, "batcalc.@1", "Division by zero");
 				break;
 				
 			} else 
 #ifdef NULLTST
-			if (*(@4 *)p2 == @4_nil || *(@5*)p3 == @5_nil)
-				*(@3*)p1= @3_nil;
+			if (*p == @4_nil || *r == @5_nil)
+				*o = @3_nil;
 			else 
 #endif
-				*(@3*)p1= (@3)(* (@4*) p2 / *(@5 *) p3);
-			p1= (ptr)( ((char*)p1) + s1);
-			p2= (ptr)( ((char*)p2) + s2);
-			p3= (ptr)( ((char*)p3) + s3);
+				*o = (@3)(*p / *r);
 		}
 	} else {
-		while( p1 < hend ){
+		for(; p<q; o++, p++, r++) {
 			/* this code is better as x?nil:y  */
 #ifdef NULLTST
-			if(*(@4 *)p2 == @4_nil || *(@5*)p3 == @5_nil)
-				*(@3*)p1= @3_nil;
+			if (*p == @4_nil || *r == @5_nil)
+				*o = @3_nil;
 			else 
 #endif
-				*(@3*)p1= (@3) (* (@4*) p2 @1 *(@5 *) p3);
-			p1= (ptr)( ((char*)p1) + s1);
-			p2= (ptr)( ((char*)p2) + s2);
-			p3= (ptr)( ((char*)p3) + s3);
+				*o = (@3) (*p @1 *r);
 		}
 	}
 }
 @= arithmeticImpl
 batcalc_export str CMDbat@2_@3_@4_@5(int *ret, int *l, int *r);
 str CMDbat@2_@3_@4_@5(int *ret, int *l, int *r)
-{	BAT *bn, *left, *right;
+{	
+	BAT *bn, *b, *right;
 	char *res = MAL_SUCCEED;
 
-	if( (left= BATdescriptor(*l)) == NULL ){
-		throw(MAL, "batcalc.@1", "Cannot access descriptor");
-	}
-	if( (right= BATdescriptor(*r)) == NULL ){
-		BBPreleaseref(left->batCacheid);
-		throw(MAL, "batcalc.@1", "Cannot access descriptor");
-	}
-	@:chkSize(left,right,CMDbat@2)@
+	@:getBATdescriptor(l,b,"batcalc.@1")@
+	@:getBATdescriptor(r,right,"batcalc.@1")@
+	@:chkSize(b,right,CMDbat@2)@
+	@:voidresultBAT(TYPE_@3,"batcalc.@1")@
 
-	if (left->ttype == TYPE_@3)
-		bn= BATwcopy(left);
-	else
-		bn= BATwcopy(right);
-	if( bn == NULL){
-		BBPreleaseref(left->batCacheid);
-		BBPreleaseref(right->batCacheid);
-		throw(MAL, "batcalc.@1", "no copy available ");
-	}
 	@:loopImpl(@1,@2,@3,@4,@5)@
-	BBPreleaseref(left->batCacheid);
-	BBPreleaseref(right->batCacheid);
-	BATkey(BATmirror(bn),0);           
+
+	BATsetcount(bn, BATcount(b));
 	bn->tsorted = 0;
-	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); \
-	*ret = bn->batCacheid;
-	BBPkeepref(*ret);
+	BATkey(BATmirror(bn),FALSE);
+
+	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); 
+
+	if (b->htype != bn->htype) {
+		BAT *r = VIEWcreate(b,bn);
+
+		BBPreleaseref(bn->batCacheid);
+		bn = r;
+	}
+	BBPkeepref(*ret = bn->batCacheid);
+	BBPreleaseref(b->batCacheid);
+	BBPreleaseref(right->batCacheid);
 	return res;
 }
 
 batcalc_export str CMDbataccum@2_@3_@4_@5(int *ret, int *d, int *l, int *r);
 str CMDbataccum@2_@3_@4_@5(int *ret, int *d, int *l, int *r)
-{	BAT *bn, *left, *right;
+{	
+	BAT *bn, *b, *right;
 	char *res = MAL_SUCCEED;
 
-	if( (bn= BATdescriptor(*d)) == NULL ){
-		throw(MAL, "batcalc.@1", "Cannot access descriptor");
-	}
-	if( (left= BATdescriptor(*l)) == NULL ){
-		BBPreleaseref(bn->batCacheid);
-		throw(MAL, "batcalc.@1", "Cannot access descriptor");
-	}
-	if( (right= BATdescriptor(*r)) == NULL ){
-		BBPreleaseref(bn->batCacheid);
-		BBPreleaseref(left->batCacheid);
-		throw(MAL, "batcalc.@1", "Cannot access descriptor");
-	}
+	@:getBATdescriptor(d,bn,"batcalc.@1")@
+	@:getBATdescriptor(l,b,"batcalc.@1")@
+	@:getBATdescriptor(r,right,"batcalc.@1")@
 
-	@:chkSize(bn,left,CMDbataccum@2)@
+	@:chkSize(bn,b,CMDbataccum@2)@
 	@:chkSize(bn,right,CMDbataccum@2)@
 
 	@:loopImpl(@1,@2,@3,@4,@5)@
-	BATkey(BATmirror(bn),0);           
+
 	bn->tsorted = 0;
-	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); \
-	*ret = bn->batCacheid;
-	BBPkeepref(bn->batCacheid);
-	BBPreleaseref(left->batCacheid);
+	BATkey(BATmirror(bn),FALSE);
+
+	BBPkeepref(*ret = bn->batCacheid);
+	BBPreleaseref(b->batCacheid);
 	BBPreleaseref(right->batCacheid);
 	return res;
 }
 
 batcalc_export str CMDbataccum@2cst_@3_@4_@5(int *ret, int *r, int *l, void *cst);
 str CMDbataccum@2cst_@3_@4_@5(int *ret, int *r, int *l, void *cst)
-{	BAT *bn, *left;
-	size_t s1,s2;
-	ptr p1,p2, hend;
+{	
+	BAT *bn, *b;
 	char *res = MAL_SUCCEED;
 
-	if( (bn= BATdescriptor(*r)) == NULL ){
-		throw(MAL, "batcalc.@1", "Cannot access descriptor");
-	}
-	if( (left= BATdescriptor(*l)) == NULL ){
-		BBPreleaseref(bn->batCacheid);
-		throw(MAL, "batcalc.@1", "Cannot access descriptor");
-	}
-	@:chkSize(bn,left,CMDbataccum@2)@
-	@:batinit(1,bn)@
-	@:batinit(2,left)@
-	hend = (str) BUNlast(bn);
+	@:getBATdescriptor(r,bn,"batcalc.@1")@
+	@:getBATdescriptor(l,b,"batcalc.@1")@
+	@:chkSize(bn,b,CMDbataccum@2)@
 
 	if( '@1'== '/') {
 		if (*(@5*)cst == 0) {
@@ -559,198 +516,104 @@ str CMDbataccum@2cst_@3_@4_@5(int *ret, int *r, int *l, void *cst)
 	} else {
 		@:accumCst(@3,@1,@4,@5)@ 
 	}
-	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); \
 	bn->tsorted = 0;
-	BATkey(BATmirror(bn),0);           
-	*ret = bn->batCacheid;
-	BBPkeepref(bn->batCacheid);
-	BBPreleaseref(left->batCacheid);
+	BATkey(BATmirror(bn),FALSE);
+
+	BBPkeepref(*ret = bn->batCacheid);
+	BBPreleaseref(b->batCacheid);
 	return res;
 }
+
 batcalc_export str CMDbataccum@2cst2_@3_@4_@5(int *ret, int *r, void *cst, int *l);
 str CMDbataccum@2cst2_@3_@4_@5(int *ret, int *r, void *cst, int *l)
-{	BAT *bn, *left;
-	size_t s1,s2;
-	ptr p1,p2, hend;
+{	
+	BAT *bn, *b;
 	char *res = MAL_SUCCEED;
 
-	if( (bn= BATdescriptor(*r)) == NULL ){
-		throw(MAL, "batcalc.@1", "Cannot access descriptor");
-	}
-	if( (left= BATdescriptor(*l)) == NULL ){
-		BBPreleaseref(bn->batCacheid);
-		throw(MAL, "batcalc.@1", "Cannot access descriptor");
-	}
-	@:chkSize(bn,left,CMDbataccum@2)@
-	@:batinit(1,bn)@
-	@:batinit(2,left)@
-	hend = (str) BUNlast(bn);
+	@:getBATdescriptor(r,bn,"batcalc.@1")@
+	@:getBATdescriptor(l,b,"batcalc.@1")@
+	@:chkSize(bn,b,CMDbataccum@2)@
 
 	if( '@1'== '/') {
 		@:accumCstDIV(@3,@1,@4,@5)@ 
 	} else {
 		@:accumCstLeft(@3,@1,@4,@5)@ 
 	}
-	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); \
 	bn->tsorted = 0;
-	BATkey(BATmirror(bn),0);           
-	*ret = bn->batCacheid;
-	BBPkeepref(bn->batCacheid);
-	BBPreleaseref(left->batCacheid);
+	BATkey(BATmirror(bn),FALSE);
+
+	BBPkeepref(*ret = bn->batCacheid);
+	BBPreleaseref(b->batCacheid);
 	return res;
 }
 
 batcalc_export str CMDbat@2cst_@3_@4_@5(int *ret, int *l, void *cst);
 str CMDbat@2cst_@3_@4_@5(int *ret, int *l, void *cst)
-{	BAT *bn, *left;
-	size_t s1,s2;
-	ptr p1,p2, hend;
+{	
+	BAT *bn, *b;
 	char *res = MAL_SUCCEED;
 
-	if( (left= BATdescriptor(*l)) == NULL ){
-		throw(MAL, "batcalc.@1", "Cannot access descriptor");
-	}
-	bn= newBATresult(left, TYPE_@3);
-	if( bn == NULL){
-		BBPreleaseref(left->batCacheid);
-		throw(MAL, "batcalc.@1", "no copy available ");
-	}
-	copyHead(bn,left);
-
-	@:batinit(1,bn)@
-	@:batinit(2,left)@
-
-	hend = ((str) BUNlast(bn)) + (s1*BATcount(left));
+	@:getBATdescriptor(l,b,"batcalc.@1")@
+	@:voidresultBAT(TYPE_@3,"batcalc.@1")@
 
 	if( '@1'== '/') {
 		if (*(@5*)cst == 0) {
-				res = createException(ARITH, "batcalc.@1", "Division by zero");
+			res = createException(ARITH, "batcalc.@1", "Division by zero");
 		} else {
 			@:accumCst(@3,@1,@4,@5)@ 
 		}
 	} else {
 		@:accumCst(@3,@1,@4,@5)@ 
 	}
-	bn->batBuns->free = BATcount(left) * s1;
-	BATsetcount(bn, BATcount(left));
+	BATsetcount(bn, BATcount(b));
 	bn->tsorted = 0;
-	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); \
-	*ret = bn->batCacheid;
-	BBPkeepref(bn->batCacheid);
-	BBPreleaseref(left->batCacheid);
+	BATkey(BATmirror(bn),FALSE);
+
+	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); 
+
+	if (b->htype != bn->htype) {
+		BAT *r = VIEWcreate(b,bn);
+
+		BBPreleaseref(bn->batCacheid);
+		bn = r;
+	}
+	BBPkeepref(*ret = bn->batCacheid);
+	BBPreleaseref(b->batCacheid);
 	return res;
 }
 batcalc_export str CMDcst@2bat_@3_@4_@5(int *ret, void *cst, int *l);
 str CMDcst@2bat_@3_@4_@5(int *ret, void *cst, int *l)
-{	BAT *bn, *left;
-	size_t s1,s2;
-	ptr p1,p2, hend;
+{	
+	BAT *bn, *b;
 	char *res = MAL_SUCCEED;
 
-	if( (left= BATdescriptor(*l)) == NULL ){
-		throw(MAL, "batcalc.@1", "Cannot access descriptor");
-	}
-	bn= newBATresult(left, TYPE_@3);
-	if( bn == NULL){
-		BBPreleaseref(left->batCacheid);
-		throw(MAL, "batcalc.@1", "no copy available ");
-	}
-	copyHead(bn,left);
-
-	@:batinit(1,bn)@
-	@:batinit(2,left)@
-
-	hend = ((str) BUNlast(bn)) + (s1*BATcount(left));
+	@:getBATdescriptor(l,b,"batcalc.@1")@
+	@:voidresultBAT(TYPE_@3,"batcalc.@1")@
 
 	if( '@1'== '/') {
 		@:accumCstDIV(@3,@1,@4,@5)@ 
 	} else {
 		@:accumCstLeft(@3,@1,@4,@5)@ 
 	}
-	bn->batBuns->free = BATcount(left) * s1;
-	BATsetcount(bn, BATcount(left));
+	BATsetcount(bn, BATcount(b));
 	bn->tsorted = 0;
-	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); \
-	*ret = bn->batCacheid;
-	BBPkeepref(bn->batCacheid);
-	BBPreleaseref(left->batCacheid);
+	BATkey(BATmirror(bn),FALSE);
+
+	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); 
+
+	if (b->htype != bn->htype) {
+		BAT *r = VIEWcreate(b,bn);
+
+		BBPreleaseref(bn->batCacheid);
+		bn = r;
+	}
+	BBPkeepref(*ret = bn->batCacheid);
+	BBPreleaseref(b->batCacheid);
 	return res;
 }
 @c
 #include "mal_config.h"
 #include "batcalc.h"
-
-#define BATwcopy(b) BATcopy(b, b->htype, b->ttype, TRUE)
-BAT *newBATresult(BAT *b, int tpe)
-{
-	BAT *bn;
-
-	if (BAThvoid(b)) {
-		bn = BATnew(TYPE_void, tpe, BATcount(b));
-		BATseqbase(bn, b->hseqbase);
-	} else
-		bn = BATnew(b->htype, tpe, BATcount(b));
-	bn->hsorted = b->hsorted;
-	bn->tsorted = b->tsorted;
-	return bn;
-}
-
-void
-copyHead(BAT *bn, BAT *org)
-{
-	if (BAThvoid(org)) {
-		BATseqbase(bn, org->hseqbase);
-	} else { /* works for fixed size only now, need to use a VIEW of the
-		    original in case of varsized atoms */
-		size_t s1,s2;
-		ptr p1,p2,hend;
-		int atomsize = ATOMsize(bn->htype);
-
-		s1 = BUNsize(bn);
-		p1 = (str) (BUNfirst(bn)+bn->hloc);
-		s2 = BUNsize(org);
-		p2 = (str) (BUNfirst(org)+org->hloc);
-		hend = (str) BUNlast(org);
-		switch(atomsize){
-		case 0:
-			break;
-		case 1:
-			while( p2<hend) {
-				*(chr*)p1 = *(chr*)p2;
-				p1= (ptr)( ((char*)p1) + s1);
-				p2= (ptr)( ((char*)p2) + s2);
-			}
-			break;
-		case 2:
-			while( p2<hend) {
-				*(sht*)p1 = *(sht*)p2;
-				p1= (ptr)( ((char*)p1) + s1);
-				p2= (ptr)( ((char*)p2) + s2);
-			}
-			break;
-		case 4:
-			while( p2<hend) {
-				*(int*)p1 = *(int*)p2;
-				p1= (ptr)( ((char*)p1) + s1);
-				p2= (ptr)( ((char*)p2) + s2);
-			}
-			break;
-		case 8:
-			while( p2<hend) {
-				*(lng*)p1 = *(lng*)p2;
-				p1= (ptr)( ((char*)p1) + s1);
-				p2= (ptr)( ((char*)p2) + s2);
-			}
-			break;
-		default:
-			while( p2<hend) {
-				memcpy(p1,p2,atomsize);
-				p1= (ptr)( ((char*)p1) + s1);
-				p2= (ptr)( ((char*)p2) + s2);
-			}
-		}
-	}
-}
 
 @= arithGrpImpl
 @:arithmeticImpl(@1,@2,flt,flt,flt)@
@@ -786,223 +649,167 @@ define here the necessary implementations separately by copying
 the arithmeticImpl block and removing elements not required.
 @c
 @= numeric_funcs
-batcalc_export str bataccum@1_@3_@4_@5(BAT *bn, BAT *left, BAT *right);
-str bataccum@1_@3_@4_@5(BAT *bn, BAT *left, BAT *right)
-{	size_t s1,s2,s3;
-	ptr p1,p2,p3, hend;
+batcalc_export str bataccum@1_@3_@4_@5(BAT *bn, BAT *b, BAT *right);
+str bataccum@1_@3_@4_@5(BAT *bn, BAT *b, BAT *right)
+{	
+	@:accum(@3,@2,@4,@5)@
+	BATsetcount(bn, BATcount(b));
+	bn->tsorted = 0;
+	BATkey(BATmirror(bn),FALSE);
 
-	@:batinit(1,bn)@
-	@:batinit(2,left)@
-	@:batinit(3,right)@
-	hend = (str) BUNlast(bn);
-	switch(BATttype(bn)){
-	case TYPE_oid: @:accum(oid,@2,oid,oid)@ break;
-	case TYPE_sht: @:accum(sht,@2,sht,sht)@ break;
-	case TYPE_int: @:accum(int,@2,int,int)@ break;
-	case TYPE_lng: @:accum(lng,@2,lng,lng)@ break;
-	default: throw(MAL, "batcalc.@1", "unexpected type");
-	}
 	return MAL_SUCCEED;
 }
 
 batcalc_export str CMDbat@1_@3_@4_@5(int *ret, int *l, int *r);
 str CMDbat@1_@3_@4_@5(int *ret, int *l, int *r)
-{	BAT *bn, *left, *right;
+{	
+	BAT *bn, *b, *right;
 	str msg;
 
-	if( (left= BATdescriptor(*l)) == NULL ){
-		throw(MAL, "batcalc.@1", "Cannot access descriptor");
-	}
-	if( (right= BATdescriptor(*r)) == NULL ){
-		BBPreleaseref(left->batCacheid);
-		throw(MAL, "batcalc.@1", "Cannot access descriptor");
-	}
+	@:getBATdescriptor(l,b,"batcalc.@1")@
+	@:getBATdescriptor(r,right,"batcalc.@1")@
+	@:chkSize(b,right,CMDbat@1)@
+	@:voidresultBAT(TYPE_@3,"batcalc.@1")@
 
-	@:chkSize(left,right,CMDbat@1)@
+	msg = bataccum@1_@3_@4_@5(bn,b,right);
 
-	if (left->ttype == TYPE_@3)
-		bn= BATwcopy(left);
-	else
-		bn= BATwcopy(right);
-	if( bn == NULL){
-		throw(MAL, "batcalc.@1", "no copy available ");
+	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); 
+
+	if (b->htype != bn->htype) {
+		BAT *r = VIEWcreate(b,bn);
+
+		BBPreleaseref(bn->batCacheid);
+		bn = r;
 	}
-	bn->tsorted = 0;
-	msg= bataccum@1_@3_@4_@5(bn,left,right);
-	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); \
-	*ret = bn->batCacheid;
-	BBPkeepref(*ret);
-	BBPreleaseref(left->batCacheid);
+	BBPkeepref(*ret = bn->batCacheid);
+	BBPreleaseref(b->batCacheid);
 	BBPreleaseref(right->batCacheid);
 	return msg;
 }
 
 batcalc_export str CMDbataccum@1_@3_@4_@5(int *ret, int *d, int *l, int *r);
 str CMDbataccum@1_@3_@4_@5(int *ret, int *d, int *l, int *r)
-{	BAT *bn, *left, *right;
+{	
+	BAT *bn, *b, *right;
 	str msg;
 
-	if( (bn= BATdescriptor(*d)) == NULL ){
-		throw(MAL, "batcalc.@1", "Cannot access descriptor");
-	}
-	if( (left= BATdescriptor(*l)) == NULL ){
-		BBPreleaseref(bn->batCacheid);
-		throw(MAL, "batcalc.@1", "Cannot access descriptor");
-	}
-	if( (right= BATdescriptor(*r)) == NULL ){
-		BBPreleaseref(bn->batCacheid);
-		BBPreleaseref(left->batCacheid);
-		throw(MAL, "batcalc.@1", "Cannot access descriptor");
-	}
-
-	@:chkSize(bn,left,CMDbataccum@1)@
+	@:getBATdescriptor(d,bn,"batcalc.@1")@
+	@:getBATdescriptor(l,b,"batcalc.@1")@
+	@:getBATdescriptor(r,right,"batcalc.@1")@
+	@:chkSize(bn,b,CMDbataccum@1)@
 	@:chkSize(bn,right,CMDbataccum@1)@
 
-	msg= bataccum@1_@3_@4_@5(bn,left,right);
-	bn->tsorted = 0;
-	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); \
-	*ret = bn->batCacheid;
-	BBPkeepref(bn->batCacheid);
-	BBPreleaseref(left->batCacheid);
+	msg = bataccum@1_@3_@4_@5(bn,b,right);
+
+	BBPkeepref(*ret = bn->batCacheid);
+	BBPreleaseref(b->batCacheid);
 	BBPreleaseref(right->batCacheid);
 	return msg;
 }
 batcalc_export str CMDbataccum@1cst_@3_@4_@5(int *ret, int *r, int *l, void *cst);
 str CMDbataccum@1cst_@3_@4_@5(int *ret, int *r, int *l, void *cst)
-{	BAT *bn, *left;
-	size_t s1,s2;
-	ptr p1,p2, hend;
+{	
+	BAT *bn, *b;
 
-	if( (bn= BATdescriptor(*r)) == NULL ){
-		throw(MAL, "batcalc.@1", "Cannot access descriptor");
-	}
-	if( (left= BATdescriptor(*l)) == NULL ){
-		BBPreleaseref(bn->batCacheid);
-		throw(MAL, "batcalc.@1", "Cannot access descriptor");
-	}
-	@:chkSize(bn,left,CMDbataccum@1)@
-	@:batinit(1,bn)@
-	@:batinit(2,left)@
-	hend = (str) BUNlast(bn);
+	@:getBATdescriptor(r,bn,"batcalc.@1")@
+	@:getBATdescriptor(l,b,"batcalc.@1")@
+	@:chkSize(bn,b,CMDbataccum@1)@
 
-	switch(BATttype(left)){
+	switch(BATttype(b)){
 	case TYPE_oid: @:accumCst(oid,@2,oid,oid)@ break;
 	case TYPE_sht: @:accumCst(sht,@2,sht,sht)@ break;
 	case TYPE_int: @:accumCst(int,@2,int,int)@ break;
 	case TYPE_lng: @:accumCst(lng,@2,lng,lng)@ break;
 	default : throw(MAL, "batcalc.@1", "unexpected type");
 	}
-	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); \
-	*ret = bn->batCacheid;
-	BBPkeepref(bn->batCacheid);
-	BBPreleaseref(left->batCacheid);
+	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); 
+
+	BBPkeepref(*ret = bn->batCacheid);
+	BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
 }
 
 batcalc_export str CMDbataccum@1cst2_@3_@4_@5(int *ret, int *r, void *cst, int *l);
 str CMDbataccum@1cst2_@3_@4_@5(int *ret, int *r, void *cst, int *l)
-{	BAT *bn, *left;
-	size_t s1,s2;
-	ptr p1,p2, hend;
+{	
+	BAT *bn, *b;
 
-	if( (bn= BATdescriptor(*r)) == NULL ){
-		throw(MAL, "batcalc.@1", "Cannot access descriptor");
-	}
-	if( (left= BATdescriptor(*l)) == NULL ){
-		BBPreleaseref(bn->batCacheid);
-		throw(MAL, "batcalc.@1", "Cannot access descriptor");
-	}
-	@:chkSize(bn,left,CMDbataccum@1)@
-	@:batinit(1,bn)@
-	@:batinit(2,left)@
-	hend = (str) BUNlast(bn);
+	@:getBATdescriptor(r,bn,"batcalc.@1")@
+	@:getBATdescriptor(l,b,"batcalc.@1")@
+	@:chkSize(bn,b,CMDbataccum@1)@
 
-	switch(BATttype(left)){
+	switch(BATttype(b)){
 	case TYPE_oid: @:accumCstLeft(oid,@2,oid,oid)@ break;
 	case TYPE_sht: @:accumCstLeft(sht,@2,sht,sht)@ break;
 	case TYPE_int: @:accumCstLeft(int,@2,int,int)@ break;
 	case TYPE_lng: @:accumCstLeft(lng,@2,lng,lng)@ break;
 	default : throw(MAL, "batcalc.@1", "unexpected type");
 	}
-	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); \
-	*ret = bn->batCacheid;
-	BBPkeepref(bn->batCacheid);
-	BBPreleaseref(left->batCacheid);
+
+	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); 
+
+	BBPkeepref(*ret = bn->batCacheid);
+	BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
 }
+
 batcalc_export str CMDbat@1cst_@3_@4_@5(int *ret, int *l, void *cst);
 str CMDbat@1cst_@3_@4_@5(int *ret, int *l, void *cst)
-{	BAT *bn, *left;
-	size_t s1,s2;
-	ptr p1,p2, hend;
+{	
+	BAT *bn, *b;
 	char *res = MAL_SUCCEED;
 
-	if( (left= BATdescriptor(*l)) == NULL ){
-		throw(MAL, "batcalc.@1", "Cannot access descriptor");
-	}
-	bn= newBATresult(left, TYPE_@3);
-	if( bn == 0){
-		BBPreleaseref(left->batCacheid);
-		throw(MAL, "batcalc.@1", "no copy available");
-	}
-	copyHead(bn,left);
-
-	@:batinit(1,bn)@
-	@:batinit(2,left)@
-	hend = ((str) BUNlast(bn)) + (s1*BATcount(left));
+	@:getBATdescriptor(l,b,"batcalc.@1")@
+	@:voidresultBAT(b->ttype,"batcalc.@1")@
 
 	if( '@2'== '/') {
 		if (*(@5*)cst == 0) {
-				res = createException(ARITH, "batcalc.@1", "Division by zero");
+			res = createException(ARITH, "batcalc.@1", "Division by zero");
 		} else {
 			@:accumCst(@3,@2,@4,@5)@ 
 		}
 	} else {
 		@:accumCst(@3,@2,@4,@5)@ 
 	}
-	bn->batBuns->free = BATcount(left) * s1;
-	BATsetcount(bn, BATcount(left));
+	BATsetcount(bn, BATcount(b));
 	bn->tsorted = 0;
-	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); \
-	*ret = bn->batCacheid;
-	BBPkeepref(bn->batCacheid);
-	BBPreleaseref(left->batCacheid);
+	BATkey(BATmirror(bn),FALSE);
+
+	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); 
+
+	BBPkeepref(*ret = bn->batCacheid);
+	BBPreleaseref(b->batCacheid);
 	return res;
 }
+
 batcalc_export str CMDcst@1bat_@3_@4_@5(int *ret,void *cst, int *l);
 str CMDcst@1bat_@3_@4_@5(int *ret,void *cst, int *l)
-{	BAT *bn, *left;
-	size_t s1,s2;
-	ptr p1,p2, hend;
+{	
+	BAT *bn, *b;
 	char *res = MAL_SUCCEED;
 
-	if( (left= BATdescriptor(*l)) == NULL ){
-		throw(MAL, "batcalc.@1", "Cannot access descriptor");
-	}
-	bn= newBATresult(left, TYPE_@3);
-	if( bn == 0){
-		BBPreleaseref(left->batCacheid);
-		throw(MAL, "batcalc.@1", "no copy available");
-	}
-	copyHead(bn,left);
-
-	@:batinit(1,bn)@
-	@:batinit(2,left)@
-	hend = ((str) BUNlast(bn)) + (s1*BATcount(left));
+	@:getBATdescriptor(l,b,"batcalc.@1")@
+	@:voidresultBAT(TYPE_@3,"batcalc.@1")@
 
 	if( '@2'== '/') {
 		@:accumCstDIV(@3,@2,@4,@5)@ 
 	} else {
 		@:accumCstLeft(@3,@2,@4,@5)@ 
 	}
-	bn->batBuns->free = BATcount(left) * s1;
-	BATsetcount(bn, BATcount(left));
-	bn->hsorted = BAThordered(left);
+	BATsetcount(bn, BATcount(b));
 	bn->tsorted = 0;
-	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); \
-	*ret = bn->batCacheid;
-	BBPkeepref(bn->batCacheid);
-	BBPreleaseref(left->batCacheid);
+	BATkey(BATmirror(bn),FALSE);
+
+	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); 
+
+	if (b->htype != bn->htype) {
+		BAT *r = VIEWcreate(b,bn);
+
+		BBPreleaseref(bn->batCacheid);
+		bn = r;
+	}
+	BBPkeepref(*ret = bn->batCacheid);
+	BBPreleaseref(b->batCacheid);
 	return res;
 }
 @c
@@ -1029,37 +836,33 @@ str CMDcst@1bat_@3_@4_@5(int *ret,void *cst, int *l)
 
 @- Implementation of unary operations
 @= accumUnary
-	while( p1 < hend ){
-		/* this code is better as x?nil:y  */
+	{
+		@1* p = (@1*)Tloc(b,BUNfirst(b));
+		@1 *q = (@1*)Tloc(b,BUNlast(b));
+		@1 *o = (@1*)Tloc(bn,BUNfirst(bn));
+
+		for(; p<q; p++, o++){
+			/* this code is better as x?nil:y  */
 #ifdef NULLTST
-		if(*(@1 *)p2 == @1_nil )
-			*(@1*)p1= @1_nil;
-		else 
+			if(*p == @1_nil )
+				*o = @1_nil;
+			else 
 #endif
-			*(@1*)p1= (@1) (@2 *(@1 *) p2);
-		p1= (ptr)( ((char *)p1) + s1);
-		p2= (ptr)( ((char *)p2) + s2);
+				*o = (@1) (@2 *p);
+		}
 	}
 @-
 Unary accummulators are only indirectly called. They can not
 always be defined without signature clashes, eg. -(batA,batC).
 @= unary_impl
 batcalc_export str CMDunaryAccum@1(int *ret,int *did, int *bid);
-str CMDunaryAccum@1(int *ret,int *did, int *bid){
+str CMDunaryAccum@1(int *ret,int *did, int *bid)
+{
 	BAT *b,*bn;
-	size_t s1,s2;
-	ptr p1,p2, hend;
 	
-	if( (bn= BATdescriptor(*did)) == NULL ){
-		throw(MAL, "batcalc.@1", "Cannot access descriptor");
-	}
-	if( (b= BATdescriptor(*bid)) == NULL ){
-		BBPreleaseref(bn->batCacheid);
-		throw(MAL, "batcalc.@1", "Cannot access descriptor");
-	}
-	@:batinit(1,bn)@
-	@:batinit(2,b)@
-	hend = (str) BUNlast(bn);
+	@:getBATdescriptor(did,bn,"batcalc.@1")@
+	@:getBATdescriptor(bid,b,"batcalc.@1")@
+
 	switch(BATttype(bn)){
 	case TYPE_oid: @:accumUnary(oid,@2)@ break;
 	case TYPE_bte: @:accumUnary(bte,@2)@ break;
@@ -1070,30 +873,48 @@ str CMDunaryAccum@1(int *ret,int *did, int *bid){
 	case TYPE_dbl: @:accumUnary(dbl,@2)@ break;
 	default: throw(MAL, "batcalc.@1", "unexpected type");
 	}
-	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); \
-	*ret= bn->batCacheid;
+	bn->tsorted = 0;
 	BATkey(BATmirror(bn),FALSE);
-	BBPkeepref(bn->batCacheid);
+
+	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); 
+
+	BBPkeepref(*ret = bn->batCacheid);
 	BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
 }
 batcalc_export str CMDunary@1(int *ret, int *bid);
-str CMDunary@1(int *ret, int *bid){
+str CMDunary@1(int *ret, int *bid)
+{
 	BAT *b,*bn;
-	str msg;
 	
-	if( (b= BATdescriptor(*bid)) == NULL ){
-		throw(MAL, "batcalc.@1", "Cannot access descriptor");
+	@:getBATdescriptor(bid,b,"batcalc.@1")@
+	@:voidresultBAT(b->ttype,"batcalc.@1")@
+
+	switch(BATttype(bn)){
+	case TYPE_oid: @:accumUnary(oid,@2)@ break;
+	case TYPE_bte: @:accumUnary(bte,@2)@ break;
+	case TYPE_sht: @:accumUnary(sht,@2)@ break;
+	case TYPE_int: @:accumUnary(int,@2)@ break;
+	case TYPE_lng: @:accumUnary(lng,@2)@ break;
+	case TYPE_flt: @:accumUnary(flt,@2)@ break;
+	case TYPE_dbl: @:accumUnary(dbl,@2)@ break;
+	default: throw(MAL, "batcalc.@1", "unexpected type");
 	}
-	bn= BATwcopy(b);
-	if( bn == NULL){
-		BBPreleaseref(b->batCacheid);
-		throw(MAL, "batcalc.unary", "no copy available ");
+	BATsetcount(bn, BATcount(b));
+	bn->tsorted = 0;
+	BATkey(BATmirror(bn),FALSE);
+
+	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); 
+
+	if (b->htype != bn->htype) {
+		BAT *r = VIEWcreate(b,bn);
+
+		BBPreleaseref(bn->batCacheid);
+		bn = r;
 	}
-	msg= CMDunaryAccum@1(ret,&bn->batCacheid,bid);
-	BBPreleaseref(bn->batCacheid);
+	BBPkeepref(*ret = bn->batCacheid);
 	BBPreleaseref(b->batCacheid);
-	return msg;
+	return MAL_SUCCEED;
 }
 @c
 @:unary_impl(MIN,-)@
@@ -1101,36 +922,27 @@ str CMDunary@1(int *ret, int *bid){
 @:unary_impl(PLUSPLUS,++)@
 
 @= accumUnaryISNIL
-	while( p1 < hend ){
-		if( *(@1*)p2 == @1_nil )
-			*(bit*)p1 = TRUE;
+{
+	@1 *p = (@1*)Tloc(b,BUNfirst(b)); 
+	@1 *q = (@1*)Tloc(b,BUNlast(b)); 
+	for(; p<q; p++, o++ ){
+		if (*p == @1_nil)
+			*o = TRUE;
 		else 
-			*(bit*)p1 = FALSE;
-		p1= (ptr)( ((char *)p1) + s1);
-		p2= (ptr)( ((char *)p2) + s2);
+			*o = FALSE;
 	}
+}
 @c
 batcalc_export str CMDunaryISNIL(int *ret, int *bid);
-str CMDunaryISNIL(int *ret, int *bid){
+str CMDunaryISNIL(int *ret, int *bid)
+{
 	BAT *b,*bn;
-	size_t s1,s2;
-	ptr p1,p2, hend;
+	bit *o;
 	
-	if( (b= BATdescriptor(*bid)) == NULL ){
-		throw(MAL, "batcalc.isnil", "Cannot access descriptor");
-	}
-	bn= newBATresult(b, TYPE_bit);
-	if( bn == NULL){
-		BBPreleaseref(b->batCacheid);
-		throw(MAL, "batcalc.isnil", "no copy available ");
-	}
-	copyHead(bn,b);
+	@:getBATdescriptor(bid,b,"batcalc.isnil")@
+	@:voidresultBAT(TYPE_bit,"batcalc.isnil")@
 
-	@:batinit(1,bn)@
-	@:batinit(2,b)@
-	bn->batBuns->free = BATcount(b) * s1;
-	BATsetcount(bn, BATcount(b));
-	hend = (ptr) BUNlast(bn);
+	o = (bit*)Tloc(bn,BUNfirst(bn)); 
 	switch(BATttype(b)){
 	case TYPE_bit: @:accumUnaryISNIL(bit)@ break;
 	case TYPE_chr: @:accumUnaryISNIL(chr)@ break;
@@ -1142,25 +954,33 @@ str CMDunaryISNIL(int *ret, int *bid){
 	case TYPE_flt: @:accumUnaryISNIL(flt)@ break;
 	case TYPE_dbl: @:accumUnaryISNIL(dbl)@ break;
 	case TYPE_str: {
-		int xx;
-		BUN p,q;
-		BATloopFast(b, p, q, xx) {
-			str t = (str) BUNtail(b,p);
-			if( strcmp(t, str_nil)== 0 )
-				*(bit*)p1 = TRUE;
-			else 
-				*(bit*)p1 = FALSE;
-			p1= (ptr)( ((char *)p1) + s1);
-		}
-		}
-		break;
+			BATiter bi = bat_iterator(b);
+			BUN p,q;
+
+			BATloop(b, p, q) {
+				str t = (str) BUNtail(bi,p);
+				if (strcmp(t, str_nil) == 0)
+					*o = TRUE;
+				else 
+					*o = FALSE;
+				o++;
+			}
+		} break;
 	default: throw(MAL, "batcalc.isnil", "unexpected type");
 	}
-	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); \
-	*ret= bn->batCacheid;
+	BATsetcount(bn, BATcount(b));
 	bn->tsorted = 0;
 	BATkey(BATmirror(bn),FALSE);
-	BBPkeepref(bn->batCacheid);
+
+	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); 
+
+	if (b->htype != bn->htype) {
+		BAT *r = VIEWcreate(b,bn);
+
+		BBPreleaseref(bn->batCacheid);
+		bn = r;
+	}
+	BBPkeepref(*ret = bn->batCacheid);
 	BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -1170,55 +990,39 @@ The structure of this code is copied from the arithmetic scheme.
 @= baselineCode
 batcalc_export str CMD_@1_@3(int *ret, int *l, int *r);
 str CMD_@1_@3(int *ret, int *l, int *r)
-{	BAT *bn, *b, *right;
-	bit nilval = bit_nil;
+{	
+	BAT *bn, *b, *right;
+	@3 *p, *q, *t;
+	bit *o;
 
 	@:getBATdescriptor(l,b,"batcalc.@1")@
 	@:getBATdescriptor(r,right,"batcalc.@1", BBPreleaseref(b->batCacheid);)@
 	@:chkSize(b,right,batcalc.@1)@
-	@:resultBAT(bit,"batcalc.@1")@
+	@:voidresultBAT(TYPE_bit,"batcalc.@1")@
 
-	if( b->htype == TYPE_void && right->htype== TYPE_void ){
-		bit *o = (bit*) BUNtail(bn,BUNfirst(bn));
-		BUN p= BUNtail(b,BUNfirst(b));
-		BUN q= BUNtail(b,BUNlast(b));
-		BUN t= BUNtail(right,BUNfirst(right));
-		size_t xx= BUNsize(b);
-		size_t yy= BUNsize(right);
+	o = (bit*)Tloc(bn,BUNfirst(bn));
+	p = (@3*)Tloc(b,BUNfirst(b));
+	q = (@3*)Tloc(b,BUNlast(b));
+	t = (@3*)Tloc(right,BUNfirst(right));
 		
-		while(p<q){
-			if( *(@3*) p == @3_nil || *(@3*) t == @3_nil)
-				*o++ = bit_nil;
-			else 
-				*o++ = *(@3*)p @2 *(@3*)t;
-			p += xx; t += yy; 
-		}
-		(bn)->batBuns->free = BATcount(b)*sizeof(bit);
-		BATsetcount(bn, BATcount(b));
-	} else {
-		BUN p,q,t,h;
-		size_t xx= BUNsize(b);
-		size_t yy= BUNsize(right);
-		bit val;
-		h = BUNhead(b,BUNfirst(b));
-		p = BUNtail(b,BUNfirst(b));
-		q = BUNtail(b,BUNlast(b));
-		t = BUNtail(right,BUNfirst(right));
-		
-		while(p<q){
-			if( *(@3*) p == @3_nil || *(@3*) t == @3_nil) {
-				BUNfastins(bn, h, (ptr) &nilval);
-			} else {
-				val = *(@3*) p @2 *(@3*)t;
-				BUNfastins(bn, h, &val);
-			}
-			p+= xx; h += yy; t+= yy; 
-		}
+	for (;p<q; p++, t++, o++) {
+		if (*p == @3_nil || *t == @3_nil)
+			*o = bit_nil;
+		else 
+			*o = (*p @2 *t);
 	}
-
-	bn->tsorted= 0;
+	BATsetcount(bn, BATcount(b));
+	bn->tsorted = 0;
 	BATkey(BATmirror(bn),FALSE);
-	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); \
+
+	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); 
+
+	if (b->htype != bn->htype) {
+		BAT *r = VIEWcreate(b,bn);
+
+		BBPreleaseref(bn->batCacheid);
+		bn = r;
+	}
 	BBPkeepref(*ret= bn->batCacheid);
 	BBPreleaseref(b->batCacheid);
 	BBPreleaseref(right->batCacheid);
@@ -1227,7 +1031,10 @@ str CMD_@1_@3(int *ret, int *l, int *r)
 
 batcalc_export str CMDaccum_@1_@3(int *ret, int *d, int *l, int *r);
 str CMDaccum_@1_@3(int *ret, int *d, int *l, int *r)
-{	BAT *bn, *b, *right;
+{	
+	BAT *bn, *b, *right;
+	@3 *p, *q, *t;
+	bit *o;
 
 	@:getBATdescriptor(l,b,"batcalc.@1")@
 	@:getBATdescriptor(r,right,"batcalc.@1", BBPreleaseref(b->batCacheid);)@
@@ -1235,46 +1042,21 @@ str CMDaccum_@1_@3(int *ret, int *d, int *l, int *r)
 	@:chkSize(bn,b,batcalc.@1)@
 	@:chkSize(bn,right,batcalc.@1)@
 
-	if(bn->htype== TYPE_void &&
-	   b->htype == TYPE_void && right->htype== TYPE_void ){
-		bit *o = (bit*) BUNtail(bn,BUNfirst(bn));
-		BUN p= BUNtail(b,BUNfirst(b));
-		BUN q= BUNtail(b,BUNlast(b));
-		BUN t= BUNtail(right,BUNfirst(right));
-		size_t xx= BUNsize(b);
-		size_t yy= BUNsize(right);
+	o = (bit*)Tloc(bn,BUNfirst(bn));
+	p = (@3*)Tloc(b,BUNfirst(b));
+	q = (@3*)Tloc(b,BUNlast(b));
+	t = (@3*)Tloc(right,BUNfirst(right));
 		
-		while(p<q){
-			if( *(@3*) p == @3_nil || *(@3*) t == @3_nil)
-				*o++ = bit_nil;
-			else 
-				*o++ = (bit)( *(@3*) p @2 *(@3*)t);
-			p += xx; t += yy; 
-		}
-		(bn)->batBuns->free = BATcount(b)*sizeof(bit);
-		BATsetcount(bn, BATcount(b));
-	} else {
-		BUN o,p,q,t;
-		size_t xx= BUNsize(b);
-		size_t yy= BUNsize(right);
-		size_t zz= BUNsize(bn);
-		p = BUNtail(b,BUNfirst(b));
-		q = BUNtail(b,BUNlast(b));
-		t = BUNtail(right,BUNfirst(right));
-		o = BUNtail(bn,BUNfirst(bn));
-		
-		while(p<q){
-			if( *(@3*) p == @3_nil || *(@3*) t == @3_nil)
-				*(bit *) o = bit_nil;
-			else 
-				*(bit *)o = (bit)( *(@3*) p @2 *(@3*)t);
-			p+= xx; t+= yy; o += zz;
-		}
+	for (;p<q; p++, t++, o++) {
+		if (*p == @3_nil || *t == @3_nil)
+			*o = bit_nil;
+		else 
+			*o = (*p @2 *t);
 	}
-
-	bn->tsorted= 0;
+	BATsetcount(bn, BATcount(b));
+	bn->tsorted = 0;
 	BATkey(BATmirror(bn),FALSE);
-	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); \
+
 	BBPkeepref(*ret= bn->batCacheid);
 	BBPreleaseref(b->batCacheid);
 	BBPreleaseref(right->batCacheid);
@@ -1283,90 +1065,78 @@ str CMDaccum_@1_@3(int *ret, int *d, int *l, int *r)
 @= baselineCstCode
 batcalc_export str CMD_@1_@3_cst(int *ret, int *l, @3 *cst);
 str CMD_@1_@3_cst(int *ret, int *l, @3 *cst)
-{	BAT *bn, *b;
-	bit nilval= bit_nil;
+{	
+	BAT *bn, *b;
+	@3 *p, *q;
+	bit *o;
 
 	@:getBATdescriptor(l,b,"batcalc.@1")@
-	@:resultBAT(bit,"batcalc.@1")@
+	@:voidresultBAT(TYPE_bit,"batcalc.@1")@
 
-	if( b->htype == TYPE_void ){
-		bit *o = (bit*) BUNtail(bn,BUNfirst(bn));
-		BUN p = BUNtail(b,BUNfirst(b));
-		BUN q = BUNtail(b,BUNlast(b));
-		size_t xx = BUNsize(b);
+	o = (bit*)Tloc(bn,BUNfirst(bn));
+	p = (@3*)Tloc(b,BUNfirst(b));
+	q = (@3*)Tloc(b,BUNlast(b));
 		
-		while(p<q){
-			if( *(@3*) p == @3_nil || *cst == @3_nil)
-				*o++ = bit_nil;
-			else 
-				*o++ = *(@3*) p @2 *cst;
-			p += xx;
-		}
-		(bn)->batBuns->free = BATcount(b)*sizeof(bit);
-		BATsetcount(bn, BATcount(b));
-	} else {
-		BUN p,q,h;
-		size_t xx= BUNsize(b);
-		bit val;
-		h = BUNhead(b,BUNfirst(b));
-		p = BUNtail(b,BUNfirst(b));
-		q = BUNtail(b,BUNlast(b));
-		
-		while(p<q){
-			if( *(@3*) p == @3_nil || *cst == @3_nil)
-				BUNfastins(bn, h, (ptr) &nilval);
-			else {
-				val= *(@3*) p @2 *cst;
-				BUNfastins(bn, h, &val);
-			}
-			p+= xx; h+= xx;
-		}
+	for (;p<q; p++, o++) {
+		if( *p == @3_nil || *cst == @3_nil)
+			*o = bit_nil;
+		else 
+			*o = (*p @2 *cst);
 	}
-
-	bn->tsorted= 0;
+	BATsetcount(bn, BATcount(b));
+	bn->tsorted = 0;
 	BATkey(BATmirror(bn),FALSE);
+
+	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
+
+	if (b->htype != bn->htype) {
+		BAT *r = VIEWcreate(b,bn);
+
+		BBPreleaseref(bn->batCacheid);
+		bn = r;
+	}
 	BBPkeepref(*ret= bn->batCacheid);
 	BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
 }
 batcalc_export str CMD_@4_cst_@3(int *ret, @3 *cst, int *l);
-str CMD_@4_cst_@3(int *ret, @3 *cst, int *l){
+str CMD_@4_cst_@3(int *ret, @3 *cst, int *l) 
+{
 	return CMD_@1_@3_cst(ret,l,cst);
 }
 
 batcalc_export str CMDaccum_@1_@3_cst(int *ret, int *r, int *l, @3 *cst);
 str CMDaccum_@1_@3_cst(int *ret, int *r, int *l, @3 *cst)
-{	BAT *bn, *b;
-	BUN o,p,q;
-	size_t xx, zz;
+{	
+	BAT *bn, *b;
+	@3 *p, *q;
+	bit *o;
 
 	@:getBATdescriptor(r,bn,"batcalc.@1")@
 	@:getBATdescriptor(l,b,"batcalc.@1", BBPreleaseref(bn->batCacheid);)@
 	@:chkSize(bn,b,batcalc.@1)@
 
-	xx = BUNsize(b);
-	zz = BUNsize(bn);
-	p = BUNtail(b,BUNfirst(b));
-	q = BUNtail(b,BUNlast(b));
-	o = BUNtail(bn,BUNfirst(bn));
+	o = (bit*)Tloc(bn,BUNfirst(bn));
+	p = (@3*)Tloc(b,BUNfirst(b));
+	q = (@3*)Tloc(b,BUNlast(b));
 		
-	while(p<q){
-		if( *(@3*) p == @3_nil || *cst == @3_nil)
-			*(bit*) o = bit_nil;
+	for (;p<q; p++, o++) {
+		if (*p == @3_nil || *cst == @3_nil)
+			*o = bit_nil;
 		else 
-			*(bit*)o = (bit)(*(@3*) p @2 *cst);
-		p+= xx; o += zz;
+			*o = (*p @2 *cst);
 	}
 
-	bn->tsorted= 0;
+	bn->tsorted = 0;
 	BATkey(BATmirror(bn),FALSE);
-	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); \
+
 	BBPkeepref(*ret= bn->batCacheid);
 	BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
 }
 batcalc_export str CMDaccum_@4_cst_@3(int *ret, int *r, @3 *cst, int *l);
-str CMDaccum_@4_cst_@3(int *ret, int *r, @3 *cst, int *l){
+str CMDaccum_@4_cst_@3(int *ret, int *r, @3 *cst, int *l)
+{
 	return CMDaccum_@1_@3_cst(ret, r, l, cst);
 }
 
@@ -1412,32 +1182,28 @@ batcalc_export str CMDbitbataccumNOT(int *ret, int *d, int *l);
 str
 CMDbitbataccumNOT(int *ret, int *d, int *l)
 {
-	BAT *bn, *left;
-	BUN p,q,t;
-	size_t xx, yy;
+	BAT *bn, *b;
+	bit *p, *q, *o;
 
 	@:getBATdescriptor(d,bn,"batcalc.not")@
-	@:getBATdescriptor(l,left,"batcalc.not",BBPreleaseref(bn->batCacheid);)@
-	@:chkSize(bn,left,batcalc.not)@
+	@:getBATdescriptor(l,b,"batcalc.not",BBPreleaseref(bn->batCacheid);)@
+	@:chkSize(bn,b,batcalc.not)@
 
-	xx = BUNsize(bn);
-	yy = BUNsize(left);
-	p = BUNtail(bn,BUNfirst(bn));
-	q = BUNtail(bn,BUNlast(bn));
-	t = BUNtail(left,BUNfirst(left));
+	p = (bit*) Tloc(bn,BUNfirst(bn));
+	q = (bit*) Tloc(bn,BUNlast(bn));
+	o = (bit*) Tloc(b,BUNfirst(b));
 
-	while(p<q){
-		if( *(bit*) t == bit_nil)
-			*(bit*) p = bit_nil;
+	for (;p<q; p++, o++) {
+		if (*o == bit_nil)
+			*p = bit_nil;
 		else 
-			*(bit*) p = ! *(bit*)t;
-		p += xx; t += yy;
+			*p = ! *o;
 	}
-
 	bn->tsorted = 0;
-	BATkey(BATmirror(bn),0);           
+	BATkey(BATmirror(bn),FALSE);
+
 	BBPkeepref(*ret= bn->batCacheid);
-	BBPreleaseref(left->batCacheid);
+	BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
 }
 
@@ -1446,44 +1212,35 @@ str
 CMDbitbatNOT(int *ret, int *bid)
 {
 	BAT *bn, *b;
-	bit nilval = bit_nil;
+	bit *p, *q, *o;
 
 	@:getBATdescriptor(bid,b,"batcalc.not")@
-	@:resultBAT(bit,"batcalc.not")@
+	@:voidresultBAT(TYPE_bit,"batcalc.not")@
 
-	if (b->htype == TYPE_void ){
-		bit *o = (bit*) BUNtail(bn,BUNfirst(bn));
-		BUN p = BUNtail(b,BUNfirst(b));
-		BUN q = BUNtail(b,BUNlast(b));
-		size_t xx = BUNsize(b);
+	o = (bit*) Tloc(bn,BUNfirst(bn));
+	p = (bit*) Tloc(b,BUNfirst(b));
+	q = (bit*) Tloc(b,BUNlast(b));
 
-		while(p<q){
-			if( *(bit*)p == bit_nil)
-				*o++ = bit_nil;
-			else 
-				*o++ = ! *(bit*)p;
-			p += xx;  
-		}
-		(bn)->batBuns->free = BATcount(b)*sizeof(bit);
-		BATsetcount(bn, BATcount(b));
-	} else {
-		BUN p,q;
-		size_t xx;
-		BATloopFast(b, p, q, xx) {
-			bit t = *(bit*) BUNtail(b,p);
-
-			if( t== bit_nil)
-				BUNfastins(bn, BUNhead(b,p), (ptr) &nilval);
-			else {
-				t= !t;
-				BUNfastins(bn, BUNhead(b,p), &t);
-			}
-		}
+	for (;p<q; p++, o++) {
+		if (*p == bit_nil)
+			*o = bit_nil;
+		else 
+			*o = ! *p;
 	}
+	BATsetcount(bn, BATcount(b));
 	bn->tsorted = 0;
-	BATkey(BATmirror(bn),0);           
+	BATkey(BATmirror(bn),FALSE);
+
 	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
-	BBPkeepref(*ret= bn->batCacheid);
+
+	if (b->htype != bn->htype) {
+		BAT *r = VIEWcreate(b,bn);
+
+		BBPreleaseref(bn->batCacheid);
+		bn = r;
+	}
+
+	BBPkeepref(*ret = bn->batCacheid);
 	BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
 }

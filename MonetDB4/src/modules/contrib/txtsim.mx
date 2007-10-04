@@ -899,10 +899,10 @@ CMDqgramselfjoin(BAT **res, BAT *qgram, BAT *id, BAT *pos, BAT *len, flt *c, int
 	unsigned int i, j;
 	BAT *bn;
 
-	oid *qbuf = (oid *) BUNtloc(qgram, BUNfirst(qgram));
-	int *ibuf = (int *) BUNtloc(id, BUNfirst(id));
-	int *pbuf = (int *) BUNtloc(pos, BUNfirst(pos));
-	int *lbuf = (int *) BUNtloc(len, BUNfirst(len));
+	oid *qbuf = (oid *) Tloc(qgram, BUNfirst(qgram));
+	int *ibuf = (int *) Tloc(id, BUNfirst(id));
+	int *pbuf = (int *) Tloc(pos, BUNfirst(pos));
+	int *lbuf = (int *) Tloc(len, BUNfirst(len));
 
 	ERRORcheck((qgram->ttype != TYPE_oid), "CMDqgramselfjoin: tail of BAT qgram must be oid.\n");
 	ERRORcheck((id->ttype != TYPE_int), "CMDqgramselfjoin: tail of BAT id must be int.\n");
@@ -916,11 +916,11 @@ CMDqgramselfjoin(BAT **res, BAT *qgram, BAT *id, BAT *pos, BAT *len, flt *c, int
 	ERRORcheck((ALIGNsynced(qgram, pos) == 0), "CMDqgramselfjoin: qgram and pos are not synced");
 	ERRORcheck((ALIGNsynced(qgram, len) == 0), "CMDqgramselfjoin: qgram and len are not synced");
 
-	ERRORcheck((BUNsize(qgram) != ATOMsize(qgram->ttype)), "CMDqgramselfjoin: qgram is not a true void bat");
-	ERRORcheck((BUNsize(id) != ATOMsize(id->ttype)), "CMDqgramselfjoin: id is not a true void bat");
+	ERRORcheck((Tsize(qgram) != ATOMsize(qgram->ttype)), "CMDqgramselfjoin: qgram is not a true void bat");
+	ERRORcheck((Tsize(id) != ATOMsize(id->ttype)), "CMDqgramselfjoin: id is not a true void bat");
 
-	ERRORcheck((BUNsize(pos) != ATOMsize(pos->ttype)), "CMDqgramselfjoin: pos is not a true void bat");
-	ERRORcheck((BUNsize(len) != ATOMsize(len->ttype)), "CMDqgramselfjoin: len is not a true void bat");
+	ERRORcheck((Tsize(pos) != ATOMsize(pos->ttype)), "CMDqgramselfjoin: pos is not a true void bat");
+	ERRORcheck((Tsize(len) != ATOMsize(len->ttype)), "CMDqgramselfjoin: len is not a true void bat");
 
 	*res = bn = BATnew(TYPE_int, TYPE_int, n);
 

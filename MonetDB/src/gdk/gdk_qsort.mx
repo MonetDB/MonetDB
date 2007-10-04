@@ -15,7 +15,7 @@
 @' All Rights Reserved.
 
 @f gdk_qsort
-@a Peter Boncz et al
+@a Peter Boncz, Niels Nes et al
 @* Qsort
 There were two problems with the OS provided qsort() library routine:
 @table @samp
@@ -83,48 +83,78 @@ Introduced to reduce number of qsort parameters
 typedef struct {
 	int (*cmp) (ptr, ptr);	/* routine that compares two atoms */
 	char *offst;		/* NULL or start of varsized heap */
-	int loc;		/* byte-offset of sort atom in record */
-	int shift;		/* log2 if width is a power of two, else -1 */
-	unsigned width;		/* byte-width of record */
+	int hshift;		/* log2 of hs */
+	int tshift;		/* log2 of hs */
+	unsigned hs;		/* width of head record */
+	unsigned ts;		/* width of tail record */
+	void *h;		/* start of head buns */		
+	void *t;		/* start of tail buns */
 } buf_t;
 
 /* fast arithmetic on the record width */
-#define MULT_WIDTH(d)					\
-	((buf->shift == -1)?				\
-		((d) * buf->width):			\
-		((d) << buf->shift))
+#define MULT_WIDTH(d)	((d) << buf->hshift)
+#define DIV_WIDTH(d)	((d) >> buf->hshift)
+#define MULT_TS(d)	((d) << buf->tshift)
 
-#define DIV_WIDTH(d)					\
-	((buf->shift == -1)?				\
-		((d) / buf->width):			\
-		((d) >> buf->shift))
-
-
+@= register_swap
 /* fast record swapping */
-#define register_SWAP(TYPE, a, b) {			\
-	lng *_pa = (lng *) (((char*) (a)) - buf->loc);	\
-	lng *_pb = (lng *) (((char*) (b)) - buf->loc);	\
-	lng _tmp = *_pa;				\
+#define @1_SWAP(TYPE, a, b, s) {			\
+	@1 *_pa = (@1 *) (a);				\
+	@1 *_pb = (@1 *) (b);				\
+	@1 _tmp = *_pa;					\
 	*_pa = *_pb;					\
 	*_pb = _tmp;					\
 }
+#define direct_@1_SWAP(TYPE, a, b, s)			\
+	@1_SWAP(TYPE, a, b, s)
+
+#define offset_@1_SWAP(TYPE, a, b, s)			\
+	var_t_SWAP(TYPE, a, b, s)
+
+#define @1_multi_SWAP(TYPE, a, b, n)			\
+	tpe_SWAP(TYPE, a, b, n)
+
+#define direct_@1_multi_SWAP(TYPE, a, b, n)		\
+	tpe_SWAP(TYPE, a, b, n)
+
+#define offset_@1_multi_SWAP(TYPE, a, b, n)		\
+	tpe_SWAP(var_t, a, b, n)
+
+@c
+@:register_swap(chr)@
+@:register_swap(bte)@
+@:register_swap(sht)@
+@:register_swap(int)@
+@:register_swap(flt)@
+@:register_swap(lng)@
+@:register_swap(var_t)@
+@:register_swap(dbl)@
+
+#define any_SWAP(TYPE, a, b, s) 		var_t_SWAP(var_t, a, b, s)
+#define direct_any_SWAP(TYPE, a, b, s) 		var_t_SWAP(var_t, a, b, s)
+#define offset_any_SWAP(TYPE, a, b, s) 		var_t_SWAP(var_t, a, b, s)
+#define any_multi_SWAP(TYPE, a, b, n) 		tpe_SWAP(var_t, a, b, n)
+#define direct_any_multi_SWAP(TYPE, a, b, n) 	tpe_SWAP(var_t, a, b, n)
+#define offset_any_multi_SWAP(TYPE, a, b, n) 	tpe_SWAP(var_t, a, b, n)
+
+/* no swapping for voids */
+#define void_SWAP(TYPE, a, b, s)
+#define void_multi_SWAP(TYPE, a, b, n)
+
+#define iterate_SWAP(TYPE, a, b, s) 		tpe_SWAP(chr, a, b, MULT_TS(s))
+#define iterate_multi_SWAP(TYPE, a, b, n) 	tpe_SWAP(chr, a, b, MULT_TS(n))
 
 #define tpe_SWAP(TYPE, a, b, n) {			\
-	size_t _i = (n)/sizeof(TYPE);			\
-	TYPE *_pa = (TYPE*) (((char*) (a)) - buf->loc);	\
-	TYPE *_pb = (TYPE*) (((char*) (b)) - buf->loc);	\
-	do {						\
+	ssize_t _i = (n);				\
+	TYPE *_pa = (TYPE*)(a);				\
+	TYPE *_pb = (TYPE*)(b);				\
+	while (--_i >= 0) {				\
 		TYPE _tmp = *_pa;			\
 		*_pa++ = *_pb;				\
 		*_pb++ = _tmp;				\
-	} while (--_i > 0);				\
+	}						\
 }
 
-#define iterate_SWAP(TYPE, a, b)			\
-	tpe_SWAP(TYPE, a, b, buf->width)
-
-#define multi_SWAP(TYPE, a, b, n)			\
-	if ((n) > 0) tpe_SWAP(TYPE, a, b, n)
 @}
 @-
 qsort is macro expanded in four dimensions:
@@ -229,14 +259,18 @@ typedef chr any;
 #define @1_@2_@3T(a,b)		@2_@3T(@1(a),@1(b))
 #define @1_@2_@3E(a,b)		@2_@3E(@1(a),@1(b))
 
-@:qsort_algo(register,@1,@2,@3,@4)@
+@:qsort_algo(void,@1,@2,@3,@4)@
+@:qsort_algo(bte,@1,@2,@3,@4)@
+@:qsort_algo(sht,@1,@2,@3,@4)@
+@:qsort_algo(int,@1,@2,@3,@4)@
+@:qsort_algo(lng,@1,@2,@3,@4)@
 @:qsort_algo(iterate,@1,@2,@3,@4)@
 
 @= qsort_algo
 static void
-GDKqsort_@1_@2_@3@5(char *a, size_t n, buf_t *buf)
+GDKqsort_@1_@2_@3@5(char *h, char *t, size_t n, buf_t *buf)
 {
-	char *pa, *pb, *pc, *pd, *pl, *pm, *pn;
+	char *pa, *pb, *pc, *pd, *pl, *pm, *pn, *pmt, *plt;
 	size_t r;
 	int swap_cnt;
 
@@ -244,16 +278,22 @@ GDKqsort_@1_@2_@3@5(char *a, size_t n, buf_t *buf)
 loop:
 	swap_cnt = 0;
 	if (n < 7) {
-		for (pm = (char *) a + buf->width; pm < (char *) a + MULT_WIDTH(n); pm += buf->width)
-			for (pl = pm; pl > (char *) a && @2_@3_@4E(pl, pl - buf->width);
-			     pl -= buf->width)
-				@1_SWAP(@3, pl, pl - buf->width);
+		for (pm = h + buf->hs, pmt = t + buf->ts; 
+		     pm < h + MULT_WIDTH(n); 
+		     pm += buf->hs, pmt += buf->ts) {
+			for (pl = pm, plt = pmt; 
+			     pl > h && @2_@3_@4E(pl, pl - buf->hs);
+			     pl -= buf->hs, plt -= buf->ts) {
+				@2_@3_SWAP(@3, pl, pl - buf->hs, buf->hs);
+				@1_SWAP(@1, plt, plt - buf->ts, buf->ts);
+			}
+		}
 		return;
 	}
-	pm = (char *) a + MULT_WIDTH(n >> 1);
+	pm = h + MULT_WIDTH(n >> 1);
 	if (n > 7) {
-		pl = a;
-		pn = (char *) a + MULT_WIDTH(n - 1);
+		pl = h;
+		pn = h + MULT_WIDTH(n - 1);
 		if (n > 40) {
 			size_t d;
 
@@ -264,54 +304,75 @@ loop:
 		}
 		pm = @2_@3_@4MED3(pl, pm, pn, buf);
 	}
-	@1_SWAP(@3, a, pm);
-	pa = pb = (char *) a + buf->width;
-	pc = pd = (char *) a + MULT_WIDTH(n - 1);
+	@2_@3_SWAP(@3, h, pm, buf->hs);
+	@1_SWAP(@1, t, t+MULT_TS(DIV_WIDTH(pm-h)), buf->ts);
+	pa = pb = h + buf->hs;
+	pc = pd = h + MULT_WIDTH(n - 1);
 
 	for (;;) {
-		while (pb <= pc && @2_@3_@4E(pb, a)) {
-			if (!@2_@3_@4T(pb, a)) { /* pb (<|>)= a && !(pb (<|>) a)  =>  pb == a */
+		while (pb <= pc && @2_@3_@4E(pb, h)) {
+			if (!@2_@3_@4T(pb, h)) { /* pb (<|>)= h && !(pb (<|>) h)  =>  pb == h */
 				swap_cnt = 1;
-				@1_SWAP(@3, pa, pb);
-				pa += buf->width;
+				@2_@3_SWAP(@3, pa, pb, buf->hs);
+				@1_SWAP(@1, 
+					t+MULT_TS(DIV_WIDTH(pa-h)), 
+					t+MULT_TS(DIV_WIDTH(pb-h)), 
+					buf->ts);
+				pa += buf->hs;
 			}
-			pb += buf->width;
+			pb += buf->hs;
 		}
-		while (pb <= pc && @2_@3_@4E(a, pc)) {
-			if (!@2_@3_@4T(a, pc)) { /* a (<|>)= pc && !(a (<|>) pc)  =>  a == pc */
+		while (pb <= pc && @2_@3_@4E(h, pc)) {
+			if (!@2_@3_@4T(h, pc)) { /* h (<|>)= pc && !(h (<|>) pc)  =>  h == pc */
 				swap_cnt = 1;
-				@1_SWAP(@3, pc, pd);
-				pd -= buf->width;
+				@2_@3_SWAP(@3, pc, pd, buf->hs);
+				@1_SWAP(@1, 
+					t+MULT_TS(DIV_WIDTH(pc-h)), 
+					t+MULT_TS(DIV_WIDTH(pd-h)), 
+					buf->ts);
+				pd -= buf->hs;
 			}
-			pc -= buf->width;
+			pc -= buf->hs;
 		}
 		if (pb > pc) {
 			break;
 		}
-		@1_SWAP(@3, pb, pc);
+		@2_@3_SWAP(@3, pb, pc, buf->hs);
+		@1_SWAP(@1, 
+			t+MULT_TS(DIV_WIDTH(pb-h)), 
+			t+MULT_TS(DIV_WIDTH(pc-h)), 
+			buf->ts);
 		swap_cnt = 1;
-		pb += buf->width;
-		pc -= buf->width;
-
+		pb += buf->hs;
+		pc -= buf->hs;
 	}
 	if (swap_cnt == 0) {  /* Switch to insertion sort */
-		for (pm = (char *) a + buf->width; pm < (char *) a + MULT_WIDTH(n); pm += buf->width)
-			for (pl = pm; pl > (char *) a && @2_@3_@4E(pl, pl - buf->width); 
-			     pl -= buf->width)
-				@1_SWAP(@3, pl, pl - buf->width);
+		for (pm = h + buf->hs, pmt = t + buf->ts; 
+		     pm < h + MULT_WIDTH(n); 
+		     pm += buf->hs, pmt += buf->ts) {
+			for (pl = pm, plt = pmt; 
+			     pl > h && @2_@3_@4E(pl, pl - buf->hs);
+			     pl -= buf->hs, plt -= buf->ts) {
+				@2_@3_SWAP(@3, pl, pl - buf->hs, buf->hs);
+				@1_SWAP(@1, plt, plt - buf->ts, buf->ts);
+			}
+		}
 		return;
 	}
 
-	pn = (char *) a + MULT_WIDTH(n);
-	r = MIN(pa - (char *) a, pb - pa);
-	multi_SWAP(@3, a, pb - r, r);
-	r = MIN(pd - pc, (ptrdiff_t) (pn - pd - buf->width));
-	multi_SWAP(@3, pb, pn - r, r);
-	if ((r = pb - pa) > buf->width)
-		GDKqsort_@1_@2_@3@5(a, DIV_WIDTH(r), buf);
-	if ((r = pd - pc) > buf->width) { 
+	pn = h + MULT_WIDTH(n);
+	r = MIN(pa - h, pb - pa);
+	@2_@3_multi_SWAP(@3, h, pb - r, DIV_WIDTH(r));
+	@1_multi_SWAP(@1, t, t+MULT_TS(DIV_WIDTH(pb-r-h)), DIV_WIDTH(r));
+	r = MIN(pd - pc, (ptrdiff_t) (pn - pd - buf->hs));
+	@2_@3_multi_SWAP(@3, pb, pn - r, DIV_WIDTH(r));
+	@1_multi_SWAP(@1, t+MULT_TS(DIV_WIDTH(pb-h)), t+MULT_TS(DIV_WIDTH(pn-r-h)), DIV_WIDTH(r));
+	if ((r = pb - pa) > buf->hs)
+		GDKqsort_@1_@2_@3@5(h, t, DIV_WIDTH(r), buf);
+	if ((r = pd - pc) > buf->hs) { 
 		/* Iterate rather than recurse to save stack space */
-		a = pn - r;
+		t = t+MULT_TS(DIV_WIDTH(pn-r-h));
+		h = pn - r;
 		n = DIV_WIDTH(r);
 		goto loop;
 	}
@@ -320,27 +381,42 @@ loop:
 @= call_offset_or_direct_storage
 	/* factorization by storage mode */
 	if (base) {
-		GDKqsort_@3_offset_@2@1(((char*) a)+loc, n, &buf); /* array of var_t, that are byte-offsets from some base */
+		GDKqsort_@3_offset_@2@1(h, t, n, &buf); /* array of var_t, that are byte-offsets from some base */
 	} else {
-		GDKqsort_@3_direct_@2@1(((char*) a)+loc, n, &buf); /* array of fixed-size values */
+		GDKqsort_@3_direct_@2@1(h, t, n, &buf); /* array of fixed-size values */
 	} 
+	break;
 
 @= call_iterate_or_register_swapmethod
-	/* factorization by array swap implementation */
-	if ((((size_t) a) & 7) || width != 8) {
-		/* array is non-aligned or entries are not one 64-bit integer wide */
+	switch (ts) {
+	case 0:
+		@:call_offset_or_direct_storage(@1,@2,void)@
+#ifndef NOEXPAND_CHR
+	case 1:
+		@:call_offset_or_direct_storage(@1,@2,bte)@
+#endif
+#ifndef NOEXPAND_SHT
+	case 2:
+		@:call_offset_or_direct_storage(@1,@2,sht)@
+#endif
+#ifndef NOEXPAND_INT
+	case 4:
+		@:call_offset_or_direct_storage(@1,@2,int)@
+#endif
+#ifndef NOEXPAND_LNG
+	case 8:
+		@:call_offset_or_direct_storage(@1,@2,lng)@
+#endif
+	default:
 		@:call_offset_or_direct_storage(@1,@2,iterate)@
-	} else {
-		/* we can swap array entries by one 64-bit integer swap */
-		@:call_offset_or_direct_storage(@1,@2,register)@
 	}
 	break;
 
 @= qsort
 void
-GDKqsort@1(void *a, void* base, size_t n, int width, int tpe, int loc)
+GDKqsort@1(void *h, void *t, void* base, size_t n, int hs, int ts, int tpe)
 {
-	int i = 0;
+	char x;
 	buf_t buf;
 
 	assert(tpe != TYPE_void);
@@ -348,16 +424,14 @@ GDKqsort@1(void *a, void* base, size_t n, int width, int tpe, int loc)
 	/* init the qsort record */
 	buf.cmp = BATatoms[tpe].atomCmp;
 	buf.offst = base;
-	buf.width = (unsigned) width;
-	buf.loc = loc;
-	buf.shift = -1;
-	do {
-		int mask = 1 << i; 
-		if ((width & mask) && (width & ~mask) == 0) {
-			buf.shift = i;
-			break;
-		}
-	} while (++i < 32);
+	buf.hs = (unsigned) hs;
+	buf.ts = (unsigned) ts;
+	buf.hshift = ATOMelmshift(hs);
+	buf.tshift = ATOMelmshift(ts);
+	buf.h = h;
+	if (!t)
+		t = &x;
+	buf.t = t;
 
 	/* factorization by comparsion type */
 	switch (ATOMstorage(tpe)) {
@@ -397,24 +471,4 @@ GDKqsort@1(void *a, void* base, size_t n, int width, int tpe, int loc)
 @:qsort()@
 @:qsort(_rev)@
 
-@ test
-main(int argc, char** argv)
-{
-	int i, n = atoi(argv[1]), m = atoi(argv[2]);
-	float d = 0.0, f = d, *buf = (float*) malloc(2*n*sizeof(float));
-
-	for (i=0; i < n; i++) {
-		buf[i+i] = f++;
-		buf[i+i+1] = d++;
-		if (d > m)
-			d = 0.0;
-	}
-	printf("start sort\n");
-	GDKqsort(buf, NULL, n, 8, TYPE_flt, 4);
-	printf("end sort\n");
-	for(i=0; i < n; i++) {
-		printf("% 9i [% 9d,% 9d]\n",
-		       i, (int) buf[i+i], (int) buf[i+i+1]);
-	}
-}
 @}

@@ -4754,19 +4754,22 @@ xquery_function_call(xquery_client *ctx,
                 if ( (strcmp(c, "boolean") == 0) ||
                      (strcmp(c, "integer") == 0) ) {
                     @:bunappend(int_values, ctx->val, *(lng*), LLFMT, "LL")@
-                    item = *(oid*) BUNhead(ctx->int_values, BUNfnd(BATmirror(ctx->int_values), ctx->val));
+                    BATiter ivi = bat_iterator(ctx->int_values);
+                    item = *(oid*) BUNhead(ivi, BUNfnd(BATmirror(ctx->int_values), ctx->val));
                     @:bunappend(fun_item000, &item, (size_t) *(oid*), SZFMT, "@0")@
                 } else if ( (strcmp(c, "decimal") == 0) ||
                             (strcmp(c, "float") == 0)   ||
                             (strcmp(c, "double") == 0) ) {
                     @:bunappend(dbl_values, ctx->val, *(dbl*), "%g")@
-                    item = *(oid*) BUNhead(ctx->dbl_values, BUNfnd(BATmirror(ctx->dbl_values), ctx->val));
+                    BATiter idi = bat_iterator(ctx->dbl_values);
+                    item = *(oid*) BUNhead(idi, BUNfnd(BATmirror(ctx->dbl_values), ctx->val));
                     @:bunappend(fun_item000, &item , (size_t) *(oid*), SZFMT, "@0")@
                 } else if ( (strcmp(c, "string") == 0) ||
                             (strcmp(c, "untypedAtomic") == 0)   ||
                             (strcmp(c, "anyAtomicType") == 0) ) {
                     @:bunappend(str_values, ctx->val, (str), "\"%s\"")@
-                    item = *(oid*) BUNhead(ctx->str_values, BUNfnd(BATmirror(ctx->str_values), ctx->val));
+                    BATiter isi = bat_iterator(ctx->str_values);
+                    item = *(oid*) BUNhead(isi, BUNfnd(BATmirror(ctx->str_values), ctx->val));
                     @:bunappend(fun_item000, &item, (size_t) *(oid*), SZFMT, "@0")@
                 } else if (shredBAT == NULL) { 
                     return "xquery_function_call: node parameter without shredBAT.\n";
@@ -4846,8 +4849,7 @@ xquery_module_compile(xquery_client *ctx,
 {
     xquery_module *mod = NULL;
     BAT *b = ctx->proc_vid;
-    int xx = BUNsize(b);
-    int cnt = BUNindex(b, BUNlast(b));
+    int cnt = BUNlast(b);
     int ret, url_len = strlen(url)+1;
     BUN p, q;
 
@@ -4864,15 +4866,16 @@ xquery_module_compile(xquery_client *ctx,
     } 
     if (ret == 2) mod->nsurl = NULL; /* for MIL modules (ret == 2), mod->nsurl == NULL (we don't know it :-( )*/
 
-    for(p = BUNptr(b,cnt), q = BUNlast(b); p < q; p += xx) {
-        char *proc = (char*) BUNhead(b,p);
+    BATiter bi = bat_iterator(b);
+    for(p = cnt, q = BUNlast(b); p < q; p++) {
+        char *proc = (char*) BUNhead(bi,p);
         xquery_function *fun = (xquery_function*) GDKmalloc(sizeof(xquery_function)+strlen(proc));
         if (fun == NULL) {
             xquery_module_free(mod);
             return NULL;
         }
         strcpy(fun->proc, proc);
-        fun->vid = *(lng*) BUNtail(b,p);
+        fun->vid = *(lng*) BUNtail(bi,p);
         fun->sig = xquery_sig_init(fun->proc);
         fun->mil = NULL;
         fun->size = 0;
@@ -5247,12 +5250,8 @@ xquery_client_reset(xquery_client *ctx, char *err)
     }
 
     /* undo any inserts by the query into the var_usage bats */
-    size_t delta_var_usage = BATcount(ctx->var_usage) - ctx->var_usage_size;
-    size_t delta_proc_vid = BATcount(ctx->proc_vid) - ctx->proc_vid_size;
     BATsetcount(ctx->var_usage, ctx->var_usage_size);
-    ctx->var_usage->batBuns->free -= delta_var_usage*BUNsize(ctx->var_usage);
     BATsetcount(ctx->proc_vid, ctx->proc_vid_size);
-    ctx->proc_vid->batBuns->free -= delta_proc_vid*BUNsize(ctx->proc_vid);
 
     /* empty all bats (static variables) */
     BATclear(ctx->loop000);

@@ -238,14 +238,14 @@ printf("#~BeginVariableOutput~#\n"); view_gdk_env().print(); printf("#~EndVariab
 #---------------------------------------------------------------------------------------------------------#
 # h			monet_environment								  # name
 # str			str										  # type
-#-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
-[ "gdk_arch",		  "64bitx86_64-pc-linux-gnu"																								  ]
+#---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ "gdk_arch",		  "64bitx86_64-redhat-linux-gnu"																		  ]
 [ "gdk_version",	  "1.19.0"																										  ]
-[ "monet_pid",		  "21115"																										  ]
-[ "prefix",		  "/ufs/fabian/scratch/monetdb/current/program-x86_64"																					  ]
-[ "exec_prefix",	  "/ufs/fabian/scratch/monetdb/current/program-x86_64"																					  ]
+[ "monet_pid",		  "9275"																																																																																																																											  ]
+[ "prefix",		  "/ufs/sjoerd/Monet-gdk2"																																																																																																																									  ]
+[ "exec_prefix",	  "/ufs/sjoerd/Monet-gdk2"																																																																																																																									  ]
 [ "gdk_dbname",		  "mTests_tests_suite_08"																																								  ]
-[ "gdk_dbfarm",		  "/net/pegasus.ins.cwi.nl/export/scratch0/fabian/vtmp/mtest-current-pegasus.ins.cwi.nl/four/dbfarm"															  ]
+[ "gdk_dbfarm",		  "/ufs/sjoerd/src/MonetDB/gdk2/MonetDB4/x86_64-unknown-linux-gnu/dbfarm"																																																																																																																			  ]
 [ "gdk_debug",		  "10"							  ]
 [ "gdk_mem_bigsize",	  "262144"																		  ]
 [ "gdk_vm_minsize",	  "137438953472"																			  ]
@@ -255,23 +255,23 @@ printf("#~BeginVariableOutput~#\n"); view_gdk_env().print(); printf("#~EndVariab
 [ "monet_admin",	  "adm"							  ]
 [ "monet_prompt",	  ""							  ]
 [ "monet_welcome",	  "yes"							  ]
-[ "monet_mod_path",	  "/ufs/fabian/scratch/monetdb/current/program-x86_64/lib64/MonetDB4:/ufs/fabian/scratch/monetdb/current/program-x86_64/lib64/MonetDB4/lib:/ufs/fabian/scratch/monetdb/current/program-x86_64/lib64/MonetDB4/bin"	  ]
+[ "monet_mod_path",	  "/ufs/sjoerd/src/MonetDB/gdk2/MonetDB4/x86_64-unknown-linux-gnu/src/modules/plain/.libs:/ufs/sjoerd/src/MonetDB/gdk2/MonetDB4/x86_64-unknown-linux-gnu/src/modules/plain:/ufs/sjoerd/src/MonetDB/gdk2/MonetDB4/src/modules/plain:/ufs/sjoerd/src/MonetDB/gdk2/MonetDB4/x86_64-unknown-linux-gnu/src/modules/contrib/.libs:/ufs/sjoerd/src/MonetDB/gdk2/MonetDB4/x86_64-unknown-linux-gnu/src/modules/contrib:/ufs/sjoerd/src/MonetDB/gdk2/MonetDB4/src/modules/contrib:/ufs/sjoerd/src/MonetDB/gdk2/MonetDB4/x86_64-unknown-linux-gnu/src/modules/calibrator/.libs:/ufs/sjoerd/src/MonetDB/gdk2/MonetDB4/x86_64-unknown-linux-gnu/src/modules/calibrator:/ufs/sjoerd/src/MonetDB/gdk2/MonetDB4/src/modules/calibrator:/ufs/sjoerd/src/MonetDB/gdk2/MonetDB4/x86_64-unknown-linux-gnu/src/mapi/.libs:/ufs/sjoerd/src/MonetDB/gdk2/MonetDB4/x86_64-unknown-linux-gnu/src/mapi:/ufs/sjoerd/src/MonetDB/gdk2/MonetDB4/src/mapi:/ufs/sjoerd/src/MonetDB/gdk2/MonetDB4/scripts:/ufs/sjoerd/src/MonetDB/gdk2/MonetDB4/scripts/tools"	  ]
 [ "monet_daemon",	  "no"																																											  ]
 [ "host",		  "localhost"						  ]
-[ "mapi_port",		  "32620"																										  ]
+[ "mapi_port",		  "33826"																																																																																																																											  ]
 [ "mapi_noheaders",	  "no"							  ]
 [ "mapi_debug",		  "0"							  ]
 [ "mapi_clients",	  "2"										  ]
 [ "sql_debug",		  "0"							  ]
-[ "sql_logdir",		  "/net/pegasus.ins.cwi.nl/export/scratch0/fabian/vtmp/mtest-current-pegasus.ins.cwi.nl/four/sqllog"															  ]
-[ "xquery_logdir",	  "/net/pegasus.ins.cwi.nl/export/scratch0/fabian/vtmp/mtest-current-pegasus.ins.cwi.nl/four/xquerylog"															  ]
+[ "sql_logdir",		  "/ufs/sjoerd/src/MonetDB/gdk2/MonetDB4/x86_64-unknown-linux-gnu/sql_logs"																																																																																																																			  ]
+[ "xquery_logdir",	  "/ufs/sjoerd/src/MonetDB/gdk2/MonetDB4/x86_64-unknown-linux-gnu/xquery_logs"																																																																																																																			  ]
 [ "standoff_ns",	  ""																																																															  ]
 [ "standoff_start",	  "start"																																																														  ]
 [ "standoff_end",	  "end"																																																															  ]
-[ "config",		  "/ufs/fabian/scratch/monetdb/current/program-x86_64/etc/MonetDB.conf"																			  ]
+[ "config",		  "/ufs/sjoerd/src/MonetDB/gdk2/MonetDB4/x86_64-unknown-linux-gnu/conf/MonetDB.conf"																																																																																																																		  ]
 [ "mapi_open",		  "true"																										  ]
-[ "xrpc_port",		  "42498"																										  ]
-[ "datadir",		  "/ufs/fabian/scratch/monetdb/current/program-x86_64/share"																				  ]
+[ "xrpc_port",		  "41490"																																																																																																																											  ]
+[ "datadir",		  "/ufs/sjoerd/Monet-gdk2/share"																																																																																																																								  ]
 [ "gdk_embedded",	  "no"								  ]
 [ "xquery_output",	  "dm"																			  ]
 [ "xquery_cacheMB",	  "100"																																																																  ]
@@ -281,9 +281,9 @@ printf("#~BeginVariableOutput~#\n"); view_gdk_env().print(); printf("#~EndVariab
 [ "xrpc_options",	  ""																																														  ]
 [ "xrpc_admin",		  "127.0.0.1"																																													  ]
 [ "xrpc_user",		  "127.0.0.1"																			  ]
-[ "xrpc_trusted",	  "http://monetdb.cwi.nl;/ufs/fabian/scratch/monetdb/current/program-x86_64/share/MonetDB/xrpc/export"															  ]
-[ "monet_cwd",		  "/net/pegasus.ins.cwi.nl/export/scratch0/fabian/vtmp/mtest-current-pegasus.ins.cwi.nl/four/mTests/tests/suite_08"													  ]
-[ "monet_version",	  "4.19.0"																										  ]
+[ "xrpc_trusted",	  "http://monetdb.cwi.nl;/ufs/sjoerd/Monet-gdk2/share/MonetDB/xrpc/export"																																																																																																																			  ]
+[ "monet_cwd",		  "/net/hirundo/export/scratch0/sjoerd/build/gdk2/MonetDB4/mTests/tests/suite_08"																																																																																																																		  ]
+[ "monet_version",	  "4.19.0"																																																																																																																											  ]
 #~EndVariableOutput~#
 
 # Pseudo bat to map thread to name
@@ -313,7 +313,7 @@ printf("#~BeginVariableOutput~#\n"); view_client_login().print(); printf("#~EndV
 # BAT:	  login				  #
 # (int)	  (str)				  #
 #-----------------------------------------#
-[ 0,	  "Fri Jul 20 14:02:10 2007"	  ]
+[ 0,	  "Mon Aug  6 16:35:08 2007"	  ]
 #~EndVariableOutput~#
 
 # Pseudo bat to map client identifier to its current active tree

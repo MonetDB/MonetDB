@@ -244,6 +244,7 @@ CMDhash_wrd(int *res, wrd *val)
 #endif
 	return GDK_SUCCEED;
 }
+
 int
 CMDhash_lng(int *res, lng *val)
 {
@@ -342,64 +343,64 @@ MKEYrotate_xor_hash(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 int
 CMDbulk_rotate_xor_hash(BAT **res, BAT *bn, int *rotate, BAT *b)
 {
-	int *dst = (int *) BUNtloc(bn, BUNfirst(bn));
+	BATiter bni = bat_iterator(bn), bi = bat_iterator(b);
+	int *dst = (int *) BUNtloc(bni, BUNfirst(bn));
 	int tpe = ATOMstorage(b->ttype);
 	int lbit = *rotate;
 	int rbit = 32 - *rotate;
 	int mask = (1 << lbit) - 1;
-	int xx = BUNsize(b);
-	int yy = BUNsize(bn);
 
 	if (!ALIGNsynced(bn, b) && (BATcount(b) || BATcount(bn))) {
 		GDKerror("CMDbulk_rotate_xor_hash: (%s,%d,%s): not synced on head.\n", BATgetId(bn), *rotate, BATgetId(b));
 		return GDK_FAIL;
-	} else if (VIEWparent(bn) || bn->batRestricted) {
+	} else if (isVIEW(bn) || bn->batRestricted) {
 		GDKerror("CMDbulk_rotate_xor_hash: (%s,%d,%s): left operand not writeable.\n", BATgetId(bn), *rotate, BATgetId(b));
 		return GDK_FAIL;
 	} else if (*rotate < 0 || *rotate >= 32) {
 		GDKerror("CMDbulk_rotate_xor_hash: (%s,%d,%s): illegal number of rotate bits.\n", BATgetId(bn), *rotate, BATgetId(b));
 		return GDK_FAIL;
 	} else if (tpe == TYPE_bte || tpe == TYPE_chr) {
-		bte *cur = (bte *) BUNtloc(b, BUNfirst(b));
-		bte *end = (bte *) BUNtloc(b, BUNlast(b));
+		bte *cur = (bte *) BUNtloc(bi, BUNfirst(b));
+		bte *end = (bte *) BUNtloc(bi, BUNlast(b));
 
 		while (cur < end) {
 			*dst = GDK_ROTATE(*dst, lbit, rbit, mask) ^ *cur;
-			cur = (bte *) (((BUN) cur) + xx);
-			dst = (int *) (((BUN) dst) + yy);
+			cur++;
+			dst++;
 		}
 	} else if (tpe == TYPE_sht) {
-		sht *cur = (sht *) BUNtloc(b, BUNfirst(b));
-		sht *end = (sht *) BUNtloc(b, BUNlast(b));
+		sht *cur = (sht *) BUNtloc(bi, BUNfirst(b));
+		sht *end = (sht *) BUNtloc(bi, BUNlast(b));
 
 		while (cur < end) {
 			*dst = GDK_ROTATE(*dst, lbit, rbit, mask) ^ *cur;
-			cur = (sht *) (((BUN) cur) + xx);
-			dst = (int *) (((BUN) dst) + yy);
+			cur++;
+			dst++;
 		}
 	} else if (tpe == TYPE_int || tpe == TYPE_flt) {
-		int *cur = (int *) BUNtloc(b, BUNfirst(b));
-		int *end = (int *) BUNtloc(b, BUNlast(b));
+		int *cur = (int *) BUNtloc(bi, BUNfirst(b));
+		int *end = (int *) BUNtloc(bi, BUNlast(b));
 
 		while (cur < end) {
 			*dst = GDK_ROTATE(*dst, lbit, rbit, mask) ^ *cur;
-			cur = (int *) (((BUN) cur) + xx);
-			dst = (int *) (((BUN) dst) + yy);
+			cur++;
+			dst++;
 		}
 	} else if (tpe == TYPE_lng || tpe == TYPE_dbl) {
-		int *cur = (int *) BUNtloc(b, BUNfirst(b));
-		int *end = (int *) BUNtloc(b, BUNlast(b));
+		lng *cur = (lng *) BUNtloc(bi, BUNfirst(b));
+		lng *end = (lng *) BUNtloc(bi, BUNlast(b));
 
 		while (cur < end) {
-			int val = cur[0] ^ cur[1];
+			int *t = (int*)cur;
+			int val = t[0] ^ t[1];
 
 			*dst = GDK_ROTATE(*dst, lbit, rbit, mask) ^ val;
-			cur = (int *) (((BUN) cur) + xx);
-			dst = (int *) (((BUN) dst) + yy);
+			cur++;
+			dst++;
 		}
 	} else if (tpe == TYPE_str) {	/* TYPE_str */
-		int *cur = (int *) BUNtloc(b, BUNfirst(b));
-		int *end = (int *) BUNtloc(b, BUNlast(b));
+		var_t *cur = (var_t *) BUNtloc(bi, BUNfirst(b));
+		var_t *end = (var_t *) BUNtloc(bi, BUNlast(b));
 		str base = b->theap->base;
 
 		while (cur < end) {
@@ -407,23 +408,23 @@ CMDbulk_rotate_xor_hash(BAT **res, BAT *bn, int *rotate, BAT *b)
 			hash_t val;
 			GDK_STRHASH(src, val);
 			*dst = GDK_ROTATE(*dst, lbit, rbit, mask) ^ val;
-			cur = (int *) (((BUN) cur) + xx);
-			dst = (int *) (((BUN) dst) + yy);
+			cur++;
+			dst++;
 		}
 	} else if (b->ttype == TYPE_void) {
 		BUN p, q;
 
-		BATloopFast(b, p, q, xx) {
-			*dst = GDK_ROTATE(*dst, lbit, rbit, mask) ^ *(int *) BUNtail(b, p);
-			dst = (int *) (((BUN) dst) + yy);
+		BATloop(b, p, q) {
+			*dst = GDK_ROTATE(*dst, lbit, rbit, mask) ^ *(int *) BUNtail(bi, p);
+			dst++;
 		}
 	} else {
 		hash_t (*hash)(ptr) = BATatoms[b->ttype].atomHash;
 		BUN p, q;
 
-		BATloopFast(b, p, q, xx) {
-			*dst = GDK_ROTATE(*dst, lbit, rbit, mask) ^ (int) (*hash)(BUNtail(b, p)); /* 64bit: truncating top bits */
-			dst = (int *) (((BUN) dst) + yy);
+		BATloop(b, p, q) {
+			*dst = GDK_ROTATE(*dst, lbit, rbit, mask) ^ (int) (*hash)(BUNtail(bi, p)); /* 64bit: truncating top bits */
+			dst++;
 		}
 	}
 	/* we return an already existing parameter BAT, so we must fix it */

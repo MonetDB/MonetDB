@@ -29,7 +29,7 @@ if( bn== NULL) {*ret= 0;
     if (BAThvoid(b)) {
         bn = BATnew(TYPE_void, TYPE_@1, BATcount(b));
         BATseqbase(bn, b->hseqbase);
-    } else
+    } else 
         bn = BATnew(b->htype, TYPE_@1, BATcount(b));
 	if( bn== NULL) {
 		@3
@@ -37,6 +37,16 @@ if( bn== NULL) {*ret= 0;
 	}
     bn->hsorted = b->hsorted;
     bn->tsorted = b->tsorted;
+
+@= voidresultBAT
+	bn = BATnew(TYPE_void, @1, BATcount(b));
+	BATseqbase(bn, b->hseqbase);
+	if (bn == NULL) {
+		@3
+		throw(MAL, @2, "can not create bat");
+	}
+	bn->hsorted = b->hsorted;
+	bn->tsorted = b->tsorted;
 
 @= Pseudo
 	if (BBPindex("view_@1_@2") <= 0)
