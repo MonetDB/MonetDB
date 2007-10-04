@@ -144,7 +144,8 @@ end main;	# 37
 [ "curStamp",		  "5"		  ]
 [ "batCopiedtodisk",		  "0"		  ]
 [ "batDirtydesc",	  "dirty"	  ]
-[ "batDirtybuns",		  "clean"	  ]
+[ "H->heap.dirty",	  "clean"	  ]
+[ "T->heap.dirty",	  "clean"	  ]
 [ "head.free",		  "0"		  ]
 [ "head.size",		  "1024"	  ]
 [ "head.maxsize",	  "1024"	  ]
@@ -155,8 +156,8 @@ end main;	# 37
 [ "tail.maxsize",	  "1024"	  ]
 [ "tail.storage",	  "malloced"	  ]
 [ "tail.filename",	  "10.tail"	  ]
-[ "hheapdirty",			  "clean"	  ]
-[ "theapdirty",			  "clean"	  ]
+[ "H->vheap->dirty",	  "clean"	  ]
+[ "T->vheap->dirty",	  "clean"	  ]
 #~EndVariableOutput~#
 # Start performance profiling
 #-----------------#

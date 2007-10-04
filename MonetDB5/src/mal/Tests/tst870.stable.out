@@ -121,7 +121,8 @@ end main;	# 21
 [ "curStamp",		  "5"		  ]
 [ "batCopiedtodisk",	  "0"		  ]
 [ "batDirtydesc",	  "dirty"	  ]
-[ "batDirtybuns",	  "dirty"	  ]
+[ "H->heap.dirty",	  "dirty"	  ]
+[ "T->heap.dirty",	  "clean"	  ]
 [ "head.free",		  "72"		  ]
 [ "head.size",		  "2048"	  ]
 [ "head.maxsize",	  "2048"	  ]
@@ -132,8 +133,8 @@ end main;	# 21
 [ "tail.maxsize",	  "2048"	  ]
 [ "tail.storage",	  "malloced"	  ]
 [ "tail.filename",	  "10.tail"	  ]
-[ "hheapdirty",		  "clean"	  ]
-[ "theapdirty",		  "clean"	  ]
+[ "H->vheap->dirty",	  "clean"	  ]
+[ "T->vheap->dirty",	  "clean"	  ]
 #~EndVariableOutput~#
 #-----------------#
 # h	t	  # name
