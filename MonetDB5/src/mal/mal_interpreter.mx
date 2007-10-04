@@ -57,7 +57,6 @@ mal_export void garbageElement(ValPtr v);
 mal_export void garbageCollector(MalBlkPtr mb, MalStkPtr stk, int flag);
 mal_export void releaseBAT(MalBlkPtr mb, MalStkPtr stk, int bid);
 mal_export int getVolume(MalStkPtr stk, InstrPtr pci, int rd);
-mal_export void updateBigFoot(Client cntxt, int bid, int add);
 
 mal_export ptr getArgValue(MalStkPtr stk, InstrPtr pci, int k);
 mal_export ptr getArgReference(MalStkPtr stk, InstrPtr pci, int k);
@@ -171,6 +170,31 @@ void showErrors() {
 	}
 }
 @-
+The bigfoot memory tracker keeps track on the space
+occupancy of BATs. It ignores for the time being the heaps.
+@c
+static INLINE void 
+updateBigFoot(Client cntxt, int bid, int add)
+{
+	BAT *b;
+
+	if( BBP_lrefs(bid)==1 ){
+		b= BATdescriptor(bid);
+		if( b==0) return;
+		/* count it once ! */
+		if( add){
+			cntxt->vmfoot += headsize(b,BATcount(b));
+			cntxt->vmfoot += tailsize(b,BATcount(b));
+		} else {
+			cntxt->vmfoot -= headsize(b,BATcount(b));
+			cntxt->vmfoot -= tailsize(b,BATcount(b));
+		}
+		if( cntxt->vmfoot > cntxt->bigfoot)
+			cntxt->bigfoot= cntxt->vmfoot;
+		BBPunfix(b->batCacheid);
+	}
+}
+@-
 Copy the constant values onto the stack frame
 @= initStack
 	for(i= @1; i< mb->vtop; i++)
@@ -207,6 +231,7 @@ str runMAL(Client cntxt, MalBlkPtr mb, int startpc, MalBlkPtr mbcaller,
 	ValPtr lhs,rhs;
 	InstrPtr pci=getInstrPtr(mb,0);
 	str ret;
+	int stkpc=0;
 	@:performanceVariables@
 
 	if (mb->errors) {
@@ -344,6 +369,7 @@ callMAL(Client cntxt, MalBlkPtr mb, MalStkPtr *env, ValPtr argv[], char debug){
 	ValPtr lhs,rhs;
 	InstrPtr pci= getInstrPtr(mb,0);
 	@:performanceVariables@
+	int stkpc=0;
 
 #ifdef DEBUG_CALLMAL
 	stream_printf(GDKout,"callMAL\n");
@@ -403,13 +429,15 @@ str runMALsequence( Client cntxt, MalBlkPtr mb, int startpc,
 	ValPtr lhs,rhs,v;
 	int i,k; 
 	InstrPtr pci=0; 
-	int exceptionVar, exceptionPC;
+	int exceptionVar;
 	str ret=0;
 	int stamp= -1;
 	bat *backup= (bat*) alloca(mb->maxarg * sizeof(bat));
 	str *sbackup= (str*) alloca(mb->maxarg * sizeof(str));
 	lng oldtimer=0;
 	struct mallinfo oldMemory;
+	int stkpc=0;
+
 #ifdef HAVE_SYS_RESOURCE_H
 	int oldinblock=0;
 	int oldoublock=0;
@@ -422,8 +450,7 @@ str runMALsequence( Client cntxt, MalBlkPtr mb, int startpc,
 	oldMemory.arena= 0;
 		
 	stkpc = startpc;
-	exceptionVar = exceptionPC = -1;
-	(void)exceptionPC; /* TODO maybe we should use this variable somewhere*/
+	exceptionVar = -1;
 @-
 From this point onwards we should differentiate fast processing
 against monitored processing. Fast processing is possible if there is
@@ -588,13 +615,15 @@ str runMALdataflow( Client cntxt, MalBlkPtr mb, int startpc,
 	ValPtr lhs,rhs,v;
 	int i,k,n; 
 	InstrPtr pci=0; 
-	int exceptionVar, exceptionPC;
+	int exceptionVar;
 	str ret=0;
 	int stamp= -1;
 	bat *backup= (bat*) alloca(mb->maxarg * sizeof(bat));
 	str *sbackup= (str*) alloca(mb->maxarg * sizeof(str));
 	lng oldtimer=0;
 	struct mallinfo oldMemory;
+	int stkpc=0;
+
 #ifdef HAVE_SYS_RESOURCE_H
 	int oldinblock=0;
 	int oldoublock=0;
@@ -629,8 +658,7 @@ the eligible instructions. [TODO]
 @c
 	/* select the first eligible instruction */
 	stkpc= -1;
-	exceptionPC = exceptionVar = -1;
-	(void)exceptionPC; /* TODO maybe we should use this variable somewhere*/
+	exceptionVar = -1;
 	while( ++stkpc < n ){
 		nxtMALflowStep(flow, stkpc,n,mb);
 		pci = flow[stkpc].p;
@@ -844,7 +872,6 @@ switch(pci->barrier){
 		stkpc++; 
 		break;
 	case RAISEsymbol:
-		exceptionPC = stkpc;
 		exceptionVar = getDestVar(pci);
 		if (getVarType(mb, getDestVar(pci)) == TYPE_str) {
 			ret = createScriptException(mb, stkpc, MAL, NULL,
@@ -968,12 +995,12 @@ the bind(namespace, batname, mode) operation. [todo]
 		for(i=0; i<pci->retc; i++) {
 			sbackup[i]= 0;  
 			backup[i]= 0;  
-			if( stk->stk[getArg(pci,i)].vtype == TYPE_bat){
+			if( stk->stk[getArg(pci,i)].vtype == TYPE_bat) {
 				backup[i]= stk->stk[getArg(pci,i)].val.br.id;
 				stamp= BBPcurstamp();
-			} else if( stk->stk[getArg(pci,i)].vtype == TYPE_str){
-					backup[i]= stk->stk[getArg(pci,i)].len;
-					sbackup[i]= stk->stk[getArg(pci,i)].val.sval;
+			} else if( stk->stk[getArg(pci,i)].vtype == TYPE_str) {
+				backup[i]= stk->stk[getArg(pci,i)].len;
+				sbackup[i]= stk->stk[getArg(pci,i)].val.sval;
 			} 
 		}
 	} 
@@ -1382,16 +1409,13 @@ if( ret != MAL_SUCCEED ) {
 		*msg= 0;
 		exceptionVar = findVariableLength(mb,ret,msg-ret);
 		*msg=':';
-		exceptionPC = stkpc;
 	} else {
 		if( ret == MAL_SUCCEED && cntxt->errbuf){
 			/* trap hidden (GDK) exception */
 			msg= GDKstrdup(cntxt->errbuf);
 			exceptionVar= findVariable(mb,"GDKerror");
-			exceptionPC = stkpc;
 		} else {
 			exceptionVar = getDestVar(pci);
-			exceptionPC = stkpc;
 		}
 	}
 	/* unknown exceptions lead to propagation */
@@ -1562,7 +1586,6 @@ See @url{The MAL Profiler} for more details.
 @= performanceVariables
 #ifdef MALprofiler
 	lng newclk=0;
-	int stkpc=0;
 	int ppc= -1;
 #endif
 @= beginProfile
@@ -1647,30 +1670,6 @@ if( cntxt->flags && stk->cmd != 't' && stk->cmd != 'C'){
 		cntxt->timer = GDKusec();
 }
 #endif
-@-
-The bigfoot memory tracker keeps track on the space
-occupancy of BATs. It ignores for the time being the heaps.
-@c
-void updateBigFoot(Client cntxt, int bid, int add)
-{
-	BAT *b;
-
-	if( BBP_lrefs(bid)==1 ){
-		b= BATdescriptor(bid);
-		if( b==0) return;
-		/* count it once ! */
-		if( add){
-			cntxt->vmfoot += headsize(b,BATcount(b));
-			cntxt->vmfoot += tailsize(b,BATcount(b));
-		} else {
-			cntxt->vmfoot -= headsize(b,BATcount(b));
-			cntxt->vmfoot -= tailsize(b,BATcount(b));
-		}
-		if( cntxt->vmfoot > cntxt->bigfoot)
-			cntxt->bigfoot= cntxt->vmfoot;
-		BBPunfix(b->batCacheid);
-	}
-}
 @-
 For performance evaluation it is handy to know the 
 maximal amount of bytes read/written. The actual
