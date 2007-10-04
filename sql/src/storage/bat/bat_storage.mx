@@ -268,7 +268,7 @@ append_bat( sql_bat *bat, BAT *i )
 	assert(bat->ibid);
 	b = temp_descriptor(bat->ibid);
 	assert(b);
-	if (BATcount(b) == 0 && !isVIEW(i) && i->htype == TYPE_void){
+	if (BATcount(b) == 0 && !isVIEW(i) && i->htype == TYPE_void && i->ttype != TYPE_void){
 		bat_destroy(b);
 		temp_destroy(bat->ibid);
 		bat->ibid = temp_create(i);
