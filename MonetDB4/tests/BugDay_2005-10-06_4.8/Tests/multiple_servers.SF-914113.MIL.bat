@@ -1,1 +1,1 @@
-@call @MSERVER@ --dbname=@TSTDB@
+@call %MSERVER% --dbname=%TSTDB%
