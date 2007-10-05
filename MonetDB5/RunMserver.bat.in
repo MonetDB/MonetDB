@@ -1,11 +1,5 @@
 @echo off
 
-if not "%1"=="" goto skip
-call %0 -rq
-goto end
-
-:skip
-
 setlocal
 
 set builddir=@XMONETDB5_BUILD@
@@ -30,5 +24,3 @@ set PATH=%builddir%\src\tools;%PATH%
 mserver5.exe "--config=%builddir%\conf\monetdb5.conf" --set "monet_mod_path=%MOD_PATH%" %*
 
 endlocal
-
-:end
