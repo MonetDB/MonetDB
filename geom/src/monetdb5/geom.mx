@@ -57,6 +57,11 @@ function @1FromText( wkt:str ) :wkb;
 	return x;
 end @1FromText;
 
+function @1FromText( wkt:str, srid:sht ) :wkb;
+	x := wkb.FromText(wkt,@3);
+	return x;
+end @1FromText;
+
 @mal
 @:types(Point,point,1)@
 @:types(Curve,curve,2)@
@@ -209,7 +214,7 @@ command wkb(v:str) :wkb address wkbFromString;
 command wkb(v:wkb) :wkb address wkbFromWKB;
 
 @= ctypes
-function @2( wkt:str ) :wkb;
+function @2( wkt:str, srid:sht ) :wkb;
 	x := wkb.FromText(wkt,@3);
 	return x;
 end @2;
