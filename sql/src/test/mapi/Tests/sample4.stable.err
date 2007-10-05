@@ -1,13 +1,13 @@
-stderr of test 'sample0` in directory 'src/backends/monet4` itself:
+stderr of test 'sample4` in directory 'src/test/mapi` itself:
 
 
-# 22:20:44 >  
-# 22:20:44 >  Mtimeout -timeout 180 Mserver "--config=/var/tmp/_PREFIX_MONET_GNU_32_d__/etc/monet.conf" --debug=10 --set "monet_mod_path=/var/tmp/_PREFIX_MONET_GNU_32_d__/lib/MonetDB" --set "gdk_dbfarm=/var/tmp/_PREFIX_MONET_GNU_32_d__/var/MonetDB/dbfarm" --set "sql_logdir=/var/tmp/_PREFIX_MONET_GNU_32_d__/var/MonetDB/log" --set mapi_port=49241 --set sql_port=58277 --set monet_prompt= --trace "--dbname=mTests_src_mapi_examples_C" "/var/tmp/_PREFIX_MONET_GNU_32_d__/lib/MonetDB/mapi.mil" ; echo ; echo Over..
-# 22:20:44 >  
+# 22:25:18 >  
+# 22:25:18 >  Mtimeout -timeout 180 Mserver "--config=/var/tmp/_PREFIX_MONET_GNU_32_d__/etc/monet.conf" --debug=10 --set "monet_mod_path=/var/tmp/_PREFIX_MONET_GNU_32_d__/lib/MonetDB" --set "gdk_dbfarm=/var/tmp/_PREFIX_MONET_GNU_32_d__/var/MonetDB/dbfarm" --set "sql_logdir=/var/tmp/_PREFIX_MONET_GNU_32_d__/var/MonetDB/log" --set mapi_port=42910 --set sql_port=52446 --set monet_prompt= --trace "--dbname=mTests_src_mapi_examples_C" "/var/tmp/_PREFIX_MONET_GNU_32_d__/lib/MonetDB/mapi.mil" ; echo ; echo Over..
+# 22:25:18 >  
 
 # builtin opt 	gdk_arch = 32biti686-pc-linux-gnu
 # builtin opt 	gdk_version = 4.3.15
-# builtin opt 	monet_pid = 24553
+# builtin opt 	monet_pid = 20164
 # builtin opt 	prefix = /var/tmp/_PREFIX_MONET_GNU_32_d__
 # builtin opt 	exec_prefix = ${prefix}
 # builtin opt 	gdk_dbname = tst
@@ -48,22 +48,22 @@ stderr of test 'sample0` in directory 'src/backends/monet4` itself:
 # cmdline opt 	monet_mod_path = /var/tmp/_PREFIX_MONET_GNU_32_d__/lib/MonetDB
 # cmdline opt 	gdk_dbfarm = /var/tmp/_PREFIX_MONET_GNU_32_d__/var/MonetDB/dbfarm
 # cmdline opt 	sql_logdir = /var/tmp/_PREFIX_MONET_GNU_32_d__/var/MonetDB/log
-# cmdline opt 	mapi_port = 49241
-# cmdline opt 	sql_port = 58277
+# cmdline opt 	mapi_port = 42910
+# cmdline opt 	sql_port = 52446
 # cmdline opt 	monet_prompt = 
 # cmdline opt 	gdk_dbname = mTests_src_mapi_examples_C
 
-# 22:20:45 >  
-# 22:20:45 >  Mtimeout -timeout 60 ./sample0.MAPI sample0 
-# 22:20:45 >  
+# 22:25:19 >  
+# 22:25:19 >  Mtimeout -timeout 60 ./sample4.MAPI sample4 
+# 22:25:19 >  
 
 
-# 22:20:45 >  
-# 22:20:45 >  Mtimeout -timeout 60 Mshutdown.py "--config=/var/tmp/_PREFIX_MONET_GNU_32_d__/etc/monet.conf" --host=draco --port=49241
-# 22:20:45 >  
+# 22:25:19 >  
+# 22:25:19 >  Mtimeout -timeout 60 Mshutdown.py "--config=/var/tmp/_PREFIX_MONET_GNU_32_d__/etc/monet.conf" --host=draco --port=42910
+# 22:25:19 >  
 
 
-# 22:20:46 >  
-# 22:20:46 >  Done.
-# 22:20:46 >  
+# 22:25:20 >  
+# 22:25:20 >  Done.
+# 22:25:20 >  
 

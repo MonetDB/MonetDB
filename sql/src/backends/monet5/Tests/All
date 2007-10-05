@@ -1,2 +1,2 @@
-optimizers
-Mbeddedsql5--help
+HAVE_MONETDB5?optimizers
+HAVE_MONETDB5?Mbeddedsql5--help

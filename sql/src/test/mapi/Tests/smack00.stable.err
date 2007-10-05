@@ -1,13 +1,13 @@
-stderr of test 'smack01` in directory 'src/backends/monet4` itself:
+stderr of test 'smack00` in directory 'src/test/mapi` itself:
 
 
-# 22:38:37 >  
-# 22:38:37 >  Mtimeout -timeout 180 Mserver "--config=/var/tmp/_PREFIX_MONET_GNU_32_d__/etc/monet.conf" --debug=10 --set "monet_mod_path=/var/tmp/_PREFIX_MONET_GNU_32_d__/lib/MonetDB" --set "gdk_dbfarm=/var/tmp/_PREFIX_MONET_GNU_32_d__/var/MonetDB/dbfarm" --set "sql_logdir=/var/tmp/_PREFIX_MONET_GNU_32_d__/var/MonetDB/log" --set mapi_port=49350 --set sql_port=55436 --set monet_prompt= --trace "--dbname=mTests_src_mapi_examples_C" "/var/tmp/_PREFIX_MONET_GNU_32_d__/lib/MonetDB/mapi.mil" ; echo ; echo Over..
-# 22:38:37 >  
+# 22:38:31 >  
+# 22:38:31 >  Mtimeout -timeout 180 Mserver "--config=/var/tmp/_PREFIX_MONET_GNU_32_d__/etc/monet.conf" --debug=10 --set "monet_mod_path=/var/tmp/_PREFIX_MONET_GNU_32_d__/lib/MonetDB" --set "gdk_dbfarm=/var/tmp/_PREFIX_MONET_GNU_32_d__/var/MonetDB/dbfarm" --set "sql_logdir=/var/tmp/_PREFIX_MONET_GNU_32_d__/var/MonetDB/log" --set mapi_port=49350 --set sql_port=55436 --set monet_prompt= --trace "--dbname=mTests_src_mapi_examples_C" "/var/tmp/_PREFIX_MONET_GNU_32_d__/lib/MonetDB/mapi.mil" ; echo ; echo Over..
+# 22:38:31 >  
 
 # builtin opt 	gdk_arch = 32biti686-pc-linux-gnu
 # builtin opt 	gdk_version = 4.3.15
-# builtin opt 	monet_pid = 22728
+# builtin opt 	monet_pid = 22649
 # builtin opt 	prefix = /var/tmp/_PREFIX_MONET_GNU_32_d__
 # builtin opt 	exec_prefix = ${prefix}
 # builtin opt 	gdk_dbname = tst
@@ -53,17 +53,17 @@ stderr of test 'smack01` in directory 'src/backends/monet4` itself:
 # cmdline opt 	monet_prompt = 
 # cmdline opt 	gdk_dbname = mTests_src_mapi_examples_C
 
-# 22:38:38 >  
-# 22:38:38 >  Mtimeout -timeout 60 ./smack01.MAPI smack01 
-# 22:38:38 >  
+# 22:38:32 >  
+# 22:38:32 >  Mtimeout -timeout 60 ./smack00.MAPI smack00 
+# 22:38:32 >  
 
 
-# 22:38:45 >  
-# 22:38:45 >  Mtimeout -timeout 60 Mshutdown.py "--config=/var/tmp/_PREFIX_MONET_GNU_32_d__/etc/monet.conf" --host=draco --port=49350
-# 22:38:45 >  
+# 22:38:35 >  
+# 22:38:35 >  Mtimeout -timeout 60 Mshutdown.py "--config=/var/tmp/_PREFIX_MONET_GNU_32_d__/etc/monet.conf" --host=draco --port=49350
+# 22:38:35 >  
 
 
-# 22:38:46 >  
-# 22:38:46 >  Done.
-# 22:38:46 >  
+# 22:38:36 >  
+# 22:38:36 >  Done.
+# 22:38:36 >  
 
