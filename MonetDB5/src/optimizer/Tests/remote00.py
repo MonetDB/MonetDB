@@ -3,7 +3,7 @@ import os, time, sys, re
 
 class Popen:
 	def __init__(self, cmd):
-		self.stdin,self.stdout = os.popen2(cmd, bufsize=0, mode='t'); 
+		self.stdin,self.stdout = os.popen2(cmd); 
 
 def server_start(x,dbname,mapi_port):
     srvcmd = '%s --debug=10 --dbname "%s"' % (re.sub('mapi_port=[^ ]* ','mapi_port=%d ' % mapi_port,os.getenv('MSERVER')),dbname)
@@ -39,10 +39,14 @@ def main():
     x += 1; srv2 = server_start(x, "db" + str(x), 12346)
 
     srv1.stdin.write(prelude_1)
+    srv1.stdin.flush()
     srv2.stdin.write(prelude_2 % (12345))
+    srv2.stdin.flush()
    
     srv1.stdin.write("clients.quit();\n");
+    srv1.stdin.flush()
     srv2.stdin.write("clients.quit();\n");
+    srv2.stdin.flush()
 
     server_stop(srv1);
     server_stop(srv2);
