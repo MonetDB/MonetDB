@@ -2159,18 +2159,13 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
         if SERVER == "SQL":
             lang="sql"
             if par['M5']:
-                source = ""
-                if PROLOGUE:
-                    source = ' language.source("%s");' % (os.path.join(env['TSTTRGDIR'],PROLOGUE[1:]))
-                Srvr = "%s --dbinit='%s include sql;%s'" % (Srvr, DBINIT, source)
+                Srvr = '%s --set mal_listing=0 --dbinit="%s include sql;"' % (Srvr, DBINIT)
             else:
                 Srvr = '%s --dbinit="%s module(sql_server);"' % (Srvr, DBINIT)
         if SERVER == "XQUERY":
             lang="xquery"
             Srvr = '%s --dbinit="%s module(pathfinder);"' % (Srvr, DBINIT)
-        if SERVER != "SQL"  or  par['M4']:
-            Srvr = Srvr+PROLOGUE
-        #-background"
+        Srvr = Srvr+PROLOGUE
         if os.name == "nt":
             Srvr = Srvr+' & echo.& '
         else:
