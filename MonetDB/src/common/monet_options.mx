@@ -221,9 +221,9 @@ mo_substitute(opt *set, int setlen, char *val)
 
 			if (!p)
 				return s;
-			t = malloc((n = n - 14 + strlen(p)));
+			t = malloc((n = n - 13 + strlen(p)));
 			*q = 0;
-			snprintf(t, n, "%s%s%s", s, p, q + 14);
+			snprintf(t, n, "%s%s%s", s, p, q + 13);
 			free(s);
 			q = t + (q-s);
 			s = t;
@@ -233,9 +233,9 @@ mo_substitute(opt *set, int setlen, char *val)
 
 			if (!p)
 				return s;
-			t = malloc((n = n - 9 + strlen(p)));
+			t = malloc((n = n - 8 + strlen(p)));
 			*q = 0;
-			snprintf(t, n, "%s%s%s", s, p, q + 9);
+			snprintf(t, n, "%s%s%s", s, p, q + 8);
 			free(s);
 			q = t + (q-s);
 			s = t;
