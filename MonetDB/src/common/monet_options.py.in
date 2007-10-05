@@ -63,12 +63,17 @@ class BuiltinOptions:
             changed = False
             for var in 'prefix', 'exec_prefix':
                 dvar = '${%s}' % var
-                if string.find(val, dvar) < 0:
-                    # variable does not occur, skip further processing
-                    continue
-                # replace variable with its value (recursive call)
-                val = string.replace(val, dvar, self.get(var))
-                changed = True
+                if string.find(val, dvar) >= 0:
+                    # replace variable with its value (recursive call)
+                    val = string.replace(val, dvar, self.get(var))
+                    changed = True
+                if os.name == 'nt':
+                    # on Windows, also replace %prefix% and %exec_prefix%
+                    dvar = '%%%s%%' % var
+                    if string.find(val, dvar) >= 0:
+                        # replace variable with its value (recursive call)
+                        val = string.replace(val, dvar, self.get(var))
+                        changed = True
         return val
 
 class SystemOptions(BuiltinOptions):
