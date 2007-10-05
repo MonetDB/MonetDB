@@ -2425,7 +2425,11 @@ PROC ws_docfilter(bat[void,bat] ws,
     if (count(any_pre) = count(one)) return any_pre;
     var cur := count(one); # ignore bogus nodes 
     var tot := count(any_pre);
-    var res := bat(any_pre.htype(), oid, tot).insert(one); # final result (copied excluding deleted docs)
+    var res := bat(one.htype(), oid, tot);
+    if (one.htype() = void) {
+        res := res.seqbase(one.seqbase());
+    }
+        res := res.insert(one); # final result (copied excluding deleted docs)
     var opt := true;
     var anc := bat(void,oid).append(1@0); # start opportunistically with first (potential) doc 1@0
 
