@@ -33,6 +33,8 @@ CREATE FUNCTION mbr (m multipolygon) RETURNS mbr external name geom.mbr;
 CREATE FUNCTION mbr (g Geometry) RETURNS mbr external name geom.mbr;
 CREATE FUNCTION mbr (g GeomCollection) RETURNS mbr external name geom.mbr;
 
+CREATE FUNCTION mbroverlaps(a mbr, b mbr) RETURNS BOOLEAN external name geom."mbroverlaps";
+
 -- The srid in the *FromText Functions is currently not used
 CREATE FUNCTION GeomFromText(wkt string, srid SMALLINT) RETURNS Geometry external name geom."GeomFromText";
 CREATE FUNCTION PointFromText(wkt string, srid SMALLINT) RETURNS Point external name geom."PointFromText";
@@ -56,6 +58,11 @@ CREATE FUNCTION AsText(l MultiLineString) RETURNS STRING external name geom."AsT
 CREATE FUNCTION AsText(s MultiSurface) RETURNS STRING external name geom."AsText";
 CREATE FUNCTION AsText(p MultiPolygon) RETURNS STRING external name geom."AsText";
 CREATE FUNCTION AsText(g Geometry) RETURNS STRING external name geom."AsText";
+
+CREATE FUNCTION X(g Geometry) RETURNS double external name geom."X";
+CREATE FUNCTION Y(g Geometry) RETURNS double external name geom."Y";
+
+CREATE FUNCTION Point(x double,y double) RETURNS Point external name geom.point;
 
 CREATE FUNCTION Point(g Geometry) RETURNS Point external name geom.point;
 CREATE FUNCTION Curve(g Geometry) RETURNS Curve external name geom.curve;

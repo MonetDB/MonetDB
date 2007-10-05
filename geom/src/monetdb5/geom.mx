@@ -73,6 +73,11 @@ end @1FromText;
 @:types(Geom,geometry,7)@
 @:types(GeomCollection,geomcollection,7)@
 
+command mbroverlaps(a:mbr, b:mbr) :bit
+address mbroverlaps
+comment "Returns true if the two mbrs overlap";
+
+
 command AsText(w:wkb) :str	address wkbAsText;
 command mbr(:flt,:flt,:flt,:flt) :mbr 
 address ordinatesMBR
@@ -155,6 +160,22 @@ comment "Returns true if the Geometry a 'spatially overlaps' Geometry b";
 command Relate(a:wkb, b:wkb, intersectionPatternMatrix:str) :bit
 address wkbRelate
 comment "Returns true if the Geometry a 'spatially related' to Geometry b, by testing for intersection between the Interior, Boundary and Exterior of the two geometries as specified by the values in the intersectionPatternMatrix.";
+
+@+ ogc constructor functions
+@mal
+command point(x:dbl,y:dbl) :wkb
+address wkbcreatepoint
+comment "Construct a point from two geometries";
+
+@+ ogc information methods
+@mal
+command X(g:wkb) :dbl
+address wkbgetcoordX
+comment "Returns the x-coordinate of a point geometry.";
+
+command Y(g:wkb) :dbl
+address wkbgetcoordY
+comment "Returns the y-coordinate of a point geometry.";
 
 @+ ogc Spatial Analysis methods
 @mal
@@ -752,6 +773,52 @@ geos2wkb( GEOSGeom geosGeometry )
 		free(w);
 	}
 	return atom;
+}
+
+@= getcoord
+str
+wkbgetcoord@1(double *out, wkb **geom)
+{
+	str ret = "";
+	GEOSGeom geosGeometry = wkb2geos(*geom);
+
+	if (geosGeometry) { 
+		if (GEOSCoordSeq_get@1(GEOSGeom_getCoordSeq( geosGeometry),0,out) != 0) {
+			ret = MAL_SUCCEED;
+		}
+		GEOSGeom_destroy(geosGeometry);
+	}
+	if (ret)
+		throw(MAL, "geom.@1", "Failed");
+	return ret;
+}
+@c
+@:getcoord(X)@
+@:getcoord(Y)@
+
+@c
+str
+wkbcreatepoint(wkb **out, double *x,double *y)
+{
+	GEOSCoordSeq pnt = GEOSCoordSeq_create(1, 2);
+	GEOSCoordSeq_setX(pnt,0,*x);
+	GEOSCoordSeq_setY(pnt,0,*y);
+	*out = geos2wkb(GEOSGeom_createPoint(pnt));
+	return MAL_SUCCEED;
+}
+
+str
+mbroverlaps( bit *out, mbr **a, mbr **b)
+{
+	str ret = "";
+
+	if (*a && *b) { 
+		*out = 0; /* XXXXX */
+		ret = MAL_SUCCEED;
+	}
+	if (ret)
+		throw(MAL, "mbroverlaps", "Failed");
+	return ret;
 }
 
 @= basic
