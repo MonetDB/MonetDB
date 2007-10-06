@@ -328,4 +328,5 @@ for $item in $todo
 return 
   do insert $item/* 
   into exactly-one($dest[@xid[. = $item/@xid]])
-
+<>
+count(doc("test10.xml")//*)
