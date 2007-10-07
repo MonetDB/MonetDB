@@ -67,10 +67,9 @@ stderr of test 'overflow_checking.SF-1089334` in directory 'src/test/BugDay_2005
 # 13:12:25 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=41056  < overflow_checking.SF-1089334.sql
 # 13:12:25 >  
 
-MAPI  = monetdb@localhost:35781
+MAPI  = monetdb@koala:30128
 QUERY = INSERT INTO rawtriples VALUES(1001, 1,
-ERROR = !ERROR: convert: too many digits (19 > 10)
-        !ERROR: lng_num2dec_lng: operation failed.
+ERROR = !wrong argument for fast call (expected decimal instead of bigint)
 
 # 13:12:25 >  
 # 13:12:25 >  Done.

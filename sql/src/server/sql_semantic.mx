@@ -589,94 +589,19 @@ stmt *
 inplace_convert(mvc *sql, sql_subtype *ct, stmt *s)
 {
 	atom *a;
-	//sql_subtype *st = tail_type(s);
 
-				 /* exclude named variables */
+	/* exclude named variables */
 	if (s->type != st_var || s->op1.sval || s->ref.refcnt > 1 || 
 		(ct->scale && ct->type->eclass != EC_FLT))
 		return s;
 
 	a = sql_bind_arg(sql, s->flag);
-
 	if (atom_cast(a, ct)) {
 		stmt *r = stmt_varnr(s->flag, ct);
 		sql_convert_arg(sql, s->flag, ct);
 		stmt_destroy(s);
 		return r;
 	}
-
-/*
-	if (ct->digits == 0 || ct->type->radix == 2 || 
-	   (ct->digits > 0 && st->digits < ct->digits)) {
-		stmt *r = s;
-
-		atom *a = sql_bind_arg(sql, s->flag);
-
-		if (ct->type->localtype >= st->type->localtype) {
-			if (ct->type->localtype == TYPE_str) {
-				sql_subtype nt;
-
-				sql_init_subtype(&nt, st->type, ct->digits, ct->scale);
-				r = stmt_varnr(s->flag, &nt);
-				sql_convert_arg(sql, s->flag, &nt);
-			}
-		} else
-		if (atom_cast(a, ct)) {
-			r = stmt_varnr(s->flag, ct);
-			sql_convert_arg(sql, s->flag, ct);
-		} else
-		if (ct->type->localtype >= st->type->localtype) {
-			if (ct->type->localtype == TYPE_lng || ct->type->localtype == TYPE_int || ct->type->localtype == TYPE_sht || ct->type->localtype == TYPE_bte) {
-				r = stmt_varnr(s->flag, ct);
-				sql_convert_arg(sql, s->flag, ct);
-			}
-		}
-*/
-
-/*
-		if (ct->type->localtype >= st->type->localtype) {
-			if (ct->type->localtype == TYPE_lng || ct->type->localtype == TYPE_int || ct->type->localtype == TYPE_sht || ct->type->localtype == TYPE_bte) {
-				r = stmt_varnr(s->flag, ct);
-				sql_convert_arg(sql, s->flag, ct);
-			} else if (ct->type->localtype == TYPE_str) {
-				sql_subtype nt;
-
-				sql_init_subtype(&nt, st->type, ct->digits, ct->scale);
-				r = stmt_varnr(s->flag, &nt);
-				sql_convert_arg(sql, s->flag, &nt);
-			}
-		} else if (st->type->localtype == TYPE_str) {
-			atom *a = sql_bind_arg(sql, s->flag);
-
-			if (atom_null(a)) {
-				r = stmt_varnr(s->flag, ct);
-				sql_convert_arg(sql, s->flag, ct);
-			}
-		}
-		if (ct->type->eclass == EC_FLT && 
-		   (st->type->eclass == EC_DEC || st->type->eclass == EC_NUM)){
-			atom *a = sql_bind_arg(sql, s->flag);
-
-			r = stmt_varnr(s->flag, ct);
-
-			if (atom_null(a)) {
-				sql_convert_arg(sql, s->flag, ct);
-			} else {
-				assert(a->d != dbl_nil);
-				if (ct->type->localtype == TYPE_dbl)
-					a->data.val.dval = a->d;
-				else
-					a->data.val.fval = a->d;
-				a->data.vtype = ct->type->localtype;
-				a->tpe = *ct;
-			}
-		}
-		if (r != s)
-			stmt_destroy(s);
-		return r;
-	}
-*/
-		/* cheap convert decimal into float */
 	return s;
 }
 

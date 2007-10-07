@@ -29,11 +29,13 @@ Over..
 [ "decimal",	6,	4	]
 [ "decimal",	6,	4	]
 [ 1	]
+[ 1	]
 % sys.xy,	sys.xy,	sys.xy # table_name
 % time,	x,	y # name
 % timestamp,	decimal,	decimal # type
 % 26,	8,	8 # length
 [ 2007-03-07 15:28:16.577000,	0.6841,	0.6840	]
+[ 2007-03-07 15:28:16.577000,	-0.6841,	-0.6840	]
 
 # 16:00:53 >  
 # 16:00:53 >  Done.

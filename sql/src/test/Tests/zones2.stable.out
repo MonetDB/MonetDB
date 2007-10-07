@@ -22,12 +22,12 @@ Over..
 # 20:47:05 >  
 
 % . # table_name
-% sql_neg_single_value # name
+% degrees_single_value # name
 % double # type
 % 22 # length
 [ -5.7295779513082321	]
 % . # table_name
-% sql_neg_single_value # name
+% degrees_single_value # name
 % double # type
 % 22 # length
 [ -5.7295779513082321	]

@@ -513,9 +513,6 @@ create_type_list(dlist *params, int param)
 			par_subtype = &an->data.typeval;
 			list_prepend(type_list, par_subtype);
 		}
-	
-		
-
 	}
 	return type_list;
 }
@@ -568,7 +565,6 @@ create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_name,
 		} else {
 			return sql_error(sql, 02, "CREATE %s: name '%s' already in use", F, fname);
 		}
-	
 	} else {
 		if (type_list)
 			list_destroy(type_list);
@@ -673,25 +669,25 @@ drop_func(mvc *sql, dlist *qname, dlist *typelist, int drop_action, int is_func)
 			
 			if (type_list->cnt > 0) {
 				for (n = type_list->h; n; n = n->next) {
-					char *args;
 					char *tpe =  subtype2string((sql_subtype *) n->data);
 				
-					if (arg_list)	
-						args = sql_message( "%s, %s", arg_list, tpe);
-					else
-						args = sql_message( "%s", tpe);
-		                	arg_list = args;
-					_DELETE(tpe);	
+					if (arg_list) {
+						arg_list = sql_message("%s, %s", arg_list, tpe);
+						_DELETE(tpe);	
+					} else {
+						arg_list = tpe;
+					}
 				}
 				list_destroy(type_list);
 				
 				return sql_error(sql, 02, "DROP %s: no such %s '%s' (%s)", F, f, name, arg_list);
 			}
-				
+			list_destroy(type_list);
 			return sql_error(sql, 02, "DROP %s: no such %s '%s' ()", F, f, name);
 
-		} else
+		} else {
 			return sql_error(sql, 02, "DROP %s: no such %s '%s'", F, f, name);
+		}
 	} else if ((is_func && !func->res.type) || 
 		   (!is_func && func->res.type)) {
 		return sql_error(sql, 02, "DROP %s: cannot drop %s '%s'", F, is_func?"procedure":"function", name);
@@ -699,11 +695,9 @@ drop_func(mvc *sql, dlist *qname, dlist *typelist, int drop_action, int is_func)
 	
 	list_destroy(type_list);
 
-	
 	if (!schema_privs(sql->role_id, s)) {
 		return sql_error(sql, 02, "DROP %s: access denied for %s to schema ;'%s'", F, stack_get_string(sql, "current_user"), s->base.name);
 	}
-	
 	
 	if (!drop_action && mvc_check_dependency(sql, func->base.id, func->is_func ? FUNC_DEPENDENCY : PROC_DEPENDENCY, NULL))
 		return sql_error(sql, 02, "DROP %s: there are database objects dependent on %s %s;", F, f, func->base.name);

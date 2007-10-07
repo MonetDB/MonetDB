@@ -3197,11 +3197,21 @@ simple_scalar_exp:
  |  '+' scalar_exp %prec UMINUS 
 			{ $$ = $2; }
  |  '-' scalar_exp %prec UMINUS 
-			{ dlist *l = L();
-			  append_list(l, 
-			  	append_string(L(), sa_strdup(SA, "sql_neg")));
-	  		  append_symbol(l, $2);
-	  		  $$ = _symbol_create_list( SQL_UNOP, l ); }
+			{ 
+ 			  $$ = NULL;
+			  if ($2->token == SQL_COLUMN && $2->data.lval->h->type == type_int) {
+				atom *a = sql_bind_arg(parm, $2->data.lval->h->data.ival);
+				if (!atom_neg(a))
+					$$ = $2;
+			  } 
+			  if (!$$) {
+				dlist *l = L();
+			  	append_list(l, 
+			  		append_string(L(), sa_strdup(SA, "sql_neg")));
+	  		  	append_symbol(l, $2);
+	  		  	$$ = _symbol_create_list( SQL_UNOP, l ); 
+			  }
+			}
  |  '(' scalar_exp ')' 	{ $$ = $2; }
  | NOT scalar_exp 	{ dlist *l = L();
 			  append_list(l, 
