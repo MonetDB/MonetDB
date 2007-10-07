@@ -1,0 +1,12 @@
+include mal_compiler;
+function tst903();
+    b:= bat.new(:void,:lng);
+    barrier (go,i):= language.newRange(0:lng);
+        k:= mmath.rand();
+        l:= calc.lng(k);
+        bat.insert(b,nil,l);
+        redo (go,i):= language.nextElement(1:lng,1000000:lng);
+    exit (go,i);
+end tst903;
+
+compiler.MALtoC("user","tst903","mal01");

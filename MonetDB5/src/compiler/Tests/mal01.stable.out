@@ -1,0 +1,87 @@
+stdout of test 'mal01` in directory 'src/compiler` itself:
+
+
+# 10:43:14 >  
+# 10:43:14 >  Mtimeout -timeout 60  mserver5 "--config=/ufs/mk/monet5/Linux/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5//Linux/lib/MonetDB5:/ufs/mk/monet5//Linux/lib/MonetDB5/lib:/ufs/mk/monet5//Linux/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/mk/monet5//Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5//Linux/var/MonetDB5/dblogs"  --set mapi_open=true --set xrpc_open=true --set mapi_port=32803 --set xrpc_port=43201 --set monet_prompt= --trace --dbname=mTests_src_compiler  mal01.mal
+# 10:43:14 >  
+
+# MonetDB server v5.3.0, based on kernel v1.21.0
+# Serving database 'mTests_src_compiler'
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Copyright (c) 1993-2007 CWI, all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://gio.ins.cwi.nl:32803/
+#include mal_compiler;
+#function tst903();
+#    b:= bat.new(:void,:lng);
+#    barrier (go,i):= language.newRange(0:lng);
+#        k:= mmath.rand();
+#        l:= calc.lng(k);
+#        bat.insert(b,nil,l);
+#        redo (go,i):= language.nextElement(1:lng,1000000:lng);
+#    exit (go,i);
+#end tst903;
+function user.tst903():void;	# 0  (tst903:void)
+    b := bat.new(:void,:lng);	# 1 CMDBATnew (b:bat[:void,:lng])<-(_2:void)(_3:lng)
+barrier (go,i):= language.newRange(0:lng);	# 2 RNGnewRange_lng (go:bit)(i:lng)<-(_6:lng) jump 7
+    k := mmath.rand();	# 3 MATHrandint (k:int)
+    l := calc.lng(k);	# 4 CALCint2lng (l:lng)<-(k:int)
+    bat.insert(b,nil:void,l);	# 5 BKCinsert_bun (_9:void)<-(b:bat[:void,:lng])(_10:void)(l:lng)
+    redo (go,i):= language.nextElement(1:lng,1000000:lng);	# 6 RNGnextElement_lng (go:bit)(i:lng)<-(_11:lng)(_12:lng) jump 3
+exit (go,i);	# 7  (go:bit)(i:lng)
+end tst903;	# 8  
+#
+#compiler.MALtoC("user","tst903","mal01");
+#
+function user.main():void;	# 0  (main:void)
+    compiler.MALtoC("user","tst903","mal01");	# 1 MCdynamicCompiler (_1:void)<-(_2:str)(_3:str)(_4:str)
+end main;	# 2  
+Calling the dynamic compiler
+MCdynamicCompiler: user.tst903
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 08:29:57 >  
+# 08:29:57 >  Done.
+# 08:29:57 >  
+

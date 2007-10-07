@@ -74,14 +74,14 @@ str MCCuser_tst903(void *tst903)
         lng V11 = 1;
         lng V12 = 1000000;
         str Xmsg = MAL_SUCCEED;
-        if( Xmsg = CMDBATnew(&b,&V2,&V3) ) return Xmsg;
-        if( Xmsg = RNGnewRange_lng(&go,&i,&V6) ) return Xmsg;
+        if( Xmsg = CMDBATnew(&b,&V2,&V3) ) goto wrapup;
+        if( Xmsg = RNGnewRange_lng(&go,&i,&V6) ) goto wrapup;
         if(  go == 0 ||go== bit_nil ) goto EXIT_7;
 BARRIER_3:
-        if( Xmsg = MATHrandint(&k) ) return Xmsg;
-        if( Xmsg = CALCint2lng(&l,&k) ) return Xmsg;
-        if( Xmsg = BKCinsert_bun(&V9,&b,&V10,&l) ) return Xmsg;
-        if( Xmsg = RNGnextElement_lng(&go,&i,&V11,&V12) ) return Xmsg;
+        if( Xmsg = MATHrandint(&k) ) goto wrapup;
+        if( Xmsg = CALCint2lng(&l,&k) ) goto wrapup;
+        if( Xmsg = BKCinsert_bun(&V9,&b,&V10,&l) ) goto wrapup;
+        if( Xmsg = RNGnextElement_lng(&go,&i,&V11,&V12) ) goto wrapup;
         if( !( go == 0 ||go== bit_nil) ) goto BARRIER_3;
 EXIT_7: ;
 }
@@ -225,9 +225,13 @@ mccVariables(stream *f, MalBlkPtr mb)
 {
 	int i;
 	str tpe, v;
+	int seenstr=0;
+	int seenbat=0;
 
 	for (i = 1; i < mb->vtop; i++) {
 		tpe = getTypeName(getVarType(mb, i));
+		seenstr += getVarType(mb,i)== TYPE_str;
+		seenbat += isaBatType(getVarType(mb,i));
 		v = getVarName(mb, i);
 		if (isTmpVar(mb, i))
 			*v = 'V';
@@ -236,7 +240,7 @@ mccVariables(stream *f, MalBlkPtr mb)
 			mccVar(f, mb, i);
 			stream_printf(f, "= 0; /* %s */\n", tpe);
 		} else if (isaBatType(getVarType(mb, i))) {
-			stream_printf(f, "\tBID *");
+			stream_printf(f, "\tBID ");
 			mccVar(f, mb, i);
 			stream_printf(f, "= 0; /* %s */\n", tpe);
 		} else {
@@ -250,6 +254,12 @@ mccVariables(stream *f, MalBlkPtr mb)
 	}
 	/* if( isTmpVar(mb,i) ) GDKfree(v); */
 	stream_printf(f, "\tstr Xmsg = MAL_SUCCEED;\n");
+	/* reserve space for backups */
+	if(seenbat || seenstr)
+    stream_printf(f,"\tBID *backup= (BID*) alloca(%d * sizeof(BID));\n",mb->maxarg);
+	if(seenstr)
+    stream_printf(f,"\tchar **sbackup= (char **) alloca(%d * sizeof(char *));\n",mb->maxarg);
+
 }
 
 void
@@ -330,15 +340,80 @@ mccCall(stream *f, MalBlkPtr mb, InstrPtr p, int *catch, int *ctop){
 		if (*ctop > 0)
 			stream_printf(f, " goto CATCH_%d;\n", catch[--*ctop]);
 		else
-			stream_printf(f, " return Xmsg;\n");
+			stream_printf(f, " goto wrapup;\n");
 	}
 }
+
+void
+mccAssignment(stream *f, MalBlkPtr mb, InstrPtr p, int *catch, int *ctop){
+	int i;
+	for(i=0; i<p->retc; i++)
+	if( p->retc+i <p->argc){
+		mccVar(f, mb, getArg(p, i));
+		stream_printf(f, " = ");
+		if( isConstant(mb,getArg(p,p->retc+i-1)))
+			mccValue(f,mb, getArg(p,p->retc+i-1));
+		else
+			mccVar(f, mb, getArg(p, p->retc+i-1));
+		stream_printf(f, ";\n");
+	}
+	(void) catch;
+	(void) ctop;
+}
+
+void
+mccSafeTarget(stream *f, MalBlkPtr mb, InstrPtr p, int *catch, int *ctop){
+	int i;
+	if( needsCleanup(p)){
+		for(i=0;i<p->retc; i++){
+			if( isaBatType(getArgType(mb,p,i))){
+				stream_printf(f,"\tbackup[%d]=",i);
+				mccVar(f,mb,getArg(p,i));
+				stream_printf(f,";\n");
+			} else
+			if( getArgType(mb,p,i)== TYPE_str){
+				stream_printf(f,"\tbackup[%d]=strlen(",i);
+				mccVar(f,mb,getArg(p,i));
+				stream_printf(f,");\n");
+				stream_printf(f,"\tsbackup[%d]=",i);
+				mccVar(f,mb,getArg(p,i));
+				stream_printf(f,";\n");
+			} 
+		}
+	}
+	(void) catch;
+	(void) ctop;
+}
+
+void
+mccRestoreTarget(stream *f, MalBlkPtr mb, InstrPtr p, int *catch, int *ctop){
+	int i;
+	if( needsCleanup(p)){
+		for(i=0;i<p->retc; i++){
+			if( isaBatType(getArgType(mb,p,i))){
+				stream_printf(f,"\tif(backup[%d] == ",i);
+				mccVar(f,mb,getArg(p,i));
+				stream_printf(f,") BBPreleaseref(backup[%d]);\n",i);
+				stream_printf(f,"\telse BBPdecref(backup[%d],TRUE);\n",i);
+			} else
+			if( getArgType(mb,p,i)== TYPE_str){
+				stream_printf(f,"\tif(backup[%d] && sbackup[%d]!= ",i,i);
+				mccVar(f,mb,getArg(p,i));
+				stream_printf(f,"\t) GDKfree(sbackup[%d]);\n");
+			} 
+		}
+	}
+	(void) catch;
+	(void) ctop;
+}
+
 int
 mccInstruction(stream *f, MalBlkPtr mb, InstrPtr p, int i, int *catch, int *ctop)
 {
 	int errors = 0;
 	int j;
 
+	mccSafeTarget(f,mb,p,catch,ctop);
 	if (p->barrier == EXITsymbol)
 		stream_printf(f, "EXIT_%d: ;\n", i);
 
@@ -350,7 +425,10 @@ mccInstruction(stream *f, MalBlkPtr mb, InstrPtr p, int i, int *catch, int *ctop
 		return errors;
 	}
 
-	mccCall(f,mb,p,catch,ctop);
+	if( p->token== ASSIGNsymbol)
+		mccAssignment(f,mb,p,catch,ctop);
+	else
+		mccCall(f,mb,p,catch,ctop);
 	if (p->barrier)
 		switch (p->barrier) {
 		case BARRIERsymbol:
@@ -367,7 +445,7 @@ mccInstruction(stream *f, MalBlkPtr mb, InstrPtr p, int i, int *catch, int *ctop
 				mccVar(f, mb, getArg(p, j));
 				stream_printf(f, ");\n");
 			}
-			stream_printf(f, "\treturn Xmsg;\n");
+			stream_printf(f, "\tgoto wrapup;\n");
 		case CATCHsymbol:
 		case EXITsymbol:
 			break;
@@ -380,6 +458,7 @@ mccInstruction(stream *f, MalBlkPtr mb, InstrPtr p, int i, int *catch, int *ctop
 		default:
 			stream_printf(f, "/* case not yet covered: %d */\n", p->barrier);
 		}
+	mccRestoreTarget(f,mb,p,catch,ctop);
 	return errors;
 }
 
@@ -443,7 +522,7 @@ mccProject(stream *f, MalBlkPtr mb, InstrPtr p, int *catch, int *ctop){
 	if (*ctop > 0)
 		stream_printf(f, " goto CATCH_%d;\n", catch[--*ctop]);
 	else
-		stream_printf(f, " return Xmsg;\n");
+		stream_printf(f, " goto wrapup;\n");
 }
 
 void
@@ -501,8 +580,28 @@ functions.
 }
 
 void
-mccExit(stream *f)
+mccExit(stream *f, MalBlkPtr mb)
 {
+	int i;
+	stream_printf(f,"wrapup:;\n");
+	for(i=0; i< mb->vtop; i++)
+	if( isaBatType(getVarType(mb,i))
+	){
+		stream_printf(f,"\tif( ");
+		mccVar(f,mb,i);
+		stream_printf(f,"&& BBP_lrefs(");
+		mccVar(f,mb,i);
+		stream_printf(f,") ) BBPdecref(");
+		mccVar(f,mb,i);
+		stream_printf(f,",TRUE);\n");
+	} else
+	if( getVarType(mb,i)== TYPE_str){
+		stream_printf(f,"\tif(");
+		mccVar(f,mb,i);
+		stream_printf(f,") GDKfree(");
+		mccVar(f,mb,i);
+		stream_printf(f,");\n");
+	}
 	stream_printf(f, "}\n");
 	(void) stream_close(f);
 }
@@ -511,6 +610,7 @@ mccExit(stream *f)
 The compiler is called with arguments to designate
 the routine be expanded and the designated file.
 @c
+static char *codefile;
 
 str
 mccGenerate(MalBlkPtr mb, str alias)
@@ -525,8 +625,28 @@ mccGenerate(MalBlkPtr mb, str alias)
 	mccInit(f, mb);
 	mccVariables(f, mb);
 	mccBody(f, mb);
-	mccExit(f);
+	mccExit(f,mb);
+	codefile= strdup(buf);
 	return MAL_SUCCEED;
+}
+
+@-
+Dump the code produced in the standard output for ease of testing
+@c
+void
+mccDump(){
+	FILE *f;
+	int ch;
+	f= fopen(codefile,"r");
+	if( f== NULL){
+		printf("Could not find result file %s\n",codefile);
+		return;
+	}
+	printf("=");
+	while( (ch= fgetc(f)) != EOF ){
+		printf("%c",(char)ch);
+		if( ch == '\n') printf("=");
+	}
 }
 
 @-
@@ -559,6 +679,9 @@ MCdynamicCompiler(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			throw(MAL,"mal_compiler","Could not find function");
 		msg= mccGenerate(t->def,alias);
 	}
+#ifdef DEBUG_MAL_COMPILER
+	mccDump();
+#endif
 	return msg;
 }
 

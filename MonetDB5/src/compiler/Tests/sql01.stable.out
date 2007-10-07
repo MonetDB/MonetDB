@@ -1,0 +1,315 @@
+stdout of test 'sql01` in directory 'src/compiler` itself:
+
+
+# 10:43:14 >  
+# 10:43:14 >  Mtimeout -timeout 60  mserver5 "--config=/ufs/mk/monet5/Linux/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5//Linux/lib/MonetDB5:/ufs/mk/monet5//Linux/lib/MonetDB5/lib:/ufs/mk/monet5//Linux/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/mk/monet5//Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5//Linux/var/MonetDB5/dblogs"  --set mapi_open=true --set xrpc_open=true --set mapi_port=32803 --set xrpc_port=43201 --set monet_prompt= --trace --dbname=mTests_src_compiler  sql01.mal
+# 10:43:14 >  
+
+
+
+
+
+
+
+# MonetDB server v5.3.0, based on kernel v1.21.0
+# Serving database 'mTests_src_compiler'
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Copyright (c) 1993-2007 CWI, all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://gio.ins.cwi.nl:32803/
+#include sql;
+##sql.compiler("sql01","select * from tables;");
+#include mal_compiler;
+#function user.qry():void;
+#    T1:bat[:oid,:int]{notnil=true,rows=0:lng,bid=113}  := sql.bind("tmp","Ttables","id",0);
+#    constraints.emptySet(T1);
+#    T10:bat[:oid,:sht]{notnil=true,rows=0:lng,bid=117}  := sql.bind("tmp","Ttables","type",0);
+#    T13:bat[:oid,:int]{notnil=true,rows=30:lng,bid=67}  := sql.bind("sys","Ttables","id",0);
+#    T15:bat[:oid,:int]{notnil=true,rows=0:lng,bid=307}  := sql.bind("sys","Ttables","id",1);
+#    constraints.emptySet(T15);
+#    T15:bat[:oid,:int]{notnil=true,rows=0:lng,bid=307}  := nil;
+#    T16:bat[:oid,:int]{notnil=true,rows=0:lng,bid=309}  := sql.bind("sys","Ttables","id",2);
+#    constraints.emptySet(T16);
+#    T16:bat[:oid,:int]{notnil=true,rows=0:lng,bid=309}  := nil;
+#    T20:bat[:oid,:sht]{notnil=true,rows=30:lng,bid=71}  := sql.bind("sys","Ttables","type",0);
+#    T39:bat[:oid,:str]{notnil=true,rows=0:lng,bid=114}  := sql.bind("tmp","Ttables","name",0);
+#    T42:bat[:oid,:str]{notnil=true,rows=30:lng,bid=68}  := sql.bind("sys","Ttables","name",0);
+#    T47:bat[:oid,:int]{notnil=true,rows=0:lng,bid=115}  := sql.bind("tmp","Ttables","schemaTid",0);
+#    T50:bat[:oid,:int]{notnil=true,rows=30:lng,bid=69}  := sql.bind("sys","Ttables","schemaTid",0);
+#    T55:bat[:oid,:str]{notnil=true,rows=0:lng,bid=116}  := sql.bind("tmp","Ttables","query",0);
+#    T58:bat[:oid,:str]{notnil=true,rows=30:lng,bid=70}  := sql.bind("sys","Ttables","query",0);
+#    T64:bat[:oid,:bit]{notnil=true,rows=0:lng,bid=118}  := sql.bind("tmp","Ttables","system",0);
+#    T67:bat[:oid,:bit]{notnil=true,rows=30:lng,bid=72}  := sql.bind("sys","Ttables","system",0);
+#    T72:bat[:oid,:sht]{notnil=true,rows=0:lng,bid=119}  := sql.bind("tmp","Ttables","commitTaction",0);
+#    T75:bat[:oid,:sht]{notnil=true,rows=30:lng,bid=73}  := sql.bind("sys","Ttables","commitTaction",0);
+#    T8{rows=0:lng} := algebra.markT(T1,0@0);
+#    T9{rows=0:lng} := bat.reverse(T8);
+#    T8{rows=0:lng} := nil;
+#    T12{rows=0:lng} := algebra.join(T9,T10);
+#    T10:bat[:oid,:sht]{notnil=true,rows=0:lng,bid=117}  := nil;
+#    T18{rows=30:lng} := algebra.markT(T13,0@0);
+#    T19{rows=30:lng} := bat.reverse(T18);
+#    T18{rows=30:lng} := nil;
+#    T21{rows=30:lng} := algebra.join(T19,T20);
+#    T20:bat[:oid,:sht]{notnil=true,rows=30:lng,bid=71}  := nil;
+#    T22{rows=31:lng} := bat.setWriteMode(T21);
+#    T21{rows=30:lng} := nil;
+#    bat.append(T22,T12,true);
+#    T12{rows=0:lng} := nil;
+#    T26{rows=31:lng} := algebra.uselect(T22,nil:sht,2:sht,false,false);
+#    T29{rows=31:lng} := algebra.markT(T26,0@0);
+#    T26{rows=31:lng} := nil;
+#    T30{rows=31:lng} := bat.reverse(T29);
+#    T29{rows=31:lng} := nil;
+#    T31{rows=0:lng} := algebra.join(T9,T1);
+#    T1:bat[:oid,:int]{notnil=true,rows=0:lng,bid=113}  := nil;
+#    T32{rows=30:lng} := algebra.join(T19,T13);
+#    T13:bat[:oid,:int]{notnil=true,rows=30:lng,bid=67}  := nil;
+#    T33{rows=31:lng} := bat.setWriteMode(T32);
+#    T32{rows=30:lng} := nil;
+#    bat.append(T33,T31,true);
+#    T31{rows=0:lng} := nil;
+#    T35{rows=31:lng} := algebra.join(T30,T33);
+#    T36{rows=31:lng} := algebra.markT(T35,0@0);
+#    T35{rows=31:lng} := nil;
+#    T37{rows=31:lng} := bat.reverse(T36);
+#    T36{rows=31:lng} := nil;
+#    T38{rows=31:lng} := algebra.joinPath(T37,T30,T33);
+#    T33{rows=31:lng} := nil;
+#    T41{rows=0:lng} := algebra.join(T9,T39);
+#    T39:bat[:oid,:str]{notnil=true,rows=0:lng,bid=114}  := nil;
+#    T43{rows=30:lng} := algebra.join(T19,T42);
+#    T42:bat[:oid,:str]{notnil=true,rows=30:lng,bid=68}  := nil;
+#    T44{rows=31:lng} := bat.setWriteMode(T43);
+#    T43{rows=30:lng} := nil;
+#    bat.append(T44,T41,true);
+#    T41{rows=0:lng} := nil;
+#    T46{rows=31:lng} := algebra.joinPath(T37,T30,T44);
+#    T44{rows=31:lng} := nil;
+#    T49{rows=0:lng} := algebra.join(T9,T47);
+#    T47:bat[:oid,:int]{notnil=true,rows=0:lng,bid=115}  := nil;
+#    T51{rows=30:lng} := algebra.join(T19,T50);
+#    T50:bat[:oid,:int]{notnil=true,rows=30:lng,bid=69}  := nil;
+#    T52{rows=31:lng} := bat.setWriteMode(T51);
+#    T51{rows=30:lng} := nil;
+#    bat.append(T52,T49,true);
+#    T49{rows=0:lng} := nil;
+#    T54{rows=31:lng} := algebra.joinPath(T37,T30,T52);
+#    T52{rows=31:lng} := nil;
+#    T57{rows=0:lng} := algebra.join(T9,T55);
+#    T55:bat[:oid,:str]{notnil=true,rows=0:lng,bid=116}  := nil;
+#    T59{rows=30:lng} := algebra.join(T19,T58);
+#    T58:bat[:oid,:str]{notnil=true,rows=30:lng,bid=70}  := nil;
+#    T60{rows=31:lng} := bat.setWriteMode(T59);
+#    T59{rows=30:lng} := nil;
+#    bat.append(T60,T57,true);
+#    T57{rows=0:lng} := nil;
+#    T62{rows=31:lng} := algebra.joinPath(T37,T30,T60);
+#    T60{rows=31:lng} := nil;
+#    T63{rows=31:lng} := algebra.joinPath(T37,T30,T22);
+#    T22{rows=31:lng} := nil;
+#    T66{rows=0:lng} := algebra.join(T9,T64);
+#    T64:bat[:oid,:bit]{notnil=true,rows=0:lng,bid=118}  := nil;
+#    T68{rows=30:lng} := algebra.join(T19,T67);
+#    T67:bat[:oid,:bit]{notnil=true,rows=30:lng,bid=72}  := nil;
+#    T69{rows=31:lng} := bat.setWriteMode(T68);
+#    T68{rows=30:lng} := nil;
+#    bat.append(T69,T66,true);
+#    T66{rows=0:lng} := nil;
+#    T71{rows=31:lng} := algebra.joinPath(T37,T30,T69);
+#    T69{rows=31:lng} := nil;
+#    T74{rows=0:lng} := algebra.join(T9,T72);
+#    T72:bat[:oid,:sht]{notnil=true,rows=0:lng,bid=119}  := nil;
+#    T76{rows=30:lng} := algebra.join(T19,T75);
+#    T75:bat[:oid,:sht]{notnil=true,rows=30:lng,bid=73}  := nil;
+#    T77{rows=31:lng} := bat.setWriteMode(T76);
+#    T76{rows=30:lng} := nil;
+#    bat.append(T77,T74,true);
+#    T74{rows=0:lng} := nil;
+#    T79{rows=31:lng} := algebra.joinPath(T37,T30,T77);
+#    T77{rows=31:lng} := nil;
+#    T81{rows=0:lng} := algebra.project(T9,1);
+#    T9{rows=0:lng} := nil;
+#    T83{rows=30:lng} := algebra.project(T19,0);
+#    T19{rows=30:lng} := nil;
+#    T84{rows=31:lng} := bat.setWriteMode(T83);
+#    T83{rows=30:lng} := nil;
+#    bat.append(T84,T81,true);
+#    T81{rows=0:lng} := nil;
+#    T86{rows=31:lng} := algebra.joinPath(T37,T30,T84);
+#    T37{rows=31:lng} := nil;
+#    T30{rows=31:lng} := nil;
+#    T84{rows=31:lng} := nil;
+#    T87 := sql.resultSet(8,1,T38);
+#    sql.rsColumn(T87,"sys.tables","id","int",32,0,T38);
+#    T38{rows=31:lng} := nil;
+#    sql.rsColumn(T87,"sys.tables","name","varchar",1024,0,T46);
+#    T46{rows=31:lng} := nil;
+#    sql.rsColumn(T87,"sys.tables","schemaTid","int",32,0,T54);
+#    T54{rows=31:lng} := nil;
+#    sql.rsColumn(T87,"sys.tables","query","varchar",2048,0,T62);
+#    T62{rows=31:lng} := nil;
+#    sql.rsColumn(T87,"sys.tables","type","smallint",16,0,T63);
+#    T63{rows=31:lng} := nil;
+#    sql.rsColumn(T87,"sys.tables","system","boolean",1,0,T71);
+#    T71{rows=31:lng} := nil;
+#    sql.rsColumn(T87,"sys.tables","commitTaction","smallint",16,0,T79);
+#    T79{rows=31:lng} := nil;
+#    sql.rsColumn(T87,"sys.tables","temporary","tinyint",8,0,T86);
+#    T86{rows=31:lng} := nil;
+#    sql.exportResult(T87,"");
+#end qry;
+function user.qry():void;	# 0  (qry:void)
+    T1:bat[:oid,:int]{bid=113,rows=0:lng,notnil=true}  := sql.bind("tmp","Ttables","id",0);	# 1 mvc_bind_wrap (T1:bat[:oid,:int])<-(_2:str)(_3:str)(_4:str)(_5:int)
+    constraints.emptySet(T1);	# 2 CemptySet (_6:void)<-(T1:bat[:oid,:int])
+    T10:bat[:oid,:sht]{bid=117,rows=0:lng,notnil=true}  := sql.bind("tmp","Ttables","type",0);	# 3 mvc_bind_wrap (T10:bat[:oid,:sht])<-(_2:str)(_3:str)(_8:str)(_5:int)
+    T13:bat[:oid,:int]{bid=67,rows=30:lng,notnil=true}  := sql.bind("sys","Ttables","id",0);	# 4 mvc_bind_wrap (T13:bat[:oid,:int])<-(_10:str)(_3:str)(_4:str)(_5:int)
+    T15:bat[:oid,:int]{bid=307,rows=0:lng,notnil=true}  := sql.bind("sys","Ttables","id",1);	# 5 mvc_bind_wrap (T15:bat[:oid,:int])<-(_10:str)(_3:str)(_4:str)(_12:int)
+    constraints.emptySet(T15);	# 6 CemptySet (_13:void)<-(T15:bat[:oid,:int])
+    T15:bat[:oid,:int]{bid=307,rows=0:lng,notnil=true}  := nil;	# 7  (T15:bat[:oid,:int])<-(_126:BAT)
+    T16:bat[:oid,:int]{bid=309,rows=0:lng,notnil=true}  := sql.bind("sys","Ttables","id",2);	# 8 mvc_bind_wrap (T16:bat[:oid,:int])<-(_10:str)(_3:str)(_4:str)(_16:int)
+    constraints.emptySet(T16);	# 9 CemptySet (_17:void)<-(T16:bat[:oid,:int])
+    T16:bat[:oid,:int]{bid=309,rows=0:lng,notnil=true}  := nil;	# 10  (T16:bat[:oid,:int])<-(_126:BAT)
+    T20:bat[:oid,:sht]{bid=71,rows=30:lng,notnil=true}  := sql.bind("sys","Ttables","type",0);	# 11 mvc_bind_wrap (T20:bat[:oid,:sht])<-(_10:str)(_3:str)(_8:str)(_5:int)
+    T39:bat[:oid,:str]{bid=114,rows=0:lng,notnil=true}  := sql.bind("tmp","Ttables","name",0);	# 12 mvc_bind_wrap (T39:bat[:oid,:str])<-(_2:str)(_3:str)(_20:str)(_5:int)
+    T42:bat[:oid,:str]{bid=68,rows=30:lng,notnil=true}  := sql.bind("sys","Ttables","name",0);	# 13 mvc_bind_wrap (T42:bat[:oid,:str])<-(_10:str)(_3:str)(_20:str)(_5:int)
+    T47:bat[:oid,:int]{bid=115,rows=0:lng,notnil=true}  := sql.bind("tmp","Ttables","schemaTid",0);	# 14 mvc_bind_wrap (T47:bat[:oid,:int])<-(_2:str)(_3:str)(_23:str)(_5:int)
+    T50:bat[:oid,:int]{bid=69,rows=30:lng,notnil=true}  := sql.bind("sys","Ttables","schemaTid",0);	# 15 mvc_bind_wrap (T50:bat[:oid,:int])<-(_10:str)(_3:str)(_23:str)(_5:int)
+    T55:bat[:oid,:str]{bid=116,rows=0:lng,notnil=true}  := sql.bind("tmp","Ttables","query",0);	# 16 mvc_bind_wrap (T55:bat[:oid,:str])<-(_2:str)(_3:str)(_26:str)(_5:int)
+    T58:bat[:oid,:str]{bid=70,rows=30:lng,notnil=true}  := sql.bind("sys","Ttables","query",0);	# 17 mvc_bind_wrap (T58:bat[:oid,:str])<-(_10:str)(_3:str)(_26:str)(_5:int)
+    T64:bat[:oid,:bit]{bid=118,rows=0:lng,notnil=true}  := sql.bind("tmp","Ttables","system",0);	# 18 mvc_bind_wrap (T64:bat[:oid,:bit])<-(_2:str)(_3:str)(_29:str)(_5:int)
+    T67:bat[:oid,:bit]{bid=72,rows=30:lng,notnil=true}  := sql.bind("sys","Ttables","system",0);	# 19 mvc_bind_wrap (T67:bat[:oid,:bit])<-(_10:str)(_3:str)(_29:str)(_5:int)
+    T72:bat[:oid,:sht]{bid=119,rows=0:lng,notnil=true}  := sql.bind("tmp","Ttables","commitTaction",0);	# 20 mvc_bind_wrap (T72:bat[:oid,:sht])<-(_2:str)(_3:str)(_32:str)(_5:int)
+    T75:bat[:oid,:sht]{bid=73,rows=30:lng,notnil=true}  := sql.bind("sys","Ttables","commitTaction",0);	# 21 mvc_bind_wrap (T75:bat[:oid,:sht])<-(_10:str)(_3:str)(_32:str)(_5:int)
+    T8{rows=0:lng} := algebra.markT(T1,0@0);	# 22 ALGtmark (T8:bat[:oid,:oid])<-(T1:bat[:oid,:int])(_35:oid)
+    T9{rows=0:lng} := bat.reverse(T8);	# 23 BKCreverse (T9:bat[:oid,:oid])<-(T8:bat[:oid,:oid])
+    T8{rows=0:lng} := nil;	# 24  (T8:bat[:oid,:oid])<-(_126:BAT)
+    T12{rows=0:lng} := algebra.join(T9,T10);	# 25 ALGjoin (T12:bat[:oid,:sht])<-(T9:bat[:oid,:oid])(T10:bat[:oid,:sht])
+    T10:bat[:oid,:sht]{bid=117,rows=0:lng,notnil=true}  := nil;	# 26  (T10:bat[:oid,:sht])<-(_126:BAT)
+    T18{rows=30:lng} := algebra.markT(T13,0@0);	# 27 ALGtmark (T18:bat[:oid,:oid])<-(T13:bat[:oid,:int])(_35:oid)
+    T19{rows=30:lng} := bat.reverse(T18);	# 28 BKCreverse (T19:bat[:oid,:oid])<-(T18:bat[:oid,:oid])
+    T18{rows=30:lng} := nil;	# 29  (T18:bat[:oid,:oid])<-(_126:BAT)
+    T21{rows=30:lng} := algebra.join(T19,T20);	# 30 ALGjoin (T21:bat[:oid,:sht])<-(T19:bat[:oid,:oid])(T20:bat[:oid,:sht])
+    T20:bat[:oid,:sht]{bid=71,rows=30:lng,notnil=true}  := nil;	# 31  (T20:bat[:oid,:sht])<-(_126:BAT)
+    T22{rows=31:lng} := bat.setWriteMode(T21);	# 32 BKCsetWriteMode (T22:bat[:oid,:sht])<-(T21:bat[:oid,:sht])
+    T21{rows=30:lng} := nil;	# 33  (T21:bat[:oid,:sht])<-(_126:BAT)
+    bat.append(T22,T12,true);	# 34 BKCappend_force_wrap (_42:void)<-(T22:bat[:oid,:sht])(T12:bat[:oid,:sht])(_43:bit)
+    T12{rows=0:lng} := nil;	# 35  (T12:bat[:oid,:sht])<-(_126:BAT)
+    T26{rows=31:lng} := algebra.uselect(T22,nil:sht,2:sht,false,false);	# 36 ALGuselectInclusive (T26:bat[:oid,:oid])<-(T22:bat[:oid,:sht])(_45:sht)(_46:sht)(_47:bit)(_47:bit)
+    T29{rows=31:lng} := algebra.markT(T26,0@0);	# 37 ALGtmark (T29:bat[:oid,:oid])<-(T26:bat[:oid,:oid])(_35:oid)
+    T26{rows=31:lng} := nil;	# 38  (T26:bat[:oid,:oid])<-(_126:BAT)
+    T30{rows=31:lng} := bat.reverse(T29);	# 39 BKCreverse (T30:bat[:oid,:oid])<-(T29:bat[:oid,:oid])
+    T29{rows=31:lng} := nil;	# 40  (T29:bat[:oid,:oid])<-(_126:BAT)
+    T31{rows=0:lng} := algebra.join(T9,T1);	# 41 ALGjoin (T31:bat[:oid,:int])<-(T9:bat[:oid,:oid])(T1:bat[:oid,:int])
+    T1:bat[:oid,:int]{bid=113,rows=0:lng,notnil=true}  := nil;	# 42  (T1:bat[:oid,:int])<-(_126:BAT)
+    T32{rows=30:lng} := algebra.join(T19,T13);	# 43 ALGjoin (T32:bat[:oid,:int])<-(T19:bat[:oid,:oid])(T13:bat[:oid,:int])
+    T13:bat[:oid,:int]{bid=67,rows=30:lng,notnil=true}  := nil;	# 44  (T13:bat[:oid,:int])<-(_126:BAT)
+    T33{rows=31:lng} := bat.setWriteMode(T32);	# 45 BKCsetWriteMode (T33:bat[:oid,:int])<-(T32:bat[:oid,:int])
+    T32{rows=30:lng} := nil;	# 46  (T32:bat[:oid,:int])<-(_126:BAT)
+    bat.append(T33,T31,true);	# 47 BKCappend_force_wrap (_54:void)<-(T33:bat[:oid,:int])(T31:bat[:oid,:int])(_43:bit)
+    T31{rows=0:lng} := nil;	# 48  (T31:bat[:oid,:int])<-(_126:BAT)
+    T35{rows=31:lng} := algebra.join(T30,T33);	# 49 ALGjoin (T35:bat[:oid,:int])<-(T30:bat[:oid,:oid])(T33:bat[:oid,:int])
+    T36{rows=31:lng} := algebra.markT(T35,0@0);	# 50 ALGtmark (T36:bat[:oid,:oid])<-(T35:bat[:oid,:int])(_35:oid)
+    T35{rows=31:lng} := nil;	# 51  (T35:bat[:oid,:int])<-(_126:BAT)
+    T37{rows=31:lng} := bat.reverse(T36);	# 52 BKCreverse (T37:bat[:oid,:oid])<-(T36:bat[:oid,:oid])
+    T36{rows=31:lng} := nil;	# 53  (T36:bat[:oid,:oid])<-(_126:BAT)
+    T38{rows=31:lng} := algebra.joinPath(T37,T30,T33);	# 54 ALGjoinPath (T38:bat[:any,:any])<-(T37:bat[:oid,:oid])(T30:bat[:oid,:oid])(T33:bat[:oid,:int])
+    T33{rows=31:lng} := nil;	# 55  (T33:bat[:oid,:int])<-(_126:BAT)
+    T41{rows=0:lng} := algebra.join(T9,T39);	# 56 ALGjoin (T41:bat[:oid,:str])<-(T9:bat[:oid,:oid])(T39:bat[:oid,:str])
+    T39:bat[:oid,:str]{bid=114,rows=0:lng,notnil=true}  := nil;	# 57  (T39:bat[:oid,:str])<-(_126:BAT)
+    T43{rows=30:lng} := algebra.join(T19,T42);	# 58 ALGjoin (T43:bat[:oid,:str])<-(T19:bat[:oid,:oid])(T42:bat[:oid,:str])
+    T42:bat[:oid,:str]{bid=68,rows=30:lng,notnil=true}  := nil;	# 59  (T42:bat[:oid,:str])<-(_126:BAT)
+    T44{rows=31:lng} := bat.setWriteMode(T43);	# 60 BKCsetWriteMode (T44:bat[:oid,:str])<-(T43:bat[:oid,:str])
+    T43{rows=30:lng} := nil;	# 61  (T43:bat[:oid,:str])<-(_126:BAT)
+    bat.append(T44,T41,true);	# 62 BKCappend_force_wrap (_62:void)<-(T44:bat[:oid,:str])(T41:bat[:oid,:str])(_43:bit)
+    T41{rows=0:lng} := nil;	# 63  (T41:bat[:oid,:str])<-(_126:BAT)
+    T46{rows=31:lng} := algebra.joinPath(T37,T30,T44);	# 64 ALGjoinPath (T46:bat[:any,:any])<-(T37:bat[:oid,:oid])(T30:bat[:oid,:oid])(T44:bat[:oid,:str])
+    T44{rows=31:lng} := nil;	# 65  (T44:bat[:oid,:str])<-(_126:BAT)
+    T49{rows=0:lng} := algebra.join(T9,T47);	# 66 ALGjoin (T49:bat[:oid,:int])<-(T9:bat[:oid,:oid])(T47:bat[:oid,:int])
+    T47:bat[:oid,:int]{bid=115,rows=0:lng,notnil=true}  := nil;	# 67  (T47:bat[:oid,:int])<-(_126:BAT)
+    T51{rows=30:lng} := algebra.join(T19,T50);	# 68 ALGjoin (T51:bat[:oid,:int])<-(T19:bat[:oid,:oid])(T50:bat[:oid,:int])
+    T50:bat[:oid,:int]{bid=69,rows=30:lng,notnil=true}  := nil;	# 69  (T50:bat[:oid,:int])<-(_126:BAT)
+    T52{rows=31:lng} := bat.setWriteMode(T51);	# 70 BKCsetWriteMode (T52:bat[:oid,:int])<-(T51:bat[:oid,:int])
+    T51{rows=30:lng} := nil;	# 71  (T51:bat[:oid,:int])<-(_126:BAT)
+    bat.append(T52,T49,true);	# 72 BKCappend_force_wrap (_67:void)<-(T52:bat[:oid,:int])(T49:bat[:oid,:int])(_43:bit)
+    T49{rows=0:lng} := nil;	# 73  (T49:bat[:oid,:int])<-(_126:BAT)
+    T54{rows=31:lng} := algebra.joinPath(T37,T30,T52);	# 74 ALGjoinPath (T54:bat[:any,:any])<-(T37:bat[:oid,:oid])(T30:bat[:oid,:oid])(T52:bat[:oid,:int])
+    T52{rows=31:lng} := nil;	# 75  (T52:bat[:oid,:int])<-(_126:BAT)
+    T57{rows=0:lng} := algebra.join(T9,T55);	# 76 ALGjoin (T57:bat[:oid,:str])<-(T9:bat[:oid,:oid])(T55:bat[:oid,:str])
+    T55:bat[:oid,:str]{bid=116,rows=0:lng,notnil=true}  := nil;	# 77  (T55:bat[:oid,:str])<-(_126:BAT)
+    T59{rows=30:lng} := algebra.join(T19,T58);	# 78 ALGjoin (T59:bat[:oid,:str])<-(T19:bat[:oid,:oid])(T58:bat[:oid,:str])
+    T58:bat[:oid,:str]{bid=70,rows=30:lng,notnil=true}  := nil;	# 79  (T58:bat[:oid,:str])<-(_126:BAT)
+    T60{rows=31:lng} := bat.setWriteMode(T59);	# 80 BKCsetWriteMode (T60:bat[:oid,:str])<-(T59:bat[:oid,:str])
+    T59{rows=30:lng} := nil;	# 81  (T59:bat[:oid,:str])<-(_126:BAT)
+    bat.append(T60,T57,true);	# 82 BKCappend_force_wrap (_72:void)<-(T60:bat[:oid,:str])(T57:bat[:oid,:str])(_43:bit)
+    T57{rows=0:lng} := nil;	# 83  (T57:bat[:oid,:str])<-(_126:BAT)
+    T62{rows=31:lng} := algebra.joinPath(T37,T30,T60);	# 84 ALGjoinPath (T62:bat[:any,:any])<-(T37:bat[:oid,:oid])(T30:bat[:oid,:oid])(T60:bat[:oid,:str])
+    T60{rows=31:lng} := nil;	# 85  (T60:bat[:oid,:str])<-(_126:BAT)
+    T63{rows=31:lng} := algebra.joinPath(T37,T30,T22);	# 86 ALGjoinPath (T63:bat[:any,:any])<-(T37:bat[:oid,:oid])(T30:bat[:oid,:oid])(T22:bat[:oid,:sht])
+    T22{rows=31:lng} := nil;	# 87  (T22:bat[:oid,:sht])<-(_126:BAT)
+    T66{rows=0:lng} := algebra.join(T9,T64);	# 88 ALGjoin (T66:bat[:oid,:bit])<-(T9:bat[:oid,:oid])(T64:bat[:oid,:bit])
+    T64:bat[:oid,:bit]{bid=118,rows=0:lng,notnil=true}  := nil;	# 89  (T64:bat[:oid,:bit])<-(_126:BAT)
+    T68{rows=30:lng} := algebra.join(T19,T67);	# 90 ALGjoin (T68:bat[:oid,:bit])<-(T19:bat[:oid,:oid])(T67:bat[:oid,:bit])
+    T67:bat[:oid,:bit]{bid=72,rows=30:lng,notnil=true}  := nil;	# 91  (T67:bat[:oid,:bit])<-(_126:BAT)
+    T69{rows=31:lng} := bat.setWriteMode(T68);	# 92 BKCsetWriteMode (T69:bat[:oid,:bit])<-(T68:bat[:oid,:bit])
+    T68{rows=30:lng} := nil;	# 93  (T68:bat[:oid,:bit])<-(_126:BAT)
+    bat.append(T69,T66,true);	# 94 BKCappend_force_wrap (_78:void)<-(T69:bat[:oid,:bit])(T66:bat[:oid,:bit])(_79:bit)
+    T66{rows=0:lng} := nil;	# 95  (T66:bat[:oid,:bit])<-(_126:BAT)
+    T71{rows=31:lng} := algebra.joinPath(T37,T30,T69);	# 96 ALGjoinPath (T71:bat[:any,:any])<-(T37:bat[:oid,:oid])(T30:bat[:oid,:oid])(T69:bat[:oid,:bit])
+    T69{rows=31:lng} := nil;	# 97  (T69:bat[:oid,:bit])<-(_126:BAT)
+    T74{rows=0:lng} := algebra.join(T9,T72);	# 98 ALGjoin (T74:bat[:oid,:sht])<-(T9:bat[:oid,:oid])(T72:bat[:oid,:sht])
+    T72:bat[:oid,:sht]{bid=119,rows=0:lng,notnil=true}  := nil;	# 99  (T72:bat[:oid,:sht])<-(_126:BAT)
+    T76{rows=30:lng} := algebra.join(T19,T75);	# 100 ALGjoin (T76:bat[:oid,:sht])<-(T19:bat[:oid,:oid])(T75:bat[:oid,:sht])
+    T75:bat[:oid,:sht]{bid=73,rows=30:lng,notnil=true}  := nil;	# 101  (T75:bat[:oid,:sht])<-(_126:BAT)
+    T77{rows=31:lng} := bat.setWriteMode(T76);	# 102 BKCsetWriteMode (T77:bat[:oid,:sht])<-(T76:bat[:oid,:sht])
+    T76{rows=30:lng} := nil;	# 103  (T76:bat[:oid,:sht])<-(_126:BAT)
+    bat.append(T77,T74,true);	# 104 BKCappend_force_wrap (_85:void)<-(T77:bat[:oid,:sht])(T74:bat[:oid,:sht])(_79:bit)
+    T74{rows=0:lng} := nil;	# 105  (T74:bat[:oid,:sht])<-(_126:BAT)
+    T79{rows=31:lng} := algebra.joinPath(T37,T30,T77);	# 106 ALGjoinPath (T79:bat[:any,:any])<-(T37:bat[:oid,:oid])(T30:bat[:oid,:oid])(T77:bat[:oid,:sht])
+    T77{rows=31:lng} := nil;	# 107  (T77:bat[:oid,:sht])<-(_126:BAT)
+    T81{rows=0:lng} := algebra.project(T9,1);	# 108 ALGprojectCst (T81:bat[:oid,:int])<-(T9:bat[:oid,:oid])(_88:int)
+    T9{rows=0:lng} := nil;	# 109  (T9:bat[:oid,:oid])<-(_126:BAT)
+    T83{rows=30:lng} := algebra.project(T19,0);	# 110 ALGprojectCst (T83:bat[:oid,:int])<-(T19:bat[:oid,:oid])(_90:int)
+    T19{rows=30:lng} := nil;	# 111  (T19:bat[:oid,:oid])<-(_126:BAT)
+    T84{rows=31:lng} := bat.setWriteMode(T83);	# 112 BKCsetWriteMode (T84:bat[:oid,:int])<-(T83:bat[:oid,:int])
+    T83{rows=30:lng} := nil;	# 113  (T83:bat[:oid,:int])<-(_126:BAT)
+    bat.append(T84,T81,true);	# 114 BKCappend_force_wrap (_92:void)<-(T84:bat[:oid,:int])(T81:bat[:oid,:int])(_79:bit)
+    T81{rows=0:lng} := nil;	# 115  (T81:bat[:oid,:int])<-(_126:BAT)
+    T86{rows=31:lng} := algebra.joinPath(T37,T30,T84);	# 116 ALGjoinPath (T86:bat[:any,:any])<-(T37:bat[:oid,:oid])(T30:bat[:oid,:oid])(T84:bat[:oid,:int])
+    T37{rows=31:lng} := nil;	# 117  (T37:bat[:oid,:oid])<-(_126:BAT)
+    T30{rows=31:lng} := nil;	# 118  (T30:bat[:oid,:oid])<-(_126:BAT)
+    T84{rows=31:lng} := nil;	# 119  (T84:bat[:oid,:int])<-(_126:BAT)
+    T87 := sql.resultSet(8,1,T38);	# 120 mvc_result_table_wrap (T87:int)<-(_95:int)(_88:int)(T38:bat[:any,:any])
+    sql.rsColumn(T87,"sys.tables","id","int",32,0,T38);	# 121 mvc_result_column_wrap (_96:void)<-(T87:int)(_97:str)(_98:str)(_99:str)(_100:int)(_90:int)(T38:bat[:any,:any])
+    T38{rows=31:lng} := nil;	# 122  (T38:bat[:any,:any])<-(_126:BAT)
+    sql.rsColumn(T87,"sys.tables","name","varchar",1024,0,T46);	# 123 mvc_result_column_wrap (_101:void)<-(T87:int)(_97:str)(_102:str)(_103:str)(_104:int)(_90:int)(T46:bat[:any,:any])
+    T46{rows=31:lng} := nil;	# 124  (T46:bat[:any,:any])<-(_126:BAT)
+    sql.rsColumn(T87,"sys.tables","schemaTid","int",32,0,T54);	# 125 mvc_result_column_wrap (_105:void)<-(T87:int)(_97:str)(_106:str)(_99:str)(_100:int)(_90:int)(T54:bat[:any,:any])
+    T54{rows=31:lng} := nil;	# 126  (T54:bat[:any,:any])<-(_126:BAT)
+    sql.rsColumn(T87,"sys.tables","query","varchar",2048,0,T62);	# 127 mvc_result_column_wrap (_107:void)<-(T87:int)(_97:str)(_108:str)(_103:str)(_109:int)(_90:int)(T62:bat[:any,:any])
+    T62{rows=31:lng} := nil;	# 128  (T62:bat[:any,:any])<-(_126:BAT)
+    sql.rsColumn(T87,"sys.tables","type","smallint",16,0,T63);	# 129 mvc_result_column_wrap (_110:void)<-(T87:int)(_97:str)(_111:str)(_112:str)(_113:int)(_90:int)(T63:bat[:any,:any])
+    T63{rows=31:lng} := nil;	# 130  (T63:bat[:any,:any])<-(_126:BAT)
+    sql.rsColumn(T87,"sys.tables","system","boolean",1,0,T71);	# 131 mvc_result_column_wrap (_114:void)<-(T87:int)(_97:str)(_115:str)(_116:str)(_88:int)(_90:int)(T71:bat[:any,:any])
+    T71{rows=31:lng} := nil;	# 132  (T71:bat[:any,:any])<-(_126:BAT)
+    sql.rsColumn(T87,"sys.tables","commitTaction","smallint",16,0,T79);	# 133 mvc_result_column_wrap (_118:void)<-(T87:int)(_97:str)(_119:str)(_112:str)(_113:int)(_90:int)(T79:bat[:any,:any])
+    T79{rows=31:lng} := nil;	# 134  (T79:bat[:any,:any])<-(_126:BAT)
+    sql.rsColumn(T87,"sys.tables","temporary","tinyint",8,0,T86);	# 135 mvc_result_column_wrap (_120:void)<-(T87:int)(_97:str)(_121:str)(_122:str)(_95:int)(_123:int)(T86:bat[:any,:any])
+    T86{rows=31:lng} := nil;	# 136  (T86:bat[:any,:any])<-(_126:BAT)
+    sql.exportResult(T87,"");	# 137 mvc_export_result_wrap (_124:void)<-(T87:int)(_125:str)
+end qry;	# 138  
+#compiler.MALtoC("user","qry","sql01");
+#
+function user.main():void;	# 0  (main:void)
+    sql.prelude();	# 1 SQLprelude (_1:void)
+#sql.compiler("sql01","select * from tables;"); 	# 2  (_2:str)
+    compiler.MALtoC("user","qry","sql01");	# 3 MCdynamicCompiler (_3:void)<-(_4:str)(_5:str)(_6:str)
+end main;	# 4  
+# MonetDB/SQL module v2.21.0 loaded
+Calling the dynamic compiler
+MCdynamicCompiler: user.qry
+
+# 10:43:14 >  
+# 10:43:14 >  Done.
+# 10:43:14 >  
+
