@@ -22,7 +22,7 @@ Over..
 # 11:50:11 >  
 
 % . # table_name
-% sql_neg_single_value # name
+% my_abs_single_value # name
 % int # type
 % 1 # length
 [ 1	]

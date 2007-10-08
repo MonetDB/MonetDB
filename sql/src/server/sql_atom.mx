@@ -42,6 +42,8 @@ extern atom *atom_string( sql_subtype *tpe, char *val, int destroy);
 extern atom *atom_general( sql_subtype *tpe, char *val, int destroy);
 extern atom *atom_dec( sql_subtype *tpe, lng val, double dval);
 
+extern int atom_neg( atom *a );
+
 /* duplicate atom */
 extern atom *atom_dup( atom *a);
 /* copy an atom allocated using the supplied allocator */
@@ -391,6 +393,34 @@ atom_copy(atom *a, sql_allocator *sa)
 	return na;
 }
 
+static unsigned int
+atom_num_digits( atom *a ) 
+{
+	lng v = 0;
+	int inlen = 1;
+
+	switch(a->tpe.type->localtype) {
+	case TYPE_bte:
+		v = a->data.val.btval;
+		break;
+	case TYPE_sht:
+		v = a->data.val.shval;
+		break;
+	case TYPE_int:
+		v = a->data.val.ival;
+		break;
+	case TYPE_lng:
+		v = a->data.val.lval;
+		break;
+	default:
+		return 64;
+	}
+	/* count the number of digits in the input */
+	while (v /= 10)
+		inlen++;
+	return inlen;
+}
+
 static lng scales[] = {
 	1,
 	10,
@@ -523,6 +553,7 @@ atom_cast(atom *a, sql_subtype *tp)
 		}
 		if (at->type->eclass == EC_NUM && tp->type->eclass == EC_DEC &&
 		    at->type->localtype <= tp->type->localtype &&
+		    (at->digits <= tp->digits || atom_num_digits(a) <= tp->digits) &&
 		    at->scale <= tp->scale) {
 			lng mul = 1;
 			/* cast numerics */
@@ -644,4 +675,34 @@ atom_dump(atom *a, stream *s)
 		stream_write(s, a->tpe.type->base.name, strlen(a->tpe.type->base.name), 1);
 		stream_write(s, "(nil)", 5, 1);
 	}
+}
+
+int 
+atom_neg( atom *a )
+{
+	switch( a->tpe.type->localtype) {
+	case TYPE_bte:
+		a->data.val.btval = -a->data.val.btval;
+		break;
+	case TYPE_sht:
+		a->data.val.shval = -a->data.val.shval;
+		break;
+	case TYPE_int:
+		a->data.val.ival = -a->data.val.ival;
+		break;
+	case TYPE_lng:
+		a->data.val.lval = -a->data.val.lval;
+		break;
+	case TYPE_flt:
+		a->data.val.fval = -a->data.val.fval;
+		break;
+	case TYPE_dbl:
+		a->data.val.dval = -a->data.val.dval;
+		break;
+	default:
+		return -1;
+	}
+	if (a->d != dbl_nil)
+		a->d = -a->d;
+	return 0;
 }

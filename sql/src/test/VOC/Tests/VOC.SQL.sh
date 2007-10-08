@@ -18,7 +18,7 @@ EOF
 
 Mlog   "$MTIMEOUT mjclient -h $HOST -p $MAPIPORT -d ${TSTDB} -e -f $RELSRCDIR/../VOCschema.sql"
 	$MTIMEOUT mjclient -h $HOST -p $MAPIPORT -d ${TSTDB} -e -f $RELSRCDIR/../VOCschema.sql 2>&1
-Mlog   "$MTIMEOUT mjclient -h $HOST -p $MAPIPORT -d ${TSTDB} -e -f $RELSRCDIR/../VOCinsert.sql -Xbatching 400"
+Mlog   "$MTIMEOUT mjclient -h $HOST -p $MAPIPORT -d ${TSTDB} -e -f $RELSRCDIR/../VOCinsert.sql"
 	$MTIMEOUT mjclient -h $HOST -p $MAPIPORT -d ${TSTDB} -e -f $RELSRCDIR/../VOCinsert.sql 2>&1
 Mlog   "$MTIMEOUT mjclient -h $HOST -p $MAPIPORT -d ${TSTDB} -e -f $RELSRCDIR/../VOCquery.sql"
 	$MTIMEOUT mjclient -h $HOST -p $MAPIPORT -d ${TSTDB} -e -f $RELSRCDIR/../VOCquery.sql 2>&1

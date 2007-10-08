@@ -4,8 +4,8 @@ setlocal
 
 rem default back end is MonetDB4
 set V=4
-if "%1" == "-4" set V=4 & shift
-if "%1" == "-5" set V=5 & shift
+if "%1" == "-4" set V=4& shift
+if "%1" == "-5" set V=5& shift
 
 set monetdb4_prefix=@XMONETDB4_PREFIX@
 set monetdb5_prefix=@XMONETDB5_PREFIX@
@@ -28,6 +28,6 @@ set PATH=%builddir%\conf;%PATH%
 if %V% == 4 set mserver=Mserver.exe
 if %V% == 5 set mserver=mserver5.exe
 
-%mserver% --set "monet_mod_path=%MOD_PATH%" "--dbfarm=%builddir%\dbfarm" %*
+%mserver% --set "monet_mod_path=%MOD_PATH%" "--dbfarm=%builddir%\dbfarm" %1 %2 %3 %4 %5 %6 %7 %8 %9
 
 endlocal
