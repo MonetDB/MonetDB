@@ -92,13 +92,11 @@ http://monetdb.cwi.nl/Development/TestWeb/index.html
      (optional)                                             (TST.dbinit5) (^,`)
   + for mclient tests, a MIL script to be used as
      prologue for Mserver, i.e., a script that is executed by Mserver after
-     dbinit is executed, but before (the first)
-     mclient connects to Mserver
+     dbinit is executed, but before (the first) mclient connects to Mserver
      (optional)                                             (TST.prologue) (^,`)
-  + for SQL tests, a MAL script to be used as
+  + for mclient tests, a MAL script to be used as
      prologue for mserver5, i.e., a script that is executed by mserver5 after
-     "include sql;" is called and before (the first) SQL-mclient connects
-     to mserver5
+     dbinit is executed, but before (the first) mclient connects to mserver5
      (optional)                                             (TST.prologue5)(^,`)
   + for mclient tests, a MIL script to be used as
      epilogue for Mserver, i.e., a script that is executed by Mserver after

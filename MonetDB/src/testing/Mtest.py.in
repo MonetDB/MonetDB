@@ -119,7 +119,8 @@ F_OK = 0
 F_WARN = 1
 F_SOCK = 2
 F_TIME = 3
-F_ERROR = 4
+F_KILL = 4
+F_ERROR = 5
 
 FAILURES = {
     F_SKIP  : "F_SKIP",
@@ -127,6 +128,7 @@ FAILURES = {
     F_WARN  : "F_WARN",
     F_SOCK  : "F_SOCK",
     F_TIME  : "F_TIME",
+    F_KILL  : "F_KILL",
     F_ERROR : "F_ERROR"
 }
 
@@ -319,6 +321,7 @@ orange = '#ffaa00'
 purple = '#aa00aa'
 stylesheet = Element('style', None, Text('''
 .error   { font-weight: bold; font-style: italic; color: red; }
+.killed  { font-weight: bold; font-style: italic; color: purple; }
 .timeout { font-weight: bold; font-style: italic; color: purple; }
 .socket  { font-weight: bold; font-style: italic; color: purple; }
 .warning { font-weight: bold; color: orange; }
@@ -537,13 +540,16 @@ def CreateTstWhatXhtml (env, TST, stableWHAT, EXT, SockTime) :
         f.close()
         diffclass = 'error'
         difftext = 'Major differences'
-    if diffclass == 'error' and SockTime in (F_SOCK, F_TIME):
+    if diffclass == 'error' and SockTime in (F_SOCK, F_TIME, F_KILL):
         if SockTime == F_SOCK:
             diffclass = 'socket'
             difftext = difftext + ' (Socket)'
         if SockTime == F_TIME:
             diffclass = 'timeout'
             difftext = difftext + ' (Timeout)'
+        if SockTime == F_KILL:
+            diffclass = 'killed'
+            difftext = difftext + ' (Killed)'
     SYSTEM = DISTVER+":"
     if COMPILER:
         SYSTEM = COMPILER+", "+SYSTEM
@@ -727,6 +733,8 @@ def CreateSrcIndex (env, TST, EXT) :
 def AddHref (href, target, linktext, diff) :
     if   diff == F_ERROR:
         klass = 'error'
+    elif diff == F_KILL:
+        klass = 'killed'
     elif diff == F_TIME:
         klass = 'timeout'
     elif diff == F_SOCK:
@@ -777,10 +785,12 @@ def AddTstToHtmlIndex (env, TST, STABLEout, STABLEerr, EXT, SockTime) :
         ff.write("\n<!--MajorDiffs-->\n")
         ff.close()
         e = F_ERROR
-    if e == F_ERROR and SockTime in (F_SOCK, F_TIME):
+    if e == F_ERROR and SockTime in (F_SOCK, F_TIME, F_KILL):
         e = SockTime
     if o == F_ERROR or e == F_ERROR:
         tstclass = 'error'
+    elif e == F_KILL:
+        tstclass = 'killed'
     elif e == F_TIME:
         tstclass = 'timeout'
     elif e == F_SOCK:
@@ -1685,7 +1695,7 @@ def RunTest(env, TST, BusyPorts, COND) :
         if MkillUsers:
             os.system(MkillUsers)
 
-        killed = 0
+        killed = F_OK
         n = TST+".KILLED."
         for (x,txf) in [("out",TestOutFile),("err",TestErrFile)]:
             f = n+x
@@ -1700,7 +1710,7 @@ def RunTest(env, TST, BusyPorts, COND) :
                 if p is not None:
                     for l in open(f):
                         p.write("! "+l)
-                        killed = 1
+                        killed = F_KILL
                     p.close()
 
         sockerr = F_OK
@@ -1734,7 +1744,7 @@ def RunTest(env, TST, BusyPorts, COND) :
             else:
                 STDOUT.write("(Timeout!) ")
 
-        if killed:
+        if killed == F_KILL:
             if quiet:
                 STDOUT.write("\n%s : Killed!\n" % TST)
             else:
@@ -1802,8 +1812,8 @@ def RunTest(env, TST, BusyPorts, COND) :
             diff_html.write('<!--MajorDiffs-->\n')
             diff_html.close()
             timedout = 1
-            if timeout == F_TIME:
-                # test run timed out => expect major differences!
+            if timeout == F_TIME or killed == F_KILL:
+                # test run timed out or orphan processes were killed => expect major differences!
                 ACCURACYout = -1
             else:
                 fs = open("%s%s.FILTERED" % (TST, STABLEout))
@@ -1841,8 +1851,8 @@ def RunTest(env, TST, BusyPorts, COND) :
             diff_html.write('<!--MajorDiffs-->\n')
             diff_html.close()
             timedout = 1
-            if timeout == F_TIME:
-                # test run timed out => expect major differences!
+            if timeout == F_TIME or killed == F_KILL:
+                # test run timed out or orphan processes were killed => expect major differences!
                 ACCURACYerr = -1
             else:
                 fs = open("%s%s.FILTERED" % (TST, STABLEerr))
@@ -1864,7 +1874,7 @@ def RunTest(env, TST, BusyPorts, COND) :
                     timedout = os.system('%s -q -I"%s" "%s" -A%d -r"%s" "%s%s.FILTERED" "%s.test.err.FILTERED" "%s.err.diff.html"' % (MDIFF, par['IGNORE'], par['CONTEXT'], ACCURACYerr, REVe, TST, STABLEerr, TST, TST))
                 ACCURACYerr = ACCURACYerr - 1
 
-            FailedOut, FailedErr, elem = AddTstToHtmlIndex(env, TST, STABLEout, STABLEerr, EXT, max(sockerr, timeout))
+            FailedOut, FailedErr, elem = AddTstToHtmlIndex(env, TST, STABLEout, STABLEerr, EXT, max(sockerr, timeout, killed))
 
     return TX,FailedOut,FailedErr,elem
 ### RunTest(env, TST, BusyPorts) #
@@ -2149,18 +2159,13 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
         if SERVER == "SQL":
             lang="sql"
             if par['M5']:
-                source = ""
-                if PROLOGUE:
-                    source = ' language.source("%s");' % (os.path.join(env['TSTTRGDIR'],PROLOGUE[1:]))
-                Srvr = "%s --dbinit='%s include sql;%s'" % (Srvr, DBINIT, source)
+                Srvr = '%s --set mal_listing=0 --dbinit="%s include sql;"' % (Srvr, DBINIT)
             else:
                 Srvr = '%s --dbinit="%s module(sql_server);"' % (Srvr, DBINIT)
         if SERVER == "XQUERY":
             lang="xquery"
             Srvr = '%s --dbinit="%s module(pathfinder);"' % (Srvr, DBINIT)
-        if SERVER != "SQL"  or  par['M4']:
-            Srvr = Srvr+PROLOGUE
-        #-background"
+        Srvr = Srvr+PROLOGUE
         if os.name == "nt":
             Srvr = Srvr+' & echo.& '
         else:
@@ -3400,7 +3405,7 @@ def main(argv) :
     if THISFILE == "Mtest.py":
         fn = os.path.join(env['TSTTRGBASE'],TSTPREF,"times.")
         fl = open(fn+"lst","w")
-        Failure = [0,0,0,0,0,0]
+        Failure = [0,0,0,0,0,0,0]
         for TSTDIR,TST,tt,ms,FtOut,FtErr in TIMES:
             fl.write(url(os.path.join(TSTDIR,TST))+":\t"+tt+
                         "\t"+FAILURES[FtOut]+
@@ -3499,12 +3504,15 @@ VALUES (%s, '%s', '%s', '%s',
         if Failure[F_WARN]:
             how = "slightly"
             what += "  %3d out of %3d tests produced %s different output\n" % (Failure[F_WARN],num_tests,how)
-        if Failure[F_TIME]:
-            how = "SIGNIFICANTLY"
-            what += "  %3d out of %3d tests ran into timeout\n" % (Failure[F_TIME],num_tests)
         if Failure[F_SOCK]:
             how = "SIGNIFICANTLY"
             what += "  %3d out of %3d tests did not properly release socket(s)\n" % (Failure[F_SOCK],num_tests)
+        if Failure[F_TIME]:
+            how = "SIGNIFICANTLY"
+            what += "  %3d out of %3d tests ran into timeout\n" % (Failure[F_TIME],num_tests)
+        if Failure[F_KILL]:
+            how = "SIGNIFICANTLY"
+            what += "  %3d out of %3d tests had orphan processes killed\n" % (Failure[F_KILL],num_tests)
         if Failure[F_ERROR]:
             how = "SIGNIFICANTLY"
             what += "  %3d out of %3d tests produced %s different output\n" % (Failure[F_ERROR],num_tests,how)

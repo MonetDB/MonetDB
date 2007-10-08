@@ -63,6 +63,10 @@ mutils_export char *mo_find_option(opt *set, int setlen, const char *name);
 /* the option values can contain ${prefix} and ${exec_prefix}, these
    will be substituted using the mo_substitute function.  The return
    value is a newly allocated buffer, it is the caller's responsibility to free the buffer. */
+#ifdef WIN32
+/* on Windows, the option values can also contain %prefix% and
+   %exec_prefix% which will be substituted as well. */
+#endif
 mutils_export char *mo_substitute(opt *set, int setlen, char *name);
 
 /* mo_system_config will add the options from the system config file
@@ -208,6 +212,37 @@ mo_substitute(opt *set, int setlen, char *val)
 		} else
 			q++;
 	}
+#ifdef WIN32
+	q = s;
+	while ((q = strchr(q, '%')) != NULL) {
+		if (strncmp(q, "%exec_prefix%",  13) == 0) {
+			char *p = mo_find_option(set, setlen, "exec_prefix");
+			char *t;
+
+			if (!p)
+				return s;
+			t = malloc((n = n - 13 + strlen(p)));
+			*q = 0;
+			snprintf(t, n, "%s%s%s", s, p, q + 13);
+			free(s);
+			q = t + (q-s);
+			s = t;
+		} else if (strncmp(q, "%prefix%", 8) == 0) {
+			char *p = mo_find_option(set, setlen, "prefix");
+			char *t;
+
+			if (!p)
+				return s;
+			t = malloc((n = n - 8 + strlen(p)));
+			*q = 0;
+			snprintf(t, n, "%s%s%s", s, p, q + 8);
+			free(s);
+			q = t + (q-s);
+			s = t;
+		} else
+			q++;
+	}
+#endif
 	return s;
 }
 

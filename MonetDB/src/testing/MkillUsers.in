@@ -50,10 +50,10 @@ function  LOG2x () {  LOG2 $* ; "$@" ; }
 
 cpids=""
 if [ "$PARENT" ] ; then
-  cpids="`ps -ef | egrep '^ *[a-zA-Z0-9_]+ +[0-9]+ +'"$PARENT"' ' | egrep -v '^ *[a-zA-Z0-9_]+ +'"$CHILD"' +[0-9]+ ' | sort -k 4.1 | awk '{printf  "%s " , $2}' | perl -pe 's|  *$||'`"
+  cpids="`ps -ef | egrep '^ *[a-zA-Z0-9_]+ +[0-9]+ +'"$PARENT"' ' | egrep -v '^ *[a-zA-Z0-9_]+ +'"$CHILD"' +[0-9]+ | '"$0"' ' | sort -k 4.1 | awk '{printf  "%s " , $2}' | perl -pe 's|  *$||'`"
   if [ "$cpids" ] ; then
 #	KIDS="`echo "($cpids)" | perl -pe 's/ /|/g'`"
-#	gpids="`ps -ef | egrep '^ *[a-zA-Z0-9_]+ +[0-9]+ +'"$KIDS"' ' | egrep -v '^ *[a-zA-Z0-9_]+ +'"$CHILD"' +[0-9]+ ' | sort -k 4.1 | awk '{printf  "%s " , $2}' | perl -pe 's|  *$||'`"
+#	gpids="`ps -ef | egrep '^ *[a-zA-Z0-9_]+ +[0-9]+ +'"$KIDS"' ' | egrep -v '^ *[a-zA-Z0-9_]+ +'"$CHILD"' +[0-9]+ | '"$0"' ' | sort -k 4.1 | awk '{printf  "%s " , $2}' | perl -pe 's|  *$||'`"
 #	if [ "$gpids" ] ; then
 #		cpids="$cpids $gpids"
 #	fi
