@@ -10,8 +10,8 @@ setlocal
 
 rem default back end is MonetDB4
 set V=4
-if "%1" == "-4" set V=4 & shift
-if "%1" == "-5" set V=5 & shift
+if "%1" == "-4" set V=4& shift
+if "%1" == "-5" set V=5& shift
 
 set monetdb4_prefix=@XMONETDB4_PREFIX@
 set monetdb5_prefix=@XMONETDB5_PREFIX@
@@ -36,7 +36,7 @@ set PATH=%builddir%\conf;%PATH%
 REM execute Mapprove.py in the source directory
 pushd %srcdir%
 
-call Mapprove.py --package=%pkg% "--monet_mod_path=%MOD_PATH%" "--dbfarm=%builddir%\dbfarm" "--sql_logdir=%builddir%\sql_logs" "--xquery_logdir=%builddir%\xquery_logs" "--TSTTRGBASE=%builddir%" %*
+call Mapprove.py --package=%pkg% "--monet_mod_path=%MOD_PATH%" "--dbfarm=%builddir%\dbfarm" "--sql_logdir=%builddir%\sql_logs" "--xquery_logdir=%builddir%\xquery_logs" "--TSTTRGBASE=%builddir%" %1 %2 %3 %4 %5 %6 %7 %8 %9
 
 popd
 endlocal

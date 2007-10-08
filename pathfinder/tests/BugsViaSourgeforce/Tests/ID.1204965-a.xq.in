@@ -1,4 +1,4 @@
-let $bib := doc("<TSTSRCDIR>/ID.1204965-a.xml")/bib return
+let $bib := doc("$TSTSRCDIR/ID.1204965-a.xml")/bib return
 <authlist>
  {
    for $a in fn:distinct-values($bib/book/author)
