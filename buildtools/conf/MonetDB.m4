@@ -1085,7 +1085,14 @@ AC_CHECK_PROG(MV,mv,mv -f)
 AC_CHECK_PROG(LOCKFILE,lockfile,lockfile -r 2,echo)
 AC_PATH_PROG(BASH,bash, /usr/bin/bash, $PATH)
 AC_CHECK_PROGS(RPMBUILD,rpmbuild rpm)
-AC_CHECK_PROG(READLINK,readlink,readlink -f,echo)
+READLINK='readlink -f'
+AC_MSG_CHECKING([for $READLINK])
+$READLINK /tmp >/dev/null 2>&1
+if test $? -ne 0; then
+	READLINK=echo
+fi
+AC_MSG_RESULT($READLINK)
+AC_SUBST(READLINK)
 
 SOPREF=lib
 case "$host_os" in
