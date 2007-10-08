@@ -169,31 +169,16 @@ ALGjoinCost(BAT *l, BAT *r)
 The join path type analysis should also be done at run time,
 because the expressive power of MAL is insufficient to
 enforce a proper join type list.
+@h
+opt_export BAT * ALGjoinPathBody(int top, BAT **joins);
 @c
-str
-ALGjoinPath(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+BAT *
+ALGjoinPathBody(int top, BAT **joins)
 {
-	BAT *b, **joins = (BAT**)alloca(pci->argc*sizeof(BAT*)); 
+	BAT *b;
 	size_t estimate, e;
-	int top, i, j, *bid;
+	int i, j;
 
-	(void) mb;
-	top = 0;
-#ifdef DEBUG_OPT_JOINPATH
-		printInstruction(GDKout,mb,pci,LIST_MAL_ALL);
-#endif
-	for (i = pci->retc; i < pci->argc; i++) {
-		bid = (int *) getArgReference(stk, pci, i);
-#ifdef DEBUG_OPT_JOINPATH
-		printf("bid %d\n", *bid);
-#endif
-		if ((b = BATdescriptor(*bid)) == NULL) {
-			for( --top; top>=0; top--)
-				BBPreleaseref(joins[top]->batCacheid);
-			throw(MAL, "algebra.joinPath", "Cannot access descriptor");
-		}
-		joins[top++] = b;
-	}
 	/* solve the join by pairing the smallest first */
 	while (top > 2) {
 		j = 0;
@@ -235,6 +220,33 @@ may fire a BATproperty check in a few cases.
 #endif
 	b = BATjoin(joins[0], joins[1], oid_nil);
 	assert(b);
+	return b;
+}
+
+str
+ALGjoinPath(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	int i,*bid,top=0;
+	BAT *b, **joins = (BAT**)alloca(pci->argc*sizeof(BAT*)); 
+
+	(void)mb;
+#ifdef DEBUG_OPT_JOINPATH
+		printInstruction(GDKout,mb,pci,LIST_MAL_ALL);
+#endif
+	for (i = pci->retc; i < pci->argc; i++) {
+		bid = (int *) getArgReference(stk, pci, i);
+#ifdef DEBUG_OPT_JOINPATH
+		printf("bid %d\n", *bid);
+#endif
+		if ((b = BATdescriptor(*bid)) == NULL) {
+			for( --top; top>=0; top--)
+				BBPreleaseref(joins[top]->batCacheid);
+			throw(MAL, "algebra.joinPath", "Cannot access descriptor");
+		}
+
+		joins[top++] = b;
+	}
+	b= ALGjoinPathBody(top,joins);
 	BBPreleaseref(joins[0]->batCacheid);
 	BBPreleaseref(joins[1]->batCacheid);
 	BBPkeepref(b->batCacheid);
