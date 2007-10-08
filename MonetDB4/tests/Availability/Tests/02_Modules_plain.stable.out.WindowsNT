@@ -772,7 +772,7 @@ Module: "mapi"
 [ "fflush",		  "PROC:      ",  "fflush(Stream) : void",							  "not available"																																						  ]
 [ "fopen",		  "PROC:      ",  "fopen(str, str) : Stream",							  "not available"																																						  ]
 [ "fputs",		  "PROC:      ",  "fputs(str, Stream) : void",							  "not available"																																						  ]
- [ "get_mapi_open",	  "PROC:      ",  "get_mapi_open() : bit",						  "not available"																											  ]
+[ "get_mapi_open",	  "PROC:      ",  "get_mapi_open() : bit",						  "not available"																											  ]
 [ "get_mapi_port",	  "PROC:      ",  "get_mapi_port() : int",							  "not available"																																						  ]
 [ "listen",		  "PROC:      ",  "listen() : void",								  "Start the Mapi listener on 50000."																																				  ]
 [ "listen",		  "PROC:      ",  "listen(bit) : void",								  "Start the Mapi listener on 50000.\n If <open> is true, accept connections from everywhere, otherwise only from localhost."																														  ]

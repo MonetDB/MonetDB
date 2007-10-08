@@ -143,7 +143,9 @@ Myylognode(int tok, int tpe)
 			GDKfatal("yyextend: out of memory.\n");
 		}
 		buf[0] = yy_buf; 
-		yy_free = sizeof(char*); /* first bytes are the backpointer */
+		yy_free = sizeof(lng); /* first bytes are the backpointer,
+					  to keep lngs etc aligned 
+					  we skip a full sizeof(lng) */
 		yy_buf = (char*) buf;
 	}
 	t = (YYSTREE) (yy_buf + yy_free);
@@ -164,6 +166,7 @@ yychunkalloc(int tok, int cap, int extendable, int noyyval, char** next, char** 
 	}
 	t = (YYSTREE) ((*next)  - off);
         YYNODE(t, tok, TYPE_void, off, nbytes, cap, malloced, extendable);
+	nbytes = (nbytes+7)&~7; /* round up to be 8 bytes aligned */
 	*next += nbytes - off;
 	return t;
 }
@@ -352,14 +355,18 @@ Myylogpop(void)
 	}
 	yy_buf = (char*) cur;
 	yy_free = yy_backup;
-	yy_backup = sizeof(char*);
+	yy_backup = sizeof(lng); /* first bytes are the backpointer,
+				  to keep lngs etc aligned 
+				  we skip a full sizeof(lng) */
 	yy_sync = NULL;
 }
 
 void 
 Myylogclean(void)
 {
-	yy_backup = sizeof(char*);
+	yy_backup = sizeof(lng); /* first bytes are the backpointer,
+				  to keep lngs etc aligned 
+				  we skip a full sizeof(lng) */
 	yy_sync = NULL;
 	Myylogpop();
 }

@@ -1,0 +1,1 @@
+@call %MSERVER% --dbname=%TSTDB%
