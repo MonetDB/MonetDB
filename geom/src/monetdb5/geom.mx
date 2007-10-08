@@ -748,13 +748,14 @@ ordinatesMBR(
  */
 str
 wkbMBR(
-	mbr** res, /* INOUT. */
+	mbr* res, /* INOUT. */
 	wkb** geom /* IN. */
 )
 {
-	*res = (mbr*)GDKmalloc(sizeof(mbr));
-	if (getMbrGeom(*res, *geom))
+	if (getMbrGeom(res, *geom))
+	{
 		return MAL_SUCCEED;
+	}
 	throw(MAL, "geom.mbr", "Failed to create mbr");
 }
 
@@ -808,17 +809,13 @@ wkbcreatepoint(wkb **out, double *x,double *y)
 }
 
 str
-mbroverlaps( bit *out, mbr **a, mbr **b)
+mbroverlaps( bit *out, mbr *b1, mbr *b2)
 {
-	str ret = "";
-
-	if (*a && *b) { 
-		*out = 0; /* XXXXX */
-		ret = MAL_SUCCEED;
-	}
-	if (ret)
-		throw(MAL, "mbroverlaps", "Failed");
-	return ret;
+    *out = ((b1->ymax >= b2->ymax && b1->xmin <= b2->ymax) ||
+	    (b2->ymax >= b1->ymax && b2->xmin <= b1->ymax)) &&
+	   ((b1->xmax >= b2->xmax && b1->ymin <= b2->xmax) ||
+	    (b2->xmax >= b1->xmax && b2->ymin <= b1->xmax));
+    return MAL_SUCCEED;
 }
 
 @= basic
