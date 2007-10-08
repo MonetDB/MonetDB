@@ -57,7 +57,7 @@ AM_MONETDB_XQ_VARS_1()
 
 
 dnl Check for Monet
-req_monetdb_ver='1.20.0'
+req_monetdb_ver='1.21.0'
 #                ^^^^^^
 # Maintained via vertoo. Please don't modify by hand!
 # Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
@@ -97,13 +97,13 @@ dnl We may not call AM_MONETDB4 and AM_MONETDB5 conditionally,
 dnl since they use AM_CONDITIONAL.  So we do both tests, but
 dnl ignore their outcome if we haven't found MonetDB common before.
 
-req_monetdb4_ver='4.20.0'
+req_monetdb4_ver='4.21.0'
 #                 ^^^^^^
 # Maintained via vertoo. Please don't modify by hand!
 # Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
 AM_MONETDB4($req_monetdb4_ver)
 
-req_monetdb5_ver='5.2.0'
+req_monetdb5_ver='5.3.0'
 #                 ^^^^^
 # Maintained via vertoo. Please don't modify by hand!
 # Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.

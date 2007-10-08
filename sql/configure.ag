@@ -54,7 +54,7 @@ AM_MONETDB_XQ_VARS_1()
 
 
 dnl Check for Monet
-req_monetdb_ver='1.20.0'
+req_monetdb_ver='1.21.0'
 #                ^^^^^^
 # Maintained via vertoo. Please don't modify by hand!
 # Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
@@ -77,12 +77,12 @@ AM_MONETDB_TOOLS()
 AM_MONETDB_OPTIONS()
 AM_MONETDB_LIBS()
 AM_MONETDB_UTILS()
-req_monetdb4_ver='4.20.0'
+req_monetdb4_ver='4.21.0'
 #                 ^^^^^^
 # Maintained via vertoo. Please don't modify by hand!
 # Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
 AM_MONETDB4($req_monetdb4_ver)
-req_monetdb5_ver='5.2.0'
+req_monetdb5_ver='5.3.0'
 #                 ^^^^^
 # Maintained via vertoo. Please don't modify by hand!
 # Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
