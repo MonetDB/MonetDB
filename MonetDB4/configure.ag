@@ -116,17 +116,19 @@ dnl get monet compiler options (debug,warning,optimize,profiling,instrument)
 dnl Checks for header files.
 AC_HEADER_DIRENT()
 AC_HEADER_SYS_WAIT()
+dnl Niels said (when this was still revision 1.141 of MonetDB/configure.ag):
+dnl OpenBSD-3.4 port: changed configure check for malloc.h to use full CFLAGS
 CFLAGS_bak="$CFLAGS"
 CFLAGS="$CFLAGS $X_CFLAGS"
 AC_CHECK_HEADER(malloc.h, AC_DEFINE(HAVE_MALLOC_H,1,[Define to 1 if you have the
  <malloc.h> header file.]),,[ ])
+CFLAGS="$CFLAGS_bak"
 AC_CHECK_HEADERS(fcntl.h limits.h unistd.h pwd.h dlfcn.h)
 AC_CHECK_HEADERS(time.h sys/time.h utime.h sys/utime.h)
 AC_CHECK_HEADERS(sys/file.h sys/param.h sys/times.h sys/mman.h)
 AC_CHECK_HEADERS(rlimit.h sys/resource.h)
 AC_CHECK_HEADERS(string.h strings.h signal.h sys/socket.h sys/un.h termios.h)
 AC_CHECK_HEADERS(ieeefp.h winsock.h xmmintrin.h)
-CFLAGS="$CFLAGS_bak"
 dnl We don't need to check for these two: they're only present on
 dnl Windows.  We list them here for completeness, since the
 dnl corresponding defines are used.
