@@ -38,50 +38,50 @@ function user.main():void;	# 0  (main:void)
 end main;	# 2  
 Calling the dynamic compiler
 MCdynamicCompiler: user.tst903
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# 08:29:57 >  
-# 08:29:57 >  Done.
-# 08:29:57 >  
+!WARNING: call to bat.new can not be handled correctly
+=/* MAL to C compiler
+=   Copyright (c) 2001-2007, CWI.
+=   All rights reserved.
+=*/
+=#include "mal_config.h"
+=#include "mal.h"
+=#include "mal_interpreter.h"
+=#include "mal_function.h"
+=#define BID int
+=str MCCuser_tst903(void *tst903)
+={
+=	BID b= 0; /* bat[:void,:lng] */
+=	void *V2= 0; /* void */
+=	lng V3 = 0;
+=	bit go = 0;
+=	lng i = 0;
+=	lng V6 = 0;
+=	int k = 0;
+=	lng l = 0;
+=	void *V9= 0; /* void */
+=	void *V10= 0; /* void */
+=	lng V11 = 1;
+=	lng V12 = 1000000;
+=	str Xmsg = MAL_SUCCEED;
+=	BID *backup= (BID*) alloca(8 * sizeof(BID));
+=	backup[0]=b;
+=	if( Xmsg = CMDBATnew(&b,&V2,&V3) ) goto wrapup;
+=	if(backup[0] == b) BBPreleaseref(backup[0]);
+=	else BBPdecref(backup[0],TRUE);
+=	if( Xmsg = RNGnewRange_lng(&go,&i,&V6) ) goto wrapup;
+=	if(  go == 0 ||go== bit_nil ) goto EXIT_7;
+=BARRIER_3:
+=	if( Xmsg = MATHrandint(&k) ) goto wrapup;
+=	if( Xmsg = CALCint2lng(&l,&k) ) goto wrapup;
+=	if( Xmsg = BKCinsert_bun(&V9,&b,&V10,&l) ) goto wrapup;
+=	if( Xmsg = RNGnextElement_lng(&go,&i,&V11,&V12) ) goto wrapup;
+=	if( !( go == 0 ||go== bit_nil) ) goto BARRIER_3;
+=EXIT_7: ;
+=wrapup:;
+=	if( b&& BBP_lrefs(b) ) BBPdecref(b,TRUE);
+=}
+=
+# 22:07:26 >  
+# 22:07:26 >  Done.
+# 22:07:26 >  
 
