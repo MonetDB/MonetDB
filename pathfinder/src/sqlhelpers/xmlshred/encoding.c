@@ -200,6 +200,8 @@ generate_name_id (const xmlChar *name)
 static void
 flush_node (kind_t kind, const xmlChar *name, const xmlChar *value)
 {
+    int valStrLen = -1;
+
     pre++;
     rank += 2;
     level++;
@@ -212,7 +214,7 @@ flush_node (kind_t kind, const xmlChar *name, const xmlChar *value)
         BAILOUT ("we allow only attributes not greater as %u characters", TAG_SIZE);
 
     /* check if value is larger than text_size characters */
-    if (value && xmlStrlen (value) > text_size)
+    if (value && (valStrLen = xmlStrlen (value)) >= 0 && (unsigned int) valStrLen > text_size)
         text_stripped++;
 
     stack[level] = (node_t) {
@@ -435,7 +437,7 @@ characters (void *ctx, const xmlChar *chars, int n)
     /* calling convention */
     (void) ctx;
 
-    if (bufpos < text_size) {
+    if (bufpos < 0 || (unsigned int) bufpos < text_size) {
         snprintf ((char *) buf + bufpos,
                   MIN (n, BUF_SIZE - bufpos) + 1,
                   "%s",
