@@ -67,6 +67,8 @@ static struct option long_options[] = {
     { "help",                no_argument,       NULL, 'h' },
     { "names-inline",        no_argument,       NULL, 'n' },
     { "out-file",            required_argument, NULL, 'o' },
+    { "quiet",               no_argument,       NULL, 'q' },
+    { "strip-values",        required_argument, NULL, 's' },
     { NULL,                  no_argument,       NULL, 0   }
 };
 /* also see definition of OPT_STRING below */
@@ -127,7 +129,7 @@ static const char
 
 #endif
 
-#define OPT_STRING "F:af:hno:"
+#define OPT_STRING "F:af:hno:qs:"
 
 #define SQL_FORMAT "%e, %s, %l, %k, %n, %t, %g"
 
@@ -170,6 +172,10 @@ print_help (char *progname)
             long_option (opt_buf, ", --%s", 'n'));
     printf ("  -h%s: print this help message\n",
             long_option (opt_buf, ", --%s", 'h'));
+    printf ("  -s n%s: strip values to n characters\n",
+            long_option (opt_buf, ", --%s=n", 's'));
+    printf ("  -q%s: don't report warnings\n",
+            long_option (opt_buf, ", --%s", 'q'));
 }
 
 #define MAIN_EXIT(rtn) \
@@ -198,6 +204,8 @@ main (int argc, char **argv)
     status.statistics = true;
     status.names_separate = true;
     status.attributes_separate = false;
+    status.quiet = false;
+    status.strip_values = 100; 
 
     /* parse command line using getopt library */
     while (true) {
@@ -241,8 +249,15 @@ main (int argc, char **argv)
                 else
                     status.doc_name = "";
                 break;
+            case 'q':
+                status.quiet = true;
+                break;
             case 'o':
                 status.outfile = strndup (optarg, FILENAME_MAX);
+                break;
+            case 's':
+                if (!sscanf (optarg, "%u", &status.strip_values))
+                    SHoops (SH_FATAL, "wrong argument to strip_values");
                 break;
             case 'h':
                 print_help (progname);

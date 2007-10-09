@@ -43,9 +43,8 @@
 
 #define MIN(a,b) ((a) < (b) ? (a) : (b))
 
-#define TEXT_SIZE 32000
-#define TAG_SIZE 32 
-
+#define TAG_SIZE  100
+#define BUF_SIZE 4096 
 #define NAME_ID 0
 
 #define BAILOUT(...) do { SHoops (SH_FATAL, __VA_ARGS__); \
@@ -57,6 +56,15 @@ FILE *out;
 FILE *out_attr;
 FILE *out_names;
 FILE *guide_out;
+FILE *err;
+
+unsigned int text_size;
+
+/* count the tags/text being truncated
+ * during the shredding process */
+unsigned int tag_stripped;
+unsigned int text_stripped;
+
 
 typedef struct node_t node_t;
 struct node_t {
@@ -79,7 +87,7 @@ static shred_state_t shredstate;
 /* hash table */
 static hashtable_t hash_table;
 
-static xmlChar buf[TEXT_SIZE + 1];
+static xmlChar buf[BUF_SIZE + 1];
 static int bufpos;
 
 static node_t stack[STACK_MAX];
@@ -145,7 +153,7 @@ print_tuple (node_t tuple)
                      if (tuple.value) {
                          unsigned int j;
                          putc ('"', out);
-                         for (j = 0; j < TEXT_SIZE && tuple.value[j]; j++)
+                         for (j = 0; j < text_size && tuple.value[j]; j++)
                              switch (tuple.value[j]) {
                                  case '"':
                                      putc ('"', out); putc ('"', out); break;
@@ -198,7 +206,15 @@ flush_node (kind_t kind, const xmlChar *name, const xmlChar *value)
 
     if (level > max_level)
         max_level = level;
-    
+
+    /* check if tagname is larger than TAG_SIZE characters */
+    if (name && xmlStrlen (name) > TAG_SIZE)
+        BAILOUT ("we allow only attributes not greater as %u characters", TAG_SIZE);
+
+    /* check if value is larger than text_size characters */
+    if (value && xmlStrlen (value) > text_size)
+        text_stripped++;
+
     stack[level] = (node_t) {
         .pre            = pre,
         .post           = post,
@@ -208,9 +224,9 @@ flush_node (kind_t kind, const xmlChar *name, const xmlChar *value)
         .size           = 0,
         .level          = level,
         .kind           = kind,
-        .name           = (xmlChar *) name,
+        .name           = xmlStrdup (name),
         .name_id        = generate_name_id (name),
-        .value          = (xmlChar *) value,
+        .value          = xmlStrndup (value, text_size),
         .guide          = insert_guide_node (name,
                                              stack[level-1].guide,
                                              kind)
@@ -226,12 +242,9 @@ flush_node (kind_t kind, const xmlChar *name, const xmlChar *value)
 static void
 flush_buffer (void)
 {
-    /* check if text is larger than TEXT_SIZE characters */
-    if (xmlStrlen (buf) > TEXT_SIZE)
-        BAILOUT ("We support text with length <= %i", TEXT_SIZE);
-
-    if (buf[0])
+    if (buf[0]) {
         flush_node (text, NULL, buf);
+    }
 
     buf[0] = '\0';
     bufpos = 0;
@@ -251,6 +264,9 @@ start_document (void *ctx)
     max_level = 0;
     att_id    = 0;
 
+    if (strlen (shredstate.doc_name) > MIN (FILENAME_MAX, text_size))
+        text_stripped++;
+
     /* create a new node */
     stack[level] = (node_t) {
           .pre            = pre
@@ -267,7 +283,7 @@ start_document (void *ctx)
         , .guide          = insert_guide_node (
                                 xmlCharStrndup (
                                     shredstate.doc_name,
-                                    FILENAME_MAX),
+                                    MIN (FILENAME_MAX, text_size)),
                                 NULL,
                                 doc)
     };
@@ -305,10 +321,6 @@ start_element (void *ctx, const xmlChar *tagname, const xmlChar **atts)
     /* calling convention */
     (void) ctx;
 
-    /* check if tagname is larger than TAG_SIZE characters */
-    if (xmlStrlen(tagname) > TAG_SIZE)
-        BAILOUT ("We support only tagnames with length <= %i", TAG_SIZE);
-     
     flush_buffer ();
 
     pre++;
@@ -319,6 +331,9 @@ start_element (void *ctx, const xmlChar *tagname, const xmlChar **atts)
         max_level = level;
 
     assert (level < STACK_MAX);
+    
+    if (xmlStrlen (tagname) > TAG_SIZE)
+        BAILOUT ("we allow only tag-names not greater as %u characters", TAG_SIZE);
 
     stack[level] = (node_t) {
         .pre            = pre,
@@ -363,16 +378,6 @@ start_element (void *ctx, const xmlChar *tagname, const xmlChar **atts)
                 }
         } else /* handle attributes like children */
             while (*atts) {
-                /* check if tagname is larger than TAG_SIZE characters */
-                if (xmlStrlen (atts[0]) > TAG_SIZE)
-                    BAILOUT ("We support only attributes with "
-                             "length <= %i", TAG_SIZE);
-
-                /* check if value is larger than TEXT_SIZE characters */
-                if (xmlStrlen (atts[1]) > TEXT_SIZE)
-                    BAILOUT ("We support only attribute content"
-                             " with length <= %i", TEXT_SIZE);
-
                 flush_node (attr, atts[0], atts[1]);
                 atts += 2;
             }
@@ -430,12 +435,12 @@ characters (void *ctx, const xmlChar *chars, int n)
     /* calling convention */
     (void) ctx;
 
-    if (bufpos < TEXT_SIZE) {
+    if (bufpos < text_size) {
         snprintf ((char *) buf + bufpos,
-                  MIN (n, TEXT_SIZE - bufpos) + 1,
+                  MIN (n, BUF_SIZE - bufpos) + 1,
                   "%s",
                   (char *) chars);
-        bufpos += MIN (n, TEXT_SIZE - bufpos);
+        bufpos += MIN (n, BUF_SIZE - bufpos);
     }
 
     buf[bufpos] = '\0';
@@ -452,7 +457,7 @@ error (void *ctx, const char *msg, ...)
 
     va_start (az, msg);
     vsnprintf (buf, buf_size, msg, az);
-    fprintf (stderr, "%s", buf);
+    fprintf (err, "%s", buf);
     va_end (az);
 
     BAILOUT ("libxml error");
@@ -489,6 +494,15 @@ static xmlSAXHandler saxhandler = {
     , .initialized           = false
 };
 
+static void
+report ()
+{
+    if (text_stripped > 0) {
+        fprintf (err, "%u Values were stripped to %u "
+                      "character(s).\n", text_stripped, text_size);
+    }
+}
+
 /**
  * Main shredding procedure.
  */
@@ -511,7 +525,16 @@ SHshredder (const char *s,
     out       = shout;
     out_attr  = attout;
     out_names = namesout;
+    err       = stderr;
 
+    /* how many characters should be stored in
+     * the value column */
+    text_size = status->strip_values;
+
+    text_stripped = 0;
+    tag_stripped  = 0;
+
+    /* initialize hashtable */
     hash_table = new_hashtable (); 
 
     /* start XML parsing */
@@ -529,6 +552,9 @@ SHshredder (const char *s,
         print_guide_tree (guideout, stack[0].guide, 0);
 
     free_hash (hash_table);
+
+    if (!status->quiet)
+        report ();
 
     return 0;
 }
