@@ -119,6 +119,8 @@ struct shred_state_t {
     bool  names_separate;      /** < print names into a separate file         */
     bool  statistics;          /** < print guides into a separate file        */
     char *format;              /** < format string                            */
+    unsigned int strip_values; /** < only store strip_values characters in the
+                                     value column                             */
 };
 typedef struct shred_state_t shred_state_t;
 
