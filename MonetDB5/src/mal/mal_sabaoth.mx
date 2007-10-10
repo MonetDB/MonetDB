@@ -693,9 +693,11 @@ str SABAOTHgetUplogInfo(sabuplog *ret, sabdb *db) {
 		snprintf(log, PATHLENGTH, "%s/%s/%s", path, e->d_name, UPLOGFILE);
 		log[PATHLENGTH] = '\0';
 		if ((f = fopen(log, "r")) != NULL) {
+			int c;
 			start = stop = up = 0;
 			p = data;
-			while ((*p = (char)fgetc(f)) != EOF) {
+			while ((c = (char)fgetc(f)) != EOF) {
+				*p = (char)c;
 				switch (*p) {
 					case '\t':
 						/* start attempt */

@@ -680,7 +680,7 @@ str
 BATXMLconcat(int *ret, int *bid, int *rid)
 {
 	BAT *b,*r=0, *bn;
-	BUN p,q, rp;
+	BUN p,q, rp = 0;
 	str buf= GDKmalloc(BUFSIZ);
 	int len,size= BUFSIZ;
 	BATiter bi, ri;
