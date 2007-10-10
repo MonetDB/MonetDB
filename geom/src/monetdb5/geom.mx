@@ -748,11 +748,12 @@ ordinatesMBR(
  */
 str
 wkbMBR(
-	mbr* res, /* INOUT. */
+	mbr** res, /* INOUT. */
 	wkb** geom /* IN. */
 )
 {
-	if (getMbrGeom(res, *geom))
+	*res = (mbr*)GDKmalloc(sizeof(mbr));
+	if (*res && getMbrGeom(*res, *geom))
 	{
 		return MAL_SUCCEED;
 	}
