@@ -1543,6 +1543,7 @@ def RunTest(env, TST, BusyPorts, COND) :
 
         # Check for available sockets and block them until we're ready to run the actual test
         MAPIsockets, reason = CheckSocket2(env, "MAPI")   #, SrvrErr)
+	XRPCsockets = None
         if MAPIsockets is not None:
             XRPCsockets, reason = CheckSocket2(env, "XRPC")   #, SrvrErr)
         if None in (MAPIsockets, XRPCsockets):

@@ -668,12 +668,12 @@ typedef __int64 ssize_t;
 
 /* The size of a `void *', as computed by sizeof. */
 #define SIZEOF_VOID_P 4
-#endif
 
 /* The size of a `ssize_t', as computed by sizeof. */
 #define SIZEOF_SSIZE_T SIZEOF_SIZE_T
 typedef int ssize_t;
 #define HAVE_SSIZE_T 1
+#endif
 
 /* The size of a `__int64', as computed by sizeof. */
 #define SIZEOF___INT64 8
