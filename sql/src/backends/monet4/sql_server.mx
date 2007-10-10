@@ -1353,7 +1353,7 @@ zero_or_one(ptr ret, BAT* b)
 		GDKerror("zero_or_one: cardinality violation (%d>1)", c);
 		return GDK_FAIL;
 	}
-	if (ATOMvarsized(b->ttype)) {
+	if (ATOMextern(b->ttype)) {
 		_s = ATOMlen(ATOMtype(b->ttype), p);
 		memcpy(*(ptr*) ret=GDKmalloc(_s), p, _s);
 	} else if (b->ttype == TYPE_bat) {

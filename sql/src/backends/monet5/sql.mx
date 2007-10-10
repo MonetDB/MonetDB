@@ -1475,7 +1475,7 @@ mvc_result_value_wrap(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void)rs;
 	if (msg)
 		return msg;
-	if (ATOMvarsized(mtype)) 
+	if (ATOMextern(mtype)) 
 		p = *(ptr*)p;
 	if (mvc_result_value(m, *tn, *cn, *type, *digits, *scale, p, mtype))
 		throw(SQL, "sql.rsColumn", "failed");
@@ -1559,7 +1559,7 @@ mvc_export_value_wrap(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	if (msg)
 		return msg;
-	if (ATOMvarsized(mtype)) 
+	if (ATOMextern(mtype)) 
 		p = *(ptr*)p;
 	if (mvc_export_value(c, b->out, *qtype, *tn, *cn, *type, *digits, *scale, *eclass, p, mtype, *w) != SQL_OK)
 		throw(SQL, "sql.exportValue", "failed");
@@ -1608,7 +1608,7 @@ zero_or_one(ptr ret, int *bid)
 		throw(SQL, "zero_or_one", buf);
 	}
 	_s = ATOMsize(ATOMtype(b->ttype));
-	if (ATOMvarsized(b->ttype)) {
+	if (ATOMextern(b->ttype)) {
 		_s = ATOMlen(ATOMtype(b->ttype), p);
 		memcpy(*(ptr*) ret=GDKmalloc(_s), p, _s);
 	} else if (b->ttype == TYPE_bat) {
@@ -1764,7 +1764,7 @@ hash_wrap(MalBlkPtr m, MalStkPtr s, InstrPtr p)
 	if (tpe == TYPE_bat)
 		return bathash_wrap(res, (int*)v); 
 
-	if (ATOMvarsized(tpe)) /* ugh */
+	if (ATOMextern(tpe)) /* ugh */
 		*res = (ATOMhash(tpe, *(char**)v)) & 0xEFFFFFFF;
 	else
 		*res = (ATOMhash(tpe, v)) & 0xEFFFFFFF;
@@ -2013,7 +2013,7 @@ SQLstr_cast(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 	if (tpe != TYPE_str) {
 		r = GDKmalloc(sz);
-		if (ATOMvarsized(tpe)) 
+		if (ATOMextern(tpe)) 
 			p = *(ptr*)p;
 		sz = convert2str(m, eclass, d, s, has_tz, p, tpe, &r, len);
 	} else {

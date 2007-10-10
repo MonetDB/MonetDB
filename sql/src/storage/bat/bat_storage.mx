@@ -414,7 +414,6 @@ new_persistent_bat(sql_trans *tr, sql_bat *bat, char *sname, char *tname, char *
 
 	bat->name = sql_message("%s_%s_%s", sname, tname, bname);
 	bat->bid = logger_add_bat(sql_logger, b, bat->name);
-	temp_destroy(bat->ibid);
 	bat->ibid = 0;
 
 	if (tr->parent == gtrans) {
@@ -428,12 +427,8 @@ new_persistent_bat(sql_trans *tr, sql_bat *bat, char *sname, char *tname, char *
 	*cnt = BATcount(b);
 
 	bat->uname = sql_message("U_%s", bat->name);
-	if (bat->ubid)
-		u = temp_descriptor(bat->ubid);
-	else
-		u = bat_new(TYPE_oid, b->ttype, sz);
+	u = temp_descriptor(bat->ubid);
 	(void) logger_add_bat(sql_logger, u, bat->uname);
-	bat->ubid = temp_create(u);
 
 	if (tr->parent == gtrans && ok == LOG_OK)
 		ok = log_bat_persists(sql_logger, u, bat->uname);
