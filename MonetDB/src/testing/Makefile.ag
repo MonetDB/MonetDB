@@ -21,7 +21,7 @@ INCLUDES = ../common
 
 bin_Mdiff = {
 	SOURCES = difflib.c helpers.c Mdiff.c difflib.h  helpers.h
-	LIBS = ../common/libmutils
+	LIBS = ../common/libmutils $(MALLOC_LIBS)
 }
 
 bin_Mtimeout = {

@@ -76,7 +76,7 @@ AC_PROG_LIBTOOL
 
 # Checks for header files.
 AC_CHECK_HEADERS([libintl.h stddef.h])
-AC_CHECK_HEADERS([fcntl.h io.h malloc.h pwd.h signal.h sys/file.h sys/mman.h sys/param.h sys/resource.h sys/socket.h sys/time.h sys/wait.h winsock.h])
+AC_CHECK_HEADERS([fcntl.h io.h malloc.h pwd.h signal.h sys/file.h sys/mman.h sys/param.h sys/resource.h sys/time.h sys/wait.h])
 AM_MONETDB_LIBS()
 
 # Checks for typedefs, structures, and compiler characteristics.
@@ -96,7 +96,6 @@ int x = (m.usmblks < 0);], AC_DEFINE(HAVE_SIGNED_MALLINFO, 1, [Define if your ma
 ))
 
 # Checks for library functions.
-AC_FUNC_MALLOC
 AC_FUNC_MEMCMP
 AC_CHECK_FUNCS([memset])
 AC_CHECK_FUNCS([fcntl ftime getopt getrlimit getuid kill lockf madvise nanosleep pipe posix_fadvise posix_madvise setenv shutdown strdup strtof sysconf uname strtoll fsync fdatasync])
