@@ -25,5 +25,5 @@ EXTRA_DIST_DIR = src \
 
 ant_distall = {
 	DIR = datadir/MonetDB/lib
-	FILES = monetdb-1.0-mcl.jar monetdb-1.6-jdbc.jar jdbcclient.jar xrpcwrapper-0.1.jar
+	FILES = monetdb-1.0-mcl.jar monetdb-1.6-jdbc.jar jdbcclient.jar
 }
