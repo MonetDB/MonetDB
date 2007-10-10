@@ -1,0 +1,136 @@
+<?xml version="1.0"?><!-- vim:set ts=2 sw=2 expandtab: -->
+
+<!--
+The contents of this file are subject to the MonetDB Public License
+Version 1.1 (the "License"); you may not use this file except in
+compliance with the License. You may obtain a copy of the License at
+http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+
+Software distributed under the License is distributed on an "AS IS"
+basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+License for the specific language governing rights and limitations
+under the License.
+
+The Original Code is the MonetDB Database System.
+
+The Initial Developer of the Original Code is CWI.
+Portions created by CWI are Copyright (C) 1997-2007 CWI.
+All Rights Reserved.
+-->
+
+<!--
+
+  Build file to allow ant (http://jakarta.apache.org/ant/) to be used
+  to build the MonetDB Java libraries, such as the JDBC and XML:DB
+  drivers.
+
+-->
+
+<project name="xrpcwrapper" default="all" basedir=".">
+
+  <!-- set global properties for this build -->
+  <property name="srcdir"               value="src" />
+  <property name="libdir"               value="lib" />
+  <property name="jardir"               value="jars" />
+  <property name="builddir"             value="build" />
+  <property name="xrpcwrapper-package"  value="nl/cwi/monetdb/xquery/xrpc/wrapper" />
+  <property name="util-package"         value="nl/cwi/monetdb/xquery/util" />
+
+  <property file="build.local.properties" />
+  <property file="build.properties" />
+
+  <property name="xrpcwrapper-jar"
+    value="${jardir}/xrpcwrapper.jar" />
+
+  <!-- full target -->
+  <target name="all">
+    <antcall target="jar_xrpcwrapper" />
+  </target>
+
+  <target name="distall">
+    <antcall target="jar_xrpcwrapper" />
+  </target>
+
+  <!-- jar targets -->
+  <target name="jar_xrpcwrapper"
+    depends="compile_util,compile_xrpcwrapper">
+    <jar jarfile="${xrpcwrapper-jar}">
+      <fileset dir="${builddir}">
+        <include name="${util-package}/**/*.class" />
+        <include name="${xrpcwrapper-package}/**/*.class" />
+      </fileset>
+      <fileset dir="${srcdir}">
+        <include name="${xrpcwrapper-package}/wrapper_functions.xq" />
+        <include name="${xrpcwrapper-package}/Tests/*.xml" />
+        <include name="${xrpcwrapper-package}/Tests/*.xq" />
+      </fileset>
+      <manifest>
+        <attribute name="Built-By" value="${user.name}" />
+        <attribute name="Main-Class"
+          value="nl.cwi.monetdb.xquery.xrpc.wrapper.XrpcWrapper" />
+      </manifest>
+    </jar>
+  </target>
+
+  <target name="compile_util" depends="prepare">
+    <echo message="Compiling Utilities" />
+    <javac
+      classpath="${srcdir}"
+      srcdir="${srcdir}"
+      destdir="${builddir}"
+      debug="${debug}"
+      optimize="${optimize}"
+      target="${javac_version}"
+      source="${javac_version}"
+      >
+      <include name="${util-package}/**/*.java" />
+    </javac>
+  </target>
+
+  <target name="compile_xrpcwrapper" depends="prepare">
+    <echo message="Compiling XRPC Wrapper" />
+    <javac
+      classpath="${srcdir}"
+      srcdir="${srcdir}"
+      destdir="${builddir}"
+      debug="${debug}"
+      optimize="${optimize}"
+      target="${javac_version}"
+      source="${javac_version}"
+      >
+      <include name="${xrpcwrapper-package}/**/*.java" />
+    </javac>
+  </target>
+
+  <!-- Prepares the build directory and sets some variables -->
+  <!-- checks whether regeneration of files is necessary -->
+  <target name="prepare">
+    <condition property="debug" value="true">
+      <equals arg1="${enable_debug}" arg2="true" casesensitive="false" trim="true" />
+    </condition>
+    <condition property="debug" value="false">
+      <not>
+        <equals arg1="${enable_debug}" arg2="true" casesensitive="false" trim="true" />
+      </not>
+    </condition>
+    <condition property="optimize" value="true">
+      <equals arg1="${enable_optimize}" arg2="true" casesensitive="false" trim="true" />
+    </condition>
+    <condition property="optimize" value="false">
+      <not>
+        <equals arg1="${enable_optimize}" arg2="true" casesensitive="false" trim="true" />
+      </not>
+    </condition>
+
+    <mkdir dir="${builddir}" />
+    <mkdir dir="${jardir}" />
+    <echo message="Debug is ${debug}, optimise is ${optimize}" />
+  </target>
+
+  <!-- This target removes the build, jar and doc directories -->
+  <target name="clean">
+    <delete quiet="true" dir="${builddir}" />
+    <delete quiet="true" dir="${jardir}" />
+  </target>
+
+</project>

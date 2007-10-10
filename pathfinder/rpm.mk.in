@@ -24,6 +24,9 @@
 
 rpmtopdir = $(shell cd $(top_builddir) && pwd)/rpm
 
+@HAVE_JAVA_FALSE@java=--without java
+@HAVE_JAVA_TRUE@java=--with java
+
 $(top_builddir)/$(distdir).tar.gz:
 	$(MAKE) $(AM_MAKEFLAGS) dist
 
@@ -45,14 +48,14 @@ $(rpmtopdir)/rpmmacros:
 	if test "@oids@" -eq 32; then echo "%oid32 1" >> $(rpmtopdir)/rpmmacros; fi
 
 rpm:	MonetDB-XQuery.spec $(top_builddir)/$(distdir).tar.gz $(rpmtopdir)/rpmmacros
-	$(RPMBUILD) --rcfile $(rpmtopdir)/rpmrc -ta --target `uname -m` --define="buildsystem 1" --define="comp_cc @CC@" $(top_builddir)/$(distdir).tar.gz
+	$(RPMBUILD) --rcfile $(rpmtopdir)/rpmrc -ta --target `uname -m` ${java} --define="buildsystem 1" --define="comp_cc @CC@" $(top_builddir)/$(distdir).tar.gz
 	for i in rpm/SRPMS/*_@LINUX_DIST@.oid@oids@* ; do \
 		mv "$$i" "`echo "$$i" | sed 's|_@LINUX_DIST@.oid@oids@||'`" ; \
 	done
 	rm -rf $(rpmtopdir)/BUILD
 
 srpm:	MonetDB-XQuery.spec $(top_builddir)/$(distdir).tar.gz $(rpmtopdir)/rpmmacros
-	$(RPMBUILD) --rcfile $(rpmtopdir)/rpmrc -ts --define="buildsystem 1" $(top_builddir)/$(distdir).tar.gz
+	$(RPMBUILD) --rcfile $(rpmtopdir)/rpmrc -ts ${java} --define="buildsystem 1" $(top_builddir)/$(distdir).tar.gz
 	for i in rpm/SRPMS/*_@LINUX_DIST@.oid@oids@* ; do \
 		mv "$$i" "`echo "$$i" | sed 's|_@LINUX_DIST@.oid@oids@||'`" ; \
 	done
