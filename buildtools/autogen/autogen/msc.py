@@ -751,7 +751,7 @@ def msc_library(fd, var, libmap, msc):
         makelib = makedll
     if libmap.has_key('COND'):
         condname = 'defined(' + ') && defined('.join(libmap['COND']) + ')'
-        mkname = (pref + v).replace('.', '_')
+        mkname = (pref + v).replace('.', '_').replace('-', '_')
         fd.write('!IF %s\n' % condname)
         fd.write('C_%s_dll = %s%s.dll\n' % (mkname, pref, v))
         fd.write('C_%s_lib = %s%s.lib\n' % (mkname, pref, v))
@@ -759,7 +759,7 @@ def msc_library(fd, var, libmap, msc):
         fd.write('C_%s_dll =\n' % mkname)
         fd.write('C_%s_lib =\n' % mkname)
         fd.write('!ENDIF\n')
-        makelib = '$(C_%s)' % makelib.replace('.', '_')
+        makelib = '$(C_%s_lib)' % mkname
         makedll = '$(C_%s_dll)' % mkname
     else:
         condname = ''

@@ -2050,6 +2050,8 @@ if test "x$have_setsockopt" = xno; then
 	  AC_CHECK_LIB(socket, setsockopt, [ SOCKET_LIBS="-lsocket $SOCKET_LIBS"; have_setsockopt=yes; ]))
 fi
 
+AC_CHECK_HEADERS([sys/socket.h winsock.h])
+
 dnl incase of windows we need to use try_link because windows uses the
 dnl pascal style of function calls and naming scheme. Therefore the 
 dnl function needs to be compiled with the correct header
@@ -2670,13 +2672,14 @@ then
         BUILDTOOLS_CONFDIR=`"$BUILDTOOLS_CONFIG" --pkgdatadir`
         AC_SUBST(BUILDTOOLS_CONFDIR)
         rules_mk=$BUILDTOOLS_CONFDIR/rules.mk
-
-        AC_CHECK_FILE($rules_mk,
-            [have_buildtools=yes],
-            [AC_MSG_WARN([$rules_mk could not be found.
+	if test -e $rules_mk; then
+		have_buildtools=yes;
+	else
+		have_buildtools=no;
+            	AC_MSG_WARN([$rules_mk could not be found.
                           You won't be able to compile $PACKAGE_NAME
-                          from CVS sources.])])
-
+                          from CVS sources.]);
+	fi
     fi
 fi
 
