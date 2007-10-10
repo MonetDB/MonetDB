@@ -38,7 +38,6 @@ All Rights Reserved.
   <property name="xmldb-package"        value="nl/cwi/monetdb/xmldb" />
   <property name="mcl-package"          value="nl/cwi/monetdb/mcl" />
   <property name="client-package"       value="nl/cwi/monetdb/client" />
-  <property name="xrpcwrapper-package"  value="nl/cwi/monetdb/xrpc/wrapper" />
   <property name="util-package"         value="nl/cwi/monetdb/util" />
 
   <property file="build.local.properties" />
@@ -52,8 +51,6 @@ All Rights Reserved.
     value="${jardir}/monetdb-${MCL_MAJOR}.${MCL_MINOR}-mcl.jar" />
   <property name="xmldb-jar"
     value="${jardir}/monetdb-${JDBC_MAJOR}.${JDBC_MINOR}-xmldb.jar" />
-  <property name="xrpcwrapper-jar"
-    value="${jardir}/xrpcwrapper-${XRPC_WRAPPER_MAJOR}.${XRPC_WRAPPER_MINOR}.jar" />
 
   <!-- full target -->
   <target name="all">
@@ -61,7 +58,6 @@ All Rights Reserved.
     <antcall target="jar_xmldb" />
     <antcall target="jar_mcl" />
     <antcall target="jar_client" />
-    <antcall target="jar_xrpcwrapper" />
 
     <antcall target="doc" />
   </target>
@@ -70,12 +66,10 @@ All Rights Reserved.
     <antcall target="jar_mcl" />
     <antcall target="jar_jdbc" />
     <antcall target="jar_jdbcclient" />
-    <antcall target="jar_xrpcwrapper" />
   </target>
 
   <target name="default">
     <antcall target="jar_jdbcclient" />
-    <antcall target="jar_xrpcwrapper" />
   </target>
 
   <!-- jar targets -->
@@ -111,26 +105,6 @@ All Rights Reserved.
         <include name="${client-package}/**/*.class" />
         <include name="${util-package}/**/*.class" />
       </fileset>
-    </jar>
-  </target>
-
-  <target name="jar_xrpcwrapper"
-    depends="compile_util,compile_xrpcwrapper">
-    <jar jarfile="${xrpcwrapper-jar}">
-      <fileset dir="${builddir}">
-        <include name="${util-package}/**/*.class" />
-        <include name="${xrpcwrapper-package}/**/*.class" />
-      </fileset>
-      <fileset dir="${srcdir}">
-        <include name="${xrpcwrapper-package}/wrapper_functions.xq" />
-        <include name="${xrpcwrapper-package}/Tests/*.xml" />
-        <include name="${xrpcwrapper-package}/Tests/*.xq" />
-      </fileset>
-      <manifest>
-        <attribute name="Built-By" value="${user.name}" />
-        <attribute name="Main-Class"
-          value="nl.cwi.monetdb.xrpc.wrapper.XrpcWrapper" />
-      </manifest>
     </jar>
   </target>
 
@@ -228,21 +202,6 @@ All Rights Reserved.
       source="${javac_version}"
       >
       <include name="${util-package}/**/*.java" />
-    </javac>
-  </target>
-
-  <target name="compile_xrpcwrapper" depends="prepare">
-    <echo message="Compiling XRPC Wrapper" />
-    <javac
-      classpath="${srcdir}"
-      srcdir="${srcdir}"
-      destdir="${builddir}"
-      debug="${debug}"
-      optimize="${optimize}"
-      target="${javac_version}"
-      source="${javac_version}"
-      >
-      <include name="${xrpcwrapper-package}/**/*.java" />
     </javac>
   </target>
 
@@ -355,7 +314,7 @@ All Rights Reserved.
 
   <!-- documentation target -->
   <target name="doc"
-    depends="compile_mcl,compile_jdbc,compile_xmldb,compile_util,compile_client,compile_xrpcwrapper">
+    depends="compile_mcl,compile_jdbc,compile_xmldb,compile_util,compile_client">
     <javadoc
       destdir="${docdir}"
       author="true"

@@ -17,7 +17,7 @@
 # All Rights Reserved.
 
 if [[ -z $1 ]] ; then
-	echo "Usage: $0 [-w] <(jdbc|mcl|xrpc)> <(major|minor|suffix)=newversion> [...]"
+	echo "Usage: $0 [-w] <(jdbc|mcl)> <(major|minor|suffix)=newversion> [...]"
 	echo "where -w activates actual write of changes"
 	exit -1
 fi
@@ -50,10 +50,6 @@ case $1 in
 	mcl)
 		TYPE=MCL
 		FILES="monetdb-XXX-mcl.jar"
-		;;
-	xrpc)
-		TYPE=XRPC_WRAPPER
-		FILES="xrpcwrapper-XXX.jar"
 		;;
 	*)
 		echo "invalid type: $1"
