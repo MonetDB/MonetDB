@@ -341,7 +341,7 @@ def msc_dep(fd, tar, deplist, msc):
     if ext == "tab.c":
         fd.write(getsrc)
         fd.write('\t$(YACC) $(YFLAGS) "%s.y"\n' % b)
-        fd.write('\t$(FILTER) "    ;" y.tab.c > "%s.tab.c"\n' % b)
+        fd.write('\t$(FILTER) $(FILTERPREF)"    ;" y.tab.c > "%s.tab.c"\n' % b)
         fd.write("\t$(DEL) y.tab.h\n")
     if ext == "yy.c":
         fd.write(getsrc)
