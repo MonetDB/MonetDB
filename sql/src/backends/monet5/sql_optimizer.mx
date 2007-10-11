@@ -324,9 +324,11 @@ SQLgetStatistics(mvc *m, MalBlkPtr mb)
 			BAT *b;
 			lng rows = 0;
 			int mode;
+			int mode_arg = 4;
 
 			if (f == binddbatRef) {
 				mode = getConstant(mb, getArg(p,3)).val.ival;
+				mode_arg = 3;
 			} else {
 				cname = getConstant(mb, getArg(p,3)).val.sval;
 				mode = getConstant(mb, getArg(p,4)).val.ival;
@@ -349,8 +351,10 @@ SQLgetStatistics(mvc *m, MalBlkPtr mb)
 							(mode == INS || mode == UPD)) {
 							PropertySet ps;
 							lng *rows;
-							bind[j].mode = mode;
-							getArg(bind[j].p,4) = getArg(p,4);
+							if (mode > bind[j].mode) {
+								bind[j].mode = mode;
+								getArg(bind[j].p,mode_arg) = getArg(p,mode_arg);
+							}
 							ps = getProps(mb,bind[j].idx);
 							assert(ps);
 							rows = getPropertyValue(ps,"rows"); 
@@ -426,7 +430,8 @@ SQLgetStatistics(mvc *m, MalBlkPtr mb)
 						PropertySet ps;
 						lng *rows;
 
-						bind[j].mode = mode;
+						if (mode > bind[j].mode)
+							bind[j].mode = mode;
 						getArg(bind[j].p,4) = getArg(p,4);
 						ps = getProps(mb,bind[j].idx);
 						assert(ps);
