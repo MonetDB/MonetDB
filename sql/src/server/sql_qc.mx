@@ -266,7 +266,7 @@ qc_insert(qc *cache, sql_allocator *sa, symbol *s, atom **params, int paramlen, 
 	n->key = key;
 	n->codestring = cmd;
 	n->count = 1;
-	namelen = 3 + ((n->id+7)>>3) + ((cache->clientid+7)>>3);
+	namelen = 5 + ((n->id+7)>>3) + ((cache->clientid+7)>>3);
 	n->name = sa_alloc(sa, namelen);
 	(void) snprintf(n->name, namelen, "s%d_%d", n->id, cache->clientid);
 	cache->q = n;
