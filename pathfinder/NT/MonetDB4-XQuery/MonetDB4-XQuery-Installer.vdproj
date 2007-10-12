@@ -4697,15 +4697,15 @@
             "Icon" = "8:"
             "Feature" = "8:"
             }
-            "{478F747B-8505-45D1-9AAE-8C3B645C26E3}:_73308174ACE047B0B3312C68DF9CED4F"
+            "{478F747B-8505-45D1-9AAE-8C3B645C26E3}:_FADEF69B58784586806CF8E1826524B3"
             {
             "Name" = "8:MonetDB XQuery Client"
-            "Arguments" = "8:-umonetdb -Pmonetdb"
+            "Arguments" = "8:--language=xquery --user=monetdb --passwd=monetdb --help"
             "Description" = "8:"
             "ShowCmd" = "3:1"
             "IconIndex" = "3:0"
             "Transitive" = "11:FALSE"
-            "Target" = "8:_C93D24C0147F40C4AF2B416E616DAA89"
+            "Target" = "8:_14A0495208064DCA9A6222547E8C9052"
             "Folder" = "8:_38127E40D5154983A56ED4DED9B77213"
             "WorkingFolder" = "8:_D9A7267FC9784D8BBD3CBC6EC1754DBE"
             "Icon" = "8:"
