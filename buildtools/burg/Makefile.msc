@@ -30,7 +30,8 @@ COPY=copy
 MKDIR=mkdir
 MT=mt
 DEL=del
-FILTER=grep -v
+FILTER=findstr /v /l
+FILTERPREF=/c:
 YACC=bison -b y -y
 YFLAGS=-d
 
@@ -66,4 +67,4 @@ gram.h: gram.y
 
 gram.c: gram.y
 	$(YACC) $(YFLAGS) gram.y
-        $(FILTER) "    ;" y.tab.c > gram.c
+        $(FILTER) $(FILTERPREF)"    ;" y.tab.c > gram.c
