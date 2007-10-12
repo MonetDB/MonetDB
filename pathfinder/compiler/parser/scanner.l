@@ -1222,7 +1222,7 @@ extract_string (const char *s)
  * (See also the lex pattern `NCNameChar' above.)
  */
 static bool
-isncnamechar (const unsigned char c)
+isncnamechar (const char c)
 {
     return ((c >= '\x41' && c <= '\x5a')
             || (c >= '\x61' && c <= '\x7a')
