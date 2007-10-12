@@ -4582,7 +4582,7 @@
         "ProductName" = "8:MonetDB4"
         "ProductCode" = "8:{59A359DD-937B-428C-9A09-55F215F1C888}"
         "PackageCode" = "8:{89C37A07-C644-4F5C-8DEE-026C7AE28CE6}"
-        "UpgradeCode" = "8:{730C595B-DBA6-48D7-94B8-A98780AC92B6}"
+        "UpgradeCode" = "8:{4F980AC7-863E-4C5E-A3BF-138F9DEDDB8A}"
         "RestartWWWService" = "11:FALSE"
         "RemovePreviousVersions" = "11:TRUE"
         "DetectNewerInstalledVersion" = "11:TRUE"
