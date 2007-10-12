@@ -1,14 +1,21 @@
-import os
+import os, sys, subprocess
 
-TSTTRGDIR = os.environ['TSTTRGDIR']
-SQLCLIENT = os.environ['SQLCLIENT']
-MAPIPORT = os.environ['MAPIPORT']
 
-f = open(os.path.join(TSTTRGDIR, 'dumpoutput.sql'), 'r')
+def main():
+	TSTTRGDIR = os.environ['TSTTRGDIR']
+	SQLCLIENT = os.environ['SQLCLIENT']
+	MAPIPORT = os.environ['MAPIPORT']
 
-p = os.popen('%s -p %s' % (SQLCLIENT, MAPIPORT), 'w')
+        cmd = str('%s -p %s' % (SQLCLIENT, MAPIPORT))
+	f = open(os.path.join(TSTTRGDIR, 'dumpoutput.sql'), 'r')
+	clt = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.PIPE)
+	clt.stdin.write(f.read())	
+	clt.stdin.close()
+	f.close()
+	sys.stdout.write(clt.stdout.read())
+	clt.stdout.close()
+	sys.stderr.write(clt.stderr.read())
+	clt.stderr.close()
+	
 
-p.write(f.read())
-
-p.close()
-f.close()
+main()
