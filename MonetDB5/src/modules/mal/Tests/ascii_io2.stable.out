@@ -71,10 +71,10 @@ exit correct;	# 17  (correct:bit)
     idxbat := tablet.load(namebat,sepbat,typebat,datafile,len);	# 20 CMDtablet_load (idxbat:bat[:str,:BAT])<-(namebat:bat[:oid,:str])(sepbat:bat[:oid,:str])(typebat:bat[:oid,:str])(datafile:str)(len:int)
 #io.print(idxbat); 	# 21  (_30:str)
     i1 := algebra.fetch(idxbat,0);	# 22 ALGfetchint (i1:BAT)<-(idxbat:bat[:str,:BAT])(_32:int)
-    b1 := bbp.find(i1);	# 23 CMDbbpbindindex (b1:bat[:any,:any])<-(i1:BAT)
+    b1:bat[:oid,:str]  := bbp.bind(i1);	# 23 CMDbbpbindindex (b1:bat[:oid,:str])<-(i1:BAT)
 #io.print(b1); 	# 24  (_34:str)
     i2 := algebra.fetch(idxbat,1);	# 25 ALGfetchint (i2:BAT)<-(idxbat:bat[:str,:BAT])(_36:int)
-    b2 := bbp.find(i2);	# 26 CMDbbpbindindex (b2:bat[:any,:any])<-(i2:BAT)
+    b2:bat[:oid,:str]  := bbp.bind(i2);	# 26 CMDbbpbindindex (b2:bat[:oid,:str])<-(i2:BAT)
 #io.print(b2); 	# 27  (_38:str)
 end main;	# 28  
 #source:/ufs/mk/monet5/Linux/mTests/src/modules/mal/ascii_io2.load

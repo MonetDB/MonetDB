@@ -1,5 +1,5 @@
 #test the statistics module
-tz:= bbp.bind("timezones");
+tz:bat[:str,:timezone]:= bbp.bind("timezones");
 statistics.prelude();
 #statistics.dump();		is size dependent
 statistics.deposit("timezones");

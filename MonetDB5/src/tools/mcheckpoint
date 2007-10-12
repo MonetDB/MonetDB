@@ -20,9 +20,8 @@
 function usage()
 {
 	echo "Usage: mcheckpoint [options] "
-	echo "    --dbname=<database_name>"
+	echo "    --database=<database_name>"
 	echo "    --ascii=<yes/no> default no"
-	echo "    --tool=<mapi/jdbc> default mapi"
 	echo "    --dir=<directory>"
 	echo "    --help"
 	exit 0
@@ -99,8 +98,8 @@ do
 				die "--tool: '${1#--tool=}' not understood, use 'mapi' or 'jdbc'"
 			esac
 		;;
-		--dbname=*)
-		DBNAME="${1#--dbname=}"
+		--database=*)
+		DBNAME="${1#--database=}"
 		;;
 		--dir=*)
 		CHKPNTDIR="${1#--dir=}"

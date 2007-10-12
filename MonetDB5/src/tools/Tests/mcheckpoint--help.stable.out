@@ -11,9 +11,8 @@ stdout of test 'mcheckpoint--help` in directory 'src/tools` itself:
 # 08:51:42 >  
 
 Usage: mcheckpoint [options] 
-    --dbname=<database_name>
+    --database=<database_name>
     --ascii=<yes/no> default no
-    --tool=<mapi/jdbc> default mapi
     --dir=<directory>
     --help
 

@@ -48,8 +48,8 @@ stdout of test 'tst2560` in directory 'src/mal` itself:
 #exit always;
 #end view1;
 factory user.view1(l:int,h:int):bat[:oid,:str];	# 0  (view1:bat[:oid,:str])<-(l:int)(h:int)
-    a:bat[:oid,:int]  := bbp.find("emp","age");	# 1 CMDbbpfind2 (a:bat[:oid,:int])<-(_4:str)(_5:str)
-    b:bat[:oid,:str]  := bbp.find("emp","name");	# 2 CMDbbpfind2 (b:bat[:oid,:str])<-(_4:str)(_7:str)
+    a:bat[:oid,:int]  := bbp.bind("emp","age");	# 1 CMDbbpbind2 (a:bat[:oid,:int])<-(_4:str)(_5:str)
+    b:bat[:oid,:str]  := bbp.bind("emp","name");	# 2 CMDbbpbind2 (b:bat[:oid,:str])<-(_4:str)(_7:str)
 barrier always := true;	# 3  (always:bit)<-(_9:bit) jump 17
     lOld := l;	# 4  (lOld:int)<-(l:int)
     hOld := h;	# 5  (hOld:int)<-(h:int)
@@ -132,6 +132,7 @@ end main;	# 20
 [ 0@0,	  "A"	  ]
 [ 1@0,	  "B"	  ]
 [ 2@0,	  "C"	  ]
+
 
 # 11:22:26 >  
 # 11:22:26 >  Done.

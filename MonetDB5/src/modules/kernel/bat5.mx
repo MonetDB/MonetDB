@@ -157,6 +157,14 @@ comment "Produce a BAT containing info about a BAT in [attribute,value] format.
         It contains all properties of the BAT record. See the BAT documentation 
         in GDK for more information.";
 
+command getSize ( b:bat[:any_1,:any_2]) :lng
+address BKCbatsize
+comment "Calculate the size of the BAT.";
+
+command getDiskSize ( b:bat[:any_1,:any_2]) :lng
+address BKCbatsize
+comment "Calculate the size of the BAT.";
+
 command getCapacity(b:bat[:any_1,:any_2]):lng 
 address BKCgetCapacity
 comment "Returns the current allocation size (in max number of elements) of a BAT.";
@@ -649,6 +657,8 @@ bat5_export str BKCaccess(int *res, int *bid, int *m);
 bat5_export str BKCsetAccess(int *res, int *bid, str *param);
 bat5_export str BKCgetAccess(str *res, int *bid);
 bat5_export str BKCinfo(int *retval, int *bid);
+bat5_export str BKCbatsize(lng *tot, int *bid);
+bat5_export str BKCbatdsksize(lng *tot, int *bid);
 bat5_export str BKCgetSpaceReserved(lng *tot, int *bid);
 bat5_export str BKCgetSpaceUsed(lng *tot, int *bid);
 bat5_export str BKCgetSpaceReserved_str(lng *tot, str batname);
@@ -3457,6 +3467,28 @@ BKCinfo(int *retval, int *bid)
 	BBPreleaseref(*bid);
 	BBPreleaseref(b->batCacheid);
 	throw(MAL, "BKCinfo", "GDKerror");
+}
+
+str
+BKCbatdsksize(lng *tot, int *bid){
+	BAT *b;
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		throw(MAL, "bat.getDiskSize", "Cannot access descriptor");
+	}
+	CMDbatdsksize(tot,b);
+	BBPreleaseref(*bid);
+	return MAL_SUCCEED;
+}
+
+str
+BKCbatsize(lng *tot, int *bid){
+	BAT *b;
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		throw(MAL, "bat.getDiskSize", "Cannot access descriptor");
+	}
+	CMDbatsize(tot,b);
+	BBPreleaseref(*bid);
+	return MAL_SUCCEED;
 }
 
 str

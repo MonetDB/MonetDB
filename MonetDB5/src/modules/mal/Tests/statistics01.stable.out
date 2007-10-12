@@ -52,7 +52,7 @@ stdout of test 'statistics01` in directory 'src/modules/mal` itself:
 
 function user.main():void;	# 0  (main:void)
 #test the statistics module 	# 1  (_1:str)
-    tz := bbp.bind("timezones");	# 2 CMDbbpbind (tz:bat[:any,:any])<-(_3:str)
+    tz:bat[:str,:timezone]  := bbp.bind("timezones");	# 2 CMDbbpbind (tz:bat[:str,:timezone])<-(_3:str)
     statistics.prelude();	# 3 STATprelude (_4:void)
 #statistics.dump();		is size dependent 	# 4  (_5:str)
     statistics.deposit("timezones");	# 5 STATdepositStr (_6:void)<-(_3:str)

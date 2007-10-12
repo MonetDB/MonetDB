@@ -26,9 +26,9 @@ idxbat := tablet.load(namebat, sepbat, typebat, datafile, len);
 #io.print(idxbat);
 
 i1 := algebra.fetch(idxbat,0);
-b1 := bbp.find(i1);
+b1:bat[:oid,:str] := bbp.bind(i1);
 #io.print(b1);
 
 i2 := algebra.fetch(idxbat,1); 
-b2 := bbp.find(i2);
+b2:bat[:oid,:str] := bbp.bind(i2);
 #io.print(b2);

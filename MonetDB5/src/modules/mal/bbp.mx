@@ -95,13 +95,11 @@ pattern bind(name:str):bat[:any_1,:any_2]
 address CMDbbpbind
 comment "Locate the BAT using its logical name";
 
-command find(name:str):bat[:any_1,:any_2]
-address CMDbbpfind3
-comment "Locate the BAT using its logical name in the BAT buffer pool");
-command find(head:str,tail:str):bat[:any_1,:any_2]
-address CMDbbpfind2
+pattern bind(head:str,tail:str):bat[:any_1,:any_2]
+address CMDbbpbind2
 comment "Locate the BAT using the head and tail names in the BAT buffer pool");
-command find(idx:BAT):bat[:any_1,:any_2] 
+
+pattern bind(idx:BAT):bat[:any_1,:any_2] 
 address CMDbbpbindindex
 comment "Locate the BAT using its BBP index in the BAT buffer pool";
 
@@ -211,9 +209,8 @@ bbp_export str CMDbbpdestroy(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 bbp_export str CMDbbpdeposit(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 bbp_export str CMDbbpbindDefinition(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 bbp_export str CMDbbpbind(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-bbp_export str CMDbbpfind2(int *ret, str *hnme, str *tnme);
-bbp_export str CMDbbpfind3(int *ret, str *nme);
-bbp_export str CMDbbpbindindex(int *ret, int *bid);
+bbp_export str CMDbbpbind2(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+bbp_export str CMDbbpbindindex(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 bbp_export str CMDbbptake(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 bbp_export str CMDbbprelease(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 bbp_export str CMDbbpreleaseBAT(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
@@ -355,6 +352,7 @@ CMDbbpbind(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	Box box;
 	ValPtr lhs, rhs;
 	int i = -1;
+	int ht,tt;
 	BAT *b;
 
 	(void) mb;		/* fool compiler */
@@ -384,6 +382,17 @@ CMDbbpbind(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (b == 0)
 		/* Simple ignore the binding if you can;t find the bat */
 		throw(MAL, "bbp.bind", "failed to find object in box");
+
+	/* check conformity of the actual type and the one requested */
+	ht= getHeadType(getArgType(mb,pci,0));
+	tt= getTailType(getArgType(mb,pci,0));
+	if( b->htype == TYPE_void && ht== TYPE_oid) ht= TYPE_void;
+	if( b->ttype == TYPE_void && tt== TYPE_oid) tt= TYPE_void;
+
+	if( ht != b->htype || tt != b->ttype){
+		BBPunfix(i);
+		throw(MAL, "bbp.bind", "Actual type does not match required type");
+	}
 	/* make sure we are not dealing with an about to be deleted bat */
 	if( BBP_refs(b->batCacheid) == 1 &&
 		BBP_lrefs(b->batCacheid) == 0){
@@ -398,56 +407,67 @@ CMDbbpbind(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-CMDbbpfind3(int *ret, str *nme)
-{
-	int i;
+CMDbbpbind2(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+	int *ret= (int*) getArgReference(stk,pci,0);
+	str hnme = (str) getArgValue(stk, pci, 1);
+	str tnme = (str) getArgValue(stk, pci, 2);
+	int i,ht,tt;
+
+	/* check conformity of the actual type and the one requested */
+	ht= getHeadType(getArgType(mb,pci,0));
+	tt= getTailType(getArgType(mb,pci,0));
 	/* find a specific BAT in the buffer pool */
-	BBPlock("CMDbbpfind3");
-	for (i = 1; i < BBPsize; i++)
-	if (BBP_logical(i) && (BBP_refs(i) || BBP_lrefs(i))) {
-		if( strcmp(BBP_logical(i),*nme)==0 ){
-			BBPkeepref(i);
-			*ret = i;
-			BBPunlock("CMDbbpfind3");
-			return MAL_SUCCEED;
-		}
-	}
-	BBPunlock("CMDbbpfind3");
-	throw(MAL, "bbp.find","BAT not found");
-}
-str
-CMDbbpfind2(int *ret, str *hnme, str *tnme)
-{
-	int i;
-	/* find a specific BAT in the buffer pool */
-	BBPlock("CMDbbpfind2");
+	BBPlock("CMDbbpbind2");
 	for (i = 1; i < BBPsize; i++)
 	if (BBP_logical(i) && (BBP_refs(i) || BBP_lrefs(i))) {
 		BAT *b = (BAT *) BATdescriptor(i);
 		if( b == 0 ) 
 			continue;
-		if( strcmp(b->hident,*hnme)==0 &&
-			strcmp(b->tident,*tnme)==0 ){
+		if( strcmp(b->hident,hnme)==0 &&
+			strcmp(b->tident,tnme)==0 ){
+
+			if( b->htype == TYPE_void && ht== TYPE_oid) ht= TYPE_void;
+			if( b->ttype == TYPE_void && tt== TYPE_oid) tt= TYPE_void;
+
+			if( ht != b->htype || tt != b->ttype){
+				BBPunfix(i);
+				throw(MAL, "bbp.bind", "Actual type does not match required type");
+			}
+
 			BBPkeepref(i);
 			*ret = i;
-			BBPunlock("CMDbbpfind2");
+			BBPunlock("CMDbbpbind2");
 			return MAL_SUCCEED;
 		}
 		BBPreleaseref(i);
 	}
-	BBPunlock("CMDbbpfind2");
+	BBPunlock("CMDbbpbind2");
 	throw(MAL, "bbp.find","BAT not found");
 }
 str
-CMDbbpbindindex(int *ret, int *bid)
-{
+CMDbbpbindindex(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	BAT *b;
+	int ht,tt;
+	int *ret= (int*) getArgReference(stk,pci,0);
+	int *bid= (int*) getArgReference(stk,pci,1);
+
+	/* check conformity of the actual type and the one requested */
+	ht= getHeadType(getArgType(mb,pci,0));
+	tt= getTailType(getArgType(mb,pci,0));
 
 	if ( *bid  == bat_nil)
 		throw(MAL, "bbp.bind", "can not access descriptor");
 	b = (BAT *) BATdescriptor(*bid);
 	if (b == 0)
 		throw(MAL, "bbp.bind", "can not access descriptor");
+
+	if( b->htype == TYPE_void && ht== TYPE_oid) ht= TYPE_void;
+	if( b->ttype == TYPE_void && tt== TYPE_oid) tt= TYPE_void;
+
+	if( ht != b->htype || tt != b->ttype){
+		BBPunfix(b->batCacheid);
+		throw(MAL, "bbp.bind", "Actual type does not match required type");
+	}
 	*ret = b->batCacheid;
 	BBPkeepref(*ret);
 	return MAL_SUCCEED;
