@@ -241,7 +241,6 @@ SQLexit(Client c)
 	stream_printf(GDKout, "#SQLexit\n");
 #endif
 	(void) c;		/* not used */
-	QOTstatisticsExit();
 	if( SQLinitialized == FALSE)
 		throw(SQL, "SQLexit", "Catalogue not available");
 	return MAL_SUCCEED;
