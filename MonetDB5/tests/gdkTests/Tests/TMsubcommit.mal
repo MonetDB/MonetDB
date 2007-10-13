@@ -17,7 +17,7 @@ transaction.subcommit(d);
 
 tmp := bat.new(:int,:str);
 bat.insert(tmp,0,"a");
-da:= bbp.bind("a");
+da:bat[:int,:int]:= bbp.bind("a");
 bat.setPersistent(da,false);
 transaction.subcommit(tmp);
 
