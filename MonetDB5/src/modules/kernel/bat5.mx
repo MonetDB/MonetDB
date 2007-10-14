@@ -3338,8 +3338,10 @@ BKCisTransient(bit *res, int *bid)
 }
 
 @-
-@= accessMode
+@= accessMode_export
 bat5_export str BKCset@1(int *res, int *bid) ;
+bat5_export str BKChas@1(bit *res, int *bid);
+@= accessMode
 str BKCset@1(int *res, int *bid) {
 	BAT *b, *bn = NULL;
 	int param=@2;
@@ -3352,7 +3354,6 @@ str BKCset@1(int *res, int *bid) {
 	BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
 }
-bat5_export str BKChas@1(bit *res, int *bid);
 str BKChas@1(bit *res, int *bid) {
 	BAT *b;
     if( (b= BATdescriptor(*bid)) == NULL ){
@@ -3363,6 +3364,10 @@ str BKChas@1(bit *res, int *bid) {
 	return MAL_SUCCEED;
 }
 @-
+@h
+@:accessMode_export(WriteMode,0,w)@
+@:accessMode_export(ReadMode,1,r)@
+@:accessMode_export(AppendMode,2,a)@
 @c
 @:accessMode(WriteMode,0,w)@
 @:accessMode(ReadMode,1,r)@

@@ -206,16 +206,9 @@ The constants defined in math.h are defined in const.mx
 @h
 #ifndef __MMATH_H__
 #define __MMATH_H__
-
-#include <gdk.h>
-
-#endif /* __MMATH_H__ */
-
-@+ Implementation Code
-@c
 #include "mal_config.h"
-
-#include "mmath.h"
+#include "mal.h"
+#include "mal_exception.h"
 #include <math.h>
 
 extern double sqrt(double x);
@@ -234,29 +227,6 @@ extern double fabs(double x);
 #define mmath_export extern
 #endif
 
-#define acos_unary(x, z)      *z = acos(*x)
-#define asin_unary(x, z)      *z = asin(*x)
-#define atan_unary(x, z)      *z = atan(*x)
-#define atan2_binary(x, y, z) *z = atan2(*x,*y)
-#define cos_unary(x, z)	      *z = cos(*x)
-#define sin_unary(x, z)	      *z = sin(*x)
-#define tan_unary(x, z)	      *z = tan(*x)
-
-#define cosh_unary(x, z)       *z = cosh(*x)
-#define sinh_unary(x, z)       *z = sinh(*x)
-#define tanh_unary(x, z)       *z = tanh(*x)
-
-#define exp_unary(x, z)	      *z = exp(*x)
-#define log_unary(x, z)	      *z = log(*x)
-#define log10_unary(x, z)     *z = log10(*x)
-
-#define pow_binary(x, y, z)   *z = pow(*x,*y)
-#define sqrt_unary(x, z)      *z = sqrt(*x)
-
-#define ceil_unary(x, z)      *z = ((-1.0<*x)&&(*x<0.0))?0.0:ceil(*x)
-#define fabs_unary(x, z)      *z = fabs(*x)
-#define floor_unary(x, z)     *z = floor(*x)
-#define fmod_binary(x, y, z)  *z = fmod(*x,*y)
 
 #ifdef _MSC_VER
 #include <float.h>
@@ -306,11 +276,78 @@ MNisinf(double x)
 #endif /* HAVE_ISINF */
 #endif /* HAVE_FPCLASSIFY */
 
-#include "mal.h"
-#include "mal_exception.h"
-mmath_export str math_unary_FINITE(bit *res, dbl *a);
-mmath_export str math_unary_ISNAN(bit *res, dbl *a);
-mmath_export str math_unary_ISINF(int *res, dbl *a);
+#define acos_unary(x, z)      *z = acos(*x)
+#define asin_unary(x, z)      *z = asin(*x)
+#define atan_unary(x, z)      *z = atan(*x)
+#define atan2_binary(x, y, z) *z = atan2(*x,*y)
+#define cos_unary(x, z)	      *z = cos(*x)
+#define sin_unary(x, z)	      *z = sin(*x)
+#define tan_unary(x, z)	      *z = tan(*x)
+
+#define cosh_unary(x, z)       *z = cosh(*x)
+#define sinh_unary(x, z)       *z = sinh(*x)
+#define tanh_unary(x, z)       *z = tanh(*x)
+
+#define exp_unary(x, z)	      *z = exp(*x)
+#define log_unary(x, z)	      *z = log(*x)
+#define log10_unary(x, z)     *z = log10(*x)
+
+#define pow_binary(x, y, z)   *z = pow(*x,*y)
+#define sqrt_unary(x, z)      *z = sqrt(*x)
+
+#define ceil_unary(x, z)      *z = ((-1.0<*x)&&(*x<0.0))?0.0:ceil(*x)
+#define fabs_unary(x, z)      *z = fabs(*x)
+#define floor_unary(x, z)     *z = floor(*x)
+#define fmod_binary(x, y, z)  *z = fmod(*x,*y)
+
+@= unopbaseM5_export
+mmath_export str MATHunary@1@3(@3 *res , @3 *a );
+@= unopM5_export
+  @:unopbaseM5_export(@1,@2,dbl)@
+  @:unopbaseM5_export(@1,@2,flt)@
+@= binopbaseM5_export
+mmath_export str MATHbinary@1@3(@3 *res, @3 *a, @3 *b );
+@= binopM5_export
+  @:binopbaseM5_export(@1,@2,dbl)@
+  @:binopbaseM5_export(@1,@2,flt)@
+
+@h
+@:unopM5_export(_ACOS,acos)@
+@:unopM5_export(_ASIN,asin)@
+@:unopM5_export(_ATAN,atan)@
+@:binopM5_export(_ATAN2,atan2)@
+@:unopM5_export(_COS,cos)@
+@:unopM5_export(_SIN,sin)@
+@:unopM5_export(_TAN,tan)@
+
+@:unopM5_export(_COSH,cosh)@
+@:unopM5_export(_SINH,sinh)@
+@:unopM5_export(_TANH,tanh)@
+
+@:unopM5_export(_EXP,exp)@
+@:unopM5_export(_LOG,log)@
+@:unopM5_export(_LOG10,log10)@
+
+@:binopM5_export(_POW,pow)@
+@:unopM5_export(_SQRT,sqrt)@
+
+@:unopM5_export(_CEIL,ceil)@
+@:unopbaseM5_export(_FABS,fabs,dbl)@
+@:unopM5_export(_FLOOR,floor)@
+@:binopM5_export(_FMOD,fmod)@
+
+
+mmath_export str MATHunary_ISNAN(bit *res, dbl *a);
+mmath_export str MATHunary_ISINF(int *res, dbl *a);
+mmath_export str MATHunary_FINITE(bit *res, dbl *a);
+mmath_export str MATHrandint(int *res);
+mmath_export str MATHsrandint(int *seed);
+mmath_export str MATHpi(dbl *pi);
+#endif /* __MMATH_H__ */
+
+@+ Implementation Code
+@c
+#include "mmath.h"
 
 @:unop(_ACOS,acos)@
 @:unop(_ASIN,asin)@
@@ -375,7 +412,6 @@ math_binary@1(dbl *res, dbl *a, dbl *b )
 	}
 	return MAL_SUCCEED;
 }
-@
 
 @c
 str
@@ -453,7 +489,6 @@ math_unary_FINITE(bit *res, dbl *a)
 Wrapping around the M4 code base
 @-
 @= unopbaseM5
-mmath_export str MATHunary@1@3(@3 *res , @3 *a );
 str MATHunary@1@3(@3 *res , @3 *a ) {
 #ifdef DEBUG
 		printf( "MATHunary@1@3\n");
@@ -476,7 +511,6 @@ str MATHunary@1@3(@3 *res , @3 *a ) {
   @:unopbaseM5(@1,@2,flt)@
 
 @= binopbaseM5
-mmath_export str MATHbinary@1@3(@3 *res, @3 *a, @3 *b );
 str MATHbinary@1@3(@3 *res, @3 *a, @3 *b ) {
 #ifdef DEBUG
 		printf( "MATHbinary@1\n");
@@ -495,7 +529,6 @@ str MATHbinary@1@3(@3 *res, @3 *a, @3 *b ) {
   @:binopbaseM5(@1,@2,flt)@
 @
 @= roundM5
-mmath_export str MATHbinary_ROUND@1(@1 *res, @1 *x, int *y);
 str MATHbinary_ROUND@1(@1 *res, @1 *x, int *y) {
   if(*x == @1_nil || *y == int_nil) {
 	*res = @1_nil;
@@ -545,28 +578,24 @@ str MATHbinary_ROUND@1(@1 *res, @1 *x, int *y) {
 @:roundM5(dbl)@
 @:roundM5(flt)@
 
-mmath_export str MATHunary_ISNAN(bit *res, dbl *a);
 str
 MATHunary_ISNAN(bit *res, dbl *a)
 {
 	return math_unary_ISNAN(res, a);
 }
 
-mmath_export str MATHunary_ISINF(int *res, dbl *a);
 str
 MATHunary_ISINF(int *res, dbl *a)
 {
 	return math_unary_ISINF(res, a);
 }
 
-mmath_export str MATHunary_FINITE(bit *res, dbl *a);
 str
 MATHunary_FINITE(bit *res, dbl *a)
 {
 	return math_unary_FINITE(res, a);
 }
 
-mmath_export str MATHrandint(int *res);
 str
 MATHrandint(int *res)
 {
@@ -574,7 +603,6 @@ MATHrandint(int *res)
 	return MAL_SUCCEED;
 }
 
-mmath_export str MATHsrandint(int *seed);
 str
 MATHsrandint(int *seed)
 {
@@ -582,11 +610,11 @@ MATHsrandint(int *seed)
 	return MAL_SUCCEED;
 }
 
-mmath_export str MATHpi(dbl *pi);
 str
 MATHpi(dbl *pi)
 {
 	*pi = 3.14159265358979323846;
 	return MAL_SUCCEED;
 }
+
 @}
