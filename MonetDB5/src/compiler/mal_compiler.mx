@@ -138,10 +138,70 @@ static char *mccPrelude[] = {
 	"   All rights reserved.\n",
 	"*/\n",
 	"#include \"mal_config.h\"\n",
+
+	"#include \"atoms/blob.h\"\n",
+	"#include \"atoms/color.h\"\n",
+	"#include \"atoms/inet.h\"\n",
+	"#include \"atoms/mtime.h\"\n",
+	"#include \"atoms/streams.h\"\n",
+	"#include \"atoms/str.h\"\n",
+	"#include \"atoms/url.h\"\n",
+	"#include \"atoms/xml.h\"\n",
+
+	"#include \"kernel/alarm.h\"\n",
+	"#include \"kernel/algebra.h\"\n",
+	"#include \"kernel/array.h\"\n",
+	"#include \"kernel/bat5.h\"\n",
+	"#include \"kernel/batcalc.h\"\n",
+	"#include \"kernel/batcast.h\"\n",
+	"#include \"kernel/batifthen.h\"\n",
+	"#include \"kernel/batmath.h\"\n",
+	"#include \"kernel/batmtime.h\"\n",
+	"#include \"kernel/calc.h\"\n",
+	"#include \"kernel/counters.h\"\n",
+	"#include \"kernel/group.h\"\n",
+	"#include \"kernel/microbenchmark.h\"\n",
+	"#include \"kernel/mkey.h\"\n",
+	"#include \"kernel/mmath.h\"\n",
+	"#include \"kernel/pqueue.h\"\n",
+	"#include \"kernel/status.h\"\n",
+
+	"#include \"mal/algebraExtensions.h\"\n",
+	"#include \"mal/batxml.h\"\n",
+	"#include \"mal/box.h\"\n",
+	"#include \"mal/bpm.h\"\n",
+	"#include \"mal/clients.h\"\n",
+	"#include \"mal/const.h\"\n",
+	"#include \"mal/constraints.h\"\n",
+	"#include \"mal/factory.h\"\n",
+	"#include \"mal/inspect.h\"\n",
+	"#include \"mal/language.h\"\n",
+	"#include \"mal/mal_io.h\"\n",
+	"#include \"mal/manual.h\"\n",
+	"#include \"mal/mat.h\"\n",
+	"#include \"mal/mdb.h\"\n",
+	"#include \"mal/mserver.h\"\n",
+	"#include \"mal/profiler.h\"\n",
+	"#include \"mal/remote.h\"\n",
+	"#include \"mal/sabaoth.h\"\n",
+	"#include \"mal/statistics.h\"\n",
+	"#include \"mal/tablet.h\"\n",
+	"#include \"mal/urlbox.h\"\n",
+
 	"#include \"mal.h\"\n",
 	"#include \"mal_interpreter.h\"\n",
 	"#include \"mal_function.h\"\n",
+
 	"#define BID int\n",	/* the interface works on BAT ids */
+	"#define BAT int\n",	
+	"#define true 1\n",	
+	"#define false 0\n",	
+	"#define nil 0\n",	
+
+	"#define RNGnewRange_lng(X,Y,Z) ((*X)=true,*(Y)= *(Z), MAL_SUCCEED)\n",
+	"#define RNGnextElement_lng(X,Y,S,L) (*(Y) += *(S), *(X)< *(L), MAL_SUCCEED)\n",
+	"#define RNGnewRange_int(X,Y,Z) ((*X)=true,*(Y)= *(Z), MAL_SUCCEED)\n",
+	"#define RNGnextElement_int(X,Y,S,L) (*(Y) += *(S), *(X)< *(L), MAL_SUCCEED)\n",
 	0
 };
 void
@@ -209,7 +269,7 @@ mccInit(stream *f, MalBlkPtr mb)
 	p = getInstrPtr(mb, 0);
 	stream_printf(f, "str MCC%s_%s(", getModuleId(p), getFunctionId(p));
 	if (p->argc > 0) {
-		mccType(f, mb, i);
+		mccType(f, mb, 0);
 		mccVar(f, mb, getArg(p, 0));
 		for (j = 1; j < p->argc; j++) {
 			stream_printf(f, ",");
@@ -236,7 +296,7 @@ mccVariables(stream *f, MalBlkPtr mb)
 		if (isTmpVar(mb, i))
 			*v = 'V';
 		if (getVarType(mb, i) == TYPE_void) {
-			stream_printf(f, "\tvoid *");
+			stream_printf(f, "\tint ");
 			mccVar(f, mb, i);
 			stream_printf(f, "= 0; /* %s */\n", tpe);
 		} else if (isaBatType(getVarType(mb, i))) {
@@ -524,6 +584,25 @@ mccProject(stream *f, MalBlkPtr mb, InstrPtr p, int *catch, int *ctop){
 	else
 		stream_printf(f, " goto wrapup;\n");
 }
+void
+mccBATnew(stream *f, MalBlkPtr mb, InstrPtr p, int *catch, int *ctop){
+	stream_printf(f,"{\t");
+	stream_printf(f,"\tint ht=%d;\n",getVarType(mb,getArg(p,2)));
+	stream_printf(f,"\tint tt=%d;\n",getVarType(mb,getArg(p,3)));
+	if(p->argc==5){
+		stream_printf(f,"lng cap="); 
+		mccVar(f,mb,getArg(p,4));
+		stream_printf(f,";\n");
+	} else stream_printf(f,"lng cap=0;\n");
+	stream_printf(f, "\tif( Xmsg = BKCnewBATlng(");
+	mccArg(f, mb, getArg(p, 0));
+	stream_printf(f, ", &ht, &tt, &cap) )");
+	if (*ctop > 0)
+		stream_printf(f, " goto CATCH_%d;\n", catch[--*ctop]);
+	else
+		stream_printf(f, " goto wrapup;\n");
+	stream_printf(f,"}\n");
+}
 
 void
 mccBody(stream *f, MalBlkPtr mb)
@@ -561,6 +640,12 @@ functions.
 				idcmp(getModuleId(p), "algebra") == 0 && 
 				idcmp(getFunctionId(p), "joinPath") == 0) {
 				mccJoinPath(f, mb, p);
+				continue;
+			}
+			if (getModuleId(p) && getFunctionId(p) && 
+				idcmp(getModuleId(p), "bat") == 0 && 
+				idcmp(getFunctionId(p), "new") == 0) {
+				mccBATnew(f, mb, p, catch, &ctop);
 				continue;
 			}
 			if (getModuleId(p) && getFunctionId(p) && 
