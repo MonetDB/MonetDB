@@ -1,5 +1,9 @@
-import os, sys, subprocess
-
+import os, sys
+try:
+    import subprocess
+except ImportError:
+    # use private copy for old Python versions
+    import MonetDB.subprocess26 as subprocess
 
 def main():
 	TSTTRGDIR = os.environ['TSTTRGDIR']
