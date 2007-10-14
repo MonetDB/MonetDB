@@ -22,5 +22,5 @@ EXTRA_DIST_DIR = src
 
 ant_distall = {
 	DIR = datadir/MonetDB/lib
-	FILES = xrpcwrapper.jar
+	FILES = xrpcwrapper.jar xrpcwrapper-test.jar
 }

@@ -35,20 +35,25 @@ All Rights Reserved.
   <property name="builddir"             value="build" />
   <property name="util-package"         value="nl/cwi/monetdb/xquery/util" />
   <property name="xrpcwrapper-package"  value="nl/cwi/monetdb/xquery/xrpc/wrapper" />
+  <property name="xrpcwrapper-test-package" value="nl/cwi/monetdb/xquery/xrpc/wrapper/Tests" />
 
   <property file="build.local.properties" />
   <property file="build.properties" />
 
   <property name="xrpcwrapper-jar"
     value="${jardir}/xrpcwrapper.jar" />
+  <property name="xrpcwrapper-test-jar"
+    value="${jardir}/xrpcwrapper-test.jar" />
 
   <!-- full target -->
   <target name="all">
     <antcall target="jar_xrpcwrapper" />
+    <antcall target="jar_xrpcwrapper_test" />
   </target>
 
   <target name="distall">
     <antcall target="jar_xrpcwrapper" />
+    <antcall target="jar_xrpcwrapper_test" />
   </target>
 
   <!-- jar targets -->
@@ -66,6 +71,25 @@ All Rights Reserved.
         <attribute name="Built-By" value="${user.name}" />
         <attribute name="Main-Class"
           value="nl.cwi.monetdb.xquery.xrpc.wrapper.XRPCWrapper" />
+      </manifest>
+    </jar>
+  </target>
+
+  <target name="jar_xrpcwrapper_test"
+    depends="compile_util,compile_xrpcwrapper_test">
+    <jar jarfile="${xrpcwrapper-test-jar}">
+      <fileset dir="${builddir}">
+        <include name="${util-package}/**/*.class" />
+        <include name="${xrpcwrapper-test-package}/**/*.class" />
+      </fileset>
+      <fileset dir="${srcdir}">
+        <include name="${xrpcwrapper-package}/Tests/*.xml" />
+        <include name="${xrpcwrapper-package}/Tests/*.xq" />
+      </fileset>
+      <manifest>
+        <attribute name="Built-By" value="${user.name}" />
+        <attribute name="Main-Class"
+          value="nl.cwi.monetdb.xquery.xrpc.wrapper.Tests.XRPCTestClient" />
       </manifest>
     </jar>
   </target>
@@ -97,6 +121,21 @@ All Rights Reserved.
       source="${javac_version}"
       >
       <include name="${xrpcwrapper-package}/*.java" />
+    </javac>
+  </target>
+
+  <target name="compile_xrpcwrapper_test" depends="prepare">
+    <echo message="Compiling XRPC test client" />
+    <javac
+      classpath="${srcdir}"
+      srcdir="${srcdir}"
+      destdir="${builddir}"
+      debug="${debug}"
+      optimize="${optimize}"
+      target="${javac_version}"
+      source="${javac_version}"
+      >
+      <include name="${xrpcwrapper-test-package}/**/*.java" />
     </javac>
   </target>
 
