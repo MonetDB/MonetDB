@@ -615,7 +615,7 @@ MT_mmap_new(char *path, void *base, size_t len, int fd, int writable)
 		MT_mmap_tab[i].writable = writable;
 		MT_mmap_tab[i].fd = fd;
 		MT_mmap_tab[i].pincnt = 0;
-		fd = -1;
+		fd = -fd;
 	}
 	(void) pthread_mutex_unlock(&MT_mmap_lock);
 	return fd;
@@ -1051,9 +1051,7 @@ MT_mmap_open(MT_mmap_hdl *hdl, char *path, int mode, off_t off, size_t len, size
 	}
 	if (ret != (void *) -1L) {
 		hdl->fixed = ret;
-		fd = MT_mmap_new(path, ret, len, fd, (mode & MMAP_WRITABLE));
-		if (fd <= 0)
-			hdl->hdl = (void *) 0;	/* MT_mmap_new keeps the fd */
+		hdl->hdl = (void*) (ssize_t) MT_mmap_new(path, ret, len, fd, (mode & MMAP_WRITABLE));
 	}
 	return ret;
 }
@@ -1061,13 +1059,12 @@ MT_mmap_open(MT_mmap_hdl *hdl, char *path, int mode, off_t off, size_t len, size
 void *
 MT_mmap_remap(MT_mmap_hdl *hdl, off_t off, size_t len)
 {
-	void *ret;
-
-	ret = mmap(hdl->fixed,
+        int fd = (int) (ssize_t) hdl->hdl;
+	void *ret = mmap(hdl->fixed,
 		   len,
 		   ((hdl->mode & MMAP_WRITABLE) ? PROT_WRITE : 0) | PROT_READ,
 		   ((hdl->mode & MMAP_COPY) ? (MAP_PRIVATE | MAP_NORESERVE) : MAP_SHARED) | (hdl->fixed ? MAP_FIXED : 0),
-		   (int) (ssize_t) hdl->hdl,
+                   (fd < 0)?-fd:fd,
 		   off);
 
 	if (ret != (void *) -1L) {
@@ -1083,9 +1080,7 @@ void
 MT_mmap_close(MT_mmap_hdl *hdl)
 {
 	int fd = (int) (ssize_t) hdl->hdl;
-
-	if (fd)
-		close(fd);
+	if (fd > 0) close(fd);
 	hdl->hdl = NULL;
 }
 

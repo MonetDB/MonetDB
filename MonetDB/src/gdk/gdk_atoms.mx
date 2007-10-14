@@ -1878,13 +1878,19 @@ The string hash function is a very simple hash function that xors and
 rotates all characters together. It is optimized to process 2 characters
 at a time (adding 16-bits to the hash value each iteration).
 @h
-#define GDK_STRHASH(x,y) {                                             \
-        str _c = (str) (x);                                            \
-        for((y)=0; _c[0] && _c[1]; _c+=2) {                            \
-                 (y) = ((y) << 3) ^ ((y) >> 11) ^ ((y) >> 17) ^ (_c[1] << 8) ^ _c[0];\
-        }                                                              \
-        (y) ^= _c[0];                                                  \
+#define GDK_STRHASH(x,y) {\
+     str _key = (str) (x);\
+     int _i;\
+     for (_i = y = 0; _key[_i]; _i++) {\
+         y += _key[_i];\
+         y += (y << 10);\
+         y ^= (y >> 6);\
+     }\
+     y += (y << 3);\
+     y ^= (y >> 11);\
+     y += (y << 15);\
 }
+
 @c
 hash_t
 strHash(str s)
