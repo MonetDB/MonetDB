@@ -186,13 +186,6 @@ monet_hello(opt *set, int setlen)
 @-
 Version information, and compile time options.
 @c
-#ifdef HAVE_LIBPCRE
-#include <pcre.h>
-#endif
-#ifdef HAVE_OPENSSL
-#include <openssl/opensslv.h>
-#endif
-
 str
 absolute_path(str s)
 {
@@ -432,7 +425,7 @@ faster system start.
 			}
 			if (strcmp(long_options[option_index].name, "version") == 0) {
 				monet_version();
-				break;
+				exit(0);
 			}
 			/* debugging options */
 			if (strcmp(long_options[option_index].name, "properties") == 0) {

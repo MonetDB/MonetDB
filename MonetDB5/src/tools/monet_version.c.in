@@ -1,8 +1,16 @@
-
+#include "mal_config.h"
+#include "mal.h"
+#include <stdio.h>
 #include "monet_version.h"
+#ifdef HAVE_LIBPCRE
+#include <pcre.h>
+#endif
+#ifdef HAVE_OPENSSL
+#include <openssl/opensslv.h>
+#endif
 
 void
-monet_version()
+monet_version(void)
 {
 	printf("MonetDB server v" VERSION " (" SZFMT "-bit), "
 			"based on kernel v%s (" SZFMT "-bit oids)\n",
@@ -25,5 +33,4 @@ monet_version()
 #else
 	printf("Linking    : %s\n", "@linkercall@");
 #endif
-	exit(0);
 }
