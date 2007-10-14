@@ -33,8 +33,8 @@ All Rights Reserved.
   <property name="libdir"               value="lib" />
   <property name="jardir"               value="jars" />
   <property name="builddir"             value="build" />
-  <property name="xrpcwrapper-package"  value="nl/cwi/monetdb/xquery/xrpc/wrapper" />
   <property name="util-package"         value="nl/cwi/monetdb/xquery/util" />
+  <property name="xrpcwrapper-package"  value="nl/cwi/monetdb/xquery/xrpc/wrapper" />
 
   <property file="build.local.properties" />
   <property file="build.properties" />
@@ -60,14 +60,12 @@ All Rights Reserved.
         <include name="${xrpcwrapper-package}/**/*.class" />
       </fileset>
       <fileset dir="${srcdir}">
-        <include name="${xrpcwrapper-package}/wrapper_functions.xq" />
-        <include name="${xrpcwrapper-package}/Tests/*.xml" />
-        <include name="${xrpcwrapper-package}/Tests/*.xq" />
+        <include name="${util-package}/wrapper_functions.xq" />
       </fileset>
       <manifest>
         <attribute name="Built-By" value="${user.name}" />
         <attribute name="Main-Class"
-          value="nl.cwi.monetdb.xquery.xrpc.wrapper.XrpcWrapper" />
+          value="nl.cwi.monetdb.xquery.xrpc.wrapper.XRPCWrapper" />
       </manifest>
     </jar>
   </target>
@@ -98,7 +96,7 @@ All Rights Reserved.
       target="${javac_version}"
       source="${javac_version}"
       >
-      <include name="${xrpcwrapper-package}/**/*.java" />
+      <include name="${xrpcwrapper-package}/*.java" />
     </javac>
   </target>
 
