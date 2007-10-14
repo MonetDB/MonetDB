@@ -409,8 +409,11 @@ mvc_commit(mvc *m, int chain, char *name)
 	/* validation phase */
 	store_lock();
 	if (sql_trans_validate(tr)) {
-		if ((ok = sql_trans_commit(tr)) != SQL_OK)
-			GDKfatal("Your disk seems to be full, exiting ...");
+		if ((ok = sql_trans_commit(tr)) != SQL_OK) {
+			char *msg = sql_message("Your disk seems to be full, exiting (%s)", GDKerrbuf);
+			GDKfatal(msg);
+			_DELETE(msg);
+		}
 	} else {
 		store_unlock();
 		GDKerror("COMMIT: transaction is aborted because of concurency conflicts, will ROLLBACK instead");
