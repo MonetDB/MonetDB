@@ -1228,7 +1228,11 @@ isncnamechar (const char c)
             || (c >= '\x61' && c <= '\x7a')
             || (c >= '\xc0' && c <= '\xd6')
             || (c >= '\xd8' && c <= '\xf6')
-            || (c >= '\xf8' /* c <= '\xff'*/ )
+            || (c >= '\xf8'
+#ifndef __CHAR_UNSIGNED__
+                && c <= '\xff'
+#endif
+                )
             || (c >= '\x30' && c <= '\x39')
             || c == '.' || c == '-' || c == '_' || c == '\xb7');
 }
