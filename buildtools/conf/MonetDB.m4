@@ -1067,6 +1067,7 @@ AC_CHECK_SIZEOF(ptrdiff_t,,[#include <stddef.h>
 #include <sys/types.h>])
 AC_CHECK_SIZEOF(long long)
 AC_CHECK_SIZEOF(__int64)
+AC_C_CHAR_UNSIGNED
 
 # Checks for library functions.
 AC_CHECK_FUNCS([ftruncate gettimeofday opendir])
