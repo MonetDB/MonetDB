@@ -2,5 +2,5 @@
 
 echo "monet_daemon=no" > $TSTTRGBASE/config
 
-Mlog "echo 'loaded(); quit();' \| eval \"Mserver $setMONETDB_MOD_PATH --config=$TSTTRGBASE/config\"" 
-      echo 'loaded(); quit();'  | eval  "Mserver $setMONETDB_MOD_PATH --config=$TSTTRGBASE/config"
+Mlog "echo 'loaded(); quit();' \| eval \"Mserver $setGDK_DBFARM $setMONETDB_MOD_PATH --config=$TSTTRGBASE/config\"" 
+      echo 'loaded(); quit();'  | eval  "Mserver $setGDK_DBFARM $setMONETDB_MOD_PATH --config=$TSTTRGBASE/config"
