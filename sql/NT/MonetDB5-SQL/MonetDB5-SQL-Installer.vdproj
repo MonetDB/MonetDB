@@ -903,6 +903,12 @@
         }
         "Entry"
         {
+        "MsmKey" = "8:_B066267D25F24C60971F33490167D53A"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
         "MsmKey" = "8:_B2E1F6BC14DE4688A66A014F1E62590A"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -4305,6 +4311,26 @@
             "TargetName" = "8:libbat.dll"
             "Tag" = "8:"
             "Folder" = "8:_A3C9BE5CA72B42628868618D180581DA"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_B066267D25F24C60971F33490167D53A"
+            {
+            "SourcePath" = "8:share\\MonetDB\\lib\\monetdb-1.0-mcl.jar"
+            "TargetName" = "8:monetdb-1.0-mcl.jar"
+            "Tag" = "8:"
+            "Folder" = "8:_2E7A7A2A3AA7443EB1803999F76D6C26"
             "Condition" = "8:"
             "Transitive" = "11:FALSE"
             "Vital" = "11:TRUE"
