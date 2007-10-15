@@ -129,6 +129,12 @@
         }
         "Entry"
         {
+        "MsmKey" = "8:_19E1C8814A5B4BD8AC56A64EF5027557"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
         "MsmKey" = "8:_1B6D66F3FD4645D4A1CE8C09DF5F2978"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -291,6 +297,12 @@
         }
         "Entry"
         {
+        "MsmKey" = "8:_41E5DEC53121410C98AC41D63900E4DC"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
         "MsmKey" = "8:_47662C727D79417D83DD2C1D3271FD03"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -310,6 +322,12 @@
         "Entry"
         {
         "MsmKey" = "8:_49C9F863C1614A73A9FB0C8EDF59444C"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_4CB035B500044361AD95C3D9C22C5C0E"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -585,6 +603,12 @@
         }
         "Entry"
         {
+        "MsmKey" = "8:_AA49E9771D4549D2A3A87B9A2158344B"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
         "MsmKey" = "8:_AA8F9BF4CF8643099DCED10BE2B0E11A"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -754,12 +778,6 @@
         "Entry"
         {
         "MsmKey" = "8:_C73F9B95B9664994B199230DA245D1F3"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_C93D24C0147F40C4AF2B416E616DAA89"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -1447,6 +1465,26 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_19E1C8814A5B4BD8AC56A64EF5027557"
+            {
+            "SourcePath" = "8:share\\MonetDB\\lib\\monetdb-1.0-mcl.jar"
+            "TargetName" = "8:monetdb-1.0-mcl.jar"
+            "Tag" = "8:"
+            "Folder" = "8:_2E7A7A2A3AA7443EB1803999F76D6C26"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_1B6D66F3FD4645D4A1CE8C09DF5F2978"
             {
             "SourcePath" = "8:lib\\MonetDB4\\lib_bat.dll"
@@ -1987,6 +2025,26 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_41E5DEC53121410C98AC41D63900E4DC"
+            {
+            "SourcePath" = "8:share\\MonetDB\\lib\\xrpcwrapper.jar"
+            "TargetName" = "8:xrpcwrapper.jar"
+            "Tag" = "8:"
+            "Folder" = "8:_2E7A7A2A3AA7443EB1803999F76D6C26"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_47662C727D79417D83DD2C1D3271FD03"
             {
             "SourcePath" = "8:lib\\MonetDB4\\lib_xrpc_server.dll"
@@ -2053,6 +2111,26 @@
             "TargetName" = "8:lib_str.dll"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_4CB035B500044361AD95C3D9C22C5C0E"
+            {
+            "SourcePath" = "8:C:\\Program Files\\PCRE\\bin\\pcre.dll"
+            "TargetName" = "8:pcre.dll"
+            "Tag" = "8:"
+            "Folder" = "8:_A3C9BE5CA72B42628868618D180581DA"
             "Condition" = "8:"
             "Transitive" = "11:FALSE"
             "Vital" = "11:TRUE"
@@ -2967,6 +3045,26 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_AA49E9771D4549D2A3A87B9A2158344B"
+            {
+            "SourcePath" = "8:share\\MonetDB\\lib\\xrpcwrapper-test.jar"
+            "TargetName" = "8:xrpcwrapper-test.jar"
+            "Tag" = "8:"
+            "Folder" = "8:_2E7A7A2A3AA7443EB1803999F76D6C26"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_AA8F9BF4CF8643099DCED10BE2B0E11A"
             {
             "SourcePath" = "8:bin\\Mserver.exe"
@@ -3533,26 +3631,6 @@
             "TargetName" = "8:monetdb_query_demo.php"
             "Tag" = "8:"
             "Folder" = "8:_69999C4142A6488CB44E3C22BC2E4BFA"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_C93D24C0147F40C4AF2B416E616DAA89"
-            {
-            "SourcePath" = "8:MXQclient.bat"
-            "TargetName" = "8:MXQclient.bat"
-            "Tag" = "8:"
-            "Folder" = "8:_D9A7267FC9784D8BBD3CBC6EC1754DBE"
             "Condition" = "8:"
             "Transitive" = "11:FALSE"
             "Vital" = "11:TRUE"
@@ -4554,13 +4632,13 @@
         {
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:MonetDB4"
-        "ProductCode" = "8:{59A359DD-937B-428C-9A09-55F215F1C888}"
-        "PackageCode" = "8:{89C37A07-C644-4F5C-8DEE-026C7AE28CE6}"
-        "UpgradeCode" = "8:{730C595B-DBA6-48D7-94B8-A98780AC92B6}"
+        "ProductCode" = "8:{C1C42910-97E2-4241-960C-2A55670C62FE}"
+        "PackageCode" = "8:{2D744424-EA2B-4C80-ADDF-52B996A443F7}"
+        "UpgradeCode" = "8:{4F980AC7-863E-4C5E-A3BF-138F9DEDDB8A}"
         "RestartWWWService" = "11:FALSE"
         "RemovePreviousVersions" = "11:TRUE"
         "DetectNewerInstalledVersion" = "11:TRUE"
-        "ProductVersion" = "8:7.10.10"
+        "ProductVersion" = "8:7.10.15"
         "Manufacturer" = "8:CWI"
         "ARPHELPTELEPHONE" = "8:"
         "ARPHELPLINK" = "8:http://monetdb.cwi.nl/"
@@ -4697,15 +4775,15 @@
             "Icon" = "8:"
             "Feature" = "8:"
             }
-            "{478F747B-8505-45D1-9AAE-8C3B645C26E3}:_73308174ACE047B0B3312C68DF9CED4F"
+            "{478F747B-8505-45D1-9AAE-8C3B645C26E3}:_FADEF69B58784586806CF8E1826524B3"
             {
             "Name" = "8:MonetDB XQuery Client"
-            "Arguments" = "8:-umonetdb -Pmonetdb"
+            "Arguments" = "8:--language=xquery --user=monetdb --passwd=monetdb --help"
             "Description" = "8:"
             "ShowCmd" = "3:1"
             "IconIndex" = "3:0"
             "Transitive" = "11:FALSE"
-            "Target" = "8:_C93D24C0147F40C4AF2B416E616DAA89"
+            "Target" = "8:_14A0495208064DCA9A6222547E8C9052"
             "Folder" = "8:_38127E40D5154983A56ED4DED9B77213"
             "WorkingFolder" = "8:_D9A7267FC9784D8BBD3CBC6EC1754DBE"
             "Icon" = "8:"
