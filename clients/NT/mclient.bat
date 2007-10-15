@@ -9,4 +9,4 @@
 @set PATH=%MONETDB%\bin;%MONETDB%\lib;%MONETDB%\lib\bin;%PATH%
 
 @rem start the real client
-@"%MONETDB%\bin\mclient.exe"  --set "prefix=%MONETDB%" --set "exec_prefix=%MONETDB%" %*
+@"%MONETDB%\bin\mclient.exe" %*
