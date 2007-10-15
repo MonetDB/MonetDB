@@ -1,0 +1,36 @@
+#include "mal_config.h"
+#include "mal.h"
+#include <stdio.h>
+#include "monet_version.h"
+#ifdef HAVE_LIBPCRE
+#include <pcre.h>
+#endif
+#ifdef HAVE_OPENSSL
+#include <openssl/opensslv.h>
+#endif
+
+void
+monet_version(void)
+{
+	printf("MonetDB server v" VERSION " (" SZFMT "-bit), "
+			"based on kernel v%s (" SZFMT "-bit oids)\n",
+			(size_t) (sizeof(ptr) * 8), GDKversion(),
+			(size_t) (sizeof(oid) * 8));
+	printf("Copyright (c) 1993-2007 CWI, all rights reserved\n");
+	printf("Visit http://monetdb.cwi.nl/ for further information\n");
+	printf("Configured for prefix: " MONETDBPREFIX "\n");
+	printf("Libraries:\n");
+#ifdef HAVE_LIBPCRE
+	printf("  libpcre: %s (%s)\n", pcre_version(), "@pcreversion@");
+#endif
+#ifdef HAVE_OPENSSL
+	printf("  openssl: %s (%s)\n", OPENSSL_VERSION_TEXT, "@opensslversion@");
+#endif
+	printf("Compiled by: %s\n", "@builtby@");
+	printf("Compilation: %s\n", "@compilercall@");
+#ifdef STATIC
+	printf("Linking    : %s (static)\n", "@linkercall@");
+#else
+	printf("Linking    : %s\n", "@linkercall@");
+#endif
+}

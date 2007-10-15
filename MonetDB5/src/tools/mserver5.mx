@@ -77,6 +77,7 @@ The server options have the following meaning:
 #include <errno.h>
 #include <string.h> /* strerror */
 #include <locale.h>
+#include "monet_version.h"
 
 #ifdef _CRTDBG_MAP_ALLOC
 /* Windows only:
@@ -185,40 +186,6 @@ monet_hello(opt *set, int setlen)
 @-
 Version information, and compile time options.
 @c
-#ifdef HAVE_LIBPCRE
-#include <pcre.h>
-#endif
-#ifdef HAVE_OPENSSL
-#include <openssl/opensslv.h>
-#endif
-
-void
-monet_version()
-{
-	printf("MonetDB server v" VERSION " (" SZFMT "-bit), "
-			"based on kernel v%s (" SZFMT "-bit oids)\n",
-			(size_t) (sizeof(ptr) * 8), GDKversion(),
-			(size_t) (sizeof(oid) * 8));
-	printf("Copyright (c) 1993-2007 CWI, all rights reserved\n");
-	printf("Visit http://monetdb.cwi.nl/ for further information\n");
-	printf("Configured for prefix: " MONETDBPREFIX "\n");
-	printf("Libraries:\n");
-#ifdef HAVE_LIBPCRE
-	printf("  libpcre: %s (%s)\n", pcre_version(), "@pcreversion@");
-#endif
-#ifdef HAVE_OPENSSL
-	printf("  openssl: %s (%s)\n", OPENSSL_VERSION_TEXT, "@opensslversion@");
-#endif
-	printf("Compiled by: %s\n", "@builtby@");
-	printf("Compilation: %s\n", "@compilercall@");
-#ifdef STATIC
-	printf("Linking    : %s (static)\n", "@linkercall@");
-#else
-	printf("Linking    : %s\n", "@linkercall@");
-#endif
-	exit(0);
-}
-
 str
 absolute_path(str s)
 {
@@ -458,7 +425,7 @@ faster system start.
 			}
 			if (strcmp(long_options[option_index].name, "version") == 0) {
 				monet_version();
-				break;
+				exit(0);
 			}
 			/* debugging options */
 			if (strcmp(long_options[option_index].name, "properties") == 0) {

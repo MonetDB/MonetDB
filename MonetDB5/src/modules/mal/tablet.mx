@@ -896,6 +896,8 @@ void_bat_create(int adt, size_t nr)
         	BATmmap(b, STORE_MMAP, STORE_MMAP, STORE_MMAP);
 	if (nr > BATTINY && adt)
 		b = BATextend(b, nr);
+	if (b == NULL)
+		return b;
 
 	/* disable all properties here */
 	bm = BBP_cache(-b->batCacheid);
