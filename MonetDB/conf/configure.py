@@ -20,7 +20,8 @@ import sys
 import fileinput
 import os
 
-subs = [("@bindir@", r'%exec_prefix%\bin'),
+subs = [("@exec_prefix@", r'%prefix%'),
+        ("@bindir@", r'%exec_prefix%\bin'),
         ("@sbindir@", r'%exec_prefix%\sbin'),
         ("@libexecdir@", r'%exec_prefix%\libexec'),
         ("@datadir@", r'%prefix%\share'),
