@@ -19,6 +19,7 @@ rem to tell it where that location is
 set MONETDBDIR=
 set MONETDBFARM=
 set SQLLOGDIR=
+set XQUERYLOGDIR=
 rem use the Application Data folder for our database
 
 rem if installed for just the current user, the file
@@ -61,6 +62,6 @@ move "%APPDATA%\MonetDB" "%MONETDBDIR%"
 :skip
 
 rem start the real server
-"%MONETDB%\bin\Mserver.exe" --set "prefix=%MONETDB%" --set "exec_prefix=%MONETDB%" %MONETDBFARM% %SQLLOGDIR% %*
+"%MONETDB%\bin\Mserver.exe" --set "prefix=%MONETDB%" --set "exec_prefix=%MONETDB%" %MONETDBFARM% %SQLLOGDIR% %XQUERYLOGDIR% %*
 
 endlocal
