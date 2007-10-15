@@ -15,6 +15,12 @@
     {
         "Entry"
         {
+        "MsmKey" = "8:_022E831F86CB49049D8A3CB546ED4989"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
         "MsmKey" = "8:_06BA53E05307494B98BD3E9A7D355D0C"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -357,6 +363,12 @@
         }
         "Entry"
         {
+        "MsmKey" = "8:_52DCEC5806254D3F9246489B9C5DFC27"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
         "MsmKey" = "8:_5333EA67476C4D1F88AE11DA01EADB0B"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -478,6 +490,12 @@
         "Entry"
         {
         "MsmKey" = "8:_656EEE2FF2A04984A62E96BA105821BD"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_659DEE26277A46FFA12AE9CF8030F0DB"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -873,7 +891,19 @@
         }
         "Entry"
         {
+        "MsmKey" = "8:_AC5E64E0F58B463D8A20DAA76D50BE33"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
         "MsmKey" = "8:_AE4DE6CBA77D450EA12BDD0424DF2E30"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_B066267D25F24C60971F33490167D53A"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -928,6 +958,12 @@
         "Entry"
         {
         "MsmKey" = "8:_BD746DA705DC45DEB6D4DA354DBC83D0"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_C09F2F527A6F4AC2ABD0251C8157D889"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -1059,6 +1095,12 @@
         }
         "Entry"
         {
+        "MsmKey" = "8:_D164E9246BD5466F863848D14E48629D"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
         "MsmKey" = "8:_D1EB751A6FC0411282BE1B7E59C98C46"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -1084,6 +1126,12 @@
         "Entry"
         {
         "MsmKey" = "8:_D4CC87AA024443C599DA2468E01B4A2E"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_D6D35BB94E694CF295F2B71D1C337143"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -1317,6 +1365,26 @@
         }
         "File"
         {
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_022E831F86CB49049D8A3CB546ED4989"
+            {
+            "SourcePath" = "8:Lib\\MonetDB5\\lib_batxml.dll"
+            "TargetName" = "8:lib_batxml.dll"
+            "Tag" = "8:"
+            "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_06BA53E05307494B98BD3E9A7D355D0C"
             {
             "SourcePath" = "8:lib\\MonetDB5\\opt_reduce.mal"
@@ -2457,6 +2525,26 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_52DCEC5806254D3F9246489B9C5DFC27"
+            {
+            "SourcePath" = "8:C:\\Program Files\\PCRE\\bin\\pcre.dll"
+            "TargetName" = "8:pcre.dll"
+            "Tag" = "8:"
+            "Folder" = "8:_A3C9BE5CA72B42628868618D180581DA"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_5333EA67476C4D1F88AE11DA01EADB0B"
             {
             "SourcePath" = "8:lib\\MonetDB5\\mal_isolation.mal"
@@ -2861,6 +2949,26 @@
             {
             "SourcePath" = "8:lib\\MonetDB5\\logger.mal"
             "TargetName" = "8:logger.mal"
+            "Tag" = "8:"
+            "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_659DEE26277A46FFA12AE9CF8030F0DB"
+            {
+            "SourcePath" = "8:Lib\\MonetDB5\\lib_xml.dll"
+            "TargetName" = "8:lib_xml.dll"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
             "Condition" = "8:"
@@ -4177,12 +4285,52 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_AC5E64E0F58B463D8A20DAA76D50BE33"
+            {
+            "SourcePath" = "8:Lib\\MonetDB5\\opt_statistics.mal"
+            "TargetName" = "8:opt_statistics.mal"
+            "Tag" = "8:"
+            "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_AE4DE6CBA77D450EA12BDD0424DF2E30"
             {
             "SourcePath" = "8:lib\\libbat.dll"
             "TargetName" = "8:libbat.dll"
             "Tag" = "8:"
             "Folder" = "8:_A3C9BE5CA72B42628868618D180581DA"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_B066267D25F24C60971F33490167D53A"
+            {
+            "SourcePath" = "8:share\\MonetDB\\lib\\monetdb-1.0-mcl.jar"
+            "TargetName" = "8:monetdb-1.0-mcl.jar"
+            "Tag" = "8:"
+            "Folder" = "8:_2E7A7A2A3AA7443EB1803999F76D6C26"
             "Condition" = "8:"
             "Transitive" = "11:FALSE"
             "Vital" = "11:TRUE"
@@ -4361,6 +4509,26 @@
             {
             "SourcePath" = "8:lib\\MonetDB5\\lib_pcre.dll"
             "TargetName" = "8:lib_pcre.dll"
+            "Tag" = "8:"
+            "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_C09F2F527A6F4AC2ABD0251C8157D889"
+            {
+            "SourcePath" = "8:Lib\\MonetDB5\\xml.mal"
+            "TargetName" = "8:xml.mal"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
             "Condition" = "8:"
@@ -4777,6 +4945,26 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_D164E9246BD5466F863848D14E48629D"
+            {
+            "SourcePath" = "8:Lib\\MonetDB5\\opt_trace.mal"
+            "TargetName" = "8:opt_trace.mal"
+            "Tag" = "8:"
+            "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_D1EB751A6FC0411282BE1B7E59C98C46"
             {
             "SourcePath" = "8:share\\MonetDB\\python\\MonetSQLdb\\times.py"
@@ -4861,6 +5049,26 @@
             {
             "SourcePath" = "8:lib\\MonetDB5\\algebraExtensions.mal"
             "TargetName" = "8:algebraExtensions.mal"
+            "Tag" = "8:"
+            "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_D6D35BB94E694CF295F2B71D1C337143"
+            {
+            "SourcePath" = "8:Lib\\MonetDB5\\batxml.mal"
+            "TargetName" = "8:batxml.mal"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
             "Condition" = "8:"
@@ -5577,13 +5785,13 @@
         {
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:MonetDB5"
-        "ProductCode" = "8:{CA8933FF-70A7-45E3-83D3-AB98B3BF1A6C}"
-        "PackageCode" = "8:{36BD4DBE-490D-43DE-B32A-9256984971A0}"
+        "ProductCode" = "8:{B5ADBCB2-DCDD-4C8D-A3AA-3198D927F677}"
+        "PackageCode" = "8:{996B3B88-59C3-42FF-9504-09A01E1DF211}"
         "UpgradeCode" = "8:{730C595B-DBA6-48D7-94B8-A98780AC92B6}"
         "RestartWWWService" = "11:FALSE"
         "RemovePreviousVersions" = "11:TRUE"
         "DetectNewerInstalledVersion" = "11:TRUE"
-        "ProductVersion" = "8:7.10.10"
+        "ProductVersion" = "8:7.10.15"
         "Manufacturer" = "8:CWI"
         "ARPHELPTELEPHONE" = "8:"
         "ARPHELPLINK" = "8:http://monetdb.cwi.nl/"

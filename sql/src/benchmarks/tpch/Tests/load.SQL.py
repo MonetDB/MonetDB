@@ -23,7 +23,7 @@ f.close()
 CALL = SQL_CLIENT+" < load.sql"
 
 if os.name == "nt":
-    os.system("call Mlog.bat '%s'" % CALL)
+    os.system("call Mlog.bat %s" % CALL)
 else:
     os.system("Mlog '%s'" % CALL)
 os.system(CALL)
