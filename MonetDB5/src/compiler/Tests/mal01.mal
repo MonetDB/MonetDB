@@ -10,3 +10,5 @@ function tst903();
 end tst903;
 
 compiler.MALtoC("user","tst903","mal01");
+compiler.mcc("mal01");
+compiler.load("user","tst903","mal01");

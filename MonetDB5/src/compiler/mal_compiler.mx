@@ -103,12 +103,21 @@ module compiler;
 pattern MALtoC(mod:str, fcn:str, alias:str):void
 address MCdynamicCompiler
 comment "MAL to C compiler for functions";
+
+command load(mod:str, fcn:str, fname:str):void
+address MCloadFunction
+comment "Load a separately compiled function";
+
+command mcc(fname:str)
+address MCmcc
+comment "Compile the mal file");
 @{
 @h
 #ifndef _MAL_COMPILER_H_
 #define _MAL_COMPILER_H_
 #include "mal.h"
 #include "mal_client.h"
+#include "mal_linker.h"
 
 #define DEBUG_MAL_COMPILER
 
@@ -123,6 +132,7 @@ comment "MAL to C compiler for functions";
 #endif
 
 mal_compiler_export str MCdynamicCompiler(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+mal_compiler_export str MCloadFunction(int *ret, str *mod, str *fcn, str *fname);
 
 #endif /* _MAL_COMPILER_H_ */
 @-
@@ -199,9 +209,12 @@ static char *mccPrelude[] = {
 	"#define nil 0\n",	
 
 	"#define RNGnewRange_lng(X,Y,Z) ((*X)=true,*(Y)= *(Z), MAL_SUCCEED)\n",
-	"#define RNGnextElement_lng(X,Y,S,L) (*(Y) += *(S), *(X)< *(L), MAL_SUCCEED)\n",
+	"#define RNGnextElement_lng(X,Y,S,L) (*(Y) += *(S), *(X)= *(Y)< *(L), MAL_SUCCEED)\n",
 	"#define RNGnewRange_int(X,Y,Z) ((*X)=true,*(Y)= *(Z), MAL_SUCCEED)\n",
-	"#define RNGnextElement_int(X,Y,S,L) (*(Y) += *(S), *(X)< *(L), MAL_SUCCEED)\n",
+	"#define RNGnextElement_int(X,Y,S,L) (*(Y) += *(S), *(X)= *(Y)< *(L), MAL_SUCCEED)\n",
+
+	/* dummy to be removed later */
+	"#define CALCint2lng(X,Y)  ((*X)= *(Y), MAL_SUCCEED)\n",
 	0
 };
 void
@@ -259,6 +272,21 @@ mccType(stream *f, MalBlkPtr mb, int i)
 }
 
 void
+mccInitUse(stream *f, MalBlkPtr mb)
+{
+	int j;
+	InstrPtr p;
+
+	p = getInstrPtr(mb, 0);
+	if (p->argc > 0) {
+		for (j = 0; j < p->argc; j++) {
+			stream_printf(f, "\t(void)");
+			mccVar(f, mb, getArg(p, j));
+			stream_printf(f,";\n");
+		}
+	}
+}
+void
 mccInit(stream *f, MalBlkPtr mb)
 {
 	int i, j;
@@ -283,14 +311,23 @@ mccInit(stream *f, MalBlkPtr mb)
 void
 mccVariables(stream *f, MalBlkPtr mb)
 {
-	int i;
+	int i,j;
 	str tpe, v;
-	int seenstr=0;
+	int usedstr=0;
 	int seenbat=0;
+	InstrPtr p;
 
-	for (i = 1; i < mb->vtop; i++) {
+	for (i = 0; i < mb->stop; i++) {
+		p=getInstrPtr(mb,i);
+		for(j=0;j<p->retc; j++)
+		if(getVarType(mb,i)== TYPE_str){
+			printf("%d %d\n",i,j);
+		}
+	}
+
+	for (i = 1; i < mb->vtop; i++) 
+	if( !isTypeVar(mb,i)){
 		tpe = getTypeName(getVarType(mb, i));
-		seenstr += getVarType(mb,i)== TYPE_str;
 		seenbat += isaBatType(getVarType(mb,i));
 		v = getVarName(mb, i);
 		if (isTmpVar(mb, i))
@@ -315,9 +352,9 @@ mccVariables(stream *f, MalBlkPtr mb)
 	/* if( isTmpVar(mb,i) ) GDKfree(v); */
 	stream_printf(f, "\tstr Xmsg = MAL_SUCCEED;\n");
 	/* reserve space for backups */
-	if(seenbat || seenstr)
+	if(seenbat || usedstr)
     stream_printf(f,"\tBID *backup= (BID*) alloca(%d * sizeof(BID));\n",mb->maxarg);
-	if(seenstr)
+	if(usedstr)
     stream_printf(f,"\tchar **sbackup= (char **) alloca(%d * sizeof(char *));\n",mb->maxarg);
 
 }
@@ -389,14 +426,14 @@ void
 mccCall(stream *f, MalBlkPtr mb, InstrPtr p, int *catch, int *ctop){
 	int j;
 	if (p->blk && p->blk->binding) {
-		stream_printf(f, "\tif( Xmsg = ");
+		stream_printf(f, "\tif( (Xmsg = ");
 		stream_printf(f, "%s(", p->blk->binding);
 		mccArg(f, mb, getArg(p, 0));
 		for (j = 1; j < p->argc; j++) {
 			stream_printf(f, ",");
 			mccArg(f, mb, getArg(p, j));
 		}
-		stream_printf(f, ") )");
+		stream_printf(f, ")) )");
 		if (*ctop > 0)
 			stream_printf(f, " goto CATCH_%d;\n", catch[--*ctop]);
 		else
@@ -474,8 +511,14 @@ mccInstruction(stream *f, MalBlkPtr mb, InstrPtr p, int i, int *catch, int *ctop
 	int j;
 
 	mccSafeTarget(f,mb,p,catch,ctop);
-	if (p->barrier == EXITsymbol)
+	if (p->barrier == EXITsymbol){
 		stream_printf(f, "EXIT_%d: ;\n", i);
+		for (j = 0; j < p->retc; j++) {
+			stream_printf(f,"\t(void)");
+			mccVar(f,mb,getArg(p,j));
+			stream_printf(f,";\n");
+		}
+	}
 
 	if (p->barrier == CATCHsymbol) {
 		stream_printf(f, "CATCH_%d:\n", i);
@@ -571,14 +614,14 @@ mccJoinPath(stream *f, MalBlkPtr mb, InstrPtr p){
 void
 mccProject(stream *f, MalBlkPtr mb, InstrPtr p, int *catch, int *ctop){
 	int j;
-	stream_printf(f, "\tif( Xmsg = ALGprojectCstBody(");
+	stream_printf(f, "\tif( (Xmsg = ALGprojectCstBody(");
 	mccArg(f, mb, getArg(p, 0));
 	for (j = 1; j < p->argc; j++) {
 		stream_printf(f, ",");
 		mccArg(f, mb, getArg(p, j));
 	}
 	stream_printf(f,",%d",getArgType(mb,p,2));
-	stream_printf(f, ") )");
+	stream_printf(f, ")) )");
 	if (*ctop > 0)
 		stream_printf(f, " goto CATCH_%d;\n", catch[--*ctop]);
 	else
@@ -586,21 +629,23 @@ mccProject(stream *f, MalBlkPtr mb, InstrPtr p, int *catch, int *ctop){
 }
 void
 mccBATnew(stream *f, MalBlkPtr mb, InstrPtr p, int *catch, int *ctop){
-	stream_printf(f,"{\t");
-	stream_printf(f,"\tint ht=%d;\n",getVarType(mb,getArg(p,2)));
-	stream_printf(f,"\tint tt=%d;\n",getVarType(mb,getArg(p,3)));
+	stream_printf(f,"{");
+	stream_printf(f,"\tint ht=%d;\n",getVarType(mb,getArg(p,1)));
+	stream_printf(f,"\tint tt=%d;\n",getVarType(mb,getArg(p,2)));
 	if(p->argc==5){
-		stream_printf(f,"lng cap="); 
+		stream_printf(f,"\tlng cap="); 
 		mccVar(f,mb,getArg(p,4));
 		stream_printf(f,";\n");
-	} else stream_printf(f,"lng cap=0;\n");
-	stream_printf(f, "\tif( Xmsg = BKCnewBATlng(");
+	} else stream_printf(f,"\tlng cap=0;\n");
+	mccSafeTarget(f,mb,p,catch,ctop);
+	stream_printf(f, "\tif( (Xmsg = BKCnewBATlng(");
 	mccArg(f, mb, getArg(p, 0));
-	stream_printf(f, ", &ht, &tt, &cap) )");
+	stream_printf(f, ", &ht, &tt, &cap)) )");
 	if (*ctop > 0)
 		stream_printf(f, " goto CATCH_%d;\n", catch[--*ctop]);
 	else
 		stream_printf(f, " goto wrapup;\n");
+	mccRestoreTarget(f,mb,p,catch,ctop);
 	stream_printf(f,"}\n");
 }
 
@@ -687,6 +732,15 @@ mccExit(stream *f, MalBlkPtr mb)
 		mccVar(f,mb,i);
 		stream_printf(f,");\n");
 	}
+	/* handle all un-used variables 
+	for(i=0;i<mb->vtop; i++)
+	if( !isVarUsed(mb,i)){
+		stream_printf(f,"\t(void)");
+		mccVar(f,mb,i);
+		stream_printf(f,";\n");
+	}
+	*/
+	stream_printf(f,"\treturn Xmsg;\n");
 	stream_printf(f, "}\n");
 	(void) stream_close(f);
 }
@@ -709,6 +763,7 @@ mccGenerate(MalBlkPtr mb, str alias)
 		throw(IO, "optimizer.MCcompiler", "Could not access file");
 	mccInit(f, mb);
 	mccVariables(f, mb);
+	mccInitUse(f, mb);
 	mccBody(f, mb);
 	mccExit(f,mb);
 	codefile= strdup(buf);
@@ -761,7 +816,7 @@ MCdynamicCompiler(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	if( s){
 		t= findSymbolInModule(s,fcn);
 		if(t== 0)
-			throw(MAL,"mal_compiler","Could not find function");
+			throw(MAL,"compiler.MALtoC","Could not find function");
 		msg= mccGenerate(t->def,alias);
 	}
 #ifdef DEBUG_MAL_COMPILER
@@ -770,4 +825,33 @@ MCdynamicCompiler(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	return msg;
 }
 
+str 
+MCloadFunction(int *ret, str *mod, str *fcn, str *fname){
+	Module s;
+	Symbol t;
+	InstrPtr sig;
+	char buf[1024];
+
+	s = findModule(MCgetClient()->nspace, *mod);
+	if( s){
+		t= findSymbolInModule(s, *fcn);
+		if(t== 0)
+			throw(MAL,"compiler.load","Could not find function");
+		snprintf(buf,1024,"MCC%s_%s", *mod,*fcn);
+		sig=getInstrPtr(t->def,0);
+		sig->fcn = getAddress(*fname,*mod, buf,0);
+		if(sig->fcn)
+			sig->token= CMDcall;
+	}
+	(void) ret;
+	return MAL_SUCCEED;
+}
+str 
+MCmcc(int *ret, str *fname){
+	char buf[1024];
+	snprintf(buf,1024,"mcc %s",*fname);
+	system(buf);
+	(void) ret;
+	return MAL_SUCCEED;
+}
 @}
