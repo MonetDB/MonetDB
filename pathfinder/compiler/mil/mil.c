@@ -1255,6 +1255,20 @@ PFmil_mstring2 (const PFmil_t *a, const PFmil_t *b, const PFmil_t *c)
     return wire3 (m_mstring2, a, b, c);
 }
 
+/** Multiplexed startsWith() function `[startsWith](a,b)' */
+PFmil_t *
+PFmil_mstarts_with (const PFmil_t *a, const PFmil_t *b)
+{
+    return wire2 (m_mstarts_with, a, b);
+}
+
+/** Multiplexed endsWith() function `[endsWith](a,b)' */
+PFmil_t *
+PFmil_mends_with (const PFmil_t *a, const PFmil_t *b)
+{
+    return wire2 (m_mends_with, a, b);
+}
+
 PFmil_t *
 PFmil_bat (const PFmil_t *a)
 {

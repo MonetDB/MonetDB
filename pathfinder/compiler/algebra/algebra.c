@@ -943,18 +943,20 @@ char *
 PFalg_fun_str (PFalg_fun_t fun)
 {
     switch (fun) {
-        case alg_fun_num_add:      return "add";
-        case alg_fun_num_subtract: return "subtract";
-        case alg_fun_num_multiply: return "multiply";
-        case alg_fun_num_divide:   return "divide";
-        case alg_fun_num_modulo:   return "modulo";
-        case alg_fun_fn_abs:       return "fn:abs";
-        case alg_fun_fn_ceiling:   return "fn:ceiling";
-        case alg_fun_fn_floor:     return "fn:floor";
-        case alg_fun_fn_round:     return "fn:round";
-        case alg_fun_fn_concat:    return "fn:concat";
-        case alg_fun_fn_contains:  return "fn:contains";
-        case alg_fun_fn_number:    return "fn:number";
+        case alg_fun_num_add:         return "add";
+        case alg_fun_num_subtract:    return "subtract";
+        case alg_fun_num_multiply:    return "multiply";
+        case alg_fun_num_divide:      return "divide";
+        case alg_fun_num_modulo:      return "modulo";
+        case alg_fun_fn_abs:          return "fn:abs";
+        case alg_fun_fn_ceiling:      return "fn:ceiling";
+        case alg_fun_fn_floor:        return "fn:floor";
+        case alg_fun_fn_round:        return "fn:round";
+        case alg_fun_fn_concat:       return "fn:concat";
+        case alg_fun_fn_contains:     return "fn:contains";
+        case alg_fun_fn_starts_with:  return "fn:starts-with";
+        case alg_fun_fn_ends_with:    return "fn:ends-with";
+        case alg_fun_fn_number:       return "fn:number";
     }
     PFoops (OOPS_FATAL, "unknown algebraic function name (%i)", fun);
     return NULL;

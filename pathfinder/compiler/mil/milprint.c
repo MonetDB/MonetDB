@@ -117,6 +117,8 @@
                  | '[search](' expression ',' expression ')'<m_msearch>
                  | '[string](' expression ',' expression ')'<m_mstring>
                  | '[string](' exp ',' exp ',' exp ')'      <m_mstring2>
+                 | '[startsWith](' exp ',' exp ')'          <m_mstarts_with>
+                 | '[endsWith](' exp ',' exp ')'            <m_mends_with>
                  | '{count}(' expression ')'                <m_gcount>
                  | '{count}(' expression ',' expression ')' <m_egcount>
                  | '{avg}(' expression ')'                  <m_gavg>
@@ -280,6 +282,8 @@ static char *ID[] = {
     , [m_msearch]      = "[search]"
     , [m_mstring]      = "[string]"
     , [m_mstring2]     = "[string]"
+    , [m_mstarts_with] = "[startsWith]"
+    , [m_mends_with]   = "[endsWith]"
     , [m_isnil]        = "isnil"
     , [m_misnil]       = "[isnil]"
     , [m_usec]         = "usec"
@@ -847,6 +851,10 @@ print_expression (PFmil_t * n)
         case m_msearch:
         /* expression : '[string](' exp ',' exp)' */
         case m_mstring:
+        /* expression : '[startsWith](' exp ',' exp)' */
+        case m_mstarts_with:
+        /* expression : '[endsWith](' exp ',' exp)' */
+        case m_mends_with:
         /* expression : '+(' expression ',' expression ')' */
         case m_add:
         /* expression : '[+](' expression ',' expression ')' */

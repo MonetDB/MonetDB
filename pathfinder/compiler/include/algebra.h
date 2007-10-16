@@ -242,18 +242,20 @@ typedef struct PFalg_scj_spec_t PFalg_scj_spec_t;
 
 /** function representatives */
 enum PFalg_fun_t {
-      alg_fun_num_add      /**< arithmetic plus operator */
-    , alg_fun_num_subtract /**< arithmetic minus operator */
-    , alg_fun_num_multiply /**< arithmetic times operator */
-    , alg_fun_num_divide   /**< arithmetic divide operator */
-    , alg_fun_num_modulo   /**< arithmetic modulo operator */
-    , alg_fun_fn_abs       /**< fn:abs */
-    , alg_fun_fn_ceiling   /**< fn:ceiling */
-    , alg_fun_fn_floor     /**< fn:floor */
-    , alg_fun_fn_round     /**< fn:round */
-    , alg_fun_fn_concat    /**< fn:concat */
-    , alg_fun_fn_contains  /**< fn:contains */
-    , alg_fun_fn_number    /**< fn:number */
+      alg_fun_num_add         /**< arithmetic plus operator */
+    , alg_fun_num_subtract    /**< arithmetic minus operator */
+    , alg_fun_num_multiply    /**< arithmetic times operator */
+    , alg_fun_num_divide      /**< arithmetic divide operator */
+    , alg_fun_num_modulo      /**< arithmetic modulo operator */
+    , alg_fun_fn_abs          /**< fn:abs */
+    , alg_fun_fn_ceiling      /**< fn:ceiling */
+    , alg_fun_fn_floor        /**< fn:floor */
+    , alg_fun_fn_round        /**< fn:round */
+    , alg_fun_fn_concat       /**< fn:concat */
+    , alg_fun_fn_contains     /**< fn:contains */
+    , alg_fun_fn_starts_with  /**< fn:starts-with */
+    , alg_fun_fn_ends_with    /**< fn:ends-with */
+    , alg_fun_fn_number       /**< fn:number */
 };
 typedef enum PFalg_fun_t PFalg_fun_t;
 

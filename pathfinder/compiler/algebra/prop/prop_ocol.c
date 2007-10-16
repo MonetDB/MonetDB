@@ -330,6 +330,8 @@ infer_ocol (PFla_op_t *n)
                     break;
                     
                 case alg_fun_fn_contains:
+                case alg_fun_fn_starts_with:
+                case alg_fun_fn_ends_with:
                     assert (n->sem.fun_1to1.refs.count == 2);
                     /* make sure both attributes are of type string */
                     assert (ocol_at (L(n), ix[0]).type == aat_str &&

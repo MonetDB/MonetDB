@@ -3567,7 +3567,31 @@ reduce (PFpa_op_t * p, int goalnt)
                                               VAR (L(p)->env, att2, aat_str)),
                                           lit_int (-1)))));
                 }   break;
-            
+
+                case alg_fun_fn_starts_with:
+                case alg_fun_fn_ends_with:
+                {
+                    PFmil_t * (*op) (const PFmil_t *, const PFmil_t *) = NULL;
+                    PFalg_att_t         att1, att2;
+
+                    att1 = p->sem.fun_1to1.refs.atts[0];
+                    att2 = p->sem.fun_1to1.refs.atts[1];
+                    res_type = aat_bln;
+
+                    switch (p->sem.fun_1to1.kind) {
+                        case alg_fun_fn_starts_with:
+                            op = PFmil_mstarts_with; break;
+                        case alg_fun_fn_ends_with:
+                            op = PFmil_mends_with; break;
+                        default: break;
+                    }
+
+                    execute (
+                        assgn (var (res->name),
+                               op (VAR (L(p)->env, att1, aat_str),
+                                   VAR (L(p)->env, att2, aat_str))));
+                }   break;
+
                 case alg_fun_fn_number:
                 {
                     PFalg_att_t         att;

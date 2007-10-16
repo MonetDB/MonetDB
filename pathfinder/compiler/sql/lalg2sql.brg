@@ -2709,6 +2709,8 @@ reduce (PFla_op_t * p, int goalnt)
                     res_expr = cast_ (expr[0], ty[0], aat_dbl); break;
                 /**< fn:round */
                 case alg_fun_fn_round:
+                case alg_fun_fn_starts_with:
+                case alg_fun_fn_ends_with:
                     /* FIXME: implementation is missing */
 
                     assert (!"missing");

@@ -331,6 +331,12 @@
 /** Multiplexed string() function `[string](a,b,c)' */
 #define mstring2(a,b,c) PFmil_mstring2 ((a), (b), (c))
 
+/** Multiplexed startsWith() function `[startsWith](a,b)' */
+#define mstarts_with(a,b) PFmil_mstarts_with ((a), (b))
+
+/** Multiplexed endsWith() function `[endsWith](a,b)' */
+#define mends_with(a,b) PFmil_mends_with ((a), (b))
+
 /* staircase join variants (ancestor axis) */
 #define llscj_anc(a,b,c,d,e) \
     PFmil_llscj_anc ((a), (b), (c), (d), (e))

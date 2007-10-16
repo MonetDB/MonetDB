@@ -1080,13 +1080,15 @@ PFfun_xquery_fo (void)
         .arity = 2, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_opt (PFty_xs_string ()),
                                 PFty_opt (PFty_xs_string ()) },
-            .ret_ty = PFty_xs_boolean () } } }
+            .ret_ty = PFty_xs_boolean () } },
+        .alg = PFbui_fn_starts_with_opt_opt }
     , /* fn:ends-with (string?, string?) as boolean */
       { .ns = PFns_fn, .loc = "ends-with",
         .arity = 2, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_opt (PFty_xs_string ()),
                                 PFty_opt (PFty_xs_string ()) },
-            .ret_ty = PFty_xs_boolean () } } }
+            .ret_ty = PFty_xs_boolean () } },
+        .alg = PFbui_fn_ends_with_opt_opt }
     , /* fn:substring-before (string?, string?) as string */
       { .ns = PFns_fn, .loc = "substring-before",
         .arity = 2, .sig_count = 1, .sigs = { {
@@ -2141,74 +2143,74 @@ PFfun_xquery_fo (void)
     , /* tijah:queryall-id(string) as integer */
       { .ns = PFns_tijah, .loc = "queryall-id",
         .arity = 1, .sig_count = 1, .sigs = { {
-	     .par_ty = (PFty_t[]) { PFty_xs_string () },
+             .par_ty = (PFty_t[]) { PFty_xs_string () },
              .ret_ty = PFty_xs_integer () },
-	     } }
+             } }
     , /* tijah:queryall-id(string, node) as integer */
       { .ns = PFns_tijah, .loc = "queryall-id",
         .arity = 2, .sig_count = 1, .sigs = { {
-	     .par_ty = (PFty_t[]) { PFty_xs_string (),
-				    PFty_xs_anyNode () },
+             .par_ty = (PFty_t[]) { PFty_xs_string (),
+                                    PFty_xs_anyNode () },
              .ret_ty = PFty_xs_integer () },
-	     } }
+             } }
     , /* tijah:query-id(node*, string) as integer */
       { .ns = PFns_tijah, .loc = "query-id",
         .arity = 2, .sig_count = 1, .sigs = { {
-	     .par_ty = (PFty_t[]) { PFty_star (PFty_xs_anyNode ()),
+             .par_ty = (PFty_t[]) { PFty_star (PFty_xs_anyNode ()),
                                     PFty_xs_string ()},
              .ret_ty = PFty_xs_integer () },
-	     } }
+             } }
     , /* tijah:query-id(node*, string, node) as integer */
       { .ns = PFns_tijah, .loc = "query-id",
         .arity = 3, .sig_count = 1, .sigs = { {
-	     .par_ty = (PFty_t[]) { PFty_star (PFty_xs_anyNode ()),
+             .par_ty = (PFty_t[]) { PFty_star (PFty_xs_anyNode ()),
                                     PFty_xs_string (),
-	     			    PFty_xs_anyNode ()},
+                                         PFty_xs_anyNode ()},
              .ret_ty = PFty_xs_integer () },
-	     } }
+             } }
     , /* tijah:queryall(string) as node* */
       { .ns = PFns_tijah, .loc = "queryall",
         .arity = 1, .sig_count = 1, .sigs = { {
-	     .par_ty = (PFty_t[]) { PFty_xs_string () },
+             .par_ty = (PFty_t[]) { PFty_xs_string () },
              .ret_ty = PFty_star (PFty_xs_anyNode ()) },
-	     } }
+             } }
     , /* tijah:queryall(string, node) as node* */
       { .ns = PFns_tijah, .loc = "queryall",
         .arity = 2, .sig_count = 1, .sigs = { {
-	     .par_ty = (PFty_t[]) { PFty_xs_string (),
-				    PFty_xs_anyNode () },
+             .par_ty = (PFty_t[]) { PFty_xs_string (),
+                                    PFty_xs_anyNode () },
              .ret_ty = PFty_star (PFty_xs_anyNode ()) },
-	     } }
+             } }
     , /* tijah:query(node*, string) as node* */
       { .ns = PFns_tijah, .loc = "query",
         .arity = 2, .sig_count = 1, .sigs = { {
-	     .par_ty = (PFty_t[]) { PFty_star (PFty_xs_anyNode ()),
+             .par_ty = (PFty_t[]) { PFty_star (PFty_xs_anyNode ()),
                                     PFty_xs_string ()},
              .ret_ty = PFty_star (PFty_xs_anyNode ()) },
-	     } }
+             } }
     , /* tijah:query(node*, string, node) as node* */
       { .ns = PFns_tijah, .loc = "query",
         .arity = 3, .sig_count = 1, .sigs = { {
-	     .par_ty = (PFty_t[]) { PFty_star (PFty_xs_anyNode ()),
+             .par_ty = (PFty_t[]) { PFty_star (PFty_xs_anyNode ()),
                                     PFty_xs_string (),
-	     			    PFty_xs_anyNode ()},
+                                         PFty_xs_anyNode ()},
              .ret_ty = PFty_star (PFty_xs_anyNode ()) },
-	     } }
+             } }
     , /* tijah:nodes(integer) as node* */
       { .ns = PFns_tijah, .loc = "nodes",
         .arity = 1, .sig_count = 1, .sigs = { {
-	     .par_ty = (PFty_t[]) { PFty_xs_integer () },
+             .par_ty = (PFty_t[]) { PFty_xs_integer () },
              .ret_ty = PFty_star (PFty_xs_anyNode ()) } } }
     , /* tijah:score(integer, node) as double */
       { .ns = PFns_tijah, .loc = "score",
         .arity = 2, .sig_count = 1, .sigs = { {
-	     .par_ty = (PFty_t[]) { PFty_xs_integer (),
-	                            PFty_xs_anyNode () },
+             .par_ty = (PFty_t[]) { PFty_xs_integer (),
+                                    PFty_xs_anyNode () },
              .ret_ty = PFty_xs_double () } } }
     , /* tijah:tokenize(string?) as string */
       { .ns = PFns_tijah, .loc = "tokenize",
         .arity = 1, .sig_count = 1, .sigs = { {
-	     .par_ty = (PFty_t[]) { PFty_xs_string () },
+             .par_ty = (PFty_t[]) { PFty_xs_string () },
              .ret_ty = PFty_xs_string () } } }
     , /* tijah:resultsize(integer) as integer */
       { .ns = PFns_tijah, .loc = "resultsize",

@@ -1191,6 +1191,8 @@ PFla_fun_1to1 (const PFla_op_t *n,
             break;
             
         case alg_fun_fn_contains:
+        case alg_fun_fn_starts_with:
+        case alg_fun_fn_ends_with:
             assert (refs.count == 2);
             /* make sure both attributes are of type string */
             assert (n->schema.items[ix[0]].type == aat_str &&
@@ -1198,7 +1200,7 @@ PFla_fun_1to1 (const PFla_op_t *n,
 
             res_type = aat_bln;
             break;
-            
+
         case alg_fun_fn_number:
             assert (refs.count == 1);
             res_type = aat_dbl;
