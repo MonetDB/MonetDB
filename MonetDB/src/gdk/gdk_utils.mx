@@ -1185,7 +1185,12 @@ GDKreallocmax(void *blk, size_t size, size_t * maxsize, int emergency)
 	if (size <= GDK_mem_bigsize) {
 		size_t newsize = size + 8;
 
+		CHKMEM(newsize, 0);
 		blk = realloc(((char *) blk) - 8, newsize);
+		if (blk == NULL && emergency) {
+			GDKmemfail("GDKrealloc", newsize, BBPTRIM_ALL, 0);
+			blk = realloc(((char *) blk) - 8, newsize);
+		}
 		if (blk != NULL) {
 			/* place 8 bytes before it */
 			assert((((size_t) blk) & 4) == 0);
