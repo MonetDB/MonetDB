@@ -3,8 +3,8 @@
  *
  * Optimize relational algebra expression DAG
  * based on the icols property.
- * (This requires no burg pattern matching as we 
- *  apply optimizations in a peep-hole style on 
+ * (This requires no burg pattern matching as we
+ *  apply optimizations in a peep-hole style on
  *  single nodes only.)
  *
  * Copyright Notice:
@@ -65,7 +65,7 @@ static void
 opt_icol (PFla_op_t *p)
 {
     bool bottom_up = true;
-    
+
     assert (p);
 
     /* rewrite each node only once */
@@ -83,7 +83,7 @@ opt_icol (PFla_op_t *p)
         default:
             break;
     }
-    
+
     if (bottom_up)
         /* apply icol optimization for children */
         for (unsigned int i = 0; i < PFLA_OP_MAXCHILD && p->child[i]; i++)
@@ -161,7 +161,7 @@ opt_icol (PFla_op_t *p)
                 /* create new schema */
                 PFalg_schema_t schema;
                 schema.count = count;
-                schema.items = PFmalloc (schema.count * 
+                schema.items = PFmalloc (schema.count *
                                          sizeof (*(schema.items)));
                 count = 0;
                 /* throw out all columns that are not in the icols list */
@@ -177,7 +177,7 @@ opt_icol (PFla_op_t *p)
                 /* prune everything except one column */
                 PFalg_schema_t schema;
                 schema.count = 1;
-                schema.items = PFmalloc (schema.count * 
+                schema.items = PFmalloc (schema.count *
                                          sizeof (*(schema.items)));
                 /* just use first column */
                 schema.items[0] = p->schema.items[0];
@@ -213,7 +213,7 @@ opt_icol (PFla_op_t *p)
                         proj[count++] = p->sem.proj.items[j];
 
                 /* Ensure that at least one column remains!
-                   Because the projection list may reference 
+                   Because the projection list may reference
                    only columns that are discarded because of
                    the icols property, a new projection
                    mapping arbitrary columns is generated */
@@ -305,8 +305,8 @@ opt_icol (PFla_op_t *p)
             break;
 
         case la_avg:
-	case la_max:
-	case la_min:
+        case la_max:
+        case la_min:
         case la_sum:
         case la_count:
         case la_seqty1:
@@ -442,7 +442,7 @@ opt_icol (PFla_op_t *p)
                 !PFprop_icol (RL(p)->prop, RL(p)->sem.iter_item.item))
                 *p = *PFla_dummy (L(p));
             break;
-            
+
         case la_rec_arg:
             /* optimize the seeds */
             opt_icol (L(p));
@@ -462,16 +462,16 @@ opt_icol (PFla_op_t *p)
 
                 p->sem.rec_arg.base->schema = schema;
             }
-            
+
             /* optimize the recursion body */
             opt_icol (R(p));
 
             /* If the both inputs to the recursion (seed and recursive call)
                contain different columns the schema of the recursive call has
                to be adjusted. A projection based on the schema of the seeds
-               does the job. 
+               does the job.
                We can assume that both inputs to the rec_arg operator already
-               use the same column names -- the initial translation and the 
+               use the same column names -- the initial translation and the
                name mappings both maintain this naming. */
             if (L(p)->schema.count != R(p)->schema.count) {
                 PFalg_proj_t *proj;
@@ -485,7 +485,7 @@ opt_icol (PFla_op_t *p)
                 R(p) = PFla_project_ (R(p), L(p)->schema.count, proj);
             }
             break;
-            
+
         default:
             break;
     }

@@ -203,7 +203,7 @@ plan_serialize (const PFla_op_t *n)
     PFplanlist_t *ret    = new_planlist ();
     PFplanlist_t *sorted = new_planlist ();
 
-    assert (n); assert (n->kind == la_serialize);
+    assert (n); assert (n->kind == la_serialize_seq);
     assert (L(n)); assert (L(n)->plans);
     assert (R(n)); assert (R(n)->plans);
 
@@ -212,7 +212,7 @@ plan_serialize (const PFla_op_t *n)
         add_plans (sorted,
                    ensure_ordering (
                        *(plan_t **) PFarray_at (R(n)->plans, i),
-                       sortby (n->sem.serialize.pos)));
+                       sortby (n->sem.ser_seq.pos)));
 
     /* throw out those plans that are too expensive */
     sorted = prune_plans (sorted);
@@ -224,7 +224,7 @@ plan_serialize (const PFla_op_t *n)
                       serialize (
                           *(plan_t **) PFarray_at (L(n)->plans, j),
                           *(plan_t **) PFarray_at (sorted, i),
-                          n->sem.serialize.item));
+                          n->sem.ser_seq.item));
 
     return ret;
 }
@@ -484,7 +484,7 @@ plan_semijoin (const PFla_op_t *n)
     /* combine each plan in R with each plan in S */
     for (unsigned int r = 0; r < PFarray_last (L(n)->plans); r++)
         for (unsigned int s = 0; s < PFarray_last (R(n)->plans); s++) {
-            add_plan (ret, 
+            add_plan (ret,
                       semijoin (n->sem.eqjoin.att1,
                                 n->sem.eqjoin.att2,
                                 *(plan_t **) PFarray_at (L(n)->plans, r),
@@ -501,7 +501,7 @@ static PFplanlist_t *
 plan_thetajoin (const PFla_op_t *n)
 {
     PFplanlist_t  *ret = new_planlist ();
-    
+
     PFalg_simple_type_t cur_type;
 
     assert (n); assert (n->kind == la_thetajoin);
@@ -511,7 +511,7 @@ plan_thetajoin (const PFla_op_t *n)
     /* combine each plan in R with each plan in S */
     for (unsigned int r = 0; r < PFarray_last (L(n)->plans); r++)
         for (unsigned int s = 0; s < PFarray_last (R(n)->plans); s++) {
-            add_plan (ret, 
+            add_plan (ret,
                       thetajoin (*(plan_t **) PFarray_at (L(n)->plans, r),
                                  *(plan_t **) PFarray_at (R(n)->plans, s),
                                  n->sem.thetajoin.count,
@@ -529,7 +529,7 @@ plan_thetajoin (const PFla_op_t *n)
         /* combine each plan in R with each plan in S */
         for (unsigned int r = 0; r < PFarray_last (L(n)->plans); r++)
             for (unsigned int s = 0; s < PFarray_last (R(n)->plans); s++)
-                join_worker (ret, 
+                join_worker (ret,
                              n->sem.thetajoin.pred[0].left,
                              n->sem.thetajoin.pred[0].right,
                              *(plan_t **) PFarray_at (L(n)->plans, r),
@@ -560,7 +560,7 @@ plan_dep_unique_thetajoin (const PFla_op_t *n)
     assert (L(n)->schema.count == 1);
     assert (LL(n)->sem.thetajoin.count == 2);
     assert (LL(n)->sem.thetajoin.pred[0].comp == alg_comp_eq);
-    assert (L(n)->sem.proj.items[0].old == 
+    assert (L(n)->sem.proj.items[0].old ==
             LL(n)->sem.thetajoin.pred[0].left ||
             L(n)->sem.proj.items[0].old ==
             LL(n)->sem.thetajoin.pred[0].right);
@@ -571,33 +571,33 @@ plan_dep_unique_thetajoin (const PFla_op_t *n)
         type_of (LL(n)->schema,
                  LL(n)->sem.thetajoin.pred[0].right) != aat_nat)
         return ret;
-   
+
     if ((cur_type = type_of (LL(n)->schema,
-                             LL(n)->sem.thetajoin.pred[1].left)) != 
+                             LL(n)->sem.thetajoin.pred[1].left)) !=
         type_of (LL(n)->schema,
                  LL(n)->sem.thetajoin.pred[1].right) ||
         !monomorphic (cur_type) ||
         cur_type & aat_node)
         return ret;
-            
+
     /* make sure the left input is sorted by the left sort criterion */
     for (unsigned int i = 0; i < PFarray_last (L(LL(n))->plans); i++)
         add_plans (lsorted,
                    ensure_ordering (
                        *(plan_t **) PFarray_at (L(LL(n))->plans, i),
                        sortby (LL(n)->sem.thetajoin.pred[0].left)));
-        
+
     /* make sure the right input is sorted by the right sort criterion */
     for (unsigned int i = 0; i < PFarray_last (R(LL(n))->plans); i++)
         add_plans (rsorted,
                    ensure_ordering (
                        *(plan_t **) PFarray_at (R(LL(n))->plans, i),
                        sortby (LL(n)->sem.thetajoin.pred[0].right)));
-    
+
     /* combine each plan in R with each plan in S */
     for (unsigned int l = 0; l < PFarray_last (lsorted); l++)
         for (unsigned int r = 0; r < PFarray_last (rsorted); r++) {
-            add_plan (ret, 
+            add_plan (ret,
                       /* add the renaming projection afterwards */
                       project (
                           unq1_tjoin (
@@ -655,18 +655,18 @@ plan_unique_thetajoin (const PFla_op_t *n)
     if (type_of (LL(n)->schema, ldist) != aat_nat ||
         type_of (LL(n)->schema, rdist) != aat_nat)
         return ret;
-        
+
     if ((cur_type = type_of (LL(n)->schema,
-                             LL(n)->sem.thetajoin.pred[0].left)) != 
+                             LL(n)->sem.thetajoin.pred[0].left)) !=
         type_of (LL(n)->schema,
                  LL(n)->sem.thetajoin.pred[0].right) ||
         !monomorphic (cur_type) ||
         cur_type & aat_node)
         return ret;
-            
+
     for (unsigned int l = 0; l < PFarray_last (L(LL(n))->plans); l++)
         for (unsigned int r = 0; r < PFarray_last (R(LL(n))->plans); r++) {
-            add_plan (ret, 
+            add_plan (ret,
                       /* add the renaming projection afterwards */
                       project (
                           unq2_tjoin (
@@ -683,10 +683,10 @@ plan_unique_thetajoin (const PFla_op_t *n)
                               *(plan_t **) PFarray_at (R(LL(n))->plans, r)),
                           2,
                           L(n)->sem.proj.items));
-            
+
             /* for an equi-join we can also plan with switched sides */
             if (LL(n)->sem.thetajoin.pred[0].comp == alg_comp_eq)
-                add_plan (ret, 
+                add_plan (ret,
                           /* add the renaming projection afterwards */
                           project (
                               unq2_tjoin (
@@ -769,8 +769,8 @@ plan_pos_select (const PFla_op_t *n)
 {
     PFalg_att_t      att,
                      used_cols     = 0,
-                     num,          
-                     cast;         
+                     num,
+                     cast;
     PFplanlist_t    *ret           = new_planlist (),
                     *sorted        = new_planlist ();
     PFord_ordering_t ord_asc,
@@ -796,15 +796,15 @@ plan_pos_select (const PFla_op_t *n)
     }
 
     switch_order = n->sem.pos_sel.pos < 0;
-    
+
     /* then we refine by all the attributes in the sortby parameter */
     for (unsigned int i = 0;
          i < PFord_count (n->sem.pos_sel.sortby);
          i++) {
         att = PFord_order_col_at (n->sem.pos_sel.sortby, i);
         dir = PFord_order_dir_at (n->sem.pos_sel.sortby, i);
-        dir = switch_order ? !dir : dir; 
-        
+        dir = switch_order ? !dir : dir;
+
         ord_asc     = PFord_refine (ord_asc, att, dir);
         ord_desc    = PFord_refine (ord_desc, att, dir);
         ord_wo_part = PFord_refine (ord_wo_part, att, dir);
@@ -833,12 +833,12 @@ plan_pos_select (const PFla_op_t *n)
     num = PFalg_ori_name (PFalg_unq_name (att_pos, 0), ~used_cols);
     used_cols |= num;
     cast = PFalg_ori_name (PFalg_unq_name (att_pos, 0), ~used_cols);
-    
+
     for (unsigned int i = 0; i < count; i++)
         proj[i] = PFalg_proj (n->schema.items[i].name,
                               n->schema.items[i].name);
-    
-    /* for each remaining plan, generate a MergeRowNumber 
+
+    /* for each remaining plan, generate a MergeRowNumber
        and a value selection operator */
     for (unsigned int i = 0; i < PFarray_last (sorted); i++)
         add_plan (ret,
@@ -906,7 +906,7 @@ plan_disjunion (const PFla_op_t *n)
             for (unsigned int i = 0; i < PFord_set_count (common); i++) {
                 /* make sure that merged_union is only called for
                    ascending orders */
-                if (PFord_order_dir_at (PFord_set_at (common, i), 0) 
+                if (PFord_order_dir_at (PFord_set_at (common, i), 0)
                     != DIR_ASC)
                     continue;
 
@@ -2314,7 +2314,7 @@ clean_up_body_plans_worker (PFla_op_t *n, PFarray_t *bases)
             if (code)
                 return 2 /* constructor appeared - bail out */;
             break;
-            
+
         /* do not delete the plans along the fragments */
         case la_frag_union:
             return 0 /* keep plans */;
@@ -2348,7 +2348,7 @@ clean_up_body_plans_worker (PFla_op_t *n, PFarray_t *bases)
  *
  * If one such operator is a constructor the clean up has to fail
  * (see also return value) as otherwise the recursion may refer
- * to a different constructor as the fragment information 
+ * to a different constructor as the fragment information
  * (the cheapest overall recursion plan vs. the last plan).
  */
 static bool
@@ -2372,7 +2372,7 @@ clean_up_body_plans (PFla_op_t *n)
     /* clean up the plans */
     while (cur->kind != la_nil) {
         code = clean_up_body_plans_worker (LR(cur), bases);
-        
+
         /* if a constructor was detected we can stop processing now. */
         if (code == 2)
             return false; /* constructor appeared - bail out */
@@ -2382,7 +2382,7 @@ clean_up_body_plans (PFla_op_t *n)
     }
     code = clean_up_body_plans_worker (R(n), bases);
     assert (code);
-    
+
     return code != 2;
 }
 
@@ -2413,14 +2413,14 @@ ensure_ordering (const plan_t *unordered, PFord_ordering_t required)
     PFord_ordering_t best_order = PFordering ();
 
     /*
-     * If the output does not need to be sorted 
+     * If the output does not need to be sorted
      * just return the unordered input.
      */
     if (PFord_implies (best_order, required)) {
         add_plan (ret, unordered);
         return ret;
     }
-    
+
     /*
      * See if we can benefit from some existing sorting
      */
@@ -2433,8 +2433,8 @@ ensure_ordering (const plan_t *unordered, PFord_ordering_t required)
         /* collect the common prefix of required and existing ordering */
         for (unsigned int k = 0;
              k < PFord_count (required) && k < PFord_count (existing)
-             && PFord_order_col_at (required, k) 
-             == PFord_order_col_at (existing, k) 
+             && PFord_order_col_at (required, k)
+             == PFord_order_col_at (existing, k)
              && PFord_order_dir_at (required, k)
              == PFord_order_dir_at (existing, k);
              k++)
@@ -2630,7 +2630,7 @@ plan_subexpression (PFla_op_t *n)
 
     /* Compute possible plans. */
     switch (n->kind) {
-        case la_serialize:      plans = plan_serialize (n);    break;
+        case la_serialize_seq:  plans = plan_serialize (n);    break;
 
         case la_lit_tbl:        plans = plan_lit_tbl (n);      break;
         case la_empty_tbl:      plans = plan_empty_tbl (n);    break;
@@ -2641,8 +2641,8 @@ plan_subexpression (PFla_op_t *n)
         case la_thetajoin:      plans = plan_thetajoin (n);    break;
         case la_project:
             plans = plan_project (n);
-                                
-            /* in addition try to implement the combination 
+
+            /* in addition try to implement the combination
                of thetajoin and distinct more efficiently */
             if (L(n)->kind == la_thetajoin &&
                 PFprop_set (n->prop)) {
@@ -2651,7 +2651,7 @@ plan_subexpression (PFla_op_t *n)
                 if (n->schema.count == 1 &&
                     L(n)->sem.thetajoin.count == 2 &&
                     L(n)->sem.thetajoin.pred[0].comp == alg_comp_eq &&
-                    (n->sem.proj.items[0].old == 
+                    (n->sem.proj.items[0].old ==
                      L(n)->sem.thetajoin.pred[0].left ||
                      n->sem.proj.items[0].old ==
                      L(n)->sem.thetajoin.pred[0].right)) {
@@ -2679,8 +2679,8 @@ plan_subexpression (PFla_op_t *n)
         case la_difference:     plans = plan_difference (n);   break;
         case la_distinct:
             plans = plan_distinct (n);
-                                
-            /* in addition try to implement the combination 
+
+            /* in addition try to implement the combination
                of thetajoin and distinct more efficiently */
             if (L(n)->kind == la_project &&
                 LL(n)->kind == la_thetajoin) {
@@ -2689,7 +2689,7 @@ plan_subexpression (PFla_op_t *n)
                 if (n->schema.count == 1 &&
                     LL(n)->sem.thetajoin.count == 2 &&
                     LL(n)->sem.thetajoin.pred[0].comp == alg_comp_eq &&
-                    (L(n)->sem.proj.items[0].old == 
+                    (L(n)->sem.proj.items[0].old ==
                      LL(n)->sem.thetajoin.pred[0].left ||
                      L(n)->sem.proj.items[0].old ==
                      LL(n)->sem.thetajoin.pred[0].right)) {
@@ -2763,7 +2763,7 @@ plan_subexpression (PFla_op_t *n)
         case la_trace:          plans = plan_trace (n);        break;
         case la_trace_msg:      plans = plan_trace_msg (n);    break;
         case la_trace_map:      plans = plan_trace_map (n);    break;
-                                
+
         case la_rec_fix:
         {
             PFla_op_t       *rec_arg, *cur;
@@ -2830,7 +2830,7 @@ plan_subexpression (PFla_op_t *n)
                 add_plans (rec_list, plan_recursion (n, ord));
 
                 /* Reset all the plans in the body.
-                   If a constructor appears in the body the clean up 
+                   If a constructor appears in the body the clean up
                    fails and we have to stop generating new plans and
                    use the current (first) plan */
                 if (!clean_up_body_plans (n))
@@ -2866,7 +2866,7 @@ plan_subexpression (PFla_op_t *n)
     assert (PFarray_last (plans) > 0);
 
     /* Introduce some more orders (on iter columns of length 1 or 2)
-       in the hope to share more sort operations. */ 
+       in the hope to share more sort operations. */
     switch (n->kind) {
         case la_element:
         case la_attribute:
@@ -2882,7 +2882,7 @@ plan_subexpression (PFla_op_t *n)
         case la_trace_msg:
         case la_trace_map:
             break;
-            
+
         default:
         {
             PFord_ordering_t ord = PFordering ();
@@ -2897,7 +2897,7 @@ plan_subexpression (PFla_op_t *n)
                     PFalg_unq_name (att_iter, 0))
                     ord = PFord_refine (ord, p->schema.items[i].name, DIR_ASC);
 
-            /* collect all possible orderings of length 1 and 2 */       
+            /* collect all possible orderings of length 1 and 2 */
             for (unsigned int i = 0; i < PFord_count (ord); i++) {
                 PFord_ordering_t  ordering = PFordering ();
 
@@ -2905,7 +2905,7 @@ plan_subexpression (PFla_op_t *n)
                                          PFord_order_col_at (ord, i),
                                          DIR_ASC);
                 PFord_set_add (orderings, ordering);
-                
+
                 for (unsigned int j = 0; j < PFord_count (ord); j++)
                     if (j != i)
                         PFord_set_add (orderings,
@@ -2926,7 +2926,7 @@ plan_subexpression (PFla_op_t *n)
             }
         }
     }
-        
+
     /* Prune un-interesting plans. */
     plans = prune_plans (plans);
 

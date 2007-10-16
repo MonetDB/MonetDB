@@ -85,10 +85,10 @@ common_super_dom (const PFprop_t *prop, dom_t dom1, dom_t dom2)
     /* check trivial case of identity */
     if (dom1 == dom2)
         return dom1;
-    
+
     /* collect all the super domains for each input */
-    
-    /* start with the input domains as seed */    
+
+    /* start with the input domains as seed */
     domains1 = PFarray (sizeof (dom_t));
     *(dom_t *) PFarray_add (domains1) = dom1;
     domains2 = PFarray (sizeof (dom_t));
@@ -97,7 +97,7 @@ common_super_dom (const PFprop_t *prop, dom_t dom1, dom_t dom2)
     for (unsigned int i = PFarray_last (prop->subdoms); i > 0; i--) {
         subdom = ((subdom_t *) PFarray_at (prop->subdoms, i-1))->subdom;
         dom = ((subdom_t *) PFarray_at (prop->subdoms, i-1))->dom;
-        
+
         insert = false;
         duplicate = false;
         for (unsigned int j = 0; j < PFarray_last (domains1); j++) {
@@ -122,7 +122,7 @@ common_super_dom (const PFprop_t *prop, dom_t dom1, dom_t dom2)
         if (insert && !duplicate)
             *(dom_t *) PFarray_add (domains2) = dom;
     }
-    
+
     /* intersect both domain lists */
     merge_doms = PFarray (sizeof (dom_t));
     for (unsigned int i = 0; i < PFarray_last (domains1); i++) {
@@ -132,17 +132,17 @@ common_super_dom (const PFprop_t *prop, dom_t dom1, dom_t dom2)
             if (dom1 == dom2) *(dom_t *) PFarray_add (merge_doms) = dom1;
         }
     }
-        
+
     /* no common super domain exists */
     if (!PFarray_last (merge_doms))
         return 0;
-    
+
     dom1 = *(dom_t *) PFarray_at (merge_doms, 0);
-    
+
     /* trivial case -- only one common domain */
     if (PFarray_last (merge_doms) == 1)
         return dom1;
-    
+
     /* find the leaf node (of the domain tree) */
     for (unsigned int i = 1; i < PFarray_last (merge_doms); i++) {
         dom2 = *(dom_t *) PFarray_at (merge_doms, i);
@@ -253,8 +253,12 @@ static unsigned int
 infer_dom (PFla_op_t *n, unsigned int id)
 {
     switch (n->kind) {
-        case la_serialize:
+        case la_serialize_seq:
             bulk_add_dom (n->prop, R(n));
+            break;
+
+        case la_serialize_rel:
+            bulk_add_dom (n->prop, L(n));
             break;
 
         case la_lit_tbl:
@@ -317,7 +321,7 @@ infer_dom (PFla_op_t *n, unsigned int id)
                                          n->sem.eqjoin.att2);
             dom_t join_dom;
             dom_t cur_dom;
-            
+
             if (att1_dom == att2_dom)
                 join_dom = att1_dom;
             else if (PFprop_subdom (n->prop, att1_dom, att2_dom))
@@ -448,7 +452,7 @@ infer_dom (PFla_op_t *n, unsigned int id)
                              n->sem.thetajoin.pred[i].right,
                              join_dom);
                 }
-            
+
             /* copy domains and update domains of join arguments */
             for (unsigned int i = 0; i < L(n)->schema.count; i++)
                 if (L(n)->schema.items[i].type == aat_nat) {
@@ -489,7 +493,7 @@ infer_dom (PFla_op_t *n, unsigned int id)
                 }
 
         }   break;
-            
+
         case la_project:
             /* bind all existing domains to the possibly new names */
             for (unsigned int i = 0; i < n->schema.count; i++)
@@ -648,7 +652,7 @@ infer_dom (PFla_op_t *n, unsigned int id)
             break;
 
         case la_to:
-            if (n->sem.to.part) { 
+            if (n->sem.to.part) {
                 PFalg_simple_type_t join_ty = 0;
                 /* find the partition type */
                 for (unsigned int i = 0; i < n->schema.count; i++)
@@ -724,12 +728,15 @@ infer_dom (PFla_op_t *n, unsigned int id)
                 }
             break;
 
-        case la_id:
-        case la_idref:
-            /* create new subdomain for attribute iter */
-            add_subdom (n->prop, PFprop_dom (R(n)->prop,
-                                             n->sem.id.iter), id);
-            add_dom (n->prop, n->sem.id.iter, id++);
+        case la_doc_index_join:
+            for (unsigned int i = 0; i < R(n)->schema.count; i++)
+                if (R(n)->schema.items[i].type == aat_nat) {
+                    add_subdom (n->prop,
+                                PFprop_dom (R(n)->prop,
+                                            R(n)->schema.items[i].name),
+                                id);
+                    add_dom (n->prop, R(n)->schema.items[i].name, id++);
+                }
             break;
 
         case la_doc_tbl:
@@ -752,7 +759,7 @@ infer_dom (PFla_op_t *n, unsigned int id)
                              PFprop_dom (L(n)->prop,
                                          L(n)->sem.docnode.iter));
                     break;
-                    
+
                 case la_element:
                 case la_textnode:
                 case la_comment:
@@ -761,7 +768,7 @@ infer_dom (PFla_op_t *n, unsigned int id)
                              PFprop_dom (L(n)->prop,
                                          L(n)->sem.iter_item.iter));
                     break;
-                    
+
                 case la_attribute:
                 case la_processi:
                     add_dom (n->prop,
@@ -769,19 +776,19 @@ infer_dom (PFla_op_t *n, unsigned int id)
                              PFprop_dom (L(n)->prop,
                                          L(n)->sem.iter_item1_item2.iter));
                     break;
-                    
+
                 case la_content:
                     add_dom (n->prop,
                              n->sem.iter_item.iter,
                              PFprop_dom (L(n)->prop,
                                          L(n)->sem.iter_pos_item.iter));
                     break;
-                    
+
                 default:
                     break;
             }
             break;
-            
+
         case la_fcns:
             break;
 
@@ -849,7 +856,7 @@ infer_dom (PFla_op_t *n, unsigned int id)
         case la_trace_map:
             /* we have no properties */
             break;
-            
+
         case la_rec_fix:
             /* get the domains of the overall result */
             bulk_add_dom (n->prop, R(n));
@@ -886,7 +893,7 @@ infer_dom (PFla_op_t *n, unsigned int id)
             PFoops (OOPS_FATAL,
                     "clone column aware cross product operator is "
                     "only allowed inside mvd optimization!");
-            
+
         case la_dummy:
             bulk_add_dom (n->prop, L(n));
             break;

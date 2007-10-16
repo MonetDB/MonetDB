@@ -72,7 +72,7 @@ PFprop_set (const PFprop_t *prop)
 static void
 prop_infer_set (PFla_op_t *n, bool set)
 {
-    bool l_set = false, 
+    bool l_set = false,
          r_set = false;
 
     assert (n);
@@ -89,12 +89,30 @@ prop_infer_set (PFla_op_t *n, bool set)
 
     /* infer set property for children */
     switch (n->kind) {
-        case la_serialize:
+        case la_serialize_seq:
         case la_trace:
         case la_trace_msg:
         case la_trace_map:
             l_set = false;
             r_set = false;
+            break;
+
+        case la_serialize_rel:
+        case la_pos_select:
+        case la_to:
+        case la_avg:
+        case la_sum:
+        case la_count:
+        case la_rownum:
+        case la_rank:
+        case la_number:
+        case la_twig:
+        case la_docnode:
+        case la_attribute:
+        case la_textnode:
+        case la_comment:
+        case la_processi:
+            l_set = false;
             break;
 
         case la_lit_tbl:
@@ -128,23 +146,6 @@ prop_infer_set (PFla_op_t *n, bool set)
             r_set = n->prop->set;
             break;
 
-        case la_pos_select:
-        case la_to:
-        case la_avg:
-        case la_sum:
-        case la_count:
-        case la_rownum:
-        case la_rank:
-        case la_number:
-        case la_twig:
-        case la_docnode:
-        case la_attribute:
-        case la_textnode:
-        case la_comment:
-        case la_processi:
-            l_set = false;
-            break;
-
         case la_intersect:
             l_set = true;
             r_set = true;
@@ -157,8 +158,8 @@ prop_infer_set (PFla_op_t *n, bool set)
             break;
 
         case la_distinct:
-	case la_max:
-	case la_min:
+        case la_max:
+        case la_min:
         case la_seqty1:
         case la_all:
             l_set = true;
@@ -166,14 +167,13 @@ prop_infer_set (PFla_op_t *n, bool set)
 
         case la_step:
         case la_guide_step:
-        case la_id:
-        case la_idref:
             l_set = false;
             r_set = true;
             break;
 
         case la_step_join:
         case la_guide_step_join:
+        case la_doc_index_join:
             l_set = false;
             r_set = n->prop->set;
             break;
@@ -215,7 +215,7 @@ prop_infer_set (PFla_op_t *n, bool set)
             prop_infer_set (L(n->sem.proxy.base1),
                             n->sem.proxy.base1->prop->set);
             return;
-            
+
         case la_proxy_base:
             /* avoid the inference as the proxy node
                may overwrite the property after traversal */
@@ -232,7 +232,7 @@ prop_infer_set (PFla_op_t *n, bool set)
             r_set = false;
         case la_rec_base:
             break;
-            
+
         case la_dummy:
             l_set = n->prop->set;
             break;
@@ -271,7 +271,7 @@ prop_infer (PFla_op_t *n)
 }
 
 /**
- * Infer set property (duplicates can be thrown away) 
+ * Infer set property (duplicates can be thrown away)
  * for a DAG rooted in @a root
  */
 void

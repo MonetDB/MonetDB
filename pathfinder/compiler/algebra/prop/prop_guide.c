@@ -94,7 +94,7 @@ static void copyLR(PFla_op_t *n);
 /* add a PFguide_mapping_t to a @guide_mapping_list  if the @a column
  * do not exist, otherwise it will be added only @a guide in the
  * corresponding PFguide_mapping_t in @guide_mapping_list */
-static PFarray_t* add_guide(PFarray_t *guide_mapping_list, 
+static PFarray_t* add_guide(PFarray_t *guide_mapping_list,
         PFguide_tree_t  *guide, PFalg_att_t column);
 
 /* initialize the guide property in @a n */
@@ -161,7 +161,7 @@ copy_guide_mapping(PFguide_mapping_t *guide_mapping)
     /* PFguide_tree_t elements to be copied */
     PFguide_tree_t *guide_tree_element = NULL;
     /* Create new PFguide_mapping_t */
-    PFguide_mapping_t *new_guide_mapping = (PFguide_mapping_t*) 
+    PFguide_mapping_t *new_guide_mapping = (PFguide_mapping_t*)
             PFmalloc(sizeof(PFguide_mapping_t));
 
     /* initialize new PF_guide_mapping element */
@@ -175,7 +175,7 @@ copy_guide_mapping(PFguide_mapping_t *guide_mapping)
         guide_tree_element = *((PFguide_tree_t**)
                 PFarray_at(guide_mapping->guide_list, i));
 
-        *((PFguide_tree_t**) PFarray_add(new_guide_mapping->guide_list)) = 
+        *((PFguide_tree_t**) PFarray_add(new_guide_mapping->guide_list)) =
                 guide_tree_element;
     }
 
@@ -194,14 +194,14 @@ deep_copy_guide_mapping_list(PFarray_t *guide_mapping_list)
     /* PFguide_mapping_t elements to copy */
     PFguide_mapping_t *guide_mapping_element = NULL;
 
-    /* make a copy of all PFguide_mapping_t elements of the 
+    /* make a copy of all PFguide_mapping_t elements of the
      * guide_mapping_list */
     for(unsigned int i = 0; i < PFarray_last(guide_mapping_list); i++) {
         guide_mapping_element = *((PFguide_mapping_t**)
                 (PFarray_at(guide_mapping_list, i)));
 
-        *((PFguide_mapping_t**)PFarray_add(new_guide_mapping_list)) = 
-                copy_guide_mapping(guide_mapping_element); 
+        *((PFguide_mapping_t**)PFarray_add(new_guide_mapping_list)) =
+                copy_guide_mapping(guide_mapping_element);
     }
 
     return new_guide_mapping_list;
@@ -299,7 +299,7 @@ getDescendantFromGuideRec(PFguide_tree_t *n, PFty_t type,
     for(unsigned int i = 0; i < PFarray_last(childs); i++) {
         element = *((PFguide_tree_t**) PFarray_at(childs, i));
         /* get recursive all descendant element */
-        getDescendantFromGuideRec(element, type, descendant); 
+        getDescendantFromGuideRec(element, type, descendant);
         /* add element if it is a subtype of @a type*/
         if(PFty_subtype(create_PFty_t(element),type)) {
             *((PFguide_tree_t**) PFarray_add(descendant)) = element;
@@ -595,12 +595,12 @@ copy_step(PFla_op_t *n)
      * the guides will be emty */
     if(axis != alg_attr) {
         if(n->sem.step.ty.type == ty_attr) {
-            new_guide_mapping_list = add_guide(new_guide_mapping_list, 
-                    child_element, column_out);          
+            new_guide_mapping_list = add_guide(new_guide_mapping_list,
+                    child_element, column_out);
             MAPPING_LIST(n) = new_guide_mapping_list;
             return;
         }
-    } 
+    }
     switch(axis) {
         case(alg_chld):
         /* child axis */
@@ -715,7 +715,7 @@ copy_step(PFla_op_t *n)
                 element = *((PFguide_tree_t**) PFarray_at(guide_list, i));
                 childs = element->child_list;
                 if(childs == NULL)
-                    continue;  
+                    continue;
                 /* subtype check for all childs */
                 for(unsigned int j = 0; j < PFarray_last(childs); j++) {
                     child_element= *((PFguide_tree_t**) PFarray_at(childs,j));
@@ -748,10 +748,10 @@ copy_guide_step(PFla_op_t *n)
 
     /* copy all guides in sem.step.guides to prop->guide_list */
     for(unsigned int i = 0; i < n->sem.step.guide_count; i++) {
-        new_guide_mapping_list = add_guide(new_guide_mapping_list, 
+        new_guide_mapping_list = add_guide(new_guide_mapping_list,
                 n->sem.step.guides[i], n->sem.step.item_res);
     }
-    
+
     MAPPING_LIST(n) = new_guide_mapping_list;
     return;
 }
@@ -778,7 +778,7 @@ copy_intersect(PFla_op_t  *n)
     /* intersection of left and right elements */
     PFarray_t *new_guide_mapping_list = NULL;
     /* guide mappings to compare */
-    PFguide_mapping_t *left_guide_mapping = NULL, 
+    PFguide_mapping_t *left_guide_mapping = NULL,
             *right_guide_mapping = NULL;
     /* guide lists to compare */
     PFguide_tree_t *left_guide = NULL, *right_guide = NULL;
@@ -794,7 +794,7 @@ copy_intersect(PFla_op_t  *n)
         MAPPING_LIST(n) = NULL;
         return;
     }
-    
+
     /* calculate intersect between left and right elements */
     for(unsigned int i = 0; i < PFarray_last(left_child_guide_mapping_list);
             i++) {
@@ -830,7 +830,7 @@ copy_intersect(PFla_op_t  *n)
 
                     if(right_guide != NULL) {
                         if(left_guide->guide == right_guide->guide)
-                            new_guide_mapping_list = add_guide(new_guide_mapping_list, left_guide, 
+                            new_guide_mapping_list = add_guide(new_guide_mapping_list, left_guide,
                                     left_guide_mapping->column);
                     }
 
@@ -840,7 +840,7 @@ copy_intersect(PFla_op_t  *n)
     }
 
     MAPPING_LIST(n) = new_guide_mapping_list;
-    return; 
+    return;
 }
 
 /* Copy guides for the step_join operator*/
@@ -852,14 +852,14 @@ static void copy_step_join(PFla_op_t *n)
     assert(PROP(R(n)));
 
     /* Deep copy of right childs guide_mapping_list */
-    PFarray_t *right_guide_mapping_list = 
+    PFarray_t *right_guide_mapping_list =
             deep_copy_guide_mapping_list(MAPPING_LIST(R(n)));
 
     /* step on n */
     copy_step(n);
 
     /* concat the results */
-    MAPPING_LIST(n) = merge_guide_mapping_list(MAPPING_LIST(n), 
+    MAPPING_LIST(n) = merge_guide_mapping_list(MAPPING_LIST(n),
             right_guide_mapping_list);
 
     return;
@@ -935,7 +935,7 @@ copy_disunion(PFla_op_t  *n)
             left_guide = *((PFguide_tree_t**) PFarray_at(
                     left_guide_mapping->guide_list, j));
 
-            new_guide_mapping_list = add_guide(new_guide_mapping_list, 
+            new_guide_mapping_list = add_guide(new_guide_mapping_list,
                     left_guide, left_guide_mapping->column);
         }
 
@@ -957,7 +957,7 @@ copy_disunion(PFla_op_t  *n)
                     }
                 }
                 /* insert element in list */
-                if(guide_node_in_list == false)                  
+                if(guide_node_in_list == false)
                     new_guide_mapping_list = add_guide(
                             new_guide_mapping_list, right_guide,
                             left_guide_mapping->column);
@@ -980,83 +980,83 @@ infer_guide(PFla_op_t *n, PFguide_tree_t *guide)
     assert(n);
     assert(n->prop);
     switch (n->kind) {
-        /* copyR */ 
-        case la_serialize:
-        case la_doc_access: 
+        /* copyR */
+        case la_serialize_seq:
+        case la_doc_index_join:
+        case la_doc_access:
             copyR(n);
             break;
 
-        /* do nothing */
-        case la_lit_tbl: 
-        case la_empty_tbl: 
-        case la_to:
-        case la_avg: 
-        case la_max: 
-        case la_min: 
-        case la_sum: 
-        case la_count: 
-        case la_seqty1: 
-        case la_all: 
-        case la_id:
-        case la_idref:
-        case la_twig: 
-        case la_fcns: 
-        case la_element: 
-        case la_attribute: 
-        case la_textnode: 
-        case la_comment: 
-        case la_processi: 
-        case la_docnode: 
-        case la_content: 
-        case la_merge_adjacent: 
-        case la_fragment: 
-        case la_frag_union: 
-        case la_empty_frag: 
-        case la_rec_fix: 
-        case la_rec_param: 
-        case la_rec_arg: 
-        case la_rec_base: 
-        case la_cross_mvd: 
-        case la_eqjoin_unq: 
-        case la_string_join: 
-        case la_nil: 
-            break;
-
         /* copyL */
-        case la_attach: 
-        case la_semijoin: 
-        case la_select: 
+        case la_serialize_rel:
+        case la_attach:
+        case la_semijoin:
+        case la_select:
         case la_pos_select:
-        case la_difference: 
-        case la_distinct: 
-        case la_fun_1to1: 
-        case la_num_eq: 
-        case la_num_gt: 
-        case la_bool_and: 
-        case la_bool_or: 
-        case la_bool_not: 
-        case la_rownum: 
+        case la_difference:
+        case la_distinct:
+        case la_fun_1to1:
+        case la_num_eq:
+        case la_num_gt:
+        case la_bool_and:
+        case la_bool_or:
+        case la_bool_not:
+        case la_rownum:
         case la_rank:
-        case la_number: 
-        case la_type: 
-        case la_type_assert: 
-        case la_cast: 
-        case la_roots: 
-        case la_cond_err: 
-        case la_trace: 
-        case la_trace_msg: 
-        case la_trace_map: 
-        case la_proxy: 
-        case la_proxy_base: 
-        case la_dummy: 
+        case la_number:
+        case la_type:
+        case la_type_assert:
+        case la_cast:
+        case la_roots:
+        case la_cond_err:
+        case la_trace:
+        case la_trace_msg:
+        case la_trace_map:
+        case la_proxy:
+        case la_proxy_base:
+        case la_dummy:
             copyL(n);
             break;
 
+        /* do nothing */
+        case la_lit_tbl:
+        case la_empty_tbl:
+        case la_to:
+        case la_avg:
+        case la_max:
+        case la_min:
+        case la_sum:
+        case la_count:
+        case la_seqty1:
+        case la_all:
+        case la_twig:
+        case la_fcns:
+        case la_element:
+        case la_attribute:
+        case la_textnode:
+        case la_comment:
+        case la_processi:
+        case la_docnode:
+        case la_content:
+        case la_merge_adjacent:
+        case la_fragment:
+        case la_frag_union:
+        case la_empty_frag:
+        case la_rec_fix:
+        case la_rec_param:
+        case la_rec_arg:
+        case la_rec_base:
+        case la_cross_mvd:
+        case la_eqjoin_unq:
+        case la_string_join:
+        case la_nil:
+            break;
+
         /* copyL+R*/
-        case la_cross: 
-        case la_eqjoin: 
-        case la_thetajoin: 
-            copyLR(n); 
+        case la_cross:
+        case la_eqjoin:
+        case la_thetajoin:
+            copyLR(n);
             break;
 
         /* project */
@@ -1065,25 +1065,25 @@ infer_guide(PFla_op_t *n, PFguide_tree_t *guide)
             break;
 
         /* union */
-        case la_disjunion: 
+        case la_disjunion:
             copy_disunion(n);
             break;
 
         /* intersect */
-        case la_intersect: 
+        case la_intersect:
             copy_intersect(n);
 
             remove_duplicate(n);
             break;
-        
+
         /* step */
-        case la_step: 
+        case la_step:
             copy_step(n);
             remove_duplicate(n);
             break;
 
         /* step_join */
-        case la_step_join: 
+        case la_step_join:
             copy_step_join(n);
             break;
 
@@ -1093,7 +1093,7 @@ infer_guide(PFla_op_t *n, PFguide_tree_t *guide)
             break;
 
         /* create guide nodes */
-        case la_doc_tbl: 
+        case la_doc_tbl:
             copy_doc_tbl(n, guide);
             break;
     }
@@ -1117,7 +1117,7 @@ prop_infer(PFla_op_t *n, PFguide_tree_t *guide)
     /* Set guide nodes to NULL  */
     MAPPING_LIST(n) = NULL;
 
-    /* calculate guide nodes for all operators */    
+    /* calculate guide nodes for all operators */
     for (unsigned int i = 0; i < PFLA_OP_MAXCHILD && n->child[i]; i++)
         prop_infer(n->child[i], guide);
 
@@ -1146,11 +1146,11 @@ PFprop_infer_guide(PFla_op_t *root, PFguide_tree_t *guide)
 
 
 /* Return if the property has guide nodes  */
-bool 
+bool
 PFprop_guide(PFprop_t *prop, PFalg_att_t column)
 {
     assert(prop);
-    
+
     if(prop->guide_mapping_list == NULL)
         return false;
 
@@ -1164,13 +1164,13 @@ PFprop_guide(PFprop_t *prop, PFalg_att_t column)
     else
         return true;
 }
-   
+
 /* Return how many guide nodes are in the property @a prop for @a column */
-unsigned int 
+unsigned int
 PFprop_guide_count(PFprop_t *prop, PFalg_att_t column)
 {
     assert(prop);
-    
+
     if(prop->guide_mapping_list == NULL)
         return 0;
 
@@ -1192,9 +1192,9 @@ PFprop_guide_count(PFprop_t *prop, PFalg_att_t column)
     return PFarray_last(guide_list);
 }
 
-/* Return an array of pointers of PFguide_tree_t of  guide nodes in the 
+/* Return an array of pointers of PFguide_tree_t of  guide nodes in the
  * property @a prop for @a column */
-PFguide_tree_t** 
+PFguide_tree_t**
 PFprop_guide_elements(PFprop_t *prop, PFalg_att_t column)
 {
     assert(prop);
@@ -1219,7 +1219,7 @@ PFprop_guide_elements(PFprop_t *prop, PFalg_att_t column)
     if(guide_list == NULL)
         return NULL;
 
-    count = PFarray_last(guide_list);   
+    count = PFarray_last(guide_list);
     /* allocate memory and copy guide nodes */
     ret = (PFguide_tree_t**)PFmalloc(count * sizeof(PFguide_tree_t*));
 
@@ -1230,6 +1230,6 @@ PFprop_guide_elements(PFprop_t *prop, PFalg_att_t column)
     return ret;
 }
 
-/* vim:set shiftwidth=4 expandtab filetype=c: */ 
+/* vim:set shiftwidth=4 expandtab filetype=c: */
 
 

@@ -240,6 +240,8 @@ infer_const (PFla_op_t *n)
      */
     switch (n->kind) {
 
+        case la_serialize_seq:
+        case la_serialize_rel:
         case la_attach:
         case la_cross:
         case la_eqjoin:
@@ -262,6 +264,7 @@ infer_const (PFla_op_t *n)
         case la_cast:
         case la_step_join:
         case la_guide_step_join:
+        case la_doc_index_join:
         case la_doc_access:
         case la_docnode:
         case la_element:
@@ -577,7 +580,7 @@ infer_const (PFla_op_t *n)
                                 PFalg_lit_bln (false));
                     break;
                 }
-            }  
+            }
             break;
 
         case la_step:
@@ -596,15 +599,6 @@ infer_const (PFla_op_t *n)
                         PFprop_const_val (R(n)->prop, n->sem.step.iter));
             break;
 
-        case la_id:
-        case la_idref:
-            if (PFprop_const (R(n)->prop, n->sem.id.iter))
-                PFprop_mark_const (
-                        n->prop,
-                        n->sem.id.iter,
-                        PFprop_const_val (R(n)->prop, n->sem.id.iter));
-            break;
-
         case la_doc_tbl:
             if (PFprop_const (L(n)->prop, n->sem.doc_tbl.iter))
                 PFprop_mark_const (
@@ -620,10 +614,10 @@ infer_const (PFla_op_t *n)
                         PFprop_mark_const (
                                 n->prop,
                                 n->sem.iter_item.iter,
-                                PFprop_const_val (L(n)->prop, 
+                                PFprop_const_val (L(n)->prop,
                                                   L(n)->sem.docnode.iter));
                     break;
-                    
+
                 case la_element:
                 case la_textnode:
                 case la_comment:
@@ -631,38 +625,38 @@ infer_const (PFla_op_t *n)
                         PFprop_mark_const (
                                 n->prop,
                                 n->sem.iter_item.iter,
-                                PFprop_const_val (L(n)->prop, 
+                                PFprop_const_val (L(n)->prop,
                                                   L(n)->sem.iter_item.iter));
                     break;
-                    
+
                 case la_attribute:
                 case la_processi:
-                    if (PFprop_const (L(n)->prop, 
+                    if (PFprop_const (L(n)->prop,
                                       L(n)->sem.iter_item1_item2.iter))
                         PFprop_mark_const (
                                 n->prop,
                                 n->sem.iter_item.iter,
                                 PFprop_const_val (
-                                    L(n)->prop, 
+                                    L(n)->prop,
                                     L(n)->sem.iter_item1_item2.iter));
                     break;
-                    
+
                 case la_content:
-                    if (PFprop_const (L(n)->prop, 
+                    if (PFprop_const (L(n)->prop,
                                       L(n)->sem.iter_pos_item.iter))
                         PFprop_mark_const (
                                 n->prop,
                                 n->sem.iter_item.iter,
                                 PFprop_const_val (
-                                    L(n)->prop, 
+                                    L(n)->prop,
                                     L(n)->sem.iter_pos_item.iter));
                     break;
-                    
+
                 default:
                     break;
             }
             break;
-            
+
         case la_nil:
         case la_trace_msg:
         case la_trace_map:
@@ -700,7 +694,8 @@ infer_const (PFla_op_t *n)
             break;
 
 
-        case la_serialize:
+        case la_serialize_seq:
+        case la_serialize_rel:
         case la_empty_tbl:
         case la_cross:
         case la_eqjoin:
@@ -717,6 +712,7 @@ infer_const (PFla_op_t *n)
         case la_type_assert:
         case la_step_join:
         case la_guide_step_join:
+        case la_doc_index_join:
         case la_doc_access:
         case la_fcns:
         case la_docnode:

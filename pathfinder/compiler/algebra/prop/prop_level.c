@@ -141,45 +141,14 @@ infer_level (PFla_op_t *n)
     if (R(n)) insert_level_info (n->prop->r_level_mapping, R(n));
 
     switch (n->kind) {
-        case la_serialize:
+        case la_serialize_seq:
+        case la_doc_index_join:
         case la_doc_access:
             /* level stays the same */
             copy_level_info (n, R(n));
             break;
 
-        case la_lit_tbl:
-        case la_empty_tbl:
-        case la_to:
-        case la_avg:
-        case la_max:
-        case la_min:
-        case la_sum:
-        case la_count:
-        case la_seqty1:
-        case la_all:
-        case la_id:
-        case la_idref:
-        case la_fcns:
-        case la_docnode:
-        case la_element:
-        case la_attribute:
-        case la_textnode:
-        case la_comment:
-        case la_processi:
-        case la_content:
-        case la_merge_adjacent:
-        case la_fragment:
-        case la_frag_union:
-        case la_empty_frag:
-        case la_nil:
-        case la_rec_fix:
-        case la_rec_param:
-        case la_rec_arg:
-        case la_rec_base:
-        case la_string_join:
-            n->prop->level_mapping = NULL;
-            break;
-
+        case la_serialize_rel:
         case la_attach:
         case la_semijoin:
         case la_select:
@@ -209,7 +178,38 @@ infer_level (PFla_op_t *n)
             /* level stays the same */
             copy_level_info (n, L(n));
             break;
-            
+
+        case la_lit_tbl:
+        case la_empty_tbl:
+        case la_to:
+        case la_avg:
+        case la_max:
+        case la_min:
+        case la_sum:
+        case la_count:
+        case la_seqty1:
+        case la_all:
+        case la_fcns:
+        case la_docnode:
+        case la_element:
+        case la_attribute:
+        case la_textnode:
+        case la_comment:
+        case la_processi:
+        case la_content:
+        case la_merge_adjacent:
+        case la_fragment:
+        case la_frag_union:
+        case la_empty_frag:
+        case la_nil:
+        case la_rec_fix:
+        case la_rec_param:
+        case la_rec_arg:
+        case la_rec_base:
+        case la_string_join:
+            n->prop->level_mapping = NULL;
+            break;
+
         case la_cross:
         case la_eqjoin:
         case la_thetajoin:
@@ -218,7 +218,7 @@ infer_level (PFla_op_t *n)
             copy_level_info (n, L(n));
             insert_level_info (n->prop->level_mapping, R(n));
             break;
-            
+
         case la_project:
             for (unsigned int i = 0; i < n->sem.proj.count; i++) {
                 int level = PFprop_level (L(n)->prop,
@@ -229,7 +229,7 @@ infer_level (PFla_op_t *n)
                                 level);
             }
             break;
-            
+
         case la_disjunion:
         case la_intersect:
             /* if the level for intersect does not match
@@ -240,16 +240,16 @@ infer_level (PFla_op_t *n)
                         R(n)->schema.items[j].name) {
                         PFalg_att_t att = L(n)->schema.items[i].name;
                         int l_level, r_level;
-                        
+
                         l_level = PFprop_level (L(n)->prop, att);
                         r_level = PFprop_level (R(n)->prop, att);
-                        
+
                         if (l_level >= 0 && l_level == r_level)
                             mark_level (n->prop, att, l_level);
                         break;
                     }
             break;
-            
+
         case la_step_join:
         case la_guide_step_join:
             copy_level_info (n, R(n));
@@ -266,7 +266,7 @@ infer_level (PFla_op_t *n)
                         case alg_chld:
                             mark_level (n->prop, item_res, level+1);
                             break;
-                            
+
                         case alg_par:
                             mark_level (n->prop, item_res, level+1);
                             break;
@@ -291,7 +291,7 @@ infer_level (PFla_op_t *n)
         case la_twig:
             mark_level (n->prop, n->sem.iter_item.item, 0);
             break;
-            
+
         case la_doc_tbl:
             mark_level (n->prop, n->sem.doc_tbl.item_res, 0);
             break;

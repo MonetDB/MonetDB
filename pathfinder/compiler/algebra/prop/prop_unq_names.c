@@ -107,7 +107,7 @@ static void
 add_name_pair (PFarray_t *np_list, PFalg_att_t ori, PFalg_att_t unq)
 {
     assert (np_list);
-    
+
     *(name_pair_t *) PFarray_add (np_list)
         = (name_pair_t) { .ori = ori, .unq = unq };
 }
@@ -115,7 +115,7 @@ add_name_pair (PFarray_t *np_list, PFalg_att_t ori, PFalg_att_t unq)
 /**
  * Create new unique name and add it together with the original name
  * to the name pair list (@a np_list).
- */ 
+ */
 static void
 new_name_pair (PFarray_t *np_list, PFalg_att_t ori, unsigned int id)
 {
@@ -134,7 +134,7 @@ bulk_add_name_pairs (PFarray_t *np_list, PFla_op_t *child)
     assert (child->prop);
 
     for (unsigned int i = 0; i < child->schema.count; i++) {
-        add_name_pair (np_list, 
+        add_name_pair (np_list,
                        child->schema.items[i].name,
                        PFprop_unq_name (child->prop,
                                         child->schema.items[i].name));
@@ -150,8 +150,12 @@ infer_unq_names (PFla_op_t *n, unsigned int id)
     PFarray_t *np_list = n->prop->name_pairs;
 
     switch (n->kind) {
-        case la_serialize:
+        case la_serialize_seq:
             bulk_add_name_pairs (np_list, R(n));
+            break;
+
+        case la_serialize_rel:
+            bulk_add_name_pairs (np_list, L(n));
             break;
 
         case la_lit_tbl:
@@ -160,7 +164,7 @@ infer_unq_names (PFla_op_t *n, unsigned int id)
             for (unsigned int i = 0; i < n->schema.count; i++)
                 new_name_pair (np_list, n->schema.items[i].name, id++);
             break;
-            
+
         case la_attach:
             bulk_add_name_pairs (np_list, L(n));
             new_name_pair (np_list, n->sem.attach.res, id++);
@@ -183,14 +187,14 @@ infer_unq_names (PFla_op_t *n, unsigned int id)
             /* initialize left and right name pair list */
             n->prop->l_name_pairs = PFarray (sizeof (name_pair_t));
             n->prop->r_name_pairs = PFarray (sizeof (name_pair_t));
-            
+
             left_np_list  = n->prop->l_name_pairs;
             right_np_list = n->prop->r_name_pairs;
-            
+
             for (unsigned int i = 0; i < L(n)->schema.count; i++) {
                 ori = L(n)->schema.items[i].name;
                 child_unq = PFprop_unq_name (L(n)->prop, ori);
-                
+
                 /* Check for multiple occurrences of the same unique
                    column name. (Use check function of variable
                    backmapping as it works on the same array) */
@@ -213,13 +217,13 @@ infer_unq_names (PFla_op_t *n, unsigned int id)
                    column name. (Use check function of variable
                    backmapping as it works on the same array) */
                 if ((ori_prev = PFprop_ori_name_right (n->prop, child_unq)))
-                    /* we already have mapped this unique name 
+                    /* we already have mapped this unique name
                        - so look up new unique name */
                     unq = find_unq_name (np_list, ori_prev);
                 else
                     /* no match */
                     unq = PFalg_unq_name (ori, id++);
-                                           
+
                 add_name_pair (np_list, ori, unq);
                 add_name_pair (right_np_list, ori, child_unq);
             }
@@ -230,7 +234,7 @@ infer_unq_names (PFla_op_t *n, unsigned int id)
             PFalg_att_t ori, join_unq, att1_unq, att2_unq, child_unq;
             PFarray_t *left_np_list, *right_np_list;
             bool proj_left = PFprop_key (L(n)->prop, n->sem.eqjoin.att1);
-            
+
             att1_unq = PFprop_unq_name (L(n)->prop, n->sem.eqjoin.att1);
             att2_unq = PFprop_unq_name (R(n)->prop, n->sem.eqjoin.att2);
             /* always use smaller (hopefully original) unique name
@@ -243,10 +247,10 @@ infer_unq_names (PFla_op_t *n, unsigned int id)
             /* initialize left and right name pair list */
             n->prop->l_name_pairs = PFarray (sizeof (name_pair_t));
             n->prop->r_name_pairs = PFarray (sizeof (name_pair_t));
-            
+
             left_np_list  = n->prop->l_name_pairs;
             right_np_list = n->prop->r_name_pairs;
-            
+
             /* Based on the boolean proj_left we decide whether
                we solve name conflicts at the left or the right side.
                   All column names that are identical to the join
@@ -266,9 +270,9 @@ infer_unq_names (PFla_op_t *n, unsigned int id)
 
                     /* like in the cross product case we map equally
                        named conflicting names to the same replacement */
-                    if ((ori_prev = PFprop_ori_name_left (n->prop, 
+                    if ((ori_prev = PFprop_ori_name_left (n->prop,
                                                            child_unq)))
-                        /* we already have mapped this unique name 
+                        /* we already have mapped this unique name
                            - so look up new unique name */
                         unq = find_unq_name (np_list, ori_prev);
                     else
@@ -295,9 +299,9 @@ infer_unq_names (PFla_op_t *n, unsigned int id)
 
                     /* like in the cross product case we map equally
                        named conflicting names to the same replacement */
-                    if ((ori_prev = PFprop_ori_name_right (n->prop, 
+                    if ((ori_prev = PFprop_ori_name_right (n->prop,
                                                            child_unq)))
-                        /* we already have mapped this unique name 
+                        /* we already have mapped this unique name
                            - so look up new unique name */
                         unq = find_unq_name (np_list, ori_prev);
                     else
@@ -327,8 +331,8 @@ infer_unq_names (PFla_op_t *n, unsigned int id)
         case la_project:
             /* bind all existing unique names to the possibly new names */
             for (unsigned int i = 0; i < n->schema.count; i++)
-                add_name_pair (np_list, 
-                               n->sem.proj.items[i].new, 
+                add_name_pair (np_list,
+                               n->sem.proj.items[i].new,
                                PFprop_unq_name (L(n)->prop,
                                                 n->sem.proj.items[i].old));
             break;
@@ -338,7 +342,7 @@ infer_unq_names (PFla_op_t *n, unsigned int id)
         case la_distinct:
             bulk_add_name_pairs (np_list, L(n));
             break;
-            
+
         case la_disjunion:
         case la_intersect:
         case la_difference:
@@ -366,7 +370,7 @@ infer_unq_names (PFla_op_t *n, unsigned int id)
                 else
                 */
                     unq = PFalg_unq_name (ori, id++);
-                    
+
                 add_name_pair (np_list, ori, unq);
                 add_name_pair (n->prop->l_name_pairs, ori, l_unq);
                 add_name_pair (n->prop->r_name_pairs, ori, r_unq);
@@ -395,14 +399,14 @@ infer_unq_names (PFla_op_t *n, unsigned int id)
             new_name_pair (np_list, n->sem.to.res, id++);
             if (n->sem.to.part)
                 add_name_pair (np_list,
-                               n->sem.to.part, 
+                               n->sem.to.part,
                                PFprop_unq_name (L(n)->prop,
                                                 n->sem.to.part));
             break;
 
         case la_avg:
-	case la_max:
-	case la_min:
+        case la_max:
+        case la_min:
         case la_sum:
         case la_count:
         case la_seqty1:
@@ -410,7 +414,7 @@ infer_unq_names (PFla_op_t *n, unsigned int id)
             new_name_pair (np_list, n->sem.aggr.res, id++);
             if (n->sem.aggr.part)
                 add_name_pair (np_list,
-                               n->sem.aggr.part, 
+                               n->sem.aggr.part,
                                PFprop_unq_name (L(n)->prop,
                                                 n->sem.aggr.part));
             break;
@@ -442,28 +446,24 @@ infer_unq_names (PFla_op_t *n, unsigned int id)
 
         case la_step:
         case la_guide_step:
-            add_name_pair (np_list, 
+            add_name_pair (np_list,
                            n->sem.step.iter,
                            PFprop_unq_name (R(n)->prop,
                                             n->sem.step.iter));
             new_name_pair (np_list, n->sem.step.item_res, id++);
             break;
-            
+
         case la_step_join:
         case la_guide_step_join:
             bulk_add_name_pairs (np_list, R(n));
             new_name_pair (np_list, n->sem.step.item_res, id++);
             break;
-            
-        case la_id:
-        case la_idref:
-            add_name_pair (np_list, 
-                           n->sem.id.iter,
-                           PFprop_unq_name (R(n)->prop,
-                                            n->sem.id.iter));
-            new_name_pair (np_list, n->sem.id.item_res, id++);
+
+        case la_doc_index_join:
+            bulk_add_name_pairs (np_list, R(n));
+            new_name_pair (np_list, n->sem.doc_join.item_res, id++);
             break;
-            
+
         case la_doc_tbl:
             add_name_pair (np_list,
                            n->sem.doc_tbl.iter,
@@ -471,7 +471,7 @@ infer_unq_names (PFla_op_t *n, unsigned int id)
                                             n->sem.doc_tbl.iter));
             new_name_pair (np_list, n->sem.doc_tbl.item_res, id++);
             break;
-            
+
         case la_doc_access:
             bulk_add_name_pairs (np_list, R(n));
             new_name_pair (np_list, n->sem.doc_access.res, id++);
@@ -482,42 +482,42 @@ infer_unq_names (PFla_op_t *n, unsigned int id)
                 case la_docnode:
                     add_name_pair (np_list,
                                    n->sem.iter_item.iter,
-                                   PFprop_unq_name (LL(n)->prop, 
+                                   PFprop_unq_name (LL(n)->prop,
                                                     L(n)->sem.docnode.iter));
                     break;
-                    
+
                 case la_element:
                 case la_textnode:
                 case la_comment:
                     add_name_pair (np_list,
                                    n->sem.iter_item.iter,
-                                   PFprop_unq_name (LL(n)->prop, 
+                                   PFprop_unq_name (LL(n)->prop,
                                                     L(n)->sem.iter_item.iter));
                     break;
-                    
+
                 case la_attribute:
                 case la_processi:
                     add_name_pair (np_list,
                                    n->sem.iter_item.iter,
                                    PFprop_unq_name (
-                                       LL(n)->prop, 
+                                       LL(n)->prop,
                                        L(n)->sem.iter_item1_item2.iter));
                     break;
-                    
+
                 case la_content:
                     add_name_pair (np_list,
                                    n->sem.iter_item.iter,
                                    PFprop_unq_name (
-                                       LR(n)->prop, 
+                                       LR(n)->prop,
                                        L(n)->sem.iter_pos_item.iter));
                     break;
-                    
+
                 default:
                     break;
             }
             new_name_pair (np_list, n->sem.iter_item.item, id++);
             break;
-            
+
         case la_fcns:
         case la_docnode:
         case la_element:
@@ -527,19 +527,19 @@ infer_unq_names (PFla_op_t *n, unsigned int id)
         case la_processi:
         case la_content:
             break;
-            
+
         case la_merge_adjacent:
             add_name_pair (np_list,
                            n->sem.merge_adjacent.iter_res,
-                           PFprop_unq_name (R(n)->prop, 
+                           PFprop_unq_name (R(n)->prop,
                                             n->sem.merge_adjacent.iter_in));
             add_name_pair (np_list,
                            n->sem.merge_adjacent.pos_res,
-                           PFprop_unq_name (R(n)->prop, 
+                           PFprop_unq_name (R(n)->prop,
                                             n->sem.merge_adjacent.pos_in));
             new_name_pair (np_list, n->sem.merge_adjacent.item_res, id++);
             break;
-            
+
         case la_roots:
             bulk_add_name_pairs (np_list, L(n));
             break;
@@ -548,7 +548,7 @@ infer_unq_names (PFla_op_t *n, unsigned int id)
         case la_frag_union:
         case la_empty_frag:
             break;
-            
+
         case la_cond_err:
         case la_trace:
         case la_trace_msg:
@@ -563,15 +563,15 @@ infer_unq_names (PFla_op_t *n, unsigned int id)
             /* get the unique names of the overall result */
             bulk_add_name_pairs (np_list, R(n));
             break;
-            
+
         case la_rec_param:
             /* recursion parameters do not have properties */
             break;
-            
+
         case la_rec_arg:
             /* The both inputs (seed and recursion) do not use
                the same column names. Thus we live with inconsistent
-               unique names and introduce a renaming projection 
+               unique names and introduce a renaming projection
                (Schema R -> Schema L) during name mapping. */
             bulk_add_name_pairs (np_list, L(n));
             break;
@@ -579,7 +579,7 @@ infer_unq_names (PFla_op_t *n, unsigned int id)
         case la_rec_base:
             /* properties are already assigned */
             break;
-            
+
         case la_proxy:
         case la_proxy_base:
             bulk_add_name_pairs (np_list, L(n));
@@ -597,12 +597,12 @@ infer_unq_names (PFla_op_t *n, unsigned int id)
             PFoops (OOPS_FATAL,
                     "clone column aware cross product operator is "
                     "only allowed inside mvd optimization!");
-            
+
         case la_eqjoin_unq:
             PFoops (OOPS_FATAL,
                     "clone column aware equi-join operator is "
                     "only allowed with unique attribute names!");
-            
+
         case la_dummy:
             bulk_add_name_pairs (np_list, L(n));
             break;
@@ -622,7 +622,7 @@ reset_property (PFla_op_t *n)
     n->prop->l_name_pairs = NULL;
     n->prop->r_name_pairs = NULL;
 }
-    
+
 /* forward declaration */
 static unsigned int
 prop_infer (PFla_op_t *n, unsigned int cur_col_id);
@@ -643,7 +643,7 @@ prop_infer_rec_seed (PFla_op_t *n, unsigned int cur_col_id)
         case la_rec_arg:
             /* infer the unique names of the seed */
             cur_col_id = prop_infer (L(n), cur_col_id);
-            
+
             n->sem.rec_arg.base->bit_dag = true;
             reset_property (n->sem.rec_arg.base);
 
@@ -687,7 +687,7 @@ prop_infer_rec_body (PFla_op_t *n, unsigned int cur_col_id)
         case la_rec_arg:
             /* infer the unique names of the recursion body */
             cur_col_id = prop_infer (R(n), cur_col_id);
-            
+
             /* The both inputs (seed and recursion) now do not use
                the same column names: the unique names are inconsistent.
                Thus the name mapping has to introduce a renaming projection
@@ -712,13 +712,13 @@ prop_infer_rec_body (PFla_op_t *n, unsigned int cur_col_id)
 
     return cur_col_id;
 }
-    
+
 /* worker for PFprop_infer_unq_names */
 static unsigned int
 prop_infer (PFla_op_t *n, unsigned int cur_col_id)
 {
     bool bottom_up = true;
-    
+
     assert (n);
 
     /* nothing to do if we already visited that node */
@@ -764,7 +764,7 @@ prop_infer (PFla_op_t *n, unsigned int cur_col_id)
 void
 PFprop_infer_unq_names (PFla_op_t *root)
 {
-    /* get the key information for 
+    /* get the key information for
        a more useful eqjoin inference */
     PFprop_infer_key (root);
 

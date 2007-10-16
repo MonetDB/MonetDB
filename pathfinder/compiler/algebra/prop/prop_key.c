@@ -183,13 +183,13 @@ static unsigned int
 find_guide_max (unsigned int count, PFguide_tree_t **guides)
 {
     unsigned int max;
-   
+
     assert (count);
     max = guides[0]->max;
     for (unsigned int i = 1; i < count; i++)
         max = max > guides[i]->max ? max : guides[i]->max;
 
-    return max; 
+    return max;
 }
 
 /**
@@ -202,7 +202,7 @@ find_guide_max_rec_worker (PFguide_tree_t *guide,
 {
     unsigned int max;
     PFguide_tree_t *parent = guide->parent;
-    
+
     assert (parent);
     for (unsigned int i = 0; i < ctx_count; i++)
         if (ctx_guides[i] == parent)
@@ -220,7 +220,7 @@ find_guide_max_rec (unsigned int count, PFguide_tree_t **guides,
                     unsigned int ctx_count, PFguide_tree_t **ctx_guides)
 {
     unsigned int max, overall_max;
-   
+
     assert (count);
     overall_max = find_guide_max_rec_worker (guides[0], ctx_count, ctx_guides);
     for (unsigned int i = 1; i < count; i++) {
@@ -228,7 +228,7 @@ find_guide_max_rec (unsigned int count, PFguide_tree_t **guides,
         overall_max = overall_max > max ? overall_max : max;
     }
 
-    return overall_max; 
+    return overall_max;
 }
 
 /**
@@ -242,9 +242,14 @@ infer_key (PFla_op_t *n, bool with_guide_info)
     if (R(n)) copy (n->prop->r_keys, R(n)->prop->keys);
 
     switch (n->kind) {
-        case la_serialize:
-            /* just copy keys from left child */
+        case la_serialize_seq:
+            /* just copy keys from right child */
             copy (n->prop->keys, R(n)->prop->keys);
+            break;
+
+        case la_serialize_rel:
+            /* just copy keys from left child */
+            copy (n->prop->keys, L(n)->prop->keys);
             break;
 
         case la_lit_tbl:
@@ -365,7 +370,7 @@ infer_key (PFla_op_t *n, bool with_guide_info)
         {
             bool key_left = false,
                  key_right = false;
-            
+
             for (unsigned int i = 0; i < n->sem.thetajoin.count; i++)
                 if (n->sem.thetajoin.pred[i].comp == alg_comp_eq) {
                     key_left = key_left ||
@@ -386,7 +391,7 @@ infer_key (PFla_op_t *n, bool with_guide_info)
             else if (key_right)
                 copy (n->prop->keys, L(n)->prop->keys);
         }   break;
-            
+
         case la_project:
             /* rename keys columns from old to new */
             for (unsigned int i = 0; i < n->sem.proj.count; i++)
@@ -428,7 +433,7 @@ infer_key (PFla_op_t *n, bool with_guide_info)
             if (PFprop_card (n->prop) == 1)
                 union_ (n->prop->keys, n->sem.fun_1to1.res);
             break;
-            
+
         case la_num_eq:
         case la_num_gt:
         case la_bool_and:
@@ -527,7 +532,7 @@ infer_key (PFla_op_t *n, bool with_guide_info)
                    || PFQNAME_LOC_WILDCARD (n->sem.step.ty.name)) &&
                 PFprop_key (R(n)->prop, n->sem.step.item))
                 union_ (n->prop->keys, n->sem.step.iter);
-            
+
             if (PFprop_const (n->prop, n->sem.step.iter))
                 union_ (n->prop->keys, n->sem.step.item_res);
             break;
@@ -561,7 +566,7 @@ infer_key (PFla_op_t *n, bool with_guide_info)
                   n->sem.step.axis == alg_desc_s))) {
                 union_ (n->prop->keys, n->sem.step.item_res);
             }
-            
+
             /* if attribute step is only a 'filter' (at most a single
                attribute for each context node) we can copy all keys */
             if (n->sem.step.axis == alg_attr &&
@@ -574,10 +579,9 @@ infer_key (PFla_op_t *n, bool with_guide_info)
                 union_ (n->prop->keys, n->sem.step.item_res);
             break;
 
-        case la_id:
-        case la_idref:
-            if (PFprop_const (n->prop, n->sem.id.iter))
-                union_ (n->prop->keys, n->sem.id.item_res);
+        case la_doc_index_join:
+            if (PFprop_card (R(n)->prop) == 1)
+                union_ (n->prop->keys, n->sem.step.item_res);
             break;
 
         case la_doc_tbl:
@@ -609,39 +613,39 @@ infer_key (PFla_op_t *n, bool with_guide_info)
                     if (PFprop_key (LL(n)->prop, L(n)->sem.docnode.iter))
                         union_ (n->prop->keys, n->sem.iter_item.iter);
                     break;
-                    
+
                 case la_element:
                 case la_textnode:
                 case la_comment:
                     if (PFprop_key (LL(n)->prop, L(n)->sem.iter_item.iter))
                         union_ (n->prop->keys, n->sem.iter_item.iter);
                     break;
-                    
+
                 case la_attribute:
                 case la_processi:
-                    if (PFprop_key (LL(n)->prop, 
+                    if (PFprop_key (LL(n)->prop,
                                     L(n)->sem.iter_item1_item2.iter))
                         union_ (n->prop->keys, n->sem.iter_item.iter);
                     break;
-                    
+
                 case la_content:
-                    if (PFprop_key (LR(n)->prop, 
+                    if (PFprop_key (LR(n)->prop,
                                     L(n)->sem.iter_pos_item.iter))
                         union_ (n->prop->keys, n->sem.iter_item.iter);
                     break;
-                    
+
                 default:
                     break;
             }
             break;
-            
+
         case la_nil:
         case la_trace:
         case la_trace_msg:
         case la_trace_map:
             /* delete keys to avoid rewrites */
             break;
-            
+
         case la_rec_fix:
             /* get the keys of the overall result */
             copy (n->prop->keys, R(n)->prop->keys);
@@ -752,7 +756,7 @@ PFprop_infer_key_with_guide (PFla_op_t *root)
        domains for columns of the native type */
     PFprop_infer_nat_dom (root);
     PFprop_infer_level (root);
-    
+
     prop_infer (root, true);
     PFla_dag_reset (root);
 }

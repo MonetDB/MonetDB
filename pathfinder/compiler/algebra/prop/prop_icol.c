@@ -168,7 +168,7 @@ diff (PFalg_att_t a, PFalg_att_t b)
 static void prop_infer_icols (PFla_op_t *, PFalg_att_t);
 
 /**
- * Alternative traversal of the icols that is started 
+ * Alternative traversal of the icols that is started
  * only for the recursion operator rec_fix. This traversal
  * ensures that the required columns of all operators in the
  * recursion body are inferred before the icols property
@@ -184,7 +184,7 @@ prop_infer_icols_rec_body (PFla_op_t *n)
     else if (n->kind == la_nil)
         return;
     else if (n->kind == la_rec_arg) {
-        /* the required columns of the body are all the 
+        /* the required columns of the body are all the
            columns of the schema */
         for (unsigned int i = 0; i < n->schema.count; i++)
             n->prop->r_icols = union_ (n->prop->r_icols,
@@ -196,7 +196,7 @@ prop_infer_icols_rec_body (PFla_op_t *n)
     else PFoops (OOPS_FATAL,
                  "only recursion operators expected!");
 }
-            
+
 static bool twig_needed;
 static bool first_twig_child;
 
@@ -229,11 +229,19 @@ prop_infer_icols (PFla_op_t *n, PFalg_att_t icols)
 
     /* infer icols property for children */
     switch (n->kind) {
-        case la_serialize:
+        case la_serialize_seq:
             /* infer empty list for fragments */
             n->prop->l_icols = 0;
-            n->prop->r_icols = union_ (n->sem.serialize.pos,
-                                       n->sem.serialize.item);
+            n->prop->r_icols = union_ (n->sem.ser_seq.pos,
+                                       n->sem.ser_seq.item);
+            break;
+
+        case la_serialize_rel:
+            n->prop->l_icols = union_ (n->sem.ser_rel.iter,
+                                       n->sem.ser_rel.pos);
+            for (unsigned int i = 0; i < n->sem.ser_rel.items.count; i++)
+                n->prop->l_icols = union_ (n->prop->l_icols,
+                                           n->sem.ser_rel.items.atts[i]);
             break;
 
         case la_lit_tbl:
@@ -354,7 +362,7 @@ prop_infer_icols (PFla_op_t *n, PFalg_att_t icols)
 
             n->prop->l_icols = diff (n->prop->l_icols, n->sem.fun_1to1.res);
             for (unsigned int i = 0; i < n->sem.fun_1to1.refs.count; i++)
-                n->prop->l_icols = union_ (n->prop->l_icols, 
+                n->prop->l_icols = union_ (n->prop->l_icols,
                                            n->sem.fun_1to1.refs.atts[i]);
             break;
 
@@ -393,10 +401,10 @@ prop_infer_icols (PFla_op_t *n, PFalg_att_t icols)
                 n->prop->l_icols = union_ (n->prop->l_icols,
                                            n->sem.to.part);
             break;
-            
+
         case la_avg:
-	case la_max:
-	case la_min:
+        case la_max:
+        case la_min:
         case la_sum:
         case la_seqty1:
         case la_all:
@@ -512,15 +520,16 @@ prop_infer_icols (PFla_op_t *n, PFalg_att_t icols)
             n->prop->r_icols = union_ (n->prop->r_icols, n->sem.step.item);
             break;
 
-        case la_id:
-        case la_idref:
+        case la_doc_index_join:
             /* infer empty list for fragments */
             n->prop->l_icols = 0;
-            /* infer iter|item|item_doc schema for input relation */
-            n->prop->r_icols = union_ (n->sem.id.iter,
-                                       n->sem.id.item);
+            n->prop->r_icols = n->prop->icols;
+            n->prop->r_icols = diff (n->prop->r_icols,
+                                     n->sem.doc_join.item_res);
             n->prop->r_icols = union_ (n->prop->r_icols,
-                                       n->sem.id.item_doc);
+                                       n->sem.doc_join.item);
+            n->prop->r_icols = union_ (n->prop->r_icols,
+                                       n->sem.doc_join.item_doc);
             break;
 
         case la_doc_tbl:
@@ -542,7 +551,7 @@ prop_infer_icols (PFla_op_t *n, PFalg_att_t icols)
             break;
 
         case la_twig:
-            /* make sure the underlying constructors 
+            /* make sure the underlying constructors
                propagate the correct information */
             if ((n->prop->icols & n->sem.iter_item.item)) {
                 twig_needed = true;
@@ -553,7 +562,7 @@ prop_infer_icols (PFla_op_t *n, PFalg_att_t icols)
             prop_infer_icols (L(n), 0);
             skip_children = true;
             break;
-            
+
         case la_fcns:
             break;
 
@@ -603,7 +612,7 @@ prop_infer_icols (PFla_op_t *n, PFalg_att_t icols)
             }
             skip_children = true;
             break;
-            
+
         case la_textnode:
         case la_comment:
             /* whenever the constructor itself is not needed column item
@@ -724,12 +733,12 @@ prop_infer_icols (PFla_op_t *n, PFalg_att_t icols)
             n->prop->l_icols = union_ (n->sem.trace_map.inner,
                                        n->sem.trace_map.outer);
             break;
-            
+
         case la_rec_fix:
             /* infer the required columns of the result */
             n->prop->r_icols = n->prop->icols;
             prop_infer_icols (R(n), n->prop->r_icols);
-            
+
             /* start an alternative traversal of the recursion
                nodes to ensure that the body of the recursion
                and thus the base operators all contain icols
@@ -744,22 +753,22 @@ prop_infer_icols (PFla_op_t *n, PFalg_att_t icols)
 
             skip_children = true;
             break;
-            
+
         case la_rec_param:
             /* infer empty list for parameter list */
             n->prop->l_icols = 0;
             n->prop->r_icols = 0;
             break;
-            
+
         case la_rec_arg:
-            /* the properties of the body are already inferred 
+            /* the properties of the body are already inferred
                (see prop_infer_icols_rec_body in la_rec_fix) */
 
             /* the icols of the seed are the resulting icols of the body */
             n->prop->l_icols = n->sem.rec_arg.base->prop->icols;
 
             /* The above only works if the icols are already inferred.
-               If that's not the case choose the full schema as seed 
+               If that's not the case choose the full schema as seed
                for L(n) */
             if (!n->prop->l_icols) {
                 n->prop->l_icols = n->prop->r_icols;
@@ -771,10 +780,10 @@ prop_infer_icols (PFla_op_t *n, PFalg_att_t icols)
 
             skip_children = true;
             break;
-            
+
         case la_rec_base:
             break;
-            
+
         case la_proxy:
         case la_proxy_base:
             /* infer incoming icols for input relation */
@@ -787,10 +796,10 @@ prop_infer_icols (PFla_op_t *n, PFalg_att_t icols)
                                                n->sem.string_join.item),
                                        n->sem.string_join.pos);
             /* infer iter|item schema for second input relation */
-            n->prop->r_icols = union_ (n->sem.string_join.iter_sep, 
+            n->prop->r_icols = union_ (n->sem.string_join.iter_sep,
                                        n->sem.string_join.item_sep);
             break;
-            
+
         case la_eqjoin_unq:
             PFoops (OOPS_FATAL,
                     "clone column aware equi-join operator is "
@@ -800,7 +809,7 @@ prop_infer_icols (PFla_op_t *n, PFalg_att_t icols)
             PFoops (OOPS_FATAL,
                     "clone column aware cross product operator is "
                     "only allowed inside mvd optimization!");
-            
+
         case la_dummy:
             /* infer incoming icols for input relation */
             n->prop->l_icols = n->prop->icols;

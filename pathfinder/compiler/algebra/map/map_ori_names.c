@@ -1,7 +1,7 @@
 /**
  * @file
  *
- * Map relational algebra expression DAG with unique attribute names 
+ * Map relational algebra expression DAG with unique attribute names
  * into an equivalent one with bit-encoded attribute names.
  *
  * Copyright Notice:
@@ -91,7 +91,7 @@ lookup (PFarray_t *map, PFla_op_t *unq)
  * (see also macros using the function below)
  */
 static PFla_op_t *
-add_renaming_projection (PFla_op_t *p, 
+add_renaming_projection (PFla_op_t *p,
                          unsigned int side,
                          PFalg_att_t free_attr,
                          PFarray_t *map)
@@ -102,21 +102,21 @@ add_renaming_projection (PFla_op_t *p,
                                        sizeof (PFalg_proj_t));
     bool renamed = false;
     unsigned int count = 0;
-    
+
     ori_free = free_attr ? ONAME(p, free_attr) : att_NULL;
 
     for (unsigned int i = 0; i < c->schema.count; i++) {
         ori_old = c->schema.items[i].name;
 
-        /* Enforce projection if column free_attr 
+        /* Enforce projection if column free_attr
            is not free without projection */
         if (ori_old == ori_free)
             renamed = true;
-            
+
         /* lookup unique name for column @a ori_old */
         unq = C_UNAME (p, ori_old, side);
 
-        /* column ori_old is not referenced by operator @a p 
+        /* column ori_old is not referenced by operator @a p
            and thus does not appear in the projection */
         if (!unq) continue;
 
@@ -187,12 +187,28 @@ map_ori_names (PFla_op_t *p, PFarray_t *map)
 
     /* action code */
     switch (p->kind) {
-        case la_serialize:
-            res = serialize (O(L(p)),
-                             PROJ(RIGHT, p),
-                             ONAME(p, p->sem.serialize.pos),
-                             ONAME(p, p->sem.serialize.item));
+        case la_serialize_seq:
+            res = serialize_seq (O(L(p)),
+                                 PROJ(RIGHT, p),
+                                 ONAME(p, p->sem.ser_seq.pos),
+                                 ONAME(p, p->sem.ser_seq.item));
             break;
+
+        case la_serialize_rel:
+        {
+            PFalg_attlist_t items;
+            items.count = p->sem.ser_rel.items.count;
+            items.atts  = PFmalloc (items.count *
+                                    sizeof (PFalg_attlist_t));
+
+            for (unsigned int i = 0; i < items.count; i++)
+                items.atts[i] = ONAME(p, p->sem.ser_rel.items.atts[i]);
+
+            res = serialize_rel (PROJ(LEFT, p),
+                                 ONAME(p, p->sem.ser_rel.iter),
+                                 ONAME(p, p->sem.ser_rel.pos),
+                                 items);
+        }   break;
 
         case la_lit_tbl:
         {
@@ -203,7 +219,7 @@ map_ori_names (PFla_op_t *p, PFarray_t *map)
 
             for (unsigned int i = 0; i < p->schema.count; i++)
                 attlist.atts[i] = ONAME(p, p->schema.items[i].name);
-                                                   
+
             res = PFla_lit_tbl_ (attlist,
                                  p->sem.lit_tbl.count,
                                  p->sem.lit_tbl.tuples);
@@ -217,11 +233,11 @@ map_ori_names (PFla_op_t *p, PFarray_t *map)
                                       sizeof (PFalg_schema_t));
 
             for (unsigned int i = 0; i < p->schema.count; i++)
-                schema.items[i] = 
+                schema.items[i] =
                     (struct PFalg_schm_item_t)
                         { .name = ONAME(p, p->schema.items[i].name),
                           .type = p->schema.items[i].type };
-                                                   
+
             res = PFla_empty_tbl_ (schema);
         }   break;
 
@@ -245,16 +261,16 @@ map_ori_names (PFla_op_t *p, PFarray_t *map)
             PFoops (OOPS_FATAL,
                     "clone column unaware eqjoin operator is "
                     "only allowed with original attribute names!");
-            
+
         case la_eqjoin_unq:
         {
             PFalg_proj_t *projlist;
             PFalg_att_t ori;
             unsigned int count;
-            
+
             /* cope with special case where unique names
                of the join arguments conflict */
-            if (p->sem.eqjoin_unq.att1 == 
+            if (p->sem.eqjoin_unq.att1 ==
                 p->sem.eqjoin_unq.att2) {
                 /* translation is almost identical to function
                    add_renaming_projection(). The only difference
@@ -263,18 +279,18 @@ map_ori_names (PFla_op_t *p, PFarray_t *map)
                 PFalg_att_t ori_new, ori_old, unq, ori_join = att_NULL;
                 PFla_op_t *right = O(R(p));
                 bool renamed = false;
-                
+
                 projlist = PFmalloc (right->schema.count *
                                      sizeof (PFalg_proj_t));
                 count = 0;
-                
+
                 for (unsigned int i = 0; i < right->schema.count; i++) {
                     ori_old = right->schema.items[i].name;
 
                     /* lookup unique name for column @a ori_old */
                     unq = C_UNAME (p, ori_old, RIGHT);
 
-                    /* column ori_old is not referenced by operator @a p 
+                    /* column ori_old is not referenced by operator @a p
                        and thus does not appear in the projection */
                     if (!unq) continue;
 
@@ -292,13 +308,13 @@ map_ori_names (PFla_op_t *p, PFarray_t *map)
 
                     /* don't allow missing matches */
                     assert (ori_new);
-                    
+
                     projlist[count++] = proj (ori_new, ori_old);
                     renamed = renamed || (ori_new != ori_old);
                 }
                 if (renamed)
                     right = PFla_project_ (right, count, projlist);
-                    
+
                 res = eqjoin (PROJ(LEFT, p), right,
                               ONAME(p, p->sem.eqjoin_unq.att1),
                               ori_join);
@@ -308,7 +324,7 @@ map_ori_names (PFla_op_t *p, PFarray_t *map)
                 res = eqjoin (PROJ(LEFT, p), PROJ(RIGHT, p),
                               ONAME(p, p->sem.eqjoin_unq.att1),
                               ONAME(p, p->sem.eqjoin_unq.att2));
-                              
+
             /* As some operators may rely on the schema of its operands
                we introduce a projection that removes the second join
                attribute thus maintaining the schema of the duplicate
@@ -351,9 +367,9 @@ map_ori_names (PFla_op_t *p, PFarray_t *map)
             PFalg_att_t new, old;
             unsigned int count = 0;
             bool renamed = false;
-            
+
             left = O(L(p));
-            
+
             for (unsigned int i = 0; i < left->schema.count; i++) {
                 old = left->schema.items[i].name;
                 for (unsigned int j = 0; j < p->sem.proj.count; j++)
@@ -366,7 +382,7 @@ map_ori_names (PFla_op_t *p, PFarray_t *map)
                         renamed = renamed || (new != old);
                     }
             }
-                    
+
             /* if the projection does not prune a column
                we may skip the projection operator */
             if (count == left->schema.count && !renamed)
@@ -392,7 +408,7 @@ map_ori_names (PFla_op_t *p, PFarray_t *map)
                                           p->sem.pos_sel.sortby, i)),
                              PFord_order_dir_at (
                                  p->sem.pos_sel.sortby, i));
-                                                   
+
             res = pos_select (PROJ(LEFT, p),
                               p->sem.pos_sel.pos,
                               sortby,
@@ -418,7 +434,7 @@ map_ori_names (PFla_op_t *p, PFarray_t *map)
         case la_fun_1to1:
         {
             PFalg_attlist_t refs;
-            
+
             refs.count = p->sem.fun_1to1.refs.count;
             refs.atts  = PFmalloc (refs.count *
                                    sizeof (*(refs.atts)));
@@ -431,7 +447,7 @@ map_ori_names (PFla_op_t *p, PFarray_t *map)
                             ONAME(p, p->sem.fun_1to1.res),
                             refs);
         }   break;
-            
+
         case la_num_eq:
             res = binary_op (PFla_eq, p, map);
             break;
@@ -449,29 +465,29 @@ map_ori_names (PFla_op_t *p, PFarray_t *map)
             break;
 
         case la_to:
-            res = to (PROJ(LEFT, p), 
+            res = to (PROJ(LEFT, p),
                       ONAME(p, p->sem.to.res),
                       ONAME(p, p->sem.to.att1),
                       ONAME(p, p->sem.to.att2),
                       p->sem.to.part?ONAME(p, p->sem.to.part):att_NULL);
             break;
-            
+
         case la_avg:
         case la_max:
         case la_min:
         case la_sum:
-            res = aggr (p->kind, PROJ(LEFT, p), 
+            res = aggr (p->kind, PROJ(LEFT, p),
                         ONAME(p, p->sem.aggr.res),
                         ONAME(p, p->sem.aggr.att),
                         p->sem.aggr.part?ONAME(p, p->sem.aggr.part):att_NULL);
             break;
-            
+
         case la_count:
             res = count (PROJ(LEFT, p),
                          ONAME(p, p->sem.aggr.res),
                          p->sem.aggr.part?ONAME(p, p->sem.aggr.part):att_NULL);
             break;
-                           
+
         case la_rownum:
         {
             PFord_ordering_t sortby = PFordering ();
@@ -485,13 +501,13 @@ map_ori_names (PFla_op_t *p, PFarray_t *map)
                                           p->sem.rownum.sortby, i)),
                              PFord_order_dir_at (
                                  p->sem.rownum.sortby, i));
-                                                   
+
             res = rownum (SEC_PROJ(LEFT, p, p->sem.rownum.res),
                           ONAME(p, p->sem.rownum.res),
                           sortby,
                           ONAME(p, p->sem.rownum.part));
         }   break;
-        
+
         case la_rank:
         {
             PFord_ordering_t sortby = PFordering ();
@@ -505,17 +521,17 @@ map_ori_names (PFla_op_t *p, PFarray_t *map)
                                           p->sem.rank.sortby, i)),
                              PFord_order_dir_at (
                                  p->sem.rank.sortby, i));
-                                                   
+
             res = rank (SEC_PROJ(LEFT, p, p->sem.rank.res),
                         ONAME(p, p->sem.rank.res),
                         sortby);
         }   break;
-        
+
         case la_number:
             res = number (SEC_PROJ(LEFT, p, p->sem.number.res),
                           ONAME(p, p->sem.number.res));
             break;
-        
+
         case la_type:
             res = type (SEC_PROJ(LEFT, p, p->sem.type.res),
                         ONAME(p, p->sem.type.res),
@@ -528,21 +544,21 @@ map_ori_names (PFla_op_t *p, PFarray_t *map)
                                    ONAME(p, p->sem.type.att),
                                    p->sem.type.ty);
             break;
-        
+
         case la_cast:
             res = cast (SEC_PROJ(LEFT, p, p->sem.type.res),
                         ONAME(p, p->sem.type.res),
                         ONAME(p, p->sem.type.att),
                         p->sem.type.ty);
             break;
-        
+
         case la_seqty1:
             res = seqty1 (PROJ(LEFT, p),
                           ONAME(p, p->sem.aggr.res),
                           ONAME(p, p->sem.aggr.att),
                           p->sem.aggr.part?ONAME(p, p->sem.aggr.part):att_NULL);
             break;
-            
+
         case la_all:
             res = all (PROJ(LEFT, p),
                        ONAME(p, p->sem.aggr.res),
@@ -565,7 +581,7 @@ map_ori_names (PFla_op_t *p, PFarray_t *map)
 
                 assert (item_in == iter);
 
-                res = step (O(L(p)), 
+                res = step (O(L(p)),
                             project (PROJ(RIGHT, p),
                                      proj (iter, iter),
                                      proj (item_out, item_in)),
@@ -584,9 +600,9 @@ map_ori_names (PFla_op_t *p, PFarray_t *map)
                             ONAME(p, p->sem.step.item),
                             ONAME(p, p->sem.step.item_res));
             break;
-                           
+
         case la_step_join:
-            res = step_join (O(L(p)), 
+            res = step_join (O(L(p)),
                              SEC_PROJ(RIGHT, p, p->sem.step.item_res),
                              p->sem.step.axis,
                              p->sem.step.ty,
@@ -594,7 +610,7 @@ map_ori_names (PFla_op_t *p, PFarray_t *map)
                              ONAME(p, p->sem.step.item),
                              ONAME(p, p->sem.step.item_res));
             break;
-            
+
         case la_guide_step:
             /* In case columns iter and item_in are identical columns
                item_in and item_out cannot refer to the same original
@@ -610,7 +626,7 @@ map_ori_names (PFla_op_t *p, PFarray_t *map)
 
                 assert (item_in == iter);
 
-                res = guide_step (O(L(p)), 
+                res = guide_step (O(L(p)),
                                   project (PROJ(RIGHT, p),
                                            proj (iter, iter),
                                            proj (item_out, item_in)),
@@ -633,9 +649,9 @@ map_ori_names (PFla_op_t *p, PFarray_t *map)
                                   ONAME(p, p->sem.step.item),
                                   ONAME(p, p->sem.step.item_res));
             break;
-                           
+
         case la_guide_step_join:
-            res = guide_step_join (O(L(p)), 
+            res = guide_step_join (O(L(p)),
                                    SEC_PROJ(RIGHT, p, p->sem.step.item_res),
                                    p->sem.step.axis,
                                    p->sem.step.ty,
@@ -645,73 +661,16 @@ map_ori_names (PFla_op_t *p, PFarray_t *map)
                                    ONAME(p, p->sem.step.item),
                                    ONAME(p, p->sem.step.item_res));
             break;
-            
-        case la_id:
-            /* In case columns iter and item_in are identical columns
-               item_in and item_out cannot refer to the same original
-               name. Then we need to ensure that we correct the naming
-               upfront (as the physical translation relies on the fact
-               that item_in and item_out are identical columns). */
-            if (ONAME(p, p->sem.id.item) !=
-                ONAME(p, p->sem.id.item_res)) {
-                PFalg_att_t iter, item_in, item_out, item_doc;
-                iter     = ONAME(p, p->sem.id.iter);
-                item_in  = ONAME(p, p->sem.id.item);
-                item_out = ONAME(p, p->sem.id.item_res);
-                item_doc = ONAME(p, p->sem.id.item_doc);
 
-                assert (item_in == iter);
-
-                res = id (O(L(p)),
-                          project (PROJ(RIGHT, p),
-                                   proj (iter, iter),
-                                   proj (item_out, item_in),
-                                   proj (item_doc, item_doc)),
-                          iter,
-                          item_out,
-                          item_out,
-                          item_doc);
-            } else
-                res = id (O(L(p)), PROJ(RIGHT, p),
-                          ONAME(p, p->sem.id.iter),
-                          ONAME(p, p->sem.id.item),
-                          ONAME(p, p->sem.id.item_res),
-                          ONAME(p, p->sem.id.item_doc));
+        case la_doc_index_join:
+            res = doc_index_join (O(L(p)),
+                                  SEC_PROJ(RIGHT, p, p->sem.doc_join.item_res),
+                                  p->sem.doc_join.kind,
+                                  ONAME(p, p->sem.doc_join.item),
+                                  ONAME(p, p->sem.doc_join.item_res),
+                                  ONAME(p, p->sem.doc_join.item_doc));
             break;
-                           
-        case la_idref:
-            /* In case columns iter and item_in are identical columns
-               item_in and item_out cannot refer to the same original
-               name. Then we need to ensure that we correct the naming
-               upfront (as the physical translation relies on the fact
-               that item_in and item_out are identical columns). */
-            if (ONAME(p, p->sem.id.item) !=
-                ONAME(p, p->sem.id.item_res)) {
-                PFalg_att_t iter, item_in, item_out, item_doc;
-                iter     = ONAME(p, p->sem.id.iter);
-                item_in  = ONAME(p, p->sem.id.item);
-                item_out = ONAME(p, p->sem.id.item_res);
-                item_doc = ONAME(p, p->sem.id.item_doc);
 
-                assert (item_in == iter);
-
-                res = idref (O(L(p)),
-                             project (PROJ(RIGHT, p),
-                                      proj (iter, iter),
-                                      proj (item_out, item_in),
-                                      proj (item_doc, item_doc)),
-                             iter,
-                             item_out,
-                             item_out,
-                             item_doc);
-            } else
-                res = idref (O(L(p)), PROJ(RIGHT, p),
-                             ONAME(p, p->sem.id.iter),
-                             ONAME(p, p->sem.id.item),
-                             ONAME(p, p->sem.id.item_res),
-                             ONAME(p, p->sem.id.item_doc));
-            break;
-                           
         case la_doc_tbl:
             /* In case columns iter and item_in are identical columns
                item_in and item_out cannot refer to the same original
@@ -739,9 +698,9 @@ map_ori_names (PFla_op_t *p, PFarray_t *map)
                                ONAME(p, p->sem.doc_tbl.item),
                                ONAME(p, p->sem.doc_tbl.item_res));
             break;
-                           
+
         case la_doc_access:
-            res = doc_access (O(L(p)), 
+            res = doc_access (O(L(p)),
                               SEC_PROJ(RIGHT, p, p->sem.doc_access.res),
                               ONAME(p, p->sem.doc_access.res),
                               ONAME(p, p->sem.doc_access.att),
@@ -757,19 +716,19 @@ map_ori_names (PFla_op_t *p, PFarray_t *map)
         case la_fcns:
             res = fcns (O(L(p)), O(R(p)));
             break;
-            
+
         case la_docnode:
             res = docnode (PROJ(LEFT, p), O(R(p)),
                            ONAME (p, p->sem.docnode.iter));
             break;
-                        
+
         case la_element:
             res = element (
                       PROJ(LEFT, p), O(R(p)),
                       ONAME (p, p->sem.iter_item.iter),
                       ONAME (p, p->sem.iter_item.item));
             break;
-        
+
         case la_attribute:
             res = attribute (PROJ(LEFT, p),
                              ONAME(p, p->sem.iter_item1_item2.iter),
@@ -862,15 +821,15 @@ map_ori_names (PFla_op_t *p, PFarray_t *map)
             break;
 
         case la_cond_err:
-            res = cond_err (PROJ(LEFT, p), O(R(p)), 
+            res = cond_err (PROJ(LEFT, p), O(R(p)),
                             PFprop_ori_name_right (p->prop, p->sem.err.att),
                             p->sem.err.str);
             break;
-        
+
         case la_nil:
             res = nil ();
             break;
-            
+
         case la_trace:
             res = trace (
                       PROJ(LEFT, p),
@@ -900,7 +859,7 @@ map_ori_names (PFla_op_t *p, PFarray_t *map)
             res = rec_fix (O(L(p)),
                            PROJ(RIGHT, p));
             break;
-            
+
         case la_rec_param:
         {
             PFla_op_t *arg = NULL;
@@ -912,17 +871,17 @@ map_ori_names (PFla_op_t *p, PFarray_t *map)
                     arg = ((ori_unq_map *) PFarray_at (map, i))->ori;
                     break;
                 }
-                    
+
             if (arg)
                 res = rec_param (arg, O(R(p)));
             else
                 res = O(R(p));
         }   break;
-            
+
         case la_rec_arg:
-        /* The both inputs (seed and recursion) may not use the same 
+        /* The both inputs (seed and recursion) may not use the same
            column names (as the base). Thus we live with inconsistent
-           original names and additionally add a renaming projection 
+           original names and additionally add a renaming projection
            (Schema L -> Schema Base and Schema R -> Schema Base)
            if necessary. */
         {
@@ -938,7 +897,7 @@ map_ori_names (PFla_op_t *p, PFarray_t *map)
             assert (count == p->sem.rec_arg.base->schema.count &&
                     count == L(p)->schema.count &&
                     count == R(p)->schema.count);
-            
+
             for (unsigned int i = 0; i < count; i++) {
                 unq      = p->sem.rec_arg.base->schema.items[i].name;
                 base_ori = ONAME(p->sem.rec_arg.base, unq);
@@ -951,7 +910,7 @@ map_ori_names (PFla_op_t *p, PFarray_t *map)
                 seed_rename = seed_rename || (base_ori != seed_ori);
                 rec_rename  = rec_rename  || (base_ori != rec_ori);
             }
-                    
+
             /* In case the recursion base is not referenced anymore
                we do not need to include the recursion argument. */
             for (unsigned int i = 0; i < PFarray_last (map); i++)
@@ -960,9 +919,9 @@ map_ori_names (PFla_op_t *p, PFarray_t *map)
                     base = ((ori_unq_map *) PFarray_at (map, i))->ori;
                     break;
                 }
-                    
+
             if (base)
-                res = rec_arg (seed_rename 
+                res = rec_arg (seed_rename
                                    ? PFla_project_ (O(L(p)), count, seed_proj)
                                    : O(L(p)),
                                rec_rename
@@ -983,14 +942,14 @@ map_ori_names (PFla_op_t *p, PFarray_t *map)
                                       sizeof (PFalg_schema_t));
 
             for (unsigned int i = 0; i < p->schema.count; i++)
-                schema.items[i] = 
+                schema.items[i] =
                     (struct PFalg_schm_item_t)
                         { .name = ONAME(p, p->schema.items[i].name),
                           .type = p->schema.items[i].type };
-                                                   
+
             res = rec_base (schema);
         } break;
-            
+
         case la_proxy:
         case la_proxy_base:
             PFoops (OOPS_FATAL,
@@ -1018,7 +977,7 @@ map_ori_names (PFla_op_t *p, PFarray_t *map)
 
     /* Add pair (p, res) to the environment map
        to allow lookup of already generated subplans. */
-    *(ori_unq_map *) PFarray_add (map) = 
+    *(ori_unq_map *) PFarray_add (map) =
         (ori_unq_map) { .ori = res, .unq = p};
 }
 
@@ -1032,7 +991,7 @@ PFmap_ori_names (PFla_op_t *root)
 
     /* infer original bit-encoded names */
     PFprop_infer_ori_names (root);
- 
+
     /* generate equivalent algebra DAG */
     map_ori_names (root, map);
 

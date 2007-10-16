@@ -86,7 +86,7 @@ unary_op (PFla_op_t *(*OP) (const PFla_op_t *,
           PFla_op_t *p,
           PFarray_t *map)
 {
-    return OP (U(L(p)), 
+    return OP (U(L(p)),
                UNAME(p, p->sem.unary.res),
                UNAME(p, p->sem.unary.att));
 }
@@ -98,7 +98,7 @@ binary_op (PFla_op_t *(*OP) (const PFla_op_t *, PFalg_att_t,
            PFla_op_t *p,
            PFarray_t *map)
 {
-    return OP (U(L(p)), 
+    return OP (U(L(p)),
                UNAME(p, p->sem.binary.res),
                UNAME(p, p->sem.binary.att1),
                UNAME(p, p->sem.binary.att2));
@@ -124,11 +124,27 @@ map_unq_names (PFla_op_t *p, PFarray_t *map)
 
     /* action code */
     switch (p->kind) {
-        case la_serialize:
-            res = serialize (U(L(p)), U(R(p)),
-                             UNAME(p, p->sem.serialize.pos),
-                             UNAME(p, p->sem.serialize.item));
+        case la_serialize_seq:
+            res = serialize_seq (U(L(p)), U(R(p)),
+                                 UNAME(p, p->sem.ser_seq.pos),
+                                 UNAME(p, p->sem.ser_seq.item));
             break;
+
+        case la_serialize_rel:
+        {
+            PFalg_attlist_t items;
+            items.count = p->sem.ser_rel.items.count;
+            items.atts  = PFmalloc (items.count *
+                                    sizeof (PFalg_attlist_t));
+
+            for (unsigned int i = 0; i < items.count; i++)
+                items.atts[i] = UNAME(p, p->sem.ser_rel.items.atts[i]);
+
+            res = serialize_rel (U(L(p)),
+                                 UNAME(p, p->sem.ser_rel.iter),
+                                 UNAME(p, p->sem.ser_rel.pos),
+                                 items);
+        }   break;
 
         case la_lit_tbl:
         {
@@ -139,7 +155,7 @@ map_unq_names (PFla_op_t *p, PFarray_t *map)
 
             for (unsigned int i = 0; i < p->schema.count; i++)
                 attlist.atts[i] = UNAME(p, p->schema.items[i].name);
-                                                   
+
             res = PFla_lit_tbl_ (attlist,
                                  p->sem.lit_tbl.count,
                                  p->sem.lit_tbl.tuples);
@@ -153,11 +169,11 @@ map_unq_names (PFla_op_t *p, PFarray_t *map)
                                       sizeof (PFalg_schema_t));
 
             for (unsigned int i = 0; i < p->schema.count; i++)
-                schema.items[i] = 
+                schema.items[i] =
                     (struct PFalg_schm_item_t)
                         { .name = UNAME(p, p->schema.items[i].name),
                           .type = p->schema.items[i].type };
-                                                   
+
             res = PFla_empty_tbl_ (schema);
         }   break;
 
@@ -192,9 +208,9 @@ map_unq_names (PFla_op_t *p, PFarray_t *map)
                 unq = left->schema.items[i].name;
                 ori = PFprop_ori_name_left (p->prop, unq);
                 assert (ori);
-                
+
                 projlist1[count1++] =
-                    proj (UNAME(p, ori), 
+                    proj (UNAME(p, ori),
                           unq);
             }
 
@@ -202,15 +218,15 @@ map_unq_names (PFla_op_t *p, PFarray_t *map)
                 unq = right->schema.items[i].name;
                 ori = PFprop_ori_name_right (p->prop, unq);
                 assert (ori);
-                
-                projlist2[count2++] = 
+
+                projlist2[count2++] =
                     proj (UNAME(p, ori),
                           unq);
             }
-            
+
             left  = PFla_project_ (left, count1, projlist1);
             right = PFla_project_ (right, count2, projlist2);
-                                
+
             if (p->kind == la_cross)
                 res = cross (left, right);
             else { /* p->kind == la_thetajoin */
@@ -250,7 +266,7 @@ map_unq_names (PFla_op_t *p, PFarray_t *map)
 
             att1_unq = PFprop_unq_name_left (p->prop, p->sem.eqjoin.att1);
             att2_unq = PFprop_unq_name_right (p->prop, p->sem.eqjoin.att2);
-            
+
             projlist  = PFmalloc (left->schema.count *
                                   sizeof (PFalg_proj_t));
             projlist2 = PFmalloc (right->schema.count *
@@ -259,13 +275,13 @@ map_unq_names (PFla_op_t *p, PFarray_t *map)
             count2 = 0;
             projlist [count++]  = proj (att1_unq, att1_unq);
             projlist2[count2++] = proj (att2_unq, att2_unq);
-                                              
+
             renamed = false;
             for (unsigned int i = 0; i < left->schema.count; i++) {
                 l_unq = left->schema.items[i].name;
                 ori = PFprop_ori_name_left (p->prop, l_unq);
                 assert (ori);
-                
+
                 unq = PFprop_unq_name (p->prop, ori);
                 if (l_unq != att1_unq) {
                     projlist[count++] = proj (unq, l_unq);
@@ -280,7 +296,7 @@ map_unq_names (PFla_op_t *p, PFarray_t *map)
                 r_unq = right->schema.items[i].name;
                 ori = PFprop_ori_name_right (p->prop, r_unq);
                 assert (ori);
-                
+
                 unq = PFprop_unq_name (p->prop, ori);
                 if (r_unq != att2_unq) {
                     projlist2[count2++] = proj (unq, r_unq);
@@ -289,12 +305,12 @@ map_unq_names (PFla_op_t *p, PFarray_t *map)
             }
             if (renamed)
                 right = PFla_project_ (right, count2, projlist2);
-                                
-            res = PFla_eqjoin_clone (left, right, 
+
+            res = PFla_eqjoin_clone (left, right,
                                      att1_unq, att2_unq,
                                      UNAME(p, p->sem.eqjoin.att1));
         }   break;
-            
+
         case la_eqjoin_unq:
             PFoops (OOPS_FATAL,
                     "clone column aware eqjoin operator is "
@@ -319,7 +335,7 @@ map_unq_names (PFla_op_t *p, PFarray_t *map)
                               left,
                               U(R(p)),
                               UNAME (p, p->sem.eqjoin.att1),
-                              PFprop_unq_name_right (p->prop, 
+                              PFprop_unq_name_right (p->prop,
                                                      p->sem.eqjoin.att2),
                               UNAME (p, p->sem.eqjoin.att1)),
                           left->schema.count,
@@ -327,7 +343,7 @@ map_unq_names (PFla_op_t *p, PFarray_t *map)
             } else {
                 res = semijoin (U(L(p)), U(R(p)),
                                 UNAME (p, p->sem.eqjoin.att1),
-                                PFprop_unq_name_right (p->prop, 
+                                PFprop_unq_name_right (p->prop,
                                                        p->sem.eqjoin.att2));
             }
             break;
@@ -339,9 +355,9 @@ map_unq_names (PFla_op_t *p, PFarray_t *map)
                                                sizeof (PFalg_proj_t));
             PFalg_att_t unq;
             unsigned int count = 0;
-            
+
             left = U(L(p));
-            
+
             for (unsigned int i = 0; i < left->schema.count; i++)
                 for (unsigned int j = 0; j < p->sem.proj.count; j++)
                     if ((unq = UNAME(p, p->sem.proj.items[j].new)) ==
@@ -349,7 +365,7 @@ map_unq_names (PFla_op_t *p, PFarray_t *map)
                         projlist[count++] = proj (unq, unq);
                         break;
                     }
-                    
+
             /* if the projection does not prune a column
                we may skip the projection operator */
             if (count == left->schema.count)
@@ -376,7 +392,7 @@ map_unq_names (PFla_op_t *p, PFarray_t *map)
                                           p->sem.pos_sel.sortby, i)),
                              PFord_order_dir_at (
                                  p->sem.pos_sel.sortby, i));
-                                                   
+
             res = pos_select (U(L(p)),
                               p->sem.pos_sel.pos,
                               sortby,
@@ -402,15 +418,15 @@ map_unq_names (PFla_op_t *p, PFarray_t *map)
             for (unsigned int i = 0; i < p->schema.count; i++) {
                 ori = p->schema.items[i].name;
                 unq = UNAME(p, ori);
-                projlist1[i] = proj (unq, 
+                projlist1[i] = proj (unq,
                                      PFprop_unq_name_left (p->prop, ori));
-                projlist2[i] = proj (unq, 
+                projlist2[i] = proj (unq,
                                      PFprop_unq_name_right (p->prop, ori));
             }
-            
+
             left  = PFla_project_ (U(L(p)), p->schema.count, projlist1);
             right = PFla_project_ (U(R(p)), p->schema.count, projlist2);
-                                
+
             if (p->kind == la_disjunion)
                 res = disjunion (left, right);
             else if (p->kind == la_intersect)
@@ -426,7 +442,7 @@ map_unq_names (PFla_op_t *p, PFarray_t *map)
         case la_fun_1to1:
         {
             PFalg_attlist_t refs;
-            
+
             refs.count = p->sem.fun_1to1.refs.count;
             refs.atts  = PFmalloc (refs.count *
                                    sizeof (*(refs.atts)));
@@ -439,7 +455,7 @@ map_unq_names (PFla_op_t *p, PFarray_t *map)
                             UNAME(p, p->sem.fun_1to1.res),
                             refs);
         }   break;
-            
+
         case la_num_eq:
             res = binary_op (PFla_eq, p, map);
             break;
@@ -457,7 +473,7 @@ map_unq_names (PFla_op_t *p, PFarray_t *map)
             break;
 
         case la_to:
-            res = to (U(L(p)), 
+            res = to (U(L(p)),
                       UNAME(p, p->sem.to.res),
                       /* attribute att is stored only in child operator */
                       UNAME(L(p), p->sem.to.att1),
@@ -469,19 +485,19 @@ map_unq_names (PFla_op_t *p, PFarray_t *map)
         case la_max:
         case la_min:
         case la_sum:
-            res = aggr (p->kind, U(L(p)), 
+            res = aggr (p->kind, U(L(p)),
                         UNAME(p, p->sem.aggr.res),
                         /* attribute att is stored only in child operator */
                         UNAME(L(p), p->sem.aggr.att),
                         p->sem.aggr.part?UNAME(p, p->sem.aggr.part):att_NULL);
             break;
-            
+
         case la_count:
             res = count (U(L(p)),
                          UNAME(p, p->sem.aggr.res),
                          p->sem.aggr.part?UNAME(p, p->sem.aggr.part):att_NULL);
             break;
-                           
+
         case la_rownum:
         {
             PFord_ordering_t sortby = PFordering ();
@@ -495,13 +511,13 @@ map_unq_names (PFla_op_t *p, PFarray_t *map)
                                           p->sem.rownum.sortby, i)),
                              PFord_order_dir_at (
                                  p->sem.rownum.sortby, i));
-                                                   
+
             res = rownum (U(L(p)),
                           UNAME(p, p->sem.rownum.res),
                           sortby,
                           UNAME(p, p->sem.rownum.part));
         }   break;
-        
+
         case la_rank:
         {
             PFord_ordering_t sortby = PFordering ();
@@ -515,17 +531,17 @@ map_unq_names (PFla_op_t *p, PFarray_t *map)
                                           p->sem.rank.sortby, i)),
                              PFord_order_dir_at (
                                  p->sem.rank.sortby, i));
-                                                   
+
             res = rank (U(L(p)),
                         UNAME(p, p->sem.rank.res),
                         sortby);
         }   break;
-        
+
         case la_number:
             res = number (U(L(p)),
                           UNAME(p, p->sem.number.res));
             break;
-        
+
         case la_type:
             res = type (U(L(p)),
                         UNAME(p, p->sem.type.res),
@@ -538,14 +554,14 @@ map_unq_names (PFla_op_t *p, PFarray_t *map)
                                    UNAME(p, p->sem.type.att),
                                    p->sem.type.ty);
             break;
-        
+
         case la_cast:
             res = cast (U(L(p)),
                         UNAME(p, p->sem.type.res),
                         UNAME(p, p->sem.type.att),
                         p->sem.type.ty);
             break;
-        
+
         case la_seqty1:
             res = seqty1 (U(L(p)),
                           UNAME(p, p->sem.aggr.res),
@@ -553,7 +569,7 @@ map_unq_names (PFla_op_t *p, PFarray_t *map)
                           UNAME(L(p), p->sem.aggr.att),
                           p->sem.aggr.part?UNAME(p, p->sem.aggr.part):att_NULL);
             break;
-            
+
         case la_all:
             res = all (U(L(p)),
                        UNAME(p, p->sem.aggr.res),
@@ -568,12 +584,12 @@ map_unq_names (PFla_op_t *p, PFarray_t *map)
                         p->sem.step.ty,
                         p->sem.step.level,
                         UNAME(p, p->sem.step.iter),
-                        /* unique name of input attribute item is 
+                        /* unique name of input attribute item is
                            stored in the child operator only */
                         UNAME(R(p), p->sem.step.item),
                         UNAME(p, p->sem.step.item_res));
             break;
-                           
+
         case la_step_join:
             res = step_join (U(L(p)), U(R(p)),
                              p->sem.step.axis,
@@ -582,7 +598,7 @@ map_unq_names (PFla_op_t *p, PFarray_t *map)
                              UNAME(p, p->sem.step.item),
                              UNAME(p, p->sem.step.item_res));
             break;
-                           
+
         case la_guide_step:
             res = guide_step (U(L(p)), U(R(p)),
                               p->sem.step.axis,
@@ -591,7 +607,7 @@ map_unq_names (PFla_op_t *p, PFarray_t *map)
                               p->sem.step.guides,
                               p->sem.step.level,
                               UNAME(p, p->sem.step.iter),
-                              /* unique name of input attribute item is 
+                              /* unique name of input attribute item is
                                  stored in the child operator only */
                               UNAME(R(p), p->sem.step.item),
                               UNAME(p, p->sem.step.item_res));
@@ -607,40 +623,24 @@ map_unq_names (PFla_op_t *p, PFarray_t *map)
                                    UNAME(p, p->sem.step.item),
                                    UNAME(p, p->sem.step.item_res));
             break;
-                           
-        case la_id:
-            res = id (U(L(p)), U(R(p)),
-                      UNAME(p, p->sem.id.iter),
-                      /* unique name of input attribute item is 
-                         stored in the child operator only */
-                      UNAME(R(p), p->sem.id.item),
-                      UNAME(p, p->sem.id.item_res),
-                      /* unique name of input attribute item_doc
-                         is stored in the child operator only */
-                      UNAME(R(p), p->sem.id.item_doc));
+
+        case la_doc_index_join:
+            res = doc_index_join (U(L(p)), U(R(p)),
+                                  p->sem.doc_join.kind,
+                                  UNAME(p, p->sem.doc_join.item),
+                                  UNAME(p, p->sem.doc_join.item_res),
+                                  UNAME(p, p->sem.doc_join.item_doc));
             break;
-            
-        case la_idref:
-            res = idref (U(L(p)), U(R(p)),
-                         UNAME(p, p->sem.id.iter),
-                         /* unique name of input attribute item is 
-                            stored in the child operator only */
-                         UNAME(R(p), p->sem.id.item),
-                         UNAME(p, p->sem.id.item_res),
-                         /* unique name of input attribute item_doc
-                            is stored in the child operator only */
-                         UNAME(R(p), p->sem.id.item_doc));
-            break;
-            
+
         case la_doc_tbl:
             res = doc_tbl (U(L(p)),
                            UNAME(p, p->sem.doc_tbl.iter),
-                           /* unique name of input attribute item is 
+                           /* unique name of input attribute item is
                               stored in the child operator only */
                            UNAME(L(p), p->sem.doc_tbl.item),
                            UNAME(p, p->sem.doc_tbl.item_res));
             break;
-                           
+
         case la_doc_access:
             res = doc_access (U(L(p)), U(R(p)),
                               UNAME(p, p->sem.doc_access.res),
@@ -657,19 +657,19 @@ map_unq_names (PFla_op_t *p, PFarray_t *map)
         case la_fcns:
             res = fcns (U(L(p)), U(R(p)));
             break;
-            
+
         case la_docnode:
         res = docnode (U(L(p)), U(R(p)),
                        UNAME (L(p), p->sem.docnode.iter));
         break;
-                        
+
         case la_element:
             res = element (
                       U(L(p)), U(R(p)),
                       UNAME (L(p), p->sem.iter_item.iter),
                       UNAME (L(p), p->sem.iter_item.item));
             break;
-        
+
         case la_attribute:
             res = attribute (U(L(p)),
                              UNAME(L(p), p->sem.iter_item1_item2.iter),
@@ -733,13 +733,13 @@ map_unq_names (PFla_op_t *p, PFarray_t *map)
             break;
 
         case la_cond_err:
-            res = cond_err (U(L(p)), U(R(p)), 
-                            /* unique name of input attribute att is 
+            res = cond_err (U(L(p)), U(R(p)),
+                            /* unique name of input attribute att is
                                stored in the child operator only */
                             UNAME(R(p), p->sem.err.att),
                             p->sem.err.str);
             break;
-        
+
         case la_trace:
             res = trace (
                       U(L(p)),
@@ -768,11 +768,11 @@ map_unq_names (PFla_op_t *p, PFarray_t *map)
         case la_nil:
             res = nil ();
             break;
-            
+
         case la_rec_fix:
             res = rec_fix (U(L(p)), U(R(p)));
             break;
-            
+
         case la_rec_param:
         {
             PFla_op_t *arg = NULL;
@@ -784,17 +784,17 @@ map_unq_names (PFla_op_t *p, PFarray_t *map)
                     arg = ((ori_unq_map *) PFarray_at (map, i))->unq;
                     break;
                 }
-                    
+
             if (arg)
                 res = rec_param (arg, U(R(p)));
             else
                 res = U(R(p));
         }   break;
-            
+
         case la_rec_arg:
-        /* The results of the left (seed) and the right (recursion) argument 
-           have different result schemas. Thus we introduce a mapping 
-           projection that transforms the recursion schema into the seed 
+        /* The results of the left (seed) and the right (recursion) argument
+           have different result schemas. Thus we introduce a mapping
+           projection that transforms the recursion schema into the seed
            (and base) schema. */
         {
             PFla_op_t *base = NULL;
@@ -804,16 +804,16 @@ map_unq_names (PFla_op_t *p, PFarray_t *map)
             for (unsigned int i = 0; i < p->schema.count; i++)
                 projlist[i] = proj (UNAME(p, p->schema.items[i].name),
                                     UNAME(R(p), p->schema.items[i].name));
-            
+
             /* In case the recursion base is not referenced anymore
                we do not need to include the recursion argument. */
             for (unsigned int i = 0; i < PFarray_last (map); i++)
-                if (((ori_unq_map *) PFarray_at (map, i))->ori 
+                if (((ori_unq_map *) PFarray_at (map, i))->ori
                     == p->sem.rec_arg.base) {
                     base = ((ori_unq_map *) PFarray_at (map, i))->unq;
                     break;
                 }
-                    
+
             if (base)
                 res = rec_arg (U(L(p)),
                                PFla_project_ (U(R(p)),
@@ -834,14 +834,14 @@ map_unq_names (PFla_op_t *p, PFarray_t *map)
                                       sizeof (PFalg_schema_t));
 
             for (unsigned int i = 0; i < p->schema.count; i++)
-                schema.items[i] = 
+                schema.items[i] =
                     (struct PFalg_schm_item_t)
                         { .name = UNAME(p, p->schema.items[i].name),
                           .type = p->schema.items[i].type };
-                                                   
+
             res = rec_base (schema);
         } break;
-            
+
         case la_proxy:
         case la_proxy_base:
             PFoops (OOPS_FATAL,
@@ -872,7 +872,7 @@ map_unq_names (PFla_op_t *p, PFarray_t *map)
 
     /* Add pair (p, res) to the environment map
        to allow lookup of already generated subplans. */
-    *(ori_unq_map *) PFarray_add (map) = 
+    *(ori_unq_map *) PFarray_add (map) =
         (ori_unq_map) { .ori = p, .unq = res};
 }
 
@@ -888,7 +888,7 @@ PFmap_unq_names (PFla_op_t *root)
     PFprop_infer_unq_names (root);
     /* infer the set property */
     PFprop_infer_set (root);
- 
+
     /* generate equivalent algebra DAG */
     map_unq_names (root, map);
 

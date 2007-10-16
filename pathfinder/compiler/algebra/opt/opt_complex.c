@@ -453,14 +453,14 @@ opt_complex (PFla_op_t *p)
 
     /* action code */
     switch (p->kind) {
-        case la_serialize:
+        case la_serialize_seq:
             if (PFprop_card (p->prop) == 1) {
                 R(p) = PFla_attach (
                            PFla_project (
                                R(p),
-                               PFalg_proj (p->sem.serialize.item,
-                                           p->sem.serialize.item)),
-                           p->sem.serialize.pos,
+                               PFalg_proj (p->sem.ser_seq.item,
+                                           p->sem.ser_seq.item)),
+                           p->sem.ser_seq.pos,
                            PFalg_lit_nat (1));
             }
             break;
@@ -1170,7 +1170,7 @@ opt_complex (PFla_op_t *p)
             if (p->sem.step.level < 0)
                 p->sem.step.level = PFprop_level (p->prop,
                                                   p->sem.step.item_res);
-            
+
             if ((p->sem.step.axis == alg_desc ||
                  p->sem.step.axis == alg_desc_s) &&
                 p->sem.step.level >= 1 &&
@@ -1238,7 +1238,7 @@ opt_complex (PFla_op_t *p)
                                                        p->sem.step.item))
                 p->sem.step.axis = alg_chld;
             break;
-                
+
         case la_step_join:
             if (p->sem.step.level < 0)
                 p->sem.step.level = PFprop_level (p->prop,
@@ -1304,7 +1304,7 @@ opt_complex (PFla_op_t *p)
                 break;
             }
             break;
-        
+
         case la_roots:
             if (L(p)->kind == la_merge_adjacent &&
                 PFprop_key_right (L(p)->prop,
@@ -1333,7 +1333,7 @@ opt_complex (PFla_op_t *p)
                                   RL(p)->sem.merge_adjacent.iter_in))
                 *p = *PFla_dummy (L(p));
             break;
-        
+
         default:
             break;
     }

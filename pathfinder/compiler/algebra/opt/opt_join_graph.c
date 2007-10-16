@@ -87,7 +87,7 @@ opt_join_graph (PFla_op_t *p)
                 /* we need to additional projections:
                    top    to remove the right join argument from the result list
                    right  to avoid name conflicts with the left input columns
-                          and to ensure that distinct is applied 
+                          and to ensure that distinct is applied
                           only on the join column */
                 PFalg_proj_t *top   = PFmalloc (p->schema.count *
                                                 sizeof (PFalg_proj_t));
@@ -100,7 +100,7 @@ opt_join_graph (PFla_op_t *p)
                    schema) */
                 for (unsigned int i = 0; i < p->schema.count; i++) {
                     cur_col = p->schema.items[i].name;
-                    
+
                     top[i] = PFalg_proj (cur_col, cur_col);
                     used_cols |= cur_col;
                 }
@@ -109,7 +109,7 @@ opt_join_graph (PFla_op_t *p)
                     new_col = PFalg_ori_name (
                                   PFalg_unq_name (new_col, 0),
                                   ~used_cols);
-                
+
                 /* replace the semijoin */
                 *p = *PFla_project_ (
                           PFla_eqjoin (L(p),
@@ -128,7 +128,7 @@ opt_join_graph (PFla_op_t *p)
             break;
 
         /* Remove unnecessary distinct operators and narrow the schema
-           of a distinct operator if some columns are not required 
+           of a distinct operator if some columns are not required
            while the remaining columns still provide a composite key. */
         case la_distinct:
             if (PFprop_set (p->prop) ||
@@ -139,7 +139,7 @@ opt_join_graph (PFla_op_t *p)
                 schema.count = 0;
                 schema.items = PFmalloc (p->schema.count *
                                          sizeof (PFalg_schema_t));
-                
+
                 for (unsigned int i = 0; i < p->schema.count; i++)
                     if (PFprop_icol (p->prop, p->schema.items[i].name))
                         schema.items[schema.count++].name
@@ -154,7 +154,7 @@ opt_join_graph (PFla_op_t *p)
                     /* create projection list */
                     proj_list = PFmalloc (schema.count *
                                           sizeof (*(proj_list)));
-                                          
+
                     for (unsigned int i = 0; i < schema.count; i++)
                         proj_list[i] = PFalg_proj (schema.items[i].name,
                                                    schema.items[i].name);
@@ -167,7 +167,7 @@ opt_join_graph (PFla_op_t *p)
                 }
             }
             break;
-        
+
         /* Use a rank operator with multiple sort criteria as the place
            where a new distinct operator based on the composite key
            property is introduced. (Rank operators with multiple sort
@@ -192,31 +192,31 @@ opt_join_graph (PFla_op_t *p)
                         schema.items[schema.count++].name = col;
                 }
                 /* ... and use it to check if it contains a composite key. */
-                if (PFprop_ckey (p->prop, schema) > 1) 
+                if (PFprop_ckey (p->prop, schema) > 1)
                     L(p) = PFla_distinct (L(p));
             }
             break;
-            
+
         /* Replace number generated columns by already existing
            key columns.
            !!!This means that iter columns with type aat_nat
               are replaced by columns of arbitrary type!!! */
         case la_number:
-        {    
+        {
             PFalg_att_t key = att_NULL;
-            
+
             for (unsigned int i = 0; i < p->schema.count; i++)
                 if (p->sem.number.res != p->schema.items[i].name &&
                     PFprop_key (p->prop, p->schema.items[i].name))
                     key = p->schema.items[i].name;
-           
+
             if (key) {
                 PFalg_proj_t *proj_list;
 
                 /* create projection list */
                 proj_list = PFmalloc (p->schema.count *
                                       sizeof (*(proj_list)));
-                                      
+
                 for (unsigned int i = 0; i < p->schema.count; i++)
                     if (p->sem.number.res != p->schema.items[i].name)
                         proj_list[i] = PFalg_proj (p->schema.items[i].name,
@@ -228,7 +228,7 @@ opt_join_graph (PFla_op_t *p)
                 break;
             }
         }   break;
-            
+
         /* Replace all step operators by step_join operators
            to allow a following optimization phase to get rid
            of unnecessary eqjoin and number operators */
@@ -242,7 +242,7 @@ opt_join_graph (PFla_op_t *p)
                  PFprop_level_right (p->prop, p->sem.step.item) >= 0 &&
                  (p->sem.step.axis == alg_desc ||
                   p->sem.step.axis == alg_desc_s))) {
-                
+
                 PFalg_att_t item_res;
                 item_res = PFalg_ori_name (
                                PFalg_unq_name (att_item, 0),
@@ -265,7 +265,7 @@ opt_join_graph (PFla_op_t *p)
                 break;
             }
             break;
-            
+
         /* Replace all guide_step operators by guide_step_join
            operators to allow a following optimization phase
            to get rid of unnecessary eqjoin and number operators */
@@ -281,13 +281,13 @@ opt_join_graph (PFla_op_t *p)
                  PFprop_level_right (p->prop, p->sem.step.item) >= 0 &&
                  (p->sem.step.axis == alg_desc ||
                   p->sem.step.axis == alg_desc_s))) {
-                
+
                 PFalg_att_t item_res;
                 item_res = PFalg_ori_name (
                                PFalg_unq_name (att_item, 0),
                                ~(p->sem.step.item |
                                  p->sem.step.iter));
-                
+
                 *p = *PFla_project (
                              PFla_guide_step_join (
                                  L(p),
@@ -306,7 +306,7 @@ opt_join_graph (PFla_op_t *p)
                 break;
             }
             break;
-            
+
         /* throw away proxy nodes and thus avoid calling option '-o {'
            which would remove all step_joins as well. */
         case la_proxy:
@@ -341,8 +341,8 @@ PFalgopt_join_graph (PFla_op_t *root, PFguide_tree_t *guide_tree)
     opt_join_graph (root);
     PFla_dag_reset (root);
 
-    /* In addition optimize the resulting DAG using the icols property 
-       to remove inconsistencies introduced by changing the types 
+    /* In addition optimize the resulting DAG using the icols property
+       to remove inconsistencies introduced by changing the types
        of unreferenced columns (rule distinct). The icols optimization
        will ensure that these columns are 'really' never used. */
     root = PFalgopt_icol (root);

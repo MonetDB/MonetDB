@@ -62,7 +62,8 @@ static bool
 check_op (PFla_op_t *n)
 {
     switch (n->kind) {
-        case la_serialize:
+        case la_serialize_seq:
+        case la_serialize_rel:
         /* we assume the following operators do not appear
            in initial plans */
         case la_semijoin:
@@ -152,12 +153,12 @@ check_op (PFla_op_t *n)
                 n->schema.items[0].name & ITER(R(n)))
                 return true;
             */
-            
+
             ITER (n) = ITER (L(n));
             POS  (n) = POS  (L(n));
             INNER(n) = INNER(L(n));
             break;
-            
+
         case la_distinct:
             /******************************************************************/
             /*                                                                */
@@ -188,12 +189,12 @@ check_op (PFla_op_t *n)
             POS  (n) = POS  (L(n));
             INNER(n) = INNER(L(n));
             break;
-            
+
         case la_eqjoin:
             /* get the iter column through the map relation */
             if (n->sem.eqjoin.att1 & ITER(L(n)) &&
                 n->sem.eqjoin.att2 == att_outer &&
-                /* as consistency check make sure the map 
+                /* as consistency check make sure the map
                    relation has the schema inner|outer */
                 R(n)->schema.count == 2 &&
                 (R(n)->schema.items[0].name == att_inner ||
@@ -203,7 +204,7 @@ check_op (PFla_op_t *n)
                 ITER(n) = att_inner;
             else if (n->sem.eqjoin.att2 & ITER(R(n)) &&
                 n->sem.eqjoin.att1 == att_outer &&
-                /* as consistency check make sure the map 
+                /* as consistency check make sure the map
                    relation has the schema inner|outer */
                 L(n)->schema.count == 2 &&
                 (L(n)->schema.items[0].name == att_inner ||
@@ -213,7 +214,7 @@ check_op (PFla_op_t *n)
                 ITER(n) = att_inner;
             else
                 ITER(n) = ITER(L(n)) | ITER(R(n));
-            
+
             POS  (n) = POS  (L(n)) | POS  (R(n));
             INNER(n) = INNER(L(n)) | INNER(R(n));
             break;
@@ -255,30 +256,30 @@ check_op (PFla_op_t *n)
             ITER (n) = ITER (L(n));
             POS  (n) = POS  (L(n));
             INNER(n) = INNER(L(n));
-            
+
             /* a numbering partitioned by ITER indicates a new sequence
                order -- we thus add new position column */
             if (n->sem.rownum.part && ITER(n) & n->sem.rownum.part)
                 POS(n) |= n->sem.rownum.res;
             break;
-            
+
         case la_rank:
             ITER (n) = ITER (L(n));
             POS  (n) = POS  (L(n));
             INNER(n) = INNER(L(n));
-            
+
             /* a numbering indicates a new sequence
                order -- we thus add new position column */
             if (ITER(n))
                 POS(n) |= n->sem.rank.res;
             break;
-            
+
         case la_number:
             ITER (n) = ITER (L(n));
             POS  (n) = POS  (L(n));
             INNER(n) = INNER(L(n));
-            
-            /* mark new iteration column that is generated 
+
+            /* mark new iteration column that is generated
                based on the old input sequence.
                This column is needed to ensure that we do not
                use the cardinality to generate new nodes */
@@ -287,7 +288,7 @@ check_op (PFla_op_t *n)
                 n->sem.number.res == att_inner)
                 INNER(n) |= att_inner;
             break;
-            
+
         case la_cast:
             /* check for a reference to pos */
             if (POS(L(n)) & n->sem.type.att)
@@ -300,14 +301,13 @@ check_op (PFla_op_t *n)
 
         case la_step:
         case la_guide_step:
-        case la_id:
-        case la_idref:
+        case la_doc_index_join:
         case la_doc_access:
             ITER (n) = ITER (R(n));
             POS  (n) = POS  (R(n));
             INNER(n) = INNER(R(n));
             break;
-            
+
         case la_twig:
         case la_fcns:
         case la_docnode:
@@ -336,7 +336,7 @@ check_op (PFla_op_t *n)
         case la_trace_map:
             /* do not propagate or introduce any column information */
             break;
-            
+
         /* we have to assume that we see a nested recursion */
         case la_rec_fix:
             if (ITER(L(n)))
@@ -344,7 +344,7 @@ check_op (PFla_op_t *n)
             if (INNER(L(n)))
                 INNER(n) = att_iter;
             break;
-            
+
         case la_rec_param:
             /* make sure to collect the iter and inner columns */
             ITER (n) = ITER (L(n)) | ITER (R(n));
@@ -360,10 +360,10 @@ check_op (PFla_op_t *n)
         case la_rec_base:
         {
             int checks_failed = 3;
-            /* initialize the iter and pos columns for the input 
+            /* initialize the iter and pos columns for the input
                relation (thus ignoring loop and result bases). */
             if (n->schema.count != 3) break;
-            
+
             for (unsigned int i = 0; i < n->schema.count; i++) {
                 if (n->schema.items[i].name == att_iter) {
                     ITER(n) = att_iter;
@@ -433,7 +433,7 @@ prop_check (PFla_op_t *n)
         n->sem.attach.value.val.bln)
         /* mark the distinct operator as unused */
         NOT_USED(L(n)) = true;
-        
+
     /* check properties for children */
     for (unsigned int i = 0; i < PFLA_OP_MAXCHILD && n->child[i]; i++)
         if (prop_check (n->child[i]))
@@ -449,7 +449,7 @@ prop_check (PFla_op_t *n)
     return check_op (n);
 }
 
-/* worker for PFprop_check_rec_delta that counts the number 
+/* worker for PFprop_check_rec_delta that counts the number
    of incoming edges for each operator */
 static void
 prop_count_refs (PFla_op_t *n)
@@ -476,8 +476,8 @@ prop_count_refs (PFla_op_t *n)
 bool
 PFprop_check_rec_delta (PFla_op_t *root) {
     bool found_conflict;
-    
-    /* infer the required value property to make 
+
+    /* infer the required value property to make
        the delta recursion check less restrictive
        for distinct operators */
     PFprop_infer_reqval (root);

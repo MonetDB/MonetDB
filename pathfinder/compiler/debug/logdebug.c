@@ -48,7 +48,8 @@
 
 /** Node names to print out for all the Algebra tree nodes. */
 static char *a_id[]  = {
-      [la_serialize]        = "SERIALIZE"
+      [la_serialize_seq]    = "SERIALIZE"
+    , [la_serialize_rel]    = "REL SERIALIZE"
     , [la_lit_tbl]          = "TBL"
     , [la_empty_tbl]        = "EMPTY_TBL"
     , [la_attach]           = "Attach"
@@ -88,8 +89,7 @@ static char *a_id[]  = {
     , [la_step_join]        = "/|+"
     , [la_guide_step]       = "/| (guide)"
     , [la_guide_step_join]  = "/|+ (guide)"
-    , [la_id]               = "fn:id"
-    , [la_idref]            = "fn:idref"
+    , [la_doc_index_join]   = "DocJoin"
     , [la_doc_tbl]          = "DOC"
     , [la_doc_access]       = "access"
     , [la_twig]             = "twig"
@@ -123,7 +123,8 @@ static char *a_id[]  = {
 
 /* XML node names to print out for all kinds */
 static char *xml_id[]  = {
-      [la_serialize]        = "serialize"
+      [la_serialize_seq]    = "serialize sequence"
+    , [la_serialize_rel]    = "serialize relation"
     , [la_lit_tbl]          = "table"
     , [la_empty_tbl]        = "empty_tbl"
     , [la_attach]           = "attach"
@@ -163,8 +164,7 @@ static char *xml_id[]  = {
     , [la_step_join]        = "path step join"
     , [la_guide_step]       = "XPath step (with guide information)"
     , [la_guide_step_join]  = "path step join (with guide information)"
-    , [la_id]               = "fn:id"
-    , [la_idref]            = "fn:idref"
+    , [la_doc_index_join]   = "document index join"
     , [la_doc_tbl]          = "fn:doc"
     , [la_doc_access]       = "#pf:string-value"
     , [la_twig]             = "twig_construction"
@@ -313,7 +313,8 @@ la_dot (PFarray_t *dot, PFla_op_t *n)
     assert(n->node_id);
 
     static char *color[] = {
-          [la_serialize]       = "#C0C0C0"
+          [la_serialize_seq]   = "#C0C0C0"
+        , [la_serialize_rel]   = "#C0C0C0"
         , [la_lit_tbl]         = "#C0C0C0"
         , [la_empty_tbl]       = "#C0C0C0"
         , [la_attach]          = "#EEEEEE"
@@ -353,8 +354,7 @@ la_dot (PFarray_t *dot, PFla_op_t *n)
         , [la_step_join]       = "#1E9099"
         , [la_guide_step]      = "#007AE0"
         , [la_guide_step_join] = "#007A7A"
-        , [la_id]              = "#1E90FF"
-        , [la_idref]           = "#1E90FF"
+        , [la_doc_index_join]  = "#1E9099"
         , [la_doc_tbl]         = "#C0C0C0"
         , [la_doc_access]      = "#CCCCFF"
         , [la_twig]            = "#00AA44"
@@ -396,6 +396,25 @@ la_dot (PFarray_t *dot, PFla_op_t *n)
     /* create label */
     switch (n->kind)
     {
+        case la_serialize_seq:
+            PFarray_printf (dot, "%s (%s) order by (%s)",
+                            a_id[n->kind], 
+                            PFatt_str (n->sem.ser_seq.item),
+                            PFatt_str (n->sem.ser_seq.pos));
+            break;
+            
+        case la_serialize_rel:
+            PFarray_printf (dot, "%s (%s",
+                            a_id[n->kind],
+                            PFatt_str (n->sem.ser_rel.items.atts[0]));
+            for (c = 1; c < n->sem.ser_rel.items.count; c++)
+                PFarray_printf (dot, ", %s",
+                                PFatt_str (n->sem.ser_rel.items.atts[c])); 
+            PFarray_printf (dot, ")\\norder by (%s) partition by (%s)",
+                            PFatt_str (n->sem.ser_rel.pos),
+                            PFatt_str (n->sem.ser_rel.iter));
+            break;
+            
         case la_lit_tbl:
             /* list the attributes of this table */
             PFarray_printf (dot, "%s: (%s", a_id[n->kind],
@@ -759,16 +778,22 @@ la_dot (PFarray_t *dot, PFla_op_t *n)
                 PFarray_printf (dot, "\\nlevel=%i", n->sem.step.level);
             break;
 
-        case la_id:
-        case la_idref:
-            PFarray_printf (dot, "%s (%s, %s:<%s, %s, %s>)",
-                            a_id[n->kind],
-                            PFatt_str (n->sem.id.iter),
-                            PFatt_str (n->sem.id.item_res),
-                            PFatt_str (n->sem.id.iter),
-                            PFatt_str (n->sem.id.item),
-                            PFatt_str (n->sem.id.item_doc));
-            break;
+        case la_doc_index_join:
+        {
+            char *name = NULL;
+            
+            switch (n->sem.doc_join.kind) {
+                case la_dj_id:    name = "fn:id";    break;
+                case la_dj_idref: name = "fn:idref"; break;
+                case la_dj_text:  name = "pf:text";  break;
+                case la_dj_attr:  name = "pf:attr";  break;
+            }
+            PFarray_printf (dot, "%s (%s:<%s, %s>)",
+                            name,
+                            PFatt_str (n->sem.doc_join.item_res),
+                            PFatt_str (n->sem.doc_join.item),
+                            PFatt_str (n->sem.doc_join.item_doc));
+        }   break;
 
         case la_doc_tbl:
             PFarray_printf (dot, "%s (%s, %s%s%s)", 
@@ -878,7 +903,6 @@ la_dot (PFarray_t *dot, PFla_op_t *n)
             PFarray_printf (dot, ")");
             break;
 
-        case la_serialize:
         case la_cross:
         case la_disjunion:
         case la_intersect:
@@ -1341,7 +1365,7 @@ la_xml (PFarray_t *xml, PFla_op_t *n)
     /* create label */
     switch (n->kind)
     {
-        case la_serialize:
+        case la_serialize_seq:
             PFarray_printf (xml,
                             "    <content>\n"
                             "      <column name=\"%s\" new=\"false\""
@@ -1349,8 +1373,29 @@ la_xml (PFarray_t *xml, PFla_op_t *n)
                             "      <column name=\"%s\" new=\"false\""
                                          " function=\"item\"/>\n"
                             "    </content>\n",
-                            PFatt_str (n->sem.serialize.pos),
-                            PFatt_str (n->sem.serialize.item));
+                            PFatt_str (n->sem.ser_seq.pos),
+                            PFatt_str (n->sem.ser_seq.item));
+            break;
+
+        case la_serialize_rel:
+            PFarray_printf (xml,
+                            "    <content>\n"
+                            "      <column name=\"%s\" new=\"false\""
+                                         " function=\"iter\"/>\n"
+                            "      <column name=\"%s\" new=\"false\""
+                                         " function=\"pos\"/>\n",
+                            PFatt_str (n->sem.ser_rel.iter),
+                            PFatt_str (n->sem.ser_rel.pos));
+
+            for (c = 0; c < n->sem.ser_rel.items.count; c++)
+                PFarray_printf (xml,
+                                "      <column name=\"%s\" new=\"false\""
+                                             " function=\"pos\""
+                                             " position=\"%i\"/>\n",
+                                PFatt_str (n->sem.ser_rel.items.atts[c]),
+                                c);
+            
+            PFarray_printf (xml, "    </content>\n");
             break;
 
         case la_lit_tbl:
@@ -1766,20 +1811,29 @@ la_xml (PFarray_t *xml, PFla_op_t *n)
                                 PFatt_str (n->sem.step.item));
             break;
 
-        case la_id:
-        case la_idref:
+        case la_doc_index_join:
+        {    
+            char *name = NULL;
+            
+            switch (n->sem.doc_join.kind) {
+                case la_dj_id:    name = "fn:id";    break;
+                case la_dj_idref: name = "fn:idref"; break;
+                case la_dj_text:  name = "pf:text";  break;
+                case la_dj_attr:  name = "pf:attr";  break;
+            }
+            
             PFarray_printf (xml,
                             "    <content>\n"
+                            "      <kind name=\"%s\"/>\n"
                             "      <column name=\"%s\" new=\"true\"/>\n"
-                            "      <column name=\"%s\" function=\"iter\"/>\n"
                             "      <column name=\"%s\" function=\"item\"/>\n"
                             "      <column name=\"%s\" function=\"docnode\"/>\n"
                             "    </content>\n",
-                            PFatt_str (n->sem.id.item_res),
-                            PFatt_str (n->sem.id.iter),
-                            PFatt_str (n->sem.id.item),
-                            PFatt_str (n->sem.id.item_doc));
-            break;
+                            name,
+                            PFatt_str (n->sem.doc_join.item_res),
+                            PFatt_str (n->sem.doc_join.item),
+                            PFatt_str (n->sem.doc_join.item_doc));
+        }   break;
 
         case la_doc_tbl:
             PFarray_printf (xml,

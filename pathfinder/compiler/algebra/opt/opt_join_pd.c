@@ -114,7 +114,7 @@ is_join_att (PFla_op_t *p, PFalg_att_t att)
 {
     assert (p && p->kind == la_eqjoin_unq);
 
-    return (p->sem.eqjoin_unq.att1 == (att) || 
+    return (p->sem.eqjoin_unq.att1 == (att) ||
             p->sem.eqjoin_unq.att2 == (att));
 }
 
@@ -226,7 +226,7 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
         /* only process equi-joins */
         if (p->kind != la_eqjoin_unq)
             break;
-        
+
         /* in case we have pushed a join down to its origin (where
            both children references point to the same node) we may
            safely remove the join */
@@ -238,11 +238,11 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
                Thus replace it by a dummy projection */
             PFalg_proj_t *proj_list = PFmalloc (p->schema.count *
                                                 sizeof (PFalg_proj_t));
-                                                
+
             for (unsigned int i = 0; i < p->schema.count; i++)
                 proj_list[i] = proj (p->schema.items[i].name,
                                      p->schema.items[i].name);
-                                     
+
             *p = *(PFla_project_ (L(p), p->schema.count, proj_list));
             return true;
         }
@@ -262,7 +262,7 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
             ratt = p->sem.eqjoin_unq.att1;
             lp_child = 1;
         }
-        
+
         /* In case the join does nothing we may safely discard it. */
         if (lp->schema.count == 1 &&
             PFprop_key (lp->prop, latt) &&
@@ -273,19 +273,20 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
             *p = *dummy (rp);
             return true;
         }
-        
-        /* skip rewrite if the join might reference itself 
+
+        /* skip rewrite if the join might reference itself
            afterwards */
         if (LEFT(lp) && RIGHT(lp))
             continue;
-     
-        /* Throw away lp whenever lp creates a column 
+
+        /* Throw away lp whenever lp creates a column
            that is also in the schema of rp. In this case
-           the new column is also created in the subtree 
+           the new column is also created in the subtree
            of rp. (Pushing lp above the eqjoin would result
            in conflicting columns otherwise.) */
         switch (lp->kind) {
-            case la_serialize:
+            case la_serialize_seq:
+            case la_serialize_rel:
             case la_lit_tbl:
             case la_empty_tbl:
             case la_cross:
@@ -311,8 +312,6 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
             case la_all:
             case la_step:
             case la_guide_step:
-            case la_id:
-            case la_idref:
             case la_doc_tbl:
             case la_twig:
             case la_fcns:
@@ -347,18 +346,18 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
             case la_attach:
                 if ((modified = GEN(lp->sem.attach.res))) LP = L(lp);
                 break;
-                
+
             case la_fun_1to1:
                 if ((modified = GEN(lp->sem.fun_1to1.res))) LP = L(lp);
                 break;
-                
+
             case la_num_eq:
             case la_num_gt:
             case la_bool_and:
             case la_bool_or:
                 if ((modified = GEN(lp->sem.binary.res))) LP = L(lp);
                 break;
-                
+
             case la_bool_not:
                 if ((modified = GEN(lp->sem.unary.res))) LP = L(lp);
                 break;
@@ -415,10 +414,14 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
             case la_cast:
                 if ((modified = GEN(lp->sem.type.res))) LP = L(lp);
                 break;
-                
+
             case la_step_join:
             case la_guide_step_join:
                 if ((modified = GEN(lp->sem.step.item_res))) LP = R(lp);
+                break;
+
+            case la_doc_index_join:
+                if ((modified = GEN(lp->sem.doc_join.item_res))) LP = R(lp);
                 break;
 
             case la_doc_access:
@@ -438,7 +441,8 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
         }
 
         switch (lp->kind) {
-            case la_serialize:
+            case la_serialize_seq:
+            case la_serialize_rel:
             case la_lit_tbl:
             case la_empty_tbl:
             case la_intersect:
@@ -454,8 +458,6 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
             case la_all:
             case la_step:
             case la_guide_step:
-            case la_id:
-            case la_idref:
             case la_doc_tbl:
             case la_twig:
             case la_fcns:
@@ -485,7 +487,7 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
                     next_join = L(p);
                 }
                 break;
-                
+
             case la_cross:
             {
                 /* choose the correct operand of the cross product
@@ -497,7 +499,7 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
                         in_left = true;
                         break;
                     }
-                    
+
                 if (in_left)
                     *p = *(cross (eqjoin_unq (L(lp), rp, latt, ratt,
                                               p->sem.eqjoin_unq.res),
@@ -521,40 +523,40 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
                 PFoops (OOPS_FATAL,
                         "clone column unaware eqjoin operator is "
                         "only allowed with original attribute names!");
-                    
+
             case la_eqjoin_unq:
                 /* Rewriting joins is only effective if we push
                    joins further down that have different join columns.
                    The correct choice of the branch is however not
-                   directly clear. 
+                   directly clear.
 
                    We thus only optimze only the patterns
-                         |X|_1          |X|_1           |X|   
+                         |X|_1          |X|_1           |X|
                         /   \          /   \           /   \
                        |X|   1        |X|   1         #     2
                       /   \    and   /   \     into   |
-                      #    2        2     #          |X|_1 
+                      #    2        2     #          |X|_1
                       |                   |         /   \
                       3                   3        3     1
-    
+
                    whenever possible (e.g., only if no columns references
-                   are missing). 
-                   
+                   are missing).
+
                    In addition we remove mapping joins directly visible
                    (more explanation see below).
-                   
+
                         |X|
                         / \
                        |X| \          |X|
                        / \  \   ->    / \
                         (pi) |           #
-                          \ /            
-                           #             
-                           
+                          \ /
+                           #
+
                    For all other directly following equi-joins
                    we discard any rewriting. */
-                
-                /* make sure that we have a key join 
+
+                /* make sure that we have a key join
                    (a rewrite thus does not change the cardinality) */
                 if (!PFprop_key (rp->prop, ratt)
                     ||
@@ -572,7 +574,7 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
                                  *top_proj = NULL;
                     PFalg_att_t   cur;
 
-                    /* ensure that column of the upper eqjoin 
+                    /* ensure that column of the upper eqjoin
                        is not created on the other side */
                     for (i = 0; i < L(lp)->schema.count; i++)
                         if (L(lp)->schema.items[i].name == latt)
@@ -639,7 +641,7 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
                     }
 
                     *p = *new_p;
-                    break;    
+                    break;
                 }
                 if (R(lp)->kind == la_number &&
                     R(lp)->sem.number.res == lp->sem.eqjoin_unq.att1 &&
@@ -650,7 +652,7 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
                                  *top_proj = NULL;
                     PFalg_att_t   cur;
 
-                    /* ensure that column of the upper eqjoin 
+                    /* ensure that column of the upper eqjoin
                        is not created on the other side */
                     for (i = 0; i < R(lp)->schema.count; i++)
                         if (R(lp)->schema.items[i].name == latt)
@@ -717,7 +719,7 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
                     }
 
                     *p = *new_p;
-                    break;    
+                    break;
                 }
 
                 /* check for the following pattern where the join
@@ -729,8 +731,8 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
                        |X| \          |X|
                        / \  \   ->    / \
                         (pi) |           #
-                          \ /            
-                           #             
+                          \ /
+                           #
                  */
                 if (rp->kind == la_number &&
                     (L(lp) == rp || R(lp) == rp ||
@@ -744,7 +746,7 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
                                   r_join_col;
                     PFalg_proj_t *proj_list;
                     unsigned int  count;
-                                
+
                     /* align pattern */
                     if (L(lp) == rp) {
                         proj = NULL;
@@ -767,23 +769,23 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
                         l_join_col = lp->sem.eqjoin_unq.att1;
                         r_join_col = lp->sem.eqjoin_unq.att2;
                     }
-                                
+
                     /* allow only non-renaming projections */
                     if (proj) {
                         bool renamed = false;
-                        
+
                         for (unsigned int i = 0; i < proj->sem.proj.count; i++)
-                            renamed = renamed || 
+                            renamed = renamed ||
                                       (proj->sem.proj.items[i].new
                                        != proj->sem.proj.items[i].old);
                         if (renamed)
                             break;
                     }
-                    
+
                     /* make sure that the column generated in the number
                        operator is only used as join column in the above
                        join operation */
-                    if (r_join_col == ratt || 
+                    if (r_join_col == ratt ||
                         latt != ratt ||
                         ratt != p->sem.eqjoin_unq.res)
                         break;
@@ -805,7 +807,7 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
                         *(PFla_op_t **) PFarray_add (clean_up_list) = rp;
                         break;
                     }
-                        
+
                     /* otherwise we have to make sure that both
                        join column are visible afterwards */
                     proj_list = PFmalloc ((join->schema.count + 1)
@@ -816,15 +818,15 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
                         PFalg_att_t cur = join->schema.items[i].name;
                         if (cur == lp->sem.eqjoin_unq.res) {
                             proj_list[count++] = PFalg_proj (
-                                                     r_join_col, 
+                                                     r_join_col,
                                                      lp->sem.eqjoin_unq.res);
                             proj_list[count++] = PFalg_proj (
-                                                     l_join_col, 
+                                                     l_join_col,
                                                      lp->sem.eqjoin_unq.res);
                         } else
                             proj_list[count++] = PFalg_proj (cur, cur);
                     }
-                
+
                     *p = *PFla_project_ (join, count, proj_list);
                     modified = true;
                     *(PFla_op_t **) PFarray_add (clean_up_list) = left;
@@ -832,7 +834,7 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
                     break;
                 }
 
-                /* Key joins that use different join columns than 
+                /* Key joins that use different join columns than
                    the join underneath have some potential and are
                    thus pushed down */
                 if (lp->sem.eqjoin_unq.res != latt) {
@@ -846,7 +848,7 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
                                       rp,
                                       latt,
                                       ratt,
-                                      p->sem.eqjoin_unq.res), 
+                                      p->sem.eqjoin_unq.res),
                                   R(lp),
                                   lp->sem.eqjoin_unq.att1,
                                   lp->sem.eqjoin_unq.att2,
@@ -863,7 +865,7 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
                                       rp,
                                       latt,
                                       ratt,
-                                      p->sem.eqjoin_unq.res), 
+                                      p->sem.eqjoin_unq.res),
                                   lp->sem.eqjoin_unq.att1,
                                   lp->sem.eqjoin_unq.att2,
                                   lp->sem.eqjoin_unq.res);
@@ -871,18 +873,18 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
                     }
                     else
                         break;
-                    
+
                     assert (res);
-                    
+
                     /* In case both join columns of the lower join
                        are visible on top of it we have to introduce
                        a projection that makes the second join column
                        visible again after the join has pruned it. */
                     if ((PFprop_ocol (rp, lp->sem.eqjoin_unq.att1) &&
-                         lp->sem.eqjoin_unq.att1 != 
+                         lp->sem.eqjoin_unq.att1 !=
                          lp->sem.eqjoin_unq.res) ||
                         (PFprop_ocol (rp, lp->sem.eqjoin_unq.att2) &&
-                         lp->sem.eqjoin_unq.att2 != 
+                         lp->sem.eqjoin_unq.att2 !=
                          lp->sem.eqjoin_unq.res)) {
                         PFalg_proj_t *proj = PFmalloc (
                                                  (res->schema.count + 1) *
@@ -892,7 +894,7 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
                             PFalg_att_t cur = res->schema.items[i].name;
                             if (cur == lp->sem.eqjoin_unq.res) {
                                 proj[count++] = PFalg_proj (
-                                                    lp->sem.eqjoin_unq.att1, 
+                                                    lp->sem.eqjoin_unq.att1,
                                                     lp->sem.eqjoin_unq.res);
                                 proj[count++] = PFalg_proj (
                                                     lp->sem.eqjoin_unq.att2,
@@ -904,15 +906,15 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
                     }
                     else
                         *p = *res;
-                    
+
                     /* Make sure that this rewrite only reports
                        a modification if this rewrite wasn't
                        the only one. Otherwise we might end up
                        in an infinite loop. */
-                    modified = join_pushdown_worker (next_join, 
+                    modified = join_pushdown_worker (next_join,
                                                      clean_up_list);
                     next_join = NULL;
-        
+
                 }
                 break;
 
@@ -929,7 +931,7 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
                 next_join = L(p);
                 *(PFla_op_t **) PFarray_add (clean_up_list) = R(p);
                 break;
-                
+
             case la_thetajoin:
                 /* choose the correct operand of the theta-join
                    (the one with the join argument) to push down
@@ -972,7 +974,7 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
                     *(PFla_op_t **) PFarray_add (clean_up_list) = L(p);
                 }
                 break;
-                
+
             case la_project:
                 /* Here we apply transformations in two different cases.
                    First we rewrite equi-joins followed by a project that
@@ -982,7 +984,7 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
                    transform key joins.
                    The second case applys a transformation of an equi-join
                    followed by a renaming projection with the additional
-                   constraints that the second join relation and the 
+                   constraints that the second join relation and the
                    projection both reference the same operator and join
                    on the same (possibly renamed) column.
 
@@ -990,14 +992,14 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
                    together with a renaming projection where the old as
                    well as the new column names do not conflict with the
                    column names of the right join operand. For a similar
-                   reason as the missing transformation of join-join 
+                   reason as the missing transformation of join-join
                    patterns we skip this alternative here. */
             {
                 bool renamed = false;
-                
+
                 /* check for renaming */
                 for (unsigned int i = 0; i < lp->sem.proj.count; i++)
-                    renamed = renamed || 
+                    renamed = renamed ||
                               (lp->sem.proj.items[i].new
                                != lp->sem.proj.items[i].old);
 
@@ -1009,11 +1011,11 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
                     /* create projection list */
                     proj_list = PFmalloc (p->schema.count *
                                           sizeof (*(proj_list)));
-                                          
+
                     /* add result column of equi-join */
                     proj_list[count++] = proj (p->sem.eqjoin_unq.res,
                                                p->sem.eqjoin_unq.res);
-                                               
+
                     /* add all columns of the left argument
                        (without the join arguments) */
                     for (unsigned int i = 0; i < lp->schema.count; i++) {
@@ -1036,7 +1038,7 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
                         }
                     }
                     assert (count <= p->schema.count);
-                                          
+
                     *p = *(PFla_project_ (eqjoin_unq (L(lp), rp, latt, ratt,
                                                       p->sem.eqjoin_unq.res),
                                           count,
@@ -1047,7 +1049,7 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
                     unsigned int i;
                     PFalg_proj_t proj;
                     bool same_join_col = false;
-                    
+
                     for (i = 0; i < lp->sem.proj.count; i++) {
                         proj = lp->sem.proj.items[i];
                         if (proj.new == latt && proj.old == ratt) {
@@ -1064,7 +1066,7 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
 
                        where both join attributes refer to the same
                        column (which contains only unique values -
-                       see check above) */                             
+                       see check above) */
                     if (same_join_col) {
                         PFalg_att_t cur;
                         PFalg_proj_t *proj_list;
@@ -1073,11 +1075,11 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
                         /* create projection list */
                         proj_list = PFmalloc (p->schema.count *
                                               sizeof (*(proj_list)));
-                                              
+
                         /* add result column of equi-join */
                         proj_list[count++] = proj (p->sem.eqjoin_unq.res,
                                                    p->sem.eqjoin_unq.res);
-                                                   
+
                         /* add all columns of the right argument
                            (without the join arguments) */
                         for (i = 0; i < rp->schema.count; i++) {
@@ -1085,7 +1087,7 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
                             if (!is_join_att (p, cur))
                                 proj_list[count++] = proj (cur, cur);
                         }
-                        
+
                         /* add all columns of the left argument
                            (without the join arguments and duplicates) */
                         for (i = 0; i < lp->sem.proj.count; i++) {
@@ -1101,7 +1103,7 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
                             }
                         }
                         assert (count <= p->schema.count);
-                                              
+
                         *p = *(PFla_project_ (L(lp), count, proj_list));
                         modified = true;
                         *(PFla_op_t **) PFarray_add (clean_up_list) = rp;
@@ -1140,7 +1142,7 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
                     /* create projection list */
                     proj_list = PFmalloc (lp->schema.count *
                                           sizeof (*(proj_list)));
-                                          
+
                     for (unsigned int i = 0; i < lp->schema.count; i++) {
                         cur = lp->schema.items[i].name;
                         if (cur != latt)
@@ -1150,12 +1152,12 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
                        the projection list */
                     proj_list[count++] = proj (latt,
                                                p->sem.eqjoin_unq.res);
-                                               
+
                     /* copy sortby criteria and change name of
                        sort column to equi-join result if it is
                        also a join argument */
                     sortby = PFordering ();
-                    
+
                     for (unsigned int i = 0;
                          i < PFord_count (lp->sem.pos_sel.sortby);
                          i++) {
@@ -1172,7 +1174,7 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
                                          lp->sem.pos_sel.sortby,
                                          i));
                     }
-                                            
+
                     /* make sure that frag and roots see
                        the new attribute node */
                     *p = *(pos_select (eqjoin_unq (L(lp), rp, latt, ratt,
@@ -1190,11 +1192,11 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
                        of the original positional selection operator
                        -- its pointer is replaced */
                     *lp = *(PFla_project_ (p, count, proj_list));
-                    
+
                     next_join = L(p);
                     break;
                 }
-                
+
                 break;
             case la_disjunion:
             {
@@ -1206,7 +1208,7 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
                    of a difference operation. */
                 PFla_op_t *cur;
                 bool diff;
-                
+
                 /* check for difference in left subtree */
                 cur = L(lp);
                 diff = false;
@@ -1228,7 +1230,7 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
                 /* stop rewriting if difference was discovered */
                 if (diff)
                     break;
-                
+
                 /* check for difference in left subtree */
                 cur = R(lp);
                 diff = false;
@@ -1250,7 +1252,7 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
                 /* stop rewriting if difference was discovered */
                 if (diff)
                     break;
-                
+
                 /* This rewrite is only correct if the union operator
                    is implemented as a union all operation. */
                 *p = *disjunion (eqjoin_unq (L(lp), rp, latt, ratt,
@@ -1261,11 +1263,11 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
                 join_pushdown_worker (L(p), clean_up_list);
                 join_pushdown_worker (R(p), clean_up_list);
             } break;
-                
+
             case la_fun_1to1:
                 if (!is_join_att (p, lp->sem.fun_1to1.res)) {
                     PFalg_attlist_t refs;
-                    
+
                     refs.count = lp->sem.fun_1to1.refs.count;
                     refs.atts  = PFmalloc (refs.count *
                                            sizeof (*(refs.atts)));
@@ -1323,7 +1325,7 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
                     /* create projection list */
                     proj_list = PFmalloc (lp->schema.count *
                                           sizeof (*(proj_list)));
-                                          
+
                     for (unsigned int i = 0; i < lp->schema.count; i++) {
                         cur = lp->schema.items[i].name;
                         if (cur != latt)
@@ -1333,12 +1335,12 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
                        the projection list */
                     proj_list[count++] = proj (latt,
                                                p->sem.eqjoin_unq.res);
-                                               
+
                     /* copy sortby criteria and change name of
                        sort column to equi-join result if it is
                        also a join argument */
                     sortby = PFordering ();
-                    
+
                     for (unsigned int i = 0;
                          i < PFord_count (lp->sem.rownum.sortby);
                          i++) {
@@ -1355,7 +1357,7 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
                                          lp->sem.rownum.sortby,
                                          i));
                     }
-                                            
+
                     /* make sure that frag and roots see
                        the new attribute node */
                     *p = *(rownum (eqjoin_unq (L(lp), rp, latt, ratt,
@@ -1372,11 +1374,11 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
                        be pruned to maintain the schema of the original
                        rownum operator -- its pointer is replaced */
                     *lp = *(PFla_project_ (p, count, proj_list));
-                    
+
                     next_join = L(p);
                     break;
                 }
-                
+
                 break;
 
             case la_rank:
@@ -1400,7 +1402,7 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
                     /* create projection list */
                     proj_list = PFmalloc (lp->schema.count *
                                           sizeof (*(proj_list)));
-                                          
+
                     for (unsigned int i = 0; i < lp->schema.count; i++) {
                         cur = lp->schema.items[i].name;
                         if (cur != latt)
@@ -1410,12 +1412,12 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
                        the projection list */
                     proj_list[count++] = proj (latt,
                                                p->sem.eqjoin_unq.res);
-                                               
+
                     /* copy sortby criteria and change name of
                        sort column to equi-join result if it is
                        also a join argument */
                     sortby = PFordering ();
-                    
+
                     for (unsigned int i = 0;
                          i < PFord_count (lp->sem.rank.sortby);
                          i++) {
@@ -1432,7 +1434,7 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
                                          lp->sem.rank.sortby,
                                          i));
                     }
-                                            
+
                     /* make sure that frag and roots see
                        the new attribute node */
                     *p = *(rank (eqjoin_unq (L(lp), rp, latt, ratt,
@@ -1443,11 +1445,11 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
                        be pruned to maintain the schema of the original
                        rank operator -- its pointer is replaced */
                     *lp = *(PFla_project_ (p, count, proj_list));
-                    
+
                     next_join = L(p);
                     break;
                 }
-                
+
                 break;
 
             case la_number:
@@ -1470,7 +1472,7 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
                     /* create projection list */
                     proj_list = PFmalloc (lp->schema.count *
                                           sizeof (*(proj_list)));
-                                          
+
                     for (unsigned int i = 0; i < lp->schema.count; i++) {
                         cur = lp->schema.items[i].name;
                         if (cur != latt)
@@ -1480,7 +1482,7 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
                        the projection list */
                     proj_list[count++] = proj (latt,
                                                p->sem.eqjoin_unq.res);
-                                               
+
                     /* make sure that frag and roots see
                        the new attribute node */
                     *p = *(number (eqjoin_unq (L(lp), rp, latt, ratt,
@@ -1490,11 +1492,11 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
                        be pruned to maintain the schema of the original
                        number operator -- its pointer is replaced */
                     *lp = *(PFla_project_ (p, count, proj_list));
-                    
+
                     next_join = L(p);
                     break;
                 }
-                
+
                 break;
 
             case la_type:
@@ -1509,7 +1511,7 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
                     next_join = L(p);
                 }
                 break;
-                
+
             case la_type_assert:
                 if (!is_join_att (p, lp->sem.type.att)) {
                     *p = *(type_assert_pos (eqjoin_unq (L(lp), rp, latt, ratt,
@@ -1519,7 +1521,7 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
                     next_join = L(p);
                 }
                 break;
-                
+
             case la_cast:
                 if (!is_join_att (p, lp->sem.type.res)) {
                     *p = *(cast (eqjoin_unq (L(lp), rp, latt, ratt,
@@ -1532,7 +1534,7 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
                     next_join = L(p);
                 }
                 break;
-                
+
             case la_step_join:
                 if (!is_join_att (p, lp->sem.step.item_res)) {
                     *p = *(step_join (
@@ -1569,6 +1571,24 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
                 }
                 break;
 
+            case la_doc_index_join:
+                if (!is_join_att (p, lp->sem.doc_join.item_res)) {
+                    *p = *(doc_index_join (
+                               L(lp),
+                               eqjoin_unq (R(lp), rp, latt, ratt,
+                                           p->sem.eqjoin_unq.res),
+                               lp->sem.doc_join.kind,
+                               is_join_att(p, lp->sem.doc_join.item)
+                                  ? p->sem.eqjoin_unq.res
+                                  : lp->sem.doc_join.item,
+                               lp->sem.doc_join.item_res,
+                               is_join_att(p, lp->sem.doc_join.item_doc)
+                                  ? p->sem.eqjoin_unq.res
+                                  : lp->sem.doc_join.item_doc));
+                    next_join = R(p);
+                }
+                break;
+
             case la_doc_access:
                 if (!is_join_att (p, lp->sem.doc_access.res)) {
                     *p = *(doc_access (L(lp),
@@ -1584,9 +1604,9 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
                 break;
 
             case la_cond_err:
-                /* this breaks proxy generation - thus don't 
+                /* this breaks proxy generation - thus don't
                    rewrite conditional errors */
-                /* 
+                /*
                 *p = *(cond_err (eqjoin_unq (L(lp), rp, latt, ratt,
                                              p->sem.eqjoin_unq.res),
                                  R(lp),
@@ -1595,10 +1615,10 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
                 next_join = L(p);
                 */
                 break;
-                
+
             case la_nil:
                 break;
-                
+
             case la_trace:
                 if (!PFprop_key (rp->prop, ratt) ||
                     !PFprop_subdom (rp->prop,
@@ -1619,7 +1639,7 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
                 /* create projection list */
                 proj_list = PFmalloc (lp->schema.count *
                                       sizeof (*(proj_list)));
-                                      
+
                 for (unsigned int i = 0; i < lp->schema.count; i++) {
                     cur = lp->schema.items[i].name;
                     if (cur != latt)
@@ -1629,7 +1649,7 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
                    to the projection list */
                 proj_list[count++] = proj (latt,
                                            p->sem.eqjoin_unq.res);
-                                           
+
                 *p = *(trace (eqjoin_unq (L(lp), rp, latt, ratt,
                                           p->sem.eqjoin_unq.res),
                               R(lp),
@@ -1642,47 +1662,47 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
                               is_join_att(p, lp->sem.iter_pos_item.item)
                                   ? p->sem.eqjoin_unq.res
                                   : lp->sem.iter_pos_item.item));
-                
+
                 /* the schema of the new trace operator has to
                    be pruned to maintain the schema of the original
                    trace operator -- its pointer is replaced */
                 *lp = *(PFla_project_ (p, count, proj_list));
-                    
+
                 next_join = L(p);
             }   break;
-                                                       
+
             case la_trace_msg:
-                /* this operator will always be referenced 
+                /* this operator will always be referenced
                    by a la_trace operator */
                 break;
-                
+
             case la_trace_map:
-                /* this operator will always be referenced 
+                /* this operator will always be referenced
                    by a la_trace_msg operator */
                 break;
-                
+
             case la_rec_fix:
             case la_rec_param:
             case la_rec_arg:
             case la_rec_base:
                 /* do not rewrite anything that has to do with recursion */
                 break;
-                
+
             case la_proxy:
             case la_proxy_base:
                 PFoops (OOPS_FATAL,
                         "cannot cope with proxy nodes");
                 break;
         }
-        
+
         if (next_join)
-            /* we already rewrote the join and 
+            /* we already rewrote the join and
                thus do not need the second iteration */
             break;
     }
 
     if (next_join) {
-        /* If we have rewritten a join continue with 
+        /* If we have rewritten a join continue with
            the new instance of that join (next_join). */
         modified = true;
         join_pushdown_worker (next_join, clean_up_list);
@@ -1700,7 +1720,8 @@ static PFalg_att_t
 map_name (PFla_op_t *p, PFalg_att_t att)
 {
     switch (p->kind) {
-        case la_serialize:
+        case la_serialize_seq:
+        case la_serialize_rel:
         case la_lit_tbl:
         case la_empty_tbl:
         case la_eqjoin:
@@ -1717,8 +1738,6 @@ map_name (PFla_op_t *p, PFalg_att_t att)
         case la_all:
         case la_step:
         case la_guide_step:
-        case la_id:
-        case la_idref:
         case la_doc_tbl:
         case la_twig:
         case la_fcns:
@@ -1748,7 +1767,7 @@ map_name (PFla_op_t *p, PFalg_att_t att)
         case la_cross_mvd:
             /* join can't be pushed down anyway */
             return att_NULL;
-            
+
         case la_cross:
         case la_select:
         case la_pos_select:
@@ -1760,13 +1779,13 @@ map_name (PFla_op_t *p, PFalg_att_t att)
         case la_cond_err:
             /* name does not change */
             break;
-            
+
         case la_project:
             for (unsigned int i = 0; i < p->sem.proj.count; i++)
                 if (p->sem.proj.items[i].new == att)
                     return p->sem.proj.items[i].old;
 
-        case la_attach:       
+        case la_attach:
             if (att == p->sem.attach.res) return att_NULL;
             break;
         case la_fun_1to1:
@@ -1799,6 +1818,9 @@ map_name (PFla_op_t *p, PFalg_att_t att)
         case la_guide_step_join:
             if (att == p->sem.step.item_res) return att_NULL;
             break;
+        case la_doc_index_join:
+            if (att == p->sem.doc_join.item_res) return att_NULL;
+            break;
         case la_doc_access:
             if (att == p->sem.doc_access.res) return att_NULL;
             break;
@@ -1815,7 +1837,7 @@ static void
 mark_left_path (PFla_op_t *p, PFalg_att_t att)
 {
     assert (p);
-    
+
     if (LEFT(p))
        return;
 
@@ -1834,10 +1856,10 @@ mark_left_path (PFla_op_t *p, PFalg_att_t att)
         LEFT(p) = true;
         return;
     }
-    
+
     att = map_name (p, att);
     if (!att) return;
-        
+
     for (unsigned int i = 0; i < PFLA_OP_MAXCHILD && p->child[i]; i++)
         for (unsigned int j = 0; j < p->child[i]->schema.count; j++)
             if (att == p->child[i]->schema.items[j].name) {
@@ -1857,7 +1879,7 @@ static void
 mark_right_path (PFla_op_t *p, PFalg_att_t att)
 {
     assert (p);
-    
+
     if (RIGHT(p))
        return;
 
@@ -1876,11 +1898,11 @@ mark_right_path (PFla_op_t *p, PFalg_att_t att)
         LEFT(p) = true;
         return;
     }
-        
+
     att = map_name (p, att);
-    
+
     if (!att) return;
-    
+
     for (unsigned int i = 0; i < PFLA_OP_MAXCHILD && p->child[i]; i++)
         for (unsigned int j = 0; j < p->child[i]->schema.count; j++)
             if (att == p->child[i]->schema.items[j].name) {
@@ -1899,14 +1921,14 @@ static void
 mark_left_subdag (PFla_op_t *p)
 {
     assert (p);
-    
+
     if (LEFT(p))
        return;
 
     if (p->kind == la_frag_union ||
         p->kind == la_empty_frag)
         return;
-    
+
     for (unsigned int i = 0; i < PFLA_OP_MAXCHILD && p->child[i]; i++)
         mark_left_subdag (p->child[i]);
 
@@ -1921,14 +1943,14 @@ static void
 mark_right_subdag (PFla_op_t *p)
 {
     assert (p);
-    
+
     if (RIGHT(p))
        return;
 
     if (p->kind == la_frag_union ||
         p->kind == la_empty_frag)
         return;
-    
+
     for (unsigned int i = 0; i < PFLA_OP_MAXCHILD && p->child[i]; i++)
         mark_right_subdag (p->child[i]);
 
@@ -1944,7 +1966,7 @@ static void
 remove_marks (PFla_op_t *p)
 {
     assert (p);
-    
+
     if (LEFT(p) || RIGHT (p))
         for (unsigned int i = 0; i < PFLA_OP_MAXCHILD && p->child[i]; i++)
             remove_marks (p->child[i]);
@@ -1963,7 +1985,7 @@ static bool
 join_pushdown (PFla_op_t *p, PFarray_t *clean_up_list)
 {
     bool modified = false;
-    
+
     assert (p);
 
     /* rewrite each node only once */
@@ -2007,7 +2029,7 @@ join_pushdown (PFla_op_t *p, PFarray_t *clean_up_list)
         modified = true;
     }
 
-    /* remove unnecessary joins 
+    /* remove unnecessary joins
        (where both children references point to the same node) */
     if (p->kind == la_eqjoin_unq &&
         L(p) == R(p) &&
@@ -2018,11 +2040,11 @@ join_pushdown (PFla_op_t *p, PFarray_t *clean_up_list)
            Thus replace it by a dummy projection */
         PFalg_proj_t *proj_list = PFmalloc (p->schema.count *
                                             sizeof (PFalg_proj_t));
-                                            
+
         for (unsigned int i = 0; i < p->schema.count; i++)
             proj_list[i] = proj (p->schema.items[i].name,
                                  p->schema.items[i].name);
-                                 
+
         *p = *(PFla_project_ (L(p), p->schema.count, proj_list));
         modified = true;
     }
@@ -2038,30 +2060,30 @@ join_pushdown (PFla_op_t *p, PFarray_t *clean_up_list)
             PFprop_subdom (p->prop,
                            PFprop_dom (R(p)->prop, p->sem.eqjoin.att2),
                            PFprop_dom (L(p)->prop, p->sem.eqjoin.att1)))
-            /* if the left join argument is key and a super domain 
+            /* if the left join argument is key and a super domain
                of the right one we can be sure that the left side will
-               never rewrite any node in the right subtree except for 
+               never rewrite any node in the right subtree except for
                the nodes on the path of the join argument. */
             mark_left_path (L(p), p->sem.eqjoin.att1);
         else
             mark_left_subdag (L(p));
-            
+
         /* mark nodes in the right child as 'RIGHT' */
         if (PFprop_key (p->prop, p->sem.eqjoin.att2) &&
             PFprop_subdom (p->prop,
                            PFprop_dom (L(p)->prop, p->sem.eqjoin.att1),
                            PFprop_dom (R(p)->prop, p->sem.eqjoin.att2)))
-            /* if the right join argument is key and a super domain 
+            /* if the right join argument is key and a super domain
                of the left one we can be sure that the right side will
-               never rewrite any node in the left subtree except for 
+               never rewrite any node in the left subtree except for
                the nodes on the path of the join argument. */
             mark_right_path (R(p), p->sem.eqjoin.att2);
         else
             mark_right_subdag (R(p));
-        
+
         /* start pushing down the join operator */
         modified = join_pushdown_worker (p, clean_up_list) || modified;
-        
+
         /* clean up the remaining 'LEFT' and 'RIGHT' markers */
         for (unsigned int i = 0; i < PFarray_last (clean_up_list); i++)
             remove_marks (*(PFla_op_t **) PFarray_at (clean_up_list, i));
@@ -2070,7 +2092,7 @@ join_pushdown (PFla_op_t *p, PFarray_t *clean_up_list)
     }
 
     SEEN(p) = true;
-    
+
     return modified;
 }
 
@@ -2100,15 +2122,15 @@ clean_up_eqjoin (PFla_op_t *p)
         PFalg_att_t cur;
         unsigned int j, count;
         bool prune;
-        
+
         /* as the equi-join may be pushed down that far that it
-           references the same relation we have to remove 
-           every duplicate except the first join column from 
+           references the same relation we have to remove
+           every duplicate except the first join column from
            the first operand and project away the first join column
            from the second operand. */
-           
+
         /* first operand */
-        
+
         /* check for duplicate columns */
         prune = false;
         for (i = 0; i < L(p)->schema.count; i++) {
@@ -2127,9 +2149,9 @@ clean_up_eqjoin (PFla_op_t *p)
         if (prune) {
             count = 0;
             /* create projection list (at maximum it has the same size) */
-            proj_list = PFmalloc ((L(p)->schema.count) 
+            proj_list = PFmalloc ((L(p)->schema.count)
                                   * sizeof (*(proj_list)));
-            
+
             /* keep first join attribute */
             proj_list[count++] = proj (p->sem.eqjoin_unq.att1,
                                        p->sem.eqjoin_unq.att1);
@@ -2154,7 +2176,7 @@ clean_up_eqjoin (PFla_op_t *p)
             left = L(p);
 
         /* second operand */
-        
+
         /* check for duplicate columns */
         prune = false;
         if (p->sem.eqjoin_unq.att1 != p->sem.eqjoin_unq.att2)
@@ -2172,11 +2194,11 @@ clean_up_eqjoin (PFla_op_t *p)
             /* create projection list (at maximum it has the same size) */
             proj_list = PFmalloc ((R(p)->schema.count)
                                   * sizeof (*(proj_list)));
-            
+
             /* keep second join attribute */
             proj_list[count++] = proj (p->sem.eqjoin_unq.att2,
                                        p->sem.eqjoin_unq.att2);
-                                       
+
             for (i = 0; i < R(p)->schema.count; i++) {
                 cur = R(p)->schema.items[i].name;
                 /* Throw out join columns we already added it
@@ -2207,7 +2229,7 @@ PFalgopt_join_pd (PFla_op_t *root)
     PFarray_t *clean_up_list = PFarray (sizeof (PFla_op_t *));
     unsigned int tries = 0, max_tries = 0;
     bool modified = true;
-    
+
     /* Optimize algebra tree */
     while (modified || tries < max_tries) {
         PFprop_infer_key (root);

@@ -52,23 +52,27 @@ typedef struct PFla_op_t PFla_op_t;
 
 /** algebra operator kinds */
 enum PFla_op_kind_t {
-      la_serialize       =  1 /**< serialize algebra expression
-                                   (Placed on the very top of the tree.) */
-    , la_lit_tbl         =  2 /**< literal table */
-    , la_empty_tbl       =  3 /**< empty literal table */
-    , la_attach          =  4 /**< attach constant column */
-    , la_cross           =  5 /**< cross product (Cartesian product) */
-    , la_eqjoin          =  6 /**< equi-join */
-    , la_semijoin        =  7 /**< semi-join */
-    , la_thetajoin       =  8 /**< theta-join (with possibly multiple
+      la_serialize_seq   =  1 /**< serialize algebra expression representing
+                                   a sequence (Placed on the very top of the
+                                   tree.) */
+    , la_serialize_rel   =  2 /**< serialize algebra expression representing
+                                   a relation (Placed on the very top of the
+                                   tree.) */
+    , la_lit_tbl         =  4 /**< literal table */
+    , la_empty_tbl       =  5 /**< empty literal table */
+    , la_attach          =  6 /**< attach constant column */
+    , la_cross           =  7 /**< cross product (Cartesian product) */
+    , la_eqjoin          =  9 /**< equi-join */
+    , la_semijoin        = 10 /**< semi-join */
+    , la_thetajoin       = 11 /**< theta-join (with possibly multiple
                                    predicates) */
-    , la_project         =  9 /**< algebra projection and renaming operator */
-    , la_select          = 10 /**< selection of rows where column value != 0 */
-    , la_pos_select      = 11 /**< positional selection of rows */
-    , la_disjunion       = 12 /**< union two relations with same schema */
-    , la_intersect       = 13 /**< intersect two relations with same schema */
-    , la_difference      = 14 /**< difference of two relations w/ same schema */
-    , la_distinct        = 15 /**< duplicate elimination operator */
+    , la_project         = 12 /**< algebra projection and renaming operator */
+    , la_select          = 13 /**< selection of rows where column value != 0 */
+    , la_pos_select      = 14 /**< positional selection of rows */
+    , la_disjunion       = 16 /**< union two relations with same schema */
+    , la_intersect       = 17 /**< intersect two relations with same schema */
+    , la_difference      = 18 /**< difference of two relations w/ same schema */
+    , la_distinct        = 19 /**< duplicate elimination operator */
     , la_fun_1to1        = 20 /**< generic operator that extends the schema with
                                    a new column where each value is determined 
                                    by the values of a single row (cardinality 
@@ -94,15 +98,14 @@ enum PFla_op_kind_t {
     , la_seqty1          = 43 /**< test for exactly one type occurrence in one
                                    iteration (Pathfinder extension) */
     , la_all             = 44 /**< test if all items in an iteration are true */
-    , la_step            = 49 /**< XPath location step */
-    , la_step_join       = 50 /**< duplicate generating path step */
-    , la_guide_step      = 51 /**< XPath location step 
+    , la_step            = 50 /**< XPath location step */
+    , la_step_join       = 51 /**< duplicate generating path step */
+    , la_guide_step      = 52 /**< XPath location step 
                                    (with guide information) */
-    , la_guide_step_join = 52 /**< duplicate generating path step 
+    , la_guide_step_join = 53 /**< duplicate generating path step 
                                    (with guide information) */
-    , la_id              = 53 /**< Operator representing a fn:id node lookup */
-    , la_idref           = 54 /**< Operator representing a fn:idref node 
-                                   lookup */
+    , la_doc_index_join  = 54 /**< Operator representing a join with a document
+                                   index relation */
     , la_doc_tbl         = 55 /**< document relation (is also a fragment) */
     , la_doc_access      = 56 /**< document access necessary 
                                    for pf:string-value */
@@ -151,14 +154,30 @@ enum PFla_op_kind_t {
 /** algebra operator kinds */
 typedef enum PFla_op_kind_t PFla_op_kind_t;
 
+enum PFla_doc_join_kind_t {
+      la_dj_id    = 1
+    , la_dj_idref = 2
+    , la_dj_text  = 3
+    , la_dj_attr  = 4
+};
+/** doc index join operator kinds */
+typedef enum PFla_doc_join_kind_t PFla_doc_join_kind_t;
+
 /** semantic content in algebra operators */
 union PFla_op_sem_t {
 
-    /* semantic content for serialize operator */
+    /* semantic content for sequence serialize operator */
     struct {
         PFalg_att_t     pos;      /**< name of attribute pos */
         PFalg_att_t     item;     /**< name of attribute item */
-    } serialize;
+    } ser_seq;
+
+    /* semantic content for relation serialize operator */
+    struct {
+        PFalg_att_t     iter;     /**< name of attribute iter */
+        PFalg_att_t     pos;      /**< name of attribute pos */
+        PFalg_attlist_t items;    /**< list of item attributes */
+    } ser_rel;
 
     /* semantic content for literal table constr. */
     struct {
@@ -305,13 +324,14 @@ union PFla_op_sem_t {
         PFalg_att_t      item_res; /**< column to store the resulting nodes */
     } step;
 
-    /* store the semantic information for fn:id/fn:idref */
+    /* store the semantic information for fn:id, fn:idref, pf:text,
+       and pf:attr */
     struct {
-        PFalg_att_t     iter;     /**< column to look up the iterations */
-        PFalg_att_t     item;     /**< column to look up the context nodes */
+        PFla_doc_join_kind_t kind; /**< kind of the operator */     
         PFalg_att_t     item_res; /**< column to store the resulting nodes */
+        PFalg_att_t     item;     /**< column to look up the context nodes */
         PFalg_att_t     item_doc; /**< column to store the fragment info */
-    } id;
+    } doc_join;
     
     /* store the column names necessary for document lookup */
     struct {
@@ -487,11 +507,20 @@ PFla_op_t * PFla_op_duplicate (PFla_op_t *n, PFla_op_t *left,
 PFla_op_t * PFla_dummy (PFla_op_t *n);
 
 /**
- * A `serialize' node will be placed on the very top of the algebra
- * expression tree.
+ * A `serialize_seq' node will be placed on the very top of the algebra
+ * expression tree that represents a sequence.
  */
-PFla_op_t * PFla_serialize (const PFla_op_t *doc, const PFla_op_t *alg,
-                            PFalg_att_t pos, PFalg_att_t item);
+PFla_op_t * PFla_serialize_seq (const PFla_op_t *doc, const PFla_op_t *alg,
+                                PFalg_att_t pos, PFalg_att_t item);
+
+/**
+ * A `serialize_rel' node will be placed on the very top of the algebra
+ * expression tree that represents a relation.
+ */
+PFla_op_t * PFla_serialize_rel (const PFla_op_t *alg,
+                                PFalg_att_t iter,
+                                PFalg_att_t pos,
+                                PFalg_attlist_t items);
 
 /**
  * Construct algebra node representing a literal table (actually just
@@ -813,18 +842,12 @@ PFla_op_t * PFla_guide_step_join (const PFla_op_t *doc, const PFla_op_t *n,
                                   PFalg_att_t item_res);
 
 /**
- * Constructor for fn:id evaluation.
+ * Constructor for fn:id, fn:idref, pf:text, and pf:attr evaluation.
  */
-PFla_op_t * PFla_id (const PFla_op_t *doc, const PFla_op_t *n,
-                     PFalg_att_t iter, PFalg_att_t item,
-                     PFalg_att_t item_res, PFalg_att_t item_doc);
-
-/**
- * Constructor for fn:idref evaluation.
- */
-PFla_op_t * PFla_idref (const PFla_op_t *doc, const PFla_op_t *n,
-                        PFalg_att_t iter, PFalg_att_t item,
-                        PFalg_att_t item_res, PFalg_att_t item_doc);
+PFla_op_t * PFla_doc_index_join (const PFla_op_t *doc, const PFla_op_t *n,
+                                 PFla_doc_join_kind_t kind,
+                                 PFalg_att_t item,
+                                 PFalg_att_t item_res, PFalg_att_t item_doc);
 
 /*********** node construction functionality *************/
 

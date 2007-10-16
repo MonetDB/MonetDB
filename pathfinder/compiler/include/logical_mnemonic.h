@@ -36,7 +36,8 @@
 #define dummy(a) PFla_dummy (a)
 
 /** serialization */
-#define serialize(a,b,c,d) PFla_serialize ((a),(b),(c),(d))
+#define serialize_seq(a,b,c,d) PFla_serialize_seq ((a),(b),(c),(d))
+#define serialize_rel(a,b,c,d) PFla_serialize_rel ((a),(b),(c),(d))
 
 /** literal table construction */
 #define lit_tbl(...)      PFla_lit_tbl (__VA_ARGS__)
@@ -140,11 +141,9 @@
 #define guide_step_join(a,b,c,d,e,f,g,h,i) \
         PFla_guide_step_join ((a),(b),(c),(d),(e),(f),(g),(h),(i))
 
-/* fn:id */
-#define id(a,b,c,d,e,f)   PFla_id ((a),(b),(c),(d),(e),(f))
-
-/* fn:idref */
-#define idref(a,b,c,d,e,f) PFla_idref ((a),(b),(c),(d),(e),(f))
+/* doc index join */
+#define doc_index_join(a,b,c,d,e,f) \
+        PFla_doc_index_join ((a),(b),(c),(d),(e),(f))
 
 /* document table */
 #define doc_tbl(a,b,c,d)    PFla_doc_tbl((a),(b),(c),(d))

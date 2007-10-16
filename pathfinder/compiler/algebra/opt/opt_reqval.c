@@ -3,8 +3,8 @@
  *
  * Optimize relational algebra expression DAG
  * based on the required values property.
- * (This requires no burg pattern matching as we 
- *  apply optimizations in a peep-hole style on 
+ * (This requires no burg pattern matching as we
+ *  apply optimizations in a peep-hole style on
  *  single nodes only.)
  *
  * Copyright Notice:
@@ -62,7 +62,7 @@ opt_reqvals (PFla_op_t *p)
     unsigned int count = 0;
     PFalg_att_t  att = 0;
     bool         val = false;
-    
+
     assert (p);
 
     /* nothing to do if we already visited that node */
@@ -84,16 +84,16 @@ opt_reqvals (PFla_op_t *p)
             *p = *PFla_empty_tbl_ (p->schema);
             return;
         }
-        
+
         if (PFprop_reqval (p->prop, cur_att)) {
             count++;
             att = cur_att;
             val = PFprop_reqval_val (p->prop, cur_att);
         }
-            
+
     }
 
-    /* if we look for exactly one required value and 
+    /* if we look for exactly one required value and
        a child of the current operator is a union operator
        that produces two different constant values in
        the required value column in its children then
@@ -117,7 +117,7 @@ opt_reqvals (PFla_op_t *p)
             else
                 L(p) = LR(p);
         }
-        
+
         if (R(p) && R(p)->kind == la_disjunion &&
             PFprop_const (RL(p)->prop, att) &&
             PFprop_const (RR(p)->prop, att) &&

@@ -3,8 +3,8 @@
  *
  * Optimize relational algebra expression DAG
  * based on the domain property.
- * (This requires no burg pattern matching as we 
- *  apply optimizations in a peep-hole style on 
+ * (This requires no burg pattern matching as we
+ *  apply optimizations in a peep-hole style on
  *  single nodes only.)
  *
  * Copyright Notice:
@@ -74,7 +74,7 @@ opt_dom (PFla_op_t *p)
         case la_difference:
         {   /**
              * If the domains of the first relation are all subdomains
-             * of the corresponding domains in the second argument 
+             * of the corresponding domains in the second argument
              * the result of the difference operation will be empty.
              */
             unsigned int all_subdom = 0;

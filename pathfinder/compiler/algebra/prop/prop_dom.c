@@ -236,8 +236,8 @@ bool
 PFprop_disjdom (const PFprop_t *p, dom_t a, dom_t b)
 {
     assert (p);
-    
-    /* In case no properties are inferred and this function 
+
+    /* In case no properties are inferred and this function
        is called we are just restrictive and return no match */
     if (!p->disjdoms) return false;
 
@@ -271,7 +271,7 @@ PFprop_subdom (const PFprop_t *prop, dom_t in_subdom, dom_t in_dom)
 
     if (!in_subdom || !in_dom) return false;
 
-    /* In case no properties are inferred and this function 
+    /* In case no properties are inferred and this function
        is called we are just restrictive and return no match */
     if (!prop->subdoms) return false;
 
@@ -337,10 +337,10 @@ common_super_dom (const PFprop_t *prop, dom_t dom1, dom_t dom2)
     /* check trivial case of identity */
     if (dom1 == dom2)
         return dom1;
-    
+
     /* collect all the super domains for each input */
-    
-    /* start with the input domains as seed */    
+
+    /* start with the input domains as seed */
     domains1 = PFarray (sizeof (dom_t));
     *(dom_t *) PFarray_add (domains1) = dom1;
     domains2 = PFarray (sizeof (dom_t));
@@ -349,7 +349,7 @@ common_super_dom (const PFprop_t *prop, dom_t dom1, dom_t dom2)
     for (unsigned int i = PFarray_last (prop->subdoms); i > 0; i--) {
         subdom = ((subdom_t *) PFarray_at (prop->subdoms, i-1))->subdom;
         dom = ((subdom_t *) PFarray_at (prop->subdoms, i-1))->dom;
-        
+
         insert = false;
         duplicate = false;
         for (unsigned int j = 0; j < PFarray_last (domains1); j++) {
@@ -374,7 +374,7 @@ common_super_dom (const PFprop_t *prop, dom_t dom1, dom_t dom2)
         if (insert && !duplicate)
             *(dom_t *) PFarray_add (domains2) = dom;
     }
-    
+
     /* intersect both domain lists */
     merge_doms = PFarray (sizeof (dom_t));
     for (unsigned int i = 0; i < PFarray_last (domains1); i++) {
@@ -384,17 +384,17 @@ common_super_dom (const PFprop_t *prop, dom_t dom1, dom_t dom2)
             if (dom1 == dom2) *(dom_t *) PFarray_add (merge_doms) = dom1;
         }
     }
-        
+
     /* no common super domain exists */
     if (!PFarray_last (merge_doms))
         return 0;
-    
+
     dom1 = *(dom_t *) PFarray_at (merge_doms, 0);
-    
+
     /* trivial case -- only one common domain */
     if (PFarray_last (merge_doms) == 1)
         return dom1;
-    
+
     /* find the leaf node (of the domain tree) */
     for (unsigned int i = 1; i < PFarray_last (merge_doms); i++) {
         dom2 = *(dom_t *) PFarray_at (merge_doms, i);
@@ -505,13 +505,13 @@ static unsigned int
 find_guide_min (unsigned int count, PFguide_tree_t **guides)
 {
     unsigned int min;
-   
+
     assert (count);
     min = guides[0]->min;
     for (unsigned int i = 1; i < count; i++)
        min = min < guides[i]->min ? min : guides[i]->min;
 
-   return min; 
+   return min;
 }
 
 /**
@@ -521,8 +521,12 @@ static unsigned int
 infer_dom (PFla_op_t *n, unsigned int id)
 {
     switch (n->kind) {
-        case la_serialize:
+        case la_serialize_seq:
             bulk_add_dom (n->prop, R(n));
+            break;
+
+        case la_serialize_rel:
+            bulk_add_dom (n->prop, L(n));
             break;
 
         case la_lit_tbl:
@@ -700,7 +704,7 @@ infer_dom (PFla_op_t *n, unsigned int id)
                              n->sem.thetajoin.pred[i].right,
                              join_dom);
                 }
-            
+
             /* copy domains and update domains of join arguments */
             for (unsigned int i = 0; i < L(n)->schema.count; i++) {
                 unsigned int j;
@@ -964,7 +968,7 @@ infer_dom (PFla_op_t *n, unsigned int id)
                  n->sem.step.axis == alg_self) &&
                 find_guide_min (n->sem.step.guide_count,
                                 n->sem.step.guides) > 0)
-                add_dom (n->prop, 
+                add_dom (n->prop,
                          n->sem.step.iter,
                          PFprop_dom (R(n)->prop, n->sem.step.iter));
             else {
@@ -1002,15 +1006,14 @@ infer_dom (PFla_op_t *n, unsigned int id)
                 }
             add_dom (n->prop, n->sem.step.item_res, id++);
             break;
-            
-        case la_id:
-        case la_idref:
-            /* create new subdomain for attribute iter */
-            add_subdom (n->prop, PFprop_dom (R(n)->prop,
-                                             n->sem.id.iter), id);
-            add_dom (n->prop, n->sem.id.iter, id++);
-            /* create new domain for attribute item */
-            add_dom (n->prop, n->sem.id.item_res, id++);
+
+        case la_doc_index_join:
+            for (unsigned int i = 0; i < R(n)->schema.count; i++) {
+                add_subdom (n->prop, PFprop_dom (R(n)->prop,
+                                                 R(n)->schema.items[i].name), id);
+                add_dom (n->prop, R(n)->schema.items[i].name, id++);
+            }
+            add_dom (n->prop, n->sem.doc_join.item_res, id++);
             break;
 
         case la_doc_tbl:
@@ -1036,7 +1039,7 @@ infer_dom (PFla_op_t *n, unsigned int id)
                              PFprop_dom (L(n)->prop,
                                          L(n)->sem.docnode.iter));
                     break;
-                    
+
                 case la_element:
                 case la_textnode:
                 case la_comment:
@@ -1045,7 +1048,7 @@ infer_dom (PFla_op_t *n, unsigned int id)
                              PFprop_dom (L(n)->prop,
                                          L(n)->sem.iter_item.iter));
                     break;
-                    
+
                 case la_attribute:
                 case la_processi:
                     add_dom (n->prop,
@@ -1053,21 +1056,21 @@ infer_dom (PFla_op_t *n, unsigned int id)
                              PFprop_dom (L(n)->prop,
                                          L(n)->sem.iter_item1_item2.iter));
                     break;
-                    
+
                 case la_content:
                     add_dom (n->prop,
                              n->sem.iter_item.iter,
                              PFprop_dom (L(n)->prop,
                                          L(n)->sem.iter_pos_item.iter));
                     break;
-                    
+
                 default:
                     break;
             }
             /* create new domain for attribute item */
             add_dom (n->prop, n->sem.iter_item.item, id++);
             break;
-            
+
         case la_fcns:
             break;
 
@@ -1136,7 +1139,7 @@ infer_dom (PFla_op_t *n, unsigned int id)
         case la_trace_map:
             /* we have no properties */
             break;
-            
+
         case la_rec_fix:
             /* get the domains of the overall result */
             bulk_add_dom (n->prop, R(n));
@@ -1174,7 +1177,7 @@ infer_dom (PFla_op_t *n, unsigned int id)
             PFoops (OOPS_FATAL,
                     "clone column aware cross product operator is "
                     "only allowed inside mvd optimization!");
-            
+
         case la_dummy:
             bulk_add_dom (n->prop, L(n));
             break;

@@ -3,8 +3,8 @@
  *
  * Optimize relational algebra expression DAG
  * based on the set property.
- * (This requires no burg pattern matching as we 
- *  apply optimizations in a peep-hole style on 
+ * (This requires no burg pattern matching as we
+ *  apply optimizations in a peep-hole style on
  *  single nodes only.)
  *
  * Copyright Notice:
@@ -127,7 +127,7 @@ opt_set (PFla_op_t *p)
                 break;
             }
             break;
-            
+
         case la_distinct:
             if (PFprop_set (p->prop))
                 *p = *PFla_dummy (L(p));
@@ -154,14 +154,14 @@ opt_set (PFla_op_t *p)
                           p->sem.step.item,
                           p->sem.step.item);
             break;
-            
+
         case la_step_join:
             if (PFprop_set (p->prop) &&
                 PFprop_icols_count (p->prop) == 2 &&
                 PFprop_icol (p->prop, p->sem.step.item_res)) {
                 PFalg_att_t iter = 0,
                             item = p->sem.step.item_res;
-                
+
                 for (unsigned int i = 0; i < p->schema.count; i++)
                     if (PFprop_icol (p->prop, p->schema.items[i].name) &&
                         p->schema.items[i].name != item &&
@@ -172,9 +172,9 @@ opt_set (PFla_op_t *p)
 
                 if (!iter)
                     break;
-                
+
                 *p = *PFla_step (
-                          L(p), 
+                          L(p),
                           PFla_project (
                               R(p),
                               PFalg_proj (p->sem.step.item_res,
@@ -188,7 +188,7 @@ opt_set (PFla_op_t *p)
                           p->sem.step.item_res);
             }
             break;
-                
+
         case la_guide_step:
             if (PFprop_set (p->prop) &&
                 PFprop_icol (p->prop, p->sem.step.item) &&
@@ -212,7 +212,7 @@ opt_set (PFla_op_t *p)
                           p->sem.step.item,
                           p->sem.step.item);
             break;
-            
+
         default:
             break;
     }

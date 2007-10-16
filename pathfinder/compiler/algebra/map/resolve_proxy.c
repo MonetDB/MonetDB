@@ -52,7 +52,7 @@
 static void
 resolve_proxies (PFla_op_t *p)
 {
-    unsigned int i; 
+    unsigned int i;
     assert (p);
 
     /* look at each node only once */
@@ -69,7 +69,7 @@ resolve_proxies (PFla_op_t *p)
     if (p->kind == la_proxy || p->kind == la_proxy_base)
         *p = *PFla_dummy (p->child[0]);
 
-    /* Replace the duplicate generating path step operators 
+    /* Replace the duplicate generating path step operators
        by the more explicit variant:
 
              pi
@@ -92,7 +92,7 @@ resolve_proxies (PFla_op_t *p)
                       cur;
         PFalg_proj_t *top_proj   = PFmalloc (p->schema.count *
                                              sizeof (PFalg_proj_t));
-        
+
         /* Collect the used columns and generate a projection list
            that discards the join columns. */
         for (i = 0; i < p->schema.count; i++) {
@@ -100,7 +100,7 @@ resolve_proxies (PFla_op_t *p)
             used_cols = used_cols | cur;
             top_proj[i] = PFalg_proj (cur, cur);
         }
-        
+
         /* Generate two new column names (used for the join attributes). */
         join_att1 = PFalg_ori_name (PFalg_unq_name (att_iter, 0), ~used_cols);
         used_cols = used_cols | join_att1;
@@ -142,11 +142,11 @@ resolve_proxies (PFla_op_t *p)
                        join_att1,
                        p->sem.step.item_res,
                        p->sem.step.item_res);
-        
+
         *p = *PFla_project_ (
                   PFla_eqjoin (
                       step,
-                      number, 
+                      number,
                       join_att1,
                       join_att2),
                   p->schema.count,

@@ -122,7 +122,7 @@ modify_binary_op (PFla_op_t *p,
                            att_present (LL(p), p->sem.binary.att2);
         bool switch_right = att_present (LR(p), p->sem.binary.att1) &&
                             att_present (LR(p), p->sem.binary.att2);
-                           
+
         if (switch_left && switch_right) {
             *p = *(cross_can (op (LL(p),
                                   p->sem.binary.res,
@@ -166,7 +166,7 @@ modify_unary_op (PFla_op_t *p,
     if (is_cross (L(p))) {
         bool switch_left = att_present (LL(p), p->sem.unary.att);
         bool switch_right = att_present (LR(p), p->sem.unary.att);
-                           
+
         if (switch_left && switch_right) {
             *p = *(cross_can (op (LL(p),
                                   p->sem.unary.res,
@@ -204,14 +204,14 @@ modify_aggr (PFla_op_t *p,
     /* An expression that contains the partitioning attribute is
        independent of the aggregate. The translation thus moves the
        expression above the aggregate operator and removes its partitioning
-       column. */ 
+       column. */
     if (is_cross (L(p)) &&
         p->sem.aggr.part) {
         if (att_present (LL(p), p->sem.aggr.part) &&
             !att_present (LL(p), p->sem.aggr.att)) {
             *p = *(cross_can (
                       LL(p),
-                      aggr (kind, 
+                      aggr (kind,
                             LR(p),
                             p->sem.aggr.res,
                             p->sem.aggr.att,
@@ -223,7 +223,7 @@ modify_aggr (PFla_op_t *p,
                  !att_present (LR(p), p->sem.aggr.att)) {
             *p = *(cross_can (
                       LR(p),
-                      aggr (kind, 
+                      aggr (kind,
                             LL(p),
                             p->sem.aggr.res,
                             p->sem.aggr.att,
@@ -234,7 +234,7 @@ modify_aggr (PFla_op_t *p,
     return modified;
 }
 
-/* check if the semantical information 
+/* check if the semantical information
    of two attributes matches */
 static bool
 project_identical (PFla_op_t *a, PFla_op_t *b)
@@ -274,9 +274,9 @@ opt_mvd (PFla_op_t *p)
     for (unsigned int i = 0; i < PFLA_OP_MAXCHILD && p->child[i]; i++)
         modified = opt_mvd (p->child[i]) || modified ;
 
-    /** 
+    /**
      * In the following action code we try to propagate cross
-     * products up the DAG as far as possible. To avoid possible 
+     * products up the DAG as far as possible. To avoid possible
      * 'deadlocks' we discard all independent expressions that
      * are constant thus reducing the number of rivalling cross
      * product operators.
@@ -301,7 +301,8 @@ opt_mvd (PFla_op_t *p)
     /* action code */
     switch (p->kind) {
 
-    case la_serialize:
+    case la_serialize_seq:
+    case la_serialize_rel:
         break;
 
     case la_lit_tbl:
@@ -344,7 +345,7 @@ opt_mvd (PFla_op_t *p)
 
                  x            x              x          x
                 / \          / \            / \        / \
-               1   x    =>  2   x   and    x   3  =>  1   x   
+               1   x    =>  2   x   and    x   3  =>  1   x
                   / \          / \        / \            / \
                  2   3        3   1      1   2          2   3
 
@@ -377,7 +378,7 @@ opt_mvd (PFla_op_t *p)
            join attribute) up the DAG. */
         if (is_cross (L(p))) {
             if (att_present (LL(p), p->sem.eqjoin.att1))
-                *p = *(cross_can (LR(p), eqjoin (LL(p), R(p), 
+                *p = *(cross_can (LR(p), eqjoin (LL(p), R(p),
                                                  p->sem.eqjoin.att1,
                                                  p->sem.eqjoin.att2)));
             else
@@ -409,7 +410,7 @@ opt_mvd (PFla_op_t *p)
            join attribute) up the DAG. */
         if (is_cross (L(p))) {
             if (att_present (LL(p), p->sem.eqjoin.att1))
-                *p = *(cross_can (LR(p), semijoin (LL(p), R(p), 
+                *p = *(cross_can (LR(p), semijoin (LL(p), R(p),
                                                    p->sem.eqjoin.att1,
                                                    p->sem.eqjoin.att2)));
             else
@@ -422,14 +423,14 @@ opt_mvd (PFla_op_t *p)
 
         }
         break;
-        
+
     case la_thetajoin:
         /* Move the independent expression (the one without any
            join attributes) up the DAG. */
         if (is_cross (L(p))) {
             bool all_left = true,
                  all_right = true;
-            
+
             for (unsigned int i = 0; i < p->sem.thetajoin.count; i++) {
                 all_left  = all_left &&
                             att_present (LL(p), p->sem.thetajoin.pred[i].left);
@@ -438,7 +439,7 @@ opt_mvd (PFla_op_t *p)
             }
 
             if (all_left)
-                *p = *(cross_can (LR(p), thetajoin (LL(p), R(p), 
+                *p = *(cross_can (LR(p), thetajoin (LL(p), R(p),
                                                     p->sem.thetajoin.count,
                                                     p->sem.thetajoin.pred)));
             else if (all_right)
@@ -455,7 +456,7 @@ opt_mvd (PFla_op_t *p)
         if (is_cross (R(p))) {
             bool all_left = true,
                  all_right = true;
-            
+
             for (unsigned int i = 0; i < p->sem.thetajoin.count; i++) {
                 all_left  = all_left &&
                             att_present (RL(p), p->sem.thetajoin.pred[i].right);
@@ -464,7 +465,7 @@ opt_mvd (PFla_op_t *p)
             }
 
             if (all_left)
-                *p = *(cross_can (RR(p), thetajoin (L(p), RL(p), 
+                *p = *(cross_can (RR(p), thetajoin (L(p), RL(p),
                                                     p->sem.thetajoin.count,
                                                     p->sem.thetajoin.pred)));
             else if (all_right)
@@ -479,7 +480,7 @@ opt_mvd (PFla_op_t *p)
             break;
         }
         break;
-        
+
     case la_project:
         /* Split project operator and push it beyond the cross product. */
         if (is_cross (L(p))) {
@@ -492,7 +493,7 @@ opt_mvd (PFla_op_t *p)
 
             for (unsigned int i = 0; i < LL(p)->schema.count; i++)
                 for (unsigned int j = 0; j < p->sem.proj.count; j++)
-                    if (LL(p)->schema.items[i].name 
+                    if (LL(p)->schema.items[i].name
                         == p->sem.proj.items[j].old) {
                         proj_list1[count1++] = p->sem.proj.items[j];
                     }
@@ -503,7 +504,7 @@ opt_mvd (PFla_op_t *p)
 
             for (unsigned int i = 0; i < LR(p)->schema.count; i++)
                 for (unsigned int j = 0; j < p->sem.proj.count; j++)
-                    if (LR(p)->schema.items[i].name 
+                    if (LR(p)->schema.items[i].name
                         == p->sem.proj.items[j].old) {
                         proj_list2[count2++] = p->sem.proj.items[j];
                     }
@@ -536,8 +537,8 @@ opt_mvd (PFla_op_t *p)
         /* An expression that does not contain any sorting column
            required by the positional select operator, but contains
            the partitioning attribute is independent of the positional
-           select. The translation thus moves the expression above 
-           the positional selection and removes its partitioning column. */ 
+           select. The translation thus moves the expression above
+           the positional selection and removes its partitioning column. */
         if (is_cross (L(p)) &&
             p->sem.pos_sel.part) {
             bool part, sortby;
@@ -551,7 +552,7 @@ opt_mvd (PFla_op_t *p)
                 for (unsigned int j = 0;
                      j < PFord_count (p->sem.pos_sel.sortby);
                      j++)
-                    if (LL(p)->schema.items[i].name 
+                    if (LL(p)->schema.items[i].name
                         == PFord_order_col_at (
                                p->sem.pos_sel.sortby,
                                j)) {
@@ -580,7 +581,7 @@ opt_mvd (PFla_op_t *p)
                 for (unsigned int j = 0;
                      j < PFord_count (p->sem.pos_sel.sortby);
                      j++)
-                    if (LR(p)->schema.items[i].name 
+                    if (LR(p)->schema.items[i].name
                         == PFord_order_col_at (
                                p->sem.pos_sel.sortby,
                                j)) {
@@ -607,7 +608,7 @@ opt_mvd (PFla_op_t *p)
            expressions (both attach operator or cross product) which
            reference the same subexpression, we move this expression
            above the union. */
-        if (L(p)->kind == la_attach && 
+        if (L(p)->kind == la_attach &&
             R(p)->kind == la_attach &&
             LL(p) == RL(p)) {
             *p = *(cross_can (
@@ -788,7 +789,7 @@ opt_mvd (PFla_op_t *p)
             modified = true;
         }
         break;
-        
+
     case la_fun_1to1:
         if (is_cross (L(p))) {
             bool switch_left = true;
@@ -802,7 +803,7 @@ opt_mvd (PFla_op_t *p)
                                att_present (LR(p),
                                             p->sem.fun_1to1.refs.atts[i]);
             }
-                               
+
             if (switch_left && switch_right) {
                 *p = *(cross_can (fun_1to1 (LL(p),
                                             p->sem.fun_1to1.kind,
@@ -848,7 +849,7 @@ opt_mvd (PFla_op_t *p)
     case la_bool_not:
         modified = modify_unary_op (p, PFla_not);
         break;
-        
+
     case la_to:
         if (is_cross (L(p))) {
             if (att_present (LL(p), p->sem.to.att1) &&
@@ -882,7 +883,7 @@ opt_mvd (PFla_op_t *p)
             }
         }
         break;
-        
+
     case la_avg:
         modified = modify_aggr (p, la_avg);
         break;
@@ -899,7 +900,7 @@ opt_mvd (PFla_op_t *p)
         /* An expression that contains the partitioning attribute is
            independent of the aggregate. The translation thus moves the
            expression above the aggregate operator and removes its partitioning
-           column. */ 
+           column. */
         if (is_cross (L(p)) &&
             p->sem.aggr.part) {
             if (att_present (LL(p), p->sem.aggr.part)) {
@@ -927,7 +928,7 @@ opt_mvd (PFla_op_t *p)
            required by the rownum operator, but contains the partitioning
            attribute is independent of the rownum. The translation thus
            moves the expression above the rownum and removes its partitioning
-           column. */ 
+           column. */
         if (is_cross (L(p)) &&
             p->sem.rownum.part) {
             bool part, sortby;
@@ -941,7 +942,7 @@ opt_mvd (PFla_op_t *p)
                 for (unsigned int j = 0;
                      j < PFord_count (p->sem.rownum.sortby);
                      j++)
-                    if (LL(p)->schema.items[i].name 
+                    if (LL(p)->schema.items[i].name
                         == PFord_order_col_at (
                                p->sem.rownum.sortby,
                                j)) {
@@ -970,7 +971,7 @@ opt_mvd (PFla_op_t *p)
                 for (unsigned int j = 0;
                      j < PFord_count (p->sem.rownum.sortby);
                      j++)
-                    if (LR(p)->schema.items[i].name 
+                    if (LR(p)->schema.items[i].name
                         == PFord_order_col_at (
                                p->sem.rownum.sortby,
                                j)) {
@@ -994,7 +995,7 @@ opt_mvd (PFla_op_t *p)
 
     case la_rank:
         /* An expression that does not contain any sorting column
-           required by the rank operator, is independent of the rank. 
+           required by the rank operator, is independent of the rank.
            The translation thus moves the expression above the rank. */
         if (is_cross (L(p))) {
             bool sortby;
@@ -1005,7 +1006,7 @@ opt_mvd (PFla_op_t *p)
                 for (unsigned int j = 0;
                      j < PFord_count (p->sem.rank.sortby);
                      j++)
-                    if (LL(p)->schema.items[i].name 
+                    if (LL(p)->schema.items[i].name
                         == PFord_order_col_at (
                                p->sem.rank.sortby,
                                j)) {
@@ -1029,7 +1030,7 @@ opt_mvd (PFla_op_t *p)
                 for (unsigned int j = 0;
                      j < PFord_count (p->sem.rownum.sortby);
                      j++)
-                    if (LR(p)->schema.items[i].name 
+                    if (LR(p)->schema.items[i].name
                         == PFord_order_col_at (
                                p->sem.rownum.sortby,
                                j)) {
@@ -1056,7 +1057,7 @@ opt_mvd (PFla_op_t *p)
         if (is_cross (L(p))) {
             bool switch_left = att_present (LL(p), p->sem.type.att);
             bool switch_right = att_present (LR(p), p->sem.type.att);
-                               
+
             if (switch_left && switch_right) {
                 *p = *(cross_can (type (LL(p),
                                         p->sem.type.res,
@@ -1086,12 +1087,12 @@ opt_mvd (PFla_op_t *p)
             }
         }
         break;
-        
+
     case la_type_assert:
         if (is_cross (L(p))) {
             bool switch_left = att_present (LL(p), p->sem.type.att);
             bool switch_right = att_present (LR(p), p->sem.type.att);
-                               
+
             if (switch_left && switch_right) {
                 *p = *(cross_can (type_assert_pos (
                                       LL(p),
@@ -1121,12 +1122,12 @@ opt_mvd (PFla_op_t *p)
             }
         }
         break;
-        
+
     case la_cast:
         if (is_cross (L(p))) {
             bool switch_left = att_present (LL(p), p->sem.type.att);
             bool switch_right = att_present (LR(p), p->sem.type.att);
-                               
+
             if (switch_left && switch_right) {
                 *p = *(cross_can (cast (LL(p),
                                         p->sem.type.res,
@@ -1156,7 +1157,7 @@ opt_mvd (PFla_op_t *p)
             }
         }
         break;
-        
+
     case la_seqty1:
         if (is_cross (L(p)) &&
             p->sem.aggr.part) {
@@ -1214,7 +1215,7 @@ opt_mvd (PFla_op_t *p)
             }
         }
         break;
-        
+
     case la_step:
         if (is_cross (R(p))) {
             if (att_present (RL(p), p->sem.step.item)) {
@@ -1251,12 +1252,12 @@ opt_mvd (PFla_op_t *p)
             modified = true;
         }
         break;
-        
+
     case la_step_join:
         if (is_cross (R(p))) {
             bool switch_left = att_present (RL(p), p->sem.step.item);
             bool switch_right = att_present (RR(p), p->sem.step.item);
-                               
+
             if (switch_left && switch_right) {
                 *p = *(cross_can (step_join (
                                         L(p),
@@ -1267,7 +1268,7 @@ opt_mvd (PFla_op_t *p)
                                         p->sem.step.item,
                                         p->sem.step.item_res),
                                   step_join (
-                                        L(p), 
+                                        L(p),
                                         RR(p),
                                         p->sem.step.axis,
                                         p->sem.step.ty,
@@ -1301,7 +1302,7 @@ opt_mvd (PFla_op_t *p)
             }
         }
         break;
-        
+
     case la_guide_step:
         if (is_cross (R(p))) {
             if (att_present (RL(p), p->sem.step.item)) {
@@ -1344,12 +1345,12 @@ opt_mvd (PFla_op_t *p)
             modified = true;
         }
         break;
-        
+
     case la_guide_step_join:
         if (is_cross (R(p))) {
             bool switch_left = att_present (RL(p), p->sem.step.item);
             bool switch_right = att_present (RR(p), p->sem.step.item);
-                               
+
             if (switch_left && switch_right) {
                 *p = *(cross_can (guide_step_join (
                                         L(p),
@@ -1362,7 +1363,7 @@ opt_mvd (PFla_op_t *p)
                                         p->sem.step.item,
                                         p->sem.step.item_res),
                                   guide_step_join (
-                                        L(p), 
+                                        L(p),
                                         RR(p),
                                         p->sem.step.axis,
                                         p->sem.step.ty,
@@ -1402,91 +1403,65 @@ opt_mvd (PFla_op_t *p)
             }
         }
         break;
-        
-    case la_id:
+
+    case la_doc_index_join:
         if (is_cross (R(p))) {
-            if (att_present (RL(p), p->sem.id.item) &&
-                att_present (RL(p), p->sem.id.item_doc)) {
-                *p = *(cross_can (
-                           RR(p),
-                           project (id (L(p),
-                                        attach (RL(p),
-                                                p->sem.id.iter,
-                                                lit_nat(1)),
-                                        p->sem.id.iter,
-                                        p->sem.id.item,
-                                        p->sem.id.item_res,
-                                        p->sem.id.item_doc),
-                                    proj (p->sem.id.item_res,
-                                          p->sem.id.item_res))));
+            bool switch_left = att_present (RL(p), p->sem.doc_join.item) &&
+                               att_present (RL(p), p->sem.doc_join.item_doc);
+            bool switch_right = att_present (RR(p), p->sem.doc_join.item) &&
+                                att_present (RR(p), p->sem.doc_join.item_doc);
+
+            if (switch_left && switch_right) {
+                *p = *(cross_can (doc_index_join (
+                                        L(p),
+                                        RL(p),
+                                        p->sem.doc_join.kind,
+                                        p->sem.doc_join.item,
+                                        p->sem.doc_join.item_res,
+                                        p->sem.doc_join.item_doc),
+                                  doc_index_join (
+                                        L(p),
+                                        RR(p),
+                                        p->sem.doc_join.kind,
+                                        p->sem.doc_join.item,
+                                        p->sem.doc_join.item_res,
+                                        p->sem.doc_join.item_doc)));
                 modified = true;
-            } else if (att_present (RR(p), p->sem.id.item) &&
-                       att_present (RR(p), p->sem.id.item_doc)) {
-                *p = *(cross_can (
-                           RL(p),
-                           project (id (L(p),
-                                        attach (RR(p),
-                                                p->sem.id.iter,
-                                                lit_nat(1)),
-                                        p->sem.id.iter,
-                                        p->sem.id.item,
-                                        p->sem.id.item_res,
-                                        p->sem.id.item_doc),
-                                    proj (p->sem.id.item_res,
-                                          p->sem.id.item_res))));
+            }
+            else if (switch_left) {
+                *p = *(cross_can (doc_index_join (
+                                        L(p), RL(p),
+                                        p->sem.doc_join.kind,
+                                        p->sem.doc_join.item,
+                                        p->sem.doc_join.item_res,
+                                        p->sem.doc_join.item_doc),
+                                  RR(p)));
+                modified = true;
+            }
+            else if (switch_right) {
+                *p = *(cross_can (RL(p),
+                                  doc_index_join (
+                                        L(p),
+                                        RR(p),
+                                        p->sem.doc_join.kind,
+                                        p->sem.doc_join.item,
+                                        p->sem.doc_join.item_res,
+                                        p->sem.doc_join.item_doc)));
                 modified = true;
             }
         }
         break;
-        
-    case la_idref:
-        if (is_cross (R(p))) {
-            if (att_present (RL(p), p->sem.id.item) &&
-                att_present (RL(p), p->sem.id.item_doc)) {
-                *p = *(cross_can (
-                           RR(p),
-                           project (idref (
-                                        L(p),
-                                        attach (RL(p),
-                                                p->sem.id.iter,
-                                                lit_nat(1)),
-                                        p->sem.id.iter,
-                                        p->sem.id.item,
-                                        p->sem.id.item_res,
-                                        p->sem.id.item_doc),
-                                    proj (p->sem.id.item_res,
-                                          p->sem.id.item_res))));
-                modified = true;
-            } else if (att_present (RR(p), p->sem.id.item) &&
-                       att_present (RR(p), p->sem.id.item_doc)) {
-                *p = *(cross_can (
-                           RL(p),
-                           project (idref (
-                                        L(p),
-                                        attach (RR(p),
-                                                p->sem.id.iter,
-                                                lit_nat(1)),
-                                        p->sem.id.iter,
-                                        p->sem.id.item,
-                                        p->sem.id.item_res,
-                                        p->sem.id.item_doc),
-                                    proj (p->sem.id.item_res,
-                                          p->sem.id.item_res))));
-                modified = true;
-            }
-        }
-        break;
-        
+
     case la_doc_tbl:
         /* should not appear as roots already
            translates the doc_tbl operator. */
         break;
-        
+
     case la_doc_access:
         if (is_cross (R(p))) {
             bool switch_left = att_present (RL(p), p->sem.doc_access.att);
             bool switch_right = att_present (RR(p), p->sem.doc_access.att);
-                               
+
             if (switch_left && switch_right) {
                 *p = *(cross_can (doc_access (L(p), RL(p),
                                         p->sem.doc_access.res,
@@ -1527,10 +1502,10 @@ opt_mvd (PFla_op_t *p)
     case la_processi:
     case la_content:
     case la_merge_adjacent:
-        /* constructors introduce like the unpartitioned 
+        /* constructors introduce like the unpartitioned
            number or rownum operators a dependency. */
         break;
-        
+
     case la_roots:
         /* modify the only pattern starting in roots
            that is no constructor: roots-doc_tbl */
@@ -1574,12 +1549,12 @@ opt_mvd (PFla_op_t *p)
                 }
                 modified = true;
             }
-            else if (LL(p)->kind == la_attach && 
+            else if (LL(p)->kind == la_attach &&
                      LL(p)->sem.attach.res == L(p)->sem.doc_tbl.item) {
                 /* save iter relation */
                 PFla_op_t *iter_rel = LL(L(p));
-                
-                /* create base table and overwrite doc_tbl 
+
+                /* create base table and overwrite doc_tbl
                    node to update both roots and frag operators */
                 *(L(p)) = *(doc_tbl (lit_tbl (
                                          attlist (L(p)->sem.doc_tbl.iter,
@@ -1602,24 +1577,24 @@ opt_mvd (PFla_op_t *p)
             }
         }
         break;
-        
+
     case la_fragment:
         break;
     case la_frag_union:
         break;
     case la_empty_frag:
         break;
-        
+
     case la_cond_err:
         if (is_cross (L(p))) {
-            *p = *(cross_can (cond_err (LL(p), R(p), 
+            *p = *(cross_can (cond_err (LL(p), R(p),
                                         p->sem.err.att,
                                         p->sem.err.str),
                               LR(p)));
             modified = true;
         }
         break;
-        
+
     case la_nil:
     case la_trace:
     case la_trace_msg:
@@ -1631,12 +1606,12 @@ opt_mvd (PFla_op_t *p)
     case la_rec_base:
         /* do not rewrite anything that has to do with recursion */
         break;
-                
+
     case la_proxy:
         /**
-         * ATTENTION: The proxies (especially the kind=1 version) are 
+         * ATTENTION: The proxies (especially the kind=1 version) are
          * generated in such a way, that the following rewrite does not
-         * introduce inconsistencies. 
+         * introduce inconsistencies.
          * The following rewrite would break if the proxy contains operators
          * that are themselves not allowed to be rewritten by the multi-value
          * dependency optimization phase. We may not transform expressions that
@@ -1650,7 +1625,7 @@ opt_mvd (PFla_op_t *p)
          *
          * By exploiting the semantics of our generated plans (at the creation
          * date of this rule) we ensure that none of the problematic operators
-         * appear in the plans. 
+         * appear in the plans.
          *
          *               !!! BEWARE THIS IS NOT CHECKED !!!
          *
@@ -1663,7 +1638,7 @@ opt_mvd (PFla_op_t *p)
          *    operator at the proxy exit. As an aggregate always uses the
          *    current scope (ensured during generation) and all scopes are
          *    properly nested, we have a functional dependency between the
-         *    partitioning attribute of an aggregate inside this proxy 
+         *    partitioning attribute of an aggregate inside this proxy
          *    (which is also equivalent to a scope) and the proxy exit number
          *    operator.
          *
@@ -1694,11 +1669,11 @@ opt_mvd (PFla_op_t *p)
          * Thus we first ensure that the proxy still has the correct shape
          * (see Figure (1)) and then check whether the proxy is independent
          * of tree t1. If that's the case we rewrite the DAG in Figure (1)
-         * into the one of Figure (2). 
+         * into the one of Figure (2).
          *
          *                proxy (kind=1)                 X
          *      __________/ |  \___                     / \
-         *     /(sem.base1) pi_1   \ (sem.ref)        t1   proxy (kind=1)                     
+         *     /(sem.base1) pi_1   \ (sem.ref)        t1   proxy (kind=1)
          *     |            |       |            __________/ |  \___
          *     |           |X|      |           /(sem.base1) pi_1'  \ (sem.ref)
          *     |          /   \     |           |            |       |
@@ -1709,20 +1684,20 @@ opt_mvd (PFla_op_t *p)
          *     |         |   /___\  |           |         |    |X|   |
          *     |         |     | __/            |        pi_3' / \   |
          *     |         |     |/               |         |   /___\  |
-         *     |         |     pi_4             |         |     | __/ 
-         *     |         |     |                |         |     |/    
-         *     |          \   /                 |         |     pi_4' 
-         *     |           \ /                  |         |     |     
-         *     \______      #                   |          \   /      
-         *            \    /                    |           \ /       
-         *          proxy_base                  \______      #        
-         *              |                              \    /         
-         *              X                            proxy_base       
-         *             / \                               |            
-         *           t1   t2                             t2              
-         *                                                            
+         *     |         |     pi_4             |         |     | __/
+         *     |         |     |                |         |     |/
+         *     |          \   /                 |         |     pi_4'
+         *     |           \ /                  |         |     |
+         *     \______      #                   |          \   /
+         *            \    /                    |           \ /
+         *          proxy_base                  \______      #
+         *              |                              \    /
+         *              X                            proxy_base
+         *             / \                               |
+         *           t1   t2                             t2
+         *
          *            ( 1 )                             ( 2 )
-         *                                                            
+         *
          *
          * The changes happen at the 3 projections: pi_1, pi_3, and pi_4.
          * - All columns of t1 in pi_1 are projected out (resulting in pi_1').
@@ -1753,9 +1728,9 @@ opt_mvd (PFla_op_t *p)
             bool rewrite = false;
 
             /* first check the dependencies of the left cross product input */
-            for (i = 0; i < L(cross)->schema.count; i++) 
+            for (i = 0; i < L(cross)->schema.count; i++)
                 for (j = 0; j < p->sem.proxy.req_cols.count; j++)
-                    if (L(cross)->schema.items[i].name 
+                    if (L(cross)->schema.items[i].name
                         == p->sem.proxy.req_cols.atts[j]) {
                         count++;
                         break;
@@ -1771,7 +1746,7 @@ opt_mvd (PFla_op_t *p)
                    input */
                 for (i = 0; i < R(cross)->schema.count; i++)
                     for (j = 0; j < p->sem.proxy.req_cols.count; j++)
-                        if (R(cross)->schema.items[i].name 
+                        if (R(cross)->schema.items[i].name
                             == p->sem.proxy.req_cols.atts[j]) {
                             count++;
                             break;
@@ -1795,24 +1770,24 @@ opt_mvd (PFla_op_t *p)
                 PFalg_proj_t *proj_exit = PFmalloc (ref->schema.count *
                                                     sizeof (PFalg_proj_t));
 
-                /* prune the columns of the right argument 
+                /* prune the columns of the right argument
                    of the Cartesian product */
                 count = 0;
                 for (i = 0; i < L(p)->sem.proj.count; i++) {
-                    for (j = 0; j < rcross->schema.count; j++) 
-                        if (L(p)->sem.proj.items[i].new == 
+                    for (j = 0; j < rcross->schema.count; j++)
+                        if (L(p)->sem.proj.items[i].new ==
                             rcross->schema.items[j].name)
                             break;
                     if (j == rcross->schema.count)
                         proj_proxy[count++] = L(p)->sem.proj.items[i];
                 }
-                
+
                 /* replace the columns of the right argument
                    of the Cartesian product by a dummy column
                    of the left argument */
                 for (i = 0; i < L(LL(p))->sem.proj.count; i++) {
-                    for (j = 0; j < rcross->schema.count; j++) 
-                        if (L(LL(p))->sem.proj.items[i].old == 
+                    for (j = 0; j < rcross->schema.count; j++)
+                        if (L(LL(p))->sem.proj.items[i].old ==
                             rcross->schema.items[j].name)
                             break;
                     if (j == rcross->schema.count)
@@ -1826,8 +1801,8 @@ opt_mvd (PFla_op_t *p)
                    of the Cartesian product by a dummy column
                    of the left argument */
                 for (i = 0; i < ref->sem.proj.count; i++) {
-                    for (j = 0; j < rcross->schema.count; j++) 
-                        if (ref->sem.proj.items[i].old == 
+                    for (j = 0; j < rcross->schema.count; j++)
+                        if (ref->sem.proj.items[i].old ==
                             rcross->schema.items[j].name)
                             break;
                     if (j == rcross->schema.count)
@@ -1842,7 +1817,7 @@ opt_mvd (PFla_op_t *p)
                                             PFla_proxy_base (lcross),
                                             L(ref)->sem.number.res);
 
-                *ref = *PFla_project_ (new_number, 
+                *ref = *PFla_project_ (new_number,
                                        ref->schema.count,
                                        proj_exit);
 
@@ -1884,7 +1859,7 @@ opt_mvd (PFla_op_t *p)
         modified = true;
     } else if (cross_cross)
         cross_changes = 0;
-        
+
     /* discard the subtree with directly following cross products */
     if (cross_changes >= max_cross_changes)
         modified = false;
@@ -1918,11 +1893,11 @@ clean_up_cross (PFla_op_t *p)
         unsigned int j;
         unsigned int count = 0;
         unsigned int dup_count = 0;
-        
+
         /* create projection list */
         proj_list = PFmalloc ((L(p)->schema.count)
                               * sizeof (*(proj_list)));
-        
+
         /* create projection list */
         for (i = 0; i < L(p)->schema.count; i++) {
             for (j = 0; j < R(p)->schema.count; j++)
@@ -1930,7 +1905,7 @@ clean_up_cross (PFla_op_t *p)
                     dup_count++;
                     break;
                 }
-                    
+
             if (j == R(p)->schema.count)
                 proj_list[count++] = proj (L(p)->schema.items[i].name,
                                            L(p)->schema.items[i].name);
@@ -1938,7 +1913,7 @@ clean_up_cross (PFla_op_t *p)
 
         /* ensure that we do not generate empty projection lists */
         if (!count) {
-            /* we can throw away the cross product if no column 
+            /* we can throw away the cross product if no column
                is required and the cross product does not change
                the cardinality */
             if (PFprop_card (L(p)->prop) == 1)
@@ -1956,7 +1931,7 @@ clean_up_cross (PFla_op_t *p)
                 for (j = 0; j < R(p)->schema.count; j++)
                     if (L(p)->schema.items[0].name !=
                         R(p)->schema.items[j].name) {
-                        proj_list2[count++] = 
+                        proj_list2[count++] =
                             proj (R(p)->schema.items[j].name,
                                   R(p)->schema.items[j].name);
                     }
@@ -1985,12 +1960,12 @@ PFla_op_t *
 PFalgopt_mvd (PFla_op_t *root, unsigned int noneffective_tries)
 {
     /* remove all common subexpressions to
-       detect more patterns */ 
+       detect more patterns */
     PFla_cse (root);
 
-    /* Keep track of the ineffective 
-       cross product - cross product 
-       rewrites and stop if 
+    /* Keep track of the ineffective
+       cross product - cross product
+       rewrites and stop if
        max_cross_changes is reached. */
     cross_changes = 0;
     max_cross_changes = noneffective_tries;

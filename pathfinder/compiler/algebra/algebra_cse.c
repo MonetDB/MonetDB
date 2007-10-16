@@ -90,7 +90,7 @@ tuple_eq (PFalg_tuple_t a, PFalg_tuple_t b)
                 break;
             /* if type is str, compare str member of union */
             case aat_uA:
-	    case aat_str:
+            case aat_str:
                 if (strcmp (a.atoms[i].val.str, b.atoms[i].val.str))
                     mismatch = true;
                 break;
@@ -195,16 +195,16 @@ subexp_eq (PFla_op_t *a, PFla_op_t *b)
         case la_thetajoin:
             if (a->sem.thetajoin.count != b->sem.thetajoin.count)
                 return false;
-            
+
             for (unsigned int i = 0; i < a->sem.thetajoin.count; i++)
-                if ((a->sem.thetajoin.pred[i].comp != 
+                if ((a->sem.thetajoin.pred[i].comp !=
                      b->sem.thetajoin.pred[i].comp) ||
-                    (a->sem.thetajoin.pred[i].left != 
+                    (a->sem.thetajoin.pred[i].left !=
                      b->sem.thetajoin.pred[i].left) ||
-                    (a->sem.thetajoin.pred[i].right != 
+                    (a->sem.thetajoin.pred[i].right !=
                      b->sem.thetajoin.pred[i].right))
                     return false;
-                    
+
             return true;
             break;
 
@@ -256,15 +256,15 @@ subexp_eq (PFla_op_t *a, PFla_op_t *b)
                 a->sem.fun_1to1.res         != b->sem.fun_1to1.res       ||
                 a->sem.fun_1to1.refs.count  != b->sem.fun_1to1.refs.count)
                 return false;
-            
+
             for (unsigned int i = 0; i < a->sem.fun_1to1.refs.count; i++)
-                if (a->sem.fun_1to1.refs.atts[i] != 
+                if (a->sem.fun_1to1.refs.atts[i] !=
                     b->sem.fun_1to1.refs.atts[i])
                     return false;
-                    
+
             return true;
             break;
-            
+
         case la_num_eq:
         case la_num_gt:
         case la_bool_and:
@@ -287,8 +287,8 @@ subexp_eq (PFla_op_t *a, PFla_op_t *b)
             break;
 
         case la_avg:
-	case la_max:
-	case la_min:
+        case la_max:
+        case la_min:
         case la_sum:
         case la_count:
         case la_seqty1:
@@ -317,7 +317,7 @@ subexp_eq (PFla_op_t *a, PFla_op_t *b)
                     PFord_order_dir_at (b->sem.rownum.sortby, i))
                     return false;
 
-            /* either both rownums are partitioned or none */ 
+            /* either both rownums are partitioned or none */
             /* partitioning attribute must be equal (if available) */
             if (a->sem.rownum.part != b->sem.rownum.part)
                 return false;
@@ -379,16 +379,15 @@ subexp_eq (PFla_op_t *a, PFla_op_t *b)
                  i++)
                 if (a->sem.step.guides[i] != b->sem.step.guides[i])
                     return false;
-            
+
             return true;
             break;
 
-        case la_id:
-        case la_idref:
-            return (a->sem.id.iter == b->sem.id.iter
-                    && a->sem.id.item == b->sem.id.item
-                    && a->sem.id.item_res == b->sem.id.item_res
-                    && a->sem.id.item_doc == b->sem.id.item_doc);
+        case la_doc_index_join:
+            return (a->sem.doc_join.kind == b->sem.doc_join.kind
+                    && a->sem.doc_join.item == b->sem.doc_join.item
+                    && a->sem.doc_join.item_res == b->sem.doc_join.item_res
+                    && a->sem.doc_join.item_doc == b->sem.doc_join.item_doc);
             break;
 
         case la_doc_access:
@@ -435,7 +434,8 @@ subexp_eq (PFla_op_t *a, PFla_op_t *b)
                     == b->sem.string_join.item_res);
             break;
 
-        case la_serialize:
+        case la_serialize_seq:
+        case la_serialize_rel:
         case la_cross:
         case la_disjunion:
         case la_intersect:
@@ -473,7 +473,7 @@ subexp_eq (PFla_op_t *a, PFla_op_t *b)
         case la_nil:
             return true;
             break;
-            
+
         case la_trace:
         case la_trace_msg:
             return false;
@@ -483,13 +483,13 @@ subexp_eq (PFla_op_t *a, PFla_op_t *b)
             return (a->sem.trace_map.inner == b->sem.trace_map.inner &&
                     a->sem.trace_map.outer == b->sem.trace_map.outer);
             break;
-            
+
         case la_rec_fix:
         case la_rec_param:
         case la_rec_arg:
         case la_rec_base:
             /*
-             * we do neither split up nor merge recursion operators 
+             * we do neither split up nor merge recursion operators
              */
             return false;
             break;

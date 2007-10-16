@@ -104,17 +104,17 @@ prop_infer_reqvals (PFla_op_t *n, reqval_t reqvals)
        overrule any decision */
     if (SEEN(n) && !reqvals.name)
         n->prop->reqvals = (reqval_t) { .name = 0, .val = 0 };
-        
-    /* in all calls (except the first) we ensure that 
+
+    /* in all calls (except the first) we ensure that
        we already have required value columns */
     if (SEEN(n) && n->prop->reqvals.name) {
-        /* Check if both parents look for required values 
+        /* Check if both parents look for required values
            in the same columns and then resolve the possible
            conflicts */
         if (n->prop->reqvals.name == reqvals.name) {
             PFalg_att_t  overlap   = reqvals.name;
             unsigned int bit_shift = 1;
-            
+
             while (bit_shift <= overlap) {
                 /* if the values of column that is required by both
                    parents do not match remove this column from the
@@ -133,7 +133,7 @@ prop_infer_reqvals (PFla_op_t *n, reqval_t reqvals)
         } else
             n->prop->reqvals = (reqval_t) { .name = 0, .val = 0 };
     }
- 
+
     /* in the first call we use the required values of the caller */
     if (!SEEN(n)) {
         n->prop->reqvals = reqvals;
@@ -151,20 +151,24 @@ prop_infer_reqvals (PFla_op_t *n, reqval_t reqvals)
     rv = n->prop->reqvals;
 
     /**
-     * Infer required values property for n's children: 
+     * Infer required values property for n's children:
      *
      * - 'select' introduces new required value columns
-     * - 'not' extends required values list with a new column 
+     * - 'not' extends required values list with a new column
      *   if the result also is one.
      * - all other operators either ignore the required value columns
      *   or infer them (partially) to their children
      */
     switch (n->kind) {
-        case la_serialize:
+        case la_serialize_seq:
             rv.name = 0;
             rv.val = 0;
             prop_infer_reqvals (L(n), rv);
             prop_infer_reqvals (R(n), n->prop->reqvals);
+            break;
+
+        case la_serialize_rel:
+            prop_infer_reqvals (L(n), n->prop->reqvals);
             break;
 
         case la_lit_tbl:
@@ -272,7 +276,7 @@ prop_infer_reqvals (PFla_op_t *n, reqval_t reqvals)
             break;
 
         case la_bool_not:
-            /* if res is a required value column also add att 
+            /* if res is a required value column also add att
                with the switched boolean value */
             if (PFprop_reqval (n->prop, n->sem.unary.res)) {
                 rv.name = union_ (rv.name, n->sem.unary.att);
@@ -331,8 +335,6 @@ prop_infer_reqvals (PFla_op_t *n, reqval_t reqvals)
 
         case la_step:
         case la_guide_step:
-        case la_id:
-        case la_idref:
         case la_fcns:
         case la_element:
         case la_content:
@@ -344,7 +346,7 @@ prop_infer_reqvals (PFla_op_t *n, reqval_t reqvals)
             prop_infer_reqvals (L(n), rv);
             prop_infer_reqvals (R(n), rv);
             break;
-            
+
         case la_step_join:
         case la_guide_step_join:
             rv.name = 0;
@@ -353,6 +355,16 @@ prop_infer_reqvals (PFla_op_t *n, reqval_t reqvals)
 
             rv.name = diff (n->prop->reqvals.name, n->sem.step.item_res);
             rv.val = diff (n->prop->reqvals.val, n->sem.step.item_res);
+            prop_infer_reqvals (R(n), rv);
+            break;
+
+        case la_doc_index_join:
+            rv.name = 0;
+            rv.val = 0;
+            prop_infer_reqvals (L(n), rv);
+
+            rv.name = diff (n->prop->reqvals.name, n->sem.doc_join.item_res);
+            rv.val = diff (n->prop->reqvals.val, n->sem.doc_join.item_res);
             prop_infer_reqvals (R(n), rv);
             break;
 
@@ -368,7 +380,7 @@ prop_infer_reqvals (PFla_op_t *n, reqval_t reqvals)
 
         case la_nil:
             break;
-                
+
         case la_trace:
             prop_infer_reqvals (L(n), rv);
 
@@ -376,7 +388,7 @@ prop_infer_reqvals (PFla_op_t *n, reqval_t reqvals)
             rv.val = 0;
             prop_infer_reqvals (R(n), rv);
             break;
-            
+
         case la_trace_msg:
         case la_trace_map:
             rv.name = 0;
@@ -384,7 +396,7 @@ prop_infer_reqvals (PFla_op_t *n, reqval_t reqvals)
             prop_infer_reqvals (L(n), rv);
             prop_infer_reqvals (R(n), rv);
             break;
-            
+
         case la_rec_fix:
             /* infer no required values */
             rv.name = 0;
@@ -392,7 +404,7 @@ prop_infer_reqvals (PFla_op_t *n, reqval_t reqvals)
             prop_infer_reqvals (L(n), rv);
             prop_infer_reqvals (R(n), rv);
             break;
-            
+
         case la_rec_param:
         case la_rec_arg:
             /* infer no required values */
@@ -400,15 +412,15 @@ prop_infer_reqvals (PFla_op_t *n, reqval_t reqvals)
             rv.val = 0;
             prop_infer_reqvals (L(n), rv);
             prop_infer_reqvals (R(n), rv);
-            
+
         case la_rec_base:
             break;
-            
+
         case la_cross_mvd:
             PFoops (OOPS_FATAL,
                     "clone column aware cross product operator is "
                     "only allowed inside mvd optimization!");
-            
+
         case la_eqjoin_unq:
             PFoops (OOPS_FATAL,
                     "clone column aware equi-join operator is "

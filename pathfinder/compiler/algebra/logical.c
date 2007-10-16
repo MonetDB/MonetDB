@@ -144,9 +144,9 @@ la_op_wire2 (PFla_op_kind_t kind, const PFla_op_t *n1, const PFla_op_t *n2)
 
 
 /**
- * Construct a dummy operator that is generated whenever some rewrite 
+ * Construct a dummy operator that is generated whenever some rewrite
  * throws away an operator (e.g., '*p = *L(p);') and the replacement
- * is an already existing node that may not be split into multiple 
+ * is an already existing node that may not be split into multiple
  * operators (e.g. a number operator).
  */
 PFla_op_t * PFla_dummy (PFla_op_t *n)
@@ -180,7 +180,7 @@ PFla_op_t * PFla_dummy (PFla_op_t *n)
             return ret;
     /*
         }
-        
+
         default:
             return n;
     }
@@ -189,22 +189,82 @@ PFla_op_t * PFla_dummy (PFla_op_t *n)
 
 
 /**
- * Construct algebra node that will serialize the argument when executed.
- * A serialization node will be placed on the very top of the algebra
- * expression tree. Its main use is to have an explicit Twig match for
- * the expression root.
+ * Construct algebra node representing a sequence that will serialize
+ * the argument when executed. A serialization node will be placed on
+ * the very top of the algebra expression tree. Its main use is to have
+ * an explicit Twig match for the expression root.
  *
  * @a doc is the current document (live nodes) and @a alg is the overall
  * algebra expression.
  */
 PFla_op_t *
-PFla_serialize (const PFla_op_t *doc, const PFla_op_t *alg,
-                PFalg_att_t pos, PFalg_att_t item)
+PFla_serialize_seq (const PFla_op_t *doc, const PFla_op_t *alg,
+                    PFalg_att_t pos, PFalg_att_t item)
 {
-    PFla_op_t *ret = la_op_wire2 (la_serialize, doc, alg);
+    PFla_op_t *ret = la_op_wire2 (la_serialize_seq, doc, alg);
 
-    ret->sem.serialize.pos  = pos;
-    ret->sem.serialize.item = item;
+    ret->sem.ser_seq.pos  = pos;
+    ret->sem.ser_seq.item = item;
+
+    ret->schema.count = alg->schema.count;
+    ret->schema.items
+        = PFmalloc (ret->schema.count * sizeof (*ret->schema.items));
+
+    /* copy schema from alg */
+    for (unsigned int i = 0; i < alg->schema.count; i++)
+        ret->schema.items[i] = alg->schema.items[i];
+
+    return ret;
+}
+
+
+/**
+ * Construct algebra node representing a relation that will serialize
+ * the argument when executed. A serialization node will be placed on
+ * the very top of the algebra expression tree. Its main use is to have
+ * an explicit Twig match for the expression root.
+ *
+ * @a doc is the current document (live nodes) and @a alg is the overall
+ * algebra expression.
+ */
+PFla_op_t *
+PFla_serialize_rel (const PFla_op_t *alg,
+                    PFalg_att_t iter, PFalg_att_t pos,
+                    PFalg_attlist_t items)
+{
+    PFla_op_t *ret = la_op_wire1 (la_serialize_rel, alg);
+
+#ifndef NDEBUG
+    unsigned int i, j;
+
+    if (!PFprop_ocol (alg, iter))
+        PFoops (OOPS_FATAL,
+                "attribute `%s' referenced in serialize"
+                " operator not found", PFatt_str (iter));
+    if (!PFprop_ocol (alg, pos))
+        PFoops (OOPS_FATAL,
+                "attribute `%s' referenced in serialize"
+                " operator not found", PFatt_str (pos));
+    /* verify that the referenced attributes in items
+       are really attributes of alg ... */
+    for (i = 0; i < items.count; i++) {
+        for (j = 0; j < alg->schema.count; j++)
+            if (alg->schema.items[j].name == items.atts[i])
+                break;
+        if (j == alg->schema.count)
+            PFoops (OOPS_FATAL,
+                    "attribute `%s' referenced in serialize"
+                    " operator not found", PFatt_str (items.atts[i]));
+    }
+#endif
+
+    ret->sem.ser_rel.iter  = iter;
+    ret->sem.ser_rel.pos   = pos;
+    ret->sem.ser_rel.items = (PFalg_attlist_t) {
+        .count = items.count,
+        .atts  = memcpy (PFmalloc (items.count * sizeof (PFalg_att_t)),
+                         items.atts,
+                         items.count * sizeof (PFalg_att_t)) };
 
     ret->schema.count = alg->schema.count;
     ret->schema.items
@@ -313,7 +373,7 @@ PFla_lit_tbl_ (PFalg_attlist_t attlist,
  * optimization rules concerning empty relations.
  *
  * @param schema Attribute list with annotated types.
- * 
+ *
  * This variant of the empty table constructor is meant to be
  * be used as replacement for algebra expressions for whom we.
  * can infer an empty result at compile time. For consistency
@@ -512,7 +572,7 @@ PFla_eqjoin (const PFla_op_t *n1, const PFla_op_t *n2,
     /* did we find attribute att1? */
     if (i >= n1->schema.count)
         PFoops (OOPS_FATAL,
-                "attribute `%s' referenced in join not found", 
+                "attribute `%s' referenced in join not found",
                 PFatt_str(att1));
 
     /* ... and att2 is attribute of n2 */
@@ -584,7 +644,7 @@ PFla_eqjoin_clone (const PFla_op_t *n1, const PFla_op_t *n2,
     /* did we find attribute att1? */
     if (i >= n1->schema.count)
         PFoops (OOPS_FATAL,
-                "attribute `%s' referenced in join not found", 
+                "attribute `%s' referenced in join not found",
                 PFatt_str(att1));
 
     /* ... and att2 is attribute of n2 */
@@ -619,7 +679,7 @@ PFla_eqjoin_clone (const PFla_op_t *n1, const PFla_op_t *n2,
             ret->schema.items[count++].name = res;
             break;
         }
-            
+
     /* copy schema from argument 'n1' */
     for (i = 0; i < n1->schema.count; i++)
         /* discard join columns - they are already added */
@@ -635,7 +695,7 @@ PFla_eqjoin_clone (const PFla_op_t *n1, const PFla_op_t *n2,
             /* only include new columns */
             unsigned int j;
             for (j = 0; j < count; j++)
-                if (ret->schema.items[j].name 
+                if (ret->schema.items[j].name
                     == n2->schema.items[i].name)
                     break;
 
@@ -673,7 +733,7 @@ PFla_semijoin (const PFla_op_t *n1, const PFla_op_t *n2,
     /* did we find attribute att1? */
     if (i >= n1->schema.count)
         PFoops (OOPS_FATAL,
-                "attribute `%s' referenced in join not found", 
+                "attribute `%s' referenced in join not found",
                 PFatt_str(att1));
 
     /* ... and att2 is attribute of n2 */
@@ -731,7 +791,7 @@ PFla_thetajoin (const PFla_op_t *n1, const PFla_op_t *n2,
     /* did we find all attributes? */
     if (i < count)
         PFoops (OOPS_FATAL,
-                "attribute `%s' referenced in theta-join not found", 
+                "attribute `%s' referenced in theta-join not found",
                 PFprop_ocol (n2, pred[i].right)
                 ? PFatt_str(pred[i].left) : PFatt_str(pred[i].right));
 
@@ -766,14 +826,14 @@ PFla_thetajoin (const PFla_op_t *n1, const PFla_op_t *n2,
                         PFatt_str (n2->schema.items[j].name));
 #endif
     }
-    
+
     return ret;
 }
 
 /**
  * Theta-join between two operator nodes.
  * Special internal variant used during thetajoin optimization.
- * 
+ *
  * The optimizer will fill check for consistency and
  * fill in the correct schema (which requires internal knowledge
  * of @a data).
@@ -794,7 +854,7 @@ PFla_thetajoin_opt_internal (const PFla_op_t *n1,
     ret->sem.thetajoin_opt.pred = PFarray_copy (data);
 
     /* allocate no schema -- this will be done by the optimization */
-    
+
     return ret;
 }
 
@@ -941,10 +1001,10 @@ PFla_pos_select (const PFla_op_t *n, int pos, PFord_ordering_t s, PFalg_att_t p)
     ret->schema.count = n->schema.count;
     ret->schema.items
         = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
-    
+
     for (i = 0; i < n->schema.count; i++)
         ret->schema.items[i] = n->schema.items[i];
-    
+
     /* see if we can find all sort specifications */
     for (i = 0; i < PFord_count (ret->sem.pos_sel.sortby); i++) {
 
@@ -1028,10 +1088,10 @@ set_operator (PFla_op_kind_t kind, const PFla_op_t *n1, const PFla_op_t *n2)
                        a complete column type mismatch */
                     if (!(n1->schema.items[i].type &
                           n2->schema.items[j].type))
-                        return PFla_empty_tbl_ (n1->schema); 
+                        return PFla_empty_tbl_ (n1->schema);
 
                     ret->schema.items[i] =
-                        (struct PFalg_schm_item_t) 
+                        (struct PFalg_schm_item_t)
                             { .name = n1->schema.items[i].name,
                               .type = n1->schema.items[i].type
                                     & n2->schema.items[j].type };
@@ -1040,11 +1100,11 @@ set_operator (PFla_op_kind_t kind, const PFla_op_t *n1, const PFla_op_t *n2)
                     /* return lhs argument in case of
                        a complete column type mismatch */
                     if (!(n1->schema.items[i].type &
-                          n2->schema.items[j].type)) 
+                          n2->schema.items[j].type))
                         return (PFla_op_t *) n1;
 
                     ret->schema.items[i] =
-                        (struct PFalg_schm_item_t) 
+                        (struct PFalg_schm_item_t)
                             { .name = n1->schema.items[i].name,
                               .type = n1->schema.items[i].type };
                 }
@@ -1113,7 +1173,7 @@ PFla_op_t * PFla_distinct (const PFla_op_t *n)
 }
 
 
-/** Constructor for generic operator that extends the schema 
+/** Constructor for generic operator that extends the schema
     with a new column where each value is determined by the values
     of a single row (cardinality stays the same) */
 PFla_op_t *
@@ -1125,7 +1185,7 @@ PFla_fun_1to1 (const PFla_op_t *n,
     PFla_op_t          *ret;
     unsigned int        i, j, ix[refs.count];
     PFalg_simple_type_t res_type = 0;
-    
+
     assert (n);
 
     /* verify that the referenced attributes in refs
@@ -1162,12 +1222,12 @@ PFla_fun_1to1 (const PFla_op_t *n,
                     n->schema.items[ix[0]].type == aat_int ||
                     n->schema.items[ix[0]].type == aat_dec ||
                     n->schema.items[ix[0]].type == aat_dbl);
-            assert (n->schema.items[ix[0]].type == 
+            assert (n->schema.items[ix[0]].type ==
                     n->schema.items[ix[1]].type);
 
             res_type = n->schema.items[ix[1]].type;
             break;
-            
+
         case alg_fun_fn_abs:
         case alg_fun_fn_ceiling:
         case alg_fun_fn_floor:
@@ -1189,7 +1249,7 @@ PFla_fun_1to1 (const PFla_op_t *n,
 
             res_type = aat_str;
             break;
-            
+
         case alg_fun_fn_contains:
         case alg_fun_fn_starts_with:
         case alg_fun_fn_ends_with:
@@ -1215,7 +1275,7 @@ PFla_fun_1to1 (const PFla_op_t *n,
     ret->sem.fun_1to1.res  = res;
     ret->sem.fun_1to1.refs = (PFalg_attlist_t) {
         .count = refs.count,
-        .atts  = memcpy (PFmalloc (refs.count * sizeof (PFalg_att_t)), 
+        .atts  = memcpy (PFmalloc (refs.count * sizeof (PFalg_att_t)),
                          refs.atts,
                          refs.count * sizeof (PFalg_att_t)) };
 
@@ -1373,7 +1433,7 @@ compar_op (PFla_op_kind_t kind, const PFla_op_t *n,
     unsigned int  i;
     int           ix1 = -1;
     int           ix2 = -1;
-    
+
     assert (n);
 
     /* verify that 'att1' and 'att2' are attributes of n ... */
@@ -1446,7 +1506,7 @@ boolean_op (PFla_op_kind_t kind, const PFla_op_t *n, PFalg_att_t res,
     unsigned int  i;
     int           ix1 = -1;
     int           ix2 = -1;
-    
+
     assert (n);
 
     /* verify that 'att1' and 'att2' are attributes of n ... */
@@ -1516,7 +1576,7 @@ unary_op(PFla_op_kind_t kind, const PFla_op_t *n, PFalg_att_t res,
     PFla_op_t    *ret;
     unsigned int  i;
     unsigned int  ix = 0;
-    
+
     assert (n);
 
     /* verify that 'att' is an attribute of n ... */
@@ -1563,7 +1623,7 @@ unary_op(PFla_op_kind_t kind, const PFla_op_t *n, PFalg_att_t res,
     return ret;
 }
 
-/** 
+/**
  * Constructor for op:to operator
  */
 PFla_op_t * PFla_to (const PFla_op_t *n,
@@ -1589,25 +1649,25 @@ PFla_op_t * PFla_to (const PFla_op_t *n,
      */
     if (!PFprop_ocol (n, att1))
         PFoops (OOPS_FATAL,
-                "attribute `%s' referenced in op:to not found", 
+                "attribute `%s' referenced in op:to not found",
                 PFatt_str (att1));
     if (!PFprop_ocol (n, att2))
         PFoops (OOPS_FATAL,
-                "attribute `%s' referenced in op:to not found", 
+                "attribute `%s' referenced in op:to not found",
                 PFatt_str (att2));
     if (part && !PFprop_ocol (n, part))
         PFoops (OOPS_FATAL,
-                "partitioning attribute `%s' referenced in op:to not found", 
+                "partitioning attribute `%s' referenced in op:to not found",
                 PFatt_str (part));
 #endif
-    
+
     ret->schema.items[0].name = res;
     ret->schema.items[0].type = aat_int;
     if (part) {
         ret->schema.items[1].name = part;
         ret->schema.items[1].type = PFprop_type_of (n, part);
     }
-    
+
     /* insert semantic value (input attributes, partitioning
      * attribute(s), and result attribute) into the result
      */
@@ -1620,8 +1680,8 @@ PFla_op_t * PFla_to (const PFla_op_t *n,
 }
 
 
-/** 
- * Constructor for operators forming the application of a 
+/**
+ * Constructor for operators forming the application of a
  * (partitioned) aggregation function (sum, min, max and avg) on a column.
  *
  * The values of attribute @a att are used by the aggregation functaion.
@@ -1664,7 +1724,7 @@ PFla_op_t * PFla_aggr (PFla_op_kind_t kind, const PFla_op_t *n, PFalg_att_t res,
     /* did we find attribute 'att'? */
     if (!c1)
         PFoops (OOPS_FATAL,
-                "attribute `%s' referenced in aggregation function not found", 
+                "attribute `%s' referenced in aggregation function not found",
                 PFatt_str (att));
 
     /* did we find attribute 'part'? */
@@ -1690,7 +1750,7 @@ PFla_op_t * PFla_aggr (PFla_op_kind_t kind, const PFla_op_t *n, PFalg_att_t res,
  *
  * Counts all rows with identical values in column @a part (which holds
  * the partitioning or group by column). The result is stored in
- * attribute @a res. 
+ * attribute @a res.
  */
 PFla_op_t *
 PFla_count (const PFla_op_t *n, PFalg_att_t res, PFalg_att_t part)
@@ -1760,7 +1820,7 @@ PFla_rownum (const PFla_op_t *n,
     ret->schema.count = n->schema.count + 1;
     ret->schema.items
         = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
-    
+
     for (i = 0; i < n->schema.count; i++) {
 
         /* there must not be an argument attribute named like the new one */
@@ -1829,7 +1889,7 @@ PFla_rank (const PFla_op_t *n, PFalg_att_t a, PFord_ordering_t s)
     ret->schema.count = n->schema.count + 1;
     ret->schema.items
         = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
-    
+
     for (i = 0; i < n->schema.count; i++) {
 
         /* there must not be an argument attribute named like the new one */
@@ -1899,7 +1959,7 @@ PFla_number (const PFla_op_t *n, PFalg_att_t a)
     ret->schema.count = n->schema.count + 1;
     ret->schema.items
         = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
-    
+
     for (i = 0; i < n->schema.count; i++) {
 
         /* there must not be an argument attribute named like the new one */
@@ -1954,7 +2014,7 @@ PFla_type (const PFla_op_t *n,
     ret->sem.type.res = res;
 
     /* allocate memory for the result schema (= schema(n) + 1 for the
-     * 'res' attribute which is to hold the result of the type test) 
+     * 'res' attribute which is to hold the result of the type test)
      */
     ret->schema.count = n->schema.count + 1;
 
@@ -2008,7 +2068,7 @@ PFla_op_t * PFla_type_assert (const PFla_op_t *n, PFalg_att_t att,
                 "attribute `%s' referenced in type_assertion not found",
                 PFatt_str (att));
 
-    /* if we statically know that the type assertion would yield 
+    /* if we statically know that the type assertion would yield
        an empty type we can replace it by an empty table */
     if (!assert_ty) {
         /* instantiate the new algebra operator node */
@@ -2018,7 +2078,7 @@ PFla_op_t * PFla_type_assert (const PFla_op_t *n, PFalg_att_t att,
         ret->schema.count = n->schema.count;
         ret->schema.items
             = PFmalloc (n->schema.count * sizeof (PFalg_schema_t));
-        
+
         for (i = 0; i < n->schema.count; i++)
             if (att == n->schema.items[i].name)
             {
@@ -2028,9 +2088,9 @@ PFla_op_t * PFla_type_assert (const PFla_op_t *n, PFalg_att_t att,
             else
                 ret->schema.items[i] = n->schema.items[i];
 
-        return ret;    
+        return ret;
     }
-        
+
     /* create new type test node */
     ret = la_op_wire1 (la_type_assert, n);
 
@@ -2106,9 +2166,9 @@ PFla_cast (const PFla_op_t *n, PFalg_att_t res,
 
     for (i = 0; i < n->schema.count; i++)
         ret->schema.items[i] = n->schema.items[i];
-    ret->schema.items[ret->schema.count - 1] 
+    ret->schema.items[ret->schema.count - 1]
         = (PFalg_schm_item_t) { .name = res, .type = ty };
-    
+
     return ret;
 }
 
@@ -2168,7 +2228,7 @@ PFla_seqty1 (const PFla_op_t *n,
 
     ret->schema.count = 2;
     ret->schema.items = PFmalloc (2 * sizeof (PFalg_schema_t));
-    
+
     ret->schema.items[0].name = part;
     ret->schema.items[0].type = PFprop_type_of (n, part);
     ret->schema.items[1].name = res;
@@ -2232,7 +2292,7 @@ PFla_all (const PFla_op_t *n,
 
     ret->schema.count = 2;
     ret->schema.items = PFmalloc (2 * sizeof (PFalg_schema_t));
-    
+
     ret->schema.items[0].name = part;
     ret->schema.items[0].type = PFprop_type_of (n, part);
     ret->schema.items[1].name = res;
@@ -2253,7 +2313,7 @@ PFla_all (const PFla_op_t *n,
  */
 PFla_op_t *
 PFla_step (const PFla_op_t *doc, const PFla_op_t *n,
-           PFalg_axis_t axis, PFty_t seqty, int level, 
+           PFalg_axis_t axis, PFty_t seqty, int level,
            PFalg_att_t iter, PFalg_att_t item,
            PFalg_att_t item_res)
 {
@@ -2294,7 +2354,7 @@ PFla_step (const PFla_op_t *doc, const PFla_op_t *n,
                 PFprop_type_of (n, item));
 #endif
 
-    
+
     /* allocate memory for the result schema */
     ret->schema.count = 2;
     ret->schema.items
@@ -2304,7 +2364,7 @@ PFla_step (const PFla_op_t *doc, const PFla_op_t *n,
         = (struct PFalg_schm_item_t) { .name = iter,
                                        .type = PFprop_type_of (n, iter) };
     /* the result of an attribute axis is also of type attribute */
-    if (ret->sem.step.axis == alg_attr) 
+    if (ret->sem.step.axis == alg_attr)
         ret->schema.items[1]
             = (struct PFalg_schm_item_t) { .name = item_res,
                                            .type = aat_anode };
@@ -2318,7 +2378,7 @@ PFla_step (const PFla_op_t *doc, const PFla_op_t *n,
 
 PFla_op_t *
 PFla_step_simple (const PFla_op_t *doc, const PFla_op_t *n,
-                  PFalg_axis_t axis, PFty_t seqty, 
+                  PFalg_axis_t axis, PFty_t seqty,
                   PFalg_att_t iter, PFalg_att_t item,
                   PFalg_att_t item_res)
 {
@@ -2337,7 +2397,7 @@ PFla_step_simple (const PFla_op_t *doc, const PFla_op_t *n,
  */
 PFla_op_t *
 PFla_step_join (const PFla_op_t *doc, const PFla_op_t *n,
-                PFalg_axis_t axis, PFty_t seqty, int level, 
+                PFalg_axis_t axis, PFty_t seqty, int level,
                 PFalg_att_t item,
                 PFalg_att_t item_res)
 {
@@ -2366,7 +2426,7 @@ PFla_step_join (const PFla_op_t *doc, const PFla_op_t *n,
                 "of a path step",
                 PFatt_str (item_res));
     if (!PFprop_ocol (n, item))
-        PFoops (OOPS_FATAL, 
+        PFoops (OOPS_FATAL,
                 "column `%s' needed in path step is missing",
                 PFatt_str (item));
     if (!(PFprop_type_of (n, item) & aat_node))
@@ -2384,7 +2444,7 @@ PFla_step_join (const PFla_op_t *doc, const PFla_op_t *n,
         ret->schema.items[i] = n->schema.items[i];
 
     /* the result of an attribute axis is also of type attribute */
-    if (ret->sem.step.axis == alg_attr) 
+    if (ret->sem.step.axis == alg_attr)
         ret->schema.items[i]
             = (struct PFalg_schm_item_t) { .name = item_res,
                                            .type = aat_anode };
@@ -2398,7 +2458,7 @@ PFla_step_join (const PFla_op_t *doc, const PFla_op_t *n,
 
 PFla_op_t *
 PFla_step_join_simple (const PFla_op_t *doc, const PFla_op_t *n,
-                       PFalg_axis_t axis, PFty_t seqty, 
+                       PFalg_axis_t axis, PFty_t seqty,
                        PFalg_att_t item, PFalg_att_t item_res)
 {
     return PFla_step_join (doc, n, axis, seqty, -1, item, item_res);
@@ -2416,7 +2476,7 @@ PFla_step_join_simple (const PFla_op_t *doc, const PFla_op_t *n,
  */
 PFla_op_t *
 PFla_guide_step (const PFla_op_t *doc, const PFla_op_t *n,
-                 PFalg_axis_t axis, PFty_t seqty, 
+                 PFalg_axis_t axis, PFty_t seqty,
                  unsigned int guide_count, PFguide_tree_t **guides,
                  int level,
                  PFalg_att_t iter, PFalg_att_t item,
@@ -2472,7 +2532,7 @@ PFla_guide_step (const PFla_op_t *doc, const PFla_op_t *n,
         = (struct PFalg_schm_item_t) { .name = iter,
                                        .type = PFprop_type_of (n, iter) };
     /* the result of an attribute axis is also of type attribute */
-    if (ret->sem.step.axis == alg_attr) 
+    if (ret->sem.step.axis == alg_attr)
         ret->schema.items[1]
             = (struct PFalg_schm_item_t) { .name = item_res,
                                            .type = aat_anode };
@@ -2486,7 +2546,7 @@ PFla_guide_step (const PFla_op_t *doc, const PFla_op_t *n,
 
 PFla_op_t *
 PFla_guide_step_simple (const PFla_op_t *doc, const PFla_op_t *n,
-                        PFalg_axis_t axis, PFty_t seqty, 
+                        PFalg_axis_t axis, PFty_t seqty,
                         unsigned int guide_count, PFguide_tree_t **guides,
                         PFalg_att_t iter, PFalg_att_t item,
                         PFalg_att_t item_res)
@@ -2545,7 +2605,7 @@ PFla_guide_step_join (const PFla_op_t *doc, const PFla_op_t *n,
                 "of a path step",
                 PFatt_str (item_res));
     if (!PFprop_ocol (n, item))
-        PFoops (OOPS_FATAL, 
+        PFoops (OOPS_FATAL,
                 "column `%s' needed in path step is missing",
                 PFatt_str (item));
     if (!(PFprop_type_of (n, item) & aat_node))
@@ -2563,7 +2623,7 @@ PFla_guide_step_join (const PFla_op_t *doc, const PFla_op_t *n,
         ret->schema.items[i] = n->schema.items[i];
 
     /* the result of an attribute axis is also of type attribute */
-    if (ret->sem.step.axis == alg_attr) 
+    if (ret->sem.step.axis == alg_attr)
         ret->schema.items[i]
             = (struct PFalg_schm_item_t) { .name = item_res,
                                            .type = aat_anode };
@@ -2577,7 +2637,7 @@ PFla_guide_step_join (const PFla_op_t *doc, const PFla_op_t *n,
 
 PFla_op_t *
 PFla_guide_step_join_simple (const PFla_op_t *doc, const PFla_op_t *n,
-                             PFalg_axis_t axis, PFty_t seqty, 
+                             PFalg_axis_t axis, PFty_t seqty,
                              unsigned int guide_count, PFguide_tree_t **guides,
                              PFalg_att_t item, PFalg_att_t item_res)
 {
@@ -2589,87 +2649,63 @@ PFla_guide_step_join_simple (const PFla_op_t *doc, const PFla_op_t *n,
 }
 
 
-static PFla_op_t *
-fn_id (bool id, const PFla_op_t *doc, const PFla_op_t *n,
-       PFalg_att_t iter, PFalg_att_t item,
-       PFalg_att_t item_res, PFalg_att_t item_doc)
+PFla_op_t *
+PFla_doc_index_join (const PFla_op_t *doc, const PFla_op_t *n,
+                     PFla_doc_join_kind_t kind,
+                     PFalg_att_t item,
+                     PFalg_att_t item_res, PFalg_att_t item_doc)
 {
     PFla_op_t    *ret;
-#ifndef NDEBUG
     unsigned int  i;
-#endif
 
     assert (n); assert (doc);
 
     /* create new join node */
-    ret = la_op_wire2 (id ? la_id : la_idref, doc, n);
+    ret = la_op_wire2 (la_doc_index_join, doc, n);
 
     /* insert semantic value into the result */
-    ret->sem.id.iter     = iter;
-    ret->sem.id.item     = item;
-    ret->sem.id.item_res = item_res;
-    ret->sem.id.item_doc = item_doc;
+    ret->sem.doc_join.kind     = kind;
+    ret->sem.doc_join.item     = item;
+    ret->sem.doc_join.item_res = item_res;
+    ret->sem.doc_join.item_doc = item_doc;
 
 #ifndef NDEBUG
-    /* verify schema of 'n' */
-    for (i = 0; i < n->schema.count; i++) {
-        if (n->schema.items[i].name == iter
-         || n->schema.items[i].name == item
-         || n->schema.items[i].name == item_doc)
-            continue;
-        else
-            PFoops (OOPS_FATAL,
-                    "illegal attribute `%s' in fn:id%s",
-                    PFatt_str (n->schema.items[i].name),
-                    id ? "" : "ref");
-    }
-    if (!(PFprop_type_of (n, item_doc) & aat_node))
+    if (PFprop_ocol (n, item_res))
         PFoops (OOPS_FATAL,
-                "wrong doc item type '0x%X' in the input of fn:id%s",
-                PFprop_type_of (n, item_doc),
-                id ? "" : "ref");
+                "illegal attribute `%s' in the input "
+                "of a doc index join",
+                PFatt_str (item_res));
+    if (!PFprop_ocol (n, item))
+        PFoops (OOPS_FATAL,
+                "column `%s' needed in doc index join is missing",
+                PFatt_str (item));
     if (!(PFprop_type_of (n, item) & aat_str))
         PFoops (OOPS_FATAL,
-                "wrong item type '0x%X' in the input of fn:id%s",
-                PFprop_type_of (n, item),
-                id ? "" : "ref");
+                "wrong item type '0x%X' in the input of a doc index join",
+                PFprop_type_of (n, item));
+    if (!PFprop_ocol (n, item_doc))
+        PFoops (OOPS_FATAL,
+                "column `%s' needed in doc index join is missing",
+                PFatt_str (item_doc));
+    if (!(PFprop_type_of (n, item_doc) & aat_node))
+        PFoops (OOPS_FATAL,
+                "wrong item type '0x%X' in the input of a doc index join",
+                PFprop_type_of (n, item_doc));
 #endif
 
     /* allocate memory for the result schema */
-    ret->schema.count = 2;
+    ret->schema.count = n->schema.count + 1;
     ret->schema.items
         = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
 
-    ret->schema.items[0]
-        = (struct PFalg_schm_item_t) { .name = iter,
-                                       .type = PFprop_type_of (n, iter) };
-    ret->schema.items[1]
-        = (struct PFalg_schm_item_t) { .name = item_res, .type = aat_pnode };
+    for (i = 0; i < n->schema.count; i++)
+        ret->schema.items[i] = n->schema.items[i];
+
+    ret->schema.items[i]
+        = (struct PFalg_schm_item_t) { .name = item_res,
+                                       .type = aat_pnode };
 
     return ret;
-}
-
-
-/**
- * Id operator (implements fn:id).
- */
-PFla_op_t *
-PFla_id (const PFla_op_t *doc, const PFla_op_t *n,
-         PFalg_att_t iter, PFalg_att_t item,
-         PFalg_att_t item_res, PFalg_att_t item_doc)
-{
-    return fn_id (true, doc, n, iter, item, item_res, item_doc);
-}
-
-/**
- * Idref operator (implements fn:idref).
- */
-PFla_op_t *
-PFla_idref (const PFla_op_t *doc, const PFla_op_t *n,
-            PFalg_att_t iter, PFalg_att_t item,
-            PFalg_att_t item_res, PFalg_att_t item_doc)
-{
-    return fn_id (false, doc, n, iter, item, item_res, item_doc);
 }
 
 
@@ -2710,7 +2746,7 @@ PFla_doc_tbl (const PFla_op_t *rel,
  * Access to string content of the loaded documents
  */
 PFla_op_t *
-PFla_doc_access (const PFla_op_t *doc, const PFla_op_t *n, 
+PFla_doc_access (const PFla_op_t *doc, const PFla_op_t *n,
                  PFalg_att_t res, PFalg_att_t col, PFalg_doc_t doc_col)
 {
     unsigned int i;
@@ -2841,7 +2877,7 @@ PFla_op_t * PFla_docnode (const PFla_op_t *scope, const PFla_op_t *fcns,
 /**
  * Constructor for element operators.
  *
- * @a tag constructs the elements' tag names, and @a fcns 
+ * @a tag constructs the elements' tag names, and @a fcns
  * is the content of the new elements.
  */
 PFla_op_t * PFla_element (const PFla_op_t *tag,
@@ -3033,7 +3069,7 @@ PFla_pf_merge_adjacent_text_nodes (const PFla_op_t *doc,
     ret->schema.count = 3;
     ret->schema.items
         = PFmalloc (ret->schema.count * sizeof (*ret->schema.items));
-    
+
     ret->schema.items[0]
         = (PFalg_schm_item_t) { .name = iter_res,
                                 .type = PFprop_type_of (cont, iter_in) };
@@ -3253,7 +3289,7 @@ PFla_cond_err (const PFla_op_t *n, const PFla_op_t *err,
 
     for (i = 0; i < n->schema.count; i++)
         ret->schema.items[i] = n->schema.items[i];
-    
+
     return ret;
 }
 
@@ -3302,7 +3338,7 @@ PFla_trace (const PFla_op_t *n1,
 
     for (i = 0; i < n1->schema.count; i++)
         ret->schema.items[i] = n1->schema.items[i];
-    
+
     return ret;
 }
 
@@ -3348,7 +3384,7 @@ PFla_trace_msg (const PFla_op_t *n1,
 
     for (i = 0; i < n1->schema.count; i++)
         ret->schema.items[i] = n1->schema.items[i];
-    
+
     return ret;
 }
 
@@ -3380,7 +3416,7 @@ PFla_trace_map (const PFla_op_t *n1,
     if (found != 2)
         PFoops (OOPS_FATAL,
                 "attributes referenced in trace operator not found");
-    
+
     /* create new trace map node */
     ret = la_op_wire2 (la_trace_map, n1, n2);
 
@@ -3414,7 +3450,7 @@ PFla_op_t *PFla_nil (void)
     /* allocate memory for the result schema */
     ret->schema.count = 0;
     ret->schema.items = NULL;
-    
+
     return ret;
 }
 
@@ -3442,7 +3478,7 @@ PFla_op_t *PFla_rec_fix (const PFla_op_t *paramList,
 
     for (i = 0; i < res->schema.count; i++)
         ret->schema.items[i] = res->schema.items[i];
-    
+
     return ret;
 }
 
@@ -3467,7 +3503,7 @@ PFla_op_t *PFla_rec_param (const PFla_op_t *arguments,
     /* allocate memory for the result schema */
     ret->schema.count = 0;
     ret->schema.items = NULL;
-    
+
     return ret;
 }
 
@@ -3534,7 +3570,7 @@ PFla_op_t *PFla_rec_arg (const PFla_op_t *seed,
 
     for (i = 0; i < seed->schema.count; i++)
         ret->schema.items[i] = seed->schema.items[i];
-    
+
     return ret;
 }
 
@@ -3560,7 +3596,7 @@ PFla_op_t *PFla_rec_base (PFalg_schema_t schema)
 
     for (i = 0; i < schema.count; i++)
         ret->schema.items[i] = schema.items[i];
-    
+
     return ret;
 }
 
@@ -3603,12 +3639,12 @@ PFla_op_t *PFla_proxy2 (const PFla_op_t *n, unsigned int kind,
     ret->sem.proxy.base2    = base2;
     ret->sem.proxy.new_cols = (PFalg_attlist_t) {
         .count = new_cols.count,
-        .atts = memcpy (PFmalloc (new_cols.count * sizeof (PFalg_att_t)), 
+        .atts = memcpy (PFmalloc (new_cols.count * sizeof (PFalg_att_t)),
                         new_cols.atts,
                         new_cols.count * sizeof (PFalg_att_t)) };
     ret->sem.proxy.req_cols = (PFalg_attlist_t) {
         .count = req_cols.count,
-        .atts = memcpy (PFmalloc (req_cols.count * sizeof (PFalg_att_t)), 
+        .atts = memcpy (PFmalloc (req_cols.count * sizeof (PFalg_att_t)),
                         req_cols.atts,
                         req_cols.count * sizeof (PFalg_att_t)) };
 
@@ -3620,7 +3656,7 @@ PFla_op_t *PFla_proxy2 (const PFla_op_t *n, unsigned int kind,
 
     for (i = 0; i < n->schema.count; i++)
         ret->schema.items[i] = n->schema.items[i];
-    
+
     return ret;
 }
 
@@ -3691,10 +3727,16 @@ PFla_op_duplicate (PFla_op_t *n, PFla_op_t *left, PFla_op_t *right)
     assert (n);
 
     switch (n->kind) {
-        case la_serialize:
-            return PFla_serialize (left, right,
-                                   n->sem.serialize.pos,
-                                   n->sem.serialize.item);
+        case la_serialize_seq:
+            return PFla_serialize_seq (left, right,
+                                       n->sem.ser_seq.pos,
+                                       n->sem.ser_seq.item);
+
+        case la_serialize_rel:
+            return PFla_serialize_rel (left,
+                                       n->sem.ser_rel.iter,
+                                       n->sem.ser_rel.pos,
+                                       n->sem.ser_rel.items);
 
         case la_lit_tbl:
         {
@@ -3704,7 +3746,7 @@ PFla_op_duplicate (PFla_op_t *n, PFla_op_t *left, PFla_op_t *right)
 
             for (unsigned int i = 0; i < n->schema.count; i++)
                 atts[i] = n->schema.items[i].name;
-            
+
             PFalg_attlist_t attlist = (PFalg_attlist_t)
                 {
                     .count = n->schema.count,
@@ -3820,7 +3862,7 @@ PFla_op_duplicate (PFla_op_t *n, PFla_op_t *left, PFla_op_t *right)
             return PFla_rank (left,
                               n->sem.rank.res,
                               n->sem.rank.sortby);
-                                
+
         case la_number:
             return PFla_number (left,
                                 n->sem.number.res);
@@ -3863,7 +3905,7 @@ PFla_op_duplicate (PFla_op_t *n, PFla_op_t *left, PFla_op_t *right)
                               n->sem.step.iter,
                               n->sem.step.item,
                               n->sem.step.item_res);
-            
+
         case la_step_join:
             return PFla_step_join (left, right,
                                    n->sem.step.axis,
@@ -3871,7 +3913,7 @@ PFla_op_duplicate (PFla_op_t *n, PFla_op_t *left, PFla_op_t *right)
                                    n->sem.step.level,
                                    n->sem.step.item,
                                    n->sem.step.item_res);
-            
+
         case la_guide_step:
             return PFla_guide_step (left, right,
                                     n->sem.step.axis,
@@ -3882,7 +3924,7 @@ PFla_op_duplicate (PFla_op_t *n, PFla_op_t *left, PFla_op_t *right)
                                     n->sem.step.iter,
                                     n->sem.step.item,
                                     n->sem.step.item_res);
-            
+
         case la_guide_step_join:
             return PFla_guide_step_join (left, right,
                                          n->sem.step.axis,
@@ -3892,21 +3934,14 @@ PFla_op_duplicate (PFla_op_t *n, PFla_op_t *left, PFla_op_t *right)
                                          n->sem.step.level,
                                          n->sem.step.item,
                                          n->sem.step.item_res);
-            
-        case la_id:
-            return PFla_id (left, right,
-                            n->sem.id.iter,
-                            n->sem.id.item,
-                            n->sem.id.item_res,
-                            n->sem.id.item_doc);
-            
-        case la_idref:
-            return PFla_idref (left, right,
-                               n->sem.id.iter,
-                               n->sem.id.item,
-                               n->sem.id.item_res,
-                               n->sem.id.item_doc);
-            
+
+        case la_doc_index_join:
+            return PFla_doc_index_join (left, right,
+                                        n->sem.doc_join.kind,
+                                        n->sem.doc_join.item,
+                                        n->sem.doc_join.item_res,
+                                        n->sem.doc_join.item_doc);
+
         case la_doc_tbl:
             return PFla_doc_tbl (left,
                                  n->sem.doc_tbl.iter,
@@ -3914,7 +3949,7 @@ PFla_op_duplicate (PFla_op_t *n, PFla_op_t *left, PFla_op_t *right)
                                  n->sem.doc_tbl.item_res);
 
         case la_doc_access:
-            return PFla_doc_access (left, right, 
+            return PFla_doc_access (left, right,
                                     n->sem.doc_access.res,
                                     n->sem.doc_access.att,
                                     n->sem.doc_access.doc_col);
@@ -3952,7 +3987,7 @@ PFla_op_duplicate (PFla_op_t *n, PFla_op_t *left, PFla_op_t *right)
                                  n->sem.iter_item.iter,
                                  n->sem.iter_item.item);
 
-        case la_processi:  
+        case la_processi:
             return PFla_processi (left,
                                   n->sem.iter_item1_item2.iter,
                                   n->sem.iter_item1_item2.item1,
@@ -3964,7 +3999,7 @@ PFla_op_duplicate (PFla_op_t *n, PFla_op_t *left, PFla_op_t *right)
                                  n->sem.iter_pos_item.pos,
                                  n->sem.iter_pos_item.item);
 
-        case la_merge_adjacent: 
+        case la_merge_adjacent:
             return PFla_pf_merge_adjacent_text_nodes (
                        left, right,
                        n->sem.merge_adjacent.iter_in,
@@ -3975,7 +4010,7 @@ PFla_op_duplicate (PFla_op_t *n, PFla_op_t *left, PFla_op_t *right)
                        n->sem.merge_adjacent.item_res);
 
         case la_roots:
-            return PFla_roots (left); 
+            return PFla_roots (left);
 
         case la_fragment:
             return PFla_fragment (left);

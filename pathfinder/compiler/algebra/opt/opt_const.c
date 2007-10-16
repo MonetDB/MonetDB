@@ -3,8 +3,8 @@
  *
  * Optimize relational algebra expression DAG
  * based on the constant property.
- * (This requires no burg pattern matching as we 
- *  apply optimizations in a peep-hole style on 
+ * (This requires no burg pattern matching as we
+ *  apply optimizations in a peep-hole style on
  *  single nodes only.)
  *
  * Copyright Notice:
@@ -123,19 +123,19 @@ opt_const (PFla_op_t *p, bool no_attach)
 
     /* action code */
     switch (p->kind) {
-        case la_serialize:
+        case la_serialize_seq:
             /* introduce attach if necessary */
-            if (PFprop_const_right (p->prop, p->sem.serialize.pos)) {
-                R(p) = add_attach (R(p), p->sem.serialize.pos,
+            if (PFprop_const_right (p->prop, p->sem.ser_seq.pos)) {
+                R(p) = add_attach (R(p), p->sem.ser_seq.pos,
                                    PFprop_const_val_right (
                                        p->prop,
-                                       p->sem.serialize.pos));
+                                       p->sem.ser_seq.pos));
             }
-            if (PFprop_const_right (p->prop, p->sem.serialize.item)) {
-                R(p) = add_attach (R(p), p->sem.serialize.item,
+            if (PFprop_const_right (p->prop, p->sem.ser_seq.item)) {
+                R(p) = add_attach (R(p), p->sem.ser_seq.item,
                                    PFprop_const_val_right (
                                        p->prop,
-                                       p->sem.serialize.item));
+                                       p->sem.ser_seq.item));
             }
             break;
 
@@ -349,7 +349,7 @@ opt_const (PFla_op_t *p, bool no_attach)
              * - false: replace select by an empty_tbl
              */
             if (PFprop_const_left (p->prop, p->sem.select.att)) {
-                if (PFprop_const_val_left (p->prop, 
+                if (PFprop_const_val_left (p->prop,
                                            p->sem.select.att).val.bln) {
                     *p = *PFla_dummy (L(p));
                     break;
@@ -376,11 +376,11 @@ opt_const (PFla_op_t *p, bool no_attach)
                     |               /   \
                     |             loop  pi_iter
                     |                    |
-                    \_______   _________/   
+                    \_______   _________/
                             \ /
                            count_item:/iter
                              |
-              
+
                and replace it by an unpartitioned count */
             if (p->schema.count == 1 &&
                 L(p)->kind == la_project &&
@@ -583,13 +583,13 @@ opt_const (PFla_op_t *p, bool no_attach)
             break;
 
         case la_avg:
-	case la_max:
-	case la_min:
-            /* some optimization opportunities for 
+        case la_max:
+        case la_min:
+            /* some optimization opportunities for
                aggregate operators arise if 'att' is constant */
             if (PFprop_const_left (p->prop, p->sem.aggr.att)) {
                 /* if partitioning column is constant as well
-                   replace aggregate by a new literal table 
+                   replace aggregate by a new literal table
                    with one row containing 'att' and 'part' */
                 if (p->sem.aggr.part &&
                     PFprop_const_left (p->prop, p->sem.aggr.part))
@@ -637,8 +637,8 @@ opt_const (PFla_op_t *p, bool no_attach)
                and attach it after the operator */
             if (p->sem.aggr.part &&
                 PFprop_const_left (p->prop, p->sem.aggr.part)) {
-	        PFla_op_t *sum = PFla_aggr (p->kind,
-					   L(p),
+                PFla_op_t *sum = PFla_aggr (p->kind,
+                                           L(p),
                                            p->sem.aggr.res,
                                            p->sem.aggr.att,
                                            p->sem.aggr.part);
@@ -774,7 +774,7 @@ opt_const (PFla_op_t *p, bool no_attach)
                 break;
             }
             break;
-            
+
         default:
             break;
     }

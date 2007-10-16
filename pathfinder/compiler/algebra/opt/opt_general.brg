@@ -59,7 +59,7 @@ typedef struct PFla_op_t *NODEPTR_TYPE;
 /* the state determined during bottom-up labeling is stored here */
 #define STATE_LABEL(p) ((p)->state_label)
 
-/* the state of the children determined during 
+/* the state of the children determined during
    bottom-up labeling is backed up here */
 #define CHILD_STATE_LABEL(p,i) ((p)->child_state_label[i])
 
@@ -75,21 +75,22 @@ typedef struct PFla_op_t *NODEPTR_TYPE;
  * Node identifiers.
  * Keep them aligned with the node kinds in include/logical.h!
  */
-%term  serialize       =   1
-%term  lit_tbl         =   2
-%term  empty_tbl       =   3
-%term  attach          =   4
-%term  cross           =   5
-%term  eqjoin          =   6
-%term  semijoin        =   7
-%term  thetajoin       =   8
-%term  project         =   9
-%term  select_         =  10
-%term  pos_select      =  11
-%term  disjunion       =  12
-%term  intersect       =  13
-%term  difference      =  14
-%term  distinct        =  15
+%term  serialize_seq   =   1
+%term  serialize_rel   =   2
+%term  lit_tbl         =   4
+%term  empty_tbl       =   5
+%term  attach          =   6
+%term  cross           =   7
+%term  eqjoin          =   9
+%term  semijoin        =  10
+%term  thetajoin       =  11
+%term  project         =  12
+%term  select_         =  13
+%term  pos_select      =  14
+%term  disjunion       =  16
+%term  intersect       =  17
+%term  difference      =  18
+%term  distinct        =  19
 %term  fun_1to1        =  20
 %term  num_eq          =  25
 %term  num_gt          =  26
@@ -110,12 +111,11 @@ typedef struct PFla_op_t *NODEPTR_TYPE;
 %term  cast            =  42
 %term  seqty1          =  43
 %term  all             =  44
-%term  step            =  49
-%term  step_join       =  50
-%term  guide_step      =  51
-%term  guide_step_join =  52
-%term  id              =  53
-%term  idref           =  54
+%term  step            =  50
+%term  step_join       =  51
+%term  guide_step      =  52
+%term  guide_step_join =  53
+%term  doc_index_join  =  54
 %term  doc_tbl         =  55
 %term  doc_access      =  56
 %term  twig            =  60
@@ -146,37 +146,36 @@ typedef struct PFla_op_t *NODEPTR_TYPE;
 
 %%
 
-Query:  serialize (Frag, Rel)                     =   1 (10);
+Query:  serialize_seq (Frag, Rel)                 =   1 (10);
+Query:  serialize_rel (Rel)                       =   2 (10);
 
-Rel:    lit_tbl                                   =   2 (10);
-Rel:    attach (Rel)                              =   3 (10);
-Rel:    attach (lit_tbl)                          =   4 (10);
-Rel:    cross (Rel, Rel)                          =   5 (10);
-Rel:    cross (lit_tbl, lit_tbl)                  =   6 (10);
-Rel:    cross (Rel, lit_tbl)                      =   7 (10);
-Rel:    cross (lit_tbl, Rel)                      =   8 (10);
-Rel:    eqjoin (Rel, Rel)                         =   9 (10);
-Rel:    semijoin (Rel, Rel)                       =  10 (10);
-Rel:    semijoin (distinct (Rel), Rel)            =  11 (10);
-Rel:    thetajoin (Rel, Rel)                      =  12 (10);
-Rel:    project (Rel)                             =  13 (10);
-Rel:    project (attach (Rel))                    =  14 (10);
-Rel:    project (project (Rel))                   =  15  (1);
-Rel:    project (lit_tbl)                         =  16 (10);
-Rel:    select_ (Rel)                             =  17 (10);
-Rel:    pos_select (Rel)                          =  18 (10);
-Rel:    disjunion (Rel, Rel)                      =  19 (10);
-Rel:    disjunion (lit_tbl, lit_tbl)              =  20 (10);
-Rel:    disjunion (EmptyRel, Rel)                 =  21  (5);
-Rel:    disjunion (Rel, EmptyRel)                 =  22  (5);
-Rel:    intersect (Rel, Rel)                      =  23 (10);
-Rel:    difference (Rel, Rel)                     =  24 (10);
-Rel:    difference (Rel, EmptyRel)                =  25  (5);
-Rel:    distinct (Rel)                            =  26 (10);
-Rel:    distinct (step (Frag, Rel))               =  27  (5);
-Rel:    distinct (id (Frag, Rel))                 =  28  (5);
-Rel:    distinct (idref (Frag, Rel))              =  29  (5);
-Rel:    fun_1to1 (Rel)                            =  30 (10);
+Rel:    lit_tbl                                   =   3 (10);
+Rel:    attach (Rel)                              =   4 (10);
+Rel:    attach (lit_tbl)                          =   5 (10);
+Rel:    cross (Rel, Rel)                          =   6 (10);
+Rel:    cross (lit_tbl, lit_tbl)                  =   7 (10);
+Rel:    cross (Rel, lit_tbl)                      =   8 (10);
+Rel:    cross (lit_tbl, Rel)                      =   9 (10);
+Rel:    eqjoin (Rel, Rel)                         =  10 (10);
+Rel:    semijoin (Rel, Rel)                       =  13 (10);
+Rel:    semijoin (distinct (Rel), Rel)            =  14 (10);
+Rel:    thetajoin (Rel, Rel)                      =  15 (10);
+Rel:    project (Rel)                             =  16 (10);
+Rel:    project (attach (Rel))                    =  17 (10);
+Rel:    project (project (Rel))                   =  18  (1);
+Rel:    project (lit_tbl)                         =  19 (10);
+Rel:    select_ (Rel)                             =  20 (10);
+Rel:    pos_select (Rel)                          =  23 (10);
+Rel:    disjunion (Rel, Rel)                      =  24 (10);
+Rel:    disjunion (lit_tbl, lit_tbl)              =  25 (10);
+Rel:    disjunion (EmptyRel, Rel)                 =  26  (5);
+Rel:    disjunion (Rel, EmptyRel)                 =  27  (5);
+Rel:    intersect (Rel, Rel)                      =  28 (10);
+Rel:    difference (Rel, Rel)                     =  29 (10);
+Rel:    difference (Rel, EmptyRel)                =  30  (5);
+Rel:    distinct (Rel)                            =  32 (10);
+Rel:    distinct (step (Frag, Rel))               =  33  (5);
+Rel:    fun_1to1 (Rel)                            =  34 (10);
 Rel:    num_gt (Rel)                              =  35 (10);
 Rel:    num_eq (Rel)                              =  36 (10);
 Rel:    bool_and (Rel)                            =  37 (10);
@@ -207,8 +206,7 @@ ScjRel: step (Frag, distinct (Rel))               =  64 (10);
 Rel:    step_join (Frag, Rel)                     =  65 (10);
 Rel:    guide_step (Frag, Rel)                    =  66 (10);
 Rel:    guide_step_join (Frag, Rel)               =  67 (10);
-Rel:    id (Frag, Rel)                            =  68 (10);
-Rel:    idref (Frag, Rel)                         =  69 (10);
+Rel:    doc_index_join (Frag, Rel)                =  68 (10);
 Rel:    doc_access (Frag, Rel)                    =  70 (10);
 
 Rel:    roots_ (doc_tbl (Rel))                    =  75 (10);
@@ -294,8 +292,7 @@ EmptyRel:    step (Frag, EmptyRel)                = 170  (0);
 EmptyRel:    step_join (Frag, EmptyRel)           = 171  (0);
 EmptyRel:    guide_step (Frag, EmptyRel)          = 172  (0);
 EmptyRel:    guide_step_join (Frag, EmptyRel)     = 173  (0);
-EmptyRel:    id (Frag, EmptyRel)                  = 174  (0);
-EmptyRel:    idref (Frag, EmptyRel)               = 175  (0);
+EmptyRel:    doc_index_join (Frag, EmptyRel)      = 174  (0);
 EmptyRel:    doc_access (Frag, EmptyRel)          = 176  (0);
 
 EmptyRel:    roots_ (doc_tbl (EmptyRel))          = 180  (0);
@@ -310,7 +307,7 @@ EmptyRel:    roots_ (twig (processi (EmptyRel)))  = 186  (0);
 EmptyRel:    roots_ (twig (content (Frag,
                                     EmptyRel)))   = 187  (0);
 EmptyRel:    roots_ (twig (nil))                  = 188  (0);
-EmptyRel:    roots_ (merge_adjacent (Frag,                   
+EmptyRel:    roots_ (merge_adjacent (Frag,
                                      EmptyRel))   = 189  (0);
 EmptyRel:    cond_err (EmptyRel, Rel)             = 190  (0);
 EmptyRel:    string_join (EmptyRel, Rel)          = 201  (0);
@@ -340,7 +337,7 @@ EmptyRel:    dummy (EmptyRel)                     = 202  (0);
 
 #define SEEN(p) ((p)->bit_dag)
 
-/* mark all nodes in the pattern of node p as seen 
+/* mark all nodes in the pattern of node p as seen
    if it is not contained in kids. */
 static void mark_pattern_SEEN (PFla_op_t *p,  PFla_op_t **kids);
 
@@ -433,14 +430,14 @@ reduce (PFla_op_t *p, int goalnt)
        by the following action code */
     old_state_label = STATE_LABEL(p);
 
-    /* mark all nodes in the current pattern as visited 
+    /* mark all nodes in the current pattern as visited
        to avoid tree traversals */
     mark_pattern_SEEN (p, kids);
 
     /* action code */
     switch (rule) {
         /* Rel:    attach (lit_tbl) */
-        case 4:
+        case 5:
         {
             unsigned int   i, j,
                            acount = p->schema.count,
@@ -450,7 +447,7 @@ reduce (PFla_op_t *p, int goalnt)
             PFalg_tuple_t  tuple;
             PFalg_atom_t   value  = p->sem.attach.value;
 
-            /* copy the tuples and attach the value 
+            /* copy the tuples and attach the value
                of the new column to every tuple */
             for (i = 0; i < tcount; i++) {
                 tuple = L(p)->sem.lit_tbl.tuples[i];
@@ -470,10 +467,10 @@ reduce (PFla_op_t *p, int goalnt)
         }   break;
 
         /* Rel:    cross (lit_tbl, lit_tbl) */
-        case 6:
-        
-        /* Rel:    cross (Rel, lit_tbl) */
         case 7:
+
+        /* Rel:    cross (Rel, lit_tbl) */
+        case 8:
             /* replace cross product with a literal table that contains
                only one row by a number of attach operators (one for each
                tuple). */
@@ -494,7 +491,7 @@ reduce (PFla_op_t *p, int goalnt)
         /* Rel:    cross (lit_tbl, lit_tbl) */
 
         /* Rel:    cross (lit_tbl, Rel) */
-        case 8:
+        case 9:
             /* replace cross product with a literal table that contains
                only one row by a number of attach operators (one for each
                tuple). */
@@ -508,13 +505,13 @@ reduce (PFla_op_t *p, int goalnt)
                 SEEN(p) = false;
                 relabel (p, kids);
                 break;
-            } 
+            }
             break;
 
         /* Rel:    semijoin (distinct (Rel), Rel) */
-        case 11:
-            /* push down semijoin operator 
-               underneath the distinct operator as 
+        case 14:
+            /* push down semijoin operator
+               underneath the distinct operator as
                the semijoin hopefully is more selective
                than the distinct operator */
             *p = *PFla_distinct (
@@ -524,24 +521,24 @@ reduce (PFla_op_t *p, int goalnt)
                           p->sem.eqjoin.att2));
             SEEN(L(p)) = false;
             SEEN(p) = false;
-            /* relabeling will be expensive 
+            /* relabeling will be expensive
                if there is no real dummy node */
             relabel (p, kids);
             break;
 
         /* Rel:    project (Rel) */
-        case 13:
+        case 16:
         {   /**
              * we can skip every project operator that is not needed.
              * Therefore it has to fulfill two conditions:
              * 1. no column is renamed
              * 2. the number of columns does not change
              * (The first condition also ensures that no
-             *  column is referenced twice thus allowing us to 
+             *  column is referenced twice thus allowing us to
              *  avoid a 1:1 column check.)
              */
             bool renamed = false;
-            
+
             for (unsigned int i = 0; i < p->schema.count; i++)
                 renamed = renamed ||
                           (p->sem.proj.items[i].new !=
@@ -550,7 +547,7 @@ reduce (PFla_op_t *p, int goalnt)
             if (!renamed && L(p)->schema.count == p->schema.count) {
                 *p = *PFla_dummy (L(p));
                 SEEN(p) = false;
-                /* relabeling will be expensive 
+                /* relabeling will be expensive
                    if there is no real dummy node */
                 relabel (p, kids);
                 break;
@@ -558,7 +555,7 @@ reduce (PFla_op_t *p, int goalnt)
         }   break;
 
         /* Rel:    project (attach (Rel)) */
-        case 14:
+        case 17:
             /* only rewrite if there are more than one columns */
             if (p->schema.count > 1) {
                 bool found = false, rewrite = true;
@@ -566,17 +563,17 @@ reduce (PFla_op_t *p, int goalnt)
                     if (p->sem.proj.items[i].old == L(p)->sem.attach.res) {
                         found = true;
                         rewrite = rewrite &&
-                                  (p->sem.proj.items[i].old 
+                                  (p->sem.proj.items[i].old
                                    == p->sem.proj.items[i].new);
                     }
-                    
+
                 /* if the projection neither discards nor renames
                    the attach result we can switch both operands  */
                 if (found && rewrite) {
                     PFalg_proj_t *proj = PFmalloc ((p->schema.count - 1) *
                                                    sizeof (PFalg_proj_t));
                     unsigned int count = 0;
-                    
+
                     for (unsigned int j = 0; j < p->schema.count; j++)
                         if (L(p)->sem.attach.res
                             != p->sem.proj.items[j].old)
@@ -592,12 +589,12 @@ reduce (PFla_op_t *p, int goalnt)
                 }
             }
             break;
-            
+
         /* Rel:    project (project (Rel)) */
-        case 15:
-        {   /* combine two projections */            
+        case 18:
+        {   /* combine two projections */
             PFalg_proj_t *proj = PFmalloc (p->schema.count *
-	                                       sizeof (PFalg_proj_t));
+                                               sizeof (PFalg_proj_t));
 
             unsigned int i, j, count = 0;
             for (i = 0; i < p->schema.count; i++)
@@ -628,7 +625,7 @@ reduce (PFla_op_t *p, int goalnt)
         } break;
 
         /* Rel:    project (lit_tbl) */
-        case 16:
+        case 19:
         {
             unsigned int   i, j, index,
                            acount  = p->schema.count,
@@ -639,15 +636,15 @@ reduce (PFla_op_t *p, int goalnt)
 
             /* allocate memory for the tuples */
             for (j = 0; j < tcount; j++) {
-                tuples[j].count = acount; 
+                tuples[j].count = acount;
                 tuples[j].atoms = PFmalloc (acount * sizeof (PFalg_atom_t));
             }
-            
+
             /* iterate over all columns */
             for (i = 0; i < acount; i++) {
                 /* copy the column names */
                 atts[i] = p->sem.proj.items[i].new;
-                
+
                 /* find the corresponding column index in the table */
                 for (j = 0; j < L(p)->schema.count; j++)
                     if (p->sem.proj.items[i].old == L(p)->schema.items[j].name)
@@ -663,36 +660,36 @@ reduce (PFla_op_t *p, int goalnt)
             *p = *PFla_lit_tbl_ (PFalg_attlist_ (acount, atts), tcount, tuples);
             SEEN(p) = false;
         }   break;
-        
+
         /* Rel:    select_ (Rel) */
-        case 17:
+        case 20:
         {
             /**
-             *  introduce thetajoin based on 
+             *  introduce thetajoin based on
              *  one of the following patterns:
-             *    
+             *
              *    sel (res)    sel (res)   sel (res)   sel (res)
              *     |            |           |           |
              *   eq,gt       project      eq,gt      project
              *     |            |           |           |
-             *     X          eq,gt      project      eq,gt 
+             *     X          eq,gt      project      eq,gt
              *    / \           |           |           |
                rel1 rel2     project        X           X
-             *                  |          / \         / \   
+             *                  |          / \         / \
              *                  X       rel1 rel2   rel1 rel2
              *                 / \
              *              rel1 rel2
-             *    
+             *
              * The result will be either:
-             *    
+             *
              *     @ (res, true)
              *     |
              *    |X| (eq|gt, rel.att1, rel.att2)
              *    / \
              * rel1 rel2
-             *    
+             *
              * or:
-             *    
+             *
              *     @ (res, true)
              *     |
              *  project
@@ -700,7 +697,7 @@ reduce (PFla_op_t *p, int goalnt)
              *    |X| (eq|gt, rel.att1, rel.att2)
              *    / \
              * rel1 rel2
-             *   
+             *
              */
             PFla_op_t *node;
             PFla_op_t *left = NULL;
@@ -725,7 +722,7 @@ reduce (PFla_op_t *p, int goalnt)
                     }
                 node = L(node);
             }
-            
+
             /* the selection column has to match the
                result column of the comparison operator */
             if ((node->kind != la_num_eq && node->kind != la_num_gt) ||
@@ -776,7 +773,7 @@ reduce (PFla_op_t *p, int goalnt)
             if (!left || !right || left == right)
                 break;
 
-            /* Now all constraints are checked and the pattern 
+            /* Now all constraints are checked and the pattern
                can be replaced by an theta-join and an attach operator
                that adds the missing res column */
             if (!proj && !proj2) {
@@ -803,11 +800,11 @@ reduce (PFla_op_t *p, int goalnt)
                 unsigned int j, count = 0;
                 PFalg_sel_t *pred = PFmalloc (sizeof (PFalg_sel_t));
                 pred[0] = PFalg_sel (comp, item1, item2);
-                
+
                 /* create projection list */
                 proj_list = PFmalloc ((p->schema.count - 1)*
                                       sizeof (*(proj_list)));
-                
+
                 for (i = 0; i < p->schema.count; i++) {
                     /* use current schema as starting point
                        (discarding the result column of the comparison) */
@@ -831,12 +828,12 @@ reduce (PFla_op_t *p, int goalnt)
                                 proj_list[count].old)
                                 proj_list[count].old
                                     = proj2->sem.proj.items[j].old;
-                    
+
                     /* increase the counter analogously */
                     if (p->schema.items[i].name != p->sem.select.att)
                         count++;
                 }
-                                                   
+
                 *p = *PFla_attach (
                           PFla_project_ (
                               PFla_thetajoin (left, right, 1, pred),
@@ -857,7 +854,7 @@ reduce (PFla_op_t *p, int goalnt)
         }   break;
 
         /* Rel:    disjunion (lit_tbl, lit_tbl) */
-        case 20:
+        case 25:
         {
             unsigned int   i, j, index,
                            acount  = p->schema.count,
@@ -871,15 +868,15 @@ reduce (PFla_op_t *p, int goalnt)
 
             /* allocate memory for the tuples */
             for (j = 0; j < tcount; j++) {
-                tuples[j].count = acount; 
+                tuples[j].count = acount;
                 tuples[j].atoms = PFmalloc (acount * sizeof (PFalg_atom_t));
             }
-            
+
             /* iterate over all columns */
             for (i = 0; i < acount; i++) {
                 /* copy the column names */
                 atts[i] = p->schema.items[i].name;
-                
+
                 /* find the corresponding column index in the left table */
                 for (j = 0; j < acount; j++)
                     if (atts[i] == L(p)->schema.items[j].name)
@@ -890,7 +887,7 @@ reduce (PFla_op_t *p, int goalnt)
                 /* copy all values from the left table */
                 for (j = 0; j < lcount; j++)
                     tuples[j].atoms[i] = ltuples[j].atoms[index];
-                
+
                 /* find the corresponding column index in the right table */
                 for (j = 0; j < acount; j++)
                     if (atts[i] == R(p)->schema.items[j].name)
@@ -906,39 +903,35 @@ reduce (PFla_op_t *p, int goalnt)
             *p = *PFla_lit_tbl_ (PFalg_attlist_ (acount, atts), tcount, tuples);
             SEEN(p) = false;
         }   break;
-        
+
         /* Rel:    disjunion (EmptyRel, Rel) */
-        case 21:
+        case 26:
             /* return right child */
             *p = *PFla_dummy (R(p));
             SEEN(p) = false;
-            /* relabeling will be expensive 
+            /* relabeling will be expensive
                if there is no real dummy node */
             relabel (p, kids);
             break;
 
         /* Rel:    disjunion (Rel, EmptyRel) */
-        case 22:
+        case 27:
         /* Rel:    difference (Rel, EmptyRel) */
-        case 25:
+        case 30:
             /* return left child */
             *p = *PFla_dummy (L(p));
             SEEN(p) = false;
-            /* relabeling will be expensive 
+            /* relabeling will be expensive
                if there is no real dummy node */
             relabel (p, kids);
             break;
 
         /* Rel:    distinct (step (Frag, Rel)) */
-        case 27:
-        /* Rel:    distinct (id (Frag, Rel)) */
-        case 28:
-        /* Rel:    distinct (idref (Frag, Rel)) */
-        case 29:
+        case 33:
             /* return left child */
             *p = *PFla_dummy (L(p));
             SEEN(p) = false;
-            /* relabeling will be expensive 
+            /* relabeling will be expensive
                if there is no real dummy node */
             relabel (p, kids);
             break;
@@ -956,14 +949,14 @@ reduce (PFla_op_t *p, int goalnt)
                 /* create projection list */
                 proj_list = PFmalloc (p->schema.count *
                                       sizeof (*(proj_list)));
-                                      
+
                 /* adjust column name of the rank operator */
                 proj_list[count++] = PFalg_proj (
                                          p->sem.rank.res,
                                          PFord_order_col_at (
                                              p->sem.rank.sortby,
                                              0));
-                                         
+
                 for (unsigned int i = 0; i < p->schema.count; i++)
                     if (p->schema.items[i].name != p->sem.rank.res)
                         proj_list[count++] = PFalg_proj (
@@ -990,7 +983,7 @@ reduce (PFla_op_t *p, int goalnt)
                 else
                     proj[i] = PFalg_proj (p->schema.items[i].name,
                                           p->schema.items[i].name);
-                                          
+
             *p = *PFla_project_ (L(p), p->schema.count, proj);
             SEEN(p) = false;
             relabel (p, kids);
@@ -1023,14 +1016,14 @@ reduce (PFla_op_t *p, int goalnt)
                     if (p->sem.type.ty == L(p)->schema.items[i].type) {
                         *p = *PFla_dummy (L(p));
                         SEEN(p) = false;
-                        /* relabeling will be expensive 
+                        /* relabeling will be expensive
                            if there is no real dummy node */
                         relabel (p, kids);
                     }
                     break;
                 }
             break;
-            
+
         /* Rel:    cast (cast (Rel)) */
         case 56:
         /* Rel:    cast (project (cast (Rel))) */
@@ -1042,7 +1035,7 @@ reduce (PFla_op_t *p, int goalnt)
             bool proj = false, found = false;
             unsigned int i;
             PFalg_att_t att = p->sem.type.att;
-            
+
             /* check for a projection in between and update
                the name of the outer cast input */
             if (L(p)->kind == la_project) {
@@ -1057,7 +1050,7 @@ reduce (PFla_op_t *p, int goalnt)
             else
                 cast = L(p);
 
-            /* make sure the input of the first cast 
+            /* make sure the input of the first cast
                is of type string */
             for (i = 0; i < cast->schema.count; i++)
                 if (cast->schema.items[i].name == cast->sem.type.att &&
@@ -1065,7 +1058,7 @@ reduce (PFla_op_t *p, int goalnt)
                     found = true;
                     break;
                 }
-            
+
             /* enforce the constraints: child node is a cast,
                the output of the nested cast and the input of
                the outer cast match, the inner cast applies a
@@ -1074,19 +1067,19 @@ reduce (PFla_op_t *p, int goalnt)
                 att == cast->sem.type.res &&
                 cast->sem.type.ty == aat_uA &&
                 p->sem.type.ty == aat_str) {
-            
+
                 PFalg_proj_t *proj_list;
                 /* create projection list */
                 proj_list = PFmalloc (p->schema.count *
                                       sizeof (*(proj_list)));
-                                      
+
                 if (proj) {
                     /* if there was already a projection keep that
                        one and extend it with the result column of the
                        outer cast that refers to the orginal input column */
                     for (i = 0; i < L(p)->sem.proj.count; i++)
                         proj_list[i] = L(p)->sem.proj.items[i];
-                        
+
                     proj_list[i] = PFalg_proj (p->sem.type.res,
                                                cast->sem.type.att);
                 }
@@ -1100,7 +1093,7 @@ reduce (PFla_op_t *p, int goalnt)
                         else
                             proj_list[i] = PFalg_proj (p->schema.items[i].name,
                                                        p->schema.items[i].name);
-                                                       
+
                 /* Replace the outer cast (and the project) by a new project
                    that avoids the unnecessary casts. (The second cast will
                    be removed by an icols optimization phase.) */
@@ -1110,7 +1103,7 @@ reduce (PFla_op_t *p, int goalnt)
                 break;
             }
         } /* fall trough otherwise */
-                
+
         /* Rel:    cast (Rel) */
         case 58:
         {
@@ -1126,7 +1119,7 @@ reduce (PFla_op_t *p, int goalnt)
                     break;
                 }
 
-            if (!cast_req) { 
+            if (!cast_req) {
                 PFalg_proj_t *proj = PFmalloc (p->schema.count
                                                * sizeof (PFalg_proj_t));
 
@@ -1162,7 +1155,7 @@ reduce (PFla_op_t *p, int goalnt)
                           p->sem.step.item_res);
                 SEEN(p) = false;
                 /* relabel does not know that the left and the right children
-                   are already labeled correctly and thus would relabel 
+                   are already labeled correctly and thus would relabel
                    the *complete* subTREE! To avoid this make sure that kids
                    contains the correct references */
                 kids[0] = L(p);
@@ -1185,7 +1178,7 @@ reduce (PFla_op_t *p, int goalnt)
                relation triggers no error */
             *p = *PFla_dummy (L(p));
             SEEN(p) = false;
-            /* relabeling will be expensive 
+            /* relabeling will be expensive
                if there is no real dummy node */
             relabel (p, kids);
             break;
@@ -1216,7 +1209,7 @@ reduce (PFla_op_t *p, int goalnt)
     return old_state_label != STATE_LABEL(p);
 }
 
-/* mark all nodes in the pattern of node p as seen 
+/* mark all nodes in the pattern of node p as seen
    if it is not contained in kids. */
 static void
 mark_pattern_SEEN (PFla_op_t *p,  PFla_op_t **kids)
@@ -1231,12 +1224,12 @@ mark_pattern_SEEN (PFla_op_t *p,  PFla_op_t **kids)
     for (i = 0; i < PFLA_OP_MAXCHILD; i++)
         if (p->child[i])
             mark_pattern_SEEN (p->child[i], kids);
- 
+
     SEEN (p) = true;
 }
 
 /**
- * Check label of pattern rooted in p. 
+ * Check label of pattern rooted in p.
  * (Every change in the state labels is reported)
  */
 static bool
@@ -1301,7 +1294,7 @@ relabel_worker (PFla_op_t *p,  PFla_op_t **kids, unsigned int counter)
 
     assert (STATE_LABEL (p));
 
-    assert (counter <= 50 && 
+    assert (counter <= 50 &&
             "tree relabeling in general optimization phase " &&
             "might escape pattern boundaries");
 

@@ -3,8 +3,8 @@
  *
  * Optimize relational algebra expression DAG
  * based on the key property.
- * (This requires no burg pattern matching as we 
- *  apply optimizations in a peep-hole style on 
+ * (This requires no burg pattern matching as we
+ *  apply optimizations in a peep-hole style on
  *  single nodes only.)
  *
  * Copyright Notice:
@@ -78,10 +78,10 @@ opt_key (PFla_op_t *p)
                     break;
                 }
             break;
-            
+
         case la_avg:
-	case la_max:
-	case la_min:
+        case la_max:
+        case la_min:
         case la_sum:
         case la_seqty1:
         case la_all:
@@ -89,12 +89,12 @@ opt_key (PFla_op_t *p)
             if (p->sem.aggr.part &&
                 PFprop_key_left (p->prop, p->sem.aggr.part)) {
                 *p = *PFla_project (
-                          L(p), 
+                          L(p),
                           PFalg_proj (p->sem.aggr.res,
                                       p->sem.aggr.att),
                           PFalg_proj (p->sem.aggr.part,
                                       p->sem.aggr.part));
-                SEEN(p) = true;                   
+                SEEN(p) = true;
             }
             break;
 
@@ -109,7 +109,7 @@ opt_key (PFla_op_t *p)
                                           p->sem.aggr.part)),
                           p->sem.aggr.res,
                           PFalg_lit_int (1));
-                SEEN(p) = true;                   
+                SEEN(p) = true;
             }
             break;
 
@@ -120,7 +120,7 @@ opt_key (PFla_op_t *p)
                           L(p),
                           p->sem.rownum.res,
                           PFalg_lit_nat (1));
-                SEEN(p) = true;                   
+                SEEN(p) = true;
             } else {
                 /* discard all sort criterions after a key attribute */
                 PFord_ordering_t sortby = PFordering ();
@@ -147,7 +147,7 @@ opt_key (PFla_op_t *p)
                 p->sem.rownum.sortby = sortby;
             }
             break;
-        
+
         case la_rank:
         {
             /* discard all sort criterions after a key attribute */
@@ -174,7 +174,7 @@ opt_key (PFla_op_t *p)
 
             p->sem.rank.sortby = sortby;
         }   break;
-        
+
         default:
             break;
     }

@@ -64,7 +64,8 @@ static void
 infer_card (PFla_op_t *n)
 {
     switch (n->kind) {
-        case la_serialize:
+        case la_serialize_seq:
+        case la_serialize_rel:
         case la_doc_access:
         case la_content:
             /* cardinality stays the same */
@@ -128,8 +129,7 @@ infer_card (PFla_op_t *n)
         case la_distinct:
         case la_step:
         case la_step_join:
-        case la_id:
-        case la_idref:
+        case la_doc_index_join:
         case la_fcns:
         case la_merge_adjacent:
         case la_fragment:
@@ -148,7 +148,7 @@ infer_card (PFla_op_t *n)
             break;
 
         case la_to:
-            /* with constant information 
+            /* with constant information
                we could infer the cardinality better */
             n->prop->card = 0;
             break;
@@ -169,12 +169,12 @@ infer_card (PFla_op_t *n)
         case la_guide_step_join:
             if (R(n)->prop->card == 1 &&
                 n->sem.step.guide_count == 1 &&
-                n->sem.step.guides[0]->count == 1) 
+                n->sem.step.guides[0]->count == 1)
                 n->prop->card = 1;
             else
                 n->prop->card = 0;
             break;
-            
+
         case la_cond_err:
             /* Optimizations are allowed to prune errors
                as long as the cardinality stays the same.
@@ -186,13 +186,13 @@ infer_card (PFla_op_t *n)
         case la_nil:
             /* there is no property to infer */
             break;
-            
+
         case la_trace:
             /* we do not propagate the cardinality
                to avoid that the operator is pruned */
             n->prop->card = 0;
             break;
-            
+
         case la_trace_msg:
         case la_trace_map:
             /* there is no property to infer */
@@ -202,11 +202,11 @@ infer_card (PFla_op_t *n)
             /* get the cardinality of the overall result */
             n->prop->card = R(n)->prop->card;
             break;
-            
+
         case la_rec_param:
             /* recursion parameters do not have properties */
             break;
-            
+
         case la_rec_arg:
             n->prop->card = R(n)->prop->card;
             break;

@@ -10,7 +10,7 @@
  *
  * To choose which equi-join is transformed into a theta-join we start
  * with the goal to transform a selection into a join predicate. Starting
- * from selection operators we first find the corresponding comparison 
+ * from selection operators we first find the corresponding comparison
  * operator(s) (if any). These comparison operators than provide a left
  * and a right join argument which we follow until the origin of the
  * left and the right comparison argument is unified in a single column.
@@ -133,12 +133,12 @@ find_join_worker (PFla_op_t *n,
                   PFalg_att_t right_cols)
 {
     assert (n);
-    
+
     /* collect all input columns */
     BOOL_COLS(n)  = union_ (BOOL_COLS(n), bool_cols);
     LEFT_COLS(n)  = union_ (LEFT_COLS(n), left_cols);
     RIGHT_COLS(n) = union_ (RIGHT_COLS(n), right_cols);
-    
+
     EDGE(n)++;
     /* nothing to do if we haven't collected
        all incoming column lists of that node */
@@ -151,16 +151,17 @@ find_join_worker (PFla_op_t *n,
     RIGHT_COLS(n) = intersect_ocol (RIGHT_COLS(n), n->schema);
 
     /* If both the left side and the right side of a comparison
-       reference the same column in a number operator 
+       reference the same column in a number operator
        we have (hopefully) reached our goal. */
     if (n->kind == la_number &&
         LEFT_COLS(n) && RIGHT_COLS(n) &&
         ((LEFT_COLS(n) & RIGHT_COLS(n)) == LEFT_COLS(n) ||
          (LEFT_COLS(n) & RIGHT_COLS(n)) == RIGHT_COLS(n)))
         return true;
-    
+
     switch (n->kind) {
-        case la_serialize:
+        case la_serialize_seq:
+        case la_serialize_rel:
             assert (!"this operator should never occur");
             break;
 
@@ -207,7 +208,7 @@ find_join_worker (PFla_op_t *n,
             PFalg_att_t bool_cols  = 0,
                         left_cols  = 0,
                         right_cols = 0;
-            
+
             /* rename columns from new to old */
             for (unsigned int i = 0; i < n->sem.proj.count; i++) {
                 if (BOOL_COLS(n) & n->sem.proj.items[i].new)
@@ -226,18 +227,18 @@ find_join_worker (PFla_op_t *n,
             BOOL_COLS(n) = diff (BOOL_COLS(n), n->sem.fun_1to1.res);
             /* ignore fn:contains() here as we do not know
                how to implement it in a theta-join */
-            
+
             if (LEFT_COLS(n) & n->sem.fun_1to1.res) {
                 LEFT_COLS(n) = diff (LEFT_COLS(n), n->sem.fun_1to1.res);
                 for (unsigned int i = 0; i < n->sem.fun_1to1.refs.count; i++)
-                    LEFT_COLS(n) = union_ (LEFT_COLS(n), 
+                    LEFT_COLS(n) = union_ (LEFT_COLS(n),
                                            n->sem.fun_1to1.refs.atts[i]);
             }
 
             if (RIGHT_COLS(n) & n->sem.fun_1to1.res) {
                 RIGHT_COLS(n) = diff (RIGHT_COLS(n), n->sem.fun_1to1.res);
                 for (unsigned int i = 0; i < n->sem.fun_1to1.refs.count; i++)
-                    RIGHT_COLS(n) = union_ (RIGHT_COLS(n), 
+                    RIGHT_COLS(n) = union_ (RIGHT_COLS(n),
                                             n->sem.fun_1to1.refs.atts[i]);
             }
             break;
@@ -249,7 +250,7 @@ find_join_worker (PFla_op_t *n,
                 LEFT_COLS(n)  = union_ (LEFT_COLS(n),  n->sem.binary.att1);
                 RIGHT_COLS(n) = union_ (RIGHT_COLS(n), n->sem.binary.att2);
             }
-            
+
             if (LEFT_COLS(n) & n->sem.binary.res) {
                 LEFT_COLS(n) = diff   (LEFT_COLS(n), n->sem.binary.res);
                 LEFT_COLS(n) = union_ (LEFT_COLS(n), n->sem.binary.att1);
@@ -269,7 +270,7 @@ find_join_worker (PFla_op_t *n,
                 BOOL_COLS(n) = union_ (BOOL_COLS(n), n->sem.binary.att1);
                 BOOL_COLS(n) = union_ (BOOL_COLS(n), n->sem.binary.att2);
             }
-            
+
             if (LEFT_COLS(n) & n->sem.binary.res) {
                 LEFT_COLS(n) = diff   (LEFT_COLS(n), n->sem.binary.res);
                 LEFT_COLS(n) = union_ (LEFT_COLS(n), n->sem.binary.att1);
@@ -282,10 +283,10 @@ find_join_worker (PFla_op_t *n,
                 RIGHT_COLS(n) = union_ (RIGHT_COLS(n), n->sem.binary.att2);
             }
             break;
-            
+
         case la_bool_or:
             BOOL_COLS(n) = diff (BOOL_COLS(n), n->sem.binary.res);
-            
+
             if (LEFT_COLS(n) & n->sem.binary.res) {
                 LEFT_COLS(n) = diff   (LEFT_COLS(n), n->sem.binary.res);
                 LEFT_COLS(n) = union_ (LEFT_COLS(n), n->sem.binary.att1);
@@ -304,7 +305,7 @@ find_join_worker (PFla_op_t *n,
                 BOOL_COLS(n) = diff   (BOOL_COLS(n), n->sem.unary.res);
                 BOOL_COLS(n) = union_ (BOOL_COLS(n), n->sem.unary.att);
             }
-            
+
             if (LEFT_COLS(n) & n->sem.unary.res) {
                 LEFT_COLS(n) = diff   (LEFT_COLS(n), n->sem.unary.res);
                 LEFT_COLS(n) = union_ (LEFT_COLS(n), n->sem.unary.att);
@@ -330,8 +331,8 @@ find_join_worker (PFla_op_t *n,
             break;
 
         case la_avg:
-	case la_max:
-	case la_min:
+        case la_max:
+        case la_min:
         case la_sum:
         case la_seqty1:
         case la_all:
@@ -370,7 +371,7 @@ find_join_worker (PFla_op_t *n,
 
             if (RIGHT_COLS(n) & n->sem.rownum.res) {
                 RIGHT_COLS(n) = diff   (RIGHT_COLS(n), n->sem.rownum.res);
-                
+
                 for (unsigned int i = 0;
                      i < PFord_count (n->sem.rownum.sortby);
                      i++)
@@ -399,7 +400,7 @@ find_join_worker (PFla_op_t *n,
 
             if (RIGHT_COLS(n) & n->sem.rank.res) {
                 RIGHT_COLS(n) = diff   (RIGHT_COLS(n), n->sem.rank.res);
-                
+
                 for (unsigned int i = 0;
                      i < PFord_count (n->sem.rank.sortby);
                      i++)
@@ -446,17 +447,18 @@ find_join_worker (PFla_op_t *n,
             }
             break;
 
-        case la_id:
-        case la_idref:
-            if (LEFT_COLS(n) & n->sem.id.item_res) {
-                LEFT_COLS(n) = diff   (LEFT_COLS(n), n->sem.id.item_res);
-                LEFT_COLS(n) = union_ (LEFT_COLS(n), n->sem.id.item);
-                LEFT_COLS(n) = union_ (LEFT_COLS(n), n->sem.id.item_doc);
+        case la_doc_index_join:
+            if (LEFT_COLS(n) & n->sem.doc_join.item_res) {
+                LEFT_COLS(n) = diff   (LEFT_COLS(n), n->sem.doc_join.item_res);
+                LEFT_COLS(n) = union_ (LEFT_COLS(n), n->sem.doc_join.item);
+                LEFT_COLS(n) = union_ (LEFT_COLS(n), n->sem.doc_join.item_doc);
             }
-            if (RIGHT_COLS(n) & n->sem.id.item_res) {
-                RIGHT_COLS(n) = diff   (RIGHT_COLS(n), n->sem.id.item_res);
-                RIGHT_COLS(n) = union_ (RIGHT_COLS(n), n->sem.id.item);
-                RIGHT_COLS(n) = union_ (RIGHT_COLS(n), n->sem.id.item_doc);
+            if (RIGHT_COLS(n) & n->sem.doc_join.item_res) {
+                RIGHT_COLS(n) = diff   (RIGHT_COLS(n),
+                                        n->sem.doc_join.item_res);
+                RIGHT_COLS(n) = union_ (RIGHT_COLS(n), n->sem.doc_join.item);
+                RIGHT_COLS(n) = union_ (RIGHT_COLS(n),
+                                        n->sem.doc_join.item_doc);
             }
             break;
 
@@ -491,14 +493,14 @@ find_join_worker (PFla_op_t *n,
         case la_comment:
         case la_processi:
         case la_content:
-            /* FIXME: for now we assume that a theta-join 
+            /* FIXME: for now we assume that a theta-join
                cannot be pushed through a constructor */
             LEFT_COLS(n)  = att_NULL;
             RIGHT_COLS(n) = att_NULL;
             break;
 
         case la_merge_adjacent:
-            /* FIXME: for now we assume that a theta-join 
+            /* FIXME: for now we assume that a theta-join
                cannot be pushed through an element constructor */
             LEFT_COLS(n)  = att_NULL;
             RIGHT_COLS(n) = att_NULL;
@@ -511,7 +513,7 @@ find_join_worker (PFla_op_t *n,
         case la_fragment:
         case la_empty_frag:
             /* for the fragment information we do not need to introduce
-               column names as the thetajoin can never be moved along 
+               column names as the thetajoin can never be moved along
                its edges. */
             LEFT_COLS(n)  = att_NULL;
             RIGHT_COLS(n) = att_NULL;
@@ -527,7 +529,7 @@ find_join_worker (PFla_op_t *n,
                     LEFT_COLS(n),
                     RIGHT_COLS(n)))
                 return true;
-            
+
             /* ... and propagate nothing to the right child */
             if (find_join_worker (
                     R(n),
@@ -548,19 +550,19 @@ find_join_worker (PFla_op_t *n,
         case la_trace_map:
             /* this operator cannot be reached */
             break;
-            
+
         case la_rec_fix:
-            /* FIXME: for now we assume that a theta-join 
+            /* FIXME: for now we assume that a theta-join
                cannot be pushed through a recursion operator */
             LEFT_COLS(n)  = att_NULL;
             RIGHT_COLS(n) = att_NULL;
             break;
-            
+
         case la_rec_param:
         case la_rec_arg:
         case la_rec_base:
             break;
-            
+
         case la_proxy:
         case la_proxy_base:
             break;
@@ -574,7 +576,7 @@ find_join_worker (PFla_op_t *n,
                     LEFT_COLS(n) ? n->sem.string_join.item : 0,
                     RIGHT_COLS(n) ? n->sem.string_join.item : 0))
                 return true;
-            
+
             /* ... and propagate the item separator to the right child */
             if (find_join_worker (
                     R(n),
@@ -586,7 +588,7 @@ find_join_worker (PFla_op_t *n,
 
             return false;
             break;
-            
+
         case la_eqjoin_unq:
             PFoops (OOPS_FATAL,
                     "clone column aware equi-join operator is "
@@ -596,7 +598,7 @@ find_join_worker (PFla_op_t *n,
             PFoops (OOPS_FATAL,
                     "clone column aware cross product operator is "
                     "only allowed inside mvd optimization!");
-            
+
         case la_dummy:
             break;
     }
@@ -615,7 +617,7 @@ find_join_worker (PFla_op_t *n,
                                   LEFT_COLS(n),
                                   RIGHT_COLS(n)))
         return true;
-        
+
     return false;
 }
 
@@ -713,7 +715,7 @@ PFintro_thetajoins (PFla_op_t *root)
 {
     PFarray_t *select_nodes = PFarray (sizeof (PFla_op_t *));
     PFla_op_t *select, *join;
-    
+
     /* collect the select nodes */
     collect_select_nodes (root, select_nodes);
     PFla_dag_reset (root);
@@ -721,10 +723,10 @@ PFintro_thetajoins (PFla_op_t *root)
     for (unsigned int i = 0; i < PFarray_last (select_nodes); i++) {
         /* for each select node we try to find a corresponding join */
         select = *(PFla_op_t **) PFarray_at (select_nodes, i);
-        
+
         assert (select->kind == la_select);
 
-        /* start the property inference (and find 
+        /* start the property inference (and find
            as a side effect a matching join operator) */
         if ((join = find_join (select)))
             /* transform the equi-join into a theta-join */

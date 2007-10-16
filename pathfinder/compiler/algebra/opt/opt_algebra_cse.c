@@ -68,7 +68,7 @@
 #define ORI(p)  (lookup_ori((ori_map),(p)))
 #define INORI(c,o) (insert_ori((ori_map), (c), (o)))
 
-/** lookup subtree with annotated real/effective 
+/** lookup subtree with annotated real/effective
  * attributes. */
 #define EFF(p)  (lookup_eff((eff_map),(p)))
 #define INEFF(o,e) (insert_eff((eff_map), (o), (e)))
@@ -136,7 +136,7 @@ lookup_cse (PFarray_t *map, PFla_op_t *ori)
 
     for (unsigned int i = 0; i < PFarray_last (map); i++) {
         if (((ori_cse_map_t *) (PFarray_at (map, i)))->ori == ori)
-            return ((ori_cse_map_t *) PFarray_at (map, i))->cse; 
+            return ((ori_cse_map_t *) PFarray_at (map, i))->cse;
     }
 
     PFoops (OOPS_FATAL, "Could not look up node (%i) (cse subtrees)", ori->kind);
@@ -145,7 +145,7 @@ lookup_cse (PFarray_t *map, PFla_op_t *ori)
 }
 
 /* worker for 'ORI(p)': based on the cse subtree
- * looks up the corresponding subtree in the 
+ * looks up the corresponding subtree in the
  * original plan, caused the insertion.
  */
 static PFla_op_t*
@@ -162,7 +162,7 @@ lookup_ori (PFarray_t *map, PFla_op_t *cse)
 
     return NULL; /* satisfy picky compilers */
 }
-/* Worker for 'INORI(c,o)'. 
+/* Worker for 'INORI(c,o)'.
  * Insert a structure that maps the operator in the
  * cse tree to its original operator.
  */
@@ -173,7 +173,7 @@ insert_ori (PFarray_t *map, PFla_op_t *cse,
     assert (map);
     assert (cse);
     assert (ori);
-    
+
     /* check if the operator has already a mapping */
     cse_ori_map_t *temp = NULL;
     for (unsigned int i = 0; i < PFarray_last (map); i++) {
@@ -204,20 +204,20 @@ insert_cse (PFarray_t *map, PFla_op_t *ori,
             PFla_op_t *cse)
 {
     assert (map);
-    assert (ori); 
+    assert (ori);
     assert (cse);
 
     /* check if the operator has already a mapping */
     ori_cse_map_t *temp = NULL;
     for (unsigned int i = 0; i < PFarray_last (map); i++) {
         if (((ori_cse_map_t *) (PFarray_at (map, i)))->ori == ori) {
-            temp = (ori_cse_map_t *) PFarray_at (map, i); 
+            temp = (ori_cse_map_t *) PFarray_at (map, i);
             break;
         }
     }
 
     if (temp) {
-        PFoops (OOPS_FATAL, "No operator should be remapped."); 
+        PFoops (OOPS_FATAL, "No operator should be remapped.");
     }
 
     *(ori_cse_map_t *) PFarray_add (map) = (ori_cse_map_t)
@@ -257,7 +257,7 @@ create_unq_name (PFla_op_t *n, PFalg_att_t att)
 static void
 patch_schema (PFla_op_t *n, PFalg_att_t old, PFalg_att_t new)
 {
-    unsigned int i = 0; 
+    unsigned int i = 0;
     for (i = 0; i < n->schema.count; i++)
     {
         if (n->schema.items[i].name == old) {
@@ -269,7 +269,7 @@ patch_schema (PFla_op_t *n, PFalg_att_t old, PFalg_att_t new)
         PFoops (OOPS_FATAL,
                 "name (%s) not found in schema", PFatt_str (old));
 
-    n->schema.items[i].name = new; 
+    n->schema.items[i].name = new;
 }
 
 
@@ -294,10 +294,10 @@ insert_eff (PFarray_t *map, PFla_op_t *ori,
      }
 
     if (temp) {
-        PFoops (OOPS_FATAL, "No operator should be remapped to" 
+        PFoops (OOPS_FATAL, "No operator should be remapped to"
             "other effective attributes");
     }
-        
+
     *(ori_eff_map_t *) PFarray_add (map) =
         (ori_eff_map_t)
         {
@@ -380,7 +380,7 @@ tuple_eq (PFalg_tuple_t a, PFalg_tuple_t b)
                 break;
             /* if type is str, compare str member of union */
             case aat_uA:
-	    case aat_str:
+            case aat_str:
                 if (strcmp (a.atoms[i].val.str, b.atoms[i].val.str))
                     mismatch = true;
                 break;
@@ -421,14 +421,14 @@ tuple_eq (PFalg_tuple_t a, PFalg_tuple_t b)
 }
 
 static bool
-eff_schema_eq (PFalg_schema_t schema1, PFalg_schema_t schema2, 
+eff_schema_eq (PFalg_schema_t schema1, PFalg_schema_t schema2,
             PFarray_t *effmap1, PFarray_t *effmap2)
 {
-    bool match = false;    
+    bool match = false;
     for (unsigned int i = 0; i < schema1.count; i++) {
         for (unsigned int j = 0; j < schema2.count; j++) {
-            if (eff_attribute_ (effmap1, schema1.items[i].name) == 
-                eff_attribute_ (effmap2, schema2.items[j].name)) 
+            if (eff_attribute_ (effmap1, schema1.items[i].name) ==
+                eff_attribute_ (effmap2, schema2.items[j].name))
                 match = true;
         }
 
@@ -440,13 +440,13 @@ eff_schema_eq (PFalg_schema_t schema1, PFalg_schema_t schema2,
 }
 
 #if 0
-static void 
+static void
 print_eff (PFarray_t *effmap)
 {
     if (effmap == NULL) return;
     for (unsigned int i = 0; i < PFarray_last (effmap); i++)
         fprintf (stderr, "\t- %s -> %s\n",
-            PFatt_str ((*(eff_map_t*)PFarray_at(effmap, i)).ori_att), 
+            PFatt_str ((*(eff_map_t*)PFarray_at(effmap, i)).ori_att),
             PFatt_str ((*(eff_map_t*)PFarray_at(effmap, i)).eff_att)
         );
 };
@@ -471,11 +471,11 @@ print_proj (unsigned int count, PFalg_proj_t *proj)
 
 /* Determine the differences between the original schema and the
  * schema used in the cse plan
- */ 
+ */
 static void
 eff_schema_patch (PFarray_t *eff_map, PFalg_schema_t schema, PFarray_t *eff_att_map)
 {
-    PFarray_t *ret = eff_map; 
+    PFarray_t *ret = eff_map;
 
     for (unsigned int i = 0; i < schema.count; i++) {
         PFalg_att_t att = eff_attribute_ (eff_att_map, schema.items[i].name);
@@ -484,7 +484,7 @@ eff_schema_patch (PFarray_t *eff_map, PFalg_schema_t schema, PFarray_t *eff_att_
                     .ori_att = schema.items[i].name,
                     .eff_att = att
                 };
-    } 
+    }
 }
 
 /* modify a schema according to the @a eff_att_map */
@@ -518,10 +518,10 @@ apply_patch (PFla_op_t *n, PFarray_t *assembly1, PFarray_t *assembly2)
 
     switch (n->kind)
     {
-        case la_serialize:
+        case la_serialize_seq:
         {
-            n->sem.serialize.pos = eff_attribute_ (assembly2, n->sem.serialize.pos);
-            n->sem.serialize.item = eff_attribute_ (assembly2, n->sem.serialize.item);
+            n->sem.ser_seq.pos = eff_attribute_ (assembly2, n->sem.ser_seq.pos);
+            n->sem.ser_seq.item = eff_attribute_ (assembly2, n->sem.ser_seq.item);
         } break;
         case la_lit_tbl:
         case la_empty_tbl:
@@ -545,14 +545,14 @@ apply_patch (PFla_op_t *n, PFarray_t *assembly1, PFarray_t *assembly2)
         case la_project:
         {
             for (unsigned int i = 0; i < n->sem.proj.count; i++) {
-                n->sem.proj.items[i].old = eff_attribute_ (assembly1, n->sem.proj.items[i].old); 
+                n->sem.proj.items[i].old = eff_attribute_ (assembly1, n->sem.proj.items[i].old);
             }
         } break;
         case la_select:
         {
             n->sem.select.att = eff_attribute_ (assembly1,
                                                 n->sem.select.att);
-                                        
+
             PFalg_schema_t schema = PFalg_schema_diff (n->schema,
                                                 n->sem.select.att);
 
@@ -593,7 +593,7 @@ apply_patch (PFla_op_t *n, PFarray_t *assembly1, PFarray_t *assembly2)
                                         n->sem.binary.res, n->sem.binary.att1,
                                         n->sem.binary.att2);
 
-            apply_schema_patch (n, schema, assembly1); 
+            apply_schema_patch (n, schema, assembly1);
 
         } break;
         case la_bool_and:
@@ -603,7 +603,7 @@ apply_patch (PFla_op_t *n, PFarray_t *assembly1, PFarray_t *assembly2)
                                             n->sem.binary.att1);
             n->sem.binary.att2 = eff_attribute_ (assembly1,
                                             n->sem.binary.att2);
-            
+
             PFalg_schema_t schema = PFalg_schema_diff (n->schema,
                                         n->sem.binary.res);
             apply_schema_patch (n, schema, assembly1);
@@ -639,7 +639,7 @@ apply_patch (PFla_op_t *n, PFarray_t *assembly1, PFarray_t *assembly2)
         {
             n->sem.rownum.part = eff_attribute_ (assembly1,
                                                 n->sem.rownum.part);
-            
+
             /* adjust ordering TODO */
             PFord_ordering_t ordering = PFordering ();
 
@@ -648,8 +648,8 @@ apply_patch (PFla_op_t *n, PFarray_t *assembly1, PFarray_t *assembly2)
                                         n->sem.rownum.sortby, i);
                 bool dir = PFord_order_dir_at (
                                         n->sem.rownum.sortby, i);
-                
-                ordering = PFord_refine (ordering, 
+
+                ordering = PFord_refine (ordering,
                                         eff_attribute_ (assembly1, ordname),
                                         dir);
             }
@@ -699,7 +699,7 @@ apply_patch (PFla_op_t *n, PFarray_t *assembly1, PFarray_t *assembly2)
                                             n->sem.type.att);
             PFalg_schema_t schema = PFalg_schema_diff (n->schema,
                                             n->sem.type.res);
-            
+
             apply_schema_patch (n, schema, assembly1);
         } break;
         case la_seqty1:
@@ -723,13 +723,9 @@ apply_patch (PFla_op_t *n, PFarray_t *assembly1, PFarray_t *assembly2)
         {
             assert (!"la_guide_step not yet supported!");
         } break;
-        case la_id:
+        case la_doc_index_join:
         {
-            assert (!"la_id not yet supported!");
-        } break;
-        case la_idref:
-        {
-            assert (!"la_idref not yet supported!");
+            assert (!"la_doc_index_join not yet supported!");
         } break;
         case la_doc_tbl:
         {
@@ -863,10 +859,10 @@ resolve_name_conflicts (PFla_op_t *n)
     PFalg_att_t new = att_NULL;
 
     switch (n->kind) {
-        case la_serialize:
+        case la_serialize_seq:
         case la_empty_tbl:
         case la_lit_tbl:
-        { 
+        {
             /* no new attributes */
             return;
         } break;
@@ -948,7 +944,7 @@ resolve_name_conflicts (PFla_op_t *n)
             assert (!"la_type not yet supported");
         } break;
         case la_type_assert:
-        case la_cast: 
+        case la_cast:
         {
             old = n->sem.type.res;
             new = create_unq_name (CSE (L(n)),
@@ -962,7 +958,7 @@ resolve_name_conflicts (PFla_op_t *n)
         } break;
         case la_all:
         {
-            assert (!"la_all not yet supported"); 
+            assert (!"la_all not yet supported");
         } break;
         case la_step:
         {
@@ -973,19 +969,15 @@ resolve_name_conflicts (PFla_op_t *n)
         } break;
         case la_step_join:
         {
-            assert (!"la_step_join not yet supported"); 
+            assert (!"la_step_join not yet supported");
         } break;
         case la_guide_step:
         {
             assert (!"la_guide_step not yet supported");
         } break;
-        case la_id:
+        case la_doc_index_join:
         {
-            assert (!"la_id not yet supported");
-        } break;
-        case la_idref:
-        {
-            assert (!"la_idref not yet supported");
+            assert (!"la_doc_index_join not yet supported");
         } break;
         case la_doc_tbl:
         {
@@ -1104,11 +1096,11 @@ subexp_eq (PFla_op_t *a, PFla_op_t *b)
     assert (a);
     assert (b);
 
-    /* first we need the original node that 
+    /* first we need the original node that
      * caused the insertion */
     /* the original value of will be automatically
      * restored when the function returns */
-    b = ORI (b); 
+    b = ORI (b);
 
     /* shortcut for the trivial case */
     if (a == b)
@@ -1120,7 +1112,7 @@ subexp_eq (PFla_op_t *a, PFla_op_t *b)
 
     /* both nodes must have identical children in terms of
      * their underlying cse plans (C pointers) */
-    if (!((CSE (L (a)) == CSE (L (b))) && 
+    if (!((CSE (L (a)) == CSE (L (b))) &&
           (CSE (R (a)) == CSE (R (b))))) {
         return false;
     }
@@ -1132,20 +1124,20 @@ subexp_eq (PFla_op_t *a, PFla_op_t *b)
         return false;
 
     switch (a->kind) {
-        case la_serialize:
+        case la_serialize_seq:
         {
             PFla_op_t *achild = R (a);
             PFla_op_t *bchild = R (b);
 
             PFalg_att_t apos = eff_attribute (achild,
-                                    a->sem.serialize.pos);
+                                    a->sem.ser_seq.pos);
             PFalg_att_t bpos = eff_attribute (bchild,
-                                    b->sem.serialize.pos);
+                                    b->sem.ser_seq.pos);
 
             PFalg_att_t aitem = eff_attribute (achild,
-                                    a->sem.serialize.item);
+                                    a->sem.ser_seq.item);
             PFalg_att_t bitem = eff_attribute (bchild,
-                                    b->sem.serialize.item);
+                                    b->sem.ser_seq.item);
 
             if (! ((apos == bpos) && (aitem == bitem)))
                 return false;
@@ -1161,7 +1153,7 @@ subexp_eq (PFla_op_t *a, PFla_op_t *b)
             /* check only the equivalence of tuples and
              * types */
             for (unsigned int i = 0; i < a->schema.count; i++) {
-                if ( !(a->schema.items[i].type == 
+                if ( !(a->schema.items[i].type ==
                         b->schema.items[i].type))
                     return false;
             }
@@ -1221,7 +1213,7 @@ subexp_eq (PFla_op_t *a, PFla_op_t *b)
         {
             PFla_op_t *alchild = L (a);
             PFla_op_t *archild = R (a);
-            
+
             PFla_op_t *blchild = L (b);
             PFla_op_t *brchild = R (b);
 
@@ -1239,7 +1231,7 @@ subexp_eq (PFla_op_t *a, PFla_op_t *b)
                 PFalg_att_t bright = eff_attribute (brchild,
                                         b->sem.thetajoin.pred[i].right);
 
-                if ( !((aleft == bleft) && (aright == bright) && 
+                if ( !((aleft == bleft) && (aright == bright) &&
                         (a->sem.thetajoin.pred[i].comp == b->sem.thetajoin.pred[i].comp)))
                         return false;
             }
@@ -1258,9 +1250,9 @@ subexp_eq (PFla_op_t *a, PFla_op_t *b)
                 PFalg_att_t aproj = eff_attribute (achild,
                                     a->sem.proj.items[i].old);
                 PFalg_att_t bproj = eff_attribute (bchild,
-                                    b->sem.proj.items[i].old); 
+                                    b->sem.proj.items[i].old);
                 if (aproj != bproj)
-                    return false; 
+                    return false;
             }
 
 
@@ -1291,7 +1283,7 @@ subexp_eq (PFla_op_t *a, PFla_op_t *b)
         case la_intersect:
         case la_difference:
         {
-            return true; 
+            return true;
         } break;
         case la_distinct:
         {
@@ -1339,23 +1331,23 @@ subexp_eq (PFla_op_t *a, PFla_op_t *b)
             PFalg_att_t aatt2 = eff_attribute (achild, a->sem.binary.att2);
             PFalg_att_t batt1 = eff_attribute (bchild, b->sem.binary.att1);
             PFalg_att_t batt2 = eff_attribute (bchild, b->sem.binary.att2);
-            
+
             if (!((aatt1 == batt1) && (aatt2 == batt2)))
                 return false;
 
-            return true; 
+            return true;
         } break;
         case la_bool_not:
         {
             PFla_op_t *achild = L (a);
             PFla_op_t *bchild = L (b);
-            
-            PFalg_att_t aatt = eff_attribute (achild, a->sem.unary.att);     
+
+            PFalg_att_t aatt = eff_attribute (achild, a->sem.unary.att);
             PFalg_att_t batt = eff_attribute (bchild, b->sem.unary.att);
 
             if (!(aatt == batt))
                 return false;
-            
+
             return true;
         } break;
         case la_avg:
@@ -1367,7 +1359,7 @@ subexp_eq (PFla_op_t *a, PFla_op_t *b)
             PFla_op_t *achild = L (a);
             PFla_op_t *bchild = L (b);
 
-            PFalg_att_t aatt = eff_attribute (achild, a->sem.aggr.att); 
+            PFalg_att_t aatt = eff_attribute (achild, a->sem.aggr.att);
             PFalg_att_t batt = eff_attribute (bchild, b->sem.aggr.att);
 
             PFalg_att_t apart = eff_attribute (achild, a->sem.aggr.part);
@@ -1391,19 +1383,19 @@ subexp_eq (PFla_op_t *a, PFla_op_t *b)
             if (PFord_count (a->sem.rownum.sortby) != PFord_count (b->sem.rownum.sortby))
                 return false;
 
-            
+
             for (unsigned int i = 0; i < PFord_count (a->sem.rownum.sortby); i++) {
-                PFalg_att_t order1 = eff_attribute (achild, PFord_order_col_at (a->sem.rownum.sortby, i)); 
+                PFalg_att_t order1 = eff_attribute (achild, PFord_order_col_at (a->sem.rownum.sortby, i));
                 PFalg_att_t order2 = eff_attribute (bchild, PFord_order_col_at (b->sem.rownum.sortby, i));
 
                 if (!((order1 == order2) &&
-                        PFord_order_dir_at (a->sem.rownum.sortby, i) == 
-                            PFord_order_dir_at (b->sem.rownum.sortby, i))) 
+                        PFord_order_dir_at (a->sem.rownum.sortby, i) ==
+                            PFord_order_dir_at (b->sem.rownum.sortby, i)))
                     return false;
             }
 
-            if (!(eff_attribute (achild, a->sem.rownum.part) 
-                    == eff_attribute (bchild, b->sem.rownum.part))) 
+            if (!(eff_attribute (achild, a->sem.rownum.part)
+                    == eff_attribute (bchild, b->sem.rownum.part)))
                     return false;
 
             if (!eff_schema_eq (schema1, schema2, EFF (achild), EFF (bchild)))
@@ -1424,14 +1416,14 @@ subexp_eq (PFla_op_t *a, PFla_op_t *b)
             if (PFord_count (a->sem.rank.sortby) != PFord_count (b->sem.rank.sortby))
                 return false;
 
-            
+
             for (unsigned int i = 0; i < PFord_count (a->sem.rank.sortby); i++) {
-                PFalg_att_t order1 = eff_attribute (achild, PFord_order_col_at (a->sem.rank.sortby, i)); 
+                PFalg_att_t order1 = eff_attribute (achild, PFord_order_col_at (a->sem.rank.sortby, i));
                 PFalg_att_t order2 = eff_attribute (bchild, PFord_order_col_at (b->sem.rank.sortby, i));
 
                 if (!((order1 == order2) &&
-                        PFord_order_dir_at (a->sem.rank.sortby, i) == 
-                            PFord_order_dir_at (b->sem.rank.sortby, i))) 
+                        PFord_order_dir_at (a->sem.rank.sortby, i) ==
+                            PFord_order_dir_at (b->sem.rank.sortby, i)))
                     return false;
             }
 
@@ -1523,17 +1515,13 @@ subexp_eq (PFla_op_t *a, PFla_op_t *b)
         {
             assert (!"la_guide_step not yet supported");
         } break;
-        case la_id:
+        case la_doc_index_join:
         {
-            assert (!"la_id not yet supported");
-        } break;
-        case la_idref:
-        {
-            assert (!"la_idref not yet supported");
+            assert (!"la_doc_index_join not yet supported");
         } break;
         case la_doc_tbl:
         {
-            PFla_op_t *achild = L (a); 
+            PFla_op_t *achild = L (a);
             PFla_op_t *bchild = L (b);
 
             PFalg_att_t aiter = eff_attribute (achild,
@@ -1565,7 +1553,7 @@ subexp_eq (PFla_op_t *a, PFla_op_t *b)
             if (!((aatt == batt) && (adoc_col == bdoc_col)))
                 return false;
 
-            
+
             return true;
         } break;
         case la_twig:
@@ -1582,12 +1570,12 @@ subexp_eq (PFla_op_t *a, PFla_op_t *b)
         } break;
         case la_merge_adjacent:
         {
-            PFla_op_t *achild = R (a); 
+            PFla_op_t *achild = R (a);
             PFla_op_t *bchild = R (b);
 
             PFalg_att_t aiter_in = eff_attribute (achild,
                                                 a->sem.merge_adjacent.iter_in);
-            PFalg_att_t biter_in = eff_attribute (bchild,  
+            PFalg_att_t biter_in = eff_attribute (bchild,
                                                 b->sem.merge_adjacent.iter_in);
             PFalg_att_t apos_in = eff_attribute (achild,
                                                 a->sem.merge_adjacent.pos_in);
@@ -1595,10 +1583,10 @@ subexp_eq (PFla_op_t *a, PFla_op_t *b)
                                                 b->sem.merge_adjacent.pos_in);
             PFalg_att_t aitem_in = eff_attribute (achild,
                                                 b->sem.merge_adjacent.item_in);
-            PFalg_att_t bitem_in = eff_attribute (bchild,   
+            PFalg_att_t bitem_in = eff_attribute (bchild,
                                                 b->sem.merge_adjacent.item_in);
 
-            if ( !((aiter_in == biter_in) && (apos_in == bpos_in) && 
+            if ( !((aiter_in == biter_in) && (apos_in == bpos_in) &&
                     (aitem_in == bitem_in)) )
                 return false;
 
@@ -1627,7 +1615,7 @@ subexp_eq (PFla_op_t *a, PFla_op_t *b)
         {
             PFla_op_t *achild = L (a);
             PFla_op_t *bchild = L (b);
-            
+
             PFalg_att_t aatt = eff_attribute (achild,
                                     a->sem.err.att);
             PFalg_att_t batt = eff_attribute (bchild,
@@ -1638,7 +1626,7 @@ subexp_eq (PFla_op_t *a, PFla_op_t *b)
 
             if (!(strcmp (a->sem.err.str, b->sem.err.str) == 0))
                 return false;
-            
+
             return true;
         } break;
         case la_nil:
@@ -1694,7 +1682,7 @@ subexp_eq (PFla_op_t *a, PFla_op_t *b)
             PFla_op_t *brchild = R (a);
 
             PFalg_att_t aiter = eff_attribute (alchild,
-                                            a->sem.string_join.iter); 
+                                            a->sem.string_join.iter);
             PFalg_att_t biter = eff_attribute (blchild,
                                             b->sem.string_join.iter);
             PFalg_att_t aitem = eff_attribute (alchild,
@@ -1756,7 +1744,7 @@ invert_effmap (PFarray_t *effmap)
 /* make difference between original and cse operator
  * explicit
  */
-static PFarray_t*  
+static PFarray_t*
 patch_projections (PFla_op_t *a, PFla_op_t *b)
 {
     PFarray_t *effmap;
@@ -1767,7 +1755,7 @@ patch_projections (PFla_op_t *a, PFla_op_t *b)
     effmap = PFarray (sizeof (eff_map_t));
 
     switch (a->kind) {
-        case la_serialize:
+        case la_serialize_seq:
         {
             return NULL;
         } break;
@@ -1775,7 +1763,7 @@ patch_projections (PFla_op_t *a, PFla_op_t *b)
         case la_empty_tbl:
         {
             for (unsigned int i = 0; i < a->schema.count; i++) {
-               *(eff_map_t *) PFarray_add (effmap) = 
+               *(eff_map_t *) PFarray_add (effmap) =
                 (eff_map_t)
                 {
                     .ori_att = a->schema.items[i].name,
@@ -1816,7 +1804,7 @@ patch_projections (PFla_op_t *a, PFla_op_t *b)
                     fatt = eff_attribute_ (EFF (lchild), a->schema.items[i].name);
                     found = true;
                 }
-                    
+
                 if (!found)
                     if (eff_attribute_ (EFF (rchild), a->schema.items[i].name) != att_NULL) {
                         fatt = eff_attribute_ (EFF (rchild), a->schema.items[i].name);
@@ -1826,11 +1814,11 @@ patch_projections (PFla_op_t *a, PFla_op_t *b)
                 if (fatt == att_NULL)
                     assert (!"this should not happen");
 
-                *(eff_map_t *) PFarray_add (effmap) = 
+                *(eff_map_t *) PFarray_add (effmap) =
                     (eff_map_t)
                     {
                         .ori_att = a->schema.items[i].name,
-                        .eff_att = fatt 
+                        .eff_att = fatt
                     };
 
                 fatt = att_NULL;
@@ -1840,7 +1828,7 @@ patch_projections (PFla_op_t *a, PFla_op_t *b)
         case la_project:
         {
            for(unsigned int i = 0; i < a->sem.proj.count; i++) {
-                *(eff_map_t *) PFarray_add (effmap) = 
+                *(eff_map_t *) PFarray_add (effmap) =
                     (eff_map_t)
                     {
                         .ori_att = a->sem.proj.items[i].new,
@@ -1861,7 +1849,7 @@ patch_projections (PFla_op_t *a, PFla_op_t *b)
         case la_difference:
         {
             for (unsigned int i = 0; i < a->schema.count; i++) {
-                *(eff_map_t *) PFarray_add (effmap) = 
+                *(eff_map_t *) PFarray_add (effmap) =
                     (eff_map_t)
                     {
                         .ori_att = a->schema.items[i].name,
@@ -1879,24 +1867,24 @@ patch_projections (PFla_op_t *a, PFla_op_t *b)
         {
             PFla_op_t *child = L (a);
 
-            *(eff_map_t *) PFarray_add (effmap) = 
+            *(eff_map_t *) PFarray_add (effmap) =
                 (eff_map_t)
                 {
                     .ori_att = a->sem.fun_1to1.res,
                     .eff_att = b->sem.fun_1to1.res
                 };
-            
+
             PFalg_schema_t schema = PFalg_schema_diff (a->schema, a->sem.fun_1to1.res);
 
             eff_schema_patch (effmap, schema, EFF (child));
 
         } break;
-        case la_num_eq: 
+        case la_num_eq:
         case la_num_gt:
         {
             PFla_op_t *child = L (a);
 
-            *(eff_map_t *) PFarray_add (effmap) = 
+            *(eff_map_t *) PFarray_add (effmap) =
                 (eff_map_t)
                 {
                     .ori_att = a->sem.binary.res,
@@ -1906,14 +1894,14 @@ patch_projections (PFla_op_t *a, PFla_op_t *b)
             PFalg_schema_t schema = PFalg_schema_diff (a->schema, a->sem.binary.res);
 
             eff_schema_patch (effmap, schema, EFF (child));
-            
+
         } break;
         case la_bool_and:
         case la_bool_or:
         {
             PFla_op_t *child = L (a);
 
-            *(eff_map_t *) PFarray_add (effmap) = 
+            *(eff_map_t *) PFarray_add (effmap) =
                 (eff_map_t)
                 {
                     .ori_att = a->sem.binary.res,
@@ -1928,7 +1916,7 @@ patch_projections (PFla_op_t *a, PFla_op_t *b)
         {
             PFla_op_t *child = L (a);
 
-            *(eff_map_t *) PFarray_add (effmap) = 
+            *(eff_map_t *) PFarray_add (effmap) =
                 (eff_map_t)
                 {
                     .ori_att = a->sem.unary.res,
@@ -1947,7 +1935,7 @@ patch_projections (PFla_op_t *a, PFla_op_t *b)
         {
             PFla_op_t *child = L (a);
 
-            *(eff_map_t *) PFarray_add (effmap) = 
+            *(eff_map_t *) PFarray_add (effmap) =
                 (eff_map_t)
                 {
                     .ori_att = a->sem.aggr.res,
@@ -2019,9 +2007,9 @@ patch_projections (PFla_op_t *a, PFla_op_t *b)
                     .ori_att = a->sem.type.res,
                     .eff_att = b->sem.type.res
                 };
-            
+
             PFalg_schema_t schema = PFalg_schema_diff (a->schema, a->sem.type.res);
-            
+
             eff_schema_patch (effmap, schema, EFF (child));
 
         } break;
@@ -2057,13 +2045,9 @@ patch_projections (PFla_op_t *a, PFla_op_t *b)
         {
             assert (!"la_guide_step not yet supported");
         } break;
-        case la_id:
+        case la_doc_index_join:
         {
-            assert (!"la_id not yet supported");
-        } break;
-        case la_idref:
-        {
-            assert (!"la_idref not yet supported");
+            assert (!"la_doc_index_join not yet supported");
         } break;
 
         case la_doc_tbl:
@@ -2149,7 +2133,7 @@ patch_projections (PFla_op_t *a, PFla_op_t *b)
         case la_roots:
         {
             PFla_op_t *child = L (a);
-            
+
             PFalg_schema_t schema = a->schema;
 
             eff_schema_patch (effmap, schema, EFF(child));
@@ -2225,7 +2209,7 @@ patch_projections (PFla_op_t *a, PFla_op_t *b)
                     .ori_att = a->sem.string_join.iter_res,
                     .eff_att = b->sem.string_join.iter_res
                 };
-            *(eff_map_t *) PFarray_add (effmap) = 
+            *(eff_map_t *) PFarray_add (effmap) =
                 (eff_map_t)
                 {
                     .ori_att = a->sem.string_join.item_res,
@@ -2268,14 +2252,14 @@ new_csenode (PFla_op_t *clone, PFla_op_t *left, PFla_op_t *right)
 
                bool differ = false;
                for (unsigned int i = 0; i < left->schema.count; i++) {
-                   PFalg_att_t new = left->schema.items[i].name; 
+                   PFalg_att_t new = left->schema.items[i].name;
                    PFalg_att_t old = eff_attribute_ (patch1, left->schema.items[i].name);
                    if (new != old) differ = true;
                    proj1[i] = PFalg_proj (new, old);
                }
 
                for (unsigned int i = 0; i < right->schema.count; i++) {
-                   PFalg_att_t new = right->schema.items[i].name; 
+                   PFalg_att_t new = right->schema.items[i].name;
                    PFalg_att_t old = eff_attribute_ (patch2, right->schema.items[i].name);
                    if (new != old) differ = true;
                    proj2[i] = PFalg_proj (new, old);
@@ -2353,20 +2337,20 @@ la_cse (PFla_op_t *n)
 
         assembly1 = EFF (L (n));
         assembly2 = EFF (R (n));
-        
+
         resolve_name_conflicts (clone);
         apply_patch (clone, assembly1, assembly2);
-       
-        *(PFla_op_t **) PFarray_add (a) = 
+
+        *(PFla_op_t **) PFarray_add (a) =
                 temp = new_csenode (clone, L (n), R (n));
 
-        /* mark n as the original node caused the 
+        /* mark n as the original node caused the
          * insertion */
         INORI (temp, n);
 
     }
 
-    /* map n to the node in the cse plan */ 
+    /* map n to the node in the cse plan */
     INCSE (n, temp);
 
     /* patch the attribute list */
@@ -2386,7 +2370,7 @@ la_cse (PFla_op_t *n)
  * We spapped this out from CSE to reduce
  * complexity.
  */
-static PFla_op_t* 
+static PFla_op_t*
 remove_dummies (PFla_op_t *n)
 {
     assert (n);
