@@ -9,6 +9,18 @@ function tst903();
     exit (go,i);
 end tst903;
 
+t0:= alarm.usec();
+user.tst903();
+t1:= alarm.usec();
+t1:= t1-t0;
+io.printf("#timing %d\n",t1);
+
 compiler.MALtoC("user","tst903","mal01");
 compiler.mcc("mal01");
 compiler.load("user","tst903","mal01");
+
+t0:= alarm.usec();
+user.tst903();
+t1:= alarm.usec();
+t1:= t1-t0;
+io.printf("#timing %d\n",t1);
