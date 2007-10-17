@@ -324,6 +324,8 @@ struct PFla_pair_t PFbui_fn_not_bln (const PFla_op_t *loop,
 /* 11.1. Additional Constructor Functions for QNames */
 struct PFla_pair_t PFbui_fn_resolve_qname
                (const PFla_op_t *loop, bool ordering, struct PFla_pair_t *args);
+struct PFla_pair_t PFbui_fn_qname (const PFla_op_t *loop, bool ordering,
+                                   struct PFla_pair_t *args);
 
 /* 14 FUNCTIONS AND OPERATORS ON NODES */
 /* 14.1 fn:name */
@@ -560,6 +562,16 @@ struct PFla_pair_t PFbui_pf_string_value_elem_attr (const PFla_op_t *loop,
 struct PFla_pair_t PFbui_pf_string_value (const PFla_op_t *loop,
                                           bool ordering,
                                           struct PFla_pair_t *args);
+
+/* #2. PATHFINDER SPECIFIC DOCUMENT MANAGEMENT FUNCTIONS */
+struct PFla_pair_t PFbui_pf_fragment (const PFla_op_t *loop, bool ordering,
+                                      struct PFla_pair_t *args);
+struct PFla_pair_t PFbui_pf_attribute (const PFla_op_t *loop, bool ordering,
+                                       struct PFla_pair_t *args);
+struct PFla_pair_t PFbui_pf_text (const PFla_op_t *loop, bool ordering,
+                                  struct PFla_pair_t *args);
+struct PFla_pair_t PFbui_pf_supernode (const PFla_op_t *loop, bool ordering,
+                                       struct PFla_pair_t *args);
 
 #endif   /* BUITLINS_H */
 

@@ -256,6 +256,9 @@ enum PFalg_fun_t {
     , alg_fun_fn_starts_with  /**< fn:starts-with */
     , alg_fun_fn_ends_with    /**< fn:ends-with */
     , alg_fun_fn_number       /**< fn:number */
+    , alg_fun_fn_qname        /**< fn:QName */
+    , alg_fun_pf_fragment     /**< #pf:fragment */
+    , alg_fun_pf_supernode    /**< #pf:supernode */
 };
 typedef enum PFalg_fun_t PFalg_fun_t;
 

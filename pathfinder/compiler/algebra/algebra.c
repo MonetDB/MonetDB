@@ -957,6 +957,9 @@ PFalg_fun_str (PFalg_fun_t fun)
         case alg_fun_fn_starts_with:  return "fn:starts-with";
         case alg_fun_fn_ends_with:    return "fn:ends-with";
         case alg_fun_fn_number:       return "fn:number";
+        case alg_fun_fn_qname:        return "fn:QName";
+        case alg_fun_pf_fragment:     return "#pf:fragment";
+        case alg_fun_pf_supernode:    return "#pf:supernode";
     }
     PFoops (OOPS_FATAL, "unknown algebraic function name (%i)", fun);
     return NULL;

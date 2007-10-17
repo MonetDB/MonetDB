@@ -3643,6 +3643,72 @@ reduce (PFpa_op_t * p, int goalnt)
                                  lit_str ("We do not support the value NaN.")),
                              nop ()));
                 }   break;
+
+                case alg_fun_fn_qname:
+                {
+                    PFalg_att_t att1, att2;
+                    att1 = p->sem.fun_1to1.refs.atts[0];
+                    att2 = p->sem.fun_1to1.refs.atts[0];
+
+                    PFmil_t *str = NULL;
+                    mvar_t  *offset  = new_var (1);
+                    mvar_t  *prefix  = new_var (1);
+                    mvar_t  *local   = new_var (1);
+                    mvar_t  *err_str = new_var (1);
+                    PFmil_t *v_cast  = VAR (L(p)->env, att1, aat_str),
+                            *v_uri   = VAR (L(p)->env, att2, aat_str);
+
+                    /* split up strings using ``:'' as delimiter */
+                    /* FIXME: currently we we don't retrieve the URI */
+                    execute (
+                        assgn (var (err_str->name),
+                               check_qnames (v_cast)),
+                        if_ (not (isnil (var (err_str->name))),
+                             error (arg (lit_str ("err:FORG0001. "
+                                                  "illegal QName '%s'."),
+                                         var (err_str->name))),
+                             nop ()),
+                        assgn (var (offset->name),
+                               msearch (v_cast, lit_str (":"))),
+                        assgn (var (prefix->name),
+                               mstring2 (v_cast,
+                                         lit_int (0),
+                                         var (offset->name))),
+                        assgn (var (local->name),
+                               mstring (v_cast,
+                                        madd (lit_int (1),
+                                              var (offset->name)))));
+                    /* FIXME: do not allow "|" uris if we have
+                       no namespace prefix */
+
+                    /* add_qnames changes the working set 
+                       in 'var (PF_MIL_VAR_WS)' as side effect */
+                    str = add_qnames (
+                              var (prefix->name),
+                              v_uri,
+                              var (local->name),
+                              var (PF_MIL_VAR_WS));
+
+                    execute (assgn (var (res->name), str));
+
+                    unpin (offset, 1);
+                    unpin (prefix, 1);
+                    unpin (local, 1);
+                    unpin (err_str, 1);
+
+                    res_type = aat_qname;
+                }   break;
+                
+                case alg_fun_pf_fragment:
+                    res_type = aat_pfrag;
+                    res = env_mvar (L(p)->env,
+                                    p->sem.fun_1to1.refs.atts[0],
+                                    aat_node);
+                    break;
+
+                case alg_fun_pf_supernode:
+                    assert (!"no implementation here");
+                    break;
             }
             
             /* and put the result into p's environment */

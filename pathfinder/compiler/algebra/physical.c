@@ -1581,6 +1581,31 @@ PFpa_fun_1to1 (const PFpa_op_t *n,
             assert (refs.count == 1);
             res_type = aat_dbl;
             break;
+
+        case alg_fun_fn_qname:
+            assert (n->sem.fun_1to1.refs.count == 2);
+            /* make sure both attributes are of type string */
+            assert (n->schema.items[ix[0]].type == aat_str &&
+                    n->schema.items[ix[1]].type == aat_str);
+
+            res_type = aat_qname;
+            break;
+
+        case alg_fun_pf_fragment:
+            assert (n->sem.fun_1to1.refs.count == 1);
+            /* make sure both attributes are of type string */
+            assert (n->schema.items[ix[0]].type & aat_node);
+
+            res_type = aat_pnode;
+            break;
+
+        case alg_fun_pf_supernode:
+            assert (n->sem.fun_1to1.refs.count == 1);
+            /* make sure both attributes are of type string */
+            assert (n->schema.items[ix[0]].type & aat_node);
+
+            res_type = n->schema.items[ix[0]].type;
+            break;
     }
 
     /* create new generic function operator node */

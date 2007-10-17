@@ -1734,6 +1734,45 @@ PFbui_fn_resolve_qname (const PFla_op_t *loop, bool ordering,
         .frag = PFla_empty_set () };
 }
 
+/**
+ * fn:QName (xs:string?, xs:string)
+ */
+struct PFla_pair_t
+PFbui_fn_qname (const PFla_op_t *loop, bool ordering,
+                struct PFla_pair_t *args)
+{
+    (void) ordering;
+
+    return (struct PFla_pair_t) {
+        .rel = project (
+                   fun_1to1 (
+                       eqjoin (
+                           disjunion (
+                               args[0].rel,
+                               attach (
+                                   attach (
+                                       difference (
+                                           loop,
+                                           project (
+                                               args[0].rel,
+                                               proj (att_iter, att_iter))),
+                                       att_pos, lit_nat (1)),
+                                   att_item, lit_str ("|"))),
+                           project (args[1].rel,
+                                    proj (att_iter1, att_iter),
+                                    proj (att_item1, att_item)),
+                           att_iter,
+                           att_iter1),
+                       alg_fun_fn_qname,
+                       att_res,
+                       attlist (att_item, att_item1)),
+                proj (att_iter, att_iter),
+                proj (att_pos, att_pos),
+                proj (att_item, att_res)),
+
+        .frag = PFla_empty_set ()};
+}
+
 /* ----------------------------------- */
 /* 14 FUNCTIONS AND OPERATORS ON NODES */
 /* ----------------------------------- */
@@ -3719,6 +3758,120 @@ PFbui_pf_string_value (const PFla_op_t *loop, bool ordering,
     (void) loop; (void) ordering;
 
     return args[0];
+}
+
+/* ----------------------------------------------------- */
+/* #2. PATHFINDER SPECIFIC DOCUMENT MANAGEMENT FUNCTIONS */
+/* ----------------------------------------------------- */
+
+/**
+ * Build up operator tree for built-in function '#pf:fragment'.
+ */
+struct PFla_pair_t
+PFbui_pf_fragment (const PFla_op_t *loop, bool ordering,
+                   struct PFla_pair_t *args)
+{
+    (void) loop; (void) ordering;
+
+    return (struct PFla_pair_t) {
+        .rel = project (fun_1to1 (
+                            args[0].rel,
+                            alg_fun_pf_fragment,
+                            att_res,
+                            attlist (att_item)),
+                        proj (att_iter, att_iter),
+                        proj (att_pos, att_pos),
+                        proj (att_item, att_res)),
+        .frag = args[0].frag };
+}
+
+/**
+ * Build up operator tree for built-in function '#pf:attribute'.
+ */
+struct PFla_pair_t
+PFbui_pf_attribute (const PFla_op_t *loop, bool ordering,
+                    struct PFla_pair_t *args)
+{
+    (void) loop; (void) ordering;
+
+    return (struct PFla_pair_t) {
+        .rel = rank (
+                   distinct (
+                       project (
+                           doc_index_join (
+                               PFla_set_to_la (args[0].frag),
+                               eqjoin (project (args[0].rel,
+                                                proj (att_iter, att_iter),
+                                                proj (att_item, att_item)),
+                                       project (args[1].rel,
+                                                proj (att_iter1, att_iter),
+                                                proj (att_item1, att_item)),
+                                       att_iter,
+                                       att_iter1),
+                                la_dj_attr,
+                                att_item1,
+                                att_res,
+                                att_item),
+                            proj (att_iter, att_iter),
+                            proj (att_item, att_res))),
+                   att_pos,
+                   sortby (att_item)),
+        .frag = args[0].frag };
+}
+
+/**
+ * Build up operator tree for built-in function '#pf:text'.
+ */
+struct PFla_pair_t
+PFbui_pf_text (const PFla_op_t *loop, bool ordering,
+               struct PFla_pair_t *args)
+{
+    (void) loop; (void) ordering;
+
+    return (struct PFla_pair_t) {
+        .rel = rank (
+                   distinct (
+                       project (
+                           doc_index_join (
+                               PFla_set_to_la (args[0].frag),
+                               eqjoin (project (args[0].rel,
+                                                proj (att_iter, att_iter),
+                                                proj (att_item, att_item)),
+                                       project (args[1].rel,
+                                                proj (att_iter1, att_iter),
+                                                proj (att_item1, att_item)),
+                                       att_iter,
+                                       att_iter1),
+                                la_dj_text,
+                                att_item1,
+                                att_res,
+                                att_item),
+                            proj (att_iter, att_iter),
+                            proj (att_item, att_res))),
+                   att_pos,
+                   sortby (att_item)),
+        .frag = args[0].frag };
+}
+
+/**
+ * Build up operator tree for built-in function '#pf:supernode'.
+ */
+struct PFla_pair_t
+PFbui_pf_supernode (const PFla_op_t *loop, bool ordering,
+                    struct PFla_pair_t *args)
+{
+    (void) loop; (void) ordering;
+
+    return (struct PFla_pair_t) {
+        .rel = project (fun_1to1 (
+                            args[0].rel,
+                            alg_fun_pf_supernode,
+                            att_res,
+                            attlist (att_item)),
+                        proj (att_iter, att_iter),
+                        proj (att_pos, att_pos),
+                        proj (att_item, att_res)),
+        .frag = args[0].frag };
 }
 
 /* vim:set shiftwidth=4 expandtab: */
