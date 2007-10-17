@@ -850,9 +850,9 @@ MCloadFunction(int *ret, str *mod, str *fcn, str *fname){
 str 
 MCmcc(int *ret, str *fname){
 	char buf[1024];
+
 	snprintf(buf,1024,"mcc %s",*fname);
-	(void) system(buf);
-	(void) ret;
+	*ret = system(buf);
 	return MAL_SUCCEED;
 }
 @}
