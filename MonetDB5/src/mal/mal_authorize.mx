@@ -348,9 +348,10 @@ AUTHcheckCredentials(
 		BATiter bi = bat_iterator(b);
 
 		if (*scenario == NULL || strNil(*scenario)) {
+			BBPunfix(b->batCacheid);
 			/* of course we DO NOT tell the exact reason here again */
-			throw(INVCRED, "checkCredentials", "Invalid credentials for user '%s'",
-					*username);
+			throw(INVCRED, "checkCredentials",
+					"Invalid credentials for user '%s'", *username);
 		}
 
 		/* ok, there are some tuples that we have to consider */
@@ -360,15 +361,19 @@ AUTHcheckCredentials(
 			if (strcmp(*scenario, tmp) == 0) {
 				/* YAY!  fun!  party!  We are granted access! */
 				*uid = *id;
+				BBPunfix(b->batCacheid);
 				return(MAL_SUCCEED);
 			}
 		}
 
+		BBPunfix(b->batCacheid);
 		/* uh oh... that we made it till here means it's wrong */
 		throw(INVCRED, "checkCredentials", "Invalid credentials for user '%s'",
 				*username);
 	} else {
 		/* no scenario restriction applies, so everything is good */
+		if (b) 
+			BBPunfix(b->batCacheid);
 		*uid = *id;
 		return(MAL_SUCCEED);
 	}
