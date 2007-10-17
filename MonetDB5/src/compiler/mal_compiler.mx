@@ -851,7 +851,7 @@ str
 MCmcc(int *ret, str *fname){
 	char buf[1024];
 	snprintf(buf,1024,"mcc %s",*fname);
-	system(buf);
+	(void) system(buf);
 	(void) ret;
 	return MAL_SUCCEED;
 }
