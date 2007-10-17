@@ -485,8 +485,8 @@ reduce (PFla_op_t *p, int goalnt)
                 relabel (p, kids);
                 break;
             }
-            /* continue for rule 6 */
-            if (rule == 7)
+            /* continue for rule 7 */
+            if (rule != 7)
                 break;
         /* Rel:    cross (lit_tbl, lit_tbl) */
 

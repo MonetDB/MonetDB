@@ -65,23 +65,13 @@ infer_card (PFla_op_t *n)
 {
     switch (n->kind) {
         case la_serialize_seq:
-        case la_serialize_rel:
         case la_doc_access:
         case la_content:
             /* cardinality stays the same */
             n->prop->card = R(n)->prop->card;
             break;
 
-        case la_lit_tbl:
-            /* number of tuples */
-            n->prop->card = n->sem.lit_tbl.count;
-            break;
-
-        case la_empty_tbl:
-            /* zero tuples */
-            n->prop->card = 0;
-            break;
-
+        case la_serialize_rel:
         case la_attach:
         case la_project:
         case la_fun_1to1:
@@ -110,6 +100,16 @@ infer_card (PFla_op_t *n)
         case la_dummy:
             /* cardinality stays the same */
             n->prop->card = L(n)->prop->card;
+            break;
+
+        case la_lit_tbl:
+            /* number of tuples */
+            n->prop->card = n->sem.lit_tbl.count;
+            break;
+
+        case la_empty_tbl:
+            /* zero tuples */
+            n->prop->card = 0;
             break;
 
         case la_cross:
