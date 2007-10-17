@@ -1494,6 +1494,7 @@ la_xml (PFarray_t *xml, PFla_op_t *n)
                                 PFatt_str (n->sem.pos_sel.part));
 
             PFarray_printf (xml, "    </content>\n");
+            break;
 
         case la_fun_1to1:
             PFarray_printf (xml,
