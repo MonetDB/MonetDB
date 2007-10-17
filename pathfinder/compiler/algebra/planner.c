@@ -545,9 +545,10 @@ plan_thetajoin (const PFla_op_t *n)
 static PFplanlist_t *
 plan_dep_unique_thetajoin (const PFla_op_t *n)
 {
-    PFplanlist_t  *ret     = new_planlist (),
-                  *lsorted = new_planlist (),
-                  *rsorted = new_planlist ();
+    PFplanlist_t *ret     = new_planlist (),
+                 *lsorted = new_planlist (),
+                 *rsorted = new_planlist ();
+    PFalg_proj_t  res_proj;
 
     PFalg_simple_type_t cur_type;
 
@@ -579,6 +580,9 @@ plan_dep_unique_thetajoin (const PFla_op_t *n)
         !monomorphic (cur_type) ||
         cur_type & aat_node)
         return ret;
+
+    res_proj = PFalg_proj (L(n)->sem.proj.items[0].new,
+                           LL(n)->sem.thetajoin.pred[0].left);
 
     /* make sure the left input is sorted by the left sort criterion */
     for (unsigned int i = 0; i < PFarray_last (L(LL(n))->plans); i++)
@@ -613,7 +617,7 @@ plan_dep_unique_thetajoin (const PFla_op_t *n)
                               *(plan_t **) PFarray_at (lsorted, l),
                               *(plan_t **) PFarray_at (rsorted, r)),
                           1,
-                          L(n)->sem.proj.items));
+                          &res_proj));
         }
 
     return ret;

@@ -793,52 +793,27 @@ reduce (PFla_op_t *p, int goalnt)
                 relabel (p, kids);
                 break;
             } else {
-                /* if at least one projection was in between we
-                   have to apply the projection between theta-join
-                   and attach operator */
-                PFalg_proj_t *proj_list;
-                unsigned int j, count = 0;
+                PFla_op_t *res;
                 PFalg_sel_t *pred = PFmalloc (sizeof (PFalg_sel_t));
                 pred[0] = PFalg_sel (comp, item1, item2);
 
-                /* create projection list */
-                proj_list = PFmalloc ((p->schema.count - 1)*
-                                      sizeof (*(proj_list)));
+                res = PFla_thetajoin (left, right, 1, pred);
+                if (proj2)
+                    res = PFla_project_ (res,
+                                         proj2->sem.proj.count,
+                                         proj2->sem.proj.items);
 
-                for (i = 0; i < p->schema.count; i++) {
-                    /* use current schema as starting point
-                       (discarding the result column of the comparison) */
-                    if (p->schema.items[i].name != p->sem.select.att)
-                        proj_list[count] = PFalg_proj (
-                                               p->schema.items[i].name,
-                                               p->schema.items[i].name);
+                res = PFla_attach (res,
+                                   p->sem.select.att,
+                                   PFalg_lit_bln (true));
 
-                    /* apply the renaming of the first projection */
-                    if (proj)
-                        for (j = 0; j < proj->sem.proj.count; j++)
-                            if (proj->sem.proj.items[j].new ==
-                                proj_list[count].old)
-                                proj_list[count].old
-                                    = proj->sem.proj.items[j].old;
+                if (proj)
+                    res = PFla_project_ (res,
+                                         proj->sem.proj.count,
+                                         proj->sem.proj.items);
 
-                    /* apply the renaming of the second projection */
-                    if (proj2)
-                        for (j = 0; j < proj2->sem.proj.count; j++)
-                            if (proj2->sem.proj.items[j].new ==
-                                proj_list[count].old)
-                                proj_list[count].old
-                                    = proj2->sem.proj.items[j].old;
+                *p = *res;
 
-                    /* increase the counter analogously */
-                    if (p->schema.items[i].name != p->sem.select.att)
-                        count++;
-                }
-
-                *p = *PFla_attach (
-                          PFla_project_ (
-                              PFla_thetajoin (left, right, 1, pred),
-                              p->schema.count - 1, proj_list),
-                          p->sem.select.att, PFalg_lit_bln (true));
                 SEEN(p) = false;
                 SEEN(L(p)) = false;
                 SEEN(LL(p)) = false;
