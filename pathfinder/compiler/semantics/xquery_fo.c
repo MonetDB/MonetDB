@@ -95,7 +95,7 @@ PFfun_xquery_fo (void)
      *    recommendation (see http://www.w3.org/TR/xpath-functions/).
      */
     {
-        
+
 /* 2. ACCESSORS */
 /* 2.3. fn:string */
       /* fn:string () as string */
@@ -183,7 +183,7 @@ PFfun_xquery_fo (void)
             .par_ty = (PFty_t[]) { PFty_opt (PFty_item ()) },
             .ret_ty = PFty_xs_string () } },
         .alg = PFbui_fn_string }
-    
+
 /* 2.4. fn:data */
       /* fn:data ((atomic|attribute)*) as atomic* */
       /* (F&O 2.4) */
@@ -263,8 +263,8 @@ PFfun_xquery_fo (void)
             .par_ty = (PFty_t[]) { PFty_star (PFty_item ()) },
             .ret_ty = PFty_star (PFty_atomic ()) } },
         .alg = PFbui_fn_data }
-    
-    
+
+
 /* 3. THE ERROR FUNCTION */
     , /* fn:error () as none */
       { .ns = PFns_fn, .loc = "error",
@@ -282,7 +282,7 @@ PFfun_xquery_fo (void)
                                 PFty_xs_string () },
             .ret_ty = PFty_none () } } }
 
-    
+
 /* 4. THE TRACE FUNCTION */
     , /* fn:trace (item*, string) as item* */
       { .ns = PFns_fn, .loc = "trace",
@@ -410,7 +410,7 @@ PFfun_xquery_fo (void)
                                    PFty_opt (PFty_xs_double ()) },
             .ret_ty = PFty_opt (PFty_xs_double ()) } },
         .alg = PFbui_op_numeric_modulo }
-    
+
 /* 6.3. Comparison Operators on Numeric Values */
     , /* op:eq (integer, integer) as boolean */
       { .ns = PFns_op, .loc = "eq",
@@ -1024,12 +1024,12 @@ PFfun_xquery_fo (void)
       { .ns = PFns_fn, .loc = "string-length",
         .arity = 1, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_opt (PFty_xs_string ()) },
-            .ret_ty = PFty_xs_integer () } } }
+            .ret_ty = PFty_xs_integer () } },
+        .alg = PFbui_fn_string_length_opt }
     , /* fn:normalize-space () as string */
       { .ns = PFns_fn, .loc = "normalize-space",
         .arity = 0,  .sig_count = 1, .sigs = { {
-            .ret_ty = PFty_xs_string () } },
-        .alg = NULL }
+            .ret_ty = PFty_xs_string () } } }
     , /* fn:normalize-space (string?) as string */
       { .ns = PFns_fn, .loc = "normalize-space",
         .arity = 1, .sig_count = 1, .sigs = { {
@@ -1039,12 +1039,14 @@ PFfun_xquery_fo (void)
       { .ns = PFns_fn, .loc = "upper-case",
         .arity = 1, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_opt (PFty_xs_string ()) },
-            .ret_ty = PFty_xs_string () } } }
+            .ret_ty = PFty_xs_string () } },
+        .alg = PFbui_fn_upper_case_opt }
     , /* fn:lower-case (string?) as string */
       { .ns = PFns_fn, .loc = "lower-case",
         .arity = 1, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_opt (PFty_xs_string ()) },
-            .ret_ty = PFty_xs_string () } } }
+            .ret_ty = PFty_xs_string () } },
+        .alg = PFbui_fn_lower_case_opt }
     , /* fn:translate (string?, string, string) as string */
       { .ns = PFns_fn, .loc = "translate",
         .arity = 3, .sig_count = 1, .sigs = { {
@@ -1101,7 +1103,7 @@ PFfun_xquery_fo (void)
             .par_ty = (PFty_t[]) { PFty_opt (PFty_xs_string ()),
                                 PFty_opt (PFty_xs_string ()) },
             .ret_ty = PFty_xs_string () } } }
-    
+
 /* 7.6. String Functions that Use Pattern Matching */
     , /* fn:matches(string?, string) as boolean */
       { .ns = PFns_fn, .loc = "matches",
@@ -1227,7 +1229,7 @@ PFfun_xquery_fo (void)
             .par_ty = (PFty_t[]) { PFty_opt (PFty_node ()) },
             .ret_ty = PFty_xs_string () } } }
 
-/* 14.4. fn:number */    
+/* 14.4. fn:number */
     , /* fn:number () as double */
       { .ns = PFns_fn, .loc = "number",
         .arity = 0, .sig_count = 1, .sigs = { {
@@ -1279,7 +1281,7 @@ PFfun_xquery_fo (void)
         .arity = 1, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_opt (PFty_node ()) },
             .ret_ty = PFty_opt (PFty_node()) } } }
-    
+
 
 /* 15. FUNCTIONS AND OPERATORS ON SEQUENCES */
 /* 15.1. General Functions and Operators on Sequences */
@@ -1642,7 +1644,7 @@ PFfun_xquery_fo (void)
         .arity = 1, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_xs_string () },
             .ret_ty = PFty_star( PFty_xs_anyNode ()) } } }
-    
+
 
 /* 16. CONTEXT FUNCTIONS */
 /* 16.1. fn:position */

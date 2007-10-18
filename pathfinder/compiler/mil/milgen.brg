@@ -3550,6 +3550,44 @@ reduce (PFpa_op_t * p, int goalnt)
                                                           res_type))))));
                 }   break;
 
+                case alg_fun_fn_string_length:
+                {
+                    PFalg_att_t         att;
+
+                    att = p->sem.fun_1to1.refs.atts[0];
+                    res_type = aat_int;
+
+                    execute (
+                        assgn (var (res->name),
+                               mcast ( implty (res_type),
+                                       mlength ( 
+                                           VAR (L(p)->env, att, aat_str)))));
+
+                }   break;
+
+                case alg_fun_fn_upper_case:
+                case alg_fun_fn_lower_case:
+                {
+                    PFmil_t * (*op) (const PFmil_t *) = NULL;
+                    PFalg_att_t         att;
+
+                    att = p->sem.fun_1to1.refs.atts[0];
+                    res_type = aat_str;
+
+                    switch (p->sem.fun_1to1.kind) {
+                        case alg_fun_fn_upper_case:
+                            op = PFmil_mtoUpper; break;
+                        case alg_fun_fn_lower_case:
+                            op = PFmil_mtoLower; break;
+                        default: break;
+                    }
+
+                    execute (
+                        assgn (var (res->name),
+                               op (VAR (L(p)->env, att, aat_str))));
+
+                }   break;
+
                 case alg_fun_fn_contains:
                 {
                     PFalg_att_t         att1, att2;

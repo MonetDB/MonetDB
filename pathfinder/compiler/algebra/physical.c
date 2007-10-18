@@ -1565,6 +1565,23 @@ PFpa_fun_1to1 (const PFpa_op_t *n,
 
             res_type = aat_str;
             break;
+
+        case alg_fun_fn_string_length:
+            assert (refs.count == 1);
+            /* make sure the attribute is of type string */
+            assert (n->schema.items[ix[0]].type == aat_str);
+
+            res_type = aat_int;
+            break;
+
+        case alg_fun_fn_upper_case:
+        case alg_fun_fn_lower_case:
+            assert (refs.count == 1);
+            /* make sure the attribute is of type string */
+            assert (n->schema.items[ix[0]].type == aat_str);
+
+            res_type = aat_str;
+            break;
             
         case alg_fun_fn_contains:
         case alg_fun_fn_starts_with:

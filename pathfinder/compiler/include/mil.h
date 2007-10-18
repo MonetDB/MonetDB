@@ -256,6 +256,9 @@ enum PFmil_kind_t {
     , m_mstarts_with /**< Multiplexed startsWith() 
                           function `[startsWith](a,b)' */
     , m_mends_with   /**< Multiplexed endsWith() function `[endsWith](a,b)' */
+    , m_mlength      /**< Multiplexed length() function `[length](a)' */
+    , m_mtoUpper     /**< Multiplexed toUpper() function `[toUpper](a)' */
+    , m_mtoLower     /**< Multiplexed toLower() function `[toLower](a)' */
 
     , m_llscj_anc
     , m_llscj_anc_elem
@@ -788,6 +791,15 @@ PFmil_t * PFmil_mstarts_with (const PFmil_t *, const PFmil_t *);
 
 /** Multiplexed endsWith() function `[endsWith](a,b)' */
 PFmil_t * PFmil_mends_with (const PFmil_t *, const PFmil_t *);
+
+/** Multiplexed length() function `[length](a)' */
+PFmil_t * PFmil_mlength (const PFmil_t *);
+
+/** Multiplexed toUpper() function `[toUpper](a)' */
+PFmil_t * PFmil_mtoUpper (const PFmil_t *);
+
+/** Multiplexed toLower() function `[toLower](a)' */
+PFmil_t * PFmil_mtoLower (const PFmil_t *);
 
 PFmil_t * PFmil_usec (void);
 PFmil_t * PFmil_new_ws (void);

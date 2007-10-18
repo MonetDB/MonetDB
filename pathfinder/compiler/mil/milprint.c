@@ -119,6 +119,9 @@
                  | '[string](' exp ',' exp ',' exp ')'      <m_mstring2>
                  | '[startsWith](' exp ',' exp ')'          <m_mstarts_with>
                  | '[endsWith](' exp ',' exp ')'            <m_mends_with>
+                 | '[length](' expresion ')'                <m_mlength>
+                 | '[toUpper](' expresion ')'               <m_mtoUpper>
+                 | '[toLower](' expresion ')'               <m_mtoLower>
                  | '{count}(' expression ')'                <m_gcount>
                  | '{count}(' expression ',' expression ')' <m_egcount>
                  | '{avg}(' expression ')'                  <m_gavg>
@@ -284,6 +287,9 @@ static char *ID[] = {
     , [m_mstring2]     = "[string]"
     , [m_mstarts_with] = "[startsWith]"
     , [m_mends_with]   = "[endsWith]"
+    , [m_mlength]      = "[length]"
+    , [m_mtoUpper]     = "[toUpper]"
+    , [m_mtoLower]     = "[toLower]"
     , [m_isnil]        = "isnil"
     , [m_misnil]       = "[isnil]"
     , [m_usec]         = "usec"
@@ -954,6 +960,12 @@ print_expression (PFmil_t * n)
         case m_isnil:
         /* expression : '[isnil](' expression ')' */
         case m_misnil:
+        /* expression : '[length](' expression ')' */
+        case m_mlength:
+        /* expression : '[toUpper](' expression ')' */
+        case m_mtoUpper:
+        /* expression : '[toLower](' expression ')' */
+        case m_mtoLower:
             milprintf ("%s(", ID[n->kind]);
             print_expression (n->child[0]);
             milprintf (")");

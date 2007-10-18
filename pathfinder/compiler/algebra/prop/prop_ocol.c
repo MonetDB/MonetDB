@@ -332,6 +332,23 @@ infer_ocol (PFla_op_t *n)
                     res_type = aat_str;
                     break;
 
+                case alg_fun_fn_string_length:
+                    assert (n->sem.fun_1to1.refs.count == 1);
+                    /* make sure the attribute is of type string */
+                    assert (ocol_at (L(n), ix[0]).type == aat_str);
+
+                    res_type = aat_int;
+                    break;
+
+                case alg_fun_fn_upper_case:
+                case alg_fun_fn_lower_case:
+                    assert (n->sem.fun_1to1.refs.count == 1);
+                    /* make sure the attribute is of type string */
+                    assert (ocol_at (L(n), ix[0]).type == aat_str);
+
+                    res_type = aat_str;
+                    break;
+
                 case alg_fun_fn_contains:
                 case alg_fun_fn_starts_with:
                 case alg_fun_fn_ends_with:

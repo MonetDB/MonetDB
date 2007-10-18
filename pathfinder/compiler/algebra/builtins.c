@@ -1348,6 +1348,8 @@ PFbui_fn_round_dbl (const PFla_op_t *loop,
 /* ------------------------------- */
 
 /**
+ * Algebra implementation for
+ * <code>fn:concat (anyAtomicType?, anyAtomicType?, ...)</code>
  * The fn:concat function is wrapped in the generic function operator
  */
 struct PFla_pair_t
@@ -1395,6 +1397,102 @@ PFbui_fn_string_join (const PFla_op_t *loop, bool ordering,
                                             att_iter, att_item),
                             att_pos, lit_nat (1)),
                 .frag = args[0].frag };
+}
+
+/**
+ * Algebra implementation for <code>fn:string-length(xs:string?)</code>
+ */
+struct PFla_pair_t
+PFbui_fn_string_length_opt (const PFla_op_t *loop, bool ordering,
+                            struct PFla_pair_t *args)
+{
+    (void) loop; (void) ordering;
+
+    return (struct PFla_pair_t) {
+                .rel = project (
+                           fun_1to1 (
+                               disjunion (
+                                   args[0].rel,
+                                   attach (
+                                       attach (
+                                       difference (
+                                           loop,
+                                           project (
+                                               args[0].rel,
+                                               proj (att_iter, att_iter))),
+                                       att_pos, lit_nat (1)),
+                                   att_item, lit_str (""))),
+                               alg_fun_fn_string_length,
+                               att_res,
+                               attlist(att_item)),
+                           proj (att_iter, att_iter),
+                           proj (att_pos, att_pos),
+                           proj (att_item, att_res)),
+                .frag = PFla_empty_set () };
+}
+
+/**
+ * Algebra implementation for <code>fn:upper-case(xs:string?)</code>
+ */
+struct PFla_pair_t
+PFbui_fn_upper_case_opt (const PFla_op_t *loop, bool ordering,
+                         struct PFla_pair_t *args)
+{
+    (void) ordering;
+
+    return (struct PFla_pair_t) {
+                .rel = project (
+                           fun_1to1 (
+                               disjunion (
+                                   args[0].rel,
+                                   attach (
+                                       attach (
+                                       difference (
+                                           loop,
+                                           project (
+                                               args[0].rel,
+                                               proj (att_iter, att_iter))),
+                                       att_pos, lit_nat (1)),
+                                   att_item, lit_str (""))),
+                               alg_fun_fn_upper_case,
+                               att_res,
+                               attlist(att_item)),
+                           proj (att_iter, att_iter),
+                           proj (att_pos, att_pos),
+                           proj (att_item, att_res)),
+                .frag = PFla_empty_set () };
+}
+
+/**
+ * Algebra implementation for <code>fn:lower-case(xs:string?)</code>
+ */
+struct PFla_pair_t
+PFbui_fn_lower_case_opt (const PFla_op_t *loop, bool ordering,
+                         struct PFla_pair_t *args)
+{
+    (void) loop; (void) ordering;
+
+    return (struct PFla_pair_t) {
+                .rel = project (
+                           fun_1to1 (
+                               disjunion (
+                                   args[0].rel,
+                                   attach (
+                                       attach (
+                                       difference (
+                                           loop,
+                                           project (
+                                               args[0].rel,
+                                               proj (att_iter, att_iter))),
+                                       att_pos, lit_nat (1)),
+                                   att_item, lit_str (""))),
+                               alg_fun_fn_lower_case,
+                               att_res,
+                               attlist(att_item)),
+                           proj (att_iter, att_iter),
+                           proj (att_pos, att_pos),
+                           proj (att_item, att_res)),
+                .frag = PFla_empty_set () };
 }
 
 /* ------------------------------------------ */
@@ -1519,7 +1617,7 @@ PFbui_fn_contains_opt_opt (const PFla_op_t *loop, bool ordering,
 }
 
 /**
- * Algebra implementation for 
+ * Algebra implementation for
  * <code>fn:starts-with (xs:string?, xs:string?)</code>.
  */
 struct PFla_pair_t
@@ -1570,7 +1668,7 @@ PFbui_fn_starts_with_opt_opt (const PFla_op_t *loop, bool ordering,
 }
 
 /**
- * Algebra implementation for 
+ * Algebra implementation for
  * <code>fn:ends-with (xs:string?, xs:string?)</code>.
  */
 struct PFla_pair_t

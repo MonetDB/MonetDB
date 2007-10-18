@@ -337,6 +337,15 @@
 /** Multiplexed endsWith() function `[endsWith](a,b)' */
 #define mends_with(a,b) PFmil_mends_with ((a), (b))
 
+/** Multiplexed length() function `[length](a)' */
+#define mlength(a)  PFmil_mlength ((a))
+
+/** Multiplexed toUpper() function `[toUpper](a)' */
+#define mtoUpper(a) PFmil_mtoUpper ((a))
+
+/** Multiplexed toLower() function `[toLower](a)' */
+#define mtoLower(a) PFmil_mtoLower ((a))
+
 /* staircase join variants (ancestor axis) */
 #define llscj_anc(a,b,c,d,e) \
     PFmil_llscj_anc ((a), (b), (c), (d), (e))

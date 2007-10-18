@@ -1269,6 +1269,27 @@ PFmil_mends_with (const PFmil_t *a, const PFmil_t *b)
     return wire2 (m_mends_with, a, b);
 }
 
+/** Multiplexed length() function `[length](a)' */
+PFmil_t *
+PFmil_mlength (const PFmil_t *a)
+{
+    return wire1 (m_mlength, a);
+}
+
+/** Multiplexed toUpper() function `[toUpper](a)' */
+PFmil_t *
+PFmil_mtoUpper (const PFmil_t *a)
+{
+    return wire1 (m_mtoUpper, a);
+}
+
+/** Multiplexed toLower() function `[toLower](a)' */
+PFmil_t *
+PFmil_mtoLower (const PFmil_t *a)
+{
+    return wire1 (m_mtoLower, a);
+}
+
 PFmil_t *
 PFmil_bat (const PFmil_t *a)
 {

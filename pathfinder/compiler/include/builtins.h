@@ -282,6 +282,18 @@ struct PFla_pair_t PFbui_fn_string_join (const PFla_op_t *loop,
                                          bool ordering,
                                          struct PFla_pair_t *args);
 
+struct PFla_pair_t PFbui_fn_string_length_opt (const PFla_op_t *loop,
+                                               bool ordering,
+                                               struct PFla_pair_t *args);
+
+struct PFla_pair_t PFbui_fn_upper_case_opt (const PFla_op_t *loop,
+                                            bool ordering,
+                                            struct PFla_pair_t *args);
+
+struct PFla_pair_t PFbui_fn_lower_case_opt (const PFla_op_t *loop,
+                                            bool ordering,
+                                            struct PFla_pair_t *args);
+
 /* 7.5. Functions Based on Substring Matching */
 struct PFla_pair_t PFbui_fn_contains (const PFla_op_t *loop,
                                       bool ordering,
@@ -329,7 +341,7 @@ struct PFla_pair_t PFbui_fn_qname (const PFla_op_t *loop, bool ordering,
 
 /* 14 FUNCTIONS AND OPERATORS ON NODES */
 /* 14.1 fn:name */
-               
+
 /* 14.2. fn:local-name */
 
 /* 14.3. fn:namespace-uri */
@@ -338,7 +350,7 @@ struct PFla_pair_t PFbui_fn_qname (const PFla_op_t *loop, bool ordering,
 struct PFla_pair_t PFbui_fn_number (const PFla_op_t *loop,
                                     bool ordering,
                                     struct PFla_pair_t *args);
-               
+
 /* 14.6. op:is-same-node */
 struct PFla_pair_t PFbui_op_is_same_node (const PFla_op_t *loop,
                                           bool ordering,
