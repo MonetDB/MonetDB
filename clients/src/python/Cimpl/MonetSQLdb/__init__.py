@@ -42,7 +42,7 @@ apilevel = "2.0"
 paramstyle = "pyformat"
 
 
-from CMapi import *
+from MonetDB.CMapi import *
 from monetexceptions import *
 import cursors, converters
 
