@@ -1,0 +1,58 @@
+stdout of test 'perl_dbi` in directory 'src/test/mapi` itself:
+
+
+# 20:58:10 >  
+# 20:58:10 >  Mtimeout -timeout 180  mserver5 "--config=/ufs/niels/scratch/rc/Linux-x86_64/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB5:/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB5/lib:/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB5/sql_logs"  --set mapi_open=true --set xrpc_open=true --set mapi_port=39249 --set xrpc_port=47893 --set monet_prompt= --trace "--dbname=mTests_src_test_mapi" --set mal_listing=0 --dbinit=" include sql;" ; echo ; echo Over..
+# 20:58:10 >  
+
+# MonetDB server v5.2.0, based on kernel v1.20.0
+# Serving database 'mTests_src_test_mapi'
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Copyright (c) 1993-2007 CWI, all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://koala.ins.cwi.nl:39249/
+# MonetDB/SQL module v2.20.0 loaded
+
+Ready.
+#function user.main():void;
+#    clients.quit();
+#end main;
+
+Over..
+
+# 20:58:10 >  
+# 20:58:10 >  Mtimeout -timeout 60 ./perl_dbi.SQL.sh perl_dbi 
+# 20:58:10 >  
+
+
+# 20:58:10 >  
+# 20:58:10 >  sqlsample.pl 39249 mTests_src_test_mapi
+# 20:58:10 >  
+
+
+Start a simple Monet SQL interaction
+
+data sources: dbi:monetdb:
+field[0]: 2, last index: 0
+field[0]: 3, last index: 0
+ERROR REPORTED: DBD::monetdb::st execute failed: !syntax error, unexpected IDENT, expecting SELECT or '(' in: "( xyz"
+bun: 3, three
+bun: 7, seven
+rows: 2, fields: 2
+field[0,0]: 3
+field[0,1]: three
+field[1,0]: 7
+field[1,1]: seven
+head[0]: 3
+head[1]: 7
+field[0]: 3
+field[1]: three
+field[0]: 3
+field[1]: three
+
+Finished
+
+# 20:58:10 >  
+# 20:58:10 >  Done.
+# 20:58:10 >  
+
