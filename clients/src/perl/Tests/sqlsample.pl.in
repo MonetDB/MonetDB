@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!@PERL@
 
 # The contents of this file are subject to the MonetDB Public License
 # Version 1.1 (the "License"); you may not use this file except in
@@ -20,47 +20,47 @@ use strict;
 use warnings;
 use DBI();
 
-print "\nStart a simple Monet MIL interaction\n\n";
+print "\nStart a simple Monet SQL interaction\n\n";
 
 # determine the data sources:
 my @ds = DBI->data_sources('monetdb');
 print "data sources: @ds\n";
 
 # connect to the database:
-my $dsn = 'dbi:monetdb:database=test;host=localhost;port=50000;language=mil';
+my $dsn = "dbi:monetdb:database=$ARGV[1];host=localhost;port=$ARGV[0];language=sql";
 my $dbh = DBI->connect( $dsn,
-  undef, undef,  # no authentication in MIL
+  undef, undef,  # no authentication in SQL
   { PrintError => 0, RaiseError => 1 }  # turn on exception handling
 );
 {
-  # simple MIL statement:
-  my $sth = $dbh->prepare('print(2);');
+  # simple SQL statement:
+  my $sth = $dbh->prepare('select 2;');
   $sth->execute;
   my @row = $sth->fetchrow_array;
   print "field[0]: $row[0], last index: $#row\n";
 }
 {
-  my $sth = $dbh->prepare('print(3);');
+  my $sth = $dbh->prepare('select 3;');
   $sth->execute;
   my @row = $sth->fetchrow_array;
   print "field[0]: $row[0], last index: $#row\n";
 }
 {
-  # deliberately executing a wrong MIL statement:
+  # deliberately executing a wrong SQL statement:
   my $sth = $dbh->prepare('( xyz 1);');
   eval { $sth->execute }; print "ERROR REPORTED: $@" if $@;
 }
-$dbh->do('var b:=new(int,str);');
-$dbh->do('insert(b,3,"three");');
+$dbh->do('create table perl_table (i smallint,s string);');
+$dbh->do('insert into perl_table values ( 3, \'three\');');
 {
   # variable binding stuff:
-  my $sth = $dbh->prepare('insert(b,?,?);');
+  my $sth = $dbh->prepare('insert into perl_table values(?,?);');
   $sth->bind_param( 1,     7 , DBI::SQL_INTEGER() );
   $sth->bind_param( 2,'seven' );
   $sth->execute;
 }
 {
-  my $sth = $dbh->prepare('print(b);');
+  my $sth = $dbh->prepare('select * from perl_table;');
   # get all rows one at a time:
   $sth->execute;
   while ( my $row = $sth->fetch ) {
@@ -80,16 +80,16 @@ $dbh->do('insert(b,3,"three");');
 }
 {
   # get values of the first column from each row:
-  my $row = $dbh->selectcol_arrayref('print(b);');
+  my $row = $dbh->selectcol_arrayref('select * from perl_table;');
   print "head[$_]: $row->[$_]\n" for 0 .. 1;
 }
 {
-  my @row = $dbh->selectrow_array('print(b);');
+  my @row = $dbh->selectrow_array('select * from perl_table;');
   print "field[0]: $row[0]\n";
   print "field[1]: $row[1]\n";
 }
 {
-  my $row = $dbh->selectrow_arrayref('print(b);');
+  my $row = $dbh->selectrow_arrayref('select * from perl_table;');
   print "field[0]: $row->[0]\n";
   print "field[1]: $row->[1]\n";
 }
