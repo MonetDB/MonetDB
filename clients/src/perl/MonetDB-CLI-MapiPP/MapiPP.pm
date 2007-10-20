@@ -27,7 +27,7 @@ sub unquote
 
 sub connect
 {
-  my ($class, $host, $port, $user, $pass, $lang) = @_;
+  my ($class, $host, $port, $user, $pass, $lang, $db) = @_;
 
   my $h = IO::Socket::INET->new( PeerAddr => $host, PeerPort => $port )
     or die "Handle is undefined: $@";

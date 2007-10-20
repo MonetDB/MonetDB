@@ -56,8 +56,9 @@ sub connect {
     my $port  = $dsn{port} || 50000;
     $user     ||= 'monetdb';
     $password ||= 'monetdb';
+    my $db = $dsn{database} || 'demo';
 
-    my $cxn = eval { MonetDB::CLI->connect($host, $port, $user, $password, $lang) };
+    my $cxn = eval { MonetDB::CLI->connect($host, $port, $user, $password, $lang, $db) };
     return $drh->set_err(-1, $@) if $@;
 
     my ($outer, $dbh) = DBI::_new_dbh($drh, { Name => $dsn });

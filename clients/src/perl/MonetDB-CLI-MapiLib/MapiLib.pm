@@ -9,9 +9,9 @@ our $VERSION = '0.03';
 
 sub connect
 {
-  my ($class, $host, $port, $user, $pass, $lang) = @_;
+  my ($class, $host, $port, $user, $pass, $lang, $db) = @_;
 
-  my $h = MapiLib::mapi_connect( $host, $port, $user, $pass, $lang )
+  my $h = MapiLib::mapi_connect( $host, $port, $user, $pass, $lang, $db )
     or die 'Handle is undefined';
   die MapiLib::mapi_error_str( $h )
     if MapiLib::mapi_error( $h );
