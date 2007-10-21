@@ -35,8 +35,8 @@ print cursor.fetchone()
 # deliberately executing a wrong SQL statement:
 try:
 	cursor.execute('( xyz 1);')
-except: 
-	print 'error'
+except (RuntimeError), e: 
+	print e
 
 cursor.execute('create table python_table (i smallint,s string);');
 cursor.execute('insert into python_table values ( 3, \'three\');');
