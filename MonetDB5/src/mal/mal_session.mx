@@ -240,8 +240,8 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout)
 			*s = 0;
 	}
 
-	if (database != NULL && database[0] != '\0' &&
-			strcmp(database, GDKgetenv("gdk_dbname")) != 0)
+	if (!GDKembedded && database != NULL && database[0] != '\0' &&
+	    strcmp(database, GDKgetenv("gdk_dbname")) != 0)
 	{
 		sabdb *stats;
 		str err;
@@ -295,30 +295,32 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout)
 			return;
 		}
 
-		err = SABAOTHgetMyStatus(&stats);
-		if (err != MAL_SUCCEED) {
-			/* this is kind of awful, but we need to get rid of this
-			 * message */
-			fprintf(stderr, "!SABAOTHgetMyStatus: %s\n", err);
-			GDKfree(err);
-			GDKfree(command);
-			return;
-		}
-
-		if (stats->locked == 1) {
-			if (uid == 0) {
-				stream_printf(fout, "#server is running in "
-						"maintenance mode\n");
-			} else {
-				stream_printf(fout, "!server is running in "
-						"maintenance mode, please try again later\n");
-				stream_flush(fout);
-				SABAOTHfreeStatus(&stats);
+		if (!GDKembedded) {
+			err = SABAOTHgetMyStatus(&stats);
+			if (err != MAL_SUCCEED) {
+				/* this is kind of awful, but we need to get rid of this
+			 	* message */
+				fprintf(stderr, "!SABAOTHgetMyStatus: %s\n", err);
+				GDKfree(err);
 				GDKfree(command);
 				return;
 			}
+	
+			if (stats->locked == 1) {
+				if (uid == 0) {
+					stream_printf(fout, "#server is running in "
+							"maintenance mode\n");
+				} else {
+					stream_printf(fout, "!server is running in "
+							"maintenance mode, please try again later\n");
+					stream_flush(fout);
+					SABAOTHfreeStatus(&stats);
+					GDKfree(command);
+					return;
+				}
+			}
+			SABAOTHfreeStatus(&stats);
 		}
-		SABAOTHfreeStatus(&stats);
 
 		c = MCinitClient(uid, fin, fout);
 		if (c == NULL) {
