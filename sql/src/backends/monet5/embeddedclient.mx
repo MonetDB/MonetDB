@@ -54,6 +54,7 @@ between 25-50%.
 extern "C" {
 #endif
 
+embeddedclient_export Mapi monetdb_sql(char *dbfarm, char *dbname);
 embeddedclient_export Mapi embedded_sql(opt *set, int len);
 
 #ifdef __cplusplus
@@ -62,7 +63,7 @@ embeddedclient_export Mapi embedded_sql(opt *set, int len);
 
 #endif /* _EMBEDDEDCLIENT_H_ */
 @c
-#include "sql_config.h"
+#include <mal_config.h>
 #include "embeddedclient.h"
 
 #include "gdk.h"
@@ -220,6 +221,32 @@ embedded_sql(opt *set, int len)
 		embedded_set = set;
 		embedded_len = len;
 	}
+	server = mapi_embedded_init(&mid,"sql");
+
+	pthread_create(&sqlthread, NULL, start_sql_server, (void *) server);
+
+	mapi_start_talking(mid);
+
+	return mid;
+}
+
+Mapi
+monetdb_sql(char *dbfarm, char *dbname)
+{
+	Mapi mid;
+	pthread_t sqlthread;
+	stream **server;
+
+	int len = mo_builtin_settings(&embedded_set);
+
+	/* needed, to prevent the MonetDB config file to be used */  
+	len = mo_add_option(&embedded_set, len, opt_config, "prefix", MONETDBPREFIX);
+	len = mo_add_option(&embedded_set, len, opt_config, "config", MONETDBCONFIG);
+
+	embedded_len = mo_system_config(&embedded_set, len);
+	embedded_len = mo_add_option(&embedded_set, embedded_len, opt_cmdline, "gdk_dbfarm", dbfarm);
+	embedded_len = mo_add_option(&embedded_set, embedded_len, opt_cmdline, "gdk_dbname", dbname);
+
 	server = mapi_embedded_init(&mid,"sql");
 
 	pthread_create(&sqlthread, NULL, start_sql_server, (void *) server);

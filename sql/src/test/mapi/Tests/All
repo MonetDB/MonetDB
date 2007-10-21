@@ -8,3 +8,4 @@ smack01
 mclient-lsql--help
 HAVE_PERL?perl_dbi
 HAVE_PYTHON?python_dbapi
+HAVE_PYTHON?python_dbapi_embedded
