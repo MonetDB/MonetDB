@@ -59,7 +59,6 @@ mal_export int parseMAL(Client cntxt, Symbol curPrg);
 mal_export void echoInput(Client cntxt);
 mal_export void debugParser(int i);
 mal_export str parseError(Client cntxt, str msg);
-mal_export void advance(Client cntxt, int length);
 mal_export void skipSpace(Client cntxt);
 mal_export void skipToEnd(Client cntxt);
 mal_export int idLength(Client cntxt);
@@ -130,7 +129,7 @@ skipSpace(Client cntxt)
 	}
 }
 
-INLINE void 
+static INLINE void 
 advance(Client cntxt, int length)
 {
 	cntxt->yycur += length;
