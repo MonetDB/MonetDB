@@ -6,7 +6,7 @@ export PATH
 PYTHONPATH="`monetdb-clients-config --pythonlibdir`"
 export PYTHONPATH
 
-if [ -n $TST_FIVE ] ; then
+if [ -n "$TST_FIVE" ] ; then
 	Mlog -x sqlsample.py $GDK_DBFARM $TSTDB 5
 else
 	Mlog -x sqlsample.py $GDK_DBFARM $TSTDB 4
