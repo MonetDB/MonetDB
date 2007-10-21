@@ -241,9 +241,12 @@ class Mapi:
         return ret
 
 class Embedded(Mapi):
-    def __init__(self, dbfarm = None, dbname = "demo", lang = "sql"):
+    def __init__(self, dbfarm = None, dbname = "demo", lang = "sql", version = 5):
         try:
-            import monetdb
+	    if version == 5:
+            	import monetdb5 as monetdb
+	    else:
+            	import monetdb
             if lang == "sql":
                 self._Mapi__mid = monetdb.monetdb_sql(dbfarm, dbname)
         except:

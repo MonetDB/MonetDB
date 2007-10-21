@@ -78,7 +78,7 @@ def defaulterrorhandler(connection, cursor, errorclass, errorvalue):
 
 class Connection:
 
-    """ Create a connection to the Monet database.
+    """ Create a connection to the MonetDB database.
     Parameters to pass to the constructor:
 
     host -- string, host to connect
@@ -88,6 +88,11 @@ class Connection:
     lang -- string, language (default SQL)
     unicode -- boolean
     cursorclass -- the class of the cursor to use
+
+    or to create an embedded MonetDB database
+
+    dbfarm -- string, dbfarm location
+    dbname -- string, database name
     """
 
     _mapi = None
@@ -106,6 +111,7 @@ class Connection:
             if not kwargs.has_key('password'): kwargs['password'] = 'monetdb'
         else:
             if not kwargs.has_key('dbname'): kwargs['dbname'] = 'demo'
+            if not kwargs.has_key('version'): kwargs['version'] = 5
         if not kwargs.has_key('lang'): kwargs['lang'] = 'sql'
 
         self.lang = kwargs['lang']
@@ -123,7 +129,7 @@ class Connection:
         if not kwargs.has_key('dbfarm'):
             self._mapi = Mapi(kwargs['host'], kwargs['port'], kwargs['user'], kwargs['password'], kwargs['lang'])
         else:
-            self._mapi = Embedded(kwargs['dbfarm'], kwargs['dbname'], kwargs['lang'])
+            self._mapi = Embedded(kwargs['dbfarm'], kwargs['dbname'], kwargs['lang'], kwargs['version'])
 
     def close(self):
         del self._mapi
