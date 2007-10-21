@@ -915,7 +915,7 @@ typedef struct {
 	bat parentid;		/* cache id of VIEW parent bat */
 } COLrec;
 
-#define GDKLIBRARY      061021	/* 64-bits BAT */
+#define GDKLIBRARY      061022	/* 64-bits BAT */
 
 typedef struct BAT {
 	/* static bat properties */
