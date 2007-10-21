@@ -12,10 +12,10 @@ stdout of test 'python_dbapi` in directory 'src/test/mapi` itself:
 # Visit http://monetdb.cwi.nl/ for further information.
 # MonetDB/SQL module v2.20.0 loaded
 
-printf("\nReady.\n");
-
 Ready.
-quit();
+#function user.main():void;
+#    clients.quit();
+#end main;
 
 Over..
 
@@ -30,7 +30,8 @@ Over..
 
 [('1',)]
 ('2',)
-error
+!syntax error, unexpected IDENT, expecting SELECT or '(' in: "( xyz"
+
 [('3', 'three'), ('7', 'seven')]
 
 # 22:24:36 >  

@@ -13,7 +13,8 @@ stdout of test 'python_dbapi_embedded` in directory 'src/test/mapi` itself:
 # MonetDB/SQL module v2.20.0 loaded
 [('1',)]
 ('2',)
-error
+!syntax error, unexpected IDENT, expecting SELECT or '(' in: "( xyz"
+
 [('3', 'three'), ('7', 'seven')]
 
 # 13:29:02 >  
