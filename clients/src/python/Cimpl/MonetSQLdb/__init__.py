@@ -42,7 +42,12 @@ apilevel = "2.0"
 paramstyle = "pyformat"
 
 
-from MonetDB.CMapi import *
+try:
+    from MonetDB.CMapi import *
+except ImportError:
+    # if run from the build directory, CMapi is not in the MonetDB module
+    from CMapi import *
+
 from monetexceptions import *
 import cursors, converters
 
