@@ -700,6 +700,30 @@ bits(size_t i)
 		break;
 	}
 
+@c
+#define SAMPLE_SIZE 	1024
+hash_t
+derive_mask( BAT *ct_histo, BAT *b)
+{
+	int n = bits(BATcount(ct_histo)), *N = &n;
+
+	if (BATcount(b) > (SAMPLE_SIZE<<3)) {
+		BAT *s = BATsample(b, SAMPLE_SIZE);
+		BAT *u = BATkunique(BATmirror(s)); 
+		size_t uc = BATcount(u);
+
+		BBPunfix(s->batCacheid);
+		BBPunfix(u->batCacheid);
+		if (uc > 0) {
+			size_t ratio = (((dbl)BATcount(b)/SAMPLE_SIZE) * uc);
+			if (ratio > 0)
+				return (1<<bits(*N * ratio)) - 1;
+		}
+	}
+	/* default to */
+	return (1<<*N) - 1;
+}
+
 @= derive
 static BAT *
 CTderive_@1_@2_@5(BAT* ct_map, BAT *ct_histo, BAT *b, BAT *bn, map_T *m)
@@ -710,9 +734,8 @@ CTderive_@1_@2_@5(BAT* ct_map, BAT *ct_histo, BAT *b, BAT *bn, map_T *m)
 	BUN p, q, r, cp = BUNfirst(ct_map) - yy;
 	mapentry_t entry, *e;
 	BAT *map;
-	int n = bits(BATcount(ct_histo)), *N = &n;
 	declare_@4
-	declare_mask_CUSTOM
+	hash_t mask = derive_mask(ct_histo, b); 
 	int custom_rng = BATcount(ct_histo); /* expected number of groups */
 	hash_t custom_MASK = mask;
 
