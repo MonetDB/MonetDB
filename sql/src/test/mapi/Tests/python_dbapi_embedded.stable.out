@@ -1,0 +1,23 @@
+stdout of test 'python_dbapi_embedded` in directory 'src/test/mapi` itself:
+
+
+# 13:29:01 >  
+# 13:29:01 >  Mtimeout -timeout 180 ./python_dbapi_embedded.sh python_dbapi_embedded 
+# 13:29:01 >  
+
+
+# 13:29:01 >  
+# 13:29:01 >  sqlsample.py /ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB4/dbfarm mTests_src_test_mapi
+# 13:29:01 >  
+
+# MonetDB/SQL module v2.20.0 loaded
+[('1',)]
+('2',)
+!syntax error, unexpected IDENT, expecting SELECT or '(' in: "( xyz"
+
+[('3', 'three'), ('7', 'seven')]
+
+# 13:29:02 >  
+# 13:29:02 >  Done.
+# 13:29:02 >  
+

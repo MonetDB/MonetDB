@@ -140,6 +140,7 @@ SQLprelude(void)
 	Scenario s = getFreeScenario();
 	if (!s)
 		throw(MAL, "sql.start", "out of scenario slots");
+	sqlinit = GDKgetenv("sqlinit");
 	s->name = "sql";
 	s->language = "sql";
 	s->initSystem = "SQLinit";
@@ -172,7 +173,6 @@ SQLprelude(void)
 	s->optimizer = "MALoptimizer";
 	/* s->tactics = .. */
 	s->engine = "MALengine";
-	sqlinit = GDKgetenv("sqlinit");
 	tmp = GDKgetenv("monet_welcome");
 	if (tmp != NULL && strcmp(tmp, "yes") == 0)
 		printf("# MonetDB/SQL module v" VERSION " loaded\n");
@@ -226,11 +226,9 @@ SQLinit(Client c)
 	if (debug_str) 
 		SQLdebug = strtol(debug_str,NULL,10);
         SQLinitialized = TRUE;
-/*
-        if (MT_create_thread(&sqllogthread, (void (*)(void *)) mvc_logmanager, NULL) < 0) {
+        if (!GDKembedded && MT_create_thread(&sqllogthread, (void (*)(void *)) mvc_logmanager, NULL) < 0) {
                 throw(SQL, "SQLinit", "Starting log manager failed");
         }
-*/
 	return MAL_SUCCEED;
 }
 

@@ -50,12 +50,20 @@ between 25-50%.
 #include <stream.h>
 #include <mapilib/Mapi.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 embeddedclient_export Mapi monetdb_sql(char *dbfarm, char *dbname);
 embeddedclient_export Mapi embedded_sql(opt *set, int len);
 
+#ifdef __cplusplus
+}
+#endif
+
 #endif /* _EMBEDDEDCLIENT_H_ */
 @c
-#include "sql_config.h"
+#include <monetdb4_config.h>
 #include "embeddedclient.h"
 
 #include "gdk.h"
@@ -132,18 +140,12 @@ Monet_init(opt *set, int setlen)
 		GDK_mem_bigsize = strtol(p, NULL, 10);
 	if ((p = GDKgetenv("gdk_vm_minsize")) != NULL)
 		GDK_vm_minsize = strtol(p, NULL, 10);
-	if (GDKgetenv_isyes("gdk_embedded")) {
-		GDKembedded = 1;
-	}
-
 	if (GDKgetenv_isyes("monet_daemon"))
 		monet_daemon = 1;
-	if (GDKgetenv_isyes("monet_embedded")) {
-		monet_daemon = 1;
-		GDKembedded = 1;
-	}
 
-
+	GDKsetenv("gdk_embedded", "yes");
+	GDKsetenv("monet_embedded", "yes");
+	GDKembedded = 1;
 	return monet_init();
 }
 
@@ -207,6 +209,11 @@ monetdb_sql(char *dbfarm, char *dbname)
 	stream **server;
 
 	int len = mo_builtin_settings(&embedded_set);
+
+	/* needed, to prevent the MonetDB config file to be used */  
+	len = mo_add_option(&embedded_set, len, opt_config, "prefix", MONETDBPREFIX);
+	len = mo_add_option(&embedded_set, len, opt_config, "config", MONETDBCONFIG);
+
 	embedded_len = mo_system_config(&embedded_set, len);
 	embedded_len = mo_add_option(&embedded_set, embedded_len, opt_cmdline, "gdk_dbfarm", dbfarm);
 	embedded_len = mo_add_option(&embedded_set, embedded_len, opt_cmdline, "gdk_dbname", dbname);

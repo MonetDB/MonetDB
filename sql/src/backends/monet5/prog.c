@@ -20,6 +20,10 @@
 #include <monet_options.h>
 #include "embeddedclient.h"
 
+#ifdef HAVE_STRING_H
+#include <string.h>
+#endif
+
 /* stolen piece */
 #ifdef HAVE_FTIME
 #include <sys/timeb.h>
@@ -73,7 +77,7 @@ usage(char *prog)
 int
 main(int argc, char **av)
 {
-	int curlen = 0, maxlen = BUFSIZ*8;
+	size_t curlen = 0, maxlen = BUFSIZ*8;
 	char *prog = *av;
 	opt *set = NULL;
 	int setlen = 0, time = 0;
@@ -141,14 +145,14 @@ main(int argc, char **av)
 				*tmp = '\0';
 				setlen = mo_add_option(&set, setlen, opt_cmdline, optarg, tmp + 1);
 			} else {
-				fprintf(stderr, "!wrong format %s\n", optarg);
+				fprintf(stderr, "!ERROR: wrong format %s\n", optarg);
 			}
 		}
 			break;
 		case '?':
 			usage(prog);
 		default:
-			fprintf(stderr, "!getopt returned character code 0%o ??\n", c);
+			fprintf(stderr, "!ERROR: getopt returned character code 0%o ??\n", c);
 			usage(prog);
 		}
 	}
@@ -160,7 +164,7 @@ main(int argc, char **av)
 	/* now for each file given on the command line (or stdin) 
 	   read the query and execute it
 	 */
-	buf = GDKmalloc(maxlen);
+	buf = malloc(maxlen);
 	if (buf == NULL) {
 		fprintf(stderr, "Cannot allocate memory for query buffer\n");
 		return -1;
@@ -170,13 +174,14 @@ main(int argc, char **av)
 	while (optind < argc || fp) {
 		if (!fp && (fp=fopen(av[optind],"r")) == NULL){
 			fprintf(stderr,"could no open file %s\n", av[optind]);
+			break;
 		}
 		while ((line = fgets(buf+curlen, 1024, fp)) != NULL) {
-			int n = strlen(line);
+			size_t n = strlen(line);
             		curlen += n;
             		if (curlen+1024 > maxlen) {
                			maxlen += 8*BUFSIZ;
-               			buf = GDKrealloc(buf, maxlen + 1);
+               			buf = realloc(buf, maxlen + 1);
 				if (buf == NULL) {
 					fprintf(stderr, "Cannot allocate memory for query buffer\n");
 					return -1;
@@ -202,7 +207,7 @@ main(int argc, char **av)
 		if (time)
 			printf("Timer: %ld (usec)\n", gettime()-t0);
 	}
-	GDKfree(buf);
+	free(buf);
 	mapi_destroy(mid);
 	return 0;
 }

@@ -17,7 +17,9 @@
 MTSAFE
 
 SWIGFLAGS = $(MONETDB_INCS) $(CLIENTS_INCS)
-INCLUDES =
+INCLUDES = ../../include ../../common ../../storage ../../server \
+	 $(CLIENTS_INCS) $(MONETDB_INCS) $(MONETDB4_INCS) $(PYTHON_INCS)
+
 
 # with gcc we could use these
 #X_CFLAGS = -Wno-unused-parameter -Wno-unused-function
@@ -53,9 +55,6 @@ smallTOC_SHARED_MODS =	\
 	-l_txtsim
 
 EXTRA_DIST = static_modules.mx mysqldump2bulkload.py
-
-INCLUDES = ../../include ../../common ../../storage ../../server \
-	 $(CLIENTS_INCS) $(MONETDB_INCS) $(MONETDB4_INCS) $(PYTHON_INCS)
 
 lib__sql_server = {
 	DIR = libdir/MonetDB4
@@ -121,7 +120,10 @@ lib_monetdb = {
 	PREFIX =
 	NAME = _monetdb
 	SOURCES = monetdb.py.i
-	LIBS = libembeddedsql $(PYTHON_LIBS) $(MONETDB_LIBS) -lmutils -lstream $(CLIENTS_LIBS) -lMapi
+	#LIBS = libembeddedsql $(PYTHON_LIBS) $(MONETDB_LIBS) -lmutils -lstream $(CLIENTS_LIBS) -lMapi
+	LIBS = libinitmodules STATIC_MODS @SHARED_LIBS@ lib_sql_server $(EXTRA_LIBS) \
+		libembeddedsql \
+		$(MONETDB_LIBS) -lbat -lmutils -lstream $(MONETDB4_LIBS) -lmonet $(CLIENTS_LIBS) -lMapi
 	DIR = $(prefix)/$(PYTHON_LIBDIR)
 }
 

@@ -6,3 +6,6 @@ sample4
 smack00
 smack01
 mclient-lsql--help
+HAVE_PERL_SWIG?perl_dbi
+HAVE_PYTHON_SWIG?python_dbapi
+HAVE_PYTHON_SWIG?python_dbapi_embedded

@@ -1546,7 +1546,9 @@ proc sql_server_start() : void {
 
 	if (isnil(err)) {
 		mapi_register(fc);
-		fork(sqllogmanager());
+		if (monet_environment.find("gdk_embedded") = "no") {
+			fork(sqllogmanager());
+		}
 		return str(nil);
 	} else {
 		printf(err);
