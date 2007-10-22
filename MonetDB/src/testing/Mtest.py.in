@@ -1237,6 +1237,7 @@ def GetBitsAndOIDsAndModsAndStatic(env) :
     os.environ['TST_MODS'] = str(env['TST_MODS'])
     if par['M5']:
         env['TST_FIVE'] = "Five"
+        os.environ['TST_FIVE'] = "Five"
     return rtrn
 ### GetBitsAndOIDsAndModsAndStatic(env) #
 
@@ -3570,7 +3571,7 @@ VALUES (%s, '%s', '%s', '%s',
 if __name__ == "__main__":
     if '--trace' in sys.argv:
         sys.argv.remove('--trace')
-        import trace
+        from MonetDB import trace
         t = trace.Trace(trace=1, count=0, ignoremods=('ntpath','monet_options','Mfilter','re', 'sre_parse', 'sre_compile'))
         t.runfunc(main, sys.argv)
     else:
