@@ -133,3 +133,4 @@ wrong_numeric_cast_in_general_comparison.SF-1731555
 pf-O0_produces_wrong_MIL.SF-1771532
 insert_attribute_gives_ERROR_in_merged_union.SF-1763575
 immune_for_updates.SF-1766259
+repeated-insert.SF-1814911
