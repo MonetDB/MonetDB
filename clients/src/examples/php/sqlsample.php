@@ -1,3 +1,4 @@
+#!/usr/bin/php 
 <?
 if (!extension_loaded('monetdb')) {
 	$prefix = (PHP_SHLIB_SUFFIX == 'dll') ? 'php_' : '';
@@ -6,7 +7,7 @@ if (!extension_loaded('monetdb')) {
 	dl($prefix.'monetdb.'.PHP_SHLIB_SUFFIX) or
 		die("Unable to load monetdb module!");
 }
-$db = monetdb_connect("sql", "localhost", 50000, "monetdb", "monetdb");
+$db = monetdb_connect("sql", "localhost", $argv[1], "monetdb", "monetdb");
 $tables = monetdb_query('SELECT name FROM tables');
 
 for ($i = 0; $line = @monetdb_fetch_assoc($tables); $i++) {
