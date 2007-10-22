@@ -14,7 +14,8 @@
 # Portions created by CWI are Copyright (C) 1997-2007 CWI.
 # All Rights Reserved.
 
-INCLUDES = $(MONETDB_INCS) -I../../monet \
+INCLUDES = -I../../monet \
+	$(MONETDB_INCS) \
 	$(Z_CFLAGS) $(BZ_CFLAGS) $(HWCOUNTERS_INCS) $(PCL_CFLAGS) \
 	$(PCRE_CFLAGS) $(ICONV_CFLAGS)
 MTSAFE

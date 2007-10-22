@@ -23,7 +23,7 @@
 # Universitaet Muenchen, respectively.  All Rights Reserved.
 #
 
-INCLUDES = $(MONETDB5_INCS) $(MONETDB_INCS) $(LIBXML2_CFLAGS) ../compiler/include ../runtime
+INCLUDES = ../compiler/include ../runtime $(MONETDB5_INCS) $(MONETDB_INCS) $(LIBXML2_CFLAGS)
 PF_LIBS = $(LIBXML2_LDADD) $(LIBXML2_LIBS) $(DL_LIBS)
 
 lib__xquery = {

@@ -27,7 +27,7 @@ SUBDIRS = xrpc
 
 EXTRA_DIST_DIR = Tests
 
-INCLUDES = $(MONETDB_INCS) $(MONETDB4_INCS) $(LIBXML2_CFLAGS) ../compiler/include
+INCLUDES = ../compiler/include $(MONETDB4_INCS) $(MONETDB_INCS) $(LIBXML2_CFLAGS)
 PF_LIBS = $(LIBXML2_LDADD) $(LIBXML2_LIBS) $(DL_LIBS)
 
 # these defines are needed to get shttpd to compile in the right way

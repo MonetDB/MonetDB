@@ -23,7 +23,7 @@
 # Universitaet Muenchen, respectively.  All Rights Reserved.
 #
 
-INCLUDES = ../../runtime $(MONETDB_INCS) $(MONETDB4_INCS) $(LIBXML2_CFLAGS) ../../compiler/include
+INCLUDES = ../../runtime ../../compiler/include $(MONETDB4_INCS) $(MONETDB_INCS) $(LIBXML2_CFLAGS)
 PF_LIBS = $(LIBXML2_LDADD) $(LIBXML2_LIBS) $(DL_LIBS)
 
 LFLAGS = -olex.yy.c

@@ -18,7 +18,7 @@ MTSAFE
 
 SWIGFLAGS = $(MONETDB_INCS) $(CLIENTS_INCS)
 INCLUDES = ../../include ../../common ../../storage ../../server \
-	 $(CLIENTS_INCS) $(MONETDB_INCS) $(MONETDB4_INCS) $(PYTHON_INCS)
+	 $(MONETDB4_INCS) $(CLIENTS_INCS) $(MONETDB_INCS) $(PYTHON_INCS)
 
 
 # with gcc we could use these

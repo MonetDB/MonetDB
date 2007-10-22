@@ -14,9 +14,9 @@
 # Portions created by CWI are Copyright (C) 1997-2007 CWI.
 # All Rights Reserved.
 
-INCLUDES = $(MONETDB_INCS) -I.. -I../monet \
+INCLUDES = -I.. -I../monet \
 	   -I../modules/plain -I../modules/plain/stream \
-	   $(OPENSSL_INCS)
+	   $(MONETDB_INCS) $(OPENSSL_INCS)
 
 MTSAFE
 
