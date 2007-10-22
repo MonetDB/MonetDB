@@ -9,3 +9,5 @@ mclient-lsql--help
 HAVE_PERL_SWIG?perl_dbi
 HAVE_PYTHON_SWIG?python_dbapi
 HAVE_PYTHON_SWIG?python_dbapi_embedded
+HAVE_PHP?php_monetdb
+
