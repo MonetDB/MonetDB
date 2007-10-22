@@ -392,7 +392,7 @@ def msc_deps(fd, deps, objext, msc):
         for t, deplist in deps.items():
             if not needbuilttool(deplist):
                 msc_dep(fd, t, deplist, msc)
-	
+
     msc['DEPS'].append("DONE")
 
 # list of scripts to install
@@ -666,7 +666,7 @@ def msc_bins(fd, var, binsmap, msc):
         fd.write("%s.exe: $(%s_OBJS)\n" % (bin, bin.replace('-','_')))
         fd.write('\t$(CC) $(CFLAGS)')
         fd.write(" -Fe%s.exe $(%s_OBJS) /link $(%s_LIBS) /subsystem:console /NODEFAULTLIB:LIBC\n" % (bin, bin.replace('-','_'), bin.replace('-','_')))
-	fd.write("\tif exist $@.manifest $(MT) -manifest $@.manifest -outputresource:$@;1\n\n");
+        fd.write("\tif exist $@.manifest $(MT) -manifest $@.manifest -outputresource:$@;1\n\n");
 
     if SCRIPTS:
         fd.write(name.replace('-','_')+"_SCRIPTS =" + msc_space_sep_list(SCRIPTS))
@@ -834,7 +834,7 @@ def msc_library(fd, var, libmap, msc):
         fd.write("%s.lib: %s%s\n" % (ln, ln, dll))
         fd.write("%s%s: $(%s_DEPS) \n" % (ln, dll, ln.replace('-','_')))
         fd.write("\t$(CC) $(CFLAGS) -LD -Fe%s%s $(%s_OBJS) /link $(%s_LIBS)%s\n" % (ln, dll, ln.replace('-','_'), ln.replace('-','_'), deffile))
-	fd.write("\tif exist $@.manifest $(MT) -manifest $@.manifest -outputresource:$@;2\n");
+        fd.write("\tif exist $@.manifest $(MT) -manifest $@.manifest -outputresource:$@;2\n");
         if sep == '_':
             fd.write('\tif not exist .libs $(MKDIR) .libs\n')
             fd.write('\t$(INSTALL) "%s%s" ".libs\\%s%s"\n' % (ln, dll, ln, dll))
@@ -922,7 +922,7 @@ def msc_libs(fd, var, libsmap, msc):
         fd.write(ln + ".lib: " + ln + ".dll\n")
         fd.write(ln + ".dll: $(" + ln.replace('-','_') + "_DEPS)\n")
         fd.write("\t$(CC) $(CFLAGS) -LD -Fe%s.dll $(%s_OBJS) /link $(%s_LIBS)%s\n" % (ln, ln.replace('-','_'), ln.replace('-','_'), deffile))
-	fd.write("\tif exist $@.manifest $(MT) -manifest $@.manifest -outputresource:$@;2\n");
+        fd.write("\tif exist $@.manifest $(MT) -manifest $@.manifest -outputresource:$@;2\n");
         if sep == '_':
             fd.write('\tif not exist .libs $(MKDIR) .libs\n')
             fd.write('\t$(INSTALL) "%s.dll" ".libs\\%s.dll"\n' % (ln, ln))
@@ -961,7 +961,7 @@ callantno = 0
 def msc_ant(fd, var, ant, msc):
     global callantno
 
-    target = var[4:]	# the ant target to call
+    target = var[4:]                    # the ant target to call
 
     jd = "JAVADIR"
     if ant.has_key("DIR"):
@@ -969,8 +969,8 @@ def msc_ant(fd, var, ant, msc):
     jd = msc_translate_dir(jd, msc)
 
     if ant.has_key("SOURCES"):
-    	for src in ant['SOURCES']:
-        	msc['EXTRA_DIST'].append(src)
+        for src in ant['SOURCES']:
+            msc['EXTRA_DIST'].append(src)
 
     if ant.has_key('COND'):
         condname = 'defined(' + ') && defined('.join(ant['COND']) + ')'
@@ -995,7 +995,7 @@ def msc_ant(fd, var, ant, msc):
     # INSTALL expects a list of dst,src,ext,install_directory,'lib?'.
     for file in ant['FILES']:
         sfile = file.replace(".", "_")
-    	fd.write('%s: %s_ant_target\n' % (file, target))
+        fd.write('%s: %s_ant_target\n' % (file, target))
         msc['INSTALL'][file] = file, '', jd, '', condname
 
     fd.write("\n!ELSE\n\n")
