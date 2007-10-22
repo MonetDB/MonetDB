@@ -1718,6 +1718,108 @@ PFbui_fn_ends_with_opt_opt (const PFla_op_t *loop, bool ordering,
         .frag = PFla_empty_set ()};
 }
 
+/**
+ * Algebra implementation for
+ * <code>fn:substring-before (xs:string?, xs:string?)</code>.
+ */
+struct PFla_pair_t
+PFbui_fn_substring_before_opt_opt (const PFla_op_t *loop, bool ordering,
+                            struct PFla_pair_t *args)
+{
+    (void) ordering;
+
+    return (struct PFla_pair_t) {
+        .rel = project (
+                   fun_1to1 (
+                       eqjoin (
+                           disjunion (
+                               args[0].rel,
+                               attach (
+                                   attach (
+                                       difference (
+                                           loop,
+                                           project (
+                                               args[0].rel,
+                                               proj (att_iter, att_iter))),
+                                       att_pos, lit_nat (1)),
+                                   att_item, lit_str (""))),
+                           project (
+                               disjunion (
+                                   args[1].rel,
+                                   attach (
+                                       attach (
+                                           difference (
+                                               loop,
+                                               project (
+                                                   args[1].rel,
+                                                   proj (att_iter, att_iter))),
+                                           att_pos, lit_nat (1)),
+                                       att_item, lit_str (""))),
+                               proj (att_iter1, att_iter),
+                               proj (att_item1, att_item)),
+                           att_iter,
+                           att_iter1),
+                       alg_fun_fn_substring_before,
+                       att_res,
+                       attlist (att_item, att_item1)),
+                proj (att_iter, att_iter),
+                proj (att_pos, att_pos),
+                proj (att_item, att_res)),
+
+        .frag = PFla_empty_set ()};
+}
+
+/**
+ * Algebra implementation for
+ * <code>fn:substring_after (xs:string?, xs:string?)</code>.
+ */
+struct PFla_pair_t
+PFbui_fn_substring_after_opt_opt (const PFla_op_t *loop, bool ordering,
+                                  struct PFla_pair_t *args)
+{
+    (void) ordering;
+
+    return (struct PFla_pair_t) {
+        .rel = project (
+                   fun_1to1 (
+                       eqjoin (
+                           disjunion (
+                               args[0].rel,
+                               attach (
+                                   attach (
+                                       difference (
+                                           loop,
+                                           project (
+                                               args[0].rel,
+                                               proj (att_iter, att_iter))),
+                                       att_pos, lit_nat (1)),
+                                   att_item, lit_str (""))),
+                           project (
+                               disjunion (
+                                   args[1].rel,
+                                   attach (
+                                       attach (
+                                           difference (
+                                               loop,
+                                               project (
+                                                   args[1].rel,
+                                                   proj (att_iter, att_iter))),
+                                           att_pos, lit_nat (1)),
+                                       att_item, lit_str (""))),
+                               proj (att_iter1, att_iter),
+                               proj (att_item1, att_item)),
+                           att_iter,
+                           att_iter1),
+                       alg_fun_fn_substring_after,
+                       att_res,
+                       attlist (att_item, att_item1)),
+                proj (att_iter, att_iter),
+                proj (att_pos, att_pos),
+                proj (att_item, att_res)),
+
+        .frag = PFla_empty_set ()};
+}
+
 /* ----------------------------------------------- */
 /* 7.6. String Functions that Use Pattern Matching */
 /* ----------------------------------------------- */

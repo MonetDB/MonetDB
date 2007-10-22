@@ -1242,6 +1242,8 @@ PFla_fun_1to1 (const PFla_op_t *n,
             break;
 
         case alg_fun_fn_concat:
+        case alg_fun_fn_substring_before:
+        case alg_fun_fn_substring_after:
             assert (refs.count == 2);
             /* make sure both attributes are of type string */
             assert (n->schema.items[ix[0]].type == aat_str &&

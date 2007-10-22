@@ -310,8 +310,12 @@ struct PFla_pair_t PFbui_fn_starts_with_opt_opt (const PFla_op_t *loop,
 struct PFla_pair_t PFbui_fn_ends_with_opt_opt (const PFla_op_t *loop,
                                                bool ordering,
                                                struct PFla_pair_t *args);
-
-
+struct PFla_pair_t PFbui_fn_substring_before_opt_opt (const PFla_op_t *loop,
+                                                      bool ordering,
+                                                      struct PFla_pair_t *args);
+struct PFla_pair_t PFbui_fn_substring_after_opt_opt (const PFla_op_t *loop,
+                                                     bool ordering,
+                                                     struct PFla_pair_t *args);
 
 /* 7.6. String Functions that Use Pattern Matching */
 

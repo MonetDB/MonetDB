@@ -1096,13 +1096,15 @@ PFfun_xquery_fo (void)
         .arity = 2, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_opt (PFty_xs_string ()),
                                 PFty_opt (PFty_xs_string ()) },
-            .ret_ty = PFty_xs_string () } } }
+            .ret_ty = PFty_xs_string () } } ,
+        .alg = PFbui_fn_substring_before_opt_opt }
     , /* fn:substring-after (string?, string?) as string */
       { .ns = PFns_fn, .loc = "substring-after",
         .arity = 2, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_opt (PFty_xs_string ()),
                                 PFty_opt (PFty_xs_string ()) },
-            .ret_ty = PFty_xs_string () } } }
+            .ret_ty = PFty_xs_string () } } ,
+        .alg = PFbui_fn_substring_after_opt_opt }
 
 /* 7.6. String Functions that Use Pattern Matching */
     , /* fn:matches(string?, string) as boolean */

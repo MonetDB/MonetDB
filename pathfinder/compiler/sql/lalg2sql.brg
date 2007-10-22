@@ -2717,6 +2717,8 @@ reduce (PFla_op_t * p, int goalnt)
                 case alg_fun_fn_string_length:
                 case alg_fun_fn_upper_case:
                 case alg_fun_fn_lower_case:
+                case alg_fun_fn_substring_before:
+                case alg_fun_fn_substring_after:
 
                 case alg_fun_fn_qname:
                 case alg_fun_pf_fragment:

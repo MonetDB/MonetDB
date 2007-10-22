@@ -324,6 +324,8 @@ infer_ocol (PFla_op_t *n)
                     break;
 
                 case alg_fun_fn_concat:
+                case alg_fun_fn_substring_before:
+                case alg_fun_fn_substring_after:
                     assert (n->sem.fun_1to1.refs.count == 2);
                     /* make sure both attributes are of type string */
                     assert (ocol_at (L(n), ix[0]).type == aat_str &&
@@ -364,7 +366,7 @@ infer_ocol (PFla_op_t *n)
                     assert (n->sem.fun_1to1.refs.count == 1);
                     res_type = aat_dbl;
                     break;
-                    
+
                 case alg_fun_fn_qname:
                     assert (n->sem.fun_1to1.refs.count == 2);
                     /* make sure both attributes are of type string */

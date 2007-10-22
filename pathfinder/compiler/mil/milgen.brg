@@ -3630,6 +3630,51 @@ reduce (PFpa_op_t * p, int goalnt)
                                    VAR (L(p)->env, att2, aat_str))));
                 }   break;
 
+                case alg_fun_fn_substring_before:
+                {
+                    PFalg_att_t         att1, att2;
+
+                    att1 = p->sem.fun_1to1.refs.atts[0];
+                    att2 = p->sem.fun_1to1.refs.atts[1];
+                    res_type = aat_str;
+
+                    execute (
+                        assgn (var (res->name),
+                               mstring2 (VAR (L(p)->env, att1, aat_str),
+                                         lit_int (0),
+                                         msearch (VAR (L(p)->env, att1, aat_str),
+                                                  VAR (L(p)->env, att2, aat_str)))));
+
+                }   break;
+
+                case alg_fun_fn_substring_after:
+                {
+                    PFalg_att_t         att1, att2;
+                    mvar_t              *search_res;
+
+                    att1 = p->sem.fun_1to1.refs.atts[0];
+                    att2 = p->sem.fun_1to1.refs.atts[1];
+                    res_type = aat_str;
+                    search_res = new_var(1);
+
+                    execute (
+                        assgn ( var (search_res->name),
+                                msearch ( VAR (L(p)->env, att1, aat_str),
+                                          VAR (L(p)->env, att2, aat_str))),
+                        assgn ( var (res->name),
+                                mifthenelse ( meq ( var (search_res->name),
+                                                    lit_int(-1)),
+                                              lit_str(""),
+                                              mstring (
+                                                    VAR (L(p)->env, att1, aat_str),
+                                                    madd ( var (search_res->name),
+                                                           mlength ( VAR (L(p)->env,
+                                                                     att2,
+                                                                     aat_str)))))));
+                    unpin(search_res, 1);
+
+                }   break;
+
                 case alg_fun_fn_number:
                 {
                     PFalg_att_t         att;

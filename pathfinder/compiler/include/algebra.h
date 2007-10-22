@@ -48,7 +48,7 @@
  *
  * Observe that the type #aat_node has four bits set, as nodes are split
  * in MonetDB into attribute nodes (#aat_anode) and other nodes (#aat_pnode).
- * Both node kinds require two bits each, to represented the nodes using a 
+ * Both node kinds require two bits each, to represented the nodes using a
  * node id (#aat_pre/#aat_attr) and a document fragment (#aat_pfrag/#aat_afrag).
  *
  * @note
@@ -65,13 +65,13 @@
 #define aat_bln   0x0020 /**< algebra simple atomic type boolean  */
 #define aat_qname 0x0040 /**< algebra simple atomic type QName  */
 #define aat_uA    0x0080 /**< algebra simple atomic type untypedAtomic  */
-#define aat_node  0x0F00 /**< algebra simple atomic type node */ 
-#define aat_anode 0x0C00 /**< algebra simple atomic type attribute */ 
-#define aat_attr  0x0800 /**< an attribute is represented 
+#define aat_node  0x0F00 /**< algebra simple atomic type node */
+#define aat_anode 0x0C00 /**< algebra simple atomic type attribute */
+#define aat_attr  0x0800 /**< an attribute is represented
                                by an attr value... */
 #define aat_afrag 0x0400 /**< ...and a attribute fragment */
 #define aat_pnode 0x0300 /**< algebra simple atomic type representing
-                               all other nodes */ 
+                               all other nodes */
 #define aat_pre   0x0200 /**< a node is represented by a pre value... */
 #define aat_pfrag 0x0100 /**< ...and a node fragment */
 
@@ -128,12 +128,12 @@ typedef struct PFalg_tuple_t PFalg_tuple_t;
 
 /* ................ algebra attribute lists ................ */
 
-/** An attribute (name) is represented by constants 
+/** An attribute (name) is represented by constants
         (as these are bit vectors we don't use an enum) */
 #define att_NULL    0x00000000    /**< cope with empty partions */
 #define att_iter    0x00000001    /**< iter column */
-#define att_item    0x00000002    /**< item column */ 
-#define att_pos     0x00000004    /**< pos column */  
+#define att_item    0x00000002    /**< item column */
+#define att_pos     0x00000004    /**< pos column */
 #define att_iter1   0x00000008    /**< iter1 column */
 #define att_item1   0x00000010    /**< item1 column */
 #define att_pos1    0x00000020    /**< pos1 column */
@@ -242,26 +242,28 @@ typedef struct PFalg_scj_spec_t PFalg_scj_spec_t;
 
 /** function representatives */
 enum PFalg_fun_t {
-      alg_fun_num_add          /**< arithmetic plus operator */
-    , alg_fun_num_subtract     /**< arithmetic minus operator */
-    , alg_fun_num_multiply     /**< arithmetic times operator */
-    , alg_fun_num_divide       /**< arithmetic divide operator */
-    , alg_fun_num_modulo       /**< arithmetic modulo operator */
-    , alg_fun_fn_abs           /**< fn:abs */
-    , alg_fun_fn_ceiling       /**< fn:ceiling */
-    , alg_fun_fn_floor         /**< fn:floor */
-    , alg_fun_fn_round         /**< fn:round */
-    , alg_fun_fn_concat        /**< fn:concat */
-    , alg_fun_fn_string_length /**< fn:string-length */
-    , alg_fun_fn_upper_case    /**< fn:upper-case */
-    , alg_fun_fn_lower_case    /**< fn:lower-case */
-    , alg_fun_fn_contains      /**< fn:contains */
-    , alg_fun_fn_starts_with   /**< fn:starts-with */
-    , alg_fun_fn_ends_with     /**< fn:ends-with */
-    , alg_fun_fn_number        /**< fn:number */
-    , alg_fun_fn_qname        /**< fn:QName */
-    , alg_fun_pf_fragment     /**< #pf:fragment */
-    , alg_fun_pf_supernode    /**< #pf:supernode */
+      alg_fun_num_add             /**< arithmetic plus operator */
+    , alg_fun_num_subtract        /**< arithmetic minus operator */
+    , alg_fun_num_multiply        /**< arithmetic times operator */
+    , alg_fun_num_divide          /**< arithmetic divide operator */
+    , alg_fun_num_modulo          /**< arithmetic modulo operator */
+    , alg_fun_fn_abs              /**< fn:abs */
+    , alg_fun_fn_ceiling          /**< fn:ceiling */
+    , alg_fun_fn_floor            /**< fn:floor */
+    , alg_fun_fn_round            /**< fn:round */
+    , alg_fun_fn_concat           /**< fn:concat */
+    , alg_fun_fn_string_length    /**< fn:string-length */
+    , alg_fun_fn_upper_case       /**< fn:upper-case */
+    , alg_fun_fn_lower_case       /**< fn:lower-case */
+    , alg_fun_fn_contains         /**< fn:contains */
+    , alg_fun_fn_starts_with      /**< fn:starts-with */
+    , alg_fun_fn_ends_with        /**< fn:ends-with */
+    , alg_fun_fn_substring_before /**< fn:substring-before */
+    , alg_fun_fn_substring_after  /**< fn:substring-after */
+    , alg_fun_fn_number           /**< fn:number */
+    , alg_fun_fn_qname            /**< fn:QName */
+    , alg_fun_pf_fragment         /**< #pf:fragment */
+    , alg_fun_pf_supernode        /**< #pf:supernode */
 };
 typedef enum PFalg_fun_t PFalg_fun_t;
 
@@ -378,7 +380,7 @@ int PFalg_atom_cmp (PFalg_atom_t a, PFalg_atom_t b);
 char * PFatt_str (PFalg_att_t att);
 
 /**
- * Create a unique name based on an id @a id and 
+ * Create a unique name based on an id @a id and
  * an original name @a ori that retains the usage information
  * of the new variable (iter, pos or item).
  */
@@ -399,7 +401,7 @@ char * PFalg_simple_type_str (PFalg_simple_type_t att);
  * Print function name
  */
 char * PFalg_fun_str (PFalg_fun_t fun);
-    
+
 /**
  * Construct a predicate.
  */

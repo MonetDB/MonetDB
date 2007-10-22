@@ -62,7 +62,7 @@
 #ifndef NDEBUG
 /**
  * check for a column @a a in op @a p.
- */ 
+ */
 static bool
 check_col (const PFpa_op_t *p, PFalg_att_t a)
 {
@@ -71,14 +71,14 @@ check_col (const PFpa_op_t *p, PFalg_att_t a)
     for (unsigned int i = 0; i < p->schema.count; i++)
         if (a == p->schema.items[i].name)
             return true;
-    
+
     return false;
 }
 #endif
 
 /**
  * check for the type of column @a a in op @a p.
- */ 
+ */
 static PFalg_simple_type_t
 type_of (const PFpa_op_t *p, PFalg_att_t a)
 {
@@ -87,7 +87,7 @@ type_of (const PFpa_op_t *p, PFalg_att_t a)
     for (unsigned int i = 0; i < p->schema.count; i++)
         if (a == p->schema.items[i].name)
             return p->schema.items[i].type;
-    
+
     assert (0);
     return 0;
 }
@@ -279,12 +279,12 @@ PFpa_lit_tbl (PFalg_attlist_t attlist,
  * optimization, however, should be able to eliminate *all* these
  * (literal) empty tables.  So none of them should occur in the
  * physical plan.
- * 
+ *
  * FIXME: There's only a single exception: If a query returns the
  *        (statically) empty sequence (i.e., the query `()'), we
  *        will end up with an empty relation as the top-level
  *        expression.  We could catch this case separately, though.
- * 
+ *
  * Constructor for an empty table.  Use this constructor (in
  * preference over a literal table with no tuples) to trigger
  * optimization rules concerning empty relations.
@@ -433,7 +433,7 @@ PFpa_attach (const PFpa_op_t *n,
     return ret;
 }
 
-/** 
+/**
  * Cross product (Cartesian product) between two algebra expressions.
  * Arguments @a a and @a b must not have any equally named attribute.
  *
@@ -460,7 +460,7 @@ PFpa_attach (const PFpa_op_t *n,
  * @bug
  *   Our current logical algebra trees do not produce cross products
  *   in the physical plan.  This code is thus not really tested.
- */ 
+ */
 PFpa_op_t *
 PFpa_cross (const PFpa_op_t *a, const PFpa_op_t *b)
 {
@@ -723,7 +723,7 @@ PFpa_semijoin (PFalg_att_t att1, PFalg_att_t att2,
     ret->orderings = PFord_unique (n1->orderings);
 
     /* ---- SemiJoin: costs ---- */
-    
+
     /* We have no alternative implmementation for this operator
        and it should be cheaper than a join plus a distinct operator
        --> dummy cost: + 10 */;
@@ -751,10 +751,10 @@ PFpa_thetajoin (const PFpa_op_t *n1, const PFpa_op_t *n2,
     /* did we find all attributes? */
     if (i < count)
         PFoops (OOPS_FATAL,
-                "attribute `%s' referenced in theta-join not found", 
+                "attribute `%s' referenced in theta-join not found",
                 contains_att (n2->schema, pred[i].right)
                 ? PFatt_str(pred[i].left) : PFatt_str(pred[i].right));
-    
+
     ret = wire2 (pa_thetajoin, n1, n2);
 
     ret->sem.thetajoin.count = count;
@@ -790,7 +790,7 @@ PFpa_thetajoin (const PFpa_op_t *n1, const PFpa_op_t *n2,
 
 /**
  * ThetaJoin: Theta-Join. Returns two columns (from n1 and n2)
- *            with duplicates eliminated. Preserves the order 
+ *            with duplicates eliminated. Preserves the order
  *            of the left argument.
  */
 PFpa_op_t *
@@ -804,7 +804,7 @@ PFpa_unq2_thetajoin (PFalg_comp_t comp, PFalg_att_t left, PFalg_att_t right,
             contains_att (n2->schema, right) &&
             contains_att (n1->schema, ldist) &&
             contains_att (n2->schema, rdist));
-    
+
     ret->sem.unq_thetajoin.comp  = comp;
     ret->sem.unq_thetajoin.left  = left;
     ret->sem.unq_thetajoin.right = right;
@@ -857,7 +857,7 @@ PFpa_unq1_thetajoin (PFalg_comp_t comp, PFalg_att_t left, PFalg_att_t right,
             contains_att (n2->schema, right) &&
             contains_att (n1->schema, ldist) &&
             contains_att (n2->schema, rdist));
-    
+
     ret->sem.unq_thetajoin.comp  = comp;
     ret->sem.unq_thetajoin.left  = left;
     ret->sem.unq_thetajoin.right = right;
@@ -982,7 +982,7 @@ PFpa_project (const PFpa_op_t *n, unsigned int count, PFalg_proj_t *proj)
         if (PFord_count (prefix) > 0)
             PFord_set_add (ret->orderings, prefix);
     }
-    
+
     /* prune away duplicate orderings */
     ret->orderings = PFord_unique (ret->orderings);
 
@@ -1097,7 +1097,7 @@ PFpa_append_union (const PFpa_op_t *n1, const PFpa_op_t *n2)
     /* ---- AppendUnion: orderings ---- */
 
     /*
-     *      e1.0 -> a(u)   e2.0 -> a(v)   u < v 
+     *      e1.0 -> a(u)   e2.0 -> a(v)   u < v
      *  -------------------------------------------
      *                e1 U e2 : [a]
      */
@@ -1235,8 +1235,8 @@ PFpa_merge_union (const PFpa_op_t *n1, const PFpa_op_t *n2,
     PFord_set_add (ret->orderings, ord);
 
     /*
-     *           e1.0 -> a(u)   e2.0 -> a(v)   u < v 
-     *   e1:[o_1,..,oi,a,ok,..on]   e2:[o_1,..,oi,a,ok,..on] 
+     *           e1.0 -> a(u)   e2.0 -> a(v)   u < v
+     *   e1:[o_1,..,oi,a,ok,..on]   e2:[o_1,..,oi,a,ok,..on]
      *  -----------------------------------------------------
      *     e1 U_{[o1,...,oi]} e2 : [o_1,..,oi,a,ok,..on]
      */
@@ -1482,7 +1482,7 @@ PFpa_refine_sort (const PFpa_op_t *n,
 
     /* ---- StandardSort: costs ---- */
     ret->cost = 3 * SORT_COST /* (1) */
-              + PFord_count (required) * SORT_COST 
+              + PFord_count (required) * SORT_COST
               - PFord_count (existing) * SORT_COST
               + n->cost;
     /* (1): make sorting more expensive as all path steps.
@@ -1496,7 +1496,7 @@ PFpa_refine_sort (const PFpa_op_t *n,
     return ret;
 }
 
-/** Constructor for generic operator that extends the schema 
+/** Constructor for generic operator that extends the schema
     with a new column where each value is determined by the values
     of a single row (cardinality stays the same) */
 PFpa_op_t *
@@ -1508,7 +1508,7 @@ PFpa_fun_1to1 (const PFpa_op_t *n,
     PFpa_op_t          *ret;
     unsigned int        i, j, ix[refs.count];
     PFalg_simple_type_t res_type = 0;
-    
+
     assert (n);
 
     /* verify that the referenced attributes in refs
@@ -1538,7 +1538,7 @@ PFpa_fun_1to1 (const PFpa_op_t *n,
                     n->schema.items[ix[0]].type == aat_int ||
                     n->schema.items[ix[0]].type == aat_dec ||
                     n->schema.items[ix[0]].type == aat_dbl);
-            assert (n->schema.items[ix[0]].type == 
+            assert (n->schema.items[ix[0]].type ==
                     n->schema.items[ix[1]].type);
 
             res_type = n->schema.items[ix[1]].type;
@@ -1558,6 +1558,8 @@ PFpa_fun_1to1 (const PFpa_op_t *n,
             break;
 
         case alg_fun_fn_concat:
+        case alg_fun_fn_substring_before:
+        case alg_fun_fn_substring_after:
             assert (refs.count == 2);
             /* make sure both attributes are of type string */
             assert (n->schema.items[ix[0]].type == aat_str &&
@@ -1582,7 +1584,7 @@ PFpa_fun_1to1 (const PFpa_op_t *n,
 
             res_type = aat_str;
             break;
-            
+
         case alg_fun_fn_contains:
         case alg_fun_fn_starts_with:
         case alg_fun_fn_ends_with:
@@ -1593,7 +1595,7 @@ PFpa_fun_1to1 (const PFpa_op_t *n,
 
             res_type = aat_bln;
             break;
-            
+
         case alg_fun_fn_number:
             assert (refs.count == 1);
             res_type = aat_dbl;
@@ -1633,7 +1635,7 @@ PFpa_fun_1to1 (const PFpa_op_t *n,
     ret->sem.fun_1to1.res  = res;
     ret->sem.fun_1to1.refs = (PFalg_attlist_t) {
         .count = refs.count,
-        .atts  = memcpy (PFmalloc (refs.count * sizeof (PFalg_att_t)), 
+        .atts  = memcpy (PFmalloc (refs.count * sizeof (PFalg_att_t)),
                          refs.atts,
                          refs.count * sizeof (PFalg_att_t)) };
 
@@ -1961,7 +1963,7 @@ PFpa_op_t *PFpa_hash_count (const PFpa_op_t *n,
  * any existing ordering, nor does it provide/preserve any input
  * ordering.
  */
-PFpa_op_t *PFpa_aggr (PFpa_op_kind_t kind, const PFpa_op_t *n, PFalg_att_t res, 
+PFpa_op_t *PFpa_aggr (PFpa_op_kind_t kind, const PFpa_op_t *n, PFalg_att_t res,
 		     PFalg_att_t att, PFalg_att_t part)
 {
     PFpa_op_t *ret = wire1 (kind, n);
@@ -2006,7 +2008,7 @@ PFpa_op_t *PFpa_aggr (PFpa_op_kind_t kind, const PFpa_op_t *n, PFalg_att_t res,
     /* did we find attribute 'att'? */
     if (!c1)
         PFoops (OOPS_FATAL,
-                "attribute `%s' referenced in aggregation function not found", 
+                "attribute `%s' referenced in aggregation function not found",
                 PFatt_str (att));
 
     /* did we find attribute 'part'? */
@@ -2053,14 +2055,14 @@ PFpa_number (const PFpa_op_t *n,
     /* ---- MergeRowNum: orderings ---- */
     for (unsigned int i = 0; i < PFord_set_count (n->orderings); i++) {
         PFord_set_add (ret->orderings, PFord_set_at (n->orderings, i));
-        
+
         /* if we have already an ordering we can also add the new
            generated column at the end. It won't break the ordering. */
-        PFord_set_add (ret->orderings, 
+        PFord_set_add (ret->orderings,
                        PFord_refine (
                            PFord_set_at (n->orderings, i),
                            new_att, DIR_ASC));
-        
+
         /* get the direction of the partitioning column */
         if (part &&
             PFord_order_col_at (PFord_set_at (n->orderings, i), 0)
@@ -2103,7 +2105,7 @@ PFpa_number (const PFpa_op_t *n,
  * stored in newly created column @a res.
  */
 PFpa_op_t *
-PFpa_type (const PFpa_op_t *n, 
+PFpa_type (const PFpa_op_t *n,
            PFalg_att_t att,
            PFalg_simple_type_t ty,
            PFalg_att_t res)
@@ -2120,7 +2122,7 @@ PFpa_type (const PFpa_op_t *n,
     for (i = 0; i < n->schema.count; i++)
         ret->schema.items[i] = n->schema.items[i];
 
-    ret->schema.items[i] 
+    ret->schema.items[i]
         = (struct PFalg_schm_item_t) { .type = aat_bln, .name = res };
 
     ret->sem.type.att = att;
@@ -2141,7 +2143,7 @@ PFpa_type (const PFpa_op_t *n,
  * stored in newly created column @a res.
  */
 PFpa_op_t *
-PFpa_type_assert (const PFpa_op_t *n, 
+PFpa_type_assert (const PFpa_op_t *n,
                   PFalg_att_t att,
                   PFalg_simple_type_t ty)
 {
@@ -2566,7 +2568,7 @@ PFpa_doc_tbl (const PFpa_op_t *rel, PFalg_att_t iter, PFalg_att_t item)
 
     ret->sem.ii.iter = iter;
     ret->sem.ii.item = item;
-    
+
     /* The schema of the result part is iter|item */
     ret->schema.count = 2;
     ret->schema.items
@@ -2605,7 +2607,7 @@ PFpa_doc_tbl (const PFpa_op_t *rel, PFalg_att_t iter, PFalg_att_t item)
 }
 
 /**
- * Construct algebra node that will allow the access to the string 
+ * Construct algebra node that will allow the access to the string
  * content of loaded documents nodes
  *
  * @a doc is the current document (live nodes) and @a alg is the overall
@@ -2627,7 +2629,7 @@ PFpa_doc_access (const PFpa_op_t *doc, const PFpa_op_t *alg,
     for (i = 0; i < alg->schema.count; i++)
         ret->schema.items[i] = alg->schema.items[i];
 
-    ret->schema.items[i] 
+    ret->schema.items[i]
         = (struct PFalg_schm_item_t) { .type = aat_str, .name = res };
 
     ret->sem.doc_access.res = res;
@@ -2685,10 +2687,10 @@ PFpa_op_t * PFpa_twig (const PFpa_op_t *n,
     PFord_set_add (ret->orderings, sortby (item));
     PFord_set_add (ret->orderings, sortby (iter, item));
     PFord_set_add (ret->orderings, sortby (item, iter));
-            
+
     /* costs */
     ret->cost = DEFAULT_COST + n->cost;
-    
+
     return ret;
 }
 
@@ -2708,10 +2710,10 @@ PFpa_op_t * PFpa_fcns (const PFpa_op_t *fc,
     ret->schema.items = NULL;
 
     /* orderings */
-    
+
     /* costs */
     ret->cost = DEFAULT_COST + fc->cost + ns->cost;
-    
+
     return ret;
 }
 
@@ -2727,7 +2729,7 @@ PFpa_op_t * PFpa_docnode (const PFpa_op_t *scope, const PFpa_op_t *fcns,
     PFpa_op_t *ret = wire2 (pa_docnode, scope, fcns);
 
     assert (check_col (scope, iter));
-    
+
     /* store columns to work on in semantical field */
     ret->sem.ii.iter = iter;
     ret->sem.ii.item = att_NULL;
@@ -2737,17 +2739,17 @@ PFpa_op_t * PFpa_docnode (const PFpa_op_t *scope, const PFpa_op_t *fcns,
     ret->schema.items = NULL;
 
     /* orderings */
-    
+
     /* costs */
     ret->cost = DEFAULT_COST + scope->cost + fcns->cost;
-    
+
     return ret;
 }
 
 /**
  * Constructor for element operators.
  *
- * @a tag constructs the elements' tag names, and @a fcns 
+ * @a tag constructs the elements' tag names, and @a fcns
  * is the content of the new elements.
  */
 PFpa_op_t * PFpa_element (const PFpa_op_t *tag,
@@ -2768,10 +2770,10 @@ PFpa_op_t * PFpa_element (const PFpa_op_t *tag,
     ret->schema.items = NULL;
 
     /* orderings */
-    
+
     /* costs */
     ret->cost = DEFAULT_COST + tag->cost + fcns->cost;
-    
+
     return ret;
 }
 
@@ -2800,10 +2802,10 @@ PFpa_op_t * PFpa_attribute (const PFpa_op_t *cont,
     ret->schema.items = NULL;
 
     /* orderings */
-    
+
     /* costs */
     ret->cost = DEFAULT_COST + cont->cost;
-    
+
     return ret;
 }
 
@@ -2830,10 +2832,10 @@ PFpa_textnode (const PFpa_op_t *cont, PFalg_att_t iter, PFalg_att_t item)
     ret->schema.items = NULL;
 
     /* orderings */
-    
+
     /* costs */
     ret->cost = DEFAULT_COST + cont->cost;
-    
+
     return ret;
 }
 
@@ -2860,10 +2862,10 @@ PFpa_comment (const PFpa_op_t *cont, PFalg_att_t iter, PFalg_att_t item)
     ret->schema.items = NULL;
 
     /* orderings */
-    
+
     /* costs */
     ret->cost = DEFAULT_COST + cont->cost;
-    
+
     return ret;
 }
 
@@ -2895,10 +2897,10 @@ PFpa_op_t * PFpa_processi (const PFpa_op_t *cont,
     ret->schema.items = NULL;
 
     /* orderings */
-    
+
     /* costs */
     ret->cost = DEFAULT_COST + cont->cost;
-    
+
     return ret;
 }
 
@@ -2931,10 +2933,10 @@ PFpa_op_t * PFpa_content (const PFpa_op_t *doc,
     ret->schema.items = NULL;
 
     /* orderings */
-    
+
     /* costs */
     ret->cost = DEFAULT_COST + doc->cost + cont->cost;
-    
+
     return ret;
 }
 
@@ -3090,7 +3092,7 @@ PFpa_op_t *PFpa_nil (void)
     /* allocate memory for the result schema */
     ret->schema.count = 0;
     ret->schema.items = NULL;
-    
+
     /* costs */
     ret->cost = 0;
 
@@ -3138,7 +3140,7 @@ PFpa_trace (const PFpa_op_t *n1,
 
     for (i = 0; i < n1->schema.count; i++)
         ret->schema.items[i] = n1->schema.items[i];
-    
+
     /* ordering stays the same */
     for (unsigned int i = 0; i < PFord_set_count (n1->orderings); i++)
         PFord_set_add (ret->orderings, PFord_set_at (n1->orderings, i));
@@ -3189,7 +3191,7 @@ PFpa_trace_msg (const PFpa_op_t *n1,
 
     for (i = 0; i < n1->schema.count; i++)
         ret->schema.items[i] = n1->schema.items[i];
-    
+
     /* ordering stays the same */
     for (unsigned int i = 0; i < PFord_set_count (n1->orderings); i++)
         PFord_set_add (ret->orderings, PFord_set_at (n1->orderings, i));
@@ -3226,7 +3228,7 @@ PFpa_trace_map (const PFpa_op_t *n1,
     if (found != 2)
         PFoops (OOPS_FATAL,
                 "attributes referenced in trace operator not found");
-    
+
     /* create new trace map node */
     ret = wire2 (pa_trace_map, n1, n2);
 
@@ -3277,7 +3279,7 @@ PFpa_op_t *PFpa_rec_fix (const PFpa_op_t *paramList,
 
     for (i = 0; i < res->schema.count; i++)
         ret->schema.items[i] = res->schema.items[i];
-    
+
     /* ordering stays the same as the result ordering */
     for (unsigned int i = 0; i < PFord_set_count (res->orderings); i++)
         PFord_set_add (ret->orderings, PFord_set_at (res->orderings, i));
@@ -3308,7 +3310,7 @@ PFpa_op_t *PFpa_rec_param (const PFpa_op_t *arguments,
     /* allocate memory for the result schema */
     ret->schema.count = 0;
     ret->schema.items = NULL;
-    
+
     /* costs */
     ret->cost = DEFAULT_COST + arguments->cost + paramList->cost;
 
@@ -3365,7 +3367,7 @@ PFpa_op_t *PFpa_rec_arg (const PFpa_op_t *seed,
     for (i = 0; i < PFord_set_count (base->orderings); i++) {
         if (!PFord_count (PFord_set_at (base->orderings, i)))
            continue; /* case is trivially fulfilled */
-        
+
         for (j = 0; j < PFord_set_count (recursion->orderings); j++)
             if (PFord_implies (
                     PFord_set_at (recursion->orderings, j),
@@ -3406,7 +3408,7 @@ PFpa_op_t *PFpa_rec_arg (const PFpa_op_t *seed,
 
     for (i = 0; i < seed->schema.count; i++)
         ret->schema.items[i] = seed->schema.items[i];
-    
+
     /* ordering stays the same as the base ordering */
     for (unsigned int i = 0; i < PFord_set_count (base->orderings); i++)
         PFord_set_add (ret->orderings, PFord_set_at (base->orderings, i));
@@ -3439,7 +3441,7 @@ PFpa_op_t *PFpa_rec_base (PFalg_schema_t schema, PFord_ordering_t ord)
                     "sort column '%s' does not appear in the schema",
                     PFatt_str (PFord_order_col_at (ord, i)));
     }
-    
+
     /* create base operator for the recursion */
     ret = leaf (pa_rec_base);
 
@@ -3451,7 +3453,7 @@ PFpa_op_t *PFpa_rec_base (PFalg_schema_t schema, PFord_ordering_t ord)
 
     for (i = 0; i < schema.count; i++)
         ret->schema.items[i] = schema.items[i];
-    
+
     /* add the ordering given to the constructor */
     PFord_set_add (ret->orderings, ord);
 
@@ -3482,7 +3484,7 @@ PFpa_op_t *PFpa_rec_border (const PFpa_op_t *n)
 
     for (i = 0; i < n->schema.count; i++)
         ret->schema.items[i] = n->schema.items[i];
-    
+
     /* ordering stays the same as the input */
     for (unsigned int i = 0; i < PFord_set_count (n->orderings); i++)
         PFord_set_add (ret->orderings, PFord_set_at (n->orderings, i));
@@ -3506,7 +3508,7 @@ PFpa_string_join (const PFpa_op_t *n1, const PFpa_op_t *n2,
 
     ret->sem.ii.iter = iter;
     ret->sem.ii.item = item;
-    
+
     /* allocate memory for the result schema */
     ret->schema.count = 2;
     ret->schema.items

@@ -159,7 +159,7 @@
  * handled by the constructor functions).
  *
  * The simple type @c node plays a special role: Lateron, we will
- * distinct attribute nodes and other nodes. In both cases we will 
+ * distinct attribute nodes and other nodes. In both cases we will
  * implement XML tree nodes with help of @em two columns: @em pre / @em attr
  * and @em pfrag / @em afrag. Enum value @c aat_pnode thus sets @em two bits;
  * the two sub-parts are available as @c aat_pre and @c aat_pfrag. Accordingly
@@ -190,7 +190,7 @@
  *   become our actual optimizer.
  *   .
  * - Perform common subexpression elimination on the algebra tree/DAG.
- *   It is known that plans that come out of our compilation procedure 
+ *   It is known that plans that come out of our compilation procedure
  *   have a high degree of sharing. The way core2alg.brg is
  *   implemented, its output will thus already be a DAG (not a tree).
  *   A distinct CSE phase in algebra_cse.c catches remaining
@@ -394,7 +394,7 @@
  * finally printing it to stdout. The implementation as a sort of grammar
  * at the same time "guarantees" that the produced code is actually valid
  * MIL code.
- * 
+ *
  *
  * <a name='fn1'>[1]</a> Torsten Grust, Jens Teubner.
  *   <a href='http://www.pathfinder-xquery.org/files/algebra-mapping.pdf'>
@@ -609,7 +609,7 @@ schema_diff_count (PFalg_schema_t schema, unsigned int count,
                 PFalg_att_t *attlist)
 {
     unsigned int c = 0;
-    bool match = false; 
+    bool match = false;
 
     for (unsigned int i = 0; i < schema.count; i++) {
         for (unsigned int j = 0; j < count; j++) {
@@ -629,14 +629,14 @@ schema_diff_count (PFalg_schema_t schema, unsigned int count,
  * in the @a attlist argument.
  */
 PFalg_schema_t
-PFalg_schema_diff_ (PFalg_schema_t schema, unsigned int count, 
+PFalg_schema_diff_ (PFalg_schema_t schema, unsigned int count,
                 PFalg_att_t *attlist)
 {
     unsigned int retc = 0;
     bool match = false;
-    unsigned int c = schema_diff_count (schema, count, attlist); 
+    unsigned int c = schema_diff_count (schema, count, attlist);
 
-    PFalg_schema_t ret = 
+    PFalg_schema_t ret =
         (PFalg_schema_t)
         {
             .count = c,
@@ -644,7 +644,7 @@ PFalg_schema_diff_ (PFalg_schema_t schema, unsigned int count,
                 c * sizeof (PFalg_schm_item_t))
         };
 
-    
+
     for (unsigned int i = 0; i < schema.count; i++) {
         for (unsigned int j = 0; j < count; j++) {
             if (schema.items[i].name == attlist[j]) {
@@ -689,16 +689,16 @@ PFalg_atom_cmp (PFalg_atom_t a, PFalg_atom_t b)
                                 : (a.val.dbl < b.val.dbl ? -1 : 1));
         case aat_bln:   return a.val.bln - b.val.bln;
         case aat_qname: return PFqname_eq (a.val.qname, b.val.qname);
-        case aat_node: 
-        case aat_pnode: 
-        case aat_anode: 
+        case aat_node:
+        case aat_pnode:
+        case aat_anode:
         case aat_pre:
         case aat_attr:
-        case aat_pfrag: 
-        case aat_afrag: 
+        case aat_pfrag:
+        case aat_afrag:
                         break; /* error */
     }
-    
+
     PFoops (OOPS_FATAL, "error comparing literal values");
 
     assert(0); /* never reached due to "exit" in PFoops */
@@ -733,7 +733,7 @@ PFalg_simple_type_str (PFalg_simple_type_t type) {
 }
 
 /**
- * Create an unique name based on an id @a id and 
+ * Create an unique name based on an id @a id and
  * an original name @a ori that retains the usage information
  * of the new variable (iter, pos or item).
  */
@@ -884,7 +884,7 @@ PFatt_str (PFalg_att_t att) {
         case att_NULL:    return "(NULL)";
         case att_iter:    return "iter";
         case att_item:    return "item";
-        case att_pos:     return "pos"; 
+        case att_pos:     return "pos";
         case att_iter1:   return "iter1";
         case att_item1:   return "item1";
         case att_pos1:    return "pos1";
@@ -943,26 +943,28 @@ char *
 PFalg_fun_str (PFalg_fun_t fun)
 {
     switch (fun) {
-        case alg_fun_num_add:          return "add";
-        case alg_fun_num_subtract:     return "subtract";
-        case alg_fun_num_multiply:     return "multiply";
-        case alg_fun_num_divide:       return "divide";
-        case alg_fun_num_modulo:       return "modulo";
-        case alg_fun_fn_abs:           return "fn:abs";
-        case alg_fun_fn_ceiling:       return "fn:ceiling";
-        case alg_fun_fn_floor:         return "fn:floor";
-        case alg_fun_fn_round:         return "fn:round";
-        case alg_fun_fn_concat:        return "fn:concat";
-        case alg_fun_fn_string_length: return "fn:string-length";
-        case alg_fun_fn_upper_case:    return "fn:upper-case";
-        case alg_fun_fn_lower_case:    return "fn:lower-case";
-        case alg_fun_fn_contains:      return "fn:contains";
-        case alg_fun_fn_starts_with:   return "fn:starts-with";
-        case alg_fun_fn_ends_with:     return "fn:ends-with";
-        case alg_fun_fn_number:        return "fn:number";
-        case alg_fun_fn_qname:         return "fn:QName";
-        case alg_fun_pf_fragment:      return "#pf:fragment";
-        case alg_fun_pf_supernode:     return "#pf:supernode";
+        case alg_fun_num_add:             return "add";
+        case alg_fun_num_subtract:        return "subtract";
+        case alg_fun_num_multiply:        return "multiply";
+        case alg_fun_num_divide:          return "divide";
+        case alg_fun_num_modulo:          return "modulo";
+        case alg_fun_fn_abs:              return "fn:abs";
+        case alg_fun_fn_ceiling:          return "fn:ceiling";
+        case alg_fun_fn_floor:            return "fn:floor";
+        case alg_fun_fn_round:            return "fn:round";
+        case alg_fun_fn_concat:           return "fn:concat";
+        case alg_fun_fn_string_length:    return "fn:string-length";
+        case alg_fun_fn_upper_case:       return "fn:upper-case";
+        case alg_fun_fn_lower_case:       return "fn:lower-case";
+        case alg_fun_fn_contains:         return "fn:contains";
+        case alg_fun_fn_starts_with:      return "fn:starts-with";
+        case alg_fun_fn_ends_with:        return "fn:ends-with";
+        case alg_fun_fn_substring_before: return "fn:substring-before";
+        case alg_fun_fn_substring_after:  return "fn:substring-after";
+        case alg_fun_fn_number:           return "fn:number";
+        case alg_fun_fn_qname:            return "fn:QName";
+        case alg_fun_pf_fragment:         return "#pf:fragment";
+        case alg_fun_pf_supernode:        return "#pf:supernode";
     }
     PFoops (OOPS_FATAL, "unknown algebraic function name (%i)", fun);
     return NULL;
