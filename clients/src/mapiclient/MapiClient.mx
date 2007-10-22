@@ -284,7 +284,7 @@ SQLrow(int *len, int *numeric, char **rest, int fields, int trim)
 	}
 
 	do {
-		fprintf(toConsole," %c", first? '|':':');
+		fprintf(toConsole,"%c ", first? '|':':');
 		more = 0;
 		for (i = 0; i < fields; i++) {
 			if (rest[i] == NULL || *rest[i] == 0) 

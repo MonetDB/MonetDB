@@ -36,6 +36,7 @@ includedir="@Qincludedir@"
 pkglibdir="${libdir}/MonetDB"
 pkgdatadir="${datadir}/MonetDB"
 pkgincludedir="${includedir}/MonetDB"
+perllibdir="${prefix}/@PERL_LIBDIR@"
 pythonlibdir="${prefix}/@PYTHON_LIBDIR@"
 
 usage()
@@ -56,7 +57,7 @@ Install directories ${pkg} was configured to
   --prefix  --exec-prefix  --bindir  --libexecdir  --datarootdir
   --datadir  --sysconfdir  --localstatedir  --libdir  --infodir
   --mandir  --includedir --pkgdatadir --pkglibdir --pkgincludedir
-  --pythonlibdir
+  --perllibdir --pythonlibdir
 
 EOF
 

@@ -125,7 +125,7 @@ class Mapi:
             raise RuntimeError(self.error_str())
         hdl = MapiQuery(hdl, self)
         if self.error():
-            raise RuntimeError(self.error_str())
+            raise RuntimeError(hdl.result_error())
         return hdl
 
     def query_array(self, cmd, argv):
@@ -241,9 +241,12 @@ class Mapi:
         return ret
 
 class Embedded(Mapi):
-    def __init__(self, dbfarm = None, dbname = "demo", lang = "sql"):
+    def __init__(self, dbfarm = None, dbname = "demo", lang = "sql", version = 5):
         try:
-            import monetdb
+	    if version == 5:
+            	import monetdb5 as monetdb
+	    else:
+            	import monetdb
             if lang == "sql":
                 self._Mapi__mid = monetdb.monetdb_sql(dbfarm, dbname)
         except:
@@ -285,7 +288,7 @@ class MapiQuery:
             raise RuntimeError(self.__mid.error_str())
         if ret == MapiLib.MTIMEOUT:
             raise IOError(self.__mid.error_str())
-    explain = explain_query
+        explain = explain_query
 
     def explain_result(self, f):
         ret = MapiLib.mapi_explain_result(self.__hdl, f)
@@ -296,6 +299,8 @@ class MapiQuery:
 
     def result_error(self):
         ret = MapiLib.mapi_result_error(self.__hdl)
+        if ret:
+            return ret
         if self.__mid.error():
             raise IOError(self.__mid.error_str())
         return ret

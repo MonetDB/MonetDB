@@ -22,6 +22,7 @@ set includedir=@includedir@
 set pkglibdir=%libdir%\MonetDB
 set pkgdatadir=%datadir%\MonetDB
 set pkgincludedir=%includedir%\MonetDB
+set perllibdir=%prefix%\@PERL_LIBDIR@   
 set pythonlibdir=%prefix%\@PYTHON_LIBDIR@   
 
 if "%1" == ""	goto usage
@@ -52,6 +53,7 @@ if "%1" == "--includedir"	echo %includedir%	& goto shift
 if "%1" == "--pkgdatadir"	echo %pkgdatadir%	& goto shift
 if "%1" == "--pkglibdir"	echo %pkglibdir%	& goto shift
 if "%1" == "--pkgincludedir"	echo %pkgincludedir%	& goto shift
+if "%1" == "--perllibdir"	echo %perllibdir%	& goto shift
 if "%1" == "--pythonlibdir"	echo %pythonlibdir%	& goto shift
 if "%1" == "--internal"					  goto shift
 
@@ -70,6 +72,6 @@ if "%1" == "--internal"					  goto shift
 	echo   --prefix  --exec-prefix  --bindir  --libexecdir  --datadir
 	echo   --sysconfdir  --localstatedir  --libdir  --infodir
 	echo   --mandir  --includedir --pkgdatadir --pkglibdir --pkgincludedir
-	echo   --pythonlibdir
+	echo   --perllibdir --pythonlibdir
 	echo.
 

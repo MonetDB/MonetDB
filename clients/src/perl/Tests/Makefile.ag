@@ -14,4 +14,12 @@
 # Portions created by CWI are Copyright (C) 1997-2007 CWI.
 # All Rights Reserved.
 
-SUBDIRS = C python
+MTSAFE
+
+scripts_pl = {
+	DIR = libdir/MonetDB/Tests
+	SOURCES = sqlsample.pl.in milsample.pl.in malsample.pl.in
+}
+
+EXTRA_DIST = client.pl smack00.pl smack01.pl
+

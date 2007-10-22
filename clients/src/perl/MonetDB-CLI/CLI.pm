@@ -24,7 +24,7 @@ MonetDB::CLI - MonetDB Call Level Interface
 
   use MonetDB::CLI();
 
-  my $cxn = MonetDB::CLI->connect( $host, $port, $user, $pass, $lang );
+  my $cxn = MonetDB::CLI->connect( $host, $port, $user, $pass, $lang, $db );
 
   my $req = $cxn->query('select * from env');
   while ( my $cnt = $req->fetch ) {
@@ -44,7 +44,7 @@ It is not guaranteed that this call level interface stays the same!
 
 =head2 The C<connect()> method
 
-  my $cxn = MonetDB::CLI->connect( $host, $port, $user, $pass, $lang );
+  my $cxn = MonetDB::CLI->connect( $host, $port, $user, $pass, $lang, $db );
 
 This method tries to load an implementation module from C<@Modules> and
 delegates to the C<connect()> method of the first successful loaded module.
