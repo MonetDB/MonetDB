@@ -20,6 +20,11 @@ SWIGFLAGS = $(MONETDB_INCS) $(CLIENTS_INCS)
 INCLUDES = ../../include ../../common ../../storage ../../server \
 	$(MONETDB_INCS) $(CLIENTS_INCS) $(MONETDB5_INCS) $(PYTHON_INCS)
 
+# with gcc we could use these
+#X_CFLAGS = -Wno-unused-parameter -Wno-unused-function
+# but we certainly have to override the default X_CFLAGS:
+X_CFLAGS =
+
 EXTRA_DIST = $(man_MANS)
 
 lib__sql = {
