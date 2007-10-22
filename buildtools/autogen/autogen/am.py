@@ -879,7 +879,7 @@ def am_libs(fd, var, libsmap, am):
 
 def am_ant(fd, var, ant, am):
 
-    target = var[4:]	# the ant target to call
+    target = var[4:]                    # the ant target to call
 
     jd = "JAVADIR"
     if ant.has_key("DIR"):

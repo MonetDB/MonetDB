@@ -1544,7 +1544,7 @@ def RunTest(env, TST, BusyPorts, COND) :
 
         # Check for available sockets and block them until we're ready to run the actual test
         MAPIsockets, reason = CheckSocket2(env, "MAPI")   #, SrvrErr)
-	XRPCsockets = None
+        XRPCsockets = None
         if MAPIsockets is not None:
             XRPCsockets, reason = CheckSocket2(env, "XRPC")   #, SrvrErr)
         if None in (MAPIsockets, XRPCsockets):
@@ -1936,7 +1936,7 @@ def CheckSocket2(env,SERVER) :  #,SrvrErr) :
         Smsg = """
 ! Socket-Check failed for %sserver on <%s:%d> with #%d; '%s' !
 """ % (SERVER, host, port, Serrno, Serrstr)
-        newport = eval(dft[SERVER+'PORT']) 
+        newport = eval(dft[SERVER+'PORT'])
         busy, host, Serrno, Serrstr, S = CheckPort(int(newport))
         if busy:
             S[0].close()
@@ -2535,10 +2535,10 @@ if OS == "Linux":
             LINUX_DIST = '%s:%s' % (x.group(1),x.group(2))
     elif os.path.isfile('/etc/redhat-release'):
         l = open('/etc/redhat-release').readline()
-    	x0 = re.compile('^.*(Red) (Hat).* Linux *([A-Z]*) release ([0-9][^ \n]*)( .*)*$').match(l)
-    	x1 = re.compile('^Red Hat Enterprise Linux ([AW]S) release ([0-9][^ \n]*)( .*)*$').match(l)
-    	x2 = re.compile('^(CentOS) release ([0-9][^ \n]*)( .*)*$').match(l)
-    	x3 = re.compile('^(Scientific) Linux SL release ([0-9][^ \n]*)( .*)*$').match(l)
+        x0 = re.compile('^.*(Red) (Hat).* Linux *([A-Z]*) release ([0-9][^ \n]*)( .*)*$').match(l)
+        x1 = re.compile('^Red Hat Enterprise Linux ([AW]S) release ([0-9][^ \n]*)( .*)*$').match(l)
+        x2 = re.compile('^(CentOS) release ([0-9][^ \n]*)( .*)*$').match(l)
+        x3 = re.compile('^(Scientific) Linux SL release ([0-9][^ \n]*)( .*)*$').match(l)
         if x0:
             LINUX_DIST = '%s%s:%s%s' % (x0.group(1),x0.group(2),x0.group(4),x0.group(3))
         elif x1:
@@ -2549,10 +2549,10 @@ if OS == "Linux":
             LINUX_DIST = '%s:%s' % (x3.group(1),x3.group(2))
     elif os.path.isfile('/etc/SuSE-release'):
         l = open('/etc/SuSE-release').readline()
-    	x0 = re.compile('^.*(S[Uu]SE) LINUX Enterprise ([SD])[ervsktop]* ([0-9][^ \n]*)( .*)*$').match(l)
-    	x1 = re.compile('^S[Uu]SE LINUX Enterprise ([SD])[ervsktop]* ([0-9][^ \n]*)( .*)*$').match(l)
-    	x2 = re.compile('^.*(S[Uu]SE) [Ll][Ii][Nn][Uu][Xx].* ([0-9][^ \n]*)( .*)*$').match(l)
-    	x3 = re.compile('^open(S[Uu]SE) ([0-9][^ \n]*)( .*)*$').match(l)
+        x0 = re.compile('^.*(S[Uu]SE) LINUX Enterprise ([SD])[ervsktop]* ([0-9][^ \n]*)( .*)*$').match(l)
+        x1 = re.compile('^S[Uu]SE LINUX Enterprise ([SD])[ervsktop]* ([0-9][^ \n]*)( .*)*$').match(l)
+        x2 = re.compile('^.*(S[Uu]SE) [Ll][Ii][Nn][Uu][Xx].* ([0-9][^ \n]*)( .*)*$').match(l)
+        x3 = re.compile('^open(S[Uu]SE) ([0-9][^ \n]*)( .*)*$').match(l)
         if x0:
             LINUX_DIST = '%s:%sE%s' % (x0.group(1),x0.group(3),x0.group(2))
         elif x1:
@@ -2567,7 +2567,7 @@ if OS == "Linux":
         if x:
             LINUX_DIST = '%s:%s' % (x.group(1),x.group(2))
     elif os.path.isfile('/etc/debian_version'):
-    	LINUX_DIST = "Debian:"+open('/etc/debian_version').readline().strip()
+        LINUX_DIST = "Debian:"+open('/etc/debian_version').readline().strip()
     if not LINUX_DIST:
         LINUX_DIST = OS+':'+re.compile('^([0-9\.]*)([^0-9\.].*)$').match(RELEASE).group(1)
     DIST,VERSION = LINUX_DIST.split(':', 1)
@@ -2844,7 +2844,7 @@ def main(argv) :
             else:
                 par['PACKAGE'] = 'monetdb'
             Warn('Using default package="%s".' % par['PACKAGE'])
-            
+
     if par['M4'] and par['PACKAGE'] == 'monetdb5':
         ErrXit('"-4/--MonetDB4" conflicts with "--package=monetdb5"!')
     if par['M5'] and par['PACKAGE'] == 'monetdb4':
