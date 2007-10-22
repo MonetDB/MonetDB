@@ -258,9 +258,11 @@ map_ori_names (PFla_op_t *p, PFarray_t *map)
             break;
 
         case la_eqjoin:
-            PFoops (OOPS_FATAL,
-                    "clone column unaware eqjoin operator is "
-                    "only allowed with original attribute names!");
+            res = eqjoin (PROJ(LEFT, p),
+                          PROJ(RIGHT, p),
+                          ONAME (p, p->sem.eqjoin.att1),
+                          ONAME (p, p->sem.eqjoin.att2));
+            break;
 
         case la_eqjoin_unq:
         {
