@@ -20,15 +20,15 @@ for file; do
 	    exit 1
 	fi
 	;;
-    *.py | *.py.in)
-	# TABs and trailing white space are not allowed in Python source
-	if grep -q $'\t\\| $' "$file"; then
-	    echo "Pre-commit check failed:"
-	    echo "The file \"$file\" contains TABs and/or trailing white space."
-	    echo "Change TABs to spaces and remove any trailing white space, then try again."
-	    exit 1
-	fi
-	;;
+#     *.py | *.py.in)
+# 	# TABs and trailing white space are not allowed in Python source
+# 	if grep -q $'\t\\| $' "$file"; then
+# 	    echo "Pre-commit check failed:"
+# 	    echo "The file \"$file\" contains TABs and/or trailing white space."
+# 	    echo "Change TABs to spaces and remove any trailing white space, then try again."
+# 	    exit 1
+# 	fi
+# 	;;
     esac
 done
 exit 0
