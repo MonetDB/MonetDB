@@ -1007,6 +1007,13 @@ class Popen(object):
             if self.pid == 0:
                 # Child
                 try:
+                    os.setpgrp()
+                except AttributeError:
+                    try:
+                        os.setpgid(0, 0)
+                    except AttributeError:
+                        pass
+                try:
                     # Close parent's pipe ends
                     if p2cwrite is not None:
                         os.close(p2cwrite)
