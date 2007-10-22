@@ -30,7 +30,7 @@ dnl AH_TOP([#include "sysdefs.h"])
 AH_BOTTOM([#include "stddef.h"])
 
 dnl ----------------------
-AM_INIT_AUTOMAKE("pathfinder", 0.20.0)
+AM_INIT_AUTOMAKE("pathfinder", 0.20.1)
 #                              ^^^^^^
 # Maintained via vertoo. Please don't modify by hand!
 # Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
