@@ -437,6 +437,18 @@ AM_CONDITIONAL(HAVE_MONETDB5,test x$have_monetdb5 = xyes)
 AC_DEFUN([AM_MONETDB_COMPILER],
 [
 
+if test "x$1" != "x"; then
+  JAVA_REQ_VER_MIN="$1"
+else
+  JAVA_REQ_VER_MIN="1.4"
+fi
+
+if test "x$2" != "x"; then
+  JAVA_REQ_VER_MAX="$2"
+else
+  unset JAVA_REQ_VER_MAX
+fi
+
 AC_PROG_CPP()
 dnl check for compiler (also set GCC (yes/no)).
 AC_PROG_CC()
@@ -954,23 +966,33 @@ esac
 if test "x$have_java" != xno; then
   AC_PATH_PROG(JAVA,java,,$JPATH)
   if test "x$JAVA" != "x"; then
-    AC_MSG_CHECKING([for Java >= 1.4, but < 1.6])
+    if test "x$JAVA_REQ_VER_MAX" = "x" ; then
+      AC_MSG_CHECKING([for Java >= $JAVA_REQ_VER_MIN])
+    else
+      AC_MSG_CHECKING([for Java >= $JAVA_REQ_VER_MIN, but < $JAVA_REQ_VER_MAX])
+    fi
     JAVA_VERSION=[`"$JAVA" -version 2>&1 | grep '[0-9]\.[0-9]' | head -n1 | sed -e 's|^[^0-9]*||' -e 's|[^0-9]*$||'`]
-    have_java_1_4=no
-    if test MONETDB_VERSION_TO_NUMBER(echo $JAVA_VERSION) -ge MONETDB_VERSION_TO_NUMBER(echo "1.4"); then
-      if test MONETDB_VERSION_TO_NUMBER(echo $JAVA_VERSION) -lt MONETDB_VERSION_TO_NUMBER(echo "1.6"); then
-        have_java_1_4=yes
+    have_java_req=no
+    if test MONETDB_VERSION_TO_NUMBER(echo $JAVA_VERSION) -ge MONETDB_VERSION_TO_NUMBER(echo "$JAVA_REQ_VER_MIN"); then
+      if test "x$JAVA_REQ_VER_MAX" = "x" ; then
+        have_java_req=yes
+      elif test MONETDB_VERSION_TO_NUMBER(echo $JAVA_VERSION) -lt MONETDB_VERSION_TO_NUMBER(echo "$JAVA_REQ_VER_MAX"); then
+        have_java_req=yes
       fi
     fi
-    AC_MSG_RESULT($have_java_1_4 -> $JAVA_VERSION found)
+    AC_MSG_RESULT($have_java_req -> $JAVA_VERSION found)
   fi
 
   AC_PATH_PROG(JAVAC,javac,,$JPATH)
   AC_PATH_PROG(JAR,jar,,$JPATH)
   AC_PATH_PROG(JAVADOC,javadoc,,$JPATH)
-  if test x$have_java_1_4 != xyes; then
+  if test x$have_java_req != xyes; then
      if test "x$have_java" = xyes; then
-	AC_MSG_ERROR([Java version too old (1.4 required) or too new (1.6 an higher not yet supported)])
+        if test "x$JAVA_REQ_VER_MAX" = "x" ; then
+           AC_MSG_ERROR([Java version too old ($JAVA_REQUIRED_VERSION required)])
+        else
+           AC_MSG_ERROR([Java version too old ($JAVA_REQUIRED_VERSION required) or too new ($JAVA_REQ_VER_MAX an higher not yet supported)])
+        fi
      fi
      have_java=no
   elif test "x$JAVAC" = "x"; then
