@@ -146,7 +146,7 @@ print_tuple (node_t tuple)
                          if (shredstate.names_separate)
                              fprintf(out, "%i", tuple.name_id);
                          else
-                             fprintf(out, "%s", (char*)tuple.name);
+                             fprintf(out, "\"%s\"", (char*)tuple.name);
                      }
                      break;
                  case 't':
