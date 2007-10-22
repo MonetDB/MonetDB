@@ -258,6 +258,7 @@ infer_ori_names (PFla_op_t *n, PFarray_t *par_np_list)
 
         case la_cross:
         case la_thetajoin:
+        case la_eqjoin:
             /* only infer matching columns to the children */
             for (unsigned int i = 0; i < L(n)->schema.count; i++) {
                 unq = L(n)->schema.items[i].name;
@@ -708,11 +709,6 @@ infer_ori_names (PFla_op_t *n, PFarray_t *par_np_list)
             PFoops (OOPS_FATAL,
                     "clone column aware cross product operator is "
                     "only allowed inside mvd optimization!");
-
-        case la_eqjoin:
-            PFoops (OOPS_FATAL,
-                    "clone column unaware equi-join operator is "
-                    "only allowed without unique attribute names!");
 
         case la_dummy:
             n->prop->l_name_pairs = PFarray_copy (np_list);
