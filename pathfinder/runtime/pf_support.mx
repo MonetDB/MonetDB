@@ -4842,7 +4842,7 @@ PROC fix_consecutive_texts(bat[void, bat] ws, bat[oid,oid] contnid) : void
 #include "pf_config.h"
 #include "pf_support.h"
 #include <gdk_scanselect.h> /* for type-specific HT_bunfastins_nocheck_noinc(), until they're moved to gdk.mx */
-#include <algebra.h> /* needed for result size estimation in CMDenumerate */
+#include <plain/algebra.h> /* needed for result size estimation in CMDenumerate */
 #include <math.h> /* needed for round_up */
 
 #if SIZEOF_OID == SIZEOF_INT
