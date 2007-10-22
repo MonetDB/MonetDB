@@ -20,9 +20,9 @@ import MonetSQLdb
 import sys
 
 if len(sys.argv) > 3:
-	dbh = MonetSQLdb.Connection(dbfarm=sys.argv[1],dbname=sys.argv[2],version=int(sys.argv[3]))
+    dbh = MonetSQLdb.Connection(dbfarm=sys.argv[1],dbname=sys.argv[2],version=int(sys.argv[3]))
 else:
-	dbh = MonetSQLdb.Connection(port=sys.argv[1],dbname=sys.argv[2])
+    dbh = MonetSQLdb.Connection(port=sys.argv[1],dbname=sys.argv[2])
 
 cursor = dbh.cursor();
 cursor.execute('select 1;')
@@ -34,9 +34,9 @@ print cursor.fetchone()
 
 # deliberately executing a wrong SQL statement:
 try:
-	cursor.execute('( xyz 1);')
-except (RuntimeError), e: 
-	print e
+    cursor.execute('( xyz 1);')
+except (RuntimeError), e:
+    print e
 
 cursor.execute('create table python_table (i smallint,s string);');
 cursor.execute('insert into python_table values ( 3, \'three\');');
