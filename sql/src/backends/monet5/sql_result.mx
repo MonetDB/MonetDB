@@ -487,6 +487,7 @@ mvc_import_table(mvc *m, bstream *bs, char *tname, char *sep, char *rsep, int sz
 				ATOMlen(fmt[i].adt, ATOMnilptr(fmt[i].adt));
 			fmt[i].data = GDKmalloc(fmt[i].len);
 			fmt[i].c = NULL;
+			fmt[i].ws = 0;
 			if (col->type.type->eclass == EC_DEC) {
 				fmt[i].tostr = &dec_tostr;
 				fmt[i].frstr = &dec_frstr;
@@ -744,6 +745,7 @@ mvc_export_table(mvc *m, stream *s, res_table *t, BAT *order, size_t offset, siz
 	fmt[0].c = NULL;
 	fmt[0].sep = _strdup("[ ");
 	fmt[0].seplen = _strlen(fmt[0].sep);
+	fmt[0].ws = 0;
 
 	for (i = 1; i <= t->nr_cols; i++) {
 		res_col *c = t->cols + (i - 1);
@@ -764,6 +766,7 @@ mvc_export_table(mvc *m, stream *s, res_table *t, BAT *order, size_t offset, siz
 		fmt[i].data = NULL;
 		fmt[i].len = 0;
 		fmt[i].nillen = 0;
+		fmt[i].ws = 0;
 		if (c->type.type->eclass == EC_DEC) {
 			fmt[i].tostr = &dec_tostr;
 			fmt[i].frstr = &dec_frstr;

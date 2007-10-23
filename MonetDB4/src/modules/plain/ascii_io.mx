@@ -266,6 +266,7 @@ typedef struct ascii_io_t {
 	void *data;
 	int len;
 	int nillen;
+	int ws; 	/* if set we need to skip white space */
 } ascii_io;
 
 typedef struct ascii_load_t {
@@ -417,6 +418,23 @@ ASCIIadt_toStr(void *extra, char **buf, int *len, int type, ptr a)
 	return (*BATatoms[type].atomToStr) (buf, len, a);
 }
 
+#define myisspace(s)  (s == ' ' || s == '\t' || s == '\n')
+
+static int
+has_whitespace(char *sep)
+{
+	char *s = sep;
+
+	if (myisspace(*s)) 
+		return 1;
+	while(*s) 
+		s++;
+	s--;
+	if (myisspace(*s)) 
+		return 1;
+	return 0;
+}
+
 static size_t
 create_loadformat(ascii *as, BAT *names, BAT *seps, BAT *types)
 {
@@ -442,6 +460,7 @@ create_loadformat(ascii *as, BAT *names, BAT *seps, BAT *types)
 		fmt[p].extra = fmt+p;
 		fmt[p].len = fmt[p].nillen = 
 			ATOMlen(fmt[p].adt, ATOMnilptr(fmt[p].adt));
+		fmt[p].ws = !(has_whitespace(fmt[p].sep));
 		fmt[p].data = GDKmalloc(fmt[p].len);
 		if (ascii_io_debug)
 			stream_printf(GDKerr, "%s\n", fmt[p].name);
@@ -478,6 +497,7 @@ create_dumpformat(ascii *as, BAT *names, BAT *seps, BAT *bats)
 		fmt[p].data = NULL;
 		fmt[p].len = 0;
 		fmt[p].nillen = 0;
+		fmt[p].ws = 0;
 		BBPunfix(b->batCacheid);
 	}
 	return as->nr_attrs;
@@ -594,8 +614,6 @@ ASCIIcollect_bats(ascii *as)
 	return bats;
 }
 
-#define myisspace(s)  (s == ' ' || s == '\t' || s == '\n')
-
 static INLINE char *
 lstrip(char *s)
 {
@@ -703,7 +721,7 @@ insert_line(ascii * as, char *line)
 		s = line;
 
 		/* skip leading spaces */
-		while (myisspace((int) (*line)))
+		while (fmt[i].ws && myisspace((int) (*line)))
 			line++;
 
 		/* recognize fields starting with a quote */
