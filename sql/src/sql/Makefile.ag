@@ -19,6 +19,6 @@ headers_sql = {
 	DIR = datadir/MonetDB/sql
 	SOURCES = \
 		bbp.sql stats.sql cache.sql math.sql \
-		mtime.sql url.sql \
+		mtime.sql url.sql inet.sql \
 		dependency_functions.sql ms_functions.sql
 }
