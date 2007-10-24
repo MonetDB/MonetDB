@@ -2850,7 +2850,7 @@ bstream_create(stream *s, size_t size)
 	if (size == 0)
 		size = BUFSIZ;
 	b->s = s;
-	b->buf = malloc(size + 1);
+	b->buf = malloc(size + 1 + 1);
 	b->size = b->buf ? size : 0;
 	b->pos = 0;
 	b->len = 0;
