@@ -18,7 +18,7 @@ Created clusterhash ti
 [ "name",	  "ti"	  ]
 [ "bname",	  "ti"	  ]
 [ "ttype",	  "oid"	  ]
-[ "batId",	  "30"	  ]
+[ "batId",	  "32"	  ]
 [ "perfect",	  "1"	  ]
 [ "refCnt",	  "3"	  ]
 #-------------------------#
@@ -28,14 +28,14 @@ Created clusterhash ti
 [ "name",	  "ti"	  ]
 [ "bname",	  "ti"	  ]
 [ "ttype",	  "oid"	  ]
-[ "batId",	  "30"	  ]
+[ "batId",	  "32"	  ]
 [ "perfect",	  "1"	  ]
 [ "refCnt",	  "2"	  ]
 #-----------------------------------------#
 # h	t	t	t		  # name
 # int	str	int	clusterhash	  # type
 #-----------------------------------------#
-[ 30,	  "ti",	  2,	  ti		  ]
+[ 32,	  "ti",	  2,	  ti		  ]
 #-----------------#
 # BAT:	  tmp_46  #
 # (oid)	  (void)  #
@@ -75,7 +75,7 @@ Created clusterhash ti
 # h	t	t	t		  # name
 # int	str	int	clusterhash	  # type
 #-----------------------------------------#
-[ 30,	  "ti",	  2,	  ti		  ]
+[ 32,	  "ti",	  2,	  ti		  ]
 quit();
 
 # 17:06:12 >  
