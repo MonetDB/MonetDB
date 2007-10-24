@@ -1853,8 +1853,11 @@ but rather discard the complete result and return an error.
 		nested->T = &n->T;
 		nested_rev->H = &n->T;
 		nested_rev->T = &n->H;
-		nested->H->type = nested_bak.B.H->type;
-		nested->H->varsized = 0;
+		nested->H->type = TYPE_void;
+		nested->H->key = FALSE;
+		nested->H->varsized = TRUE;
+		nested->H->shift = 0;
+		nested->H->width = 0;
 		nested->H->vheap = NULL;
 	}
 	BBPreclaim(nested);
