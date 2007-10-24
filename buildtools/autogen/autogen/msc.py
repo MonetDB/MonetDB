@@ -468,7 +468,19 @@ def msc_headers(fd, var, headers, msc):
 ##                fd.write('\t$(INSTALL) "$(SRCDIR)\\%s" "%s"\n' % (header, header))
 ##                fd.write('\tif not exist "%s" if exist "$(SRCDIR)\\%s" $(INSTALL) "$(SRCDIR)\\%s" "%s"\n' % (header, header, header, header))
                 fd.write('\t$(INSTALL) "$(SRCDIR)\\%s" "%s"\n' % (header, header))
-            msc['INSTALL'][header] = header, '', sd, '', ''
+            if headers.has_key('COND'):
+                condname = 'defined(' + ') && defined('.join(headers['COND']) + ')'
+                mkname = header.replace('.', '_').replace('-', '_')
+                fd.write('!IF %s\n' % condname)
+                fd.write('C_%s = %s\n' % (mkname, header))
+                fd.write('!ELSE\n')
+                fd.write('C_%s =\n' % mkname)
+                fd.write('!ENDIF\n')
+                cheader = '$(C_%s)' % mkname
+            else:
+                cheader = header
+                condname = ''
+            msc['INSTALL'][header] = cheader, '', sd, '', condname
 
 ##    msc_find_ins(msc, headers)
 ##    msc_deps(fd, headers['DEPS'], "\.o", msc)
@@ -1031,12 +1043,11 @@ output_funcs = {'SUBDIRS': msc_subdirs,
 
 def output(tree, cwd, topdir):
     # HACKS to keep uncompilable stuff out of Windows makefiles.
-    if tree.has_key('bin_Mtimeout'):
-        tree = tree.copy()
-        del tree['bin_Mtimeout']
-    if tree.has_key('LIB_mprof'):
-        tree = tree.copy()
-        del tree['LIB_mprof']
+    for k, v in tree.items():
+        if type(v) is type({}):
+            if v.has_key('COND'):
+                if 'NOT_WIN32' in v['COND']:
+                    del tree[k]
 
     fd = open(os.path.join(cwd, 'Makefile.msc'), "w")
 
