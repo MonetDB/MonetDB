@@ -18,7 +18,7 @@ MTSAFE
 
 SWIGFLAGS = $(MONETDB_INCS) $(CLIENTS_INCS)
 INCLUDES = ../../include ../../common ../../storage ../../server \
-	 $(CLIENTS_INCS) $(MONETDB_INCS) $(MONETDB4_INCS) $(PYTHON_INCS)
+	 $(MONETDB4_INCS) $(CLIENTS_INCS) $(MONETDB_INCS) $(PYTHON_INCS)
 
 
 # with gcc we could use these
@@ -123,7 +123,7 @@ lib_monetdb = {
 	#LIBS = libembeddedsql $(PYTHON_LIBS) $(MONETDB_LIBS) -lmutils -lstream $(CLIENTS_LIBS) -lMapi
 	LIBS = libinitmodules STATIC_MODS @SHARED_LIBS@ lib_sql_server $(EXTRA_LIBS) \
 		libembeddedsql \
-		$(MONETDB_LIBS) -lbat -lmutils -lstream $(MONETDB4_LIBS) -lmonet $(CLIENTS_LIBS) -lMapi
+		$(MONETDB_LIBS) -lbat -lmutils -lstream $(MONETDB4_LIBS) -lmonet $(CLIENTS_LIBS) -lMapi $(PYTHON_LIBS)
 	DIR = $(prefix)/$(PYTHON_LIBDIR)
 }
 

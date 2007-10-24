@@ -1,0 +1,92 @@
+stdout of test 'php_monetdb` in directory 'src/test/mapi` itself:
+
+
+# 20:50:24 >  
+# 20:50:24 >  Mtimeout -timeout 180  Mserver "--config=/ufs/niels/scratch/rc/Linux-x86_64/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB4:/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB4/lib:/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB4/bin" --set "gdk_dbfarm=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB4/dbfarm" --set "sql_logdir=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB4/sql_logs" --set "xquery_logdir=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB4/xquery_logs" --set mapi_open=true --set xrpc_open=true --set mapi_port=36034 --set xrpc_port=48617 --set monet_prompt= --trace "--dbname=mTests_src_test_mapi" --dbinit=" module(sql_server);" ; echo ; echo Over..
+# 20:50:24 >  
+
+# MonetDB Server v4.20.0
+# based on GDK   v1.20.0
+# Copyright (c) 1993-2007, CWI. All rights reserved.
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
+# Visit http://monetdb.cwi.nl/ for further information.
+# MonetDB/SQL module v2.20.1 loaded
+
+printf("\nReady.\n");
+
+Ready.
+quit();
+
+Over..
+
+# 20:50:24 >  
+# 20:50:24 >  Mtimeout -timeout 60 ./php_monetdb.SQL.sh php_monetdb 
+# 20:50:24 >  
+
+
+# 20:50:24 >  
+# 20:50:24 >  php -n -d extension_dir= -f /ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB/Tests/sqlsample.php 36034
+# 20:50:24 >  
+
+schemas
+types
+functions
+args
+sequences
+dependencies
+connections
+_tables
+_columns
+keys
+idxs
+triggers
+keycolumns
+_tables
+_columns
+keys
+idxs
+triggers
+keycolumns
+tables
+columns
+db_users
+users
+user_role
+auths
+privileges
+profile
+perl_table
+id	name	schema_id	query	type	system	commit_action	temporary	
+981	schemas	980		0	true	0	0	
+986	types	980		0	true	0	0	
+995	functions	980		0	true	0	0	
+1004	args	980		0	true	0	0	
+1012	sequences	980		0	true	0	0	
+1022	dependencies	980		0	true	0	0	
+1026	connections	980		0	true	0	0	
+1035	_tables	980		0	true	0	0	
+1043	_columns	980		0	true	0	0	
+1053	keys	980		0	true	0	0	
+1060	idxs	980		0	true	0	0	
+1065	triggers	980		0	true	0	0	
+1076	keycolumns	980		0	true	0	0	
+1082	_tables	1081		0	true	2	0	
+1090	_columns	1081		0	true	2	0	
+1100	keys	1081		0	true	2	0	
+1107	idxs	1081		0	true	2	0	
+1112	triggers	1081		0	true	2	0	
+1123	keycolumns	1081		0	true	2	0	
+3791	tables	980	SELECT * FROM (SELECT p.*, 0 AS "temporary" FROM "sys"."_tables" AS p UNION ALL SELECT t.*, 1 AS "temporary" FROM "tmp"."_tables" AS t) AS tables where tables.type < 2;	1	true	0	0	
+3800	columns	980	SELECT * FROM (SELECT p.* FROM "sys"."_columns" AS p UNION ALL SELECT t.* FROM "tmp"."_columns" AS t) AS columns;	1	true	0	0	
+3819	db_users	980		0	true	0	0	
+3824	users	980	SELECT "name", "fullname", "default_schema" FROM "sys"."db_users";	1	true	0	0	
+3828	user_role	980		0	true	0	0	
+3831	auths	980		0	true	0	0	
+3835	privileges	980		0	true	0	0	
+3841	profile	1081		0	true	2	0	
+3849	perl_table	980		0	false	0	0	
+
+# 20:50:24 >  
+# 20:50:24 >  Done.
+# 20:50:24 >  
+

@@ -18,7 +18,7 @@ man_MANS = monetdb.1 merovingian.1
 
 SWIGFLAGS = $(MONETDB_INCS) $(CLIENTS_INCS)
 INCLUDES = ../../include ../../common ../../storage ../../server \
-	$(MONETDB_INCS) $(CLIENTS_INCS) $(MONETDB5_INCS) $(PYTHON_INCS)
+	$(MONETDB5_INCS) $(CLIENTS_INCS) $(MONETDB_INCS) $(PYTHON_INCS)
 
 # with gcc we could use these
 #X_CFLAGS = -Wno-unused-parameter -Wno-unused-function
@@ -70,7 +70,7 @@ lib_monetdb5 = {
 	SOURCES = monetdb5.py.i
 	LIBS = libembeddedsql5 ../../server/libsqlserver ../../storage/libstore ../../storage/bat/libbatstore ../../common/libsqlcommon \
 		$(MONETDB5_MODS) -l_logger -l_bat5 -l_tablet $(MONETDB5_LIBS) -lmal \
-		$(CLIENTS_LIBS) $(MONETDB_LIBS) -lbat -lMapi -lmutils -lstream $(READLINE_LIBS) $(PTHREAD_LIBS)
+		$(CLIENTS_LIBS) $(MONETDB_LIBS) -lbat -lMapi -lmutils -lstream $(PYTHON_LIBS) $(READLINE_LIBS) $(PTHREAD_LIBS)
 	DIR = $(prefix)/$(PYTHON_LIBDIR)
 }
 
