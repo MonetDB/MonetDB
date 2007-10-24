@@ -14,4 +14,9 @@
 # Portions created by CWI are Copyright (C) 1997-2007 CWI.
 # All Rights Reserved.
 
-SUBDIRS = C python php
+MTSAFE
+
+scripts_php = {
+	DIR = libdir/MonetDB/Tests
+	SOURCES = sqlsample.php
+}
