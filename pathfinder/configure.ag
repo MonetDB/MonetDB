@@ -72,7 +72,8 @@ fi
 
 dnl must check for compiler before checking for MonetDB4
 AM_MONETDB_DEFAULTS()
-AM_MONETDB_COMPILER()
+req_java_ver_min=1.5 # >= $req_java_ver_min required
+AM_MONETDB_COMPILER($req_java_ver_min)
 if test "x$have_c99" != xyes; then
 	AC_MSG_ERROR([Pathfinder requires a C99 compliant C compiler, but your C compiler does not seem to be C99 compliant.])
 fi
