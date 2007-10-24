@@ -677,7 +677,7 @@ derive_mask( BAT *ct_map, BAT *ct_histo, BAT *b)
 		BBPunfix(s->batCacheid);
 		BATloop(histo, p, q) {
 			/* + 4 for a average chain list of 4 */
-			r += ((dbl)cnt/SAMPLE_SIZE)/(*(int*)BUNtloc(histo,p)+4);
+			r += ((dbl)cnt/SAMPLE_SIZE)/(*(int*)Tloc(histo,p)+4);
 		}
 		BBPunfix(histo->batCacheid);
 		BBPunfix(map->batCacheid);
