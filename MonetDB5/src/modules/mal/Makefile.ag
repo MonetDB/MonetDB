@@ -17,7 +17,7 @@
 #SUBDIRS = crackers
 
 INCLUDES = -I../atoms -I../kernel \
-        -I../../mal $(MONETDB_INCS) $(CLIENTS_INCS) \
+        -I../../mal $(CLIENTS_INCS) $(MONETDB_INCS) \
         $(Z_CFLAGS) $(BZ_CFLAGS) $(PCRE_CFLAGS) $(READLINE_INCS)
 
 MTSAFE

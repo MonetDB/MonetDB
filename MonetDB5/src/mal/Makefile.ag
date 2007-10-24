@@ -14,9 +14,8 @@
 # Portions created by CWI are Copyright (C) 1997-2007 CWI.
 # All Rights Reserved.
 
-INCLUDES = $(MONETDB_INCS) $(READLINE_INCS) $(OPENSSL_INCS) \
-		   -I../optimizer -I../scheduler -I../modules/kernel
-
+INCLUDES = -I../optimizer -I../scheduler -I../modules/kernel \
+		$(MONETDB_INCS) $(READLINE_INCS) $(OPENSSL_INCS)
 MTSAFE
 
 lib_mal = {
