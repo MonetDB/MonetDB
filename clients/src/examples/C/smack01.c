@@ -48,21 +48,25 @@ main(int argc, char **argv)
 	char buf[40], *line;
 	int port;
 	int lang = 0;
+	char *l = "mil";
 
 	if (argc != 2 && argc != 3) {
 		printf("usage: smack01 <port> [<language>]\n");
 		exit(-1);
 	}
 	if (argc == 3) {
+		l = argv[2];
 		if (strcmp(argv[2], "sql") == 0) 
 			lang = 1;
 		else if (strcmp(argv[2], "xquery") == 0)
 			lang = 2;
+		else if (strcmp(argv[2], "mal") == 0)
+			lang = 3;
 	}
 
 
 	port = atol(argv[1]);
-	dbh = mapi_connect("localhost", port, "monetdb", "monetdb", (lang==0) ? NULL : (lang==1)? "sql": "xquery", NULL);
+	dbh = mapi_connect("localhost", port, "monetdb", "monetdb", l, NULL);
 	for (i = 0; i < 1000; i++) {
 		/* printf("setup connection %d\n", i); */
 		mapi_reconnect(dbh);
@@ -77,6 +81,8 @@ main(int argc, char **argv)
 			snprintf(buf, 40, "%d", i);
 		else if (lang==1)
 			snprintf(buf, 40, "select %d;", i);
+		else if (lang==3)
+			snprintf(buf, 40, "io.print(%d);", i);
 		else
 			snprintf(buf, 40, "print(%d);", i);
 		if ((hdl = mapi_query(dbh, buf)) == NULL || mapi_error(dbh))
