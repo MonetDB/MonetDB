@@ -121,8 +121,8 @@ res := nil;
 [ "adm_atomtbl",	  0,	  "tran", 1	  ]
 [ "monet_unicode_case",	  0,	  "tran", 1	  ]
 [ "top",		  0,	  "tran", 0	  ]
-[ "one",		  0,	  "tran", 0	  ]
 [ "two",		  0,	  "tran", 0	  ]
+[ "one",		  0,	  "tran", 0	  ]
 #-------------------------------------------------#
 # name			heat	kind	refcnt	  # name
 # str			int	str	int	  # type
@@ -185,8 +185,8 @@ res := nil;
 [ "monet_unicode_case",	  0,	  "tran", 1	  ]
 [ "top",		  0,	  "tran", 0	  ]
 [ "tmp_33",		  0,	  "tran", 0	  ]
-[ "tmp_35",		  0,	  "tran", 0	  ]
 [ "two",		  0,	  "tran", 0	  ]
+[ "tmp_40",		  0,	  "tran", 0	  ]
 [ "ten",		  0,	  "tran", 0	  ]
 [ "twenty",		  0,	  "tran", 0	  ]
 
