@@ -121,7 +121,7 @@ gdk_export void BBPuncacheit(bat bid);
 gdk_export int BBPreclaim(BAT *b);
 gdk_export int BBPsave(BAT *b);
 gdk_export int BBPrename(bat bid, str nme);
-gdk_export BAT *BBPrecycle(int ht, int tt, ssize_t cap);
+gdk_export BAT *BBPrecycle(int ht, int tt, size_t cap);
 gdk_export wrd BBPrecycle_minsize(wrd);
 
 /* query interface */
@@ -2215,7 +2215,7 @@ int batcache_headbin[TYPE_str + 1], batcache_tailbin[TYPE_str + 1];	/* fast bin 
 
 typedef signed short batcache_int;	/* make compact, whole structure is < 500 bytes: CPU cache resident  */
 
-ssize_t batcache_minsize = BATTINY;
+size_t batcache_minsize = BATTINY;
 
 /* the list elements, use int as element pointer type (<0 means: no such element) */
 typedef struct {
@@ -2428,16 +2428,9 @@ BBPaddtobin(BAT *b)
 	}
 	if ((hp == 0 && tp == 0) && (b->htype | b->ttype)) {
 		/* additional restrictions do not hold for views and void,void bats */
-		size_t hminsize = ATOMsize(b->htype) * batcache_minsize;
-		size_t hmaxsize = hminsize + hminsize;
-		size_t tminsize = ATOMsize(b->ttype) * batcache_minsize;
-		size_t tmaxsize = tminsize + tminsize;
-
 		/* bat should be of the right size, types and BUN layoutt */
-		if (b->H->heap.size < hminsize ||
-		    b->H->heap.size >= tmaxsize ||
-		    b->T->heap.size < hminsize ||
-		    b->T->heap.size >= hmaxsize ||
+		if (b->U->capacity < batcache_minsize ||
+		    b->U->capacity >= (batcache_minsize<<1) ||
 		    BATCACHE_NOTYPE(b->htype) ||
 		    BATCACHE_NOTYPE(b->ttype)) {
 			BATdelete(b);	/* handles persistent case also (file deletes) */
@@ -2483,7 +2476,6 @@ BBPaddtobin(BAT *b)
 		b->H->heap.base = b->T->heap.base = NULL;
 		b->H->vheap = b->T->vheap = NULL;
 	}
-
 	/* free non-reusable stuff that has to be freed anyway */
 	if (b->hident != BATstring_h) {
 		if (b->hident)
@@ -2513,7 +2505,7 @@ BBPaddtobin(BAT *b)
 }
 
 BAT *
-BBPrecycle(int ht, int tt, ssize_t cap)
+BBPrecycle(int ht, int tt, size_t cap)
 {
 	int bin = BATCACHE_BIN(ht, tt);
 	bat bid = 0;
@@ -2529,6 +2521,7 @@ BBPrecycle(int ht, int tt, ssize_t cap)
 		BAT *m = BBP_cache(-bid);
 
 		b->htype = m->ttype = ht;
+        	b->H->varsized = BATatoms[b->htype].varsized;
 		b->hsorted = ATOMlinear(ht) ? GDK_SORTED : 0;
 		b->halign = 0;
 		b->hkey = m->tkey = FALSE;
@@ -2536,6 +2529,7 @@ BBPrecycle(int ht, int tt, ssize_t cap)
 		b->hseqbase = m->tseqbase = (ht == TYPE_void) ? oid_nil : 0;
 
 		b->ttype = m->htype = tt;
+        	b->T->varsized = BATatoms[b->ttype].varsized;
 		b->tsorted = ATOMlinear(tt) ? GDK_SORTED : 0;
 		b->talign = 0;
 		b->tkey = m->hkey = FALSE;
