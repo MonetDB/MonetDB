@@ -106,7 +106,7 @@ print(a.info().access(BAT_WRITE).delete("batBuns.base").delete("batStamp").delet
 [ "tsorted",			  "65",		  "0",		  "65"		  ]
 [ "ttop",		  "12",		  "3",		  "0"		  ]
 [ "tvarsized",			  "0",		  "0",		  "1"		  ]
-[ "version",		  "25105",	  "25105",	  "25105"	  ]
+[ "version",		  "25106",	  "25106",	  "25106"	  ]
 
 A := 1;
 aA := [=]( a, A );   aA.print();
@@ -185,7 +185,7 @@ print(a.info().access(BAT_WRITE).delete("batBuns.base").delete("batStamp").delet
 [ "tsorted",			  "65",		  "0",		  "65"		  ]
 [ "ttop",		  "12",		  "3",		  "0"		  ]
 [ "tvarsized",			  "0",		  "0",		  "1"		  ]
-[ "version",		  "25105",	  "25105",	  "25105"	  ]
+[ "version",		  "25106",	  "25106",	  "25106"	  ]
 
 # BUT...
 
@@ -266,7 +266,7 @@ print(a.info().access(BAT_WRITE).delete("batBuns.base").delete("batStamp").delet
 [ "tsorted",			  "65",		  "65",		  "65"		  ]
 [ "ttop",		  "12",		  "3",		  "0"		  ]
 [ "tvarsized",			  "0",		  "0",		  "1"		  ]
-[ "version",		  "25105",	  "25105",	  "25105"	  ]
+[ "version",		  "25106",	  "25106",	  "25106"	  ]
 
 # interesting...
 
