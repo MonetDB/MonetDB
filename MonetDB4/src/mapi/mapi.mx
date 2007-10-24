@@ -1403,13 +1403,15 @@ proc get_mapi_open() : bit {
 }
 
 proc mapi_server() : void {
-	fork(mapi_listen(
-		get_mapi_port(),
-		str(nil),
-		5,
-		get_mapi_open()	
-		)
-	);
+	if (monet_environment.find("gdk_embedded") = "no") {
+		fork(mapi_listen(
+			get_mapi_port(),
+			str(nil),
+			5,
+			get_mapi_open()	
+			)
+		);
+	}
 }
 mapi_server();
 
