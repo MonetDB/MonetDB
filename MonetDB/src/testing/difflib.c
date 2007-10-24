@@ -147,27 +147,10 @@ oldnew2u_diff(int mindiff, int context, char *ignore, char *old_fn, char *new_fn
 	stat(new_fn, &new_fstat);
 
 	if ((old_fstat.st_size != 0) && (new_fstat.st_size != 0)) {
-#ifdef NATIVE_WIN32
-		sprintf(command, "%s %s %s.cp > nul", COPY, old_fn, old_fn);
-		SYSTEM(command);
-		sprintf(command, "%s %s %s.cp > nul", COPY, new_fn, new_fn);
-		SYSTEM(command);
-
-		sprintf(command, "%s %s -a %s -U%d %s.cp %s.cp > %s", DIFF, ignore, _d, context, old_fn, new_fn, u_diff_fn);
-#else
 		sprintf(command, "%s %s -a %s -U%d %s    %s    > %s", DIFF, ignore, _d, context, old_fn, new_fn, u_diff_fn);
-#endif
 
 		SYSTEM(command);
 
-#ifdef NATIVE_WIN32
-#ifdef DEBUG
-		sprintf(command, "dir %s* %s* %s*", old_fn, new_fn, u_diff_fn);
-		SYSTEM(command);
-#endif
-		sprintf(command, "del %s.cp %s.cp", old_fn, new_fn);
-		SYSTEM(command);
-#endif
 	} else {
 		u_diff_fp = Wfopen(u_diff_fn);
 		fprintf(u_diff_fp, "--- %s\t%s", old_fn, ctime(&old_fstat.st_mtime));
@@ -348,27 +331,10 @@ lw_diff2wc_diff(int mindiff, int doChar, char *lw_diff_fn, char *wc_diff_fn)
       SYSTEM(command);
 */
 
-#ifdef NATIVE_WIN32
-		sprintf(command, "%s %s %s.cp > nul", COPY, fn[0], fn[0]);
-		SYSTEM(command);
-		sprintf(command, "%s %s %s.cp > nul", COPY, fn[1], fn[1]);
-		SYSTEM(command);
-
-		sprintf(command, "%s -a %s -U%d %s.cp %s.cp > %s", DIFF, _d, MAX(l[0], l[1]), fn[0], fn[1], pipe_fn);
-#else
 		sprintf(command, "%s -a %s -U%d %s %s > %s", DIFF, _d, MAX(l[0], l[1]), fn[0], fn[1], pipe_fn);
-#endif
 
 		SYSTEM(command);
 
-#ifdef NATIVE_WIN32
-#ifdef DEBUG
-		sprintf(command, "dir %s* %s* %s*", fn[0], fn[1], pipe_fn);
-		SYSTEM(command);
-#endif
-		sprintf(command, "del %s.cp %s.cp", fn[0], fn[1]);
-		SYSTEM(command);
-#endif
 
 		pipe_fp = Rfopen(pipe_fn);
 		wc_diff_fp = Afopen(wc_diff_fn);
@@ -678,12 +644,6 @@ lwc_diff2html(char *old_fn, char *new_fn, char *lwc_diff_fn, char *html_fn, char
 	*old_time++ = '\0';
 	new_time = strchr(new, '\t') + 1;
 	*new_time++ = '\0';
-#ifdef NATIVE_WIN32
-	if (!strcmp(strrchr(old, '.'), ".cp"))
-		*strrchr(old, '.') = '\0';
-	if (!strcmp(strrchr(new, '.'), ".cp"))
-		*strrchr(new, '.') = '\0';
-#endif
 	fprintf(html_fp, "<TR><TH COLSPAN=3 ALIGN=CENTER><FONT SIZE=3 COLOR=#0000ff><CODE><A HREF='%s'>%s%s</A>\t%s</CODE></FONT></TH>", filename(old), filename(old_fn), revision, old_time);
 	fprintf(html_fp, "<TH>&nbsp;</TH>");
 	fprintf(html_fp, "<TH COLSPAN=3 ALIGN=CENTER><FONT SIZE=3 COLOR=#ff0000><CODE><A HREF='%s'>%s</A>\t%s</CODE></FONT></TH></TR>\n", new, new_fn, new_time);
