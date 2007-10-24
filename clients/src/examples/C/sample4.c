@@ -71,6 +71,21 @@ main(int argc, char **argv)
 			die(dbh, hdl);
 		if ((hdl = mapi_query(dbh, "select * from emp")) == NULL || mapi_error(dbh))
 			die(dbh, hdl);
+	} else if (strcmp(argv[3], "mal") == 0) {
+		if ((hdl = mapi_query(dbh, "emp := bat.new(:str,:int);")) == NULL || mapi_error(dbh))
+			die(dbh, hdl);
+		if (mapi_close_handle(hdl) != MOK)
+			die(dbh, hdl);
+		if ((hdl = mapi_query(dbh, "bat.insert(emp,\"John\",23);")) == NULL)
+			die(dbh, hdl);
+		if (mapi_close_handle(hdl) != MOK)
+			die(dbh, hdl);
+		if ((hdl = mapi_query(dbh, "bat.insert(emp,\"Mary\",22);")) == NULL || mapi_error(dbh))
+			die(dbh, hdl);
+		if (mapi_close_handle(hdl) != MOK)
+			die(dbh, hdl);
+		if ((hdl = mapi_query(dbh, "io.print(emp);")) == NULL || mapi_error(dbh))
+			die(dbh, hdl);
 	} else {
 		if ((hdl = mapi_query(dbh, "var emp:= new(str,int);")) == NULL || mapi_error(dbh))
 			die(dbh, hdl);
