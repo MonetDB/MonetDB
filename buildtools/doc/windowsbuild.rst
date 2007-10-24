@@ -18,7 +18,7 @@ libraries.
 CVS (Concurrent Version System)
 -------------------------------
 
-All sources of the MonetDB suite of programs is stored using CVS__ at
+All sources of the MonetDB suite of programs are stored using CVS__ at
 SourceForge__.  You will need CVS to get the sources.  We use CVS
 under Cygwin__, but any other version will do as well.
 
@@ -215,7 +215,9 @@ Java
 The most important use of Java__ that we make is for building the JDBC
 driver.  Get Java from http://java.sun.com/, but make sure you do
 *not* get the latest version.  Get the Java Development Kit 1.5.  Our
-current JDBC driver is not compatible with Java 1.6 yet.
+current JDBC driver is not compatible with Java 1.6 yet, and the XRPC
+wrapper which is part of the pathfinder component is not compatible
+with Java 1.4 or older.
 
 In addition to the Java Development Kit, you will also need Apache Ant
 which is responsible for the actual building of the driver.
@@ -269,6 +271,10 @@ Studio point-and-click interface.
 We use a number of environment variables to tell the build process
 where other parts of the suite can be found, and to tell the build
 process where to install the finished bits.
+
+In addition, you may need to edit some of the ``NT\rules.msc`` files
+(each component has one), or the file ``NT\winrules.msc`` in the
+MonetDB component which is included by all ``NT\rules.msc`` files.
 
 Environment Variables
 ---------------------
