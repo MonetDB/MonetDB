@@ -913,3 +913,61 @@ INETabbrev(str *retval, inet * val)
 }
 
 @}
+
+@mal
+module calc;
+
+command inet(s:inet):inet
+address INET_inet
+comment "Convert a inet to an inet";
+
+@c
+str
+INET_inet(inet *d, inet *s)
+{
+	*d = *s;
+	return MAL_SUCCEED;
+}
+
+@mal
+command inet(s:str):inet
+address INET_fromstr
+comment "Convert a string to an inet";
+
+@c
+str
+INET_fromstr(inet *ret, str *s)
+{
+	int len = sizeof(inet);
+	INETfromString(*s, &len, &ret);
+	return MAL_SUCCEED;
+}
+
+@mal
+command isnil(v:inet):bit 
+address INET_isnil
+comment "Nil test for inet value";
+
+command =(v:inet,w:inet):bit 
+address INET_comp_EQ
+comment "Equality of two inets";
+
+command !=(v:inet,w:inet):bit 
+address INET_comp_NEQ
+comment "Inequality of two inets";
+
+command <(v:inet,w:inet):bit 
+address INET_comp_LT
+comment "Whether v is less than w";
+
+command >(v:inet,w:inet):bit 
+address INET_comp_GT
+comment "Whether v is greater than w";
+
+command <=(v:inet,w:inet):bit 
+address INET_comp_LE
+comment "Whether v is less than or equal to w";
+
+command >=(v:inet,w:inet):bit 
+address INET_comp_GE
+comment "Whether v is equal to or greater than w";
