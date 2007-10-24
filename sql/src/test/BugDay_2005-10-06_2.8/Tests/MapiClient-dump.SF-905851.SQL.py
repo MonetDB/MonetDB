@@ -16,9 +16,9 @@ def client(cmd):
 
 
 def main():
-    clcmd = ("%s/bin/Mlog -x " % os.getenv('MONETDB_PREFIX')) + str(os.getenv('SQL_CLIENT')) + "< %s" % ('%s/JdbcClient_create_tables.sql' % os.getenv('RELSRCDIR'))
-    clcmd1 = ("%s/bin/Mlog -x " % os.getenv('MONETDB_PREFIX')) + str(os.getenv('SQL_CLIENT')) + "< %s" % ('%s/JdbcClient_inserts_selects.sql' % os.getenv('RELSRCDIR'))
-    clcmd2 = ("%s/bin/Mlog -x " % os.getenv('MONETDB_PREFIX')) + str(os.getenv('SQL_DUMP'))
+    clcmd = 'Mlog -x %s < %s/JdbcClient_create_tables.sql' % (os.getenv('SQL_CLIENT'), os.getenv('RELSRCDIR'))
+    clcmd1 = 'Mlog -x %s < %s/JdbcClient_inserts_selects.sql' % (os.getenv('SQL_CLIENT'), os.getenv('RELSRCDIR'))
+    clcmd2 = 'Mlog -x %s' % os.getenv('SQL_DUMP')
     client(clcmd)
     client(clcmd1)
     client(clcmd2)
