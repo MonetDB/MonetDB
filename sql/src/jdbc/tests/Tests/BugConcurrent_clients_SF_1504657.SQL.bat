@@ -1,1 +1,1 @@
-@call %TSTSRCDIR%\Test.SQL.bat %*
+@call "%TSTSRCDIR%\Test.SQL.bat" %*
