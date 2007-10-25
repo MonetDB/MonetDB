@@ -5,6 +5,7 @@ Makefile
 MonetDB.ncb
 MonetDB.suo
 Mx
+Mx.exe.manifest
 Mx.ilk
 Mx.pdb
 aclocal.m4
@@ -14,6 +15,7 @@ configure
 depcomp
 epstogif
 idxmx
+idxmx.exe.manifest
 idxmx.ilk
 idxmx.pdb
 install-sh
@@ -21,7 +23,9 @@ missing
 mx_config.h
 mx_config.h.in
 prefixMxFile
+prefixMxFile.exe.manifest
 prefixMxFile.ilk
 prefixMxFile.pdb
 stamp-h1
 vc70.pdb
+vc80.pdb
