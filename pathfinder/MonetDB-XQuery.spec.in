@@ -62,8 +62,7 @@ Requires: MonetDB4-server-devel >= 4.20
 # Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
 Requires: libxml2-devel
 
-%define _without_java --without-java
-%{!?_with_java: %{!?_without_java: %define _with_java --with-java}}
+%{!?_with_java: %{!?_without_java: %define _without_java --without-java}}
 
 %description devel
 MonetDB is a database management system that is developed from a
