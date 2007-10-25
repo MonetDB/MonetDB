@@ -7,10 +7,10 @@ TSTSRCDIR = os.environ['TSTSRCDIR']
 XQ = os.path.join('XQ','Tests')
 MIL = os.path.join('MIL','Tests')
 
-CALL = "pf %s.xq > xmark.mil" % os.path.join(TSTSRCDIR.replace(MIL,XQ),'xmark')
+CALL = 'pf "%s.xq" > xmark.mil' % os.path.join(TSTSRCDIR.replace(MIL,XQ),'xmark')
 
 if os.name == "nt":
-    os.system("call Mlog.bat '%s'" % CALL.replace('>','\\>'))
+    os.system('Mlog "%s"' % CALL)
 else:
     os.system("Mlog '%s'" % CALL.replace('>','\\>'))
 os.system(CALL)
