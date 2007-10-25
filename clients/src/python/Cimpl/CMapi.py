@@ -242,16 +242,12 @@ class Mapi:
 
 class Embedded(Mapi):
     def __init__(self, dbfarm = None, dbname = "demo", lang = "sql", version = 5):
-        try:
-            if version == 5:
-                import monetdb5 as monetdb
-            else:
-                import monetdb
-            if lang == "sql":
-                self._Mapi__mid = monetdb.monetdb_sql(dbfarm, dbname)
-        except:
-            e, value
-            print(e)
+        if version == 5:
+            import monetdb5 as monetdb
+        else:
+            import monetdb
+        if lang == "sql":
+            self._Mapi__mid = monetdb.monetdb_sql(dbfarm, dbname)
 
         if not self._Mapi__mid:
             raise IOError("Creating connection structure failed")
