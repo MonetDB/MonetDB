@@ -121,9 +121,11 @@ infer_ocol (PFla_op_t *n)
     {
         case la_serialize_seq:
             ocols (n) = copy_ocols (ocols (R(n)), ocols_count (R(n)));
+            break;
 
         case la_serialize_rel:
             ocols (n) = copy_ocols (ocols (L(n)), ocols_count (L(n)));
+            break;
 
         /* only a rewrite can change the ocol property
            - thus update schema (property) during rewrite */
