@@ -305,6 +305,21 @@ class Comment:
     def write(self, f, newline = False):
         f.write(str(self))
 
+class Timer:
+    # interface to the threading.Timer function that interprets a timeout of 0 as no timeout
+    def __init__(self, interval, function, args):
+        self.timer = None
+        if interval > 0:
+            self.timer = threading.Timer(interval, function, args = args)
+
+    def start(self):
+        if self.timer is not None:
+            self.timer.start()
+
+    def cancel(self):
+        if self.timer is not None:
+            self.timer.cancel()
+
 STDOUT = sys.stdout
 STDERR = sys.stdout     # err
 
@@ -1156,7 +1171,7 @@ def GetBitsAndOIDsAndModsAndStatic(env) :
     TSTPREF = env['TSTPREF']
     cmd = '%s --dbname=%s' % (env['exe']['Mserver'][1], TSTPREF)
     proc = subprocess.Popen(cmd, shell = True, stdin = subprocess.PIPE, stdout = subprocess.PIPE, stderr = subprocess.PIPE, universal_newlines = True)
-    t = threading.Timer(float(par['TIMEOUT']), killProc, args = [proc, proc.stderr, cmd])
+    t = Timer(float(par['TIMEOUT']), killProc, args = [proc, proc.stderr, cmd])
     try:
         t.start()
         if par['M5']:
@@ -1287,7 +1302,7 @@ def CheckBATs(env, TST, TSTDB) :
 
     cmd = '%s --dbname=%s' % (env['exe']['Mserver'][1], TSTDB)
     proc = subprocess.Popen(cmd, shell = True, stdin = subprocess.PIPE, stdout = subprocess.PIPE, stderr = subprocess.PIPE, universal_newlines = True)
-    t = threading.Timer(float(par['TIMEOUT']), killProc, args = [proc, proc.stderr, cmd])
+    t = Timer(float(par['TIMEOUT']), killProc, args = [proc, proc.stderr, cmd])
     try:
         t.start()
         qOut, qErr = proc.communicate('''\
@@ -1843,7 +1858,7 @@ def RunTest(env, TST, BusyPorts, COND) :
                     cmd.append('-q')
                 proc = subprocess.Popen(cmd + ['-I%s' % par['IGNORE'], par['CONTEXT'], '-A%d' % ACCURACYout, '-r%s' % REVe, '%s%s.FILTERED' % (TST, STABLEout), '%s.test.out.FILTERED' % TST, '%s.out.diff.html' % TST])
                 proc.killed = False
-                t = threading.Timer(float(par['TIMEOUT']), killProc, args = [proc])
+                t = Timer(float(par['TIMEOUT']), killProc, args = [proc])
                 try:
                     t.start()
                     proc.wait()
@@ -2072,7 +2087,7 @@ def RunIt(cmd, TestIn, TestOut, TestErr, TimeOut) :
     TestErr.flush()
     proc = subprocess.Popen(cmd, shell = True, stdin = TestIn, stdout = TestOut, stderr = TestErr, universal_newlines = True)
     proc.killed = False
-    t = threading.Timer(TimeOut, killProc, args = [proc, TestErr, cmd])
+    t = Timer(TimeOut, killProc, args = [proc, TestErr, cmd])
     try:
         t.start()
         # since both stdout and stderr are redirected to files,
@@ -2375,7 +2390,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
         if MkillUsersAT:
             ATJOB2 = StartAt(MkillUsersAT)
         pSrvr.killed = False
-        t = threading.Timer(TIMEOUT, killProc, args = [pSrvr, SrvrErr, Srvr])
+        t = Timer(TIMEOUT, killProc, args = [pSrvr, SrvrErr, Srvr])
         try:
             t.start()
             CollectIt(pSrvr.stdout, SrvrOut)
@@ -2434,7 +2449,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
 
 def Check(command, input) :
     proc = subprocess.Popen(command, shell = True, stdin = subprocess.PIPE, stdout = subprocess.PIPE, stderr = subprocess.PIPE, universal_newlines = True)
-    t = threading.Timer(float(par['TIMEOUT']), killProc, args = [proc])
+    t = Timer(float(par['TIMEOUT']), killProc, args = [proc])
     try:
         t.start()
         qOut, qErr = proc.communicate(input = input)
