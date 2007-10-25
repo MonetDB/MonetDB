@@ -30,8 +30,6 @@
 #define WINNT 1
 #endif
 
-#include <stdlib.h>
-
 #include "php.h"
 #include "php_ini.h"
 #include "ext/standard/php_standard.h"
@@ -45,6 +43,8 @@
 #include "php_monetdb.h"
 #include "php_globals.h"
 #include "zend_exceptions.h"
+
+#include <stdlib.h>
 
 #define MONETDB_ASSOC		1<<0
 #define MONETDB_NUM			1<<1
