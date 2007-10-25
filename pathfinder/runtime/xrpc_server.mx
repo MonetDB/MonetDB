@@ -233,13 +233,13 @@ Start XPRC receiver using the default values as specified in \
 #include <stream_socket.h>
 
 extern int xrpc_port;
-int rpcd_running = 0;
-int timing = 0;
-int listen_socket = -1;
-char datadir[1024];
+static int rpcd_running = 0;
+static int timing = 0;
+static int listen_socket = -1;
+static char datadir[1024];
 
-BAT* xrpc_trusted = NULL;
-BAT* xrpc_admin = NULL;
+static BAT* xrpc_trusted = NULL;
+static BAT* xrpc_admin = NULL;
 
 static INLINE void
 clean_up(lng **argcnt,
@@ -1418,7 +1418,9 @@ void xrpc_epilogue(void)
 {
     shttpd_fini();      /* Shut down the HTTP server. */
     rpcd_running = 0;   /* Stop RPC server */
-    close(listen_socket);
+    if (listen_socket >= 0)
+        close(listen_socket);
+    listen_socket = -1;
     if (xrpc_trusted) {
         BBPunfix(xrpc_trusted->batCacheid);
         xrpc_trusted = NULL;
