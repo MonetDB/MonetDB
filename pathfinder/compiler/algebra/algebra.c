@@ -775,6 +775,7 @@ PFalg_unq_name (PFalg_att_t ori, unsigned int id)
         case att_res1:
         case att_cast:
         case att_item2:
+        case att_item3:
         case att_subty:
         case att_itemty:
         case att_notsub:
@@ -908,6 +909,7 @@ PFatt_str (PFalg_att_t att) {
         case att_res1:    return "res1";
         case att_cast:    return "cast";
         case att_item2:   return "item2";
+        case att_item3:   return "item3";
         case att_subty:   return "item3";
         case att_itemty:  return "item4";
         case att_notsub:  return "item5";
@@ -953,7 +955,10 @@ PFalg_fun_str (PFalg_fun_t fun)
         case alg_fun_fn_floor:            return "fn:floor";
         case alg_fun_fn_round:            return "fn:round";
         case alg_fun_fn_concat:           return "fn:concat";
+        case alg_fun_fn_substring:        return "fn:substring";
+        case alg_fun_fn_substring_lng:    return "fn:substring";
         case alg_fun_fn_string_length:    return "fn:string-length";
+        case alg_fun_fn_normalize_space:  return "fn:normalize-space";
         case alg_fun_fn_upper_case:       return "fn:upper-case";
         case alg_fun_fn_lower_case:       return "fn:lower-case";
         case alg_fun_fn_contains:         return "fn:contains";
@@ -961,6 +966,10 @@ PFalg_fun_str (PFalg_fun_t fun)
         case alg_fun_fn_ends_with:        return "fn:ends-with";
         case alg_fun_fn_substring_before: return "fn:substring-before";
         case alg_fun_fn_substring_after:  return "fn:substring-after";
+        case alg_fun_fn_matches:          return "fn:matches";
+        case alg_fun_fn_matches_flag:     return "fn:matches";
+        case alg_fun_fn_replace:          return "fn:replace";
+        case alg_fun_fn_replace_flag:     return "fn:replace";
         case alg_fun_fn_number:           return "fn:number";
         case alg_fun_fn_qname:            return "fn:QName";
         case alg_fun_pf_fragment:         return "#pf:fragment";

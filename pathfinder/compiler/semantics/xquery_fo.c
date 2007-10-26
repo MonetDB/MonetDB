@@ -1007,14 +1007,16 @@ PFfun_xquery_fo (void)
         .arity = 2, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_opt (PFty_xs_string ()),
                                 PFty_xs_double () },
-            .ret_ty = PFty_xs_string () } } }
+            .ret_ty = PFty_xs_string () } },
+        .alg = PFbui_fn_substring}
     , /* fn:substring (string?, double, double) as string */
       { .ns = PFns_fn, .loc = "substring",
         .arity = 3, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_opt (PFty_xs_string ()),
                                 PFty_xs_double (),
                                 PFty_xs_double () },
-            .ret_ty = PFty_xs_string () } } }
+            .ret_ty = PFty_xs_string () } },
+        .alg = PFbui_fn_substring_dbl }
     , /* fn:string-length () as integer */
       { .ns = PFns_fn, .loc = "string-length",
         .arity = 0, .sig_count = 1, .sigs = { {
@@ -1025,28 +1027,30 @@ PFfun_xquery_fo (void)
         .arity = 1, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_opt (PFty_xs_string ()) },
             .ret_ty = PFty_xs_integer () } },
-        .alg = PFbui_fn_string_length_opt }
+        .alg = PFbui_fn_string_length }
     , /* fn:normalize-space () as string */
       { .ns = PFns_fn, .loc = "normalize-space",
         .arity = 0,  .sig_count = 1, .sigs = { {
-            .ret_ty = PFty_xs_string () } } }
+            .ret_ty = PFty_xs_string () } },
+        .alg = NULL }
     , /* fn:normalize-space (string?) as string */
       { .ns = PFns_fn, .loc = "normalize-space",
         .arity = 1, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_opt (PFty_xs_string ()) },
-            .ret_ty = PFty_xs_string () } } }
+            .ret_ty = PFty_xs_string () } },
+        .alg = PFbui_fn_normalize_space }
     , /* fn:upper-case (string?) as string */
       { .ns = PFns_fn, .loc = "upper-case",
         .arity = 1, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_opt (PFty_xs_string ()) },
             .ret_ty = PFty_xs_string () } },
-        .alg = PFbui_fn_upper_case_opt }
+        .alg = PFbui_fn_upper_case }
     , /* fn:lower-case (string?) as string */
       { .ns = PFns_fn, .loc = "lower-case",
         .arity = 1, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_opt (PFty_xs_string ()) },
             .ret_ty = PFty_xs_string () } },
-        .alg = PFbui_fn_lower_case_opt }
+        .alg = PFbui_fn_lower_case }
     , /* fn:translate (string?, string, string) as string */
       { .ns = PFns_fn, .loc = "translate",
         .arity = 3, .sig_count = 1, .sigs = { {
@@ -1083,28 +1087,28 @@ PFfun_xquery_fo (void)
             .par_ty = (PFty_t[]) { PFty_opt (PFty_xs_string ()),
                                 PFty_opt (PFty_xs_string ()) },
             .ret_ty = PFty_xs_boolean () } },
-        .alg = PFbui_fn_starts_with_opt_opt }
+        .alg = PFbui_fn_starts_with }
     , /* fn:ends-with (string?, string?) as boolean */
       { .ns = PFns_fn, .loc = "ends-with",
         .arity = 2, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_opt (PFty_xs_string ()),
                                 PFty_opt (PFty_xs_string ()) },
             .ret_ty = PFty_xs_boolean () } },
-        .alg = PFbui_fn_ends_with_opt_opt }
+        .alg = PFbui_fn_ends_with }
     , /* fn:substring-before (string?, string?) as string */
       { .ns = PFns_fn, .loc = "substring-before",
         .arity = 2, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_opt (PFty_xs_string ()),
                                 PFty_opt (PFty_xs_string ()) },
             .ret_ty = PFty_xs_string () } } ,
-        .alg = PFbui_fn_substring_before_opt_opt }
+        .alg = PFbui_fn_substring_before }
     , /* fn:substring-after (string?, string?) as string */
       { .ns = PFns_fn, .loc = "substring-after",
         .arity = 2, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_opt (PFty_xs_string ()),
                                 PFty_opt (PFty_xs_string ()) },
             .ret_ty = PFty_xs_string () } } ,
-        .alg = PFbui_fn_substring_after_opt_opt }
+        .alg = PFbui_fn_substring_after }
 
 /* 7.6. String Functions that Use Pattern Matching */
     , /* fn:matches(string?, string) as boolean */
@@ -1112,21 +1116,24 @@ PFfun_xquery_fo (void)
         .arity = 2, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_opt (PFty_xs_string ()),
                                 PFty_xs_string () },
-            .ret_ty = PFty_xs_boolean () } } }
+            .ret_ty = PFty_xs_boolean () } },
+        .alg = PFbui_fn_matches }
     , /* fn:matches (string?, string, string) as boolean */
       { .ns = PFns_fn, .loc = "matches",
         .arity = 3, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_opt (PFty_xs_string ()),
                                 PFty_xs_string (),
                                 PFty_xs_string () },
-            .ret_ty = PFty_xs_boolean () } } }
+            .ret_ty = PFty_xs_boolean () } },
+        .alg = PFbui_fn_matches_str }
     , /* fn:replace (string?, string, string) as string */
       { .ns = PFns_fn, .loc = "replace",
         .arity = 3, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_opt (PFty_xs_string ()),
                                 PFty_xs_string (),
                                 PFty_xs_string () },
-            .ret_ty = PFty_xs_string () } } }
+            .ret_ty = PFty_xs_string () } },
+        .alg = PFbui_fn_replace }
     , /* fn:replace (string?, string, string, string) as string */
       { .ns = PFns_fn, .loc = "replace",
         .arity = 4, .sig_count = 1, .sigs = { {
@@ -1134,7 +1141,8 @@ PFfun_xquery_fo (void)
                                 PFty_xs_string (),
                                 PFty_xs_string (),
                                 PFty_xs_string () },
-            .ret_ty = PFty_xs_string () } } }
+            .ret_ty = PFty_xs_string () } },
+        .alg = PFbui_fn_replace_str }
 
 
 /* 9. FUNCTIONS AND OPERATORS ON BOOLEAN VALUES */

@@ -122,6 +122,10 @@
                  | '[length](' expresion ')'                <m_mlength>
                  | '[toUpper](' expresion ')'               <m_mtoUpper>
                  | '[toLower](' expresion ')'               <m_mtoLower>
+                 | '[normSpace](' expresion ')'             <m_mnorm_space>
+                 | '[pcre_match]('exp','exp')'              <m_mpcre_match>
+                 | '[pcre_match]('exp','exp','exp')'        <m_mpcre_match_flag>
+                 | '[pcre_replace]('exp','exp','exp','exp')'<m_mpcre_replace>
                  | '{count}(' expression ')'                <m_gcount>
                  | '{count}(' expression ',' expression ')' <m_egcount>
                  | '{avg}(' expression ')'                  <m_gavg>
@@ -290,6 +294,10 @@ static char *ID[] = {
     , [m_mlength]      = "[length]"
     , [m_mtoUpper]     = "[toUpper]"
     , [m_mtoLower]     = "[toLower]"
+    , [m_mnorm_space]  = "[normSpace]"
+    , [m_mpcre_match]  = "[pcre_match]"
+    , [m_mpcre_match_flag] = "[pcre_match]"
+    , [m_mpcre_replace]    = "[pcre_replace]"
     , [m_isnil]        = "isnil"
     , [m_misnil]       = "[isnil]"
     , [m_usec]         = "usec"
@@ -861,6 +869,8 @@ print_expression (PFmil_t * n)
         case m_mstarts_with:
         /* expression : '[endsWith](' exp ',' exp)' */
         case m_mends_with:
+        /* expression : '[pcre_match](' exp ',' exp)' */
+        case m_mpcre_match:
         /* expression : '+(' expression ',' expression ')' */
         case m_add:
         /* expression : '[+](' expression ',' expression ')' */
@@ -904,6 +914,8 @@ print_expression (PFmil_t * n)
             milprintf (")");
             break;
 
+        /* expression : '[pcre_match](' exp ',' exp ',' exp)' */
+        case m_mpcre_match_flag:
         /* expression : '[string](' exp ',' exp ',' exp)' */
         case m_mstring2:
         /* expression : '[ifthenelse](' expr ',' expr ',' expr ')' */
@@ -914,6 +926,19 @@ print_expression (PFmil_t * n)
             print_expression (n->child[1]);
             milprintf (", ");
             print_expression (n->child[2]);
+            milprintf (")");
+            break;
+
+        /* expression: '[pcre_replace](' expr ',' expr ',' expr ',' expr ')' */
+        case m_mpcre_replace:
+            milprintf ("%s(", ID[n->kind]);
+            print_expression (n->child[0]);
+            milprintf (", ");
+            print_expression (n->child[1]);
+            milprintf (", ");
+            print_expression (n->child[2]);
+            milprintf (", ");
+            print_expression (n->child[3]);
             milprintf (")");
             break;
 
@@ -966,6 +991,8 @@ print_expression (PFmil_t * n)
         case m_mtoUpper:
         /* expression : '[toLower](' expression ')' */
         case m_mtoLower:
+        /* expression : '[normSpace](' expression ')' */
+        case m_mnorm_space:
             milprintf ("%s(", ID[n->kind]);
             print_expression (n->child[0]);
             milprintf (")");

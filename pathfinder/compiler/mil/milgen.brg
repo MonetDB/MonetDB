@@ -3550,6 +3550,40 @@ reduce (PFpa_op_t * p, int goalnt)
                                                           res_type))))));
                 }   break;
 
+                case alg_fun_fn_substring:
+                {
+                    PFalg_att_t        att1, att2;
+
+                    att1 = p->sem.fun_1to1.refs.atts[0];
+                    att2 = p->sem.fun_1to1.refs.atts[1];
+                    res_type = aat_str;
+
+                    execute (
+                        assgn (var (res->name),
+                               mstring (VAR (L(p)->env, att1, aat_str),
+                                        mcast ( type (mty_int),
+                                                VAR (L(p)->env, att2, aat_int)))));
+
+                }   break;
+
+                case alg_fun_fn_substring_lng:
+                {
+                    PFalg_att_t        att1, att2, att3;
+
+                    att1 = p->sem.fun_1to1.refs.atts[0];
+                    att2 = p->sem.fun_1to1.refs.atts[1];
+                    att3 = p->sem.fun_1to1.refs.atts[2];
+                    res_type = aat_str;
+
+                    execute (
+                        assgn (var (res->name),
+                               mstring2 (VAR (L(p)->env, att1, aat_str),
+                                         mcast ( type (mty_int),
+                                                 VAR (L(p)->env, att2, aat_int)),
+                                         mcast ( type (mty_int),
+                                                 VAR (L(p)->env, att3, aat_int)))));
+                }   break;
+
                 case alg_fun_fn_string_length:
                 {
                     PFalg_att_t         att;
@@ -3565,6 +3599,7 @@ reduce (PFpa_op_t * p, int goalnt)
 
                 }   break;
 
+                case alg_fun_fn_normalize_space:
                 case alg_fun_fn_upper_case:
                 case alg_fun_fn_lower_case:
                 {
@@ -3579,6 +3614,8 @@ reduce (PFpa_op_t * p, int goalnt)
                             op = PFmil_mtoUpper; break;
                         case alg_fun_fn_lower_case:
                             op = PFmil_mtoLower; break;
+                        case alg_fun_fn_normalize_space:
+                            op = PFmil_mnorm_space; break;
                         default: break;
                     }
 
@@ -3608,6 +3645,7 @@ reduce (PFpa_op_t * p, int goalnt)
 
                 case alg_fun_fn_starts_with:
                 case alg_fun_fn_ends_with:
+                case alg_fun_fn_matches:
                 {
                     PFmil_t * (*op) (const PFmil_t *, const PFmil_t *) = NULL;
                     PFalg_att_t         att1, att2;
@@ -3621,6 +3659,8 @@ reduce (PFpa_op_t * p, int goalnt)
                             op = PFmil_mstarts_with; break;
                         case alg_fun_fn_ends_with:
                             op = PFmil_mends_with; break;
+                        case alg_fun_fn_matches:
+                            op = PFmil_mpcre_match; break;
                         default: break;
                     }
 
@@ -3642,8 +3682,9 @@ reduce (PFpa_op_t * p, int goalnt)
                         assgn (var (res->name),
                                mstring2 (VAR (L(p)->env, att1, aat_str),
                                          lit_int (0),
-                                         msearch (VAR (L(p)->env, att1, aat_str),
-                                                  VAR (L(p)->env, att2, aat_str)))));
+                                         msearch (
+                                            VAR (L(p)->env, att1, aat_str),
+                                            VAR (L(p)->env, att2, aat_str)))));
 
                 }   break;
 
@@ -3666,13 +3707,69 @@ reduce (PFpa_op_t * p, int goalnt)
                                                     lit_int(-1)),
                                               lit_str(""),
                                               mstring (
-                                                    VAR (L(p)->env, att1, aat_str),
-                                                    madd ( var (search_res->name),
-                                                           mlength ( VAR (L(p)->env,
+                                               VAR (L(p)->env, att1, aat_str),
+                                               madd ( var (search_res->name),
+                                                      mlength ( VAR (L(p)->env,
                                                                      att2,
-                                                                     aat_str)))))));
+                                                                     aat_str)
+                                                                       ))))));
                     unpin(search_res, 1);
 
+                }   break;
+
+                case alg_fun_fn_matches_flag:
+                {
+                    PFalg_att_t         att1, att2, att3;
+
+                    att1 = p->sem.fun_1to1.refs.atts[0];
+                    att2 = p->sem.fun_1to1.refs.atts[1];
+                    att3 = p->sem.fun_1to1.refs.atts[2];
+                    res_type = aat_bln;
+
+                    execute (
+                        assgn ( var (res->name),
+                                mpcre_match_flag ( 
+                                    VAR (L(p)->env, att1, aat_str),
+                                    VAR (L(p)->env, att2, aat_str),
+                                    VAR (L(p)->env, att3, aat_str))));
+
+                }   break;
+
+                case alg_fun_fn_replace:
+                {
+                    PFalg_att_t         att1, att2, att3;
+
+                    att1 = p->sem.fun_1to1.refs.atts[0];
+                    att2 = p->sem.fun_1to1.refs.atts[1];
+                    att3 = p->sem.fun_1to1.refs.atts[2];
+                    res_type = aat_str;
+
+                    execute (
+                        assgn ( var (res->name),
+                                mpcre_replace (
+                                    VAR (L(p)->env, att1, aat_str),
+                                    VAR (L(p)->env, att2, aat_str),
+                                    VAR (L(p)->env, att3, aat_str),
+                                    lit_str(""))));
+                }   break;
+
+                case alg_fun_fn_replace_flag:
+                {
+                    PFalg_att_t         att1, att2, att3, att4;
+
+                    att1 = p->sem.fun_1to1.refs.atts[0];
+                    att2 = p->sem.fun_1to1.refs.atts[1];
+                    att3 = p->sem.fun_1to1.refs.atts[2];
+                    att4 = p->sem.fun_1to1.refs.atts[3];
+                    res_type = aat_str;
+
+                    execute (
+                        assgn ( var (res->name),
+                                mpcre_replace (
+                                    VAR (L(p)->env, att1, aat_str),
+                                    VAR (L(p)->env, att2, aat_str),
+                                    VAR (L(p)->env, att3, aat_str),
+                                    VAR (L(p)->env, att4, aat_str))));
                 }   break;
 
                 case alg_fun_fn_number:
@@ -3682,13 +3779,13 @@ reduce (PFpa_op_t * p, int goalnt)
                     bool                first = true;
 
                     att = p->sem.fun_1to1.refs.atts[0];
-                    
+
                     for (unsigned int i = 0; i < L(p)->schema.count; i++)
                         if (L(p)->schema.items[i].name == att) {
                             att_type = L(p)->schema.items[i].type;
                             break;
                         }
-                    
+
                     res_type = aat_dbl;
 
                     for (PFalg_simple_type_t t = 1; t; t <<= 1)
@@ -3715,7 +3812,7 @@ reduce (PFpa_op_t * p, int goalnt)
                                                     casted,
                                                     var (res->name))));
                         }
-       
+
                     /* As we do not support the value NaN we need to generate
                        an error for all tuples that cannot be casted (instead
                        of generating NaN). */
@@ -3764,7 +3861,7 @@ reduce (PFpa_op_t * p, int goalnt)
                     /* FIXME: do not allow "|" uris if we have
                        no namespace prefix */
 
-                    /* add_qnames changes the working set 
+                    /* add_qnames changes the working set
                        in 'var (PF_MIL_VAR_WS)' as side effect */
                     str = add_qnames (
                               var (prefix->name),
@@ -3781,7 +3878,7 @@ reduce (PFpa_op_t * p, int goalnt)
 
                     res_type = aat_qname;
                 }   break;
-                
+
                 case alg_fun_pf_fragment:
                     res_type = aat_pfrag;
                     res = env_mvar (L(p)->env,
@@ -3793,7 +3890,7 @@ reduce (PFpa_op_t * p, int goalnt)
                     assert (!"no implementation here");
                     break;
             }
-            
+
             /* and put the result into p's environment */
             env_add (p->env, p->sem.fun_1to1.res, res_type, res);
 
@@ -3991,7 +4088,7 @@ reduce (PFpa_op_t * p, int goalnt)
         case 74:
         {
             mvar_t             *res = new_var (p->refctr);
-            PFalg_simple_type_t input_ty = 0; 
+            PFalg_simple_type_t input_ty = 0;
 
             /* and put the result into p's environment */
             env_add (p->env, p->sem.type.res, aat_bln, res);
@@ -4009,7 +4106,7 @@ reduce (PFpa_op_t * p, int goalnt)
                 if (entry.att == p->sem.type.att)
                     input_ty = entry.ty | input_ty;
             }
-            
+
             if (!(p->sem.type.ty & input_ty))
                 /* cope with the case that our schema does not provide
                    the type represented by p->sem.type.ty */
@@ -4017,7 +4114,7 @@ reduce (PFpa_op_t * p, int goalnt)
                     assgn (var (res->name),
                            project (var (env_at (L(p)->env, 0).mvar->name),
                                     lit_bit (false))));
-            
+
             else if (p->sem.type.ty == aat_node &&
                      input_ty & aat_pre &&
                      input_ty & aat_attr)
@@ -4031,7 +4128,7 @@ reduce (PFpa_op_t * p, int goalnt)
                                mnot (misnil (VAR (L(p)->env,
                                              p->sem.type.att,
                                              aat_attr))))));
-            
+
             else if (p->sem.type.ty == aat_pnode ||
                      (p->sem.type.ty == aat_node &&
                       input_ty & aat_pre))
@@ -4041,7 +4138,7 @@ reduce (PFpa_op_t * p, int goalnt)
                            mnot (misnil (VAR (L(p)->env,
                                          p->sem.type.att,
                                          aat_pre)))));
-            
+
             else if (p->sem.type.ty == aat_anode ||
                      (p->sem.type.ty == aat_node &&
                       input_ty & aat_attr))
@@ -4051,7 +4148,7 @@ reduce (PFpa_op_t * p, int goalnt)
                            mnot (misnil (VAR (L(p)->env,
                                          p->sem.type.att,
                                          aat_attr)))));
-            
+
             else
                 /* we have one simple type */
                 execute (
@@ -4081,7 +4178,7 @@ reduce (PFpa_op_t * p, int goalnt)
             {
                 bool att_needed = true;
                 mvar_t *v = NULL;
-               
+
                 /* cast as qname requires additional document access */
                 if (L(p)->schema.items[i].name == p->sem.cast.att &&
                     p->sem.cast.ty == aat_qname) {
@@ -4100,7 +4197,7 @@ reduce (PFpa_op_t * p, int goalnt)
                     /* nothing to do - just assign it to a new variable */
                     if (L(p)->schema.items[i].type & aat_qname)
                     {
-                        execute (assgn (var (v->name), 
+                        execute (assgn (var (v->name),
                                         VAR (L(p)->env, p->sem.cast.att,
                                              L(p)->schema.items[i].type)));
                         qn = true;
@@ -4114,7 +4211,7 @@ reduce (PFpa_op_t * p, int goalnt)
                         mvar_t  *prefix  = new_var (1);
                         mvar_t  *local   = new_var (1);
                         mvar_t  *err_str = new_var (1);
-                        PFmil_t *v_cast  = 
+                        PFmil_t *v_cast  =
                                      VAR (L(p)->env, p->sem.cast.att,
                                           L(p)->schema.items[i].type);
 
@@ -4139,7 +4236,7 @@ reduce (PFpa_op_t * p, int goalnt)
                                             madd (lit_int (1),
                                                   var (offset->name)))));
 
-                        /* add_qnames changes the working set 
+                        /* add_qnames changes the working set
                            in 'var (PF_MIL_VAR_WS)' as side effect */
                         str = add_qnames (
                                   var (prefix->name),
@@ -4176,7 +4273,7 @@ reduce (PFpa_op_t * p, int goalnt)
 
                             if (t == p->sem.cast.ty)
                                 casted = VAR (L(p)->env, p->sem.cast.att, t);
-                            
+
                             else if ((t == aat_str || t == aat_uA) &&
                                      p->sem.cast.ty == aat_bln) {
                                 /* The cast from string or untypedAtomic
@@ -4191,29 +4288,29 @@ reduce (PFpa_op_t * p, int goalnt)
 
                                 /* collect all strings that map to 'true' */
                                 execute (assgn (var (true_values->name),
-                                                meq (VAR (L(p)->env, 
+                                                meq (VAR (L(p)->env,
                                                           p->sem.cast.att,
                                                           t),
                                                      lit_str("true"))),
                                          assgn (var (true_values->name),
                                                 mor (var (true_values->name),
-                                                     meq (VAR (L(p)->env, 
+                                                     meq (VAR (L(p)->env,
                                                                p->sem.cast.att,
                                                                t),
                                                           lit_str("1")))),
                                 /* collect all strings that map to 'false' */
                                          assgn (var (false_values->name),
-                                                meq (VAR (L(p)->env, 
+                                                meq (VAR (L(p)->env,
                                                           p->sem.cast.att,
                                                           t),
                                                      lit_str("false"))),
                                          assgn (var (false_values->name),
                                                 mor (var (false_values->name),
-                                                     meq (VAR (L(p)->env, 
+                                                     meq (VAR (L(p)->env,
                                                                p->sem.cast.att,
                                                                t),
                                                           lit_str("0")))),
-                                /* generate an error message for all other 
+                                /* generate an error message for all other
                                    strings */
                                          if_ (
                                              exist (
@@ -4225,7 +4322,7 @@ reduce (PFpa_op_t * p, int goalnt)
                                                              false_values->name)
                                                          )),
                                                  lit_bit (false)),
-                                             
+
                                              error (
                                                  t == aat_uA
                                                  ? lit_str ("err:FORG0001. "
@@ -4239,7 +4336,7 @@ reduce (PFpa_op_t * p, int goalnt)
                                                             "boolean failed.")
                                                  ),
                                              nop ()));
-                                
+
                                 casted = var (true_values->name);
                                 /* note: casted == bln_tmp */
                                 unpin (false_values, 1);
@@ -4261,7 +4358,7 @@ reduce (PFpa_op_t * p, int goalnt)
 
                             parts++;
 
-                            /* Unpin the temporary variable 
+                            /* Unpin the temporary variable
                                bln_tmp if it has been pinned. */
                             if (bln_tmp) {
                                 unpin (bln_tmp, 1);
@@ -4323,7 +4420,7 @@ reduce (PFpa_op_t * p, int goalnt)
             mvar_t  *ret_iter; /* var to which we assign the `iter' result */
             mvar_t  *ret_attr; /* var to which we assign the `pre' result */
             mvar_t  *ret_frag; /* var to which we assign the `kind' result */
-            
+
             /*
              * Determine generic input arguments.
              */
@@ -4340,7 +4437,7 @@ reduce (PFpa_op_t * p, int goalnt)
 
             /* first get all attribute nodes... */
             execute (
-                assgn (var (tmp->name), 
+                assgn (var (tmp->name),
                        mvaljoin (pre, frag, fetch (var (PF_MIL_VAR_WS),
                                                    var (PF_MIL_VAR_ATTR_OWN)))),
                 assgn (var (ret_attr->name),
@@ -4421,7 +4518,7 @@ reduce (PFpa_op_t * p, int goalnt)
                                        var (ret_frag->name),
                                        fetch (var (PF_MIL_VAR_WS),
                                               var (PF_MIL_VAR_ATTR_CONT))),
-                                   fetch (var (PF_MIL_VAR_WS), 
+                                   fetch (var (PF_MIL_VAR_WS),
                                           var (PF_MIL_VAR_QN_URI)))),
                         assgn (var (tmp->name),
                                uselect (var (tmp->name),
@@ -4468,7 +4565,7 @@ reduce (PFpa_op_t * p, int goalnt)
                         assgn (var (tmp->name),
                                reverse (mark (var (tmp->name), lit_oid (0)))),
                         assgn (var (ret_attr->name),
-                               leftjoin (var (tmp->name), 
+                               leftjoin (var (tmp->name),
                                          var (ret_attr->name))),
                         assgn (var (ret_frag->name),
                                leftjoin (var (tmp->name),
@@ -4498,7 +4595,7 @@ reduce (PFpa_op_t * p, int goalnt)
                         assgn (var (tmp->name),
                                reverse (mark (var (tmp->name), lit_oid (0)))),
                         assgn (var (ret_attr->name),
-                               leftjoin (var (tmp->name), 
+                               leftjoin (var (tmp->name),
                                          var (ret_attr->name))),
                         assgn (var (ret_frag->name),
                                leftjoin (var (tmp->name),
@@ -4526,7 +4623,7 @@ reduce (PFpa_op_t * p, int goalnt)
                         "Problem with an XPath step: cannot evaluate "
                         "node test `%s'", PFty_str (ty));
 
-            /* because leftjoin does not know that we have 
+            /* because leftjoin does not know that we have
                exactly one match for each tuple in v,
                we need to make the heads void ourselves */
             execute (
@@ -4602,7 +4699,7 @@ reduce (PFpa_op_t * p, int goalnt)
         case 100:
         {
             mvar_t *time;
-            
+
             /* copy the iter BAT */
             mvar_t *iter = env_mvar (L(p)->env, p->sem.ii.iter, aat_nat);
 
@@ -4612,7 +4709,7 @@ reduce (PFpa_op_t * p, int goalnt)
             /* add timing information */
             time = new_var (1);
             execute (assgn (var (time->name), usec ()));
-            
+
             /* temporary variable */
             mvar_t *v = new_var (1);
             /* result BATs */
@@ -4632,7 +4729,7 @@ reduce (PFpa_op_t * p, int goalnt)
                  );
 
             unpin (v, 1);
-            
+
             /* add timing information */
             execute (
                 assgn (var (PF_MIL_VAR_TIME_LOAD),
@@ -4762,7 +4859,7 @@ reduce (PFpa_op_t * p, int goalnt)
                     }
                     break;
                 default:
-                    PFoops (OOPS_FATAL, 
+                    PFoops (OOPS_FATAL,
                             "unexpected document column in doc_access (%i)",
                             p->sem.doc_access.doc_col);
             }
@@ -4775,7 +4872,7 @@ reduce (PFpa_op_t * p, int goalnt)
         case 102:
         { /* top-down */
             unsigned int i;
-            mvar_t *root_pre, *root_frag, *root_iter, 
+            mvar_t *root_pre, *root_frag, *root_iter,
                    *mmu_res, *seqb, *newPre, *tmp;
 
             /* backup old twig state before traversing the children... */
@@ -4802,35 +4899,35 @@ reduce (PFpa_op_t * p, int goalnt)
             seqb      = new_var (1);
             newPre    = new_var (1);
 
-            /* the result of the twig construction will be stored 
+            /* the result of the twig construction will be stored
                in the variables root_iter, root_pre, and root_frag */
             env_add (p->env, p->sem.ii.iter, aat_nat,   root_iter);
             env_add (p->env, p->sem.ii.item, aat_pre,   root_pre);
             env_add (p->env, p->sem.ii.item, aat_pfrag, root_frag);
-            
+
             /* FIXME: We cannot cope with a single content operator
                that provides only attribute nodes */
 
-            /* merge all input node constructors 
+            /* merge all input node constructors
                (in the correct order -- the one stored
                 in twig_state->elem_vars) */
             if (PFarray_last (twig_state->elem_vars) > 1) {
                 mvar_t *mmu_input = new_var (1);
-                
-                /* create relation to hold all the input relations 
-                   for the merged_union operation */ 
+
+                /* create relation to hold all the input relations
+                   for the merged_union operation */
                 execute (
                     assgn (var (mmu_input->name),
                            seqbase (new (type (mty_void), type (mty_bat)),
                                     lit_oid (0))));
-                
+
                 /* fill in all input relations (in the correct order) */
                 for (i = 0; i < PFarray_last (twig_state->elem_vars); i++) {
                     tmp = *(mvar_t **) PFarray_at (twig_state->elem_vars, i);
                     execute (bappend (var (mmu_input->name), var (tmp->name)));
                     unpin (tmp, 1);
                 }
-                
+
                 /* apply merged union operation over multiple inputs */
                 execute (
                     assgn (var (mmu_res->name),
@@ -4842,12 +4939,12 @@ reduce (PFpa_op_t * p, int goalnt)
                    constructor (with possibly multiple attributes) */
                 assert (PFarray_last (twig_state->elem_vars) == 1);
                 tmp = *(mvar_t **) PFarray_at (twig_state->elem_vars, 0);
-                
+
                 execute (assgn (var (mmu_res->name), var (tmp->name)));
                 unpin (tmp, 1);
             }
 
-            /* Generate the MIL code necessary for document, element, 
+            /* Generate the MIL code necessary for document, element,
                textnodes, comments, and processing-instructions */
             execute (
 
@@ -4879,10 +4976,10 @@ reduce (PFpa_op_t * p, int goalnt)
                        mark (
                            fetch (var (mmu_res->name), lit_int (0)),
                            var (seqb->name))),
-                
+
 
                 /* fill the constructed nodes into the ws */
-                
+
                 /* size:
                    ws.fetch(PRE_SIZE).fetch(WS).append (mmu_res.fetch(2)); */
                 bappend (fetch (
@@ -4939,7 +5036,7 @@ reduce (PFpa_op_t * p, int goalnt)
                                  var (PF_MIL_VAR_NID_RID)),
                              var (PF_MIL_VAR_WS_CONT)),
                          var (newPre->name)),
-                
+
                 /* select roots and fill environment */
 
                 /* collect new pre values of the root nodes:
@@ -4958,7 +5055,7 @@ reduce (PFpa_op_t * p, int goalnt)
                                            var (seqb->name))),
                                    lit_oid (0)),
                                lit_oid (0)))),
-                
+
                 /* prepare new iter column:
                    root_iter := root_pre.leftjoin (mmu_res.fetch(0)
                                                           .reverse.mark(seqb)
@@ -5001,7 +5098,7 @@ reduce (PFpa_op_t * p, int goalnt)
                              project (
                                  reverse (var (root_pre->name)),
                                  lit_oid (0)))) );
-            
+
             unpin (seqb, 1);
 
             /* map root attributes (dslink (iter, pre))
@@ -5031,8 +5128,8 @@ reduce (PFpa_op_t * p, int goalnt)
                    'if (...) {...} else {}' */
                 milprog = nop ();
 
-                /* create relation to hold all the input relations 
-                   for the append operation */ 
+                /* create relation to hold all the input relations
+                   for the append operation */
                 execute (
                     assgn (var (a_iter->name),
                            seqbase (new (type (mty_void), type (mty_oid)),
@@ -5049,8 +5146,8 @@ reduce (PFpa_op_t * p, int goalnt)
                     assgn (var (a_cont->name),
                            seqbase (new (type (mty_void), type (mty_oid)),
                                     lit_oid (0))));
-                
-                /* add all possible root attributes 
+
+                /* add all possible root attributes
                    (references stored in twig_state->attr_vars) */
                 for (i = 0; i < PFarray_last (twig_state->attr_vars); i++) {
                     tmp = *(mvar_t **) PFarray_at (twig_state->attr_vars, i);
@@ -5083,7 +5180,7 @@ reduce (PFpa_op_t * p, int goalnt)
                                        var (a_pre->name),
                                        fetch (var (mmu_res->name),
                                               lit_int (1)))))),
-                    
+
                     /* get the pre values and align them
                        with the attribute values:
                        mapping := a_iter.mirror()
@@ -5094,7 +5191,7 @@ reduce (PFpa_op_t * p, int goalnt)
                                            var (newPre->name)))),
 
                     /* fill the constructed attributes into the ws */
-                
+
                     /* own:
                        ws.fetch(ATTR_OWN).fetch(WS).append(mapping); */
                     bappend (fetch (
@@ -5129,7 +5226,7 @@ reduce (PFpa_op_t * p, int goalnt)
                              var (a_cont->name)));
                 unpin (mapping, 1);
 
-                /* check for duplicate attributes and generate 
+                /* check for duplicate attributes and generate
                    a runtime error if duplicates have been found. */
                 execute (
                     /* sorting := a_iter.reverse().sort().reverse(); */
@@ -5192,14 +5289,14 @@ reduce (PFpa_op_t * p, int goalnt)
                 bodymilprog = milprog;
                 /* activate old mil program */
                 milprog = oldmilprog;
-                
+
                 /* fill in the MIL code for root attributes:
                    if (count > 0) { ... } else { } */
                 execute (
                     if_ (gt (var (count->name), lit_int (0)),
                     /* then */ bodymilprog,
                     /* else */ nop ()));
-                
+
                 unpin (count, 1);
             }
 
@@ -5222,7 +5319,7 @@ reduce (PFpa_op_t * p, int goalnt)
                             fetch (
                                 var (PF_MIL_VAR_WS),
                                 var (PF_MIL_VAR_ATTR_OWN)))),
-                    
+
                     /* align the resulting attribute ids and the fragment
                        information:
                        item := attr.reverse().mark(0@0).reverse();
@@ -5243,7 +5340,7 @@ reduce (PFpa_op_t * p, int goalnt)
                                fetch (var (mmu_res->name), lit_int (8)))),
 
                     /* fill the constructed attributes into the ws */
-                
+
                     /* own:
                        ws.fetch(ATTR_OWN).fetch(WS)
                          .append(attr.mark(0@0).reverse().leftjoin(newPre)); */
@@ -5313,7 +5410,7 @@ reduce (PFpa_op_t * p, int goalnt)
             twig_state = old_twig_state;
         }
             break;
-        
+
         /* FragRel:  twig (attribute (Rel)) */
         case 103:
         {
@@ -5370,7 +5467,7 @@ reduce (PFpa_op_t * p, int goalnt)
                                  var (PF_MIL_VAR_WS),
                                  var (PF_MIL_VAR_ATTR_PROP)),
                              var (PF_MIL_VAR_WS_CONT)),
-                         add_content (val, 
+                         add_content (val,
                                       var (PF_MIL_VAR_WS),
                                       var (PF_MIL_VAR_PROP_VAL))),
                 /* cont */
@@ -5380,14 +5477,14 @@ reduce (PFpa_op_t * p, int goalnt)
                                  var (PF_MIL_VAR_ATTR_CONT)),
                              var (PF_MIL_VAR_WS_CONT)),
                          project (qn, var (PF_MIL_VAR_WS_CONT))),
-                
+
                 /* new root pre values */
                 assgn (var (root_attr->name),
                        mark (qn, var (seqb->name))),
-                /* fragment information */ 
+                /* fragment information */
                 assgn (var (root_frag->name),
                        project (qn, var (PF_MIL_VAR_WS_CONT))));
-            
+
             unpin (seqb, 1);
             pin (iter, p->refctr);
             env_add (p->env, p->sem.ii.iter, aat_nat,   iter);
@@ -5395,7 +5492,7 @@ reduce (PFpa_op_t * p, int goalnt)
             env_add (p->env, p->sem.ii.item, aat_afrag, root_frag);
         }
             break;
-        
+
         /* FragRel:  twig (textnode (Rel)) */
         case 104:
         {
@@ -5452,7 +5549,7 @@ reduce (PFpa_op_t * p, int goalnt)
                                  var (PF_MIL_VAR_WS),
                                  var (PF_MIL_VAR_PRE_PROP)),
                              var (PF_MIL_VAR_WS_CONT)),
-                         add_content (item, 
+                         add_content (item,
                                       var (PF_MIL_VAR_WS),
                                       var (PF_MIL_VAR_PROP_TEXT))),
                 /* cont */
@@ -5476,11 +5573,11 @@ reduce (PFpa_op_t * p, int goalnt)
                                  var (PF_MIL_VAR_NID_RID)),
                              var (PF_MIL_VAR_WS_CONT)),
                          mark (item, var (seqb->name))),
-                
+
                 /* new root pre values */
                 assgn (var (root_pre->name),
                        mark (item, var (seqb->name))),
-                /* fragment information */ 
+                /* fragment information */
                 assgn (var (root_frag->name),
                        project (item, var (PF_MIL_VAR_WS_CONT))),
 
@@ -5494,7 +5591,7 @@ reduce (PFpa_op_t * p, int goalnt)
                              project (
                                  reverse (var (root_pre->name)),
                                  lit_oid (0)))));
-            
+
             unpin (seqb, 1);
             pin (iter, p->refctr);
             env_add (p->env, p->sem.ii.iter, aat_nat,   iter);
@@ -5502,7 +5599,7 @@ reduce (PFpa_op_t * p, int goalnt)
             env_add (p->env, p->sem.ii.item, aat_pfrag, root_frag);
         }
             break;
-        
+
         /* Fcns:     fcns (Twig, Fcns) */
         case 105:
         { /* top-down */
@@ -5510,7 +5607,7 @@ reduce (PFpa_op_t * p, int goalnt)
             /* traverse the DAG in sequence order */
             reduce(kids[0], nts[0]);
             reduce(kids[1], nts[1]);
-            
+
             /* propagate the size information of the content
                operators underneath */
             if (env_count (L(p)->env) &&
@@ -5518,7 +5615,7 @@ reduce (PFpa_op_t * p, int goalnt)
                 mvar_t *v = new_var (1);
                 mvar_t *l = env_at (L(p)->env, 0).mvar;
                 mvar_t *r = env_at (R(p)->env, 0).mvar;
-                
+
                 assert (env_count (L(p)->env) == 1);
                 assert (env_count (R(p)->env) == 1);
 
@@ -5530,9 +5627,9 @@ reduce (PFpa_op_t * p, int goalnt)
                          env_at (L(p)->env, 0).att,
                          env_at (L(p)->env, 0).ty,
                          v);
-                
+
             } else if (env_count (L(p)->env)) {
-                
+
                 assert (env_count (L(p)->env) == 1);
                 env_add (p->env,
                          env_at (L(p)->env, 0).att,
@@ -5551,7 +5648,7 @@ reduce (PFpa_op_t * p, int goalnt)
             }
         }
             break;
-        
+
         /* Fcns:     fcns (Twig, nil) */
         case 106:
             /* propagate the size information of the content
@@ -5565,7 +5662,7 @@ reduce (PFpa_op_t * p, int goalnt)
                 pin (env_at (p->env, 0).mvar, 1);
             }
             break;
-        
+
         /* Twig:     docnode (Rel, fcns (nil, nil)) */
         case 107:
         {
@@ -5586,7 +5683,7 @@ reduce (PFpa_op_t * p, int goalnt)
                          project (iter, lit_int (0))),
                 /* level */
                 bappend (var (v->name),
-                         project (iter, 
+                         project (iter,
                                   cast (type (mty_chr),
                                         lit_int (twig_state->level)))),
                 /* kind */
@@ -5604,13 +5701,13 @@ reduce (PFpa_op_t * p, int goalnt)
                 /* old_cont */
                 bappend (var (v->name),
                          project (iter, cast (type (mty_oid), nil ()))));
-                        
+
             *(mvar_t **) PFarray_add (twig_state->elem_vars) = v;
             twig_state->pre++;
             twig_state->size++;
         }
             break;
-        
+
         /* Twig:     docnode (Rel, Fcns) */
         case 108:
         { /* top-down */
@@ -5623,16 +5720,16 @@ reduce (PFpa_op_t * p, int goalnt)
 
             /* translate the qnames */
             reduce(kids[0], nts[0]);
-            
+
             iter = VAR (L(p)->env, p->sem.ii.iter, aat_nat);
-            
+
             /* add the element representation into the ordered
                twig state list to ensure that the constructed node
                appears before all children */
             *(mvar_t **) PFarray_add (twig_state->elem_vars) = v;
-            
+
             /* store the twig state information
-               and prepare for the translation of the children */ 
+               and prepare for the translation of the children */
             old_twig_state_pre    = twig_state->pre;
             old_twig_state_parent = twig_state->parent;
             old_twig_state_size   = twig_state->size;
@@ -5643,27 +5740,27 @@ reduce (PFpa_op_t * p, int goalnt)
             twig_state->level++;
             /* Use the iter column of the root twig operator
                as loop relation for the content operator.
-               
-               NOTE: We have to use the root twig operator 
+
+               NOTE: We have to use the root twig operator
                (the one the content operator is nested in)
                as otherwise the variable stored in twig_state->loop
                might not be pinned anymore before the content operator
                can use it. */
             if (!twig_state->loop)
                 twig_state->loop = iter;
-            
+
             /* translate the children */
             reduce(kids[1], nts[1]);
-            
+
             /* reset the level information */
             twig_state->level--;
-            
+
             /* calculate the sizes */
             if (env_count (R(p)->env) && twig_state->size) {
                 mvar_t *content_size = env_at (R(p)->env, 0).mvar;
-                
+
                 assert (env_count (R(p)->env) == 1);
-                
+
                 execute (
                     assgn (var (size->name),
                            madd (var (content_size->name),
@@ -5677,9 +5774,9 @@ reduce (PFpa_op_t * p, int goalnt)
 
             } else if (env_count (R(p)->env)) {
                 mvar_t *content_size = env_at (R(p)->env, 0).mvar;
-                
+
                 assert (env_count (R(p)->env) == 1);
-                
+
                 execute (
                     assgn (var (size->name),
                            var (content_size->name)));
@@ -5709,7 +5806,7 @@ reduce (PFpa_op_t * p, int goalnt)
                 bappend (var (v->name), var (size->name)),
                 /* level */
                 bappend (var (v->name),
-                         project (iter, 
+                         project (iter,
                                   cast (type (mty_chr),
                                         lit_int (twig_state->level)))),
                 /* kind */
@@ -5729,12 +5826,12 @@ reduce (PFpa_op_t * p, int goalnt)
                          project (iter, cast (type (mty_oid), nil ()))));
 
             unpin (size, 1);
-                        
+
             twig_state->size = twig_state->size + old_twig_state_size + 1;
             twig_state->parent = old_twig_state_parent;
         }
             break;
-        
+
         /* Twig:     element (Rel, fcns (nil, nil)) */
         case 109:
         {
@@ -5756,7 +5853,7 @@ reduce (PFpa_op_t * p, int goalnt)
                          project (iter, lit_int (0))),
                 /* level */
                 bappend (var (v->name),
-                         project (iter, 
+                         project (iter,
                                   cast (type (mty_chr),
                                         lit_int (twig_state->level)))),
                 /* kind */
@@ -5773,13 +5870,13 @@ reduce (PFpa_op_t * p, int goalnt)
                 /* old_cont */
                 bappend (var (v->name),
                          project (iter, cast (type (mty_oid), nil ()))));
-                        
+
             *(mvar_t **) PFarray_add (twig_state->elem_vars) = v;
             twig_state->pre++;
             twig_state->size++;
         }
             break;
-        
+
         /* Twig:     element (Rel, Fcns) */
         case 110:
         { /* top-down */

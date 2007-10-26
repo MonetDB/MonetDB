@@ -1359,21 +1359,21 @@ PFbui_fn_concat (const PFla_op_t *loop, bool ordering,
     (void) loop; (void) ordering;
 
     return (struct PFla_pair_t) {
-                .rel = project (
-                           fun_1to1 (
-                               eqjoin (args[0].rel,
-                                       project (args[1].rel,
-                                                proj (att_iter1, att_iter),
-                                                proj (att_item1, att_item)),
-                                       att_iter,
-                                       att_iter1),
-                               alg_fun_fn_concat,
-                               att_res,
-                               attlist(att_item, att_item1)),
-                        proj (att_iter, att_iter),
-                        proj (att_pos, att_pos),
-                        proj (att_item, att_res)),
-                .frag = args[0].frag };
+        .rel = project (
+                   fun_1to1 (
+                       eqjoin (args[0].rel,
+                               project (args[1].rel,
+                                        proj (att_iter1, att_iter),
+                                        proj (att_item1, att_item)),
+                               att_iter,
+                               att_iter1),
+                       alg_fun_fn_concat,
+                       att_res,
+                       attlist(att_item, att_item1)),
+                proj (att_iter, att_iter),
+                proj (att_pos, att_pos),
+                proj (att_item, att_res)),
+        .frag = args[0].frag };
 }
 
 /**
@@ -1386,113 +1386,239 @@ PFbui_fn_string_join (const PFla_op_t *loop, bool ordering,
     (void) loop; (void) ordering;
 
     return (struct PFla_pair_t) {
-                .rel  = attach (
-                            fn_string_join (args[0].rel,
-                                            project (
-                                                args[1].rel,
-                                                proj (att_iter, att_iter),
-                                                proj (att_item, att_item)),
-                                            att_iter, att_pos, att_item,
-                                            att_iter, att_item,
-                                            att_iter, att_item),
-                            att_pos, lit_nat (1)),
-                .frag = args[0].frag };
+        .rel  = attach (
+                    fn_string_join (args[0].rel,
+                                    project (
+                                        args[1].rel,
+                                        proj (att_iter, att_iter),
+                                        proj (att_item, att_item)),
+                                    att_iter, att_pos, att_item,
+                                    att_iter, att_item,
+                                    att_iter, att_item),
+                    att_pos, lit_nat (1)),
+        .frag = args[0].frag };
+}
+
+/**
+ * Algebra implementation for <code>fn:substring (xs:string?, xs:double)</code>
+ */
+struct PFla_pair_t
+PFbui_fn_substring (const PFla_op_t *loop, bool ordering,
+                    struct PFla_pair_t *args)
+{
+    (void) ordering;
+
+    return (struct PFla_pair_t) {
+        .rel = project (
+                   fun_1to1 (
+                       eqjoin (
+                           disjunion (
+                               args[0].rel,
+                               attach (
+                                   attach (
+                                       difference (
+                                           loop,
+                                           project (
+                                               args[0].rel,
+                                               proj (att_iter, att_iter))),
+                                       att_pos, lit_nat (1)),
+                                   att_item, lit_str (""))),
+                           project (cast (args[1].rel,
+                                          att_cast,
+                                          att_item,
+                                          aat_int),
+                                    proj (att_iter1, att_iter),
+                                    proj (att_item1, att_cast)),
+                           att_iter,
+                           att_iter1),
+                       alg_fun_fn_substring,
+                       att_res,
+                       attlist (att_item, att_item1)),
+                proj (att_iter, att_iter),
+                proj (att_pos, att_pos),
+                proj (att_item, att_res)),
+
+        .frag = PFla_empty_set ()};
+}
+
+/**
+ * Algebra implementation for
+ * <code>fn:substring(xs:string?, xs:double, xs:double)</code>
+ */
+struct PFla_pair_t
+PFbui_fn_substring_dbl (const PFla_op_t *loop, bool ordering,
+                        struct PFla_pair_t *args)
+{
+    (void) ordering;
+
+    return (struct PFla_pair_t) {
+        .rel = project (
+                   fun_1to1 (
+                       eqjoin (
+                           eqjoin (
+                               disjunion (
+                                   args[0].rel,
+                                   attach (
+                                       attach (
+                                           difference (
+                                               loop,
+                                               project (
+                                                   args[0].rel,
+                                                   proj (att_iter, att_iter))),
+                                           att_pos, lit_nat (1)),
+                                       att_item, lit_str (""))),
+                               project (cast (args[1].rel,
+                                              att_cast,
+                                              att_item,
+                                              aat_int),
+                                        proj (att_iter1, att_iter),
+                                        proj (att_item1, att_cast)),
+                               att_iter,
+                               att_iter1),
+                           project (cast (args[2].rel,
+                                          att_cast,
+                                          att_item,
+                                          aat_int),
+                                    proj (att_iter2, att_iter),
+                                    proj (att_item2, att_cast)),
+                           att_iter,
+                           att_iter2),
+                       alg_fun_fn_substring_lng,
+                       att_res,
+                       attlist (att_item, att_item1, att_item2)),
+                proj (att_iter, att_iter),
+                proj (att_pos, att_pos),
+                proj (att_item, att_res)),
+
+        .frag = PFla_empty_set ()};
 }
 
 /**
  * Algebra implementation for <code>fn:string-length(xs:string?)</code>
  */
 struct PFla_pair_t
-PFbui_fn_string_length_opt (const PFla_op_t *loop, bool ordering,
-                            struct PFla_pair_t *args)
+PFbui_fn_string_length (const PFla_op_t *loop, bool ordering,
+                        struct PFla_pair_t *args)
 {
-    (void) loop; (void) ordering;
+    (void) ordering;
 
     return (struct PFla_pair_t) {
-                .rel = project (
-                           fun_1to1 (
-                               disjunion (
-                                   args[0].rel,
-                                   attach (
-                                       attach (
-                                       difference (
-                                           loop,
-                                           project (
-                                               args[0].rel,
-                                               proj (att_iter, att_iter))),
-                                       att_pos, lit_nat (1)),
-                                   att_item, lit_str (""))),
-                               alg_fun_fn_string_length,
-                               att_res,
-                               attlist(att_item)),
-                           proj (att_iter, att_iter),
-                           proj (att_pos, att_pos),
-                           proj (att_item, att_res)),
-                .frag = PFla_empty_set () };
+        .rel = project (
+                   fun_1to1 (
+                       disjunion (
+                           args[0].rel,
+                           attach (
+                               attach (
+                               difference (
+                                   loop,
+                                   project (
+                                       args[0].rel,
+                                       proj (att_iter, att_iter))),
+                               att_pos, lit_nat (1)),
+                           att_item, lit_str (""))),
+                       alg_fun_fn_string_length,
+                       att_res,
+                       attlist(att_item)),
+                   proj (att_iter, att_iter),
+                   proj (att_pos, att_pos),
+                   proj (att_item, att_res)),
+        .frag = PFla_empty_set () };
+}
+
+/**
+ * Algebra implementation for <code>fn:normalize-space(xs:string?)</code>
+ */
+struct PFla_pair_t
+PFbui_fn_normalize_space (const PFla_op_t *loop, bool ordering,
+                          struct PFla_pair_t *args)
+{
+    (void) ordering;
+
+    return (struct PFla_pair_t) {
+        .rel = project (
+                   fun_1to1 (
+                       disjunion (
+                           args[0].rel,
+                           attach (
+                               attach (
+                               difference (
+                                   loop,
+                                   project (
+                                       args[0].rel,
+                                       proj (att_iter, att_iter))),
+                               att_pos, lit_nat (1)),
+                           att_item, lit_str (""))),
+                       alg_fun_fn_normalize_space,
+                       att_res,
+                       attlist(att_item)),
+                   proj (att_iter, att_iter),
+                   proj (att_pos, att_pos),
+                   proj (att_item, att_res)),
+        .frag = PFla_empty_set () };
 }
 
 /**
  * Algebra implementation for <code>fn:upper-case(xs:string?)</code>
  */
 struct PFla_pair_t
-PFbui_fn_upper_case_opt (const PFla_op_t *loop, bool ordering,
-                         struct PFla_pair_t *args)
+PFbui_fn_upper_case (const PFla_op_t *loop, bool ordering,
+                     struct PFla_pair_t *args)
 {
     (void) ordering;
 
     return (struct PFla_pair_t) {
-                .rel = project (
-                           fun_1to1 (
-                               disjunion (
-                                   args[0].rel,
-                                   attach (
-                                       attach (
-                                       difference (
-                                           loop,
-                                           project (
-                                               args[0].rel,
-                                               proj (att_iter, att_iter))),
-                                       att_pos, lit_nat (1)),
-                                   att_item, lit_str (""))),
-                               alg_fun_fn_upper_case,
-                               att_res,
-                               attlist(att_item)),
-                           proj (att_iter, att_iter),
-                           proj (att_pos, att_pos),
-                           proj (att_item, att_res)),
-                .frag = PFla_empty_set () };
+        .rel = project (
+                   fun_1to1 (
+                       disjunion (
+                           args[0].rel,
+                           attach (
+                               attach (
+                               difference (
+                                   loop,
+                                   project (
+                                       args[0].rel,
+                                       proj (att_iter, att_iter))),
+                               att_pos, lit_nat (1)),
+                           att_item, lit_str (""))),
+                       alg_fun_fn_upper_case,
+                       att_res,
+                       attlist(att_item)),
+                   proj (att_iter, att_iter),
+                   proj (att_pos, att_pos),
+                   proj (att_item, att_res)),
+        .frag = PFla_empty_set () };
 }
 
 /**
  * Algebra implementation for <code>fn:lower-case(xs:string?)</code>
  */
 struct PFla_pair_t
-PFbui_fn_lower_case_opt (const PFla_op_t *loop, bool ordering,
-                         struct PFla_pair_t *args)
+PFbui_fn_lower_case (const PFla_op_t *loop, bool ordering,
+                     struct PFla_pair_t *args)
 {
-    (void) loop; (void) ordering;
+    (void) ordering;
 
     return (struct PFla_pair_t) {
-                .rel = project (
-                           fun_1to1 (
-                               disjunion (
-                                   args[0].rel,
-                                   attach (
-                                       attach (
-                                       difference (
-                                           loop,
-                                           project (
-                                               args[0].rel,
-                                               proj (att_iter, att_iter))),
+        .rel = project (
+                   fun_1to1 (
+                       disjunion (
+                           args[0].rel,
+                           attach (
+                               attach (
+                               difference (
+                                   loop,
+                                   project (
+                                       args[0].rel,
+                                       proj (att_iter, att_iter))),
                                        att_pos, lit_nat (1)),
-                                   att_item, lit_str (""))),
-                               alg_fun_fn_lower_case,
-                               att_res,
-                               attlist(att_item)),
-                           proj (att_iter, att_iter),
-                           proj (att_pos, att_pos),
-                           proj (att_item, att_res)),
-                .frag = PFla_empty_set () };
+                           att_item, lit_str (""))),
+                       alg_fun_fn_lower_case,
+                       att_res,
+                       attlist(att_item)),
+                   proj (att_iter, att_iter),
+                   proj (att_pos, att_pos),
+                   proj (att_item, att_res)),
+        .frag = PFla_empty_set () };
 }
 
 /* ------------------------------------------ */
@@ -1621,8 +1747,8 @@ PFbui_fn_contains_opt_opt (const PFla_op_t *loop, bool ordering,
  * <code>fn:starts-with (xs:string?, xs:string?)</code>.
  */
 struct PFla_pair_t
-PFbui_fn_starts_with_opt_opt (const PFla_op_t *loop, bool ordering,
-                              struct PFla_pair_t *args)
+PFbui_fn_starts_with (const PFla_op_t *loop, bool ordering,
+                      struct PFla_pair_t *args)
 {
     (void) ordering;
 
@@ -1672,8 +1798,8 @@ PFbui_fn_starts_with_opt_opt (const PFla_op_t *loop, bool ordering,
  * <code>fn:ends-with (xs:string?, xs:string?)</code>.
  */
 struct PFla_pair_t
-PFbui_fn_ends_with_opt_opt (const PFla_op_t *loop, bool ordering,
-                            struct PFla_pair_t *args)
+PFbui_fn_ends_with (const PFla_op_t *loop, bool ordering,
+                    struct PFla_pair_t *args)
 {
     (void) ordering;
 
@@ -1723,8 +1849,8 @@ PFbui_fn_ends_with_opt_opt (const PFla_op_t *loop, bool ordering,
  * <code>fn:substring-before (xs:string?, xs:string?)</code>.
  */
 struct PFla_pair_t
-PFbui_fn_substring_before_opt_opt (const PFla_op_t *loop, bool ordering,
-                            struct PFla_pair_t *args)
+PFbui_fn_substring_before (const PFla_op_t *loop, bool ordering,
+                           struct PFla_pair_t *args)
 {
     (void) ordering;
 
@@ -1774,8 +1900,8 @@ PFbui_fn_substring_before_opt_opt (const PFla_op_t *loop, bool ordering,
  * <code>fn:substring_after (xs:string?, xs:string?)</code>.
  */
 struct PFla_pair_t
-PFbui_fn_substring_after_opt_opt (const PFla_op_t *loop, bool ordering,
-                                  struct PFla_pair_t *args)
+PFbui_fn_substring_after (const PFla_op_t *loop, bool ordering,
+                          struct PFla_pair_t *args)
 {
     (void) ordering;
 
@@ -1823,6 +1949,191 @@ PFbui_fn_substring_after_opt_opt (const PFla_op_t *loop, bool ordering,
 /* ----------------------------------------------- */
 /* 7.6. String Functions that Use Pattern Matching */
 /* ----------------------------------------------- */
+
+/**
+ * Algebra implementation for <code>fn:matches(xs:string?, xs:string)</code>
+ */
+struct PFla_pair_t
+PFbui_fn_matches (const PFla_op_t *loop, bool ordering,
+                  struct PFla_pair_t *args)
+{
+    (void) ordering;
+
+    return (struct PFla_pair_t) {
+        .rel = project (
+                   fun_1to1 (
+                       eqjoin (
+                           disjunion (
+                               args[0].rel,
+                               attach (
+                                   attach (
+                                       difference (
+                                           loop,
+                                           project (
+                                               args[0].rel,
+                                               proj (att_iter, att_iter))),
+                                       att_pos, lit_nat (1)),
+                                   att_item, lit_str (""))),
+                           project (args[1].rel,
+                                    proj (att_iter1, att_iter),
+                                    proj (att_item1, att_item)),
+                           att_iter,
+                           att_iter1),
+                       alg_fun_fn_matches,
+                       att_res,
+                       attlist (att_item, att_item1)),
+                proj (att_iter, att_iter),
+                proj (att_pos, att_pos),
+                proj (att_item, att_res)),
+
+        .frag = PFla_empty_set ()};
+}
+
+/**
+ * Algebra implementation for
+ * <code>fn:matches(xs:string?, xs:string, xs:string)</code>
+ */
+struct PFla_pair_t
+PFbui_fn_matches_str (const PFla_op_t *loop, bool ordering,
+                      struct PFla_pair_t *args)
+{
+    (void) ordering;
+
+    return (struct PFla_pair_t) {
+        .rel = project (
+                   fun_1to1 (
+                       eqjoin (
+                           eqjoin (
+                               disjunion (
+                                   args[0].rel,
+                                   attach (
+                                       attach (
+                                           difference (
+                                               loop,
+                                               project (
+                                                   args[0].rel,
+                                                   proj (att_iter, att_iter))),
+                                           att_pos, lit_nat (1)),
+                                       att_item, lit_str (""))),
+                               project (args[1].rel,
+                                        proj (att_iter1, att_iter),
+                                        proj (att_item1, att_item)),
+                               att_iter,
+                               att_iter1),
+                           project (args[2].rel,
+                                    proj (att_iter2, att_iter),
+                                    proj (att_item2, att_item)),
+                           att_iter,
+                           att_iter2),
+                       alg_fun_fn_matches_flag,
+                       att_res,
+                       attlist (att_item, att_item1, att_item2)),
+                proj (att_iter, att_iter),
+                proj (att_pos, att_pos),
+                proj (att_item, att_res)),
+
+        .frag = PFla_empty_set ()};
+}
+
+/**
+ * Algebra implementation for
+ * <code>fn:replace(xs:string?, xs:string, xs:string)</code>
+ */
+struct PFla_pair_t
+PFbui_fn_replace (const PFla_op_t *loop, bool ordering,
+                  struct PFla_pair_t *args)
+{
+    (void) ordering;
+
+    return (struct PFla_pair_t) {
+        .rel = project (
+                   fun_1to1 (
+                       eqjoin (
+                           eqjoin (
+                               disjunion (
+                                   args[0].rel,
+                                   attach (
+                                       attach (
+                                           difference (
+                                               loop,
+                                               project (
+                                                   args[0].rel,
+                                                   proj (att_iter, att_iter))),
+                                           att_pos, lit_nat (1)),
+                                       att_item, lit_str (""))),
+                               project (args[1].rel,
+                                        proj (att_iter1, att_iter),
+                                        proj (att_item1, att_item)),
+                               att_iter,
+                               att_iter1),
+                           project (args[2].rel,
+                                    proj (att_iter2, att_iter),
+                                    proj (att_item2, att_item)),
+                           att_iter,
+                           att_iter2),
+                       alg_fun_fn_replace,
+                       att_res,
+                       attlist (att_item, att_item1, att_item2)),
+                proj (att_iter, att_iter),
+                proj (att_pos, att_pos),
+                proj (att_item, att_res)),
+
+        .frag = PFla_empty_set ()};
+}
+
+/**
+ * Algebra implementation for
+ * <code>fn:replace(xs:string?, xs:string, xs:string, xs:string)</code>
+ */
+struct PFla_pair_t
+PFbui_fn_replace_str (const PFla_op_t *loop, bool ordering,
+                      struct PFla_pair_t *args)
+{
+    (void) ordering;
+
+    return (struct PFla_pair_t) {
+        .rel = project (
+                   fun_1to1 (
+                       eqjoin (
+                           eqjoin (
+                               eqjoin (
+                                   disjunion (
+                                       args[0].rel,
+                                       attach (
+                                           attach (
+                                               difference (
+                                                   loop,
+                                                   project (
+                                                       args[0].rel,
+                                                       proj (att_iter,
+                                                             att_iter))),
+                                               att_pos, lit_nat (1)),
+                                           att_item, lit_str (""))),
+                                   project (args[1].rel,
+                                            proj (att_iter1, att_iter),
+                                            proj (att_item1, att_item)),
+                                   att_iter,
+                                   att_iter1),
+                               project (args[2].rel,
+                                        proj (att_iter2, att_iter),
+                                        proj (att_item2, att_item)),
+                               att_iter,
+                               att_iter2),
+                            project (args[3].rel,
+                                        proj (att_iter3, att_iter),
+                                        proj (att_item3, att_item)),
+                            att_iter,
+                            att_iter3),
+                       alg_fun_fn_replace_flag,
+                       att_res,
+                       attlist (att_item, att_item1, att_item2, att_item3)),
+                proj (att_iter, att_iter),
+                proj (att_pos, att_pos),
+                proj (att_item, att_res)),
+
+        .frag = PFla_empty_set ()};
+
+}
 
 /* -------------------------------------------- */
 /* 9. FUNCTIONS AND OPERATORS ON BOOLEAN VALUES */

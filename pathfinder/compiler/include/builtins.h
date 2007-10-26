@@ -282,17 +282,28 @@ struct PFla_pair_t PFbui_fn_string_join (const PFla_op_t *loop,
                                          bool ordering,
                                          struct PFla_pair_t *args);
 
-struct PFla_pair_t PFbui_fn_string_length_opt (const PFla_op_t *loop,
-                                               bool ordering,
-                                               struct PFla_pair_t *args);
+struct PFla_pair_t PFbui_fn_substring (const PFla_op_t *loop,
+                                       bool ordering,
+                                       struct PFla_pair_t *args);
+struct PFla_pair_t PFbui_fn_substring_dbl (const PFla_op_t *loop,
+                                           bool ordering,
+                                           struct PFla_pair_t *args);
 
-struct PFla_pair_t PFbui_fn_upper_case_opt (const PFla_op_t *loop,
-                                            bool ordering,
-                                            struct PFla_pair_t *args);
+struct PFla_pair_t PFbui_fn_string_length (const PFla_op_t *loop,
+                                           bool ordering,
+                                           struct PFla_pair_t *args);
 
-struct PFla_pair_t PFbui_fn_lower_case_opt (const PFla_op_t *loop,
-                                            bool ordering,
-                                            struct PFla_pair_t *args);
+struct PFla_pair_t PFbui_fn_normalize_space (const PFla_op_t *loop,
+                                             bool ordering,
+                                             struct PFla_pair_t *args);
+
+struct PFla_pair_t PFbui_fn_upper_case (const PFla_op_t *loop,
+                                        bool ordering,
+                                        struct PFla_pair_t *args);
+
+struct PFla_pair_t PFbui_fn_lower_case (const PFla_op_t *loop,
+                                        bool ordering,
+                                        struct PFla_pair_t *args);
 
 /* 7.5. Functions Based on Substring Matching */
 struct PFla_pair_t PFbui_fn_contains (const PFla_op_t *loop,
@@ -304,20 +315,38 @@ struct PFla_pair_t PFbui_fn_contains_opt (const PFla_op_t *loop,
 struct PFla_pair_t PFbui_fn_contains_opt_opt (const PFla_op_t *loop,
                                               bool ordering,
                                               struct PFla_pair_t *args);
-struct PFla_pair_t PFbui_fn_starts_with_opt_opt (const PFla_op_t *loop,
-                                                 bool ordering,
-                                                 struct PFla_pair_t *args);
-struct PFla_pair_t PFbui_fn_ends_with_opt_opt (const PFla_op_t *loop,
-                                               bool ordering,
-                                               struct PFla_pair_t *args);
-struct PFla_pair_t PFbui_fn_substring_before_opt_opt (const PFla_op_t *loop,
-                                                      bool ordering,
-                                                      struct PFla_pair_t *args);
-struct PFla_pair_t PFbui_fn_substring_after_opt_opt (const PFla_op_t *loop,
-                                                     bool ordering,
-                                                     struct PFla_pair_t *args);
+
+struct PFla_pair_t PFbui_fn_starts_with (const PFla_op_t *loop,
+                                         bool ordering,
+                                         struct PFla_pair_t *args);
+
+struct PFla_pair_t PFbui_fn_ends_with (const PFla_op_t *loop,
+                                       bool ordering,
+                                       struct PFla_pair_t *args);
+
+struct PFla_pair_t PFbui_fn_substring_before (const PFla_op_t *loop,
+                                              bool ordering,
+                                              struct PFla_pair_t *args);
+
+struct PFla_pair_t PFbui_fn_substring_after (const PFla_op_t *loop,
+                                             bool ordering,
+                                             struct PFla_pair_t *args);
 
 /* 7.6. String Functions that Use Pattern Matching */
+
+struct PFla_pair_t PFbui_fn_matches (const PFla_op_t *loop,
+                                     bool ordering,
+                                     struct PFla_pair_t *args);
+struct PFla_pair_t PFbui_fn_matches_str (const PFla_op_t *loop,
+                                         bool ordering,
+                                         struct PFla_pair_t *args);
+
+struct PFla_pair_t PFbui_fn_replace (const PFla_op_t *loop,
+                                     bool ordering,
+                                     struct PFla_pair_t *args);
+struct PFla_pair_t PFbui_fn_replace_str (const PFla_op_t *loop,
+                                         bool ordering,
+                                         struct PFla_pair_t *args);
 
 /* 9. FUNCTIONS AND OPERATORS ON BOOLEAN VALUES */
 /* 9.1. Additional Boolean Constructor Functions */

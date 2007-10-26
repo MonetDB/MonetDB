@@ -325,6 +325,26 @@ infer_ocol (PFla_op_t *n)
                     res_type = ocol_at (L(n), ix[0]).type;
                     break;
 
+                case alg_fun_fn_substring:
+                    assert (n->sem.fun_1to1.refs.count == 2);
+
+                    /* make sure both attributes are of type str & int */
+                    assert (ocol_at (L(n), ix[0]).type == aat_str);
+                    assert (ocol_at (L(n), ix[1]).type == aat_int);
+
+                    res_type = aat_str;
+                    break;
+
+                case alg_fun_fn_substring_lng:
+                    assert (n->sem.fun_1to1.refs.count == 3);
+                    /* make sure both attributes are of type str & int */
+                    assert (ocol_at (L(n), ix[0]).type == aat_str);
+                    assert (ocol_at (L(n), ix[1]).type == aat_int &&
+                            ocol_at (L(n), ix[2]).type == aat_int);
+
+                    res_type = aat_str;
+                    break;
+
                 case alg_fun_fn_concat:
                 case alg_fun_fn_substring_before:
                 case alg_fun_fn_substring_after:
@@ -344,6 +364,7 @@ infer_ocol (PFla_op_t *n)
                     res_type = aat_int;
                     break;
 
+                case alg_fun_fn_normalize_space:
                 case alg_fun_fn_upper_case:
                 case alg_fun_fn_lower_case:
                     assert (n->sem.fun_1to1.refs.count == 1);
@@ -356,12 +377,44 @@ infer_ocol (PFla_op_t *n)
                 case alg_fun_fn_contains:
                 case alg_fun_fn_starts_with:
                 case alg_fun_fn_ends_with:
+                case alg_fun_fn_matches:
                     assert (n->sem.fun_1to1.refs.count == 2);
                     /* make sure both attributes are of type string */
                     assert (ocol_at (L(n), ix[0]).type == aat_str &&
                             ocol_at (L(n), ix[1]).type == aat_str);
 
                     res_type = aat_bln;
+                    break;
+
+                case alg_fun_fn_matches_flag:
+                    assert (n->sem.fun_1to1.refs.count == 3);
+                    /* make sure all attributes are of type string */
+                    assert (ocol_at (L(n), ix[0]).type == aat_str &&
+                            ocol_at (L(n), ix[1]).type == aat_str &&
+                            ocol_at (L(n), ix[2]).type == aat_str);
+
+                    res_type = aat_bln;
+                    break;
+
+                case alg_fun_fn_replace:
+                    assert (n->sem.fun_1to1.refs.count == 3);
+                    /* make sure all attributes are of type string */
+                    assert (ocol_at (L(n), ix[0]).type == aat_str &&
+                            ocol_at (L(n), ix[1]).type == aat_str &&
+                            ocol_at (L(n), ix[2]).type == aat_str);
+
+                    res_type = aat_str;
+                    break;
+
+                case alg_fun_fn_replace_flag:
+                    assert (n->sem.fun_1to1.refs.count == 4);
+                    /* make sure all attributes are of type string */
+                    assert (ocol_at (L(n), ix[0]).type == aat_str &&
+                            ocol_at (L(n), ix[1]).type == aat_str &&
+                            ocol_at (L(n), ix[2]).type == aat_str &&
+                            ocol_at (L(n), ix[3]).type == aat_str);
+
+                    res_type = aat_str;
                     break;
 
                 case alg_fun_fn_number:

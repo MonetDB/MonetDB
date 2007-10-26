@@ -33,7 +33,7 @@
 
 /* always include pathfinder.h first! */
 #include "pathfinder.h"
-   
+
 #include <assert.h>
 #include <stdarg.h>
 #include <stdio.h>
@@ -290,24 +290,24 @@ PFmil_var (const PFmil_ident_t name)
 char * PFmil_var_str (PFmil_ident_t name) {
     switch (name) {
         case PF_MIL_VAR_UNUSED:      return "unused";
-        case PF_MIL_VAR_WS:          return "ws";     
-        case PF_MIL_VAR_WS_CONT:     return "WS";     
-                                     
-        case PF_MIL_VAR_KIND_DOC:    return "DOCUMENT";     
-        case PF_MIL_VAR_KIND_ELEM:   return "ELEMENT";     
-        case PF_MIL_VAR_KIND_TEXT:   return "TEXT";     
-        case PF_MIL_VAR_KIND_COM:    return "COMMENT";     
-        case PF_MIL_VAR_KIND_PI:     return "PI";     
-                                     
-        case PF_MIL_VAR_ATTR:        return "ATTR";   
-        case PF_MIL_VAR_ELEM:        return "ELEM";   
-                                     
-        case PF_MIL_VAR_STR:         return "STR";    
-        case PF_MIL_VAR_INT:         return "INT";    
-        case PF_MIL_VAR_DBL:         return "DBL";    
-        case PF_MIL_VAR_DEC:         return "DEC";    
+        case PF_MIL_VAR_WS:          return "ws";
+        case PF_MIL_VAR_WS_CONT:     return "WS";
+
+        case PF_MIL_VAR_KIND_DOC:    return "DOCUMENT";
+        case PF_MIL_VAR_KIND_ELEM:   return "ELEMENT";
+        case PF_MIL_VAR_KIND_TEXT:   return "TEXT";
+        case PF_MIL_VAR_KIND_COM:    return "COMMENT";
+        case PF_MIL_VAR_KIND_PI:     return "PI";
+
+        case PF_MIL_VAR_ATTR:        return "ATTR";
+        case PF_MIL_VAR_ELEM:        return "ELEM";
+
+        case PF_MIL_VAR_STR:         return "STR";
+        case PF_MIL_VAR_INT:         return "INT";
+        case PF_MIL_VAR_DBL:         return "DBL";
+        case PF_MIL_VAR_DEC:         return "DEC";
         case PF_MIL_VAR_BOOL:        return "BOOL";
-                                     
+
         case PF_MIL_VAR_PRE_SIZE:    return "PRE_SIZE";
         case PF_MIL_VAR_PRE_LEVEL:   return "PRE_LEVEL";
         case PF_MIL_VAR_PRE_KIND:    return "PRE_KIND";
@@ -317,23 +317,23 @@ char * PFmil_var_str (PFmil_ident_t name) {
         case PF_MIL_VAR_NID_RID:     return "NID_RID";
         case PF_MIL_VAR_FRAG_ROOT:   return "FRAG_ROOT";
         case PF_MIL_VAR_ATTR_OWN:    return "ATTR_OWN";
-        case PF_MIL_VAR_ATTR_QN:     return "ATTR_QN";  
+        case PF_MIL_VAR_ATTR_QN:     return "ATTR_QN";
         case PF_MIL_VAR_ATTR_PROP:   return "ATTR_PROP";
         case PF_MIL_VAR_ATTR_CONT:   return "ATTR_CONT";
-        case PF_MIL_VAR_QN_LOC:      return "QN_LOC";   
-        case PF_MIL_VAR_QN_URI:      return "QN_URI";   
-        case PF_MIL_VAR_PROP_VAL:    return "PROP_VAL"; 
+        case PF_MIL_VAR_QN_LOC:      return "QN_LOC";
+        case PF_MIL_VAR_QN_URI:      return "QN_URI";
+        case PF_MIL_VAR_PROP_VAL:    return "PROP_VAL";
         case PF_MIL_VAR_PROP_TEXT:   return "PROP_TEXT";
-        case PF_MIL_VAR_PROP_COM:    return "PROP_COM"; 
-        case PF_MIL_VAR_PROP_INS:    return "PROP_INS";    
-        case PF_MIL_VAR_PROP_TGT:    return "PROP_TGT";    
-                                     
+        case PF_MIL_VAR_PROP_COM:    return "PROP_COM";
+        case PF_MIL_VAR_PROP_INS:    return "PROP_INS";
+        case PF_MIL_VAR_PROP_TGT:    return "PROP_TGT";
+
         case PF_MIL_VAR_LE:          return "LE";
         case PF_MIL_VAR_LT:          return "LT";
         case PF_MIL_VAR_EQ:          return "EQ";
         case PF_MIL_VAR_GT:          return "GT";
         case PF_MIL_VAR_GE:          return "GE";
-                                     
+
         case PF_MIL_VAR_TRACE_OUTER: return "trace_outer";
         case PF_MIL_VAR_TRACE_INNER: return "trace_inner";
         case PF_MIL_VAR_TRACE_ITER:  return "trace_iter";
@@ -349,7 +349,7 @@ char * PFmil_var_str (PFmil_ident_t name) {
         default:
         {
             assert (name >= PF_MIL_RES_VAR_COUNT);
-            name -= PF_MIL_RES_VAR_COUNT; 
+            name -= PF_MIL_RES_VAR_COUNT;
             assert (name < 10000);
             size_t len = sizeof ("a0000");
             char *res = PFmalloc (len);
@@ -759,7 +759,7 @@ PFmil_sintersect (const PFmil_t *a, const PFmil_t *b)
 }
 
 /**
- * Multi column intersection 
+ * Multi column intersection
  * (MIL ds_link() proc from the mkey module)
  */
 PFmil_t *
@@ -891,8 +891,8 @@ PFmil_egcount (const PFmil_t *a, const PFmil_t *b)
     return wire2 (m_egcount, a, b);
 }
 
-/** 
- * MIL avg() function 
+/**
+ * MIL avg() function
  */
 PFmil_t * PFmil_avg (const PFmil_t *a)
 {
@@ -900,23 +900,23 @@ PFmil_t * PFmil_avg (const PFmil_t *a)
 }
 
 /**
- * Grouped avg function `{avg}()' (aka. ``pumped avg'') 
+ * Grouped avg function `{avg}()' (aka. ``pumped avg'')
  */
 PFmil_t * PFmil_gavg (const PFmil_t *a)
 {
     return wire1 (m_gavg, a);
 }
 
-/** 
- * MIL max() function 
+/**
+ * MIL max() function
  */
 PFmil_t * PFmil_max (const PFmil_t *a)
 {
     return wire1 (m_max, a);
 }
 
-/** 
- * Grouped max function `{max}()' (aka. ``pumped max'') 
+/**
+ * Grouped max function `{max}()' (aka. ``pumped max'')
  */
 PFmil_t * PFmil_gmax (const PFmil_t *a)
 {
@@ -924,15 +924,15 @@ PFmil_t * PFmil_gmax (const PFmil_t *a)
 }
 
 /**
- * MIL min() function 
+ * MIL min() function
  */
 PFmil_t * PFmil_min (const PFmil_t *a)
 {
     return wire1 (m_min, a);
 }
 
-/** 
- * Grouped min function `{min}()' (aka. ``pumped min'') 
+/**
+ * Grouped min function `{min}()' (aka. ``pumped min'')
  */
 PFmil_t * PFmil_gmin (const PFmil_t *a)
 {
@@ -1288,6 +1288,35 @@ PFmil_t *
 PFmil_mtoLower (const PFmil_t *a)
 {
     return wire1 (m_mtoLower, a);
+}
+
+/** Multiplexed normSpace() function `[normSpace](a)' */
+PFmil_t *
+PFmil_mnorm_space (const PFmil_t *a)
+{
+    return wire1 (m_mnorm_space, a);
+}
+
+/** Multiplexed pcre_match() function `[pcre_match](a,b)' */
+PFmil_t *
+PFmil_mpcre_match (const PFmil_t *a, const PFmil_t *b)
+{
+    return wire2 (m_mpcre_match, a, b);
+}
+
+/** Multiplexed pcre_match() function `[pcre_match](a,b,c)' */
+PFmil_t *
+PFmil_mpcre_match_flag (const PFmil_t *a, const PFmil_t *b, const PFmil_t *c)
+{
+    return wire3 (m_mpcre_match_flag, a, b, c);
+}
+
+/** Multiplexed pcre_replace() function `[pcre_replace](a,b,c,d)' */
+PFmil_t *
+PFmil_mpcre_replace (const PFmil_t *a, const PFmil_t *b,
+                     const PFmil_t *c, const PFmil_t *d)
+{
+    return wire4 (m_mpcre_replace, a, b, c, d);
 }
 
 PFmil_t *
@@ -2217,7 +2246,7 @@ PFmil_attribute (const PFmil_t *qn, const PFmil_t *str, const PFmil_t *ws)
 }
 
 PFmil_t * PFmil_element (const PFmil_t *qn_iter, const PFmil_t *qn_item,
-                         const PFmil_t *iter, 
+                         const PFmil_t *iter,
                          const PFmil_t *pre, const PFmil_t *pfrag,
                          const PFmil_t *attr, const PFmil_t *afrag,
                          const PFmil_t *ws)
@@ -2290,7 +2319,7 @@ PFmil_t *
 PFmil_comment (const char *fmt, ...)
 {
     PFmil_t *ret = leaf (m_comment);
-    PFarray_t *a = PFarray(sizeof (char));    
+    PFarray_t *a = PFarray(sizeof (char));
     va_list args;
 
     va_start (args, fmt);

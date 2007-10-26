@@ -162,6 +162,7 @@ typedef struct PFalg_tuple_t PFalg_tuple_t;
 #define att_notsub  0x10000000    /**< notsub column */
 #define att_isint   0x20000000    /**< isint column */
 #define att_isdec   0x40000000    /**< isdec column */
+#define att_item3   0x80000000    /**< item3 column */
 
 /** attribute names */
 typedef unsigned int PFalg_att_t;
@@ -252,7 +253,10 @@ enum PFalg_fun_t {
     , alg_fun_fn_floor            /**< fn:floor */
     , alg_fun_fn_round            /**< fn:round */
     , alg_fun_fn_concat           /**< fn:concat */
+    , alg_fun_fn_substring        /**< fn:substring */
+    , alg_fun_fn_substring_lng    /**< fn:substring with length specified*/
     , alg_fun_fn_string_length    /**< fn:string-length */
+    , alg_fun_fn_normalize_space  /**< fn:normalize-space */
     , alg_fun_fn_upper_case       /**< fn:upper-case */
     , alg_fun_fn_lower_case       /**< fn:lower-case */
     , alg_fun_fn_contains         /**< fn:contains */
@@ -260,6 +264,10 @@ enum PFalg_fun_t {
     , alg_fun_fn_ends_with        /**< fn:ends-with */
     , alg_fun_fn_substring_before /**< fn:substring-before */
     , alg_fun_fn_substring_after  /**< fn:substring-after */
+    , alg_fun_fn_matches          /**< fn:matches */
+    , alg_fun_fn_matches_flag     /**< fn:matches with flags */
+    , alg_fun_fn_replace          /**< fn:replace */
+    , alg_fun_fn_replace_flag     /**< fn:replace with flags */
     , alg_fun_fn_number           /**< fn:number */
     , alg_fun_fn_qname            /**< fn:QName */
     , alg_fun_pf_fragment         /**< #pf:fragment */

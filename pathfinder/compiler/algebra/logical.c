@@ -1241,6 +1241,27 @@ PFla_fun_1to1 (const PFla_op_t *n,
             res_type = n->schema.items[ix[0]].type;
             break;
 
+        case alg_fun_fn_substring:
+            assert (refs.count == 2);
+
+            /* make sure both attributes are of type str & int */
+            assert (n->schema.items[ix[0]].type == aat_str);
+            assert (n->schema.items[ix[1]].type == aat_int);
+
+            res_type = aat_str;
+            break;
+
+        case alg_fun_fn_substring_lng:
+            assert (refs.count == 3);
+
+            /* make sure attributes are of type str & int */
+            assert (n->schema.items[ix[0]].type == aat_str);
+            assert (n->schema.items[ix[1]].type == aat_int &&
+                    n->schema.items[ix[2]].type == aat_int );
+
+            res_type = aat_str;
+            break;
+
         case alg_fun_fn_concat:
         case alg_fun_fn_substring_before:
         case alg_fun_fn_substring_after:
@@ -1260,6 +1281,7 @@ PFla_fun_1to1 (const PFla_op_t *n,
             res_type = aat_int;
             break;
 
+        case alg_fun_fn_normalize_space:
         case alg_fun_fn_upper_case:
         case alg_fun_fn_lower_case:
             assert (refs.count == 1);
@@ -1272,12 +1294,44 @@ PFla_fun_1to1 (const PFla_op_t *n,
         case alg_fun_fn_contains:
         case alg_fun_fn_starts_with:
         case alg_fun_fn_ends_with:
+        case alg_fun_fn_matches:
             assert (refs.count == 2);
             /* make sure both attributes are of type string */
             assert (n->schema.items[ix[0]].type == aat_str &&
                     n->schema.items[ix[1]].type == aat_str);
 
             res_type = aat_bln;
+            break;
+
+        case alg_fun_fn_matches_flag:
+            assert (refs.count == 3);
+            /* make sure all attributes are of type string */
+            assert (n->schema.items[ix[0]].type == aat_str &&
+                    n->schema.items[ix[1]].type == aat_str &&
+                    n->schema.items[ix[2]].type == aat_str);
+
+            res_type = aat_bln;
+            break;
+
+        case alg_fun_fn_replace:
+            assert (refs.count == 3);
+            /* make sure all attributes are of type string */
+            assert (n->schema.items[ix[0]].type == aat_str &&
+                    n->schema.items[ix[1]].type == aat_str &&
+                    n->schema.items[ix[2]].type == aat_str);
+
+            res_type = aat_str;
+            break;
+
+        case alg_fun_fn_replace_flag:
+            assert (refs.count == 4);
+            /* make sure all attributes are of type string */
+            assert (n->schema.items[ix[0]].type == aat_str &&
+                    n->schema.items[ix[1]].type == aat_str &&
+                    n->schema.items[ix[2]].type == aat_str &&
+                    n->schema.items[ix[3]].type == aat_str);
+
+            res_type = aat_str;
             break;
 
         case alg_fun_fn_number:

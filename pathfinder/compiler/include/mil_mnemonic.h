@@ -346,6 +346,18 @@
 /** Multiplexed toLower() function `[toLower](a)' */
 #define mtoLower(a) PFmil_mtoLower ((a))
 
+/** Multiplexed normSpace() function `[normSpace](a)' */
+#define mnorm_space(a) PFmil_mnorm_space ((a))
+
+/** Multiplexed pcre_match() function `[pcre_match](a,b)' */
+#define mpcre_match(a,b) PFmil_mpcre_match ((a),(b))
+
+/** Multiplexed pcre_match() function `[pcre_match](a,b,c)' */
+#define mpcre_match_flag(a,b,c) PFmil_mpcre_match_flag ((a), (b), (c))
+
+/** Multiplexed pcre_replace() function `[pcre_replace](a,b,c,d)' */
+#define mpcre_replace(a,b,c,d) PFmil_mpcre_replace ((a),(b),(c),(d))
+
 /* staircase join variants (ancestor axis) */
 #define llscj_anc(a,b,c,d,e) \
     PFmil_llscj_anc ((a), (b), (c), (d), (e))

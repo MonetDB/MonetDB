@@ -201,7 +201,7 @@ enum PFmil_kind_t {
     , m_mceiling     /**< multiplexed operator ceil */
     , m_mfloor       /**< multiplexed operator floor */
     , m_mround_up    /**< multiplexed operator round_up */
-    
+
     , m_gt           /**< greater than */
     , m_eq           /**< equal */
     , m_meq          /**< multiplexed comparison (equality) */
@@ -230,7 +230,7 @@ enum PFmil_kind_t {
     , m_sum          /**< MIL sum() function */
     , m_gsum         /**< Grouped sum() function `{sum}()' */
     , m_egsum        /**< Grouped sum() function `{sum}()' */
-    
+
     , m_declare      /**< declare variable */
     , m_nop          /**< `no operation', do nothing.
                           (This may be produced during compilation.) */
@@ -243,7 +243,7 @@ enum PFmil_kind_t {
     , m_mposjoin     /**< Positional multijoin with a working set */
     , m_mvaljoin     /**< Multijoin with a working set */
     , m_bat          /**< MonetDB bat() function */
-    , m_catch        /**< MonetDB catch function + assignment 
+    , m_catch        /**< MonetDB catch function + assignment
                           'a0000 := CATCH()' */
     , m_error        /**< MonetDB ERROR() function */
 
@@ -253,12 +253,17 @@ enum PFmil_kind_t {
     , m_msearch      /**< Multiplexed search() function `[search](a,b)' */
     , m_mstring      /**< Multiplexed string() function `[string](a,b)' */
     , m_mstring2     /**< Multiplexed string() function `[string](a,b,c)' */
-    , m_mstarts_with /**< Multiplexed startsWith() 
+    , m_mstarts_with /**< Multiplexed startsWith()
                           function `[startsWith](a,b)' */
     , m_mends_with   /**< Multiplexed endsWith() function `[endsWith](a,b)' */
     , m_mlength      /**< Multiplexed length() function `[length](a)' */
     , m_mtoUpper     /**< Multiplexed toUpper() function `[toUpper](a)' */
     , m_mtoLower     /**< Multiplexed toLower() function `[toLower](a)' */
+
+    , m_mnorm_space       /**< Multiplexed normSpace() function */
+    , m_mpcre_match       /**< Multiplexed pcre_match() function */
+    , m_mpcre_match_flag  /**< Multiplexed pcre_match() function w flags*/
+    , m_mpcre_replace     /**< Multiplexed pcre_replace() function */
 
     , m_llscj_anc
     , m_llscj_anc_elem
@@ -367,7 +372,7 @@ enum PFmil_kind_t {
     , m_set_kind
     , m_materialize
 
-    , m_assert_order /**< MIL assert_order() function. Fixes the order 
+    , m_assert_order /**< MIL assert_order() function. Fixes the order
                           property of the tail in MonetDB BAT headers.
                           It is a work-around to tell MonetDB about
                           sortedness whenever it is not able to infer
@@ -387,7 +392,7 @@ enum PFmil_kind_t {
 
     , m_elem_constr  /**< elem_constr() function (Pathfinder runtime) */
 
-    , m_elem_constr_e  /**< elem_constr_empty() function 
+    , m_elem_constr_e  /**< elem_constr_empty() function
                           (Pathfinder runtime) */
 
     , m_text_constr  /**< text_constr() function (Pathfinder runtime) */
@@ -397,27 +402,27 @@ enum PFmil_kind_t {
     , m_add_qnames   /**< add_qnames() function (Pathfinder runtime) */
 
     , m_add_content  /**< add_conten() function (Pathfinder runtime) */
-    
+
     , m_chk_qnames   /**< invalid_qname() function (Pathfinder runtime) */
 
     , m_print        /**< MIL print() function */
-    
+
     , m_col_name     /**< assign BAT column name (for debugging only) */
 
-    , m_comment      /**< MIL comment (for debugging only) */ 
+    , m_comment      /**< MIL comment (for debugging only) */
 
     , m_serialize    /**< serialization function.
                           The serialization function must be provided by the
                           pathfinder extension module. For now we just have
                           a simple MIL script that does the work mainly for
                           debugging purposes. */
-    
+
     , m_trace        /**< trace function.
                           The trace function must be provided by the
                           pathfinder extension module. For now we just have
                           a simple MIL script that does the work mainly for
                           debugging purposes. */
-    
+
     , m_module       /**< module loading */
 };
 typedef enum PFmil_kind_t PFmil_kind_t;
@@ -800,6 +805,20 @@ PFmil_t * PFmil_mtoUpper (const PFmil_t *);
 
 /** Multiplexed toLower() function `[toLower](a)' */
 PFmil_t * PFmil_mtoLower (const PFmil_t *);
+
+/** Multiplexed normSpace() function `[normSpace](a)' */
+PFmil_t * PFmil_mnorm_space (const PFmil_t *);
+
+/** Multiplexed pcre_match() function `[pcre_match](a,b)' */
+PFmil_t * PFmil_mpcre_match (const PFmil_t *, const PFmil_t *);
+
+/** Multiplexed pcre_match() function `[pcre_match](a,b,c)' */
+PFmil_t * PFmil_mpcre_match_flag (const PFmil_t *, const PFmil_t *,
+                                                   const PFmil_t *);
+
+/** Multiplexed pcre_replace() function `[pcre_replace](a,b,c,d)' */
+PFmil_t * PFmil_mpcre_replace (const PFmil_t *, const PFmil_t *,
+                               const PFmil_t *, const PFmil_t *);
 
 PFmil_t * PFmil_usec (void);
 PFmil_t * PFmil_new_ws (void);
@@ -1280,7 +1299,7 @@ PFmil_t * PFmil_llscj_prec_sibl_pi_targ (const PFmil_t *iter, const PFmil_t *ite
 
 PFmil_t * PFmil_merge_adjacent (const PFmil_t *, const PFmil_t *,
                                 const PFmil_t *, const PFmil_t *);
-PFmil_t * PFmil_string_join (const PFmil_t *, const PFmil_t *); 
+PFmil_t * PFmil_string_join (const PFmil_t *, const PFmil_t *);
 
 PFmil_t * PFmil_get_fragment (const PFmil_t *);
 PFmil_t * PFmil_set_kind (const PFmil_t *, const PFmil_t *);
