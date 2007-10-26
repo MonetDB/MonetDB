@@ -1132,7 +1132,7 @@ SQLexecutePrepared(Client cntxt, backend *be, cq *q )
 {
 	mvc *c = be->mvc;
 	int argc, parc; 
-	ValPtr *argv, argvbuffer[MAXARG];
+	ValPtr *argv, argvbuffer[MAXARG], v;
 	ValRecord *argrec, argrecbuffer[MAXARG];
 	MalBlkPtr mb;
 	MalStkPtr glb;
@@ -1187,6 +1187,12 @@ SQLexecutePrepared(Client cntxt, backend *be, cq *q )
 	}
 	glb = (MalStkPtr)(q->stk);
 	ret= callMAL(cntxt,mb, &glb, argv, (c->mode == m_debug?'n':0));
+	/* cleanup the arguments */
+	for(i=pci->retc; i<pci->argc; i++) {
+		garbageElement(v= &glb->stk[pci->argv[i]]);
+		v->vtype= TYPE_int;
+		v->val.ival= int_nil;
+	}
 	q->stk = (backend_stack)glb;
 	if( pci->argc >= MAXARG)
 		GDKfree(argv);

@@ -671,6 +671,7 @@ mvc_destroy(mvc *m)
 	sql_session_destroy(m->session);
 
 	stack_pop_until(m, 0);
+	_DELETE(m->vars);
 
 	if (m->scanner.log) /* close and destroy stream */
 		close_stream(m->scanner.log);
