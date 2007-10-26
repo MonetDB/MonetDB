@@ -33,7 +33,7 @@ set PATH=%builddir%\src\common;%PATH%
 set PATH=%builddir%\src\backends\monet%V%;%PATH%
 set PATH=%builddir%\conf;%PATH%
 
-if %V% == 4 set PYTHONPATH=%builddir%\src\backends\monet4;%PYTHONPATH%
+set PYTHONPATH=%builddir%\src\backends\monet%V%;%PYTHONPATH%
 
 REM execute Mtest.py in the source directory
 pushd %srcdir%
