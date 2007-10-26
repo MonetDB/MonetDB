@@ -534,7 +534,7 @@ If the source BAT is readonly, then we can obtain a VIEW
 that just reuses the memory of the source.
 @c
 	if (BAThrestricted(b) == BAT_READ && BATtrestricted(b) == BAT_READ) {
-		int cnt = h-l;
+		size_t cnt = h-l;
 		bn = VIEWcreate_(b, b, TRUE);
 		bn->batFirst = bn->batDeleted = bn->batInserted = 0;
 		bn->H->heap.base = (bn->htype)?BUNhloc(bi,l):NULL;

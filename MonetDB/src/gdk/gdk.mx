@@ -1339,8 +1339,8 @@ gdk_export BUN BUNfnd(BAT *b, ptr left);
 #define Tsize(b)	((b)->T->width)
 
 /* new semantics ! */
-#define headsize(b,p)   (b->H->type?(p)<<b->H->shift:0)
-#define tailsize(b,p)   (b->T->type?(p)<<b->T->shift:0)
+#define headsize(b,p)   (b->H->type?((size_t)(p))<<b->H->shift:0)
+#define tailsize(b,p)   (b->T->type?((size_t)(p))<<b->T->shift:0)
 
 #define Hloc(b,p)	((b)->H->heap.base+((p)<<(b)->H->shift))
 #define Tloc(b,p)	((b)->T->heap.base+((p)<<(b)->T->shift))
