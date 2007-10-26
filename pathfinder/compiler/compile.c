@@ -841,7 +841,10 @@ PFcompile_MonetDB (char *xquery, char* url, char** prologue, char** query, char*
         strcpy (*query, intern_query);
         strcpy (*epilogue, intern_epilogue);
 #else
-        (void) url;
+        (void) url;		/* not used in the Algebra case (yet??) */
+        (void) num_fun;		/* not used in the Algebra case (yet??) */
+        (void) timing;		/* not used in the Algebra case (yet??) */
+        (void) module_base;	/* not used in the Algebra case (yet??) */
 
         /* compile into logical algebra */
         laroot = PFcore2alg (croot);
