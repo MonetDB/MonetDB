@@ -6,6 +6,16 @@ date_04:= mtime.date("-5867411-JAN-1");
 date_05:= mtime.date("-768/octobe/01");
 date_06:= mtime.date("5000\\novembe\\01");
 date_07:= mtime.date("-1999/jun/01");
+date_08:= mtime.date(nil);
+
+f:= calc.min(date_01,date_02);
+io.print(f);
+f:= calc.min(date_02,date_01);
+io.print(f);
+f:= calc.min(date_02,date_08);
+io.print(f);
+f:= calc.min(date_08,date_08);
+io.print(f);
 
 b:= bat.new(:int,:date);
 bat.insert(b,1,date_01);
