@@ -365,7 +365,7 @@ mo_builtin_settings(opt **Set)
 	if (Set == NULL)
 		return 0;
 
-#define N_OPTIONS	29	/*MUST MATCH # OPTIONS BELOW */
+#define N_OPTIONS	28	/*MUST MATCH # OPTIONS BELOW */
 	set = malloc(sizeof(opt) * N_OPTIONS);
 	if (set == NULL)
 		return 0;
@@ -409,15 +409,6 @@ mo_builtin_settings(opt **Set)
 	set[i].kind = opt_builtin;
 	set[i].name = strdup("gdk_mem_bigsize");
 	set[i].value = strdup("262144");
-	i++;
-	/*
-	 * gdk_vm_minsize will be set/limited to
-	 * 1/8 of the physically available amount of main-memory
-	 * during start-up in src/tools/Mserver.mx
-	 */
-	set[i].kind = opt_builtin;
-	set[i].name = strdup("gdk_vm_minsize");
-	set[i].value = strdup("137438953472");
 	i++;
 	set[i].kind = opt_builtin;
 	set[i].name = strdup("gdk_alloc_map");
