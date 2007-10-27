@@ -115,6 +115,7 @@ getLocalObjectFile(str filename)
 	int mode = RTLD_NOW | RTLD_GLOBAL;
 	void *handle = NULL;
 	char *fullname;
+	MALfcn fcn=0;
 
 	fullname = MSP_locate_file(filename);
 	if (fullname == NULL) {
@@ -130,8 +131,11 @@ getLocalObjectFile(str filename)
 #ifdef DEBUG_MAL_LINKER
 	stream_printf(GDKout, "localObjectLoaded ? %s\n",(handle!=0?"yes":"no"));
 #endif
-	if (handle)
-		return (MALfcn) dlsym(handle, filename);
+	if (handle){
+		fcn=(MALfcn) dlsym(handle, filename);
+		GDKfree(filename);
+		return fcn;
+	}
 	stream_printf(GDKout, "could not access library %s\n", dlerror());
 	return 0;
 }
