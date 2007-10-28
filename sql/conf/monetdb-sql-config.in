@@ -27,6 +27,7 @@ exec_prefix="@Qexec_prefix@"
 libdir="@Qlibdir@"
 M4libdir="${libdir}/MonetDB4"
 M5libdir="${libdir}/MonetDB5"
+pythonlibdir="${prefix}/@PYTHON_LIBDIR@"
 
 usage()
 {
@@ -42,7 +43,7 @@ Known values for OPTION are:
   --help		display this help and exit
 
 Install directories ${pkg} was configured to
-  --prefix
+  --prefix --pythonlibdir
 
 EOF
 
@@ -79,6 +80,14 @@ while test $# -gt 0; do
 
     --modpath5)
         echo 	$M5libdir:$M5libdir/lib:$M5libdir/bin
+        ;;
+
+    --*dir)
+        dirname=\$`echo $1 | sed -e 's,^--,,'`
+        dirname=`eval echo $dirname`
+        test -z "$dirname" && exit 1
+        echo $dirname
+        exit 0
         ;;
 
     --help)
