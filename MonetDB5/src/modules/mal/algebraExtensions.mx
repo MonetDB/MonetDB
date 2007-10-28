@@ -36,7 +36,9 @@ comment "Fill the tail column with a constant.";
 In most cases we pass a BAT identifier, which should be unified
 with a BAT descriptor. Upon failure we can simply abort the function.
 
-@c
+@h
+#ifndef _ALGEBRA_EXTENSIONS_H
+#define _ALGEBRA_EXTENSIONS_H
 #include "mal_config.h"
 #include "mal_box.h"
 #include "mal_client.h"
@@ -56,7 +58,10 @@ with a BAT descriptor. Upon failure we can simply abort the function.
 
 ae_export str ALGprojectCst(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 ae_export str ALGprojectCstBody(int *result, int *bid, ptr *p, int tt);
+#endif /* _ALGEBRA_EXTENSIONS_H*/
 
+@c
+#include "algebraExtensions.h"
 str
 ALGprojectCstBody(int *result, int *bid, ptr *p, int tt){
 	BAT *b, *bn;
