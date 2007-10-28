@@ -8,5 +8,5 @@ TSTSRCBASE = os.environ['TSTSRCBASE']
 
 CALL = 'pf -A "%s.xq" | %s --dbname=%s "--dbinit=module(pathfinder);"' % (os.path.join(TSTSRCBASE,'benchmarks','XMark','Tests',TST),MSERVER,TSTDB)
 
-os.system('Mlog "%s"' % CALL)
+os.system('Mlog "%s"' % CALL.replace('"','\\"'))
 os.system(CALL)

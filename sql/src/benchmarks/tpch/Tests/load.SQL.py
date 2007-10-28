@@ -22,5 +22,5 @@ f.close()
 
 CALL = SQL_CLIENT+" < load.sql"
 
-os.system('Mlog "%s"' % CALL)
+os.system('Mlog "%s"' % CALL.replace('"','\\"'))
 os.system(CALL)

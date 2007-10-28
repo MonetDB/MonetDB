@@ -27,5 +27,5 @@ MSERVER = os.environ['MSERVER'].replace('--trace','')
 
 CALL = 'pf -A "%s.xq" | %s --dbname=%s "--dbinit=module(pathfinder);"' % (TST,MSERVER,TSTDB)
 
-os.system('Mlog "%s"' % CALL)
+os.system('Mlog "%s"' % CALL.replace('"','\\"'))
 os.system(CALL)

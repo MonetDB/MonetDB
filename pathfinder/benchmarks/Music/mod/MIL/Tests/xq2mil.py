@@ -9,5 +9,5 @@ MIL = os.path.join('MIL','Tests')
 
 CALL = 'pf "%s.xq" > music.mil' % os.path.join(TSTSRCDIR.replace(MIL,XQ),'music')
 
-os.system('Mlog "%s"' % CALL)
+os.system('Mlog "%s"' % CALL.replace('"','\\"'))
 os.system(CALL)
