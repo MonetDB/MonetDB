@@ -7,10 +7,13 @@ echo password=monetdb>>	.monetdb
 
 set LANG=en_US.UTF-8
 
-call Mlog.bat -x java -jar "%JAR%" -h %HOST% -p %MAPIPORT% -d "%TSTDB%" -f "%RELSRCDIR%\..\JdbcClient_create_tables.sql"
+prompt # $t $g  
+echo on
 
-call Mlog.bat -x java -jar "%JAR%" -h %HOST% -p %MAPIPORT% -d "%TSTDB%" -f "%RELSRCDIR%\..\JdbcClient_inserts_selects.sql"
+java -jar "%JAR%" -h %HOST% -p %MAPIPORT% -d "%TSTDB%" -f "%RELSRCDIR%\..\JdbcClient_create_tables.sql"
 
-call Mlog.bat -x java -jar "%JAR%" -h %HOST% -p %MAPIPORT% -d "%TSTDB%" -D
+java -jar "%JAR%" -h %HOST% -p %MAPIPORT% -d "%TSTDB%" -f "%RELSRCDIR%\..\JdbcClient_inserts_selects.sql"
 
-del .monetdb
+java -jar "%JAR%" -h %HOST% -p %MAPIPORT% -d "%TSTDB%" -D
+
+@del .monetdb

@@ -1,3 +1,4 @@
-@echo off
+@prompt # $t $g  
+@echo on
 
-call Mlog.bat -x %SQL_CLIENT% -uinvalid -Pinvalid
+%SQL_CLIENT% -uinvalid -Pinvalid

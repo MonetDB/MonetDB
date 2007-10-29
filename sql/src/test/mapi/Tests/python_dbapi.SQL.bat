@@ -4,4 +4,7 @@ set PATH=%CLIENTS_PREFIX%\lib\MonetDB\Tests;%PATH%
 
 set PYTHONPATH=%MONETDB_PREFIX%\%PYTHON_LIBDIR%;%CLIENTS_PREFIX%\%PYTHON_LIBDIR%;%CLIENTS_PREFIX%\%PYTHON_LIBDIR%\MonetDB;%PYTHONPATH%
 
-call Mlog.bat -x sqlsample.py %MAPIPORT% %TSTDB%
+prompt # $t $g  
+echo on
+
+sqlsample.py %MAPIPORT% %TSTDB%

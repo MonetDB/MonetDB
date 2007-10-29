@@ -2,4 +2,7 @@
 
 set PATH=%CLIENTS_PREFIX%\lib\MonetDB\Tests;%PATH%
 
-call Mlog.bat -x testgetinfo.exe
+prompt # $t $g  
+echo on
+
+testgetinfo.exe

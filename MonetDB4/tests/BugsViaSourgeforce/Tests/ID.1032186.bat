@@ -2,9 +2,10 @@
 
 set NAME=%1
 
-call Mlog.bat   "%MSERVER% --dbname=%TSTDB% %NAME%.milS"
-call             %MSERVER% --dbname=%TSTDB% %NAME%.milS
+prompt # $t $g  
+echo on
 
-call Mlog.bat   "%MSERVER% --dbname=%TSTDB% < %NAME%.milS"
-call             %MSERVER% --dbname=%TSTDB% < %NAME%.milS
+call %MSERVER% --dbname=%TSTDB% %NAME%.milS
+
+call %MSERVER% --dbname=%TSTDB% < %NAME%.milS
 

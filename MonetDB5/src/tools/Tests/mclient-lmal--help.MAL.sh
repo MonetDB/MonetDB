@@ -1,3 +1,3 @@
 #!/bin/sh
 
-Mlog -x $MAL_CLIENT --help < /dev/null
+Mlog -x "$MAL_CLIENT --help < /dev/null"

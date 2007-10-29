@@ -6,14 +6,17 @@
 @rem  1582."
 @rem Hence, we run the script 10 times, and see whether it works...
 
-call Mlog.bat -x %MIL_CLIENT% < %1.mil
-call Mlog.bat -x %MIL_CLIENT% < %1.mil
-call Mlog.bat -x %MIL_CLIENT% < %1.mil
-call Mlog.bat -x %MIL_CLIENT% < %1.mil
-call Mlog.bat -x %MIL_CLIENT% < %1.mil
-call Mlog.bat -x %MIL_CLIENT% < %1.mil
-call Mlog.bat -x %MIL_CLIENT% < %1.mil
-call Mlog.bat -x %MIL_CLIENT% < %1.mil
-call Mlog.bat -x %MIL_CLIENT% < %1.mil
-call Mlog.bat -x %MIL_CLIENT% < %1.mil
+prompt # $t $g  
+echo on
+
+%MIL_CLIENT% < %1.mil
+%MIL_CLIENT% < %1.mil
+%MIL_CLIENT% < %1.mil
+%MIL_CLIENT% < %1.mil
+%MIL_CLIENT% < %1.mil
+%MIL_CLIENT% < %1.mil
+%MIL_CLIENT% < %1.mil
+%MIL_CLIENT% < %1.mil
+%MIL_CLIENT% < %1.mil
+%MIL_CLIENT% < %1.mil
 

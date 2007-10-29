@@ -3,4 +3,4 @@
 PATH="`monetdb-clients-config --pkglibdir`/Tests:$PATH"
 export PATH
 
-Mlog -x sample4 $HOST $MAPIPORT sql
+Mlog -x "sample4 $HOST $MAPIPORT sql"

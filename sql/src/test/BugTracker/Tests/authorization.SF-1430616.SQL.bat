@@ -5,11 +5,14 @@ echo password=monetdb>>	.monetdb
 
 set LANG=en_US.UTF-8
 
-call Mlog.bat -x mjclient -h %HOST% -p %MAPIPORT% -d %TSTDB% -f "%RELSRCDIR%\authorization.SF-1430616-data.sql"
+prompt # $t $g  
+echo on
 
-echo user=voc>		.monetdb
-echo password=voc>>	.monetdb
+call mjclient -h %HOST% -p %MAPIPORT% -d %TSTDB% -f "%RELSRCDIR%\authorization.SF-1430616-data.sql"
 
-call Mlog.bat -x mjclient -h %HOST% -p %MAPIPORT% -d %TSTDB% -q
+@echo user=voc>		.monetdb
+@echo password=voc>>	.monetdb
 
-del .monetdb
+call mjclient -h %HOST% -p %MAPIPORT% -d %TSTDB% -q
+
+@del .monetdb
