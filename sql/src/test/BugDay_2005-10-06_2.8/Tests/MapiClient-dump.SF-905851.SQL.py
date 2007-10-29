@@ -1,4 +1,4 @@
-import os, sys
+import os, sys, time
 try:
     import subprocess
 except ImportError:
@@ -11,6 +11,9 @@ def client(cmd, infile = None):
         f = open(infile)
     else:
         f = None
+    Mlog = "\n%s  %s\n\n" % (time.strftime('# %H:%M:%S >',time.localtime(time.time())), cmd)
+    sys.stdout.write(Mlog)
+    sys.stderr.write(Mlog)
     clt = subprocess.Popen(cmd, shell=True, stdin = f)
     if f is not None:
         f.close()
@@ -18,12 +21,12 @@ def client(cmd, infile = None):
 
 
 def main():
-    client('Mlog -x %s' % os.getenv('SQL_CLIENT'),
+    client(os.getenv('SQL_CLIENT'),
            os.path.join(os.getenv('RELSRCDIR'),
                         'JdbcClient_create_tables.sql'))
-    client('Mlog -x %s' % os.getenv('SQL_CLIENT'),
+    client(os.getenv('SQL_CLIENT'),
            os.path.join(os.getenv('RELSRCDIR'),
                         'JdbcClient_inserts_selects.sql'))
-    client('Mlog -x %s' % os.getenv('SQL_DUMP'))
+    client(os.getenv('SQL_DUMP'))
 
 main()
