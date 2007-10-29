@@ -455,6 +455,7 @@ doChallenge(str cmd, stream *in, stream *out) {
 				"LIT"
 #endif
 				);
+		GDKfree(algos);
 		stream_flush(fdout);
 		/* get response */
 		if ((len = stream_read_block(fdin, buf, 1, BLOCK)) < 0 || 
