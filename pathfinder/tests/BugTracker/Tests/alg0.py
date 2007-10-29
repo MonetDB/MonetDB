@@ -7,8 +7,9 @@ MSERVER = os.environ['MSERVER'].replace('--trace','')
 
 CALL = 'pf -A "%s.xq" | %s --dbname=%s "--dbinit=module(pathfinder); debugmask(and(debugmask(),xor(INT_MAX,8+2)));"' % (TST,MSERVER,TSTDB)
 
-if os.name == "nt":
-    os.system('Mlog "%s"' % CALL)
-else:
-    os.system("Mlog '%s'" % CALL.replace('|','\\|'))
+import sys, time
+Mlog = "\n%s  %s\n\n" % (time.strftime('# %H:%M:%S >',time.localtime(time.time())), CALL)
+sys.stdout.write(Mlog)
+sys.stderr.write(Mlog)
+
 os.system(CALL)

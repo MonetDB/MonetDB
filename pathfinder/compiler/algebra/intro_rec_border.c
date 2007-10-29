@@ -95,6 +95,13 @@ introduce_rec_borders_worker (PFpa_op_t *n, PFarray_t *bases)
                 }
             break;
 
+        case pa_fcns:
+            /* this also skips the introduction of a rec_border
+               operator for the content of an empty elements:
+               elem (fcns (nil, nil)). */
+            if (R(n)->kind == pa_nil)
+                break;
+            /* else fall through */
         default:
             /* follow the children until a base or a leaf is reached */
             for (unsigned int i = 0; i < PFPA_OP_MAXCHILD && n->child[i]; i++)

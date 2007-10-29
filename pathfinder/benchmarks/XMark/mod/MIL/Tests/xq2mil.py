@@ -9,8 +9,9 @@ MIL = os.path.join('MIL','Tests')
 
 CALL = 'pf "%s.xq" > xmark.mil' % os.path.join(TSTSRCDIR.replace(MIL,XQ),'xmark')
 
-if os.name == "nt":
-    os.system('Mlog "%s"' % CALL)
-else:
-    os.system("Mlog '%s'" % CALL.replace('>','\\>'))
+import sys, time
+Mlog = "\n%s  %s\n\n" % (time.strftime('# %H:%M:%S >',time.localtime(time.time())), CALL)
+sys.stdout.write(Mlog)
+sys.stderr.write(Mlog)
+
 os.system(CALL)
