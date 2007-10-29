@@ -151,6 +151,7 @@ sql_create_env(mvc *m, sql_schema *s)
 	/* add function */
 	l = list_create((fdestroy) &arg_destroy);
 	mvc_create_func(m, s, "env", l, &tpe, FALSE, FALSE, "sql", "sql_environment", 1);
+	list_destroy(l);
 
 	t = mvc_create_generated(m, s, "#var", NULL, 1);
 	mvc_create_column_(m, t, "name", "varchar", 1024);
@@ -162,6 +163,7 @@ sql_create_env(mvc *m, sql_schema *s)
 	/* add function */
 	l = list_create((fdestroy) &arg_destroy);
 	mvc_create_func(m, s, "var", l, &tpe, FALSE, FALSE, "sql", "sql_variables", 1);
+	list_destroy(l);
 	return 0;
 }
 
