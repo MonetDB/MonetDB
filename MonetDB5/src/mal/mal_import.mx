@@ -264,7 +264,8 @@ str mal_cmdline( char *s, int *len)
 mal_export str compileString(Symbol *fcn, Client c, str s);
 @c
 str
-compileString(Symbol *fcn, Client c, str s){
+compileString(Symbol *fcn, Client c, str s)
+{
 	@:restoreState@
 	int len = strlen(s);
 	buffer *b;
@@ -304,11 +305,7 @@ compileString(Symbol *fcn, Client c, str s){
 	}
 	*fcn= c->curprg;
 	/* restore IO channel */
-	@:restoreClient1()@
-	c->listing = oldlisting;
-	c->glb = oldglb;
-	c->nspace = oldnspace;
-	c->curprg = oldprg;
+	@:restoreClient()@
 	GDKfree(qry);
 	GDKfree(b);
 	return MAL_SUCCEED;
