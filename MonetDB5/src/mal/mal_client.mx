@@ -259,7 +259,6 @@ mal_export void     MCcleanupClients(void);
 mal_export void     MCtraceAllClients(int flag);
 mal_export void     MCtraceClient(oid which, int flag);
 
-mal_export bstream *MCgetConsole(Client c);
 mal_export void     MCpushClientInput(Client c, bstream *new_input, int listing, char *prompt);
 mal_export void     MCpopClientInput(Client c);
 
@@ -315,14 +314,6 @@ void THRawake(Thread h){
 	/* printf("awake Thread %d %d\n", h->tid, (int) h->pid);*/
 }
 
-bstream *MCgetConsole(Client c){
-	ClientInput *x;
-	if( c->bak == 0) return c->fdin;
-	x= c->bak;
-	while(x->next) x= x->next;
-	return x->fdin;
-	/* return c->console;*/
-}
 void MCpushClientInput(Client c, bstream *new_input, int listing, char *prompt)
 {
 	ClientInput *x = (ClientInput*)GDKmalloc(sizeof(ClientInput));
