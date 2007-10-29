@@ -3,4 +3,4 @@
 PATH="`monetdb-clients-config --pkglibdir`/Tests:$PATH"
 export PATH
 
-Mlog -x smack00 $MAPIPORT xquery
+Mlog -x "smack00 $MAPIPORT xquery"

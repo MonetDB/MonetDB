@@ -7,8 +7,11 @@ echo password=monetdb>> .monetdb
 
 set LANG=en_US.UTF-8
 
-call Mlog.bat -x java -jar "%JAR%" -h %HOST% -p %MAPIPORT% -d %TSTDB% -l xquery -f "%TST%.250.xq"
+prompt # $t $g  
+echo on
 
-call Mlog.bat -x java -jar "%JAR%" -h %HOST% -p %MAPIPORT% -d %TSTDB% -l xquery -f "%TST%.251.xq"
+java -jar "%JAR%" -h %HOST% -p %MAPIPORT% -d %TSTDB% -l xquery -f "%TST%.250.xq"
 
-del .monetdb
+java -jar "%JAR%" -h %HOST% -p %MAPIPORT% -d %TSTDB% -l xquery -f "%TST%.251.xq"
+
+@del .monetdb
