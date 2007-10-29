@@ -24,10 +24,10 @@ THISFILE=${0##*/}
 #	FUNCTIONS
 
 function LOG1 () { prompt="\n# `date +%H:%M:%S` >  " ; { echo -en "$prompt$prompt" ; echo -n "$*" ; echo -en "$prompt\n\n" ; } >&2 ; }
-function LOG2 () { LOG1 $* 2>&1 ; LOG1 $* ; }
+function LOG2 () { LOG1 "$@" 2>&1 ; LOG1 "$@" ; }
  
-function LOG1x () { LOG1 $* ; "$@" ; }
-function LOG2x () { LOG2 $* ; "$@" ; }
+function LOG1x () { LOG1 "$@" ; eval "$@" ; }
+function LOG2x () { LOG2 "$@" ; eval "$@" ; }
 
 #############################################################################
 #	MAIN
@@ -44,7 +44,7 @@ while :; do
 	shift
 done
 
-eval $ACTION "$@"
+$ACTION "$@"
 
 #	END
 #############################################################################

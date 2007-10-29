@@ -2,12 +2,9 @@
 
 if not '%1' == '-x' (
 	echo # ..:..:.. .  %*
-	goto Done
+	goto :EOF
 )
 
-set args=%*
 prompt # $t $g  
 echo on
-call %args:~2%
-
-:Done
+call %~2 %~3 %~4 %~5 %~6 %~7 %~8 %~9
