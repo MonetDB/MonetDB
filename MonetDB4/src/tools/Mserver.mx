@@ -215,6 +215,9 @@ Monet_init(opt *set, int setlen)
 		/* sanity check to avoid memory fragmentation */
 		GDK_mem_bigsize = (size_t) MIN(max_mem_bigsize, strtol(p, NULL, 10));
 	}
+	if ((p = GDKgetenv("gdk_vm_minsize"))) 
+		GDK_vm_minsize = (size_t)strtol(p, NULL, 10);
+
 	if (GDKgetenv_isyes("gdk_embedded") || GDKgetenv_isyes("embedded")) {
 		GDKembedded = 1;
 		monet_daemon = 1;

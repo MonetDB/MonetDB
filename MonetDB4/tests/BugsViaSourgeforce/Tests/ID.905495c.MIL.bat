@@ -2,9 +2,10 @@
 
 set NAME=%1
 
-call Mlog.bat   "%MIL_CLIENT% %NAME%.mil"
-call             %MIL_CLIENT% %NAME%.mil
+prompt # $t $g  
+echo on
 
-call Mlog.bat   "%MIL_CLIENT% < %NAME%.mil"
-call             %MIL_CLIENT% < %NAME%.mil
+call %MIL_CLIENT% %NAME%.mil
+
+call %MIL_CLIENT% < %NAME%.mil
 
