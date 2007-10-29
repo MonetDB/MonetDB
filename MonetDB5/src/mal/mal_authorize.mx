@@ -330,12 +330,15 @@ AUTHcheckCredentials(
 	rethrow("checkCredentials", tmp, AUTHdecypherValue(&pwd, &tmp));
 	/* generate the hash as the client should have done */
 	rethrow("checkCredentials", tmp, AUTHhashPassword(&hash, algo, &pwd, challenge));
+	GDKfree(pwd);
 	/* and now we have it, compare it to what was given to us */
 	if (strcmp(*passwd, hash) != 0) {
 		/* of course we DO NOT print the password here */
+		GDKfree(hash);
 		throw(INVCRED, "checkCredentials", "Invalid credentials for user '%s'",
 				*username);
 	}
+	GDKfree(hash);
 
 	/* now see if the scenario is permitted (if restrictions for that
 	 * apply)
@@ -409,6 +412,7 @@ AUTHaddUser(oid *uid, str *username, str *passwd, bat *scenarios) {
 	/* needs force, as SQL makes a view over user */
 	BUNappend(user, *username, TRUE);
 	BUNappend(pass, hash, FALSE);	/* should always be private! */
+	GDKfree(hash);
 	/* retrieve the oid of the just inserted user */
 	p = BUNfnd(BATmirror(user), *username);
 	assert (p != NULL);
@@ -553,7 +557,8 @@ AUTHchangePassword(str *oldpass, str *passwd) {
 	/* cypher the password */
 	rethrow("setPassword", tmp, AUTHcypherValue(&hash, passwd));
 	/* ok, just overwrite the password field for this user */
-	BUNinplace(pass, p, BUNhead(pass, p), &hash, FALSE);
+	BUNinplace(pass, p, BUNhead(pass, p), hash, FALSE);
+	GDKfree(hash);
 	AUTHcommit();
 
 	return(MAL_SUCCEED);
@@ -600,7 +605,8 @@ AUTHsetPassword(str *username, str *passwd) {
 	/* ok, just overwrite the password field for this user */
 	p = BUNfnd(pass, &id);
 	assert (p != NULL);
-	BUNinplace(pass, p, BUNhead(pass, p), &hash, FALSE);
+	BUNinplace(pass, p, BUNhead(pass, p), hash, FALSE);
+	GDKfree(hash);
 	AUTHcommit();
 
 	return(MAL_SUCCEED);
