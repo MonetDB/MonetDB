@@ -323,7 +323,7 @@ void deleteSymbol(Module scope, Symbol prg){
 			}
 			nxt = nxt->peer;
 		}
-		}
+	}
 }
 
 @+ Inheritance

@@ -254,16 +254,19 @@ pushFlt(MalBlkPtr mb, InstrPtr q, float val)
 }
 
 InstrPtr
-pushStr(MalBlkPtr mb, InstrPtr q, const char *val)
+pushStr(MalBlkPtr mb, InstrPtr q, const char *Val)
 {
 	int _t;
 	ValRecord cst;
+	char *val = (char*)Val;
 
 	cst.vtype= TYPE_str;
-	cst.val.sval= GDKstrdup(val);
+	cst.val.sval= val;
 	cst.len= strlen(cst.val.sval);
 	_t = defConstant(mb,TYPE_str,&cst);
 
+	if (getConstant(mb,_t).val.sval == val) 
+		getConstant(mb,_t).val.sval = GDKstrdup(val);
 	return pushArgument(mb, q, _t);
 }
 

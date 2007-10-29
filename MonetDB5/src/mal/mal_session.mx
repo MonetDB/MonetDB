@@ -398,6 +398,7 @@ static int unknownType(int tpe){
 			getHeadType(tpe) == TYPE_any || 
 			getTailType(tpe) == TYPE_any ));
 }
+
 void
 MSresetVariables(MalBlkPtr mb, MalStkPtr glb, int start)
 {

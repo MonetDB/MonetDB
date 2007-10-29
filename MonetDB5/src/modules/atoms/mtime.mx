@@ -198,6 +198,12 @@ comment "Equality of two @1s";
 command calc.isnil(v:@1):bit 
 address MTIME@1_isnil
 comment "Nil test for @1 value";
+command calc.min(v:@1,w:@1):@1 
+address MTIME@1_min
+comment "Minimum test for @1 value";
+command calc.max(v:@1,w:@1):@1 
+address MTIME@1_max
+comment "Minimum test for @1 value";
 @mal
 
 @+ Date atom
@@ -958,6 +964,8 @@ mtime_export str MTIMEtimestamp_add(timestamp *ret, timestamp *v, lng *msecs);
 mtime_export str MTIMEtimestamp_diff(lng *ret, timestamp *v1, timestamp *v2);
 mtime_export str MTIMEtimestamp_inside_dst(bit *ret, timestamp *p, tzone *z);
 mtime_export str MTIMEtimestamp_isnil(bit *retval, timestamp *val);
+mtime_export str MTIMEtimestamp_min(timestamp *ret, timestamp *v, timestamp *w);
+mtime_export str MTIMEtimestamp_max(timestamp *ret, timestamp *v, timestamp *w);
 mtime_export str MTIMEtimestamp_EQ(bit *retval, timestamp *val1, timestamp *val2);
 mtime_export str MTIMEtimestamp_NEQ(bit *retval, timestamp *val1, timestamp *val2);
 
@@ -2821,6 +2829,8 @@ str MTIME@3_@1(bit *ret, @3 *v, @3 *w){
 }
 @= compareDefAll
 mtime_export str MTIME@1_isnil(bit *ret, @1 *v);
+mtime_export str MTIME@1_min(@1 *ret, @1 *v, @1 *w);
+mtime_export str MTIME@1_max(@1 *ret, @1 *v, @1 *w);
 	    @:compareDef(EQ,==,@1)@
 	    @:compareDef(NEQ,!=,@1)@
 	    @:compareDef(LT,<,@1)@
@@ -2830,6 +2840,20 @@ mtime_export str MTIME@1_isnil(bit *ret, @1 *v);
 @= compareAll
 str MTIME@1_isnil(bit *ret, @1 *v){
 	*ret= *v == @1_nil;
+	return MAL_SUCCEED;
+}
+str MTIME@1_min(@1 *ret, @1 *v, @1 *w){
+	if( *v== @1_nil || *w== @1_nil)
+			*ret= @1_nil;
+	else
+		*ret= *v<*w ? *v: *w;
+	return MAL_SUCCEED;
+}
+str MTIME@1_max(@1 *ret, @1 *v, @1 *w){
+	if( *v== @1_nil || *w== @1_nil)
+			*ret= @1_nil;
+	else
+		*ret= *v<*w ? *v: *w;
 	return MAL_SUCCEED;
 }
 	    @:compareImpl(EQ,==,@1)@
@@ -3268,6 +3292,31 @@ str
 MTIMEtimestamp_isnil(bit *retval, timestamp *val)
 {
 	*retval = ts_isnil(*val);
+	return MAL_SUCCEED;
+}
+
+str
+MTIMEtimestamp_min(timestamp *ret, timestamp *v, timestamp *w)
+{
+	if (ts_isnil(*v) || ts_isnil(*w))
+		*ret = *ts_nilptr;
+	else 
+	if( v->days < w->days || (v->days == w->days && v->msecs < w->msecs))
+		*ret= *v;
+	else
+		*ret= *w;
+	return MAL_SUCCEED;
+}
+str
+MTIMEtimestamp_max(timestamp *ret, timestamp *v, timestamp *w)
+{
+	if (ts_isnil(*v) || ts_isnil(*w))
+		*ret = *ts_nilptr;
+	else 
+	if( !( v->days < w->days || (v->days == w->days && v->msecs < w->msecs)))
+		*ret= *v;
+	else
+		*ret= *w;
 	return MAL_SUCCEED;
 }
 

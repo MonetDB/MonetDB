@@ -245,16 +245,33 @@ evalFile(Client c, str fname, int listing){
 	@:restoreClient()@
 	return msg;
 }
+
+str mal_cmdline( char *s, int *len)
+{
+	if (s[*len - 1] != '\n') {
+		char *n = GDKmalloc(*len + 1 + 1);
+
+		strncpy(n, s, *len);
+		n[*len] = '\n';
+		n[*len + 1] = 0;
+		(*len)++;
+		return n;
+	}
+	return s;
+}
+
 @h
 mal_export str compileString(Symbol *fcn, Client c, str s);
 @c
 str
-compileString(Symbol *fcn, Client c, str s){
+compileString(Symbol *fcn, Client c, str s)
+{
 	@:restoreState@
 	int len = strlen(s);
 	buffer *b;
 	str msg = MAL_SUCCEED;
 	str qry;
+	str old = s;
 
 	c->yycur = 0;
 	c->prompt = GDKstrdup("");	/* do not produce visible prompts */
@@ -264,18 +281,11 @@ compileString(Symbol *fcn, Client c, str s){
 	c->fdin = NULL;
 	c->srcFile= NULL;
 
-	b = (buffer *) GDKmalloc(sizeof(buffer));
-	if (s[len - 1] != '\n') {
-		char *n = GDKmalloc(len + 1 + 1);
-
-		strncpy(n, s, len);
-		n[len] = '\n';
-		n[len + 1] = 0;
-		s = n;
-		len++;
-	}
-	if( *s== '"') s++;
+	s = mal_cmdline(s, &len);
 	mal_unquote(qry = GDKstrdup(s));
+	if (old != s)
+		GDKfree(s);
+	b = (buffer *) GDKmalloc(sizeof(buffer));
 	buffer_init(b, qry, len);
 	MCpushClientInput(c, bstream_create(buffer_rastream(b, "compileString"), b->len), 0, "");
 	MSinitClientPrg(c,"user", "main");	/* create new context */
@@ -295,12 +305,9 @@ compileString(Symbol *fcn, Client c, str s){
 	}
 	*fcn= c->curprg;
 	/* restore IO channel */
-	@:restoreClient1()@
-	c->listing = oldlisting;
-	c->glb = oldglb;
-	c->nspace = oldnspace;
-	c->curprg = oldprg;
+	@:restoreClient()@
 	GDKfree(qry);
+	GDKfree(b);
 	return MAL_SUCCEED;
 }
 
@@ -314,6 +321,7 @@ callString(Client c, str s, int listing)
 	int len = strlen(s);
 	buffer *b;
 	str msg = MAL_SUCCEED,qry;
+	str old = s;
 
 	c->yycur = 0;
 	c->prompt = GDKstrdup("");	/* do not produce visible prompts */
@@ -323,18 +331,11 @@ callString(Client c, str s, int listing)
 	c->fdin = NULL;
 	c->srcFile= NULL;
 
-	b = (buffer *) GDKmalloc(sizeof(buffer));
-	if (s[len - 1] != '\n') {
-		char *n = GDKmalloc(len + 1 + 1);
-
-		strncpy(n, s, len);
-		n[len] = '\n';
-		n[len + 1] = 0;
-		s = n;
-		len++;
-	}
-	if( *s=='"') s++;
+	s = mal_cmdline(s, &len);
 	mal_unquote(qry = GDKstrdup(s));
+	if (old != s)
+		GDKfree(s);
+	b = (buffer *) GDKmalloc(sizeof(buffer));
 	buffer_init(b, qry, len);
 	MCpushClientInput(c, bstream_create(buffer_rastream(b, "callString"), b->len), listing, "");
 	MSinitClientPrg(c,"user", "main");	/* create new context */
@@ -347,6 +348,7 @@ callString(Client c, str s, int listing)
 	@:runPhase(MAL_SCENARIO_ENGINE,restoreClient2)@
 	@:restoreClient2()@
 	GDKfree(qry);
+	GDKfree(b);
 }
 
 @h
