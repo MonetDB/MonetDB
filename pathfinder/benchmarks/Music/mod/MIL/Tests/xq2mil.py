@@ -9,5 +9,9 @@ MIL = os.path.join('MIL','Tests')
 
 CALL = 'pf "%s.xq" > music.mil' % os.path.join(TSTSRCDIR.replace(MIL,XQ),'music')
 
-os.system('Mlog "%s"' % CALL.replace('"','\\"'))
+import sys, time
+Mlog = "\n%s  %s\n\n" % (time.strftime('# %H:%M:%S >',time.localtime(time.time())), CALL)
+sys.stdout.write(Mlog)
+sys.stderr.write(Mlog)
+
 os.system(CALL)

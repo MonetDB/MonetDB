@@ -22,5 +22,9 @@ f.close()
 
 CALL = SQL_CLIENT+" < load.sql"
 
-os.system('Mlog "%s"' % CALL.replace('"','\\"'))
+import sys, time
+Mlog = "\n%s  %s\n\n" % (time.strftime('# %H:%M:%S >',time.localtime(time.time())), CALL)
+sys.stdout.write(Mlog)
+sys.stderr.write(Mlog)
+
 os.system(CALL)

@@ -28,5 +28,9 @@ TSTSRCDIR = os.environ['TSTSRCDIR']
 
 CALL = 'pf --enable-standoff "%s.xq" | %s --set standoff=enabled --dbname=%s "--dbinit=module(pathfinder);"' % (os.path.join(TSTSRCDIR,TST),MSERVER,TSTDB)
 
-os.system('Mlog.bat "%s"' % CALL)
+import sys, time
+Mlog = "\n%s  %s\n\n" % (time.strftime('# %H:%M:%S >',time.localtime(time.time())), CALL)
+sys.stdout.write(Mlog)
+sys.stderr.write(Mlog)
+
 os.system(CALL)
