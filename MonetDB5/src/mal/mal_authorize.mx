@@ -955,7 +955,9 @@ AUTHgetHashAlgorithms(str *ret) {
 /**
  * Returns the hash for the given password, challenge and algorithm.
  * The hash calculated using the given algorithm over the password
- * concatenated with the challenge.
+ * concatenated with the challenge.  The returned string is allocated
+ * using GDKmalloc, and hence should be freed with GDKfree by the
+ * caller.
  */
 static str
 AUTHhashPassword(str *ret, str *algo, str *password, str *challenge) {
