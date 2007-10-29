@@ -254,10 +254,11 @@ pushFlt(MalBlkPtr mb, InstrPtr q, float val)
 }
 
 InstrPtr
-pushStr(MalBlkPtr mb, InstrPtr q, const char *val)
+pushStr(MalBlkPtr mb, InstrPtr q, const char *Val)
 {
 	int _t;
 	ValRecord cst;
+	char *val = (char*)Val;
 
 	cst.vtype= TYPE_str;
 	cst.val.sval= val;
