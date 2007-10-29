@@ -212,6 +212,7 @@ monet5_create_privileges(ptr _mvc, sql_schema *s)
 	/* following funcion returns a table (single column) of user names
 	   with the approriate scenario (sql) */
 	mvc_create_func(m, s, "db_users", l, &tpe, FALSE, FALSE, "sql", "db_users", 1);
+	list_destroy(l);
 
 	t = mvc_create_view(m, s, "users",
 			"SELECT u.\"name\" AS \"name\", "
@@ -388,6 +389,7 @@ monet5_user_get_def_schema(mvc *m, oid user)
 	stack_set_string(m, "current_schema", schema);
 	stack_set_string(m, "current_user", username);
 	stack_set_string(m, "current_role", username);
+	GDKfree(username);
 	mvc_rollback(m, 0, NULL);
 	return schema;
 }
