@@ -1,5 +1,6 @@
-@echo off
+@prompt # $t $g  
+@echo on
 
-call Mlog.bat -x %SQL_CLIENT% < "%TSTSRCDIR%\check0.sql"
+%SQL_CLIENT% < "%TSTSRCDIR%\check0.sql"
 
-call Mlog.bat -x %SQL_CLIENT% < "%TSTSRCBASE%\%TSTDIR%\queries_sorted.sql"
+%SQL_CLIENT% < "%TSTSRCBASE%\%TSTDIR%\queries_sorted.sql"

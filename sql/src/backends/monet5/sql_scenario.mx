@@ -91,7 +91,8 @@ static char *sqlinit = NULL;
 static void
 monet5_freestack(backend_stack stk)
 {
-	ptr p = (ptr)stk;
+	MalStkPtr p = (ptr)stk;
+
 	if (p != NULL)
 		GDKfree(p);
 #ifdef _SQL_SCENARIO_DEBUG
@@ -254,13 +255,12 @@ SQLtrace(int *ret)
 	return MAL_SUCCEED;
 }
 
-@-
-@= SQLglobal
-	name = @1;
-	r = stmt_var(_strdup(name), &ctype, 0, 1);
-	stack_push_var(sql, name, r, &ctype);
-	stack_set_var(sql, name, VALset(&src, ctype.type->localtype, @2));
-@c
+#define SQLglobal(name, val) \
+	r = stmt_var(_strdup(name), &ctype, 0, 1); \
+	stack_push_var(sql, name, r, &ctype);	   \
+	stmt_destroy(r);			   \
+	stack_set_var(sql, name, VALset(&src, ctype.type->localtype, val));
+
 /* initialize the global variable, ie make mvc point to these */
 static int
 global_variables(mvc *sql, char *user, char *schema)
@@ -276,27 +276,27 @@ global_variables(mvc *sql, char *user, char *schema)
 
  	typename = "int";
 	sql_find_subtype(&ctype, typename, 0, 0);
-	@:SQLglobal("debug", &debug)@
+	SQLglobal("debug", &sql->debug);
 
 	typename = "varchar";
 	sql_find_subtype(&ctype, typename, 8, 0);
-	@:SQLglobal("explain", "")@
+	SQLglobal("explain", "");
 
 	sql_find_subtype(&ctype, typename, 1024, 0);
-	@:SQLglobal("current_schema", schema)@
-	@:SQLglobal("current_user", user)@
-	@:SQLglobal("current_role", user)@
-	@:SQLglobal("optimizer", defaultPlan)@
+	SQLglobal("current_schema", schema);
+	SQLglobal("current_user", user);
+	SQLglobal("current_role", user);
+	SQLglobal("optimizer", defaultPlan);
 
 	typename = "sec_interval";
 	sql_find_subtype(&ctype, typename, 0, 0);
-	@:SQLglobal("current_timezone", &sec)@
+	SQLglobal("current_timezone", &sec);
 
 	typename = "boolean";
 	sql_find_subtype(&ctype, typename, 0, 0);
-	@:SQLglobal("cache", &T)@
-	@:SQLglobal("profile", &F)@
-	@:SQLglobal("trace", &F)@
+	SQLglobal("cache", &T);
+	SQLglobal("profile", &F);
+	SQLglobal("trace", &F);
 	return 0;
 }
 
@@ -1132,7 +1132,7 @@ SQLexecutePrepared(Client cntxt, backend *be, cq *q )
 {
 	mvc *c = be->mvc;
 	int argc, parc; 
-	ValPtr *argv, argvbuffer[MAXARG];
+	ValPtr *argv, argvbuffer[MAXARG], v;
 	ValRecord *argrec, argrecbuffer[MAXARG];
 	MalBlkPtr mb;
 	MalStkPtr glb;
@@ -1187,6 +1187,12 @@ SQLexecutePrepared(Client cntxt, backend *be, cq *q )
 	}
 	glb = (MalStkPtr)(q->stk);
 	ret= callMAL(cntxt,mb, &glb, argv, (c->mode == m_debug?'n':0));
+	/* cleanup the arguments */
+	for(i=pci->retc; i<pci->argc; i++) {
+		garbageElement(v= &glb->stk[pci->argv[i]]);
+		v->vtype= TYPE_int;
+		v->val.ival= int_nil;
+	}
 	q->stk = (backend_stack)glb;
 	if( pci->argc >= MAXARG)
 		GDKfree(argv);

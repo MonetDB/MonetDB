@@ -7,6 +7,9 @@ echo password=monetdb>>	.monetdb
 
 set LANG=en_US.UTF-8
 
-call Mlog.bat -x java -jar "%JAR%" -h %HOST% -p %MAPIPORT% -d %TSTDB% -e -f "%RELSRCDIR%\..\cast_select.sql"
+prompt # $t $g  
+echo on
 
-del .monetdb
+java -jar "%JAR%" -h %HOST% -p %MAPIPORT% -d %TSTDB% -e -f "%RELSRCDIR%\..\cast_select.sql"
+
+@del .monetdb

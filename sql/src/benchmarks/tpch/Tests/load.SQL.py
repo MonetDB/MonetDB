@@ -22,8 +22,9 @@ f.close()
 
 CALL = SQL_CLIENT+" < load.sql"
 
-if os.name == "nt":
-    os.system("call Mlog.bat %s" % CALL)
-else:
-    os.system("Mlog '%s'" % CALL)
+import sys, time
+Mlog = "\n%s  %s\n\n" % (time.strftime('# %H:%M:%S >',time.localtime(time.time())), CALL)
+sys.stdout.write(Mlog)
+sys.stderr.write(Mlog)
+
 os.system(CALL)

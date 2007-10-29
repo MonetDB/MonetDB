@@ -15,6 +15,7 @@ set M4libdir=%libdir%\MonetDB4
 set M5libdir=%libdir%\MonetDB5
 set modpath4=%M4libdir%
 set modpath5=%M5libdir%
+set pythonlibdir=%prefix%\@PYTHON_LIBDIR@   
 
 if "%1" == ""	goto usage
 
@@ -31,6 +32,7 @@ if "%1" == "--build"		echo %build%		& goto shift
 if "%1" == "--prefix"		echo %prefix%		& goto shift
 if "%1" == "--modpath4"		echo %modpath4%		& goto shift
 if "%1" == "--modpath5"		echo %modpath5%		& goto shift
+if "%1" == "--pythonlibdir"	echo %pythonlibdir%	& goto shift
 if "%1" == "--internal"					  goto shift
 
 :usage
@@ -46,6 +48,6 @@ if "%1" == "--internal"					  goto shift
 	echo   --help		display this help and exit
 	echo.
 	echo Install directories %pkg% was configured to
-	echo   --prefix
+	echo   --prefix --pythonlibdir
 	echo.
 

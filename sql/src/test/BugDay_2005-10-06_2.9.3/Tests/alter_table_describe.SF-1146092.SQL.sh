@@ -8,7 +8,6 @@ EOF
 LANG="en_US.UTF-8"
 export LANG
 
-Mlog   "$MTIMEOUT mjclient -h $HOST -p $MAPIPORT -d $TSTDB -f $RELSRCDIR/alter_table_describe.SF-1146092-src.sql"
-	$MTIMEOUT mjclient -h $HOST -p $MAPIPORT -d $TSTDB -f $RELSRCDIR/alter_table_describe.SF-1146092-src.sql 
+Mlog -x "$MTIMEOUT mjclient -h $HOST -p $MAPIPORT -d $TSTDB -f \"$RELSRCDIR/alter_table_describe.SF-1146092-src.sql\""
 
 rm -f .monetdb

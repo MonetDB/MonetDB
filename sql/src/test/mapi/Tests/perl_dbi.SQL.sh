@@ -6,4 +6,4 @@ export PATH
 PERLLIB="`monetdb-clients-config --perllibdir`"
 export PERLLIB
 
-Mlog -x sqlsample.pl $MAPIPORT $TSTDB
+Mlog -x "sqlsample.pl $MAPIPORT $TSTDB"

@@ -712,6 +712,12 @@ dump_opt_stats(Cntxt stk, YYSTREE lt, ValPtr res)
 	return GDK_SUCCEED;
 }
 
+#define SQLglobal(name, val) \
+	r = stmt_var(_strdup(name), &ctype, 0, 1); \
+	stack_push_var(sql, name, r, &ctype);	   \
+	stmt_destroy(r);			   \
+	stack_set_var(sql, name, VALset(&src, ctype.type->localtype, val));
+
 /* initialize the global variable, ie make mvc point to these */
 static int
 global_variables(mvc *sql, char *user, char *schema)
@@ -726,63 +732,30 @@ global_variables(mvc *sql, char *user, char *schema)
 
  	typename = "int";
 	sql_find_subtype(&ctype, typename, 0, 0);
- 	name = "debug";
-
-	r = stmt_var(_strdup(name), &ctype, 0, 1);
-	stack_push_var(sql, name, r, &ctype);
-	stack_set_var(sql, name, VALset(&src, ctype.type->localtype, &sql->debug));
+	SQLglobal("debug", &sql->debug);
 
 	typename = "varchar";
 	sql_find_subtype(&ctype, typename, 8, 0);
-	name = "explain";
-	r = stmt_var(_strdup(name), &ctype, 0, 1);
-	stack_push_var(sql, name, r, &ctype);
+	SQLglobal("explain", "");
+
 	stack_set_var(sql, name, VALset(&src, ctype.type->localtype, ""));
 
 	sql_find_subtype(&ctype, typename, 1024, 0);
-	name = "current_schema";
-	r = stmt_var(_strdup(name), &ctype, 0, 1);
-	stack_push_var(sql, name, r, &ctype);
-	stack_set_var(sql, name, VALset(&src, ctype.type->localtype, schema));
-
-	name = "current_user";
-	r = stmt_var(_strdup(name), &ctype, 0, 1);
-	stack_push_var(sql, name, r, &ctype);
-	stack_set_var(sql, name, VALset(&src, ctype.type->localtype, user));
-
-	name = "current_role";
-	r = stmt_var(_strdup(name), &ctype, 0, 1);
-	stack_push_var(sql, name, r, &ctype);
-	stack_set_var(sql, name, VALset(&src, ctype.type->localtype, user));
-
-	name = "optimizer";
-	r = stmt_var(_strdup(name), &ctype, 0, 1);
-	stack_push_var(sql, name, r, &ctype);
-	stack_set_var(sql, name, VALset(&src, ctype.type->localtype, "yes"));
+	SQLglobal("current_schema", schema);
+	SQLglobal("current_user", user);
+	SQLglobal("current_role", user);
+	SQLglobal("optimizer", "yes");
 
 	typename = "sec_interval";
 	sql_find_subtype(&ctype, typename, 0, 0);
-	name = "current_timezone";
+	SQLglobal("current_timezone", &sec);
 	r = stmt_var(_strdup(name), &ctype, 0, 1);
-	stack_push_var(sql, name, r, &ctype);
-	stack_set_var(sql, name, VALset(&src, ctype.type->localtype, &sec));
 
 	typename = "boolean";
 	sql_find_subtype(&ctype, typename, 0, 0);
-	name = "cache";
-	r = stmt_var(_strdup(name), &ctype, 0, 1);
-	stack_push_var(sql, name, r, &ctype);
-	stack_set_var(sql, name, VALset(&src, ctype.type->localtype, &T));
-
-	name = "profile";
-	r = stmt_var(_strdup(name), &ctype, 0, 1);
-	stack_push_var(sql, name, r, &ctype);
-	stack_set_var(sql, name, VALset(&src, ctype.type->localtype, &F));
-
-	name = "trace";
-	r = stmt_var(_strdup(name), &ctype, 0, 1);
-	stack_push_var(sql, name, r, &ctype);
-	stack_set_var(sql, name, VALset(&src, ctype.type->localtype, &F));
+	SQLglobal("cache", &T);
+	SQLglobal("profile", &F);
+	SQLglobal("trace", &F);
 	return 0;
 }
 

@@ -2,4 +2,7 @@
 
 set PATH=%CLIENTS_PREFIX%\lib\MonetDB\Tests;%PATH%
 
-call Mlog.bat -x sample0.exe %HOST% %MAPIPORT% sql
+prompt # $t $g  
+echo on
+
+sample0.exe %HOST% %MAPIPORT% sql

@@ -1,3 +1,3 @@
+@prompt # $t $g  
 @echo on
-
-call Mlog.bat -x %MIL_CLIENT% < %1.milC
+%MIL_CLIENT% < %1.milC

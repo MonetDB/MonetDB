@@ -70,7 +70,7 @@ stderr of test 'select_from_env.SF-1240701.1242164` in directory 'src/test/BugDa
 
 MAPI  = monetdb@corona:36421
 QUERY = select * from env() as env where name = ( select 'prefix' from env() as env );
-ERROR = !ERROR: zero_or_one: cardinality violation (45>1)
+ERROR = !ERROR: zero_or_one: cardinality violation (44>1)
         !ERROR: zero_or_one: operation failed.
 
 # 13:22:15 >  
