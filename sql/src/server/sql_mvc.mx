@@ -1406,8 +1406,8 @@ stack_pop_until(mvc *sql, int top)
 		_DELETE(v->name);
 		if (v->s) {
 			stmt_destroy(v->s);
-			v->value.vtype = 0;
 			VALclear(&v->value);
+			v->value.vtype = 0;
 			if (v->type.comp_type && v->view) 
 				table_destroy(v->type.comp_type);
 		}
@@ -1422,8 +1422,8 @@ stack_pop_frame(mvc *sql)
 
 		stmt_destroy(v->s);
 		_DELETE(v->name);
-		v->value.vtype = 0;
 		VALclear(&v->value);
+		v->value.vtype = 0;
 		if (v->type.comp_type && v->view) 
 			table_destroy(v->type.comp_type);
 	}
