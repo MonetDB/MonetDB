@@ -99,11 +99,11 @@ OPTevaluateImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #endif
 	setLifespan(mb);
 	
+	env= prepareMALstack(mb);
+	env->keepAlive= TRUE;
 	do{
 		again = 0;
 		limit = mb->stop;
-		env= prepareMALstack(mb);
-		env->keepAlive= TRUE;
 		nxt= first;
 		for (k=i= first ; i < limit; i++) {
 			p = getInstrPtr(mb,i);
