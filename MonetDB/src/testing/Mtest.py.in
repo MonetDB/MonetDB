@@ -2196,19 +2196,19 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
 
         if SERVER == "MIL":
             lang="mil"
-            Srvr = '%s --dbinit="%s module(mapi); mil_start();"' % (Srvr, DBINIT)
+            Srvr = '%s "--dbinit=%s module(mapi); mil_start();"' % (Srvr, DBINIT)
         if SERVER == "MAL":
             lang="mal"
-            Srvr = '%s --dbinit="%s"' % (Srvr, DBINIT)
+            Srvr = '%s "--dbinit=%s"' % (Srvr, DBINIT)
         if SERVER == "SQL":
             lang="sql"
             if par['M5']:
-                Srvr = '%s --set mal_listing=0 --dbinit="%s include sql;"' % (Srvr, DBINIT)
+                Srvr = '%s --set mal_listing=0 "--dbinit=%s include sql;"' % (Srvr, DBINIT)
             else:
-                Srvr = '%s --dbinit="%s module(sql_server);"' % (Srvr, DBINIT)
+                Srvr = '%s "--dbinit=%s module(sql_server);"' % (Srvr, DBINIT)
         if SERVER == "XQUERY":
             lang="xquery"
-            Srvr = '%s --dbinit="%s module(pathfinder);"' % (Srvr, DBINIT)
+            Srvr = '%s "--dbinit=%s module(pathfinder);"' % (Srvr, DBINIT)
         Srvr = Srvr+PROLOGUE
         if os.name == "nt":
             Srvr = Srvr+' & echo.& '
