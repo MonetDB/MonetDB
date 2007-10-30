@@ -73,7 +73,7 @@ PROC probxml_ping() : void :=
 
 #define min3(a3,b3,c3) min2(min2(a3, b3), c3)
 
-#define I(M,N) ((mdim*(M))+N)
+#define I(M,N) ((ndim*(M))+N)
 
 // computes the Levenshtein distance between two strings
 // "x" represent the pattern and "y" represent the text
