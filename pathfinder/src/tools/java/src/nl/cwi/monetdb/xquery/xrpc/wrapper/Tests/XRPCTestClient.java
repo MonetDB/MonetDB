@@ -18,7 +18,6 @@
 
 package nl.cwi.monetdb.xquery.xrpc.wrapper.Tests;
 
-import com.sun.org.apache.xml.internal.dtm.ref.DTMNodeList;
 import java.io.*;
 import java.net.*;
 import javax.xml.transform.*;
@@ -151,6 +150,14 @@ public class XRPCTestClient {
             }
             rootdirOpt.resetArguments();
             rootdirOpt.addArgument(rootdir);
+        }
+
+        if (!opts.getOption("function").isPresent()) {
+            System.err.println(
+                    "ERROR: missing mandatory option: --function\n" +
+                    "Don't know which function to execute.\n\n" +
+                    usage);
+            System.exit(-1);
         }
     }
 
@@ -364,7 +371,7 @@ public class XRPCTestClient {
                                  xrpcPrefix + ":response/" +
                                  xrpcPrefix + ":sequence/child::*";
         InputSource inputSource = new InputSource(new StringReader(msg));
-        DTMNodeList nodeList = (DTMNodeList) xPath.evaluate(xPathExpr,
+        NodeList nodeList = (NodeList) xPath.evaluate(xPathExpr,
                 inputSource, XPathConstants.NODESET);
         
                 TransformerFactory tf = TransformerFactory.newInstance();
