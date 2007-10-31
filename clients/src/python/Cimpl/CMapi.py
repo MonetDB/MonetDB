@@ -21,8 +21,8 @@ except ImportError:
     import MapiLib
 
 class Mapi:
-    def __init__(self, host = None, port = 0, username = None, password = None, lang = None):
-        self.__mid = MapiLib.mapi_connect(host, int(port), username, password, lang, None)
+    def __init__(self, host = None, port = 0, username = None, password = None, lang = None, dbname = None):
+        self.__mid = MapiLib.mapi_connect(host, int(port), username, password, lang, dbname)
         if not self.__mid:
             raise IOError("Creating connection structure failed")
         if self.error():

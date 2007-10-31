@@ -110,8 +110,8 @@ class Connection:
             if not kwargs.has_key('user'): kwargs['user'] = 'monetdb'
             if not kwargs.has_key('password'): kwargs['password'] = 'monetdb'
         else:
-            if not kwargs.has_key('dbname'): kwargs['dbname'] = 'demo'
             if not kwargs.has_key('version'): kwargs['version'] = 5
+        if not kwargs.has_key('dbname'): kwargs['dbname'] = 'demo'
         if not kwargs.has_key('lang'): kwargs['lang'] = 'sql'
 
         self.lang = kwargs['lang']
@@ -127,7 +127,7 @@ class Connection:
             self.converter = converters.conversions
 
         if not kwargs.has_key('dbfarm'):
-            self._mapi = Mapi(kwargs['host'], kwargs['port'], kwargs['user'], kwargs['password'], kwargs['lang'])
+            self._mapi = Mapi(kwargs['host'], kwargs['port'], kwargs['user'], kwargs['password'], kwargs['lang'], kwargs['dbname'])
         else:
             self._mapi = Embedded(kwargs['dbfarm'], kwargs['dbname'], kwargs['lang'], kwargs['version'])
 
