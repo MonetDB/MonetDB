@@ -113,7 +113,7 @@ OPTcommonTermsImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	setLifespan(mb);
 	old= mb->stmt;
 	limit= mb->stop;
-	newMalBlkStmt(mb, mb->stop); /* a new statement stack */
+	newMalBlkStmt(mb, mb->ssize); /* a new statement stack */
 	for ( n= i = 0; i < limit; i++) {
 		p = old[i];
 		pushInstruction(mb,p);
@@ -123,6 +123,7 @@ First apply alias propagation, before considering a match.
 @c
 		if( p->token == ENDsymbol){
 			for(i++; i<limit; i++)
+			if(old[i])
 				pushInstruction(mb,old[i]);
 			break;
 		}
