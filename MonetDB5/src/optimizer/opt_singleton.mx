@@ -140,7 +140,7 @@ STpack(MalBlkPtr mb, int varid, STtuple * tuples)
 static int
 STevaluate(MalBlkPtr mb, int cnt, int *vars)
 {
-	int i, j = 0, k, limit, actions = 0;
+	int i, j = 0, k, limit, slimit, actions = 0;
 	InstrPtr p;
 	InstrPtr *old;
 	STtuple *tuples;
@@ -150,6 +150,7 @@ STevaluate(MalBlkPtr mb, int cnt, int *vars)
 		return 0;
 	tuples = alloca(mb->stop * sizeof(STtuple));
 	limit = mb->stop;
+	slimit = mb->ssize;
 	old = mb->stmt;
 
 @-
@@ -166,7 +167,7 @@ variables on the stack.
 	printFunction(GDKout, mb, LIST_MAL_ALL);
 	stream_printf(GDKout, "START OPTIMIZER ");
 #endif
-	newMalBlkStmt(mb, mb->stop);
+	newMalBlkStmt(mb, mb->ssize);
 
 	for (i = 0; i < limit; i++) {
 		p = old[i];
@@ -309,6 +310,10 @@ variables on the stack.
 		}
 		pushInstruction(mb, p);
 	}
+	for(; i<slimit; i++)
+	if( old[i])
+		freeInstruction(old[i]);
+	GDKfree(old);
 #ifdef DEBUG_OPT_SINGLETON
 	if (actions) {
 		printf("FINAL STAGE actions=%d\n", actions);
@@ -318,7 +323,6 @@ variables on the stack.
 		stream_printf(GDKout, "\n");
 	}
 #endif
-	GDKfree(old);
 
 #ifdef DEBUG_OPT_SINGLETON
 	printf("FINAL STAGE SINGLETON errors=%d\n", mb->errors);

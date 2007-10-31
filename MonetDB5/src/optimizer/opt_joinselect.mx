@@ -46,7 +46,7 @@ static int
 OPTjoinselectImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	InstrPtr p, *old, qs, qi, qu, qd, r, d, k;
-	int i, limit, attr;
+	int i, limit, slimit, attr;
 	int start = -1;
 	int *scr_s, *scr_i, *scr_u, *scr_d;
 	int *ps, *pi, *pu, *pd;
@@ -67,9 +67,10 @@ OPTjoinselectImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) pci;
 	setLifespan(mb);
 	limit = mb->stop;
+	slimit = mb->ssize;
 	old = mb->stmt;
 
-	newMalBlkStmt(mb, mb->stop);
+	newMalBlkStmt(mb, mb->ssize);
 	
 	/* The first loop identifies all the select calls and keeps a reference 
 		to the operations.
@@ -135,6 +136,9 @@ OPTjoinselectImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (start == -1)
 			pushInstruction(mb, p);
 	}
+	for( ; i<slimit; i++)
+	if( old[i])
+		freeInstruction(old[i]);
 
 	/*Nothing to optimize*/
 	if (start== -1) goto end;
