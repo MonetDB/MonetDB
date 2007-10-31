@@ -81,3 +81,5 @@ limit_timestampz.SF-1774217
 convert_dec2varchar.SF-1774312
 convert_dec2varchar_crash.SF-1775550
 jdbc_no_debug.SF-1739356
+cascade_operations_in_different_sessions.SF-1823387_create
+cascade_operations_in_different_sessions.SF-1823387_drop
