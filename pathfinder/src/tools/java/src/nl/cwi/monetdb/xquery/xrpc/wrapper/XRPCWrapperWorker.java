@@ -18,7 +18,6 @@
 
 package nl.cwi.monetdb.xquery.xrpc.wrapper;
 
-import com.sun.org.apache.xml.internal.dtm.ref.DTMNodeList;
 import java.io.*;
 import java.net.*;
 import javax.xml.xpath.*;

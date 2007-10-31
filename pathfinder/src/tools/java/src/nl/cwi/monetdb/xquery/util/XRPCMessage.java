@@ -25,7 +25,8 @@ import javax.xml.xpath.*;
 import org.w3c.dom.*;
 import org.xml.sax.*;
 
-import com.sun.org.apache.xml.internal.dtm.ref.DTMNodeList;
+//import com.sun.org.apache.xml.internal.dtm.ref.DTMNodeList;
+//import org.apache.xml.dtm.ref.DTMNodeList;
 
 /**
  * @author Ying Zhang <Y.Zhang@cwi.nl>
@@ -412,7 +413,7 @@ public class XRPCMessage {
         throws Exception
     {
         InputSource inputSource = new InputSource(new StringReader(xmlStr));
-        DTMNodeList nodeList = (DTMNodeList) xPath.evaluate(xPathExpr,
+        NodeList nodeList = (NodeList) xPath.evaluate(xPathExpr,
                 inputSource, XPathConstants.NODESET);
         if(nodeList.getLength() != 1){
             throw new XRPCException("Exactly 1 node is expected, got " +
@@ -436,7 +437,7 @@ public class XRPCMessage {
         throws Exception
     {
         InputSource inputSource = new InputSource(new StringReader(xmlStr));
-        DTMNodeList nodeList = (DTMNodeList) xPath.evaluate(xPathExpr,
+        NodeList nodeList = (NodeList) xPath.evaluate(xPathExpr,
                 inputSource, XPathConstants.NODESET);
 
         String[] attrValues= new String[nodeList.getLength()];
