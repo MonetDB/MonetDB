@@ -452,6 +452,7 @@ tablet_export ptr *TABLETadt_frStr(void *extra, int type, char *s, char *e, char
 tablet_export int TABLETadt_toStr(void *extra, char **buf, int *len, int type, ptr a);
 tablet_export int insert_line(Tablet * as, char *line, ptr key);
 tablet_export int output_file_dense(Tablet * as, stream *fd);
+tablet_export int has_whitespace(char *sep);
 
 #endif
 @c
@@ -1004,9 +1005,9 @@ TABLETadt_toStr(void *extra, char **buf, int *len, int type, ptr a)
 	}
 }
 
-#define myisspace(s)  (s == ' ' || s == '\t' || s == '\n')
+#define myisspace(s)  (s == ' ' || s == '\t')
 
-static int
+int
 has_whitespace(char *sep)
 {
 	char *s = sep;
