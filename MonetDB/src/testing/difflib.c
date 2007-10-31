@@ -72,6 +72,7 @@
 #define SETRED(f,m)  if(clr[f]!=5-m) { fprintf(clmn_fp[f],"</FONT><FONT SIZE=1 COLOR=#ff%s00>",(m?"aa":"00")); clr[f]=5-m; }
 #define SETPINK(f,m) if(clr[f]!=7-m) { fprintf(clmn_fp[f],"</FONT><FONT SIZE=1 COLOR=#ff%sff>",(m?"aa":"00")); clr[f]=7-m; }
 
+#define CMDLEN  8192
 #define BUFLEN  16384
 #define BUFLEN2 32768
 
@@ -135,10 +136,10 @@ markNL(FILE *fp, int k)
 int
 oldnew2u_diff(int mindiff, int context, char *ignore, char *old_fn, char *new_fn, char *u_diff_fn)
 {
-	char command[BUFLEN];
+	char command[CMDLEN];
 	struct stat old_fstat, new_fstat;
 	FILE *u_diff_fp, *oldnew_fp;
-	char c, line[BUFLEN];
+	char c, *ok, line[BUFLEN];
 	char *_d = mindiff ? "-d" : "";
 
 	TRACE(fprintf(STDERR, "oldnew2u_diff(%i,%i,%s,%s,%s,%s)\n", mindiff, context, ignore, old_fn, new_fn, u_diff_fn));
@@ -164,8 +165,12 @@ oldnew2u_diff(int mindiff, int context, char *ignore, char *old_fn, char *new_fn
 			fprintf(u_diff_fp, "@@ -1,0 +0,0 @@\n");
 			oldnew_fp = Rfopen(old_fn);
 		}
-		while (fgets(line, BUFLEN, oldnew_fp)) {
-			fprintf(u_diff_fp, "%c%s", c, line);
+		ok = line;
+		while (ok && (ok = fgets(line, BUFLEN, oldnew_fp))) {
+			fprintf(u_diff_fp, "%c", c);
+			do {
+				fprintf(u_diff_fp, "%s", line);
+			} while (line[strlen(line) - 1] != '\n' && (ok = fgets(line, BUFLEN, oldnew_fp)));
 		}
 		fclose(oldnew_fp);
 		fflush(u_diff_fp);
@@ -198,11 +203,17 @@ u_diff2l_diff(char *u_diff_fn, char *l_diff_fn)
 		ok = fgets(line, BUFLEN, u_diff_fp);
 	}
 	while (ok) {
-		fprintf(l_diff_fp, "%s", line);
-		while ((ok = fgets(line, BUFLEN, u_diff_fp)) && strchr(" -+", line[0])) {
+		do {
+			fprintf(l_diff_fp, "%s", line);
+		} while (line[strlen(line) - 1] != '\n' && (ok = fgets(line, BUFLEN, u_diff_fp)));
+		while (ok && (ok = fgets(line, BUFLEN, u_diff_fp)) && strchr(" -+", line[0])) {
+			char l0 = line[0];
 			if (line[1] == '\n')
 				sprintf(line + 1, "\2\n");
-			fprintf(l_diff_fp, "%s%c\1\n", line, line[0]);
+			do {
+				fprintf(l_diff_fp, "%s", line);
+			} while (line[strlen(line) - 1] != '\n' && (ok = fgets(line, BUFLEN, u_diff_fp)));
+			fprintf(l_diff_fp, "%c\1\n", l0);
 		}
 	}
 	fflush(l_diff_fp);
@@ -219,12 +230,12 @@ static int
 lw_diff2wc_diff(int mindiff, int doChar, char *lw_diff_fn, char *wc_diff_fn)
 {
 	FILE *lw_diff_fp, *wc_diff_fp, *fp[2], *pipe_fp;
-	char line[BUFLEN], command[BUFLEN], pipe_ln[BUFLEN], pipe_fn[1024];
+	char line[BUFLEN], command[CMDLEN], pipe_ln[BUFLEN], pipe_fn[CMDLEN];
 	char *ok, *fn[2];
 	size_t i;
 	int j;
 	int space, alpha_, digit, l[2], k[2];
-	char wc_old_fn[BUFLEN], wc_new_fn[BUFLEN];
+	char wc_old_fn[CMDLEN], wc_new_fn[CMDLEN];
 	char *_d = mindiff ? "-d" : "";
 
 	TRACE(fprintf(STDERR, "lw_diff2wc_diff(%i,%i,%s,%s)\n", mindiff, doChar, lw_diff_fn, wc_diff_fn));
@@ -252,15 +263,18 @@ lw_diff2wc_diff(int mindiff, int doChar, char *lw_diff_fn, char *wc_diff_fn)
 
 	while (ok) {
 		wc_diff_fp = Afopen(wc_diff_fn);
-		fprintf(wc_diff_fp, "%s", line);
+		do {
+			fprintf(wc_diff_fp, "%s", line);
+		} while (line[strlen(line) - 1] != '\n' && (ok = fgets(line, BUFLEN, lw_diff_fp)));
 		fflush(wc_diff_fp);
 		fclose(wc_diff_fp);
 
 		l[0] = l[1] = k[0] = k[1] = 0;
 		for (j = 0; j < 2; j++)
 			fp[j] = Wfopen(fn[j]);
-		while ((ok = fgets(line, BUFLEN, lw_diff_fp)) && strchr(" -+", line[0])) {
+		while (ok && (ok = fgets(line, BUFLEN, lw_diff_fp)) && strchr(" -+", line[0])) {
 			if (line[0] == ' ') {
+				char l1 = line[1];
 				while (k[0] < k[1]) {
 					markNL(fp[0], k[0]++);
 					l[0]++;
@@ -269,11 +283,17 @@ lw_diff2wc_diff(int mindiff, int doChar, char *lw_diff_fn, char *wc_diff_fn)
 					markNL(fp[1], k[1]++);
 					l[1]++;
 				}
+				i = 1;
+				do {
+					for (j = 0; j < 2; j++) {
+						fprintf(fp[j], "%s", line+i);
+					}
+					i = 0;
+				} while (line[strlen(line) - 1] != '\n' && (ok = fgets(line, BUFLEN, lw_diff_fp)));
 				for (j = 0; j < 2; j++) {
-					fprintf(fp[j], "%s", line + 1);
 					l[j]++;
 				}
-				if (line[1] == '\1')
+				if (l1 == '\1')
 					for (j = 0; j < 2; j++) {
 						markNL(fp[j], k[j]++);
 						l[j]++;
@@ -288,32 +308,40 @@ lw_diff2wc_diff(int mindiff, int doChar, char *lw_diff_fn, char *wc_diff_fn)
 					markNL(fp[j], k[j]++);
 					l[j] += 2;
 				} else if (doChar) {
-					for (i = 1; i < strlen(line) - 1; i++) {
-						fprintf(fp[j], "%c\n", line[i]);
-						l[j]++;
-					}
+					i = 1;
+					do {
+						for (; line[i] != '\n' && line[i] != '\0'; i++) {
+							fprintf(fp[j], "%c\n", line[i]);
+							l[j]++;
+						}
+						i = 0;
+					} while (line[strlen(line) - 1] != '\n' && (ok = fgets(line, BUFLEN, lw_diff_fp)));
 				} else {
 					space = isspace((int) (line[1]));
 					alpha_ = isalpha_((int) (line[1]));
 					digit = isdigit((int) (line[1]));
-					for (i = 1; i < strlen(line) - 1; i++) {
-						if ((space && !isspace((int) line[i])) ||
-						    (!space && isspace((int) line[i])) ||
-						    (alpha_ && !isalpha_((int) line[i])) ||
-						    (!alpha_ && isalpha_((int) line[i])) ||
-						    (digit && !isdigit((int) line[i])) ||
-						    (!digit && isdigit((int) line[i])) ||
-						    (!isspace((int) line[i]) &&
-						     !isalpha_((int) line[i]) &&
-						     !isdigit((int) line[i]))) {
-							fprintf(fp[j], "\n");
-							space = isspace((int) line[i]);
-							alpha_ = isalpha_((int) line[i]);
-							digit = isdigit((int) line[i]);
-							l[j]++;
+					i = 1;
+					do {
+						for (; line[i] != '\n' && line[i] != '\0'; i++) {
+							if ((space && !isspace((int) line[i])) ||
+							    (!space && isspace((int) line[i])) ||
+							    (alpha_ && !isalpha_((int) line[i])) ||
+							    (!alpha_ && isalpha_((int) line[i])) ||
+							    (digit && !isdigit((int) line[i])) ||
+							    (!digit && isdigit((int) line[i])) ||
+							    (!isspace((int) line[i]) &&
+							     !isalpha_((int) line[i]) &&
+							     !isdigit((int) line[i]))) {
+								fprintf(fp[j], "\n");
+								space = isspace((int) line[i]);
+								alpha_ = isalpha_((int) line[i]);
+								digit = isdigit((int) line[i]);
+								l[j]++;
+							}
+							fprintf(fp[j], "%c", line[i]);
 						}
-						fprintf(fp[j], "%c", line[i]);
-					}
+						i = 0;
+					} while (line[strlen(line) - 1] != '\n' && (ok = fgets(line, BUFLEN, lw_diff_fp)));
 					fprintf(fp[j], "\n");
 					l[j]++;
 				}
@@ -389,7 +417,7 @@ w_diff2c_diff(int mindiff, char *w_diff_fn, char *c_diff_fn)
 int
 l_diff2c_diff(int mindiff, char *l_diff_fn, char *c_diff_fn)
 {
-	char w_diff_fn[BUFLEN];
+	char w_diff_fn[CMDLEN];
 	int rtrn = 0;
 
 	TRACE(fprintf(STDERR, "l_diff2c_diff(%i,%s,%s)\n", mindiff, l_diff_fn, c_diff_fn));
@@ -413,7 +441,7 @@ l_diff2c_diff(int mindiff, char *l_diff_fn, char *c_diff_fn)
 int
 u_diff2w_diff(int mindiff, char *u_diff_fn, char *w_diff_fn)
 {
-	char l_diff_fn[BUFLEN];
+	char l_diff_fn[CMDLEN];
 	int rtrn = 0;
 
 	TRACE(fprintf(STDERR, "u_diff2w_diff(%i,%s,%s)\n", mindiff, u_diff_fn, w_diff_fn));
@@ -437,7 +465,7 @@ u_diff2w_diff(int mindiff, char *u_diff_fn, char *w_diff_fn)
 int
 u_diff2c_diff(int mindiff, char *u_diff_fn, char *c_diff_fn)
 {
-	char w_diff_fn[BUFLEN];
+	char w_diff_fn[CMDLEN];
 	int rtrn = 0;
 
 	TRACE(fprintf(STDERR, "u_diff2c_diff(%i,%s,%s)\n", mindiff, u_diff_fn, c_diff_fn));
@@ -482,7 +510,7 @@ u_diff2lwc_diff(int mindiff, int LWC, char *u_diff_fn, char *lwc_diff_fn)
 int
 oldnew2l_diff(int mindiff, int context, char *ignore, char *old_fn, char *new_fn, char *l_diff_fn)
 {
-	char u_diff_fn[BUFLEN];
+	char u_diff_fn[CMDLEN];
 	int rtrn = 0;
 
 	TRACE(fprintf(STDERR, "oldnew2l_diff(%i,%i,%s,%s,%s,%s)\n", mindiff, context, ignore, old_fn, new_fn, l_diff_fn));
@@ -506,7 +534,7 @@ oldnew2l_diff(int mindiff, int context, char *ignore, char *old_fn, char *new_fn
 int
 oldnew2w_diff(int mindiff, int context, char *ignore, char *old_fn, char *new_fn, char *w_diff_fn)
 {
-	char l_diff_fn[BUFLEN];
+	char l_diff_fn[CMDLEN];
 	int rtrn = 0;
 
 	TRACE(fprintf(STDERR, "oldnew2w_diff(%i,%i,%s,%s,%s,%s)\n", mindiff, context, ignore, old_fn, new_fn, w_diff_fn));
@@ -530,7 +558,7 @@ oldnew2w_diff(int mindiff, int context, char *ignore, char *old_fn, char *new_fn
 int
 oldnew2c_diff(int mindiff, int context, char *ignore, char *old_fn, char *new_fn, char *c_diff_fn)
 {
-	char w_diff_fn[BUFLEN];
+	char w_diff_fn[CMDLEN];
 	int rtrn = 0;
 
 	TRACE(fprintf(STDERR, "oldnew2c_diff(%i,%i,%s,%s,%s,%s)\n", mindiff, context, ignore, old_fn, new_fn, c_diff_fn));
@@ -577,7 +605,7 @@ int
 lwc_diff2html(char *old_fn, char *new_fn, char *lwc_diff_fn, char *html_fn, char *caption, char *revision)
 {
 	FILE *html_fp, *lwc_diff_fp, *clmn_fp[5];
-	char line[BUFLEN], ln[BUFLEN], fn_clmn[BUFLEN], *clmn_fn[5], c[3], *ok;
+	char line[BUFLEN], ln[BUFLEN], fn_clmn[CMDLEN], *clmn_fn[5], c[3], *ok;
 	char *old = NULL, *new = NULL, *old_time, *new_time, olns[24], nlns[24];
 	int oln, nln, orn, nrn, i, clr[5], newline, newline_, minor = 0, Minor = 0, Major = 0;
 
@@ -671,13 +699,18 @@ lwc_diff2html(char *old_fn, char *new_fn, char *lwc_diff_fn, char *html_fn, char
 		newline_ = 1;
 		newline = 1;
 		sprintf(c, "  ");
-		while ((ok = fgets(line, BUFLEN, lwc_diff_fp)) && strchr(" -+", line[0])) {
+		while (ok && (ok = fgets(line, BUFLEN, lwc_diff_fp)) && strchr(" -+", line[0])) {
 			if (line[1] != '\3') {
+				size_t sl = strlen(line) - 1;
+				char nl = line[sl], l0, l1;
+
 				if (newline_ || newline)
 					Minor |= (minor = (strchr("#=\n\2", line[1]) ? 1 : 0));
-				line[strlen(line) - 1] = '\0';
+				line[sl] = '\0';
 				if (line[1] == '\2')
 					sprintf(line + 1, " ");
+				l0 = line[0];
+				l1 = line[1];
 				if (line[0] == ' ') {
 					if (newline && (nrn < orn)) {
 						SETBLUE(1, minor);
@@ -702,12 +735,27 @@ lwc_diff2html(char *old_fn, char *new_fn, char *lwc_diff_fn, char *html_fn, char
 					SETRED(4, minor);
 				}
 				if (line[1] != '\1') {
-					if (strchr(" -", line[0])) {
-						fprintf(clmn_fp[0], "%s", HTMLsave(line + 1));
+					line[sl] = nl;
+					line[sl+1] = '\0';
+					i = 1;
+					do {
+						sl = strlen(line) - 1;
+						nl = line[sl];
+						if (nl == '\n') {
+							line[sl] = '\0';
+						}
+						if (strchr(" -", l0)) {
+							fprintf(clmn_fp[0], "%s", HTMLsave(line + i));
+						}
+						if (strchr(" +", l0)) {
+							fprintf(clmn_fp[4], "%s", HTMLsave(line + i));
+						}
+						i = 0;
+					} while (nl != '\n' && (ok = fgets(line, BUFLEN, lwc_diff_fp)));
+					if (strchr(" -", l0)) {
 						Major |= (clr[0] & 1);
 					}
-					if (strchr(" +", line[0])) {
-						fprintf(clmn_fp[4], "%s", HTMLsave(line + 1));
+					if (strchr(" +", l0)) {
 						Major |= (clr[4] & 1);
 					}
 				} else {
@@ -764,7 +812,7 @@ lwc_diff2html(char *old_fn, char *new_fn, char *lwc_diff_fn, char *html_fn, char
 					sprintf(c, "  ");
 				}
 				newline_ = newline;
-				newline = (line[1] == '\1');
+				newline = (l1 == '\1');
 			}
 		}
 
@@ -873,7 +921,7 @@ lwc_diff2html(char *old_fn, char *new_fn, char *lwc_diff_fn, char *html_fn, char
 int
 u_diff2html(int mindiff, int LWC, char *u_diff_fn, char *html_fn, char *caption, char *revision)
 {
-	char lwc_diff_fn[BUFLEN];
+	char lwc_diff_fn[CMDLEN];
 	int rtrn;
 
 	TRACE(fprintf(STDERR, "u_diff2html(%i,%s,%s,%s,%s)\n", LWC, u_diff_fn, html_fn, caption, revision));
@@ -896,7 +944,7 @@ u_diff2html(int mindiff, int LWC, char *u_diff_fn, char *html_fn, char *caption,
 int
 oldnew2html(int mindiff, int LWC, int context, char *ignore, char *old_fn, char *new_fn, char *html_fn, char *caption, char *revision)
 {
-	char lwc_diff_fn[BUFLEN];
+	char lwc_diff_fn[CMDLEN];
 	int rtrn;
 
 	TRACE(fprintf(STDERR, "oldnew2html(%i,%i,%i,%s,%s,%s,%s,%s,%s)\n", mindiff, LWC, context, ignore, old_fn, new_fn, html_fn, caption, revision));
