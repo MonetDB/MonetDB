@@ -28,7 +28,7 @@ or scripting language. Such use is even discouraged.
 Furthermore, a MAL program is considered a specification
 of intended computation and data flow behavior. It should be
 understood that its actual evaluation depends on the execution
-paradigm choosen in the scenario. The program blocks can both
+paradigm choosen in a scenario. The program blocks can both
 be interpreted as ordered sequences of assembler instructions,
 or as a representation of a data-flow graph that should be resolved
 in a dataflow driven manner.
@@ -671,13 +671,17 @@ freeMalBlk(MalBlkPtr mb)
 {
 	int i;
 
-	for (i = 0; i < mb->stop; i++) {
-		freeInstruction(getInstrPtr(mb, i));
+	for (i = 0; i < mb->ssize; i++) 
+	if( mb->stmt[i]){
+		freeInstruction(mb->stmt[i]);
 		mb->stmt[i] = NULL;
 	}
 	mb->stop = 0;
-	for (i = 0; i < mb->vtop; i++)
+	for (i = 0; i < mb->vsize; i++)
+	if( mb->var[i]){
 		freeVariable(mb, i);
+		mb->var[i]=0;
+	}
 	mb->vtop = 0;
 	GDKfree(mb->stmt);
 	mb->stmt = 0;
@@ -2054,7 +2058,7 @@ pushInstruction(MalBlkPtr mb, InstrPtr p)
 			showException(MAL, "pushInstruction", "out of memory (requested: %d bytes)", space);
 			return;
 		}
-		memcpy(newblk, mb->stmt, mb->stop * sizeof(InstrPtr));
+		memcpy(newblk, mb->stmt, mb->ssize * sizeof(InstrPtr));
 
 		mb->ssize += STMT_INCREMENT;
 		GDKfree(mb->stmt);
