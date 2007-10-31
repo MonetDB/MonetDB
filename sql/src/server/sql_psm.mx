@@ -85,7 +85,7 @@ psm_set(mvc *sql, scope *scp, dnode *n)
 		return NULL;
 
 	level = stack_find_frame(sql, name);
-	r = check_types(sql, tpe, r, type_equal); 
+	r = check_types(sql, tpe, r, type_cast); 
 	if (!r)
 		return NULL;
 	return stmt_assign(name, r, level);

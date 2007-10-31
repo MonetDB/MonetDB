@@ -968,6 +968,10 @@ sql_binop_(mvc *sql, scope *scp, sql_schema *s, char *fname, stmt *ls, stmt *rs)
 				return stmt_binop(ls, rs, f);
 			}
 		}
+		/* reset error */
+		sql->errstr[0] = '\0';
+		sql->session->status = 0;
+
 		if (ls)
 			stmt_destroy(ls);
 		if (rs)

@@ -10,4 +10,4 @@ if     "%TST_FIVE%" == "Five" set v=5
 prompt # $t $g  
 echo on
 
-sqlsample.py "%GDK_DBFARM%" %TSTDB% %v%
+sqlsample.py "%GDK_DBFARM%" "%TSTDB%" %v%

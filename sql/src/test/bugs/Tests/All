@@ -70,3 +70,4 @@ float2dec
 not
 references-bug
 redirect
+dbl_sht_cast_bug

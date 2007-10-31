@@ -16,7 +16,7 @@ password=voc
 EOF
 
 Mlog -x "$MTIMEOUT mjclient -h $HOST -p $MAPIPORT -d ${TSTDB} -e -f \"$RELSRCDIR/../VOCschema.sql\" 2>&1"
-Mlog   "$MTIMEOUT mjclient -h $HOST -p $MAPIPORT -d ${TSTDB} -e -f \"$RELSRCDIR/../VOCinsert.sql\" 2>&1"
+Mlog -x "$MTIMEOUT mjclient -h $HOST -p $MAPIPORT -d ${TSTDB} -e -f \"$RELSRCDIR/../VOCinsert.sql\" 2>&1"
 Mlog -x "$MTIMEOUT mjclient -h $HOST -p $MAPIPORT -d ${TSTDB} -e -f \"$RELSRCDIR/../VOCquery.sql\" 2>&1"
 Mlog -x "$MTIMEOUT mjclient -h $HOST -p $MAPIPORT -d ${TSTDB} -e -f \"$RELSRCDIR/../VOCmanual_examples.sql\" 2>&1"
 Mlog -x "$MTIMEOUT mjclient -h $HOST -p $MAPIPORT -d ${TSTDB} -e -f \"$RELSRCDIR/../VOCdrop.sql\" 2>&1"
