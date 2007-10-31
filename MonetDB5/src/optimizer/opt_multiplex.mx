@@ -286,7 +286,7 @@ int
 OPTmultiplexImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	InstrPtr *old, p;
-	int i, limit,doit= 0;
+	int i, limit, slimit, doit= 0;
 	str msg= MAL_SUCCEED;
 
 	(void) stk;
@@ -294,7 +294,8 @@ OPTmultiplexImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	old = mb->stmt;
 	limit = mb->stop;
-	newMalBlkStmt(mb, mb->stop);
+	slimit = mb->ssize;
+	newMalBlkStmt(mb, mb->ssize);
 
 	for (i = 0; i < limit; i++) {
 		p = old[i];
@@ -313,6 +314,9 @@ OPTmultiplexImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if( old[i])
 			pushInstruction(mb, p);
 	}
+	for(;i<slimit; i++)
+	if( old[i])
+		freeInstruction(old[i]);
 	GDKfree(old);
 	return doit;
 }

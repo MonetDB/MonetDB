@@ -89,7 +89,7 @@ static int
 OPTpeepholeImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	InstrPtr p, q, r, *old;
-	int i, limit, doit, actions = 0;
+	int i, limit, slimit, doit, actions = 0;
 
 #ifdef DEBUG_OPT_PEEPHOLE
 	stream_printf(GDKout, "Peephole optimizer started\n");
@@ -100,9 +100,10 @@ OPTpeepholeImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	doit = 0;
 	setLifespan(mb);
 	limit = mb->stop;
+	slimit = mb->ssize;
 	old = mb->stmt;
 
-	newMalBlkStmt(mb, mb->stop);
+	newMalBlkStmt(mb, mb->ssize);
 	for (i = 0; i < limit; i++) {
 		p = old[i];
 		q = i < limit - 1 ? old[i + 1] : 0;
@@ -129,6 +130,9 @@ OPTpeepholeImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		else
 			pushInstruction(mb, p);
 	}
+	for( ; i<slimit; i++)
+	if( old[i])
+		freeInstruction(old[i]);
 	GDKfree(old);
 	if (doit) {
 		chkProgram(MCgetClient()->nspace, mb);

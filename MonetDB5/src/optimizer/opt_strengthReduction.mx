@@ -132,6 +132,11 @@ OPTstrengthReductionImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	ik = 0;
 	blk = 0;
 	blkexit= blkbegin = 0;
+	for (i = mb->stop; i < mb->ssize; i++)
+	if( mb->stmt[i]){
+		freeInstruction(mb->stmt[i]);
+		mb->stmt[i]=0;
+	}
 	for (i = 0; i < mb->stop; i++)
 		before[i] = within[i] = 0;
 	before[bk++] = getInstrPtr(mb, 0);	/* to become a factory */

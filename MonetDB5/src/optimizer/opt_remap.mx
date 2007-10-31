@@ -173,14 +173,15 @@ OPTremapImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 
 	InstrPtr *old, p;
-	int i, limit, doit= 0;
+	int i, limit, slimit, doit= 0;
 	Client cntxt = MCgetClient();
 	Module scope = cntxt->nspace;
 
 	(void) pci;
 	old = mb->stmt;
 	limit = mb->stop;
-	newMalBlkStmt(mb, mb->stop);
+	slimit = mb->ssize;
+	newMalBlkStmt(mb, mb->ssize);
 
 	for (i = 0; i < limit; i++) {
 		p = old[i];
@@ -196,6 +197,9 @@ OPTremapImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		} else
 			pushInstruction(mb, p);
 	}
+	for(; i<slimit; i++)
+	if( old[i])
+		freeInstruction(old[i]);
 	GDKfree(old);
 	return doit;
 }
