@@ -236,7 +236,7 @@ inlineMALblock(MalBlkPtr mb, int pc, MalBlkPtr mc)
 #endif
 	p = getInstrPtr(mb, pc);
 	q = getInstrPtr(mc, 0);
-	ns = GDKmalloc((l = (mb->ssize + mc->ssize + p->retc - 3)) * sizeof(InstrPtr));
+	ns = GDKzalloc((l = (mb->ssize + mc->ssize + p->retc - 3)) * sizeof(InstrPtr));
 	nv = alloca(mc->vtop * sizeof(int));
 
 	/* add all variables of the new block to the target environment */
@@ -306,6 +306,12 @@ inlineMALblock(MalBlkPtr mb, int pc, MalBlkPtr mc)
 	/* copy the remainder of the stable part */
 	for (i = pc + 1; i < mb->stop; i++){
 		ns[k++] = mb->stmt[i];
+	}
+	/* remove any free instruction */
+	for(; i<mb->ssize; i++)
+	if( mb->stmt[i]){
+		freeInstruction(mb->stmt[i]);
+		mb->stmt[i]= 0;
 	}
 	GDKfree(mb->stmt);
 	mb->stmt = ns;

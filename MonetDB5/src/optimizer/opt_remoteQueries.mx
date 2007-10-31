@@ -242,7 +242,7 @@ static int
 OPTremoteQueriesImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	InstrPtr p, q, r, *old;
-	int i, j, cnt, limit, doit=0;
+	int i, j, cnt, limit, slimit, doit=0;
 	int remoteSite,collectFirst;
 	int *location;
 	DBalias *dbalias;
@@ -261,6 +261,7 @@ OPTremoteQueriesImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	setLifespan(mb);
 	limit = mb->stop;
+	slimit = mb->ssize;
 	old = mb->stmt;
 
 	location= alloca(mb->vsize * sizeof(int));
@@ -269,7 +270,7 @@ OPTremoteQueriesImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	memset((char*) dbalias, 0, 128 * sizeof(DBalias));
 	dbtop= 0;
 
-	newMalBlkStmt(mb, mb->stop);
+	newMalBlkStmt(mb, mb->ssize);
 	for (i = 0; i < limit; i++) {
 		p = old[i];
 
@@ -439,6 +440,9 @@ to be shipped should be simple.
 				pushInstruction(mb,p);
 		}
 	}
+	for(; i<slimit; i++)
+	if( old[i])
+		freeInstruction(old[i]);
 	GDKfree(old);
 #ifdef DEBUG_OPT_REMOTE
 	if (doit) {
