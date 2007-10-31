@@ -295,6 +295,7 @@ ascii_io_export int ASCIIoutput_file(ascii *as, BAT *order, stream *s);
 ascii_io_export ptr *ASCIIstrFrStr(ascii_io* fmt, char *s, char *e);
 ascii_io_export ptr *ASCIIadt_frStr(void *extra, int type, char *s, char *e, char quote);
 ascii_io_export int ASCIIadt_toStr(void *extra, char **buf, int *len, int type, ptr a);
+ascii_io_export int has_whitespace(char *sep);
 
 #endif
 @c
@@ -418,9 +419,9 @@ ASCIIadt_toStr(void *extra, char **buf, int *len, int type, ptr a)
 	return (*BATatoms[type].atomToStr) (buf, len, a);
 }
 
-#define myisspace(s)  (s == ' ' || s == '\t' || s == '\n')
+#define myisspace(s)  (s == ' ' || s == '\t')
 
-static int
+int
 has_whitespace(char *sep)
 {
 	char *s = sep;
