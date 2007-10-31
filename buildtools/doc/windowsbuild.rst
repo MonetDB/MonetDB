@@ -368,13 +368,16 @@ internally, but only used here as a shorthand.
 
 For testing purposes it may be handy to add some more folders to the
 ``Path``.  To begin with, all DLLs that are used also need to be found
-in the ``Path``, and Python modules that were installed need to be
-found by the Python interpreter::
+in the ``Path``, various programs are used during testing, such as
+diff (from GnuWin32) and php, and Python modules that were installed
+need to be found by the Python interpreter::
 
  rem Pthreads DLL
  set Path=C:\Pthreads\lib;%Path%
  rem PCRE DLL
  set Path=C:\Program Files\PCRE\bin;%Path%
+ rem PHP binary
+ set Path=C:\php-5;%Path%
  if not "%MONETDB_PREFIX%" == "%SQL_PREFIX%" set Path=%SQL_PREFIX%\bin;%SQL_PREFIX%\lib;%SQL_PREFIX%\lib\MonetDB4;%Path%
  set Path=%MONETDB4_PREFIX%\lib\MonetDB4;%Path%
  if not "%MONETDB_PREFIX%" == "%MONETDB4_PREFIX%" set Path=%MONETDB4_PREFIX%\bin;%MONETDB4_PREFIX%\lib;%Path%
