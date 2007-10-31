@@ -712,25 +712,30 @@ def msc_library(fd, var, libmap, msc):
         else:
             pref = ''
     instlib = 1
-    # if underneath a directory called "python" (up to 3 levels),
-    # set DLL suffix to ".pyd" and set instlib to 0
-    # if underneath a directory called "php" (also up to 3 levels),
-    # set instlib to 0 and pref to 'php_'
-    h,t = os.path.split(msc['cwd'])
-    if t == 'python' or t == 'php':
-        if t == 'python':
-            dll = '.pyd'
-        else:
-            pref = 'php_'
+    if libmap['SOURCES'][0].endswith('.py.i'):
+        # if the first source ends in .py.i, it's a Python module
+        dll = '.pyd'
         instlib = 0
     else:
-        h,t = os.path.split(h)
-        if t == 'python' or os.path.basename(h) == 'python':
-            dll = '.pyd'
+        # if underneath a directory called "python" (up to 3 levels),
+        # set DLL suffix to ".pyd" and set instlib to 0
+        # if underneath a directory called "php" (also up to 3 levels),
+        # set instlib to 0 and pref to 'php_'
+        h,t = os.path.split(msc['cwd'])
+        if t == 'python' or t == 'php':
+            if t == 'python':
+                dll = '.pyd'
+            else:
+                pref = 'php_'
             instlib = 0
-        elif t == 'php' or os.path.basename(h) == 'php':
-            instlib = 0
-            pref = 'php_'
+        else:
+            h,t = os.path.split(h)
+            if t == 'python' or os.path.basename(h) == 'python':
+                dll = '.pyd'
+                instlib = 0
+            elif t == 'php' or os.path.basename(h) == 'php':
+                instlib = 0
+                pref = 'php_'
 
     if (libname[0] == "_"):
         sep = "_"
