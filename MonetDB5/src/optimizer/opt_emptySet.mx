@@ -131,7 +131,7 @@ ESevaluate(MalBlkPtr mb, char *empty)
 	int *alias;
 	int runonce= FALSE;
 
-	int limit = mb->stop, ctop=0;
+	int limit = mb->stop, slimit= mb->ssize, ctop=0;
 	InstrPtr *old = mb->stmt, *constraints;
 
 	/* get query property */
@@ -139,8 +139,8 @@ ESevaluate(MalBlkPtr mb, char *empty)
 	if( fndArgProperty(mb,old[0],0,putName("inline",6)) )
 		return 0;
 
-	newMalBlkStmt(mb, mb->stop); /* a new statement stack */
-	constraints= (InstrPtr *) alloca(sizeof(InstrPtr)*limit);
+	newMalBlkStmt(mb, mb->ssize); /* a new statement stack */
+	constraints= (InstrPtr *) alloca(sizeof(InstrPtr)*slimit);
 	alias = (int*) alloca(sizeof(int)*mb->vtop);
 	for(i=0;i<mb->vtop; i++) alias[i]=i;
 
@@ -153,6 +153,7 @@ ESevaluate(MalBlkPtr mb, char *empty)
 		pushInstruction(mb,p);
 		if( p->token == ENDsymbol){
 			for(i++; i<limit; i++)
+			if( old[i])
 				pushInstruction(mb,old[i]);
 			break;
 		}

@@ -133,10 +133,8 @@ OPTfactorizeImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	for (i = 0; i < p->argc; i++)
 		varused[i] = 1;
 
-	first = (InstrPtr *) GDKmalloc(mb->stop * sizeof(InstrPtr));
-	second = (InstrPtr *) GDKmalloc(mb->stop * sizeof(InstrPtr));
-	for (i = 0; i < mb->stop; i++)
-		first[i] = second[i] = 0;
+	first = (InstrPtr *) GDKzalloc(mb->ssize * sizeof(InstrPtr));
+	second = (InstrPtr *) GDKzalloc(mb->ssize * sizeof(InstrPtr));
 
 	first[fk++] = getInstrPtr(mb, 0);	/* to become a factory */
 	for (i = 1; i < mb->stop - 1; i++) {
