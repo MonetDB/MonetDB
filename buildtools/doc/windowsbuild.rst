@@ -194,8 +194,10 @@ PCRE build options.  I chose to do build shared libs, and to do have
 UTF-8 support and support for Unicode properties.  When you're
 satisfied with the options, click on Configure, and then on OK.  Then
 in the build directory you've chosen, open the PCRE.sln file with
-Visual Studio, and build and install.  The library will be installed
-in ``C:\Program Files\PCRE``.
+Visual Studio, and build and install.  Make sure you set the Solution
+Configuration to Release if you want to build a releasable version of
+the MonetDB suite.  The library will be installed in ``C:\Program
+Files\PCRE``.
 
 __ http://www.pcre.org/
 
