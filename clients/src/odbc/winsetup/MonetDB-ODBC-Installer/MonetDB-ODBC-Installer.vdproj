@@ -1,7 +1,7 @@
 "DeployProject"
 {
-"VSVersion" = "3:701"
-"ProjectType" = "8:{2C2AF0D9-9B47-4FE5-BEF2-169778172667}"
+"VSVersion" = "3:800"
+"ProjectType" = "8:{978C614F-708E-4E1A-B201-565925725DBA}"
 "IsWebType" = "8:FALSE"
 "ProjectName" = "8:MonetDB-ODBC-Installer"
 "LanguageId" = "3:1033"
@@ -15,7 +15,19 @@
     {
         "Entry"
         {
+        "MsmKey" = "8:_20B48E6B0CE044A98097C7204EB3D952"
+        "OwnerKey" = "8:_3517E482BC7F4EFC88537C979178E768"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
         "MsmKey" = "8:_2FB9A57E3DD7443F97A7C8B0DBF82DB5"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_3517E482BC7F4EFC88537C979178E768"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -85,6 +97,17 @@
         "PrivateKeyFile" = "8:"
         "TimeStampServer" = "8:"
         "InstallerBootstrapper" = "3:2"
+            "BootstrapperCfg:{63ACBE69-63AA-4F98-B2B6-99F9E24495F2}"
+            {
+            "Enabled" = "11:TRUE"
+            "PromptEnabled" = "11:TRUE"
+            "PrerequisitesLocation" = "2:1"
+            "Url" = "8:"
+            "ComponentsUrl" = "8:"
+                "Items"
+                {
+                }
+            }
         }
         "Release"
         {
@@ -101,13 +124,24 @@
         "PrivateKeyFile" = "8:"
         "TimeStampServer" = "8:"
         "InstallerBootstrapper" = "3:2"
+            "BootstrapperCfg:{63ACBE69-63AA-4F98-B2B6-99F9E24495F2}"
+            {
+            "Enabled" = "11:TRUE"
+            "PromptEnabled" = "11:TRUE"
+            "PrerequisitesLocation" = "2:1"
+            "Url" = "8:"
+            "ComponentsUrl" = "8:"
+                "Items"
+                {
+                }
+            }
         }
     }
     "Deployable"
     {
         "CustomAction"
         {
-            "{0C9D821E-95BB-411F-BE03-2864360EBF94}:_B2FF38FB524E4822B2CB552C567A665C"
+            "{4AA51A2D-7D85-4A59-BA75-B0809FC8B380}:_B2FF38FB524E4822B2CB552C567A665C"
             {
             "Name" = "8:odbcinstall.exe"
             "Condition" = "8:"
@@ -121,7 +155,7 @@
             "InstallerClass" = "11:FALSE"
             "CustomActionData" = "8:"
             }
-            "{0C9D821E-95BB-411F-BE03-2864360EBF94}:_B80CC898EB0D41EF9097C9E930B7E8FA"
+            "{4AA51A2D-7D85-4A59-BA75-B0809FC8B380}:_B80CC898EB0D41EF9097C9E930B7E8FA"
             {
             "Name" = "8:odbcinstall.exe"
             "Condition" = "8:"
@@ -148,12 +182,9 @@
             {
             }
         }
-        "Feature"
-        {
-        }
         "File"
         {
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_2FB9A57E3DD7443F97A7C8B0DBF82DB5"
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_2FB9A57E3DD7443F97A7C8B0DBF82DB5"
             {
             "SourcePath" = "8:banner.bmp"
             "TargetName" = "8:banner.bmp"
@@ -173,7 +204,7 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_42425D9BCD9641D3ABC839D5A29358DE"
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_42425D9BCD9641D3ABC839D5A29358DE"
             {
             "SourcePath" = "8:lib\\libMapi.dll"
             "TargetName" = "8:libMapi.dll"
@@ -193,7 +224,7 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_5CCCB992693C48C0BFEF4B0EFBBD884A"
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_5CCCB992693C48C0BFEF4B0EFBBD884A"
             {
             "SourcePath" = "8:license.rtf"
             "TargetName" = "8:license.rtf"
@@ -213,7 +244,7 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_8ADC98E4D05143999FFC87CAB78E68C9"
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_8ADC98E4D05143999FFC87CAB78E68C9"
             {
             "SourcePath" = "8:bin\\odbcinstall.exe"
             "TargetName" = "8:odbcinstall.exe"
@@ -233,7 +264,7 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_931FDCC4685C438DB61DFA8D32DF80D1"
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_931FDCC4685C438DB61DFA8D32DF80D1"
             {
             "SourcePath" = "8:lib\\libmutils.dll"
             "TargetName" = "8:libmutils.dll"
@@ -253,7 +284,7 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_BC1CD3A227FA4EB7B035DFA62EF4D82C"
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_BC1CD3A227FA4EB7B035DFA62EF4D82C"
             {
             "SourcePath" = "8:lib\\libstream.dll"
             "TargetName" = "8:libstream.dll"
@@ -273,7 +304,7 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_CB89303C19364CECA36BDC911637BE9C"
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_CB89303C19364CECA36BDC911637BE9C"
             {
             "SourcePath" = "8:website.html"
             "TargetName" = "8:website.html"
@@ -293,7 +324,7 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_E763DA578AC34798B710589F4C224BDE"
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_E763DA578AC34798B710589F4C224BDE"
             {
             "SourcePath" = "8:lib\\libMonetODBCs.dll"
             "TargetName" = "8:libMonetODBCs.dll"
@@ -313,7 +344,7 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_E78854C05F3D4756B29D929C6E751845"
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_E78854C05F3D4756B29D929C6E751845"
             {
             "SourcePath" = "8:lib\\libMonetODBC.dll"
             "TargetName" = "8:libMonetODBC.dll"
@@ -339,7 +370,7 @@
         }
         "Folder"
         {
-            "{78BAF5CE-F2E5-45BE-83BC-DB6AF387E941}:_503DDABC465044AEB71567A56F1DB599"
+            "{1525181F-901A-416C-8A58-119130FE478E}:_503DDABC465044AEB71567A56F1DB599"
             {
             "Name" = "8:#1919"
             "AlwaysCreate" = "11:FALSE"
@@ -348,7 +379,7 @@
             "Property" = "8:ProgramMenuFolder"
                 "Folders"
                 {
-                    "{F27BD5C5-A65D-4608-96D4-7C5DA1F76302}:_1CAF389F5D9043A1AEDFA7B5978DF66F"
+                    "{9EF0B969-E518-4E46-987F-47570745A589}:_1CAF389F5D9043A1AEDFA7B5978DF66F"
                     {
                     "Name" = "8:MonetDB ODBC Driver"
                     "AlwaysCreate" = "11:FALSE"
@@ -361,7 +392,7 @@
                     }
                 }
             }
-            "{78BAF5CE-F2E5-45BE-83BC-DB6AF387E941}:_9245CDB6FEBD4976A80FD08B79835724"
+            "{1525181F-901A-416C-8A58-119130FE478E}:_9245CDB6FEBD4976A80FD08B79835724"
             {
             "Name" = "8:#1916"
             "AlwaysCreate" = "11:FALSE"
@@ -372,7 +403,7 @@
                 {
                 }
             }
-            "{58C0ADA3-3CEA-43BD-A3B3-2EA121BC8217}:_E71AEF246CD8428C98B2ECCFE2014056"
+            "{3C67513D-01DD-4637-8A68-80971EB9504F}:_E71AEF246CD8428C98B2ECCFE2014056"
             {
             "DefaultLocation" = "8:[ProgramFilesFolder][Manufacturer]\\[ProductName]"
             "Name" = "8:#1925"
@@ -382,7 +413,7 @@
             "Property" = "8:TARGETDIR"
                 "Folders"
                 {
-                    "{F27BD5C5-A65D-4608-96D4-7C5DA1F76302}:_376EC0506E4F452CA2C78ACE11515435"
+                    "{9EF0B969-E518-4E46-987F-47570745A589}:_376EC0506E4F452CA2C78ACE11515435"
                     {
                     "Name" = "8:lib"
                     "AlwaysCreate" = "11:FALSE"
@@ -410,13 +441,14 @@
         {
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:MonetDB ODBC Driver"
-        "ProductCode" = "8:{86607096-CAFD-484E-91BD-3034CA9BC083}"
-        "PackageCode" = "8:{DB6BEA92-FB80-4283-AA88-84A904EE7B3B}"
+        "ProductCode" = "8:{72DCC5FC-1466-424E-8EFF-88BA56CB509E}"
+        "PackageCode" = "8:{2A5429A9-3DEE-4526-9B71-84CDC0E19859}"
         "UpgradeCode" = "8:{C1F69378-3F5C-4120-8224-32F07D3458F3}"
         "RestartWWWService" = "11:FALSE"
         "RemovePreviousVersions" = "11:TRUE"
         "DetectNewerInstalledVersion" = "11:TRUE"
-        "ProductVersion" = "8:7.10.17"
+        "InstallAllUsers" = "11:TRUE"
+        "ProductVersion" = "8:7.10.31"
         "Manufacturer" = "8:CWI"
         "ARPHELPTELEPHONE" = "8:"
         "ARPHELPLINK" = "8:http://monetdb.cwi.nl/"
@@ -430,6 +462,10 @@
         "ARPIconIndex" = "3:0"
         "SearchPath" = "8:"
         "UseSystemSearchPath" = "11:TRUE"
+        "TargetPlatform" = "3:0"
+        "PreBuildEvent" = "8:"
+        "PostBuildEvent" = "8:"
+        "RunPostBuildEvent" = "3:0"
         }
         "Registry"
         {
@@ -437,7 +473,7 @@
             {
                 "Keys"
                 {
-                    "{6A471EEF-D31B-40F8-BCF6-C9E8EC783F36}:_B6E1E50C1E7848778742E42D8359745A"
+                    "{60EA8692-D2D5-43EB-80DC-7906BF13D6EF}:_B6E1E50C1E7848778742E42D8359745A"
                     {
                     "Name" = "8:Software"
                     "Condition" = "8:"
@@ -446,7 +482,7 @@
                     "Transitive" = "11:FALSE"
                         "Keys"
                         {
-                            "{6A471EEF-D31B-40F8-BCF6-C9E8EC783F36}:_2B5476066BB54F78A2141185B26B5C8A"
+                            "{60EA8692-D2D5-43EB-80DC-7906BF13D6EF}:_2B5476066BB54F78A2141185B26B5C8A"
                             {
                             "Name" = "8:[Manufacturer]"
                             "Condition" = "8:"
@@ -471,7 +507,7 @@
             {
                 "Keys"
                 {
-                    "{6A471EEF-D31B-40F8-BCF6-C9E8EC783F36}:_8A95AF0A959B4337A073C1B71F8C8D93"
+                    "{60EA8692-D2D5-43EB-80DC-7906BF13D6EF}:_8A95AF0A959B4337A073C1B71F8C8D93"
                     {
                     "Name" = "8:Software"
                     "Condition" = "8:"
@@ -480,7 +516,7 @@
                     "Transitive" = "11:FALSE"
                         "Keys"
                         {
-                            "{6A471EEF-D31B-40F8-BCF6-C9E8EC783F36}:_6AB463458E1B4758A5D0ADB3266A94B9"
+                            "{60EA8692-D2D5-43EB-80DC-7906BF13D6EF}:_6AB463458E1B4758A5D0ADB3266A94B9"
                             {
                             "Name" = "8:[Manufacturer]"
                             "Condition" = "8:"
@@ -525,7 +561,7 @@
         }
         "Shortcut"
         {
-            "{478F747B-8505-45D1-9AAE-8C3B645C26E3}:_9B1F21C1395547F5A001CB185B35F255"
+            "{970C0BB2-C7D0-45D7-ABFA-7EC378858BC0}:_9B1F21C1395547F5A001CB185B35F255"
             {
             "Name" = "8:MonetDB Web Site"
             "Arguments" = "8:"
@@ -542,20 +578,20 @@
         }
         "UserInterface"
         {
-            "{B654A020-6903-4E6A-A86C-75DC463DB54B}:_0179634AC52640D1B73A23B1CD0CA128"
+            "{2479F3F5-0309-486D-8047-8187E2CE5BA0}:_0179634AC52640D1B73A23B1CD0CA128"
             {
             "UseDynamicProperties" = "11:FALSE"
             "IsDependency" = "11:FALSE"
             "SourcePath" = "8:<VsdDialogDir>\\VsdUserInterface.wim"
             }
-            "{8D9DEE8B-DD8B-4F48-9072-C4364E4F4011}:_01B73578E5DF4CA38A070609A49AA471"
+            "{DF760B10-853B-4699-99F2-AFF7185B4A62}:_01B73578E5DF4CA38A070609A49AA471"
             {
             "Name" = "8:#1900"
             "Sequence" = "3:2"
             "Attributes" = "3:1"
                 "Dialogs"
                 {
-                    "{18ADD6EC-89FE-4ED7-AD3E-211C40278470}:_2AA06FB5750D4E419BD16BC8C6A7EAAC"
+                    "{688940B3-5CA9-4162-8DEE-2993FA9D8CBC}:_2AA06FB5750D4E419BD16BC8C6A7EAAC"
                     {
                     "Sequence" = "3:300"
                     "DisplayName" = "8:Confirm Installation"
@@ -578,7 +614,7 @@
                             }
                         }
                     }
-                    "{18ADD6EC-89FE-4ED7-AD3E-211C40278470}:_74E1101663F4492081A007C7FFC1152F"
+                    "{688940B3-5CA9-4162-8DEE-2993FA9D8CBC}:_74E1101663F4492081A007C7FFC1152F"
                     {
                     "Sequence" = "3:200"
                     "DisplayName" = "8:Installation Folder"
@@ -601,7 +637,7 @@
                             }
                         }
                     }
-                    "{18ADD6EC-89FE-4ED7-AD3E-211C40278470}:_9DEA2B8EE620491CB649657957EBF8BC"
+                    "{688940B3-5CA9-4162-8DEE-2993FA9D8CBC}:_9DEA2B8EE620491CB649657957EBF8BC"
                     {
                     "Sequence" = "3:110"
                     "DisplayName" = "8:License Agreement"
@@ -649,7 +685,7 @@
                             }
                         }
                     }
-                    "{18ADD6EC-89FE-4ED7-AD3E-211C40278470}:_E71D817FDAE04BDAB4006A07A774A13A"
+                    "{688940B3-5CA9-4162-8DEE-2993FA9D8CBC}:_E71D817FDAE04BDAB4006A07A774A13A"
                     {
                     "Sequence" = "3:100"
                     "DisplayName" = "8:Welcome"
@@ -700,14 +736,14 @@
                     }
                 }
             }
-            "{8D9DEE8B-DD8B-4F48-9072-C4364E4F4011}:_34E93C519EC04FC695027E754F5E113B"
+            "{DF760B10-853B-4699-99F2-AFF7185B4A62}:_34E93C519EC04FC695027E754F5E113B"
             {
             "Name" = "8:#1902"
             "Sequence" = "3:1"
             "Attributes" = "3:3"
                 "Dialogs"
                 {
-                    "{18ADD6EC-89FE-4ED7-AD3E-211C40278470}:_9474A461ED014C1DBCAB8B5BA5308E7B"
+                    "{688940B3-5CA9-4162-8DEE-2993FA9D8CBC}:_9474A461ED014C1DBCAB8B5BA5308E7B"
                     {
                     "Sequence" = "3:100"
                     "DisplayName" = "8:Finished"
@@ -745,14 +781,14 @@
                     }
                 }
             }
-            "{8D9DEE8B-DD8B-4F48-9072-C4364E4F4011}:_5E88C27DA4584B859737ED9BF50BD537"
+            "{DF760B10-853B-4699-99F2-AFF7185B4A62}:_5E88C27DA4584B859737ED9BF50BD537"
             {
             "Name" = "8:#1901"
             "Sequence" = "3:1"
             "Attributes" = "3:2"
                 "Dialogs"
                 {
-                    "{18ADD6EC-89FE-4ED7-AD3E-211C40278470}:_DC0E129161AB4D31BE18062DD173EFD0"
+                    "{688940B3-5CA9-4162-8DEE-2993FA9D8CBC}:_DC0E129161AB4D31BE18062DD173EFD0"
                     {
                     "Sequence" = "3:100"
                     "DisplayName" = "8:Progress"
@@ -790,20 +826,20 @@
                     }
                 }
             }
-            "{B654A020-6903-4E6A-A86C-75DC463DB54B}:_60B9533BE35647A19BDA9FA8A9F113DB"
+            "{2479F3F5-0309-486D-8047-8187E2CE5BA0}:_60B9533BE35647A19BDA9FA8A9F113DB"
             {
             "UseDynamicProperties" = "11:FALSE"
             "IsDependency" = "11:FALSE"
             "SourcePath" = "8:<VsdDialogDir>\\VsdBasicDialogs.wim"
             }
-            "{8D9DEE8B-DD8B-4F48-9072-C4364E4F4011}:_940D1E5E29B84AE09F26C4CDC4C7840D"
+            "{DF760B10-853B-4699-99F2-AFF7185B4A62}:_940D1E5E29B84AE09F26C4CDC4C7840D"
             {
             "Name" = "8:#1900"
             "Sequence" = "3:1"
             "Attributes" = "3:1"
                 "Dialogs"
                 {
-                    "{18ADD6EC-89FE-4ED7-AD3E-211C40278470}:_1609556EF3F84BE2AB92B89E63253230"
+                    "{688940B3-5CA9-4162-8DEE-2993FA9D8CBC}:_1609556EF3F84BE2AB92B89E63253230"
                     {
                     "Sequence" = "3:110"
                     "DisplayName" = "8:License Agreement"
@@ -851,7 +887,7 @@
                             }
                         }
                     }
-                    "{18ADD6EC-89FE-4ED7-AD3E-211C40278470}:_701F0912E76B485E8A0F1376971A2268"
+                    "{688940B3-5CA9-4162-8DEE-2993FA9D8CBC}:_701F0912E76B485E8A0F1376971A2268"
                     {
                     "Sequence" = "3:120"
                     "DisplayName" = "8:Installation Folder"
@@ -872,9 +908,22 @@
                             "Value" = "8:_2FB9A57E3DD7443F97A7C8B0DBF82DB5"
                             "UsePlugInResources" = "11:TRUE"
                             }
+                            "InstallAllUsersVisible"
+                            {
+                            "Name" = "8:InstallAllUsersVisible"
+                            "DisplayName" = "8:#1059"
+                            "Description" = "8:#1159"
+                            "Type" = "3:5"
+                            "ContextData" = "8:1;True=1;False=0"
+                            "Attributes" = "3:0"
+                            "Setting" = "3:0"
+                            "Value" = "3:1"
+                            "DefaultValue" = "3:1"
+                            "UsePlugInResources" = "11:TRUE"
+                            }
                         }
                     }
-                    "{18ADD6EC-89FE-4ED7-AD3E-211C40278470}:_A63EB3EC3BF54DEEA7F6A01DC18EBAE5"
+                    "{688940B3-5CA9-4162-8DEE-2993FA9D8CBC}:_A63EB3EC3BF54DEEA7F6A01DC18EBAE5"
                     {
                     "Sequence" = "3:100"
                     "DisplayName" = "8:Welcome"
@@ -923,7 +972,7 @@
                             }
                         }
                     }
-                    "{18ADD6EC-89FE-4ED7-AD3E-211C40278470}:_EF8BEF85AEE749C2B29173FE79556B4D"
+                    "{688940B3-5CA9-4162-8DEE-2993FA9D8CBC}:_EF8BEF85AEE749C2B29173FE79556B4D"
                     {
                     "Sequence" = "3:300"
                     "DisplayName" = "8:Confirm Installation"
@@ -948,14 +997,14 @@
                     }
                 }
             }
-            "{8D9DEE8B-DD8B-4F48-9072-C4364E4F4011}:_AF4411328CE743CB816AAF808D4AD7C8"
+            "{DF760B10-853B-4699-99F2-AFF7185B4A62}:_AF4411328CE743CB816AAF808D4AD7C8"
             {
             "Name" = "8:#1901"
             "Sequence" = "3:2"
             "Attributes" = "3:2"
                 "Dialogs"
                 {
-                    "{18ADD6EC-89FE-4ED7-AD3E-211C40278470}:_A36411BC7394491586925DDB5A67B450"
+                    "{688940B3-5CA9-4162-8DEE-2993FA9D8CBC}:_A36411BC7394491586925DDB5A67B450"
                     {
                     "Sequence" = "3:100"
                     "DisplayName" = "8:Progress"
@@ -993,14 +1042,14 @@
                     }
                 }
             }
-            "{8D9DEE8B-DD8B-4F48-9072-C4364E4F4011}:_D0B3B66F5A474DF89BAAD1DDF06E928B"
+            "{DF760B10-853B-4699-99F2-AFF7185B4A62}:_D0B3B66F5A474DF89BAAD1DDF06E928B"
             {
             "Name" = "8:#1902"
             "Sequence" = "3:2"
             "Attributes" = "3:3"
                 "Dialogs"
                 {
-                    "{18ADD6EC-89FE-4ED7-AD3E-211C40278470}:_4C7232FF38AD4798AC5E1162EEECCF25"
+                    "{688940B3-5CA9-4162-8DEE-2993FA9D8CBC}:_4C7232FF38AD4798AC5E1162EEECCF25"
                     {
                     "Sequence" = "3:100"
                     "DisplayName" = "8:Finished"
@@ -1028,8 +1077,39 @@
         }
         "MergeModule"
         {
+            "{CEE29DC0-9FBA-4B99-8D47-5BC643D9B626}:_20B48E6B0CE044A98097C7204EB3D952"
+            {
+            "UseDynamicProperties" = "11:TRUE"
+            "IsDependency" = "11:TRUE"
+            "SourcePath" = "8:policy_8_0_microsoft_vc80_crt_x86.msm"
+                "Properties"
+                {
+                }
+            "LanguageId" = "3:0"
+            "Exclude" = "11:FALSE"
+            "Folder" = "8:"
+            "Feature" = "8:"
+            "IsolateTo" = "8:"
+            }
+            "{CEE29DC0-9FBA-4B99-8D47-5BC643D9B626}:_3517E482BC7F4EFC88537C979178E768"
+            {
+            "UseDynamicProperties" = "11:TRUE"
+            "IsDependency" = "11:FALSE"
+            "SourcePath" = "8:C:\\Program Files\\Common Files\\Merge Modules\\Microsoft_VC80_CRT_x86.msm"
+                "Properties"
+                {
+                }
+            "LanguageId" = "3:0"
+            "Exclude" = "11:FALSE"
+            "Folder" = "8:"
+            "Feature" = "8:"
+            "IsolateTo" = "8:"
+            }
         }
         "ProjectOutput"
+        {
+        }
+        "VJSharpPlugin"
         {
         }
     }
