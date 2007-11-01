@@ -25,9 +25,6 @@ import javax.xml.xpath.*;
 import org.w3c.dom.*;
 import org.xml.sax.*;
 
-//import com.sun.org.apache.xml.internal.dtm.ref.DTMNodeList;
-//import org.apache.xml.dtm.ref.DTMNodeList;
-
 /**
  * @author Ying Zhang <Y.Zhang@cwi.nl>
  * @version 0.1
