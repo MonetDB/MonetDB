@@ -1482,6 +1482,8 @@ key_dup(sql_trans *tr, int flag, sql_key *k, sql_table *t)
 				list_append(uk->keys, fk);
 			}
 		}
+		fk->on_delete = ok->on_delete;
+		fk->on_update = ok->on_update;
 	} else {		/* could be a set of rkeys */
 		sql_ukey *uk = (sql_ukey *) nk;
 		sql_ukey *ok = (sql_ukey *) k;

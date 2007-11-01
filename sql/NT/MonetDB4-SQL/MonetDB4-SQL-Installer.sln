@@ -1,21 +1,19 @@
-Microsoft Visual Studio Solution File, Format Version 8.00
+Microsoft Visual Studio Solution File, Format Version 9.00
+# Visual Studio 2005
 Project("{54435603-DBB4-11D2-8724-00A0C9A8B90C}") = "MonetDB4-SQL-Installer", "MonetDB4-SQL-Installer.vdproj", "{E5EBAB1B-6991-4ACC-8DBD-36E77E3D7F45}"
-	ProjectSection(ProjectDependencies) = postProject
-	EndProjectSection
 EndProject
 Global
-	GlobalSection(SolutionConfiguration) = preSolution
-		Debug = Debug
-		Release = Release
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Default = Debug|Default
+		Release|Default = Release|Default
 	EndGlobalSection
-	GlobalSection(ProjectConfiguration) = postSolution
-		{E5EBAB1B-6991-4ACC-8DBD-36E77E3D7F45}.Debug.ActiveCfg = Debug
-		{E5EBAB1B-6991-4ACC-8DBD-36E77E3D7F45}.Debug.Build.0 = Debug
-		{E5EBAB1B-6991-4ACC-8DBD-36E77E3D7F45}.Release.ActiveCfg = Release
-		{E5EBAB1B-6991-4ACC-8DBD-36E77E3D7F45}.Release.Build.0 = Release
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{E5EBAB1B-6991-4ACC-8DBD-36E77E3D7F45}.Debug|Default.ActiveCfg = Debug
+		{E5EBAB1B-6991-4ACC-8DBD-36E77E3D7F45}.Debug|Default.Build.0 = Debug
+		{E5EBAB1B-6991-4ACC-8DBD-36E77E3D7F45}.Release|Default.ActiveCfg = Release
+		{E5EBAB1B-6991-4ACC-8DBD-36E77E3D7F45}.Release|Default.Build.0 = Release
 	EndGlobalSection
-	GlobalSection(ExtensibilityGlobals) = postSolution
-	EndGlobalSection
-	GlobalSection(ExtensibilityAddIns) = postSolution
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
 	EndGlobalSection
 EndGlobal
