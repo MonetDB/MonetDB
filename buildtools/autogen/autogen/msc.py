@@ -770,7 +770,7 @@ def msc_library(fd, var, libmap, msc):
         condname = 'defined(' + ') && defined('.join(libmap['COND']) + ')'
         mkname = (pref + v).replace('.', '_').replace('-', '_')
         fd.write('!IF %s\n' % condname)
-        fd.write('C_%s_dll = %s%s.dll\n' % (mkname, pref, v))
+        fd.write('C_%s_dll = %s%s%s\n' % (mkname, pref, v, dll))
         fd.write('C_%s_lib = %s%s.lib\n' % (mkname, pref, v))
         fd.write('!ELSE\n')
         fd.write('C_%s_dll =\n' % mkname)
@@ -1000,9 +1000,9 @@ def msc_ant(fd, var, ant, msc):
     # can get hold of the full path name of the current working
     # directory
     fd.write("callant%d.bat:\n" % callantno)
-    fd.write("\techo @set PWD=%%~dp0>callant%d.bat\n" % callantno)
-    fd.write("\techo @set PWD=%%PWD:~0,-1%%>>callant%d.bat\n" % callantno)
-    fd.write("\techo @$(ANT) -d -f $(SRCDIR)\\build.xml \"-Dbuilddir=%%PWD%%\" \"-Djardir=%%PWD%%\" %s>>callant%d.bat\n" % (target, callantno))
+    fd.write("\techo @set thisdir=%%~dp0>callant%d.bat\n" % callantno)
+    fd.write("\techo @set thisdir=%%thisdir:~0,-1%%>>callant%d.bat\n" % callantno)
+    fd.write("\techo @$(ANT) -d -f $(SRCDIR)\\build.xml \"-Dbuilddir=%%thisdir%%\" \"-Djardir=%%thisdir%%\" %s>>callant%d.bat\n" % (target, callantno))
     fd.write("%s_ant_target: callant%d.bat\n" % (target, callantno))
     fd.write("\tcallant%d.bat\n" % callantno)
     callantno = callantno + 1
