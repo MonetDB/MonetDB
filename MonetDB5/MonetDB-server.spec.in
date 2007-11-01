@@ -169,7 +169,7 @@ rm -fr $RPM_BUILD_ROOT
 %dir %{_includedir}/MonetDB5
 %dir %{_includedir}/MonetDB5/atoms
 %dir %{_includedir}/MonetDB5/compiler
-%dir %{_includedir}/MonetDB5/crackers
+#%dir %{_includedir}/MonetDB5/crackers
 %dir %{_includedir}/MonetDB5/kernel
 %dir %{_includedir}/MonetDB5/mal
 %dir %{_includedir}/MonetDB5/optimizer
