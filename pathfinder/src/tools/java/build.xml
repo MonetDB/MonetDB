@@ -97,7 +97,6 @@ All Rights Reserved.
   <target name="compile_util" depends="prepare">
     <echo message="Compiling Utilities" />
     <javac
-      compiler="${build_compiler}"
       classpath="${srcdir}"
       srcdir="${srcdir}"
       destdir="${builddir}"
@@ -113,7 +112,6 @@ All Rights Reserved.
   <target name="compile_xrpcwrapper" depends="prepare">
     <echo message="Compiling XRPC Wrapper" />
     <javac
-      compiler="${build_compiler}"
       classpath="${srcdir}"
       srcdir="${srcdir}"
       destdir="${builddir}"
@@ -129,7 +127,6 @@ All Rights Reserved.
   <target name="compile_xrpcwrapper_test" depends="prepare">
     <echo message="Compiling XRPC test client" />
     <javac
-      compiler="${build_compiler}"
       classpath="${srcdir}"
       srcdir="${srcdir}"
       destdir="${builddir}"
