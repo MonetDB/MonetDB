@@ -84,6 +84,8 @@
 #include "sqlprint.h"
 #include "load_stats.h"  /* to create the guide tree */
 
+#include "xml2lalg.h" /* xml importer */
+
 #ifndef NDEBUG
 /* to invoke PFty_debug_subtyping() if --debug subtyping */
 #include "subtyping.h"
@@ -314,8 +316,8 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
     int        module_base;
     
     /* elapsed time for compiler phase */
-    long tm, tm_first;
-
+    long tm, tm_first = 0;
+   
     PFguide_tree_t *guide_tree = NULL; /* guide tree */
 
 
@@ -323,6 +325,60 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
     /* setup sementation fault signal handler */
     signal (SIGSEGV, segfault_handler);
 #endif
+
+
+    if(status->import_xml)
+    {
+
+       /* todo: init-stuff */
+       /* e.g. qnameInit */
+       /* e.g namespaceInit */
+            
+        XML2LALGContext* ctx = PFxml2la_xml2lalgContext();
+
+
+        PFla_op_t*  rootOp;
+        if(status->import_xml_filename)
+        {
+            /**
+             * If the input is explicitely specified with an filename,
+             * we drive the xml-importer with this filename instead with the
+             * url-cache-buffer.
+             * Reason: If the validation of the input-file against a schema
+             * fails, we explicitely get the locations in the file
+             * (linenumbers) from the xml-parser. But only, if the parser is
+             * driven with an explicit filename. If the parser is driven
+             * with an buffer, then we don't get explicit error-positions
+             * from the parser in case of validation errors (which makes
+             * fixing/locating this validation-errors unneccessary hard)
+             */
+            rootOp = 
+                PFxml2la_importXMLFromFile(ctx, status->import_xml_filename);
+        }
+        else
+        {
+
+            /**
+             * Note, that we don't get explicit error-positions (line 
+             * numbers of the xml-input) from the parser in case of 
+             * validation errors... 
+             * 
+             * Call PF from the command line with an explicit filename
+             * (instead of using stdin/pipelining) if you want to get
+             * explicit error positions (line numbers) from the xml-parser
+             * in case of validation-errors
+             */
+            char* xml = PFurlcache (url, 1);
+            int size = strlen(xml);
+            rootOp = PFxml2la_importXMLFromMemory(ctx, xml, size);
+        }
+
+        laroot = rootOp;
+
+
+         
+        goto AFTER_CORE2ALG; 
+    }
 
     /* compiler chain below 
      */
@@ -530,6 +586,10 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
         PFlog ("logical algebra tree generation:\t %s", PFtimer_str (tm));
 
     STOP_POINT(16);
+
+AFTER_CORE2ALG:
+
+     
 
     /*
      * Rewrite/optimize algebra tree

@@ -1390,7 +1390,7 @@ la_xml (PFarray_t *xml, PFla_op_t *n)
             for (c = 0; c < n->sem.ser_rel.items.count; c++)
                 PFarray_printf (xml,
                                 "      <column name=\"%s\" new=\"false\""
-                                             " function=\"pos\""
+                                             " function=\"item\""
                                              " position=\"%i\"/>\n",
                                 PFatt_str (n->sem.ser_rel.items.atts[c]),
                                 c);
@@ -1839,9 +1839,11 @@ la_xml (PFarray_t *xml, PFla_op_t *n)
         case la_doc_tbl:
             PFarray_printf (xml,
                             "    <content>\n"
+                            "      <column name=\"%s\" new=\"true\"/>\n"
                             "      <column name=\"%s\" function=\"iter\"/>\n"
                             "      <column name=\"%s\" function=\"item\"/>\n"
                             "    </content>\n",
+                            PFatt_str (n->sem.doc_tbl.item_res),
                             PFatt_str (n->sem.doc_tbl.iter),
                             PFatt_str (n->sem.doc_tbl.item));
             break;
@@ -2107,7 +2109,11 @@ PFla_xml (FILE *f, PFla_op_t *root)
         /* initialize array to hold dot output */
         PFarray_t *xml = PFarray (sizeof (char));
 
-        PFarray_printf (xml, "<logical_query_plan>\n");
+
+        
+        PFarray_printf (xml, "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
+        PFarray_printf (xml, "<logical_query_plan unique_names=\"%s\">\n",
+                        (PFalg_is_unq_name(root->schema.items[0].name) ? "true" : "false"));
         /* add domain subdomain relationships if required */
         if (PFstate.format) {
             char *fmt = PFstate.format;

@@ -433,7 +433,7 @@
  * Software is distributed as the "MonetDB/XQuery" system at
  * <a href='http://www.monetdb-xquery.org/'>http://www.monetdb-xquery.org/</a>.
  */
-
+  
 #include "pathfinder.h"
 
 #include <stdlib.h>
@@ -460,6 +460,7 @@
 #endif
 
 #include "compile.h"
+#include "array.h"
 
 #if HAVE_GETOPT_H && HAVE_GETOPT_LONG
 #include <getopt.h>
@@ -473,6 +474,7 @@ static struct option long_options[] = {
     { "mil",                       no_argument,       NULL, 'A' },
     { "dot",                       no_argument,       NULL, 'D' },
     { "fullhelp",                  no_argument,       NULL, 'H' },
+    { "xml-import",                no_argument,       NULL, 'I' },
     { "mil_2004",                  no_argument,       NULL, 'M' },
     { "optimize",                  optional_argument, NULL, 'O' },
     { "text",                      no_argument,       NULL, 'P' },
@@ -603,6 +605,8 @@ static char *progname = 0;
 int
 main (int argc, char *argv[])
 {
+
+   
     /* Call setjmp() before variables are declared;
      * otherwise, some compilers complain about clobbered variables.
      */
@@ -641,7 +645,7 @@ main (int argc, char *argv[])
 #if HAVE_GETOPT_H && HAVE_GETOPT_LONG
         int option_index = 0;
         opterr = 1;
-        c = getopt_long (argc, argv, "ADHMO::PTXabc"
+        c = getopt_long (argc, argv, "ADHIMO::PTXabc"
 #ifndef NDEBUG
                                      "d:"
 #endif
@@ -691,6 +695,12 @@ main (int argc, char *argv[])
                         "\n",
                         long_option (opt_buf, ", --%s", 'g'));
                 printf ("\n");
+
+                printf ("  -I%s: import logical-algebra-plan from xml file"
+                        "\n",
+                        long_option (opt_buf, ", --%s", 'I'));
+                printf ("\n");
+
                 
                 printf ("  -D%s: print internal tree structure in AT&T dot notation\n",
                         long_option (opt_buf, ", --%s", 'D'));
@@ -804,6 +814,12 @@ main (int argc, char *argv[])
                 printf ("\n");
                 printf ("Enjoy.\n");
                 exit (0);
+
+
+            case 'I':
+                status->import_xml = true;
+                status->import_xml_filename = NULL;
+                break;
 
             case 'M':
                 status->output_format = PFoutput_format_milprint_summer;
@@ -984,8 +1000,31 @@ main (int argc, char *argv[])
         status->output_format = PFoutput_format_sql;
     }
 
-    if (optind < argc)
-        url = argv[optind];
+    /* should the input explicitely be read from a file (instead of stdin)? */
+    if (optind < argc) {
+
+        if(status->import_xml)
+        {
+            /**
+             * If the input is explicitely specified with an filename,
+             * we drive the xml-importer with this filename instead with the
+             * url-cache-buffer.
+             * Reason: If the validation of the input-file against a schema
+             * fails, we explicitely get the locations in the file
+             * (linenumbers) from the xml-parser. But only, if the parser is
+             * driven with an explicit filename. If the parser is driven
+             * with an buffer, then we don't get explicit error-positions
+             * from the parser in case of validation errors (which makes
+             * fixing/locating this validation-errors unneccessary hard)
+             */
+            status->import_xml_filename = argv[optind];
+        } 
+        else
+        {
+            url = argv[optind];
+        }
+    }
+        
 
     /* Now call the main compiler driver */
     if ( PFcompile(url, stdout, status) < 0 )

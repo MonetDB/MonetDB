@@ -96,6 +96,13 @@ PFalgopt (PFla_op_t *root, bool timing, PFguide_tree_t* guide_tree)
     bool proxies_involved = false;
     char *args = PFstate.opt_alg;
 
+
+    if (PFalg_is_unq_name(root->schema.items[0].name))
+    {
+        root = PFmap_ori_names (root);
+
+    }
+    
 #define DEBUG_OPT_STR 0
 #if DEBUG_OPT_STR
     fprintf (stderr, "-o");

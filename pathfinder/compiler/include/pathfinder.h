@@ -91,6 +91,8 @@ struct PFstate_t {
     bool timing;              /**< command line switch: -T */
     bool print_dot;           /**< command line switch: -D */
     bool print_xml;           /**< command line switch: -X */
+    bool import_xml;          /**< command line switch: -I */
+    char* import_xml_filename;/**< the filename of the import-file */
     bool print_pretty;        /**< command line switch: -P */
     unsigned int stop_after;  /**< processing phase to stop after */
     bool print_types;         /**< command line switch: -t */

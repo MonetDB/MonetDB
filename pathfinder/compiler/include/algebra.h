@@ -388,6 +388,11 @@ int PFalg_atom_cmp (PFalg_atom_t a, PFalg_atom_t b);
 char * PFatt_str (PFalg_att_t att);
 
 /**
+ * Checks whether a name is unique or not.
+ */
+bool PFalg_is_unq_name(PFalg_att_t att); 
+
+/**
  * Create a unique name based on an id @a id and
  * an original name @a ori that retains the usage information
  * of the new variable (iter, pos or item).

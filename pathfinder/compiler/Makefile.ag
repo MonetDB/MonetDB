@@ -18,11 +18,12 @@
 # 2000-2005 University of Konstanz and (C) 2005-2007 Technische
 # Universitaet Muenchen, respectively.  All Rights Reserved.
 
-SUBDIRS = schema debug mem parser semantics core algebra mil include sql
+SUBDIRS = utils schema debug mem parser semantics core algebra mil include sql xmlimport 
 
 EXTRA_DIST_DIR = Tests
 
 INCLUDES = include $(MONETDB_INCS) $(LIBXML2_CFLAGS)
+
 
 lib_compiler1 = {
         NOINST
@@ -41,7 +42,10 @@ lib_compiler2 = {
              scope.c \
              timer.c \
              variable.c
+
+
 }
+
 bin_pf = {
         LIBS = \
                 libcompiler1 \
@@ -58,6 +62,9 @@ bin_pf = {
                 libcompiler2 \
                 mem/libmem \
                 sql/libsql \
+                #
+                xmlimport/libxmlimport \
+                # 
                 $(LIBGC_LDADD) $(LIBGC_LIBS) \
                 $(LIBXML2_LDADD) $(LIBXML2_LIBS) \
                 $(SOCKET_LIBS) $(DL_LIBS)
@@ -65,3 +72,6 @@ bin_pf = {
         SOURCES = \
              main.c
 }
+
+
+

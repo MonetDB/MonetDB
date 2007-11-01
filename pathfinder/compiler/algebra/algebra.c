@@ -733,13 +733,26 @@ PFalg_simple_type_str (PFalg_simple_type_t type) {
 }
 
 /**
- * Create an unique name based on an id @a id and
+ * Checks whether a name is unique or not.
+ */
+bool
+PFalg_is_unq_name(PFalg_att_t att) 
+{
+    return ((1 << 3) & att) && (att & 7);
+}
+
+/**
+ * Create an unique name based on an id @a id and 
  * an original name @a ori that retains the usage information
  * of the new variable (iter, pos or item).
  */
 PFalg_att_t
 PFalg_unq_name (PFalg_att_t ori, unsigned int id)
 {
+
+//     printf("id:%i\n", id);
+//     printf("name:%s\n", PFatt_str(ori));
+
     PFalg_att_t unq;
 
     switch (ori) {
