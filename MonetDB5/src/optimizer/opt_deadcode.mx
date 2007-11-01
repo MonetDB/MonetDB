@@ -86,7 +86,7 @@ comment "Dead code optimizer";
 static int 
 OPTdeadcodeImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int i, k, se,limit,slimit;
+	int i, k, se,limit;
 	InstrPtr p=0, *old= mb->stmt;
 	int actions = 0;
 
@@ -102,7 +102,6 @@ OPTdeadcodeImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #endif
 
 	limit= mb->stop;
-	slimit= mb->ssize;
 	newMalBlkStmt(mb, mb->ssize); /* a new statement stack */
 
 	pushInstruction(mb, old[0]);
