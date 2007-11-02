@@ -91,6 +91,7 @@ lib__pathfinder = {
                 ../compiler/mem/libmem_embedded \
                 ../compiler/libcompiler2 \
                 ../compiler/sql/libsql \
+                ../compiler/xmlimport/libxmlimport \
                 $(PF_LIBS) \
                 $(MONETDB_LIBS) -lbat -lstream $(MONETDB4_LIBS) -lmonet $(PTHREAD_LIBS) \
                 $(MONETDB4_MODS) -l_streams -l_builtin -l_ascii_io -l_algebra -l_sys -l_constant -l_mapi 
