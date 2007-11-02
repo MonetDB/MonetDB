@@ -3391,6 +3391,14 @@ def main(argv) :
             MissingMods = CheckMods(env, '', 'SQL', '')
             if MissingMods:
                 ErrXit('Stopping SQL testing as modules "%s" are missing!' % str(MissingMods))
+            if par['M5']:
+                mod_name = 'sql'
+                mod_load = 'include %s;' % mod_name
+            else:
+                mod_name = 'sql_server'
+                mod_load = 'module(%s);' % mod_name
+            if Check('%s --dbname=%s "--dbinit=%s"' % (env['exe']['Mserver'][1], TSTPREF, mod_load), QUIT):
+                ErrXit('Stopping SQL testing as module "%s" fails to load!' % mod_name)
 
         is_pf = par['PACKAGE'] == 'monetdb-xquery'
         if not is_pf:
@@ -3408,6 +3416,13 @@ def main(argv) :
             MissingMods = CheckMods(env, '', 'XQUERY', '')
             if MissingMods:
                 ErrXit('Stopping Pathfinder testing as modules "%s" are missing!' % str(MissingMods))
+            mod_name = 'pathfinder'
+            if par['M5']:
+                mod_load = 'include %s;' % mod_name
+            else:
+                mod_load = 'module(%s);' % mod_name
+            if Check('%s --dbname=%s "--dbinit=%s"' % (env['exe']['Mserver'][1], TSTPREF, mod_load), QUIT):
+                ErrXit('Stopping Pathfinder testing as module "%s" fails to load!' % mod_name)
 
         if par['PACKAGE'] == 'monetdb-geom':
             MissingMods = CheckMods(env, '', 'SQL', '')
@@ -3415,6 +3430,13 @@ def main(argv) :
                 MissingMods.append('geom')
             if MissingMods:
                 ErrXit('Stopping Geom testing as modules "%s" are missing!' % str(MissingMods))
+            mod_name = 'geom'
+            if par['M5']:
+                mod_load = 'include %s;' % mod_name
+            else:
+                mod_load = 'module(%s);' % mod_name
+            if Check('%s --dbname=%s "--dbinit=%s"' % (env['exe']['Mserver'][1], TSTPREF, mod_load), QUIT):
+                ErrXit('Stopping Geom testing as module "%s" fails to load!' % mod_name)
 
         if par['PACKAGE'] == 'monetdb-amdb':
             if not env['exe']['X100_Client'][0]:
