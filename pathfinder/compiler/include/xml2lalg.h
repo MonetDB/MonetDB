@@ -62,7 +62,7 @@ struct XML2LALGContext {
 
 
 XML2LALGContext* 
-PFxml2la_xml2lalgContext();
+PFxml2la_xml2lalgContext(void);
 
 PFla_op_t* 
 PFxml2la_importXMLFromFile(XML2LALGContext* ctx, const char *filename);

@@ -384,7 +384,7 @@ info1(XML2LALGContext* ctx, xmlNodePtr nodePtr);
 
 
 XML2LALGContext* 
-PFxml2la_xml2lalgContext() 
+PFxml2la_xml2lalgContext(void) 
 {
 
     XML2LALGContext* ctx = (XML2LALGContext*) PFmalloc (sizeof (XML2LALGContext));

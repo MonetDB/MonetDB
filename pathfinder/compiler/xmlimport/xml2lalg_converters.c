@@ -422,6 +422,8 @@ PFxml2la_conv_2PFLA_OpKind(const char* s)
     {
 
         PFoops (OOPS_FATAL, "unknown operator kind (%s)", s);
+        /* pacify picky compilers */
+        return la_serialize_seq;
 
     }
 
@@ -570,6 +572,7 @@ PFxml2la_conv_2PFLA_attributeName(const char* s)
     {
 
         PFoops (OOPS_FATAL, "unknown attribute name (%s)", s);
+        return -1; /* pacify picky compilers */
 
     }
 }
@@ -636,6 +639,7 @@ PFxml2la_conv_2PFLA_attributeName_unq(const char* s)
 
 
         PFoops (OOPS_FATAL, "don't know what to do with (%s)", s);
+        
     }
 
 
@@ -719,6 +723,7 @@ PFxml2la_conv_2PFLA_atomType(char* typeString)
     {
 
         PFoops (OOPS_FATAL, "unknown attribute simple type (%s)", typeString);
+        return -1; /* pacify picky compilers */
 
     }
 }
@@ -793,6 +798,8 @@ PFxml2la_conv_2PFLA_atom(char* typeString, char* valueString)
     default:       
         {
             PFoops (OOPS_FATAL, "don't know what to do (%s, %s)", typeString, valueString);
+            /* pacify picky compilers */
+            return (PFalg_atom_t) { .type = 0, .val = { .nat_ = 0 } }; 
 
         }
 
@@ -841,6 +848,9 @@ PFxml2la_conv_2PFLA_comparisonType(char* s)
     else
     {
         PFoops (OOPS_FATAL, "don't know what to do (%s)", s);
+        /* pacify picky compilers */
+        return alg_comp_eq; 
+
 
     }
 }
@@ -907,6 +917,8 @@ PFxml2la_conv_2PFLA_functionType(char* s)
     else
     {
         PFoops (OOPS_FATAL, "don't know what to do (%s)", s);
+        /* pacify picky compilers */
+        return alg_fun_num_add; 
 
     }
 }
@@ -928,7 +940,8 @@ PFxml2la_conv_2PFLA_orderingDirection(char* s)
     else
     {
         PFoops (OOPS_FATAL, "don't know what to do (%s)", s);
-
+        /* pacify picky compilers */
+        return DIR_ASC;
     }
 
 }
@@ -990,6 +1003,8 @@ PFxml2la_conv_2PFLA_xpathaxis(char* s)
     else
     {
         PFoops (OOPS_FATAL, "don't know what to do (%s)", s);
+        /* pacify picky compilers */
+        return alg_anc;
 
     }
 
@@ -1039,6 +1054,9 @@ PFxml2la_conv_2PFLA_sequenceType(char* s)
     else
     {
         PFoops (OOPS_FATAL, "don't know what to do (%s)", s);
+        /* pacify picky compilers */
+        return type;
+
 
     }
 
@@ -1073,6 +1091,9 @@ PFxml2la_conv_2PFLA_docType(char* s)
     else
     {
         PFoops (OOPS_FATAL, "don't know what to do (%s)", s);
+        /* pacify picky compilers */
+        return doc_atext;
+
 
     }
 

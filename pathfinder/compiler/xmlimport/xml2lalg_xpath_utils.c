@@ -272,6 +272,9 @@ PFxml2la_xpath_getBoolValue(char* s)
     else
     {
         PFoops (OOPS_FATAL, "expected \"true\" or \"false\", but got (%s)", s);
+        /* pacify picky compilers */
+        return false;
+
     }
 
 }
