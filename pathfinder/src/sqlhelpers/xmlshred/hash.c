@@ -111,7 +111,13 @@ find_hash_bucket (char *key)
 hashtable_t
 new_hashtable (void)
 {
-    return (hashtable_t) malloc (PRIME * sizeof (bucket_t));
+    hashtable_t ht = malloc (PRIME * sizeof (bucket_t));
+    
+    /* initialize the hash table */
+    for (unsigned int i = 0; i < PRIME; i++)
+        ht[i] = NULL;
+    
+    return ht;
 }
 
 /**
@@ -152,9 +158,12 @@ free_hash(hashtable_t hash_table)
 
     for (int i = 0; i < PRIME; i++) {
         bucket = hash_table[i];
+        /* free the overflow chain */
         while (bucket) {
             free_bucket = bucket;
             bucket = bucket->next;
+            /* free the copied hash key */
+            if (free_bucket->key) free (free_bucket->key);
             free (free_bucket);
         }
    }

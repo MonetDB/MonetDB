@@ -84,6 +84,14 @@ struct node_t {
 
 static shred_state_t shredstate;
 
+/* guide wrapper to ensure that guide information is only collected if needed */
+#define insert_guide_node_(n,p,k) ((shredstate.statistics)           \
+                                  ? insert_guide_node (n,p,k)        \
+                                  : NULL)                            
+#define guide_val_(g)             ((shredstate.statistics)           \
+                                  ? (g)->guide                       \
+                                  : 0)
+
 /* hash table */
 static hashtable_t hash_table;
 
@@ -97,6 +105,13 @@ static nat pre;
 static nat post;
 static nat rank;
 static nat att_id;
+
+void
+print_text (FILE *f, char *buf, size_t len) {
+    if (len)
+        if (fwrite (buf, (size_t) 1, len, f) < len)
+            BAILOUT ("write failed");
+}
 
 /**
  * Print the encoded kind.
@@ -115,12 +130,81 @@ print_kind (FILE *f, kind_t kind)
     }
 }
 
+void
+print_number (FILE *f, node_t tuple)
+{
+    if (tuple.value) {
+        char *num_str = (char *) tuple.value;
+        char *src = num_str;
+        double num = strtod (num_str, &src);
+        /* ensure that the number represents neither the infinity
+           nor NaN (num_str[0] < 'a') and that the whole string
+           can be converted into a number (src is the empty string) */
+        if (num_str[0] < 'a' && !src[0])
+            fprintf(f, "%20.10f", num);
+    }
+}
+
+void
+print_value (FILE *f, node_t tuple)
+{
+    /* escape quotes in quoted string */
+    if (tuple.value) {
+        char *src = (char *) tuple.value;
+        unsigned int start = 0, end;
+        putc ('"', f);
+        for (end = 0; end < text_size && tuple.value[end]; end++)
+            /* escape quotes */
+            if (tuple.value[end] == '"') {
+                print_text (f, &src[start], end - start);
+                start = end + 1;
+                putc ('"', f); putc ('"', f);
+            }
+        if (start < end)
+            print_text (f, &src[start], end - start);
+        putc ('"', f);
+    }
+}
+
+void (*print_name) (FILE *, node_t);
+    
+void
+print_name_str (FILE *f, node_t tuple)
+{
+    fprintf (f, "%i", tuple.name_id);
+}
+
+void
+print_name_id (FILE *f, node_t tuple)
+{
+    fprintf (f, "\"%s\"", (char *) tuple.name);
+}
+
 static void
 print_tuple (node_t tuple)
 {
-    const char *format = shredstate.format;
-    
+    const char  *format = shredstate.format;
     unsigned int i;
+    
+    if (shredstate.fastformat) {
+        /* Ensure that in main.c the format string in shredstate.format
+           is compared with the string FAST_FORMAT and that FAST_FORMAT
+           describes the output printed here. */
+
+        fprintf (out, SSZFMT ", " SSZFMT ", %i, ",
+                 tuple.pre, tuple.size, tuple.level);
+        print_kind (out, tuple.kind);
+        print_text (out, ", ", 2);
+        if (tuple.name_id != -1)
+            print_name (out, tuple);
+        print_text (out, ", ", 2);
+        print_number (out, tuple);
+        print_text (out, ", ", 2);
+        print_value (out, tuple);
+        putc ('\n', out);
+        return;
+    }
+    
     for (i = 0; format[i]; i++)
          if (format[i] == '%') {
              i++;
@@ -142,29 +226,16 @@ print_tuple (node_t tuple)
                          fprintf (out, SSZFMT,tuple.parent->pre_stretched);
                      break;
                  case 'n':
-                     if (tuple.name_id != -1) {
-                         if (shredstate.names_separate)
-                             fprintf(out, "%i", tuple.name_id);
-                         else
-                             fprintf(out, "\"%s\"", (char*)tuple.name);
-                     }
+                     if (tuple.name_id != -1)
+                         print_name (out, tuple);
                      break;
-                 case 't':
-                     if (tuple.value) {
-                         unsigned int j;
-                         putc ('"', out);
-                         for (j = 0; j < text_size && tuple.value[j]; j++)
-                             switch (tuple.value[j]) {
-                                 case '"':
-                                     putc ('"', out); putc ('"', out); break;
-                                 default:
-                                     putc (tuple.value[j], out);
-                             }
-                             putc ('"', out);
-                      }
-                      break;    
-                   case 'g':  fprintf (out, SSZFMT, tuple.guide->guide); break;
-                   default:   putc (format[i], out); break;
+                 case 'd':  print_number (out, tuple); break;    
+                 case 't':  print_value (out, tuple); break;    
+                 case 'g':  fprintf (out, SSZFMT, guide_val_(tuple.guide)); break;
+                 case '%':  putc ('%', out); break;
+                 default:   SHoops (SH_FATAL,
+                                    "Unexpected formatting character '%c'",
+                                    format[i]);
              }
          }
          else
@@ -214,7 +285,8 @@ flush_node (kind_t kind, const xmlChar *name, const xmlChar *value)
         BAILOUT ("we allow only attributes not greater as %u characters", TAG_SIZE);
 
     /* check if value is larger than text_size characters */
-    if (value && (valStrLen = xmlStrlen (value)) >= 0 && (unsigned int) valStrLen > text_size)
+    if (value && (valStrLen = xmlStrlen (value)) >= 0 &&
+        (unsigned int) valStrLen > text_size)
         text_stripped++;
 
     stack[level] = (node_t) {
@@ -228,16 +300,20 @@ flush_node (kind_t kind, const xmlChar *name, const xmlChar *value)
         .kind           = kind,
         .name           = xmlStrdup (name),
         .name_id        = generate_name_id (name),
-        .value          = xmlStrndup (value, text_size),
-        .guide          = insert_guide_node (name,
-                                             stack[level-1].guide,
-                                             kind)
+        .value          = xmlStrndup (value,
+                                      MIN ((unsigned int ) xmlStrlen (value),
+                                           text_size)),
+        .guide          = insert_guide_node_ (name,
+                                              stack[level-1].guide,
+                                              kind)
     };
 
     post++;
 
     print_tuple (stack[level]);
 
+    if (stack[level].name)  xmlFree (stack[level].name);
+    if (stack[level].value) xmlFree (stack[level].value);
     level--;
 }
 
@@ -282,7 +358,7 @@ start_document (void *ctx)
         , .name           = NULL
         , .name_id        = -1
         , .value          = xmlStrdup ((xmlChar *) shredstate.doc_name)
-        , .guide          = insert_guide_node (
+        , .guide          = insert_guide_node_ (
                                 xmlCharStrndup (
                                     shredstate.doc_name,
                                     MIN (FILENAME_MAX, text_size)),
@@ -311,10 +387,12 @@ end_document (void *ctx)
 
     print_tuple (stack[level]);
 
-    assert (stack[level].guide->guide == GUIDE_INIT);
-
-    adjust_guide_min_max (stack[level].guide);
-    stack[level].guide->max = 1;
+    if (shredstate.statistics) {
+        assert (guide_val_ (stack[level].guide) == GUIDE_INIT);
+        adjust_guide_min_max (stack[level].guide);
+        stack[level].guide->max = 1;
+    }
+    if (stack[level].value) xmlFree (stack[level].value);
 }
 
 static void
@@ -349,10 +427,9 @@ start_element (void *ctx, const xmlChar *tagname, const xmlChar **atts)
         .name           = xmlStrdup (tagname),
         .name_id        = generate_name_id (tagname), 
         .value          = (xmlChar *) NULL,
-        .guide          = insert_guide_node (
-                              tagname,
-                              stack[level-1].guide,
-                              elem)
+        .guide          = insert_guide_node_ (tagname,
+                                              stack[level-1].guide,
+                                              elem)
     };
 
     if (atts) {
@@ -360,22 +437,35 @@ start_element (void *ctx, const xmlChar *tagname, const xmlChar **atts)
             if (shredstate.names_separate)
                 while (*atts) {
                     fprintf (out_attr,
-                             SSZFMT ", " SSZFMT ", %i, \"%s\"," 
-                             SSZFMT "\n",
-                             att_id++, pre, generate_name_id (atts[0]), (char*)atts[1],
-                             insert_guide_node (atts[0],
-                                                stack[level].guide,
-                                                attr)->guide);
+                             SSZFMT ", " SSZFMT ", %i, \"%s\"",
+                             att_id++,
+                             pre,
+                             generate_name_id (atts[0]),
+                             (char*)atts[1]);
+                    if (shredstate.statistics)
+                        fprintf (out_attr, "," SSZFMT,
+                                 guide_val_ (
+                                     insert_guide_node_ (atts[0],
+                                                         stack[level].guide,
+                                                         attr)));
+                    putc ('\n', out_attr);
                     atts += 2;
                 }
             else
                 while (*atts) {
                     fprintf (out_attr,
-                             SSZFMT ", " SSZFMT ", \"%s\", \"%s\"," SSZFMT "\n",
-                             att_id++, pre, (char*)atts[0], (char*)atts[1],
-                             insert_guide_node (atts[0],
-                                                stack[level].guide,
-                                                attr)->guide);
+                             SSZFMT ", " SSZFMT ", \"%s\", \"%s\"",
+                             att_id++,
+                             pre,
+                             (char*)atts[0],
+                             (char*)atts[1]);
+                    if (shredstate.statistics)
+                        fprintf (out_attr, "," SSZFMT,
+                                 guide_val_ (
+                                     insert_guide_node_ (atts[0],
+                                                         stack[level].guide,
+                                                         attr)));
+                    putc ('\n', out_attr);
                     atts += 2;
                 }
         } else /* handle attributes like children */
@@ -392,6 +482,15 @@ end_element (void *ctx, const xmlChar *name)
     (void) ctx;
     (void) name;
 
+/* Enable the following lines if your code generation produces
+   code that collapses path steps and directly following text
+   value lookups into a single path step. */
+#if 0
+    /* copy the text value of a text node if it is the only child */
+    if (buf[0] && pre == stack[level].pre)
+        stack[level].value = xmlStrndup (buf, text_size);
+#endif
+
     flush_buffer ();
 
     rank++;
@@ -402,9 +501,13 @@ end_element (void *ctx, const xmlChar *name)
 
     print_tuple (stack[level]);
 
-    adjust_guide_min_max (stack[level].guide);
+    if (shredstate.statistics)
+        adjust_guide_min_max (stack[level].guide);
 
     post++;
+    /* free the memory allocated for the element name and the text value */
+    if (stack[level].name)  xmlFree (stack[level].name);
+    if (stack[level].value) xmlFree (stack[level].value);
     level--;
     assert (level >= 0);
 }
@@ -497,7 +600,7 @@ static xmlSAXHandler saxhandler = {
 };
 
 static void
-report ()
+report (void)
 {
     if (text_stripped > 0) {
         fprintf (err, "%u Values were stripped to %u "
@@ -539,6 +642,13 @@ SHshredder (const char *s,
     /* initialize hashtable */
     hash_table = new_hashtable (); 
 
+    /* Decide whether to print the node names
+       or its corresponding name ids only once. */
+    if (shredstate.names_separate)
+        print_name = print_name_id;
+    else
+        print_name = print_name_str;
+
     /* start XML parsing */
     ctx = xmlCreateFileParserCtxt (s);
     ctx->sax = &saxhandler;
@@ -550,10 +660,14 @@ SHshredder (const char *s,
     }
 
     /* print statistics if required */
-    if (shredstate.statistics)
+    if (shredstate.statistics) {
         print_guide_tree (guideout, stack[0].guide, 0);
+        free_guide_tree (stack[0].guide);
+    }
 
     free_hash (hash_table);
+
+    xmlCleanupParser ();
 
     if (!status->quiet)
         report ();

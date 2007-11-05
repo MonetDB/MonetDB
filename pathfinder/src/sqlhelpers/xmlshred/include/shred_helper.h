@@ -118,6 +118,7 @@ struct shred_state_t {
     bool  attributes_separate; /** < print attributes into a separate file    */
     bool  names_separate;      /** < print names into a separate file         */
     bool  statistics;          /** < print guides into a separate file        */
+    bool  fastformat;          /** < flag to use static formatting            */
     char *format;              /** < format string                            */
     unsigned int strip_values; /** < only store strip_values characters in the
                                      value column                             */

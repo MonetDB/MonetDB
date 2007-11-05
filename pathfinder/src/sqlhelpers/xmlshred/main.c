@@ -133,8 +133,6 @@ static const char
 
 #define SQL_FORMAT "%e, %s, %l, %k, %n, %t, %g"
 
-shred_state_t status;  
-
 /* print help message */
 static void
 print_help (char *progname)
@@ -162,6 +160,7 @@ print_help (char *progname)
             "\t%%P: preorder rank of parent node in stretched pre/post plane\n"
             "\t%%n: element/attribute name\n"
             "\t%%t: text node content\n"
+            "\t%%d: text node content stored as number (if possible)\n"
             "\t%%g: guide node for node (also writes dataguide to file <prefix>_guide.xml)\n",
             long_option (opt_buf, ", --%s=format", 'F'), SQL_FORMAT);
     printf ("  -a%s: attributes separate (default: attributes inline)\n"
@@ -178,19 +177,26 @@ print_help (char *progname)
             long_option (opt_buf, ", --%s", 'q'));
 }
 
-#define MAIN_EXIT(rtn) \
-        do { \
-                   exit (rtn); \
+#define MAIN_EXIT(rtn)                                  \
+        do { /* free the copied strings ... */          \
+             if (progname)       free (progname);       \
+             if (new_format)     free (status.format);  \
+             if (status.infile)  free (status.infile);  \
+             if (status.outfile) free (status.outfile); \
+             /* ... and exit */                         \
+             exit (rtn);                                \
            } while (0)
 int
 main (int argc, char **argv)
 {
-    char *progname = NULL;
+    shred_state_t status;  
+    bool  new_format = false; /* make sure we free only a new format string */
+    char *progname   = NULL;
 
-    FILE *shout    = NULL;
-    FILE *attout   = NULL;
-    FILE *namesout = NULL;
-    FILE *guideout = NULL;
+    FILE *shout      = NULL;
+    FILE *attout     = NULL;
+    FILE *namesout   = NULL;
+    FILE *guideout   = NULL;
 
     /*
      * Determine basename(argv[0]) and dirname(argv[0]) on
@@ -199,6 +205,8 @@ main (int argc, char **argv)
     progname = strndup (argv[0], FILENAME_MAX);
 
     status.format = SQL_FORMAT; 
+#define FAST_FORMAT "%e, %s, %l, %k, %n, %d, %t"
+    status.fastformat = !strcmp (status.format, FAST_FORMAT);
     status.infile = NULL;
     status.outfile = NULL;
     status.statistics = true;
@@ -230,7 +238,9 @@ main (int argc, char **argv)
                 status.names_separate = false;
                 break;
             case 'F':
+                new_format = true;
                 status.format = strdup (optarg);
+                status.fastformat = !strcmp (status.format, FAST_FORMAT);
                 status.statistics = false;
                 
                 for (unsigned int i = 0; status.format[i+1]; i++)
@@ -267,6 +277,8 @@ main (int argc, char **argv)
         }
     }
 
+    /* we can only print to standard out
+       if the output ends up in a single 'file' */
     if (!status.outfile &&
         (status.attributes_separate ||
          status.names_separate ||
@@ -299,7 +311,7 @@ main (int argc, char **argv)
             guideout = SHopen_write (guideoutfile);
         }
 
-
+        /* encoding file */
         char outfile[FILENAME_MAX];
         snprintf (outfile, FILENAME_MAX, "%s.csv", status.outfile);
         shout = SHopen_write (outfile);

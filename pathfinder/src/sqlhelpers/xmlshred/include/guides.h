@@ -68,4 +68,7 @@ void adjust_guide_min_max (guide_tree_t *guide);
 /* print the guide tree */
 void print_guide_tree(FILE *guide_out, guide_tree_t *root, int tree_depth);
 
+/* free the guide tree */
+void free_guide_tree(guide_tree_t *root);
+
 #endif /* GUIDES_H__ */

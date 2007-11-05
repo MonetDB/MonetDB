@@ -141,7 +141,7 @@ adjust_guide_min_max (guide_tree_t *parent)
 void 
 print_guide_tree (FILE *guide_out, guide_tree_t *guide, int tree_depth)
 {
-    child_list_t  *child_list, *child_list_free;
+    child_list_t  *child_list;
     bool           print_end_tag = true;
     int            i;
 
@@ -175,9 +175,7 @@ print_guide_tree (FILE *guide_out, guide_tree_t *guide, int tree_depth)
     child_list = guide->child_list;
     while (child_list != NULL) {
        print_guide_tree (guide_out, child_list->node, tree_depth+1);
-       child_list_free = child_list;
        child_list = child_list->next_element;
-       free (child_list_free);
     }
 
     /* print the end tag */
@@ -187,6 +185,31 @@ print_guide_tree (FILE *guide_out, guide_tree_t *guide, int tree_depth)
             fputc (' ', guide_out);
         fprintf(guide_out, "</node>\n");
     }
+}
 
+/**
+ * free the memory allocated for the guide tree
+ */
+void 
+free_guide_tree (guide_tree_t *guide)
+{
+    child_list_t  *child_list, *child_list_free;
+    
+    assert (guide);
+    
+    /* recursively free the memory allocated
+       for the children */
+    child_list = guide->child_list;
+    while (child_list) {
+       free_guide_tree (child_list->node);
+       child_list_free = child_list;
+       child_list = child_list->next_element;
+       /* free child list item */
+       free (child_list_free);
+    }
+
+    /* free the copied tagname */
+    if (guide->tag_name) xmlFree (guide->tag_name);
+    /* free the current guide node */
     free (guide);
 }
