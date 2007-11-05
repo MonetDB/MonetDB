@@ -696,6 +696,14 @@ PFalg_atom_cmp (PFalg_atom_t a, PFalg_atom_t b)
         case aat_attr:
         case aat_pfrag:
         case aat_afrag:
+        case aat_update:
+        case aat_node1:
+        case aat_pnode1:
+        case aat_anode1:
+        case aat_pre1:
+        case aat_attr1:
+        case aat_pfrag1:
+        case aat_afrag1:
                         break; /* error */
     }
 
@@ -727,7 +735,10 @@ PFalg_simple_type_str (PFalg_simple_type_t type) {
         case aat_pre:   return "pre";
         case aat_pfrag: return "pfrag";
         default:
-            PFoops (OOPS_FATAL, "unknown attribute simple type (%i)", type);
+            if (type & aat_update)
+                return "update";
+            else
+                PFoops (OOPS_FATAL, "unknown attribute simple type (%i)", type);
     }
     return NULL;
 }

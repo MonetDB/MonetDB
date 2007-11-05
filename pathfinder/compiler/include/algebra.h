@@ -57,25 +57,47 @@
  *   first sort by the frag BAT, then by the pre BAT this way.
  *   This implements document order across documents correctly.
  */
-#define aat_nat   0x0001 /**< algebra simple atomic type natural number */
-#define aat_int   0x0002 /**< algebra simple atomic type integer */
-#define aat_str   0x0004 /**< algebra simple atomic type string  */
-#define aat_dec   0x0008 /**< algebra simple atomic type decimal */
-#define aat_dbl   0x0010 /**< algebra simple atomic type double  */
-#define aat_bln   0x0020 /**< algebra simple atomic type boolean  */
-#define aat_qname 0x0040 /**< algebra simple atomic type QName  */
-#define aat_uA    0x0080 /**< algebra simple atomic type untypedAtomic  */
-#define aat_node  0x0F00 /**< algebra simple atomic type node */
-#define aat_anode 0x0C00 /**< algebra simple atomic type attribute */
-#define aat_attr  0x0800 /**< an attribute is represented
-                               by an attr value... */
-#define aat_afrag 0x0400 /**< ...and a attribute fragment */
-#define aat_pnode 0x0300 /**< algebra simple atomic type representing
-                               all other nodes */
-#define aat_pre   0x0200 /**< a node is represented by a pre value... */
-#define aat_pfrag 0x0100 /**< ...and a node fragment */
+#define aat_nat     0x00000001 /**< algebra simple atomic type natural number */
+#define aat_int     0x00000002 /**< algebra simple atomic type integer */
+#define aat_str     0x00000004 /**< algebra simple atomic type string  */
+#define aat_dec     0x00000008 /**< algebra simple atomic type decimal */
+#define aat_dbl     0x00000010 /**< algebra simple atomic type double  */
+#define aat_bln     0x00000020 /**< algebra simple atomic type boolean  */
+#define aat_qname   0x00000040 /**< algebra simple atomic type QName  */
+#define aat_uA      0x00000080 /**< algebra simple atomic type untypedAtomic  */
+#define aat_node    0x00000F00 /**< algebra simple atomic type node */
+#define aat_anode   0x00000C00 /**< algebra simple atomic type attribute */
+#define aat_attr    0x00000800 /**< an attribute is represented
+                                     by an attr value... */
+#define aat_afrag   0x00000400 /**< ...and a attribute fragment */
+#define aat_pnode   0x00000300 /**< algebra simple atomic type representing
+                                     all other nodes */
+#define aat_pre     0x00000200 /**< a node is represented by a pre value... */
+#define aat_pfrag   0x00000100 /**< ...and a node fragment */
 
-#define aat_charseq 0x1000  /**< this type represents the CHAR type in SQL */
+#define aat_charseq 0x00010000  /**< this type represents the CHAR type in SQL */
+#define aat_update  0x00010000  /**< and it represents the update kind in MIL */
+/**
+ * The following types represent the first parameter of an update function
+ * (which is a always of kind node). This allows an update item to correctly
+ * encode all information in separate types: update + node1 + str|qname|node
+ * and to transport this (triple) information to the update tape
+ * at the serialize operator.
+ *
+ * @note
+ *    The bits encoding the node1 information #aat_att1, #aat_afrag1, #aat_pre1,
+ *    and #aat_pfrag1 represent the normal node information shifted 4 bits
+ *    to the left.
+ */
+#define aat_node1   0x0000F000 /**< algebra simple atomic type node */
+#define aat_anode1  0x0000C000 /**< algebra simple atomic type attribute */
+#define aat_attr1   0x00008000 /**< an attribute is represented
+                                     by an attr value... */
+#define aat_afrag1  0x00004000 /**< ...and a attribute fragment */
+#define aat_pnode1  0x00003000 /**< algebra simple atomic type representing
+                                     all other nodes */
+#define aat_pre1    0x00002000 /**< a node is represented by a pre value... */
+#define aat_pfrag1  0x00001000 /**< ...and a node fragment */
 
 /** Simple atomic types in our algebra */
 typedef unsigned int PFalg_simple_type_t;

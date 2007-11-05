@@ -1224,39 +1224,43 @@ la_xml (PFarray_t *xml, PFla_op_t *n)
 
         PFarray_printf (xml, "      <col name=\"%s\" types=\"",
                         PFatt_str (n->schema.items[i].name));
-        for (PFalg_simple_type_t t = 1; t; t <<= 1) {
-            if (t & n->schema.items[i].type) {
-                /* hide fragment information */
-                switch (t) {
-                    case aat_afrag:
-                    case aat_pfrag:
-                        continue;
-                    default:
-                        break;
-                }
-                
-                /* start printing spaces only after the first type */
-                if (!first)
-                    PFarray_printf (xml, " ");
-                else
-                    first = false;
-                
-                /* print the different types */
-                switch (t) {
-                    case aat_nat:    PFarray_printf (xml, "nat");   break;
-                    case aat_int:    PFarray_printf (xml, "int");   break;
-                    case aat_str:    PFarray_printf (xml, "str");   break;
-                    case aat_dec:    PFarray_printf (xml, "dec");   break;
-                    case aat_dbl:    PFarray_printf (xml, "dbl");   break;
-                    case aat_bln:    PFarray_printf (xml, "bln");   break;
-                    case aat_qname:  PFarray_printf (xml, "qname"); break;
-                    case aat_uA:     PFarray_printf (xml, "uA");    break;
-                    case aat_attr:   PFarray_printf (xml, "attr");  break;
-                    case aat_pre:    PFarray_printf (xml, "node");  break;
-                    default:                                        break;
+        
+        if (n->schema.items[i].type & aat_update)
+            PFarray_printf (xml, "update");
+        else
+            for (PFalg_simple_type_t t = 1; t; t <<= 1) {
+                if (t & n->schema.items[i].type) {
+                    /* hide fragment information */
+                    switch (t) {
+                        case aat_afrag:
+                        case aat_pfrag:
+                            continue;
+                        default:
+                            break;
+                    }
+                    
+                    /* start printing spaces only after the first type */
+                    if (!first)
+                        PFarray_printf (xml, " ");
+                    else
+                        first = false;
+                    
+                    /* print the different types */
+                    switch (t) {
+                        case aat_nat:    PFarray_printf (xml, "nat");   break;
+                        case aat_int:    PFarray_printf (xml, "int");   break;
+                        case aat_str:    PFarray_printf (xml, "str");   break;
+                        case aat_dec:    PFarray_printf (xml, "dec");   break;
+                        case aat_dbl:    PFarray_printf (xml, "dbl");   break;
+                        case aat_bln:    PFarray_printf (xml, "bln");   break;
+                        case aat_qname:  PFarray_printf (xml, "qname"); break;
+                        case aat_uA:     PFarray_printf (xml, "uA");    break;
+                        case aat_attr:   PFarray_printf (xml, "attr");  break;
+                        case aat_pre:    PFarray_printf (xml, "node");  break;
+                        default:                                        break;
+                    }
                 }
             }
-        }
         PFarray_printf (xml, "\"/>\n");
     }
     PFarray_printf (xml, "    </schema>\n");
