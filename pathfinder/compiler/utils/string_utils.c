@@ -33,6 +33,8 @@
  */
 
 
+#include "pathfinder.h"
+
 #include "string_utils.h"
 
 #include <stdlib.h>

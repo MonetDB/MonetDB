@@ -29,18 +29,14 @@
 
 INCLUDES = ../include $(MONETDB_INCS) $(LIBXML2_CFLAGS)
 
-
-
-
 lib_xmlimport = {
         NOINST
         DIR = libdir
-
         LIBS = \
                #../../mem/libmem \
                #$(LIBXML2_LDADD) $(LIBXML2_LIBS)               
-               ../utils/libstringutils 
-
+               ../utils/libstringutils
+                
         SOURCES = \
                 xml2lalg_xpath_utils.c \
                 xml2lalg_converters.c \

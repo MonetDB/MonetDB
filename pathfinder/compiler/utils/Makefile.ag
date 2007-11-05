@@ -35,14 +35,11 @@ INCLUDES = ../include $(MONETDB_INCS) $(LIBXML2_CFLAGS)
 lib_stringutils = {
         NOINST
         DIR = libdir
-
-        #LIBS = \
-        #       #../../mem/libmem \
-        #       #$(LIBXML2_LDADD) $(LIBXML2_LIBS)               
-
         SOURCES = \
                 string_utils.c
 }
+
+ 
 
 
 
