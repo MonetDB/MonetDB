@@ -82,12 +82,16 @@ EXTRA_DIST = \
 	scanner.h \
 	scope.h \
 	simplify.h \
+	string_utils.h \
 	subtyping.h \
 	timer.h \
 	typecheck.h \
 	types.h \
 	variable.h \
 	varscope.h \
+	xml2lalg.h \
+	xml2lalg_converters.h \
+	xml2lalg_xpath_utils.h \
 	xquery_fo.h \
 	sql.h \
 	sql_mnemonic.h \
