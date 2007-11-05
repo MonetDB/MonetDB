@@ -47,7 +47,6 @@ smallTOC_SHARED_MODS =	\
 	../modules/plain/lib_pcre	\
 	../modules/plain/lib_pqueue	\
 	../modules/plain/lib_profiler	\
-	../modules/plain/lib_radix	\
 	../modules/plain/lib_stats	\
 	../modules/plain/lib_streams	\
 	../modules/plain/lib_tcpip	\
