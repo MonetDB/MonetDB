@@ -616,9 +616,9 @@ PQinit(int *ret, int *bid, wrd *maxsize){
 	if( (b= BATdescriptor(*bid)) == NULL)
 		throw(MAL, "pqueue.init","Could not access BAT");
 	pqueue_init(&bn,b,maxsize);
+	BBPreleaseref(b->batCacheid);
 	*ret = bn->batCacheid;
-	BBPkeepref(b->batCacheid);
-	BBPreleaseref(bn->batCacheid);
+	BBPkeepref(bn->batCacheid);
 	return MAL_SUCCEED;
 }
 @-
