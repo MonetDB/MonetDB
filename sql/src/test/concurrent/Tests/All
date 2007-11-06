@@ -1,1 +1,1 @@
-simple_select
+HAVE_PYTHON_SWIG?simple_select
