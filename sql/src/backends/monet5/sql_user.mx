@@ -133,21 +133,20 @@ monet5_create_user(list *l, str user, str passwd, str fullname, sqlid schema_id,
 static BAT *
 db_users() 
 {
-	bat b, bid;
+	BAT *b;
 	str tmp;
 
 	/* prepare the scens BAT: it should contain the sql scenario */
 	BAT *scens = BATnew(TYPE_str, TYPE_void, 1);
 
 	BUNins(scens, "sql", 0, FALSE);
-	bid = BBPcacheid(scens);
-	if ((tmp = AUTHgetUsers(&b, &bid)) != MAL_SUCCEED) {
-		BBPunfix(bid); 
+	if ((tmp = AUTHgetUsers(&b, &scens->batCacheid)) != MAL_SUCCEED) {
+		BBPunfix(scens->batCacheid); 
 		GDKfree(tmp);
 		return(NULL);
 	}
-	BBPunfix(bid);
-	return BBPdescriptor(b);
+	BBPunfix(scens->batCacheid); 
+	return b;
 }
 
 static int
@@ -157,7 +156,6 @@ monet5_find_user(ptr mp, str user)
 	BUN p;
 	(void)mp;	/* we don't need mvc, as we do a M5 backend call */
 	
-
 	users = db_users();
 	if (!users)
 		return -1; 
