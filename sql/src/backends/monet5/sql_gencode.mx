@@ -1072,23 +1072,18 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			@:SQLprelude@
 			if (s->op2.stval) {
 				char *nme, *buf;
-				int e, e1, g = _dumpstmt(sql, mb, s->op2.stval);
+				int e, g = _dumpstmt(sql, mb, s->op2.stval);
 
 				nme = alloca(SMALLBUFSIZ);
 				buf = alloca(SMALLBUFSIZ);
-				q = newStmt(mb, "group", "new");
-				e1 = getDestVar(q);
-				snprintf( nme, SMALLBUFSIZ, "grp%d", e1);
-        			q = pushReturn(mb, q, newVariable(mb, _strdup(nme), TYPE_any));
-				q = pushArgument(mb, q, g);
 
 				q = newStmt(mb, "group", "derive");
 				e = getDestVar(q);
 				snprintf( nme, SMALLBUFSIZ, "grp%d", getDestVar(q));
         			q = pushReturn(mb, q, newVariable(mb, _strdup(nme), TYPE_any));
-				q = pushArgument(mb, q, e1);
-				(void) snprintf(buf, SMALLBUFSIZ, "grp%d", e1);
+				(void) snprintf(buf, SMALLBUFSIZ, "ext%d", g);
 				q = pushArgumentId(mb, q, _strdup(buf));
+				q = pushArgument(mb, q, g);
 				q = pushArgument(mb, q, l);
 
 				q = newStmt1(mb, batRef, "mirror");
@@ -1366,83 +1361,65 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			s->nr = getDestVar(q);
 		}
 			break;
-		case st_insert:{
-			int l = _dumpstmt(sql, mb, s->op1.stval);
-			int r = _dumpstmt(sql, mb, s->op2.stval);
-
-			@:SQLprelude@
-			if (s->op2.stval->nrcols) {
-				q = newStmt2(mb, batRef, insertRef);
-				q = pushArgument(mb, q, l);
-				q = pushArgument(mb, q, r);
-				q = pushBit(mb, q, TRUE);
-				s->nr = l;
-			} else {
-				q = newStmt2(mb, batRef, insertRef);
-				q = pushArgument(mb, q, l);
-				q = pushArgument(mb, q, r);
-				q = pushBit(mb, q, TRUE);
-				s->nr = l;
-			}
-			@:SQLpostlude@
-		}
-			break;
 		case st_append:{
 			int l = 0;
 			int r = _dumpstmt(sql, mb, s->op2.stval);
 
-			/* special cases try to simply replace the insert bat */
-			if (s->op1.stval->type == st_bat && 
-			    s->op2.stval->nrcols) {
-				stmt *c = s->op1.stval; 
-
-				q = newStmt1(mb, sqlRef, appendRef);
-				q = pushStr(mb, q, c->op1.cval->t->s->base.name);
-				q = pushStr(mb, q, c->op1.cval->t->base.name);
-				q = pushStr(mb, q, c->op1.cval->base.name);
-				q = pushInt(mb, q, c->flag);
-				q = pushArgument(mb, q, r);
-				l = getDestVar(q);
-			} else if (s->op1.stval->type == st_idxbat && 
-			    	   s->op2.stval->nrcols) {
-				stmt *c = s->op1.stval; 
-
-				q = newStmt1(mb, sqlRef, putName("append_idxbat",13));
-				q = pushStr(mb, q, c->op1.idxval->t->s->base.name);
-				q = pushStr(mb, q, c->op1.idxval->t->base.name);
-				q = pushStr(mb, q, c->op1.idxval->base.name);
-				q = pushInt(mb, q, c->flag);
-				q = pushArgument(mb, q, r);
-				l = getDestVar(q);
-			} else {
-				l = _dumpstmt(sql, mb, s->op1.stval);
-				if (s->op1.stval->type != st_bat &&
-			    	    s->op1.stval->type != st_idxbat) {
-					q = newStmt1(mb, batRef, "setWriteMode");
-					q = pushArgument(mb, q, l);
-					l = getDestVar(q);
-				}
-
-				q = newStmt2(mb, batRef, appendRef);
+			l = _dumpstmt(sql, mb, s->op1.stval);
+			if (s->op1.stval->type != st_bat &&
+			    s->op1.stval->type != st_idxbat) {
+				q = newStmt1(mb, batRef, "setWriteMode");
 				q = pushArgument(mb, q, l);
-				q = pushArgument(mb, q, r);
-				q = pushBit(mb, q, TRUE);
+				l = getDestVar(q);
 			}
-			s->nr = l;
-			@:SQLpostlude@
-		} break;
-		case st_replace:{
-			int l = _dumpstmt(sql, mb, s->op1.stval);
-			int r = _dumpstmt(sql, mb, s->op2.stval);
-			char *f = (s->op1.stval->type == st_bat ||
-				   s->op1.stval->type == st_idxbat)?
-				putName("inplace",7):putName("replace",7);
-
-			@:SQLprelude@
-			q = newStmt1(mb, batRef, f);
+			q = newStmt2(mb, batRef, appendRef);
 			q = pushArgument(mb, q, l);
 			q = pushArgument(mb, q, r);
 			q = pushBit(mb, q, TRUE);
+			s->nr = l;
+			@:SQLpostlude@
+		} break;
+		case st_update_col:
+		case st_append_col:{
+			int l = 0;
+			int r = _dumpstmt(sql, mb, s->op2.stval);
+			sql_column *c = s->op1.cval;
+			char *n = (s->type==st_append_col)?appendRef:updateRef;
+
+			q = newStmt2(mb, sqlRef, n);
+			q = pushStr(mb, q, c->t->s->base.name);
+			q = pushStr(mb, q, c->t->base.name);
+			q = pushStr(mb, q, c->base.name);
+			q = pushArgument(mb, q, r);
+			s->nr = l;
+			@:SQLpostlude@
+		} break;
+
+		case st_update_idx:
+		case st_append_idx:{
+			int l = 0;
+			int r = _dumpstmt(sql, mb, s->op2.stval);
+			sql_idx *i = s->op1.idxval; 
+			char *n = (s->type==st_append_idx)?appendRef:updateRef;
+
+			q = newStmt2(mb, sqlRef, n);
+			q = pushStr(mb, q, i->t->s->base.name);
+			q = pushStr(mb, q, i->t->base.name);
+			q = pushStr(mb, q, i->base.name);
+			q = pushArgument(mb, q, r);
+			s->nr = l;
+			@:SQLpostlude@
+		} break;
+		case st_delete:{
+			int l = 0;
+			int r = _dumpstmt(sql, mb, s->op2.stval);
+			sql_table *t = s->op1.tval;
+
+			@:SQLprelude@
+			q = newStmt1(mb, sqlRef, "delete");
+			q = pushStr(mb, q, t->s->base.name);
+			q = pushStr(mb, q, t->base.name);
+			q = pushArgument(mb, q, r);
 			s->nr = l;
 			@:SQLpostlude@
 		} break;
@@ -1995,7 +1972,7 @@ backend_create_func(backend *be, sql_func *f)
 	stmt *s;
 	bit t = TRUE;
 
-	/* nothing to do for internal and ready functions */
+	/* nothing to do for internal and ready (not recompiling) functions */
 	if (!f->sql || f->sql > 1)
 		return;
 	f->sql++;

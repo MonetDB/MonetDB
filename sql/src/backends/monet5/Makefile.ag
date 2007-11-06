@@ -49,24 +49,25 @@ lib__sql = {
 		sql_gencode.mx \
 		sql_optimizer.mx \
 		sql_result.mx \
-		sql_readline.mx
-	LIBS = ../../server/libsqlserver ../../storage/libstore ../../storage/bat/libbatstore ../../common/libsqlcommon \
-		$(MONETDB5_MODS) -l_blob -l_logger -l_mtime -l_bat5 -l_optimizer -l_tablet $(MONETDB5_LIBS) -lmal \
+		sql_readline.mx \
+		sql_bpm.mx
+	LIBS = ../../server/libsqlserver ../../storage/libstore ../../storage/bat/libbatstore ../../storage/bpm/libbpmstore ../../common/libsqlcommon \
+		$(MONETDB5_MODS) -l_blob -l_logger -l_mtime -l_bat5 -l_optimizer -l_tablet -l_bpm $(MONETDB5_LIBS) -lmal \
 		$(MONETDB_LIBS) -lbat -lstream $(READLINE_LIBS) $(PTHREAD_LIBS)
 }
 
 
 lib_embeddedsql5 = {
 	SOURCES = embeddedclient.mx
-	LIBS = ../../server/libsqlserver ../../storage/libstore ../../storage/bat/libbatstore ../../common/libsqlcommon \
-		$(MONETDB5_MODS) -l_logger -l_bat5 -l_tablet $(MONETDB5_LIBS) -lmal \
+	LIBS = ../../server/libsqlserver ../../storage/libstore ../../storage/bat/libbatstore ../../storage/bpm/libbpmstore ../../common/libsqlcommon \
+		$(MONETDB5_MODS) -l_logger -l_bat5 -l_tablet -l_bpm $(MONETDB5_LIBS) -lmal \
 		$(CLIENTS_LIBS) $(MONETDB_LIBS) -lbat -lMapi -lmutils -lstream $(READLINE_LIBS) $(PTHREAD_LIBS)
 }
 
 bin_Mbeddedsql5 = {
 	SOURCES = prog.c
-	LIBS = libembeddedsql5 ../../server/libsqlserver ../../storage/libstore ../../storage/bat/libbatstore ../../common/libsqlcommon \
-		$(MONETDB5_MODS) -l_logger -l_bat5 -l_tablet $(MONETDB5_LIBS) -lmal \
+	LIBS = libembeddedsql5 ../../server/libsqlserver ../../storage/libstore ../../storage/bat/libbatstore ../../storage/bpm/libbpmstore ../../common/libsqlcommon \
+		$(MONETDB5_MODS) -l_logger -l_bat5 -l_tablet -l_bpm $(MONETDB5_LIBS) -lmal \
 		$(CLIENTS_LIBS) $(MONETDB_LIBS) -lbat -lMapi -lmutils -lstream $(READLINE_LIBS) $(PTHREAD_LIBS)
 }
 
@@ -98,7 +99,7 @@ headers_py = {
 headers_mal = {
 	HEADERS = mal
 	DIR = libdir/MonetDB5
-	SOURCES = sql.mx 
+	SOURCES = sql.mx sql_bpm.mx
 }
 
 bin_merovingian = {

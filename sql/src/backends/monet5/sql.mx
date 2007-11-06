@@ -121,21 +121,25 @@ address mvc_bind_idxbat_wrap
 comment "Bind the idx bat, tname.idx
 	with specific accsess modes";
 
-command append_idxbat(sname:str, tname:str, iname:str, access:int, b:bat[:oid,:any_1] ):bat[:any_1,:any_2]
-address mvc_append_idxbat_wrap
-comment "Append b to the column tname.iname (possibly optimized to replace the insert bat of tname.iname";
-
 command bind(sname:str, tname:str, cname:str, access:int ):bat[:oid,:any_1]
 address mvc_bind_wrap
 comment "Bind the bat tname.cname into the focus with specific access mode";
 
-command append(sname:str, tname:str, cname:str, access:int, b:bat[:oid,:any_1] ):bat[:any_1,:any_2]
+pattern append(sname:str, tname:str, cname:str, ins:any ):void
 address mvc_append_wrap
+comment "Append b to the column tname.cname (possibly optimized to replace the insert bat of tname.cname";
+
+pattern update(sname:str, tname:str, cname:str, ins:any ):void
+address mvc_update_wrap
 comment "Append b to the column tname.cname (possibly optimized to replace the insert bat of tname.cname";
 
 command clear_table(sname:str, tname:str) :lng
 address mvc_clear_table_wrap
 comment "Clear table";
+
+pattern delete(sname:str, tname:str, b:any) :void 
+address mvc_delete_wrap
+comment "delete from table";
 
 command columnBind(b:bat[:str,:bat], nme:str) :bat[:oid,:any_1]
 address mvc_bind_single_wrap
@@ -552,6 +556,8 @@ address SQLepilogue;
 
 sql.prelude();
 
+include sql_bpm;
+
 @h
 #ifndef _SQL_H
 #define _SQL_H
@@ -636,12 +642,13 @@ extern BAT *mvc_bind_idxbat(mvc *m, char *sname, char *tname, char *iname, int a
 sql5_export str SQLcommit_wrap(int *ret);
 sql5_export str SQLrollback_wrap(int *ret);
 sql5_export str mvc_bind_wrap(int *bid, str *sname, str *tname, str *cname, int *access);
-sql5_export str mvc_append_wrap(int *bid, str *sname, str *tname, str *cname, int *access, int *ins);
+sql5_export str mvc_append_wrap(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str mvc_update_wrap(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str mvc_bind_single_wrap(int *ret, int *bid, str *name);
 sql5_export str mvc_bind_dbat_wrap(int *ret, str *sname, str *tname, int *access);
 sql5_export str mvc_bind_idxbat_wrap(int *ret, str *sname, str *tname, str *iname, int *access);
-sql5_export str mvc_append_idxbat_wrap(int *bid, str *sname, str *tname, str *iname, int *access, int *ins);
 sql5_export str mvc_clear_table_wrap(lng *res, str *sname, str *tname);
+sql5_export str mvc_delete_wrap(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str mvc_result_row_wrap(int *res_id, int *nr_cols, int *qtype, int *o);
 sql5_export str mvc_result_table_wrap(int *res_id, int *nr_cols, int *qtype, bat *order_bid);
 sql5_export str mvc_result_column_wrap(int *ret, int *rs, str *tn, str *name, str *type, int *digits, int *scale, bat *bid);
@@ -780,6 +787,7 @@ sql5_export str @2_num2dec_@1( @1 *res, @2 *v, int *d2, int *s2 );
 @:numcastdown_export(sht,lng)@
 @:numcastdown_export(int,lng)@
 
+sql5_export str getContext(mvc **c, backend **b );
 
 #endif /* _SQL_H */
 
@@ -1168,19 +1176,6 @@ mvc_bind(mvc *m, char *sname, char *tname, char *cname, int access)
 	return b;
 }
 
-int 
-mvc_append(BAT **b, mvc *m, str sname, str tname, str cname, int *access, BAT *ins)
-{
-	sql_trans *tr = m->session->tr;
-	sql_schema *s = mvc_bind_schema(m, sname);
-	sql_table *t = mvc_bind_table(m, s, tname);
-	sql_column *c = mvc_bind_column(m, t, cname);
-
-	*b = store_funcs.append_col(tr, c, *access, ins);
-	return GDK_SUCCEED;
-}
-
-
 BAT *
 mvc_bind_dbat(mvc *m, char *sname, char *tname, int access)
 {
@@ -1206,19 +1201,6 @@ mvc_bind_idxbat(mvc *m, char *sname, char *tname, char *iname, int access)
 	return b;
 }
 
-int
-mvc_append_idxbat(BAT **b, mvc *m, char *sname, char *tname, char *iname, int *access, BAT *ins)
-{
-	sql_trans *tr = m->session->tr;
-	sql_schema *s = mvc_bind_schema(m, sname);
-	sql_idx *i = mvc_bind_idx(m, s, iname);
-
-	(void) tname;
-	*b = store_funcs.append_idx(tr, i, *access, ins);
-	return GDK_SUCCEED;
-}
-
-
 str
 mvc_bind_wrap(int *bid, str *sname, str *tname, str *cname, int *access)
 {
@@ -1237,24 +1219,101 @@ mvc_bind_wrap(int *bid, str *sname, str *tname, str *cname, int *access)
 }
 
 str
-mvc_append_wrap(int *bid, str *sname, str *tname, str *cname, int *access, int *ins)
+mvc_bind_idxbat_wrap(int *bid, str *sname, str *tname, str *iname, int *access)
 {
-	BAT *I = NULL, *B = NULL;
+	BAT *b = NULL;
 	mvc *m = NULL;
 	str msg = getContext(&m, NULL);
 
-	if( (I= BATdescriptor(*ins)) == NULL)
-		throw(SQL, "sql.append","Cannot access descriptor");
+	if (msg)
+		return msg;
+	b = mvc_bind_idxbat(m, *sname, *tname, *iname, *access);
+	if (b) {
+		BBPkeepref( *bid = b->batCacheid);
+		return MAL_SUCCEED;
+	}
+	throw(SQL, "mvc_bind_idxbat", "limitation in transaction scope");
+}
+
+
+/*mvc_append_wrap(int *bid, str *sname, str *tname, str *cname, ptr d) */
+str
+mvc_append_wrap(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	mvc *m = NULL;
+	str msg = getContext(&m, NULL);
+	str sname = *(str *)getArgReference(stk, pci, 1);
+	str tname = *(str *)getArgReference(stk, pci, 2);
+	str cname = *(str *)getArgReference(stk, pci, 3);
+	ptr ins = (ptr)getArgReference(stk, pci, 4);
+	int tpe = getArgType(mb, pci, 4);
+
+	sql_schema *s;
+	sql_table *t;
+	sql_column *c;
 
 	if (msg)
 		return msg;
-	mvc_append(&B, m, *sname, *tname, *cname, access, I);
-	BBPunfix(I->batCacheid);
-	if (B) {
-		BBPkeepref( *bid = B->batCacheid);
-		return MAL_SUCCEED;
+
+	if (tpe > TYPE_any)
+		tpe = TYPE_bat;
+	if (tpe == TYPE_bat && (ins = BATdescriptor(*(int*)ins)) == NULL) 
+		throw(SQL, "sql.append","Cannot access descriptor");
+	if (ATOMextern(tpe)) 
+		ins = *(ptr*)ins;
+	s = mvc_bind_schema(m, sname);
+	t = mvc_bind_table(m, s, tname);
+	c = mvc_bind_column(m, t, cname);
+	if (c) {
+		store_funcs.append_col(m->session->tr, c, ins, tpe);
+	} else {
+		sql_idx *i = mvc_bind_idx(m, s, cname);
+		if (i)
+			store_funcs.append_idx(m->session->tr, i, ins, tpe);
 	}
-	throw(SQL, "mvc_append", "limitation in transaction scope");
+	if (tpe == TYPE_bat)
+		BBPunfix(((BAT*)ins)->batCacheid);
+	return MAL_SUCCEED;
+}
+
+/*mvc_update_wrap(int *bid, str *sname, str *tname, str *cname, ptr d) */
+str
+mvc_update_wrap(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	mvc *m = NULL;
+	str msg = getContext(&m, NULL);
+	str sname = *(str *)getArgReference(stk, pci, 1);
+	str tname = *(str *)getArgReference(stk, pci, 2);
+	str cname = *(str *)getArgReference(stk, pci, 3);
+	ptr ins = (ptr)getArgReference(stk, pci, 4);
+	int tpe = getArgType(mb, pci, 4);
+
+	sql_schema *s;
+	sql_table *t;
+	sql_column *c;
+
+	if (msg)
+		return msg;
+
+	if (tpe > TYPE_any)
+		tpe = TYPE_bat;
+	if( tpe == TYPE_bat && (ins = BATdescriptor(*(int*)ins)) == NULL) 
+		throw(SQL, "sql.update","Cannot access descriptor");
+	if (ATOMextern(tpe)) 
+		ins = *(ptr*)ins;
+	s = mvc_bind_schema(m, sname);
+	t = mvc_bind_table(m, s, tname);
+	c = mvc_bind_column(m, t, cname);
+	if (c) {
+		store_funcs.update_col(m->session->tr, c, ins, tpe, 0);
+	} else {
+ 		sql_idx *i = mvc_bind_idx(m, s, cname);
+		if (i)
+			store_funcs.update_idx(m->session->tr, i, ins, tpe);
+	}
+	if (tpe == TYPE_bat)
+		BBPunfix(((BAT*)ins)->batCacheid);
+	return MAL_SUCCEED;
 }
 
 @-
@@ -1316,45 +1375,6 @@ mvc_bind_dbat_wrap(int *ret, str *sname, str *tname, int *access)
 }
 
 str
-mvc_bind_idxbat_wrap(int *ret, str *sname, str *tname, str *iname, int *access)
-{
-	BAT *b;
-	mvc *m = NULL;
-	str msg = getContext(&m, NULL);
-
-	if (msg)
-		return msg;
-	b = mvc_bind_idxbat(m, *sname, *tname, *iname, *access);
-	if (b) {
-		BBPkeepref( *ret = b->batCacheid);
-		return MAL_SUCCEED;
-	}
-	throw(SQL, "mvc_bind_idxbat_wrap", "error");
-}
-
-str
-mvc_append_idxbat_wrap(int *bid, str *sname, str *tname, str *iname, int *access, int *ins)
-{
-	BAT *I, *B = NULL;
-	mvc *m = NULL;
-	str msg = getContext(&m, NULL);
-
-	if( (I= BATdescriptor(*ins)) == NULL)
-		throw(SQL, "sql.append_idxbat","Cannot access descriptor");
-
-	if (msg)
-		return msg;
-	mvc_append_idxbat(&B, m, *sname, *tname, *iname, access, I);
-	BBPunfix(I->batCacheid);
-	if (B) {
-		BBPkeepref( *bid = B->batCacheid);
-		return MAL_SUCCEED;
-	}
-	throw(SQL, "mvc_append_idxbat", "error");
-}
-
-
-str
 mvc_clear_table_wrap(lng *res, str *sname, str *tname)
 {
 	sql_schema *s;
@@ -1367,6 +1387,38 @@ mvc_clear_table_wrap(lng *res, str *sname, str *tname)
 	s = mvc_bind_schema(m, *sname);
 	t = mvc_bind_table(m, s, *tname);
 	*res = mvc_clear_table(m, t);
+	return MAL_SUCCEED;
+}
+
+/*mvc_delete_wrap(int *d, str *sname, str *tname, ptr d) */
+str
+mvc_delete_wrap(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	mvc *m = NULL;
+	str msg = getContext(&m, NULL);
+	str sname = *(str *)getArgReference(stk, pci, 1);
+	str tname = *(str *)getArgReference(stk, pci, 2);
+	ptr ins = (ptr)getArgReference(stk, pci, 3);
+	int tpe = getArgType(mb, pci, 3);
+	BAT *b = NULL;
+
+	sql_schema *s;
+	sql_table *t;
+
+	if (msg)
+		return msg;
+
+	if (tpe > TYPE_any)
+		tpe = TYPE_bat;
+	if (tpe == TYPE_bat && (b = BATdescriptor(*(int*)ins)) == NULL) 
+		throw(SQL, "sql.delete","Cannot access descriptor");
+	if (tpe != TYPE_bat || (b->ttype != TYPE_oid && b->ttype != TYPE_void))
+		throw(SQL, "sql.delete","Cannot access descriptor");
+	s = mvc_bind_schema(m, sname);
+	t = mvc_bind_table(m, s, tname);
+	store_funcs.delete_tab(m->session->tr, t, b, tpe);
+	if (tpe == TYPE_bat)
+		BBPunfix(((BAT*)ins)->batCacheid);
 	return MAL_SUCCEED;
 }
 
