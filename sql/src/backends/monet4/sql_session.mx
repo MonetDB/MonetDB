@@ -738,8 +738,6 @@ global_variables(mvc *sql, char *user, char *schema)
 	sql_find_subtype(&ctype, typename, 8, 0);
 	SQLglobal("explain", "");
 
-	stack_set_var(sql, name, VALset(&src, ctype.type->localtype, ""));
-
 	sql_find_subtype(&ctype, typename, 1024, 0);
 	SQLglobal("current_schema", schema);
 	SQLglobal("current_user", user);
