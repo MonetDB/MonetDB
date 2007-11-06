@@ -49,9 +49,7 @@ smallTOC_SHARED_MODS =	\
 	../modules/plain/lib_profiler	\
 	../modules/plain/lib_stats	\
 	../modules/plain/lib_streams	\
-	../modules/plain/lib_tcpip	\
 	../modules/plain/lib_unix	\
-	../modules/plain/lib_upgrade	\
 	../modules/plain/lib_url	\
 	../modules/plain/lib_xtables	\
 	\
@@ -59,16 +57,11 @@ smallTOC_SHARED_MODS =	\
 	../modules/contrib/lib_bat_cast	\
 	../modules/contrib/lib_bat_mmath	\
 	../modules/contrib/lib_bitset	\
-	../modules/contrib/lib_bitvector	\
 	../modules/contrib/lib_color	\
-	../modules/contrib/lib_ddbench	\
 	../modules/contrib/lib_image	\
 	../modules/contrib/lib_malalgebra	\
 	../modules/contrib/lib_mel	\
-	../modules/contrib/lib_mprof	\
-	../modules/contrib/lib_oo7	\
 	../modules/contrib/lib_uchr	\
-	../modules/contrib/lib_qt	\
 	../modules/contrib/lib_salgebra	\
 	../modules/contrib/lib_txtsim	\
 	../modules/contrib/lib_wisc
@@ -77,7 +70,6 @@ largeTOC_SHARED_MODS =	\
 	../modules/plain/lib_counters	\
 	../modules/plain/lib_pcl	\
 	\
-	../modules/contrib/lib_iterator	\
 	../modules/contrib/lib_vector
 
 EXTRA_DIST = static_modules.mx
