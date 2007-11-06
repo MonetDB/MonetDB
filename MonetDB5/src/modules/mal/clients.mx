@@ -257,13 +257,11 @@ CLTInfo(int *ret)
 
 	BUNins(b, "user", local_itoa((int)c->user), FALSE);
 	BUNins(b, "password", "", FALSE); /* FIXME: get rid of this */
-	BUNins(b, "permission", local_itoa(c->permission), FALSE);
 	BUNins(b, "scenario", c->scenario, FALSE);
 	BUNins(b, "timer", local_itoa((int) c->timer), FALSE);
 	BUNins(b, "trace", local_itoa(c->itrace), FALSE);
 	BUNins(b, "listing", local_itoa(c->listing), FALSE);
 	BUNins(b, "debug", local_itoa(c->debug), FALSE);
-	BUNins(b, "cwd", c->cwd, FALSE);
 	CLTtimeConvert((time_t) c->login,s);
 	BUNins(b, "login", s, FALSE);
 	CLTtimeConvert((time_t) c->delay,s);
@@ -543,10 +541,13 @@ command getUsers(s:bat[:str,:any_1]):bat[:oid,:str]
 address CLTgetUsers
 comment "return a BAT with user id and name available in the system with access to the given scenario(s)";
 @c
-str CLTgetUsers(bat *ret, bat *scens) {
+str CLTgetUsers(bat *ret, bat *scens) 
+{
+	BAT *r = NULL;
 	str tmp;
 
-	rethrow("getUsers", tmp, AUTHgetUsers(ret, scens));
+	rethrow("getUsers", tmp, AUTHgetUsers(&r, scens));
+	BBPkeepref(*ret = r->batCacheid);
 	return(MAL_SUCCEED);
 }
 
