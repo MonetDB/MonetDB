@@ -2250,8 +2250,8 @@ ALGgroupby(int *res, int *bid)
 		throw(MAL, "algebra.groupby","unknown error");
 	}
 	if( bn){
-		*res = bn->batCacheid;
 		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
+		*res = bn->batCacheid;
 		BBPkeepref(bn->batCacheid);
 	}
 	BBPreleaseref(b->batCacheid);
