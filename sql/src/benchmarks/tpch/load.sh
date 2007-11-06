@@ -26,7 +26,8 @@ if [ $# -eq 1 ]; then
 	SQL="$1"
 fi
 
-#$SQL < c.sql-dec
+#T=-
+T=
 SF='sf-0.01'
 #SF='sf-1'
 #SF='sf-2'
@@ -34,6 +35,7 @@ SF='sf-0.01'
 
 dir=`echo $SF | tr '[a-z]' '[A-Z]'`
 $SQL < c.sql-dec-primary-foreign
-#$SQL -T < c.sql-dec
-cat load-$SF.sql | sed -e s+PWD+$PWD/$dir+ | $SQL -T
-#$SQL -T < alter.sql
+#$SQL -t < c.sql-dec
+cat load-$SF.sql$T | sed -e s+PWD+$PWD/$dir+ | $SQL -t
+#cat load-$SF.sql$T | sed -e s+PWD+$PWD/$dir+ 
+#$SQL -t < alter.sql

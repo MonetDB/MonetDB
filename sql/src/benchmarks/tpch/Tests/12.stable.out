@@ -21,7 +21,7 @@ Over..
 # 11:48:01 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781  < 12.sql
 # 11:48:01 >  
 
-% sys.lineitem,	.,	. # table_name
+% sys.lineitem,	sys.,	sys. # table_name
 % l_shipmode,	high_line_count,	low_line_count # name
 % varchar,	smallint,	smallint # type
 % 4,	2,	2 # length

@@ -21,7 +21,7 @@ Over..
 # 11:47:59 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781  < 08.sql
 # 11:47:59 >  
 
-% sys.all_nations,	. # table_name
+% sys.all_nations,	sys. # table_name
 % o_year,	mkt_share # name
 % int,	decimal # type
 % 4,	21 # length
