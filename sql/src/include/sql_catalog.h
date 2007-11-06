@@ -86,8 +86,6 @@
 #define RDONLY 0
 #define RD_INS 1
 #define RD_UPD 2
-#define INS 3
-#define UPD 4
 
 #define cur_user 1
 #define cur_role 2
