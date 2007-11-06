@@ -180,7 +180,8 @@ comment "Returns a string representation of the current function
 @+ Implementation
 @include prelude.mx
 @h
-#ifdef _MDB_H
+#ifndef _MDB_H
+#define _MDB_H
 #endif /* _MDB_H */
 @c
 #include "mal_config.h"
@@ -838,16 +839,12 @@ MDBgrabClient(int *ret, int *id){
 	this->fdin->pos= c->fdin->len;
 	this->fdout= c->fdout;
 	this->yycur= c->yycur;
-	this->output= c->output;
-	this->console= c->console;
 	this->prompt= c->prompt;
 	this->promptlength= c->promptlength;
 	c->fdin= old.fdin;
 	c->fdin->pos= old.fdin->len;
 	c->fdout= old.fdout;
 	c->yycur= old.yycur;
-	c->output= old.output;
-	c->console= old.console;
 	c->prompt= old.prompt;
 	c->promptlength= old.promptlength;
 	c->itrace = 0;
