@@ -1009,75 +1009,62 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 			_DELETE(buf);
 			break;
 		}
-		case st_insert:{
-			int l = backend_dumpstmt_(s->op1.stval, nr, sql);
-			int r = backend_dumpstmt_(s->op2.stval, nr, sql);
-			buf = NEW_ARRAY(char, BUFSIZ + 1);
-
-			if (s->op2.stval->nrcols) {
-				len = snprintf(buf, BUFSIZ, "var s%d := insert(s%d,s%d);\n", -s->nr, l, r);
-			} else {
-				len = snprintf(buf, BUFSIZ, "var s%d := insert(s%d,s%d);\n", -s->nr, l, r);
-			}
-			dump(sql, buf, len, -s->nr);
-			_DELETE(buf);
-			backend_dump_nil(sql, s->op1.stval);
-			backend_dump_nil(sql, s->op2.stval);
-			break;
-		}
 		case st_append:{
 			int l, r = backend_dumpstmt_(s->op2.stval, nr, sql);
 
-			/* special cases try to simply replace the insert bat */
-			if (s->op1.stval->type == st_bat && 
-			    s->op2.stval->nrcols) {
-				stmt *c = s->op1.stval; 
-
-				buflen = 128 + strlen(c->op1.cval->t->s->base.name) + strlen(c->op1.cval->t->base.name) + strlen(c->op1.cval->base.name);
-
-				buf = NEW_ARRAY(char, buflen + 1);
-				len = snprintf(buf, buflen, "var s%d := mvc_append(myc, \"%s\", \"%s\", \"%s\", %d, s%d);\n", -s->nr, c->op1.cval->t->s->base.name, c->op1.cval->t->base.name, c->op1.cval->base.name, c->flag, r);
-				assert(len <= buflen);
-				dump(sql, buf, len, -s->nr);
-			} else if (s->op1.stval->type == st_idxbat && 
-			    	   s->op2.stval->nrcols) {
-				stmt *c = s->op1.stval; 
-
-				buflen = 128 + strlen(c->op1.idxval->t->s->base.name) + strlen(c->op1.idxval->t->base.name) + strlen(c->op1.idxval->base.name);
-
-				buf = NEW_ARRAY(char, buflen + 1);
-				len = snprintf(buf, buflen, "var s%d := mvc_append_idxbat(myc, \"%s\", \"%s\", \"%s\", %d, s%d);\n", -s->nr, c->op1.idxval->t->s->base.name, c->op1.idxval->t->base.name, c->op1.idxval->base.name, c->flag, r);
-				assert(len <= buflen);
-				dump(sql, buf, len, -s->nr);
-			} else {
-				char *access = "";
-				if (s->op1.stval->type != st_bat &&
-				    s->op1.stval->type != st_idxbat)
-					access=".access(BAT_WRITE)";
-				l = backend_dumpstmt_(s->op1.stval, nr, sql);
-				buf = NEW_ARRAY(char, BUFSIZ + 1);
-				len = snprintf(buf, BUFSIZ, "var s%d := append(s%d%s,s%d);\n", -s->nr, l, access, r);
-				dump(sql, buf, len, -s->nr);
-				backend_dump_nil(sql, s->op1.stval);
-			}
+			char *access = "";
+			if (s->op1.stval->type != st_bat &&
+			    s->op1.stval->type != st_idxbat)
+				access=".access(BAT_WRITE)";
+			l = backend_dumpstmt_(s->op1.stval, nr, sql);
+			buf = NEW_ARRAY(char, BUFSIZ + 1);
+			len = snprintf(buf, BUFSIZ, "var s%d := append(s%d%s,s%d);\n", -s->nr, l, access, r);
+			dump(sql, buf, len, -s->nr);
+			backend_dump_nil(sql, s->op1.stval);
 			backend_dump_nil(sql, s->op2.stval);
 			_DELETE(buf);
 			break;
 		}
-		case st_replace:{
-			int l = backend_dumpstmt_(s->op1.stval, nr, sql);
+		case st_append_col: 
+		case st_update_col: {
+			char *n = (s->type == st_append_col)?"append":"update";
+			sql_column *c = s->op1.cval; 
 			int r = backend_dumpstmt_(s->op2.stval, nr, sql);
-			char *f = (s->op1.stval->type == st_bat ||
-				   s->op1.stval->type == st_idxbat)?
-				"inplace":"replace";
-			buf = NEW_ARRAY(char, BUFSIZ + 1);
 
-			/* use forced inplace/replace */
-			len += snprintf(buf, BUFSIZ, "var s%d := %s(s%d,s%d,true);\n", -s->nr, f, l, r);
+			buflen = 128 + strlen(c->t->s->base.name) + strlen(c->t->base.name) + strlen(c->base.name);
+			buf = NEW_ARRAY(char, buflen + 1);
+			len = snprintf(buf, buflen, "var s%d := mvc_%s(myc, \"%s\", \"%s\", \"%s\", s%d);\n", -s->nr, n, c->t->s->base.name, c->t->base.name, c->base.name, r);
+			assert(len <= buflen);
+			dump(sql, buf, len, -s->nr);
+			backend_dump_nil(sql, s->op2.stval);
+			_DELETE(buf);
+			break;
+		} 
+		case st_append_idx: 
+		case st_update_idx: {
+			char *n = (s->type == st_append_idx)?"append":"update";
+			sql_idx *i = s->op1.idxval; 
+			int r = backend_dumpstmt_(s->op2.stval, nr, sql);
+
+			buflen = 128 + strlen(i->t->s->base.name) + strlen(i->t->base.name) + strlen(i->base.name);
+			buf = NEW_ARRAY(char, buflen + 1);
+			len = snprintf(buf, buflen, "var s%d := mvc_%s_idx(myc, \"%s\", \"%s\", \"%s\", s%d);\n", -s->nr, n, i->t->s->base.name, i->t->base.name, i->base.name, r);
+			assert(len <= buflen);
+			dump(sql, buf, len, -s->nr);
+			backend_dump_nil(sql, s->op2.stval);
+			_DELETE(buf);
+			break;
+		}
+		case st_delete:{
+			sql_table *t = s->op1.tval;
+			int r = backend_dumpstmt_(s->op2.stval, nr, sql);
+
+			buflen = strlen(t->base.name) + strlen(t->s->base.name) + SMALLBUFSIZ;
+			buf = NEW_ARRAY(char, buflen + 1);
+			len = snprintf(buf, buflen, "var s%d := mvc_delete(myc, \"%s\", \"%s\", s%d);\n", -s->nr, t->s->base.name, t->base.name, r);
+			assert(len <= buflen);
 			dump(sql, buf, len, -s->nr);
 			_DELETE(buf);
-			backend_dump_nil(sql, s->op1.stval);
-			backend_dump_nil(sql, s->op2.stval);
 			break;
 		}
 		case st_table_clear:{

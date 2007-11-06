@@ -95,9 +95,11 @@ the updates to the persistent versions.
 		BAT[any::1,any::2] = 
 		mvc_bind_wrap; "Bind the bat, tname.cname"
 
-	.COMMAND mvc_append( mvc c, str sname, str tname, str cname, int access, BAT[oid,any::1] b ) : 
-		BAT[void,any::1] = 
-		mvc_append; "Append b to the column, tname.cname (possibly optimized to replace the insert bat of tname.cname"
+	.COMMAND mvc_append( mvc c, str sname, str tname, str cname, any b ) :void = mvc_append; 
+		"Append b to the column, tname.cname (possibly optimized to replace the insert bat of tname.cname"
+
+	.COMMAND mvc_update( mvc c, str sname, str tname, str cname, any b ) :void = mvc_update; 
+		"Append b to the column, tname.cname (possibly optimized to replace the insert bat of tname.cname"
 
 	.COMMAND mvc_bind_dbat( mvc c, str sname, str tname, int access ) : 
 		BAT[any::1,any::2] = mvc_bind_dbat_wrap; 
@@ -107,15 +109,19 @@ the updates to the persistent versions.
 		BAT[any::1,any::2] = mvc_bind_idxbat_wrap; 
 		"Bind the idx table"
 
-	.COMMAND mvc_append_idxbat( mvc c, str sname, str tname, str iname, int access, BAT[oid,any::1] b ) : 
-		BAT[void,any::1] = mvc_append_idxbat; 
+	.COMMAND mvc_append_idx( mvc c, str sname, str tname, str iname, any b) :void = mvc_append_idx; 
+		"Bind the idx table"
+
+	.COMMAND mvc_update_idx( mvc c, str sname, str tname, str iname, any b) :void = mvc_update_idx; 
 		"Bind the idx table"
 @-
 A special clear table function is required for an efficient DELETE ALL implementation. A table clear requires global table knowledge. 
 @m
-	.COMMAND mvc_clear_table( mvc c, str sname, str tname ) :
-		lng = mvc_clear_table_wrap;
+	.COMMAND mvc_clear_table( mvc c, str sname, str tname ) :lng = mvc_clear_table_wrap;
 		"Clear table" 
+
+	.COMMAND mvc_delete( mvc c, str sname, str tname, any b ) :void = mvc_delete_wrap;
+		"delete from table" 
 @-
 The results of the SQL queries are assembled in result sets, which
 can be shipped to the front-end for display or exported over a
@@ -295,7 +301,6 @@ handles and returns proper error messages upon failure.
 #include <algebra.h>
 #include "sql_storage.h"
 #include <store_sequence.h>
-#include <bat/res_table.h>
 
 @-
 The code heavily depends on the (complex) data structures for
@@ -547,18 +552,74 @@ mvc_bind(mvc *m, char *sname, char *tname, char *cname, int access)
 }
 
 int 
-mvc_append(BAT **b, mvc *M, str sname, str tname, str cname, int *access, BAT *ins)
+mvc_append(mvc *M, str sname, str tname, str cname, ptr ins, int tpe)
 {
 	mvc *m = *(mvc**)M;
 	sql_trans *tr = m->session->tr;
 	sql_schema *s = mvc_bind_schema(m, sname);
 	sql_table *t = mvc_bind_table(m, s, tname);
 	sql_column *c = mvc_bind_column(m, t, cname);
+	BAT *b = (BAT*)ins;
 
-	*b = store_funcs.append_col(tr, c, *access, ins);
+	if ((tpe == TYPE_bat && b->ttype != c->type.type->localtype) ||
+	    (tpe != TYPE_bat && tpe != c->type.type->localtype)) 
+		return GDK_FAIL;
+	store_funcs.append_col(tr, c, ins, tpe);
 	return GDK_SUCCEED;
 }
 
+int
+mvc_append_idx(mvc *M, char *sname, char *tname, char *iname, ptr ins, int tpe)
+{
+	mvc *m = *(mvc**)M;
+	sql_trans *tr = m->session->tr;
+	sql_schema *s = mvc_bind_schema(m, sname);
+	sql_idx *i = mvc_bind_idx(m, s, iname);
+	BAT *b = (BAT*)ins;
+
+	(void) tname;
+	if ((tpe != TYPE_bat && tpe != TYPE_int && tpe != TYPE_oid) &&
+	    (tpe == TYPE_bat && b->ttype != TYPE_int && b->ttype != TYPE_oid)){
+		GDKerror("incorrect type (%d) for index\n", tpe);
+		return GDK_FAIL;
+	}
+	store_funcs.append_idx(tr, i, ins, tpe);
+	return GDK_SUCCEED;
+}
+
+int 
+mvc_update(mvc *M, str sname, str tname, str cname, ptr ins, int tpe)
+{
+	mvc *m = *(mvc**)M;
+	sql_trans *tr = m->session->tr;
+	sql_schema *s = mvc_bind_schema(m, sname);
+	sql_table *t = mvc_bind_table(m, s, tname);
+	sql_column *c = mvc_bind_column(m, t, cname);
+	BAT *b = (BAT*)ins;
+
+	if (tpe != TYPE_bat || b->ttype != c->type.type->localtype) 
+		return GDK_FAIL;
+	store_funcs.update_col(tr, c, ins, tpe, 0);
+	return GDK_SUCCEED;
+}
+
+int
+mvc_update_idx(mvc *M, char *sname, char *tname, char *iname, ptr ins, int tpe)
+{
+	mvc *m = *(mvc**)M;
+	sql_trans *tr = m->session->tr;
+	sql_schema *s = mvc_bind_schema(m, sname);
+	sql_idx *i = mvc_bind_idx(m, s, iname);
+	BAT *b = (BAT*)ins;
+
+	(void) tname;
+	if (tpe != TYPE_bat || (b->ttype != TYPE_int && b->ttype != TYPE_oid)){
+		GDKerror("incorrect type (%d) for index\n", tpe);
+		return GDK_FAIL;
+	}
+	store_funcs.update_idx(tr, i, ins, tpe);
+	return GDK_SUCCEED;
+}
 
 static BAT *
 mvc_bind_dbat(mvc *m, char *sname, char *tname, int access)
@@ -584,21 +645,6 @@ mvc_bind_idxbat(mvc *m, char *sname, char *tname, char *iname, int access)
 	b = store_funcs.bind_idx(tr, i, access);
 	return b;
 }
-
-int
-mvc_append_idxbat(BAT **b, mvc *M, char *sname, char *tname, char *iname, int *access, BAT *ins)
-{
-	mvc *m = *(mvc**)M;
-	sql_trans *tr = m->session->tr;
-	sql_schema *s = mvc_bind_schema(m, sname);
-	sql_idx *i = mvc_bind_idx(m, s, iname);
-
-	(void) tname;
-	*b = store_funcs.append_idx(tr, i, *access, ins);
-	return GDK_SUCCEED;
-}
-
-
 
 int
 mvc_bind_wrap(BAT **res, mvc *c, str sname, str tname, str cname, int *access)
@@ -638,6 +684,22 @@ mvc_clear_table_wrap(lng *res, mvc *c, str sname, str tname)
 	sql_table *t = mvc_bind_table(m, s, tname);
 
 	*res = mvc_clear_table(m, t);
+	return GDK_SUCCEED;
+}
+
+int
+mvc_delete_wrap(mvc *M, char *sname, char *tname, ptr ins, int tpe)
+{
+	mvc *m = *(mvc**)M;
+	sql_schema *s = mvc_bind_schema(m, sname);
+	sql_table *t = mvc_bind_table(m, s, tname);
+	BAT *b = (BAT*)ins;
+
+	if (tpe != TYPE_bat || (b->ttype != TYPE_oid && b->ttype != TYPE_void)){
+		GDKerror("incorrect type (%d) for index\n", tpe);
+		return GDK_FAIL;
+	}
+	store_funcs.delete_tab(m->session->tr, t, ins, tpe);
 	return GDK_SUCCEED;
 }
 
