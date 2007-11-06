@@ -154,7 +154,6 @@ typedef struct SCENARIO {
 
 mal_export str setScenario(Client c, str nme);
 mal_export str runScenario(Client c);
-mal_export str runScenarioBody(Client c);
 mal_export str fillScenario(Client c, Scenario scen);
 mal_export void clrScenario(Client c);
 mal_export str getScenarioLanguage(Client c);
@@ -419,9 +418,6 @@ fillScenario(Client c, Scenario scen)
 	c->state[MAL_SCENARIO_ENGINE] = 0;
 	c->state[MAL_SCENARIO_INITCLIENT] = 0;
 	c->state[MAL_SCENARIO_EXITCLIENT] = 0;
-	if (scen->initClientCmd)
-		return((*scen->initClientCmd) (c));
-
 	return(MAL_SUCCEED);
 }
 
@@ -576,7 +572,7 @@ between speed and ability to analysis its behavior.
 Access control enforcement. Except for the server owner
 running a scenario should be explicitly permitted.
 @c
-str
+static str
 runScenarioBody(Client c)
 {
 	str msg= MAL_SUCCEED;
@@ -585,6 +581,8 @@ runScenarioBody(Client c)
 	struct tms t0,t1;
 #endif
 
+	if (c->phase[MAL_SCENARIO_INITCLIENT])
+		(*c->phase[MAL_SCENARIO_INITCLIENT]) (c);
 	while (c->mode > FINISHING) {
 		msg = MAL_SUCCEED;
 		@:runPhase(MAL_SCENARIO_READER)@
@@ -597,8 +595,8 @@ runScenarioBody(Client c)
 		@:runPhase(MAL_SCENARIO_OPTIMIZE)@
 		@:runPhase(MAL_SCENARIO_SCHEDULER)@
 		@:runPhase(MAL_SCENARIO_ENGINE)@
-		start= GDKusec()-start;
 		c->actions++;
+		start = GDKusec()-start;
 		c->totaltime += start;
 #ifdef HAVE_TIMES
 		times(&t1);
@@ -608,45 +606,21 @@ runScenarioBody(Client c)
 		c->workload.tms_cstime += t1.tms_cstime-t0.tms_cstime;
 #endif
 	}
+	if (c->phase[MAL_SCENARIO_EXITCLIENT])
+		(*c->phase[MAL_SCENARIO_EXITCLIENT]) (c);
 	return msg;
 }
 str
 runScenario(Client c)
 {
-	int cnt = 0;
 	str msg = MAL_SUCCEED;
-	Client c1;
 
-	if( c== 0 || c->phase[MAL_SCENARIO_READER] == 0) return msg;
-
-	msg= runScenarioBody(c);
-	if( msg != MAL_SUCCEED && 
-		strcmp(msg,"MALException:client.quit:Server stopped."))
+	if (c == 0 || c->phase[MAL_SCENARIO_READER] == 0) 
+		return msg;
+	msg = runScenarioBody(c);
+	if (msg != MAL_SUCCEED && 
+	    strcmp(msg,"MALException:client.quit:Server stopped."))
 		stream_printf(c->fdout,"!%s\n",msg);
-#ifdef MAL_SCENARIO_DEBUG
-	printf("About to terminate scenario %s\n", c->scenario);
-#endif
-@-
-Check if we are closing the last client, because then we also
-have to call the scenario exit.
-@c
-	if( c->scenario)
-		for (c1 = mal_clients; c1 < mal_clients + MAL_MAXCLIENTS; c1++)
-			if (c1->scenario && strcmp(c->scenario, c1->scenario) == 0)
-				cnt++;
-
-	if (c->phase[MAL_SCENARIO_EXITCLIENT]) {
-#ifdef MAL_SCENARIO_DEBUG
-		printf("Calling client exit function \n");
-#endif
-		(*c->phase[MAL_SCENARIO_EXITCLIENT]) (c);
-	}
-#ifdef MAL_SCENARIO_DEBUG
-		printf("scenario client cnt %d\n",cnt);
-#endif
-	if (cnt == 1) {
-		exitScenario(c);
-	}
 	return msg;
 }
 

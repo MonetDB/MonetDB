@@ -869,7 +869,7 @@ mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
 				break;
 			if(cntxt->mode == FINISHING)
 				break;
-		} else {
+		} else if (cntxt == mal_clients) {
 			/* switch to mdb streams */
 			r= readConsole(cntxt);
 			if( r <= 0)
@@ -1194,8 +1194,8 @@ mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
 				if( *b == 0){
 					strcat(fname,name+1);
 				} else
-				if( cntxt->cwd && *b !='/'){
-					strcpy(fname,cntxt->cwd);
+				if( monet_cwd && *b !='/'){
+					strcpy(fname,monet_cwd);
 					strcat(fname,name);
 				} else 
 					strcat(fname,name+1);

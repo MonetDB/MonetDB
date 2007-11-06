@@ -47,7 +47,7 @@ mal_export str AUTHaddScenario(str *username, str *scenario);
 mal_export str AUTHremoveScenario(str *username, str *scenario);
 mal_export str AUTHresolveUser(str *ret, oid *uid);
 mal_export str AUTHgetUsername(str *ret);
-mal_export str AUTHgetUsers(bat *ret, bat *scenarios);
+mal_export str AUTHgetUsers(BAT **ret, bat *scenarios);
 
 mal_export str AUTHrequireAdmin(void);
 mal_export str AUTHrequirteAdminOrUser(str *username);
@@ -777,7 +777,7 @@ AUTHgetUsername(str *username) {
  * scenarios.
  */
 str
-AUTHgetUsers(bat *ret, bat *scenarios) {
+AUTHgetUsers(BAT **ret, bat *scenarios) {
 	BAT *b, *r;
 	str tmp;
 
@@ -822,10 +822,8 @@ AUTHgetUsers(bat *ret, bat *scenarios) {
 		BBPunfix(*scenarios);
 	} else {
 		r = BATcopy(user, user->htype, user->ttype, FALSE);
-		BBPunfix(*scenarios);
 	}
-
-	*ret = BBPcacheid(r);
+	*ret = r;
 	return(NULL);
 }
 

@@ -474,17 +474,16 @@ getConsoleInput(const char *prompt, int linemode, int exit_on_error)
 	return line;
 }
 int 
-readConsole(Client cntxt){
+readConsole(Client cntxt)
+{
 	/* execute from stdin */
 	struct stat statb;
 	char *buf;
 
-	if( cntxt->promptlength == 0)
+	assert(cntxt == mal_clients);
+	if (cntxt->promptlength == 0 || 
+	   !(fstat(fileno(stdin), &statb) == 0 && S_ISCHR(statb.st_mode))  )
 		return -1;
-	if( cntxt->fdin->s == cntxt->console->s){
-		if ( !(fstat(fileno(stdin), &statb) == 0 && S_ISCHR(statb.st_mode))  )
-			return -1;
-	}
 
 	/* read lines and move string to client buffer. */
 #ifdef HAVE_LIBREADLINE

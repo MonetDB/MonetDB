@@ -61,7 +61,6 @@ mal_export int getVolume(MalStkPtr stk, InstrPtr pci, int rd);
 mal_export ptr getArgValue(MalStkPtr stk, InstrPtr pci, int k);
 mal_export ptr getArgReference(MalStkPtr stk, InstrPtr pci, int k);
 
-#define VALcopy2(lhs,rhs) if( (rhs)->vtype < TYPE_str) *lhs = *rhs; else VALcopy(lhs,rhs);
 #endif /*  _MAL_INTERPRET_H*/
 @c
 #include "mal_config.h"
@@ -201,7 +200,7 @@ Copy the constant values onto the stack frame
 	if( isConstant(mb,i) > 0 ){
 		lhs = &stk->stk[i];
 		rhs = &getConstant(mb,i);
-		VALcopy2(lhs,rhs);
+		VALcopy(lhs,rhs);
 	} else {
 		lhs = &stk->stk[i];
 		lhs->vtype = getVarGDKType(mb,i);
@@ -296,7 +295,7 @@ of the return statement.
 			if( k== pp->argc-1) k--; 
 
 			rhs = &env->stk[pci->argv[i]];
-			VALcopy2(lhs,rhs);
+			VALcopy(lhs,rhs);
 			if( lhs->vtype == TYPE_bat)
 				BBPincref(lhs->val.br.id, TRUE);
 		}
@@ -398,7 +397,7 @@ all arguments and return values.
 		assert(stk);
 		for(i=pci->retc; i<pci->argc; i++){
 			lhs= &stk->stk[pci->argv[i]];
-			VALcopy2(lhs, argv[i]);
+			VALcopy(lhs, argv[i]);
 			if( lhs->vtype == TYPE_bat)
 				BBPincref(lhs->val.br.id,TRUE);
 		}
@@ -900,7 +899,7 @@ switch(pci->barrier){
 				for(i=0;i < pci->retc; i++){
 					rhs = &stk->stk[pp->argv[i]];
 					lhs = &env->stk[pci->argv[i]];
-					VALcopy2(lhs,rhs);
+					VALcopy(lhs,rhs);
 					if( lhs->vtype == TYPE_bat )
 						BBPincref(lhs->val.br.id, TRUE); 
 				}
@@ -937,7 +936,7 @@ cause errors in multi-assignment statements.
 	for(k=0, i=pci->retc; k<pci->retc && i<pci->argc; i++,k++){
 		lhs = &stk->stk[pci->argv[k]];
 		rhs = &stk->stk[pci->argv[i]];
-		VALcopy2(lhs,rhs);
+		VALcopy(lhs,rhs);
 		if( lhs->vtype == TYPE_bat)
 			BBPincref(lhs->val.br.id, TRUE);
 	}
@@ -1022,16 +1021,12 @@ the bind(namespace, batname, mode) operation. [todo]
 			/* update the bigfoot information */
 			updateBigFoot(cntxt, bid, TRUE);
 			/* BAT *b;*/
-			if( backup[i] ){
-				if( backup[i]== bid){
-					/* target and source are identical, which means its
-				   	   logical reference count is one too high . */
-					BBPreleaselref(backup[i]);
-				} else { 
+			if (backup[i]){
+				if (backup[i] != bid) {
 					/* possible garbage collect the variable */
 					updateBigFoot(cntxt, backup[i], FALSE);
-					BBPdecref(backup[i],TRUE);
 				}
+				BBPdecref(backup[i], TRUE);
 				backup[i]=0;
 				sbackup[i]=0;
 			} 

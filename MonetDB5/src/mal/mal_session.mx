@@ -41,7 +41,6 @@ mal_export void MSscheduleClient(str command, str challenge, bstream *fin, strea
 
 mal_export str MALreader(Client c);
 mal_export str MALexitClient(Client c);
-mal_export str MALexitSession(Client c);
 mal_export str MALparser(Client c);
 mal_export str MALengine(Client c);
 mal_export void MSresetInstructions(MalBlkPtr mb, int start);
@@ -53,10 +52,10 @@ mal_export int MALcommentsOnly(MalBlkPtr mb);
 @c
 #include "mal_config.h"
 #include "mal_session.h"
-#include "mal_instruction.h"	/* for pushEndInstruction() */
-#include "mal_interpreter.h"	/* for showErrors(), runMAL(), garbageElement(), garbageCollector() */
-#include "mal_linker.h"		/* for initLibraries() */
-#include "mal_parser.h"		/* for parseMAL() */
+#include "mal_instruction.h" /* for pushEndInstruction() */
+#include "mal_interpreter.h" /* for showErrors(), runMAL(), garbageElement() */
+#include "mal_linker.h"	     /* for initLibraries() */
+#include "mal_parser.h"	     /* for parseMAL() */
 #include "mal_namespace.h"
 #include "mal_readline.h"
 #include "mal_authorize.h"
@@ -153,12 +152,7 @@ MSinitClientPrg(Client cntxt, str mod, str nme)
 @+ Client authorization
 The default method to interact with the database server is to
 connect using a port number. The first line received should contain
-authorization information, such as user name and a possible session key.
-
-No encryption scheme is performed yet.
-
-An example initialization string would be "guest:23" which indicates access
-of the client named 'guest' to a session previously started under identity 23.
+authorization information, such as user name.
 
 @{
 The scheduleClient receives a challenge response consisting of
@@ -169,7 +163,6 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout)
 {
 	char *user = command, *algo = NULL, *passwd = NULL, *lang = NULL;
 	char *database = NULL, *s;
-	int key = 0;
 	Client c;
 	MT_Id p;
 
@@ -322,6 +315,13 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout)
 			SABAOTHfreeStatus(&stats);
 		}
 
+		/* find and reactivate client */
+		c = MCfindClient(uid, lang, fin, fout); 
+		if (c != NULL) {
+			GDKfree(command);
+			return;
+		}
+
 		c = MCinitClient(uid, fin, fout);
 		if (c == NULL) {
 			stream_printf(fout, "!Out of client slots\n");
@@ -329,9 +329,9 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout)
 			GDKfree(command);
 			return;
 		}
+		/* move this back !! */
 		c->nspace = newModule(NULL, putName("user", 4));
 		c->nspace->outer = mal_clients[0].nspace->outer;
-		c->sessionkey = key;
 
 		if (!lang) {
 			if ((s = defaultScenario(c))) {
@@ -466,13 +466,18 @@ The scenarios are run until we finally close the last one.
 	if (msg) {
 		showException(MAL, "serveClient", "could not initialize default scenario");
 		c->mode = FINISHING + 1;
-	} else
+	} else {
 		do {
-			runScenario(c);
-			if (c->mode == FINISHING)
+			do {
+				runScenario(c);
+				if (c->mode == FINISHING)
+					break;
+				resetScenario(c);
+			} while (c->scenario);
+			if (!MCwait(c))
 				break;
-			resetScenario(c);
-		} while (c->scenario);
+		} while(c->scenario && c->mode != FINISHING);
+	}
 @-
 At this stage we should clean out the MAL block
 @c
@@ -481,7 +486,6 @@ At this stage we should clean out the MAL block
 
 	if (c->mode > FINISHING) {
 		if (isAdministrator(c)) {
-			/* old OIDflushdelta =0; */
 			if (c->scenario) {
 				exitScenario(c);
 			}
@@ -512,12 +516,6 @@ table may have grown in size.
 	MSresetVariables(c->curprg->def, 0, oldstate.vtop);
 @c
 str
-MALexitSession(Client c)
-{
-	(void) c;
-	return 0;
-}
-str
 MALexitClient(Client c)
 {
 	if (c->glb) {
@@ -533,14 +531,13 @@ MALreader(Client c)
 {
 	int r= 1;
 
-	if( c == mal_clients){
+	if (c == mal_clients){
 		r= readConsole(c);
 		if (r <0 && c->fdin->eof == 0 )
 			r= MCreadClient(c);
 		if( r > 0)
 			return MAL_SUCCEED;
-	} else
-	if (MCreadClient(c) > 0)
+	} else if (MCreadClient(c) > 0)
 		return MAL_SUCCEED;
 	c->mode = FINISHING;
 	if (c->fdin)

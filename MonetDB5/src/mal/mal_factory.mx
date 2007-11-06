@@ -435,7 +435,7 @@ callFactory(Client cntxt, MalBlkPtr mb, ValPtr argv[], char flag){
 		if( isConstant(mb,i) > 0 ){
 			lhs = &stk->stk[i];
 			rhs = &getConstant(mb,i);
-			VALcopy2(lhs,rhs);
+			VALcopy(lhs,rhs);
 		} else {
 			lhs = &stk->stk[i];
 			lhs->vtype = getVarGDKType(mb,i);

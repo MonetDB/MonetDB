@@ -118,8 +118,6 @@ typedef struct CLIENT_INPUT {
 typedef struct CLIENT {
 	int idx;        /* entry in mal_clients */
 	oid user;       /* user id in the auth administration */
-	int sessionkey; /* NOTUSED ANYMORE */
-	int permission; /* access mode */
 @-
 The actions for a client is separated into several stages: parsing,
 strategic optimization, tactial optimization, and execution. 
@@ -131,7 +129,6 @@ information should be dealt with separately.[TODO]
 @h
 	str     scenario;  /* scenario management references */
 	str     oldscenario;
-	str     srcFile;	/* NULL for stdin, or file name */
 	void    *state[7], *oldstate[7];
 	MALfcn  phase[7], oldphase[7];
 	sht		stage;		/* keep track of the phase being ran */
@@ -161,31 +158,15 @@ Future releases may support a re-connect facility.  [TODO]
 @h
 	time_t      login;  
 	time_t      lastcmd;	/* set when input is received */
-	time_t      delay;		/* not yet used */
+	time_t      delay;	/* not yet used */
 @-
 Communication channels for the interconnect are stored here.
 It is perfectly legal to have a client without input stream.
 It will simple terminate after consuming the input buffer.
 @h
+	str       srcFile;  /* NULL for stdin, or file name */
 	bstream  *fdin;
-	bstream	 *console;	/* always available for reading */
-	int      yycur;		/* the scanners current position */
-	ClientInput *bak;   /* used for recursive script and string execution */
-	stream   *fdout;    /* streams from and to user. */
-
-	str output; 	/* output buffer */
-	str prompt;         /* acknowledge prompt */
-	int promptlength;
-@-
-In interactive mode, reading one line at a time, we should be
-aware of parsing compound structures, such as functions and
-barrier blocks. The level of nesting is maintained in blkmode,
-which is reset to zero upon encountering an end instruction,
-or the closing bracket has been detected. Once the complete
-structure has been parsed the program can be checked and executed.
-Nesting is indicated using a '+' before the prompt.
-@h
-	int blkmode;        /* control block parsing */
+	int       yycur;    /* the scanners current position */
 @-
 Keeping track of instructions executed is a valueable tool for
 script processing and debugging. 
@@ -198,6 +179,21 @@ program execution tracing. The lowest level (1) simply dumps the input,
 type information
 @h
 	bitset  listing;        
+	str prompt;         /* acknowledge prompt */
+	int promptlength;
+	ClientInput *bak;   /* used for recursive script and string execution */
+
+	stream   *fdout;    /* streams from and to user. */
+@-
+In interactive mode, reading one line at a time, we should be
+aware of parsing compound structures, such as functions and
+barrier blocks. The level of nesting is maintained in blkmode,
+which is reset to zero upon encountering an end instruction,
+or the closing bracket has been detected. Once the complete
+structure has been parsed the program can be checked and executed.
+Nesting is indicated using a '+' before the prompt.
+@h
+	int blkmode;        /* control block parsing */
 @-
 The MAL debugger uses the client record to keep track of
 any pervasive debugger command. For detailed information
@@ -205,18 +201,17 @@ on the debugger features.
 @{
 @h
 	bitset debug;
-	void  *mdb;        /* context upon suspend */
-	void  *notused;
-	str  history;			/* where to keep console history */
-	short mode;           /* FREECLIENT..BLOCKED */
-	str cwd;            /* working directory of client */
+	void  *mdb;            /* context upon suspend */
+	str    history;	       /* where to keep console history */
+	short  mode;           /* FREECLIENT..BLOCKED */
 @-
 Client records are organized into a two-level dependency
 tree, where children may be created to deal with parallel processing
 activities. Each client runs in its own process thread. Its identity
 is retained here for access by others (=father).
 @h
-	Thread      mythread;
+	MT_Sema 	s;	    /* sema to (de)activate thread */ 
+	Thread      	mythread;
 	size_t		mypid;
 	str     	errbuf;     /* location of GDK exceptions */
 	struct CLIENT   *father;    
@@ -237,8 +232,8 @@ a frame of reference. We measure the elapsed time after
 a request has been received and we have to wait for
 the next one. 
 @h
-	int			actions;
-	lng			totaltime;	/* sum of elapsed processing times */
+	int		actions;
+	lng		totaltime;	/* sum of elapsed processing times */
 #ifdef HAVE_TIMES
 	struct tms	workload;
 #endif
@@ -246,21 +241,24 @@ the next one.
 
 mal_export ClientRec mal_clients[MAL_MAXCLIENTS+1];
 
-mal_export Client   MCgetClient   (void);
-mal_export Client   MCinitClient(oid user, bstream *fin, stream *fout);
-mal_export void     MCinitClientThread(Client c);
-mal_export void     MCcloseClient    (Client c);
-mal_export Client   MCforkClient     (Client c);
-mal_export int	    MCcountClients(void);
-mal_export int      MCreadClient  (Client c);
-mal_export str	    MCsuspendClient(int id, int timeout);
-mal_export str	    MCawakeClient(int id);
-mal_export void     MCcleanupClients(void);
-mal_export void     MCtraceAllClients(int flag);
-mal_export void     MCtraceClient(oid which, int flag);
+mal_export Client  MCgetClient   (void);
+mal_export Client  MCfindClient(oid user, str scen, bstream *fin, stream *fout);
+mal_export Client  MCinitClient(oid user, bstream *fin, stream *fout);
+mal_export void    MCinitClientThread(Client c);
+mal_export void    MCcloseClient    (Client c);
+mal_export Client  MCforkClient     (Client c);
+mal_export int	   MCcountClients(void);
+mal_export int     MCreadClient  (Client c);
+mal_export str	   MCsuspendClient(int id, int timeout);
+mal_export str	   MCawakeClient(int id);
+mal_export int     MCwait(Client c);
+mal_export void    MCcleanupClients(void);
+mal_export void    MCexitPending(void);
+mal_export void    MCtraceAllClients(int flag);
+mal_export void    MCtraceClient(oid which, int flag);
 
-mal_export void     MCpushClientInput(Client c, bstream *new_input, int listing, char *prompt);
-mal_export void     MCpopClientInput(Client c);
+mal_export void    MCpushClientInput(Client c, bstream *new_input, int listing, char *prompt);
+mal_export void    MCpopClientInput(Client c);
 
 #endif /* _MAL_CLIENT_H_ */
 @-
@@ -304,15 +302,6 @@ int bstreamClient(Client c, str prompt);
 static void     freeClient  (Client c);
 
 ClientRec   mal_clients[MAL_MAXCLIENTS+1];
-
-void THRsuspend(Thread h){
-	(void) h;
-	/* printf("suspend Thread %d %d\n", h->tid, (int) h->pid);*/
-}
-void THRawake(Thread h){
-	(void) h;
-	/* printf("awake Thread %d %d\n", h->tid, (int) h->pid);*/
-}
 
 void MCpushClientInput(Client c, bstream *new_input, int listing, char *prompt)
 {
@@ -402,8 +391,94 @@ Client MCgetClient()
 	return NULL;
 }
 
-Client MCinitClient(oid user, bstream *fin, stream *fout) {
-	Client c;
+Client MCfindClient(oid user, str scen, bstream *fin, stream *fout) 
+{
+	Client c = NULL;
+	Scenario s = findScenario(scen);
+
+	if (!s) 
+		return NULL;
+
+	mal_set_lock(mal_contextLock, "newClient");
+	if (mal_clients[CONSOLE].user &&
+	    mal_clients[CONSOLE].mode == FINISHING) {
+		showException(MAL,"newClient", "system shutdown in progress");
+		mal_unset_lock(mal_contextLock, "newClient");
+		return NULL;
+	}
+	for (c = mal_clients; c < mal_clients+MAL_MAXCLIENTS; c++) {
+		if (c->mode == AWAITING && c->scenario == s->name) {
+			c->mode = CLAIMED;
+			break;
+		}
+	}
+	mal_unset_lock(mal_contextLock, "newClient");
+
+	if (c == mal_clients+MAL_MAXCLIENTS) 
+		return NULL;
+#ifdef MAL_CLIENT_DEBUG
+	printf("Client found %d\n", (int)(c-mal_clients));
+#endif
+	if (c) {
+		/* TODO reset client */
+		c->user = user; 
+		c->fdin = fin ? fin : bstream_create(GDKin,0);
+		c->yycur = 0;
+		c->bak = NULL;
+
+		c->listing = 0;
+		c->fdout = fout ? fout : GDKstdout;
+		c->mdb = 0;
+
+		/* (re)activate thread */
+		MT_up_sema(c->s, "MCfindClient");
+		return c;
+	}
+	return NULL;
+}
+
+static void
+MCexitClient(Client c)
+{
+	if (c->father == NULL) { /* normal client */
+		if( c->fdout && c->fdout != GDKstdout){
+			MPresetProfiler(c->fdout);
+			(void) stream_close(c->fdout);
+			(void) stream_destroy(c->fdout);
+		}
+		assert(c->bak==NULL);
+		if(c->fdin){
+			/* missing protection against closing stdin stream */
+			(void) stream_close(c->fdin->s);
+			(void) stream_destroy(c->fdin->s);
+			(void) bstream_destroy(c->fdin);
+		}
+		c->fdout = NULL;
+		c->fdin= NULL;
+	} 
+}
+
+int
+MCwait(Client c) 
+{
+	if (c != mal_clients && c->mode == FINISHING) {
+		mal_set_lock(mal_contextLock, "wait");
+		c->mode = AWAITING;
+		/* close streams */
+		MCexitClient(c);
+		/* wait for work */
+		mal_unset_lock(mal_contextLock, "wait");
+		MT_down_sema(c->s, "MSserveClient");
+		c->mythread->data[1] = c->fdin;
+		c->mythread->data[0] = c->fdout;
+		return (c->mode == CLAIMED);
+	}
+	return 1;
+}
+
+Client MCinitClient(oid user, bstream *fin, stream *fout) 
+{
+	Client c = NULL; 
 	str prompt;
 
 	if ((c = MCnewClient()) == NULL)
@@ -413,35 +488,22 @@ Client MCinitClient(oid user, bstream *fin, stream *fout) {
 	c->scenario = NULL;
 	c->oldscenario = NULL;
 	c->srcFile = NULL;
-	c->sessionkey = 0;
 	c->blkmode = 0;
 
 	c->fdin = fin ? fin : bstream_create(GDKin,0);
-	c->console = c->fdin;
 	c->yycur = 0;
 	c->bak = NULL;
 
 	c->listing = 0;
 	c->fdout = fout ? fout : GDKstdout;
 	c->mdb = 0;
-	c->notused = 0;
 	c->history = 0;
-@-
-The output buffer is currently not used. Beware to garbage
-collect the buffer when in use.
-@c
-	c->output = 0;
-/*
-	if(c->nspace==0)
-		c->nspace = newModule(NULL, putName("guest",5));
-*/
 	c->curprg = c->backup = 0;
 	c->glb = 0;
 
 	c->father = NULL;
 	c->login = c->lastcmd= time(0);
 	c->delay= TIMEOUT;
-	c->mode = AWAITING;
 	c->stage = 0;
 	c->itrace = 0;
 	c->debugOptimizer = c->debugScheduler= 0;
@@ -450,15 +512,16 @@ collect the buffer when in use.
 	c->vmfoot = 0;
 	c->errbuf = 0;
 
-	c->cwd= GDKstrdup(monet_cwd);
 	prompt = !fin? GDKgetenv("monet_prompt"): PROMPT1;
 	c->prompt= GDKstrdup(prompt);
 	c->promptlength= strlen(prompt);
 
 	c->actions =0;
 	c->totaltime= 0;
+	MT_init_sema(c->s, 0, "MCinitClient");
 	return c;
 }
+
 @-
 The administrator should be initialized to enable
 interpretation of the command line arguments, before
@@ -468,11 +531,7 @@ void MCinitClientThread(Client c)
 {
 	Thread t;
 	char cname[11 + 1];
-/*	still unsafe, race conditions, garbage left over??
-	if( c->mythread){
-		t= c->mythread;
-	} else
-*/
+
 	snprintf(cname, 11, SZFMT, (size_t)(c->user));
 	cname[11] = '\0';
 	c->mypid = MT_getpid();
@@ -555,24 +614,7 @@ void freeClient(Client c)
 	Thread t= c->mythread;
 	c->mode = FINISHING;
 
-	/* epilogue actions have been done already */
-	if (c->father == NULL) { /* normal client */
-		if( c->fdout && c->fdout != GDKstdout){
-			MPresetProfiler(c->fdout);
-			(void) stream_close(c->fdout);
-			(void) stream_destroy(c->fdout);
-		}
-		assert(c->bak==NULL);
-		if(c->fdin){
-			/* missing protection against closing stdin stream */
-			(void) stream_close(c->fdin->s);
-			(void) stream_destroy(c->fdin->s);
-			(void) bstream_destroy(c->fdin);
-		}
-		c->fdout = NULL;
-		c->fdin= NULL;
-	} 
-	/* forked client also */
+	MCexitClient(c);
 
 	/* scope list and curprg can not be removed, 
 	   because the client may reside in a
@@ -586,10 +628,10 @@ void freeClient(Client c)
 		c->nspace=0;
 	}
 	   */
-	/* re-use output buffer */
 	c->scenario = NULL;
-	if(c->prompt) GDKfree(c->prompt); c->prompt = NULL;
-	if(c->cwd) GDKfree(c->cwd); c->cwd = NULL;
+	if(c->prompt) 
+		GDKfree(c->prompt); 
+	c->prompt = NULL;
 	c->promptlength=-1;
 	if(c->errbuf){
 		GDKsetbuf(0);
@@ -607,7 +649,6 @@ The threads may not be removed, but should become dormant
 	c->mode = FREECLIENT;
 	if (t) 
 		THRdel(t);	/* you may perform suicide */
-	/* THRsuspend(c->mythread); still unsafe */
 }
 
 @-
@@ -646,29 +687,31 @@ void MCcleanupClients(){
 	Client c;
 	for(c = mal_clients; c < mal_clients+MAL_MAXCLIENTS; c++) {
 		/* if( c->nspace){ freeModuleList(c->nspace); c->nspace=0;}*/
-		if( c->cwd){ 
-			GDKfree(c->cwd); 
-			c->cwd = NULL;
-		}
-		if( c->prompt){ 
+		if( c->prompt) { 
 			GDKfree(c->prompt); 
 			c->prompt = NULL;
 		}
 		c->user = oid_nil;
 		assert(c->bak==NULL);
-		if( c->fdin){
-			(void) stream_close(c->fdin->s);
-			(void) stream_destroy(c->fdin->s); 
-			(void) bstream_destroy(c->fdin);
-			c->fdin= NULL;
-		}
-		if( c->fdout && c->fdout != GDKstdout){
-			MPresetProfiler(c->fdout);
-			(void) stream_destroy(c->fdout); 
-			c->fdout= NULL;
-		}
+		MCexitClient(c);
 	}
 }
+void 
+MCexitPending()
+{
+	Client c;
+
+	mal_set_lock(mal_contextLock, "MCexitPending");
+	for (c = mal_clients+1; c < mal_clients+MAL_MAXCLIENTS; c++) {
+		if (c->mode == AWAITING) {
+			c->mode = FINISHING;
+			/* (re)activate thread */
+			MT_up_sema(c->s, "MCfindClient");
+		}
+	}
+	mal_unset_lock(mal_contextLock, "MCexitPending");
+}
+
 str
 MCsuspendClient(int id, int timeout){
 	if( id<0 || id>MAL_MAXCLIENTS)

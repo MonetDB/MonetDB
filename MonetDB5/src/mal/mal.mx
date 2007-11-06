@@ -362,19 +362,23 @@ This seemingly superflous action is necessary to simplify analyis of
 memory leakage problems later on.
 @c
 void mal_exit(void){
-	int reruns=0, t = 0;
-	int freeclient=0, finishing=0, claimed=0, awaiting=0;
+ 	int t = 0;
 	str err;
-	Client cntxt = mal_clients;
 
 @-
 Before continuing we should make sure that all clients
 (except the console) have left the scene.
 @c
+	MCexitPending();
 	if( MCgetClient() != mal_clients){
 		stream_printf(mal_clients->fdout,"#MALexit: non-admin attempt\n");
 		return;
 	}
+#if 0
+	int reruns=0;
+	int freeclient=0, finishing=0, claimed=0, awaiting=0;
+	Client cntxt = mal_clients;
+
 	do{
 		freeclient=0; finishing=0; claimed=0; awaiting=0;
 		for(cntxt= mal_clients+1;  cntxt<mal_clients+MAL_MAXCLIENTS; cntxt++){
@@ -390,10 +394,11 @@ Before continuing we should make sure that all clients
 		if(reruns) 
 			stream_printf(mal_clients->fdout,"#MALexit: clients still active\n");
 	} while (++reruns<3 && finishing+claimed+awaiting );
-	if( reruns== 3)
+	if( reruns == 3)
 		stream_printf(mal_clients->fdout,"#MALexit: server forced exit"
 			" %d finishing %d claimed %d waiting\n", 
 				finishing,claimed,awaiting);
+#endif
 @c
 #if 0
 	/* skip this to solve random crashes, needs work */
@@ -402,8 +407,6 @@ Before continuing we should make sure that all clients
 	unloadLibraries(); 
 
 	finishNamespace();
-	if( cntxt->cwd)
-		GDKfree(cntxt->cwd);
 	if( cntxt->prompt)
 		GDKfree(cntxt->prompt);
 	if( cntxt->errbuf)

@@ -239,7 +239,7 @@ evalFile(Client c, str fname, int listing){
 	} else {
 		c->fdin = bstream_create(fd, 128 * BLOCK);
 		MSinitClientPrg(c,"user","main");	/* re-initialize context */
-		msg= runScenario(c);
+		msg = runScenario(c);
 	}
 
 	@:restoreClient()@
