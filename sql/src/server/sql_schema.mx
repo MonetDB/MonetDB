@@ -134,15 +134,15 @@ sql_insert_priv(mvc *sql, int auth_id, int obj_id, int privilege, int grantor, i
 	stmt *res, **inserts = NEW_ARRAY(stmt *, 5);
 	stmt *pts = stmt_basetable(pt, pt->base.name);
 
-	inserts[0] = stmt_append(stmt_bat(n->data, stmt_dup(pts), INS), stmt_atom_int(obj_id));
+	inserts[0] = stmt_append_col(n->data, stmt_atom_int(obj_id));
 	n = n->next;
-	inserts[1] = stmt_append(stmt_bat(n->data, stmt_dup(pts), INS), stmt_atom_int(auth_id));
+	inserts[1] = stmt_append_col(n->data, stmt_atom_int(auth_id));
 	n = n->next;
-	inserts[2] = stmt_append(stmt_bat(n->data, stmt_dup(pts), INS), stmt_atom_int(privilege));
+	inserts[2] = stmt_append_col(n->data, stmt_atom_int(privilege));
 	n = n->next;
-	inserts[3] = stmt_append(stmt_bat(n->data, stmt_dup(pts), INS), stmt_atom_int(grantor));
+	inserts[3] = stmt_append_col(n->data, stmt_atom_int(grantor));
 	n = n->next;
-	inserts[4] = stmt_append(stmt_bat(n->data, stmt_dup(pts), INS), stmt_atom_int(grantable));
+	inserts[4] = stmt_append_col(n->data, stmt_atom_int(grantable));
 	stmt_destroy(pts);
 	res = sql_insert(sql, pt, inserts, 5, 0);
 	cleanup_stmts(inserts, 5);
@@ -351,8 +351,6 @@ sql_delete_priv(mvc *sql, int auth_id, int obj_id, int privilege, int grantor, i
 
 	stmt *pts = stmt_basetable(pt, pt->base.name);
 	stmt *s = stmt_relselect_init();
-	scope *scp = scope_open(NULL);
-	tvar *ptv = scope_add_table_columns(sql, scp, pt, pt->base.name, UPD);
 
 	(void) grantor;
 	(void) grantable;
@@ -364,8 +362,7 @@ sql_delete_priv(mvc *sql, int auth_id, int obj_id, int privilege, int grantor, i
 	stmt_relselect_fill(s, stmt_uselect(stmt_bat(n->data, stmt_dup(pts), RDONLY), stmt_atom_int(obj_id), cmp_equal));
 
 	s = stmt_mark(stmt_reverse(s), 0);
-	s = sql_delete(sql, ptv, ss, pt, s, 0, 0);
-	scope_close(scp);
+	s = sql_delete(sql, ss, pt, s, 0, 0);
 	return s;
 }
 
@@ -1258,7 +1255,7 @@ create_column(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 			if (cs->null && !cs->def) {
 				a = atom_general(&cs->type, NULL, 0);
 				if (a)
-					res = stmt_append(stmt_bat(cs, stmt_basetable(t, t->base.name), INS), stmt_const(stmt_bat(mvc_first_column(sql, t), stmt_basetable(t, t->base.name), RDONLY), stmt_atom(a)));
+					res = stmt_append_col(cs, stmt_const(stmt_bat(mvc_first_column(sql, t), stmt_basetable(t, t->base.name), RDONLY), stmt_atom(a)));
 			} else {
 				stmt *sq, *val;
 				char *msg = NULL;
@@ -1281,7 +1278,7 @@ create_column(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 				   next value for, this should be called once
 				   foreach new value.
 				*/
-				res = stmt_append(stmt_bat(cs, stmt_basetable(t, t->base.name), INS), stmt_const(stmt_bat(mvc_first_column(sql, t), stmt_basetable(t, t->base.name), RDONLY), val));
+				res = stmt_append_col(cs, stmt_const(stmt_bat(mvc_first_column(sql, t), stmt_basetable(t, t->base.name), RDONLY), val));
 			}
 			if (!res) {
 				return sql_error(sql, 02, "ALTER TABLE: failed to create default value '%s'\n", cs->def ? cs->def : "NULL");
@@ -1638,14 +1635,13 @@ sql_create_table(mvc *sql, sql_schema *ss, int temp, dlist *qname, symbol *table
 		if (with_data) {
 			node *n, *m;
 			scope *scp = scope_open(NULL);
-			tvar *tv = scope_add_table_columns(sql, scp, t, t->base.name, INS);
 			list *l = create_stmt_list();
 			list *cl = t->columns.set;
 
 			for (n = sq->op1.lval->h, m = cl->h; n && m; n = n->next, m = m->next) {
 				sql_column *c = m->data;
 				stmt *ins = stmt_dup(n->data);
-				list_append(l, stmt_append(stmt_bat(c, stmt_dup(tv->s), INS), ins));
+				list_append(l, stmt_append_col(c, ins));
 			}
 			scope_close(scp);
 			res = stmt_list(l);

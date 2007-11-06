@@ -1266,7 +1266,6 @@ optimize(mvc *c, stmt *s)
 	case st_atom:
 	case st_bulkinsert:
 	case st_var:
-	case st_table_clear:
 
 		s->optimized = 1;
 		return stmt_dup(s);
@@ -1338,8 +1337,6 @@ optimize(mvc *c, stmt *s)
 	case st_output:
 	case st_affected_rows:
 	case st_append:
-	case st_insert:
-	case st_replace:
 	case st_exception:
 
 	case st_aggr:
@@ -1363,6 +1360,14 @@ optimize(mvc *c, stmt *s)
 			s->op1.stval = ns;
 			stmt_destroy(os);
 		}
+
+	case st_append_col:
+	case st_append_idx:
+	case st_update_col:
+	case st_update_idx:
+	case st_delete:
+	case st_table_clear:
+
 		if (s->type != st_convert) {
 			if (s->op2.stval) {
 				stmt *os = s->op2.stval;

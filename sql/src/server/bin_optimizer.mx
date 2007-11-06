@@ -514,8 +514,6 @@ bin_optimizer(mvc *c, stmt *s)
 	case st_alias:
 	case st_column:
 	case st_append:
-	case st_insert:
-	case st_replace:
 	case st_exception:
 
 	case st_aggr:
@@ -543,6 +541,12 @@ bin_optimizer(mvc *c, stmt *s)
 			stmt_destroy(os);
 			s->op1.stval = ns;
 		}
+	case st_append_col:
+	case st_append_idx:
+	case st_update_col:
+	case st_update_idx:
+	case st_delete:
+
 		if (s->type != st_convert) {
 			if (s->op2.stval) {
 				stmt *os = s->op2.stval;

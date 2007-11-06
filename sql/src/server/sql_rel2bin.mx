@@ -71,8 +71,6 @@ tail_column(stmt *st)
 	case st_union:
 
 	case st_append:
-	case st_insert:
-	case st_replace:
 
 	case st_unique:
 	case st_aggr:
@@ -151,8 +149,6 @@ head_column(stmt *st)
 	case st_union:
 
 	case st_append:
-	case st_insert:
-	case st_replace:
 
 	case st_group_ext:
 	case st_group:
@@ -208,6 +204,12 @@ head_column(stmt *st)
 	case st_sql:
 
 	case st_dbat:
+
+	case st_append_col:
+	case st_update_col:
+	case st_append_idx:
+	case st_update_idx:
+	case st_delete:
 
 	case st_ordered:
 	case st_output:
@@ -1024,8 +1026,6 @@ rel2bin(mvc *c, stmt *s)
 	case st_alias:
 	case st_column:
 	case st_append:
-	case st_insert:
-	case st_replace:
 	case st_exception:
 
 	case st_aggr:
@@ -1053,6 +1053,13 @@ rel2bin(mvc *c, stmt *s)
 			stmt_destroy(os);
 			s->op1.stval = ns;
 		}
+
+	case st_append_col:
+	case st_update_col:
+	case st_append_idx:
+	case st_update_idx:
+	case st_delete:
+
 		if (s->type != st_convert) {
 			if (s->op2.stval) {
 				stmt *os = s->op2.stval;
@@ -1097,7 +1104,7 @@ rel2bin(mvc *c, stmt *s)
 
 	case st_bat:
 
-		if (s->flag == RDONLY && !mvc_debug_on(c, 8192)) {
+		if (s->flag == RDONLY && !mvc_debug_on(c, 8192)){
 			stmt *res = stmt_delta_table_bat( s->op1.cval, stmt_dup(s->h), s->flag);
 			s->rewritten = stmt_dup(res);
 			s->optimized = res->optimized = 2;
@@ -1109,7 +1116,7 @@ rel2bin(mvc *c, stmt *s)
 
 	case st_idxbat:
 
-		if (s->flag == RDONLY && !mvc_debug_on(c, 8192)) {
+		if (s->flag == RDONLY && !mvc_debug_on(c, 8192)){
 			stmt *res = stmt_delta_table_idxbat( s->op1.idxval, s->flag);
 			s->rewritten = stmt_dup(res);
 			s->optimized = res->optimized = 2;

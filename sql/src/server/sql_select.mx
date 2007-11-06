@@ -46,11 +46,10 @@ typedef struct exp_kind_t {
 	bit reduce;	
 } exp_kind;
 
-#define sql_from 0		/* nothing */
-#define sql_where 1		/* relate to any column from the from */
-/* special search fase which is used within the selection fase */
-#define sql_search 2		/* ??? */
-#define sql_sel   3		/* relate to the pivots (subquery) */
+#define sql_from 0	/* nothing */
+#define sql_where 1	/* relate to any column from the from */
+#define sql_having 2	/* special flag which is used within the having fase */
+#define sql_sel   3	/* relate to the pivots (subquery) */
 
 extern stmt *selects(mvc *sql, scope *scp, symbol *sym);
 
@@ -553,7 +552,7 @@ sql_case(mvc *sql, scope *scp, int token, symbol *opt_cond, dlist *when_search_l
 	stmt *res = NULL, *else_stmt = NULL;
 	node *n, *m;
 	exp_kind ek = {type_value, card_column, FALSE};
-
+	
 	if (dn) {
 		stmt *cond = NULL, *result = NULL;
 
@@ -566,7 +565,7 @@ sql_case(mvc *sql, scope *scp, int token, symbol *opt_cond, dlist *when_search_l
 			if (e1 && subset && subset->nrcols && e1->nrcols == 0)
 				e1 = stmt_const(first_subset(subset), e1);
 			if (e1 && e2) {
-				cond = sql_compare(sql, scp, stmt_dup(e1), e2, "=", sql_search);
+				cond = sql_compare(sql, scp, stmt_dup(e1), e2, "=", sql_sel);
 				result = stmt_atom(atom_general(tail_type(e1), NULL, 0));
 				else_stmt = e1;	/* ELSE case */
 			} else {
@@ -590,17 +589,14 @@ sql_case(mvc *sql, scope *scp, int token, symbol *opt_cond, dlist *when_search_l
 				not = sql_bind_func_result(sql->session->schema, "not", bt, NULL, bt);
 				result = stmt_dup(cond);
 				cond = stmt_unop(stmt_unop(cond, isnul), not);
-				if (f == sql_sel) {
-					cond = stmt_select(cond, stmt_bool(1), cmp_equal);
-				}
 			}
 		} else {
 			dlist *when = dn->data.sym->data.lval;
 
 			if (opt_cond) {
-				cond = sql_compare_exp(sql, scp, grp, subset, opt_cond, when->h->data.sym, "=", sql_search);
+				cond = sql_compare_exp(sql, scp, grp, subset, opt_cond, when->h->data.sym, "=", sql_sel);
 			} else {
-				cond = sql_logical_exp(sql, scp, when->h->data.sym, grp, subset, sql_search);
+				cond = sql_logical_exp(sql, scp, when->h->data.sym, grp, subset, sql_sel);
 			}
 			result = sql_value_exp(sql, scp, when->h->next->data.sym, grp, subset, f, ek);
 		}
@@ -641,19 +637,16 @@ sql_case(mvc *sql, scope *scp, int token, symbol *opt_cond, dlist *when_search_l
 				not = sql_bind_func_result(sql->session->schema, "not", bt, NULL, bt);
 				result = stmt_dup(cond);
 				cond = stmt_unop(stmt_unop(cond, isnul), not);
-				if (f == sql_sel) {
-					cond = stmt_select(cond, stmt_bool(1), cmp_equal);
-				}
 			}
 		} else {
 			dlist *when = dn->data.sym->data.lval;
 
 			if (opt_cond) {
-				cond = sql_compare_exp(sql, scp, grp, subset, opt_cond, when->h->data.sym, "=", sql_search);
+				cond = sql_compare_exp(sql, scp, grp, subset, opt_cond, when->h->data.sym, "=", sql_sel);
 			} else {
-				cond = sql_logical_exp(sql, scp, when->h->data.sym, grp, subset, sql_search);
+				cond = sql_logical_exp(sql, scp, when->h->data.sym, grp, subset, sql_sel);
 			}
-			result = sql_value_exp(sql, scp, when->h->next->data.sym, grp, subset, sql_search, ek);
+			result = sql_value_exp(sql, scp, when->h->next->data.sym, grp, subset, sql_sel, ek);
 		}
 		if (!cond || !result) {
 			list_destroy(conds);
@@ -742,19 +735,7 @@ sql_case(mvc *sql, scope *scp, int token, symbol *opt_cond, dlist *when_search_l
 			stmt_destroy(res);
 			return NULL;
 		}
-
-		/* handle single values differently ! */
-		if (f == sql_sel && !subset) {
-			res = sql_Nop_(sql, "ifthenelse", cond, result, res, NULL);
-		} else {
-			/* TODO implement with ifthenelse only */
-			if (result->nrcols <= 0)
-				result = stmt_const(cond, result);
-			else
-				result = stmt_semijoin(result, cond);
-
-			res = stmt_replace(res, result);
-		}
+		res = sql_Nop_(sql, "ifthenelse", cond, result, res, NULL);
 	}
 	list_destroy(conds);
 	list_destroy(results);
@@ -2804,7 +2785,7 @@ sql_compare_exp(mvc *sql, scope *scp, group *grp, stmt *subset, symbol *lo, symb
 			}
 
 			cmp = stmt_join(stmt_reverse(oref), sqa, cmp_equal);
-			if (f == sql_search) {
+			if (f == sql_sel) {
 				/* need to fix the cmp head */
 				h = stmt_dup(cmp->h->t);
 				stmt_destroy(cmp->h);
@@ -2817,7 +2798,8 @@ sql_compare_exp(mvc *sql, scope *scp, group *grp, stmt *subset, symbol *lo, symb
 				stmt_destroy(cmp->h);
 				cmp->h = h;
 
-				if (subset) {	/* filter subset */
+				/* filter subset */
+				if (subset) {	
 					stmt *p = find_pivot(subset, ls->h);
 
 					ls = stmt_join(p, ls, cmp_equal);
@@ -2842,7 +2824,7 @@ sql_compare_exp(mvc *sql, scope *scp, group *grp, stmt *subset, symbol *lo, symb
 
 			cmp = sql_compare(sql, scp, ls, cmp, compare_op, f);
 			/* incase of sub queries no need too filter */
-			if (f == sql_search)
+			if (f == sql_having)
 				return cmp;
 			stmt_destroy(rs);
 			if (!cmp)
@@ -2915,7 +2897,7 @@ sql_and(mvc *sql, scope *scp, stmt *ls, stmt *rs, int f)
 	if (f == sql_sel || (ls->nrcols <= 0 && rs->nrcols <= 0))
 		return sql_binop_(sql, NULL, NULL, "and", ls, rs);
 
-	if (f >= sql_search)
+	if (f >= sql_having)
 		return stmt_semijoin(ls, rs);
 
 	if (ls->type != st_set && ls->type != st_sets) {
@@ -3002,7 +2984,7 @@ sql_or(mvc *sql, scope *scp, stmt *ls, stmt *rs, int f)
 	if (f == sql_sel || (ls->nrcols <= 0 && rs->nrcols <= 0))
 		return sql_binop_(sql, NULL, NULL, "or", ls, rs);
 
-	if (f >= sql_search)
+	if (f >= sql_having)
 		return stmt_union(stmt_const(ls, stmt_atom_int(0)), stmt_const(rs, stmt_atom_int(0)));
 
 	/* optimization 
@@ -3397,7 +3379,21 @@ sql_logical_exp_(mvc *sql, scope *scp, symbol *sc, group *grp, stmt *subset, int
 		stmt *res = sql_value_exp(sql, scp, cr, grp, subset, f, ek);
 
 		/* TODO predicate! */
-		if (res) {
+		if (res && f == sql_sel) {
+			sql_subtype *bt = sql_bind_localtype("bit");
+			sql_subtype *tp = tail_type(res);
+			sql_subfunc *isnul = sql_bind_func_result(sql->session->schema, "isnull", tp, NULL, bt);
+
+			if (!isnul) {
+				stmt_destroy(res);
+				return NULL;
+			}
+			res = stmt_unop(res, isnul);
+			if (sc->token != SQL_NULL) {
+				sql_subfunc *not = sql_bind_func_result(sql->session->schema, "not", bt, NULL, bt);
+				res = stmt_unop(res, not);
+			} 
+		} else if (res) {
 			sql_subtype *tpe = tail_type(res);
 			stmt *a = stmt_atom(atom_general(tpe, NULL, 0));
 
@@ -3487,7 +3483,7 @@ sql_logical_exp(mvc *sql, scope *scp, symbol *sc, group *grp, stmt *subset, int 
 		if (!found)
 			scope_add_alias(scp, stmt_dup(t), "row");
 
-	} else if (s && s->nrcols == 0 && f == sql_search && subset) {
+	} else if (s && s->nrcols == 0 && f == sql_having && subset) {
 		stmt *t = first_subset(subset);
 
 		t = stmt_const(t, stmt_bool(1));
@@ -3856,7 +3852,7 @@ sql_select(mvc *sql, scope *scp, SelectNode *sn, exp_kind ek)
 		if (!grp)
 			ss = ptable_parent(subset);
 
-		t = sql_logical_exp(sql, scp, sn->having, grp, ss, sql_search);
+		t = sql_logical_exp(sql, scp, sn->having, grp, ss, sql_having);
 		if (!t) {
 			sql_select_cleanup(sql, s, subset, grp);
 			return sql_error(sql, 02, "SELECT: subquery result missing");

@@ -1779,6 +1779,17 @@ func_def:
 				append_list(f, $11);
 				append_list(f, NULL);
 			  $$ = _symbol_create_list( SQL_CREATE_FUNC, f ); }
+ |  create FUNCTION qname
+	'(' opt_paramlist ')'
+    RETURNS func_data_type
+    routine_body
+			{ dlist *f = L();
+				append_list(f, $3);
+				append_list(f, $5);
+				append_symbol(f, $8);
+				append_string(f, NULL);
+				append_list(f, $9);
+			  $$ = _symbol_create_list( SQL_CREATE_FUNC, f ); }
   | create AGGREGATE qname
 	'(' opt_paramlist ')'
     RETURNS func_data_type
@@ -1790,20 +1801,18 @@ func_def:
 				append_list(f, $11);
 				append_list(f, NULL);
 			  $$ = _symbol_create_list( SQL_CREATE_AGGR, f ); }
- |
-    create FUNCTION qname
+ | /* proc ie no result */
+    create PROCEDURE qname
 	'(' opt_paramlist ')'
-    RETURNS func_data_type
-    routine_body
+    EXTERNAL sqlNAME external_function_name 	
 			{ dlist *f = L();
 				append_list(f, $3);
 				append_list(f, $5);
-				append_symbol(f, $8);
-				append_string(f, NULL);
+				append_symbol(f, NULL); /* no result */
 				append_list(f, $9);
-			  $$ = _symbol_create_list( SQL_CREATE_FUNC, f ); }
- | /* proc ie no result */
-    create PROCEDURE qname
+				append_list(f, NULL);
+			  $$ = _symbol_create_list( SQL_CREATE_PROC, f ); }
+  | create PROCEDURE qname
 	'(' opt_paramlist ')'
     routine_body
 			{ dlist *f = L();

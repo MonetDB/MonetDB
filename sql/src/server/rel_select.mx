@@ -26,8 +26,7 @@
 
 #define sql_from 0
 #define sql_where 1
-/* special search fase which is used within the selection fase */
-#define sql_search 2
+#define sql_having 2
 #define sql_sel   3
 
 extern sql_rel *rel_selects(mvc *sql, symbol *sym);
@@ -3150,7 +3149,7 @@ rel_case(mvc *sql, sql_rel **rel, int token, symbol *opt_cond, dlist *when_searc
 				cond = rel_binop_(sql, l, r, NULL, "=");
 			} else {
 				/* binary value exp (TODO check result type?) */
-				cond = rel_value_exp(sql, rel, when->h->data.sym, sql_search);
+				cond = rel_value_exp(sql, rel, when->h->data.sym, sql_sel);
 			}
 			result = rel_value_exp(sql, rel, when->h->next->data.sym, f);
 		}
@@ -3196,9 +3195,9 @@ rel_case(mvc *sql, sql_rel **rel, int token, symbol *opt_cond, dlist *when_searc
 					return NULL;
 			} else {
 				/* binary value exp (TODO check result type?) */
-				cond = rel_value_exp(sql, rel, when->h->data.sym, sql_search);
+				cond = rel_value_exp(sql, rel, when->h->data.sym, sql_sel);
 			}
-			result = rel_value_exp(sql, rel, when->h->next->data.sym, sql_search);
+			result = rel_value_exp(sql, rel, when->h->next->data.sym, sql_sel);
 		}
 		if (!cond || !result) {
 			list_destroy(conds);
@@ -3723,7 +3722,7 @@ rel_select_exp(mvc *sql, sql_rel *rel, sql_rel *outer, SelectNode *sn, int tople
 			rel = rel_groupby( rel, NULL);
 
 		aggr = 1;
-		rel = rel_logical_exp(sql, rel, sn->having, sql_search);
+		rel = rel_logical_exp(sql, rel, sn->having, sql_having);
 
 		if (!rel) 
 			return NULL;
