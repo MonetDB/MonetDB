@@ -386,6 +386,8 @@ PHP_MINIT_FUNCTION(monetdb)
 	le_result = zend_register_list_destructors_ex(_free_result, NULL, "monetdb result", module_number);
 	le_lofp = zend_register_list_destructors_ex(_free_ptr, NULL, "monetdb large object", module_number);
 	le_string = zend_register_list_destructors_ex(_free_ptr, NULL, "monetdb string", module_number);
+	(void) le_lofp;   /* pacify compiler */
+	(void) le_string; /* pacify compiler */
 	/* For connection option */
 	REGISTER_LONG_CONSTANT("MONETDB_CONNECT_FORCE_NEW", MONETDB_CONNECT_FORCE_NEW, CONST_CS | CONST_PERSISTENT);
 	/* For m_fetch_array() */
