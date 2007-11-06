@@ -302,12 +302,12 @@ URLBOXdepositFile(int *r, str *fnme){
 	char *s,*t;
 	int len=0;
 	char buf[PATHLENGTH];
-	Client c= MCgetClient();
 
 	(void) r; 
 	if( **fnme == '/')
-		snprintf(buf,PATHLENGTH,"%s",*fnme);
-	else snprintf(buf,PATHLENGTH,"%s/%s",c->cwd,*fnme);
+		snprintf(buf,PATHLENGTH,"%s", *fnme);
+	else 
+		snprintf(buf,PATHLENGTH,"%s/%s", monet_cwd, *fnme);
 	/* later, handle directory separator */
 	fs= open_rastream(buf);
 	if( fs == NULL || stream_errnr(fs) ) 
