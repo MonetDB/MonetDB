@@ -128,7 +128,7 @@ OPTdeadcodeImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			freeInstruction(p);
 			actions++;
 		} else
-		if (se || hasSideEffects(p, FALSE) )
+		if (se || hasSideEffects(p, FALSE) || isProcedure(mb,p) )
 			pushInstruction(mb,p);
 		else {
 			freeInstruction(p);

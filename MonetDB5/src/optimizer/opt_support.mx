@@ -522,6 +522,7 @@ opt_export int hasSameSignature(InstrPtr p, InstrPtr q);
 opt_export int hasSameArguments(MalBlkPtr mb, InstrPtr p, InstrPtr q);
 opt_export int isUpdated(MalBlkPtr mb, int pc);
 opt_export int hasCommonResults(InstrPtr p, InstrPtr q);
+opt_export int isProcedure(MalBlkPtr mb, InstrPtr p);
 opt_export int hasSideEffects(InstrPtr p, int strict);
 opt_export int isBlocking(InstrPtr p);
 opt_export int isFragmentGroup(InstrPtr q);
@@ -1063,6 +1064,15 @@ because it will trim most programs to an empty list.
 The side effect tests should become part of the signature
 definitions.
 @c
+
+int
+isProcedure(MalBlkPtr mb, InstrPtr p)
+{
+	if (p->retc == 0 || (p->retc == 1 && getArgType(mb,p,0) == TYPE_void))
+		return TRUE;
+	return FALSE;
+}
+
 int
 hasSideEffects(InstrPtr p, int strict)
 {
@@ -1074,6 +1084,7 @@ hasSideEffects(InstrPtr p, int strict)
 		getFunctionId(p) == insertRef ||
 		getFunctionId(p) == inplaceRef ||
 		getFunctionId(p) == appendRef ||
+		getFunctionId(p) == updateRef ||
 		getFunctionId(p) == sortTailRef ||
 		getFunctionId(p) == setAccessRef ||
 		getFunctionId(p) == setWriteModeRef ||
@@ -1171,10 +1182,11 @@ int isFragmentGroup(InstrPtr p){
 			(getModuleId(p)== algebraRef && (
 				getFunctionId(p)== selectRef ||
 				getFunctionId(p)==uselectRef ||
+		   		getFunctionId(p) == markTRef ||
 				getFunctionId(p)==likeselectRef ||
-				getFunctionId(p)==markTRef ||
 				getFunctionId(p)== joinRef ||
-				getFunctionId(p)== semijoinRef
+				getFunctionId(p)== semijoinRef ||
+				getFunctionId(p)== kdifferenceRef
 			)	)  ||
 			(getModuleId(p)== batRef && (
 				getFunctionId(p)==reverseRef ||

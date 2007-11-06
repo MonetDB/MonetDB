@@ -83,7 +83,7 @@ OPTevaluateImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	InstrPtr p;
 	int first=0, nxt, i, j, k, limit, done=0, again=0;
 	Client c= MCgetClient();
-	MalStkPtr env;
+	MalStkPtr env = NULL;
 	str msg;
 	int debugstate= c->itrace;
 	c->itrace= 0;

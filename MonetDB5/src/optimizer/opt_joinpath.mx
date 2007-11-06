@@ -208,8 +208,8 @@ may fire a BATproperty check in a few cases.
 			b->batCacheid, joins[j]->batCacheid, joins[j + 1]->batCacheid);
 #endif
 		assert(b);
-		BBPreleaseref(joins[j]->batCacheid);
-		BBPreleaseref(joins[j+1]->batCacheid);
+		BBPdecref(joins[j]->batCacheid, FALSE);
+		BBPdecref(joins[j+1]->batCacheid, FALSE);
 		joins[j] = b;
 		top--;
 		for (i = j + 1; i < top; i++)
@@ -219,6 +219,8 @@ may fire a BATproperty check in a few cases.
 	printf("final join %d and %d\n", joins[0]->batCacheid, joins[1]->batCacheid);
 #endif
 	b = BATjoin(joins[0], joins[1], oid_nil);
+	BBPdecref(joins[0]->batCacheid, FALSE);
+	BBPdecref(joins[1]->batCacheid, FALSE);
 	assert(b);
 	return b;
 }
@@ -247,8 +249,6 @@ ALGjoinPath(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		joins[top++] = b;
 	}
 	b= ALGjoinPathBody(top,joins);
-	BBPreleaseref(joins[0]->batCacheid);
-	BBPreleaseref(joins[1]->batCacheid);
 	BBPkeepref(b->batCacheid);
 	*(int *) getArgReference(stk, pci, 0) = b->batCacheid;
 	return MAL_SUCCEED;
