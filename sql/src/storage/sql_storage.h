@@ -37,6 +37,7 @@ typedef enum store_type {
 
 extern sql_trans *gtrans;
 extern int store_nr_active;
+extern store_type active_store_type;
 
 /* relational interface */
 typedef ssize_t (*column_find_row_fptr)(sql_trans *tr, sql_column *c, void *value, ...);
@@ -88,10 +89,13 @@ typedef void *(*bind_idx_fptr) (sql_trans *tr, sql_idx *i, int access);
 typedef void *(*bind_del_fptr) (sql_trans *tr, sql_table *t, int access);
 
 /*
--- append to columns and indices 
+-- append/update to columns and indices 
 */
-typedef void *(*append_col_fptr) (sql_trans *tr, sql_column *c, int access, void *data);
-typedef void *(*append_idx_fptr) (sql_trans *tr, sql_idx *i, int access, void *data);
+typedef void (*append_col_fptr) (sql_trans *tr, sql_column *c, void *d, int t);
+typedef void (*append_idx_fptr) (sql_trans *tr, sql_idx *i, void *d, int t);
+typedef void (*update_col_fptr) (sql_trans *tr, sql_column *c, void *d, int t, ssize_t rid);
+typedef void (*update_idx_fptr) (sql_trans *tr, sql_idx *i, void *d, int t);
+typedef void (*delete_tab_fptr) (sql_trans *tr, sql_table *t, void *d, int tpe);
 
 /*
 -- create the necessary storage resources for columns, indices and tables
@@ -154,6 +158,9 @@ typedef struct store_functions {
 
 	append_col_fptr append_col;
 	append_idx_fptr append_idx;
+	update_col_fptr update_col;
+	update_idx_fptr update_idx;
+	delete_tab_fptr delete_tab;
 
 	create_col_fptr create_col;
 	create_idx_fptr create_idx;
