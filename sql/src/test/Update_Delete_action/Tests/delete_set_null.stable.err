@@ -82,12 +82,12 @@ stderr of test 'delete_set_null` in directory 'src/test/Update_Delete_action` it
 # 11:11:31 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=36107 
 # 11:11:31 >  
 
-MAPI  = monetdb@koala:30346
+MAPI  = monetdb@koala:39231
 QUERY = delete from t1 where id > 2 and id < 5;
-ERROR = !ERROR: UPDATE: FOREIGN KEY constraint 't2.t2_id_fkey' violated
-MAPI  = monetdb@koala:30346
+ERROR = !ERROR: UPDATE: NOT NULL constraint violated for column 't2.id'
+MAPI  = monetdb@koala:39231
 QUERY = delete from t1 where id = 1;
-ERROR = !ERROR: UPDATE: FOREIGN KEY constraint 't2.t2_id_fkey' violated
+ERROR = !ERROR: UPDATE: NOT NULL constraint violated for column 't2.id'
 
 # 11:11:31 >  
 # 11:11:31 >  Done.

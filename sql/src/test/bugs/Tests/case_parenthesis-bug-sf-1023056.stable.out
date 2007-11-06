@@ -22,8 +22,8 @@ Over..
 # 12:53:33 >  
 
 [ 3	]
-% . # table_name
-% single_value # name
+% sys. # table_name
+% ifthenelse_or_=_name # name
 % tinyint # type
 % 1 # length
 [ 1	]

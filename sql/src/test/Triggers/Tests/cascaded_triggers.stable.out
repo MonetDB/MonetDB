@@ -1,19 +1,23 @@
 stdout of test 'cascaded_triggers` in directory 'src/test/Triggers` itself:
 
 
-# 18:27:15 >  
-# 18:27:15 >  Mtimeout -timeout 180 mserver5 "--config=/ufs/goncalve/scratch/MonetDB/MonetDB5/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/goncalve/scratch/MonetDB/MonetDB5/lib/MonetDB5:/ufs/goncalve/scratch/MonetDB/MonetDB5/lib/MonetDB5/lib:/ufs/goncalve/scratch/MonetDB/MonetDB5/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/goncalve/scratch/MonetDB/MonetDB5/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/goncalve/scratch/MonetDB/MonetDB5/var/MonetDB5/sql_logs" --set "xquery_logdir=/ufs/goncalve/scratch/MonetDB/MonetDB5/var/MonetDB5/xquery_logs" --set mapi_port=31130 --set xrpc_port=49289 --set monet_prompt= --trace "--dbname=mTests_src_test_Triggers" --dbinit=' include sql;' ; echo ; echo Over..
-# 18:27:15 >  
+# 12:53:18 >  
+# 12:53:18 >   Mserver "--config=/ufs/niels/scratch/monetdb/Linux-x86_64/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB4:/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB4/lib:/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB4/bin" --set "gdk_dbfarm=/ufs/niels/scratch/monetdb/Linux-x86_64/var/MonetDB4/dbfarm" --set "sql_logdir=/ufs/niels/scratch/monetdb/Linux-x86_64/var/MonetDB4/sql_logs" --set "xquery_logdir=/ufs/niels/scratch/monetdb/Linux-x86_64/var/MonetDB4/xquery_logs" --set mapi_open=true --set xrpc_open=true --set mapi_port=39231 --set xrpc_port=40555 --set monet_prompt= --trace "--dbname=mTests_src_test_Triggers" "--dbinit= module(sql_server);" ; echo ; echo Over..
+# 12:53:18 >  
 
 
 
-# MonetDB Server v5.0.0_beta2_1
-# Copyright (c) 1993-2007 CWI, all rights reserved
-# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs dynamically linked
-# dbname:mTests_src_test_Triggers
-# Visit http://monetdb.cwi.nl/ for further information
+# MonetDB Server v4.21.0
+# based on GDK   v1.21.0
+# Copyright (c) 1993-2007, CWI. All rights reserved.
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
+# Visit http://monetdb.cwi.nl/ for further information.
+# MonetDB/SQL module v2.21.0 loaded
+
+printf("\nReady.\n");
 
 Ready.
+quit();
 
 Over..
 
@@ -47,10 +51,10 @@ Over..
 % 1,	2 # length
 [ 1,	25	]
 [ 3,	27	]
-[ 0	]
 [ 2	]
 [ 1	]
 [ 2	]
+[ 0	]
 % sys.t1,	sys.t1,	sys.t1 # table_name
 % id,	name,	age # name
 % int,	varchar,	int # type

@@ -73,12 +73,12 @@ stderr of test 'update_delete_set_null_crash` in directory 'src/test/Update_Dele
 # 18:10:00 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=31046 
 # 18:10:00 >  
 
-MAPI  = monetdb@amelia:35862
+MAPI  = monetdb@koala:39231
 QUERY = update t1 set id = 10 where id =3;
-ERROR = !SQLException:assert:UPDATE: FOREIGN KEY constraint 't3.t3_id_fkey' violated
-MAPI  = monetdb@amelia:35862
+ERROR = !ERROR: UPDATE: NOT NULL constraint violated for column 't3.id'
+MAPI  = monetdb@koala:39231
 QUERY = delete from t2 where id = 4;
-ERROR = !SQLException:assert:UPDATE: FOREIGN KEY constraint 't3.t3_id_fkey' violated
+ERROR = !ERROR: UPDATE: NOT NULL constraint violated for column 't3.id'
 
 # 18:10:02 >  
 # 18:10:02 >  Done.

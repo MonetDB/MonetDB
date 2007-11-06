@@ -21,7 +21,7 @@ Over..
 # 11:55:41 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35185  < case_cast-bug-sf-1019506.sql
 # 11:55:41 >  
 
-% .,	sys.,	sys.,	.,	.,	sys.,	.,	sys.,	sys.,	.,	.,	.,	. # table_name
+% .,	sys.,	sys.,	sys.,	.,	sys.,	sys.,	sys.,	sys.,	.,	.,	.,	. # table_name
 % table_cat,	table_schem,	table_name,	non_unique,	index_qualifier,	index_name,	type,	ordinal_position,	column_name,	asc_or_desc,	cardinality,	pages,	filter_condition # name
 % clob,	clob,	clob,	smallint,	clob,	clob,	smallint,	smallint,	clob,	char,	int,	int,	clob # type
 % 0,	0,	0,	1,	0,	0,	1,	1,	0,	1,	1,	1,	0 # length

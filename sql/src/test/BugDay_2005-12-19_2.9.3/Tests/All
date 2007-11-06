@@ -19,4 +19,4 @@ crash_on_incorrect_SQL.SF-1314904
 timestamp_fraction.SF-1357342
 aggregate_functions_with_limit.SF-1367127
 bogus_prepare.SF-1377079
-HAVE_MONETDB4?multiple_servers_2.SF-1385247
+#HAVE_MONETDB4?multiple_servers_2.SF-1385247

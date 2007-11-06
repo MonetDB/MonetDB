@@ -21,7 +21,7 @@ Over..
 # 11:55:47 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35185  < selectlist_subquery-sf-1208599.sql
 # 11:55:47 >  
 
-% sys.o,	sys.o,	. # table_name
+% sys.o,	sys.o,	sys. # table_name
 % lid,	avg_prijs,	current_prijs # name
 % int,	double,	double # type
 % 1,	22,	22 # length

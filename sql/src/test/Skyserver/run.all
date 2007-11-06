@@ -43,6 +43,7 @@ $SQL1 < ../../sql/cache.sql
 $SQL1 < ../../sql/ms_functions.sql
 $SQL1 < Skyserver_functions.sql
 
+exit
 echo Cleanup
 $SQL1 < Skyserver_dropFunctions.sql
 $SQL1 < Skyserver_dropMs_functions.sql
