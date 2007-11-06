@@ -49,9 +49,8 @@ extern int bat_table_init( table_functions *tf );
 @c
 #include "sql_config.h"
 #include "bat_table.h"
+#include "bat_utils.h"
 #include "bat_storage.h"
-
-/* TODO use store functions */
 
 static BAT *
 full_column(sql_column *c, BAT *d, BAT *s )
@@ -99,11 +98,11 @@ full_column(sql_column *c, BAT *d, BAT *s )
 	return r;
 }
 
-ssize_t
+static ssize_t
 column_find_row(sql_trans *tr, sql_column *c, void *value, ...)
 {
 	va_list va;
-	BUN p;
+	BUN q;
 	BAT *b = NULL, *s = NULL, *r = NULL, *d = NULL;
 	ssize_t rid = -1;
 	sql_column *nc;
@@ -131,19 +130,19 @@ column_find_row(sql_trans *tr, sql_column *c, void *value, ...)
 		bat_destroy(d);
 
 	r = BATmirror(b);
-	p = BUNfnd(r, value);
-	if (p != BUN_NONE) {
+	q = BUNfnd(r, value);
+	if (q != BUN_NONE) {
 		BATiter ri = bat_iterator(r);
-		rid = *(oid *) BUNtail(ri, p);
+		rid = *(oid *) BUNtail(ri, q);
 	}
 	bat_destroy(b);
 	return rid;
 }
 
-void *
+static void *
 column_find_value(sql_trans *tr, sql_column *c, ssize_t rid)
 {
-	BUN p;
+	BUN q;
 	BAT *b, *d = NULL;
 	void *res = NULL;
 	sql_dbat *bat = c->t->data;
@@ -154,13 +153,13 @@ column_find_value(sql_trans *tr, sql_column *c, ssize_t rid)
 	if (d)
 		bat_destroy(d);
 
-	p = BUNfnd(b, (ptr) &rid);
-	if (p != BUN_NONE) {
+	q = BUNfnd(b, (ptr) &rid);
+	if (q != BUN_NONE) {
 		BATiter bi = bat_iterator(b);
 		void *r;
 		int sz;
 
-		res = BUNtail(bi, p);
+		res = BUNtail(bi, q);
                 sz = ATOMlen(b->ttype, res);
                 r = GDKmalloc(sz);
 		memcpy(r,res,sz);
@@ -170,58 +169,30 @@ column_find_value(sql_trans *tr, sql_column *c, ssize_t rid)
 	return res;
 }
 
-int
+static int
 column_update_value(sql_trans *tr, sql_column *c, ssize_t rid, void *value)
 {
-	BAT *b;
-	sql_bat *bat = c->data;
-
 	assert(rid != (ssize_t)oid_nil);
 	assert(rid != -1);
 
-	if (bat->ubid) {
-		b = temp_descriptor(bat->ubid);
-		if (BUNfnd(b, &rid) != BUN_NONE) {
-			BUNreplace(b, (ptr) &rid, value, TRUE);
-		} else {
-			bat_set_access(b, BAT_WRITE);
-			BUNins(b, (ptr) &rid, value, FALSE);
-			bat_set_access(b, BAT_READ);
-		}
-		bat_destroy(b);
-	} else {
-		b = temp_descriptor(bat->ibid);
-		void_inplace(b, rid, value, TRUE);
-		bat_destroy(b);
-	}
-	c->base.wtime = c->t->base.wtime = c->t->s->base.wtime = tr->wtime = tr->stime;
+	store_funcs.update_col(tr, c, value, c->type.type->localtype, rid);
 	return 0;
 }
 
-int
+static int
 table_insert(sql_trans *tr, sql_table *t, ...)
 {
 	va_list va;
 	node *n = cs_first_node(&t->columns);
-	sql_column *c = n->data;
-	sql_bat *bat = c->data;
-	BAT *b = temp_descriptor(bat->ibid);
 	void *val = NULL;
 	int cnt = 0;
 
-	bat_destroy(b);
 	va_start(va, t);
-
-	c->base.wtime = tr->stime;
 	for (val = va_arg(va, void *); n && val; n = n->next, val = va_arg(va, void *))
 	{
+		sql_column *c = n->data;
+		store_funcs.append_col(tr, c, val, c->type.type->localtype);
 		cnt++;
-		c = n->data;
-		bat = c->data;
-		b = temp_descriptor(bat->ibid);
-		BUNappend(b, val, TRUE);
-		bat_destroy(b);
-		c->base.wtime = tr->stime;
 	}
 	t->cnt ++;
 	if (n) {
@@ -229,21 +200,16 @@ table_insert(sql_trans *tr, sql_table *t, ...)
 		assert(0);
 		return -1;
 	}
-	t->base.wtime = t->s->base.wtime = tr->wtime = tr->stime;
 	return 0;
 }
 
-int
+static int
 table_delete(sql_trans *tr, sql_table *t, ssize_t rid)
 {
-	BAT *b = store_funcs.bind_del(tr, t, INS);
-
 	assert(rid != (ssize_t)oid_nil);
 	assert(rid != -1);
 
-	BUNappend(b, (ptr) &rid, TRUE);
-	bat_destroy(b);
-	t->base.wtime = t->s->base.wtime = tr->wtime = tr->stime;
+	store_funcs.delete_tab(tr, t, &rid, TYPE_oid);
 	return 0;
 }
 
@@ -295,7 +261,7 @@ table_check(sql_trans *tr, sql_table *t)
 #endif
 
 /* returns table rids, for the given select ranges */
-rids *
+static rids *
 rids_select( sql_trans *tr, sql_column *key, void *key_value_low, void *key_value_high, ...)
 {
 	va_list va;
@@ -348,7 +314,7 @@ rids_select( sql_trans *tr, sql_column *key, void *key_value_low, void *key_valu
 }
 
 /* order rids by orderby_column values */
-rids *
+static rids *
 rids_orderby(sql_trans *tr, rids *r, sql_column *orderby_col)
 {
 	BAT *b, *d = NULL;
@@ -368,7 +334,7 @@ rids_orderby(sql_trans *tr, rids *r, sql_column *orderby_col)
 
 
 /* return table rids from result of rids_select, return (-1) when done */
-ssize_t 
+static ssize_t 
 rids_next(rids *r)
 {
 	if (r->cur < BATcount(r->data)) {
@@ -378,7 +344,7 @@ rids_next(rids *r)
 	return -1;
 }
 
-rids *
+static rids *
 rids_join(sql_trans *tr, rids *l, sql_column *lc, rids *r, sql_column *rc)
 {
 	BAT *lcb, *rcb, *d = NULL;
@@ -404,7 +370,7 @@ rids_join(sql_trans *tr, rids *l, sql_column *lc, rids *r, sql_column *rc)
 }
 
 /* clean up the resources taken by the result of rids_select */
-void 
+static void 
 rids_destroy(rids *r)
 {
 	bat_destroy(r->data);

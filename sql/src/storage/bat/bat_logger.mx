@@ -22,7 +22,7 @@
 #include "sql_storage.h"
 #include <gdk_logger.h>
 
-extern logger *sql_logger;
+extern logger *bat_logger;
 
 extern int bat_logger_init( logger_functions *lf );
 
@@ -31,15 +31,15 @@ extern int bat_logger_init( logger_functions *lf );
 #include "sql_config.h"
 #include "bat_logger.h"
 
-logger *sql_logger = NULL;
+logger *bat_logger = NULL;
 
 static int 
 bl_create(char *logdir, char *dbname, int catalog_version)
 {
-	if (sql_logger)
+	if (bat_logger)
 		return LOG_ERR;
-	sql_logger = logger_create(0, "sql", logdir, dbname, catalog_version);
-	if (sql_logger)
+	bat_logger = logger_create(0, "sql", logdir, dbname, catalog_version);
+	if (bat_logger)
 		return LOG_OK;
 	return LOG_ERR;
 }
@@ -47,9 +47,9 @@ bl_create(char *logdir, char *dbname, int catalog_version)
 static void 
 bl_destroy(void)
 {
-	logger *l = sql_logger;
+	logger *l = bat_logger;
 
-	sql_logger = NULL;
+	bat_logger = NULL;
 	if (l) {
 		logger_exit(l);
 		logger_destroy(l);
@@ -59,35 +59,35 @@ bl_destroy(void)
 static int 
 bl_restart(void)
 {
-	if (sql_logger)
-		return logger_restart(sql_logger);
+	if (bat_logger)
+		return logger_restart(bat_logger);
 	return LOG_OK;
 }
 
 static int
 bl_cleanup(void)
 {
-	if (sql_logger)
-		return logger_cleanup(sql_logger);
+	if (bat_logger)
+		return logger_cleanup(bat_logger);
 	return LOG_OK;
 }
 
 static int
 bl_changes(void)
 {	
-	return logger_changes(sql_logger);
+	return logger_changes(bat_logger);
 }
 
 static int 
 bl_get_sequence(int seq, lng *id)
 {
-	return logger_sequence(sql_logger, seq, id);
+	return logger_sequence(bat_logger, seq, id);
 }
 
 static int
 bl_log_isnew(void)
 {
-	if (BATcount(sql_logger->catalog) > 10) {
+	if (BATcount(bat_logger->catalog) > 10) {
 		return 0;
 	}
 	return 1;
@@ -96,19 +96,19 @@ bl_log_isnew(void)
 static int 
 bl_tstart(void)
 {
-	return log_tstart(sql_logger);
+	return log_tstart(bat_logger);
 }
 
 static int 
 bl_tend(void)
 {
-	return log_tend(sql_logger);
+	return log_tend(bat_logger);
 }
 
 static int 
 bl_sequence(int seq, lng id)
 {
-	return log_sequence(sql_logger, seq, id);
+	return log_sequence(bat_logger, seq, id);
 }
 
 int 

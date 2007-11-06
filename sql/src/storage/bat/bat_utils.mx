@@ -1,0 +1,183 @@
+@' The contents of this file are subject to the MonetDB Public License
+@' Version 1.1 (the "License"); you may not use this file except in
+@' compliance with the License. You may obtain a copy of the License at
+@' http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+@'
+@' Software distributed under the License is distributed on an "AS IS"
+@' basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+@' License for the specific language governing rights and limitations
+@' under the License.
+@'
+@' The Original Code is the MonetDB Database System.
+@'
+@' The Initial Developer of the Original Code is CWI.
+@' Portions created by CWI are Copyright (C) 1997-2007 CWI.
+@' All Rights Reserved.
+
+@f bat_utils
+
+@h
+#ifndef BAT_UTILS_H
+#define BAT_UTILS_H
+
+#include "sql_storage.h"
+#include <gdk_logger.h>
+
+extern BAT *temp_descriptor(log_bid b);
+extern void temp_destroy(log_bid b);
+extern void temp_dup(log_bid b);
+extern log_bid temp_create(BAT *b);
+extern log_bid temp_copy(log_bid b, int temp);
+
+extern void bat_destroy(BAT *b);
+extern BAT *bat_new(int ht, int tt, size_t size);
+
+extern void update_table_bat(BAT *b, BAT *ub);
+extern size_t append_inserted(BAT *b, BAT *i );
+extern size_t copy_inserted(BAT *b, BAT *i );
+
+extern void leaks(void);
+
+#endif /* BAT_UTILS_H */
+@c
+#include "sql_config.h"
+#include "bat_utils.h"
+
+void
+leaks(void)
+{
+	int pbat = 0;
+	int pdisk = 0;
+	int pheat = 0;
+	bat i;
+	int tmp = 0, per = 0;
+	BAT *b;
+
+	b = BATnew(TYPE_str, TYPE_int, 32);
+	if (b == 0)
+		return ;
+
+	for (i = 1; i < BBPsize; i++) {
+	        if (i != b->batCacheid && BBPvalid(i) && !(BBP_status(i) & BBPUNSTABLE)) {
+			pbat++;
+			if (BBP_cache(i)) {
+				pheat += BBP_lastused(i);
+				if (BBP_cache(i)->batPersistence == PERSISTENT)
+					per++;
+				else
+					tmp++;
+			} else {
+				pdisk++;
+			}
+		}
+	}
+	b = BUNins(b, "bats", &pbat, FALSE);
+	b = BUNins(b, "tmpbats", &tmp, FALSE);
+	b = BUNins(b, "perbats", &per, FALSE);
+	b = BUNins(b, "ondisk", &pdisk, FALSE);
+	b = BUNins(b, "todisk", &BBPout, FALSE);
+	b = BUNins(b, "fromdisk", &BBPin, FALSE);
+	BATprint(b);
+	bat_destroy(b);
+}
+
+void
+bat_destroy(BAT *b)
+{
+	if (b)
+		BBPunfix(b->batCacheid);
+}
+
+BAT *
+bat_new(int ht, int tt, size_t size)
+{
+	BAT *nb = BATnew(ht, tt, size);
+
+	if (ht == TYPE_void)
+		BATseqbase(nb, 0);
+	nb->batDirty |= 2;
+	return nb;
+}
+
+BAT *
+temp_descriptor(log_bid b)
+{
+	return BATdescriptor((bat) b);
+}
+
+void
+temp_destroy(log_bid b)
+{
+	BBPdecref(b, TRUE);
+}
+
+void
+temp_dup(log_bid b)
+{
+	BBPincref(b, TRUE);
+}
+
+log_bid
+temp_create(BAT *b)
+{
+	temp_dup(b->batCacheid);
+	return b->batCacheid;
+}
+
+log_bid
+temp_copy(log_bid b, int temp)
+{
+	/* make a copy of b, if temp is set only create a empty bat */
+	BAT *o = temp_descriptor(b);
+	BAT *c;
+	log_bid r;
+
+	if (!temp) {
+		c = BATcopy(o, o->htype, o->ttype, TRUE);
+		BATcommit(c);
+	} else {
+		c = bat_new(o->htype, o->ttype, COLSIZE);
+	}
+	r = temp_create(c);
+	bat_destroy(c);
+	bat_destroy(o);
+	return r;
+}
+
+void
+update_table_bat(BAT *b, BAT *ub)
+{
+	if (ub && BATcount(ub)) {
+		void_replace_bat(b, ub, TRUE);
+		BATclear(ub);
+		BATcommit(ub);
+	}
+}
+
+size_t
+append_inserted(BAT *b, BAT *i )
+{
+	size_t nr = 0;
+	BUN r;
+       	BATiter ii = bat_iterator(i);
+
+       	for (r = i->batInserted; r < BUNlast(i); r++) {
+		BUNappend(b, BUNtail(ii,r), TRUE);
+		nr++;
+	}
+	return nr;
+}
+
+size_t
+copy_inserted(BAT *b, BAT *i )
+{
+	size_t nr = 0;
+	BUN r;
+       	BATiter ii = bat_iterator(i);
+
+	for (r = i->batInserted; r < BUNlast(i); r++) {
+		BUNins(b, BUNhead(ii,r), BUNtail(ii,r), TRUE);
+       		nr++;
+	}
+	return nr;
+}
