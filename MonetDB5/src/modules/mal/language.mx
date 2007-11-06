@@ -145,7 +145,6 @@ language_export str CMDevalFile(int *ret, str *fnme);
 language_export str CMDcallBAT(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 language_export str CMDincludeFile(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 language_export str CMDdebug(int *ret, int *flg);
-language_export str CMDsetCwd(str *ret, str *fnme);
 language_export str MALassertTriple(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 language_export str MALsafeguardStack(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 #endif /* _LANGUAGE_H */
@@ -299,12 +298,12 @@ CMDevalFile(int *ret, str *fnme)
 
 	(void) ret;		/* fool compiler */
 	if (s == 0) 
-		throw(MAL, "mal.setCwd", "File name missing\n");
+		throw(MAL, "mal.evalFile", "File name missing\n");
 
 	if (*s != '/') {
-		char *buf = GDKmalloc(strlen(c->cwd) + strlen(s) + 2);
+		char *buf = GDKmalloc(strlen(monet_cwd) + strlen(s) + 2);
 
-		strcpy(buf, c->cwd);
+		strcpy(buf, monet_cwd);
 		strcat(buf, "/");
 		strcat(buf, s);
 		msg = evalFile(c, buf, 0);
@@ -342,16 +341,6 @@ CMDdebug(int *ret, int *flg)
 	*ret = GDKdebug;
 	if (*flg)
 		GDKdebug = *flg;
-	return MAL_SUCCEED;
-}
-
-str
-CMDsetCwd(str *ret, str *fnme)
-{
-	Client c = MCgetClient();
-
-	*ret = c->cwd;
-	c->cwd = GDKstrdup(*fnme);
 	return MAL_SUCCEED;
 }
 
