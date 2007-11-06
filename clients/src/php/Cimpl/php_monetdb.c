@@ -377,6 +377,9 @@ static void php_monetdb_init_globals(zend_monetdb_globals *monetdb_globals)
  */
 PHP_MINIT_FUNCTION(monetdb)
 {
+	/* unused parameters */
+	(void) type;
+
 	ZEND_INIT_MODULE_GLOBALS(monetdb, php_monetdb_init_globals, NULL);
 
 	REGISTER_INI_ENTRIES();
@@ -386,6 +389,8 @@ PHP_MINIT_FUNCTION(monetdb)
 	le_result = zend_register_list_destructors_ex(_free_result, NULL, "monetdb result", module_number);
 	le_lofp = zend_register_list_destructors_ex(_free_ptr, NULL, "monetdb large object", module_number);
 	le_string = zend_register_list_destructors_ex(_free_ptr, NULL, "monetdb string", module_number);
+	(void) le_lofp;   /* pacify compiler */
+	(void) le_string; /* pacify compiler */
 	/* For connection option */
 	REGISTER_LONG_CONSTANT("MONETDB_CONNECT_FORCE_NEW", MONETDB_CONNECT_FORCE_NEW, CONST_CS | CONST_PERSISTENT);
 	/* For m_fetch_array() */
@@ -426,6 +431,9 @@ PHP_MINIT_FUNCTION(monetdb)
  */
 PHP_MSHUTDOWN_FUNCTION(monetdb)
 {
+	/* unused parameters */
+	(void) type;
+
 	UNREGISTER_INI_ENTRIES();
 	zend_hash_destroy(&MG(notices));
 	zend_hash_destroy(&MG(errors));
@@ -438,6 +446,10 @@ PHP_MSHUTDOWN_FUNCTION(monetdb)
  */
 PHP_RINIT_FUNCTION(monetdb)
 {
+	/* unused parameters */
+	(void) type;
+	(void) module_number;
+
 	MG(default_link)=-1;
 	MG(num_links) = MG(num_persistent);
 	return SUCCESS;
@@ -448,6 +460,10 @@ PHP_RINIT_FUNCTION(monetdb)
  */
 PHP_RSHUTDOWN_FUNCTION(monetdb)
 {
+	/* unused parameters */
+	(void) type;
+	(void) module_number;
+
 	/* clean up notice messages */
 	zend_hash_clean(&MG(notices));
 	zend_hash_clean(&MG(errors));
@@ -501,6 +517,11 @@ static void php_monetdb_do_connect(INTERNAL_FUNCTION_PARAMETERS, int persistent)
 	smart_str s = {NULL, 0, 0};
 
 	Mconn *monetdb;
+
+	/* unused parameters */
+	(void) return_value_ptr;
+	(void) this_ptr;
+	(void) return_value_used;
 
 	argc = ZEND_NUM_ARGS();
 	if (argc > 7 ||
@@ -704,6 +725,11 @@ PHP_FUNCTION(monetdb_close)
 	int id;
 	Mconn *monetdb;
 	
+	/* unused parameters */
+	(void) return_value_ptr;
+	(void) this_ptr;
+	(void) return_value_used;
+
 	switch (ZEND_NUM_ARGS()) {
 		case 0:
 			id = MG(default_link);
@@ -751,6 +777,11 @@ static void php_monetdb_get_link_info(INTERNAL_FUNCTION_PARAMETERS, int entry_ty
 	zval **monetdb_link = NULL;
 	int id = -1;
 	Mconn *monetdb;
+
+	/* unused parameters */
+	(void) return_value_ptr;
+	(void) this_ptr;
+	(void) return_value_used;
 
 	switch(ZEND_NUM_ARGS()) {
 		case 0:
@@ -850,6 +881,11 @@ PHP_FUNCTION(monetdb_ping)
 	int id;
 	Mconn *monetdb;
 
+	/* unused parameters */
+	(void) return_value_ptr;
+	(void) this_ptr;
+	(void) return_value_used;
+
 	if (zend_parse_parameters_ex(ZEND_PARSE_PARAMS_QUIET, ZEND_NUM_ARGS() TSRMLS_CC, "r", &monetdb_link) == SUCCESS) {
 		id = -1;
 	} else {
@@ -884,6 +920,11 @@ PHP_FUNCTION(monetdb_query)
 	Mconn *monetdb;
 	Mresult *monetdb_result;
 	php_monetdb_result_handle *monetdb_result_h;
+
+	/* unused parameters */
+	(void) return_value_ptr;
+	(void) this_ptr;
+	(void) return_value_used;
 
 	switch(ZEND_NUM_ARGS()) {
 		case 1:
@@ -1303,6 +1344,11 @@ static void php_monetdb_get_result_info(INTERNAL_FUNCTION_PARAMETERS, int entry_
 	Mresult *monetdb_result;
 	php_monetdb_result_handle *monetdb_result_h;
 
+	/* unused parameters */
+	(void) return_value_ptr;
+	(void) this_ptr;
+	(void) return_value_used;
+
 	if (ZEND_NUM_ARGS() != 1 || zend_get_parameters_ex(1, &result)==FAILURE) {
 		WRONG_PARAM_COUNT;
 	}
@@ -1361,6 +1407,11 @@ PHP_FUNCTION(monetdb_last_notice)
 	int id = -1;
 	php_monetdb_notice **notice;
 	
+	/* unused parameters */
+	(void) return_value_ptr;
+	(void) this_ptr;
+	(void) return_value_used;
+
 	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "r",
 							  &monetdb_link) == FAILURE) {
 		return;
@@ -1387,6 +1438,11 @@ static void php_monetdb_get_field_info(INTERNAL_FUNCTION_PARAMETERS, int entry_t
 	Mresult *monetdb_result;
 	php_monetdb_result_handle *monetdb_result_h;
 	
+	/* unused parameters */
+	(void) return_value_ptr;
+	(void) this_ptr;
+	(void) return_value_used;
+
 	if (ZEND_NUM_ARGS() != 2 || zend_get_parameters_ex(2, &result, &field)==FAILURE) {
 		WRONG_PARAM_COUNT;
 	}
@@ -1459,6 +1515,11 @@ PHP_FUNCTION(monetdb_field_num)
 	php_monetdb_result_handle *monetdb_result_h;
 	int i;
 
+	/* unused parameters */
+	(void) return_value_ptr;
+	(void) this_ptr;
+	(void) return_value_used;
+
 	if (ZEND_NUM_ARGS() != 2 || zend_get_parameters_ex(2, &result, &field)==FAILURE) {
 		WRONG_PARAM_COUNT;
 	}
@@ -1491,6 +1552,11 @@ PHP_FUNCTION(monetdb_fetch_result)
 	int field_offset, monetdb_row;
 	char *data;
 	
+	/* unused parameters */
+	(void) return_value_ptr;
+	(void) this_ptr;
+	(void) return_value_used;
+
 	if ((ZEND_NUM_ARGS() != 3 || zend_get_parameters_ex(3, &result, &row, &field)==FAILURE) &&
 	    (ZEND_NUM_ARGS() != 2 || zend_get_parameters_ex(2, &result, &field)==FAILURE)) {
 		WRONG_PARAM_COUNT;
@@ -1576,6 +1642,11 @@ static void php_monetdb_fetch_hash(INTERNAL_FUNCTION_PARAMETERS, long result_typ
 	uint            element_len;
 	zval            *ctor_params = NULL;
 	zend_class_entry *ce = NULL;
+
+	/* unused parameters */
+	(void) return_value_ptr;
+	(void) this_ptr;
+	(void) return_value_used;
 
 	if (into_object) {
 		char *class_name;
@@ -1807,6 +1878,11 @@ PHP_FUNCTION(monetdb_result_seek)
 	long row;
 	php_monetdb_result_handle *monetdb_result_h;
 
+	/* unused parameters */
+	(void) return_value_ptr;
+	(void) this_ptr;
+	(void) return_value_used;
+
 	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rl", &result, &row) == FAILURE) {
 		return;
 	}
@@ -1835,6 +1911,11 @@ static void php_monetdb_data_info(INTERNAL_FUNCTION_PARAMETERS, int entry_type)
 	php_monetdb_result_handle *monetdb_result_h;
 	int field_offset, monetdb_row;
 	
+	/* unused parameters */
+	(void) return_value_ptr;
+	(void) this_ptr;
+	(void) return_value_used;
+
 	if ((ZEND_NUM_ARGS() != 3 || zend_get_parameters_ex(3, &result, &row, &field)==FAILURE) &&
 	    (ZEND_NUM_ARGS() != 2 || zend_get_parameters_ex(2, &result, &field)==FAILURE)) {
 		WRONG_PARAM_COUNT;
@@ -1933,6 +2014,11 @@ PHP_FUNCTION(monetdb_free_result)
 	zval **result;
 	php_monetdb_result_handle *monetdb_result_h;
 	
+	/* unused parameters */
+	(void) return_value_ptr;
+	(void) this_ptr;
+	(void) return_value_used;
+
 	if (ZEND_NUM_ARGS() != 1 || zend_get_parameters_ex(1, &result)==FAILURE) {
 		WRONG_PARAM_COUNT;
 	}
@@ -1953,6 +2039,12 @@ PHP_FUNCTION(monetdb_escape_string)
 	char *from = NULL, *to = NULL, *ret = NULL;
 	int to_len;
 	int from_len;
+
+	/* unused parameters */
+	(void) return_value_ptr;
+	(void) this_ptr;
+	(void) return_value_used;
+
 	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s",
 							  &from, &from_len) == FAILURE) {
 		return;
@@ -1974,6 +2066,11 @@ PHP_FUNCTION(monetdb_connection_status)
 	int id = -1;
 	Mconn *monetdb_conn;
 
+	/* unused parameters */
+	(void) return_value_ptr;
+	(void) this_ptr;
+	(void) return_value_used;
+
 	if (zend_parse_parameters_ex(ZEND_PARSE_PARAMS_QUIET, ZEND_NUM_ARGS() TSRMLS_CC, "r",
 								 &monetdb_link) == FAILURE) {
 		RETURN_FALSE;
@@ -1993,6 +2090,11 @@ PHP_FUNCTION(monetdb_connection_reset)
 	int id = -1;
 	Mconn *monetdb_conn;
 	
+	/* unused parameters */
+	(void) return_value_ptr;
+	(void) this_ptr;
+	(void) return_value_used;
+
 	if (zend_parse_parameters_ex(ZEND_PARSE_PARAMS_QUIET, ZEND_NUM_ARGS() TSRMLS_CC, "r",
 								 &monetdb_link) == FAILURE) {
 		RETURN_FALSE;
