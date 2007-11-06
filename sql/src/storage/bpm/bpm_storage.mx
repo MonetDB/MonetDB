@@ -1,0 +1,1434 @@
+@' The contents of this file are subject to the MonetDB Public License
+@' Version 1.1 (the "License"); you may not use this file except in
+@' compliance with the License. You may obtain a copy of the License at
+@' http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+@'
+@' Software distributed under the License is distributed on an "AS IS"
+@' basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+@' License for the specific language governing rights and limitations
+@' under the License.
+@'
+@' The Original Code is the MonetDB Database System.
+@'
+@' The Initial Developer of the Original Code is CWI.
+@' Portions created by CWI are Copyright (C) 1997-2007 CWI.
+@' All Rights Reserved.
+
+@f bpm_storage
+
+@h
+#ifndef BPMSTORAGE_H
+#define BPMSTORAGE_H
+
+#include "sql_storage.h"
+#include "bpm_logger.h"
+
+#define BPM_SPLIT 	1024
+#define BPM_DEFAULT 	8
+
+#define bpm_hrange 1
+#define bpm_trange 2
+
+typedef struct PartRec {
+	int  bid, ubid;	/* updates, needed for void and readonly bats */
+	/* we assume oid,any bats ? */
+	oid hlow,hhgh; /* head range */
+	ptr tlow,thgh; /* tail range */
+	sht hbits, tbits; /* linear hashing bits */
+	char *name, *uname;
+	size_t cnt;
+} *Part, PartRec;
+
+typedef struct sql_bpm {
+	char *name;
+	char *uname;
+	oid   pid;
+	sht   type;
+	sht   ttpe;	/* bat tail type only kept in memory */
+	sht   nr;	/* total */
+	sht   ins;	/* from ins on the bats contain inserted values */
+	sht   sz;
+	Part  parts;
+} sql_bpm;
+
+#define bat_set_access(b,access) b->P->restricted = access
+#define bat_clear(b) bat_set_access(b,BAT_WRITE);BATclear(b);bat_set_access(b,BAT_READ)
+
+/* initialize bat storage call back functions interface */
+extern int bpm_storage_init( store_functions *sf );
+
+extern void bpm_add_partition(sql_bpm *p);
+
+#endif /*BPMSTORAGE_H */
+
+@c
+#include "sql_config.h"
+#include "bpm_storage.h"
+#include "bat/bat_utils.h"
+#include <sql_string.h>
+
+static MT_Lock part_lock;
+static BAT *part_name = NULL;
+static BAT *part_type = NULL;
+static BAT *part_pid = NULL;
+static BAT *part_nr = NULL;
+static BAT *part_hlow = NULL;
+static BAT *part_hhgh = NULL;
+static BAT *part_tlow = NULL;
+static BAT *part_thgh = NULL;
+static BAT *part_hbits = NULL;
+static BAT *part_tbits = NULL;
+
+int part = 1; /* part id is saved by the logger */
+
+static int 
+PartID() 
+{
+	int p;
+
+	/* needs locks */
+	MT_set_lock(part_lock, "PartID");
+	p = part++;
+	MT_unset_lock(part_lock, "PartID");
+	return p;
+}
+
+static int
+extend_part( sql_bpm *p, BAT *b, bat u)
+{
+	int nr = p->nr;
+
+	if (p->sz == p->nr) 
+		p -> parts = RENEW_ARRAY(PartRec, p->parts, p->sz<<=1);
+	p -> parts[nr].bid = b->batCacheid;
+	temp_dup(b->batCacheid);
+	p -> parts[nr].ubid = 0;
+	if (u) {
+		p -> parts[nr].ubid = u;
+		temp_dup(u);
+	}
+	p -> parts[nr].cnt = BATcount(b);
+	p -> parts[nr].hlow = p->parts[nr].hhgh = -1;
+	if (BATcount(b)) {
+		BATiter bi = bat_iterator(b);
+		p -> parts[nr].hlow = *(oid*)BUNhead(bi,BUNfirst(b));
+		p -> parts[nr].hhgh = *(oid*)BUNhead(bi,BUNlast(b)-1);
+	}
+	p -> parts[nr].tlow = p -> parts[nr].thgh = NULL; 
+	p -> parts[nr].hbits = p -> parts[nr].tbits = 0;
+	p -> nr++;
+	return nr;
+}
+
+void
+bpm_add_partition(sql_bpm *p)
+{
+	BAT *x = temp_descriptor(p->parts[p->nr-1].bid);
+	BAT *b = BATnew(TYPE_void, p->ttpe, 0);
+	BATseqbase(b, x->hseqbase + BATcount(x));
+	bat_destroy(x);
+	extend_part(p, b, 0);
+	bat_destroy(b);
+}
+
+static sql_bpm *
+create_parts(sql_bpm *p, int ttpe)
+{
+	if (!p->pid)
+		p -> pid = PartID();
+	p -> type = bpm_hrange;
+	p -> ttpe = ttpe; 
+	p -> nr = 0; 
+	p -> ins = 0; 
+	p -> sz = BPM_DEFAULT;
+	p -> parts = NEW_ARRAY(PartRec,p->sz);
+	return p;
+}
+
+/*
+static sql_bpm *
+copy_part( sql_bpm *pp )
+{
+	int i;
+	sql_bpm *p = ZNEW(sql_bpm);
+
+	p -> name = NULL;
+	p -> pid = pp->pid;
+	if (!p->pid)
+		p -> pid = PartID();
+	p -> type = pp->type;
+	p -> ttpe = pp->ttpe;
+	p -> nr = pp->nr; 
+	p -> ins = pp->ins;
+	p -> sz = pp->sz;
+	p -> parts = NEW_ARRAY(PartRec,pp->sz);
+	for (i = 0; i<pp->nr; i++) {
+		p->parts[i] = pp->parts[i];
+		temp_dup(p->parts[i].bid);
+		if (p->parts[i].ubid)
+			temp_dup(p->parts[i].ubid);
+	}
+	return p;
+}
+*/
+
+static void 
+bpm_init(void)
+{
+	int p;
+
+	if (!part_name && (p = logger_find_bat(bpm_logger, "part_name"))) {
+		#define get_bat(nme) \
+			temp_descriptor(logger_find_bat(bpm_logger, nme))
+		part_name = temp_descriptor(p);
+		part_type = get_bat("part_type");
+		part_pid = get_bat("part_pid");
+		part_nr = get_bat("part_nr");
+		part_hlow = get_bat("part_hlow");
+		part_hhgh = get_bat("part_hhgh");
+		part_tlow = get_bat("part_tlow");
+		part_thgh = get_bat("part_thgh");
+		part_hbits = get_bat("part_hbits");
+		part_tbits = get_bat("part_tbits");
+	}
+	if (!part_name) {
+		/* partition bats */
+		part_name = bat_new(TYPE_oid, TYPE_str, 0);
+		part_type = bat_new(TYPE_oid, TYPE_sht, 0);
+
+		/* parts bats */
+		part_pid = bat_new(TYPE_oid, TYPE_int, 0);
+		part_nr = bat_new(TYPE_oid, TYPE_sht, 0);
+		part_hlow = bat_new(TYPE_oid, TYPE_oid, 0);
+		part_hhgh = bat_new(TYPE_oid, TYPE_oid, 0);
+		part_tlow = bat_new(TYPE_oid, TYPE_oid, 0);
+		part_thgh = bat_new(TYPE_oid, TYPE_oid, 0);
+		part_thgh = bat_new(TYPE_oid, TYPE_oid, 0);
+		part_hbits = bat_new(TYPE_oid, TYPE_sht, 0);
+		part_tbits = bat_new(TYPE_oid, TYPE_sht, 0);
+
+#define log_P(l, b, n) logger_add_bat(l, b, n); log_bat_persists(l, b, n)
+		log_P(bpm_logger, part_name, "part_name");
+		log_P(bpm_logger, part_type, "part_type");
+		log_P(bpm_logger, part_pid, "part_pid");
+		log_P(bpm_logger, part_nr, "part_nr");
+		log_P(bpm_logger, part_hlow, "part_hlow");
+		log_P(bpm_logger, part_hhgh, "part_hhgh");
+		log_P(bpm_logger, part_tlow, "part_tlow");
+		log_P(bpm_logger, part_thgh, "part_thgh");
+		log_P(bpm_logger, part_hbits, "part_hbits");
+		log_P(bpm_logger, part_tbits, "part_tbits");
+	}
+}
+
+static BAT *
+bpm_part_name() {
+	if (!part_name)
+		bpm_init();
+	return part_name;
+}
+
+static void
+bpm_new_part(oid id, char *name )
+{
+	BAT *part_name = bpm_part_name();
+
+	BUNins(part_name, (ptr)&id, (ptr)name, FALSE);
+}
+
+static BAT *
+bind_ucol(sql_trans *tr, sql_column *c, int access)
+{
+	BAT *b;
+	sql_bpm *p = c->data;
+
+	assert(access == RD_UPD);
+	/* TODO we should fold here ??? */
+	b = temp_descriptor(p->parts[0].ubid);
+	assert(b);
+	b->batDirty |= 2;
+	c->t->s->base.rtime = c->t->base.rtime = c->base.rtime = tr->stime;
+	return b;
+}
+
+static BAT *
+bind_uidx(sql_trans *tr, sql_idx * i, int access)
+{
+	BAT *b;
+	sql_bpm *p = i->data;
+
+	assert(access == RD_UPD);
+	/* TODO we should fold here ??? */
+	b = temp_descriptor(p->parts[0].ubid);
+	assert(b);
+	b->batDirty |= 2;
+	i->base.rtime = i->t->base.rtime = i->t->s->base.rtime = tr->rtime = tr->stime;
+	return b;
+}
+
+static BAT *
+bind_col(sql_trans *tr, sql_column *c, int access)
+{
+	BAT *b;
+	sql_bpm *p = c->data;
+
+	if (access == RD_UPD)
+		return bind_ucol(tr, c, access);
+	assert(access == RDONLY || access == RD_INS);
+	if (isTemp(c) || access == RD_INS) {
+		/* TODO we should fold here ??? */
+		b = temp_descriptor(p->parts[p->ins].bid);
+	} else {
+		/* TODO we should fold here ??? */
+		b = temp_descriptor(p->parts[0].bid);
+		bat_set_access(b, BAT_READ);
+	}
+	assert(b);
+	b->batDirty |= 2;
+	c->base.rtime = c->t->base.rtime = c->t->s->base.rtime = tr->rtime = tr->stime;
+	assert(b);
+	return b;
+}
+
+static BAT *
+bind_idx(sql_trans *tr, sql_idx * i, int access)
+{
+	BAT *b;
+	sql_bpm *p = i->data;
+
+	if (access == RD_UPD)
+		return bind_uidx(tr, i, access);
+	assert(access == RDONLY || access == RD_INS);
+	if (isTemp(i) || access == RD_INS) {
+		/* TODO we should fold here ??? */
+		b = temp_descriptor(p->parts[p->ins].bid);
+	} else {
+		/* TODO we should fold here ??? */
+		b = temp_descriptor(p->parts[0].bid);
+		bat_set_access(b, BAT_READ);
+	}
+	assert(b);
+	b->batDirty |= 2;
+	i->base.rtime = i->t->base.rtime = i->t->s->base.rtime = tr->rtime = tr->stime;
+	return b;
+}
+
+static void
+update_bat( sql_bpm *p, BAT *upd) 
+{
+	BAT *b;
+
+	/* TODO we should make sure all parts are correctly updated */
+	if (p->parts[0].ubid) {
+		b = temp_descriptor(p->parts[0].ubid);
+		assert(b);
+/*
+		if (BATcount(b) == 0 && !isVIEW(upd) && upd->htype != TYPE_void && upd->ttype != TYPE_void){
+			temp_destroy(bat->ubid);
+			bat->ubid = temp_create(upd);
+			upd->batDirty |= 2;
+		} else {
+*/
+			BATins(b, upd, TRUE);
+//		}
+	} else {
+		b = temp_descriptor(p->parts[p->ins].bid);
+		void_replace_bat(b, upd, TRUE);
+	}
+	b->batDirty |= 2;
+	bat_destroy(b);
+}
+
+static void
+update_val( sql_bpm *p, ssize_t rid, void *upd) 
+{
+	BAT *b;
+
+	assert(rid != (ssize_t)oid_nil);
+	assert(rid != -1);
+
+	if (p->parts[0].ubid) {
+		b = temp_descriptor(p->parts[0].ubid);
+		assert(b);
+
+		BUNins(b, (ptr) &rid, upd, TRUE);
+	} else {
+		b = temp_descriptor(p->parts[p->ins].bid);
+		void_inplace(b, rid, upd, TRUE);
+	}
+	bat_destroy(b);
+}
+
+static void
+update_col(sql_trans *tr, sql_column *c, void *i, int tpe, ssize_t rid)
+{
+	sql_bpm *p = c->data;
+
+	c->base.wtime = c->t->base.wtime = c->t->s->base.wtime = tr->wtime = tr->stime;
+	c->base.rtime = c->t->base.rtime = c->t->s->base.rtime = tr->rtime = tr->stime;
+	if (tpe == TYPE_bat)
+		update_bat(p, i);
+	else 
+		update_val(p, rid, i);
+}
+
+static void 
+update_idx(sql_trans *tr, sql_idx * i, void *ib, int tpe)
+{
+	sql_bpm *p = i->data;
+
+	i->base.wtime = i->t->base.wtime = i->t->s->base.wtime = tr->wtime = tr->stime;
+	i->base.rtime = i->t->base.rtime = i->t->s->base.rtime = tr->rtime = tr->stime;
+	if (tpe == TYPE_bat)
+		update_bat(p, ib);
+	else
+		assert(0);
+}
+
+#if 0
+static void
+append_bat( sql_bpm *p, BAT *i ) 
+{
+	BAT *b = temp_descriptor(p->parts[p->nr-1].bid);
+
+	/* A horizontal split algo should be added here.
+	
+	   Current code works with hard partition boundaries, ie all parts
+	   should be smaller than BPM_SPLIT. And the distribution over the
+	   parts should be evenly done (without to complex code). 
+	*/
+	
+	/* all parts up to p->nr-1 are spread correctly */
+	if (BATcount(i) + BATcount(b) > BPM_SPLIT) {
+
+		if (BATcount(i) < BPM_SPLIT) {
+			BAT *ni = i;
+			if (isVIEW(i) || i->htype != TYPE_void || i->ttype == TYPE_void)
+				ni = BATcopy(i, TYPE_void, i->ttype, TRUE);
+			ni->batDirty |= 2;
+			extend_part(p, ni, 0);
+			if (ni != i)
+				bat_destroy(ni);
+		} else {
+			ssize_t todo = BATcount(i);
+			ssize_t l = 0, sz = BPM_SPLIT - BATcount(b);
+			BAT *ni, *v = BATslice(i, l, l + sz);
+			
+			BATappend(b, v, TRUE);
+			bat_destroy(v);
+			todo -= sz;
+			l += sz;
+			sz = BPM_SPLIT;
+			while(todo > 0) {
+				v = BATslice(i, l, l + sz);
+				ni = BATcopy(v, TYPE_void, v->ttype, TRUE);
+				ni->batDirty |= 2;
+				bat_destroy(v);
+				extend_part(p, ni, 0);
+				todo -= sz;
+				l += sz;
+			}
+		}
+	} else if (BATcount(b) == 0 && !isVIEW(i) && i->htype == TYPE_void && i->ttype != TYPE_void){
+		temp_destroy(p->parts[p->nr-1].bid);
+		p->parts[p->nr-1].bid = temp_create(i);
+		i->batDirty |= 2;
+	} else {
+		BATappend(b, i, TRUE);
+	}
+	bat_destroy(b);
+}
+#endif
+
+static void
+append_bat( sql_bpm *p, BAT *i ) 
+{
+	BAT *b = temp_descriptor(p->parts[p->nr-1].bid);
+
+	if (BATcount(b) == 0 && !isVIEW(i) && i->htype == TYPE_void && i->ttype != TYPE_void){
+		temp_destroy(p->parts[p->nr-1].bid);
+		p->parts[p->nr-1].bid = temp_create(i);
+		i->batDirty |= 2;
+	} else {
+		BATappend(b, i, TRUE);
+	}
+	bat_destroy(b);
+}
+
+
+static void
+append_val( sql_bpm *p, void *i ) 
+{
+	BAT *b = temp_descriptor(p->parts[p->ins].bid);
+
+	BUNappend(b, i, TRUE);
+	bat_destroy(b);
+}
+
+static void 
+append_col(sql_trans *tr, sql_column *c, void *i, int tpe)
+{
+	sql_bpm *p = c->data;
+
+	c->base.wtime = c->t->base.wtime = c->t->s->base.wtime = tr->wtime = tr->stime;
+	c->base.rtime = c->t->base.rtime = c->t->s->base.rtime = tr->rtime = tr->stime;
+	if (tpe == TYPE_bat)
+		append_bat(p, i);
+	else
+		append_val(p, i);
+}
+
+static void
+append_idx(sql_trans *tr, sql_idx * i, void *ib, int tpe)
+{
+	sql_bpm *p = i->data;
+
+	i->base.wtime = i->t->base.wtime = i->t->s->base.wtime = tr->wtime = tr->stime;
+	i->base.rtime = i->t->base.rtime = i->t->s->base.rtime = tr->rtime = tr->stime;
+	if (tpe == TYPE_bat)
+		append_bat(p, ib);
+	else
+		append_val(p, ib);
+}
+
+static void
+delete_bat( sql_bpm *p, BAT *i ) 
+{
+	BAT *b = temp_descriptor(p->parts[p->ins].bid);
+
+	assert(p->ins == 0);
+	if (BATcount(b) == 0 && !isVIEW(i) && i->htype == TYPE_void && i->ttype != TYPE_void){
+		temp_destroy(p->parts[p->ins].bid);
+		p->parts[p->ins].bid = temp_create(i);
+		i->batDirty |= 2;
+	} else {
+		BATappend(b, i, TRUE);
+	}
+	bat_destroy(b);
+}
+
+static void
+delete_val( sql_bpm *p, ptr i ) 
+{
+	BAT *b = temp_descriptor(p->parts[p->ins].bid);
+
+	assert(p->ins == 0);
+	BUNappend(b, i, TRUE);
+	bat_destroy(b);
+}
+
+static void
+delete_tab(sql_trans *tr, sql_table * t, void *ib, int tpe)
+{
+	sql_bpm *p = t->data;
+
+	t->base.wtime = t->s->base.wtime = tr->wtime = tr->stime;
+	t->base.rtime = t->s->base.rtime = tr->rtime = tr->stime;
+	if (tpe == TYPE_bat)
+		delete_bat(p, ib);
+	else
+		delete_val(p, ib);
+}
+
+static BAT *
+bind_del(sql_trans *tr, sql_table *t, int access)
+{
+	BAT *b;
+	sql_bpm *p = t->data;
+
+	assert(access == RDONLY || access == RD_INS);
+	assert(access!=RD_UPD);
+
+	/* fold */
+	if (p->nr > 1) {
+		int i;
+
+		b = BATnew(TYPE_void, TYPE_oid, 0);
+		for (i=0; i<p->nr; i++) {
+			BAT *d = temp_descriptor(p->parts[i].bid);
+			BATappend(b, d, TRUE);
+			bat_destroy(d);
+		}
+	} else {
+		b = temp_descriptor(p->parts[0].bid);
+		assert(b);
+		b->batDirty |= 2;
+	}
+	t->s->base.rtime = t->base.rtime = tr->stime;
+	return b;
+}
+
+static sql_bpm *
+load_part (sql_bpm *pp, int ttpe, int sz, lng *cnt) 
+{
+	oid o = 0;
+	int pid;
+	BAT *part_name = bpm_part_name();
+	BAT *b, *parts;
+	BUN p, q, r = BUNfnd(BATmirror(part_name), pp->name);
+	BATiter partsi, part_namei = bat_iterator(part_name);
+
+	if (r == BUN_NONE)
+		return NULL;
+	pid = *(oid*)BUNhead(part_namei, r);
+	parts = BATselect(part_pid, &pid, &pid);
+	partsi = bat_iterator(parts);
+	BATloop(parts, p, q) {
+		ptr id = BUNhead(partsi,p);
+		BATiter part_nri = bat_iterator(part_nr);
+		sht nr = *(sht*)BUNtail(part_nri, BUNfnd(part_nr, id));
+		char *name = sql_message("%s_%d", pp->name, nr);
+		char *uname = sql_message("U_%s_%d", pp->name, nr);
+		int bid = logger_find_bat(bpm_logger, name);
+		int ubid = logger_find_bat(bpm_logger, uname);
+		
+		b = temp_descriptor(bid);
+		if (b->htype == TYPE_void) {
+			BATseqbase(b, o);
+			o += BATcount(b);
+		}	
+		
+		extend_part(pp, b, ubid);
+		pp->parts[pp->nr-1].name = name;
+		pp->parts[pp->nr-1].uname = uname;
+		bat_destroy(b);
+	}
+	*cnt = o;
+	pp->ins = pp->nr;
+	b = BATnew(TYPE_void, ttpe, sz);
+	BATseqbase(b, o);
+	extend_part(pp, b, 0);
+	bat_destroy(b);
+	bat_destroy(parts);
+	return pp;
+}
+
+static sql_bpm *
+load_bat( char *sname, char *tname, char *bname, int type, int sz, lng *cnt ) {
+	oid o = 0;
+	BAT *b;
+	sql_bpm *p = ZNEW(sql_bpm);
+
+	p->name = sql_message("%s_%s_%s", sname, tname, bname );
+	p->uname = sql_message("U_%s", p->name);
+
+	/* first check for partitions */
+	if (load_part(create_parts(p, type), type, sz, cnt))
+		return p;
+
+	b = temp_descriptor(logger_find_bat(bpm_logger, p->name));
+	extend_part(p, b, logger_find_bat(bpm_logger, p->uname));
+	o = BATcount(b);
+	bat_destroy(b);
+
+	p->ins = p->nr;
+ 	b = bat_new(TYPE_void, type, sz);
+	BATseqbase(b, o);
+	extend_part(p, b, 0);
+	bat_destroy(b);
+
+	if (p->parts[0].bid && p->parts[0].ubid) {
+		BAT *b  = temp_descriptor(p->parts[0].bid);
+		BAT *ub = temp_descriptor(p->parts[0].ubid);
+
+		*cnt = BATcount(b);
+		if (BATcount(ub)) 
+			update_table_bat(b, ub);
+		bat_destroy(ub);
+		bat_destroy(b);
+	}
+	return p;
+}
+
+static int
+new_persistent_bat(sql_trans *tr, sql_bpm *p, char *sname, char *tname, char *bname, lng *cnt) 
+{
+	int ok = LOG_OK;
+	BAT *u, *b;
+
+	p->name = sql_message("%s_%s_%s", sname, tname, bname);
+	p->uname = sql_message("U_%s", p->name);
+
+	if (p->nr > 2) {
+		/* it should make sure all parts are logged too */
+		bpm_new_part(p->pid, p->name);
+		assert(0);
+	}
+
+	assert(p->nr == 2);
+
+	b = temp_descriptor(p->parts[0].bid);
+	(void)logger_add_bat(bpm_logger, b, p->name);
+
+	if (tr->parent == gtrans) 
+		ok = log_bat_persists(bpm_logger, b, p->name);
+	*cnt = BATcount(b);
+	bat_destroy(b);
+
+	assert(p->parts[0].ubid);
+	if (p->parts[0].ubid) {
+		u = temp_descriptor(p->parts[0].ubid);
+		(void)logger_add_bat(bpm_logger, u, p->uname);
+		if (tr->parent == gtrans && ok == LOG_OK)
+			ok = log_bat_persists(bpm_logger, u, p->uname);
+		bat_destroy(u);
+	}
+	return ok;
+}
+
+static int
+create_col(sql_trans *tr, sql_column *c)
+{
+	int ok = LOG_OK;
+	BAT *b;
+	int type = c->type.type->localtype;
+	sql_bpm *p = c->data;
+
+	(void)tr;
+	if (c->base.flag == TR_OLD && !isTempTable(c->t)){
+		c->data = load_bat( c->t->s->base.name, c->t->base.name, c->base.name, type, c->t->sz, &c->t->cnt);
+	} else if (p && p->ins != p->nr && !isTempTable(c->t)) {
+		return new_persistent_bat( tr, c->data, c->t->s->base.name, c->t->base.name, c->base.name, &c->t->cnt);
+	} else {
+		if (!p) {
+ 			p = c->data = ZNEW(sql_bpm);
+			create_parts(p, type);
+		}
+		if (!p->nr) {
+			b = bat_new(TYPE_void, type, c->t->sz);
+			if (!b) 
+				return LOG_ERR;
+			extend_part(p, b, 0);
+			bat_destroy(b);
+		}
+	}
+	return ok;
+}
+
+/* will be called for new idx's and when new index columns are create */
+static int
+create_idx(sql_trans *tr, sql_idx *ni)
+{
+	int ok = LOG_OK;
+	BAT *b;
+	sql_bpm *p = ni->data;
+
+	/* create bats for a loaded idx structure */
+	if (ni->base.flag == TR_OLD && !isTempTable(ni->t)){
+		if (ni->type == join_idx || list_length(ni->columns) > 1 ) {
+			int type = TYPE_int;
+			if (ni->type == join_idx)
+				type = TYPE_oid;
+			ni->data = load_bat( ni->t->s->base.name, ni->t->base.name, ni->base.name, type, ni->t->sz, &ni->t->cnt);
+		}
+	} else if (p && p->ins != p->nr) { /* create bats for a new persistent idx */
+		return new_persistent_bat( tr, ni->data, ni->t->s->base.name, ni->t->base.name, ni->base.name, &ni->t->cnt);
+	} else {
+		if (ni->type == join_idx || list_length(ni->columns) > 1 ) {
+			int type = (ni->type == join_idx)?TYPE_oid:TYPE_int;
+
+			if (!p) {
+ 				p = ni->data = ZNEW(sql_bpm);
+				create_parts(p, type);
+			}
+			if (!p->nr) {
+				b = bat_new(TYPE_void, type, ni->t->sz);
+				if (!b) 
+					return LOG_ERR;
+				extend_part(p, b, 0);
+				bat_destroy(b);
+			}
+		}
+		if (ni->type == unique && 
+		    ni->key != NULL && list_length(ni->key->columns)==1) {
+			sql_kc *c = ni->columns->h->data;
+			BAT *b = bind_col(tr->parent, c->c, RDONLY);
+
+			BATkey(BATmirror(b), BOUND2BTRUE);
+			bat_destroy(b);
+		}
+	}
+	return ok;
+}
+
+static int
+create_del(sql_trans *tr, sql_table *t)
+{
+	int ok = LOG_OK;
+	BAT *b;
+	sql_bpm *p = t->data;
+
+	(void)tr;
+	if (t->base.flag == TR_OLD && !isTempTable(t)) {
+		p = t->data = ZNEW(sql_bpm);
+
+		create_parts(p, TYPE_oid);
+		p->name = sql_message("D_%s_%s", t->s->base.name, t->base.name);
+		b = temp_descriptor(logger_find_bat(bpm_logger, p->name));
+		extend_part(p, b, 0);
+		bat_destroy(b);
+	} else if (p && p->ins != p->nr && !isTempTable(t)) {
+		p->name = sql_message("D_%s_%s", t->s->base.name, t->base.name);
+		assert(p->nr == 1);
+		b = temp_descriptor(p->parts[0].bid);
+		(void) logger_add_bat(bpm_logger, b, p->name);
+		if (tr->parent == gtrans) 
+			ok = log_bat_persists(bpm_logger, b, p->name);
+		t->cnt -= BATcount(b);
+		bat_destroy(b);
+	} else {
+		if (!p) {
+			p = t->data = ZNEW(sql_bpm);
+			create_parts(p, TYPE_oid);
+		}
+		if (!p->nr) {
+			b = bat_new(TYPE_void, TYPE_oid, t->sz);
+			extend_part(p, b, 0);
+			bat_destroy(b);
+		}
+	}
+	return ok;
+}
+
+static int 
+dup_part(sql_trans *tr, sql_table *t, sql_bpm *op, sql_bpm *p, int type, int oc_isnew, int c_isnew, int has_updates)
+{
+	int i;
+	if (!op)
+		return LOG_OK;
+
+	p -> type = op -> type;
+	p -> ttpe = type;
+	if (isTempTable(t) || !has_updates) {
+		if (p->sz < op->nr) {
+			p -> sz = op->nr;
+			p -> parts = RENEW_ARRAY(PartRec, p->parts, p->sz);
+		}
+		for (i=0; i<op->nr; i++) {
+			p->parts[i] = op->parts[i];
+			if (c_isnew) 
+				op->parts[i].bid = temp_copy(op->parts[i].bid, has_updates);
+			else
+				p->parts[i].bid = temp_copy(op->parts[i].bid, has_updates);
+			p->nr++;
+		}
+	} else {
+		BAT *b;
+		oid o = 0;
+
+		if (p->sz < op->nr+1) {
+			p -> sz = op->nr+1;
+			p -> parts = RENEW_ARRAY(PartRec, p->parts, p->sz);
+		}
+		for (i=0; i < op->ins; i++) {
+			p->parts[i] = op->parts[i];
+			temp_dup(p->parts[i].bid);
+			b = temp_descriptor(p->parts[i].bid);
+			p->parts[i].ubid = 0;
+			if (op->parts[i].ubid) {
+				p->parts[i].ubid = temp_copy(op->parts[i].ubid, 0);
+			} else {
+				BAT *U = BATnew(TYPE_oid, b->ttype, 0);
+				p->parts[i].ubid = temp_create(U);
+				op->parts[i].ubid = temp_copy(p->parts[i].ubid, 0);
+				bat_destroy(U);
+			}
+			BATseqbase(b, o);
+			o += BATcount(b);
+			bat_destroy(b);
+			p->nr++;
+		}
+		p -> ins = p->nr;
+		for (   ; i < op->nr; i++) {
+			p->parts[i] = op->parts[i];
+			/* we move the inserts into the central copy */
+			if (oc_isnew && c_isnew && tr->parent == gtrans) {
+				p->parts[i].bid = op->parts[i].bid;
+				temp_dup(p->parts[i].bid);
+			} else {
+				p->parts[i].bid = temp_copy(op->parts[i].bid, 0);
+			}
+			b = temp_descriptor(p->parts[i].bid);
+			p->parts[i].ubid = 0;
+			if (p->ins == 0) {
+				if (op->parts[i].ubid) {
+					p->parts[i].ubid = temp_copy(op->parts[i].ubid, 0);
+				} else {
+					BAT *U = BATnew(TYPE_oid, b->ttype, 0);
+					p->parts[i].ubid = temp_create(U);
+					op->parts[i].ubid = temp_copy(p->parts[i].ubid, 0);
+					bat_destroy(U);
+				}
+			}
+			BATseqbase(b, o);
+			o += BATcount(b);
+			bat_destroy(b);
+			p->nr++;
+		}
+
+		if (op->ins == 0) {
+			op->ins = op->nr;
+			b = bat_new(TYPE_void, type, t->sz);
+			BATseqbase(b, o);
+			extend_part(op, b, 0);
+			bat_destroy(b);
+		}
+
+		if (p->ins == 0) { 
+			p->ins = p->nr;
+			b = bat_new(TYPE_void, type, t->sz);
+			BATseqbase(b, o);
+			extend_part(p, b, 0);
+			bat_destroy(b);
+		}
+		assert(p->nr == op->nr);
+	} 
+	return LOG_OK;
+}
+
+static int 
+dup_col(sql_trans *tr, sql_column *oc, sql_column *c )
+{
+	if (oc->data) {
+		int type = c->type.type->localtype;
+		sql_bpm *p = c->data = ZNEW(sql_bpm), *op = oc->data;
+		return dup_part(tr, c->t, op, p, type, isNew(oc), c->base.flag == TR_NEW, 1);
+	}
+	return LOG_OK;
+}
+
+static int 
+dup_idx(sql_trans *tr, sql_idx *oi, sql_idx *i )
+{
+	if (oi->data) {
+		int type = (i->type==join_idx)?TYPE_oid:TYPE_int;
+		sql_bpm *p = i->data = ZNEW(sql_bpm), *op = oi->data;
+		return dup_part(tr, i->t, op, p, type, isNew(oi), i->base.flag == TR_NEW, 1);
+	}
+	return LOG_OK;
+}
+
+static int
+dup_del(sql_trans *tr, sql_table *ot, sql_table *t)
+{
+	if (ot->data) {
+		sql_bpm *p = t->data = ZNEW(sql_bpm), *op = ot->data;
+		return dup_part(tr, t, op, p, TYPE_oid, isNew(ot), t->base.flag == TR_NEW, 0);
+	}
+	return LOG_OK;
+}
+
+static void
+bpm_destroy_part(oid id)
+{
+	BUNdelHead(part_name, (ptr)&id, FALSE);
+}
+
+static void
+destroy_part(sql_bpm *p)
+{
+	int i;
+
+	for(i = 0; i < p->nr; i++) {
+		temp_destroy(p->parts[i].bid);
+		if (p->parts[i].ubid)
+			temp_destroy(p->parts[i].ubid);
+		if (p->parts[i].tlow)
+			_DELETE(p->parts[i].tlow);
+		if (p->parts[i].thgh)
+			_DELETE(p->parts[i].thgh);
+	}
+	if (p->name)
+		_DELETE(p->name);
+	_DELETE(p->parts);
+	_DELETE(p);
+}
+
+static int
+destroy_bat(sql_trans *tr, sql_bpm *b)
+{
+	int ok = LOG_OK;
+	if (!b)
+		return ok;
+	if (tr && tr->parent == gtrans) {
+		log_bid bid;
+
+		if (b->pid) 
+			bpm_destroy_part(b->pid);
+
+		if (b->nr <= 2) {
+			ok = log_bat_transient(bpm_logger, b->name);
+			bid = logger_find_bat(bpm_logger, b->name);
+			if (bid) 
+				logger_del_bat(bpm_logger, bid);
+			if (b->uname && ok == LOG_OK) {
+				ok = log_bat_transient(bpm_logger, b->uname);
+				bid = logger_find_bat(bpm_logger, b->uname);
+				if (bid) 
+					logger_del_bat(bpm_logger, bid);
+			}
+		} 
+	} else {
+		destroy_part(b);
+	}
+	return ok;
+}
+
+static int
+destroy_col(sql_trans *tr, sql_column *c)
+{
+	int ok = destroy_bat(tr, c->data);
+	if (!tr || tr->parent != gtrans) 
+		c->data = NULL;
+	return ok;
+}
+
+static int
+destroy_idx(sql_trans *tr, sql_idx *i)
+{
+	int ok = destroy_bat(tr, i->data);
+	if (!tr || tr->parent != gtrans) 
+		i->data = NULL;
+	return ok;
+}
+
+static int
+destroy_del(sql_trans *tr, sql_table *t)
+{
+	int ok = destroy_bat(tr, t->data);
+	if (!tr || tr->parent != gtrans) 
+		t->data = NULL;
+	return ok;
+}
+
+static size_t 
+clear_bat(sql_trans *tr, sql_bpm *p)
+{
+	BAT *b;
+	size_t sz = 0;
+	int i,j;
+
+	for (i=0; i<p->ins; i++) {
+		b = temp_descriptor(p->parts[i].bid);
+		sz += BATcount(b);
+
+		/* for transactions we simple switch to the insert bats only */
+		if (tr != gtrans) {
+			temp_destroy(p->parts[i].bid);
+			if (p->parts[i].ubid)
+				temp_destroy(p->parts[i].ubid);
+			p->parts[i].bid = 0;
+			p->parts[i].ubid = 0;
+		} else {
+			bat_clear(b);
+			BATcommit(b);
+		}
+		bat_destroy(b);
+	}
+	for ( j=0; i< p->nr; i++) {
+		b = temp_descriptor(p->parts[i].bid);
+
+		sz += BATcount(b);
+		bat_clear(b);
+		BATcommit(b);
+		bat_destroy(b);
+
+		if (tr != gtrans) { 
+			p->parts[j++] = p->parts[i];
+			if (p->ins)
+				p->parts[i].bid = p->parts[i].ubid = 0;
+		}
+	}
+	if (tr != gtrans) {
+		p->nr -= p->ins;
+		p->ins = 0;
+	}
+	if (tr == gtrans && p->name && p->uname && p->nr == 2) 
+		if (log_bat_clear(bpm_logger, p->name) == LOG_OK)
+			log_bat_clear(bpm_logger, p->uname);
+	return sz;
+}
+
+static size_t 
+clear_col(sql_trans *tr, sql_column *c)
+{
+	if (c->data)
+		return clear_bat(tr, c->data);
+	return 0;
+}
+
+static size_t
+clear_idx(sql_trans *tr, sql_idx *i)
+{
+	if (i->data)
+		return clear_bat(tr, i->data);
+	return 0;
+}
+
+static size_t
+clear_del(sql_trans *tr, sql_table *t)
+{
+	if (t->data)
+		return clear_bat(tr, t->data);
+	return 0;
+}
+
+static int 
+tr_update_bat( sql_trans *tr, sql_bpm *op, sql_bpm *cp, lng *cnt)
+{
+	int ok = LOG_OK;
+	BAT *ups, *ins, *cur;
+
+	cur = temp_descriptor(op->parts[0].bid);
+	ins = temp_descriptor(cp->parts[cp->ins].bid);
+	/* any inserts */
+	if (BUNlast(ins) > BUNfirst(ins)) {
+		assert(store_nr_active>0);
+		if (BUNlast(ins) > ins->batInserted) {
+			if (store_nr_active > 1) { 
+				BAT *ci = temp_descriptor(op->parts[op->ins].bid);
+				append_inserted(ci, ins);
+				bat_destroy(ci);
+			}
+			if (ok == LOG_OK && tr->parent == gtrans && 
+				(store_nr_active != 1 || BATcount(cur)))
+				ok = log_bat(bpm_logger, ins, op->name);
+		}
+		if (store_nr_active == 1) { /* flush all */
+			BAT *pi = temp_descriptor(op->parts[op->ins].bid);
+			if (!BATcount(cur)) {
+				/* swap cur and ins */
+				BAT *swpbat = ins;
+				bat swp = cp->parts[cp->ins].bid;
+				cp->parts[cp->ins].bid = op->parts[0].bid;
+				op->parts[0].bid = swp;
+				temp_destroy(cp->parts[0].bid);
+				cp->parts[0].bid = temp_create(swpbat);
+				if (tr->parent == gtrans) {
+					BATmode(ins, PERSISTENT);
+					logger_add_bat(bpm_logger, ins, op->name);
+					log_bat_persists(bpm_logger, ins, op->name);
+				}
+				ins = cur;
+				cur = swpbat;
+			} else {
+				BATappend(cur,ins,TRUE);
+				bat_clear(ins);
+			}
+			bat_clear(pi);
+			BATseqbase(ins,BATcount(cur));
+			BATseqbase(pi,BATcount(cur));
+			bat_destroy(pi);
+		}
+		BATcommit(ins);
+	}
+	bat_destroy(ins);
+
+	ups = temp_descriptor(cp->parts[0].ubid);
+	/* any updates */
+	if (BUNlast(ups) > BUNfirst(ups)) {
+		if (BUNlast(ups) > ups->batInserted) {
+			if (store_nr_active > 1) { 
+				BAT *cu = temp_descriptor(op->parts[0].ubid);
+				copy_inserted(cu, ups);
+				bat_destroy(cu);
+			}
+			if (ok == LOG_OK && tr->parent == gtrans)
+				ok = log_bat(bpm_logger, ups, op->uname);
+		}
+		if (store_nr_active == 1) { /* flush all */
+			void_replace_bat(cur, ups, TRUE);
+			/* cleanup the old deltas */
+			if (BUNfirst(ups) != ups->batInserted) { 
+				BAT *cu = temp_descriptor(op->parts[0].ubid);
+				bat_clear(cu);
+				BATcommit(cu);
+				bat_destroy(cu);
+			}
+			bat_clear(ups);
+		}
+		BATcommit(ups);
+	}
+	*cnt = BATcount(cur);
+	bat_destroy(ups);
+	bat_destroy(cur);
+	return ok;
+}
+
+
+static int 
+update_part( sql_trans *tr, sql_bpm *op, sql_bpm *cp, lng *cnt)
+{
+	int ok = LOG_OK;
+	int i;
+
+	if (!part_name)
+		bpm_init();
+
+	(void)cnt;
+
+	assert(op->type == bpm_hrange);
+	assert(cp->nr >= op->nr);
+
+	if (op->type == bpm_hrange && op->nr < 2) 
+		assert(0);
+
+	/* this (should) handle all default cases, ie appends to the existing
+	   bats (even when we have more than 2 bats! 
+		ie if cp->ins + 1 == cp->nr
+	 */
+	if (op->type == bpm_hrange && op->nr == cp->nr && op->nr == 2) 
+		return tr_update_bat( tr, op, cp, cnt);
+
+	/* real partitions have more than 2 bats */
+	if (op->type == bpm_hrange) { 
+		oid o = 0;
+		BAT *b;
+		/* any inserts ? */
+
+		if (op->nr == 2 && tr->parent == gtrans) { 
+			/* first remove the old persistent bats */
+			/* leave it for now, else we need to copy the bat 
+			ok = log_bat_transient(bpm_logger, op->name);
+			if (ok == LOG_OK && op->uname)
+				ok = log_bat_transient(bpm_logger, op->uname);
+			*/
+			
+			/* add part to the partition table */
+			if (op->pid == 0)
+				op -> pid = PartID();
+			bpm_new_part(op->pid, op->name);
+
+			/* add old parts to the partition table */
+			for (i=0; i<op->nr; i++) {
+				Part p = op->parts+i;
+
+				BUNappend(part_pid,&op->pid,TRUE);
+				BUNappend(part_nr, &i, TRUE);
+				BUNappend(part_hlow, &p->hlow, TRUE);
+				BUNappend(part_hhgh, &p->hhgh, TRUE);
+				p->name = sql_message("%s_%d", op->name, i);
+				p->uname = sql_message("U_%s_%d", op->name,i);
+
+				b = temp_descriptor(p->bid);
+				o = b->hseqbase + BATcount(b);
+				logger_add_bat(bpm_logger, b, p->name);
+				log_bat_persists(bpm_logger, b, p->name);
+				bat_destroy(b);
+				if (p->ubid) {
+					b = temp_descriptor(p->ubid);
+					logger_add_bat(bpm_logger, b, p->uname);
+					log_bat_persists(bpm_logger, b, p->uname);
+					bat_destroy(b);
+				}
+			}
+		}
+		/* merge 2 partions  
+		   1) the cp partition could hold old inserts (allready in op)
+		   2) there could be parallel transactions using bats
+			(ie we cannot freely add anything to the exiting bats)
+		   3)
+		 */
+		assert(op->ins == cp->ins);
+		for (i=op->ins; i<cp->nr; i++) {
+			Part p = cp->parts+i;
+
+			b = temp_descriptor(p->bid);
+			/* use the cp bats as they are newer */
+			if (i < op->nr) {
+				temp_destroy(p->bid);
+				p->bid = cp->parts[i].bid;
+				temp_dup(p->bid);
+			} else {
+				extend_part(op, b, p->ubid);
+			}
+			bat_set_access(b, BAT_READ);
+			o = b->hseqbase + BATcount(b);
+			bat_destroy(b);
+			if (tr->parent == gtrans) {
+				BAT *b;
+				BUNappend(part_pid,&op->pid,TRUE);
+				BUNappend(part_nr, &i, TRUE);
+				BUNappend(part_hlow, &p->hlow, TRUE);
+				BUNappend(part_hhgh, &p->hhgh, TRUE);
+				p->name = sql_message("%s_%d", op->name, i);
+				p->uname = sql_message("U_%s_%d", op->name,i);
+
+				/* log bat */
+				b = temp_descriptor(p->bid);
+				logger_add_bat(bpm_logger, b, p->name);
+				log_bat_persists(bpm_logger, b, p->name);
+				bat_destroy(b);
+				if (p->ubid) {
+					b = temp_descriptor(p->ubid);
+					logger_add_bat(bpm_logger, b, p->uname);
+					log_bat_persists(bpm_logger, b, p->uname);
+					bat_destroy(b);
+				}
+			}
+		}
+		/* create new insert bats */
+		op->ins = op->nr;
+		b = bat_new(TYPE_void, op->ttpe, 0);
+		BATseqbase(b, o);
+		extend_part(op, b, 0);
+		bat_destroy(b);
+
+		cp->ins = cp->nr;
+		b = bat_new(TYPE_void, cp->ttpe, 0);
+		BATseqbase(b, o);
+		extend_part(cp, b, 0);
+		bat_destroy(b);
+		assert(cp->nr == op->nr);
+		assert(cp->ins == op->ins);
+		
+		log_bat(bpm_logger, part_name, "part_name");
+		log_bat(bpm_logger, part_pid, "part_pid");
+		log_bat(bpm_logger, part_nr, "part_nr");
+		log_bat(bpm_logger, part_hlow, "part_hlow");
+		log_bat(bpm_logger, part_hhgh, "part_hhgh");
+	}
+	return ok;
+}
+
+static int
+update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
+{
+	int i, ok = LOG_OK;
+	node *n, *m;
+	lng deleted = 0;
+	sql_bpm *fdb, *tdb;
+	BAT *db = NULL;
+
+	if (ft->cleared) {
+		(void)store_funcs.clear_del(tr->parent, tt);
+		for (n = tt->columns.set->h; n; n = n->next) 
+			(void)store_funcs.clear_col(tr->parent, n->data);
+		if (tt->idxs.set) 
+			for (n = tt->idxs.set->h; n; n = n->next) 
+				(void)store_funcs.clear_idx(tr->parent, n->data);
+	}
+
+	fdb = ft->data;
+	tdb = tt->data;
+
+	for(i=0; i<fdb->nr; i++) {
+		assert(i==0);
+		db = temp_descriptor(fdb->parts[i].bid);
+		deleted = BATcount(db);
+		tt->cnt = 0;
+		if (BUNlast(db) > db->batInserted || ft->cleared) {
+			BAT *odb = temp_descriptor(tdb->parts[i].bid);
+
+			append_inserted(odb, db);
+			if (tr->parent == gtrans)
+				ok = log_bat(bpm_logger, odb, tdb->name);
+			bat_destroy(odb);
+			BATcommit(db);
+		}
+		bat_destroy(db);
+	}
+
+	for (n = ft->columns.set->h, m = tt->columns.set->h; ok == LOG_OK && n && m; n = n->next, m = m->next) {
+		sql_column *cc = n->data;
+		sql_column *oc = m->data;
+		sql_bpm *cp = cc->data;
+
+		/* for cleared tables the bid is reset */
+		if (cp->ins == 0) {
+			sql_bpm *op = oc->data;
+
+			for (i=0; i<cp->nr; i++) 
+				cp->parts[op->ins+i] = cp->parts[i];
+			for (i=0; i<op->ins; i++) {
+				cp->parts[i] = op->parts[i];
+				cp->name = cp->uname = NULL;
+				temp_dup(cp->parts[i].bid);
+				if (cp->parts[i].ubid)
+					temp_dup(cp->parts[i].ubid);
+			}
+			cp->ins = op->ins;
+			cp->nr += op->ins;
+		}
+		if (!cc->base.wtime) 
+			continue;
+		update_part(tr, oc->data, cc->data, &cc->t->cnt);
+
+		if (cc->base.rtime)
+			oc->base.rtime = tr->stime;
+		oc->base.wtime = tr->stime;
+		cc->base.rtime = cc->base.wtime = 0;
+	}
+	if (ok == LOG_OK && tt->idxs.set) {
+		for (n = ft->idxs.set->h, m = tt->idxs.set->h; ok == LOG_OK && n && m; n = n->next, m = m->next) {
+			sql_idx *ci = n->data;
+			sql_idx *oi = m->data;
+			sql_bpm *cp = ci->data;
+			sql_bpm *op = oi->data;
+
+			/* some indices have no bats */
+			if (!op)
+				continue;
+
+			/* for cleared tables the bid is reset */
+			if (cp->ins == 0) {
+				for (i=0; i<cp->nr; i++) 
+					cp->parts[op->ins+i] = cp->parts[i];
+				for (i=0; i<op->ins; i++) {
+					cp->parts[i] = op->parts[i];
+					cp->name = cp->uname = NULL;
+					temp_dup(cp->parts[i].bid);
+					if (cp->parts[i].ubid)
+						temp_dup(cp->parts[i].ubid);
+				}
+				cp->ins = op->ins;
+				cp->nr += op->ins;
+			}
+			if (!ci->base.wtime) 
+				continue;
+			update_part(tr, oi->data, ci->data, &ci->t->cnt);
+
+			if (ci->base.rtime)
+				oi->base.rtime = tr->stime;
+			oi->base.wtime = tr->stime;
+			ci->base.rtime = ci->base.wtime = 0;
+		}
+	}
+	tt->cnt -= deleted;
+	return ok;
+}
+
+int
+bpm_storage_init( store_functions *sf)
+{
+	sf->bind_col = (bind_col_fptr)&bind_col;
+	sf->bind_idx = (bind_idx_fptr)&bind_idx;
+	sf->bind_del = (bind_del_fptr)&bind_del;
+
+	sf->append_col = (append_col_fptr)&append_col;
+	sf->append_idx = (append_idx_fptr)&append_idx;
+	sf->update_col = (update_col_fptr)&update_col;
+	sf->update_idx = (update_idx_fptr)&update_idx;
+	sf->delete_tab = (delete_tab_fptr)&delete_tab;
+
+	sf->create_col = (create_col_fptr)&create_col;
+	sf->create_idx = (create_idx_fptr)&create_idx;
+	sf->create_del = (create_del_fptr)&create_del;
+
+	sf->dup_col = (dup_col_fptr)&dup_col;
+	sf->dup_idx = (dup_idx_fptr)&dup_idx;
+	sf->dup_del = (dup_del_fptr)&dup_del;
+
+	sf->destroy_col = (destroy_col_fptr)&destroy_col;
+	sf->destroy_idx = (destroy_idx_fptr)&destroy_idx;
+	sf->destroy_del = (destroy_del_fptr)&destroy_del;
+
+	sf->clear_col = (clear_col_fptr)&clear_col;
+	sf->clear_idx = (clear_idx_fptr)&clear_idx;
+	sf->clear_del = (clear_del_fptr)&clear_del;
+
+	sf->update_table = (update_table_fptr)&update_table;
+	MT_lock_init(&part_lock, "SQL_part_lock");
+	return LOG_OK;
+}
+
