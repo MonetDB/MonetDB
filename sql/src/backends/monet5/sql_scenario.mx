@@ -309,12 +309,65 @@ SQLexitQuery(int *ret, str *qry){
 	return MAL_SUCCEED;
 }
 
+static int
+error(stream *out, char *str)
+{
+	char *p;
+
+	if (!out)
+		out = GDKerr;
+
+	if (stream_errnr(out))
+		return -1;
+	while ((p = strchr(str, '\n')) != NULL) {
+		p++;		/* include newline */
+		if (*str !='!' && stream_write(out, "!", 1, 1) != 1)
+			return -1;
+		if (stream_write(out, str, p - str, 1) != 1)
+			 return -1;
+		str = p;
+	}
+	if (str &&*str) {
+		if (*str !='!' && stream_write(out, "!", 1, 1) != 1)
+			return -1;
+		if (stream_write(out, str, strlen(str), 1) != 1 || stream_write(out, "\n", 1, 1) != 1)
+			 return -1;
+	}
+	return 0;
+}
+
+#define TRANS_ABORTED "!current transaction is aborted (please ROLLBACK)\n"
+
+int
+handle_error(mvc *m, stream *out, int pstatus)
+{
+	int go = 1;
+	char *buf = GDKerrbuf;
+
+	/* transaction already broken */
+	if (m->type != Q_TRANS && pstatus < 0) {
+		if (stream_write(out, TRANS_ABORTED, sizeof(TRANS_ABORTED) - 1, 1) != 1) {
+			go = !go;
+		}
+	} else {
+		if (error(out, m->errstr) < 0 || (buf && buf[0] && error(out, buf) < 0)) {
+			go = !go;
+		}
+	}
+	/* reset error buffers */
+	m->errstr[0] = 0;
+	if (buf)
+		buf[0] = 0;
+	return go;
+}
+
 str
 SQLinitClient(Client c)
 {
 	str msg;
 	mvc *m;
 	str schema;
+	backend *be;
 
 #ifdef _SQL_SCENARIO_DEBUG
 	stream_printf(GDKout, "#SQLinitClient\n");
@@ -323,43 +376,47 @@ SQLinitClient(Client c)
 	if (!SQLinitialized && (msg = SQLinit(c)) != MAL_SUCCEED)
 		return msg;
 	
-	if ((backend *) c->state[MAL_SCENARIO_PARSER] == 0) {
-		if (sqlinit) { /* add sqlinit to the fdin stack */
-			buffer *b = (buffer*)GDKmalloc(sizeof(buffer));
-			int len = strlen(sqlinit);
-			bstream *fdin;
+	if (sqlinit) { /* add sqlinit to the fdin stack */
+		buffer *b = (buffer*)GDKmalloc(sizeof(buffer));
+		int len = strlen(sqlinit);
+		bstream *fdin;
 
-			buffer_init(b, _strdup(sqlinit), len);
-			fdin = bstream_create(buffer_rastream(b, "si"), b->len);
-			bstream_next(fdin);
-			MCpushClientInput(c, fdin, 0, "");
-		}
+		buffer_init(b, _strdup(sqlinit), len);
+		fdin = bstream_create(buffer_rastream(b, "si"), b->len);
+		bstream_next(fdin);
+		MCpushClientInput(c, fdin, 0, "");
+	}
+	if (c->state[MAL_SCENARIO_PARSER] == 0) {
 		m = mvc_create(c->idx, 0, SQLdebug, c->fdin, c->fdout);
-
 		global_variables(m, "monetdb", "sys");
 		if (isAdministrator(c))  /* console should return everything */
 			m->reply_size = -1;
-		/* pass through credentials of the user if not console */
-		schema = monet5_user_get_def_schema(m, c->user);
-		if (!schema) {
-			_DELETE(schema);
-			throw(PERMD, "SQLinitClient", "schema authorization error");
-		}
-		_DELETE(schema);
-
-		if (keep_trace && !m->scanner.log) {
-			char fn[BUFSIZ];
-
-			snprintf(fn, BUFSIZ, "sql.%d", c->idx);
-			m->scanner.log = open_wastream(fn);
-		}
-		c->state[MAL_SCENARIO_PARSER] = (void *) backend_create(m, c);
-		((backend*)c->state[MAL_SCENARIO_PARSER])->language = 'S';	/*expect SQL text first */
-		c->state[MAL_SCENARIO_OPTIMIZE] = m;
+		be = (void *) backend_create(m, c);
 	} else {
 		m = c->state[MAL_SCENARIO_OPTIMIZE];
-		/* TODO reset global variables */
+		be = c->state[MAL_SCENARIO_PARSER];
+		mvc_reset(m, c->fdin, c->fdout, SQLdebug, 10);
+		backend_reset(be);
 	}
+	/* pass through credentials of the user if not console */
+	schema = monet5_user_get_def_schema(m, c->user);
+	if (!schema) {
+		_DELETE(schema);
+		throw(PERMD, "SQLinitClient", "schema authorization error");
+	}
+	_DELETE(schema);
+
+	if (keep_trace && !m->scanner.log) {
+		char fn[BUFSIZ];
+
+		snprintf(fn, BUFSIZ, "sql.%d", c->idx);
+		m->scanner.log = open_wastream(fn);
+	}
+
+	/*expect SQL text first */
+	be->language = 'S';
+	c->state[MAL_SCENARIO_PARSER] = be;
+	c->state[MAL_SCENARIO_OPTIMIZE] = m;
 
 	initSQLreferences();
 	return MAL_SUCCEED;
@@ -368,24 +425,32 @@ SQLinitClient(Client c)
 str
 SQLexitClient(Client c)
 {
-	mvc *m;
 #ifdef _SQL_SCENARIO_DEBUG
 	stream_printf(GDKout, "#SQLexitClient\n");
 #endif
-	if (SQLinitialized == FALSE) {
-		throw(SQL, "SQLinitClient", "Catalogue not available");
-	}
-	if ((backend *) c->state[MAL_SCENARIO_PARSER] && (mvc *) c->state[MAL_SCENARIO_OPTIMIZE]) {
-		m= (mvc *) c->state[MAL_SCENARIO_OPTIMIZE];
+	if (SQLinitialized == FALSE) 
+		throw(SQL, "SQLexitClient", "Catalogue not available");
+	if (c->state[MAL_SCENARIO_PARSER] && c->state[MAL_SCENARIO_OPTIMIZE]) {
+		mvc *m = (mvc *) c->state[MAL_SCENARIO_OPTIMIZE];
+
+		if (m->session->auto_commit && m->session->active) {
+			if (mvc_status(m) >= 0 && mvc_commit(m, 0, NULL) < 0) 
+				(void) handle_error(m, c->fdout, 0);
+		}
+		if (m->session->active)
+			mvc_rollback(m, 0, NULL);
+
 		res_tables_destroy(m->results);
 		m->results= NULL;
+
+		/* files are already closed 
 		if (m->session && m->session->tr)
 			reset_functions(m->session->tr);
 		mvc_destroy(m);
 		backend_destroy((backend *) c->state[MAL_SCENARIO_PARSER]);
-		/* files are already closed */
 		c->state[MAL_SCENARIO_OPTIMIZE] = NULL;
 		c->state[MAL_SCENARIO_PARSER] = NULL;
+		*/
 	}
 	return MAL_SUCCEED;
 }
@@ -616,59 +681,6 @@ SQLcompile(str *ret, str *expr){
 		*ret= _strdup("SQLcompile");
 	return msg;
 }
-
-static int
-error(stream *out, char *str)
-{
-	char *p;
-
-	if (!out)
-		out = GDKerr;
-
-	if (stream_errnr(out))
-		return -1;
-	while ((p = strchr(str, '\n')) != NULL) {
-		p++;		/* include newline */
-		if (*str !='!' && stream_write(out, "!", 1, 1) != 1)
-			return -1;
-		if (stream_write(out, str, p - str, 1) != 1)
-			 return -1;
-		str = p;
-	}
-	if (str &&*str) {
-		if (*str !='!' && stream_write(out, "!", 1, 1) != 1)
-			return -1;
-		if (stream_write(out, str, strlen(str), 1) != 1 || stream_write(out, "\n", 1, 1) != 1)
-			 return -1;
-	}
-	return 0;
-}
-
-#define TRANS_ABORTED "!current transaction is aborted (please ROLLBACK)\n"
-
-int
-handle_error(mvc *m, stream *out, int pstatus)
-{
-	int go = 1;
-	char *buf = GDKerrbuf;
-
-	/* transaction already broken */
-	if (m->type != Q_TRANS && pstatus < 0) {
-		if (stream_write(out, TRANS_ABORTED, sizeof(TRANS_ABORTED) - 1, 1) != 1) {
-			go = !go;
-		}
-	} else {
-		if (error(out, m->errstr) < 0 || (buf && buf[0] && error(out, buf) < 0)) {
-			go = !go;
-		}
-	}
-	/* reset error buffers */
-	m->errstr[0] = 0;
-	if (buf)
-		buf[0] = 0;
-	return go;
-}
-
 
 @-
 The SQL reader collects a (sequence) of statements from the input

@@ -610,7 +610,6 @@ typedef struct backend {
 	int console;
 	char language;		/* 'S' or 's' or 'X' */
 	mvc *mvc;
-	buffer *outbuf;
 	stream *out;
 	Client client;
 	sql_schema *currSchema;
@@ -629,6 +628,7 @@ query has been successfully executed.
 	str qry;
 } backend;
 
+extern backend *backend_reset(backend *b);
 extern backend *backend_create(mvc *m, Client c);
 extern void backend_destroy(backend *b);
 
@@ -805,16 +805,10 @@ First introduce the routines to be called by the front-end.
 #include <rel_bin.h>
 
 backend *
-backend_create(mvc *m, Client c)
+backend_reset(backend *b)
 {
-	backend *b = NEW(backend);
-
-	b->console = isAdministrator(c);
-	b->outbuf = NULL;
-	b->out = c->fdout;
+	b->out = b->client->fdout;
 	b->language = 0;
-	b->mvc = m;
-	b->client = c;
 
 	b->currSchema = NULL;
 	b->currTable = NULL;
@@ -826,6 +820,17 @@ backend_create(mvc *m, Client c)
 	b->qry = NULL;
 	b->q = NULL;
 	return b;
+}
+
+backend *
+backend_create(mvc *m, Client c)
+{
+	backend *b = NEW(backend);
+
+	b->console = isAdministrator(c);
+	b->mvc = m;
+	b->client = c;
+	return backend_reset(b);
 }
 
 void
