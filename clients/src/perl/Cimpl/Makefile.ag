@@ -24,11 +24,10 @@ MapiLib_la_LDFLAGS = -module
 #  (at least not with our strict X_CFLAGS), complaining about
 #  "warning: dereferencing type-punned pointer will break strict-aliasing rules",
 #  "warning: unused variable '...'",
-#  "warning: '..' defined but not used",
-#  "warning: unused parameter '...'", and/or
+#  "warning: '...' defined but not used", and/or
 #  'error: "..." is not defined'.
 #  Hence, we use GCC_SWIG_CFLAGS to disable the respective warning
-#  as locally as possbile via "-Wno-strict-aliasing -Wno-unused-variable -Wno-unused-function -Wno-unused-parameter -Wno-undef".
+#  as locally as possbile via "-Wno-strict-aliasing -Wno-unused-variable -Wno-unused-function -Wno-undef".
 #  Intel's icc does not like to compile swig-generated code
 #  (at least not with our strict X_CFLAGS), complaining about
 #  'error #869: parameter "..." was never referenced',
