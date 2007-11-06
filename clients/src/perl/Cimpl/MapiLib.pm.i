@@ -101,7 +101,7 @@
 // TODO:
 // %typemap(out) char * { }
 
-%typemap(in) FILE * {
+%typemap(in) PerlIO * {
     $1 = IoIFP(sv_2io($input));
 }
 
