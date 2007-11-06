@@ -165,10 +165,8 @@ SQLreadConsole(Client cntxt){
 
 	if( cntxt->promptlength == 0)
 		return -1;
-	if( cntxt->fdin->s == cntxt->console->s){
-		if ( !(fstat(fileno(stdin), &statb) == 0 && S_ISCHR(statb.st_mode))  )
-			return -1;
-	}
+	if ( !(fstat(fileno(stdin), &statb) == 0 && S_ISCHR(statb.st_mode))  )
+		return -1;
 
 	/* read lines and move string to client buffer. */
 	if( initsqlReadline ==0){
