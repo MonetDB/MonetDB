@@ -53,6 +53,7 @@ opt_export  str finishRef;
 opt_export  str getRef;
 opt_export  str groupRef;
 opt_export  str hashRef;
+opt_export  str hrangeRef;
 opt_export  str identityRef;
 opt_export  str inplaceRef;
 opt_export  str insertRef;
@@ -80,6 +81,7 @@ opt_export  str mmathRef;
 opt_export  str mserverRef;
 opt_export  str multiplexRef;
 opt_export  str newRef;
+opt_export  str oidRef;
 opt_export  str optimizerRef;
 opt_export  str packRef;
 opt_export  str plusRef;
@@ -115,6 +117,7 @@ opt_export  str tuniqueRef;
 opt_export  str unionRef;
 opt_export  str unpackRef;
 opt_export  str unsafeRef;
+opt_export  str updateRef;
 opt_export  str uselectRef;
 
 opt_export void optimizerInit(void);
@@ -155,6 +158,7 @@ str finishRef;
 str getRef;
 str groupRef;
 str hashRef;
+str hrangeRef;
 str identityRef;
 str inplaceRef;
 str insertRef;
@@ -182,6 +186,7 @@ str mmathRef;
 str mserverRef;
 str multiplexRef;
 str newRef;
+str oidRef;
 str optimizerRef;
 str packRef;
 str plusRef;
@@ -217,6 +222,7 @@ str tuniqueRef;
 str unionRef;
 str unpackRef;
 str unsafeRef;
+str updateRef;
 str uselectRef;
 
 void optimizerInit(){
@@ -252,6 +258,7 @@ void optimizerInit(){
 		getRef = putName("get",3);
 		groupRef = putName("group",5);
 		hashRef = putName("hash",4);
+		hrangeRef = putName("hrange",6);
 		identityRef = putName("identity",8);
 		inplaceRef = putName("inplace",7);
 		insertRef = putName("insert",6);
@@ -279,6 +286,7 @@ void optimizerInit(){
 		mserverRef = putName("mserver",7);
 		multiplexRef = putName("multiplex",9);
 		newRef = putName("new",3);
+		oidRef = putName("oid",3);
 		optimizerRef = putName("optimizer",9);
 		packRef = putName("pack",4);
 		plusRef = putName("+",1);
@@ -313,6 +321,7 @@ void optimizerInit(){
 		unionRef= putName("union",5);
 		unpackRef = putName("unpack",6);
 		unsafeRef = putName("unsafe",6);
+		updateRef = putName("update",6);
 		uselectRef = putName("uselect",7);
 	}
 }
