@@ -724,7 +724,6 @@ global_variables(mvc *sql, char *user, char *schema)
 {
 	sql_subtype ctype;
 	char *typename;
-	char *name;
 	stmt *r = NULL;
 	lng sec = 0;
 	bit T = TRUE, F = FALSE;
@@ -747,7 +746,6 @@ global_variables(mvc *sql, char *user, char *schema)
 	typename = "sec_interval";
 	sql_find_subtype(&ctype, typename, 0, 0);
 	SQLglobal("current_timezone", &sec);
-	r = stmt_var(_strdup(name), &ctype, 0, 1);
 
 	typename = "boolean";
 	sql_find_subtype(&ctype, typename, 0, 0);

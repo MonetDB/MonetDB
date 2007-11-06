@@ -267,9 +267,7 @@ global_variables(mvc *sql, char *user, char *schema)
 {
 	sql_subtype ctype;
 	char *typename;
-	char *name;
 	stmt *r = NULL;
-	int debug = 0;
 	lng sec = 0;
 	bit T = TRUE, F = FALSE;
 	ValRecord src;
