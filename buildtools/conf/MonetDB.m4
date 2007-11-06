@@ -656,6 +656,8 @@ NO_X_CFLAGS='_NO_X_CFLAGS_'
 NO_INLINE_CFLAGS=""
 GCC_BISON_CFLAGS=""
 ICC_BISON_CFLAGS=""
+GCC_SWIG_CFLAGS=""
+ICC_SWIG_CFLAGS=""
 CFLAGS_NO_OPT="-O0"
 if test "x$enable_strict" = xyes; then
 case "$GCC-$CC-$host_os" in
@@ -730,6 +732,19 @@ yes-*-*)
 		X_CFLAGS="$X_CFLAGS -Wno-uninitialized"
 		;;
 	esac
+
+	dnl  GNU's gcc does not like to compile swig-generated code
+	dnl  (at least not with our strict X_CFLAGS), complaining about
+	dnl  "warning: dereferencing type-punned pointer will break strict-aliasing rules",
+	dnl  "warning: unused variable '...'",
+	dnl  "warning: '...' defined but not used", and/or
+	dnl  'error: "..." is not defined'.
+	dnl  Hence, we use GCC_SWIG_CFLAGS to disable the respective warning
+	dnl  as locally as possbile via "-Wno-strict-aliasing -Wno-unused-variable -Wno-unused-function -Wno-undef"
+	dnl  (see also sql/src/backends/monet[45]/Makefile.ag,
+	dnl   clients/src/{python,perl,php}/Cimpl/Makefile.ag).
+	GCC_SWIG_CFLAGS="$GCC_SWIG_CFLAGS -Wno-strict-aliasing -Wno-unused-variable -Wno-unused-function -Wno-undef"
+
 	NO_INLINE_CFLAGS="-fno-inline -fno-inline-functions"
 	;;
 -icc*-linux*|-ecc*-linux*)
@@ -798,6 +813,18 @@ yes-*-*)
 	dnl  (#177: label "." was declared but never referenced)
 	dnl  (see also pathfinder/modules/pftijah/Makefile.ag).
 	ICC_BISON_CFLAGS="$ICC_BISON_CFLAGS -wd177"
+
+	dnl  Intel's icc does not like to compile swig-generated code
+	dnl  (at least not with our strict X_CFLAGS), complaining about
+	dnl  'error #869: parameter "..." was never referenced',
+	dnl  'error #177: function "..." was declared but never referenced', and/or
+	dnl  'error #310: old-style parameter list (anachronism)'.
+	dnl  Hence, we use ICC_SWIG_CFLAGS to disable the respective warning
+	dnl  as locally as possbile via "-wd869 -wd177 -wd310"
+	dnl  (see also sql/src/backends/monet[45]/Makefile.ag,
+	dnl   clients/src/{python,perl,php}/Cimpl/Makefile.ag).
+	ICC_SWIG_CFLAGS="$ICC_SWIG_CFLAGS -wd869 -wd177 -wd310"
+
 	NO_INLINE_CFLAGS="-fno-inline -fno-inline-functions"
 	;;
 -pgcc*-linux*)
@@ -1724,6 +1751,8 @@ AC_SUBST(CFLAGS_NO_OPT)
 AC_SUBST(NO_INLINE_CFLAGS)
 AC_SUBST(GCC_BISON_CFLAGS)
 AC_SUBST(ICC_BISON_CFLAGS)
+AC_SUBST(GCC_SWIG_CFLAGS)
+AC_SUBST(ICC_SWIG_CFLAGS)
 
 dnl --enable-warning (only gcc & icc/ecc)
 AC_ARG_ENABLE(warning,
