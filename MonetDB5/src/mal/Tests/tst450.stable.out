@@ -73,7 +73,6 @@ end main;	# 14
 [ 28,	  "inet"	  ]
 [ 29,	  "xml"		  ]
 [ 30,	  "mapentry"	  ]
-[ 31,	  "idxentry"	  ]
 #-------------------------#
 # t	h		  # name
 # oid	str		  # type

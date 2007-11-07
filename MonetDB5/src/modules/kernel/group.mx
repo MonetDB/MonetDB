@@ -238,7 +238,6 @@ extern int CTgroup(BAT **B, BAT **H, BAT *b);
 #include "group.h"
 #include "algebra.h"
 static int TYPE_mapentry;
-static int TYPE_idxentry;
 
 
 int
@@ -320,13 +319,6 @@ hashing.
 
 #define tst_derive_unclustered(eq,p,t) (e->hcur == hcur && eq(p, tcur, t))
 #define tst_derive_clustered(eq,p,t)   ((samecluster = e->hcur == hcur) && eq(p, tcur, t))
-
-/* NOTE: the first two fields of idxentry_t and mapentry_t MUST be the
-   same */
-typedef struct {
-	oid hcur;		/* old group id */
-	hash_t link;		/* hash link */
-} idxentry_t;
 
 typedef struct {
 	oid hcur;		/* old group id */
@@ -926,7 +918,12 @@ CTsubhisto(BAT **ret, BAT *sel, BAT *grp, BAT *dom)
 	size_t size = BATcount(dom);
 	hash_t yy, mask, *hash = NULL;
 	BUN r, p, q;
-	BAT *bn = BATnew(TYPE_idxentry, TYPE_int, size);
+	BAT *bn = BATnew(TYPE_oid, TYPE_int, size);
+	BAT *lnk = BATnew(TYPE_oid, TYPE_void, size);
+	int *hcnt = (int*)Tloc(bn, BUNfirst(bn));
+	oid *hcur = (oid*)Hloc(bn, BUNfirst(bn));
+	oid *link = (oid*)Hloc(lnk, BUNfirst(lnk));
+	oid *hdom = (oid*)Hloc(dom, 0);
 
 	if (bn == NULL)
 		return GDK_FAIL;
@@ -947,24 +944,21 @@ CTsubhisto(BAT **ret, BAT *sel, BAT *grp, BAT *dom)
 	mask--;
 
 	/* insert all values in the hash table, and in bn with count zero */
-	r = BUNfirst(bn);
+	r = 0;
 	yy = 0;
 	BATloop(dom, p, q) {
-		oid v = *(oid *) Hloc(dom, p);
+		oid v = hdom[p];
 		hash_t c = v & mask;
 
-		((idxentry_t *) Hloc(bn, r))->hcur = v;
-		((idxentry_t *) Hloc(bn, r))->link = hash[c];
-		*(int *) Tloc(bn, r) = 0;
+		hcur[r] = v;
+		link[r] = hash[c];
+		hcnt[r] = 0;
 		r++;
 		hash[c] = yy;
 		yy++;
 	}
 	BATsetcount(bn, r);
 	bn->tsorted = 0;
-	bn->htype = BATmirror(bn)->ttype = TYPE_oid;
-	/* assert(offsetof(idxentry_t,hcur) == 0);
-	ALIGNsetH(bn, dom); */
 
 	/* add the counts for this selection using the hash table */
 	BATloop(grp, p, q) {
@@ -972,10 +966,10 @@ CTsubhisto(BAT **ret, BAT *sel, BAT *grp, BAT *dom)
 			oid v = *(oid *) Tloc(grp, p);
 			hash_t c = v & mask;
 
-			for (yy = hash[c]; yy != HASH_MAX; yy = ((idxentry_t *) Hloc(bn, r))->link) {
+			for (yy = hash[c]; yy != HASH_MAX; yy = link[r]) {
 				r = yy;
-				if (((idxentry_t *) Hloc(bn, r))->hcur == v) {
-					*(int *) Tloc(bn, r) += 1;
+				if (hcur[r] == v) {
+					hcnt[r]++;
 					break;
 				}
 			}
@@ -984,6 +978,7 @@ CTsubhisto(BAT **ret, BAT *sel, BAT *grp, BAT *dom)
 
 	}
 	GDKfree(hash);
+	BBPreclaim(lnk);
 	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
 	*ret = bn;
 	return GDK_SUCCEED;
@@ -1223,7 +1218,6 @@ GRPprelude(void)
 {
 	/* printf("#init group\n"); */
 	TYPE_mapentry = malAtomFixed(sizeof(mapentry_t), sizeof(oid), "mapentry");
-	TYPE_idxentry = malAtomFixed(sizeof(idxentry_t), sizeof(oid), "idxentry");
 	return MAL_SUCCEED;
 }
 

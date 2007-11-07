@@ -105,8 +105,6 @@ end main;	# 32
 [ 28,	  "inet"	  ]
 [ 29,	  "xml"		  ]
 [ 30,	  "mapentry"	  ]
-[ 31,	  "idxentry"	  ]
-#MALexit: clients still active
 
 # 15:28:56 >  
 # 15:28:56 >  Done.
