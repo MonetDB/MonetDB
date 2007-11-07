@@ -31,6 +31,8 @@ AH_BOTTOM([#include "stddef.h"])
 AM_INIT_AUTOMAKE
 AC_CONFIG_SRCDIR([src/mapilib/Mapi.mx])
 AM_CONFIG_HEADER([clients_config.h])
+CONFIG_H=clients_config.h
+AC_SUBST(CONFIG_H)
 
 HOST=[$target]
 AC_DEFINE_UNQUOTED(HOST, "$HOST", [Host identifier])
