@@ -268,7 +268,7 @@ infer_level (PFla_op_t *n)
                             break;
 
                         case alg_par:
-                            mark_level (n->prop, item_res, level+1);
+                            mark_level (n->prop, item_res, level-1);
                             break;
 
                         case alg_fol_s:
