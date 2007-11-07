@@ -738,13 +738,14 @@ yes-*-*)
 	dnl  "warning: dereferencing type-punned pointer will break strict-aliasing rules",
 	dnl  "warning: unused variable '...'",
 	dnl  "warning: '...' defined but not used",
+	dnl  "warning: missing initializer",
 	dnl  "warning: unused parameter '...'", and/or
 	dnl  'error: "..." is not defined'.
 	dnl  Hence, we use GCC_SWIG_CFLAGS to disable the respective warning
-	dnl  as locally as possbile via "-Wno-strict-aliasing -Wno-unused-variable -Wno-unused-function -Wno-unused-parameter -Wno-undef"
+	dnl  as locally as possbile via "-Wno-strict-aliasing -Wno-unused-variable -Wno-unused-function -Wno-missing-field-initializers -Wno-unused-parameter -Wno-undef"
 	dnl  (see also sql/src/backends/monet[45]/Makefile.ag,
 	dnl   clients/src/{python,perl,php}/Cimpl/Makefile.ag).
-	GCC_SWIG_CFLAGS="$GCC_SWIG_CFLAGS -Wno-strict-aliasing -Wno-unused-variable -Wno-unused-function -Wno-unused-parameter -Wno-undef"
+	GCC_SWIG_CFLAGS="$GCC_SWIG_CFLAGS -Wno-strict-aliasing -Wno-unused-variable -Wno-unused-function -Wno-missing-field-initializers -Wno-unused-parameter -Wno-undef"
 
 	NO_INLINE_CFLAGS="-fno-inline -fno-inline-functions"
 	;;
