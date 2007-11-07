@@ -275,6 +275,14 @@ infer_dom (PFla_op_t *n, unsigned int id)
                     add_dom (n->prop, n->schema.items[i].name, EMPTYDOM);
             break;
 
+        case la_ref_tbl:
+            /* create new domains for all attributes */
+            for (unsigned int i = 0; i < n->schema.count; i++)
+                if (n->schema.items[i].type == aat_nat)
+                    add_dom (n->prop, n->schema.items[i].name, id++);
+            break;
+    
+
         case la_attach:
             bulk_add_dom (n->prop, L(n));
             if (n->sem.attach.value.type == aat_nat)

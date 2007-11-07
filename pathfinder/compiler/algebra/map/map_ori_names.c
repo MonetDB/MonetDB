@@ -241,6 +241,25 @@ map_ori_names (PFla_op_t *p, PFarray_t *map)
             res = PFla_empty_tbl_ (schema);
         }   break;
 
+        case la_ref_tbl:
+        {
+            PFalg_schema_t schema;
+            schema.count = p->schema.count;
+            schema.items  = PFmalloc (schema.count *
+                                      sizeof (PFalg_schema_t));
+
+            for (unsigned int i = 0; i < p->schema.count; i++)
+                schema.items[i] =
+                    (struct PFalg_schm_item_t)
+                        { .name = ONAME(p, p->schema.items[i].name),
+                          .type = p->schema.items[i].type };
+
+            res = PFla_ref_tbl_ (p->sem.ref_tbl.name, 
+                                 schema,
+                                 p->sem.ref_tbl.tatts,
+                                 p->sem.ref_tbl.keys);
+        }   break;
+
         case la_attach:
             res = attach (SEC_PROJ(LEFT, p, p->sem.attach.res),
                           ONAME(p, p->sem.attach.res),

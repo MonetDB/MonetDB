@@ -79,8 +79,9 @@ typedef struct PFla_op_t *NODEPTR_TYPE;
 %term  serialize_rel   =   2
 %term  lit_tbl         =   4
 %term  empty_tbl       =   5
-%term  attach          =   6
-%term  cross           =   7
+%term  ref_tbl         =   6
+%term  attach          =   7
+%term  cross           =   8
 %term  eqjoin          =   9
 %term  semijoin        =  10
 %term  thetajoin       =  11
@@ -148,15 +149,15 @@ typedef struct PFla_op_t *NODEPTR_TYPE;
 
 Query:  serialize_seq (Frag, Rel)                 =   1 (10);
 Query:  serialize_rel (Rel)                       =   2 (10);
-
 Rel:    lit_tbl                                   =   3 (10);
-Rel:    attach (Rel)                              =   4 (10);
-Rel:    attach (lit_tbl)                          =   5 (10);
-Rel:    cross (Rel, Rel)                          =   6 (10);
-Rel:    cross (lit_tbl, lit_tbl)                  =   7 (10);
-Rel:    cross (Rel, lit_tbl)                      =   8 (10);
-Rel:    cross (lit_tbl, Rel)                      =   9 (10);
-Rel:    eqjoin (Rel, Rel)                         =  10 (10);
+Rel:    ref_tbl                                   =   4 (10);
+Rel:    attach (Rel)                              =   5 (10);
+Rel:    attach (lit_tbl)                          =   6 (10);
+Rel:    cross (Rel, Rel)                          =   7 (10);
+Rel:    cross (lit_tbl, lit_tbl)                  =   8 (10);
+Rel:    cross (Rel, lit_tbl)                      =   9 (10);
+Rel:    cross (lit_tbl, Rel)                      =  10 (10);
+Rel:    eqjoin (Rel, Rel)                         =  11 (10);
 Rel:    semijoin (Rel, Rel)                       =  13 (10);
 Rel:    semijoin (distinct (Rel), Rel)            =  14 (10);
 Rel:    thetajoin (Rel, Rel)                      =  15 (10);
@@ -437,7 +438,7 @@ reduce (PFla_op_t *p, int goalnt)
     /* action code */
     switch (rule) {
         /* Rel:    attach (lit_tbl) */
-        case 5:
+        case 6:
         {
             unsigned int   i, j,
                            acount = p->schema.count,
@@ -467,10 +468,10 @@ reduce (PFla_op_t *p, int goalnt)
         }   break;
 
         /* Rel:    cross (lit_tbl, lit_tbl) */
-        case 7:
+        case 8:
 
         /* Rel:    cross (Rel, lit_tbl) */
-        case 8:
+        case 9:
             /* replace cross product with a literal table that contains
                only one row by a number of attach operators (one for each
                tuple). */
@@ -485,13 +486,13 @@ reduce (PFla_op_t *p, int goalnt)
                 relabel (p, kids);
                 break;
             }
-            /* continue for rule 7 */
-            if (rule != 7)
+            /* continue for rule 8 */
+            if (rule != 8)
                 break;
         /* Rel:    cross (lit_tbl, lit_tbl) */
 
         /* Rel:    cross (lit_tbl, Rel) */
-        case 9:
+        case 10:
             /* replace cross product with a literal table that contains
                only one row by a number of attach operators (one for each
                tuple). */

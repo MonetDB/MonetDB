@@ -63,28 +63,6 @@
 #include "xml2lalg_xpath_utils.h"
  
 
-/******************************************************************************/
-/******************************************************************************/
-
-
-char* 
-PFxml2la_xpath_getUniqueXPATHPrefix(xmlNodePtr nodePtr)
-{
-
-
-    char* s1  = (char*)PFmalloc(80*sizeof(char));
-
-    char* prefix = "//node[@id='";
-    char* middle = 
-        PFxml2la_xpath_getAttributeValueFromElementNode(nodePtr, "id");  
-    char* postfix = "']";
-
-    strcpy (s1,prefix);
-    strcat(s1, middle);
-    strcat(s1, postfix);
-
-    return s1;
-}
 
 
 /******************************************************************************/
@@ -117,12 +95,19 @@ PFxml2la_xpath_evalXPathFromNodeCtx(
     const char* xpathExpression)
 {
 
-    char* s1  = (char*)PFmalloc(200*sizeof(char));
-    char* uniqueXPATHPrefix  =  PFxml2la_xpath_getUniqueXPATHPrefix(nodeXpathCtx);
-    strcpy (s1,uniqueXPATHPrefix);
-    strcat(s1, xpathExpression);
+    xmlChar* uniqueXPATHPrefix = xmlGetNodePath(nodeXpathCtx);
+        
+    xmlBufferPtr buffer = xmlBufferCreate();
+    xmlBufferAdd(buffer, uniqueXPATHPrefix, xmlStrlen(uniqueXPATHPrefix));
+    xmlBufferAdd(buffer, (xmlChar*)xpathExpression, strlen(xpathExpression));
 
-    return PFxml2la_xpath_evalXPathFromDocCtx(docXPathCtx, s1);
+    char* absoluteXPath = (char*) xmlBufferContent(buffer); 
+
+    xmlXPathObjectPtr result =  PFxml2la_xpath_evalXPathFromDocCtx(docXPathCtx, absoluteXPath);
+
+    xmlBufferFree(buffer);
+
+    return result;
 }
 
 
@@ -216,6 +201,8 @@ PFxml2la_xpath_getAttributeValueFromElementNode(xmlNodePtr nodePtr,
 
 }
 
+
+
 /******************************************************************************/
 /******************************************************************************/
 
@@ -230,11 +217,40 @@ PFxml2la_xpath_getAttributeValueFromAttributeNode(xmlNodePtr nodePtr)
 /******************************************************************************/
 
 
+PFarray_t *
+PFxml2la_xpath_getAttributeValuesFromAttributeNodes(
+    xmlXPathObjectPtr xpathObjectPtr)
+{
+
+    PFarray_t * values = PFarray (sizeof (char*));
+
+    int nodeCount = PFxml2la_xpath_getNodeCount(xpathObjectPtr);
+
+    for (int i = 0; i < nodeCount; i++)
+    {
+
+        xmlNodePtr nodePtr = PFxml2la_xpath_getNthNode(xpathObjectPtr, i);        
+        char* value = PFxml2la_xpath_getAttributeValueFromAttributeNode(nodePtr);
+        char* copiedValue = PFstrdup(value);
+        *(char**) PFarray_add (values) = copiedValue;
+    }             
+
+   
+    return values;
+
+}
+ 
+
+/******************************************************************************/
+/******************************************************************************/
+
+
 char* 
 PFxml2la_xpath_getElementValue(xmlNodePtr nodePtr)
 {
     return(char*)nodePtr->children->content;
 }
+
 
 
 

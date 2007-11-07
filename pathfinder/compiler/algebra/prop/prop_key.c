@@ -286,6 +286,19 @@ infer_key (PFla_op_t *n, bool with_guide_info)
                 }
             break;
 
+
+        case la_ref_tbl:
+            /* just copy keys from the semantical infos */
+            for (unsigned int i = 0; i < PFarray_last (n->sem.ref_tbl.keys); i++)
+                *(PFalg_att_t *) PFarray_add (n->prop->keys) =
+                    *(PFalg_att_t *) PFarray_at (n->sem.ref_tbl.keys, i);
+
+
+
+            break;
+
+
+
         case la_disjunion:
             /*
              * If

@@ -173,6 +173,7 @@ prop_infer_reqvals (PFla_op_t *n, reqval_t reqvals)
 
         case la_lit_tbl:
         case la_empty_tbl:
+        case la_ref_tbl:
         case la_empty_frag:
             break;
 

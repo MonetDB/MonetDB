@@ -1021,6 +1021,7 @@ infer_guide(PFla_op_t *n, PFguide_tree_t *guide)
         /* do nothing */
         case la_lit_tbl:
         case la_empty_tbl:
+        case la_ref_tbl:
         case la_to:
         case la_avg:
         case la_max:

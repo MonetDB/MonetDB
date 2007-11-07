@@ -248,6 +248,7 @@ infer_ori_names (PFla_op_t *n, PFarray_t *par_np_list)
 
         case la_lit_tbl:
         case la_empty_tbl:
+        case la_ref_tbl:
             break;
 
         case la_attach:

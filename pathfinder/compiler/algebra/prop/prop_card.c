@@ -108,6 +108,7 @@ infer_card (PFla_op_t *n)
             break;
 
         case la_empty_tbl:
+        case la_ref_tbl:
             /* zero tuples */
             n->prop->card = 0;
             break;

@@ -231,6 +231,7 @@ infer_ckey (PFla_op_t *n)
             break;
 
         case la_empty_tbl:
+        case la_ref_tbl:
         case la_disjunion: /* disjoint domains could help here */
         case la_fcns:
         case la_docnode:

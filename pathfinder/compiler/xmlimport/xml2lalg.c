@@ -3,7 +3,12 @@
 /**
  * @file
  * 
- * Importing of XML-serialized logical Algebra Plans
+ * Importing of XML-serialized logical Algebra Plans. 
+ *  
+ * The XML Importer makes use of the libxml2 xpath facilities: 
+ *  - http://xmlsoft.org/html/libxml-xpath.html 
+ *  - http://xmlsoft.org/html/libxml-tree.html
+ *  - http://xmlsoft.org/html/libxml-xmlstring.html
  *
  *
  * Copyright Notice:
@@ -103,6 +108,12 @@
     PFxml2la_xpath_evalXPathFromNodeCtx( \
         ctx->docXPathCtx, nodePtr, xpath)
 
+
+#define XPATH2(nodePtr, xpath) \
+    PFxml2la_xpath_evalXPathFromNodeCtx( \
+        ctx->docXPathCtx, nodePtr, xpath)
+
+
 #define NODECOUNT(xpath) \
     PFxml2la_xpath_getNodeCount(XPATH(xpath))
 
@@ -148,6 +159,23 @@
 #define PFLA_ATT_LST(xpath) \
             getPFLA_AttributeList(ctx, nodePtr, xpath)
 
+
+/**              
+ * Macro return-type:  PFalg_schema_t 
+ * XPath return-type:  element(column)+
+ */
+#define PFLA_SCHEMA(xpath) \
+            getPFLA_Schema(ctx, nodePtr, xpath)
+
+
+/**              
+ * Macro return-type:  PFarray_t* 
+ * XPath return-type:  element(key)+
+ */
+#define PFLA_KEYINFOS(xpath) \
+            getPFLA_KeyInfos(ctx, nodePtr, xpath)
+
+
 /**              
  * Macro return-type:  PFalg_atom_t 
  * XPath return-type:  element(value){1}
@@ -161,6 +189,9 @@
  */
 #define PFLA_TUPLES(xpath, rowCount, columnCount) \
             getPFLA_Tuples(ctx, nodePtr, xpath, rowCount, columnCount)
+
+
+
 
 /**              
  * Macro return-type:  PFalg_axis_t 
@@ -253,6 +284,24 @@
   PFxml2la_xpath_getElementValue(PFxml2la_xpath_getNthNode(XPATH(xpath), 0))
 
 
+/**              
+ * Macro return-type:  char* 
+ * XPath return-type:  attribute(){1}
+ */
+#define A2STR(xpath) \
+  (char*)xmlXPathCastToString(XPATH(xpath))
+
+
+
+/**              
+ * Macro return-type:  PFarray_t* (with element-type char*) 
+ * XPath return-type:  attribute()+
+ */
+#define AS2STRLST(xpath) \
+  PFxml2la_xpath_getAttributeValuesFromAttributeNodes(XPATH(xpath))
+
+
+
 
 /* 
   =============================================================================
@@ -325,6 +374,20 @@ getPFLA_Atom(
 
 PFalg_attlist_t 
 getPFLA_AttributeList(
+    XML2LALGContext* ctx, 
+    xmlNodePtr nodePtr, 
+    const char* xpathExpression);
+
+
+PFalg_schema_t 
+getPFLA_Schema(
+    XML2LALGContext* ctx, 
+    xmlNodePtr nodePtr, 
+    const char* xpathExpression);
+
+
+PFarray_t *
+getPFLA_KeyInfos(
     XML2LALGContext* ctx, 
     xmlNodePtr nodePtr, 
     const char* xpathExpression);
@@ -559,11 +622,10 @@ importXML(XML2LALGContext* ctx, xmlDocPtr doc)
 void createAndStoreAlgOpNode(XML2LALGContext* ctx, xmlNodePtr nodePtr)
 {
 
+
    /*
    info1(ctx, nodePtr);
    */
-
-
 
     /**
      * the logical algebra node which must be constructed from the
@@ -681,6 +743,39 @@ void createAndStoreAlgOpNode(XML2LALGContext* ctx, xmlNodePtr nodePtr)
             newAlgNode = PFla_empty_tbl 
              (
              PFLA_ATT_LST("/content/column[@new='true']")
+             );
+        }  
+        break;
+
+
+/******************************************************************************/
+/******************************************************************************/
+
+    case la_ref_tbl              : 
+
+        {
+            /*
+             <properties>
+                <keys>
+                    (<key>
+                        (<column name="COLNAME" position="[0..n]"/>)+
+                    </key>)+
+                </keys>
+             </properties>
+            
+             <content>
+                <table name="TABLENAME">
+                    (<column name="COLNAME" tname="TCOLNAME" type="DATATYPE"/>)+    
+                </table>
+             </content>             
+            */
+                                    
+            newAlgNode = PFla_ref_tbl_ 
+             (
+             A2STR("/content/table/@name"),
+             PFLA_SCHEMA("/content/table/column"),
+             AS2STRLST("/content/table/column/@tname"),
+             PFLA_KEYINFOS("/properties/keys/key")
              );
         }  
         break;
@@ -2147,9 +2242,9 @@ getPFLA_Atom(
 {
     /* fetch the atom from xml and transfer it to the corresponding PF-Type */
     xmlNodePtr atom_xml = PFxml2la_xpath_getNthNode(XPATH(xpathExpression), 0);
-    PFalg_atom_t atom = PFxml2la_conv_2PFLA_atom(
-        PFxml2la_xpath_getAttributeValueFromElementNode(
-            atom_xml, "type"), PFxml2la_xpath_getElementValue(atom_xml));
+    PFalg_atom_t atom = PFxml2la_conv_2PFLA_atom(        
+        (char*)xmlXPathCastToString(XPATH2(atom_xml, "/@type")),
+        PFxml2la_xpath_getElementValue(atom_xml));
     return atom;
 }
 
@@ -2196,6 +2291,99 @@ getPFLA_AttributeList(
     return attlist;
 
 }
+
+
+
+PFalg_schema_t 
+getPFLA_Schema(
+    XML2LALGContext* ctx, 
+    xmlNodePtr nodePtr, 
+    const char* xpathExpression)
+{
+
+    /*
+    (<column name="COLNAME" tname="TCOLNAME" type="DATATYPE"/>)+
+    */
+
+    PFalg_schema_t schema;
+
+    xmlXPathObjectPtr columns_xml =  XPATH(xpathExpression);
+    int columnCount = PFxml2la_xpath_getNodeCount(columns_xml);
+
+    schema.count = columnCount;
+    schema.items = PFmalloc (columnCount * sizeof (*(schema.items)));
+
+    for (int i = 0; i < columnCount; i++) {
+
+        xmlNodePtr column_xml = PFxml2la_xpath_getNthNode(columns_xml, i);
+
+        PFalg_att_t columnName = ctx->convert2PFLA_attributeName(
+            PFxml2la_xpath_getAttributeValueFromElementNode(
+                column_xml, "name"));
+
+        PFalg_simple_type_t columnType = PFxml2la_conv_2PFLA_atomType(
+            PFxml2la_xpath_getAttributeValueFromElementNode(
+                column_xml, "type"));
+    
+        schema.items[i].name = columnName;
+        schema.items[i].type = columnType; 
+    }
+    
+    return  schema;
+}
+
+
+
+/*
+todo: check order...
+*/
+PFarray_t *
+getPFLA_KeyInfos(
+    XML2LALGContext* ctx, 
+    xmlNodePtr nodePtr, 
+    const char* xpathExpression)
+{
+    /*
+    (<key>
+        (<column name="COLNAME" position="[0..n]"/>)+
+    </key>)+
+    */
+
+    PFarray_t * keys = PFarray (sizeof (PFalg_att_t));
+
+
+    xmlXPathObjectPtr keys_xml =  XPATH(xpathExpression);
+    int keysCount = PFxml2la_xpath_getNodeCount(keys_xml);
+
+    for (int i = 0; i < keysCount; i++)
+    {
+
+        xmlNodePtr key_xml = PFxml2la_xpath_getNthNode(keys_xml, i);
+
+        xmlXPathObjectPtr keyColumns_xml =  XPATH2(key_xml, "/column");
+        /*int keyColumnsCount = PFxml2la_xpath_getNodeCount(keyColumns_xml);*/
+
+        /*for (int j = 0; j < keyColumnsCount; j++)*/
+        for (int j = 0; j < 1; j++)
+        {
+            xmlNodePtr keyColumn_xml = PFxml2la_xpath_getNthNode(keyColumns_xml, j);
+            char* columnName = (char*)xmlXPathCastToString(XPATH2(keyColumn_xml, "/@name"));
+            PFalg_att_t keyAttribute = ctx->convert2PFLA_attributeName(columnName);
+
+            *(PFalg_att_t *) PFarray_add (keys) = keyAttribute;
+
+
+        }
+
+        
+    }             
+
+   
+    return keys;
+
+}
+
+
 
 
 PFalg_tuple_t* 
@@ -2246,6 +2434,9 @@ getPFLA_Tuples(
 
     return  tuples;
 }
+
+
+
 
 
 /* todo: check order... */

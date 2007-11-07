@@ -307,6 +307,7 @@ opt_mvd (PFla_op_t *p)
 
     case la_lit_tbl:
     case la_empty_tbl:
+    case la_ref_tbl:
         /* nothing to do -- everything is constant */
         break;
 

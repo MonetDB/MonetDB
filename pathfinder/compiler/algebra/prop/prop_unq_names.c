@@ -160,6 +160,7 @@ infer_unq_names (PFla_op_t *n, unsigned int id)
 
         case la_lit_tbl:
         case la_empty_tbl:
+        case la_ref_tbl:
             /* create new unique names for all attributes */
             for (unsigned int i = 0; i < n->schema.count; i++)
                 new_name_pair (np_list, n->schema.items[i].name, id++);

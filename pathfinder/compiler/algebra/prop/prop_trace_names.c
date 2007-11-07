@@ -149,6 +149,7 @@ map_names (PFla_op_t *n, PFla_op_t *goal, PFarray_t *par_np_list)
         case la_serialize_rel:
         case la_lit_tbl:
         case la_empty_tbl:
+        case la_ref_tbl:
         case la_cross:
         case la_eqjoin:
         case la_semijoin:

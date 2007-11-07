@@ -131,6 +131,7 @@ infer_ocol (PFla_op_t *n)
            - thus update schema (property) during rewrite */
         case la_lit_tbl:
         case la_empty_tbl:
+        case la_ref_tbl:
             break;
 
         case la_attach:

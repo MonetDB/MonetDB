@@ -60,8 +60,9 @@ enum PFla_op_kind_t {
                                    tree.) */
     , la_lit_tbl         =  4 /**< literal table */
     , la_empty_tbl       =  5 /**< empty literal table */
-    , la_attach          =  6 /**< attach constant column */
-    , la_cross           =  7 /**< cross product (Cartesian product) */
+    , la_ref_tbl         =  6 /**< referenced table */
+    , la_attach          =  7 /**< attach constant column */
+    , la_cross           =  8 /**< cross product (Cartesian product) */
     , la_eqjoin          =  9 /**< equi-join */
     , la_semijoin        = 10 /**< semi-join */
     , la_thetajoin       = 11 /**< theta-join (with possibly multiple
@@ -150,6 +151,8 @@ enum PFla_op_kind_t {
     , la_string_join     =102 /**< fn:string-join */
                          
     , la_dummy           =120 /**< dummy operator that does nothing */
+
+
 };
 /** algebra operator kinds */
 typedef enum PFla_op_kind_t PFla_op_kind_t;
@@ -186,6 +189,17 @@ union PFla_op_sem_t {
     } lit_tbl;                    /**< semantic content for literal table
                                        constructor */
 
+
+    /* semantic content for tableref operator */
+    struct {
+        char* name;
+        PFarray_t*      tatts;    /**< array holding the original attr.names */
+        PFarray_t*      keys;     /**< array holding the key attributes */
+    } ref_tbl;                    /**< semantic content for tableref operator */
+
+
+
+    /* semantic content for attach operator */
     struct {
         PFalg_att_t     res;      /**< names of new attribute */
         PFalg_atom_t    value;    /**< value for the new attribute */
@@ -550,6 +564,19 @@ PFla_op_t *PFla_lit_tbl_ (PFalg_attlist_t a,
  */
 PFla_op_t *PFla_empty_tbl (PFalg_attlist_t a);
 PFla_op_t *PFla_empty_tbl_ (PFalg_schema_t s);
+
+
+/**
+ * Referenced table constructor.
+ */
+PFla_op_t *
+PFla_ref_tbl_ (const char* name,
+               PFalg_schema_t schema, 
+               PFarray_t* tatts,
+               PFarray_t* keys);
+
+
+
 
 PFla_op_t *PFla_attach (const PFla_op_t *n,
                         PFalg_att_t res, PFalg_atom_t value);

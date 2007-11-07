@@ -6,7 +6,7 @@
  * Debugging: dump logical algebra tree in AT&T dot format.
  *
  * Copyright Notice:
- * -----------------
+ * -----------------                       
  *
  * The contents of this file are subject to the Pathfinder Public License
  * Version 1.1 (the "License"); you may not use this file except in
@@ -52,6 +52,7 @@ static char *a_id[]  = {
     , [la_serialize_rel]    = "REL SERIALIZE"
     , [la_lit_tbl]          = "TBL"
     , [la_empty_tbl]        = "EMPTY_TBL"
+    , [la_ref_tbl ]         = "REF_TBL"
     , [la_attach]           = "Attach"
     , [la_cross]            = "Cross"
     , [la_eqjoin]           = "Join"
@@ -127,6 +128,7 @@ static char *xml_id[]  = {
     , [la_serialize_rel]    = "serialize relation"
     , [la_lit_tbl]          = "table"
     , [la_empty_tbl]        = "empty_tbl"
+    , [la_ref_tbl ]         = "ref_tbl"
     , [la_attach]           = "attach"
     , [la_cross]            = "cross"
     , [la_eqjoin]           = "eqjoin"
@@ -317,6 +319,7 @@ la_dot (PFarray_t *dot, PFla_op_t *n)
         , [la_serialize_rel]   = "#C0C0C0"
         , [la_lit_tbl]         = "#C0C0C0"
         , [la_empty_tbl]       = "#C0C0C0"
+        , [la_ref_tbl ]        = "#C0C0C0"
         , [la_attach]          = "#EEEEEE"
         , [la_cross]           = "#990000"
         , [la_eqjoin]          = "#00FF00"
@@ -452,6 +455,21 @@ la_dot (PFarray_t *dot, PFla_op_t *n)
                                 PFatt_str (n->schema.items[c].name));
 
             PFarray_printf (dot, ")");
+            break;
+
+        /*todo: implement me*/
+        case la_ref_tbl :
+            /* list the attributes of this table */
+            PFarray_printf (dot, "%s: (%s", a_id[n->kind],
+                            PFatt_str (n->schema.items[0].name));
+    
+           /*
+           for (c = 1; c < n->schema.count;c++)
+                PFarray_printf (dot, " | %s", 
+                                PFatt_str (n->schema.items[c].name));
+    
+            PFarray_printf (dot, ")");
+            */
             break;
 
         case la_attach:
@@ -1432,6 +1450,47 @@ la_xml (PFarray_t *xml, PFla_op_t *n)
 
             PFarray_printf (xml, "    </content>\n");
             break;
+
+
+        case la_ref_tbl :
+
+            /* todo: only print the properties here, if the 
+               "general property output" is not enabled (e.g. via -f<format>)
+
+               NB: the keys-property is an inherent information for the la_ref_tbl-op
+            */
+            PFarray_printf (xml, "    <properties>\n"); 
+            PFarray_printf (xml, "      <keys>\n"); 
+            /* list the keys of this table */
+            for (unsigned int c = 0; c < PFarray_last (n->sem.ref_tbl.keys); c++) 
+            {
+                PFarray_printf (xml, "    <key>\n");
+                PFarray_printf (xml, 
+                                 "          <column name=\"%s\" position=\"%i\"/>\n",
+                                PFatt_str(*((PFalg_att_t*) PFarray_at (n->sem.ref_tbl.keys, c))),
+                                 1);
+                PFarray_printf (xml, "    </key>\n");
+            }
+            PFarray_printf (xml, "      </keys>\n");
+            PFarray_printf (xml, "    </properties>\n");
+
+
+            PFarray_printf (xml, "    <content>\n"); 
+            PFarray_printf (xml, "      <table name=\"%s\">\n",
+                                 n->sem.ref_tbl.name); 
+            /* list the attributes of this table */
+            for (c = 0; c < n->schema.count;c++) 
+            {
+                PFarray_printf (xml, 
+                                 "        <column name=\"%s\" tname=\"%s\" type=\"%s\"/>\n",
+                                 PFatt_str (n->schema.items[c].name),
+                                 *((char**) PFarray_at (n->sem.ref_tbl.tatts, c)),                                 
+                                 PFalg_simple_type_str (n->schema.items[c].type));
+            }
+            PFarray_printf (xml, "      </table>\n");
+            PFarray_printf (xml, "    </content>\n");
+            break;
+    
 
         case la_attach:
             PFarray_printf (xml, 

@@ -289,6 +289,7 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
             case la_serialize_rel:
             case la_lit_tbl:
             case la_empty_tbl:
+            case la_ref_tbl:
             case la_cross:
             case la_eqjoin:
             case la_eqjoin_unq:
@@ -445,6 +446,7 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
             case la_serialize_rel:
             case la_lit_tbl:
             case la_empty_tbl:
+            case la_ref_tbl:
             case la_intersect:
             case la_difference:
             case la_distinct:
@@ -1724,6 +1726,7 @@ map_name (PFla_op_t *p, PFalg_att_t att)
         case la_serialize_rel:
         case la_lit_tbl:
         case la_empty_tbl:
+        case la_ref_tbl:
         case la_eqjoin:
         case la_intersect:
         case la_difference:

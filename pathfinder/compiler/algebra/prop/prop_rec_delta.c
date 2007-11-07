@@ -83,6 +83,7 @@ check_op (PFla_op_t *n)
 
         case la_lit_tbl:
         case la_empty_tbl:
+        case la_ref_tbl:
         case la_fragment:
         case la_frag_union:
         case la_empty_frag:

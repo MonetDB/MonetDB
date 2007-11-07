@@ -429,6 +429,87 @@ PFla_empty_tbl (PFalg_attlist_t attlist)
     return ret;
 }
 
+
+
+
+
+
+/**
+ * Construct an algebra node representing a referenced table,
+ * given a (external) name, a (internal) schema, a list of the
+ * external attribute/column names, and a list of the (internal)
+ * key attributes.
+ *
+ * @param name    The name of the referenced table.  
+ * @param schema  Attribute list ("internal" attribute names)
+ *                with annotated types.
+ * @param tatts   String list ("external" attribute/column
+ *                names).
+ * @param keys    Attribute list ("internal" attribute names) of
+ *                key attributes.
+ *
+ */
+PFla_op_t *
+PFla_ref_tbl_ (const char* name,
+               PFalg_schema_t schema, 
+               PFarray_t* tatts,
+               PFarray_t* keys)
+{
+    PFla_op_t      *ret;      /* return value we are building */
+
+    assert(name);
+
+    /**************************************************************/
+    /* instantiate the new algebra operator node */
+    /**************************************************************/
+    ret = la_op_leaf (la_ref_tbl);
+
+    /**************************************************************/
+    /* set its schema */
+    /**************************************************************/
+
+    /* deep copy the schema parameter*/
+    ret->schema.items
+        = PFmalloc (schema.count * sizeof (*(ret->schema.items)));
+    for (unsigned int i = 0; i < schema.count; i++) {
+        ret->schema.items[i] = schema.items[i];
+    }
+    ret->schema.count = schema.count;
+
+
+    /**************************************************************/
+    /* set its semantical infos */
+    /**************************************************************/
+
+    /* deep copy the name of the referenced table*/
+    ret->sem.ref_tbl.name = PFstrdup(name);
+    
+    /* deep copy the "original column names" of the referenced table*/
+    ret->sem.ref_tbl.tatts = PFarray(sizeof (char*));
+    for (unsigned int i = 0; i < PFarray_last (tatts); i++)
+    {
+            char* value = *(char**) PFarray_at (tatts, i);
+            char* copiedValue = PFstrdup(value);
+            *(char**) PFarray_add (ret->sem.ref_tbl.tatts) = copiedValue;
+    }
+
+
+    /* (it's save to) shallow copy the list of key-attribute-names */
+    ret->sem.ref_tbl.keys  = PFarray_copy(keys);
+
+
+    /**************************************************************/
+    /* return the new algebra operator node */
+    /**************************************************************/
+    return ret;
+}
+
+
+
+
+
+
+
 /**
  * ColumnAttach: Attach a column to a table.
  *
@@ -3858,6 +3939,18 @@ PFla_op_duplicate (PFla_op_t *n, PFla_op_t *left, PFla_op_t *right)
 
         case la_empty_tbl:
             return PFla_empty_tbl_ (n->schema);
+
+        case la_ref_tbl:
+        {
+
+            return PFla_ref_tbl_ 
+            (
+                n->sem.ref_tbl.name,
+                n->schema,
+                n->sem.ref_tbl.tatts,
+                n->sem.ref_tbl.keys            
+            );
+        } break;
 
         case la_attach:
             return PFla_attach (left,

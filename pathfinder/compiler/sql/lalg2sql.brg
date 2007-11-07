@@ -81,8 +81,9 @@ typedef struct PFla_op_t *NODEPTR_TYPE;
                                 tree.) */
 %term lit_tbl         =  4 /**< literal table */
 %term empty_tbl       =  5 /**< empty literal table */
-%term attach          =  6 /**< attach constant column */
-%term cross           =  7 /**< cross product (Cartesian product) */
+%term ref_table       =  6 /**< referenced table */
+%term attach          =  7 /**< attach constant column */
+%term cross           =  8 /**< cross product (Cartesian product) */
 %term eqjoin          =  9 /**< equi-join */
 %term semijoin        = 10 /**< semi-join */
 %term thetajoin       = 11 /**< theta-join (with possibly multiple

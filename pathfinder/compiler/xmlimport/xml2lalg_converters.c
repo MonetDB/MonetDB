@@ -147,6 +147,10 @@ PFxml2la_conv_2PFLA_OpKind(const char* s)
     {
         return la_empty_tbl;
     }
+    else if (strcmp(s, "ref_tbl") == 0)
+    {
+        return la_ref_tbl;
+    }
     else if (strcmp(s, "attach") == 0)
     {
         return la_attach;

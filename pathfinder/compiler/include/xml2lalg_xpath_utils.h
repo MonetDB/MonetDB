@@ -83,6 +83,10 @@ PFxml2la_xpath_getAttributeValueFromElementNode(xmlNodePtr nodePtr,
 char* 
 PFxml2la_xpath_getAttributeValueFromAttributeNode(xmlNodePtr nodePtr);
 
+PFarray_t *
+PFxml2la_xpath_getAttributeValuesFromAttributeNodes(
+    xmlXPathObjectPtr xpathObjectPtr);
+
 char* 
 PFxml2la_xpath_getElementValue(xmlNodePtr nodePtr);
 

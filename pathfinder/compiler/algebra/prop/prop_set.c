@@ -117,6 +117,7 @@ prop_infer_set (PFla_op_t *n, bool set)
 
         case la_lit_tbl:
         case la_empty_tbl:
+        case la_ref_tbl:
             break;
 
         case la_attach:
