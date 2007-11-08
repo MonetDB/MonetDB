@@ -128,32 +128,54 @@ HIDE=1
 # .xx file.  There may be a race condition here when using a parallel
 # make.  We try to alleviate the problem by sending the .xx.c output
 # to a dummy file in the second rule.
+# We also make sure that "$(CONFIG_HEADER)" is included first, also with swig-generated files.
+# This is crucial to prevent inconsistent (re-)definitions of macros.
 %.ruby.c: %.ruby.i
 	$(SWIG) -ruby $(SWIGFLAGS) -outdir . -o $@ $<
+	$(MV) $@ $@.tmp
+	echo '#include <'"$(CONFIG_HEADER)"'>' > $@
+	grep -v '^#include.*[<"]'"$(CONFIG_HEADER)"'[">]' $@.tmp >> $@
+	$(RM) $@.tmp
 
 %.ruby: %.ruby.i
 	$(SWIG) -ruby $(SWIGFLAGS) -outdir . -o dymmy.c $<
 
 %.tcl.c: %.tcl.i
 	$(SWIG) -tcl $(SWIGFLAGS) -outdir . -o $@ $<
+	$(MV) $@ $@.tmp
+	echo '#include <'"$(CONFIG_HEADER)"'>' > $@
+	grep -v '^#include.*[<"]'"$(CONFIG_HEADER)"'[">]' $@.tmp >> $@
+	$(RM) $@.tmp
 
 %.tcl: %.tcl.i
 	$(SWIG) -tcl $(SWIGFLAGS) -outdir . -o dymmy.c $<
 
 %.php.c: %.php.i
 	$(SWIG) -php $(SWIGFLAGS) -outdir . -o $@ $<
+	$(MV) $@ $@.tmp
+	echo '#include <'"$(CONFIG_HEADER)"'>' > $@
+	grep -v '^#include.*[<"]'"$(CONFIG_HEADER)"'[">]' $@.tmp >> $@
+	$(RM) $@.tmp
 
 %.php: %.php.i
 	$(SWIG) -php $(SWIGFLAGS) -outdir . -o dymmy.c $<
 
 %.py.c: %.py.i
 	$(SWIG) -python $(SWIGFLAGS) -outdir . -o $@ $<
+	$(MV) $@ $@.tmp
+	echo '#include <'"$(CONFIG_HEADER)"'>' > $@
+	grep -v '^#include.*[<"]'"$(CONFIG_HEADER)"'[">]' $@.tmp >> $@
+	$(RM) $@.tmp
 
 %.py: %.py.i
 	$(SWIG) -python $(SWIGFLAGS) -outdir . -o dymmy.c $<
 
 %.pm.c: %.pm.i
 	$(SWIG) -perl5 $(SWIGFLAGS) -outdir . -o $@ $<
+	$(MV) $@ $@.tmp
+	echo '#include <'"$(CONFIG_HEADER)"'>' > $@
+	grep -v '^#include.*[<"]'"$(CONFIG_HEADER)"'[">]' $@.tmp >> $@
+	$(RM) $@.tmp
 
 %.pm: %.pm.i
 	$(SWIG) -perl5 $(SWIGFLAGS) -outdir . -o dymmy.c $<
