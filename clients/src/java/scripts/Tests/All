@@ -1,1 +1,1 @@
-mjclient--help
+HAVE_JAVA?mjclient--help
