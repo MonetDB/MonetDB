@@ -20,22 +20,12 @@ SWIGFLAGS = $(MONETDB_INCS) $(CLIENTS_INCS)
 INCLUDES = ../../include ../../common ../../storage ../../server \
 	$(MONETDB5_INCS) $(CLIENTS_INCS) $(MONETDB_INCS) $(PYTHON_INCS)
 
-#  GNU's gcc does not like to compile swig-generated code
-#  (at least not with our strict X_CFLAGS), complaining about
-#  "warning: dereferencing type-punned pointer will break strict-aliasing rules",
-#  "warning: unused variable '...'",
-#  "warning: '...' defined but not used", and/or
-#  'error: "..." is not defined'.
-#  Hence, we use GCC_SWIG_CFLAGS to disable the respective warning
-#  as locally as possbile via "-Wno-strict-aliasing -Wno-unused-variable -Wno-unused-function -Wno-undef".
-#  Intel's icc does not like to compile swig-generated code
-#  (at least not with our strict X_CFLAGS), complaining about
-#  'error #869: parameter "..." was never referenced',
-#  'error #177: function "..." was declared but never referenced', and/or
-#  'error #310: old-style parameter list (anachronism)'.
-#  Hence, we use ICC_SWIG_CFLAGS to disable the respective warning
-#  as locally as possbile via "-wd869 -wd177 -wd310".
-#  (See also buildtools/conf/MonetDB.m4.)
+#  Both GNU's gcc and Intel's icc do not like to compile swig-generated code
+#  with our strict X_CFLAGS.
+#  Instead of diabling the strict X_CFLAGS completely,
+#  we use GCC_SWIG_CFLAGS and ICC_SWIG_CFLAGS, respectively,
+#  to disable only the problematic warnings/errors as locally as possbile.
+#  See buildtools/conf/MonetDB.m4 for details.
 CFLAGS = $(GCC_SWIG_CFLAGS) $(ICC_SWIG_CFLAGS)
 
 EXTRA_DIST = $(man_MANS)
