@@ -391,7 +391,7 @@ char monet_version[PATHLENGTH] = VERSION;
 void
 monet_hello(stream *out)
 {
-#ifdef STATIC
+#ifdef MONETDB_STATIC
 	char *linkinfo = "statically";
 #else
 	char *linkinfo = "dynamically";

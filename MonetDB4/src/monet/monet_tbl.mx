@@ -318,7 +318,7 @@ m_export int DL_regfcn(void *tbl, ptr fcnptr, str name);
 #endif
 #endif				/* _MONET_TBL_H */
 @c
-#ifndef STATIC
+#ifndef MONETDB_STATIC
 
 #ifdef HAVE_DLFCN_H
 # ifdef __APPLE__
@@ -351,7 +351,7 @@ typedef struct {
 
 int DL_errno = 0;
 
-#ifndef STATIC
+#ifndef MONETDB_STATIC
 static const char *DL_errmsg;
 #endif
 str DL_mod[DL_TABLE_MAXLIBS] = { 0 };
@@ -448,7 +448,7 @@ MSP_locate_script(const char *mod_name)
 	return locate_file(mod_name, MIL_EXT);
 }
 
-#ifndef STATIC
+#ifndef MONETDB_STATIC
 static char *
 MSP_locate_module(const char *mod_name)
 {
@@ -477,7 +477,7 @@ DL_open(char *nme, int mode)
 	int i;
 
 	DL_errno = 0;
-#ifndef STATIC
+#ifndef MONETDB_STATIC
 	DL_errmsg = NULL;
 
 /* AIX requires RTLD_MEMBER to load a module that is a member of an archive.  */
@@ -491,7 +491,7 @@ DL_open(char *nme, int mode)
 		}
 
 	if (tbl == NULL) {
-#ifndef STATIC
+#ifndef MONETDB_STATIC
 		char *fullname;
 
 		if ((fullname = MSP_locate_module(nme)) != NULL) {
@@ -521,7 +521,7 @@ DL_sym(void *handle, const char *nme)
 	int i;
 
 	DL_errno = 0;
-#ifndef STATIC
+#ifndef MONETDB_STATIC
 	if (tbl->dynamic_handle) {
 		return dlsym(tbl->dynamic_handle, nme);
 	}
@@ -541,7 +541,7 @@ DL_close(void *handle)
 {
 	int ret = 0;
 
-#ifndef STATIC
+#ifndef MONETDB_STATIC
 	dltable *tbl = (dltable *) handle;
 	int i;
 
@@ -571,7 +571,7 @@ static short_str DL_errormsg[3] = { "no error occured (STATIC)", "library not fo
 static const char *
 DL_error(void)
 {
-#ifndef STATIC
+#ifndef MONETDB_STATIC
 	if (DL_errmsg != NULL)
 		return DL_errmsg;
 	if (DL_errno == 0)
@@ -1032,7 +1032,7 @@ TBL_getdir(void)
 	BAT *b = BATnew(TYPE_int, TYPE_str, 100);
 	int i = 0;
 
-#ifdef STATIC
+#ifdef MONETDB_STATIC
 	for (i = 0; i < DL_TABLE_MAXLIBS; i++) {
 		if (DL_mod[i])
 			BUNins(b, &i, DL_mod[i] + 1, FALSE);
