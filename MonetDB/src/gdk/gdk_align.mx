@@ -608,6 +608,10 @@ VIEWreset(BAT *b)
 		n->batCopiedtodisk = 0;
 		n->batDirty = 1;
 
+		/* reset BOUND2KEY */
+		n->hkey = m->tkey = BAThkey(v);
+		n->tkey = m->hkey = BATtkey(v);
+
 		/* make the BAT empty and insert all again */
 		DELTAinit(n);
 		/* reset capacity */
