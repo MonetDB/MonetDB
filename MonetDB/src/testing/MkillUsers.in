@@ -98,19 +98,33 @@ for b in $BINPATH ; do
 	files="$files `ls $b/* 2>/dev/null | egrep '/(lt-)?(mserver5|Mserver|mclient|mclient\.py|mjclient|Mdiff|Mlog|Mtimeout|pf|actuator|sensor)$'`"
 done
 
+if type -p fuser >/dev/null
+  then	FUSER='fuser'
+  else	FUSER=''
+fi
+
 case `uname` in
   Linux)
-	pids1="`fuser $files | cut -d: -f2- | perl -pe 's|[a-z]||g'`"
+	if [ "$FUSER" ]
+	  then	pids1="`fuser $files | cut -d: -f2- | perl -pe 's|[a-z]||g'`"
+	  else	pids1=''
+	fi
 	pids1="`echo "$pids1" | perl -pe 's| *'"$CHILD"'||g'`"
 	if [ "$PARENT" ] ; then
 		pids1="`echo "$pids1" | perl -pe 's| *'"$PARENT"'||g'`"
 	fi
 	pids1="$cpids$pids1"
 	PS="ps -f $pids1"
-	FUSER="fuser -v"
+	if [ "$FUSER" ]
+	  then	FUSER_V='fuser -v'
+	  else	FUSER_V=''
+	fi
 	;;
   IRIX|IRIX64)
-  	pids0="`fuser -q $files`"
+  	if [ "$FUSER" ]
+  	  then	pids0="`fuser -q $files`"
+  	  else	pids0=''
+  	fi
 	pids0="`echo "$pids0" | perl -pe 's|,*'"$CHILD"'||g'`"
 	if [ "$PARENT" ] ; then
 		pids0="`echo "$pids0" | perl -pe 's|,*'"$PARENT"'||g'`"
@@ -118,10 +132,16 @@ case `uname` in
 	pids0="`echo $cpids | perl -pe 's| +|,|g'`${pids0#,}"
   	pids1="`echo $pids0 | perl -pe 's|,| |g'`"
 	PS="ps -fp $pids0"
-	FUSER="fuser"
+	if [ "$FUSER" ]
+	  then	FUSER_V='fuser'
+	  else	FUSER_V=''
+	fi
 	;;
   SunOS)
-	pids1="`fuser $files 2>/dev/null`"
+	if [ "$FUSER" ]
+	  then	pids1="`fuser $files 2>/dev/null`"
+	  else	pids1=''
+	fi
 	pids1="`echo "$pids1" | perl -pe 's| *'"$CHILD"'||g'`"
 	if [ "$PARENT" ] ; then
 		pids1="`echo "$pids1" | perl -pe 's| *'"$PARENT"'||g'`"
@@ -129,7 +149,10 @@ case `uname` in
 	pids1="$cpids$pids1"
 	pids0="`echo $pids1 | perl -pe 's| +|,|g'`"
 	PS="ps -fp $pids0"
-	FUSER="fuser"
+	if [ "$FUSER" ]
+	  then	FUSER_V='fuser'
+	  else	FUSER_V=''
+	fi
 	;;
 # CYGWIN32_NT)
 #	;;
@@ -145,7 +168,9 @@ if [ "$pids1" ] ; then
 	echo pids1=$pids1	>&2
 	echo pids2=$pids2	>&2
 	LOG1x	$PS
-	LOG1x	$FUSER   $files
+	if [ "$FUSER_V" ] ; then
+		LOG1x	$FUSER_V $files
+	fi
 	#LOG1x	fuser -k $files
 	LOG1x	kill     $pids1
 	if [ "$cpids" ] ; then
