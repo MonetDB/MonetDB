@@ -28,7 +28,7 @@ monet_version(void)
 #endif
 	printf("Compiled by: %s\n", "@builtby@");
 	printf("Compilation: %s\n", "@compilercall@");
-#ifdef STATIC
+#ifdef MONETDB_STATIC
 	printf("Linking    : %s (static)\n", "@linkercall@");
 #else
 	printf("Linking    : %s\n", "@linkercall@");

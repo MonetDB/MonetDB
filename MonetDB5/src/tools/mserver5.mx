@@ -162,7 +162,7 @@ changes.
 void
 monet_hello(opt *set, int setlen)
 {
-#ifdef STATIC
+#ifdef MONETDB_STATIC
 	char *linkinfo = "statically";
 #else
 	char *linkinfo = "dynamically";

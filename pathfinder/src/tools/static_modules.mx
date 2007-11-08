@@ -24,7 +24,7 @@
 @:install_load_module(sys)@
 @:install_load_module(trans)@
 
-#ifdef STATIC
+#ifdef MONETDB_STATIC
 @:install_module(streams)@
 
 /* mapi */

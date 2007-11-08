@@ -1825,7 +1825,7 @@ dnl static or shared linking
 SHARED_LIBS=''
 [
 if [ "$enable_static" = "yes" ]; then
-	CFLAGS="$CFLAGS -DSTATIC"
+	CFLAGS="$CFLAGS -DMONETDB_STATIC"
 	SHARED_LIBS='$(STATIC_LIBS) $(smallTOC_SHARED_LIBS) $(largeTOC_SHARED_LIBS)'
 	case "$host_os" in
 	aix*)	
