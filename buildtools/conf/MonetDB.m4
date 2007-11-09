@@ -748,8 +748,13 @@ yes-*-*)
 	GCC_SWIG_CFLAGS="$GCC_SWIG_CFLAGS -Wno-strict-aliasing -Wno-unused-variable -Wno-unused-function -Wno-unused-parameter -Wno-undef"
 	case "$gcc_ver-$host_os" in
 	[[4-9]].*-*)
-	    dnl  -Wno-missing-field-initializers is only available (and necessary) as of gcc 4.*
+	    dnl  -Wno-missing-field-initializers is only available as of gcc 4.*
 	    GCC_SWIG_CFLAGS="$GCC_SWIG_CFLAGS -Wno-missing-field-initializers"
+	    ;;
+	*-*)
+	    dnl  need to use -Wno-extra with older gcc
+	    GCC_SWIG_CFLAGS="$GCC_SWIG_CFLAGS -Wno-extra"
+	    ;;
 	esac
 	
 
