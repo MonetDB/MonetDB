@@ -108,11 +108,15 @@ extend_part( sql_bpm *p, BAT *b, bat u)
 		temp_dup(u);
 	}
 	p -> parts[nr].cnt = BATcount(b);
-	p -> parts[nr].hlow = p->parts[nr].hhgh = -1;
-	if (BATcount(b)) {
-		BATiter bi = bat_iterator(b);
-		p -> parts[nr].hlow = *(oid*)BUNhead(bi,BUNfirst(b));
-		p -> parts[nr].hhgh = *(oid*)BUNhead(bi,BUNlast(b)-1);
+	if (p->type == bpm_hrange) {
+		p -> parts[nr].hlow = p -> parts[nr].hhgh = -1;
+		if (nr)
+			p->parts[nr].hlow = p->parts[nr-1].hhgh;
+		BATseqbase(b, p->parts[nr].hlow);
+		if (BATcount(b)) {
+			BATiter bi = bat_iterator(b);
+			p -> parts[nr].hhgh = *(oid*)BUNhead(bi,BUNlast(b)-1);
+		}
 	}
 	p -> parts[nr].tlow = p -> parts[nr].thgh = NULL; 
 	p -> parts[nr].hbits = p -> parts[nr].tbits = 0;
@@ -123,10 +127,7 @@ extend_part( sql_bpm *p, BAT *b, bat u)
 void
 bpm_add_partition(sql_bpm *p)
 {
-	BAT *x = temp_descriptor(p->parts[p->nr-1].bid);
 	BAT *b = BATnew(TYPE_void, p->ttpe, 0);
-	BATseqbase(b, x->hseqbase + BATcount(x));
-	bat_destroy(x);
 	extend_part(p, b, 0);
 	bat_destroy(b);
 }
@@ -583,11 +584,6 @@ load_part (sql_bpm *pp, int ttpe, int sz, lng *cnt)
 		int ubid = logger_find_bat(bpm_logger, uname);
 		
 		b = temp_descriptor(bid);
-		if (b->htype == TYPE_void) {
-			BATseqbase(b, o);
-			o += BATcount(b);
-		}	
-		
 		extend_part(pp, b, ubid);
 		pp->parts[pp->nr-1].name = name;
 		pp->parts[pp->nr-1].uname = uname;
@@ -596,7 +592,6 @@ load_part (sql_bpm *pp, int ttpe, int sz, lng *cnt)
 	*cnt = o;
 	pp->ins = pp->nr;
 	b = BATnew(TYPE_void, ttpe, sz);
-	BATseqbase(b, o);
 	extend_part(pp, b, 0);
 	bat_destroy(b);
 	bat_destroy(parts);
@@ -604,8 +599,8 @@ load_part (sql_bpm *pp, int ttpe, int sz, lng *cnt)
 }
 
 static sql_bpm *
-load_bat( char *sname, char *tname, char *bname, int type, int sz, lng *cnt ) {
-	oid o = 0;
+load_bat( char *sname, char *tname, char *bname, int type, int sz, lng *cnt ) 
+{
 	BAT *b;
 	sql_bpm *p = ZNEW(sql_bpm);
 
@@ -618,12 +613,11 @@ load_bat( char *sname, char *tname, char *bname, int type, int sz, lng *cnt ) {
 
 	b = temp_descriptor(logger_find_bat(bpm_logger, p->name));
 	extend_part(p, b, logger_find_bat(bpm_logger, p->uname));
-	o = BATcount(b);
+	*cnt = p->parts[0].hhgh;
 	bat_destroy(b);
 
 	p->ins = p->nr;
  	b = bat_new(TYPE_void, type, sz);
-	BATseqbase(b, o);
 	extend_part(p, b, 0);
 	bat_destroy(b);
 
@@ -814,13 +808,13 @@ dup_part(sql_trans *tr, sql_table *t, sql_bpm *op, sql_bpm *p, int type, int oc_
 		}
 	} else {
 		BAT *b;
-		oid o = 0;
 
 		if (p->sz < op->nr+1) {
 			p -> sz = op->nr+1;
 			p -> parts = RENEW_ARRAY(PartRec, p->parts, p->sz);
 		}
 		for (i=0; i < op->ins; i++) {
+			/* why don't we use extend parts */
 			p->parts[i] = op->parts[i];
 			temp_dup(p->parts[i].bid);
 			b = temp_descriptor(p->parts[i].bid);
@@ -833,8 +827,7 @@ dup_part(sql_trans *tr, sql_table *t, sql_bpm *op, sql_bpm *p, int type, int oc_
 				op->parts[i].ubid = temp_copy(p->parts[i].ubid, 0);
 				bat_destroy(U);
 			}
-			BATseqbase(b, o);
-			o += BATcount(b);
+			BATseqbase(b, p->parts[i].hlow);
 			bat_destroy(b);
 			p->nr++;
 		}
@@ -860,8 +853,7 @@ dup_part(sql_trans *tr, sql_table *t, sql_bpm *op, sql_bpm *p, int type, int oc_
 					bat_destroy(U);
 				}
 			}
-			BATseqbase(b, o);
-			o += BATcount(b);
+			BATseqbase(b, p->parts[i].hlow);
 			bat_destroy(b);
 			p->nr++;
 		}
@@ -869,7 +861,6 @@ dup_part(sql_trans *tr, sql_table *t, sql_bpm *op, sql_bpm *p, int type, int oc_
 		if (op->ins == 0) {
 			op->ins = op->nr;
 			b = bat_new(TYPE_void, type, t->sz);
-			BATseqbase(b, o);
 			extend_part(op, b, 0);
 			bat_destroy(b);
 		}
@@ -877,7 +868,6 @@ dup_part(sql_trans *tr, sql_table *t, sql_bpm *op, sql_bpm *p, int type, int oc_
 		if (p->ins == 0) { 
 			p->ins = p->nr;
 			b = bat_new(TYPE_void, type, t->sz);
-			BATseqbase(b, o);
 			extend_part(p, b, 0);
 			bat_destroy(b);
 		}
@@ -1116,8 +1106,11 @@ tr_update_bat( sql_trans *tr, sql_bpm *op, sql_bpm *cp, lng *cnt)
 				bat_clear(ins);
 			}
 			bat_clear(pi);
-			BATseqbase(ins,BATcount(cur));
-			BATseqbase(pi,BATcount(cur));
+			op->parts[op->ins-1].hhgh = op->parts[op->ins].hlow =
+			cp->parts[cp->ins-1].hhgh = cp->parts[cp->ins].hlow = 
+				BATcount(cur);
+			BATseqbase(ins, op->parts[op->ins].hlow);
+			BATseqbase(pi, cp->parts[cp->ins].hlow);
 			bat_destroy(pi);
 		}
 		BATcommit(ins);

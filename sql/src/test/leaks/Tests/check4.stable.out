@@ -251,7 +251,7 @@ Over..
 % single_value,	count_ # name
 % char,	int # type
 % 9,	3 # length
-[ "transient",	311	]
+[ "transient",	210	]
 % .,	. # table_name
 % single_value,	count_ # name
 % char,	int # type

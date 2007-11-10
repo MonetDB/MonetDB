@@ -173,28 +173,10 @@ column_find_value(sql_trans *tr, sql_column *c, ssize_t rid)
 static int
 column_update_value(sql_trans *tr, sql_column *c, ssize_t rid, void *value)
 {
-	BAT *b;
-	sql_bpm *p = c->data;
-
 	assert(rid != (ssize_t)oid_nil);
 	assert(rid != -1);
 
-	if (p->parts[0].ubid) {
-		b = temp_descriptor(p->parts[0].ubid);
-		if (BUNfnd(b, &rid) != BUN_NONE) {
-			BUNreplace(b, (ptr) &rid, value, TRUE);
-		} else {
-			bat_set_access(b, BAT_WRITE);
-			BUNins(b, (ptr) &rid, value, FALSE);
-			bat_set_access(b, BAT_READ);
-		}
-		bat_destroy(b);
-	} else {
-		b = temp_descriptor(p->parts[p->ins].bid);
-		void_inplace(b, rid, value, TRUE);
-		bat_destroy(b);
-	}
-	c->base.wtime = c->t->base.wtime = c->t->s->base.wtime = tr->wtime = tr->stime;
+	store_funcs.update_col(tr, c, value, c->type.type->localtype, rid);
 	return 0;
 }
 
@@ -203,25 +185,15 @@ table_insert(sql_trans *tr, sql_table *t, ...)
 {
 	va_list va;
 	node *n = cs_first_node(&t->columns);
-	sql_column *c = n->data;
-	sql_bpm *p = c->data;
-	BAT *b = temp_descriptor(p->parts[p->ins].bid);
 	void *val = NULL;
 	int cnt = 0;
 
-	bat_destroy(b);
 	va_start(va, t);
-
-	c->base.wtime = tr->stime;
 	for (val = va_arg(va, void *); n && val; n = n->next, val = va_arg(va, void *))
 	{
+		sql_column *c = n->data;
+		store_funcs.append_col(tr, c, val, c->type.type->localtype);
 		cnt++;
-		c = n->data;
-		p = c->data;
-		b = temp_descriptor(p->parts[p->ins].bid);
-		BUNappend(b, val, TRUE);
-		bat_destroy(b);
-		c->base.wtime = tr->stime;
 	}
 	t->cnt ++;
 	if (n) {
@@ -229,7 +201,6 @@ table_insert(sql_trans *tr, sql_table *t, ...)
 		assert(0);
 		return -1;
 	}
-	t->base.wtime = t->s->base.wtime = tr->wtime = tr->stime;
 	return 0;
 }
 

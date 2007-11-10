@@ -78,6 +78,14 @@ ebat2real(log_bid b, oid ibase)
 }
 
 static log_bid 
+e_bat(int type)
+{
+	if (!ebats[type]) 
+		ebats[type] = BATnew(TYPE_void, type, 0);
+	return temp_create(ebats[type]);
+}
+
+static log_bid 
 ebat_copy(log_bid b, oid ibase, int temp)
 {
 	/* make a copy of b */
@@ -411,38 +419,31 @@ delete_tab(sql_trans *tr, sql_table * t, void *ib, int tpe)
 }
 
 static sql_bat *
-load_bat( char *sname, char *tname, char *bname, int type, int sz, lng *cnt ) {
+load_bat( char *sname, char *tname, char *bname, int type, int sz, lng *cnt ) 
+{
 	BAT *b;
 	sql_bat *bat = ZNEW(sql_bat);
 
+	(void)sz;
 	bat->name = sql_message("%s_%s_%s", sname, tname, bname );
-	b = temp_descriptor(logger_find_bat(bat_logger, bat->name));
+	b = quick_descriptor(logger_find_bat(bat_logger, bat->name));
 	bat->bid = temp_create(b);
 	*cnt = bat->ibase = BATcount(b);
-	bat_destroy(b);
 	
 	bat->uname = sql_message("U_%s", bat->name);
-	b = temp_descriptor(logger_find_bat(bat_logger, bat->uname));
+	b = quick_descriptor(logger_find_bat(bat_logger, bat->uname));
 	bat->ubid = temp_create(b);
-	bat_destroy(b);
 
- 	b = bat_new(TYPE_void, type, sz);
-	bat->ibid = temp_create(b);
-	BATseqbase(b, bat->ibase);
-	bat_destroy(b);
-
+	bat->ibid = e_bat(type);
 	if (bat->bid && bat->ubid) {
-		BAT *b  = temp_descriptor(bat->bid);
-		BAT *ib  = temp_descriptor(bat->ibid);
 		BAT *ub = temp_descriptor(bat->ubid);
 
-		BATseqbase(ib, bat->ibase);
-		*cnt = BATcount(b);
-		if (BATcount(ub)) 
+		if (BATcount(ub)) {
+			BAT *b  = temp_descriptor(bat->bid);
 			update_table_bat(b, ub);
+			bat_destroy(b);
+		}
 		bat_destroy(ub);
-		bat_destroy(ib);
-		bat_destroy(b);
 	}
 	return bat;
 }
@@ -563,9 +564,8 @@ create_del(sql_trans *tr, sql_table *t)
 	if (t->base.flag == TR_OLD && !isTempTable(t)) {
 		bat = t->data = ZNEW(sql_dbat);
 		bat->dname = sql_message("D_%s_%s", t->s->base.name, t->base.name);
-		b = temp_descriptor(logger_find_bat(bat_logger, bat->dname));
+		b = quick_descriptor(logger_find_bat(bat_logger, bat->dname));
 		bat->dbid = temp_create(b);
-		bat_destroy(b);
 	} else if (bat && bat->dbid && !isTempTable(t)) {
 		b = temp_descriptor(bat->dbid);
 		bat->dbid = temp_create(b);

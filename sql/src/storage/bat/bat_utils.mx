@@ -24,6 +24,7 @@
 #include <gdk_logger.h>
 
 extern BAT *temp_descriptor(log_bid b);
+extern BAT *quick_descriptor(log_bid b);
 extern void temp_destroy(log_bid b);
 extern void temp_dup(log_bid b);
 extern log_bid temp_create(BAT *b);
@@ -103,6 +104,12 @@ BAT *
 temp_descriptor(log_bid b)
 {
 	return BATdescriptor((bat) b);
+}
+
+BAT *
+quick_descriptor(log_bid b)
+{
+	return BBPquickdesc((bat) b, FALSE);
 }
 
 void
