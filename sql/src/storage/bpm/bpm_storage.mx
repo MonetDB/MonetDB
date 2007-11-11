@@ -243,6 +243,9 @@ bind_ucol(sql_trans *tr, sql_column *c, int access)
 	BAT *b;
 	sql_bpm *p = c->data;
 
+#ifdef NDEBUG
+	(void) access; /* satisfy compiler */
+#endif
 	assert(access == RD_UPD);
 	/* TODO we should fold here ??? */
 	b = temp_descriptor(p->parts[0].ubid);
@@ -258,6 +261,9 @@ bind_uidx(sql_trans *tr, sql_idx * i, int access)
 	BAT *b;
 	sql_bpm *p = i->data;
 
+#ifdef NDEBUG
+	(void) access; /* satisfy compiler */
+#endif
 	assert(access == RD_UPD);
 	/* TODO we should fold here ??? */
 	b = temp_descriptor(p->parts[0].ubid);
@@ -537,6 +543,9 @@ bind_del(sql_trans *tr, sql_table *t, int access)
 	BAT *b;
 	sql_bpm *p = t->data;
 
+#ifdef NDEBUG
+	(void) access; /* satisfy compiler */
+#endif
 	assert(access == RDONLY || access == RD_INS);
 	assert(access!=RD_UPD);
 

@@ -141,6 +141,9 @@ bind_ucol(sql_trans *tr, sql_column *c, int access)
 	BAT *b;
 	sql_bat *bat = c->data;
 
+#ifdef NDEBUG
+	(void) access; /* satisfy compiler */
+#endif
 	assert(access == RD_UPD);
 	b = temp_descriptor(bat->ubid);
 	assert(b);
@@ -155,6 +158,9 @@ bind_uidx(sql_trans *tr, sql_idx * i, int access)
 	BAT *b;
 	sql_bat *bat = i->data;
 
+#ifdef NDEBUG
+	(void) access; /* satisfy compiler */
+#endif
 	assert(access == RD_UPD);
 	b = temp_descriptor(bat->ubid);
 	assert(b);
@@ -214,6 +220,9 @@ bind_del(sql_trans *tr, sql_table *t, int access)
 	BAT *b;
 	sql_dbat *bat = t->data;
 
+#ifdef NDEBUG
+	(void) access; /* satisfy compiler */
+#endif
 	assert(access == RDONLY || access == RD_INS);
 	assert(access!=RD_UPD);
 
