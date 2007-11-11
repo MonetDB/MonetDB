@@ -5775,8 +5775,6 @@ CMDnormSpace(str *res, str string)
         n = strspn (cur, ws);
         if (n)
         {
-            *pointer = ' ';
-            pointer++;
             cur += n;
         }
 
@@ -5795,6 +5793,9 @@ CMDnormSpace(str *res, str string)
                 pointer++;
                 cur += n;
             }
+        }
+        if (pointer > *res && pointer[-1] == ' ') {
+            pointer--;
         }
         *pointer = '\0';
 
