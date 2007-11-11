@@ -50,11 +50,8 @@
 @:install_module(pcre)@
 @:install_module(pqueue)@
 @:install_module(profiler)@
-@:install_module(radix)@
 @:install_module(stats)@
-@:install_module(tcpip)@
 @:install_module(unix)@
-@:install_module(upgrade)@
 @:install_module(url)@
 @:install_module(ascii_io)@
 
@@ -63,26 +60,20 @@
 @:install_module(bat_cast)@
 @:install_module(bat_mmath)@
 @:install_module(bitset)@
-@:install_module(bitvector)@
 @:install_module(color)@
-@:install_module(ddbench)@
 @:install_module(image)@
 @:install_module(malalgebra)@
-@:install_module(mprof)@
-@:install_module(oo7)@
 @:install_module(salgebra)@
 @:install_module(txtsim)@
 @:install_module(wisc)@
 @:install_module(mel)@
 @:install_module(uchr)@
-@:install_module(qt)@
 
 #ifndef smallTOC
 /* plain */
 @:install_module(counters)@
 @:install_module(pcl)@
 /* contrib */
-@:install_module(iterator)@
 @:install_module(vector)@
 #endif
 
