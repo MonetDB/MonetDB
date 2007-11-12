@@ -28,7 +28,7 @@ address mat_bind_idxbat_wrap
 comment "Bind the idx bat, tname.idx
 	with specific accsess modes";
 
-command hrange(low:oid, high:oid):void
+command hrange(b:bat[:oid,:any_1], low:oid, high:oid):void
 address mat_dummy
 comment "pass the horizontal range to the optimizers (dummy function)";
 
@@ -154,7 +154,8 @@ Cparts(int *d, str *sname, str *tname, str *cname, int *access, int *parts)
 		err = *parts != (p->nr-p->ins);
 	else
 		err = *parts != (p->ins);
-	if (!err) 
+		    /* HACK ALERT */
+	if (!err || *access == RD_UPD) 
 		return MAL_SUCCEED;
 	throw(OPTIMIZER, "mal.assert", "parts changed");
 }
@@ -174,13 +175,13 @@ inc_parts(sql_table *t)
 		return ;
 	for (n=t->columns.set->h; n; n = n->next) {
 		sql_column *c = n->data;
-		if (c->data)
-			bpm_add_partition(c->data);
+		if (c->data && !bpm_add_partition(c->data))
+			return;
 	}
 	if (t->idxs.set) for (n=t->idxs.set->h; n; n = n->next) {
 		sql_idx *i = n->data;
-		if (i->data)
-			bpm_add_partition(i->data);
+		if (i->data && !bpm_add_partition(i->data))
+			return;
 	}
 }
 
@@ -197,6 +198,9 @@ inc_parts_wrap(int *d, str *sname, str *tname)
 		return msg;
 
 	s = mvc_bind_schema(m, *sname);
+	if (active_store_type != store_bpm)
+		throw(SQL, "mat.inc_parts", 
+			"currently no bpm store support available");
 	if (!s)
 		throw(SQL, "mat.inc_parts", 
 			sql_message("schema %s unknown", *sname));

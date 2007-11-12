@@ -88,15 +88,20 @@ full_column(sql_column *c, BAT *d, BAT *s )
 		t = BATsemijoin(u,s); bat_destroy(u); u = t;
 	}
 	assert(b->ttype == i->ttype);
-	r = BATkunion(b,i); bat_destroy(b); bat_destroy(i); b = r;
-	r = BATkdiff(b,u); bat_destroy(b); b = r;
-	assert(b->ttype == u->ttype);
-	r = BATkunion(b,u); bat_destroy(b); bat_destroy(u); b = r;
-	if (d) {
+	if (BATcount(i)) {
+		r = BATkunion(b,i); bat_destroy(b); b = r;
+	}
+	bat_destroy(i); 
+	if (BATcount(u)) {
+		r = BATkdiff(b,u); bat_destroy(b); b = r;
+		assert(b->ttype == u->ttype);
+		r = BATkunion(b,u); bat_destroy(b); b = r;
+	}
+	bat_destroy(u); 
+	if (d && BATcount(d)) {
 		r = BATkdiff(b,BATmirror(d)); bat_destroy(b); b = r;
 	}
-	assert(r->T->hash == NULL);
-	return r;
+	return b;
 }
 
 static ssize_t

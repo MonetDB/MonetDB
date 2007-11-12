@@ -57,7 +57,7 @@ typedef struct sql_bpm {
 /* initialize bat storage call back functions interface */
 extern int bpm_storage_init( store_functions *sf );
 
-extern void bpm_add_partition(sql_bpm *p);
+extern int bpm_add_partition(sql_bpm *p);
 
 #endif /*BPMSTORAGE_H */
 
@@ -109,9 +109,16 @@ extend_part( sql_bpm *p, BAT *b, bat u)
 	}
 	p -> parts[nr].cnt = BATcount(b);
 	if (p->type == bpm_hrange) {
-		p -> parts[nr].hlow = p -> parts[nr].hhgh = -1;
-		if (nr)
+		p->parts[nr].hlow = 0;
+		p->parts[nr].hhgh = -1;
+		if (nr) {
+			/* this should be fixed by the update_part code which
+			   should remove empty partitions */
+			if (p->parts[nr-1].hhgh == (oid)-1)
+				p->parts[nr-1].hhgh = p->parts[nr-1].hlow;
+			
 			p->parts[nr].hlow = p->parts[nr-1].hhgh;
+		}
 		BATseqbase(b, p->parts[nr].hlow);
 		if (BATcount(b)) {
 			BATiter bi = bat_iterator(b);
@@ -124,12 +131,19 @@ extend_part( sql_bpm *p, BAT *b, bat u)
 	return nr;
 }
 
-void
+int
 bpm_add_partition(sql_bpm *p)
 {
-	BAT *b = BATnew(TYPE_void, p->ttpe, 0);
-	extend_part(p, b, 0);
-	bat_destroy(b);
+	/* do not add a partition if the current part is empty */
+	if (p->parts[p->nr-1].cnt > 0) {
+		BAT *b = bat_new(TYPE_void, p->ttpe, 0);
+		
+		extend_part(p, b, 0);
+		bat_destroy(b);
+		return 1;
+	}
+	/* error */
+	return 0;
 }
 
 static sql_bpm *
@@ -459,6 +473,7 @@ append_bat( sql_bpm *p, BAT *i )
 	} else {
 		BATappend(b, i, TRUE);
 	}
+	p->parts[p->nr-1].cnt += BATcount(i);
 	bat_destroy(b);
 }
 
@@ -469,6 +484,7 @@ append_val( sql_bpm *p, void *i )
 	BAT *b = temp_descriptor(p->parts[p->ins].bid);
 
 	BUNappend(b, i, TRUE);
+	p->parts[p->nr-1].cnt++;
 	bat_destroy(b);
 }
 
@@ -553,7 +569,7 @@ bind_del(sql_trans *tr, sql_table *t, int access)
 	if (p->nr > 1) {
 		int i;
 
-		b = BATnew(TYPE_void, TYPE_oid, 0);
+		b = bat_new(TYPE_void, TYPE_oid, 0);
 		for (i=0; i<p->nr; i++) {
 			BAT *d = temp_descriptor(p->parts[i].bid);
 			BATappend(b, d, TRUE);
@@ -597,10 +613,11 @@ load_part (sql_bpm *pp, int ttpe, int sz, lng *cnt)
 		pp->parts[pp->nr-1].name = name;
 		pp->parts[pp->nr-1].uname = uname;
 		bat_destroy(b);
+		assert(pp->parts[pp->nr-1].hlow != (oid)-1);
 	}
 	*cnt = o;
 	pp->ins = pp->nr;
-	b = BATnew(TYPE_void, ttpe, sz);
+	b = bat_new(TYPE_void, ttpe, sz);
 	extend_part(pp, b, 0);
 	bat_destroy(b);
 	bat_destroy(parts);
@@ -831,7 +848,7 @@ dup_part(sql_trans *tr, sql_table *t, sql_bpm *op, sql_bpm *p, int type, int oc_
 			if (op->parts[i].ubid) {
 				p->parts[i].ubid = temp_copy(op->parts[i].ubid, 0);
 			} else {
-				BAT *U = BATnew(TYPE_oid, b->ttype, 0);
+				BAT *U = bat_new(TYPE_oid, b->ttype, 0);
 				p->parts[i].ubid = temp_create(U);
 				op->parts[i].ubid = temp_copy(p->parts[i].ubid, 0);
 				bat_destroy(U);
@@ -856,7 +873,7 @@ dup_part(sql_trans *tr, sql_table *t, sql_bpm *op, sql_bpm *p, int type, int oc_
 				if (op->parts[i].ubid) {
 					p->parts[i].ubid = temp_copy(op->parts[i].ubid, 0);
 				} else {
-					BAT *U = BATnew(TYPE_oid, b->ttype, 0);
+					BAT *U = bat_new(TYPE_oid, b->ttype, 0);
 					p->parts[i].ubid = temp_create(U);
 					op->parts[i].ubid = temp_copy(p->parts[i].ubid, 0);
 					bat_destroy(U);
@@ -1115,7 +1132,9 @@ tr_update_bat( sql_trans *tr, sql_bpm *op, sql_bpm *cp, lng *cnt)
 				bat_clear(ins);
 			}
 			bat_clear(pi);
+			op->parts[op->ins-1].cnt =
 			op->parts[op->ins-1].hhgh = op->parts[op->ins].hlow =
+			cp->parts[cp->ins-1].cnt =
 			cp->parts[cp->ins-1].hhgh = cp->parts[cp->ins].hlow = 
 				BATcount(cur);
 			BATseqbase(ins, op->parts[op->ins].hlow);
@@ -1202,7 +1221,7 @@ update_part( sql_trans *tr, sql_bpm *op, sql_bpm *cp, lng *cnt)
 			bpm_new_part(op->pid, op->name);
 
 			/* add old parts to the partition table */
-			for (i=0; i<op->nr; i++) {
+			for (i=0; i<op->ins; i++) {
 				Part p = op->parts+i;
 
 				BUNappend(part_pid,&op->pid,TRUE);

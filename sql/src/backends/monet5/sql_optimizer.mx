@@ -395,6 +395,7 @@ SQLgetStatistics(mvc *m, MalBlkPtr mb)
 					oid low = 0, high = 1;
 
 					low = bpm->parts[off+i].hlow;
+					assert(low != (oid)-1);
 					high = bpm->parts[off+i].hhgh;
 					q = newInstruction(mb, ASSIGNsymbol);
 					setModuleId(q, matRef);
@@ -402,16 +403,17 @@ SQLgetStatistics(mvc *m, MalBlkPtr mb)
 					d = getArg(q,0) = newTmpVariable(mb, tpe);
 					for(j=p->retc; j<p->argc; j++) 
 						q = pushArgument(mb, q, getArg(p,j));
-					pushInt(mb, q, i);
+					q = pushInt(mb, q, i);
 					pushInstruction(mb,q);
 
 					q = newInstruction(mb, ASSIGNsymbol);
-					d = getArg(q,0) = newTmpVariable(mb, TYPE_void);
 					setModuleId(q, matRef);
 					setFunctionId(q, hrangeRef);
+					getArg(q,0) = newTmpVariable(mb, TYPE_void);
 					q = pushArgument(mb, q, d);
 					q = pushOid(mb, q, low);
 					q = pushOid(mb, q, high);
+					pushInstruction(mb,q);
 				}
 				q = newInstruction(mb, ASSIGNsymbol);
 				setModuleId(q,matRef);

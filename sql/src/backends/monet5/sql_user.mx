@@ -333,7 +333,7 @@ monet5_user_get_def_schema(mvc *m, oid user)
 	str username = NULL;
 	str err = NULL;
 
-	if (m->debug)
+	if (m->debug&1)
 		fprintf(stderr, "monet5_user_get_def_schema " OIDFMT "\n", user);
 
 	if ((err = AUTHresolveUser(&username, &user)) != MAL_SUCCEED) {

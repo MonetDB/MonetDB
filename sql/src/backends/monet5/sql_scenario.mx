@@ -222,10 +222,11 @@ SQLinit(Client c)
 
 	MTIMEtimezone(&tz, &gmt);
 	(void) tz;
-	if (mvc_init(FALSE, store_bat, 0) < 0) 
-		throw(SQL, "SQLinit", "Catalogue initialization failed");
 	if (debug_str) 
 		SQLdebug = strtol(debug_str,NULL,10);
+	if (((SQLdebug&16)!=0 && mvc_init(FALSE, store_bpm, 0) < 0) ||
+	    ((SQLdebug&16)==0 && mvc_init(FALSE, store_bat, 0) < 0))
+		throw(SQL, "SQLinit", "Catalogue initialization failed");
         SQLinitialized = TRUE;
         if (!GDKembedded && MT_create_thread(&sqllogthread, (void (*)(void *)) mvc_logmanager, NULL) < 0) {
                 throw(SQL, "SQLinit", "Starting log manager failed");
