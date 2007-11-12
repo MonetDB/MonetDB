@@ -452,7 +452,6 @@ Now we handle group.new (and derive) statements
 		   ((o=isMATalias(getArg(p,4),mvar,mtop)) >= 0)))) {
 			InstrPtr ext, grp;
 		
-			printf("%s %d %d %d\n", getFunctionId(p), m, n, o);
 			grp = mat_group(&ext, mb, p, mat, m, n, o);
 			mtop= mat_add(mat, mvar, mtop, grp);
 			mtop= mat_add(mat, mvar, mtop, ext);
