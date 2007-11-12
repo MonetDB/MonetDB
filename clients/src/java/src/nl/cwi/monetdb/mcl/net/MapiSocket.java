@@ -677,6 +677,12 @@ public final class MapiSocket {
 				}
 			}
 
+			// sanity check to avoid bad servers make us do an ugly
+			// stack trace
+			if (blockLen > block.length)
+				throw new AssertionError("Server sent a block " +
+						"larger than BLOCKsize: " +
+						blockLen + " > " + block.length);
 			size = in.read(block, 0, blockLen);
 			if (size == -1)
 				throw new IOException("End of stream reached");
