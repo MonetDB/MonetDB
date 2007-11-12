@@ -160,6 +160,32 @@ mat_add(InstrPtr *mat, int *mvar, int mtop, InstrPtr q)
 	return mtop+1;
 }
 
+static InstrPtr
+mat_join(MalBlkPtr mb, InstrPtr p, InstrPtr *mat, int m, int n)
+{
+	int tpe = getArgType(mb,p,0);
+	int k;
+	InstrPtr r = newInstruction(mb, ASSIGNsymbol);
+
+	setModuleId(r,matRef);
+	setFunctionId(r,newRef);
+	getArg(r,0) = getArg(p,0);
+	
+	for(k=1; k<mat[m]->argc; k++) {
+		InstrPtr q = copyInstruction(p);
+		getArg(q,0) = newTmpVariable(mb, tpe);
+		getArg(q,1) = getArg(mat[m],k);
+		getArg(q,2) = getArg(mat[n],k);
+		pushInstruction(mb,q);
+
+		/* add result to mat */
+		r = pushArgument(mb,r,getArg(q,0));
+	}
+	freeInstruction(p);
+	pushInstruction(mb, r);
+	return r;
+}
+
 /* todo make general re-name func function */
 static InstrPtr
 mat_union(MalBlkPtr mb, InstrPtr p, InstrPtr *mat, int m)
@@ -319,13 +345,13 @@ OPTmergetableImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	mb->stmt = (InstrPtr *) GDKzalloc(size * sizeof(InstrPtr));
 	mb->ssize = size;
 	mb->stop = 0;
-	hr = (hrange *) GDKzalloc(size * sizeof(hrange));
+	hr = (hrange *) GDKzalloc(mb->vsize * sizeof(hrange));
 
 	/* the number of MATs is limited to the variable stack*/
 	mat = (InstrPtr*) alloca(mb->vtop * sizeof(InstrPtr));
 	memset((char*) mat, 0, mb->vtop * sizeof(InstrPtr));
 	mvar = (int*) alloca(mb->vtop * sizeof(int));
-	memset((char*) mvar, 0, mb->vtop * sizeof(InstrPtr));
+	memset((char*) mvar, 0, mb->vtop * sizeof(int));
 
 	for( i=0; i<oldtop; i++){
 		p = old[i];
@@ -363,7 +389,18 @@ mat.hrange(b,x,y). So if this is available, we can simplify batcalc operations
 and for fetch joins we can use this information to do per part joins only.
 @c
 		if (match == 2) {
-			
+			int n;
+			if (getModuleId(p) == algebraRef &&
+			    getFunctionId(p) == joinRef &&
+				(m=isMATalias(getArg(p,1),mvar,mtop)) >= 0 &&
+				(n=isMATalias(getArg(p,2),mvar,mtop)) >= 0 &&
+				mat[m]->argc == mat[n]->argc ) {
+				/* todo match the hranges */
+				mtop= mat_add(mat, mvar, mtop, mat_join(mb, p, mat, m, n));
+				actions++;
+				continue;
+				
+			}	
 		}
 @-
 Pack MAT arguments, except one, to limit plan explosion.
@@ -408,7 +445,6 @@ partition is dominant.
 			   bat.append()
 			   bat.kunion()
 				-> mat.union(mat, b or val) */
-		//	pushInstruction(mb,p);
 			mtop= mat_add(mat, mvar, mtop, mat_union(mb, p, mat, m));
 			actions++;
 			continue;
