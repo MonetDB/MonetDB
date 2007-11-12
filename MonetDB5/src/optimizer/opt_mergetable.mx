@@ -186,6 +186,45 @@ mat_join(MalBlkPtr mb, InstrPtr p, InstrPtr *mat, int m, int n)
 	return r;
 }
 
+static InstrPtr
+mat_group(InstrPtr *ext, MalBlkPtr mb, InstrPtr p, InstrPtr *mat, int m, int n, int o)
+{
+	int tp0 = getArgType(mb,p,0);
+	int tp1 = getArgType(mb,p,1);
+	int k;
+	InstrPtr r0 = newInstruction(mb, ASSIGNsymbol);
+	InstrPtr r1 = newInstruction(mb, ASSIGNsymbol);
+
+	setModuleId(r0,matRef);
+	setFunctionId(r0,newRef);
+	getArg(r0,0) = getArg(p,0);
+
+	setModuleId(r1,matRef);
+	setFunctionId(r1,newRef);
+	getArg(r1,0) = getArg(p,1);
+	
+	for(k=1; k<mat[m]->argc; k++) {
+		InstrPtr q = copyInstruction(p);
+		getArg(q,0) = newTmpVariable(mb, tp0);
+		getArg(q,1) = newTmpVariable(mb, tp1);
+		getArg(q,2) = getArg(mat[m],k);
+		if (n)
+			getArg(q,3) = getArg(mat[n],k);
+		if (o)
+			getArg(q,4) = getArg(mat[o],k);
+		pushInstruction(mb,q);
+
+		/* add result to mat */
+		r0 = pushArgument(mb,r0,getArg(q,0));
+		r1 = pushArgument(mb,r1,getArg(q,1));
+	}
+	freeInstruction(p);
+	pushInstruction(mb, r0);
+	pushInstruction(mb, r1);
+	*ext = r1;
+	return r0;
+}
+
 /* todo make general re-name func function */
 static InstrPtr
 mat_union(MalBlkPtr mb, InstrPtr p, InstrPtr *mat, int m)
@@ -354,6 +393,7 @@ OPTmergetableImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	memset((char*) mvar, 0, mb->vtop * sizeof(int));
 
 	for( i=0; i<oldtop; i++){
+		int n = 0, o = 0;
 		p = old[i];
 		if (getModuleId(p)== matRef && 
 		   (getFunctionId(p)==newRef || getFunctionId(p)==packRef)) {
@@ -389,7 +429,6 @@ mat.hrange(b,x,y). So if this is available, we can simplify batcalc operations
 and for fetch joins we can use this information to do per part joins only.
 @c
 		if (match == 2) {
-			int n;
 			if (getModuleId(p) == algebraRef &&
 			    getFunctionId(p) == joinRef &&
 				(m=isMATalias(getArg(p,1),mvar,mtop)) >= 0 &&
@@ -399,8 +438,26 @@ and for fetch joins we can use this information to do per part joins only.
 				mtop= mat_add(mat, mvar, mtop, mat_join(mb, p, mat, m, n));
 				actions++;
 				continue;
-				
 			}	
+		}
+@- 
+Now we handle group.new (and derive) statements
+@c
+		if (getModuleId(p) == groupRef && 
+		   ((match == 1 && getFunctionId(p) == newRef &&
+		   ((m=isMATalias(getArg(p,2),mvar,mtop)) >= 0)) ||
+		   (match == 3 && getFunctionId(p) == deriveRef &&
+		   ((m=isMATalias(getArg(p,2),mvar,mtop)) >= 0) &&
+		   ((n=isMATalias(getArg(p,3),mvar,mtop)) >= 0) &&
+		   ((o=isMATalias(getArg(p,4),mvar,mtop)) >= 0)))) {
+			InstrPtr ext, grp;
+		
+			printf("%s %d %d %d\n", getFunctionId(p), m, n, o);
+			grp = mat_group(&ext, mb, p, mat, m, n, o);
+			mtop= mat_add(mat, mvar, mtop, grp);
+			mtop= mat_add(mat, mvar, mtop, ext);
+			actions++;
+			continue;
 		}
 @-
 Pack MAT arguments, except one, to limit plan explosion.
