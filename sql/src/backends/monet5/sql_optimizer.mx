@@ -451,8 +451,8 @@ str defaultPlan=
 	/* "crack," */
 	"commonTerms,"
 	"accumulators,"
-	"joinPath,"
 	"mergetable," 
+	"joinPath,"
 	"deadcode,"
 	"reduce,"
 	"garbageCollector," 

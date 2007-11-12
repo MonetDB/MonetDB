@@ -604,9 +604,9 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 
 			@:SQLprelude@
 			if (s->flag) {
-				q = newStmt(mb, "group", "refine");
+				q = newStmt1(mb, groupRef, "refine");
 			} else {
-				q = newStmt(mb, "group", "refine_reverse");
+				q = newStmt1(mb, groupRef, "refine_reverse");
 			}
 			q = pushArgument(mb, q, l);
 			q = pushArgument(mb, q, r);
@@ -876,9 +876,9 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				int o1 = _dumpstmt(sql, mb, s->op1.stval);
 				int o2 = _dumpstmt(sql, mb, s->op2.stval);
 				@:SQLprelude@
-				mp = newStmt(mb, batRef, mirrorRef);
+				mp = newStmt2(mb, batRef, mirrorRef);
 				pushArgument(mb,mp,o2);
-				mq = newStmt(mb, algebraRef, joinRef);
+				mq = newStmt2(mb, algebraRef, joinRef);
 				pushArgument(mb,mq,getArg(mp,0));
 				pushArgument(mb,mq,o1);
 				s->nr = getDestVar(mq);
@@ -1007,7 +1007,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 
 			nme = alloca(SMALLBUFSIZ);
 			@:SQLprelude@
-			q = newStmt(mb, "group", "new");
+			q = newStmt2(mb, groupRef, newRef);
 			ext = getDestVar(q);
 			snprintf( nme, SMALLBUFSIZ, "grp%d", getDestVar(q));
         		q = pushReturn(mb, q, newVariable(mb, _strdup(nme), TYPE_any));
@@ -1047,7 +1047,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			nme = alloca(SMALLBUFSIZ);
 			buf = alloca(SMALLBUFSIZ);
 			@:SQLprelude@
-			q = newStmt(mb, "group", "derive");
+			q = newStmt2(mb, groupRef, deriveRef);
 			ext = getDestVar(q);
 			snprintf( nme, SMALLBUFSIZ, "grp%d", getDestVar(q));
         		q = pushReturn(mb, q, newVariable(mb, _strdup(nme), TYPE_any));
@@ -1077,7 +1077,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				nme = alloca(SMALLBUFSIZ);
 				buf = alloca(SMALLBUFSIZ);
 
-				q = newStmt(mb, "group", "derive");
+				q = newStmt2(mb, groupRef, deriveRef);
 				e = getDestVar(q);
 				snprintf( nme, SMALLBUFSIZ, "grp%d", getDestVar(q));
         			q = pushReturn(mb, q, newVariable(mb, _strdup(nme), TYPE_any));
