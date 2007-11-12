@@ -1,0 +1,70 @@
+stdout of test 'scanselect` in directory 'tests/gdkTests` itself:
+
+
+# 02:31:40 >  
+# 02:31:40 >   mserver5 "--config=/ufs/manegold/_/scratch0/Monet/Testing/Current/prefix.--enable-strict_--disable-debug_--disable-optimize_--enable-assert/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/manegold/_/scratch0/Monet/Testing/Current/prefix.--enable-strict_--disable-debug_--disable-optimize_--enable-assert/lib64/MonetDB5:/ufs/manegold/_/scratch0/Monet/Testing/Current/prefix.--enable-strict_--disable-debug_--disable-optimize_--enable-assert/lib64/MonetDB5/lib:/ufs/manegold/_/scratch0/Monet/Testing/Current/prefix.--enable-strict_--disable-debug_--disable-optimize_--enable-assert/lib64/MonetDB5/bin" --set "gdk_dbfarm=/ufs/manegold/_/scratch0/Monet/Testing/Current/prefix.--enable-strict_--disable-debug_--disable-optimize_--enable-assert/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/manegold/_/scratch0/Monet/Testing/Current/prefix.--enable-strict_--disable-debug_--disable-optimize_--enable-assert/var/MonetDB5/sql_logs"  --set mapi_open=true --set xrpc_open=true --set mapi_port=32882 --set xrpc_port=47507 --set monet_prompt= --trace --dbname=mTests_tests_gdkTests  scanselect.mal
+# 02:31:40 >  
+
+# MonetDB server v5.3.0, based on kernel v1.21.0
+# Serving database 'mTests_tests_gdkTests'
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Copyright (c) 1993-2007 CWI, all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://corona.ins.cwi.nl:32882/
+#x:=bat.new(:void,:int);
+#bat.append(x,1);
+#bat.append(x,2);
+#bat.append(x,1);
+#y:=algebra.markH(x,0@0);
+#io.print(y);
+#z:=algebra.select(y,1);
+#io.print(z);
+#z:=algebra.select(y,2);
+#io.print(z);
+#z:=algebra.select(y,1,2);
+#io.print(z);
+#
+function user.main():void;	# 0  (main:void)
+    x := bat.new(:void,:int);	# 1 CMDBATnew (x:bat[:void,:int])<-(_2:void)(_3:int)
+    bat.append(x,1);	# 2 BKCappend_val_wrap (_4:void)<-(x:bat[:void,:int])(_5:int)
+    bat.append(x,2);	# 3 BKCappend_val_wrap (_6:void)<-(x:bat[:void,:int])(_7:int)
+    bat.append(x,1);	# 4 BKCappend_val_wrap (_8:void)<-(x:bat[:void,:int])(_5:int)
+    y := algebra.markH(x,0@0);	# 5 ALGmarkHead (y:bat[:oid,:int])<-(x:bat[:void,:int])(_10:oid)
+    io.print(y);	# 6 IOprint_val (_11:void)<-(y:bat[:oid,:int])
+    z := algebra.select(y,1);	# 7 ALGselect1 (z:bat[:oid,:int])<-(y:bat[:oid,:int])(_5:int)
+    io.print(z);	# 8 IOprint_val (_13:void)<-(z:bat[:oid,:int])
+    z := algebra.select(y,2);	# 9 ALGselect1 (z:bat[:oid,:int])<-(y:bat[:oid,:int])(_7:int)
+    io.print(z);	# 10 IOprint_val (_14:void)<-(z:bat[:oid,:int])
+    z := algebra.select(y,1,2);	# 11 ALGselect (z:bat[:oid,:int])<-(y:bat[:oid,:int])(_5:int)(_7:int)
+    io.print(z);	# 12 IOprint_val (_15:void)<-(z:bat[:oid,:int])
+end main;	# 13  
+#-----------------#
+# t	h	  # name
+# void	int	  # type
+#-----------------#
+[ 0@0,	  1	  ]
+[ 1@0,	  2	  ]
+[ 2@0,	  1	  ]
+#-----------------#
+# h	t	  # name
+# oid	int	  # type
+#-----------------#
+[ 0@0,	  1	  ]
+[ 2@0,	  1	  ]
+#-----------------#
+# h	t	  # name
+# oid	int	  # type
+#-----------------#
+[ 1@0,	  2	  ]
+#-----------------#
+# h	t	  # name
+# oid	int	  # type
+#-----------------#
+[ 0@0,	  1	  ]
+[ 1@0,	  2	  ]
+[ 2@0,	  1	  ]
+
+# 02:31:40 >  
+# 02:31:40 >  Done.
+# 02:31:40 >  
+

@@ -27,3 +27,4 @@ append_bat_val.new
 #append_bat_bat.old # not added, yet?
 #append_bat_bat.new # not added, yet?
 append_dense_tail
+scanselect
