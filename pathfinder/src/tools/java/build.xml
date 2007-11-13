@@ -40,6 +40,8 @@ All Rights Reserved.
   <property file="build.local.properties" />
   <property file="build.properties" />
 
+  <property name="xrpcutil-jar"
+    value="${jardir}/xrpcutil.jar" />
   <property name="xrpcwrapper-jar"
     value="${jardir}/xrpcwrapper.jar" />
   <property name="xrpcwrapper-test-jar"
@@ -47,16 +49,26 @@ All Rights Reserved.
 
   <!-- full target -->
   <target name="all">
+    <antcall target="jar_xrpcutil" />
     <antcall target="jar_xrpcwrapper" />
     <antcall target="jar_xrpcwrapper_test" />
   </target>
 
   <target name="distall">
+    <antcall target="jar_xrpcutil" />
     <antcall target="jar_xrpcwrapper" />
     <antcall target="jar_xrpcwrapper_test" />
   </target>
 
   <!-- jar targets -->
+  <target name="jar_xrpcutil" depends="compile_util">
+    <jar jarfile="${xrpcutil-jar}">
+      <fileset dir="${builddir}">
+        <include name="${util-package}/**/*.class" />
+      </fileset>
+    </jar>
+  </target>
+
   <target name="jar_xrpcwrapper"
     depends="compile_util,compile_xrpcwrapper">
     <jar jarfile="${xrpcwrapper-jar}">
