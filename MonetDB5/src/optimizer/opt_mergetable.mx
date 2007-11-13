@@ -187,6 +187,33 @@ mat_join(MalBlkPtr mb, InstrPtr p, InstrPtr *mat, int m, int n)
 }
 
 static InstrPtr
+mat_group_aggr(MalBlkPtr mb, InstrPtr p, InstrPtr *mat, int m, int n, int o)
+{
+	int tp = getArgType(mb,p,0);
+	int k;
+	InstrPtr r = newInstruction(mb, ASSIGNsymbol);
+
+	setModuleId(r,matRef);
+	setFunctionId(r,newRef);
+	getArg(r,0) = getArg(p,0);
+
+	for(k=1; k<mat[m]->argc; k++) {
+		InstrPtr q = copyInstruction(p);
+		getArg(q,0) = newTmpVariable(mb, tp);
+		getArg(q,1) = getArg(mat[m],k);
+		getArg(q,2) = getArg(mat[n],k);
+		getArg(q,3) = getArg(mat[o],k);
+		pushInstruction(mb,q);
+
+		/* add result to mat */
+		r = pushArgument(mb,r,getArg(q,0));
+	}
+	freeInstruction(p);
+	pushInstruction(mb, r);
+	return r;
+}
+
+static InstrPtr
 mat_group(InstrPtr *ext, MalBlkPtr mb, InstrPtr p, InstrPtr *mat, int m, int n, int o)
 {
 	int tp0 = getArgType(mb,p,0);
@@ -441,7 +468,7 @@ and for fetch joins we can use this information to do per part joins only.
 			}	
 		}
 @- 
-Now we handle group.new (and derive) statements
+Now we handle group, derive and aggregation statements. 
 @c
 		if (getModuleId(p) == groupRef && 
 		   ((match == 1 && getFunctionId(p) == newRef &&
@@ -455,6 +482,20 @@ Now we handle group.new (and derive) statements
 			grp = mat_group(&ext, mb, p, mat, m, n, o);
 			mtop= mat_add(mat, mvar, mtop, grp);
 			mtop= mat_add(mat, mvar, mtop, ext);
+			actions++;
+			continue;
+		}
+		if (match == 3 && getModuleId(p) == aggrRef && p->argc == 4 &&
+		   (getFunctionId(p)== countRef ||
+		    getFunctionId(p)== minRef ||
+		    getFunctionId(p)== maxRef ||
+		    getFunctionId(p)== sumRef) &&
+		   ((m=isMATalias(getArg(p,1),mvar,mtop)) >= 0) &&
+		   ((n=isMATalias(getArg(p,2),mvar,mtop)) >= 0) &&
+		   ((o=isMATalias(getArg(p,3),mvar,mtop)) >= 0)) {
+			InstrPtr aggr = mat_group_aggr(mb, p, mat, m, n, o);
+
+			mtop = mat_add(mat, mvar, mtop, aggr);
 			actions++;
 			continue;
 		}
