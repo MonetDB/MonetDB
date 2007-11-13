@@ -90,9 +90,9 @@ main-memory perspective with use of a fully decomposed storage model,
 automatic index management, extensibility of data types and search
 accelerators, SQL- and XQuery- frontends.
 
-This package contains three Java Archieves
+This package contains three Java Archives
 - xrpcwrapper.jar: the XRPC Wrapper, which is a stand-alone Java program
-  that can be pluged in on top of an XQuery engine to handle non-nested
+  that can be plugged in on top of an XQuery engine to handle non-nested
   XRPC requests (i.e. requests that do not trigger another XRPC
   request).
 
@@ -100,7 +100,7 @@ This package contains three Java Archieves
   to test the XRPC Wrapper, and (ii) shows how to write an XRPC Java
   client.
 
-- xrpcutil.jar: the XRPC Java API, which includes funcionts for
+- xrpcutil.jar: the XRPC Java API, which includes functions for
     -- creating XRPC request messages,
     -- parsing XRPC response messages, 
     -- send and/or receive XRPC messages using HTTP connection,
