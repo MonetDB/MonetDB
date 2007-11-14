@@ -171,6 +171,37 @@ merge_getmem@1(MergeState *ms, ssize_t need)
 		}						\
 	} while (0)
 
+#define COPY_anyN(d,s,w,N) do {					\
+		int i;						\
+		switch (w) {					\
+		case 0:						\
+			break;					\
+		case sizeof(bte):				\
+			for(i=0; i<N; i++)			\
+				((bte*)(d))[i] = ((bte*)(s))[i];\
+			break;					\
+		case sizeof(sht):				\
+			for(i=0; i<N; i++)			\
+				((sht*)(d))[i] = ((sht*)(s))[i];\
+			break;					\
+		case sizeof(int):				\
+			for(i=0; i<N; i++)			\
+				((int*)(d))[i] = ((int*)(s))[i];\
+			break;					\
+		case sizeof(lng):				\
+			for(i=0; i<N; i++)			\
+				((lng*)(d))[i] = ((lng*)(s))[i];\
+			break;					\
+		case 2 * sizeof(lng):				\
+			for(i=0; i<(N<2); i++)			\
+				((lng*)(d))[i] = ((lng*)(s))[i];\
+			break;					\
+		default:					\
+			memcpy((d), (s), (size_t) (w)*N);	\
+			break;					\
+		}						\
+	} while (0)
+
 #define ISLT_any(X, Y, ms)  (((ms)->heap ? (*(ms)->compare)((ms)->heap + * (var_t *) (X), (ms)->heap + * (var_t *) (Y)) : (*(ms)->compare)((X), (Y))) < 0)
 #define ISLT_any_rev(X, Y, ms)  (((ms)->heap ? (*(ms)->compare)((ms)->heap + * (var_t *) (X), (ms)->heap + * (var_t *) (Y)) : (*(ms)->compare)((X), (Y))) > 0)
 @= islt
@@ -498,8 +529,8 @@ merge_at_@1@2(MergeState *ms, ssize_t i)
 			return -1;
 		if (MERGE_GETMEMT(ms, na) < 0)
 			return -1;
-		COPY_any(ms->ah, PTRADD(ms->bh, pa, ms->hs), na * ms->hs);
-		COPY_any(ms->at, PTRADD(ms->bt, pa, ms->ts), na * ms->ts);
+		COPY_anyN(ms->ah, PTRADD(ms->bh, pa, ms->hs), ms->hs, na);
+		COPY_anyN(ms->at, PTRADD(ms->bt, pa, ms->ts), ms->ts, na);
 		dest = pa;
 		pa = 0;
 
@@ -563,8 +594,8 @@ merge_at_@1@2(MergeState *ms, ssize_t i)
 				k = gallop_right_@1@2(PTRADD(ms->bh, pb, ms->hs), PTRADD(ms->ah, pa, ms->hs), na, 0, ms);
 				acount = k;
 				if (k) {
-					COPY_any(PTRADD(ms->bh, dest, ms->hs), PTRADD(ms->ah, pa, ms->hs), k * ms->hs);
-					COPY_any(PTRADD(ms->bt, dest, ms->ts), PTRADD(ms->at, pa, ms->ts), k * ms->ts);
+					COPY_anyN(PTRADD(ms->bh, dest, ms->hs), PTRADD(ms->ah, pa, ms->hs), ms->hs, k);
+					COPY_anyN(PTRADD(ms->bt, dest, ms->ts), PTRADD(ms->at, pa, ms->ts), ms->ts, k);
 					dest += k;
 					pa += k;
 					na -= k;
@@ -609,8 +640,8 @@ merge_at_@1@2(MergeState *ms, ssize_t i)
 		}
 	SucceedA:
 		if (na) {
-			COPY_any(PTRADD(ms->bh, dest, ms->hs), PTRADD(ms->ah, pa, ms->hs), na * ms->hs);
-			COPY_any(PTRADD(ms->bt, dest, ms->ts), PTRADD(ms->at, pa, ms->ts), na * ms->ts);
+			COPY_anyN(PTRADD(ms->bh, dest, ms->hs), PTRADD(ms->ah, pa, ms->hs), ms->hs, na);
+			COPY_anyN(PTRADD(ms->bt, dest, ms->ts), PTRADD(ms->at, pa, ms->ts), ms->ts, na);
 		}
 		return 0;
 	CopyB:
@@ -638,8 +669,8 @@ merge_at_@1@2(MergeState *ms, ssize_t i)
 		if (MERGE_GETMEMT(ms, nb) < 0)
 			return -1;
 		dest = pb + nb - 1;
-		COPY_any(ms->ah, PTRADD(ms->bh, pb, ms->hs), nb * ms->hs);
-		COPY_any(ms->at, PTRADD(ms->bt, pb, ms->ts), nb * ms->ts);
+		COPY_anyN(ms->ah, PTRADD(ms->bh, pb, ms->hs), ms->hs, nb);
+		COPY_anyN(ms->at, PTRADD(ms->bt, pb, ms->ts), ms->ts, nb);
 		basea = pa;
 		baseb = 0;
 		pb = nb - 1;
@@ -761,8 +792,8 @@ merge_at_@1@2(MergeState *ms, ssize_t i)
 		}
 	SucceedB:
 		if (nb) {
-			COPY_any(PTRADD(ms->bh, dest + 1 - nb, ms->hs), PTRADD(ms->ah, baseb, ms->hs), nb * ms->hs);
-			COPY_any(PTRADD(ms->bt, dest + 1 - nb, ms->ts), PTRADD(ms->at, baseb, ms->ts), nb * ms->ts);
+			COPY_anyN(PTRADD(ms->bh, dest + 1 - nb, ms->hs), PTRADD(ms->ah, baseb, ms->hs), ms->hs, nb);
+			COPY_anyN(PTRADD(ms->bt, dest + 1 - nb, ms->ts), PTRADD(ms->at, baseb, ms->ts), ms->ts, nb);
 		}
 		return 0;
 	CopyA:
