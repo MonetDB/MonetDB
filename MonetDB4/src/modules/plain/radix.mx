@@ -1509,7 +1509,7 @@ M4_RDX_BATinteger(BAT **ret, BAT *b, int *width)
 		}
 		ALIGNsetH(bn, b);
 		bn->tsorted = b->tsorted;
-		BATkey(BATmirror(bn), b->tkey);
+		BATkey(BATmirror(bn), BATtkey(b));
 		bn->T->nosorted = b->T->nosorted;
 		bn->T->nosorted_rev = b->T->nosorted_rev;
 		bn->T->nokey[0] = b->T->nokey[0];

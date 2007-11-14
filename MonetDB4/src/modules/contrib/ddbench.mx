@@ -1792,7 +1792,7 @@ rngs_oidselect(BAT **res, BAT *b, ...)
 	@2 {
 		bn@3->batBuns->free = ((char*) dst@3) - bn@3->batBuns->base;
 		BATsetcount(bn@3, bn@3->batBuns->free/BUNsize(bn@3));
-		bn@3->hkey = BATmirror(bn@3)->tkey = b->hkey;
+		bn@3->hkey = BATmirror(bn@3)->tkey = BAThkey(b);
 		bn@3->hsorted = BAThordered(b) && ((GDKdebug&786432)==0);
 		bn@3->batDirty = 1;
 	}
@@ -2002,7 +2002,7 @@ rng_oidrefine(BAT **res, BAT *sel, BAT *b, ptr lo, ptr hi)
 	bn->batBuns->free = ((char*) dst) - bn->batBuns->base;
 	BATsetcount(bn, bn->batBuns->free/BUNsize(bn));
 	bn->hsorted = BAThordered(b) && BAThordered(sel);
-	bn->hkey = BATmirror(bn)->tkey = b->hkey && sel->hkey;
+	bn->hkey = BATmirror(bn)->tkey = BAThkey(b) && BAThkey(sel);
 	bn->batDirty = 1;
 }
 @= oidref

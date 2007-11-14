@@ -735,12 +735,12 @@ iter_join(iter *res, iter *input, BAT *inner)
 	bn = BATnew(ht, BATttype(inner), chunksize);
 	bn->hsorted = outer->result->hsorted;
 	bn->tsorted = 0;
-	bn->hkey = outer->result->hkey && inner->hkey;
+	bn->hkey = BAThkey(outer->result) && BAThkey(inner);
 	it = ITERinit(outer, "join", nxt, ViewFree, JoinGuess, bn, outer->result, inner);
 	it->hdl.join.inner = inner;
 	if (nxt == JoinNextVoid) {
 		BATseqbase(bn, outer->result->hseqbase);
-		bn->tkey = outer->result->tkey && inner->tkey;
+		bn->tkey = BATtkey(outer->result) && BATtkey(inner);
 	} else {
 		(void) BATprepareHash(inner);
 		it->hdl.join.hash = inner->hhash->hash;
