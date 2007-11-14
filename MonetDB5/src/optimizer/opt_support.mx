@@ -1176,21 +1176,22 @@ Used in the merge table optimizer. It is build incrementally
 and should be conservative.
 @c
 int isFragmentGroup(InstrPtr p){
-	return
+	return		(getModuleId(p)== batcalcRef) ||
 			(getModuleId(p)== constraintsRef && 
 				getFunctionId(p)== getName("emptySet",8)) ||
 			(getModuleId(p)== algebraRef && (
 				getFunctionId(p)== selectRef ||
-				getFunctionId(p)==uselectRef ||
-		   		getFunctionId(p) == markTRef ||
-				getFunctionId(p)==likeselectRef ||
+				getFunctionId(p)== selectNotNilRef ||
+				getFunctionId(p)== uselectRef ||
+				getFunctionId(p)== likeselectRef ||
 				getFunctionId(p)== joinRef ||
 				getFunctionId(p)== semijoinRef ||
-				getFunctionId(p)== kdifferenceRef
+				getFunctionId(p)== kdifferenceRef ||
+				getFunctionId(p)== reuseRef
 			)	)  ||
 			(getModuleId(p)== batRef && (
-				getFunctionId(p)==reverseRef ||
-				getFunctionId(p)==mirrorRef ||
+				getFunctionId(p)== reverseRef ||
+				getFunctionId(p)== mirrorRef ||
 				getFunctionId(p)== setAccessRef ||
 				getFunctionId(p)== setWriteModeRef 
 			) );

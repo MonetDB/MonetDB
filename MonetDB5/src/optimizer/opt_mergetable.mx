@@ -160,6 +160,57 @@ mat_add(InstrPtr *mat, int *mvar, int mtop, InstrPtr q)
 	return mtop+1;
 }
 
+static void
+mat_reuse(MalBlkPtr mb, InstrPtr p, InstrPtr *mat, int m, int a1, int a2, int a3)
+{
+	int k;
+	
+	for(k=1; k<mat[m]->argc; k++) {
+		InstrPtr q = copyInstruction(p);
+		getArg(q,0) = getArg(mat[m],k);
+
+		if (a1 >= 0)
+			getArg(q,1) = getArg(mat[a1],k);
+		if (a2 >= 0)
+			getArg(q,2) = getArg(mat[a2],k);
+		if (a3 >= 0)
+			getArg(q,3) = getArg(mat[a3],k);
+		pushInstruction(mb,q);
+	}
+	freeInstruction(p);
+}
+
+/* TODO change into general mat1,mat2,mat3 etc */
+static InstrPtr
+mat_batcalc(MalBlkPtr mb, InstrPtr p, InstrPtr *mat, int m, int n, int o)
+{
+	int tpe = getArgType(mb,p,0);
+	int k;
+	InstrPtr r = newInstruction(mb, ASSIGNsymbol);
+
+	setModuleId(r,matRef);
+	setFunctionId(r,newRef);
+	getArg(r,0) = getArg(p,0);
+	
+	for(k=1; k<mat[m]->argc; k++) {
+		InstrPtr q = copyInstruction(p);
+		getArg(q,0) = newTmpVariable(mb, tpe);
+		if (m >= 0)
+			getArg(q,1) = getArg(mat[m],k);
+		if (n >= 0)
+			getArg(q,2) = getArg(mat[n],k);
+		if (o >= 0)
+			getArg(q,3) = getArg(mat[o],k);
+		pushInstruction(mb,q);
+
+		/* add result to mat */
+		r = pushArgument(mb,r,getArg(q,0));
+	}
+	freeInstruction(p);
+	pushInstruction(mb, r);
+	return r;
+}
+
 static InstrPtr
 mat_join(MalBlkPtr mb, InstrPtr p, InstrPtr *mat, int m, int n)
 {
@@ -186,31 +237,156 @@ mat_join(MalBlkPtr mb, InstrPtr p, InstrPtr *mat, int m, int n)
 	return r;
 }
 
-static InstrPtr
-mat_group_aggr(MalBlkPtr mb, InstrPtr p, InstrPtr *mat, int m, int n, int o)
+static int
+resultof(MalBlkPtr mb, int var, int topstmt)
 {
-	int tp = getArgType(mb,p,0);
-	int k;
-	InstrPtr r = newInstruction(mb, ASSIGNsymbol);
+	int i;
 
-	setModuleId(r,matRef);
-	setFunctionId(r,newRef);
-	getArg(r,0) = getArg(p,0);
+	while(--topstmt > 0) {
+		InstrPtr p = mb->stmt[topstmt];
+		for(i=0;i<p->retc; i++)
+			if (p->argv[i] == var)
+				return topstmt;
+	}
+	return 0;
+}
+
+/* later we should set the Lifespan parts of a variable in the mat_group
+   function
+ */
+
+static int
+group_chain_list_length(MalBlkPtr mb, int var, int topstmt)
+{
+	int cnt = 0;
+	while(var) {
+		int s = resultof(mb, var, topstmt);
+		InstrPtr p = mb->stmt[s];
+
+		var = 0;
+		if (s == 0)
+			return 0;
+		if (getModuleId(p) == groupRef && getFunctionId(p) == deriveRef)
+			var = getArg(p, 3);
+		cnt++;
+	}
+	return cnt;
+}
+
+static void
+group_attrs(int *attrs, MalBlkPtr mb, int var, int ext )
+{
+	int cnt = 0;
+	while(var) {
+		int s = resultof(mb, var, mb->stop);
+		InstrPtr q, p = mb->stmt[s];
+		int attr = 0;
+
+		assert(s!=0);
+		var = 0;
+		if (getModuleId(p) == groupRef && getFunctionId(p) == deriveRef){
+			var = getArg(p, 3);
+			attr = getArg(p, 4);
+		} else if (getModuleId(p) == groupRef && getFunctionId(p) == newRef){
+			attr = getArg(p, 2);
+		} else {
+			assert(0);
+		}
+		/* ext.join(attr); */
+		q = newInstruction(mb, ASSIGNsymbol);
+		setModuleId(q, algebraRef);
+		setFunctionId(q, joinRef);
+		getArg(q, 0) = newTmpVariable(mb, getVarType(mb,attr));
+		q = pushArgument(mb, q, ext);
+		q = pushArgument(mb, q, attr);
+		pushInstruction(mb, q);
+		attrs[cnt] = getDestVar(q);
+		cnt++;
+	}
+}
+
+static char *
+aggr_phase2(char *aggr)
+{
+	if (aggr == countRef /* || aggr == count_no_nilRef */)
+		return sumRef;
+	/* min/max/sum are fine */
+	return aggr;
+}
+
+static void
+mat_group_aggr(MalBlkPtr mb, InstrPtr p, InstrPtr *mat, int m, int g, int ext)
+{
+	int *attrs, tp = getArgType(mb,p,0), i, k, cnt;
+	char *aggr2 = aggr_phase2(getFunctionId(p));
+	InstrPtr ai1 = newInstruction(mb, ASSIGNsymbol), cur = NULL;
+	InstrPtr ai2 = newInstruction(mb, ASSIGNsymbol);
+
+	setModuleId(ai1,matRef);
+	setFunctionId(ai1,packRef);
+	getArg(ai1,0) = newTmpVariable(mb, tp);
+
+	setModuleId(ai2, aggrRef);
+	setFunctionId(ai2, aggr2);
+	getArg(ai2,0) = getArg(p,0);
 
 	for(k=1; k<mat[m]->argc; k++) {
 		InstrPtr q = copyInstruction(p);
 		getArg(q,0) = newTmpVariable(mb, tp);
 		getArg(q,1) = getArg(mat[m],k);
-		getArg(q,2) = getArg(mat[n],k);
-		getArg(q,3) = getArg(mat[o],k);
+		getArg(q,2) = getArg(mat[g],k);
+		getArg(q,3) = getArg(mat[ext],k);
 		pushInstruction(mb,q);
 
 		/* add result to mat */
-		r = pushArgument(mb,r,getArg(q,0));
+		ai1 = pushArgument(mb,ai1,getArg(q,0));
 	}
 	freeInstruction(p);
-	pushInstruction(mb, r);
-	return r;
+	pushInstruction(mb, ai1);
+
+	/* The extend/histogram in a mat of groupings should be 
+	   rewritten into a single extend. This is simply done by joining the
+	   the group attributes with the per part extend, which are merged
+	   into a new bats. Also the aggregates are merged.
+	   These should then be grouped and aggregated again (allthough 
+	   possibly with a different aggregation function).
+
+	   TODO optimization: we should reuse groupings among multiple aggrs.
+	 */
+	cnt = group_chain_list_length(mb, getArg(mat[g], 1), mb->stop);
+	attrs = alloca(cnt * sizeof(int) * mat[ext]->argc);
+	for(k=1; k<mat[ext]->argc; k++) 
+		group_attrs(attrs+k*cnt, mb, getArg(mat[g], k), getArg(mat[ext], k));
+	for(i=cnt-1; i>=0; i--) {
+		/* pack, group (or derive) */
+		InstrPtr pck = newInstruction(mb, ASSIGNsymbol);
+		InstrPtr grp = newInstruction(mb, ASSIGNsymbol);
+
+		setModuleId(grp,groupRef);
+		setFunctionId(grp, newRef);
+		
+		setModuleId(pck,matRef);
+		setFunctionId(pck,packRef);
+		getArg(pck,0) = newTmpVariable(mb, getVarType(mb, attrs[cnt+i]));
+		for(k=1; k<mat[m]->argc; k++) 
+			pck = pushArgument(mb, pck, attrs[k*cnt+i]);
+		pushInstruction(mb, pck);
+
+		getArg(grp,0) = newTmpVariable(mb, newBatType(TYPE_oid,TYPE_int));
+		grp = pushReturn(mb, grp, newTmpVariable(mb, newBatType(TYPE_oid,TYPE_oid)));
+		if (cur) {
+			setFunctionId(grp, deriveRef);
+			grp = pushArgument(mb, grp, getArg(cur, 0));
+			grp = pushArgument(mb, grp, getArg(cur, 1));
+		}
+		grp = pushArgument(mb, grp, getArg(pck, 0));
+		pushInstruction(mb, grp);
+		cur = grp;
+	}
+	ai2 = pushArgument(mb, ai2, getArg(ai1, 0));
+	ai2 = pushArgument(mb, ai2, getArg(cur, 1));
+	ai2 = pushArgument(mb, ai2, getArg(cur, 0));
+	pushInstruction(mb, ai2);
 }
 
 static InstrPtr
@@ -235,9 +411,9 @@ mat_group(InstrPtr *ext, MalBlkPtr mb, InstrPtr p, InstrPtr *mat, int m, int n, 
 		getArg(q,0) = newTmpVariable(mb, tp0);
 		getArg(q,1) = newTmpVariable(mb, tp1);
 		getArg(q,2) = getArg(mat[m],k);
-		if (n)
+		if (n >= 0)
 			getArg(q,3) = getArg(mat[n],k);
-		if (o)
+		if (o >= 0)
 			getArg(q,4) = getArg(mat[o],k);
 		pushInstruction(mb,q);
 
@@ -344,7 +520,7 @@ MATpackAll(MalBlkPtr mb, InstrPtr  r, int m, InstrPtr *mat, int *mvar, int *mtop
 		r = newInstruction(mb, ASSIGNsymbol);
 		getArg(r,0)= getArg(mat[m],0);
 		getArg(r,1)= getArg(mat[m],1);
-	} else{
+	} else {
 		if (r == NULL){
 			r = newInstruction(mb, ASSIGNsymbol);
 			setModuleId(r,matRef);
@@ -420,7 +596,7 @@ OPTmergetableImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	memset((char*) mvar, 0, mb->vtop * sizeof(int));
 
 	for( i=0; i<oldtop; i++){
-		int n = 0, o = 0;
+		int n = -1, o = -1;
 		p = old[i];
 		if (getModuleId(p)== matRef && 
 		   (getFunctionId(p)==newRef || getFunctionId(p)==packRef)) {
@@ -450,22 +626,45 @@ Otherwise we have to decide on either packing them or replacement.
 #endif
 			continue;
 		}
+@-
+Sometimes mats are reused (ie input mats are used as the output). Such
+statements can allways be done by iterating over the parts.
+@c
+		if (match > 0 && (m=isMATalias(getArg(p,0), mvar, mtop)) >= 0) {
+			int x = -1;
+			if (match > 1) {
+				n = isMATalias(getArg(p,1), mvar, mtop);
+				o = isMATalias(getArg(p,2), mvar, mtop);
+				x = isMATalias(getArg(p,3), mvar, mtop);
+			}
+			mat_reuse(mb, p, mat, m, n, o, x); 
+			actions++;
+			continue;
+		}
 @- 
-First we handle horizontal aligned mats. This information is passed using
+Here we handle horizontal aligned mats. This information is passed using
 mat.hrange(b,x,y). So if this is available, we can simplify batcalc operations
 and for fetch joins we can use this information to do per part joins only.
 @c
 		if (match == 2) {
-			if (getModuleId(p) == algebraRef &&
-			    getFunctionId(p) == joinRef &&
-				(m=isMATalias(getArg(p,1),mvar,mtop)) >= 0 &&
-				(n=isMATalias(getArg(p,2),mvar,mtop)) >= 0 &&
-				mat[m]->argc == mat[n]->argc ) {
+			if (getModuleId(p) == algebraRef && 
+			     getFunctionId(p) == joinRef &&
+			     (m=isMATalias(getArg(p,1),mvar,mtop)) >= 0 &&
+			     (n=isMATalias(getArg(p,2),mvar,mtop)) >= 0 &&
+			      mat[m]->argc == mat[n]->argc ) {
 				/* todo match the hranges */
 				mtop= mat_add(mat, mvar, mtop, mat_join(mb, p, mat, m, n));
 				actions++;
 				continue;
 			}	
+		}
+		if (match > 1 && getModuleId(p) == batcalcRef) { 
+			m = isMATalias(getArg(p,1),mvar,mtop);
+		 	n = isMATalias(getArg(p,2),mvar,mtop);
+		 	o = isMATalias(getArg(p,3),mvar,mtop);
+			mtop = mat_add(mat, mvar, mtop, mat_batcalc(mb, p, mat, m, n, o));
+			actions++;
+			continue;
 		}
 @- 
 Now we handle group, derive and aggregation statements. 
@@ -486,16 +685,14 @@ Now we handle group, derive and aggregation statements.
 			continue;
 		}
 		if (match == 3 && getModuleId(p) == aggrRef && p->argc == 4 &&
-		   (getFunctionId(p)== countRef ||
-		    getFunctionId(p)== minRef ||
-		    getFunctionId(p)== maxRef ||
-		    getFunctionId(p)== sumRef) &&
+		   (getFunctionId(p) == countRef ||
+		    getFunctionId(p) == minRef ||
+		    getFunctionId(p) == maxRef ||
+		    getFunctionId(p) == sumRef) &&
 		   ((m=isMATalias(getArg(p,1),mvar,mtop)) >= 0) &&
 		   ((n=isMATalias(getArg(p,2),mvar,mtop)) >= 0) &&
 		   ((o=isMATalias(getArg(p,3),mvar,mtop)) >= 0)) {
-			InstrPtr aggr = mat_group_aggr(mb, p, mat, m, n, o);
-
-			mtop = mat_add(mat, mvar, mtop, aggr);
+			mat_group_aggr(mb, p, mat, m, n, o);
 			actions++;
 			continue;
 		}
