@@ -911,8 +911,8 @@ Propagate alignment info. Key properties are inherited from the parent.
 Hash changes the order; IDX yields ordered tail; scan respects original order.
 @c
 	if (BATcount(bn)) {
-		BATkey(bn, b->hkey);
-		BATkey(BATmirror(bn), b->tkey);
+		BATkey(bn, BAThkey(b));
+		BATkey(BATmirror(bn), BATtkey(b));
 	} else {
 		BATkey(bn, TRUE);
 		BATkey(BATmirror(bn), TRUE);
@@ -1083,8 +1083,8 @@ BATsample(BAT *b, size_t size)
 	/* set sorted flags by hand, because we used BUNfastins() */
 	bn->hsorted = BAThordered(b);
 	bn->tsorted = BATtordered(b);
-	BATkey(bn, b->hkey);
-	BATkey(BATmirror(bn), b->tkey);
+	BATkey(bn, BAThkey(b));
+	BATkey(BATmirror(bn), BATtkey(b));
 	return bn;
       bunins_failed:
 	BBPreclaim(bn);
@@ -1185,8 +1185,8 @@ BATrestrict(BAT *b, ptr hl, ptr hh, ptr tl, ptr th)
 	if (bn == NULL) {
 		return NULL;
 	}
-	BATkey(bn, b->hkey);
-	BATkey(BATmirror(bn), b->tkey);
+	BATkey(bn, BAThkey(b));
+	BATkey(BATmirror(bn), BATtkey(b));
 	bn->hsorted = BAThordered(b);
 	bn->tsorted = BATtordered(b);
 
@@ -1717,8 +1717,8 @@ part_bat(BAT *b, int ht, int tt, size_t expected_size, int respect_order)
 	BAT *bn = BATnew(ht, tt, (size_t) ((double) expected_size * BATMARGIN));
 
 	if (bn) {
-		BATkey(bn, b->hkey);
-		BATkey(BATmirror(bn), b->tkey);
+		BATkey(bn, BAThkey(b));
+		BATkey(BATmirror(bn), BATtkey(b));
 		bn->hsorted = (respect_order && (BAThordered(b) & 1)) ? GDK_SORTED : 0;
 		bn->tsorted = (respect_order && (BATtordered(b) & 1)) ? GDK_SORTED : 0;
 	}
@@ -2295,7 +2295,7 @@ BATmark_grp(BAT *b, BAT *g, oid *s)
 	if (BAThdense(bn)) {
 		BATseqbase(bn, b->hseqbase);
 	}
-	BATkey(bn, (bn->hdense || b->hkey != 0));
+	BATkey(bn, (bn->hdense || b->hkey != FALSE));
 	bn->tsorted = (trivprop ? GDK_SORTED : FALSE);
 	bn->tdense = trivprop;
 	if (BATtdense(bn)) {

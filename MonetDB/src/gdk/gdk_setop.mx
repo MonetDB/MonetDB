@@ -307,7 +307,7 @@ BATkunique(BAT *b)
 		b->halign = OIDnew(1);
 	}
 	BATkey(bn, TRUE);	/* this we accomplished */
-	BATkey(BATmirror(bn), b->tkey);
+	BATkey(BATmirror(bn), BATtkey(b));
 	bn->hsorted = BAThordered(b);
 	bn->tsorted = BATtordered(b);
 	if (BATcount(bn) == BATcount(b)) {
@@ -360,8 +360,8 @@ BATsunique(BAT *b)
 
 	/* property management */
 	BATset(bn, TRUE);	/* this we accomplished */
-	BATkey(bn, b->hkey);
-	BATkey(BATmirror(bn), b->tkey);
+	BATkey(bn, BAThkey(b));
+	BATkey(BATmirror(bn), BATtkey(b));
 	bn->hsorted = BAThordered(b);
 	bn->tsorted = BATtordered(b);
 	if (BATcount(bn) == BATcount(b)) {
@@ -662,8 +662,8 @@ BAT@1@2(BAT *l, BAT *r)
 	bn->hsorted = BAThordered(l);
 	bn->tsorted = BATtordered(l);
 	if (BATcount(bn)) {
-		BATkey(bn, l->hkey);
-		BATkey(BATmirror(bn), l->tkey);
+		BATkey(bn, BAThkey(l));
+		BATkey(BATmirror(bn), BATtkey(l));
 	} else {
 		BATkey(bn, TRUE);
 		BATkey(BATmirror(bn), TRUE);
@@ -820,7 +820,7 @@ BAT@1union(BAT *l, BAT *r)
 	if (bn->hkey && hdisjunct == FALSE)
 		BATkey(bn, FALSE);
 #endif
-	BATkey(BATmirror(bn), tdisjunct ? l->tkey && r->tkey : 0);
+	BATkey(BATmirror(bn), tdisjunct ? BATtkey(l) && BATtkey(r) : 0);
 
 	return bn;
   bunins_failed:

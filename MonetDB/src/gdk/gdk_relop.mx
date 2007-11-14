@@ -2345,8 +2345,8 @@ BATantijoin(BAT *l, BAT *r)
 		bn->tsorted = (lc == 1 ? r->tsorted : FALSE);
 		bn->hdense = (rc == 1 ? l->hdense : FALSE);
 		bn->tdense = (lc == 1 ? r->tdense : FALSE);
-		BATkey(bn, (rc == 1 ? l->hkey : FALSE));
-		BATkey(BATmirror(bn), (lc == 1 ? r->tkey : FALSE));
+		BATkey(bn, (rc == 1 ? BAThkey(l) : FALSE));
+		BATkey(BATmirror(bn), (lc == 1 ? BATtkey(r) : FALSE));
 		if (!bn->batDirty)
 			bn->batDirty = TRUE;
 	}
@@ -2514,8 +2514,8 @@ BATcross(BAT *l, BAT *r)
 		bn->tsorted = (lc == 1 ? r->tsorted : FALSE);
 		bn->hdense = (rc == 1 ? l->hdense : FALSE);
 		bn->tdense = (lc == 1 ? r->tdense : FALSE);
-		BATkey(bn, (rc == 1 ? l->hkey : FALSE));
-		BATkey(BATmirror(bn), (lc == 1 ? r->tkey : FALSE));
+		BATkey(bn, (rc == 1 ? BAThkey(l) : FALSE));
+		BATkey(BATmirror(bn), (lc == 1 ? BATtkey(r) : FALSE));
 		if (!bn->batDirty)
 			bn->batDirty = TRUE;
 	}

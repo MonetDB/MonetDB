@@ -1088,7 +1088,7 @@ Print the table header and then the multijoin.
 		}
 		MULTIJOIN_LEAD(ret) = 1;
 		MULTIJOIN_SORTED(ret) = (BAThordered(b) & 1);
-		MULTIJOIN_KEY(ret) = b->hkey;
+		MULTIJOIN_KEY(ret) = BAThkey(b);
 		MULTIJOIN_SYNCED(ret) = 1;
 	} else {
 		ret = BATmultijoin(argc, argv, (RowFcn) print_line, (void *) s, value_fcn, (void **) cp, order);

@@ -126,7 +126,7 @@ ALIGNsetH(BAT *b1, BAT *b2)
 		b1->hdense = FALSE;
 		BATseqbase(b1, oid_nil);
 	}
-	BATkey(b1, b2->hkey != FALSE);
+	BATkey(b1, BAThkey(b2));
 	b1->hsorted = BAThordered(b2);
 	b1->halign = b2->halign;
 	b1->batDirtydesc = TRUE;
@@ -404,6 +404,7 @@ BATmaterializeh(BAT *b)
 	BUN p = BUNfirst(b), q = BUNlast(b);
 	oid h, *x;
 
+	assert(!isVIEW(b));
 	assert(cnt >= q - p);
 	BATcheck(b, "BATmaterialize: bat required");
 	ALGODEBUG THRprintf(GDKout, "#BATmaterialize(%d);\n", (int) b->batCacheid);
@@ -589,6 +590,10 @@ VIEWreset(BAT *b)
 		n->H->parentid = n->T->parentid = 0;
 		n->batRestricted = BAT_WRITE;
 		n->GDKversion = GDKLIBRARY;
+
+		/* reset BOUND2KEY */
+		n->H->key = BAThkey(v);
+		n->T->key = BATtkey(v);
 
 		/* copy the heaps */
 		n->H->heap = head;
