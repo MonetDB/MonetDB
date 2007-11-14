@@ -102,7 +102,7 @@ implementation for shifted window arithmetic as well.
 	}
 	bn->hsorted = b->hsorted;
 	bn->tsorted = FALSE;
-	BATkey(bn, b->hkey);
+	BATkey(bn, BAThkey(b));
 	BATkey(BATmirror(bn), FALSE);
 
 @- IfThenElse
