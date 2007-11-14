@@ -246,23 +246,24 @@ pcre_patindex(int *ret, str val, str pat)
 #else
 
 #include <pcre.h>
-#define m2p(p) (pcre*)(((sht*)p)+1)
-#define p2m(p) (pcre*)(((sht*)p)-1)
+
+#define m2p(p) (pcre*)(((size_t*)p)+1)
+#define p2m(p) (pcre*)(((size_t*)p)-1)
 
 void *
 my_pcre_malloc(size_t s)
 {
-	char *r = GDKmalloc(s + sizeof(sht));
-	sht *sz = (sht *) r;
+	char *r = GDKmalloc(s + sizeof(size_t));
+	size_t *sz = (size_t *) r;
 
-	*sz = s + sizeof(sht);
+	*sz = s + sizeof(size_t);
 	return (void *) (sz + 1);
 }
 
 void
 my_pcre_free(void *blk)
 {
-	sht *sz = (sht *) blk;
+	size_t *sz = (size_t *) blk;
 
 	sz -= 1;
 	GDKfree((void *) sz);
@@ -720,7 +721,7 @@ pcre_del(Heap *h, var_t *idx)
 	HEAP_free(h, *idx);
 }
 
-#define pcresize(val) ((sht*)val)[0]
+#define pcresize(val) ((size_t*)val)[0]
 
 var_t
 pcre_put(Heap *h, var_t *bun, pcre * val)
