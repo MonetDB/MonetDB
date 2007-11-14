@@ -194,8 +194,46 @@ OPTremapImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			} else {
 				pushInstruction(mb, p);
 			}
-		} else
+		} else if (p->argc == 4 && 
+			getModuleId(p) == aggrRef && 
+			getFunctionId(p) == avgRef) {
+			/* group aggr.avg -> aggr.sum/aggr.count */	
+			InstrPtr sum = copyInstruction(p), avg, t;
+			InstrPtr cnt = copyInstruction(p);
+			setFunctionId(sum, sumRef);
+			setFunctionId(cnt, countRef);
+			getArg(sum,0) = newTmpVariable(mb, getArgType(mb, p, 1));
+			getArg(cnt,0) = newTmpVariable(mb, newBatType(TYPE_oid,TYPE_int));
+			pushInstruction(mb, sum);
+			pushInstruction(mb, cnt);
+
+			t = newInstruction(mb, ASSIGNsymbol);
+			setModuleId(t, batcalcRef);
+			setFunctionId(t, dblRef);
+			getArg(t,0) = newTmpVariable(mb, getArgType(mb, p, 0));
+			t = pushArgument(mb, t, getDestVar(sum));
+			pushInstruction(mb, t);
+			sum = t;
+
+			t = newInstruction(mb, ASSIGNsymbol);
+			setModuleId(t, batcalcRef);
+			setFunctionId(t, dblRef);
+			getArg(t,0) = newTmpVariable(mb, getArgType(mb, p, 0));
+			t = pushArgument(mb, t, getDestVar(cnt));
+			pushInstruction(mb, t);
+			cnt = t;
+
+			avg = newInstruction(mb, ASSIGNsymbol);
+			setModuleId(avg, batcalcRef);
+			setFunctionId(avg, divRef);
+			getArg(avg, 0) = getArg(p, 0);
+			avg = pushArgument(mb, avg, getDestVar(sum));
+			avg = pushArgument(mb, avg, getDestVar(cnt));
+			freeInstruction(p);
+			pushInstruction(mb, avg);
+		} else {
 			pushInstruction(mb, p);
+		}
 	}
 	for(; i<slimit; i++)
 	if( old[i])
