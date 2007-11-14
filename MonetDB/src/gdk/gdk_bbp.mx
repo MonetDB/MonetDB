@@ -269,7 +269,7 @@ Note that this also means that updates to the BBP\_status indicator array
 must be protected by GDKswapLock. 
 
 To reduce contention GDKswapLock was split into multiple locks; it is now 
-an array of lock pointers which is accessed by GDKswapLock[ABS(bat)\&BBP_BATMASK]
+an array of lock pointers which is accessed by GDKswapLock(ABS(bat))
 @end table
 
 Routines that need both locks should first acquire the locks in the GDKswapLock 
@@ -862,10 +862,10 @@ BBPgetdesc(bat i)
 				BBPclear(i);
 			} else if (BBP_desc(i) == NULL) {
 				if (lock)
-					gdk_set_lock(GDKswapLock(i & BBP_BATMASK), "BBPgetdesc");
+					gdk_set_lock(GDKswapLock(i), "BBPgetdesc");
 				BBP_desc(i) = (BATstore *) b;
 				if (lock)
-					gdk_unset_lock(GDKswapLock(i & BBP_BATMASK), "BBPgetdesc");
+					gdk_unset_lock(GDKswapLock(i), "BBPgetdesc");
 			}
 		}
 		if (b)
@@ -1033,7 +1033,7 @@ BBPcacheit(BAT *b)
 		i = BBPinsert(b);	/* bat was not previously entered */
 	}
 	if (lock)
-		gdk_set_lock(GDKswapLock(i & BBP_BATMASK), "BBPcacheit");
+		gdk_set_lock(GDKswapLock(i), "BBPcacheit");
 	mode = (BBP_status(i) | BBPLOADED) & ~(BBPLOADING | BBPDELETING);
 	BBP_status_set(i, mode, "BBPcacheit");
 	BBP_lastused(i) = BBPLASTUSED(BBPstamp() + ((mode == BBPLOADED) ? 150 : 0));
@@ -1052,7 +1052,7 @@ BBPcacheit(BAT *b)
 	BBP_cache(-i) = bm;
 
 	if (lock)
-		gdk_unset_lock(GDKswapLock(i & BBP_BATMASK), "BBPcacheit");
+		gdk_unset_lock(GDKswapLock(i), "BBPcacheit");
 }
 
 @
@@ -1211,10 +1211,10 @@ BBPrename(bat bid, str nme)
 		int lock = locked_by ? BBP_getpid() != locked_by : 1;
 
 		if (lock)
-			gdk_set_lock(GDKswapLock(i & BBP_BATMASK), "BBPrename");
+			gdk_set_lock(GDKswapLock(i), "BBPrename");
 		BBP_status_on(ABS(bid), BBPRENAMED, "BBPrename");
 		if (lock)
-			gdk_unset_lock(GDKswapLock(i & BBP_BATMASK), "BBPrename");
+			gdk_unset_lock(GDKswapLock(i), "BBPrename");
 		BBPdirty(1);
 	}
 	gdk_unset_lock(GDKnameLock, "BBPrename");
@@ -1273,14 +1273,15 @@ incref(bat i, int logical, int lock)
 		i = -i;
 	if (BBPcheck(i, "BBPincref")) {
 		if (lock) {
-			gdk_set_lock(GDKswapLock(i & BBP_BATMASK), "BBPincref");
+			gdk_set_lock(GDKswapLock(i), "BBPincref");
 
 			while (BBP_status(i) & BBPUNSTABLE) {
-				gdk_unset_lock(GDKswapLock(i & BBP_BATMASK), "BBPincref spin wait");
+				gdk_unset_lock(GDKswapLock(i), "BBPincref spin wait");
 				MT_sleep_ms(1);
-				gdk_set_lock(GDKswapLock(i & BBP_BATMASK), "BBPincref spin wait");
+				gdk_set_lock(GDKswapLock(i), "BBPincref spin wait");
 			}
 		}
+		assert(BBP_refs(i)+BBP_lrefs(i));
 
 		/* got the lock */
 		if (logical) {
@@ -1289,7 +1290,7 @@ incref(bat i, int logical, int lock)
 			refs = ++BBP_refs(i);
 		}
 		if (lock)
-			gdk_unset_lock(GDKswapLock(i & BBP_BATMASK), "BBPfix");
+			gdk_unset_lock(GDKswapLock(i), "BBPfix");
 	}
 	return refs;
 }
@@ -1306,18 +1307,15 @@ void
 BBPshare(bat parent)
 {
 	int lock = locked_by ? BBP_getpid() != locked_by : 1;
-	int fix = 0;
 
 	if (parent < 0)
 		parent = -parent;
 	if (lock)
-		gdk_set_lock(GDKswapLock(parent & BBP_BATMASK), "BBPshare");
+		gdk_set_lock(GDKswapLock(parent), "BBPshare");
 	if (++BBP_cache(parent)->batSharecnt == 1)
-		fix = 1;
+		(void) incref(parent, FALSE, 0);
 	if (lock)
-		gdk_unset_lock(GDKswapLock(parent & BBP_BATMASK), "BBPshare");
-	if (fix)
-		BBPincref(parent, FALSE);
+		gdk_unset_lock(GDKswapLock(parent), "BBPshare");
 }
 
 static INLINE int
@@ -1330,12 +1328,14 @@ decref(bat i, int logical, int lock)
 	if (logical) {
 		if (BBP_lrefs(i) == 0) {
 			GDKerror("BBPdecref: %s does not have logical references.\n", BBPname(i));
+			assert(0);
 		} else {
 			refs = --BBP_lrefs(i);
 		}
 	} else {
 		if (BBP_refs(i) == 0) {
 			GDKerror("BBPdecref: %s does not have pointer fixes.\n", BBPname(i));
+			assert(0);
 		} else {
 			refs = --BBP_refs(i);
 		}
@@ -1363,7 +1363,7 @@ decref(bat i, int logical, int lock)
 
 	/* unlock before re-locking in unload; as saving a dirty persistent bat may take a long time */
 	if (lock)
-		gdk_unset_lock(GDKswapLock(i & BBP_BATMASK), "BBPdecref");
+		gdk_unset_lock(GDKswapLock(i), "BBPdecref");
 
 	if (swap_unloading) {
 		BBPspin(i, "BBPdecref", BBPUNLOADING);	/* wait for unload to complete */
@@ -1393,7 +1393,7 @@ BBPdecref(bat i, int logical)
 	if (i < 0)
 		i = -i;
 	if (lock)
-		gdk_set_lock(GDKswapLock(i & BBP_BATMASK), "BBPdecref");
+		gdk_set_lock(GDKswapLock(i), "BBPdecref");
 	return decref(i, logical, lock);
 }
 
@@ -1415,20 +1415,21 @@ BBPkeepref(bat i)
 		i = -i;
 	if (BBPcheck(i, "BBPkeepref")) {
 		if (lock)
-			gdk_set_lock(GDKswapLock(i & BBP_BATMASK), "BBPkeepref");
+			gdk_set_lock(GDKswapLock(i), "BBPkeepref");
 
 		while (BBP_status(i) & BBPUNLOADING) {
 			if (lock)
-				gdk_unset_lock(GDKswapLock(i & BBP_BATMASK), "BBPincref spin wait");
+				gdk_unset_lock(GDKswapLock(i), "BBPincref spin wait");
 			MT_sleep_ms(1);
 			if (lock)
-				gdk_set_lock(GDKswapLock(i & BBP_BATMASK), "BBPincref spin wait");
+				gdk_set_lock(GDKswapLock(i), "BBPincref spin wait");
 		}
 		/* got the lock */
 		++BBP_lrefs(i);
+		assert(BBP_refs(i));
 		--BBP_refs(i);
 		if (lock)
-			gdk_unset_lock(GDKswapLock(i & BBP_BATMASK), "BBPfix");
+			gdk_unset_lock(GDKswapLock(i), "BBPfix");
 		/* decref(i, FALSE, lock); */
 	}
 }
@@ -1443,21 +1444,23 @@ BBPreleaselref(bat i)
 		i = -i;
 	if (BBPcheck(i, "BBPreleaselref")) {
 		if (lock)
-			gdk_set_lock(GDKswapLock(i & BBP_BATMASK), "BBPreleaselref");
+			gdk_set_lock(GDKswapLock(i), "BBPreleaselref");
 
 		while (BBP_status(i) & BBPUNLOADING) {
 			if (lock)
-				gdk_unset_lock(GDKswapLock(i & BBP_BATMASK), "BBPincref spin wait");
+				gdk_unset_lock(GDKswapLock(i), "BBPincref spin wait");
 			MT_sleep_ms(1);
 			if (lock)
-				gdk_set_lock(GDKswapLock(i & BBP_BATMASK), "BBPincref spin wait");
+				gdk_set_lock(GDKswapLock(i), "BBPincref spin wait");
 		}
 		/* got the lock */
+		assert(BBP_lrefs(i));
 		--BBP_lrefs(i);
 		if (lock)
-			gdk_unset_lock(GDKswapLock(i & BBP_BATMASK), "BBPfix");
+			gdk_unset_lock(GDKswapLock(i), "BBPfix");
 	}
 }
+
 void
 BBPreleaseref(bat i)
 {
@@ -1469,19 +1472,20 @@ BBPreleaseref(bat i)
 		i = -i;
 	if (BBPcheck(i, "BBPreleaseref")) {
 		if (lock)
-			gdk_set_lock(GDKswapLock(i & BBP_BATMASK), "BBPreleaseref");
+			gdk_set_lock(GDKswapLock(i), "BBPreleaseref");
 
 		while (BBP_status(i) & BBPUNLOADING) {
 			if (lock)
-				gdk_unset_lock(GDKswapLock(i & BBP_BATMASK), "BBPincref spin wait");
+				gdk_unset_lock(GDKswapLock(i), "BBPincref spin wait");
 			MT_sleep_ms(1);
 			if (lock)
-				gdk_set_lock(GDKswapLock(i & BBP_BATMASK), "BBPincref spin wait");
+				gdk_set_lock(GDKswapLock(i), "BBPincref spin wait");
 		}
 		/* got the lock */
+		assert(BBP_refs(i));
 		--BBP_refs(i);
 		if (lock)
-			gdk_unset_lock(GDKswapLock(i & BBP_BATMASK), "BBPfix");
+			gdk_unset_lock(GDKswapLock(i), "BBPfix");
 	}
 }
 
@@ -1493,12 +1497,11 @@ unshare(bat parent)
 	if (parent < 0)
 		parent = -parent;
 	if (lock)
-		gdk_set_lock(GDKswapLock(parent & BBP_BATMASK), "BBPunshare");
-	if (--BBP_cache(parent)->batSharecnt == 0) {
-		(void) decref(parent, FALSE, lock);
-	} else if (lock) {
-		gdk_unset_lock(GDKswapLock(parent & BBP_BATMASK), "BBPunshare");
-	}
+		gdk_set_lock(GDKswapLock(parent), "BBPunshare");
+	if (--BBP_cache(parent)->batSharecnt == 0) 
+		(void) decref(parent, FALSE, 0);
+	if (lock) 
+		gdk_unset_lock(GDKswapLock(parent), "BBPunshare");
 }
 
 void
@@ -1524,12 +1527,13 @@ BBPreclaim(BAT *b)
 	int ret = 0;
 
 	if (lock)
-		gdk_set_lock(GDKswapLock(i & BBP_BATMASK), "BBPreclaim");
+		gdk_set_lock(GDKswapLock(i), "BBPreclaim");
 
 	BATDEBUG THRprintf(GDKout, "#BBPreclaim: bat(%d) view=%d lrefs=%d ref=%d stat=%d\n", (int) b->batCacheid, b->batSharecnt, BBP_lrefs(b->batCacheid), BBP_refs(b->batCacheid), BBP_status(b->batCacheid));
 
 	if (BBP_refs(b->batCacheid) > 1) {
 		GDKerror("BBPreclaim: %d refs > 1 (%d)\n", i, BBP_refs(i));
+		assert(0);
 		ret = -1;
 	} else if (BBP_status(i) & BBPUNLOADING) {
 		/* BBPtrim was unloading this bat that just now is getting killed. */
@@ -1540,7 +1544,7 @@ BBPreclaim(BAT *b)
 		BBP_status_on(i, BBPUNLOADING, "BBPreclaim");
 	}
 	if (lock)
-		gdk_unset_lock(GDKswapLock(i & BBP_BATMASK), "BBPreclaim");
+		gdk_unset_lock(GDKswapLock(i), "BBPreclaim");
 
 	if (reclaim_while_unloading) {
 		BBPspin(i, "BBPreclaim", BBPUNLOADING);	/* wait for unload to complete */
@@ -1580,13 +1584,13 @@ BBPdescriptor(bat i)
 	if ((b = BBP_cache(i)) == NULL) {
 
 		if (lock)
-			gdk_set_lock(GDKswapLock(j & BBP_BATMASK), "BBPdescriptor");
+			gdk_set_lock(GDKswapLock(j), "BBPdescriptor");
 		while (BBP_status(j) & BBPWAITING) {	/* wait for bat to be loaded by other thread */
 			if (lock)
-				gdk_unset_lock(GDKswapLock(j & BBP_BATMASK), "BBPdescriptor");
+				gdk_unset_lock(GDKswapLock(j), "BBPdescriptor");
 			MT_sleep_ms(1);
 			if (lock)
-				gdk_set_lock(GDKswapLock(j & BBP_BATMASK), "BBPdescriptor");
+				gdk_set_lock(GDKswapLock(j), "BBPdescriptor");
 		}
 		if (BBPvalid(j)) {
 			b = BBP_cache(i);
@@ -1596,7 +1600,7 @@ BBPdescriptor(bat i)
 			}
 		}
 		if (lock)
-			gdk_unset_lock(GDKswapLock(j & BBP_BATMASK), "BBPdescriptor");
+			gdk_unset_lock(GDKswapLock(j), "BBPdescriptor");
 	}
 	if (load) {
 		IODEBUG THRprintf(GDKout, "#load %s\n", BBPname(i));
@@ -1628,13 +1632,13 @@ BBPsave(BAT *b)
 		return 0;
 
 	if (lock)
-		gdk_set_lock(GDKswapLock(bid & BBP_BATMASK), "BBPsave");
+		gdk_set_lock(GDKswapLock(bid), "BBPsave");
 
 	if (BBP_status(bid) & BBPSAVING) {
 		/* wait until save in other thread completes */
 		BBPspin(bid, "BBPsave", BBPSAVING);
 		if (lock)
-			gdk_unset_lock(GDKswapLock(bid & BBP_BATMASK), "BBPsave");
+			gdk_unset_lock(GDKswapLock(bid), "BBPsave");
 	} else {
 		/* save it */
 		int flags = BBPSAVING;
@@ -1648,7 +1652,7 @@ BBPsave(BAT *b)
 		}
 		BBP_status_on(bid, flags, "BBPsave");
 		if (lock)
-			gdk_unset_lock(GDKswapLock(bid & BBP_BATMASK), "BBPsave");
+			gdk_unset_lock(GDKswapLock(bid), "BBPsave");
 
 		IODEBUG THRprintf(GDKout, "#save %s\n", BATgetId(b));
 
@@ -2032,7 +2036,7 @@ BBPtrim(size_t memtarget, size_t vmtarget)
 		for (i = 0; i <= BBP_THREADMASK; i++)
 			gdk_set_lock(GDKcacheLock(i), "BBPtrim");
 		for (i = 0; i <= BBP_BATMASK; i++)
-			gdk_set_lock(GDKswapLock(i & BBP_BATMASK), "BBPtrim");
+			gdk_set_lock(GDKswapLock(i), "BBPtrim");
 
 		/* gather a list of unload candidate BATs, but try to avoid scanning by reusing previous leftovers first */
 		if (scan) {
@@ -2052,7 +2056,7 @@ BBPtrim(size_t memtarget, size_t vmtarget)
 
 		/* release the BBP locks */
 		for (i = 0; i <= BBP_BATMASK; i++)
-			gdk_unset_lock(GDKswapLock(i & BBP_BATMASK), "BBPtrim");
+			gdk_unset_lock(GDKswapLock(i), "BBPtrim");
 		for (i = 0; i <= BBP_THREADMASK; i++)
 			gdk_unset_lock(GDKcacheLock(i), "BBPtrim");
 
@@ -2094,10 +2098,10 @@ BBPhot(bat i)
 		int lock = locked_by ? BBP_getpid() != locked_by : 1;
 
 		if (lock)
-			gdk_set_lock(GDKswapLock(i & BBP_BATMASK), "BBPhot");
+			gdk_set_lock(GDKswapLock(i), "BBPhot");
 		BBP_lastused(i) = BBPLASTUSED(BBPstamp() + 30000);
 		if (lock)
-			gdk_unset_lock(GDKswapLock(i & BBP_BATMASK), "BBPhot");
+			gdk_unset_lock(GDKswapLock(i), "BBPhot");
 	}
 }
 
@@ -2112,7 +2116,7 @@ BBPcold(bat i)
 
 		gdk_set_lock(GDKtrimLock(pid & BBP_THREADMASK), "BBPcold");
 		if (lock)
-			gdk_set_lock(GDKswapLock(i & BBP_BATMASK), "BBPcold");
+			gdk_set_lock(GDKswapLock(i), "BBPcold");
 		/* make very cold and insert on top of trim list */
 		BBP_lastused(i) = 0;
 		if (BBP_cache(i) && bbptrimlast < bbptrimmax) {
@@ -2122,7 +2126,7 @@ BBPcold(bat i)
 			bbptrimfirst = bbptrimmax;
 		}
 		if (lock)
-			gdk_unset_lock(GDKswapLock(i & BBP_BATMASK), "BBPcold");
+			gdk_unset_lock(GDKswapLock(i), "BBPcold");
 		gdk_unset_lock(GDKtrimLock(pid & BBP_THREADMASK), "BBPcold");
 	}
 }
@@ -2158,6 +2162,7 @@ BBPquickdesc(bat bid, int delaccess)
 
 	if (bid < 0) {
 		GDKerror("BBPquickdesc: called with negative batid.\n");
+		assert(0);
 		return NULL;
 	}
 	if (b) {
@@ -2518,23 +2523,21 @@ BBPrecycle(int ht, int tt, size_t cap)
 	b = BBP_cache(bid);
 	if (b) {
 		/* make the bat empty; do this extra work only if the bat is reused (not in BBPaddtobin) */
-		BAT *m = BBP_cache(-bid);
-
-		b->htype = m->ttype = ht;
+		b->htype = ht;
         	b->H->varsized = BATatoms[b->htype].varsized;
 		b->hsorted = ATOMlinear(ht) ? GDK_SORTED : 0;
 		b->halign = 0;
-		b->hkey = m->tkey = FALSE;
+		b->hkey = FALSE;
 		b->hdense = 0;
-		b->hseqbase = m->tseqbase = (ht == TYPE_void) ? oid_nil : 0;
+		b->hseqbase = (ht == TYPE_void) ? oid_nil : 0;
 
-		b->ttype = m->htype = tt;
+		b->ttype = tt;
         	b->T->varsized = BATatoms[b->ttype].varsized;
 		b->tsorted = ATOMlinear(tt) ? GDK_SORTED : 0;
 		b->talign = 0;
-		b->tkey = m->hkey = FALSE;
+		b->tkey = FALSE;
 		b->tdense = 0;
-		b->tseqbase = m->hseqbase = (tt == TYPE_void) ? oid_nil : 0;
+		b->tseqbase = (tt == TYPE_void) ? oid_nil : 0;
 
 		b->batSet = FALSE;
 		b->batFirst = b->batInserted = b->batDeleted = 0;
@@ -2758,7 +2761,7 @@ BBPprepare(bit subcommit)
 	int start_subcommit, ret = 0, set = 1 + subcommit;
 
 	/* tmLock is only used here, helds usually very shortly just to protect the file counters */
-	gdk_unset_lock(GDKtmLock, "BBPprepare");
+	gdk_set_lock(GDKtmLock, "BBPprepare");
 
 	start_subcommit = (subcommit && backup_subdir == 0);
 	if (start_subcommit) {
