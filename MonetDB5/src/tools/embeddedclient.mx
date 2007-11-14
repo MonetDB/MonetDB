@@ -78,12 +78,10 @@ static void
 Monet_init(opt **set, int setlen)
 {
 	/* determine Monet's kernel settings. */
-	setlen = mo_add_option(set, setlen, opt_config, "gdk_embedded", "yes");
+	setlen = mo_add_option(set, setlen, opt_cmdline, "gdk_embedded", "yes");
 	if (!GDKinit(*set, setlen))
 		return;
-
-	if (GDKgetenv_isyes("monet_daemon"))
-		monet_daemon = 1;
+	monet_daemon = GDKembedded;
 }
 
 static opt *embedded_set = NULL;

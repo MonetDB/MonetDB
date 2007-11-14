@@ -77,7 +77,7 @@ static Client
 Monet_init(opt **set, int setlen)
 {
 	/* determine Monet's kernel settings. */
-	setlen = mo_add_option(set, setlen, opt_config, "gdk_embedded", "yes");
+	setlen = mo_add_option(set, setlen, opt_cmdline, "gdk_embedded", "yes");
 	if (!GDKinit(*set, setlen)) 
 		return NULL;
 
