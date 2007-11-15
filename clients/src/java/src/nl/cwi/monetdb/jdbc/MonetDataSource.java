@@ -64,7 +64,7 @@ public class MonetDataSource implements DataSource {
 	public MonetDataSource() {
 		databaseName = "demo";
 		hostName = "localhost";
-		portNumber = 45123;
+		portNumber = 50000;
 		description = "MonetDB database";
 
 		driver = new MonetDriver();
