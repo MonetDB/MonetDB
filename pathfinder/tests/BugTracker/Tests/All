@@ -117,7 +117,7 @@ collection_management.SF-1726599
 attribute_access_mposjoin_error.SF-1726928
 insert_large_doc.SF-1726954
 32_docs.SF-1730617
-JDBC_250_results.SF-1730556
+HAVE_JAVA?JDBC_250_results.SF-1730556
 crash_on_concatenated_query.SF-1730547
 error_in_preceeding_axis.SF-1731850
 attribute_serialization.SF-1743442
@@ -134,3 +134,4 @@ pf-O0_produces_wrong_MIL.SF-1771532
 insert_attribute_gives_ERROR_in_merged_union.SF-1763575
 immune_for_updates.SF-1766259
 repeated-insert.SF-1814911
+fn_normalize-space.SF-1828362
