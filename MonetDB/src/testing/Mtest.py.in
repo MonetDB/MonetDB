@@ -3092,8 +3092,9 @@ def main(argv) :
         if os.path.isdir(env[p]):
             os.chdir(env[p])
             if os.getcwd() != env[p]:
-                Warn(p+": Replacing logical path  "+env[p]+
-                     "  by absolute physical path  "+os.getcwd())
+                if not quiet:
+                    Warn(p+": Replacing logical path  "+env[p]+
+                         "  by absolute physical path  "+os.getcwd())
                 env[p] = os.getcwd()
         else:
             ErrXit("Illegal "+p+": directory '"+env[p]+"' does not exist!")
