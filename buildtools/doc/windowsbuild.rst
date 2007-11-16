@@ -5,6 +5,14 @@ Building MonetDB On Windows
    http://docutils.sourceforge.net/ for more information).
    Use ``rst2html.py`` to convert this file to HTML.
 
+In this document we describe how to build the MonetDB suite of
+programs on Windows using the sources from our source repository at
+SourceForge__.  This document is mainly targeted at building on
+Windows XP on a 32-bit architecture, but there are notes throughout
+about building on Windows XP x64 which is indicated with Windows64.
+
+__ http://sourceforge.net/projects/monetdb/
+
 Prerequisites
 =============
 
@@ -56,6 +64,10 @@ compiler uses to determine which files to compile.  Python can be
 downloaded from http://www.python.org/.  Just download and install the
 Windows binary distribution.
 
+On Windows64 you can use either the 32-bit or 64-bit version of Python
+for creating the configuration files, but you will need the 64-bit
+version if you want to create the optional Python client modules.
+
 __ http://www.python.org/
 
 Bison
@@ -88,6 +100,12 @@ latest pthreads-\*-release.exe which is a self-extracting archive.
 Extract it, and move or copy the contents of the Pre-built.2 folder to
 ``C:\Pthreads`` (so that you end up with folders ``C:\Pthreads\lib`` and
 ``C:\Pthreads\include``).
+
+On Windows64, in a command interpreter, run ``nmake clean VC`` in the
+extracted ``pthreads.2`` folder with the Visual Studio environment set
+to the appropriate values, e.g. by executing the command ``Open Visual
+Studio 2005 x64 Win64 Command Prompt``.  Then copy the files
+``pthreadsVC2.dll`` and ``pthreadsVC2.lib`` to ``C:\Pthreads\lib``.
 
 Diff
 ----
@@ -127,6 +145,9 @@ can be gotten from http://www.zlatkovic.com/libxml.en.html.  Click on
 Win32 Binaries on the right, and download libxml2, iconv, and zlib.
 Install these in e.g. ``C:\``.
 
+On Windows64 you will have to compile libxml2 yourself (with its
+optional prerequisites iconv and zlib).
+
 __ http://xmlsoft.org/
 
 Optional Packages
@@ -162,7 +183,7 @@ the directory where the ZIP package was extracted.
 In order to get MonetDB to compile with these sources a few changes
 had to be made to the sources:
 
-- In the file Zend\zend.h, move the line
+- In the file ``Zend\zend.h``, move the line
   ::
 
    #include <stdio.h>
@@ -173,6 +194,8 @@ had to be made to the sources:
   ::
 
    #include "arpa/inet.h"
+
+We have no support yet for Windows64.
 
 __ http://www.php.net/
 
@@ -198,6 +221,11 @@ Visual Studio, and build and install.  Make sure you set the Solution
 Configuration to Release if you want to build a releasable version of
 the MonetDB suite.  The library will be installed in ``C:\Program
 Files\PCRE``.
+
+For Windows64, select the correct compiler (``Visual Studio 8 2005
+Win64``) and proceed normally.  When building the 32 bit version on
+Windows64, choose ``C:/Program Files (x86)/PCRE`` for the
+``CMAKE_INSTALL_PREFIX`` value.
 
 __ http://www.pcre.org/
 
