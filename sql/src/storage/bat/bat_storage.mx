@@ -86,6 +86,15 @@ e_bat(int type)
 }
 
 static log_bid 
+e_ubat(int type)
+{
+	if (!eubats[type]) 
+		eubats[type] = BATnew(TYPE_oid, type, 0);
+	return temp_create(eubats[type]);
+}
+
+
+static log_bid 
 ebat_copy(log_bid b, oid ibase, int temp)
 {
 	/* make a copy of b */
@@ -449,7 +458,10 @@ load_bat( char *sname, char *tname, char *bname, int type, int sz, lng *cnt )
 
 		if (BATcount(ub)) {
 			BAT *b  = temp_descriptor(bat->bid);
-			update_table_bat(b, ub);
+			void_replace_bat(b, ub, TRUE);
+
+			temp_destroy(bat->ubid);
+			bat->ubid = e_ubat(ub->ttype); 
 			bat_destroy(b);
 		}
 		bat_destroy(ub);
