@@ -12,6 +12,12 @@ stderr of test 'number_null_first_row.SF-1833286` in directory 'src/test/BugTrac
 # 21:23:57 >  mclient -lsql -umonetdb -Pmonetdb --host=koala --port=33754 
 # 21:23:57 >  
 
+MAPI  = monetdb@koala:33724
+QUERY = INSERT into "decimal_null" values (NULL);
+
+MAPI  = monetdb@koala:33724
+QUERY = INSERT into "decimal_null" values (NULL);
+
 
 # 21:23:57 >  
 # 21:23:57 >  Done.
