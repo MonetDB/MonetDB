@@ -44,7 +44,7 @@ import nl.cwi.monetdb.mcl.parser.*;
  * For each line read, it is determined what type of line it is
  * according to the MonetDB MAPI protocol.  This results in a line to be
  * PROMPT, HEADER, RESULT, ERROR or UNKNOWN.  Use the getLineType()
- * method on the MapiBufferedReader to retrieve the type of the last
+ * method on the BufferedMCLReader to retrieve the type of the last
  * line read.
  * <br /><br />
  * For debugging purposes a socket level debugging is implemented where
@@ -69,7 +69,7 @@ import nl.cwi.monetdb.mcl.parser.*;
  * are interfaced, so they can be chained in any way.  While the Socket
  * transparently deals with how data is sent over the wire, the actual
  * data read needs to be interpreted, for which a Reader/Writer
- * interface is most sufficient.  In particular the BufferedMCL
+ * interface is most sufficient.  In particular the BufferedMCL*
  * implementations of those interfaces supply some extra functionality
  * geared towards the format of the data.
  *
