@@ -82,3 +82,4 @@ convert_dec2varchar_crash.SF-1775550
 HAVE_JAVA?jdbc_no_debug.SF-1739356
 cascade_operations_in_different_sessions.SF-1823387_create
 cascade_operations_in_different_sessions.SF-1823387_drop
+number_null_first_row.SF-1833286

@@ -1927,8 +1927,13 @@ str_2dec_@1( @1 *res, str *val, int *d, int *sc )
 	lng value = 0;
 
 	if (!dot) {
-		throw(SQL, "@1", 
-			"\"%s\" is no decimal value (doesn't contain a '.')", *val);
+		if (GDK_STRNIL(*val)) {
+			*res = @1_nil;
+			return MAL_SUCCEED;
+		} else {
+			throw(SQL, "@1", 
+				"\"%s\" is no decimal value (doesn't contain a '.')", *val);
+		}
 	}
 		
 	value = decimal_from_str(s);

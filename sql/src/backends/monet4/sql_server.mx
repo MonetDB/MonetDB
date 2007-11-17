@@ -890,8 +890,13 @@ str_2dec_@1( @1 *res, str val, int *d, int *sc )
 	lng value = 0;
 
 	if (!dot) {
-		GDKerror("\"%s\" is no decimal value (doesn't contain a '.')", val);
-		return GDK_FAIL;
+		if (GDK_STRNIL(val)) {
+			*res = @1_nil;
+			return GDK_SUCCEED;
+		} else {
+			GDKerror("\"%s\" is no decimal value (doesn't contain a '.')", val);
+			return GDK_FAIL;
+		}
 	}
 		
 	value = decimal_from_str(s);

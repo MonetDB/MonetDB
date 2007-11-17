@@ -122,7 +122,6 @@ lib_monetdb = {
 	PREFIX =
 	NAME = _monetdb
 	SOURCES = monetdb.py.i
-	#LIBS = libembeddedsql $(PYTHON_LIBS) $(MONETDB_LIBS) -lmutils -lstream $(CLIENTS_LIBS) -lMapi
 	LIBS = libinitmodules STATIC_MODS @SHARED_LIBS@ lib_sql_server $(EXTRA_LIBS) \
 		libembeddedsql \
 		$(MONETDB_LIBS) -lbat -lmutils -lstream $(MONETDB4_LIBS) -lmonet $(CLIENTS_LIBS) -lMapi $(PYTHON_LIBS)
