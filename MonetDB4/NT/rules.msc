@@ -19,13 +19,6 @@
 RULESMSC = $(MONETDB_PREFIX)\share\MonetDB\winrules.msc
 !INCLUDE $(RULESMSC)
 
-!IFDEF HAVE_PCRE
-# This is the loccation of the PCRE library
-LIBPCRE = C:\Program Files\PCRE
-PCRE_LIBS = "$(LIBPCRE)\lib\pcre.lib"
-PCRE_CFLAGS = -DHAVE_LIBPCRE "-I$(LIBPCRE)\include"
-!ENDIF
-
 MONETDB_INCLUDEDIR=$(MONETDB_PREFIX)\include
 
 MONETDB_INCS=-I"$(MONETDB_INCLUDEDIR)" -I"$(MONETDB_INCLUDEDIR)\common" -I"$(MONETDB_INCLUDEDIR)\gdk"
