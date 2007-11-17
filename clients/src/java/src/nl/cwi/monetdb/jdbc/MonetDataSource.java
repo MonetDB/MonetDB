@@ -38,14 +38,12 @@ import java.io.*;
  * @version 0.1
  */
 public class MonetDataSource implements DataSource {
-	private String databaseName;
-	private String hostName;
-	private int portNumber;
 	private String description;
 	private int loginTimeout = 0;
 	private String user;
-	// insecure, but no big issue as long as MonetDB itself doesn't do decent authorisation
+	// insecure, but how to do it better?
 	private String password;
+	private String url;
 
 	// the following properties are also standard:
 	// private String dataSourceName;
@@ -58,14 +56,12 @@ public class MonetDataSource implements DataSource {
 
 	/**
 	 * Constructor of a MonetDataSource which uses default settings for a
-	 * connection.  You probably want to change these settings using the
-	 * methods setDatabaseName, setServerName, setPortNumber, etc.
+	 * connection.  You probably want to change this setting using the
+	 * method setURL.
 	 */
 	public MonetDataSource() {
-		databaseName = "demo";
-		hostName = "localhost";
-		portNumber = 45123;
 		description = "MonetDB database";
+		url = "jdbc:monetdb://localhost/";
 
 		driver = new MonetDriver();
 	}
@@ -90,7 +86,9 @@ public class MonetDataSource implements DataSource {
 	 * @return a MonetConnection
 	 * @throws SQLException if connecting to the database fails
 	 */
-	public Connection getConnection(String username, String password) throws SQLException {
+	public Connection getConnection(String username, String password)
+		throws SQLException
+	{
 		if (loginTimeout > 0) {
 			/// could enable Socket.setSoTimeout(int timeout) here...
 		}
@@ -98,10 +96,7 @@ public class MonetDataSource implements DataSource {
 		props.put("user", username);
 		props.put("password", password);
 
-		return(driver.connect(
-			"jdbc:monetdb://" + hostName + ":" + portNumber + "/" + databaseName,
-			props
-		));
+		return(driver.connect(url, props));
 	}
 
 
@@ -172,21 +167,21 @@ public class MonetDataSource implements DataSource {
 	}
 
 	/**
-	 * Gets the database name
+	 * Gets the connection URL
 	 *
-	 * @return the database name
+	 * @return the connection URL
 	 */
-	public String getDatabaseName() {
-		return(databaseName);
+	public String getURL() {
+		return(url);
 	}
 
 	/**
-	 * Sets the database name
+	 * Sets the connection URL
 	 *
-	 * @param databaseName the database name
+	 * @param url the connection URL
 	 */
-	public void setDatabaseName(String databaseName) {
-		this.databaseName = databaseName;
+	public void setDatabaseName(String url) {
+		this.url = url;
 	}
 
 	/**

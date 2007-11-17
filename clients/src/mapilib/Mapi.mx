@@ -2382,7 +2382,7 @@ mapi_start_talking(Mapi mid)
 				case '^':{
 					/* FIXME: there may be multiple redirects */
 					char *tmp = result->cache.line[i].rows;
-					char *tmp2 = "";
+					char *tmp2 = "", *p = NULL, *db = NULL;
 
 					/* redirect, looks like:
 					 * ^mapi:monetdb://localhost:50001/test?lang=sql&user=monetdb */
@@ -2400,23 +2400,26 @@ mapi_start_talking(Mapi mid)
 					/* parse components (we store the args
 					 * immediately in the mid... ok, that's dirty */
 					tmp += strlen("mapi:monetdb://");
-					mid->hostname = tmp;
+					p = tmp;
 					if ((tmp = strchr(tmp, ':')) != NULL) {
 						*tmp++ = '\0';
 						tmp2 = tmp;
 					} else {
-						tmp = mid->hostname;
+						tmp = p;
 					}
 					if ((tmp = strchr(tmp, '/')) != NULL) {
 						*tmp++ = '\0';
 						mid->port = atoi(tmp2);
 						if (mid->port == 0)
 							goto err;
-						mid->database = tmp;
+						db = tmp;
 					} else {
-						tmp = mid->hostname;
+						tmp = p;
 						goto err;
 					}
+					if (mid->hostname)
+						free(mid->hostname);
+					mid->hostname = strdup(p);
 					if ((tmp = strchr(tmp, '?')) != NULL) {
 						char *tmp3;
 
@@ -2454,6 +2457,10 @@ mapi_start_talking(Mapi mid)
 						} else
 							goto err;
 					}	/* no optional arguments (weird) */
+					if (mid->database) 
+						free(mid->database);
+					mid->database = (db)?strdup(db):NULL;
+
 					mid->redircnt++;
 					mapi_close_handle(hdl);
 					/* reconnect using the new values */

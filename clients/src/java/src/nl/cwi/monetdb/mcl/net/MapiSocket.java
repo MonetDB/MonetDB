@@ -632,6 +632,41 @@ public final class MapiSocket {
 		}
 
 		/**
+		 * Small wrapper to get a blocking variant of the read() method
+		 * on the BufferedInputStream.  We want to benefit from the
+		 * Buffered pre-fetching, but not dealing with half blocks.
+		 * Changing this class to be able to use the partially received
+		 * data will greatly complicate matters, while an performance
+		 * improvement is debatable given the relatively small size of
+		 * our blocks.  Maybe it does speed up on slower links, then
+		 * consider this method a quick bug fix/workaround.
+		 */
+		private boolean _read(byte[] b, int len) throws IOException {
+			int s;
+			int off = 0;
+
+			while (len > 0) {
+				s = in.read(b, off, len);
+				if (s == -1) {
+					// if we have read something before, we should have been
+					// able to read the whole, so make this fatal
+					if (off > 0) {
+						if (debug) {
+							logRd("the following incomplete block was received:");
+							logRx(new String(b, 0, off, "UTF-8"));
+						}
+						throw new IOException("Incomplete block read from stream");
+					}
+					return(false);
+				}
+				len -= s;
+				off += s;
+			}
+
+			return(true);
+		}
+
+		/**
 		 * Reads the next block on the stream into the internal buffer,
 		 * or writes the prompt in the buffer.
 		 *
@@ -656,11 +691,8 @@ public final class MapiSocket {
 		 */
 		private void readBlock() throws IOException {
 			// read next two bytes (short)
-			int size = in.read(blklen);
-			if (size == -1) throw
+			if (!_read(blklen, 2)) throw
 				new IOException("End of stream reached");
-			if (size < 2) throw
-				new AssertionError("Illegal start of block");
 
 			// Get the short-value and store its value in blockLen.
 			blockLen = (short)(
@@ -677,20 +709,17 @@ public final class MapiSocket {
 				}
 			}
 
-			size = in.read(block, 0, blockLen);
-			if (size == -1)
+			// sanity check to avoid bad servers make us do an ugly
+			// stack trace
+			if (blockLen > block.length)
+				throw new AssertionError("Server sent a block " +
+						"larger than BLOCKsize: " +
+						blockLen + " > " + block.length);
+			if (!_read(block, blockLen))
 				throw new IOException("End of stream reached");
-			if (size != blockLen) {
-				if (debug) {
-					logRd("the following incomplete block (" + size +
-							" bytes) was received:");
-					logRx(new String(block, 0, size, "UTF-8"));
-				}
-				throw new IOException("Incomplete block read from stream");
-			}
 
 			if (debug) {
-				logRx(new String(block, 0, size, "UTF-8"));
+				logRx(new String(block, 0, blockLen, "UTF-8"));
 			}
 
 			// if this is the last block, make it end with a newline and
