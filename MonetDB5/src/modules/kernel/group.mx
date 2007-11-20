@@ -1251,7 +1251,8 @@ GRPgroup(int *rethisto, int *retbid, int *bid)
 		throw(MAL, "group.group", "Cannot access descriptor");
 	}
 	if (BATcount(b) > 1024*1024 &&
-	    (b->ttype == TYPE_int || b->ttype == TYPE_lng)) { 
+	    (ATOMstorage(b->ttype) == TYPE_int || 
+	     ATOMstorage(b->ttype) == TYPE_lng)) { 
 		int N = BATcount(b), one = 1;
 		assert(N);
 		if (b->ttype == TYPE_int) {
