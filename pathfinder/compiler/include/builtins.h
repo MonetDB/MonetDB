@@ -618,6 +618,45 @@ struct PFla_pair_t PFbui_pf_text (const PFla_op_t *loop, bool ordering,
 struct PFla_pair_t PFbui_pf_supernode (const PFla_op_t *loop, bool ordering,
                                        struct PFla_pair_t *args);
 
+/* #3. UPDATE FUNCTIONS */
+struct PFla_pair_t PFbui_upd_rename (const PFla_op_t *loop, bool ordering,
+                                     struct PFla_pair_t *args);
+
+struct PFla_pair_t PFbui_upd_delete (const PFla_op_t *loop, bool ordering,
+                                     struct PFla_pair_t *args);
+
+struct PFla_pair_t PFbui_upd_insert_into_as_first (const PFla_op_t *loop,
+                                                   bool ordering,
+                                                   struct PFla_pair_t *args);
+
+struct PFla_pair_t PFbui_upd_insert_into_as_last (const PFla_op_t *loop,
+                                                  bool ordering,
+                                                  struct PFla_pair_t *args);
+
+struct PFla_pair_t PFbui_upd_insert_before (const PFla_op_t *loop,
+                                            bool ordering,
+                                            struct PFla_pair_t *args);
+
+struct PFla_pair_t PFbui_upd_insert_after (const PFla_op_t *loop,
+                                           bool ordering,
+                                           struct PFla_pair_t *args);
+
+struct PFla_pair_t PFbui_upd_replace_value_att (const PFla_op_t *loop,
+                                                bool ordering,
+                                                struct PFla_pair_t *args);
+
+struct PFla_pair_t PFbui_upd_replace_value (const PFla_op_t *loop,
+                                            bool ordering,
+                                            struct PFla_pair_t *args);
+
+struct PFla_pair_t PFbui_upd_replace_element (const PFla_op_t *loop,
+                                              bool ordering,
+                                              struct PFla_pair_t *args);
+
+struct PFla_pair_t PFbui_upd_replace_node (const PFla_op_t *loop,
+                                           bool ordering,
+                                           struct PFla_pair_t *args);
+
 #endif   /* BUITLINS_H */
 
 /* vim:set shiftwidth=4 expandtab: */

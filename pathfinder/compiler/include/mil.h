@@ -448,6 +448,20 @@ enum PFmil_access_t {
 };
 typedef enum PFmil_access_t PFmil_access_t;
 
+/* enum for update types */
+enum PFmil_update_t {
+      UPDATE_DUMMY          /**< skip zero enum */
+    , UPDATE_INSERT_FIRST
+    , UPDATE_INSERT_LAST
+    , UPDATE_INSERT_BEFORE
+    , UPDATE_INSERT_AFTER
+    , UPDATE_REPLACECONTENT
+    , UPDATE_REPLACENODE
+    , UPDATE_DELETE
+    , UPDATE_RENAME
+    , UPDATE_REPLACE
+};
+typedef enum PFmil_update_t PFmil_update_t;
 
 /** semantic content for MIL tree nodes */
 union PFmil_sem_t {

@@ -734,6 +734,13 @@ PFalg_simple_type_str (PFalg_simple_type_t type) {
         case aat_pnode: return "pnode";
         case aat_pre:   return "pre";
         case aat_pfrag: return "pfrag";
+        case aat_node1: return "node1";
+        case aat_anode1:return "attr1";
+        case aat_attr1: return "attrID1";
+        case aat_afrag1:return "afrag1";
+        case aat_pnode1:return "pnode1";
+        case aat_pre1:  return "pre1";
+        case aat_pfrag1:return "pfrag1";
         default:
             if (type & aat_update)
                 return "update";
@@ -747,13 +754,13 @@ PFalg_simple_type_str (PFalg_simple_type_t type) {
  * Checks whether a name is unique or not.
  */
 bool
-PFalg_is_unq_name(PFalg_att_t att) 
+PFalg_is_unq_name(PFalg_att_t att)
 {
     return ((1 << 3) & att) && (att & 7);
 }
 
 /**
- * Create an unique name based on an id @a id and 
+ * Create an unique name based on an id @a id and
  * an original name @a ori that retains the usage information
  * of the new variable (iter, pos or item).
  */
@@ -857,6 +864,7 @@ PFalg_ori_name (PFalg_att_t unq, PFalg_att_t free)
             if (free & att_item)   return att_item;
             if (free & att_item1)  return att_item1;
             if (free & att_item2)  return att_item2;
+            if (free & att_item3)  return att_item3;
             if (free & att_subty)  return att_subty;
             if (free & att_itemty) return att_itemty;
             if (free & att_notsub) return att_notsub;
@@ -998,6 +1006,16 @@ PFalg_fun_str (PFalg_fun_t fun)
         case alg_fun_fn_qname:            return "fn:QName";
         case alg_fun_pf_fragment:         return "#pf:fragment";
         case alg_fun_pf_supernode:        return "#pf:supernode";
+        case alg_fun_upd_rename:          return "upd:rename";
+        case alg_fun_upd_delete:          return "upd:delete";
+        case alg_fun_upd_insert_into_as_first:  return "upd:insertIntoAsFirst";
+        case alg_fun_upd_insert_into_as_last:   return "upd:insertIntoAsLast";
+        case alg_fun_upd_insert_before:         return "upd:insertBefore";
+        case alg_fun_upd_insert_after:          return "upd:insertAfter";
+        case alg_fun_upd_replace_value_att:     return "upd:replaceValue";
+        case alg_fun_upd_replace_value:         return "upd:replaceValue";
+        case alg_fun_upd_replace_element: return "upd:replaceElementContent";
+        case alg_fun_upd_replace_node:    return "upd:replaceNode";
     }
     PFoops (OOPS_FATAL, "unknown algebraic function name (%i)", fun);
     return NULL;

@@ -75,8 +75,8 @@
 #define aat_pre     0x00000200 /**< a node is represented by a pre value... */
 #define aat_pfrag   0x00000100 /**< ...and a node fragment */
 
-#define aat_charseq 0x00010000  /**< this type represents the CHAR type in SQL */
-#define aat_update  0x00010000  /**< and it represents the update kind in MIL */
+#define aat_charseq 0x00010000 /**< this type represents the CHAR type in SQL */
+#define aat_update  0x00010000 /**< and it represents the update kind in MIL */
 /**
  * The following types represent the first parameter of an update function
  * (which is a always of kind node). This allows an update item to correctly
@@ -116,7 +116,7 @@ typedef unsigned int nat;
 union PFalg_atom_val_t {
     nat           nat_;    /**< value for natural number atoms (#aat_nat) */
     long long int int_;    /**< value for integer atoms (#aat_int) */
-    char         *str;     /**< value for string and untyped atoms (#aat_str)  */
+    char         *str;     /**< value for string and untyped atoms (#aat_str) */
     double        dec_;     /**< value for decimal atoms (#aat_dec) */
     double        dbl;     /**< value for double atoms (#aat_dbl) */
     bool          bln;     /**< value for boolean atoms (#aat_bln) */
@@ -294,6 +294,16 @@ enum PFalg_fun_t {
     , alg_fun_fn_qname            /**< fn:QName */
     , alg_fun_pf_fragment         /**< #pf:fragment */
     , alg_fun_pf_supernode        /**< #pf:supernode */
+    , alg_fun_upd_rename          /**< upd:rename */
+    , alg_fun_upd_delete          /**< upd:delete */
+    , alg_fun_upd_insert_into_as_first    /**< upd:insertIntoAsFirst */
+    , alg_fun_upd_insert_into_as_last     /**< upd:insertIntoAsLast */
+    , alg_fun_upd_insert_before           /**< upd:insertBefore */
+    , alg_fun_upd_insert_after            /**< upd:insertAfter */
+    , alg_fun_upd_replace_value_att       /**< upd:replaceValue */
+    , alg_fun_upd_replace_value           /**< upd:replaceValue */
+    , alg_fun_upd_replace_element /**< upd:replaceElementContent */
+    , alg_fun_upd_replace_node    /**< upd:replaceNode */
 };
 typedef enum PFalg_fun_t PFalg_fun_t;
 

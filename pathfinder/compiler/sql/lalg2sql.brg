@@ -2731,6 +2731,17 @@ reduce (PFla_op_t * p, int goalnt)
                 case alg_fun_fn_qname:
                 case alg_fun_pf_fragment:
                 case alg_fun_pf_supernode:
+
+                case alg_fun_upd_delete:
+                case alg_fun_upd_rename:
+                case alg_fun_upd_insert_into_as_first:
+                case alg_fun_upd_insert_into_as_last:
+                case alg_fun_upd_insert_before:
+                case alg_fun_upd_insert_after:
+                case alg_fun_upd_replace_value_att:
+                case alg_fun_upd_replace_value:
+                case alg_fun_upd_replace_element:
+                case alg_fun_upd_replace_node:
                     /* FIXME: implementation is missing */
 
                     assert (!"missing");

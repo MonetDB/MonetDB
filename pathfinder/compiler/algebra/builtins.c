@@ -4385,4 +4385,291 @@ PFbui_pf_supernode (const PFla_op_t *loop, bool ordering,
         .frag = args[0].frag };
 }
 
+/* -------------------- */
+/* #3. UPDATE FUNCTIONS */
+/* -------------------- */
+
+/**
+ * Algebra implementation of updates functions. An update can be represented by
+ * the same generic algebra operator (fun1to1) as any row based function
+ * (e.g., the string functions). The mapping of multiple nodes to a target node
+ * (e.g., the insert* functions) as well as the item reversal (needed for some
+ * insert* functions) is be done during the translation from core to logical
+ * algebra.
+ */
+
+/**
+ * Built-in function upd:rename(node, QName)
+ */
+struct PFla_pair_t
+PFbui_upd_rename (const PFla_op_t *loop, bool ordering,
+                  struct PFla_pair_t *args)
+{
+    (void) loop; (void) ordering;
+
+    return (struct PFla_pair_t) {
+        .rel = project (
+                   fun_1to1 (
+                       eqjoin (args[0].rel,
+                               project (args[1].rel,
+                                        proj (att_iter1, att_iter),
+                                        proj (att_item1, att_item)),
+                               att_iter,
+                               att_iter1),
+                       alg_fun_upd_rename,
+                       att_res,
+                       attlist (att_item, att_item1)),
+                   proj (att_iter, att_iter),
+                   proj (att_pos, att_pos),
+                   proj (att_item, att_res)),
+        .frag = args[0].frag };
+}
+
+/**
+ * Built-in function upd:delete(node)
+ */
+struct PFla_pair_t
+PFbui_upd_delete (const PFla_op_t *loop, bool ordering,
+                  struct PFla_pair_t *args)
+{
+    (void) loop; (void) ordering;
+
+    return (struct PFla_pair_t) {
+        .rel = project ( fun_1to1 ( args[0].rel,
+                                    alg_fun_upd_delete,
+                                    att_res,
+                                    attlist (att_item)),
+                         proj (att_iter, att_iter),
+                         proj (att_pos, att_pos),
+                         proj (att_item, att_res)),
+        .frag = args[0].frag };
+}
+
+/**
+ * Built-in function
+ * upd:insertIntoAsFirst(node, node*)
+ * this should be node+ ...
+ */
+struct PFla_pair_t
+PFbui_upd_insert_into_as_first (const PFla_op_t *loop,
+                                bool ordering,
+                                struct PFla_pair_t *args)
+{
+    (void) loop; (void) ordering;
+
+    /* FIXME: also have to reverse the order of the sequence*/
+    return (struct PFla_pair_t) {
+        .rel = project (
+                   fun_1to1 (
+                       eqjoin (args[0].rel,
+                               project (args[1].rel,
+                                        proj (att_iter1, att_iter),
+                                        proj (att_item1, att_item)),
+                               att_iter,
+                               att_iter1),
+                       alg_fun_upd_insert_into_as_first,
+                       att_res,
+                       attlist (att_item, att_item1)),
+                   proj (att_iter, att_iter),
+                   proj (att_pos, att_pos),
+                   proj (att_item, att_res)),
+        .frag = args[0].frag };
+}
+
+/**
+ * Built-in function
+ * upd:insertIntoAsLast(node, node*)
+ * this should be node+ ...
+ */
+struct PFla_pair_t
+PFbui_upd_insert_into_as_last (const PFla_op_t *loop, bool ordering,
+                               struct PFla_pair_t *args)
+{
+    (void) loop; (void) ordering;
+
+    return (struct PFla_pair_t) {
+        .rel = project (
+                   fun_1to1 (
+                       eqjoin (args[0].rel,
+                               project (args[1].rel,
+                                        proj (att_iter1, att_iter),
+                                        proj (att_item1, att_item)),
+                               att_iter,
+                               att_iter1),
+                       alg_fun_upd_insert_into_as_last,
+                       att_res,
+                       attlist (att_item, att_item1)),
+                   proj (att_iter, att_iter),
+                   proj (att_pos, att_pos),
+                   proj (att_item, att_res)),
+        .frag = args[0].frag };
+}
+
+/**
+ * Built-in function upd:insertBefore(node, node*)
+ * this should be node+ ...
+ */
+struct PFla_pair_t
+PFbui_upd_insert_before (const PFla_op_t *loop, bool ordering,
+                         struct PFla_pair_t *args)
+{
+    (void) loop; (void) ordering;
+
+    /* FIXME: also have to reverse the order of the sequence*/
+    return (struct PFla_pair_t) {
+        .rel = project (
+                   fun_1to1 (
+                       eqjoin (args[0].rel,
+                               project (args[1].rel,
+                                        proj (att_iter1, att_iter),
+                                        proj (att_item1, att_item)),
+                               att_iter,
+                               att_iter1),
+                       alg_fun_upd_insert_before,
+                       att_res,
+                       attlist (att_item, att_item1)),
+                   proj (att_iter, att_iter),
+                   proj (att_pos, att_pos),
+                   proj (att_item, att_res)),
+        .frag = args[0].frag };
+}
+
+/**
+ * Built-in function upd:insertAfter(node, node*)
+ * this should be node+ ...
+ */
+struct PFla_pair_t
+PFbui_upd_insert_after (const PFla_op_t *loop, bool ordering,
+                        struct PFla_pair_t *args)
+{
+    (void) loop; (void) ordering;
+
+    return (struct PFla_pair_t) {
+        .rel = project (
+                   fun_1to1 (
+                       eqjoin (args[0].rel,
+                               project (args[1].rel,
+                                        proj (att_iter1, att_iter),
+                                        proj (att_item1, att_item)),
+                               att_iter,
+                               att_iter1),
+                       alg_fun_upd_insert_after,
+                       att_res,
+                       attlist (att_item, att_item1)),
+                   proj (att_iter, att_iter),
+                   proj (att_pos, att_pos),
+                   proj (att_item, att_res)),
+        .frag = args[0].frag };
+}
+
+/**
+ * Built-in function upd:replaceValue(anyAttribute, untypedAtomic)
+ */
+struct PFla_pair_t
+PFbui_upd_replace_value_att (const PFla_op_t *loop, bool ordering,
+                             struct PFla_pair_t *args)
+{
+    (void) loop; (void) ordering;
+
+    return (struct PFla_pair_t) {
+        .rel = project (
+                   fun_1to1 (
+                       eqjoin (args[0].rel,
+                               project (args[1].rel,
+                                        proj (att_iter1, att_iter),
+                                        proj (att_item1, att_item)),
+                               att_iter,
+                               att_iter1),
+                       alg_fun_upd_replace_value_att,
+                       att_res,
+                       attlist (att_item, att_item1)),
+                   proj (att_iter, att_iter),
+                   proj (att_pos, att_pos),
+                   proj (att_item, att_res)),
+        .frag = args[0].frag };
+}
+
+/**
+ * Built-in function upd:replaceValue(text(), untypedAtomic)
+ * Built-in function upd:replaceValue(processing-instr(), untypedAtomic)
+ * Built-in function upd:replaceValue(comment(), untypedAtomic)
+ */
+struct PFla_pair_t
+PFbui_upd_replace_value (const PFla_op_t *loop, bool ordering,
+                         struct PFla_pair_t *args)
+{
+    (void) loop; (void) ordering;
+
+    return (struct PFla_pair_t) {
+        .rel = project (
+                   fun_1to1 (
+                       eqjoin (args[0].rel,
+                               project (args[1].rel,
+                                        proj (att_iter1, att_iter),
+                                        proj (att_item1, att_item)),
+                               att_iter,
+                               att_iter1),
+                       alg_fun_upd_replace_value,
+                       att_res,
+                       attlist (att_item, att_item1)),
+                   proj (att_iter, att_iter),
+                   proj (att_pos, att_pos),
+                   proj (att_item, att_res)),
+        .frag = args[0].frag };
+}
+
+/**
+ * Built-in function upd:replaceElementContent(element(), text()?))
+ */
+struct PFla_pair_t
+PFbui_upd_replace_element (const PFla_op_t *loop, bool ordering,
+                           struct PFla_pair_t *args)
+{
+    (void) loop; (void) ordering;
+
+    return (struct PFla_pair_t) {
+        .rel = project (
+                   fun_1to1 (
+                       eqjoin (args[0].rel,
+                               project (args[1].rel,
+                                        proj (att_iter1, att_iter),
+                                        proj (att_item1, att_item)),
+                               att_iter,
+                               att_iter1),
+                       alg_fun_upd_replace_element,
+                       att_res,
+                       attlist (att_item, att_item1)),
+                   proj (att_iter, att_iter),
+                   proj (att_pos, att_pos),
+                   proj (att_item, att_res)),
+        .frag = args[0].frag };
+}
+
+/**
+ * Built-in function upd:replaceNode (node, node)
+ */
+struct PFla_pair_t
+PFbui_upd_replace_node (const PFla_op_t *loop, bool ordering,
+                        struct PFla_pair_t *args)
+{
+    (void) loop; (void) ordering;
+
+    return (struct PFla_pair_t) {
+        .rel = project (
+                   fun_1to1 (
+                       eqjoin (args[0].rel,
+                               project (args[1].rel,
+                                        proj (att_iter1, att_iter),
+                                        proj (att_item1, att_item)),
+                               att_iter,
+                               att_iter1),
+                       alg_fun_upd_replace_node,
+                       att_res,
+                       attlist (att_item, att_item1)),
+                   proj (att_iter, att_iter),
+                   proj (att_pos, att_pos),
+                   proj (att_item, att_res)),
+        .frag = args[0].frag };
+}
+
 /* vim:set shiftwidth=4 expandtab: */

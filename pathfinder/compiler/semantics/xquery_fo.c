@@ -2022,7 +2022,8 @@ PFfun_xquery_fo (void)
       { .ns = PFns_upd, .loc = "rename",
         .arity = 2, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_node (), PFty_xs_QName () },
-            .ret_ty = PFty_stmt () } } }
+            .ret_ty = PFty_stmt () } },
+        .alg = PFbui_upd_rename }
 #if 0
     /* This signature apparently is too strict (or our static type
      * inference too coarse).  Relaxed the type of the first argument
@@ -2040,7 +2041,8 @@ PFfun_xquery_fo (void)
       { .ns = PFns_upd, .loc = "delete",
         .arity = 1, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_node () },
-            .ret_ty = PFty_stmt () } } }
+            .ret_ty = PFty_stmt () } },
+        .alg = PFbui_upd_delete }
     ,  /* upd:insertIntoAsFirst ((xs:anyElement | document-node())?,
                                  node*) as stmt */
        /* FIXME: should be `elem | doc, node+', which would make
@@ -2051,7 +2053,8 @@ PFfun_xquery_fo (void)
                                      PFty_xs_anyElement (),
                                      PFty_doc (PFty_xs_anyNode ()))),
                                    PFty_star (PFty_node ()) },
-            .ret_ty = PFty_stmt () } } }
+            .ret_ty = PFty_stmt () } },
+        .alg = PFbui_upd_insert_into_as_first }
     ,  /* upd:insertIntoAsLast ((xs:anyElement | document-node())?,
                                 node*) as stmt */
        /* FIXME: should be `elem | doc, node+', which would make
@@ -2062,7 +2065,8 @@ PFfun_xquery_fo (void)
                                      PFty_xs_anyElement (),
                                      PFty_doc (PFty_xs_anyNode ()))),
                                    PFty_star (PFty_node ()) },
-            .ret_ty = PFty_stmt () } } }
+            .ret_ty = PFty_stmt () } },
+            .alg = PFbui_upd_insert_into_as_last }
     ,  /* upd:insertBefore (node, node*) as stmt */
        /* FIXME: should be node+, which would make trouble during
         *        type checking.                                    */
@@ -2070,7 +2074,8 @@ PFfun_xquery_fo (void)
         .arity = 2, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_node (),
                                    PFty_star (PFty_node ()) },
-            .ret_ty = PFty_stmt () } } }
+            .ret_ty = PFty_stmt () } },
+        .alg = PFbui_upd_insert_before }
     ,  /* upd:insertAfter (node, node*) as stmt */
        /* FIXME: should be node+, which would make trouble during
         *        type checking.                                    */
@@ -2078,43 +2083,50 @@ PFfun_xquery_fo (void)
         .arity = 2, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_node (),
                                    PFty_star (PFty_node ()) },
-            .ret_ty = PFty_stmt () } } }
+            .ret_ty = PFty_stmt () } },
+        .alg = PFbui_upd_insert_after }
     ,  /* upd:replaceValue (xs:anyAttribute, xdt:untypedAtomic) as stmt */
       { .ns = PFns_upd, .loc = "replaceValue",
         .arity = 2, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_xs_anyAttribute (),
                                    PFty_xdt_untypedAtomic () },
-            .ret_ty = PFty_stmt () } } }
+            .ret_ty = PFty_stmt () } },
+        .alg = PFbui_upd_replace_value_att }
     ,  /* upd:replaceValue (text(), xdt:untypedAtomic) as stmt */
       { .ns = PFns_upd, .loc = "replaceValue",
         .arity = 2, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_text (),
                                    PFty_xdt_untypedAtomic () },
-            .ret_ty = PFty_stmt () } } }
+            .ret_ty = PFty_stmt () } },
+        .alg = PFbui_upd_replace_value }
     ,  /* upd:replaceValue (processing-instr(), xdt:untypedAtomic) as stmt */
       { .ns = PFns_upd, .loc = "replaceValue",
         .arity = 2, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_pi (NULL),
                                    PFty_xdt_untypedAtomic () },
-            .ret_ty = PFty_stmt () } } }
+            .ret_ty = PFty_stmt () } },
+        .alg = PFbui_upd_replace_value }
     ,  /* upd:replaceValue (comment(), xdt:untypedAtomic) as stmt */
       { .ns = PFns_upd, .loc = "replaceValue",
         .arity = 2, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_comm (),
                                    PFty_xdt_untypedAtomic () },
-            .ret_ty = PFty_stmt () } } }
+            .ret_ty = PFty_stmt () } },
+        .alg = PFbui_upd_replace_value }
     , /* upd:replaceElementContent (element(), text()?) as stmt */
       { .ns = PFns_upd, .loc = "replaceElementContent",
         .arity = 2, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t []) { PFty_xs_anyElement (),
                                     PFty_opt (PFty_text ()) },
-            .ret_ty = PFty_stmt () } } }
+            .ret_ty = PFty_stmt () } },
+        .alg = PFbui_upd_replace_element }
     , /* upd:replaceNode (node, node) as stmt */
       { .ns = PFns_upd, .loc = "replaceNode",
         .arity = 2, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t []) { PFty_node (),
                                     PFty_star (PFty_node ()) },
-            .ret_ty = PFty_stmt () } } }
+            .ret_ty = PFty_stmt () } },
+        .alg = PFbui_upd_replace_node }
 
 
 #ifdef HAVE_PFTIJAH

@@ -447,6 +447,74 @@ infer_ocol (PFla_op_t *n)
 
                     res_type = ocol_at (L(n), ix[0]).type;
                     break;
+
+                case alg_fun_upd_delete:
+                    assert(n->sem.fun_1to1.refs.count == 1);
+                    /* make sure that the attribute is a node */
+                    assert(ocol_at (L(n), ix[0]).type & aat_node);
+
+                    /* the result type is aat_update bitwise OR the type of
+                    the target node shifted 4 bits to the left */
+                    assert((ocol_at (L(n), ix[0]).type << 4) & aat_node1);
+                    res_type = aat_update | (ocol_at (L(n), ix[0]).type << 4);
+                    break;
+
+                case alg_fun_upd_rename:
+                case alg_fun_upd_insert_into_as_first:
+                case alg_fun_upd_insert_into_as_last:
+                case alg_fun_upd_insert_before:
+                case alg_fun_upd_insert_after:
+                case alg_fun_upd_replace_value_att:
+                case alg_fun_upd_replace_value:
+                case alg_fun_upd_replace_element:
+                case alg_fun_upd_replace_node:
+                    assert(n->sem.fun_1to1.refs.count == 2);
+
+                    /* make some assertions according to the fun signature */
+                    switch (n->sem.fun_1to1.kind) {
+                        case alg_fun_upd_rename:
+                            assert(ocol_at (L(n), ix[0]).type & aat_node);
+                            assert(ocol_at (L(n), ix[1]).type & aat_qname);
+                            assert((ocol_at (L(n), ix[0]).type << 4) &
+                                   aat_node1);
+                            break;
+                        case alg_fun_upd_insert_into_as_first:
+                        case alg_fun_upd_insert_into_as_last:
+                        case alg_fun_upd_insert_before:
+                        case alg_fun_upd_insert_after:
+                        case alg_fun_upd_replace_node:
+                            assert(ocol_at (L(n), ix[0]).type & aat_node);
+                            assert(ocol_at (L(n), ix[1]).type & aat_node);
+                            assert((ocol_at (L(n), ix[0]).type << 4) &
+                                   aat_node1);
+                            break;
+                        case alg_fun_upd_replace_value_att:
+                            assert(ocol_at (L(n), ix[0]).type & aat_anode);
+                            assert(ocol_at (L(n), ix[1]).type & aat_uA);
+                            assert((ocol_at (L(n), ix[0]).type << 4) &
+                                   aat_anode1);
+                            break;
+                        case alg_fun_upd_replace_value:
+                            assert(ocol_at (L(n), ix[0]).type & aat_pnode);
+                            assert(ocol_at (L(n), ix[1]).type & aat_uA);
+                            assert((ocol_at (L(n), ix[0]).type << 4) &
+                                   aat_pnode1);
+                            break;
+                        case alg_fun_upd_replace_element:
+                            assert(ocol_at (L(n), ix[0]).type & aat_pnode);
+                            assert(ocol_at (L(n), ix[1]).type & aat_str);
+                            assert((ocol_at (L(n), ix[0]).type << 4) &
+                                   aat_pnode1);
+                            break;
+                        default: assert(!"should never reach here"); break;
+                    }
+
+                    /* the result type is aat_update bitwise OR the type of
+                       the target_node shifted 4 bits to the left bitwise OR
+                       the type of the second argument */
+                    res_type = aat_update | (ocol_at (L(n), ix[0]).type << 4)
+                                          |  ocol_at (L(n), ix[1]).type;
+                    break;
             }
 
             ocols (n) = copy_ocols (ocols (L(n)), ocols_count (L(n)) + 1);

@@ -1574,7 +1574,7 @@ PFpa_fun_1to1 (const PFpa_op_t *n,
             assert (n->schema.items[ix[0]].type == aat_str);
             assert (n->schema.items[ix[1]].type == aat_int &&
                     n->schema.items[ix[2]].type == aat_int);
- 
+
             res_type = aat_str;
             break;
 
@@ -1678,6 +1678,69 @@ PFpa_fun_1to1 (const PFpa_op_t *n,
             assert (n->schema.items[ix[0]].type & aat_node);
 
             res_type = n->schema.items[ix[0]].type;
+            break;
+
+        case alg_fun_upd_delete:
+            assert(refs.count == 1);
+            /* make sure that the attributes is a node */
+            assert(n->schema.items[ix[0]].type & aat_node);
+
+            /* the result type is aat_update bitwise OR the type of
+               the target node shifted 4 bits to the left */
+            assert((n->schema.items[ix[0]].type << 4) & aat_node1);
+            res_type = aat_update | (n->schema.items[ix[0]].type << 4);
+            break;
+
+        case alg_fun_upd_rename:
+        case alg_fun_upd_insert_into_as_first:
+        case alg_fun_upd_insert_into_as_last:
+        case alg_fun_upd_insert_before:
+        case alg_fun_upd_insert_after:
+        case alg_fun_upd_replace_value_att:
+        case alg_fun_upd_replace_value:
+        case alg_fun_upd_replace_element:
+        case alg_fun_upd_replace_node:
+            assert(refs.count == 2);
+
+            /* make some assertions according to the fun signature */
+            switch (kind) {
+                case alg_fun_upd_rename:
+                    assert(n->schema.items[ix[0]].type & aat_node);
+                    assert(n->schema.items[ix[1]].type & aat_qname);
+                    assert((n->schema.items[ix[0]].type << 4) & aat_node1);
+                    break;
+                case alg_fun_upd_insert_into_as_first:
+                case alg_fun_upd_insert_into_as_last:
+                case alg_fun_upd_insert_before:
+                case alg_fun_upd_insert_after:
+                case alg_fun_upd_replace_node:
+                    assert(n->schema.items[ix[0]].type & aat_node);
+                    assert(n->schema.items[ix[1]].type & aat_node);
+                    assert((n->schema.items[ix[0]].type << 4) & aat_node1);
+                    break;
+                case alg_fun_upd_replace_value_att:
+                    assert(n->schema.items[ix[0]].type & aat_anode);
+                    assert(n->schema.items[ix[1]].type & aat_uA);
+                    assert((n->schema.items[ix[0]].type << 4) & aat_anode1);
+                    break;
+                case alg_fun_upd_replace_value:
+                    assert(n->schema.items[ix[0]].type & aat_pnode);
+                    assert(n->schema.items[ix[1]].type & aat_uA);
+                    assert((n->schema.items[ix[0]].type << 4) & aat_pnode1);
+                    break;
+                case alg_fun_upd_replace_element:
+                    assert(n->schema.items[ix[0]].type & aat_pnode);
+                    assert(n->schema.items[ix[1]].type & aat_str);
+                    assert((n->schema.items[ix[0]].type << 4) & aat_pnode1);
+                    break;
+                default: assert(!"should never reach here"); break;
+            }
+
+            /* the result type is aat_update bitwise OR the type of
+               the target_node shifted 4 bits to the left bitwise OR
+               the type of the second argument */
+            res_type = aat_update | (n->schema.items[ix[0]].type << 4)
+                                  |  n->schema.items[ix[1]].type;
             break;
     }
 
