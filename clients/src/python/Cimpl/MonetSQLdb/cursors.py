@@ -116,12 +116,10 @@ class BaseCursor:
 
         """
         if not args: return
-        if not m:
-            r = 0
-            for a in args:
-                r = r + self._execute(query, a)
-            return r
-
+        r = 0
+        for a in args:
+            r = r + self.execute(query, a)
+        return r
 
     def __do_query(self, q):
         self._result = self.connection._mapi.query(q)
