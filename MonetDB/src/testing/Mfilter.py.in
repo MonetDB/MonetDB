@@ -312,6 +312,7 @@ def mFilter (FILE, IGNORE) :
     il = iw = ic = el = ew = ec = al = aw = ac = 0
     for iline in open(FILE):
         iline = iline.replace('\r', '')
+        iline = iline.replace('\033[?1034h','')
         oline = xline = ""
         if iline == "#~BeginVariableOutput~#\n"  or  iline == "#~BeginProfilingOutput~#\n":
             ig = 1
