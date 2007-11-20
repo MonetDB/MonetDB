@@ -93,5 +93,7 @@ $dbh->do('insert into perl_table values ( 3, \'three\');');
   print "field[0]: $row->[0]\n";
   print "field[1]: $row->[1]\n";
 }
+my $sth = $dbh->prepare('drop table perl_table;');
+$sth->execute;
 $dbh->disconnect;
 print "\nFinished\n";
