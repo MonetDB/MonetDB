@@ -55,7 +55,6 @@ user_role
 auths
 privileges
 profile
-perl_table
 id	name	schema_id	query	type	system	commit_action	temporary	
 981	schemas	980		0	true	0	0	
 986	types	980		0	true	0	0	
@@ -84,7 +83,6 @@ id	name	schema_id	query	type	system	commit_action	temporary
 3831	auths	980		0	true	0	0	
 3835	privileges	980		0	true	0	0	
 3841	profile	1081		0	true	2	0	
-3849	perl_table	980		0	false	0	0	
 
 # 20:50:24 >  
 # 20:50:24 >  Done.

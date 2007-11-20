@@ -12,11 +12,12 @@ stderr of test 'number_null_first_row.SF-1833286` in directory 'src/test/BugTrac
 # 21:23:57 >  mclient -lsql -umonetdb -Pmonetdb --host=koala --port=33754 
 # 21:23:57 >  
 
-MAPI  = monetdb@koala:33724
+MAPI  = monetdb@koala:37532
 QUERY = INSERT into "decimal_null" values (NULL);
-
-MAPI  = monetdb@koala:33724
+ERROR = !ERROR: INSERT INTO: NOT NULL constraint violated for column decimal_null.promoid
+MAPI  = monetdb@koala:37532
 QUERY = INSERT into "decimal_null" values (NULL);
+ERROR = !ERROR: INSERT INTO: NOT NULL constraint violated for column decimal_null.promoid
 
 
 # 21:23:57 >  

@@ -208,6 +208,7 @@ module 'sql_server'
 [ "sql_variables() : ptr "								  ]
 [ "sqlconsole( ) "							  ]
 [ "sqllogmanager() : void"						  ]
+[ "storage(int) : int"									  ]
 [ "str(mvc, int, int, int, int, any, int) : str"				  ]
 [ "timestamp(str) : timestamp"							  ]
 [ "zero_or_one(BAT[any,any::1]) : any::1"						  ]

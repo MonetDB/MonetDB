@@ -265,6 +265,8 @@ stream.
 
 	.COMMAND not_unique( BAT[oid,oid] b) : bit = not_unique; "check if the tail sorted bat b doesn't have unique tail values" 
 
+	.COMMAND storage( int t ) : int = atom_storage; "return the atoms (t) storage type"
+
 .END sql_server;
 
 @-
@@ -1463,6 +1465,12 @@ int not_unique(bit *ret, BAT* b)
 	return GDK_SUCCEED;
 }
 
+int atom_storage(int *t, int *i )
+{
+	*t = ATOMstorage(*i);
+	return GDK_SUCCEED;
+}
+
 @-
 An SQL session needs a minimal set of modules, shown below.
 The MIL procs should also be moved to the kernel, despite the
@@ -1534,9 +1542,9 @@ proc sql_semijoin (bat[oid,any::1] b1, bat[oid,any::2] b2) : bat[oid,any::1] {
 	return x.join(b1);
 }
 
-proc log2(int i) : int {
+proc log2(lng i) : int {
   var n := 0;
-  while(i > 1)  {
+  while(i > lng(1))  {
      i >>= 1;
      n :+= 1;
   }
@@ -1560,16 +1568,22 @@ proc restart( str sname, str seq, lng v ) : lng {
 
 proc SQLgroup(BAT[oid,any] a) : grp {
 	# handle the grouping for unique checks with the special _CTgroup 
-	if (and(or((a.ttype()=int),(a.ttype()=lng)),(a.count()>(256*1024)))) {
-		var N := (max(a) - min(a));
-		if (or((N.type()=lng),isnil(N)))
-			N := a.count();
-		if (or((N > a.count()),(N<0)))
-			N := a.count();
-		if (or((N = 0),(log2(N)=0))) {
+	if (and(or((storage(a.ttype())=int),(storage(a.ttype())=lng)),(a.count()>(256*1024)))) {
+		var N := lng(0);
+		if (and(storage(a.ttype())=lng,a.ttype()!=lng))
+			N := (lng(max(a)) - lng(min(a)));
+		if (and(storage(a.ttype())=int,a.ttype()!=int))
+			N := lng(int(max(a)) - int(min(a)));
+		if (N=lng(0))
+			N := lng(max(a) - min(a));
+		if (isnil(N))
+			N := lng(a.count());
+		if (or((N > lng(a.count())),(N<lng(0))))
+			N := lng(a.count());
+		if (or((N = lng(0)),(log2(lng(N))=0))) {
 			return 1;
 		}
-		return _CTgroup(a, log2(N), 1); 
+		return _CTgroup(a, log2(lng(N)), 1); 
 	}
 	return CTgroup(a);
 }

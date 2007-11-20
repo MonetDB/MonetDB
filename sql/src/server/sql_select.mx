@@ -3469,7 +3469,12 @@ sql_logical_exp(mvc *sql, scope *scp, symbol *sc, group *grp, stmt *subset, int 
 		stmt *t = NULL;
 		int found = 1;
 
-		if (!(t = scope_bind(scp, NULL, "row"))) {
+		if (scp->tables->h) {
+			cvar *c = scope_first_column(scp);
+			stmt *b = stmt_bool(1);
+			t = stmt_const(stmt_dup(c->s), b);
+			found = 0;
+		} else if (!(t = scope_bind(scp, NULL, "row"))) {
 			stmt *b = stmt_bool(1);
 			t = stmt_temp(bt);
 			/* fake column needs fake base table too */
@@ -3711,7 +3716,7 @@ set2table( mvc *sql, scope *scp, stmt *s)
 	}
 	if (!cur)
 		return s;
-	if ((t = scope_bind(scp, NULL, "row")) != NULL) {
+	if ((t = scope_bind(scp, NULL, "row")) != NULL && t->nrcols == 0) {
 		t = stmt_join(stmt_dup(cur), stmt_reverse(t), cmp_all);
 		s = sql_and(sql, scp, s, t, sql_where);
 	}

@@ -37,4 +37,4 @@ echo Manual examples
 $SQL < VOCmanual_examples.sql
 
 #Cleanup
-$SQL < VOCdrop.sql
+#$SQL < VOCdrop.sql
