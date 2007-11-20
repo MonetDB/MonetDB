@@ -44,4 +44,8 @@ cursor.execute('insert into python_table values ( 7, \'seven\');');
 cursor.execute('select * from python_table;');
 print cursor.fetchall()
 
+s = ((0, 'row1'), (1, 'row2'))
+x = cursor.executemany("insert into python_table VALUES (%s, %s);", s)
+print(x);
+
 cursor.execute('drop table python_table;');
