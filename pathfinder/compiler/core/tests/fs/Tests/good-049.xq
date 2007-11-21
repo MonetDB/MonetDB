@@ -1,1 +1,0 @@
-processing-instruction foo { "bar" }

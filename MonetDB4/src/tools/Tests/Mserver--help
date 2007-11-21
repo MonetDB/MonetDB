@@ -1,3 +1,0 @@
-#!/bin/sh
-
-Mlog -x $MTIMEOUT Mserver --config=$MONET_CONF --help

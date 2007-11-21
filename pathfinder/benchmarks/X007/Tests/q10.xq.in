@@ -1,4 +1,0 @@
-let $doc := doc("$TSTTRGDIR/load_docs.xml")//doc/text()
-
-for $ca in doc(exactly-one($doc[1]))//ComplexAssembly[./@type = "type008"]
-return $ca

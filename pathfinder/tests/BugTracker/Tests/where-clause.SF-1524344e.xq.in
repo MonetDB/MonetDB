@@ -1,6 +1,0 @@
-let $doc := doc("$TSTSRCDIR/where-clause.SF-1524344.xml")
-for $query in $doc//query
-return <query> {$query/@id} {$query/qtext}
-{ for $event in $query//event[@rel = "not"]
-return <event>{$event/@rel}{$event/s}</event>
-}</query>

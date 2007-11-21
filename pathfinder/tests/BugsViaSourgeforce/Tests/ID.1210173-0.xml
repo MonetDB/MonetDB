@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<doc>
-<greet kind="informal">Hi</greet>
-<greet kind="casual">Hello</greet>
-<location kind="global">World</location>
-<location kind="local">Amsterdam</location>
-</doc>
