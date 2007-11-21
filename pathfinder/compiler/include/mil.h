@@ -450,16 +450,15 @@ typedef enum PFmil_access_t PFmil_access_t;
 
 /* enum for update types */
 enum PFmil_update_t {
-      UPDATE_DUMMY          /**< skip zero enum */
-    , UPDATE_INSERT_FIRST
-    , UPDATE_INSERT_LAST
-    , UPDATE_INSERT_BEFORE
-    , UPDATE_INSERT_AFTER
-    , UPDATE_REPLACECONTENT
-    , UPDATE_REPLACENODE
-    , UPDATE_DELETE
-    , UPDATE_RENAME
-    , UPDATE_REPLACE
+      UPDATE_INSERT_FIRST     = 1
+    , UPDATE_INSERT_LAST      = 2
+    , UPDATE_INSERT_BEFORE    = 3
+    , UPDATE_INSERT_AFTER     = 4
+    , UPDATE_REPLACECONTENT   = 5
+    , UPDATE_REPLACENODE      = 6
+    , UPDATE_DELETE           = 7
+    , UPDATE_RENAME           = 8
+    , UPDATE_REPLACE          = 9
 };
 typedef enum PFmil_update_t PFmil_update_t;
 

@@ -3999,7 +3999,9 @@ reduce (PFpa_op_t * p, int goalnt)
                         case alg_fun_upd_replace_node:
                              update_str = UPDATE_REPLACENODE;
                              break;
-                        default: break;
+                        default:
+                             update_str = 0; /* should never reach here */
+                             break;     /* this is just to fool the compiler */
                     }
 
                     execute (
