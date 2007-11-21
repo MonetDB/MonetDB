@@ -16,7 +16,7 @@
 
 MTSAFE
 
-INCLUDES = -I../common 
+INCLUDES = ../common 
 
 gdk_scanselect_CFLAGS = $(NO_INLINE_CFLAGS)
 # gdk_relop.mx
