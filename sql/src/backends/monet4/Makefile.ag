@@ -16,17 +16,8 @@
 
 MTSAFE
 
-SWIGFLAGS = $(MONETDB_INCS) $(CLIENTS_INCS)
 INCLUDES = ../../include ../../common ../../storage ../../server \
-	 $(MONETDB4_INCS) $(CLIENTS_INCS) $(MONETDB_INCS) $(PYTHON_INCS)
-
-#  Both GNU's gcc and Intel's icc do not like to compile swig-generated code
-#  with our strict X_CFLAGS.
-#  Instead of diabling the strict X_CFLAGS completely,
-#  we use GCC_SWIG_CFLAGS and ICC_SWIG_CFLAGS, respectively,
-#  to disable only the problematic warnings/errors as locally as possbile.
-#  See buildtools/conf/MonetDB.m4 for details.
-CFLAGS = $(GCC_SWIG_CFLAGS) $(ICC_SWIG_CFLAGS)
+	 $(MONETDB4_INCS) $(CLIENTS_INCS) $(MONETDB_INCS)
 
 GDK_LIBS = $(PTHREAD_LIBS) $(MALLOC_LIBS)
 EXTRA_LIBS = $(SOCKET_LIBS) $(DL_LIBS) $(GDK_LIBS) 
@@ -115,25 +106,6 @@ headers_h = {
 	HEADERS = h
 	DIR = includedir
 	SOURCES = embeddedclient.mx
-}
-
-lib_monetdb = {
-	COND = HAVE_PYTHON_SWIG
-	PREFIX =
-	NAME = _monetdb
-	SOURCES = monetdb.py.i
-	LIBS = libinitmodules STATIC_MODS @SHARED_LIBS@ lib_sql_server $(EXTRA_LIBS) \
-		libembeddedsql \
-		$(MONETDB_LIBS) -lbat -lmutils -lstream $(MONETDB4_LIBS) -lmonet $(CLIENTS_LIBS) -lMapi $(PYTHON_LIBS)
-	DIR = $(prefix)/$(PYTHON_LIBDIR)
-}
-
-headers_py = {
-	COND = HAVE_PYTHON_SWIG
-	HEADERS = py
-	SOURCES = monetdb.py.i
-	TARGETS = monetdb.py
-	DIR = $(prefix)/$(PYTHON_LIBDIR)
 }
 
 EXTRA_DIST_DIR = Tests

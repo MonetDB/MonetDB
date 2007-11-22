@@ -1,0 +1,43 @@
+
+## Use: nmake -f makefile.msc install
+
+# Nothing much configurable below
+
+TOPDIR = .\..\..\..\..
+SRCDIR = $(TOPDIR)\..\src\backends\python\monet5
+!INCLUDE $(TOPDIR)\rules.msc
+all: all-msc
+check: check-msc
+install: install-msc
+X_CFLAGS = 
+INCLUDES = -I$(SRCDIR) "-I..\..\..\include" -I$(SRCDIR)\..\..\..\include "-I..\..\..\common" -I$(SRCDIR)\..\..\..\common "-I..\..\..\storage" -I$(SRCDIR)\..\..\..\storage "-I..\..\..\server" -I$(SRCDIR)\..\..\..\server $(MONETDB5_INCS) $(CLIENTS_INCS) $(MONETDB_INCS) $(PYTHON_INCS)
+SWIGFLAGS =  $(MONETDB_INCS) $(CLIENTS_INCS)
+_monetdb5.pyd:  ..\..\monet5\libembeddedsql5.lib ..\..\..\server\libsqlserver.lib ..\..\..\storage\libstore.lib ..\..\..\storage\bat\libbatstore.lib ..\..\..\common\libsqlcommon.lib
+_monetdb5_LIBS = ..\..\monet5\libembeddedsql5.lib ..\..\..\server\libsqlserver.lib ..\..\..\storage\libstore.lib ..\..\..\storage\bat\libbatstore.lib ..\..\..\common\libsqlcommon.lib $(MONETDB5_MODS) lib_logger.lib lib_bat5.lib lib_tablet.lib $(MONETDB5_LIBS) libmal.lib $(CLIENTS_LIBS) $(MONETDB_LIBS) libbat.lib libMapi.lib libmutils.lib libstream.lib $(PYTHON_LIBS) $(READLINE_LIBS) $(PTHREAD_LIBS)
+_monetdb5_OBJS = monetdb5.py.obj
+_monetdb5_DEPS = $(_monetdb5_OBJS)
+_monetdb5.lib: _monetdb5.pyd
+_monetdb5.pyd: $(_monetdb5_DEPS) 
+	$(CC) $(CFLAGS) -LD -Fe_monetdb5.pyd $(_monetdb5_OBJS) /link $(_monetdb5_LIBS)
+	if exist $@.manifest $(MT) -manifest $@.manifest -outputresource:$@;2
+	if not exist .libs $(MKDIR) .libs
+	$(INSTALL) "_monetdb5.pyd" ".libs\_monetdb5.pyd"
+
+!IFDEF NEED_MX
+!ENDIF #NEED_MX
+monetdb5.py.obj: "monetdb5.py.c"
+monetdb5.py: "$(SRCDIR)\monetdb5.py.i"
+	$(SWIG) -python $(SWIGFLAGS) -outdir . -o dummy.c "$(SRCDIR)\monetdb5.py.i"
+monetdb5.py.c: "$(SRCDIR)\monetdb5.py.i"
+	$(SWIG) -python $(SWIGFLAGS) -outdir . -o "$@" "$(SRCDIR)\monetdb5.py.i"
+all-msc: "_monetdb5.pyd"
+check-msc: all-msc "monetdb5.py" "_monetdb5.pyd"
+install-msc: install-exec install-data
+install-exec:  "install_monetdb5.py" "install__monetdb5" 
+install_monetdb5.py: "monetdb5.py" "$(prefix)\$(PYTHON_LIBDIR)"
+	$(INSTALL) "monetdb5.py" "$(prefix)\$(PYTHON_LIBDIR)\monetdb5.py"
+install__monetdb5: "_monetdb5.pyd" "$(prefix)\$(PYTHON_LIBDIR)"
+	$(INSTALL) "_monetdb5.pyd" "$(prefix)\$(PYTHON_LIBDIR)\_monetdb5.pyd"
+"$(prefix)\$(PYTHON_LIBDIR)":
+	if not exist "$(prefix)\$(PYTHON_LIBDIR)" $(MKDIR) "$(prefix)\$(PYTHON_LIBDIR)"
+install-data:

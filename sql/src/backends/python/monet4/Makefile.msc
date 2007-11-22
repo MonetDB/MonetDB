@@ -1,0 +1,47 @@
+
+## Use: nmake -f makefile.msc install
+
+# Nothing much configurable below
+
+TOPDIR = .\..\..\..\..
+SRCDIR = $(TOPDIR)\..\src\backends\python\monet4
+!INCLUDE $(TOPDIR)\rules.msc
+all: all-msc
+check: check-msc
+install: install-msc
+GDK_LIBS =  $(PTHREAD_LIBS) $(MALLOC_LIBS)
+X_CFLAGS = 
+INCLUDES = -I$(SRCDIR) "-I..\..\..\include" -I$(SRCDIR)\..\..\..\include "-I..\..\..\common" -I$(SRCDIR)\..\..\..\common "-I..\..\..\storage" -I$(SRCDIR)\..\..\..\storage "-I..\..\..\server" -I$(SRCDIR)\..\..\..\server $(MONETDB4_INCS) $(CLIENTS_INCS) $(MONETDB_INCS) $(PYTHON_INCS)
+STATIC_MODS =  $(MONETDB4_MODS) -l_builtin -l_arith -l_bat -l_algebra -l_sys -l_trans -l_str -l_constant
+STATIC_LIBS = $(MONETDB4_MODS) lib_builtin.lib lib_arith.lib lib_bat.lib lib_algebra.lib lib_sys.lib lib_trans.lib lib_str.lib lib_constant.lib
+EXTRA_LIBS =  $(SOCKET_LIBS) $(DL_LIBS) $(GDK_LIBS)
+SWIGFLAGS =  $(MONETDB_INCS) $(CLIENTS_INCS)
+_monetdb.pyd:  ..\..\monet4\libinitmodules.lib ..\..\monet4\lib_sql_server.lib ..\..\monet4\libembeddedsql.lib
+_monetdb_LIBS = ..\..\monet4\libinitmodules.lib $(MONETDB4_MODS) lib_builtin.lib lib_arith.lib lib_bat.lib lib_algebra.lib lib_sys.lib lib_trans.lib lib_str.lib lib_constant.lib ..\..\monet4\lib_sql_server.lib $(EXTRA_LIBS) ..\..\monet4\libembeddedsql.lib $(MONETDB_LIBS) libbat.lib libmutils.lib libstream.lib $(MONETDB4_LIBS) libmonet.lib $(CLIENTS_LIBS) libMapi.lib $(PYTHON_LIBS)
+_monetdb_OBJS = monetdb.py.obj
+_monetdb_DEPS = $(_monetdb_OBJS)
+_monetdb.lib: _monetdb.pyd
+_monetdb.pyd: $(_monetdb_DEPS) 
+	$(CC) $(CFLAGS) -LD -Fe_monetdb.pyd $(_monetdb_OBJS) /link $(_monetdb_LIBS)
+	if exist $@.manifest $(MT) -manifest $@.manifest -outputresource:$@;2
+	if not exist .libs $(MKDIR) .libs
+	$(INSTALL) "_monetdb.pyd" ".libs\_monetdb.pyd"
+
+!IFDEF NEED_MX
+!ENDIF #NEED_MX
+monetdb.py: "$(SRCDIR)\monetdb.py.i"
+	$(SWIG) -python $(SWIGFLAGS) -outdir . -o dummy.c "$(SRCDIR)\monetdb.py.i"
+monetdb.py.obj: "monetdb.py.c"
+monetdb.py.c: "$(SRCDIR)\monetdb.py.i"
+	$(SWIG) -python $(SWIGFLAGS) -outdir . -o "$@" "$(SRCDIR)\monetdb.py.i"
+all-msc: "_monetdb.pyd"
+check-msc: all-msc "monetdb.py" "_monetdb.pyd"
+install-msc: install-exec install-data
+install-exec:  "install_monetdb.py" "install__monetdb" 
+install_monetdb.py: "monetdb.py" "$(prefix)\$(PYTHON_LIBDIR)"
+	$(INSTALL) "monetdb.py" "$(prefix)\$(PYTHON_LIBDIR)\monetdb.py"
+install__monetdb: "_monetdb.pyd" "$(prefix)\$(PYTHON_LIBDIR)"
+	$(INSTALL) "_monetdb.pyd" "$(prefix)\$(PYTHON_LIBDIR)\_monetdb.pyd"
+"$(prefix)\$(PYTHON_LIBDIR)":
+	if not exist "$(prefix)\$(PYTHON_LIBDIR)" $(MKDIR) "$(prefix)\$(PYTHON_LIBDIR)"
+install-data:

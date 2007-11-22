@@ -7,13 +7,13 @@ PYTHONPATH="`monetdb-config --pythonlibdir`:`monetdb-clients-config --pythonlibd
 export PYTHONPATH
 
 if [ -n "$TST_FIVE" ] ; then
-	PYTHONPATH="$TSTBLDBASE/src/backends/monet5/:$PYTHONPATH"
-	PYTHONPATH="$TSTBLDBASE/src/backends/monet5/.libs:$PYTHONPATH"
+	PYTHONPATH="$TSTBLDBASE/src/backends/python/monet5:$PYTHONPATH"
+	PYTHONPATH="$TSTBLDBASE/src/backends/python/monet5/.libs:$PYTHONPATH"
 	export PYTHONPATH
 	Mlog -x "sqlsample.py $GDK_DBFARM $TSTDB 5"
 else
-	PYTHONPATH="$TSTBLDBASE/src/backends/monet4/:$PYTHONPATH"
-	PYTHONPATH="$TSTBLDBASE/src/backends/monet4/.libs:$PYTHONPATH"
+	PYTHONPATH="$TSTBLDBASE/src/backends/python/monet4:$PYTHONPATH"
+	PYTHONPATH="$TSTBLDBASE/src/backends/python/monet4/.libs:$PYTHONPATH"
 	export PYTHONPATH
 	Mlog -x "sqlsample.py $GDK_DBFARM $TSTDB 4"
 fi
