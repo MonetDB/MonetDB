@@ -64,6 +64,7 @@ bin_pf = {
                 sql/libsql \
                 #
                 xmlimport/libxmlimport \
+		utils/libstringutils \
                 # 
                 $(LIBGC_LDADD) $(LIBGC_LIBS) \
                 $(LIBXML2_LDADD) $(LIBXML2_LIBS) \
