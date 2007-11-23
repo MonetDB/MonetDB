@@ -24,28 +24,14 @@
 # Universitaet Muenchen, respectively.  All Rights Reserved.
 #
 
-
-#SUBDIRS = utils lalgebra
-
 INCLUDES = ../include $(MONETDB_INCS) $(LIBXML2_CFLAGS)
 
 lib_xmlimport = {
         NOINST
         DIR = libdir
-        LIBS = \
-               #../../mem/libmem \
-               #$(LIBXML2_LDADD) $(LIBXML2_LIBS)               
-               ../utils/libstringutils
-                
         SOURCES = \
                 xml2lalg_xpath_utils.c \
                 xml2lalg_converters.c \
                 schema_relaxng.c \
                 xml2lalg.c
 }
-
-
-
-
-
-
