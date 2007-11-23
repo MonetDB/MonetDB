@@ -330,8 +330,8 @@ printStatus(sabdb *stats, int mode)
 		printf("  average of crashes in the last 30 start attempts: %.2f\n",
 				uplog.crashavg30);
 	} else {
-		/* this is the default, also for modes that are added but we
-		 * don't understand (yet) */
+		/* this shows most used properties, and is shown also for modes
+		 * that are added but we don't understand (yet) */
 		char buf[64];
 		char min[8], avg[8], max[8];
 		struct tm *t;

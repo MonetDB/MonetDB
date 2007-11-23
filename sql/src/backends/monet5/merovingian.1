@@ -101,15 +101,15 @@ Server.  Setting the
 option to a positive
 non-zero value, causes each started database server to be shut down by
 .B merovingian
-when it shuts doen itself with a given time-out in seconds.  If the
+when it shuts down itself with a given time-out in seconds.  If the
 time-out expires, the database server is killed using the SIGKILL
 signal.  A time-out value of
 .B 0
 means that no attempt is made to shut down started database servers.  As
 a result, database servers will remain active after
 .B merovingian
-is stopped.  This situation may yield in confusing scenarios, hence you
-are strongly adviced to set the
+has stopped.  This situation may yield in confusing scenarios, hence you
+are strongly advised to set the
 .B mero_exittimeout
 option as to override the
 .B 0

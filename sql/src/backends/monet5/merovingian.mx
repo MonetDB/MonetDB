@@ -663,34 +663,13 @@ handleClient(int sock)
 	}
 
 	if (*database == '\0') {
-		/* send a redirect to the "default" database, since we don't
-		 * know what "default" is, we can't do much more than
-		 * redirecting to the first database which appears to be online. */
-		str er = SABAOTHgetStatus(&top, NULL);
-		if (er != MAL_SUCCEED) {
-			err e = newErr(er);
-			GDKfree(er);
-			stream_printf(fout, "!internal error, please try again later\n");
-			stream_flush(fout);
-			stream_close(fout);
-			stream_close(fdin);
-			return(e);
-		}
-		stat = top;
-		while (stat != NULL) {
-			if (stat->state == SABdbRunning) {
-				break;
-			}
-			stat = stat->next;
-		}
-		if (stat == NULL) {
-			SABAOTHfreeStatus(&top);
-			stream_printf(fout, "!no database running, and no database specified\n");
-			stream_flush(fout);
-			stream_close(fout);
-			stream_close(fdin);
-			return(newErr("no database running, and no database specified"));
-		}
+		/* we need to have a database, if we haven't gotten one,
+		 * complain */
+		stream_printf(fout, "!please specify a database\n");
+		stream_flush(fout);
+		stream_close(fout);
+		stream_close(fdin);
+		return(newErr("no database specified"));
 	} else {
 		err e = forkMserver(database, &top, 0);
 		if (e != NO_ERR) {

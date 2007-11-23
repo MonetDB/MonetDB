@@ -39,7 +39,7 @@ command.
 .IP \-f
 By default, a confirmation question is asked, however the
 .I \-f
-option, when provided, supresses this question and removal is executed
+option, when provided, suppresses this question and removal is executed
 right away.  Note that you cannot destroy a running database, bring it
 down first using the
 .B stop
@@ -52,10 +52,10 @@ maintenance can only be connected to by an administrator account
 account).  A database which is under maintenance is not started
 automatically by
 .BR merovingian (1)
-, the MonetDB Database Server when clients request for it.  Use the
+, the MonetDB Database Server, when clients request for it.  Use the
 .B release
 command to bring the database back for normal usage.  To start a
-database which in under maintenance for administrator access, the
+database which is under maintenance for administrator access, the
 .B start
 command can be used.
 .IP "release database"
@@ -64,29 +64,28 @@ available again for normal use by any client, and is started on demand.
 Use the
 .B lock
 command to take a database under maintenance.
-.IP "status [\-ls] [database ...]"
+.IP "status [\-lc] [database ...]"
 Shows the state of the given database(s) or, when none given, all known
-databases.  Three modes control the level of
-detail in the displayed output.  By default the most used properties of
-a database are being shown.  This includes the state of the database
-(running, crashed, stopped), whether it is under maintenance or not, the
-crash averages and uptime statistics.  The crash average is the number
-of times the database has crashed over the last 1, 15 or 30 starts.  The
-lower the average, the healthier the database is.
+databases.  Three modes control the level of detail in the displayed
+output.  By default a condensed one-line output per database format is
+used.  This output resembles pretty much the output of various
+.B XXXstat
+functions, and is ideal for quickly gaining an overview of the system
+state.
+.IP \-c
+The
+.I \-c
+flag shows the most used properties of a database.  This includes the
+state of the database (running, crashed, stopped), whether it is under
+maintenance or not, the crash averages and uptime statistics.  The crash
+average is the number of times the database has crashed over the last 1,
+15 or 30 starts.  The lower the average, the healthier the database is.
 .IP \-l
 Triggered by the
 .I \-l
 flag, a long listing is used.  This listing spans many rows with on each
 row one property and its value separated by a colon (`:').  The long
-listing includes every information that is available.
-.IP \-s
-Contrary to the long listing, the
-.I \-s
-flag produces a short, one-line output per database.  This output
-resembles pretty much the output of various
-.B XXXstat
-functions, and is ideal for quickly gaining an overview of the system
-state.
+listing includes all information that is available.
 .IP "start [\-a] [database ...]"
 .IP "stop [\-a] [database ...]"
 .IP "kill [\-a] [database ...]"
