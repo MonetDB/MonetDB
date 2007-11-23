@@ -236,7 +236,9 @@ public final class MapiSocket {
 		int lineType;
 		do {
 			if ((tmp = reader.readLine()) == null)
-				throw new IOException("Connection to server lost!");
+				throw new IOException("Read from " +
+						con.getInetAddress().getHostAddress() + ":" +
+						con.getPort() + ": End of stream reached");
 			if ((lineType = reader.getLineType()) == BufferedMCLReader.ERROR) {
 				err += "\n" + tmp.substring(1);
 			} else if (lineType == BufferedMCLReader.INFO) {
@@ -655,7 +657,9 @@ public final class MapiSocket {
 							logRd("the following incomplete block was received:");
 							logRx(new String(b, 0, off, "UTF-8"));
 						}
-						throw new IOException("Incomplete block read from stream");
+						throw new IOException("Read from " +
+								con.getInetAddress().getHostAddress() + ":" +
+								con.getPort() + ": Incomplete block read from stream");
 					}
 					return(false);
 				}
@@ -692,7 +696,9 @@ public final class MapiSocket {
 		private void readBlock() throws IOException {
 			// read next two bytes (short)
 			if (!_read(blklen, 2)) throw
-				new IOException("End of stream reached");
+				new IOException("Read from " +
+						con.getInetAddress().getHostAddress() + ":" +
+						con.getPort() + ": End of stream reached");
 
 			// Get the short-value and store its value in blockLen.
 			blockLen = (short)(
@@ -716,7 +722,9 @@ public final class MapiSocket {
 						"larger than BLOCKsize: " +
 						blockLen + " > " + block.length);
 			if (!_read(block, blockLen))
-				throw new IOException("End of stream reached");
+				new IOException("Read from " +
+						con.getInetAddress().getHostAddress() + ":" +
+						con.getPort() + ": End of stream reached");
 
 			if (debug) {
 				logRx(new String(block, 0, blockLen, "UTF-8"));

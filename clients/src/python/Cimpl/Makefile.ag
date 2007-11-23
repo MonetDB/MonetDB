@@ -25,7 +25,13 @@ INCLUDES = -I../.. $(MONETDB_INCS) $(PYTHON_INCS)
 #  we use GCC_SWIG_CFLAGS and ICC_SWIG_CFLAGS, respectively,
 #  to disable only the problematic warnings/errors as locally as possbile.
 #  See buildtools/conf/MonetDB.m4 for details.
-CFLAGS = $(GCC_SWIG_CFLAGS) $(ICC_SWIG_CFLAGS)
+#CFLAGS = $(GCC_SWIG_CFLAGS) $(ICC_SWIG_CFLAGS)
+#
+#  However, there are situations where user-chosen CFLAGS and/or X_CFLAGS
+#  are beyond our control. Hence, for the sake of a smooth compilation, we
+#  have to take the freedom to overrule the user's deliberate choice for
+#  X_CFLAGS by locally disabling them indifferently.
+X_CFLAGS =
 
 SUBDIRS = MonetSQLdb
 

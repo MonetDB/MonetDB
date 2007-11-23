@@ -110,10 +110,6 @@ sed \
 for file in \
 	Makefile.ag \
 	../../../*/src/jdbc/tests/Tests/Test.SQL.bat \
-	../../../*/NT/MonetDB4-SQL/MonetDB4-Installer.vdproj \
-	../../../*/NT/MonetDB5-SQL/MonetDB5-Installer.vdproj \
-	../../../*/NT/MonetDB-XQuery/MonetDB-XQuery.vdproj \
-	../../../*/NT/MonetDB4-XQuery/MonetDB4-Installer.vdproj \
 	; do
 	if [[ -f ${file} ]] ; then
 		for f in $FILES ; do
