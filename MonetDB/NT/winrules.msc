@@ -16,11 +16,35 @@
 # Portions created by CWI are Copyright (C) 1997-2007 CWI.
 # All Rights Reserved.
 
+!IFNDEF bits
+!IF defined(BITS32)
+bits=32
+!ELSEIF defined(BITS64)
+bits=64
+!ELSE
+bits=32
+!ENDIF
+!ENDIF
+
+!IF $(bits) == 32
+!IFNDEF BITS32
+BITS32=True
+!ENDIF
+!ELSEIF $(bits) == 64
+!IFNDEF BITS64
+BITS64=True
+!ENDIF
+!ENDIF
+
 # This is the location of pthreads for Win32, 
 # see http://sources.redhat.com/pthreads-win32/
 PTHREAD = C:\Pthreads
 PTHREAD_INCS = "-I$(PTHREAD)\include"
+!IF $(bits) == 32
 PTHREAD_LIBS = "$(PTHREAD)\lib\pthreadVC2.lib"
+!ELSE
+PTHREAD_LIBS = "$(PTHREAD)\lib64\pthreadVC2.lib"
+!ENDIF
 PHP_INSTDIR = C:\php-525
 PHP_SRCDIR = $(PHP_INSTDIR)\php-5.2.5
 # for these, also see configure.py

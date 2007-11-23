@@ -25,16 +25,17 @@ M4INSTALLER =
 !ENDIF
 
 all: "$(SRCDIR)\Makefile.msc" all-msc unistd.h RunMserver.bat RunMtest.bat RunMapprove.bat $(RUNMSERVER5)
-	$(MAKE) /nologo /f "$(SRCDIR)\Makefile.msc" "prefix=$(prefix)" all
+	$(MAKE) /nologo /f "$(SRCDIR)\Makefile.msc" "prefix=$(prefix)" "bits=$(bits)" all
 
 check: "$(SRCDIR)\Makefile.msc" RunMtest.bat
-	$(MAKE) /nologo /i /f "$(SRCDIR)\Makefile.msc" "prefix=$(prefix)" check
+	$(MAKE) /nologo /i /f "$(SRCDIR)\Makefile.msc" "prefix=$(prefix)" "bits=$(bits)" check
 	call RunMtest.bat
 
 install: targetdirs all $(M4INSTALLER) $(M5INSTALLER)
-	$(MAKE) /nologo /f "$(SRCDIR)\Makefile.msc" "prefix=$(prefix)" install
+	$(MAKE) /nologo /f "$(SRCDIR)\Makefile.msc" "prefix=$(prefix)" "bits=$(bits)" install
 	if not "$(MAKEDIR)" == "$(prefix)" $(INSTALL) MSQLserver.bat "$(prefix)"
 
+!IFDEF BITS32
 install-m4installer:
 	$(INSTALL) MonetDB4-SQL\MonetDB4-SQL-Installer.sln "$(prefix)"
 	$(INSTALL) MonetDB4-SQL\MonetDB4-SQL-Installer.vdproj "$(prefix)"
@@ -42,6 +43,17 @@ install-m4installer:
 install-m5installer:
 	$(INSTALL) MonetDB5-SQL\MonetDB5-SQL-Installer.sln "$(prefix)"
 	$(INSTALL) MonetDB5-SQL\MonetDB5-SQL-Installer.vdproj "$(prefix)"
+!ENDIF
+
+!IFDEF BITS64
+install-m4installer:
+	$(INSTALL) MonetDB4-SQL64\MonetDB4-SQL-Installer.sln "$(prefix)"
+	$(INSTALL) MonetDB4-SQL64\MonetDB4-SQL-Installer.vdproj "$(prefix)"
+
+install-m5installer:
+	$(INSTALL) MonetDB5-SQL64\MonetDB5-SQL-Installer.sln "$(prefix)"
+	$(INSTALL) MonetDB5-SQL64\MonetDB5-SQL-Installer.vdproj "$(prefix)"
+!ENDIF
 
 $(SRCDIR)\Makefile.msc:
 	$(CD) "$(SRCDIR)" && autogen.py

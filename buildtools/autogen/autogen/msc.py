@@ -68,15 +68,15 @@ def create_dir(fd, v,n):
     else:
         vv = v
     fd.write('%s-all: "%s-dir" "%s-Makefile"\n' % (n, n, n))
-    fd.write('\t$(CD) "%s" && $(MAKE) /nologo "prefix=$(prefix)" all \n' % vv)
+    fd.write('\t$(CD) "%s" && $(MAKE) /nologo "prefix=$(prefix)" "bits=$(bits)" all \n' % vv)
     fd.write('%s-dir: \n\tif not exist "%s" $(MKDIR) "%s"\n' % (n, vv, vv))
     fd.write('%s-Makefile: "$(SRCDIR)\\%s\\Makefile.msc"\n' % (n, v))
     fd.write('\t$(INSTALL) "$(SRCDIR)\\%s\\Makefile.msc" "%s\\Makefile"\n' % (v, v))
     fd.write('%s-check: "%s"\n' % (n, vv))
-    fd.write('\t$(CD) "%s" && $(MAKE) /nologo "prefix=$(prefix)" check\n' % vv)
+    fd.write('\t$(CD) "%s" && $(MAKE) /nologo "prefix=$(prefix)" "bits=$(bits)" check\n' % vv)
 
     fd.write('%s-install: "$(bindir)" "$(libdir)"\n' % n)
-    fd.write('\t$(CD) "%s" && $(MAKE) /nologo "prefix=$(prefix)" install\n' % vv)
+    fd.write('\t$(CD) "%s" && $(MAKE) /nologo "prefix=$(prefix)" "bits=$(bits)" install\n' % vv)
 
 def empty_dir(fd, n):
 

@@ -14,22 +14,13 @@
 # Portions created by CWI are Copyright (C) 1997-2007 CWI.
 # All Rights Reserved.
 
-SUBDIRS = BITS32?MonetDB-ODBC-Installer BITS64?MonetDB-ODBC-Installer64
-
-INCLUDES = \
-	../include \
-	../driver \
-	-I$(MONETDB_INCLUDEDIR)
-
-DEFS = @DEFS@
-ODBCLIBS = -lodbc32 -lodbccp32 -lversion -lshlwapi -luser32
-
-lib_MonetODBCs = {
-	SOURCES = setup.c setup.rc setup.syms
-	LIBS = -lodbccp32 -luser32
+headers_vdproj = {
+	HEADERS = vdproj
+	DIR = prefix
+	SOURCES = MonetDB-ODBC-Installer.vdproj
 }
 
-bin_odbcinstall = {
-	SOURCES = install.c
-	LIBS = -lodbc32 -lodbccp32 -lversion -lshlwapi -luser32
+scripts_sln = {
+	DIR = prefix
+	SOURCES = MonetDB-ODBC-Driver.sln
 }

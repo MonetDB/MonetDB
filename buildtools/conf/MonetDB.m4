@@ -536,6 +536,8 @@ if test x"$bits" != x"$native_bits"; then
 	fi
 fi
 AC_SUBST(bits)
+AM_CONDITIONAL(BITS32, test x"$bits" = x32)
+AM_CONDITIONAL(BITS64, test x"$bits" = x64)
 
 oids=$bits
 AC_ARG_ENABLE(oid32,

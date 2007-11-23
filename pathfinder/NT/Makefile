@@ -12,19 +12,28 @@ prefix = $(MAKEDIR)
 UNISTD_H = unistd.h
 
 all: "$(SRCDIR)\Makefile.msc" all-msc $(UNISTD_H) RunMserver.bat RunMtest.bat RunMapprove.bat
-	$(MAKE) /nologo /f "$(SRCDIR)\Makefile.msc" "prefix=$(prefix)" all
+	$(MAKE) /nologo /f "$(SRCDIR)\Makefile.msc" "prefix=$(prefix)" "bits=$(bits)" all
 
 check: "$(SRCDIR)\Makefile.msc" RunMtest.bat
-	$(MAKE) /nologo /i /f "$(SRCDIR)\Makefile.msc" "prefix=$(prefix)" check
+	$(MAKE) /nologo /i /f "$(SRCDIR)\Makefile.msc" "prefix=$(prefix)" "bits=$(bits)" check
 	call RunMtest.bat
 
-install: targetdirs pf_config.h all
-	$(INSTALL) pf_config.h "$(includedir)"
-	$(MAKE) /nologo /f "$(SRCDIR)\Makefile.msc" "prefix=$(prefix)" install
-	if not "$(MAKEDIR)" == "$(prefix)" $(INSTALL) MXQserver.bat "$(prefix)"
-	if not "$(MAKEDIR)" == "$(prefix)" $(INSTALL) pf.bat "$(prefix)"
+!IFDEF BITS32
+install-installer:
 	$(INSTALL) MonetDB4-XQuery\MonetDB4-XQuery-Installer.sln "$(prefix)"
 	$(INSTALL) MonetDB4-XQuery\MonetDB4-XQuery-Installer.vdproj "$(prefix)"
+!ENDIF
+!IFDEF BITS64
+install-installer:
+	$(INSTALL) MonetDB4-XQuery64\MonetDB4-XQuery-Installer.sln "$(prefix)"
+	$(INSTALL) MonetDB4-XQuery64\MonetDB4-XQuery-Installer.vdproj "$(prefix)"
+!ENDIF
+
+install: targetdirs pf_config.h all install-installer
+	$(INSTALL) pf_config.h "$(includedir)"
+	$(MAKE) /nologo /f "$(SRCDIR)\Makefile.msc" "prefix=$(prefix)" "bits=$(bits)" install
+	if not "$(MAKEDIR)" == "$(prefix)" $(INSTALL) MXQserver.bat "$(prefix)"
+	if not "$(MAKEDIR)" == "$(prefix)" $(INSTALL) pf.bat "$(prefix)"
 
 $(SRCDIR)\Makefile.msc: "$(SRCDIR)\Makefile.ag"
         $(CD) "$(SRCDIR)" && autogen.py
