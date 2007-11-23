@@ -465,59 +465,51 @@ AC_ARG_WITH(bits,
 		[obsolete: use --enable-bits instead]),
 	AC_MSG_ERROR([argument --with-bits is obsolete: use --enable-bits instead]))
 
-bits="no"
+AC_CHECK_SIZEOF(long)
+native_bits=`expr $ac_cv_sizeof_long \* 8`
+bits=$native_bits
 AC_ARG_ENABLE(bits,
 	AC_HELP_STRING([--enable-bits=BITS],
 		[specify number of bits (32 or 64)]), [
-case $enableval in
-32)	case "$host" in
-	ia64*)	AC_MSG_ERROR([we do not support 32 bits on $host, yet]);;
-	esac
+case "$GCC-$CC-$enableval" in
+*-*-$native_bits)
 	;;
-64)	case "$host-$GCC-$CC" in
-	i?86*-*-*)  AC_MSG_ERROR([$host does not support 64 bits]);;
-	esac
+-*icc*-*)
+	AC_MSG_ERROR([icc does not support a command line option to switch between 32- & 64-bit compilation; please use CC & PATH (instead of --enable-bits=$enableval) to point to the $enableval-bit version of icc])
 	;;
-*)	AC_MSG_ERROR(--enable-bits argument must be either 32 or 64);;
+*-*-32|*-*-64)
+	;;
+*)	
+	AC_MSG_ERROR(--enable-bits argument must be either 32 or 64)
+	;;
 esac
 bits=$enableval
 ])
-if test "$bits" = "64"; then
-	dnl  Keep in mind how to call the 32-bit compiler.
-	case "$GCC-$CC-$host_os-$host" in
-	yes-*-linux*-x86_64*)
-		dnl  On our x86_64 machine, "gcc" defaults to "gcc -m64" ...
-		CC32="$CC -m32";;
-	-pgcc*-linux*-x86_64*)
-		dnl  On our x86_64 machine, "pgcc" defaults to "pgcc -tp=k8-64" ...
-		CC32="$CC -tp=k8-32";;
-	*)	CC32="$CC";;
-	esac
-fi
-if test x"$bits" != xno; then
 case "$GCC-$CC-$host_os-$host-$bits" in
-yes-*-solaris*-64)
-	case `$CC -v 2>&1` in
-	*'gcc version 3.'*)	;;
+*-*-*-*-$native_bits)  
+	;;
+yes-*-solaris*-*-*)
+	case `$bits-$CC -v 2>&1` in
+	32-*|*-*'gcc version 3.'*)	;;
 	*)	AC_MSG_ERROR([need GCC version 3.X for 64 bits]);;
 	esac
 	CC="$CC -m$bits"
 	;;
--*-solaris*-64)
+-*-solaris*-*-64)
 	CC="$CC -xarch=v9"
 	;;
-yes-*-irix*-64)
+yes-*-irix*-*-*)
 	CC="$CC -mabi=$bits"
 	;;
--*-irix*-64)
+-*-irix*-*-*)
 	CC="$CC -$bits"
 	;;
-yes-*-aix*-64)
+yes-*-aix*-*-64)
 	CC="$CC -maix$bits"
 	AR="ar -X64"
 	NM="nm -X64 -B"
 	;;
--*-aix*-64)
+-*-aix*-*-64)
 	CC="$CC -q$bits"
 	AR="ar -X64"
 	NM="nm -X64 -B"
@@ -525,16 +517,23 @@ yes-*-aix*-64)
 yes-*-linux*-x86_64*-*)
 	CC="$CC -m$bits"
 	;;
--pgcc*-linux*-x86_64*-*)
+-*pgcc*-linux*-x86_64*-*)
 	CC="$CC -tp=k8-$bits"
 	;;
 yes-*-darwin8*-powerpc*-*)
 	CC="$CC -m$bits"
 	;;
+*)
+	AC_MSG_ERROR([case "$GCC-$CC-$host_os-$host-$bits" not handled with --enable-bits, yet; please use CC, CFLAGS and/or LDFLAGS (instead of --enable-bits=$bits) to make "$CC" produce $bits-bit code])
+	;;
 esac
-else
+if test x"$bits" != x"$native_bits"; then
+	unset ac_cv_sizeof_long
 	AC_CHECK_SIZEOF(long)
-	bits=`expr $ac_cv_sizeof_long \* 8`
+	alien_bits=`expr $ac_cv_sizeof_long \* 8`
+	if test x"$alien_bits" != x"$bits"; then
+		AC_MSG_ERROR([CC="$CC" seems to produce $alien_bits-bit code, not matching the "--enable-bits=$bits" request])
+	fi
 fi
 AC_SUBST(bits)
 
@@ -618,7 +617,7 @@ yes-*-*)
 		;;
 	esac
 	;;
--icc*-linux*|-ecc*-linux*|-pgcc*-linux*)
+-*icc*-linux*|-*ecc*-linux*|-*pgcc*-linux*)
 	dnl Define the same settings as for gcc, as we use the same
 	dnl header files
 	AC_DEFINE(_POSIX_C_SOURCE, 200112L, [Compiler flag])
@@ -760,7 +759,7 @@ yes-*-*)
 
 	NO_INLINE_CFLAGS="-fno-inline -fno-inline-functions"
 	;;
--icc*-linux*|-ecc*-linux*)
+-*icc*-linux*|-*ecc*-linux*)
 	dnl  Intel ([ie]cc/[ie]cpc on Linux)
  	LDFLAGS="$LDFLAGS -i_dynamic"
 	dnl  Let warning #140 "too many arguments in function call"
@@ -840,7 +839,7 @@ yes-*-*)
 
 	NO_INLINE_CFLAGS="-fno-inline -fno-inline-functions"
 	;;
--pgcc*-linux*)
+-*pgcc*-linux*)
 	dnl  Portland Group (PGI) (pgcc/pgCC on Linux)
 	dnl  required for "scale" in module "decimal"
 	CFLAGS="$CFLAGS -Msignextend"
@@ -892,13 +891,13 @@ yes-*-*)
 		;;
 	esac
 	;;
--icc*-linux*|-ecc*-linux*)
+-*icc*-linux*|-*ecc*-linux*)
       	case "$host-$icc_ver" in
         *-*-*-10.*)   	CFLAGS="$CFLAGS -std=c99"	;;
       	*-*-*-*)    	CFLAGS="$CFLAGS -c99" 		;;
       	esac   
 	;;
--pgcc*-linux*)
+-*pgcc*-linux*)
 	CFLAGS="$CFLAGS -c9x"
 	;;
 esac
