@@ -1039,7 +1039,7 @@ MT_heapcur(void)
 void *
 MT_mmap_open(MT_mmap_hdl *hdl, char *path, int mode, off_t off, size_t len, size_t nremaps)
 {
-	int fd = open(path, O_CREAT | ((mode & MMAP_WRITE) ? O_RDWR : O_RDONLY));
+	int fd = open(path, O_CREAT | ((mode & MMAP_WRITE) ? O_RDWR : O_RDONLY), 0664);
 	void *ret = (void *) -1L;
 
 	(void) nremaps;
