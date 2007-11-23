@@ -1,0 +1,36 @@
+stdout of test 'recursive_function.SF-1835745` in directory 'tests/BugTracker` itself:
+
+
+# 14:11:22 >  
+# 14:11:22 >   Mserver "--config=/ufs/manegold/_/scratch0/Monet/Testing/Stable/prefix.--enable-strict_--disable-debug_--enable-optimize_--disable-assert/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/manegold/_/scratch0/Monet/Testing/Stable/prefix.--enable-strict_--disable-debug_--enable-optimize_--disable-assert/lib64/MonetDB4:/ufs/manegold/_/scratch0/Monet/Testing/Stable/prefix.--enable-strict_--disable-debug_--enable-optimize_--disable-assert/lib64/MonetDB4/lib:/ufs/manegold/_/scratch0/Monet/Testing/Stable/prefix.--enable-strict_--disable-debug_--enable-optimize_--disable-assert/lib64/MonetDB4/bin" --set "gdk_dbfarm=/ufs/manegold/_/scratch0/Monet/Testing/Stable/prefix.--enable-strict_--disable-debug_--enable-optimize_--disable-assert/var/MonetDB4/dbfarm" --set "sql_logdir=/ufs/manegold/_/scratch0/Monet/Testing/Stable/prefix.--enable-strict_--disable-debug_--enable-optimize_--disable-assert/var/MonetDB4/sql_logs" --set "xquery_logdir=/ufs/manegold/_/scratch0/Monet/Testing/Stable/prefix.--enable-strict_--disable-debug_--enable-optimize_--disable-assert/var/MonetDB4/xquery_logs" --set mapi_open=true --set xrpc_open=true --set mapi_port=32359 --set xrpc_port=49581 --set monet_prompt= --trace "--dbname=mTests_tests_BugTracker" "--dbinit= module(pathfinder);" ; echo ; echo Over..
+# 14:11:22 >  
+
+# MonetDB Server v4.20.1
+# based on GDK   v1.20.1
+# Copyright (c) 1993-2007, CWI. All rights reserved.
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
+# Visit http://monetdb.cwi.nl/ for further information.
+# PF/Tijah module v0.3.0 loaded. http://dbappl.cs.utwente.nl/pftijah
+# MonetDB/XQuery module v0.20.1 loaded
+# XRPC administrative console at http://localhost:49581/admin
+
+printf("\nReady.\n");
+
+Ready.
+quit();
+
+Over..
+
+# 14:11:24 >  
+# 14:11:24 >  mclient -lxquery -fxml -umonetdb -Pmonetdb --host=corona --port=32359 recursive_function.SF-1835745.xq
+# 14:11:24 >  
+
+<?xml version="1.0" encoding="utf-8"?>
+<XQueryResult><a name="2"><a name="y"><b name="2"/></a></a><a name="2"><a name="y"><b name="2"/></a></a></XQueryResult>
+<?xml version="1.0" encoding="utf-8"?>
+<XQueryResult><a name="2"><a name="y"><b name="2"/></a></a><a name="2"><a name="y"><b name="2"/></a></a></XQueryResult>
+
+# 14:11:24 >  
+# 14:11:24 >  Done.
+# 14:11:24 >  
+

@@ -135,3 +135,4 @@ insert_attribute_gives_ERROR_in_merged_union.SF-1763575
 immune_for_updates.SF-1766259
 repeated-insert.SF-1814911
 fn_normalize-space.SF-1828362
+recursive_function.SF-1835745
