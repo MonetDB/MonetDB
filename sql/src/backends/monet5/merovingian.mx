@@ -449,6 +449,7 @@ forkMserver(str database, sabdb** stats, int force)
 	pid = fork();
 	if (pid == 0) {
 		str dbname = alloca(sizeof(char) * 512);
+		str vaultkey = alloca(sizeof(char) * 512);
 		str argv[10];	/* for the exec arguments */
 		int c = 0;
 
@@ -467,11 +468,13 @@ forkMserver(str database, sabdb** stats, int force)
 
 		/* ok, now exec that mserver we want */
 		snprintf(dbname, 511, "--dbname=%s", database);
+		snprintf(vaultkey, 511, "monet_vault_key=%s/.vaultkey", (*stats)->path);
 		argv[c++] = _merovingian_mserver;
 		argv[c++] = dbname;
 		argv[c++] = "--dbinit=include sql;"; /* yep, no quotes needed! */
 		argv[c++] = "--set"; argv[c++] = "daemon=yes";
 		argv[c++] = "--set"; argv[c++] = "mapi_open=true";
+		argv[c++] = "--set"; argv[c++] = vaultkey;
 		argv[c++] = NULL;
 
 		merlog("executing '%s' for database '%s'",
@@ -962,6 +965,9 @@ childhandler(int sig, siginfo_t *si, void *unused)
 	p = q->next;
 	while (p != NULL) {
 		if (p->pid == si->si_pid) {
+			/* wait a little (we're not in a hurry anyway, are we?) such
+			 * that the logger catches the messages (if any). */
+			MT_sleep_ms(40);
 			/* remove it, disconnect first, then free (because the
 			 * logger might access it otherwise after the free) */
 			q->next = p->next;
@@ -1109,7 +1115,7 @@ main(int argc, char *argv[])
 
 	snprintf(buf, 1024, "%s/.merovingian_control", dbfarm);
 	unlink(buf);
-	if ((ret = mkfifo(buf, 0660)) != 0) {
+	if ((ret = mkfifo(buf, S_IRUSR | S_IWUSR)) != 0) {
 		fprintf(stderr, "failed to create a control channel %s: %s\n",
 				buf, strerror(errno));
 		fflush(stderr);
@@ -1272,7 +1278,6 @@ main(int argc, char *argv[])
 	merlog("monitoring dbfarm %s", dbfarm);
 
 	SABAOTHinit(dbfarm, NULL);
-	GDKfree(dbfarm);
 
 	/* open up a connection */
 	e = openConnection(&sock, port);
@@ -1290,11 +1295,13 @@ main(int argc, char *argv[])
 		}
 
 		/* handle control commands */
+		snprintf(buf, 1024, "%s/.merovingian_control", dbfarm);
 		comfd = open(buf, O_RDONLY | O_NONBLOCK);
 		if (pthread_create(&ctid, NULL, (void *(*)(void *))controlRunner, (void *)&comfd) < 0) {
 			fprintf(stderr, "unable to create control command thread\n");
 			ctid = 0;
 		}
+		GDKfree(dbfarm);
 
 		/* handle external connections main loop */
 		e = acceptConnections(sock);
