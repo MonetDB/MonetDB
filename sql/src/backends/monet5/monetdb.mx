@@ -999,9 +999,16 @@ main(int argc, char *argv[])
 	mero_running = 1;
 	snprintf(buf, 1024, "%s/.merovingian_lock", dbfarm);
 	fd = MT_lockf(buf, F_TLOCK, 4, 1);
-	if (fd >= 0 || fd == -2) {
-		if (fd >= 0)
+	if (fd >= 0 || fd <= -2) {
+		if (fd >= 0) {
 			close(fd);
+		} else {
+			/* see if it is a permission problem, if so nicely abort */
+			if (errno == EACCES) {
+				fprintf(stderr, "permission denied\n");
+				exit(1);
+			}
+		}
 		/* locking succeed or locking was impossible */
 		fprintf(stderr, "warning: MonetDB Database Server is not running\n");
 		mero_running = 0;
