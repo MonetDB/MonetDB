@@ -147,6 +147,12 @@ mero_timeinterval=600
 # again.
 mero_pidfile=@localstatedir@@DIRSEP@run@DIRSEP@merovingian.pid
 #
+# In normal use, Merovingian replaces an mserver, and hence listens for
+# connections on the same port as an mserver would do.  For certain
+# configs, however, it may be more suitable to use an alternate port,
+# which can be specified here.
+#mero_port=50000
+#
 # mservers that were started by Merovingian are shut down when the
 # Merovingian is shut down.  This behaviour is desirable if the
 # Merovingian is ran as daemon process that represents MonetDB, such as
