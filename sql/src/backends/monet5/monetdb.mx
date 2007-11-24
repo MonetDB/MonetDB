@@ -35,7 +35,7 @@ information about them are the primary goals of this tool.
 #include <stdarg.h>	/* variadic stuff */
 #include <stdio.h> /* fprintf */
 #include <string.h> /* strerror */
-#include <sys/stat.h> /* mkdir, stat */
+#include <sys/stat.h> /* mkdir, stat, umask */
 #include <sys/types.h> /* mkdir, readdir */
 #include <dirent.h> /* readdir */
 #include <unistd.h> /* stat, rmdir, unlink */
@@ -960,6 +960,11 @@ main(int argc, char *argv[])
 
 	/* seed the randomiser for when we create a database */
 	srand(time(NULL));
+	
+	/* My preciousssssssssss!  Set umask such that only /us/ can read
+	 * things we created, which is a good idea with the vault rin... eh
+	 * key around here and all. */
+	umask(S_IRWXG | S_IRWXO);
 
 	/* hunt for the config file, and read it */
 	cnf = fopen(MONETDB5_CONFFILE, "r");

@@ -1005,6 +1005,10 @@ main(int argc, char *argv[])
 	int oerr = -1;
 	unsigned short port = MEROV_PORT;
 
+	/* Paranoia umask, but good, because why would people have to sniff
+	 * our private parts? */
+	umask(S_IRWXG | S_IRWXO);
+
 	/* hunt for the config file, and read it */
 	cnf = fopen(MONETDB5_CONFFILE, "r");
 	if (cnf == NULL) {
