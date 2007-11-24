@@ -50,7 +50,7 @@ as error to the connecting client.
 FIXME: actually implement that
 
 @h
-#define MEROV_VERSION   "0.5"
+#define MEROV_VERSION   "0.6"
 #define MEROV_PORT      50000
 
 @c
@@ -1007,9 +1007,9 @@ main(int argc, char *argv[])
 {
 	err e;
 	int argp;
-	str dbfarm, msglog, errlog;
+	str dbfarm, msglog, errlog, pidfilename;
 	str p;
-	FILE *cnf = NULL;
+	FILE *cnf = NULL, *pidfile = NULL;
 	char buf[1024];
 	sabdb* stats = NULL;
 	dpair d;
@@ -1018,11 +1018,8 @@ main(int argc, char *argv[])
 	struct sigaction sa;
 	int ret;
 	int sock = 0;
-
-	/* where is the binary we call? */
-	snprintf(buf, 1023, "%s/bin/mserver5", MONETDB5_PREFIX);
-	_merovingian_mserver = alloca(sizeof(char) * (strlen(buf) + 1));
-	memcpy(_merovingian_mserver, buf, strlen(buf) + 1);
+	struct stat sb;
+	int oerr = -1;
 
 	/* hunt for the config file, and read it */
 	cnf = fopen(MONETDB5_CONFFILE, "r");
@@ -1036,6 +1033,7 @@ main(int argc, char *argv[])
 	msglog = NULL;
 	errlog = NULL;
 	timeout = 0;
+	pidfilename = NULL;
 	while (fgets(buf, 1024, cnf) != NULL) {
 		/* eliminate fgets' newline */
 		buf[strlen(buf) - 1] = '\0';
@@ -1054,13 +1052,36 @@ main(int argc, char *argv[])
 		} else if (*buf && strncmp(buf, "mero_timeinterval=", 18) == 0) {
 			p = strchr(buf, '=');
 			_timeInterval = atoi(++p);
+		} else if (*buf && strncmp(buf, "mero_pidfile=", 13) == 0) {
+			p = strchr(buf, '=');
+			pidfilename = replacePrefix(++p);
 		}
 	}
 
 	fclose(cnf);
 
+	/* where is the mserver5 binary we fork on demand? */
+	snprintf(buf, 1023, "%s/bin/mserver5", MONETDB5_PREFIX);
+	_merovingian_mserver = alloca(sizeof(char) * (strlen(buf) + 1));
+	memcpy(_merovingian_mserver, buf, strlen(buf) + 1);
+	/* exit early if this is not going to work well */
+	if (stat(_merovingian_mserver, &sb) == -1) {
+		fprintf(stderr, "cannot stat mserver5 executable: %s\n",
+				strerror(errno));
+		fflush(stderr);
+		exit(1);
+	}
+
+	/* we need a dbfarm */
 	if (dbfarm == NULL) {
 		fprintf(stderr, "cannot find dbfarm via config file\n");
+		fflush(stderr);
+		exit(1);
+	}
+
+	/* we need a pidfile */
+	if (pidfilename == NULL) {
+		fprintf(stderr, "cannot find pidfilename via config file\n");
 		fflush(stderr);
 		exit(1);
 	}
@@ -1134,10 +1155,17 @@ main(int argc, char *argv[])
 
 	d = topdp->next = alloca(sizeof(struct _dpair));
 
+	/* make sure we will be able to write the our pid */
+	if ((pidfile = fopen(pidfilename, "w")) == NULL) {
+		fprintf(stderr, "unable to open '%s' for writing: %s\n",
+				pidfilename, strerror(errno));
+		exit(1);
+	}
+
 	/* redirect stdout */
 	if (pipe(pfd) == -1) {
-		fprintf(stderr, "%s: unable to create pipe: %s\n",
-				argv[0], strerror(errno));
+		fprintf(stderr, "unable to create pipe: %s\n",
+				strerror(errno));
 		return(1);
 	}
 	d->fout = fdopen(pfd[0], "r");
@@ -1147,18 +1175,45 @@ main(int argc, char *argv[])
 
 	/* redirect stderr */
 	if (pipe(pfd) == -1) {
-		fprintf(stderr, "%s: unable to create pipe: %s\n",
-				argv[0], strerror(errno));
+		fprintf(stderr, "unable to create pipe: %s\n",
+				strerror(errno));
 		return(1);
 	}
+	/* before it is too late, save original stderr */
+	oerr = dup(2);
 	d->ferr = fdopen(pfd[0], "r");
 	fcntl(pfd[0], F_SETFL, O_NONBLOCK);
 	dup2(pfd[1], 2);
 	close(pfd[1]);
 
+	/* fork into the background, right after we know that everything
+	 * that was necessary (config, pipes) is working */
+	switch (fork()) {
+		case -1:
+			/* oops, forking went wrong, cheat a bit in order to write to
+			 * the console */
+			write(oerr, "unable to fork into background: ", 
+					sizeof("unable to fork into background: "));
+			write(oerr, strerror(errno), strlen(strerror(errno)));
+			write(oerr, "\n", 1);
+			return(1);
+		case 0:
+			/* the child, we want to keep it */
+			close(oerr);
+		break;
+		default:
+			/* the parent, we want it to die, with no error */
+			return(0);
+	}
+
 	d->next = NULL;
 	d->pid = getpid();
 	d->dbname = "merovingian";
+
+	/* write out the pid */
+	fprintf(pidfile, "%d\n", d->pid);
+	fflush(pidfile);
+	fclose(pidfile);
 
 	servers = d;
 
