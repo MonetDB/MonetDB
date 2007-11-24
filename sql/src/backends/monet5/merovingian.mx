@@ -449,6 +449,8 @@ forkMserver(str database, sabdb** stats, int force)
 	pid = fork();
 	if (pid == 0) {
 		str dbname = alloca(sizeof(char) * 512);
+		str argv[10];	/* for the exec arguments */
+		int c = 0;
 
 		/* redirect stdout and stderr to a new pair of fds for
 		 * logging help */
@@ -465,14 +467,16 @@ forkMserver(str database, sabdb** stats, int force)
 
 		/* ok, now exec that mserver we want */
 		snprintf(dbname, 511, "--dbname=%s", database);
+		argv[c++] = _merovingian_mserver;
+		argv[c++] = dbname;
+		argv[c++] = "--dbinit=include sql;"; /* yep, no quotes needed! */
+		argv[c++] = "--set"; argv[c++] = "daemon=yes";
+		argv[c++] = "--set"; argv[c++] = "mapi_open=true";
+		argv[c++] = NULL;
+
 		merlog("executing '%s' for database '%s'",
 				_merovingian_mserver, database);
-		execl(_merovingian_mserver, _merovingian_mserver,
-				"--set", "daemon=yes",
-				"--set", "mapi_open=true",
-				dbname,
-				"--dbinit=include sql;", /* yes, this IS correct */
-				(char *)NULL);
+		execv(_merovingian_mserver, argv);
 		/* if the exec returns, it is because of a failure */
 		fprintf(stderr, "executing failed: %s\n", strerror(errno));
 		exit(1);

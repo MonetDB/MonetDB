@@ -596,6 +596,12 @@ command_merocom(int argc, char *argv[], merocom mode)
 	fclose(f);
 }
 
+static char seedChars[] = {'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j',
+	'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x',
+	'y', 'z', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L',
+	'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
+	'1', '2', '3', '4', '5', '6', '7', '8', '9', '0'};
+
 static void
 command_create(int argc, char *argv[])
 {
@@ -637,6 +643,9 @@ command_create(int argc, char *argv[])
 		if (stats == NULL) {
 			char path[8096];
 			FILE *f;
+			int i, size;
+			char buf[48];
+
 			/* Sabaoth doesn't know, green light for us! */
 			snprintf(path, 8095, "%s/%s", dbfarm, dbname);
 			path[8095] = '\0';
@@ -652,9 +661,6 @@ command_create(int argc, char *argv[])
 				snprintf(path, 8095, "%s/%s/.maintenance", dbfarm, dbname);
 				fclose(fopen(path, "w"));
 			}
-			/* without an .uplog file, Merovingian won't work */
-			snprintf(path, 8095, "%s/%s/.uplog", dbfarm, dbname);
-			fclose(fopen(path, "w"));
 			/* avoid GDK from making fugly complaints */
 			snprintf(path, 8095, "%s/%s/.gdk_lock", dbfarm, dbname);
 			f = fopen(path, "w");
@@ -664,6 +670,24 @@ command_create(int argc, char *argv[])
 			if (fwrite("bla:", 1, 4, f) < 4)
 				fprintf(stderr, "create: failure in writing lock file\n");
 			fclose(f);
+			/* generate a vault key */
+			size = rand();
+			size = (size % (36 - 20)) + 20;
+			for (i = 0; i < size; i++) {
+				buf[i] = seedChars[rand() % 62];
+			}
+			for ( ; i < 48; i++) {
+				buf[i] = '\0';
+			}
+			snprintf(path, 8095, "%s/%s/.vaultkey", dbfarm, dbname);
+			f = fopen(path, "w");
+			if (fwrite(buf, 1, 48, f) < 48)
+				fprintf(stderr, "create: failure in writing vaultkey file\n");
+			fclose(f);
+			/* without an .uplog file, Merovingian won't work */
+			snprintf(path, 8095, "%s/%s/.uplog", dbfarm, dbname);
+			fclose(fopen(path, "w"));
+
 			printf("successfully created database '%s'%s\n", dbname,
 					(maintenance == 1 ? " in maintenance mode" : ""));
 		} else {
@@ -933,6 +957,9 @@ main(int argc, char *argv[])
 	FILE *cnf = NULL;
 	char buf[1024];
 	int fd;
+
+	/* seed the randomiser for when we create a database */
+	srand(time(NULL));
 
 	/* hunt for the config file, and read it */
 	cnf = fopen(MONETDB5_CONFFILE, "r");
