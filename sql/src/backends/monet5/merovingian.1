@@ -66,13 +66,6 @@ instead.  It is legitimate to have both
 and
 .B mero_errlog
 pointing to the same file.
-.IP mero_pidfile
-Location pointing to the pidfile used by
-.B merovingian
-to write the process id of the daemon process that was started in the
-background.  This pid can be used to stop
-.B merovingian
-again by sending it a termination signal.
 .IP mero_timeinterval
 Log messages from started databases may not be instantly logged, because
 that database process that writes the message does not flush its
@@ -95,6 +88,13 @@ option.  Note that an interval of
 .B 0
 makes Merovingian print a TME record for every log record, which is the
 default of this option when unset.
+.IP mero_pidfile
+Location pointing to the pidfile used by
+.B merovingian
+to write the process id of the daemon process that was started in the
+background.  This pid can be used to stop
+.B merovingian
+again by sending it a termination signal.
 .IP mero_exittimeout
 All database servers that were started by
 .B merovingian

@@ -128,11 +128,6 @@ monet_welcome=yes
 mero_msglog=@localstatedir@@DIRSEP@log@DIRSEP@merovingian.log
 mero_errlog=@localstatedir@@DIRSEP@log@DIRSEP@merovingian.log
 #
-# Merovingian forks itself to detach into the background.  It stores its
-# pid in the following file, which can be used to stop Merovingian
-# again.
-mero_pidfile=@localstatedir@@DIRSEP@run@DIRSEP@merovingian.pid
-#
 # Log messages may not be instantly logged, because the process that
 # writes the message does not flush its buffered stream.  Since
 # Merovingian cannot force other processes to flush their output, the
@@ -146,6 +141,11 @@ mero_pidfile=@localstatedir@@DIRSEP@run@DIRSEP@merovingian.pid
 # every printed log record.  The default is to print a TME record every
 # 10 minutes.
 mero_timeinterval=600
+#
+# Merovingian forks itself to detach into the background.  It stores its
+# pid in the following file, which can be used to stop Merovingian
+# again.
+mero_pidfile=@localstatedir@@DIRSEP@run@DIRSEP@merovingian.pid
 #
 # mservers that were started by Merovingian are shut down when the
 # Merovingian is shut down.  This behaviour is desirable if the
