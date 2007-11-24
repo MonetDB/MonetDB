@@ -41,5 +41,7 @@ scripts_bat = {
 
 monetdb_var_logdir = $(localstatedir)/log
 monetdb_var_log_DATA = 
+monetdb_var_rundir = $(localstatedir)/run
+monetdb_var_run_DATA = 
 monetdb_var_dbfarmdir = $(localstatedir)/$(PACKAGE)/dbfarm
 monetdb_var_dbfarm_DATA = 

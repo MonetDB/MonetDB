@@ -22,11 +22,10 @@ exec_prefix=@exec_prefix@
 # of your data.
 gdk_dbfarm=@localstatedir@@DIRSEP@@PACKAGE@@DIRSEP@dbfarm
 
-# MonetDB can only handle one database at a time.  You can specify
-# the name of the default database to use below.  
-# Often, though, you should use the command line option 
-# to specify the database of interest explicitly.
-gdk_dbname=demo			# default database to open
+# MonetDB can only handle one database at a time.  When you start an
+# mserver5 manually without specifying the database name yourself, the
+# following database name is used.
+gdk_dbname=demo
 
 # The options below deal with various aspects of memory usage behaviour.
 # If you don't know what these values mean, you should leave them alone.
@@ -128,6 +127,11 @@ monet_welcome=yes
 # Unsetting below defaults will make merovingian log to the screen.
 mero_msglog=@localstatedir@@DIRSEP@log@DIRSEP@merovingian.log
 mero_errlog=@localstatedir@@DIRSEP@log@DIRSEP@merovingian.log
+#
+# Merovingian forks itself to detach into the background.  It stores its
+# pid in the following file, which can be used to stop Merovingian
+# again.
+mero_pidfile=@localstatedir@@DIRSEP@run@DIRSEP@merovingian.pid
 #
 # Log messages may not be instantly logged, because the process that
 # writes the message does not flush its buffered stream.  Since
