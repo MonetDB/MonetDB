@@ -410,9 +410,8 @@ static void generateChallenge(str buf, int min, int max) {
 	size_t chr;
 	size_t i;
 
-	/* don't seed the randomiser, or you get the same challenge during
-	 * the same second */
-	/* srand(time(NULL)); */
+	/* don't seed the randomiser here, or you get the same challenge
+	 * during the same second */
 	size = rand();
 	size = (size % (max - min)) + min;
 	for (i = 0; i < size; i++) {
@@ -740,6 +739,11 @@ errno == WSAEADDRINUSE &&
 	snprintf(msg, (int) 512, "#Ready to accept connections on %s:%d\n", host, port);
 	stream_printf(GDKout, "%s", msg);
 #endif
+
+	/* seed the randomiser such that our challenges aren't
+	 * predictable... */
+	srand(time(NULL));
+
 	SERVERannounce(server.sin_addr, port, 0);
 	return MAL_SUCCEED;
 }
