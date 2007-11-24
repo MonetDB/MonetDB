@@ -95,6 +95,11 @@ to write the process id of the daemon process that was started in the
 background.  This pid can be used to stop
 .B merovingian
 again by sending it a termination signal.
+.IP mero_port
+The port
+.B merovingian
+will open up and listen to connections for.  When unset, the default
+port 50000 is used, which should be ok for most setups.
 .IP mero_exittimeout
 All database servers that were started by
 .B merovingian

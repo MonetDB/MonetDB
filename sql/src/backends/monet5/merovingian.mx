@@ -721,17 +721,12 @@ openConnection(int *ret, unsigned short port)
 	socklen_t length = 0;
 	int on = 1;
 	int i = 0;
-	unsigned short origport = port;
 	char host[512];
 
 	sock = socket(AF_INET, SOCK_STREAM, 0);
 	if (sock < 0)
 		return(newErr("creation of stream socket failed: %s",
 					strerror(errno)));
-
-	/* In auto-sensing mode, start at the default */
-	if (origport == 0)
-		port = MEROV_PORT;
 
 	setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char *) &on, sizeof on);
 
@@ -741,27 +736,11 @@ openConnection(int *ret, unsigned short port)
 		server.sin_zero[i] = 0;
 	length = (socklen_t) sizeof(server);
 
-	do {
-		server.sin_port = htons((unsigned short) ((port) & 0xFFFF));
-		if (bind(sock, (SOCKPTR) &server, length) < 0) {
-			if (
-#ifdef EADDRINUSE
-errno == EADDRINUSE &&
-#else 
-#ifdef WSAEADDRINUSE 
-errno == WSAEADDRINUSE &&
-#endif
-#endif
-				origport == 0 && port < 60000) {
-				port++;
-				continue;
-			}
-			return(newErr("binding to stream socket port %d failed: %s",
-					origport, strerror(errno)));
-		} else {
-			break;
-		}
-	} while (1);
+	server.sin_port = htons((unsigned short) ((port) & 0xFFFF));
+	if (bind(sock, (SOCKPTR) &server, length) < 0) {
+		return(newErr("binding to stream socket port %d failed: %s",
+				port, strerror(errno)));
+	}
 
 	if (getsockname(sock, (SOCKPTR) &server, &length) < 0)
 		return(newErr("failed getting socket name: %s",
@@ -1020,6 +999,7 @@ main(int argc, char *argv[])
 	int sock = 0;
 	struct stat sb;
 	int oerr = -1;
+	unsigned short port = MEROV_PORT;
 
 	/* hunt for the config file, and read it */
 	cnf = fopen(MONETDB5_CONFFILE, "r");
@@ -1055,6 +1035,16 @@ main(int argc, char *argv[])
 		} else if (*buf && strncmp(buf, "mero_pidfile=", 13) == 0) {
 			p = strchr(buf, '=');
 			pidfilename = replacePrefix(++p);
+		} else if (*buf && strncmp(buf, "mero_port=", 10) == 0) {
+			p = strchr(buf, '=');
+			/* temporarily misuse oerr */
+			oerr = atoi(++p);
+			if (oerr <= 0 || oerr > 65535) {
+				fprintf(stderr, "invalid port number: %s\n", p);
+				fflush(stderr);
+			}
+			port = (unsigned short)oerr;
+			oerr = -1;
 		}
 	}
 
@@ -1249,7 +1239,7 @@ main(int argc, char *argv[])
 	GDKfree(dbfarm);
 
 	/* open up a connection */
-	e = openConnection(&sock, MEROV_PORT);
+	e = openConnection(&sock, port);
 	if (e == NO_ERR) {
 		pthread_t ctid = 0;
 		int comfd = -1;
