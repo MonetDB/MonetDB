@@ -1081,8 +1081,14 @@ main(int argc, char *argv[])
 	}
 
 	snprintf(buf, 1024, "%s/.merovingian_lock", dbfarm);
-	/* we leak ret, but that doesn't matter as the file needs to remain
-	 * available, otherwise we loose the lock */
+	/* Unfortunately we need to do this twice.  After we fork, we lose
+	 * the lock on this file, so in the forked child we need to lock
+	 * again, making sure the parent unlocked.  There is a potential
+	 * race condition here between the unlock and the relock by the
+	 * child, but this is assumed to be neglictible.  Over all, it is
+	 * important that the parent can return when the lockfile is already
+	 * in use, because that means s-s-d (the caller) is able to
+	 * identify it as a failed start attempt. */
 	if ((ret = MT_lockf(buf, F_TLOCK, 4, 1)) == -1) {
 		/* locking failed */
 		fprintf(stderr, "another merovingian is already running\n");
@@ -1095,6 +1101,7 @@ main(int argc, char *argv[])
 		fflush(stderr);
 		exit(1);
 	}
+	close(ret);
 
 	snprintf(buf, 1024, "%s/.merovingian_control", dbfarm);
 	unlink(buf);
@@ -1192,7 +1199,28 @@ main(int argc, char *argv[])
 			write(oerr, "\n", 1);
 			return(1);
 		case 0:
-			/* the child, we want to keep it */
+			/* the child, we want to keep it, try to lock, we can only
+			 * do that here, as we don't inherit the lock from our
+			 * parent... */
+			snprintf(buf, 1024, "%s/.merovingian_lock", dbfarm);
+			/* we leak ret, but that doesn't matter as the file needs to
+			 * remain available, otherwise we loose the lock */
+			if ((ret = MT_lockf(buf, F_TLOCK, 4, 1)) == -1) {
+				/* locking failed */
+				write(oerr, "another merovingian is already running\n",
+						sizeof("another merovingian is already running\n"));
+				exit(1);
+			} else if (ret == -2) {
+				/* directory or something doesn't exist */
+				write(oerr, "unable to create .merovingian_lock file in ",
+						sizeof("unable to create .merovingian_lock file in "));
+				write(oerr, dbfarm, strlen(dbfarm));
+				write(oerr, ": ", 2);
+				write(oerr, strerror(errno), strlen(strerror(errno)));
+				write(oerr, "\n", 1);
+				exit(1);
+			}
+
 			close(oerr);
 		break;
 		default:
