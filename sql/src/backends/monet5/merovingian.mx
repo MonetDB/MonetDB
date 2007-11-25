@@ -1243,7 +1243,7 @@ main(int argc, char *argv[])
 	d->dbname = "merovingian";
 
 	/* write out the pid */
-	fprintf(pidfile, "%d\n", d->pid);
+	fprintf(pidfile, "%d\n", (int)d->pid);
 	fflush(pidfile);
 	fclose(pidfile);
 
