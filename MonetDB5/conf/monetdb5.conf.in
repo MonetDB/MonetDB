@@ -115,6 +115,8 @@ monet_welcome=yes
 # You can easily generate some key by running pwgen and adding a few of
 # the passwords generated.  Make sure not to make the key too small.
 # If you leave this unset, some default key is used.
+# If you use Merovingian, a per-database vault key is used and this
+# setting ignored.
 #monet_vault_key=@sysconfdir@@DIRSEP@monetdb.secret
 
 # Merovingian section
