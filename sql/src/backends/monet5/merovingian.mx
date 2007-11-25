@@ -1203,10 +1203,10 @@ main(int argc, char *argv[])
 		case -1:
 			/* oops, forking went wrong, cheat a bit in order to write to
 			 * the console */
-			write(oerr, "unable to fork into background: ", 
+			(void)write(oerr, "unable to fork into background: ", 
 					sizeof("unable to fork into background: "));
-			write(oerr, strerror(errno), strlen(strerror(errno)));
-			write(oerr, "\n", 1);
+			(void)write(oerr, strerror(errno), strlen(strerror(errno)));
+			(void)write(oerr, "\n", 1);
 			return(1);
 		case 0:
 			/* the child, we want to keep it, try to lock, we can only
@@ -1217,17 +1217,17 @@ main(int argc, char *argv[])
 			 * remain available, otherwise we loose the lock */
 			if ((ret = MT_lockf(buf, F_TLOCK, 4, 1)) == -1) {
 				/* locking failed */
-				write(oerr, "another merovingian is already running\n",
+				(void)write(oerr, "another merovingian is already running\n",
 						sizeof("another merovingian is already running\n"));
 				exit(1);
 			} else if (ret == -2) {
 				/* directory or something doesn't exist */
-				write(oerr, "unable to create .merovingian_lock file in ",
+				(void)write(oerr, "unable to create .merovingian_lock file in ",
 						sizeof("unable to create .merovingian_lock file in "));
-				write(oerr, dbfarm, strlen(dbfarm));
-				write(oerr, ": ", 2);
-				write(oerr, strerror(errno), strlen(strerror(errno)));
-				write(oerr, "\n", 1);
+				(void)write(oerr, dbfarm, strlen(dbfarm));
+				(void)write(oerr, ": ", 2);
+				(void)write(oerr, strerror(errno), strlen(strerror(errno)));
+				(void)write(oerr, "\n", 1);
 				exit(1);
 			}
 
