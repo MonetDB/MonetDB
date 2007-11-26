@@ -37,6 +37,7 @@
 #include <assert.h>
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 
 #include "lalg2sql.h"
 #include "alg_dag.h"
@@ -971,8 +972,11 @@ step_sibling (PFla_op_t *p, PFsql_aident_t ctx, PFsql_aident_t step,
 
 static void
 step_axis (PFla_op_t *p, PFsql_aident_t ctx, PFsql_aident_t step,
-           PFalg_axis_t axis, PFsql_t *fragment)
+           PFalg_axis_t axis, PFsql_t *fragment, int level_in)
 {
+    char *selectivity_str = getenv ("PF_USE_DB2_SELECTIVITY");
+    bool  selectivity     = selectivity_str && !strcmp (selectivity_str, "1");
+    
     switch (axis) {
         /* ancestor axis */
         case alg_anc:
@@ -996,16 +1000,64 @@ step_axis (PFla_op_t *p, PFsql_aident_t ctx, PFsql_aident_t step,
         case alg_chld:
         /* attribute axis */
         case alg_attr:
-            where_list_add (WHERELIST(p),
-                            between (PRE(step), add (PRE(ctx), lit_int (1)),
-                                     add (PRE(ctx), SIZE(ctx))));
+            if (selectivity) {
+                if ((level_in == 0 || level_in == 1) &&
+                    /* check for steps from a single document */
+                    L(p)->kind == la_frag_union &&
+                    LL(p)->kind == la_empty_frag &&
+                    LR(p)->kind == la_fragment &&
+                    L(LR(p))->kind == la_doc_tbl) {
+                    where_list_add (WHERELIST(p),
+                                    selectivity (gt (PRE(step), PRE(ctx)),
+                                                 lit_dec (1)));
+                    where_list_add (WHERELIST(p),
+                                    selectivity (gteq (add (PRE(ctx), SIZE(ctx)),
+                                                       PRE(step)),
+                                                 lit_dec (1)));
+                } else {
+                    where_list_add (WHERELIST(p),
+                                    selectivity (gt (PRE(step), PRE(ctx)),
+                                                 lit_dec (0.01)));
+                    where_list_add (WHERELIST(p),
+                                    selectivity (gteq (add (PRE(ctx), SIZE(ctx)),
+                                                       PRE(step)),
+                                                 lit_dec (0.01)));
+                }
+            } else
+                where_list_add (WHERELIST(p),
+                                between (PRE(step), add (PRE(ctx), lit_int (1)),
+                                         add (PRE(ctx), SIZE(ctx))));
             break;
 
         /* descendant-or-self axis */
         case alg_desc_s:
-            where_list_add (WHERELIST(p),
-                            between (PRE(step), PRE(ctx),
-                                     add (PRE(ctx), SIZE(ctx))));
+            if (selectivity) {
+                if ((level_in == 0 || level_in == 1) &&
+                    /* check for steps from a single document */
+                    L(p)->kind == la_frag_union &&
+                    LL(p)->kind == la_empty_frag &&
+                    LR(p)->kind == la_fragment &&
+                    L(LR(p))->kind == la_doc_tbl) {
+                    where_list_add (WHERELIST(p),
+                                    selectivity (gteq (PRE(step), PRE(ctx)),
+                                                 lit_dec (1)));
+                    where_list_add (WHERELIST(p),
+                                    selectivity (gteq (add (PRE(ctx), SIZE(ctx)),
+                                                     PRE(step)),
+                                                 lit_dec (1)));
+                } else {
+                    where_list_add (WHERELIST(p),
+                                    selectivity (gteq (PRE(step), PRE(ctx)),
+                                                 lit_dec (0.01)));
+                    where_list_add (WHERELIST(p),
+                                    selectivity (gteq (add (PRE(ctx), SIZE(ctx)),
+                                                     PRE(step)),
+                                                 lit_dec (0.01)));
+                }
+            } else
+                where_list_add (WHERELIST(p),
+                                between (PRE(step), PRE(ctx),
+                                         add (PRE(ctx), SIZE(ctx))));
             break;
 
         /* following-sibling axis */
@@ -1902,10 +1954,7 @@ reduce (PFla_op_t * p, int goalnt)
                     else {
                         doc2 = new_alias ();
                         from_list_add  (FROMLIST(p), frags, doc2);
-                        where_list_add  (WHERELIST(p),
-                                         between (PRE(doc2),
-                                                  PRE(doc1),
-                                                  add (PRE(doc1), SIZE(doc1))));
+                        step_axis (p, doc1, doc2, alg_desc_s, NULL, -1);
                         orderby = sortkey_list (orderby,
                                                 sortkey_item (PRE(doc2), true));
                     }
@@ -1956,6 +2005,9 @@ reduce (PFla_op_t * p, int goalnt)
                 from      = from_list_at (FROMLIST(query), 0);
                 from_bind = alias_bind (from.table, alias (from.alias));
 
+                /* add the axis conditions */
+                step_axis (p, doc1, doc2, alg_desc_s, NULL, -1);
+
                 finalquery = PFsql_select (
                                  distinct,
                                  select_list (
@@ -1974,10 +2026,7 @@ reduce (PFla_op_t * p, int goalnt)
                                                          alias (doc1))),
                                                  eq (PRE(doc1), item_expr)),
                                              alias_bind (frags, alias (doc2))),
-                                         between (PRE(doc2),
-                                                  PRE(doc1),
-                                                  add (PRE(doc1),
-                                                       SIZE(doc1))))),
+                                         transform_wheremap (p))),
                                  NULL,
                                  sortkey_list (orderby,
                                                sortkey_item (PRE(doc2), true)),
@@ -3493,7 +3542,8 @@ reduce (PFla_op_t * p, int goalnt)
                        ctxalias,
                        stepalias,
                        p->sem.step.axis,
-                       FRAG(L(p)));
+                       FRAG(L(p)),
+                       PFprop_level (R(p)->prop, p->sem.step.item));
 
             if (p->kind == la_step || p->kind == la_step_join) {
                 step_name (p, stepalias, p->sem.step.ty);
@@ -4058,7 +4108,7 @@ reduce (PFla_op_t * p, int goalnt)
             step = new_alias ();
             from_list_add (FROMLIST(p), NULL, step);
             /* add the axis conditions */
-            step_axis (p, ctx, step, alg_desc_s, NULL);
+            step_axis (p, ctx, step, alg_desc_s, NULL, -1);
 
             selectlist = select_list (
                              column_assign (iter_expr, ITER_),
