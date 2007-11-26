@@ -1203,13 +1203,9 @@ main(int argc, char *argv[])
 		case -1:
 			/* oops, forking went wrong, cheat a bit in order to write to
 			 * the console */
-		    	/* show compiler that we do (not?) care about write()'s return value */
-			if (write(oerr, "unable to fork into background: ", 
-					sizeof("unable to fork into background: ")) < 0
-			 || write(oerr, strerror(errno), strlen(strerror(errno))) < 0
-			 || write(oerr, "\n", 1) < 0) {
-				return(1);
-			}
+			d->ferr = fdopen(oerr, "r");
+			fprintf(d->ferr, "unable to fork into background: %s\n",
+					strerror(errno));
 			return(1);
 		case 0:
 			/* the child, we want to keep it, try to lock, we can only
@@ -1220,23 +1216,14 @@ main(int argc, char *argv[])
 			 * remain available, otherwise we loose the lock */
 			if ((ret = MT_lockf(buf, F_TLOCK, 4, 1)) == -1) {
 				/* locking failed */
-			    	/* show compiler that we do (not?) care about write()'s return value */
-				if (write(oerr, "another merovingian is already running\n",
-						sizeof("another merovingian is already running\n")) > 0) {
-					exit(1);
-				}
+				d->ferr = fdopen(oerr, "r");
+				fprintf(d->ferr, "another merovingian is already running\n");
 				exit(1);
 			} else if (ret == -2) {
 				/* directory or something doesn't exist */
-			    	/* show compiler that we do (not?) care about write()'s return value */
-				if (write(oerr, "unable to create .merovingian_lock file in ",
-						sizeof("unable to create .merovingian_lock file in ")) < 0
-				 || write(oerr, dbfarm, strlen(dbfarm)) < 0
-				 || write(oerr, ": ", 2) < 0
-				 || write(oerr, strerror(errno), strlen(strerror(errno))) < 0
-				 || write(oerr, "\n", 1) < 0) {
-					exit(1);
-				}
+				d->ferr = fdopen(oerr, "r");
+				fprintf(d->ferr, "unable to create .merovingian_lock file in "
+						"%s: %s\n", dbfarm, strerror(errno));
 				exit(1);
 			}
 
