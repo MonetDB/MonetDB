@@ -26,12 +26,12 @@
  *
  * $Id$
  */
-#ifndef CORE_2_SQL_H
-#define CORE_2_SQL_H
+#ifndef LALG_2_SQL_H
+#define LALG_2_SQL_H
 
 #include "logical.h"
 #include "sql.h"
 
 PFsql_t* PFlalg2sql(PFla_op_t *p);
 
-#endif /* CORE_2_SQL */
+#endif /* LALG_2_SQL */
