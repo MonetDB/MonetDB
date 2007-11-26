@@ -142,6 +142,7 @@
 #define case_(...)                   PFsql_case(__VA_ARGS__)
 #define when(be,e)                   PFsql_when(be,e)
 #define else_(e)                     PFsql_else(e)
+#define selectivity(pred,sel)        PFsql_selectivity(pred,sel)
 
 #define duplicate(e)                 PFsql_op_duplicate(e)
 

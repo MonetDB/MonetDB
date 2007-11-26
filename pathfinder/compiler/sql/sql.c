@@ -1079,6 +1079,15 @@ PFsql_else (PFsql_t *expr)
 }
 
 /**
+ * Create a DB2 selectivity hint.
+ */
+PFsql_t *
+PFsql_selectivity (PFsql_t *pred, PFsql_t *sel)
+{
+    return wire2 (sql_db2_selectivity, pred, sel);
+}
+
+/**
  * Duplicate a given SQL tree.
  */
 PFsql_t *
@@ -1253,6 +1262,11 @@ PFsql_column_name_str (PFsql_col_t *name)
             case sql_col_pos:      return "pos";
             case sql_col_guide:    return "guide";
             case sql_col_max:      return "max";
+            case sql_col_dist:
+                assert (name->ty < 100);
+                res = (char *) PFmalloc (7 * sizeof (char));
+                snprintf (res, 7, "dist%02i", name->ty);
+                return res;
         }
     else {
         char  *attstr = PFatt_str (name->att);

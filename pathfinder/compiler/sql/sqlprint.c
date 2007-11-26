@@ -325,11 +325,9 @@ print_condition (PFsql_t *n)
     {
         case sql_is:
         case sql_is_not:
-            PFprettyprintf ("(");
             print_statement (L(n));
             PFprettyprintf(" %s ", ID[n->kind]);
             print_statement (R(n));
-            PFprettyprintf (")");
             break;
 
         case sql_not:
@@ -341,68 +339,69 @@ print_condition (PFsql_t *n)
         case sql_and:
         case sql_or:
             /* expression : '(' expression 'OP' expression ')' */
-            PFprettyprintf ("(");
+            PFprettyprintf ("((");
             print_condition (L(n));
-            PFprettyprintf (" %s ", ID[n->kind]);
-            print_condition (R(n));
             PFprettyprintf (")");
+            PFprettyprintf (" %s ", ID[n->kind]);
+            PFprettyprintf ("(");
+            print_condition (R(n));
+            PFprettyprintf ("))");
             break;
             
         case sql_eq:
-            PFprettyprintf ("(");
             print_statement (L(n));
             PFprettyprintf (" = ");
             print_statement (R(n));
-            PFprettyprintf (")");
             break;
             
         case sql_gt:
             /* switch arguments */
-            PFprettyprintf ("(");
             print_statement (R(n));
             PFprettyprintf (" < ");
             print_statement (L(n));
-            PFprettyprintf (")");
             break;
 
         case sql_gteq:
             /* switch arguments */
-            PFprettyprintf ("(");
             print_statement (R(n));
             PFprettyprintf (" <= ");
             print_statement (L(n));
-            PFprettyprintf (")");
             break;
         
         case sql_between:
-            PFprettyprintf ("(");
             print_statement (n->child[0]);
             PFprettyprintf (" BETWEEN ");
             print_statement (n->child[1]);
             PFprettyprintf (" AND ");
             assert (n->child[2]);
             print_statement (n->child[2]);        
-            PFprettyprintf (")");
             break;
             
         case sql_like:
             if (R(n)->kind != sql_lit_str)
                 PFoops (OOPS_FATAL, "LIKE only works with constant strings");
             
-            PFprettyprintf ("(");
             print_statement (L(n));
             /* write the string without beginning and trailing ' */
-            PFprettyprintf (" LIKE  '%%%s%%')", R(n)->sem.atom.val.s);
+            PFprettyprintf (" LIKE  '%%%s%%'", R(n)->sem.atom.val.s);
             break;
     
         case sql_in:
-            PFprettyprintf ("(");
             print_statement (L(n));
             PFprettyprintf (" IN (");
             print_stmt_list (R(n));
-            PFprettyprintf ("))");
+            PFprettyprintf (")");
             break; 
             
+        case sql_db2_selectivity:
+            PFprettyprintf ("(");
+            print_condition (L(n));
+            PFprettyprintf (" SELECTIVITY ");
+            assert (R(n)->kind == sql_lit_dec);
+            print_literal (R(n));
+            PFprettyprintf (")");
+            break;
+
         default:
             PFoops (OOPS_FATAL,
                     "SQL grammar conflict. (Expected: condition; "
