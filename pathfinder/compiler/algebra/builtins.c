@@ -4457,12 +4457,22 @@ PFbui_upd_insert_into_as_first (const PFla_op_t *loop,
 {
     (void) loop; (void) ordering;
 
-    /* FIXME: also have to reverse the order of the sequence*/
+
+
+    PFla_op_t *rev = project (rank (args[1].rel,
+                                    att_pos1,
+                                    PFord_refine (PFordering (),
+                                                  att_pos,
+                                                  DIR_DESC)),
+                              proj (att_iter, att_iter),
+                              proj (att_pos, att_pos1),
+                              proj (att_item, att_item));
+
     return (struct PFla_pair_t) {
         .rel = project (
                    fun_1to1 (
                        eqjoin (args[0].rel,
-                               project (args[1].rel,
+                               project (rev,
                                         proj (att_iter1, att_iter),
                                         proj (att_item1, att_item)),
                                att_iter,
@@ -4515,7 +4525,6 @@ PFbui_upd_insert_before (const PFla_op_t *loop, bool ordering,
 {
     (void) loop; (void) ordering;
 
-    /* FIXME: also have to reverse the order of the sequence*/
     return (struct PFla_pair_t) {
         .rel = project (
                    fun_1to1 (
@@ -4544,11 +4553,20 @@ PFbui_upd_insert_after (const PFla_op_t *loop, bool ordering,
 {
     (void) loop; (void) ordering;
 
+    PFla_op_t *rev = project (rank (args[1].rel,
+                                    att_pos1,
+                                    PFord_refine (PFordering (),
+                                                  att_pos,
+                                                  DIR_DESC)),
+                              proj (att_iter, att_iter),
+                              proj (att_pos, att_pos1),
+                              proj (att_item, att_item));
+
     return (struct PFla_pair_t) {
         .rel = project (
                    fun_1to1 (
                        eqjoin (args[0].rel,
-                               project (args[1].rel,
+                               project (rev,
                                         proj (att_iter1, att_iter),
                                         proj (att_item1, att_item)),
                                att_iter,

@@ -1174,411 +1174,646 @@ reduce (PFpa_op_t * p, int goalnt)
             time = new_var (1);
             execute (assgn (var (time->name), usec ()));
 
+            /* check if the type of the root node is aat_update
+               and if yes play the update tape */
             if (aat_update & type_of (R(p), pa_item)) {
-                /* play update tape and return (a.k.a. if-else) */
-            }
+                /* Set up all the value containers for update_tape(). */
+  /* UpdateTape (
+     BAT[void,bat] ws,                     BAT[void,int] kind,
+     BAT[void,oid] pre_tgt,                BAT[void,oid] pre_cont_tgt,
+     BAT[void,oid] attr_tgt,               BAT[void,oid] attr_cont_tgt,
+     BAT[void,str] replace_strings,        BAT[void,str] replace_qn_uristrings,
+     BAT[void,str] replace_qn_loc_strings, BAT[void,oid] pre_ins,
+     BAT[void,oid] pre_cont_ins,           BAT[void,oid] attr_ins,
+     BAT[void,oid] attr_cont_ins): void
+  */
+                mvar_t *upd_kind, *pre_tgt, *pre_cont_tgt, *attr_tgt,
+                       *attr_cont_tgt, *replace_strings, *replace_qn_uristrings,
+                       *replace_qn_loc_strings, *pre_ins, *pre_cont_ins,
+                       *attr_ins, *attr_cont_ins;
 
-            /* Set up all the value containers for print_result().
-             * (It is actually too much overhead to introduce the value
-             * containers just for printing. But this way we can re-use
-             * Jan F's print_result() and stay compatible with the
-             * ``summer branch''.
-             */
+                upd_kind = new_var(1);
+                pre_tgt = new_var(1);
+                pre_cont_tgt = new_var(1);
+                attr_tgt = new_var(1);
+                attr_cont_tgt = new_var(1);
+                replace_strings = new_var(1);
+                replace_qn_uristrings = new_var(1);
+                replace_qn_loc_strings = new_var(1);
+                pre_ins = new_var(1);
+                pre_cont_ins = new_var(1);
+                attr_ins = new_var(1);
+                attr_cont_ins = new_var(1);
 
-            intVAL = new_var (1);
-            dblVAL = new_var (1);
-            /*decVAL = new_var (1); as we currently have no
-                                    decimal support we use doubles */
-            decVAL = dblVAL;
-            strVAL = new_var (1);
-            item = new_var (1);
-            kind = new_var (1);
 
-            execute (
-                assgn (var (intVAL->name),
-                       seqbase (
-                           reverse (
-                               key (new (type (mty_lng), type (mty_void)),
-                                    true)),
-                           lit_oid (0))),
-                assgn (var (dblVAL->name),
-                       seqbase (
-                           reverse (
-                               key (new (type (mty_dbl), type (mty_void)),
-                                    true)),
-                           lit_oid (0))),
-                /*
-                assgn (var (decVAL->name),
-                       seqbase (
-                           reverse (
-                               key (new (type (mty_dbl), type (mty_void)),
-                                true)),
-                           lit_oid (0))),
-                */
-                assgn (var (strVAL->name),
-                       seqbase (
-                           reverse (
-                               key (new (type (mty_str), type (mty_void)),
-                                    true)),
-                           lit_oid (0))),
-                assgn (var (item->name),
-                       seqbase (new (type (mty_void), type (mty_oid)),
-                                lit_oid(0))),
-                assgn (var (kind->name),
-                       seqbase (new (type (mty_void), type (mty_int)),
-                                lit_oid(0)))
+                ty = type_of (R(p), pa_item);
+
+
+                /* consider update kind */
+                execute (
+                    assgn (var (upd_kind->name),
+                           VAR (R(p)->env, pa_item, aat_update)),
                 );
 
-            ty = type_of (R(p), pa_item);
+                /* consider strings  (which are arriving as aat_uA...)*/
 
-            /* consider attribute results */
-            if (ty & aat_anode) {
-                if (ty == aat_anode) {
+                if (ty & aat_uA) {
                     execute (
-                        assgn (var (item->name),
-                               VAR (R(p)->env, pa_item, aat_attr)),
-                        assgn (var (kind->name),
-                               set_kind (VAR (R(p)->env, pa_item, aat_afrag),
-                                         var (PF_MIL_VAR_ATTR)))
+                        assgn (var (replace_strings->name),
+                               VAR (R(p)->env, pa_item, aat_uA))
                         );
-                    sorted = true;
-                }
-                else {
-                    assert (ty & aat_attr && ty & aat_afrag);
+                } else {
                     execute (
-                        binsert (var (item->name),
-                                 select2 (
-                                     VAR (R(p)->env, pa_item, aat_attr),
-                                     cast (type (mty_oid), nil ()),
-                                     cast (type (mty_oid), nil ()))),
-                        binsert (var (kind->name),
-                                 select2 (
-                                     set_kind (VAR (R(p)->env,
-                                                    pa_item,
-                                                    aat_afrag),
-                                               var (PF_MIL_VAR_ATTR)),
-                                     cast (type (mty_int), nil ()),
-                                     cast (type (mty_int), nil ())))
+                        assgn (var (replace_strings->name),
+                               project (var (upd_kind->name),
+                                        nil()))
                         );
                 }
-            }
 
-            /* consider node results */
-            if (ty & aat_pnode) {
-                if (ty == aat_pnode) {
+                /* consider qnames */
+                /* FIXME: qnames are not treated correctly */
+                if (ty & aat_qname) {
                     execute (
-                        assgn (var (item->name),
-                               VAR (R(p)->env, pa_item, aat_pre)),
-                        assgn (var (kind->name),
-                               set_kind (VAR (R(p)->env, pa_item, aat_pfrag),
+                        assgn (var (replace_qn_uristrings->name),
+                               VAR (R(p)->env, pa_item, aat_qname)),
+                        assgn (var (replace_qn_loc_strings->name),
+                               VAR (R(p)->env, pa_item, aat_qname)),
+                        );
+                } else {
+                    execute (
+                        assgn (var (replace_qn_uristrings->name),
+                               project (var (upd_kind->name),
+                                        nil())),
+                        assgn (var (replace_qn_loc_strings->name),
+                               project (var (upd_kind->name),
+                                        nil()))
+                        );
+                }
+
+                /* consider node tgt */
+                if (ty & aat_pnode1) {
+                    execute (
+                        assgn (var (pre_tgt->name),
+                               VAR (R(p)->env, pa_item, aat_pre1)),
+                        assgn (var (pre_cont_tgt->name),
+                               set_kind (VAR (R(p)->env,
+                                              pa_item,
+                                              aat_pfrag1),
                                          var (PF_MIL_VAR_ELEM)))
                         );
-                    sorted = true;
-                }
-                else {
-                    assert (ty & aat_pre && ty & aat_pfrag);
+                } else {
                     execute (
-                        binsert (var (item->name),
-                                 select2 (
-                                     VAR (R(p)->env, pa_item, aat_pre),
-                                     cast (type (mty_oid), nil ()),
-                                     cast (type (mty_oid), nil ()))),
-                        binsert (var (kind->name),
-                                 select2 (
-                                     set_kind (VAR (R(p)->env,
-                                                    pa_item,
-                                                    aat_pfrag),
-                                               var (PF_MIL_VAR_ELEM)),
-                                     cast (type (mty_int), nil ()),
-                                     cast (type (mty_int), nil ())))
+                        assgn (var (pre_tgt->name),
+                               project (var (upd_kind->name),
+                                        nil())),
+                        assgn (var (pre_cont_tgt->name),
+                               project (var (upd_kind->name),
+                                        nil()))
                         );
                 }
-            }
 
-            /* consider str results */
-            if (ty & aat_str) {
+                /* consider node ins */
+                if (ty & aat_pnode) {
+                    execute (
+                        assgn (var (pre_ins->name),
+                               VAR (R(p)->env, pa_item, aat_pre)),
+                        assgn (var (pre_cont_ins->name),
+                               set_kind (VAR (R(p)->env,
+                                              pa_item,
+                                              aat_pfrag),
+                                         var (PF_MIL_VAR_ELEM)))
+                        );
+                } else {
+                    execute (
+                        assgn (var (pre_ins->name),
+                               project (var (upd_kind->name),
+                                        nil())),
+                        assgn (var (pre_cont_ins->name),
+                               project (var (upd_kind->name),
+                                        nil()))
+                        );
+                }
+
+                /* consider attribute tgt */
+                if (ty & aat_anode1) {
+                    execute (
+                        assgn (var (attr_tgt->name),
+                               VAR (R(p)->env, pa_item, aat_attr1)),
+                        assgn (var (attr_cont_tgt->name),
+                               set_kind (VAR (R(p)->env,
+                                              pa_item,
+                                              aat_afrag1),
+                                         var (PF_MIL_VAR_ATTR)))
+                        );
+                } else {
+                    execute (
+                        assgn (var (attr_tgt->name),
+                               project (var (upd_kind->name),
+                                        nil())),
+                        assgn (var (attr_cont_tgt->name),
+                               project (var (upd_kind->name),
+                                        nil()))
+                        );
+                }
+
+                /* consider attribute ins */
+                if (ty & aat_anode) {
+                    execute (
+                        assgn (var (attr_ins->name),
+                               VAR (R(p)->env, pa_item, aat_attr)),
+                        assgn (var (attr_cont_ins->name),
+                               set_kind (VAR (R(p)->env,
+                                              pa_item,
+                                              aat_afrag),
+                                         var (PF_MIL_VAR_ATTR)))
+                        );
+                } else {
+                    execute (
+                        assgn (var (attr_ins->name),
+                               project (var (upd_kind->name),
+                                        nil())),
+                        assgn (var (attr_cont_ins->name),
+                               project (var (upd_kind->name),
+                                        nil()))
+                        );
+                }
+
+                /* execute update_tape */
                 execute (
-                    bappend (var (strVAL->name),
-                             reverse (
-                                 kunique (
-                                     reverse (
-                                         select2 (VAR (R(p)->env,
+                    update_tape (
+                        arg (var (PF_MIL_VAR_WS),
+                            arg (var (upd_kind->name),
+                                arg (var (pre_tgt->name),
+                                    arg (var (pre_cont_tgt->name),
+                                        arg (var (attr_tgt->name),
+                                            arg (var (attr_cont_tgt->name),
+                        arg (var (replace_strings->name),
+                            arg (var (replace_qn_uristrings->name),
+                                arg (var (replace_qn_loc_strings->name),
+                                    arg (var (pre_ins->name),
+                                        arg (var (pre_cont_ins->name),
+                                            arg (var (attr_ins->name),
+                                                 var (attr_cont_ins->name)
+                        ))))))))))))));  /* end of play update tape      */
+
+                unpin (upd_kind, 1);
+                unpin (pre_tgt, 1);
+                unpin (pre_cont_tgt, 1);
+                unpin (attr_tgt, 1);
+                unpin (attr_cont_tgt, 1);
+                unpin (replace_strings, 1);
+                unpin (replace_qn_uristrings, 1);
+                unpin (replace_qn_loc_strings, 1);
+                unpin (pre_ins, 1);
+                unpin (pre_cont_ins, 1);
+                unpin (attr_ins, 1);
+                unpin (attr_cont_ins, 1);
+            } else {                     /* else, is not an update query */
+
+                /* Set up all the value containers for print_result().
+                 * (It is actually too much overhead to introduce the value
+                 * containers just for printing. But this way we can re-use
+                 * Jan F's print_result() and stay compatible with the
+                 * ``summer branch''.
+                 */
+
+                intVAL = new_var (1);
+                dblVAL = new_var (1);
+                /*decVAL = new_var (1); as we currently have no
+                                        decimal support we use doubles */
+                decVAL = dblVAL;
+                strVAL = new_var (1);
+                item = new_var (1);
+                kind = new_var (1);
+
+                execute (
+                    assgn (var (intVAL->name),
+                           seqbase (
+                               reverse (
+                                   key (new (type (mty_lng), type (mty_void)),
+                                        true)),
+                               lit_oid (0))),
+                    assgn (var (dblVAL->name),
+                           seqbase (
+                               reverse (
+                                   key (new (type (mty_dbl), type (mty_void)),
+                                        true)),
+                               lit_oid (0))),
+                    /*
+                    assgn (var (decVAL->name),
+                           seqbase (
+                               reverse (
+                                   key (new (type (mty_dbl), type (mty_void)),
+                                    true)),
+                               lit_oid (0))),
+                    */
+                    assgn (var (strVAL->name),
+                           seqbase (
+                               reverse (
+                                   key (new (type (mty_str), type (mty_void)),
+                                        true)),
+                               lit_oid (0))),
+                    assgn (var (item->name),
+                           seqbase (new (type (mty_void), type (mty_oid)),
+                                    lit_oid(0))),
+                    assgn (var (kind->name),
+                           seqbase (new (type (mty_void), type (mty_int)),
+                                    lit_oid(0)))
+                    );
+
+                ty = type_of (R(p), pa_item);
+
+                /* consider attribute results */
+                if (ty & aat_anode) {
+                    if (ty == aat_anode) {
+                        execute (
+                            assgn (var (item->name),
+                                   VAR (R(p)->env, pa_item, aat_attr)),
+                            assgn (var (kind->name),
+                                   set_kind (VAR (R(p)->env,
+                                                  pa_item,
+                                                  aat_afrag),
+                                             var (PF_MIL_VAR_ATTR)))
+                            );
+                        sorted = true;
+                    }
+                    else {
+                        assert (ty & aat_attr && ty & aat_afrag);
+                        execute (
+                            binsert (var (item->name),
+                                     select2 (
+                                         VAR (R(p)->env, pa_item, aat_attr),
+                                         cast (type (mty_oid), nil ()),
+                                         cast (type (mty_oid), nil ()))),
+                            binsert (var (kind->name),
+                                     select2 (
+                                         set_kind (VAR (R(p)->env,
+                                                        pa_item,
+                                                        aat_afrag),
+                                                   var (PF_MIL_VAR_ATTR)),
+                                         cast (type (mty_int), nil ()),
+                                         cast (type (mty_int), nil ())))
+                            );
+                    }
+                }
+
+                /* consider node results */
+                if (ty & aat_pnode) {
+                    if (ty == aat_pnode) {
+                        execute (
+                            assgn (var (item->name),
+                                   VAR (R(p)->env, pa_item, aat_pre)),
+                            assgn (var (kind->name),
+                                   set_kind (VAR (R(p)->env,
+                                                  pa_item,
+                                                  aat_pfrag),
+                                             var (PF_MIL_VAR_ELEM)))
+                            );
+                        sorted = true;
+                    }
+                    else {
+                        assert (ty & aat_pre && ty & aat_pfrag);
+                        execute (
+                            binsert (var (item->name),
+                                     select2 (
+                                         VAR (R(p)->env, pa_item, aat_pre),
+                                         cast (type (mty_oid), nil ()),
+                                         cast (type (mty_oid), nil ()))),
+                            binsert (var (kind->name),
+                                     select2 (
+                                         set_kind (VAR (R(p)->env,
+                                                        pa_item,
+                                                        aat_pfrag),
+                                                   var (PF_MIL_VAR_ELEM)),
+                                         cast (type (mty_int), nil ()),
+                                         cast (type (mty_int), nil ())))
+                            );
+                    }
+                }
+
+                /* consider str results */
+                if (ty & aat_str) {
+                    execute (
+                        bappend (var (strVAL->name),
+                                 reverse (
+                                     kunique (
+                                         reverse (
+                                             select2 (VAR (R(p)->env,
+                                                           pa_item,
+                                                           aat_str),
+                                                      cast (type (mty_str),
+                                                            nil ()),
+                                                      cast (type (mty_str),
+                                                            nil ()))
+                                             )))));
+                    if (ty == aat_str) {
+                        execute (
+                            assgn (
+                                var (item->name),
+                                leftjoin (VAR (R(p)->env, pa_item, aat_str),
+                                          reverse (var (strVAL->name)))),
+                            assgn (
+                                var (kind->name),
+                                project (VAR (R(p)->env, pa_item, aat_str),
+                                         var (PF_MIL_VAR_STR)))
+                            );
+                        sorted = true;
+                    }
+                    else {
+                        execute (
+                            binsert (
+                                var (item->name),
+                                join (VAR (R(p)->env, pa_item, aat_str),
+                                      reverse (var (strVAL->name)))),
+                            binsert (
+                                var (kind->name),
+                                project (select2 (VAR (R(p)->env,
                                                        pa_item,
                                                        aat_str),
-                                                  cast (type (mty_str), nil ()),
-                                                  cast (type (mty_str), nil ()))
-                                         )))));
-                if (ty == aat_str) {
-                    execute (
-                        assgn (
-                            var (item->name),
-                            leftjoin (VAR (R(p)->env, pa_item, aat_str),
-                                      reverse (var (strVAL->name)))),
-                        assgn (
-                            var (kind->name),
-                            project (VAR (R(p)->env, pa_item, aat_str),
-                                     var (PF_MIL_VAR_STR)))
+                                                  cast (type (mty_str),
+                                                        nil ()),
+                                                  cast (type (mty_str),
+                                                        nil ())),
+                                         var (PF_MIL_VAR_STR)))
                         );
-                    sorted = true;
+                    }
                 }
-                else {
-                    execute (
-                        binsert (
-                            var (item->name),
-                            join (VAR (R(p)->env, pa_item, aat_str),
-                                  reverse (var (strVAL->name)))),
-                        binsert (
-                            var (kind->name),
-                            project (select2 (VAR (R(p)->env, pa_item, aat_str),
-                                              cast (type (mty_str), nil ()),
-                                              cast (type (mty_str), nil ())),
-                                     var (PF_MIL_VAR_STR)))
-                    );
-                }
-            }
 
-            /* consider untyped results */
-            if (ty & aat_uA) {
-                execute (
-                    bappend (var (strVAL->name),
-                             reverse (
-                                 kunique (
-                                     reverse (
-                                         select2 (VAR (R(p)->env,
+                /* consider untyped results */
+                if (ty & aat_uA) {
+                    execute (
+                        bappend (var (strVAL->name),
+                                 reverse (
+                                     kunique (
+                                         reverse (
+                                             select2 (VAR (R(p)->env,
+                                                           pa_item,
+                                                           aat_uA),
+                                                      cast (type (mty_str),
+                                                            nil ()),
+                                                      cast (type (mty_str),
+                                                            nil ()))
+                                             )))));
+                    if (ty == aat_uA) {
+                        execute (
+                            assgn (
+                                var (item->name),
+                                leftjoin (VAR (R(p)->env, pa_item, aat_uA),
+                                          reverse (var (strVAL->name)))),
+                            assgn (
+                                var (kind->name),
+                                project (VAR (R(p)->env, pa_item, aat_uA),
+                                         var (PF_MIL_VAR_STR)))
+                            );
+                        sorted = true;
+                    }
+                    else {
+                        execute (
+                            binsert (
+                                var (item->name),
+                                join (VAR (R(p)->env, pa_item, aat_uA),
+                                      reverse (var (strVAL->name)))),
+                            binsert (
+                                var (kind->name),
+                                project (select2 (VAR (R(p)->env,
                                                        pa_item,
                                                        aat_uA),
-                                                  cast (type (mty_str), nil ()),
-                                                  cast (type (mty_str), nil ()))
-                                         )))));
-                if (ty == aat_uA) {
-                    execute (
-                        assgn (
-                            var (item->name),
-                            leftjoin (VAR (R(p)->env, pa_item, aat_uA),
-                                      reverse (var (strVAL->name)))),
-                        assgn (
-                            var (kind->name),
-                            project (VAR (R(p)->env, pa_item, aat_uA),
-                                     var (PF_MIL_VAR_STR)))
+                                                  cast (type (mty_str),
+                                                        nil ()),
+                                                  cast (type (mty_str),
+                                                        nil ())),
+                                         var (PF_MIL_VAR_STR)))
                         );
-                    sorted = true;
+                    }
                 }
-                else {
-                    execute (
-                        binsert (
-                            var (item->name),
-                            join (VAR (R(p)->env, pa_item, aat_uA),
-                                  reverse (var (strVAL->name)))),
-                        binsert (
-                            var (kind->name),
-                            project (select2 (VAR (R(p)->env, pa_item, aat_uA),
-                                              cast (type (mty_str), nil ()),
-                                              cast (type (mty_str), nil ())),
-                                     var (PF_MIL_VAR_STR)))
-                    );
-                }
-            }
 
-            /* consider int results */
-            if (ty & aat_int) {
-                execute (
-                    bappend (var (intVAL->name),
-                             reverse (
-                                 kunique (
-                                     reverse (
-                                         select2 (VAR (R(p)->env,
+                /* consider int results */
+                if (ty & aat_int) {
+                    execute (
+                        bappend (var (intVAL->name),
+                                 reverse (
+                                     kunique (
+                                         reverse (
+                                             select2 (VAR (R(p)->env,
+                                                           pa_item,
+                                                           aat_int),
+                                                      cast (type (mty_lng),
+                                                            nil ()),
+                                                      cast (type (mty_lng),
+                                                            nil ()))
+                                             )))));
+                    if (ty == aat_int) {
+                        execute (
+                            assgn (
+                                var (item->name),
+                                leftjoin (VAR (R(p)->env, pa_item, aat_int),
+                                          reverse (var (intVAL->name)))),
+                            assgn (
+                                var (kind->name),
+                                project (VAR (R(p)->env, pa_item, aat_int),
+                                         var (PF_MIL_VAR_INT)))
+                            );
+                        sorted = true;
+                    }
+                    else {
+                        execute (
+                            binsert (
+                                var (item->name),
+                                join (VAR (R(p)->env, pa_item, aat_int),
+                                      reverse (var (intVAL->name)))),
+                            binsert (
+                                var (kind->name),
+                                project (select2 (VAR (R(p)->env,
                                                        pa_item,
                                                        aat_int),
-                                                  cast (type (mty_lng), nil ()),
-                                                  cast (type (mty_lng), nil ()))
-                                         )))));
-                if (ty == aat_int) {
-                    execute (
-                        assgn (
-                            var (item->name),
-                            leftjoin (VAR (R(p)->env, pa_item, aat_int),
-                                      reverse (var (intVAL->name)))),
-                        assgn (
-                            var (kind->name),
-                            project (VAR (R(p)->env, pa_item, aat_int),
-                                     var (PF_MIL_VAR_INT)))
+                                                  cast (type (mty_lng),
+                                                        nil ()),
+                                                  cast (type (mty_lng),
+                                                        nil ())),
+                                         var (PF_MIL_VAR_INT)))
                         );
-                    sorted = true;
+                    }
                 }
-                else {
-                    execute (
-                        binsert (
-                            var (item->name),
-                            join (VAR (R(p)->env, pa_item, aat_int),
-                                  reverse (var (intVAL->name)))),
-                        binsert (
-                            var (kind->name),
-                            project (select2 (VAR (R(p)->env, pa_item, aat_int),
-                                              cast (type (mty_lng), nil ()),
-                                              cast (type (mty_lng), nil ())),
-                                     var (PF_MIL_VAR_INT)))
-                    );
-                }
-            }
 
-            /* consider dbl results */
-            if (ty & aat_dbl) {
-                execute (
-                    bappend (var (dblVAL->name),
-                             reverse (
-                                 kunique (
-                                     reverse (
-                                         select2 (VAR (R(p)->env,
+                /* consider dbl results */
+                if (ty & aat_dbl) {
+                    execute (
+                        bappend (var (dblVAL->name),
+                                 reverse (
+                                     kunique (
+                                         reverse (
+                                             select2 (VAR (R(p)->env,
+                                                           pa_item,
+                                                           aat_dbl),
+                                                      cast (type (mty_dbl),
+                                                            nil ()),
+                                                      cast (type (mty_dbl),
+                                                            nil ()))
+                                             )))));
+                    if (ty == aat_dbl) {
+                        execute (
+                            assgn (
+                                var (item->name),
+                                leftjoin (VAR (R(p)->env, pa_item, aat_dbl),
+                                          reverse (var (dblVAL->name)))),
+                            assgn (
+                                var (kind->name),
+                                project (VAR (R(p)->env, pa_item, aat_dbl),
+                                         var (PF_MIL_VAR_DBL)))
+                            );
+                        sorted = true;
+                    }
+                    else {
+                        execute (
+                            binsert (
+                                var (item->name),
+                                join (VAR (R(p)->env, pa_item, aat_dbl),
+                                      reverse (var (dblVAL->name)))),
+                            binsert (
+                                var (kind->name),
+                                project (select2 (VAR (R(p)->env,
                                                        pa_item,
                                                        aat_dbl),
-                                                  cast (type (mty_dbl), nil ()),
-                                                  cast (type (mty_dbl), nil ()))
-                                         )))));
-                if (ty == aat_dbl) {
-                    execute (
-                        assgn (
-                            var (item->name),
-                            leftjoin (VAR (R(p)->env, pa_item, aat_dbl),
-                                      reverse (var (dblVAL->name)))),
-                        assgn (
-                            var (kind->name),
-                            project (VAR (R(p)->env, pa_item, aat_dbl),
-                                     var (PF_MIL_VAR_DBL)))
+                                                  cast (type (mty_dbl),
+                                                        nil ()),
+                                                  cast (type (mty_dbl),
+                                                        nil ())),
+                                         var (PF_MIL_VAR_DBL)))
                         );
-                    sorted = true;
+                    }
                 }
-                else {
-                    execute (
-                        binsert (
-                            var (item->name),
-                            join (VAR (R(p)->env, pa_item, aat_dbl),
-                                  reverse (var (dblVAL->name)))),
-                        binsert (
-                            var (kind->name),
-                            project (select2 (VAR (R(p)->env, pa_item, aat_dbl),
-                                              cast (type (mty_dbl), nil ()),
-                                              cast (type (mty_dbl), nil ())),
-                                     var (PF_MIL_VAR_DBL)))
-                    );
-                }
-            }
 
-            /* consider dec results */
-            if (ty & aat_dec) {
-                execute (
-                    bappend (var (decVAL->name),
-                             reverse (
-                                 kunique (
-                                     reverse (
-                                         select2 (VAR (R(p)->env,
+                /* consider dec results */
+                if (ty & aat_dec) {
+                    execute (
+                        bappend (var (decVAL->name),
+                                 reverse (
+                                     kunique (
+                                         reverse (
+                                             select2 (VAR (R(p)->env,
+                                                           pa_item,
+                                                           aat_dec),
+                                                      cast (type (mty_dbl),
+                                                            nil ()),
+                                                      cast (type (mty_dbl),
+                                                            nil ()))
+                                             )))));
+                    if (ty == aat_dec) {
+                        execute (
+                            assgn (
+                                var (item->name),
+                                leftjoin (VAR (R(p)->env, pa_item, aat_dec),
+                                          reverse (var (decVAL->name)))),
+                            assgn (
+                                var (kind->name),
+                                project (VAR (R(p)->env, pa_item, aat_dec),
+                                         var (PF_MIL_VAR_DEC)))
+                            );
+                        sorted = true;
+                    }
+                    else {
+                        execute (
+                            binsert (
+                                var (item->name),
+                                join (VAR (R(p)->env, pa_item, aat_dec),
+                                      reverse (var (decVAL->name)))),
+                            binsert (
+                                var (kind->name),
+                                project (select2 (VAR (R(p)->env,
                                                        pa_item,
                                                        aat_dec),
-                                                  cast (type (mty_dbl), nil ()),
-                                                  cast (type (mty_dbl), nil ()))
-                                         )))));
-                if (ty == aat_dec) {
-                    execute (
-                        assgn (
-                            var (item->name),
-                            leftjoin (VAR (R(p)->env, pa_item, aat_dec),
-                                      reverse (var (decVAL->name)))),
-                        assgn (
-                            var (kind->name),
-                            project (VAR (R(p)->env, pa_item, aat_dec),
-                                     var (PF_MIL_VAR_DEC)))
+                                                  cast (type (mty_dbl),
+                                                        nil ()),
+                                                  cast (type (mty_dbl),
+                                                        nil ())),
+                                         var (PF_MIL_VAR_DEC)))
                         );
-                    sorted = true;
+                    }
                 }
-                else {
-                    execute (
-                        binsert (
-                            var (item->name),
-                            join (VAR (R(p)->env, pa_item, aat_dec),
-                                  reverse (var (decVAL->name)))),
-                        binsert (
-                            var (kind->name),
-                            project (select2 (VAR (R(p)->env, pa_item, aat_dec),
-                                              cast (type (mty_dbl), nil ()),
-                                              cast (type (mty_dbl), nil ())),
-                                     var (PF_MIL_VAR_DEC)))
-                    );
-                }
-            }
 
-            /* consider bit results */
-            if (ty & aat_bln) {
-                if (ty == aat_int) {
-                    execute (
-                        assgn (
-                            var (item->name),
-                            mcast (type (mty_oid),
-                                   VAR (R(p)->env, pa_item, aat_bln))),
-                        assgn (
-                            var (kind->name),
-                            project (VAR (R(p)->env, pa_item, aat_bln),
-                                     var (PF_MIL_VAR_BOOL)))
+                /* consider bit results */
+                if (ty & aat_bln) {
+                    if (ty == aat_int) {
+                        execute (
+                            assgn (
+                                var (item->name),
+                                mcast (type (mty_oid),
+                                       VAR (R(p)->env, pa_item, aat_bln))),
+                            assgn (
+                                var (kind->name),
+                                project (VAR (R(p)->env, pa_item, aat_bln),
+                                         var (PF_MIL_VAR_BOOL)))
+                            );
+                        sorted = true;
+                    }
+                    else {
+                        execute (
+                            binsert (
+                                var (item->name),
+                                mcast (type (mty_oid),
+                                       VAR (R(p)->env, pa_item, aat_bln))),
+                            binsert (
+                                var (kind->name),
+                                project (select2 (VAR (R(p)->env,
+                                                       pa_item,
+                                                       aat_bln),
+                                                  cast (type (mty_bit),
+                                                        nil ()),
+                                                  cast (type (mty_bit),
+                                                        nil ())),
+                                         var (PF_MIL_VAR_BOOL)))
                         );
-                    sorted = true;
+                    }
                 }
-                else {
-                    execute (
-                        binsert (
-                            var (item->name),
-                            mcast (type (mty_oid),
-                                   VAR (R(p)->env, pa_item, aat_bln))),
-                        binsert (
-                            var (kind->name),
-                            project (select2 (VAR (R(p)->env, pa_item, aat_bln),
-                                              cast (type (mty_bit), nil ()),
-                                              cast (type (mty_bit), nil ())),
-                                     var (PF_MIL_VAR_BOOL)))
-                    );
-                }
-            }
 
-            if (!sorted)
+                if (!sorted)
+                    execute (
+                        assgn (var (item->name),
+                               sort (var (item->name), DIR_ASC)),
+                        assgn (var (kind->name),
+                               leftjoin (mirror (var (item->name)),
+                                         var (kind->name))));
+
                 execute (
                     assgn (var (item->name),
-                           sort (var (item->name), DIR_ASC)),
+                           reverse (mark (reverse (var (item->name)),
+                                          lit_oid (0)))),
                     assgn (var (kind->name),
-                           leftjoin (mirror (var (item->name)),
-                                     var (kind->name))));
+                           reverse (mark (reverse (var (kind->name)),
+                                          lit_oid (0)))),
 
-            execute (
-                assgn (var (item->name),
-                       reverse (mark (reverse (var (item->name)),lit_oid (0)))),
-                assgn (var (kind->name),
-                       reverse (mark (reverse (var (kind->name)),lit_oid (0)))),
+                    serialize (
+                        arg (lit_str ("xml"),
+                            arg (var (PF_MIL_VAR_WS),
+                                arg (var (item->name),
+                                    arg (var (kind->name),
+                                        arg (var (intVAL->name),
+                                            arg (var (dblVAL->name),
+                                                arg (var (decVAL->name),
+                                                     var (strVAL->name)))))))))
+                        );
 
-                serialize (
-                    arg (lit_str ("xml"),
-                        arg (var (PF_MIL_VAR_WS),
-                            arg (var (item->name),
-                                arg (var (kind->name),
-                                    arg (var (intVAL->name),
-                                        arg (var (dblVAL->name),
-                                            arg (var (decVAL->name),
-                                                 var (strVAL->name))))))))));
+                /*
+                for (unsigned int i = 0; i < env_count (R(p)->env); i++) {
+                    if (i)
+                        args = arg (args,
+                                    var (env_at (R(p)->env, i).mvar->name));
+                    else
+                        args = var (env_at (R(p)->env, i).mvar->name);
+                }
 
-            /*
-            for (unsigned int i = 0; i < env_count (R(p)->env); i++) {
-                if (i)
-                    args = arg (args,
-                                var (env_at (R(p)->env, i).mvar->name));
-                else
-                    args = var (env_at (R(p)->env, i).mvar->name);
-            }
+                execute (print (args));
+                */
 
-            execute (print (args));
-            */
+                unpin (intVAL, 1);
+                unpin (dblVAL, 1);
+                /* unpin (decVAL, 1); as we currently have no
+                                               decimal support we use doubles */
+                unpin (strVAL, 1);
+                unpin (item, 1);
+                unpin (kind, 1);
 
-            unpin (intVAL, 1);
-            unpin (dblVAL, 1);
-            /* unpin (decVAL, 1); as we currently have no
-                                           decimal support we use doubles */
-            unpin (strVAL, 1);
-            unpin (item, 1);
-            unpin (kind, 1);
+            } /* end of printing results */
 
             /* add timing information */
             execute (
@@ -4003,7 +4238,6 @@ reduce (PFpa_op_t * p, int goalnt)
                              update_str = 0; /* should never reach here */
                              break;     /* this is just to fool the compiler */
                     }
-
                     execute (
                         assgn (var (res->name),
                                project (

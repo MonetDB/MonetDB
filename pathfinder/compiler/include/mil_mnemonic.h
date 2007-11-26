@@ -580,4 +580,7 @@
 /** module loading */
 #define module(a) PFmil_module (a)
 
+/** play update tape function */
+#define update_tape(a) PFmil_upd (a)
+
 /* vim:set shiftwidth=4 expandtab: */

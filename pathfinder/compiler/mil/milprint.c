@@ -6,12 +6,12 @@
  * Serialization is done with the help of a simplified MIL grammar:
  *
  * @verbatim
- 
+
    statements    : statements statements                    <m_seq>
                  | 'if (' Expr ') {' stmts '} else {' stmts '}' <m_if>
                  | 'while (' Expr ') {' stmts '}'           <m_while>
                  | <nothing>                                <m_nop>
-                 | '#' c                                    <m_comment> 
+                 | '#' c                                    <m_comment>
                  | statement ';'                            <otherwise>
 
    statement     : Variable ':=' expression                 <m_assgn>
@@ -200,8 +200,8 @@
  * $Id$
  */
 
-/* always include pathfinder.h first! */ 
-#include "pathfinder.h" 
+/* always include pathfinder.h first! */
+#include "pathfinder.h"
 
 #include <stdio.h>
 #include <assert.h>
@@ -325,7 +325,7 @@ static char *ID[] = {
     , [m_llscj_anc_elem_ns]      = "loop_lifted_ancestor_step_with_ns_test"
     , [m_llscj_anc_pi_targ]      = "loop_lifted_ancestor_step_with_target_test"
 
-    , [m_llscj_anc_self]         
+    , [m_llscj_anc_self]
         = "loop_lifted_ancestor_or_self_step"
     , [m_llscj_anc_self_elem]
         = "loop_lifted_ancestor_or_self_step_with_kind_test"
@@ -543,7 +543,7 @@ print_statements (PFmil_t * n)
             milprintf ("while (");
             print_expression (n->child[0]);
             milprintf (") {\n");
-            print_statements (n->child[1]);        
+            print_statements (n->child[1]);
             milprintf ("}\n");
             break;
 
@@ -580,7 +580,7 @@ print_statement (PFmil_t * n)
             print_literal (n->child[0]);
             milprintf (")");
             break;
-            
+
         /* statement : variable ':=' expression */
         case m_assgn:
             print_variable (n->child[0]);
@@ -674,6 +674,12 @@ print_statement (PFmil_t * n)
 
         case m_trace:
             milprintf ("trace (");
+            print_args (n->child[0]);
+            milprintf (")");
+            break;
+
+        case m_update_tape:
+            milprintf ("UpdateTape (");
             print_args (n->child[0]);
             milprintf (")");
             break;
@@ -1095,7 +1101,7 @@ print_expression (PFmil_t * n)
             print_expression (n->child[1]);
             milprintf (", nil, nil)");
             break;
-            
+
         /* expression : 'll_htordered_unique_thetajoin ('
                             exp ',' exp ',' exp ',' exp ',' exp ', nil, nil)' */
         case m_unq1_tjoin:
@@ -1499,7 +1505,7 @@ milprintf (char * fmt, ...)
     /* print string */
     va_start (args, fmt);
 
-    if (PFarray_vprintf (out, fmt, args) == -1) 
+    if (PFarray_vprintf (out, fmt, args) == -1)
         PFoops (OOPS_FATAL, "unable to print MIL output");
 
     va_end (args);
@@ -1508,7 +1514,7 @@ milprintf (char * fmt, ...)
 /**
  * Serialize the internal representation of a MIL program into a
  * string representation that can serve as an input to Monet.
- * 
+ *
  * @param m   The MIL tree to print
  * @return Dynamic (character) array holding the generated MIL script.
  */
