@@ -175,36 +175,41 @@ typedef struct PFla_op_t *NODEPTR_TYPE;
 %%
 
 Query:  serialize_seq (Frag, Rel)                    =   1 (10);
+Query:  serialize_seq (Frag, distinct (Rel))         =   2 (10);
+Query:  serialize_seq (Frag, project (rank (Rel)))   =   3 (10);
+Query:  serialize_seq (Frag,
+                       project (
+                           rank (distinct (Rel))))   =   4 (10);
 Query:  serialize_seq (
             frag_union (
                 empty_frag, fragment (twig (Twig))),
-            roots_ (twig (Twig)))                    =   2 (10);
-Query:  serialize_seq (Frag, empty_tbl)              =   3 (10);
-Rel:    lit_tbl                                      =   4 (10);
-Rel:    attach (Rel)                                 =   5 (10);
+            roots_ (twig (Twig)))                    =   5 (10);
+Query:  serialize_seq (Frag, empty_tbl)              =   6 (10);
+Rel:    lit_tbl                                      =   9 (10);
+Rel:    attach (Rel)                                 =  10 (10);
 
-Rel:    cross (Rel, Rel)                             =   6 (10);
-Rel:    eqjoin (Rel, Rel)                            =   7 (10);
-Rel:    semijoin (Rel, Rel)                          =   8 (10);
-Rel:    thetajoin (Rel, Rel)                         =   9 (10);
-Rel:    project (Rel)                                =  10 (10);
-Rel:    select_ (Rel)                                =  11 (10);
-Rel:    pos_select (Rel)                             =  12 (10);
+Rel:    cross (Rel, Rel)                             =  11 (10);
+Rel:    eqjoin (Rel, Rel)                            =  12 (10);
+Rel:    semijoin (Rel, Rel)                          =  13 (10);
+Rel:    thetajoin (Rel, Rel)                         =  14 (10);
+Rel:    project (Rel)                                =  15 (10);
+Rel:    select_ (Rel)                                =  16 (10);
+Rel:    pos_select (Rel)                             =  17 (10);
 
-Rel:    disjunion (Rel, Rel)                         =  15 (10);
-Rel:    intersect (Rel, Rel)                         =  16 (10);
-Rel:    difference (Rel, Rel)                        =  17 (10);
-Rel:    distinct (Rel)                               =  18 (10);
+Rel:    disjunion (Rel, Rel)                         =  20 (10);
+Rel:    intersect (Rel, Rel)                         =  21 (10);
+Rel:    difference (Rel, Rel)                        =  22 (10);
+Rel:    distinct (Rel)                               =  23 (10);
 
-Rel:    fun_1to1 (Rel)                               =  20 (10);
-Rel:    num_eq (Rel)                                 =  21 (10);
-Rel:    num_gt (Rel)                                 =  22 (10);
-Rel:    bool_and (Rel)                               =  23 (10);
-Rel:    bool_or (Rel)                                =  24 (10);
-Rel:    bool_not (Rel)                               =  25 (10);
-Rel:    type (Rel)                                   =  26 (10);
-Rel:    type_assert (Rel)                            =  27 (10);
-Rel:    cast (Rel)                                   =  28 (10);
+Rel:    fun_1to1 (Rel)                               =  25 (10);
+Rel:    num_eq (Rel)                                 =  26 (10);
+Rel:    num_gt (Rel)                                 =  27 (10);
+Rel:    bool_and (Rel)                               =  28 (10);
+Rel:    bool_or (Rel)                                =  29 (10);
+Rel:    bool_not (Rel)                               =  30 (10);
+Rel:    type (Rel)                                   =  31 (10);
+Rel:    type_assert (Rel)                            =  32 (10);
+Rel:    cast (Rel)                                   =  33 (10);
 
 Rel:    avg (Rel)                                    =  35 (10);
 Rel:    max_ (Rel)                                   =  36 (10);
@@ -454,6 +459,7 @@ special_col (PFsql_special_t spc)
 #define ITER_       column_name (special_col (sql_col_iter))
 #define POS_        column_name (special_col (sql_col_pos))
 #define MAX_        column_name (special_col (sql_col_max))
+#define DIST_       column_name (special_col (sql_col_dist))
 
 #define PRE(n)      ext_column_name (n, special_col (sql_col_pre))
 #define SIZE(n)     ext_column_name (n, special_col (sql_col_size))
@@ -1600,13 +1606,13 @@ reduce (PFla_op_t * p, int goalnt)
 
     switch (rule) {
         /* Rel:    cross (Rel, Rel) */
-        case 6:
+        case 11:
         /* Rel:    eqjoin (Rel, Rel) */
-        case 7:
+        case 12:
         /* Rel:    semijoin (Rel, Rel) */
-        case 8:
+        case 13:
         /* Rel:    thetajoin (Rel, Rel) */
-        case 9:
+        case 14:
         /* Rel:    string_join (Rel, Rel) */
         case 43:
         /* Rel:    cond_err (Rel, Rel) */
@@ -1621,9 +1627,45 @@ reduce (PFla_op_t * p, int goalnt)
     }
 
     switch (rule) {
+        /* Query:  serialize_seq (Frag, project (rank (Rel))) */
+        case 3:
+        /* Query:  serialize_seq (Frag,
+                                  project (
+                                      rank (distinct (Rel)))) */
+        case 4:
+        {
+            /* The main implementation happens inside the scope
+               of the next case block into which we fall through.
+               Here we prepare the translation by resolving
+               any renaming done by the projection operator. */
+            PFalg_att_t item = p->sem.ser_seq.item;
+            PFalg_att_t pos  = p->sem.ser_seq.pos;
+
+            assert (R(p)->schema.count <= 2);
+            if (R(p)->sem.proj.items[0].new == item)
+                item = R(p)->sem.proj.items[0].old;
+            else if (R(p)->sem.proj.items[1].new == item)
+                item = R(p)->sem.proj.items[1].old;
+
+            if (R(p)->sem.proj.items[0].new == pos)
+                pos = R(p)->sem.proj.items[0].old;
+            else if (R(p)->sem.proj.items[1].new == pos)
+                pos = R(p)->sem.proj.items[1].old;
+
+            /* ignore the projection operator */
+            p->sem.ser_seq.item = item;
+            p->sem.ser_seq.pos  = pos;
+        }   /* fall through */
+        
         /* Query:  serialize_seq (Frag, Rel) */
         case 1:
+        /* Query:  serialize_seq (Frag, distinct (Rel)) */
+        case 2:
         {
+            /* lookup whether we need a SELECT or a SELECT DISTINCT */
+            bool                distinct   = rule == 2 || rule == 4;
+            /* use the second non-terminal as the query part */
+            PFla_op_t          *query      = kids[1];
             PFalg_att_t         item       = p->sem.ser_seq.item;
             PFalg_att_t         pos        = p->sem.ser_seq.pos;
             PFalg_simple_type_t item_ty    = type_of (p, p->sem.ser_seq.item);
@@ -1633,14 +1675,52 @@ reduce (PFla_op_t * p, int goalnt)
                                *orderby    = NULL,
                                *ser_info,
                                *finalquery = NULL;
+            
+            /* Make sure that we bind the input if we have
+               to perform outer-joins (for mixed results)
+               and our input has more than one input relation
+               or contains a where clause. */
+            if (item_ty & aat_node && item_ty & ~aat_node &&
+                (PFarray_last (FROMLIST(query)) != 1 ||
+                 PFarray_last(WHERELIST(query))))
+                bind_operator (query, false);
 
-            assert (PFarray_last (COLMAP(R(p))));
+            assert (PFarray_last (COLMAP(query)));
 
             assert (monomorphic (pos_ty));
 
-            orderby = col_env_lookup (COLMAP(R(p)), pos, pos_ty);
-            orderby = IS_LITERAL(orderby)
-                      ? NULL : sortkey_list (sortkey_item (orderby, true));
+            /* The order criterion consists of the column pos. */
+            if (rule == 1 || rule == 2) {
+                orderby = col_env_lookup (COLMAP(query), pos, pos_ty);
+                orderby = IS_LITERAL(orderby)
+                          ? NULL : sortkey_list (sortkey_item (orderby, true));
+            }
+            /* The order is represented by the order list of a rank operator.
+               Transform the list of order columns into a SQL ORDER BY list. */
+            else {
+                PFord_ordering_t sortby;
+                PFalg_att_t ord;
+                bool asc;
+
+                assert (R(p)->kind == la_project &&
+                        RL(p)->kind == la_rank &&
+                        pos == RL(p)->sem.rank.res);
+                
+                sortby = RL(p)->sem.rank.sortby;
+                for (int i = PFord_count (sortby) - 1; i >= 0; i--) {
+                    ord = PFord_order_col_at (sortby, i);
+                    asc = PFord_order_dir_at (sortby, i) == DIR_ASC;
+                    orderby = sortkey_list (
+                                  sortkey_item (
+                                      col_env_lookup (
+                                          COLMAP(query),
+                                          ord,
+                                          type_of (query, ord)),
+                                      asc),
+                                  orderby);
+
+                }
+            }
 
             /* construct schema information for serializer */
             ser_info = ser_info_item (
@@ -1669,8 +1749,8 @@ reduce (PFla_op_t * p, int goalnt)
                            ser_info)))));
 
             /* the item information */
-            for (unsigned int i = 0; i < PFarray_last (COLMAP(R(p))); i++) {
-                sql_column_env_t entry = col_env_at (COLMAP(R(p)), i);
+            for (unsigned int i = 0; i < PFarray_last (COLMAP(query)); i++) {
+                sql_column_env_t entry = col_env_at (COLMAP(query), i);
                 if (((entry.att == item) && !(entry.type & aat_node)) &&
                     (entry.att != pos)) {
                     sername = COLUMN_NAME (att_item, entry.type);
@@ -1690,6 +1770,29 @@ reduce (PFla_op_t * p, int goalnt)
                                    ser_map (sername, colname),
                                    ser_info);
                 }
+                /* If we have to eliminate duplicates then we are not
+                   allowed to remove any column from the selection list. */
+                else if (distinct) {
+                    colexpr = entry.expression;
+                    /* Ensure that boolean columns are replaced. */
+                    if (entry.type == aat_bln)
+                        colexpr = case_ (when (colexpr, lit_int (1)),
+                                         else_ (lit_int (0)));
+                    
+                    /* Generate a special column name DIST
+                       that can be overloaded ... */
+                    sername = DIST_;
+                    /* ... and overload it with a unique identifier. */
+                    sername->sem.column.name->ty = i;
+
+                    /* Rename the columns to avoid name conflicts
+                       during serialization. */
+                    if (colexpr->kind != sql_column_assign)
+                        colexpr = column_assign (colexpr, sername);
+                    
+                    /* Add the column to the select list. */
+                    selectlist = select_list (colexpr, selectlist);
+                }
             }
 
             /* our result contains only atomic values */
@@ -1700,10 +1803,10 @@ reduce (PFla_op_t * p, int goalnt)
                                ser_info);
 
                 finalquery = PFsql_select (
-                                     false,
+                                     distinct,
                                      select_list (selectlist),
-                                     transform_frommap (R(p)),
-                                     transform_wheremap (R(p)),
+                                     transform_frommap (query),
+                                     transform_wheremap (query),
                                      orderby,
                                      NULL);
             }
@@ -1718,14 +1821,14 @@ reduce (PFla_op_t * p, int goalnt)
                    so we return just the values we get */
                 if (SER_REPORT(p) == ser_yes) {
                     PFsql_aident_t twig = col_env_lookup_step (
-                                              COLMAP(R(p)),
+                                              COLMAP(query),
                                               item,
                                               item_ty);
 
                     assert (twig != PF_SQL_ALIAS_UNBOUND);
 
-                    if (RANK_MAP(R(p)) &&
-                        PFarray_last (RANK_MAP(R(p))) >= 1) {
+                    if (RANK_MAP(query) &&
+                        PFarray_last (RANK_MAP(query)) >= 1) {
                         PFarray_t *list;
                         PFsql_t *sort_item;
                         rank_map_t *rank_map;
@@ -1733,7 +1836,7 @@ reduce (PFla_op_t * p, int goalnt)
                         orderby = NULL;
 
                         rank_map = *(rank_map_t **)
-                                       PFarray_at (RANK_MAP(R(p)), 0);
+                                       PFarray_at (RANK_MAP(query), 0);
 
                         assert (rank_map->name == p->sem.ser_seq.pos);
                         assert (rank_map->sort_list);
@@ -1747,15 +1850,16 @@ reduce (PFla_op_t * p, int goalnt)
                         }
                     }
                     finalquery = PFsql_select (
-                                     false,
+                                     distinct,
                                      select_list (
                                          PRE(twig),
                                          SIZE(twig),
                                          KIND(twig),
                                          VALUE(twig),
-                                         NAME(twig)),
-                                     transform_frommap (R(p)),
-                                     transform_wheremap (R(p)),
+                                         NAME(twig),
+                                         selectlist),
+                                     transform_frommap (query),
+                                     transform_wheremap (query),
                                      orderby,
                                      NULL);
                 } else {
@@ -1776,23 +1880,24 @@ reduce (PFla_op_t * p, int goalnt)
                         frags = table_name (newtable);
                     }
 
-                    from_list_copy (FROMLIST(p), FROMLIST(R(p)));
-                    where_list_copy (WHERELIST(p), WHERELIST(R(p)));
+                    from_list_copy (FROMLIST(p), FROMLIST(query));
+                    where_list_copy (WHERELIST(p), WHERELIST(query));
 
                     /* make sure to get the full table schema
                        for the context nodes */
-                    doc1 = col_env_lookup_step (COLMAP(R(p)), item, item_ty);
+                    doc1 = col_env_lookup_step (COLMAP(query), item, item_ty);
                     if (doc1 == PF_SQL_ALIAS_UNBOUND) {
                         doc1 = new_alias ();
                         from_list_add  (FROMLIST(p), frags, doc1);
                         where_list_add (WHERELIST(p),
                                         eq (col_env_lookup (
-                                                COLMAP(R(p)), item, item_ty),
+                                                COLMAP(query), item, item_ty),
                                             PRE(doc1)));
                     }
 
-                    if (col_env_lookup_step_leaf (COLMAP(R(p)), item, item_ty)
-                        && col_env_lookup_step (COLMAP(R(p)), item, item_ty))
+                    /* avoid step if we already have leaf nodes in our hands */
+                    if (col_env_lookup_step_leaf (COLMAP(query), item, item_ty)
+                        && col_env_lookup_step (COLMAP(query), item, item_ty))
                         doc2 = doc1;
                     else {
                         doc2 = new_alias ();
@@ -1806,13 +1911,14 @@ reduce (PFla_op_t * p, int goalnt)
                     }
 
                     finalquery = PFsql_select (
-                                     false,
+                                     distinct,
                                      select_list (
                                          PRE(doc2),
                                          SIZE(doc2),
                                          KIND(doc2),
                                          VALUE(doc2),
-                                         NAME(doc2)),
+                                         NAME(doc2),
+                                         selectlist),
                                      transform_frommap (p),
                                      transform_wheremap (p),
                                      orderby,
@@ -1844,24 +1950,14 @@ reduce (PFla_op_t * p, int goalnt)
                     frags = table_name (newtable);
                 }
 
-                /* if the right child has more than on table
-                 * or it contains a where-clause bind it */
-                if (PFarray_last (FROMLIST(R(p))) != 1 ||
-                    PFarray_last(WHERELIST(R(p))))
-                    bind_operator (R(p), false);
-
-                item_expr = col_env_lookup (COLMAP(R(p)), item, aat_pre);
-                orderby   = col_env_lookup (COLMAP(R(p)), pos, pos_ty);
-                orderby   = IS_LITERAL(orderby)
-                            ? NULL
-                            : sortkey_list (sortkey_item (orderby, true));
+                item_expr = col_env_lookup (COLMAP(query), item, aat_pre);
                 doc1      = new_alias ();
                 doc2      = new_alias ();
-                from      = from_list_at (FROMLIST(R(p)), 0);
+                from      = from_list_at (FROMLIST(query), 0);
                 from_bind = alias_bind (from.table, alias (from.alias));
 
                 finalquery = PFsql_select (
-                                 false,
+                                 distinct,
                                  select_list (
                                      selectlist,
                                      PRE(doc2),
@@ -1914,7 +2010,7 @@ reduce (PFla_op_t * p, int goalnt)
          *              frag_union (empty_frag, Frag),
          *              roots_ (twig (Twig)))
          */
-        case 2:
+        case 5:
         {
             PFsql_aident_t      content      = new_alias ();
             PFsql_t            *sortkey_list = NULL;
@@ -1933,7 +2029,7 @@ reduce (PFla_op_t * p, int goalnt)
                                         " DO NOT EDIT THESE LINES"),
                        ser_info_item (
                            ser_type (lit_str("Type"),
-                                     lit_str("ATOMIC_ONLY")),
+                                     lit_str("NODES_ONLY")),
                        ser_info_item (
                            ser_map (PRE_, PRE_),
                        ser_info_item (
@@ -1999,13 +2095,13 @@ reduce (PFla_op_t * p, int goalnt)
         }   break;
 
         /* Query:  serialize_seq (Frag, empty_tbl) */
-        case 3:
+        case 6:
             /* FIXME: implementation is missting */
             assert (!"missing");
             break;
 
         /* Rel:    lit_tbl */
-        case 4:
+        case 9:
             if (p->sem.lit_tbl.count == 1) {
                 for (unsigned int col = 0; col < p->schema.count; col++)
                     for (PFalg_simple_type_t t = 1; t; t <<= 1)
@@ -2110,7 +2206,7 @@ reduce (PFla_op_t * p, int goalnt)
             break;
 
         /* Rel:    attach (Rel) */
-        case 5:
+        case 10:
             /* copy all existing column, from, and where lists */
             copy_cols_from_where (p, L(p));
 
@@ -2122,11 +2218,11 @@ reduce (PFla_op_t * p, int goalnt)
             break;
 
         /* Rel:    cross (Rel, Rel) */
-        case 6:
+        case 11:
         /* Rel:    eqjoin (Rel, Rel) */
-        case 7:
+        case 12:
         /* Rel:    thetajoin (Rel, Rel) */
-        case 9:
+        case 14:
         {
             assert (kids[0] && nts[0]);
             assert (kids[1] && nts[1]);
@@ -2238,7 +2334,7 @@ reduce (PFla_op_t * p, int goalnt)
         }       break;
 
         /* Rel:    semijoin (Rel, Rel) */
-        case 8:
+        case 13:
         {
             assert (kids[0] && nts[0]);
             assert (kids[1] && nts[0]);
@@ -2318,7 +2414,7 @@ reduce (PFla_op_t * p, int goalnt)
         }   break;
 
         /* Rel:    project (Rel) */
-        case 10:
+        case 15:
         {
             sql_column_env_t entry;
 
@@ -2344,7 +2440,7 @@ reduce (PFla_op_t * p, int goalnt)
         }   break;
 
         /* Rel:    select_ (Rel) */
-        case 11:
+        case 16:
         {
             PFsql_t *sqlnode;
 
@@ -2369,7 +2465,7 @@ reduce (PFla_op_t * p, int goalnt)
         }   break;
 
         /* Rel:    pos_select (Rel) */
-        case 12:
+        case 17:
             /* create a special translation for the positional
                predicates [1] and [last()] */
             if (p->schema.count <= 2 &&
@@ -2547,9 +2643,9 @@ reduce (PFla_op_t * p, int goalnt)
             break;
 
         /* Rel:    disjunion (Rel, Rel) */
-        case 15:
+        case 20:
         /* Rel:    difference (Rel, Rel) */
-        case 17:
+        case 22:
         {
             /* FIXME: the translation won't work if the same operator
                is referenced twice (as the left environment is
@@ -2644,13 +2740,13 @@ reduce (PFla_op_t * p, int goalnt)
         }   break;
 
         /* Rel:    intersect (Rel, Rel) */
-        case 16:
+        case 21:
             /* FIXME: implementation is missing */
             assert (!"missing");
             break;
 
         /* Rel:    distinct (Rel) */
-        case 18:
+        case 23:
             /* copy all existing column, from, and where lists */
             copy_cols_from_where (p, L(p));
 
@@ -2660,7 +2756,7 @@ reduce (PFla_op_t * p, int goalnt)
             break;
 
         /* Rel:    fun_1to1 (Rel) */
-        case 20:
+        case 25:
         {
             unsigned int count = p->sem.fun_1to1.refs.count;
             PFalg_att_t att[count];
@@ -2751,9 +2847,9 @@ reduce (PFla_op_t * p, int goalnt)
 
         }   break;
         /* Rel:    num_eq (Rel) */
-        case 21:
+        case 26:
         /* Rel:    num_gt (Rel) */
-        case 22:
+        case 27:
         {
             PFsql_t * (*op) (const PFsql_t *, const PFsql_t *);
 
@@ -2778,19 +2874,19 @@ reduce (PFla_op_t * p, int goalnt)
         }   break;
 
         /* Rel:    bool_and (Rel) */
-        case 23:
+        case 28:
             /* FIXME: implementation is missing */
             assert (!"missing");
             break;
 
         /* Rel:    bool_or (Rel) */
-        case 24:
+        case 29:
             /* FIXME: implementation is missing */
             assert (!"missing");
             break;
 
         /* Rel:    bool_not (Rel) */
-        case 25:
+        case 30:
         {
             PFsql_t *sqlnode;
 
@@ -2810,19 +2906,19 @@ reduce (PFla_op_t * p, int goalnt)
         }   break;
 
         /* Rel:    type (Rel) */
-        case 26:
+        case 31:
             /* FIXME: implementation is missing */
             assert (!"missing");
             break;
 
         /* Rel:    type_assert (Rel) */
-        case 27:
+        case 32:
             /* FIXME: implementation is missing */
             assert (!"missing");
             break;
 
         /* Rel:    cast (Rel) */
-        case 28:
+        case 33:
         {
             PFalg_att_t att = p->sem.type.att;
             PFalg_simple_type_t ty = TYPE_MASK (type_of (p, att));
