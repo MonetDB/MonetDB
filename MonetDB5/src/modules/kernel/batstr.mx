@@ -286,6 +286,7 @@ str STRbat@1(int *ret, int *l)
 		else 
 			@2(yp,x);
 		bunfastins(bn, h, *yp);
+		GDKfree(*yp);
 	}
 	finalizeResult(ret,bn,b);
 	return MAL_SUCCEED;
