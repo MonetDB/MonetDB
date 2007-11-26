@@ -835,8 +835,6 @@ main (int argc, char *argv[])
 
             case 'S':
                 status->output_format = PFoutput_format_sql;
-                if (!status->stop_after)
-                    status->stop_after = 19;
                 if (!explicit_opt)
                     status->opt_alg = status->opt_sql;
                 break;
