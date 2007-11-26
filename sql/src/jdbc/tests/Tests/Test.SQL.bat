@@ -5,4 +5,4 @@ set URL=jdbc:monetdb://%HOST%:%MAPIPORT%/%TSTDB%?user=monetdb^&password=monetdb%
 prompt # $t $g  
 echo on
 
-java -classpath "%CLIENTS_PREFIX%\share\MonetDB\lib\monetdb-1.6-jdbc.jar;%CLIENTS_PREFIX%\share\MonetDB\Tests" %TST% "%URL%"
+java -classpath "%CLIENTS_PREFIX%\share\MonetDB\lib\monetdb-1.7-jdbc.jar;%CLIENTS_PREFIX%\share\MonetDB\Tests" %TST% "%URL%"

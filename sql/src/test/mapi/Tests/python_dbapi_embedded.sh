@@ -3,7 +3,9 @@
 PATH="`monetdb-clients-config --pkglibdir`/Tests:$PATH"
 export PATH
 
-PYTHONPATH="`monetdb-config --pythonlibdir`:`monetdb-clients-config --pythonlibdir`:`monetdb-clients-config --pythonlibdir`/MonetDB:$PYTHONPATH"
+PYTHONPATH="`monetdb-config --pythonlibdir`:$PYTHONPATH"
+PYTHONPATH="`monetdb-clients-config --pythonlibdir`:`monetdb-clients-config --pythonlibdir`/MonetDB:$PYTHONPATH"
+PYTHONPATH="`monetdb-sql-config --pythonlibdir`:`monetdb-sql-config --pythonlibdir`/MonetDB:$PYTHONPATH"
 export PYTHONPATH
 
 if [ -n "$TST_FIVE" ] ; then
