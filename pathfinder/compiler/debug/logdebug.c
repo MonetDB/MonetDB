@@ -2131,7 +2131,8 @@ PFla_dot (FILE *f, PFla_op_t *root)
                              "node [style=filled];\n"
                              "node [color=\"#C0C0C0\"];\n"
                              "node [fontsize=10];\n"
-                             "edge [fontsize=9];\n");
+                             "edge [fontsize=9];\n"
+                             "edge [dir=back];\n");
 
         create_node_id (root);
         la_dot (dot, root);
