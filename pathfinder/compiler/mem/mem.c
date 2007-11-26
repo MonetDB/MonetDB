@@ -42,6 +42,8 @@
 
 #include "oops.h"
 
+#include "fmt.h"
+
 typedef struct PFmem_allocator {
     size_t size;
     size_t nr;
@@ -147,8 +149,8 @@ PFmalloc_ (size_t n, const char *file, const char *func, const int line)
 
     if (mem == 0) {
         /* don't use PFoops () here as it tries to allocate even more memory */
-        PFlog ("fatal error: insufficient memory in %s (%s), line %d", 
-                file, func, line);
+        PFlog ("fatal error: insufficient memory (allocating "SZFMT" bytes failed) in %s (%s), line %d", 
+                n, file, func, line);
         PFexit(-OOPS_FATAL);
     }
 
@@ -167,8 +169,8 @@ PFrealloc_ (void *mem, size_t old_n, size_t n,
 
     if (mem == 0) {
         /* don't use PFoops () here as it tries to allocate even more memory */
-        PFlog ("fatal error: insufficient memory in %s (%s), line %d", 
-                file, func, line);
+        PFlog ("fatal error: insufficient memory (re-allocating "SZFMT" bytes failed) in %s (%s), line %d", 
+                n, file, func, line);
         PFexit(-OOPS_FATAL);
     }
 
