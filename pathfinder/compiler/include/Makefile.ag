@@ -95,6 +95,7 @@ EXTRA_DIST = \
 	xml2lalg_xpath_utils.h \
 	xquery_fo.h \
 	sql.h \
+	sql_opt.h \
 	sql_mnemonic.h \
    	lalg2sql.h \
    	sqlprint.h \

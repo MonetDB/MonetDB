@@ -81,6 +81,7 @@
 #include "mem.h"
 #include "coreopt.h"
 #include "lalg2sql.h"
+#include "sql_opt.h"
 #include "sqlprint.h"
 #include "load_stats.h"  /* to create the guide tree */
 
@@ -178,7 +179,8 @@ PFquery_t PFquery = {
     .ordering            = true,  /* implementation defined: ordered */
     .empty_order         = undefined,
     .inherit_ns          = false, /* implementation def'd: inherit-ns: no */
-    .pres_boundary_space = false
+    .pres_boundary_space = false,
+    .revalid             = revalid_strict /* XQ update facility 1.0 [§2.3] */
 };
 
 /** Compilation stage we've last been in. */
@@ -326,20 +328,19 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
     signal (SIGSEGV, segfault_handler);
 #endif
 
-
-    if(status->import_xml)
-    {
+    /*******************************************/
+    /* Split Point: Logical Algebra XML Import */
+    /*******************************************/
+    if (status->import_xml) {
 
        /* todo: init-stuff */
        /* e.g. qnameInit */
        /* e.g namespaceInit */
             
-        XML2LALGContext* ctx = PFxml2la_xml2lalgContext();
-
-
-        PFla_op_t*  rootOp;
-        if(status->import_xml_filename)
-        {
+        XML2LALGContext *ctx = PFxml2la_xml2lalgContext();
+        PFla_op_t       *rootOp;
+        
+        if (status->import_xml_filename) {
             /**
              * If the input is explicitely specified with an filename,
              * we drive the xml-importer with this filename instead with the
@@ -352,12 +353,10 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
              * from the parser in case of validation errors (which makes
              * fixing/locating this validation-errors unneccessary hard)
              */
-            rootOp = 
-                PFxml2la_importXMLFromFile(ctx, status->import_xml_filename);
+            rootOp = PFxml2la_importXMLFromFile (ctx,
+                                                 status->import_xml_filename);
         }
-        else
-        {
-
+        else {
             /**
              * Note, that we don't get explicit error-positions (line 
              * numbers of the xml-input) from the parser in case of 
@@ -368,15 +367,13 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
              * explicit error positions (line numbers) from the xml-parser
              * in case of validation-errors
              */
-            char* xml = PFurlcache (url, 1);
-            int size = strlen(xml);
-            rootOp = PFxml2la_importXMLFromMemory(ctx, xml, size);
+            char *xml  = PFurlcache (url, 1);
+            int   size = strlen(xml);
+            rootOp = PFxml2la_importXMLFromMemory (ctx, xml, size);
         }
 
         laroot = rootOp;
 
-
-         
         goto AFTER_CORE2ALG; 
     }
 
@@ -587,9 +584,10 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
 
     STOP_POINT(16);
 
+/*******************************************/
+/* Merge point logical algebra XML import. */
+/*******************************************/
 AFTER_CORE2ALG:
-
-     
 
     /*
      * Rewrite/optimize algebra tree
@@ -619,28 +617,37 @@ AFTER_CORE2ALG:
 
     STOP_POINT(18);
 
-    /* generate SQL code if requested */
+    /************************************/
+    /* Split Point: SQL Code Generation */
+    /************************************/
     if (status->output_format == PFoutput_format_sql) {
-        if (laroot) {
-            /* this is not the final semantic of this function */
-            PFsql_t *sqlroot = PFlalg2sql(laroot);
-            if (sqlroot) {
-                tm = PFtimer_start ();
-                PFsql_print (pfout, sqlroot);
-                tm = PFtimer_stop (tm);
+        /* generate the SQL code */
+        tm = PFtimer_start ();
+        PFsql_t *sqlroot = PFlalg2sql(laroot);
+        tm = PFtimer_stop (tm);
+        if (status->timing)
+            PFlog ("Compilation to SQL:\t\t\t %s", PFtimer_str (tm));
+        
+        STOP_POINT(19);
 
-                if (status->timing)
-                    PFlog ("SQL Code generation:\t\t\t %s",
-                           PFtimer_str (tm));
-            } else
-               PFinfo(OOPS_NOTICE,
-                 "SQL expressions not available at this "
-                 "point of compilation");
+        if (status->dead_code_el) {
+            /* optimize the SQL code */
+            tm = PFtimer_start ();
+            sqlroot = PFsql_opt (sqlroot);
+            tm = PFtimer_stop (tm);
+            if (status->timing)
+                PFlog ("SQL dead code elimination:\t\t %s", PFtimer_str (tm));
         }
-        else
-           PFinfo(OOPS_NOTICE,
-             "SQL expressions not available at this "
-             "point of compilation");
+
+        STOP_POINT(20);
+        
+        /* serialize the internal SQL query tree */
+        tm = PFtimer_start ();
+        PFsql_print (pfout, sqlroot);
+        tm = PFtimer_stop (tm);
+        if (status->timing)
+            PFlog ("SQL Code generation:\t\t\t %s", PFtimer_str (tm));
+
         goto bailout;
     }
 
@@ -722,17 +729,18 @@ AFTER_CORE2ALG:
 
     STOP_POINT(22);
 
+    /* Print MIL program to pfout */
+    if (mil_program)
+        PFmilprint (pfout, mil_program);
+
+ bailout:
+
     if (status->timing) {
         PFlog ("----------------------------------------------");
         tm_first = PFtimer_stop (tm_first);
         PFlog ("overall compilation time:\t\t %s", PFtimer_str (tm_first));
     }
 
-    /* Print MIL program to pfout */
-    if (mil_program)
-        PFmilprint (pfout, mil_program);
-
- bailout:
     /* print abstract syntax tree if requested */
     if (status->print_parse_tree) {
         if (proot) {

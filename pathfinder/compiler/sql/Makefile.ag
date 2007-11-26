@@ -41,6 +41,7 @@ lib_sql = {
         SOURCES = \
                 lalg2sql.brg \
                 sql.c \
+                sql_opt.c \
                 sqlprint.c
 }
 
