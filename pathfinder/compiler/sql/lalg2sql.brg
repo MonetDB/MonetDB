@@ -318,6 +318,15 @@ Rel:    cross_mvd (Rel, Rel)                         = 114 (10);
  */
 static PFsql_t *sql_stmts = NULL;
 
+/**
+ * Generate DB2 SELECTIVITY hints;
+ */
+bool selectivity;
+/**
+ * Generate bindings for operators with multiple references.
+ */
+bool bind_multi_ref;
+
 /* The execute is used to construct the sequence
  * of `common table expressions'.
  */
@@ -974,9 +983,6 @@ static void
 step_axis (PFla_op_t *p, PFsql_aident_t ctx, PFsql_aident_t step,
            PFalg_axis_t axis, PFsql_t *fragment, int level_in)
 {
-    char *selectivity_str = getenv ("PF_USE_DB2_SELECTIVITY");
-    bool  selectivity     = selectivity_str && !strcmp (selectivity_str, "1");
-    
     switch (axis) {
         /* ancestor axis */
         case alg_anc:
@@ -4293,7 +4299,7 @@ reduce (PFla_op_t * p, int goalnt)
        as many operators as possible into one SQL statement.  */
     if (bind)
         bind_operator (p, distinct);
-    else if (REFCTR(p) > 1 && !FRAG_OP(p)) {
+    else if (bind_multi_ref && REFCTR(p) > 1 && !FRAG_OP(p)) {
         execute (comment ("binding due to multiple references"));
         bind_operator (p, distinct);
     }
@@ -4714,44 +4720,51 @@ assign_twig_info (PFla_op_t *n, unsigned int twig_pre, unsigned int level)
 PFsql_t *
 PFlalg2sql (PFla_op_t * n)
 {
-  sql_stmts = NULL;
-
-  assert (n);
-
-  if (n->kind != la_serialize_seq)
-      PFoops (OOPS_FATAL,
-              "SQL code generation can only "
-              "cope with result sequences.");
-
-  /* Set reference counters in algebra tree nodes. */
-  PFprop_infer_refctr (n);
-
-  /* Set the initial fragment. */
-  max_pre_frag = table_name (PF_SQL_TABLE_FRAG);
-
-  /* Label and annotate the complete DAG. */
-  label (n);
-  PFla_dag_reset (n);
-
-  /* check if serialize returns a node* */
-  PFalg_simple_type_t ser_ty = PFprop_type_of (n, n->sem.ser_seq.item);
-  /* check if ser_ty has no other type */
-  if ((ser_ty & aat_node) && !(ser_ty & ~aat_node)) {
-      /* infer the serialization information */
-      infer_ser_info (n);
-
-      PFla_dag_reset (n);
-  }
-
-  /* Assign the delta-pre, level, and size value for node constructors */
-  assign_twig_info (n, 0, 0);
-  PFla_dag_reset (n);
-
-  /* Traverse the tree and collect as a side effect
-     the SQL code in the global variable @a sql_stmts. */
-  reduce (n, 1);
-
-  return sql_stmts;
+    /* read in environment variables */
+    char *selectivity_str = getenv ("PFSQL_USE_DB2_SELECTIVITY");
+    char *bind_str        = getenv ("PFSQL_BIND_MULTIPLE_REFERENCES");
+    /* interpret environment variables */
+    selectivity    = selectivity_str && !strcmp (selectivity_str, "1");
+    bind_multi_ref = bind_str && !strcmp (bind_str, "1");
+    
+    sql_stmts = NULL;
+ 
+    assert (n);
+ 
+    if (n->kind != la_serialize_seq)
+        PFoops (OOPS_FATAL,
+                "SQL code generation can only "
+                "cope with result sequences.");
+ 
+    /* Set reference counters in algebra tree nodes. */
+    PFprop_infer_refctr (n);
+ 
+    /* Set the initial fragment. */
+    max_pre_frag = table_name (PF_SQL_TABLE_FRAG);
+ 
+    /* Label and annotate the complete DAG. */
+    label (n);
+    PFla_dag_reset (n);
+ 
+    /* check if serialize returns a node* */
+    PFalg_simple_type_t ser_ty = PFprop_type_of (n, n->sem.ser_seq.item);
+    /* check if ser_ty has no other type */
+    if ((ser_ty & aat_node) && !(ser_ty & ~aat_node)) {
+        /* infer the serialization information */
+        infer_ser_info (n);
+ 
+        PFla_dag_reset (n);
+    }
+ 
+    /* Assign the delta-pre, level, and size value for node constructors */
+    assign_twig_info (n, 0, 0);
+    PFla_dag_reset (n);
+ 
+    /* Traverse the tree and collect as a side effect
+       the SQL code in the global variable @a sql_stmts. */
+    reduce (n, 1);
+ 
+    return sql_stmts;
 }
 
 /* vim:set shiftwidth=4 expandtab filetype=c: */
