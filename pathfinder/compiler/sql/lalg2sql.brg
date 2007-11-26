@@ -1621,7 +1621,7 @@ reduce (PFla_op_t * p, int goalnt)
             break;
         default:
             /* bottom-up translation */
-            for (unsigned short i = 0; i < PFLA_OP_MAXCHILD && nts[i]; i++)
+            for (unsigned short i = 0; i < nts[i]; i++)
                 reduce (kids[i], nts[i]);
             break;
     }
