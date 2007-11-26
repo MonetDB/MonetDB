@@ -136,3 +136,5 @@ immune_for_updates.SF-1766259
 repeated-insert.SF-1814911
 fn_normalize-space.SF-1828362
 recursive_function.SF-1835745
+variable_in_module.SF-1836980
+variable_in_module.SF-1836980-alg
