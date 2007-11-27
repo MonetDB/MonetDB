@@ -182,7 +182,6 @@ subexp_eq (PFla_op_t *a, PFla_op_t *b)
         case la_ref_tbl:
     
             return  (strcmp(a->sem.ref_tbl.name, b->sem.ref_tbl.name) == 0);
-            //return  true;
             break;
 
         case la_attach:
