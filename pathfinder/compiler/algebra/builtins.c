@@ -626,6 +626,33 @@ PFbui_fn_data (const PFla_op_t *loop,
 /* 3. THE ERROR FUNCTION */
 /* --------------------- */
 
+/**
+ * Build up operator tree for built-in function 'fn:error(string)'.
+ */
+struct PFla_pair_t
+PFbui_fn_error (const PFla_op_t *loop, bool ordering, struct PFla_pair_t *args)
+{
+    (void) loop; (void) ordering; (void) args;
+
+    return (struct PFla_pair_t) {
+        .rel  = NULL,
+        .frag = PFla_empty_set ()};
+}
+
+/**
+ * Build up operator tree for built-in function 'fn:error(string?, string)'.
+ */
+struct PFla_pair_t
+PFbui_fn_error_str (const PFla_op_t *loop, bool ordering,
+                    struct PFla_pair_t *args)
+{
+    (void) loop; (void) ordering; (void) args;
+
+    return (struct PFla_pair_t) {
+        .rel = NULL,
+        .frag = PFla_empty_set ()};
+}
+
 /* -------------------------------------- */
 /* 6. FUNCTIONS AND OPERATORS ON NUMERICS */
 /* -------------------------------------- */

@@ -444,9 +444,9 @@ enum PFmil_type_t {
 typedef enum PFmil_type_t PFmil_type_t;
 
 enum PFmil_access_t {
-      BAT_READ      /**< BAT is read-only */
+      BAT_WRITE     /**< full read/write access to this BAT */
+    , BAT_READ      /**< BAT is read-only */
     , BAT_APPEND    /**< BUNs may be inserted, but no updates or deletions */
-    , BAT_WRITE     /**< full read/write access to this BAT */
 };
 typedef enum PFmil_access_t PFmil_access_t;
 

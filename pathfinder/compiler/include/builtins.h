@@ -107,6 +107,13 @@ struct PFla_pair_t PFbui_fn_data (const PFla_op_t *loop,
                                   struct PFla_pair_t *args);
 
 /* 3. THE ERROR FUNCTION */
+struct PFla_pair_t PFbui_fn_error (const PFla_op_t *loop,
+                                   bool ordering,
+                                   struct PFla_pair_t *args);
+
+struct PFla_pair_t PFbui_fn_error_str (const PFla_op_t *loop,
+                                        bool ordering,
+                                        struct PFla_pair_t *args);
 
 /* 6. FUNCTIONS AND OPERATORS ON NUMERICS */
 /* 6.2. Operators on Numeric Values */

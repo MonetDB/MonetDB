@@ -269,18 +269,21 @@ PFfun_xquery_fo (void)
     , /* fn:error () as none */
       { .ns = PFns_fn, .loc = "error",
         .arity = 0,  .sig_count = 1, .sigs = { {
-            .ret_ty = PFty_none () } } }
-    , /* fn:error (string?) as none */
+            .ret_ty = PFty_none () } },
+        .alg = NULL }
+    , /* fn:error (string) as none */
       { .ns = PFns_fn, .loc = "error",
         .arity = 1, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_opt (PFty_xs_string ()) },
-            .ret_ty = PFty_none () } } }
+            .ret_ty = PFty_none () } },
+        .alg = PFbui_fn_error }
     , /* fn:error (string?, string) as none */
       { .ns = PFns_fn, .loc = "error",
         .arity = 2, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_opt (PFty_xs_string ()),
                                 PFty_xs_string () },
-            .ret_ty = PFty_none () } } }
+            .ret_ty = PFty_none () } },
+        .alg = PFbui_fn_error_str }
 
 
 /* 4. THE TRACE FUNCTION */

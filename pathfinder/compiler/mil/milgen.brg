@@ -606,6 +606,11 @@ static PFmil_type_t impl_types[] = {
     , [aat_attr]  = mty_oid
     , [aat_pfrag] = mty_oid
     , [aat_afrag] = mty_oid
+    , [aat_pre1]   = mty_oid
+    , [aat_attr1]  = mty_oid
+    , [aat_pfrag1] = mty_oid
+    , [aat_afrag1] = mty_oid
+    , [aat_update] = mty_lng
 };
 
 /** implementation type for a given algebra type, as a MIL node */

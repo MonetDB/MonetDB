@@ -1278,7 +1278,8 @@ PFla_fun_1to1 (const PFla_op_t *n,
         if (j == n->schema.count)
             PFoops (OOPS_FATAL,
                     "attribute `%s' referenced in generic function"
-                    " operator not found", PFatt_str (refs.atts[i]));
+                    " operator not found (kind = %s)",
+                    PFatt_str (refs.atts[i]), PFalg_fun_str(kind));
         ix[i] = j;
     }
 
