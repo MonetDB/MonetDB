@@ -22,7 +22,7 @@ bindir = $(prefix)\bin
 !IFDEF DEBUG
 CFLAGS = -I. -GF -W3 -MDd -nologo -Zi -Od -D_DEBUG -RTC1 -ZI
 !ELSE
-CFLAGS = -I. -GF -W3 -MD -nologo -Zi
+CFLAGS = -I. -GF -W3 -MD -nologo
 !ENDIF
 
 COPY=copy

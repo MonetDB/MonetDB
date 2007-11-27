@@ -23,7 +23,7 @@ MX = ..\Mx\Mx.exe
 !IFDEF DEBUG
 CFLAGS = -I. -GF -W3 -wd4273 -wd4102 -MDd -nologo -Zi -Od -D_DEBUG -RTC1 -ZI
 !ELSE
-CFLAGS = -I. -GF -wd4273 -wd4102 -W3 -MD -nologo -Zi
+CFLAGS = -I. -GF -wd4273 -wd4102 -W3 -MD -nologo
 !ENDIF
 CXXFLAGS = $(CFLAGS) -EHsc
 MV=copy
