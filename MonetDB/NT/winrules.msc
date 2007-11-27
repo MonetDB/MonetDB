@@ -85,7 +85,7 @@ ANT = ant.bat
 CFLAGS = -GF -W3 -wd4273 -wd4102 -MDd -nologo -Zi -Od -D_DEBUG -RTC1 -ZI -I. -I$(TOPDIR) $(LIBC_INCS) $(INCLUDES)
 NO_INLINE_CFLAGS =
 !ELSE
-CFLAGS = -GF -W3 -wd4273 -wd4102 -MD -nologo -Zi -Ox -I. -I$(TOPDIR) $(LIBC_INCS) $(INCLUDES)
+CFLAGS = -GF -W3 -wd4273 -wd4102 -MD -nologo -Ox -I. -I$(TOPDIR) $(LIBC_INCS) $(INCLUDES)
 NO_INLINE_CFLAGS = -Od -Ob0gysi-
 !ENDIF
 
