@@ -1265,7 +1265,7 @@ PFsql_column_name_str (PFsql_col_t *name)
             case sql_col_dist:
                 assert (name->ty < 100);
                 res = (char *) PFmalloc (7 * sizeof (char));
-                snprintf (res, 7, "dist%02i", name->ty);
+                snprintf (res, 7, "dist%02u", name->ty);
                 return res;
         }
     else {
