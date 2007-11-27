@@ -16,13 +16,13 @@ QUERY = INSERT INTO surfaces values ('POINT(10 10)');
 ERROR = !MALException:wkb.FromText:Geometry type 'Polygon' not found
 MAPI  = monetdb@koala:39306
 QUERY = INSERT INTO surfaces values ('POLYGON(10 10)');
-ERROR = !MALException:wkb.FromText:!ERROR: ParseException: Expected word but encountered number: '10'
-        !ERROR: ParseException: Expected word but encountered number: '10'
-MAPI  = monetdb@koala:39306
+ERROR = !MALException:wkb.FromText:!ERROR: ParseException: Expected word but encountered number: 10
+        !ERROR: ParseException: Expected word but encountered number: 10
+MAPI  = monetdb@corona:38025
 QUERY = INSERT INTO surfaces values ('POLYGON(10)');
-ERROR = !MALException:wkb.FromText:!ERROR: ParseException: Expected word but encountered number: '10'
-        !ERROR: ParseException: Expected word but encountered number: '10'
-MAPI  = monetdb@koala:39306
+ERROR = !MALException:wkb.FromText:!ERROR: ParseException: Expected word but encountered number: 10
+        !ERROR: ParseException: Expected word but encountered number: 10
+MAPI  = monetdb@corona:38025
 QUERY = INSERT INTO surfaces values ('POLYGON()');
 ERROR = !MALException:wkb.FromText:!ERROR: ParseException: Expected 'EMPTY' or '(' but encountered : ')'
         !ERROR: ParseException: Expected 'EMPTY' or '(' but encountered : ')'

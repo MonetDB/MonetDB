@@ -21,11 +21,11 @@ QUERY = INSERT INTO surfaces values ('POINT(10 10)');
 ERROR = !ERROR: wkbFromText: operation failed.
 MAPI  = monetdb@koala:35790
 QUERY = INSERT INTO surfaces values ('POLYGON(10 10)');
-ERROR = !ERROR: ParseException: Expected word but encountered number: '10'
+ERROR = !ERROR: ParseException: Expected word but encountered number: 10
         !ERROR: wkbFromText: operation failed.
 MAPI  = monetdb@koala:35790
 QUERY = INSERT INTO surfaces values ('POLYGON(10)');
-ERROR = !ERROR: ParseException: Expected word but encountered number: '10'
+ERROR = !ERROR: ParseException: Expected word but encountered number: 10
         !ERROR: wkbFromText: operation failed.
 MAPI  = monetdb@koala:35790
 QUERY = INSERT INTO surfaces values ('POLYGON()');
