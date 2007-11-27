@@ -110,6 +110,8 @@ enum PFsql_kind_t {
     , sql_tbl_def           /* a table name definition */
     , sql_schema_tbl_name   /* a database table reference (schema+tablename) */
     , sql_tbl_name          /* a table name reference */
+    , sql_ref_tbl_name      /* a reference to an external relation */
+    , sql_ref_column_name   /* a reference to a column of an ext. relation */
     , sql_alias             /* SQL alias (a table reference) */
     , sql_column_list       /* an item of a list of column names */
     , sql_column_name       /* SQL column name (a column reference) */
@@ -230,6 +232,15 @@ union PFsql_sem_t {
     struct {
         PFsql_tident_t name;    /**< Table name. */
     } tbl;
+
+    struct {
+        char* name;             /**< name of an external relation. */
+    } ref_tbl;
+
+    struct {
+        PFsql_aident_t alias;   /**< Alias name. */
+        char* name;             /**< name of a column of an ext. relation. */
+    } ref_column_name;
  
     struct {
         bool distinct;         /**< Boolean indicating if elimination
@@ -420,6 +431,19 @@ PFsql_t * PFsql_schema_table_name (const char *schema,
  * Construct a SQL tree node representing a reference to a relation.
  */
 PFsql_t * PFsql_table_name (PFsql_tident_t name);
+
+/**
+ * Construct a SQL tree node representing a reference to a 
+ * column of an external relation. 
+ */
+PFsql_t * PFsql_ref_column_name (PFsql_aident_t alias, char* name);
+
+/**
+ * Construct a SQL tree node representing a reference to an 
+ * external relation. 
+ */
+PFsql_t * PFsql_ref_table_name (char* name);
+
 /**
  * Construct a SQL tree node representing a SQL `correlation name'.
  */

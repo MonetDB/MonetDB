@@ -44,12 +44,14 @@
 /* .......... Tables .......... */
 #define schema_table_name(s,t)       PFsql_schema_table_name(s,t)
 #define table_name(n)                PFsql_table_name(n)
+#define ref_table_name(n)            PFsql_ref_table_name(n)
 #define table_def(n,clmnlist)        PFsql_table_def(n,clmnlist)
 #define alias(i)                     PFsql_alias(i)
 
 /* .......... Columns .......... */
 #define column_list(...)             PFsql_column_list(__VA_ARGS__)
 #define column_name(i)               PFsql_column_name(PF_SQL_ALIAS_UNBOUND,i)
+#define ref_column_name(a,n)         PFsql_ref_column_name(PF_SQL_ALIAS_UNBOUND,n)
 #define ext_column_name(a,i)         PFsql_column_name(a,i)
 #define star()                       PFsql_star()
 

@@ -257,6 +257,31 @@ PFsql_table_name (PFsql_tident_t name)
 }
 
 /**
+ * Construct a SQL tree node representing a reference to a 
+ * column of an external relation. 
+ */
+PFsql_t *
+PFsql_ref_column_name (PFsql_aident_t alias, char* name)
+{
+    PFsql_t *ret = leaf (sql_ref_column_name);
+    ret->sem.column.alias = alias;
+    ret->sem.ref_column_name.name = PFstrdup(name);
+    return ret;
+}
+
+/**
+ * Construct a SQL tree node representing a reference to an 
+ * external relation. 
+ */
+PFsql_t *
+PFsql_ref_table_name (char* name)
+{
+    PFsql_t *ret = leaf (sql_ref_tbl_name);
+    ret->sem.ref_tbl.name = PFstrdup(name);
+    return ret;
+}
+
+/**
  * Construct a SQL tree node representing a SQL `correlation name'.
  */
 PFsql_t *

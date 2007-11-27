@@ -82,7 +82,7 @@ typedef struct PFla_op_t *NODEPTR_TYPE;
                                 tree.) */
 %term lit_tbl         =  4 /**< literal table */
 %term empty_tbl       =  5 /**< empty literal table */
-%term ref_table       =  6 /**< referenced table */
+%term ref_tbl         =  6 /**< referenced table */
 %term attach          =  7 /**< attach constant column */
 %term cross           =  8 /**< cross product (Cartesian product) */
 %term eqjoin          =  9 /**< equi-join */
@@ -186,16 +186,18 @@ Query:  serialize_seq (
                 empty_frag, fragment (twig (Twig))),
             roots_ (twig (Twig)))                    =   5 (10);
 Query:  serialize_seq (Frag, empty_tbl)              =   6 (10);
+Query:  serialize_rel (Rel)                          =   7 (10);
 Rel:    lit_tbl                                      =   9 (10);
-Rel:    attach (Rel)                                 =  10 (10);
+Rel:    ref_tbl                                      =  10 (10);
+Rel:    attach (Rel)                                 =  11 (10);
 
-Rel:    cross (Rel, Rel)                             =  11 (10);
-Rel:    eqjoin (Rel, Rel)                            =  12 (10);
-Rel:    semijoin (Rel, Rel)                          =  13 (10);
-Rel:    thetajoin (Rel, Rel)                         =  14 (10);
-Rel:    project (Rel)                                =  15 (10);
-Rel:    select_ (Rel)                                =  16 (10);
-Rel:    pos_select (Rel)                             =  17 (10);
+Rel:    cross (Rel, Rel)                             =  12 (10);
+Rel:    eqjoin (Rel, Rel)                            =  13 (10);
+Rel:    semijoin (Rel, Rel)                          =  14 (10);
+Rel:    thetajoin (Rel, Rel)                         =  15 (10);
+Rel:    project (Rel)                                =  16 (10);
+Rel:    select_ (Rel)                                =  17 (10);
+Rel:    pos_select (Rel)                             =  18 (10);
 
 Rel:    disjunion (Rel, Rel)                         =  20 (10);
 Rel:    intersect (Rel, Rel)                         =  21 (10);
@@ -1664,13 +1666,13 @@ reduce (PFla_op_t * p, int goalnt)
 
     switch (rule) {
         /* Rel:    cross (Rel, Rel) */
-        case 11:
-        /* Rel:    eqjoin (Rel, Rel) */
         case 12:
-        /* Rel:    semijoin (Rel, Rel) */
+        /* Rel:    eqjoin (Rel, Rel) */
         case 13:
-        /* Rel:    thetajoin (Rel, Rel) */
+        /* Rel:    semijoin (Rel, Rel) */
         case 14:
+        /* Rel:    thetajoin (Rel, Rel) */
+        case 15:
         /* Rel:    string_join (Rel, Rel) */
         case 43:
         /* Rel:    cond_err (Rel, Rel) */
@@ -2155,6 +2157,49 @@ reduce (PFla_op_t * p, int goalnt)
             assert (!"missing");
             break;
 
+
+        /* Query:  serialize_rel(Rel) */
+        case 7:
+        {
+    
+
+            /* construct schema information for serialization */
+            /*
+            PFsql_t * ser_info = ser_info_item (
+                           ser_comment ("START SCHEMA INFORMATION **"
+                                        " DO NOT EDIT THESE LINES"),
+                           ser_info_item (
+                               ser_comment ("END SCHEMA INFORMATION **"
+                                            " DO NOT EDIT THESE LINES"),
+                       nil ()));
+            */
+
+    
+            /* call a helper function that does the 'real' job */
+            PFsql_t* final_query = PFsql_select (false,
+                   transform_selectlist (COLMAP(L(p))),
+                   transform_frommap (L(p)),
+                   transform_wheremap (L(p)),
+                   NULL,
+                   NULL);
+    
+                
+            /* Check if there are already common-table expressions
+               or we have a standalone query */
+            if (sql_stmts)
+                /* sql_stmts = root (ser_info, with (sql_stmts, final_query)); */
+                sql_stmts = root (nil (), with (sql_stmts, final_query));
+               else
+                /* sql_stmts = root (ser_info, final_query); */
+                sql_stmts = root (nil (), final_query);
+    
+        }
+        break;
+
+
+
+
+
         /* Rel:    lit_tbl */
         case 9:
             if (p->sem.lit_tbl.count == 1) {
@@ -2260,8 +2305,50 @@ reduce (PFla_op_t * p, int goalnt)
 
             break;
 
-        /* Rel:    attach (Rel) */
+
+
+        /* Rel:  ref_tbl */
         case 10:
+        {
+            PFsql_aident_t tabalias = new_alias();
+
+            /* add the tables "external"/"real" name to the fromlist */
+            from_list_add (FROMLIST(p),
+                           ref_table_name (p->sem.ref_tbl.name),
+                           tabalias);
+
+            /* lookup the "internal" column names (and types) in the 
+               schema info */
+            PFalg_schema_t schema = p->schema;
+            /* lookup the "external"/"real" column names in the 
+               semantical info */
+            PFarray_t* externalCNames = p->sem.ref_tbl.tatts;
+
+            /* iterate the schema and generate a column-mapping for each
+               "internal"-"external"-column-name-pair */
+            int count = schema.count;
+            for(int i = 0; i < count; i++)
+            {
+                PFalg_schm_item_t schemaItem = schema.items[i];
+
+                PFalg_att_t columnNameInternal = schemaItem.name;
+                char* columnNameExternal = 
+                    *(char**) PFarray_at (externalCNames, i);
+                PFalg_simple_type_t columnType = schemaItem.type;
+
+                col_env_add (COLMAP(p),
+                         columnNameInternal,
+                         columnType,
+                         ref_column_name(tabalias, columnNameExternal)
+                           );
+            }
+        }
+        break;
+
+
+
+        /* Rel:    attach (Rel) */
+        case 11:
             /* copy all existing column, from, and where lists */
             copy_cols_from_where (p, L(p));
 
@@ -2273,11 +2360,11 @@ reduce (PFla_op_t * p, int goalnt)
             break;
 
         /* Rel:    cross (Rel, Rel) */
-        case 11:
-        /* Rel:    eqjoin (Rel, Rel) */
         case 12:
+        /* Rel:    eqjoin (Rel, Rel) */
+        case 13:
         /* Rel:    thetajoin (Rel, Rel) */
-        case 14:
+        case 15:
         {
             assert (kids[0] && nts[0]);
             assert (kids[1] && nts[1]);
@@ -2389,7 +2476,7 @@ reduce (PFla_op_t * p, int goalnt)
         }       break;
 
         /* Rel:    semijoin (Rel, Rel) */
-        case 13:
+        case 14:
         {
             assert (kids[0] && nts[0]);
             assert (kids[1] && nts[0]);
@@ -2469,7 +2556,7 @@ reduce (PFla_op_t * p, int goalnt)
         }   break;
 
         /* Rel:    project (Rel) */
-        case 15:
+        case 16:
         {
             sql_column_env_t entry;
 
@@ -2495,7 +2582,7 @@ reduce (PFla_op_t * p, int goalnt)
         }   break;
 
         /* Rel:    select_ (Rel) */
-        case 16:
+        case 17:
         {
             PFsql_t *sqlnode;
 
@@ -2520,7 +2607,7 @@ reduce (PFla_op_t * p, int goalnt)
         }   break;
 
         /* Rel:    pos_select (Rel) */
-        case 17:
+        case 18:
             /* create a special translation for the positional
                predicates [1] and [last()] */
             if (p->schema.count <= 2 &&
@@ -4731,7 +4818,7 @@ PFlalg2sql (PFla_op_t * n)
  
     assert (n);
  
-    if (n->kind != la_serialize_seq)
+    if ((n->kind != la_serialize_seq) && (n->kind != la_serialize_rel))
         PFoops (OOPS_FATAL,
                 "SQL code generation can only "
                 "cope with result sequences.");

@@ -75,6 +75,8 @@ static char *ID[] = {
       [sql_tbl_def]           = "tbl_def",
       [sql_schema_tbl_name]   = "schema_tbl_name",
       [sql_tbl_name]          = "tbl_name",
+      [sql_ref_tbl_name]      = "ref_tbl_name",
+      [sql_ref_column_name]   = "ref_column_name",
       [sql_alias]             = "alias",
       [sql_column_list]       = "column_list",
       [sql_column_name]       = "column_name",
@@ -190,17 +192,44 @@ print_schema_information (FILE *f, PFsql_t *n)
 static void
 print_column_name (PFsql_t *n)
 {
-    assert (n->kind == sql_column_name);
+    assert ((n->kind == sql_column_name) || (n->kind == sql_ref_column_name));
     
     if (n->sem.column.alias != PF_SQL_ALIAS_UNBOUND)
+    {
         PFprettyprintf (
             "%s.", 
             PFsql_alias_name_str (n->sem.column.alias));
     
-    PFprettyprintf (
-        "%s",
-        PFsql_column_name_str (n->sem.column.name));
+     }
+
+
+    switch (n->kind)
+    {
+        case  sql_column_name:
+
+            PFprettyprintf (
+                "%s",
+                PFsql_column_name_str (n->sem.column.name));
+            break;
+
+        case  sql_ref_column_name:
+
+            PFprettyprintf (
+                "%s",
+                n->sem.ref_column_name.name);    
+            break;
+
+    default:
+
+         PFoops (OOPS_FATAL,
+                    "SQL grammar conflict. (Expected: column reference; "
+                    "Got: %s)", ID[n->kind]);
+
+    }
+   
 }
+
+
 
 static void
 print_column_name_list (PFsql_t *n)
@@ -487,7 +516,7 @@ print_case (PFsql_t *n)
 
 static void
 print_statement (PFsql_t *n)
-{
+{           
     switch (n->kind) {
         case sql_sortkey_item:
             print_statement (L(n));
@@ -548,9 +577,12 @@ print_statement (PFsql_t *n)
             print_window_clause (R(n));
             PFprettyprintf ("%c)", END_BLOCK);
             break;
-    
+
+        case sql_ref_column_name:
         case sql_column_name:
-            print_column_name (n);
+
+                  print_column_name (n);
+      
             break;
 
         case sql_lit_int:
@@ -591,7 +623,7 @@ print_statement (PFsql_t *n)
         default:
             PFoops (OOPS_FATAL,
                     "SQL grammar conflict. (Expected: statement; "
-                    "Got: %s)", ID[n->kind]);
+                    "Got: %s), %i", ID[n->kind], n->kind);
     }
 }
 
@@ -665,8 +697,12 @@ print_tablereference (FILE *f, PFsql_t* n, int i)
                 print_tablereference (f, L(n), i);
             fprintf (f, " AS %s", PFsql_alias_name_str (R(n)->sem.alias.name));
             break;
+        case sql_ref_tbl_name:
+            /* prettyprint ref table name */
+            fprintf (f, "%s", n->sem.ref_tbl.name);
+            break;
 
-        case sql_tbl_name:
+    case sql_tbl_name:
             /* prettyprint table name */
             fprintf (f, "%s", PFsql_table_str (n->sem.tbl.name));
             break;
@@ -929,8 +965,8 @@ PFsql_print (FILE *f, PFsql_t *n)
     assert (n);
     assert (n->kind == sql_root);
 
-    assert (L(n));
-    assert (R(n));    
+    assert (L(n)); /* serialize info */
+    assert (R(n)); /* common table expression */   
 
     /* first print all schema information */
     print_schema_information (f, L(n));
