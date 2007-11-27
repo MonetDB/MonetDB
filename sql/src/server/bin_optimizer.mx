@@ -287,8 +287,7 @@ bin_optimizer(mvc *c, stmt *s)
 		} else
 		/* incase there is no reduction on the left, push
 		   the topn into the right part */
-		if (
-		    s->flag != 0 /* topn, ie limit and orderby */ &&
+		if (s->flag != 0 /* topn, ie limit and orderby */ &&
 		    j->type == st_join && 
 		  ((j->flag == cmp_equal && 
 		    !is_reduced(j) &&
@@ -321,19 +320,19 @@ bin_optimizer(mvc *c, stmt *s)
 			return ns;
 		}
 		/* try to push the limit through the reverse */
-		if (j->type == st_reverse) {
+		if (!s->flag && j->type == st_reverse) {
 			s = stmt_reverse(stmt_limit(stmt_dup(j->op1.stval),
 				s->op2.stval->op1.aval->data.val.ival,
 				s->op3.stval->op1.aval->data.val.ival,
-				j->flag));
+				0));
 			ns = bin_optimizer(c, s);
 			stmt_destroy(s);
 			os->rewritten = stmt_dup(ns);
 			os->optimized = ns->optimized = 3;
 			return ns;
 		}
-		/* try to push the limit through the mark */
-		if (j->type == st_mark) {
+		/* try to push the limit through the mark (only if there is no offset) */
+		if (!s->op2.stval->op1.aval->data.val.ival && j->type == st_mark) {
 			s = stmt_mark_tail(stmt_limit(stmt_dup(j->op1.stval),
 				s->op2.stval->op1.aval->data.val.ival,
 				s->op3.stval->op1.aval->data.val.ival, j->flag),

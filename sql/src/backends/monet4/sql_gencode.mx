@@ -453,8 +453,10 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 			if (s->flag) { /* topN direction */
 				buf = NEW_ARRAY(char, BUFSIZ + 1);
 
-				len = snprintf(buf, BUFSIZ, "var s%dT := s%d.pqueue_topn(s%d + s%d, %d);\n", -s->nr, l, r1, r2, s->flag-1);
-				len += snprintf(buf+len, BUFSIZ-len, "var s%d := s%dT.slice(s%d, s%d + s%d - 1);\n", -s->nr, -s->nr, r1, r1, r2);
+				len = snprintf(buf, BUFSIZ, "var s%d := s%d.pqueue_topn(s%d + s%d, %d);\n", -s->nr, l, r1, r2, s->flag-1);
+				if (s->op2.stval->op1.aval->data.val.ival) 
+					len += snprintf(buf+len, BUFSIZ-len, "s%d := s%d.pqueue_topn(s%d, %d);\n", -s->nr, -s->nr, r2, (s->flag-1)?0:1);
+
 				dump(sql, buf, len, -s->nr);
 			} else {
 				buf = NEW_ARRAY(char, BUFSIZ + 1);
