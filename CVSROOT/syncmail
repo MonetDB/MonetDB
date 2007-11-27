@@ -1,12 +1,58 @@
-#! /usr/bin/python
-
-# Copyright (c) 2002, 2003, 2004 Barry Warsaw, Fred Drake, and contributors
+#!/usr/bin/env python
+#                        S Y N C M A I L
+#
+# Copyright (c) 2002-2006 Barry Warsaw, Fred Drake, and contributors
 # All rights reserved.
-# See the accompanying LICENSE file for details.
-
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:
+#
+# * Redistributions of source code must retain the above copyright
+#   notice, this list of conditions and the following disclaimer.
+# * Redistributions in binary form must reproduce the above copyright
+#   notice, this list of conditions and the following disclaimer in
+#   the documentation and/or other materials provided with the
+#   distribution.
+# * Neither the names of the authors nor the names of its contributors
+#   may be used to endorse or promote products derived from this
+#   software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+# FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+# COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+# BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+# ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
+#
+###
+#
+# syncmail is a script that is used to provide email notification of
+# changes to a CVS repository.  For more information, including
+# installation instructions, read the syncmail(1) manpage, or type
+# "syncmail --help".
+#
+# This project is maintained at SourceForge:
+#
+#     http://sourceforge.net/projects/cvs-syncmail/
+#
+# And there is a mailing list for discussing syncmail:
+#
+#     cvs-syncmail-talk@lists.sourceforge.net
+#
+# Our thanks to Zooko for helping improve the security of the script.
+# -Barry Warsaw & Fred Drake (maintainers)
+#
 # NOTE: SourceForge currently runs Python 2.2.3, so we need to remain
 # compatible with at least that version.  Python 2.2.2 or newer is
 # currently required.
+###
 
 """Complicated notification for CVS checkins.
 
@@ -89,7 +135,7 @@ The rest of the command line arguments are:
     email-addrs
         At least one email address.
 """
-__version__ = '2.3'
+__version__ = '2.5'
 
 import os
 import re
