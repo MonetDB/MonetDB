@@ -412,27 +412,31 @@ def load_change_info(prefix=None):
         entries_fn = os.path.join("CVS", "Entries")
     entries_log_fn = entries_fn + ".Log"
     mapping = {}
-    f = open(entries_fn)
-    while 1:
-        line = f.readline()
-        if not line:
-            break
-##        if line.strip() == "D":
-##            continue
-        # we could recurse down subdirs, except the Entries.Log files
-        # we need haven't been written to the subdirs yet, so it
-        # doesn't do us any good
-##        if line[0] == "D":
-##            name = line.split("/")[1]
-##            dirname = namekey(prefix, name)
-##            if os.path.isdir(dirname):
-##                m = load_change_info(dirname)
-##                mapping.update(m)
-        if line[0] == "/":
-            # normal file
-            get_entry(prefix, mapping, line, entries_fn)
-        # else: bogus Entries line
-    f.close()
+    try:
+        f = open(entries_fn)
+    except IOError:
+        pass
+    else:
+        while 1:
+            line = f.readline()
+            if not line:
+                break
+##            if line.strip() == "D":
+##                continue
+            # we could recurse down subdirs, except the Entries.Log files
+            # we need haven't been written to the subdirs yet, so it
+            # doesn't do us any good
+##            if line[0] == "D":
+##                name = line.split("/")[1]
+##                dirname = namekey(prefix, name)
+##                if os.path.isdir(dirname):
+##                    m = load_change_info(dirname)
+##                    mapping.update(m)
+            if line[0] == "/":
+                # normal file
+                get_entry(prefix, mapping, line, entries_fn)
+            # else: bogus Entries line
+        f.close()
     if os.path.isfile(entries_log_fn):
         f = open(entries_log_fn)
         while 1:
