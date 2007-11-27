@@ -83,3 +83,6 @@ HAVE_JAVA?jdbc_no_debug.SF-1739356
 cascade_operations_in_different_sessions.SF-1823387_create
 cascade_operations_in_different_sessions.SF-1823387_drop
 number_null_first_row.SF-1833286
+select_mod.SF-1838813
+insert_date.SF-1838785
+variable_names.SF-1838816

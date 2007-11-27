@@ -78,7 +78,7 @@ extern void sql_add_param(mvc *sql, char *name, sql_subtype *st);
 extern sql_arg *sql_bind_param(mvc *sql, char *name);
 /* once the type of the '?' parameters is known its set using the set_type
  * function */
-extern int set_type_param(mvc *sql, sql_subtype *type, char *name);
+extern int set_type_param(mvc *sql, sql_subtype *type, int nr);
 extern int stmt_set_type_param(mvc *sql, sql_subtype *type, stmt *param);
 extern void sql_destroy_params(mvc *sql);	/* used in backend */
 
@@ -137,7 +137,9 @@ sql_add_param(mvc *sql, char *name, sql_subtype *st)
 {
 	sql_arg *a = NEW(sql_arg);
 
-	a->name = _strdup(name);
+	a->name = NULL;
+	if (name)
+		a->name = _strdup(name);
 	if (st)
 		a->type = *st;
 	else
@@ -157,12 +159,28 @@ sql_bind_param(mvc *sql, char *name)
 		for (n = sql->params->h; n; n = n->next) {
 			sql_arg *a = n->data;
 
-			if (strcmp(a->name, name) == 0) 
+			if (a->name && strcmp(a->name, name) == 0) 
 				return a;
 		}
 	}
 	return NULL;
 }
+
+static sql_arg *
+sql_bind_paramnr(mvc *sql, int nr)
+{
+	int i=0;
+	node *n;
+
+	if (sql->params && nr < list_length(sql->params)) {
+		for (n = sql->params->h, i=0; n && i<nr; n = n->next, i++) 
+			;
+
+		return n->data;
+	}
+	return NULL;
+}
+
 
 atom *
 sql_bind_arg(mvc *sql, int nr)
@@ -606,9 +624,9 @@ inplace_convert(mvc *sql, sql_subtype *ct, stmt *s)
 }
 
 int
-set_type_param(mvc *sql, sql_subtype *type, char *name)
+set_type_param(mvc *sql, sql_subtype *type, int nr)
 {
-	sql_arg *a = sql_bind_param(sql, name);
+	sql_arg *a = sql_bind_paramnr(sql, nr);
 
 	if (!a) 
 		return -1;
@@ -622,7 +640,7 @@ stmt_set_type_param(mvc *sql, sql_subtype *type, stmt *param)
 	if (!type || !param || param->type != st_var)
 		return -1;
 
-	if (set_type_param(sql, type, param->op1.sval) == 0) {
+	if (set_type_param(sql, type, param->flag) == 0) {
 		param->op2.typeval = *type;
 		return 0;
 	}

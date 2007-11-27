@@ -411,13 +411,21 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 					setVarType(mb, getArg(q, 0), tt);
 					freezeVarType(mb,getArg(q,0));
 				} else if ((s->flag & VAR_DECLARE) == 0) {
+					char *buf;
+
+					buf = alloca(SMALLBUFSIZ);
+					(void) snprintf(buf, SMALLBUFSIZ, "A%s", s->op1.sval);
 					q = newAssignment(mb);
-					q = pushArgumentId(mb, q, _strdup(s->op1.sval));
+					q = pushArgumentId(mb, q, _strdup(buf));
 				} else {
 					int tt = tail_type(s)->type->localtype;
+					char *buf;
+
+					buf = alloca(SMALLBUFSIZ);
+					(void) snprintf(buf, SMALLBUFSIZ, "A%s", s->op1.sval);
 					q = newInstruction(mb,ASSIGNsymbol);
 					q->argc = q->retc = 0;
-					q = pushArgumentId(mb, q, _strdup(s->op1.sval));
+					q = pushArgumentId(mb, q, _strdup(buf));
 					q = pushNil(mb, q, tt);
 					pushInstruction(mb, q);
 					q->retc++;
@@ -1748,9 +1756,14 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			int r = _dumpstmt(sql,mb, s->op2.stval);
 			if (!VAR_GLOBAL(s->flag)) { /* globals */
 				char *vn = atom2string(s->op1.stval->op1.aval);
+				char *buf;
+
+				buf = alloca(SMALLBUFSIZ);
+				(void) snprintf(buf, SMALLBUFSIZ, "A%s", vn);
 				q = newInstruction(mb,ASSIGNsymbol);
 				q->argc = q->retc = 0;
-				q = pushArgumentId(mb, q, vn);
+				q = pushArgumentId(mb, q, _strdup(buf));
+				_DELETE(vn);
 				pushInstruction(mb, q);
 				q->retc++;
 			} else {
@@ -2007,13 +2020,18 @@ backend_create_func(backend *be, sql_func *f)
 	if (f->ops) {
 		int argc = 0;
 		node *n;
+		char *buf = alloca(SMALLBUFSIZ);
 
 		for (n = f->ops->h; n; n = n->next, argc++) {
 			sql_arg *a = n->data;
 			int type = a->type.type->localtype;
 			int varid = 0;
 
-			varid = newVariable(curBlk, _strdup(a->name), type);
+			if (a->name) 
+				(void) snprintf(buf, SMALLBUFSIZ, "A%s", a->name);
+			else
+				(void) snprintf(buf, SMALLBUFSIZ, "A%d", argc);
+			varid = newVariable(curBlk, _strdup(buf), type);
 			curInstr = pushArgument(curBlk, curInstr, varid);
 			setVarType(curBlk, varid, type);
 			freezeVarType(curBlk,varid);

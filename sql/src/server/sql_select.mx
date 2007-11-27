@@ -1732,7 +1732,7 @@ sql_value_exp(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset, int f,
 	case SQL_PARAMETER:{
 		if (sql->mode != m_prepare) 
 			return sql_error(sql, 02, "SELECT: parameters ('?') not allowed in normal queries, use PREPARE");
-		return stmt_var(_strdup(se->data.sval), NULL, 0, 0);
+		return stmt_varnr(se->data.ival, NULL);
 	}
 	case SQL_NULL:
 		return stmt_atom(atom_general(sql_bind_localtype("str"), NULL, 0));

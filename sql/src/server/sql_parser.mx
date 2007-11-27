@@ -3253,12 +3253,10 @@ value_exp:
  |  XML_value_function
  |  '?'			
 	{ mvc *m = (mvc*)parm;
-	  int nr = (m->params)?list_length(m->params):0, l = 3 + ((nr+7)>>3);
-	  char *n = sa_alloc(m->sa, l);
+	  int nr = (m->params)?list_length(m->params):0;
 
-	  snprintf(n, l, "A%d", nr);
-	  sql_add_param(m, n, NULL);
-	  $$ = _symbol_create( SQL_PARAMETER, n ); }
+	  sql_add_param(m, NULL, NULL);
+	  $$ = _symbol_create_int( SQL_PARAMETER, nr ); }
  ;
 
 /*

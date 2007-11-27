@@ -305,10 +305,10 @@ static sql_exp * exp_param(char *name, sql_subtype *tpe)
 	sql_exp *e = exp_create(e_atom);
 	e->r = _strdup(name);
 	e->card = CARD_ATOM;
-	e->flag = 0;
 	e->f = tpe;
 	return e;
 }
+
 
 
 static sql_exp *
@@ -1784,7 +1784,7 @@ rel_set_type_param(mvc *sql, sql_subtype *type, sql_exp *param)
 	if (!type || !param || param->type != e_atom || !param->r)
 		return -1;
 
-	if (set_type_param(sql, type, param->r) == 0) {
+	if (set_type_param(sql, type, param->flag) == 0) {
 		param->f = type;
 		return 0;
 	}
@@ -3399,7 +3399,7 @@ rel_value_exp(mvc *sql, sql_rel **rel, symbol *se, int f)
 	case SQL_PARAMETER:{
 		if (sql->mode != m_prepare) 
 			return sql_error(sql, 02, "SELECT: parameters ('?') not allowed in normal queries, use PREPARE");
-		return exp_param(se->data.sval, NULL);
+		return exp_atom_ref(se->data.ival, NULL);
 	}
 	case SQL_ATOM:{
 		AtomNode *an = (AtomNode *) se;

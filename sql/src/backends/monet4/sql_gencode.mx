@@ -1750,7 +1750,10 @@ backend_create_func(backend *be, sql_func *f)
 		for (n = f->ops->h; n; n = n->next, argc++) {
 			sql_arg *a = n->data;
 
-			i += snprintf(buf + i, BUFSIZ - i, "%s %s%c", a->type.type->base.name, a->name, (n->next) ? ',' : ' ');
+			if (a->name)
+				i += snprintf(buf + i, BUFSIZ - i, "%s %s%c", a->type.type->base.name, a->name, (n->next) ? ',' : ' ');
+			else
+				i += snprintf(buf + i, BUFSIZ - i, "%s A%d%c", a->type.type->base.name, argc, (n->next) ? ',' : ' ');
 		}
 	}
 	i += snprintf(buf + i, BUFSIZ - i, ") : ");

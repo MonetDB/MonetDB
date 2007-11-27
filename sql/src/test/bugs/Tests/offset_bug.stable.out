@@ -1,0 +1,62 @@
+stdout of test 'offset_bug` in directory 'src/test/bugs` itself:
+
+
+# 09:54:32 >  
+# 09:54:32 >   Mserver "--config=/ufs/niels/scratch/rc/Linux-x86_64/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB4:/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB4/lib:/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB4/bin" --set "gdk_dbfarm=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB4/dbfarm" --set "sql_logdir=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB4/sql_logs" --set "xquery_logdir=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB4/xquery_logs" --set mapi_open=true --set xrpc_open=true --set mapi_port=34343 --set xrpc_port=40816 --set monet_prompt= --trace "--dbname=mTests_src_test_bugs" "--dbinit= module(sql_server);" ; echo ; echo Over..
+# 09:54:32 >  
+
+# MonetDB Server v4.20.1
+# based on GDK   v1.20.1
+# Copyright (c) 1993-2007, CWI. All rights reserved.
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
+# Visit http://monetdb.cwi.nl/ for further information.
+# MonetDB/SQL module v2.20.3 loaded
+
+printf("\nReady.\n");
+
+Ready.
+quit();
+
+Over..
+
+# 09:54:33 >  
+# 09:54:33 >  mclient -lsql -umonetdb -Pmonetdb --host=koala --port=34343 
+# 09:54:33 >  
+
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+% sys.query_users,	sys.query_users # table_name
+% user_id,	user_name # name
+% int,	varchar # type
+% 1,	5 # length
+[ 1,	"john"	]
+[ 2,	"jack"	]
+[ 3,	"ed"	]
+[ 4,	"wendy"	]
+[ 5,	"laura"	]
+[ 6,	"ralph"	]
+[ 7,	"fido"	]
+% sys.query_users,	sys.query_users # table_name
+% user_id,	user_name # name
+% int,	varchar # type
+% 1,	5 # length
+[ 3,	"ed"	]
+[ 4,	"wendy"	]
+[ 5,	"laura"	]
+% sys.query_users,	sys.query_users # table_name
+% user_id,	user_name # name
+% int,	varchar # type
+% 1,	5 # length
+[ 3,	"ed"	]
+[ 4,	"wendy"	]
+[ 5,	"laura"	]
+
+# 09:54:33 >  
+# 09:54:33 >  Done.
+# 09:54:33 >  
+
