@@ -40,6 +40,7 @@ ALL $CVSROOT/CVSROOT/warn %s
 ^template $CVSROOT/CVSROOT/syncmail -q -u %{stVv} monetdb-templ-chkins@lists.sourceforge.net
 ^xml $CVSROOT/CVSROOT/syncmail -q -u %{stVv} monetdb-xml-checkins@lists.sourceforge.net
 ^buildtools $CVSROOT/CVSROOT/syncmail -q -u %{stVv} monetdb-checkins@lists.sourceforge.net
+^java $CVSROOT/CVSROOT/syncmail -q -u %{stVv} monetdb-checkins@lists.sourceforge.net
 
 # catch all
 DEFAULT $CVSROOT/CVSROOT/syncmail -q -u %{stVv} sjoerd@users.sourceforge.net
