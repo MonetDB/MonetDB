@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+# The contents of this file are subject to the MonetDB Public License
+# Version 1.1 (the "License"); you may not use this file except in
+# compliance with the License. You may obtain a copy of the License at
+# http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+#
+# Software distributed under the License is distributed on an "AS IS"
+# basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+# License for the specific language governing rights and limitations
+# under the License.
+#
+# The Original Code is the MonetDB Database System.
+#
+# The Initial Developer of the Original Code is CWI.
+# Portions created by CWI are Copyright (C) 1997-2007 CWI.
+# All Rights Reserved.
+
+# The JdbcClient program searches the latest Java .jar file and starts
+# the program.  Searching is done with the assumption that SQL is
+# installed with the same prefix as MonetDB.  If this is not the case,
+# searching will fail.
+# Future versions might inspect a database of eligible servers
+# to direct the interaction to the proper ports.
+
+jdbcclient_jar="@datadir@/MonetDB/lib/jdbcclient.jar"
+if [ ! -s "$jdbcclient_jar" ] ; then
+	jdbcclient_jar="@QCLIENTS_BUILD@/src/java/jdbcclient.jar"
+fi
+
+exec java -jar "$jdbcclient_jar" $*

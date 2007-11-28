@@ -1,0 +1,201 @@
+#                                               -*- Autoconf -*-
+
+# The contents of this file are subject to the MonetDB Public License
+# Version 1.1 (the "License"); you may not use this file except in
+# compliance with the License. You may obtain a copy of the License at
+# http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+#
+# Software distributed under the License is distributed on an "AS IS"
+# basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+# License for the specific language governing rights and limitations
+# under the License.
+#
+# The Original Code is the MonetDB Database System.
+#
+# The Initial Developer of the Original Code is CWI.
+# Portions created by CWI are Copyright (C) 1997-2007 CWI.
+# All Rights Reserved.
+
+# Process this file with autoconf to produce a configure script.
+
+AC_PREREQ(2.59)
+AC_INIT([MonetDB clients], [1.21.0], [monet@cwi.nl], [clients])
+#                           ^^^^^^
+# Maintained via vertoo. Please don't modify by hand!
+# Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
+AC_CONFIG_AUX_DIR(conf)
+AC_CANONICAL_HOST
+AC_CANONICAL_TARGET
+dnl AH_TOP([#include "sysdefs.h"])
+AH_BOTTOM([#include "stddef.h"])
+AM_INIT_AUTOMAKE
+AC_CONFIG_SRCDIR([src/mapilib/Mapi.mx])
+AM_CONFIG_HEADER([clients_config.h])
+CONFIG_H=clients_config.h
+AC_SUBST(CONFIG_H)
+
+HOST=[$target]
+AC_DEFINE_UNQUOTED(HOST, "$HOST", [Host identifier])
+
+if test x"$target_os" = xcygwin; then
+	AC_DEFINE(WIN32, 1, [Define on MS Windows (also under Cygwin)])
+fi
+
+# CLIENTS_BUILD and CLIENTS_SOURCE are *only* used for monetdb-clients-config
+# CLIENTS_SOURCE is the absolute path name of the source directory
+# (srcdir can be relative)
+
+# The Q versions of various variables are used in places where \'s
+# need to be escapes with an extra \.  Configure does not support \'s
+# in path names, so there is no need to do anything special here
+# except set the variables.  The command to set them in case we do
+# need to escape the \'s is Qvar=`echo "$var" | sed 's/\\\\/\\\\\\\\/g'`
+CLIENTS_BUILD=[`pwd`]
+AC_SUBST(CLIENTS_BUILD)
+
+CLIENTS_SOURCE=[`(cd $srcdir && pwd)`]
+AC_SUBST(CLIENTS_SOURCE)
+
+AM_MONETDB_XQ_VARS_1()
+
+
+# Check for Monet 
+req_monetdb_ver='1.20.0'
+#                ^^^^^^
+# Maintained via vertoo. Please don't modify by hand!
+# Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
+AM_MONETDB_COMMON($req_monetdb_ver)
+if test "x$have_monetdb" != xyes; then
+	if test "x$MONETDBVERS" = "x"; then
+		AC_MSG_ERROR([MonetDB was not found. Clients requires at least version $req_monetdb_ver of MonetDB.])
+	else
+		AC_MSG_ERROR([Clients requires at least version $req_monetdb_ver of MonetDB, but only version $MONETDBVERS was found.])
+	fi
+fi
+AM_MONETDB_DEFAULTS()
+req_java_ver_min=1.4 # >= $req_java_ver_min required
+req_java_ver_max=1.6 # <  $req_java_ver_max required
+AM_MONETDB_COMPILER($req_java_ver_min, $req_java_ver_max)
+AM_MONETDB_TOOLS()
+AM_MONETDB_OPTIONS()
+AM_MONETDB_LIBS()
+AM_MONETDB_UTILS()
+
+AC_PROG_LIBTOOL
+
+# Checks for libraries.
+dnl unixODBC
+dnl this is only used by the ODBC driver
+have_unixodbc=auto
+UNIXODBC_PATH="$PATH"
+UNIXODBC_CONFIG=''
+ODBC_INCS=''
+ODBC_LIBS=''
+AC_ARG_WITH(unixodbc,
+	AC_HELP_STRING([--with-unixodbc=DIR],
+		[unixODBC library is installed in DIR]),
+	have_unixodbc="$withval")
+case "$have_unixodbc" in
+yes|no|auto)
+	;;
+*)
+	UNIXODBC_PATH="$withval/bin:$PATH"
+	;;
+esac
+if test "x$have_unixodbc" != xno; then
+	AC_PATH_PROG(UNIXODBC_CONFIG,odbc_config,,$UNIXODBC_PATH)
+	if test "x$UNIXODBC_CONFIG" = x; then
+		if test "x$have_unixodbc" = xyes; then
+			AC_MSG_ERROR([odbc_config not found; use --with-unixodbc=<path>])
+		fi
+		have_unixodbc=no
+	fi
+fi
+if test "x$have_unixodbc" != xno; then
+	case "$have_unixodbc" in
+	yes|auto)
+		;;
+	*)
+		ODBC_INCS="-I$have_unixodbc/include"
+		ODBC_LIBS="-L$have_unixodbc/lib"
+		;;
+	esac
+	save_CPPFLAGS="$CPPFLAGS"
+	CPPFLAGS="$CPPFLAGS $ODBC_INCS"
+	AC_CHECK_HEADER(odbcinst.h, AC_DEFINE(HAVE_ODBCINST_H, 1, [Define to 1 if you have the <odbcinst.h> header file.]), [if test "x$have_unixodbc" != xauto; then AC_MSG_ERROR([odbcinst.h not found]); fi; have_unixodbc=no])
+	CPPFLAGS="$save_CPPFLAGS"
+fi
+if test "x$have_unixodbc" != xno; then
+	save_LIBS="$LIBS"
+    	LIBS="$LIBS $ODBC_LIBS"
+    	AC_CHECK_LIB(odbcinst, SQLGetPrivateProfileString, :, [if test "x$have_unixodbc" != xauto; then AC_MSG_ERROR([-lodbcinst not found]); fi; have_unixodbc=no])
+    	LIBS="$save_LIBS"
+fi
+if test "x$have_unixodbc" != xno; then
+	ODBC_LIBS="$ODBC_LIBS -lodbcinst"
+	AC_DEFINE(HAVE_SQLGETPRIVATEPROFILESTRING, 1, [Define if you have the SQLGetPrivateProfileString function])
+fi
+AC_SUBST(ODBC_INCS)
+AC_SUBST(ODBC_LIBS)
+
+# Checks for header files.
+AC_HEADER_TIME
+AC_CHECK_HEADERS([crypt.h pwd.h sys/ioctl.h sys/un.h])
+
+# Checks for library functions.
+AC_CHECK_FUNCS([crypt ftime getlogin gethostname localtime_r popen strcasecmp strncasecmp strtod strtof strtoll strtoull])
+AC_CHECK_DECLS([strtof, strtoll, strtoull])
+
+
+dnl provide different versions of the paths derived above
+AM_MONETDB_XQ_VARS_2()
+AC_DEFINE_UNQUOTED(CLIENTS_PREFIX,"$QXprefix",[architecture-independent files])
+AC_DEFINE_UNQUOTED(CLIENTS_EXEC_PREFIX,"$QXexec_prefix",[architecture-dependent files])
+QCLIENTS_BUILD="$CLIENTS_BUILD"
+XCLIENTS_BUILD="`$translatepath "$CLIENTS_BUILD"`"
+QXCLIENTS_BUILD="`echo "$XCLIENTS_BUILD" | sed 's/\\\\/\\\\\\\\/g'`"
+AC_SUBST(QCLIENTS_BUILD)
+AC_SUBST(XCLIENTS_BUILD)
+AC_SUBST(QXCLIENTS_BUILD)
+QCLIENTS_SOURCE="$CLIENTS_SOURCE"
+XCLIENTS_SOURCE="`$translatepath "$CLIENTS_SOURCE"`"
+QXCLIENTS_SOURCE="`echo "$XCLIENTS_SOURCE" | sed 's/\\\\/\\\\\\\\/g'`"
+AC_SUBST(QCLIENTS_SOURCE)
+AC_SUBST(XCLIENTS_SOURCE)
+AC_SUBST(QXCLIENTS_SOURCE)
+AC_DEFINE_UNQUOTED(CLIENTS_LOCALSTATEDIR,"$QXlocalstatedir",[modifiable single-machine data])
+AC_DEFINE_UNQUOTED(CLIENTS_LIBDIR,"$QXlibdir",[object code libraries])
+AC_DEFINE_UNQUOTED(CLIENTS_SYSCONFDIR,"$QXsysconfdir",[read-only single-machine data])
+
+
+case "$host_os" in
+mac*)	DIRSEP=':'
+	QDIRSEP=':'
+	AC_ERROR([mac not supported])
+	;;
+*mingw*)
+	DIRSEP='\'
+	QDIRSEP='\\'
+	PATHSEP=';'
+	SOEXT='-0.dll'
+	;;
+*darwin*)
+	DIRSEP='/'
+	QDIRSEP='/'
+	PATHSEP=':'
+	SOEXT='.dylib'
+	;;
+*)
+	DIRSEP='/'
+	QDIRSEP='/'
+	PATHSEP=':'
+	SOEXT='.so'
+	;;
+esac
+AC_SUBST(DIRSEP)
+AC_SUBST(QDIRSEP)
+AC_SUBST(PATHSEP)
+AC_SUBST(SOEXT)
+
+dnl  CFLAGS for our code are stricter than what autoconf can cope with.
+CFLAGS="$CFLAGS \$(X_CFLAGS)"

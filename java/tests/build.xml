@@ -1,0 +1,216 @@
+<?xml version="1.0"?><!-- vim:set ts=2 sw=2 expandtab: -->
+
+<!--
+The contents of this file are subject to the MonetDB Public License
+Version 1.1 (the "License"); you may not use this file except in
+compliance with the License. You may obtain a copy of the License at
+http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+
+Software distributed under the License is distributed on an "AS IS"
+basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+License for the specific language governing rights and limitations
+under the License.
+
+The Original Code is the MonetDB Database System.
+
+The Initial Developer of the Original Code is CWI.
+Portions created by CWI are Copyright (C) 1997-2007 CWI.
+All Rights Reserved.
+-->
+
+<!--
+
+  Build file to allow ant (http://jakarta.apache.org/ant/) to be used
+  to build and run the tests
+
+-->
+
+<project name="JDBCTests" default="compile" basedir=".">
+
+  <property file="build.local.properties" />
+  <property file="build.properties" />
+  <property file="../build.properties"/> <!-- included for version -->
+
+  <!-- set global properties for this build -->
+  <property name="srcdir"    value="." />
+  <property name="builddir"  value="build" />
+  <property name="jardir"    value="../jars" />
+  <property name="jdbc_jar"
+    value="${jardir}/monetdb-${JDBC_MAJOR}.${JDBC_MINOR}-jdbc.jar" />
+  <property name="jdbc_url"
+    value="jdbc:monetdb://localhost/?user=monetdb&amp;password=monetdb${debug}" />
+
+  <!-- Prepares the build directory -->
+  <target name="prepare">
+    <mkdir dir="${builddir}" />
+  </target>
+
+  <!-- Compiles the tests -->
+  <target name="compile" depends="prepare">
+    <echo message="Compiling JDBC tests" />
+    <javac
+      srcdir="${srcdir}"
+      destdir="${builddir}"
+      target="${javac_version}"
+      source="${javac_version}"
+      >
+      <include name="**/*.java" />
+      <classpath>
+        <pathelement path="${srcdir}" />
+      </classpath>
+    </javac>
+  </target>
+
+  <!-- makes sure the jdbc driver is compiled -->
+  <target name="jdbc" depends="find_driver" unless="have_driver">
+    <ant antfile="build.xml" dir=".." inheritAll="false" target="jar_jdbc" />
+  </target>
+
+  <target name="find_driver">
+    <condition property="have_driver">
+      <and>
+        <available classname="nl.cwi.monetdb.jdbc.MonetDriver">
+          <classpath>
+            <pathelement path="${jdbc_jar}" />
+          </classpath>
+        </available>
+      </and>
+    </condition>
+  </target>
+
+  <!-- This target removes the build directory -->
+  <target name="clean">
+    <delete quiet="true" dir="${builddir}" />
+  </target>
+
+  <!-- Run tests -->
+  <target name="test">
+    <antcall target="Test_Cautocommit" />
+    <antcall target="Test_Clargequery" />
+    <antcall target="Test_Cmanycon" />
+    <antcall target="Test_Creplysize" />
+    <antcall target="Test_Csavepoints" />
+    <antcall target="Test_Ctransaction" />
+    <antcall target="Test_PSlargeresponse" />
+    <antcall target="Test_PStimedate" />
+    <antcall target="Test_PStimezone" />
+    <antcall target="Test_PStypes" />
+    <antcall target="Test_Rbooleans" />
+    <antcall target="Test_Rmetadata" />
+    <antcall target="Test_Rpositioning" />
+    <antcall target="Test_Rtimedate" />
+    <antcall target="Test_Sbatching" />
+    <antcall target="BugConcurrent_clients_SF_1504657" />
+  </target>
+
+  <target name="test_class" depends="compile,jdbc">
+    <echo message="Testing class ${test.class}" />
+    <java classname="${test.class}" failonerror="true">
+      <classpath>
+        <pathelement path="${builddir}" />
+        <pathelement path="${jdbc_jar}" />
+      </classpath>
+      <arg value="${jdbc_url}" />
+    </java>
+  </target>
+  
+
+  <!-- convenience targets for the outside caller to specify which
+  test(s) should be run -->
+  <target name="Test_Cautocommit">
+    <antcall target="test_class">
+      <param name="test.class" value="Test_Cautocommit" />
+    </antcall>
+  </target>
+
+  <target name="Test_Csavepoints">
+    <antcall target="test_class">
+      <param name="test.class" value="Test_Csavepoints" />
+    </antcall>
+  </target>
+
+  <target name="Test_Clargequery">
+    <antcall target="test_class">
+      <param name="test.class" value="Test_Clargequery" />
+    </antcall>
+  </target>
+
+  <target name="Test_Cmanycon">
+    <antcall target="test_class">
+      <param name="test.class" value="Test_Cmanycon" />
+    </antcall>
+  </target>
+
+  <target name="Test_Ctransaction">
+    <antcall target="test_class">
+      <param name="test.class" value="Test_Ctransaction" />
+    </antcall>
+  </target>
+
+  <target name="Test_Creplysize">
+    <antcall target="test_class">
+      <param name="test.class" value="Test_Creplysize" />
+    </antcall>
+  </target>
+
+  <target name="Test_Sbatching">
+    <antcall target="test_class">
+      <param name="test.class" value="Test_Sbatching" />
+    </antcall>
+  </target>
+
+  <target name="Test_PSlargeresponse">
+    <antcall target="test_class">
+      <param name="test.class" value="Test_PSlargeresponse" />
+    </antcall>
+  </target>
+
+  <target name="Test_PStimedate">
+    <antcall target="test_class">
+      <param name="test.class" value="Test_PStimedate" />
+    </antcall>
+  </target>
+
+  <target name="Test_PStimezone">
+    <antcall target="test_class">
+      <param name="test.class" value="Test_PStimezone" />
+    </antcall>
+  </target>
+
+  <target name="Test_PStypes">
+    <antcall target="test_class">
+      <param name="test.class" value="Test_PStypes" />
+    </antcall>
+  </target>
+
+  <target name="Test_Rbooleans">
+    <antcall target="test_class">
+      <param name="test.class" value="Test_Rbooleans" />
+    </antcall>
+  </target>
+
+  <target name="Test_Rpositioning">
+    <antcall target="test_class">
+      <param name="test.class" value="Test_Rpositioning" />
+    </antcall>
+  </target>
+
+  <target name="Test_Rtimedate">
+    <antcall target="test_class">
+      <param name="test.class" value="Test_Rtimedate" />
+    </antcall>
+  </target>
+
+  <target name="Test_Rmetadata">
+    <antcall target="test_class">
+      <param name="test.class" value="Test_Rmetadata" />
+    </antcall>
+  </target>
+  
+  <target name="BugConcurrent_clients_SF_1504657">
+    <antcall target="test_class">
+      <param name="test.class" value="BugConcurrent_clients_SF_1504657" />
+    </antcall>
+  </target>
+
+</project>

@@ -1,0 +1,48 @@
+#!/bin/sh
+
+# The contents of this file are subject to the MonetDB Public License
+# Version 1.1 (the "License"); you may not use this file except in
+# compliance with the License. You may obtain a copy of the License at
+# http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+#
+# Software distributed under the License is distributed on an "AS IS"
+# basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+# License for the specific language governing rights and limitations
+# under the License.
+#
+# The Original Code is the MonetDB Database System.
+#
+# The Initial Developer of the Original Code is CWI.
+# Portions created by CWI are Copyright (C) 1997-2007 CWI.
+# All Rights Reserved.
+
+pkg=monetdb-clients
+builddir=@QCLIENTS_BUILD@
+# make sure srcdir contains absolute path name
+srcdir=`cd '@srcdir@'; pwd`
+uname=`uname`
+
+# make sure scripts are executable
+for x in "${builddir}/conf/${pkg}-config" "${builddir}/src/java/scripts/mjclient" "${builddir}/src/python/mclient.py"
+do
+	if [ -s $x ] ; then
+		chmod +x $x
+	fi
+done
+
+# enhance various paths to find our stuff
+PATH="${builddir}/conf:${builddir}/src/java/scripts:${builddir}/src/mapiclient:${builddir}/src/python:$PATH"
+export PATH
+
+PYTHONPATH="${srcdir}/src/python:${PYTHONPATH}"
+export PYTHONPATH
+
+# execute Mtest.py in the source directory
+cd "$srcdir"
+
+# execute the script.
+# if no arguments, do a recursive test (Mtest.py -r), else pass on the
+# arguments.
+# if the environment variable MTEST_AT is set (value does not matter), pass
+# the --at flag to Mtest.py so that it uses the at command as a watchdog.
+exec Mtest.py --package=${pkg} --TSTTRGBASE="${builddir}" ${MTEST_AT+--at} "${@--rq}"

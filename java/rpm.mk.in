@@ -1,0 +1,69 @@
+# -*- makefile -*-
+
+# The contents of this file are subject to the MonetDB Public License
+# Version 1.1 (the "License"); you may not use this file except in
+# compliance with the License. You may obtain a copy of the License at
+# http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+#
+# Software distributed under the License is distributed on an "AS IS"
+# basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+# License for the specific language governing rights and limitations
+# under the License.
+#
+# The Original Code is the MonetDB Database System.
+#
+# The Initial Developer of the Original Code is CWI.
+# Portions created by CWI are Copyright (C) 1997-2007 CWI.
+# All Rights Reserved.
+
+# make rules to generate MonetDB RPMs (works on RedHat Linux, only)
+
+rpmtopdir = $(shell cd $(top_builddir) && pwd)/rpm
+
+@HAVE_PHP_FALSE@php=--without php
+@HAVE_PHP_TRUE@php=--with php
+@HAVE_PERL_SWIG_FALSE@perl=--without perl
+@HAVE_PERL_SWIG_TRUE@perl=--with perl
+@HAVE_PYTHON_SWIG_FALSE@python=--without python
+@HAVE_PYTHON_SWIG_TRUE@python=--with python
+@HAVE_JAVA_FALSE@java=--without java
+@HAVE_JAVA_TRUE@java=--with java
+
+$(top_builddir)/$(distdir).tar.gz:
+	$(MAKE) $(AM_MAKEFLAGS) dist
+
+$(rpmtopdir)/rpmmacros:
+	mkdir -p $(rpmtopdir)/RPMS
+	mkdir -p $(rpmtopdir)/SRPMS
+	mkdir -p $(rpmtopdir)/SPECS
+	mkdir -p $(rpmtopdir)/BUILD
+	mkdir -p $(rpmtopdir)/INSTALL
+
+	echo "macrofiles: /usr/lib/rpm/macros:/usr/lib/rpm/%{_target}/macros:/usr/lib/rpm/redhat/macros:/etc/rpm/macros.specspo:/etc/rpm/macros.prelink:/etc/rpm/macros.solve:/etc/rpm/macros.up2date:/etc/rpm/macros:/etc/rpm/%{_target}/macros:$(rpmtopdir)/rpmmacros" > $(rpmtopdir)/rpmrc
+
+	echo "%_tmppath          /tmp"                >  $(rpmtopdir)/rpmmacros
+	echo "%_topdir           $(rpmtopdir)"        >> $(rpmtopdir)/rpmmacros
+	echo "%tmpdir            %{_tmppath}"         >> $(rpmtopdir)/rpmmacros
+	echo "%rpmcflags         -O2 "                >> $(rpmtopdir)/rpmmacros
+	echo "#%top_builddirroot %{_topdir}/INSTALL/" >> $(rpmtopdir)/rpmmacros
+	echo "%dist              _@LINUX_DIST@"       >> $(rpmtopdir)/rpmmacros
+	if test "@oids@" -eq 32; then echo "%oid32 1" >> $(rpmtopdir)/rpmmacros; fi
+
+rpm:	MonetDB-client.spec $(top_builddir)/$(distdir).tar.gz $(rpmtopdir)/rpmmacros
+	$(RPMBUILD) --rcfile $(rpmtopdir)/rpmrc -ta --target `uname -m` ${php} ${perl} ${python} ${java} --define="buildsystem 1" --define="comp_cc @CC@" $(top_builddir)/$(distdir).tar.gz
+	for i in rpm/SRPMS/*_@LINUX_DIST@.oid@oids@* ; do \
+		mv "$$i" "`echo "$$i" | sed 's|_@LINUX_DIST@.oid@oids@||'`" ; \
+	done
+	rm -rf $(rpmtopdir)/BUILD
+
+srpm:	MonetDB-client.spec $(top_builddir)/$(distdir).tar.gz $(rpmtopdir)/rpmmacros
+	$(RPMBUILD) --rcfile $(rpmtopdir)/rpmrc -ts ${php} ${perl} ${python} ${java} --define="buildsystem 1" $(top_builddir)/$(distdir).tar.gz
+	for i in rpm/SRPMS/*_@LINUX_DIST@.oid@oids@* ; do \
+		mv "$$i" "`echo "$$i" | sed 's|_@LINUX_DIST@.oid@oids@||'`" ; \
+	done
+
+cleanup_distr:
+	find clients-* -perm -0100 -type f ! -name \*.bat ! -name \*.sh ! -exec grep -q '^#!' {} \; -exec chmod a-x {} \;
+	find clients-* -name \*.in ! -name configure.in ! -name \*.spec.in -print | while read i; do test -f $${i%.in} && rm -f $${i%.in}; done || true
+
+dist-hook: cleanup_distr
