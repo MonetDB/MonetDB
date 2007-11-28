@@ -1636,7 +1636,8 @@ Go there and obtain the global database lock.
 	if (GDKrecovery && unlink(GDKLOCK) < 0) {
 		GDKfatal("GDKlockHome: unlock DB failed\n");
 	}
-	umask(0000);
+	if (getenv("gdk_dont_unset_umask") == NULL)
+		umask(0000);
 	if (MT_lockf(GDKLOCK, F_TLOCK, 4, 1) < 0) {
 		GDKlockFile = 0;
 		GDKfatal("GDKlockHome: Database lock '%s' denied\n", GDKLOCK);
