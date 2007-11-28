@@ -303,6 +303,8 @@ int yydebug=1;
 	joined_table
 	join_spec
 	search_condition
+	and_exp
+	not_exp
 	update_statement
 	sql_connections_statement
 	update_stmt
@@ -1936,8 +1938,7 @@ return_statement:
    ;
 
 return_value:
-      simple_scalar_exp
-   |  complex_select
+      complex_select
    |  search_condition
    |  TABLE '(' complex_select ')'	
 		{ $$ = _symbol_create_symbol(SQL_TABLE, $3); }
@@ -2607,21 +2608,14 @@ assignment_commalist:
  ;
 
 assignment:
-    column '=' scalar_exp
-
-	{ dlist *l = L();
-	  append_string(l, $1);
-	  append_symbol(l, $3);
-	  $$ = _symbol_create_list( SQL_ASSIGN, l); }
-
- |  column '=' search_condition
+   column '=' search_condition
 
 	{ dlist *l = L();
 	  append_string(l, $1);
 	  append_symbol(l, $3 );
 	  $$ = _symbol_create_list( SQL_ASSIGN, l); }
 
- |  column '=' sqlNULL
+ | column '=' sqlNULL
 
 	{ dlist *l = L();
 	  append_string(l, $1);
@@ -2960,39 +2954,34 @@ opt_having_clause:
 
 
 search_condition:
-    search_condition OR search_condition
+    and_exp OR search_condition
 		{ dlist *l = L();
 		  append_symbol(l, $1);
 		  append_symbol(l, $3);
 		  $$ = _symbol_create_list(SQL_OR, l ); }
- |  search_condition AND search_condition
+ |  and_exp	{ $$ = $1; }
+ ;
+   
+and_exp:
+    not_exp AND and_exp
 		{ dlist *l = L();
 		  append_symbol(l, $1);
 		  append_symbol(l, $3);
 		  $$ = _symbol_create_list(SQL_AND, l ); }
- |  '(' search_condition ')'	{ $$ = $2; }
- | NOT search_condition { 
-			  $$ = $2;
-
-			  if ($$->token == SQL_EXISTS)
-				$$->token = SQL_NOT_EXISTS;
-			  else
-				$$ = _symbol_create_symbol(SQL_NOT, $2);
-			}
-	
- |  predicate
- |  BOOL_FALSE
-		{ sql_subtype t;
-		  sql_find_subtype(&t, "boolean", 0, 0 );
-		  $$ = _newAtomNode( atom_bool(&t, FALSE)); }
- |  BOOL_TRUE
-		{ sql_subtype t;
-		  sql_find_subtype(&t, "boolean", 0, 0 );
-		  $$ = _newAtomNode( atom_bool(&t, TRUE)); }
+ |  not_exp	{ $$ = $1; }
  ;
 
- 
+not_exp:
+    NOT not_exp 
+		{ $$ = $2;
 
+		  if ($$->token == SQL_EXISTS)
+			$$->token = SQL_NOT_EXISTS;
+		  else
+			$$ = _symbol_create_symbol(SQL_NOT, $2); }
+ |  pred_exp	{ $$ = $1; }
+ ;
+	
 opt_order_by_clause:
     /* empty */ 			  { $$ = NULL; }
  |  ORDER BY sort_specification_list
@@ -3038,12 +3027,11 @@ predicate:
  |  in_predicate
  |  all_or_any_predicate
  |  existence_test
- |  '(' predicate ')' 	{  $$ = $2; }
+ |  scalar_exp
  ;
 
 pred_exp:
-    scalar_exp
- |  predicate
+    predicate
  ;
 
 comparison_predicate:
@@ -3221,12 +3209,7 @@ simple_scalar_exp:
 	  		  	$$ = _symbol_create_list( SQL_UNOP, l ); 
 			  }
 			}
- |  '(' scalar_exp ')' 	{ $$ = $2; }
- | NOT scalar_exp 	{ dlist *l = L();
-			  append_list(l, 
-			  	append_string(L(), sa_strdup(SA, "not")));
-	  		  append_symbol(l, $2);
-	  		  $$ = _symbol_create_list( SQL_UNOP, l ); }
+ |  '(' search_condition ')' 	{ $$ = $2; }
  ;
 
 scalar_exp:
@@ -3463,11 +3446,6 @@ column_exp:
   		  append_string(l, $1);
   		  append_string(l, NULL);
   		  $$ = _symbol_create_list( SQL_TABLE, l ); }
- |  scalar_exp opt_alias_name
-		{ dlist *l = L();
-  		  append_symbol(l, $1);
-  		  append_string(l, $2);
-  		  $$ = _symbol_create_list( SQL_COLUMN, l ); }
  |  null opt_alias_name
 		{ dlist *l = L();
   		  append_symbol(l, $1 );
@@ -3987,8 +3965,7 @@ cast_exp:
  ;
 
 cast_value:
-	scalar_exp
- | 	search_condition
+  	search_condition
  | 	null	 
  ;
 

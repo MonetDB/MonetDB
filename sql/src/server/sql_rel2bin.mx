@@ -57,8 +57,6 @@ tail_column(stmt *st)
 	case st_reljoin:
 		return tail_column(st->op2.lval->h->data);
 
-	case st_const:
-
 	case st_filter:
 	case st_select:
 	case st_select2:
@@ -116,6 +114,7 @@ tail_column(stmt *st)
 	case st_unop:
 	case st_binop:
 	case st_Nop:
+	case st_const:
 		return NULL;
 
 	default:

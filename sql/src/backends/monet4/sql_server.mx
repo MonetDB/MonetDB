@@ -1626,11 +1626,15 @@ proc sql_server_start() : void {
 	var err := CATCH({ fc := sql_frontend(); });
 
 	if (isnil(err)) {
+	    if (not(isnil(fc))) {
 		mapi_register(fc);
 		if (monet_environment.find("gdk_embedded") = "no") {
 			fork(sqllogmanager());
 		}
 		return str(nil);
+	    } else {
+	    	ERROR("sql_server_start(): sql_frontend() returned NIL without error!?");
+	    }
 	} else {
 		printf(err);
 	}

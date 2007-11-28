@@ -3410,13 +3410,12 @@ sql_logical_exp_(mvc *sql, scope *scp, symbol *sc, group *grp, stmt *subset, int
 		symbol *lo = sc->data.sym;
 		stmt *ls = sql_logical_exp(sql, scp, lo, grp, subset, f);
 
+		if (!ls)
+			return NULL;
 		if (ls->nrcols == 0 || f == sql_sel) { /* predicates */
 			sql_subtype *bt = sql_bind_localtype("bit");
 			sql_subfunc *not = sql_bind_func_result(sql->session->schema, "not", bt, NULL, bt);
 		
-			if (!ls)
-				return NULL;
-	
 			return stmt_unop(ls, not);
 		} else { /* R.diff(ls) */
 			if (subset)
@@ -3433,6 +3432,8 @@ sql_logical_exp_(mvc *sql, scope *scp, symbol *sc, group *grp, stmt *subset, int
 		return stmt_atom(atom_dup(an->a));
 	}
 		break;
+	case SQL_COLUMN:
+		return sql_column_value(sql, scp, sc, grp, subset, f);
 	case SQL_UNION:
 	case SQL_EXCEPT:
 	case SQL_INTERSECT: {
