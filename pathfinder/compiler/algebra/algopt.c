@@ -35,6 +35,7 @@
 #include "pathfinder.h"
 #include <assert.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "algopt.h"
 #include "map_names.h"
@@ -89,6 +90,7 @@
 PFla_op_t *
 PFalgopt (PFla_op_t *root, bool timing, PFguide_tree_t* guide_tree)
 {
+    bool debug_opt = getenv("PF_DEBUG_OPTIMIZATIONS");
     assert (PFstate.opt_alg);
     long tm;
     bool const_no_attach = false;
@@ -103,14 +105,13 @@ PFalgopt (PFla_op_t *root, bool timing, PFguide_tree_t* guide_tree)
 
     }
     
-#define DEBUG_OPT_STR 0
-#if DEBUG_OPT_STR
-    fprintf (stderr, "-o");
-#endif
+    if (debug_opt)
+        fprintf (stderr, "-o");
+
     while (*args) {
-#if DEBUG_OPT_STR
-        fputc (*args, stderr);
-#endif
+        if (debug_opt)
+            fputc (*args, stderr);
+
         switch (*args) {
             case 'A': /* disabled */
                 /*
@@ -450,9 +451,8 @@ PFalgopt (PFla_op_t *root, bool timing, PFguide_tree_t* guide_tree)
         args++;
         root = PFla_cse (root);
     }
-#if DEBUG_OPT_STR
-    fputc ('\n', stderr);
-#endif
+    if (debug_opt)
+        fputc ('\n', stderr);
 
     if (unq_names)
         PFinfo (OOPS_WARNING,
