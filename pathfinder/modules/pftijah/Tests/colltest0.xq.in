@@ -1,4 +1,0 @@
-for $doc in ("cdilbert1.xml", "cdilbert2.xml", "cdilbert3.xml")
-  return pf:add-doc(concat("$TSTSRCDIR/xml-docs/", $doc), $doc, "PFCOLL")
-<>
-doc("cdilbert2.xml")

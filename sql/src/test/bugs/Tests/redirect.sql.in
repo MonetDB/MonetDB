@@ -1,4 +1,0 @@
-START TRANSACTION;
-create table cs_901b_counts (i int);
-\< $TSTSRCDIR/redirect.ddl
-

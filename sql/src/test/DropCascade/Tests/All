@@ -1,5 +1,0 @@
-drop_columns_cascade
-drop_function_cascade
-drop_pkey_cascade
-drop_table_cascade
-drop_view_cascade
