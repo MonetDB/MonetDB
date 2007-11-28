@@ -156,7 +156,7 @@ PFprop_write_dom_rel_dot (PFarray_t *f, const PFprop_t *prop)
         PFarray_printf (f,
                         "dr_header [label=\"domain -> "
                         "subdomain\\nrelationships (# = %i)\"];\n"
-                        "node1 -> dr_header;\n",
+                        "node1 -> dr_header [dir=forward,style=invis];\n",
                         PFarray_last (prop->subdoms));
 
         for (unsigned int i = 0; i < PFarray_last (prop->subdoms); i++) {
@@ -167,13 +167,13 @@ PFprop_write_dom_rel_dot (PFarray_t *f, const PFprop_t *prop)
                 PFarray_printf (
                     f,
                     "dom_rel%i [label=\"%i\"];\n"
-                    "dr_header -> dom_rel%i;\n",
+                    "dr_header -> dom_rel%i [dir=forward];\n",
                     dom, dom, dom);
 
             PFarray_printf (
                 f,
                 "dom_rel%i [label=\"%i\"];\n"
-                "dom_rel%i -> dom_rel%i;\n",
+                "dom_rel%i -> dom_rel%i [dir=forward];\n",
                 subdom, subdom, dom, subdom);
         }
     }
