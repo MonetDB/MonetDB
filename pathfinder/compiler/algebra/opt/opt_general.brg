@@ -804,9 +804,7 @@ reduce (PFla_op_t *p, int goalnt)
                                          proj2->sem.proj.count,
                                          proj2->sem.proj.items);
 
-                res = PFla_attach (res,
-                                   p->sem.select.att,
-                                   PFalg_lit_bln (true));
+                res = PFla_attach (res, sel, PFalg_lit_bln (true));
 
                 if (proj)
                     res = PFla_project_ (res,
