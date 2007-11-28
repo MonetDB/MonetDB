@@ -781,7 +781,11 @@ file_fsetpos(stream *s, size_t p)
 {
 	FILE *fp = (FILE*)s->stream_data.p;
 
-	return fseek(fp, p, SEEK_SET);
+#ifdef NATIVE_WIN32
+	return _fseeki64(fp, (__int64) p, SEEK_SET);
+#else
+	return fseek(fp, (long) p, SEEK_SET);
+#endif
 }
 
 
@@ -1451,12 +1455,12 @@ socket_write(stream *s, const void *buf, size_t elmsize, size_t cnt)
 	errno = 0;
 	while (res < size && (
 #ifdef NATIVE_WIN32
-				     /* send works on int, make sure the argument fits */
-				     ((nr = send(s->stream_data.s, (void *) ((char *) buf + res), (int) min(size - res, 1 << 16), 0)) > 0)
+		       /* send works on int, make sure the argument fits */
+		       ((nr = send(s->stream_data.s, (void *) ((char *) buf + res), (int) min(size - res, 1 << 16), 0)) > 0)
 #else
-				     ((nr = write(s->stream_data.s, (void *) ((char *) buf + res), size - res)) > 0)
+		       ((nr = write(s->stream_data.s, (void *) ((char *) buf + res), size - res)) > 0)
 #endif
-				     || errno == EAGAIN || errno == EWOULDBLOCK || errno == EINTR)
+		       || errno == EAGAIN || errno == EWOULDBLOCK || errno == EINTR)
 	    ) {
 		errno = 0;
 		if (nr > 0)
@@ -1483,12 +1487,12 @@ socket_read(stream *s, void *buf, size_t elmsize, size_t cnt)
 	errno = 0;
 	while (res < size && (
 #ifdef NATIVE_WIN32
-				     /* recv works on int, make sure the argument fits */
-				     ((nr = recv(s->stream_data.s, (void *) ((char *) buf + res), (int) min(size - res, 1 << 16), 0)) > 0)
+		       /* recv works on int, make sure the argument fits */
+		       ((nr = recv(s->stream_data.s, (void *) ((char *) buf + res), (int) min(size - res, 1 << 16), 0)) > 0)
 #else
-				     ((nr = read(s->stream_data.s, (void *) ((char *) buf + res), size - res)) > 0)
+		       ((nr = read(s->stream_data.s, (void *) ((char *) buf + res), size - res)) > 0)
 #endif
-				     || errno == EAGAIN || errno == EWOULDBLOCK || errno == EINTR)
+		       || errno == EAGAIN || errno == EWOULDBLOCK || errno == EINTR)
 	    ) {
 		errno = 0;
 		if (nr > 0)
@@ -1663,7 +1667,7 @@ socket_wastream(SOCKET sock, const char *name)
 }
 
 typedef struct udp_stream {
-	int s;
+	SOCKET s;
 	struct sockaddr_in addr;
 } udp_stream;
 
@@ -1681,7 +1685,11 @@ udp_write(stream *s, const void *buf, size_t elmsize, size_t cnt)
 		return cnt;
 
 	errno = 0;
-	if ((res = sendto(udp->s, buf, size, 0,(struct sockaddr *)&udp->addr, addrlen)) < 0) {
+	if ((res = sendto(udp->s, buf,
+#ifdef NATIVE_WIN32
+			  (int)	/* on Windows, the length is an int... */
+#endif
+			  size, 0, (struct sockaddr *) &udp->addr, addrlen)) < 0) {
 		s->errnr = WRITE_ERROR;
 		return res;
 	}
@@ -1702,7 +1710,11 @@ udp_read(stream *s, void *buf, size_t elmsize, size_t cnt)
 		return(-1);
 
 	errno = 0;
-	if ((res = recvfrom(udp->s, buf, size, 0,(struct sockaddr *)&from, &fromlen)) < 0) {
+	if ((res = recvfrom(udp->s, buf,
+#ifdef NATIVE_WIN32
+			    (int) /* on Windows, the length is an int... */
+#endif
+			    size, 0,(struct sockaddr *)&from, &fromlen)) < 0) {
 		s->errnr = READ_ERROR;
 		return res;
 	}
@@ -1715,7 +1727,10 @@ static void
 udp_close(stream *s) 
 {
 	udp_stream *udp = s->stream_data.p;
-	close(udp->s);
+#ifdef HAVE_SHUTDOWN
+	shutdown(udp->s, SHUT_RDWR);
+#endif
+	closesocket(udp->s);
 }
 
 static void
@@ -1765,11 +1780,11 @@ udp_socket(udp_stream *udp, char *hostname, int port, int write)
 	if (write)
 		memcpy(&udp->addr.sin_addr, hp->h_addr, hp->h_length);
 	else
-   		udp->addr.sin_addr.s_addr=INADDR_ANY;
+   		udp->addr.sin_addr.s_addr = INADDR_ANY;
 	udp->addr.sin_family = hp->h_addrtype;
 	udp->addr.sin_port = htons((unsigned short) (port & 0xFFFF));
 	serv = (struct sockaddr *) &udp->addr;
-	servsize = sizeof(udp->addr);
+	servsize = (socklen_t) sizeof(udp->addr);
 	udp->s = socket(serv->sa_family, SOCK_DGRAM, IPPROTO_UDP);
 	if (udp->s == INVALID_SOCKET ||
 	   (!write && bind(udp->s, serv, servsize) < 0)) 
@@ -2680,9 +2695,10 @@ isa_block_stream(stream *s)
 ssize_t 
 stream_read_block(stream *s, void *buf, size_t elmsize, size_t cnt)
 {
-	int len = 0;
+	ssize_t len = 0;
 	char x = 0;
-	assert( s->read == bs_read || s->write == bs_write );
+
+	assert(s->read == bs_read || s->write == bs_write);
 	len = stream_read(s, buf, elmsize, cnt);
 	stream_read(s, &x, 0, 0); /* read prompt */
 	if (x > 0)
@@ -2846,7 +2862,7 @@ bstream_create(stream *s, size_t size)
 
 	if ((b = malloc(sizeof(*b))) == NULL)
 		return NULL;
-	b->mode = size;		/* 64bit: should check that size isn't too large and fits in an int */
+	b->mode = (int) size; /* 64bit: should check that size isn't too large and fits in an int */
 	if (size == 0)
 		size = BUFSIZ;
 	b->s = s;
@@ -3059,7 +3075,11 @@ pipe_write(stream *s, const void *buf, size_t elmsize, size_t cnt)
 
 	if (size == 0 || elmsize == 0)
 		return cnt;
-	sz = write(s->stream_data.i, buf, size);
+	sz = write(s->stream_data.i, buf,
+#ifdef NATIVE_WIN32
+		   (unsigned int) /* on Windows, the length is an unsigned int... */
+#endif
+		   size);
 	if (sz > 0)
 		return sz / elmsize;
 	if (sz < 0)
@@ -3076,7 +3096,11 @@ pipe_read(stream *s, void *buf, size_t elmsize, size_t cnt)
 	if (s->errnr)
 		return -1;
 
-	while (res < size && (nr = read(s->stream_data.i, (void *) ((char *) buf + res), size - res)) > 0) {
+	while (res < size && (nr = read(s->stream_data.i, (void *) ((char *) buf + res),
+#ifdef NATIVE_WIN32
+					(unsigned int) /* on Windows, the length is an unsigned int... */
+#endif
+					(size - res))) > 0) {
 		res += nr;
 	}
 	if (nr < 0) {
