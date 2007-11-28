@@ -1,5 +1,6 @@
 char rcsid_lex[] = "$Id$";
 
+#include "burg_config.h"
 #include <ctype.h>
 #include <stdio.h>
 #include <string.h>

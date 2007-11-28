@@ -1,9 +1,18 @@
 char rcsid_fe[] = "$Id$";
 
+#include "burg_config.h"
 #include <stdio.h>
 #include <string.h>
 #include "b.h"
 #include "fe.h"
+
+#ifdef NATIVE_WIN32
+/* The POSIX name for this item is deprecated. Instead, use the ISO
+   C++ conformant name: _strdup. See online help for details. */
+#define strdup _strdup
+
+#define snprintf _snprintf
+#endif
 
 int grammarflag;
 
@@ -69,9 +78,13 @@ lookup(Pattern p)
 			return x->normalizer;
 		}
 	}
-	sprintf(buf, "n%%%d", tcount++);
+	snprintf(buf, sizeof(buf), "n%%%d", tcount++);
+#ifdef HAVE_STRDUP
+	s = strdup(buf);
+#else
 	s = (char *) zalloc(strlen(buf)+1);
 	strcpy(s, buf);
+#endif
 	n = newNonTerminal(s);
 	p->normalizer = n;
 	xpatterns = newList(p, xpatterns);

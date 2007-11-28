@@ -1,5 +1,6 @@
 char rcsid_operator[] = "$Id$";
 
+#include "burg_config.h"
 #include "b.h"
 #include <stdio.h>
 

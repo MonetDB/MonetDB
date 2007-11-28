@@ -1,5 +1,6 @@
 char rcsid_list[] = "$Id$";
 
+#include "burg_config.h"
 #include "b.h"
 
 IntList

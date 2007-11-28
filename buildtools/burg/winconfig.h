@@ -24,6 +24,7 @@
 
 /* Visual Studio 8 has deprecated lots of stuff: suppress warnings */
 #define _CRT_SECURE_NO_DEPRECATE 1
+#define _CRT_SECURE_NO_WARNINGS 1
 
 /* Define to 1 if you have the <inttypes.h> header file. */
 /* #undef HAVE_INTTYPES_H */

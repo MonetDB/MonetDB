@@ -1,5 +1,6 @@
 char rcsid_delta[] = "$Id$";
 
+#include "burg_config.h"
 #include <stdio.h>
 #include "b.h"
 #include "fe.h"
@@ -115,8 +116,8 @@ CHECKDIVERGE(c, its, nt, base) DeltaPtr c; Item_Set its; int nt; int base;
 			if (c[i] > prevent_divergence) {
 				char ntname[100];
 				char basename[100];
-				nonTerminalName(ntname, nt);
-				nonTerminalName(basename, base);
+				nonTerminalName(ntname, sizeof(ntname), nt);
+				nonTerminalName(basename, sizeof(basename), base);
 				fprintf(stderr, "ERROR:  The grammar appears to diverge\n");
 				fprintf(stderr, "\tRelative Costs: %s(0), %s(%d)\n", basename, ntname, c[i]);
 				fprintf(stderr, "\tOffending Operator: %s\n", its->op->name);
@@ -130,8 +131,8 @@ CHECKDIVERGE(c, its, nt, base) DeltaPtr c; Item_Set its; int nt; int base;
 	} else if (PRINCIPLECOST(c) > prevent_divergence) {
 		char ntname[100];
 		char basename[100];
-		nonTerminalName(ntname, nt);
-		nonTerminalName(basename, base);
+		nonTerminalName(ntname, sizeof(ntname), nt);
+		nonTerminalName(basename, sizeof(basename), base);
 		fprintf(stderr, "ERROR:  The grammar appears to diverge\n");
 		fprintf(stderr, "\tRelative Costs: %s(0), %s(%d)\n", basename, ntname, PRINCIPLECOST(c));
 		fprintf(stderr, "\tOffending Operator: %s\n", its->op->name);

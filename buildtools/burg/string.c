@@ -1,9 +1,16 @@
 char rcsid_string[] = "$Id$";
 
+#include "burg_config.h"
 #include <stdio.h>
 #include <string.h>
 #include "b.h"
 #include "fe.h"
+
+#ifdef NATIVE_WIN32
+/* The POSIX name for this item is deprecated. Instead, use the ISO
+   C++ conformant name: _strdup. See online help for details. */
+#define strdup _strdup
+#endif
 
 static StrTableElement newStrTableElement ARGS((void));
 
@@ -57,8 +64,12 @@ addString(t, s, eruleno, new) StrTable t; char *s; int eruleno; int *new;
 	}
 	ste = newStrTableElement();
 	ste->erulenos = newIntList(eruleno, 0);
+#ifdef HAVE_STRDUP
+	ste->str = strdup(s);
+#else
 	ste->str = (char *) zalloc(strlen(s) + 1);
 	strcpy(ste->str, s);
+#endif
 	t->elems = newList(ste, t->elems);
 	*new = 1;
 	return ste;

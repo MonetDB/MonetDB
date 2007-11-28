@@ -1,5 +1,6 @@
 char rcsid_closure[] = "$Id$";
 
+#include "burg_config.h"
 #include <stdio.h>
 #include "b.h"
 

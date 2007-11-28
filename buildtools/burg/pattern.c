@@ -1,5 +1,6 @@
 char rcsid_pattern[] = "$Id$";
 
+#include "burg_config.h"
 #include <stdio.h>
 #include "b.h"
 

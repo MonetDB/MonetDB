@@ -1,6 +1,7 @@
 %{
 char rcsid_gram[] = "$Id$";
 
+#include "burg_config.h"
 #include <stdio.h>
 #include "b.h"
 #include "fe.h"

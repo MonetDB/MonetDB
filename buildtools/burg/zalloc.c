@@ -1,5 +1,6 @@
 char rcsid_zalloc[] = "$Id$";
 
+#include "burg_config.h"
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>

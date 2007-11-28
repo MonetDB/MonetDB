@@ -1,10 +1,19 @@
 char rcsid_plank[] = "$Id$";
 
+#include "burg_config.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include "b.h"
 #include "fe.h"
+
+#ifdef NATIVE_WIN32
+/* The POSIX name for this item is deprecated. Instead, use the ISO
+   C++ conformant name: _strdup. See online help for details. */
+#define strdup _strdup
+
+#define snprintf _snprintf
+#endif
 
 #define ERROR_VAL 0
 
@@ -52,9 +61,13 @@ newPlank()
 	static int num = 0;
 
 	p = (Plank) zalloc(sizeof(struct plank));
-	sprintf(buf, "%s_plank_%d", prefix, num++);
+	snprintf(buf, sizeof(buf), "%s_plank_%d", prefix, num++);
+#ifdef HAVE_STRDUP
+	p->name = strdup(buf);
+#else
 	p->name = (char *) zalloc(strlen(buf)+1);
 	strcpy(p->name, buf);
+#endif
 	return p;
 }
 
@@ -77,9 +90,13 @@ newStateMap()
 	StateMap sm;
 
 	sm = (StateMap) zalloc(sizeof(struct stateMap));
-	sprintf(buf, "f%d", num++);
+	snprintf(buf, sizeof(buf), "f%d", num++);
+#ifdef HAVE_STRDUP
+	sm->fieldname = strdup(buf);
+#else
 	sm->fieldname = (char *) zalloc(strlen(buf)+1);
 	strcpy(sm->fieldname, buf);
+#endif
 	return sm;
 }
 
@@ -675,10 +692,10 @@ doPlankLabel(op) Operator op;
 		} else {
 			assert(im0->offset == 0);
 			assert(im1->offset == 0);
-			sprintf(buf, "l = %s[l].%s",
+			snprintf(buf, sizeof(buf), "l = %s[l].%s",
 				im0->values->plank->name, im0->values->fieldname);
 			exceptionSwitch(im0->exceptions, "l", "l =", "break;", 0, buf);
-			sprintf(buf, "r = %s[r].%s",
+			snprintf(buf, sizeof(buf), "r = %s[r].%s",
 				im1->values->plank->name, im1->values->fieldname);
 			exceptionSwitch(im1->exceptions, "r", "r =", "break;", 0, buf);
 
@@ -787,10 +804,10 @@ doPlankLabelMacrosSafely(op) Operator op;
 			assert(im0->offset == 0);
 			assert(im1->offset == 0);
 			/*
-			sprintf(buf, "l = %s[l].%s",
+			snprintf(buf, sizeof(buf), "l = %s[l].%s",
 				im0->values->plank->name, im0->values->fieldname);
 			exceptionSwitch(im0->exceptions, "l", "l =", "break;", 0, buf);
-			sprintf(buf, "r = %s[r].%s",
+			snprintf(buf, sizeof(buf), "r = %s[r].%s",
 				im1->values->plank->name, im1->values->fieldname);
 			exceptionSwitch(im1->exceptions, "r", "r =", "break;", 0, buf);
 

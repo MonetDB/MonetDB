@@ -207,7 +207,7 @@ extern const char *config_h;
 #endif
 
 @C
-#include <mel_config.h>
+#include "mel_config.h"
 #include "mel.h"
 #include "mel.tab.h"
 #ifdef HAVE_IOSTREAM

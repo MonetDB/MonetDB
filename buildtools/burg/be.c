@@ -1,6 +1,6 @@
 char rcsid_be[] = "$Id$";
 
-#include <burg_config.h>
+#include "burg_config.h"
 
 #include <stdio.h>
 

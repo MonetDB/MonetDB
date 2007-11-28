@@ -1,5 +1,6 @@
 char rcsid_burs[] = "$Id$";
 
+#include "burg_config.h"
 #include "b.h"
 
 Item_Set errorState;

@@ -22,6 +22,12 @@ extern int main ARGS((int argc, char **argv));
 
 #if HAVE_STRING_H && HAVE_STRDUP
 #include <string.h>
+
+#ifdef NATIVE_WIN32
+/* The POSIX name for this item is deprecated. Instead, use the ISO
+   C++ conformant name: _strdup. See online help for details. */
+#define strdup _strdup
+#endif
 #else
 static char *strdup (const char *);
 #endif
@@ -215,7 +221,7 @@ static char *
 strdup (const char *s) {
 
     int   len = strlen (s);
-    char *ret = malloc (len);
+    char *ret = malloc (len + 1);
 
     if (!ret)
         return NULL;

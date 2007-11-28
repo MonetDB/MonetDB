@@ -216,7 +216,7 @@ extern Item_Set newItem_Set ARGS((Relevant));
 extern void freeItem_Set ARGS((Item_Set));
 extern Mapping newMapping ARGS((int));
 extern NonTerminal newNonTerminal ARGS((char *));
-extern int nonTerminalName ARGS((char *, int));
+extern int nonTerminalName ARGS((char *, size_t, int));
 extern Operator newOperator ARGS((char *, OperatorNum, ArityNum));
 extern Pattern newPattern ARGS((Operator));
 extern Rule newRule ARGS((DeltaPtr, ERuleNum, NonTerminal, Pattern));

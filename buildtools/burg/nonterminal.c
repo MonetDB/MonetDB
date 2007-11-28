@@ -1,5 +1,6 @@
 char rcsid_nonterminal[] = "$Id$";
 
+#include "burg_config.h"
 #include "b.h"
 #include <stdio.h>
 #include <string.h>
@@ -10,7 +11,7 @@ NonTerminalNum	last_user_nonterminal;
 List		nonterminals;
 
 NonTerminal
-newNonTerminal(name) char *name;
+newNonTerminal(char *name)
 {
 	NonTerminal nt;
 
@@ -27,7 +28,7 @@ newNonTerminal(name) char *name;
 }
 
 int
-nonTerminalName(buf, i) char *buf; int i;
+nonTerminalName(char *buf, size_t len, int i)
 {
 	List l;
 	/* extern char *strcpy ARGS((char *, char *)); */
@@ -35,16 +36,16 @@ nonTerminalName(buf, i) char *buf; int i;
 	for (l = nonterminals; l; l = l->next) {
 		NonTerminal nt = (NonTerminal) l->x;
 		if (nt->num == i) {
-			strcpy(buf, nt->name);
+			strncpy(buf, nt->name, len);
 			return 1;
 		}
 	}
-	strcpy(buf, "(Unknown NonTerminal)");
+	strncpy(buf, "(Unknown NonTerminal)", len);
 	return 0;
 }
 
 void
-dumpNonTerminal(n) NonTerminal n;
+dumpNonTerminal(NonTerminal n)
 {
 	printf("%s(%d)", n->name, n->num);
 }
