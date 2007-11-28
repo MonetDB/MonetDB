@@ -13,7 +13,7 @@ SQL frontend that is in a separate CVS module.
 
 If you got a source distribution, please compile and install MonetDB
 first, following the instructions in the file 'HowToStart' (for Unix) or
-'HowToStart-Win32.txt' (for Windows).
+'buildtools/doc/windowsbuild.rst' (for Windows).
 
 The documentation starts in doc/MonetDB.html, relative from your binary
 distribution top-level directory, or installation directory (once you

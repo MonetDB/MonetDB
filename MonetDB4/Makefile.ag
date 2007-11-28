@@ -21,7 +21,7 @@ EXTRA_DIST = bootstrap configure.ag RunMtest.in \
 		RunMserver.bat.in RunMserver.in \
 		sysdefs.h.in \
 		rpm.mk.in MonetDB-server.spec MonetDB-server.spec.in \
-		HowToStart HowToStart-Win32.txt HowToStart-MinGW.txt \
+		HowToStart HowToStart-MinGW.txt \
 		HowToStart-MinGW-pcre.txt HowToStart-MinGW-swig.txt 
 
 EXTRA_DIST_DIR = NT tests
