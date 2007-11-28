@@ -4008,13 +4008,10 @@ PFla_op_duplicate (PFla_op_t *n, PFla_op_t *left, PFla_op_t *right)
         case la_ref_tbl:
         {
 
-            return PFla_ref_tbl_
-            (
-                n->sem.ref_tbl.name,
-                n->schema,
-                n->sem.ref_tbl.tatts,
-                n->sem.ref_tbl.keys
-            );
+            return PFla_ref_tbl_ (n->sem.ref_tbl.name,
+                                  n->schema,
+                                  n->sem.ref_tbl.tatts,
+                                  n->sem.ref_tbl.keys);
         } break;
 
         case la_attach:
