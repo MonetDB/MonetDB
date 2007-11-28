@@ -1,4 +1,0 @@
-import module namespace xrpc = "xrpc-fun" at "$TSTSRCDIR/xrpcfun.xq";
-
-for $i in ("First", "Second")
-    return execute at {"$HOST:$XRPCPORT"} {xrpc:concatStr($i, " string.")}

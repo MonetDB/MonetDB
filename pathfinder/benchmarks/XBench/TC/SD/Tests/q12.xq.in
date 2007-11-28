@@ -1,6 +1,0 @@
-for $a in doc("$TSTTRGDIR/small.dictionary.xml")/dictionary/e
-where $a/hwg/hw="his"
-return
-    <Entry>
-        {$a/ss}
-    </Entry>

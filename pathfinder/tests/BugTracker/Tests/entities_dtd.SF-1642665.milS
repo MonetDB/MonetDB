@@ -1,6 +1,0 @@
-module(unix);
-module(pathfinder);
-var TSTTRGDIR := getenv("TSTTRGDIR");
-shred_doc(TSTTRGDIR+"/entities_dtd.SF-1642665.xml", "entities_dtd.SF-1642665.xml");
-xquery("doc(\"entities_dtd.SF-1642665.xml\")").print();
-

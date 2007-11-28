@@ -1,7 +1,0 @@
-# exception variables are implicitly defined
-# by the catch statement.
-
-catch NotDefinedException:str;
-	io.print("Shouldn't do this");
-	io.print(NotDefineException);
-exit NotDefinedException;
