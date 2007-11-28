@@ -107,9 +107,21 @@ sed \
 	-e "s|Release date: 20[0-9][0-9]-[01][0-9]-[0-3][0-9]|Release date: `date +%F`|" \
 	${file} | ${diff} ${file} - | ${patch}
 
+file="configure.ag"
+sed \
+	-e "s|^\(\[MonetDB Java\], \)\[${ESC_MAJOR}\.${ESC_MINOR}.${ESC_SUFFIX//[^0-9]/}\]|\1\[${NEW_MAJOR}.${NEW_MINOR}.${NEW_SUFFIX//[^0-9]/}\]|" \
+	${file} | ${diff} ${file} - | ${patch}
+
+file="NT/rules.msc"
+sed \
+	-e "s|^\(VERSION=\)${ESC_MAJOR}\.${ESC_MINOR}.${ESC_SUFFIX//[^0-9]/}|\1${NEW_MAJOR}.${NEW_MINOR}.${NEW_SUFFIX//[^0-9]/}|" \
+	${file} | ${diff} ${file} - | ${patch}
+
 for file in \
 	Makefile.ag \
-	../../../*/src/jdbc/tests/Tests/Test.SQL.bat \
+	../*/src/jdbc/tests/Tests/Test.SQL.bat \
+	../*/NT/MonetDB[45]-SQL{,64}/MonetDB4-SQL-Installer.vdproj \
+	../*/NT/MonetDB4-XQuery{,64}/MonetDB4-XQuery-Installer.vdproj \
 	; do
 	if [[ -f ${file} ]] ; then
 		for f in $FILES ; do

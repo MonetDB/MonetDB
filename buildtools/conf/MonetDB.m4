@@ -163,6 +163,62 @@ dnl VERSION_TO_NUMBER macro (copied from libxslt)
 AC_DEFUN([MONETDB_VERSION_TO_NUMBER],
 [`$1 | sed 's|[[_\-]][[a-zA-Z0-9]]*$||' | awk 'BEGIN { FS = "."; } { printf "%d", ([$]1 * 1000 + [$]2) * 1000 + [$]3;}'`])
 
+AC_DEFUN([AM_MONETDB_JAVA],
+[
+
+if test x$have_java = x; then
+  AM_MONETDB_ANT_JAVA()
+fi
+
+dnl check for MonetDB Java Interface
+have_monetdb_java=auto
+MONETDB_JAVA_PREFIX="."
+if test "x$1" = "x"; then
+  MONETDB_JAVA_REQUIRED_VERSION="1.7.0"
+  #                              ^^^^^^
+  # Maintained via vertoo. Please don't modify by hand!
+  # Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
+else
+  MONETDB_JAVA_REQUIRED_VERSION="$1"
+fi
+AC_ARG_WITH(monetdb-java,
+	AC_HELP_STRING([--with-monetdb-java=DIR], [MonetDB Java is installed in DIR]),
+	have_monetdb_java="$withval")
+if test "x$have_monetdb_java" != xno; then
+  case "$have_monetdb_java" in
+  yes|auto) MPATH="${MONETDB_JAVA_PREFIX+$MONETDB_JAVA_PREFIX/bin:}$PATH:$prefix/bin";;
+  *) MPATH="$withval/bin:$PATH";;
+  esac
+  AC_PATH_PROG(MONETDB_JAVA_CONFIG,monetdb-java-config,,$MPATH)
+
+  if test "x$MONETDB_JAVA_CONFIG" != x; then
+    AC_MSG_CHECKING(whether MonetDB Java version $MONETDB_JAVA_REQUIRED_VERSION or newer is installed) 
+    MONETDB_JAVA_VERSION=`$MONETDB_JAVA_CONFIG --version`
+    if test MONETDB_VERSION_TO_NUMBER(echo $MONETDB_JAVA_VERSION) -ge MONETDB_VERSION_TO_NUMBER(echo $MONETDB_JAVA_REQUIRED_VERSION); then
+      if test x$have_java != xno; then
+        have_monetdb_java=yes
+        AC_MSG_RESULT($have_monetdb_java: found version $MONETDB_JAVA_VERSION)
+      else
+        have_monetdb_java=no
+        AC_MSG_RESULT($have_monetdb_java: found version $MONETDB_JAVA_VERSION, but no Java support)
+      fi
+    else
+      have_monetdb_java=no
+      AC_MSG_RESULT($have_monetdb_java: found only version $MONETDB_JAVA_VERSION)
+    fi
+  fi
+
+  if test "x$have_monetdb_java" != xyes; then
+    MONETDB_JAVA_PREFIX=""
+  else
+    MONETDB_JAVA_PREFIX=`$MONETDB_JAVA_CONFIG --prefix`
+  fi
+fi
+AC_SUBST(MONETDB_JAVA_PREFIX)
+AC_SUBST(MONETDB_JAVA_VERSION)
+AM_CONDITIONAL(HAVE_MONETDB_JAVA,test x$have_monetdb_java = xyes)
+]) dnl AC_DEFUN AM_MONETDB_JAVA
+
 AC_DEFUN([AM_MONETDB_COMMON],
 [
 
@@ -434,20 +490,51 @@ AC_SUBST(MONETDB5_VERSION)
 AM_CONDITIONAL(HAVE_MONETDB5,test x$have_monetdb5 = xyes)
 ]) dnl AC_DEFUN AM_MONETDB5
 
+AC_DEFUN([AM_MONETDB_LINUX_DIST],
+[
+LINUX_DIST=''
+case "$host_os" in
+    linux*)
+	AC_MSG_CHECKING(which Linux distribution we're using) 
+	dnl  Please keep this aligned / in sync with TestTools/.Mconfig.rc & TestTools/MdoServer & MonetDB/src/testing/Mtest.py.in !
+	if test -s /etc/fedora-release ; then
+		LINUX_DIST="`cat /etc/fedora-release | head -n1 \
+			| sed 's|^.*\(Fedora\).* release \([[0-9]][[^ \n]]*\)\( .*\)*$|\1:\2|'`" 
+	elif test -s /etc/centos-release ; then
+		LINUX_DIST="`cat /etc/centos-release | head -n1 \
+			| sed 's|^\(CentOS\) release \([[0-9]][[^ \n]]*\)\( .*\)*$|\1:\2|'`"
+	elif test -s /etc/yellowdog-release ; then
+		LINUX_DIST="`cat /etc/yellowdog-release | head -n1 \
+			| sed 's|^\(Yellow\) Dog Linux release \([[0-9]][[^ \n]]*\)\( .*\)*$|\1:\2|'`"
+	elif test -s /etc/redhat-release ; then
+		LINUX_DIST="`cat /etc/redhat-release | head -n1 \
+			| sed 's|^.*\(Red\) \(Hat\).* Linux *\([[A-Z]]*\) release \([[0-9]][[^ \n]]*\)\( .*\)*$|\1\2:\4\3|' \
+			| sed 's|^Red Hat Enterprise Linux \([[AW]]S\) release \([[0-9]][[^ \n]]*\)\( .*\)*$|RHEL:\2\1|' \
+			| sed 's|^\(CentOS\) release \([[0-9]][[^ \n]]*\)\( .*\)*$|\1:\2|' \
+			| sed 's|^\(Scientific\) Linux SL release \([[0-9]][[^ \n]]*\)\( .*\)*$|\1:\2|'`" 
+	elif test -s /etc/SuSE-release ; then
+		LINUX_DIST="`cat /etc/SuSE-release   | head -n1 \
+			| sed 's|^.*\(S[[Uu]]SE\) LINUX Enterprise \([[SD]]\)[[ervsktop]]* \([[0-9]][[^ \n]]*\)\( .*\)*$|\1:\3E\2|' \
+			| sed 's|^S[[Uu]]SE LINUX Enterprise \([[SD]]\)[[ervsktop]]* \([[0-9]][[^ \n]]*\)\( .*\)*$|SLE\1:\2|' \
+			| sed 's|^.*\(S[[Uu]]SE\) [[Ll]][[Ii]][[Nn]][[Uu]][[Xx]].* \([[0-9]][[^ \n]]*\)\( .*\)*$|\1:\2|' \
+			| sed 's|^open\(S[[Uu]]SE\) \([[0-9]][[^ \n]]*\)\( .*\)*$|\1:\2|'`"
+	elif test -s /etc/gentoo-release ; then
+		LINUX_DIST="`cat /etc/gentoo-release | head -n1 \
+			| sed 's|^.*\(Gentoo\) Base System.* [[versionrelease]]* \([[0-9]][[^ \n]]*\)\( .*\)*$|\1:\2|'`" 
+	elif test -s /etc/debian_version ; then
+		LINUX_DIST="Debian:`cat /etc/debian_version | head -n1`"
+	else
+		LINUX_DIST="`uname -s`:`uname -r | sed 's|^\([[0-9\.]]*\)\([[^0-9\.]].*\)$|\1|'`"
+	fi
+	LINUX_DIST="`echo "$LINUX_DIST" | sed 's|:||'`"
+	AC_MSG_RESULT($LINUX_DIST)
+	;;
+esac
+AC_SUBST(LINUX_DIST)
+]) dnl AM_MONETDB_LINUX_DIST
+        
 AC_DEFUN([AM_MONETDB_COMPILER],
 [
-
-if test "x$1" != "x"; then
-  JAVA_REQ_VER_MIN="$1"
-else
-  JAVA_REQ_VER_MIN="1.4"
-fi
-
-if test "x$2" != "x"; then
-  JAVA_REQ_VER_MAX="$2"
-else
-  unset JAVA_REQ_VER_MAX
-fi
 
 AC_PROG_CPP()
 dnl check for compiler (also set GCC (yes/no)).
@@ -554,45 +641,7 @@ AC_SUBST(oids)
 
 AC_C_BIGENDIAN()
 
-LINUX_DIST=''
-case "$host_os" in
-    linux*)
-	AC_MSG_CHECKING(which Linux distribution we're using) 
-	dnl  Please keep this aligned / in sync with TestTools/.Mconfig.rc & TestTools/MdoServer & MonetDB/src/testing/Mtest.py.in !
-	if test -s /etc/fedora-release ; then
-		LINUX_DIST="`cat /etc/fedora-release | head -n1 \
-			| sed 's|^.*\(Fedora\).* release \([[0-9]][[^ \n]]*\)\( .*\)*$|\1:\2|'`" 
-	elif test -s /etc/centos-release ; then
-		LINUX_DIST="`cat /etc/centos-release | head -n1 \
-			| sed 's|^\(CentOS\) release \([[0-9]][[^ \n]]*\)\( .*\)*$|\1:\2|'`"
-	elif test -s /etc/yellowdog-release ; then
-		LINUX_DIST="`cat /etc/yellowdog-release | head -n1 \
-			| sed 's|^\(Yellow\) Dog Linux release \([[0-9]][[^ \n]]*\)\( .*\)*$|\1:\2|'`"
-	elif test -s /etc/redhat-release ; then
-		LINUX_DIST="`cat /etc/redhat-release | head -n1 \
-			| sed 's|^.*\(Red\) \(Hat\).* Linux *\([[A-Z]]*\) release \([[0-9]][[^ \n]]*\)\( .*\)*$|\1\2:\4\3|' \
-			| sed 's|^Red Hat Enterprise Linux \([[AW]]S\) release \([[0-9]][[^ \n]]*\)\( .*\)*$|RHEL:\2\1|' \
-			| sed 's|^\(CentOS\) release \([[0-9]][[^ \n]]*\)\( .*\)*$|\1:\2|' \
-			| sed 's|^\(Scientific\) Linux SL release \([[0-9]][[^ \n]]*\)\( .*\)*$|\1:\2|'`" 
-	elif test -s /etc/SuSE-release ; then
-		LINUX_DIST="`cat /etc/SuSE-release   | head -n1 \
-			| sed 's|^.*\(S[[Uu]]SE\) LINUX Enterprise \([[SD]]\)[[ervsktop]]* \([[0-9]][[^ \n]]*\)\( .*\)*$|\1:\3E\2|' \
-			| sed 's|^S[[Uu]]SE LINUX Enterprise \([[SD]]\)[[ervsktop]]* \([[0-9]][[^ \n]]*\)\( .*\)*$|SLE\1:\2|' \
-			| sed 's|^.*\(S[[Uu]]SE\) [[Ll]][[Ii]][[Nn]][[Uu]][[Xx]].* \([[0-9]][[^ \n]]*\)\( .*\)*$|\1:\2|' \
-			| sed 's|^open\(S[[Uu]]SE\) \([[0-9]][[^ \n]]*\)\( .*\)*$|\1:\2|'`"
-	elif test -s /etc/gentoo-release ; then
-		LINUX_DIST="`cat /etc/gentoo-release | head -n1 \
-			| sed 's|^.*\(Gentoo\) Base System.* [[versionrelease]]* \([[0-9]][[^ \n]]*\)\( .*\)*$|\1:\2|'`" 
-	elif test -s /etc/debian_version ; then
-		LINUX_DIST="Debian:`cat /etc/debian_version | head -n1`"
-	else
-		LINUX_DIST="`uname -s`:`uname -r | sed 's|^\([[0-9\.]]*\)\([[^0-9\.]].*\)$|\1|'`"
-	fi
-	LINUX_DIST="`echo "$LINUX_DIST" | sed 's|:||'`"
-	AC_MSG_RESULT($LINUX_DIST)
-	;;
-esac
-AC_SUBST(LINUX_DIST)
+AM_MONETDB_LINUX_DIST()
 
 dnl MonetDB code requires some POSIX and XOPEN extensions 
 case "$GCC-$CC-$host_os" in
@@ -627,10 +676,6 @@ yes-*-*)
 	AC_DEFINE(_XOPEN_SOURCE, 600, [Compiler flag])
 	;;
 esac
-
-dnl  default javac flags
-JAVACFLAGS="$JAVACFLAGS -g:none -O"
-AC_SUBST(JAVACFLAGS)
 
 
 dnl --enable-strict
@@ -964,6 +1009,23 @@ AC_SUBST(thread_safe_flag_spec)
 AC_SUBST(THREAD_SAVE_FLAGS)
 AC_SUBST(NO_OPTIMIZE_FILES)
 
+]) dnl AC_DEFUN AM_MONETDB_COMPILER
+
+AC_DEFUN([AM_MONETDB_ANT_JAVA],
+[
+
+if test "x$1" != "x"; then
+  JAVA_REQ_VER_MIN="$1"
+else
+  JAVA_REQ_VER_MIN="1.4"
+fi
+
+if test "x$2" != "x"; then
+  JAVA_REQ_VER_MAX="$2"
+else
+  unset JAVA_REQ_VER_MAX
+fi
+
 AC_ARG_WITH(ant,
 	AC_HELP_STRING([--with-ant=FILE], [ant is installed as FILE]),
 	ANT="$withval",
@@ -985,6 +1047,10 @@ no) ;;
 esac
 AC_SUBST(ANT)
 AM_CONDITIONAL(HAVE_ANT, test x"$ANT" != xno)
+
+dnl  default javac flags
+JAVACFLAGS="$JAVACFLAGS -g:none -O"
+AC_SUBST(JAVACFLAGS)
 
 JAVA_VERSION=""
 JAVA="java"
@@ -1070,7 +1136,7 @@ AC_SUBST(JAVADOC)
 AC_SUBST(CLASSPATH)
 AM_CONDITIONAL(HAVE_JAVA,test x$have_java != xno)
 
-]) dnl AC_DEFUN AM_MONETDB_COMPILER
+]) dnl AC_DEFUN AM_MONETDB_ANT_JAVA
 
 AC_DEFUN([AM_MONETDB_TOOLS],[
 
@@ -1149,14 +1215,6 @@ AC_CHECK_PROG(MV,mv,mv -f)
 AC_CHECK_PROG(LOCKFILE,lockfile,lockfile -r 2,echo)
 AC_PATH_PROG(BASH,bash, /usr/bin/bash, $PATH)
 AC_CHECK_PROGS(RPMBUILD,rpmbuild rpm)
-READLINK='readlink -f'
-AC_MSG_CHECKING([for $READLINK])
-$READLINK /tmp >/dev/null 2>&1
-if test $? -ne 0; then
-	READLINK=echo
-fi
-AC_MSG_RESULT($READLINK)
-AC_SUBST(READLINK)
 
 SOPREF=lib
 case "$host_os" in
@@ -1543,8 +1601,17 @@ esac
 
 ]) dnl AC_DEFUN AM_MONETDB_TOOLS
 
-AC_DEFUN([AM_MONETDB_OPTIONS],
+AC_DEFUN([AM_MONETDB_TRANSLATEPATH],
 [
+READLINK='readlink -f'
+AC_MSG_CHECKING([for $READLINK])
+$READLINK /tmp >/dev/null 2>&1
+if test $? -ne 0; then
+	READLINK=echo
+fi
+AC_MSG_RESULT($READLINK)
+AC_SUBST(READLINK)
+
 translatepath=echo
 anttranslatepath=$READLINK
 
@@ -1565,6 +1632,12 @@ AC_ARG_WITH(anttranslatepath,
 		[program to translate paths from configure-time format to a format that can be given to the ant program [default: 'readlink -f' or value for --with-translatepath]]),
 	anttranslatepath="$withval")
 AC_SUBST(anttranslatepath)
+]) dnl AC_DEFUN AM_MONETDB_TRANSLATEPATH
+
+AC_DEFUN([AM_MONETDB_OPTIONS],
+[
+
+AM_MONETDB_TRANSLATEPATH()
 
 dnl --enable-noexpand
 AC_ARG_ENABLE(noexpand,

@@ -23,11 +23,11 @@ scripts_sh = {
 	COND = NOT_WIN32
 	EXT = ""
 	DIR = bindir
-	SOURCES = monetdb-clients-config.in
+	SOURCES = monetdb-java-config.in
 }
 
 scripts_bat = {
 	COND = NATIVE_WIN32
 	DIR = bindir
-	SOURCES = monetdb-clients-config.bat.in 
+	SOURCES = monetdb-java-config.bat.in 
 }

@@ -11,4 +11,3 @@ configure
 configure.in
 install.lst
 doc.lst
-clients_config.h.in

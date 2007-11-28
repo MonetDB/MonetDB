@@ -73,9 +73,7 @@ if test "x$have_monetdb" != xyes; then
 	fi
 fi
 AM_MONETDB_DEFAULTS()
-req_java_ver_min=1.4 # >= $req_java_ver_min required
-req_java_ver_max=1.6 # <  $req_java_ver_max required
-AM_MONETDB_COMPILER($req_java_ver_min, $req_java_ver_max)
+AM_MONETDB_COMPILER()
 AM_MONETDB_TOOLS()
 AM_MONETDB_OPTIONS()
 AM_MONETDB_LIBS()

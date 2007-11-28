@@ -49,6 +49,7 @@ packages = {
     'CLIENTS':  'monetdb-clients',
     'MONETDB4': 'monetdb4',
     'MONETDB5': 'monetdb5',
+    'MONETDB_JAVA':  'monetdb-java',
 }
 
 while len(sys.argv) > 2 and '=' in sys.argv[1]:

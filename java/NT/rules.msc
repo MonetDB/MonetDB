@@ -25,10 +25,6 @@ MONETDB_INCS=-I"$(MONETDB_INCLUDEDIR)" -I"$(MONETDB_INCLUDEDIR)\common" -I"$(MON
 MONETDB_LIBS=/libpath:"$(MONETDB_PREFIX)\lib"
 
 pkg = MonetDB
-CONFIG_H=clients_config.h
-VERSION=1.21.0
-#       ^^^^^^
-# Maintained via vertoo. Please don't modify by hand!
-# Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
+VERSION=1.7.1
 
 ODBC_LIBS = odbccp32.lib user32.lib

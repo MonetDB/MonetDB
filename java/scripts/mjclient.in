@@ -24,7 +24,7 @@
 
 jdbcclient_jar="@datadir@/MonetDB/lib/jdbcclient.jar"
 if [ ! -s "$jdbcclient_jar" ] ; then
-	jdbcclient_jar="@QCLIENTS_BUILD@/src/java/jdbcclient.jar"
+	jdbcclient_jar="@QMONETDB_JAVA_BUILD@/jdbcclient.jar"
 fi
 
 exec java -jar "$jdbcclient_jar" $*

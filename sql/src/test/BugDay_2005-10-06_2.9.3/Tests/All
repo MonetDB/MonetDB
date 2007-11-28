@@ -27,7 +27,7 @@ drop_index.SF-929243
 create_table_default.SF-931573
 comment_only.SF-931619
 set_types.SF-932360
-HAVE_JAVA?not_null.SF-933194
+HAVE_MONETDB_JAVA?not_null.SF-933194
 create_drop_schema.SF-933546
 singleton_view.SF-933573
 foreign_key_in_frontend_crashes_backend.SF-935578
@@ -38,7 +38,7 @@ multiple_select_cast.SF-938419
 view_on_deleted_table.SF-938583
 reserved_words.SF-939112
 div_by_zero.SF-987304
-HAVE_JAVA?type_dump_test.SF-989257
+HAVE_MONETDB_JAVA?type_dump_test.SF-989257
 sesamstr_parser_error.SF-993366
 simple_union.SF-1005596
 BATpropcheck_error.SF-1012739
@@ -47,7 +47,7 @@ cast_to_interval.SF-1019079
 error_in_sql_parser.SF-1019122
 cross_product.SF-1122802
 max_min_sum_null.SF-1123132
-HAVE_JAVA?alter_table_describe.SF-1146092
+HAVE_MONETDB_JAVA?alter_table_describe.SF-1146092
 affected_rows_count.SF-1149757
 var_char_cast_truncate.SF-1150907
 foreign_key_null.SF-1164646

@@ -23,7 +23,7 @@ srcdir=`cd '@srcdir@'; pwd`
 uname=`uname`
 
 # make sure scripts are executable
-for x in "${builddir}/conf/${pkg}-config" "${builddir}/src/java/scripts/mjclient" "${builddir}/src/python/mclient.py"
+for x in "${builddir}/conf/${pkg}-config" "${builddir}/src/python/mclient.py"
 do
 	if [ -s $x ] ; then
 		chmod +x $x
@@ -31,7 +31,7 @@ do
 done
 
 # enhance various paths to find our stuff
-PATH="${builddir}/conf:${builddir}/src/java/scripts:${builddir}/src/mapiclient:${builddir}/src/python:$PATH"
+PATH="${builddir}/conf:${builddir}/src/mapiclient:${builddir}/src/python:$PATH"
 export PATH
 
 PYTHONPATH="${srcdir}/src/python:${PYTHONPATH}"

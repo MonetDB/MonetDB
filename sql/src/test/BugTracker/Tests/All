@@ -13,11 +13,11 @@ cardinality_violation.SF-1240701
 rows_affected.SF-1377180
 broken_join.SF-1373391
 insert_not_exists.SF-1380287
-HAVE_JAVA?authorization.SF-1430616
+HAVE_MONETDB_JAVA?authorization.SF-1430616
 mapi_connect_errors_vanish.SF-1432134
 create_column_name_data.SF-1440214
 HAVE_MONETDB4?connect_crash.SF-1436626
-HAVE_JAVA?drop_schema_crash.SF-1504794
+HAVE_MONETDB_JAVA?drop_schema_crash.SF-1504794
 set_session_vars.SF-1505987
 reset_session_vars.SF-1505987
 cast_interval2time.SF-1488247
@@ -75,11 +75,11 @@ update_pkey_bug.SF-1733712
 update_fkey_with_value_not_in_the_pkey.SF-1734143
 alter_table_add_fkey.SF-1737668
 select_id_not_in_another_select.SF-1737777
-HAVE_JAVA?explain.SF-1739353
+HAVE_MONETDB_JAVA?explain.SF-1739353
 limit_timestampz.SF-1774217
 convert_dec2varchar.SF-1774312
 convert_dec2varchar_crash.SF-1775550
-HAVE_JAVA?jdbc_no_debug.SF-1739356
+HAVE_MONETDB_JAVA?jdbc_no_debug.SF-1739356
 cascade_operations_in_different_sessions.SF-1823387_create
 cascade_operations_in_different_sessions.SF-1823387_drop
 number_null_first_row.SF-1833286

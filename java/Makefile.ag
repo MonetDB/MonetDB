@@ -14,12 +14,16 @@
 # Portions created by CWI are Copyright (C) 1997-2007 CWI.
 # All Rights Reserved.
 
-MTSAFE
+SUBDIRS = conf tests scripts
 
-SUBDIRS = tests scripts
+EXTRA_DIST = configure.ag rpm.mk.in \
+		MonetDB-java.spec MonetDB-java.spec.in \
+		RunMtest.in RunMtest.bat.in \
+		RunMapprove.in \
+		build.xml build.properties release.txt
 
-EXTRA_DIST = build.xml build.properties release.txt
-EXTRA_DIST_DIR = src \
+EXTRA_DIST_DIR = NT \
+		 src \
 		 lib \
 		 example
 
@@ -27,3 +31,6 @@ ant_distall = {
 	DIR = datadir/MonetDB/lib
 	FILES = monetdb-1.1-mcl.jar monetdb-1.7-jdbc.jar jdbcclient.jar
 }
+
+TESTS = RunMtest
+TESTS_ENVIRONMENT = $(SHELL)

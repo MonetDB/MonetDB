@@ -102,17 +102,6 @@ except ImportError:
     import distutils.sysconfig
     p = _configure(os.path.join('@QXprefix@',distutils.sysconfig.get_python_lib(1,0,"")))
     sys.path.insert(0, p)
-    try:
-        q = GetConfig('monetdb-config', '--pythonlibdir')
-        p = p + os.pathsep + q
-    except:
-        None
-    try:
-        q = GetConfig('monetdb-clients-config', '--pythonlibdir')
-        p = p + os.pathsep + q
-        p = p + os.pathsep + q + os.sep + 'MonetDB'
-    except:
-        None
     from MonetDB import monet_options
     if os.environ.has_key('PYTHONPATH'):
         p = p + os.pathsep + os.environ['PYTHONPATH']
@@ -161,10 +150,11 @@ CONDITIONALS = {
     'PROFILING'        : "@PROFILING_FALSE@",
     # SQL:
     'NATIVE_WIN32'     : "@NATIVE_WIN32_FALSE@",
-    # unknown at compile time, as Mtest.py is compiled with MonetDB(4);
+    # unknown at compile time, as Mtest.py is compiled with MonetDB;
     # hence, we set them at runtime in main() below
     'HAVE_MONETDB5'    : "@HAVE_MONETDB5_FALSE@",
     'HAVE_MONETDB4'    : "@HAVE_MONETDB4_FALSE@",
+    'HAVE_MONETDB_JAVA': "@HAVE_MONETDB_JAVA_FALSE@",
 }
 
 # a bunch of classes to help with generating (X)HTML files
@@ -1507,7 +1497,7 @@ def RunTest(env, TST, BusyPorts, COND) :
             ErrMsg("test missing: '"+os.path.join(TSTSRCDIR,TST)+"[.py|.mal|.malC|.milS|.milC|.sql|.xq|.x100]`")
         return TX,Failed,Failed,elem
 
-    if par['PACKAGE'] not in ('monetdb', 'monetdb-clients'):
+    if par['PACKAGE'] not in ('monetdb', 'monetdb-java', 'monetdb-clients'):
         MissingMods = CheckMods(env, TST, SERVER, CALL)
         MissingBATs = CheckBATs(env, TST, TSTDB)
     else:
@@ -2703,6 +2693,7 @@ URLSUFFIX_F = ''
 URLSUFFIX_D = ''
 
 _PackageDict = {
+    'java':       'monetdb-java',
     'clients':    'monetdb-clients',
     'template':   'monetdb-template',
     'sql':        'monetdb-sql',
@@ -2728,7 +2719,7 @@ if os.path.exists(os.path.join('CVS', 'Repository')):
             repo = _PackageDict[repo]
     par['PACKAGE'] = repo
     if not CheckExec(par['PACKAGE']+'-config'):
-        if par['PACKAGE'] in ('monetdb', 'monetdb-clients', 'monetdb4', 'monetdb5'):
+        if par['PACKAGE'] in ('monetdb', 'monetdb-java', 'monetdb-clients', 'monetdb4', 'monetdb5'):
             ErrXit('Could not find "%s-config" in your $PATH:\n%s' % (par['PACKAGE'],os.environ['PATH']))
         else:
             Warn('Could not find "%s-config" in your $PATH:\n%s' % (par['PACKAGE'],os.environ['PATH']))
@@ -2809,7 +2800,7 @@ def main(argv) :
     cmd_options = [
         # long name, short name, GDK option, argument, comment
         ('package', 'p', 'package', '<package>',
-         "package to be tested, e.g.:\nmonetdb(|4|5), [monetdb-](clients|template|sql|xquery|xml|amdb|geom|datacell);\ndefault: %s" % par['PACKAGE']),
+         "package to be tested, e.g.:\nmonetdb(|4|5), [monetdb-](java|clients|template|sql|xquery|xml|amdb|geom|datacell);\ndefault: %s" % par['PACKAGE']),
         ('MonetDB4', '4', 'MonetDB4', None,
          "use Mserver of MonetDB Version 4 (default with <package> not in {monetdb5, monetdb-datacell})"),
         ('MonetDB5', '5', 'MonetDB5', None,
@@ -2923,7 +2914,7 @@ def main(argv) :
                 pkg = _PackageDict[pkg]
         par['PACKAGE'] = pkg
     if not CheckExec(par['PACKAGE']+'-config'):
-        if par['PACKAGE'] in ('monetdb', 'monetdb-clients', 'monetdb4', 'monetdb5'):
+        if par['PACKAGE'] in ('monetdb', 'monetdb-java', 'monetdb-clients', 'monetdb4', 'monetdb5'):
             ErrXit('Could not find "%s-config" in your $PATH:\n%s' % (par['PACKAGE'],os.environ['PATH']))
         else:
             Warn('Could not find "%s-config" in your $PATH:\n%s' % (par['PACKAGE'],os.environ['PATH']))
@@ -2944,7 +2935,7 @@ def main(argv) :
         par['M5'] = par['PACKAGE']     in ['monetdb5', 'monetdb-datacell']
 
     config = opts.get('config')
-    if config is None and par['PACKAGE'] not in ('monetdb', 'monetdb-clients'):
+    if config is None and par['PACKAGE'] not in ('monetdb', 'monetdb-java', 'monetdb-clients'):
         # no --config given on the command line; we assume the M4/M5 default
         # and have monet_options.parse_options() re-parse the command line arguments
         if par['M5']:
@@ -3017,7 +3008,7 @@ def main(argv) :
     STDOUT.flush()
     #env['par'] = par
 
-    # unknown at compile time, as Mtest.py is compiled with MonetDB(4);
+    # unknown at compile time, as Mtest.py is compiled with MonetDB;
     # hence, we set then at runtime.
     # X == true   =>  @X_TRUE@='',  @X_FALSE@='#'
     # X == false  =>  @X_TRUE@='#', @X_FALSE@=''
@@ -3027,6 +3018,10 @@ def main(argv) :
     else:
         CONDITIONALS['HAVE_MONETDB5'] = ''
         CONDITIONALS['HAVE_MONETDB4'] = '#'
+    if CheckExec('monetdb-java-config'):
+        CONDITIONALS['HAVE_MONETDB_JAVA'] = '#'
+    else:
+        CONDITIONALS['HAVE_MONETDB_JAVA'] = ''
 
     #if env.has_key('MONETDB_PREFIX'):
         #bp = os.path.join(env['MONETDB_PREFIX'],"bin")
@@ -3375,7 +3370,7 @@ def main(argv) :
         else:
             QUIT = 'quit();\n'
 
-        if par['PACKAGE'] not in ('monetdb', 'monetdb-clients'):
+        if par['PACKAGE'] not in ('monetdb', 'monetdb-java', 'monetdb-clients'):
             if Check('%s --dbname=%s' % (env['exe']['Mserver'][1], TSTPREF), QUIT):
                 sys.exit(1)
             if GetBitsAndOIDsAndModsAndStatic(env):

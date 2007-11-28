@@ -1,6 +1,6 @@
 #!/bin/bash
 
-pdd="`monetdb-clients-config --pkgdatadir`"
+pdd="`monetdb-java-config --pkgdatadir`"
 JAR="$pdd/lib/jdbcclient.jar"
 
 cat << EOF > .monetdb

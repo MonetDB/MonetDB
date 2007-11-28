@@ -22,6 +22,6 @@
 @rem to direct the interaction to the proper ports.
 
 @set jdbcclient_jar="@datadir@\MonetDB\lib\jdbcclient.jar"
-@if not exist %jdbcclient_jar% set jdbcclient_jar="@XCLIENTS_BUILD@\src\java\jdbcclient.jar"
+@if not exist %jdbcclient_jar% set jdbcclient_jar="@XMONETDB_JAVA_BUILD@\jdbcclient.jar"
 
 call java -jar %jdbcclient_jar% %*

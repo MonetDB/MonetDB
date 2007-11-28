@@ -16,14 +16,14 @@
 # Portions created by CWI are Copyright (C) 1997-2007 CWI.
 # All Rights Reserved.
 
-pkg=monetdb-clients
-builddir=@QCLIENTS_BUILD@
+pkg=monetdb-java
+builddir=@QMONETDB_JAVA_BUILD@
 # make sure srcdir contains absolute path name
 srcdir=`cd '@srcdir@'; pwd`
 uname=`uname`
 
 # make sure scripts are executable
-for x in "${builddir}/conf/${pkg}-config" "${builddir}/src/java/scripts/mjclient" "${builddir}/src/python/mclient.py"
+for x in "${builddir}/conf/${pkg}-config" "${builddir}/scripts/mjclient"
 do
 	if [ -s $x ] ; then
 		chmod +x $x
@@ -31,11 +31,8 @@ do
 done
 
 # enhance various paths to find our stuff
-PATH="${builddir}/conf:${builddir}/src/java/scripts:${builddir}/src/mapiclient:${builddir}/src/python:$PATH"
+PATH="${builddir}/conf:${builddir}/scripts:$PATH"
 export PATH
-
-PYTHONPATH="${srcdir}/src/python:${PYTHONPATH}"
-export PYTHONPATH
 
 # execute Mtest.py in the source directory
 cd "$srcdir"

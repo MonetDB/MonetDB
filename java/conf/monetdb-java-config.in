@@ -17,28 +17,15 @@
 # All Rights Reserved.
 
 pkg="@PACKAGE@"
-source="@QCLIENTS_SOURCE@"
-build="@QCLIENTS_BUILD@"
+source="@QMONETDB_JAVA_SOURCE@"
+build="@QMONETDB_JAVA_BUILD@"
 prefix="@Qprefix@"
 exec_prefix="@Qexec_prefix@"
 
 bindir="@Qbindir@"
-libexecdir="@Qlibexecdir@"
 datarootdir="@Qdatarootdir@"
 datadir="@Qdatadir@"
-sysconfdir="@Qsysconfdir@"
-localstatedir="@Qlocalstatedir@"
-libdir="@Qlibdir@"
-infodir="@Qinfodir@"
-mandir="@Qmandir@"
-includedir="@Qincludedir@"
-
-pkglibdir="${libdir}/MonetDB"
 pkgdatadir="${datadir}/MonetDB"
-pkgincludedir="${includedir}/MonetDB"
-perllibdir="${prefix}/@PERL_LIBDIR@"
-pythonlibdir="${prefix}/@PYTHON_LIBDIR@"
-phpextensiondir="${prefix}/@PHP_EXTENSIONDIR@"
 
 usage()
 {
@@ -49,16 +36,12 @@ Known values for OPTION are:
 
   --build		print ${pkg} build directory
   --source		print ${pkg} source directory
-  --libs		print ${pkg} library linking information
-  --cflags		print ${pkg} module pre-processor and compiler flags
   --help		display this help and exit
   --version		output version information
 
 Install directories ${pkg} was configured to
-  --prefix  --exec-prefix  --bindir  --libexecdir  --datarootdir
-  --datadir  --sysconfdir  --localstatedir  --libdir  --infodir
-  --mandir  --includedir --pkgdatadir --pkglibdir --pkgincludedir
-  --perllibdir --pythonlibdir --phpextensiondir
+  --prefix  --exec-prefix  --bindir
+  --datarootdir  --datadir  --pkgdatadir
 
 EOF
 
@@ -112,23 +95,6 @@ while test $# -gt 0; do
     --help)
 	usage 0
 	;;
-
-    --includes)
-       	echo \
-		-I\${CLIENTS_INCLUDEDIR} \
-		-I\${CLIENTS_INCLUDEDIR}/mapilib
-       	;;
-
-    --cflags)
-       	echo \
-		-I$pkgincludedir \
-		-I$pkgincludedir/mapilib
-       	;;
-
-    --libs)
-       	echo \
-		-L$libdir
-       	;;
 
     *)
 	usage 1 >&2

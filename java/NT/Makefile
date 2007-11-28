@@ -11,25 +11,18 @@ prefix = $(MAKEDIR)
 
 UNISTD_H = unistd.h
 
-all: "$(SRCDIR)\Makefile.msc" all-msc $(UNISTD_H) Runmclient.bat RunMtest.bat RunMapprove.bat
-	$(MAKE) /nologo /f "$(SRCDIR)\Makefile.msc" "prefix=$(prefix)" "bits=$(bits)" all
+all: "$(SRCDIR)\Makefile.msc" $(UNISTD_H) RunMtest.bat RunMapprove.bat
+	$(MAKE) /nologo /f "$(SRCDIR)\Makefile.msc" "prefix=$(prefix)" all
 
 check: "$(SRCDIR)\Makefile.msc"
-	$(MAKE) /nologo /i /f "$(SRCDIR)\Makefile.msc" "prefix=$(prefix)" "bits=$(bits)" check
+	$(MAKE) /nologo /i /f "$(SRCDIR)\Makefile.msc" "prefix=$(prefix)" check
 	call RunMtest.bat
 
-install: targetdirs clients_config.h all
-	$(INSTALL) clients_config.h "$(includedir)"
-	$(MAKE) /nologo /f "$(SRCDIR)\Makefile.msc" "prefix=$(prefix)" "bits=$(bits)" install
-	if not "$(MAKEDIR)" == "$(prefix)" $(INSTALL) mclient.bat "$(prefix)"
+install: targetdirs all
+	$(MAKE) /nologo /f "$(SRCDIR)\Makefile.msc" "prefix=$(prefix)" install
 
 $(SRCDIR)\Makefile.msc: "$(SRCDIR)\Makefile.ag"
         $(CD) "$(SRCDIR)" && autogen.py
-
-all-msc: clients_config.h
-
-clients_config.h: clients_config.h.in
-	$(CONFIGURE) clients_config.h.in > clients_config.h
 
 unistd.h:
 	$(ECHO) #ifndef UNISTD_H > unistd.h
@@ -42,9 +35,6 @@ unistd.h:
 	$(ECHO) #define getpid _getpid >> unistd.h
 	$(ECHO) #define umask _umask >> unistd.h
 	$(ECHO) #endif >> unistd.h
-
-Runmclient.bat: "$(SRCDIR)\Runmclient.bat.in"
-	$(CONFIGURE) "$(SRCDIR)\Runmclient.bat.in" > Runmclient.bat
 
 RunMtest.bat: "$(SRCDIR)\RunMtest.bat.in"
         $(CONFIGURE) "$(SRCDIR)\RunMtest.bat.in" > RunMtest.bat

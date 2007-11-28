@@ -37,7 +37,6 @@ BuildRequires: readline-devel, openssl-devel
 %{!?_with_php: %{!?_without_php: %define _with_php --with-php}}
 %{!?_with_python: %{!?_without_python: %define _with_python --with-python}}
 %{!?_with_perl: %{!?_without_perl: %define _with_perl --with-perl}}
-%{!?_with_java: %{!?_without_java: %define _with_java --with-java}}
 
 %if !%{?buildsystem}
 BuildRequires: MonetDB-devel >= 1.20
@@ -69,9 +68,6 @@ Requires: perl, swig
 # in Fedora 7 there is a perl-devel package which we need.
 Requires: perl-devel
 %endif
-%endif
-%if %{?_with_java:1}%{!?_with_java:0}
-Requires: ant, java
 %endif
 
 
@@ -119,16 +115,6 @@ BuildRequires: perl, swig
 # in Fedora 7 there is a perl-devel package which we need.
 BuildRequires: perl-devel
 %endif
-%endif
-%endif
-
-%if %{?_with_java:1}%{!?_with_java:0}
-%package java
-Summary: MonetDB java interface
-Group: Applications/Databases
-Requires: java
-%if !%{?buildsystem}
-BuildRequires: ant, java
 %endif
 %endif
 
@@ -192,17 +178,6 @@ This package contains the files needed to use MonetDB from a Perl
 program.
 %endif
 
-%if %{?_with_java:1}%{!?_with_java:0}
-%description java
-MonetDB is a database management system that is developed from a
-main-memory perspective with use of a fully decomposed storage model,
-automatic index management, extensibility of data types and search
-accelerators, SQL- and XML- frontends.
-
-This package contains the JDBC driver and mjclient, a client program
-written in Java that uses the JDBC driver to communicate with the
-database server.
-%endif
 
 %prep
 rm -rf $RPM_BUILD_ROOT
@@ -219,8 +194,7 @@ rm -rf $RPM_BUILD_ROOT
 	%{?comp_cc:CC="%{comp_cc}"} \
 	%{?_with_php} %{?_without_php} \
 	%{?_with_python} %{?_without_python} \
-	%{?_with_perl} %{?_without_perl} \
-	%{?_with_java} %{?_without_java}
+	%{?_with_perl} %{?_without_perl}
 
 make
 
@@ -292,14 +266,6 @@ rm -fr $RPM_BUILD_ROOT
 %{_prefix}/%{perl_libdir}/*
 %dir %{_datadir}/MonetDB/perl
 %{_datadir}/MonetDB/perl/*
-%endif
-
-%if %{?_with_java:1}%{!?_with_java:0}
-%files java
-%defattr(-,root,root)
-%{_bindir}/mjclient
-%dir %{_datadir}/MonetDB/lib
-%{_datadir}/MonetDB/lib/*jar
 %endif
 
 %changelog

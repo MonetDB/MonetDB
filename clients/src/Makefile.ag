@@ -14,4 +14,4 @@
 # Portions created by CWI are Copyright (C) 1997-2007 CWI.
 # All Rights Reserved.
 
-SUBDIRS = mapilib mapiclient odbc HAVE_PERL?perl HAVE_PYTHON?python HAVE_PHP?php HAVE_JAVA?java examples
+SUBDIRS = mapilib mapiclient odbc HAVE_PERL?perl HAVE_PYTHON?python HAVE_PHP?php examples
