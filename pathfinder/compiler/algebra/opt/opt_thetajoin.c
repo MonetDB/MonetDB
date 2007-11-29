@@ -204,13 +204,13 @@ thetajoin_opt (PFla_op_t *n1, PFla_op_t *n2, PFarray_t *pred)
 }
 
 /**
- * resolve_name_conflicts renames columns of the thetajoin
+ * resolve_name_conflict renames a column of the thetajoin
  * predicates if it conflicts with a newly introduced column
  * name @a att. (This can of course only happen if the
  * conflicting column names are not visible anymore.)
  */
 static void
-resolve_name_conflicts (PFla_op_t *n, PFalg_att_t att)
+resolve_name_conflict (PFla_op_t *n, PFalg_att_t att)
 {
     PFalg_att_t used_cols = 0;
     bool conflict_left = false,
@@ -283,7 +283,7 @@ resolve_name_conflicts (PFla_op_t *n, PFalg_att_t att)
     /* solve conflicts by generating new column name that
        replaces the conflicting one */
     if (conflict_right) {
-        PFalg_proj_t *proj = PFmalloc (L(n)->schema.count *
+        PFalg_proj_t *proj = PFmalloc (R(n)->schema.count *
                                        sizeof (PFalg_proj_t));
         PFalg_att_t new_col, cur_col;
 
@@ -293,8 +293,8 @@ resolve_name_conflicts (PFla_op_t *n, PFalg_att_t att)
         used_cols = used_cols | new_col;
 
         /* fill renaming projection list */
-        for (i = 0; i < L(n)->schema.count; i++) {
-            cur_col = L(n)->schema.items[i].name;
+        for (i = 0; i < R(n)->schema.count; i++) {
+            cur_col = R(n)->schema.items[i].name;
 
             if (cur_col != att)
                 proj[i] = PFalg_proj (cur_col, cur_col);
@@ -303,12 +303,126 @@ resolve_name_conflicts (PFla_op_t *n, PFalg_att_t att)
         }
 
         /* place a renaming projection underneath the thetajoin */
-        L(n) = PFla_project_ (L(n), L(n)->schema.count, proj);
+        R(n) = PFla_project_ (R(n), R(n)->schema.count, proj);
 
         /* update all the references in the predicate list */
         for (i = 0; i < PFarray_last (pred); i++)
             if (RIGHT_AT(pred, i) == att)
                 RIGHT_AT(pred, i) = new_col;
+    }
+}
+
+/**
+ * resolve_name_conflicts renames columns of the thetajoin
+ * predicates if it conflicts with a set of newly introduced
+ * column names in a schema (@a schema). (This can of course
+ * only happen if the conflicting column names are not visible
+ * anymore.)
+ */
+static void
+resolve_name_conflicts (PFla_op_t *n, PFalg_schema_t schema)
+{
+    PFalg_att_t used_cols = 0, conf_cols = 0;
+    bool conflict_left = false,
+         conflict_right = false;
+    PFarray_t *pred;
+    unsigned int i, j;
+
+    assert (n->kind == la_thetajoin);
+
+    pred = n->sem.thetajoin_opt.pred;
+
+    /* collect all the names in use */
+    for (i = 0; i < schema.count; i++)
+        conf_cols = conf_cols | schema.items[i].name;
+    used_cols = conf_cols;
+    for (i = 0; i < n->schema.count; i++)
+        used_cols = used_cols | n->schema.items[i].name;
+    
+    /* check for conflicts */
+    for (i = 0; i < PFarray_last (pred); i++) {
+        if (LEFT_AT(pred, i) & conf_cols) {
+            /* If the input to the predicate is used above
+               while it is still visible a thinking
+               error has sneaked in. */
+            assert (LEFT_VIS_AT (pred, i) == false);
+            conflict_left = true;
+        }
+        if (RIGHT_AT(pred, i) & conf_cols) {
+            /* If the input to the predicate is used above
+               while it is still visible a thinking
+               error has sneaked in. */
+            assert (RIGHT_VIS_AT (pred, i) == false);
+            conflict_right = true;
+        }
+
+        /* collect all the names in use */
+        used_cols = used_cols | LEFT_AT(pred, i);
+        used_cols = used_cols | RIGHT_AT(pred, i);
+    }
+
+    /* solve conflicts by generating new column name that
+       replaces the conflicting one */
+    if (conflict_left) {
+        PFalg_proj_t *proj = PFmalloc (L(n)->schema.count *
+                                       sizeof (PFalg_proj_t));
+        PFalg_att_t new_col, cur_col;
+
+        /* fill renaming projection list */
+        for (i = 0; i < L(n)->schema.count; i++) {
+            cur_col = L(n)->schema.items[i].name;
+
+            if (cur_col & conf_cols) {
+                /* generate new column name */
+                new_col = PFalg_ori_name (PFalg_unq_name (cur_col, 0),
+                                          ~used_cols);
+                used_cols = used_cols | new_col;
+
+                proj[i] = PFalg_proj (new_col, cur_col);
+                
+                /* update all the references in the predicate list */
+                for (j = 0; j < PFarray_last (pred); j++)
+                    if (LEFT_AT(pred, j) == cur_col)
+                        LEFT_AT(pred, j) = new_col;
+            }
+            else
+                proj[i] = PFalg_proj (cur_col, cur_col);
+        }
+
+        /* place a renaming projection underneath the thetajoin */
+        L(n) = PFla_project_ (L(n), L(n)->schema.count, proj);
+    }
+
+    /* solve conflicts by generating new column name that
+       replaces the conflicting one */
+    if (conflict_right) {
+        PFalg_proj_t *proj = PFmalloc (R(n)->schema.count *
+                                       sizeof (PFalg_proj_t));
+        PFalg_att_t new_col, cur_col;
+
+        /* fill renaming projection list */
+        for (i = 0; i < R(n)->schema.count; i++) {
+            cur_col = R(n)->schema.items[i].name;
+
+            if (cur_col & conf_cols) {
+                /* generate new column name */
+                new_col = PFalg_ori_name (PFalg_unq_name (cur_col, 0),
+                                          ~used_cols);
+                used_cols = used_cols | new_col;
+
+                proj[i] = PFalg_proj (new_col, cur_col);
+                
+                /* update all the references in the predicate list */
+                for (j = 0; j < PFarray_last (pred); j++)
+                    if (RIGHT_AT(pred, j) == cur_col)
+                        RIGHT_AT(pred, j) = new_col;
+            }
+            else
+                proj[i] = PFalg_proj (cur_col, cur_col);
+        }
+
+        /* place a renaming projection underneath the thetajoin */
+        R(n) = PFla_project_ (R(n), R(n)->schema.count, proj);
     }
 }
 
@@ -424,7 +538,7 @@ modify_binary_op (PFla_op_t *p,
                             PFprop_ocol (LR(p), p->sem.binary.att2);
 
         if (switch_left && switch_right) {
-            resolve_name_conflicts (L(p), p->sem.binary.res);
+            resolve_name_conflict (L(p), p->sem.binary.res);
             *p = *(thetajoin_opt (
                        op (LL(p),
                            p->sem.binary.res,
@@ -438,7 +552,7 @@ modify_binary_op (PFla_op_t *p,
             modified = true;
         }
         else if (switch_left) {
-            resolve_name_conflicts (L(p), p->sem.binary.res);
+            resolve_name_conflict (L(p), p->sem.binary.res);
             *p = *(thetajoin_opt (
                        op (LL(p),
                            p->sem.binary.res,
@@ -449,7 +563,7 @@ modify_binary_op (PFla_op_t *p,
             modified = true;
         }
         else if (switch_right) {
-            resolve_name_conflicts (L(p), p->sem.binary.res);
+            resolve_name_conflict (L(p), p->sem.binary.res);
             *p = *(thetajoin_opt (
                        LL(p),
                        op (LR(p),
@@ -547,7 +661,7 @@ opt_mvd (PFla_op_t *p)
 
         case la_attach:
             if (is_tj (L(p))) {
-                resolve_name_conflicts (L(p), p->sem.attach.res);
+                resolve_name_conflict (L(p), p->sem.attach.res);
 
                 /* push attach into both thetajoin operands */
                 *p = *(thetajoin_opt (
@@ -565,12 +679,14 @@ opt_mvd (PFla_op_t *p)
         case la_cross:
         case la_cross_mvd:
             if (is_tj (L(p))) {
+                resolve_name_conflicts (L(p), R(p)->schema);
                 *p = *(thetajoin_opt (LL(p),
                                   cross (LR(p), R(p)),
                                   L(p)->sem.thetajoin_opt.pred));
                 modified = true;
             }
             else if (is_tj (R(p))) {
+                resolve_name_conflicts (R(p), L(p)->schema);
                 *p = *(thetajoin_opt (RL(p),
                                   cross (RR(p), L(p)),
                                   R(p)->sem.thetajoin_opt.pred));
@@ -585,6 +701,7 @@ opt_mvd (PFla_op_t *p)
             /* Move the independent expression (the one without
                join attribute) up the DAG. */
             if (is_tj (L(p))) {
+                resolve_name_conflicts (L(p), R(p)->schema);
                 if (PFprop_ocol (LL(p), p->sem.eqjoin.att1))
                     *p = *(thetajoin_opt (eqjoin (LL(p),
                                                   R(p),
@@ -605,6 +722,7 @@ opt_mvd (PFla_op_t *p)
 
             }
             if (is_tj (R(p))) {
+                resolve_name_conflicts (R(p), L(p)->schema);
                 if (PFprop_ocol (RL(p), p->sem.eqjoin.att2))
                     *p = *(thetajoin_opt (eqjoin (L(p),
                                                   RL(p),
@@ -1072,7 +1190,7 @@ opt_mvd (PFla_op_t *p)
                 }
 
                 if (switch_left && switch_right) {
-                    resolve_name_conflicts (L(p), p->sem.fun_1to1.res);
+                    resolve_name_conflict (L(p), p->sem.fun_1to1.res);
                     *p = *(thetajoin_opt (
                                fun_1to1 (LL(p),
                                          p->sem.fun_1to1.kind,
@@ -1086,7 +1204,7 @@ opt_mvd (PFla_op_t *p)
                     modified = true;
                 }
                 else if (switch_left) {
-                    resolve_name_conflicts (L(p), p->sem.fun_1to1.res);
+                    resolve_name_conflict (L(p), p->sem.fun_1to1.res);
                     *p = *(thetajoin_opt (
                                fun_1to1 (LL(p),
                                          p->sem.fun_1to1.kind,
@@ -1097,7 +1215,7 @@ opt_mvd (PFla_op_t *p)
                     modified = true;
                 }
                 else if (switch_right) {
-                    resolve_name_conflicts (L(p), p->sem.fun_1to1.res);
+                    resolve_name_conflict (L(p), p->sem.fun_1to1.res);
                     *p = *(thetajoin_opt (
                                LL(p),
                                fun_1to1 (LR(p),
@@ -1131,7 +1249,7 @@ opt_mvd (PFla_op_t *p)
                 bool switch_right = PFprop_ocol (LR(p), p->sem.unary.att);
 
                 if (switch_left && switch_right) {
-                    resolve_name_conflicts (L(p), p->sem.unary.res);
+                    resolve_name_conflict (L(p), p->sem.unary.res);
                     *p = *(thetajoin_opt (
                                PFla_not (LL(p),
                                          p->sem.unary.res,
@@ -1143,7 +1261,7 @@ opt_mvd (PFla_op_t *p)
                     modified = true;
                 }
                 else if (switch_left) {
-                    resolve_name_conflicts (L(p), p->sem.unary.res);
+                    resolve_name_conflict (L(p), p->sem.unary.res);
                     *p = *(thetajoin_opt (
                                PFla_not (LL(p),
                                          p->sem.unary.res,
@@ -1153,7 +1271,7 @@ opt_mvd (PFla_op_t *p)
                     modified = true;
                 }
                 else if (switch_right) {
-                    resolve_name_conflicts (L(p), p->sem.unary.res);
+                    resolve_name_conflict (L(p), p->sem.unary.res);
                     *p = *(thetajoin_opt (
                                LL(p),
                                PFla_not (LR(p),
@@ -1175,7 +1293,7 @@ opt_mvd (PFla_op_t *p)
                     comp = alg_comp_eq;
 
                     /* make sure that column res is not used as join argument */
-                    resolve_name_conflicts (L(p), res);
+                    resolve_name_conflict (L(p), res);
                     /* create a new thetajoin operator ... */
                     *p = *(thetajoin_opt (LL(p),
                                           LR(p),
@@ -1291,7 +1409,7 @@ opt_mvd (PFla_op_t *p)
                 }
 
                 if (lpart && rsortby == PFord_count (p->sem.rownum.sortby)) {
-                    resolve_name_conflicts (L(p), p->sem.rownum.res);
+                    resolve_name_conflict (L(p), p->sem.rownum.res);
                     *p = *(thetajoin_opt (
                               LL(p),
                               rownum (
@@ -1305,7 +1423,7 @@ opt_mvd (PFla_op_t *p)
                 }
 
                 if (rpart && lsortby == PFord_count (p->sem.rownum.sortby)) {
-                    resolve_name_conflicts (L(p), p->sem.rownum.res);
+                    resolve_name_conflict (L(p), p->sem.rownum.res);
                     *p = *(thetajoin_opt (
                               rownum (
                                   LL(p),
@@ -1358,7 +1476,7 @@ opt_mvd (PFla_op_t *p)
                         }
 
                 if (!lsortby && rsortby == PFord_count (p->sem.rank.sortby)) {
-                    resolve_name_conflicts (L(p), p->sem.rank.res);
+                    resolve_name_conflict (L(p), p->sem.rank.res);
                     *p = *(thetajoin_opt (
                               LL(p),
                               rank (
@@ -1371,7 +1489,7 @@ opt_mvd (PFla_op_t *p)
                 }
 
                 if (lsortby == PFord_count (p->sem.rank.sortby) && !rsortby) {
-                    resolve_name_conflicts (L(p), p->sem.rank.res);
+                    resolve_name_conflict (L(p), p->sem.rank.res);
                     *p = *(thetajoin_opt (
                               rank (
                                   LL(p),
@@ -1394,7 +1512,7 @@ opt_mvd (PFla_op_t *p)
                 bool switch_right = PFprop_ocol (LR(p), p->sem.type.att);
 
                 if (switch_left && switch_right) {
-                    resolve_name_conflicts (L(p), p->sem.type.res);
+                    resolve_name_conflict (L(p), p->sem.type.res);
                     *p = *(thetajoin_opt (type (LL(p),
                                                 p->sem.type.res,
                                                 p->sem.type.att,
@@ -1407,7 +1525,7 @@ opt_mvd (PFla_op_t *p)
                     modified = true;
                 }
                 else if (switch_left) {
-                    resolve_name_conflicts (L(p), p->sem.type.res);
+                    resolve_name_conflict (L(p), p->sem.type.res);
                     *p = *(thetajoin_opt (type (LL(p),
                                                 p->sem.type.res,
                                                 p->sem.type.att,
@@ -1417,7 +1535,7 @@ opt_mvd (PFla_op_t *p)
                     modified = true;
                 }
                 else if (switch_right) {
-                    resolve_name_conflicts (L(p), p->sem.type.res);
+                    resolve_name_conflict (L(p), p->sem.type.res);
                     *p = *(thetajoin_opt (LL(p),
                                           type (LR(p),
                                                 p->sem.type.res,
@@ -1473,7 +1591,7 @@ opt_mvd (PFla_op_t *p)
                 bool switch_right = PFprop_ocol (LR(p), p->sem.type.att);
 
                 if (switch_left && switch_right) {
-                    resolve_name_conflicts (L(p), p->sem.type.res);
+                    resolve_name_conflict (L(p), p->sem.type.res);
                     *p = *(thetajoin_opt (cast (LL(p),
                                                 p->sem.type.res,
                                                 p->sem.type.att,
@@ -1486,7 +1604,7 @@ opt_mvd (PFla_op_t *p)
                     modified = true;
                 }
                 else if (switch_left) {
-                    resolve_name_conflicts (L(p), p->sem.type.res);
+                    resolve_name_conflict (L(p), p->sem.type.res);
                     *p = *(thetajoin_opt (cast (LL(p),
                                                 p->sem.type.res,
                                                 p->sem.type.att,
@@ -1496,7 +1614,7 @@ opt_mvd (PFla_op_t *p)
                     modified = true;
                 }
                 else if (switch_right) {
-                    resolve_name_conflicts (L(p), p->sem.type.res);
+                    resolve_name_conflict (L(p), p->sem.type.res);
                     *p = *(thetajoin_opt (LL(p),
                                           cast (LR(p),
                                                 p->sem.type.res,
@@ -1518,7 +1636,7 @@ opt_mvd (PFla_op_t *p)
                 bool switch_right = PFprop_ocol (RR(p), p->sem.step.item);
 
                 if (switch_left && switch_right) {
-                    resolve_name_conflicts (R(p), p->sem.step.item_res);
+                    resolve_name_conflict (R(p), p->sem.step.item_res);
                     *p = *(thetajoin_opt (step_join (
                                                 L(p),
                                                 RL(p),
@@ -1539,7 +1657,7 @@ opt_mvd (PFla_op_t *p)
                     modified = true;
                 }
                 else if (switch_left) {
-                    resolve_name_conflicts (R(p), p->sem.step.item_res);
+                    resolve_name_conflict (R(p), p->sem.step.item_res);
                     *p = *(thetajoin_opt (step_join (
                                                 L(p), RL(p),
                                                 p->sem.step.axis,
@@ -1552,7 +1670,7 @@ opt_mvd (PFla_op_t *p)
                     modified = true;
                 }
                 else if (switch_right) {
-                    resolve_name_conflicts (R(p), p->sem.step.item_res);
+                    resolve_name_conflict (R(p), p->sem.step.item_res);
                     *p = *(thetajoin_opt (RL(p),
                                           step_join (
                                                 L(p),
@@ -1574,7 +1692,7 @@ opt_mvd (PFla_op_t *p)
                 bool switch_right = PFprop_ocol (RR(p), p->sem.step.item);
 
                 if (switch_left && switch_right) {
-                    resolve_name_conflicts (R(p), p->sem.step.item_res);
+                    resolve_name_conflict (R(p), p->sem.step.item_res);
                     *p = *(thetajoin_opt (guide_step_join (
                                                 L(p),
                                                 RL(p),
@@ -1599,7 +1717,7 @@ opt_mvd (PFla_op_t *p)
                     modified = true;
                 }
                 else if (switch_left) {
-                    resolve_name_conflicts (R(p), p->sem.step.item_res);
+                    resolve_name_conflict (R(p), p->sem.step.item_res);
                     *p = *(thetajoin_opt (guide_step_join (
                                                 L(p), RL(p),
                                                 p->sem.step.axis,
@@ -1614,7 +1732,7 @@ opt_mvd (PFla_op_t *p)
                     modified = true;
                 }
                 else if (switch_right) {
-                    resolve_name_conflicts (R(p), p->sem.step.item_res);
+                    resolve_name_conflict (R(p), p->sem.step.item_res);
                     *p = *(thetajoin_opt (RL(p),
                                           guide_step_join (
                                                 L(p),
@@ -1641,7 +1759,7 @@ opt_mvd (PFla_op_t *p)
                                PFprop_ocol (RR(p), p->sem.doc_join.item_doc);
 
                 if (switch_left && switch_right) {
-                    resolve_name_conflicts (R(p), p->sem.doc_join.item_res);
+                    resolve_name_conflict (R(p), p->sem.doc_join.item_res);
                     *p = *(thetajoin_opt (doc_index_join (
                                                 L(p),
                                                 RL(p),
@@ -1660,7 +1778,7 @@ opt_mvd (PFla_op_t *p)
                     modified = true;
                 }
                 else if (switch_left) {
-                    resolve_name_conflicts (R(p), p->sem.doc_join.item_res);
+                    resolve_name_conflict (R(p), p->sem.doc_join.item_res);
                     *p = *(thetajoin_opt (doc_index_join (
                                                 L(p), RL(p),
                                                 p->sem.doc_join.kind,
@@ -1672,7 +1790,7 @@ opt_mvd (PFla_op_t *p)
                     modified = true;
                 }
                 else if (switch_right) {
-                    resolve_name_conflicts (R(p), p->sem.doc_join.item_res);
+                    resolve_name_conflict (R(p), p->sem.doc_join.item_res);
                     *p = *(thetajoin_opt (RL(p),
                                           doc_index_join (
                                                 L(p),
@@ -1696,7 +1814,7 @@ opt_mvd (PFla_op_t *p)
                 bool switch_right = PFprop_ocol (RR(p), p->sem.doc_access.att);
 
                 if (switch_left && switch_right) {
-                    resolve_name_conflicts (R(p), p->sem.doc_access.res);
+                    resolve_name_conflict (R(p), p->sem.doc_access.res);
                     *p = *(thetajoin_opt (doc_access (L(p), RL(p),
                                                 p->sem.doc_access.res,
                                                 p->sem.doc_access.att,
@@ -1709,7 +1827,7 @@ opt_mvd (PFla_op_t *p)
                     modified = true;
                 }
                 else if (switch_left) {
-                    resolve_name_conflicts (R(p), p->sem.doc_access.res);
+                    resolve_name_conflict (R(p), p->sem.doc_access.res);
                     *p = *(thetajoin_opt (doc_access (L(p), RL(p),
                                                 p->sem.doc_access.res,
                                                 p->sem.doc_access.att,
@@ -1719,7 +1837,7 @@ opt_mvd (PFla_op_t *p)
                     modified = true;
                 }
                 else if (switch_right) {
-                    resolve_name_conflicts (R(p), p->sem.doc_access.res);
+                    resolve_name_conflict (R(p), p->sem.doc_access.res);
                     *p = *(thetajoin_opt (RL(p),
                                           doc_access (L(p), RR(p),
                                                 p->sem.doc_access.res,
