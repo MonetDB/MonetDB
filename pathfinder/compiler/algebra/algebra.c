@@ -942,11 +942,11 @@ PFatt_str (PFalg_att_t att) {
         case att_cast:    return "cast";
         case att_item2:   return "item2";
         case att_item3:   return "item3";
-        case att_subty:   return "item3";
-        case att_itemty:  return "item4";
-        case att_notsub:  return "item5";
-        case att_isint:   return "item6";
-        case att_isdec:   return "item7";
+        case att_subty:   return "item4";
+        case att_itemty:  return "item5";
+        case att_notsub:  return "item6";
+        case att_isint:   return "item7";
+        case att_isdec:   return "item8";
         default:
             if (att & (1 << 3)) {
                 unsigned int id = att >> 4;
