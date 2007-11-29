@@ -21,17 +21,8 @@
 AC_PREREQ(2.59)
 AC_INIT([MonetDB Java], [1.7.1], [monet@cwi.nl], [java])
 AC_CONFIG_AUX_DIR(conf)
-AC_CANONICAL_HOST
-AC_CANONICAL_TARGET
 AM_INIT_AUTOMAKE
 AM_CONFIG_HEADER([monetdb_java_config.h])
-
-HOST=[$target]
-AC_DEFINE_UNQUOTED(HOST, "$HOST", [Host identifier])
-
-if test x"$target_os" = xcygwin; then
-	AC_DEFINE(WIN32, 1, [Define on MS Windows (also under Cygwin)])
-fi
 
 # MONETDB_JAVA_BUILD and MONETDB_JAVA_SOURCE are *only* used for monetdb-java-config
 # MONETDB_JAVA_SOURCE is the absolute path name of the source directory
@@ -64,8 +55,6 @@ AC_CHECK_PROGS(RPMBUILD,rpmbuild rpm)
 
 dnl provide different versions of the paths derived above
 AM_MONETDB_XQ_VARS_2()
-AC_DEFINE_UNQUOTED(MONETDB_JAVA_PREFIX,"$QXprefix",[architecture-independent files])
-AC_DEFINE_UNQUOTED(MONETDB_JAVA_EXEC_PREFIX,"$QXexec_prefix",[architecture-dependent files])
 QMONETDB_JAVA_BUILD="$MONETDB_JAVA_BUILD"
 XMONETDB_JAVA_BUILD="`$translatepath "$MONETDB_JAVA_BUILD"`"
 QXMONETDB_JAVA_BUILD="`echo "$XMONETDB_JAVA_BUILD" | sed 's/\\\\/\\\\\\\\/g'`"
