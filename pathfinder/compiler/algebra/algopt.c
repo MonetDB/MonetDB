@@ -109,6 +109,8 @@ PFalgopt (PFla_op_t *root, bool timing, PFguide_tree_t* guide_tree)
         fprintf (stderr, "-o");
 
     while (*args) {
+        root = PFla_cse (root);
+
         if (debug_opt)
             fputc (*args, stderr);
 
@@ -449,7 +451,6 @@ PFalgopt (PFla_op_t *root, bool timing, PFguide_tree_t* guide_tree)
                 break;
         }
         args++;
-        root = PFla_cse (root);
     }
     if (debug_opt)
         fputc ('\n', stderr);
