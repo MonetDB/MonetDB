@@ -1290,13 +1290,14 @@ timestamp_fromstr(str buf, int *len, timestamp **ret)
 	}
 	d = &(*ret)->days;
 	t = &(*ret)->msecs;
+	(*ret)->msecs = 0;
 	s += date_fromstr(buf, len, &d);
 	if (s > buf && (*(s) == '@' || *s == ' ' || *s == '-')) {
 		while (*(++s) == ' ')
 			;
 		pos = daytime_fromstr(s, len, &t);
 		s = pos ? s + pos : buf;
-	} else {
+	} else if (!s || *s) {
 		(*ret)->msecs = daytime_nil;
 	}
 	if (s <= buf || (*ret)->days == date_nil || (*ret)->msecs == daytime_nil) {
