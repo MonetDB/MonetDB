@@ -633,9 +633,10 @@ prepareSaveBox(Box box, str *boxfile, str *boxfilebak)
 		showException(MAL, "box.saveBox", "can not determine box file");
 		return 0;
 	}
-	if (access(*boxfile,R_OK)==0 && rename(*boxfile, *boxfilebak)) {
+	if (access(*boxfile,R_OK)==0 &&
+		(unlink(*boxfilebak), rename(*boxfile, *boxfilebak) < 0)) {
 #ifdef DEBUG_MAL_BOX
-		stream_printf(GDKout, "saveBox:can not rename %s\n", boxfile);
+		stream_printf(GDKout, "saveBox:can not rename %s to %s\n", *boxfile, *boxfilebak);
 #endif
 		showException(MAL,"box.saveBox", "can not rename backup");
 		GDKfree(*boxfile); *boxfile = NULL;

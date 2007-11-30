@@ -113,7 +113,7 @@ on linking in a portable library, e.g. libxml2 ?
 typedef str xml;
 
 #ifdef WIN32
-#ifndef LIBURL
+#ifndef LIBXML
 #define xml_export extern __declspec(dllimport)
 #else
 #define xml_export extern __declspec(dllexport)
