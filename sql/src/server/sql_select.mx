@@ -3304,6 +3304,12 @@ sql_logical_exp_(mvc *sql, scope *scp, symbol *sc, group *grp, stmt *subset, int
 					isnul = sql_bind_func_result(sql->session->schema, "isnull", tp, NULL, bt);
 					return stmt_unop(stmt_outerjoin(ls, stmt_reverse(temp), cmp_equal), isnul);
 				} else {	/* normal subquery */
+					/* NULL not IN null isn't possible */
+					if (stmt_has_null(ls)) {
+						sql_subtype *t = tail_type(ls);
+						stmt *n = stmt_atom(atom_general(t, NULL, 0));
+						ls = stmt_select2(ls, n, stmt_dup(n), 0);
+					}
 					return stmt_diff(stmt_dup(ls), stmt_join(ls, stmt_reverse(temp), cmp_equal));
 				}
 			}

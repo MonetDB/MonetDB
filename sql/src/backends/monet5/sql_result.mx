@@ -291,7 +291,7 @@ bat_max_@1length(BAT *b)
 @:bat_max_xlength(lng)@
 
 @= dec_frstr
-	sql_subtype *t = (sql_subtype*)extra;
+	sql_subtype *t = &df->col->type;
 
 	unsigned int i, neg = 0;
 	char *p = s;
@@ -347,13 +347,27 @@ bat_max_@1length(BAT *b)
 	return (ptr*)r;
 @c
 
+typedef struct dec_format {
+	sql_column *col;
+	Column *ai;
+} dec_format;
+
 ptr *
 dec_frstr(void *extra, int type, char *s, char *e, char quote)
 {
 	/* support dec map to bte, sht, int and lng */
+	dec_format *df = extra;
+
 	(void) e;
-	(void) quote;
-	if (type == TYPE_bte) {
+	if (s == NULL || (!quote && 
+			(s[0] == 'N' || s[0] == 'n') &&
+			(s[1] == 'U' || s[1] == 'u') &&
+			(s[2] == 'L' || s[2] == 'l') &&
+			(s[3] == 'L' || s[3] == 'l') &&
+			(s[4] == 0))) { 
+        	memcpy(df->ai->data, ATOMnilptr(type), df->ai->nillen);
+		return df->ai->data;
+	} else if (type == TYPE_bte) {
 		@:dec_frstr(bte)@
 	} else if (type == TYPE_sht) {
 		@:dec_frstr(sht)@
@@ -463,11 +477,13 @@ mvc_import_table(mvc *m, bstream *bs, char *tname, char *sep, char *rsep, int sz
 	rsep = coerce(rsep);
 	if (t->columns.set) {
 		stream *out = m->scanner.ws;
+		dec_format *dec;
 
 		as.nr_attrs = list_length(t->columns.set);
 		as.nr = sz;
 		as.error = NULL;
 		fmt = as.format = (Column *) GDKmalloc(sizeof(Column) * (as.nr_attrs + 1));
+		dec = (dec_format*) GDKmalloc(sizeof(dec_format) * (as.nr_attrs + 1));
 
 		if (!isa_block_stream(bs->s))
 			 out = NULL;
@@ -491,7 +507,9 @@ mvc_import_table(mvc *m, bstream *bs, char *tname, char *sep, char *rsep, int sz
 			if (col->type.type->eclass == EC_DEC) {
 				fmt[i].tostr = &dec_tostr;
 				fmt[i].frstr = &dec_frstr;
-				fmt[i].extra = &col->type;
+				fmt[i].extra = dec+i;
+				dec[i].col = col;
+				dec[i].ai = fmt+i;
 			}
 		}
 		if (TABLETcreate_bats(&as, (sz<0)?1000:sz) >= 0) {
@@ -500,6 +518,7 @@ mvc_import_table(mvc *m, bstream *bs, char *tname, char *sep, char *rsep, int sz
 		}
 		if (as.error)
 			showException(SQL, "sql", as.error);
+		GDKfree(dec);
 		TABLETdestroy_format(&as);
 	}
 	_DELETE(sep);

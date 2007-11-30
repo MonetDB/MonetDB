@@ -2293,7 +2293,7 @@ stmt_has_null( stmt *s )
 	case st_binop:
 		return stmt_has_null(s->op1.stval) + stmt_has_null(s->op2.stval);
 	case st_bat:
-		return !s->op1.cval->null;
+		return s->op1.cval->null;
 
 	default:
 		return 1;

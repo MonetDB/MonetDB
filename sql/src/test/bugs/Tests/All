@@ -74,3 +74,5 @@ dbl_sht_cast_bug
 leftjoinbug
 offset_bug
 scalar_and_predicate_bug
+decimal_copy_into_bug
+not_in_null_bug
