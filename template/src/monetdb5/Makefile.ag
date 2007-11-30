@@ -23,8 +23,8 @@ lib__example = {
 	LIBS = $(MONETDB5_MODS) 
 }
 
-headers_mil = {
-	HEADERS = mil
+headers_mal = {
+	HEADERS = mal
 	DIR = libdir/MonetDB5
 	SOURCES = example.mx
 }

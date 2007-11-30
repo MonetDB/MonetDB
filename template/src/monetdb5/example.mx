@@ -75,4 +75,5 @@ hello(str *res, str *arg0)
 }
 
 @mal
-io.print(hello("world"));
+x:=example.hello("world");
+io.print(x);
