@@ -60,8 +60,8 @@ def Thing2Str(s, d):
     return str(s)
 
 def Unicode2Str(s, d):
-    """Convert a unicode object to a string using latin1 encoding."""
-    return s.encode('latin')
+    """Convert a unicode object to a string using utf-8 encoding."""
+    return s.encode('utf-8')
 
 # Python 1.5.2 compatibility hack
 if str(0L)[-1]=='L':
@@ -140,12 +140,16 @@ conversions = {
 
     # Monet SQL -> Python
     "varchar": str,
+    "tinyint": int,
     "shortint": int,
     "mediumint": int,
+    "bigint": long,
     "longint": long,
     "boolean": str2bool,
+    "decimal": float,
     "float": float,
     "double": float,
+    "real": float,
     "blob": str2blob,
     # timestamp types
     "date": times.fromDate,
@@ -154,10 +158,10 @@ conversions = {
 
     # Monet MIL -> Python
     "str": str,
+    "bte": int,
+    "sht": int,
     "int": int,
     "lng": long,
-    "sht": int,
-    "bte": int,
     "wrd": long,
     "bit": bool,
     "chr": str,
