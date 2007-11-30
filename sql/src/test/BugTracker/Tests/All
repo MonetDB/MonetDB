@@ -87,3 +87,4 @@ select_mod.SF-1838813
 insert_date.SF-1838785
 variable_names.SF-1838816
 timestamp_default_time.SF-1841191
+select_with_coalesce.SF-1841734
