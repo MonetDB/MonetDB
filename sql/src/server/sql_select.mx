@@ -627,7 +627,7 @@ sql_case(mvc *sql, scope *scp, int token, symbol *opt_cond, dlist *when_search_l
 		if (token == SQL_COALESCE) {
 			cond = sql_value_exp(sql, scp, dn->data.sym, grp, subset, f, ek);
 
-			if (cond && subset->nrcols && cond->nrcols == 0)
+			if (cond && subset && subset->nrcols && cond->nrcols == 0)
 				cond = stmt_const(first_subset(subset), cond);
 			if (cond) {
 				sql_subtype *bt = sql_bind_localtype("bit");
