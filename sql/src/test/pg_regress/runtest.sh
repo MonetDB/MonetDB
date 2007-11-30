@@ -30,7 +30,7 @@ else
 	exit -1
 fi
 
-jdbcclient="java -jar ${monetdir}/share/MonetDB/lib/MonetDB_JDBC.jar -e"
+jdbcclient="java -jar ${monetdir}/share/MonetDB/lib/jdbcclient.jar -e"
 
 if [ "$1" == "" ];
 then
