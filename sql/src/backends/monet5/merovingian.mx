@@ -466,12 +466,6 @@ forkMserver(str database, sabdb** stats, int force)
 		/* we don't use stdin, neither should mserver ... */
 		close(0);
 
-		/* gdk has a bug that unsets the caller's umask, we can work
-		 * around it by setting "gdk_dont_unset_umask" in the
-		 * environment, always overwrite, as a user shouldn't mess
-		 * with this here */
-		setenv("gdk_dont_unset_umask", "yesplease", 1);
-
 		/* ok, now exec that mserver we want */
 		snprintf(dbname, 511, "--dbname=%s", database);
 		snprintf(vaultkey, 511, "monet_vault_key=%s/.vaultkey", (*stats)->path);
