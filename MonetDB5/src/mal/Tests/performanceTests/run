@@ -1,0 +1,15 @@
+#!/bin/bash
+
+iter=5
+tsts="base tst400a tst400bHuge tst400cHuge tst400d tst400e tst901a tst901b"
+
+TIMEFORMAT='%3lR/%3lU/%3lS'.
+
+for t in $tsts; do 
+	i=0;
+	while [ $i -lt $iter ]; do
+		i=$[$i + 1];
+		echo -n "$t:	"
+		time mserver5 -c perf.conf $t.mal </dev/null >$t.out 2>$t.err
+	done
+done
