@@ -28,8 +28,8 @@ Over..
 # 22:24:36 >  sqlsample.py 33515 mTests_src_test_mapi
 # 22:24:36 >  
 
-[('1',)]
-('2',)
+[(1,)]
+(2,)
 !syntax error, unexpected IDENT, expecting SELECT or '(' in: "( xyz"
 
 [('3', 'three'), ('7', 'seven')]
