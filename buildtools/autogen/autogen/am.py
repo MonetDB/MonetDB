@@ -392,7 +392,6 @@ def am_headers(fd, var, headers, am):
             if s in headers['SOURCES']:
                 deps.append(d)
                 break
-    print am['CWD'], var, deps
     for header in uniq(headers['TARGETS'] + deps):
         h, ext = split_filename(header)
         if ext not in hdrs_ext:
