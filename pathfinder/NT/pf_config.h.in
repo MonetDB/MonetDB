@@ -25,19 +25,19 @@
 #define VERSION "@VERSION@"
 
 /* architecture-dependent files */
-#define MONETDB_EXEC_PREFIX "${prefix}"
+#define PATHFINDER_EXEC_PREFIX "${prefix}"
 
 /* object code libraries */
-#define MONETDB_LIBDIR "${exec_prefix}\\lib"
+#define PATHFINDER_LIBDIR "${exec_prefix}\\lib"
 
 /* modifiable single-machine data */
-#define MONETDB_LOCALSTATEDIR "${prefix}\\var"
+#define PATHFINDER_LOCALSTATEDIR "${prefix}\\var"
 
 /* architecture-independent files */
-#define MONETDB_PREFIX "@QXprefix@"
+#define PATHFINDER_PREFIX "@QXprefix@"
 
 /* read-only single-machine data */
-#define MONETDB_SYSCONFDIR "${prefix}\\etc"
+#define PATHFINDER_SYSCONFDIR "${prefix}\\etc"
 
 /* Intel compiler for windows does not know __attribute__() */
 #define __attribute__(x)

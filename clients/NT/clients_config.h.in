@@ -35,19 +35,19 @@
 /* #undef HAVE_SYS_IOCTL_H */
 
 /* architecture-dependent files */
-#define MONETDB_EXEC_PREFIX "${prefix}"
+#define CLIENTS_EXEC_PREFIX "${prefix}"
 
 /* object code libraries */
-#define MONETDB_LIBDIR "${exec_prefix}\\lib"
+#define CLIENTS_LIBDIR "${exec_prefix}\\lib"
 
 /* modifiable single-machine data */
-#define MONETDB_LOCALSTATEDIR "${prefix}\\var"
+#define CLIENTS_LOCALSTATEDIR "${prefix}\\var"
 
 /* architecture-independent files */
-#define MONETDB_PREFIX "@QXprefix@"
+#define CLIENTS_PREFIX "@QXprefix@"
 
 /* read-only single-machine data */
-#define MONETDB_SYSCONFDIR "${prefix}\\etc"
+#define CLIENTS_SYSCONFDIR "${prefix}\\etc"
 
 /* Version number of package */
 #define VERSION "@VERSION@"
