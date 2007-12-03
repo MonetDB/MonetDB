@@ -1039,7 +1039,7 @@ MT_heapcur(void)
 void *
 MT_mmap_open(MT_mmap_hdl *hdl, char *path, int mode, off_t off, size_t len, size_t nremaps)
 {
-	int fd = open(path, O_CREAT | ((mode & MMAP_WRITE) ? O_RDWR : O_RDONLY), 0664);
+	int fd = open(path, O_CREAT | ((mode & MMAP_WRITE) ? O_RDWR : O_RDONLY), MONETDB_MODE);
 	void *ret = (void *) -1L;
 
 	(void) nremaps;
@@ -1928,7 +1928,7 @@ win_errno(void)
 #else
 #define MMAP_FLAGS(f)		f
 #define MMAP_FD			fd
-#define MMAP_OPEN_DEV_ZERO	int fd = open("/dev/zero", O_RDWR, 0666)
+#define MMAP_OPEN_DEV_ZERO	int fd = open("/dev/zero", O_RDWR, MONETDB_MODE)
 #define MMAP_CLOSE_DEV_ZERO	close(fd)
 #endif
 
@@ -2035,7 +2035,7 @@ lockf(int fd, int cmd, off_t len)
 int
 MT_lockf(char *filename, int mode, off_t off, off_t len)
 {
-	int fd = open(filename, O_CREAT | O_RDWR, 0662);
+	int fd = open(filename, O_CREAT | O_RDWR, MONETDB_MODE);
 
 	if (fd < 0)
 		return -2;
@@ -2198,7 +2198,7 @@ MT_lockf(char *filename, int mode, off_t off, off_t len)
 		SetLastError(ERROR_INVALID_DATA);
 	}
 	if (ret != 0) {
-		fd = open(filename, O_CREAT | O_RDWR, 0662);
+		fd = open(filename, O_CREAT | O_RDWR, MONETDB_MODE);
 		if (fd < 0) {
 			/* this is nasty, but I "trust" windows that it in this case
 			 * also cannot open the file into a filehandle any more, so

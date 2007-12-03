@@ -2323,6 +2323,8 @@ gdk_export int GDKerrorCount(void);
 #define strdup _strdup
 #endif
 
+#define MONETDB_MODE  S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH
+
 #define BBP_BATMASK     511
 #define BBP_THREADMASK   63
 

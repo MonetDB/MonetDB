@@ -160,14 +160,14 @@ GDKfdlocate(str nme, str mode, str extension)
 #ifdef WIN32
 	flags |= strchr(mode, 'b') ? O_BINARY : O_TEXT;
 #endif
-	fd = open(path, flags, 0644);
+	fd = open(path, flags, MONETDB_MODE);
 	if (fd < 0 && *mode == 'w') {
 		/* try to create the directory, if that was the problem */
 		char tmp[PATHLENGTH];
 
 		strcpy(tmp, buf);
 		if (GDKcreatedir(tmp)) {
-			fd = open(path, flags, 0644);
+			fd = open(path, flags, MONETDB_MODE);
 		}
 	}
 	return fd;
