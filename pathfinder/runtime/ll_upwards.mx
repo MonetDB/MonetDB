@@ -549,6 +549,11 @@ ll_upwards(               /* RESULT: */
     if (status == GDK_SUCCEED) {
         BATsetcount(bn, m);
         bn->hsorted = 1;
+        if (BATcount(bn) == BATcount(iter_bat)) {
+            bn->hdense = BATtdense(iter_bat);
+            BATseqbase(bn, iter_bat->tseqbase);
+            BATkey(bn, iter_bat->tkey);
+        }
         bn->tsorted = 0;
         if (niters == 1) {
             bn->tsorted = 1;
