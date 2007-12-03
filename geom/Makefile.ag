@@ -18,7 +18,11 @@ SUBDIRS = conf src
 
 EXTRA_DIST = RunMtest.in RunMapprove.in rpm.mk.in
 
-EXTRA_HEADERS = geom_config.h
+headers_h = {
+	HEADERS = h
+	SOURCES = geom_config.h
+	DIR = includedir/geom
+}
 
 TESTS = RunMtest
 TESTS_ENVIRONMENT = $(SHELL)
