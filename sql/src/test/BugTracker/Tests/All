@@ -88,3 +88,8 @@ insert_date.SF-1838785
 variable_names.SF-1838816
 timestamp_default_time.SF-1841191
 select_with_coalesce.SF-1841734
+full_join_crash.SF-1841754
+insert_text_with_repeat.SF-1841759
+creation_of_exeception_for_select.SF-1841749
+pkey_in_temp_table.SF-1841727
+copy_overflow_null_bug.SF-1842550

@@ -24,4 +24,6 @@ LIMIT 3 OFFSET 2;
 SELECT query_users.user_id, query_users.user_name
 FROM query_users LIMIT 3 OFFSET 2;
 
+select * from query_users OFFSET 2;
+
 drop table query_users;

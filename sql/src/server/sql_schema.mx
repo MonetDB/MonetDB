@@ -964,6 +964,11 @@ column_constraint_type(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_tabl
 				key_type kt = (s->token == SQL_UNIQUE) ? ukey : pkey;
 				sql_key *k;
 
+				if (isTempTable(t)) {
+					(void) sql_error(sql, 02, "CONSTRAINT: constraints on temporary tables are not supported\n");
+					return res;
+				}
+
 				if (kt == pkey && t->pkey) {
 					(void) sql_error(sql, 02, "CONSTRAINT PRIMARY KEY: a table can have only one PRIMARY KEY\n");
 					return res;
@@ -992,11 +997,16 @@ column_constraint_type(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_tabl
 				dnode *n = s->data.lval->h;
 				char *rtname = qname_table(n->data.lval);
 				int ref_actions = n->next->next->next->data.ival; 
+				sql_table *rt;
 				sql_fkey *fk;
 				list *cols;
-				sql_table *rt = mvc_bind_table(sql, cur_schema(sql), rtname);
 				sql_key *rk = NULL;
 
+				if (isTempTable(t)) {
+					(void) sql_error(sql, 02, "CONSTRAINT: constraints on temporary tables are not supported\n");
+					return res;
+				}
+				rt = mvc_bind_table(sql, cur_schema(sql), rtname);
 				if (!rt) {
 					(void) sql_error(sql, 02, "CONSTRAINT FOREIGN KEY: no such table table '%s'\n", rtname);
 					return res;
@@ -1005,7 +1015,6 @@ column_constraint_type(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_tabl
 					(void) sql_error(sql, 02, "CONSTRAINT PRIMARY KEY: key %s already exists", name);
 					return res;
 				}
-
 
 				/* find unique referenced key */
 				if (n->next->data.lval) {	
@@ -1367,6 +1376,8 @@ table_constraint_type(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_table
 	if (!isTable(t)) {
 		return sql_error(sql, 02, "ALTER TABLE: cannot add constraint to VIEW '%s'\n", t->base.name);
 	}
+	if (isTempTable(t))
+		return sql_error(sql, 02, "CONSTRAINT: constraints on temporary tables are not supported\n");
 	switch (s->token) {
 		case SQL_UNIQUE:
 		case SQL_PRIMARY_KEY:

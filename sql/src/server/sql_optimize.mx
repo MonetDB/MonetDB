@@ -782,7 +782,6 @@ push_selects_down(mvc *c, list *con)
 		for(jn = ejoins->h; jn; jn = jn->next) {
 			stmt *j = jn->data;
 
-			assert(j->op2.stval->type==st_reverse);
 			if (j->t == join->h && j->type == st_join) {
 				stmt *jh = stmt_dup(j->op2.stval->op1.stval);
 				stmt *jt = stmt_reverse(stmt_dup(j->op1.stval));

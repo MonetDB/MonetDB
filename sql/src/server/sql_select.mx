@@ -1840,6 +1840,78 @@ join_on_column_name(mvc *sql, scope *scp, tvar *tv, tvar *r, int all)
 	return res;
 }
 
+static stmt *
+set2table( mvc *sql, scope *scp, stmt *s) 
+{
+	stmt *cur = NULL, *t = NULL;
+	int pending = 0;
+	node *n;
+
+	for (n = scp->tables->h; n; n = n->next) {
+		tvar *v = n->data;
+		stmt *tmp = complex_find_subset(s, v->s);
+
+		if (!tmp) {
+			cvar *cv = v->columns->h->data;
+
+			tmp = stmt_dup(cv->s);
+			pending = 1;
+			/* just add a select whole column */
+			if (!cur) {
+				cur = tmp;
+				continue;
+			}
+		} else if (!cur) {
+			cur = tmp;
+			continue;
+		}
+		if (pending) {
+			pending = 0;
+			tmp = stmt_join(stmt_dup(cur), 
+					stmt_reverse(tmp), cmp_all);
+			s = sql_and(sql, scp, s, tmp, sql_where);
+		} else if (tmp) {
+			stmt_destroy(tmp);
+		}
+	}
+			/* just add a select whole column */
+	for (n = scp->outers->h; n; n = n->next) {
+		stmt *o = n->data;
+		stmt *tmp = complex_find_subset(s, o);
+
+		if (!tmp) {
+			tmp = stmt_column(stmt_const(stmt_dup(o), stmt_atom_int(0)), stmt_dup(o), NULL);
+			pending = 1;
+			if (!cur) {
+				cur = tmp;
+				continue;
+			}
+		} else if (!cur) {
+			cur = tmp;
+			continue;
+		}
+		if (pending) {
+			pending = 0;
+			tmp = stmt_join(stmt_dup(cur), 
+					stmt_reverse(tmp), cmp_all);
+			if (s)
+				s = sql_and(sql, scp, s, tmp, sql_where);
+			else
+				s = stmt_set(tmp);
+		} else if (tmp) {
+			stmt_destroy(tmp);
+		}
+	}
+	if (!cur)
+		return s;
+	if ((t = scope_bind(scp, NULL, "row")) != NULL && t->nrcols == 0) {
+		t = stmt_join(stmt_dup(cur), stmt_reverse(t), cmp_all);
+		s = sql_and(sql, scp, s, t, sql_where);
+	}
+	stmt_destroy(cur);
+	return s;
+}
+
 
 static stmt *
 sql_join_(mvc *sql, scope *scp, symbol *tab1, int natural, jt jointype, symbol *tab2, symbol *js)
@@ -1924,9 +1996,10 @@ sql_join_(mvc *sql, scope *scp, symbol *tab1, int natural, jt jointype, symbol *
 		list_destroy(matching_columns);
 	}
 
-	if (s) {
+	if (s && s->type != st_set && s->type != st_sets) 
+		s = stmt_set(s);
+	if (s && (s = set2table(sql, scp, s)) != NULL)
 		s = stmt2pivot(scp, s);
-	}
 	subset = s;
 	if (subset) {
 		list *l1;
@@ -3660,78 +3733,6 @@ sql_simple_select(mvc *sql, scope *scp, SelectNode *sn )
 }
 
 static stmt *
-set2table( mvc *sql, scope *scp, stmt *s) 
-{
-	stmt *cur = NULL, *t = NULL;
-	int pending = 0;
-	node *n;
-
-	for (n = scp->tables->h; n; n = n->next) {
-		tvar *v = n->data;
-		stmt *tmp = complex_find_subset(s, v->s);
-
-		if (!tmp) {
-			cvar *cv = v->columns->h->data;
-
-			tmp = stmt_dup(cv->s);
-			pending = 1;
-			/* just add a select whole column */
-			if (!cur) {
-				cur = tmp;
-				continue;
-			}
-		} else if (!cur) {
-			cur = tmp;
-			continue;
-		}
-		if (pending) {
-			pending = 0;
-			tmp = stmt_join(stmt_dup(cur), 
-					stmt_reverse(tmp), cmp_all);
-			s = sql_and(sql, scp, s, tmp, sql_where);
-		} else if (tmp) {
-			stmt_destroy(tmp);
-		}
-	}
-			/* just add a select whole column */
-	for (n = scp->outers->h; n; n = n->next) {
-		stmt *o = n->data;
-		stmt *tmp = complex_find_subset(s, o);
-
-		if (!tmp) {
-			tmp = stmt_column(stmt_const(stmt_dup(o), stmt_atom_int(0)), stmt_dup(o), NULL);
-			pending = 1;
-			if (!cur) {
-				cur = tmp;
-				continue;
-			}
-		} else if (!cur) {
-			cur = tmp;
-			continue;
-		}
-		if (pending) {
-			pending = 0;
-			tmp = stmt_join(stmt_dup(cur), 
-					stmt_reverse(tmp), cmp_all);
-			if (s)
-				s = sql_and(sql, scp, s, tmp, sql_where);
-			else
-				s = stmt_set(tmp);
-		} else if (tmp) {
-			stmt_destroy(tmp);
-		}
-	}
-	if (!cur)
-		return s;
-	if ((t = scope_bind(scp, NULL, "row")) != NULL && t->nrcols == 0) {
-		t = stmt_join(stmt_dup(cur), stmt_reverse(t), cmp_all);
-		s = sql_and(sql, scp, s, t, sql_where);
-	}
-	stmt_destroy(cur);
-	return s;
-}
-
-static stmt *
 sets2table( mvc *sql, scope *scp , stmt *s ) 
 {
 	list *l = s->op1.lval, *nl = list_create((fdestroy) &list_destroy);
@@ -4078,15 +4079,25 @@ sql_select(mvc *sql, scope *scp, SelectNode *sn, exp_kind ek)
 
 	sql_select_cleanup(sql, NULL, subset, grp);
 
-	if (sn->limit >= 0) {
+	if (sn->limit >= 0 || sn->offset > 0) {
 		int offset = (sn->offset >=0)?sn->offset:0;
+		int limit = sn->limit;
+
+		if (limit < 0) {
+			limit = sn->offset;
+			offset = 0;
+		}
+	
 		if (order) {
 			node *n;
 			list *l = create_stmt_list();
 
-			order = stmt_limit(order, offset, sn->limit, 0);
+			order = stmt_limit(order, offset, limit, 0);
 			for (n = s->op1.lval->h; n; n = n->next)
-				list_append(l, stmt_semijoin(stmt_dup(n->data), stmt_dup(order)));
+				if (sn->limit < 0)
+					list_append(l, stmt_diff(stmt_dup(n->data), stmt_dup(order)));
+				else
+					list_append(l, stmt_semijoin(stmt_dup(n->data), stmt_dup(order)));
 			stmt_destroy(s);
 			s = stmt_list(l);
 		} else {
@@ -4095,10 +4106,16 @@ sql_select(mvc *sql, scope *scp, SelectNode *sn, exp_kind ek)
 			list *l = create_stmt_list();
 
 			if (n) {
-				stmt *limit = stmt_limit(stmt_dup(n->data), offset, sn->limit, 0);
-				list_append(l, limit);
-				for ( n = n->next; n; n = n->next)
-					list_append(l, stmt_semijoin(stmt_dup(n->data), stmt_dup(limit)));
+				stmt *lmt = stmt_limit(stmt_dup(n->data), offset, limit, 0);
+				if (sn->limit >= 0) {
+					list_append(l, lmt);
+					n = n->next;
+				}
+				for ( ; n; n = n->next)
+					if (sn->limit < 0)
+						list_append(l, stmt_diff(stmt_dup(n->data), stmt_dup(lmt)));
+					else
+						list_append(l, stmt_semijoin(stmt_dup(n->data), stmt_dup(lmt)));
 			}
 			stmt_destroy(s);
 			s = stmt_list(l);

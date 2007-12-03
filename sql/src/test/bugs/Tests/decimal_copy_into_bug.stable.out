@@ -23,11 +23,20 @@ Over..
 # 23:07:21 >  mclient -lsql -umonetdb -Pmonetdb --host=koala --port=35940 
 # 23:07:21 >  
 
-[ 2	]
+[ 3	]
 % sys.bulk,	sys.bulk,	sys.bulk,	sys.bulk # table_name
 % id,	fax,	phone,	acctnum # name
 % decimal,	decimal,	decimal,	decimal # type
 % 10,	11,	11,	8 # length
+[ 1001,	NULL,	231231234,	1001	]
+[ 1001,	NULL,	231231234,	1001	]
+[ 1002,	1234,	1231231235,	1002	]
+[ 3	]
+% sys.bulk,	sys.bulk,	sys.bulk,	sys.bulk # table_name
+% id,	fax,	phone,	acctnum # name
+% bigint,	bigint,	bigint,	bigint # type
+% 4,	4,	10,	4 # length
+[ 1001,	NULL,	231231234,	1001	]
 [ 1001,	NULL,	231231234,	1001	]
 [ 1002,	1234,	1231231235,	1002	]
 

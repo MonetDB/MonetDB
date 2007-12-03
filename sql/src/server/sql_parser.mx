@@ -2994,7 +2994,7 @@ opt_limit:
  ;
 
 opt_offset:
-	/* empty */				{ $$ = -1; }
+	/* empty */			{ $$ = -1; }
  |  OFFSET posint			{ $$ = $2; }
  ;
 

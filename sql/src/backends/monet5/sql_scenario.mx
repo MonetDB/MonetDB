@@ -583,7 +583,7 @@ System has been prepared to parse it and generate code
 		if (!err)
 			err = mvc_status(m);
 		if( m->errstr)
-			msg = createException(PARSE, "SQLparser", m->errstr);
+			msg = createException(PARSE, "SQLparser", "%s", m->errstr);
 		 else 
 			msg = createException(PARSE, "SQLparser", "Parser errors");
 		*m->errstr = 0;
@@ -605,8 +605,9 @@ We don;t search the cache for a previous incarnation yet.
 		if (!s && (err = mvc_status(m))) {
 			stream_printf(c->fdout, "%s\n", m->errstr);
 			if( m->errstr)
-				msg = createException(PARSE, "SQLparser", m->errstr);
-			else msg = createException(PARSE, "SQLparser", "Semantic errors");
+				msg = createException(PARSE, "SQLparser", "%s", m->errstr);
+			else 
+				msg = createException(PARSE, "SQLparser", "Semantic errors");
 			*m->errstr = 0;
 			sqlcleanup(m, err);
 			/* restore the state */
@@ -985,7 +986,7 @@ SQLparser(Client c)
 		if (!err && m->scanner.started) /* repeat old errors, with a parsed query */
 			err = mvc_status(m);
 		if (err) {
-			msg = createException(PARSE, "SQLparser", m->errstr);
+			msg = createException(PARSE, "SQLparser", "%s", m->errstr);
 			handle_error(m, c->fdout, pstatus);
 		}
 		sqlcleanup(m, err);
@@ -1021,7 +1022,7 @@ produce code.
 		s = sql_symbol2stmt(m, m->sym);
 
 		if (s==0 || (err = mvc_status(m))) {
-			msg = createException(PARSE, "SQLparser", m->errstr);
+			msg = createException(PARSE, "SQLparser", "%s", m->errstr);
 			handle_error(m, c->fdout, pstatus);
 			sqlcleanup(m, err);
 			goto finalize;
