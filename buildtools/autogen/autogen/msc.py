@@ -443,6 +443,16 @@ def msc_scripts(fd, var, scripts, msc):
 
 ##    msc_deps(fd, scripts['DEPS'], "\.o", msc)
 
+# return the unique elements of the argument list
+def uniq(l):
+    try:
+        return list(set(l))
+    except NameError:                   # presumably set() is unknown
+        u = {}
+        for x in l:
+            u[x] = 1
+        return u.keys()
+
 # list of headers to install
 def msc_headers(fd, var, headers, msc):
 
@@ -452,7 +462,13 @@ def msc_headers(fd, var, headers, msc):
     sd = msc_translate_dir(sd, msc)
 
     hdrs_ext = headers['HEADERS']
-    for header in headers['TARGETS']:
+    deps = []
+    for d,srcs in headers['DEPS'].items():
+        for s in srcs:
+            if s in headers['SOURCES']:
+                deps.append(d)
+                break
+    for header in uniq(headers['TARGETS'] + deps):
         h, ext = split_filename(header)
         if ext in hdrs_ext:
             if os.path.isfile(os.path.join(msc['cwd'], header+'.in')):
