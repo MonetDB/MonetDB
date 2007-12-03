@@ -20,7 +20,7 @@ INCLUDES = -I../../monet -I../plain \
 MTSAFE
 
 LIBS = {
-	DIR = pkglibdir
+	DIR = libdir/MonetDB4
 	SEP = _
 	SOURCES = \
 		bitset.mx malalgebra.mx \
@@ -30,7 +30,6 @@ LIBS = {
 		image.mx txtsim.mx
 
 		# bitvector.mx ddbench.mx iterator.mx oo7.mx qt.mx
-	HEADERS = h proto.h m
 	#SCRIPTS = mil ""
 	LIBS = $(MONETDB_LIBS) -lstream -lbat \
 		../../monet/libmonet ../plain/lib_algebra \
@@ -38,11 +37,24 @@ LIBS = {
 		$(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) $(MATH_LIBS)
 }
 
+headers_contrib = {
+	DIR = includedir/MonetDB4/contrib
+	SOURCES = \
+		bitset.mx malalgebra.mx \
+		mel.mx uchr.mx salgebra.mx vector.mx \
+		wisc.mx \
+		bat_mmath.mx bat_cast.mx array.mx color.mx \
+		image.mx txtsim.mx
+
+		# bitvector.mx ddbench.mx iterator.mx oo7.mx qt.mx
+	HEADERS = h proto.h m
+}
+
 # mprof.mx
 
 headers_mil = {
 	HEADERS = mil
-	DIR = pkglibdir
+	DIR = libdir/MonetDB4
 	SOURCES = \
 		bitset.mx malalgebra.mx \
 		mel.mx uchr.mx salgebra.mx vector.mx \

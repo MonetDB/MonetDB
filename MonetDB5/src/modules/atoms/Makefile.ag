@@ -19,11 +19,10 @@ INCLUDES = -I../../mal $(MONETDB_INCS) \
 MTSAFE
 
 LIBS = {
-	DIR = pkglibdir
+	DIR = libdir/MonetDB5
 	SEP = _
 	SOURCES = blob.mx url.mx mtime.mx streams.mx inet.mx color.mx xml.mx
 
-	HEADERS = h 
 	#SCRIPTS = mal
 	LIBS = $(MONETDB_LIBS) -lbat -lstream $(MATH_LIBS) \
                 $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
@@ -31,11 +30,10 @@ LIBS = {
 }
 
 lib__str = {
-	DIR = pkglibdir
+	DIR = libdir/MonetDB5
 	SEP = _
 	SOURCES = str.mx 
 
-	HEADERS = h 
 	#SCRIPTS = mal
 	LIBS = $(MONETDB_LIBS) -lbat -lstream \
                 $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
@@ -43,10 +41,17 @@ lib__str = {
 		$(ICONV_LIBS) ../../mal/libmal
 }
 
+headers_h = {
+	DIR = includedir/MonetDB5/atoms
+	SOURCES = blob.mx url.mx mtime.mx streams.mx inet.mx color.mx xml.mx \
+		str.mx
+	HEADERS = h 
+}
+
 
 headers_mal = {
 	HEADERS = mal
-	DIR = pkglibdir
+	DIR = libdir/MonetDB5
 	SOURCES = str.mx blob.mx url.mx mtime.mx streams.mx inet.mx color.mx xml.mx
 }
 

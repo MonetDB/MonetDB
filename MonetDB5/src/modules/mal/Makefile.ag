@@ -23,7 +23,7 @@ INCLUDES = -I../atoms -I../kernel \
 MTSAFE
 
 LIBS = {
-	DIR = pkglibdir
+	DIR = libdir/MonetDB5
 	SEP = _
 	SOURCES = \
 		chopper.mx constraints.mx language.mx box.mx \
@@ -34,7 +34,6 @@ LIBS = {
 		sabaoth.mx remote.mx batxml.mx 
 		#radix.mx 
 
-	HEADERS = h 
 	LIBS = ../../mal/libmal ../atoms/lib_xml $(MONETDB_LIBS) -lbat -lstream $(MATH_LIBS) \
                 $(CLIENTS_LIBS) -lMapi \
                 $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
@@ -42,50 +41,45 @@ LIBS = {
 }
 
 lib_batExtensions = {
-	DIR = pkglibdir
+	DIR = libdir/MonetDB5
 	SEP = _
 	SOURCES = batExtensions.mx
-	HEADERS = h
 	LIBS = ../../mal/libmal ../kernel/lib_bat5 $(MONETDB_LIBS) -lbat -lstream $(CLIENTS_LIBS) -lMapi \
                 $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
                 $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
 }
 
 lib_bpm = {
-	DIR = pkglibdir
+	DIR = libdir/MonetDB5
 	SEP = _
 	SOURCES = bpm.mx
-	HEADERS = h
 	LIBS = ../../mal/libmal ../kernel/lib_bat5 ../kernel/lib_algebra $(MONETDB_LIBS) -lbat -lstream $(CLIENTS_LIBS) -lMapi \
                 $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
                 $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
 }
 
 lib_mserver = {
-	DIR = pkglibdir
+	DIR = libdir/MonetDB5
 	SEP = _
 	SOURCES = mserver.mx
-	HEADERS = h
 	LIBS = ../../mal/libmal $(MONETDB_LIBS) -lbat -lstream $(CLIENTS_LIBS) -lMapi \
                 $(OPENSSL_LIBS) $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
                 $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
 }
 
 lib_mal_io = {
-	DIR = pkglibdir
+	DIR = libdir/MonetDB5
 	SEP = _
 	SOURCES = mal_io.mx 
-	HEADERS = h 
 	LIBS = ../../mal/libmal $(MONETDB_LIBS) -lbat -lstream \
                 $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
                 $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
 }
 
 lib__clients = {
-	DIR = pkglibdir
+	DIR = libdir/MonetDB5
 	SOURCES = clients.mx
 
-	HEADERS = h 
 	#SCRIPTS = mal mil ""
 	LIBS = ../../mal/libmal $(MONETDB_LIBS) -lbat -lstream \
                 $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
@@ -93,10 +87,9 @@ lib__clients = {
 }
 
 lib__pcre = {
-	DIR = pkglibdir
+	DIR = libdir/MonetDB5
 	SOURCES = pcre.mx
 
-	HEADERS = h 
 	#SCRIPTS = mal mil ""
 	LIBS = ../../mal/libmal $(MONETDB_LIBS) -lbat -lstream \
                 $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
@@ -104,10 +97,9 @@ lib__pcre = {
 }
 
 lib__bbp = {
-	DIR = pkglibdir
+	DIR = libdir/MonetDB5
 	SOURCES = bbp.mx
 
-	HEADERS = h
 	#SCRIPTS = mal mil ""
 	LIBS = ../../mal/libmal ../kernel/lib_bat5 \
 		$(MONETDB_LIBS) -lbat -lstream \
@@ -116,10 +108,9 @@ lib__bbp = {
 }
 
 lib__tablet = {
-	DIR = pkglibdir
+	DIR = libdir/MonetDB5
 	SOURCES = tablet.mx
 
-	HEADERS = h 
 	#SCRIPTS = mal mil ""
 	LIBS = ../../mal/libmal ../kernel/lib_algebra \
 		$(MONETDB_LIBS) -lbat -lstream \
@@ -128,10 +119,9 @@ lib__tablet = {
 }
 
 lib__transaction = {
-	DIR = pkglibdir
+	DIR = libdir/MonetDB5
 	SOURCES = transaction.mx
 
-	HEADERS = h 
 	#SCRIPTS = mal mil ""
 	LIBS = ../../mal/libmal ../kernel/lib_bat5 $(MONETDB_LIBS) -lbat -lstream \
                 $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
@@ -139,10 +129,9 @@ lib__transaction = {
 }
 
 lib__statistics = {
-	DIR = pkglibdir
+	DIR = libdir/MonetDB5
 	SOURCES = statistics.mx
 
-	HEADERS = h 
 	#SCRIPTS = mal mil ""
 	LIBS = ../../mal/libmal ../kernel/lib_algebra \
 		$(MONETDB_LIBS) -lbat -lstream \
@@ -150,9 +139,25 @@ lib__statistics = {
                 $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
 }
 
+headers_h = {
+	DIR = includedir/MonetDB5/mal
+	SOURCES = batExtensions.mx bpm.mx mserver.mx mal_io.mx clients.mx \
+		pcre.mx bbp.mx tablet.mx transaction.mx statistics.mx \
+		\
+		chopper.mx constraints.mx language.mx box.mx \
+		profiler.mx const.mx algebraExtensions.mx \
+		inspect.mx manual.mx \
+		factory.mx mdb.mx  \
+		urlbox.mx mat.mx \
+		sabaoth.mx remote.mx batxml.mx 
+		#radix.mx 
+
+	HEADERS = h 
+}
+
 headers_mal = {
 	HEADERS = mal
-	DIR = pkglibdir
+	DIR = libdir/MonetDB5
 	SOURCES = language.mx constraints.mx mal_init.mx box.mx bbp.mx \
 		profiler.mx const.mx batExtensions.mx algebraExtensions.mx \
 		inspect.mx manual.mx mal_io.mx \

@@ -21,9 +21,8 @@ INCLUDES = -I../../monet \
 MTSAFE
 
 lib__streams = {
-	DIR = pkglibdir
+	DIR = libdir/MonetDB4
 	SOURCES = streams.mx
-	HEADERS = h proto.h m
 	#SCRIPTS = mil ""
 	LIBS = $(MONETDB_LIBS) -lstream -lbat ../../monet/libmonet \
 		$(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
@@ -31,10 +30,9 @@ lib__streams = {
 }
 
 lib__str = {
-	DIR = pkglibdir
+	DIR = libdir/MonetDB4
 	SEP = _
 	SOURCES = str.mx
-	HEADERS = h proto.h m
 	#SCRIPTS = mil ""
 	LIBS = $(MONETDB_LIBS) -lstream -lbat \
 		../../monet/libmonet \
@@ -43,10 +41,9 @@ lib__str = {
 }
 
 lib__xtables = {
-	DIR = pkglibdir
+	DIR = libdir/MonetDB4
 	SEP = _
 	SOURCES = xtables.mx
-	HEADERS = h proto.h m
 	#SCRIPTS = mil ""
 	LIBS = $(MONETDB_LIBS) -lstream -lbat \
 		../../monet/libmonet ./lib_algebra \
@@ -55,10 +52,9 @@ lib__xtables = {
 }
 
 lib__logger = {
-	DIR = pkglibdir
+	DIR = libdir/MonetDB4
 	SEP = _
 	SOURCES = logger.mx
-	HEADERS = h proto.h m
 	#SCRIPTS = mil ""
 	LIBS = $(MONETDB_LIBS) -lstream -lbat \
 		../../monet/libmonet ./lib_bat \
@@ -67,7 +63,7 @@ lib__logger = {
 }
 
 LIBS = {
-	DIR = pkglibdir
+	DIR = libdir/MonetDB4
 	SEP = _
 	SOURCES = \
 		algebra.mx arith.mx bat.mx builtin.mx sys.mx trans.mx \
@@ -76,7 +72,6 @@ LIBS = {
 		decimal.mx enum.mx lock.mx mmath.mx monettime.mx \
 		stats.mx unix.mx url.mx pqueue.mx 
 		#radix.mx tcpip.mx upgrade.mx
-	HEADERS = h proto.h m
 	#SCRIPTS = mil ""
 	LIBS = $(MONETDB_LIBS) -lstream -lbat \
 		../../monet/libmonet \
@@ -85,9 +80,8 @@ LIBS = {
 }
 
 lib__counters = {
-	DIR = pkglibdir
+	DIR = libdir/MonetDB4
 	SOURCES = counters.mx
-	HEADERS = h proto.h m
 	#SCRIPTS = mil ""
 	LIBS = $(MONETDB_LIBS) -lstream -lbat \
 		../../monet/libmonet \
@@ -96,9 +90,8 @@ lib__counters = {
 }
 
 lib__pcl = {
-	DIR = pkglibdir
+	DIR = libdir/MonetDB4
 	SOURCES = pcl.mx
-	HEADERS = h proto.h m
 	#SCRIPTS = mil ""
 	LIBS = $(MONETDB_LIBS) -lstream -lbat \
 		../../monet/libmonet \
@@ -107,9 +100,8 @@ lib__pcl = {
 }
 
 lib__pcre = {
-	DIR = pkglibdir
+	DIR = libdir/MonetDB4
 	SOURCES = pcre.mx
-	HEADERS = h proto.h m
 	#SCRIPTS = mil ""
 	LIBS = $(MONETDB_LIBS) -lstream -lbat \
 		../../monet/libmonet \
@@ -119,7 +111,7 @@ lib__pcre = {
 
 headers_mil = {
 	HEADERS = mil
-	DIR = pkglibdir
+	DIR = libdir/MonetDB4
 	SOURCES = streams.mx str.mx xtables.mx constant.mx \
          	algebra.mx arith.mx bat.mx builtin.mx sys.mx trans.mx \
                 mkey.mx profiler.mx \
@@ -129,6 +121,18 @@ headers_mil = {
 		unix.mx url.mx counters.mx pcl.mx pcre.mx pqueue.mx \
 		logger.mx
 		# radix.mx tcpip.mx upgrade.mx
+}
+
+headers_plain = {
+	HEADERS = h proto.h m
+	DIR = includedir/MonetDB4/plain
+	SOURCES = streams.mx str.mx xtables.mx logger.mx \
+		algebra.mx arith.mx bat.mx builtin.mx sys.mx trans.mx \
+		mkey.mx profiler.mx constant.mx \
+		aggr.mx aggrX3.mx alarm.mx ascii_io.mx bat_arith.mx blob.mx \
+		decimal.mx enum.mx lock.mx mmath.mx monettime.mx \
+		stats.mx unix.mx url.mx pqueue.mx \
+		counters.mx pcl.mx pcre.mx
 }
 
 EXTRA_DIST_DIR = Tests

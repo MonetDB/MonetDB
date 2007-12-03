@@ -367,6 +367,16 @@ def am_scripts(fd, var, scripts, am):
     am_find_ins(am, scripts)
     am_deps(fd, scripts['DEPS'], "\.o", am)
 
+# return the unique elements of the argument list
+def uniq(l):
+    try:
+        return list(set(l))
+    except NameError:                   # presumably set() is unknown
+        u = {}
+        for x in l:
+            u[x] = 1
+        return u.keys()
+
 # list of headers to install
 def am_headers(fd, var, headers, am):
 
@@ -376,7 +386,14 @@ def am_headers(fd, var, headers, am):
     sd = am_translate_dir(sd, am)
 
     hdrs_ext = headers['HEADERS']
-    for header in headers['TARGETS']:
+    deps = []
+    for d,srcs in headers['DEPS'].items():
+        for s in srcs:
+            if s in headers['SOURCES']:
+                deps.append(d)
+                break
+    print am['CWD'], var, deps
+    for header in uniq(headers['TARGETS'] + deps):
         h, ext = split_filename(header)
         if ext not in hdrs_ext:
             continue

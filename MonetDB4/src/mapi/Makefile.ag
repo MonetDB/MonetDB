@@ -22,9 +22,8 @@ MTSAFE
 
 # install these libs in the pkglib
 lib__mapi = {
-	DIR = pkglibdir
+	DIR = libdir/MonetDB4
 	SOURCES = mapi.mx
-	HEADERS = h proto.h m
 	#SCRIPTS = mil ""
 	LIBS =  $(MONETDB_LIBS) -lmutils -lstream -lbat \
 		../monet/libmonet \
@@ -33,9 +32,15 @@ lib__mapi = {
 
 }
 
+headers__mapi = {
+	DIR = includedir/MonetDB4/mapi
+	SOURCES = mapi.mx
+	HEADERS = h proto.h m
+}
+
 headers_mil = {
 	HEADERS = mil
-	DIR = pkglibdir
+	DIR = libdir/MonetDB4
 	SOURCES = mapi.mx
 }
 

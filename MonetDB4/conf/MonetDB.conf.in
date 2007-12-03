@@ -15,7 +15,7 @@ datadir=@Xdatadir@
 # All databases are stored as a directory under the directory
 # given below.  Use this value to change the overall location
 # of your data.
-gdk_dbfarm=@Xlocalstatedir@@DIRSEP@@PACKAGE@@DIRSEP@dbfarm
+gdk_dbfarm=@Xlocalstatedir@@DIRSEP@MonetDB4@DIRSEP@dbfarm
 
 # MonetDB can only handle one database at a time.  You can specify
 # the name of the database to use below.  Note that you can use
@@ -93,7 +93,7 @@ monet_prompt=MonetDB>
 monet_welcome=yes
 # Where do the MonetDB modules reside?
 # The first directory contains MIL modules, and either the second or third (depending on the system) the C modules.
-monet_mod_path=@Xlibdir@@DIRSEP@@PACKAGE@@PATHSEP@@Xlibdir@@DIRSEP@@PACKAGE@@DIRSEP@lib@PATHSEP@@Xlibdir@@DIRSEP@@PACKAGE@@DIRSEP@bin
+monet_mod_path=@Xlibdir@@DIRSEP@MonetDB4@PATHSEP@@Xlibdir@@DIRSEP@MonetDB4@DIRSEP@lib@PATHSEP@@Xlibdir@@DIRSEP@MonetDB4@DIRSEP@bin
 # Start Mserver in daemon mode, or start with MIL interactive interface?
 monet_daemon=no
 
@@ -120,7 +120,7 @@ sql_debug=0
 # The logs are typically stored on a different storage medium
 # to protect the database against accidental hardware loss.
 # it should be different directory as used for xquery!
-sql_logdir=@Xlocalstatedir@@DIRSEP@@PACKAGE@@DIRSEP@sql_logs
+sql_logdir=@Xlocalstatedir@@DIRSEP@MonetDB4@DIRSEP@sql_logs
 
 # XQuery Interface Section
 #=========================
@@ -143,7 +143,7 @@ xquery_procMB=128
 # The logs are typically stored on a different storage medium
 # to protect the database against accidental hardware loss.
 # it should be different directory as used for sql!
-xquery_logdir=@Xlocalstatedir@@DIRSEP@@PACKAGE@@DIRSEP@xquery_logs
+xquery_logdir=@Xlocalstatedir@@DIRSEP@MonetDB4@DIRSEP@xquery_logs
 
 # if not set port to address the HTTP server for pathfinder = mapi_port+1
 xrpc_port=""

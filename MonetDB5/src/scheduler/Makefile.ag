@@ -23,21 +23,27 @@ MTSAFE
 
 LIBS = {
 	NAME = sched
-	DIR = pkglibdir
+	DIR = libdir/MonetDB5
 	SEP = _
 	SOURCES = \
 	mal_isolation.mx mal_scheduler.mx mal_mes.mx mal_memorun.mx
 
-	HEADERS = h 
 	#SCRIPTS = mal
 	LIBS = ../mal/libmal ../optimizer/lib_optimizer $(MONETDB_LIBS) -lbat -lstream \
                 $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
                 $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
 }
 
+headers_h = {
+	DIR = includedir/MonetDB5/scheduler
+	SOURCES = \
+	mal_isolation.mx mal_scheduler.mx mal_mes.mx mal_memorun.mx
+	HEADERS = h 
+}
+
 headers_mal = {
 	HEADERS = mal
-	DIR = pkglibdir
+	DIR = libdir/MonetDB5
 	SOURCES = mal_isolation.mx mal_scheduler.mx mal_mes.mx mal_memorun.mx
 }
 

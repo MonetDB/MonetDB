@@ -21,21 +21,29 @@ INCLUDES = -I../../atoms -I../../kernel \
 MTSAFE
 
 lib_crackers = {
-	DIR = pkglibdir
+	DIR = libdir/MonetDB5
 	SEP = _
 	SOURCES = crackers.mx \
 		crackers_AVL_index.mx crackers_AVL_tree.mx crackers_index.mx \
 		crackers_core_ordered.mx crackers_core_unordered.mx crackers_validation.mx \
 		crackers_joinselect_ops.mx crackers_select_ops.mx crackers_sideways.mx crackers_updates.mx
-	HEADERS = h 
 	LIBS = ../../../mal/libmal ../../kernel/lib_bat5 $(MONETDB_LIBS) -lbat -lstream ../../atoms/lib_mtime \
                 $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
                 $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
 }
 
+headers_crackers = {
+	DIR = includedir/MonetDB5/crackers
+	SOURCES = crackers.mx \
+		crackers_AVL_index.mx crackers_AVL_tree.mx crackers_index.mx \
+		crackers_core_ordered.mx crackers_core_unordered.mx crackers_validation.mx \
+		crackers_joinselect_ops.mx crackers_select_ops.mx crackers_sideways.mx crackers_updates.mx
+	HEADERS = h 
+}
+
 headers_mal = {
 	HEADERS = mal
-	DIR = pkglibdir
+	DIR = libdir/MonetDB5
 	SOURCES = crackers.mx
 }
 

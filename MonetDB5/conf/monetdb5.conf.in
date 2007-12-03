@@ -20,7 +20,7 @@ exec_prefix=@exec_prefix@
 # All databases are stored as a directory under the directory
 # given below.  Use this value to change the overall location
 # of your data.
-gdk_dbfarm=@localstatedir@@DIRSEP@@PACKAGE@@DIRSEP@dbfarm
+gdk_dbfarm=@localstatedir@@DIRSEP@MonetDB5@DIRSEP@dbfarm
 
 # MonetDB can only handle one database at a time.  When you start an
 # mserver5 manually without specifying the database name yourself, the
@@ -104,7 +104,7 @@ gdk_debug=0
 # Prompt when using MAL interface
 # monet_prompt=>
 # Where do the MonetDB modules reside? The second path is for windows dlls.
-monet_mod_path=@libdir@@DIRSEP@@PACKAGE@@PATHSEP@@libdir@@DIRSEP@@PACKAGE@@DIRSEP@lib@PATHSEP@@libdir@@DIRSEP@@PACKAGE@@DIRSEP@bin
+monet_mod_path=@libdir@@DIRSEP@MonetDB5@PATHSEP@@libdir@@DIRSEP@MonetDB5@DIRSEP@lib@PATHSEP@@libdir@@DIRSEP@MonetDB5@DIRSEP@bin
 # Start mserver in daemon mode, or start with MAL interactive interface?
 monet_daemon=no
 # Display version and copyright information upon startup?
@@ -170,7 +170,7 @@ mero_exittimeout=7
 # MAL section
 # Monet Virtual Machine
 #====================================
-mal_init=@libdir@@DIRSEP@@PACKAGE@/mal_init.mal
+mal_init=@libdir@@DIRSEP@MonetDB5/mal_init.mal
 mal_listing = 15           # List everything
 #    1 = List the original input
 #    2 = List the MAL instruction
@@ -182,7 +182,7 @@ mal_listing = 15           # List everything
 # Checkpoints are stored in their own area, preferrably
 # on a different storage device. Checkpoints should be
 # initialized manually.
-checkpoint_dir=@localstatedir@@DIRSEP@@PACKAGE@@DIRSEP@chkpnt
+checkpoint_dir=@localstatedir@@DIRSEP@MonetDB5@DIRSEP@chkpnt
 
 # Monet Application Interface Section
 #====================================
@@ -198,9 +198,9 @@ sql_debug=0
 # Place to store transaction logs
 # The logs are typically stored on a different storage medium
 # to protect the database against accidental hardware loss.
-sql_logdir=@localstatedir@@DIRSEP@@PACKAGE@@DIRSEP@sql_logs
+sql_logdir=@localstatedir@@DIRSEP@MonetDB5@DIRSEP@sql_logs
 
 # The sql_init is a comma separated list of sql files to be
 # executed upon system restart. It is primarily used to make
 # SQL library functions known to all users.
-sql_init=@libdir@@DIRSEP@@PACKAGE@/sql_init.sql
+sql_init=@libdir@@DIRSEP@MonetDB5/sql_init.sql

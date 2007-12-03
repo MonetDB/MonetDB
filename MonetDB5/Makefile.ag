@@ -24,7 +24,11 @@ EXTRA_DIST = bootstrap configure.ag RunMtest.in \
 
 EXTRA_DIST_DIR = NT tests
 
-EXTRA_HEADERS = mal_config.h sysdefs.h
+headers_h = {
+        HEADERS = h
+        SOURCES = mal_config.h sysdefs.h
+        DIR = includedir/MonetDB5
+}
 
 TESTS = RunMtest
 TESTS_ENVIRONMENT = $(SHELL)

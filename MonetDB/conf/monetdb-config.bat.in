@@ -3,7 +3,7 @@
 REM	set prefix=%~dp0
 REM	set prefix=%prefix:~0,-4%
 
-set pkg=@PACKAGE@
+set pkg=MonetDB
 set version=@VERSION@
 set source=@MONETDB_SOURCE@
 set build=@MONETDB_BUILD@

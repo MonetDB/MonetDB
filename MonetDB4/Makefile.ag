@@ -26,7 +26,11 @@ EXTRA_DIST = bootstrap configure.ag RunMtest.in \
 
 EXTRA_DIST_DIR = NT tests
 
-EXTRA_HEADERS = monetdb4_config.h sysdefs.h
+headers_h = {
+        HEADERS = h
+        SOURCES = monetdb4_config.h sysdefs.h
+        DIR = includedir/MonetDB4
+}
 
 headers_pc = {
 	HEADERS = pc

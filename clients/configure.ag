@@ -19,7 +19,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.59)
-AC_INIT([MonetDB clients], [1.21.0], [monet@cwi.nl], [clients])
+AC_INIT([MonetDB clients], [1.21.0], [monet@cwi.nl], [MonetDB-client])
 #                           ^^^^^^
 # Maintained via vertoo. Please don't modify by hand!
 # Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.

@@ -24,7 +24,11 @@ EXTRA_DIST = configure.ag rpm.mk.in \
 
 EXTRA_DIST_DIR = NT
 
-#EXTRA_HEADERS = clients_config.h
+#headers_h = {
+#        HEADERS = h
+#        SOURCES = clients_config.h
+#        DIR = includedir/clients
+#}
 
 TESTS = RunMtest
 TESTS_ENVIRONMENT = $(SHELL)

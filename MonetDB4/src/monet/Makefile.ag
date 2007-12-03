@@ -44,11 +44,20 @@ lib_monet = {
 		monet_client.mx monet_multiplex.mx monet_tbl.mx \
 		monet_context.mx monet_parse.mx monet_deparse.mx \
 		monet_process.mx monet.feps
-	HEADERS = h tab.h
 	LIBS = $(MONETDB_LIBS) -lmutils -lstream -lbat \
 		$(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
 		$(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
 
+}
+
+headers_monet = { 
+	SOURCES = \
+		monet.mx monet_interpreter.mx monet_queue.mx yytree.mx \
+		monet_client.mx monet_multiplex.mx monet_tbl.mx \
+		monet_context.mx monet_parse.mx monet_deparse.mx \
+		monet_process.mx monet.feps
+	HEADERS = h tab.h
+	DIR = includedir/MonetDB4/monet
 }
 
 EXTRA_DIST = monet_tem.mx 

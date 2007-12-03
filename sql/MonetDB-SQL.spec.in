@@ -24,7 +24,7 @@ Summary: MonetDB SQL - Monet Database Management System
 Group: Applications/Databases
 License:   MPL - http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
 URL: http://monetdb.cwi.nl/
-Source: http://downloads.sourceforge.net/monetdb/sql-%{version}.tar.gz
+Source: http://downloads.sourceforge.net/monetdb/MonetDB-SQL-%{version}.tar.gz
 BuildRoot: %(mktemp -ud %{_tmppath}/%{name}-%{version}-%{release}-XXXXXX)
 
 %{!?_with_python: %{!?_without_python: %define _with_python --with-python}}
@@ -132,7 +132,7 @@ This package contains the files needed to develop with %{name}.
 %prep
 rm -rf $RPM_BUILD_ROOT
 
-%setup -q -n sql-%{version}
+%setup -q -n MonetDB-SQL-%{version}
 
 %build
 

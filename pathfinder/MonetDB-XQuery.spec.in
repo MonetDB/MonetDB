@@ -19,7 +19,7 @@ Summary: MonetDB XQuery - Monet Database Management System
 Group: Applications/Databases
 License:   MPL - http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
 URL: http://monetdb.cwi.nl/
-Source: http://downloads.sourceforge.net/monetdb/pathfinder-%{version}.tar.gz
+Source: http://downloads.sourceforge.net/monetdb/MonetDB-XQuery-%{version}.tar.gz
 BuildRoot: %(mktemp -ud %{_tmppath}/%{name}-%{version}-%{release}-XXXXXX)
 
 Requires: MonetDB4-server >= 4.21
@@ -111,7 +111,7 @@ This package contains three Java Archives
 %prep
 rm -rf $RPM_BUILD_ROOT
 
-%setup -q -n pathfinder-%{version}
+%setup -q -n MonetDB-XQuery-%{version}
 
 %build
 

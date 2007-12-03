@@ -61,7 +61,7 @@ srpm:	MonetDB-SQL.spec $(top_builddir)/$(distdir).tar.gz $(rpmtopdir)/rpmmacros
 	done
 
 cleanup_distr:
-	find sql-* -perm -0100 -type f ! -name \*.bat ! -name \*.sh ! -exec grep -q '^#!' {} \; -exec chmod a-x {} \;
-	find sql-* -name \*.in ! -name configure.in ! -name \*.spec.in -print | while read i; do test -f $${i%.in} && rm -f $${i%.in}; done || true
+	find MonetDB-SQL-* -perm -0100 -type f ! -name \*.bat ! -name \*.sh ! -exec grep -q '^#!' {} \; -exec chmod a-x {} \;
+	find MonetDB-SQL-* -name \*.in ! -name configure.in ! -name \*.spec.in -print | while read i; do test -f $${i%.in} && rm -f $${i%.in}; done || true
 
 dist-hook: cleanup_distr

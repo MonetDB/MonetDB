@@ -15,7 +15,7 @@ Summary: MonetDB - Monet Database Management System - Java interface
 Group: Applications/Databases
 License: MPL - http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
 URL: http://monetdb.cwi.nl/
-Source: http://downloads.sourceforge.net/monetdb/java-%{version}.tar.gz
+Source: http://downloads.sourceforge.net/monetdb/MonetDB-java-%{version}.tar.gz
 BuildRoot: %(mktemp -ud %{_tmppath}/%{name}-%{version}-%{release}-XXXXXX)
 BuildArch: noarch
 
@@ -56,7 +56,7 @@ MonetDB-java.
 %prep
 rm -rf $RPM_BUILD_ROOT
 
-%setup -q -n java-%{version}
+%setup -q -n MonetDB-java-%{version}
 
 %build
 

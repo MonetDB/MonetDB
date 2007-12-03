@@ -22,20 +22,27 @@ INCLUDES = -I../modules/atoms -I../mal \
 MTSAFE
 
 LIBS = {
-	DIR = pkglibdir
+	DIR = libdir/MonetDB5
 	SEP = _
 	SOURCES = \
 	mal_compiler.mx 
 
-	HEADERS = h 
 	#SCRIPTS = mal
 	LIBS = ../mal/libmal $(MONETDB_LIBS) -lbat -lstream \
                 $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
                 $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
 }
 
+headers_h = {
+	DIR = includedir/MonetDB5/compiler
+	SOURCES = \
+	mal_compiler.mx 
+
+	HEADERS = h 
+}
+
 headers_mal = {
 	HEADERS = mal
-	DIR = pkglibdir
+	DIR = libdir/MonetDB5
 	SOURCES = mal_compiler.mx 
 }

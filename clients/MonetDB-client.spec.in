@@ -24,7 +24,7 @@ Summary: MonetDB - Monet Database Management System
 Group: Applications/Databases
 License: MPL - http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
 URL: http://monetdb.cwi.nl/
-Source: http://downloads.sourceforge.net/monetdb/clients-%{version}.tar.gz
+Source: http://downloads.sourceforge.net/monetdb/MonetDB-client-%{version}.tar.gz
 BuildRoot: %(mktemp -ud %{_tmppath}/%{name}-%{version}-%{release}-XXXXXX)
 
 Requires: MonetDB >= 1.20
@@ -135,7 +135,7 @@ automatic index management, extensibility of data types and search
 accelerators, SQL- and XML- frontends.
 
 This package contains the files needed to develop with
-MonetDB-clients.
+MonetDB-client.
 
 %description odbc
 MonetDB is a database management system that is developed from a
@@ -182,7 +182,7 @@ program.
 %prep
 rm -rf $RPM_BUILD_ROOT
 
-%setup -q -n clients-%{version}
+%setup -q -n MonetDB-client-%{version}
 
 %build
 

@@ -24,7 +24,7 @@ Summary: MonetDB - Monet Database Management System
 Group: Applications/Databases
 License:   MPL - http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
 URL: http://monetdb.cwi.nl/
-Source: http://downloads.sourceforge.net/monetdb/MonetDB4-%{version}.tar.gz
+Source: http://downloads.sourceforge.net/monetdb/MonetDB4-server-%{version}.tar.gz
 BuildRoot: %(mktemp -ud %{_tmppath}/%{name}-%{version}-%{release}-XXXXXX)
 
 Requires(pre): shadow-utils
@@ -93,7 +93,7 @@ This package contains the files needed to develop with MonetDB4.
 %prep
 rm -rf $RPM_BUILD_ROOT
 
-%setup -q -n MonetDB4-%{version}
+%setup -q -n MonetDB4-server-%{version}
 
 %build
 

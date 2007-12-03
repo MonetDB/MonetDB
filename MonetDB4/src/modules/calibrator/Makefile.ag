@@ -23,13 +23,18 @@ EXTRA_DIST = calib_analyse.c  calib_main.c  calib_print.c  calib_run.c \
 	calib_common.c   calib_plot.c  calib_smp.c
 
 LIBS = {
-	DIR = pkglibdir
+	DIR = libdir/MonetDB4
 	SEP = _
 	SOURCES = calib.mx 
-	HEADERS = h m
 	#SCRIPTS = mil ""
 	LIBS = ../../monet/libmonet $(MONETDB_LIBS) -lbat \
 		$(SOCKET_LIBS) $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) $(MATH_LIBS)
+}
+
+HEADERS = {
+	DIR = includedir/MonetDB4/calibrator
+	SOURCES = calib.mx
+	HEADERS = h m
 }
 
 BINS = {
@@ -39,6 +44,6 @@ BINS = {
 
 headers_mil = {
 	HEADERS = mil
-	DIR = pkglibdir
+	DIR = libdir/MonetDB4
 	SOURCES = calib.mx
 }

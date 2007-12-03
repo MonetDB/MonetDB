@@ -16,7 +16,7 @@
 # Portions created by CWI are Copyright (C) 1997-2007 CWI.
 # All Rights Reserved.
 
-pkg="@PACKAGE@"
+pkg="MonetDB5"
 source="@QMONETDB5_SOURCE@"
 build="@QMONETDB5_BUILD@"
 prefix="@Qprefix@"
