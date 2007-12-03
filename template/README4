@@ -52,8 +52,8 @@ Usage
 =====
 
 In case the compilation worked well, you can start MonetDB and load the
-"example" module as follows (assuming "Mserver" is reachable via your
-$PATH), e.g.:
+"example" module as follows (assuming "Mserver" and
+"monetdb-template-config" are reachable via your $PATH), e.g.:
 
 	Mserver --set monet_mod_path=`monetdb4-config --modpath`:`monetdb-template-config --modpath4` --dbinit='module(example);'
 

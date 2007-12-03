@@ -52,10 +52,10 @@ Usage
 =====
 
 In case the compilation worked well, you can start MonetDB and load the
-"example" module as follows (assuming "Mserver" is reachable via your
-$PATH), e.g.:
+"example" module as follows (assuming "mserver5" and 
+"monetdb-template-config" are reachable via your $PATH), e.g.:
 
-	mserver5 --set monet_mod_path=`monetdb5-config --modpath`:`monetdb-template-config --modpath5` --dbinit='module(example);'
+	mserver5 --set monet_mod_path=`monetdb5-config --modpath`:`monetdb-template-config --modpath5` --dbinit='include example;'
 
 Alternatively, you can add
 <PREFIX>/lib(64)/MonetDB5:<PREFIX>/lib(64)/MonetDB5/lib
