@@ -2467,19 +2467,22 @@ STRreplace(str *ret, str *s1, str *s2, str *s3){
 }
 
 str
-STRrepeat(str *ret, str *s, int *c){
+STRrepeat(str *ret, str *s, int *c)
+{
 	str t;
 	int i;
 	size_t l;
 
-	if( *c < 0 || strcmp(*s,str_nil)==0 )
-		*ret= GDKstrdup(str_nil);
-	else {
-		l= strlen(*s);
-		t= *ret = GDKmalloc( *c * l +1);
+	if (*c < 0 || strcmp(*s, str_nil) == 0) {
+		*ret = GDKstrdup(str_nil);
+	} else {
+		l = strlen(*s);
+		t = *ret = GDKmalloc( *c * l + 1);
+
+		if (!t)
+			throw(MAL, "str.repeat", "Allocation failed");
 		*t = 0;
-		
-		for(i= *c; i>0; i--,t+= l) 
+		for(i = *c; i>0; i--, t += l) 
 			strcat(t, *s);
 	}
 	return MAL_SUCCEED;
