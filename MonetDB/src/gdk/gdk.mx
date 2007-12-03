@@ -2323,7 +2323,17 @@ gdk_export int GDKerrorCount(void);
 #define strdup _strdup
 #endif
 
-#define MONETDB_MODE  S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH
+#ifndef S_IRUSR
+/* if one doesn't exist, presumably they all don't exist */
+#define S_IRUSR 0000400		/* read permission, owner */
+#define S_IWUSR 0000200		/* write permission, owner */
+#define S_IRGRP 0000040		/* read permission, group */
+#define S_IWGRP 0000020		/* write permission, grougroup */
+#define S_IROTH 0000004		/* read permission, other */
+#define S_IWOTH 0000002		/* write permission, other */
+#endif
+
+#define MONETDB_MODE (S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH)
 
 #define BBP_BATMASK     511
 #define BBP_THREADMASK   63
