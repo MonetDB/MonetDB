@@ -38,6 +38,7 @@ def main(argv) :
         ('language',None,'language','language','language (default: sql)'),
         ('database',None,'database','database','database (default: "")'),
         ('mapi_trace',None,'mapi_trace', None, 'mapi_trace'),
+        ('encoding',None,'encoding','encoding','character encoding'),
         ]
 
     try:
@@ -46,13 +47,20 @@ def main(argv) :
         # error parsing options
         sys.exit(1)
 
+    encoding = opt.get("encoding", None)
+    if encoding is None:
+        import locale
+        encoding = locale.getlocale()[1]
+        if encoding is None:
+            encoding = locale.getdefaultlocale()[1]
+
     s = server(opt.get("host", "localhost"),
                int(opt.get("mapi_port", 50000)),
                opt.get("user", "monetdb"),
                opt.get("passwd", "monetdb"),
                opt.get("language", "sql"),
                opt.get("database", ""),
-               opt.get("mapi_trace", None)!=None)
+               opt.get("mapi_trace", None) is not None)
     print "#mclient (python) connected to %s:%d as %s" % \
           (opt.get("host", "localhost"),
            int(opt.get("mapi_port", 50000)),
@@ -63,10 +71,17 @@ def main(argv) :
 
     sys.stdout.write(s.prompt.encode('utf-8'))
     line = fi.readline()
+    prompt = s.prompt
+    if encoding != 'utf-8':
+        prompt = unicode(prompt, 'utf-8').encode(encoding, 'replace')
     while line and line != "\q\n":
+        if encoding != 'utf-8':
+            line = unicode(line, encoding).encode('utf-8')
         res = s.cmd(line)
+        if encoding != 'utf-8':
+            res = unicode(res, 'utf-8').encode(encoding, 'replace')
         print res
-        sys.stdout.write(s.prompt.encode('utf-8'))
+        sys.stdout.write(prompt)
         line = fi.readline()
 
     s.disconnect()
