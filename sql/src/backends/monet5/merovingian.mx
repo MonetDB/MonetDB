@@ -71,7 +71,6 @@ FIXME: actually implement that
 #ifdef HAVE_NETDB_H
 #include <netdb.h>
 #include <netinet/in.h>
-#include <arpa/inet.h> /* inet_ntoa */
 #endif
 #ifdef HAVE_FCNTL_H
 #include <fcntl.h>
@@ -712,9 +711,18 @@ handleClient(int sock)
 		merlog("redirecting client for database '%s' to %s",
 				stat->dbname, stat->conns->val);
 	} else {
-
+		/* avoid doing this, it requires some includes that probably
+		 * give trouble on windowz
+		host = inet_ntoa(saddr.sin_addr);
+		 */
+		char *host = alloca(sizeof(char) * ((3 + 1 + 3 + 1 + 3 + 1 + 3) + 1));
+		sprintf(host, "%u.%u.%u.%u",
+				(unsigned) ((ntohl(saddr.sin_addr.s_addr) >> 24) & 0xff),
+				(unsigned) ((ntohl(saddr.sin_addr.s_addr) >> 16) & 0xff),
+				(unsigned) ((ntohl(saddr.sin_addr.s_addr) >> 8) & 0xff),
+				(unsigned) (ntohl(saddr.sin_addr.s_addr) & 0xff));
 		merlog("redirecting client %s:%d for database '%s' to %s",
-				inet_ntoa(saddr.sin_addr), (int) ntohs(saddr.sin_port),
+				host, (int)ntohs(saddr.sin_port),
 				stat->dbname, stat->conns->val);
 	}
 
