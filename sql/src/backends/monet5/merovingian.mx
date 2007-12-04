@@ -1247,6 +1247,8 @@ main(int argc, char *argv[])
 			}
 
 			close(oerr);
+			/* detach from controlling tty */
+			close(0);
 		break;
 		default:
 			/* the parent, we want it to die, with no error */
