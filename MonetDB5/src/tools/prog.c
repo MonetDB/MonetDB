@@ -102,8 +102,8 @@ main(int argc, char **av)
 		usage(prog);
 
 	/* needed to prevent the MonetDB config file from being used */
-	setlen = mo_add_option(&set, setlen, opt_config, "prefix", MONETDBPREFIX);
-	setlen = mo_add_option(&set, setlen, opt_config, "config", MONETDBCONFIG);
+	setlen = mo_add_option(&set, setlen, opt_config, "prefix", MONETDB5_PREFIX);
+	setlen = mo_add_option(&set, setlen, opt_config, "config", MONETDB5_CONFFILE);
 
 	for (;;) {
 		int option_index = 0;

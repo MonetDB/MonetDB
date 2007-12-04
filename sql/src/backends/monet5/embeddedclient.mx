@@ -63,7 +63,7 @@ embeddedclient_export Mapi embedded_sql(opt *set, int len);
 
 #endif /* _EMBEDDEDCLIENT_H_ */
 @c
-#include <mal_config.h>
+#include <sql_config.h>
 #include "embeddedclient.h"
 
 #include "gdk.h"
@@ -183,8 +183,8 @@ monetdb_sql(char *dbfarm, char *dbname)
 	int len = mo_builtin_settings(&embedded_set);
 
 	/* needed, to prevent the MonetDB config file to be used */  
-	len = mo_add_option(&embedded_set, len, opt_config, "prefix", MONETDBPREFIX);
-	len = mo_add_option(&embedded_set, len, opt_config, "config", MONETDBCONFIG);
+	len = mo_add_option(&embedded_set, len, opt_config, "prefix", MONETDB5_PREFIX);
+	len = mo_add_option(&embedded_set, len, opt_config, "config", MONETDB5_CONFFILE);
 
 	embedded_len = mo_system_config(&embedded_set, len);
 	embedded_len = mo_add_option(&embedded_set, embedded_len, opt_cmdline, "gdk_dbfarm", dbfarm);

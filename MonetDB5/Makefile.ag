@@ -19,16 +19,10 @@ SUBDIRS = src conf
 
 EXTRA_DIST = bootstrap configure.ag RunMtest.in \
 		RunMtest.bat.in RunMapprove.in RunMapprove.bat.in \
-		RunMserver.in RunMserver.bat.in sysdefs.h.in \
+		RunMserver.in RunMserver.bat.in \
 		rpm.mk.in MonetDB-server.spec MonetDB-server.spec.in
 
 EXTRA_DIST_DIR = NT tests
-
-headers_h = {
-        HEADERS = h
-        SOURCES = mal_config.h sysdefs.h
-        DIR = includedir/MonetDB5
-}
 
 TESTS = RunMtest
 TESTS_ENVIRONMENT = $(SHELL)

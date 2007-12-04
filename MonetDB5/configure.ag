@@ -157,6 +157,7 @@ AC_SUBST(QXMONETDB5_SOURCE)
 AC_DEFINE_UNQUOTED(MONETDB5_LOCALSTATEDIR,"$QXlocalstatedir",[modifiable single-machine data])
 AC_DEFINE_UNQUOTED(MONETDB5_LIBDIR,"$QXlibdir",[object code libraries])
 AC_DEFINE_UNQUOTED(MONETDB5_SYSCONFDIR,"$QXsysconfdir",[read-only single-machine data])
+AC_DEFINE_UNQUOTED(MONETDB5_CONFFILE,"$QXsysconfdir${QDIRSEP}monetdb5.conf",[MonetDB5 config file])
 
 
 dnl allow to keep track of how we are going to build this thing

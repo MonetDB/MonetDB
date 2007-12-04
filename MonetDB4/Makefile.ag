@@ -19,18 +19,11 @@ SUBDIRS = src conf scripts
 EXTRA_DIST = bootstrap configure.ag RunMtest.in \
 		RunMtest.bat.in RunMapprove.in RunMapprove.bat.in \
 		RunMserver.bat.in RunMserver.in \
-		sysdefs.h.in \
 		rpm.mk.in MonetDB-server.spec MonetDB-server.spec.in \
 		HowToStart HowToStart-MinGW.txt \
 		HowToStart-MinGW-pcre.txt HowToStart-MinGW-swig.txt 
 
 EXTRA_DIST_DIR = NT tests
-
-headers_h = {
-        HEADERS = h
-        SOURCES = monetdb4_config.h sysdefs.h
-        DIR = includedir/MonetDB4
-}
 
 headers_pc = {
 	HEADERS = pc

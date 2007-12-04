@@ -16,7 +16,7 @@
  * All Rights Reserved.
  */
 
-#include <monetdb4_config.h>
+#include <sql_config.h>
 #include <monet_options.h>
 #include "embeddedclient.h"
 
@@ -102,8 +102,8 @@ main(int argc, char **av)
 		usage(prog);
 
 	/* needed, to prevent the MonetDB config file to be used */  
-	setlen = mo_add_option(&set, setlen, opt_config, "prefix", MONETDBPREFIX);
-	setlen = mo_add_option(&set, setlen, opt_config, "config", MONETDBCONFIG);
+	setlen = mo_add_option(&set, setlen, opt_config, "prefix", MONETDB4_PREFIX);
+	setlen = mo_add_option(&set, setlen, opt_config, "config", MONETDB4_CONFFILE);
 
 	for (;;) {
 		int option_index = 0;

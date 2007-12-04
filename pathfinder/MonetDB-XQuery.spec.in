@@ -174,8 +174,6 @@ rm -rf $RPM_BUILD_ROOT
 
 %files devel
 %defattr(-,root,root)
-%dir %{_includedir}/pathfinder
-%{_includedir}/pathfinder/*.h
 %{_libdir}/libembeddedxq.so
 %{_bindir}/monetdb-xquery-config
 

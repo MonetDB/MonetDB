@@ -22,8 +22,8 @@
 
 #include <monetdb_winconfig.h>
 
-#define MONETDBPREFIX "@Qprefix@"
-#define MONETDBCONFIG "@Qsysconfdir@@QDIRSEP@monetdb5.conf"
+#define MONETDB5_PREFIX "@QXprefix@"
+#define MONETDB5_CONFFILE "@QXsysconfdir@@QDIRSEP@monetdb5.conf"
 
 /* Version number of package */
 #define VERSION "@VERSION@"

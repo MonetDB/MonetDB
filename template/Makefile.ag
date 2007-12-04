@@ -18,11 +18,5 @@ SUBDIRS = conf src
 
 EXTRA_DIST = RunMtest.in RunMapprove.in rpm.mk.in
 
-headers_h = {
-        HEADERS = h
-        SOURCES = template_config.h
-        DIR = includedir/template
-}
-
 TESTS = RunMtest
 TESTS_ENVIRONMENT = $(SHELL)

@@ -22,8 +22,8 @@
 
 #include <monetdb_winconfig.h>
 
-#define MONETDBPREFIX "@Qprefix@"
-#define MONETDBCONFIG "@Qsysconfdir@@QDIRSEP@MonetDB.conf"
+#define MONETDB4_PREFIX "@QXprefix@"
+#define MONETDB4_CONFFILE "@QXsysconfdir@@QDIRSEP@MonetDB.conf"
 
 /* architecture-dependent files */
 #define MONETDB4_EXEC_PREFIX "${prefix}"
@@ -33,9 +33,6 @@
 
 /* modifiable single-machine data */
 #define MONETDB4_LOCALSTATEDIR "${prefix}\\var"
-
-/* architecture-independent files */
-#define MONETDB4_PREFIX "@QXprefix@"
 
 /* read-only single-machine data */
 #define MONETDB4_SYSCONFDIR "${prefix}\\etc"

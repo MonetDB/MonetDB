@@ -173,7 +173,6 @@ rm -fr $RPM_BUILD_ROOT
 %{_bindir}/calibrator
 %{_libdir}/pkgconfig/MonetDB.pc
 %dir %{_includedir}/MonetDB4
-%{_includedir}/MonetDB4/*.h
 %{_includedir}/MonetDB4/*/*.[hcm]
 %{_libdir}/libmonet.so
 %{_libdir}/libembeddedmil.so

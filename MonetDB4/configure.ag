@@ -105,6 +105,7 @@ AC_SUBST(QXMONETDB4_SOURCE)
 AC_DEFINE_UNQUOTED(MONETDB4_LOCALSTATEDIR,"$QXlocalstatedir",[modifiable single-machine data])
 AC_DEFINE_UNQUOTED(MONETDB4_LIBDIR,"$QXlibdir",[object code libraries])
 AC_DEFINE_UNQUOTED(MONETDB4_SYSCONFDIR,"$QXsysconfdir",[read-only single-machine data])
+AC_DEFINE_UNQUOTED(MONETDB4_CONFFILE,"$QXsysconfdir${QDIRSEP}MonetDB.conf",[MonetDB4 config file])
 
 
 dnl AC_CHECK_PROG(CP,cp,cp -f)

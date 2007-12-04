@@ -174,7 +174,6 @@ rm -fr $RPM_BUILD_ROOT
 %dir %{_includedir}/MonetDB5/mal
 %dir %{_includedir}/MonetDB5/optimizer
 %dir %{_includedir}/MonetDB5/scheduler
-%{_includedir}/MonetDB5/*.h
 %{_includedir}/MonetDB5/*/*.[hcm]
 %{_libdir}/*.so
 

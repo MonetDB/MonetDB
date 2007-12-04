@@ -226,11 +226,8 @@ capabilities depend on the malloc implementation used at run time.
 	if (!(setlen = mo_builtin_settings(&set)))
 		usage(prog, debug, set, setlen);
 
-/*	* MONETDBPREFIX & MONETDBCONFIG are not (yet?) available for sql;
-	* use "Mserver --config=`monetdb4-config --sysconfdir`/MonetDB.conf", instead.
-	setlen = mo_add_option(&set, setlen, opt_config, "prefix", MONETDBPREFIX);
-	setlen = mo_add_option(&set, setlen, opt_config, "config", MONETDBCONFIG);
-*/
+	setlen = mo_add_option(&set, setlen, opt_config, "prefix", MONETDB4_PREFIX);
+	setlen = mo_add_option(&set, setlen, opt_config, "config", MONETDB4_CONFFILE);
 
 	for (;;) {
 		int option_index = 0;

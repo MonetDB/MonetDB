@@ -42,11 +42,5 @@ headers_docs = {
 	DIR = datadir/doc/MonetDB-XQuery-$(VERSION)
 }
 
-headers_h = {
-	HEADERS = h
-	SOURCES = pf_config.h
-	DIR = includedir/pathfinder
-}
-
 TESTS = RunMtest
 TESTS_ENVIRONMENT = $(SHELL)
