@@ -181,7 +181,8 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/libembeddedsql.so.*
 %{_libdir}/MonetDB4/lib/lib_sql_server*
 %{_libdir}/MonetDB4/*.mil
-%{_includedir}/embeddedclient.h
+%dir %{_includedir}/MonetDB4/sql
+%{_includedir}/MonetDB4/sql/embeddedclient.h
 %endif
 
 %if %{?_with_monetdb5:1}%{!?_with_monetdb5:0}
@@ -191,6 +192,8 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/libembeddedsql5.so.*
 %{_libdir}/MonetDB5/lib/lib_sql*
 %{_libdir}/MonetDB5/*.mal
+%dir %{_includedir}/MonetDB5/sql
+%{_includedir}/MonetDB5/sql/embeddedclient.h
 %{_bindir}/merovingian
 %{_bindir}/monetdb
 %{_mandir}/man1/monetdb.1.gz

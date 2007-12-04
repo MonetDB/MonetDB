@@ -104,7 +104,7 @@ bin_embeddedExample = {
 
 headers_h = {
 	HEADERS = h
-	DIR = includedir
+	DIR = includedir/MonetDB4/sql
 	SOURCES = embeddedclient.mx
 }
 

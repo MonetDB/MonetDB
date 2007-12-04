@@ -54,7 +54,7 @@ bin_Mbeddedsql5 = {
 
 headers_h = {
 	HEADERS = h
-	DIR = includedir
+	DIR = includedir/MonetDB5/sql
 	SOURCES = embeddedclient.mx
 }
 
