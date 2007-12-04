@@ -50,8 +50,10 @@ public class BufferedMCLWriter extends BufferedWriter {
 	 *
 	 * @param in An OutputStream
 	 */
-	public BufferedMCLWriter(OutputStream in) {
-		super(new OutputStreamWriter(in));
+	public BufferedMCLWriter(OutputStream in, String enc)
+		throws UnsupportedEncodingException
+	{
+		super(new OutputStreamWriter(in, enc));
 	}
 
 	/**

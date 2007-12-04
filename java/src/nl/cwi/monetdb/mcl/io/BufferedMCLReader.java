@@ -76,8 +76,10 @@ public class BufferedMCLReader extends BufferedReader {
 	 *
 	 * @param in An InputStream
 	 */
-	public BufferedMCLReader(InputStream in) {
-		super(new InputStreamReader(in));
+	public BufferedMCLReader(InputStream in, String enc)
+		throws UnsupportedEncodingException
+	{
+		super(new InputStreamReader(in, enc));
 	}
 
 	/**

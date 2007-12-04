@@ -211,8 +211,12 @@ public final class MapiSocket {
 
 		fromMonet = new BlockInputStream(con.getInputStream());
 		toMonet = new BlockOutputStream(con.getOutputStream());
-		reader = new BufferedMCLReader(fromMonet);
-		writer = new BufferedMCLWriter(toMonet);
+		try {
+			reader = new BufferedMCLReader(fromMonet, "UTF-8");
+			writer = new BufferedMCLWriter(toMonet, "UTF-8");
+		} catch (UnsupportedEncodingException e) {
+			throw new AssertionError(e.toString());
+		}
 		writer.registerReader(reader);
 
 		// do the login ritual, read challenge, send response
