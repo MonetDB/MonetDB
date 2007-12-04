@@ -71,6 +71,7 @@ FIXME: actually implement that
 #ifdef HAVE_NETDB_H
 #include <netdb.h>
 #include <netinet/in.h>
+#include <arpa/inet.h> /* inet_ntoa */
 #endif
 #ifdef HAVE_FCNTL_H
 #include <fcntl.h>
@@ -566,6 +567,8 @@ handleClient(int sock)
 	char *database = NULL, *s;
 	sabdb *top = NULL;
 	sabdb *stat = NULL;
+	struct sockaddr_in saddr;
+	socklen_t saddrlen = sizeof(struct sockaddr_in);
 
 	fdin = block_stream(socket_rastream(sock, "read"));
 	fout = block_stream(socket_wastream(sock, "write"));
@@ -704,8 +707,16 @@ handleClient(int sock)
 		return(e);
 	}
 
-	merlog("redirecting client for database '%s' to %s",
-			stat->dbname, stat->conns->val);
+	if (getpeername(sock, (struct sockaddr *)&saddr, &saddrlen) == -1) {
+		merlog("couldn't get peername of client: %s", strerror(errno));
+		merlog("redirecting client for database '%s' to %s",
+				stat->dbname, stat->conns->val);
+	} else {
+
+		merlog("redirecting client %s:%d for database '%s' to %s",
+				inet_ntoa(saddr.sin_addr), (int) ntohs(saddr.sin_port),
+				stat->dbname, stat->conns->val);
+	}
 
 	/* need to send a redirect */
 	stream_printf(fout, "^%s%s\n",
