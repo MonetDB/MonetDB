@@ -549,6 +549,7 @@ AUTHchangeUsername(str *olduser, str *newuser)
 str
 AUTHchangePassword(str *oldpass, str *passwd) {
 	BUN p;
+	str err;
 	str tmp;
 	str hash;
 	oid id;
@@ -567,7 +568,9 @@ AUTHchangePassword(str *oldpass, str *passwd) {
 	passi = bat_iterator(pass);
 	tmp = BUNtail(passi, p);
 	assert (tmp != NULL);
-	if (strcmp(tmp, *oldpass) != 0)
+	/* decypher the password */
+	rethrow("setPassword", err, AUTHdecypherValue(&hash, &tmp));
+	if (strcmp(hash, *oldpass) != 0)
 		throw(INVCRED, "changePassword", "Access denied");
 
 	/* cypher the password */
