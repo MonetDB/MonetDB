@@ -169,6 +169,11 @@ stream_export stream *file_wstream(FILE *fp, const char *name);
 stream_export stream *file_rastream(FILE *fp, const char *name);
 stream_export stream *file_wastream(FILE *fp, const char *name);
 
+#ifdef HAVE_ICONV
+stream_export stream *iconv_rstream(stream *ss, const char *charset, const char *name);
+stream_export stream *iconv_wstream(stream *ss, const char *charset, const char *name);
+#endif
+
 stream_export int rendezvous_streams(stream **in, stream **out, const char *name);
 
 typedef struct buffer {
@@ -689,6 +694,9 @@ create_stream(const char *name)
 	return s;
 }
 
+/* ------------------------------------------------------------------ */
+/* streams working on a disk file */
+
 static ssize_t
 file_read(stream *s, void *buf, size_t elmsize, size_t cnt)
 {
@@ -723,9 +731,12 @@ file_close(stream *s)
 
 	if (!fp)
 		return;
-	if (fp != stdin && fp != stdout && fp != stderr)
-		fclose(fp);
-	else if (s->access == ST_WRITE)
+	if (fp != stdin && fp != stdout && fp != stderr) {
+		if (s->name && *s->name == '|')
+			pclose(fp);
+		else
+			fclose(fp);
+	} else if (s->access == ST_WRITE)
 		fflush(fp);
 	s->stream_data.p = NULL;
 }
@@ -810,6 +821,9 @@ open_stream(const char *filename, const char *flags)
 	s->stream_data.p = (void *) fp;
 	return s;
 }
+
+/* ------------------------------------------------------------------ */
+/* streams working on a gzip-compressed disk file */
 
 #ifdef HAVE_LIBZ
 static ssize_t
@@ -935,6 +949,9 @@ open_gzwastream(const char *filename)
 }
 #endif
 
+/* ------------------------------------------------------------------ */
+/* streams working on a bzip2-compressed disk file */
+
 #ifdef HAVE_LIBBZ2
 static ssize_t
 stream_bzread(stream *s, void *buf, size_t elmsize, size_t cnt)
@@ -1055,6 +1072,9 @@ open_bzwastream(const char *filename)
 	return open_bzwastream_(filename, "wb");
 }
 #endif
+
+/* ------------------------------------------------------------------ */
+/* streams working on a disk file, compressed or not */
 
 stream *
 open_rstream(const char *filename)
@@ -1229,6 +1249,9 @@ append_wastream(const char *filename)
 {
 	return open_wastream_(filename, "a");
 }
+
+/* ------------------------------------------------------------------ */
+/* streams working on a remote file using cURL */
 
 #ifdef HAVE_CURL
 #include <curl/curl.h>
@@ -1440,6 +1463,9 @@ open_urlstream(const char *url)
 }
 
 #endif /* HAVE_CURL */
+
+/* ------------------------------------------------------------------ */
+/* streams working on a socket */
 
 static ssize_t
 socket_write(stream *s, const void *buf, size_t elmsize, size_t cnt)
@@ -1666,6 +1692,9 @@ socket_wastream(SOCKET sock, const char *name)
 	return s;
 }
 
+/* ------------------------------------------------------------------ */
+/* streams working on a UDP socket */
+
 typedef struct udp_stream {
 	SOCKET s;
 	struct sockaddr_in addr;
@@ -1828,6 +1857,9 @@ udp_wastream(char *hostname, int port, const char *name)
 	s->type = ST_ASCII;
 	return s;
 }
+
+/* ------------------------------------------------------------------ */
+/* streams working on a openSSL connection */
 
 #ifdef HAVE_OPENSSL
 struct ssl_data {
@@ -2106,6 +2138,9 @@ ssl_wastream(SSL * ssl, const char *name)
 }
 #endif /* HAVE_OPENSSL */
 
+/* ------------------------------------------------------------------ */
+/* streams working on an open file pointer */
+
 static stream *
 file_stream(const char *name)
 {
@@ -2204,6 +2239,142 @@ file_wastream(FILE *fp, const char *name)
 	s->stream_data.p = (void *) fp;
 	return s;
 }
+
+/* ------------------------------------------------------------------ */
+/* streams working on a substream, converting character sets using iconv */
+
+#ifdef HAVE_ICONV
+
+#ifdef HAVE_ICONV_H
+#include <iconv.h>
+#endif
+
+struct icstream {
+	iconv_t cd;
+	stream *s;
+	char buffer[BUFSIZ];
+	size_t buflen;
+};
+
+static ssize_t
+ic_write(stream *s, const void *buf, size_t elmsize, size_t cnt)
+{
+	struct icstream *ic = (struct icstream *) s->stream_data.p;
+	char *inbuf = (char *) buf;
+	size_t inbytesleft = elmsize * cnt;
+	char *outbuf = ic->buffer;
+	size_t outbytesleft = sizeof(ic->buffer);
+
+	while (inbytesleft > 0) {
+		iconv(ic->cd, &inbuf, &inbytesleft, &outbuf, &outbytesleft);
+		stream_write(ic->s, ic->buffer, 1, sizeof(ic->buffer) - outbytesleft);
+	}
+	return cnt;
+}
+
+static ssize_t
+ic_read(stream *s, void *buf, size_t elmsize, size_t cnt)
+{
+	struct icstream *ic = (struct icstream *) s->stream_data.p;
+	char *inbuf = ic->buffer;
+	size_t inbytesleft = ic->buflen;
+	char *outbuf = (char *) buf;
+	size_t outbytesleft = elmsize * cnt;
+
+	errno = 0;
+	while (outbytesleft > 0 && errno != E2BIG) {
+		stream_read(ic->s, inbuf, 1, 1);
+		inbytesleft++;
+		iconv(ic->cd, &inbuf, &inbytesleft, &outbuf, &outbytesleft);
+		if (inbytesleft == 0)
+			inbuf = ic->buffer;
+	}
+	ic->buflen = inbytesleft;
+	return (elmsize * cnt - outbytesleft) / elmsize;
+}
+
+static void
+ic_close(stream *s)
+{
+	struct icstream *ic = (struct icstream *) s->stream_data.p;
+
+	if (ic == NULL)
+		return;
+	stream_close(ic->s);
+	free(s->stream_data.p);
+	s->stream_data.p = NULL;
+}
+
+static int
+ic_flush(stream *s)
+{
+	struct icstream *ic = (struct icstream *) s->stream_data.p;
+	char *outbuf = ic->buffer;
+	size_t outbytesleft = sizeof(ic->buffer);
+
+	iconv(ic->cd, NULL, NULL, &outbuf, &outbytesleft);
+	stream_write(ic->s, ic->buffer, 1, sizeof(ic->buffer) - outbytesleft);
+	stream_flush(ic->s);
+	return 1;
+}
+
+static stream *
+ic_open(iconv_t cd, stream *ss, const char *name)
+{
+	stream *s;
+	struct icstream *ic;
+
+	if ((s = create_stream(name)) == NULL)
+		return NULL;
+	s->read = ic_read;
+	s->write = ic_write;
+	s->close = ic_close;
+	s->flush = ic_flush;
+	s->stream_data.p = malloc(sizeof(struct icstream));
+	ic = (struct icstream *) s->stream_data.p;
+	ic->cd = cd;
+	ic->s = ss;
+	ic->buflen = 0;
+	return s;
+}
+	
+stream *
+iconv_rstream(stream *ss, const char *charset, const char *name)
+{
+	stream *s;
+	iconv_t cd;
+
+#ifdef STREAM_DEBUG
+	printf("iconv_rstream %s %s\n", charset, name);
+#endif
+	cd = iconv_open(charset, "utf-8");
+	if (cd == (iconv_t) -1)
+		return NULL;
+	s = ic_open(cd, ss, name);
+	s->access = ST_READ;
+	return s;
+}
+	
+stream *
+iconv_wstream(stream *ss, const char *charset, const char *name)
+{
+	stream *s;
+	iconv_t cd;
+
+#ifdef STREAM_DEBUG
+	printf("iconv_wstream %s %s\n", charset, name);
+#endif
+	cd = iconv_open("utf-8", charset);
+	if (cd == (iconv_t) -1)
+		return NULL;
+	s = ic_open(cd, ss, name);
+	s->access = ST_WRITE;
+	return s;
+}
+
+#endif /* HAVE_ICONV */
+
+/* ------------------------------------------------------------------ */
 
 void
 buffer_init(buffer *b, char *buf, size_t size)
@@ -2347,6 +2518,8 @@ buffer_wastream(buffer *b, const char *name)
 	s->stream_data.p = (void *) b;
 	return s;
 }
+
+/* ------------------------------------------------------------------ */
 
 /* A buffered stream consists of a sequence of blocks.  Each block
    consists of a count followed by the data in the block.  A flush is
@@ -2692,6 +2865,8 @@ isa_block_stream(stream *s)
 	return s->read == bs_read || s->write == bs_write;
 }
 
+/* ------------------------------------------------------------------ */
+
 ssize_t 
 stream_read_block(stream *s, void *buf, size_t elmsize, size_t cnt)
 {
@@ -2855,6 +3030,8 @@ stream_printf(stream *s, const char *format, ...)
 }
 
 
+/* ------------------------------------------------------------------ */
+
 bstream *
 bstream_create(stream *s, size_t size)
 {
@@ -2988,6 +3165,8 @@ bstream_destroy(bstream *s)
 	free(s);
 }
 
+/* ------------------------------------------------------------------ */
+
 /*
  * Buffered write stream batches subsequent write requests in order to optimize write bandwidth
  */
@@ -3062,6 +3241,8 @@ stream* wbstream(stream *s, size_t buflen) {
         }
         return ns;
 }
+
+/* ------------------------------------------------------------------ */
 
 #ifdef HAVE_PIPE
 static ssize_t
