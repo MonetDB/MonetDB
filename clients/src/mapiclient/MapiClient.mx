@@ -106,9 +106,26 @@ In the SQL mode, a few more convenient commands are available.
 #include <readline/history.h>
 #include "ReadlineTools.h"
 #endif
+#include "stream.h"
 #include "msqldump.h"
 #include "mprompt.h"
-#include "stream.h"
+#ifdef HAVE_LOCALE_H
+#include <locale.h>
+#endif
+#ifdef HAVE_ICONV
+#ifdef HAVE_ICONV_H
+#include <iconv.h>
+#endif
+#ifdef HAVE_NL_LANGINFO
+#ifdef HAVE_LANGINFO_H
+#include <langinfo.h>
+#endif
+#else
+#ifdef NATIVE_WIN32
+#include <Windows.h>
+#endif
+#endif
+#endif
 
 #ifndef S_ISCHR
 #define S_ISCHR(m)	(((m) & S_IFMT) == S_IFCHR)
@@ -131,13 +148,20 @@ enum modes {
 };
 
 static enum modes mode = NOLANGUAGE;
-static FILE *toConsole;
+static stream *toConsole;
+static stream *toConsole_raw;	       /* toConsole without iconv conversion */
+static stream *stdout_stream;
+static stream *stderr_stream;
 static FILE *fromConsole = NULL;
 static char *language = NULL;
 static char *logfile = NULL;
 static int start_with_help = 0;
 static char promptbuf[16];
 static int echoquery = 0;
+#ifdef HAVE_ICONV
+static char *encoding;
+static iconv_t cd_in;
+#endif
 
 #define setPrompt() sprintf(promptbuf, "%.*s>", (int) sizeof(promptbuf) - 2, language)
 #define debugMode() (strncmp(promptbuf, "mdb", 3) == 0)
@@ -242,9 +266,42 @@ timerEnd(void)
 {
 	t1 = gettime();
 	if (mark && specials == NOmodifier) {
-		fprintf(toConsole, "%s % 7ld.%03ld msec %s\n", mark, (t1 - t0) / 1000, (t1 - t0) % 1000, mark2 ? mark2 : "");
-		fflush(toConsole);
+		stream_printf(toConsole, "%s % 7ld.%03ld msec %s\n", mark, (t1 - t0) / 1000, (t1 - t0) % 1000, mark2 ? mark2 : "");
+		stream_flush(toConsole);
 	}
+}
+
+@-
+The Mapi library eats away the comment lines, which
+we need to detect end of debugging. We overload
+the routine to our liking.
+@c
+static char *
+fetch_line(MapiHdl hdl)
+{
+	char *reply;
+
+	if ((reply = mapi_fetch_line(hdl)) == NULL)
+		return NULL;
+	if (strncmp(reply, "mdb>#", 5) == 0) {
+		if (strncmp(reply, "mdb>#EOD", 8) == 0)
+			setPrompt();
+		else
+			sprintf(promptbuf, "mdb>");
+	}
+	return reply;
+}
+
+static int
+fetch_row(MapiHdl hdl)
+{
+	char *reply;
+
+	do {
+		if ((reply = fetch_line(hdl)) == NULL)
+			return 0;
+	} while (*reply != '[' && *reply != '=');
+	return mapi_split_line(hdl);
 }
 
 static void
@@ -284,11 +341,11 @@ SQLrow(int *len, int *numeric, char **rest, int fields, int trim)
 	}
 
 	do {
-		fprintf(toConsole,"%c ", first? '|':':');
+		stream_printf(toConsole,"%c ", first? '|':':');
 		more = 0;
 		for (i = 0; i < fields; i++) {
 			if (rest[i] == NULL || *rest[i] == 0) 
-				fprintf(toConsole, "%*s |", len[i], " ");
+				stream_printf(toConsole, "%*s |", len[i], " ");
 			else {
 				/* break the string into pieces and left-adjust them in the column */
 				if (strlen(rest[i]) > (size_t) len[i]) {
@@ -297,20 +354,20 @@ SQLrow(int *len, int *numeric, char **rest, int fields, int trim)
 						t--;
 					if (t == rest[i] && !isspace((int) *t))
 						t = rest[i] + len[i];
-					fprintf(toConsole, "%*.*s |", first && numeric[i] ? len[i] : -len[i], (int) (t - rest[i]), rest[i]);
+					stream_printf(toConsole, "%*.*s |", first && numeric[i] ? len[i] : -len[i], (int) (t - rest[i]), rest[i]);
 					while (isspace((int) *t))
 						t++;
 					rest[i] = *t ? t : 0;
 					if (rest[i])
 						more = 1;
 				} else {
-					fprintf(toConsole, "%*s |", first && numeric[i] ? len[i] : -len[i], rest[i]);
+					stream_printf(toConsole, "%*s |", first && numeric[i] ? len[i] : -len[i], rest[i]);
 					rest[i] = 0;
 				}
 			}
 		}
 		first = 0;
-		fprintf(toConsole, "\n");
+		stream_printf(toConsole, "\n");
 		rows++;
 	} while (more);
 	return rows;
@@ -323,19 +380,28 @@ XMLprdata(const char *val)
 		return;
 	while (*val) {
 		if (*val == '&')
-			fprintf(toConsole, "&amp;");
+			stream_printf(toConsole_raw, "&amp;");
 		else if (*val == '<')
-			fprintf(toConsole, "&lt;");
+			stream_printf(toConsole_raw, "&lt;");
 		else if (*val == '>')
-			fprintf(toConsole, "&gt;");
+			stream_printf(toConsole_raw, "&gt;");
 		else if (*val == '"')
-			fprintf(toConsole, "&quot;");
+			stream_printf(toConsole_raw, "&quot;");
 		else if (*val == '\'')
-			fprintf(toConsole, "&apos;");
-		else if ((*val & 0xFF) < 0x20)
-			fprintf(toConsole, "&#%d;", *val & 0xFF);
-		else
-			fputc(*val, toConsole);
+			stream_printf(toConsole_raw, "&apos;");
+		else if ((*val & 0xFF) < 0x20)  /* control character */
+			stream_printf(toConsole_raw, "&#%d;", *val & 0xFF);
+		else if ((*val & 0x80) != 0 /* && encoding != NULL */) {
+			int n, m;
+			int c = *val & 0x7F;
+
+			for (n = 0, m = 0x40; c & m; n++, m >>= 1)
+				c &= ~m;
+			while (--n >= 0)
+				c = (c << 6) | (*++val & 0x3F);
+			stream_printf(toConsole_raw, "&#x%x;", c);
+		} else
+			stream_write(toConsole_raw, val, 1, 1);
 		val++;
 	}
 }
@@ -343,42 +409,9 @@ XMLprdata(const char *val)
 static void
 XMLprattr(const char *name, const char *val)
 {
-	fprintf(toConsole, " %s=\"", name);
+	stream_printf(toConsole_raw, " %s=\"", name);
 	XMLprdata(val);
-	fputc('"', toConsole);
-}
-
-@-
-The Mapi library eats away the comment lines, which
-we need to detect end of debugging. We overload
-the routine to our liking.
-@c
-static char *
-fetch_line(MapiHdl hdl)
-{
-	char *reply;
-
-	if ((reply = mapi_fetch_line(hdl)) == NULL)
-		return NULL;
-	if (strncmp(reply, "mdb>#", 5) == 0) {
-		if (strncmp(reply, "mdb>#EOD", 8) == 0)
-			setPrompt();
-		else
-			sprintf(promptbuf, "mdb>");
-	}
-	return reply;
-}
-
-static int
-fetch_row(MapiHdl hdl)
-{
-	char *reply;
-
-	do {
-		if ((reply = fetch_line(hdl)) == NULL)
-			return 0;
-	} while (*reply != '[' && *reply != '=');
-	return mapi_split_line(hdl);
+	stream_write(toConsole_raw, "\"", 1, 1);
 }
 
 static void
@@ -387,35 +420,38 @@ XMLrenderer(MapiHdl hdl)
 	int i, fields;
 	char *name;
 
-	fprintf(toConsole, "<?xml version='1.0' encoding='UT-8'?>\n");
-	fprintf(toConsole, "<!DOCTYPE table [\n"
+	/* we must use toConsole_raw since the XML file is encoded in UTF-8 */
+	stream_flush(toConsole);
+	stream_printf(toConsole_raw, "<?xml version='1.0' encoding='UTF-8'?>\n");
+	stream_printf(toConsole_raw, "<!DOCTYPE table [\n"
 		" <!ELEMENT table (row)*>\n"			/* a table consists of zero or more rows */
 		" <!ELEMENT row (column)+>\n"			/* a row consists of one or more columns */
 		" <!ELEMENT column (#PCDATA)>\n"
 		" <!ATTLIST table name CDATA #IMPLIED>\n"	/* a table may have a name */
 		" <!ATTLIST column name CDATA #IMPLIED>]>\n");	/* a column may have a name */
-	fprintf(toConsole, "<table");
+	stream_printf(toConsole_raw, "<table");
 	name = mapi_get_table(hdl, 0);
 	if (name != NULL && *name != 0)
 		XMLprattr("name", name);
-	fprintf(toConsole, ">\n");
+	stream_printf(toConsole_raw, ">\n");
 	while ((fields = fetch_row(hdl)) != 0) {
-		fprintf(toConsole, "<row>");
+		stream_printf(toConsole_raw, "<row>");
 		for (i = 0; i < fields; i++) {
 			char *data = mapi_fetch_field(hdl, i);
 
-			fprintf(toConsole, "<column");
+			stream_printf(toConsole_raw, "<column");
 			name = mapi_get_name(hdl, i);
 			if (name != NULL && *name != 0)
 				XMLprattr("name", name);
-			fputc('>', toConsole);
+			stream_write(toConsole_raw, ">", 1, 1);
 			if (data)
 				XMLprdata(data);
-			fprintf(toConsole, "</column>");
+			stream_printf(toConsole_raw, "</column>");
 		}
-		fprintf(toConsole, "</row>\n");
+		stream_printf(toConsole_raw, "</row>\n");
 	}
-	fprintf(toConsole, "</table>\n");
+	stream_printf(toConsole_raw, "</table>\n");
+	stream_flush(toConsole_raw);
 }
 
 static void
@@ -426,7 +462,7 @@ RAWrenderer(MapiHdl hdl)
 	while ((line = fetch_line(hdl)) != 0) {
 		if (*line == '=')
 			line++;
-		fprintf(toConsole, "%s\n", line);
+		stream_printf(toConsole, "%s\n", line);
 	}
 }
 
@@ -444,42 +480,37 @@ CSVrenderer(MapiHdl hdl)
 			if (s == NULL)
 				s = "";
 			if (strchr(s, *sep) != NULL || strchr(s, '\n') != NULL || strchr(s, '"') != NULL) {
-				fprintf(toConsole, "%s\"", i == 0 ? "" : sep);
+				stream_printf(toConsole, "%s\"", i == 0 ? "" : sep);
 				while (*s) {
 					switch (*s) {
 					case '\n':
-						putc('\\', toConsole);
-						putc('n', toConsole);
+						stream_write(toConsole, "\\n", 1, 2);
 						break;
 					case '\t':
-						putc('\\', toConsole);
-						putc('t', toConsole);
+						stream_write(toConsole, "\\t", 1, 2);
 						break;
 					case '\r':
-						putc('\\', toConsole);
-						putc('r', toConsole);
+						stream_write(toConsole, "\\r", 1, 2);
 						break;
 					case '\\':
-						putc('\\', toConsole);
-						putc('\\', toConsole);
+						stream_write(toConsole, "\\\\", 1, 2);
 						break;
 					case '"':
-						putc('\\', toConsole);
-						putc('"', toConsole);
+						stream_write(toConsole, "\\\"", 1, 2);
 						break;
 					default:
 						if (*s == *sep)
-							putc('\\', toConsole);
-						putc(*s, toConsole);
+							stream_write(toConsole, "\\", 1, 1);
+						stream_write(toConsole, s, 1, 1);
 						break;
 					}
 					s++;
 				}
-				putc('"', toConsole);
+				stream_write(toConsole, "\"", 1, 1);
 			} else
-				fprintf(toConsole, "%s%s", i == 0 ? "" : sep, s ? s : "");
+				stream_printf(toConsole, "%s%s", i == 0 ? "" : sep, s ? s : "");
 		}
-		fprintf(toConsole, "\n");
+		stream_printf(toConsole, "\n");
 	}
 }
 
@@ -488,13 +519,13 @@ SQLseparator(int *len, int fields, char sep)
 {
 	int i, j;
 
-	fprintf(toConsole, "+%c", sep);
+	stream_printf(toConsole, "+%c", sep);
 	for (i = 0; i < fields; i++) {
 		for (j = 0; j < (len[i] < 0 ? -len[i] : len[i]); j++)
-			fprintf(toConsole, "%c", sep);
-		fprintf(toConsole, "%c+", sep);
+			stream_printf(toConsole, "%c", sep);
+		stream_printf(toConsole, "%c+", sep);
 	}
-	fprintf(toConsole, "\n");
+	stream_printf(toConsole, "\n");
 }
 
 static void
@@ -505,9 +536,9 @@ SQLqueryEcho(MapiHdl hdl)
 
 		qry = mapi_get_query(hdl);
 		if (!interactive_stdin)
-			fputc('#', toConsole);
+			stream_write(toConsole, "#", 1, 1);
 		if (qry) {
-			fprintf(toConsole, "%s", qry);
+			stream_printf(toConsole, "%s", qry);
 			free(qry);
 		}
 	}
@@ -540,7 +571,7 @@ SQLdebugRendering(MapiHdl hdl)
 	sprintf(promptbuf, "mdb>");
 	while ((reply = fetch_line(hdl))) {
 		cnt++;
-		fprintf(toConsole, "%s\n", reply);
+		stream_printf(toConsole, "%s\n", reply);
 		if (strncmp(reply, "mdb>#EOD", 8) == 0) {
 			cnt = 0;
 			break;
@@ -558,7 +589,7 @@ SQLpagemove(int *len, int fields, int *ps, int *silent)
 	int c;
 
 	SQLseparator(len, fields, '-');
-	fprintf(toConsole, "next page? (continue,quit,next)");
+	stream_printf(toConsole, "next page? (continue,quit,next)");
 	c = getc(fromConsole);
 	if (c == 'c')
 		*ps = 0;
@@ -807,7 +838,7 @@ setFormatter(char *s)
 	else if (strcmp(s, "xml") == 0)
 		formatter = XMLformatter;
 	else
-		fprintf(toConsole, "unsupported formatter\n");
+		stream_printf(toConsole, "unsupported formatter\n");
 }
 
 static void
@@ -827,17 +858,27 @@ static int
 format_result(MapiHdl hdl)
 {
 #ifdef HAVE_POPEN
-	FILE *saveFD = NULL;	/* for external paging */
+	stream *saveFD = NULL, *saveFD_raw; /* for external paging */
 #endif
 	MapiMsg rc;
 
 #ifdef HAVE_POPEN
 	if (pager) {
-		saveFD = toConsole;
-		toConsole = popen(pager, "w");
-		if (toConsole == NULL) {
-			toConsole = saveFD;
+		FILE *p;
+
+		p = popen(pager, "w");
+		if (p == NULL)
 			fprintf(stderr, "Starting '%s' failed\n", pager);
+		else {
+			saveFD = toConsole;
+			saveFD_raw = toConsole_raw;
+			/* put | in name to indicate that file should be closed with pclose */
+			toConsole = file_wastream(p, "|pager");
+			toConsole_raw = toConsole;
+#ifdef HAVE_ICONV
+			if (encoding != NULL)
+				toConsole = iconv_wstream(toConsole, encoding, "pager");
+#endif
 		}
 	}
 #endif
@@ -849,9 +890,9 @@ format_result(MapiHdl hdl)
 		oldpagewidth = pagewidth;
 		if (mapi_get_querytype(hdl) == Q_UPDATE) {
 			if (formatter == RAWformatter)
-				fprintf(toConsole, "[ %d\t]\n", mapi_rows_affected(hdl));
+				stream_printf(toConsole, "[ %d\t]\n", mapi_rows_affected(hdl));
 			else
-				fprintf(toConsole, "Rows affected %d\n", mapi_rows_affected(hdl));
+				stream_printf(toConsole, "Rows affected %d\n", mapi_rows_affected(hdl));
 			continue;
 		}
 		if (pagewidth <= 0) {
@@ -873,7 +914,7 @@ format_result(MapiHdl hdl)
 			if (formatter == RAWformatter)
 				mapi_explain_result(hdl, stderr);
 			else
-				fprintf(toConsole, "%s", reply);
+				stream_printf(toConsole, "%s", reply);
 		}
 		if (debugMode())
 			RAWrenderer(hdl);
@@ -912,8 +953,9 @@ format_result(MapiHdl hdl)
 
 #ifdef HAVE_POPEN
 	if (saveFD) {
-		pclose(toConsole);
+		stream_close(toConsole);
 		toConsole = saveFD;
+		toConsole_raw = saveFD_raw;
 	}
 #endif
 
@@ -1073,7 +1115,7 @@ doFile(Mapi mid, const char *file)
 	free(buf);
 	if (file != NULL)
 		fclose(fp);
-	fflush(stdout);
+	stream_flush(toConsole);
 	return 0;
 }
 
@@ -1086,15 +1128,15 @@ showCommands(void)
 {
 	/* XQuery prelude */
 	if (mode == XQUERY) {
-		fprintf(toConsole, "mclient interactive MonetDB/XQuery session: type an XQuery or XQUF update.\n");
-		fprintf(toConsole, "\nSupported document-management XQuery extensions:\n");
-		fprintf(toConsole, " pf:collections() as node()\n");
-		fprintf(toConsole, " pf:documents($collectionName as xs:string) as node()\n");
-		fprintf(toConsole, " pf:del-doc($documentName as xs:string)\n");
-		fprintf(toConsole, " pf:add-doc($uri as xs:string, $documentName as xs:string\n");
-		fprintf(toConsole, "     [,$collectionName as xs:string [,$freePercentage as xs:integer]])\n");
-		fprintf(toConsole, "\nSession commands:\n");
-		fprintf(toConsole, "<>      - send query to server (or %s)\n",
+		stream_printf(toConsole, "mclient interactive MonetDB/XQuery session: type an XQuery or XQUF update.\n");
+		stream_printf(toConsole, "\nSupported document-management XQuery extensions:\n");
+		stream_printf(toConsole, " pf:collections() as node()\n");
+		stream_printf(toConsole, " pf:documents($collectionName as xs:string) as node()\n");
+		stream_printf(toConsole, " pf:del-doc($documentName as xs:string)\n");
+		stream_printf(toConsole, " pf:add-doc($uri as xs:string, $documentName as xs:string\n");
+		stream_printf(toConsole, "     [,$collectionName as xs:string [,$freePercentage as xs:integer]])\n");
+		stream_printf(toConsole, "\nSession commands:\n");
+		stream_printf(toConsole, "<>      - send query to server (or %s)\n",
 #ifdef WIN32
 			"CTRL-Z"
 #else
@@ -1104,29 +1146,29 @@ showCommands(void)
 	}
 
 	/* shared control options */
-	fprintf(toConsole, "\\?      - show this message\n");
+	stream_printf(toConsole, "\\?      - show this message\n");
 	if (mode == MAL)
-		fprintf(toConsole, "?pat    - MAL function help. pat=[modnme[.fcnnme][(][)]] wildcard *\n");
-	fprintf(toConsole, "\\<file  - read input from file\n");
-	fprintf(toConsole, "\\>file  - save response in file, or stdout if no file is given\n");
-	fprintf(toConsole, "\\|cmd   - pipe result to process, or stop when no command is given\n");
+		stream_printf(toConsole, "?pat    - MAL function help. pat=[modnme[.fcnnme][(][)]] wildcard *\n");
+	stream_printf(toConsole, "\\<file  - read input from file\n");
+	stream_printf(toConsole, "\\>file  - save response in file, or stdout if no file is given\n");
+	stream_printf(toConsole, "\\|cmd   - pipe result to process, or stop when no command is given\n");
 #ifdef HAVE_LIBREADLINE
-	fprintf(toConsole, "\\h      - show the readline history\n");
+	stream_printf(toConsole, "\\h      - show the readline history\n");
 #endif
-	fprintf(toConsole, "\\t      - toggle timer\n");
-	fprintf(toConsole, "\\e      - echo the query in sql formatting mode\n");
+	stream_printf(toConsole, "\\t      - toggle timer\n");
+	stream_printf(toConsole, "\\e      - echo the query in sql formatting mode\n");
 	if (mode == SQL) {
-		fprintf(toConsole, "\\D table- dumps the table, or the complete database if none given.\n");
-		fprintf(toConsole, "\\d table- describe the table, or the complete database if none given.\n");
-		fprintf(toConsole, "\\A      - enable auto commit\n");
-		fprintf(toConsole, "\\a      - disable auto commit\n");
+		stream_printf(toConsole, "\\D table- dumps the table, or the complete database if none given.\n");
+		stream_printf(toConsole, "\\d table- describe the table, or the complete database if none given.\n");
+		stream_printf(toConsole, "\\A      - enable auto commit\n");
+		stream_printf(toConsole, "\\a      - disable auto commit\n");
 	}
-	fprintf(toConsole, "\\f      - format using a built-in renderer {csv,tab,raw,sql,xml} \n");
-	fprintf(toConsole, "\\w#     - set maximal page width (-1=raw,0=no limit, >0 max char)\n");
-	fprintf(toConsole, "\\r#     - set maximum rows per page (-1=raw)\n");
-	fprintf(toConsole, "\\L file - save client/server interaction\n");
-	fprintf(toConsole, "\\X      - trace mclient code\n");
-	fprintf(toConsole, "\\q      - terminate session\n");
+	stream_printf(toConsole, "\\f      - format using a built-in renderer {csv,tab,raw,sql,xml} \n");
+	stream_printf(toConsole, "\\w#     - set maximal page width (-1=raw,0=no limit, >0 max char)\n");
+	stream_printf(toConsole, "\\r#     - set maximum rows per page (-1=raw)\n");
+	stream_printf(toConsole, "\\L file - save client/server interaction\n");
+	stream_printf(toConsole, "\\X      - trace mclient code\n");
+	stream_printf(toConsole, "\\q      - terminate session\n");
 }
 
 static int
@@ -1179,6 +1221,20 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt)
 #endif
 			line = fgets(buf, BUFSIZ, fp);
 		}
+#ifdef HAVE_ICONV
+		if (line != NULL && encoding != NULL && cd_in != (iconv_t) -1) {
+			ICONV_CONST char *from = line;
+			size_t fromlen = strlen(from);
+			size_t tolen = 4 * fromlen + 1;
+			char *to = malloc(tolen);
+
+			line = to;
+			iconv(cd_in, &from, &fromlen, &to, &tolen);
+			*to = 0;
+			free(buf);
+			buf = line;
+		}
+#endif
 		if (line == NULL || (mode == XQUERY && line[0] == '<' && line[1] == '>')) {
 			/* end of file */
 			if (hdl == NULL)
@@ -1267,9 +1323,9 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt)
 					for (line += 2; *line && isspace((int) *line); line++)
 						;
 					if (*line) {
-						fprintf(toConsole, "START TRANSACTION;\n");
+						stream_printf(toConsole, "START TRANSACTION;\n");
 						dump_table(mid, line, toConsole, 0);
-						fprintf(toConsole, "COMMIT;\n");
+						stream_printf(toConsole, "COMMIT;\n");
 					} else
 						dump_tables(mid, toConsole);
 					continue;
@@ -1287,14 +1343,17 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt)
 						line[--length] = 0;
 					for (line += 2; *line && isspace((int) *line); line++)
 						;
-					if (toConsole != stdout && toConsole != stderr)
-						fclose(toConsole);
+					if (toConsole != stdout_stream && toConsole != stderr_stream)
+						stream_close(toConsole);
 					if (*line == 0 || strcmp(line, "stdout") == 0)
-						toConsole = stdout;
+						toConsole = stdout_stream;
 					else if (strcmp(line, "stderr") == 0)
-						toConsole = stderr;
-					else if ((toConsole = fopen(line, "w")) == NULL) {
-						toConsole = stdout;
+						toConsole = stderr_stream;
+					else if ((toConsole = open_wastream(line)) == NULL ||
+						 stream_errnr(toConsole)) {
+						if (toConsole != NULL)
+							stream_close(toConsole);
+						toConsole = stdout_stream;
 						fprintf(stderr, "Cannot open %s\n", line);
 					}
 					continue;
@@ -1341,7 +1400,7 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt)
 					for (h = 0; h < history_length; h++) {
 						nl = history_get(h) ? history_get(h)->line : 0;
 						if (nl)
-							fprintf(toConsole, "%d %s\n", h, nl);
+							stream_printf(toConsole, "%d %s\n", h, nl);
 					}
 					continue;
 				}
@@ -1354,9 +1413,9 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt)
 					if (nl)
 						*nl = 0;
 					if (history_expand(line + 2, &nl)) {
-						fprintf(toConsole, "%s\n", nl);
+						stream_printf(toConsole, "%s\n", nl);
 					}
-					fprintf(toConsole, "Expansion needs work\n");
+					stream_printf(toConsole, "Expansion needs work\n");
 					continue;
 				}
 */
@@ -1370,25 +1429,25 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt)
 					for (line += 2; *line && isspace((int) *line); line++)
 						;
 					if (*line == 0) {
-						fprintf(toConsole, "Current formatter: ");
+						stream_printf(toConsole, "Current formatter: ");
 						switch (formatter) {
 						case RAWformatter:
-							fprintf(toConsole, "raw\n");
+							stream_printf(toConsole, "raw\n");
 							break;
 						case TABLEformatter:
-							fprintf(toConsole, "sql\n");
+							stream_printf(toConsole, "sql\n");
 							break;
 						case CSVformatter:
-							fprintf(toConsole, "csv\n");
+							stream_printf(toConsole, "csv\n");
 							break;
 						case TABformatter:
-							fprintf(toConsole, "tab\n");
+							stream_printf(toConsole, "tab\n");
 							break;
 						case XMLformatter:
-							fprintf(toConsole, "xml\n");
+							stream_printf(toConsole, "xml\n");
 							break;
 						default:
-							fprintf(toConsole, "none\n");
+							stream_printf(toConsole, "none\n");
 							break;
 						}
 					} else
@@ -1466,6 +1525,9 @@ usage(const char *prog)
 	fprintf(stderr, " -d database | --database=database  database to connect to\n");
 
 	fprintf(stderr, " -e          | --echo             echo the query\n");
+#ifdef HAVE_ICONV
+	fprintf(stderr, " -E charset  | --encoding=charset specify encoding (character set) of the terminal\n");
+#endif
 	fprintf(stderr, " -f kind     | --format=kind      specify output format {dm,xml} for Xquery, or {csv,tab,raw,sql,xml}\n");
 	fprintf(stderr, " -H          | --history          load/save cmdline history (default off)\n");
 	fprintf(stderr, " -h hostname | --host=hostname    host to connect to\n");
@@ -1520,32 +1582,40 @@ main(int argc, char **argv)
 	struct stat statb;
 	static struct option long_options[] = {
 		{"collection", 1, 0, 'C'},
-		{"dump", 0, 0, 'D'},
 		{"database", 1, 0, 'd'},
+		{"dump", 0, 0, 'D'},
 		{"echo", 0, 0, 'e'},
+#ifdef HAVE_ICONV
+		{"encoding", 1, 0, 'E'},
+#endif
 		{"format", 1, 0, 'f'},
+		{"help", 0, 0, '?'},
+		{"history", 0, 0, 'H'},
+		{"host", 1, 0, 'h'},
 		{"input", 1, 0, 'I'},
 		{"interactive", 0, 0, 'i'},
-		{"host", 1, 0, 'h'},
-		{"log", 1, 0, 'L'},
 		{"language", 1, 0, 'l'},
+		{"log", 1, 0, 'L'},
 #ifdef HAVE_POPEN
 		{"pager", 1, 0, '|'},
 #endif
-		{"width", 1, 0, 'w'},
-		{"rows", 1, 0, 'r'},
 		{"passwd", 2, 0, 'P'},
 		{"port", 1, 0, 'p'},
+		{"rows", 1, 0, 'r'},
 		{"statement", 1, 0, 's'},
 		{"time", 0, 0, 't'},
-		{"Xdebug", 0, 0, 'X'},
 		{"user", 2, 0, 'u'},
-		{"history", 0, 0, 'H'},
-		{"help", 0, 0, '?'},
+		{"width", 1, 0, 'w'},
+		{"Xdebug", 0, 0, 'X'},
 		{0, 0, 0, 0}
 	};
 
-	toConsole = stdout;
+#ifdef HAVE_SETLOCALE
+	setlocale(LC_ALL, "");
+#endif
+	toConsole = stdout_stream = file_wastream(stdout, "stdout");
+	toConsole_raw = toConsole;
+	stderr_stream = file_wastream(stderr, "stderr");
 
 	/* execute from stdin? */
 	if (fstat(fileno(stdin), &statb) == 0 && S_ISCHR(statb.st_mode))
@@ -1554,7 +1624,11 @@ main(int argc, char **argv)
 	mark = NULL;
 	mark2 = NULL;
 
-	while ((c = getopt_long(argc, argv, "C:Dd:ef:I:ih:L:l:"
+	while ((c = getopt_long(argc, argv, "C:Dd:e"
+#ifdef HAVE_ICONV
+				"E:"
+#endif
+				"f:I:ih:L:l:"
 #ifdef HAVE_POPEN
 				"|:"
 #endif
@@ -1574,6 +1648,11 @@ main(int argc, char **argv)
 		case 'e':
 			echoquery = 1;
 			break;
+#ifdef HAVE_ICONV
+		case 'E':
+			encoding = optarg;
+			break;
+#endif
 		case 'L':
 			logfile = strdup(optarg);
 			break;
@@ -1677,6 +1756,38 @@ main(int argc, char **argv)
 		fprintf(stderr, "--input (-I) and --interactive (-i) cannot both be specified\n\n");
 		usage(argv[0]);
 	}
+
+#ifdef HAVE_ICONV
+	if (encoding == NULL) {
+#ifdef HAVE_NL_LANGINFO
+		encoding = nl_langinfo(CODESET);
+#else
+#ifdef NATIVE_WIN32
+		UINT cp = GetOEMCP();
+
+		if (cp != 0) {
+			encoding = malloc(10);
+			snprintf(encoding, 10, "cp%d", cp);
+
+		}
+#endif
+#endif
+	}
+	if (strcasecmp(encoding, "utf-8") == 0)
+		encoding = NULL;
+	if (encoding != NULL) {
+		toConsole = iconv_wstream(toConsole, encoding, "stdout");
+		if (toConsole == NULL || stream_errnr(toConsole)) {
+			fprintf(stderr, "%s: warning: cannot convert local character set %s to UTF-8\n", argv[0], encoding);
+			if (toConsole != NULL)
+				stream_close(toConsole);
+			toConsole = toConsole_raw;
+		}
+		stdout_stream = toConsole;
+		if ((cd_in = iconv_open("utf-8", encoding)) == (iconv_t) -1)
+			fprintf(stderr, "%s: warning: cannot convert UTF-8 to local character set %s\n", argv[0], encoding);
+	}
+#endif
 
 	/* default to administrator account (eeks) when being called without
 	 * any arguments, default to the current user if -u flag is given */

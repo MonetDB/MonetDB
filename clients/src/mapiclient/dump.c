@@ -19,6 +19,7 @@
 #include "clients_config.h"
 #include <monet_options.h>
 #include "mapilib/Mapi.h"
+#include "stream.h"
 #include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
@@ -31,34 +32,32 @@
 #endif
 
 static void
-quoted_print(FILE *f, const char *s)
+quoted_print(stream *f, const char *s)
 {
-	putc('"', f);
+	stream_write(f, "\"", 1, 1);
 	while (*s) {
 		switch (*s) {
 		case '\\':
 		case '"':
-			putc('\\', f);
-			putc(*s, f);
+			stream_write(f, "\\", 1, 1);
+			stream_write(f, s, 1, 1);
 			break;
 		case '\n':
-			putc('\\', f);
-			putc('n', f);
+			stream_write(f, "\\n", 1, 2);
 			break;
 		case '\t':
-			putc('\\', f);
-			putc('t', f);
+			stream_write(f, "\\t", 1, 2);
 			break;
 		default:
 			if ((0 < *s && *s < 32) || *s == '\377')
-				fprintf(f, "\\%03o", *s & 0377);
+				stream_printf(f, "\\%03o", *s & 0377);
 			else
-				putc(*s, f);
+				stream_write(f, s, 1, 1);
 			break;
 		}
 		s++;
 	}
-	putc('"', f);
+	stream_write(f, "\"", 1, 1);
 }
 
 static char *actions[] = {
@@ -103,7 +102,7 @@ get_schema(Mapi mid)
 }
 
 int
-dump_table(Mapi mid, char *tname, FILE *toConsole, int describe)
+dump_table(Mapi mid, char *tname, stream *toConsole, int describe)
 {
 	int cnt, i;
 	MapiHdl hdl;
@@ -165,14 +164,14 @@ dump_table(Mapi mid, char *tname, FILE *toConsole, int describe)
 		return 1;
 	}
 
-	fprintf(toConsole, "CREATE TABLE ");
+	stream_printf(toConsole, "CREATE TABLE ");
 
 	quoted_print(toConsole, sname);
 	free(sname);
-	fprintf(toConsole, ".");
+	stream_printf(toConsole, ".");
 
 	quoted_print(toConsole, tname);
-	fprintf(toConsole, " (\n");
+	stream_printf(toConsole, " (\n");
 
 	snprintf(query, maxquerylen,
 		 "SELECT \"c\".\"name\","		/* 0 */
@@ -216,11 +215,11 @@ dump_table(Mapi mid, char *tname, FILE *toConsole, int describe)
 			return 1;
 		}
 		if (cnt)
-			fprintf(toConsole, ",\n");
+			stream_printf(toConsole, ",\n");
 
-		putc('\t', toConsole);
+		stream_write(toConsole, "\t", 1, 1);
 		quoted_print(toConsole, c_name);
-		putc(' ', toConsole);
+		stream_write(toConsole, " ", 1, 1);
 		if (strcmp(c_type, "boolean") == 0 ||
 		    strcmp(c_type, "int") == 0 ||
 		    strcmp(c_type, "smallint") == 0 ||
@@ -228,82 +227,82 @@ dump_table(Mapi mid, char *tname, FILE *toConsole, int describe)
 		    strcmp(c_type, "double") == 0 ||
 		    strcmp(c_type, "real") == 0 ||
 		    strcmp(c_type, "date") == 0) {
-			fprintf(toConsole, "%s", c_type);
+			stream_printf(toConsole, "%s", c_type);
 		} else if (strcmp(c_type, "month_interval") == 0) {
 			if (*c_type_scale == '1') {
 				if (*c_type_digits == 1)
-					fprintf(toConsole, "INTERVAL YEAR");
+					stream_printf(toConsole, "INTERVAL YEAR");
 				else
-					fprintf(toConsole, "INTERVAL YEAR TO MONTH");
+					stream_printf(toConsole, "INTERVAL YEAR TO MONTH");
 			} else
-				fprintf(toConsole, "INTERVAL MONTH");
+				stream_printf(toConsole, "INTERVAL MONTH");
 		} else if (strcmp(c_type, "sec_interval") == 0) {
 			switch (*c_type_scale) {
 			case '3':
 				switch (*c_type_digits) {
 				case '3':
-					fprintf(toConsole, "INTERVAL DAY");
+					stream_printf(toConsole, "INTERVAL DAY");
 					break;
 				case '4':
-					fprintf(toConsole, "INTERVAL DAY TO HOUR");
+					stream_printf(toConsole, "INTERVAL DAY TO HOUR");
 					break;
 				case '5':
-					fprintf(toConsole, "INTERVAL DAY TO MINUTE");
+					stream_printf(toConsole, "INTERVAL DAY TO MINUTE");
 					break;
 				case '6':
-					fprintf(toConsole, "INTERVAL DAY TO SECOND");
+					stream_printf(toConsole, "INTERVAL DAY TO SECOND");
 					break;
 				}
 				break;
 			case '4':
 				switch (*c_type_digits) {
 				case '4':
-					fprintf(toConsole, "INTERVAL HOUR");
+					stream_printf(toConsole, "INTERVAL HOUR");
 					break;
 				case '5':
-					fprintf(toConsole, "INTERVAL HOUR TO MINUTE");
+					stream_printf(toConsole, "INTERVAL HOUR TO MINUTE");
 					break;
 				case '6':
-					fprintf(toConsole, "INTERVAL HOUR TO SECOND");
+					stream_printf(toConsole, "INTERVAL HOUR TO SECOND");
 					break;
 				}
 				break;
 			case '5':
 				switch (*c_type_digits) {
 				case '5':
-					fprintf(toConsole, "INTERVAL MINUTE");
+					stream_printf(toConsole, "INTERVAL MINUTE");
 					break;
 				case '6':
-					fprintf(toConsole, "INTERVAL MINUTE TO SECOND");
+					stream_printf(toConsole, "INTERVAL MINUTE TO SECOND");
 					break;
 				}
 				break;
 			case '6':
-				fprintf(toConsole, "INTERVAL SECOND");
+				stream_printf(toConsole, "INTERVAL SECOND");
 				break;
 			}		
 		} else if (strcmp(c_type, "clob") == 0) {
-			fprintf(toConsole, "CHARACTER LARGE OBJECT");
+			stream_printf(toConsole, "CHARACTER LARGE OBJECT");
 			if (strcmp(c_type_digits, "0") != 0)
-				fprintf(toConsole, "(%s)", c_type_digits);
+				stream_printf(toConsole, "(%s)", c_type_digits);
 		} else if (strcmp(c_type, "timestamp") == 0 ||
 			   strcmp(c_type, "time") == 0) {
-			fprintf(toConsole, "%s", c_type);
+			stream_printf(toConsole, "%s", c_type);
 			if (strcmp(c_type_digits, "0") != 0)
-				fprintf(toConsole, "(%s)", c_type_digits);
+				stream_printf(toConsole, "(%s)", c_type_digits);
 			if (strcmp(c_type_scale, "1") == 0)
-				fprintf(toConsole, " WITH TIME ZONE");
+				stream_printf(toConsole, " WITH TIME ZONE");
 		} else if (strcmp(c_type_digits, "0") == 0) {
-			fprintf(toConsole, "%s", c_type);
+			stream_printf(toConsole, "%s", c_type);
 		} else if (strcmp(c_type_scale, "0") == 0) {
-			fprintf(toConsole, "%s(%s)", c_type, c_type_digits);
+			stream_printf(toConsole, "%s(%s)", c_type, c_type_digits);
 		} else {
-			fprintf(toConsole, "%s(%s,%s)", c_type, c_type_digits, c_type_scale);
+			stream_printf(toConsole, "%s(%s,%s)", c_type, c_type_digits, c_type_scale);
 		}
 		if (strcmp(c_null, "false") == 0)
-			fprintf(toConsole, " NOT NULL");
+			stream_printf(toConsole, " NOT NULL");
 		if (c_default != NULL)
-			fprintf(toConsole, " DEFAULT %s", c_default);
+			stream_printf(toConsole, " DEFAULT %s", c_default);
 		cnt++;
 	}
 	if (mapi_error(mid)) {
@@ -346,20 +345,20 @@ dump_table(Mapi mid, char *tname, FILE *toConsole, int describe)
 			return 1;
 		}
 		if (cnt == 0) {
-			fprintf(toConsole, ",\n\t");
+			stream_printf(toConsole, ",\n\t");
 			if (k_name) {
-				fprintf(toConsole, "CONSTRAINT ");
+				stream_printf(toConsole, "CONSTRAINT ");
 				quoted_print(toConsole, k_name);
-				putc(' ', toConsole);
+				stream_write(toConsole, " ", 1, 1);
 			}
-			fprintf(toConsole, "PRIMARY KEY (");
+			stream_printf(toConsole, "PRIMARY KEY (");
 		} else
-			fprintf(toConsole, ", ");
+			stream_printf(toConsole, ", ");
 		quoted_print(toConsole, c_column);
 		cnt++;
 	}
 	if (cnt)
-		fprintf(toConsole, ")");
+		stream_printf(toConsole, ")");
 	if (mapi_error(mid)) {
 		mapi_explain_query(hdl, stderr);
 		mapi_close_handle(hdl);
@@ -403,21 +402,21 @@ dump_table(Mapi mid, char *tname, FILE *toConsole, int describe)
 		}
 		if (strcmp(kc_nr, "0") == 0) {
 			if (cnt)
-				putc(')', toConsole);
-			fprintf(toConsole, ",\n\t");
+				stream_write(toConsole, ")", 1, 1);
+			stream_printf(toConsole, ",\n\t");
 			if (k_name) {
-				fprintf(toConsole, "CONSTRAINT ");
+				stream_printf(toConsole, "CONSTRAINT ");
 				quoted_print(toConsole, k_name);
-				putc(' ', toConsole);
+				stream_write(toConsole, " ", 1, 1);
 			}
-			fprintf(toConsole, "UNIQUE (");
+			stream_printf(toConsole, "UNIQUE (");
 			cnt = 1;
 		} else
-			fprintf(toConsole, ", ");
+			stream_printf(toConsole, ", ");
 		quoted_print(toConsole, c_column);
 	}
 	if (cnt)
-		putc(')', toConsole);
+		stream_write(toConsole, ")", 1, 1);
 	if (mapi_error(mid)) {
 		mapi_explain_query(hdl, stderr);
 		mapi_close_handle(hdl);
@@ -487,27 +486,27 @@ dump_table(Mapi mid, char *tname, FILE *toConsole, int describe)
 			pkeys[nkeys - 1] = mapi_fetch_field(hdl, 1);
 			fkeys[nkeys - 1] = mapi_fetch_field(hdl, 2);
 		}
-		fprintf(toConsole, ",\n\t");
+		stream_printf(toConsole, ",\n\t");
 		if (c_fkname) {
-			fprintf(toConsole, "CONSTRAINT ");
+			stream_printf(toConsole, "CONSTRAINT ");
 			quoted_print(toConsole, c_fkname);
-			putc(' ', toConsole);
+			stream_write(toConsole, " ", 1, 1);
 		}
-		fprintf(toConsole, "FOREIGN KEY (");
+		stream_printf(toConsole, "FOREIGN KEY (");
 		for (i = 0; i < nkeys; i++) {
 			if (i > 0)
-				fprintf(toConsole, ", ");
+				stream_printf(toConsole, ", ");
 			quoted_print(toConsole, fkeys[i]);
 		}
-		fprintf(toConsole, ") REFERENCES ");
+		stream_printf(toConsole, ") REFERENCES ");
 		quoted_print(toConsole, c_name);
-		fprintf(toConsole, " (");
+		stream_printf(toConsole, " (");
 		for (i = 0; i < nkeys; i++) {
 			if (i > 0)
-				fprintf(toConsole, ", ");
+				stream_printf(toConsole, ", ");
 			quoted_print(toConsole, pkeys[i]);
 		}
-		fprintf(toConsole, ")");
+		stream_printf(toConsole, ")");
 		free(fkeys);
 		free(pkeys);
 		if (c_faction) {
@@ -516,9 +515,9 @@ dump_table(Mapi mid, char *tname, FILE *toConsole, int describe)
 			int on_delete = action & 255;
 
 			if (0 < on_delete && on_delete < NR_ACTIONS && on_delete != 2 /* RESTRICT -- default */)
-				fprintf(toConsole, " ON DELETE %s", actions[on_delete]);
+				stream_printf(toConsole, " ON DELETE %s", actions[on_delete]);
 			if (0 < on_update && on_update < NR_ACTIONS && on_delete != 2 /* RESTRICT -- default */)
-				fprintf(toConsole, " ON UPDATE %s", actions[on_update]);
+				stream_printf(toConsole, " ON UPDATE %s", actions[on_update]);
 		}
 	}
 	if (mapi_error(mid)) {
@@ -529,9 +528,9 @@ dump_table(Mapi mid, char *tname, FILE *toConsole, int describe)
 	}
 	mapi_close_handle(hdl);
 
-	fprintf(toConsole, "\n");
+	stream_printf(toConsole, "\n");
 
-	fprintf(toConsole, ");\n");
+	stream_printf(toConsole, ");\n");
 
 	snprintf(query, maxquerylen,
 		 "SELECT \"i\".\"name\", "		/* 0 */
@@ -579,19 +578,19 @@ dump_table(Mapi mid, char *tname, FILE *toConsole, int describe)
 
 		if (strcmp(kc_nr, "0") == 0) {
 			if (cnt)
-				fprintf(toConsole, ");\n");
-			fprintf(toConsole, "CREATE INDEX ");
+				stream_printf(toConsole, ");\n");
+			stream_printf(toConsole, "CREATE INDEX ");
 			quoted_print(toConsole, i_name);
-			fprintf(toConsole, " ON ");
+			stream_printf(toConsole, " ON ");
 			quoted_print(toConsole, tname);
-			fprintf(toConsole, " (");
+			stream_printf(toConsole, " (");
 			cnt = 1;
 		} else
-			fprintf(toConsole, ", ");
+			stream_printf(toConsole, ", ");
 		quoted_print(toConsole, c_name);
 	}
 	if (cnt)
-		fprintf(toConsole, ");\n");
+		stream_printf(toConsole, ");\n");
 	if (mapi_error(mid)) {
 		mapi_explain_query(hdl, stderr);
 		mapi_close_handle(hdl);
@@ -617,9 +616,9 @@ dump_table(Mapi mid, char *tname, FILE *toConsole, int describe)
 	if (mapi_fetch_row(hdl)) {
 		char *cntfld = mapi_fetch_field(hdl, 0);
 
-		fprintf(toConsole, "COPY %s RECORDS INTO ", cntfld);
+		stream_printf(toConsole, "COPY %s RECORDS INTO ", cntfld);
 		quoted_print(toConsole, tname);
-		fprintf(toConsole, " FROM stdin USING DELIMITERS '\\t';\n");
+		stream_printf(toConsole, " FROM stdin USING DELIMITERS '\\t';\n");
 	}
 	mapi_close_handle(hdl);
 
@@ -648,17 +647,17 @@ dump_table(Mapi mid, char *tname, FILE *toConsole, int describe)
 		for (i = 0; i < cnt; i++) {
 			s = mapi_fetch_field(hdl, i);
 			if (s == NULL)
-				fputs("NULL", toConsole);
+				stream_printf(toConsole, "NULL");
 			else if (string[i]) {
 				/* write double-quoted string with
 				   certain characters escaped */
 				quoted_print(toConsole, s);
 			} else
-				fputs(s, toConsole);
+				stream_printf(toConsole, "%s", s);
 			if (i < cnt - 1)
-				putc('\t', toConsole);
+				stream_write(toConsole, "\t", 1, 1);
 			else
-				putc('\n', toConsole);
+				stream_write(toConsole, "\n", 1, 1);
 		}
 	}
 	free(string);
@@ -674,7 +673,7 @@ dump_table(Mapi mid, char *tname, FILE *toConsole, int describe)
 }
 
 int
-dump_tables(Mapi mid, FILE *toConsole)
+dump_tables(Mapi mid, stream *toConsole)
 {
 	const char *start = "START TRANSACTION";
 	const char *end = "COMMIT";
@@ -691,7 +690,7 @@ dump_tables(Mapi mid, FILE *toConsole)
 	int rc = 0;
 
 	/* start a transaction for the dump */
-	fprintf(toConsole, "START TRANSACTION;\n");
+	stream_printf(toConsole, "START TRANSACTION;\n");
 
 	if ((hdl = mapi_query(mid, start)) == NULL || mapi_error(mid)) {
 		if (hdl) {
@@ -707,8 +706,8 @@ dump_tables(Mapi mid, FILE *toConsole)
 	if (sname == NULL)
 		return 1;
 	if (strcmp(sname, "sys") != 0 && strcmp(sname, "tmp") != 0) {
-		fprintf(toConsole, "CREATE SCHEMA %s;\n", sname);
-		fprintf(toConsole, "SET SCHEMA %s;\n", sname);
+		stream_printf(toConsole, "CREATE SCHEMA %s;\n", sname);
+		stream_printf(toConsole, "SET SCHEMA %s;\n", sname);
 	}
 	free(sname);
 
@@ -725,7 +724,7 @@ dump_tables(Mapi mid, FILE *toConsole)
 	while (mapi_fetch_row(hdl) != 0) {
 		char *name = mapi_fetch_field(hdl, 0);
 
-		fprintf(toConsole, "CREATE SEQUENCE \"%s\" AS INTEGER;\n", name);
+		stream_printf(toConsole, "CREATE SEQUENCE \"%s\" AS INTEGER;\n", name);
 	}
 	if (mapi_error(mid)) {
 		mapi_explain_query(hdl, stderr);
@@ -774,14 +773,14 @@ dump_tables(Mapi mid, FILE *toConsole)
 		char *increment = mapi_fetch_field(hdl, 4);
 		char *cycle = mapi_fetch_field(hdl, 5);
 
-		fprintf(toConsole, "ALTER SEQUENCE \"%s\" RESTART WITH %s", name, restart);
+		stream_printf(toConsole, "ALTER SEQUENCE \"%s\" RESTART WITH %s", name, restart);
 		if (strcmp(increment, "1") != 0)
-			fprintf(toConsole, " INCREMENT BY %s", increment);
+			stream_printf(toConsole, " INCREMENT BY %s", increment);
 		if (strcmp(minvalue, "0") != 0)
-			fprintf(toConsole, " MINVALUE %s", minvalue);
+			stream_printf(toConsole, " MINVALUE %s", minvalue);
 		if (strcmp(maxvalue, "0") != 0)
-			fprintf(toConsole, " MAXVALUE %s", maxvalue);
-		fprintf(toConsole, " %sCYCLE;\n", strcmp(cycle, "true") == 0 ? "" : "NO ");
+			stream_printf(toConsole, " MAXVALUE %s", maxvalue);
+		stream_printf(toConsole, " %sCYCLE;\n", strcmp(cycle, "true") == 0 ? "" : "NO ");
 	}
 	if (mapi_error(mid)) {
 		mapi_explain_query(hdl, stderr);
@@ -803,9 +802,9 @@ dump_tables(Mapi mid, FILE *toConsole)
 		char *vname = mapi_fetch_field(hdl, 0);
 		char *query = mapi_fetch_field(hdl, 1);
 
-		fprintf(toConsole, "CREATE VIEW ");
+		stream_printf(toConsole, "CREATE VIEW ");
 		quoted_print(toConsole, vname);
-		fprintf(toConsole, " AS %s\n", query);
+		stream_printf(toConsole, " AS %s\n", query);
 	}
 	if (mapi_error(mid)) {
 		mapi_explain_query(hdl, stderr);
@@ -826,7 +825,7 @@ dump_tables(Mapi mid, FILE *toConsole)
 	while (mapi_fetch_row(hdl) != 0) {
 		char *query = mapi_fetch_field(hdl, 0);
 
-		fprintf(toConsole, "%s\n", query);
+		stream_printf(toConsole, "%s\n", query);
 	}
 	if (mapi_error(mid)) {
 		mapi_explain_query(hdl, stderr);
@@ -846,7 +845,7 @@ dump_tables(Mapi mid, FILE *toConsole)
 	mapi_close_handle(hdl);
 
 	/* finally commit the whole transaction */
-	fprintf(toConsole, "COMMIT;\n");
+	stream_printf(toConsole, "COMMIT;\n");
 
 	return rc;
 }

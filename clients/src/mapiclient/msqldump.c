@@ -29,6 +29,7 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
+#include "stream.h"
 #include "msqldump.h"
 #include "mprompt.h"
 
@@ -68,6 +69,7 @@ main(int argc, char **argv)
 	int c;
 	Mapi mid;
 	int quiet = 0;
+	stream *out;
 	static struct option long_options[] = {
 		{"host", 1, 0, 'h'},
 		{"passwd", 2, 0, 'P'},
@@ -141,7 +143,9 @@ main(int argc, char **argv)
 	}
 	mapi_trace(mid, trace);
 
-	c = dump_tables(mid, stdout);
+	out = file_wastream(stdout, "stdout");
+	c = dump_tables(mid, out);
+	stream_flush(out);
 
 	mapi_disconnect(mid);
 	return c;
