@@ -242,6 +242,7 @@ AC_ARG_WITH(monetdb,
 if test "x$have_monetdb" != xno; then
   case "$have_monetdb" in
   yes|auto) MPATH="${MONETDB_PREFIX+$MONETDB_PREFIX/bin:}$PATH:$prefix/bin";;
+  included) MPATH="";;
   *) MPATH="$withval/bin:$PATH";;
   esac
   AC_PATH_PROG(MONETDB_CONFIG,monetdb-config,,$MPATH)
@@ -258,7 +259,15 @@ if test "x$have_monetdb" != xno; then
     fi
   fi
 
-  if test "x$have_monetdb" != xyes; then
+  if test "x$have_monetdb" = "xincluded"; then
+    have_monetdb=yes
+	MONETDB_INCLUDEDIR="\$(top_srcdir)/../../MonetDB/MonetDB"
+	# root is necessary for sysdefs.h
+    MONETDB_INCS="-I${MONETDB_INCLUDEDIR} -I${MONETDB_INCLUDEDIR}/src/common -I${MONETDB_INCLUDEDIR}/src/gdk"
+	MONETDB_LIBS="-L${MONETDB_INCLUDEDIR} -L${MONETDB_INCLUDEDIR}/src/common -L${MONETDB_INCLUDEDIR}/src/gdk"
+	MONETDB_PREFIX="${prefix}"
+	MONETDB_CONFDIR="${pkgdatadir}/conf"
+  elif test "x$have_monetdb" != xyes; then
     MONETDB_INCS=""
     MONETDB_INCLUDEDIR=""
     MONETDB_LIBS=""
@@ -305,6 +314,7 @@ AC_ARG_WITH(clients,
 if test "x$have_clients" != xno; then
   case "$have_clients" in
   yes|auto) MPATH="${CLIENTS_PREFIX+$CLIENTS_PREFIX/bin:}$PATH:$prefix/bin";;
+  included) MPATH="";;
   *) MPATH="$withval/bin:$PATH";;
   esac
   AC_PATH_PROG(CLIENTS_CONFIG,monetdb-clients-config,,$MPATH)
@@ -321,7 +331,15 @@ if test "x$have_clients" != xno; then
     fi
   fi
 
-  if test "x$have_clients" != xyes; then
+  if test "x$have_clients" = "xincluded"; then
+    have_clients=yes
+    CLIENTS_CFLAGS=""
+    CLIENTS_INCLUDEDIR="\$(top_srcdir)/../../MonetDB-clients/client/src"
+    CLIENTS_INCS="-I${CLIENTS_INCLUDEDIR} -I${CLIENTS_INCLUDEDIR}/mapilib"
+    CLIENTS_LIBS="-L${CLIENTS_INCLUDEDIR} -L${CLIENTS_INCLUDEDIR}/mapilib"
+    CLIENTS_PREFIX="${prefix}"
+    CLIENTS_CONFDIR="${pkgdatadir}/conf"
+  elif test "x$have_clients" != xyes; then
     CLIENTS_CFLAGS=""
     CLIENTS_INCS=""
     CLIENTS_INCLUDEDIR=""
@@ -371,6 +389,7 @@ AC_ARG_WITH(monetdb4,
 if test "x$have_monetdb4" != xno; then
   case "$have_monetdb4" in
   yes|auto) MPATH="${MONETDB4_PREFIX+$MONETDB4_PREFIX/bin:}$PATH:$prefix/bin";;
+  included) MPATH="";;
   *) MPATH="$withval/bin:$PATH";;
   esac
   AC_PATH_PROG(MONETDB4_CONFIG,monetdb4-config,,$MPATH)
@@ -387,7 +406,19 @@ if test "x$have_monetdb4" != xno; then
     fi
   fi
 
-  if test "x$have_monetdb4" != xyes; then
+  if test "x$have_monetdb4" = "xincluded"; then
+    have_monetdb4=yes
+    MONETDB4_CFLAGS=""
+    MONETDB4_INCLUDEDIR="\$(top_srcdir)/../../MonetDB4-server/MonetDB4/src"
+    MONETDB4_INCS="-I${MONETDB4_INCLUDEDIR}/monet -I${MONETDB4_INCLUDEDIR}/modules/plain -I${MONETDB4_INCLUDEDIR}/modules/contrib -I${MONETDB4_INCLUDEDIR}/mapi -I${MONETDB4_INCLUDEDIR}/modules/calibrator"
+    MONETDB4_LIBS="-L${MONETDB4_INCLUDEDIR}/monet -L${MONETDB4_INCLUDEDIR}/modules/plain -L${MONETDB4_INCLUDEDIR}/modules/contrib -L${MONETDB4_INCLUDEDIR}/mapi -L${MONETDB4_INCLUDEDIR}/modules/calibrator"
+    MONETDB4_MODS="-L${libdir}/MonetDB4/lib -R${libdir}/MonetDB4/lib"
+    MONETDB4_MOD_PATH="${libdir}/MonetDB4:${libdir}/MonetDB4/lib:${libdir}/MonetDB4/bin"
+    MONETDB4_PREFIX="${prefix}"
+    MONETDB4_CONFFILE="${sysconfdir}/MonetDB.conf"
+	# expand ${prefix} in ${sysconfdir} if using the default
+	eval "eval MONETDB4_CONFFILE=${MONETDB4_CONFFILE}"
+  elif test "x$have_monetdb4" != xyes; then
     MONETDB4_CFLAGS=""
     MONETDB4_INCS=""
     MONETDB4_INCLUDEDIR=""
@@ -405,9 +436,9 @@ if test "x$have_monetdb4" != xno; then
     MONETDB4_MOD_PATH=`$MONETDB4_CONFIG --modpath`
     MONETDB4_PREFIX=`$MONETDB4_CONFIG --prefix`
     MONETDB4_CONFFILE=`$MONETDB4_CONFIG --sysconfdir`/MonetDB.conf
-    AC_DEFINE_UNQUOTED(MONETDB4_CONFFILE, "$MONETDB4_CONFFILE", [MonetDB4 config file location])
-    AC_DEFINE_UNQUOTED(MONETDB4_PREFIX, "$MONETDB4_PREFIX", [MonetDB4 configured prefix])
   fi
+  AC_DEFINE_UNQUOTED(MONETDB4_CONFFILE, "$MONETDB4_CONFFILE", [MonetDB4 config file location])
+  AC_DEFINE_UNQUOTED(MONETDB4_PREFIX, "$MONETDB4_PREFIX", [MonetDB4 configured prefix])
 fi
 AC_SUBST(MONETDB4_CFLAGS)
 AC_SUBST(MONETDB4_INCS)
@@ -446,6 +477,7 @@ AC_ARG_WITH(monetdb5,
 if test "x$have_monetdb5" != xno; then
   case "$have_monetdb5" in
   yes|auto) MPATH="${MONETDB5_PREFIX+$MONETDB5_PREFIX/bin:}$PATH:$prefix/bin";;
+  included) MPATH="";;
   *) MPATH="$withval/bin:$PATH";;
   esac
   AC_PATH_PROG(MONETDB5_CONFIG,monetdb5-config,,$MPATH)
@@ -462,7 +494,19 @@ if test "x$have_monetdb5" != xno; then
     fi
   fi
 
-  if test "x$have_monetdb5" != xyes; then
+  if test "x$have_monetdb5" = "xincluded"; then
+    have_monetdb5=yes
+    MONETDB5_CFLAGS=""
+    MONETDB5_INCLUDEDIR="\$(top_srcdir)/../../MonetDB5-server/MonetDB5/src"
+    MONETDB5_INCS="-I${MONETDB5_INCLUDEDIR}/modules/atoms -I${MONETDB5_INCLUDEDIR}/compiler -I${MONETDB5_INCLUDEDIR}/modules/kernel -I${MONETDB5_INCLUDEDIR}/mal -I${MONETDB5_INCLUDEDIR}/modules/mal -I${MONETDB5_INCLUDEDIR}/optimizer -I${MONETDB5_INCLUDEDIR}/scheduler"
+    MONETDB5_LIBS="-L${MONETDB5_INCLUDEDIR}/modules/atoms -L${MONETDB5_INCLUDEDIR}/compiler -L${MONETDB5_INCLUDEDIR}/modules/kernel -L${MONETDB5_INCLUDEDIR}/mal -L${MONETDB5_INCLUDEDIR}/modules/mal -L${MONETDB5_INCLUDEDIR}/optimizer -L${MONETDB5_INCLUDEDIR}/scheduler"
+    MONETDB5_MODS="-L${libdir}/MonetDB5/lib -R${libdir}/MonetDB5/lib"
+    MONETDB5_MOD_PATH="${libdir}/MonetDB5:${libdir}/MonetDB5/lib:${libdir}/MonetDB5/bin"
+    MONETDB5_PREFIX="${prefix}"
+    MONETDB5_CONFFILE="${sysconfdir}/monetdb5.conf"
+    # expand ${prefix} in ${sysconfdir} if using the default
+    eval "eval MONETDB5_CONFFILE=${MONETDB5_CONFFILE}"
+  elif test "x$have_monetdb5" != xyes; then
     MONETDB5_CFLAGS=""
     MONETDB5_INCS=""
     MONETDB5_INCLUDEDIR=""
@@ -480,9 +524,9 @@ if test "x$have_monetdb5" != xno; then
     MONETDB5_MOD_PATH=`$MONETDB5_CONFIG --modpath`
     MONETDB5_PREFIX=`$MONETDB5_CONFIG --prefix`
     MONETDB5_CONFFILE=`$MONETDB5_CONFIG --sysconfdir`/monetdb5.conf
-    AC_DEFINE_UNQUOTED(MONETDB5_CONFFILE, "$MONETDB5_CONFFILE", [MonetDB5 config file location])
-    AC_DEFINE_UNQUOTED(MONETDB5_PREFIX, "$MONETDB5_PREFIX", [MonetDB5 configured prefix])
   fi
+  AC_DEFINE_UNQUOTED(MONETDB5_CONFFILE, "$MONETDB5_CONFFILE", [MonetDB5 config file location])
+  AC_DEFINE_UNQUOTED(MONETDB5_PREFIX, "$MONETDB5_PREFIX", [MonetDB5 configured prefix])
 fi
 AC_SUBST(MONETDB5_CFLAGS)
 AC_SUBST(MONETDB5_INCS)

@@ -1,2 +1,8 @@
-   9 Jan 2007; Fabian Groffen <fabian@cwi.nl> :
-   Initial autotooled setup
+  05 Dec 2007; Fabian Groffen <fabian@cwi.nl> conf/MonetDB.m4:
+  Allow for 'included' dependencies, such that the wonders of libtool can
+  compile against a build dir of a dependency, instead of its installation
+  dir.
+
+  09 Jan 2007; Fabian Groffen <fabian@cwi.nl> :
+  Initial autotooled setup
+
