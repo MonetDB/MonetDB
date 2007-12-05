@@ -858,7 +858,7 @@ static int
 format_result(MapiHdl hdl)
 {
 #ifdef HAVE_POPEN
-	stream *saveFD = NULL, *saveFD_raw; /* for external paging */
+	stream *saveFD = NULL, *saveFD_raw = NULL; /* for external paging */
 #endif
 	MapiMsg rc;
 
