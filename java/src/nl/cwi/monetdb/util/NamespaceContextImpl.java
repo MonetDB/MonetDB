@@ -16,7 +16,7 @@
  * All Rights Reserved.
 **/
 
-package nl.cwi.monetdb.xquery.util;
+package nl.cwi.monetdb.util;
 
 import java.util.*;
 import javax.xml.namespace.*;

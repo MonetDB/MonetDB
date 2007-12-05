@@ -42,6 +42,21 @@ This package contains the JDBC driver and mjclient, a client program
 written in Java that uses the JDBC driver to communicate with the
 database server.
 
+This package also cotains the XRPC Wrapper, with which one can run
+ distributed XQuery queries on different XQuery processing engine.
+The XRPC Wrapper comes with three Java Archives
+- xrpcapi.jar: the XRPC Java API, which includes functions for
+  -- creating XRPC request messages,
+  -- parsing XRPC response messages, 
+  -- send and/or receive XRPC messages using HTTP connection, and
+  -- XRPC specific exception classes
+- xrpcwrapper.jar: the XRPC Wrapper, which is a stand-alone program that
+  can be plugged in on top of an XQuery engine to handle non-nested XRPC
+  requests (i.e. requests that do not trigger another XRPC request).
+- xrpcclient.jar: an example client program, which (i) can be used to
+  test the XRPC Wrapper, and (ii) shows how to write an XRPC Java
+  client.
+
 
 %description devel
 MonetDB is a database management system that is developed from a

@@ -16,7 +16,7 @@
  * All Rights Reserved.
 **/
 
-package nl.cwi.monetdb.xquery.xrpc.wrapper.Tests;
+package nl.cwi.monetdb.xquery.xrpc.client;
 
 import java.io.*;
 import java.net.*;
@@ -27,7 +27,8 @@ import javax.xml.xpath.*;
 import org.w3c.dom.*;
 import org.xml.sax.*;
 
-import nl.cwi.monetdb.xquery.util.*;
+import nl.cwi.monetdb.util.*;
+import nl.cwi.monetdb.xquery.xrpc.api.*;
 
 /**
  * This is an XRPC client program that can be used to test the XRPC
@@ -61,7 +62,7 @@ public class XRPCTestClient {
 		System.getProperty("java.io.tmpdir") + FILE_SEPARATOR;
 	private static final String XRPCD_CALLBACK = "/xrpc";
 	private static final String DEFAULT_SERVER = "http://localhost:50002";
-    private static final String PACKAGE = "/nl/cwi/monetdb/xquery/xrpc/wrapper/Tests/";
+    private static final String PACKAGE_PATH = "/nl/cwi/monetdb/xquery/xrpc/client/";
 
     private static final int AUCT = 0;
     private static final int BIB  = 1;
@@ -167,7 +168,7 @@ public class XRPCTestClient {
 
         try {
             for(int i = 0; i < FILES.length; i++) {
-                fromFile = PACKAGE + FILES[i];
+                fromFile = PACKAGE_PATH + FILES[i];
                 toFile = opts.getOption("rootdir").getArgument() + FILES[i];
                 Extract.extractFile(fromFile, toFile);
                 if(opts.getOption("verbose").isPresent()) {

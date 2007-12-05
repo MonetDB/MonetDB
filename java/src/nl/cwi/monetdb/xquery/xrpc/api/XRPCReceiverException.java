@@ -16,7 +16,7 @@
  * All Rights Reserved.
 **/
 
-package nl.cwi.monetdb.xquery.util;
+package nl.cwi.monetdb.xquery.xrpc.api;
 
 /**
  * @author Ying Zhang <Y.Zhang@cwi.nl>

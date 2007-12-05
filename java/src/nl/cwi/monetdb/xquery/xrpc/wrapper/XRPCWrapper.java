@@ -21,7 +21,8 @@ package nl.cwi.monetdb.xquery.xrpc.wrapper;
 import java.io.*;
 import java.net.*;
 
-import nl.cwi.monetdb.xquery.util.*;
+import nl.cwi.monetdb.util.*;
+import nl.cwi.monetdb.xquery.xrpc.api.*;
 
 /**
  * The XRPC wrapper is a SOAP service handler that stores the incoming
@@ -48,6 +49,7 @@ public class XRPCWrapper {
 	public static final String XRPC_WRAPPER_VERSION = "0.1";
 	public static final String XRPCD_CALLBACK = "/xrpc";
 	public static final String DEFAULT_PORT = "50002";
+	public static final String PACKAGE_PATH = "/nl/cwi/monetdb/xquery/xrpc/wrapper";
 	public static final String WF_FILE = "wrapper_functions.xq";
     public static final String WELCOME_MSG =
             "# XRPC Wrapper v" + XRPC_WRAPPER_VERSION + "\n" +
@@ -79,7 +81,7 @@ public class XRPCWrapper {
 			String toFile = opts.getOption("rootdir").getArgument()+WF_FILE;
 
             /* Extract the XQuery module file to a temporary directory. */
-			Extract.extractFile(WF_FILE, toFile);
+			Extract.extractFile(PACKAGE_PATH + "/" + WF_FILE, toFile);
             if(opts.getOption("debug").isPresent()) {
                 System.out.println("# XQuery module file \"" + WF_FILE +
                         "\" extracted to \"" + toFile + "\"");

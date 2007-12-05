@@ -16,15 +16,15 @@
  * All Rights Reserved.
 **/
 
-package nl.cwi.monetdb.xquery.util;
+package nl.cwi.monetdb.xquery.xrpc.api;
 
 /**
  * @author Ying Zhang <Y.Zhang@cwi.nl>
  * @version 0.1
  */
 
-public class XRPCException extends Exception {
-    public XRPCException(String reason) {
+public class XRPCSenderException extends XRPCException {
+    public XRPCSenderException(String reason) {
         super(reason);
     }
 }

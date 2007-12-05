@@ -16,7 +16,7 @@
  * All Rights Reserved.
 **/
 
-package nl.cwi.monetdb.xquery.util;
+package nl.cwi.monetdb.util;
 
 import java.io.*;
 import java.net.*;
@@ -34,7 +34,7 @@ public class Extract {
 
     /* Extracts 'fromFile' from the jar package to 'toFile' */
 	public static void extractFile(String fromFile, String toFile)
-		throws Exception
+		throws FileNotFoundException, IOException
 	{
 		char[] cbuf = new char[DEFAULT_BUFSIZE];
 		int ret = 0;
@@ -42,7 +42,7 @@ public class Extract {
 		InputStream is = new Extract().getClass().getResourceAsStream(fromFile);
 
 		if(is == null) {
-			throw new XRPCException("File " + fromFile +
+			throw new FileNotFoundException("File " + fromFile +
 					" does not exist in the JAR package.");
 		}
 

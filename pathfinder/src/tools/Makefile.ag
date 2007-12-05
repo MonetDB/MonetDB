@@ -23,8 +23,6 @@ EXTRA_LIBS = $(SOCKET_LIBS) $(DL_LIBS) $(GDK_LIBS)
 STATIC_MODS = $(MONETDB4_MODS) \
 	-l_builtin -l_arith -l_bat -l_algebra -l_sys -l_trans -l_str -l_constant
 
-SUBDIRS = HAVE_JAVA?java
-
 smallTOC_SHARED_MODS =	\
 	-l_mapi	\
 	\
