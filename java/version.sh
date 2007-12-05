@@ -124,7 +124,8 @@ for file in \
 	../sql/NT/MonetDB5-SQL{,64}/MonetDB5-SQL-Installer.vdproj \
 	../"*"/NT/MonetDB4-XQuery{,64}/MonetDB4-XQuery-Installer.vdproj \
 	; do
-	file=$(eval echo ${file})
+	[[ ${file} == *"*"* ]] \
+		&& file=$(eval echo "${file%/\*/*}"/*/"${file#*/\*/}")
 	if [[ -f ${file} ]] ; then
 		for f in $FILES ; do
 			fr=${f//XXX/${NEW_MAJOR}.${NEW_MINOR}}
