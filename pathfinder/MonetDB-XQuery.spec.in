@@ -84,7 +84,7 @@ rm -rf $RPM_BUILD_ROOT
 	--enable-bits=%{bits} \
 	%{?oid32:--enable-oid32} \
 	%{?comp_cc:CC="%{comp_cc}"} \
-	--with-monet=%{_prefix} \
+	--with-monet=%{_prefix}
 
 make
 
