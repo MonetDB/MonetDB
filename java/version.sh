@@ -122,15 +122,9 @@ for file in \
 	../sql/src/jdbc/tests/Tests/Test.SQL.bat \
 	../sql/NT/MonetDB4-SQL{,64}/MonetDB4-SQL-Installer.vdproj \
 	../sql/NT/MonetDB5-SQL{,64}/MonetDB5-SQL-Installer.vdproj \
-	../pathfinder/NT/MonetDB4-XQuery{,64}/MonetDB4-XQuery-Installer.vdproj \
+	../"*"/NT/MonetDB4-XQuery{,64}/MonetDB4-XQuery-Installer.vdproj \
 	; do
-	if [[ ! -f ${file} ]] ; then
-		f="`echo ${file} | sed 's=\.\./\(sql\|pathfinder\)/=../*/='`"
-		f="`ls ${f} 2>/dev/null`"
-		if [[ -f $[f} ]] ; then
-			file=${f}
-		fi
-	fi
+	file=$(eval echo ${file})
 	if [[ -f ${file} ]] ; then
 		for f in $FILES ; do
 			fr=${f//XXX/${NEW_MAJOR}.${NEW_MINOR}}
