@@ -78,8 +78,6 @@ if test "x$have_c99" != xyes; then
 	AC_MSG_ERROR([Pathfinder requires a C99 compliant C compiler, but your C compiler does not seem to be C99 compliant.])
 fi
 
-req_java_ver_min=1.5 # >= $req_java_ver_min required
-AM_MONETDB_ANT_JAVA($req_java_ver_min)
 req_monetdb_java_ver='1.7.0'
 #                     ^^^^^^
 # Maintained via vertoo. Please don't modify by hand!

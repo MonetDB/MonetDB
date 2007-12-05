@@ -49,16 +49,10 @@ HAVE_PHP=1 (optional)
   also download sources, edit PHP paths in MonetDB/conf/rules.msc
   eliminate line "#include <arpa/inet.h>" from main/php_network.h (SIC!!)
 
-HAVE_JAVA=1 (optional)
-- ant
-  http://ant.apache.org/bindownload.cgi
-- JDK
-  http://java.sun.com
-
 mode of operation:
 
 buildtools: nmake -f Makefile.msc 
-Monet,Clients,MonetDB4,pathfinder: nmake -f Makefile.msc NEED_MX=1 HAVE_PHP=1 HAVE_JAVA=1 install
+Monet,Clients,MonetDB4,pathfinder: nmake -f Makefile.msc NEED_MX=1 HAVE_PHP=1 install
 
 ========== example environment, starting from the Microsoft Visual C++ Command Window ===============
 
