@@ -1,3 +1,6 @@
 conf/
 	bin/Mbootstrap
 	bin/Mdebootstrap
+	bin/buildtools-config
+	share/MonetDB/rules.mk
+	share/MonetDB/MonetDB.m4
