@@ -133,7 +133,7 @@ for file in \
 				${file} | ${diff} ${file} - | ${patch}
 		done
 	else
-		echo "'${file##*../}' not found"
+		echo "Please do not forget to patch file '${file##*../}', too."
 	fi
 done
 
