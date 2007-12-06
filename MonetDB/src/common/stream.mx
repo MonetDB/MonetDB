@@ -2260,7 +2260,7 @@ static ssize_t
 ic_write(stream *s, const void *buf, size_t elmsize, size_t cnt)
 {
 	struct icstream *ic = (struct icstream *) s->stream_data.p;
-	char *inbuf = (char *) buf;
+	ICONV_CONST char *inbuf = (char *) buf;
 	size_t inbytesleft = elmsize * cnt;
 	char *outbuf = ic->buffer;
 	size_t outbytesleft = sizeof(ic->buffer);
@@ -2276,14 +2276,14 @@ static ssize_t
 ic_read(stream *s, void *buf, size_t elmsize, size_t cnt)
 {
 	struct icstream *ic = (struct icstream *) s->stream_data.p;
-	char *inbuf = ic->buffer;
+	ICONV_CONST char *inbuf = ic->buffer;
 	size_t inbytesleft = ic->buflen;
 	char *outbuf = (char *) buf;
 	size_t outbytesleft = elmsize * cnt;
 
 	errno = 0;
 	while (outbytesleft > 0 && errno != E2BIG) {
-		stream_read(ic->s, inbuf, 1, 1);
+		stream_read(ic->s, ic->buffer, 1, 1);
 		inbytesleft++;
 		iconv(ic->cd, &inbuf, &inbytesleft, &outbuf, &outbytesleft);
 		if (inbytesleft == 0)
