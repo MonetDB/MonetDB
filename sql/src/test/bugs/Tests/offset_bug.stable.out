@@ -64,6 +64,26 @@ Over..
 [ 5,	"laura"	]
 [ 6,	"ralph"	]
 [ 7,	"fido"	]
+% sys.query_users,	sys.query_users # table_name
+% user_id,	user_name # name
+% int,	varchar # type
+% 1,	5 # length
+[ 3,	"ed"	]
+[ 7,	"fido"	]
+[ 2,	"jack"	]
+[ 1,	"john"	]
+[ 5,	"laura"	]
+[ 6,	"ralph"	]
+[ 4,	"wendy"	]
+% sys.query_users,	sys.query_users # table_name
+% user_id,	user_name # name
+% int,	varchar # type
+% 1,	5 # length
+[ 2,	"jack"	]
+[ 1,	"john"	]
+[ 5,	"laura"	]
+[ 6,	"ralph"	]
+[ 4,	"wendy"	]
 
 # 09:54:33 >  
 # 09:54:33 >  Done.

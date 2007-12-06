@@ -27,6 +27,7 @@
 #include "sql_statement.h"
 
 extern stmt *optimize(mvc *c, stmt *s);
+extern stmt *push_semijoin( stmt *select, stmt *s );
 
 #endif /* _SQL_OPTIMIZE_H */
 
@@ -160,9 +161,13 @@ select_count(stmt *s)
 	case st_select: case st_uselect:
 		if (s->op2.stval->nrcols >= 1) 
 		   /* before the reduce we need to scan */
-			return -1;
-		else
-			return select_count(s->op1.stval) + 4;	/* point */
+			return -20;
+		else if (s->flag == cmp_equal)
+			return select_count(s->op1.stval) + 20;	/* point */
+		else if (s->flag == cmp_like || s->flag == cmp_notlike)
+			return select_count(s->op1.stval) + 2;	/* like==scan */
+		/* ranges */
+		return select_count(s->op1.stval) + 4;	
 	case st_select2: case st_uselect2:
 		return select_count(s->op1.stval) + 2;		/* range */
 	case st_idxbat:
@@ -279,6 +284,7 @@ stmt_intersect(stmt *op1, stmt *op2)
 	   multi-att join ("st_reljoin") by push_selects_down()
 	 */
 	assert(!(op1->type == st_reljoin && op2->type == st_reljoin));
+	assert(op1->type != st_idxbat && op2->type != st_idxbat);
 
 	/*
 	 * need to add the mark trick as [].select(true) on tables
@@ -455,7 +461,6 @@ stmt_push_down_tail(stmt *join, stmt *select)
 		 stmt_destroy(join);
 		 return res;
 		 */
-		printf("st_mark\n");
 		return stmt_reverse(stmt_semijoin(stmt_reverse(join), select));
 #ifndef NDEBUG
 	} else {
@@ -584,7 +589,7 @@ stmt_push_join_tail(stmt *s, stmt *join)
 		stmt_destroy(s);
 		return res;
 	/* recursively proceed push-down/search for join through some operations */
-	} else if (s->type == st_semijoin){
+	} else if (s->type == st_semijoin) {
 		stmt *op1 = stmt_push_join_tail( stmt_dup(s->op1.stval), join);
 		stmt *res = stmt_semijoin( op1, stmt_dup(s->op2.stval) );
 		stmt_destroy(s);
@@ -608,7 +613,7 @@ stmt_push_join_tail(stmt *s, stmt *join)
 		stmt_destroy(s);
 		return res;
 	/* known ends of recursion */
-	} else if (s->type == st_idxbat){
+	} else if (s->type == st_idxbat) {
 	/* unknown end of recursion */
 #ifndef NDEBUG
 	} else {
@@ -641,6 +646,7 @@ stmt_join2select(stmt *j)
 		stmt_destroy(j);
 		return res;
 	} else if (j->type == st_semijoin) {
+		printf(" TODO: common/optimize.c: join2select %s\n", st_type2string(j->type));
 		return j;
 #ifndef NDEBUG
 	} else {
@@ -649,6 +655,116 @@ stmt_join2select(stmt *j)
 	}
 	return j;
 }
+
+/* push the semijoin of (select,s) through the select statement (select) */
+stmt *
+push_semijoin( stmt *select, stmt *s )
+{
+	if (select->type == st_convert){ 
+		sql_subtype f = select->op3.typeval;
+		sql_subtype t = select->op4.typeval;
+		stmt *op1 = stmt_dup(select->op1.stval);
+
+		op1 = push_semijoin(op1, s);
+		stmt_destroy(select);
+		return stmt_convert(op1, &f, &t);
+	}
+	if (select->type == st_unop){ 
+		stmt *op1 = stmt_dup(select->op1.stval);
+
+		op1 = push_semijoin(op1, s);
+		stmt_destroy(select);
+		return stmt_unop(op1, sql_dup_func(select->op4.funcval));
+	}
+	if (select->type == st_binop) {
+		stmt *op1 = stmt_dup(select->op1.stval);
+		stmt *op2 = stmt_dup(select->op2.stval);
+		if (op1->nrcols) 
+			op1 = push_semijoin(op1, stmt_dup(s));
+		if (op2->nrcols) 
+			op2 = push_semijoin(op2, stmt_dup(s));
+		stmt_destroy(select);
+		stmt_destroy(s);
+		return stmt_binop(op1, op2, sql_dup_func(select->op4.funcval));
+	}
+	if (select->type == st_diff) {
+		stmt *op1 = stmt_dup(select->op1.stval);
+		stmt *op2 = stmt_dup(select->op2.stval);
+
+		op1 = push_semijoin(op1, s);
+		stmt_destroy(select);
+		return stmt_diff(op1, op2);
+	}
+	if (select->type == st_union) {
+		stmt *op1 = stmt_dup(select->op1.stval);
+		stmt *op2 = stmt_dup(select->op2.stval);
+
+		op1 = push_semijoin(op1, stmt_dup(s));
+		op2 = push_semijoin(op2, s);
+		stmt_destroy(select);
+		return stmt_union(op1, op2);
+	}
+
+	/* semijoin(reverse(semijoin(reverse(x)),s) */
+	if (select->type == st_reverse &&
+	    select->op1.stval->type == st_semijoin &&
+	    select->op1.stval->op1.stval->type == st_reverse) {
+		stmt *op1 = stmt_dup( select->op1.stval->op1.stval->op1.stval);
+		stmt *op2 = stmt_dup( select->op1.stval->op2.stval);
+
+		op1 = push_semijoin( op1, s );
+		stmt_destroy(select);
+		return stmt_reverse(stmt_semijoin( stmt_reverse(op1), op2));
+	}
+	if (select->type != st_select2 && select->type != st_uselect2 &&
+	    select->type != st_select && select->type != st_uselect)
+		return stmt_semijoin(select, s);
+
+	s = push_semijoin(stmt_dup(select->op1.stval), s);
+	if (select->type == st_select2) {
+		comp_type cmp = (comp_type)select->flag;
+		stmt *op2 = stmt_dup( select->op2.stval);
+		stmt *op3 = stmt_dup( select->op3.stval);
+
+		stmt_destroy(select);
+		return stmt_select2( s, op2, op3, cmp);
+	}
+
+	if (select->type == st_uselect2) {
+		comp_type cmp = (comp_type)select->flag;
+		stmt *op2 = stmt_dup( select->op2.stval);
+		stmt *op3 = stmt_dup( select->op3.stval);
+
+		stmt_destroy(select);
+		return stmt_uselect2( s, op2, op3, cmp);
+	}
+
+	if (select->type == st_select) {
+		comp_type cmp = (comp_type)select->flag;
+		stmt *op2 = stmt_dup( select->op2.stval);
+
+		if (cmp == cmp_like || cmp == cmp_notlike) {
+			stmt *op3 = stmt_dup( select->op3.stval);
+
+			stmt_destroy(select);
+			return stmt_likeselect( s, op2, op3, cmp);
+		} else {
+			stmt_destroy(select);
+			return stmt_select( s, op2, cmp);
+		}
+	}
+
+	if (select->type == st_uselect) {
+		comp_type cmp = (comp_type)select->flag;
+		stmt *op2 = stmt_dup( select->op2.stval);
+
+		stmt_destroy(select);
+		return stmt_uselect( s, op2, cmp);
+	}
+	assert(0);
+	return NULL;
+}
+
 
 
 
@@ -869,15 +985,25 @@ push_selects_down(mvc *c, list *con)
 		} else if (jdx) {
 			hsel = list_find(rsel, (void*)jdx, (fcmp)&cmp_sel_head);
 			tsel = list_find(rsel, (void*)jdx, (fcmp)&cmp_sel_tail);
-			if (hsel) {
-				stmt *sel = hsel->data;
-				jdx = stmt_semijoin(jdx, stmt_dup(sel));
-				sel->nr++;
-			}
+			/* first select on the unique values */
 			if (tsel){
 				stmt *sel = tsel->data;
 				jdx = stmt_reverse(stmt_semijoin(stmt_reverse(jdx), stmt_dup(sel)));
 				sel->nr++;
+			}
+			if (hsel) {
+				stmt *sel = hsel->data;
+				/* reduced using the primary key -> stmt_join */
+
+				/* select get replace, ie mark old
+					   as used in the query */
+				sel->nr++;
+				if (tsel) {
+					sel = push_semijoin(stmt_dup(sel), stmt_dup(jdx));
+					jdx = stmt_semijoin(jdx, sel);
+				} else {
+					jdx = stmt_semijoin(jdx, stmt_dup(sel));
+				}
 			}
 		}
 
@@ -1050,12 +1176,14 @@ set2pivot(mvc *c, list *l)
 					list_destroy(pivots);
 					pivots = nps;
 					n = list_remove_node(l, n);
+					n = NULL; /* restart from smallest */
 					break;
 				} else if (pv->t == st->t) {
 					nps = mk_pivot(pivots, stmt_reverse(stmt_dup(st)), stmt_dup(pv), markid++);
 					list_destroy(pivots);
 					pivots = nps;
 					n = list_remove_node(l, n);
+					n = NULL; /* restart from smallest */
 					break;
 				}
 			}

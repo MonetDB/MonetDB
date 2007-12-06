@@ -179,6 +179,8 @@ typedef struct group {
 extern const char *st_type2string(st_type type);
 
 extern int stmt2dot(stmt *s, int i, char *fn);
+extern int print_stmt(stmt *s, int *nr);
+extern void Sprint(stmt *s);
 
 extern stmt *stmt_none(void);
 extern stmt *stmt_sql(char *query);
@@ -2811,3 +2813,167 @@ stmt2dot(stmt *s, int i, char *fn)
 	return -1;
 }
 
+static void dump0(stmt *s, char *name)
+{
+	printf("s%d = %s();\n", -s->nr, name);
+}
+
+static void dump1(stmt *s, char *name, int *nr)
+{
+	int o1 = print_stmt(s->op1.stval, nr);
+
+	printf("s%d = %s( s%d );\n", -s->nr, name, o1);
+}
+
+static void dump2(stmt *s, char *name, int *nr)
+{
+	int o1 = print_stmt(s->op1.stval, nr);
+	int o2 = print_stmt(s->op2.stval, nr);
+
+	printf("s%d = %s( s%d, s%d );\n", -s->nr, name, o1, o2);
+}
+
+static void dump3(stmt *s, char *name, int *nr)
+{
+	int o1 = print_stmt(s->op1.stval, nr);
+	int o2 = print_stmt(s->op2.stval, nr);
+	int o3 = print_stmt(s->op3.stval, nr);
+
+	printf("s%d = %s( s%d, s%d, s%d );\n", -s->nr, name, o1, o2, o3);
+}
+
+
+int 
+print_stmt(stmt *s, int *nr)
+{
+	node *n;
+	str a;
+
+	assert(s);
+	if (s->nr > 0)
+		return s->nr;
+
+	if (s->nr == 0)
+		s->nr = -(*nr)++;
+
+	switch(s->type) {
+	case st_none: 	
+	case st_temp:
+	case st_unique:
+	case st_Nop:
+		 	printf("temp,unique,Nop\n"); break;
+	case st_exception:
+		 	printf("exception\n"); break;
+	case st_rs_column:
+	case st_bulkinsert:
+			printf("bulkinsert\n"); break;
+	case st_affected_rows: 
+	case st_while: 
+	case st_if: 
+	case st_return: 
+	case st_assign: 
+			printf("psm\n"); break;
+	case st_var:	
+			if (s->op1.sval) 
+				printf("s%d = var(%s)\n", -s->nr, s->op1.sval);
+			else 
+				printf("s%d = A%d\n", -s->nr, s->flag);
+			break;
+	case st_atom:	a = atom2string(s->op1.aval);
+			printf("s%d = %s\n", -s->nr, a);
+			GDKfree(a);
+			break;
+	case st_filter:
+	case st_column:  s->nr = -print_stmt(s->op1.stval, nr); break;
+	case st_sql: 	 dump1(s, "sql", nr); break;
+				
+	case st_bat: 	 printf("s%d := Column(\"%s\".\"%s\".\"%s\", %d);\n", -s->nr, s->op1.cval->t->s->base.name, s->op1.cval->t->base.name, s->op1.cval->base.name, s->flag); break;
+	case st_dbat:    printf("s%d := Table(\"%s\".\"%s\");\n", -s->nr, s->op1.tval->s->base.name, s->op1.tval->base.name); break;
+	case st_idxbat:  printf("s%d := Index(\"%s\".\"%s\".\"%s\", %d);\n", -s->nr, s->op1.idxval->t->s->base.name, s->op1.idxval->t->base.name, s->op1.idxval->base.name, s->flag); break;
+	case st_const: 	 dump2(s, "project", nr); break;
+	case st_mark: 	 dump2(s, "mark", nr); break;
+	case st_gen_group: dump1(s, "group", nr); break;
+	case st_reverse: dump1(s, "reverse", nr); break;
+	case st_mirror:  dump1(s, "mirror", nr); break;
+	case st_limit:   dump3(s, "limit", nr); break;
+	case st_order:   dump1(s, "order", nr); break;
+	case st_reorder: dump2(s, "reorder", nr); break;
+	case st_ordered: dump2(s, "ordered", nr); s->nr = -s->op1.stval->nr; break;
+	case st_select:
+	case st_uselect: 
+			if (s->flag == cmp_like || s->flag == cmp_notlike)
+				dump3(s, "likeselect", nr);
+			else
+				dump2(s, "select", nr);
+			break;
+	case st_select2:
+	case st_uselect2:
+			dump3(s, "select", nr); break;
+	case st_semijoin: dump2(s, "semijoin", nr); break;
+	case st_diff:	dump2(s, "diff", nr); break;
+	case st_union:	dump2(s, "union", nr); break;
+	case st_outerjoin:
+	case st_join:	
+			dump2(s, "join", nr); break;
+	case st_intersect: dump2(s, "intersect", nr); break;
+	case st_group:	dump1(s, "group", nr); break;
+	case st_group_ext:	dump1(s, "extent", nr); break;
+	case st_derive:	dump2(s, "derive", nr); break;
+	case st_convert:dump1(s, "convert", nr); break;
+	case st_op:	dump0(s, s->op4.funcval->func->imp); break;
+	case st_unop:	dump1(s, s->op4.funcval->func->imp, nr); break;
+	case st_binop:	dump2(s, s->op4.funcval->func->imp, nr); break;
+	case st_aggr:	
+			if (s->flag)
+				dump2(s, s->op4.aggrval->aggr->imp, nr);
+			else
+				dump1(s, s->op4.aggrval->aggr->imp, nr);
+			break;
+	case st_insert:	dump2(s, "insert", nr); break;
+	case st_append:	dump2(s, "append", nr); break;
+	case st_replace:dump2(s, "replace", nr); break;
+	case st_table_clear: printf("s%d := clear(\"%s\".\"%s\");\n", -s->nr, s->op1.tval->s->base.name, s->op1.tval->base.name); break;
+	case st_alias: 	dump1(s, "alias", nr); break;
+	case st_output: dump1(s, "output", nr); break;
+	case st_table:  dump1(s, "table", nr); break;
+	case st_set:
+	case st_list:
+	case st_sets:
+	case st_relselect:
+		for (n = s->op1.lval->h; n; n = n->next) 
+			(void) print_stmt(n->data, nr);
+		break;
+	case st_reljoin:
+		printf("s%d = reljoin(\n", -s->nr);
+		printf("R(\n");
+		for (n = s->op1.lval->h; n; n = n->next) 
+			(void) print_stmt(n->data, nr);
+		printf(")\nL(\n");
+		for (n = s->op2.lval->h; n; n = n->next) 
+			(void) print_stmt(n->data, nr);
+		printf("))\n");
+		break;
+	case st_ptable:
+		if (ptable_parent(s)) 
+			print_stmt(ptable_parent(s), nr);
+		printf("s%d = ptable( s%d )\n", -s->nr, 
+			print_stmt(ptable_statements(s), nr));
+		break;
+	case st_pivot:
+		s->nr = -print_stmt(s->op2.stval, nr); break;
+	case st_basetable:	
+		printf("basetable\n"); break;
+	case st_connection:
+		printf("connection\n"); break;
+	}
+	s->nr = -s->nr;
+	return s->nr;
+}
+
+void
+Sprint(stmt *s)
+{
+	int nr = 0;
+
+	(void)print_stmt(s, &nr);
+}

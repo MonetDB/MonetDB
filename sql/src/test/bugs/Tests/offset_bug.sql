@@ -26,4 +26,7 @@ FROM query_users LIMIT 3 OFFSET 2;
 
 select * from query_users OFFSET 2;
 
+select * from query_users order by user_name;
+select * from query_users order BY user_name OFFSET 2;
+
 drop table query_users;

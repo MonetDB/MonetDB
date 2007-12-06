@@ -39,6 +39,7 @@ extern sql_column * basecolumn(stmt *st);
 
 #include "sql_config.h"
 #include "sql_rel2bin.h"
+#include "sql_optimize.h"
 #include "sql_env.h"
 #include <stdio.h>
 
@@ -734,89 +735,6 @@ reljoin( mvc *sql, list *l1, list *l2 )
 	return res;
 }
 
-/* push the semijoin of (select,s) through the select statement (select) */
-stmt *
-push_semijoin( stmt *select, stmt *s )
-{
-	if (select->type == st_unop){ 
-		stmt *op1 = stmt_dup(select->op1.stval);
-
-		op1 = push_semijoin(op1, s);
-		stmt_destroy(select);
-		return stmt_unop(op1, sql_dup_func(select->op4.funcval));
-	}
-	if (select->type == st_binop) {
-		stmt *op1 = stmt_dup(select->op1.stval);
-		stmt *op2 = stmt_dup(select->op2.stval);
-		if (op1->nrcols) 
-			op1 = push_semijoin(op1, s);
-		if (op2->nrcols) 
-			op2 = push_semijoin(op2, s);
-		stmt_destroy(select);
-		return stmt_binop(op1, op2, sql_dup_func(select->op4.funcval));
-	}
-
-	/* semijoin(reverse(semijoin(reverse(x)),s) */
-	if (select->type == st_reverse &&
-	    select->op1.stval->type == st_semijoin &&
-	    select->op1.stval->op1.stval->type == st_reverse) {
-		stmt *op1 = stmt_dup( select->op1.stval->op1.stval->op1.stval);
-		stmt *op2 = stmt_dup( select->op1.stval->op2.stval);
-
-		op1 = push_semijoin( op1, s );
-		stmt_destroy(select);
-		return stmt_reverse(stmt_semijoin( stmt_reverse(op1), op2));
-	}
-	if (select->type != st_select2 && select->type != st_uselect2 &&
-	    select->type != st_select && select->type != st_uselect)
-		return stmt_semijoin(select, stmt_dup(s));
-
-	s = push_semijoin(stmt_dup(select->op1.stval), s);
-	if (select->type == st_select2) {
-		comp_type cmp = (comp_type)select->flag;
-		stmt *op2 = stmt_dup( select->op2.stval);
-		stmt *op3 = stmt_dup( select->op3.stval);
-
-		stmt_destroy(select);
-		return stmt_select2( s, op2, op3, cmp);
-	}
-
-	if (select->type == st_uselect2) {
-		comp_type cmp = (comp_type)select->flag;
-		stmt *op2 = stmt_dup( select->op2.stval);
-		stmt *op3 = stmt_dup( select->op3.stval);
-
-		stmt_destroy(select);
-		return stmt_uselect2( s, op2, op3, cmp);
-	}
-
-	if (select->type == st_select) {
-		comp_type cmp = (comp_type)select->flag;
-		stmt *op2 = stmt_dup( select->op2.stval);
-
-		if (cmp == cmp_like || cmp == cmp_notlike) {
-			stmt *op3 = stmt_dup( select->op3.stval);
-
-			stmt_destroy(select);
-			return stmt_likeselect( s, op2, op3, cmp);
-		} else {
-			stmt_destroy(select);
-			return stmt_select( s, op2, cmp);
-		}
-	}
-
-	if (select->type == st_uselect) {
-		comp_type cmp = (comp_type)select->flag;
-		stmt *op2 = stmt_dup( select->op2.stval);
-
-		stmt_destroy(select);
-		return stmt_uselect( s, op2, cmp);
-	}
-	assert(0);
-	return NULL;
-}
-
-
 int
 find_unique( stmt *s, void *v)
 {
@@ -987,8 +905,16 @@ rel2bin(mvc *c, stmt *s)
 		return res;
 	}
 
-	case st_limit: 
-	case st_semijoin:
+	case st_semijoin: {
+/*
+		stmt *res = push_semijoin(rel2bin(c, s->op1.stval), rel2bin(c, s->op2.stval));
+		s->optimized = res->optimized = 2;
+		if (res != s) {
+			s->rewritten = stmt_dup(res);
+		}
+		return res;
+*/
+
 		/* here we should rewrite semijoins into mirrorjoins */
 		/* select(t.a,l1,h1).semijoin(select(t.b,l2,h2)); */
 		/* select(t.a,l1,h1).mirror().join(t.b).select(l2,l2); */
@@ -996,6 +922,8 @@ rel2bin(mvc *c, stmt *s)
 		   mirror and projection join are pushed through 
 		   the 'delta column'. 
 		*/
+	}
+	case st_limit: 
 	case st_join:
 
 	case st_reverse:

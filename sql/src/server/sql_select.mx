@@ -4091,15 +4091,21 @@ sql_select(mvc *sql, scope *scp, SelectNode *sn, exp_kind ek)
 		if (order) {
 			node *n;
 			list *l = create_stmt_list();
+			stmt *lmt = stmt_limit(stmt_dup(order), offset, limit, 0);
 
-			order = stmt_limit(order, offset, limit, 0);
 			for (n = s->op1.lval->h; n; n = n->next)
 				if (sn->limit < 0)
-					list_append(l, stmt_diff(stmt_dup(n->data), stmt_dup(order)));
+					list_append(l, stmt_diff(stmt_dup(n->data), stmt_dup(lmt)));
 				else
-					list_append(l, stmt_semijoin(stmt_dup(n->data), stmt_dup(order)));
+					list_append(l, stmt_semijoin(stmt_dup(n->data), stmt_dup(lmt)));
 			stmt_destroy(s);
 			s = stmt_list(l);
+			if (sn->limit < 0) {
+				order = stmt_diff(order, lmt);
+			} else {
+				stmt_destroy(order);
+				order = lmt;
+			}
 		} else {
 			/* simply reduce ptable */
 			node *n = s->op1.lval->h;
