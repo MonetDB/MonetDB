@@ -76,13 +76,13 @@ public class XRPCTestClient {
     private CmdLineOpts opts;
 
 	XRPCTestClient()
-        throws Exception
+        throws OptionsException
     {
         opts = initCmdLineOpts();
     }
 
     private static CmdLineOpts initCmdLineOpts()
-        throws Exception
+        throws OptionsException
     {
 		CmdLineOpts copts = new CmdLineOpts();
 
@@ -126,7 +126,7 @@ public class XRPCTestClient {
     }
 
     private void parseOptions(String[] args)
-        throws Exception
+        throws OptionsException
     {
         String usage = 
             "Usage: java -jar xrpcwrapper-test.jar [options]\n" +
@@ -176,8 +176,14 @@ public class XRPCTestClient {
                             "\" extracted to \"" + toFile + "\"");
                 }
             }
-        } catch (Exception e){
-            e.printStackTrace();
+        } catch (OptionsException oe){
+            oe.printStackTrace();
+            System.exit(1);
+        } catch (FileNotFoundException fe){
+            fe.printStackTrace();
+            System.exit(1);
+        } catch (IOException ioe){
+            ioe.printStackTrace();
             System.exit(1);
         }
     }
@@ -195,14 +201,14 @@ public class XRPCTestClient {
                             fn + "\" deleted");
                 }
             }
-        } catch (Exception e){
+        } catch (OptionsException e){
             e.printStackTrace();
             System.exit(1);
         }
     }
 
     private String generateRequestMessage()
-        throws Exception
+        throws OptionsException, XRPCException
     {
         String method = opts.getOption("function").getArgument();
         String rootdir = opts.getOption("rootdir").getArgument();
@@ -312,7 +318,7 @@ public class XRPCTestClient {
                         ) ));
 
             } else {
-                throw new Exception("generateRequestMessage(): " +
+                throw new XRPCException("generateRequestMessage(): " +
                         "unknow function " + method);
             }
         }
@@ -328,7 +334,9 @@ public class XRPCTestClient {
     }
 
     private void extractResults(StringBuffer response)
-        throws Exception
+        throws XRPCException, XPathExpressionException,
+                          TransformerConfigurationException,
+                          TransformerException
     {
         String msg = response.toString();
         
@@ -345,7 +353,7 @@ public class XRPCTestClient {
         /* Find and check the prefix of the XRPC namespace URI */
         int i = response.indexOf(":sequence");
         if (i < 0) {
-            throw new Exception("Invalid response message: " +
+            throw new XRPCReceiverException("Invalid response message: " +
                     "no sequence element found");
         }
         int j = i - 1;
@@ -354,7 +362,7 @@ public class XRPCTestClient {
         /* check the namespace */
         String nsURI = XRPCMessage.getNamespaceURI(msg, xrpcPrefix);
         if(!nsURI.equals(XRPCMessage.XRPC_NS)){
-            throw new Exception("Expected namespace URI: " +
+            throw new XRPCReceiverException("Expected namespace URI: " +
                     XRPCMessage.XRPC_NS + "; " +
                     "found namespace URI: " + nsURI);
         }
@@ -393,29 +401,32 @@ public class XRPCTestClient {
     }
 
     private void doXRPCCall()
-        throws Exception
     {
-        String reqMsg = generateRequestMessage();
-        if(opts.getOption("verbose").isPresent()){
-            System.out.println("doXRPCCall(): " +
-                    "request message to send: \n");
-            System.out.print(reqMsg.toString());
-        }
+        try{
+            String reqMsg = generateRequestMessage();
+            if(opts.getOption("verbose").isPresent()){
+                System.out.println("doXRPCCall(): " +
+                        "request message to send: \n");
+                System.out.print(reqMsg.toString());
+            }
 
-        StringBuffer respMsg = XRPCHTTPConnection.sendReceive(
-                opts.getOption("server").getArgument() + XRPCD_CALLBACK,
-                reqMsg);
-        if(opts.getOption("verbose").isPresent()){
-            System.out.println("doXRPCCall(): " +
-                    "response message received: \n");
-            System.out.println(respMsg.toString());
-        }
+            StringBuffer respMsg = XRPCHTTPConnection.sendReceive(
+                    opts.getOption("server").getArgument() + XRPCD_CALLBACK,
+                    reqMsg);
+            if(opts.getOption("verbose").isPresent()){
+                System.out.println("doXRPCCall(): " +
+                        "response message received: \n");
+                System.out.println(respMsg.toString());
+            }
 
-        extractResults(respMsg);
+            extractResults(respMsg);
+        } catch (Exception e){
+            e.printStackTrace();
+            System.exit(1);
+        }
     }
 
     private void callAllFunctions()
-        throws Exception
     {
         String[] functions = {
             "echoVoid",
@@ -429,13 +440,18 @@ public class XRPCTestClient {
             "buyerAndAuction",
             "auctionsOfBuyer"};
 
-        CmdLineOpts.OptionContainer funcOpt = opts.getOption("function");
-        for(int i = 0; i < functions.length; i++){
-            funcOpt.resetArguments();
-            funcOpt.addArgument(functions[i]);
-            System.out.println("\n********** callAllFunctions(): " +
-                    "calling function \"" + functions[i] + "\" **********");
-            doXRPCCall();
+        try {
+            CmdLineOpts.OptionContainer funcOpt = opts.getOption("function");
+            for(int i = 0; i < functions.length; i++){
+                funcOpt.resetArguments();
+                funcOpt.addArgument(functions[i]);
+                System.out.println("\n********** callAllFunctions(): " +
+                        "calling function \"" + functions[i] + "\" **********");
+                doXRPCCall();
+            }
+        } catch (OptionsException oe){
+            oe.printStackTrace();
+            System.exit(1);
         }
     }
 
@@ -455,8 +471,8 @@ public class XRPCTestClient {
 
             /* delete temporiry files, if necessary */
             tc.deleteFiles();
-        } catch (Exception e) {
-            e.printStackTrace();
+        } catch (OptionsException oe) {
+            oe.printStackTrace();
             System.exit(1);
         }
     }

@@ -45,7 +45,7 @@ public class XRPCHTTPConnection {
     public static void send(BufferedWriter socketWriter,
                             String httpHeader,
                             String xrpcMessage)
-        throws Exception
+        throws IOException
     {
         socketWriter.write(httpHeader);
         socketWriter.write(xrpcMessage);
@@ -134,7 +134,7 @@ public class XRPCHTTPConnection {
      * SOAP Fault message */
     public static StringBuffer sendReceive(String server,
                                            String request)
-        throws Exception
+        throws IOException
     {
         URL url = new URL(server);
         HttpURLConnection httpConn = (HttpURLConnection) url.openConnection();

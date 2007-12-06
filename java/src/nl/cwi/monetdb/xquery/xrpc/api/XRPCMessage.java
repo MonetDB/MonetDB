@@ -257,13 +257,13 @@ public class XRPCMessage {
         /* Find the start and end of the tag "Envelope" */
         start = msg.indexOf("Envelope");
         if(start < 0){
-            throw new XRPCSenderException(
+            throw new XRPCException(
                     "XRPC " + msgType + " message not well-formed:" +
                     "could not find the \"Envelope\" tag.");
         }
         end = msg.indexOf(">", (start + 8));
         if(end < 0){
-            throw new XRPCSenderException(
+            throw new XRPCException(
                     "XRPC " + msgType + " message nog well-formed: " +
                     "could not find the end of the \"Envelope\" tag.");
         }
@@ -271,13 +271,13 @@ public class XRPCMessage {
         /* Find the end of the tag msgType */
         end = msg.indexOf(msgType, end);
         if(end < 0){
-            throw new XRPCSenderException(
+            throw new XRPCException(
                     "XRPC " + msgType + " message not well-formed:" +
                     "could not find the \"" + msgType + "\" tag.");
         }
         end = msg.indexOf(">", (end + 7));
         if(end < 0){
-            throw new XRPCSenderException(
+            throw new XRPCException(
                     "XRPC " + msgType + " message nog well-formed: " +
                     "could not find the end of the \"" +
                     msgType + "\" tag.");
@@ -297,7 +297,7 @@ public class XRPCMessage {
                 end = str.lastIndexOf("=", start);
                 start = str.lastIndexOf("\"", end) + 1;
                 if(str.indexOf("xmlns",start) != start){
-                    throw new XRPCSenderException(
+                    throw new XRPCException(
                             "XRPC " + msgType + " message not " +
                             "well-formed: \"xmlns\" expected in a " +
                             "namespace declaration.");
@@ -308,7 +308,7 @@ public class XRPCMessage {
             start += nsLen;
         } while(start < end);
 
-        throw new XRPCSenderException(
+        throw new XRPCException(
                 "XRPC " + msgType + " message nog well-formed: " +
                 "declaration of the namespace \"" + namespaceURI +
                 "\" not found.");
@@ -388,7 +388,7 @@ public class XRPCMessage {
                               xrpcPrefix + ":atomic-value/text()",
                         new InputSource(new StringReader(request)));
             }
-        } catch (Exception e){
+        } catch (XPathExpressionException e){
             throw new XRPCSenderException(
                     "Failed to execute XPath query:" +
                     e.getClass().getName() +
@@ -407,11 +407,18 @@ public class XRPCMessage {
     public static NamedNodeMap getNodeAttributes(XPath xPath,
                                                  String xmlStr,
                                                  String xPathExpr)
-        throws Exception
+        throws XRPCException
     {
         InputSource inputSource = new InputSource(new StringReader(xmlStr));
-        NodeList nodeList = (NodeList) xPath.evaluate(xPathExpr,
-                inputSource, XPathConstants.NODESET);
+        NodeList nodeList;
+        try{
+            nodeList = (NodeList) xPath.evaluate(xPathExpr, inputSource,
+                    XPathConstants.NODESET);
+        } catch (XPathExpressionException e) {
+            throw new XRPCException("Exactly 1 node is expected, " +
+                    "got XPathExpressionException instead:" +
+                    e.getMessage());
+        }
         if(nodeList.getLength() != 1){
             throw new XRPCException("Exactly 1 node is expected, got " +
                                     nodeList.getLength());
@@ -431,7 +438,7 @@ public class XRPCMessage {
                                                 String xmlStr,
                                                 String xPathExpr,
                                                 String attrName)
-        throws Exception
+        throws XPathExpressionException
     {
         InputSource inputSource = new InputSource(new StringReader(xmlStr));
         NodeList nodeList = (NodeList) xPath.evaluate(xPathExpr,

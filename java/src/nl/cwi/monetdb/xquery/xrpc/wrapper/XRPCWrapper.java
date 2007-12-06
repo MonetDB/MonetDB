@@ -86,8 +86,11 @@ public class XRPCWrapper {
                 System.out.println("# XQuery module file \"" + WF_FILE +
                         "\" extracted to \"" + toFile + "\"");
             }
-		} catch (Exception e) {
-			e.printStackTrace();
+		} catch (OptionsException oe) {
+			oe.printStackTrace();
+			System.exit(1);
+		} catch (IOException ioe) {
+			ioe.printStackTrace();
 			System.exit(1);
 		}
 
