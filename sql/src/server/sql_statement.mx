@@ -2929,9 +2929,26 @@ print_stmt(stmt *s, int *nr)
 			else
 				dump1(s, s->op4.aggrval->aggr->imp, nr);
 			break;
-	case st_insert:	dump2(s, "insert", nr); break;
 	case st_append:	dump2(s, "append", nr); break;
-	case st_replace:dump2(s, "replace", nr); break;
+	case st_append_col: 
+	case st_update_col: { 
+			sql_column *c = s->op1.cval; 
+			char *n = (s->type == st_append_col)?"append":"update";
+			int r = print_stmt(s->op2.stval, nr);
+			printf("s%d = %s(\"%s\".\"%s\".\"%s\", s%d);\n", -s->nr, n, c->t->s->base.name, c->t->base.name, c->base.name, r);
+	} break;
+	case st_append_idx: 
+	case st_update_idx: {
+			sql_idx *i = s->op1.idxval; 
+			char *n = (s->type == st_append_idx)?"append":"update";
+			int r = print_stmt(s->op2.stval, nr);
+			printf("s%d = %s_idx(\"%s\".\"%s\".\"%s\", s%d);\n", -s->nr, n, i->t->s->base.name, i->t->base.name, i->base.name, r);
+	} break;
+	case st_delete:{
+			sql_table *t = s->op1.tval;
+			int r = print_stmt(s->op2.stval, nr);
+			printf("s%d = delete(\"%s\".\"%s\", s%d);\n", -s->nr, t->s->base.name, t->base.name, r);
+	} break;
 	case st_table_clear: printf("s%d := clear(\"%s\".\"%s\");\n", -s->nr, s->op1.tval->s->base.name, s->op1.tval->base.name); break;
 	case st_alias: 	dump1(s, "alias", nr); break;
 	case st_output: dump1(s, "output", nr); break;
