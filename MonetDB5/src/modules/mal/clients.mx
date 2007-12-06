@@ -456,6 +456,18 @@ str CLTremoveUser(int *ret, str *usr) {
 }
 
 @mal
+command getUsername():str
+address CLTgetUsername
+comment "Return the username of the currently logged in user";
+@c
+str CLTgetUsername(str *ret) {
+	str tmp;
+
+	rethrow("getUsername", tmp, AUTHgetUsername(ret));
+	return(MAL_SUCCEED);
+}
+
+@mal
 command changeUsername(old:str, new:str):void
 address CLTchangeUsername
 comment "Change the username of the user into the new string";
