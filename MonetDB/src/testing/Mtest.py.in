@@ -3530,7 +3530,8 @@ def main(argv) :
             product += env['TST_FIVE']
         compiler = ''
         if os.name == 'nt':
-            compiler = 'NTV'
+            compiler = 'Mic' # Microsoft Visual Studio C
+            #compiler = 'Int' # Intel icc
         else:
             f = os.path.join(env['TSTBLDBASE'],'Makefile')
             if os.path.isfile(f):
