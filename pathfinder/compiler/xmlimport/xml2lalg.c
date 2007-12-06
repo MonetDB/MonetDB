@@ -168,8 +168,8 @@
  * Macro return-type:  PFarray_t* 
  * XPath return-type:  element(key)+
  */
-#define PFLA_KEYINFOS(xpath) \
-            getPFLA_KeyInfos(ctx, nodePtr, xpath)
+#define PFLA_KEYINFOS(xpath, schema) \
+            getPFLA_KeyInfos(ctx, nodePtr, xpath, schema)
 
 
 /**              
@@ -386,7 +386,8 @@ PFarray_t *
 getPFLA_KeyInfos(
     XML2LALGContext* ctx, 
     xmlNodePtr nodePtr, 
-    const char* xpathExpression);
+    const char* xpathExpression,
+    PFalg_schema_t schema);
 
 PFalg_tuple_t* 
 getPFLA_Tuples(
@@ -765,13 +766,15 @@ void createAndStoreAlgOpNode(XML2LALGContext* ctx, xmlNodePtr nodePtr)
                 </table>
              </content>             
             */
+
+            PFalg_schema_t schema = PFLA_SCHEMA("/content/table/column");
                                     
             newAlgNode = PFla_ref_tbl_ 
              (
              A2STR("/content/table/@name"),
-             PFLA_SCHEMA("/content/table/column"),
+             schema,
              AS2STRLST("/content/table/column/@tname"),
-             PFLA_KEYINFOS("/properties/keys/key")
+             PFLA_KEYINFOS("/properties/keys/key", schema)
              );
         }  
         break;
@@ -2359,7 +2362,8 @@ PFarray_t *
 getPFLA_KeyInfos(
     XML2LALGContext* ctx, 
     xmlNodePtr nodePtr, 
-    const char* xpathExpression)
+    const char* xpathExpression,
+    PFalg_schema_t schema)
 {
     /*
     (<key>
@@ -2367,7 +2371,7 @@ getPFLA_KeyInfos(
     </key>)+
     */
 
-    PFarray_t * keys = PFarray (sizeof (PFalg_att_t));
+    PFarray_t * keyPositions = PFarray (sizeof (int));
 
 
     xmlXPathObjectPtr keys_xml =  XPATH(xpathExpression);
@@ -2388,7 +2392,24 @@ getPFLA_KeyInfos(
             char* columnName = (char*)xmlXPathCastToString(XPATH2(keyColumn_xml, "/@name"));
             PFalg_att_t keyAttribute = ctx->convert2PFLA_attributeName(columnName);
 
-            *(PFalg_att_t *) PFarray_add (keys) = keyAttribute;
+            int keyPos = -1;
+
+            for (unsigned int k = 0; k < schema.count; k++) {
+
+
+                PFalg_schm_item_t schemaItem = schema.items[k];
+                if(schemaItem.name == keyAttribute) 
+                {
+                    keyPos = k;
+                    break;
+                }
+            }
+
+
+            assert(keyPos >= 0);
+
+
+            *(int*) PFarray_add (keyPositions) = keyPos;
 
 
         }
@@ -2397,7 +2418,7 @@ getPFLA_KeyInfos(
     }             
 
    
-    return keys;
+    return keyPositions;
 
 }
 

@@ -288,15 +288,22 @@ infer_key (PFla_op_t *n, bool with_guide_info)
 
 
         case la_ref_tbl:
-            /* just copy keys from the semantical infos */
-            for (unsigned int i = 0; i < PFarray_last (n->sem.ref_tbl.keys); i++)
-                *(PFalg_att_t *) PFarray_add (n->prop->keys) =
-                    *(PFalg_att_t *) PFarray_at (n->sem.ref_tbl.keys, i);
+            /* Make sure we don't process a component key here. */
+            if(PFarray_last (n->sem.ref_tbl.keys) == 1)
+            {
+                int keyPos =  *(int*) PFarray_at (n->sem.ref_tbl.keys, 0);
 
+                assert(keyPos >= 0);
+                
+                PFalg_schm_item_t schemaItem = n->schema.items[keyPos];
+                PFalg_att_t key = schemaItem.name;
+
+                *(PFalg_att_t *) PFarray_add (n->prop->keys) = key;
+
+            }
 
 
             break;
-
 
 
         case la_disjunion:

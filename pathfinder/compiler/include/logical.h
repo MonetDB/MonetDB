@@ -210,7 +210,8 @@ union PFla_op_sem_t {
     struct {
         char* name;
         PFarray_t*      tatts;    /**< array holding the original attr.names */
-        PFarray_t*      keys;     /**< array holding the key attributes */
+        PFarray_t*      keys;     /**< array holding the *positions* 
+                                      (w.r.t. the schema) of key attributes */
     } ref_tbl;                    /**< semantic content for tableref operator */
 
 

@@ -445,9 +445,8 @@ PFla_empty_tbl (PFalg_attlist_t attlist)
  *                with annotated types.
  * @param tatts   String list ("external" attribute/column
  *                names).
- * @param keys    Attribute list ("internal" attribute names) of
- *                key attributes.
- *
+ * @param keys    Array holding the *positions* (w.r.t. the 
+ *                schema) of key attributes
  */
 PFla_op_t *
 PFla_ref_tbl_ (const char* name,
@@ -493,7 +492,7 @@ PFla_ref_tbl_ (const char* name,
             *(char**) PFarray_add (ret->sem.ref_tbl.tatts) = copiedValue;
     }
 
-
+    
     /* (it's save to) shallow copy the list of key-attribute-names */
     ret->sem.ref_tbl.keys  = PFarray_copy(keys);
 

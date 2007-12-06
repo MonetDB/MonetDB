@@ -1458,10 +1458,15 @@ la_xml (PFarray_t *xml, PFla_op_t *n)
             /* list the keys of this table */
             for (unsigned int c = 0; c < PFarray_last (n->sem.ref_tbl.keys); c++) 
             {
+
+                int keyPos = *((int*) PFarray_at (n->sem.ref_tbl.keys, c));
+                PFalg_schm_item_t schemaItem = n->schema.items[keyPos];
+                PFalg_att_t keyName = schemaItem.name; 
+
                 PFarray_printf (xml, "    <key>\n");
                 PFarray_printf (xml, 
                                  "          <column name=\"%s\" position=\"%i\"/>\n",
-                                PFatt_str(*((PFalg_att_t*) PFarray_at (n->sem.ref_tbl.keys, c))),
+                                PFatt_str(keyName),
                                  1);
                 PFarray_printf (xml, "    </key>\n");
             }
