@@ -13,6 +13,73 @@ about building on Windows XP x64 which is indicated with Windows64.
 
 __ http://sourceforge.net/projects/monetdb/
 
+Introduction
+============
+
+The MonetDB suite of programs consists of a number of components which
+we will describe briefly here.  The general rule is that the
+components should be compiled and installed in the order given here,
+although some components can be compiled and installed in a different
+order.  Unless you know the inter-component dependencies, it is better
+to stick to this order.  Also note that before the next component is
+built, the previous ones need to be installed.  The section names are
+the names of the CVS modules on SourceForge.
+
+MonetDB
+-------
+
+Also known as the MonetDB Common component contains the database
+kernel, i.e. the heart of MonetDB, and some generally useful
+libraries.  This component is required.
+
+clients
+-------
+
+Also known as the MonetDB Client component contains a library which
+forms the basis for communicating with the MonetDB server components,
+and some interface programs that use this library to communicate with
+the server.  This component is required.
+
+MonetDB4
+--------
+
+The deprecated (but still used) database server MonetDB4 Server.  This
+component is still required for the MonetDB XQuery (pathfinder)
+component.  This is the old server which uses MIL (the MonetDB
+Interface Language) as programming interface.  This component is only
+required if you need MIL or if you need the MonetDB XQuery component.
+This component also works with the MonetDB SQL component, but that is
+not officially supported anymore (it does work, however).
+
+MonetDB5
+--------
+
+The MonetDB5 Server component is the new database server.  It uses MAL
+(the MonetDB Algebra Language) as programming interface.  This
+component is required if you need MAL or if you need the MonetDB SQL
+component.
+
+sql
+---
+
+Also known as MonetDB SQL, this component provides an SQL frontend to
+MonetDB4 and MonetDB5 (the former is deprecated).  This component is
+required if you need SQL support.
+
+pathfinder
+----------
+
+Also known as MonetDB XQuery, this component provides an XQuery query
+engine on top of a relational database.  You can store XML documents
+in the database and query these documents using XQuery.  This
+component is required if you need XML/XQuery support.
+
+java
+----
+
+Also known as MonetDB Java, this component provides both the MonetDB
+JDBC driver and the XRPC wrapper.  This component is optional.
+
 Prerequisites
 =============
 
@@ -242,12 +309,11 @@ __ http://www.swig.org/
 Java
 ----
 
-The most important use of Java__ that we make is for building the JDBC
-driver.  Get Java from http://java.sun.com/, but make sure you do
+If you want to build the java component of the MonetDB suite, you need
+Java__.  Get Java from http://java.sun.com/, but make sure you do
 *not* get the latest version.  Get the Java Development Kit 1.5.  Our
 current JDBC driver is not compatible with Java 1.6 yet, and the XRPC
-wrapper which is part of the pathfinder component is not compatible
-with Java 1.4 or older.
+wrapper is not compatible with Java 1.4 or older.
 
 In addition to the Java Development Kit, you will also need Apache Ant
 which is responsible for the actual building of the driver.
@@ -257,7 +323,8 @@ __ http://java.sun.com/
 Apache Ant
 ----------
 
-`Apache Ant`__ is a program to build other programs.
+`Apache Ant`__ is a program to build other programs.  This program is
+only used by the java component of the MonetDB suite.
 
 Get the Binary Distribution from http://ant.apache.org/, and extract
 the file somewhere.
