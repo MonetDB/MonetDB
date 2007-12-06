@@ -46,6 +46,7 @@ srpm:	MonetDB-java.spec $(top_builddir)/$(distdir).tar.gz $(rpmtopdir)/rpmmacros
 
 cleanup_distr:
 	find MonetDB-java-* -perm -0100 -type f ! -name \*.bat ! -name \*.sh ! -exec grep -q '^#!' {} \; -exec chmod a-x {} \;
-	find MonetDB-java-* -name \*.in ! -name configure.in ! -name \*.spec.in -print | while read i; do test -f $${i%.in} && rm -f $${i%.in}; done || true
+	find MonetDB-java-* -type f ! -name \*.in ! -name configure ! -name \*.spec -print | while read i; do test -f "$${i}.in" && rm -f "$${i}"; done || true
+	find MonetDB-java-* -type f -exec sed -n -e "/^#line/!w $${TMPDIR:-/var/tmp}/mn-dist-$$$$" {} \; -exec mv -f $${TMPDIR:-/var/tmp}/mn-dist-$$$$ {} \;
 
 dist-hook: cleanup_distr
