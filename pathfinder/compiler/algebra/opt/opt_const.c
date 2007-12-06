@@ -112,7 +112,6 @@ opt_const (PFla_op_t *p, bool no_attach)
             case la_min:
             case la_rownum:
             case la_rank:
-            case la_number:
             case la_cond_err:
                 /* these rules apply a 'real rewrite'
                    and therefore continue */
@@ -676,50 +675,55 @@ opt_const (PFla_op_t *p, bool no_attach)
             PFord_ordering_t sortby = PFordering ();
 
             for (unsigned int i = 0;
-                 i < PFord_count (p->sem.rownum.sortby);
+                 i < PFord_count (p->sem.sort.sortby);
                  i++)
                 if (!PFprop_const (p->prop,
                                    PFord_order_col_at (
-                                       p->sem.rownum.sortby, i)))
+                                       p->sem.sort.sortby, i)))
                     sortby = PFord_refine (
                                 sortby,
                                 PFord_order_col_at (
-                                    p->sem.rownum.sortby,
+                                    p->sem.sort.sortby,
                                     i),
                                 PFord_order_dir_at (
-                                    p->sem.rownum.sortby,
+                                    p->sem.sort.sortby,
                                     i));
 
-            p->sem.rownum.sortby = sortby;
+            p->sem.sort.sortby = sortby;
 
             /* only include partitioning attribute if it is not constant */
-            if (p->sem.rownum.part &&
-                PFprop_const (p->prop, p->sem.rownum.part))
-                p->sem.rownum.part = att_NULL;
+            if (p->sem.sort.part &&
+                PFprop_const (p->prop, p->sem.sort.part))
+                p->sem.sort.part = att_NULL;
 
         }   break;
 
+        case la_rowrank:
         case la_rank:
         {
             /* discard all sort criterions that are constant */
             PFord_ordering_t sortby = PFordering ();
 
             for (unsigned int i = 0;
-                 i < PFord_count (p->sem.rank.sortby);
+                 i < PFord_count (p->sem.sort.sortby);
                  i++)
                 if (!PFprop_const (p->prop,
                                    PFord_order_col_at (
-                                       p->sem.rank.sortby, i)))
+                                       p->sem.sort.sortby, i)))
                     sortby = PFord_refine (
                                 sortby,
                                 PFord_order_col_at (
-                                    p->sem.rank.sortby,
+                                    p->sem.sort.sortby,
                                     i),
                                 PFord_order_dir_at (
-                                    p->sem.rank.sortby,
+                                    p->sem.sort.sortby,
                                     i));
 
-            p->sem.rank.sortby = sortby;
+            p->sem.sort.sortby = sortby;
+
+            /* replace rank operator if it has no rank criterion anymore */
+            if (PFord_count (sortby) == 0)
+                *p = *PFla_attach (L(p), p->sem.sort.res, PFalg_lit_int (1));
         }   break;
 
         case la_type:

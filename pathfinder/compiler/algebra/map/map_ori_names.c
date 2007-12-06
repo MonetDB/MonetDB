@@ -510,47 +510,39 @@ map_ori_names (PFla_op_t *p, PFarray_t *map)
             break;
 
         case la_rownum:
-        {
-            PFord_ordering_t sortby = PFordering ();
-
-            for (unsigned int i = 0;
-                 i < PFord_count (p->sem.rownum.sortby);
-                 i++)
-                sortby = PFord_refine (
-                             sortby,
-                             ONAME(p, PFord_order_col_at (
-                                          p->sem.rownum.sortby, i)),
-                             PFord_order_dir_at (
-                                 p->sem.rownum.sortby, i));
-
-            res = rownum (SEC_PROJ(LEFT, p, p->sem.rownum.res),
-                          ONAME(p, p->sem.rownum.res),
-                          sortby,
-                          ONAME(p, p->sem.rownum.part));
-        }   break;
-
+        case la_rowrank:
         case la_rank:
         {
             PFord_ordering_t sortby = PFordering ();
 
             for (unsigned int i = 0;
-                 i < PFord_count (p->sem.rank.sortby);
+                 i < PFord_count (p->sem.sort.sortby);
                  i++)
                 sortby = PFord_refine (
                              sortby,
                              ONAME(p, PFord_order_col_at (
-                                          p->sem.rank.sortby, i)),
+                                          p->sem.sort.sortby, i)),
                              PFord_order_dir_at (
-                                 p->sem.rank.sortby, i));
+                                 p->sem.sort.sortby, i));
 
-            res = rank (SEC_PROJ(LEFT, p, p->sem.rank.res),
-                        ONAME(p, p->sem.rank.res),
-                        sortby);
+            if (p->kind == la_rownum)
+                res = rownum (SEC_PROJ(LEFT, p, p->sem.sort.res),
+                              ONAME(p, p->sem.sort.res),
+                              sortby,
+                              ONAME(p, p->sem.sort.part));
+            else if (p->kind == la_rowrank)
+                res = rowrank (SEC_PROJ(LEFT, p, p->sem.sort.res),
+                               ONAME(p, p->sem.sort.res),
+                               sortby);
+            else if (p->kind == la_rank)
+                res = rank (SEC_PROJ(LEFT, p, p->sem.sort.res),
+                            ONAME(p, p->sem.sort.res),
+                            sortby);
         }   break;
 
-        case la_number:
-            res = number (SEC_PROJ(LEFT, p, p->sem.number.res),
-                          ONAME(p, p->sem.number.res));
+        case la_rowid:
+            res = rowid (SEC_PROJ(LEFT, p, p->sem.rowid.res),
+                         ONAME(p, p->sem.rowid.res));
             break;
 
         case la_type:

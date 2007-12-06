@@ -114,7 +114,9 @@ typedef struct PFpa_op_t *NODEPTR_TYPE;
 %term max_           =  57
 %term min_           =  58
 %term sum            =  59
-%term number         =  60
+%term mark           =  60
+%term rank           =  61
+%term mark_grp       =  62
 %term type           =  63
 %term type_assert    =  64
 %term cast           =  65
@@ -203,10 +205,14 @@ Rel:      avg (Rel)                                                =  67 (10);
 Rel:      max_ (Rel)                                               =  68 (10);
 Rel:      min_ (Rel)                                               =  69 (10);
 Rel:      sum (Rel)                                                =  70 (10);
-Rel:      number (Rel)                                             =  73 (10);
-Rel:      type (Rel)                                               =  74 (10);
-Rel:      type_assert (Rel)                                        =  75 (10);
-Rel:      cast (Rel)                                               =  76 (10);
+Rel:      mark (Rel)                                               =  71 (10);
+Rel:      rank (Rel)                                               =  72 (10);
+Rel:      rank (std_sort (Rel))                                    =  73 (10);
+Rel:      rank (refine_sort (Rel))                                 =  74 (10);
+Rel:      mark_grp (Rel)                                           =  75 (10);
+Rel:      type (Rel)                                               =  76 (10);
+Rel:      type_assert (Rel)                                        =  77 (10);
+Rel:      cast (Rel)                                               =  78 (10);
 
 Rel:      llscj_anc (FragList, Rel)                                =  80 (10);
 Rel:      llscj_anc_self (FragList, Rel)                           =  81 (10);
@@ -4392,8 +4398,8 @@ reduce (PFpa_op_t * p, int goalnt)
              aggr_function(PFmil_sum, PFmil_gsum, p);
              break;
 
-        /* Rel:      number (Rel) */
-        case 73:
+        /* Rel:      mark (Rel) */
+        case 71:
         {
             mvar_t *res = new_var (p->refctr);
 
@@ -4408,25 +4414,9 @@ reduce (PFpa_op_t * p, int goalnt)
                          env_at (L(p)->env, i).mvar);
             }
 
-            /* and add the newly numbered one */
-            if (p->sem.number.part != att_NULL)
-                execute (
-                    assgn (var (res->name),
-                           mark_grp (
-                               VAR (p->env,
-                                    p->sem.number.part,
-                                    type_of (p, p->sem.number.part)),
-                               project (
-                                   kunique (
-                                       reverse (
-                                           VAR (p->env,
-                                                p->sem.number.part,
-                                                type_of (p, p->sem.number.part))
-                                           )),
-                                   lit_oid (1)))));
-            else if (env_at (L(p)->env, 0).ty == aat_pfrag)
+            if (env_at (L(p)->env, 0).ty == aat_pfrag)
                 /* As in many cases two adjacent path steps are separated
-                   by a number operator and the fragment is constant we
+                   by a mark operator and the fragment is constant we
                    try to avoid an additional dependency on the fragment
                    to ease 'materialize' operator removal. */
                 execute (
@@ -4442,11 +4432,178 @@ reduce (PFpa_op_t * p, int goalnt)
                                  lit_oid (1))));
 
             /* put the result into p's environment */
-            env_add (p->env, p->sem.number.attname, aat_nat, res);
+            env_add (p->env, p->sem.mark.res, aat_nat, res);
+        } break;
+        
+        /* Rel:      rank (Rel) */
+        case 72:
+        /* Rel:      rank (std_sort (Rel)) */
+        case 73:
+        /* Rel:      rank (refine_sort (Rel)) */
+        case 74:
+            /* as we have to sort anyway we can also skip the sort operator */
+        {
+            /*
+             * Derive a single BAT from the multi-column grouping
+             * (using functions from the xtables module).
+             */
+            mvar_t    *res            = new_var (p->refctr),
+                      *v              = new_var (1),
+                      *first_sort_var = NULL;
+            bool       initialized = false;
+            PFpa_op_t *rel;
+
+            if (L(p)->kind == pa_std_sort || L(p)->kind == pa_refine_sort)
+                rel = LL(p);
+            else
+                rel = L(p);
+
+            assert (PFord_count (p->sem.rank.ord));
+
+            for (unsigned int i = 0; i < PFord_count (p->sem.rank.ord); i++) {
+                for (PFalg_simple_type_t t = 1; t; t <<= 1) {
+                    if (t & type_of (rel,
+                                     PFord_order_col_at (p->sem.rank.ord, i))) {
+                        if (!initialized) {
+                            /* we need a hit for the first order criterion */
+                            assert (!i);
+
+                            first_sort_var = env_mvar (
+                                                 rel->env,
+                                                 PFord_order_col_at (
+                                                     p->sem.rank.ord,
+                                                     i),
+                                                 t);
+                            execute (
+                                assgn (
+                                    var (v->name),
+                                    reverse (
+                                        sort (
+                                            reverse (
+                                                var (first_sort_var->name)),
+                                            PFord_order_dir_at (
+                                                p->sem.rank.ord,
+                                                i)))));
+
+                            initialized = true;
+                        }
+                        else {
+                            execute (
+                                assgn (
+                                    var (v->name),
+                                    ctrefine (
+                                        var (v->name),
+                                        VAR (rel->env,
+                                             PFord_order_col_at (
+                                                 p->sem.rank.ord,
+                                                 i),
+                                             t),
+                                        PFord_order_dir_at (
+                                            p->sem.rank.ord,
+                                            i))));
+                        }
+                    }
+                }
+            }
+
+            execute (
+                /* Extend the sorting with a dummy sort criterion to
+                   ensure that the result column @a res consists of oids. */
+                assgn (var (res->name),
+                       reverse (mark (reverse (
+                                          ctrefine (var (v->name),
+                                                    project (var (v->name),
+                                                             lit_oid (1)),
+                                                    false)),
+                                      lit_oid (0)))),
+                 /* We know that the extent certainly is sorted. */
+                assgn (var (res->name),
+                       assert_order (var (res->name))),
+                /* Create a new mapping relation. */
+                assgn (var (v->name),
+                       reverse (mark (var (v->name), lit_oid (0)))));
+
+            /* put the result into p's environment */
+            env_add (p->env, p->sem.rank.res, aat_nat, res);
+            
+            /*
+             * The join with each input relation:
+             *
+             * out := v.join (in);
+             */
+            for (unsigned int i = 0; i < env_count (rel->env); i++) {
+                 mvar_t *out = new_var (p->refctr);
+
+                 execute (
+                      assgn (var (out->name),
+                             leftjoin (var (v->name),
+                                       var (env_at (rel->env,
+                                                    i).mvar->name))));
+
+                 /* we know that the first sort criterion certainly is sorted
+                    -- assert_order however only copes with ascending order */
+                 if (first_sort_var == env_at (rel->env,i).mvar &&
+                     PFord_order_dir_at (p->sem.rank.ord, 0)
+                     == DIR_ASC)
+                     execute (
+                          assgn (var (out->name),
+                                 assert_order (var (out->name))));
+
+                 /* because leftjoin does not know that we have
+                    exactly one match for each tuple in v,
+                    we need to make the heads void ourselves */
+                 execute (
+                     assgn (var (out->name),
+                            reverse (mark (reverse (var (out->name)),
+                                           lit_oid (0)))));
+
+                 env_add (p->env,
+                          env_at (rel->env, i).att,
+                          env_at (rel->env, i).ty,
+                          out);
+            }
+
+            /* release our temporary variable */
+            unpin (v, 1);
+
+        } break;
+        /* Rel:      mark_grp (Rel) */
+        case 75:
+        {
+            mvar_t *res = new_var (p->refctr);
+
+            assert (env_count (L(p)->env));
+            assert (p->sem.mark.part);
+
+            /* copy all the attributes */
+            for (unsigned int i = 0; i < env_count (L(p)->env); i++) {
+                pin (env_at (L(p)->env, i).mvar, p->refctr);
+                env_add (p->env,
+                         env_at (L(p)->env, i).att,
+                         env_at (L(p)->env, i).ty,
+                         env_at (L(p)->env, i).mvar);
+            }
+
+            execute (
+                assgn (var (res->name),
+                       mark_grp (
+                           VAR (p->env,
+                                p->sem.mark.part,
+                                type_of (p, p->sem.mark.part)),
+                           project (
+                               kunique (
+                                   reverse (
+                                       VAR (p->env,
+                                            p->sem.mark.part,
+                                            type_of (p, p->sem.mark.part)))),
+                               lit_oid (1)))));
+
+            /* put the result into p's environment */
+            env_add (p->env, p->sem.mark.res, aat_nat, res);
         } break;
 
         /* Rel:      type (Rel) */
-        case 74:
+        case 76:
         {
             mvar_t             *res = new_var (p->refctr);
             PFalg_simple_type_t input_ty = 0;
@@ -4522,7 +4679,7 @@ reduce (PFpa_op_t * p, int goalnt)
             break;
 
         /* Rel:      type_assert (Rel) */
-        case 75:
+        case 77:
             /* copy all the attributes */
             for (unsigned int i = 0; i < env_count (L(p)->env); i++) {
                 pin (env_at (L(p)->env, i).mvar, p->refctr);
@@ -4534,7 +4691,7 @@ reduce (PFpa_op_t * p, int goalnt)
             break;
 
         /* Rel:      cast (Rel) */
-        case 76:
+        case 78:
             for (unsigned int i = 0; i < L(p)->schema.count; i++)
             {
                 bool att_needed = true;

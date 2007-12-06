@@ -310,6 +310,8 @@ CoreExpr:           recursion (var, seed (CoreExpr, CoreExpr))  =  72 (10);
 /** mnemonic algebra constructors */
 #include "logical_mnemonic.h"
 
+#define RANK_DUMMY 42
+
 /**
  * Variable environment (Gamma in our papers)
  */
@@ -805,7 +807,7 @@ reduce (PFcnode_t * p, int goalnt)
                 else {
                     /**
                      * If an order by clause is present we need
-                     * the iter column as a row number criterion
+                     * the iter column as a row ranking criterion
                      * (sort_0, sort_1, ..., sort_n, iter, pos).
                      *
                      * Without an order by the combination of sort
@@ -914,7 +916,7 @@ reduce (PFcnode_t * p, int goalnt)
             PFla_op_t   *var;
             PFla_op_t   *opt_var;
             PFla_op_t   *var_map;
-            PFla_op_t   *number;
+            PFla_op_t   *rowid;
             unsigned int  i;
             PFla_env_t   e;
             PFla_op_t   *new_map;
@@ -924,10 +926,10 @@ reduce (PFcnode_t * p, int goalnt)
             /* initiate translation of e1 */
             reduce (kids[1], nts[1]);
 
-            number = number (A(LR(p)).rel, att_inner);
+            rowid = rowid (A(LR(p)).rel, att_inner);
 
             /* translate $v */
-            var = attach (project (number,
+            var = attach (project (rowid,
                                    proj (att_iter, att_inner),
                                    proj (att_item, att_item)),
                           att_pos, lit_nat (1));
@@ -943,7 +945,7 @@ reduce (PFcnode_t * p, int goalnt)
             loop = project (var, proj (att_iter, att_iter));
 
             /* create var_map relation. */
-            var_map = project (number,
+            var_map = project (rowid,
                                proj (att_outer, att_iter),
                                proj (att_sort, att_pos),
                                proj (att_inner, att_inner));
@@ -1028,14 +1030,15 @@ reduce (PFcnode_t * p, int goalnt)
                 atts[MAP_COUNT -1].new = att_sort << (MAP_COUNT - 3);
                 atts[MAP_COUNT -1].old = att_pos;
 
-                MAP = PFla_project_ (eqjoin (MAP,
-                                             project (number,
-                                                      proj (att_iter1, att_inner),
-                                                      proj (att_iter, att_iter),
-                                                      proj (att_pos, att_pos)),
-                                             att_inner,
-                                             att_iter),
-                                     MAP_COUNT, atts);
+                MAP = PFla_project_ (
+                          eqjoin (MAP,
+                                  project (rowid,
+                                           proj (att_iter1, att_inner),
+                                           proj (att_iter, att_iter),
+                                           proj (att_pos, att_pos)),
+                                  att_inner,
+                                  att_iter),
+                          MAP_COUNT, atts);
             }
 
             /* translate e2 under the specified conditions (updated
@@ -2626,7 +2629,7 @@ locstep (PFalg_axis_t axis, PFty_t seqty, struct PFla_pair_t p)
                    .frag = p.frag };
     else
         return (struct  PFla_pair_t) {
-                   .rel = number (step, att_pos),
+                   .rel = attach (step, att_pos, lit_nat (RANK_DUMMY)),
                    .frag = p.frag };
 }
 

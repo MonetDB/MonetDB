@@ -7,7 +7,7 @@
  * path steps in one go instead of a single distinct after each step).
  * Furthermore we try to replace all step operators by step_join operators
  * that can handle more input columns (than just iter|item) which should
- * ultimatively lead to less mapping joins and blocking number operators.
+ * ultimatively lead to less mapping joins and blocking rowid operators.
  *
  * Because the optimizations introduced here might hurt the efficiency
  * of the generated MIL code we used a separate optimization phase that
@@ -129,7 +129,7 @@ opt_join_graph (PFla_op_t *p)
            operator as nesting and the correct duplicates are treated
            by the new distinct operator.) */
         case la_rank:
-            if (PFord_count (p->sem.rank.sortby) > 1 &&
+            if (PFord_count (p->sem.sort.sortby) > 1 &&
                 !PFprop_set (p->prop) && /* ignore nested rank operators */
                 L(p)->kind != la_distinct) /* introduce distinct only once */ {
                 PFalg_att_t col;
@@ -140,7 +140,7 @@ opt_join_graph (PFla_op_t *p)
                 /* Create a new schema without result column... */
                 for (unsigned int i = 0; i < p->schema.count; i++) {
                     col = p->schema.items[i].name;
-                    if (col != p->sem.rank.res)
+                    if (col != p->sem.sort.res)
                         schema.items[schema.count++].name = col;
                 }
                 /* ... and use it to check if it contains a composite key. */
@@ -149,16 +149,16 @@ opt_join_graph (PFla_op_t *p)
             }
             break;
 
-        /* Replace number generated columns by already existing
+        /* Replace rowid generated columns by already existing
            key columns.
            !!!This means that iter columns with type aat_nat
               are replaced by columns of arbitrary type!!! */
-        case la_number:
+        case la_rowid:
         {
             PFalg_att_t key = att_NULL;
 
             for (unsigned int i = 0; i < p->schema.count; i++)
-                if (p->sem.number.res != p->schema.items[i].name &&
+                if (p->sem.rowid.res != p->schema.items[i].name &&
                     PFprop_key (p->prop, p->schema.items[i].name))
                     key = p->schema.items[i].name;
 
@@ -170,11 +170,11 @@ opt_join_graph (PFla_op_t *p)
                                       sizeof (*(proj_list)));
 
                 for (unsigned int i = 0; i < p->schema.count; i++)
-                    if (p->sem.number.res != p->schema.items[i].name)
+                    if (p->sem.rowid.res != p->schema.items[i].name)
                         proj_list[i] = PFalg_proj (p->schema.items[i].name,
                                                    p->schema.items[i].name);
                     else
-                        proj_list[i] = PFalg_proj (p->sem.number.res, key);
+                        proj_list[i] = PFalg_proj (p->sem.rowid.res, key);
 
                 *p = *PFla_project_ (L(p), p->schema.count, proj_list);
                 break;
@@ -183,7 +183,7 @@ opt_join_graph (PFla_op_t *p)
 
         /* Replace all step operators by step_join operators
            to allow a following optimization phase to get rid
-           of unnecessary eqjoin and number operators */
+           of unnecessary eqjoin and rowid operators */
         case la_step:
             if ((PFprop_key_right (p->prop, p->sem.step.item) &&
                  (p->sem.step.axis == alg_attr ||
@@ -219,7 +219,7 @@ opt_join_graph (PFla_op_t *p)
 
         /* Replace all guide_step operators by guide_step_join
            operators to allow a following optimization phase
-           to get rid of unnecessary eqjoin and number operators */
+           to get rid of unnecessary eqjoin and rowid operators */
         case la_guide_step:
             if (((PFprop_key_right (p->prop, p->sem.step.item) ||
                   PFprop_ckey (R(p)->prop, p->schema)) &&
@@ -344,7 +344,7 @@ opt_set (PFla_op_t *p)
 
         /* Replace all step operators by step_join operators
            to allow a following optimization phase to get rid
-           of unnecessary eqjoin and number operators */
+           of unnecessary eqjoin and rowid operators */
         case la_step:
             if (PFprop_set (p->prop)) {
 
@@ -373,7 +373,7 @@ opt_set (PFla_op_t *p)
 
         /* Replace all guide_step operators by guide_step_join
            operators to allow a following optimization phase
-           to get rid of unnecessary eqjoin and number operators */
+           to get rid of unnecessary eqjoin and rowid operators */
         case la_guide_step:
             if (PFprop_set (p->prop)) {
 

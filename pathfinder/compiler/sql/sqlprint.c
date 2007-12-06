@@ -128,7 +128,8 @@ static char *ID[] = {
       [sql_min]    /* used */ = "MIN",
       [sql_avg]    /* used */ = "AVG",
       [sql_over]              = "over",
-      [sql_rownumber]         = "rownumber",
+      [sql_row_number]        = "ROW_NUMBER",
+      [sql_dense_rank]        = "DENSE_RANK",
       [sql_wnd_clause]        = "wnd_clause",
       [sql_order_by]          = "order_by",
       [sql_sortkey_list]      = "sortkey_list",
@@ -571,9 +572,10 @@ print_statement (PFsql_t *n)
             break;
 
         case sql_over:
-            assert (L(n)->kind == sql_rownumber);
+            assert (L(n)->kind == sql_row_number ||
+                    L(n)->kind == sql_dense_rank);
             
-            PFprettyprintf ("ROW_NUMBER () OVER (%c", START_BLOCK );
+            PFprettyprintf ("%s () OVER (%c", ID[L(n)->kind], START_BLOCK);
             print_window_clause (R(n));
             PFprettyprintf ("%c)", END_BLOCK);
             break;

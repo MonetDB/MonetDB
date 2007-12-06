@@ -89,16 +89,32 @@ enum PFla_op_kind_t {
     , la_min             = 34 /**< operator for (partitioned) min of a column */
     , la_sum             = 35 /**< operator for (partitioned) sum of a column */
     , la_count           = 36 /**< (partitioned) row counting operator */
-    , la_rownum          = 37 /**< consecutive number generation */
-    , la_rank            = 38 /**< arbitrary but ordered number generation */
-    , la_number          = 39 /**< arbitrary, unordered number generation */
-    , la_type            = 40 /**< selection of rows where a column is of a
+    /* Semantics of la_row_num, la_rowrank, la_rank, and la_rowid:
+       - la_rownum behaves exactly like SQLs ROW_NUMBER. It is used to generate
+         position values.
+       - la_rowrank behaves exactly like SQLs DENSE_RANK. It is used to generate
+         the group by semantics of our functional source language.
+       - la_rank -- beside one exception -- behaves like la_rowrank. It is also
+         implemented in our SQL compilation with a DENSE_RANK operation. la_rank's
+         important difference to la_rowrank is that its resulting values are used
+         solely for ordering. No operation should ever look at the generated values.
+         While this difference is uninteresting in the resulting code it simplifies
+         the algebraic optimizer a lot. Instead of repeatedly inferring a property
+         that checks for column usage we can optimize based on the operator kind.
+       - la_rowid generates unrepeatable unique numbers (as 'ROW_NUMBER() OVER ()'
+         does in SQL or 'mark()' does in MIL). It is used to generate a new key
+         column. */
+    , la_rownum          = 37 /**< consecutive number generation (ROW_NUMBER) */
+    , la_rowrank         = 38 /**< consecutive number generation (DENSE_RANK) */
+    , la_rank            = 39 /**< arbitrary but ordered number generation */
+    , la_rowid           = 40 /**< arbitrary, unordered number generation */
+    , la_type            = 41 /**< selection of rows where a column is of a
                                    certain type */
-    , la_type_assert     = 41 /**< restricts the type of a relation */
-    , la_cast            = 42 /**< type cast of an attribute */
-    , la_seqty1          = 43 /**< test for exactly one type occurrence in one
+    , la_type_assert     = 42 /**< restricts the type of a relation */
+    , la_cast            = 43 /**< type cast of an attribute */
+    , la_seqty1          = 44 /**< test for exactly one type occurrence in one
                                    iteration (Pathfinder extension) */
-    , la_all             = 44 /**< test if all items in an iteration are true */
+    , la_all             = 45 /**< test if all items in an iteration are true */
     , la_step            = 50 /**< XPath location step */
     , la_step_join       = 51 /**< duplicate generating path step */
     , la_guide_step      = 52 /**< XPath location step 
@@ -295,26 +311,19 @@ union PFla_op_sem_t {
         PFalg_att_t     res;   /**< attribute to hold the result */
     } aggr;
 
-    /* semantic content for rownum operator */
+    /* semantic content for rownumber, rowrank, and rank operator */
     struct {
         PFalg_att_t     res;      /**< name of generated (integer) attribute */
         PFord_ordering_t sortby;  /**< sort crit. (list of attribute names
                                        and direction) */
         PFalg_att_t     part;     /**< optional partitioning attribute,
                                        otherwise NULL */
-    } rownum;
+    } sort;
 
-    /* semantic content for rank operator */
+    /* semantic content for rowid operator */
     struct {
         PFalg_att_t     res;      /**< name of generated (integer) attribute */
-        PFord_ordering_t sortby;  /**< sort crit. (list of attribute names
-                                       and direction) */
-    } rank;
-
-    /* semantic content for number operator */
-    struct {
-        PFalg_att_t     res;      /**< name of generated (integer) attribute */
-    } number;
+    } rowid;
 
     /* semantic content for type test, cast, and type_assert operator */
     struct {
@@ -516,7 +525,7 @@ PFla_op_t * PFla_op_duplicate (PFla_op_t *n, PFla_op_t *left,
  * A dummy operator that is generated whenever some rewrite 
  * throws away an operator (e.g., '*p = *L(p);') and the replacement
  * is an already existing node that may not be split into multiple 
- * operators (e.g. a number operator).
+ * operators (e.g. a rowid operator).
  */
 PFla_op_t * PFla_dummy (PFla_op_t *n);
 
@@ -753,12 +762,16 @@ PFla_op_t * PFla_count (const PFla_op_t *n, PFalg_att_t res,
 PFla_op_t * PFla_rownum (const PFla_op_t *n, PFalg_att_t a,
                          PFord_ordering_t s, PFalg_att_t p);
 
+/** Constructor for the row ranking operator. */
+PFla_op_t * PFla_rowrank (const PFla_op_t *n, PFalg_att_t a,
+                          PFord_ordering_t s);
+
 /** Constructor for the ranking operator. */
 PFla_op_t * PFla_rank (const PFla_op_t *n, PFalg_att_t a,
                        PFord_ordering_t s);
 
 /** Constructor for the numbering operator. */
-PFla_op_t * PFla_number (const PFla_op_t *n, PFalg_att_t a);
+PFla_op_t * PFla_rowid (const PFla_op_t *n, PFalg_att_t a);
 
 /**
  * Constructor for type test of column values. The result is

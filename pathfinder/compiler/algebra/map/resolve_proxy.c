@@ -85,7 +85,7 @@ resolve_proxies (PFla_op_t *p)
               #
     */
     if (p->kind == la_step_join || p->kind == la_guide_step_join) {
-        PFla_op_t    *number, *step;
+        PFla_op_t    *rowid, *step;
         PFalg_att_t   used_cols = 0,
                       join_att1,
                       join_att2,
@@ -106,8 +106,8 @@ resolve_proxies (PFla_op_t *p)
         used_cols = used_cols | join_att1;
         join_att2 = PFalg_ori_name (PFalg_unq_name (att_iter, 0), ~used_cols);
 
-        /* Generate a new number operator. */
-        number = PFla_number (R(p), join_att2);
+        /* Generate a new rowid operator. */
+        rowid = PFla_rowid (R(p), join_att2);
 
         /* Generate the pattern sketched above. The projection
            underneath the path step operator renames the
@@ -116,7 +116,7 @@ resolve_proxies (PFla_op_t *p)
             step = PFla_step (
                        L(p),
                        PFla_project (
-                           number,
+                           rowid,
                            PFalg_proj (join_att1, join_att2),
                            PFalg_proj (p->sem.step.item_res,
                                        p->sem.step.item)),
@@ -130,7 +130,7 @@ resolve_proxies (PFla_op_t *p)
             step = PFla_guide_step (
                        L(p),
                        PFla_project (
-                           number,
+                           rowid,
                            PFalg_proj (join_att1, join_att2),
                            PFalg_proj (p->sem.step.item_res,
                                        p->sem.step.item)),
@@ -146,7 +146,7 @@ resolve_proxies (PFla_op_t *p)
         *p = *PFla_project_ (
                   PFla_eqjoin (
                       step,
-                      number,
+                      rowid,
                       join_att1,
                       join_att2),
                   p->schema.count,

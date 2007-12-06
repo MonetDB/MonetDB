@@ -251,13 +251,17 @@ PFxml2la_conv_2PFLA_OpKind(const char* s)
     {
         return la_rownum;
     }
+    else if (strcmp(s, "rowrank") == 0)
+    {
+        return la_rowrank;
+    }
     else if (strcmp(s, "rank") == 0)
     {
         return la_rank;
     }
-    else if (strcmp(s, "number") == 0)
+    else if (strcmp(s, "rowid") == 0)
     {
-        return la_number;
+        return la_rowid;
     }
     else if (strcmp(s, "type") == 0)
     {

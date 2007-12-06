@@ -2146,16 +2146,96 @@ PFpa_op_t *PFpa_aggr (PFpa_op_kind_t kind, const PFpa_op_t *n, PFalg_att_t res,
 }
 
 PFpa_op_t *
-PFpa_number (const PFpa_op_t *n,
-             PFalg_att_t new_att,
-             PFalg_att_t part)
+PFpa_mark (const PFpa_op_t *n, PFalg_att_t new_att)
 {
-    PFpa_op_t *ret      = wire1 (pa_number, n);
+    PFpa_op_t *ret = wire1 (pa_mark, n);
+
+    ret->sem.mark.res  = new_att;
+    ret->sem.mark.part = att_NULL;
+
+    /* allocate memory for the result schema */
+    ret->schema.count = n->schema.count + 1;
+    ret->schema.items
+        = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
+
+    /* copy schema from n */
+    for (unsigned int i = 0; i < n->schema.count; i++)
+        ret->schema.items[i] = n->schema.items[i];
+
+    ret->schema.items[ret->schema.count - 1]
+        = (PFalg_schm_item_t) { .name = new_att, .type = aat_nat };
+
+    /* ---- orderings ---- */
+    for (unsigned int i = 0; i < PFord_set_count (n->orderings); i++) {
+        PFord_set_add (ret->orderings, PFord_set_at (n->orderings, i));
+
+        /* if we have already an ordering we can also add the new
+           generated column at the end. It won't break the ordering. */
+        PFord_set_add (ret->orderings,
+                       PFord_refine (
+                           PFord_set_at (n->orderings, i),
+                           new_att, DIR_ASC));
+    }
+
+    PFord_set_add (ret->orderings, sortby (new_att));
+
+    /* ---- costs ---- */
+    ret->cost = DEFAULT_COST + n->cost;
+
+    return ret;
+}
+
+PFpa_op_t *
+PFpa_rank (const PFpa_op_t *n, PFalg_att_t new_att, PFord_ordering_t ord)
+{
+    PFpa_op_t *ret = wire1 (pa_rank, n);
+
+    ret->sem.rank.res = new_att;
+    ret->sem.rank.ord = ord;
+
+    /* allocate memory for the result schema */
+    ret->schema.count = n->schema.count + 1;
+    ret->schema.items
+        = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
+
+    /* copy schema from n */
+    for (unsigned int i = 0; i < n->schema.count; i++)
+        ret->schema.items[i] = n->schema.items[i];
+
+    ret->schema.items[ret->schema.count - 1]
+        = (PFalg_schm_item_t) { .name = new_att, .type = aat_nat };
+
+    /* ---- orderings ---- */
+    for (unsigned int i = 0; i < PFord_set_count (n->orderings); i++) {
+        PFord_set_add (ret->orderings, PFord_set_at (n->orderings, i));
+
+        /* if we have already an ordering we can also add the new
+           generated column at the end. It won't break the ordering. */
+        PFord_set_add (ret->orderings,
+                       PFord_refine (
+                           PFord_set_at (n->orderings, i),
+                           new_att, DIR_ASC));
+    }
+
+    PFord_set_add (ret->orderings, sortby (new_att));
+
+    /* ---- costs ---- */
+    ret->cost = DEFAULT_COST + n->cost;
+
+    return ret;
+}
+
+PFpa_op_t *
+PFpa_mark_grp (const PFpa_op_t *n, PFalg_att_t new_att, PFalg_att_t part)
+{
+    PFpa_op_t *ret      = wire1 (pa_mark_grp, n);
     bool       dir_asc  = false,
                dir_desc = false;
 
-    ret->sem.number.attname = new_att;
-    ret->sem.number.part = part;
+    assert (part);
+
+    ret->sem.mark.res  = new_att;
+    ret->sem.mark.part = part;
 
     /* allocate memory for the result schema */
     ret->schema.count = n->schema.count + 1;

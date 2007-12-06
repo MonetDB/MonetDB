@@ -549,20 +549,47 @@ infer_ckey (PFla_op_t *n)
 
             /* if the cardinality is equal to one
                the result is key itself */
-            if (PFprop_card (n->prop) == 1 || !n->sem.rownum.part)
-                union_ (n->prop->ckeys, n->sem.rownum.res);
+            if (PFprop_card (n->prop) == 1 || !n->sem.sort.part)
+                union_ (n->prop->ckeys, n->sem.sort.res);
+            if (n->sem.sort.part)
+                union_ (n->prop->ckeys, n->sem.sort.res | n->sem.sort.part);
             break;
 
+        case la_rowrank:
         case la_rank:
-            /* composite key columns are propagated */
-            copy (n->prop->ckeys, L(n)->prop->ckeys);
-            union_ (n->prop->ckeys, n->sem.rank.res);
-            break;
+        {
+            PFarray_t *ckeys = L(n)->prop->ckeys;
+            PFalg_att_t ckey, att;
+            PFalg_att_t cols = 0;
+            unsigned int i;
 
-        case la_number:
+            copy (n->prop->ckeys, ckeys);
+
+            for (i = 0; i < PFord_count (n->sem.sort.sortby); i++) {
+                att = PFord_order_col_at (n->sem.sort.sortby, i);
+                /* check normal keys ... */
+                if (PFprop_key (L(n)->prop, att))
+                    break;
+                cols |= att;
+            }
+            if (i < PFord_count (n->sem.sort.sortby)) {
+                union_ (n->prop->ckeys, n->sem.sort.res);
+                break;
+            }
+            /* ... and composed keys */
+            for (i = 0; i < PFarray_last (ckeys); i++) {
+                ckey = *(PFalg_att_t *) PFarray_at (ckeys, i);
+                if ((cols & ckey) == ckey) {
+                    union_ (n->prop->ckeys, n->sem.sort.res);
+                    break;
+                }
+            }
+        }   break;
+
+        case la_rowid:
             /* composite key columns are propagated */
             copy (n->prop->ckeys, L(n)->prop->ckeys);
-            union_ (n->prop->ckeys, n->sem.number.res);
+            union_ (n->prop->ckeys, n->sem.rowid.res);
             break;
 
         case la_type:

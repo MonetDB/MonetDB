@@ -111,16 +111,17 @@ typedef struct PFla_op_t *NODEPTR_TYPE;
 %term min_            = 34 /**< operator for (partitioned) min of a column */
 %term sum             = 35 /**< operator for (partitioned) sum of a column */
 %term count           = 36 /**< (partitioned) row counting operator */
-%term rownum          = 37 /**< consecutive number generation */
-%term rank            = 38 /**< arbitrary but ordered number generation */
-%term number          = 39 /**< arbitrary, unordered number generation */
-%term type            = 40 /**< selection of rows where a column is of a
+%term rownum          = 37 /**< consecutive number generation (DENSE_RANK) */
+%term rowrank         = 38 /**< consecutive number generation (ROW_NUMBER) */
+%term rank            = 39 /**< arbitrary but ordered number generation */
+%term rowid           = 40 /**< arbitrary, unordered number generation */
+%term type            = 41 /**< selection of rows where a column is of a
                                 certain type */
-%term type_assert     = 41 /**< restricts the type of a relation */
-%term cast            = 42 /**< type cast of an attribute */
-%term seqty1          = 43 /**< test for exactly one type occurrence in one
+%term type_assert     = 42 /**< restricts the type of a relation */
+%term cast            = 43 /**< type cast of an attribute */
+%term seqty1          = 44 /**< test for exactly one type occurrence in one
                                 iteration (Pathfinder extension) */
-%term all             = 44 /**< test if all items in an iteration are true */
+%term all             = 45 /**< test if all items in an iteration are true */
 %term step            = 50 /**< XPath location step */
 %term step_join       = 51 /**< duplicate generating path step */
 %term guide_step      = 52 /**< XPath location step
@@ -231,8 +232,9 @@ Rel:    all (Rel)                                    =  42 (10);
 Rel:    string_join (Rel, Rel)                       =  43 (10);
 
 Rel:    rownum (Rel)                                 =  50 (10);
-Rel:    number (Rel)                                 =  51 (10);
+Rel:    rowrank (Rel)                                =  51 (10);
 Rel:    rank (Rel)                                   =  52 (10);
+Rel:    rowid (Rel)                                  =  53 (10);
 
 Rel:    step (Frag, Rel)                             =  55 (10);
 Rel:    guide_step (Frag, Rel)                       =  56 (10);
@@ -1319,7 +1321,7 @@ construct_twig_generic (PFla_op_t *p,
                                column_name (iter_col)),
                            column_assign (
                                add (MAX(max),
-                                    over (rownumber (),
+                                    over (row_number (),
                                           window_clause (NULL, NULL))),
                                PRE_),
                            column_assign (lit_int (0), SIZE_),
@@ -1342,7 +1344,7 @@ construct_twig_generic (PFla_op_t *p,
                                column_name (iter_col)),
                            column_assign (
                                add (MAX(max),
-                                    over (rownumber (),
+                                    over (row_number (),
                                           window_clause (
                                               NULL,
                                               order_by (sortkey_list)))),
@@ -1764,9 +1766,9 @@ reduce (PFla_op_t * p, int goalnt)
 
                 assert (R(p)->kind == la_project &&
                         RL(p)->kind == la_rank &&
-                        pos == RL(p)->sem.rank.res);
+                        pos == RL(p)->sem.sort.res);
                 
-                sortby = RL(p)->sem.rank.sortby;
+                sortby = RL(p)->sem.sort.sortby;
                 for (int i = PFord_count (sortby) - 1; i >= 0; i--) {
                     ord = PFord_order_col_at (sortby, i);
                     asc = PFord_order_dir_at (sortby, i) == DIR_ASC;
@@ -2121,7 +2123,7 @@ reduce (PFla_op_t * p, int goalnt)
                               false,
                               select_list (
                                   column_assign (
-                                      over (rownumber (),
+                                      over (row_number (),
                                             window_clause (NULL, NULL)),
                                       PRE_),
                                   SIZE(content),
@@ -2762,7 +2764,7 @@ reduce (PFla_op_t * p, int goalnt)
                 col_env_add (COLMAP(p),
                              num,
                              aat_int,
-                             over (rownumber (),
+                             over (row_number (),
                                    window_clause (
                                        partlist,
                                        PFord_count (sortby)
@@ -3447,9 +3449,9 @@ reduce (PFla_op_t * p, int goalnt)
             copy_cols_from_where (p, L(p));
 
             /* collect all sorting criteria */
-            for (int i = PFord_count (p->sem.rownum.sortby) - 1; i >= 0; i--) {
-                ord = PFord_order_col_at (p->sem.rownum.sortby, i);
-                asc = PFord_order_dir_at (p->sem.rownum.sortby, i) == DIR_ASC;
+            for (int i = PFord_count (p->sem.sort.sortby) - 1; i >= 0; i--) {
+                ord = PFord_order_col_at (p->sem.sort.sortby, i);
+                asc = PFord_order_dir_at (p->sem.sort.sortby, i) == DIR_ASC;
                 srtbylist = sortkey_list (
                                 sortkey_item (
                                     col_env_lookup (
@@ -3461,43 +3463,30 @@ reduce (PFla_op_t * p, int goalnt)
             }
 
             /* create partition criterion if present */
-            if (p->sem.rownum.part)
+            if (p->sem.sort.part)
                 partlist = partition (
                                column_list (
                                    col_env_lookup (
                                        COLMAP(L(p)),
-                                       p->sem.rownum.part,
-                                       type_of (L(p), p->sem.rownum.part))));
+                                       p->sem.sort.part,
+                                       type_of (L(p), p->sem.sort.part))));
 
             orderby = (srtbylist->kind == sql_nil)?NULL:order_by(srtbylist);
 
             col_env_add (COLMAP(p),
-                         p->sem.rownum.res,
+                         p->sem.sort.res,
                          aat_nat,
-                         over (rownumber (),
+                         over (row_number (),
                                window_clause (
                                    partlist,
                                    orderby)));
 
             bind = true;
-            execute (comment ("binding due to rownumber operator"));
+            execute (comment ("binding due to rownum operator"));
         }   break;
 
-        /* Rel:    number (Rel) */
+        /* Rel:    rowrank (Rel) */
         case 51:
-            /* copy all existing column, from, and where lists */
-            copy_cols_from_where (p, L(p));
-
-            col_env_add (COLMAP(p),
-                         p->sem.number.res,
-                         aat_nat,
-                         over (rownumber (),
-                               window_clause (NULL, NULL)));
-
-            bind = true;
-            execute (comment ("binding due to number operator"));
-            break;
-
         /* Rel:    rank (Rel) */
         case 52:
             /* copy all existing column, from, and where lists */
@@ -3507,7 +3496,7 @@ reduce (PFla_op_t * p, int goalnt)
                 /* Ignore the result of the rank operator in the normal
                    translation process and only add it to the special
                    rank map environment. */
-                PFord_ordering_t sortby = p->sem.rank.sortby;
+                PFord_ordering_t sortby = p->sem.sort.sortby;
                 unsigned int     i, j, k;
                 PFalg_att_t      ord;
                 PFarray_t       *srtbylist = PFarray (sizeof (PFsql_t *));
@@ -3552,19 +3541,19 @@ reduce (PFla_op_t * p, int goalnt)
 
                 /* add new entry to the rank map */
                 rank_map = PFmalloc (sizeof (rank_map_t));
-                *rank_map = (rank_map_t) { .name = p->sem.rank.res,
+                *rank_map = (rank_map_t) { .name = p->sem.sort.res,
                                            .sort_list = srtbylist };
                 *(rank_map_t **) PFarray_add (RANK_MAP(p)) = rank_map;
 
                 /* add a dummy for the rank operator */
                 col_env_add (COLMAP(p),
-                             p->sem.rank.res,
+                             p->sem.sort.res,
                              aat_nat,
                              lit_int(0));
             } else {
-                /* Normal translation of rank operator (using a ROW_NUMBER
+                /* Normal translation of rank operator (using a DENSE_RANK
                    operator). */
-                PFord_ordering_t sortby = p->sem.rank.sortby;
+                PFord_ordering_t sortby = p->sem.sort.sortby;
                 PFsql_t *srtbylist = NULL;
                 PFalg_att_t ord;
                 bool asc;
@@ -3584,14 +3573,29 @@ reduce (PFla_op_t * p, int goalnt)
 
                 }
                 col_env_add (COLMAP(p),
-                             p->sem.rank.res,
+                             p->sem.sort.res,
                              aat_nat,
-                             over (rownumber (),
+                             over (dense_rank (),
                                    window_clause (NULL, order_by (srtbylist))));
 
                 bind = true;
                 execute (comment ("binding due to rank operator"));
             }
+            break;
+
+        /* Rel:    rowid (Rel) */
+        case 53:
+            /* copy all existing column, from, and where lists */
+            copy_cols_from_where (p, L(p));
+
+            col_env_add (COLMAP(p),
+                         p->sem.rowid.res,
+                         aat_nat,
+                         over (row_number (),
+                               window_clause (NULL, NULL)));
+
+            bind = true;
+            execute (comment ("binding due to rowid operator"));
             break;
 
         /* Rel:    step (Frag, Rel) */
@@ -4590,7 +4594,7 @@ ser_info_worker (PFla_op_t *p, PFarray_t *twigs, PFarray_t *ranks)
         }   break;
 
         case la_rank:
-            RANK_LIST(p) = p->sem.rank.res;
+            RANK_LIST(p) = p->sem.sort.res;
         case la_roots:
         case la_attach:
             ITEM_LIST(p) = ITEM_LIST(L(p));
@@ -4654,8 +4658,8 @@ ser_info_worker (PFla_op_t *p, PFarray_t *twigs, PFarray_t *ranks)
              * the rank is not save.
              * Except the case where item is the last sort criterion
              * but we don't handle this. */
-            for (int i = PFord_count (p->sem.rank.sortby) - 1; i >= 0; i--) {
-                ord = PFord_order_col_at (p->sem.rank.sortby, i);
+            for (int i = PFord_count (p->sem.sort.sortby) - 1; i >= 0; i--) {
+                ord = PFord_order_col_at (p->sem.sort.sortby, i);
                 if (ITEM_LIST(p) & ord) {
                     SER_REPORT(p) = ser_no;
                     return;

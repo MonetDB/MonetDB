@@ -103,19 +103,22 @@
 #define to(a,b,c,d,e)     PFla_to ((a),(b),(c),(d),(e))
 
 /* operator applying a (partitioned) aggregation function on a column */
-#define aggr(a,b,c,d,e)      PFla_aggr ((a),(b),(c),(d),(e))
+#define aggr(a,b,c,d,e)   PFla_aggr ((a),(b),(c),(d),(e))
 
 /* (partitioned) row counting operator */
 #define count(a,b,c)      PFla_count ((a),(b),(c))
 
-/** rownum operator */
-#define rownum(a,b,c,d)   PFla_rownum ((a),(b),(c),(d))
+/** rownumber operator */
+#define rownum(a,b,c,d)  PFla_rownum ((a),(b),(c),(d))
+
+/** rowrank operator */
+#define rowrank(a,b,c)    PFla_rowrank ((a),(b),(c))
 
 /** rank operator */
 #define rank(a,b,c)       PFla_rank ((a),(b),(c))
 
-/** number operator */
-#define number(a,b)       PFla_number ((a),(b))
+/** numbering operator */
+#define rowid(a,b)        PFla_rowid ((a),(b))
 
 /** type test operator */
 #define type(a,b,c,d)     PFla_type ((a),(b),(c),(d))

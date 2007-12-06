@@ -636,55 +636,37 @@ apply_patch (PFla_op_t *n, PFarray_t *assembly1, PFarray_t *assembly2)
             apply_schema_patch (n, schema, assembly1);
         } break;
         case la_rownum:
+        case la_rowrank:
+        case la_rank:
         {
-            n->sem.rownum.part = eff_attribute_ (assembly1,
-                                                n->sem.rownum.part);
+            n->sem.sort.part = eff_attribute_ (assembly1,
+                                                n->sem.sort.part);
 
             /* adjust ordering TODO */
             PFord_ordering_t ordering = PFordering ();
 
-            for (unsigned int i = 0; i < PFord_count (n->sem.rownum.sortby); i++) {
+            for (unsigned int i = 0; i < PFord_count (n->sem.sort.sortby); i++) {
                 PFalg_att_t ordname = PFord_order_col_at (
-                                        n->sem.rownum.sortby, i);
+                                        n->sem.sort.sortby, i);
                 bool dir = PFord_order_dir_at (
-                                        n->sem.rownum.sortby, i);
+                                        n->sem.sort.sortby, i);
 
                 ordering = PFord_refine (ordering,
                                         eff_attribute_ (assembly1, ordname),
                                         dir);
             }
 
-            n->sem.rownum.sortby = ordering;
+            n->sem.sort.sortby = ordering;
 
             PFalg_schema_t schema = PFalg_schema_diff (n->schema,
-                                                n->sem.rownum.res);
+                                                n->sem.sort.res);
 
             apply_schema_patch (n, schema, assembly1);
         } break;
-        case la_rank:
-        {
-            PFord_ordering_t ordering = PFordering ();
-            for (unsigned int i = 0; i < PFord_count (n->sem.rank.sortby); i++) {
-                PFalg_att_t ordname = PFord_order_col_at (
-                                        n->sem.rank.sortby, i);
-                bool dir = PFord_order_dir_at (
-                                        n->sem.rank.sortby, i);
-                ordering = PFord_refine (ordering,
-                                        eff_attribute_ (assembly1, ordname),
-                                        dir);
-            }
-
-            n->sem.rank.sortby = ordering;
-
-            PFalg_schema_t schema = PFalg_schema_diff (n->schema,
-                                                n->sem.rank.res);
-
-            apply_schema_patch (n, schema, assembly1);
-        } break;
-        case la_number:
+        case la_rowid:
         {
             PFalg_schema_t schema = PFalg_schema_diff (n->schema,
-                                                n->sem.number.res);
+                                                n->sem.rowid.res);
 
             apply_schema_patch (n, schema, assembly1);
         } break;
@@ -868,7 +850,7 @@ resolve_name_conflicts (PFla_op_t *n)
         } break;
         case la_attach:
         {
-            old = n->sem.number.res;
+            old = n->sem.attach.res;
             new = create_unq_name (CSE (L (n)),
                             n->sem.attach.res);
         } break;
@@ -919,25 +901,20 @@ resolve_name_conflicts (PFla_op_t *n)
             n->sem.aggr.res = new;
         } break;
         case la_rownum:
-        {
-            old = n->sem.rownum.res;
-            new = create_unq_name (CSE (L (n)),
-                            old);
-            n->sem.rownum.res = new;
-        } break;
+        case la_rowrank:
         case la_rank:
         {
-            old = n->sem.rank.res;
+            old = n->sem.sort.res;
             new = create_unq_name (CSE (L (n)),
                             old);
-            n->sem.rank.res = new;
+            n->sem.sort.res = new;
         } break;
-        case la_number:
+        case la_rowid:
         {
-            old = n->sem.number.res;
+            old = n->sem.rowid.res;
             new = create_unq_name (CSE (L (n)),
                             old);
-            n->sem.number.res = new;
+            n->sem.rowid.res = new;
         } break;
         case la_type:
         {
@@ -1371,74 +1348,47 @@ subexp_eq (PFla_op_t *a, PFla_op_t *b)
             return true;
         } break;
         case la_rownum:
-        {
-            PFla_op_t *achild = L (a);
-            PFla_op_t *bchild = L (b);
-
-            /* check the schema without the created attname */
-            PFalg_schema_t schema1 = PFalg_schema_diff (a->schema, a->sem.rownum.res);
-            PFalg_schema_t schema2 = PFalg_schema_diff (b->schema, b->sem.rownum.res);
-
-            /* check if the number of ordering items is the same */
-            if (PFord_count (a->sem.rownum.sortby) != PFord_count (b->sem.rownum.sortby))
-                return false;
-
-
-            for (unsigned int i = 0; i < PFord_count (a->sem.rownum.sortby); i++) {
-                PFalg_att_t order1 = eff_attribute (achild, PFord_order_col_at (a->sem.rownum.sortby, i));
-                PFalg_att_t order2 = eff_attribute (bchild, PFord_order_col_at (b->sem.rownum.sortby, i));
-
-                if (!((order1 == order2) &&
-                        PFord_order_dir_at (a->sem.rownum.sortby, i) ==
-                            PFord_order_dir_at (b->sem.rownum.sortby, i)))
-                    return false;
-            }
-
-            if (!(eff_attribute (achild, a->sem.rownum.part)
-                    == eff_attribute (bchild, b->sem.rownum.part)))
-                    return false;
-
-            if (!eff_schema_eq (schema1, schema2, EFF (achild), EFF (bchild)))
-                return false;
-
-            return true;
-        } break;
+        case la_rowrank:
         case la_rank:
         {
             PFla_op_t *achild = L (a);
             PFla_op_t *bchild = L (b);
 
             /* check the schema without the created attname */
-            PFalg_schema_t schema1 = PFalg_schema_diff (a->schema, a->sem.rank.res);
-            PFalg_schema_t schema2 = PFalg_schema_diff (b->schema, b->sem.rank.res);
+            PFalg_schema_t schema1 = PFalg_schema_diff (a->schema, a->sem.sort.res);
+            PFalg_schema_t schema2 = PFalg_schema_diff (b->schema, b->sem.sort.res);
 
             /* check if the number of ordering items is the same */
-            if (PFord_count (a->sem.rank.sortby) != PFord_count (b->sem.rank.sortby))
+            if (PFord_count (a->sem.sort.sortby) != PFord_count (b->sem.sort.sortby))
                 return false;
 
 
-            for (unsigned int i = 0; i < PFord_count (a->sem.rank.sortby); i++) {
-                PFalg_att_t order1 = eff_attribute (achild, PFord_order_col_at (a->sem.rank.sortby, i));
-                PFalg_att_t order2 = eff_attribute (bchild, PFord_order_col_at (b->sem.rank.sortby, i));
+            for (unsigned int i = 0; i < PFord_count (a->sem.sort.sortby); i++) {
+                PFalg_att_t order1 = eff_attribute (achild, PFord_order_col_at (a->sem.sort.sortby, i));
+                PFalg_att_t order2 = eff_attribute (bchild, PFord_order_col_at (b->sem.sort.sortby, i));
 
                 if (!((order1 == order2) &&
-                        PFord_order_dir_at (a->sem.rank.sortby, i) ==
-                            PFord_order_dir_at (b->sem.rank.sortby, i)))
+                        PFord_order_dir_at (a->sem.sort.sortby, i) ==
+                            PFord_order_dir_at (b->sem.sort.sortby, i)))
                     return false;
             }
+
+            if (!(eff_attribute (achild, a->sem.sort.part)
+                    == eff_attribute (bchild, b->sem.sort.part)))
+                    return false;
 
             if (!eff_schema_eq (schema1, schema2, EFF (achild), EFF (bchild)))
                 return false;
 
             return true;
         } break;
-        case la_number:
+        case la_rowid:
         {
             PFla_op_t *achild = L (a);
             PFla_op_t *bchild = L (b);
 
-            PFalg_schema_t schema1 = PFalg_schema_diff (a->schema, a->sem.number.res);
-            PFalg_schema_t schema2 = PFalg_schema_diff (b->schema, b->sem.number.res);
+            PFalg_schema_t schema1 = PFalg_schema_diff (a->schema, a->sem.rowid.res);
+            PFalg_schema_t schema2 = PFalg_schema_diff (b->schema, b->sem.rowid.res);
 
             if (!eff_schema_eq (schema1, schema2, EFF (achild), EFF (bchild)))
                 return false;
@@ -1948,34 +1898,22 @@ patch_projections (PFla_op_t *a, PFla_op_t *b)
 
         } break;
         case la_rownum:
-        {
-            PFla_op_t *child = L(a);
-            *(eff_map_t *) PFarray_add (effmap) =
-                (eff_map_t)
-                {
-                    .ori_att = a->sem.rownum.res,
-                    .eff_att = b->sem.rownum.res
-                };
-
-            PFalg_schema_t schema = PFalg_schema_diff (a->schema, a->sem.rownum.res);
-
-            eff_schema_patch (effmap, schema, EFF(child));
-        } break;
+        case la_rowrank:
         case la_rank:
         {
             PFla_op_t *child = L(a);
             *(eff_map_t *) PFarray_add (effmap) =
                 (eff_map_t)
                 {
-                    .ori_att = a->sem.rank.res,
-                    .eff_att = b->sem.rank.res
+                    .ori_att = a->sem.sort.res,
+                    .eff_att = b->sem.sort.res
                 };
 
-            PFalg_schema_t schema = PFalg_schema_diff (a->schema, a->sem.rank.res);
+            PFalg_schema_t schema = PFalg_schema_diff (a->schema, a->sem.sort.res);
 
             eff_schema_patch (effmap, schema, EFF(child));
         } break;
-        case la_number:
+        case la_rowid:
         {
 
             PFla_op_t *child = L (a);
@@ -1983,11 +1921,11 @@ patch_projections (PFla_op_t *a, PFla_op_t *b)
             *(eff_map_t *) PFarray_add (effmap) =
                 (eff_map_t)
                 {
-                    .ori_att = a->sem.number.res,
-                    .eff_att = b->sem.number.res
+                    .ori_att = a->sem.rowid.res,
+                    .eff_att = b->sem.rowid.res
                 };
 
-            PFalg_schema_t schema = PFalg_schema_diff (a->schema, a->sem.number.res);
+            PFalg_schema_t schema = PFalg_schema_diff (a->schema, a->sem.rowid.res);
 
             eff_schema_patch (effmap, schema, EFF(child));
 

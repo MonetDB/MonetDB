@@ -81,8 +81,9 @@ infer_card (PFla_op_t *n)
         case la_bool_or:
         case la_bool_not:
         case la_rownum:
+        case la_rowrank:
         case la_rank:
-        case la_number:
+        case la_rowid:
         case la_type:
         case la_type_assert:
         case la_cast:

@@ -702,18 +702,15 @@ infer_dom (PFla_op_t *n, unsigned int id)
             break;
 
         case la_rownum:
-            bulk_add_dom (n->prop, L(n));
-            add_dom (n->prop, n->sem.rownum.res, id++);
-            break;
-
+        case la_rowrank:
         case la_rank:
             bulk_add_dom (n->prop, L(n));
-            add_dom (n->prop, n->sem.rank.res, id++);
+            add_dom (n->prop, n->sem.sort.res, id++);
             break;
 
-        case la_number:
+        case la_rowid:
             bulk_add_dom (n->prop, L(n));
-            add_dom (n->prop, n->sem.number.res, id++);
+            add_dom (n->prop, n->sem.rowid.res, id++);
             break;
 
         case la_step:

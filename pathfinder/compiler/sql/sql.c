@@ -973,12 +973,21 @@ PFsql_over (const PFsql_t *a, const PFsql_t *b)
 }
 
 /**
- * Create a SQL tree node representing SQL `ROWNUMBER()' function.
+ * Create a SQL tree node representing SQL `ROW_NUMBER()' function.
  */
 PFsql_t *
-PFsql_rownumber (void)
+PFsql_row_number (void)
 {
-    return leaf (sql_rownumber);
+    return leaf (sql_row_number);
+}
+
+/**
+ * Create a SQL tree node representing SQL `DENSE_RANK()' function.
+ */
+PFsql_t *
+PFsql_dense_rank (void)
+{
+    return leaf (sql_dense_rank);
 }
 
 /**

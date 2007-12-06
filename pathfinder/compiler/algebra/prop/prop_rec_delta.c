@@ -254,16 +254,7 @@ check_op (PFla_op_t *n)
             break;
 
         case la_rownum:
-            ITER (n) = ITER (L(n));
-            POS  (n) = POS  (L(n));
-            INNER(n) = INNER(L(n));
-
-            /* a numbering partitioned by ITER indicates a new sequence
-               order -- we thus add new position column */
-            if (n->sem.rownum.part && ITER(n) & n->sem.rownum.part)
-                POS(n) |= n->sem.rownum.res;
-            break;
-
+        case la_rowrank:
         case la_rank:
             ITER (n) = ITER (L(n));
             POS  (n) = POS  (L(n));
@@ -272,10 +263,10 @@ check_op (PFla_op_t *n)
             /* a numbering indicates a new sequence
                order -- we thus add new position column */
             if (ITER(n))
-                POS(n) |= n->sem.rank.res;
+                POS(n) |= n->sem.sort.res;
             break;
 
-        case la_number:
+        case la_rowid:
             ITER (n) = ITER (L(n));
             POS  (n) = POS  (L(n));
             INNER(n) = INNER(L(n));
@@ -286,7 +277,7 @@ check_op (PFla_op_t *n)
                use the cardinality to generate new nodes */
             if ((ITER(L(n)) & att_iter ||
                  INNER(L(n)) & att_iter) &&
-                n->sem.number.res == att_inner)
+                n->sem.rowid.res == att_inner)
                 INNER(n) |= att_inner;
             break;
 

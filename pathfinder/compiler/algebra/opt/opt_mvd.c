@@ -931,21 +931,21 @@ opt_mvd (PFla_op_t *p)
            moves the expression above the rownum and removes its partitioning
            column. */
         if (is_cross (L(p)) &&
-            p->sem.rownum.part) {
+            p->sem.sort.part) {
             bool part, sortby;
 
             /* first check the dependencies of the left cross product input */
             part = false;
             sortby = false;
             for (unsigned int i = 0; i < LL(p)->schema.count; i++) {
-                if (LL(p)->schema.items[i].name == p->sem.rownum.part)
+                if (LL(p)->schema.items[i].name == p->sem.sort.part)
                     part = true;
                 for (unsigned int j = 0;
-                     j < PFord_count (p->sem.rownum.sortby);
+                     j < PFord_count (p->sem.sort.sortby);
                      j++)
                     if (LL(p)->schema.items[i].name
                         == PFord_order_col_at (
-                               p->sem.rownum.sortby,
+                               p->sem.sort.sortby,
                                j)) {
                         sortby = true;
                         break;
@@ -956,8 +956,8 @@ opt_mvd (PFla_op_t *p)
                           LL(p),
                           rownum (
                               LR(p),
-                              p->sem.rownum.res,
-                              p->sem.rownum.sortby,
+                              p->sem.sort.res,
+                              p->sem.sort.sortby,
                               att_NULL)));
                 modified = true;
                 break;
@@ -967,14 +967,14 @@ opt_mvd (PFla_op_t *p)
             part = false;
             sortby = false;
             for (unsigned int i = 0; i < LR(p)->schema.count; i++) {
-                if (LR(p)->schema.items[i].name == p->sem.rownum.part)
+                if (LR(p)->schema.items[i].name == p->sem.sort.part)
                     part = true;
                 for (unsigned int j = 0;
-                     j < PFord_count (p->sem.rownum.sortby);
+                     j < PFord_count (p->sem.sort.sortby);
                      j++)
                     if (LR(p)->schema.items[i].name
                         == PFord_order_col_at (
-                               p->sem.rownum.sortby,
+                               p->sem.sort.sortby,
                                j)) {
                         sortby = true;
                         break;
@@ -985,8 +985,8 @@ opt_mvd (PFla_op_t *p)
                           LR(p),
                           rownum (
                               LL(p),
-                              p->sem.rownum.res,
-                              p->sem.rownum.sortby,
+                              p->sem.sort.res,
+                              p->sem.sort.sortby,
                               att_NULL)));
                 modified = true;
                 break;
@@ -994,22 +994,28 @@ opt_mvd (PFla_op_t *p)
         }
         break;
 
+    case la_rowrank:
     case la_rank:
         /* An expression that does not contain any sorting column
            required by the rank operator, is independent of the rank.
            The translation thus moves the expression above the rank. */
         if (is_cross (L(p))) {
             bool sortby;
+            PFla_op_t *(* op) (const PFla_op_t *,
+                               PFalg_att_t,
+                               PFord_ordering_t);
+
+            op = p->kind == la_rowrank ? PFla_rowrank : PFla_rank;
 
             /* first check the dependencies of the left cross product input */
             sortby = false;
             for (unsigned int i = 0; i < LL(p)->schema.count; i++)
                 for (unsigned int j = 0;
-                     j < PFord_count (p->sem.rank.sortby);
+                     j < PFord_count (p->sem.sort.sortby);
                      j++)
                     if (LL(p)->schema.items[i].name
                         == PFord_order_col_at (
-                               p->sem.rank.sortby,
+                               p->sem.sort.sortby,
                                j)) {
                         sortby = true;
                         break;
@@ -1017,10 +1023,9 @@ opt_mvd (PFla_op_t *p)
             if (!sortby) {
                 *p = *(cross_can (
                           LL(p),
-                          rank (
-                              LR(p),
-                              p->sem.rank.res,
-                              p->sem.rank.sortby)));
+                          op (LR(p),
+                              p->sem.sort.res,
+                              p->sem.sort.sortby)));
                 modified = true;
                 break;
             }
@@ -1029,11 +1034,11 @@ opt_mvd (PFla_op_t *p)
             sortby = false;
             for (unsigned int i = 0; i < LR(p)->schema.count; i++)
                 for (unsigned int j = 0;
-                     j < PFord_count (p->sem.rownum.sortby);
+                     j < PFord_count (p->sem.sort.sortby);
                      j++)
                     if (LR(p)->schema.items[i].name
                         == PFord_order_col_at (
-                               p->sem.rownum.sortby,
+                               p->sem.sort.sortby,
                                j)) {
                         sortby = true;
                         break;
@@ -1041,17 +1046,16 @@ opt_mvd (PFla_op_t *p)
             if (!sortby) {
                 *p = *(cross_can (
                           LR(p),
-                          rank (
-                              LL(p),
-                              p->sem.rank.res,
-                              p->sem.rank.sortby)));
+                          op (LL(p),
+                              p->sem.sort.res,
+                              p->sem.sort.sortby)));
                 modified = true;
                 break;
             }
         }
         break;
 
-    case la_number:
+    case la_rowid:
         break;
 
     case la_type:
@@ -1504,7 +1508,7 @@ opt_mvd (PFla_op_t *p)
     case la_content:
     case la_merge_adjacent:
         /* constructors introduce like the unpartitioned
-           number or rownum operators a dependency. */
+           rowid or rownum operators a dependency. */
         break;
 
     case la_roots:
@@ -1620,7 +1624,7 @@ opt_mvd (PFla_op_t *p)
          *
          * In the current situation these operators are:
          * - aggregates (sum and count)
-         * - rownum and number operators
+         * - rownum and rowid operators
          * - constructors (element, attribute, and textnode)
          * - fn:string-join
          *
@@ -1635,21 +1639,21 @@ opt_mvd (PFla_op_t *p)
          * Here are the reasons why it currently works without problems:
          * - aggregates (sum and count):
          *    The aggregates are only a problem if used without partitioning
-         *    or if the partition criterion is not inferred from the number
+         *    or if the partition criterion is not inferred from the rowid
          *    operator at the proxy exit. As an aggregate always uses the
          *    current scope (ensured during generation) and all scopes are
          *    properly nested, we have a functional dependency between the
          *    partitioning attribute of an aggregate inside this proxy
-         *    (which is also equivalent to a scope) and the proxy exit number
+         *    (which is also equivalent to a scope) and the proxy exit rowid
          *    operator.
          *
-         * - rownum and number operators:
+         * - rownum and rowid operators:
          *    With a similar explanation as the one for aggregates we can be
-         *    sure that every rownum and number operator inside the proxy is
+         *    sure that every rownum and rowid operator inside the proxy is
          *    not used outside the proxy pattern. The generation process
          *    ensures that these are not used outside the scope or if used
-         *    outside are partitioned by the number of the number operator at
-         *    theproxy exit.
+         *    outside are partitioned by the numbers of the rowid operator at
+         *    the proxy exit.
          *
          * - constructors (element, attribute, and textnode):
          *    Constructors are never allowed inside the proxy of kind=1.
@@ -1717,7 +1721,7 @@ opt_mvd (PFla_op_t *p)
             L(LL(p))->kind == la_project &&
             R(LL(p))->kind == la_project &&
             RL(LL(p))->kind == la_eqjoin &&
-            LL(LL(p))->kind == la_number &&
+            LL(LL(p))->kind == la_rowid &&
             L(LL(LL(p))) == p->sem.proxy.base1 &&
             p->sem.proxy.ref->kind == la_project &&
             L(p->sem.proxy.ref) == LL(LL(p))) {
@@ -1814,11 +1818,11 @@ opt_mvd (PFla_op_t *p)
                                            dummy_col);
                 }
 
-                PFla_op_t *new_number = PFla_number (
-                                            PFla_proxy_base (lcross),
-                                            L(ref)->sem.number.res);
+                PFla_op_t *new_rowid = PFla_rowid (
+                                           PFla_proxy_base (lcross),
+                                           L(ref)->sem.rowid.res);
 
-                *ref = *PFla_project_ (new_number,
+                *ref = *PFla_project_ (new_rowid,
                                        ref->schema.count,
                                        proj_exit);
 
@@ -1828,7 +1832,7 @@ opt_mvd (PFla_op_t *p)
                               PFla_project_ (
                                   PFla_eqjoin (
                                       PFla_project_ (
-                                          new_number,
+                                          new_rowid,
                                           L(LL(p))->schema.count,
                                           proj_left),
                                       R(LL(p)),
@@ -1837,7 +1841,7 @@ opt_mvd (PFla_op_t *p)
                                   count, proj_proxy),
                               1,
                               ref,
-                              L(new_number),
+                              L(new_rowid),
                               p->sem.proxy.new_cols,
                               p->sem.proxy.req_cols)));
 

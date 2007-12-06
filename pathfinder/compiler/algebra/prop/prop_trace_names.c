@@ -223,15 +223,13 @@ map_names (PFla_op_t *n, PFla_op_t *goal, PFarray_t *par_np_list)
             break;
 
         case la_rownum:
-            diff_np (np_list, n->sem.rownum.res);
-            break;
-
+        case la_rowrank:
         case la_rank:
-            diff_np (np_list, n->sem.rank.res);
+            diff_np (np_list, n->sem.sort.res);
             break;
 
-        case la_number:
-            diff_np (np_list, n->sem.number.res);
+        case la_rowid:
+            diff_np (np_list, n->sem.rowid.res);
             break;
 
         case la_type:

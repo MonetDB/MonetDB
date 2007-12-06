@@ -129,7 +129,8 @@
                                      
 /* .......... OLAP Functionality .......... */
 #define over(a,b)                    PFsql_over(a,b)
-#define rownumber()                  PFsql_rownumber()
+#define row_number()                 PFsql_row_number()
+#define dense_rank()                 PFsql_dense_rank()
 #define window_clause(p,o)           PFsql_window_clause(p,o)
 #define order_by(a)                  PFsql_order_by(a)
 

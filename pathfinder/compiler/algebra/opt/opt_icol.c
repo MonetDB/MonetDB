@@ -333,24 +333,19 @@ opt_icol (PFla_op_t *p)
             break;
 
         case la_rownum:
-            /* prune rownum if result column is not required */
-            if (!PFprop_icol (p->prop, p->sem.rownum.res)) {
-                *p = *PFla_dummy (L(p));
-                break;
-            }
-            break;
-
+        case la_rowrank:
         case la_rank:
-            /* prune rank if result column is not required */
-            if (!PFprop_icol (p->prop, p->sem.rank.res)) {
+            /* prune rownum, rowrank, or rank if the result
+               column is not required */
+            if (!PFprop_icol (p->prop, p->sem.sort.res)) {
                 *p = *PFla_dummy (L(p));
                 break;
             }
             break;
 
-        case la_number:
-            /* prune number if result column is not required */
-            if (!PFprop_icol (p->prop, p->sem.number.res)) {
+        case la_rowid:
+            /* prune rowid if result column is not required */
+            if (!PFprop_icol (p->prop, p->sem.rowid.res)) {
                 *p = *PFla_dummy (L(p));
                 break;
             }

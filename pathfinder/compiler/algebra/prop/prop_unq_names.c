@@ -421,18 +421,15 @@ infer_unq_names (PFla_op_t *n, unsigned int id)
             break;
 
         case la_rownum:
-            bulk_add_name_pairs (np_list, L(n));
-            new_name_pair (np_list, n->sem.rownum.res, id++);
-            break;
-
+        case la_rowrank:
         case la_rank:
             bulk_add_name_pairs (np_list, L(n));
-            new_name_pair (np_list, n->sem.rank.res, id++);
+            new_name_pair (np_list, n->sem.sort.res, id++);
             break;
 
-        case la_number:
+        case la_rowid:
             bulk_add_name_pairs (np_list, L(n));
-            new_name_pair (np_list, n->sem.number.res, id++);
+            new_name_pair (np_list, n->sem.rowid.res, id++);
             break;
 
         case la_type:

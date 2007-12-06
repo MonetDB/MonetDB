@@ -90,7 +90,7 @@
 PFla_op_t *
 PFalgopt (PFla_op_t *root, bool timing, PFguide_tree_t* guide_tree)
 {
-    bool debug_opt = getenv("PF_DEBUG_OPTIMIZATIONS");
+    bool debug_opt = getenv("PF_DEBUG_OPTIMIZATIONS") != NULL;
     assert (PFstate.opt_alg);
     long tm;
     bool const_no_attach = false;

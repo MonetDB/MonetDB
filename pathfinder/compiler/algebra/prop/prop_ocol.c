@@ -614,22 +614,17 @@ infer_ocol (PFla_op_t *n)
             break;
 
         case la_rownum:
-            ocols (n) = copy_ocols (ocols (L(n)), ocols_count (L(n)) + 1);
-            ocol_at (n, ocols_count (n)).name = n->sem.rownum.res;
-            ocol_at (n, ocols_count (n)).type = aat_nat;
-            ocols_count (n)++;
-            break;
-
+        case la_rowrank:
         case la_rank:
             ocols (n) = copy_ocols (ocols (L(n)), ocols_count (L(n)) + 1);
-            ocol_at (n, ocols_count (n)).name = n->sem.rank.res;
+            ocol_at (n, ocols_count (n)).name = n->sem.sort.res;
             ocol_at (n, ocols_count (n)).type = aat_nat;
             ocols_count (n)++;
             break;
 
-        case la_number:
+        case la_rowid:
             ocols (n) = copy_ocols (ocols (L(n)), ocols_count (L(n)) + 1);
-            ocol_at (n, ocols_count (n)).name = n->sem.number.res;
+            ocol_at (n, ocols_count (n)).name = n->sem.rowid.res;
             ocol_at (n, ocols_count (n)).type = aat_nat;
             ocols_count (n)++;
             break;

@@ -311,44 +311,28 @@ subexp_eq (PFla_op_t *a, PFla_op_t *b)
             return true;
 
         case la_rownum:
-            if (a->sem.rownum.res != b->sem.rownum.res)
-                return false;
-
-            for (unsigned int i = 0;
-                 i < PFord_count (a->sem.rownum.sortby);
-                 i++)
-                if (PFord_order_col_at (a->sem.rownum.sortby, i) !=
-                    PFord_order_col_at (b->sem.rownum.sortby, i) ||
-                    PFord_order_dir_at (a->sem.rownum.sortby, i) !=
-                    PFord_order_dir_at (b->sem.rownum.sortby, i))
-                    return false;
-
-            /* either both rownums are partitioned or none */
-            /* partitioning attribute must be equal (if available) */
-            if (a->sem.rownum.part != b->sem.rownum.part)
-                return false;
-
-            return true;
-            break;
-
+        case la_rowrank:
         case la_rank:
-            if (a->sem.rank.res != b->sem.rank.res)
+            if (a->sem.sort.res != b->sem.sort.res)
                 return false;
 
-            for (unsigned int i = 0;
-                 i < PFord_count (a->sem.rank.sortby);
-                 i++)
-                if (PFord_order_col_at (a->sem.rank.sortby, i) !=
-                    PFord_order_col_at (b->sem.rank.sortby, i) ||
-                    PFord_order_dir_at (a->sem.rank.sortby, i) !=
-                    PFord_order_dir_at (b->sem.rank.sortby, i))
+            for (unsigned int i = 0; i < PFord_count (a->sem.sort.sortby); i++)
+                if (PFord_order_col_at (a->sem.sort.sortby, i) !=
+                    PFord_order_col_at (b->sem.sort.sortby, i) ||
+                    PFord_order_dir_at (a->sem.sort.sortby, i) !=
+                    PFord_order_dir_at (b->sem.sort.sortby, i))
                     return false;
+
+            /* either both operators are partitioned or none */
+            /* partitioning attribute must be equal (if available) */
+            if (a->sem.sort.part != b->sem.sort.part)
+                return false;
 
             return true;
             break;
 
-        case la_number:
-            if (a->sem.number.res != b->sem.number.res)
+        case la_rowid:
+            if (a->sem.rowid.res != b->sem.rowid.res)
                 return false;
 
             return true;

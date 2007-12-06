@@ -78,9 +78,10 @@ static char *a_id[]  = {
     , [la_min]              = "MIN"
     , [la_sum]              = "SUM"
     , [la_count]            = "COUNT"
-    , [la_rownum]           = "ROW#"
+    , [la_rownum]           = "ROWNUM"
+    , [la_rowrank]          = "ROWRANK"
     , [la_rank]             = "RANK"
-    , [la_number]           = "NUMBER"
+    , [la_rowid]            = "ROWID"
     , [la_type]             = "TYPE"
     , [la_type_assert]      = "type assertion"
     , [la_cast]             = "CAST"
@@ -155,8 +156,9 @@ static char *xml_id[]  = {
     , [la_sum]              = "sum"
     , [la_count]            = "count"
     , [la_rownum]           = "rownum"
+    , [la_rowrank]          = "rowrank"
     , [la_rank]             = "rank"
-    , [la_number]           = "number"
+    , [la_rowid]            = "rowid"
     , [la_type]             = "type"
     , [la_type_assert]      = "type assertion"
     , [la_cast]             = "cast"
@@ -309,7 +311,7 @@ comp_str (PFalg_comp_t comp) {
  * @param n The current node to print (function is recursive)
  */
 static void
-la_dot (PFarray_t *dot, PFla_op_t *n)
+la_dot (PFarray_t *dot, PFla_op_t *n, bool print_frag_info)
 {
     unsigned int c;
     assert(n->node_id);
@@ -346,8 +348,9 @@ la_dot (PFarray_t *dot, PFla_op_t *n)
         , [la_sum]             = "#A0A0A0"
         , [la_count]           = "#A0A0A0"
         , [la_rownum]          = "#FF0000"
+        , [la_rowrank]         = "#FF0000"
         , [la_rank]            = "#FF3333"
-        , [la_number]          = "#FF9999"
+        , [la_rowid]           = "#FF9999"
         , [la_type]            = "#C0C0C0"
         , [la_type_assert]     = "#C0C0C0"
         , [la_cast]            = "#C0C0C0"
@@ -631,64 +634,41 @@ la_dot (PFarray_t *dot, PFla_op_t *n)
             break;
 
         case la_rownum:
+        case la_rowrank:
+        case la_rank:
             PFarray_printf (dot, "%s (%s:<", a_id[n->kind],
-                            PFatt_str (n->sem.rownum.res));
+                            PFatt_str (n->sem.sort.res));
 
-            if (PFord_count (n->sem.rownum.sortby))
+            if (PFord_count (n->sem.sort.sortby))
                 PFarray_printf (dot, "%s%s", 
                                 PFatt_str (
                                     PFord_order_col_at (
-                                        n->sem.rownum.sortby, 0)),
+                                        n->sem.sort.sortby, 0)),
                                 PFord_order_dir_at (
-                                    n->sem.rownum.sortby, 0) == DIR_ASC
+                                    n->sem.sort.sortby, 0) == DIR_ASC
                                 ? "" : " (desc)");
 
-            for (c = 1; c < PFord_count (n->sem.rownum.sortby); c++)
+            for (c = 1; c < PFord_count (n->sem.sort.sortby); c++)
                 PFarray_printf (dot, ", %s%s", 
                                 PFatt_str (
                                     PFord_order_col_at (
-                                        n->sem.rownum.sortby, c)),
+                                        n->sem.sort.sortby, c)),
                                 PFord_order_dir_at (
-                                    n->sem.rownum.sortby, c) == DIR_ASC
+                                    n->sem.sort.sortby, c) == DIR_ASC
                                 ? "" : " (desc)");
 
             PFarray_printf (dot, ">");
 
-            if (n->sem.rownum.part != att_NULL)
+            if (n->sem.sort.part != att_NULL)
                 PFarray_printf (dot, "/%s", 
-                                PFatt_str (n->sem.rownum.part));
+                                PFatt_str (n->sem.sort.part));
 
             PFarray_printf (dot, ")");
             break;
 
-        case la_rank:
-            PFarray_printf (dot, "%s (%s:<", a_id[n->kind],
-                            PFatt_str (n->sem.rank.res));
-
-            if (PFord_count (n->sem.rank.sortby))
-                PFarray_printf (dot, "%s%s", 
-                                PFatt_str (
-                                    PFord_order_col_at (
-                                        n->sem.rank.sortby, 0)),
-                                PFord_order_dir_at (
-                                    n->sem.rank.sortby, 0) == DIR_ASC
-                                ? "" : " (desc)");
-
-            for (c = 1; c < PFord_count (n->sem.rank.sortby); c++)
-                PFarray_printf (dot, ", %s%s", 
-                                PFatt_str (
-                                    PFord_order_col_at (
-                                        n->sem.rank.sortby, c)),
-                                PFord_order_dir_at (
-                                    n->sem.rank.sortby, c) == DIR_ASC
-                                ? "" : " (desc)");
-
-            PFarray_printf (dot, ">)");
-            break;
-
-        case la_number:
+        case la_rowid:
             PFarray_printf (dot, "%s (%s)", a_id[n->kind],
-                            PFatt_str (n->sem.number.res));
+                            PFatt_str (n->sem.rowid.res));
             break;
 
         case la_type:
@@ -1152,6 +1132,13 @@ la_dot (PFarray_t *dot, PFla_op_t *n)
     PFarray_printf (dot, "\", color=\"%s\" ];\n", color[n->kind]);
 
     for (c = 0; c < PFLA_OP_MAXCHILD && n->child[c]; c++) {      
+        /* Avoid printing the fragment info to make the graphs
+           more readable. */
+        if (print_frag_info &&
+            (n->child[c]->kind == la_frag_union ||
+             n->child[c]->kind == la_empty_frag ||
+             (n->kind == la_fcns && c == 1 && n->child[c]->kind == la_nil)))
+            continue;
         PFarray_printf (dot, "node%i -> node%i;\n",
                         n->node_id, n->child[c]->node_id);
     }
@@ -1198,8 +1185,15 @@ la_dot (PFarray_t *dot, PFla_op_t *n)
     n->bit_dag = true;
 
     for (c = 0; c < PFLA_OP_MAXCHILD && n->child[c]; c++) {
+        /* Avoid printing the fragment info to make the graphs
+           more readable. */
+        if (print_frag_info &&
+            (n->child[c]->kind == la_frag_union ||
+             n->child[c]->kind == la_empty_frag ||
+             (n->kind == la_fcns && c == 1 && n->child[c]->kind == la_nil)))
+            continue;
         if (!n->child[c]->bit_dag)
-            la_dot (dot, n->child[c]);
+            la_dot (dot, n->child[c], print_frag_info);
     }
 }
 
@@ -1702,61 +1696,41 @@ la_xml (PFarray_t *xml, PFla_op_t *n)
             break;
 
         case la_rownum:
-            PFarray_printf (xml, 
-                            "    <content>\n" 
-                            "      <column name=\"%s\" new=\"true\"/>\n",
-                            PFatt_str (n->sem.rownum.res));
-
-            for (c = 0; c < PFord_count (n->sem.rownum.sortby); c++)
-                PFarray_printf (xml, 
-                                "      <column name=\"%s\" function=\"sort\""
-                                        " position=\"%u\" direction=\"%s\""
-                                        " new=\"false\"/>\n",
-                                PFatt_str (
-                                    PFord_order_col_at (
-                                        n->sem.rownum.sortby, c)),
-                                c+1,
-                                PFord_order_dir_at (
-                                    n->sem.rownum.sortby, c) == DIR_ASC
-                                ? "ascending" : "descending");
-
-            if (n->sem.rownum.part != att_NULL)
-                PFarray_printf (xml,
-                                "      <column name=\"%s\" function=\"partition\""
-                                        " new=\"false\"/>\n",
-                                PFatt_str (n->sem.rownum.part));
-
-            PFarray_printf (xml, "    </content>\n");
-            break;
-
+        case la_rowrank:
         case la_rank:
             PFarray_printf (xml, 
                             "    <content>\n" 
                             "      <column name=\"%s\" new=\"true\"/>\n",
-                            PFatt_str (n->sem.rank.res));
+                            PFatt_str (n->sem.sort.res));
 
-            for (c = 0; c < PFord_count (n->sem.rank.sortby); c++)
+            for (c = 0; c < PFord_count (n->sem.sort.sortby); c++)
                 PFarray_printf (xml, 
                                 "      <column name=\"%s\" function=\"sort\""
                                         " position=\"%u\" direction=\"%s\""
                                         " new=\"false\"/>\n",
                                 PFatt_str (
                                     PFord_order_col_at (
-                                        n->sem.rank.sortby, c)),
+                                        n->sem.sort.sortby, c)),
                                 c+1,
                                 PFord_order_dir_at (
-                                    n->sem.rank.sortby, c) == DIR_ASC
+                                    n->sem.sort.sortby, c) == DIR_ASC
                                 ? "ascending" : "descending");
+
+            if (n->sem.sort.part != att_NULL)
+                PFarray_printf (xml,
+                                "      <column name=\"%s\" function=\"partition\""
+                                        " new=\"false\"/>\n",
+                                PFatt_str (n->sem.sort.part));
 
             PFarray_printf (xml, "    </content>\n");
             break;
 
-        case la_number:
+        case la_rowid:
             PFarray_printf (xml, 
                             "    <content>\n" 
                             "      <column name=\"%s\" new=\"true\"/>\n"
                             "    </content>\n",
-                            PFatt_str (n->sem.number.res));
+                            PFatt_str (n->sem.rowid.res));
             break;
 
         case la_type:
@@ -2135,7 +2109,7 @@ PFla_dot (FILE *f, PFla_op_t *root)
                              "edge [dir=back];\n");
 
         create_node_id (root);
-        la_dot (dot, root);
+        la_dot (dot, root, getenv("PF_DEBUG_PRINT_FRAG") != NULL);
         PFla_dag_reset (root);
         reset_node_id (root);
 
@@ -2173,8 +2147,6 @@ PFla_xml (FILE *f, PFla_op_t *root)
         /* initialize array to hold dot output */
         PFarray_t *xml = PFarray (sizeof (char));
 
-
-        
         PFarray_printf (xml, "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
         PFarray_printf (xml, "<logical_query_plan unique_names=\"%s\">\n",
                         (PFalg_is_unq_name(root->schema.items[0].name) ? "true" : "false"));

@@ -180,7 +180,9 @@ enum PFsql_kind_t {
     , sql_avg               /* AVG () aggregate */
 
     , sql_over              /* OVER expression */
-    , sql_rownumber         /* ROWNUMBER () function
+    , sql_row_number        /* ROW_NUMBER () function
+                               (first argument of a sql_over operator) */
+    , sql_dense_rank        /* DENSE_RANK () function
                                (first argument of a sql_over operator) */
     , sql_wnd_clause        /* a window clause
                                (second argument of a sql_over operator) */
@@ -832,9 +834,13 @@ PFsql_t * PFsql_sum (const PFsql_t * column);
  */
 PFsql_t * PFsql_over (const PFsql_t *a, const PFsql_t *b);
 /**
- * Create a SQL tree node representing SQL `ROWNUMBER()' function.
+ * Create a SQL tree node representing SQL `ROW_NUMBER()' function.
  */
-PFsql_t * PFsql_rownumber (void);
+PFsql_t * PFsql_row_number (void);
+/**
+ * Create a SQL tree node representing SQL `DENSE_RANK()' function.
+ */
+PFsql_t * PFsql_dense_rank (void);
 /**
  * The whole clause, consisting of sortkey- and
  * partition expressions is called window_clause.

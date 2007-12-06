@@ -105,13 +105,14 @@ typedef struct PFla_op_t *NODEPTR_TYPE;
 %term  sum             =  35
 %term  count           =  36
 %term  rownum          =  37
-%term  rank            =  38
-%term  number          =  39
-%term  type            =  40
-%term  type_assert     =  41
-%term  cast            =  42
-%term  seqty1          =  43
-%term  all             =  44
+%term  rowrank         =  38
+%term  rank            =  39
+%term  rowid           =  40
+%term  type            =  41
+%term  type_assert     =  42
+%term  cast            =  43
+%term  seqty1          =  44
+%term  all             =  45
 %term  step            =  50
 %term  step_join       =  51
 %term  guide_step      =  52
@@ -190,9 +191,9 @@ Rel:    sum (Rel)                                 =  44 (10);
 Rel:    count (Rel)                               =  45 (10);
 Rel:    rownum (Rel)                              =  49 (10);
 Rel:    rank (Rel)                                =  50 (10);
-Rel:    number (Rel)                              =  51 (10);
-Rel:    number (number (Rel))                     =  52 (10);
-Rel:    number (project (number (Rel)))           =  53 (10);
+Rel:    rowid (Rel)                               =  51 (10);
+Rel:    rowid (rowid (Rel))                       =  52 (10);
+Rel:    rowid (project (rowid (Rel)))             =  53 (10);
 Rel:    type (Rel)                                =  54 (10);
 Rel:    type_assert (Rel)                         =  55 (10);
 Rel:    cast (cast (Rel))                         =  56 (10);
@@ -281,9 +282,10 @@ EmptyRel:    max_ (EmptyRel)                      = 152  (0);
 EmptyRel:    min_ (EmptyRel)                      = 153  (0);
 EmptyRel:    sum (EmptyRel)                       = 154  (0);
 EmptyRel:    count (EmptyRel)                     = 155  (0);
-EmptyRel:    rownum (EmptyRel)                    = 159  (0);
+EmptyRel:    rownum (EmptyRel)                    = 158  (0);
+EmptyRel:    rowrank (EmptyRel)                   = 159  (0);
 EmptyRel:    rank (EmptyRel)                      = 160  (0);
-EmptyRel:    number (EmptyRel)                    = 161  (0);
+EmptyRel:    rowid (EmptyRel)                     = 161  (0);
 EmptyRel:    type (EmptyRel)                      = 162  (0);
 EmptyRel:    type_assert (EmptyRel)               = 163  (0);
 EmptyRel:    cast (EmptyRel)                      = 164  (0);
@@ -915,8 +917,8 @@ reduce (PFla_op_t *p, int goalnt)
             /* Replace a rank operator with a single ascending order
                criterion by a projection that links the output column
                to the order criterion. */
-            if (PFord_count (p->sem.rank.sortby) == 1 &&
-                PFord_order_dir_at (p->sem.rank.sortby, 0) == DIR_ASC) {
+            if (PFord_count (p->sem.sort.sortby) == 1 &&
+                PFord_order_dir_at (p->sem.sort.sortby, 0) == DIR_ASC) {
                 PFalg_proj_t *proj_list;
                 unsigned int count = 0;
 
@@ -926,13 +928,13 @@ reduce (PFla_op_t *p, int goalnt)
 
                 /* adjust column name of the rank operator */
                 proj_list[count++] = PFalg_proj (
-                                         p->sem.rank.res,
+                                         p->sem.sort.res,
                                          PFord_order_col_at (
-                                             p->sem.rank.sortby,
+                                             p->sem.sort.sortby,
                                              0));
 
                 for (unsigned int i = 0; i < p->schema.count; i++)
-                    if (p->schema.items[i].name != p->sem.rank.res)
+                    if (p->schema.items[i].name != p->sem.sort.res)
                         proj_list[count++] = PFalg_proj (
                                                  p->schema.items[i].name,
                                                  p->schema.items[i].name);
@@ -943,7 +945,7 @@ reduce (PFla_op_t *p, int goalnt)
             }
             break;
 
-        /* Rel:    number (number (Rel)) */
+        /* Rel:    rowid (rowid (Rel)) */
         case 52:
         {
             PFalg_proj_t *proj = PFmalloc (
@@ -951,9 +953,9 @@ reduce (PFla_op_t *p, int goalnt)
                                      * sizeof (PFalg_proj_t));
             /* copy property list */
             for (unsigned int i = 0; i < p->schema.count; i++)
-                if (p->sem.number.res == p->schema.items[i].name)
-                    proj[i] = PFalg_proj (p->sem.number.res,
-                                          L(p)->sem.number.res);
+                if (p->sem.rowid.res == p->schema.items[i].name)
+                    proj[i] = PFalg_proj (p->sem.rowid.res,
+                                          L(p)->sem.rowid.res);
                 else
                     proj[i] = PFalg_proj (p->schema.items[i].name,
                                           p->schema.items[i].name);
@@ -963,7 +965,7 @@ reduce (PFla_op_t *p, int goalnt)
             relabel (p, kids);
         }   break;
 
-        /* Rel:    number (project (number (Rel))) */
+        /* Rel:    rowid (project (rowid (Rel))) */
         case 53:
         {
             unsigned int count = L(p)->sem.proj.count;
@@ -974,8 +976,8 @@ reduce (PFla_op_t *p, int goalnt)
             for (unsigned int i = 0; i < count; i++)
                 proj[i] = L(p)->sem.proj.items[i];
 
-            proj[count] = PFalg_proj (p->sem.number.res,
-                                      LL(p)->sem.number.res);
+            proj[count] = PFalg_proj (p->sem.rowid.res,
+                                      LL(p)->sem.rowid.res);
 
             *p = *PFla_project_ (LL(p), count + 1, proj);
             SEEN(p) = false;

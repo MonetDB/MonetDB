@@ -436,52 +436,32 @@ prop_infer_icols (PFla_op_t *n, PFalg_att_t icols)
             break;
 
         case la_rownum:
-            n->prop->l_icols = n->prop->icols;
-
-            /* do not infer input columns if operator is not required */
-            if (!(n->prop->icols & n->sem.rownum.res))
-                break;
-
-            n->prop->l_icols = diff (n->prop->l_icols, n->sem.rownum.res);
-
-            for (unsigned int i = 0;
-                 i < PFord_count (n->sem.rownum.sortby);
-                 i++)
-                n->prop->l_icols = union_ (n->prop->l_icols,
-                                           PFord_order_col_at (
-                                               n->sem.rownum.sortby, i));
-
-            /* only infer part if available */
-            if (n->sem.rownum.part != att_NULL)
-                n->prop->l_icols = union_ (n->prop->l_icols,
-                                           n->sem.rownum.part);
-            break;
-
+        case la_rowrank:
         case la_rank:
             n->prop->l_icols = n->prop->icols;
 
             /* do not infer input columns if operator is not required */
-            if (!(n->prop->icols & n->sem.rank.res))
+            if (!(n->prop->icols & n->sem.sort.res))
                 break;
 
-            n->prop->l_icols = diff (n->prop->l_icols, n->sem.rank.res);
+            n->prop->l_icols = diff (n->prop->l_icols, n->sem.sort.res);
 
             for (unsigned int i = 0;
-                 i < PFord_count (n->sem.rank.sortby);
+                 i < PFord_count (n->sem.sort.sortby);
                  i++)
                 n->prop->l_icols = union_ (n->prop->l_icols,
                                            PFord_order_col_at (
-                                               n->sem.rank.sortby, i));
+                                               n->sem.sort.sortby, i));
+
+            /* only infer part if available */
+            if (n->sem.sort.part != att_NULL)
+                n->prop->l_icols = union_ (n->prop->l_icols,
+                                           n->sem.sort.part);
             break;
 
-        case la_number:
+        case la_rowid:
             n->prop->l_icols = n->prop->icols;
-
-            /* do not infer input columns if operator is not required */
-            if (!(n->prop->icols & n->sem.number.res))
-                break;
-
-            n->prop->l_icols = diff (n->prop->l_icols, n->sem.number.res);
+            n->prop->l_icols = diff (n->prop->l_icols, n->sem.rowid.res);
             break;
 
         case la_type:

@@ -88,7 +88,9 @@ static char *a_id[]  = {
     , [pa_max]             = "MIN"
     , [pa_sum]             = "SUM"
     , [pa_hash_count]      = "HASH_COUNT"
-    , [pa_number]          = "NUMBER"            /* \"#FF0000\" */
+    , [pa_mark]            = "mark"
+    , [pa_rank]            = "rank"
+    , [pa_mark_grp]        = "mark_grp"
     , [pa_type]            = "TYPE"
     , [pa_type_assert]     = "type assertion"
     , [pa_cast]            = "CAST"
@@ -170,7 +172,9 @@ static char *xml_id[]  = {
     , [pa_max]             = "min"
     , [pa_sum]             = "sum"
     , [pa_hash_count]      = "hash_count"
-    , [pa_number]          = "number"
+    , [pa_mark]            = "mark"
+    , [pa_rank]            = "rank"
+    , [pa_mark_grp]        = "mark_grp"
     , [pa_type]            = "type"
     , [pa_type_assert]     = "type assertion"
     , [pa_cast]            = "cast"
@@ -366,7 +370,9 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, unsigned int node_id)
         , [pa_min]             = "\"#A0A0A0\""
         , [pa_sum]             = "\"#A0A0A0\""
         , [pa_hash_count]      = "\"#A0A0A0\""
-        , [pa_number]          = "\"#FFBBBB\""
+        , [pa_mark]            = "\"#FFBBBB\""
+        , [pa_rank]            = "\"#FFBBBB\""
+        , [pa_mark_grp]        = "\"#FFBBBB\""
         , [pa_type]            = "\"#C0C0C0\""
         , [pa_type_assert]     = "\"#C0C0C0\""
         , [pa_cast]            = "\"#C0C0C0\""
@@ -613,16 +619,22 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, unsigned int node_id)
                                 PFatt_str (n->sem.aggr.part));
             break;
 
-        case pa_number:
+        case pa_mark:
+        case pa_mark_grp:
             PFarray_printf (dot, "%s (%s", a_id[n->kind],
-                            PFatt_str (n->sem.number.attname));
-            if (n->sem.number.part != att_NULL)
+                            PFatt_str (n->sem.mark.res));
+            if (n->sem.mark.part != att_NULL)
                 PFarray_printf (dot, "/%s", 
-                                PFatt_str (n->sem.number.part));
+                                PFatt_str (n->sem.mark.part));
 
             PFarray_printf (dot, ")");
             break;
 
+        case pa_rank:
+            PFarray_printf (dot, "%s (%s)", a_id[n->kind],
+                            PFatt_str (n->sem.rank.res));
+            break;
+            
         case pa_type:
             PFarray_printf (dot, "%s (%s:<%s>), type: %s", a_id[n->kind],
                             PFatt_str (n->sem.type.res),
@@ -1268,25 +1280,37 @@ pa_xml (PFarray_t *xml, PFpa_op_t *n, unsigned int node_id)
             PFarray_printf (xml, "    </content>\n");
             break;
 
-        case pa_number:
+        case pa_mark:
+        case pa_mark_grp:
             PFarray_printf (xml, 
                             "    <content>\n" 
                             "      <column name=\"%s\" new=\"true\">\n"
                             "        <annotation>new number column"
                                     "</annotation>\n"
                             "      </column>\n",
-                            PFatt_str (n->sem.number.attname));
+                            PFatt_str (n->sem.mark.res));
 
-            if (n->sem.number.part != att_NULL)
+            if (n->sem.mark.part != att_NULL)
                 PFarray_printf (xml,
                                 "      <column name=\"%s\" function=\"partition\""
                                         " new=\"false\">\n"
                                 "        <annotation>partitioning argument"
                                         "</annotation>\n"
                                 "      </column>\n",
-                                PFatt_str (n->sem.number.part));
+                                PFatt_str (n->sem.mark.part));
 
             PFarray_printf (xml, "    </content>\n");
+            break;
+
+        case pa_rank:
+            PFarray_printf (xml, 
+                            "    <content>\n" 
+                            "      <column name=\"%s\" new=\"true\">\n"
+                            "        <annotation>new rank column"
+                                    "</annotation>\n"
+                            "      </column>\n"
+                            "    </content>\n",
+                            PFatt_str (n->sem.rank.res));
             break;
 
         case pa_type:

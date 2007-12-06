@@ -104,8 +104,7 @@ prop_infer_set (PFla_op_t *n, bool set)
         case la_sum:
         case la_count:
         case la_rownum:
-        case la_rank:
-        case la_number:
+        case la_rowid:
         case la_twig:
         case la_docnode:
         case la_attribute:
@@ -129,6 +128,8 @@ prop_infer_set (PFla_op_t *n, bool set)
         case la_bool_and:
         case la_bool_or:
         case la_bool_not:
+        case la_rowrank:
+        case la_rank:
         case la_type:
         case la_cast:
         case la_type_assert:

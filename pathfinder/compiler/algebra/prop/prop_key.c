@@ -499,20 +499,33 @@ infer_key (PFla_op_t *n, bool with_guide_info)
 
             /* if the cardinality is equal to one
                the result is key itself */
-            if (PFprop_card (n->prop) == 1 || !n->sem.rownum.part)
-                union_ (n->prop->keys, n->sem.rownum.res);
+            if (PFprop_card (n->prop) == 1 || !n->sem.sort.part)
+                union_ (n->prop->keys, n->sem.sort.res);
             break;
 
+        case la_rowrank:
         case la_rank:
-            /* key columns are propagated */
-            copy (n->prop->keys, L(n)->prop->keys);
-            union_ (n->prop->keys, n->sem.rank.res);
-            break;
+        {
+            PFalg_att_t cols = 0;
+            unsigned int i;
 
-        case la_number:
             /* key columns are propagated */
             copy (n->prop->keys, L(n)->prop->keys);
-            union_ (n->prop->keys, n->sem.number.res);
+
+            for (i = 0; i < PFord_count (n->sem.sort.sortby); i++)
+                cols |= PFord_order_col_at (n->sem.sort.sortby, i);
+            
+            for (i = 0; i < PFarray_last (L(n)->prop->keys); i++)
+                if (cols & *(PFalg_att_t *) PFarray_at (L(n)->prop->keys, i)) {
+                    union_ (n->prop->keys, n->sem.sort.res);
+                    break;
+                }
+        }   break;
+
+        case la_rowid:
+            /* key columns are propagated */
+            copy (n->prop->keys, L(n)->prop->keys);
+            union_ (n->prop->keys, n->sem.rowid.res);
             break;
 
         case la_type:

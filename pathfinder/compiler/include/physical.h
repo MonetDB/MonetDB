@@ -91,7 +91,11 @@ enum PFpa_op_kind_t {
     , pa_max            =  57 /**< Max operator */
     , pa_min            =  58 /**< Min operator */    
     , pa_sum            =  59 /**< Sum operator */
-    , pa_number         =  60 /**< Numbering operator */
+    , pa_mark           =  60 /**< consecutive numbering operator 
+                                   (starting from 1) */
+    , pa_rank           =  61 /**< ranking operator */
+    , pa_mark_grp       =  62 /**< grouped consecutive numbering operator
+                                   (starting from 1) */
     , pa_type           =  63 /**< selection of rows where a column is of a
                                    certain type */
     , pa_type_assert    =  64 /**< restriction of the type of a given column */
@@ -260,12 +264,19 @@ union PFpa_op_sem_t {
         PFalg_att_t     res;  /**< attribute to hold the result */
     } aggr;
 
-    /* semantic content for number operator */
+    /* semantic content for mark operators */
     struct {
-        PFalg_att_t     attname;  /**< name of generated (integer) attribute */
+        PFalg_att_t     res;      /**< name of generated (integer) attribute */
         PFalg_att_t     part;     /**< optional partitioning attribute,
                                        otherwise NULL */
-    } number;
+    } mark;
+
+    /** semantic content for rank operator */
+    struct {
+        PFalg_att_t      res;     /**< name of generated (integer) attribute */
+        PFord_ordering_t ord;    /**< ordering to consider for duplicate
+                                      elimination */
+    } rank;
 
     /* semantic content for type test operator */
     struct {
@@ -620,9 +631,12 @@ PFpa_op_t *PFpa_aggr (PFpa_op_kind_t kind, const PFpa_op_t *n, PFalg_att_t res,
 
 /****************************************************************/
 
-PFpa_op_t *PFpa_number (const PFpa_op_t *n,
-                        PFalg_att_t new_att,
-                        PFalg_att_t part);
+PFpa_op_t *PFpa_mark (const PFpa_op_t *n, PFalg_att_t new_att);
+PFpa_op_t *PFpa_rank (const PFpa_op_t *n, PFalg_att_t new_att,
+                      PFord_ordering_t ord);
+PFpa_op_t *PFpa_mark_grp (const PFpa_op_t *n,
+                          PFalg_att_t new_att,
+                          PFalg_att_t part);
 
 /**
  * Type operator

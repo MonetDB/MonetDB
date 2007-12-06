@@ -114,11 +114,13 @@ opt_key (PFla_op_t *p)
             break;
 
         case la_rownum:
-            if (PFprop_key_left (p->prop, p->sem.rownum.part)) {
+        case la_rowrank:
+        case la_rank:
+            if (PFprop_key_left (p->prop, p->sem.sort.part)) {
                 /* replace rownum by attach if part is key */
                 *p = *PFla_attach (
                           L(p),
-                          p->sem.rownum.res,
+                          p->sem.sort.res,
                           PFalg_lit_nat (1));
                 SEEN(p) = true;
             } else {
@@ -126,54 +128,27 @@ opt_key (PFla_op_t *p)
                 PFord_ordering_t sortby = PFordering ();
 
                 for (unsigned int i = 0;
-                     i < PFord_count (p->sem.rownum.sortby);
+                     i < PFord_count (p->sem.sort.sortby);
                      i++) {
                     sortby = PFord_refine (
                                  sortby,
                                  PFord_order_col_at (
-                                     p->sem.rownum.sortby,
+                                     p->sem.sort.sortby,
                                      i),
                                  PFord_order_dir_at (
-                                     p->sem.rownum.sortby,
+                                     p->sem.sort.sortby,
                                      i));
                     if (PFprop_key_left (
                             p->prop,
                             PFord_order_col_at (
-                                p->sem.rownum.sortby,
+                                p->sem.sort.sortby,
                                 i)))
                         break;
                 }
 
-                p->sem.rownum.sortby = sortby;
+                p->sem.sort.sortby = sortby;
             }
             break;
-
-        case la_rank:
-        {
-            /* discard all sort criterions after a key attribute */
-            PFord_ordering_t sortby = PFordering ();
-
-            for (unsigned int i = 0;
-                 i < PFord_count (p->sem.rank.sortby);
-                 i++) {
-                sortby = PFord_refine (
-                             sortby,
-                             PFord_order_col_at (
-                                 p->sem.rank.sortby,
-                                 i),
-                             PFord_order_dir_at (
-                                 p->sem.rank.sortby,
-                                 i));
-                if (PFprop_key_left (
-                        p->prop,
-                        PFord_order_col_at (
-                            p->sem.rank.sortby,
-                            i)))
-                    break;
-            }
-
-            p->sem.rank.sortby = sortby;
-        }   break;
 
         default:
             break;

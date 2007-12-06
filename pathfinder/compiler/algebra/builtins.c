@@ -49,6 +49,8 @@
 #include "logical.h"
 #include "logical_mnemonic.h"
 
+#define RANK_DUMMY 42
+
 /**
  * Assign correct row numbers in case we need the real values.
  */
@@ -507,7 +509,7 @@ fn_data (struct PFla_pair_t (*str_val)
                                   proj (att_item, att_item));
 
     /* renumber */
-    PFla_op_t *q = number (nodes, att_inner);
+    PFla_op_t *q = rowid (nodes, att_inner);
 
     PFla_op_t *map = project (q,
                               proj (att_outer, att_iter),
@@ -2712,12 +2714,12 @@ PFbui_fn_distinct_values (const PFla_op_t *loop, bool ordering,
     (void) loop; (void) ordering;
 
     return (struct PFla_pair_t) {
-                  .rel = number (
+                  .rel = attach (
                              distinct (
                                  project (args[0].rel,
                                       proj (att_iter, att_iter),
                                       proj (att_item, att_item))),
-                             att_pos),
+                             att_pos, lit_nat (RANK_DUMMY)),
                   .frag = args[0].frag };
 }
 
@@ -2974,11 +2976,11 @@ PFbui_fn_unordered (const PFla_op_t *loop, bool ordering,
      * project away pos column
      */
     return (struct PFla_pair_t) {
-        .rel  = number (
+        .rel  = attach (
                     project (args[0].rel,
                              proj (att_iter, att_iter),
                              proj (att_item, att_item)),
-                    att_pos),
+                    att_pos, lit_nat (RANK_DUMMY)),
         .frag = args[0].frag };
 }
 
@@ -3076,7 +3078,7 @@ PFbui_op_union (const PFla_op_t *loop, bool ordering,
             .frag = PFla_set_union (args[0].frag, args[1].frag) };
     else
         return (struct  PFla_pair_t) {
-            .rel = number (distinct, att_pos),
+            .rel = attach (distinct, att_pos, lit_nat (RANK_DUMMY)),
             .frag = PFla_set_union (args[0].frag, args[1].frag) };
 }
 
@@ -3112,7 +3114,7 @@ PFbui_op_intersect (const PFla_op_t *loop, bool ordering,
             .frag = PFla_set_union (args[0].frag, args[1].frag) };
     else
         return (struct  PFla_pair_t) {
-            .rel = number (distinct, att_pos),
+            .rel = attach (distinct, att_pos, lit_nat (RANK_DUMMY)),
             .frag = PFla_set_union (args[0].frag, args[1].frag) };
 }
 
@@ -3151,7 +3153,7 @@ PFbui_op_except (const PFla_op_t *loop, bool ordering,
             .frag = args[0].frag };
     else
         return (struct  PFla_pair_t) {
-            .rel = number (difference, att_pos),
+            .rel = attach (difference, att_pos, lit_nat (RANK_DUMMY)),
             /* result nodes can only originate from first argument */
             .frag = args[0].frag };
 }
@@ -3547,7 +3549,7 @@ fn_id (const PFla_op_t *loop, bool ordering,
             .frag = args[1].frag };
     else
         return (struct PFla_pair_t) {
-            .rel = number (distinct (op), att_pos),
+            .rel = attach (distinct (op), att_pos, lit_nat (RANK_DUMMY)),
             .frag = args[1].frag };
 }
 
@@ -3677,7 +3679,7 @@ PFbui_pf_distinct_doc_order (const PFla_op_t *loop, bool ordering,
             .frag = args[0].frag };
     else
         return (struct  PFla_pair_t) {
-            .rel = number (distinct, att_pos),
+            .rel = attach (distinct, att_pos, lit_nat (RANK_DUMMY)),
             .frag = args[0].frag };
 }
 
@@ -3958,7 +3960,7 @@ pf_item_seq_to_node_seq_worker (struct PFla_pair_t *args,
      * create textnodes for each string
      * (casted atomic values and whitespace strings)
      */
-    PFla_op_t *unq_strings = number (
+    PFla_op_t *unq_strings = rowid (
                                  disjunion (
                                      attach (project (strings,
                                                      proj (att_iter, att_iter),

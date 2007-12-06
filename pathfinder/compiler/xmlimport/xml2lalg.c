@@ -42,10 +42,6 @@
 #include "pathfinder.h"
 
 #include <stdio.h>
-#ifdef HAVE_STDBOOL_H
-    #include <stdbool.h>
-#endif
-
 #include <string.h>
 #include <assert.h>
 #include <stdlib.h>
@@ -1230,6 +1226,28 @@ void createAndStoreAlgOpNode(XML2LALGContext* ctx, xmlNodePtr nodePtr)
 /******************************************************************************/
 /******************************************************************************/
 
+    case la_rowrank              : 
+
+        {
+            /*
+            <content>
+               <column name="COLNAME" new="true"/>
+              (<column name="COLNAME" function="sort" position="[0..n]" direction="DIRECTION" new="false"/>)+
+            </content>
+            */
+
+            newAlgNode = PFla_rowrank
+             (
+             CHILDNODE(0), 
+             PFLA_ATT("/content/column[@new='true']/@name"), 
+             PFLA_ORDERING("/content/column[@function='sort']")
+             );
+        }  
+        break;
+
+/******************************************************************************/
+/******************************************************************************/
+
     case la_rank                 : 
 
         {
@@ -1252,7 +1270,7 @@ void createAndStoreAlgOpNode(XML2LALGContext* ctx, xmlNodePtr nodePtr)
 /******************************************************************************/
 /******************************************************************************/
 
-    case la_number               : 
+    case la_rowid                : 
 
         {
             /*
@@ -1261,7 +1279,7 @@ void createAndStoreAlgOpNode(XML2LALGContext* ctx, xmlNodePtr nodePtr)
              </content>
             */
 
-            newAlgNode = PFla_number
+            newAlgNode = PFla_rowid
              (
              CHILDNODE(0), 
              PFLA_ATT("/content/column[@new='true']/@name")

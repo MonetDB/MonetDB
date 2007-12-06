@@ -14,7 +14,7 @@
  * 3.) operators that support the transformation if the do not create
  *     a join column (e.g. comparisons and calculations)
  * 4.) operators that fit into the 4. category and additionally require
- *     the cardinality to stay the same (rownum, number, attribute, and
+ *     the cardinality to stay the same (rownum, rowid, attribute, and
  *     textnode constructor)
  * 5.) cross product operator
  * 6.) equi-join operator
@@ -376,26 +376,15 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
                        rownum operator stays stable. */
                     break;
 
-                if ((modified = GEN(lp->sem.rownum.res))) LP = L(lp);
+                if ((modified = GEN(lp->sem.sort.res))) LP = L(lp);
                 break;
 
+            case la_rowrank:
             case la_rank:
-                if (!PFprop_key (rp->prop, ratt) ||
-                    !PFprop_subdom (rp->prop,
-                                    PFprop_dom (lp->prop, latt),
-                                    PFprop_dom (rp->prop, ratt)))
-                    /* Ensure that the values of the left join argument
-                       are a subset of the values of the right join argument
-                       and that the right join argument is keyed. These
-                       two tests make sure that we have exactly one match per
-                       tuple in the left relation and thus the result of the
-                       rank operator stays stable. */
-                    break;
-
-                if ((modified = GEN(lp->sem.rank.res))) LP = L(lp);
+                if ((modified = GEN(lp->sem.sort.res))) LP = L(lp);
                 break;
 
-            case la_number:
+            case la_rowid:
                 if (!PFprop_key (rp->prop, ratt) ||
                     !PFprop_subdom (rp->prop,
                                     PFprop_dom (lp->prop, latt),
@@ -405,10 +394,10 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
                        and that the right join argument is keyed. These
                        two tests make sure that we have exactly one match per
                        tuple in the left relation and thus the result of the
-                       number operator stays stable. */
+                       rowid operator stays stable. */
                     break;
 
-                if ((modified = GEN(lp->sem.number.res))) LP = L(lp);
+                if ((modified = GEN(lp->sem.rowid.res))) LP = L(lp);
                 break;
 
             case la_type:
@@ -567,11 +556,11 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
                                     PFprop_dom (rp->prop, ratt)))
                     break;
 
-                if (L(lp)->kind == la_number &&
-                    L(lp)->sem.number.res == lp->sem.eqjoin_unq.att1 &&
+                if (L(lp)->kind == la_rowid &&
+                    L(lp)->sem.rowid.res == lp->sem.eqjoin_unq.att1 &&
                     lp->sem.eqjoin_unq.res != latt) {
                     unsigned int  i;
-                    PFla_op_t    *new_number, *new_p;
+                    PFla_op_t    *new_rowid, *new_p;
                     PFalg_proj_t *proj,
                                  *top_proj = NULL;
                     PFalg_att_t   cur;
@@ -584,8 +573,8 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
                     if (i == L(lp)->schema.count)
                         break;
 
-                    /* replace the number operator by a projection
-                       that holds the same schema as the old number
+                    /* replace the rowid operator by a projection
+                       that holds the same schema as the old rowid
                        operator */
                     proj = PFmalloc (L(lp)->schema.count *
                                      sizeof (PFalg_proj_t));
@@ -598,24 +587,24 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
                             proj[i] = PFalg_proj (cur, cur);
                     }
 
-                    /* push down upper join underneath the number
+                    /* push down upper join underneath the rowid
                        operator */
-                    new_number = number (
-                                     eqjoin_unq (LL(lp), rp,
-                                                 latt, ratt,
-                                                 p->sem.eqjoin_unq.res),
-                                     L(lp)->sem.number.res);
+                    new_rowid = rowid (
+                                    eqjoin_unq (LL(lp), rp,
+                                                latt, ratt,
+                                                p->sem.eqjoin_unq.res),
+                                    L(lp)->sem.rowid.res);
                     /* remember a reference to that join */
-                    next_join = L(new_number);
+                    next_join = L(new_rowid);
 
-                    /* replace the old number operator by a projection
-                       that refers to the new number operator */
-                    *L(lp) = *PFla_project_ (new_number,
+                    /* replace the old rowid operator by a projection
+                       that refers to the new rowid operator */
+                    *L(lp) = *PFla_project_ (new_rowid,
                                              L(lp)->schema.count,
                                              proj);
 
                     /* rebuild the originally lower join operator */
-                    new_p = eqjoin_unq (new_number, R(lp),
+                    new_p = eqjoin_unq (new_rowid, R(lp),
                                         lp->sem.eqjoin_unq.att1,
                                         lp->sem.eqjoin_unq.att2,
                                         lp->sem.eqjoin_unq.res);
@@ -624,7 +613,7 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
                        visited anymore by the rewritten join */
                     *(PFla_op_t **) PFarray_add (clean_up_list) = R(lp);
 
-                    /* As the new projection (that replaced the number
+                    /* As the new projection (that replaced the rowid
                        operator) refers to the 'latt' column (and this
                        column may only appear above the pattern if it
                        corresponds to the result of the originally
@@ -645,11 +634,11 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
                     *p = *new_p;
                     break;
                 }
-                if (R(lp)->kind == la_number &&
-                    R(lp)->sem.number.res == lp->sem.eqjoin_unq.att1 &&
+                if (R(lp)->kind == la_rowid &&
+                    R(lp)->sem.rowid.res == lp->sem.eqjoin_unq.att1 &&
                     lp->sem.eqjoin_unq.res != latt) {
                     unsigned int  i;
-                    PFla_op_t    *new_number, *new_p;
+                    PFla_op_t    *new_rowid, *new_p;
                     PFalg_proj_t *proj,
                                  *top_proj = NULL;
                     PFalg_att_t   cur;
@@ -662,8 +651,8 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
                     if (i == R(lp)->schema.count)
                         break;
 
-                    /* replace the number operator by a projection
-                       that holds the same schema as the old number
+                    /* replace the rowid operator by a projection
+                       that holds the same schema as the old rowid
                        operator */
                     proj = PFmalloc (R(lp)->schema.count *
                                      sizeof (PFalg_proj_t));
@@ -676,24 +665,24 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
                             proj[i] = PFalg_proj (cur, cur);
                     }
 
-                    /* push down upper join underneath the number
+                    /* push down upper join underneath the rowid
                        operator */
-                    new_number = number (
-                                     eqjoin_unq (RL(lp), rp,
-                                                 latt, ratt,
-                                                 p->sem.eqjoin_unq.res),
-                                     R(lp)->sem.number.res);
+                    new_rowid = rowid (
+                                    eqjoin_unq (RL(lp), rp,
+                                                latt, ratt,
+                                                p->sem.eqjoin_unq.res),
+                                    R(lp)->sem.rowid.res);
                     /* remember a reference to that join */
-                    next_join = L(new_number);
+                    next_join = L(new_rowid);
 
-                    /* replace the old number operator by a projection
-                       that refers to the new number operator */
-                    *R(lp) = *PFla_project_ (new_number,
+                    /* replace the old rowid operator by a projection
+                       that refers to the new rowid operator */
+                    *R(lp) = *PFla_project_ (new_rowid,
                                              R(lp)->schema.count,
                                              proj);
 
                     /* rebuild the originally lower join operator */
-                    new_p = eqjoin_unq (new_number, L(lp),
+                    new_p = eqjoin_unq (new_rowid, L(lp),
                                         lp->sem.eqjoin_unq.att1,
                                         lp->sem.eqjoin_unq.att2,
                                         lp->sem.eqjoin_unq.res);
@@ -702,7 +691,7 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
                        visited anymore by the rewritten join */
                     *(PFla_op_t **) PFarray_add (clean_up_list) = L(lp);
 
-                    /* As the new projection (that replaced the number
+                    /* As the new projection (that replaced the rowid
                        operator) refers to the 'latt' column (and this
                        column may only appear above the pattern if it
                        corresponds to the result of the originally
@@ -725,7 +714,7 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
                 }
 
                 /* check for the following pattern where the join
-                   condition of p originates from the number operator
+                   condition of p originates from the rowid operator
                    in rp and remove the join.
 
                         |X|
@@ -736,11 +725,11 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
                           \ /
                            #
                  */
-                if (rp->kind == la_number &&
+                if (rp->kind == la_rowid &&
                     (L(lp) == rp || R(lp) == rp ||
                      (L(lp)->kind == la_project && LL(lp) == rp) ||
                      (R(lp)->kind == la_project && RL(lp) == rp)) &&
-                    rp->sem.number.res == ratt) {
+                    rp->sem.rowid.res == ratt) {
                     PFla_op_t    *proj,
                                  *left,
                                  *join;
@@ -784,7 +773,7 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
                             break;
                     }
 
-                    /* make sure that the column generated in the number
+                    /* make sure that the column generated in the rowid
                        operator is only used as join column in the above
                        join operation */
                     if (r_join_col == ratt ||
@@ -1319,11 +1308,14 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
                        rownum operator stays stable. */
                     break;
 
-                if (!is_join_att (p, lp->sem.rownum.res)) {
+            case la_rowrank:
+            case la_rank:
+                if (!is_join_att (p, lp->sem.sort.res)) {
                     PFalg_proj_t *proj_list;
                     PFord_ordering_t sortby;
                     PFalg_att_t cur;
                     unsigned int count = 0;
+                    PFla_op_t *eqjoin;
                     /* create projection list */
                     proj_list = PFmalloc (lp->schema.count *
                                           sizeof (*(proj_list)));
@@ -1344,10 +1336,10 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
                     sortby = PFordering ();
 
                     for (unsigned int i = 0;
-                         i < PFord_count (lp->sem.rownum.sortby);
+                         i < PFord_count (lp->sem.sort.sortby);
                          i++) {
                         cur = PFord_order_col_at (
-                                  lp->sem.rownum.sortby,
+                                  lp->sem.sort.sortby,
                                   i);
                         if (cur == latt)
                             cur = p->sem.eqjoin_unq.res;
@@ -1356,25 +1348,33 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
                                      sortby,
                                      cur,
                                      PFord_order_dir_at (
-                                         lp->sem.rownum.sortby,
+                                         lp->sem.sort.sortby,
                                          i));
                     }
 
+                    eqjoin = eqjoin_unq (L(lp), rp, latt, ratt,
+                                         p->sem.eqjoin_unq.res);
+                    
                     /* make sure that frag and roots see
                        the new attribute node */
-                    *p = *(rownum (eqjoin_unq (L(lp), rp, latt, ratt,
-                                               p->sem.eqjoin_unq.res),
-                                   lp->sem.rownum.res,
-                                   sortby,
-                                   lp->sem.rownum.part
-                                       ? is_join_att(p,
-                                                     lp->sem.rownum.part)
-                                             ? p->sem.eqjoin_unq.res
-                                             : lp->sem.rownum.part
-                                       : att_NULL));
-                    /* the schema of the new rownum operator has to
-                       be pruned to maintain the schema of the original
-                       rownum operator -- its pointer is replaced */
+                    if (lp->kind == la_rownum)
+                        *p = *(rownum (eqjoin,
+                                       lp->sem.sort.res,
+                                       sortby,
+                                       lp->sem.sort.part
+                                           ? is_join_att(p,
+                                                         lp->sem.sort.part)
+                                                 ? p->sem.eqjoin_unq.res
+                                                 : lp->sem.sort.part
+                                           : att_NULL));
+                    else if (lp->kind == la_rowrank)
+                        *p = *(rowrank (eqjoin, lp->sem.sort.res, sortby));
+                    else if (lp->kind == la_rank)
+                        *p = *(rank (eqjoin, lp->sem.sort.res, sortby));
+                    
+                    /* the schema of the new operator has to be pruned
+                       to maintain the schema of the original rownum, rowrank,
+                       or rank operator -- its pointer is replaced */
                     *lp = *(PFla_project_ (p, count, proj_list));
 
                     next_join = L(p);
@@ -1383,7 +1383,6 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
 
                 break;
 
-            case la_rank:
                 if (!PFprop_key (rp->prop, ratt) ||
                     !PFprop_subdom (rp->prop,
                                     PFprop_dom (lp->prop, latt),
@@ -1396,7 +1395,7 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
                        rank operator stays stable. */
                     break;
 
-                if (!is_join_att (p, lp->sem.rank.res)) {
+                if (!is_join_att (p, lp->sem.sort.res)) {
                     PFalg_proj_t *proj_list;
                     PFord_ordering_t sortby;
                     PFalg_att_t cur;
@@ -1421,10 +1420,10 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
                     sortby = PFordering ();
 
                     for (unsigned int i = 0;
-                         i < PFord_count (lp->sem.rank.sortby);
+                         i < PFord_count (lp->sem.sort.sortby);
                          i++) {
                         cur = PFord_order_col_at (
-                                  lp->sem.rank.sortby,
+                                  lp->sem.sort.sortby,
                                   i);
                         if (cur == latt)
                             cur = p->sem.eqjoin_unq.res;
@@ -1433,7 +1432,7 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
                                      sortby,
                                      cur,
                                      PFord_order_dir_at (
-                                         lp->sem.rank.sortby,
+                                         lp->sem.sort.sortby,
                                          i));
                     }
 
@@ -1441,7 +1440,7 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
                        the new attribute node */
                     *p = *(rank (eqjoin_unq (L(lp), rp, latt, ratt,
                                                p->sem.eqjoin_unq.res),
-                                   lp->sem.rank.res,
+                                   lp->sem.sort.res,
                                    sortby));
                     /* the schema of the new rank operator has to
                        be pruned to maintain the schema of the original
@@ -1454,7 +1453,7 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
 
                 break;
 
-            case la_number:
+            case la_rowid:
                 if (!PFprop_key (rp->prop, ratt) ||
                     !PFprop_subdom (rp->prop,
                                     PFprop_dom (lp->prop, latt),
@@ -1464,10 +1463,10 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
                        and that the right join argument is keyed. These
                        two tests make sure that we have exactly one match per
                        tuple in the left relation and thus the result of the
-                       number operator stays stable. */
+                       rowid operator stays stable. */
                     break;
 
-                if (!is_join_att (p, lp->sem.number.res)) {
+                if (!is_join_att (p, lp->sem.rowid.res)) {
                     PFalg_proj_t *proj_list;
                     PFalg_att_t cur;
                     unsigned int count = 0;
@@ -1487,12 +1486,12 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
 
                     /* make sure that frag and roots see
                        the new attribute node */
-                    *p = *(number (eqjoin_unq (L(lp), rp, latt, ratt,
+                    *p = *(rowid (eqjoin_unq (L(lp), rp, latt, ratt,
                                                p->sem.eqjoin_unq.res),
-                                   lp->sem.number.res));
-                    /* the schema of the new number operator has to
+                                   lp->sem.rowid.res));
+                    /* the schema of the new rowid operator has to
                        be pruned to maintain the schema of the original
-                       number operator -- its pointer is replaced */
+                       rowid operator -- its pointer is replaced */
                     *lp = *(PFla_project_ (p, count, proj_list));
 
                     next_join = L(p);
@@ -1804,13 +1803,12 @@ map_name (PFla_op_t *p, PFalg_att_t att)
             if (att == p->sem.unary.res) return att_NULL;
             break;
         case la_rownum:
-            if (att == p->sem.rownum.res) return att_NULL;
-            break;
+        case la_rowrank:
         case la_rank:
-            if (att == p->sem.rank.res) return att_NULL;
+            if (att == p->sem.sort.res) return att_NULL;
             break;
-        case la_number:
-            if (att == p->sem.number.res) return att_NULL;
+        case la_rowid:
+            if (att == p->sem.rowid.res) return att_NULL;
             break;
         case la_type:
         case la_cast:

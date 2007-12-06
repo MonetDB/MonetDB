@@ -849,9 +849,11 @@ plan_pos_select (const PFla_op_t *n)
                   project (
                       val_select (
                           cast (
-                              number (*(plan_t **) PFarray_at (sorted, i),
-                                      num,
-                                      n->sem.pos_sel.part),
+                              n->sem.pos_sel.part
+                              ? mark_grp (*(plan_t **) PFarray_at (sorted, i),
+                                          num,
+                                          n->sem.pos_sel.part)
+                              : mark (*(plan_t **) PFarray_at (sorted, i), num),
                               cast,
                               num,
                               aat_int),
@@ -1283,27 +1285,27 @@ plan_rownum (const PFla_op_t *n)
     ord_wo_part = PFordering ();
 
     /* the partitioning attribute must be the primary ordering */
-    if (n->sem.rownum.part) {
-        ord_asc  = PFord_refine (ord_asc, n->sem.rownum.part, DIR_ASC);
-        ord_desc = PFord_refine (ord_desc, n->sem.rownum.part, DIR_DESC);
+    if (n->sem.sort.part) {
+        ord_asc  = PFord_refine (ord_asc, n->sem.sort.part, DIR_ASC);
+        ord_desc = PFord_refine (ord_desc, n->sem.sort.part, DIR_DESC);
     }
 
     /* then we refine by all the attributes in the sortby parameter */
     for (unsigned int i = 0;
-         i < PFord_count (n->sem.rownum.sortby);
+         i < PFord_count (n->sem.sort.sortby);
          i++) {
         ord_asc     = PFord_refine (
                           ord_asc,
-                          PFord_order_col_at (n->sem.rownum.sortby, i),
-                          PFord_order_dir_at (n->sem.rownum.sortby, i));
+                          PFord_order_col_at (n->sem.sort.sortby, i),
+                          PFord_order_dir_at (n->sem.sort.sortby, i));
         ord_desc    = PFord_refine (
                           ord_desc,
-                          PFord_order_col_at (n->sem.rownum.sortby, i),
-                          PFord_order_dir_at (n->sem.rownum.sortby, i));
+                          PFord_order_col_at (n->sem.sort.sortby, i),
+                          PFord_order_dir_at (n->sem.sort.sortby, i));
         ord_wo_part = PFord_refine (
                           ord_wo_part,
-                          PFord_order_col_at (n->sem.rownum.sortby, i),
-                          PFord_order_dir_at (n->sem.rownum.sortby, i));
+                          PFord_order_col_at (n->sem.sort.sortby, i),
+                          PFord_order_dir_at (n->sem.sort.sortby, i));
     }
 
     /* ensure correct input ordering for MergeRowNumber */
@@ -1325,9 +1327,12 @@ plan_rownum (const PFla_op_t *n)
     /* for each remaining plan, generate a MergeRowNumber operator */
     for (unsigned int i = 0; i < PFarray_last (sorted); i++)
         add_plan (ret,
-                  number (*(plan_t **) PFarray_at (sorted, i),
-                          n->sem.rownum.res,
-                          n->sem.rownum.part));
+                  n->sem.sort.part
+                  ? mark_grp (*(plan_t **) PFarray_at (sorted, i),
+                              n->sem.sort.res,
+                              n->sem.sort.part)
+                  : mark (*(plan_t **) PFarray_at (sorted, i),
+                          n->sem.sort.res));
 
     return ret;
 }
@@ -1338,30 +1343,30 @@ plan_rank (const PFla_op_t *n)
     PFplanlist_t *ret    = new_planlist ();
     PFplanlist_t *sorted = new_planlist ();
 
-    assert (n); assert (n->kind == la_rank);
+    assert (n); assert (n->kind == la_rank || n->kind == la_rowrank);
     assert (L(n)); assert (L(n)->plans);
+    assert (!n->sem.sort.part);
 
     for (unsigned int i = 0; i < PFarray_last (L(n)->plans); i++)
         add_plans (sorted,
                    ensure_ordering (
                        *(plan_t **) PFarray_at (L(n)->plans, i),
-                       n->sem.rank.sortby));
+                       n->sem.sort.sortby));
 
     for (unsigned int i = 0; i < PFarray_last (sorted); i++)
         add_plan (ret,
-                  number (*(plan_t **) PFarray_at (sorted, i),
-                          n->sem.rank.res,
-                          att_NULL));
+                  rank (*(plan_t **) PFarray_at (sorted, i),
+                        n->sem.sort.res, n->sem.sort.sortby));
     return ret;
 }
 
 static PFplanlist_t *
-plan_number (const PFla_op_t *n)
+plan_rowid (const PFla_op_t *n)
 {
     PFplanlist_t *ret     = new_planlist ();
     plan_t        *cheapest_unordered = NULL;
 
-    assert (n); assert (n->kind == la_number);
+    assert (n); assert (n->kind == la_rowid);
     assert (L(n)); assert (L(n)->plans);
 
 
@@ -1373,9 +1378,7 @@ plan_number (const PFla_op_t *n)
             cheapest_unordered
                 = *(plan_t **) PFarray_at (L(n)->plans, i);
 
-    add_plan (ret, number (cheapest_unordered,
-                           n->sem.number.res,
-                           att_NULL));
+    add_plan (ret, mark (cheapest_unordered, n->sem.rowid.res));
 
     return ret;
 }
@@ -2728,8 +2731,13 @@ plan_subexpression (PFla_op_t *n)
         case la_count:          plans = plan_count (n);        break;
 
         case la_rownum:         plans = plan_rownum (n);       break;
+        case la_rowrank:
+            PFinfo (OOPS_WARNING,
+                    "The column generated by the rowrank operator"
+                    " will not start with value 1");
+            /* fall through */
         case la_rank:           plans = plan_rank (n);         break;
-        case la_number:         plans = plan_number (n);       break;
+        case la_rowid:          plans = plan_rowid (n);       break;
         case la_type:           plans = plan_type (n);         break;
         case la_type_assert:    plans = plan_type_assert (n);  break;
         case la_cast:           plans = plan_cast (n);         break;

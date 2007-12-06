@@ -2042,23 +2042,22 @@ PFla_count (const PFla_op_t *n, PFalg_att_t res, PFalg_att_t part)
 
 
 /**
- * The `rownum' operator, a Pathfinder-specific extension to the
- * relational algebra.
+ * Worker for PFla_rownum, PFla_rowrank, and PFla_rank.
  */
-PFla_op_t *
-PFla_rownum (const PFla_op_t *n,
-             PFalg_att_t a, PFord_ordering_t s, PFalg_att_t p)
+static PFla_op_t *
+sort_col (const PFla_op_t *n, PFla_op_kind_t kind, char *name, 
+          PFalg_att_t a, PFord_ordering_t s, PFalg_att_t p)
 {
-    PFla_op_t    *ret = la_op_wire1 (la_rownum, n);
+    PFla_op_t    *ret = la_op_wire1 (kind, n);
     unsigned int  i;
     unsigned int  j;
 
     assert (s);
 
     /* copy parameters into semantic content of return node */
-    ret->sem.rownum.res = a;
-    ret->sem.rownum.sortby = s;
-    ret->sem.rownum.part = p;
+    ret->sem.sort.res = a;
+    ret->sem.sort.sortby = s;
+    ret->sem.sort.part = p;
 
     /* result schema is input schema plus the new attribute */
     ret->schema.count = n->schema.count + 1;
@@ -2066,12 +2065,11 @@ PFla_rownum (const PFla_op_t *n,
         = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
 
     for (i = 0; i < n->schema.count; i++) {
-
         /* there must not be an argument attribute named like the new one */
         if (n->schema.items[i].name == a)
             PFoops (OOPS_FATAL,
-                    "rownum operator would result in duplicate attribute `%s'",
-                    PFatt_str (a));
+                    "%s operator would result in duplicate attribute `%s'",
+                    name, PFatt_str (a));
 
         /* copy this attribute specification */
         ret->schema.items[i] = n->schema.items[i];
@@ -2081,29 +2079,18 @@ PFla_rownum (const PFla_op_t *n,
         = (struct PFalg_schm_item_t) { .name = a, .type = aat_nat };
 
     /* see if we can find all sort specifications */
-    for (i = 0; i < PFord_count (ret->sem.rownum.sortby); i++) {
-
+    for (i = 0; i < PFord_count (s); i++) {
         for (j = 0; j < n->schema.count; j++)
-            if (n->schema.items[j].name ==
-                         PFord_order_col_at (ret->sem.rownum.sortby, i))
+            if (n->schema.items[j].name == PFord_order_col_at (s, i))
                 break;
 
         if (j == n->schema.count)
             PFoops (OOPS_FATAL,
                     "could not find sort attribute `%s'",
-                    PFatt_str (PFord_order_col_at (
-                                   ret->sem.rownum.sortby, i)));
+                    PFatt_str (PFord_order_col_at (s, i)));
 
-        if (!monomorphic (n->schema.items[j].type))
-            PFoops (OOPS_FATAL,
-                    "sort criterion for rownum must be monomorphic, "
-                    "type: %i, name: %s",
-                    n->schema.items[j].type,
-                    PFatt_str (n->schema.items[j].name));
-
-        if (ret->sem.rownum.part
-            && PFord_order_col_at (ret->sem.rownum.sortby, i)
-               == ret->sem.rownum.part)
+        if (ret->sem.sort.part &&
+            PFord_order_col_at (s, i) == ret->sem.sort.part)
             PFoops (OOPS_FATAL,
                     "partitioning attribute must not appear in sort clause");
     }
@@ -2113,91 +2100,61 @@ PFla_rownum (const PFla_op_t *n,
 
 
 /**
- * The `rank' operator, a Pathfinder-specific extension to the
- * relational algebra.
+ * The `rownum' operator, a Pathfinder-specific extension to the
+ * relational algebra (behaves like SQL ROW_NUMBER()).
  */
 PFla_op_t *
-PFla_rank (const PFla_op_t *n, PFalg_att_t a, PFord_ordering_t s)
+PFla_rownum (const PFla_op_t *n,
+             PFalg_att_t a, PFord_ordering_t s, PFalg_att_t p)
 {
-    PFla_op_t    *ret = la_op_wire1 (la_rank, n);
-    unsigned int  i;
-    unsigned int  j;
-
-    assert (s);
-
-    /* copy parameters into semantic content of return node */
-    ret->sem.rank.res = a;
-    ret->sem.rank.sortby = s;
-
-    /* result schema is input schema plus the new attribute */
-    ret->schema.count = n->schema.count + 1;
-    ret->schema.items
-        = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
-
-    for (i = 0; i < n->schema.count; i++) {
-
-        /* there must not be an argument attribute named like the new one */
-        if (n->schema.items[i].name == a)
-            PFoops (OOPS_FATAL,
-                    "rank operator would result in duplicate attribute `%s'",
-                    PFatt_str (a));
-
-        /* copy this attribute specification */
-        ret->schema.items[i] = n->schema.items[i];
-    }
-    /* append new attribute, named as given in a, with type nat */
-    ret->schema.items[ret->schema.count - 1]
-        = (struct PFalg_schm_item_t) { .name = a, .type = aat_nat };
-
-    /* sanity checks below */
-    if (PFord_count (s) == 0)
-        PFinfo (OOPS_WARNING,
-                "applying rank operator without sort specifier");
-
-    /* see if we can find all sort specifications */
-    for (i = 0; i < PFord_count (ret->sem.rank.sortby); i++) {
-
-        for (j = 0; j < n->schema.count; j++)
-            if (n->schema.items[j].name ==
-                         PFord_order_col_at (ret->sem.rank.sortby, i))
-                break;
-
-        if (j == n->schema.count)
-            PFoops (OOPS_FATAL,
-                    "could not find sort attribute `%s'",
-                    PFatt_str (PFord_order_col_at (
-                                   ret->sem.rank.sortby, i)));
-
-        /* FIXME: we do allow polymorphic sequences as these
-           are only introduced by a combination of sequence
-           construction and optimizing rank operators. We only
-           ensure that these polymorphic columns are not the first
-           order constraint. The order of applying the different
-           columns independentely thus does not matter. */
-        if (!i && !monomorphic (n->schema.items[j].type))
-            PFoops (OOPS_FATAL,
-                    "sort criterion for rank must be monomorphic, "
-                    "type: %i, name: %s",
-                    n->schema.items[j].type,
-                    PFatt_str (n->schema.items[j].name));
-    }
-
-    return ret;
+    return sort_col (n, la_rownum, "rownum", a, s, p);
 }
 
 
 /**
- * The `number' operator, a Pathfinder-specific extension to the
+ * The `rowrank' operator, a Pathfinder-specific extension to the
+ * relational algebra (behaves like SQL DENSE_RANK()).
+ */
+PFla_op_t *
+PFla_rowrank (const PFla_op_t *n, PFalg_att_t a, PFord_ordering_t s)
+{
+    if (PFord_count (s) == 0)
+        PFinfo (OOPS_FATAL,
+                "applying rank operator without sort specifier");
+
+    return sort_col (n, la_rowrank, "rowrank", a, s, att_NULL);
+}
+
+
+/**
+ * The `rank' operator, a Pathfinder-specific extension to the
+ * relational algebra (behaves like SQL DENSE_RANK()). In comparison
+ * to rowrank we do not care about the generated values and can
+ * therefore apply more rewrites.
+ */
+PFla_op_t *
+PFla_rank (const PFla_op_t *n, PFalg_att_t a, PFord_ordering_t s)
+{
+    if (PFord_count (s) == 0)
+        PFinfo (OOPS_FATAL,
+                "applying rank operator without sort specifier");
+
+    return sort_col (n, la_rank, "rank", a, s, att_NULL);
+}
+
+
+/**
+ * The `rowid' operator, a Pathfinder-specific extension to the
  * relational algebra.
  */
 PFla_op_t *
-PFla_number (const PFla_op_t *n, PFalg_att_t a)
+PFla_rowid (const PFla_op_t *n, PFalg_att_t a)
 {
-    PFla_op_t    *ret = la_op_wire1 (la_number, n);
+    PFla_op_t    *ret = la_op_wire1 (la_rowid, n);
     unsigned int  i;
 
     /* copy parameters into semantic content of return node */
-    ret->sem.number.res  = a;
+    ret->sem.rowid.res  = a;
 
     /* result schema is input schema plus the new attribute */
     ret->schema.count = n->schema.count + 1;
@@ -2209,7 +2166,7 @@ PFla_number (const PFla_op_t *n, PFalg_att_t a)
         /* there must not be an argument attribute named like the new one */
         if (n->schema.items[i].name == a)
             PFoops (OOPS_FATAL,
-                    "number operator would result in duplicate attribute `%s'",
+                    "rowid operator would result in duplicate attribute `%s'",
                     PFatt_str (a));
 
         /* copy this attribute specification */
@@ -4107,18 +4064,23 @@ PFla_op_duplicate (PFla_op_t *n, PFla_op_t *left, PFla_op_t *right)
 
         case la_rownum:
             return PFla_rownum (left,
-                                n->sem.rownum.res,
-                                n->sem.rownum.sortby,
-                                n->sem.rownum.part);
+                                n->sem.sort.res,
+                                n->sem.sort.sortby,
+                                n->sem.sort.part);
+
+        case la_rowrank:
+            return PFla_rowrank (left,
+                                 n->sem.sort.res,
+                                 n->sem.sort.sortby);
 
         case la_rank:
             return PFla_rank (left,
-                              n->sem.rank.res,
-                              n->sem.rank.sortby);
+                              n->sem.sort.res,
+                              n->sem.sort.sortby);
 
-        case la_number:
-            return PFla_number (left,
-                                n->sem.number.res);
+        case la_rowid:
+            return PFla_rowid (left,
+                               n->sem.rowid.res);
 
         case la_type:
             return PFla_type (left,

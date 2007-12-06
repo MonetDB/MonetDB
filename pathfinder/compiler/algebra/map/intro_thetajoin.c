@@ -151,9 +151,9 @@ find_join_worker (PFla_op_t *n,
     RIGHT_COLS(n) = intersect_ocol (RIGHT_COLS(n), n->schema);
 
     /* If both the left side and the right side of a comparison
-       reference the same column in a number operator
+       reference the same column in a rowid operator
        we have (hopefully) reached our goal. */
-    if (n->kind == la_number &&
+    if (n->kind == la_rowid &&
         LEFT_COLS(n) && RIGHT_COLS(n) &&
         ((LEFT_COLS(n) & RIGHT_COLS(n)) == LEFT_COLS(n) ||
          (LEFT_COLS(n) & RIGHT_COLS(n)) == RIGHT_COLS(n)))
@@ -354,66 +354,44 @@ find_join_worker (PFla_op_t *n,
             break;
 
         case la_rownum:
-            if (LEFT_COLS(n) & n->sem.rownum.res) {
-                LEFT_COLS(n) = diff   (LEFT_COLS(n), n->sem.rownum.res);
-
-                for (unsigned int i = 0;
-                     i < PFord_count (n->sem.rownum.sortby);
-                     i++)
-                    LEFT_COLS(n) = union_ (LEFT_COLS(n),
-                                           PFord_order_col_at (
-                                               n->sem.rownum.sortby, i));
-
-                /* only infer part if available */
-                if (n->sem.rownum.part != att_NULL)
-                    LEFT_COLS(n) = union_ (LEFT_COLS(n),
-                                           n->sem.rownum.part);
-            }
-
-            if (RIGHT_COLS(n) & n->sem.rownum.res) {
-                RIGHT_COLS(n) = diff   (RIGHT_COLS(n), n->sem.rownum.res);
-
-                for (unsigned int i = 0;
-                     i < PFord_count (n->sem.rownum.sortby);
-                     i++)
-                    RIGHT_COLS(n) = union_ (RIGHT_COLS(n),
-                                            PFord_order_col_at (
-                                                n->sem.rownum.sortby, i));
-
-                /* only infer part if available */
-                if (n->sem.rownum.part != att_NULL)
-                    RIGHT_COLS(n) = union_ (RIGHT_COLS(n),
-                                            n->sem.rownum.part);
-            }
-            break;
-
+        case la_rowrank:
         case la_rank:
-            if (LEFT_COLS(n) & n->sem.rank.res) {
-                LEFT_COLS(n) = diff   (LEFT_COLS(n), n->sem.rank.res);
+            if (LEFT_COLS(n) & n->sem.sort.res) {
+                LEFT_COLS(n) = diff   (LEFT_COLS(n), n->sem.sort.res);
 
                 for (unsigned int i = 0;
-                     i < PFord_count (n->sem.rank.sortby);
+                     i < PFord_count (n->sem.sort.sortby);
                      i++)
                     LEFT_COLS(n) = union_ (LEFT_COLS(n),
                                            PFord_order_col_at (
-                                               n->sem.rank.sortby, i));
+                                               n->sem.sort.sortby, i));
+
+                /* only infer part if available */
+                if (n->sem.sort.part != att_NULL)
+                    LEFT_COLS(n) = union_ (LEFT_COLS(n),
+                                           n->sem.sort.part);
             }
 
-            if (RIGHT_COLS(n) & n->sem.rank.res) {
-                RIGHT_COLS(n) = diff   (RIGHT_COLS(n), n->sem.rank.res);
+            if (RIGHT_COLS(n) & n->sem.sort.res) {
+                RIGHT_COLS(n) = diff   (RIGHT_COLS(n), n->sem.sort.res);
 
                 for (unsigned int i = 0;
-                     i < PFord_count (n->sem.rank.sortby);
+                     i < PFord_count (n->sem.sort.sortby);
                      i++)
                     RIGHT_COLS(n) = union_ (RIGHT_COLS(n),
                                             PFord_order_col_at (
-                                                n->sem.rank.sortby, i));
+                                                n->sem.sort.sortby, i));
+
+                /* only infer part if available */
+                if (n->sem.sort.part != att_NULL)
+                    RIGHT_COLS(n) = union_ (RIGHT_COLS(n),
+                                            n->sem.sort.part);
             }
             break;
 
-        case la_number:
-            LEFT_COLS(n)  = diff   (LEFT_COLS(n), n->sem.number.res);
-            RIGHT_COLS(n) = diff   (RIGHT_COLS(n), n->sem.number.res);
+        case la_rowid:
+            LEFT_COLS(n)  = diff   (LEFT_COLS(n), n->sem.rowid.res);
+            RIGHT_COLS(n) = diff   (RIGHT_COLS(n), n->sem.rowid.res);
             break;
 
         case la_type:

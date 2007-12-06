@@ -257,8 +257,9 @@ infer_const (PFla_op_t *n)
         case la_bool_or:
         case la_bool_not:
         case la_rownum:
+        case la_rowrank:
         case la_rank:
-        case la_number:
+        case la_rowid:
         case la_type:
         case la_type_assert:
         case la_cast:
@@ -708,8 +709,9 @@ infer_const (PFla_op_t *n)
            Leave it out as it isn't a common case */
         case la_fun_1to1:
         case la_rownum:
+        case la_rowrank:
         case la_rank:
-        case la_number:
+        case la_rowid:
         case la_type_assert:
         case la_step_join:
         case la_guide_step_join:

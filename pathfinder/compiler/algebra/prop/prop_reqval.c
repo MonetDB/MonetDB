@@ -219,9 +219,10 @@ prop_infer_reqvals (PFla_op_t *n, reqval_t reqvals)
 
         case la_pos_select:
         case la_distinct:
-        case la_rownum: /* in rownum, rank, and number */
-        case la_rank:   /* type of res is != boolean and */
-        case la_number: /* therefore never needs to be removed */
+        case la_rownum:  /* for rownum, rowrank, rank, and rowid */
+        case la_rowrank: /* type of res is != boolean and */
+        case la_rank:    /* therefore never needs to be removed */
+        case la_rowid:
         case la_type_assert:
         case la_roots:
         case la_proxy:
