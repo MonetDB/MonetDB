@@ -1522,7 +1522,7 @@ def RunTest(env, TST, BusyPorts, COND) :
     elif COND and not CONDITIONALS[COND]:
         elem = SkipTest(env, TST, EXT, "as conditional '%s' does not hold." % COND)
     elif os.name == "nt"  and  url(TSTDIR)+"/"+TST in NotOnNT:
-        elem = SkipTest(env, TST, EXT, "as it currently crashes/hangs on WindowsNT.")
+        elem = SkipTest(env, TST, EXT, "as it currently crashes/hangs on Windows.")
     elif sys.platform == "cygwin"  and  url(TSTDIR)+"/"+TST in NotOnCYG:
         elem = SkipTest(env, TST, EXT, "as it currently crashes/hangs on CYGWIN.")
     elif ( EXT[:4] == ".mil" or SERVER == "MIL" ) and par['M5']:
@@ -2573,9 +2573,9 @@ HOST = HOST.split('.', 1)[0]
 os.environ['HOST'] = HOST
 
 if os.name == "nt":
-    OS    = "WindowsNT"
+    OS    = "Windows"
     RELEASE = "5.0"
-    r = re.compile('^Microsoft Windows (.*) \[Version ([0-9]+\.[0-9]+)([^\[0-9].*)\]$')
+    r = re.compile('^Microsoft Windows (.*)\[Version ([0-9]+\.[0-9]+)([^\[0-9].*)\]$')
     proc = subprocess.Popen('ver', stdin = subprocess.PIPE, stdout = subprocess.PIPE, universal_newlines = True)
     qOut, qErr = proc.communicate()
     for l in qOut.split('\n'):
@@ -2591,7 +2591,7 @@ else:
 
 # this is for the wine/mingw setup
 if sys.platform == 'linux2' and CONDITIONALS['CROSS_COMPILING']:
-    OS = 'WindowsNT'
+    OS = 'Windows'
     HOST = "WINE"
     RELEASE = "5.2"
 
