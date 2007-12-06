@@ -21,7 +21,7 @@
 rpmtopdir = $(shell cd $(top_builddir) && pwd)/rpm
 
 $(top_builddir)/$(distdir).tar.gz:
-	$(MAKE) $(AM_MAKEFLAGS) MXFLAGS=-l dist
+	$(MAKE) $(AM_MAKEFLAGS) dist
 
 $(rpmtopdir)/rpmmacros:
 	mkdir -p $(rpmtopdir)/RPMS
