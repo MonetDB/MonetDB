@@ -64,37 +64,32 @@ All Rights Reserved.
 
   <!-- full target -->
   <target name="all">
-    <antcall target="jar_jdbc" />
+    <antcall target="distjdbc" />
+    <!-- xmldb is not in distjdbc because it needs a library which needs
+         to be fetched first -->
     <antcall target="jar_xmldb" />
-    <antcall target="jar_mcl" />
-    <antcall target="jar_client" />
 
-    <antcall target="jar_xrpc_api" />
-    <antcall target="jar_xrpc_wrapper" />
-    <antcall target="jar_xrpc_client" />
+    <antcall target="distxrpc" />
 
     <antcall target="doc" />
   </target>
 
   <target name="distall">
-    <antcall target="jar_mcl" />
-    <antcall target="jar_jdbc" />
-    <antcall target="jar_jdbcclient" />
-
-    <antcall target="jar_xrpc_api" />
-    <antcall target="jar_xrpc_wrapper" />
-    <antcall target="jar_xrpc_client" />
+    <antcall target="distjdbc" />
+    <antcall target="distxrpc" />
   </target>
 
   <target name="default">
     <antcall target="jar_jdbcclient" />
-
-    <antcall target="jar_xrpc_api" />
-    <antcall target="jar_xrpc_wrapper" />
-    <antcall target="jar_xrpc_client" />
   </target>
 
-  <target name="xrpc">
+  <target name="distjdbc">
+    <antcall target="jar_jdbc" />
+    <antcall target="jar_mcl" />
+    <antcall target="jar_jdbcclient" />
+  </target>
+
+  <target name="distxrpc">
     <antcall target="jar_xrpc_api" />
     <antcall target="jar_xrpc_wrapper" />
     <antcall target="jar_xrpc_client" />

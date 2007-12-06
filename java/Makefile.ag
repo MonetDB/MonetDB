@@ -14,7 +14,7 @@
 # Portions created by CWI are Copyright (C) 1997-2007 CWI.
 # All Rights Reserved.
 
-SUBDIRS = conf tests scripts
+SUBDIRS = conf HAVE_JAVAJDBC?tests HAVE_JAVAJDBC?scripts
 
 EXTRA_DIST = configure.ag rpm.mk.in \
 		MonetDB-java.spec MonetDB-java.spec.in \
@@ -27,9 +27,16 @@ EXTRA_DIST_DIR = NT \
 		 lib \
 		 example
 
-ant_distall = {
+ant_distjdbc = {
+	COND = HAVE_JAVAJDBC
 	DIR = datadir/MonetDB/lib
-	FILES = monetdb-1.2-mcl.jar monetdb-1.7-jdbc.jar jdbcclient.jar xrpcapi.jar xrpcwrapper.jar xrpcclient.jar
+	FILES = monetdb-1.2-mcl.jar monetdb-1.7-jdbc.jar jdbcclient.jar
+}
+
+ant_distxrpc = {
+	COND = HAVE_JAVAXRPC
+	DIR = datadir/MonetDB/lib
+	FILES = xrpcapi.jar xrpcwrapper.jar xrpcclient.jar
 }
 
 TESTS = RunMtest
