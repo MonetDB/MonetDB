@@ -1,3 +1,8 @@
+# MonetDB/Buildtools ChangeLog
+
+  06 Dec 2007; Fabian Groffen <fabian@cwi.nl> autogen/autogen/am.py:
+  Implemented rudimentary conditional support for ant targets
+
   05 Dec 2007; Fabian Groffen <fabian@cwi.nl> conf/MonetDB.m4:
   Allow for 'included' dependencies, such that the wonders of libtool can
   compile against a build dir of a dependency, instead of its installation

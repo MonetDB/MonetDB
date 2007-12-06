@@ -909,6 +909,9 @@ def am_ant(fd, var, ant, am):
 
     fd.write("\nif HAVE_JAVA\n\n")  # there is ant if configure set HAVE_JAVA
 
+    if ant.has_key("COND"):
+        fd.write("\nif " + ant["COND"][0] +"\n\n")
+
     fd.write("\n%s_ant_target:\n\t\"$(ANT)\" -f \"`$(anttranslatepath) $(srcdir)/build.xml`\" -Dbuilddir=\"`$(anttranslatepath) $(PWD)`\" -Djardir=\"`$(anttranslatepath) $(PWD)`\" -Dbasedir=\"`$(anttranslatepath) $(srcdir)`\" %s\n" % (target, target))
 
     for file in ant['FILES']:
@@ -925,6 +928,18 @@ def am_ant(fd, var, ant, am):
         fd.write("all-local-%s: %s\n" % (sfile, file))
 
         am['ALL'].append(sfile)
+
+    if ant.has_key("COND"):
+        fd.write("\nelse\n\n")
+
+    for file in ant['FILES']:
+        sfile = file.replace(".", "_")
+        fd.write("install-exec-local-%s:\n" % sfile)
+        fd.write("uninstall-local-%s:\n" % sfile)
+        fd.write("all-local-%s:\n" % sfile)
+
+    if ant.has_key("COND"):
+        fd.write("\nendif !" + ant["COND"][0] + "\n\n")
 
     fd.write("\nelse\n\n")
 
