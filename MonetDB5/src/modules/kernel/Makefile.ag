@@ -17,7 +17,7 @@
 INCLUDES = \
 	-I../atoms -I../../mal \
 	$(MONETDB_INCS)  \
-	$(HWCOUNTERS_INCS) $(PCL_FLAGS)
+	$(HWCOUNTERS_INCS) $(PCL_FLAGS) $(ICONV_CFLAGS)
 
 MTSAFE
 

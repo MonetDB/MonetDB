@@ -1658,13 +1658,17 @@ main(int argc, char **argv)
 			break;
 		case 'l':
 			/* accept unambiguous prefix of language */
-			if (strcmp(optarg, "sql") == 0 || strcmp(optarg, "sq") == 0 || strcmp(optarg, "s") == 0) {
+			if (strcmp(optarg, "sql") == 0 ||
+			    strcmp(optarg, "sq") == 0 ||
+			    strcmp(optarg, "s") == 0) {
 				language = "sql";
 				mode = SQL;
-			} else if (strcmp(optarg, "mil") == 0 || strcmp(optarg, "mi") == 0) {
+			} else if (strcmp(optarg, "mil") == 0 ||
+				   strcmp(optarg, "mi") == 0) {
 				language = "mil";
 				mode = MIL;
-			} else if (strcmp(optarg, "mal") == 0 || strcmp(optarg, "ma") == 0) {
+			} else if (strcmp(optarg, "mal") == 0 ||
+				   strcmp(optarg, "ma") == 0) {
 				language = "mal";
 
 				mode = MAL;
@@ -1758,22 +1762,11 @@ main(int argc, char **argv)
 	}
 
 #ifdef HAVE_ICONV
-	if (encoding == NULL) {
 #ifdef HAVE_NL_LANGINFO
+	if (encoding == NULL)
 		encoding = nl_langinfo(CODESET);
-#else
-#ifdef NATIVE_WIN32
-		UINT cp = GetOEMCP();
-
-		if (cp != 0) {
-			encoding = malloc(10);
-			snprintf(encoding, 10, "cp%d", cp);
-
-		}
 #endif
-#endif
-	}
-	if (strcasecmp(encoding, "utf-8") == 0)
+	if (encoding != NULL && strcasecmp(encoding, "utf-8") == 0)
 		encoding = NULL;
 	if (encoding != NULL) {
 		toConsole = iconv_wstream(toConsole, encoding, "stdout");
@@ -1787,7 +1780,7 @@ main(int argc, char **argv)
 		if ((cd_in = iconv_open("utf-8", encoding)) == (iconv_t) -1)
 			fprintf(stderr, "%s: warning: cannot convert UTF-8 to local character set %s\n", argv[0], encoding);
 	}
-#endif
+#endif	/* HAVE_ICONV */
 
 	/* default to administrator account (eeks) when being called without
 	 * any arguments, default to the current user if -u flag is given */
