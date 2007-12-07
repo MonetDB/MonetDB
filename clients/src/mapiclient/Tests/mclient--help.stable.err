@@ -15,6 +15,7 @@ Usage: mclient --language=(sql|xquery|mal|mil) [ options ]
 Options are:
  -d database | --database=database  database to connect to
  -e          | --echo            echo the query
+ -E charset  | --encoding=charset specify encoding (character set) of the terminal
  -f kind     | --format=kind      specify output format {dm,xml} for Xquery, or {csv,tab,raw,sql,xml}
  -H          | --history         load/save cmdline history (default off)
  -h hostname | --host=hostname   host to connect to
