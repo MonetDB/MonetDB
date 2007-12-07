@@ -27,12 +27,12 @@ lib_mutils = {
 	HEADERS = h
 }
 
-INCLUDES = $(Z_CFLAGS) $(BZ_CFLAGS) $(OPENSSL_INCS) $(CURL_INCS)
+INCLUDES = $(Z_CFLAGS) $(BZ_CFLAGS) $(OPENSSL_INCS) $(CURL_INCS) $(ICONV_CFLAGS)
 
 lib_stream  =  {
 	SOURCES = stream.mx dummy_gdk_utils.mx
 	HEADERS = h
-	LIBS = libmutils $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) $(OPENSSL_LIBS) $(CURL_LIBS)
+	LIBS = libmutils $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) $(OPENSSL_LIBS) $(CURL_LIBS) $(ICONV_LIBS)
 }
 
 headers_py = {

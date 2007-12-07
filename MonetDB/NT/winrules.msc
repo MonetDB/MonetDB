@@ -62,6 +62,35 @@ PCRE_LIBS = "$(LIBPCRE)\lib\pcre.lib"
 PCRE_CFLAGS = -DHAVE_LIBPCRE "-I$(LIBPCRE)\include"
 !ENDIF
 
+# !IFDEF HAVE_ICONV
+# This is the location of the ICONV library
+LIBICONV = C:\iconv-1.9.2.win$(bits)
+ICONV_LIBS = "$(LIBICONV)\lib\iconv.lib"
+ICONV_CFLAGS = -DHAVE_ICONV "-I$(LIBICONV)\include"
+# !ENDIF
+
+# !IFDEF HAVE_LIBZ
+# This is the location of the Z library
+LIBZLIB = C:\zlib-1.2.3.win$(bits)
+!IF $(bits) == 32
+Z_LIBS = "$(LIBZLIB)\lib\zdll.lib"
+!ELSE
+Z_LIBS = "$(LIBZLIB)\lib\zlib1.lib"
+!ENDIF
+Z_CFLAGS = -DHAVE_LIBZ "-I$(LIBZLIB)\include"
+# !ENDIF
+
+# !IFDEF HAVE_LIBXML2
+# This is the location of the libxml2 library
+LIBXML2 = C:\libxml2-2.6.30.win$(bits)
+LIBXML2_CFLAGS = -DHAVE_LIBXML2 "-I$(LIBXML2)\include" "-I$(LIBZLIB)\include" "-I$(LIBICONV)\include"
+!IF $(bits) == 32
+LIBXML2_LIBS = "$(LIBXML2)\lib\libxml2.lib" "$(LIBZLIB)\lib\zdll.lib" "$(LIBICONV)\lib\iconv.lib"
+!ELSE
+LIBXML2_LIBS = "$(LIBXML2)\lib\libxml2.lib" "$(LIBZLIB)\lib\zlib1.lib" "$(LIBICONV)\lib\iconv.lib"
+!ENDIF
+# !ENDIF
+
 # some programs we use, probably no need to edit
 
 # install python, flex and bison on your systems 

@@ -308,6 +308,10 @@ typedef enum stream_errors {
 #define INVALID_SOCKET (-1)
 #endif
 
+#ifdef NATIVE_WIN32
+#define pclose _pclose
+#endif
+
 struct stream {
 	short byteorder;
 	short access;		/* read/write */
