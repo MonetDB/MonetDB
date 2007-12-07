@@ -26,29 +26,56 @@ import org.w3c.dom.*;
 import org.xml.sax.*;
 
 /**
+ * This class provides functions to generate XRPC request messages and
+ * retrieve values from XRPC response messages.
+ *
  * @author Ying Zhang <Y.Zhang@cwi.nl>
  * @version 0.1
  */
 
 public class XRPCMessage {
+    /**
+     * XRPC request message type
+     */
     public static final String XRPC_MSG_TYPE_REQ  = "request";
+    /**
+     * XRPC response message type
+     */
     public static final String XRPC_MSG_TYPE_RESP = "response";
 
     /**
-     * Namespace definitions used in an XRPC message
-     **/
+     * The SOAP Namespace 
+     */
 	public static final String SOAP_NS  = "http://www.w3.org/2003/05/soap-envelope";
+    /**
+     * The XPath Data Type Namespace
+     */
 	public static final String XDT_NS   = "http://www.w3.org/2005/xpath-datatypes";
+    /**
+     * The XML Schema Namespace
+     */
 	public static final String XS_NS    = "http://www.w3.org/2001/XMLSchema";
+    /**
+     * The XML Schema Instance Namespace
+     */
 	public static final String XSI_NS   = "http://www.w3.org/2001/XMLSchema-instance";
+    /**
+     * The XRPC Namespace
+     */
 	public static final String XRPC_NS  = "http://monetdb.cwi.nl/XQuery";
+    /**
+     * The location of the XRPC Namespace
+     */
 	public static final String XRPC_LOC = "http://monetdb.cwi.nl/XQuery/XRPC.xsd";
 
     /**
-     * Start and End of the messages
-     **/
+     * The XML declaration
+     */
     public static final String XML_DECL =
         "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n";
+    /**
+     * Common header of XRPC (request/response) messages
+     */
     public static final String XRPC_MSG_START =
         "<env:Envelope" + 
         " xmlns:env=\"" + SOAP_NS + "\"" +
@@ -57,14 +84,26 @@ public class XRPCMessage {
         " xmlns:xsi=\"" + XSI_NS + "\"" +
         " xsi:schemaLocation=\"" + XRPC_NS + " " + XRPC_LOC + "\">" +
         "<env:Body>";
+    /**
+     * Footer of XRPC request messages
+     */
     public static final String XRPC_REQUEST_END =
         "</xrpc:request></env:Body></env:Envelope>\n";
+    /**
+     * Footer of XRPC response  messages
+     */
     public static final String XRPC_RESPONSE_END =
         "</xrpc:response></env:Body></env:Envelope>\n";
+    /**
+     * Header of SOAP Fault messages
+     */
     public static final String SOAP_FAULT_START =
         XML_DECL +
         "<env:Envelope xmlns:env=\""+SOAP_NS+"\">" +
         "<env:Body><env:Fault>";
+    /**
+     * Footer of SOAP Fault messages
+     */
     public static final String SOAP_FAULT_END =
         "</env:Fault></env:Body></env:Envelope>\n";
 
@@ -107,6 +146,21 @@ public class XRPCMessage {
     /***********************************************/
     /*     Public Message Generating Functions     */
     /***********************************************/
+
+    /**
+     * Constructs an XRPC request message (with all attributes defined
+     * by the <a href="http://monetdb.cwi.nl/XQuery/XRPC.xsd">XRPC
+     * schema</a>) with the information passed by the parameters.
+     *
+     * @param module Namespace URI of the XQuery module
+     * @param location the location (i.e. at-hint) where the module file is stored.
+     * @param method the called XQuery function
+     * @param arity number of parameters the called function has
+     * @param iterc number of iterations the called function should be executed
+     * @param updCall indicates if the called function is read-only or updating
+     * @param body body of the request message
+     * @return an XRPC request message
+     */
     public static String XRPC_REQUEST(String module,
                                       String location,
                                       String method,
@@ -119,6 +173,19 @@ public class XRPCMessage {
                         updCall?"true":"false", body);
     }
 
+    /**
+     * Constructs an XRPC request message (without the optional
+     * attribute <code>updCall</code>) with the information passed by
+     * the parameters.
+     *
+     * @param module Namespace URI of the XQuery module
+     * @param location the location (i.e. at-hint) where the module file is stored.
+     * @param method the called XQuery function
+     * @param arity number of parameters the called function has
+     * @param iterc number of iterations the called function should be executed
+     * @param body body of the request message
+     * @return an XRPC request message
+     */
     public static String XRPC_REQUEST(String module,
                                       String location,
                                       String method,
@@ -130,6 +197,19 @@ public class XRPCMessage {
                         null, body);
     }
 
+    /**
+     * Constructs an XRPC request message (without the optional
+     * attribute <code>iter-count</code>) with the information passed by
+     * the parameters.
+     *
+     * @param module Namespace URI of the XQuery module
+     * @param location the location (i.e. at-hint) where the module file is stored.
+     * @param method the called XQuery function
+     * @param arity number of parameters the called function has
+     * @param updCall indicates if the called function is read-only or updating
+     * @param body body of the request message
+     * @return an XRPC request message
+     */
     public static String XRPC_REQUEST(String module,
                                       String location,
                                       String method,
@@ -141,6 +221,18 @@ public class XRPCMessage {
                         updCall?"true":"false", body);
     }
 
+    /**
+     * Constructs an XRPC request message (without the optional
+     * attributes <code>updCall</code> and <code>iter-count</code>) with
+     * the information passed by the parameters.
+     *
+     * @param module Namespace URI of the XQuery module
+     * @param location the location (i.e. at-hint) where the module file is stored.
+     * @param method the called XQuery function
+     * @param arity number of parameters the called function has
+     * @param body body of the request message
+     * @return an XRPC request message
+     */
     public static String XRPC_REQUEST(String module,
                                       String location,
                                       String method,
@@ -151,6 +243,15 @@ public class XRPCMessage {
                         null, body);
     }
 
+    /**
+     * Constructs an XRPC response message with the information passed
+     * by the parameters.
+     *
+     * @param module Namespace URI of the XQuery module
+     * @param method the called XQuery function
+     * @param body body of the response message
+     * @return an XRPC response message
+     */
     public static String XRPC_RESPONSE(String module,
                                        String method,
                                        String body)
@@ -161,6 +262,19 @@ public class XRPCMessage {
                body + XRPC_RESPONSE_END;
     }
 
+    /**
+     * Constructs a SOAP Fault message with the information passed by
+     * the parameters.
+     * The message is constructed according to
+     * <a
+     * href="http://www.w3.org/TR/2007/REC-soap12-part1-20070427/">SOAP
+     * Version 1.2 Part 1: Messaging Framework</a>.
+     *
+     * @param faultCode which side has caused the fault,
+     * <code>env:Sender</code> or <code>env:Receiver</code>
+     * @param faultReason some explanation of the fault.
+     * @return a SOAP Fault message
+     */
     public static String SOAP_FAULT(String faultCode,
                                     String faultReason)
     {
@@ -175,7 +289,15 @@ public class XRPCMessage {
             SOAP_FAULT_END;
     }
 
-    /* a body consists of one or more calls */
+    /**
+     * Constructs an <code>xrpc:call</code> element with the information
+     * passed by the parameters.
+     *
+     * @param params parameters of one iteration of the called XQuery
+     * function, consists of zero or more <code>xrpc:sequence</code>
+     * element(s).
+     * @return an <code>xrpc:call</code> element
+     */
     public static String XRPC_CALL(String params)
     {
         if (params == null || params.length() == 0){
@@ -184,7 +306,18 @@ public class XRPCMessage {
         return "<xrpc:call>" + params + "</xrpc:call>";
     }
 
-    /* each parameter is an XQuery sequence */
+    /**
+     * Constructs an <code>xrpc:sequence</code> element with the
+     * information passed by the parameters.
+     * Sequence values are either atomics of an <code>"xs:"<type></code>
+     * or XML nodes (e.g. elements, documents, attribute, comment, text,
+     * processing-instruction, etc)
+     *
+     * @param seq zero or more values element(s) of one parameter
+     * sequence, each of which can be an atomic-typed or an XML
+     * node-typed value.
+     * @return an <code>xrpc:sequence</code> element
+     */
     public static String XRPC_SEQ(String seq)
     {
         if (seq == null || seq.length() == 0){
@@ -193,9 +326,15 @@ public class XRPCMessage {
         return "<xrpc:sequence>" + seq + "</xrpc:sequence>";
     }
 
-    /* Sequence values are either atomics of an "xs:"<type> or XML nodes
-     * (e.g. elements, documents, attribute, comment, text,
-     * processing-instruction, etc)
+    /**
+     * Constructs an <code>xrpc:atomic-value</code> element with the
+     * information passed by the parameters.
+     * The parameter <code>type</code> is used as the value of the
+     * attribute <code>xsi:type</code>.
+     *
+     * @param type XQuery type of the atomic value
+     * @param value String representation of an atomic value
+     * @return an <code>xrpc:atomic-value</code> element
      */
     public static String XRPC_ATOM(String type, String value)
     {
@@ -205,32 +344,76 @@ public class XRPCMessage {
             value + "</xrpc:atomic-value>";
     }
 
+    /**
+     * Constructs an <code>xrpc:element</code> element with the
+     * information passed by the parameters.
+     *
+     * @param value String representation of an XML element
+     * @return an <code>xrpc:element</code> element
+     */
     public static String XRPC_ELEMENT(String value)
     {
         return "<xrpc:element>" + value + "</xrpc:element>";
     }
 
+    /**
+     * Constructs an <code>xrpc:document</code> element with the
+     * information passed by the parameters.
+     *
+     * @param value String representation of an XML document
+     * @return an <code>xrpc:document</code> element
+     */
     public static String XRPC_DOCUMENT(String value)
     {
         return "<xrpc:document>" + value + "</xrpc:document>";
     }
 
+    /**
+     * Constructs an <code>xrpc:text</code> element with the
+     * information passed by the parameters.
+     *
+     * @param value the text string
+     * @return an <code>xrpc:text</code> element
+     */
     public static String XRPC_TEXT(String value)
     {
         return "<xrpc:text>" + value + "</xrpc:text>";
     }
 
+    /**
+     * Constructs an <code>xrpc:comment</code> element with the
+     * information passed by the parameters.
+     *
+     * @param value String representation of an XQuery <code>comment</code> element
+     * @return an <code>xrpc:comment</code> element
+     */
     public static String XRPC_COMMENT(String value)
     {
         return "<xrpc:comment>" + value + "</xrpc:comment>";
     }
 
+    /**
+     * Constructs an <code>xrpc:processing-instruction</code> element
+     * with the information passed by the parameters.
+     *
+     * @param value String representation of an XQuery
+     * <code>processing-instruction</code> element
+     * @return an <code>xrpc:processing-instruction</code> element
+     */
     public static String XRPC_PI(String value)
     {
         return "<xrpc:processing-instruction>" + value +
                "</xrpc:processing-instruction>";
     }
 
+    /**
+     * Constructs an <code>xrpc:attribute</code> element with the
+     * information passed by the parameters.
+     *
+     * @param attrName name of an attribute
+     * @param attrVal value of the attribute
+     * @return an <code>xrpc:attribute</code> element
+     */
     public static String XRPC_ATTRIBUTE(String attrName, String attrVal)
     {
         return "<xrpc:attribute " + attrName+"=\""+attrVal+"\" />";
@@ -241,11 +424,17 @@ public class XRPCMessage {
     /***********************************************/
 
     /**
-     * Find the prefix definition of the given namespace URI in an XRPC
+     * Find the prefix definition of the given Namespace URI in an XRPC
      * message, by searching in the SOAP Envelope tag and the XRPC
      * request/response tag.
      *
-     * Returns: the prefix, or throws XRPCException
+     * @param msgType type of the message,
+     * <code>XRPC_MSG_TYPE_REQ</code> or <code>XRPC_MSG_TYPE_RESP</code>
+     * @param msg the message
+     * @param namespaceURI URI of the Namespace
+     * @return the prefix defined in the message for the Namespace
+     * @throws XRPCException If the prefix could not be found, or the
+     * XRPC message is not well-formed.
      **/
     public static String getNamespacePrefix(String msgType,
                                             String msg,
@@ -315,10 +504,14 @@ public class XRPCMessage {
     }
 
     /**
-     * Given a prefix and an XRPC message, find the Namespace URI it
-     * represents.
+     * Given a prefix and an XRPC message, find the Namespace URI the
+     * prefix represents.
      *
-     * Returns: the Namespace URI, or throws XRPCException
+     * @param msg the XRPC message
+     * @param prefix prefix of the Namespace URI
+     * @return the Namespace URI
+     * @throws XRPCException If the prefix could not be found, or the
+     * XRPC message is not well-formed.
      **/
     public static String getNamespaceURI(String msg,
                                          String prefix)
@@ -358,20 +551,32 @@ public class XRPCMessage {
         return msg.substring(i, j);
     }
 
-    /* Retrieves the values of the parameters of a called XQuery
-     * function into a String array.
+    /**
+     * Retrieves the values of the parameters of the called XQuery
+     * function contained in an XRPC request message into a String
+     * array.
+     * Note that: the parameter values <b>must</b> be single-item
+     * sequences containing <b>only</b> atomic values.
      *
-     * NOTE: the parameter values MUST be single-item sequences
-     *       containing ONLY atomic values.
+     * @param request an XRPC request message
+     * @param soapPrefix the prefix of the SOAP namespace defined in the
+     * XRPC message
+     * @param xrpcPrefix the prefix of the XRPC namespace defined in the
+     * XRPC message
+     * @param xPath an XPath object used to evaluate XPath expression on
+     * the given XRPC requst message to retrieve parameter values
+     * @param arity number of parameters the called function has
+     * @return values of the parameters
+     * @throws XRPCSenderException If the parameter values could not be
+     * found, because the execution of XPath expression failed
      */
     public static String[] getSingleItemParamValues(String request,
                                                     String soapPrefix,
                                                     String xrpcPrefix,
                                                     XPath xPath,
                                                     int arity)
-        throws XRPCException
+        throws XRPCSenderException
     {
-
         String[] values = new String[arity];
         int j = 1;
 
@@ -398,11 +603,25 @@ public class XRPCMessage {
         return values;
     }
 
-    /* Evaluate 'xPathExpr' on 'xmlStr' using 'xPath' into a NodeSet,
-     * which should contain only *one* node, then return all
-     * attributes of the resulting node in a NamedNodeMap.
+    /**
+     * Finds all attribute nodes belonging to a particular node in an
+     * XML string.
+     * This function first evaluates <code>xPathExpr</code> on
+     * <code>xmlStr</code> using <code>xPath</code> into a
+     * <code>NodeSet</code>, which should contain only <b>one</b> node,
+     * then returns all attributes of the resulting node in a
+     * <code>NamedNodeMap</code>.
      *
-     * Return a NamedNodeMap
+     * @param xPath an XPath object, which is used to execute the XPath
+     * expression <code>xPathExpr</code>
+     * @param xmlStr the XML data as a <code>String</code> to work on
+     * @param xPathExpr the XPath expression that will be evaluated
+     * @return A <code>NamedNodeMap</code> that contains all attribute
+     * nodes of the node that is returned by evaluating the given
+     * <code>XPath</code> expression <code>xPathExpr</code> on the given
+     * XML data <code>xmlStr</code>.
+     * @throws XRPCException If the result of evaluating
+     * <code>xPathExpr</code> is not exactly one node
      */
     public static NamedNodeMap getNodeAttributes(XPath xPath,
                                                  String xmlStr,
@@ -427,12 +646,28 @@ public class XRPCMessage {
         return nodeList.item(0).getAttributes();
     }
 
-    /* Evaluate 'xPathExpr' on 'xmlStr' using 'xPath' into a NodeSet,
-     * then retrieve the value of the attribute 'attrName' of each node
-     * in the NodeSet.  With this function, one can, e.g., retrieve the
-     * values of the ID attribute of all 'person' nodes.
+    /**
+     * Finds values of the same attribute with name
+     * <code>attrName</code> in all nodes selected by the XPath
+     * expression <code>xPathExpr</code>.
+     * This function first evaluates <code>xPathExpr</code> on
+     * <code>xmlStr</code> using <code>xPath</code> into a
+     * <code>NodeSet</code>, which can contain one or more nodes, then
+     * returns all values of the attribute <code>attrName</code> of the
+     * resulting nodes in the <code>NodeSet</code>.
      *
-     * Return a String[] with the values of the attribute 'attrName'
+     * @param xPath an XPath object, which is used to execute the XPath
+     * expression <code>xPathExpr</code>
+     * @param xmlStr the XML data as a <code>String</code> to work on
+     * @param xPathExpr the XPath expression that will be evaluated
+     * @param attrName the name of the attribute, which values should be
+     * retrieved.
+     * @return A <code>NamedNodeMap</code> that contains all attribute
+     * nodes of the node that is returned by evaluating the given
+     * <code>XPath</code> expression <code>xPathExpr</code> on the given
+     * XML data <code>xmlStr</code>.
+     * @throws XPathExpressionException If the evaluating of
+     * <code>xPathExpr</code> failed
      */
     public static String[] getNodeListAttribute(XPath xPath,
                                                 String xmlStr,
