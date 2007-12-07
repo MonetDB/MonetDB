@@ -85,7 +85,7 @@ if test "x$enable_xrpc" != xno; then
 		if test "x$enable_xrpc" = xyes; then
 			AC_MSG_ERROR([MonetDB XRPC requires ant and Java >= $req_java_ver_min.])
 		else
-			AC_MSG_ERROR([Cannot build MonetDB XRPC as it requires ant and Java >= $req_java_ver_min.])
+			AC_MSG_WARN([Cannot build MonetDB XRPC as it requires ant and Java >= $req_java_ver_min.])
 		fi
 	else
 		have_java_xrpc=yes
