@@ -2376,7 +2376,7 @@ PROC movedata(bat[void,bat] ws, oid cont, oid from, int size, int delta): void
         if (rid_nid_update.exist(from_rid)) {
           from_nid := rid_nid_update.find(from_rid);
         } else {
-          from_nid := pre_nid.find(swizzle(from_rid, map_pid_update));
+          from_nid := pre_nid.find(swizzle(from_rid, map_pid));
         }
       } else {
         from_nid := rid_nid.find(from_rid);
@@ -2413,7 +2413,7 @@ PROC movedata(bat[void,bat] ws, oid cont, oid from, int size, int delta): void
     # now figure out which ancestors *end* at the hole
     var ancestors_end := [oid]([+]([lng](ancestors_newpre), ancestors_size));
     # select those that end in the data being moved
-    var cands := ancestors_end.uselect(from_rid, last);
+    var cands := ancestors_end.uselect(swizzle(from_rid, map_pid_update), swizzle(last, map_pid_update));
     if (cands.count() > 0) {
       var new_size := [+](cands.mirror().join(ancestors_size), delta);
       var old_page := ancestors_isnewpage.uselect(false);
@@ -2428,7 +2428,7 @@ PROC movedata(bat[void,bat] ws, oid cont, oid from, int size, int delta): void
       ancestor_nid.insert(cands.project(cont).reverse().join(ancestors_nid));
     }
     # select those that end in the hole being overwritten
-    var cands := ancestors_end.uselect(holefirst, holelast);
+    var cands := ancestors_end.uselect(swizzle(holefirst, map_pid_update), swizzle(holelast, map_pid_update));
     if (cands.count() > 0) {
       # clamp to edge
       var new_size := [int](cands.mirror().join(ancestors_newrid)); # not really, yet
@@ -3675,11 +3675,11 @@ PROC do_update_insert(bat[void, bat] ws, bat[void,lng] insert_update, bat[void,o
               } else {
                 var cpend_rid := oid((lng(cpstart_rid) + cpsize) - 1);
                 extend_protect(ws, doccont);
-                rid_size_data := rid_size.reverse().select(cpstart_rid, cpend_rid).reverse();
-                rid_level_data := rid_level.reverse().select(cpstart_rid, cpend_rid).reverse();
-                rid_kind_data := rid_kind.reverse().select(cpstart_rid, cpend_rid).reverse();
-                rid_prop_data := rid_prop.reverse().select(cpstart_rid, cpend_rid).reverse();
-                rid_nid_data := rid_nid.reverse().select(cpstart_rid, cpend_rid).reverse();
+                rid_size_data := rid_size.reverse().select(cpstart_rid, cpend_rid).reverse().copy();
+                rid_level_data := rid_level.reverse().select(cpstart_rid, cpend_rid).reverse().copy();
+                rid_kind_data := rid_kind.reverse().select(cpstart_rid, cpend_rid).reverse().copy();
+                rid_prop_data := rid_prop.reverse().select(cpstart_rid, cpend_rid).reverse().copy();
+                rid_nid_data := rid_nid.reverse().select(cpstart_rid, cpend_rid).reverse().copy();
                 extend_unprotect(ws, doccont);
                 # nodes on a new page have already been added to modified_nid table
               }
