@@ -2576,10 +2576,10 @@ if os.name == "nt":
     OS    = "Windows"
     RELEASE = "5.0"
     r = re.compile('^Microsoft Windows (.*)\[Version ([0-9]+\.[0-9]+)([^\[0-9].*)\]$')
-    proc = subprocess.Popen('ver', stdin = subprocess.PIPE, stdout = subprocess.PIPE, universal_newlines = True)
+    proc = subprocess.Popen('cmd /c ver', stdin = subprocess.PIPE, stdout = subprocess.PIPE, universal_newlines = True)
     qOut, qErr = proc.communicate()
     for l in qOut.split('\n'):
-        m = r.match(i.strip())
+        m = r.match(l.strip())
         if m and m.group(2):
             RELEASE = m.group(2)
 else:
