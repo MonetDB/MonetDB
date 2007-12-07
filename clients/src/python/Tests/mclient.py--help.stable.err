@@ -32,6 +32,8 @@ Options are:
 	database (default: "")
 --mapi_trace
 	mapi_trace
+--encoding encoding
+	character encoding
 
 # 15:14:07 >  
 # 15:14:07 >  Done.
