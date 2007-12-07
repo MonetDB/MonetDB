@@ -313,8 +313,9 @@ CoreExpr:           pi (CoreExpr, CoreExpr)                     =  47 (10);
 TagName:            tag                                         =  48 (10);
 TagName:            CoreExpr                                    =  49 (10);
                                                                      
-CoreExpr:           apply (FunctionArgs)                        =  50 (10);
-CoreExpr:           apply (arg (CoreExpr,                                
+CoreExpr:           FunExpr                                     =  79 (10);
+FunExpr:            apply (FunctionArgs)                        =  50 (10);
+FunExpr:            apply (arg (CoreExpr,                                
                                 arg (CoreExpr,                           
                                      arg (CoreExpr,                      
                                           FunctionArgs))))      =  51 (10);
@@ -360,7 +361,7 @@ FunParam:           param (SequenceType, CoreExpr)              =  76 (10);
 CoreExpr:           recursion (var, seed (CoreExpr, CoreExpr))  =  77 (10);
 
 /* Pathfinder extension: XRPC */
-CoreExpr:           xrpc (CoreExpr, CoreExpr)                   =  78 (10);
+CoreExpr:           xrpc (CoreExpr, FunExpr)                    =  78 (10);
 
 %%
 

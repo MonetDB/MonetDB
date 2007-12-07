@@ -324,13 +324,14 @@ CoreExpr:           pi (CoreExpr, CoreExpr)                     =   82(10);
 TagName:            tag                                         =   83(10);
 TagName:            CoreExpr                                    =   84(10);
                                                                      
-CoreExpr:           apply (FunctionArgs)                        =   85(10);
-CoreExpr:           apply (arg (CoreExpr, nil))                 =  25 (10);
-CoreExpr:           apply (arg (CoreExpr, arg (CoreExpr, nil))) =  26 (10);
+CoreExpr:           FunExpr                                     =   85(10);
+FunExpr:            apply (FunctionArgs)                        =   86(10);
+FunExpr:            apply (arg (CoreExpr, nil))                 =  25 (10);
+FunExpr:            apply (arg (CoreExpr, arg (CoreExpr, nil))) =  26 (10);
 
-FunctionArgs:       arg (CoreExpr, FunctionArgs)                =   86(10);
-FunctionArgs:       arg (SequenceTypeCast, FunctionArgs)        =   87(10);
-FunctionArgs:       nil                                         =   88(10);
+FunctionArgs:       arg (CoreExpr, FunctionArgs)                =   87(10);
+FunctionArgs:       arg (SequenceTypeCast, FunctionArgs)        =   88(10);
+FunctionArgs:       nil                                         =   89(10);
                                                                      
 CoreExpr:           ordered (CoreExpr)                          =   90(10);
 CoreExpr:           unordered (CoreExpr)                        =   91(10);
@@ -369,7 +370,7 @@ FunParam:           param (SequenceType, var)                   =  114(10);
 CoreExpr:           recursion (var, seed (CoreExpr, CoreExpr))  =  115(10);
 
 /* Pathfinder extension: XRPC */
-CoreExpr:           xrpc (CoreExpr, CoreExpr)                   =  116(10);
+CoreExpr:           xrpc (CoreExpr, FunExpr)                    =  116(10);
 
 %%
 
@@ -490,7 +491,7 @@ reduce (PFcnode_t * p, int goalnt)
                 }
                 break;
 
-            /* OptBindExpr:        let (letbind (var, CoreExpr), OptBindExpr) */
+            /* OptBindExpr:        let (letbind (var, Atom), OptBindExpr) */
             case 10:
                 /*
                  * Unfold atoms (a is an atom)

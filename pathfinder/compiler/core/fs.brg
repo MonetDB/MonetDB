@@ -2890,7 +2890,7 @@ reduce (PFpnode_t * p, int goalnt)
              * Apply ``function conversion rules'' (W3C XQuery 3.1.5).
              * See also helper function function_conversion().
              */
-            PFvar_t      *v        = new_var (NULL);
+            PFcnode_t    *dummy = nil ();
             PFfun_t      *fun;
             PFty_t        expected;
             int  param_num;
@@ -2900,9 +2900,10 @@ reduce (PFpnode_t * p, int goalnt)
             /* translate function argument */
             reduce (kids[0], nts[0]);
 
-            /* build up argument list */
+            /* build up argument list -- fill in a dummy placeholder
+               which will be replaced at the end by the real content */
             *(PFcnode_t **) PFarray_top (args)
-                = arg (var (v), *(PFcnode_t **) PFarray_top (args));
+                = arg (dummy, *(PFcnode_t **) PFarray_top (args));
 
             /* translate other arguments */
             reduce (kids[1], nts[1]);
@@ -2973,19 +2974,15 @@ reduce (PFpnode_t * p, int goalnt)
             if (! PFqname_eq (fun->qname, PFqname (PFns_fn, "concat")))
                 implicit = function (PFqname (PFns_fn, "string"));
 
-            if (implicit) {
-                C(p) = flwr (let (letbind (var (v),
-                                           APPLY (implicit, converted)),
-                                  nil ()),
-                             C(R(p)));
-            }
-            else {
-                /* construct return value */
-                C(p) = flwr (let (letbind (var (v), converted),
-                                  nil ()),
-                             C(R(p)));
-            }
+            /* replace the dummy placeholder in the list of function
+               arguments by the real input */
+            if (implicit)
+                *dummy = *(APPLY (implicit, converted));
+            else
+                *dummy = *(converted); 
 
+            /* propagate the complete function call */
+            C(p) = C(R(p));
         } break;
 
         /* OrderedExpr:            ordered (Expr) */
