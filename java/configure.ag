@@ -95,6 +95,10 @@ AM_CONDITIONAL(HAVE_JAVAXRPC,test x$have_java_xrpc != xno)
 
 if test "x${have_java_jdbc}x${have_java_xrpc}" = xnoxno; then
 	AC_MSG_ERROR([Java and Ant are required to build MonetDB Java.])
+else
+	# Make sure that HAVE_JAVA is TRUE if at least one of HAVE_JAVAJDBC and HAVE_JAVAXRPC is TRUE,
+	# i.e., even in case the test for Java/XRPC failed, setting HAVE_JAVA to FALSE.
+	AM_CONDITIONAL(HAVE_JAVA,true)
 fi
 
 AM_MONETDB_UTILS()	# for buildtools
