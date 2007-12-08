@@ -95,6 +95,9 @@ gdk_export hash_t HASHlist(Hash *h, size_t i);
 /* XXX return size_t-sized value for 8-byte oid? */
 #define hash_lng(H,V)         ((hash_t) mix_int((unsigned int) (*(lng *)(V) ^ (*(lng *)(V) >> 32))) & (H)->mask)
 
+#define hash_flt(H,V)         hash_int(H,V)
+#define hash_dbl(H,V)         hash_lng(H,V)
+
 
 @= hashfnd
 #define HASHfnd_@1(x,y,z)	{					\
@@ -301,24 +304,27 @@ HASHnew(Heap *hp, int tpe, size_t size, hash_t mask)
 }
 
 @= starthash
-	for (; r < p; r++) {
-		ptr v = BUN@2(bi, r);
-		hash_t c = hash_@1(h, v);
+	{
+		@1 *v = (@1*)BUNhloc(bi, 0);
+		for (; r < p; r++) {
+			hash_t c = hash_@1(h, v+r);
 
-		if (h->hash[c] == HASH_MAX && nslots-- == 0) {
-			break; /* mask too full */
+			if (h->hash[c] == HASH_MAX && nslots-- == 0) 
+				break; /* mask too full */
+			h->link[r] = h->hash[c];
+			h->hash[c] = (hash_t)r;
 		}
-		h->link[i] = h->hash[c];
-		h->hash[c] = (hash_t) i++;
 	}
 	break;
 @= finishhash
-	for (; p < q; p++) {
-		ptr v = BUN@2(bi, p);
-		hash_t c = hash_@1(h, v);
-
-		h->link[i] = h->hash[c];
-		h->hash[c] = (hash_t) i++;
+	{
+		@1 *v = (@1*)BUNhloc(bi, 0);
+		for (; p < q; p++) {
+			hash_t c = hash_@1(h, v+p);
+	
+			h->link[p] = h->hash[c];
+			h->hash[c] = (hash_t)p;
+		}
 	}
 	break;
 @-
@@ -332,7 +338,7 @@ BAThash(BAT *b, size_t masksize)
 	gdk_set_lock(GDKhashLock(ABS(b->batCacheid) & BBP_BATMASK), "BAThash");
 	if (b->H->hash == NULL) {
 		unsigned int tpe = ATOMstorage(b->htype);
-		size_t i, cnt = BATcount(b);
+		size_t cnt = BATcount(b);
 		hash_t mask;
 		BUN p = BUNfirst(b), q = BUNlast(b), r;
 		Hash *h = NULL;
@@ -350,11 +356,16 @@ BAThash(BAT *b, size_t masksize)
 
 			tpe = TYPE_void;
 		}
-		/* determine hash mask size */
+		/* determine hash mask size 
+		   p = first; then no dynamic scheme */
 		if (masksize > 0) {
-			mask = HASHmask(masksize);	/* p = first; so no dynamic scheme */
+			mask = HASHmask(masksize);	
+		} else if (ATOMsize(ATOMstorage(tpe)) == 1) { 
+			mask = (1<<8); 			
+		} else if (ATOMsize(ATOMstorage(tpe)) == 2) { 
+			mask = (1<<12);
 		} else if (b->hkey) {
-			mask = HASHmask(cnt);	/* p = first; so no dynamic scheme */
+			mask = HASHmask(cnt);	
 		} else {
 			/* dynamic hash: we start with HASHmask(cnt/64); if there are too many collisions
 			 * we try HASHmask(cnt/16), then HASHmask(cnt/4), and finally HASHmask(cnt).  */
@@ -363,12 +374,13 @@ BAThash(BAT *b, size_t masksize)
 			if (p > q)
 				p = q;
 		}
+
 		if (mask < 1024)
 			mask = 1024;
 		do {
-			size_t nslots = mask >> 3;	/* 1/2 full is too full */
+			size_t nslots = mask >> 3;	/* 1/8 full is too full */
 
-			i = r = BUNfirst(b);
+			r = BUNfirst(b);
 			if (hp) {
 				HEAPfree(hp);
 				GDKfree(hp);
@@ -391,28 +403,38 @@ BAThash(BAT *b, size_t masksize)
 			switch (tpe) {
 #ifndef NOEXPAND_CHR
 			case TYPE_chr:
-				@:starthash(chr,hloc)@
+				@:starthash(chr)@
 #endif
 #ifndef NOEXPAND_BTE
 			case TYPE_bte:
-				@:starthash(bte,hloc)@
+				@:starthash(bte)@
 #endif
 #ifndef NOEXPAND_SHT
 			case TYPE_sht:
-				@:starthash(sht,hloc)@
+				@:starthash(sht)@
 #endif
 #if !defined(NOEXPAND_INT) || !defined(NOEXPAND_FLT)
 			case TYPE_int:
 			case TYPE_flt:
-				@:starthash(int,hloc)@
+				@:starthash(int)@
 #endif
 #if !defined(NOEXPAND_DBL) || !defined(NOEXPAND_LNG)
 			case TYPE_dbl:
 			case TYPE_lng:
-				@:starthash(lng,hloc)@
+				@:starthash(lng)@
 #endif
 			default:
-				@:starthash(any,head)@
+				for (; r < p; r++) {
+					ptr v = BUNhead(bi, r);
+					hash_t c = hash_any(h, v);
+
+					if (h->hash[c] == HASH_MAX && 
+					    nslots-- == 0) 
+						break; /* mask too full */
+					h->link[r] = h->hash[c];
+					h->hash[c] = (hash_t)r;
+				}
+	break;
 			}
 		} while (r < p && mask < cnt && (mask <<= 2));
 
@@ -421,28 +443,35 @@ BAThash(BAT *b, size_t masksize)
 		switch (tpe) {
 #ifndef NOEXPAND_CHR
 		case TYPE_chr:
-			@:finishhash(chr,hloc)@
+			@:finishhash(chr)@
 #endif
 #ifndef NOEXPAND_BTE
 		case TYPE_bte:
-			@:finishhash(bte,hloc)@
+			@:finishhash(bte)@
 #endif
 #ifndef NOEXPAND_SHT
 		case TYPE_sht:
-			@:finishhash(sht,hloc)@
+			@:finishhash(sht)@
 #endif
 #if !defined(NOEXPAND_INT) || !defined(NOEXPAND_FLT)
 		case TYPE_int:
 		case TYPE_flt:
-			@:finishhash(int,hloc)@
+			@:finishhash(int)@
 #endif
 #if !defined(NOEXPAND_DBL) || !defined(NOEXPAND_LNG)
 		case TYPE_dbl:
 		case TYPE_lng:
-			@:finishhash(lng,hloc)@
+			@:finishhash(lng)@
 #endif
 		default:
-			@:finishhash(any,head)@
+			for (; p < q; p++) {
+				ptr v = BUNhead(bi, p);
+				hash_t c = hash_any(h, v);
+
+				h->link[p] = h->hash[c];
+				h->hash[c] = (hash_t)p;
+			}
+			break;
 		}
 		b->H->hash = h;
 	}
