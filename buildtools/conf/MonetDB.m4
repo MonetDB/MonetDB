@@ -242,7 +242,7 @@ AC_ARG_WITH(monetdb,
 if test "x$have_monetdb" != xno; then
   case "$have_monetdb" in
   yes|auto) MPATH="${MONETDB_PREFIX+$MONETDB_PREFIX/bin:}$PATH:$prefix/bin";;
-  included) MPATH="";;
+  included) MPATH="/hopefully-not-there";;
   *) MPATH="$withval/bin:$PATH";;
   esac
   AC_PATH_PROG(MONETDB_CONFIG,monetdb-config,,$MPATH)
@@ -314,7 +314,7 @@ AC_ARG_WITH(clients,
 if test "x$have_clients" != xno; then
   case "$have_clients" in
   yes|auto) MPATH="${CLIENTS_PREFIX+$CLIENTS_PREFIX/bin:}$PATH:$prefix/bin";;
-  included) MPATH="";;
+  included) MPATH="/hopefully-not-there";;
   *) MPATH="$withval/bin:$PATH";;
   esac
   AC_PATH_PROG(CLIENTS_CONFIG,monetdb-clients-config,,$MPATH)
@@ -389,7 +389,7 @@ AC_ARG_WITH(monetdb4,
 if test "x$have_monetdb4" != xno; then
   case "$have_monetdb4" in
   yes|auto) MPATH="${MONETDB4_PREFIX+$MONETDB4_PREFIX/bin:}$PATH:$prefix/bin";;
-  included) MPATH="";;
+  included) MPATH="/hopefully-not-there";;
   *) MPATH="$withval/bin:$PATH";;
   esac
   AC_PATH_PROG(MONETDB4_CONFIG,monetdb4-config,,$MPATH)
@@ -477,7 +477,7 @@ AC_ARG_WITH(monetdb5,
 if test "x$have_monetdb5" != xno; then
   case "$have_monetdb5" in
   yes|auto) MPATH="${MONETDB5_PREFIX+$MONETDB5_PREFIX/bin:}$PATH:$prefix/bin";;
-  included) MPATH="";;
+  included) MPATH="/hopefully-not-there";;
   *) MPATH="$withval/bin:$PATH";;
   esac
   AC_PATH_PROG(MONETDB5_CONFIG,monetdb5-config,,$MPATH)
