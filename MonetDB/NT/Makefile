@@ -19,7 +19,7 @@ check: "$(SRCDIR)\Makefile.msc"
 	call RunMtest.bat
 
 install: targetdirs monetdb_winconfig.h monetdb_config.h winrules.msc all
-	$(INSTALL) monetdb_winconfig.h "$(includedir)"
+	$(INSTALL) monetdb_winconfig.h "$(includedir)\MonetDB"
 	$(INSTALL) monetdb_config.h "$(includedir)"
 	$(INSTALL) winrules.msc "$(pkgdatadir)"
 	$(MAKE) /nologo /f "$(SRCDIR)\Makefile.msc" "prefix=$(prefix)" "bits=$(bits)" install

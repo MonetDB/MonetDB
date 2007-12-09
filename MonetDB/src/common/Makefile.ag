@@ -19,20 +19,25 @@
 MTSAFE
 
 EXTRA_DIST = monet_getopt.h getopt.c getopt1.c memcmp.c stream_socket.h
-EXTRA_HEADERS = stream_socket.h
 
 lib_mutils = { 
 	NAME = mutils
 	SOURCES = monet_utils.mx monet_options.mx monet_getopt.h
-	HEADERS = h
 }
 
 INCLUDES = $(Z_CFLAGS) $(BZ_CFLAGS) $(OPENSSL_INCS) $(CURL_INCS) $(ICONV_CFLAGS)
 
 lib_stream  =  {
 	SOURCES = stream.mx dummy_gdk_utils.mx
-	HEADERS = h
 	LIBS = libmutils $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) $(OPENSSL_LIBS) $(CURL_LIBS) $(ICONV_LIBS)
+}
+
+headers_common = {
+	DIR = includedir/MonetDB/common
+	HEADERS = h
+	SOURCES = stream_socket.h \
+	          monet_utils.mx monet_options.mx monet_getopt.h \
+	          stream.mx dummy_gdk_utils.mx
 }
 
 headers_py = {
