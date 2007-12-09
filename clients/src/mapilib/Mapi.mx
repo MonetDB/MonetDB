@@ -436,7 +436,7 @@ Return the number of fields in the current row.
 If possible, return the number of rows in the last select call.  A -1
 is returned if this information is not available.
 
-@item lng mapi_get_last_id(Mapi mid)
+@item mapi_int64 mapi_get_last_id(Mapi mid)
 
 If possible, return the last inserted id of auto_increment (or alike) column.  
 A -1 is returned if this information is not available. We restrict this to
@@ -926,7 +926,7 @@ struct MapiResultSet {
 	int tableid;		/* SQL id of current result set */
 	int querytype;		/* type of SQL query */
 	int row_count;
-	lng last_id;
+	mapi_int64 last_id;
 	int fieldcnt;
 	int maxfields;
 	char *errorstr;		/* error from server */
@@ -1020,6 +1020,16 @@ extern "C" {
 #endif
 #else
 #define mapi_export extern
+#endif
+
+#ifdef HAVE_LONG_LONG
+typedef unsigned long long mapi_uint64;
+typedef long long mapi_int64;
+#else
+#ifdef HAVE___INT64
+typedef unsigned __int64 mapi_uint64;
+typedef __int64 mapi_int64;
+#endif
 #endif
 
 /* three structures used for communicating date/time information */
@@ -1116,7 +1126,7 @@ mapi_export int mapi_fetch_row(MapiHdl hdl);
 mapi_export int mapi_fetch_all_rows(MapiHdl hdl);
 mapi_export int mapi_get_field_count(MapiHdl hdl);
 mapi_export int mapi_get_row_count(MapiHdl hdl);
-mapi_export lng mapi_get_last_id(MapiHdl hdl);
+mapi_export mapi_int64 mapi_get_last_id(MapiHdl hdl);
 mapi_export int mapi_rows_affected(MapiHdl hdl);
 
 mapi_export char *mapi_fetch_field(MapiHdl hdl, int fnr);
@@ -1169,16 +1179,6 @@ static SSL_CTX *mapi_ssl_ctx = 0;
 #endif
 
 static int mapi_initialized = 0;
-
-#ifdef HAVE_LONG_LONG
-typedef unsigned long long mapi_uint64;
-typedef long long mapi_int64;
-#else
-#ifdef HAVE___INT64
-typedef unsigned __int64 mapi_uint64;
-typedef __int64 mapi_int64;
-#endif
-#endif
 
 #define check_stream(mid,s,msg,f,e)					\
 	do {								\
@@ -4780,7 +4780,7 @@ mapi_get_row_count(MapiHdl hdl)
 	return hdl->result ? hdl->result->row_count : 0;
 }
 
-lng
+mapi_int64
 mapi_get_last_id(MapiHdl hdl)
 {
 	mapi_hdl_check(hdl, "mapi_get_last_id");
