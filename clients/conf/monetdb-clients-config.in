@@ -39,6 +39,7 @@ pkgincludedir="${includedir}/MonetDB"
 perllibdir="${prefix}/@PERL_LIBDIR@"
 pythonlibdir="${prefix}/@PYTHON_LIBDIR@"
 phpextensiondir="${prefix}/@PHP_EXTENSIONDIR@"
+rubylibdir="${prefix}/@RUBY_LIBDIR@"
 
 usage()
 {
@@ -58,7 +59,7 @@ Install directories ${pkg} was configured to
   --prefix  --exec-prefix  --bindir  --libexecdir  --datarootdir
   --datadir  --sysconfdir  --localstatedir  --libdir  --infodir
   --mandir  --includedir --pkgdatadir --pkglibdir --pkgincludedir
-  --perllibdir --pythonlibdir --phpextensiondir
+  --perllibdir --pythonlibdir --phpextensiondir --rubylibdir
 
 EOF
 
