@@ -988,12 +988,12 @@ mvc_export_affrows(mvc *m, stream *s, lng val, str w)
 	 */
 	if (!s) return 0;
 	
-#ifdef NDEBUG
-	(void) m; /* pacify compiler in case asserts are disabled */
-#endif
 	assert(m->type == Q_UPDATE);
-	if (stream_write(s, "&2 ", 3, 1) != 1 || !mvc_send_lng(s, val) ||
-			stream_write(s, "\n", 1, 1) != 1)
+	if (stream_write(s, "&2 ", 3, 1) != 1 || 
+	   !mvc_send_lng(s, val) ||
+	    stream_write(s, " ", 1, 1) != 1 ||
+	   !mvc_send_lng(s, m->last_id) ||
+   	    stream_write(s, "\n", 1, 1) != 1)
 		return -1;
 	if (mvc_export_warning(s, w) != 1)
 		return -1;
