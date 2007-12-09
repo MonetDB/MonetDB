@@ -77,7 +77,7 @@ import nl.cwi.monetdb.mcl.parser.*;
  * @version 3.0
  */
 public final class MapiSocket {
-	/** The TCP Socket to Mserver */
+	/** The TCP Socket to mserver */
 	private Socket con;
 	/** Stream from the Socket for reading */
 	private InputStream fromMonet;
@@ -87,6 +87,8 @@ public final class MapiSocket {
 	private BufferedMCLReader reader;
 	/** MCLWriter on the OutputStream */
 	private BufferedMCLWriter writer;
+	/** protocol version of the connection */
+	private int version;
 
 	/** The database to connect to */
 	private String database = null;
@@ -104,7 +106,7 @@ public final class MapiSocket {
 	private FileWriter log;
 
 	/** The blocksize (hardcoded in compliance with stream.mx) */
-	public final static int BLOCK     = 8 * 1024 - 2;
+	public final static int BLOCK = 8 * 1024 - 2;
 
 	/** A buffer which holds the blocks read */
 	private StringBuffer readBuffer;
@@ -321,7 +323,6 @@ public final class MapiSocket {
 			String database,
 			String hash
 	) throws MCLParseException, MCLException, IOException {
-		int version = 0;
 		String response;
 
 		// parse the challenge string, split it on ':'
@@ -342,6 +343,9 @@ public final class MapiSocket {
 		switch (version) {
 			default:
 				throw new MCLException("Unsupported protocol version: " + version);
+			case 9:
+				// proto 9 is like 8, but has extensions in the response
+				// headers
 			case 8:
 				// proto 7 (finally) used the challenge and works with a
 				// password hash.  The supported implementations come
@@ -465,6 +469,17 @@ public final class MapiSocket {
 	 */
 	public BufferedMCLWriter getWriter() {
 		return(writer);
+	}
+
+	/**
+	 * Returns the mapi protocol version used by this socket.  The
+	 * protocol version depends on the server being used.  Users of the
+	 * MapiSocket should check this version to act appropriately.
+	 *
+	 * @return the mapi protocol version
+	 */
+	public int getProtocolVersion() {
+		return(version);
 	}
 
 	/**
