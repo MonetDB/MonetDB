@@ -20,5 +20,8 @@ CREATE TABLE test_copyinto (
 copy 1 records INTO test_copyinto FROM stdin USING DELIMITERS '|','\n';
 2413949|8117533|1234 ANOTHER DISK||ABCDE|TT|23456|7860|" S||LAST|-|N
 
+copy 1 records INTO test_copyinto FROM stdin USING DELIMITERS '|','\n';
+2413949|8117533|1234 ANOTHER DISK||ABCDE|TT|23456|7860|' S||LAST|-|N
+
 select * from test_copyinto;
 drop table test_copyinto;
