@@ -175,6 +175,23 @@ int overlap( MalBlkPtr mb, int lv, int rv)
 	return 1;
 }
 
+int Hoverlap( MalBlkPtr mb, int lv, int rv)
+{
+	VarPtr llb = varGetProp(mb, lv, hlbProp); 
+	VarPtr lub = varGetProp(mb, lv, hubProp); 
+	VarPtr rlb = varGetProp(mb, rv, hlbProp); 
+	VarPtr rub = varGetProp(mb, rv, hubProp); 
+	if (!llb || !rlb) {
+		/* unknown ie overlap */
+		return 1;
+	}
+	if (rub->value.val.lval <= llb->value.val.lval || 
+	    lub->value.val.lval <= rlb->value.val.lval)
+		return 0;
+	return 1;
+}
+
+
 static void
 propagateProp(MalBlkPtr mb, InstrPtr q, int ivar)
 {
@@ -261,33 +278,15 @@ mat_add(mat_t *mat, int mtop, InstrPtr q, mat_type type)
 	return mtop+1;
 }
 
-static void
-mat_reuse(MalBlkPtr mb, InstrPtr p, mat_t *mat, int m, int a1, int a2, int a3)
-{
-	int k;
-	
-	for(k=1; k<mat[m].mi->argc; k++) {
-		InstrPtr q = copyInstruction(p);
-		getArg(q,0) = getArg(mat[m].mi,k);
-
-		if (a1 >= 0)
-			getArg(q,1) = getArg(mat[a1].mi,k);
-		if (a2 >= 0)
-			getArg(q,2) = getArg(mat[a2].mi,k);
-		if (a3 >= 0)
-			getArg(q,3) = getArg(mat[a3].mi,k);
-		pushInstruction(mb,q);
-	}
-	freeInstruction(p);
-}
-
 /* mat_apply1 handles both apply and reduce cases */
 static InstrPtr
-mat_apply1(MalBlkPtr mb, InstrPtr p, mat_t *mat, int m, int var)
+mat_apply1(MalBlkPtr mb, InstrPtr p, mat_t *mat, int m, int var, int reuse)
 {
 	int tpe, k;
 	InstrPtr r = NULL;
 
+	assert(reuse == 0);
+	(void)reuse;
 	if (isaBatType(getVarType(mb,getArg(p,0)))){
 		r = newInstruction(mb, ASSIGNsymbol);
 		setModuleId(r,matRef);
@@ -313,15 +312,27 @@ mat_apply1(MalBlkPtr mb, InstrPtr p, mat_t *mat, int m, int var)
 }
 
 static InstrPtr
-mat_apply2(MalBlkPtr mb, InstrPtr p, mat_t *mat, int a1, int a2, int a3)
+mat_apply2(MalBlkPtr mb, InstrPtr p, mat_t *mat, int a1, int a2, int a3, int reuse)
 {
 	int tpe = getArgType(mb,p,0);
-	int k,j;
+	int k,j,m,n,Am,An;
 	InstrPtr r = newInstruction(mb, ASSIGNsymbol);
-	int m = (a1>=0)?a1:a2;
-	int n = (a3>=0)?a3:a2;
-	int Am = (a1>=0)?1:2;
-	int An = (a3>=0)?3:2;
+
+	if (reuse) {
+		if (a1 == a2) { 
+			a2 = -1;
+			reuse = 2;
+		}
+		if (a1 == a3) {
+			a3 = -1;
+			reuse = 3;
+		}
+	}
+
+	m = (a1>=0)?a1:a2;
+	n = (a3>=0)?a3:a2;
+	Am = (a1>=0)?1:2;
+	An = (a3>=0)?3:2;
 
 	setModuleId(r,matRef);
 	setFunctionId(r,newRef);
@@ -331,13 +342,20 @@ mat_apply2(MalBlkPtr mb, InstrPtr p, mat_t *mat, int a1, int a2, int a3)
 		int vm = getArg(mat[m].mi, j);
 		for(k=1; k<mat[n].mi->argc; k++) {
 			int vn = getArg(mat[n].mi, k);
-			if (overlap(mb, vm, vn)) {
+			if (Hoverlap(mb, vm, vn)) {
 				InstrPtr q = copyInstruction(p);
-				getArg(q,0) = newTmpVariable(mb, tpe);
+				if (!reuse)
+					getArg(q,0) = newTmpVariable(mb, tpe);
+				else
+					getArg(q,0) = vm;
 				getArg(q,Am) = vm;
 				getArg(q,An) = vn;
+				if (reuse) 
+					getArg(q,reuse) = vm;
 				pushInstruction(mb,q);
-				propagateProp(mb, q, vm);
+
+				if (!reuse)
+					propagateProp(mb, q, vm);
 
 				/* add result to mat */
 				r = pushArgument(mb,r,getArg(q,0));
@@ -350,7 +368,7 @@ mat_apply2(MalBlkPtr mb, InstrPtr p, mat_t *mat, int a1, int a2, int a3)
 }
 
 static InstrPtr
-mat_apply3(MalBlkPtr mb, InstrPtr p, mat_t *mat, int a1, int a2, int a3)
+mat_apply3(MalBlkPtr mb, InstrPtr p, mat_t *mat, int a1, int a2, int a3, int reuse)
 {
 	int tpe = getArgType(mb,p,0);
 	int k,j,i;
@@ -364,17 +382,22 @@ mat_apply3(MalBlkPtr mb, InstrPtr p, mat_t *mat, int a1, int a2, int a3)
 		int vi = getArg(mat[a1].mi, i);
 		for(j=1; j<mat[a2].mi->argc; j++) {
 			int vj = getArg(mat[a2].mi, j);
-			if (overlap(mb, vi, vj)) {
+			if (Hoverlap(mb, vi, vj)) {
 				for(k=1; k<mat[a3].mi->argc; k++) {
 					int vk = getArg(mat[a3].mi, k);
-					if (overlap(mb, vi, vk)) {
+					if (Hoverlap(mb, vi, vk)) {
 						InstrPtr q = copyInstruction(p);
-						getArg(q,0) = newTmpVariable(mb, tpe);
+						if (!reuse) 
+							getArg(q,0) = newTmpVariable(mb, tpe);
+						else
+							getArg(q,0) = vi;
+				
 						getArg(q,1) = vi;
 						getArg(q,2) = vj;
 						getArg(q,3) = vk;
 						pushInstruction(mb,q);
-						propagateProp(mb, q, vi);
+						if (!reuse)
+							propagateProp(mb, q, vi);
 	
 						/* add result to mat */
 						r = pushArgument(mb,r,getArg(q,0));
@@ -389,20 +412,21 @@ mat_apply3(MalBlkPtr mb, InstrPtr p, mat_t *mat, int a1, int a2, int a3)
 }
 
 static InstrPtr
-mat_apply(MalBlkPtr mb, InstrPtr p, mat_t *mat, int a1, int a2, int a3) 
+mat_apply(MalBlkPtr mb, InstrPtr p, mat_t *mat, int a1, int a2, int a3, int reuse) 
 {
 	if (a1>=0 && a2<0 && a3<0)
-		return mat_apply1(mb, p, mat, a1, 1);
+		return mat_apply1(mb, p, mat, a1, 1, reuse);
 	if (a1<0 && a2>=0 && a3<0)
-		return mat_apply1(mb, p, mat, a2, 2);
+		return mat_apply1(mb, p, mat, a2, 2, reuse);
 	if (a1<0 && a2<0 && a3>=0)
-		return mat_apply1(mb, p, mat, a3, 3);
+		return mat_apply1(mb, p, mat, a3, 3, reuse);
 
-	if (a1<0 || a2<0 || a3<0)
-		return mat_apply2(mb, p, mat, a1, a2, a3);
+	if (a1<0 || a2<0 || a3<0 || (a1 == a2) || (a1 == a3))
+		return mat_apply2(mb, p, mat, a1, a2, a3, reuse);
 
-	return mat_apply3(mb, p, mat, a1, a2, a3);
+	return mat_apply3(mb, p, mat, a1, a2, a3, reuse);
 }
+
 
 /* join 2 mats, also handles the case that mat[m].mm is set, ie that we
 have the extend available */
@@ -733,7 +757,7 @@ mat_group_derive(InstrPtr *exti, MalBlkPtr mb, InstrPtr p, mat_t *mat, int ext, 
 	/* we need overlapping ranges */
 	for(i=1; i<mat[ext].mi->argc; i++) {
 	    for(k=1; k<mat[attr].mi->argc; k++) {
- 	   	if (overlap(mb, getArg(mat[ext].mi, i), getArg(mat[attr].mi, k))){
+ 	   	if (Hoverlap(mb, getArg(mat[ext].mi, i), getArg(mat[attr].mi, k))){
 			InstrPtr q = copyInstruction(p);
 			getArg(q,0) = newTmpVariable(mb, tp0);
 			getArg(q,1) = newTmpVariable(mb, tp1);
@@ -952,8 +976,9 @@ statements can allways be done by iterating over the parts.
 				n = isMATalias(getArg(p,1), mat, mtop);
 				o = isMATalias(getArg(p,2), mat, mtop);
 				x = isMATalias(getArg(p,3), mat, mtop);
+				assert(m==n);
 			}
-			mat_reuse(mb, p, mat, m, n, o, x); 
+			mat_apply(mb, p, mat, m, o, x, 1); 
 			actions++;
 			continue;
 		}
@@ -995,7 +1020,7 @@ UNION(mirror().join()).
 		 		n = isMATalias(getArg(p,2), mat, mtop);
 			if (p->argc >= 4)
 		 		o = isMATalias(getArg(p,3), mat, mtop);
-			bc = mat_apply(mb, p, mat, m, n, o);
+			bc = mat_apply(mb, p, mat, m, n, o, 0);
 			mtop = mat_add(mat, mtop, bc, mat_none );
 			actions++;
 			continue;
@@ -1143,7 +1168,7 @@ group them and check for them individually.
 			if (getFunctionId(p) == mirrorRef && 
 	    			mat[m].type == mat_hist) 
 				pack_mirror = 1;
-			if ((r = mat_apply1(mb, p, mat, m, fm)) != NULL)
+			if ((r = mat_apply1(mb, p, mat, m, fm, 0)) != NULL)
 				mtop = mat_add(mat, mtop, r, mat_none);
 			/* packed group should include the mirror statement */
 			if (pack_mirror) {
