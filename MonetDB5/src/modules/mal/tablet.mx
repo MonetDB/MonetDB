@@ -392,7 +392,6 @@ typedef struct Column_t {
 	unsigned int tabs;	/* field size in tab positions */
 	str lbrk, rbrk;		/* column brackets */
 	str nullstr;		/* null representation */
-	int quoted;		/* escape charaters */
 	unsigned int width;	/* actual column width */
 	unsigned int maxwidth;	/* permissible width */
 	int fieldstart;		/* Fixed character field load positions */
@@ -404,7 +403,8 @@ typedef struct Column_t {
 	void *data;
 	int len;
 	int nillen;
-	int ws; 	/* if set we need to skip white space */
+	bit ws; 	/* if set we need to skip white space */
+	bit quote; 	/* if set use this character for string quotes */
 } Column;
 
 @-
@@ -1315,7 +1315,7 @@ insert_line(Tablet * as, char *line, ptr key)
 			line++;
 
 		/* recognize fields starting with a quote */
-		if ( (*line == '\"' || *line == '\'') && 
+		if ( *line == fmt[i].quote && 
 	             (line == s || *(line - 1) != '\\')) {
 			quote = *line;
 			line++;

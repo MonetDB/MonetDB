@@ -266,7 +266,8 @@ typedef struct ascii_io_t {
 	void *data;
 	int len;
 	int nillen;
-	int ws; 	/* if set we need to skip white space */
+	bit ws; 	/* if set we need to skip white space */
+	bit quote; 	/* if set use this character for string quotes */
 } ascii_io;
 
 typedef struct ascii_load_t {
@@ -726,7 +727,7 @@ insert_line(ascii * as, char *line)
 			line++;
 
 		/* recognize fields starting with a quote */
-		if ( (*line == '\"' || *line == '\'') && 
+		if ( *line == fmt[i].quote && 
 	             (line == s || *(line - 1) != '\\')) {
 			quote = *line;
 			line++;
