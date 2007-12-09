@@ -2751,7 +2751,7 @@ varGetPropStr( MalBlkPtr mb, int var )
 			*s++ = ',';
 		if (p->var) {
 			VarPtr v = getVar(mb, p->var);
-			char *op = PropertyOperatorString(p->op); 
+			char *op = PropertyOperatorString((prop_op_t)p->op); 
 	
 			ATOMformat(v->type, VALget(&v->value), &t);
 			switch(v->type) {
