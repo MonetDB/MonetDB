@@ -91,7 +91,7 @@ OPTevaluateImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) stk;
 	(void) pci;
 
-	if( fndArgProperty(mb,mb->stmt[0],0,putName("inline",6)) )
+	if (varGetProp(mb, getArg(mb->stmt[0], 0), inlineProp) != NULL)
 		return 0;
 
 #ifdef DEBUG_OPT_CX
@@ -108,7 +108,7 @@ OPTevaluateImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		for (k=i= first ; i < limit; i++) {
 			p = getInstrPtr(mb,i);
 			j = OPTallConstant(mb,p);
-			if(j && nxt == first) nxt=i;
+			if (j && nxt == first) nxt=i;
 #ifdef DEBUG_OPT_CX
 			stream_printf(GDKout,"Constants:%d\n",j);
 			stream_printf(GDKout,"retc %d var %s\n",p->retc,getVarName(mb,getArg(p,0)));
@@ -141,14 +141,20 @@ a constant itself.
 					GDKfree(msg);
 					mb->stmt[k++]=p;
 				}
-			} else mb->stmt[k++]=p;
+			} else {
+				mb->stmt[k++]=p;
+			}
+			/* make sure we don't have instructions twice */
+			if (k <= i)
+				mb->stmt[i] = NULL;
 		}
-		if( k != mb->stop){
-			mb->stop= k;
+		if( k != mb->stop) {
+			mb->stop = k;
 			setLifespan(mb);	/* the lastUpdate property changes */
-		} else
+		} else {
 			mb->stop= k;
-		first= nxt;
+		}
+		first = nxt;
 	} while( again );
 	clearStack(env);	/* garbage collect */
 	freeStack(env);

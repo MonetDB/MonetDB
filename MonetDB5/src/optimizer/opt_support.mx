@@ -493,6 +493,7 @@ comment "Handle simple replacements";
 #include "mal_function.h"
 #include "mal_scenario.h"
 #include "mal_builder.h"
+#include "mal_properties.h"
 
 /* #define DEBUG_OPT_OPTIMIZER     show partial result */
 
@@ -829,7 +830,7 @@ isUnsafeFunction(InstrPtr q)
 	p= getInstrPtr(q->blk,0);
 	if( p->retc== 0) 
 		return TRUE;
-	return isPropertyDefined( getVar(q->blk,getArg(p,0))->props, unsafeRef);
+	return (varGetProp( q->blk, getArg(p,0), unsafeProp ) != NULL);
 	/* check also arguments for 'unsafe' property */
 }
 

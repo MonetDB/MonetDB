@@ -45,21 +45,21 @@ pattern sql.exportValue(b:any...):void address MDBdummy;	# 0  (exportValue:void)
 #    sql.exportResult(x18,"");
 #end query;
 function sql.query(A0:sht):void;	# 0  (query:void)<-(A0:sht)
-    x1:bat[:oid,:int]{bid=2199,rows=1,notnil=true}  := sql.bind("sys","t","i",0);	# 1 MDBdummy (x1:bat[:oid,:int])<-(_3:str)(_4:str)(_5:str)(_6:int)
-    x6:bat[:oid,:int]{bid=2481,rows=0,notnil=true}  := sql.bind("sys","t","i",1);	# 2 MDBdummy (x6:bat[:oid,:int])<-(_3:str)(_4:str)(_5:str)(_8:int)
-    constraints.emptySet(x6);	# 3 CemptySet (_9:void)<-(x6:bat[:oid,:int])
-    x8:bat[:oid,:int]{bid=2480,rows=0,notnil=true}  := sql.bind("sys","t","i",2);	# 4 MDBdummy (x8:bat[:oid,:int])<-(_3:str)(_4:str)(_5:str)(_11:int)
-    constraints.emptySet(x8);	# 5 CemptySet (_12:void)<-(x8:bat[:oid,:int])
-    x13:bat[:oid,:int]{bid=2201,rows=1,notnil=true}  := sql.bind("sys","t","j",1);	# 6 MDBdummy (x13:bat[:oid,:int])<-(_3:str)(_4:str)(_14:str)(_8:int)
-    x11{rows=1} := algebra.markT(x1,0@0);	# 7 ALGtmark (x11:bat[:oid,:oid])<-(x1:bat[:oid,:int])(_16:oid)
+    x1:bat[:oid,:int]{notnil=true,rows=1,bid=2199}  := sql.bind("sys","t","i",0);	# 1 MDBdummy (x1:bat[:oid,:int])<-(_6:str)(_7:str)(_8:str)(_9:int)
+    x6:bat[:oid,:int]{notnil=true,rows=0,bid=2481}  := sql.bind("sys","t","i",1);	# 2 MDBdummy (x6:bat[:oid,:int])<-(_6:str)(_7:str)(_8:str)(_4:int)
+    constraints.emptySet(x6);	# 3 CemptySet (_12:void)<-(x6:bat[:oid,:int])
+    x8:bat[:oid,:int]{notnil=true,rows=0,bid=2480}  := sql.bind("sys","t","i",2);	# 4 MDBdummy (x8:bat[:oid,:int])<-(_6:str)(_7:str)(_8:str)(_15:int)
+    constraints.emptySet(x8);	# 5 CemptySet (_16:void)<-(x8:bat[:oid,:int])
+    x13:bat[:oid,:int]{notnil=true,rows=1,bid=2201}  := sql.bind("sys","t","j",1);	# 6 MDBdummy (x13:bat[:oid,:int])<-(_6:str)(_7:str)(_19:str)(_4:int)
+    x11{rows=1} := algebra.markT(x1,0@0);	# 7 ALGtmark (x11:bat[:oid,:oid])<-(x1:bat[:oid,:int])(_21:oid)
     x12{rows=1} := bat.reverse(x11);	# 8 BKCreverse (x12:bat[:oid,:oid])<-(x11:bat[:oid,:oid])
     x15{rows=1} := algebra.join(x12,x13);	# 9 ALGjoin (x15:bat[:oid,:int])<-(x12:bat[:oid,:oid])(x13:bat[:oid,:int])
     x16{rows=1} := algebra.sortTail(x15);	# 10 ALGtsort (x16:bat[:oid,:int])<-(x15:bat[:oid,:int])
     x17{rows=1} := algebra.join(x12,x1);	# 11 ALGjoin (x17:bat[:oid,:int])<-(x12:bat[:oid,:oid])(x1:bat[:oid,:int])
-    x18 := sql.resultSet(2,1,x16);	# 12 MDBdummy (x18:void)<-(_11:int)(_8:int)(x16:bat[:oid,:int])
-    sql.rsColumn(x18,"sys.t","i","int",32,0,x17);	# 13 MDBdummy (_22:void)<-(x18:void)(_23:str)(_5:str)(_24:str)(_25:int)(_6:int)(x17:bat[:oid,:int])
-    sql.rsColumn(x18,"sys.t","j","int",32,0,x15);	# 14 MDBdummy (_26:void)<-(x18:void)(_23:str)(_14:str)(_24:str)(_25:int)(_6:int)(x15:bat[:oid,:int])
-    sql.exportResult(x18,"");	# 15 MDBdummy (_27:void)<-(x18:void)(_28:str)
+    x18 := sql.resultSet(2,1,x16);	# 12 MDBdummy (x18:void)<-(_15:int)(_4:int)(x16:bat[:oid,:int])
+    sql.rsColumn(x18,"sys.t","i","int",32,0,x17);	# 13 MDBdummy (_27:void)<-(x18:void)(_28:str)(_8:str)(_29:str)(_30:int)(_9:int)(x17:bat[:oid,:int])
+    sql.rsColumn(x18,"sys.t","j","int",32,0,x15);	# 14 MDBdummy (_31:void)<-(x18:void)(_28:str)(_19:str)(_29:str)(_30:int)(_9:int)(x15:bat[:oid,:int])
+    sql.exportResult(x18,"");	# 15 MDBdummy (_32:void)<-(x18:void)(_33:str)
 end query;	# 16  
 #optimizer.partitions("sql","query");
 #mdb.list("sql","query");
@@ -72,24 +72,24 @@ function user.main():void;	# 0  (main:void)
     mdb.list("sql","query");	# 5 MDBlist3 (_8:void)<-(_6:str)(_7:str)
 end main;	# 6  
 function sql.query(A0:sht):void;
-    x1:bat[:oid,:int]{bid=2199,rows=1,notnil=true}  := sql.bind("sys","t","i",0);
-    x6:bat[:oid,:int]{bid=2481,rows=0,notnil=true}  := sql.bind("sys","t","i",1);
-    bpm7:bat[:oid,:int]  := bpm.unfold(x6);
-    bpm.emptySet(bpm7);
-    x8:bat[:oid,:int]{bid=2480,rows=0,notnil=true}  := sql.bind("sys","t","i",2);
-    bpm10:bat[:oid,:int]  := bpm.unfold(x8);
+    x1:bat[:oid,:int]{notnil=true,rows=1,bid=2199}  := sql.bind("sys","t","i",0);
+    x6:bat[:oid,:int]{notnil=true,rows=0,bid=2481}  := sql.bind("sys","t","i",1);
+    bpm10:bat[:oid,:int]  := bpm.unfold(x6);
     bpm.emptySet(bpm10);
-    x13:bat[:oid,:int]{bid=2201,rows=1,notnil=true}  := sql.bind("sys","t","j",1);
-    bpm13:bat[:oid,:int]  := bpm.unfold(x13);
+    x8:bat[:oid,:int]{notnil=true,rows=0,bid=2480}  := sql.bind("sys","t","i",2);
+    bpm13:bat[:oid,:int]  := bpm.unfold(x8);
+    bpm.emptySet(bpm13);
+    x13:bat[:oid,:int]{notnil=true,rows=1,bid=2201}  := sql.bind("sys","t","j",1);
+    bpm17:bat[:oid,:int]  := bpm.unfold(x13);
     x11{rows=1} := algebra.markT(x1,0@0);
     x12{rows=1} := bat.reverse(x11);
-    _35 := bpm.new(:oid,:int);
-barrier x13:bat[:oid,:int]{bid=2201,rows=1,notnil=true}  := bpm.newIterator(bpm13);
+    _40 := bpm.new(:oid,:int);
+barrier x13:bat[:oid,:int]{notnil=true,rows=1,bid=2201}  := bpm.newIterator(bpm17);
     x15{rows=1} := algebra.join(x12,x13);
-    bpm.addPartition(_35,x15);
-    redo x13:bat[:oid,:int]{bid=2201,rows=1,notnil=true}  := bpm.hasMoreElements(bpm13);
-exit x13:bat[:oid,:int]{bid=2201,rows=1,notnil=true} ;
-    x15{rows=1} := bpm.fold(_35);
+    bpm.addPartition(_40,x15);
+    redo x13:bat[:oid,:int]{notnil=true,rows=1,bid=2201}  := bpm.hasMoreElements(bpm17);
+exit x13:bat[:oid,:int]{notnil=true,rows=1,bid=2201} ;
+    x15{rows=1} := bpm.fold(_40);
     x16{rows=1} := algebra.sortTail(x15);
     x17{rows=1} := algebra.join(x12,x1);
     x18 := sql.resultSet(2,1,x16);
@@ -97,14 +97,14 @@ exit x13:bat[:oid,:int]{bid=2201,rows=1,notnil=true} ;
     sql.rsColumn(x18,"sys.t","j","int",32,0,x15);
     sql.exportResult(x18,"");
 catch SQLexception;
-    bpm.garbage(bpm7);
     bpm.garbage(bpm10);
     bpm.garbage(bpm13);
+    bpm.garbage(bpm17);
     raise SQLexception;
 exit SQLexception;
-    bpm.garbage(bpm7);
     bpm.garbage(bpm10);
     bpm.garbage(bpm13);
+    bpm.garbage(bpm17);
 end query;
 
 # 10:36:14 >  

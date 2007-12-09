@@ -79,15 +79,19 @@ comment "Return substring s[offset..offset+count] of a string s[0..n]";
 command +( l:str, r:str) :str 
 address STRConcat
 comment "Concatenate two strings.";
+
 command length( s:str ) :int 
 address STRLength
 comment "Return the length of a string.";
+
 command stringlength( s:str ) :int 
 address STRstringLength
 comment "Return the length of a right trimed string (SQL semantics).";
+
 command nbytes( s:str ) :int 
 address STRBytes
 comment "Return the string length in bytes.";
+
 command chrAt( s:str, index:int) :chr 
 address STRChrAt
 comment "String array lookup operation.";
@@ -191,6 +195,7 @@ address STRsuffix;
 command locate(s1:str,s2:str):int
 address STRlocate
 comment "Locate the start position of a string";
+
 command locate(s1:str,s2:str,start:int)
 address STRlocate2
 comment "Locate the start position of a string";
@@ -198,12 +203,14 @@ comment "Locate the start position of a string";
 command insert(s:str,start:int,l:int,s2:str):str
 address STRinsert
 comment "Insert a string into another";
+
 command replace(s:str,pat:str,s2:str):str
 address STRreplace
 comment "Insert a string into another";
 
 command repeat(s2:str,c:int):str
 address STRrepeat;
+
 command space(l:int):str
 address STRspace;
 

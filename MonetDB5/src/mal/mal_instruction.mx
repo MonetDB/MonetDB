@@ -328,8 +328,10 @@ typedef struct VARRECORD {
 	int tmpindex;		/* temporary variable */
 	short scope;		/* block id where it is declared */
 	short beginLifespan, endLifespan, lastUpdate;	/* for optimizers */
-	PropertySet props;	/* private list of (name,value) pairs */
 	ValRecord value;
+
+	short propc, maxprop;	/* proc count and max number of properties */
+	short prps[];		/* property array */
 } *VarPtr, VarRecord;
 
 /* type check status is kept around to improve type checking efficiency */
@@ -392,7 +394,6 @@ typedef struct PERF {
 typedef struct MALBLK {
 	str binding;		/* related C-function */
 	str help;		/* supportive commentary */
-	PropertySet props;	/* private */
 	struct MALBLK *alternative;
 	int vtop;		/* next free slot */
 	int vsize;		/* size of variable arena */
@@ -400,6 +401,9 @@ typedef struct MALBLK {
 	int stop;		/* next free slot */
 	int ssize;		/* byte size of arena */
 	InstrPtr *stmt;		/* Instruction location */
+	int ptop;		/* next free slot */
+	int psize;		/* byte size of arena */
+	MalProp *prps;		/* property table */
 	int errors;		/* left over errors */
 	int typefixed;		/* no undetermined instruction */
 	int flowfixed;		/* all flow instructions are fixed */
@@ -438,7 +442,6 @@ for separate name space management.
 #define getVarType(M,I)     ((M)->var[I]->type)
 #define getVarGDKType(M,I)      ((M)->var[I]->gdktype)
 #define getVarScope(M,I)   ((M)->var[I]->scope)
-#define getVarProperties(M,I)   ((M)->var[I]->props)
 
 #define isFixed(M,I)        ((M)->var[I]->fixtype)
 #define freezeVarType(M,I) getVar(M,I)->isudftype = 1;
@@ -517,6 +520,12 @@ mal_export int defConstant(MalBlkPtr mb, int type, ValPtr cst);
 mal_export int fndConstant(MalBlkPtr mb, ValPtr cst);
 mal_export int convertConstant(malType type, ValPtr vr);
 
+#define varSetProperty(mb, var, name, opname, cst) \
+	varSetProp(mb, var, PropertyIndex(name), PropertyOperator(opname), cst)
+mal_export void varSetProp(MalBlkPtr mb, int var, int prop, int op, ValPtr cst);
+mal_export str  varGetPropStr( MalBlkPtr mb, int var );
+mal_export VarPtr varGetProp(MalBlkPtr mb, int var, int prop);
+
 mal_export void pushInstruction(MalBlkPtr mb, InstrPtr p);
 mal_export InstrPtr pushArgument(MalBlkPtr mb, InstrPtr p, int varid);
 mal_export InstrPtr setArgument(MalBlkPtr mb, InstrPtr p, int idx, int varid);
@@ -529,7 +538,6 @@ mal_export void setArgType(MalBlkPtr mb, InstrPtr p, int i, int tpe);
 mal_export void setReturnArgument(InstrPtr p, int varid);
 mal_export malType destinationType(MalBlkPtr mb, InstrPtr p);
 mal_export void setPolymorphic(InstrPtr p, int tpe, int force);
-mal_export void setVarProperty(MalBlkPtr mb, int i, str name, str op, ValPtr cst);
 mal_export str fcnClass(InstrPtr p);
 mal_export str fcnDefinition(MalBlkPtr mb, InstrPtr p, str s, int flg);
 mal_export void printInstruction(stream *fd, MalBlkPtr mb, InstrPtr p, int flg);
@@ -640,7 +648,6 @@ newMalBlk(int maxvars, int maxstmts)
 	mb->vsize = maxvars;
 	mb->help = mb->binding = NULL;
 	mb->errors = 0;
-	mb->props = NULL;
 	mb->alternative = NULL;
 	mb->history = NULL;
 	mb->keephistory = 0;
@@ -649,6 +656,8 @@ newMalBlk(int maxvars, int maxstmts)
 	mb->typefixed = 0;
 	mb->flowfixed = 0;
 	mb->profiler = NULL;
+	mb->ptop = mb->psize = 0;
+	mb->prps = NULL;
 	return mb;
 }
 
@@ -672,21 +681,25 @@ freeMalBlk(MalBlkPtr mb)
 	int i;
 
 	for (i = 0; i < mb->ssize; i++) 
-	if( mb->stmt[i]){
-		freeInstruction(mb->stmt[i]);
-		mb->stmt[i] = NULL;
-	}
+		if( mb->stmt[i]){
+			freeInstruction(mb->stmt[i]);
+			mb->stmt[i] = NULL;
+		}
 	mb->stop = 0;
 	for (i = 0; i < mb->vsize; i++)
-	if( mb->var[i]){
-		freeVariable(mb, i);
-		mb->var[i]=0;
-	}
+		if( mb->var[i]){
+			freeVariable(mb, i);
+			mb->var[i]=0;
+		}
 	mb->vtop = 0;
 	GDKfree(mb->stmt);
 	mb->stmt = 0;
 	GDKfree(mb->var);
 	mb->var = 0;
+	if (mb->prps)
+		GDKfree(mb->prps);
+	mb->ptop = mb->psize = 0;
+	mb->prps = NULL;
 
 	if( mb->history)
 		freeMalBlk(mb->history);
@@ -696,9 +709,6 @@ freeMalBlk(MalBlkPtr mb)
 	if (mb->help)
 		GDKfree(mb->help);
 	mb->help = 0;
-	if (mb->props)
-		GDKfree(mb->props);
-	mb->props = NULL;
 	if (mb->profiler)
 		GDKfree(mb->profiler);
 	mb->profiler = NULL;
@@ -718,7 +728,6 @@ copyMalBlk(MalBlkPtr old)
 	mb = (MalBlkPtr) GDKzalloc(sizeof(MalBlkRecord));
 	if (mb == NULL)
 		GDKfatal("newMalBlk:could not get storage\n");
-	mb->props = old->props;
 	mb->alternative = old->alternative;
 	mb->history = NULL;
 	mb->keephistory= old->keephistory;
@@ -753,10 +762,17 @@ copyMalBlk(MalBlkPtr old)
 	mb->typefixed = old->typefixed;
 	mb->flowfixed = old->flowfixed;
 	mb->maxarg= old->maxarg;
-	/* copy the properties as well */
-	if (mb->props)
-		mb->props = cpyPropertySet(old->props);
 	mb->profiler = NULL;
+
+	mb->ptop = mb->psize = 0;
+	mb->prps = NULL;
+	if (old->prps) {
+		mb->prps = (MalProp*) GDKzalloc(old->psize * sizeof(MalProp));
+		mb->psize = old->psize;
+		mb->ptop = old->ptop;
+		for (i=0; i<old->ptop; i++)
+			mb->prps[i] = old->prps[i]; 
+	}
 	return mb;
 }
 
@@ -1321,27 +1337,26 @@ cheap to perform a linear search to a variable or constant.
 	if( mb->vtop >= (1<<15)-2 ){
 		mb->vtop = (1<<15)-2 ;
 		GDKerror("newVariable: too many variables\n");
-	} else
-	if( mb->vtop >= mb->vsize){
+	} else if (mb->vtop >= mb->vsize){
 		VarPtr *new;
-        int s= mb->vtop + MAXVARS;
+		int s= mb->vtop + MAXVARS;
 
 		if (mb->vtop >mb->vsize)
 			GDKfatal("newVariable:variable administration\n");
 
-        new= (VarPtr *) GDKzalloc(s * sizeof(VarPtr));
-        /*printf("generate new variable block %d\n",s);*/
-        if( new== NULL ){
-            mb->errors++;
-            showScriptException(mb,0,MAL,"newMalBlk:no storage left\n");
-            return mb->vtop;
-        }
-        memcpy((char*)new, (char*)mb->var, sizeof(VarPtr) * mb->vtop);
-        GDKfree((str)mb->var);
-        mb->vsize= s;
-        mb->var= new;
-        mb->var[mb->vtop-1]->gdktype= TYPE_void;
-    }
+        	new= (VarPtr *) GDKzalloc(s * sizeof(VarPtr));
+        	/*printf("generate new variable block %d\n",s);*/
+        	if( new== NULL ){
+            		mb->errors++;
+            		showScriptException(mb,0,MAL,"newMalBlk:no storage left\n");
+            		return mb->vtop;
+        	}
+        	memcpy((char*)new, (char*)mb->var, sizeof(VarPtr) * mb->vtop);
+        	GDKfree((str)mb->var);
+        	mb->vsize= s;
+        	mb->var= new;
+        	mb->var[mb->vtop-1]->gdktype= TYPE_void;
+    	}
 @c
 int
 newVariable(MalBlkPtr mb, str name, malType type)
@@ -1364,9 +1379,10 @@ newVariable(MalBlkPtr mb, str name, malType type)
 		}
 	}
 	n = mb->vtop;
-	getVar(mb, n) = (VarPtr) GDKzalloc(sizeof(VarRecord));
+	getVar(mb, n) = (VarPtr) GDKzalloc(sizeof(VarRecord) + 2*MAXARG * sizeof(short));
 	mb->var[n]->name = name;
-	mb->var[n]->props = NULL;
+	mb->var[n]->propc = 0;
+	mb->var[n]->maxprop = 2*MAXARG;
 
 	setVarType(mb, n, type);
 	isConstant(mb, n) = 0;
@@ -1411,10 +1427,9 @@ newTmpVariable(MalBlkPtr mb, malType type)
 	@:makeVarSpace@
 	n = mb->vtop;
 	if (getVar(mb, n) == NULL)
-		getVar(mb, n) = (VarPtr) GDKzalloc(sizeof(VarRecord));
+		getVar(mb, n) = (VarPtr) GDKzalloc(sizeof(VarRecord) + 2*MAXARG * sizeof(short));
 /* already captured by memset
     mb->var[n]->name = 0;
-    mb->var[n]->props = NULL;
     isConstant(mb,n) = 0;
     setVarCleanup(mb,n) = FALSE;
 	getVar(mb,n)->isudftype= 0;
@@ -1422,6 +1437,8 @@ newTmpVariable(MalBlkPtr mb, malType type)
 */
 	getVarTmp(mb, n) = n;
 	setVarType(mb, n, type);
+	mb->var[n]->propc = 0;
+	mb->var[n]->maxprop = 2*MAXARG;
 	mb->vtop++;
 	return n;
 }
@@ -1462,10 +1479,11 @@ delVariable(MalBlkPtr mb, int varid)
 void
 copyVariable(MalBlkPtr dst, MalBlkPtr src, VarPtr v)
 {
+	int i;
 	VarPtr w;
 
 	(void) src;		/* fool the compiler */
-	w = (VarPtr) GDKzalloc(sizeof(VarRecord));
+	w = (VarPtr) GDKzalloc(sizeof(VarRecord) + v->maxprop * sizeof(short));
 	w->name = v->name ? GDKstrdup(v->name) : 0;
 	w->type = v->type;
 	w->gdktype = v->gdktype;
@@ -1477,11 +1495,13 @@ copyVariable(MalBlkPtr dst, MalBlkPtr src, VarPtr v)
 	w->isatypevar = v->isatypevar;
 	w->tmpindex = v->tmpindex;
 	w->scope = v->scope;
+	w->propc = v->propc;
+	w->maxprop = v->maxprop;
+	for (i=0; i<v->propc; i++)
+		w->prps[i] = v->prps[i];
 
 	VALcopy(&w->value, &v->value);
 	dst->var[dst->vtop] = w;
-	if( v->props )
-		w->props = cpyPropertySet(v->props);
 }
 
 @-
@@ -1522,9 +1542,6 @@ clearVariable(MalBlkPtr mb, int varid)
 		GDKfree(v->name);
 	if (v->isaconstant)
 		VALclear(&v->value);
-	if (v->props)
-		freePropertySet(v->props);
-	v->props= NULL;
 	v->name = 0;
 	v->type = 0;
 	v->gdktype = 0;
@@ -1536,8 +1553,7 @@ clearVariable(MalBlkPtr mb, int varid)
 	v->isatypevar = 0;
 	v->tmpindex = 0;
 	v->scope = 0;
-
-	/* the above version is faster memset((char*)v, 0, sizeof(VarRecord)); */
+	v->propc = 0;
 }
 
 void
@@ -2100,24 +2116,6 @@ pushEndInstruction(MalBlkPtr mb)
 	pushInstruction(mb, p);
 }
 
-@-
-Property value setting.
-@c
-void
-setVarProperty(MalBlkPtr mb, int i, str name, str op, ValPtr cst)
-{
-	bit t = TRUE;
-
-	if (getProps(mb,i) == NULL)
-		getProps(mb,i) = newPropertySet();
-
-	if (cst == NULL)
-		setProperty(getProps(mb,i), name, "", TYPE_bit, &t);
-
-	else
-		setProperty(getProps(mb,i), name, op, cst->vtype, VALget(cst));
-}
-
 @+ Reverse programming
 Since MAL programs can be created on the fly by linked-in query
 compilers, or transformed by optimizers, it becomes
@@ -2249,10 +2247,10 @@ beginning of each line.
 
 @= showParam
         tpe= getTypeName(getArgType(mb,p,i));
-		if( flg & LIST_MAL_PROPS ){
-			ps= getProps(mb,getArg(p,i));
-			pstring= propertySet2str(ps);
-		} else pstring= GDKstrdup("");
+	if (flg & LIST_MAL_PROPS)
+		pstring = varGetPropStr(mb, getArg(p,i));
+	else
+		pstring = GDKstrdup("");
         advance(t);
         sprintf(t,"%s:%s%s",getArgName(mb,p,i),tpe,pstring);
         advance(t);
@@ -2271,10 +2269,8 @@ fcnDefinition(MalBlkPtr mb, InstrPtr p, str s, int flg)
 {
 	int i;
 	str t, tpe, pstring;
-	PropertySet ps = 0;
 
-	ps = getProps(mb,getArg(p, 0));
-	pstring = propertySet2str(ps);
+	pstring = varGetPropStr(mb, getArg(p,0));
 	t = s;
 	sprintf(t, "%s%s ", (flg ? "" : "#"), fcnClass(p));
 
@@ -2286,9 +2282,11 @@ fcnDefinition(MalBlkPtr mb, InstrPtr p, str s, int flg)
 	advance(t);
 	if( pstring )
 		sprintf(t, "%s%s(", getFunctionId(p),pstring);
-	else sprintf(t, "%s(", getFunctionId(p));
+	else 
+		sprintf(t, "%s(", getFunctionId(p));
 	for (i = p->retc; i < p->argc; i++) {
-	@:showParam(argc)@}
+		@:showParam(argc)@
+	}
 	advance(t);
 	if (p->varargs & VARARGS)
 		sprintf(t, "...");
@@ -2325,20 +2323,6 @@ fcnDefinition(MalBlkPtr mb, InstrPtr p, str s, int flg)
 #endif
 	return s;
 }
-
-@-
-@= tabulate
-    for(;tab>0;tab--) *t++= ' ';
-    *t= 0;
-    advance(t);
-@-
-Variables and MAL blocks, and instructions can be associated with a
-property list. At least for debugging purposes, the latest known value
-should be displayed.
-@= propertyList
-    {char *tmp= propertySet2str(ps); strcat(t,tmp); GDKfree(tmp);}
-    advance(t);
-@c
 
 str
 operatorName(int i)
@@ -2385,7 +2369,6 @@ instruction2str(MalBlkPtr mb, InstrPtr p, int flg)
 	str s, t, nme;
 	int low, high;
 	char nmebuf[PATHLENGTH];
-	PropertySet ps = 0;
 	str pstring = 0;
 
 	len = 8196;
@@ -2428,12 +2411,19 @@ instruction2str(MalBlkPtr mb, InstrPtr p, int flg)
 			p->barrier == RETURNsymbol || 
 			p->barrier == YIELDsymbol || 
 			p->barrier == RAISEsymbol) {
-			@:tabulate@
+    			for(;tab>0;tab--) 
+				*t++= ' ';
+    			*t= 0;
+    			advance(t);
 		}
 		sprintf(t, "%s ", operatorName(p->barrier));
 		advance(t);
-	} else if (!functionStart(p) && !functionExit(p))
-		@:tabulate@
+	} else if (!functionStart(p) && !functionExit(p)) {
+    		for(;tab>0;tab--) 
+			*t++= ' ';
+    		*t= 0;
+    		advance(t);
+	}
 	switch (p->token<0?-p->token:p->token) {
 	case NOOPsymbol:
 	case FCNcall:
@@ -2442,11 +2432,10 @@ instruction2str(MalBlkPtr mb, InstrPtr p, int flg)
 	case CMDcall:
 	case ASSIGNsymbol:
 		if (p->argc <= 1 && getFunctionId(p) == NULL) {
-			if( flg & LIST_MAL_PROPS ){
-				ps = getProps(mb,getArg(p, 0));
-				pstring = propertySet2str(ps);
-			} else pstring = GDKstrdup("");
-
+			if (flg & LIST_MAL_PROPS)
+				pstring = varGetPropStr(mb, getArg(p, 0));
+			else 
+				pstring = GDKstrdup("");
 			if (getVar(mb, getArg(p, 0))->isudftype) {
 				str tpe = getTypeName(getVarType(mb, getArg(p, 0)));
 
@@ -2469,10 +2458,10 @@ instruction2str(MalBlkPtr mb, InstrPtr p, int flg)
 				*t++ = '(';
 
 			for (i = 0; i < p->retc; i++) {
-				if( flg & LIST_MAL_PROPS ){
-					ps = getProps(mb,getArg(p, i));
-					pstring = propertySet2str(ps);
-				} else pstring= GDKstrdup("");
+				if (flg & LIST_MAL_PROPS)
+					pstring = varGetPropStr(mb, getArg(p, i));
+				else 
+					pstring = GDKstrdup("");
 				if (getVar(mb, getArg(p, i))->isudftype) {
 					str tpe = getTypeName(getVarType(mb, getArg(p, i)));
 
@@ -2695,5 +2684,125 @@ void showMalBlkHistory(MalBlkPtr mb)
 			getModuleId(sig), getFunctionId(sig),j++,msg+3);
 			GDKfree(msg);
 		} 
+}
+
+void
+varSetProp(MalBlkPtr mb, int var, int prop, int op, ValPtr cst)
+{
+	VarPtr v = getVar(mb, var);
+	int i, propid = -1, reset = 0;
+
+	for(i=0; i<v->propc; i++){
+		MalProp *p = mb->prps+v->prps[i];
+
+		if (p->idx == prop) {
+			propid = v->prps[i]; 
+			reset = 1;
+			break;
+		}
+	}
+	if (propid < 0) {
+		if (mb->ptop >= (1<<15)-2 ){
+			mb->ptop = (1<<15)-2;
+			GDKerror("varSetProp: too many properties\n");
+			assert(0);
+		} else if (mb->ptop >= mb->psize){
+        		mb->psize += MAXVARS;
+        		mb->prps = (MalProp*) GDKrealloc(mb->prps, mb->psize * sizeof(MalProp));
+        		if (mb->prps == NULL) {
+            			mb->errors++;
+				assert(0);
+            			showScriptException(mb, 0, MAL, "varSetProp: no storage left\n");
+        		}
+    		}
+		propid = mb->ptop++;
+	}
+
+	mb->prps[propid].var = 0;
+	if (cst != NULL) 
+		mb->prps[propid].var = defConstant(mb, cst->vtype, cst);
+	mb->prps[propid].idx = prop;
+	mb->prps[propid].op = op;
+
+	/* here we need to add the new property to the variable */
+	if (!reset) {
+		assert(v->propc < v->maxprop); /* Hard limit for now */
+		v->prps[v->propc++] = propid;
+	}
+}
+
+str
+varGetPropStr( MalBlkPtr mb, int var )
+{
+	char buf[BUFSIZ], *s = buf;
+	VarPtr v = getVar(mb, var);
+	int i, first = 1;
+
+	if (v->propc == 0)
+		return GDKstrdup("");
+
+	*s++ = '{';
+	for(i=0; i<v->propc; i++){
+		char *t = NULL;
+		MalProp *p = mb->prps+v->prps[i];
+		char *nme = PropertyName(p->idx);
+
+		if (!first)
+			*s++ = ',';
+		if (p->var) {
+			VarPtr v = getVar(mb, p->var);
+			char *op = PropertyOperatorString(p->op); 
+	
+			ATOMformat(v->type, VALget(&v->value), &t);
+			switch(v->type) {
+			case TYPE_oid:
+				sprintf(s, "%s%s%s:oid", nme, op, t);
+				break;
+			case TYPE_lng:
+				sprintf(s, "%s%s%s:lng", nme, op, t);
+				break;
+			case TYPE_sht:
+				sprintf(s, "%s%s%s:sht", nme, op, t);
+				break;
+			default:
+				sprintf(s, "%s%s%s", nme, op, t);
+			}
+			if (t)
+				GDKfree(t);
+		} else {
+			sprintf(s, "%s", nme);
+		}
+		while (*s)
+			s++;
+		first = 0;
+	}
+	*s++ = '}';
+	*s = 0;
+	return GDKstrdup(buf);
+}
+
+static VarRecord varTrue;
+
+VarPtr
+varGetProp( MalBlkPtr mb, int var, int prop )
+{
+	VarPtr v = getVar(mb, var);
+	int i;
+
+	for(i=0; i<v->propc; i++){
+		MalProp *p = mb->prps+v->prps[i];
+
+		if (p->idx == prop) {
+			if (p->var) {
+				return getVar(mb, p->var);
+			} else {
+				bit t = TRUE;
+				VALset(&varTrue.value, TYPE_bit, &t);
+				varTrue.gdktype = varTrue.type = TYPE_bit;
+				return &varTrue;
+			}
+		}
+	}
+	return NULL;
 }
 @}

@@ -57,7 +57,6 @@ opt_export  str getRef;
 opt_export  str groupRef;
 opt_export  str groupbyRef;
 opt_export  str hashRef;
-opt_export  str hrangeRef;
 opt_export  str identityRef;
 opt_export  str inplaceRef;
 opt_export  str insertRef;
@@ -122,15 +121,32 @@ opt_export  str takeRef;
 opt_export  str tuniqueRef;
 opt_export  str unionRef;
 opt_export  str unpackRef;
-opt_export  str unsafeRef;
 opt_export  str updateRef;
 opt_export  str uselectRef;
+
+opt_export int canBeCrackedProp;	/* binary */
+opt_export int inlineProp;		/* binary */
+opt_export int keepProp;		/* binary */
+opt_export int notnilProp;		/* binary */
+opt_export int rowsProp;		/* long */
+opt_export int runonceProp;		/* binary */
+opt_export int singletonProp;		/* binary */
+opt_export int unsafeProp;		/* binary */
+
+opt_export int stableProp;		/* binary */
+opt_export int insertionsProp;		/* binary */
+opt_export int updatesProp;		/* binary */
+opt_export int deletesProp;		/* binary */
+
+opt_export int hlbProp;			/* any (head lower bound) */
+opt_export int hubProp;			/* any (head upper bound) */
+opt_export int tlbProp;			/* any (tail lower bound) */
+opt_export int tubProp;			/* any (tail upper bound) */
 
 opt_export void optimizerInit(void);
 #endif
 @c
 #include "mal_config.h"
-#include "opt_support.h"
 #include "opt_prelude.h"
 
 str aggrRef;
@@ -168,7 +184,6 @@ str getRef;
 str groupRef;
 str groupbyRef;
 str hashRef;
-str hrangeRef;
 str identityRef;
 str inplaceRef;
 str insertRef;
@@ -233,9 +248,27 @@ str takeRef;
 str tuniqueRef;
 str unionRef;
 str unpackRef;
-str unsafeRef;
 str updateRef;
 str uselectRef;
+
+int canBeCrackedProp;
+int inlineProp;
+int keepProp;
+int notnilProp;
+int rowsProp;
+int runonceProp;
+int singletonProp;
+int unsafeProp;
+
+int stableProp;	
+int insertionsProp;
+int updatesProp;
+int deletesProp;
+
+int hlbProp;
+int hubProp;
+int tlbProp;
+int tubProp;
 
 void optimizerInit(){
 	if(batRef == NULL){
@@ -274,7 +307,6 @@ void optimizerInit(){
 		groupRef = putName("group",5);
 		groupbyRef = putName("groupby",7);
 		hashRef = putName("hash",4);
-		hrangeRef = putName("hrange",6);
 		identityRef = putName("identity",8);
 		inplaceRef = putName("inplace",7);
 		insertRef = putName("insert",6);
@@ -338,8 +370,26 @@ void optimizerInit(){
 		tuniqueRef = putName("tunique",7);
 		unionRef= putName("union",5);
 		unpackRef = putName("unpack",6);
-		unsafeRef = putName("unsafe",6);
 		updateRef = putName("update",6);
 		uselectRef = putName("uselect",7);
+
+		canBeCrackedProp = PropertyIndex("canBeCracked");
+		inlineProp = PropertyIndex("inline");
+		keepProp = PropertyIndex("keep");
+		notnilProp = PropertyIndex("notnil");
+		rowsProp = PropertyIndex("rows");
+		runonceProp = PropertyIndex("runonce");
+		singletonProp = PropertyIndex("singleton");
+		unsafeProp = PropertyIndex("unsafe");
+
+		stableProp = PropertyIndex("stableProp");
+		insertionsProp = PropertyIndex("insertionsProp");
+		updatesProp = PropertyIndex("updatesProp");
+		deletesProp = PropertyIndex("deletesProp");
+
+		hlbProp = PropertyIndex("hlb");
+		hubProp = PropertyIndex("hub");
+		tlbProp = PropertyIndex("tlb");
+		tubProp = PropertyIndex("tub");
 	}
 }

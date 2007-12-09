@@ -1166,23 +1166,23 @@ optimizers to make decisions. (See the section on properties).
 			if(l==0) 
 				break;
 			pname= idCopy(cntxt,l);
-			if( curBlk->var[@1]->props== NULL)
-				 curBlk->var[@1]->props= newPropertySet();
 			/* localize value , simplified version */
 			lo= operatorLength(cntxt);
 			if( lo > 0) 
 				opname= operatorCopy(cntxt,lo);
-			else opname= GDKstrdup("");
-			if((i= cstToken(cntxt,&cst))){
+			else 
+				opname= GDKstrdup("");
+			if ((i= cstToken(cntxt,&cst))){
 				int csttpe;
 				advance(cntxt,i);
 				if( currChar(cntxt)==':') {
 					csttpe = simpleTypeId(cntxt);
 					convertConstant(csttpe,&cst);
 				} 
-				setVarProperty(curBlk,@1, pname, opname, &cst);
-			} else 
-				setVarProperty(curBlk,@1, pname, NULL, NULL);
+				varSetProperty(curBlk,@1, pname, opname, &cst);
+			} else {
+				varSetProperty(curBlk,@1, pname, NULL, NULL);
+			}
 			GDKfree(pname); 
 			GDKfree(opname); 
 		} while( keyphrase1(cntxt,","));

@@ -81,21 +81,22 @@ OPTcrackImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			if (getModuleId(p)== sqlRef &&
 				mb->var[getArg(p,4)]->value.val.ival != 0 ) continue;		
 				
-			setArgProperty(mb,p,0,"canBeCracked","=", TYPE_int, &i);
+			varSetProp(mb, getArg(p, 0), canBeCrackedProp, 0, NULL);
 			actions++;
 		}
 		if (match2(p, batRef, setWriteModeRef)){ /* propagete the canBeCracked property */
 
-			if(fndArgProperty(mb,p,1,"canBeCracked")){
-				setArgProperty(mb,p,0,"canBeCracked","=", TYPE_int, &i);
-			actions++;
+			if (varGetProp(mb, getArg(p, 1), canBeCrackedProp) != NULL){
+				varSetProp(mb, getArg(p, 0), canBeCrackedProp, 0, NULL);
+				actions++;
 			}
 		}
 		if (match2(p, algebraRef, selectRef) ||
-			match2(p, algebraRef, uselectRef)){ 
-				if(fndArgProperty(mb,p,1,"canBeCracked"))
-						setModuleId(p,putName("crackers",8));
-			actions++;
+		    match2(p, algebraRef, uselectRef)){ 
+			if (varGetProp(mb, getArg(p,1), canBeCrackedProp) != NULL){
+				setModuleId(p,putName("crackers",8));
+				actions++;
+			}
 		}
 		if (p == pci) 
 			removeInstruction(mb, p);

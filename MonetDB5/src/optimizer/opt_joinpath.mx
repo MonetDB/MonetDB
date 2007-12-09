@@ -71,7 +71,7 @@ OPTjoinPathImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	InstrPtr q,r;
 
 	(void) stk;
-	if( fndArgProperty(mb,mb->stmt[0],0,putName("inline",6)) )
+	if (varGetProp(mb, getArg(mb->stmt[0], 0), inlineProp) != NULL)
 		return 0;
 
 	pc= (int*) alloca(sizeof(int)* mb->vtop); /* to find last assignment */

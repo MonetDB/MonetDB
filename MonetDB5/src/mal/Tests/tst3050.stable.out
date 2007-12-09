@@ -16,12 +16,12 @@ stdout of test 'tst3050` in directory 'src/mal` itself:
 #function dummy(a:int{unsafe=true,sorted=true},b:int{sequence=true}):int{dense=true};
 #	return dummy:=1;
 #end dummy;
-function user.dummy{dense=true}(a:int{sorted=true,unsafe=true},b:int{sequence=true}):int;	# 0  (dummy:int)<-(a:int)(b:int)
-    return dummy{dense=true} := 1;	# 1  (dummy:int)<-(_3:int)
+function user.dummy{dense=true}(a:int{unsafe=true,sorted=true},b:int{sequence=true}):int;	# 0  (dummy:int)<-(a:int)(b:int)
+    return dummy{dense=true} := 1;	# 1  (dummy:int)<-(_4:int)
 end dummy;	# 2  
 #function myprint{unsafe,optimizer}():void;
 #end myprint;
-function user.myprint{optimizer,unsafe}():void;	# 0  (myprint:void)
+function user.myprint{unsafe,optimizer}():void;	# 0  (myprint:void)
 end myprint;	# 1  
 #
 #a:= 0;
@@ -36,7 +36,7 @@ function user.main():void;	# 0  (main:void)
     a{sorted=true} := 0;	# 2  (a:int)<-(_3:int)
     b{sequence=true} := 2;	# 3  (b:int)<-(_5:int)
     t := user.dummy(a,b);	# 4  (t:int)<-(a:int)(b:int)
-    mdb.var("user","myprint");	# 5 MDBvar3 (_7:void)<-(_8:str)(_9:str)
+    mdb.var("user","myprint");	# 5 MDBvar3 (_8:void)<-(_9:str)(_10:str)
 end main;	# 6  
 #[0] myprint	= nil:void  {optimizer,unsafe}
 

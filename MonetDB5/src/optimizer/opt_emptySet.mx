@@ -135,8 +135,8 @@ ESevaluate(MalBlkPtr mb, char *empty)
 	InstrPtr *old = mb->stmt, *constraints;
 
 	/* get query property */
-	runonce= fndArgProperty(mb,old[0],0,putName("runonce",7)) != NULL;
-	if( fndArgProperty(mb,old[0],0,putName("inline",6)) )
+	runonce = (varGetProp(mb, getArg(old[0], 0), runonceProp) != NULL);
+	if (varGetProp(mb, getArg(old[0], 0), inlineProp) != NULL)
 		return 0;
 
 	newMalBlkStmt(mb, mb->ssize); /* a new statement stack */
@@ -291,8 +291,6 @@ OPTemptySetImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	char *empty;
 	int i;
-	lng *rows;
-	PropertySet ps;
 
 	empty = (char *) alloca(mb->vsize * sizeof(char));
 	memset(empty,0,mb->vsize);
@@ -303,8 +301,9 @@ OPTemptySetImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	printFunction(GDKout, mb, LIST_MAL_ALL);
 #endif
 	for (i = 0; i < mb->vtop; i++) {
-		ps = getVarProperties(mb, i);
-		if ( (rows= (lng*) getPropertyValue(ps, "rows"))   && *rows == 0) {
+		VarPtr rowsp;
+		if ((rowsp = varGetProp(mb, i, rowsProp)) != NULL 
+		     && rowsp->value.val.lval == 0) {
 #ifdef DEBUG_OPT_EMPTYSET
 		stream_printf(GDKout, "START emptyset optimizer %d", i);
 #endif

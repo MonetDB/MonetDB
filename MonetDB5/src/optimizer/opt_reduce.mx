@@ -61,31 +61,39 @@ static
 void MRconstant(MalBlkPtr mb){
 	int i,j;
 	int *cst,*alias,top=0;
-	InstrPtr p;
 
 	cst= (int*) alloca(mb->vtop *sizeof(int));
 	alias= (int*) alloca(mb->vtop *sizeof(int));
 
 	for(i = 0; i< mb->vtop; i++)
-	if( isConstant(mb,i) ){
-		alias[i]= i;
-		for(j=0; j<top; j++)
-		if( getVarType(mb,i) == getVarType(mb,cst[j]) &&
-			ATOMcmp(getVarType(mb,i),
-			VALget(&getVar(mb,i)->value),
-			VALget(&getVar(mb,cst[j])->value)) == 0){
-				alias[i]= cst[j];
+	if (isConstant(mb,i)){
+		alias[i] = i;
+		for(j=0; j<top; j++) {
+			if (getVarType(mb,i) == getVarType(mb,cst[j]) &&
+			    ATOMcmp(getVarType(mb,i),
+			     VALget(&getVar(mb,i)->value),
+			     VALget(&getVar(mb,cst[j])->value)) == 0) {
+				alias[i] = cst[j];
 				break;
 			}
-		cst[top++]= i;
+		}
+		cst[top++] = i;
 	}
 	for( i=0; i< mb->stop; i++){
-		p= getInstrPtr(mb,i);
+		InstrPtr p = getInstrPtr(mb,i);
+
 		for(j=p->retc; j < p->argc; j++)
-		if( isConstant(mb, getArg(p,j)) )
-			getArg(p,j) = alias[getArg(p,j)];
+			if (isConstant(mb, getArg(p,j)))
+				getArg(p,j) = alias[getArg(p,j)];
+	}
+	for( i=0; i< mb->ptop; i++){
+		MalProp *p= mb->prps+i;
+
+		if (p->var)
+			p->var = alias[p->var];
 	}
 }
+
 static int
 OPTreduceImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
@@ -108,7 +116,11 @@ OPTreduceImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		q= getInstrPtr(mb,i);
 
 		for(j=0; j<q->argc; j++)
-			used[getArg(q,j)]= 1;
+			used[getArg(q,j)] = 1;
+	}
+	for (i=0; i<mb->ptop; i++) {
+		if (mb->prps[i].var)
+			used[mb->prps[i].var] = 1;
 	}
 	/* build the alias table */
 	for (i = 0; i < mb->vtop; i++) {
@@ -140,6 +152,12 @@ OPTreduceImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			q = getInstrPtr(mb, i);
 			for (j = 0; j < q->argc; j++)
 				getArg(q, j) = vars[getArg(q, j)];
+		}
+		for( i=0; i< mb->ptop; i++){
+			MalProp *p= mb->prps+i;
+
+			if (p->var)
+				p->var = vars[p->var];
 		}
 	}
 #ifdef DEBUG_OPT_REDUCE

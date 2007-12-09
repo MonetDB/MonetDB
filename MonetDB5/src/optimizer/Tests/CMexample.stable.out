@@ -24,17 +24,17 @@ stdout of test 'CMexample` in directory 'src/optimizer` itself:
 #
 function user.main():void;	# 0  (main:void)
 # Cost model example 	# 1  (_1:str)
-    r{rows=100:lng} := bat.new(:oid,:int);	# 2 CMDBATnew (r:bat[:oid,:int])<-(_3:oid)(_4:int)
-    s{rows=1000:lng} := bat.new(:oid,:int);	# 3 CMDBATnew (s:bat[:oid,:int])<-(_3:oid)(_4:int)
-    rs{rows=501:lng} := algebra.select(s,1,1);	# 4 ALGselect (rs:bat[:oid,:int])<-(s:bat[:oid,:int])(_7:int)(_7:int)
+    r{rows=100} := bat.new(:oid,:int);	# 2 CMDBATnew (r:bat[:oid,:int])<-(_4:oid)(_5:int)
+    s{rows=1000} := bat.new(:oid,:int);	# 3 CMDBATnew (s:bat[:oid,:int])<-(_4:oid)(_8:int)
+    rs{rows=501:lng} := algebra.select(s,1,1);	# 4 ALGselect (rs:bat[:oid,:int])<-(s:bat[:oid,:int])(_10:int)(_10:int)
     rr{rows=100:lng} := bat.reverse(r);	# 5 BKCreverse (rr:bat[:int,:oid])<-(r:bat[:oid,:int])
     j{rows=100:lng} := algebra.join(rs,rr);	# 6 ALGjoin (j:bat[:oid,:oid])<-(rs:bat[:oid,:int])(rr:bat[:int,:oid])
-    mdb.list();	# 7 MDBlist (_11:void)
+    mdb.list();	# 7 MDBlist (_14:void)
 end main;	# 8  
 function user.main():void;
 # Cost model example 
-    r{rows=100:lng} := bat.new(:oid,:int);
-    s{rows=1000:lng} := bat.new(:oid,:int);
+    r{rows=100} := bat.new(:oid,:int);
+    s{rows=1000} := bat.new(:oid,:int);
     rs{rows=501:lng} := algebra.select(s,1,1);
     rr{rows=100:lng} := bat.reverse(r);
     j{rows=100:lng} := algebra.join(rs,rr);

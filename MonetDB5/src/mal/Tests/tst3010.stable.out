@@ -17,7 +17,7 @@ stdout of test 'tst3010` in directory 'src/mal` itself:
 #	j:= j+i;
 #	return j;
 #end add;
-function user.add{safe,writeable}(i:int{readonly},j:int{readonly}):int;	# 0  (add:int)<-(i:int)(j:int)
+function user.add{writeable,safe}(i:int{readonly},j:int{readonly}):int;	# 0  (add:int)<-(i:int)(j:int)
     j{readonly} := calc.+(j,i);	# 1 CALCbinaryADDintint (j:int)<-(j:int)(i:int)
     return j{readonly};	# 2  (j:int)
 end add;	# 3  

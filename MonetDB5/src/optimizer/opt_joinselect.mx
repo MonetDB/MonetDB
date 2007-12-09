@@ -83,50 +83,51 @@ OPTjoinselectImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			if (start == -1) 
 				start = i;
 
-			if(fndArgProperty(mb,p,1,"stable")){
+			if (varGetProp(mb, getArg(p,1), stableProp) != NULL){
 				*(int*)ps = i;
 				ps += xx;
 			}
-			if(fndArgProperty(mb,p,1,"insertions")){
+			if (varGetProp(mb, getArg(p,1), insertionsProp) != NULL){
 				*(int*)pi = i;
 				pi += xx;
 			}
-			if(fndArgProperty(mb,p,1,"updates")){
+			if (varGetProp(mb, getArg(p,1), updatesProp) != NULL){
 				*(int*)pu = i;
 				pu += xx;
 			}
 		}
 		
 		if (match2(p, batRef, reverseRef)){
-			if(fndArgProperty(mb,p,1,"deletes")){
-					*(int*)pd = i;
-					pd += xx;
+			if (varGetProp(mb, getArg(p,1), deletesProp) != NULL){
+				*(int*)pd = i;
+				pd += xx;
 			}
 		}
 	
 		if (match2(p, sqlRef, bindRef)){
 			switch( getVar(mb,getArg(p,4))->value.val.ival ){
 			case 0:
-				setArgProperty(mb,p,0,"stable","=", TYPE_int, &i);
+				varSetProp(mb, getArg(p,0), stableProp, 0, NULL);
 				break;
 			case 1:
-				setArgProperty(mb,p,0,"insertions","=", TYPE_int, &i);
+				varSetProp(mb, getArg(p,0), insertionsProp, 0, NULL);
 				break;
 			case 3:
-				setArgProperty(mb,p,0,"updates","=", TYPE_int, &i);
+				varSetProp(mb, getArg(p,0), updatesProp, 0, NULL);
+				break;
 			}
 		}
 		if (match2(p, sqlRef, binddbatRef))
-			setArgProperty(mb,p,0,"deletes","=", TYPE_int, &i);
+			varSetProp(mb, getArg(p,0), deletesProp, 0, NULL);
 
 		if (match2(p, batRef, setWriteModeRef)){ 
-				if(fndArgProperty(mb,p,1,"stable"))
-						setArgProperty(mb,p,0,"stable","=", TYPE_int, &i);
-				if(fndArgProperty(mb,p,1,"insertions"))
-						setArgProperty(mb,p,0,"insertions","=", TYPE_int, &i);
-				if(fndArgProperty(mb,p,1,"updates"))
-						setArgProperty(mb,p,0,"updates","=", TYPE_int, &i);
-			}
+			if (varGetProp(mb, getArg(p,1), stableProp) != NULL)
+				varSetProp(mb, getArg(p,0), stableProp, 0, NULL);
+			if (varGetProp(mb, getArg(p,1), insertionsProp) != NULL)
+				varSetProp(mb, getArg(p,0), insertionsProp, 0, NULL);
+			if (varGetProp(mb, getArg(p,1), updatesProp) != NULL)
+				varSetProp(mb, getArg(p,0), updatesProp, 0, NULL);
+		}
 
 		if (match2(p, algebraRef, markTRef)){
 			pivot = i;

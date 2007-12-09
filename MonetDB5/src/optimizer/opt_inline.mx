@@ -51,30 +51,25 @@ OPTinlineImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	int i;
 	InstrPtr q,sig;
 	int actions = 0;
-	PropertySet ps;
 	(void) p;
 
 	for (i = 1; i < mb->stop; i++) {
 		q = getInstrPtr(mb, i);
 		if( q->blk ){
-			sig= getInstrPtr(q->blk,0);
-			ps= getVar(q->blk, getArg(sig,0))->props;
-			if(	sig->token == FUNCTIONsymbol &&
-				isPropertyDefined(ps,"inline") ){
+			sig = getInstrPtr(q->blk,0);
+			if (sig->token == FUNCTIONsymbol &&
+			    varGetProp(q->blk, getArg(sig, 0), inlineProp) != NULL) {
 				(void) inlineMALblock(mb,i,q->blk);
 				actions++;
 #ifdef DEBUG_OPT_INLINE
 				printFunction(GDKout, mb, LIST_MAL_ALL);
 #endif
-			} else {
-				ps= getVar(mb, getArg(q,0))->props;
-				if( isPropertyDefined(ps,"inline") ){
-					inlineMALblock(mb,i,q->blk);
-					actions++;
+			} else if (varGetProp(mb, getArg(q,0), inlineProp) != NULL) {
+				inlineMALblock(mb,i,q->blk);
+				actions++;
 #ifdef DEBUG_OPT_INLINE
-					printFunction(GDKout, mb, LIST_MAL_ALL);
+				printFunction(GDKout, mb, LIST_MAL_ALL);
 #endif
-				}
 			}
 		}
 	}

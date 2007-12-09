@@ -343,9 +343,8 @@ OPTsingletonImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	for (i = 1; i < mb->stop; i++) {
 		p = getInstrPtr(mb, i);
 		for (j = 0; j < p->retc; j++)
-			if (fndProperty(getVarProperties(mb, getArg(p, j)), "singleton")) {
+			if (varGetProp(mb, getArg(p, j), singletonProp) != NULL)
 				vars[cnt++] = getArg(p, j);
-			}
 	}
 	return STevaluate(mb, cnt, vars);
 }

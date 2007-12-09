@@ -18,7 +18,7 @@ stdout of test 'tst3060` in directory 'src/mal` itself:
 #	return tst:=a;
 #end tst;
 function user.tst(a:any_1{type="int,flt"}):any_1;	# 0  dynamic (tst:any_1)<-(a:any_1)
-    io.print(a);	# 1 IOprint_val (_2:void)<-(a:any_1)
+    io.print(a);	# 1 IOprint_val (_3:void)<-(a:any_1)
     return tst := a;	# 2  (tst:any_1)<-(a:any_1)
 end tst;	# 3  
 #

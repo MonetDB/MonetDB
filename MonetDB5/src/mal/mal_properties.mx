@@ -282,304 +282,109 @@ The MAL language uses a few defaults, recognizable as properties
 @tab data can be appended
 @end multitable
 @-
-@{
-The code base supports multiple property sets.
-Not used right now.
 @h
 #ifndef _MAL_PROPERTIES_
 #define _MAL_PROPERTIES_
 #include "mal.h"
 #include "mal_namespace.h"
 
-#define MAXPROPLIST 3
+typedef struct MalProp {
+	bte idx;
+	bte op;
+	short var;
+} *MalPropPtr, MalProp;
 
-typedef struct PROPrecord {
-	str nme;
-	str operator;
-	ValRecord val;
-	struct PROPrecord *nxt;
-} *Property;
+typedef enum prop_op_t {
+	op_lt = 0,
+	op_lte = 1,
+	op_eq = 2,
+	op_gte = 3,
+	op_gt = 4,
+	op_ne = 5
+} prop_op_t;
 
-typedef struct PROPSET {
-	int refcount;
-	int maxlist;
-	Property prop[MAXPROPLIST];
-} *PropertySet;
-
-mal_export PropertySet newPropertySet(void);
-mal_export void freePropertySet(PropertySet ps);
-mal_export PropertySet cpyPropertySet(PropertySet old);
-mal_export Property cpyProperty(PropertySet * target, Property src);
-mal_export Property fndProperty(PropertySet ps, str nme);
-mal_export Property fndPropertyIndexed(PropertySet ps, int first, int last, str nme);
-mal_export Property setProperty(PropertySet ps, str nme, str op, int tpe, ptr val);
-mal_export void delProperty(PropertySet ps, str nme);
-mal_export ptr getPropertyValue(PropertySet ps, str nme);
-mal_export ptr getPropertyTypedValue(PropertySet ps, str nme, int type);
-mal_export int getPropertyType(PropertySet ps, str nme);
-mal_export int setPropertyType(PropertySet ps, str nme, int type);
-mal_export str propertySet2str(PropertySet ps);
-mal_export int isPropertyDefined(PropertySet ps, str nme);
-
-#define getProps(M,Y) M->var[Y]->props
-#define fndArgProperty(M,P,I,NME) fndProperty(getProps(M,getArg(P,I)),NME)
-#define setArgProperty(M,P,I,NME,OP,T,V) {if(getProps(M,getArg(P,I))== 0) \
-		getProps(M,getArg(P,I))= newPropertySet();\
-		setProperty(getProps(M,getArg(P,I)),NME,OP,T,V);}
-#define addProperty(M,V,NME) { if(getProps(M,V)== 0) \
-			getProps(M,V)= newPropertySet();\
-		{ int v=1; setProperty(getProps(M,V),NME,"=",TYPE_bit,&v);}}
+mal_export sht PropertyIndex(str name);
+mal_export str PropertyName(sht idx);
+mal_export prop_op_t PropertyOperator( str s );
+mal_export str PropertyOperatorString( prop_op_t op );
 
 #endif
+
+@{
 @c
 #include "mal_config.h"
 #include "mal_properties.h"
 #include "mal_type.h"		/* for idcmp() */
 
-PropertySet
-newPropertySet()
+static str *properties = NULL;
+static int nr_properties = 0;
+static int max_properties = 0;
+
+sht 
+PropertyIndex(str name)
 {
-	PropertySet ps;
-
-	ps = (PropertySet) GDKzalloc(sizeof(struct PROPSET));
-	ps->refcount = 0;
-	ps->maxlist = MAXPROPLIST;
-	return ps;
-}
-
-Property
-cpyProperty(PropertySet * target, Property src)
-{
-	if (*target == 0)
-		*target = newPropertySet();
-	return setProperty(*target, src->nme, 
-			src->operator, src->val.vtype, VALptr(&src->val));
-}
-
-PropertySet
-cpyPropertySet(PropertySet old)
-{
-	PropertySet ps;
-	Property pr;
-	int i;
-
-	ps = newPropertySet();
-	for(i=0; i< MAXPROPLIST; i++){
-		pr = old->prop[i];
-		while(pr){
-			cpyProperty(&ps, pr);
-			pr= pr->nxt;
+	int i=0;
+	for (i=0; i<nr_properties; i++) {
+		if (strcmp(properties[i], name) == 0)
+			return i;
+	}
+	mal_set_lock(mal_contextLock,"propertyIndex");
+	/* small change its allready added */
+	for (i=0; i<nr_properties; i++) {
+		if (strcmp(properties[i], name) == 0) {
+			mal_unset_lock(mal_contextLock,"propertyIndex");
+			return i;
 		}
 	}
-	return ps;
-}
-
-void
-freePropertySet(PropertySet ps)
-{
-	Property p1, p2;
-	int i;
-
-	for (i = 0; i < MAXPROPLIST; i++) {
-		p1 = ps->prop[i];
-		while(p1){
-			p2 = p1->nxt;
-			GDKfree(p1);
-			p1= p2;
-		}
+	if (i >= max_properties) {
+		max_properties += 256;
+		properties = GDKrealloc(properties, max_properties * sizeof(str));
 	}
-	GDKfree(ps);
+	properties[nr_properties] = GDKstrdup(name);
+	mal_unset_lock(mal_contextLock,"propertyIndex");
+	return nr_properties++;
 }
 
-Property
-fndProperty(PropertySet ps, str nme)
+str 
+PropertyName(sht idx)
 {
-	Property pr;
-	int i;
-
-	if (ps == NULL || nme== NULL)
-		return NULL;
-	nme= getName(nme,strlen(nme));
-	for (i = 0; i < MAXPROPLIST; i++) {
-		pr = ps->prop[i];
-		while (pr) {
-			if (pr->nme== nme)
-				return pr;
-			pr = pr->nxt;
-		}
-	}
-	return 0;
+	if (idx < nr_properties)
+		return properties[idx];
+	return "None";
 }
 
-Property
-fndPropertyIndexed(PropertySet ps, int first, int last, str nme)
+prop_op_t
+PropertyOperator( str s )
 {
-	Property pr;
-	int i;
-
-	if (ps == NULL)
-		return NULL;
-	nme= getName(nme,strlen(nme));
-	for (i = first; i < last; i++) {
-		pr = ps->prop[i];
-		while (pr) {
-			if (pr->nme== nme)
-				return pr;
-			pr = pr->nxt;
-		}
-	}
-	return 0;
+	if (!s || !*s)
+		return op_eq;
+	if (*s == '<') {
+		if (*(s+1) == '=')
+			return op_lte;
+		return op_lt;
+	} else if (*s == '>') {
+		if (*(s+1) == '=')
+			return op_gte;
+		return op_gt;
+	} else if (*s == '=')
+		return op_eq;
+	else if (*s == '!' && *(s+1) == '=')
+		return op_ne;
+	return op_eq;
 }
 
-int
-isPropertyDefined(PropertySet ps, str nme){
-	Property pr;
-	if( ps == NULL || nme== NULL) return FALSE;
-	pr = fndProperty(ps,nme);
-	return pr != NULL;
-}
-@-
-A property is assigned to a specific property list.
-@c
-Property
-setPropertyIndexed(PropertySet ps, int idx, str nme, str op, int tpe, ptr val)
-{
-	Property pr;
-
-	pr = fndPropertyIndexed(ps, idx, idx + 1, nme);
-	if (pr == 0) {
-		pr = (Property) GDKmalloc(sizeof(struct PROPrecord));
-		pr->nxt = ps->prop[idx];
-		ps->prop[idx] = pr;
-		pr->nme = putName(nme,strlen(nme));
-	}
-	if (val)
-		VALset(&pr->val, tpe, val);
-	pr->operator= putName(op,strlen(op));
-	return pr;
-}
-
-Property
-setProperty(PropertySet ps, str nme, str op, int tpe, ptr val)
-{
-	return setPropertyIndexed(ps, 0, nme, op, tpe, val);
-}
-void
-delProperty(PropertySet ps, str nme){
-	Property pr, po;
-	pr = fndPropertyIndexed(ps, 0, 1, nme);
-	if( pr){
-		if( pr->nxt){
-			po= pr->nxt;
-			*pr = *pr->nxt;
-			GDKfree(po);
-		} else
-			pr->nme= NULL;
-	}
-}
-
-@-
-The users of properties need a simple scheme to localize a
-property.
-@c
-ptr
-getPropertyValue(PropertySet ps, str nme)
-{
-	Property pr;
-
-	pr = fndProperty(ps, nme);
-	if (pr)
-		return VALptr(&pr->val);
-	return NULL;
-}
-
-ptr
-getPropertyTypedValue(PropertySet ps, str nme, int type)
-{
-	Property pr;
-
-	pr = fndProperty(ps, nme);
-	if (pr) {
-		if (pr->val.vtype != type)
-			VALconvert(type, &pr->val);
-		if (pr->val.vtype != type)
-			return NULL;
-		return VALptr(&pr->val);
-	}
-	return NULL;
-}
-
-int
-getPropertyType(PropertySet ps, str nme)
-{
-	Property pr;
-
-	pr = fndProperty(ps, nme);
-	if (pr)
-		return pr->val.vtype;
-	return TYPE_void;
-}
-
-int
-setPropertyType(PropertySet ps, str nme, int type)
-{
-	Property pr;
-
-	pr = fndProperty(ps, nme);
-	if (pr) {
-		if (pr->val.vtype != type)
-			VALconvert(type, &pr->val);
-		return pr->val.vtype;
-	}
-	return TYPE_void;
-}
-
-@-
-For debugging purposes we should be able to convert any property set
-back into a string. We simple assume the space required is limited.
-@c
 str
-propertySet2str(PropertySet ps)
+PropertyOperatorString( prop_op_t op )
 {
-	char buf[128 * 1024];
-	str s = buf, t = 0;
-	Property pr;
-	int i,first=0;
-
-	if (ps == NULL )
-		return GDKstrdup("");
-	pr = ps->prop[0];
-	*s++ = '{';
-	for(i=0; i<MAXPROPLIST; i++){
-		pr = ps->prop[i];
-		while(pr){
-			t = 0;
-			if (first++ )
-				*s++ = ',';
-			ATOMformat(pr->val.vtype, VALget(&pr->val), &t);
-			if (pr->operator && * pr->operator) {
-				switch(pr->val.vtype){
-				case TYPE_lng:
-					sprintf(s, "%s%s%s:lng", pr->nme, pr->operator, t);
-					break;
-				case TYPE_sht:
-					sprintf(s, "%s%s%s:sht", pr->nme, pr->operator, t);
-					break;
-				default:
-					sprintf(s, "%s%s%s", pr->nme, pr->operator, t);
-				}
-			} else
-				sprintf(s, "%s", pr->nme);
-			while (*s)
-				s++;
-			pr= pr->nxt;
-			if (t)
-			GDKfree(t);
-		}
+	switch(op) {
+	case op_lt: return "<";
+	case op_lte: return "<=";
+	case op_eq: return "=";
+	case op_gte: return ">=";
+	case op_gt: return ">";
+	case op_ne: return "!=";
 	}
-	*s++ = '}';
-	*s = 0;
-	return GDKstrdup(buf);
+	return "=";
 }
 
 @}

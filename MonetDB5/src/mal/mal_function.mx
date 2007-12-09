@@ -975,7 +975,6 @@ static void
 showFlowDetails(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc, stream *f)
 {
 	str s, msg;
-	PropertySet ps;
 	int i;
 
 	(void) stk;		/* fool the compiler */
@@ -986,23 +985,23 @@ showFlowDetails(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc, stream *f)
 			stream_printf(f, "\\\"");
 		else
 			stream_printf(f, "%c", *s);
+	GDKfree(msg);
 	for(i=0;i<p->retc; i++){
+		char *ps = NULL;
 		stream_printf(f, "\\n%s",getArgName(mb,p,i));
 		stream_printf(f,":%s", s=getTypeName(getVarType(mb,getArg(p,i))));
 		GDKfree(s);
 
-		ps = getProps(mb,getArg(p,i));
-		if( ps == 0) continue;
-		s= propertySet2str(ps);
+		ps = s = varGetPropStr(mb, getArg(p, i));
 		for (; s && *s; s++)
 			if (*s == '"')
 				stream_printf(f, "\\\"");
 			else
 				stream_printf(f, "%c", *s);
+		GDKfree(ps);
 	}
 	/* later: add BAT runtime properties */
 	stream_printf(f, "\"];\n");
-	GDKfree(msg);
 }
 
 void

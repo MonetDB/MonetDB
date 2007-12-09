@@ -223,9 +223,9 @@ are acceptable and detailed type analysis becomes part of the pattern
 implementation.
 In all other cases the type should apply to all remaining arguments.
 @c
-		if( formal == actual)
+		if (formal == actual)
 			continue;
-		if( isPolyType(formal) && getVar(mb,getArg(p,i))->props){
+		if (isPolyType(formal)){
 			/* printf("perform union type check\n");*/
 		}
 		if( updateTypeMap(formal, actual, polytype)){
