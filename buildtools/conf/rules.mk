@@ -177,6 +177,16 @@ ifdef NEED_MX
 %.pm: %.pm.i
 	$(SWIG) -perl5 $(SWIGFLAGS) -outdir . -o dymmy.c $<
 
+%.ruby.c: %.ruby.i
+	$(SWIG) -ruby $(SWIGFLAGS) -outdir . -o $@ $<
+	$(MV) $@ $@.tmp
+	echo '#include <'"$(CONFIG_H)"'>' > $@
+	grep -v '^#include.*[<"]'"$(CONFIG_H)"'[">]' $@.tmp >> $@
+	$(RM) $@.tmp
+
+%.ruby: %.ruby.i
+	$(SWIG) -ruby $(SWIGFLAGS) -outdir . -o dymmy.c $<
+
 endif # NEED_MX
 
 %.tex: %.mx

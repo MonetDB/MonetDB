@@ -839,7 +839,7 @@ yes-*-*)
 	dnl  Hence, we use GCC_SWIG_CFLAGS to disable the respective warning
 	dnl  as locally as possbile via "-Wno-strict-aliasing -Wno-unused-variable -Wno-unused-function -Wno-unused-parameter -Wno-undef -Wno-missing-field-initializers"
 	dnl  (see also sql/src/backends/monet[45]/Makefile.ag,
-	dnl   clients/src/{python,perl,php}/Cimpl/Makefile.ag).
+	dnl   clients/src/{python,perl,php,ruby}/Cimpl/Makefile.ag).
 	GCC_SWIG_CFLAGS="$GCC_SWIG_CFLAGS -Wno-strict-aliasing -Wno-unused-variable -Wno-unused-function -Wno-unused-parameter -Wno-undef"
 	case "$gcc_ver-$host_os" in
 	[[4-9]].*-*)
@@ -930,7 +930,7 @@ yes-*-*)
 	dnl  Hence, we use ICC_SWIG_CFLAGS to disable the respective warning
 	dnl  as locally as possbile via "-wd869 -wd177 -wd310"
 	dnl  (see also sql/src/backends/monet[45]/Makefile.ag,
-	dnl   clients/src/{python,perl,php}/Cimpl/Makefile.ag).
+	dnl   clients/src/{python,perl,php,ruby}/Cimpl/Makefile.ag).
 	ICC_SWIG_CFLAGS="$ICC_SWIG_CFLAGS -wd869 -wd177 -wd310"
 
 	NO_INLINE_CFLAGS="-fno-inline -fno-inline-functions"
@@ -1458,7 +1458,7 @@ if test "x$have_python" != xno; then
 	AC_ARG_WITH(python-libdir,
 		AC_HELP_STRING([--with-python-libdir=DIR],
 			[relative path for Python library directory (where Python modules should be installed)]),
-		have_python_libdir="$withval")
+		have_pyTHON_LIBDir="$withval")
 	case "$have_python_libdir" in
 	yes|auto)
 		if test $cross_compiling = xyes; then
@@ -1628,6 +1628,129 @@ if test -f "$srcdir"/vertoo.data; then
 else
 	AM_CONDITIONAL(HAVE_PERL_SWIG,  test "x$have_perl_incdir" != xno -a "x$have_perl_libdir" != xno)
 fi
+
+have_ruby=auto
+RUBY=ruby
+RUBY_INCS=
+RUBY_LIBS=
+AC_ARG_WITH(ruby,
+	AC_HELP_STRING([--with-ruby=FILE], [ruby is installed as FILE]),
+	have_ruby="$withval")
+case "$have_ruby" in
+yes|no|auto)
+	;;
+*)
+	RUBY="$have_ruby"
+	have_ruby=yes
+	;;
+esac
+if test "x$have_ruby" != xno; then
+	if test $cross_compiling != xyes; then
+		AC_PATH_PROG(RUBY,$RUBY,no,$PATH)
+		if test "x$RUBY" = xno; then
+			if test "x$have_ruby" != xauto; then
+				AC_MSG_ERROR([No Ruby executable found])
+			fi
+			have_ruby=no
+		fi
+	fi
+fi
+if test "x$have_ruby" != xno; then
+	have_ruby_incdir=auto
+	AC_ARG_WITH(ruby-incdir,
+		AC_HELP_STRING([--with-ruby-incdir=DIR],
+			[Ruby include directory]),
+		have_ruby_incdir="$withval")
+	case "$have_ruby_incdir" in
+	yes|auto)
+		if test $cross_compiling = xyes; then
+			AC_MSG_ERROR([Must specify --with-ruby-incdir --with-ruby-libdir --with-ruby-library when cross compiling])
+		fi
+		RUBY_INCS=`"$RUBY" -e 'require "rbconfig.rb";include Config;print CONFIG[["archdir"]];' 2>/dev/null`
+		;;
+	no)	;;
+	*)	RUBY_INCS="$have_ruby_incdir"
+		echo "2 $RUBY_INCS"
+		have_ruby_incdir=yes
+		;;
+	esac
+	if test "x$have_ruby_incdir" != no -a ! -f "$RUBY_INCS/ruby.h"; then
+		if test "x$have_ruby_incdir" = yes; then
+			AC_MSG_ERROR([No ruby.h found, is Ruby installed properly?])
+		fi
+		have_ruby_incdir=no
+	fi
+	if test "x$have_ruby_incdir" != no; then
+		RUBY_INCS="-I$RUBY_INCS"
+	fi
+
+	have_ruby_library=auto
+	AC_ARG_WITH(ruby-library,
+		AC_HELP_STRING([--with-ruby-library=DIR],
+			[Ruby library directory (where -lruby can be found)]),
+		have_ruby_library="$withval")
+	case "$have_ruby_library" in
+	yes|auto)
+		if test $cross_compiling = xyes; then
+			AC_MSG_ERROR([Must specify --with-ruby-incdir --with-ruby-libdir --with-ruby-library when cross compiling])
+		fi
+		RUBY_LIBS=`"$RUBY" -e 'require "rbconfig.rb";include Config;print CONFIG[["libdir"]];' 2>/dev/null`
+		;;
+	no)	;;
+	*)	RUBY_LIBS="$have_ruby_library"
+		have_ruby_library=yes
+		;;
+	esac
+	if test "x$have_ruby_library" != no; then
+		RUBY_LIBS="-L$RUBY_LIBS -lruby"
+	fi
+
+	have_ruby_libdir=auto
+	AC_ARG_WITH(ruby-libdir,
+		AC_HELP_STRING([--with-ruby-libdir=DIR],
+			[relative path for Ruby library directory (where Ruby modules should be installed)]),
+		have_ruby_libdir="$withval")
+	case "$have_ruby_libdir" in
+	yes|auto)
+		if test $cross_compiling = xyes; then
+			AC_MSG_ERROR([Must specify --with-ruby-incdir --with-ruby-libdir --with-ruby-library when cross compiling])
+		fi
+		ruby_prefix=`"$RUBY" -e 'require "rbconfig.rb";include Config;print CONFIG[["prefix"]];' 2>/dev/null`
+		ruby_libdir=`"$RUBY" -e 'require "rbconfig.rb";include Config;print CONFIG[["sitearchdir"]];' 2>/dev/null`
+		RUBY_LIBDIR=`echo $ruby_libdir | sed -e "s|$ruby_prefix||g"`
+		;;
+	no)	;;
+	*)	RUBY_LIBDIR="$have_ruby_libdir"
+		have_ruby_libdir=yes
+		;;
+	esac
+else
+	# no Ruby implies no Ruby includes or libraries
+	have_ruby_incdir=no
+	have_ruby_libdir=no
+fi
+if test "x$have_ruby_incdir" != xno -a "x$have_ruby_libdir" != xno; then
+	save_CPPFLAGS="$CPPFLAGS"
+	save_LIBS="$LIBS"
+	CPPFLAGS="$CPPFLAGS $RUBY_INCS"
+	LIBS="$LIBS $RUBY_LIBS"
+	AC_TRY_LINK([#include <ruby.h>], [], [],
+		[ if test "x$have_ruby_incdir" != xauto -o "x$have_ruby_libdir" != xauto; then AC_MSG_ERROR([Cannot compile with Ruby]); fi; have_ruby_incdir=no have_ruby_libdir=no ])
+	CPPFLAGS="$save_CPPFLAGS"
+	LIBS="$save_LIBS"
+fi
+AC_SUBST(RUBY)
+AM_CONDITIONAL(HAVE_RUBY, test x"$have_ruby" != xno)
+AC_SUBST(RUBY_INCS)
+AC_SUBST(RUBY_LIBS)
+AC_SUBST(RUBY_LIBDIR)
+AM_CONDITIONAL(HAVE_RUBY_DEVEL, test "x$have_ruby_incdir" != xno -a "x$have_ruby_libdir" != xno)
+if test -f "$srcdir"/vertoo.data; then
+	AM_CONDITIONAL(HAVE_RUBY_SWIG,  test "x$have_ruby_incdir" != xno -a "x$have_ruby_libdir" != xno -a x"$SWIG" != xno)
+else
+	AM_CONDITIONAL(HAVE_RUBY_SWIG,  test "x$have_ruby_incdir" != xno -a "x$have_ruby_libdir" != xno)
+fi
+
 
 dnl to shut up automake (.m files are used for mel not for objc)
 AC_CHECK_TOOL(OBJC,objc)
