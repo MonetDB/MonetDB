@@ -354,14 +354,14 @@ def msc_dep(fd, tar, deplist, msc):
 
     if ext == "glue.c":
         fd.write(getsrc)
-        fd.write('\t$(MEL) $(INCLUDES) -o "%s" -glue "%s.m"\n' % (t, b))
+        fd.write('\t$(MEL) -c $(CONFIG_H) $(INCLUDES) -o "%s" -glue "%s.m"\n' % (t, b))
     if ext == "proto.h":
         fd.write(getsrc)
-        fd.write('\t$(MEL) $(INCLUDES) -o "%s" -proto "%s.m"\n' % (t, b))
+        fd.write('\t$(MEL) -c $(CONFIG_H) $(INCLUDES) -o "%s" -proto "%s.m"\n' % (t, b))
     if ext == "mil":
         fd.write(getsrc)
         if b+".tmpmil" in deplist:
-            fd.write('\t$(MEL) $(INCLUDES) -mil "%s.m" > "%s.mil"\n' % (b, b))
+            fd.write('\t$(MEL) -c $(CONFIG_H) $(INCLUDES) -mil "%s.m" > "%s.mil"\n' % (b, b))
             fd.write('\ttype "%s.tmpmil" >> "%s.mil"\n' % (b, b))
             fd.write('\tif not exist .libs $(MKDIR) .libs\n')
             fd.write('\t$(INSTALL) "%s.mil" ".libs\\%s.mil"\n' % (b, b))

@@ -246,13 +246,13 @@ PHP_LIBS = $(PHP_INSTDIR)\php5embed.lib
 	$(MX) $(MXFLAGS) -x m $<
 
 .m.mil: 
-	$(MEL) $(INCLUDES) -mil $*.m > $@
+	$(MEL) -c $(CONFIG_H) $(INCLUDES) -mil $*.m > $@
 	type $*.tmpmil >> $@
 	if not exist .libs $(MKDIR) .libs
 	$(INSTALL) $@ .libs\$@
 
 .m.mil:
-	$(MEL) $(INCLUDES) -mil $*.m > $@
+	$(MEL) -c $(CONFIG_H) $(INCLUDES) -mil $*.m > $@
 	if not exist .libs $(MKDIR) .libs
 	$(INSTALL) $@ .libs\$@
 
