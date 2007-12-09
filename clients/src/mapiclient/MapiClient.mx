@@ -100,7 +100,12 @@ In the SQL mode, a few more convenient commands are available.
 #include <ctype.h>
 #include <sys/stat.h>
 #include <errno.h>
+#ifdef HAVE_STRING_H
 #include <string.h>
+#endif
+#ifdef HAVE_STRINGS_H
+#include <strings.h>
+#endif
 #ifdef HAVE_LIBREADLINE
 #include <readline/readline.h>
 #include <readline/history.h>
