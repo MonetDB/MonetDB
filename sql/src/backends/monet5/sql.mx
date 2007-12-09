@@ -1056,8 +1056,10 @@ mvc_next_value(lng *res, str *sname, str *seqname)
 	if (s) {
 		sql_sequence *seq = find_sql_sequence(s, *seqname);
 
-		if (seq && seq_next_value(seq, res))
+		if (seq && seq_next_value(seq, res)) {
+			m->last_id = *res;
 			return MAL_SUCCEED;
+		}
 	}
 	throw(SQL, "sql.next_value", "error");
 }

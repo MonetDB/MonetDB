@@ -448,8 +448,10 @@ mvc_next_value(lng *res, mvc *C, str sname, str seqname)
 	if (s) {
 		sql_sequence *seq = find_sql_sequence(s, seqname);
 
-		if (seq && seq_next_value(seq, res))
+		if (seq && seq_next_value(seq, res)) {
+			c->last_id = *res;
 			return GDK_SUCCEED;
+		}
 	}
 	return GDK_FAIL;
 }
