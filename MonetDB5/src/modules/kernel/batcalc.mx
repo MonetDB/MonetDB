@@ -524,14 +524,14 @@ str CMDbataccum@2cst_@3_@4_@5(int *ret, int *r, int *l, void *cst)
 	return res;
 }
 
-batcalc_export str CMDbataccum@2cst2_@3_@4_@5(int *ret, int *r, void *cst, int *l);
-str CMDbataccum@2cst2_@3_@4_@5(int *ret, int *r, void *cst, int *l)
+batcalc_export str CMDbataccum@2cst2_@3_@4_@5(int *ret, int *l, void *cst, int *r);
+str CMDbataccum@2cst2_@3_@4_@5(int *ret, int *l, void *cst, int *r)
 {	
 	BAT *bn, *b;
 	char *res = MAL_SUCCEED;
 
-	@:getBATdescriptor(r,bn,"batcalc.@1")@
-	@:getBATdescriptor(l,b,"batcalc.@1")@
+	@:getBATdescriptor(l,bn,"batcalc.@1")@
+	@:getBATdescriptor(r,b,"batcalc.@1")@
 	@:chkSize(bn,b,CMDbataccum@2)@
 
 	if( '@1'== '/') {
