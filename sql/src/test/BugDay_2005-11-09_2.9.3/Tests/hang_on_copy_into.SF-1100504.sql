@@ -5,7 +5,7 @@ CREATE TABLE "news" (
 	"date" timestamp,
 	CONSTRAINT "news_id_pkey" PRIMARY KEY ("id")
 );
-COPY 1 RECORDS INTO "news" FROM stdin USING DELIMITERS '\t';
+COPY 1 RECORDS INTO "news" FROM stdin USING DELIMITERS '\t', '\n', '''';
 1	'dwerg.net word volwassen, er is eindelijk content
 en het voicemail archief begint al aardig vol te lopen.
 De commentaar en rating code voor de voicemails is ook

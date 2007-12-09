@@ -157,22 +157,22 @@ sql_symbol2stmt(mvc *c)
 	if (s){
 		stmt *opt;
 
-		if (mvc_debug_on(c,32768)) 
+		if (mvc_debug_on(c,32)) 
 			stmt2dot(s, 1, "/tmp/g1.dot");
 		opt = optimize(c, s);
 		stmt_destroy(s);
 		s = opt;
-		if (mvc_debug_on(c,32768)) 
+		if (mvc_debug_on(c,32)) 
 			stmt2dot(s, 2, "/tmp/g2.dot");
 		opt = rel2bin(c, s);
 		stmt_destroy(s);
 		s = opt;
-		if (mvc_debug_on(c,32768)) 
+		if (mvc_debug_on(c,32)) 
 			stmt2dot(s, 3, "/tmp/g3.dot");
 		opt = bin_optimizer(c, s);
 		stmt_destroy(s);
 		s = opt;
-		if (mvc_debug_on(c,32768)) 
+		if (mvc_debug_on(c,32)) 
 			stmt2dot(s, 4, "/tmp/g4.dot");
 	}
 	return s;

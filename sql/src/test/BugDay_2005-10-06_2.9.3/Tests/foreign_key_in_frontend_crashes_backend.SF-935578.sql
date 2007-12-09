@@ -21,12 +21,12 @@
 
   copy 2 records into studenten 
        from stdin
-       using delimiters ',','\n';
+       using delimiters ',','\n','"';
 1, "k.zheng@ewi.tudelft.nl", "Kang Zheng", "1190857"
 2, "yaleyoung109@hotmail.com", "Yang Yang", "1194887"
   copy 1 records into classes
        from stdin
-       using delimiters ',','\n';
+       using delimiters ',','\n','''';
 1,'2004-4-20','13:45','14:30'
   copy 2 records into groups
        from stdin

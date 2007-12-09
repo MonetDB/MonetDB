@@ -217,7 +217,7 @@ extern stmt *stmt_delete(sql_table *t, stmt *b);
 
 extern stmt *stmt_append(stmt *c, stmt *values);
 extern stmt *stmt_table_clear(sql_table *t);
-extern stmt *stmt_bulkinsert(stmt *t, char *sep, char *rsep, stmt *file, int nr);
+extern stmt *stmt_bulkinsert(stmt *t, char *sep, char *rsep, char *ssep, stmt *file, int nr);
 extern stmt *stmt_temp(sql_subtype *t);
 extern stmt *stmt_atom(atom *op1);
 extern stmt *stmt_atom_string(char *s);
@@ -695,6 +695,7 @@ stmt_destroy(stmt *s)
 		case st_temp:
 			if (s->op1.stval)
 				stmt_destroy(s->op1.stval);
+
 		case st_append_col:
 		case st_update_col:
 		case st_append_idx:
@@ -705,6 +706,16 @@ stmt_destroy(stmt *s)
 			if (s->op3.stval)
 				stmt_destroy(s->op3.stval);
 			break;
+
+		case st_bulkinsert:
+			if (s->op1.stval)
+				stmt_destroy(s->op1.stval);
+			if (s->op2.lval)
+				list_destroy(s->op2.lval);
+			if (s->op4.stval)
+				stmt_destroy(s->op4.stval);
+			break;
+
 		case st_aggr:
 			if (s->op1.stval)
 				stmt_destroy(s->op1.stval);
@@ -764,8 +775,6 @@ stmt_destroy(stmt *s)
 		case st_uselect:
 		case st_uselect2:
 		case st_semijoin:
-
-		case st_bulkinsert:
 			if (s->op1.stval)
 				stmt_destroy(s->op1.stval);
 			if (s->op2.stval)
@@ -775,7 +784,6 @@ stmt_destroy(stmt *s)
 			if (s->op4.stval)
 				stmt_destroy(s->op4.stval);
 			break;
-
 		default:
 			printf("! TODO: stmt_destroy(%u=%s) !\n", s->type, st_type2string(s->type));
 		}
@@ -928,6 +936,12 @@ stmt_list_dependencies(stmt *s, int depend_type)
 			if (s->op3.stval)
 				dep_list = list_merge_destroy(dep_list, stmt_list_dependencies(s->op3.stval, depend_type), (fdup)NULL);
 			break;
+		case st_bulkinsert:
+			if (s->op1.stval)
+				dep_list = list_merge_destroy(dep_list, stmt_list_dependencies(s->op1.stval, depend_type), (fdup)NULL);
+			if (s->op4.stval)
+				dep_list = list_merge_destroy(dep_list, stmt_list_dependencies(s->op4.stval, depend_type), (fdup)NULL);
+			break;
 		case st_aggr:
 			if (s->op1.stval)
 				dep_list = list_merge_destroy(dep_list, stmt_list_dependencies(s->op1.stval, depend_type), (fdup)NULL);
@@ -989,7 +1003,6 @@ stmt_list_dependencies(stmt *s, int depend_type)
 		case st_semijoin:
 		case st_connection:
 
-		case st_bulkinsert:
 			if (s->op1.stval)
 				dep_list = list_merge_destroy(dep_list, stmt_list_dependencies(s->op1.stval, depend_type), (fdup)NULL);
 			if (s->op2.stval)
@@ -999,7 +1012,6 @@ stmt_list_dependencies(stmt *s, int depend_type)
 			if (s->op4.stval)
 				dep_list = list_merge_destroy(dep_list, stmt_list_dependencies(s->op4.stval, depend_type), (fdup)NULL);
 			break;
-
 	}
 
 	return dep_list;
@@ -1773,13 +1785,15 @@ stmt_rs_column(stmt *rs, stmt *name, sql_subtype *tpe)
 }
 
 stmt *
-stmt_bulkinsert(stmt *t, char *sep, char *rsep, stmt *file, int nr)
+stmt_bulkinsert(stmt *t, char *sep, char *rsep, char *ssep, stmt *file, int nr)
 {
 	stmt *s = stmt_create(st_bulkinsert);
 
 	s->op1.stval = t;
-	s->op2.stval = stmt_atom_string(sep);
-	s->op3.stval = stmt_atom_string(rsep);
+	s->op2.lval = list_create((fdestroy)& GDKfree);
+	list_append(s->op2.lval, sep);
+	list_append(s->op2.lval, rsep);
+	list_append(s->op2.lval, ssep);
 	s->op4.stval = file;
 	s->flag = nr;
 	return s;
@@ -2767,12 +2781,6 @@ stmt_stmt2dot(stmt *s, int l, int *i, FILE *fp)
 			if (s->op1.stval) 
 				fprintf(fp, "id%d -> id%d [headlabel=\"1\"];\n",
 					stmt_stmt2dot(s->op1.stval, l, i, fp), -(s->optimized));
-			if (s->op2.stval) 
-				fprintf(fp, "id%d -> id%d [headlabel=\"2\"];\n",
-					stmt_stmt2dot(s->op2.stval, l, i, fp), -(s->optimized));
-			if (s->op3.stval) 
-				fprintf(fp, "id%d -> id%d [headlabel=\"3\"];\n",
-					stmt_stmt2dot(s->op3.stval, l, i, fp), -(s->optimized));
 			if (s->type == st_bulkinsert && s->op4.stval) 
 				fprintf(fp, "id%d -> id%d [headlabel=\"4\"];\n",
 					stmt_stmt2dot(s->op4.stval, l, i, fp), -(s->optimized));

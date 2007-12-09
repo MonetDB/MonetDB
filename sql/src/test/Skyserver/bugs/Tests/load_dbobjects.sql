@@ -10,7 +10,7 @@ CONSTRAINT pk_DBObjects_name PRIMARY KEY
    name
 ));
 
-COPY 9 RECORDS INTO DBObjects FROM stdin USING DELIMITERS '\t', '\t\n';
+COPY 9 RECORDS INTO DBObjects FROM stdin USING DELIMITERS '\t', '\t\n', '"';
 "Algorithm"	"U"	"U"	" Contains a paragraph of text for each algorithm "	" The Glossary table contains cross-references to entries in the Algorithm table. "	"0"	
 "BestTarget2Sector"	"U"	"U"	" Map PhotoObj which are potential targets to sectors  "	" PhotoObj should only appear once in this list because any ra,dec  should belong to a unique sector "	"0"	
 "Chunk"	"U"	"U"	" Contains basic data for a Chunk

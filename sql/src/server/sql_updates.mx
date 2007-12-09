@@ -1375,7 +1375,7 @@ insert_into(mvc *sql, dlist *qname, dlist *columns, symbol *val_or_q)
    where import is a function returning a table of to be inserted values.
  */
 static stmt *
-sql_bulkinsert(mvc *sql, sql_table *t, char *tsep, char *rsep, char *filename, int nr)
+sql_bulkinsert(mvc *sql, sql_table *t, char *tsep, char *rsep, char *ssep, char *filename, int nr)
 {
 	stmt *rs = NULL;
 	stmt *fname = (filename) ? stmt_atom_string(_strdup(filename)) : NULL;
@@ -1383,7 +1383,7 @@ sql_bulkinsert(mvc *sql, sql_table *t, char *tsep, char *rsep, char *filename, i
 	int i, len = 0;
 	stmt **inserts, *res = NULL;
 
-	rs = stmt_bulkinsert(stmt_basetable(t, t->base.name), _strdup(tsep), _strdup(rsep), fname, nr);
+	rs = stmt_bulkinsert(stmt_basetable(t, t->base.name), _strdup(tsep), _strdup(rsep), _strdup(ssep), fname, nr);
 	len = list_length(t->columns.set);
 	inserts = NEW_ARRAY(stmt *, len);
 
@@ -1407,6 +1407,7 @@ copyfrom(mvc *sql, dlist *qname, dlist *files, dlist *seps, int nr)
 	sql_table *t = NULL;
 	char *tsep = seps->h->data.sval;
 	char *rsep = seps->h->next->data.sval;
+	char *ssep = (seps->h->next->next)?seps->h->next->next->data.sval:"";
 	list *slist;
 
 	if (sname && !(s=mvc_bind_schema(sql, sname))) {
@@ -1433,12 +1434,12 @@ copyfrom(mvc *sql, dlist *qname, dlist *files, dlist *seps, int nr)
 		for (slist = create_stmt_list(); n; n = n->next) {
 			char *fname = n->data.sval;
 
-			list_append(slist, sql_bulkinsert(sql, t, tsep, rsep, fname, nr));
+			list_append(slist, sql_bulkinsert(sql, t, tsep, rsep, ssep, fname, nr));
 		}
 		return stmt_list(slist);
 	}
 	slist = create_stmt_list();
-	list_append(slist, sql_bulkinsert(sql, t, tsep, rsep, NULL, nr));
+	list_append(slist, sql_bulkinsert(sql, t, tsep, rsep, ssep, NULL, nr));
 	return stmt_list(slist);
 }
 

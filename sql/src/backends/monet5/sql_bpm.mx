@@ -28,10 +28,6 @@ address mat_bind_idxbat_wrap
 comment "Bind the idx bat, tname.idx
 	with specific accsess modes";
 
-command hrange(b:bat[:oid,:any_1], low:oid, high:oid):void
-address mat_dummy
-comment "pass the horizontal range to the optimizers (dummy function)";
-
 command inc_parts(sname:str, tname:str):void
 address inc_parts_wrap
 comment "Increment the number of partions";

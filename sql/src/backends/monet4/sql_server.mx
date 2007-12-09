@@ -150,7 +150,7 @@ stream.
 		mvc_export_value_wrap; "export a single value onto the stream s"
 
 	.COMMAND mvc_import_table( mvc c, Bstream s, str tname, 
-					str sep, str rsep, int nr) : 
+					str sep, str rsep, str ssep, int nr) : 
 		BAT[str,BAT] = mvc_import_table_wrap; 
 		"import a table from stream s with the given tuple and record seperators (sep/rsep)"
 
@@ -753,9 +753,9 @@ mvc_result_value_wrap(mvc *M, str tn, str name, str type, int *digits, int *scal
 }
 
 int
-mvc_import_table_wrap(BAT **res, mvc *c, Bstream *s, str tname, str sep, str rsep, int *sz)
+mvc_import_table_wrap(BAT **res, mvc *c, Bstream *s, str tname, str sep, str rsep, str ssep, int *sz)
 {
-	*res = mvc_import_table(*(mvc **) c, *(bstream **) s, tname, sep, rsep, *sz);
+	*res = mvc_import_table(*(mvc **) c, *(bstream **) s, tname, sep, rsep, ssep, *sz);
 	if (*res == NULL) {
 		GDKerror("importTable: failed to import table");
 		return GDK_FAIL;
@@ -1537,11 +1537,6 @@ proc sql_union (bat[any::1,any::2] b1, bat[any::1,any::2] b2) : bat[any::1,any::
 #	if (count(b2) > 0)
 		return kunion(b1,b2);
 #	return b1;
-}
-
-proc sql_semijoin (bat[oid,any::1] b1, bat[oid,any::2] b2) : bat[oid,any::1] {
-	var x := b2.mirror();
-	return x.join(b1);
 }
 
 proc log2(lng i) : int {

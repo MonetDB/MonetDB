@@ -1339,8 +1339,8 @@ be adjusted too.
 /* postpone */
 
 	mb= c->curprg->def;
-	if( be->q && mb &&
-		fndArgProperty(mb, (p= getInstrPtr(mb,0)),0,putName("runonce",7)) ){
+	if (be->q && mb &&
+	    varGetProp(mb, getArg(getInstrPtr(mb,0), 0), runonceProp)){
 		SQLCacheRemove(c, getFunctionId(p));
 		/* this should invalidate any match */
 		be->q->key= -1;

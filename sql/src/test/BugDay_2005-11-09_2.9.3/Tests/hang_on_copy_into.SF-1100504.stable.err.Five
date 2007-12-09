@@ -5,11 +5,18 @@ stderr of test 'hang_on_copy_into.SF-1100504` in directory 'src/test/BugDay_2005
 # 13:11:12 >  Mtimeout -timeout 180 Mserver "--config=/ufs/niels/scratch/Linux-x86_64/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/niels/scratch/Linux-x86_64/lib/MonetDB:/ufs/niels/scratch/Linux-x86_64/lib/bin" --set "gdk_dbfarm=/ufs/niels/scratch/Linux-x86_64/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/niels/scratch/Linux-x86_64/var/MonetDB/log" --set mapi_port=30055 --set sql_port=45907 --set xquery_port=50884 --set monet_prompt= --trace "--dbname=mTests_src_test_BugDay_2005-11-09_2.9.3" --dbinit="module(sql_server); sql_server_start();" ; echo ; echo Over..
 # 13:11:12 >  
 
-MAPI  = monetdb@koala:31641
-QUERY = COPY 1 RECORDS INTO "news" FROM stdin USING DELIMITERS '\t';
+#warning: please don't forget to set your vault key!
+#(see /ufs/niels/scratch/monetdb/Linux-x86_64/etc/monetdb5.conf)
+
+# 17:07:35 >  
+# 17:07:35 >  mclient -lsql -umonetdb -Pmonetdb --host=koala --port=39961 
+# 17:07:35 >  
+
+MAPI  = monetdb@koala:39961
+QUERY = COPY 1 RECORDS INTO "news" FROM stdin USING DELIMITERS '\t', '\n', '''';
 ERROR = !SQLException:sql:End of string (') missing in 'dwerg.net word volwassen, er is eindelijk content at line 1
         !SQLException:importTable:failed to import table
-MAPI  = monetdb@koala:31641
+MAPI  = monetdb@koala:39961
 QUERY = en het voicemail archief begint al aardig vol te lopen.
 ERROR = !syntax error, unexpected IDENT in: "en"
 

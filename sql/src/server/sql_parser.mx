@@ -2409,6 +2409,12 @@ opt_seps:
 				  append_string(l, $3);
 				  append_string(l, $5);
 				  $$ = l; }
+ |  opt_using DELIMITERS string ',' string ',' string
+				{ dlist *l = L();
+				  append_string(l, $3);
+				  append_string(l, $5);
+				  append_string(l, sql2str($7));
+				  $$ = l; }
  ;
 
 opt_using:

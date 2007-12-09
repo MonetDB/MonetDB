@@ -314,6 +314,7 @@ SQLgetStatistics(mvc *m, MalBlkPtr mb)
 
 		if( getModuleId(p) == sqlRef && 
 		    (f == bindRef || f == bindidxRef || f == binddbatRef ) ){
+			ValRecord vr;
 			InstrPtr q;
 			char *sname = getConstant(mb, getArg(p,1)).val.sval;
 			char *tname = getConstant(mb, getArg(p,2)).val.sval;
@@ -321,9 +322,8 @@ SQLgetStatistics(mvc *m, MalBlkPtr mb)
 			int not_null = 0;
 			lng rows = 1;
 			int mode = 0;
-			int part = 1, off = 0;
+			int part = 0, off = 0;
 			int k = getArg(p,0);
-			bit t = TRUE;
 			sql_bpm *bpm = NULL;
 
 			if (f == binddbatRef) {
@@ -367,11 +367,9 @@ SQLgetStatistics(mvc *m, MalBlkPtr mb)
 				if (c->t->cnt && mode == RDONLY)
 					rows = c->t->cnt;
 			}	
-			if (mb->var[k]->props == 0)
-				mb->var[k]->props = newPropertySet();
-			setProperty(getProps(mb,k),"rows", "=", TYPE_lng, &rows);
+			varSetProp(mb, k, rowsProp, op_eq, VALset(&vr, TYPE_lng, &rows));
 			if (not_null)
-				setProperty(getProps(mb,k),"notnil", "=", TYPE_bit, &t);
+				varSetProp(mb, k, notnilProp, op_eq, NULL);
 			if (active_store_type == store_bpm && part && 
 			    f != binddbatRef) {
 				q = newInstruction(mb, ASSIGNsymbol);
@@ -385,13 +383,21 @@ SQLgetStatistics(mvc *m, MalBlkPtr mb)
 			}
 			if (part <= 1) {
 				pushInstruction(mb,p);
+				if (bpm) {
+					oid low = 0, high = 1;
+
+					low = bpm->parts[off].hlow;
+					high = bpm->parts[off].hhgh;
+
+					varSetProp(mb, getArg(p,0), hlbProp, op_gte, VALset(&vr, TYPE_oid, &low));
+					varSetProp(mb, getArg(p,0), hubProp, op_lt, VALset(&vr, TYPE_oid, &high));
+				}
 			} else {
 				int i, v = getArg(p,0);
 				int tpe = getVarType(mb, v);
 				int top = mb->stop;
 
 				for(i=0; i<part; i++){
-					int d;
 					oid low = 0, high = 1;
 
 					low = bpm->parts[off+i].hlow;
@@ -400,26 +406,20 @@ SQLgetStatistics(mvc *m, MalBlkPtr mb)
 					q = newInstruction(mb, ASSIGNsymbol);
 					setModuleId(q, matRef);
 					setFunctionId(q, f);
-					d = getArg(q,0) = newTmpVariable(mb, tpe);
+					getArg(q,0) = newTmpVariable(mb, tpe);
 					for(j=p->retc; j<p->argc; j++) 
 						q = pushArgument(mb, q, getArg(p,j));
 					q = pushInt(mb, q, i);
 					pushInstruction(mb,q);
 
-					q = newInstruction(mb, ASSIGNsymbol);
-					setModuleId(q, matRef);
-					setFunctionId(q, hrangeRef);
-					getArg(q,0) = newTmpVariable(mb, TYPE_void);
-					q = pushArgument(mb, q, d);
-					q = pushOid(mb, q, low);
-					q = pushOid(mb, q, high);
-					pushInstruction(mb,q);
+					varSetProp(mb, getArg(q,0), hlbProp, op_gte, VALset(&vr, TYPE_oid, &low));
+					varSetProp(mb, getArg(q,0), hubProp, op_lt, VALset(&vr, TYPE_oid, &high));
 				}
 				q = newInstruction(mb, ASSIGNsymbol);
 				setModuleId(q,matRef);
 				setFunctionId(q,newRef);
 				getArg(q,0)= v;
-				for(; top<mb->stop; top+=2) /* skip hrange */
+				for(; top<mb->stop; top++) 
 					q= pushArgument(mb, q, getArg(getInstrPtr(mb,top), 0));
 				pushInstruction(mb,q);
 			}

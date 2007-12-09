@@ -632,10 +632,7 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 			break;
 		}
 		case st_semijoin:
-			if (s->op1.stval->h && s->op1.stval->h == s->op2.stval->h)
-				dump_2(sql, s, "sql_semijoin", nr);
-			else
-				dump_2(sql, s, "semijoin", nr);
+			dump_2(sql, s, "semijoin", nr);
 			break;
 		case st_diff:
 			dump_2(sql, s, "kdiff", nr);
@@ -1131,8 +1128,10 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 			break;
 		case st_bulkinsert:{
 			char *tname = s->op1.stval->op1.tval->base.name;
-			int sep = backend_dumpstmt_(s->op2.stval, nr, sql);
-			int rsep = backend_dumpstmt_(s->op3.stval, nr, sql);
+			node *n = s->op2.lval->h;
+			char *sep = n->data;
+			char *rsep = n->next->data;
+			char *ssep = sql_escape_ident(n->next->next->data);
 
 			buflen = strlen(tname) + 512;
 			buf = NEW_ARRAY(char, buflen + 1);
@@ -1144,20 +1143,19 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 				assert(len <= buflen);
 				len += snprintf(buf + len, buflen - len, "var f%d := bstream_create(f%ds, 1024*1024);\n", file, file);
 				assert(len <= buflen);
-				len += snprintf(buf + len, buflen - len, "var s%d := mvc_import_table( myc, f%d, \"%s\", s%d, s%d, %d);\n", -s->nr, file, tname, sep, rsep, s->flag);
+				len += snprintf(buf + len, buflen - len, "var s%d := mvc_import_table( myc, f%d, \"%s\", \"%s\", \"%s\", \"%s\", %d);\n", -s->nr, file, tname, sep, rsep, ssep, s->flag);
 				assert(len <= buflen);
 				len += snprintf(buf + len, buflen - len, "bstream_destroy(f%d);\n", file);
 				assert(len <= buflen);
 				len += snprintf(buf + len, buflen - len, "stream_close(f%ds);\n", file);
 				assert(len <= buflen);
 			} else {
-				len += snprintf(buf + len, buflen - len, "var s%d := mvc_import_table( myc, Input, \"%s\", s%d, s%d, %d);\n", -s->nr, tname, sep, rsep, s->flag);
+				len += snprintf(buf + len, buflen - len, "var s%d := mvc_import_table( myc, Input, \"%s\", \"%s\", \"%s\", \"%s\", %d);\n", -s->nr, tname, sep, rsep, ssep, s->flag);
 				assert(len <= buflen);
 			}
 			dump(sql, buf, len, -s->nr);
 			_DELETE(buf);
-			backend_dump_nil(sql, s->op2.stval);
-			backend_dump_nil(sql, s->op3.stval);
+			_DELETE(ssep);
 			backend_dump_nil(sql, s->op4.stval);
 			break;
 		}
