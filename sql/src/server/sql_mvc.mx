@@ -86,6 +86,7 @@ typedef struct mvc {
 
 	int user_id;
 	int role_id;
+	lng last_id;	
 
 	/* current session variables */
 	int timezone;		/* minutes west of UTC */
@@ -557,7 +558,7 @@ mvc_create(int clientid, backend_stack stk, int debug, bstream *rs, stream *ws)
 	m->argfixed = 0;
 	m->sym = NULL;
 
-	m->role_id = m->user_id = -1;
+	m->role_id = m->user_id = m->last_id = -1;
 	m->timezone = 0;
 	m->clientid = clientid;
 
@@ -619,7 +620,7 @@ mvc_reset(mvc *m, bstream *rs, stream *ws, int debug, int globalvars)
 	m->argc = 0;
 	m->sym = NULL;
 
-	m->role_id = m->user_id = -1;
+	m->role_id = m->user_id = m->last_id = -1;
 	m->mode = m_normal;
 	if (m->explain != m_normal)
 		stack_set_number(m, "explain", m_normal);
