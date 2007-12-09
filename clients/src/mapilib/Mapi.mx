@@ -207,6 +207,7 @@ section.
 @item mapi_get_monet_version()	@tab MonetDB version name
 @item mapi_get_motd()	@tab	Get server welcome message
 @item mapi_get_row_count()	@tab	Number of rows in cache or -1
+@item mapi_get_last_id()	@tab	last inserted id of an auto_increment (or alike) column 
 @item mapi_get_trace()	@tab	Get trace flag
 @item mapi_get_user()	@tab	Current user name
 @item mapi_log()	@tab Keep log of client/server interaction
@@ -434,6 +435,13 @@ Return the number of fields in the current row.
 
 If possible, return the number of rows in the last select call.  A -1
 is returned if this information is not available.
+
+@item lng mapi_get_last_id(Mapi mid)
+
+If possible, return the last inserted id of auto_increment (or alike) column.  
+A -1 is returned if this information is not available. We restrict this to
+single row inserts and one auto_increment column per table. If the restrictions
+do not hold, the result is unspecified.
 
 @item int mapi_rows_affected(MapiHdl hdl)
 
@@ -918,6 +926,7 @@ struct MapiResultSet {
 	int tableid;		/* SQL id of current result set */
 	int querytype;		/* type of SQL query */
 	int row_count;
+	lng last_id;
 	int fieldcnt;
 	int maxfields;
 	char *errorstr;		/* error from server */
@@ -1107,6 +1116,7 @@ mapi_export int mapi_fetch_row(MapiHdl hdl);
 mapi_export int mapi_fetch_all_rows(MapiHdl hdl);
 mapi_export int mapi_get_field_count(MapiHdl hdl);
 mapi_export int mapi_get_row_count(MapiHdl hdl);
+mapi_export lng mapi_get_last_id(MapiHdl hdl);
 mapi_export int mapi_rows_affected(MapiHdl hdl);
 
 mapi_export char *mapi_fetch_field(MapiHdl hdl, int fnr);
@@ -1475,6 +1485,7 @@ new_result(MapiHdl hdl)
 	result->errorstr = NULL;
 
 	result->row_count = 0;
+	result->last_id = -1;
 
 	result->fieldcnt = 0;
 	result->maxfields = 0;
@@ -3393,6 +3404,7 @@ parse_header_line(MapiHdl hdl, char *line, struct MapiResultSet *result)
 			break;
 		case Q_UPDATE:
 			result->row_count = strtol(nline, &nline, 0);
+			result->last_id = strtol(nline, &nline, 0);
 			break;
 		case Q_TABLE:
 		case Q_PREPARE:{
@@ -4766,6 +4778,13 @@ mapi_get_row_count(MapiHdl hdl)
 {
 	mapi_hdl_check(hdl, "mapi_get_row_count");
 	return hdl->result ? hdl->result->row_count : 0;
+}
+
+lng
+mapi_get_last_id(MapiHdl hdl)
+{
+	mapi_hdl_check(hdl, "mapi_get_last_id");
+	return hdl->result ? hdl->result->last_id : -1;
 }
 
 char *
