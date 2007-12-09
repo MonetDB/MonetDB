@@ -463,6 +463,7 @@ create_loadformat(ascii *as, BAT *names, BAT *seps, BAT *types)
 		fmt[p].len = fmt[p].nillen = 
 			ATOMlen(fmt[p].adt, ATOMnilptr(fmt[p].adt));
 		fmt[p].ws = !(has_whitespace(fmt[p].sep));
+		fmt[p].quote = '"';
 		fmt[p].data = GDKmalloc(fmt[p].len);
 		if (ascii_io_debug)
 			stream_printf(GDKerr, "%s\n", fmt[p].name);
