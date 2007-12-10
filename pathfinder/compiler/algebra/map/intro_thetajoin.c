@@ -183,6 +183,7 @@ find_join_worker (PFla_op_t *n,
         case la_disjunion:
         case la_intersect:
         case la_difference:
+        case la_error:
         case la_distinct:
             break;
 

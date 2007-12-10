@@ -455,6 +455,9 @@ subexp_eq (PFla_op_t *a, PFla_op_t *b)
             return false;
             break;
 
+        case la_error:
+            return false;
+            break;
         case la_cond_err:
             return (a->sem.err.att == b->sem.err.att
                     && a->sem.err.str == b->sem.err.str);

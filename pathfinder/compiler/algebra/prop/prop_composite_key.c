@@ -465,6 +465,7 @@ infer_ckey (PFla_op_t *n)
         case la_difference:
         case la_type_assert:
         case la_roots:
+        case la_error:
         case la_cond_err:
             /* composite key columns are propagated */
             copy (n->prop->ckeys, L(n)->prop->ckeys);

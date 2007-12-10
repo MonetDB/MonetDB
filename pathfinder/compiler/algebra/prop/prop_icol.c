@@ -247,6 +247,7 @@ prop_infer_icols (PFla_op_t *n, PFalg_att_t icols)
         case la_lit_tbl:
         case la_empty_tbl:
         case la_ref_tbl:
+        case la_error:
             break;
 
         case la_attach:

@@ -104,6 +104,7 @@ check_op (PFla_op_t *n)
         case la_doc_tbl:
         case la_roots:
         case la_trace:
+        case la_error:
         case la_cond_err:
             /* just propagate all column information */
             ITER (n) = ITER (L(n));

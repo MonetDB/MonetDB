@@ -886,6 +886,7 @@ infer_ocol (PFla_op_t *n)
             /* keep empty schema */
             break;
 
+        case la_error:
         case la_cond_err:
         case la_trace:
         case la_trace_msg:

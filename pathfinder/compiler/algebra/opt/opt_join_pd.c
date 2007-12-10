@@ -328,6 +328,7 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
             case la_fragment:
             case la_frag_union:
             case la_empty_frag:
+            case la_error:
             case la_cond_err:
             case la_nil:
             case la_trace:
@@ -1604,6 +1605,7 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
                 }
                 break;
 
+            case la_error: /* don't rewrite errors */
             case la_cond_err:
                 /* this breaks proxy generation - thus don't
                    rewrite conditional errors */
@@ -1778,6 +1780,7 @@ map_name (PFla_op_t *p, PFalg_att_t att)
         case la_semijoin:
         case la_thetajoin:
         case la_trace:
+        case la_error:
         case la_cond_err:
             /* name does not change */
             break;

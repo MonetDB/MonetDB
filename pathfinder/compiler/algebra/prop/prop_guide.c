@@ -1009,6 +1009,7 @@ infer_guide(PFla_op_t *n, PFguide_tree_t *guide)
         case la_type_assert:
         case la_cast:
         case la_roots:
+        case la_error:
         case la_cond_err:
         case la_trace:
         case la_trace_msg:

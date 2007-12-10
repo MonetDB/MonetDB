@@ -159,6 +159,7 @@ prop_infer_set (PFla_op_t *n, bool set)
             r_set = true;
             break;
 
+        case la_error:
         case la_distinct:
         case la_max:
         case la_min:

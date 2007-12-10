@@ -1831,6 +1831,11 @@ void createAndStoreAlgOpNode(XML2LALGContext* ctx, xmlNodePtr nodePtr)
 /******************************************************************************/
 /******************************************************************************/
 
+    case la_error:
+        /** FIXME**/
+        assert(!"not implemented, sorry");
+        break;
+
     case la_cond_err             : 
 
         {

@@ -758,6 +758,9 @@ apply_patch (PFla_op_t *n, PFarray_t *assembly1, PFarray_t *assembly2)
         case la_empty_frag:
         {
         } break;
+        case la_error:
+        {
+        } break;
         case la_cond_err:
         {
             PFalg_schema_t schema = n->schema;
@@ -984,6 +987,7 @@ resolve_name_conflicts (PFla_op_t *n)
         case la_fragment:
         case la_frag_union:
         case la_empty_frag:
+        case la_error:
         case la_cond_err:
         case la_nil:
         {
@@ -1558,6 +1562,10 @@ subexp_eq (PFla_op_t *a, PFla_op_t *b)
         case la_fragment:
         case la_frag_union:
         case la_empty_frag:
+        {
+            return true;
+        } break;
+        case la_error:
         {
             return true;
         } break;

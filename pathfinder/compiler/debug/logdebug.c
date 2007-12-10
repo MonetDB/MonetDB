@@ -108,6 +108,7 @@ static char *a_id[]  = {
     , [la_fragment]         = "FRAGs"
     , [la_frag_union]       = "FRAG_UNION"
     , [la_empty_frag]       = "EMPTY_FRAG"
+    , [la_error]            = "!ERROR"
     , [la_cond_err]         = "!ERROR"
     , [la_nil]              = "nil"
     , [la_trace]            = "trace"
@@ -185,6 +186,7 @@ static char *xml_id[]  = {
     , [la_fragment]         = "FRAG"
     , [la_frag_union]       = "FRAG_UNION"
     , [la_empty_frag]       = "EMPTY_FRAG"
+    , [la_error]            = "error"
     , [la_cond_err]         = "error"
     , [la_nil]              = "nil"
     , [la_trace]            = "trace"
@@ -377,6 +379,7 @@ la_dot (PFarray_t *dot, PFla_op_t *n, bool print_frag_info)
         , [la_fragment]        = "#E0E0E0"
         , [la_frag_union]      = "#E0E0E0"
         , [la_empty_frag]      = "#E0E0E0"
+        , [la_error]           = "#C0C0C0"
         , [la_cond_err]        = "#C0C0C0"
         , [la_nil]             = "#FFFFFF"
         , [la_trace]           = "#FF5500"
@@ -920,6 +923,7 @@ la_dot (PFarray_t *dot, PFla_op_t *n, bool print_frag_info)
         case la_proxy_base:
         case la_string_join:
         case la_dummy:
+        case la_error:
             PFarray_printf (dot, "%s", a_id[n->kind]);
             break;
 

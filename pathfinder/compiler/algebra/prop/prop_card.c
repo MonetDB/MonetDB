@@ -177,6 +177,7 @@ infer_card (PFla_op_t *n)
                 n->prop->card = 0;
             break;
 
+        case la_error:
         case la_cond_err:
             /* Optimizations are allowed to prune errors
                as long as the cardinality stays the same.

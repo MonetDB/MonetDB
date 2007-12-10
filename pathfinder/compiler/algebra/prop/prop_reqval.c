@@ -228,6 +228,7 @@ prop_infer_reqvals (PFla_op_t *n, reqval_t reqvals)
         case la_proxy:
         case la_proxy_base:
         case la_dummy:
+        case la_error:
             /* propagate required values list to left subtree */
             prop_infer_reqvals (L(n), rv);
             break;

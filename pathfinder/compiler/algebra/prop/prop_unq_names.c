@@ -547,6 +547,7 @@ infer_unq_names (PFla_op_t *n, unsigned int id)
         case la_empty_frag:
             break;
 
+        case la_error:
         case la_cond_err:
         case la_trace:
         case la_trace_msg:

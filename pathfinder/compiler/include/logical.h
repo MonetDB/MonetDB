@@ -145,7 +145,8 @@ enum PFla_op_kind_t {
     , la_frag_union      = 72 /**< special node type used to form an algebraic
                                    union of fragments */
     , la_empty_frag      = 73 /**< representation of an empty fragment */
-                             
+          
+    , la_error           = 79 /**< error operator for the fn:error function*/
     , la_cond_err        = 80 /**< facility to trigger runtime errors */
     , la_nil             = 81 /**< end of the list of parameters */
     , la_trace           = 82 /**< debug operator */
@@ -1070,6 +1071,11 @@ PFla_op_t * PFla_empty_frag (void);
 
 
 /****************************************************************/
+
+/**
+ * Constructor for error
+ */
+PFla_op_t * PFla_error (const PFla_op_t *n);
 
 /**
  * Constructor for conditional error

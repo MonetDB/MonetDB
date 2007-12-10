@@ -156,6 +156,7 @@ map_names (PFla_op_t *n, PFla_op_t *goal, PFarray_t *par_np_list)
         case la_thetajoin:
         case la_select:
         case la_pos_select:
+        case la_error:
         case la_distinct:
         case la_disjunion:
         case la_intersect:

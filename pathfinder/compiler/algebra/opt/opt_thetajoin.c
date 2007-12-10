@@ -1875,6 +1875,8 @@ opt_mvd (PFla_op_t *p)
         case la_empty_frag:
             break;
 
+        case la_error: /* don't rewrite errors */
+            break;
         case la_cond_err:
             /* We push the error operator into the left input
                as we do not know whether it relates to the left or

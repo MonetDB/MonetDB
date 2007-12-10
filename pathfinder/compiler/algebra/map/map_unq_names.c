@@ -746,6 +746,9 @@ map_unq_names (PFla_op_t *p, PFarray_t *map)
             res = empty_frag ();
             break;
 
+        case la_error:
+            res =  error (U(L(p)));
+            break;
         case la_cond_err:
             res = cond_err (U(L(p)), U(R(p)),
                             /* unique name of input attribute att is

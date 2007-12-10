@@ -358,6 +358,7 @@ infer_ori_names (PFla_op_t *n, PFarray_t *par_np_list)
             }
             break;
 
+        case la_error:
         case la_select:
         case la_pos_select:
         case la_distinct:

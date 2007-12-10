@@ -3440,6 +3440,31 @@ PFla_empty_frag (void)
     return ret;
 }
 
+/**
+ * Construct for an error message.
+ *
+ */
+PFla_op_t *
+PFla_error (const PFla_op_t *n)
+{
+    PFla_op_t    *ret;
+    unsigned int i;
+
+    assert(n);
+
+    ret = la_op_wire1 (la_error, n);
+
+    /* allocate memory for the result schema; it's the same schema as n's */
+    ret->schema.count = n->schema.count;
+    ret->schema.items
+        = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
+
+    /* copy schema from argument 'n' */
+    for (i = 0; i < n->schema.count; i++)
+        ret->schema.items[i] = n->schema.items[i];
+
+    return ret;
+}
 
 /**
  * Constructor for a conditional error message.
@@ -4234,6 +4259,9 @@ PFla_op_duplicate (PFla_op_t *n, PFla_op_t *left, PFla_op_t *right)
 
         case la_empty_frag:
             return PFla_empty_frag ();
+
+        case la_error:
+            return PFla_error (left);
 
         case la_cond_err:
             return PFla_cond_err (left, right,

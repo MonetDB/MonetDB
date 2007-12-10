@@ -424,6 +424,7 @@ infer_key (PFla_op_t *n, bool with_guide_info)
         case la_difference:
         case la_type_assert:
         case la_roots:
+        case la_error:
         case la_cond_err:
             /* key columns are propagated */
             copy (n->prop->keys, L(n)->prop->keys);

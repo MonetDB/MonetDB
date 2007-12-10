@@ -851,6 +851,7 @@ infer_dom (PFla_op_t *n, unsigned int id)
         case la_empty_frag:
             break;
 
+        case la_error:
         case la_cond_err:
         case la_trace:
             bulk_add_dom (n->prop, L(n));

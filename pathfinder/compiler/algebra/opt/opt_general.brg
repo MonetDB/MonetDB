@@ -134,6 +134,7 @@ typedef struct PFla_op_t *NODEPTR_TYPE;
 %term  fragment        =  71
 %term  frag_union      =  72
 %term  empty_frag      =  73
+%term  error           =  79
 %term  cond_err        =  80
 %term  nil             =  81
 %term  trace           =  82
@@ -230,6 +231,7 @@ Fcns:   nil                                       =  87 (10);
 
 Rel:    cond_err (Rel, Rel)                       =  88 (10);
 Rel:    cond_err (Rel, EmptyRel)                  =  89  (0);
+Rel:    error (Rel)                               =  90 (10);
 Rel:    trace (Rel, Msg)                          =  93 (10);
 Msg:    trace_msg (Rel, Map)                      =  94 (10);
 Map:    trace_map (Rel, Map)                      =  95 (10);
