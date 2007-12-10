@@ -1517,15 +1517,15 @@ sqltypeinit(void)
 		sql_create_func("character_length", "str", "length", *t, NULL, INT, SCALE_NONE);
 		sql_create_func("octet_length", "str", "nbytes", *t, NULL, INT, SCALE_NONE);
 
-		sql_create_func("soundex", "calc", "soundex", *t, NULL, *t, SCALE_NONE);
-		sql_create_func("difference", "calc", "stringdiff", *t, *t, INT, SCALE_NONE);
-		sql_create_func("editdistance", "calc", "editdistance", *t, *t, INT, SCALE_FIX);
-		sql_create_func("editdistance2", "calc", "editdistance2", *t, *t, INT, SCALE_FIX);
+		sql_create_func("soundex", "txtsim", "soundex", *t, NULL, *t, SCALE_NONE);
+		sql_create_func("difference", "txtsim", "stringdiff", *t, *t, INT, SCALE_NONE);
+		sql_create_func("editdistance", "txtsim", "editdistance", *t, *t, INT, SCALE_FIX);
+		sql_create_func("editdistance2", "txtsim", "editdistance2", *t, *t, INT, SCALE_FIX);
 
-		sql_create_func("similarity", "calc", "similarity", *t, *t, DBL, SCALE_FIX);
-		sql_create_func("qgramnormalize", "calc", "qgramnormalize", *t, NULL, *t, SCALE_NONE);
+		sql_create_func("similarity", "txtsim", "similarity", *t, *t, DBL, SCALE_FIX);
+		sql_create_func("qgramnormalize", "txtsim", "qgramnormalize", *t, NULL, *t, SCALE_NONE);
 
-		sql_create_func("levenshtein", "calc", "levenshtein", *t, *t, INT, SCALE_FIX);
+		sql_create_func("levenshtein", "txtsim", "levenshtein", *t, *t, INT, SCALE_FIX);
 		{ sql_subtype sres;
 		sql_init_subtype(&sres, *t, 0, 0);
 		sql_create_func_("levenshtein", "calc", "levenshtein",
