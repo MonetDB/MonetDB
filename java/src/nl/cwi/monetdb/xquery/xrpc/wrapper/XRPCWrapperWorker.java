@@ -23,6 +23,7 @@ import java.net.*;
 import javax.xml.xpath.*;
 import org.w3c.dom.*;
 
+import nl.cwi.monetdb.util.*;
 import nl.cwi.monetdb.xquery.xrpc.api.*;
 
 public class XRPCWrapperWorker extends Thread {
