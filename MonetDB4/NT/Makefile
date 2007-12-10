@@ -19,7 +19,6 @@ check: "$(SRCDIR)\Makefile.msc" RunMtest.bat
 	call RunMtest.bat
 
 install: targetdirs monetdb4_config.h all
-	$(INSTALL) monetdb4_config.h "$(includedir)"
 	$(MAKE) /nologo /f "$(SRCDIR)\Makefile.msc" "prefix=$(prefix)" "bits=$(bits)" install
 	if not "$(MAKEDIR)" == "$(prefix)" $(INSTALL) Mserver.bat "$(prefix)"
 

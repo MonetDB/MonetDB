@@ -18,7 +18,6 @@ check: "$(SRCDIR)\Makefile.msc" RunMtest.bat
 	call RunMtest.bat
 
 install: targetdirs mal_config.h all
-	$(INSTALL) mal_config.h "$(includedir)"
 	$(MAKE) /nologo /f "$(SRCDIR)\Makefile.msc" "prefix=$(prefix)" "bits=$(bits)" install
 	if not "$(MAKEDIR)" == "$(prefix)" $(INSTALL) M5server.bat "$(prefix)"
 

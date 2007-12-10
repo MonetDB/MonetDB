@@ -25,7 +25,6 @@ check: "$(SRCDIR)\Makefile.msc" RunMtest.bat
 	call RunMtest.bat
 
 install: targetdirs monetdb_config.h all
-	$(INSTALL) monetdb_config.h "$(includedir)"
 	$(MAKE) /nologo /f "$(SRCDIR)\Makefile.msc" "prefix=$(prefix)" install
 
 $(SRCDIR)\Makefile.msc: "$(SRCDIR)\Makefile.ag"

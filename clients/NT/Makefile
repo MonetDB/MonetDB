@@ -19,7 +19,6 @@ check: "$(SRCDIR)\Makefile.msc"
 	call RunMtest.bat
 
 install: targetdirs clients_config.h all
-	$(INSTALL) clients_config.h "$(includedir)"
 	$(MAKE) /nologo /f "$(SRCDIR)\Makefile.msc" "prefix=$(prefix)" "bits=$(bits)" install
 	if not "$(MAKEDIR)" == "$(prefix)" $(INSTALL) mclient.bat "$(prefix)"
 

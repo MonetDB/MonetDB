@@ -30,7 +30,6 @@ install-installer:
 !ENDIF
 
 install: targetdirs pf_config.h all install-installer
-	$(INSTALL) pf_config.h "$(includedir)"
 	$(MAKE) /nologo /f "$(SRCDIR)\Makefile.msc" "prefix=$(prefix)" "bits=$(bits)" install
 	if not "$(MAKEDIR)" == "$(prefix)" $(INSTALL) MXQserver.bat "$(prefix)"
 	if not "$(MAKEDIR)" == "$(prefix)" $(INSTALL) pf.bat "$(prefix)"
