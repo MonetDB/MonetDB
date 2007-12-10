@@ -16,14 +16,15 @@
  * All Rights Reserved.
 **/
 
-package nl.cwi.monetdb.util;
+package nl.cwi.monetdb.xquery.xrpc.api;
 
 import java.util.*;
 import javax.xml.namespace.*;
 
 /**
  * This class implements <code>NamespaceContex</code>, which is needed
- * to evaluate an <code>XPath</code> expression on an XML document.
+ * to evaluate an <code>XPath</code> expression on an XML document
+ * containing namespaces.
  * This class provides functions to store and retrieve (prefix, uri)
  * mappings for Namespaces.
  * See the documentation of the interface <a
