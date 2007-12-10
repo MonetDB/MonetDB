@@ -708,6 +708,14 @@ address MTIMEoldduration
 comment "parse the old duration format and 
 	return an (estimated) number of days.";
 
+command str_to_date(s:str, format:str) :date
+address MTIMEstrptime
+comment "create a date from the string, using the specified format (see man strptime)";
+
+command date_to_str(d:date, format:str) :str
+address MTIMEstrftime
+comment "create a string from the date, using the specified format (see man strftime)";
+
 @+ Utilities
 The Monet V4 procs are converted into functions.
 @mal
@@ -1041,6 +1049,10 @@ mtime_export int tzone_tostr(str *buf, int *len, tzone *z);
 mtime_export int rule_fromstr(str buf, int *len, rule **d);
 mtime_export int rule_tostr(str *buf, int *len, rule *r);
 mtime_export int tzone_fromstr(str buf, int *len, tzone **d);
+
+mtime_export str MTIMEstrptime(date *d, str *s, str *format);
+mtime_export str MTIMEstrftime(str *s, date *d, str *format);
+
 @= ExtractExport
 mtime_export str MTIME@1_extract_@2_bulk(int *ret, int *bid);
 @h
@@ -3900,3 +3912,39 @@ MTIMEmsec(lng *r)
 @:Extract(daytime,seconds,int)@
 @:Extract(daytime,milliseconds,int)@
 @}
+
+str 
+MTIMEstrptime(date *d, str *s, str *format)
+{
+#ifdef HAVE_STRPTIME
+	struct tm t;
+	
+	memset(&t, 0, sizeof(struct tm));
+	if (strptime(*s, *format, &t) == NULL) 
+		throw(MAL, "mtime.str_to_date", "format '%s', doesn't match date '%s'\n", *format, *s);
+	*d = todate(t.tm_mday, t.tm_mon+1, t.tm_year+1900);
+	return MAL_SUCCEED;
+#endif
+	throw(MAL, "mtime.str_to_date", "strptime support missing");
+}
+
+str MTIMEstrftime(str *s, date *d, str *format)
+{
+#ifdef HAVE_STRFTIME
+	struct tm t;
+	char buf[BUFSIZ+1];
+	size_t sz;
+	int mon, year;
+	
+	memset(&t, 0, sizeof(struct tm));
+	fromdate( (int)*d, &t.tm_mday, &mon, &year);
+	t.tm_mon = mon-1;
+	t.tm_year = year-1900;
+	if ((sz = strftime(buf, BUFSIZ, *format, &t)) == 0) 
+		throw(MAL, "mtime.date_to_str", "failed to convert date to string using format '%s'\n", *format);
+	*s = GDKmalloc(sz+1);
+	strncpy(*s, buf, sz+1);
+	return MAL_SUCCEED;
+#endif
+	throw(MAL, "mtime.str_to_date", "strptime support missing");
+}
