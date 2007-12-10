@@ -1458,7 +1458,7 @@ if test "x$have_python" != xno; then
 	AC_ARG_WITH(python-libdir,
 		AC_HELP_STRING([--with-python-libdir=DIR],
 			[relative path for Python library directory (where Python modules should be installed)]),
-		have_pyTHON_LIBDir="$withval")
+		have_python_libdir="$withval")
 	case "$have_python_libdir" in
 	yes|auto)
 		if test $cross_compiling = xyes; then
