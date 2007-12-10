@@ -87,6 +87,7 @@ library statistics;
 library optimizer;
 
 library chopper;
+library txtsim;
 
 #library logger;
 library transaction;
@@ -198,6 +199,7 @@ include opt_statistics;
 include opt_trace;
 
 include chopper;
+include txtsim;
 
 #include logger;
 include transaction;
