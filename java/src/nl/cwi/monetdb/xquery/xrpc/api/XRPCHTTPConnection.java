@@ -22,46 +22,75 @@ import java.io.*;
 import java.net.*;
 
 /**
+ * This class contains functions to send and/or receive (XRPC) messages
+ * using HTTP connections.
+ *
  * @author Ying Zhang <Y.Zhang@cwi.nl>
  * @version 0.1
  */
 
 public class XRPCHTTPConnection {
+    /**
+     * HTTP response header: 200 OK
+     */
     public static final String HTTP_OK_HEADER =
         "HTTP/1.1 200 OK\r\n" +
         "Content-type: text/xml; charset=\"utf-8\"\r\n\r\n";
+    /**
+     * HTTP response header: 404 Bad Request
+     */
     public static final String HTTP_ERR_404_HEADER =
         "HTTP/1.1 404 Bad Request\r\n" +
         "Content-type: text/xml; charset=\"utf-8\"\r\n\r\n";
+    /**
+     * HTTP response header: 500 Internal Server Error
+     */
     public static final String HTTP_ERR_500_HEADER =
         "HTTP/1.1 500 Internal Server Error\r\n" +
         "Content-type: text/xml; charset=\"utf-8\"\r\n\r\n";
 
-    /* Sends XRPC request messages and SOAP Fault messages.
+    /**
+     * Sends the given (XRPC) message <code>msg</code> in the pay load
+     * of an HTTP message with <code>httpHeader</code> using the
+     * <code>writer</code>.
+     * It is up to the caller to close <code>writer</code>.
      *
-     * It is up to the caller to catch the possible exception and print
-     * proper error message.  It is also up to the caller to close the
-     * socket and the associated streams. */
-    public static void send(BufferedWriter socketWriter,
+     * @param writer A (socket) writer for sending message
+     * @param httpHeader Header of the HTTP message
+     * @param msg The message to be send as the pay load of the HTTP
+     * message.
+     * @throws IOException If an I/O error occurs
+     */
+    public static void send(BufferedWriter writer,
                             String httpHeader,
-                            String xrpcMessage)
+                            String msg)
         throws IOException
     {
-        socketWriter.write(httpHeader);
-        socketWriter.write(xrpcMessage);
-        socketWriter.flush();
+        writer.write(httpHeader);
+        writer.write(msg);
+        writer.flush();
     }
 
-    /* Receives XRPC request messages.
+    /**
+     * Reads an HTTP message using the <code>socketReader</code> and
+     * checks the HTTP header for mandatory fields, the validity of the
+     * values of the mandatory fields.
+     * The header is then discarded.
+     * Receives XRPC request message included in the pay load as a
+     * <code>String</code>.
+     * It is up to the caller to close the socket and the associated
+     * streams.
      *
-     * Returns: the received XRPC message
-     *
-     * It is up to the caller to catch the possible exception and print
-     * proper error message.  It is also up to the caller to close the
-     * socket and the associated streams. */
+     * @param socketReader A reader based on socket
+     * @param reqURI Accepted URI in the HTTP request header
+     * @return the received (XRPC) message
+     * @throws XRPCSenderException If the received message is invalid
+     * @throws XRPCReceiverException If the receiver failed to read the
+     * whole message
+     */
     public static String receive(BufferedReader socketReader,
                                  String reqURI)
-        throws XRPCException
+        throws XRPCSenderException, XRPCReceiverException
     {
         int contentLength = 0;
         String ln = null;
@@ -130,8 +159,18 @@ public class XRPCHTTPConnection {
         return reqMsg.toString();
     }
 
-    /* Send an XRPC request, returns the XRPC response message or the
-     * SOAP Fault message */
+    /**
+     * Sends the given XRPC <code>request</code> over an HTTP connection
+     * to the destination <code>server</code> and returns the server's
+     * response message, which can be an XRPC response message or a SOAP
+     * Fault message, in a <code>StringBuffer</code>.
+     *
+     * @param server URL of the destination XRPC server
+     * @param request The (XRPC) request to send
+     * @return Server's response message, which can be an XRPC response
+     * message or a SOAP Fault message.
+     * @throws IOException If an I/O error occurs
+     */
     public static StringBuffer sendReceive(String server,
                                            String request)
         throws IOException
