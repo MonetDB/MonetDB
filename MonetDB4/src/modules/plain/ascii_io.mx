@@ -728,7 +728,7 @@ insert_line(ascii * as, char *line)
 			line++;
 
 		/* recognize fields starting with a quote */
-		if ( *line == fmt[i].quote && 
+		if ( *line && *line == fmt[i].quote && 
 	             (line == s || *(line - 1) != '\\')) {
 			quote = *line;
 			line++;
