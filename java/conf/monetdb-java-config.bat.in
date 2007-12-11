@@ -24,16 +24,16 @@ shift
 :case
 if "%1" == ""			goto :EOF
 if "%1" == "--help"		goto usage
-if "%1" == "--version"		echo %version%		& goto shift
-if "%1" == "--source"		echo %source%		& goto shift
-if "%1" == "--build"		echo %build%		& goto shift
-if "%1" == "--prefix"		echo %prefix%		& goto shift
-if "%1" == "--exec-prefix"	echo %exec_prefix%	& goto shift
-if "%1" == "--bindir"		echo %bindir%		& goto shift
-if "%1" == "--datarootdir"	echo %datarootdir%	& goto shift
-if "%1" == "--datadir"		echo %datadir%		& goto shift
-if "%1" == "--pkgdatadir"	echo %pkgdatadir%	& goto shift
-if "%1" == "--internal"					  goto shift
+if "%1" == "--version"		echo %version%&		goto shift
+if "%1" == "--source"		echo %source%&		goto shift
+if "%1" == "--build"		echo %build%&		goto shift
+if "%1" == "--prefix"		echo %prefix%&		goto shift
+if "%1" == "--exec-prefix"	echo %exec_prefix%&	goto shift
+if "%1" == "--bindir"		echo %bindir%&		goto shift
+if "%1" == "--datarootdir"	echo %datarootdir%&	goto shift
+if "%1" == "--datadir"		echo %datadir%&		goto shift
+if "%1" == "--pkgdatadir"	echo %pkgdatadir%&	goto shift
+if "%1" == "--internal"					goto shift
 
 :usage
 	echo.

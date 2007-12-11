@@ -37,29 +37,29 @@ shift
 :case
 if "%1" == ""			goto :EOF
 if "%1" == "--help"		goto usage
-if "%1" == "--version"		echo %version%		& goto shift
-if "%1" == "--source"		echo %source%		& goto shift
-if "%1" == "--build"		echo %build%		& goto shift
-if "%1" == "--prefix"		echo %prefix%		& goto shift
-if "%1" == "--exec-prefix"	echo %exec_prefix%	& goto shift
-if "%1" == "--bindir"		echo %bindir%		& goto shift
-if "%1" == "--libexecdir"	echo %libexecdir%	& goto shift
-if "%1" == "--datarootdir"	echo %datarootdir%	& goto shift
-if "%1" == "--datadir"		echo %datadir%		& goto shift
-if "%1" == "--sysconfdir"	echo %sysconfdir%	& goto shift
-if "%1" == "--localstatedir"	echo %localstatedir%	& goto shift
-if "%1" == "--libdir"		echo %libdir%		& goto shift
-if "%1" == "--infodir"		echo %infodir%		& goto shift
-if "%1" == "--mandir"		echo %mandir%		& goto shift
-if "%1" == "--includedir"	echo %includedir%	& goto shift
-if "%1" == "--pkgdatadir"	echo %pkgdatadir%	& goto shift
-if "%1" == "--pkglibdir"	echo %pkglibdir%	& goto shift
-if "%1" == "--pkgincludedir"	echo %pkgincludedir%	& goto shift
-if "%1" == "--perllibdir"	echo %perllibdir%	& goto shift
-if "%1" == "--pythonlibdir"	echo %pythonlibdir%	& goto shift
-if "%1" == "--phpextensiondir"	echo %phpextensiondir%	& goto shift
-if "%1" == "--rubylibdir"	echo %rubylibdir%	& goto shift
-if "%1" == "--internal"					  goto shift
+if "%1" == "--version"		echo %version%&		goto shift
+if "%1" == "--source"		echo %source%&		goto shift
+if "%1" == "--build"		echo %build%&		goto shift
+if "%1" == "--prefix"		echo %prefix%&		goto shift
+if "%1" == "--exec-prefix"	echo %exec_prefix%&	goto shift
+if "%1" == "--bindir"		echo %bindir%&		goto shift
+if "%1" == "--libexecdir"	echo %libexecdir%&	goto shift
+if "%1" == "--datarootdir"	echo %datarootdir%&	goto shift
+if "%1" == "--datadir"		echo %datadir%&		goto shift
+if "%1" == "--sysconfdir"	echo %sysconfdir%&	goto shift
+if "%1" == "--localstatedir"	echo %localstatedir%&	goto shift
+if "%1" == "--libdir"		echo %libdir%&		goto shift
+if "%1" == "--infodir"		echo %infodir%&		goto shift
+if "%1" == "--mandir"		echo %mandir%&		goto shift
+if "%1" == "--includedir"	echo %includedir%&	goto shift
+if "%1" == "--pkgdatadir"	echo %pkgdatadir%&	goto shift
+if "%1" == "--pkglibdir"	echo %pkglibdir%&	goto shift
+if "%1" == "--pkgincludedir"	echo %pkgincludedir%&	goto shift
+if "%1" == "--perllibdir"	echo %perllibdir%&	goto shift
+if "%1" == "--pythonlibdir"	echo %pythonlibdir%&	goto shift
+if "%1" == "--phpextensiondir"	echo %phpextensiondir%&	goto shift
+if "%1" == "--rubylibdir"	echo %rubylibdir%&	goto shift
+if "%1" == "--internal"					goto shift
 
 :usage
 	echo.
