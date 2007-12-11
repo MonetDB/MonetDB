@@ -37,7 +37,7 @@
 #include <pf_config.h>
 
 /* AIX requires this to be the first thing in the file.  */
-#if HAVE_ALLOCA_H
+#ifdef HAVE_ALLOCA_H
 #  include <alloca.h>
 #else
 #  ifdef _AIX
