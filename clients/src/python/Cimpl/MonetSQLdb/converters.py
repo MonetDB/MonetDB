@@ -61,7 +61,7 @@ def Thing2Str(s, d):
 
 def Unicode2Str(s, d):
     """Convert a unicode object to a string using utf-8 encoding."""
-    return s.encode('utf-8')
+    return string_literal(s.encode('utf-8'), d)
 
 # Python 1.5.2 compatibility hack
 if str(0L)[-1]=='L':
