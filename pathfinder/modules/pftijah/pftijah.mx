@@ -315,7 +315,9 @@ PROC ws_ft_index_info_base(BAT[void,BAT] ws, BAT[any,str] ftiNames, bit all) : B
 #                                                                   #
 #####################################################################
 
-var verbose := false;
+var verbose      := false;
+
+var extra_commit := false;
 
 const dflt_ft_index   := "DFLT_FT_INDEX";
 const dflt_bg_index   := "DFLT_FT_INDEX";
@@ -997,6 +999,7 @@ PROC tj_add2collection(str ftiName, str uri_loc, str uri_name, bit store) : void
       _tj_add2collection(ftiName, collBat, uri_loc, uri_name, store);
       _tj_finalize_collection(ftiName, collBat, FALSE);
       _tj_commit(collBat); 
+      if ( extra_commit ) subcommit(_tj_collection_str(ftiName));
       if ( timing ) {
          var ms := (usec()-t_start)/1000;
          printf("#C[%s]:tj_add2collection(): + aggregate time = %lld.%03llds.\n",ftiName,/(ms,1000),%(ms,1000));
@@ -1038,6 +1041,7 @@ PROC tj_add2collection(str ftiName, BAT[str,str] uri, bit store) : void
          printf("#C[%s]:tj_add2collection(BAT): + aggregate time = %lld.%03llds.\n",ftiName,/(ms,1000),%(ms,1000));
        }
       _tj_commit(collBat); 
+      if ( extra_commit ) subcommit(_tj_collection_str(ftiName));
     });
     lock_unset(coll_lock);
     if (not(isnil(err))) ERROR(err);
