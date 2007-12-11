@@ -3026,6 +3026,8 @@ def main(argv) :
         CONDITIONALS['HAVE_MONETDB_JAVAXRPC'] = GetConfig('monetdb-java-config', '--HAVE_MONETDB_JAVAXRPC')
     else:
         CONDITIONALS['HAVE_MONETDB_JAVA'] = ''
+        CONDITIONALS['HAVE_MONETDB_JAVAJDBC'] = ''
+        CONDITIONALS['HAVE_MONETDB_JAVAXRPC'] = ''
 
     #if env.has_key('MONETDB_PREFIX'):
         #bp = os.path.join(env['MONETDB_PREFIX'],"bin")

@@ -232,9 +232,6 @@ if test "x$have_monetdb_java" != xno; then
 fi
 AC_SUBST(MONETDB_JAVA_PREFIX)
 AC_SUBST(MONETDB_JAVA_VERSION)
-AM_CONDITIONAL(HAVE_MONETDB_JAVA,test x$have_monetdb_java = xyes)
-AM_CONDITIONAL(HAVE_MONETDB_JAVAJDBC,test x$have_monetdb_javajdbc = xyes)
-AM_CONDITIONAL(HAVE_MONETDB_JAVAXRPC,test x$have_monetdb_javaxrpc = xyes)
 ]) dnl AC_DEFUN AM_MONETDB_JAVA
 
 AC_DEFUN([AM_MONETDB_COMMON],
