@@ -14,6 +14,7 @@ set srcdir=@XCLIENTS_SOURCE@
 
 set PATH=%builddir%\conf;%PATH%
 set PATH=%builddir%\src\mapiclient;%PATH%
+set PATH=%builddir%\src\mapilib;%PATH%
 set PATH=%builddir%\src\python;%PATH%
 
 REM execute Mtest.py in the source directory
