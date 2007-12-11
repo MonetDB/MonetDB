@@ -2324,7 +2324,8 @@ BATconst(BAT *b, int tailtype, ptr v)
 	BATiter bi = bat_iterator(b);
 
 	BATcheck(b, "BATconst");
-	if (BAThrestricted(b) == BAT_READ && !ATOMvarsized(tailtype)) {
+	if (BAThrestricted(b) == BAT_READ && 
+	    !ATOMvarsized(tailtype) && tailtype != TYPE_bat) {
  		if (tailtype == TYPE_void) {
 			oid seqbase = oid_nil;
 
