@@ -121,6 +121,7 @@ static char *a_id[]  = {
     , [pa_fragment]        = "FRAGs"
     , [pa_frag_union]      = "FRAG_UNION"
     , [pa_empty_frag]      = "EMPTY_FRAG"
+    , [pa_error]           = "!ERROR"
     , [pa_cond_err]        = "!ERROR"
     , [pa_nil]             = "nil"
     , [pa_trace]           = "trace"
@@ -205,6 +206,7 @@ static char *xml_id[]  = {
     , [pa_fragment]        = "frags"
     , [pa_frag_union]      = "frag_union"
     , [pa_empty_frag]      = "empty_frag"
+    , [pa_error]           = "!ERROR"
     , [pa_cond_err]        = "!ERROR"
     , [pa_nil]             = "nil"
     , [pa_trace]           = "trace"
@@ -403,6 +405,7 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, unsigned int node_id)
         , [pa_fragment]        = "\"#E0E0E0\""
         , [pa_frag_union]      = "\"#E0E0E0\""
         , [pa_empty_frag]      = "\"#E0E0E0\""
+        , [pa_error]           = "\"#C0C0C0\""
         , [pa_cond_err]        = "\"#C0C0C0\""
         , [pa_nil]             = "\"#FFFFFF\""
         , [pa_trace]           = "\"#FF5500\""
@@ -725,6 +728,10 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, unsigned int node_id)
                             PFatt_str (n->sem.iter_item1_item2.item2));
             break;
 
+        case pa_error:
+            PFarray_printf (dot, "%s: (%s)", a_id[n->kind],
+                            PFatt_str (n->sem.ii.item));
+            break;
         case pa_cond_err:
             PFarray_printf (dot, "%s (%s)\\n%s ...", a_id[n->kind],
                             PFatt_str (n->sem.err.att),
@@ -1625,7 +1632,9 @@ pa_xml (PFarray_t *xml, PFpa_op_t *n, unsigned int node_id)
                             PFatt_str (n->sem.ii.iter),
                             PFatt_str (n->sem.ii.item));
             break;
-        
+       
+        case pa_error:
+            break; 
         case pa_cond_err:
             PFarray_printf (xml,
                             "    <content>\n"

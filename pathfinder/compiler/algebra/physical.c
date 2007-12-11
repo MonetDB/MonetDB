@@ -3244,6 +3244,33 @@ PFpa_empty_frag (void)
 }
 
 /**
+ * Constructor for error
+ */
+PFpa_op_t * PFpa_error (const PFpa_op_t *n)
+{
+    PFpa_op_t *ret = wire1 (pa_error, n);
+
+    assert (n);
+
+    /* allocate memory for the result schema */
+    ret->schema.count = n->schema.count;
+    ret->schema.items
+        = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
+
+    /* copy schema from n  */
+    for (unsigned int i = 0; i < n->schema.count; i++)
+            ret->schema.items[i] = n->schema.items[i];
+
+    /* ordering stays the same */
+    for (unsigned int i = 0; i < PFord_set_count (n->orderings); i++)
+        PFord_set_add (ret->orderings, PFord_set_at (n->orderings, i));
+    /* costs */
+    ret->cost = DEFAULT_COST + n->cost;
+
+    return ret;
+}
+
+/**
  * Constructor for conditional error
  */
 PFpa_op_t * PFpa_cond_err (const PFpa_op_t *n, const PFpa_op_t *err,

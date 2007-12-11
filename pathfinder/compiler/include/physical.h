@@ -127,6 +127,7 @@ enum PFpa_op_kind_t {
     , pa_fragment       = 133
     , pa_frag_union     = 134
     , pa_empty_frag     = 135
+    , pa_error          = 139 /**< error operator */
     , pa_cond_err       = 140 /**< conditional error operator */
     , pa_nil            = 141 /**< end of the list of parameters */
     , pa_trace          = 142 /**< debug operator */
@@ -837,6 +838,11 @@ PFpa_op_t *PFpa_frag_union (const PFpa_op_t *n1, const PFpa_op_t *n2);
  * Empty fragment list
  */
 PFpa_op_t *PFpa_empty_frag (void);
+
+/**
+ * Constructor for error
+ */
+PFpa_op_t * PFpa_error (const PFpa_op_t *n);
 
 /**
  * Constructor for conditional error

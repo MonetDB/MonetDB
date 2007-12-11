@@ -177,6 +177,7 @@
 /** empty fragment list */
 #define empty_frag()         PFpa_empty_frag ()
 
+#define error(a)             PFpa_error ((a))
 #define cond_err(a,b,c,d)    PFpa_cond_err ((a), (b), (c), (d))
 #define nil()                PFpa_nil ()
 #define trace(a,b,c,d)       PFpa_trace ((a),(b),(c),(d))
