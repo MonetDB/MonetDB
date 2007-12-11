@@ -17,7 +17,7 @@ set PATH=%builddir%\src\mapiclient;%PATH%
 set PATH=%builddir%\src\mapilib;%PATH%
 set PATH=%builddir%\src\python;%PATH%
 
-set PYTHONPATH=%builddir%\src\python;%PYTHONPATH%
+set PYTHONPATH=%srcdir%\src\python;%PYTHONPATH%
 
 REM execute Mtest.py in the source directory
 pushd %srcdir%
