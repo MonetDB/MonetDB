@@ -2060,6 +2060,53 @@ PROC loop_lifted_@1_step@2 (bat[void, oid] iter, bat[void, oid] item, bat[void, 
 @- update primitives
 @mil
 
+#################################################################
+#
+#
+#
+#                           /-------------\
+#                          /               \
+#                         /                 \
+#                        /                   \
+#                        |   XXXX     XXXX   |
+#                        |   XXXX     XXXX   |
+#                        |   XXX       XXX   |
+#                        \         X        /
+#                         --\     XXX     /--
+#                          | |    XXX    | |
+#                          | |           | |
+#                          | I I I I I I I |
+#                          |  I I I I I I  |
+#                           \             /
+#                            --         --
+#                              \-------/
+#                      XXX                    XXX
+#                     XXXXX                  XXXXX
+#                     XXXXXXXXX         XXXXXXXXXX
+#                            XXXXX   XXXXX
+#                               XXXXXXX
+#                            XXXXX   XXXXX
+#                     XXXXXXXXX        XXXXXXXXXX
+#                     XXXXX                  XXXXX
+#                      XXX                    XXX
+#
+#                            **************
+#                            *  BEWARE!!  *
+#                            **************
+#
+#                        All ye who enter here:
+#                   Most of the code in this module
+#                      is twisted beyond belief!
+#
+#                           Tread carefully.
+#
+#                   If you think you understand it,
+#                              You Don't,
+#                            So Look Again.
+#
+#################################################################
+
+#
 # the UPDATE_INSERT_*, UPDATE_REPLACENODE and UPDATE_REPLACECONTENT commands MUST be
 # consecutive, the UPDATE_INSERT_LAST and UPDATE_INSERT_BEFORE
 # commands also MUST be consecutive
