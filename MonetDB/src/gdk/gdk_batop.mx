@@ -2318,26 +2318,66 @@ BATmark_grp(BAT *b, BAT *g, oid *s)
 BAT *
 BATconst(BAT *b, int tailtype, ptr v)
 {
-	BAT *bn;
+	BAT *bn = NULL;
 	BUN p, q, r;
-	size_t hs, ts;
+	size_t hs, ts, cnt = BATcount(b);
 	BATiter bi = bat_iterator(b);
 
 	BATcheck(b, "BATconst");
-	if (BAThrestricted(b) == BAT_READ && tailtype == TYPE_void) {
-		oid seqbase = (tailtype == TYPE_void) ? oid_nil : *(oid *) v;
+	if (BAThrestricted(b) == BAT_READ && !ATOMvarsized(tailtype)) {
+ 		if (tailtype == TYPE_void) {
+			oid seqbase = oid_nil;
 
-		bn = VIEWhead(b);
-		BATseqbase(BATmirror(bn), seqbase);
-		return bn;
+			bn = VIEWhead(b);
+			BATseqbase(BATmirror(bn), seqbase);
+			return bn;
+		} else {
+			BAT *bt = BATnew(TYPE_void, tailtype, cnt);
+			
+			if (!bt)
+				return NULL;
+			ts = Tsize(bt);
+			switch(ATOMsize(ATOMstorage(tailtype))) {
+			case 1: {
+				bte *d = (bte*)Tloc(bt, BUNfirst(bt)), V = *(bte*)v;
+				for(r=0; r<cnt; r++)
+					d[r] = V; 
+				BATsetcount(bt, cnt);
+			} break;
+			case 2: {
+				sht *d = (sht*)Tloc(bt, BUNfirst(bt)), V = *(sht*)v;
+				for(r=0; r<cnt; r++)
+					d[r] = V; 
+				BATsetcount(bt, cnt);
+			} break;
+			case 4: {
+				int *d = (int*)Tloc(bt, BUNfirst(bt)), V = *(int*)v;
+				for(r=0; r<cnt; r++)
+					d[r] = V; 
+				BATsetcount(bt, cnt);
+			} break;
+			case 8: {
+				lng *d = (lng*)Tloc(bt, BUNfirst(bt)), V = *(lng*)v;
+				for(r=0; r<cnt; r++)
+					d[r] = V; 
+				BATsetcount(bt, cnt);
+			} break;
+			default:
+				for(r=BUNfirst(bt), cnt+=r; r<cnt; r++)
+					bunfastins_nocheck(bt, r, NULL, v, 0, ts);
+			}
+			bt->tsorted = GDK_SORTED;
+			bn = VIEWcreate(b, bt);
+			BBPunfix(bt->batCacheid);
+			return bn;
+		}
 	}
 	if (tailtype == TYPE_bat) {
 		v = &((BAT *) v)->batCacheid;
 	}
 	bn = BATnew(b->htype, tailtype, BATcount(b));
-	if (bn == NULL) {
+	if (bn == NULL) 
 		return bn;
-	}
 	r = BUNfirst(bn);
 	hs = Hsize(bn);
 	ts = Tsize(bn);
