@@ -386,7 +386,7 @@ m_export str SERVERmapi_rpc_bat(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 #endif
 
 #define SOCKPTR struct sockaddr *
-#if HAVE_SOCKLEN_T
+#ifdef HAVE_SOCKLEN_T
 #define SOCKLEN socklen_t
 #else
 #define SOCKLEN int
