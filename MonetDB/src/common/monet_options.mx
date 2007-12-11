@@ -95,7 +95,7 @@ mutils_export void mo_free_options(opt *set, int setlen);
 #include <string.h>
 #include <ctype.h>
 
-#if HAVE_UNISTD_H
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
 
@@ -104,7 +104,7 @@ mutils_export void mo_free_options(opt *set, int setlen);
 #  include "getopt1.c"
 #endif
 
-#if !HAVE_DECL_STRDUP
+#ifndef HAVE_DECL_STRDUP
 #ifdef HAVE_STRDUP
 extern char *strdup(const char *);
 #else
