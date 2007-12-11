@@ -1016,11 +1016,12 @@ childhandler(int sig, siginfo_t *si, void *unused)
 			if (p->dbname)
 				GDKfree(p->dbname);
 			GDKfree(p);
-			break;
+			return;
 		}
 		q = p;
 		p = q->next;
 	}
+	merlog("received SIGCHLD from unknown child with pid %d", si->si_pid);
 }
 
 int
@@ -1296,7 +1297,7 @@ main(int argc, char *argv[])
 		return(1);
 	}
 
-	sa.sa_flags = SA_SIGINFO;
+	sa.sa_flags = SA_SIGINFO | SA_NOCLDWAIT;
 	sigemptyset(&sa.sa_mask);
 	sa.sa_sigaction = childhandler;
 	if (sigaction(SIGCHLD, &sa, NULL) == -1) {
