@@ -385,6 +385,16 @@ comment "cast to @1 and check for overflow";
 command calc.@1( v:str, digits:int, scale:int ) :@1 
 address str_2dec_@1
 comment "cast to dec(@1) and check for overflow";
+
+command batcalc.@1( v:bat[:oid,:str] ) :bat[:oid,:@1] 
+address batstr_2_@1
+comment "Cast to @1";
+command batcalc.@1( v:bat[:oid,:str], digits:int ) :bat[:oid,:@1] 
+address batstr_2num_@1
+comment "cast to @1 and check for overflow";
+command batcalc.@1( v:bat[:oid,:str], digits:int, scale:int ) :bat[:oid,:@1] 
+address batstr_2dec_@1
+comment "cast to dec(@1) and check for overflow";
 @-
 @{
 address CALCstr2@1
@@ -414,11 +424,13 @@ comment "cast @1 to str";
 @:mal_castfromstr(sqlblob)@
 
 @mal
-command calc.str( v:bit) :str 
-address CALCbit2str
-comment "Idempotent cast of strings";
 command calc.str( v:str) :str 
 address CALCstr2str
+comment "Idempotent cast of strings";
+
+@+ bit conversion (why?) 
+command calc.str( v:bit) :str 
+address CALCbit2str
 comment "Idempotent cast of strings";
 
 command calc.bte( v:bit) :bte 
@@ -433,6 +445,7 @@ comment "Cast bit to int ";
 command calc.lng( v:bit) :lng 
 address CALCbit2lng
 comment "Cast bit to lng ";
+@mal
 
 pattern calc.str( eclass:int, d1:int, s1:int, has_tz:int, v:any_1, digits:int ) :str 
 address SQLstr_cast
@@ -443,14 +456,19 @@ address STRsubstringTail;
 command calc.substring(s:str,offset:int,count:int):str
 address STRsubstring;
 
-@-
-command calc.str( v:any_1, digits:int ) :str 
 @= mal_cast_2dec
 command calc.@1( v:@2) :@1 
 address @2_2_@1
 comment "cast @2 to @1";
 command calc.@1( v:@2, digits:int, scale:int ) :@1 
 address @2_num2dec_@1
+comment "cast number to decimal(@1) and check for overflow";
+
+command batcalc.@1( v:bat[:oid,:@2]) :bat[:oid,:@1]
+address bat@2_2_@1
+comment "cast @2 to @1";
+command batcalc.@1( v:bat[:oid,:@2], digits:int, scale:int ) :bat[:oid,:@1] 
+address bat@2_num2dec_@1
 comment "cast number to decimal(@1) and check for overflow";
 @mal
 @:mal_cast_2dec(bte,flt)@
@@ -468,6 +486,13 @@ address @2_dec2_@1
 comment "cast decimal(@2) to @1 and check for overflow";
 command calc.@1( s1:int, v:@2, d2:int, s2:int ) :@1 
 address @2_dec2dec_@1
+comment "cast decimal(@2) to decimal(@1) and check for overflow";
+
+command batcalc.@1( s1:int, v:bat[:oid,:@2]) :bat[:oid,:@1]
+address bat@2_dec2_@1
+comment "cast decimal(@2) to @1 and check for overflow";
+command batcalc.@1( s1:int, v:bat[:oid,:@2], d2:int, s2:int ) :bat[:oid,:@1] 
+address bat@2_dec2dec_@1
 comment "cast decimal(@2) to decimal(@1) and check for overflow";
 @mal
 
@@ -691,6 +716,8 @@ sql5_export str @1_int_dec_round_wrap( @1 *res, @1 *v, int *r );
 sql5_export str @1_round_wrap( @1 *res, @1 *v, int *d, int *s, bte *r );
 sql5_export str str_2dec_@1( @1 *res, str *val, int *d, int *sc );
 sql5_export str str_2num_@1( @1 *res, str *v, int *len );
+sql5_export str batstr_2dec_@1( int *res, int *val, int *d, int *sc );
+sql5_export str batstr_2num_@1( int *res, int *v, int *len );
 @h
 @:round_export(bte)@
 @:round_export(sht)@
@@ -698,6 +725,7 @@ sql5_export str str_2num_@1( @1 *res, str *v, int *len );
 @:round_export(lng)@
 @= cast_export
 sql5_export str str_2_@1( @1 *res, str *val );
+sql5_export str batstr_2_@1( int *res, int *val );
 sql5_export str SQL@1_2_str( str *res, @1 *val );
 @h
 @:cast_export(bit,bitToStr)@
@@ -730,13 +758,18 @@ sql5_export str second_interval_@1( lng *res, @1 *s, int *ek, int *sk );
 @:c_interval_export(lng)@
 @= simpleupcast_export
 sql5_export str @2_2_@1( @1 *res, @2 *v );
+sql5_export str bat@2_2_@1( int *res, int *v );
 @= simpledowncast_export
 sql5_export str @2_2_@1( @1 *res, @2 *v );
+sql5_export str bat@2_2_@1( int *res, int *v );
 @= numcastup_export
 @:simpledowncast_export(@1,@2)@
 sql5_export str @2_dec2_@1( @1 *res, int *s1, @2 *v );
 sql5_export str @2_dec2dec_@1( @1 *res, int *S1, @2 *v, int *d2, int *S2 );
 sql5_export str @2_num2dec_@1( @1 *res, @2 *v, int *d2, int *s2 );
+sql5_export str bat@2_dec2_@1( int *res, int *s1, int *v );
+sql5_export str bat@2_dec2dec_@1( int *res, int *S1, int *v, int *d2, int *S2 );
+sql5_export str bat@2_num2dec_@1( int *res, int *v, int *d2, int *s2 );
 @h
 @:numcastup_export(bte,bte)@
 @:numcastup_export(sht,bte)@
@@ -751,6 +784,7 @@ sql5_export str @2_num2dec_@1( @1 *res, @2 *v, int *d2, int *s2 );
 @= fnumcastdown_export
 @:simpledowncast_export(@1,@2)@
 sql5_export str @2_num2dec_@1( @1 *res, @2 *v, int *d2, int *s2 );
+sql5_export str bat@2_num2dec_@1( int *res, int *v, int *d2, int *s2 );
 @h
 @:fnumcastdown_export(bte,flt)@
 @:fnumcastdown_export(sht,flt)@
@@ -765,6 +799,9 @@ sql5_export str @2_num2dec_@1( @1 *res, @2 *v, int *d2, int *s2 );
 sql5_export str @2_dec2_@1( @1 *res, int *s1, @2 *v );
 sql5_export str @2_dec2dec_@1( @1 *res, int *S1, @2 *v, int *d2, int *S2 );
 sql5_export str @2_num2dec_@1( @1 *res, @2 *v, int *d2, int *s2 );
+sql5_export str bat@2_dec2_@1( int *res, int *s1, int *v );
+sql5_export str bat@2_dec2dec_@1( int *res, int *S1, int *v, int *d2, int *S2 );
+sql5_export str bat@2_num2dec_@1( int *res, int *v, int *d2, int *s2 );
 @h
 @:fnumcastup_export(flt,bte)@
 @:fnumcastup_export(flt,sht)@
@@ -779,6 +816,9 @@ sql5_export str @2_num2dec_@1( @1 *res, @2 *v, int *d2, int *s2 );
 sql5_export str @2_dec2_@1( @1 *res, int *s1, @2 *v );
 sql5_export str @2_dec2dec_@1( @1 *res, int *S1, @2 *v, int *d2, int *S2 );
 sql5_export str @2_num2dec_@1( @1 *res, @2 *v, int *d2, int *s2 );
+sql5_export str bat@2_dec2_@1( int *res, int *s1, int *v );
+sql5_export str bat@2_dec2dec_@1( int *res, int *S1, int *v, int *d2, int *S2 );
+sql5_export str bat@2_num2dec_@1( int *res, int *v, int *d2, int *s2 );
 @h
 @:numcastdown_export(bte,sht)@
 @:numcastdown_export(bte,int)@
@@ -1082,13 +1122,13 @@ mvc_bat_next_value(int *res, int *sid, str *seqname)
 	if( (b = BATdescriptor(*sid)) == NULL )
 		throw(SQL, "sql.next_value", "Cannot access descriptor");
 
-	r= BATnew(b->htype, TYPE_lng, BATcount(b));
+	r = BATnew(b->htype, TYPE_lng, BATcount(b));
 	if (!r) {
 		BBPunfix(b->batCacheid);
 		throw(SQL, "sql.next_value", "Cannot create bat");
 	}
-
 	BATseqbase(r, b->hseqbase);
+
 	if (!BATcount(b)) {
 		BBPunfix(b->batCacheid);
 		BBPkeepref( *res = r->batCacheid);
@@ -1729,7 +1769,7 @@ voidbathash(int *res, BAT *b )
 	int *r, *f;
 	BATiter bi, dsti;
 
-	dst= BATnew(TYPE_void,TYPE_int, BATcount(b));
+	dst = BATnew(TYPE_void,TYPE_int, BATcount(b));
 	if (!dst) {
 		BBPunfix(b->batCacheid);
 		throw(SQL, "bathash", "can not create bat");
@@ -1972,6 +2012,60 @@ str_2num_@1( @1 *res, str *v, int *len )
 	int zero = 0;
 	return str_2dec_@1( res, v, len, &zero );
 }
+
+str
+batstr_2dec_@1( int *res, int *bid, int *d, int *sc )
+{
+	BAT *b, *dst;
+	BATiter bi;
+	BUN p,q;
+	char *msg = NULL;
+
+	if( (b = BATdescriptor(*bid)) == NULL ){
+		throw(SQL, "batcalc.str_2dec_@1", "Cannot access descriptor");
+	}
+	bi = bat_iterator(b);
+	dst = BATnew(b->htype, TYPE_@1, BATcount(b));
+	BATseqbase(dst, b->hseqbase);
+	BATloop(b,p,q) {
+		str v = (str)BUNtail(bi,p);
+		@1 r;
+		msg = str_2dec_@1( &r, &v, d, sc );
+		if (msg)
+			break;
+		BUNins(dst, BUNhead(bi,p), &r, FALSE);
+	}
+	BBPkeepref( *res = dst->batCacheid);
+	BBPunfix(b->batCacheid);
+	return msg;
+}
+
+str
+batstr_2num_@1( int *res, int *bid, int *len )
+{
+	BAT *b, *dst;
+	BATiter bi;
+	BUN p,q;
+	char *msg = NULL;
+
+	if( (b = BATdescriptor(*bid)) == NULL ){
+		throw(SQL, "batcalc.str_2num_@1", "Cannot access descriptor");
+	}
+	bi = bat_iterator(b);
+	dst = BATnew(b->htype, TYPE_@1, BATcount(b));
+	BATseqbase(dst, b->hseqbase);
+	BATloop(b,p,q) {
+		str v = (str)BUNtail(bi,p);
+		@1 r;
+		msg = str_2num_@1( &r, &v, len );
+		if (msg)
+			break;
+		BUNins(dst, BUNhead(bi,p), &r, FALSE);
+	}
+	BBPkeepref( *res = dst->batCacheid);
+	BBPunfix(b->batCacheid);
+	return msg;
+}
 @c
 
 @:round(bte)@
@@ -2031,6 +2125,33 @@ SQL@1_2_str( str *res, @1 *val )
 	@2( &p, &len, val);
 	*res = p;
 	return MAL_SUCCEED;
+}
+
+str
+batstr_2_@1( int *res, int *bid )
+{
+	BAT *b, *dst;
+	BATiter bi;
+	BUN p,q;
+	char *msg = NULL;
+
+	if( (b = BATdescriptor(*bid)) == NULL ){
+		throw(SQL, "batcalc.str_2_@1", "Cannot access descriptor");
+	}
+	bi = bat_iterator(b);
+	dst = BATnew(b->htype, TYPE_@1, BATcount(b));
+	BATseqbase(dst, b->hseqbase);
+	BATloop(b,p,q) {
+		str v = (str)BUNtail(bi,p);
+		@1 r;
+		msg = str_2_@1( &r, &v );
+		if (msg)
+			break;
+		BUNins(dst, BUNhead(bi,p), &r, FALSE);
+	}
+	BBPkeepref( *res = dst->batCacheid);
+	BBPunfix(b->batCacheid);
+	return msg;
 }
 @c
 @:cast(bit,bitToStr)@
@@ -2115,6 +2236,32 @@ str
 	*res = (@1)*v;
 	return(MAL_SUCCEED);
 }
+
+str bat@2_2_@1( int *res, int *bid )
+{
+	BAT *b, *dst;
+	BATiter bi;
+	BUN p,q;
+	char *msg = NULL;
+
+	if( (b = BATdescriptor(*bid)) == NULL ){
+		throw(SQL, "batcalc.@2_2_@1", "Cannot access descriptor");
+	}
+	bi = bat_iterator(b);
+	dst = BATnew(b->htype, TYPE_@1, BATcount(b));
+	BATseqbase(dst, b->hseqbase);
+	BATloop(b,p,q) {
+		@2 *v = (@2*)BUNtail(bi,p);
+		@1 r;
+		msg = @2_2_@1( &r, v );
+		if (msg)
+			break;
+		BUNins(dst, BUNhead(bi,p), &r, FALSE);
+	}
+	BBPkeepref( *res = dst->batCacheid);
+	BBPunfix(b->batCacheid);
+	return msg;
+}
 @c
 
 @= simpledowncast
@@ -2136,6 +2283,32 @@ str @2_2_@1( @1 *res, @2 *v )
 		throw(SQL, "convert",
 			"value (" LLFMT ") exceeds limits of type @1", val);
 	}
+}
+
+str bat@2_2_@1( int *res, int *bid )
+{
+	BAT *b, *dst;
+	BATiter bi;
+	BUN p,q;
+	char *msg = NULL;
+
+	if( (b = BATdescriptor(*bid)) == NULL ){
+		throw(SQL, "batcalc.@2_2_@1", "Cannot access descriptor");
+	}
+	bi = bat_iterator(b);
+	dst = BATnew(b->htype, TYPE_@1, BATcount(b));
+	BATseqbase(dst, b->hseqbase);
+	BATloop(b,p,q) {
+		@2 *v = (@2*)BUNtail(bi,p);
+		@1 r;
+		msg = @2_2_@1( &r, v );
+		if (msg)
+			break;
+		BUNins(dst, BUNhead(bi,p), &r, FALSE);
+	}
+	BBPkeepref( *res = dst->batCacheid);
+	BBPunfix(b->batCacheid);
+	return msg;
 }
 @c
 
@@ -2205,6 +2378,83 @@ str
 	return @2_dec2dec_@1( res, &zero, v, d2, s2 );
 }
 
+str bat@2_dec2_@1( int *res, int *s1, int *bid )
+{
+	BAT *b, *dst;
+	BATiter bi;
+	BUN p,q;
+	char *msg = NULL;
+
+	if( (b = BATdescriptor(*bid)) == NULL ){
+		throw(SQL, "batcalc.@2_dec2_@1", "Cannot access descriptor");
+	}
+	bi = bat_iterator(b);
+	dst = BATnew(b->htype, TYPE_@1, BATcount(b));
+	BATseqbase(dst, b->hseqbase);
+	BATloop(b,p,q) {
+		@2 *v = (@2*)BUNtail(bi,p);
+		@1 r;
+		msg = @2_dec2_@1( &r, s1, v );
+		if (msg)
+			break;
+		BUNins(dst, BUNhead(bi,p), &r, FALSE);
+	}
+	BBPkeepref( *res = dst->batCacheid);
+	BBPunfix(b->batCacheid);
+	return msg;
+}
+
+str bat@2_dec2dec_@1( int *res, int *S1, int *bid, int *d2, int *S2 )
+{
+	BAT *b, *dst;
+	BATiter bi;
+	BUN p,q;
+	char *msg = NULL;
+
+	if( (b = BATdescriptor(*bid)) == NULL ){
+		throw(SQL, "batcalc.@2_dec2dec_@1", "Cannot access descriptor");
+	}
+	bi = bat_iterator(b);
+	dst = BATnew(b->htype, TYPE_@1, BATcount(b));
+	BATseqbase(dst, b->hseqbase);
+	BATloop(b,p,q) {
+		@2 *v = (@2*)BUNtail(bi,p);
+		@1 r;
+		msg = @2_dec2dec_@1( &r, S1, v, d2, S2 );
+		if (msg)
+			break;
+		BUNins(dst, BUNhead(bi,p), &r, FALSE);
+	}
+	BBPkeepref( *res = dst->batCacheid);
+	BBPunfix(b->batCacheid);
+	return msg;
+}
+str bat@2_num2dec_@1( int *res, int *bid, int *d2, int *s2 )
+{
+	BAT *b, *dst;
+	BATiter bi;
+	BUN p,q;
+	char *msg = NULL;
+
+	if( (b = BATdescriptor(*bid)) == NULL ){
+		throw(SQL, "batcalc.@2_num2dec_@1", "Cannot access descriptor");
+	}
+	bi = bat_iterator(b);
+	dst = BATnew(b->htype, TYPE_@1, BATcount(b));
+	BATseqbase(dst, b->hseqbase);
+	BATloop(b,p,q) {
+		@2 *v = (@2*)BUNtail(bi,p);
+		@1 r;
+		msg = @2_num2dec_@1( &r, v, d2, s2 );
+		if (msg)
+			break;
+		BUNins(dst, BUNhead(bi,p), &r, FALSE);
+	}
+	BBPkeepref( *res = dst->batCacheid);
+	BBPunfix(b->batCacheid);
+	return msg;
+}
+
 @c
 @:numcastup(bte,bte)@
 @:numcastup(sht,bte)@
@@ -2254,6 +2504,33 @@ str
 	*res = (@1) r;
 	return MAL_SUCCEED;
 }
+str 
+bat@2_num2dec_@1( int *res, int *bid, int *d2, int *s2 )
+{
+	BAT *b, *dst;
+	BATiter bi;
+	BUN p,q;
+	char *msg = NULL;
+
+	if( (b = BATdescriptor(*bid)) == NULL ){
+		throw(SQL, "batcalc.@2_num2dec_@1", "Cannot access descriptor");
+	}
+	bi = bat_iterator(b);
+	dst = BATnew(b->htype, TYPE_@1, BATcount(b));
+	BATseqbase(dst, b->hseqbase);
+	BATloop(b,p,q) {
+		@2 *v = (@2*)BUNtail(bi,p);
+		@1 r;
+		msg = @2_num2dec_@1( &r, v, d2, s2 );
+		if (msg)
+			break;
+		BUNins(dst, BUNhead(bi,p), &r, FALSE);
+	}
+	BBPkeepref( *res = dst->batCacheid);
+	BBPunfix(b->batCacheid);
+	return msg;
+}
+
 @c
 @:fnumcastdown(bte,flt)@
 @:fnumcastdown(sht,flt)@
@@ -2329,6 +2606,86 @@ str
 	int zero = 0;
 	return @2_dec2dec_@1( res, &zero, v, d2, s2 );
 }
+
+str bat@2_dec2_@1( int *res, int *s1, int *bid )
+{
+	BAT *b, *dst;
+	BATiter bi;
+	BUN p,q;
+	char *msg = NULL;
+
+	if( (b = BATdescriptor(*bid)) == NULL ){
+		throw(SQL, "batcalc.@2_dec2_@1", "Cannot access descriptor");
+	}
+	bi = bat_iterator(b);
+	dst = BATnew(b->htype, TYPE_@1, BATcount(b));
+	BATseqbase(dst, b->hseqbase);
+	BATloop(b,p,q) {
+		@2 *v = (@2*)BUNtail(bi,p);
+		@1 r;
+		msg = @2_dec2_@1( &r, s1, v );
+		if (msg)
+			break;
+		BUNins(dst, BUNhead(bi,p), &r, FALSE);
+	}
+	BBPkeepref( *res = dst->batCacheid);
+	BBPunfix(b->batCacheid);
+	return msg;
+}
+
+str bat@2_dec2dec_@1( int *res, int *S1, int *bid, int *d2, int *S2 )
+{
+	BAT *b, *dst;
+	BATiter bi;
+	BUN p,q;
+	char *msg = NULL;
+
+	if( (b = BATdescriptor(*bid)) == NULL ){
+		throw(SQL, "batcalc.@2_dec2dec_@1", "Cannot access descriptor");
+	}
+	bi = bat_iterator(b);
+	dst = BATnew(b->htype, TYPE_@1, BATcount(b));
+	BATseqbase(dst, b->hseqbase);
+	BATloop(b,p,q) {
+		@2 *v = (@2*)BUNtail(bi,p);
+		@1 r;
+		msg = @2_dec2dec_@1( &r, S1, v, d2, S2 );
+		if (msg)
+			break;
+		BUNins(dst, BUNhead(bi,p), &r, FALSE);
+	}
+	BBPkeepref( *res = dst->batCacheid);
+	BBPunfix(b->batCacheid);
+	return msg;
+}
+
+str bat@2_num2dec_@1( int *res, int *bid, int *d2, int *s2 )
+{
+	BAT *b, *dst;
+	BATiter bi;
+	BUN p,q;
+	char *msg = NULL;
+
+	if( (b = BATdescriptor(*bid)) == NULL ){
+		throw(SQL, "batcalc.@2_num2dec_@1", "Cannot access descriptor");
+	}
+	bi = bat_iterator(b);
+	dst = BATnew(b->htype, TYPE_@1, BATcount(b));
+	BATseqbase(dst, b->hseqbase);
+	BATloop(b,p,q) {
+		@2 *v = (@2*)BUNtail(bi,p);
+		@1 r;
+		msg = @2_num2dec_@1( &r, v, d2, s2 );
+		if (msg)
+			break;
+		BUNins(dst, BUNhead(bi,p), &r, FALSE);
+	}
+	BBPkeepref( *res = dst->batCacheid);
+	BBPunfix(b->batCacheid);
+	return msg;
+}
+
+
 @c
 @:fnumcastup(flt,bte)@
 @:fnumcastup(flt,sht)@
@@ -2411,6 +2768,86 @@ str
 	int zero = 0;
 	return @2_dec2dec_@1( res, &zero, v, d2, s2 );
 }
+
+str bat@2_dec2_@1( int *res, int *s1, int *bid )
+{
+	BAT *b, *dst;
+	BATiter bi;
+	BUN p,q;
+	char *msg = NULL;
+
+	if( (b = BATdescriptor(*bid)) == NULL ){
+		throw(SQL, "batcalc.@2_dec2_@1", "Cannot access descriptor");
+	}
+	bi = bat_iterator(b);
+	dst = BATnew(b->htype, TYPE_@1, BATcount(b));
+	BATseqbase(dst, b->hseqbase);
+	BATloop(b,p,q) {
+		@2 *v = (@2*)BUNtail(bi,p);
+		@1 r;
+		msg = @2_dec2_@1( &r, s1, v );
+		if (msg)
+			break;
+		BUNins(dst, BUNhead(bi,p), &r, FALSE);
+	}
+	BBPkeepref( *res = dst->batCacheid);
+	BBPunfix(b->batCacheid);
+	return msg;
+}
+
+str bat@2_dec2dec_@1( int *res, int *S1, int *bid, int *d2, int *S2 )
+{
+	BAT *b, *dst;
+	BATiter bi;
+	BUN p,q;
+	char *msg = NULL;
+
+	if( (b = BATdescriptor(*bid)) == NULL ){
+		throw(SQL, "batcalc.@2_dec2dec_@1", "Cannot access descriptor");
+	}
+	bi = bat_iterator(b);
+	dst = BATnew(b->htype, TYPE_@1, BATcount(b));
+	BATseqbase(dst, b->hseqbase);
+	BATloop(b,p,q) {
+		@2 *v = (@2*)BUNtail(bi,p);
+		@1 r;
+		msg = @2_dec2dec_@1( &r, S1, v, d2, S2 );
+		if (msg)
+			break;
+		BUNins(dst, BUNhead(bi,p), &r, FALSE);
+	}
+	BBPkeepref( *res = dst->batCacheid);
+	BBPunfix(b->batCacheid);
+	return msg;
+}
+
+str bat@2_num2dec_@1( int *res, int *bid, int *d2, int *s2 )
+{
+	BAT *b, *dst;
+	BATiter bi;
+	BUN p,q;
+	char *msg = NULL;
+
+	if( (b = BATdescriptor(*bid)) == NULL ){
+		throw(SQL, "batcalc.@2_num2dec_@1", "Cannot access descriptor");
+	}
+	bi = bat_iterator(b);
+	dst = BATnew(b->htype, TYPE_@1, BATcount(b));
+	BATseqbase(dst, b->hseqbase);
+	BATloop(b,p,q) {
+		@2 *v = (@2*)BUNtail(bi,p);
+		@1 r;
+		msg = @2_num2dec_@1( &r, v, d2, s2 );
+		if (msg)
+			break;
+		BUNins(dst, BUNhead(bi,p), &r, FALSE);
+	}
+	BBPkeepref( *res = dst->batCacheid);
+	BBPunfix(b->batCacheid);
+	return msg;
+}
+
+
 @c
 @:numcastdown(bte,sht)@
 @:numcastdown(bte,int)@
