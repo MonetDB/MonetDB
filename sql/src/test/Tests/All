@@ -86,3 +86,6 @@ procedure_syntax
 order_by_simple_exp
 
 setoptimizer
+string
+crashme
+50ways
