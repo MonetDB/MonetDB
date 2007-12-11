@@ -356,7 +356,7 @@ atom_name(int tpe)
 #define MAX_CONN	256
 
 #define SOCKPTR struct sockaddr *
-#if HAVE_SOCKLEN_T
+#ifdef HAVE_SOCKLEN_T
 #define SOCKLEN socklen_t
 #else
 #define SOCKLEN int
