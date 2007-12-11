@@ -86,6 +86,7 @@ procedure_syntax
 order_by_simple_exp
 
 setoptimizer
+load_dec_as_int
 string
 crashme
 50ways
