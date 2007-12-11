@@ -737,7 +737,7 @@ transform_colenv (PFarray_t *col_env, PFsql_aident_t ident)
 struct sql_from_list_t
 {
     PFsql_t       *table;
-    PFsql_aident_t alias;
+    PFsql_t       *alias;
 };
 typedef struct sql_from_list_t sql_from_list_t;
 
@@ -790,7 +790,7 @@ transform_frommap_ext (PFla_op_t *p, PFsql_t *tbl)
                                   /* check for a NULL value */
                                   from_clause.table
                                   ? from_clause.table : tbl,
-                                  alias (from_clause.alias)));
+                                  from_clause.alias));
     }
 
     return fromlist;
@@ -921,8 +921,8 @@ substitute_aliases (PFla_op_t * p)
        replace the old aliases in the from list */
     for (unsigned int i = 0; i < count; i++) {
         map[i].new = new_alias ();
-        map[i].old = (from_list_at (FROMLIST(p), i)).alias;
-        (from_list_at (FROMLIST(p), i)).alias = map[i].new;
+        map[i].old = (from_list_at (FROMLIST(p), i)).alias->sem.alias.name;
+        (from_list_at (FROMLIST(p), i)).alias->sem.alias.name = map[i].new;
 
         /* Copy the expressions in the fromlist */
         (from_list_at (FROMLIST(p), i)).table
@@ -966,7 +966,7 @@ step_sibling (PFla_op_t *p, PFsql_aident_t ctx, PFsql_aident_t step,
               PFsql_t *fragment)
 {
     PFsql_aident_t par  = new_alias ();
-    from_list_add (FROMLIST(p), fragment, par);
+    from_list_add (FROMLIST(p), fragment, alias (par));
 
     /* parent step */
     /* ctx.pre > par.pre and par.pre + par.size >= ctx.pre */
@@ -1246,7 +1246,6 @@ step_guide_join (PFla_op_t *p, PFsql_aident_t step,
 {
     assert (p);
 
-    PFsql_tident_t newtable = new_table_name ();
     PFsql_aident_t newalias = new_alias ();
 
     PFsql_t **list = PFmalloc (count * sizeof (PFsql_t *));
@@ -1254,16 +1253,10 @@ step_guide_join (PFla_op_t *p, PFsql_aident_t step,
     for (unsigned int i = 0; i < count; i++)
         list[i] = stmt_list (lit_int (guides[i]->guide));
 
-    /* prepare table to dump */
-    execute (bind (table_def (
-                       newtable,
-                       column_list (GUIDE_)),
-                   values (PFsql_list_list_ (count, (const PFsql_t **) list))));
-
     /* prepare step node */
-    from_list_add (FROMLIST(p), table_name (newtable),
-                   newalias);
-
+    from_list_add (FROMLIST(p),
+                   values (PFsql_list_list_ (count, (const PFsql_t **) list)),
+                   alias_def (newalias, column_list (GUIDE_)));
 
     where_list_add (WHERELIST(p),
                     eq
@@ -1404,7 +1397,7 @@ construct_twig_generic (PFla_op_t *p,
 
     from_list_add (FROMLIST(p),
                    table_name (twig_tbl),
-                   new_root);
+                   alias (new_root));
 
     /* mark node p as bound */
     BOUND(p) = true;
@@ -1522,7 +1515,7 @@ bind_operator (PFla_op_t *p, bool distinct)
     /* add the new binding to the from list */
     from_list_add (FROMLIST(p),
                    table_name (newtable),
-                   newalias);
+                   alias (newalias));
 
     /* mark node p as bound */
     BOUND(p) = true;
@@ -1950,7 +1943,7 @@ reduce (PFla_op_t * p, int goalnt)
                     doc1 = col_env_lookup_step (COLMAP(query), item, item_ty);
                     if (doc1 == PF_SQL_ALIAS_UNBOUND) {
                         doc1 = new_alias ();
-                        from_list_add  (FROMLIST(p), frags, doc1);
+                        from_list_add  (FROMLIST(p), frags, alias (doc1));
                         where_list_add (WHERELIST(p),
                                         eq (col_env_lookup (
                                                 COLMAP(query), item, item_ty),
@@ -1963,7 +1956,7 @@ reduce (PFla_op_t * p, int goalnt)
                         doc2 = doc1;
                     else {
                         doc2 = new_alias ();
-                        from_list_add  (FROMLIST(p), frags, doc2);
+                        from_list_add  (FROMLIST(p), frags, alias (doc2));
                         step_axis (p, doc1, doc2, alg_desc_s, NULL, -1);
                         orderby = sortkey_list (orderby,
                                                 sortkey_item (PRE(doc2), true));
@@ -2013,7 +2006,7 @@ reduce (PFla_op_t * p, int goalnt)
                 doc1      = new_alias ();
                 doc2      = new_alias ();
                 from      = from_list_at (FROMLIST(query), 0);
-                from_bind = alias_bind (from.table, alias (from.alias));
+                from_bind = alias_bind (from.table, from.alias);
 
                 /* add the axis conditions */
                 step_axis (p, doc1, doc2, alg_desc_s, NULL, -1);
@@ -2224,7 +2217,7 @@ reduce (PFla_op_t * p, int goalnt)
                                schema_table_name (
                                    "sysibm",
                                    table_name (PF_SQL_TABLE_SYSDUMMY1)),
-                               new_alias ());
+                               alias (new_alias ()));
             } else {
                 /* literal table has more than one row */
                 PFsql_tident_t      newtable = new_table_name ();
@@ -2263,7 +2256,7 @@ reduce (PFla_op_t * p, int goalnt)
                 /* prepare the fromlist */
                 from_list_add (FROMLIST(p),
                                table_name (newtable),
-                               newalias);
+                               alias (newalias));
 
                 /* initialize the list */
                 list  = PFmalloc (ccount * sizeof (PFsql_t *));
@@ -2317,7 +2310,7 @@ reduce (PFla_op_t * p, int goalnt)
             /* add the tables "external"/"real" name to the fromlist */
             from_list_add (FROMLIST(p),
                            ref_table_name (p->sem.ref_tbl.name),
-                           tabalias);
+                           alias (tabalias));
 
             /* lookup the "internal" column names (and types) in the 
                schema info */
@@ -2536,7 +2529,7 @@ reduce (PFla_op_t * p, int goalnt)
 
                 from_list_add (right->frommap,
                                table_name (newtable),
-                               newalias);
+                               alias (newalias));
 
                 col_env_add (right->colmap,
                              att2,
@@ -2656,7 +2649,7 @@ reduce (PFla_op_t * p, int goalnt)
                 /* start a new from list as a newtable will be bound */
                 from_list_add (FROMLIST(p),
                                table_name (newtable),
-                               newalias);
+                               alias (newalias));
 
                 /* add the partition criterion to all lists and environments */
                 if (part) {
@@ -2810,7 +2803,7 @@ reduce (PFla_op_t * p, int goalnt)
             /* start a new from list as @a newtable will be bound */
             from_list_add (FROMLIST(p),
                            table_name (newtable),
-                           newalias);
+                           alias (newalias));
 
             /* prepare the selection lists, the column list, and fill in
                the new bindings for the column environment */
@@ -3112,7 +3105,7 @@ reduce (PFla_op_t * p, int goalnt)
                              ext_column_name (newalias, res_col));
 
                 /* prepare fromlist */
-                from_list_add (FROMLIST(p), table_name(newtable), newalias);
+                from_list_add (FROMLIST(p), table_name(newtable), alias (newalias));
 
                 /* run over the possible types */
                 for (PFalg_simple_type_t t = 1; t; t <<= 1)
@@ -3189,7 +3182,7 @@ reduce (PFla_op_t * p, int goalnt)
             /* start a new from list as @a newtable will be bound */
             from_list_add (FROMLIST(p),
                            table_name (newtable),
-                           newalias);
+                           alias (newalias));
 
             if (att) /* cope with missing att column in case of count */ {
                 ty = type_of (p, att);
@@ -3338,9 +3331,9 @@ reduce (PFla_op_t * p, int goalnt)
             loop      = col_env_lookup (COLMAP(RLL(p)), part, part_ty);
             part_expr = col_env_lookup (COLMAP(LL(p)), part, part_ty);
             from      = from_list_at (FROMLIST(RLL(p)), 0);
-            loop_from = alias_bind (from.table, alias (from.alias));
+            loop_from = alias_bind (from.table, from.alias);
             from      = from_list_at (FROMLIST(LL(p)), 0);
-            part_from = alias_bind (from.table, alias (from.alias));
+            part_from = alias_bind (from.table, from.alias);
 
             /* create a new table name for binding */
             newtable = new_table_name ();
@@ -3349,7 +3342,7 @@ reduce (PFla_op_t * p, int goalnt)
             /* start a new from list as @a newtable will be bound */
             from_list_add (FROMLIST(p),
                            table_name (newtable),
-                           newalias);
+                           alias (newalias));
 
             /* PREPARE EVERYTHING FOR THE RESULT ATTRIBUTE */
             col_env_add (COLMAP(p), res_att, res_ty,
@@ -3622,7 +3615,7 @@ reduce (PFla_op_t * p, int goalnt)
             ctxalias = col_env_lookup_step (COLMAP(p), item, item_ty);
             if (ctxalias == PF_SQL_ALIAS_UNBOUND) {
                 ctxalias = new_alias ();
-                from_list_add (FROMLIST(p), FRAG(L(p)), ctxalias);
+                from_list_add (FROMLIST(p), FRAG(L(p)), alias (ctxalias));
                 where_list_add (WHERELIST(p),
                                 eq (col_env_lookup (COLMAP(p), item, item_ty),
                                     PRE(ctxalias)));
@@ -3632,7 +3625,7 @@ reduce (PFla_op_t * p, int goalnt)
             stepalias = new_alias ();
             from_list_add (FROMLIST(p),
                            FRAG(L(p)),
-                           stepalias);
+                           alias (stepalias));
 
             /* add the axis conditions */
             step_axis (p,
@@ -3715,7 +3708,7 @@ reduce (PFla_op_t * p, int goalnt)
             ctxalias = col_env_lookup_step (COLMAP(p), item, item_ty);
             if (ctxalias == PF_SQL_ALIAS_UNBOUND) {
                 ctxalias = new_alias ();
-                from_list_add (FROMLIST(p), FRAG(L(p)), ctxalias);
+                from_list_add (FROMLIST(p), FRAG(L(p)), alias (ctxalias));
                 where_list_add (WHERELIST(p),
                                 eq (PRE(ctxalias),
                                     col_env_lookup (COLMAP(p), item, item_ty)));
@@ -3792,7 +3785,7 @@ reduce (PFla_op_t * p, int goalnt)
             /* ... and use it to refer to a fresh document relation */
             from_list_add (FROMLIST(p),
                            table_name (PF_SQL_TABLE_FRAG),
-                           doc_tbl);
+                           alias (doc_tbl));
 
             /* add the output columns to the column map */
             col_env_add_full (COLMAP(p), iter, iter_ty,
@@ -3976,7 +3969,7 @@ reduce (PFla_op_t * p, int goalnt)
                                    on (left_outer_join (
                                            alias_bind (
                                                name_from.table,
-                                               alias (name_from.alias)),
+                                               name_from.alias),
                                            alias_bind (
                                                CSIZE(R(p)),
                                                alias (csize_alias))),
@@ -4045,7 +4038,7 @@ reduce (PFla_op_t * p, int goalnt)
                    also into the list of groupby criteria. */
                 else {
                     item_col = EXT_COLUMN_NAME (
-                                   name_from.alias,
+                                   name_from.alias->sem.alias.name,
                                    item,
                                    type_of (L(p), item));
                     grpbylist = column_list (iter_col, item_col);
@@ -4072,7 +4065,7 @@ reduce (PFla_op_t * p, int goalnt)
                                    on (left_outer_join (
                                            alias_bind (
                                                name_from.table,
-                                               alias (name_from.alias)),
+                                               name_from.alias),
                                            alias_bind (
                                                CSIZE(R(p)),
                                                alias (csize_alias))),
@@ -4173,7 +4166,7 @@ reduce (PFla_op_t * p, int goalnt)
 
             /* add the document relation */
             ctx = new_alias ();
-            from_list_add (FROMLIST(p), NULL, ctx);
+            from_list_add (FROMLIST(p), NULL, alias (ctx));
             where_list_add (WHERELIST(p), eq (item_expr, PRE(ctx)));
 
             for (unsigned int i = 0; i < PFarray_last (frags); i++) {
@@ -4203,7 +4196,7 @@ reduce (PFla_op_t * p, int goalnt)
 
             /* add the binding for the new document relation */
             step = new_alias ();
-            from_list_add (FROMLIST(p), NULL, step);
+            from_list_add (FROMLIST(p), NULL, alias (step));
             /* add the axis conditions */
             step_axis (p, ctx, step, alg_desc_s, NULL, -1);
 

@@ -46,6 +46,7 @@
 #define table_name(n)                PFsql_table_name(n)
 #define ref_table_name(n)            PFsql_ref_table_name(n)
 #define table_def(n,clmnlist)        PFsql_table_def(n,clmnlist)
+#define alias_def(n,clmnlist)        PFsql_alias_def(n,clmnlist)
 #define alias(i)                     PFsql_alias(i)
 
 /* .......... Columns .......... */

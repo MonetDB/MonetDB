@@ -235,6 +235,17 @@ PFsql_table_def (PFsql_tident_t name, PFsql_t *columnlist)
 }
 
 /**
+ * Construct a SQL tree node representing a definition of an alias name
+ * with columnlist.
+ */
+PFsql_t * PFsql_alias_def (PFsql_aident_t name, PFsql_t *columnlist)
+{
+    PFsql_t *ret = wire1 (sql_alias_def, columnlist);
+    ret->sem.alias.name = name;
+    return ret;
+}
+
+/**
  * Collate a schema and a table_name, to identify a table in a database.
  */
 PFsql_t *
@@ -291,8 +302,6 @@ PFsql_alias (PFsql_aident_t name)
     ret->sem.alias.name = name;
     return ret;
 }
-
-
 
 /* .......... Columns .......... */
 

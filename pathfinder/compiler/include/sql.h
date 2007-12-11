@@ -113,6 +113,7 @@ enum PFsql_kind_t {
     , sql_ref_tbl_name      /* a reference to an external relation */
     , sql_ref_column_name   /* a reference to a column of an ext. relation */
     , sql_alias             /* SQL alias (a table reference) */
+    , sql_alias_def         /* SQL alias with columnlist */
     , sql_column_list       /* an item of a list of column names */
     , sql_column_name       /* SQL column name (a column reference) */
     , sql_star              /* a SQL wildcard '*' */
@@ -424,6 +425,13 @@ PFsql_t * PFsql_serialization_comment (char *cmmnt);
  * Construct a SQL tree node representing a definition of a relation.
  */
 PFsql_t * PFsql_table_def (PFsql_tident_t name, PFsql_t *columnlist);
+
+/**
+ * Construct a SQL tree node representing a definition of an alias name
+ * with columnlist.
+ */
+PFsql_t * PFsql_alias_def (PFsql_aident_t name, PFsql_t *columnlist);
+
 /**
  * Collate a schema and a table_name, to identify a table in a database.
  */

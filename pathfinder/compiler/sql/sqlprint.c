@@ -46,6 +46,9 @@
 #define L(p)      ((p)->child[0])
 /** starting from p, make a right step */
 #define R(p)      ((p)->child[1])
+/** starting from p, make a right step
+ *  then a left step */
+#define RL(p)     L(R(p))
 
 /* shortcut for pretty printing */
 #define pretty_dump(f,i) PFprettyp_extended ((f), 70, (i))
@@ -73,6 +76,7 @@ static char *ID[] = {
       [sql_ser_mapping]       = "ser_mapping",
       [sql_ser_type]          = "ser_type",
       [sql_tbl_def]           = "tbl_def",
+      [sql_alias_def]         = "alias_def",
       [sql_schema_tbl_name]   = "schema_tbl_name",
       [sql_tbl_name]          = "tbl_name",
       [sql_ref_tbl_name]      = "ref_tbl_name",
@@ -230,7 +234,42 @@ print_column_name (PFsql_t *n)
    
 }
 
+static void
+print_column_name_ (FILE *f, PFsql_t *n)
+{
+    assert ((n->kind == sql_column_name) || (n->kind == sql_ref_column_name));
+    
+    if (n->sem.column.alias != PF_SQL_ALIAS_UNBOUND)
+    {
+        fprintf (f, "%s.", 
+            PFsql_alias_name_str (n->sem.column.alias));
+    
+     }
 
+
+    switch (n->kind)
+    {
+        case  sql_column_name:
+
+            fprintf (f, "%s",
+                PFsql_column_name_str (n->sem.column.name));
+            break;
+
+        case  sql_ref_column_name:
+
+            fprintf (f, "%s",
+                n->sem.ref_column_name.name);    
+            break;
+
+    default:
+
+         PFoops (OOPS_FATAL,
+                    "SQL grammar conflict. (Expected: column reference; "
+                    "Got: %s)", ID[n->kind]);
+
+    }
+   
+}
 
 static void
 print_column_name_list (PFsql_t *n)
@@ -249,6 +288,33 @@ print_column_name_list (PFsql_t *n)
             
         case sql_column_name:
             print_column_name (n);
+            break;
+
+        default:
+            PFoops (OOPS_FATAL,
+                    "SQL grammar conflict. (Expected: column name list; "
+                    "Got: %s)", ID[n->kind]);
+    }
+}
+
+static void
+print_column_name_list_ (FILE *f, PFsql_t * n, int i)
+{
+    assert (n);
+
+    switch (n->kind) {
+        case sql_column_list:
+            print_column_name_list_ (f, L(n), i);
+
+            if (R(n)->kind != sql_nil) {
+                fprintf (f, ",");
+                indent (f, i);
+                print_column_name_list_ (f, R(n), i);
+            }
+            break;
+            
+        case sql_column_name:
+            print_column_name_ (f, n);
             break;
 
         default:
@@ -690,21 +756,30 @@ print_tablereference (FILE *f, PFsql_t* n, int i)
 
     switch (n->kind) {
         case sql_alias_bind:
-            assert (R(n)->kind == sql_alias);
+            assert (R(n)->kind == sql_alias ||
+                    R(n)->kind == sql_alias_def);
             
             if (L(n)->kind == sql_select || L(n)->kind == sql_union)
                 /* print nested selection */
                 print_fullselect (f, L(n), i);
             else
                 print_tablereference (f, L(n), i);
+
             fprintf (f, " AS %s", PFsql_alias_name_str (R(n)->sem.alias.name));
+
+            /* printf column list if required */
+            if (R(n)->kind == sql_alias_def) {
+                fprintf (f, "(");
+                print_column_name_list_ (f, RL(n), i);
+                fprintf (f, ")");
+            }
             break;
         case sql_ref_tbl_name:
             /* prettyprint ref table name */
             fprintf (f, "%s", n->sem.ref_tbl.name);
             break;
 
-    case sql_tbl_name:
+        case sql_tbl_name:
             /* prettyprint table name */
             fprintf (f, "%s", PFsql_table_str (n->sem.tbl.name));
             break;
@@ -714,6 +789,13 @@ print_tablereference (FILE *f, PFsql_t* n, int i)
 
             fprintf (f, "%s.%s", n->sem.schema.str,
                      PFsql_table_str(L(n)->sem.tbl.name));
+            break;
+
+        case sql_values:
+            /* TABLE */
+            fprintf (f, "(VALUES ");
+            print_list_list (f, L(n), i+7); 
+            fprintf (f, ")");
             break;
 
         default:
@@ -845,12 +927,12 @@ print_fullselect (FILE *f, PFsql_t *n, int i)
                 pretty_dump (f, i+7);
             }
             break;
+
         case sql_values:
             /* TABLE */
             fprintf (f, "VALUES ");
             print_list_list (f, L(n), i+7); 
             break;
-
 
         case sql_union:
             print_fullselect (f, L(n), i);
