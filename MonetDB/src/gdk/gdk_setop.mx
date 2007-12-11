@@ -73,6 +73,17 @@ The @emph{kintersect(l,r)} is used also as implementation for the @emph{semijoin
 #define HITdiff(h,t)
 #define MISSintersect(h,t)
 #define MISSdiff(h,t)           bunfastins(bn,h,t)
+
+#define HITintersect_nocheck(h,t)       bunfastins_nocheck(bn,BUNlast(bn),h,t,Hsize(bn),Tsize(bn))
+#define HITdiff_nocheck(h,t)
+#define MISSintersect_nocheck(h,t)
+#define MISSdiff_nocheck(h,t)           bunfastins_nocheck(bn,BUNlast(bn),h,t,Hsize(bn),Tsize(bn))
+
+#define DHITintersect(h,t)       bnh[o] = *(h); bnt[o++] = t;
+#define DHITdiff(h,t)
+#define DMISSintersect(h,t)
+#define DMISSdiff(h,t)           bnh[o] = *(h); bnt[o++] = t;
+
 #define ENDintersect(h,t)
 #define ENDdiff(h,t)            for(;p1<q1;p1++) bunfastins(bn,h,t)
 #define RALIGNdiff(bn,l,r)      FALSE
@@ -84,6 +95,7 @@ The @emph{kintersect(l,r)} is used also as implementation for the @emph{semijoin
 #include "monetdb_config.h"
 #include "gdk.h"
 #include "gdk_setop.h"
+#include "gdk_search.h"
 
 @+ Double Elimination
 Comes in two flavors: looking at one column, or at two at-a-time.
@@ -428,7 +440,7 @@ TODO synced/key case..
 	BUN p1, q1;
 	int ins;
 	hash_t s2;
-	ptr h, t, t2 = NULL, h2 = hnil;
+	ptr h, t, h2 = hnil;
 	BATiter li = bat_iterator(l);
 	BATiter ri = bat_iterator(r);
 
@@ -443,8 +455,7 @@ TODO synced/key case..
 		ins = TRUE;
 		if (@6) /* check for not-nil (nils don't match anyway) */
 			HASHloop@4(ri, r->H->hash, s2, h) {
-				t2 = BUNtail(ri, s2);
-				if (EQUAL@5(t, t2)) {
+				if (EQUAL@5(t, BUNtail(ri, s2))) {
 					HIT@1(h, t);
 					ins = FALSE;
 					break;
@@ -454,9 +465,113 @@ TODO synced/key case..
 			continue;
 		MISS@1(h, t);
 	}
-	if (t2 || h2)
-		ins = 0;	       /* dummy action for the compiler */
+	(void)h2; /* in some cases the @6 check doesn't use the h2 */
 	BATmmap_unpin(r);
+
+#define DIRECT_MAX 256
+
+#define chr_EQ(x,y) simple_EQ(x,y,chr)
+#define bte_EQ(x,y) simple_EQ(x,y,bte)
+#define sht_EQ(x,y) simple_EQ(x,y,sht)
+#define int_EQ(x,y) simple_EQ(x,y,int)
+#define lng_EQ(x,y) simple_EQ(x,y,lng)
+#define flt_EQ(x,y) simple_EQ(x,y,flt)
+#define dbl_EQ(x,y) simple_EQ(x,y,dbl)
+
+#define hashvar(h,v) hash_any(h,v)
+#define hashloc(h,v) hash_any(h,v)
+
+/* later add version for l void tail, remove general tail values then */
+@= directcheck
+	BUN p1, q1;
+	int i;
+	ptr h, h2 = hnil;
+	BATiter li = bat_iterator(l);
+	BATiter ri = bat_iterator(r);
+	sht d[DIRECT_MAX];
+	Hash hs, *H = &hs;
+	int collision = 0;
+
+	H -> mask = DIRECT_MAX-1;
+	H -> type = BAThtype(l);
+
+	ALGODEBUG THRprintf(GDKout, "#BATins_@1@2: directcheck[@1, @2, @3, @4, @5];\n");
+
+	assert(l->htype == r->htype && r->htype != TYPE_void);
+
+	memset(d, 0, sizeof(d));
+	BATloop(r, p1, q1) {
+		h = BUNh@2(ri,p1);
+		i = hash_@4(H, h);
+		/* collision or check for not-nil (nils don't match anyway) */
+		if (d[i] != 0 || !(@6)) {
+			collision = 1;
+			break;
+		}
+		d[i] = ((sht)p1)+1;
+	}
+	if (collision) {
+		@:hashcheck(@1,@2,@3,_@4,@5,@6)@
+	} else {
+		if (!l->ttype && l->tseqbase != oid_nil) {
+			oid b = l->tseqbase, *t = &b;
+			@4 *h = (@4*)BUNhloc(li, BUNfirst(l));
+			@4 *rh = (@4*)BUNhloc(ri, 0);
+			@4 *bnh;
+			oid *bnt;
+			BUN o = BUNfirst(bn);
+
+			ALGODEBUG THRprintf(GDKout, "#BATins_@1@2: directcheck[@1, @2, @3, _@4, @5][void tail]; %d %d\n", BATcount(l), BATcount(r));
+			p1 = 0;
+			q1 = BATcount(l);
+			while(p1 < q1) {
+				BUN r1 = p1 + 65536;
+				if (r1 > q1) r1 = q1;
+				if (o + 65536 > BATcapacity(bn)){	
+					if (BATextend(bn, BATcapacity(bn)+65536) == NULL)
+						goto bunins_failed; 
+				}
+				bnh = (@4*)Hloc(bn,0);
+				bnt = (oid*)Tloc(bn,0);
+				for (; p1<r1; p1++, b++){ 
+					i = hash_@4(H, h+p1);
+					if (d[i] != 0 && @7(h+p1, rh+d[i]-1) &&
+					    EQUAL@5(t, BUNtail(ri, d[i]-1))) {
+						DHIT@1(h+p1, b);
+					} else {
+						DMISS@1(h+p1, b);
+					}
+				}
+			}
+			BATsetcount(bn, o);
+			(void)t;
+		} else { 
+			@4 *h = (@4*)BUNhloc(li, 0);
+			@4 *rh = (@4*)BUNhloc(ri, 0);
+
+			ALGODEBUG THRprintf(GDKout, "#BATins_@1@2: directcheck[@1, @2, @3, _@4, @5]; %d %d\n", BATcount(l), BATcount(r));
+			p1 = BUNfirst(l);
+			q1 = BUNlast(l);
+			while(p1 < q1) {
+				BUN r1 = p1 + 65536;
+				if (r1 > q1) r1 = q1;
+				if (BUNlast(bn) + 65536 > BATcapacity(bn)){	
+					if (BATextend(bn, BATcapacity(bn)+65536) == NULL)
+						goto bunins_failed; 
+				}
+				for (; p1<r1; p1++) { 
+					i = hash_@4(H, h+p1);
+					if (d[i] != 0 && @7(h+p1, rh+d[i]-1) &&
+				    	EQUAL@5(BUNtail(li,p1), BUNtail(ri, d[i]-1))) {
+						HIT@1_nocheck(h+p1, BUNtail(li, p1));
+					} else {
+						MISS@1_nocheck(h+p1, BUNtail(li, p1));
+					}
+				}
+			}
+		}
+	}
+	(void)h2; /* in some cases the @6 check doesn't use the h2 */
 
 @= voidcheck
 	{
@@ -534,13 +649,27 @@ TODO synced/key case..
 		}
 	}
 
-@= check
+@= checkall
 	if (BAThdense(l)) {
 		@:hashcheck(@1,pos,@2,@3,@5,TRUE)@
 	} else if (hash) {
 		@:hashcheck(@1,@2,@2,@3,@5,@4)@
 	} else {
 		@:mergecheck(@1,@2,@3,@4,@5)@
+	}
+	break;
+
+@= check
+	if (BAThdense(l)) {
+		@:hashcheck(@1,pos,@2,_@3,@5,TRUE)@
+	} else if (hash) {
+		if (BATcount(r) < DIRECT_MAX && (GDKdebug&65536)) {
+			@:directcheck(@1,@2,@2,@3,@5,@4,@6)@
+		} else {
+			@:hashcheck(@1,@2,@2,_@3,@5,@4)@
+		}
+	} else {
+		@:mergecheck(@1,@2,_@3,@4,@5)@
 	}
 	break;
 
@@ -583,37 +712,37 @@ BATins_@1@2(BAT *bn, BAT *l, BAT *r)
 		switch(ATOMstorage(r->htype)) {
 #ifndef NOEXPAND_CHR
 		case TYPE_chr:
-			@:check(@2,loc,_chr,simple_CMP(h,h2,chr),@1)@
+			@:check(@2,loc,chr,simple_CMP(h,h2,chr),@1,chr_EQ)@
 #endif
 #ifndef NOEXPAND_BTE
 		case TYPE_bte:
-			@:check(@2,loc,_bte,simple_CMP(h,h2,bte),@1)@
+			@:check(@2,loc,bte,simple_CMP(h,h2,bte),@1,bte_EQ)@
 #endif
 #ifndef NOEXPAND_SHT
 		case TYPE_sht:
-			@:check(@2,loc,_sht,simple_CMP(h,h2,sht),@1)@
+			@:check(@2,loc,sht,simple_CMP(h,h2,sht),@1,sht_EQ)@
 #endif
 #ifndef NOEXPAND_INT
 		case TYPE_int:
-			@:check(@2,loc,_int,simple_CMP(h,h2,int),@1)@
+			@:check(@2,loc,int,simple_CMP(h,h2,int),@1,int_EQ)@
 #endif
 #ifndef NOEXPAND_FLT
 		case TYPE_flt:
-			@:check(@2,loc,_flt,simple_CMP(h,h2,flt),@1)@
+			@:check(@2,loc,flt,simple_CMP(h,h2,flt),@1,flt_EQ)@
 #endif
 #ifndef NOEXPAND_DBL
 		case TYPE_dbl:
-			@:check(@2,loc,_dbl,simple_CMP(h,h2,dbl),@1)@
+			@:check(@2,loc,dbl,simple_CMP(h,h2,dbl),@1,dbl_EQ)@
 #endif
 #ifndef NOEXPAND_LNG
 		case TYPE_lng:
-			@:check(@2,loc,_lng,simple_CMP(h,h2,lng),@1)@
+			@:check(@2,loc,lng,simple_CMP(h,h2,lng),@1,lng_EQ)@
 #endif
 		default:
 			if (r->hvarsized) {
-				@:check(@2,var,var,((*merge)(h,h2)),@1)@
+				@:checkall(@2,var,var,((*merge)(h,h2)),@1,0==cmp)@
 			} else {
-				@:check(@2,loc,loc,((*merge)(h,h2)),@1)@
+				@:checkall(@2,loc,loc,((*merge)(h,h2)),@1,0==cmp)@
 			}
 		}
 	}
