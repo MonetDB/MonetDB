@@ -172,6 +172,8 @@ fi
 
 dnl check for MonetDB Java Interface
 have_monetdb_java=auto
+have_monetdb_javajdbc=auto
+have_monetdb_javaxrpc=auto
 MONETDB_JAVA_PREFIX="."
 if test "x$1" = "x"; then
   MONETDB_JAVA_REQUIRED_VERSION="1.7.0"
@@ -198,6 +200,20 @@ if test "x$have_monetdb_java" != xno; then
       if test x$have_java != xno; then
         have_monetdb_java=yes
         AC_MSG_RESULT($have_monetdb_java: found version $MONETDB_JAVA_VERSION)
+        AC_MSG_CHECKING(whether MonetDB Java includes JDBC support)
+        if test x"`$MONETDB_JAVA_CONFIG --HAVE_MONETDB_JAVAJDBC`" != x ; then
+          have_monetdb_javajdbc=yes
+        else
+          have_monetdb_javajdbc=no
+        fi
+        AC_MSG_RESULT($have_monetdb_javajdbc)
+        AC_MSG_CHECKING(whether MonetDB Java includes XRPC wrapper)
+        if test x"`$MONETDB_JAVA_CONFIG --HAVE_MONETDB_JAVAXRPC`" != x ; then
+          have_monetdb_javaxrpc=yes
+        else
+          have_monetdb_javaxrpc=no
+        fi
+        AC_MSG_RESULT($have_monetdb_javaxrpc)
       else
         have_monetdb_java=no
         AC_MSG_RESULT($have_monetdb_java: found version $MONETDB_JAVA_VERSION, but no Java support)
@@ -217,6 +233,8 @@ fi
 AC_SUBST(MONETDB_JAVA_PREFIX)
 AC_SUBST(MONETDB_JAVA_VERSION)
 AM_CONDITIONAL(HAVE_MONETDB_JAVA,test x$have_monetdb_java = xyes)
+AM_CONDITIONAL(HAVE_MONETDB_JAVAJDBC,test x$have_monetdb_javajdbc = xyes)
+AM_CONDITIONAL(HAVE_MONETDB_JAVAXRPC,test x$have_monetdb_javaxrpc = xyes)
 ]) dnl AC_DEFUN AM_MONETDB_JAVA
 
 AC_DEFUN([AM_MONETDB_COMMON],

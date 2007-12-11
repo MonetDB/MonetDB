@@ -155,6 +155,8 @@ CONDITIONALS = {
     'HAVE_MONETDB5'    : "@HAVE_MONETDB5_FALSE@",
     'HAVE_MONETDB4'    : "@HAVE_MONETDB4_FALSE@",
     'HAVE_MONETDB_JAVA': "@HAVE_MONETDB_JAVA_FALSE@",
+    'HAVE_MONETDB_JAVAJDBC': "@HAVE_MONETDB_JAVAJDBC_FALSE@",
+    'HAVE_MONETDB_JAVAXRPC': "@HAVE_MONETDB_JAVAXRPC_FALSE@",
 }
 
 # a bunch of classes to help with generating (X)HTML files
@@ -3020,6 +3022,8 @@ def main(argv) :
         CONDITIONALS['HAVE_MONETDB4'] = '#'
     if CheckExec('monetdb-java-config'):
         CONDITIONALS['HAVE_MONETDB_JAVA'] = '#'
+        CONDITIONALS['HAVE_MONETDB_JAVAJDBC'] = GetConfig('monetdb-java-config', '--HAVE_MONETDB_JAVAJDBC')
+        CONDITIONALS['HAVE_MONETDB_JAVAXRPC'] = GetConfig('monetdb-java-config', '--HAVE_MONETDB_JAVAXRPC')
     else:
         CONDITIONALS['HAVE_MONETDB_JAVA'] = ''
 
@@ -3184,6 +3188,8 @@ def main(argv) :
                 print "%s = %s" % (v, env[v])
     if not quiet:
         print "%s = %s" % ('PATH', os.environ['PATH'])
+        if os.environ.has_key('PYTHONPATH'):
+            print "%s = %s" % ('PYTHONPATH', os.environ['PYTHONPATH'])
     STDOUT.flush()
 
     # add QUIET par to env

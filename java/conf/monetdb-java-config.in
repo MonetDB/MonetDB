@@ -27,6 +27,9 @@ datarootdir="@Qdatarootdir@"
 datadir="@Qdatadir@"
 pkgdatadir="${datadir}/MonetDB"
 
+HAVE_MONETDB_JAVAJDBC=@HAVE_JAVAJDBC_FALSE@
+HAVE_MONETDB_JAVAXRPC=@HAVE_JAVAXRPC_FALSE@
+
 usage()
 {
     cat <<EOF
@@ -34,10 +37,12 @@ Usage: `basename $0` [OPTION]
 
 Known values for OPTION are:
 
-  --build		print ${pkg} build directory
-  --source		print ${pkg} source directory
-  --help		display this help and exit
-  --version		output version information
+  --build			print ${pkg} build directory
+  --source			print ${pkg} source directory
+  --help			display this help and exit
+  --version			output version information
+  --HAVE_MONETDB_JAVAJDBC	"#" in case JDBC is available, "" otherwise
+  --HAVE_MONETDB_JAVAXRPC	"#" in case XRPCwrapper is available, "" otherwise
 
 Install directories ${pkg} was configured to
   --prefix  --exec-prefix  --bindir
@@ -89,6 +94,13 @@ while test $# -gt 0; do
         dirname=`eval echo $dirname`
         test -z "$dirname" && exit 1
         echo $dirname
+        exit 0
+        ;;
+
+    --HAVE_MONETDB_JAVA*C)
+        condname=\$`echo $1 | sed -e 's,^--,,'`
+        condname=`eval echo $condname`
+        test -n "$condname" && echo $condname
         exit 0
         ;;
 

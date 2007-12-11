@@ -48,10 +48,10 @@ savepoint_rollback-bug-sf-1023652
 select_orderby_alias-bug-sf-1024615
 like-bug-sf-1031435
 unicode_varchar-bug-sf-1041324_MapiClient
-HAVE_MONETDB_JAVA?unicode_varchar-bug-sf-1041324_JdbcClient
+HAVE_MONETDB_JAVAJDBC?unicode_varchar-bug-sf-1041324_JdbcClient
 unique-bug-sf-1043512
 # like-bug-sf-1043521  # covered by like_tests
-HAVE_MONETDB_JAVA?except-union-intersect-bug-sf-1146079
+HAVE_MONETDB_JAVAJDBC?except-union-intersect-bug-sf-1146079
 timestamp_comparison-bug-sf-1158581
 selectlist_subquery-sf-1208599
 interval_data_commutative_add_bug-sf-1263928

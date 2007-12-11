@@ -14,6 +14,10 @@ set datarootdir=@datarootdir@
 set datadir=@datadir@
 set pkgdatadir=%datadir%\MonetDB
 
+set HAVE_MONETDB_JAVA=@HAVE_JAVA_FALSE@
+set HAVE_MONETDB_JAVAJDBC=@HAVE_JAVAJDBC_FALSE@
+set HAVE_MONETDB_JAVAXRPC=@HAVE_JAVAXRPC_FALSE@
+
 if "%1" == ""	goto usage
 
 goto case
@@ -33,6 +37,8 @@ if "%1" == "--bindir"		echo %bindir%&		goto shift
 if "%1" == "--datarootdir"	echo %datarootdir%&	goto shift
 if "%1" == "--datadir"		echo %datadir%&		goto shift
 if "%1" == "--pkgdatadir"	echo %pkgdatadir%&	goto shift
+if "%1" == "--HAVE_MONETDB_JAVAJDBC"	echo %HAVE_MONETDB_JAVAJDBC%&	goto shift
+if "%1" == "--HAVE_MONETDB_JAVAXRPC"	echo %HAVE_MONETDB_JAVAXRPC%&	goto shift
 if "%1" == "--internal"					goto shift
 
 :usage
@@ -41,10 +47,12 @@ if "%1" == "--internal"					goto shift
 	echo.
 	echo Known values for OPTION are:
 	echo.
-	echo   --build		print %pkg% build directory
-	echo   --source		print %pkg% source directory
-	echo   --help		display this help and exit
-	echo   --version	output version information
+	echo   --build			print %pkg% build directory
+	echo   --source			print %pkg% source directory
+	echo   --help			display this help and exit
+	echo   --version		output version information
+	echo   --HAVE_MONETDB_JAVAJDBC	"#" in case JDBC is available, "" otherwise
+	echo   --HAVE_MONETDB_JAVAXRPC	"#" in case XRPCwrapper is available, "" otherwise
 	echo.
 	echo Install directories %pkg% was configured to
 	echo   --prefix  --exec-prefix  --bindir
