@@ -40,7 +40,9 @@ information about them are the primary goals of this tool.
 #include <dirent.h> /* readdir */
 #include <unistd.h> /* stat, rmdir, unlink */
 #include <time.h> /* strftime */
+#ifdef HAVE_ALLOCA_H
 #include <alloca.h>
+#endif
 #include <errno.h>
 
 typedef char* err;
