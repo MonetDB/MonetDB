@@ -104,7 +104,7 @@ mutils_export void mo_free_options(opt *set, int setlen);
 #  include "getopt1.c"
 #endif
 
-#ifndef HAVE_DECL_STRDUP
+#if !HAVE_DECL_STRDUP
 #ifdef HAVE_STRDUP
 extern char *strdup(const char *);
 #else
