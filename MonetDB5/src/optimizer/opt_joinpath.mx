@@ -99,9 +99,10 @@ Try to expand each of its argument list
 				if(  getModuleId(r)== algebraRef && 
 					( getFunctionId(r)== joinRef  || getFunctionId(r)== joinPathRef) ){
 					for(k= r->retc; k<r->argc; k++)
-						q= pushArgument(mb,q,getArg(r,k));
-				} else
-						q= pushArgument(mb,q,getArg(p,j));
+						q = pushArgument(mb,q,getArg(r,k));
+				} else {
+					q = pushArgument(mb,q,getArg(p,j));
+				}
 			}
 #ifdef DEBUG_OPT_JOINPATH 
 			stream_printf(GDKout,"new joinPath instruction\n");

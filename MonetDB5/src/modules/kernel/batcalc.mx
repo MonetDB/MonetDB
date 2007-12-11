@@ -50,6 +50,7 @@ Another improvement can be obtained when we do not have to check
 for NULLs in each and every basic operation +,-,/,* and comparisons.
 This variant can be obtained using a compile time flag (NULLTST) for the time
 being. If it turns out to be effective, we will derive a new
+
 version of batcalc.
 Experiments show that ignoring the NULLS saves about 15\%
 for larger instructions.

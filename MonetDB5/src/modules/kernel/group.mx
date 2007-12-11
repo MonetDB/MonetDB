@@ -244,6 +244,7 @@ int
 grp_new(BAT *b, BAT *h)
 {
 	if (h) {
+		if (!(h->batDirty&2)) h = BATsetaccess(h, BAT_READ); 
 		BATkey(h, TRUE);
 		h->tsorted = 0;
 		if ((h->hsorted = BAThordered(b)) & 1) {
@@ -258,6 +259,7 @@ grp_new(BAT *b, BAT *h)
 	} else {
 		assert(h);
 	}
+	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ); 
 	BBPkeepref(b->batCacheid);
 	return GDK_SUCCEED;
 }

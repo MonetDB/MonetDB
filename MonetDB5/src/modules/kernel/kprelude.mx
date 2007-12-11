@@ -25,18 +25,30 @@ The Mx macros below are used in many places throughout the code base.
 if( bn== NULL) {*ret= 0;
     throw(MAL, @1, "can not create bat");}
 
+@= resBAT
+    bn = BATnew(ATOMtype(b->htype), TYPE_@1, BATcount(b));
+    if ( bn== NULL) {
+	@3
+	throw(MAL, @2, "can not create bat");
+    }
+    bn->hsorted = b->hsorted;
+    bn->tsorted = b->tsorted;
+    BATkey(bn, BAThkey(b));
+
 @= resultBAT
     if (BAThvoid(b)) {
         bn = BATnew(TYPE_void, TYPE_@1, BATcount(b));
         BATseqbase(bn, b->hseqbase);
-    } else 
+    } else {
         bn = BATnew(b->htype, TYPE_@1, BATcount(b));
-	if( bn== NULL) {
-		@3
-		throw(MAL, @2, "can not create bat");
-	}
+    }
+    if ( bn== NULL) {
+	@3
+	throw(MAL, @2, "can not create bat");
+    }
     bn->hsorted = b->hsorted;
     bn->tsorted = b->tsorted;
+    BATkey(bn, BAThkey(b));
 
 @= voidresultBAT
 	bn = BATnew(TYPE_void, @1, BATcount(b));

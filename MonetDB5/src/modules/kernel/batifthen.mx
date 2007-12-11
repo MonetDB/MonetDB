@@ -50,13 +50,14 @@ comment "If-then-else operation to assemble a conditional result ";
 @mal
 	@:ifthenGrp(bit)@
 	@:ifthenGrp(chr)@
-	@:ifthenGrp(str)@
-	@:ifthenGrp(oid)@
-	@:ifthenGrp(int)@
+	@:ifthenGrp(bte)@
 	@:ifthenGrp(sht)@
+	@:ifthenGrp(int)@
 	@:ifthenGrp(lng)@
+	@:ifthenGrp(oid)@
 	@:ifthenGrp(flt)@
 	@:ifthenGrp(dbl)@
+	@:ifthenGrp(str)@
 @- Implementation
 @include kprelude.mx
 @h
@@ -89,21 +90,18 @@ implementation for shifted window arithmetic as well.
     BBPkeepref(*ret);
     BBPreleaseref(b->batCacheid);
     return MAL_SUCCEED;
-@= resBAT
-	if (BAThvoid(b)) {
-		bn = BATnew(TYPE_oid, TYPE_@1, BATcount(b));
-		BATseqbase(bn, b->hseqbase);
-	} else {
-		bn = BATnew(b->htype, TYPE_@1, BATcount(b));
+
+@= void_wrapup
+	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
+	if (b->htype != bn->htype) {
+		BAT *r = VIEWcreate(b,bn);
+
+		BBPreleaseref(bn->batCacheid);
+		bn = r;
 	}
-	if( bn== NULL) {
-		@3
-		throw(MAL, @2, "can not create bat");
-	}
-	bn->hsorted = b->hsorted;
-	bn->tsorted = FALSE;
-	BATkey(bn, BAThkey(b));
-	BATkey(BATmirror(bn), FALSE);
+	BBPkeepref(*ret = bn->batCacheid);
+	BBPreleaseref(b->batCacheid);
+	return MAL_SUCCEED;
 
 @- IfThenElse
 The conditional multiplex operations .
@@ -112,7 +110,7 @@ The constant versions are typed by the parser
 String arguments call for an extra type casting. In combination
 with type resolution and runtime checks it provides a dense
 definitoin.
-@= ifthencstImpl
+@= ifthenImpl
 batifthen_export str CMDifThen_@1(int *ret, int *bid, int *tid);
 str
 CMDifThen_@1(int *ret, int *bid, int *tid) 
@@ -126,16 +124,10 @@ CMDifThen_@1(int *ret, int *bid, int *tid)
 	@:getBATdescriptor(bid,b,"batcalc.ifThen")@
 	@:getBATdescriptor(tid,tb,"batcalc.ifThen",BBPreleaseref(b->batCacheid))@
 	@:chkSize(b,tb,CMDifThen)@
-
-	bn= BATnew(ATOMtype(b->htype),TYPE_@1,BATcount(b));
-	if( bn == 0 )
-		throw(MAL, "batcalc.ifThen","Can not create BAT");
-	bn->hsorted= b->hsorted;
-	bn->tsorted= b->tsorted;
+	@:resBAT(@1,"batcalc.ifThen")@
 
 	bi = bat_iterator(b);
 	tbi = bat_iterator(tb);
-
 	t = (bit*)Tloc(b,BUNfirst(b));
 
 	BATloop(b, p, q) {
@@ -162,8 +154,6 @@ str CMDifThenCst_@1(int *ret, int *bid, @1 *tid)
 
 	@:getBATdescriptor(bid,b,"batcalc.ifThen")@
 	@:resBAT(@1,"batcalc.ifThen")@
-	bn->hsorted= b->hsorted;
-	bn->tsorted= b->tsorted;
 
 	bi = bat_iterator(b);
 	t = (bit*)Tloc(b,BUNfirst(b));
@@ -177,6 +167,157 @@ str CMDifThenCst_@1(int *ret, int *bid, @1 *tid)
 	}
 	@:wrapup@
 }
+
+@= ifthenelseImpl
+batifthen_export str CMDifThenElseCst_@1(int *ret, int *bid, @1 *tid, @1 *eid);
+str CMDifThenElseCst_@1(int *ret, int *bid, @1 *tid, @1 *eid)
+{
+	BAT *b, *bn;
+	@1 nilval= (@1) @1_nil, *dst;
+	bit *t;
+	size_t cnt, p;
+
+	@:getBATdescriptor(bid,b,"batcalc.ifThenElse")@
+	@:voidresultBAT(TYPE_@1,"batcalc.ifThenElse")@
+	bn->tsorted = FALSE;
+    	BATkey(BATmirror(bn), FALSE);
+
+	cnt = BATcount(b);
+	t = (bit*)Tloc(b,BUNfirst(b));
+	dst = (@1*)Tloc(bn, BUNfirst(bn));
+
+	for (p=0; p<cnt; p++) {
+		if (t[p] == bit_nil) 
+			dst[p] = nilval;
+		else if (t[p]) 
+			dst[p] = *tid;
+		else
+			dst[p] = *eid;
+	}
+	BATsetcount(bn, p);
+	@:void_wrapup@
+}
+
+batifthen_export str CMDifThenElse_@1(int *ret, int *bid, int *tid, int *eid);
+str
+CMDifThenElse_@1(int *ret, int *bid, int *tid, int *eid)
+{
+	BAT *b, *tb, *eb, *bn;
+	@1 nilval= (@1) @1_nil, *dst, *tbv, *ebv;
+	bit *t;
+	size_t cnt, p;
+
+	@:getBATdescriptor(bid,b,"batcalc.ifThenElse")@
+	@:getBATdescriptor(tid,tb,"batcalc.ifThenElse",BBPreleaseref(b->batCacheid);)@
+	@:getBATdescriptor(eid,eb,"batcalc.ifThenElse", BBPreleaseref(b->batCacheid); BBPreleaseref(tb->batCacheid);)@
+	@:chkSize(b,tb,ifThenElse)@
+	@:chkSize(b,eb,ifThenElse)@
+	@:voidresultBAT(TYPE_@1,"batcalc.ifThenElse")@
+	bn->tsorted = FALSE;
+    	BATkey(BATmirror(bn), FALSE);
+
+	cnt = BATcount(b);
+	t = (bit*) Tloc(b, BUNfirst(b));
+	dst = (@1*)Tloc(bn, BUNfirst(bn));
+	tbv = (@1*)Tloc(tb, BUNfirst(tb));
+	ebv = (@1*)Tloc(eb, BUNfirst(eb));
+
+	for (p=0; p<cnt; p++) {
+		if (t[p] == bit_nil) 
+			dst[p] = nilval;
+		else if (t[p]) 
+			dst[p] = tbv[p];
+		else
+			dst[p] = ebv[p];
+	}
+	BATsetcount(bn, p);
+	BBPreleaseref(tb->batCacheid);
+	BBPreleaseref(eb->batCacheid);
+	@:void_wrapup@
+}
+
+batifthen_export str CMDifThenElseCst1_@1(int *ret, int *bid, @1 *val, int *eid);
+str
+CMDifThenElseCst1_@1(int *ret, int *bid, @1 *val, int *eid)
+{
+	BAT *b, *eb, *bn;
+	@1 nilval= (@1) @1_nil, *dst, *ebv;
+	bit *t;
+	size_t cnt, p;
+
+	@:getBATdescriptor(bid,b,"batcalc.ifThenElse")@
+	@:getBATdescriptor(eid,eb,"batcalc.ifThenElse", BBPreleaseref(b->batCacheid);)@
+	@:chkSize(b,eb,ifThenElse)@
+	@:voidresultBAT(TYPE_@1,"batcalc.ifThenElse")@
+	bn->tsorted = FALSE;
+    	BATkey(BATmirror(bn), FALSE);
+
+	cnt = BATcount(b);
+	t = (bit*) Tloc(b,BUNfirst(b));
+	dst = (@1*)Tloc(bn, BUNfirst(bn));
+	ebv = (@1*)Tloc(eb, BUNfirst(eb));
+
+	for (p=0; p<cnt; p++) {
+		if (t[p] == bit_nil) 
+			dst[p] = nilval;
+		else if (t[p]) 
+			dst[p] = *val;
+		else
+			dst[p] = ebv[p];
+	}
+	BATsetcount(bn, p);
+	BBPreleaseref(eb->batCacheid);
+	@:void_wrapup@
+}
+
+batifthen_export str CMDifThenElseCst2_@1(int *ret, int *bid, int *tid, @1 *val);
+str
+CMDifThenElseCst2_@1(int *ret, int *bid, int *tid, @1 *val)
+{
+	BAT *b, *tb, *bn;
+	@1 nilval= (@1) @1_nil, *dst, *tbv;
+	bit *t;
+	size_t cnt, p;
+
+	@:getBATdescriptor(bid,b,"batcalc.ifThenElse")@
+	@:getBATdescriptor(tid,tb,"batcalc.ifThenElse",BBPreleaseref(b->batCacheid);)@
+	@:chkSize(b,tb,ifThenElse)@
+	@:voidresultBAT(TYPE_@1,"batcalc.ifThenElse")@
+	bn->tsorted = FALSE;
+    	BATkey(BATmirror(bn), FALSE);
+
+	cnt = BATcount(b);
+	t = (bit*) Tloc(b,BUNfirst(b));
+	dst = (@1*)Tloc(bn, BUNfirst(bn));
+	tbv = (@1*)Tloc(tb, BUNfirst(tb));
+	
+	for (p=0; p<cnt; p++) {
+		if (t[p] == bit_nil) 
+			dst[p] = nilval;
+		else if (t[p]) 
+			dst[p] = tbv[p];
+		else 
+			dst[p] = *val;
+	}
+	BATsetcount(bn, p);
+	BBPreleaseref(tb->batCacheid);
+	@:void_wrapup@
+}
+@:ifthenImpl(@1)@
+@c
+#include "mal_config.h"
+#include "batifthen.h"
+
+@:ifthenelseImpl(bit)@
+@:ifthenelseImpl(chr)@
+@:ifthenelseImpl(bte)@
+@:ifthenelseImpl(sht)@
+@:ifthenelseImpl(int)@
+@:ifthenelseImpl(lng)@
+@:ifthenelseImpl(flt)@
+@:ifthenelseImpl(dbl)@
+
+@= ifthenelseDefault
 batifthen_export str CMDifThenElseCst_@1(int *ret, int *bid, @1 *tid, @1 *eid);
 str CMDifThenElseCst_@1(int *ret, int *bid, @1 *tid, @1 *eid)
 {
@@ -187,7 +328,9 @@ str CMDifThenElseCst_@1(int *ret, int *bid, @1 *tid, @1 *eid)
 	bit *t;
 
 	@:getBATdescriptor(bid,b,"batcalc.ifThenElse")@
-	@:resBAT(@1,"batcalc.ifThenElse")@
+	@:resultBAT(@1,"batcalc.ifThenElse")@
+	bn->tsorted = FALSE;
+    	BATkey(BATmirror(bn), FALSE);
 
 	bi = bat_iterator(b);
 	t = (bit*)Tloc(b,BUNfirst(b));
@@ -219,7 +362,9 @@ CMDifThenElse_@1(int *ret, int *bid, int *tid, int *eid)
 	@:getBATdescriptor(eid,eb,"batcalc.ifThenElse", BBPreleaseref(b->batCacheid); BBPreleaseref(tb->batCacheid);)@
 	@:chkSize(b,tb,ifThenElse)@
 	@:chkSize(b,eb,ifThenElse)@
-	@:resBAT(@1,"batcalc.ifThenElse")@
+	@:resultBAT(@1,"batcalc.ifThenElse")@
+	bn->tsorted = FALSE;
+    	BATkey(BATmirror(bn), FALSE);
 
 	bi = bat_iterator(b);
 	tbi = bat_iterator(tb);
@@ -254,7 +399,9 @@ CMDifThenElseCst1_@1(int *ret, int *bid, @1 *val, int *eid)
 	@:getBATdescriptor(bid,b,"batcalc.ifThenElse")@
 	@:getBATdescriptor(eid,eb,"batcalc.ifThenElse", BBPreleaseref(b->batCacheid);)@
 	@:chkSize(b,eb,ifThenElse)@
-	@:resBAT(@1,"batcalc.ifThenElse")@
+	@:resultBAT(@1,"batcalc.ifThenElse")@
+	bn->tsorted = FALSE;
+    	BATkey(BATmirror(bn), FALSE);
 
 	bi = bat_iterator(b);
 	ebi = bat_iterator(eb);
@@ -289,38 +436,31 @@ CMDifThenElseCst2_@1(int *ret, int *bid, int *tid, @1 *val)
 	@:getBATdescriptor(bid,b,"batcalc.ifThenElse")@
 	@:getBATdescriptor(tid,tb,"batcalc.ifThenElse",BBPreleaseref(b->batCacheid);)@
 	@:chkSize(b,tb,ifThenElse)@
-	@:resBAT(@1,"batcalc.ifThenElse")@
+	@:resultBAT(@1,"batcalc.ifThenElse")@
+	bn->tsorted = FALSE;
+    	BATkey(BATmirror(bn), FALSE);
 
-	if (ATOMvarsized(TYPE_@1))
-		val = *(@1**)val;
 	bi = bat_iterator(b);
 	tbi = bat_iterator(tb);
 
 	t = (bit*) Tloc(b,BUNfirst(b));
-
+	
+	if (ATOMvarsized(TYPE_@1))
+		val = *(@1**)val;
 	BATloop(b, p, q) {
 		if (*t == bit_nil) 
-			BUNfastins(bn, BUNhead(bi,p), (ptr) &nilval);
+			BUNfastins(bn, NULL, (ptr) &nilval);
 		else if (*t) 
-			BUNfastins(bn, BUNhead(bi,p), BUNtail(tbi, p));
+			BUNfastins(bn, NULL, BUNtail(tbi, p));
 		else
-			BUNfastins(bn, BUNhead(bi,p), val);
+			BUNfastins(bn, NULL, val);
 		t++;
 	}
 	BBPreleaseref(tb->batCacheid);
 	@:wrapup@
 }
+@:ifthenImpl(@1)@
 @c
-#include "mal_config.h"
-#include "batifthen.h"
-
-@:ifthencstImpl(int)@
-@:ifthencstImpl(sht)@
-@:ifthencstImpl(lng)@
-@:ifthencstImpl(oid)@
-@:ifthencstImpl(flt)@
-@:ifthencstImpl(dbl)@
-@:ifthencstImpl(str)@
-@:ifthencstImpl(chr)@
-@:ifthencstImpl(bit)@
+@:ifthenelseDefault(oid)@
+@:ifthenelseDefault(str)@
 @}
