@@ -663,7 +663,7 @@ TODO synced/key case..
 	if (BAThdense(l)) {
 		@:hashcheck(@1,pos,@2,_@3,@5,TRUE)@
 	} else if (hash) {
-		if (BATcount(r) < DIRECT_MAX && (GDKdebug&65536)) {
+		if (BATcount(r) < DIRECT_MAX) {
 			@:directcheck(@1,@2,@2,@3,@5,@4,@6)@
 		} else {
 			@:hashcheck(@1,@2,@2,_@3,@5,@4)@
