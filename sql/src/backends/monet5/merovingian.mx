@@ -77,7 +77,9 @@ FIXME: actually implement that
 #endif
 #include <unistd.h>
 #include <string.h> /* strerror */
+#ifdef HAVE_ALLOCA_H
 #include <alloca.h>
+#endif
 #include <errno.h>
 #include <signal.h> /* handle Ctrl-C, etc. */
 #include <pthread.h>
