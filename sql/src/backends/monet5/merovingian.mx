@@ -91,6 +91,17 @@ FIXME: actually implement that
 #define SOCKLEN int
 #endif
 
+/* FreeBSD 6.2 misses these definitions */
+#ifndef CLD_EXITED
+# define CLD_EXITED 1
+#endif
+#ifndef CLD_KILLED
+# define CLD_KILLED 2
+#endif
+#ifndef CLD_DUMPED
+# define CLD_DUMPED 3
+#endif
+
 typedef char* err;
 
 #define freeErr(X) GDKfree(X)
