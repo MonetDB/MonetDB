@@ -2869,8 +2869,6 @@ if test "x$have_php" != xno; then
 		if test "x$have_php" != xauto
 		then
 		    AC_MSG_ERROR([Cannot find php-config. Please use --with-php-config=PATH])
-		else
-		    AC_MSG_WARN([Cannot find php-config. Please use --with-php-config=PATH])
 		fi
 		have_php=no
 	fi
