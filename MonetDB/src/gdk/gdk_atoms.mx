@@ -1534,7 +1534,7 @@ int
 			if (*p++ == '-')
 				sign = -1;
 		}
-		if (!num10(*p)) {
+		if (!num10(*p) && *p != '.') {
 			error = 1;
 			p = src;
 		}
