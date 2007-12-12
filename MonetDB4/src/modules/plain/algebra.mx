@@ -1315,8 +1315,9 @@ We should package this program into a utility that eats MIL
 directly.  It would be an attractive idea to have it callable
 as an extension module from MIL directly.
 
+@(
 @- Utility
-@sh
+@-sh
 #/bin/sh
 # COST MODEL UTILITY
 # ==================
@@ -1330,6 +1331,7 @@ more /tmp/$$
 echo "============== +"
 awk '{ a += $1 } END { print "TOTAL="a; }' < /tmp/$$
 rm /tmp/$$
+@)
 
 @+ BAT sum operation
 The sum aggregate only works for int and float fields.
