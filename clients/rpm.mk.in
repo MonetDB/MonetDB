@@ -66,5 +66,6 @@ cleanup_distr:
 	find MonetDB-client-* -perm -0100 -type f ! -name \*.bat ! -name \*.sh ! -exec grep -q '^#!' {} \; -exec chmod a-x {} \;
 	find MonetDB-client-* -type f ! -name \*.in ! -name configure ! -name \*.spec -print | while read i; do test -f "$${i}.in" && rm -f "$${i}"; done || true
 	find MonetDB-client-* \( -name '*.[chm]' -o -name '*.cc' -o -name '*.mal' \) -exec sed -n -e "/^#line/!w $${TMPDIR:-/var/tmp}/mn-dist-$$$$" {} \; -exec chmod u+w {} \; -exec cp $${TMPDIR:-/var/tmp}/mn-dist-$$$$ {} \; && rm -f $${TMPDIR:-/var/tmp}/mn-dist-$$$$
+	find MonetDB-client-* -type f ! -name \*.i -print | while read i; do test -f "$${i}.i" && touch "$${i}"*; done || true
 
 dist-hook: cleanup_distr
