@@ -37,6 +37,7 @@ BuildRequires: readline-devel, openssl-devel
 %{!?_with_php: %{!?_without_php: %define _with_php --with-php}}
 %{!?_with_python: %{!?_without_python: %define _with_python --with-python}}
 %{!?_with_perl: %{!?_without_perl: %define _with_perl --with-perl}}
+%{!?_with_ruby: %{!?_without_ruby: %define _with_ruby --with-ruby}}
 
 %if !%{?buildsystem}
 BuildRequires: MonetDB-devel >= 1.20
@@ -68,6 +69,10 @@ Requires: perl, swig
 # in Fedora 7 there is a perl-devel package which we need.
 Requires: perl-devel
 %endif
+%endif
+%if %{?_with_ruby:1}%{!?_with_ruby:0}
+Requires: ruby, swig
+Requires: ruby-devel
 %endif
 
 
@@ -115,6 +120,19 @@ BuildRequires: perl, swig
 # in Fedora 7 there is a perl-devel package which we need.
 BuildRequires: perl-devel
 %endif
+%endif
+%endif
+
+%if %{?_with_ruby:1}%{!?_with_ruby:0}
+%package ruby
+Summary: MonetDB ruby interface
+Group: Applications/Databases
+Requires: %{name} = %{version}-%{release}
+Requires: ruby
+%define ruby_libdir %(ruby_prefix="`ruby -e 'require "rbconfig.rb";include Config;print CONFIG["prefix"];'`"; ruby_libdir="`ruby -e 'require "rbconfig.rb";include Config;print CONFIG["sitearchdir"];'`"; echo $ruby_libdir | sed -e "s|^$ruby_prefix||g")
+%if !%{?buildsystem}
+BuildRequires: ruby, swig
+BuildRequires: ruby-devel
 %endif
 %endif
 
@@ -178,6 +196,17 @@ This package contains the files needed to use MonetDB from a Perl
 program.
 %endif
 
+%if %{?_with_ruby:1}%{!?_with_ruby:0}
+%description ruby
+MonetDB is a database management system that is developed from a
+main-memory perspective with use of a fully decomposed storage model,
+automatic index management, extensibility of data types and search
+accelerators, SQL- and XML- frontends.
+
+This package contains the files needed to use MonetDB from a Ruby
+program.
+%endif
+
 
 %prep
 rm -rf $RPM_BUILD_ROOT
@@ -194,7 +223,8 @@ rm -rf $RPM_BUILD_ROOT
 	%{?comp_cc:CC="%{comp_cc}"} \
 	%{?_with_php} %{?_without_php} \
 	%{?_with_python} %{?_without_python} \
-	%{?_with_perl} %{?_without_perl}
+	%{?_with_perl} %{?_without_perl} \
+	%{?_with_ruby} %{?_without_ruby}
 
 make
 
@@ -266,6 +296,12 @@ rm -fr $RPM_BUILD_ROOT
 %{_prefix}/%{perl_libdir}/*
 %dir %{_datadir}/MonetDB/perl
 %{_datadir}/MonetDB/perl/*
+%endif
+
+%if %{?_with_ruby:1}%{!?_with_ruby:0}
+%files ruby
+%defattr(-,root,root)
+%{_prefix}/%{ruby_libdir}/*
 %endif
 
 %changelog

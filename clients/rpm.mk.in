@@ -26,6 +26,8 @@ rpmtopdir = $(shell cd $(top_builddir) && pwd)/rpm
 @HAVE_PERL_SWIG_TRUE@perl=--with perl
 @HAVE_PYTHON_SWIG_FALSE@python=--without python
 @HAVE_PYTHON_SWIG_TRUE@python=--with python
+@HAVE_RUBY_SWIG_FALSE@ruby=--without ruby
+@HAVE_RUBY_SWIG_TRUE@ruby=--with ruby
 
 $(top_builddir)/$(distdir).tar.gz:
 	$(MAKE) $(AM_MAKEFLAGS) dist
@@ -48,14 +50,14 @@ $(rpmtopdir)/rpmmacros:
 	if test "@oids@" -eq 32; then echo "%oid32 1" >> $(rpmtopdir)/rpmmacros; fi
 
 rpm:	MonetDB-client.spec $(top_builddir)/$(distdir).tar.gz $(rpmtopdir)/rpmmacros
-	$(RPMBUILD) --rcfile $(rpmtopdir)/rpmrc -ta --target `uname -m` ${php} ${perl} ${python} --define="buildsystem 1" --define="comp_cc @CC@" $(top_builddir)/$(distdir).tar.gz
+	$(RPMBUILD) --rcfile $(rpmtopdir)/rpmrc -ta --target `uname -m` ${php} ${perl} ${python} ${ruby} --define="buildsystem 1" --define="comp_cc @CC@" $(top_builddir)/$(distdir).tar.gz
 	for i in rpm/SRPMS/*_@LINUX_DIST@.oid@oids@* ; do \
 		mv "$$i" "`echo "$$i" | sed 's|_@LINUX_DIST@.oid@oids@||'`" ; \
 	done
 	rm -rf $(rpmtopdir)/BUILD
 
 srpm:	MonetDB-client.spec $(top_builddir)/$(distdir).tar.gz $(rpmtopdir)/rpmmacros
-	$(RPMBUILD) --rcfile $(rpmtopdir)/rpmrc -ts ${php} ${perl} ${python} --define="buildsystem 1" $(top_builddir)/$(distdir).tar.gz
+	$(RPMBUILD) --rcfile $(rpmtopdir)/rpmrc -ts ${php} ${perl} ${python} ${ruby} --define="buildsystem 1" $(top_builddir)/$(distdir).tar.gz
 	for i in rpm/SRPMS/*_@LINUX_DIST@.oid@oids@* ; do \
 		mv "$$i" "`echo "$$i" | sed 's|_@LINUX_DIST@.oid@oids@||'`" ; \
 	done
