@@ -36,7 +36,7 @@ esac
 aclocal || exit 1
 autoheader || exit 1
 autoconf || exit 1
-automake --add-missing -c -f || exit 1
+automake --add-missing --copy --force-missing --foreign || exit 1
 
 if [ -f configure.ac.orig_bootstrap ];
 then
