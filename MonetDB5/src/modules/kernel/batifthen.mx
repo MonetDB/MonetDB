@@ -449,11 +449,11 @@ CMDifThenElseCst2_@1(int *ret, int *bid, int *tid, @1 *val)
 		val = *(@1**)val;
 	BATloop(b, p, q) {
 		if (*t == bit_nil) 
-			BUNfastins(bn, NULL, (ptr) &nilval);
+			BUNfastins(bn, BUNhead(bi,p), (ptr) &nilval);
 		else if (*t) 
-			BUNfastins(bn, NULL, BUNtail(tbi, p));
+			BUNfastins(bn, BUNhead(bi,p), BUNtail(tbi, p));
 		else
-			BUNfastins(bn, NULL, val);
+			BUNfastins(bn, BUNhead(bi,p), val);
 		t++;
 	}
 	BBPreleaseref(tb->batCacheid);
