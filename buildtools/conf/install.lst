@@ -1,4 +1,4 @@
-conf/
+conf/#NOT_WIN32
 	bin/Mbootstrap
 	bin/Mdebootstrap
 	bin/buildtools-config

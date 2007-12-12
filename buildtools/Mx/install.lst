@@ -1,5 +1,5 @@
 Mx/
 	bin/Mx
-	bin/epstogif
+	bin/epstogif#NOT_WIN32
 	bin/idxmx
 	bin/prefixMxFile
