@@ -59,7 +59,7 @@ def msc_list2string(l, pre, post):
         res = res + pre + i + post
     return res
 
-def create_dir(fd, v,n):
+def create_dir(fd, v, n, i):
     # Stupid Windows/nmake cannot cope with single-letter directory
     # names; apparently, it treats them as drive-letters, unless we
     # explicitely call them ".\?".
@@ -67,24 +67,24 @@ def create_dir(fd, v,n):
         vv = '.\\%s' % v
     else:
         vv = v
-    fd.write('%s-all: "%s-dir" "%s-Makefile"\n' % (n, n, n))
+    fd.write('%s-%d-all: "%s-%d-dir" "%s-%d-Makefile"\n' % (n, i, n, i, n, i))
     fd.write('\t$(CD) "%s" && $(MAKE) /nologo "prefix=$(prefix)" "bits=$(bits)" all \n' % vv)
-    fd.write('%s-dir: \n\tif not exist "%s" $(MKDIR) "%s"\n' % (n, vv, vv))
-    fd.write('%s-Makefile: "$(SRCDIR)\\%s\\Makefile.msc"\n' % (n, v))
+    fd.write('%s-%d-dir: \n\tif not exist "%s" $(MKDIR) "%s"\n' % (n, i, vv, vv))
+    fd.write('%s-%d-Makefile: "$(SRCDIR)\\%s\\Makefile.msc"\n' % (n, i, v))
     fd.write('\t$(INSTALL) "$(SRCDIR)\\%s\\Makefile.msc" "%s\\Makefile"\n' % (v, v))
-    fd.write('%s-check: "%s"\n' % (n, vv))
+    fd.write('%s-%d-check: "%s"\n' % (n, i, vv))
     fd.write('\t$(CD) "%s" && $(MAKE) /nologo "prefix=$(prefix)" "bits=$(bits)" check\n' % vv)
 
-    fd.write('%s-install: "$(bindir)" "$(libdir)"\n' % n)
+    fd.write('%s-%d-install: "$(bindir)" "$(libdir)"\n' % (n, i))
     fd.write('\t$(CD) "%s" && $(MAKE) /nologo "prefix=$(prefix)" "bits=$(bits)" install\n' % vv)
 
-def empty_dir(fd, n):
+def empty_dir(fd, n, i):
 
-    fd.write('%s-all:\n' % (n))
-    fd.write('%s-check:\n' % (n))
-    fd.write('%s-install:\n' % (n))
+    fd.write('%s-%d-all:\n' % (n, i))
+    fd.write('%s-%d-check:\n' % (n, i))
+    fd.write('%s-%d-install:\n' % (n, i))
 
-def create_subdir(fd, dir):
+def create_subdir(fd, dir, i):
     res = ""
     if string.find(dir, "?") > -1:
         parts = string.split(dir, "?")
@@ -92,20 +92,20 @@ def create_subdir(fd, dir):
             dirs = string.split(parts[1], ":")
             fd.write("!IFDEF %s\n" % parts[0])
             if len(dirs) > 0 and string.strip(dirs[0]) != "":
-                create_dir(fd, dirs[0],parts[0])
+                create_dir(fd, dirs[0], parts[0], i)
             else:
-                empty_dir(fd, parts[0])
+                empty_dir(fd, parts[0], i)
             if len(dirs) > 1 and string.strip(dirs[1]) != "":
                 fd.write("!ELSE\n")
-                create_dir(fd, dirs[1],parts[0])
+                create_dir(fd, dirs[1], parts[0], i)
             else:
                 fd.write("!ELSE\n")
-                empty_dir(fd, parts[0])
+                empty_dir(fd, parts[0], i)
             fd.write("!ENDIF\n")
-        res = parts[0]
+        res = '%s-%d' % (parts[0], i)
     else:
-        create_dir(fd, dir,dir)
-        res = dir
+        create_dir(fd, dir, dir, i)
+        res = '%s-%d' % (dir, i)
     return res
 
 def msc_subdirs(fd, var, values, msc):
@@ -115,7 +115,7 @@ def msc_subdirs(fd, var, values, msc):
     nvalues = []
     for dir in values:
         i = i + 1
-        val = create_subdir(fd, dir)
+        val = create_subdir(fd, dir, i)
         if val:
             nvalues.append(val)
 
