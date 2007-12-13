@@ -515,22 +515,18 @@ infer_key (PFla_op_t *n, bool with_guide_info)
 
         case la_rowrank:
         case la_rank:
-        {
-            PFalg_att_t cols = 0;
-            unsigned int i;
-
             /* key columns are propagated */
             copy (n->prop->keys, L(n)->prop->keys);
 
-            for (i = 0; i < PFord_count (n->sem.sort.sortby); i++)
-                cols |= PFord_order_col_at (n->sem.sort.sortby, i);
-            
-            for (i = 0; i < PFarray_last (L(n)->prop->keys); i++)
-                if (cols & *(PFalg_att_t *) PFarray_at (L(n)->prop->keys, i)) {
+            /* propagate the result column as key 
+               if one of the sort criteria is already a key */
+            for (unsigned int i = 0; i < PFord_count (n->sem.sort.sortby); i++)
+                if (key_worker (L(n)->prop->keys,
+                                PFord_order_col_at (n->sem.sort.sortby, i))) {
                     union_ (n->prop->keys, n->sem.sort.res);
                     break;
                 }
-        }   break;
+            break;
 
         case la_rowid:
             /* key columns are propagated */
