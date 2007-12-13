@@ -849,11 +849,11 @@ str CMDcst@1bat_@3_@4_@5(int *ret,void *cst, int *l)
 				*o = @1_nil;
 			else 
 #endif
-				*o = (@1) (@2 *p);
+				*o = @2 *p;
 		}
 	}
 @-
-Unary accummulators are only indirectly called. They can not
+Unary accummulators are only called indirectly. They cannot
 always be defined without signature clashes, eg. -(batA,batC).
 @= unary_impl
 batcalc_export str CMDunaryAccum@1(int *ret,int *did, int *bid);

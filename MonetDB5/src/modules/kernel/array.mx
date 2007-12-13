@@ -239,7 +239,7 @@ ARRAYgridBAT_@1(@1 *ret, @1 *bid, @1 *groups, @1 *groupsize, @1 *clustersize, @1
 	BAT *bn;
 	@1 shift = 1;
 
-	if ((bn = BATdescriptor(*bid)) == NULL) {
+	if ((bn = BATdescriptor((bat) *bid)) == NULL) {
 		throw(MAL, "array.grid", "Cannot access descriptor");
 	}
 
@@ -256,7 +256,7 @@ ARRAYgridBATshift_@1(@1 *ret, @1 *bid, @1 *groups, @1 *groupsize, @1 *clustersiz
 {
 	BAT *bn;
 
-	if ((bn = BATdescriptor(*bid)) == NULL) {
+	if ((bn = BATdescriptor((bat) *bid)) == NULL) {
 		throw(MAL, "array.grid", "Cannot access descriptor");
 	}
 	if (fillgrid_@1(&bn, groups, groupsize, clustersize, offset, shift) == GDK_FAIL)

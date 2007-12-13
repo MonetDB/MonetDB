@@ -269,7 +269,7 @@ HASHfnd_oid for void- and hash-lookups, respectively
 				if (*t == @6_nil) {
 					*dst = @9_nil;
 				} else {
-					*dst += *t;
+					*dst += (@9) *t;
 				}
 			}
 		}
@@ -332,7 +332,7 @@ HASHfnd_oid for void- and hash-lookups, respectively
 				if (*t == @6_nil) {
 					*dst = @9_nil;
 				} else {
-					*dst *= *t;
+					*dst *= (@9) *t;
 				}
 			}
 		}
@@ -1152,7 +1152,7 @@ CMDaggrX3_size(BAT **ret, BAT *b, BAT *e)
 					if (*t == @6_nil) {
 						*dst = @9_nil;
 					} else {
-						*dst += *t;
+						*dst += (@9) *t;
 					}
 				}
 			}
@@ -1228,7 +1228,7 @@ CMDaggrX3_size(BAT **ret, BAT *b, BAT *e)
 					if (*t == @6_nil) {
 						*dst = @9_nil;
 					} else {
-						*dst *= *t;
+						*dst *= (@9) *t;
 					}
 				}
 			}

@@ -869,7 +869,7 @@ of BATs.
 	r= BUNfnd(@3,&i); 
 	if (r != BUN_NONE){
 	   val= BUNtail(@3i,r);
-	   vl= * (@5 *) val;	
+	   vl= (lng) * (@5 *) val;	
 	   @2= (@1) vl;
 	   VALset(&bpmcat[i]->@4, tp, &@2); 
 	} else 

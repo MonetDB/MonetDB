@@ -718,7 +718,7 @@ str SABAOTHgetUplogInfo(sabuplog *ret, sabdb *db) {
 						*p = '\0';
 						stop = (time_t)atol(data);
 						p = data;
-						i = stop - start;
+						i = (int) (stop - start);
 						if (i > ret->maxuptime)
 							ret->maxuptime = i;
 						if (ret->minuptime == -1 || ret->minuptime > i)

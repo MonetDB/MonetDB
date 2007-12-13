@@ -496,7 +496,7 @@ status_export str SYSmem_usage(int *ret, lng *minsize);
 str
 SYSmem_usage(int *ret, lng *minsize)
 {
-	lng hbuns = 0, tbuns, hhsh = 0, thsh = 0, hind = 0, tind = 0, head = 0, tail = 0, tot = 0, n = 0, sz;
+	lng hbuns = 0, tbuns = 0, hhsh = 0, thsh = 0, hind = 0, tind = 0, head = 0, tail = 0, tot = 0, n = 0, sz;
 	BAT *bn = BATnew(TYPE_str, TYPE_lng, 2 * BBPsize);
 	struct mallinfo m;
 	char buf[1024];

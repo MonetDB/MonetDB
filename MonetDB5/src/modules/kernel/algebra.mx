@@ -1055,7 +1055,7 @@ CMDsum_@1_@2(@2* res, BAT *b)
 			result = @2_nil;
 			break;
 		} else {
-			result += *value;
+			result += (@2) *value;
 		}
 	}
 	*res = result;
@@ -1753,7 +1753,7 @@ fetch(ptr ret, BAT *b, lng i)
 		return GDK_FAIL;
 	}
 	i += BUNfirst(b);
-	@:putTail((size_t)i)@
+	@:putTail(((BUN)i))@
 @= putTail
 	if (b->ttype && b->theap) {
 		ptr _src = BUNtvar(bi,@1);/*b->theap->base + *(var_t*) BUNtloc(bi,@1);*/

@@ -230,7 +230,7 @@ CLTtimeConvert(time_t l, char *s){
 #endif
 
 #ifdef HAVE_ASCTIME_R3
-			asctime_r(&localt, s, sizeof(s));
+			asctime_r(&localt, s, 26);
 #else
 #ifdef HAVE_ASCTIME_R
 			asctime_r(&localt, s);
