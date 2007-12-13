@@ -83,6 +83,8 @@ inet_export str INEThostmask(inet *retval, inet *val);
 inet_export str INETnetwork(inet *retval, inet *val);
 inet_export str INETtext(str *retval, inet *val);
 inet_export str INETabbrev(str *retval, inet *val);
+inet_export str INET_inet(inet *d, inet *s);
+inet_export str INET_fromstr(inet *ret, str *s);
 
 @c
 #include "mal_config.h"

@@ -133,6 +133,7 @@ clients_export str CLTLastCommand(int *ret);
 clients_export str CLTActions(int *ret);
 clients_export str CLTTime(int *ret);
 clients_export str CLTInfo(int *ret);
+clients_export str CLTgetUsername(str *ret);
 
 clients_export str CLTsuspend(int *ret, int *id);
 clients_export str CLTwakeup(int *ret, int *id);

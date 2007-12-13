@@ -2046,6 +2046,7 @@ CMDaggr_@1_@3(BAT **ret, BAT *b, BAT *e)
 @= extreme_
 @:extreme(@1,@2,oid,@3)@
 @:extreme(@1,@2,ptr,@3)@
+group_export str GRP@1(int *retval, int *bid, int *eid);
 str
 GRP@1(int *retval, int *bid, int *eid)
 {

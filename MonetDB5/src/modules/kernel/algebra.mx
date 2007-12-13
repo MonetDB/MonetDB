@@ -996,6 +996,8 @@ algebra_export str ALGhashjoin(int *result, int *lid, int *rid);
 algebra_export str ALGmergejoin(int *result, int *lid, int *rid);
 algebra_export str ALGindexjoin(int *result, int *lid, int *rid);
 algebra_export str ALGprojectNIL(int *ret, int *bid);
+algebra_export str ALGselectNotNil(int *result, int *bid);
+algebra_export str ALGuhashsplit(int *result, int *bid, int *nfrag);
 
 @= project_export
 algebra_export str ALGprojecthead_@1(int *ret,ptr *val, int *bid);

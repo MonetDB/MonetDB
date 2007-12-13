@@ -176,15 +176,15 @@ comment "The round(n, m) returns n rounded to m places to the right
         m must be an integer.";
 
 command isnan(d:dbl) :bit 
-address math_unary_ISNAN
+address MATHunary_ISNAN
 comment "The isnan(x) function returns true if x is 'not-a-number' 
         (NaN), and false otherwise.";
 command isinf(d:dbl) :int 
-address math_unary_ISINF
+address MATHunary_ISINF
 comment "The isinf(x) function returns -1 if x represents negative 
         infinity, 1 if x represents positive infinity, and 0 otherwise.";
 command finite(d:dbl) :bit 
-address math_unary_FINITE
+address MATHunary_FINITE
 comment "The finite(x) function returns true if x is neither infinite 
         nor a 'not-a-number' (NaN) value, and false otherwise.";
 
@@ -301,41 +301,42 @@ MNisinf(double x)
 #define fmod_binary(x, y, z)  *z = fmod(*x,*y)
 
 @= unopbaseM5_export
-mmath_export str MATHunary@1@3(@3 *res , @3 *a );
+mmath_export str MATHunary@1@2(@2 *res , @2 *a );
 @= unopM5_export
-  @:unopbaseM5_export(@1,@2,dbl)@
-  @:unopbaseM5_export(@1,@2,flt)@
+  @:unopbaseM5_export(@1,dbl)@
+  @:unopbaseM5_export(@1,flt)@
 @= binopbaseM5_export
-mmath_export str MATHbinary@1@3(@3 *res, @3 *a, @3 *b );
+mmath_export str MATHbinary@1@2(@2 *res, @2 *a, @3 *b );
 @= binopM5_export
-  @:binopbaseM5_export(@1,@2,dbl)@
-  @:binopbaseM5_export(@1,@2,flt)@
+  @:binopbaseM5_export(@1,dbl,dbl)@
+  @:binopbaseM5_export(@1,flt,flt)@
 
 @h
-@:unopM5_export(_ACOS,acos)@
-@:unopM5_export(_ASIN,asin)@
-@:unopM5_export(_ATAN,atan)@
-@:binopM5_export(_ATAN2,atan2)@
-@:unopM5_export(_COS,cos)@
-@:unopM5_export(_SIN,sin)@
-@:unopM5_export(_TAN,tan)@
+@:unopM5_export(_ACOS)@
+@:unopM5_export(_ASIN)@
+@:unopM5_export(_ATAN)@
+@:binopM5_export(_ATAN2)@
+@:unopM5_export(_COS)@
+@:unopM5_export(_SIN)@
+@:unopM5_export(_TAN)@
 
-@:unopM5_export(_COSH,cosh)@
-@:unopM5_export(_SINH,sinh)@
-@:unopM5_export(_TANH,tanh)@
+@:unopM5_export(_COSH)@
+@:unopM5_export(_SINH)@
+@:unopM5_export(_TANH)@
 
-@:unopM5_export(_EXP,exp)@
-@:unopM5_export(_LOG,log)@
-@:unopM5_export(_LOG10,log10)@
+@:unopM5_export(_EXP)@
+@:unopM5_export(_LOG)@
+@:unopM5_export(_LOG10)@
 
-@:binopM5_export(_POW,pow)@
-@:unopM5_export(_SQRT,sqrt)@
+@:binopM5_export(_POW)@
+@:unopM5_export(_SQRT)@
 
-@:unopM5_export(_CEIL,ceil)@
-@:unopbaseM5_export(_FABS,fabs,dbl)@
-@:unopM5_export(_FLOOR,floor)@
-@:binopM5_export(_FMOD,fmod)@
-
+@:unopM5_export(_CEIL)@
+@:unopbaseM5_export(_FABS,dbl,dbl)@
+@:unopM5_export(_FLOOR)@
+@:binopM5_export(_FMOD)@
+@:binopbaseM5_export(_ROUND,dbl,int)@
+@:binopbaseM5_export(_ROUND,flt,int)@
 
 mmath_export str MATHunary_ISNAN(bit *res, dbl *a);
 mmath_export str MATHunary_ISINF(int *res, dbl *a);
