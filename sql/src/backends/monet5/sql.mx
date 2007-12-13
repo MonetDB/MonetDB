@@ -199,7 +199,7 @@ address mvc_export_value_wrap
 comment "export a single value onto the stream s";
 
 command importTable( s:bstream, tname:str, 
-	sep:str, rsep:str, ssep:str, nr:int) :bat[:str,:bat] 
+	sep:str, rsep:str, ssep:str, nr:int, offset:int) :bat[:str,:bat] 
 address mvc_import_table_wrap
 comment "Import a table from bstream s with the 
 	given tuple and seperators (sep/rsep)";
@@ -692,7 +692,7 @@ sql5_export str mvc_affected_rows_wrap(int *r, lng *nr, str *w);
 sql5_export str mvc_export_result_wrap(int *ret, int *res_id, str *w);
 sql5_export str mvc_export_operation_wrap(int *ret, str *w);
 sql5_export str mvc_export_value_wrap(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-sql5_export str mvc_import_table_wrap(int *res, bstream **s, str *tname, str *sep, str *rsep, str *ssep, int *sz);
+sql5_export str mvc_import_table_wrap(int *res, bstream **s, str *tname, str *sep, str *rsep, str *ssep, int *sz, int *offset);
 sql5_export str bathash_wrap(int *res, int *bid );
 sql5_export str hash_wrap(MalBlkPtr m, MalStkPtr s, InstrPtr p);
 sql5_export str setVariable(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
@@ -1666,7 +1666,7 @@ mvc_export_value_wrap(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-mvc_import_table_wrap(int *res, bstream **s, str *tname, str *sep, str *rsep, str *ssep, int *sz)
+mvc_import_table_wrap(int *res, bstream **s, str *tname, str *sep, str *rsep, str *ssep, int *sz, int *offset)
 {
 	BAT *b;
 	mvc *m = NULL;
@@ -1674,7 +1674,7 @@ mvc_import_table_wrap(int *res, bstream **s, str *tname, str *sep, str *rsep, st
 
 	if (msg)
 		return msg;
-	b = mvc_import_table(m, *s, *tname, *sep, *rsep, *ssep, *sz);
+	b = mvc_import_table(m, *s, *tname, *sep, *rsep, *ssep, *sz, *offset);
 	if (!b)
 		throw(SQL, "importTable", "failed to import table");
 	*res = b->batCacheid;

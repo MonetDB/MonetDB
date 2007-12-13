@@ -90,3 +90,4 @@ load_dec_as_int
 string
 crashme
 50ways
+load_with_offset

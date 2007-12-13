@@ -1510,6 +1510,8 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			char *sep = n->data;
 			char *rsep = n->next->data;
 			char *ssep = n->next->next->data;
+			int nr_rec = *(int*)(n->next->next->next->data);
+			int offset = *(int*)(n->next->next->next->next->data);
 
 			if (s->op4.stval) {
 				int file = _dumpstmt(sql, mb, s->op4.stval);
@@ -1540,7 +1542,8 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				q = pushStr(mb, q, sep);
 				q = pushStr(mb, q, rsep);
 				q = pushStr(mb, q, ssep);
-				q = pushInt(mb, q, s->flag);
+				q = pushInt(mb, q, nr_rec);
+				q = pushInt(mb, q, offset);
 				s->nr = getDestVar(q);
 
 				q = newStmt(mb, "bstream", "destroy");
@@ -1559,7 +1562,8 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				q = pushStr(mb, q, sep);
 				q = pushStr(mb, q, rsep);
 				q = pushStr(mb, q, ssep);
-				q = pushInt(mb, q, s->flag);
+				q = pushInt(mb, q, nr_rec);
+				q = pushInt(mb, q, offset);
 				s->nr = getDestVar(q);
 			}
 		}

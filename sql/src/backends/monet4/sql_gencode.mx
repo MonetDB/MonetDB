@@ -1132,6 +1132,8 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 			char *sep = n->data;
 			char *rsep = n->next->data;
 			char *ssep = sql_escape_ident(n->next->next->data);
+			int nr_rec = *(int*)(n->next->next->next->data);
+			int offset = *(int*)(n->next->next->next->next->data);
 
 			buflen = strlen(tname) + 512;
 			buf = NEW_ARRAY(char, buflen + 1);
@@ -1143,14 +1145,14 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 				assert(len <= buflen);
 				len += snprintf(buf + len, buflen - len, "var f%d := bstream_create(f%ds, 1024*1024);\n", file, file);
 				assert(len <= buflen);
-				len += snprintf(buf + len, buflen - len, "var s%d := mvc_import_table( myc, f%d, \"%s\", \"%s\", \"%s\", \"%s\", %d);\n", -s->nr, file, tname, sep, rsep, ssep, s->flag);
+				len += snprintf(buf + len, buflen - len, "var s%d := mvc_import_table( myc, f%d, \"%s\", \"%s\", \"%s\", \"%s\", %d, %d);\n", -s->nr, file, tname, sep, rsep, ssep, nr_rec, offset);
 				assert(len <= buflen);
 				len += snprintf(buf + len, buflen - len, "bstream_destroy(f%d);\n", file);
 				assert(len <= buflen);
 				len += snprintf(buf + len, buflen - len, "stream_close(f%ds);\n", file);
 				assert(len <= buflen);
 			} else {
-				len += snprintf(buf + len, buflen - len, "var s%d := mvc_import_table( myc, Input, \"%s\", \"%s\", \"%s\", \"%s\", %d);\n", -s->nr, tname, sep, rsep, ssep, s->flag);
+				len += snprintf(buf + len, buflen - len, "var s%d := mvc_import_table( myc, Input, \"%s\", \"%s\", \"%s\", \"%s\", %d, %d);\n", -s->nr, tname, sep, rsep, ssep, nr_rec, offset);
 				assert(len <= buflen);
 			}
 			dump(sql, buf, len, -s->nr);
