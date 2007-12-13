@@ -1245,15 +1245,99 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
                 if (diff)
                     break;
 
-                /* This rewrite is only correct if the union operator
-                   is implemented as a union all operation. */
-                *p = *disjunion (eqjoin_unq (L(lp), rp, latt, ratt,
-                                             p->sem.eqjoin_unq.res),
-                                 eqjoin_unq (R(lp), rp, latt, ratt,
-                                             p->sem.eqjoin_unq.res));
-                modified = true;
-                join_pushdown_worker (L(p), clean_up_list);
-                join_pushdown_worker (R(p), clean_up_list);
+                /* stop if this consistency check fails */
+                if (p->sem.eqjoin_unq.res != latt &&
+                    p->sem.eqjoin_unq.res != ratt)
+                    break;
+                        
+                /* We have to look at the union operator in conjunction
+                   with its renaming projection operators underneath as
+                   we otherwise state that the input is the same -- the
+                   cleanup phase only looks at the column names to decide
+                   how to resolve conflicts. */
+                if (L(lp)->kind == la_project && R(lp)->kind == la_project) {
+                    PFalg_att_t   latt1 = att_NULL,
+                                  latt2 = att_NULL,
+                                  res1,
+                                  res2;
+                    PFalg_proj_t *proj_list1,
+                                 *proj_list2;
+                    PFalg_att_t   cur;
+                    unsigned int  count = 0;
+                    
+                    /* create projection list */
+                    proj_list1 = PFmalloc (p->schema.count *
+                                           sizeof (*(proj_list1)));
+                    proj_list2 = PFmalloc (p->schema.count *
+                                           sizeof (*(proj_list2)));
+
+                    /* Copy the projection list except for the join column. */
+                    for (unsigned int i = 0; i < lp->schema.count; i++) {
+                        cur = lp->schema.items[i].name;
+                        /* consistency check to ensure that the projections
+                           and the union operator are aligned */
+                        assert (cur == L(lp)->sem.proj.items[i].new &&
+                                cur == R(lp)->sem.proj.items[i].new);
+
+                        if (cur == latt) {
+                            /* remember old join names */
+                            latt1 = L(lp)->sem.proj.items[i].old;
+                            latt2 = R(lp)->sem.proj.items[i].old;
+                        }
+                        else {
+                            proj_list1[count] = L(lp)->sem.proj.items[i];
+                            proj_list2[count] = R(lp)->sem.proj.items[i];
+                            count++;
+                        }
+                    }
+                    
+                    /* Extend the projection list with the columns of
+                       the right join input (again discarding the join
+                       column. */
+                    for (unsigned int i = 0; i < rp->schema.count; i++) {
+                        cur = rp->schema.items[i].name;
+                        if (cur != ratt) {
+                            proj_list1[count] = proj (cur, cur);
+                            proj_list2[count] = proj (cur, cur);
+                            count++;
+                        }
+                        /* Make sure that we do not write more
+                           projection than we allocated space for it. */
+                        if (count == p->schema.count)
+                            break;
+                    }
+                    
+                    /* Skip rewrite if we have duplicate columns. */
+                    if (count != p->schema.count - 1)
+                        break;
+                    
+                    assert (latt1);
+                    assert (latt2);
+
+                    /* find out the correct join result columns */
+                    res1 = latt1 < ratt ? latt1 : ratt;
+                    res2 = latt2 < ratt ? latt2 : ratt;
+
+                    /* fix the output schema by adjusting the result name */
+                    proj_list1[count] = proj (p->sem.eqjoin_unq.res, res1);
+                    proj_list2[count] = proj (p->sem.eqjoin_unq.res, res2);
+                    count++;
+                    
+                    /* This rewrite is only correct if the union operator
+                       is implemented as a union all operation. */
+                    *p = *disjunion (PFla_project_ (
+                                         eqjoin_unq (LL(lp), rp, latt1, ratt,
+                                                     res1),
+                                         count, proj_list1),
+                                     PFla_project_ (
+                                         eqjoin_unq (RL(lp), rp, latt2, ratt,
+                                                     res2),
+                                         count, proj_list2));
+                    modified = true;
+
+                    join_pushdown_worker (LL(p), clean_up_list);
+                    join_pushdown_worker (RL(p), clean_up_list);
+                }
             } break;
 
             case la_fun_1to1:
