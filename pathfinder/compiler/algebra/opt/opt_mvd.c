@@ -1673,64 +1673,31 @@ opt_mvd (PFla_op_t *p)
 
         /**
          * We are looking for a proxy (of kind 1) followed by a cross product.
-         * Thus we first ensure that the proxy still has the correct shape
-         * (see Figure (1)) and then check whether the proxy is independent
-         * of tree t1. If that's the case we rewrite the DAG in Figure (1)
-         * into the one of Figure (2).
+         * We check whether the proxy is independent of tree t1. If that's
+         * the case we rewrite the DAG in Figure (1) into the one of Figure (2):
          *
-         *                proxy (kind=1)                 X
-         *      __________/ |  \___                     / \
-         *     /(sem.base1) pi_1   \ (sem.ref)        t1   proxy (kind=1)
-         *     |            |       |            __________/ |  \___
-         *     |           |X|      |           /(sem.base1) pi_1'  \ (sem.ref)
-         *     |          /   \     |           |            |       |
-         *     |         |     pi_2 |           |           |X|      |
-         *     |         |     |    |           |          /   \     |
-         *     |         |    |X|   |           |         |     pi_2 |
-         *     |        pi_3  / \   |           |         |     |    |
-         *     |         |   /___\  |           |         |    |X|   |
-         *     |         |     | __/            |        pi_3' / \   |
-         *     |         |     |/               |         |   /___\  |
-         *     |         |     pi_4             |         |     | __/
-         *     |         |     |                |         |     |/
-         *     |          \   /                 |         |     pi_4'
-         *     |           \ /                  |         |     |
-         *     \______      #                   |          \   /
-         *            \    /                    |           \ /
-         *          proxy_base                  \______      #
-         *              |                              \    /
-         *              X                            proxy_base
-         *             / \                               |
-         *           t1   t2                             t2
+         *                proxy (kind=1)              pi_above
+         *                  |                          |
+         *                 / \                         X
+         *                /___\                    ___/ \___
+         *                  |                     /         \
+         *                  X                    pi_lcross  pi_rcross
+         *                 / \                    |          |
+         *                t1 t2                   t1       proxy (kind=1)
+         *                                                   |
+         *                ( 1 )                             / \
+         *                                                 /___\
+         *                                                   |
+         *                                                  pi_below
+         *                                                   |
+         *                                                   t2
          *
-         *            ( 1 )                             ( 2 )
-         *
-         *
-         * The changes happen at the 3 projections: pi_1, pi_3, and pi_4.
-         * - All columns of t1 in pi_1 are projected out (resulting in pi_1').
-         * - All columns of t1 in pi_3 and pi_4 are replaced by a dummy
-         *   column (the first column of t2) thus resulting in the modified
-         *   projections pi_3' and pi_4', respectively. We don't throw out
-         *   the columns of t1 in the proxy as this would require a bigger
-         *   rewrite, which is done eventually by the following icols
-         *   optimization.
+         *                                            ( 2 )
          */
         if (is_cross (L(p->sem.proxy.base1)) &&
-            p->sem.proxy.kind == 1 &&
-            /* check consistency */
-            L(p)->kind == la_project &&
-            LL(p)->kind == la_eqjoin &&
-            L(LL(p))->kind == la_project &&
-            R(LL(p))->kind == la_project &&
-            RL(LL(p))->kind == la_eqjoin &&
-            LL(LL(p))->kind == la_rowid &&
-            L(LL(LL(p))) == p->sem.proxy.base1 &&
-            p->sem.proxy.ref->kind == la_project &&
-            L(p->sem.proxy.ref) == LL(LL(p))) {
-
+            p->sem.proxy.kind == 1) {
             PFla_op_t *cross = L(p->sem.proxy.base1);
             PFla_op_t *lcross, *rcross;
-            PFla_op_t *ref = p->sem.proxy.ref;
             unsigned int i, j, count = 0;
             bool rewrite = false;
 
@@ -1766,86 +1733,92 @@ opt_mvd (PFla_op_t *p)
             }
 
             if (rewrite) {
-                PFalg_att_t dummy_col = lcross->schema.items[0].name;
-                /* pi_1' */
-                PFalg_proj_t *proj_proxy = PFmalloc (L(p)->schema.count *
+                unsigned int  lcount    = 0,
+                              rcount    = 0;
+                PFalg_att_t   dummy_col = lcross->schema.items[0].name,
+                              cur,
+                              used_cols = 0;
+                PFalg_proj_t *proj_below = PFmalloc (cross->schema.count *
                                                      sizeof (PFalg_proj_t));
-                /* pi_3' */
-                PFalg_proj_t *proj_left = PFmalloc (L(LL(p))->schema.count *
-                                                    sizeof (PFalg_proj_t));
-                /* pi_4' */
-                PFalg_proj_t *proj_exit = PFmalloc (ref->schema.count *
-                                                    sizeof (PFalg_proj_t));
+                PFalg_proj_t *proj_above = PFmalloc (p->schema.count *
+                                                     sizeof (PFalg_proj_t));
+                PFalg_proj_t *proj_lcross = PFmalloc (p->schema.count *
+                                                      sizeof (PFalg_proj_t));
+                PFalg_proj_t *proj_rcross = PFmalloc (p->schema.count *
+                                                      sizeof (PFalg_proj_t));
 
-                /* prune the columns of the right argument
-                   of the Cartesian product */
-                count = 0;
-                for (i = 0; i < L(p)->sem.proj.count; i++) {
-                    for (j = 0; j < rcross->schema.count; j++)
-                        if (L(p)->sem.proj.items[i].new ==
-                            rcross->schema.items[j].name)
+                /* Replace the right columns of the Cartesian product
+                   by dummy columns (at the bottom of the proxy). */
+                for (i = 0; i < cross->schema.count; i++) {
+                    cur = cross->schema.items[i].name;
+                    for (j = 0; j < lcross->schema.count; j++)
+                        if (cur == lcross->schema.items[j].name) {
+                            proj_below[i] = proj (cur, cur);
                             break;
+                        }
+                    if (j == lcross->schema.count)
+                        proj_below[i] = proj (cur, dummy_col);
+                }
+                /* Replace the Cartesian product by a projection that
+                   assigns the right cross product columns dummy columns
+                   (to ensure that the plan stays consistent). */
+                L(p->sem.proxy.base1) = PFla_project_ (lcross,
+                                                       cross->schema.count,
+                                                       proj_below);
+
+                /* Split up the columns into a distinct list of left
+                   and right cross product columns. If a column appears
+                   in both children we keep the column in the right child.
+
+                   Futhermore create a projection list that throws
+                   away additional columns (introduced by the fallback
+                   for a possibly empty projection list). */
+                for (i = 0; i < p->schema.count; i++) {
+                    cur = p->schema.items[i].name;
+                    /* prefer right columns over left columns */
+                    for (j = 0; j < rcross->schema.count; j++)
+                        if (cur == rcross->schema.items[j].name) {
+                            proj_rcross[rcount++] = proj (cur, cur);
+                            break;
+                        }
                     if (j == rcross->schema.count)
-                        proj_proxy[count++] = L(p)->sem.proj.items[i];
+                        proj_lcross[lcount++] = proj (cur, cur);
+
+                    proj_above[i] = proj (cur, cur);
+
+                    used_cols |= cur;
+                }
+                /* Create a fallback projection list with a new name
+                   to ensure that at least one column remains as input
+                   for the cross product. */
+                if (!lcount) {
+                    cur = PFalg_ori_name (PFalg_unq_name (att_iter, 0),
+                                          ~used_cols);
+                    proj_lcross[0] = proj (cur, p->schema.items[0].name);
+                    lcount++;
+                } else if (!rcount) {
+                    cur = PFalg_ori_name (PFalg_unq_name (att_iter, 0),
+                                          ~used_cols);
+                    proj_rcross[0] = proj (cur, rcross->schema.items[0].name);
+                    rcount++;
                 }
 
-                /* replace the columns of the right argument
-                   of the Cartesian product by a dummy column
-                   of the left argument */
-                for (i = 0; i < L(LL(p))->sem.proj.count; i++) {
-                    for (j = 0; j < rcross->schema.count; j++)
-                        if (L(LL(p))->sem.proj.items[i].old ==
-                            rcross->schema.items[j].name)
-                            break;
-                    if (j == rcross->schema.count)
-                        proj_left[i] = L(LL(p))->sem.proj.items[i];
-                    else
-                        proj_left[i] = PFalg_proj (
-                                           L(LL(p))->sem.proj.items[i].new,
-                                           dummy_col);
-                }
-                /* replace the columns of the right argument
-                   of the Cartesian product by a dummy column
-                   of the left argument */
-                for (i = 0; i < ref->sem.proj.count; i++) {
-                    for (j = 0; j < rcross->schema.count; j++)
-                        if (ref->sem.proj.items[i].old ==
-                            rcross->schema.items[j].name)
-                            break;
-                    if (j == rcross->schema.count)
-                        proj_exit[i] = ref->sem.proj.items[i];
-                    else
-                        proj_exit[i] = PFalg_proj (
-                                           ref->sem.proj.items[i].new,
-                                           dummy_col);
-                }
-
-                PFla_op_t *new_rowid = PFla_rowid (
-                                           PFla_proxy_base (lcross),
-                                           L(ref)->sem.rowid.res);
-
-                *ref = *PFla_project_ (new_rowid,
-                                       ref->schema.count,
-                                       proj_exit);
-
-                *p = *(cross_can (
-                          rcross,
-                          PFla_proxy (
-                              PFla_project_ (
-                                  PFla_eqjoin (
-                                      PFla_project_ (
-                                          new_rowid,
-                                          L(LL(p))->schema.count,
-                                          proj_left),
-                                      R(LL(p)),
-                                      LL(p)->sem.eqjoin.att1,
-                                      LL(p)->sem.eqjoin.att2),
-                                  count, proj_proxy),
-                              1,
-                              ref,
-                              L(new_rowid),
-                              p->sem.proxy.new_cols,
-                              p->sem.proxy.req_cols)));
+                /* Place the cross product on top of the proxy operator
+                   and adjust all column names by additional projection. */
+                *p = *(PFla_project_ (
+                            cross_can (
+                                PFla_project_ (
+                                    /* make a copy of p */
+                                    PFla_proxy (
+                                        L(p),
+                                        p->sem.proxy.kind,
+                                        p->sem.proxy.ref,
+                                        p->sem.proxy.base1,
+                                        p->sem.proxy.req_cols,
+                                        p->sem.proxy.new_cols),
+                                    lcount, proj_lcross),
+                                PFla_project_ (rcross, rcount, proj_rcross)),
+                            p->schema.count, proj_above));
 
                 modified = true;
                 break;
