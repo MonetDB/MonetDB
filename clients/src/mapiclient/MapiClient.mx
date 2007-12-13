@@ -1224,6 +1224,8 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt)
 				fflush(stdout);
 			}
 #endif
+			if (buf != oldbuf)
+				free(buf);
 			buf = oldbuf; 
 			line = fgets(buf, BUFSIZ, fp);
 		}
@@ -1237,7 +1239,7 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt)
 			line = to;
 			iconv(cd_in, &from, &fromlen, &to, &tolen);
 			*to = 0;
-			if (oldbuf)
+			if (!oldbuf)
 				free(buf);
 			buf = line;
 		}
