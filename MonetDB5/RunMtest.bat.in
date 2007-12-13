@@ -14,23 +14,29 @@ set srcdir=@XMONETDB5_SOURCE@
 
 set MOD_PATH=%builddir%\src\compiler\.libs
 set MOD_PATH=%MOD_PATH%;%builddir%\src\compiler
+set MOD_PATH=%MOD_PATH%;%srcdir%\src\compiler
 set MOD_PATH=%MOD_PATH%;%builddir%\src\optimizer\.libs
 set MOD_PATH=%MOD_PATH%;%builddir%\src\optimizer
+set MOD_PATH=%MOD_PATH%;%srcdir%\src\optimizer
 set MOD_PATH=%MOD_PATH%;%builddir%\src\scheduler\.libs
 set MOD_PATH=%MOD_PATH%;%builddir%\src\scheduler
+set MOD_PATH=%MOD_PATH%;%srcdir%\src\scheduler
 set MOD_PATH=%MOD_PATH%;%builddir%\src\modules\atoms\.libs
 set MOD_PATH=%MOD_PATH%;%builddir%\src\modules\atoms
+set MOD_PATH=%MOD_PATH%;%srcdir%\src\modules\atoms
 set MOD_PATH=%MOD_PATH%;%builddir%\src\modules\kernel\.libs
 set MOD_PATH=%MOD_PATH%;%builddir%\src\modules\kernel
+set MOD_PATH=%MOD_PATH%;%srcdir%\src\modules\kernel
 set MOD_PATH=%MOD_PATH%;%builddir%\src\modules\mal\.libs
 set MOD_PATH=%MOD_PATH%;%builddir%\src\modules\mal
+set MOD_PATH=%MOD_PATH%;%srcdir%\src\modules\mal
 set MOD_PATH=%MOD_PATH%;%builddir%\src\modules\mal\crackers\.libs
 set MOD_PATH=%MOD_PATH%;%builddir%\src\modules\mal\crackers
+set MOD_PATH=%MOD_PATH%;%srcdir%\src\modules\mal\crackers
 
 set PATH=%MOD_PATH%;%PATH%
 set PATH=%builddir%\src\mal;%PATH%
 set PATH=%builddir%\src\tools;%PATH%
-set PATH=%builddir%\src\scheduler;%PATH%
 set PATH=%builddir%\conf;%PATH%
 
 REM execute Mtest.py in the source directory

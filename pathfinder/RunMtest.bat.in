@@ -19,13 +19,15 @@ set monetdb5_prefix=@XMONETDB5_PREFIX@
 if %V% == 4 call "%monetdb4_prefix%\bin\monetdb4-config.bat" --internal
 if %V% == 5 call "%monetdb5_prefix%\bin\monetdb5-config.bat" --internal
 
+set pkg=monetdb-xquery
 set builddir=@XPATHFINDER_BUILD@
 set srcdir=@XPATHFINDER_SOURCE@
-set pkg=monetdb-xquery
 
 set MOD_PATH=%modpath%
+set MOD_PATH=%srcdir%\modules\pftijah;%MOD_PATH%
 set MOD_PATH=%builddir%\modules\pftijah;%MOD_PATH%
 set MOD_PATH=%builddir%\modules\pftijah\.libs;%MOD_PATH%
+set MOD_PATH=%srcdir%\runtime;%MOD_PATH%
 set MOD_PATH=%builddir%\runtime;%MOD_PATH%
 set MOD_PATH=%builddir%\runtime\.libs;%MOD_PATH%
 
