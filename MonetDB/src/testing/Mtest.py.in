@@ -2044,7 +2044,7 @@ def Prompt(cmd) :
 
 def killProc(proc, outfile = None, cmd = None):
     try:
-        os.kill(-proc.pid, signal.SIGTERM)
+        os.kill(-proc.pid, signal.SIGKILL)
     except AttributeError:
         subprocess.Popen(['pskill','-t',str(proc.pid)])
     if outfile is not None and cmd is not None:
