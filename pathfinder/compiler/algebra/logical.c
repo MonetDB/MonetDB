@@ -3325,6 +3325,21 @@ PFla_fragment (const PFla_op_t *n)
     return ret;
 }
 
+/** Constructor for a fragment extract operator
+    (to be used in combination with a function call) */
+PFla_op_t *
+PFla_frag_extract (const PFla_op_t *n, unsigned int col_pos)
+{
+    PFla_op_t *ret = la_op_wire1 (la_frag_extract, n);
+
+    /* allocate memory for the result schema */
+    ret->schema.count = 0;
+    ret->schema.items = NULL;
+
+    ret->sem.col_ref.pos = col_pos;
+
+    return ret;
+}
 
 /**
  * Create empty set of fragments. It signals that an algebra expression
@@ -3827,11 +3842,107 @@ PFla_op_t *PFla_rec_base (PFalg_schema_t schema)
 
 
 /**
+ * Constructor for the function application
+ */
+PFla_op_t *
+PFla_fun_call (const PFla_op_t *loop, const PFla_op_t *param_list,
+               PFalg_schema_t schema, PFalg_fun_call_t kind,
+               PFqname_t qname, void *ctx,
+               PFalg_att_t iter, PFalg_occ_ind_t occ_ind)
+{
+    PFla_op_t     *ret;
+    unsigned int   i;
+
+    assert (loop);
+    assert (param_list);
+
+    /* create new function application node */
+    ret = la_op_wire2 (la_fun_call, loop, param_list);
+
+    /* allocate memory for the result schema (= schema(n)) */
+    ret->schema.count = schema.count;
+
+    ret->schema.items
+        = PFmalloc (schema.count * sizeof (*(ret->schema.items)));
+
+    for (i = 0; i < schema.count; i++)
+        ret->schema.items[i] = schema.items[i];
+
+    /* insert semantic value */
+    ret->sem.fun_call.kind    = kind;
+    ret->sem.fun_call.qname   = qname;
+    ret->sem.fun_call.ctx     = ctx;
+    ret->sem.fun_call.iter    = iter;
+    ret->sem.fun_call.occ_ind = occ_ind;
+
+    return ret;
+}
+
+
+/**
+ * Constructor for a list item of a parameter list
+ * related to function application
+ */
+PFla_op_t *
+PFla_fun_param (const PFla_op_t *argument, const PFla_op_t *param_list,
+                PFalg_schema_t schema)
+{
+    PFla_op_t     *ret;
+    unsigned int   i;
+
+    assert (argument);
+    assert (param_list);
+
+    /* create new function application parameter node */
+    ret = la_op_wire2 (la_fun_param, argument, param_list);
+
+    /* allocate memory for the result schema (= schema(n)) */
+    ret->schema.count = schema.count;
+
+    ret->schema.items
+        = PFmalloc (schema.count * sizeof (*(ret->schema.items)));
+
+    for (i = 0; i < schema.count; i++)
+        ret->schema.items[i] = schema.items[i];
+
+    return ret;
+}
+
+
+/**
+ * Constructor for the fragment information of a list item
+ * of a parameter list related to function application
+ */
+PFla_op_t *
+PFla_fun_frag_param (const PFla_op_t *argument,
+                     const PFla_op_t *param_list,
+                     unsigned int col_pos)
+{
+    PFla_op_t     *ret;
+
+    assert (argument);
+    assert (param_list);
+
+    /* create new function application parameter node */
+    ret = la_op_wire2 (la_fun_frag_param, argument, param_list);
+
+    /* allocate memory for the result schema */
+    ret->schema.count = 0;
+    ret->schema.items = NULL;
+
+    ret->sem.col_ref.pos = col_pos;
+    
+    return ret;
+}
+
+
+/**
  * Constructor for a proxy operator with a single child
  */
-PFla_op_t *PFla_proxy (const PFla_op_t *n, unsigned int kind,
-                       PFla_op_t *ref, PFla_op_t *base,
-                       PFalg_attlist_t new_cols, PFalg_attlist_t req_cols)
+PFla_op_t *
+PFla_proxy (const PFla_op_t *n, unsigned int kind,
+            PFla_op_t *ref, PFla_op_t *base,
+            PFalg_attlist_t new_cols, PFalg_attlist_t req_cols)
 {
     return PFla_proxy2 (n, kind, ref, base, NULL, new_cols, req_cols);
 }
@@ -3840,9 +3951,10 @@ PFla_op_t *PFla_proxy (const PFla_op_t *n, unsigned int kind,
 /**
  * Constructor for a proxy operator with a two children
  */
-PFla_op_t *PFla_proxy2 (const PFla_op_t *n, unsigned int kind,
-                       PFla_op_t *ref, PFla_op_t *base1, PFla_op_t *base2,
-                       PFalg_attlist_t new_cols, PFalg_attlist_t req_cols)
+PFla_op_t *
+PFla_proxy2 (const PFla_op_t *n, unsigned int kind,
+             PFla_op_t *ref, PFla_op_t *base1, PFla_op_t *base2,
+             PFalg_attlist_t new_cols, PFalg_attlist_t req_cols)
 {
     PFla_op_t     *ret;
     unsigned int   i;
@@ -3889,7 +4001,8 @@ PFla_op_t *PFla_proxy2 (const PFla_op_t *n, unsigned int kind,
 /**
  * Constructor for a proxy base operator
  */
-PFla_op_t *PFla_proxy_base (const PFla_op_t *n)
+PFla_op_t *
+PFla_proxy_base (const PFla_op_t *n)
 {
     PFla_op_t *ret = la_op_wire1 (la_proxy_base, n);
 
@@ -3945,6 +4058,10 @@ PFla_fn_string_join (const PFla_op_t *text, const PFla_op_t *sep,
  * The @a left and @a right arguments are its new children.
  * Each algebra node has at most 2 children, so the left children
  * can even be misused as document.
+ *
+ * This function does not care about XQuery semantics and also
+ * duplicates operators whose semantics change this way (e.g., node
+ * constructors).
  */
 PFla_op_t *
 PFla_op_duplicate (PFla_op_t *n, PFla_op_t *left, PFla_op_t *right)
@@ -4254,6 +4371,9 @@ PFla_op_duplicate (PFla_op_t *n, PFla_op_t *left, PFla_op_t *right)
         case la_fragment:
             return PFla_fragment (left);
 
+        case la_frag_extract:
+            return PFla_frag_extract (left, n->sem.col_ref.pos);
+
         case la_frag_union:
             return PFla_frag_union (left, right);
 
@@ -4287,6 +4407,23 @@ PFla_op_duplicate (PFla_op_t *n, PFla_op_t *left, PFla_op_t *right)
                                    n->sem.trace_map.inner,
                                    n->sem.trace_map.outer);
 
+        case la_fun_call:
+            return PFla_fun_call (left, right,
+                                  n->schema,
+                                  n->sem.fun_call.kind,
+                                  n->sem.fun_call.qname,
+                                  n->sem.fun_call.ctx,
+                                  n->sem.fun_call.iter,
+                                  n->sem.fun_call.occ_ind);
+
+        case la_fun_param:
+            return PFla_fun_param (left, right,
+                                   n->schema);
+                                   
+        case la_fun_frag_param:
+            return PFla_fun_frag_param (left, right,
+                                        n->sem.col_ref.pos);
+                                   
         case la_string_join:
             return PFla_fn_string_join (
                        left, right,

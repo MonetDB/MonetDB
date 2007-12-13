@@ -1584,9 +1584,8 @@ opt_mvd (PFla_op_t *p)
         break;
 
     case la_fragment:
-        break;
+    case la_frag_extract:
     case la_frag_union:
-        break;
     case la_empty_frag:
         break;
 
@@ -1612,6 +1611,12 @@ opt_mvd (PFla_op_t *p)
     case la_rec_arg:
     case la_rec_base:
         /* do not rewrite anything that has to do with recursion */
+        break;
+
+    case la_fun_call:
+    case la_fun_param:
+    case la_fun_frag_param:
+        /* do not rewrite anything that has to do with function application */
         break;
 
     case la_proxy:

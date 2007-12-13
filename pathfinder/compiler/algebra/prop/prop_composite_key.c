@@ -243,8 +243,10 @@ infer_ckey (PFla_op_t *n)
         case la_content:
         case la_merge_adjacent:
         case la_fragment:
+        case la_frag_extract:
         case la_frag_union:
         case la_empty_frag:
+        case la_fun_frag_param:
             /* no composite keys */
             break;
 
@@ -726,6 +728,17 @@ infer_ckey (PFla_op_t *n)
 
         case la_rec_base:
             /* infer no properties of the seed */
+            break;
+
+        case la_fun_call:
+            if (n->sem.fun_call.occ_ind == alg_occ_exactly_one &&
+                n->sem.fun_call.kind == alg_fun_call_xrpc &&
+                key_worker (L(n)->prop->ckeys, n->sem.fun_call.iter))
+                union_ (n->prop->ckeys, n->schema.items[0].name);
+            break;
+                
+        case la_fun_param:
+            copy (n->prop->ckeys, L(n)->prop->ckeys);
             break;
 
         case la_proxy:

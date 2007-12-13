@@ -682,6 +682,19 @@ infer_const (PFla_op_t *n)
             /* infer no properties of the seed */
             break;
 
+        case la_fun_call:
+            if (n->sem.fun_call.kind == alg_fun_call_xrpc &&
+                PFprop_const (L(n)->prop, n->sem.fun_call.iter))
+                PFprop_mark_const (
+                        n->prop,
+                        n->schema.items[0].name,
+                        PFprop_const_val (L(n)->prop, n->sem.fun_call.iter));
+            break;
+                
+        case la_fun_param:
+            copy (n->prop->constants, L(n)->prop->constants);
+            break;
+
         case la_proxy:
         case la_proxy_base:
             copy (n->prop->constants, L(n)->prop->constants);
@@ -729,9 +742,11 @@ infer_const (PFla_op_t *n)
         case la_merge_adjacent:
         case la_roots:
         case la_fragment:
+        case la_frag_extract:
         case la_frag_union:
         case la_empty_frag:
         case la_trace:
+        case la_fun_frag_param:
         case la_dummy:
             break;
 

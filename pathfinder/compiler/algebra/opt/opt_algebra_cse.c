@@ -754,6 +754,7 @@ apply_patch (PFla_op_t *n, PFarray_t *assembly1, PFarray_t *assembly2)
             }
         } break;
         case la_fragment:
+        case la_frag_extract:
         case la_frag_union:
         case la_empty_frag:
         {
@@ -796,6 +797,18 @@ apply_patch (PFla_op_t *n, PFarray_t *assembly1, PFarray_t *assembly2)
         case la_rec_base:
         {
             assert (!"la_rec_base not yet supported");
+        } break;
+        case la_fun_call:
+        {
+            assert (!"la_fun_call not yet supported");
+        } break;
+        case la_fun_param:
+        {
+            assert (!"la_fun_param not yet supported");
+        } break;
+        case la_fun_frag_param:
+        {
+            assert (!"la_fun_frag_param not yet supported");
         } break;
         case la_proxy:
         {
@@ -985,6 +998,7 @@ resolve_name_conflicts (PFla_op_t *n)
         case la_merge_adjacent:
         case la_roots:
         case la_fragment:
+        case la_frag_extract:
         case la_frag_union:
         case la_empty_frag:
         case la_error:
@@ -1021,6 +1035,18 @@ resolve_name_conflicts (PFla_op_t *n)
         case la_rec_base:
         {
             assert (!"la_rec_base not yet supported");
+        } break;
+        case la_fun_call:
+        {
+            assert (!"la_fun_call not yet supported");
+        } break;
+        case la_fun_param:
+        {
+            assert (!"la_fun_param not yet supported");
+        } break;
+        case la_fun_frag_param:
+        {
+            assert (!"la_fun_frag_param not yet supported");
         } break;
         case la_proxy:
         {
@@ -1560,6 +1586,7 @@ subexp_eq (PFla_op_t *a, PFla_op_t *b)
             return true;
         } break;
         case la_fragment:
+        case la_frag_extract:
         case la_frag_union:
         case la_empty_frag:
         {
@@ -1618,6 +1645,18 @@ subexp_eq (PFla_op_t *a, PFla_op_t *b)
         case la_rec_base:
         {
             assert (!"la_rec_base not yet supported!");
+        } break;
+        case la_fun_call:
+        {
+            assert (!"la_fun_call not yet supported");
+        } break;
+        case la_fun_param:
+        {
+            assert (!"la_fun_param not yet supported");
+        } break;
+        case la_fun_frag_param:
+        {
+            assert (!"la_fun_frag_param not yet supported");
         } break;
         case la_proxy:
         {
@@ -2085,6 +2124,7 @@ patch_projections (PFla_op_t *a, PFla_op_t *b)
             eff_schema_patch (effmap, schema, EFF(child));
         } break;
         case la_fragment:
+        case la_frag_extract:
         case la_frag_union:
         case la_empty_frag:
         {
@@ -2130,6 +2170,18 @@ patch_projections (PFla_op_t *a, PFla_op_t *b)
         case la_rec_base:
         {
             assert (!"la_rec_base not yet supported");
+        } break;
+        case la_fun_call:
+        {
+            assert (!"la_fun_call not yet supported");
+        } break;
+        case la_fun_param:
+        {
+            assert (!"la_fun_param not yet supported");
+        } break;
+        case la_fun_frag_param:
+        {
+            assert (!"la_fun_frag_param not yet supported");
         } break;
         case la_proxy:
         {

@@ -881,8 +881,10 @@ infer_ocol (PFla_op_t *n)
 
         /* operators without schema */
         case la_fragment:
+        case la_frag_extract:
         case la_frag_union:
         case la_empty_frag:
+        case la_fun_frag_param:
             /* keep empty schema */
             break;
 
@@ -950,6 +952,37 @@ infer_ocol (PFla_op_t *n)
            - thus update schema (property) during rewrite */
         case la_rec_base:
             break;
+
+        /* only a rewrite can change the ocol property
+           - thus update schema (property) during rewrite */
+        case la_fun_call:
+            break;
+
+        case la_fun_param:
+        {
+            unsigned int  i, j;
+
+            /* see if both operands have same number of attributes */
+            if (ocols_count (L(n)) != ocols_count (n))
+                PFoops (OOPS_FATAL,
+                        "Schema of the arguments of function application "
+                        "argument to not match");
+
+            /* see if we find each attribute in all of the input relations */
+            for (i = 0; i < ocols_count (L(n)); i++) {
+                for (j = 0; j < ocols_count (n); j++)
+                    if (ocol_at (L(n), i).name == ocol_at (n, j).name) {
+                        break;
+                    }
+
+                if (j == ocols_count (n))
+                    PFoops (OOPS_FATAL,
+                            "Schema of the arguments of function application "
+                            "argument to not match");
+            }
+
+            /* keep the schema of its inputs */
+        } break;
 
         case la_proxy:
         case la_proxy_base:

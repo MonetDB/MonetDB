@@ -344,8 +344,10 @@ infer_key (PFla_op_t *n, bool with_guide_info)
         case la_content:
         case la_merge_adjacent:
         case la_fragment:
+        case la_frag_extract:
         case la_frag_union:
         case la_empty_frag:
+        case la_fun_frag_param:
             /* no keys */
             break;
 
@@ -695,6 +697,17 @@ infer_key (PFla_op_t *n, bool with_guide_info)
 
         case la_rec_base:
             /* infer no properties of the seed */
+            break;
+
+        case la_fun_call:
+            if (n->sem.fun_call.occ_ind == alg_occ_exactly_one &&
+                n->sem.fun_call.kind == alg_fun_call_xrpc &&
+                key_worker (L(n)->prop->keys, n->sem.fun_call.iter))
+                union_ (n->prop->keys, n->schema.items[0].name);
+            break;
+                
+        case la_fun_param:
+            copy (n->prop->keys, L(n)->prop->keys);
             break;
 
         case la_proxy:

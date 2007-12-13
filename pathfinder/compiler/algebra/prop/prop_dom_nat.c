@@ -847,8 +847,10 @@ infer_dom (PFla_op_t *n, unsigned int id)
             break;
 
         case la_fragment:
+        case la_frag_extract:
         case la_frag_union:
         case la_empty_frag:
+        case la_fun_frag_param:
             break;
 
         case la_error:
@@ -881,6 +883,36 @@ infer_dom (PFla_op_t *n, unsigned int id)
             for (unsigned int i = 0; i < n->schema.count; i++)
                 if (n->schema.items[i].type == aat_nat)
                     add_dom (n->prop, n->schema.items[i].name, id++);
+            break;
+
+        case la_fun_call:
+        {
+            unsigned int i = 0;
+            if (n->sem.fun_call.occ_ind == alg_occ_exactly_one &&
+                n->sem.fun_call.kind == alg_fun_call_xrpc &&
+                n->schema.items[0].type == aat_nat) {
+                add_dom (n->prop,
+                         n->schema.items[0].name,
+                         PFprop_dom (L(n)->prop, n->sem.fun_call.iter));
+                i++;
+            } else if (n->sem.fun_call.occ_ind == alg_occ_zero_or_one &&
+                       n->sem.fun_call.kind == alg_fun_call_xrpc &&
+                       n->schema.items[0].type == aat_nat) {
+                add_subdom (n->prop,
+                            PFprop_dom (L(n)->prop, n->sem.fun_call.iter),
+                            id);
+                add_dom (n->prop, n->schema.items[0].name, id++);
+                i++;
+            }
+                
+            /* create new domains for all (remaining) attributes */
+            for (; i < n->schema.count; i++)
+                if (n->schema.items[i].type == aat_nat)
+                    add_dom (n->prop, n->schema.items[i].name, id++);
+        }   break;
+                
+        case la_fun_param:
+            bulk_add_dom (n->prop, L(n));
             break;
 
         case la_proxy:

@@ -326,6 +326,7 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
             case la_merge_adjacent:
             case la_roots:
             case la_fragment:
+            case la_frag_extract:
             case la_frag_union:
             case la_empty_frag:
             case la_error:
@@ -338,6 +339,9 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
             case la_rec_param:
             case la_rec_arg:
             case la_rec_base:
+            case la_fun_call:
+            case la_fun_param:
+            case la_fun_frag_param:
             case la_proxy:
             case la_proxy_base:
             case la_cross_mvd:
@@ -463,6 +467,7 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
             case la_merge_adjacent:
             case la_roots:
             case la_fragment:
+            case la_frag_extract:
             case la_frag_union:
             case la_empty_frag:
             case la_string_join:
@@ -1775,6 +1780,13 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
                 /* do not rewrite anything that has to do with recursion */
                 break;
 
+            case la_fun_call:
+            case la_fun_param:
+            case la_fun_frag_param:
+                /* do not rewrite anything
+                   that has to do with function application */
+                break;
+                
             case la_proxy:
             case la_proxy_base:
                 PFoops (OOPS_FATAL,
@@ -1839,6 +1851,7 @@ map_name (PFla_op_t *p, PFalg_att_t att)
         case la_merge_adjacent:
         case la_roots:
         case la_fragment:
+        case la_frag_extract:
         case la_frag_union:
         case la_empty_frag:
         case la_string_join:
@@ -1849,6 +1862,9 @@ map_name (PFla_op_t *p, PFalg_att_t att)
         case la_rec_param:
         case la_rec_arg:
         case la_rec_base:
+        case la_fun_call:
+        case la_fun_param:
+        case la_fun_frag_param:
         case la_proxy:
         case la_proxy_base:
         case la_dummy:

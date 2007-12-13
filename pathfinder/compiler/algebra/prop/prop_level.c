@@ -202,6 +202,7 @@ infer_level (PFla_op_t *n)
         case la_content:
         case la_merge_adjacent:
         case la_fragment:
+        case la_frag_extract:
         case la_frag_union:
         case la_empty_frag:
         case la_nil:
@@ -209,6 +210,9 @@ infer_level (PFla_op_t *n)
         case la_rec_param:
         case la_rec_arg:
         case la_rec_base:
+        case la_fun_call:
+        case la_fun_param:
+        case la_fun_frag_param:
         case la_string_join:
             n->prop->level_mapping = NULL;
             break;

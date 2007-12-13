@@ -196,10 +196,11 @@ prop_infer_set (PFla_op_t *n, bool set)
             break;
 
         case la_frag_union:
-            r_set = n->prop->set;
+            r_set = false;
         case la_fragment:
+        case la_frag_extract:
         case la_empty_frag:
-            l_set = n->prop->set;
+            l_set = false;
             break;
 
         case la_cond_err:
@@ -234,6 +235,14 @@ prop_infer_set (PFla_op_t *n, bool set)
             l_set = false;
             r_set = false;
         case la_rec_base:
+            break;
+
+        /* ignore this property for the function application */
+        case la_fun_call:
+        case la_fun_param:
+        case la_fun_frag_param:
+            l_set = false;
+            r_set = false;
             break;
 
         case la_dummy:

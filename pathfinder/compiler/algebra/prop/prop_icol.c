@@ -447,9 +447,7 @@ prop_infer_icols (PFla_op_t *n, PFalg_att_t icols)
 
             n->prop->l_icols = diff (n->prop->l_icols, n->sem.sort.res);
 
-            for (unsigned int i = 0;
-                 i < PFord_count (n->sem.sort.sortby);
-                 i++)
+            for (unsigned int i = 0; i < PFord_count (n->sem.sort.sortby); i++)
                 n->prop->l_icols = union_ (n->prop->l_icols,
                                            PFord_order_col_at (
                                                n->sem.sort.sortby, i));
@@ -680,7 +678,9 @@ prop_infer_icols (PFla_op_t *n, PFalg_att_t icols)
         case la_frag_union:
             n->prop->r_icols = 0;
         case la_fragment:
+        case la_frag_extract:
         case la_empty_frag:
+        case la_fun_frag_param:
             /* infer empty list for fragments */
             n->prop->l_icols = 0;
             break;
@@ -766,6 +766,16 @@ prop_infer_icols (PFla_op_t *n, PFalg_att_t icols)
         case la_rec_base:
             break;
 
+        case la_fun_call:
+            n->prop->l_icols = n->sem.fun_call.iter;
+            break;
+            
+        case la_fun_param:
+            for (unsigned int i = 0; i < n->schema.count; i++)
+                n->prop->l_icols = union_ (n->prop->l_icols,
+                                           n->schema.items[i].name);
+            break;
+            
         case la_proxy:
         case la_proxy_base:
             /* infer incoming icols for input relation */

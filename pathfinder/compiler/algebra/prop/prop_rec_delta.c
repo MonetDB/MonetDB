@@ -85,8 +85,10 @@ check_op (PFla_op_t *n)
         case la_empty_tbl:
         case la_ref_tbl:
         case la_fragment:
+        case la_frag_extract:
         case la_frag_union:
         case la_empty_frag:
+        case la_fun_frag_param:
             /* do not propagate or introduce any column information */
             break;
 
@@ -374,6 +376,12 @@ check_op (PFla_op_t *n)
             if (checks_failed)
                 ITER(n) = POS(n) = att_NULL;
         }   break;
+
+        case la_fun_call:
+        case la_fun_param:
+            /* don't know what to do -- avoid the delta evaluation */
+            return true;
+            break;
 
         case la_string_join:
             /* we may not allow an aggregate on the input sequence */

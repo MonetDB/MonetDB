@@ -1811,6 +1811,20 @@ void createAndStoreAlgOpNode(XML2LALGContext* ctx, xmlNodePtr nodePtr)
 /******************************************************************************/
 /******************************************************************************/
 
+    case la_frag_extract         : 
+
+        {
+            newAlgNode = PFla_frag_extract
+             (
+             CHILDNODE(0),
+             PFLA_ATT("/content/column/@reference")
+             );
+        }  
+        break;
+
+/******************************************************************************/
+/******************************************************************************/
+
     case la_frag_union           : 
 
         {
@@ -1971,6 +1985,36 @@ void createAndStoreAlgOpNode(XML2LALGContext* ctx, xmlNodePtr nodePtr)
 
         {
             PFoops (OOPS_FATAL, "Importing of la_rec_base operator is not implemented yet");
+        }  
+        break;
+
+/******************************************************************************/
+/******************************************************************************/
+
+    case la_fun_call             : 
+
+        {
+            PFoops (OOPS_FATAL, "Importing of la_fun_call operator is not implemented yet");
+        }  
+        break;
+
+/******************************************************************************/
+/******************************************************************************/
+
+    case la_fun_param            : 
+
+        {
+            PFoops (OOPS_FATAL, "Importing of la_fun_param operator is not implemented yet");
+        }  
+        break;
+
+/******************************************************************************/
+/******************************************************************************/
+
+    case la_fun_frag_param       : 
+
+        {
+            PFoops (OOPS_FATAL, "Importing of la_fun_frag_param operator is not implemented yet");
         }  
         break;
 

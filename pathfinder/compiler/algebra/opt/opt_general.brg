@@ -132,8 +132,9 @@ typedef struct PFla_op_t *NODEPTR_TYPE;
 %term  merge_adjacent  =  69
 %term  roots_          =  70
 %term  fragment        =  71
-%term  frag_union      =  72
-%term  empty_frag      =  73
+%term  frag_extract    =  72
+%term  frag_union      =  73
+%term  empty_frag      =  74
 %term  error           =  79
 %term  cond_err        =  80
 %term  nil             =  81
@@ -144,6 +145,9 @@ typedef struct PFla_op_t *NODEPTR_TYPE;
 %term  rec_param       =  86
 %term  rec_arg         =  87
 %term  rec_base        =  88
+%term  fun_call        =  90
+%term  fun_param       =  91
+%term  fun_frag_param  =  92
 %term  string_join     = 102
 %term  dummy           = 120
 
@@ -243,16 +247,22 @@ Rec:    rec_param (Arg, Rec)                      = 100 (10);
 Rec:    nil                                       = 101 (10);
 Arg:    rec_arg (Rel, Rel)                        = 102 (10);
 
-Rel:    string_join (Rel, Rel)                    = 103 (10);
-Rel:    dummy (Rel)                               = 104 (10);
+Rel:    fun_call (Rel, Param)                     = 105 (10);
+Param:  fun_param (Rel, Param)                    = 106 (10);
+Param:  fun_frag_param (Frag, Param)              = 107 (10);
+Param:  nil                                       = 108 (10);
 
-Rel:    EmptyRel                                  = 107  (0);
+Rel:    string_join (Rel, Rel)                    = 110 (10);
+Rel:    dummy (Rel)                               = 111 (10);
+
+Rel:    EmptyRel                                  = 112  (0);
 
 
-Frag:    fragment (doc_tbl (Rel))                 = 108 (10);
-Frag:    fragment (twig (Twig))                   = 109 (10);
-Frag:    fragment (merge_adjacent (Frag, Rel))    = 110 (10);
+Frag:    fragment (doc_tbl (Rel))                 = 114 (10);
+Frag:    fragment (twig (Twig))                   = 115 (10);
+Frag:    fragment (merge_adjacent (Frag, Rel))    = 116 (10);
 
+Frag:    frag_extract (Rel)                       = 117 (10);
 Frag:    frag_union (Frag, Frag)                  = 118 (10);
 Frag:    empty_frag                               = 119 (10);
 
@@ -316,6 +326,7 @@ EmptyRel:    roots_ (twig (nil))                  = 188  (0);
 EmptyRel:    roots_ (merge_adjacent (Frag,
                                      EmptyRel))   = 189  (0);
 EmptyRel:    cond_err (EmptyRel, Rel)             = 190  (0);
+EmptyRel:    fun_call (EmptyRel, Param)           = 191  (0);
 EmptyRel:    string_join (EmptyRel, Rel)          = 201  (0);
 EmptyRel:    dummy (EmptyRel)                     = 202  (0);
 
@@ -1163,7 +1174,7 @@ reduce (PFla_op_t *p, int goalnt)
             break;
 
         /* Rel:    EmptyRel */
-        case 107:
+        case 112:
         {
             /*
              * Replace any sub-tree that we determined empty with these

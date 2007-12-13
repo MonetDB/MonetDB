@@ -96,6 +96,7 @@ infer_card (PFla_op_t *n)
         case la_comment:
         case la_processi:
         case la_roots:
+        case la_fun_param:
         case la_proxy:
         case la_proxy_base:
         case la_dummy:
@@ -135,8 +136,10 @@ infer_card (PFla_op_t *n)
         case la_fcns:
         case la_merge_adjacent:
         case la_fragment:
+        case la_frag_extract:
         case la_frag_union:
         case la_empty_frag:
+        case la_fun_frag_param:
         case la_string_join:
             /* can't say something specific about cardinality */
             n->prop->card = 0;
@@ -218,6 +221,12 @@ infer_card (PFla_op_t *n)
             /* infer no properties of the seed */
             n->prop->card = 0;
             break;
+
+        case la_fun_call:
+            if (n->sem.fun_call.occ_ind == alg_occ_exactly_one)
+                n->prop->card = L(n)->prop->card;
+            else
+                n->prop->card = 0;
     }
 }
 

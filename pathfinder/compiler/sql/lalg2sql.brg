@@ -148,9 +148,12 @@ typedef struct PFla_op_t *NODEPTR_TYPE;
                                 schema: iter | pos | item */
 /* all operators below represent xml node fragments with no schema */
 %term fragment        = 71 /**< representation of a node fragment */
-%term frag_union      = 72 /**< special node type used to form an algebraic
+%term frag_extract    = 72 /**< representation of a reference to a node
+                                fragment (used in combination with function
+                                calls to address the resulting fragments) */
+%term frag_union      = 73 /**< special node type used to form an algebraic
                                 union of fragments */
-%term empty_frag      = 73 /**< representation of an empty fragment */
+%term empty_frag      = 74 /**< representation of an empty fragment */
 
 %term cond_err        = 80 /**< facility to trigger runtime errors */
 %term nil             = 81 /**< end of the list of parameters */
@@ -163,6 +166,10 @@ typedef struct PFla_op_t *NODEPTR_TYPE;
                                 in the recursion */
 %term rec_base        = 88 /**< base of the DAG describing the recursion */
 
+%term fun_call        = 90 /**< function application */
+%term fun_param       = 91 /**< function application parameter */
+%term fun_frag_param  = 92 /**< function application parameter */
+    
 %term proxy           = 96 /**< proxy operator that represents a group
                                 of operators */
 %term proxy_base      = 97 /**< completes the content of the proxy
@@ -1021,7 +1028,8 @@ step_axis (PFla_op_t *p, PFsql_aident_t ctx, PFsql_aident_t step,
                                     selectivity (gt (PRE(step), PRE(ctx)),
                                                  lit_dec (1)));
                     where_list_add (WHERELIST(p),
-                                    selectivity (gteq (add (PRE(ctx), SIZE(ctx)),
+                                    selectivity (gteq (add (PRE(ctx),
+                                                            SIZE(ctx)),
                                                        PRE(step)),
                                                  lit_dec (1)));
                 } else {
@@ -1029,7 +1037,8 @@ step_axis (PFla_op_t *p, PFsql_aident_t ctx, PFsql_aident_t step,
                                     selectivity (gt (PRE(step), PRE(ctx)),
                                                  lit_dec (0.01)));
                     where_list_add (WHERELIST(p),
-                                    selectivity (gteq (add (PRE(ctx), SIZE(ctx)),
+                                    selectivity (gteq (add (PRE(ctx),
+                                                            SIZE(ctx)),
                                                        PRE(step)),
                                                  lit_dec (0.01)));
                 }
@@ -1052,7 +1061,8 @@ step_axis (PFla_op_t *p, PFsql_aident_t ctx, PFsql_aident_t step,
                                     selectivity (gteq (PRE(step), PRE(ctx)),
                                                  lit_dec (1)));
                     where_list_add (WHERELIST(p),
-                                    selectivity (gteq (add (PRE(ctx), SIZE(ctx)),
+                                    selectivity (gteq (add (PRE(ctx),
+                                                            SIZE(ctx)),
                                                      PRE(step)),
                                                  lit_dec (1)));
                 } else {
@@ -1060,7 +1070,8 @@ step_axis (PFla_op_t *p, PFsql_aident_t ctx, PFsql_aident_t step,
                                     selectivity (gteq (PRE(step), PRE(ctx)),
                                                  lit_dec (0.01)));
                     where_list_add (WHERELIST(p),
-                                    selectivity (gteq (add (PRE(ctx), SIZE(ctx)),
+                                    selectivity (gteq (add (PRE(ctx),
+                                                            SIZE(ctx)),
                                                      PRE(step)),
                                                  lit_dec (0.01)));
                 }
@@ -2182,12 +2193,9 @@ reduce (PFla_op_t * p, int goalnt)
             /* Check if there are already common-table expressions
                or we have a standalone query */
             if (sql_stmts)
-                /* sql_stmts = root (ser_info, with (sql_stmts, final_query)); */
                 sql_stmts = root (nil (), with (sql_stmts, final_query));
-               else
-                /* sql_stmts = root (ser_info, final_query); */
+            else
                 sql_stmts = root (nil (), final_query);
-    
         }
         break;
 
@@ -3105,7 +3113,9 @@ reduce (PFla_op_t * p, int goalnt)
                              ext_column_name (newalias, res_col));
 
                 /* prepare fromlist */
-                from_list_add (FROMLIST(p), table_name(newtable), alias (newalias));
+                from_list_add (FROMLIST(p),
+                               table_name(newtable),
+                               alias (newalias));
 
                 /* run over the possible types */
                 for (PFalg_simple_type_t t = 1; t; t <<= 1)

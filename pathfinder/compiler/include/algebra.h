@@ -263,6 +263,24 @@ struct PFalg_scj_spec_t {
 };
 typedef struct PFalg_scj_spec_t PFalg_scj_spec_t;
 
+/** function call result occurrence indicator */
+enum PFalg_occ_ind_t {
+      alg_occ_unknown            /**< unknown result size */
+    , alg_occ_zero_or_one        /**< zero or one tuple per iteration */
+    , alg_occ_exactly_one        /**< exactly one tuple per iteration */
+    , alg_occ_one_or_more        /**< one or more tuples per iteration */
+};
+typedef enum PFalg_occ_ind_t PFalg_occ_ind_t;
+
+/** function call representatives */
+enum PFalg_fun_call_t {
+      alg_fun_call_dft           /**< normal function call */
+    , alg_fun_call_xrpc          /**< XRPC function call */
+    , alg_fun_call_xrpc_helpers  /**< function call for XRPC helpers */
+    , alg_fun_call_tijah         /**< Tijah function call */
+};
+typedef enum PFalg_fun_call_t PFalg_fun_call_t;
+
 /** function representatives */
 enum PFalg_fun_t {
       alg_fun_num_add             /**< arithmetic plus operator */
@@ -441,6 +459,21 @@ PFalg_att_t PFalg_ori_name (PFalg_att_t unq, PFalg_att_t free);
  * Print simple type name
  */
 char * PFalg_simple_type_str (PFalg_simple_type_t att);
+
+/**
+ * Print function call kind
+ */
+char * PFalg_fun_call_kind_str (PFalg_fun_call_t kind);
+
+/**
+ * Extract all possible algebra types from the XQuery type.
+ */
+PFalg_simple_type_t PFalg_type (PFty_t ty);
+
+/**
+ * Extract occurrence indicator from the XQuery type.
+ */
+PFalg_occ_ind_t PFalg_type_occ (PFty_t ty);
 
 /**
  * Print function name

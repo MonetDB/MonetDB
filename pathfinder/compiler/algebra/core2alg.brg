@@ -154,6 +154,9 @@ typedef struct PFcnode_t *NODEPTR_TYPE;
 %term recursion          = 74 /**< "with $v seeded by..." expression */
 %term seed               = 75
 
+  /* Pathfinder extension: XRPC */
+%term xrpc               = 76 /**< XRPC calls: "execute at" */
+
 %%
 
 Query:              main (FunctionDecls, CoreExpr)              =   1 (10);
@@ -243,6 +246,7 @@ TagName:            tag                                         = 400 (10);
 TagName:            CoreExpr                                    = 401 (10);
 
 CoreExpr:           apply (FunctionArgs)                        =  60 (10);
+CoreExpr:           xrpc (CoreExpr, apply (FunctionArgs))       =  61 (10);
 
 FunctionArgs:       nil                                         = 500 (10);
 FunctionArgs:       arg (FunctionArg, FunctionArgs)             = 501 (10);
@@ -476,6 +480,9 @@ reduce (PFcnode_t * p, int goalnt)
         /* CoreExpr:           apply (FunctionArgs) */
         case 60:
 
+        /* CoreExpr:           xrpc (CoreExpr, apply (FunctionArgs)) */
+        case 61:
+            
         /* FunctionArgs:       arg (FunctionArg, FunctionArgs) */
         case 501:
 
@@ -2179,6 +2186,126 @@ reduce (PFcnode_t * p, int goalnt)
 
         } break;
 
+        /* CoreExpr:           xrpc (CoreExpr, apply (FunctionArgs)) */
+        case 61:
+        {   /* TOPDOWN*/
+            PFla_op_t     *param_list = PFla_nil (),
+                          *fun_call;
+            PFalg_schema_t schema;
+            PFarray_t     *old_env;
+            PFarray_t     *old_fun_args;
+            
+            /* prepare the standard in/output schema */
+            schema.count = 3;
+            schema.items = PFmalloc (schema.count *
+                                     sizeof (PFalg_schm_item_t));
+            schema.items[0].name = att_iter;
+            schema.items[0].type = aat_nat;
+            schema.items[1].name = att_pos;
+            schema.items[1].type = aat_nat;
+            schema.items[2].name = att_item;
+            /* Note: the item type has to be adjusted for each parameter */
+            schema.items[2].type = 0;
+            
+            PFty_t ty = p->type;
+
+            /* Collect the destinations */
+            reduce (kids[0], nts[0]);
+            
+            /*
+             * Function application:
+             *
+             * (1) Save current variable and function parameter environment.
+             * (2) Enter bindings for all variables in the function
+             *     signature to the variable environment.
+             * (3) Transform the function parameters
+             *     into an XRPC function call.
+             * (4) Restore variable and function parameter environment.
+             */
+
+            /* (1) Save current variable and function parameter environment
+               and create new ones. */
+            old_env = env;
+
+            env = PFarray (sizeof (PFla_env_t));
+
+            for (unsigned int i = 0; i < PFarray_last (old_env); i++)
+                *((PFla_env_t *) PFarray_add (env))
+                    = *((PFla_env_t *) PFarray_at (old_env, i));
+
+            old_fun_args = fun_args;
+
+            /* We will collect the argument values here */
+            fun_args = PFarray (sizeof (struct PFla_pair_t));
+
+            /* (2) Enter bindings for function parameters.
+             *     We do this by reducing our child nodes in a
+             *     top-down fashion.
+             */
+
+            /* Top-down processing puts all argument values into this array */
+            reduce (kids[1], nts[1]);
+
+            /* All function arguments are now in the array `fun_args'. */
+
+            /* (3) Transform the function parameters into an XRPC function
+             *     call.
+             */
+            
+            /* Create a linked list of parameters. */
+            for (unsigned int i = R(p)->sem.fun->arity; i > 0; i--) {
+                PFla_pair_t curr_arg
+                    = *(PFla_pair_t *) PFarray_at (fun_args, i-1);
+
+                /* adjust the item type */
+                schema.items[2].type = PFprop_type_of (curr_arg.rel, att_item);
+                /* create a new parameter */
+                param_list = fun_param (curr_arg.rel, param_list, schema);
+                
+                /* create a new fragment parameter if the parameter
+                   represents a sequence with nodes */
+                if (schema.items[2].type & aat_node)
+                    param_list = fun_frag_param (
+                                     PFla_set_to_la (curr_arg.frag),
+                                     param_list,
+                                     2 /* referencing column item */);
+            }
+
+            /* As the top-most argument add the XRPC destination strings */
+            schema.items[2].type = PFprop_type_of (A(L(p)).rel, att_item);
+            param_list = fun_param (A(L(p)).rel, param_list, schema);
+            
+            /* Collect all result types */
+            schema.items[2].type = PFalg_type (ty);
+
+            /* Construct the complete function call */
+            fun_call = fun_call (loop,                 /* loop relation */
+                                 param_list,           /* parameter list */
+                                 schema,               /* result schema */
+                                 alg_fun_call_xrpc,    /* function call kind */
+                                 R(p)->sem.fun->qname, /* function name */
+                                 R(p),                 /* context info */
+                                 att_iter,             /* loop column */
+                                 PFalg_type_occ (ty)); /* occurrence
+                                                          indicator */
+                
+            /* To correctly reference the fragment information of
+               resulting items of kind node we introduce an additional
+               frag_extract operator that refers to column item */
+            if (schema.items[2].type & aat_node)
+                A(p) = (struct  PFla_pair_t) {
+                         .rel = fun_call,
+                         .frag = PFla_set (frag_extract (fun_call, 2)) };
+            else
+                A(p) = (struct  PFla_pair_t) {
+                         .rel = fun_call,
+                         .frag = PFla_empty_set () };
+
+            /* (4) Restore variable and function parameter environments. */
+            env = old_env;
+            fun_args = old_fun_args;
+        } break;
+            
         /* FunctionArgs:       nil */
         case 500:
             break;

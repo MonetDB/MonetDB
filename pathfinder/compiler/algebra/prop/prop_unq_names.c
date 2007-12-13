@@ -543,8 +543,10 @@ infer_unq_names (PFla_op_t *n, unsigned int id)
             break;
 
         case la_fragment:
+        case la_frag_extract:
         case la_frag_union:
         case la_empty_frag:
+        case la_fun_frag_param:
             break;
 
         case la_error:
@@ -577,6 +579,16 @@ infer_unq_names (PFla_op_t *n, unsigned int id)
 
         case la_rec_base:
             /* properties are already assigned */
+            break;
+
+        case la_fun_call:
+            /* create new unique names for all attributes */
+            for (unsigned int i = 0; i < n->schema.count; i++)
+                new_name_pair (np_list, n->schema.items[i].name, id++);
+            break;
+
+        case la_fun_param:
+            bulk_add_name_pairs (np_list, L(n));
             break;
 
         case la_proxy:

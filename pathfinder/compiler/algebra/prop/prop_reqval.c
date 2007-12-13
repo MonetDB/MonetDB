@@ -309,6 +309,7 @@ prop_infer_reqvals (PFla_op_t *n, reqval_t reqvals)
         case la_comment:
         case la_processi:
         case la_fragment:
+        case la_frag_extract:
             rv.name = 0;
             rv.val = 0;
             prop_infer_reqvals (L(n), rv);
@@ -415,8 +416,19 @@ prop_infer_reqvals (PFla_op_t *n, reqval_t reqvals)
             rv.val = 0;
             prop_infer_reqvals (L(n), rv);
             prop_infer_reqvals (R(n), rv);
+            break;
 
         case la_rec_base:
+            break;
+            
+        case la_fun_call:
+        case la_fun_param:
+        case la_fun_frag_param:
+            /* infer no required values */
+            rv.name = 0;
+            rv.val = 0;
+            prop_infer_reqvals (L(n), rv);
+            prop_infer_reqvals (R(n), rv);
             break;
 
         case la_cross_mvd:

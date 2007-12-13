@@ -403,6 +403,14 @@ PFxml2la_conv_2PFLA_OpKind(const char* s)
     {
         return la_rec_base;
     }
+    else if (strcmp(s, "function call") == 0)
+    {
+        return la_fun_call;
+    }
+    else if (strcmp(s, "function call parameter") == 0)
+    {
+        return la_fun_param;
+    }
     else if (strcmp(s, "proxy") == 0)
     {
         return la_proxy;

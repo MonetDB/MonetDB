@@ -106,6 +106,7 @@ static char *a_id[]  = {
     , [la_merge_adjacent]   = "#pf:merge-adjacent-text-nodes"
     , [la_roots]            = "ROOTS"
     , [la_fragment]         = "FRAGs"
+    , [la_frag_extract]     = "FRAG EXTRACT"
     , [la_frag_union]       = "FRAG_UNION"
     , [la_empty_frag]       = "EMPTY_FRAG"
     , [la_error]            = "!ERROR"
@@ -118,6 +119,9 @@ static char *a_id[]  = {
     , [la_rec_param]        = "rec param"
     , [la_rec_arg]          = "rec arg"
     , [la_rec_base]         = "rec base"
+    , [la_fun_call]         = "fun call"
+    , [la_fun_param]        = "fun param"
+    , [la_fun_frag_param]   = "fun frag param"
     , [la_proxy]            = "PROXY"
     , [la_proxy_base]       = "PROXY_BASE"
     , [la_string_join]      = "fn:string_join"
@@ -184,6 +188,7 @@ static char *xml_id[]  = {
     , [la_merge_adjacent]   = "#pf:merge-adjacent-text-nodes"
     , [la_roots]            = "ROOTS"
     , [la_fragment]         = "FRAG"
+    , [la_frag_extract]     = "FRAG EXTRACT"
     , [la_frag_union]       = "FRAG_UNION"
     , [la_empty_frag]       = "EMPTY_FRAG"
     , [la_error]            = "error"
@@ -196,6 +201,9 @@ static char *xml_id[]  = {
     , [la_rec_param]        = "recursion param"
     , [la_rec_arg]          = "recursion arg"
     , [la_rec_base]         = "recursion base"
+    , [la_fun_call]         = "function call"
+    , [la_fun_param]        = "function call parameter"
+    , [la_fun_frag_param]   = "function call fragment parameter"
     , [la_proxy]            = "proxy"
     , [la_proxy_base]       = "proxy base"
     , [la_string_join]      = "fn:string-join"
@@ -377,6 +385,7 @@ la_dot (PFarray_t *dot, PFla_op_t *n, bool print_frag_info)
         , [la_merge_adjacent]  = "#00D000"
         , [la_roots]           = "#E0E0E0"
         , [la_fragment]        = "#E0E0E0"
+        , [la_frag_extract]    = "#DD22DD"
         , [la_frag_union]      = "#E0E0E0"
         , [la_empty_frag]      = "#E0E0E0"
         , [la_error]           = "#C0C0C0"
@@ -389,6 +398,9 @@ la_dot (PFarray_t *dot, PFla_op_t *n, bool print_frag_info)
         , [la_rec_param]       = "#FF00FF"
         , [la_rec_arg]         = "#BB00BB"
         , [la_rec_base]        = "#BB00BB"
+        , [la_fun_call]        = "#BB00BB"
+        , [la_fun_param]       = "#BB00BB"
+        , [la_fun_frag_param]  = "#BB00BB"
         , [la_proxy]           = "#DFFFFF"
         , [la_proxy_base]      = "#DFFFFF"
         , [la_string_join]     = "#C0C0C0"
@@ -882,6 +894,35 @@ la_dot (PFarray_t *dot, PFla_op_t *n, bool print_frag_info)
                             PFatt_str (n->sem.trace_map.outer));
             break;
         
+        case la_fun_call:
+            PFarray_printf (dot,
+                            "%s function \\\"%s\\\" (",
+                            PFalg_fun_call_kind_str (n->sem.fun_call.kind),
+                            PFqname_uri_str (n->sem.fun_call.qname));
+            for (unsigned int i = 0; i < n->schema.count; i++)
+                PFarray_printf (dot, "%s%s",
+                                i?", ":"",
+                                PFatt_str (n->schema.items[i].name));
+            PFarray_printf (dot,
+                            ")\\n(loop: %s)",
+                            PFatt_str (n->sem.fun_call.iter));
+            break;
+            
+        case la_fun_param:
+            PFarray_printf (dot, "%s (", a_id[n->kind]);
+            for (unsigned int i = 0; i < n->schema.count; i++)
+                PFarray_printf (dot, "%s%s",
+                                i?", ":"",
+                                PFatt_str (n->schema.items[i].name));
+            PFarray_printf (dot, ")");
+            break;
+            
+        case la_frag_extract:
+        case la_fun_frag_param:
+            PFarray_printf (dot, "%s (referencing column %i)",
+                            a_id[n->kind], n->sem.col_ref.pos);
+            break;
+            
         case la_proxy:
             PFarray_printf (dot, "%s %i (", a_id[n->kind], n->sem.proxy.kind);
 
@@ -2020,6 +2061,37 @@ la_xml (PFarray_t *xml, PFla_op_t *n)
                             PFatt_str (n->sem.trace_map.outer));
             break;
         
+        case la_fun_call:
+            PFarray_printf (xml,
+                            "    <content>\n"
+                            "      <function uri=\"%s\" name=\"%s\"/>\n"
+                            "      <kind name=\"%s\"/>\n"
+                            "      <column name=\"%s\" function=\"iter\"/>\n"
+                            "    </content>\n",
+                            PFqname_uri (n->sem.fun_call.qname),
+                            PFqname_loc (n->sem.fun_call.qname),
+                            PFalg_fun_call_kind_str (n->sem.fun_call.kind),
+                            PFatt_str (n->sem.fun_call.iter));
+            break;
+            
+        case la_fun_param:
+            PFarray_printf (xml, "    <content>\n"); 
+            for (c = 0; c < n->schema.count; c++)
+                PFarray_printf (xml, 
+                                "      <column name=\"%s\" position=\"%u\"/>\n",
+                                PFatt_str (n->schema.items[c].name), c);
+            PFarray_printf (xml, "    </content>\n");
+            break;
+
+        case la_frag_extract:
+        case la_fun_frag_param:
+            PFarray_printf (xml,
+                            "    <content>\n"
+                            "      <column reference=\"%i\"/>\n"
+                            "    </content>\n",
+                            n->sem.col_ref.pos);
+            break;
+
         case la_string_join:
             PFarray_printf (xml,
                             "    <content>\n"

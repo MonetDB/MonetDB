@@ -177,7 +177,6 @@ map_unq_names (PFla_op_t *p, PFarray_t *map)
             res = PFla_empty_tbl_ (schema);
         }   break;
 
-
         case la_ref_tbl:
         {
             PFalg_schema_t schema;
@@ -197,8 +196,6 @@ map_unq_names (PFla_op_t *p, PFarray_t *map)
                                  p->sem.ref_tbl.tatts,
                                  p->sem.ref_tbl.keys);
         }   break;
-
-
 
         case la_attach:
             res = attach (U(L(p)),
@@ -738,6 +735,10 @@ map_unq_names (PFla_op_t *p, PFarray_t *map)
             res = fragment (U(L(p)));
             break;
 
+        case la_frag_extract:
+            res = frag_extract (U(L(p)), p->sem.col_ref.pos);
+            break;
+
         case la_frag_union:
             res = PFla_frag_union (U(L(p)), U(R(p)));
             break;
@@ -859,6 +860,48 @@ map_unq_names (PFla_op_t *p, PFarray_t *map)
             res = rec_base (schema);
         } break;
 
+        case la_fun_call:
+        {
+            PFalg_schema_t schema;
+            schema.count = p->schema.count;
+            schema.items  = PFmalloc (schema.count *
+                                      sizeof (PFalg_schema_t));
+
+            for (unsigned int i = 0; i < p->schema.count; i++)
+                schema.items[i] =
+                    (struct PFalg_schm_item_t)
+                        { .name = UNAME(p, p->schema.items[i].name),
+                          .type = p->schema.items[i].type };
+    
+            res = fun_call (U(L(p)), U(R(p)),
+                            schema,
+                            p->sem.fun_call.kind,
+                            p->sem.fun_call.qname,
+                            p->sem.fun_call.ctx,
+                            UNAME(L(p), p->sem.fun_call.iter),
+                            p->sem.fun_call.occ_ind);
+        }   break;
+        
+        case la_fun_param:
+        {
+            PFalg_schema_t schema;
+            schema.count = p->schema.count;
+            schema.items  = PFmalloc (schema.count *
+                                      sizeof (PFalg_schema_t));
+
+            for (unsigned int i = 0; i < p->schema.count; i++)
+                schema.items[i] =
+                    (struct PFalg_schm_item_t)
+                        { .name = UNAME(p, p->schema.items[i].name),
+                          .type = p->schema.items[i].type };
+    
+            res = fun_param (U(L(p)), U(R(p)), schema);
+        }   break;
+        
+        case la_fun_frag_param:
+            res = fun_frag_param (U(L(p)), U(R(p)), p->sem.col_ref.pos);
+            break;
+            
         case la_proxy:
         case la_proxy_base:
             PFoops (OOPS_FATAL,

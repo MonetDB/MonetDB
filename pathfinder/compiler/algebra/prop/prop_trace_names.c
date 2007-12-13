@@ -390,6 +390,7 @@ map_names (PFla_op_t *n, PFla_op_t *goal, PFarray_t *par_np_list,
             break;
 
         case la_fragment:
+        case la_frag_extract:
         case la_frag_union:
         case la_empty_frag:
             /* do not infer name pairs to the children */
@@ -422,6 +423,13 @@ map_names (PFla_op_t *n, PFla_op_t *goal, PFarray_t *par_np_list,
                     "handle recursion operator.");
             break;
             
+        case la_fun_call:
+        case la_fun_param:
+        case la_fun_frag_param:
+            /* empty the name pair list */
+            PFarray_last (np_list) = 0;
+            break;
+
         case la_string_join:
             assert (n->sem.string_join.iter == n->sem.string_join.iter_res &&
                     n->sem.string_join.iter_sep == n->sem.string_join.iter_res);

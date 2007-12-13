@@ -95,15 +95,16 @@ enum PFla_op_kind_t {
        - la_rowrank behaves exactly like SQLs DENSE_RANK. It is used to generate
          the group by semantics of our functional source language.
        - la_rank -- beside one exception -- behaves like la_rowrank. It is also
-         implemented in our SQL compilation with a DENSE_RANK operation. la_rank's
-         important difference to la_rowrank is that its resulting values are used
-         solely for ordering. No operation should ever look at the generated values.
-         While this difference is uninteresting in the resulting code it simplifies
-         the algebraic optimizer a lot. Instead of repeatedly inferring a property
-         that checks for column usage we can optimize based on the operator kind.
-       - la_rowid generates unrepeatable unique numbers (as 'ROW_NUMBER() OVER ()'
-         does in SQL or 'mark()' does in MIL). It is used to generate a new key
-         column. */
+         implemented in our SQL compilation with a DENSE_RANK operation.
+         la_rank's important difference to la_rowrank is that its resulting
+         values are used solely for ordering. No operation should ever look
+         at the generated values. While this difference is uninteresting
+         in the resulting code it simplifies the algebraic optimizer a lot.
+         Instead of repeatedly inferring a property that checks for column usage
+         we can optimize based on the operator kind.
+       - la_rowid generates unrepeatable unique numbers
+         (as 'ROW_NUMBER() OVER ()' does in SQL or 'mark()' does in MIL).
+         It is used to generate a new key column. */
     , la_rownum          = 37 /**< consecutive number generation (ROW_NUMBER) */
     , la_rowrank         = 38 /**< consecutive number generation (DENSE_RANK) */
     , la_rank            = 39 /**< arbitrary but ordered number generation */
@@ -142,9 +143,12 @@ enum PFla_op_kind_t {
                                    schema: iter | pos | item */
     /* all operators below represent xml node fragments with no schema */
     , la_fragment        = 71 /**< representation of a node fragment */
-    , la_frag_union      = 72 /**< special node type used to form an algebraic
+    , la_frag_extract    = 72 /**< representation of a reference to a node
+                                   fragment (used in combination with function
+                                   calls to address the resulting fragments) */
+    , la_frag_union      = 73 /**< special node type used to form an algebraic
                                    union of fragments */
-    , la_empty_frag      = 73 /**< representation of an empty fragment */
+    , la_empty_frag      = 74 /**< representation of an empty fragment */
           
     , la_error           = 79 /**< error operator for the fn:error function*/
     , la_cond_err        = 80 /**< facility to trigger runtime errors */
@@ -158,6 +162,10 @@ enum PFla_op_kind_t {
                                    in the recursion */
     , la_rec_base        = 88 /**< base of the DAG describing the recursion */
                          
+    , la_fun_call        = 90 /**< function application */
+    , la_fun_param       = 91 /**< function application parameter */
+    , la_fun_frag_param  = 92 /**< function application parameter */
+
     , la_proxy           = 96 /**< proxy operator that represents a group
                                    of operators */
     , la_proxy_base      = 97 /**< completes the content of the proxy 
@@ -206,7 +214,6 @@ union PFla_op_sem_t {
     } lit_tbl;                    /**< semantic content for literal table
                                        constructor */
 
-
     /* semantic content for tableref operator */
     struct {
         char* name;
@@ -214,8 +221,6 @@ union PFla_op_sem_t {
         PFarray_t*      keys;     /**< array holding the *positions* 
                                       (w.r.t. the schema) of key attributes */
     } ref_tbl;                    /**< semantic content for tableref operator */
-
-
 
     /* semantic content for attach operator */
     struct {
@@ -259,7 +264,7 @@ union PFla_op_sem_t {
 
     /* semantic content for selection operator */
     struct {
-        PFalg_att_t     att;     /**< name of selected attribute */
+        PFalg_att_t     att;      /**< name of selected attribute */
     } select;
 
     /* semantic content for positional selection operator */
@@ -273,10 +278,10 @@ union PFla_op_sem_t {
 
     /* semantic content for generic (row based) function operator */
     struct {
-        PFalg_fun_t         kind;  /**< kind of the function */
-        PFalg_att_t         res;   /**< attribute to hold the result */
-        PFalg_attlist_t     refs;  /**< list of attributes required 
-                                        to compute attribute res */
+        PFalg_fun_t     kind;     /**< kind of the function */
+        PFalg_att_t     res;      /**< attribute to hold the result */
+        PFalg_attlist_t refs;     /**< list of attributes required 
+                                       to compute attribute res */
     } fun_1to1;
 
     /* semantic content for binary (arithmetic and boolean) operators */
@@ -307,10 +312,10 @@ union PFla_op_sem_t {
      * or a boolean grouping function (seqty1, all,...)
      */
     struct {
-        PFalg_att_t     att;   /**< attribute to be used for the agg. func. */
-                                  /* Note that 'att' is ignored by la_count */
-        PFalg_att_t     part;  /**< partitioning attribute */
-        PFalg_att_t     res;   /**< attribute to hold the result */
+        PFalg_att_t     att;      /**< column to be used for the agg. func. */
+                                    /* Note that 'att' is ignored by la_count */
+        PFalg_att_t     part;     /**< partitioning attribute */
+        PFalg_att_t     res;      /**< attribute to hold the result */
     } aggr;
 
     /* semantic content for rownumber, rowrank, and rank operator */
@@ -329,24 +334,24 @@ union PFla_op_sem_t {
 
     /* semantic content for type test, cast, and type_assert operator */
     struct {
-        PFalg_att_t     att;     /**< name of type-tested, casted or type
-                                      asserted attribute */
-        PFalg_simple_type_t ty;  /**< comparison, cast, and restriction type */
-        PFalg_att_t     res;     /**< column to store result of type test 
-                                      or cast */
+        PFalg_att_t     att;      /**< name of type-tested, casted or type
+                                       asserted attribute */
+        PFalg_simple_type_t ty;   /**< comparison, cast, and restriction type */
+        PFalg_att_t     res;      /**< column to store result of type test 
+                                       or cast */
                              /* Note that 'res' is ignored by la_type_assert */
     } type;
 
     /* store the semantic information for path steps (with guide information) */
     struct {
-        PFalg_axis_t     axis;
-        PFty_t           ty;
-        unsigned int     guide_count;
+        PFalg_axis_t    axis;
+        PFty_t          ty;
+        unsigned int    guide_count;
         PFguide_tree_t **guides;
-        int              level;
-        PFalg_att_t      iter;     /**< column to look up the iterations */
-        PFalg_att_t      item;     /**< column to look up the context nodes */
-        PFalg_att_t      item_res; /**< column to store the resulting nodes */
+        int             level;
+        PFalg_att_t     iter;    /**< column to look up the iterations */
+        PFalg_att_t     item;    /**< column to look up the context nodes */
+        PFalg_att_t     item_res; /**< column to store the resulting nodes */
     } step;
 
     /* store the semantic information for fn:id, fn:idref, pf:text,
@@ -384,10 +389,10 @@ union PFla_op_sem_t {
 
     /* store the column names necessary for a constructor content operator */
     /* semantic content for debug operator */
-    struct {
-        PFalg_att_t     iter;      /**< name of iter column */
-        PFalg_att_t     pos;       /**< name of pos column */
-        PFalg_att_t     item;      /**< name of item column */
+    struct { 
+        PFalg_att_t     iter;     /**< name of iter column */
+        PFalg_att_t     pos;      /**< name of pos column */
+        PFalg_att_t     item;     /**< name of item column */
     } iter_pos_item;
 
     /* store the column names necessary for an attribute constructor */
@@ -415,32 +420,49 @@ union PFla_op_sem_t {
 
     /* semantic content for conditional error */
     struct {
-        PFalg_att_t     att;     /**< name of the boolean attribute */
-        char *          str;     /**< error message */
+        PFalg_att_t     att;      /**< name of the boolean attribute */
+        char *          str;      /**< error message */
     } err;
 
     /* semantic content for debug relation map operator */
     struct {
-        PFalg_att_t      inner;    /**< name of the inner column */
-        PFalg_att_t      outer;    /**< name of the outer column */
+        PFalg_att_t     inner;    /**< name of the inner column */
+        PFalg_att_t     outer;    /**< name of the outer column */
     } trace_map;
 
     /* semantic content for an argument of a recursion parameter */
     struct {
-        PFla_op_t      *base;    /**< reference to the base relation
-                                      of the recursion */
+        PFla_op_t      *base;     /**< reference to the base relation
+                                       of the recursion */
     } rec_arg;
+
+    struct {
+        PFalg_fun_call_t kind;    /**< kind of function call */
+        PFqname_t       qname;    /**< function name */
+        void           *ctx;      /**< reference to the context node
+                                       representing the function call */
+        PFalg_att_t     iter;     /**< the loop relation */
+        PFalg_occ_ind_t occ_ind;  /**< occurrence indicator for the
+                                       iter column of the result
+                                       (used for optimizations) */
+    } fun_call;
+    
+    /* semantic content of the function call fragment paramter and
+       the fragment extraction operator */
+    struct {
+        unsigned int    pos;      /**< position of the referenced column */
+    } col_ref;
 
     /* semantic content for proxy nodes */
     struct {
-        unsigned int    kind;      /**< proxy kind */
-        PFla_op_t      *ref;       /**< reference a certain operator in the
-                                        proxy body */
-        PFla_op_t      *base1;     /**< the leafs first child */
-        PFla_op_t      *base2;     /**< the leafs second child */
-        PFalg_attlist_t req_cols;  /**< list of columns required
-                                        to evaluate proxy */
-        PFalg_attlist_t new_cols;  /**< list of new generated columns */
+        unsigned int    kind;     /**< proxy kind */
+        PFla_op_t      *ref;      /**< reference a certain operator in the
+                                       proxy body */
+        PFla_op_t      *base1;    /**< the leafs first child */
+        PFla_op_t      *base2;    /**< the leafs second child */
+        PFalg_attlist_t req_cols; /**< list of columns required
+                                       to evaluate proxy */
+        PFalg_attlist_t new_cols; /**< list of new generated columns */
     } proxy;
 
     /* store the column names necessary for a string_join operator */
@@ -1027,6 +1049,10 @@ PFla_op_t * PFla_roots (const PFla_op_t *n);
  */
 PFla_op_t * PFla_fragment (const PFla_op_t *n);
 
+/** Constructor for a fragment extract operator
+    (to be used in combination with a function call) */
+PFla_op_t * PFla_frag_extract (const PFla_op_t *n, unsigned int col_pos);
+
 
 
 /****************** fragment set handling *******************/
@@ -1061,7 +1087,6 @@ PFla_set_t *PFla_set_union (PFla_set_t *frag1, PFla_set_t *frag2);
  * empty fragment.
  */
 PFla_op_t *PFla_set_to_la (PFla_set_t *frags);
-
 
 /** Form algebraic disjoint union between two fragments. */
 PFla_op_t * PFla_frag_union (const PFla_op_t *n1, const PFla_op_t *n2);
@@ -1143,6 +1168,34 @@ PFla_op_t *PFla_rec_arg (const PFla_op_t *seed,
  */
 PFla_op_t *PFla_rec_base (PFalg_schema_t schema);
 
+/**
+ * Constructor for the function application
+ */
+PFla_op_t *PFla_fun_call (const PFla_op_t *loop,
+                          const PFla_op_t *param_list,
+                          PFalg_schema_t schema,
+                          PFalg_fun_call_t kind,
+                          PFqname_t qname,
+                          void *ctx,
+                          PFalg_att_t iter,
+                          PFalg_occ_ind_t occ_ind);
+
+/**
+ * Constructor for a list item of a parameter list
+ * related to function application
+ */
+PFla_op_t *PFla_fun_param (const PFla_op_t *argument,
+                           const PFla_op_t *param_list,
+                           PFalg_schema_t schema);
+                                   
+/**
+ * Constructor for the fragment information of a list item
+ * of a parameter list related to function application
+ */
+PFla_op_t *PFla_fun_frag_param (const PFla_op_t *argument,
+                                const PFla_op_t *param_list,
+                                unsigned int col_pos);
+                                   
 /****************************************************************/
 
 /**

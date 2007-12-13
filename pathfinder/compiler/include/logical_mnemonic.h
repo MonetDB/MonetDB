@@ -194,6 +194,9 @@
 /** constructor for a new fragment, containing newly ceated xml nodes */
 #define fragment(a)       PFla_fragment ((a))
 
+/** constructor for a fragment extract operator */
+#define frag_extract(a,b) PFla_frag_extract ((a),(b))
+
 /** constructor for an empty fragment */
 #define empty_frag()      PFla_empty_frag ()
 
@@ -222,6 +225,12 @@
 #define rec_param(a,b) PFla_rec_param ((a),(b))
 #define rec_arg(a,b,c) PFla_rec_arg ((a),(b),(c))
 #define rec_base(a) PFla_rec_base (a)
+
+/* function application */
+#define fun_call(a,b,c,d,e,f,g,h) \
+        PFla_fun_call ((a),(b),(c),(d),(e),(f),(g),(h))
+#define fun_param(a,b,c)  PFla_fun_param ((a),(b),(c))  
+#define fun_frag_param(a,b,c) PFla_fun_frag_param ((a),(b),(c))  
 
 /* constructors for built-in functions */
 #define fn_string_join(a,b,c,d,e,f,g,h,i) \

@@ -455,6 +455,10 @@ subexp_eq (PFla_op_t *a, PFla_op_t *b)
             return false;
             break;
 
+        case la_frag_extract:
+            return (a->sem.col_ref.pos == b->sem.col_ref.pos);
+            break;
+            
         case la_error:
             return false;
             break;
@@ -487,6 +491,15 @@ subexp_eq (PFla_op_t *a, PFla_op_t *b)
             return false;
             break;
 
+        case la_fun_call:
+        case la_fun_param:
+        case la_fun_frag_param:
+            /*
+             * we do neither split up nor merge function application
+             */
+            return false;
+            break;
+            
         case la_proxy:
         case la_proxy_base:
             /* we assume that we do not split up proxy nodes */

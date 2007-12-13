@@ -491,6 +491,7 @@ find_join_worker (PFla_op_t *n,
 
         case la_frag_union:
         case la_fragment:
+        case la_frag_extract:
         case la_empty_frag:
             /* for the fragment information we do not need to introduce
                column names as the thetajoin can never be moved along
@@ -543,6 +544,15 @@ find_join_worker (PFla_op_t *n,
         case la_rec_base:
             break;
 
+        case la_fun_call:
+        case la_fun_param:
+        case la_fun_frag_param:
+            /* FIXME: for now we assume that a theta-join
+               cannot be pushed through a function application */
+            LEFT_COLS(n)  = att_NULL;
+            RIGHT_COLS(n) = att_NULL;
+            break;
+            
         case la_proxy:
         case la_proxy_base:
             break;
