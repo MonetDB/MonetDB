@@ -1180,7 +1180,7 @@ static int
 doFileByLines(Mapi mid, FILE *fp, const char *prompt)
 {
 	char *line = NULL;
-	char *buf = NULL;
+	char *oldbuf = NULL, *buf = NULL;
 	size_t length;
 	MapiHdl hdl = mapi_get_active(mid);
 	MapiMsg rc = MOK;
@@ -1189,7 +1189,7 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt)
 #ifdef HAVE_LIBREADLINE
 	if (prompt == NULL)
 #endif
-		buf = malloc(BUFSIZ);
+		oldbuf = buf = malloc(BUFSIZ);
 
 	do {
 #ifdef HAVE_LIBREADLINE
@@ -1224,6 +1224,7 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt)
 				fflush(stdout);
 			}
 #endif
+			buf = oldbuf; 
 			line = fgets(buf, BUFSIZ, fp);
 		}
 #ifdef HAVE_ICONV
@@ -1236,7 +1237,8 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt)
 			line = to;
 			iconv(cd_in, &from, &fromlen, &to, &tolen);
 			*to = 0;
-			free(buf);
+			if (oldbuf)
+				free(buf);
 			buf = line;
 		}
 #endif
