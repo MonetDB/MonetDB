@@ -497,7 +497,7 @@ def msc_headers(fd, var, headers, msc):
                 cheader = header
                 condname = ''
             msc['INSTALL'][header] = cheader, '', sd, '', condname
-            msc['HDRS'].append(header)
+            msc['SCRIPTS'].append(header)
 
 ##    msc_find_ins(msc, headers)
 ##    msc_deps(fd, headers['DEPS'], "\.o", msc)
