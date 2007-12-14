@@ -89,5 +89,5 @@ setoptimizer
 load_dec_as_int
 string
 NOT_WIN32?crashme
-50ways
+NOT_WIN32?50ways
 load_with_offset
