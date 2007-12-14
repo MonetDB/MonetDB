@@ -38,8 +38,21 @@ command parts(sname:str, tname:str, cname:str, access:int, nrparts:int):void
 address Cparts
 comment "Check if the number of partions is still valid";
 
+@h
+#ifndef _SQL_BPM_H_
+#define _SQL_BPM_H_
+#include "sql.h"
+
+sql5_export str mat_bind_wrap(int *bid, str *sname, str *tname, str *cname, int *access, int *part);
+sql5_export str mat_bind_idxbat_wrap(int *bid, str *sname, str *tname, str *cname, int *access, int *part);
+sql5_export str inc_parts_wrap(int *d, str *sname, str *tname);
+sql5_export str Cparts(int *d, str *sname, str *tname, str *cname, int *access, int *parts);
+
+#endif /* _SQL_BPM_H_ */
+
 @c
 #include <sql_config.h>
+#include <sql_bpm.h>
 #include <sql_mem.h>
 #include <sql_mvc.h>
 #include <sql.h>
