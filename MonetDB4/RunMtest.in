@@ -25,7 +25,7 @@ uname=`uname`
 # where compiled modules are to be found
 for d in src/modules/plain src/modules/contrib src/modules/calibrator src/mapi @HAVE_NETCDF_TRUE@ src/modules/mnetcdf
 do
-	MOD_PATH="${MOD_PATH}${builddir}/$d/.libs:${builddir}/$d:${srcdir}/$d:"
+	MOD_PATH="${MOD_PATH}${builddir}/$d/.libs:${builddir}/$d:"
 done
 MOD_PATH="${MOD_PATH}${srcdir}/scripts/tools"
 

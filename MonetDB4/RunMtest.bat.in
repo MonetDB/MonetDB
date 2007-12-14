@@ -14,19 +14,14 @@ set srcdir=@XMONETDB4_SOURCE@
 
 set MOD_PATH=%builddir%\src\modules\plain\.libs
 set MOD_PATH=%MOD_PATH%;%builddir%\src\modules\plain
-set MOD_PATH=%MOD_PATH%;%srcdir%\src\modules\plain
 set MOD_PATH=%MOD_PATH%;%builddir%\src\modules\contrib\.libs
 set MOD_PATH=%MOD_PATH%;%builddir%\src\modules\contrib
-set MOD_PATH=%MOD_PATH%;%srcdir%\src\modules\contrib
 set MOD_PATH=%MOD_PATH%;%builddir%\src\modules\calibrator\.libs
 set MOD_PATH=%MOD_PATH%;%builddir%\src\modules\calibrator
-set MOD_PATH=%MOD_PATH%;%srcdir%\src\modules\calibrator
 set MOD_PATH=%MOD_PATH%;%builddir%\src\mapi\.libs
 set MOD_PATH=%MOD_PATH%;%builddir%\src\mapi
-set MOD_PATH=%MOD_PATH%;%srcdir%\src\mapi
 set MOD_PATH=%MOD_PATH%;%builddir%\src\modules\mnetcdf\.libs
 set MOD_PATH=%MOD_PATH%;%builddir%\src\modules\mnetcdf
-set MOD_PATH=%MOD_PATH%;%srcdir%\src\modules\mnetcdf
 set MOD_PATH=%MOD_PATH%;%srcdir%\scripts\tools
 
 set PATH=%MOD_PATH%;%PATH%

@@ -39,7 +39,7 @@ done
 # where compiled modules are to be found
 for d in runtime modules/pftijah
 do
-	MOD_PATH="${MOD_PATH}${builddir}/$d/.libs:${builddir}/$d:${srcdir}/$d:"
+	MOD_PATH="${MOD_PATH}${builddir}/$d/.libs:${builddir}/$d:"
 done
 MOD_PATH="${MOD_PATH}`monetdb$V-config --modpath`"
 

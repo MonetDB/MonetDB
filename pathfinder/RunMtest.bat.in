@@ -24,10 +24,8 @@ set builddir=@XPATHFINDER_BUILD@
 set srcdir=@XPATHFINDER_SOURCE@
 
 set MOD_PATH=%modpath%
-set MOD_PATH=%srcdir%\modules\pftijah;%MOD_PATH%
 set MOD_PATH=%builddir%\modules\pftijah;%MOD_PATH%
 set MOD_PATH=%builddir%\modules\pftijah\.libs;%MOD_PATH%
-set MOD_PATH=%srcdir%\runtime;%MOD_PATH%
 set MOD_PATH=%builddir%\runtime;%MOD_PATH%
 set MOD_PATH=%builddir%\runtime\.libs;%MOD_PATH%
 

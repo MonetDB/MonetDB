@@ -24,7 +24,6 @@ set builddir=@XSQL_BUILD@
 set srcdir=@XSQL_SOURCE@
 
 set MOD_PATH=%modpath%
-set MOD_PATH=%srcdir%\src\backends\monet%V%;%MOD_PATH%
 set MOD_PATH=%builddir%\src\backends\monet%V%;%MOD_PATH%
 set MOD_PATH=%builddir%\src\backends\monet%V%\.libs;%MOD_PATH%
 

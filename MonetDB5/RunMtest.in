@@ -25,7 +25,7 @@ uname=`uname`
 # where compiled modules are to be found
 for d in src/compiler src/optimizer src/scheduler src/modules/atoms src/modules/kernel src/modules/mal src/modules/mal/crackers
 do
-	MOD_PATH="${MOD_PATH}${builddir}/$d/.libs:${builddir}/$d:${srcdir}/$d:"
+	MOD_PATH="${MOD_PATH}${builddir}/$d/.libs:${builddir}/$d:"
 done
 
 # make sure scripts are executable
