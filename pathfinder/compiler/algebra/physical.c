@@ -3776,6 +3776,11 @@ PFpa_fun_call (const PFpa_op_t *loop, const PFpa_op_t *param_list,
 
     /* by default we don't know anything about the output ordering */
 
+    /* XRPC functions return the result in iter|pos order */
+    if (kind == alg_fun_call_xrpc) 
+        PFord_set_add (ret->orderings, sortby (schema.items[0].name,
+                                               schema.items[1].name));
+
     /* costs */
     ret->cost = loop->cost + param_list->cost + DEFAULT_COST;
 
