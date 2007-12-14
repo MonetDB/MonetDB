@@ -88,6 +88,6 @@ order_by_simple_exp
 setoptimizer
 load_dec_as_int
 string
-crashme
+NOT_WIN32?crashme
 50ways
 load_with_offset
