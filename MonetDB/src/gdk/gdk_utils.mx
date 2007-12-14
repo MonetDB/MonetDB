@@ -1476,7 +1476,11 @@ GDKinit(opt *set, int setlen)
 
 	/* Mserver intends to rob 80% of all memory as a default */
 	GDK_mem_maxsize = (size_t) ((double) MT_npages() * (double) MT_pagesize() * 0.815);
+#ifdef WIN32
 	GDK_vm_minsize = (size_t) ((double) MT_npages() * (double) MT_pagesize() * 0.33);
+#else
+	GDK_vm_minsize = 64*1024*1024;
+#endif
 
 	GDKmemchk(TRUE, TRUE);
 	GDKremovedir(DELDIR);
