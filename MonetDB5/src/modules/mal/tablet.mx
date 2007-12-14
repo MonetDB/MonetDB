@@ -1509,20 +1509,20 @@ ssize_t
 TABLETload_file(Tablet * as, bstream *b, stream *out)
 {
 	int res = 0, done = 0;
-	size_t i = 1;
+	size_t i = 0;
 	char *sep = as->format[as->nr_attrs - 1].sep;
 	int seplen = as->format[as->nr_attrs - 1].seplen;
-	size_t nr = as->offset + as->nr;
 	size_t offset = as->offset;
+	size_t nr = offset + as->nr;
 
 	if (tablet_debug)
 		stream_printf(GDKerr, "TABLETload_file\n");
 
-	while ((b->pos < b->len || !b->eof) && res == 0 && (nr == ~(size_t) 0 || i <= nr)) {
+	while ((b->pos < b->len || !b->eof) && res == 0 && (nr == ~(size_t) 0 || i < nr)) {
 		char *s, *end;
 
 		if (b->pos >= b->len && read_more(b, out, b->size - (b->len - b->pos)) == EOF) {
-			if (nr != ~(size_t)0 && i <= nr) {
+			if (nr != ~(size_t)0 && i < nr) {
 				res = 1; 
 				if (b->len > b->pos) {
 					GDKerror("TABLETload_file: read error (after loading %d records)\n", BATcount(as->format[0].c));
@@ -1582,11 +1582,11 @@ TABLETload_file(Tablet * as, bstream *b, stream *out)
 			i++;
 			if (tablet_debug && (i % 100000) == 0)
 				stream_printf(GDKerr, "inserted " SZFMT "\n", i);
-			if (nr != ~(size_t) 0 && i > nr)
+			if (nr != ~(size_t) 0 && i >= nr)
 				break;
 		}
 	}
-	as->nr = i-as->offset-1;
+	as->nr = i-offset;
 	if (res < 0)
 		return res;
 	return (ssize_t) as->nr;
