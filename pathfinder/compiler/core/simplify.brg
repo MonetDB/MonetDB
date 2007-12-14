@@ -617,7 +617,7 @@ reduce (PFcnode_t *p, int goalnt)
                 break;
 
 
-            /* CoreExpr:           apply (arg (CoreExpr,
+            /* FunExpr:            apply (arg (CoreExpr,
                                                arg (CoreExpr,
                                                     arg (CoreExpr,
                                                          FunctionArgs)))) */
@@ -630,17 +630,17 @@ reduce (PFcnode_t *p, int goalnt)
                 if (! PFqname_eq (p->sem.fun->qname,
                                   PFqname (PFns_fn, "concat"))) {
 
-                    PFvar_t *v = new_var (NULL);
                     PFfun_t *fn_concat = function (PFqname (PFns_fn, "concat"));
 
-                    *p = *flwr (let (letbind (
-                                         var (v),
-                                         apply (fn_concat,
-                                                arg (LL(p), 
-                                                     arg (LRL(p), 
-                                                          nil ())))),
-                                     nil ()),
-                                apply (fn_concat, arg (var (v), LRR(p))));
+                    /* The result must refer to the same parent non-terminal
+                       FunExpr as otherwise the next reduce() call fails. */
+                    *p = *apply (fn_concat,
+                                 arg (apply (fn_concat,
+                                             arg (LL(p), 
+                                                  arg (LRL(p), 
+                                                       nil ()))),
+                                      LRR(p)));
+
                     relabel (p, kids);
                     rewrite_again = true;
                 }
