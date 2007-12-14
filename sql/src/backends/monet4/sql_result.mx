@@ -450,6 +450,8 @@ mvc_import_table(mvc *m, bstream *bs, char *tname, char *sep, char *rsep, char *
 		return NULL;
 	}
 
+	if (offset > 0)
+		offset--;
 	if (t->columns.set) {
 		stream *out = m->scanner.ws;
 		dec_format *dec;

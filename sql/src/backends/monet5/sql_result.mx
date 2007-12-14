@@ -474,6 +474,8 @@ mvc_import_table(mvc *m, bstream *bs, char *tname, char *sep, char *rsep, char *
 		return NULL;
 	}
 
+	if (offset > 0)
+		offset--;
 	sep = coerce(sep);
 	rsep = coerce(rsep);
 	if (t->columns.set) {
