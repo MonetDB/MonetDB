@@ -141,43 +141,43 @@ opt_const (PFla_op_t *p, bool no_attach)
 
 
     case la_serialize_rel:
-
-            /* Introduce (superfluous) attach-ops for constant attributes. 
-               This rewrite ensures, that constants are introduced at 
-               the latest possible point in the plan.
-            */
-
-            /* Rewrite for the iter-attribute. */
-            if (PFprop_const_left (p->prop, p->sem.ser_rel.iter)) {
-                L(p) = add_attach (L(p), p->sem.ser_rel.iter,
-                                   PFprop_const_val_left (
-                                       p->prop,
-                                       p->sem.ser_rel.iter));
-
-            }
-
-            /* Rewrite for the pos-attribute. */
-            if (PFprop_const_left (p->prop, p->sem.ser_rel.pos)) {
-                L(p) = add_attach (L(p), p->sem.ser_rel.pos,
-                                   PFprop_const_val_left (
-                                       p->prop,
-                                       p->sem.ser_rel.pos));
-            }
-
-            /* Rewrite for the item-attributes. */
-            PFalg_attlist_t items = p->sem.ser_rel.items;
-            unsigned int count = items.count;
-            for (unsigned int i = 0; i < count; i++)
             {
-                PFalg_att_t item = items.atts[i];
-                if (PFprop_const_left (p->prop, item)) {
-                    L(p) = add_attach (L(p), item,
+                /* Introduce (superfluous) attach-ops for constant attributes. 
+                   This rewrite ensures, that constants are introduced at 
+                   the latest possible point in the plan.
+                */
+    
+                /* Rewrite for the iter-attribute. */
+                if (PFprop_const_left (p->prop, p->sem.ser_rel.iter)) {
+                    L(p) = add_attach (L(p), p->sem.ser_rel.iter,
                                        PFprop_const_val_left (
                                            p->prop,
-                                           item));
+                                           p->sem.ser_rel.iter));
+    
+                }
+    
+                /* Rewrite for the pos-attribute. */
+                if (PFprop_const_left (p->prop, p->sem.ser_rel.pos)) {
+                    L(p) = add_attach (L(p), p->sem.ser_rel.pos,
+                                       PFprop_const_val_left (
+                                           p->prop,
+                                           p->sem.ser_rel.pos));
+                }
+    
+                /* Rewrite for the item-attributes. */
+                PFalg_attlist_t items = p->sem.ser_rel.items;
+                unsigned int count = items.count;
+                for (unsigned int i = 0; i < count; i++)
+                {
+                    PFalg_att_t item = items.atts[i];
+                    if (PFprop_const_left (p->prop, item)) {
+                        L(p) = add_attach (L(p), item,
+                                           PFprop_const_val_left (
+                                               p->prop,
+                                               item));
+                    }
                 }
             }
-
             break;
 
 
