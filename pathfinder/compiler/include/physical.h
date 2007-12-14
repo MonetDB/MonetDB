@@ -125,8 +125,9 @@ enum PFpa_op_kind_t {
     , pa_merge_adjacent = 131
     , pa_roots          = 132
     , pa_fragment       = 133
-    , pa_frag_union     = 134
-    , pa_empty_frag     = 135
+    , pa_frag_extract   = 134
+    , pa_frag_union     = 135
+    , pa_empty_frag     = 136
     , pa_error          = 139 /**< error operator */
     , pa_cond_err       = 140 /**< conditional error operator */
     , pa_nil            = 141 /**< end of the list of parameters */
@@ -139,7 +140,10 @@ enum PFpa_op_kind_t {
                                   in the recursion */
     , pa_rec_base       = 148 /**< base of the DAG describing the recursion */
     , pa_rec_border     = 149 /**< border of the DAG describing the recursion */
-    , pa_string_join    = 150 /**< Concatenation of multiple strings */
+    , pa_fun_call       = 150 /**< function application */
+    , pa_fun_param      = 151 /**< function application parameter */
+    , pa_fun_frag_param = 152 /**< function application parameter */
+    , pa_string_join    = 160 /**< Concatenation of multiple strings */
 };
 /** algebra operator kinds */
 typedef enum PFpa_op_kind_t PFpa_op_kind_t;
@@ -356,6 +360,23 @@ union PFpa_op_sem_t {
         PFpa_op_t      *base;    /**< reference to the base relation
                                       of the recursion */
     } rec_arg;
+
+    struct {
+        PFalg_fun_call_t kind;    /**< kind of function call */
+        PFqname_t       qname;    /**< function name */
+        void           *ctx;      /**< reference to the context node
+                                       representing the function call */
+        PFalg_att_t     iter;     /**< the loop relation */
+        PFalg_occ_ind_t occ_ind;  /**< occurrence indicator for the
+                                       iter column of the result
+                                       (used for optimizations) */
+    } fun_call;
+    
+    /* semantic content of the function call fragment paramter and
+       the fragment extraction operator */
+    struct {
+        unsigned int    pos;      /**< position of the referenced column */
+    } col_ref;
 
 };
 /** semantic content in physical algebra operators */
@@ -830,6 +851,12 @@ PFpa_op_t *PFpa_roots (const PFpa_op_t *n);
 PFpa_op_t *PFpa_fragment (const PFpa_op_t *n);
 
 /**
+ * Constructor for a fragment extract operator
+ * (to be used in combination with a function call)
+ */
+PFpa_op_t * PFpa_frag_extract (const PFpa_op_t *n, unsigned int col_pos);
+
+/**
  * Form disjoint union between two fragments.
  */
 PFpa_op_t *PFpa_frag_union (const PFpa_op_t *n1, const PFpa_op_t *n2);
@@ -917,6 +944,34 @@ PFpa_op_t *PFpa_rec_base (PFalg_schema_t schema, PFord_ordering_t ord);
  * operator representing the border of a recursion body).
  */
 PFpa_op_t *PFpa_rec_border (const PFpa_op_t *n);
+
+/**
+ * Constructor for the function application
+ */
+PFpa_op_t *PFpa_fun_call (const PFpa_op_t *loop,
+                          const PFpa_op_t *param_list,
+                          PFalg_schema_t schema,
+                          PFalg_fun_call_t kind,
+                          PFqname_t qname,
+                          void *ctx,
+                          PFalg_att_t iter,
+                          PFalg_occ_ind_t occ_ind);
+
+/**
+ * Constructor for a list item of a parameter list
+ * related to function application
+ */
+PFpa_op_t *PFpa_fun_param (const PFpa_op_t *argument,
+                           const PFpa_op_t *param_list,
+                           PFalg_schema_t schema);
+                                   
+/**
+ * Constructor for the fragment information of a list item
+ * of a parameter list related to function application
+ */
+PFpa_op_t *PFpa_fun_frag_param (const PFpa_op_t *argument,
+                                const PFpa_op_t *param_list,
+                                unsigned int col_pos);
 
 /****************************************************************/
 /* operators introduced by built-in functions */

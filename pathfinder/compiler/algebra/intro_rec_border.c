@@ -95,6 +95,39 @@ introduce_rec_borders_worker (PFpa_op_t *n, PFarray_t *bases)
                 }
             break;
 
+        case pa_fun_call:
+             base_path = introduce_rec_borders_worker (L(n), bases) ||
+                         introduce_rec_borders_worker (R(n), bases);
+
+             /* the complete function call resides in the recursion */
+             if (base_path) {
+                 /* If one argument of the function call resides in the
+                    recursion the loop relation certainly does as well. */
+
+                 /* Introduce a recursion border for all arguments
+                    that reside outside the recursion. */
+                 PFpa_op_t *param = R(n);
+                 while (param->kind != pa_nil) {
+                     if (param->kind == pa_fun_param && !pfIN(L(param))) {
+                         L(param) = PFpa_rec_border (L(param));
+                         L(param)->prop = L(L(param))->prop;
+                     }
+                     param = R(param);
+                 }
+             }
+             break;
+
+        case pa_fun_param:             
+             /* only collect the base paths */
+             base_path = introduce_rec_borders_worker (L(n), bases) ||
+                         introduce_rec_borders_worker (R(n), bases);
+             break;
+            
+        case pa_fun_frag_param:             
+             /* only collect the base paths */
+             base_path = introduce_rec_borders_worker (R(n), bases);
+             break;
+             
         case pa_fcns:
             /* this also skips the introduction of a rec_border
                operator for the content of an empty elements:

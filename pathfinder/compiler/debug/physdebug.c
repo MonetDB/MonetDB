@@ -119,6 +119,7 @@ static char *a_id[]  = {
     , [pa_merge_adjacent]  = "#pf:merge-adjacent-text-nodes"
     , [pa_roots]           = "ROOTS"
     , [pa_fragment]        = "FRAGs"
+    , [pa_frag_extract]    = "FRAG EXTRACT"
     , [pa_frag_union]      = "FRAG_UNION"
     , [pa_empty_frag]      = "EMPTY_FRAG"
     , [pa_error]           = "!ERROR"
@@ -132,6 +133,9 @@ static char *a_id[]  = {
     , [pa_rec_arg]         = "rec arg"
     , [pa_rec_base]        = "rec base"
     , [pa_rec_border]      = "rec border"
+    , [pa_fun_call]        = "fun call"
+    , [pa_fun_param]       = "fun param"
+    , [pa_fun_frag_param]  = "fun frag param"
     , [pa_string_join]     = "fn:string-join"
 };
 
@@ -204,6 +208,7 @@ static char *xml_id[]  = {
     , [pa_merge_adjacent]  = "#pf:merge-adjacent-text-nodes"
     , [pa_roots]           = "roots"
     , [pa_fragment]        = "frags"
+    , [pa_frag_extract]    = "frag extract"
     , [pa_frag_union]      = "frag_union"
     , [pa_empty_frag]      = "empty_frag"
     , [pa_error]           = "!ERROR"
@@ -217,6 +222,9 @@ static char *xml_id[]  = {
     , [pa_rec_arg]         = "rec_arg"
     , [pa_rec_base]        = "rec_base"
     , [pa_rec_border]      = "rec_border"
+    , [pa_fun_call]        = "function call"
+    , [pa_fun_param]       = "function call parameter"
+    , [pa_fun_frag_param]  = "function call fragment parameter"
     , [pa_string_join]     = "fn:string-join"
 };
 
@@ -403,6 +411,7 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, unsigned int node_id)
         , [pa_merge_adjacent]  = "\"#00D000\""
         , [pa_roots]           = "\"#E0E0E0\""
         , [pa_fragment]        = "\"#E0E0E0\""
+        , [pa_frag_extract]    = "\"#DD22DD\""
         , [pa_frag_union]      = "\"#E0E0E0\""
         , [pa_empty_frag]      = "\"#E0E0E0\""
         , [pa_error]           = "\"#C0C0C0\""
@@ -416,6 +425,9 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, unsigned int node_id)
         , [pa_rec_arg]         = "\"#BB00BB\""
         , [pa_rec_base]        = "\"#BB00BB\""
         , [pa_rec_border]      = "\"#BB00BB\""
+        , [pa_fun_call]        = "\"#BB00BB\""
+        , [pa_fun_param]       = "\"#BB00BB\""
+        , [pa_fun_frag_param]  = "\"#BB00BB\""
         , [pa_string_join]     = "\"#C0C0C0\""
     };
 
@@ -746,6 +758,35 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, unsigned int node_id)
                             PFatt_str (n->sem.trace_map.outer));
             break;
         
+        case pa_fun_call:
+            PFarray_printf (dot,
+                            "%s function \\\"%s\\\" (",
+                            PFalg_fun_call_kind_str (n->sem.fun_call.kind),
+                            PFqname_uri_str (n->sem.fun_call.qname));
+            for (unsigned int i = 0; i < n->schema.count; i++)
+                PFarray_printf (dot, "%s%s",
+                                i?", ":"",
+                                PFatt_str (n->schema.items[i].name));
+            PFarray_printf (dot,
+                            ")\\n(loop: %s)",
+                            PFatt_str (n->sem.fun_call.iter));
+            break;
+            
+        case pa_fun_param:
+            PFarray_printf (dot, "%s (", a_id[n->kind]);
+            for (unsigned int i = 0; i < n->schema.count; i++)
+                PFarray_printf (dot, "%s%s",
+                                i?", ":"",
+                                PFatt_str (n->schema.items[i].name));
+            PFarray_printf (dot, ")");
+            break;
+            
+        case pa_frag_extract:
+        case pa_fun_frag_param:
+            PFarray_printf (dot, "%s (referencing column %i)",
+                            a_id[n->kind], n->sem.col_ref.pos);
+            break;
+            
         case pa_serialize:
         case pa_cross:
         case pa_append_union:
@@ -1646,6 +1687,37 @@ pa_xml (PFarray_t *xml, PFpa_op_t *n, unsigned int node_id)
                             "    </content>\n",
                             PFatt_str (n->sem.err.att),
                             PFstrdup (n->sem.err.str));
+            break;
+
+        case pa_fun_call:
+            PFarray_printf (xml,
+                            "    <content>\n"
+                            "      <function uri=\"%s\" name=\"%s\"/>\n"
+                            "      <kind name=\"%s\"/>\n"
+                            "      <column name=\"%s\" function=\"iter\"/>\n"
+                            "    </content>\n",
+                            PFqname_uri (n->sem.fun_call.qname),
+                            PFqname_loc (n->sem.fun_call.qname),
+                            PFalg_fun_call_kind_str (n->sem.fun_call.kind),
+                            PFatt_str (n->sem.fun_call.iter));
+            break;
+            
+        case pa_fun_param:
+            PFarray_printf (xml, "    <content>\n"); 
+            for (c = 0; c < n->schema.count; c++)
+                PFarray_printf (xml, 
+                                "      <column name=\"%s\" position=\"%u\"/>\n",
+                                PFatt_str (n->schema.items[c].name), c);
+            PFarray_printf (xml, "    </content>\n");
+            break;
+
+        case pa_frag_extract:
+        case pa_fun_frag_param:
+            PFarray_printf (xml,
+                            "    <content>\n"
+                            "      <column reference=\"%i\"/>\n"
+                            "    </content>\n",
+                            n->sem.col_ref.pos);
             break;
 
         case pa_string_join:

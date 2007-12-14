@@ -3215,6 +3215,27 @@ PFpa_fragment (const PFpa_op_t *n)
     return ret;
 }
 
+/**
+ * Constructor for a fragment extract operator
+ * (to be used in combination with a function call)
+ */
+PFpa_op_t *
+PFpa_frag_extract (const PFpa_op_t *n, unsigned int col_pos)
+{
+    PFpa_op_t *ret = wire1 (pa_frag_extract, n);
+
+    /* allocate memory for the result schema */
+    ret->schema.count = 0;
+    ret->schema.items = NULL;
+
+    ret->sem.col_ref.pos = col_pos;
+
+    /* ---- Fragment: costs ---- */
+    ret->cost = 0;
+
+    return ret;
+}
+
 /** Form algebraic disjoint union between two fragments. */
 PFpa_op_t *
 PFpa_frag_union (const PFpa_op_t *n1, const PFpa_op_t *n2)
@@ -3715,6 +3736,113 @@ PFpa_op_t *PFpa_rec_border (const PFpa_op_t *n)
 
     /* costs */
     ret->cost = n->cost;
+
+    return ret;
+}
+
+/**
+ * Constructor for the function application
+ */
+PFpa_op_t *
+PFpa_fun_call (const PFpa_op_t *loop, const PFpa_op_t *param_list,
+               PFalg_schema_t schema, PFalg_fun_call_t kind,
+               PFqname_t qname, void *ctx,
+               PFalg_att_t iter, PFalg_occ_ind_t occ_ind)
+{
+    PFpa_op_t     *ret;
+    unsigned int   i;
+
+    assert (loop);
+    assert (param_list);
+
+    /* create new function application node */
+    ret = wire2 (pa_fun_call, loop, param_list);
+
+    /* allocate memory for the result schema (= schema(n)) */
+    ret->schema.count = schema.count;
+
+    ret->schema.items
+        = PFmalloc (schema.count * sizeof (*(ret->schema.items)));
+
+    for (i = 0; i < schema.count; i++)
+        ret->schema.items[i] = schema.items[i];
+
+    /* insert semantic value */
+    ret->sem.fun_call.kind    = kind;
+    ret->sem.fun_call.qname   = qname;
+    ret->sem.fun_call.ctx     = ctx;
+    ret->sem.fun_call.iter    = iter;
+    ret->sem.fun_call.occ_ind = occ_ind;
+
+    /* by default we don't know anything about the output ordering */
+
+    /* costs */
+    ret->cost = loop->cost + param_list->cost + DEFAULT_COST;
+
+    return ret;
+}
+
+/**
+ * Constructor for a list item of a parameter list
+ * related to function application
+ */
+PFpa_op_t *
+PFpa_fun_param (const PFpa_op_t *argument, const PFpa_op_t *param_list,
+                PFalg_schema_t schema)
+{
+    PFpa_op_t     *ret;
+    unsigned int   i;
+
+    assert (argument);
+    assert (param_list);
+
+    /* create new function application parameter node */
+    ret = wire2 (pa_fun_param, argument, param_list);
+
+    /* allocate memory for the result schema (= schema(n)) */
+    ret->schema.count = schema.count;
+
+    ret->schema.items
+        = PFmalloc (schema.count * sizeof (*(ret->schema.items)));
+
+    for (i = 0; i < schema.count; i++)
+        ret->schema.items[i] = schema.items[i];
+
+    /* ordering stays the same as the input */
+    for (unsigned int i = 0; i < PFord_set_count (argument->orderings); i++)
+        PFord_set_add (ret->orderings, PFord_set_at (argument->orderings, i));
+
+    /* costs */
+    ret->cost = argument->cost + param_list->cost;
+
+    return ret;
+}
+
+/**
+ * Constructor for the fragment information of a list item
+ * of a parameter list related to function application
+ */
+PFpa_op_t *
+PFpa_fun_frag_param (const PFpa_op_t *argument,
+                     const PFpa_op_t *param_list,
+                     unsigned int col_pos)
+{
+    PFpa_op_t     *ret;
+
+    assert (argument);
+    assert (param_list);
+
+    /* create new function application parameter node */
+    ret = wire2 (pa_fun_frag_param, argument, param_list);
+
+    /* allocate memory for the result schema */
+    ret->schema.count = 0;
+    ret->schema.items = NULL;
+
+    ret->sem.col_ref.pos = col_pos;
+    
+    /* costs */
+    ret->cost = argument->cost + param_list->cost;
 
     return ret;
 }

@@ -124,6 +124,9 @@
  */
 typedef PFpa_op_t plan_t;
 
+/* Function call kind indicator */
+static PFalg_fun_call_t fun_call_kind;
+
 /* ensure some ordering on a given plan */
 static PFplanlist_t *ensure_ordering (const plan_t *unordered,
                                       PFord_ordering_t required);
@@ -1964,6 +1967,23 @@ plan_fragment (const PFla_op_t *n)
 }
 
 /**
+ * `frag_extract' operators in the logical algebra just get a 1:1 mapping
+ * into the physical frag_extract operator.
+ */
+static PFplanlist_t *
+plan_frag_extract (const PFla_op_t *n)
+{
+    PFplanlist_t *ret = new_planlist ();
+
+    for (unsigned int i = 0; i < PFarray_last (L(n)->plans); i++)
+        add_plan (ret,
+                  frag_extract (*(plan_t **) PFarray_at (L(n)->plans, i),
+                                n->sem.col_ref.pos));
+
+    return ret;
+}
+
+/**
  * `frag_union' operators in the logical algebra just get a 1:1 mapping
  * into the physical FragUnion operator.
  */
@@ -2086,6 +2106,108 @@ plan_trace_map (const PFla_op_t *n)
                           *(plan_t **) PFarray_at (R(n)->plans, j),
                           n->sem.trace_map.inner,
                           n->sem.trace_map.outer));
+
+    return ret;
+}
+
+/**
+ * `fun_call' operators in the logical algebra just get a 1:1 mapping
+ * into the physical fun_call operator.
+ */
+static PFplanlist_t *
+plan_fun_call (const PFla_op_t *n)
+{
+    unsigned int i;
+    PFplanlist_t *ret = new_planlist ();
+
+    for (unsigned int i = 0; i < PFarray_last (L(n)->plans); i++)
+        for (unsigned int j = 0; j < PFarray_last (R(n)->plans); j++)
+            add_plan (ret,
+                      fun_call (
+                          *(plan_t **) PFarray_at (L(n)->plans, i),
+                          *(plan_t **) PFarray_at (R(n)->plans, j),
+                          n->schema,
+                          n->sem.fun_call.kind,
+                          n->sem.fun_call.qname,
+                          n->sem.fun_call.ctx,
+                          n->sem.fun_call.iter,
+                          n->sem.fun_call.occ_ind));
+
+    /* check for nodes -- if that's the case we may return
+       only a single plan (as constructors might be involved). */
+    for (i = 0; i < n->schema.count; i++)
+        if (n->schema.items[i].type & aat_node)
+            break;
+    
+    if (i == n->schema.count)
+        return ret;
+    else {
+        PFplanlist_t  *single_plan   = new_planlist ();
+        plan_t        *cheapest_plan = NULL;
+        
+        /* find the cheapest plan */
+        for (unsigned int i = 0; i < PFarray_last (ret); i++)
+            if (!cheapest_plan
+                || costless (*(plan_t **) PFarray_at (ret, i),
+                             cheapest_plan))
+                cheapest_plan = *(plan_t **) PFarray_at (ret, i);
+
+        add_plan (single_plan, cheapest_plan);
+        return single_plan;
+    }
+}
+
+/**
+ * `fun_param' operators in the logical algebra just get a 1:1 mapping
+ * into the physical fun_param operator.
+ */
+static PFplanlist_t *
+plan_fun_param (const PFla_op_t *n)
+{
+    PFplanlist_t *ret = new_planlist (),
+                 *left;
+
+    if (fun_call_kind == alg_fun_call_xrpc) {
+        left = new_planlist ();
+        /* XRPC function call requires its inputs to be properly sorted. */
+        for (unsigned int i = 0; i < PFarray_last (L(n)->plans); i++)
+            add_plans (left,
+                       ensure_ordering (
+                           *(plan_t **) PFarray_at (L(n)->plans, i),
+                           sortby (n->schema.items[0].name,
+                                   n->schema.items[1].name)));
+    }
+    else {
+        left = L(n)->plans;
+    }
+
+    for (unsigned int i = 0; i < PFarray_last (left); i++)
+        for (unsigned int j = 0; j < PFarray_last (R(n)->plans); j++)
+            add_plan (ret,
+                      fun_param (
+                          *(plan_t **) PFarray_at (left, i),
+                          *(plan_t **) PFarray_at (R(n)->plans, j),
+                          n->schema));
+
+    return ret;
+}
+
+/**
+ * `fun_frag_param' operators in the logical algebra just get a 1:1 mapping
+ * into the physical fun_frag_param operator.
+ */
+static PFplanlist_t *
+plan_fun_frag_param (const PFla_op_t *n)
+{
+    PFplanlist_t *ret = new_planlist ();
+
+    for (unsigned int i = 0; i < PFarray_last (L(n)->plans); i++)
+        for (unsigned int j = 0; j < PFarray_last (R(n)->plans); j++)
+            add_plan (ret,
+                      fun_frag_param (
+                          *(plan_t **) PFarray_at (L(n)->plans, i),
+                          *(plan_t **) PFarray_at (R(n)->plans, j),
+                          n->sem.col_ref.pos));
 
     return ret;
 }
@@ -2309,10 +2431,8 @@ clean_up_body_plans_worker (PFla_op_t *n, PFarray_t *bases)
 
     switch (n->kind)
     {
-        case la_element:
-        case la_attribute:
-        case la_textnode:
-        case la_doc_tbl:
+        case la_twig:
+        case la_fun_call: /* a function call may contain constructors */
             for (i = 0; i < PFLA_OP_MAXCHILD && n->child[i]; i++) {
                 cur_code = clean_up_body_plans_worker (n->child[i], bases);
                 /* collect the codes */
@@ -2590,7 +2710,6 @@ better_or_equal (const plan_t *a, const plan_t *b)
     return true;
 }
 
-
 /**
  * Compute all interesting plans that execute @a n and store them
  * in the @a plans field of @a n.
@@ -2626,6 +2745,8 @@ plan_subexpression (PFla_op_t *n)
     switch (n->kind) {
         /* process the following logical algebra nodes top-down */
         case la_rec_fix:
+        case la_fun_call:
+        case la_fun_frag_param:
             break;
         default:
             /* translate bottom-up (ensure that the fragment
@@ -2762,6 +2883,7 @@ plan_subexpression (PFla_op_t *n)
 
         case la_roots:          plans = plan_roots (n);        break;
         case la_fragment:       plans = plan_fragment (n);     break;
+        case la_frag_extract:   plans = plan_frag_extract (n); break;
         case la_frag_union:     plans = plan_frag_union (n);   break;
         case la_empty_frag:     plans = plan_empty_frag (n);   break;
 
@@ -2866,6 +2988,28 @@ plan_subexpression (PFla_op_t *n)
             add_plan (plans, cheapest_rec_plan);
         } break;
 
+        case la_fun_call:
+        {   /* TOPDOWN */
+            PFalg_fun_call_t old_fun_call_kind = fun_call_kind;
+            fun_call_kind = n->sem.fun_call.kind;
+
+            plan_subexpression (L(n));
+            plan_subexpression (R(n));
+            plans = plan_fun_call (n);
+            
+            fun_call_kind = old_fun_call_kind;
+        } break;
+
+        case la_fun_param:      plans = plan_fun_param (n);    break;  
+        case la_fun_frag_param:
+            /* TOPDOWN */
+            /* change the order of the translation to ensure that fragment
+               information is translated after the value part) */
+            plan_subexpression (R(n));
+            plan_subexpression (L(n));
+            plans = plan_fun_frag_param (n);
+            break;           
+        
         case la_string_join:    plans = plan_string_join (n);  break;
 
         default:
@@ -2888,11 +3032,13 @@ plan_subexpression (PFla_op_t *n)
         case la_processi:
         case la_merge_adjacent:
         case la_fragment:
+        case la_frag_extract:
         case la_frag_union:
         case la_empty_frag:
         case la_nil:
         case la_trace_msg:
         case la_trace_map:
+        case la_fun_call:
             break;
 
         default:

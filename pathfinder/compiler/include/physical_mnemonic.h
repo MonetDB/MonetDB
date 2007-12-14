@@ -172,6 +172,7 @@
 #define roots(a)             PFpa_roots (a)
 
 #define fragment(a)          PFpa_fragment (a)
+#define frag_extract(a,b)    PFpa_frag_extract ((a),(b))
 #define frag_union(a,b)      PFpa_frag_union ((a), (b))
 
 /** empty fragment list */
@@ -190,6 +191,12 @@
 #define rec_arg(a,b,c)       PFpa_rec_arg ((a),(b),(c))
 #define rec_base(a,b)        PFpa_rec_base ((a),(b))
 #define rec_border(a)        PFpa_rec_border (a)
+
+/* function application */
+#define fun_call(a,b,c,d,e,f,g,h) \
+        PFpa_fun_call ((a),(b),(c),(d),(e),(f),(g),(h))
+#define fun_param(a,b,c)  PFpa_fun_param ((a),(b),(c))  
+#define fun_frag_param(a,b,c) PFpa_fun_frag_param ((a),(b),(c))  
 
 #define fn_concat(a,b,c,d)   PFpa_fn_concat ((a), (b), (c), (d))
 #define fn_contains(a,b,c,d) PFpa_fn_contains ((a), (b), (c), (d))

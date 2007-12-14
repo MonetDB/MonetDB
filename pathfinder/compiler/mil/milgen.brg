@@ -44,6 +44,9 @@
 #include "properties.h"
 #include "mil.h"
 
+/* XRPC function call context */
+#include "core.h"
+
 #include "subtyping.h"
 
 #include <stdio.h>
@@ -145,8 +148,9 @@ typedef struct PFpa_op_t *NODEPTR_TYPE;
 %term merge_adjacent = 131
 %term roots          = 132
 %term fragment       = 133
-%term frag_union     = 134
-%term empty_frag     = 135
+%term frag_extract   = 134
+%term frag_union     = 135
+%term empty_frag     = 136
 %term cond_err       = 140
 %term nil            = 141
 %term trace          = 142
@@ -157,7 +161,10 @@ typedef struct PFpa_op_t *NODEPTR_TYPE;
 %term rec_arg        = 147
 %term rec_base       = 148
 %term rec_border     = 149
-%term string_join    = 150
+%term fun_call       = 150
+%term fun_param      = 151
+%term fun_frag_param = 152
+%term string_join    = 160
 
 %%
 
@@ -246,8 +253,9 @@ FragRel:  merge_adjacent (FragList, Rel)                           = 116 (10);
 
 Rel:      roots (FragRel)                                          = 120 (10);
 Frag:     fragment (FragRel)                                       = 121 (10);
-FragList: frag_union (FragList, Frag)                              = 122 (10);
-FragList: empty_frag                                               = 123 (10);
+Frag:     frag_extract (FunRel)                                    = 122 (10);
+FragList: frag_union (FragList, Frag)                              = 123 (10);
+FragList: empty_frag                                               = 124 (10);
 
 Rel:      cond_err (Rel, Rel)                                      = 130 (10);
 Rel:      cond_err (Rel, empty_tbl)                                = 131 (10);
@@ -263,7 +271,13 @@ Rec:      nil                                                      = 143 (10);
 Rel:      rec_base                                                 = 144 (10);
 Rel:      rec_border (Rel)                                         = 145 (10);
 
-Rel:      string_join (Rel, Rel)                                   = 150 (10);
+Rel:      FunRel                                                   = 150 (10);
+FunRel:   fun_call (Rel, Param)                                    = 151 (10);
+Param:    fun_param (Rel, Param)                                   = 152 (10);
+Param:    fun_frag_param (FragList, Param)                         = 153 (10);
+Param:    nil                                                      = 154 (10);
+
+Rel:      string_join (Rel, Rel)                                   = 160 (10);
 
 %%
 
@@ -348,6 +362,11 @@ typedef struct twig_state_t twig_state_t;
 
 /** current twig state */
 static twig_state_t *twig_state;
+
+/**
+ * Function call parameter list.
+ */
+static PFarray_t *fun_params = NULL;
 
 /**
  * Return a ``new'' valid variable.  Will try to re-use an old,
@@ -1128,6 +1147,10 @@ reduce (PFpa_op_t * p, int goalnt)
         case 110:
         /* Rel:      rec_fix (Rec, Rel) */
         case 140:
+        /* FunRel:   fun_call (Rel, Param) */
+        case 151:
+        /* Param:    fun_param (Rel, Param) */
+        case 152:
             topdown = true;
             break;
 
@@ -7127,12 +7150,16 @@ reduce (PFpa_op_t * p, int goalnt)
         case 121:
             break;
 
-        /* FragList: frag_union (FragList, Frag) */
+        /* Frag:     frag_extract (FunRel) */
         case 122:
+           break;
+
+        /* FragList: frag_union (FragList, Frag) */
+        case 123:
             break;
 
         /* FragList: empty_frag */
-        case 123:
+        case 124:
             break;
 
         /* Rel:      cond_err (Rel, Rel) */
@@ -7385,9 +7412,107 @@ reduce (PFpa_op_t * p, int goalnt)
                          env_at (L(p)->env, i).mvar);
             }
             break;
+            
+        /* Rel:      FunRel */
+        case 150:
+            /* no operator -- nothing to do */
+            break;
+            
+        /* FunRel:   fun_call (Rel, Param) */
+        case 151:
+        {   /* TOPDOWN */
+            PFarray_t     *old_fun_params;
+            
+            /* Collect the destinations */
+            reduce (kids[0], nts[0]);
+            
+            old_fun_params = fun_params;
+
+            /* We will collect the parameters here */
+            fun_params = PFarray (sizeof (PFpa_op_t **));
+
+            /* Top-down processing puts all parameters into this array */
+            reduce (kids[1], nts[1]);
+
+            /* All function parameters are now in the array `fun_params'. */
+
+            /***********************************/
+            /*                                 */
+            /* DO FUNCTION TRANSFORMATION HERE */
+            /*                                 */
+            /***********************************/
+            
+            if (p->sem.fun_call.kind == alg_fun_call_xrpc) {
+                PFcnode_t *core_apply = (PFcnode_t *) p->sem.fun_call.ctx;
+                
+                /* do XRPC stuff here */
+                (void)* fun_params;
+                (void)* core_apply;
+                
+                /* dummy stub to fill the environment */
+
+                /* create dummy temp variable */
+                mvar_t *v  = new_var (1);
+                /* add more references to v */
+                pin (v, 1);
+                /* release all pins */
+                unpin (v, 2);
+                
+                /* fill the environment for all attributes and columns */
+                for (unsigned int i = 0; i < p->schema.count; i++) {
+                    for (PFalg_simple_type_t t = 1; t; t <<= 1)
+                        if (t & p->schema.items[i].type) {
+                            /* create new variable */
+                            mvar_t *v  = new_var (p->refctr);
+                            /* dummy assignment */
+                            execute (
+                                assgn (var (v->name),
+                                       nil ()));
+                            env_add (p->env, p->schema.items[i].name, t, v);
+                        }
+                }
+
+            } 
+
+            /* restore the function arguments */
+            fun_params = old_fun_params;
+        }   break;
+        
+        /* Param:    fun_param (Rel, Param) */
+        case 152:
+        {   /* TOPDOWN */
+
+            /* translate the argument itself */
+            reduce (kids[0], nts[0]);
+
+            /* copy all the attributes */
+            for (unsigned int i = 0; i < env_count (L(p)->env); i++) {
+                pin (env_at (L(p)->env, i).mvar, p->refctr);
+                env_add (p->env,
+                         env_at (L(p)->env, i).att,
+                         env_at (L(p)->env, i).ty,
+                         env_at (L(p)->env, i).mvar);
+            }
+
+            /* Append the new parameter to function parameter list */
+            *((PFpa_op_t **) PFarray_add (fun_params)) = p;
+
+            /* go on to next arguments */
+            reduce (kids[1], nts[1]);
+        }   break;
+            
+        /* Param:    fun_frag_param (FragList, Param) */
+        case 153:
+            /* fragment part of the parameter list -- probably ignored */
+            break;
+            
+        /* Param:    nil */
+        case 154:
+            /* end of parameter list */
+            break;
 
         /* Rel:      string_join (Rel, Rel) */
-        case 150:
+        case 160:
         {
             mvar_t *str  = new_var (1);
             mvar_t *iter = new_var (p->refctr);
@@ -8471,8 +8596,9 @@ PFmilgen (PFpa_op_t *n)
              assgn (var (PF_MIL_VAR_TRACE_REL  ),
                     new (type (mty_oid), type (mty_oid))));
 
-    /* dummy initialization */
+    /* dummy initializations */
     twig_state = NULL;
+    fun_params = NULL;
 
     /* start compilation */
     reduce (n, 1);
