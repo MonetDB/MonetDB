@@ -962,12 +962,6 @@ infer_ocol (PFla_op_t *n)
         {
             unsigned int  i, j;
 
-            /* see if both operands have same number of attributes */
-            if (ocols_count (L(n)) != ocols_count (n))
-                PFoops (OOPS_FATAL,
-                        "Schema of the arguments of function application "
-                        "argument to not match");
-
             /* see if we find each attribute in all of the input relations */
             for (i = 0; i < ocols_count (L(n)); i++) {
                 for (j = 0; j < ocols_count (n); j++)
