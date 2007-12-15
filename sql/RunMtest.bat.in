@@ -8,8 +8,11 @@ goto end
 
 setlocal
 
-rem default back end is MonetDB4
-set V=4
+rem if both M4 & M5 are available, M5 is default;
+rem otherwise, the available one is default
+if "@HAVE_MONETDB4_FALSE@" == "#" set V=4
+if "@HAVE_MONETDB5_FALSE@" == "#" set V=5
+rem commandline option overrules default
 if "%1" == "-4" set V=4& shift
 if "%1" == "-5" set V=5& shift
 

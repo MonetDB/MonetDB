@@ -22,8 +22,11 @@ builddir=@QGEOM_BUILD@
 srcdir=`cd '@srcdir@'; pwd`
 uname=`uname`
 
-# default back-end is MonetDB4
-V=4
+# if both M4 & M5 are available, M5 is default;
+# otherwise, the available one is default
+@HAVE_MONETDB4_TRUE@V=4
+@HAVE_MONETDB5_TRUE@V=5
+# commandline option overrules default
 for arg
 do
     case "$arg" in
