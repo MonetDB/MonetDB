@@ -565,9 +565,10 @@ def CreateTstWhatXhtml (env, TST, stableWHAT, EXT, SockTime) :
         if SockTime == F_KILL:
             diffclass = 'killed'
             difftext = difftext + ' (Killed)'
-    SYSTEM = DISTVER+":"
-    if COMPILER:
-        SYSTEM = COMPILER+", "+SYSTEM
+    if COMPBITSOIDSLINK:
+        SYSTEM = DISTVER+", "+COMPBITSOIDSLINK+":"
+    else
+        SYSTEM = DISTVER+":"
 
     html = Element('html', {},
                    Element('head', {},
@@ -2666,17 +2667,17 @@ os.environ['DIST'] = DIST
 os.environ['DISTVER'] = DISTVER
 os.environ['VERSION'] = VERSION
 
-if os.environ.has_key('COMPILER'):
-    COMPILER = os.environ['COMPILER']
+if os.environ.has_key('COMPBITSOIDSLINK'):
+    COMPBITSOIDSLINK = os.environ['COMPBITSOIDSLINK']
 else:
-    COMPILER = ""
+    COMPBITSOIDSLINK = ""
 
 if os.environ.has_key('HTMLTITLE'):
     HTMLTITLE = os.environ['HTMLTITLE']
 else:
     HTMLTITLE = ""
-    if COMPILER:
-        HTMLTITLE = " for "+COMPILER
+    if COMPBITSOIDSLINK:
+        HTMLTITLE = " for "+COMPBITSOIDSLINK
     HTMLTITLE = ""+THISFILE+" results"+HTMLTITLE+" on "+DISTVER       #"+ ("`date`")"
 
 URLPREFIXMAP = {
