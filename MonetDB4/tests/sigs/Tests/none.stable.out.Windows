@@ -53,22 +53,20 @@ view_modules().reverse().mark(oid(nil)).kunique().sort().print();
 [ "arith",	  nil	  ]
 [ "array",	  nil	  ]
 [ "ascii_io",	  nil	  ]
+[ "backup",	  nil	  ]
 [ "bat",	  nil	  ]
 [ "bat_arith",	  nil	  ]
 [ "bat_cast",	  nil	  ]
 [ "bat_mmath",	  nil	  ]
 [ "bitset",	  nil	  ]
-[ "bitvector",	  nil	  ]
 [ "blob",	  nil	  ]
 [ "builtin",	  nil	  ]
 [ "color",	  nil	  ]
 [ "constant",	  nil	  ]
 [ "counters",	  nil	  ]
-[ "ddbench",	  nil	  ]
 [ "decimal",	  nil	  ]
 [ "enum",	  nil	  ]
 [ "image",	  nil	  ]
-[ "iterator",	  nil	  ]
 [ "lock",	  nil	  ]
 [ "logger",	  nil	  ]
 [ "malalgebra",	  nil	  ]
@@ -77,24 +75,20 @@ view_modules().reverse().mark(oid(nil)).kunique().sort().print();
 [ "mkey",	  nil	  ]
 [ "mmath",	  nil	  ]
 [ "monettime",	  nil	  ]
-[ "oo7",	  nil	  ]
 [ "pcl",	  nil	  ]
 [ "pcre",	  nil	  ]
 [ "pqueue",	  nil	  ]
 [ "profiler",	  nil	  ]
-[ "qt",		  nil	  ]
-[ "radix",	  nil	  ]
+[ "restore",	  nil	  ]
 [ "salgebra",	  nil	  ]
 [ "stats",	  nil	  ]
 [ "str",	  nil	  ]
 [ "streams",	  nil	  ]
 [ "sys",	  nil	  ]
-[ "tcpip",	  nil	  ]
 [ "trans",	  nil	  ]
 [ "txtsim",	  nil	  ]
 [ "uchr",	  nil	  ]
 [ "unix",	  nil	  ]
-[ "upgrade",	  nil	  ]
 [ "url",	  nil	  ]
 [ "vector",	  nil	  ]
 [ "wisc",	  nil	  ]
@@ -158,21 +152,17 @@ others.mark(oid(nil)).print();
 [ "wisc",	  nil	  ]
 [ "vector",	  nil	  ]
 [ "url",	  nil	  ]
-[ "upgrade",	  nil	  ]
 [ "unix",	  nil	  ]
 [ "uchr",	  nil	  ]
 [ "txtsim",	  nil	  ]
-[ "tcpip",	  nil	  ]
 [ "streams",	  nil	  ]
 [ "stats",	  nil	  ]
 [ "salgebra",	  nil	  ]
-[ "radix",	  nil	  ]
-[ "qt",		  nil	  ]
+[ "restore",	  nil	  ]
 [ "profiler",	  nil	  ]
 [ "pqueue",	  nil	  ]
 [ "pcre",	  nil	  ]
 [ "pcl",	  nil	  ]
-[ "oo7",	  nil	  ]
 [ "monettime",	  nil	  ]
 [ "mmath",	  nil	  ]
 [ "mkey",	  nil	  ]
@@ -181,19 +171,17 @@ others.mark(oid(nil)).print();
 [ "malalgebra",	  nil	  ]
 [ "logger",	  nil	  ]
 [ "lock",	  nil	  ]
-[ "iterator",	  nil	  ]
 [ "image",	  nil	  ]
 [ "enum",	  nil	  ]
 [ "decimal",	  nil	  ]
-[ "ddbench",	  nil	  ]
 [ "counters",	  nil	  ]
 [ "color",	  nil	  ]
 [ "blob",	  nil	  ]
-[ "bitvector",	  nil	  ]
 [ "bitset",	  nil	  ]
 [ "bat_mmath",	  nil	  ]
 [ "bat_cast",	  nil	  ]
 [ "bat_arith",	  nil	  ]
+[ "backup",	  nil	  ]
 [ "ascii_io",	  nil	  ]
 [ "array",	  nil	  ]
 [ "alarm",	  nil	  ]
@@ -349,46 +337,8 @@ others@batloop(){
 
 	dropping url
 
-#-------------------------#
-# tmp_41		tmp_32	  # name
-# str		int	  # type
-#-------------------------#
-[ "algebra",	  1	  ]
-[ "arith",	  1	  ]
-[ "bat",	  1	  ]
-[ "builtin",	  1	  ]
-[ "constant",	  1		  ]
-[ "main",	  1	  ]
-[ "str",	  1	  ]
-[ "sys",	  1	  ]
-[ "trans",	  1	  ]
-
-	loading upgrade
-
-#-------------------------#
-# tmp_33		tmp_37	  # name
-# str		int	  # type
-#-------------------------#
-[ "algebra",	  1	  ]
-[ "arith",	  1	  ]
-[ "bat",	  1	  ]
-[ "builtin",	  1	  ]
-[ "constant",	  1		  ]
-[ "main",	  1	  ]
-[ "str",	  1	  ]
-[ "sys",	  1	  ]
-[ "trans",	  1	  ]
-[ "upgrade",	  1	  ]
-#-------------------------#
-# h		t	  # name
-# str		void	  # type
-#-------------------------#
-[ "upgrade",	  nil	  ]
-
-	dropping upgrade
-
-#-------------------------#
-# tmp_33		tmp_40	  # name
+#---------------------------------#
+# module		usage_count	  # name
 # str		int	  # type
 #-------------------------#
 [ "algebra",	  1		  ]
@@ -514,43 +464,6 @@ others@batloop(){
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 
-	loading tcpip
-
-#---------------------------------#
-# module	| usage_count	  #
-#---------------------------------#
-[ "algebra",	  1		  ]
-[ "arith",	  1		  ]
-[ "bat",	  1		  ]
-[ "builtin",	  1		  ]
-[ "constant",	  1		  ]
-[ "main",	  1		  ]
-[ "str",	  1		  ]
-[ "sys",	  1		  ]
-[ "tcpip",	  1		  ]
-[ "trans",	  1		  ]
-#-------------------------#
-# BAT:		  tmp_26  #
-# (str)		  (void)  #
-#-------------------------#
-[ "tcpip",	  nil	  ]
-
-	dropping tcpip
-
-!WARNING: TCPepilogue: terminate 0 listeners
-#---------------------------------#
-# module	| usage_count	  #
-#---------------------------------#
-[ "algebra",	  1		  ]
-[ "arith",	  1		  ]
-[ "bat",	  1		  ]
-[ "builtin",	  1		  ]
-[ "constant",	  1		  ]
-[ "main",	  1		  ]
-[ "str",	  1		  ]
-[ "sys",	  1		  ]
-[ "trans",	  1		  ]
-
 	loading streams
 
 #---------------------------------#
@@ -647,7 +560,8 @@ others@batloop(){
 	dropping salgebra
 
 #---------------------------------#
-# module	| usage_count	  #
+# module		usage_count	  # name
+# str		int		  # type
 #---------------------------------#
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
@@ -659,79 +573,38 @@ others@batloop(){
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 
-	loading radix
+	loading restore
 
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
+[ "ascii_io",	  1		  ]
 [ "bat",	  1		  ]
 [ "builtin",	  1		  ]
 [ "constant",	  1		  ]
 [ "main",	  1		  ]
-[ "radix",	  1		  ]
+[ "restore",	  1		  ]
 [ "str",	  1		  ]
+[ "streams",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-#-------------------------#
-# BAT:		  tmp_26  #
-# (str)		  (void)  #
-#-------------------------#
-[ "radix",	  nil	  ]
-
-	dropping radix
-
-#---------------------------------#
-# module	| usage_count	  #
-#---------------------------------#
-[ "algebra",	  1		  ]
-[ "arith",	  1		  ]
-[ "bat",	  1		  ]
-[ "builtin",	  1		  ]
-[ "constant",	  1		  ]
-[ "main",	  1		  ]
-[ "str",	  1		  ]
-[ "sys",	  1		  ]
-[ "trans",	  1		  ]
-
-	loading qt
-
-#---------------------------------#
-# module	| usage_count	  #
-#---------------------------------#
-[ "algebra",	  1		  ]
-[ "arith",	  1		  ]
-[ "bat",	  1		  ]
-[ "bitvector",	  1		  ]
-[ "builtin",	  1		  ]
-[ "constant",	  1		  ]
-[ "main",	  1		  ]
-[ "qt",		  1		  ]
-[ "stats",	  1		  ]
-[ "str",	  1		  ]
-[ "sys",	  1		  ]
-[ "trans",	  1		  ]
-[ "uchr",	  1		  ]
 #-------------------------#
 # BAT:		  tmp_34  #
 # (str)		  (void)  #
 #-------------------------#
-[ "qt",		  nil	  ]
-[ "uchr",	  nil	  ]
-[ "bitvector",	  nil	  ]
-[ "stats",	  nil	  ]
+[ "restore",	  nil	  ]
+[ "ascii_io",	  nil	  ]
+[ "streams",	  nil	  ]
 
-	dropping qt
-
-
-	dropping uchr
+	dropping restore
 
 
-	dropping bitvector
+	dropping ascii_io
 
 
-	dropping stats
+	dropping streams
 
 #---------------------------------#
 # module		usage_count	  # name
@@ -888,43 +761,8 @@ others@batloop(){
 	dropping pcl
 
 #---------------------------------#
-# module	| usage_count	  #
-#---------------------------------#
-[ "algebra",	  1		  ]
-[ "arith",	  1		  ]
-[ "bat",	  1		  ]
-[ "builtin",	  1		  ]
-[ "constant",	  1		  ]
-[ "main",	  1		  ]
-[ "str",	  1		  ]
-[ "sys",	  1		  ]
-[ "trans",	  1		  ]
-
-	loading oo7
-
-#---------------------------------#
-# module	| usage_count	  #
-#---------------------------------#
-[ "algebra",	  1		  ]
-[ "arith",	  1		  ]
-[ "bat",	  1		  ]
-[ "builtin",	  1		  ]
-[ "constant",	  1		  ]
-[ "main",	  1		  ]
-[ "oo7",	  1		  ]
-[ "str",	  1		  ]
-[ "sys",	  1		  ]
-[ "trans",	  1		  ]
-#-----------------#
-# BAT:	  tmp_26  #
-# (str)	  (void)  #
-#-----------------#
-[ "oo7",  nil	  ]
-
-	dropping oo7
-
-#---------------------------------#
-# module	| usage_count	  #
+# module		usage_count	  # name
+# str		int		  # type
 #---------------------------------#
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
@@ -1249,50 +1087,6 @@ others@batloop(){
 	dropping lock
 
 #---------------------------------#
-# module	| usage_count	  #
-#---------------------------------#
-[ "algebra",	  1		  ]
-[ "arith",	  1		  ]
-[ "bat",	  1		  ]
-[ "builtin",	  1		  ]
-[ "constant",	  1		  ]
-[ "main",	  1		  ]
-[ "str",	  1		  ]
-[ "sys",	  1		  ]
-[ "trans",	  1		  ]
-
-	loading iterator
-
-#---------------------------------#
-# module	| usage_count	  #
-#---------------------------------#
-[ "algebra",	  1		  ]
-[ "arith",	  1		  ]
-[ "bat",	  1		  ]
-[ "builtin",	  1		  ]
-[ "constant",	  1		  ]
-[ "iterator",	  1		  ]
-[ "main",	  1		  ]
-[ "str",	  1		  ]
-[ "sys",	  1		  ]
-[ "trans",	  1		  ]
-#-------------------------#
-# BAT:		  tmp_50  #
-# (str)		  (void)  #
-#-------------------------#
-[ "mapi",	  nil	  ]
-[ "streams",	  nil	  ]
-[ "iterator",	  nil	  ]
-
-	dropping mapi
-
-
-	dropping streams
-
-
-	dropping iterator
-
-#---------------------------------#
 # module		usage_count	  # name
 #---------------------------------#
 [ "algebra",	  1		  ]
@@ -1431,62 +1225,8 @@ others@batloop(){
 	dropping decimal
 
 #---------------------------------#
-# module	| usage_count	  #
-#---------------------------------#
-[ "algebra",	  1		  ]
-[ "arith",	  1		  ]
-[ "bat",	  1		  ]
-[ "builtin",	  1		  ]
-[ "constant",	  1		  ]
-[ "main",	  1		  ]
-[ "str",	  1		  ]
-[ "sys",	  1		  ]
-[ "trans",	  1		  ]
-
-	loading ddbench
-
-#---------------------------------#
-# module	| usage_count	  #
-#---------------------------------#
-[ "algebra",	  1		  ]
-[ "arith",	  1		  ]
-[ "bat",	  1		  ]
-[ "builtin",	  1		  ]
-[ "constant",	  1		  ]
-[ "ddbench",	  1		  ]
-[ "enum",	  1		  ]
-[ "main",	  1		  ]
-[ "str",	  1		  ]
-[ "streams",	  1		  ]
-[ "sys",	  1		  ]
-[ "trans",	  1		  ]
-[ "xtables",	  1		  ]
-#-------------------------#
-# BAT:		  tmp_45  #
-# (str)		  (void)  #
-#-------------------------#
-[ "mapi",	  nil	  ]
-[ "streams",	  nil	  ]
-[ "ddbench",	  nil	  ]
-[ "xtables",	  nil	  ]
-[ "enum",	  nil	  ]
-
-	dropping mapi
-
-
-	dropping streams
-
-
-	dropping ddbench
-
-
-	dropping xtables
-
-
-	dropping enum
-
-#---------------------------------#
-# module	| usage_count	  #
+# module		usage_count	  # name
+# str		int		  # type
 #---------------------------------#
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
@@ -1630,50 +1370,6 @@ others@batloop(){
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 
-	loading bitvector
-
-#---------------------------------#
-# module	| usage_count	  #
-#---------------------------------#
-[ "algebra",	  1		  ]
-[ "arith",	  1		  ]
-[ "bat",	  1		  ]
-[ "bitvector",	  1		  ]
-[ "builtin",	  1		  ]
-[ "constant",	  1		  ]
-[ "main",	  1		  ]
-[ "str",	  1		  ]
-[ "sys",	  1		  ]
-[ "trans",	  1		  ]
-#-------------------------#
-# BAT:		  tmp_47  #
-# (str)		  (void)  #
-#-------------------------#
-[ "mapi",	  nil	  ]
-[ "streams",	  nil	  ]
-[ "bitvector",	  nil	  ]
-
-	dropping mapi
-
-
-	dropping streams
-
-
-	dropping bitvector
-
-#---------------------------------#
-# module	| usage_count	  #
-#---------------------------------#
-[ "algebra",	  1		  ]
-[ "arith",	  1		  ]
-[ "bat",	  1		  ]
-[ "builtin",	  1		  ]
-[ "constant",	  1		  ]
-[ "main",	  1		  ]
-[ "str",	  1		  ]
-[ "sys",	  1		  ]
-[ "trans",	  1		  ]
-
 	loading bitset
 
 #---------------------------------#
@@ -1690,7 +1386,7 @@ others@batloop(){
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 #-------------------------#
-# BAT:		  tmp_54  #
+# BAT:		  tmp_47  #
 # (str)		  (void)  #
 #-------------------------#
 [ "mapi",	  nil	  ]
@@ -1706,7 +1402,7 @@ others@batloop(){
 	dropping bitset
 
 #---------------------------------#
-# module		usage_count	  # name
+# module	| usage_count	  #
 #---------------------------------#
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
@@ -1721,7 +1417,7 @@ others@batloop(){
 	loading bat_mmath
 
 #---------------------------------#
-# module		usage_count	  # name
+# module	| usage_count	  #
 #---------------------------------#
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
@@ -1734,8 +1430,8 @@ others@batloop(){
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 #-------------------------#
-# h		tmp_45	  # name
-# str		void	  # type
+# BAT:		  tmp_54  #
+# (str)		  (void)  #
 #-------------------------#
 [ "mapi",	  nil	  ]
 [ "streams",	  nil	  ]
@@ -1778,7 +1474,7 @@ others@batloop(){
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 #-------------------------#
-# h		tmp_48	  # name
+# h		tmp_45	  # name
 # str		void	  # type
 #-------------------------#
 [ "mapi",	  nil	  ]
@@ -1809,7 +1505,7 @@ others@batloop(){
 	loading bat_arith
 
 #---------------------------------#
-# module	| usage_count	  #
+# module		usage_count	  # name
 #---------------------------------#
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
@@ -1822,8 +1518,8 @@ others@batloop(){
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 #-------------------------#
-# BAT:		  tmp_49  #
-# (str)		  (void)  #
+# h		tmp_48	  # name
+# str		void	  # type
 #-------------------------#
 [ "mapi",	  nil	  ]
 [ "streams",	  nil	  ]
@@ -1836,6 +1532,61 @@ others@batloop(){
 
 
 	dropping bat_arith
+
+#---------------------------------#
+# module		usage_count	  # name
+#---------------------------------#
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "builtin",	  1		  ]
+[ "constant",	  1		  ]
+[ "main",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+
+	loading backup
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "ascii_io",	  1		  ]
+[ "backup",	  1		  ]
+[ "bat",	  1		  ]
+[ "builtin",	  1		  ]
+[ "constant",	  1		  ]
+[ "main",	  1		  ]
+[ "str",	  1		  ]
+[ "streams",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+[ "xtables",	  1		  ]
+#-------------------------#
+# BAT:		  tmp_49  #
+# (str)		  (void)  #
+#-------------------------#
+[ "mapi",	  nil	  ]
+[ "streams",	  nil	  ]
+[ "backup",	  nil	  ]
+[ "xtables",	  nil	  ]
+[ "ascii_io",	  nil	  ]
+
+	dropping mapi
+
+
+	dropping streams
+
+
+	dropping backup
+
+
+	dropping xtables
+
+
+	dropping ascii_io
 
 #---------------------------------#
 # module	| usage_count	  #

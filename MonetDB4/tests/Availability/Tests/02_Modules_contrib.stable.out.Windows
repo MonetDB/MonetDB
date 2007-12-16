@@ -1,13 +1,16 @@
 stdout of test '02_Modules_contrib` in directory 'tests/Availability` itself:
 
 
-# 15:30:10 >  
-# 15:30:10 >  Mtimeout -timeout 60 Mserver "--config=/ufs/boncz/MonetDB/linux/etc/monet.conf" --debug=10 --set "monet_mod_path=/ufs/boncz/MonetDB/linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/boncz/MonetDB/linux/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/boncz/MonetDB/linux/var/MonetDB/log" --set mapi_port=55437 --set sql_port=50559 --set monet_prompt= --trace --dbname=mTests_tests_Availability  < 02_Modules_contrib.milS
-# 15:30:10 >  
+# 06:00:18 >  
+# 06:00:18 >   Mserver "--config=C:\cygwin\var\tmp\monet.Int.32.32.d.8719\MonetDB4\NT\conf\MonetDB.conf" --debug=10 --set "monet_mod_path=C:\cygwin\var\tmp\monet.Int.32.32.d.8719\MonetDB4\NT\src\modules\plain\.libs;C:\cygwin\var\tmp\monet.Int.32.32.d.8719\MonetDB4\NT\src\modules\plain;C:\cygwin\var\tmp\monet.Int.32.32.d.8719\MonetDB4\NT\src\modules\contrib\.libs;C:\cygwin\var\tmp\monet.Int.32.32.d.8719\MonetDB4\NT\src\modules\contrib;C:\cygwin\var\tmp\monet.Int.32.32.d.8719\MonetDB4\NT\src\modules\calibrator\.libs;C:\cygwin\var\tmp\monet.Int.32.32.d.8719\MonetDB4\NT\src\modules\calibrator;C:\cygwin\var\tmp\monet.Int.32.32.d.8719\MonetDB4\NT\src\mapi\.libs;C:\cygwin\var\tmp\monet.Int.32.32.d.8719\MonetDB4\NT\src\mapi;C:\cygwin\var\tmp\monet.Int.32.32.d.8719\MonetDB4\NT\src\modules\mnetcdf\.libs;C:\cygwin\var\tmp\monet.Int.32.32.d.8719\MonetDB4\NT\src\modules\mnetcdf;C:\cygwin\var\tmp\monet.Int.32.32.d.8719\MonetDB4\scripts\tools" --set "gdk_dbfarm=C:\cygwin\var\tmp\monet.Int.32.32.d.8719\MonetDB4\NT\dbfarm" --set "sql_logdir=C:\cygwin\var\tmp\monet.Int.32.32.d.8719\MonetDB4\NT\sql_logs" --set "xquery_logdir=C:\cygwin\var\tmp\monet.Int.32.32.d.8719\MonetDB4\NT\xquery_logs" --set mapi_open=true --set xrpc_open=true --set mapi_port=30048 --set xrpc_port=41800 --set monet_prompt= --trace --dbname=mTests_tests_Availability  
+# 06:00:18 >  
 
-# Monet Database Server V4.3.13
-# Copyright (c) 1993-2004, CWI. All rights reserved.
-# compiled for i686-pc-linux-gnu/32bit; dynamically linked.
+# MonetDB Server v4.21.0
+# based on GDK   v1.21.0
+# Copyright (c) 1993-2007, CWI. All rights reserved.
+# Compiled for i686-pc-win32/32bit with 32bit OIDs; dynamically linked.
+
+# Visit http://monetdb.cwi.nl/ for further information.
 setoid(oid(20000000));
 
 var MODULES:=bat("MODULES");
@@ -29,15 +32,10 @@ table(Plain_mods.reverse().col_name(sprintf("%i modules",Plain_mods.count())));
 [ "bat_cast"	  ]
 [ "bat_mmath"	  ]
 [ "bitset"	  ]
-[ "bitvector"	  ]
 [ "color"	  ]
-[ "ddbench"	  ]
 [ "image"	  ]
-[ "iterator"	  ]
 [ "malalgebra"	  ]
 [ "mel"		  ]
-[ "oo7"		  ]
-[ "qt"		  ]
 [ "salgebra"	  ]
 [ "txtsim"	  ]
 [ "uchr"	  ]
@@ -155,31 +153,6 @@ Module: "bitset"
 [ "newBitset",		  "COMMAND:   ",  "newBitset(int) : bitset",			  "Create a new BitSet from an existing integer."	  ]
 [ "test_bitset",	  "PROC:      ",  "test_bitset() : void",			  "not available"					  ]
 
-Module: "bitvector"
-
-[ 17 ]
-[ 17 ]
-#---------------------------------------------------------------------------------------------------------------------------------------------------------#
-# function		| type		| signature						| help							  #
-#---------------------------------------------------------------------------------------------------------------------------------------------------------#
-[ "[allocate]",		  "COMMAND:   ",  "[allocate](wrd, bit) : BAT[void,lng]",		  "Allocate a new and empty bitvector"			  ]
-[ "[allocate]",		  "PROC:      ",  "[allocate](int, bit) : BAT[void,lng]",		  "not available"					  ]
-[ "[and]",		  "COMMAND:   ",  "[and](BAT[void,lng], BAT[void,lng]) : BAT[void,lng]",  "Logically ANDs two bitvectors"			  ]
-[ "[clr]",		  "COMMAND:   ",  "[clr](BAT[any::1,lng], wrd) : void",			  "Clear a bit in a bitvector"				  ]
-[ "[clr]",		  "PROC:      ",  "[clr](BAT[any::1,lng], int) : void",			  "not available"					  ]
-[ "[count]",		  "COMMAND:   ",  "[count](BAT[void,lng]) : wrd",			  "Count the number of bits set"			  ]
-[ "[decode]",		  "COMMAND:   ",  "[decode](BAT[void,lng]) : BAT[oid,oid]",		  "Decodes a bitvector into a real BAT"			  ]
-[ "[encode]",		  "COMMAND:   ",  "[encode](BAT[any::1,oid]) : BAT[void,lng]",		  "Encode a BAT with tail values into a bitvector"	  ]
-[ "[isclr]",		  "COMMAND:   ",  "[isclr](BAT[any::1,lng], wrd) : bit",		  "Is bit bnum not set?"				  ]
-[ "[isclr]",		  "PROC:      ",  "[isclr](BAT[any::1,lng], int) : bit",		  "not available"					  ]
-[ "[isset]",		  "COMMAND:   ",  "[isset](BAT[any::1,lng], wrd) : bit",		  "Is bit bnum set?"					  ]
-[ "[isset]",		  "PROC:      ",  "[isset](BAT[any::1,lng], int) : bit",		  "not available"					  ]
-[ "[or]",		  "COMMAND:   ",  "[or](BAT[void,lng], BAT[void,lng]) : BAT[void,lng]",	  "Logically ORs two bitvectors"			  ]
-[ "[prt]",		  "COMMAND:   ",  "[prt](BAT[void,lng]) : void",			  "Print a bitvector"					  ]
-[ "[set]",		  "COMMAND:   ",  "[set](BAT[any::1,lng], wrd) : void",			  "Set a bit in a bitvector"				  ]
-[ "[set]",		  "PROC:      ",  "[set](BAT[any::1,lng], int) : void",			  "not available"					  ]
-[ "test_bitvector",	  "PROC:      ",  "test_bitvector() : void",				  "not available"					  ]
-
 Module: "color"
 
 [ 12 ]
@@ -200,69 +173,6 @@ Module: "color"
 [ "value",	  "COMMAND:   ",  "value(color) : flt",		  "Extracts value component from a color atom"		  ]
 [ "ycc",	  "COMMAND:   ",  "ycc(int, int, int) : color",	  "Converts an YCC triplets to a color atom"		  ]
 
-Module: "ddbench"
-
-[ 55 ]
-[ 55 ]
-#---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
-# function		| type		| signature										| help																																													  #
-#---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
-[ "CTderive",		  "PROC:      ",  "CTderive(BAT[oid,any], BAT[oid,any]) : grp",						  "not available"																																											  ]
-[ "CTgroup",		  "PROC:      ",  "CTgroup(BAT[oid,any], BAT[oid,any]) : grp",						  "not available"																																											  ]
-[ "CTorderby",		  "PROC:      ",  "CTorderby(BAT[oid,any], BAT[oid,any]) : BAT[oid,oid]",				  "not available"																																											  ]
-[ "CTorderby_rev",	  "PROC:      ",  "CTorderby_rev(BAT[oid,any], BAT[oid,any]) : BAT[oid,oid]",				  "not available"																																											  ]
-[ "CTsubgroup",		  "PROC:      ",  "CTsubgroup(BAT[oid,oid], BAT[oid,any], BAT[oid,any]) : BAT[oid,oid]",		  "not available"																																											  ]
-[ "enum_group",		  "COMMAND:   ",  "enum_group(BAT[void,any], BAT[void,any]) : BAT[void,any]",				  "optimized group: use a byte-array[card(ct)*card(b)] instead of a hash\n\t           table and directly create enumerated group oid-s"																												  ]
-[ "enum_join",		  "COMMAND:   ",  "enum_join(BAT[any::1,void], BAT[any,any::2]) : BAT[any::1,any::2]",			  "positional join if the b2 head type is an enumerated oid"																																						  ]
-[ "enum_semijoin",	  "COMMAND:   ",  "enum_semijoin(BAT[void,any::1], BAT[any,any]) : BAT[oid,any::1]",			  "positional semijoin if the b2 head type is an enumerated oid"																																					  ]
-[ "enum_view",		  "COMMAND:   ",  "enum_view(BAT[void,any]) : BAT[oid,int]",						  "produces a histogram that is an adaptation of the enum-lookup table\n  of the tail of b. Its head column differs: it contains oids; namely \n  the first oid of 'b' where the original lookup head value occured\n  in the tail of 'b'. In other words :-), this produces the lookup\n  table needed to create an 'enumeration view' that represents CTgroup(b)."	  ]
-[ "extend",		  "PROC:      ",  "extend(grp) : BAT[any,int]",								  "not available"																																											  ]
-[ "fclose",		  "PROC:      ",  "fclose(Stream) : void",								  "not available"																																											  ]
-[ "fflush",		  "PROC:      ",  "fflush(Stream) : void",								  "not available"																																											  ]
-[ "fopen",		  "PROC:      ",  "fopen(str, str) : Stream",								  "not available"																																											  ]
-[ "fputs",		  "PROC:      ",  "fputs(str, Stream) : void",								  "not available"																																											  ]
-[ "group",		  "PROC:      ",  "group(BAT[oid,any]) : BAT[oid,oid]",							  "not available"																																											  ]
-[ "group",		  "PROC:      ",  "group(BAT[oid,any], BAT[oid,any]) : BAT[oid,any]",					  "not available"																																											  ]
-[ "group",		  "PROC:      ",  "group(BAT[void,any]) : BAT[oid,oid]",						  "not available"																																											  ]
-[ "group",		  "PROC:      ",  "group(BAT[void,any], BAT[void,any]) : BAT[oid,any]",					  "not available"																																											  ]
-[ "histogram",		  "PROC:      ",  "histogram(grp) : BAT[any,int]",							  "not available"																																											  ]
-[ "kintersect",		  "COMMAND:   ",  "kintersect(BAT[oid,any::1], BAT[void,bit32]) : BAT[oid,any::1]",			  "do b.semijoin(sel.tobat); b must be dense and sel must correspond to it.\n"																																				  ]
-[ "map",		  "PROC:      ",  "map(grp) : BAT[oid,oid]",								  "not available"																																											  ]
-[ "mjoin",		  "PROC:      ",  "mjoin(BAT[any::1,any::3], BAT[any::3,any::2]) : BAT[any::1,any::2]",			  "not available"																																											  ]
-[ "mjoin",		  "PROC:      ",  "mjoin(BAT[any::1,any], BAT[void,any::2]) : BAT[any::1,any::2]",			  "not available"																																											  ]
-[ "mjoin",		  "PROC:      ",  "mjoin(BAT[any::1,void], BAT[any,any::2]) : BAT[any::1,any::2]",			  "not available"																																											  ]
-[ "not",		  "PROC:      ",  "not(BAT[void,bit32]) : BAT[void,bit32]",						  "not available"																																											  ]
-[ "orderby_table",	  "PROC:      ",  "orderby_table(str, str, ..BAT[any::1,any]..) : void",				  "not available"																																											  ]
-[ "print",		  "PROC:      ",  "print(str, BAT[any::1,any], ..BAT[any::1,any]..) : void",				  "not available"																																											  ]
-[ "refine",		  "COMMAND:   ",  "refine(BAT[oid,void], BAT[oid,any::1], any::1) : BAT[oid,void]",			  "like val_oidsubsel(sel,b,v), but *OVERWRITES* sel with result."																																					  ]
-[ "refine",		  "COMMAND:   ",  "refine(BAT[oid,void], BAT[oid,any::1], any::1, any::1) : BAT[oid,void]",		  "like rng_oidsubsel(sel,b,lo,hi), but *OVERWRITES* sel with result."																																					  ]
-[ "refine",		  "COMMAND:   ",  "refine(BAT[void,bit32], BAT[oid,any::1], any::1) : BAT[void,bit32]",			  "like val_bitsubsel(sel,b,v), but *OVERWRITES* sel with result."																																					  ]
-[ "refine",		  "COMMAND:   ",  "refine(BAT[void,bit32], BAT[oid,any::1], any::1, any::1) : BAT[void,bit32]",		  "like rng_bitsubsel(sel,b,lo,hi), but *OVERWRITES* sel with result."																																					  ]
-[ "rng_bitselect",	  "COMMAND:   ",  "rng_bitselect(BAT[oid,any::1], any::1, any::1) : BAT[void,bit32]",			  "do a range-scan rangeselect, but output the result as a bitmask, partitioned\n  in 32-bits integers. "																																  ]
-[ "rng_oidselect",	  "COMMAND:   ",  "rng_oidselect(BAT[oid,any::1], any::1, any::1) : BAT[void,oid]",			  "uselect, optimized for enumeration types"																																								  ]
-[ "rngs_bitselect",	  "COMMAND:   ",  "rngs_bitselect(BAT[oid,any::1], any::1, any::1, ..any::1..) : BAT[int,BAT]",		  "computes multiple bitmasks for each equi-select 'v' on 'sel'"																																					  ]
-[ "rngs_oidselect",	  "COMMAND:   ",  "rngs_oidselect(BAT[oid,any::1], any::1, any::1, ..any::1..) : BAT[int,BAT]",		  "uselect, optimized for enum types, on multiple range-select predicates"																																				  ]
-[ "semijoin",		  "PROC:      ",  "semijoin(BAT[void,any::1], BAT[any,any]) : BAT[oid,any::1]",				  "not available"																																											  ]
-[ "semijoin",		  "PROC:      ",  "semijoin(BAT[void,bit32], BAT[void,bit32]) : BAT[void,bit32]",			  "not available"																																											  ]
-[ "stats",		  "COMMAND:   ",  "stats(BAT[void,bit32]) : BAT[str,lng]",						  "produce info on this bit-selection"																																									  ]
-[ "subhisto",		  "COMMAND:   ",  "subhisto(BAT[oid,any::1], BAT[oid,any]) : BAT[any,int]",				  "computes a subset-histogram on b, receiving the subset as a selection BAT"																																				  ]
-[ "subhisto",		  "COMMAND:   ",  "subhisto(BAT[oid,any::1], BAT[void,bit32]) : BAT[any,int]",				  "computes a subset-histogram on b, receiving the subset as a bitmask"																																					  ]
-[ "subhistos",		  "COMMAND:   ",  "subhistos(BAT[oid,any::1], ..BAT[void,bit32]..) : BAT[int,BAT]",			  "computes multiple subset-histograms on b, receiving multiple bitmasks"																																				  ]
-[ "subselect",		  "COMMAND:   ",  "subselect(BAT[oid,void], BAT[oid,any::1], any::1) : BAT[oid,void]",			  "uselect, on b.semijoin(sel), optimized for enum types"																																						  ]
-[ "subselect",		  "COMMAND:   ",  "subselect(BAT[oid,void], BAT[oid,any::1], any::1, any::1) : BAT[oid,void]",		  "uselect, on b.semijoin(sel), optimized for enum types"																																						  ]
-[ "subselect",		  "COMMAND:   ",  "subselect(BAT[void,bit32], BAT[oid,any::1], any::1) : BAT[void,bit32]",		  "do a bitselect on the subset indicated by the first BAT param"																																					  ]
-[ "subselect",		  "COMMAND:   ",  "subselect(BAT[void,bit32], BAT[oid,any::1], any::1, any::1) : BAT[void,bit32]",	  "do a bitselect on the subset indicated by the first BAT param"																																					  ]
-[ "table",		  "PROC:      ",  "table(str, BAT[any::1,any], ..BAT[any::1,any]..) : void",				  "not available"																																											  ]
-[ "test_ddbench",	  "PROC:      ",  "test_ddbench() : void",								  "not available"																																											  ]
-[ "tobat",		  "COMMAND:   ",  "tobat(BAT[void,bit32]) : BAT[oid,void]",						  "convert a bat[void,bit32] bitmap selection into a BAT of oids"																																					  ]
-[ "val_bitselect",	  "COMMAND:   ",  "val_bitselect(BAT[oid,any::1], any::1) : BAT[void,bit32]",				  "do a range-scan equiselect, but output the result as a bitmask, partitioned\n  in 32-bits integers. "																																  ]
-[ "val_oidselect",	  "COMMAND:   ",  "val_oidselect(BAT[oid,any::1], any::1) : BAT[void,oid]",				  "uselect, optimized for enumeration types"																																								  ]
-[ "vals_bitselect",	  "COMMAND:   ",  "vals_bitselect(BAT[oid,any::1], any::1, ..any::1..) : BAT[int,BAT]",			  "computes multiple bitmasks for each equi-select 'v' on 'sel'"																																					  ]
-[ "vals_oidselect",	  "COMMAND:   ",  "vals_oidselect(BAT[oid,any::1], any::1, ..any::1..) : BAT[int,BAT]",			  "uselect, optimized for enum types, on multiple equi-select predicates"																																				  ]
-[ "{count}",		  "PROC:      ",  "{count}(BAT[any::1,any]) : BAT[any::1,int]",						  "not available"																																											  ]
-[ "{count}",		  "PROC:      ",  "{count}(BAT[oid,bit], BAT[oid,oid], BAT[oid,int]) : BAT[oid,int]",			  "not available"																																											  ]
-[ "{count}",		  "PROC:      ",  "{count}(BAT[void,bit], BAT[void,oid], BAT[oid,int]) : BAT[oid,int]",			  "not available"																																											  ]
-
 Module: "image"
 
 [ 0 ]
@@ -271,30 +181,6 @@ Module: "image"
 # function		type		signature		help			  # name
 # str		str	str		str	  # type
 #-------------------------------------------------#
-
-Module: "iterator"
-
-[ 16 ]
-[ 16 ]
-#-----------------------------------------------------------------------------------------------------------------------------------------------------------------#
-# function		| type		| signature						| help								  #
-#-----------------------------------------------------------------------------------------------------------------------------------------------------------------#
-[ "aggr",		  "COMMAND:   ",  "aggr(iter, str, BAT[oid,any::1]) : BAT[any,any::1]",	  "groupby-aggregate(attr), aggr in {max,min,sum,avg}"		  ]
-[ "chunk",		  "COMMAND:   ",  "chunk(iter) : BAT[any,any]",				  "get the next chunk"						  ]
-[ "chunksize",		  "COMMAND:   ",  "chunksize() : int",					  "return the iterator chunksize (default=1)"			  ]
-[ "chunksize",		  "COMMAND:   ",  "chunksize(int) : void",				  "set the iterator chunksize"					  ]
-[ "collect",		  "COMMAND:   ",  "collect(iter) : BAT[any,any]",			  "recursively execute an iterator; collect results in a bat"	  ]
-[ "count",		  "COMMAND:   ",  "count(iter) : int",					  "recursively execute an iterator; just count the elements"	  ]
-[ "histo",		  "COMMAND:   ",  "histo(iter) : BAT[any,int]",				  "groupby-count on tail"					  ]
-[ "join",		  "COMMAND:   ",  "join(iter, BAT[any,any]) : iter",			  "hash-join iterator"						  ]
-[ "mark",		  "COMMAND:   ",  "mark(iter, oid) : iter",				  "mark tail buns of the input iterator"			  ]
-[ "mirror",		  "COMMAND:   ",  "mirror(iter) : iter",				  "mirror buns (both head) in the input iterator"		  ]
-[ "next",		  "COMMAND:   ",  "next(iter) : bit",					  "false: no more chunks / true: iter contains next chunk"	  ]
-[ "reverse",		  "COMMAND:   ",  "reverse(iter) : iter",				  "reverse the buns in the input iterator"			  ]
-[ "scan",		  "COMMAND:   ",  "scan(BAT[any,any]) : iter",				  "sequential-scan on bat"					  ]
-[ "select",		  "COMMAND:   ",  "select(iter, bit, str, any) : iter",			  "select on tail (fcn in {eq,=,!=,<,>,<=,>=,..})"		  ]
-[ "select",		  "COMMAND:   ",  "select(iter, bit, str, any, any) : iter",		  "select on tail (fcn in {rng,..})"				  ]
-[ "test_iterator",	  "PROC:      ",  "test_iterator() : void",				  "not available"						  ]
 
 Module: "malalgebra"
 
@@ -344,42 +230,6 @@ Module: "mel"
 #---------------------------------------------------------------------------------#
 [ "mel_test",	  "PROC:      ",  "mel_test() : void",	  "not available"	  ]
 [ "test_mel",	  "PROC:      ",  "test_mel() : void",	  "not available"	  ]
-
-Module: "oo7"
-
-[ 5 ]
-[ 5 ]
-#-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
-# function	| type		| signature									| help																																		  #
-#-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
-[ "closure",	  "COMMAND:   ",  "closure(BAT[any::1,any::1]) : BAT[any::1,any::1]",				  "Computes the transitive closure of all points in the 'edges'\ngraph. Breadth-first traversal is used (repeated forward joins)."																		  ]
-[ "oo7create",	  "COMMAND:   ",  "oo7create(str) : void",							  "Create the OO7 database schema and fill it. Run with -help for info."																									  ]
-[ "oo7delete",	  "COMMAND:   ",  "oo7delete() : void",								  "Delete all OO7 tables."																															  ]
-[ "subgraph",	  "COMMAND:   ",  "subgraph(BAT[any::2,any::1], BAT[any::1,any::1]) : BAT[any::1,any::1]",	  "Uses the tail values from 'in' as starting points, and\ndetermines by recursive traversal which subgraph of 'edges'\ncan be reached from there. This subgraph is returned.\n\nTraversal order is currently breadth-first.\n\nWorks only on ANY::1 e {int,oid,flt,bat,ptr}. "	  ]
-[ "traverse",	  "COMMAND:   ",  "traverse(BAT[any::2,any::1], BAT[any::1,any::1]) : BAT[any::1,any::1]",	  "From the starting points in 'in' (tail), compute all\nreachable points by (dag!) 'edges'."																							  ]
-
-Module: "qt"
-
-[ 15 ]
-[ 15 ]
-#---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
-# function			| type		| signature																					| help																																																															  #
-#---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
-[ "[allocate]",			  "PROC:      ",  "[allocate](int, bit) : BAT[void,lng]",																	  "not available"																																																													  ]
-[ "[clr]",			  "PROC:      ",  "[clr](BAT[any::1,lng], int) : void",																		  "not available"																																																													  ]
-[ "[isclr]",			  "PROC:      ",  "[isclr](BAT[any::1,lng], int) : bit",																	  "not available"																																																													  ]
-[ "[isset]",			  "PROC:      ",  "[isset](BAT[any::1,lng], int) : bit",																	  "not available"																																																													  ]
-[ "[qt_cross_pre_select]",	  "COMMAND:   ",  "[qt_cross_pre_select](int, int, wrd) : BAT[oid,oid]",															  "Select images that _may_ satisfy the cross's color transitions"																																																							  ]
-[ "[qt_debug]",			  "COMMAND:   ",  "[qt_debug](int) : void",																			  "Set debuging on/off"																																																													  ]
-[ "[qt_delcross]",		  "COMMAND:   ",  "[qt_delcross](int) : void",																			  "Delete a cross."																																																													  ]
-[ "[qt_ir_cluster]",		  "COMMAND:   ",  "[qt_ir_cluster](BAT[void,oid], BAT[void,int], BAT[void,int], BAT[void,uchr], BAT[void,uchr], BAT[void,uchr], int) : void",							  "Cluster all images in a set of bit vectors with 3 color transitions in\n  the Itten-Runge color space.  The clusters themselves are named \n  IR_[N|W]_C0_C1_C2"																																											  ]
-[ "[qt_makecross]",		  "COMMAND:   ",  "[qt_makecross](BAT[int,uchr], BAT[int,uchr], BAT[int,uchr], int) : int",													  "Construct a cross from a spot quad tree.  When IR space is set, the \n  cross is stored in IR color space."																																																		  ]
-[ "[qt_match]",			  "COMMAND:   ",  "[qt_match](int, oid, BAT[void,oid], BAT[void,int], BAT[void,int], BAT[void,uchr], BAT[void,uchr], BAT[void,uchr], BAT[oid,oid], BAT[oid,int], BAT[oid,int], int, flt) : void", "Look for a matching color cross, which is described by the cross \n  referenced by crossid, in the ID, H, S, and V table.  The requested quad\n  tree is presented in the tables qt_ioffs and qt_inum (offset and number\n  of features, respectively) at entry image_oid.  Fill in the r_* BATS\n  with matching images, number of colors and the IDs of the matched\n  features, respectively if more than or equal to the number of different\n  colors from the spot time the fraction match in the image."	  ]
-[ "[qt_pre_select]",		  "COMMAND:   ",  "[qt_pre_select](int, int, wrd) : BAT[oid,oid]",																  "Select images that _may_ satisfy the cross's color transitions"																																																							  ]
-[ "[qt_stats]",			  "COMMAND:   ",  "[qt_stats](int, str) : void",																		  "Control statistics output"																																																												  ]
-[ "[set]",			  "PROC:      ",  "[set](BAT[any::1,lng], int) : void",																		  "not available"																																																													  ]
-[ "test_bitvector",		  "PROC:      ",  "test_bitvector() : void",																			  "not available"																																																													  ]
-[ "test_uchr",			  "PROC:      ",  "test_uchr() : void",																				  "not available"																																																													  ]
 
 Module: "salgebra"
 

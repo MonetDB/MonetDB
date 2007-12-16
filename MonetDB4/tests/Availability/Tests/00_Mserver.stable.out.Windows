@@ -1,13 +1,17 @@
 stdout of test '00_Mserver` in directory 'tests/Availability` itself:
 
 
-# 18:28:04 >  
-# 18:28:04 >  Mtimeout -timeout 60 Mserver "--config=/var/tmp/_4.3.13-FixedPetersDDsync_PREFIX_MONET_GNU_32_d_--enable-warning_/etc/monet.conf" --debug=10 --set "monet_mod_path=/var/tmp/_4.3.13-FixedPetersDDsync_PREFIX_MONET_GNU_32_d_--enable-warning_/lib/MonetDB" --set "gdk_dbfarm=/var/tmp/_4.3.13-FixedPetersDDsync_PREFIX_MONET_GNU_32_d_--enable-warning_/var/MonetDB/dbfarm" --set "sql_logdir=/var/tmp/_4.3.13-FixedPetersDDsync_PREFIX_MONET_GNU_32_d_--enable-warning_/var/MonetDB/log" --set mapi_port=53708 --set sql_port=52024 --set monet_prompt= --trace --dbname=mTests_tests_Availability 00_Mserver.prelude < 00_Mserver.milS
-# 18:28:04 >  
+# 06:00:12 >  
+# 06:00:12 >   Mserver "--config=C:\cygwin\var\tmp\monet.Int.32.32.d.8719\MonetDB4\NT\conf\MonetDB.conf" --debug=10 --set "monet_mod_path=C:\cygwin\var\tmp\monet.Int.32.32.d.8719\MonetDB4\NT\src\modules\plain\.libs;C:\cygwin\var\tmp\monet.Int.32.32.d.8719\MonetDB4\NT\src\modules\plain;C:\cygwin\var\tmp\monet.Int.32.32.d.8719\MonetDB4\NT\src\modules\contrib\.libs;C:\cygwin\var\tmp\monet.Int.32.32.d.8719\MonetDB4\NT\src\modules\contrib;C:\cygwin\var\tmp\monet.Int.32.32.d.8719\MonetDB4\NT\src\modules\calibrator\.libs;C:\cygwin\var\tmp\monet.Int.32.32.d.8719\MonetDB4\NT\src\modules\calibrator;C:\cygwin\var\tmp\monet.Int.32.32.d.8719\MonetDB4\NT\src\mapi\.libs;C:\cygwin\var\tmp\monet.Int.32.32.d.8719\MonetDB4\NT\src\mapi;C:\cygwin\var\tmp\monet.Int.32.32.d.8719\MonetDB4\NT\src\modules\mnetcdf\.libs;C:\cygwin\var\tmp\monet.Int.32.32.d.8719\MonetDB4\NT\src\modules\mnetcdf;C:\cygwin\var\tmp\monet.Int.32.32.d.8719\MonetDB4\scripts\tools" --set "gdk_dbfarm=C:\cygwin\var\tmp\monet.Int.32.32.d.8719\MonetDB4\NT\dbfarm" --set "sql_logdir=C:\cygwin\var\tmp\monet.Int.32.32.d.8719\MonetDB4\NT\sql_logs" --set "xquery_logdir=C:\cygwin\var\tmp\monet.Int.32.32.d.8719\MonetDB4\NT\xquery_logs" --set mapi_open=true --set xrpc_open=true --set mapi_port=30048 --set xrpc_port=41800 --set monet_prompt= --trace --dbname=mTests_tests_Availability 00_Mserver.prelude 
+# 06:00:12 >  
 
-# Monet Database Server V4.3.13
-# Copyright (c) 1993-2004, CWI. All rights reserved.
-# compiled for i686-pc-linux-gnu/32bit; dynamically linked.
+
+
+# MonetDB Server v4.21.0
+# based on GDK   v1.21.0
+# Copyright (c) 1993-2007, CWI. All rights reserved.
+# Compiled for i686-pc-win32/32bit with 32bit OIDs; dynamically linked.
+# Visit http://monetdb.cwi.nl/ for further information.
 #---------------------------------#
 # BAT:		  tmp_30	  #
 # (str)		  (str)		  #
@@ -19,22 +23,20 @@ stdout of test '00_Mserver` in directory 'tests/Availability` itself:
 [ "arith",	  "static"	  ]
 [ "array",	  "contrib"	  ]
 [ "ascii_io",	  "plain"	  ]
+[ "backup",	  "UNKNOWN"	  ]
 [ "bat",	  "static"	  ]
 [ "bat_arith",	  "plain"	  ]
 [ "bat_cast",	  "contrib"	  ]
 [ "bat_mmath",	  "contrib"	  ]
 [ "bitset",	  "contrib"	  ]
-[ "bitvector",	  "contrib"	  ]
 [ "blob",	  "plain"	  ]
 [ "builtin",	  "static"	  ]
 [ "color",	  "contrib"	  ]
 [ "constant",	  "static"	  ]
 [ "counters",	  "plain"	  ]
-[ "ddbench",	  "contrib"	  ]
 [ "decimal",	  "plain"	  ]
 [ "enum",	  "plain"	  ]
 [ "image",	  "contrib"	  ]
-[ "iterator",	  "contrib"	  ]
 [ "lock",	  "plain"	  ]
 [ "logger",	  "plain"	  ]
 [ "malalgebra",	  "contrib"	  ]
@@ -43,24 +45,20 @@ stdout of test '00_Mserver` in directory 'tests/Availability` itself:
 [ "mkey",	  "plain"	  ]
 [ "mmath",	  "plain"	  ]
 [ "monettime",	  "plain"	  ]
-[ "oo7",	  "contrib"	  ]
 [ "pcl",	  "plain"	  ]
 [ "pcre",	  "plain"	  ]
 [ "pqueue",	  "plain"	  ]
 [ "profiler",	  "plain"	  ]
-[ "qt",		  "contrib"	  ]
-[ "radix",	  "plain"	  ]
+[ "restore",	  "UNKNOWN"	  ]
 [ "salgebra",	  "contrib"	  ]
 [ "stats",	  "plain"	  ]
 [ "str",	  "static"	  ]
 [ "streams",	  "plain"	  ]
 [ "sys",	  "static"	  ]
-[ "tcpip",	  "plain"	  ]
 [ "trans",	  "static"	  ]
 [ "txtsim",	  "contrib"	  ]
 [ "uchr",	  "contrib"	  ]
 [ "unix",	  "plain"	  ]
-[ "upgrade",	  "plain"	  ]
 [ "url",	  "plain"	  ]
 [ "vector",	  "contrib"	  ]
 [ "wisc",	  "contrib"	  ]
@@ -71,13 +69,13 @@ ls();
 #---------------------------------------------------------------------------------------------------------#
 # name		| htype	| ttype	| count	| heat	| dirty		| status| kind	| refcnt| lrefcnt	  #
 #---------------------------------------------------------------------------------------------------------#
-[ "MODULES",	  "str",  "str",  53,	  0,	  "clean",	  "load", "pers", 0,	  2		  ]
+[ "MODULES",	  "str",  "str",  47,	  0,	  "clean",	  "load", "pers", 0,	  2		  ]
 
 dir();
 #-----------------------------------------------------------------------------------------------------------------#
 # name			| htype	| ttype	| count	| heat	| dirty		| status| kind	| refcnt| lrefcnt	  #
 #-----------------------------------------------------------------------------------------------------------------#
-[ "MODULES",		  "str",  "str",  53,	  0,	  "clean",	  "load", "pers", 0,	  2		  ]
+[ "MODULES",		  "str",  "str",  47,	  0,	  "clean",	  "load", "pers", 0,	  2		  ]
 [ "adm_atomtbl",	  "str",  "int",  15,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
 [ "adm_fcntbl",		  "str",  "oid",  1027,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
 [ "monet_environment",	  "str",  "str",  44,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
@@ -127,19 +125,17 @@ table(kdiff(view_modules().reverse().kunique(),monet_mod_nme.reverse()).sort().r
 [ "alarm"		  ]
 [ "array"		  ]
 [ "ascii_io"		  ]
+[ "backup"		  ]
 [ "bat_arith"		  ]
 [ "bat_cast"		  ]
 [ "bat_mmath"		  ]
 [ "bitset"		  ]
-[ "bitvector"		  ]
 [ "blob"		  ]
 [ "color"		  ]
 [ "counters"		  ]
-[ "ddbench"		  ]
 [ "decimal"		  ]
 [ "enum"		  ]
 [ "image"		  ]
-[ "iterator"		  ]
 [ "lock"		  ]
 [ "logger"		  ]
 [ "malalgebra"		  ]
@@ -148,21 +144,17 @@ table(kdiff(view_modules().reverse().kunique(),monet_mod_nme.reverse()).sort().r
 [ "mkey"		  ]
 [ "mmath"		  ]
 [ "monettime"		  ]
-[ "oo7"			  ]
 [ "pcl"			  ]
 [ "pcre"		  ]
 [ "pqueue"	  ]
 [ "profiler"		  ]
-[ "qt"			  ]
-[ "radix"		  ]
+[ "restore"		  ]
 [ "salgebra"		  ]
 [ "stats"		  ]
 [ "streams"		  ]
-[ "tcpip"		  ]
 [ "txtsim"		  ]
 [ "uchr"		  ]
 [ "unix"		  ]
-[ "upgrade"	  ]
 [ "url"			  ]
 [ "vector"		  ]
 [ "wisc"		  ]
