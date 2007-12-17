@@ -2040,7 +2040,14 @@ la_xml (PFarray_t *xml, PFla_op_t *n)
                             PFatt_str (n->sem.merge_adjacent.pos_res),
                             PFatt_str (n->sem.merge_adjacent.item_res));
             break;
-        
+
+        case la_error:
+            PFarray_printf (xml,
+                            "    <content>\n"
+                            "      <column name=\"%s\" new=\"false\"/>\n"
+                            "    </content>\n",
+                            PFatt_str (n->sem.iter_pos_item.item));
+ 
         case la_cond_err:
             PFarray_printf (xml,
                             "    <content>\n"

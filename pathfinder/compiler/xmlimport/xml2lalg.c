@@ -1845,10 +1845,14 @@ void createAndStoreAlgOpNode(XML2LALGContext* ctx, xmlNodePtr nodePtr)
 /******************************************************************************/
 /******************************************************************************/
 
-    case la_error:
-        /** FIXME**/
-        assert(!"not implemented, sorry");
+    case la_error                :
+        {
+            PFoops (OOPS_FATAL, "Importing of error operator is not implemented yet");
+        }
         break;
+
+/******************************************************************************/
+/******************************************************************************/
 
     case la_cond_err             : 
 

@@ -110,6 +110,7 @@ la_op_leaf (PFla_op_kind_t kind)
     return ret;
 }
 
+
 /**
  * Create an algebra operator node with one child.
  * Similar to #la_op_leaf(), but additionally wires one child.
@@ -125,6 +126,7 @@ la_op_wire1 (PFla_op_kind_t kind, const PFla_op_t *n)
 
     return ret;
 }
+
 
 /**
  * Create an algebra operator node with two children.
@@ -399,6 +401,7 @@ PFla_empty_tbl_ (PFalg_schema_t schema)
     return ret;
 }
 
+
 /**
  * Constructor for an empty table.  Use this constructor (in
  * preference over a literal table with no tuples) to trigger
@@ -430,10 +433,6 @@ PFla_empty_tbl (PFalg_attlist_t attlist)
 }
 
 
-
-
-
-
 /**
  * Construct an algebra node representing a referenced table,
  * given a (external) name, a (internal) schema, a list of the
@@ -449,24 +448,17 @@ PFla_empty_tbl (PFalg_attlist_t attlist)
  *                schema) of key attributes
  */
 PFla_op_t *
-PFla_ref_tbl_ (const char* name,
-               PFalg_schema_t schema, 
-               PFarray_t* tatts,
+PFla_ref_tbl_ (const char* name, PFalg_schema_t schema, PFarray_t* tatts,
                PFarray_t* keys)
 {
     PFla_op_t      *ret;      /* return value we are building */
 
     assert(name);
 
-    /**************************************************************/
     /* instantiate the new algebra operator node */
-    /**************************************************************/
     ret = la_op_leaf (la_ref_tbl);
 
-    /**************************************************************/
     /* set its schema */
-    /**************************************************************/
-
     /* deep copy the schema parameter*/
     ret->schema.items
         = PFmalloc (schema.count * sizeof (*(ret->schema.items)));
@@ -475,11 +467,7 @@ PFla_ref_tbl_ (const char* name,
     }
     ret->schema.count = schema.count;
 
-
-    /**************************************************************/
     /* set its semantical infos */
-    /**************************************************************/
-
     /* deep copy the name of the referenced table*/
     ret->sem.ref_tbl.name = PFstrdup(name);
     
@@ -491,22 +479,13 @@ PFla_ref_tbl_ (const char* name,
             char* copiedValue = PFstrdup(value);
             *(char**) PFarray_add (ret->sem.ref_tbl.tatts) = copiedValue;
     }
-
     
     /* (it's save to) shallow copy the list of key-attribute-names */
     ret->sem.ref_tbl.keys  = PFarray_copy(keys);
 
-
-    /**************************************************************/
     /* return the new algebra operator node */
-    /**************************************************************/
     return ret;
 }
-
-
-
-
-
 
 
 /**
@@ -520,8 +499,7 @@ PFla_ref_tbl_ (const char* name,
  * @parma value Value for the new column.
  */
 PFla_op_t *
-PFla_attach (const PFla_op_t *n,
-             PFalg_att_t res, PFalg_atom_t value)
+PFla_attach (const PFla_op_t *n, PFalg_att_t res, PFalg_atom_t value)
 {
     PFla_op_t   *ret = la_op_wire1 (la_attach, n);
 
@@ -584,6 +562,8 @@ PFla_cross (const PFla_op_t *n1, const PFla_op_t *n2)
 
     return ret;
 }
+
+
 /**
  * Cross product (Cartesian product) between two algebra expressions.
  * Arguments @a n1 and @a n2 may have equally named attributes.
@@ -699,6 +679,7 @@ PFla_eqjoin (const PFla_op_t *n1, const PFla_op_t *n2,
     return ret;
 }
 
+
 /**
  * Equi-join between two operator nodes.
  *
@@ -789,6 +770,7 @@ PFla_eqjoin_clone (const PFla_op_t *n1, const PFla_op_t *n2,
     return ret;
 }
 
+
 /**
  * Semi-join between two operator nodes.
  *
@@ -845,6 +827,7 @@ PFla_semijoin (const PFla_op_t *n1, const PFla_op_t *n2,
 
     return ret;
 }
+
 
 /**
  * Theta-join between two operator nodes.
@@ -910,6 +893,7 @@ PFla_thetajoin (const PFla_op_t *n1, const PFla_op_t *n2,
     return ret;
 }
 
+
 /**
  * Theta-join between two operator nodes.
  * Special internal variant used during thetajoin optimization.
@@ -919,8 +903,7 @@ PFla_thetajoin (const PFla_op_t *n1, const PFla_op_t *n2,
  * of @a data).
  */
 PFla_op_t *
-PFla_thetajoin_opt_internal (const PFla_op_t *n1,
-                             const PFla_op_t *n2,
+PFla_thetajoin_opt_internal (const PFla_op_t *n1, const PFla_op_t *n2,
                              PFarray_t *data)
 {
     PFla_op_t     *ret;
@@ -3455,6 +3438,7 @@ PFla_empty_frag (void)
     return ret;
 }
 
+
 /**
  * Construct for an error message.
  *
@@ -3480,6 +3464,7 @@ PFla_error (const PFla_op_t *n)
 
     return ret;
 }
+
 
 /**
  * Constructor for a conditional error message.

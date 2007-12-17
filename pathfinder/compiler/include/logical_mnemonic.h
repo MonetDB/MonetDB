@@ -200,7 +200,7 @@
 /** constructor for an empty fragment */
 #define empty_frag()      PFla_empty_frag ()
 
-/* conditional error operator */
+/* error operator */
 #define error(a) PFla_error ((a))
 
 /* conditional error operator */
