@@ -567,7 +567,7 @@ def CreateTstWhatXhtml (env, TST, stableWHAT, EXT, SockTime) :
             difftext = difftext + ' (Killed)'
     if COMPBITSOIDSLINK:
         SYSTEM = DISTVER+", "+COMPBITSOIDSLINK+":"
-    else
+    else:
         SYSTEM = DISTVER+":"
 
     html = Element('html', {},
