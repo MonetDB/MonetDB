@@ -489,6 +489,9 @@ address OPTheuristics
 comment "Handle simple replacements";
 
 @h
+#ifndef _OPT_SUPPORT_H
+#define _OPT_SUPPORT_H
+
 #include "mal.h"
 #include "mal_function.h"
 #include "mal_scenario.h"
@@ -1197,4 +1200,6 @@ int isFragmentGroup(InstrPtr p){
 				getFunctionId(p)== setWriteModeRef 
 			) );
 }
+@h
+#endif /* _OPT_SUPPORT_H */
 @}
