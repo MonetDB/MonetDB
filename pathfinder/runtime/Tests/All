@@ -35,7 +35,7 @@ serialization-mclient
 escaped-string
 smack00
 smack01
-pf_docname
+NOT_WIN32?pf_docname
 pf_log
 pf_sqrt
 pf_pow
