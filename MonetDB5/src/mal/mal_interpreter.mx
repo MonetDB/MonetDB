@@ -61,7 +61,6 @@ mal_export int getVolume(MalStkPtr stk, InstrPtr pci, int rd);
 mal_export ptr getArgValue(MalStkPtr stk, InstrPtr pci, int k);
 mal_export ptr getArgReference(MalStkPtr stk, InstrPtr pci, int k);
 
-#endif /*  _MAL_INTERPRET_H*/
 @c
 #include "mal_config.h"
 #include "mal_interpreter.h"
@@ -1706,4 +1705,6 @@ void showVolume(Client cntxt, MalStkPtr stk, InstrPtr pci, int rd){
 	vol= getVolume(stk,pci,rd);
 	displayVolume(cntxt,vol);
 }
+@h
+#endif /*  _MAL_INTERPRET_H*/
 @}
