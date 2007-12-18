@@ -1253,7 +1253,7 @@ void *
 MT_mmap_open(MT_mmap_hdl *hdl, char *path, int mode, off_t off, size_t len, size_t nremaps)
 {
 	void *ret = NULL;
-	int mode0 = GENERIC_READ;
+	int mode0 = FILE_READ_ATTRIBUTES | FILE_READ_DATA;
 	int mode1 = FILE_SHARE_READ;
 	int mode2 = mode & MMAP_ADVISE;
 	int mode3 = PAGE_READONLY;
@@ -1264,7 +1264,7 @@ MT_mmap_open(MT_mmap_hdl *hdl, char *path, int mode, off_t off, size_t len, size
 
 	memset(hdl, 0, sizeof(MT_mmap_hdl));
 	if (mode & MMAP_WRITE) {
-		mode0 |= GENERIC_WRITE;
+		mode0 |= FILE_APPEND_DATA | FILE_WRITE_ATTRIBUTES | FILE_WRITE_DATA;
 		mode1 |= FILE_SHARE_WRITE;
 	}
 	if (mode2 == MMAP_RANDOM || mode2 == MMAP_DONTNEED) {
@@ -1744,7 +1744,13 @@ int
 win_unlink(const char *pathname)
 {
 	int ret = _unlink(pathname);
-
+	if (ret < 0) {
+ 		/* Vista is paranoid: we cannot delete read-only files owned
+		 * by ourselves. Vista somehow also sets these files to read-only.
+		 */
+		(void) SetFileAttributes(path, FILE_ATTRIBUTE_NORMAL);
+		ret = _unlink(pathname);
+	}
 	if (ret < 0) {
 		/* it could be the <expletive deleted> indexing
 		 * service which prevents us from doing what we have a
