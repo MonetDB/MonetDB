@@ -445,6 +445,14 @@ All Rights Reserved.
         <include name="${util-package}/**/*.java" />
         <include name="${xrpc-api-package}/**/*.java" />
       </fileset>
+
+      <fileset dir="${builddir}/src" defaultexcludes="yes">
+        <include name="${jdbc-package}/**/*.java" />
+        <include name="${mcl-package}/**/*.java" />
+        <include name="${client-package}/**/*.java" />
+        <include name="${util-package}/**/*.java" />
+        <include name="${xrpc-api-package}/**/*.java" />
+      </fileset>
     </javadoc>
   </target>
 
