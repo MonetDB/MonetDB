@@ -267,7 +267,7 @@ Module: "txtsim"
 [ "similarity",		  "COMMAND:   ",  "similarity(str, str, dbl) : dbl",											  "Normalized edit distance between two strings"											  ]
 [ "soundex",		  "COMMAND:   ",  "soundex(str) : str",				  "Soundex function for phonetic matching"												  ]
 [ "str2qgrams",		  "PROC:      ",  "str2qgrams(str) : BAT[oid,str]",											  "not available"															  ]
-[ "stringdiff",		  "PROC:      ",  "stringdiff(str, str) : int",			  "not available"															  ]
+[ "stringdiff",		  "COMMAND:   ",  "stringdiff(str, str) : int",												  "calculate the soundexed editdistance"												  ]
 
 Module: "uchr"
 
