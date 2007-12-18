@@ -55,6 +55,10 @@ command soundex(name:str) : str
 address soundex_impl
 comment "Soundex function for phonetic matching";
 
+command stringdiff(s1:str, s2:str) :int 
+address stringdiff_impl
+comment "calculate the soundexed editdistance";
+
 command qgramnormalize(input:str): str 
 address CMDqgramnormalize
 comment "'Normalizes' strings (eg. toUpper and replaces non-alphanumerics with one space";
@@ -90,21 +94,24 @@ comment "QGram self-join on ordered(!) qgram tables and sub-ordered q-gram posit
 #define txtsim_export extern
 #endif
 
-txtsim_export int levenshtein_impl(int *result, str s, str t, int *insdel_cost, int *replace_cost, int *transpose_cost);
-txtsim_export int levenshteinbasic_impl(int *result, str s, str t);
-txtsim_export int levenshteinbasic2_impl(int *result, str s, str t);
-txtsim_export int fstrcmp_impl(dbl *ret, str string1, str string2, dbl *minimum);
-txtsim_export int fstrcmp0_impl(dbl *ret, str string1, str string2);
-txtsim_export int soundex_impl(str *res, str Name);
-txtsim_export int CMDqgramnormalize(str *res, str input);
-txtsim_export int CMDqgramselfjoin(BAT **res, BAT *qgram, BAT *id, BAT *pos, BAT *len, flt *c, int *k);
+txtsim_export str levenshtein_impl(int *result, str *s, str *t, int *insdel_cost, int *replace_cost, int *transpose_cost);
+txtsim_export str levenshteinbasic_impl(int *result, str *s, str *t);
+txtsim_export str levenshteinbasic2_impl(int *result, str *s, str *t);
+txtsim_export str fstrcmp_impl(dbl *ret, str *string1, str *string2, dbl *minimum);
+txtsim_export str fstrcmp0_impl(dbl *ret, str *string1, str *string2);
+txtsim_export str soundex_impl(str *res, str *Name);
+txtsim_export str stringdiff_impl(int *res, str *s1, str*s2);
+txtsim_export str CMDqgramnormalize(str *res, str *input);
+txtsim_export str CMDqgramselfjoin(BAT **res, BAT *qgram, BAT *id, BAT *pos, BAT *len, flt *c, int *k);
 
 #endif /*_TXTSIM_H*/
 
 
 
 @c
+#include "mal_config.h"
 #include "txtsim.h"
+#include "mal_exception.h"
 
 
 #define RETURN_NIL_IF(b,t) \
@@ -114,7 +121,7 @@ txtsim_export int CMDqgramselfjoin(BAT **res, BAT *qgram, BAT *id, BAT *pos, BAT
 	   } else {\
 	      memcpy(res, ATOMnilptr(t), ATOMsize(t));\
  	   }\
-	   return GDK_SUCCEED; \
+	   return MAL_SUCCEED; \
 	}
 
 /* =========================================================================
@@ -169,9 +176,11 @@ levenshtein_PutAt(int *pOrigin, int col, int row, int nCols, int x)
 /******************************
  * Compute Levenshtein distance
  *****************************/
-int
-levenshtein_impl(int *result, str s, str t, int *insdel_cost, int *replace_cost, int *transpose_cost)
+str
+levenshtein_impl(int *result, str *S, str *T, int *insdel_cost, int *replace_cost, int *transpose_cost)
 {
+	char *s = *S;
+	char *t = *T;
 	int *d;			/* pointer to matrix */
 	int n;			/* length of s */
 	int m;			/* length of t */
@@ -191,10 +200,12 @@ levenshtein_impl(int *result, str s, str t, int *insdel_cost, int *replace_cost,
 	n = (int) strlen(s);	/* 64bit: assume strings are less than 2 GB */
 	m = (int) strlen(t);
 	if (n == 0) {
-		return m;
+		*result = m;
+		return MAL_SUCCEED;
 	}
 	if (m == 0) {
-		return n;
+		*result = n;
+		return MAL_SUCCEED;
 	}
 	sz = (n + 1) * (m + 1) * sizeof(int);
 	d = (int *) GDKmalloc(sz);
@@ -250,19 +261,19 @@ levenshtein_impl(int *result, str s, str t, int *insdel_cost, int *replace_cost,
 	/* Step 7 */
 	*result = levenshtein_GetAt(d, n, m, n);
 	GDKfree(d);
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
 }
 
-int
-levenshteinbasic_impl(int *result, str s, str t)
+str
+levenshteinbasic_impl(int *result, str *s, str *t)
 {
 	int insdel = 1, replace = 1, transpose = 2;
 
 	return levenshtein_impl(result, s, t, &insdel, &replace, &transpose);
 }
 
-int
-levenshteinbasic2_impl(int *result, str s, str t)
+str
+levenshteinbasic2_impl(int *result, str *s, str *t)
 {
 	int insdel = 1, replace = 1, transpose = 1;
 
@@ -332,19 +343,32 @@ soundex_code(char *Name, char *Key)
 }
 
 
-int
-soundex_impl(str *res, str Name)
+str
+soundex_impl(str *res, str *Name)
 {
-	RETURN_NIL_IF(strNil(Name), TYPE_str);
+	RETURN_NIL_IF(strNil(*Name), TYPE_str);
 
 	*res = (str) GDKmalloc(sizeof(char) * (SoundexLen + 1));
 
 	/* calculate Key for Name */
-	soundex_code(Name, *res);
+	soundex_code(*Name, *res);
 
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
 }
 
+str
+stringdiff_impl(int *res, str *s1, str *s2)
+{
+	str r = MAL_SUCCEED;
+	char *S1 = NULL, *S2 = NULL;
+
+	soundex_impl(&S1, s1);
+	soundex_impl(&S2, s2);
+	r = levenshteinbasic_impl(res, &S1, &S2);
+	GDKfree(S1);
+	GDKfree(S2);
+	return r;
+}
 
 /******************************
  * QGRAMNORMALIZE
@@ -357,9 +381,10 @@ soundex_impl(str *res, str Name)
  * qgramnormalize(" '' t ' est").print(); --> [ "T EST" ]
  *
  *****************************/
-int
-CMDqgramnormalize(str *res, str input)
+str
+CMDqgramnormalize(str *res, str *Input)
 {
+	char *input = *Input;
 	int i, j = 0;
 	char c, last = ' ';
 
@@ -381,8 +406,7 @@ CMDqgramnormalize(str *res, str input)
 	while (j > 0 && (*res)[--j] == ' ')
 		(*res)[j] = 0;
 
-	return GDK_SUCCEED;
-
+	return MAL_SUCCEED;
 }
 
 /* =========================================================================
@@ -855,9 +879,11 @@ compareseq(int xoff, int xlim, int yoff, int ylim, int minimal)
 	strings are identical, and a number in between if they are
 	similar.  */
 
-int
-fstrcmp_impl(dbl *ret, str string1, str string2, dbl *minimum)
+str
+fstrcmp_impl(dbl *ret, str *S1, str *S2, dbl *minimum)
 {
+	char *string1 = *S1;
+	char *string2 = *S2;
 	int i;
 
 	size_t fdiag_len;
@@ -873,11 +899,11 @@ fstrcmp_impl(dbl *ret, str string1, str string2, dbl *minimum)
 	/* short-circuit obvious comparisons */
 	if (string[0].data_length == 0 && string[1].data_length == 0) {
 		*ret = 1.0;
-		return GDK_SUCCEED;
+		return MAL_SUCCEED;
 	}
 	if (string[0].data_length == 0 || string[1].data_length == 0) {
 		*ret = 0.0;
-		return GDK_SUCCEED;
+		return MAL_SUCCEED;
 	}
 
 	/* Set TOO_EXPENSIVE to be approximate square root of input size,
@@ -914,11 +940,11 @@ fstrcmp_impl(dbl *ret, str string1, str string2, dbl *minimum)
 	*ret = ((double)
 		(string[0].data_length + string[1].data_length - string[1].edit_count - string[0].edit_count)
 		/ (string[0].data_length + string[1].data_length));
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
 }
 
-int
-fstrcmp0_impl(dbl *ret, str string1, str string2)
+str
+fstrcmp0_impl(dbl *ret, str *string1, str *string2)
 {
 	double min = 0.0;
 
@@ -928,19 +954,17 @@ fstrcmp0_impl(dbl *ret, str string1, str string2)
 
 /* ============ Q-GRAM SELF JOIN ============== */
 
-int
+str
 CMDqgramselfjoin(BAT **res, BAT *qgram, BAT *id, BAT *pos, BAT *len, flt *c, int *k)
 {
 	size_t n = BATcount(qgram);
 	unsigned int i, j;
 	BAT *bn;
 
-	oid *qbuf;
-	int *ibuf, *pbuf, *lbuf;
-	qbuf = (oid *) Tloc(qgram,  BUNfirst(qgram));
-	ibuf = (int *) Tloc(id, BUNfirst(id));
-	pbuf = (int *) Tloc(pos, BUNfirst(pos));
-	lbuf = (int *) Tloc(len, BUNfirst(len));
+	oid *qbuf = (oid *) Tloc(qgram, BUNfirst(qgram));
+	int *ibuf = (int *) Tloc(id, BUNfirst(id));
+	int *pbuf = (int *) Tloc(pos, BUNfirst(pos));
+	int *lbuf = (int *) Tloc(len, BUNfirst(len));
 
 	ERRORcheck((qgram->ttype != TYPE_oid), "CMDqgramselfjoin: tail of BAT qgram must be oid.\n");
 	ERRORcheck((id->ttype != TYPE_int), "CMDqgramselfjoin: tail of BAT id must be int.\n");
@@ -955,10 +979,10 @@ CMDqgramselfjoin(BAT **res, BAT *qgram, BAT *id, BAT *pos, BAT *len, flt *c, int
 	ERRORcheck((ALIGNsynced(qgram, len) == 0), "CMDqgramselfjoin: qgram and len are not synced");
 
 	ERRORcheck((Tsize(qgram) != ATOMsize(qgram->ttype)), "CMDqgramselfjoin: qgram is not a true void bat");
-	ERRORcheck((Tsize(qgram) != ATOMsize(id->ttype)), "CMDqgramselfjoin: id is not a true void bat");
+	ERRORcheck((Tsize(id) != ATOMsize(id->ttype)), "CMDqgramselfjoin: id is not a true void bat");
 
 	ERRORcheck((Tsize(pos) != ATOMsize(pos->ttype)), "CMDqgramselfjoin: pos is not a true void bat");
-	ERRORcheck((Tsize(qgram) != ATOMsize(len->ttype)), "CMDqgramselfjoin: len is not a true void bat");
+	ERRORcheck((Tsize(len) != ATOMsize(len->ttype)), "CMDqgramselfjoin: len is not a true void bat");
 
 	*res = bn = BATnew(TYPE_int, TYPE_int, n);
 
@@ -972,29 +996,15 @@ CMDqgramselfjoin(BAT **res, BAT *qgram, BAT *id, BAT *pos, BAT *len, flt *c, int
 
 	bn->hsorted = bn->tsorted = 0;
 
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
       bunins_failed:
-	GDKerror("CMDqgramselfjoin: could not realloc\n");
 	BBPreclaim(bn);
-	return GDK_FAIL;
+	throw(MAL, "txtsim.qgramselfjoin", "could not realloc\n");
 }
 
 @mal
 
 #mil implementation
-
-#proc stringdiff( str s1, str s1 ) : int {
-#	var sd1 := soundex(s1);
-#	var sd2 := soundex(s2);
-#	return editdistance(sd1,sd2);
-#}
-
-#mal implementation
-function stringdiff( s1:str, s2:str):int;
-	sd1 := soundex(s1);
-	sd2 := soundex(s2);
-	return editdistance(sd1,sd2);
-end stringdiff;
 
 #mil implementation
 #proc str2qgrams(str s) : bat[oid,str]
