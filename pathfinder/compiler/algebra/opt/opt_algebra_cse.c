@@ -521,7 +521,8 @@ apply_patch (PFla_op_t *n, PFarray_t *assembly1, PFarray_t *assembly2)
         case la_serialize_seq:
         {
             n->sem.ser_seq.pos = eff_attribute_ (assembly2, n->sem.ser_seq.pos);
-            n->sem.ser_seq.item = eff_attribute_ (assembly2, n->sem.ser_seq.item);
+            n->sem.ser_seq.item =
+                                eff_attribute_ (assembly2, n->sem.ser_seq.item);
         } break;
         case la_lit_tbl:
         case la_empty_tbl:
@@ -539,13 +540,14 @@ apply_patch (PFla_op_t *n, PFarray_t *assembly1, PFarray_t *assembly2)
         case la_semijoin:
         case la_thetajoin:
         {
-            /* instead of modifying the attributes use a projection to leave the
-             * join as it is */
+            /* instead of modifying the attributes use a projection to leave
+             * the join as it is */
         } break;
         case la_project:
         {
             for (unsigned int i = 0; i < n->sem.proj.count; i++) {
-                n->sem.proj.items[i].old = eff_attribute_ (assembly1, n->sem.proj.items[i].old);
+                n->sem.proj.items[i].old = 
+                         eff_attribute_ (assembly1, n->sem.proj.items[i].old);
             }
         } break;
         case la_select:
@@ -645,7 +647,8 @@ apply_patch (PFla_op_t *n, PFarray_t *assembly1, PFarray_t *assembly2)
             /* adjust ordering TODO */
             PFord_ordering_t ordering = PFordering ();
 
-            for (unsigned int i = 0; i < PFord_count (n->sem.sort.sortby); i++) {
+            for (unsigned int i = 0; i < PFord_count (n->sem.sort.sortby); i++)
+            {
                 PFalg_att_t ordname = PFord_order_col_at (
                                         n->sem.sort.sortby, i);
                 bool dir = PFord_order_dir_at (
@@ -711,8 +714,10 @@ apply_patch (PFla_op_t *n, PFarray_t *assembly1, PFarray_t *assembly2)
         } break;
         case la_doc_tbl:
         {
-            n->sem.doc_tbl.iter = eff_attribute_ (assembly1, n->sem.doc_tbl.iter);
-            n->sem.doc_tbl.item = eff_attribute_ (assembly1, n->sem.doc_tbl.item);
+            n->sem.doc_tbl.iter =
+                               eff_attribute_ (assembly1, n->sem.doc_tbl.iter);
+            n->sem.doc_tbl.item =
+                               eff_attribute_ (assembly1, n->sem.doc_tbl.item);
 
             PFalg_schema_t schema = PFalg_schema_diff (n->schema,
                                             n->sem.doc_tbl.item_res);
@@ -721,8 +726,8 @@ apply_patch (PFla_op_t *n, PFarray_t *assembly1, PFarray_t *assembly2)
         } break;
         case la_doc_access:
         {
-            n->sem.doc_access.att = eff_attribute_ (assembly2, n->sem.doc_access.att);
-
+            n->sem.doc_access.att =
+                             eff_attribute_ (assembly2, n->sem.doc_access.att);
             PFalg_schema_t schema = PFalg_schema_diff (n->schema,
                                             n->sem.doc_access.res);
             apply_schema_patch (n, schema, assembly2);
@@ -740,17 +745,18 @@ apply_patch (PFla_op_t *n, PFarray_t *assembly1, PFarray_t *assembly2)
         } break;
         case la_merge_adjacent:
         {
-            n->sem.merge_adjacent.iter_in = eff_attribute_ (assembly2,
-                                                   n->sem.merge_adjacent.iter_in);
-            n->sem.merge_adjacent.pos_in = eff_attribute_ (assembly2,
-                                                   n->sem.merge_adjacent.pos_in);
-            n->sem.merge_adjacent.item_in = eff_attribute_ (assembly2,
-                                                   n->sem.merge_adjacent.item_in);
+            n->sem.merge_adjacent.iter_in =
+                     eff_attribute_ (assembly2, n->sem.merge_adjacent.iter_in);
+            n->sem.merge_adjacent.pos_in = 
+                     eff_attribute_ (assembly2, n->sem.merge_adjacent.pos_in);
+            n->sem.merge_adjacent.item_in = 
+                     eff_attribute_ (assembly2, n->sem.merge_adjacent.item_in);
         } break;
         case la_roots:
         {
             for (unsigned int i = 0; i < n->schema.count; i++) {
-                n->schema.items[i].name = eff_attribute_ (assembly1, n->schema.items[i].name);
+                n->schema.items[i].name =
+                           eff_attribute_ (assembly1, n->schema.items[i].name);
             }
         } break;
         case la_fragment:
@@ -760,7 +766,7 @@ apply_patch (PFla_op_t *n, PFarray_t *assembly1, PFarray_t *assembly2)
         {
         } break;
         case la_error:
-        {
+        { /* FIXME: is this correct? nothing to do? */
         } break;
         case la_cond_err:
         {
@@ -1178,14 +1184,17 @@ subexp_eq (PFla_op_t *a, PFla_op_t *b)
         {
             PFla_op_t *achild = L (a);
             PFla_op_t *bchild = L (b);
-            if ( !PFalg_atom_comparable (a->sem.attach.value, b->sem.attach.value))
+            if ( !PFalg_atom_comparable (a->sem.attach.value,
+                                         b->sem.attach.value))
                 return false;
 
             if ( PFalg_atom_cmp (a->sem.attach.value, b->sem.attach.value) != 0)
                 return false;
 
-            PFalg_schema_t schema1 = PFalg_schema_diff (a->schema, a->sem.attach.res);
-            PFalg_schema_t schema2 = PFalg_schema_diff (b->schema, b->sem.attach.res);
+            PFalg_schema_t schema1 =
+                              PFalg_schema_diff (a->schema, a->sem.attach.res);
+            PFalg_schema_t schema2 =
+                              PFalg_schema_diff (b->schema, b->sem.attach.res);
 
             if (!eff_schema_eq (schema1, schema2, EFF (achild), EFF (bchild)))
                 return false;
@@ -1239,7 +1248,8 @@ subexp_eq (PFla_op_t *a, PFla_op_t *b)
                                         b->sem.thetajoin.pred[i].right);
 
                 if ( !((aleft == bleft) && (aright == bright) &&
-                        (a->sem.thetajoin.pred[i].comp == b->sem.thetajoin.pred[i].comp)))
+                       (a->sem.thetajoin.pred[i].comp == 
+                        b->sem.thetajoin.pred[i].comp)))
                         return false;
             }
 
@@ -1297,7 +1307,8 @@ subexp_eq (PFla_op_t *a, PFla_op_t *b)
             PFla_op_t *achild = L (a);
             PFla_op_t *bchild = L (b);
 
-            if (!eff_schema_eq (a->schema, b->schema, EFF (achild), EFF (bchild)))
+            if (!eff_schema_eq (a->schema, b->schema, EFF (achild),
+                                                      EFF (bchild)))
                 return false;
 
             return true;
@@ -1311,15 +1322,19 @@ subexp_eq (PFla_op_t *a, PFla_op_t *b)
                 return false;
 
             for (unsigned int i = 0; i < a->sem.fun_1to1.refs.count; i++) {
-                PFalg_att_t aref = eff_attribute (achild, a->sem.fun_1to1.refs.atts[i]);
-                PFalg_att_t bref = eff_attribute (bchild, b->sem.fun_1to1.refs.atts[i]);
+                PFalg_att_t aref =
+                          eff_attribute (achild, a->sem.fun_1to1.refs.atts[i]);
+                PFalg_att_t bref = 
+                          eff_attribute (bchild, b->sem.fun_1to1.refs.atts[i]);
 
                 if (!(aref == bref))
                     return false;
             }
 
-            PFalg_schema_t schema1 = PFalg_schema_diff (a->schema, a->sem.fun_1to1.res);
-            PFalg_schema_t schema2 = PFalg_schema_diff (b->schema, b->sem.fun_1to1.res);
+            PFalg_schema_t schema1 =
+                            PFalg_schema_diff (a->schema, a->sem.fun_1to1.res);
+            PFalg_schema_t schema2 =
+                            PFalg_schema_diff (b->schema, b->sem.fun_1to1.res);
 
             if (!eff_schema_eq (schema1, schema2, EFF (achild), EFF (bchild)))
                 return false;
@@ -1393,9 +1408,16 @@ subexp_eq (PFla_op_t *a, PFla_op_t *b)
                 return false;
 
 
-            for (unsigned int i = 0; i < PFord_count (a->sem.sort.sortby); i++) {
-                PFalg_att_t order1 = eff_attribute (achild, PFord_order_col_at (a->sem.sort.sortby, i));
-                PFalg_att_t order2 = eff_attribute (bchild, PFord_order_col_at (b->sem.sort.sortby, i));
+            for (unsigned int i = 0; i < PFord_count (a->sem.sort.sortby); i++) 
+            {
+                PFalg_att_t order1 = eff_attribute (achild, 
+                                                    PFord_order_col_at (
+                                                         a->sem.sort.sortby,
+                                                         i));
+                PFalg_att_t order2 = eff_attribute (bchild,
+                                                    PFord_order_col_at (
+                                                         b->sem.sort.sortby,
+                                                         i));
 
                 if (!((order1 == order2) &&
                         PFord_order_dir_at (a->sem.sort.sortby, i) ==
@@ -1593,7 +1615,7 @@ subexp_eq (PFla_op_t *a, PFla_op_t *b)
             return true;
         } break;
         case la_error:
-        {
+        {   /* FIXME: is this correct? */
             return true;
         } break;
         case la_cond_err:

@@ -112,7 +112,6 @@ opt_const (PFla_op_t *p, bool no_attach)
             case la_min:
             case la_rownum:
             case la_rank:
-            case la_error:
             case la_cond_err:
                 /* these rules apply a 'real rewrite'
                    and therefore continue */
