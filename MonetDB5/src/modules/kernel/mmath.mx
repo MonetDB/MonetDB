@@ -85,6 +85,12 @@ address MATHunary_TANdbl
 comment "The tan(x) function returns the tangent of x,
         where x is given in radians";
 
+command cot(x:flt)   	  :flt 
+address MATHunary_COTflt;
+command cot(x:dbl)   	  :dbl 
+address MATHunary_COTdbl
+comment "The cot(x) function returns the Cotangent of x,
+        where x is given in radians";
 
 command cosh(x:flt)     :flt 
 address MATHunary_COSHflt;
@@ -357,6 +363,7 @@ mmath_export str MATHpi(dbl *pi);
 @:unop(_COS,cos)@
 @:unop(_SIN,sin)@
 @:unop(_TAN,tan)@
+@:unop(_COT,cot)@
 
 @:unop(_COSH,cosh)@
 @:unop(_SINH,sinh)@
@@ -559,6 +566,7 @@ str MATHbinary_ROUND@1(@1 *res, @1 *x, int *y) {
 @:unopM5(_COS,cos)@
 @:unopM5(_SIN,sin)@
 @:unopM5(_TAN,tan)@
+@:unopM5(_COT,cot)@
 
 @:unopM5(_COSH,cosh)@
 @:unopM5(_SINH,sinh)@

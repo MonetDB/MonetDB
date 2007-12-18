@@ -44,6 +44,10 @@ command match(pat:pcre, s:str) :bit
 address PCREexec_wrap
 comment "match a pattern";
 
+command index(pat:pcre, s:str) :int 
+address PCREindex
+comment "match a pattern, return matched position (or 0 when not found)";
+
 command select(pat:str, strs:bat[:any_1,:str]) :bat[:any_1,:str] 
 address PCREselect
 comment "Select tuples based on the pattern";
@@ -56,7 +60,7 @@ command match(s:str, pat:str):bit
 address PCREmatch
 comment "POSIX pattern matching against a string";
 
-command patindex(s:str, pat:str):int
+command patindex(pat:str, s:str) :int
 address PCREpatindex
 comment "Location of the first POSIX pattern matching against a string"
 
@@ -133,7 +137,8 @@ pcre_export str PCREquote(str *r, str *v);
 pcre_export str PCREselect(int *res, str *pattern, int *bid);
 pcre_export str PCREuselect(int *res, str *pattern, int *bid);
 pcre_export str PCREmatch(bit *ret, str *val, str *pat);
-pcre_export str PCREpatindex(int *ret, str *val, str *pat);
+pcre_export str PCREindex(int *ret, pcre *pat, str *val);
+pcre_export str PCREpatindex(int *ret, str *pat, str *val);
 pcre_export str PCREfromstr(str instr, int *l, pcre ** val);
 
 pcre_export str PCREreplace_wrap(str *res, str *or, str *pat, str *repl, str *flags);
@@ -173,6 +178,15 @@ pcre_exec_wrap(bit *res, pcre * pattern, str s)
 	(void) pattern;
 	(void) s;
 	throw(MAL, "pcre_exec", "not available as required version of libpcre was not found by configure.\n");
+}
+
+str
+pcre_index(int *res, pcre * pattern, str s)
+{
+	(void) res;
+	(void) pattern;
+	(void) s;
+	throw(MAL, "pcre_index", "not available as required version of libpcre was not found by configure.\n");
 }
 
 str
@@ -226,6 +240,17 @@ pcre_exit(void)
 {
 }
 
+int
+pcre_match_with_flags(bit *ret, str val, str pat, str flags)
+{
+	(void) ret;
+	(void) val;
+	(void) pat;
+    (void)flags;
+	GDKerror("pcre_match_with_flags() not available as required version of libpcre was not found by configure.\n");
+	return GDK_FAIL;
+}
+
 str
 pcre_match(bit *ret, str val, str pat)
 {
@@ -235,14 +260,6 @@ pcre_match(bit *ret, str val, str pat)
 	throw(MAL, "pcre_match", "not available as required version of libpcre was not found by configure.\n");
 }
 
-str
-pcre_patindex(int *ret, str val, str pat)
-{
-	(void) ret;
-	(void) val;
-	(void) pat;
-	throw(MAL,  "pcre_patindexmatch", "not available as required version of libpcre was not found by configure.\n");
-}
 #else
 
 #include <pcre.h>
@@ -294,6 +311,18 @@ pcre_exec_wrap(bit *res, pcre * pattern, str s)
 	} 
 	*res = FALSE;
 	throw(MAL, "pcre.exec","failed to execute pattern match");
+}
+
+str
+pcre_index(int *res, pcre * pattern, str s)
+{
+	int v[2];
+
+	v[0] = v[1] = *res = 0;
+	if (pcre_exec(m2p(pattern), NULL, s, strlen(s), 0, 0, v, 2) >= 0) {
+		*res = v[1];
+	}
+	return MAL_SUCCEED;
 }
 
 str
@@ -643,11 +672,6 @@ pcre_match(bit *ret, str val, str pat)
 	return msg;
 }
 
-str
-pcre_patindex(int *ret, str val, str pat)
-{
-	return pcre_match_with_flags(ret, val, pat, "");
-}
 #endif
 
 static int
@@ -817,6 +841,37 @@ sql2pcre(str *r, str pat, str esc_str)
 	}
 	return GDK_SUCCEED; 
 }
+
+/* change SQL PATINDEX pattern into PCRE pattern */
+int
+pat2pcre(str *r, str pat) 
+{
+	int len = (int) strlen(pat);
+	char *ppat = GDKmalloc(len*2+3 /* 3 = "^'the translated regexp'$0" */);
+	int start = 0;
+
+	*r = ppat;
+	while (*pat) {
+		int c = *pat++;
+
+		if (strchr( ".+*()\\", c) != NULL) {
+			*ppat++ = '\\';
+			*ppat++ = c;
+		} else if (c == '%') {
+			if (start && *pat) {
+				*ppat++ = '.';
+				*ppat++ = '*';
+			}
+			start++;
+		} else if (c == '_') {
+			*ppat++ = '.';
+		} else {
+			*ppat++ = c;
+		}
+	}
+	*ppat = 0;
+	return GDK_SUCCEED; 
+}
 @+ Wrapping
 @c
 #include "mal.h"
@@ -932,9 +987,26 @@ PCREmatch(bit *ret, str *val, str *pat)
 }
 
 str
-PCREpatindex(int *ret, str *val, str *pat)
+PCREindex(int *res, pcre * pattern, str *s)
 {
-	return pcre_patindex(ret, *val, *pat);
+	return pcre_index(res, pattern, *s);
+}
+
+
+str
+PCREpatindex(int *ret, str *pat, str *val)
+{
+	pcre *re = NULL;
+	char *ppat, *msg;
+	
+	if (pat2pcre(&ppat, *pat) <0)
+		throw(MAL, "pcre.sql2pcre", "Pattern convert failed");
+	if ((msg = pcre_compile_wrap(&re, ppat)) != NULL)
+		return msg;
+	GDKfree(ppat);
+	msg = PCREindex(ret, re, val);
+	GDKfree(re);
+	return msg;
 }
 
 str

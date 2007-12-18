@@ -1655,24 +1655,24 @@ strTail(str *res, str s, int *offset)
 int
 strSubString(str *res, str s, int *offset, int *length)
 {
-	int len, off = *offset;
+	int len, off = *offset, l = *length;
 
-	RETURN_NIL_IF(strNil(s) || off == int_nil || *length == int_nil, TYPE_str);
+	RETURN_NIL_IF(strNil(s) || off == int_nil || l == int_nil, TYPE_str);
 	if (off < 0) {
 		len = UTF8_strlen(s);
 		RETURN_NIL_IF(len == int_nil, TYPE_str);
 		off = len + off;
 		if (off < 0) {
-			*length += off;
+			l += off;
 			off = 0;
 		}
 	}
-	if (*length < 0) {
+	if (l < 0) {
 		*res = GDKstrdup("");
 		return GDK_SUCCEED;
 	}
 	s = UTF8_strtail(s, MAX(0, off));
-	len = UTF8_strtail(s, *length) - s;
+	len = UTF8_strtail(s, l) - s;
 	if (off < 0) {
 		len += off;
 		off = 0;
@@ -1700,9 +1700,9 @@ strWChrAt(int *res, str val, int *at)
 /* 64bit: should have wrd arg */
 	unsigned char *s = (unsigned char *) val;
 
-	RETURN_NIL_IF(strNil(val) || *at == int_nil || *at < 0, TYPE_chr);
+	RETURN_NIL_IF(strNil(val) || *at == int_nil || *at < 0, TYPE_int);
 	s = (unsigned char *) UTF8_strtail((str) s, *at);
-	RETURN_NIL_IF(*s == 0, TYPE_chr);
+	RETURN_NIL_IF(*s == 0, TYPE_int);
 	@:UTF8_GETCHAR(*res,s)@
 	return GDK_SUCCEED;
 }

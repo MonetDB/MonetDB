@@ -313,16 +313,21 @@ The unary operators include coercion routines for built-in types
 		comment "negative value";
 		command length(x:@1):int
 		address CALClength@1;
-@-
+		command sign(x:@1) :@1 
+		address CALCunary@1SIGN 
+		comment "Returns +1, 0, -1 based on the sign of the given expression";
+@= unary_ops
+	@:@1_unary_ops(chr)@
+	@:@1_unary_ops(bte)@
+	@:@1_unary_ops(sht)@
+	@:@1_unary_ops(int)@
+	@:@1_unary_ops(wrd)@
+	@:@1_unary_ops(flt)@
+	@:@1_unary_ops(lng)@
+	@:@1_unary_ops(dbl)@
 @mal
-	@:mal_unary_ops(chr)@
-	@:mal_unary_ops(bte)@
-	@:mal_unary_ops(sht)@
-	@:mal_unary_ops(int)@
-	@:mal_unary_ops(wrd)@
-	@:mal_unary_ops(lng)@
-	@:mal_unary_ops(flt)@
-	@:mal_unary_ops(dbl)@
+@:unary_ops(mal)@
+
 	command length(x:str):int
 	address CALClengthstr;
 @-
@@ -564,35 +569,10 @@ the string representations.
 /* the normal implementation of an operator is to just stick the
    operator between the operands */
 #define calc_abs(s) ((s)>0)?(s):-(s)
-@:calc_unop(ABS,calc_abs,chr)@
-@:calc_unop(ABS,calc_abs,bte)@
-@:calc_unop(ABS,calc_abs,sht)@
-@:calc_unop(ABS,calc_abs,int)@
-@:calc_unop(ABS,calc_abs,wrd)@
-@:calc_unop(ABS,calc_abs,flt)@
-@:calc_unop(ABS,calc_abs,dbl)@
-@:calc_unop(ABS,calc_abs,lng)@
-
 #define calc_inv(s) (1/(s))
-@:check_unop(INV,calc_inv,chr)@
-@:check_unop(INV,calc_inv,bte)@
-@:check_unop(INV,calc_inv,sht)@
-@:check_unop(INV,calc_inv,int)@
-@:check_unop(INV,calc_inv,wrd)@
-@:check_unop(INV,calc_inv,flt)@
-@:check_unop(INV,calc_inv,dbl)@
-@:check_unop(INV,calc_inv,lng)@
-
 #define calc_neg(s) (-(s))
-@:calc_unop(NEG,calc_neg,chr)@
-@:calc_unop(NEG,calc_neg,bte)@
-@:calc_unop(NEG,calc_neg,sht)@
-@:calc_unop(NEG,calc_neg,int)@
-@:calc_unop(NEG,calc_neg,wrd)@
-@:calc_unop(NEG,calc_neg,flt)@
-@:calc_unop(NEG,calc_neg,dbl)@
-@:calc_unop(NEG,calc_neg,lng)@
-@-
+#define calc_sign(s) ((s)<0)?-1:((s)==0)?0:1
+
 @= calc_length
 calc_export str CALClength@1(int *res , @1 *a );
 str CALClength@1(int *res , @1 *a ) {
@@ -601,14 +581,14 @@ str CALClength@1(int *res , @1 *a ) {
 }
 @c
 
-@:calc_length(chr)@
-@:calc_length(bte)@
-@:calc_length(sht)@
-@:calc_length(int)@
-@:calc_length(wrd)@
-@:calc_length(flt)@
-@:calc_length(dbl)@
-@:calc_length(lng)@
+@= c_unary_ops
+@:calc_unop(ABS,calc_abs,@1)@
+@:check_unop(INV,calc_inv,@1)@
+@:calc_unop(NEG,calc_neg,@1)@
+@:calc_unop(SIGN,calc_sign,@1)@
+@:calc_length(@1)@
+@c
+@:unary_ops(c)@
 
 calc_export str CALClengthstr(int *res , str *a );
 str CALClengthstr(int *res , str *a ) {
