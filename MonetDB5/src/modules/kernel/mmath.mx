@@ -289,6 +289,7 @@ MNisinf(double x)
 #define cos_unary(x, z)	      *z = cos(*x)
 #define sin_unary(x, z)	      *z = sin(*x)
 #define tan_unary(x, z)	      *z = tan(*x)
+#define cot_unary(x, z)	      *z = (1/tan(*x))
 
 #define cosh_unary(x, z)       *z = cosh(*x)
 #define sinh_unary(x, z)       *z = sinh(*x)
