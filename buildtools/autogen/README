@@ -14,6 +14,16 @@ variable accordingly.  The directory which needs to be added is
 <python-version> is the version of Python used (e.g. 2.4).
 You can automatically get the respective directory via
 "<install-dir-prefix>/`python -c 'import distutils.sysconfig; print distutils.sysconfig.get_python_lib(0,0,"")'`".
+(
+In case your are using Apple-built Python 2.5.1 on Mac OS X 10.5.1 (Darwin 9.1.0),
+it can be that the above command yields
+"<install-dir-prefix>/Library/Python/2.5/site-packages", 
+while Python's distutils.core.setup() actually installs the python modules into
+"<install-dir-prefix>/lib/python2.5/site-packages".
+In that case, replacing the above command by 
+"<install-dir-prefix>/`python -c 'import distutils.sysconfig; print distutils.sysconfig.get_python_lib(0,1,"")'`/site-packages"
+might help to overcome this inconsistency.
+)
 
 On Windows, to follow these instructions, Python must of course be
 found in your PATH.  The default location where autogen.py is
