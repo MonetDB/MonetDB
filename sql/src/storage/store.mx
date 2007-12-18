@@ -3338,7 +3338,7 @@ sql_trans_drop_table(sql_trans *tr, sql_schema *s, int id, int drop_action)
 	sys_drop_table(tr, t, drop_action);
 
 	t->base.wtime = s->base.wtime = tr->wtime = tr->stime;
-	if (isGlobalTable(t)) 
+	if (isGlobalTable(t) || (t->commit_action != CA_DROP)) 
 		tr->schema_updates ++;
 	cs_del(&s->tables, n, t->base.flag);
 	
