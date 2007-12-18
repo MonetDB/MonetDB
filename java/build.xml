@@ -429,7 +429,7 @@ All Rights Reserved.
 
   <!-- documentation target -->
   <target name="doc"
-    depends="compile_mcl,compile_jdbc,compile_xmldb,compile_util,compile_client,
+    depends="compile_mcl,compile_jdbc,compile_util,compile_client,
     compile_xrpc_api,compile_xrpc_wrapper, compile_xrpc_client">
     <javadoc
       destdir="${docdir}"
@@ -439,7 +439,11 @@ All Rights Reserved.
       windowtitle="MonetDB Java APIs">
 
       <fileset dir="${srcdir}" defaultexcludes="yes">
-        <include name="**/*.java" />
+        <include name="${jdbc-package}/**/*.java" />
+        <include name="${mcl-package}/**/*.java" />
+        <include name="${client-package}/**/*.java" />
+        <include name="${util-package}/**/*.java" />
+        <include name="${xrpc-api-package}/**/*.java" />
       </fileset>
     </javadoc>
   </target>
