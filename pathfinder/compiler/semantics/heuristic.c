@@ -393,8 +393,8 @@ check_predicate(PFpnode_t *r, PFpnode_t **req_name)
             if (!tst) {
                 if (L(r)->sem.axis == p_attribute) {
                     tst = TST_ATTR; /* 'PATH/@attr = VAL' pattern */
-                } else {
-                    tst = TST_DATA; /* 'PATH = VAL' pattern, ie fn:data(PATH) */
+                /* } else { commented out because wrong..
+                    tst = TST_DATA;  'PATH = VAL' pattern, ie fn:data(PATH) */
                 }
             }
             if (tst) *req_name = cpy(LL(LL(n)));
