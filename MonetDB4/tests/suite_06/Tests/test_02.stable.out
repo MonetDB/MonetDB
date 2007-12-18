@@ -32,6 +32,7 @@ z.[insert](t,"hello");
 !MAYBE YOU MEAN:
 !	insert(BAT[any::1,any::2], BAT[any::1,any::2]) : BAT[any::1,any::2]
 !	insert(BAT[any::1,any::2], any::1, any::2) : BAT[any::1,any::2]
+!	insert(str, int, int, str) : str
 z.print();
 #-----------------#
 # BAT:	  tmp_26  #

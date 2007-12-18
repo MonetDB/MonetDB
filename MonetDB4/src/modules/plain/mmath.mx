@@ -14,10 +14,9 @@
 @' Portions created by CWI are Copyright (C) 1997-2007 CWI.
 @' All Rights Reserved.
 
-@'		Alex van Ballegooij <Alex.van.Ballegooij@cwi.nl>
-
 @f mmath
-@a N.J. Nes
+@a N.J. Nes, Alex van Ballegooij
+
 @d 07/01/1996
 @t The math module
 
@@ -58,6 +57,9 @@ where x is given in radians. The return value is between -1 and 1."
 where x is given in radians. The return value is between -1 and 1."
    .COMMAND tan(dbl)	  : dbl = math_unary_TAN;
 "The tan(x) function returns the tangent of x,
+where x is given in radians"
+   .COMMAND cot(dbl)	  : dbl = math_unary_COT;
+"The cot(x) function returns the cotangent of x,
 where x is given in radians"
 
    .COMMAND cosh(dbl)	  : dbl = math_unary_COSH;
@@ -132,6 +134,7 @@ proc ceil(flt f) : flt	{return flt(ceil(dbl(f)));}
 proc sin(flt f) : flt	{return flt(sin(dbl(f)));}
 proc cos(flt f) : flt	{return flt(cos(dbl(f)));}
 proc tan(flt f) : flt	{return flt(tan(dbl(f)));}
+proc cot(flt f) : flt	{return flt(cot(dbl(f)));}
 proc asin(flt f) : flt	{return flt(asin(dbl(f)));}
 proc acos(flt f) : flt	{return flt(acos(dbl(f)));}
 proc atan(flt f) : flt	{return flt(atan(dbl(f)));}
@@ -171,6 +174,7 @@ proc pi() : dbl 	{return M_PI; }
 #define cos_unary(x, z)	      *z = cos(*x)
 #define sin_unary(x, z)	      *z = sin(*x)
 #define tan_unary(x, z)	      *z = tan(*x)
+#define cot_unary(x, z)	      *z = (1/tan(*x))
 
 #define cosh_unary(x, z)       *z = cosh(*x)
 #define sinh_unary(x, z)       *z = sinh(*x)
@@ -243,6 +247,7 @@ MNisinf(double x)
 @:unop(_COS,cos)@
 @:unop(_SIN,sin)@
 @:unop(_TAN,tan)@
+@:unop(_COT,cot)@
 
 @:unop(_COSH,cosh)@
 @:unop(_SINH,sinh)@

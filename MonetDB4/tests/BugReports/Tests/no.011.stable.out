@@ -5,9 +5,13 @@ stdout of test 'no.011` in directory 'tests/BugReports` itself:
 # 22:20:28 >  Mtimeout -timeout 60 Mserver "--config=/ufs/niels/data/monet/Linux/etc/monet.conf" --debug=10 --set "monet_mod_path=/ufs/niels/data/monet/Linux/lib/MonetDB" --dbfarm "/ufs/niels/data/monet/Linux/var/dbfarm" --set monet_prompt= --dbname=Tests_tests_BugReports  < no.011.milS
 # 22:20:28 >  
 
-# Monet Database Server V4.3.5
-# Copyright (c) 1993-2002, CWI. All rights reserved.
-# compiled for i686-pc-linux-gnu/32bit; dynamically linked.
+!WARNING: GDKlockHome: ignoring empty or invalid .gdk_lock.
+!WARNING: BBPdir: initializing BBP.
+# MonetDB Server v4.20.1
+# based on GDK   v1.20.1
+# Copyright (c) 1993-2007, CWI. All rights reserved.
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs; dynamically linked.
+# Visit http://monetdb.cwi.nl/ for further information.
 # >Number:         11
 # >Category:       Mserver
 # >Synopsis:       batloop operator on new(int, nil) hangs...
@@ -40,16 +44,19 @@ f.insert(1,10);
 !MAYBE YOU MEAN:
 !	insert(BAT[any::1,any::2], BAT[any::1,any::2]) : BAT[any::1,any::2]
 !	insert(BAT[any::1,any::2], any::1, any::2) : BAT[any::1,any::2]
+!	insert(str, int, int, str) : str
 f.insert(2,20);
 !ERROR: interpret: no matching MIL operator to 'insert(BAT[int,void], int, int)'.
 !MAYBE YOU MEAN:
 !	insert(BAT[any::1,any::2], BAT[any::1,any::2]) : BAT[any::1,any::2]
 !	insert(BAT[any::1,any::2], any::1, any::2) : BAT[any::1,any::2]
+!	insert(str, int, int, str) : str
 f.insert(3,30);
 !ERROR: interpret: no matching MIL operator to 'insert(BAT[int,void], int, int)'.
 !MAYBE YOU MEAN:
 !	insert(BAT[any::1,any::2], BAT[any::1,any::2]) : BAT[any::1,any::2]
 !	insert(BAT[any::1,any::2], any::1, any::2) : BAT[any::1,any::2]
+!	insert(str, int, int, str) : str
 f.print();
 #-----------------#
 # BAT:	  tmp_27  #

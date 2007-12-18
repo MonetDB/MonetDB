@@ -84,6 +84,7 @@ a.insert(b).print();
 !MAYBE YOU MEAN:
 !	insert(BAT[any::1,any::2], BAT[any::1,any::2]) : BAT[any::1,any::2]
 !	insert(BAT[any::1,any::2], any::1, any::2) : BAT[any::1,any::2]
+!	insert(str, int, int, str) : str
 !ERROR: interpret_params: print(param 1): evaluation error.
 
 # from #1385067 "bug appending to [void,void] bat"

@@ -49,6 +49,9 @@ explicitly enabled; it is not the default.
 .COMMAND pcre_match(pcre pattern, str s) : bit = pcre_exec_wrap;
    "match a pattern"
 
+.COMMAND pcre_index(pcre pattern, str s) : int = pcre_index_wrap;
+   "match a pattern, return matched position (or 0 when not found)"
+
 .COMMAND pcre_select(str pattern, BAT[any::1,str] strs) : BAT[any::1,str] = pcre_select;
    "Select tuples based on the pattern"
 
@@ -91,6 +94,9 @@ explicitly enabled; it is not the default.
 .COMMAND sql2pcre(str pat, str esc) : str = sql2pcre;
    "Convert a SQL like pattern with the given escape character into a PCRE pattern."
 
+.COMMAND pat2pcre(str pat) : str = pat2pcre;
+   "Convert a SQL patindex pattern into a PCRE pattern."
+
 .PRELUDE  = pcre_init;
 .EPILOGUE = pcre_exit;
 
@@ -128,6 +134,16 @@ pcre_exec_wrap(bit *res, pcre * pattern, str s)
 	(void) pattern;
 	(void) s;
 	GDKerror("pcre_exec_wrap() not available as required version of libpcre was not found by configure.\n");
+	return GDK_FAIL;
+}
+
+int
+pcre_index_wrap(int *res, pcre * pattern, str s)
+{
+	(void) res;
+	(void) pattern;
+	(void) s;
+	GDKerror("pcre_index_wrap() not available as required version of libpcre was not found by configure.\n");
 	return GDK_FAIL;
 }
 
@@ -254,6 +270,18 @@ pcre_exec_wrap(bit *res, pcre * pattern, str s)
 		*res = TRUE;
 	} else {
 		*res = FALSE;
+	}
+	return GDK_SUCCEED;
+}
+
+int
+pcre_index_wrap(int *res, pcre * pattern, str s)
+{
+	int v[2];
+
+	v[0] = v[1] = *res = 0;
+	if (pcre_exec(m2p(pattern), NULL, s, strlen(s), 0, 0, v, 2) >= 0) {
+		*res = v[1];
 	}
 	return GDK_SUCCEED;
 }
@@ -775,6 +803,37 @@ sql2pcre(str *r, str pat, str esc_str)
 	}
 	return GDK_SUCCEED; 
 }
+
+/* change SQL PATINDEX pattern into PCRE pattern */
+int
+pat2pcre(str *r, str pat) 
+{
+	int len = (int) strlen(pat);
+	char *ppat = GDKmalloc(len*2+3 /* 3 = "^'the translated regexp'$0" */);
+	int start = 0;
+
+	*r = ppat;
+	while (*pat) {
+		int c = *pat++;
+
+		if (strchr( ".+*()\\", c) != NULL) {
+			*ppat++ = '\\';
+			*ppat++ = c;
+		} else if (c == '%') {
+			if (start && *pat) {
+				*ppat++ = '.';
+				*ppat++ = '*';
+			}
+			start++;
+		} else if (c == '_') {
+			*ppat++ = '.';
+		} else {
+			*ppat++ = c;
+		}
+	}
+	*ppat = 0;
+	return GDK_SUCCEED; 
+}
 @}
 @mil
 
@@ -811,3 +870,14 @@ sql2pcre(str *r, str pat, str esc_str)
     ADDHELP("like_uselect_pcre", "groffen", "Dec 19 2004",
     "does SQL LIKE select with use of PCRE", "algebra");
 
+    proc patindex(str pat, str s) : int 
+    {
+		var ppat := pat2pcre(pat);
+		if (isnil(ppat)) {
+			return 0;
+		} else {
+			return(pcre_index(pcre_compile(ppat), s));
+		}
+    }
+    ADDHELP("patindex", "niels", "Dec 13 2008",
+    "does SQL PATINDEX with use of PCRE", "algebra");

@@ -281,8 +281,8 @@ Module: "uchr"
 
 Module: "vector"
 
-[ 140 ]
-[ 140 ]
+[ 141 ]
+[ 141 ]
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function			| type		| signature							| help												  #
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
@@ -352,6 +352,7 @@ Module: "vector"
 [ "centroid",			  "COMMAND:   ",  "centroid(ints) : dbl",					  "Computes the centroid of the given vector"							  ]
 [ "cos",			  "PROC:      ",  "cos(flt) : flt",						  "not available"										  ]
 [ "cosh",			  "PROC:      ",  "cosh(flt) : flt",						  "not available"										  ]
+[ "cot",			  "PROC:      ",  "cot(flt) : flt",						  "not available"										  ]
 [ "dbl_vector32_rancreate",	  "COMMAND:   ",  "dbl_vector32_rancreate() : dbl_vector32",			  "Creates random vector"									  ]
 [ "dbls_rancreate",		  "COMMAND:   ",  "dbls_rancreate(int) : dbls",					  "Creates random vector"									  ]
 [ "dimension",			  "COMMAND:   ",  "dimension(dbl_vector32) : int",				  "Retrieves the dimension of the vector"							  ]

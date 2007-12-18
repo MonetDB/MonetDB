@@ -46,12 +46,12 @@ monet_fcntbl.sort()@batloop() {
 }
 
 Fnts.count().print();
-[ 1026 ]
+[ 1034 ]
 Fnts.reverse().sort().reverse()@batloop() {
 	FnameS.insert($h,Fname.find($h));
 }
 FnameS.count().print();
-[ 1026 ]
+[ 1034 ]
 
 var All:=0;
 
@@ -100,6 +100,7 @@ Module: ""
 [ "help_sig",	  "PROC:      ",  "help_sig(oid) : void",							  "not available"																																																													  ]
 [ "help_tpe",	  "PROC:      ",  "help_tpe(int) : str",							  "not available"																																																													  ]
 [ "hot",	  "PROC:      ",  "hot(BAT[any::1,any::2]) : void",						  "not available"																																																													  ]
+[ "insert",	  "PROC:      ",  "insert(str, int, int, str) : str",						  "not available"																																																										  ]
 [ "join",	  "PROC:      ",  "join(BAT[any::1,any::2], BAT[any::2,any::3], lng, str, ..any..) : BAT[any::1,any::3]", "not available"																																																													  ]
 [ "join",	  "PROC:      ",  "join(BAT[any::1,any::2], BAT[any::2,any::3], str, ..any..) : BAT[any::1,any::3]", "not available"																																																													  ]
 [ "load",	  "PROC:      ",  "load(str) : BAT[any,any]",							  "not available"																																																													  ]
@@ -123,15 +124,14 @@ Module: ""
 [ "prod",		  "PROC:      ",  "prod(BAT[any,wrd]) : wrd",							  "not available"																																		  ]
 [ "project",	  "PROC:      ",  "project(BAT[any::1,any]) : BAT[any::1,void]",				  "not available"																																																													  ]
 [ "repeat",		  "PROC:      ",  "repeat(str, int) : str",										  "not available"																																																													  ]
+[ "replace",	  "PROC:      ",  "replace(str, str, str) : str",						  "not available"																																																										  ]
 [ "save",	  "PROC:      ",  "save(BAT[any::1,any::2]) : BAT[any::1,any::2]",				  "not available"																																																													  ]
 [ "space",		  "PROC:      ",  "space(int) : str",											  "not available"																																																													  ]
 [ "string",		  "PROC:      ",  "string(str, int) : str",								  "not available"																																																																																															  ]
 [ "string",		  "PROC:      ",  "string(str, int, int) : str",							  "not available"																																																																																															  ]
-[ "stringinsert",	  "PROC:      ",  "stringinsert(str, int, int, str) : str",								  "not available"																																																													  ]
 [ "stringleft",		  "PROC:      ",  "stringleft(str, int) : str",										  "not available"																																																													  ]
 [ "stringleft",		  "PROC:      ",  "stringleft(str, wrd) : str",								  "not available"																																																																																															  ]
 [ "stringlength",	  "PROC:      ",  "stringlength(str) : int",										  "not available"																																																													  ]
-[ "stringreplace",	  "PROC:      ",  "stringreplace(str, str, str) : str",									  "not available"																																																													  ]
 [ "stringright",	  "PROC:      ",  "stringright(str, int) : str",									  "not available"																																																													  ]
 [ "stringright",	  "PROC:      ",  "stringright(str, wrd) : str",							  "not available"																																																																																															  ]
 [ "substring",		  "PROC:      ",  "substring(str, int) : str",										  "not available"																																																													  ]
@@ -315,8 +315,8 @@ Module: "algebra"
 
 Module: "arith"
 
-[ 509 ]
-#---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ 517 ]
+#-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function		type		signature												help																																																																												  # name
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 [ "!=",		  "OPERATOR:  ",  "!=(any::1, any::1) : bit",								  "left unequal to right?"																																		  ]
@@ -820,6 +820,14 @@ Module: "arith"
 [ "or",		  "OPERATOR:  ",  "or(sht, sht) : sht",									  "bitwise or"																																				  ]
 [ "or",		  "OPERATOR:  ",  "or(wrd, wrd) : wrd",									  "bitwise or"																																			  ]
 [ "rand",	  "COMMAND:   ",  "rand() : int",									  "return a random number"																																		  ]
+[ "sign",	  "COMMAND:   ",  "sign(bte) : bte",									  "Returns +1, 0, -1 based on the sign of the given expression"																																																													  ]
+[ "sign",	  "COMMAND:   ",  "sign(chr) : chr",									  "Returns +1, 0, -1 based on the sign of the given expression"																																																													  ]
+[ "sign",	  "COMMAND:   ",  "sign(dbl) : dbl",									  "Returns +1, 0, -1 based on the sign of the given expression"																																																													  ]
+[ "sign",	  "COMMAND:   ",  "sign(flt) : flt",									  "Returns +1, 0, -1 based on the sign of the given expression"																																																													  ]
+[ "sign",	  "COMMAND:   ",  "sign(int) : int",									  "Returns +1, 0, -1 based on the sign of the given expression"																																																													  ]
+[ "sign",	  "COMMAND:   ",  "sign(lng) : lng",									  "Returns +1, 0, -1 based on the sign of the given expression"																																																													  ]
+[ "sign",	  "COMMAND:   ",  "sign(sht) : sht",									  "Returns +1, 0, -1 based on the sign of the given expression"																																																													  ]
+[ "sign",	  "COMMAND:   ",  "sign(wrd) : wrd",									  "Returns +1, 0, -1 based on the sign of the given expression"																																																													  ]
 [ "srand",	  "COMMAND:   ",  "srand(int) : void",									  "initialize the rand() function with a seed"																																  ]
 [ "xor",	  "OPERATOR:  ",  "xor(bit, bit) : bit",								  "boolean xor"																																				  ]
 [ "xor",	  "OPERATOR:  ",  "xor(bte, bte) : bte",								  "bitwise xor"																																			  ]
@@ -1171,7 +1179,7 @@ Module: "trans"
 [ "sync",	  "COMMAND:   ",  "sync() : bit",									  "save all persistent BATs"																																																												  ]
 
 All.print();
-[ 1026 ]
+[ 1034 ]
 
 quit();
 

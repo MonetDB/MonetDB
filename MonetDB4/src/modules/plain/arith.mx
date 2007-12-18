@@ -251,6 +251,7 @@ the first for all other operations.
 @= mel_unary_ops
 	.COMMAND abs(@1) : @1 = @1_unary_ABS; "absolute value"
 	.OPERATOR "-" (@1) : @1 = @1_unary_NEG; "negative value"
+	.COMMAND sign(@1) : @1 = @1_unary_SIGN; "Returns +1, 0, -1 based on the sign of the given expression"
 @= unary_ops
 	@:@1_unary_ops(chr)@
 	@:@1_unary_ops(bte)@
@@ -411,9 +412,11 @@ flt2int(int *r, flt *v)
 
 #define arith_abs(s) ((s)<0)?-(s):(s)
 #define arith_neg(s) (-(s))
+#define arith_sign(s) ((s)<0)?-1:((s)==0)?0:1
 @= c_unary_ops
 @:arith_unop(_ABS,arith_abs,@1)@
 @:arith_unop(_NEG,arith_neg,@1)@
+@:arith_unop(_SIGN,arith_sign,@1)@
 @c
 @:unary_ops(c)@
 
