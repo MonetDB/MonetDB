@@ -635,16 +635,7 @@ infer_dom (PFla_op_t *n, unsigned int id)
             break;
 
         case la_distinct:
-            /* create new subdomains for all existing attributes */
-            for (unsigned int i = 0; i < L(n)->schema.count; i++)
-                if (L(n)->schema.items[i].type == aat_nat) {
-                    add_subdom (n->prop,
-                                PFprop_dom (L(n)->prop,
-                                            L(n)->schema.items[i].name),
-                                id);
-                    add_dom (n->prop, L(n)->schema.items[i].name, id);
-                    id++;
-                }
+            bulk_add_dom (n->prop, L(n));
             break;
 
         case la_fun_1to1:
