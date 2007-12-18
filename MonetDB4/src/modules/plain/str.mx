@@ -207,7 +207,7 @@ proc stringlength( str s) : int {
 	return length(rtrim(s));
 }
 proc insert( str s, int start, int l, str s2 ) : str {
-	return substring(s,start,l) + s2 + substring(s,start+l);
+	return substring(s,0,start) + s2 + string(s,start+l);
 }
 proc replace( str s1, str s2, str s3 ) : str {
 	return substitute(s1,s2,s3, true);
