@@ -5,9 +5,10 @@ stdout of test 'procs` in directory 'modules/pftijah` itself:
 # 02:59:56 >  Mtimeout -timeout 60 Mserver "--config=/var/tmp/_Stable_PREFIX__GNU_32_d_--enable-debug_/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/var/tmp/_Stable_PREFIX__GNU_32_d_--enable-debug_/lib/MonetDB:/var/tmp/_Stable_PREFIX__GNU_32_d_--enable-debug_/lib/bin" --set "gdk_dbfarm=/var/tmp/_Stable_PREFIX__GNU_32_d_--enable-debug_/var/MonetDB/dbfarm" --set "sql_logdir=/var/tmp/_Stable_PREFIX__GNU_32_d_--enable-debug_/var/MonetDB/log" --set mapi_port=37488 --set sql_port=45466 --set xquery_port=52692 --set monet_prompt= --trace --dbname=mTests_modules_pftijah  < procs.milS
 # 02:59:56 >  
 
-# Monet Database Server V4.8.0
-# Copyright (c) 1993-2005, CWI. All rights reserved.
-# Compiled for i686-redhat-linux-gnu/32bit with 32bit OIDs; dynamically linked.
+# MonetDB Server v4.20.1
+# based on GDK   v1.20.1
+# Copyright (c) 1993-2007, CWI. All rights reserved.
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
 module(pathfinder);
 # XRPC administrative console at http://localhost:47346/admin
@@ -155,6 +156,7 @@ procs();
 [ "correct_sizes(oid, BAT[void,oid], BAT[void,int]) : BAT[void,int]"											  ]
 [ "cos(flt) : flt"																	  ]
 [ "cosh(flt) : flt"																	  ]
+[ "cot(flt) : flt"																												  ]
 [ "count_no_nil(BAT[any,any]) : int"															  ]
 [ "cpu() : BAT[str,int]"																  ]
 [ "create_qenv() : BAT[oid,str]"																										  ]
@@ -251,6 +253,7 @@ procs();
 [ "htordered_sunique(BAT[oid,any::1]) : BAT[oid,any::1]"												  ]
 [ "htordered_unique_thetajoin(int, BAT[oid,any::1], BAT[oid,any::1], any, any) : BAT[any,any]"								  ]
 [ "impl_attr_own(BAT[oid,BAT], any, any) : BAT[oid,oid]"																					  ]
+[ "insert(str, int, int, str) : str"																										  ]
 [ "intersect(BAT[any,any], BAT[any,any]) : BAT[any,any]"																					  ]
 [ "intersect(BAT[any::1,any::2], BAT[any::1,any::2]) : BAT[any::1,any::2]"										  ]
 [ "io() : BAT[str,int]"																	  ]
@@ -485,6 +488,7 @@ procs();
 [ "p_containing_wsumd(BAT[oid,dbl], BAT[oid,dbl], int, BAT[oid,str]) : BAT[oid,dbl]"									  ]
 [ "pagesample(BAT[oid,any]) : BAT[oid,void]"														  ]
 [ "parent(BAT[void,oid], BAT[void,oid], oid, BAT[void,BAT], int) : BAT[void,BAT]"									  ]
+[ "patindex(str, str) : int"																											  ]
 [ "pf_assert(str, str) : void"																  ]
 [ "pf_checkpoint(BAT[void,str]) : bit"														  ]
 [ "pf_logflush(lng) : void"																  ]
@@ -513,6 +517,7 @@ procs();
 [ "regionindex_extract(BAT[void,BAT], oid, str) : void"																						  ]
 [ "rename(BAT[any::1,any::2], str) : BAT[any::1,any::2]"												  ]
 [ "repeat(str, int) : str"																  ]
+[ "replace(str, str, str) : str"																										  ]
 [ "replace_root(BAT[void,oid], BAT[oid,oid], BAT[oid,oid]) : void"										  ]
 [ "rev_select(BAT[any::1,any::2], str, any::2) : BAT[any::1,any::2]"											  ]
 [ "rm_overlap(BAT[any,any], str) : BAT[any,any]"																								  ]
@@ -571,11 +576,9 @@ procs();
 [ "stream_strip(Stream, str) : str"															  ]
 [ "string(str, int) : str"																								  ]
 [ "string(str, int, int) : str"																								  ]
-[ "stringinsert(str, int, int, str) : str"														  ]
 [ "stringleft(str, int) : str"																  ]
 [ "stringleft(str, wrd) : str"																								  ]
 [ "stringlength(str) : int"																  ]
-[ "stringreplace(str, str, str) : str"															  ]
 [ "stringright(str, int) : str"																  ]
 [ "stringright(str, wrd) : str"																								  ]
 [ "substring(str, int) : str"																  ]

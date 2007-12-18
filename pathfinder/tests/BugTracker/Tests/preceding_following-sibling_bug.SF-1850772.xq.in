@@ -1,0 +1,9 @@
+count(doc("$TSTSRCDIR/preceding_following-sibling_bug.SF-1850772.xmark01.xml")//*/following-sibling::regions)
+<>
+count(doc("$TSTSRCDIR/preceding_following-sibling_bug.SF-1850772.xmark01.xml")//*/preceding-sibling::regions)
+<>
+pf:add-doc("$TSTSRCDIR/preceding_following-sibling_bug.SF-1850772.xmark01.xml","xmark01")
+<>
+count(doc("xmark01")//*/following-sibling::regions)
+<>
+count(doc("xmark01")//*/preceding-sibling::regions)
