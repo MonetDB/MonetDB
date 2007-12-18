@@ -48,7 +48,7 @@ between 25-50%.
 #endif
 
 #include <streams.h>
-#include <mserver.h>
+#include <mapilib/Mapi.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -82,6 +82,7 @@ embeddedclient_export Mapi embedded_sql(opt *set, int len);
 #include "mal_import.h"
 #include "mal_client.h"
 #include "mal_function.h"
+#include "mal_authorize.h"
 
 static void
 Monet_init(opt **set, int setlen)

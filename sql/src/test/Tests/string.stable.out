@@ -1,0 +1,239 @@
+stdout of test 'string` in directory 'src/test` itself:
+
+
+# 12:30:46 >  
+# 12:30:46 >   mserver5 "--config=/ufs/goncalve/scratch/MonetDB/Stable/MonetDB5/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/goncalve/scratch/MonetDB/Stable/MonetDB5/lib/MonetDB5:/ufs/goncalve/scratch/MonetDB/Stable/MonetDB5/lib/MonetDB5/lib:/ufs/goncalve/scratch/MonetDB/Stable/MonetDB5/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/goncalve/scratch/MonetDB/Stable/MonetDB5/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/goncalve/scratch/MonetDB/Stable/MonetDB5/var/MonetDB5/sql_logs"  --set mapi_open=true --set xrpc_open=true --set mapi_port=31025 --set xrpc_port=49090 --set monet_prompt= --trace "--dbname=mTests_src_test" --set mal_listing=0 "--dbinit= include sql;" ; echo ; echo Over..
+# 12:30:46 >  
+
+!WARNING: GDKlockHome: ignoring empty or invalid .gdk_lock.
+!WARNING: BBPdir: initializing BBP.
+# MonetDB server v5.2.3, based on kernel v1.20.1
+# Serving database 'mTests_src_test'
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Copyright (c) 1993-2007 CWI, all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://amelia.ins.cwi.nl:31025/
+# MonetDB/SQL module v2.20.3 loaded
+
+Ready.
+#function user.main():void;
+#    clients.quit();
+#end main;
+
+Over..
+
+# 12:30:46 >  
+# 12:30:46 >  mclient -lsql -umonetdb -Pmonetdb --host=amelia --port=31025 
+# 12:30:46 >  
+
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+% sys.test,	sys.test # table_name
+% str,	str2 # name
+% varchar,	varchar # type
+% 6,	4 # length
+[ "",	"test"	]
+[ "test",	""	]
+[ "",	""	]
+[ " Test ",	""	]
+% sys.,	sys.test # table_name
+% length_str,	str # name
+% int,	varchar # type
+% 1,	6 # length
+[ 0,	""	]
+[ 4,	"test"	]
+[ 0,	""	]
+[ 5,	" Test "	]
+% sys.,	sys.test # table_name
+% substring_str,	str2 # name
+% varchar,	varchar # type
+% 5,	4 # length
+[ "",	"test"	]
+[ "est",	""	]
+[ "",	""	]
+[ "Test ",	""	]
+% sys.,	sys.test # table_name
+% substring_str,	str2 # name
+% varchar,	varchar # type
+% 5,	4 # length
+[ "",	"test"	]
+[ "est",	""	]
+[ "",	""	]
+[ "Test ",	""	]
+% sys.,	sys.test # table_name
+% substring_str,	str2 # name
+% varchar,	varchar # type
+% 1,	4 # length
+[ "",	"test"	]
+[ "e",	""	]
+[ "",	""	]
+[ "T",	""	]
+% sys.,	sys.test # table_name
+% substring_str,	str2 # name
+% varchar,	varchar # type
+% 1,	4 # length
+[ "",	"test"	]
+[ "e",	""	]
+[ "",	""	]
+[ "T",	""	]
+% sys.,	sys.test # table_name
+% substring_str,	str2 # name
+% varchar,	varchar # type
+% 5,	4 # length
+[ "",	"test"	]
+[ "est",	""	]
+[ "",	""	]
+[ "Test ",	""	]
+% sys.,	sys.test # table_name
+% substring_str,	str2 # name
+% varchar,	varchar # type
+% 5,	4 # length
+[ "",	"test"	]
+[ "est",	""	]
+[ "",	""	]
+[ "Test ",	""	]
+% sys.,	sys.test,	sys.test # table_name
+% locate_str,	str,	str2 # name
+% int,	varchar,	varchar # type
+% 1,	6,	4 # length
+[ 1,	"",	"test"	]
+[ 0,	"test",	""	]
+[ 1,	"",	""	]
+[ 0,	" Test ",	""	]
+% sys.,	sys.test,	sys.test # table_name
+% locate_str,	str,	str2 # name
+% int,	varchar,	varchar # type
+% 1,	6,	4 # length
+[ 1,	"",	"test"	]
+[ 0,	"test",	""	]
+[ 1,	"",	""	]
+[ 0,	" Test ",	""	]
+% sys.,	sys.test # table_name
+% ascii_str,	str # name
+% int,	varchar # type
+% 3,	6 # length
+[ NULL,	""	]
+[ 116,	"test"	]
+[ NULL,	""	]
+[ 32,	" Test "	]
+% sys.,	sys.test # table_name
+% code_ascii_str,	str # name
+% char,	varchar # type
+% 0,	6 # length
+[ NULL,	""	]
+[ "t",	"test"	]
+[ NULL,	""	]
+[ " ",	" Test "	]
+% sys.,	sys.test # table_name
+% left_str,	str # name
+% varchar,	varchar # type
+% 3,	6 # length
+[ "",	""	]
+[ "tes",	"test"	]
+[ "",	""	]
+[ " Te",	" Test "	]
+% sys.,	sys.test # table_name
+% right_str,	str # name
+% varchar,	varchar # type
+% 3,	6 # length
+[ "",	""	]
+[ "est",	"test"	]
+[ "",	""	]
+[ "st ",	" Test "	]
+% sys.,	sys.test # table_name
+% lower_str,	str # name
+% varchar,	varchar # type
+% 6,	6 # length
+[ "",	""	]
+[ "test",	"test"	]
+[ "",	""	]
+[ " test ",	" Test "	]
+% sys.,	sys.test # table_name
+% lcase_str,	str # name
+% varchar,	varchar # type
+% 6,	6 # length
+[ "",	""	]
+[ "test",	"test"	]
+[ "",	""	]
+[ " test ",	" Test "	]
+% sys.,	sys.test # table_name
+% upper_str,	str # name
+% varchar,	varchar # type
+% 6,	6 # length
+[ "",	""	]
+[ "TEST",	"test"	]
+[ "",	""	]
+[ " TEST ",	" Test "	]
+% sys.,	sys.test # table_name
+% ucase_str,	str # name
+% varchar,	varchar # type
+% 6,	6 # length
+[ "",	""	]
+[ "TEST",	"test"	]
+[ "",	""	]
+[ " TEST ",	" Test "	]
+% sys.,	sys.test # table_name
+% trim_str,	str # name
+% varchar,	varchar # type
+% 4,	6 # length
+[ "",	""	]
+[ "test",	"test"	]
+[ "",	""	]
+[ "Test",	" Test "	]
+% sys.,	sys.test # table_name
+% ltrim_str,	str # name
+% varchar,	varchar # type
+% 5,	6 # length
+[ "",	""	]
+[ "test",	"test"	]
+[ "",	""	]
+[ "Test ",	" Test "	]
+% sys.,	sys.test # table_name
+% rtrim_str,	str # name
+% varchar,	varchar # type
+% 5,	6 # length
+[ "",	""	]
+[ "test",	"test"	]
+[ "",	""	]
+[ " Test",	" Test "	]
+% sys.,	sys.test,	sys.test # table_name
+% insert_str,	str,	str2 # name
+% varchar,	varchar,	varchar # type
+% 4,	6,	4 # length
+[ "test",	"",	"test"	]
+[ "te",	"test",	""	]
+[ "",	"",	""	]
+[ " T",	" Test ",	""	]
+% sys.,	sys.test,	sys.test # table_name
+% replace_str,	str,	str2 # name
+% varchar,	varchar,	varchar # type
+% 11,	6,	4 # length
+[ "",	"",	"test"	]
+[ "testestest",	"test",	""	]
+[ "",	"",	""	]
+[ " Tes Test  ",	" Test ",	""	]
+% sys.,	sys.test # table_name
+% repeat_str,	str # name
+% varchar,	varchar # type
+% 24,	6 # length
+[ "",	""	]
+[ "testtesttesttest",	"test"	]
+[ "",	""	]
+[ " Test  Test  Test  Test ",	" Test "	]
+% .,	sys.test # table_name
+% ascii_single_value,	str # name
+% int,	varchar # type
+% 2,	6 # length
+[ 52,	""	]
+[ 52,	"test"	]
+[ 52,	""	]
+[ 52,	" Test "	]
+[ 1	]
+[ 1	]
+
+# 12:30:46 >  
+# 12:30:46 >  Done.
+# 12:30:46 >  
+

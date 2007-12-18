@@ -1483,8 +1483,11 @@ table_element(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 		symbol *sym = l->h->next->data.sym;
 		sql_column *c = mvc_bind_column(sql, t, cname);
 		exp_kind ek = {type_value, card_value, FALSE};
-		stmt *tmp = sql_value_exp(sql, NULL, sym, NULL, NULL, sql_sel, ek);
+		stmt *tmp;
 
+		if (!c) 
+			return sql_error(sql, 02, "column '%s' not found\n", cname);
+ 		tmp = sql_value_exp(sql, NULL, sym, NULL, NULL, sql_sel, ek);
 		if (!tmp || (tmp = check_types(sql, &c->type, tmp, type_equal)) == NULL) 
 			return NULL;
 		stmt_destroy(tmp);
@@ -1504,6 +1507,9 @@ table_element(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 		sql_column *c = mvc_bind_column(sql, t, cname);
 		int null = (s->token == SQL_NOT_NULL) ? 0 : 1;
 
+
+		if (!c) 
+			return sql_error(sql, 02, "column '%s' not found\n", cname);
 		mvc_null(sql, c, null);
 		res = stmt_none();
 	}
@@ -1512,6 +1518,8 @@ table_element(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 	{
 		char *cname = s->data.sval;
 		sql_column *c = mvc_bind_column(sql, t, cname);
+		if (!c) 
+			return sql_error(sql, 02, "column '%s' not found\n", cname);
 		mvc_drop_default(sql,c);
 
 		res = stmt_none();
