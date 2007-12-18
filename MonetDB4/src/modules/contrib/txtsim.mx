@@ -50,6 +50,9 @@ Provides basic similarity metrics for strings.
   .COMMAND soundex(str) : str = soundex_impl;
     "Soundex function for phonetic matching"
 
+  .COMMAND stringdiff(str s1, str s2) : int = stringdiff_impl;
+    "calculate the soundexed editdistance"
+
   .COMMAND qgramnormalize(str): str = CMDqgramnormalize;
     "'Normalizes' strings (eg. toUpper and replaces non-alphanumerics with one space"
   
@@ -155,10 +158,12 @@ levenshtein_impl(int *result, str s, str t, int *insdel_cost, int *replace_cost,
 	n = (int) strlen(s);	/* 64bit: assume strings are less than 2 GB */
 	m = (int) strlen(t);
 	if (n == 0) {
-		return m;
+		*result = m;
+		return GDK_SUCCEED;
 	}
 	if (m == 0) {
-		return n;
+		*result = n;
+		return GDK_SUCCEED;
 	}
 	sz = (n + 1) * (m + 1) * sizeof(int);
 	d = (int *) GDKmalloc(sz);
@@ -309,6 +314,19 @@ soundex_impl(str *res, str Name)
 	return GDK_SUCCEED;
 }
 
+int
+stringdiff_impl(int *res, str s1, str s2)
+{
+	int r = GDK_SUCCEED;
+	char *S1 = NULL, *S2 = NULL;
+
+	soundex_impl(&S1, s1);
+	soundex_impl(&S2, s2);
+	r = levenshteinbasic_impl(res, S1, S2);
+	GDKfree(S1);
+	GDKfree(S2);
+	return r;
+}
 
 /******************************
  * QGRAMNORMALIZE
@@ -942,12 +960,6 @@ CMDqgramselfjoin(BAT **res, BAT *qgram, BAT *id, BAT *pos, BAT *len, flt *c, int
 }
 
 @mil
-
-proc stringdiff( str s1, str s1 ) : int {
-	var sd1 := soundex(s1);
-	var sd2 := soundex(s2);
-	return editdistance(sd1,sd2);
-}
 
 proc str2qgrams(str s) : bat[oid,str]
 {
