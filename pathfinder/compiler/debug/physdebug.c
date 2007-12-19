@@ -1675,7 +1675,14 @@ pa_xml (PFarray_t *xml, PFpa_op_t *n, unsigned int node_id)
             break;
        
         case pa_error:
-            break; 
+            /* FIXME */
+            PFarray_printf (xml,
+                            "    <content>\n"
+                            "      <column name=error new=\"false\"/>\n"
+                            "    </content>\n"
+                           );
+            break;
+
         case pa_cond_err:
             PFarray_printf (xml,
                             "    <content>\n"

@@ -2020,6 +2020,21 @@ plan_empty_frag (const PFla_op_t *n __attribute__((unused)))
 }
 
 /**
+ * 'error' operator in the logical algebra just get a 1:1 mapping
+ * into the physical error operator (just like cond_err).
+ */
+static PFplanlist_t *
+plan_error (const PFla_op_t *n)
+{
+    PFplanlist_t *ret = new_planlist ();
+
+    for (unsigned int i = 0; i < PFarray_last (L(n)->plans); i++)
+        add_plan (ret, error(*(plan_t **) PFarray_at (L(n)->plans, i)));
+
+    return ret;
+}
+
+/**
  * `cond_err' operator in the logical algebra just get a 1:1 mapping
  * into the physical cond_err operator.
  */
@@ -2887,6 +2902,7 @@ plan_subexpression (PFla_op_t *n)
         case la_frag_union:     plans = plan_frag_union (n);   break;
         case la_empty_frag:     plans = plan_empty_frag (n);   break;
 
+        case la_error:          plans = plan_error (n);        break;
         case la_cond_err:       plans = plan_cond_err (n);     break;
 
         case la_nil:

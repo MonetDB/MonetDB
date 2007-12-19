@@ -418,6 +418,11 @@ union PFla_op_sem_t {
         PFalg_att_t     item_res; /**< item column of result relation */
     } merge_adjacent;
 
+    /* semantic content for error */
+    struct {
+        PFalg_att_t     att;      /**< column with the error msg */
+    } error;
+
     /* semantic content for conditional error */
     struct {
         PFalg_att_t     att;      /**< name of the boolean attribute */

@@ -151,6 +151,7 @@ typedef struct PFpa_op_t *NODEPTR_TYPE;
 %term frag_extract   = 134
 %term frag_union     = 135
 %term empty_frag     = 136
+%term error          = 139
 %term cond_err       = 140
 %term nil            = 141
 %term trace          = 142
@@ -257,6 +258,7 @@ Frag:     frag_extract (FunRel)                                    = 122 (10);
 FragList: frag_union (FragList, Frag)                              = 123 (10);
 FragList: empty_frag                                               = 124 (10);
 
+Rel:      error(Rel)                                               = 129 (10);
 Rel:      cond_err (Rel, Rel)                                      = 130 (10);
 Rel:      cond_err (Rel, empty_tbl)                                = 131 (10);
 Rel:      trace (Rel, trace_msg (Rel, Map))                        = 135 (10);
@@ -7162,6 +7164,10 @@ reduce (PFpa_op_t * p, int goalnt)
         case 124:
             break;
 
+        /* Rel:      error(Rel) */
+        case 129:
+            execute ( error(lit_str("error msg")));
+            break;
         /* Rel:      cond_err (Rel, Rel) */
         case 130:
             execute (
