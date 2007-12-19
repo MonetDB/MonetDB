@@ -227,6 +227,26 @@ CFLAGS = $(CFLAGS)
 CFLAGS = $(CFLAGS) -Wp64 -Wcheck
 !ENDIF
 
+# When compiled with plain `nmake`,
+# 32-bit OIDs are used by default on 64-bit Windows
+# (see NT/monetdb_winconfig.h for details);
+# compile with `nmake MONET_OID64=1` to use 64-bit OIDs on 64-bit Windows;
+# compile with `nmake MONET_OID32=1` to use 32-bit OIDs on 64-bit Windows
+# in case the default is altered in NT/monetdb_winconfig.h .
+#!IFDEF BITS64
+!IF $(bits) == 64
+!IFNDEF MONET_OID64
+!IFDEF MONET_OID32
+CFLAGS = $(CFLAGS) -DMONET_OID32
+!ENDIF
+!ENDIF
+!IFNDEF MONET_OID32
+!IFDEF MONET_OID64
+CFLAGS = $(CFLAGS) -DMONET_OID64
+!ENDIF
+!ENDIF
+!ENDIF
+
 PHP_INCS = -I$(PHP_SRCDIR) -I$(PHP_SRCDIR)\main -I$(PHP_SRCDIR)\TSRM -I$(PHP_SRCDIR)\Zend -DPHP_WIN32 -DZEND_WIN32 -DZEND_DEBUG=0 -DZTS=1
 PHP_LIBS = $(PHP_INSTDIR)\php5embed.lib
 

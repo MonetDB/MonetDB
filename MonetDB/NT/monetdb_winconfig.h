@@ -514,8 +514,16 @@ typedef int socklen_t;
 #define LLFMT "%I64d"
 
 /* Define if the oid type should use 32 bits on a 64-bit architecture */
+/* 32-bit OIDs are used by default on 64-bit Windows;
+ * compile with `nmake MONET_OID64=1` to use 64-bit OIDs on 64-bit Windows;
+ * remove the following 5 lines (and this comment) to make 64-bit OIDs
+ * default on 64-bit Windows (then to be overruled via `nmake MONET_OID32=1`;
+ * see also NT/winrules.msc .
+ */
 #ifdef _WIN64
+#ifndef MONET_OID64
 #define MONET_OID32 1
+#endif
 #endif
 
 /* Define if you do not want assertions */
