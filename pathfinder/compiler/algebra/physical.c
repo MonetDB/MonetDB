@@ -3267,7 +3267,7 @@ PFpa_empty_frag (void)
 /**
  * Constructor for error
  */
-PFpa_op_t * PFpa_error (const PFpa_op_t *n)
+PFpa_op_t * PFpa_error (const PFpa_op_t *n,  PFalg_att_t att)
 {
     PFpa_op_t *ret = wire1 (pa_error, n);
 
@@ -3279,8 +3279,15 @@ PFpa_op_t * PFpa_error (const PFpa_op_t *n)
         = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
 
     /* copy schema from n  */
-    for (unsigned int i = 0; i < n->schema.count; i++)
-            ret->schema.items[i] = n->schema.items[i];
+    for (unsigned int i = 0; i < n->schema.count; i++) {
+        ret->schema.items[i] = n->schema.items[i];
+        if (att == n->schema.items[i].name)
+            ret->schema.items[i].type = 0;
+    }
+
+    ret->sem.err.att = att;
+    ret->sem.err.str = "I was there, Case; I was there when "
+                       "they invented your kind";
 
     /* ordering stays the same */
     for (unsigned int i = 0; i < PFord_set_count (n->orderings); i++)
@@ -3310,7 +3317,7 @@ PFpa_op_t * PFpa_cond_err (const PFpa_op_t *n, const PFpa_op_t *err,
 
     /* copy schema from n  */
     for (unsigned int i = 0; i < n->schema.count; i++)
-            ret->schema.items[i] = n->schema.items[i];
+        ret->schema.items[i] = n->schema.items[i];
 
     ret->sem.err.att = att;
     ret->sem.err.str = err_string;

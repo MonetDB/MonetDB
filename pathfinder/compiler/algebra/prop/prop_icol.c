@@ -247,7 +247,6 @@ prop_infer_icols (PFla_op_t *n, PFalg_att_t icols)
         case la_lit_tbl:
         case la_empty_tbl:
         case la_ref_tbl:
-        case la_error:
             break;
 
         case la_attach:
@@ -685,6 +684,7 @@ prop_infer_icols (PFla_op_t *n, PFalg_att_t icols)
             n->prop->l_icols = 0;
             break;
 
+        case la_error:
         case la_cond_err:
             /* infer incoming icols for input relation */
             n->prop->l_icols = n->prop->icols;

@@ -3444,7 +3444,7 @@ PFla_empty_frag (void)
  *
  */
 PFla_op_t *
-PFla_error (const PFla_op_t *n)
+PFla_error (const PFla_op_t *n, PFalg_att_t att)
 {
     PFla_op_t    *ret;
     unsigned int i;
@@ -3459,8 +3459,15 @@ PFla_error (const PFla_op_t *n)
         = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
 
     /* copy schema from argument 'n' */
-    for (i = 0; i < n->schema.count; i++)
+    for (i = 0; i < n->schema.count; i++) {
         ret->schema.items[i] = n->schema.items[i];
+        if (att == n->schema.items[i].name)
+            ret->schema.items[i].type = 0;
+    }
+
+    ret->sem.err.att = att;
+    ret->sem.err.str =  "Flying is learning how to throw yourself "
+                        "at the ground and miss.";
 
     return ret;
 }
@@ -4366,7 +4373,7 @@ PFla_op_duplicate (PFla_op_t *n, PFla_op_t *left, PFla_op_t *right)
             return PFla_empty_frag ();
 
         case la_error:
-            return PFla_error (left);
+            return PFla_error (left, n->sem.err.att);
 
         case la_cond_err:
             return PFla_cond_err (left, right,

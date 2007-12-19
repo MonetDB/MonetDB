@@ -418,15 +418,12 @@ union PFla_op_sem_t {
         PFalg_att_t     item_res; /**< item column of result relation */
     } merge_adjacent;
 
-    /* semantic content for error */
+    /* semantic content for error and conditional error */
     struct {
-        PFalg_att_t     att;      /**< column with the error msg */
-    } error;
-
-    /* semantic content for conditional error */
-    struct {
-        PFalg_att_t     att;      /**< name of the boolean attribute */
-        char *          str;      /**< error message */
+        /* error: column of error message
+         * cond_error: name of the boolean attribute */
+        PFalg_att_t     att;
+        char *          str;      /**< error message, only used by cond_err */
     } err;
 
     /* semantic content for debug relation map operator */
@@ -1105,7 +1102,7 @@ PFla_op_t * PFla_empty_frag (void);
 /**
  * Constructor for error
  */
-PFla_op_t * PFla_error (const PFla_op_t *n);
+PFla_op_t * PFla_error (const PFla_op_t *n, PFalg_att_t att);
 
 /**
  * Constructor for conditional error

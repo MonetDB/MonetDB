@@ -201,7 +201,7 @@
 #define empty_frag()      PFla_empty_frag ()
 
 /* error operator */
-#define error(a) PFla_error ((a))
+#define error(a, b) PFla_error ((a), (b))
 
 /* conditional error operator */
 #define cond_err(a,b,c,d) PFla_cond_err ((a),(b),(c),(d))

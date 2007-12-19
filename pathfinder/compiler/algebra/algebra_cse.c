@@ -435,7 +435,6 @@ subexp_eq (PFla_op_t *a, PFla_op_t *b)
         case la_fragment:
         case la_frag_union:
         case la_empty_frag:
-        case la_error:
             /* no extra semantic content to check for these operators */
             return true;
             break;
@@ -459,6 +458,10 @@ subexp_eq (PFla_op_t *a, PFla_op_t *b)
 
         case la_frag_extract:
             return (a->sem.col_ref.pos == b->sem.col_ref.pos);
+            break;
+
+        case la_error:
+            return (a->sem.err.att == b->sem.err.att);
             break;
 
         case la_cond_err:

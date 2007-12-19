@@ -358,7 +358,6 @@ infer_ori_names (PFla_op_t *n, PFarray_t *par_np_list)
             }
             break;
 
-        case la_error:
         case la_select:
         case la_pos_select:
         case la_distinct:
@@ -628,6 +627,10 @@ infer_ori_names (PFla_op_t *n, PFarray_t *par_np_list)
         case la_empty_frag:
         case la_fun_frag_param:
             /* do not infer name pairs to the children */
+            break;
+
+        case la_error:
+            n->prop->l_name_pairs = PFarray_copy (np_list);
             break;
 
         case la_cond_err:

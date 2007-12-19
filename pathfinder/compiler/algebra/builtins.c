@@ -637,10 +637,7 @@ PFbui_fn_error (const PFla_op_t *loop, bool ordering, struct PFla_pair_t *args)
     (void) loop; (void) ordering;
 
     return (struct PFla_pair_t) {
-        .rel  = error( project (args[0].rel,
-                                proj (att_iter, att_iter),
-                                proj (att_pos, att_pos),
-                                proj (att_item, att_item))),
+        .rel  = error (args[0].rel, att_item),
         .frag = PFla_empty_set ()};
 }
 

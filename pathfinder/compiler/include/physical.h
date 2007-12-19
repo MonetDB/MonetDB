@@ -341,10 +341,12 @@ union PFpa_op_sem_t {
         PFalg_att_t     item2;    /**< name of the second item column */
     } iter_item1_item2;
 
-    /* semantic content for conditional error */
+    /* semantic content for error and conditional error */
     struct {
-        PFalg_att_t     att;     /**< name of the boolean attribute */
-        char *          str;     /**< error message */
+        /* error: column of error message
+         * cond_error: name of the boolean attribute */
+        PFalg_att_t     att;
+        char *          str;     /**< error message, only used by cond_err */
     } err;
     
     /* semantic content for debug relation map operator */
@@ -869,7 +871,7 @@ PFpa_op_t *PFpa_empty_frag (void);
 /**
  * Constructor for error
  */
-PFpa_op_t * PFpa_error (const PFpa_op_t *n);
+PFpa_op_t * PFpa_error (const PFpa_op_t *n,  PFalg_att_t att);
 
 /**
  * Constructor for conditional error

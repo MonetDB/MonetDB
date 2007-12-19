@@ -765,9 +765,8 @@ apply_patch (PFla_op_t *n, PFarray_t *assembly1, PFarray_t *assembly2)
         case la_empty_frag:
         {
         } break;
+
         case la_error:
-        { /* FIXME: is this correct? nothing to do? */
-        } break;
         case la_cond_err:
         {
             PFalg_schema_t schema = n->schema;

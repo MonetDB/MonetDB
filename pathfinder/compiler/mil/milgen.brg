@@ -7166,8 +7166,23 @@ reduce (PFpa_op_t * p, int goalnt)
 
         /* Rel:      error(Rel) */
         case 129:
-            execute ( error(lit_str("error msg")));
+            execute (
+                if_ (eq (count (VAR (L(p)->env, p->sem.err.att, aat_str)),
+                         lit_int (0)),
+                     nop(),
+                     error (fetch ( VAR (L(p)->env, p->sem.err.att, aat_str),
+                                    lit_int (0)))));
+
+            /* copy all the attributes */
+            for (unsigned int i = 0; i < env_count (L(p)->env); i++) {
+                pin (env_at (L(p)->env, i).mvar, p->refctr);
+                env_add (p->env,
+                         env_at (L(p)->env, i).att,
+                         env_at (L(p)->env, i).ty,
+                         env_at (L(p)->env, i).mvar);
+            }
             break;
+
         /* Rel:      cond_err (Rel, Rel) */
         case 130:
             execute (
