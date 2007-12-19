@@ -1748,7 +1748,7 @@ win_unlink(const char *pathname)
  		/* Vista is paranoid: we cannot delete read-only files owned
 		 * by ourselves. Vista somehow also sets these files to read-only.
 		 */
-		(void) SetFileAttributes(path, FILE_ATTRIBUTE_NORMAL);
+		(void) SetFileAttributes(pathname, FILE_ATTRIBUTE_NORMAL);
 		ret = _unlink(pathname);
 	}
 	if (ret < 0) {
