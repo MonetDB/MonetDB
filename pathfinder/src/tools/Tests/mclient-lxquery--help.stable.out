@@ -1,10 +1,18 @@
 stdout of test 'mclient-lxquery--help` in directory 'src/tools` itself:
 
 
-# 16:36:12 >  
-# 16:36:12 >  Mtimeout -timeout 300 ./mclient-lxquery--help mclient-lxquery--help 
-# 16:36:12 >  
+# 23:46:23 >  
+# 23:46:23 >   Mserver "--config=/ufs/manegold/_/scratch0/Monet/Testing/Stable/prefix.--enable-strict_--disable-debug_--enable-optimize_--disable-assert/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/manegold/_/scratch0/Monet/Testing/Stable/prefix.--enable-strict_--disable-debug_--enable-optimize_--disable-assert/lib64/MonetDB4:/ufs/manegold/_/scratch0/Monet/Testing/Stable/prefix.--enable-strict_--disable-debug_--enable-optimize_--disable-assert/lib64/MonetDB4/lib:/ufs/manegold/_/scratch0/Monet/Testing/Stable/prefix.--enable-strict_--disable-debug_--enable-optimize_--disable-assert/lib64/MonetDB4/bin" --set "gdk_dbfarm=/ufs/manegold/_/scratch0/Monet/Testing/Stable/prefix.--enable-strict_--disable-debug_--enable-optimize_--disable-assert/var/MonetDB4/dbfarm" --set "sql_logdir=/ufs/manegold/_/scratch0/Monet/Testing/Stable/prefix.--enable-strict_--disable-debug_--enable-optimize_--disable-assert/var/MonetDB4/sql_logs" --set "xquery_logdir=/ufs/manegold/_/scratch0/Monet/Testing/Stable/prefix.--enable-strict_--disable-debug_--enable-optimize_--disable-assert/var/MonetDB4/xquery_logs" --set mapi_open=true --set xrpc_open=true --set mapi_port=34548 --set xrpc_port=49429 --set monet_prompt= --trace "--dbname=mTests_src_tools" "--dbinit= module(pathfinder);" ; echo ; echo Over..
+# 23:46:23 >  
 
+# MonetDB Server v4.20.1
+# based on GDK   v1.20.1
+# Copyright (c) 1993-2007, CWI. All rights reserved.
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs; dynamically linked.
+# Visit http://monetdb.cwi.nl/ for further information.
+# PF/Tijah module v0.3.0 loaded. http://dbappl.cs.utwente.nl/pftijah
+# MonetDB/XQuery module v0.20.1 loaded
+# XRPC administrative console at http://127.0.0.1:49429/admin
 
 printf("\nReady.\n");
 
@@ -39,15 +47,12 @@ Session commands:
 \|cmd   - pipe result to process, or stop when no command is given
 \h      - show the readline history
 \t      - toggle timer
-\e      - echo the query in sql formatting mode
-\f      - format using a built-in renderer {csv,tab,raw,sql,xml} 
-\w#     - set maximal page width (-1=raw,0=no limit, >0 max char)
-\r#     - set maximum rows per page (-1=raw)
+\f      - result format: dm or xml[-noheader][-typed|-noroot|-root-FOOBAR]
 \L file - save client/server interaction
 \X      - trace mclient code
 \q      - terminate session
-xquery>
-# 23:46:47 >  
-# 23:46:47 >  Done.
-# 23:46:47 >  
+[?1034hxquery>
+# 23:46:24 >  
+# 23:46:24 >  Done.
+# 23:46:24 >  
 
