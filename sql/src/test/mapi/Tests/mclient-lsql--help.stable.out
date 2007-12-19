@@ -28,20 +28,19 @@ Over..
 \|cmd   - pipe result to process, or stop when no command is given
 \h      - show the readline history
 \t      - toggle timer
-\e      - echo the query in sql formatting mode
 \D table- dumps the table, or the complete database if none given.
 \d table- describe the table, or the complete database if none given.
 \A      - enable auto commit
 \a      - disable auto commit
+\e      - echo the query in sql formatting mode
 \f      - format using a built-in renderer {csv,tab,raw,sql,xml} 
 \w#     - set maximal page width (-1=raw,0=no limit, >0 max char)
 \r#     - set maximum rows per page (-1=raw)
 \L file - save client/server interaction
 \X      - trace mclient code
 \q      - terminate session
-sql>
-
-# 23:46:47 >  
-# 23:46:47 >  Done.
-# 23:46:47 >  
+[?1034hsql>
+# 23:30:05 >  
+# 23:30:05 >  Done.
+# 23:30:05 >  
 
