@@ -767,7 +767,6 @@ CALCswitchbit(MalBlkPtr mb, MalStkPtr stk, InstrPtr P)
 
 	if (b == bit_nil) {
 		p = ATOMnilptr(t1);
-		throw(MAL, "ifthenelse", "cannot switch on nil value\n");
 	} else if (b) {
 		p = getArgReference(stk,P,2);
 	} else {
