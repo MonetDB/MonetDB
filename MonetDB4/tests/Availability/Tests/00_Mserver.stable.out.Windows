@@ -1,17 +1,13 @@
 stdout of test '00_Mserver` in directory 'tests/Availability` itself:
 
 
-# 06:00:12 >  
-# 06:00:12 >   Mserver "--config=C:\cygwin\var\tmp\monet.Int.32.32.d.8719\MonetDB4\NT\conf\MonetDB.conf" --debug=10 --set "monet_mod_path=C:\cygwin\var\tmp\monet.Int.32.32.d.8719\MonetDB4\NT\src\modules\plain\.libs;C:\cygwin\var\tmp\monet.Int.32.32.d.8719\MonetDB4\NT\src\modules\plain;C:\cygwin\var\tmp\monet.Int.32.32.d.8719\MonetDB4\NT\src\modules\contrib\.libs;C:\cygwin\var\tmp\monet.Int.32.32.d.8719\MonetDB4\NT\src\modules\contrib;C:\cygwin\var\tmp\monet.Int.32.32.d.8719\MonetDB4\NT\src\modules\calibrator\.libs;C:\cygwin\var\tmp\monet.Int.32.32.d.8719\MonetDB4\NT\src\modules\calibrator;C:\cygwin\var\tmp\monet.Int.32.32.d.8719\MonetDB4\NT\src\mapi\.libs;C:\cygwin\var\tmp\monet.Int.32.32.d.8719\MonetDB4\NT\src\mapi;C:\cygwin\var\tmp\monet.Int.32.32.d.8719\MonetDB4\NT\src\modules\mnetcdf\.libs;C:\cygwin\var\tmp\monet.Int.32.32.d.8719\MonetDB4\NT\src\modules\mnetcdf;C:\cygwin\var\tmp\monet.Int.32.32.d.8719\MonetDB4\scripts\tools" --set "gdk_dbfarm=C:\cygwin\var\tmp\monet.Int.32.32.d.8719\MonetDB4\NT\dbfarm" --set "sql_logdir=C:\cygwin\var\tmp\monet.Int.32.32.d.8719\MonetDB4\NT\sql_logs" --set "xquery_logdir=C:\cygwin\var\tmp\monet.Int.32.32.d.8719\MonetDB4\NT\xquery_logs" --set mapi_open=true --set xrpc_open=true --set mapi_port=30048 --set xrpc_port=41800 --set monet_prompt= --trace --dbname=mTests_tests_Availability 00_Mserver.prelude 
-# 06:00:12 >  
+# 18:28:04 >  
+# 18:28:04 >  Mtimeout -timeout 60 Mserver "--config=/var/tmp/_4.3.13-FixedPetersDDsync_PREFIX_MONET_GNU_32_d_--enable-warning_/etc/monet.conf" --debug=10 --set "monet_mod_path=/var/tmp/_4.3.13-FixedPetersDDsync_PREFIX_MONET_GNU_32_d_--enable-warning_/lib/MonetDB" --set "gdk_dbfarm=/var/tmp/_4.3.13-FixedPetersDDsync_PREFIX_MONET_GNU_32_d_--enable-warning_/var/MonetDB/dbfarm" --set "sql_logdir=/var/tmp/_4.3.13-FixedPetersDDsync_PREFIX_MONET_GNU_32_d_--enable-warning_/var/MonetDB/log" --set mapi_port=53708 --set sql_port=52024 --set monet_prompt= --trace --dbname=mTests_tests_Availability 00_Mserver.prelude < 00_Mserver.milS
+# 18:28:04 >  
 
-
-
-# MonetDB Server v4.21.0
-# based on GDK   v1.21.0
-# Copyright (c) 1993-2007, CWI. All rights reserved.
-# Compiled for i686-pc-win32/32bit with 32bit OIDs; dynamically linked.
-# Visit http://monetdb.cwi.nl/ for further information.
+# Monet Database Server V4.3.13
+# Copyright (c) 1993-2004, CWI. All rights reserved.
+# compiled for i686-pc-linux-gnu/32bit; dynamically linked.
 #---------------------------------#
 # BAT:		  tmp_30	  #
 # (str)		  (str)		  #
@@ -77,19 +73,19 @@ dir();
 #-----------------------------------------------------------------------------------------------------------------#
 [ "MODULES",		  "str",  "str",  47,	  0,	  "clean",	  "load", "pers", 0,	  2		  ]
 [ "adm_atomtbl",	  "str",  "int",  15,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
-[ "adm_fcntbl",		  "str",  "oid",  1027,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
+[ "adm_fcntbl",		  "str",  "oid",  1035,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
 [ "monet_environment",	  "str",  "str",  44,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
-[ "monet_fcn_aut",	  "oid",  "str",  956,	  0,	  "dirty",	  "load", "tran", 1,	  2		  ]
-[ "monet_fcn_cnt",	  "oid",  "int",  1027,	  0,	  "dirty",	  "load", "tran", 1,	  2		  ]
-[ "monet_fcn_dat",	  "oid",  "str",  956,	  0,	  "dirty",	  "load", "tran", 1,	  2		  ]
-[ "monet_fcn_dsc",	  "oid",  "str",  956,	  0,	  "dirty",	  "load", "tran", 1,	  2		  ]
-[ "monet_fcn_fcn",	  "oid",  "ptr",  913,	  0,	  "dirty",	  "load", "tran", 1,	  2		  ]
-[ "monet_fcn_imp",	  "oid",  "ptr",  1027,	  0,	  "dirty",	  "load", "tran", 1,	  2		  ]
-[ "monet_fcn_mid",	  "oid",  "oid",  956,	  0,	  "dirty",	  "load", "tran", 1,	  2		  ]
-[ "monet_fcn_nme",	  "oid",  "str",  1027,	  0,	  "dirty",	  "load", "tran", 1,	  2		  ]
-[ "monet_fcn_pro",	  "oid",  "str",  2686,	  0,	  "dirty",	  "load", "tran", 1,	  2		  ]
+[ "monet_fcn_aut",	  "oid",  "str",  964,	  0,	  "dirty",	  "load", "tran", 1,	  2		  ]
+[ "monet_fcn_cnt",	  "oid",  "int",  1035,	  0,	  "dirty",	  "load", "tran", 1,	  2		  ]
+[ "monet_fcn_dat",	  "oid",  "str",  964,	  0,	  "dirty",	  "load", "tran", 1,	  2		  ]
+[ "monet_fcn_dsc",	  "oid",  "str",  964,	  0,	  "dirty",	  "load", "tran", 1,	  2		  ]
+[ "monet_fcn_fcn",	  "oid",  "ptr",  921,	  0,	  "dirty",	  "load", "tran", 1,	  2		  ]
+[ "monet_fcn_imp",	  "oid",  "ptr",  1035,	  0,	  "dirty",	  "load", "tran", 1,	  2		  ]
+[ "monet_fcn_mid",	  "oid",  "oid",  964,	  0,	  "dirty",	  "load", "tran", 1,	  2		  ]
+[ "monet_fcn_nme",	  "oid",  "str",  1035,	  0,	  "dirty",	  "load", "tran", 1,	  2		  ]
+[ "monet_fcn_pro",	  "oid",  "str",  2702,	  0,	  "dirty",	  "load", "tran", 1,	  2		  ]
 [ "monet_fcn_sig",	  "oid",  "str",  39,	  0,	  "dirty",	  "load", "tran", 1,	  2		  ]
-[ "monet_fcn_tpe",	  "oid",  "int",  1027,	  0,	  "dirty",	  "load", "tran", 1,	  2		  ]
+[ "monet_fcn_tpe",	  "oid",  "int",  1035,	  0,	  "dirty",	  "load", "tran", 1,	  2		  ]
 [ "monet_mod_atm",	  "oid",  "str",  0,	  0,	  "dirty",	  "load", "tran", 1,	  2		  ]
 [ "monet_mod_cnt",	  "oid",  "int",  17,	  0,	  "dirty",	  "load", "tran", 1,	  2		  ]
 [ "monet_mod_dep",	  "oid",  "str",  8,	  0,	  "dirty",	  "load", "tran", 1,	  2		  ]

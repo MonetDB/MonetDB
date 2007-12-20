@@ -1,15 +1,13 @@
 stdout of test '99_Modules_ALL` in directory 'tests/Availability` itself:
 
 
-# 06:00:21 >  
-# 06:00:21 >   Mserver "--config=C:\cygwin\var\tmp\monet.Int.32.32.d.8719\MonetDB4\NT\conf\MonetDB.conf" --debug=10 --set "monet_mod_path=C:\cygwin\var\tmp\monet.Int.32.32.d.8719\MonetDB4\NT\src\modules\plain\.libs;C:\cygwin\var\tmp\monet.Int.32.32.d.8719\MonetDB4\NT\src\modules\plain;C:\cygwin\var\tmp\monet.Int.32.32.d.8719\MonetDB4\NT\src\modules\contrib\.libs;C:\cygwin\var\tmp\monet.Int.32.32.d.8719\MonetDB4\NT\src\modules\contrib;C:\cygwin\var\tmp\monet.Int.32.32.d.8719\MonetDB4\NT\src\modules\calibrator\.libs;C:\cygwin\var\tmp\monet.Int.32.32.d.8719\MonetDB4\NT\src\modules\calibrator;C:\cygwin\var\tmp\monet.Int.32.32.d.8719\MonetDB4\NT\src\mapi\.libs;C:\cygwin\var\tmp\monet.Int.32.32.d.8719\MonetDB4\NT\src\mapi;C:\cygwin\var\tmp\monet.Int.32.32.d.8719\MonetDB4\NT\src\modules\mnetcdf\.libs;C:\cygwin\var\tmp\monet.Int.32.32.d.8719\MonetDB4\NT\src\modules\mnetcdf;C:\cygwin\var\tmp\monet.Int.32.32.d.8719\MonetDB4\scripts\tools" --set "gdk_dbfarm=C:\cygwin\var\tmp\monet.Int.32.32.d.8719\MonetDB4\NT\dbfarm" --set "sql_logdir=C:\cygwin\var\tmp\monet.Int.32.32.d.8719\MonetDB4\NT\sql_logs" --set "xquery_logdir=C:\cygwin\var\tmp\monet.Int.32.32.d.8719\MonetDB4\NT\xquery_logs" --set mapi_open=true --set xrpc_open=true --set mapi_port=30048 --set xrpc_port=41800 --set monet_prompt= --trace --dbname=mTests_tests_Availability  
-# 06:00:21 >  
+# 13:58:47 >  
+# 13:58:47 >  Mtimeout -timeout 60 Mserver "--config=/ufs/sjoerd/src/MonetDB/build/conf/monet.conf" --debug=10 --set "monet_mod_path=/ufs/sjoerd/src/MonetDB/build/src/modules/plain/.libs:/ufs/sjoerd/src/MonetDB/build/src/modules/calibrator/.libs:/ufs/sjoerd/src/MonetDB/build/src/mapi/.libs" --dbfarm "/ufs/sjoerd/src/MonetDB/build/dbfarm" --set monet_prompt= --trace --dbname=mTests_tests_Availability  < 99_Modules_ALL.milS
+# 13:58:47 >  
 
-# MonetDB Server v4.21.0
-# based on GDK   v1.21.0
-# Copyright (c) 1993-2007, CWI. All rights reserved.
-# Compiled for i686-pc-win32/32bit with 32bit OIDs; dynamically linked.
-# Visit http://monetdb.cwi.nl/ for further information.
+# Monet Database Server V4.3.7
+# Copyright (c) 1993-2002, CWI. All rights reserved.
+# compiled for i686-pc-linux-gnu/32bit; dynamically linked.
 setoid(oid(20000000));
 
 var MODULES:=bat("MODULES");

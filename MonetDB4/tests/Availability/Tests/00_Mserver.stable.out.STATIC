@@ -1,17 +1,13 @@
 stdout of test '00_Mserver` in directory 'tests/Availability` itself:
 
 
-# 00:44:35 >  
-# 00:44:35 >   Mserver "--config=/scratch/monet.GNU.64.64.s.8719/MonetDB4/Fedora6/conf/MonetDB.conf" --debug=10 --set "monet_mod_path=/scratch/monet.GNU.64.64.s.8719/MonetDB4/Fedora6/src/modules/plain/.libs:/scratch/monet.GNU.64.64.s.8719/MonetDB4/Fedora6/src/modules/plain:/scratch/monet.GNU.64.64.s.8719/MonetDB4/Fedora6/src/modules/contrib/.libs:/scratch/monet.GNU.64.64.s.8719/MonetDB4/Fedora6/src/modules/contrib:/scratch/monet.GNU.64.64.s.8719/MonetDB4/Fedora6/src/modules/calibrator/.libs:/scratch/monet.GNU.64.64.s.8719/MonetDB4/Fedora6/src/modules/calibrator:/scratch/monet.GNU.64.64.s.8719/MonetDB4/Fedora6/src/mapi/.libs:/scratch/monet.GNU.64.64.s.8719/MonetDB4/Fedora6/src/mapi:/scratch/monet.GNU.64.64.s.8719/MonetDB4/scripts/tools" --set "gdk_dbfarm=/scratch/monet.GNU.64.64.s.8719/MonetDB4/Fedora6/dbfarm" --set "sql_logdir=/scratch/monet.GNU.64.64.s.8719/MonetDB4/Fedora6/sql_logs" --set "xquery_logdir=/scratch/monet.GNU.64.64.s.8719/MonetDB4/Fedora6/xquery_logs" --set mapi_open=true --set xrpc_open=true --set mapi_port=33093 --set xrpc_port=45781 --set monet_prompt= --trace --dbname=mTests_tests_Availability 00_Mserver.prelude 
-# 00:44:35 >  
+# 18:28:04 >  
+# 18:28:04 >  Mtimeout -timeout 60 Mserver "--config=/var/tmp/_4.3.13-FixedPetersDDsync_PREFIX_MONET_GNU_32_d_--enable-warning_/etc/monet.conf" --debug=10 --set "monet_mod_path=/var/tmp/_4.3.13-FixedPetersDDsync_PREFIX_MONET_GNU_32_d_--enable-warning_/lib/MonetDB" --set "gdk_dbfarm=/var/tmp/_4.3.13-FixedPetersDDsync_PREFIX_MONET_GNU_32_d_--enable-warning_/var/MonetDB/dbfarm" --set "sql_logdir=/var/tmp/_4.3.13-FixedPetersDDsync_PREFIX_MONET_GNU_32_d_--enable-warning_/var/MonetDB/log" --set mapi_port=53708 --set sql_port=52024 --set monet_prompt= --trace --dbname=mTests_tests_Availability 00_Mserver.prelude < 00_Mserver.milS
+# 18:28:04 >  
 
-
-
-# MonetDB Server v4.21.0
-# based on GDK   v1.21.0
-# Copyright (c) 1993-2007, CWI. All rights reserved.
-# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; statically linked.
-# Visit http://monetdb.cwi.nl/ for further information.
+# Monet Database Server V4.3.13
+# Copyright (c) 1993-2004, CWI. All rights reserved.
+# compiled for i686-pc-linux-gnu/32bit; dynamically linked.
 #---------------------------------#
 # BAT:		  tmp_30	  #
 # (str)		  (str)		  #
