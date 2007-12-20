@@ -108,11 +108,12 @@ OPTcommonTermsImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	memset((void*) filter, 0, 1024 * sizeof(int));
 
 	alias= (int*) alloca(sizeof(int)* mb->vtop);
-	for(i=0; i<mb->vtop; i++) alias[i]=i;
+	for(i=0; i<mb->vtop; i++) 
+		alias[i]=i;
 
 	setLifespan(mb);
-	old= mb->stmt;
-	limit= mb->stop;
+	old = mb->stmt;
+	limit = mb->stop;
 	newMalBlkStmt(mb, mb->ssize); /* a new statement stack */
 	for ( n= i = 0; i < limit; i++) {
 		p = old[i];
@@ -121,27 +122,29 @@ OPTcommonTermsImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 @-
 First apply alias propagation, before considering a match.
 @c
-		if( p->token == ENDsymbol){
+		if (p->token == ENDsymbol){
 			for(i++; i<limit; i++)
-			if(old[i])
-				pushInstruction(mb,old[i]);
+				if(old[i])
+					pushInstruction(mb,old[i]);
 			break;
 		}
-		if( p->token == NOOPsymbol) continue;
-		if( p->token == ASSIGNsymbol && p->argc== 2 && p->barrier==0){
-			if( getLastUpdate(mb,getArg(p,0)) == i &&
+		if (p->token == NOOPsymbol) 
+			continue;
+		if (OPTisAlias(p)){
+			if (getLastUpdate(mb,getArg(p,0)) == i &&
 				getBeginLifespan(mb,getArg(p,0)) == i &&
 				getLastUpdate(mb,getArg(p,1)) < i){
-					alias[getArg(p,0)]= alias[getArg(p,1)];
+					alias[getArg(p,0)] = alias[getArg(p,1)];
 					freeInstruction(p);
 					mb->stop--;
 					mb->stmt[mb->stop]=0;
 					n--;
 					continue;
+			} else {
+				OPTaliasRemap(p,alias);
 			}
 		} else {
-			for(j=0; j<p->argc; j++)
-				getArg(p,j)= alias[getArg(p,j)];
+			OPTaliasRemap(p,alias);
 		}
 @-
 Use a hash filter to speed up matching
@@ -149,7 +152,7 @@ Use a hash filter to speed up matching
 		c = p->argc;
 		for(j=p->retc; j<p->argc; j++){
 			c *= 4;
-			if( !isConstant(mb,getArg(p,j)) )
+			if (!isConstant(mb,getArg(p,j)))
 				c += getArg(p,j);
 		}
 		c &= 1023;
@@ -163,12 +166,12 @@ relevant assignment. Beware, we may miss opportunities due to
 multiple occurrences of the same constant in the symbol table.
 @c
 			last=1;
-			for( j = p->retc; j<p->argc; j++)
-			if( getBeginLifespan(mb,getArg(p,j)) > last )
-				last = getBeginLifespan(mb,getArg(p,j));
+			for (j = p->retc; j<p->argc; j++)
+				if( getBeginLifespan(mb,getArg(p,j)) > last )
+					last = getBeginLifespan(mb,getArg(p,j));
 
 			for (j = (n-1) - 1; j >= last-(i-(n-1)) && j>0; j--) 
-			if( mask[j] == c ){
+			if (mask[j] == c ){
 				if (safetyBarrier(p, q = getInstrPtr(mb, j)))
 					break;
 #ifdef DEBUG_OPT_COMMONTERMS

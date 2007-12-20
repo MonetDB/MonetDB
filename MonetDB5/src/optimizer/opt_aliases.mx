@@ -71,6 +71,8 @@ They are marked as unsafe.
 /* #define DEBUG_OPT_ALIASES      show partial result */
 
 opt_export int OPTaliasStep(MalBlkPtr mb, int pc);
+opt_export int OPTisAlias(InstrPtr p);
+opt_export void OPTaliasRemap(InstrPtr p, int *alias);
 @-
 When you propagate an alias through the program, the properties
 maintained should also be updated. In particular, the lifespan
@@ -88,7 +90,7 @@ expressions.
 @c
 #include "mal_config.h"
 #include "opt_aliases.h"
-static int
+int
 OPTisAlias(InstrPtr p){
 	if( p->token == ASSIGNsymbol &&
 		p->barrier == 0 && 
@@ -97,11 +99,11 @@ OPTisAlias(InstrPtr p){
 	return FALSE;
 }
 
-static void
-OPTremap(InstrPtr p, int *alias){
+void
+OPTaliasRemap(InstrPtr p, int *alias){
 	int i;
-	for(i=0;i<p->argc; i++)
-		getArg(p,i)= alias[getArg(p,i)];
+	for(i=0; i<p->argc; i++)
+		getArg(p,i) = alias[getArg(p,i)];
 }
 
 static int
@@ -115,11 +117,11 @@ OPTaliasesImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	for(i=0; i<mb->vtop; i++) alias[i]=i;
 
 	setLifespan(mb);
-	limit= mb->stop;
+	limit = mb->stop;
 	for (i = 1; i < limit; i++){
 		p= getInstrPtr(mb,i);
-		mb->stmt[k++]= p;
-		if( OPTisAlias(p)){
+		mb->stmt[k++] = p;
+		if (OPTisAlias(p)){
 			if( getLastUpdate(mb,getArg(p,0)) == i  &&
 				getBeginLifespan(mb,getArg(p,0)) == i  &&
 				getLastUpdate(mb,getArg(p,1)) < i ){
@@ -127,10 +129,12 @@ OPTaliasesImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 				freeInstruction(p);
 				actions++;
 				k--;
-			} else
-				OPTremap(p,alias);
-		} else
-			OPTremap(p,alias);
+			} else {
+				OPTaliasRemap(p,alias);
+			}
+		} else {
+			OPTaliasRemap(p,alias);
+		}
 	}
 	for(i=k; i<limit; i++)
 		mb->stmt[i]= NULL;
