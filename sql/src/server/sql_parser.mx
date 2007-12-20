@@ -372,6 +372,7 @@ int yydebug=1;
 	simple_table
 	table_ref
 	case_exp
+	case_scalar_exp
 	cast_exp
 	when_value
 	when_search
@@ -493,6 +494,7 @@ int yydebug=1;
 	single_datetime_field
 	interval_qualifier
 	scalar_exp_list2
+	case_scalar_exp_list2
 	when_value_list
 	when_search_list
 	opt_seps
@@ -3983,12 +3985,12 @@ case_exp:
 		   append_symbol(
 		    append_symbol(
 		     L(), $3), $5)); }
- |   COALESCE '(' scalar_exp ',' scalar_exp ')'
+ |   COALESCE '(' case_scalar_exp ',' case_scalar_exp ')'
 		{ $$ = _symbol_create_list(SQL_COALESCE,
 		   append_symbol(
 		    append_symbol(
 		     L(), $3), $5)); }
- |   COALESCE '(' scalar_exp_list2 ')'
+ |   COALESCE '(' case_scalar_exp_list2 ')'
 		{ $$ = _symbol_create_list(SQL_COALESCE, $3); }
  |   CASE scalar_exp when_value_list case_opt_else END
 		{ $$ = _symbol_create_list(SQL_CASE,
@@ -4012,6 +4014,17 @@ scalar_exp_list2:
  |  scalar_exp_list2 ',' scalar_exp
 			{ $$ = append_symbol( $1, $3); }
  ;
+
+case_scalar_exp_list2:
+    case_scalar_exp ',' case_scalar_exp ',' case_scalar_exp
+			{ $$ = append_symbol( L(), $1);
+			  $$ = append_symbol( $$, $3);
+			  $$ = append_symbol( $$, $5);
+			}
+ |  case_scalar_exp_list2 ',' case_scalar_exp
+			{ $$ = append_symbol( $1, $3); }
+ ;
+
 
 when_value:
     WHEN scalar_exp THEN scalar_exp
@@ -4049,6 +4062,10 @@ case_opt_else:
  |  ELSE sqlNULL 	{ $$ = _newAtomNode(NULL); }
  ;
 
+case_scalar_exp:
+    sqlNULL		{ $$ = _newAtomNode(NULL); }
+ |  scalar_exp	
+ ;
 		/* data types, more types to come */
 
 nonzero:
