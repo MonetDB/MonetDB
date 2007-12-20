@@ -9,3 +9,4 @@ select avg(coalesce(age,38)) from test;
 select id, coalesce(name,'unknown') from test;
 drop table test;
 
+SELECT COALESCE(NULL,'x');
