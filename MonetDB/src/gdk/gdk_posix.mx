@@ -1290,8 +1290,12 @@ MT_mmap_open(MT_mmap_hdl *hdl, char *path, int mode, off_t off, size_t len, size
 
 	h1 = CreateFile(path, mode0, mode1, &sa, OPEN_ALWAYS, mode2, NULL);
 	if (h1 == INVALID_HANDLE_VALUE) {
-		GDKsyserror("MT_mmap: CreateFile('%s', %lu, %lu, &sa, %lu, %lu, NULL) failed\n", path, mode0, mode1, (DWORD) OPEN_ALWAYS, mode2);
-		return (void *) -1;
+		(void) SetFileAttributes(path, FILE_ATTRIBUTE_NORMAL);
+		h1 = CreateFile(path, mode0, mode1, &sa, OPEN_ALWAYS, mode2, NULL);
+		if (h1 == INVALID_HANDLE_VALUE) {
+			GDKsyserror("MT_mmap: CreateFile('%s', %lu, %lu, &sa, %lu, %lu, NULL) failed\n", path, mode0, mode1, (DWORD) OPEN_ALWAYS, mode2);
+			return (void *) -1;
+		}
 	}
 
 	h2 = CreateFileMapping(h1, &sa, mode3, (DWORD) ((((gdk_int64) off + (gdk_int64) len) >> 32) & LL_CONSTANT(0xFFFFFFFF)), (DWORD) ((off + len) & LL_CONSTANT(0xFFFFFFFF)), NULL);
