@@ -1884,28 +1884,54 @@ GDKsyserror(const char *format, ...)
 	char message[GDKMAXERRLEN];
 	size_t len = strlen(GDKERROR);
 
+#ifdef NATIVE_WIN32
+	DWORD err = GetLastError();
+	LPTSTR lpMsgBuf;
+#else
 	int err = errno;
+#endif
 	va_list ap;
 
-	if (!strncmp(format, GDKERROR, len)) {
+	if (strncmp(format, GDKERROR, len) == 0) {
 		len = 0;
 	} else {
-		strcpy(message, GDKERROR);
+		strncpy(message, GDKERROR, sizeof(message));
 	}
 	va_start(ap, format);
-	vsnprintf(message + len, GDKMAXERRLEN - (len + 2), format, ap);
+	vsnprintf(message + len, sizeof(message) - (len + 2), format, ap);
 	va_end(ap);
-	if (err > 0 && err < 1024) {
-		char *osmsg = strerror(err);
-		size_t len1 = strlen(message);
-		size_t len2 = len1 + strlen(GDKMESSAGE);
-		size_t len3 = len2 + strlen(osmsg);
+#ifndef NATIVE_WIN32
+	if (err > 0 && err < 1024)
+#endif
+	{
+		size_t len1;
+		size_t len2;
+		size_t len3;
+		char *osmsg;
+#ifdef NATIVE_WIN32
+		char osmsgbuf[256];
+		osmsg = osmsgbuf;
+		FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM,
+			      NULL,
+			      err,
+			      MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+			      (LPTSTR) osmsgbuf,
+			      sizeof(osmsgbuf),
+			      NULL);
+#else
+		osmsg = strerror(err);
+#endif
+		len1 = strlen(message);
+		len2 = len1 + strlen(GDKMESSAGE);
+		len3 = len2 + strlen(osmsg);
 
 		if (len3 + 2 < GDKMAXERRLEN) {
 			strcpy(message + len1, GDKMESSAGE);
 			strcpy(message + len2, osmsg);
-			message[len3] = '\n';
-			message[len3 + 1] = 0;
+			if (len3 > 0 && message[len3 - 1] != '\n') {
+				message[len3] = '\n';
+				message[len3 + 1] = 0;
+			}
 		}
 	}
 	GDKaddbuf(message);
