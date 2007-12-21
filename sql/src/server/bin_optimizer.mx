@@ -206,6 +206,7 @@ is_reduced( stmt *s )
 	case st_semijoin:
 	case st_limit:
 	case st_reljoin:
+	case st_join2:
 		return 1;
 
 	case st_join:
@@ -392,7 +393,8 @@ bin_optimizer(mvc *c, stmt *s)
 		return ns;
 	}
 
-	case st_join:{
+	case st_join:
+	case st_join2:{
 
 		if (s->op1.stval) {
 			stmt *os = s->op1.stval;
@@ -410,12 +412,20 @@ bin_optimizer(mvc *c, stmt *s)
 			stmt_destroy(os);
 			s->op2.stval = ns;
 		}
+		if (s->op3.stval) {
+			stmt *os = s->op3.stval;
+			stmt *ns = bin_optimizer(c, os);
+
+			assert(ns != s);
+			stmt_destroy(os);
+			s->op3.stval = ns;
+		}
 
 		/* remove expensive double kdiffs 
 		 * if join on oids from the same table then 	
 		 * right kdiff is not needed 
 		 */
-		if (s->flag == cmp_equal && 
+		if (s->type == st_join && s->flag == cmp_equal && 
 		    s->op1.stval->t == s->op2.stval->h &&
 		    s->op2.stval->type == st_diff){
 			stmt *old = s->op2.stval;

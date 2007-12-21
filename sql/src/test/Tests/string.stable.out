@@ -1,19 +1,16 @@
 stdout of test 'string` in directory 'src/test` itself:
 
 
-# 12:30:46 >  
-# 12:30:46 >   mserver5 "--config=/ufs/goncalve/scratch/MonetDB/Stable/MonetDB5/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/goncalve/scratch/MonetDB/Stable/MonetDB5/lib/MonetDB5:/ufs/goncalve/scratch/MonetDB/Stable/MonetDB5/lib/MonetDB5/lib:/ufs/goncalve/scratch/MonetDB/Stable/MonetDB5/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/goncalve/scratch/MonetDB/Stable/MonetDB5/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/goncalve/scratch/MonetDB/Stable/MonetDB5/var/MonetDB5/sql_logs"  --set mapi_open=true --set xrpc_open=true --set mapi_port=31025 --set xrpc_port=49090 --set monet_prompt= --trace "--dbname=mTests_src_test" --set mal_listing=0 "--dbinit= include sql;" ; echo ; echo Over..
-# 12:30:46 >  
+# 16:38:09 >  
+# 16:38:09 >   Mserver "--config=/ufs/niels/scratch/monetdb/Linux-x86_64/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB4:/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB4/lib:/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB4/bin" --set "gdk_dbfarm=/ufs/niels/scratch/monetdb/Linux-x86_64/var/MonetDB4/dbfarm" --set "sql_logdir=/ufs/niels/scratch/monetdb/Linux-x86_64/var/MonetDB4/sql_logs" --set "xquery_logdir=/ufs/niels/scratch/monetdb/Linux-x86_64/var/MonetDB4/xquery_logs" --set mapi_open=true --set xrpc_open=true --set mapi_port=39708 --set xrpc_port=42376 --set monet_prompt= --trace "--dbname=mTests_src_test" "--dbinit= module(sql_server);" ; echo ; echo Over..
+# 16:38:09 >  
 
-!WARNING: GDKlockHome: ignoring empty or invalid .gdk_lock.
-!WARNING: BBPdir: initializing BBP.
-# MonetDB server v5.2.3, based on kernel v1.20.1
-# Serving database 'mTests_src_test'
-# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs dynamically linked
-# Copyright (c) 1993-2007 CWI, all rights reserved
-# Visit http://monetdb.cwi.nl/ for further information
-# Listening for connection requests on mapi:monetdb://amelia.ins.cwi.nl:31025/
-# MonetDB/SQL module v2.20.3 loaded
+# MonetDB Server v4.21.0
+# based on GDK   v1.21.0
+# Copyright (c) 1993-2007, CWI. All rights reserved.
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs; dynamically linked.
+# Visit http://monetdb.cwi.nl/ for further information.
+# MonetDB/SQL module v2.21.0 loaded
 
 Ready.
 #function user.main():void;
@@ -230,8 +227,35 @@ Over..
 [ 52,	"test"	]
 [ 52,	""	]
 [ 52,	" Test "	]
+% sys.test,	sys.test,	sys.,	sys.,	sys.,	sys.,	sys. # table_name
+% str,	str2,	soundex_str,	soundex_str2,	editdistance2_soundex_str,	editdistance_soundex_str,	difference_str # name
+% varchar,	varchar,	varchar,	varchar,	int,	int,	int # type
+% 6,	4,	4,	4,	1,	1,	1 # length
+[ "",	"test",	"",	"T230",	4,	4,	4	]
+[ "test",	"",	"T230",	"",	4,	4,	4	]
+[ "",	"",	"",	"",	0,	0,	0	]
+[ " Test ",	"",	" 323",	"",	4,	4,	4	]
 [ 1	]
+% sys.,	sys.test,	sys.test # table_name
+% levenshtein_str,	str,	str2 # name
+% int,	varchar,	varchar # type
+% 2,	13,	13 # length
+[ 4,	"",	"test"	]
+[ 4,	"test",	""	]
+[ 0,	"",	""	]
+[ 6,	" Test ",	""	]
+[ 12,	"monetdbiscool",	"coolismonetdb"	]
 [ 1	]
+% sys.,	sys.,	sys.test,	sys.test # table_name
+% qgramnormalize_str,	qgramnormalize_str2,	str,	str2 # name
+% varchar,	varchar,	varchar,	varchar # type
+% 16,	13,	17,	18 # length
+[ "",	"TEST",	"",	"test"	]
+[ "TEST",	"",	"test",	""	]
+[ "",	"",	"",	""	]
+[ "TEST",	"",	" Test ",	""	]
+[ "MONETDBISCOOL",	"COOLISMONETDB",	"monetdbiscool",	"coolismonetdb"	]
+[ "MONETDB45IS COOL",	"123123 123123",	"monetdb45is+ cool",	"  123123  123123  "	]
 
 # 12:30:46 >  
 # 12:30:46 >  Done.

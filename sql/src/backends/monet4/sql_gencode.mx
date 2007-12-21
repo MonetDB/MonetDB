@@ -596,7 +596,8 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 			break;
 		}
 		case st_select2:
-		case st_uselect2:{
+		case st_uselect2:
+		case st_join2:{
 			int l = backend_dumpstmt_(s->op1.stval, nr, sql);
 			int r1 = backend_dumpstmt_(s->op2.stval, nr, sql);
 			int r2 = backend_dumpstmt_(s->op3.stval, nr, sql);
@@ -605,8 +606,10 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 
 			if (s->type == st_select2)
 				cmd = "select";
-			else
+			else if (s->type == st_uselect2)
 				cmd = "uselect";
+			else
+				cmd = "join";
 			switch (s->flag) {
 			case 0:
 				bits = ", FALSE, FALSE";

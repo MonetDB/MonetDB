@@ -383,7 +383,7 @@ SQLgetStatistics(mvc *m, MalBlkPtr mb)
 			}
 			if (part <= 1) {
 				pushInstruction(mb,p);
-				if (bpm) {
+				if (bpm && mode != RD_UPD) {
 					oid low = 0, high = 1;
 
 					low = bpm->parts[off].hlow;

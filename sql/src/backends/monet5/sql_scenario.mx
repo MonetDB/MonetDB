@@ -1140,9 +1140,9 @@ However, when we received an Execute call, we make a shortcut
 and prepare the stack for immediate execution
 @c
 str
-SQLexecutePrepared(Client cntxt, backend *be, cq *q )
+SQLexecutePrepared(Client c, backend *be, cq *q )
 {
-	mvc *c = be->mvc;
+	mvc *m = be->mvc;
 	int argc, parc; 
 	ValPtr *argv, argvbuffer[MAXARG], v;
 	ValRecord *argrec, argrecbuffer[MAXARG];
@@ -1172,7 +1172,7 @@ SQLexecutePrepared(Client cntxt, backend *be, cq *q )
 		argv[i]->vtype= getVarGDKType(mb,i);
 	}
 
-	argc = c->argc;
+	argc = m->argc;
 	parc = q->paramlen;
 
 	if (argc != parc) {
@@ -1182,8 +1182,8 @@ SQLexecutePrepared(Client cntxt, backend *be, cq *q )
 			GDKfree(argrec);
 		throw(SQL, "sql.prepare", "wrong number of arguments for prepared statement: %d, expected %d", argc, parc);
 	} else {
-		for (i = 0; i<c->argc; i++){
-			atom *arg = c->args[i];
+		for (i = 0; i<m->argc; i++){
+			atom *arg = m->args[i];
 			sql_subtype *pt = q->params+i;
 
 			if (!atom_cast(arg, pt)) {
@@ -1198,7 +1198,10 @@ SQLexecutePrepared(Client cntxt, backend *be, cq *q )
 		}
 	}
 	glb = (MalStkPtr)(q->stk);
-	ret= callMAL(cntxt,mb, &glb, argv, (c->mode == m_debug?'n':0));
+	ret= callMAL(c, mb, &glb, argv, (m->mode == m_debug?'n':0));
+	if (ret && SQLdebug&16) 
+		printFunction(c->fdout, mb, 
+			      LIST_MAL_INSTR | LIST_MAL_PROPS | LIST_MAPI);
 	/* cleanup the arguments */
 	for(i=pci->retc; i<pci->argc; i++) {
 		garbageElement(v= &glb->stk[pci->argv[i]]);

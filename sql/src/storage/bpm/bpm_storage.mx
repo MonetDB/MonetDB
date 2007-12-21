@@ -112,10 +112,8 @@ extend_part( sql_bpm *p, BAT *b, bat u)
 		p->parts[nr].hlow = 0;
 		p->parts[nr].hhgh = -1;
 		if (nr) {
-			/* this should be fixed by the update_part code which
-			   should remove empty partitions */
 			if (p->parts[nr-1].hhgh == (oid)-1)
-				p->parts[nr-1].hhgh = p->parts[nr-1].hlow;
+				p->parts[nr-1].hhgh = p->parts[nr-1].hlow + p->parts[nr-1].cnt;
 			
 			p->parts[nr].hlow = p->parts[nr-1].hhgh;
 		}
@@ -143,6 +141,7 @@ bpm_add_partition(sql_bpm *p)
 		return 1;
 	}
 	/* error */
+	assert(0);
 	return 0;
 }
 

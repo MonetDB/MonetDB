@@ -638,7 +638,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			break;
 
 		case st_uselect:
-		case st_select:{
+		case st_select: {
 			int l = _dumpstmt(sql, mb, s->op1.stval);
 			int r = _dumpstmt(sql, mb, s->op2.stval);
 			int k;
@@ -757,7 +757,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 #ifdef HAVE_LIBPCRE
 					q = newStmt(mb, "pcre", "like");
 #else
-					q = newStmt(mb, "batcalc", "like");
+					q = newStmt(mb, "batstr", "like");
 #endif
 					q = pushArgument(mb, q, l);
 					q = pushArgument(mb, q, r);
@@ -771,7 +771,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 #ifdef HAVE_LIBPCRE
 					q = newStmt(mb, "pcre", "like");
 #else
-					q = newStmt(mb, "batcalc", "like");
+					q = newStmt(mb, "batstr", "like");
 #endif
 					q = pushArgument(mb, q, l);
 					q = pushArgument(mb, q, r);
@@ -844,11 +844,15 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 		}
 			break;
 		case st_uselect2:
-		case st_select2:{
+		case st_select2:
+		case st_join2:{
 			int l = _dumpstmt(sql, mb, s->op1.stval);
 			int r1 = _dumpstmt(sql, mb, s->op2.stval);
 			int r2 = _dumpstmt(sql, mb, s->op3.stval);
-			char *cmd = st_uselect2 == s->type ? uselectRef : selectRef;
+			char *cmd = 
+				(s->type == st_select2) ? selectRef :
+				(s->type == st_uselect2) ? uselectRef :
+				joinRef;
 
 			@:SQLprelude@
 

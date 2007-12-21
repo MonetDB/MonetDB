@@ -412,6 +412,9 @@ comment "Cast @1 to str";
 command calc.@1( v:str ) :@1 
 address str_2_@1
 comment "cast to @1";
+command batcalc.@1( v:bat[:oid,:str] ) :bat[:oid,:@1] 
+address batstr_2_@1
+comment "cast to @1";
 command calc.str( v:@1 ) :str 
 address SQL@1_2_str
 comment "cast @1 to str";
@@ -449,6 +452,10 @@ comment "Cast bit to lng ";
 
 pattern calc.str( eclass:int, d1:int, s1:int, has_tz:int, v:any_1, digits:int ) :str 
 address SQLstr_cast
+comment "cast to string and check for overflow";
+
+command batcalc.str( eclass:int, d1:int, s1:int, has_tz:int, v:bat[:oid,:any_1], digits:int ) :bat[:oid,:str] 
+address SQLbatstr_cast
 comment "cast to string and check for overflow";
 
 command calc.substring(s:str,offset:int):str
@@ -741,6 +748,7 @@ sql5_export str SQL@1_2_str( str *res, @1 *val );
 @:cast_export(date,date_tostr)@
 @:cast_export(sqlblob,sqlblob_tostr)@
 sql5_export str SQLstr_cast(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str SQLbatstr_cast(int *r, int *eclass, int *d1, int *s1, int *has_tz, int *v, int *digits );
 @= fround_export
 sql5_export str @1_@2_dec_round_wrap( @1 *res, @1 *v, @2 *r );
 @h
@@ -2178,31 +2186,16 @@ SQLstr_2_str( str *res, str *val )
 }
 
 str
-/*SQLstr_cast(str *res, ptr v, int tpe, int *len) */
-SQLstr_cast(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+SQLstr_cast_(str *res, mvc *m, int eclass, int d, int s, int has_tz, ptr p, int tpe, int len)
 {
-	str *res  = (str *) getArgReference(stk, pci, 0);
-	int eclass = *(int*) getArgReference(stk, pci, 1);
-	int d = *(int*) getArgReference(stk, pci, 2);
-	int s = *(int*) getArgReference(stk, pci, 3);
-	int has_tz = *(int*) getArgReference(stk, pci, 4);
-	ptr p   = (ptr) getArgReference(stk, pci, 5);
-	int tpe = getArgType(mb, pci, 5);
-	int len   = *(int *) getArgReference(stk, pci, 6);
-	int sz = len + 1;
 	char *r = NULL;
-	mvc *m = NULL;
-	str msg = getContext(&m, NULL);
+	int sz = len + 1;
 
-	if (msg)
-		return msg;
 	if (tpe != TYPE_str) {
 		r = GDKmalloc(sz);
-		if (ATOMextern(tpe)) 
-			p = *(ptr*)p;
-		sz = convert2str(m, eclass, d, s, has_tz, p, tpe, &r, len);
+		sz = convert2str(m, eclass, d, s, has_tz, p, tpe, &r, sz);
 	} else {
-		str v = *(str*)p; 
+		str v = (str)p; 
 		sz = _strlen(v);
 		if (len == 0 || sz <= len) 
 			r = GDKstrdup(v);
@@ -2213,12 +2206,63 @@ SQLstr_cast(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (ATOMcmp(TYPE_str, ATOMnilptr(TYPE_str), p) != 0) {
 			throw(SQL, "str_cast", "value too long for type (var)char(%d)", len);
 		} else {
-			*res = GDKstrdup(str_nil);
-			return MAL_SUCCEED;
+			r = GDKstrdup(str_nil);
 		}
 	}
 	*res = r;
 	return MAL_SUCCEED;
+}
+
+str
+SQLstr_cast(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	str *res  = (str *) getArgReference(stk, pci, 0);
+	int eclass = *(int*) getArgReference(stk, pci, 1);
+	int d = *(int*) getArgReference(stk, pci, 2);
+	int s = *(int*) getArgReference(stk, pci, 3);
+	int has_tz = *(int*) getArgReference(stk, pci, 4);
+	ptr p   = (ptr) getArgReference(stk, pci, 5);
+	int tpe = getArgType(mb, pci, 5);
+	int len   = *(int *) getArgReference(stk, pci, 6);
+	mvc *m = NULL;
+	str msg = getContext(&m, NULL);
+
+	if (msg)
+		return msg;
+	if (ATOMextern(tpe)) 
+		p = *(ptr*)p;
+	return SQLstr_cast_(res, m, eclass, d, s, has_tz, p, tpe, len );
+}
+
+str 
+SQLbatstr_cast(int *res, int *eclass, int *d1, int *s1, int *has_tz, int *bid, int *digits )
+{
+	BAT *b, *dst;
+	BATiter bi;
+	BUN p,q;
+	mvc *m = NULL;
+	str msg = getContext(&m, NULL);
+	char *r = NULL;
+
+	if (msg)
+		return msg;
+	if( (b = BATdescriptor(*bid)) == NULL ){
+		throw(SQL, "batcalc.str_2dec_@1", "Cannot access descriptor");
+	}
+	bi = bat_iterator(b);
+	dst = BATnew(b->htype, TYPE_str, BATcount(b));
+	BATseqbase(dst, b->hseqbase);
+	BATloop(b,p,q) {
+		ptr v = (ptr)BUNtail(bi,p);
+		msg = SQLstr_cast_( &r, m, *eclass, *d1, *s1, *has_tz, v, b->ttype, *digits);
+		if (msg)
+			break;
+		BUNins(dst, BUNhead(bi,p), r, FALSE);
+		GDKfree(r);
+	}
+	BBPkeepref( *res = dst->batCacheid);
+	BBPunfix(b->batCacheid);
+	return msg;
 }
 
 @= simpleupcast

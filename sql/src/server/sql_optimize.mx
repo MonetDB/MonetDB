@@ -37,6 +37,7 @@ extern stmt *push_semijoin( stmt *select, stmt *s );
 #include "sql_env.h"
 #include <stdio.h>
 #include "rel_semantic.h"
+#include "sql_rel2bin.h"
 
 #define create_stmt_list() list_create((fdestroy)&stmt_destroy)
 
@@ -116,6 +117,21 @@ stmt_cmp_head_tail(stmt *h, stmt *key)
 }
 
 static int
+cmp_matching_column( stmt *l, stmt *r)
+{
+	sql_column *lbc = basecolumn(l->op1.stval);
+	sql_column *rbc = basecolumn(r->op1.stval);
+
+	if (lbc && rbc && lbc == rbc)
+		return 0;
+	lbc = basecolumn(tail_column(l->op2.stval));
+	rbc = basecolumn(tail_column(r->op2.stval));
+	if (lbc && rbc && lbc == rbc)
+		return 0;
+	return -1;
+}
+
+static int
 select_count(stmt *s)
 {
 	switch (s->type) {
@@ -144,6 +160,9 @@ select_count(stmt *s)
 		if (s->flag != cmp_equal)
 			return -1;
 		return select_count(s->op1.stval) + select_count(s->op2.stval);
+	case st_join2:
+		return select_count(s->op1.stval) + 
+			select_count(s->op2.stval) + select_count(s->op3.stval);
 	case st_reverse:
 	case st_mirror:
 		return select_count(s->op1.stval);
@@ -237,7 +256,6 @@ pivot_cmp_tail(stmt *piv, stmt *key)
 	return -1;
 }
 
-
 static int
 data_cmp(void *d, void *k)
 {
@@ -246,7 +264,7 @@ data_cmp(void *d, void *k)
 	return -1;
 }
 
-#define TYPE_JOIN(type) 	(type == st_join || type == st_reljoin)
+#define TYPE_JOIN(type)  (type == st_join || type == st_join2 || type == st_reljoin)
 
 static stmt *
 stmt_intersect(stmt *op1, stmt *op2)
@@ -339,6 +357,10 @@ stmt_push_down_head(stmt *join, stmt *select)
 		res = stmt_join(stmt_push_down_head(stmt_dup(join->op1.stval), select), stmt_dup(join->op2.stval), (comp_type) join->flag);
 		stmt_destroy(join);
 		return res;
+	} else if (join->type == st_join2) {
+		res = stmt_join2(stmt_push_down_head(stmt_dup(join->op1.stval), select), stmt_dup(join->op2.stval), stmt_dup(join->op3.stval), join->flag);
+		stmt_destroy(join);
+		return res;
 	} else if (join->type == st_intersect) {
 		res = stmt_intersect(stmt_push_down_head(stmt_dup(join->op1.stval), select), stmt_push_down_head(stmt_dup(join->op2.stval), stmt_dup(select))
 		    );
@@ -420,6 +442,10 @@ stmt_push_down_tail(stmt *join, stmt *select)
 		return stmt_reljoin2(l1, l2);
 	} else if (join->type == st_join) {
 		res = stmt_join(stmt_dup(join->op1.stval), stmt_push_down_tail(stmt_dup(join->op2.stval), select), (comp_type) join->flag);
+		stmt_destroy(join);
+		return res;
+	} else if (join->type == st_join2) {
+		res = stmt_join2(stmt_dup(join->op1.stval), stmt_push_down_tail(stmt_dup(join->op2.stval), select), stmt_push_down_tail(stmt_dup(join->op3.stval), select), join->flag);
 		stmt_destroy(join);
 		return res;
 	} else if (join->type == st_intersect) {
@@ -632,6 +658,13 @@ stmt_join2select(stmt *j)
 					 stmt_reverse(stmt_dup(j->op2.stval)),
 					 (comp_type) j->flag);
 
+		stmt_destroy(j);
+		return res;
+	} else if (j->type == st_join2) {
+		stmt *res = stmt_select2(stmt_dup(j->op1.stval),
+					 stmt_dup(j->op2.stval),
+					 stmt_dup(j->op3.stval),
+					 j->flag);
 		stmt_destroy(j);
 		return res;
 	} else if (j->type == st_reverse) {
@@ -889,7 +922,7 @@ push_selects_down(mvc *c, list *con)
 	for (n = djoins->h; n; n = n->next) {
 		list *ejoins = list_select(joins, n->data, (fcmp) &stmt_cmp_head_tail, (fdup) &stmt_dup);
 		stmt *join = ejoins->h->data;
-		list *eqjoins = NULL, *nqjoins = NULL;
+		list *eqjoins = NULL, *nqjoins = NULL, *rjoins = NULL;
 		stmt *reljoin = NULL, *jdx = NULL;
 		node *hsel = NULL, *tsel = NULL;
 		node * jn;
@@ -903,12 +936,14 @@ push_selects_down(mvc *c, list *con)
 				stmt *jt = stmt_reverse(stmt_dup(j->op1.stval));
 				jn->data = stmt_join(jh, jt, swap_compare((comp_type)j->flag));
 				stmt_destroy(j);
-			} else if (STMT_BAT(j->op1.stval->type) && 
+			} else if (j->type == st_reljoin &&
+				   STMT_BAT(j->op1.stval->type) && 
 				   STMT_BAT(j->op2.stval->op1.stval->type) &&
-				   j->t == join->h && 
-				   j->type == st_reljoin) {
+				   j->t == join->h) {
 				list *l1 = list_dup(j->op1.lval, (fdup)&stmt_dup);
 				list *l2 = list_dup(j->op2.lval, (fdup)&stmt_dup);
+				/* change order reljoin ? */
+				assert(0);
 				jn->data = stmt_reljoin2(l2,l1);
 				stmt_destroy(j);
 			}
@@ -1021,6 +1056,66 @@ push_selects_down(mvc *c, list *con)
 			nqjoins = ejoins;
 		}
 		list_destroy(eqjoins);
+
+		/* look for range join candidates (ie collect theta joins) */
+		rjoins = create_stmt_list();
+		while (list_length(nqjoins) > 1) {
+			node *n = nqjoins->h;
+			stmt *o1 = stmt_dup(n->data);
+
+			list_remove_node(nqjoins, n);
+			n = list_find(nqjoins, o1, (fcmp)&cmp_matching_column);
+			if (n) {
+				stmt *s, *o2 = stmt_dup(n->data);
+				sql_column *o1bc = basecolumn(o1->op1.stval);
+				sql_column *o2bc = basecolumn(o2->op1.stval);
+				int cmp = 0;
+
+				list_remove_node(nqjoins, n);
+				if (o1->flag > o2->flag){
+					s = o1; 
+					o1 = o2; 
+					o2 = s;
+				}
+				if (o1->flag == cmp_gt && o2->flag == cmp_lt)
+					cmp = 0;
+				else if (o1->flag == cmp_gt && o2->flag == cmp_lte)
+					cmp = 1;
+				else if (o1->flag == cmp_gte && o2->flag == cmp_lt)
+					cmp = 2;
+				else if (o1->flag == cmp_gte && o2->flag == cmp_lte)
+					cmp = 3;
+				else
+					assert(0);
+	
+				if (o1bc && o2bc && o1bc == o2bc) {
+					s = stmt_join2(
+						stmt_dup(o1->op1.stval),
+						stmt_reverse(stmt_dup(o1->op2.stval)),
+						stmt_reverse(stmt_dup(o2->op2.stval)),
+						cmp);
+				} else {
+					s = stmt_join2(
+						stmt_reverse(stmt_dup(o1->op2.stval)),
+						/* we need to swap order too */
+						stmt_dup(o2->op1.stval),
+						stmt_dup(o1->op1.stval),
+						3-cmp);
+				}
+				stmt_destroy(o1);
+				stmt_destroy(o2);
+				o1 = s;
+			} 
+			list_append(rjoins, o1);
+		}
+		if (list_length(rjoins)) {
+			if (list_length(nqjoins) == 1)
+				list_append(rjoins, stmt_dup(nqjoins->h->data));
+			list_destroy(nqjoins);
+			nqjoins = rjoins;
+		} else {
+			list_destroy(rjoins);
+		}
 
 		/* re-add fk join index and multi-att equi-join to the collection */
 		if (jdx) 
@@ -1445,6 +1540,7 @@ optimize(mvc *c, stmt *s)
 	case st_union:
 	case st_outerjoin:
 	case st_join:
+	case st_join2:
 	case st_mirror:
 	case st_reverse:
 	case st_const:

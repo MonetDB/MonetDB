@@ -32,6 +32,8 @@
 
 extern stmt *rel2bin(mvc *c, stmt *s);
 extern sql_column * basecolumn(stmt *st);
+extern stmt *head_column(stmt *st);
+extern stmt *tail_column(stmt *st);
 
 #endif /* _SQL_REL2BIN_H */
 
@@ -43,9 +45,8 @@ extern sql_column * basecolumn(stmt *st);
 #include "sql_env.h"
 #include <stdio.h>
 
-static stmt *head_column(stmt *st);
 
-static stmt *
+stmt *
 tail_column(stmt *st)
 {
 	switch (st->type) {
@@ -55,6 +56,8 @@ tail_column(stmt *st)
 	case st_reorder:
 		return tail_column(st->op2.stval);
 
+	case st_join2:
+		return tail_column(st->op2.stval);
 	case st_reljoin:
 		return tail_column(st->op2.lval->h->data);
 
@@ -125,7 +128,7 @@ tail_column(stmt *st)
 	}
 }
 
-static stmt *
+stmt *
 head_column(stmt *st)
 {
 	switch (st->type) {
@@ -143,6 +146,7 @@ head_column(stmt *st)
 	case st_limit:
 
 	case st_join:
+	case st_join2:
 	case st_outerjoin:
 	case st_diff:
 	case st_intersect:
@@ -925,6 +929,7 @@ rel2bin(mvc *c, stmt *s)
 	}
 	case st_limit: 
 	case st_join:
+	case st_join2:
 
 	case st_reverse:
 	case st_select:

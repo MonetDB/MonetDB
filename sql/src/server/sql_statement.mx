@@ -85,6 +85,7 @@ typedef enum stmt_type {
 
 	st_reljoin,
 	st_join,
+	st_join2,
 	st_outerjoin,
 	st_diff,
 	st_intersect,
@@ -249,6 +250,7 @@ extern void stmt_reljoin_fill(stmt *reljoin, stmt *lc, stmt *rc);
 extern stmt *stmt_reljoin1(list *joins);
 extern stmt *stmt_reljoin2(list *l1, list *l2);
 extern stmt *stmt_join(stmt *op1, stmt *op2, comp_type cmptype);
+extern stmt *stmt_join2(stmt *l, stmt *ra, stmt *rb, int cmp);
 extern stmt *stmt_outerjoin(stmt *op1, stmt *op2, comp_type cmptype);
 
 extern stmt *stmt_diff(stmt *op1, stmt *op2);
@@ -376,6 +378,7 @@ st_type2string(st_type type)
 
 		ST(reljoin);
 		ST(join);
+		ST(join2);
 		ST(outerjoin);
 		ST(diff);
 		ST(intersect);
@@ -637,6 +640,7 @@ stmt_destroy(stmt *s)
 		case st_intersect:
 		case st_union:
 		case st_join:
+		case st_join2:
 		case st_outerjoin:
 		case st_derive:
 		case st_unique:
@@ -862,6 +866,7 @@ stmt_list_dependencies(stmt *s, int depend_type)
 		case st_intersect:
 		case st_union:
 		case st_join:
+		case st_join2:
 		case st_outerjoin:
 		case st_derive:
 		case st_unique:
@@ -1728,6 +1733,22 @@ stmt_join(stmt *op1, stmt *op2, comp_type cmptype)
 }
 
 stmt *
+stmt_join2(stmt *l, stmt *ra, stmt *rb, int cmp)
+{
+	stmt *s = stmt_create(st_join2);
+
+	s->op1.stval = l;
+	s->op2.stval = ra;
+	s->op3.stval = rb;
+	s->flag = cmp;
+	s->nrcols = 2;
+	s->h = stmt_dup(l->h);
+	s->t = stmt_dup(ra->h);
+	return s;
+}
+
+
+stmt *
 stmt_outerjoin(stmt *op1, stmt *op2, comp_type cmptype)
 {
 	stmt *s = stmt_create(st_outerjoin);
@@ -2161,6 +2182,10 @@ tail_type(stmt *st)
 	case st_join:
 	case st_outerjoin:
 		return tail_type(st->op2.stval);
+	case st_join2:
+		/* The tail type of a join2 is the head of the second operant!,
+		   ie should be 'oid' */
+		return head_type(st->op2.stval);
 	case st_reljoin:
 		/* The tail type of a reljoin is the head of the second list!,
 		   ie should be 'oid' */
@@ -2250,6 +2275,7 @@ head_type(stmt *st)
 	case st_alias:
 	case st_diff:
 	case st_join:
+	case st_join2:
 	case st_outerjoin:
 	case st_semijoin:
 	case st_mirror:
@@ -2373,6 +2399,7 @@ column_name(stmt *st)
 		return column_name(st->op1.stval);
 	case st_const:
 	case st_join:
+	case st_join2:
 	case st_outerjoin:
 	case st_derive:
 	case st_rs_column:
@@ -2450,6 +2477,7 @@ table_name(stmt *st)
 		return table_name(st->op1.stval);
 	case st_const:
 	case st_join:
+	case st_join2:
 	case st_outerjoin:
 	case st_derive:
 		return table_name(st->op2.stval);
@@ -2506,6 +2534,7 @@ schema_name(stmt *st)
 		return schema_name(st->op1.stval);
 	case st_const:
 	case st_join:
+	case st_join2:
 	case st_outerjoin:
 	case st_derive:
 		return schema_name(st->op2.stval);
@@ -2759,7 +2788,7 @@ stmt_stmt2dot(stmt *s, int l, int *i, FILE *fp)
 		case st_aggr:
 		case st_op: case st_unop: case st_binop: case st_Nop:
 		case st_diff: case st_intersect: case st_union:
-		case st_join: case st_outerjoin:
+		case st_join: case st_join2: case st_outerjoin:
 		case st_derive:
 		case st_unique:
 		case st_alias:
@@ -2927,6 +2956,8 @@ print_stmt(stmt *s, int *nr)
 	case st_outerjoin:
 	case st_join:	
 			dump2(s, "join", nr); break;
+	case st_join2:	
+			dump3(s, "join", nr); break;
 	case st_intersect: dump2(s, "intersect", nr); break;
 	case st_group:	dump1(s, "group", nr); break;
 	case st_group_ext:	dump1(s, "extent", nr); break;
