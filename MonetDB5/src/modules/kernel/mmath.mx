@@ -326,6 +326,7 @@ mmath_export str MATHbinary@1@2(@2 *res, @2 *a, @3 *b );
 @:unopM5_export(_COS)@
 @:unopM5_export(_SIN)@
 @:unopM5_export(_TAN)@
+@:unopM5_export(_COT)@
 
 @:unopM5_export(_COSH)@
 @:unopM5_export(_SINH)@
