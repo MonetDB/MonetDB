@@ -28,17 +28,15 @@ are limited to :void, which can be cheaply realized using
 the GRPsplit operation.
 @{
 @mal
-command batcalc.length( s:bat[:oid,:str] ) :bat[:oid,:int]
+module batstr;
+
+command batstr.length( s:bat[:oid,:str] ) :bat[:oid,:int]
 address STRbatLength
 comment "Return the length of a string.";
 
-command batcalc.nbytes( s:bat[:oid,:str] ) :bat[:oid,:int]
+command batstr.nbytes( s:bat[:oid,:str] ) :bat[:oid,:int]
 address STRbatBytes
 comment "Return the string length in bytes.";
-
-command batcalc.match(b:bat[:oid,:str], pat:str):bat[:oid,:bit]
-address STRbatmatchCst
-comment "POSIX pattern matching against a string BAT";
 
 command batcalc.==( l:bat[:oid,:str], r:bat[:oid,:str]) :bat[:oid,:bit]
 address STRbatEqual
@@ -54,48 +52,48 @@ command batcalc.!=( l:bat[:oid,:str], r:str) :bat[:oid,:bit]
 address STRbatNotEqualCst
 comment "Equate a bat of strings against a singleton";
 
-command batcalc.toLower( s:bat[:oid,:str] ) :bat[:oid,:str]
+command batstr.toLower( s:bat[:oid,:str] ) :bat[:oid,:str]
 address STRbatLower
 comment "Convert a string to lower case.";
-command batcalc.toUpper( s:bat[:oid,:str] ) :bat[:oid,:str]
+command batstr.toUpper( s:bat[:oid,:str] ) :bat[:oid,:str]
 address STRbatUpper
 comment "Convert a string to upper case.";
 
-command batcalc.trim( s:bat[:oid,:str] ) :bat[:oid,:str]
+command batstr.trim( s:bat[:oid,:str] ) :bat[:oid,:str]
 address STRbatStrip
 comment "Strip whitespaces around a string.";
-command batcalc.ltrim( s:bat[:oid,:str] ) :bat[:oid,:str]
+command batstr.ltrim( s:bat[:oid,:str] ) :bat[:oid,:str]
 address STRbatLtrim
 comment "Strip whitespaces from start of a string.";
-command batcalc.rtrim( s:bat[:oid,:str] ) :bat[:oid,:str]
+command batstr.rtrim( s:bat[:oid,:str] ) :bat[:oid,:str]
 address STRbatRtrim
 comment "Strip whitespaces from end of a string.";
 
-command batcalc.startsWith(s:bat[:oid,:str],prefix:bat[:oid,:str]):bat[:oid,:bit]
+command batstr.startsWith(s:bat[:oid,:str],prefix:bat[:oid,:str]):bat[:oid,:bit]
 address STRbatPrefix
 comment "Prefix check.";
-command batcalc.startsWith(s:bat[:oid,:str],prefix:str):bat[:oid,:bit]
+command batstr.startsWith(s:bat[:oid,:str],prefix:str):bat[:oid,:bit]
 address STRbatPrefixcst
 comment "Prefix check.";
 
-command batcalc.endsWith( s:bat[:oid,:str], suffix:bat[:oid,:str] ) :bat[:oid,:bit]
+command batstr.endsWith( s:bat[:oid,:str], suffix:bat[:oid,:str] ) :bat[:oid,:bit]
 address STRbatSuffix
 comment "Suffix check.";
-command batcalc.endsWith( s:bat[:oid,:str], suffix:str ) :bat[:oid,:bit]
+command batstr.endsWith( s:bat[:oid,:str], suffix:str ) :bat[:oid,:bit]
 address STRbatSuffixcst
 comment "Suffix check.";
 
-command batcalc.search( s:bat[:oid,:str], c:bat[:oid,:str] ) :bat[:oid,:int]
+command batstr.search( s:bat[:oid,:str], c:bat[:oid,:str] ) :bat[:oid,:int]
 address STRbatstrSearch
 comment "Search for a substring. Returns position, -1 if not found.";
-command batcalc.search( s:bat[:oid,:str], c:str ) :bat[:oid,:int]
+command batstr.search( s:bat[:oid,:str], c:str ) :bat[:oid,:int]
 address STRbatstrSearchcst
 comment "Search for a substring. Returns position, -1 if not found.";
 
-command batcalc.r_search( s:bat[:oid,:str], c:bat[:oid,:str] ) :bat[:oid,:int]
+command batstr.r_search( s:bat[:oid,:str], c:bat[:oid,:str] ) :bat[:oid,:int]
 address STRbatRstrSearch
 comment "Reverse search for a substring. Returns position, -1 if not found.";
-command batcalc.r_search( s:bat[:oid,:str], c:str ) :bat[:oid,:int]
+command batstr.r_search( s:bat[:oid,:str], c:str ) :bat[:oid,:int]
 address STRbatRstrSearchcst
 comment "Reverse search for a substring. Returns position, -1 if not found.";
 
@@ -109,38 +107,38 @@ command batcalc.+( l:str, r:bat[:oid,:str]) :bat[:oid,:str]
 address STRcstConcatbat
 comment "Concatenate two strings.";
 
-command batcalc.string(b:bat[:oid,:str],offset:bat[:oid,:int]) :bat[:oid,:str]
+command batstr.string(b:bat[:oid,:str],offset:bat[:oid,:int]) :bat[:oid,:str]
 address STRbatTail
 comment "Return the tail s[offset..n] of a string s[0..n].";
-command batcalc.string(b:bat[:oid,:str],offset:int) :bat[:oid,:str]
+command batstr.string(b:bat[:oid,:str],offset:int) :bat[:oid,:str]
 address STRbatTailcst
 comment "Return the tail s[offset..n] of a string s[0..n].";
 
-command batcalc.chrAt( s:bat[:oid,:str], index:bat[:oid,:int]) :bat[:oid,:chr]
+command batstr.chrAt( s:bat[:oid,:str], index:bat[:oid,:int]) :bat[:oid,:chr]
 address STRbatChrAt
 comment "String array lookup operation.";
-command batcalc.chrAt( s:bat[:oid,:str], index:int) :bat[:oid,:chr]
+command batstr.chrAt( s:bat[:oid,:str], index:int) :bat[:oid,:chr]
 address STRbatChrAtcst
 comment "String array lookup operation.";
 
-command batcalc.substring( s:bat[:oid,:str], start:bat[:oid,:int], 
+command batstr.substring( s:bat[:oid,:str], start:bat[:oid,:int], 
 	index:bat[:oid,:int]) :bat[:oid,:str]
 address STRbatsubstring
 comment "Substring extraction using [start,start+length]";
 
-command batcalc.substring( s:bat[:oid,:str], start:int, index:int)
+command batstr.substring( s:bat[:oid,:str], start:int, index:int)
 	:bat[:oid,:str]
 address STRbatsubstringcst
 comment "Substring extraction using [start,start+length]";
 
-command batcalc.unicodeAt(s:bat[:oid,:str], index:bat[:oid,:int]) :bat[:oid,:int]
+command batstr.unicodeAt(s:bat[:oid,:str], index:bat[:oid,:int]) :bat[:oid,:int]
 address STRbatWChrAt
 comment "get a unicode character (as an int) from a string position.";
-command batcalc.unicodeAt(s:bat[:oid,:str], index:int) :bat[:oid,:int]
+command batstr.unicodeAt(s:bat[:oid,:str], index:int) :bat[:oid,:int]
 address STRbatWChrAtcst
 comment "get a unicode character (as an int) from a string position.";
 
-command batcalc.substitute(s:bat[:oid,:str],src:str,dst:str,rep:bit):bat[:oid,:str]
+command batstr.substitute(s:bat[:oid,:str],src:str,dst:str,rep:bit):bat[:oid,:str]
 address STRbatSubstitutecst
 comment "Substitute first occurrence of 'src' by
 	'dst'.  Iff repeated = true this is
@@ -150,11 +148,11 @@ comment "Substitute first occurrence of 'src' by
 	size, repeating is only done iff src is
 	not a substring of dst.";
 
-command batcalc.like(s:bat[:oid,:str],pat:str):bat[:oid,:oid]
+command batstr.like(s:bat[:oid,:str],pat:str):bat[:oid,:oid]
 address STRbatlike2
 comment "Perform SQL like operation against a string bat";
 
-command batcalc.like(s:bat[:oid,:str],pat:str,esc:str):bat[:oid,:oid]
+command batstr.like(s:bat[:oid,:str],pat:str,esc:str):bat[:oid,:oid]
 address STRbatlike
 comment "Perform SQL like operation against a string bat";
 @+ Implementation
@@ -165,9 +163,6 @@ comment "Perform SQL like operation against a string bat";
 #include <string.h>
 #include "mal_exception.h"
 #include "str.h"
-#ifdef HAVE_REGEX_H
-#include <regex.h>
-#endif
 
 #ifdef HAVE_LANGINFO_H
 #include <langinfo.h>
@@ -223,9 +218,6 @@ comment "Perform SQL like operation against a string bat";
 	BBPkeepref(*(X));\
 	BBPreleaseref(Z->batCacheid);
 
-batstr_export str STRbatsubstringcst(int *ret, int *bid, int *start, int *length);
-batstr_export str STRbatsubstring(int *ret, int *bid, int *start, int *length);
-
 @= BATint
 batstr_export str STRbat@1(int *ret, int *l);
 str STRbat@1(int *ret, int *l)
@@ -270,10 +262,10 @@ str STRbat@1(int *ret, int *l)
 	BAT *bn, *b;
 	BUN p,q;
 	@3 x;
-	@4 y, *yp = &y;
+	str y, *yp = &y;
 
 	prepareOperand(b,l,"@1");
-	prepareResult(bn,b,TYPE_@4,"@1");
+	prepareResult(bn,b,TYPE_str,"@1");
 
 	bi = bat_iterator(b);
 
@@ -282,11 +274,12 @@ str STRbat@1(int *ret, int *l)
 
 		x = (@3) BUNtail(bi,p);
 		if (x== 0 || *x == 0 || strcmp(x,@3_nil)== 0)
-			y = (@4)@4_nil;
+			y = (str)str_nil;
 		else 
 			@2(yp,x);
-		bunfastins(bn, h, *yp);
-		GDKfree(*yp);
+		bunfastins(bn, h, y);
+		if (y != str_nil)
+			GDKfree(y);
 	}
 	finalizeResult(ret,bn,b);
 	return MAL_SUCCEED;
@@ -296,11 +289,11 @@ bunins_failed:
 	throw(MAL, "batstr.@1", "bunins failed");
 }
 @c
-@:BATstr(Lower,strLower,str,str)@
-@:BATstr(Upper,strUpper,str,str)@
-@:BATstr(Strip,strStrip,str,str)@
-@:BATstr(Ltrim,strLtrim,str,str)@
-@:BATstr(Rtrim,strRtrim,str,str)@
+@:BATstr(Lower,strLower,str)@
+@:BATstr(Upper,strUpper,str)@
+@:BATstr(Strip,strStrip,str)@
+@:BATstr(Ltrim,strLtrim,str)@
+@:BATstr(Rtrim,strRtrim,str)@
 
 @-
 @c
@@ -348,7 +341,7 @@ head column. This is not checked and may be mis-used to deploy the
 implementation for shifted window arithmetic as well.
 @= chkSize
 	if( BATcount(@1) != BATcount(@2) )
-	throw(MAL, "batcalc.@3", "requires bats of identical size");
+	throw(MAL, "batstr.@3", "requires bats of identical size");
 @c
 @= STRbatcmp
 batstr_export str STRbat@2(int *ret, int *l, int *r);
@@ -413,6 +406,7 @@ str STRbat@1(int *ret, int *l, int *r)
 		ptr tr = BUNtail(righti,p);
 		@4(vp, tl, tr);
 		bunfastins(bn, h, vp);
+		@7;
 	}
 	BBPreleaseref(right->batCacheid);
 	finalizeResult(ret,bn,left);
@@ -443,6 +437,7 @@ str STRbat@1cst(int *ret, int *l, @3 *cst)
 		ptr tl = BUNtail(lefti,p);
 		@4(vp, tl, cst);
 		bunfastins(bn, h, vp);
+		@7;
 	}
 	finalizeResult(ret,bn,left);
 	return MAL_SUCCEED;
@@ -474,6 +469,7 @@ str STRbat@1(int *ret, int *l, int *r)
 		str tr = (str) BUNtail(righti,p);
 		@4(vp, &tl, &tr);
 		bunfastins(bn, h, @6);
+		@7;
 	}
 	BBPreleaseref(right->batCacheid);
 	finalizeResult(ret,bn,left);
@@ -504,6 +500,7 @@ str STRbat@1cst(int *ret, int *l, @3 *cst)
 		str tl = (str) BUNtail(lefti,p);
 		@4(vp, &tl, cst);
 		bunfastins(bn, h, @6);
+		@7;
 	}
 	finalizeResult(ret,bn,left);
 	return MAL_SUCCEED;
@@ -532,6 +529,7 @@ str STRcst@1bat(int *ret, @3 *cst, int *r)
 		str tr = (str) BUNtail(righti,p);
 		@4(vp, cst, &tr);
 		bunfastins(bn, h, @6);
+		@7;
 	}
 	finalizeResult(ret,bn,right);
 	return MAL_SUCCEED;
@@ -542,14 +540,14 @@ bunins_failed:
 	throw(MAL, "batstr"@5, "bunins failed");
 }
 @c
-@:binarySTRstr(Prefix,bit,str,STRPrefix,"prefix",vp)@
-@:binarySTRstr(Suffix,bit,str,STRSuffix,"suffix",vp)@
-@:binarySTRstr(strSearch,int,str,STRstrSearch,"search",vp)@
-@:binarySTRstr(RstrSearch,int,str,STRReverseStrSearch,"r_search",vp)@
-@:binarySTRstr(Concat,str,str,STRConcat,"+",v)@
-@:binarySTR(Tail,str,int,strTail,"tail")@
-@:binarySTR(WChrAt,int,int,strWChrAt,"chrAt")@
-@:binarySTR(ChrAt,chr,int,strChrAt,"chrAt")@
+@:binarySTRstr(Prefix,bit,str,STRPrefix,"prefix",vp,)@
+@:binarySTRstr(Suffix,bit,str,STRSuffix,"suffix",vp,)@
+@:binarySTRstr(strSearch,int,str,STRstrSearch,"search",vp,)@
+@:binarySTRstr(RstrSearch,int,str,STRReverseStrSearch,"r_search",vp,)@
+@:binarySTRstr(Concat,str,str,STRConcat,"+",v,GDKfree(v))@
+@:binarySTR(Tail,str,int,strTail,"tail",v,GDKfree(v))@
+@:binarySTR(WChrAt,int,int,strWChrAt,"chrAt",vp,)@
+@:binarySTR(ChrAt,chr,int,strChrAt,"chrAt",vp,)@
 
 batstr_export str STRbatSubstitutecst(int *ret, int *l, str *arg2, str *arg3, bit *rep);
 str
@@ -570,11 +568,14 @@ STRbatSubstitutecst(int *ret, int *l, str *arg2, str *arg3, bit *rep)
 		ptr h = BUNhead(bi, p);
 
 		x = (str) BUNtail(bi, p);
-		if (x == 0 || *x == 0 || strcmp(x, str_nil) == 0)
+		if (x == 0 || *x == 0 || strcmp(x, str_nil) == 0) {
 			y = (str)str_nil;
-		else
+		} else {
 			STRSubstitute(yp, xp, arg2, arg3, rep);
-		bunfastins(bn, h, yp);
+		}
+		bunfastins(bn, h, y);
+		if (y != str_nil)
+			GDKfree(yp);
 	}
 	finalizeResult(ret, bn, b);
 	return MAL_SUCCEED;
@@ -584,56 +585,6 @@ bunins_failed:
 	throw(MAL, "batstr.subString", "bunins failed");
 }
 
-batstr_export str STRbatmatchCst(int *ret, int *bid, str *pat);
-str
-STRbatmatchCst(int *ret, int *bid, str *pat)
-{
-#ifdef HAVE_REGEX_H
-	regex_t prg;
-	BATiter bi;
-	BAT *b, *bn;
-	int tpe;
-	BUN p, q;
-	bit bnil = bit_nil;
-	ptr nilptr;
-	int error = regcomp(&prg, *pat, REG_EXTENDED | REG_NOSUB);
-
-	if (error < 0)
-		throw(MAL, "str.match", "Compilation of regular expression failed");
-
-	prepareOperand(b, bid, "match");
-	bn = BATnew(BAThtype(b), TYPE_bit, BATcount(b));
-
-	tpe = BATttype(b);
-	nilptr = ATOMnilptr(tpe);
-	bi = bat_iterator(b);
-	BATloop(b, p, q) {
-		ptr h = BUNhead(bi, p);
-		ptr t = BUNtail(bi, p);
-
-		if (ATOMcmp(tpe, t, nilptr) == 0) {
-			bunfastins(bn, h, &bnil);
-		} else {
-			bit match = regexec(&prg, t, 0, 0, 0) == 0;
-
-			bunfastins(bn, h, &match);
-		}
-	}
-bunins_failed:
-	bn->hsorted = b->hsorted;
-	bn->tsorted = 0;
-	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); 
-	*ret = bn->batCacheid;
-	BBPkeepref(bn->batCacheid);
-	BBPreleaseref(b->batCacheid);
-	return MAL_SUCCEED;
-#else
-	(void) ret;
-	(void) bid;
-	(void) pat;
-	throw(MAL, "str.match", "No implementation available");
-#endif
-}
 @-
 The pattern matching routine is optimized for SQL pattern structures.
 @c
@@ -647,6 +598,7 @@ STRbatlike(int *ret, int *bid, str *pat, str *esc)
 	BAT *b,*bn;
 	BUN p, q;
 	oid o = oid_nil;
+
 	if( (b= BATdescriptor(*bid)) == NULL)
 		throw(MAL, "batstr.like","Can not find BAT");
 	bn= BATnew(BAThtype(b),TYPE_void, BATcount(b)/10+5);
@@ -660,8 +612,8 @@ STRbatlike(int *ret, int *bid, str *pat, str *esc)
 		ptr h = BUNhead(bi, p);
 		ptr t = BUNtail(bi, p);
 
-		if ( STRlike((str) t, *pat, *esc) )
-			bunfastins(bn, h,&o);
+		if (STRlike((str) t, *pat, *esc)) 
+			bunfastins(bn, h, &o);
 	}
 bunins_failed:
 	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); 
@@ -689,10 +641,11 @@ STRbatsubstringcst(int *ret, int *bid, int *start, int *length)
 	BUN p, q;
 	str res;
 	oid o=oid_nil;
+	char *msg = MAL_SUCCEED;
 
 	if( (b= BATdescriptor(*bid)) == NULL)
-		throw(MAL, "batstr.like","Can not find BAT");
-	bn= BATnew(BAThtype(b),TYPE_void, BATcount(b)/10+5);
+		throw(MAL, "batstr.substring","Can not find BAT");
+	bn= BATnew(BAThtype(b),TYPE_str, BATcount(b)/10+5);
 	BATseqbase(BATmirror(b),o);
 	bn->hsorted = b->hsorted;
 	bn->tsorted = b->tsorted;
@@ -702,16 +655,19 @@ STRbatsubstringcst(int *ret, int *bid, int *start, int *length)
 		ptr h = BUNhead(bi, p);
 		str t =  (str) BUNtail(bi, p);
 
-		if ( STRsubstring(&res, &t, start, length) )
-			bunfastins(bn, h, (ptr)&res);
+		if ((msg=STRsubstring(&res, &t, start, length))) 
+			goto bunins_failed;
+		bunfastins(bn, h, (ptr)res);
+		GDKfree(res);
 	}
 bunins_failed:
 	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); 
 	*ret = bn->batCacheid;
 	BBPkeepref(bn->batCacheid);
 	BBPreleaseref(b->batCacheid);
-	return MAL_SUCCEED;
+	return msg;
 }
+
 batstr_export str STRbatsubstring(int *ret, int *l, int *r, int *t);
 str STRbatsubstring(int *ret, int *l, int *r, int *t)
 {   
@@ -754,7 +710,8 @@ str STRbatsubstring(int *ret, int *l, int *r, int *t)
 		int *t1 = (int *) BUNtail(starti,p);
 		int *t2 = (int *) BUNtail(lengthi,p);
 		STRsubstring(vp, &tl, t1, t2);
-		bunfastins(bn, h, vp);
+		bunfastins(bn, h, *vp);
+		GDKfree(*vp);
 	}
 	BBPreleaseref(start->batCacheid);
 	BBPreleaseref(length->batCacheid);

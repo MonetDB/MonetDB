@@ -2,8 +2,8 @@ b:= bat.new(:oid,:str);
 bat.append(b,"hello");
 bat.append(b,"goodbye");
 
-z1:= batcalc.match(b,"hel");
+z1:= batstr.like(b,"%hel%");
 io.print(z1);
 
-z2:= batcalc.match(b,".*[ly].*");
+z2:= pcre.uselect(".*[ly].*", b);
 io.print(z2);

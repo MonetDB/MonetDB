@@ -26,23 +26,22 @@ function user.main():void;	# 0  (main:void)
     b := bat.new(:oid,:str);	# 1 CMDBATnew (b:bat[:oid,:str])<-(_2:oid)(_3:str)
     bat.append(b,"hello");	# 2 BKCappend_val_wrap (_4:void)<-(b:bat[:oid,:str])(_5:str)
     bat.append(b,"goodbye");	# 3 BKCappend_val_wrap (_6:void)<-(b:bat[:oid,:str])(_7:str)
-    z1 := batcalc.match(b,"hel");	# 4 STRbatmatchCst (z1:bat[:oid,:bit])<-(b:bat[:oid,:str])(_9:str)
-    io.print(z1);	# 5 IOprint_val (_10:void)<-(z1:bat[:oid,:bit])
-    z2 := batcalc.match(b,".*[ly].*");	# 6 STRbatmatchCst (z2:bat[:oid,:bit])<-(b:bat[:oid,:str])(_12:str)
-    io.print(z2);	# 7 IOprint_val (_13:void)<-(z2:bat[:oid,:bit])
+    z1 := batstr.like(b,"%hel%");	# 4 STRbatlike2 (z1:bat[:oid,:oid])<-(b:bat[:oid,:str])(_9:str)
+    io.print(z1);	# 5 IOprint_val (_10:void)<-(z1:bat[:oid,:oid])
+    z2 := pcre.uselect(".*[ly].*",b);	# 6 PCREuselect (z2:bat[:oid,:void])<-(_12:str)(b:bat[:oid,:str])
+    io.print(z2);	# 7 IOprint_val (_13:void)<-(z2:bat[:oid,:void])
 end main;	# 8  
 #-----------------#
 # h	tmp_5	  # name
 # int	bit	  # type
 #-----------------#
-[ 0@0,	  true	  ]
-[ 1@0,	  false	  ]
+[ 0@0,	  nil	  ]
 #-----------------#
 # h	tmp_6	  # name
 # int	bit	  # type
 #-----------------#
-[ 0@0,	  true	  ]
-[ 1@0,	  true	  ]
+[ 0@0,	  nil	  ]
+[ 1@0,	  nil	  ]
 
 # 08:01:12 >  
 # 08:01:12 >  Done.

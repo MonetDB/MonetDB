@@ -495,6 +495,10 @@ comment "This is a join() for which the predicate is that two BUNs match
 		if the left-tail value is within the range [right-head - minus, 
 		right-head + plus]. Works only for the builtin numerical types, 
 		and their derivates.";
+
+command join(l:bat[:any_1,:any_2], rl:bat[:any_3,:any_2], rh:bat[:any_3,:any_2], li:bit, hi:bit) :bat[:any_1,:any_3] 
+address ALGrangejoin;
+
 @+ Projection operations
 @mal
 command project(b:bat[:any_1,:any_2]) :bat[:any_1,:oid]
@@ -920,6 +924,7 @@ algebra_export str ALGfragment(int *result, int *bid, ptr hlow, ptr hhigh, ptr t
 algebra_export str ALGthetajoinEstimate(int *result, int *lid, int *rid, int *opc, lng *estimate);
 algebra_export str ALGthetajoin(int *result, int *lid, int *rid, int *opc);
 algebra_export str ALGbandjoin(int *result, int *lid, int *rid, ptr *minus, ptr *plus);
+algebra_export str ALGrangejoin(int *result, int *lid, int *rlid, int *rhid, bit *li, bit *hi);
 
 @= ALGunaryExport
 algebra_export str ALG@1(int *result, int *bid);
@@ -1031,7 +1036,7 @@ algebra_export str ALGavg_@1(dbl *res, int *bid) {
 @c
 #include "mal_config.h"
 #include "algebra.h"
-
+#include "gdk_rangejoin.h"
 
 @* Command Implementations in C
 This module contains just a wrapper implementations; since all described
@@ -2605,6 +2610,36 @@ ALGbandjoin(int *result, int *lid, int *rid, ptr *minus, ptr *plus)
 		return MAL_SUCCEED;
 	}
 	throw(MAL, "algebra.bandjoin", "GDKerror");
+}
+
+str 
+ALGrangejoin(int *result, int *lid, int *rlid, int *rhid, bit *li, bit *hi)
+{
+	BAT *left, *rightl, *righth, *bn = NULL;
+
+	if ((left = BATdescriptor(*lid)) == NULL) {
+		throw(MAL, "algebra.rangejoin", "Cannot access descriptor");
+	}
+	if ((rightl = BATdescriptor(*rlid)) == NULL) {
+		BBPreleaseref(left->batCacheid);
+		throw(MAL, "algebra.rangejoin", "Cannot access descriptor");
+	}
+	if ((righth = BATdescriptor(*rhid)) == NULL) {
+		BBPreleaseref(left->batCacheid);
+		BBPreleaseref(rightl->batCacheid);
+		throw(MAL, "algebra.rangejoin", "Cannot access descriptor");
+	}
+	bn = BATrangejoin(left, rightl, righth, *li, *hi);
+	BBPreleaseref(left->batCacheid);
+	BBPreleaseref(rightl->batCacheid);
+	BBPreleaseref(righth->batCacheid);
+	if (bn) {
+		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
+		*result = bn->batCacheid;
+		BBPkeepref(*result);
+		return MAL_SUCCEED;
+	}
+	throw(MAL, "algebra.rangejoin", "GDKerror");
 }
 
 @-

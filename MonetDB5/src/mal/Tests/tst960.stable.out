@@ -59,31 +59,31 @@ function user.main():void;	# 0  (main:void)
     bat.append(S,"new");	# 5 BKCappend_val_wrap (_9:void)<-(S:bat[:oid,:str])(_10:str)
     bat.append(S,"world");	# 6 BKCappend_val_wrap (_11:void)<-(S:bat[:oid,:str])(_12:str)
     io.print(S);	# 7 IOprint_val (_13:void)<-(S:bat[:oid,:str])
-    L := batcalc.length(S);	# 8 STRbatLength (L:bat[:oid,:int])<-(S:bat[:oid,:str])
+    L := batstr.length(S);	# 8 STRbatLength (L:bat[:oid,:int])<-(S:bat[:oid,:str])
     io.print(L);	# 9 IOprint_val (_15:void)<-(L:bat[:oid,:int])
-    L := batcalc.nbytes(S);	# 10 STRbatBytes (L:bat[:oid,:int])<-(S:bat[:oid,:str])
+    L := batstr.nbytes(S);	# 10 STRbatBytes (L:bat[:oid,:int])<-(S:bat[:oid,:str])
     io.print(L);	# 11 IOprint_val (_16:void)<-(L:bat[:oid,:int])
     B := batcalc.==(S,"hello");	# 12 STRbatEqualCst (B:bat[:oid,:bit])<-(S:bat[:oid,:str])(_6:str)
     io.print(B);	# 13 IOprint_val (_18:void)<-(B:bat[:oid,:bit])
-    B := batcalc.match(S,"hello");	# 14 STRbatmatchCst (B:bat[:oid,:bit])<-(S:bat[:oid,:str])(_6:str)
-    io.print(B);	# 15 IOprint_val (_19:void)<-(B:bat[:oid,:bit])
-    U := batcalc.toUpper(S);	# 16 STRbatUpper (U:bat[:oid,:str])<-(S:bat[:oid,:str])
-    io.print(U);	# 17 IOprint_val (_21:void)<-(U:bat[:oid,:str])
-    l := batcalc.toLower(U);	# 18 STRbatLower (l:bat[:oid,:str])<-(U:bat[:oid,:str])
-    io.print(l);	# 19 IOprint_val (_23:void)<-(l:bat[:oid,:str])
-    trim := batcalc.trim(S);	# 20 STRbatStrip (trim:bat[:oid,:str])<-(S:bat[:oid,:str])
-    io.print(trim);	# 21 IOprint_val (_25:void)<-(trim:bat[:oid,:str])
-    ltrim := batcalc.ltrim(S);	# 22 STRbatLtrim (ltrim:bat[:oid,:str])<-(S:bat[:oid,:str])
-    io.print(ltrim);	# 23 IOprint_val (_27:void)<-(ltrim:bat[:oid,:str])
-    rtrim := batcalc.rtrim(S);	# 24 STRbatRtrim (rtrim:bat[:oid,:str])<-(S:bat[:oid,:str])
-    io.print(rtrim);	# 25 IOprint_val (_29:void)<-(rtrim:bat[:oid,:str])
-    io.print("Start searches");	# 26 IOprint_val (_30:void)<-(_31:str)
-    srch := batcalc.search(S,"hello");	# 27 STRbatstrSearchcst (srch:bat[:oid,:int])<-(S:bat[:oid,:str])(_6:str)
-    io.print(srch);	# 28 IOprint_val (_33:void)<-(srch:bat[:oid,:int])
-    srch := batcalc.search(S,S);	# 29 STRbatstrSearch (srch:bat[:oid,:int])<-(S:bat[:oid,:str])(S:bat[:oid,:str])
-    io.print(srch);	# 30 IOprint_val (_34:void)<-(srch:bat[:oid,:int])
+    C := batstr.like(S,"hello");	# 14 STRbatlike2 (C:bat[:oid,:oid])<-(S:bat[:oid,:str])(_6:str)
+    io.print(C);	# 15 IOprint_val (_20:void)<-(C:bat[:oid,:oid])
+    U := batstr.toUpper(S);	# 16 STRbatUpper (U:bat[:oid,:str])<-(S:bat[:oid,:str])
+    io.print(U);	# 17 IOprint_val (_22:void)<-(U:bat[:oid,:str])
+    l := batstr.toLower(U);	# 18 STRbatLower (l:bat[:oid,:str])<-(U:bat[:oid,:str])
+    io.print(l);	# 19 IOprint_val (_24:void)<-(l:bat[:oid,:str])
+    trim := batstr.trim(S);	# 20 STRbatStrip (trim:bat[:oid,:str])<-(S:bat[:oid,:str])
+    io.print(trim);	# 21 IOprint_val (_26:void)<-(trim:bat[:oid,:str])
+    ltrim := batstr.ltrim(S);	# 22 STRbatLtrim (ltrim:bat[:oid,:str])<-(S:bat[:oid,:str])
+    io.print(ltrim);	# 23 IOprint_val (_28:void)<-(ltrim:bat[:oid,:str])
+    rtrim := batstr.rtrim(S);	# 24 STRbatRtrim (rtrim:bat[:oid,:str])<-(S:bat[:oid,:str])
+    io.print(rtrim);	# 25 IOprint_val (_30:void)<-(rtrim:bat[:oid,:str])
+    io.print("Start searches");	# 26 IOprint_val (_31:void)<-(_32:str)
+    srch := batstr.search(S,"hello");	# 27 STRbatstrSearchcst (srch:bat[:oid,:int])<-(S:bat[:oid,:str])(_6:str)
+    io.print(srch);	# 28 IOprint_val (_34:void)<-(srch:bat[:oid,:int])
+    srch := batstr.search(S,S);	# 29 STRbatstrSearch (srch:bat[:oid,:int])<-(S:bat[:oid,:str])(S:bat[:oid,:str])
+    io.print(srch);	# 30 IOprint_val (_35:void)<-(srch:bat[:oid,:int])
     plus := batcalc.+(S,S);	# 31 STRbatConcat (plus:bat[:oid,:str])<-(S:bat[:oid,:str])(S:bat[:oid,:str])
-    io.print(plus);	# 32 IOprint_val (_36:void)<-(plus:bat[:oid,:str])
+    io.print(plus);	# 32 IOprint_val (_37:void)<-(plus:bat[:oid,:str])
 end main;	# 33  
 #-------------------------#
 # h	tmp_13		  # name
@@ -121,10 +121,7 @@ end main;	# 33
 # h	tmp_16	  # name
 # oid	bit	  # type
 #-----------------#
-[ 0@0,	  true	  ]
-[ 1@0,	  false	  ]
-[ 2@0,	  false	  ]
-[ 3@0,	  false	  ]
+[ 0@0,	  nil	  ]
 #-------------------------#
 # h	tmp_14		  # name
 # void	str		  # type
