@@ -1281,7 +1281,7 @@ incref(bat i, int logical, int lock)
 				gdk_set_lock(GDKswapLock(i), "BBPincref spin wait");
 			}
 		}
-		assert(BBP_refs(i)+BBP_lrefs(i));
+		assert(BBP_refs(i)+BBP_lrefs(i) || BBP_status(i)&BBPDELETED);
 
 		/* got the lock */
 		if (logical) {
