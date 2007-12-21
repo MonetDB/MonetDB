@@ -135,6 +135,12 @@
         }
         "Entry"
         {
+        "MsmKey" = "8:_1992D42F131B41FDAE84D6816215EF64"
+        "OwnerKey" = "8:_EA668A9692344C8396B4176458706382"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
         "MsmKey" = "8:_1B6D66F3FD4645D4A1CE8C09DF5F2978"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -232,6 +238,12 @@
         "Entry"
         {
         "MsmKey" = "8:_321DB6EFF7B84F4A80B4646C4E734374"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_375F749A737F4F3489323758855641B3"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -447,6 +459,12 @@
         }
         "Entry"
         {
+        "MsmKey" = "8:_8AFD0EAE04F64FF1935B451B245A22B1"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
         "MsmKey" = "8:_8BC0A289A0DC450B8F11684E25562B6F"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -555,13 +573,13 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_A9FF91A8DA78489DA5DE7F3F3FBCBD8D"
+        "MsmKey" = "8:_A8C792724FD44234836F2EDE69BEBC5A"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
-        "MsmKey" = "8:_AA49E9771D4549D2A3A87B9A2158344B"
+        "MsmKey" = "8:_A9FF91A8DA78489DA5DE7F3F3FBCBD8D"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -735,6 +753,12 @@
         }
         "Entry"
         {
+        "MsmKey" = "8:_D2110371739742A483635DF77AC98616"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
         "MsmKey" = "8:_D2120B6B37C34F27A8B50F72DF72123E"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -809,12 +833,6 @@
         {
         "MsmKey" = "8:_E1D1F67A020E43D9B52D6DF3B8E4B7E6"
         "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_E71CC1C617F74064A81C90D688B43515"
-        "OwnerKey" = "8:_EA668A9692344C8396B4176458706382"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -1736,6 +1754,26 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_375F749A737F4F3489323758855641B3"
+            {
+            "SourcePath" = "8:share\\MonetDB\\lib\\xrpcapi.jar"
+            "TargetName" = "8:xrpcapi.jar"
+            "Tag" = "8:"
+            "Folder" = "8:_2E7A7A2A3AA7443EB1803999F76D6C26"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_3A10565193E2432A946E6CD3ED052E96"
             {
             "SourcePath" = "8:share\\MonetDB\\xrpc\\admin\\admin.xq"
@@ -2436,6 +2474,26 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_8AFD0EAE04F64FF1935B451B245A22B1"
+            {
+            "SourcePath" = "8:share\\MonetDB\\xrpc\\export\\xrpc-mod.xq"
+            "TargetName" = "8:xrpc-mod.xq"
+            "Tag" = "8:"
+            "Folder" = "8:_F2A6A1E84C544DFCA135E87057353285"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_8BC0A289A0DC450B8F11684E25562B6F"
             {
             "SourcePath" = "8:lib\\MonetDB4\\txtsim.mil"
@@ -2796,12 +2854,12 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_A9FF91A8DA78489DA5DE7F3F3FBCBD8D"
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_A8C792724FD44234836F2EDE69BEBC5A"
             {
-            "SourcePath" = "8:lib\\MonetDB4\\lib_pftijah.dll"
-            "TargetName" = "8:lib_pftijah.dll"
+            "SourcePath" = "8:share\\MonetDB\\xrpc\\export\\xrpc.html"
+            "TargetName" = "8:xrpc.html"
             "Tag" = "8:"
-            "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
+            "Folder" = "8:_F2A6A1E84C544DFCA135E87057353285"
             "Condition" = "8:"
             "Transitive" = "11:FALSE"
             "Vital" = "11:TRUE"
@@ -2816,12 +2874,12 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_AA49E9771D4549D2A3A87B9A2158344B"
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_A9FF91A8DA78489DA5DE7F3F3FBCBD8D"
             {
-            "SourcePath" = "8:share\\MonetDB\\lib\\xrpcwrapper-test.jar"
-            "TargetName" = "8:xrpcwrapper-test.jar"
+            "SourcePath" = "8:lib\\MonetDB4\\lib_pftijah.dll"
+            "TargetName" = "8:lib_pftijah.dll"
             "Tag" = "8:"
-            "Folder" = "8:_2E7A7A2A3AA7443EB1803999F76D6C26"
+            "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
             "Condition" = "8:"
             "Transitive" = "11:FALSE"
             "Vital" = "11:TRUE"
@@ -3382,6 +3440,26 @@
             "TargetName" = "8:lib_aggrX3.dll"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_D2110371739742A483635DF77AC98616"
+            {
+            "SourcePath" = "8:share\\MonetDB\\lib\\xrpcclient.jar"
+            "TargetName" = "8:xrpcclient.jar"
+            "Tag" = "8:"
+            "Folder" = "8:_2E7A7A2A3AA7443EB1803999F76D6C26"
             "Condition" = "8:"
             "Transitive" = "11:FALSE"
             "Vital" = "11:TRUE"
@@ -4805,7 +4883,7 @@
         }
         "MergeModule"
         {
-            "{CEE29DC0-9FBA-4B99-8D47-5BC643D9B626}:_E71CC1C617F74064A81C90D688B43515"
+            "{CEE29DC0-9FBA-4B99-8D47-5BC643D9B626}:_1992D42F131B41FDAE84D6816215EF64"
             {
             "UseDynamicProperties" = "11:TRUE"
             "IsDependency" = "11:TRUE"
