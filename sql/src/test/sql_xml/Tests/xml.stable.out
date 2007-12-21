@@ -1,0 +1,98 @@
+stdout of test 'xml` in directory 'src/test/sql_xml` itself:
+
+
+# 17:54:53 >  
+# 17:54:53 >   mserver5 "--config=/ufs/niels/scratch/monetdb/Linux-x86_64/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB5:/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB5/lib:/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/niels/scratch/monetdb/Linux-x86_64/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/niels/scratch/monetdb/Linux-x86_64/var/MonetDB5/sql_logs"  --set mapi_open=true --set xrpc_open=true --set mapi_port=35176 --set xrpc_port=43869 --set monet_prompt= --trace "--dbname=mTests_src_test_sql_xml" --set mal_listing=0 "--dbinit= include sql;" ; echo ; echo Over..
+# 17:54:53 >  
+
+# MonetDB server v5.3.0, based on kernel v1.21.0
+# Serving database 'mTests_src_test_sql_xml'
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Copyright (c) 1993-2007 CWI, all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://koala.ins.cwi.nl:35176/
+# MonetDB/SQL module v2.21.0 loaded
+
+Ready.
+#function user.main():void;
+#    clients.quit();
+#end main;
+
+Over..
+
+# 17:54:53 >  
+# 17:54:53 >  mclient -lsql -umonetdb -Pmonetdb --host=koala --port=35176 
+# 17:54:53 >  
+
+% sys.c,	sys.c # table_name
+% custid,	custname # name
+% int,	varchar # type
+% 1,	18 # length
+[ 1,	"WoodWorks"	]
+[ 2,	"Software Solutions"	]
+[ 3,	"Food Supplies"	]
+[ 4,	"Hardware Shop"	]
+[ 5,	"Books Inc"	]
+% . # table_name
+% element_Customer # name
+% xml # type
+% 97 # length
+[ <Customer><CustId>1</CustId><CustName>WoodWorks</CustName><City>Baltimore</City></Customer>	]
+[ <Customer><CustId>2</CustId><CustName>Software Solutions</CustName><City>Boston</City></Customer>	]
+[ <Customer><CustId>3</CustId><CustName>Food Supplies</CustName><City>New York</City></Customer>	]
+[ <Customer><CustId>4</CustId><CustName>Hardware Shop</CustName><City>Washington</City></Customer>	]
+[ <Customer><CustId>5</CustId><CustName>Books Inc</CustName><City>New Orleans</City></Customer>	]
+% . # table_name
+% element_Customer # name
+% xml # type
+% 97 # length
+[ <Customer><custid>1</custid><custname>WoodWorks</custname><city>Baltimore</city></Customer>	]
+[ <Customer><custid>2</custid><custname>Software Solutions</custname><city>Boston</city></Customer>	]
+[ <Customer><custid>3</custid><custname>Food Supplies</custname><city>New York</city></Customer>	]
+[ <Customer><custid>4</custid><custname>Hardware Shop</custname><city>Washington</city></Customer>	]
+[ <Customer><custid>5</custid><custname>Books Inc</custname><city>New Orleans</city></Customer>	]
+% sys.c,	sys.c,	sys.c,	sys.p,	sys.p,	sys.p # table_name
+% custid,	name,	city,	projid,	name,	custid # name
+% int,	varchar,	varchar,	int,	varchar,	int # type
+% 1,	13,	11,	2,	7,	1 # length
+[ 1,	"WoodWorks",	"Baltimore",	1,	"Medusa",	1	]
+[ 4,	"Hardware Shop",	"Washington",	2,	"Pegasus",	4	]
+[ 4,	"Hardware Shop",	"Washington",	8,	"Typhon",	4	]
+[ 5,	"Books Inc",	"New Orleans",	10,	"Sphinx",	5	]
+% . # table_name
+% element_CustomerProj # name
+% xml # type
+% 127 # length
+[ <CustomerProj><custid>1</custid><custname>WoodWorks</custname><projid>1</projid><projname>Medusa</projname></CustomerProj>	]
+[ <CustomerProj><custid>4</custid><custname>Hardware Shop</custname><projid>2</projid><projname>Pegasus</projname></CustomerProj>	]
+[ <CustomerProj><custid>4</custid><custname>Hardware Shop</custname><projid>8</projid><projname>Typhon</projname></CustomerProj>	]
+[ <CustomerProj><custid>5</custid><custname>Books Inc</custname><projid>10</projid><projname>Sphinx</projname></CustomerProj>	]
+% . # table_name
+% element_project # name
+% xml # type
+% 125 # length
+[ <project  id="1"><custid>1</custid><custname>WoodWorks</custname><projid>1</projid><projname>Medusa</projname></project>	]
+[ <project  id="2"><custid>4</custid><custname>Hardware Shop</custname><projid>2</projid><projname>Pegasus</projname></project>	]
+[ <project  id="8"><custid>4</custid><custname>Hardware Shop</custname><projid>8</projid><projname>Typhon</projname></project>	]
+[ <project  id="10"><custid>5</custid><custname>Books Inc</custname><projid>10</projid><projname>Sphinx</projname></project>	]
+% . # table_name
+% customer_projects # name
+% xml # type
+% 192 # length
+[ <Customer  id="1"><name>WoodWorks</name><city>Baltimore</city><projects><project  id="1"><name>Medusa</name></project></projects></Customer>	]
+[ <Customer  id="4"><name>Hardware Shop</name><city>Washington</city><projects><project  id="2"><name>Pegasus</name></project><project  id="8"><name>Typhon</name></project></projects></Customer>	]
+[ <Customer  id="5"><name>Books Inc</name><city>New Orleans</city><projects><project  id="10"><name>Sphinx</name></project></projects></Customer>	]
+% . # table_name
+% element_Customer # name
+% xml # type
+% 55 # length
+[ <Customer  id="1"><!-- simple comment test -</Customer>	]
+[ <Customer  id="2"><!-- simple comment test -</Customer>	]
+[ <Customer  id="3"><!-- simple comment test -</Customer>	]
+[ <Customer  id="4"><!-- simple comment test -</Customer>	]
+[ <Customer  id="5"><!-- simple comment test -</Customer>	]
+
+# 17:54:53 >  
+# 17:54:53 >  Done.
+# 17:54:53 >  
+

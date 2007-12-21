@@ -1,0 +1,4 @@
+HAVE_MONETDB5?funcs
+HAVE_MONETDB5?load
+HAVE_MONETDB5?xml
+HAVE_MONETDB5?xml_attribute_parsing.SF-1855673
