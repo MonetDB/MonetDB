@@ -21,12 +21,6 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_02B85DFFF1D54D15BDA4F1ED00189513"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
         "MsmKey" = "8:_039D616D2FE84FF495B8F9DCBC94DEA7"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -58,6 +52,12 @@
         "Entry"
         {
         "MsmKey" = "8:_0C33051D1E8445EC823BCB0873B891D6"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_0E2F9CDD58B14849A45CC037128D2745"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -417,6 +417,12 @@
         }
         "Entry"
         {
+        "MsmKey" = "8:_7B40636520614A1C9ADD8375F4A01588"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
         "MsmKey" = "8:_7D090E8FE2ED48FF89ED14BDC137CE81"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -574,12 +580,6 @@
         "Entry"
         {
         "MsmKey" = "8:_A9FF91A8DA78489DA5DE7F3F3FBCBD8D"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_AA49E9771D4549D2A3A87B9A2158344B"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -861,12 +861,6 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_E9BC27A87CCA4AA2AE5E8D8127E45B7A"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
         "MsmKey" = "8:_EA668A9692344C8396B4176458706382"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -881,12 +875,6 @@
         {
         "MsmKey" = "8:_F0029914192546A68D98F43958663E5B"
         "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_F219A6309885407989797173717DE59F"
-        "OwnerKey" = "8:_EA668A9692344C8396B4176458706382"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -1064,26 +1052,6 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_02B85DFFF1D54D15BDA4F1ED00189513"
-            {
-            "SourcePath" = "8:share\\MonetDB\\lib\\monetdb-1.7-jdbc.jar"
-            "TargetName" = "8:monetdb-1.7-jdbc.jar"
-            "Tag" = "8:"
-            "Folder" = "8:_2E7A7A2A3AA7443EB1803999F76D6C26"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_039D616D2FE84FF495B8F9DCBC94DEA7"
             {
             "SourcePath" = "8:C:\\Program Files\\Intel\\Compiler\\C++\\9.1\\IA32\\Bin\\libmmd.dll"
@@ -1190,6 +1158,26 @@
             "TargetName" = "8:lib_malalgebra.dll"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_0E2F9CDD58B14849A45CC037128D2745"
+            {
+            "SourcePath" = "8:share\\MonetDB\\lib\\xrpcclient.jar"
+            "TargetName" = "8:xrpcclient.jar"
+            "Tag" = "8:"
+            "Folder" = "8:_2E7A7A2A3AA7443EB1803999F76D6C26"
             "Condition" = "8:"
             "Transitive" = "11:FALSE"
             "Vital" = "11:TRUE"
@@ -2384,6 +2372,26 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_7B40636520614A1C9ADD8375F4A01588"
+            {
+            "SourcePath" = "8:share\\MonetDB\\lib\\xrpcapi.jar"
+            "TargetName" = "8:xrpcapi.jar"
+            "Tag" = "8:"
+            "Folder" = "8:_2E7A7A2A3AA7443EB1803999F76D6C26"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_7D090E8FE2ED48FF89ED14BDC137CE81"
             {
             "SourcePath" = "8:share\\MonetDB\\lib\\monetdb-1.7-jdbc.jar"
@@ -2890,26 +2898,6 @@
             "TargetName" = "8:lib_pftijah.dll"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_AA49E9771D4549D2A3A87B9A2158344B"
-            {
-            "SourcePath" = "8:share\\MonetDB\\lib\\xrpcwrapper-test.jar"
-            "TargetName" = "8:xrpcwrapper-test.jar"
-            "Tag" = "8:"
-            "Folder" = "8:_2E7A7A2A3AA7443EB1803999F76D6C26"
             "Condition" = "8:"
             "Transitive" = "11:FALSE"
             "Vital" = "11:TRUE"
@@ -3830,26 +3818,6 @@
             "TargetName" = "8:xrpc-mod.xq"
             "Tag" = "8:"
             "Folder" = "8:_F2A6A1E84C544DFCA135E87057353285"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_E9BC27A87CCA4AA2AE5E8D8127E45B7A"
-            {
-            "SourcePath" = "8:lib\\MonetDB4\\upgrade.mil"
-            "TargetName" = "8:upgrade.mil"
-            "Tag" = "8:"
-            "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
             "Condition" = "8:"
             "Transitive" = "11:FALSE"
             "Vital" = "11:TRUE"
@@ -5020,20 +4988,6 @@
             "UseDynamicProperties" = "11:TRUE"
             "IsDependency" = "11:FALSE"
             "SourcePath" = "8:C:\\Program Files\\Common Files\\Merge Modules\\Microsoft_VC80_CRT_x86.msm"
-                "Properties"
-                {
-                }
-            "LanguageId" = "3:0"
-            "Exclude" = "11:FALSE"
-            "Folder" = "8:"
-            "Feature" = "8:"
-            "IsolateTo" = "8:"
-            }
-            "{CEE29DC0-9FBA-4B99-8D47-5BC643D9B626}:_F219A6309885407989797173717DE59F"
-            {
-            "UseDynamicProperties" = "11:TRUE"
-            "IsDependency" = "11:TRUE"
-            "SourcePath" = "8:policy_8_0_microsoft_vc80_crt_x86.msm"
                 "Properties"
                 {
                 }
