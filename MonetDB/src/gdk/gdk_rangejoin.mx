@@ -1,0 +1,202 @@
+@' The contents of this file are subject to the MonetDB Public License
+@' Version 1.1 (the "License"); you may not use this file except in
+@' compliance with the License. You may obtain a copy of the License at
+@' http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+@'
+@' Software distributed under the License is distributed on an "AS IS"
+@' basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+@' License for the specific language governing rights and limitations
+@' under the License.
+@'
+@' The Original Code is the MonetDB Database System.
+@'
+@' The Initial Developer of the Original Code is CWI.
+@' Portions created by CWI are Copyright (C) 1997-2007 CWI.
+@' All Rights Reserved.
+
+@f gdk_rangejoin
+@a N. J. Nes
+
+@* Range Join Operators
+The sql statement b.x <= a.z <= b.y, could be implemented using too thetajoins.
+But that results in very large intermediates.
+
+@h
+#ifndef GDK_RANGEJOIN_H
+#define GDK_RANGEJOIN_H
+
+#include "gdk.h"
+
+gdk_export BAT *BATrangejoin(BAT *l, BAT *rl, BAT *rh, bit li, bit hi);
+/* Join all BUNs of the BATs that have tail values: {rl <= l <= rh}.  */
+
+#endif /* GDK_RANGEJOIN_H */
+@c
+
+#include "monetdb_config.h"
+#include "gdk_rangejoin.h"
+
+BAT *BATrangejoin(BAT *l, BAT *rl, BAT *rh, bit li, bit hi)
+{
+	BAT *bn;
+
+	ERRORcheck(l == NULL, "BATrangejoin: invalid left operand");
+	ERRORcheck(rl == NULL, "BATrangejoin: invalid right low operand");
+	ERRORcheck(rh == NULL, "BATrangejoin: invalid right high operand");
+	ERRORcheck(TYPEerror(l->ttype, rl->ttype), "BATrangejoin: type conflict\n");
+	ERRORcheck(TYPEerror(l->ttype, rh->ttype), "BATrangejoin: type conflict\n");
+	/* TODO check that rl and rh are aligned */
+
+	bn = BATnew(BAThtype(l), BAThtype(rl), MIN(BATcount(l), BATcount(rl)));
+	if (bn == NULL) 
+		return bn;
+	switch (ATOMstorage(rl->ttype)) {
+	case TYPE_chr:
+		@:rangejoin(chr)@
+	case TYPE_bte:
+		@:rangejoin(bte)@
+	case TYPE_sht:
+		@:rangejoin(sht)@
+	case TYPE_int:
+		@:rangejoin(int)@
+	case TYPE_flt:
+		@:rangejoin(flt)@
+	case TYPE_dbl:
+		@:rangejoin(dbl)@
+	case TYPE_lng:
+		@:rangejoin(lng)@
+	default:
+		GDKerror("BATrangejoin: type not implemented\n");
+		return NULL;
+	}
+	/* set sorted flags by hand, because we used BUNfastins() */
+	bn->hsorted = BAThordered(l);
+	bn->tsorted = FALSE;
+
+	ESTIDEBUG THRprintf(GDKout, "#BATrangejoin: actual resultsize: " SZFMT "\n", BATcount(bn));
+
+	return bn;
+}
+
+@= rangejoin
+if (li && hi)
+	@:rangejoin_(@1,>=,<=)
+else if (li && !hi)
+	@:rangejoin_(@1,>=,<)
+else if (!li && hi)
+	@:rangejoin_(@1,>,<=)
+else
+	@:rangejoin_(@1,>,<)
+break;
+@
+@= rangejoin_
+{
+	BATiter li = bat_iterator(l);
+	BATiter rli = bat_iterator(rl);
+	BATiter rhi = bat_iterator(rh);
+	BUN p, q;
+	BUN v, w;
+
+	BATloop(l, p, q) {
+		@1 x1 = *(@1 *) BUNtloc(li, p);
+		BATloop(rl, v, w) {
+			if ((x1 @2 *(@1 *) BUNtloc(rli, v))  &&
+			    (x1 @3 *(@1 *) BUNtloc(rhi, v))) { 
+				if (BUNfastins(bn, BUNhead(li, p), BUNhead(rli, v)) == NULL) {
+					BBPreclaim(bn);
+					return NULL;
+				}
+			}
+		}
+	}
+}
+@+ Bandjoin
+A non-equi join of two relations R and S is called a Band-join if
+the join predicate requires the values of R to fall within a given range.
+This kind of joins is encountered in real world domains, such as those
+involved with time and distance.
+
+The boundary conditions for the bandjoin are constants or a NULL value.
+The latter enables encoding of arbitrary theta joins using the more
+general bandjoin.
+Incidentally note that c1 = c2 = 0 leads to an equi-join.
+
+The straight forward implementation uses a nested loop.
+The current implementation does not optimize processing, because
+the impact of the choices is not yet clear.
+
+The hash indexing routines have been extended with a Band argument.
+@{
+@c
+BAT *
+BATbandjoin(BAT *l, BAT *r, ptr c1, ptr c2)
+{
+	BAT *bn;
+
+	ERRORcheck(l == NULL, "BATbandjoin: invalid left operand");
+	ERRORcheck(r == NULL, "BATbandjoin: invalid right operand");
+	ERRORcheck(TYPEerror(l->ttype, r->htype), "BATbandjoin: type conflict\n");
+	bn = BATnew(BAThtype(l), BAThtype(r), MIN(BATcount(l), BATcount(r)));
+	if (bn == NULL) 
+		return bn;
+	switch (ATOMstorage(r->htype)) {
+	case TYPE_chr:
+		@:bandjoin(chr)@
+	case TYPE_bte:
+		@:bandjoin(bte)@
+	case TYPE_sht:
+		@:bandjoin(sht)@
+	case TYPE_int:
+		@:bandjoin(int)@
+	case TYPE_flt:
+		@:bandjoin(flt)@
+	case TYPE_dbl:
+		@:bandjoin(dbl)@
+	case TYPE_lng:
+		@:bandjoin(lng)@
+	default:
+		GDKerror("BATbandjoin: type not implemented\n");
+		return NULL;
+	}
+	/* set sorted flags by hand, because we used BUNfastins() */
+	bn->hsorted = BAThordered(l);
+	bn->tsorted = FALSE;
+
+	ESTIDEBUG THRprintf(GDKout, "#BATbandjoin: actual resultsize: " SZFMT "\n", BATcount(bn));
+
+	return bn;
+}
+
+@
+@}
+@-
+The easiest case is to implement a nested loop for band operations.
+Choice point is to determine the status of the NULL values in the final
+result.
+@{
+@= bandjoin
+{
+	BATiter li = bat_iterator(l);
+	BATiter ri = bat_iterator(r);
+	@1 *x1;
+	@1 *x2;
+	BUN p, q;
+	BUN v, w;
+
+	BATloop(l, p, q) {
+		x1 = (@1 *) BUNtloc(li, p);
+		BATloop(r, v, w) {
+			x2 = (@1 *) BUNhloc(ri, v);
+			if ((*x1 >= *x2 -  *(@1 *) c1) &&
+			    (*x1 <= *x2 + *(@1 *) c2)) {
+				if (BUNfastins(bn, BUNhead(li, p), BUNtail(ri, v)) == NULL) {
+					BBPreclaim(bn);
+					return NULL;
+				}
+			}
+		}
+	}
+	break;
+}
+@
+@}
