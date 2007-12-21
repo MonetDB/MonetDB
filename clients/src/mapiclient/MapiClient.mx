@@ -268,6 +268,18 @@ timerStart(void)
 }
 
 static void
+timerPause(void)
+{
+	t1 = gettime();
+}
+
+static void
+timerResume(void)
+{
+	t0 = gettime() - (t1 - t0);
+}
+
+static void
 timerEnd(void)
 {
 	t1 = gettime();
@@ -1049,6 +1061,7 @@ doFile(Mapi mid, const char *file)
 
 	timerStart();
 	do {
+		timerPause();
 		if ((length = fread(buf, 1, bufsize, fp)) == 0) {
 			/* end of file */
 			if (file != NULL) {
@@ -1058,6 +1071,7 @@ doFile(Mapi mid, const char *file)
 			if (hdl == NULL)
 				break;	/* nothing more to do */
 		}
+		timerResume();
 
 		if (hdl == NULL) {
 			hdl = mapi_query_prep(mid);
@@ -1202,6 +1216,7 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt)
 		oldbuf = buf = malloc(BUFSIZ);
 
 	do {
+		timerPause();
 #ifdef HAVE_LIBREADLINE
 		if (prompt) {
 			rl_completion_func_t *func = NULL;
@@ -1492,7 +1507,9 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt)
 			timerStart();
 			hdl = mapi_query_prep(mid);
 			CHECK_RESULT(mid, hdl, buf, continue);
-		}
+		} else
+			timerResume();
+
 		assert(hdl != NULL);
 
 		if (length > 0) {

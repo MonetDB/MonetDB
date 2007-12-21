@@ -3152,7 +3152,7 @@ MapiMsg
 mapi_output(Mapi mid, char *output)
 {
 	mapi_clrError(mid);
-	if (mid->languageId == LANG_XQUERY && strcmp(output, "dm") != 0)
+	if (mid->languageId == LANG_XQUERY)
 		return mapi_Xcommand(mid, "output", output);
 	return MOK;
 }
