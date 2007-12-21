@@ -386,6 +386,15 @@ binary search trees on the join columns. "
 the left-tail value is within the range [right-head - minus,
 right-head + plus]\n
 Works only for the builtin numerical types, and their derivates."
+
+.COMMAND join ( BAT[any::1,any::2] l, 
+	        BAT[any::3,any::2] rl, 
+		BAT[any::3,any::2] rh, bit l_in, bit h_in) :
+				BAT[any::1,any::3] = CMDrangejoin;
+"Range join ie { rl <[=] l <[=] rh }.
+Either boundary value is included ('<=') if the respective bit (l_in / h_in)
+is TRUE, and excluded ('<') otherwise."
+
 @+ OID Introducing Commands
 For relational processing, some operators are necessary to produce newly
 initiated OID columns, for representing n-ary (intermediary) relations.
@@ -1399,6 +1408,7 @@ algebra_export ptr BATmin(BAT *b, ptr res);
 @c
 #include "monetdb4_config.h"
 #include "algebra.h"
+#include "gdk_rangejoin.h"
 
 @+ Minimum and Maximum
 The routines @`BATmin@5(b) and @`BATmax@5(b) compute the minimum and
@@ -1696,6 +1706,12 @@ int
 CMDbandjoin(BAT **result, BAT *left, BAT *right, ptr minus, ptr plus)
 {
 	return (*result = BATbandjoin(left, right, minus, plus)) ? GDK_SUCCEED : GDK_FAIL;
+}
+
+int
+CMDrangejoin(BAT **result, BAT *left, BAT *rl, BAT *rh, bit *li, bit *hi)
+{
+	return (*result = BATrangejoin(left, rl, rh, *li, *hi)) ? GDK_SUCCEED : GDK_FAIL;
 }
 
 @-

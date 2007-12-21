@@ -46,12 +46,12 @@ monet_fcntbl.sort()@batloop() {
 }
 
 Fnts.count().print();
-[ 1034 ]
+[ 1035 ]
 Fnts.reverse().sort().reverse()@batloop() {
 	FnameS.insert($h,Fname.find($h));
 }
 FnameS.count().print();
-[ 1034 ]
+[ 1035 ]
 
 var All:=0;
 
@@ -156,8 +156,8 @@ Module: ""
 
 Module: "algebra"
 
-[ 151 ]
-#---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ 152 ]
+#-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function		type		signature										help																																													  # name
 # str		str		str											str																																													  # type
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
@@ -199,6 +199,7 @@ Module: "algebra"
 [ "hmark",			  "COMMAND:   ",  "hmark(BAT[any::1,any], oid) : BAT[oid,any::1]",				  "Produces a new BAT with fresh unique dense sequence of OIDs in the head, and old head as tail,\n that starts at base (i.e. [base,base+1,..base+b.count()-1] )."																									  ]
 [ "intersect",	  "PROC:      ",  "intersect(BAT[any::1,any::2], BAT[any::1,any::2]) : BAT[any::1,any::2]",		  "backward compatibility: use sintersect() explicitly."																														  ]
 [ "join",	  "COMMAND:   ",  "join(BAT[any::1,any::2], BAT[any::2,any::3], lng) : BAT[any::1,any::3]",		  "Returns all BUNs, consisting of a head-value from 'left' and\na tail-value from 'right' for which there are BUNs in 'left'\nand 'right' with equal tail- resp. head-value (i.e. the join\ncolumns are projected out)."										  ]
+[ "join",			  "COMMAND:   ",  "join(BAT[any::1,any::2], BAT[any::3,any::2], BAT[any::3,any::2], bit, bit) : BAT[any::1,any::3]", "Range join ie { rl <[=] l <[=] rh }.\nEither boundary value is included ('<=') if the respective bit (l_in / h_in)\nis TRUE, and excluded ('<') otherwise."																																																									  ]
 [ "join",	  "PROC:      ",  "join(BAT[any::1,any::2], BAT[any::2,any::3]) : BAT[any::1,any::3]",			  "Returns [left.head,right.tail] where (*fcn)(left.tail,right.head,..params..)"																											  ]
 [ "kdiff",			  "COMMAND:   ",  "kdiff(BAT[any::1,any::2], BAT[any::1,any]) : BAT[any::1,any::2]",					  "Returns the difference taken over only the *head* columns of two BATs.\n Results in all BUNs of 'left' that are *not* in 'right'. Does *not* do\n double-elimination over the 'left' BUNs, If you want this, use:\n 'kdiff(left.kunique(),right.kunique())' or: 'kdiff(left,right).kunique()'."																																	  ]
 [ "kintersect",			  "COMMAND:   ",  "kintersect(BAT[any::1,any::2], BAT[any::1,any]) : BAT[any::1,any::2]",				  "Returns the intersection taken over only the *head* columns of two BATs.\n Results in all BUNs of 'left' that are also in 'right'. Does *not* do\n double-elimination over the 'left' BUNs, If you want this, use:\n 'kintersect(left.kunique(),right.kunique())' or: 'kintersect(left,right).kunique()'."																																  ]
@@ -1179,7 +1180,7 @@ Module: "trans"
 [ "sync",	  "COMMAND:   ",  "sync() : bit",									  "save all persistent BATs"																																																												  ]
 
 All.print();
-[ 1034 ]
+[ 1035 ]
 
 quit();
 
