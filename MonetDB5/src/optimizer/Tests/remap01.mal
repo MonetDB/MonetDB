@@ -1,0 +1,14 @@
+# remapping inline functions
+function foo{inline}(a:int,b:int):int;
+	c:= a+b;
+	return c;
+end foo;
+
+	b:= bat.new(:oid,:int);
+	bat.insert(b,0@0,1);
+	z:bat[:oid,:int]:= mal.multiplex("user","foo",b,b);
+	z:bat[:oid,:int]:= mal.multiplex("user","foo",b,2);
+
+	optimizer.remap();
+	optimizer.multiplex();
+	mdb.list();
