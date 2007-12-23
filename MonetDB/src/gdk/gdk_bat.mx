@@ -141,11 +141,15 @@ fill in heap names, so HEAPallocs can resort to disk for very large writes.
 	if (heapnames) {
 		str nme = BBP_physical(bn->batCacheid);
 
-		bn->H->heap.filename = (str) GDKmalloc(strlen(nme) + 12);
-		GDKfilepath(bn->H->heap.filename, NULL, nme, "head");
+		if (ht) {
+			bn->H->heap.filename = (str) GDKmalloc(strlen(nme) + 12);
+			GDKfilepath(bn->H->heap.filename, NULL, nme, "head");
+		}
 
-		bn->T->heap.filename = (str) GDKmalloc(strlen(nme) + 12);
-		GDKfilepath(bn->T->heap.filename, NULL, nme, "tail");
+		if (tt) {
+			bn->T->heap.filename = (str) GDKmalloc(strlen(nme) + 12);
+			GDKfilepath(bn->T->heap.filename, NULL, nme, "tail");
+		}
 
 		if (ATOMneedheap(ht)) {
 			bn->H->vheap = (Heap *) GDKzalloc(sizeof(Heap));
