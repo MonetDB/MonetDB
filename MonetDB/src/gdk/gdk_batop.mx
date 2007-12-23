@@ -699,8 +699,8 @@ BAT_hashselect(BAT *b, BAT *bn, ptr tl)
 		BUN q = BUNfirst(bn);
 		BUN r = BATcapacity(bn);
 		BATiter bi = bat_iterator(b);
-		size_t hs = Hsize(b);
-		size_t ts = Tsize(b);
+		size_t hs = Hsize(bn);
+		size_t ts = Tsize(bn);
 
 		if (b->tvarsized) {
 			@:hashselect(var)@
