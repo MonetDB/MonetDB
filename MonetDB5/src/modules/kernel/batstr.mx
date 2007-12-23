@@ -236,7 +236,7 @@ str STRbat@1(int *ret, int *l)
 	BATloop(b, p, q) {
 		ptr h = BUNhead(bi,p);
 		x = (@3) BUNtail(bi,p);
-		if (x== 0 || *x == 0 || strcmp(x,@3_nil)== 0)
+		if (x== 0 || strcmp(x,@3_nil)== 0)
 			y= int_nil;
 		else 
 			@2(yp,x);
@@ -273,7 +273,7 @@ str STRbat@1(int *ret, int *l)
 		ptr h = BUNhead(bi,p);
 
 		x = (@3) BUNtail(bi,p);
-		if (x== 0 || *x == 0 || strcmp(x,@3_nil)== 0)
+		if (x== 0 || strcmp(x,@3_nil)== 0)
 			y = (str)str_nil;
 		else 
 			@2(yp,x);
@@ -317,7 +317,7 @@ STRbat@2Cst(int *ret, int *l, str *cst)
 		ptr h = BUNhead(bi, p);
 
 		x = (str) BUNtail(bi, p);
-		if (x == 0 || *x == 0 || strcmp(x, str_nil) == 0)
+		if (x == 0 || strcmp(x, str_nil) == 0)
 			y = bit_nil;
 		else
 			y = strcmp(x, *cst) @1 0;
@@ -568,7 +568,7 @@ STRbatSubstitutecst(int *ret, int *l, str *arg2, str *arg3, bit *rep)
 		ptr h = BUNhead(bi, p);
 
 		x = (str) BUNtail(bi, p);
-		if (x == 0 || *x == 0 || strcmp(x, str_nil) == 0) {
+		if (x == 0 || strcmp(x, str_nil) == 0) {
 			y = (str)str_nil;
 		} else {
 			STRSubstitute(yp, xp, arg2, arg3, rep);
