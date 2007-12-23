@@ -396,6 +396,7 @@ mvc_commit(mvc *m, int chain, char *name)
 		return -1;
 	}
 
+	store_lock();
 	/* if there is nothing to commit reuse the current transaction */
 	if (tr->wtime == 0) {
 		if (!chain) 
@@ -404,11 +405,11 @@ mvc_commit(mvc *m, int chain, char *name)
 		if (mvc_debug)
 			fprintf(stderr, "mvc_commit %s done\n", (name) ? name : "");
 		m->last = NULL;
+		store_unlock();
 		return 0;
 	}
 
 	/* validation phase */
-	store_lock();
 	if (sql_trans_validate(tr)) {
 		if ((ok = sql_trans_commit(tr)) != SQL_OK) {
 			char *msg = sql_message("Your disk seems to be full, exiting (%s)", GDKerrbuf);
