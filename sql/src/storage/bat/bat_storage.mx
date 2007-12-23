@@ -70,7 +70,6 @@ ebat2real(log_bid b, oid ibase)
 
 	BATseqbase(c, ibase );
 	c->batDirty |= 2;
-	BATcommit(c);
 	r = temp_create(c);
 	bat_destroy(c);
 	bat_destroy(o);
@@ -882,20 +881,18 @@ tr_update_bat( sql_trans *tr, sql_bat *obat, sql_bat *cbat, lng *cnt)
 				append_inserted(ci, ins);
 				bat_destroy(ci);
 			}
-			if (ok == LOG_OK && tr->parent == gtrans && 
-				(store_nr_active != 1 || BATcount(cur)))
+			if (ok == LOG_OK && tr->parent == gtrans && (store_nr_active != 1 || BATcount(cur) || BATcount(ins) <= 1000))
 				ok = log_bat(bat_logger, ins, obat->name);
 		}
 		if (store_nr_active == 1) { /* flush all */
 			BAT *pi = temp_descriptor(obat->ibid);
-			if (!BATcount(cur)) {
+			if (!BATcount(cur) && BATcount(ins) > 1000) {
 				/* swap cur and ins */
 				BAT *swpbat = ins;
-				bat swp = cbat->ibid;
-				cbat->ibid = obat->bid;
-				obat->bid = swp;
+
+				temp_destroy(obat->bid);
 				temp_destroy(cbat->bid);
-				cbat->bid = temp_create(swpbat);
+				obat->bid = cbat->bid = temp_create(swpbat);
 				if (tr->parent == gtrans) {
 					BATmode(ins, PERSISTENT);
 					if (BATcount(ins) > (size_t) REMAP_PAGE_MAXSIZE)
@@ -903,7 +900,9 @@ tr_update_bat( sql_trans *tr, sql_bat *obat, sql_bat *cbat, lng *cnt)
 					logger_add_bat(bat_logger, ins, obat->name);
 					log_bat_persists(bat_logger, ins, obat->name);
 				}
-				ins = cur;
+				cbat->ibid = e_bat(cur->ttype);
+				ins = temp_descriptor(cbat->ibid);
+				bat_destroy(cur);
 				cur = swpbat;
 			} else {
 				if (BATcount(cur)+BATcount(ins) > (size_t) REMAP_PAGE_MAXSIZE) { /* try to use mmap() */
