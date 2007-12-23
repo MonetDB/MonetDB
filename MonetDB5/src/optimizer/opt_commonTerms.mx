@@ -228,6 +228,7 @@ handled by the alias removal part
 		}
 		filter[c ]= 1;
 	}
+	GDKfree(old);
 	return actions;
 }
 
