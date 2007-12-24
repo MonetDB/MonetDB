@@ -1,23 +1,17 @@
 # remapping inline functions
 # the crucial part is to recognize valid inlines
-# here the inlined function contains more then
-# just multiplex callable functions.
 function foo{inline}(a:int,b:int):int;
 	c:= a+b;
-	base:=1;
-barrier loop:= true;
-	c:= c *c;
-	base:= base+1;
-	redo loop:= base <3;
-exit loop;
-	return c;
+	io.print(c); # this has a memory-less side effect
+	return foo:=1;
 end foo;
 
+function qry();
 	b:= bat.new(:oid,:int);
 	bat.insert(b,0@0,1);
 	z:bat[:oid,:int]:= mal.multiplex("user","foo",b,b);
 	z:bat[:oid,:int]:= mal.multiplex("user","foo",b,2);
+end qry;
 
-	optimizer.remap();
-	optimizer.multiplex();
-	mdb.list();
+	optimizer.inline("user","qry");
+	mdb.list("user","qry");

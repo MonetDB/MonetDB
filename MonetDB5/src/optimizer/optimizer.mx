@@ -146,9 +146,7 @@ QOToptimize(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		modnme = getArgDefault(mb, pci, 1);
 		fcnnme = getArgDefault(mb, pci, 2);
 	}
-	s = findSymbolInModule(
-		findModule(MCgetClient()->nspace, getName(modnme,strlen(modnme))),
-		fcnnme);
+	s = findSymbol( getName(modnme,strlen(modnme)), fcnnme);
 	if (s == NULL)
 		throw(MAL, "optimizer.optimize", "operation not found\n");
 	removeInstruction(mb, pci);
@@ -161,9 +159,7 @@ QOTshowFlowGraph(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	str fname;
 	str modnme;
 	str fcnnme;
-	Module scope = NULL;
 	Symbol s = NULL;
-	Client c = MCgetClient();
 
 	if (stk != 0) {
 		modnme = (str) getArgValue(stk, p, 1);
@@ -175,10 +171,8 @@ QOTshowFlowGraph(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		fname = getArgDefault(mb, p, 3);
 	}
 
-	scope = findModule(c->nspace, putName(modnme, strlen(modnme)));
 
-	if (scope)
-		s = findSymbolInModule(scope, putName(fcnnme, strlen(fcnnme)));
+	s = findSymbol(putName(modnme, strlen(modnme)), putName(fcnnme, strlen(fcnnme)));
 
 	if (s == NULL) {
 		char buf[1024];
@@ -194,7 +188,6 @@ QOTshowPlan(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	str modnme;
 	str fcnnme;
-	Module scope = NULL;
 	Symbol s = NULL;
 	Client c = MCgetClient();
 
@@ -209,10 +202,7 @@ QOTshowPlan(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	stream_printf(c->fdout,"#showPlan()\n");
 	removeInstruction(mb, p);
 	if( modnme ) {
-		scope = findModule(c->nspace, putName(modnme, strlen(modnme)));
-
-		if (scope)
-			s = findSymbolInModule(scope, putName(fcnnme, strlen(fcnnme)));
+		s = findSymbol(putName(modnme, strlen(modnme)), putName(fcnnme, strlen(fcnnme)));
 
 		if (s == NULL) {
 			char buf[1024];

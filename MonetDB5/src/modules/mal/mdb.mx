@@ -483,9 +483,7 @@ MDBinspect(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	str modnme;
 	str fcnnme;
-	Module scope = NULL;
 	Symbol s = NULL;
-	Client c = MCgetClient();
 
 	if (stk != 0) {
 		modnme = (str) getArgValue(stk, p, 1);
@@ -495,10 +493,7 @@ MDBinspect(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		fcnnme = getArgDefault(mb, p, 2);
 	}
 
-	scope = findModule(c->nspace, putName(modnme, strlen(modnme)));
-
-	if (scope)
-		s = findSymbolInModule(scope, putName(fcnnme, strlen(fcnnme)));
+	s = findSymbol(putName(modnme, strlen(modnme)), putName(fcnnme, strlen(fcnnme)));
 
 	if (s == NULL)
 		throw(MAL, "mdb.inspect", "Could not find function");
@@ -634,10 +629,8 @@ MDBlist3(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	str fcnnme = (str) getArgValue(stk, p, 2);
 	Symbol s = NULL;
 	Client c = MCgetClient();
-	Module mod;
 
-	mod= findModule(c->nspace, getName(modnme,strlen(modnme)) );
-	s = findSymbolInModule(mod, putName(fcnnme, strlen(fcnnme)));
+	s = findSymbol(getName(modnme,strlen(modnme)), putName(fcnnme, strlen(fcnnme)));
 	if (s == NULL)
 		showException(MAL,"mdb.list","Could not find %s.%s", modnme, fcnnme);
 	else
@@ -664,10 +657,8 @@ MDBlist3Detail(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	str fcnnme = (str) getArgValue(stk, p, 2);
 	Symbol s = NULL;
 	Client c = MCgetClient();
-	Module mod;
 
-	mod= findModule(c->nspace, getName(modnme,strlen(modnme)) );
-	s = findSymbolInModule(mod, putName(fcnnme, strlen(fcnnme)));
+	s = findSymbol(getName(modnme,strlen(modnme)), putName(fcnnme, strlen(fcnnme)));
 	if (s == NULL)
 		showException(MAL,"mdb.list","Could not find %s.%s", modnme, fcnnme);
 	else
@@ -694,10 +685,8 @@ MDBvar3(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	str fcnnme = (str) getArgValue(stk, p, 2);
 	Symbol s = NULL;
 	Client c = MCgetClient();
-	Module mod;
 
-	mod= findModule(c->nspace, getName(modnme,strlen(modnme)) );
-	s = findSymbolInModule(mod, putName(fcnnme, strlen(fcnnme)));
+	s = findSymbol(getName(modnme,strlen(modnme)), putName(fcnnme, strlen(fcnnme)));
 	if (s == NULL)
 		showException(MAL,"mdb.var","Could not find %s.%s", modnme, fcnnme);
 	else
@@ -787,9 +776,7 @@ MDBshowFlowGraph(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	str fname;
 	str modnme;
 	str fcnnme;
-	Module scope = NULL;
 	Symbol s = NULL;
-	Client c = MCgetClient();
 
 	if (stk != 0) {
 		modnme = (str) getArgValue(stk, p, 1);
@@ -801,10 +788,7 @@ MDBshowFlowGraph(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		fname = getArgDefault(mb, p, 3);
 	}
 
-	scope = findModule(c->nspace, putName(modnme, strlen(modnme)));
-
-	if (scope)
-		s = findSymbolInModule(scope, putName(fcnnme, strlen(fcnnme)));
+	s = findSymbol(getName(modnme,strlen(modnme)), putName(fcnnme, strlen(fcnnme)));
 
 	if (s == NULL) {
 		char buf[1024];

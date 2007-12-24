@@ -75,6 +75,7 @@ mal_export void     deleteSymbol(Module scope, Symbol prg);
 mal_export void		setInheritanceMode(Module head,int flag);
 mal_export Module	setInheritance(Module head,Module first, Module second);
 mal_export Module   findModule(Module scope, str name);
+mal_export Symbol   findSymbol(str mod, str fcn);
 mal_export int 		isModuleDefined(Module scope, str name);
 mal_export Symbol   findSymbolInModule(Module v, str fcn);
 mal_export int      displayModule(stream *f, Module v, str fcn,int listing);
@@ -433,6 +434,12 @@ Symbol findSymbolInModule(Module v, str fcn){
 	}
 	return NULL;
 }
+
+Symbol findSymbol(str mod, str fcn){
+	Module m= findModule(MCgetClient()->nspace,mod);
+	return findSymbolInModule(m,fcn);
+}
+
 int displayModule(stream *f, Module v, str fcn, int listing){
 	Symbol s;
 	int k=0;

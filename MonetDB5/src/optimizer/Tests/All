@@ -31,11 +31,6 @@ cst00
 cst01
 
 remap
-#remap01
-#remap02
-#remap03
-#remap04
-#remap05
 
 #mat00
 #mat01
@@ -68,6 +63,11 @@ emptyset01
 
 inline00
 inline01
+#inline02
+#inline03
+#inline04
+#inline05
+#inline06
 
 CXerror1
 #the remainder are snippets used in the reference manual

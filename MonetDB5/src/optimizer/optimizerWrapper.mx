@@ -34,7 +34,6 @@ opt_export str OPT@1(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 str OPT@1(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	str modnme;
 	str fcnnme;
-	Module  scope=NULL;
 	Symbol s= NULL;
 	lng t,clk= GDKusec();
 	int actions = 0;
@@ -66,9 +65,7 @@ str OPT@1(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 			modnme= getArgDefault(mb,p,1);
 			fcnnme= getArgDefault(mb,p,2);
 		}
-		scope = findModule(MCgetClient()->nspace,putName(modnme,strlen(modnme)) );
-		if( scope)
-			s= findSymbolInModule(scope,putName(fcnnme,strlen(fcnnme)));
+		s= findSymbol(putName(modnme,strlen(modnme)),putName(fcnnme,strlen(fcnnme)));
 
 		if( s == NULL) {
 			char buf[1024];

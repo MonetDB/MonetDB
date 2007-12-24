@@ -797,7 +797,6 @@ The dynamic version takes variables from the runtime stack.
 str
 MCdynamicCompiler(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
-	Module s;
 	Symbol t;
 	str alias;
 	str nme, fcn, msg = MAL_SUCCEED;
@@ -812,13 +811,10 @@ MCdynamicCompiler(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	printf("MCdynamicCompiler: %s.%s\n", nme, fcn);
 #endif
 
-	s = findModule(MCgetClient()->nspace, nme);
-	if( s){
-		t= findSymbolInModule(s,fcn);
-		if(t== 0)
-			throw(MAL,"compiler.MALtoC","Could not find function");
-		msg= mccGenerate(t->def,alias);
-	}
+	t= findSymbol(putName(nme,strlen(nme)),fcn);
+	if(t== 0)
+		throw(MAL,"compiler.MALtoC","Could not find function");
+	msg= mccGenerate(t->def,alias);
 #ifdef DEBUG_MAL_COMPILER
 	mccDump();
 #endif
@@ -827,23 +823,19 @@ MCdynamicCompiler(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 
 str 
 MCloadFunction(int *ret, str *mod, str *fcn, str *fname){
-	Module s;
 	Symbol t;
 	InstrPtr sig;
 	char buf[1024];
 
-	s = findModule(MCgetClient()->nspace, *mod);
-	if( s){
-		t= findSymbolInModule(s, *fcn);
-		if(t== 0)
-			throw(MAL,"compiler.load","Could not find function");
-		loadLibrary(*fname,FALSE);
-		snprintf(buf,1024,"MCC%s_%s", *mod,*fcn);
-		sig=getInstrPtr(t->def,0);
-		sig->fcn = getAddress(*fname,*mod, buf,0);
-		if(sig->fcn)
-			sig->token= COMMANDsymbol;
-	}
+	t= findSymbol(putName(*mod, strlen(*mod)), *fcn);
+	if(t== 0)
+		throw(MAL,"compiler.load","Could not find function");
+	loadLibrary(*fname,FALSE);
+	snprintf(buf,1024,"MCC%s_%s", *mod,*fcn);
+	sig=getInstrPtr(t->def,0);
+	sig->fcn = getAddress(*fname,*mod, buf,0);
+	if(sig->fcn)
+		sig->token= COMMANDsymbol;
 	(void) ret;
 	return MAL_SUCCEED;
 }

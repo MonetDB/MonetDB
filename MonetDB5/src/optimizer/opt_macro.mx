@@ -513,10 +513,7 @@ OPT@1Implementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	} else {
 		mod= getArgDefault(mb,p,1);
 		fcn= getArgDefault(mb,p,2);
-		s = findModule(MCgetClient()->nspace, putName(mod, strlen(mod)));
-		if (s == 0)
-			return 0;
-		t= findSymbolInModule(s, fcn);
+		t= findSymbol(putName(mod, strlen(mod)), fcn);
 		if( t == 0)
 			return 0;
 		target= t->def;
@@ -558,7 +555,6 @@ opt_export str OPT@1(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 
 @= wrapOptimizer
 str OPT@1(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
-	Module s;
 	Symbol t;
 	str msg,mod,fcn;
 	lng clk= GDKusec();
@@ -572,10 +568,7 @@ str OPT@1(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 		mod= getArgDefault(mb,p,3);
 		fcn= getArgDefault(mb,p,4);
 	}
-	s = findModule(MCgetClient()->nspace, putName(mod, strlen(mod)));
-	if (s == 0)
-		return 0;
-	t= findSymbolInModule(s, fcn);
+	t= findSymbol(putName(mod, strlen(mod)), fcn);
 	if( t == 0)
 		return 0;
 

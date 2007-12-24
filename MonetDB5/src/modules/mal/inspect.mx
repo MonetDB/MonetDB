@@ -468,11 +468,8 @@ INSPECTgetDefinition(int *ret, str *mod, str *fcn)
 	Symbol s;
 	char buf[BUFSIZ];
 	BAT *b;
-	Client c= MCgetClient();
-	Module m;
 
-	m= findModule(c->nspace, getName(*mod,strlen(*mod)) );
-	s = findSymbolInModule(m, putName(*fcn, strlen(*fcn)));
+	s = findSymbol(getName(*mod,strlen(*mod)), putName(*fcn, strlen(*fcn)));
 	if (s == 0)
 		throw(MAL, "inspect.getDefinition", 
 				"failed to find <module>.<function>");
@@ -506,11 +503,8 @@ INSPECTgetSignature(int *ret, str *mod, str *fcn)
 	char buf[BUFSIZ];
 	str ps, tail;
 	BAT *b;
-	Client c= MCgetClient();
-	Module m;
 
-	m= findModule(c->nspace, getName(*mod,strlen(*mod)) );
-	s = findSymbolInModule(m, putName(*fcn, strlen(*fcn)));
+	s = findSymbol(getName(*mod,strlen(*mod)), putName(*fcn, strlen(*fcn)));
 	if (s == 0)
 		throw(MAL, "inspect.getSignature", 
 				"failed to find <module>.<function>");
@@ -549,11 +543,8 @@ INSPECTgetAddress(int *ret, str *mod, str *fcn)
 	char buf[BUFSIZ];
 	str ps, tail;
 	BAT *b;
-	Client c= MCgetClient();
-	Module m;
 
-	m= findModule(c->nspace, getName(*mod,strlen(*mod)) );
-	s = findSymbolInModule(m, putName(*fcn, strlen(*fcn)));
+	s = findSymbol( getName(*mod,strlen(*mod)), putName(*fcn, strlen(*fcn)));
 	if (s == 0)
 		throw(MAL, "inspect.getAddress", "failed to find <module>.<function>");
 	b = BATnew(TYPE_str, TYPE_str, 12);
@@ -592,11 +583,8 @@ INSPECTgetComment(int *ret, str *mod, str *fcn)
 	Symbol s;
 	char buf[BUFSIZ];
 	BAT *b;
-	Client c= MCgetClient();
-	Module m;
 
-	m= findModule(c->nspace, getName(*mod,strlen(*mod)) );
-	s = findSymbolInModule(m, putName(*fcn, strlen(*fcn)));
+	s = findSymbol( getName(*mod,strlen(*mod)), putName(*fcn, strlen(*fcn)));
 	if (s == 0)
 		throw(MAL, "inspect.getComment", "failed to find <module>.<function>");
 	b = BATnew(TYPE_str, TYPE_str, 12);
@@ -621,11 +609,8 @@ INSPECTgetSource(str *ret, str *mod, str *fcn)
 	Symbol s;
 	char *buf;
 	size_t len,lim;
-	Client c= MCgetClient();
-	Module m;
 
-	m= findModule(c->nspace, getName(*mod,strlen(*mod)) );
-	s = findSymbolInModule(m, putName(*fcn, strlen(*fcn)));
+	s = findSymbol( getName(*mod,strlen(*mod)), putName(*fcn, strlen(*fcn)));
 	if (s == 0)
 		throw(MAL, "inspect.getSource", 
 			"Failed to find <module>.<function>");
@@ -668,11 +653,8 @@ INSPECTsymbolType(int *ret, str *mod, str *fcn)
 {
 	Symbol s;
 	BAT *b;
-	Client c= MCgetClient();
-	Module m;
 
-	m= findModule(c->nspace, getName(*mod,strlen(*mod)) );
-	s = findSymbolInModule(m, putName(*fcn, strlen(*fcn)));
+	s = findSymbol( getName(*mod,strlen(*mod)), putName(*fcn, strlen(*fcn)));
 	if (s == 0)
 		throw(MAL, "inspect.getSignature", 
 			"failed to find <module>.<function>");
@@ -823,11 +805,8 @@ str
 INSPECTgetFunctionSize(lng *ret, str *mod, str *fcn)
 {
 	Symbol s;
-	Client c= MCgetClient();
-	Module m;
 
-	m= findModule(c->nspace, getName(*mod,strlen(*mod)) );
-	s = findSymbolInModule(m, putName(*fcn, strlen(*fcn)));
+	s = findSymbol( getName(*mod,strlen(*mod)), putName(*fcn, strlen(*fcn)));
 	if (s == 0)
 		throw(MAL, "inspect.getSize", 
 			"failed to find <module>.<function>");
@@ -852,14 +831,11 @@ INSPECTshowFunction3(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	str modnme = getArgName(mb, p, 1);
 	str fcnnme = getArgName(mb, p, 2);
-	Module scope = NULL;
 	Symbol s = NULL;
 	Client c = MCgetClient();
 
-	scope = findModule(c->nspace, modnme);
 
-	if (scope)
-		s = findSymbolInModule(scope, putName(fcnnme, strlen(fcnnme)));
+	s = findSymbol(getName(modnme,strlen(modnme)), putName(fcnnme, strlen(fcnnme)));
 
 	if (s == NULL){
 		char buf[BUFSIZ];
