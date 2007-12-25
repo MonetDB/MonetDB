@@ -37,7 +37,7 @@ barrier go := true;	# 3  (go:bit)<-(_8:bit) jump 7
     i := calc.+(i,1);	# 5 CALCbinaryADDintint (i:int)<-(i:int)(_10:int)
     redo go := calc.<(i,N);	# 6 CALCcompLTintint (go:bit)<-(i:int)(N:int) jump 4
 exit go;	# 7  (go:bit)
-    return seq;	# 8  (seq:bat[:oid,:int])
+    return Nseq := seq;	# 8  (Nseq:bat[:oid,:int])<-(seq:bat[:oid,:int])
 end Nseq;	# 9  
 #
 ## first create example with l.count() < 4*r.count()
