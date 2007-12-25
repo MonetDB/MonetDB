@@ -21,7 +21,7 @@ stdout of test 'tst501` in directory 'src/mal` itself:
 #end simple;
 function user.simple(i:int):int;	# 0  (simple:int)<-(i:int)
     i := calc.+(i,1);	# 1 CALCbinaryADDintint (i:int)<-(i:int)(_2:int)
-    return i;	# 2  (i:int)
+    return simple := i;	# 2  (simple:int)<-(i:int)
 end simple;	# 3  
 #
 #k:= 0;

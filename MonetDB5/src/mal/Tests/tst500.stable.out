@@ -34,7 +34,7 @@ barrier v := calc.<(i,lim);	# 5 CALCcompLTintint (v:bit)<-(i:int)(lim:int) jump 
     z := user.simple(i,lim,s);	# 6  (z:flt)<-(i:int)(lim:int)(s:str)
 exit v;	# 7  (v:bit)
     r := 3.1400001:flt;	# 8  (r:flt)<-(_14:flt)
-    return r;	# 9  (r:flt)
+    return simple := r;	# 9  (simple:flt)<-(r:flt)
 end simple;	# 10  
 #
 #r:= simple(0,2,"hello");

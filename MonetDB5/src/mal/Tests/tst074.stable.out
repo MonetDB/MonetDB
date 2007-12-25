@@ -17,7 +17,7 @@ stdout of test 'tst074` in directory 'src/mal` itself:
 #	return x;
 #end swap;
 function user.swap(x:str):str;	# 0  (swap:str)<-(x:str)
-    return x;	# 1  (x:str)
+    return swap := x;	# 1  (swap:str)<-(x:str)
 end swap;	# 2  
 #
 #x:= swap("world hello");

@@ -17,7 +17,7 @@ stdout of test 'tst802` in directory 'src/mal` itself:
 #	return b;
 #end tst;
 function user.tst(b:bat[:any_1,:any_2]):BAT;	# 0  (tst:BAT)<-(b:bat[:any_1,:any_2])
-    return b;	# 1  (b:bat[:any_1,:any_2])
+    return tst := b;	# 1  (tst:BAT)<-(b:bat[:any_1,:any_2])
 end tst;	# 2  
 #
 #z:= bat.new(:int,:int);

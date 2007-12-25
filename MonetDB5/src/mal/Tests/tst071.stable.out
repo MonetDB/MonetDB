@@ -21,7 +21,7 @@ stdout of test 'tst071` in directory 'src/mal` itself:
 function user.swap(x:int,y:int) (a:int,b:int);	# 0  (a:int)(b:int)<-(x:int)(y:int)
     a := y;	# 1  (a:int)<-(y:int)
     b := x;	# 2  (b:int)<-(x:int)
-    return (a,b);	# 3  (a:int)(b:int)
+    return (a,b):= (a,b);	# 3  (a:int)(b:int)<-(a:int)(b:int)
 end swap;	# 4  
 #
 #(x,y):= swap(1,2);

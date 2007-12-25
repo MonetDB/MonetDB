@@ -19,7 +19,7 @@ stdout of test 'tst3010` in directory 'src/mal` itself:
 #end add;
 function user.add{writeable,safe}(i:int{readonly},j:int{readonly}):int;	# 0  (add:int)<-(i:int)(j:int)
     j{readonly} := calc.+(j,i);	# 1 CALCbinaryADDintint (j:int)<-(j:int)(i:int)
-    return j{readonly};	# 2  (j:int)
+    return add{writeable,safe} := j;	# 2  (add:int)<-(j:int)
 end add;	# 3  
 #
 #function add2(i:int,j:int):int{safe};
@@ -28,7 +28,7 @@ end add;	# 3
 #end ;
 function user.add2{safe}(i:int,j:int):int;	# 0  (add2:int)<-(i:int)(j:int)
     k := calc.+(j,i);	# 1 CALCbinaryADDintint (k:int)<-(j:int)(i:int)
-    return k;	# 2  (k:int)
+    return add2{safe} := k;	# 2  (add2:int)<-(k:int)
 end add2;	# 3  
 #
 #i{cost=23}:= 23;

@@ -19,7 +19,7 @@ stdout of test 'tst400e` in directory 'src/mal` itself:
 #end simple;
 function user.simple(z:lng):lng;	# 0  (simple:lng)<-(z:lng)
     z := calc.+(z,1:lng);	# 1 CALCbinaryADDlnglng (z:lng)<-(z:lng)(_2:lng)
-    return z;	# 2  (z:lng)
+    return simple := z;	# 2  (simple:lng)<-(z:lng)
 end simple;	# 3  
 #
 #	k:= 0:lng;

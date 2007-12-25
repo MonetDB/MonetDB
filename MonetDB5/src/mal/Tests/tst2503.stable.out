@@ -28,7 +28,7 @@ factory user.random(seed:int):int;	# 0  (random:int)<-(seed:int)
 barrier always := true;	# 2  (always:bit)<-(_4:bit) jump 7
     i := calc.*(125,i);	# 3 CALCbinaryMULintint (i:int)<-(_5:int)(i:int)
     i := calc.%(i,32767);	# 4 CALCbinarycheckMODintint (i:int)<-(i:int)(_6:int)
-    yield i;	# 5  (i:int)
+    yield random := i;	# 5  (random:int)<-(i:int)
     redo always;	# 6  (always:bit) jump 3
 exit always;	# 7  (always:bit)
     return random := 0;	# 8  (random:int)<-(_7:int)

@@ -29,7 +29,7 @@ stdout of test 'tst2510` in directory 'src/mal` itself:
 factory user.tryme():bit;	# 0  (tryme:bit)
     bat.setWriteMode(b);	# 1 BKCsetWriteMode (_1:bat[:any,:any])<-(b:bat[:any_1,:any_2])
 barrier always := true;	# 2  (always:bit)<-(_4:bit) jump 5
-    yield always;	# 3  (always:bit)
+    yield tryme := always;	# 3  (tryme:bit)<-(always:bit)
     redo always;	# 4  (always:bit) jump 3
 exit always;	# 5  (always:bit)
 #catch MALException; 	# 6  (_5:str)

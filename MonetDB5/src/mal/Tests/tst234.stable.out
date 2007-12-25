@@ -40,7 +40,7 @@ function user.tmp1(b:bat[:any_1,:any_2]):bat[:any_1,:any_2];	# 0  dynamic (tmp1:
     io.print("inside tmp1");	# 2 IOprint_val (_2:void)<-(_3:str)
     i := bbp.getLRefCount(b);	# 3 CMDgetBATlrefcnt (i:int)<-(b:bat[:any_1,:any_2])
     io.print(i);	# 4 IOprint_val (_5:void)<-(i:int)
-    return tmp1;	# 5  (tmp1:bat[:any_1,:any_2])
+    return tmp1 := tmp1;	# 5  (tmp1:bat[:any_1,:any_2])<-(tmp1:bat[:any_1,:any_2])
 end tmp1;	# 6  
 #
 #b:= bat.new(:int,:int);

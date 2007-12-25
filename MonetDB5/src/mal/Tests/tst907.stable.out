@@ -18,7 +18,7 @@ stdout of test 'tst907` in directory 'src/mal` itself:
 #end one;
 function user.one(base:int):int;	# 0  (one:int)<-(base:int)
     io.print(base);	# 1 IOprint_val (_2:void)<-(base:int)
-    return base;	# 2  (base:int)
+    return one := base;	# 2  (one:int)<-(base:int)
 end one;	# 3  
 #
 #function three(base:int,x:int,y:int):int;
@@ -27,7 +27,7 @@ end one;	# 3
 #end three;
 function user.three(base:int,x:int,y:int):int;	# 0  (three:int)<-(base:int)(x:int)(y:int)
     io.print(base);	# 1 IOprint_val (_4:void)<-(base:int)
-    return base;	# 2  (base:int)
+    return three := base;	# 2  (three:int)<-(base:int)
 end three;	# 3  
 #function pow(base:int,raise:int):int;
 #        mg_a := calc.dbl(base);
@@ -41,7 +41,7 @@ function user.pow(base:int,raise:int):int;	# 0  (pow:int)<-(base:int)(raise:int)
     ng_a := calc.dbl(raise);	# 2 CALCint2dbl (ng_a:dbl)<-(raise:int)
     og_a := calc.*(mg_a,ng_a);	# 3 CALCbinaryMULdbldbl (og_a:dbl)<-(mg_a:dbl)(ng_a:dbl)
     pg_a := calc.int(og_a);	# 4 CALCdbl2int (pg_a:int)<-(og_a:dbl)
-    return pg_a;	# 5  (pg_a:int)
+    return pow := pg_a;	# 5  (pow:int)<-(pg_a:int)
 end pow;	# 6  
 #k:=one(1);
 #l:=three(1,2,3);

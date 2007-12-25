@@ -45,7 +45,7 @@ function user.createBAT(name:str):BAT;	# 0  (createBAT:BAT)<-(name:str)
 # now res should have 3 lrefs 	# 5  (_7:str)
     z := bbp.getLRefCount(res);	# 6 CMDgetBATlrefcnt (z:int)<-(res:bat[:int,:int])
     io.print(z);	# 7 IOprint_val (_9:void)<-(z:int)
-    return i;	# 8  (i:BAT)
+    return createBAT := i;	# 8  (createBAT:BAT)<-(i:BAT)
 end createBAT;	# 9  
 #
 #dir();

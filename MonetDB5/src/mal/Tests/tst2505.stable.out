@@ -28,10 +28,10 @@ factory user.random(seed:int):int;	# 0  (random:int)<-(seed:int)
     i := seed;	# 1  (i:int)<-(seed:int)
     i := calc.*(125,i);	# 2 CALCbinaryMULintint (i:int)<-(_3:int)(i:int)
     i := calc.%(i,32767);	# 3 CALCbinarycheckMODintint (i:int)<-(i:int)(_4:int)
-    yield i;	# 4  (i:int)
+    yield random := i;	# 4  (random:int)<-(i:int)
     i := calc.*(125,i);	# 5 CALCbinaryMULintint (i:int)<-(_3:int)(i:int)
     i := calc.%(i,32767);	# 6 CALCbinarycheckMODintint (i:int)<-(i:int)(_4:int)
-    return i;	# 7  (i:int)
+    return random := i;	# 7  (random:int)<-(i:int)
 end random;	# 8  
 #
 #r1:= random(1);

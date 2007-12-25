@@ -20,7 +20,7 @@ stdout of test 'tst280` in directory 'src/mal` itself:
 function user.pow(i:int,j:int):int;	# 0  (pow:int)<-(i:int)(j:int)
     z := calc.+(i,j);	# 1 CALCbinaryADDintint (z:int)<-(i:int)(j:int)
     io.printf("result %d\n",z);	# 2 IOprint_formatted_int (_4:void)<-(_5:str)(z:int)
-    return z;	# 3  (z:int)
+    return pow := z;	# 3  (pow:int)<-(z:int)
 end pow;	# 4  
 #function tst(A2:bat[:void,:int],A3:bat[:void,:int]):bat[:void,:int]; 
 #	print(A2);
@@ -62,7 +62,7 @@ barrier (mloop,m):= language.newRange(0:lng);	# 6 RNGnewRange_lng (mloop:bit)(m:
 catch MALException:str ;	# 15  (MALException:str) jump 16
 exit MALException:str ;	# 16  (MALException:str)
 exit (mloop,m);	# 17  (mloop:bit)(m:lng)
-    return resB;	# 18  (resB:bat[:oid,:int])
+    return tst := resB;	# 18  (tst:bat[:oid,:int])<-(resB:bat[:oid,:int])
 end tst;	# 19  
 #
 #

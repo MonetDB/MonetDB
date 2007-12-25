@@ -57,7 +57,7 @@ barrier always := true;	# 3  (always:bit)<-(_9:bit) jump 17
     c := algebra.select(a,l,h);	# 7 ALGselect (c:bat[:oid,:int])<-(a:bat[:oid,:int])(l:int)(h:int)
     d := algebra.semijoin(b,c);	# 8 ALGsemijoin (d:bat[:oid,:str])<-(b:bat[:oid,:str])(c:bat[:oid,:int])
 barrier available := true;	# 9  (available:bit)<-(_9:bit) jump 15
-    yield d;	# 10  (d:bat[:oid,:str])
+    yield view1 := d;	# 10  (view1:bat[:oid,:str])<-(d:bat[:oid,:str])
     leave available := calc.!=(lOld,l);	# 11 CALCcompNEQintint (available:bit)<-(lOld:int)(l:int) jump 15
     leave available := calc.!=(hOld,h);	# 12 CALCcompNEQintint (available:bit)<-(hOld:int)(h:int) jump 15
     io.print("reuse");	# 13 IOprint_val (_17:void)<-(_18:str)

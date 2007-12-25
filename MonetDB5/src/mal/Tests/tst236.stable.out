@@ -35,7 +35,7 @@ function user.createBAT(name:str):BAT;	# 0  (createBAT:BAT)<-(name:str)
     res := bat.new(:int,:int);	# 1 CMDBATnew (res:bat[:int,:int])<-(_3:int)(_3:int)
     bat.setName(res,name);	# 2 BKCsetName (_4:void)<-(res:bat[:int,:int])(name:str)
     i := calc.getBATidentifier(res);	# 3 CALCbat2batid (i:BAT)<-(res:bat[:int,:int])
-    return i;	# 4  (i:BAT)
+    return createBAT := i;	# 4  (createBAT:BAT)<-(i:BAT)
 end createBAT;	# 5  
 #m:= bat.new(:oid,:str);
 #bat.insert(m,10:oid,"ten");

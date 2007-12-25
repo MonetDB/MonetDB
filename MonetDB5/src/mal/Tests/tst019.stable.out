@@ -17,13 +17,12 @@ stdout of test 'tst019` in directory 'src/mal` itself:
 #    w:="hello";
 #    return w;   # should produce a type error
 #end welcome;
-!TypeException:user.welcome[3]:RETURN type mismatch at type 13
 
 function user.welcome(lim:int):void;	# 0  (welcome:void)<-(lim:int)
     i := 2;	# 1  (i:int)<-(_3:int)
     w := "hello";	# 2  (w:str)<-(_5:str)
-    return w;	# 3  (w:str)
-# should produce a type error 	# 4  (_7:str)
+    return welcome := w;	# 3  unknown (welcome:void)<-(w:str)
+# should produce a type error 	# 4  (_6:str)
 end welcome;	# 5  
 #
 #function welcome0(lim:int):str;
@@ -36,8 +35,8 @@ end welcome;	# 5
 function user.welcome0(lim:int):str;	# 0  (welcome0:str)<-(lim:int)
     i := 2;	# 1  (i:int)<-(_3:int)
     w := "hello";	# 2  (w:str)<-(_5:str)
-    return (w,i);	# 3  (w:str)(i:int)
-# should produce a type error 	# 4  (_7:str)
+    return (welcome0,lim):= (w,i);	# 3  (welcome0:str)(lim:int)<-(w:str)(i:int)
+# should produce a type error 	# 4  (_6:str)
 end welcome0;	# 5  
 #
 #function welcome1(lim:int):str;
@@ -57,7 +56,7 @@ end welcome1;	# 3
 function user.welcome2(lim:int):str;	# 0  (welcome2:str)<-(lim:int)
     i := 2;	# 1  (i:int)<-(_3:int)
     w := "hello";	# 2  (w:str)<-(_5:str)
-    return w;	# 3  (w:str)
+    return welcome2 := w;	# 3  (welcome2:str)<-(w:str)
 end welcome2;	# 4  
 #
 #function welcome3(lim:int)(w:str,i:int);
