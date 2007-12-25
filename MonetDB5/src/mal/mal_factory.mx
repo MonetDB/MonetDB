@@ -608,7 +608,7 @@ shutdownFactoryByName(Module m, str nme){
 
 			p= getInstrPtr(pl->factory,0);
 			if( strcmp(nme, getFunctionId(p)) != 0) continue;
-			s = findSymbolInModule(m, getName(nme,strlen(nme)) );
+			s = findSymbolInModule(m, nme );
 			if (s == NULL){
 				throw(MAL, "factory.remove", 
 					"Internal error, sql_cache entry '%s' missing",

@@ -582,7 +582,7 @@ mdbSetBreakRequest(Client cntxt, MalBlkPtr mb, str request, char cmd)
 		modnme= request;
 		*fcnnme= 0;
 		fcnnme++;
-		sym= findSymbol( getName(modnme,strlen(modnme)), fcnnme);
+		sym= findSymbol( modnme,fcnnme);
 		mdb->brkBlock[mdb->brkTop] = sym? sym->def: mb;
 		mdb->brkPc[mdb->brkTop] = -1;
 		mdb->brkVar[mdb->brkTop] = -1;
@@ -815,7 +815,7 @@ mdbLocateMalBlk(MalBlkPtr mb, str b, stream *out){
 		if( (h= strchr(fcnname,'[')) ){
 			*h=0; idx= atoi(h+1);
 		} 
-		fsym= findSymbol( getName(b,strlen(b)), fcnname);
+		fsym= findSymbol( b, fcnname);
 		if (fsym == 0) {
 			stream_printf(out, "'%s.%s' not found\n", b,fcnname);
 			return NULL;

@@ -1492,6 +1492,16 @@ parseAssign(Client cntxt, int cntrl)
 	/* look for assignment operator */
 	if( !keyphrase2(cntxt,":=") ){
 	  	/* no assignment !! a control variable is allowed */
+		/* for the case RETURN X, we normalize it */
+		if( cntrl== RETURNsymbol || cntrl== YIELDsymbol){
+			int e,lim;
+			lim= curInstr->retc;
+			for(e=0; e<lim; e++){
+				curInstr= pushArgument(curBlk,curInstr, getArg(curInstr,e));
+				curInstr->argv[e]= getArg(getInstrPtr(curBlk,0),e);
+			}
+		}
+		
 		if (currChar(cntxt) != ';')
 			parseError(cntxt,"';' expected\n");
 		goto part3;
