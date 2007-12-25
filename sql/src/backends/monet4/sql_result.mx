@@ -339,7 +339,10 @@ bat_max_@1length(BAT *b)
 		GDKerror("decimal wrong format (%s)", p);
 		return NULL;
 	}
-	r = (@1*)GDKmalloc(sizeof(@1));
+	r = df->ai->data;
+	if (!r)
+		r = (@1*)GDKmalloc(sizeof(@1));
+	df->ai->data = r;
 	if (neg)
 		*r = -res;
 	else

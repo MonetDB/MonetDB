@@ -94,7 +94,7 @@ constantAtom(backend *sql, MalBlkPtr mb, atom *a)
 
 	(void) sql;
 	VALcopy(&cst,vr);
-	idx= defConstant(mb, vr->vtype, &cst);
+	idx = defConstant(mb, vr->vtype, &cst);
 	return idx;
 }
 @-

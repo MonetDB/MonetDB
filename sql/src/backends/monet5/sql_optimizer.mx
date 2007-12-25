@@ -467,7 +467,7 @@ addOptimizers(Client c,MalBlkPtr mb, str optimizer)
 	/* the optimizer control is a semicolon separated list of names */
 	/* the predefined 'default' injects the default plan upon need */
 	str optimizers[256];
-	str oldbase= optimizer;
+	str oldbase = optimizer;
 	int top=0,i;
 	char *nxt, *nme;
 
@@ -487,19 +487,19 @@ addOptimizers(Client c,MalBlkPtr mb, str optimizer)
 			optimizers[top++] = nme; 
 		optimizer = nxt;
 	} 
-	if( top== 256){
+	if (top == 256){
 		showException(SQL,"optimizer","Too many optimizer steps\n");
 		mb->errors++;
 	}
 
 	/* add the optimizers to the query plan */
 	for (i=0;i<top; i++) {
-		InstrPtr p = newFcnCall(mb,"optimizer",optimizers[i]);
-		typeChecker(c->nspace, mb,p,TRUE);
+		InstrPtr p = newFcnCall(mb, "optimizer", optimizers[i]);
+		typeChecker(c->nspace, mb, p, TRUE);
 		/* niels added else leaks */
 		//pushInstruction(mb, p);
 	}
-	if( oldbase)
+	if (oldbase)
 		GDKfree(oldbase);
 }
 
