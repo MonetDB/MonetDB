@@ -64,7 +64,7 @@ end qry;	# 2
 #mdb.list("user","qry");
 #
 function user.main():void;	# 0  (main:void)
-    mdb.list("user","qry");	# 1 MDBlist3 (_4:void)<-(_2:str)(_3:str)
+    mdb.list("user","qry");	# 1 MDBlist3 (_5:void)<-(_2:str)(_3:str)
 end main;	# 2  
 function user.qry():void;
     nil:void;

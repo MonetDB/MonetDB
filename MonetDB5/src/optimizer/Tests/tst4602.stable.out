@@ -29,7 +29,7 @@ barrier j := calc.<(i,lim);	# 2 CALCcompLTintint (j:bit)<-(i:int)(lim:int) jump 
     io.print("Welcome");	# 3 IOprint_val (_5:void)<-(_6:str)
     i := calc.+(i,1);	# 4 CALCbinaryADDintint (i:int)<-(i:int)(_7:int)
     redo j := calc.<(i,lim);	# 5 CALCcompLTintint (j:bit)<-(i:int)(lim:int) jump 3
-    return i;	# 6  (i:int)
+    return welcome := i;	# 6  (welcome:int)<-(i:int)
 exit j;	# 7  (j:bit)
 end welcome;	# 8  
 #

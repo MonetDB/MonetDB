@@ -22,7 +22,7 @@ stdout of test 'tst4610` in directory 'src/optimizer` itself:
 function user.joinPath(a:bat[:any_1,:any_2],b:bat[:any_2,:any_3],c:bat[:any_3,:any_4]):bat[:any_1,:any_4];	# 0  dynamic (joinPath:bat[:any_1,:any_4])<-(a:bat[:any_1,:any_2])(b:bat[:any_2,:any_3])(c:bat[:any_3,:any_4])
     z := algebra.join(a,b);	# 1 ALGjoin (z:bat[:any,:any])<-(a:bat[:any_1,:any_2])(b:bat[:any_2,:any_3])
     zz := algebra.join(z,c);	# 2 ALGjoin (zz:bat[:any,:any])<-(z:bat[:any,:any])(c:bat[:any_3,:any_4])
-    return zz;	# 3  (zz:bat[:any,:any])
+    return joinPath := zz;	# 3  (joinPath:bat[:any_1,:any_4])<-(zz:bat[:any,:any])
 end joinPath;	# 4  
 #
 #optimizer.macroContraction("user","joinPath");
@@ -41,7 +41,7 @@ function user.main():void;	# 0  (main:void)
     a := bat.new(:int,:int);	# 2 CMDBATnew (a:bat[:int,:int])<-(_6:int)(_6:int)
     b := bat.new(:int,:int);	# 3 CMDBATnew (b:bat[:int,:int])<-(_6:int)(_6:int)
     c := bat.new(:int,:int);	# 4 CMDBATnew (c:bat[:int,:int])<-(_6:int)(_6:int)
-    h := user.joinPath(a,b,c);	# 5  (h:bat[:int,:int])<-(a:bat[:int,:int])(b:bat[:int,:int])(c:bat[:int,:int])
+    r := user.joinPath(a,b,c);	# 5  (r:bat[:any,:any])<-(a:bat[:int,:int])(b:bat[:int,:int])(c:bat[:int,:int])
     r := algebra.joinPath(a,b,c);	# 6 ALGjoinPath (r:bat[:any,:any])<-(a:bat[:int,:int])(b:bat[:int,:int])(c:bat[:int,:int])
     mdb.list();	# 7 MDBlist (_12:void)
 function user.main():void;
@@ -49,7 +49,7 @@ function user.main():void;
     a := bat.new(:int,:int);
     b := bat.new(:int,:int);
     c := bat.new(:int,:int);
-    h := user.joinPath(a,b,c);
+    r := user.joinPath(a,b,c);
     r := algebra.joinPath(a,b,c);
     mdb.list();
 

@@ -29,7 +29,7 @@ function user.qry(i:dbl):dbl;	# 0  (qry:dbl)<-(i:dbl)
     j := 1:dbl;	# 3  (j:dbl)<-(_2:dbl)
     k := mmath.sin(j);	# 4 MATHunary_SINdbl (k:dbl)<-(j:dbl)
     l := calc.+(k,i);	# 5 CALCbinaryADDdbldbl (l:dbl)<-(k:dbl)(i:dbl)
-    return z;	# 6  (z:dbl)
+    return qry := z;	# 6  (qry:dbl)<-(z:dbl)
 end qry;	# 7  
 #t0:= alarm.usec();
 #optimizer.aliasRemoval("user","qry");
@@ -62,7 +62,7 @@ end main;	# 12
 function user.qry(i:dbl):dbl;
     z := mmath.sin(1:dbl);
     l := calc.+(z,1:dbl);
-    return z;
+    return qry := z;
 end qry;
 function user.main():void;
 #tesing the optimizers 

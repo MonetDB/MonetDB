@@ -2,7 +2,7 @@
 # the crucial part is to recognize valid inlines
 function foo{inline}(a:int,b:int):int;
 	c:= a+b;
-	base:=mmath.rand(c); # this has a memory-side effect
+	base:=mmath.rand(); # this has a memory-side effect
 	c:= c*base;
 	return c;
 end foo;
@@ -15,4 +15,5 @@ function qry();
 end qry;
 
 	optimizer.inline("user","qry");
+	optimizer.remap("user","qry");
 	mdb.list("user","qry");

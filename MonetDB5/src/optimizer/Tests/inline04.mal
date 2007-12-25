@@ -20,4 +20,5 @@ function qry();
 end qry;
 
 	optimizer.inline("user","qry");
+	optimizer.remap("user","qry");
 	mdb.list("user","qry");

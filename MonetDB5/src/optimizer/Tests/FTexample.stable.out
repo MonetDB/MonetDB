@@ -25,7 +25,7 @@ function user.test(s:str):int;	# 0  (test:int)<-(s:str)
     bat.insert(b,1,"hello");	# 2 BKCinsert_bun (_5:void)<-(b:bat[:int,:str])(_6:int)(_7:str)
     z := algebra.select(b,s,s);	# 3 ALGselect (z:bat[:int,:str])<-(b:bat[:int,:str])(s:str)(s:str)
     i := aggr.count(z);	# 4 ALGcount_bat (i:int)<-(z:bat[:int,:str])
-    return i;	# 5  (i:int)
+    return test := i;	# 5  (test:int)<-(i:int)
 end test;	# 6  
 #optimizer.factorize("user","test");
 #mdb.list("user","test");
@@ -40,7 +40,7 @@ factory user.test(s:str):int;
 barrier always := true;
     z := algebra.select(b,s,s);
     i := aggr.count(z);
-    yield i;
+    yield test := i;
     redo always;
 exit always;
 end test;

@@ -165,21 +165,21 @@ barrier always := true;	# 9  (always:bit)<-(_26:bit) jump 72
     V135 := aggr.avg(V83,V35,V37);	# 56 AX3aggrX3_avg3_flt (V135:bat[:oid,:dbl])<-(V83:bat[:oid,:flt])(V35:bat[:oid,:oid])(V37:bat[:oid,:oid])
     V136 := mal.multiplex("calc.round",V135,100);	# 57 OPTremapMultiplex (V136:any)<-(_80:str)(V135:bat[:oid,:dbl])(_58:int)
     V137 := aggr.count(V35,V35,V37);	# 58 AX3aggrX3_count3Nils (V137:bat[:oid,:int])<-(V35:bat[:oid,:oid])(V35:bat[:oid,:oid])(V37:bat[:oid,:oid])
-#sql.column(V42,"l_returnflag","varchar",1,0); 	# 59  (_83:str)
-#sql.column(V51,"l_linestatus","varchar",1,0); 	# 60  (_84:str)
-#sql.column(V59,"sum_qty","bigint",0,0); 	# 61  (_85:str)
-#sql.column(V66,"sum_base_price","decimal",19,2); 	# 62  (_86:str)
-#sql.column(V88,"sum_disc_price","decimal",19,4); 	# 63  (_87:str)
-#sql.column(V114,"sum_charge","decimal",19,6); 	# 64  (_88:str)
-#sql.column(V122,"avg_qty","double",53,0); 	# 65  (_89:str)
-#sql.column(V129,"avg_price","double",53,0); 	# 66  (_90:str)
-#sql.column(V136,"avg_disc","double",53,0); 	# 67  (_91:str)
-#sql.column(V137,"count_order","int",0,0); 	# 68  (_92:str)
-#sql.output(V52,V42,V51,V59,V66,V88,V114,V122,V129,V136,V137); 	# 69  (_93:str)
-    yield always;	# 70  (always:bit)
+#sql.column(V42,"l_returnflag","varchar",1,0); 	# 59  (_84:str)
+#sql.column(V51,"l_linestatus","varchar",1,0); 	# 60  (_85:str)
+#sql.column(V59,"sum_qty","bigint",0,0); 	# 61  (_86:str)
+#sql.column(V66,"sum_base_price","decimal",19,2); 	# 62  (_87:str)
+#sql.column(V88,"sum_disc_price","decimal",19,4); 	# 63  (_88:str)
+#sql.column(V114,"sum_charge","decimal",19,6); 	# 64  (_89:str)
+#sql.column(V122,"avg_qty","double",53,0); 	# 65  (_90:str)
+#sql.column(V129,"avg_price","double",53,0); 	# 66  (_91:str)
+#sql.column(V136,"avg_disc","double",53,0); 	# 67  (_92:str)
+#sql.column(V137,"count_order","int",0,0); 	# 68  (_93:str)
+#sql.output(V52,V42,V51,V59,V66,V88,V114,V122,V129,V136,V137); 	# 69  (_94:str)
+    yield qry1 := always;	# 70  (qry1:bit)<-(always:bit)
     redo always;	# 71  (always:bit) jump 10
 exit always;	# 72  (always:bit)
-    return always;	# 73  (always:bit)
+    return qry1 := always;	# 73  (qry1:bit)<-(always:bit)
 end qry1;	# 74  
 #
 #optimizer.costEstimation("user","qry1");
@@ -261,10 +261,10 @@ barrier always := true;
 #sql.column(V136,"avg_disc","double",53,0); 
 #sql.column(V137,"count_order","int",0,0); 
 #sql.output(V52,V42,V51,V59,V66,V88,V114,V122,V129,V136,V137); 
-    yield always;
+    yield qry1 := always;
     redo always;
 exit always;
-    return always;
+    return qry1 := always;
 end qry1;
 
 # 23:52:59 >  
