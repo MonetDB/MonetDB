@@ -17,7 +17,7 @@ stdout of test 'tst019` in directory 'src/mal` itself:
 #    w:="hello";
 #    return w;   # should produce a type error
 #end welcome;
-
+!TypeException:user.welcome[3]:type mismatch void := str
 function user.welcome(lim:int):void;	# 0  (welcome:void)<-(lim:int)
     i := 2;	# 1  (i:int)<-(_3:int)
     w := "hello";	# 2  (w:str)<-(_5:str)
