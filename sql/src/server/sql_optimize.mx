@@ -116,17 +116,83 @@ stmt_cmp_head_tail(stmt *h, stmt *key)
 	return -1;
 }
 
+static stmt * headcolumn(stmt *st);
+
+static stmt *
+tailcolumn(stmt *st)
+{
+	switch (st->type) {
+	case st_join:
+	case st_outerjoin:
+	case st_intersect:
+	case st_reorder:
+		return tailcolumn(st->op2.stval);
+
+	case st_join2:
+		return tailcolumn(st->op2.stval);
+	case st_reljoin:
+		return tailcolumn(st->op2.lval->h->data);
+
+	case st_semijoin:
+		return tailcolumn(st->op1.stval);
+
+	case st_column:
+	case st_bat:
+		return st;
+	case st_reverse:
+		return headcolumn(st->op1.stval);
+	default:
+		return NULL;
+	}
+}
+
+static stmt *
+headcolumn(stmt *st)
+{
+	switch (st->type) {
+	case st_column:
+	case st_bat:
+		return st;
+	case st_reverse:
+		return tailcolumn(st->op1.stval);
+	case st_semijoin:
+		return headcolumn(st->op1.stval);
+	default:
+		return NULL;
+	}
+	return NULL;
+}
+
+/* getcolumn is used by rangejoin detection */
+static stmt *
+getcolumn(stmt *st)
+{
+	if (!st)
+		return NULL;	
+	switch (st->type) {
+	case st_reverse:
+		return getcolumn(headcolumn(st->op1.stval));
+	case st_pivot:
+		return getcolumn(st->op1.stval);
+	case st_bat:
+	case st_column:
+		return st;
+	default:
+		return getcolumn(tailcolumn(st));
+	}
+}
+
 static int
 cmp_matching_column( stmt *l, stmt *r)
 {
-	sql_column *lbc = basecolumn(l->op1.stval);
-	sql_column *rbc = basecolumn(r->op1.stval);
+	stmt *lc = getcolumn(l->op1.stval);
+	stmt *rc = getcolumn(r->op1.stval);
 
-	if (lbc && rbc && lbc == rbc)
+	if (lc && rc && lc == rc)
 		return 0;
-	lbc = basecolumn(tail_column(l->op2.stval));
-	rbc = basecolumn(tail_column(r->op2.stval));
-	if (lbc && rbc && lbc == rbc)
+	lc = getcolumn(tailcolumn(l->op2.stval));
+	rc = getcolumn(tailcolumn(r->op2.stval));
+	if (lc && rc && lc == rc)
 		return 0;
 	return -1;
 }
@@ -309,25 +375,63 @@ stmt_intersect(stmt *op1, stmt *op2)
 	 * without unique head identifiers + semijoin is wrong
 	 */
 	if (!reverse) {
-		stmt *ml = stmt_mark(stmt_reverse(stmt_dup(op1)), 50);
-		stmt *mr = stmt_mark(stmt_dup(op1), 50);
-		stmt *l = stmt_join(stmt_dup(ml),
-				    stmt_dup(op2->op1.stval), cmp_equal);
-		stmt *r = stmt_join(stmt_dup(mr),
-				    stmt_reverse(stmt_dup(op2->op2.stval)), cmp_equal);
-		stmt *v = stmt_uselect(l, r, (comp_type) op2->flag);
-
-		res = stmt_join(stmt_reverse(stmt_semijoin(ml, v)), mr, cmp_equal);
+		if (op2->type == st_join2) {
+			stmt *ml = stmt_mark(stmt_reverse(stmt_dup(op1)), 50);
+			stmt *mr = stmt_mark(stmt_dup(op1), 50);
+			stmt *l = stmt_join(stmt_dup(ml),
+				    	stmt_dup(op2->op1.stval), cmp_equal);
+			stmt *r1 = stmt_join(stmt_dup(mr),
+				    	stmt_dup(op2->op2.stval), cmp_equal);
+			stmt *r2 = stmt_join(stmt_dup(mr),
+				    	stmt_dup(op2->op3.stval), cmp_equal);
+			comp_type c1 = op2->flag&2 ? cmp_gte : cmp_gt;
+			comp_type c2 = op2->flag&1 ? cmp_lte : cmp_lt;
+			stmt *v1 = stmt_uselect(l, r1, c1);
+			stmt *v2 = stmt_uselect(stmt_dup(l), r2, c2);
+			
+			ml = stmt_semijoin(ml, v1);
+			ml = stmt_semijoin(ml, v2);
+			res = stmt_join(stmt_reverse(ml), mr, cmp_equal);
+		} else {
+			stmt *ml = stmt_mark(stmt_reverse(stmt_dup(op1)), 50);
+			stmt *mr = stmt_mark(stmt_dup(op1), 50);
+			stmt *l = stmt_join(stmt_dup(ml),
+				    	stmt_dup(op2->op1.stval), cmp_equal);
+			stmt *r = stmt_join(stmt_dup(mr),
+				    	stmt_reverse(stmt_dup(op2->op2.stval)), cmp_equal);
+			stmt *v = stmt_uselect(l, r, (comp_type) op2->flag);
+	
+			res = stmt_join(stmt_reverse(stmt_semijoin(ml, v)), mr, cmp_equal);
+		}
 	} else {		/* reverse */
-		stmt *ml = stmt_mark(stmt_reverse(stmt_dup(op1)), 50);
-		stmt *mr = stmt_mark(stmt_dup(op1), 50);
-		stmt *l = stmt_join(stmt_dup(mr),
-				    stmt_dup(op2->op1.stval), cmp_equal);
-		stmt *r = stmt_join(stmt_dup(ml),
-				    stmt_reverse(stmt_dup(op2->op2.stval)), cmp_equal);
-		stmt *v = stmt_uselect(l, r, (comp_type) op2->flag);
-
-		res = stmt_join(stmt_reverse(stmt_semijoin(ml, v)), mr, cmp_equal);
+		if (op2->type == st_join2) {
+			stmt *ml = stmt_mark(stmt_reverse(stmt_dup(op1)), 50);
+			stmt *mr = stmt_mark(stmt_dup(op1), 50);
+			stmt *l = stmt_join(stmt_dup(mr),
+				    	stmt_dup(op2->op1.stval), cmp_equal);
+			stmt *r1 = stmt_join(stmt_dup(ml),
+				    	stmt_dup(op2->op2.stval), cmp_equal);
+			stmt *r2 = stmt_join(stmt_dup(ml),
+				    	stmt_dup(op2->op3.stval), cmp_equal);
+			comp_type c1 = op2->flag&2 ? cmp_gte : cmp_gt;
+			comp_type c2 = op2->flag&1 ? cmp_lte : cmp_lt;
+			stmt *v1 = stmt_uselect(l, r1, c1);
+			stmt *v2 = stmt_uselect(stmt_dup(l), r2, c2);
+	
+			ml = stmt_semijoin(ml, v1);
+			ml = stmt_semijoin(ml, v2);
+			res = stmt_join(stmt_reverse(ml), mr, cmp_equal);
+		} else {
+			stmt *ml = stmt_mark(stmt_reverse(stmt_dup(op1)), 50);
+			stmt *mr = stmt_mark(stmt_dup(op1), 50);
+			stmt *l = stmt_join(stmt_dup(mr),
+				    	stmt_dup(op2->op1.stval), cmp_equal);
+			stmt *r = stmt_join(stmt_dup(ml),
+				    	stmt_reverse(stmt_dup(op2->op2.stval)), cmp_equal);
+			stmt *v = stmt_uselect(l, r, (comp_type) op2->flag);
+	
+			res = stmt_join(stmt_reverse(stmt_semijoin(ml, v)), mr, cmp_equal);
+		}
 	}
 
 	stmt_destroy(op1);
@@ -1110,8 +1214,8 @@ push_selects_down(mvc *c, list *con)
 			n = list_find(nqjoins, o1, (fcmp)&cmp_matching_column);
 			if (n) {
 				stmt *s, *o2 = stmt_dup(n->data);
-				sql_column *o1bc = basecolumn(o1->op1.stval);
-				sql_column *o2bc = basecolumn(o2->op1.stval);
+				stmt *o1c = getcolumn(o1->op1.stval);
+				stmt *o2c = getcolumn(o2->op1.stval);
 				int cmp = 0;
 
 				list_remove_node(nqjoins, n);
@@ -1131,7 +1235,7 @@ push_selects_down(mvc *c, list *con)
 				else
 					assert(0);
 	
-				if (o1bc && o2bc && o1bc == o2bc) {
+				if (o1c && o2c && o1c == o2c) {
 					s = stmt_join2(
 						stmt_dup(o1->op1.stval),
 						stmt_reverse(stmt_dup(o1->op2.stval)),
@@ -1147,9 +1251,13 @@ push_selects_down(mvc *c, list *con)
 				}
 				stmt_destroy(o1);
 				stmt_destroy(o2);
-				o1 = s;
-			} 
-			list_append(rjoins, o1);
+
+				/* prepend as 2 joins in one are hopefully 
+			   	more restrictive then a single join */
+				list_prepend(rjoins, s);
+			}  else {
+				list_append(rjoins, o1);
+			}
 		}
 		if (list_length(rjoins)) {
 			if (list_length(nqjoins) == 1)

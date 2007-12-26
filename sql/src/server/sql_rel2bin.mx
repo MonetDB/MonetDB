@@ -31,9 +31,7 @@
 #include "sql_types.h"
 
 extern stmt *rel2bin(mvc *c, stmt *s);
-extern sql_column * basecolumn(stmt *st);
-extern stmt *head_column(stmt *st);
-extern stmt *tail_column(stmt *st);
+extern sql_column *basecolumn(stmt *st);
 
 #endif /* _SQL_REL2BIN_H */
 
@@ -45,8 +43,9 @@ extern stmt *tail_column(stmt *st);
 #include "sql_env.h"
 #include <stdio.h>
 
+static stmt * head_column(stmt *st);
 
-stmt *
+static stmt *
 tail_column(stmt *st)
 {
 	switch (st->type) {
@@ -128,7 +127,7 @@ tail_column(stmt *st)
 	}
 }
 
-stmt *
+static stmt *
 head_column(stmt *st)
 {
 	switch (st->type) {
