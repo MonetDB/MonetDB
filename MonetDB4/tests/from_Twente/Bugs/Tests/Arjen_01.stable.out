@@ -7,6 +7,8 @@ stdout of test 'Arjen_01` in directory 'tests/from_Twente/Bugs` itself:
 
 
 
+
+
 # MonetDB Server v4.21.0
 # based on GDK   v1.21.0
 # Copyright (c) 1993-2007, CWI. All rights reserved.
@@ -166,7 +168,7 @@ print(indexA.info().access(BAT_WRITE).delete("batBuns.base").delete("batStamp").
 [ "halign",		  "2020",	  "2021",	  "2021",	  "2028",	  "2021",	  "2032",	  "2028",	  "2028",	  "2044",	  "2039",	  "2039"	  ]
 [ "hdense",			  "1",		  "1",		  "1",		  "1",		  "1",		  "1",		  "1",		  "1",		  "1",		  "1",		  "1"		  ]
 [ "head",		  "void",	  "void",	  "void",	  "void",	  "void",	  "oid",	  "void",	  "void",	  "void",	  "void",	  "void"	  ]
-[ "head.filename",	  "32.head",	  "34.head",	  "35.head",	  "35.head",	  "40.head",	  "41.head",	  "35.head",	  "35.head",	  "32.head",	  "no file",	  "46.head"	  ]
+[ "head.filename",	  "no file",	  "no file",	  "no file",	  "no file",	  "no file",	  "41.head",	  "no file",	  "no file",	  "no file",	  "no file",	  "no file"	  ]
 [ "head.free",		  "0",		  "0",		  "0",		  "0",		  "0",		  "24",		  "0",		  "0",		  "0",		  "0",		  "0"		  ]
 [ "head.maxsize",	  "0",		  "0",		  "0",		  "0",		  "0",		  "2048",	  "0",		  "0",		  "0",		  "0",		  "0"		  ]
 [ "head.size",		  "0",		  "0",		  "0",		  "0",		  "0",		  "2048",	  "0",		  "0",		  "0",		  "0",		  "0"		  ]
@@ -184,7 +186,7 @@ print(indexA.info().access(BAT_WRITE).delete("batBuns.base").delete("batStamp").
 [ "htop",		  "0",		  "0",		  "0",		  "0",		  "0",		  "24",		  "0",		  "0",		  "0",		  "0",		  "0"		  ]
 [ "hvarsized",		  "1",		  "1",		  "1",		  "1",		  "1",		  "0",		  "1",		  "1",		  "1",		  "1",		  "1"		  ]
 [ "tail",			  "oid",	  "int",	  "bit",	  "void",	  "bit",	  "void",	  "void",	  "void",	  "void",	  "void",	  "int"		  ]
-[ "tail.filename",	  "32.tail",	  "34.tail",	  "35.tail",	  "no file",	  "40.tail",	  "no file",	  "no file",	  "no file",	  "no file",	  "35.head",	  "46.tail"	  ]
+[ "tail.filename",	  "32.tail",	  "34.tail",	  "35.tail",	  "no file",	  "40.tail",	  "no file",	  "no file",	  "no file",	  "no file",	  "no file",	  "46.tail"	  ]
 [ "tail.free",		  "32",		  "16",		  "4",		  "0",		  "4",		  "0",		  "0",		  "0",		  "0",		  "0",		  "8"		  ]
 [ "tail.maxsize",	  "2048",	  "1024",	  "256",	  "0",		  "256",	  "0",		  "0",		  "0",		  "0",		  "0",		  "1024"	  ]
 [ "tail.size",		  "2048",	  "1024",	  "256",	  "0",		  "256",	  "0",		  "0",		  "0",		  "0",		  "0",		  "1024"	  ]
