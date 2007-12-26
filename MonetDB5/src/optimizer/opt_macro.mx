@@ -278,13 +278,14 @@ inlineMALblock(MalBlkPtr mb, int pc, MalBlkPtr mc)
 	for (i = 0; i < pc; i++)
 		ns[k++] = mb->stmt[i];
 
-	/* make result variable(s) known, ie assign a nil value */
+	/* make result variable(s) known, ie assign a nil value
 	for (n = 0; n < p->retc; n++) {
 		q = ns[k++] = newInstruction(NULL, ASSIGNsymbol);
 		q->argc = q->retc = 0;
 		q= pushArgument(mb, q, getArg(p, n)); q->retc++;
 		q= pushNil(mb, q, getArgType(mb, p, n));
 	}
+	*/
 
 	/* copying stops at the first return statement */
 	for (i = 1; i < mc->stop - 1; i++) {
@@ -298,6 +299,8 @@ inlineMALblock(MalBlkPtr mb, int pc, MalBlkPtr mc)
 			getArg(ns[k], n) = nv[getArg(q, n)];
 
 		if (q->barrier == RETURNsymbol || q->barrier == YIELDsymbol) {
+			setModuleId(ns[k],NULL);
+			setFunctionId(ns[k],NULL);
 			ns[k]->barrier = 0;
 			ns[k]->token = ASSIGNsymbol;
 		}

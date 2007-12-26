@@ -180,11 +180,13 @@ multiple occurrences of the same constant in the symbol table.
 				printf("%d, %d  %d %d ", i, j, 
 					hasSameSignature(p, q), 
 					hasSameArguments(mb, p, q));
-				printf(" :%d %d %d %d\n", 
+				printf(" :%d %d %d %d %d %d\n", 
 					!isUpdated(mb, i), 
 					!hasCommonResults(p, q), 
 					!hasSideEffects(p, TRUE),
-					!hasSideEffects(q, TRUE));
+					!hasSideEffects(q, TRUE),
+					isLinearFlow(q),
+					isLinearFlow(p));
 
 #endif
 @-
@@ -197,6 +199,7 @@ handled by the alias removal part
 					!isUpdated(mb, i) && 
 					!hasCommonResults(p, q) && 
 					!hasSideEffects(p, TRUE) &&
+					isLinearFlow(p) &&
 					allTargetsVisible(mb,j,n-1) 
 					) {
 #ifdef DEBUG_OPT_COMMONTERMS

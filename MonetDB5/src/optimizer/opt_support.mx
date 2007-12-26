@@ -528,6 +528,7 @@ opt_export int isUpdated(MalBlkPtr mb, int pc);
 opt_export int hasCommonResults(InstrPtr p, InstrPtr q);
 opt_export int isProcedure(MalBlkPtr mb, InstrPtr p);
 opt_export int hasSideEffects(InstrPtr p, int strict);
+opt_export int isSideEffectFree(MalBlkPtr mb);
 opt_export int isBlocking(InstrPtr p);
 opt_export int isFragmentGroup(InstrPtr q);
 opt_export int allArgumentsVisible(MalBlkPtr mb, int pc,int qc);
@@ -1067,6 +1068,11 @@ The dead code remover should not be used for testing,
 because it will trim most programs to an empty list.
 The side effect tests should become part of the signature
 definitions.
+
+A side effect is either an action to leave data around
+in a variable/resource outside the MALblock.
+A variant encoded here as well is that the linear flow
+of control can be broken.
 @c
 
 int
@@ -1080,8 +1086,6 @@ isProcedure(MalBlkPtr mb, InstrPtr p)
 int
 hasSideEffects(InstrPtr p, int strict)
 {
-	if (blockStart(p) || blockExit(p) || blockCntrl(p))
-		return TRUE;
 	if( getFunctionId(p) == NULL) return FALSE;
 
 	if (getFunctionId(p) == depositRef ||
@@ -1134,6 +1138,18 @@ hasSideEffects(InstrPtr p, int strict)
 	if (strict && getFunctionId(p)==newRef)
 		return TRUE;
 	return FALSE;
+}
+@-
+Side-effect free functions are crucial for several operators.
+@c
+int
+isSideEffectFree(MalBlkPtr mb){
+	int i;
+	for(i=1; i< mb->stop; i++){
+		if( hasSideEffects(getInstrPtr(mb,i), TRUE))
+			return FALSE;
+	}
+	return TRUE;
 }
 @-
 Breaking up a MAL program into pieces for distributed requires 

@@ -75,6 +75,7 @@ into the iterator code generation.
 @c
 #include "mal_config.h"
 #include "opt_remap.h"
+#include "opt_macro.h"
 
 static int
 OPTremapDirect(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Module scope){
@@ -118,6 +119,143 @@ OPTremapDirect(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Module scope){
 	return 1;
 }
 
+@-
+Multiplex inline functions should be done with care.
+The approach taken is to make a temporary copy of the function to be inlined. 
+To change all the statements to reflect the new situation
+and, if no error occurs, replaces the target instruction
+with this new block.
+
+By the time we get here, we know that function is
+side-effect free.
+
+The multiplex upgrade is targeted at all function
+arguments whose actual is a BAT and its formal
+is a scalar.
+This seems sufficient for the SQL generated PSM code,
+but does in general not hold.
+Forexample,
+
+function foo(b:int,c:bat[:oid,:int])
+	... d:= batcalc.+(b,c)
+and
+multiplex("user","foo",ba:bat[:oid,:int],ca:bat[:oid,:int])
+upgrades the first argument. The naive upgrade of
+the statement that would fail. The code below catches
+most of them by simple prepending "bat" to the MAL function
+name and leave it to the type resolver to generate the
+error.
+
+The process terminates as soon as we
+find an instruction that does not have a multiplex
+counterpart.
+@c
+#define DEBUG_OPT_REMAP
+static int OPTmultiplexInline( MalBlkPtr mb, InstrPtr p, int pc ){
+	MalBlkPtr mq;
+	InstrPtr q,sig;
+	char buf[1024];
+	int i,j,k, *upgrade;
+	Symbol s;
+	s= findSymbol( 	VALget(&getVar(mb, getArg(p, 1))->value),
+					VALget(&getVar(mb, getArg(p, 2))->value));
+
+	if( s== NULL || !isSideEffectFree(s->def)){
+#ifdef DEBUG_OPT_REMAP
+		if( s== NULL)
+			stream_printf(GDKout,"#not found \n");
+		else
+			stream_printf(GDKout,"#side-effects\n");
+#endif
+		return 0;
+	}
+@-
+Determine the variables to be upgraded and adjust their type
+@c
+	mq= copyMalBlk(s->def);
+	sig= getInstrPtr(mq,0);
+#ifdef DEBUG_OPT_REMAP
+		stream_printf(GDKout,"#Modify the code\n");
+		printInstruction(GDKout,mq,sig,LIST_MAL_ALL);
+		printInstruction(GDKout,mb,p,LIST_MAL_ALL);
+#endif
+	upgrade= (int*) GDKzalloc(sizeof(int)*mq->vtop);
+	for(i=3; i<p->argc; i++){
+		if( !isaBatType( getArgType(mq,sig,i-2)) &&
+			isaBatType( getArgType(mb,p,i)) ){
+
+			if( getTailType(getArgType(mb,p,i)) != getArgType(mq,sig,i-2)){
+#ifdef DEBUG_OPT_REMAP
+				stream_printf(GDKout,"#Type mismatch %d\n",i);
+#endif
+				goto terminateMX;
+			}
+#ifdef DEBUG_OPT_REMAP
+			stream_printf(GDKout,"#Upgrade type %d\n",i);
+#endif
+			setVarType(mq, i-2,newBatType(TYPE_oid, getArgType(mb,p,i)));
+			upgrade[getArg(sig,i-2)]= TRUE;
+		}
+	}
+@-
+The next step is to check each instruction of the
+to-be-inlined function for arguments that require
+an upgrade and resolve it afterwards.
+@c
+	for(i=1; i<mq->stop; i++){
+		q= getInstrPtr(mq,i);
+		k=0;
+		for(j=q->retc; j<q->argc; j++)
+		if( upgrade[getArg(q,j)] )
+			k++;
+		if(k){
+#ifdef DEBUG_OPT_REMAP
+			stream_printf(GDKout,"#Patch the instruction\n");
+			printInstruction(GDKout,mq,q,LIST_MAL_ALL);
+#endif
+			for(j=0;j<q->retc; j++)
+				setVarType(mq,getArg(q,j),TYPE_any);
+			if( getModuleId(q)){
+				snprintf(buf,1024,"bat%s",getModuleId(q));
+				setModuleId(q,putName(buf,strlen(buf)));
+#ifdef DEBUG_OPT_REMAP
+				printInstruction(GDKout,mq,q,LIST_MAL_ALL);
+#endif
+			}
+			/* now see if we can resolve the instruction */
+			typeChecker(MCgetClient()->nspace,mq,q,TRUE);
+			if( q->typechk== TYPE_UNKNOWN)
+				goto terminateMX;
+			for(j=0;j<q->retc; j++)
+				upgrade[getArg(q,j)]= TRUE;
+		}
+	}
+
+	if(mq->errors){
+terminateMX:
+		freeMalBlk(mq);
+		GDKfree(upgrade);
+		return 0;
+	}
+@-
+We have successfully constructed a variant
+of the to-be-inlined function. Put it in place
+of the original multiplex.
+But first, shift the arguments of the multiplex.
+@c
+	delArgument(p,2);
+	delArgument(p,1);
+	inlineMALblock(mb,pc,mq);
+#ifdef DEBUG_OPT_REMAP
+	printInstruction(GDKout,mb,p,LIST_MAL_ALL);
+	stream_printf(GDKout,"New block\n");
+	printFunction(GDKout,mq,LIST_MAL_ALL);
+	stream_printf(GDKout,"Inlined result\n");
+	printFunction(GDKout,mb,LIST_MAL_ALL);
+#endif
+	GDKfree(upgrade);
+	return 0;
+}
 @-
 The comparison multiplex operations with a constant head may be supported
 by reverse of the operation.
@@ -187,6 +325,21 @@ OPTremapImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		p = old[i];
 		if ( getModuleId(p) == malRef && 
 			getFunctionId(p) == multiplexRef) {
+@-
+The next step considered is to handle inlined functions.
+It means we have already skipped the most obvious ones,
+such as the calculator functions. It is particularly
+geared at handling the PSM code.
+@c
+			if ( varGetProp(mb,getArg(p,0),inlineProp)!= NULL) {
+#ifdef DEBUG_OPT_REMAP
+				stream_printf(GDKout,"Multiplex inline\n");
+				printInstruction(GDKout,mb,p,LIST_MAL_ALL);
+#endif
+				pushInstruction(mb, p);
+				if( OPTmultiplexInline(mb,p,mb->stop-1) )
+					doit++;
+			} else 
 			if(	OPTremapDirect(mb, stk, p, scope) ||
 				OPTremapSwitched(mb, stk, p, scope)){
 				freeInstruction(p); 
@@ -231,7 +384,8 @@ OPTremapImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			avg = pushArgument(mb, avg, getDestVar(cnt));
 			freeInstruction(p);
 			pushInstruction(mb, avg);
-		} else {
+		} else 
+		{
 			pushInstruction(mb, p);
 		}
 	}

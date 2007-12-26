@@ -250,6 +250,7 @@ have a side-effect, we can replace it with a construction
 of the empty set. The dead-code optimizer will take care
 of removal of superflous constructions.
 				if( p->retc==1 && !hasSideEffects(p, FALSE) &&
+					!isLinearFlow(p) &&
 					!isUnsafeFunction(p) &&
 					isaBatType(getArgType(mb,p,0))){
 					int tpe=getArgType(mb,p,0);
