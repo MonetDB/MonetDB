@@ -150,7 +150,6 @@ The process terminates as soon as we
 find an instruction that does not have a multiplex
 counterpart.
 @c
-#define DEBUG_OPT_REMAP
 static int OPTmultiplexInline( MalBlkPtr mb, InstrPtr p, int pc ){
 	MalBlkPtr mq;
 	InstrPtr q,sig;
@@ -254,7 +253,7 @@ But first, shift the arguments of the multiplex.
 	printFunction(GDKout,mb,LIST_MAL_ALL);
 #endif
 	GDKfree(upgrade);
-	return 0;
+	return 1;
 }
 @-
 The comparison multiplex operations with a constant head may be supported
@@ -339,6 +338,9 @@ geared at handling the PSM code.
 				pushInstruction(mb, p);
 				if( OPTmultiplexInline(mb,p,mb->stop-1) )
 					doit++;
+#ifdef DEBUG_OPT_REMAP
+				stream_printf(GDKout,"doit %d\n",doit);
+#endif
 			} else 
 			if(	OPTremapDirect(mb, stk, p, scope) ||
 				OPTremapSwitched(mb, stk, p, scope)){

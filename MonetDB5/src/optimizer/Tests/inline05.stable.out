@@ -1,0 +1,60 @@
+stdout of test 'inline05` in directory 'src/optimizer` itself:
+
+
+# 18:00:44 >  
+# 18:00:44 >   mserver5 "--config=/ufs/mk/monet5/Linux/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5//Linux/lib/MonetDB5:/ufs/mk/monet5//Linux/lib/MonetDB5/lib:/ufs/mk/monet5//Linux/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/mk/monet5//Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5//Linux/var/MonetDB5/sql_logs"  --set mapi_open=true --set xrpc_open=true --set mapi_port=34223 --set xrpc_port=43286 --set monet_prompt= --trace --dbname=mTests_src_optimizer  inline05.mal
+# 18:00:44 >  
+
+# MonetDB server v5.3.0, based on kernel v1.21.0
+# Serving database 'mTests_src_optimizer'
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Copyright (c) 1993-2007 CWI, all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://gio.ins.cwi.nl:34223/
+## remapping inline functions
+## the crucial part is to recognize valid inlines
+#function foo{inline}(a:int,b:int):int;
+#	c:= a+b;
+#	io.print(c); # this has a memory-less side effect
+#	return foo:=1;
+#end foo;
+function user.foo{inline}(a:int,b:int):int;	# 0  (foo:int)<-(a:int)(b:int)
+    c := calc.+(a,b);	# 1 CALCbinaryADDintint (c:int)<-(a:int)(b:int)
+    io.print(c);	# 2 IOprint_val (_4:void)<-(c:int)
+# this has a memory-less side effect 	# 3  (_5:str)
+    return foo{inline} := 1;	# 4  (foo:int)<-(_6:int)
+end foo;	# 5  
+#
+#function qry();
+#	b:= bat.new(:oid,:int);
+#	bat.insert(b,0@0,1);
+#	z:bat[:oid,:int]:= mal.multiplex("user","foo",b,b);
+#	z:bat[:oid,:dbl]:= mal.multiplex("user","foo",b,2);
+#end qry;
+function user.qry():void;	# 0  (qry:void)
+    b := bat.new(:oid,:int);	# 1 CMDBATnew (b:bat[:oid,:int])<-(_2:oid)(_3:int)
+    bat.insert(b,0@0,1);	# 2 BKCinsert_bun (_4:void)<-(b:bat[:oid,:int])(_5:oid)(_6:int)
+    z:bat[:oid,:dbl]  := mal.multiplex("user","foo",b,b);	# 3 OPTremapMultiplex (z:bat[:oid,:dbl])<-(_8:str)(_9:str)(b:bat[:oid,:int])(b:bat[:oid,:int])
+    z:bat[:oid,:dbl]  := mal.multiplex("user","foo",b,2);	# 4 OPTremapMultiplex (z:bat[:oid,:dbl])<-(_8:str)(_9:str)(b:bat[:oid,:int])(_10:int)
+end qry;	# 5  
+#
+#	optimizer.inline("user","qry");
+#	optimizer.remap("user","qry");
+#	mdb.list("user","qry");
+#
+function user.main():void;	# 0  (main:void)
+# remapping inline functions 	# 1  (_1:str)
+# the crucial part is to recognize valid inlines 	# 2  (_2:str)
+    mdb.list("user","qry");	# 3 MDBlist3 (_7:void)<-(_4:str)(_5:str)
+end main;	# 4  
+function user.qry():void;
+    b := bat.new(:oid,:int);
+    bat.insert(b,0@0,1);
+    z:bat[:oid,:dbl]{inline}  := mal.multiplex("user","foo",b,b);
+    z:bat[:oid,:dbl]{inline}  := mal.multiplex("user","foo",b,2);
+end qry;
+
+# 18:00:44 >  
+# 18:00:44 >  Done.
+# 18:00:44 >  
+

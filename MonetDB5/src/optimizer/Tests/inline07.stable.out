@@ -1,0 +1,54 @@
+stdout of test 'inline07` in directory 'src/optimizer` itself:
+
+
+# 18:00:44 >  
+# 18:00:44 >   mserver5 "--config=/ufs/mk/monet5/Linux/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5//Linux/lib/MonetDB5:/ufs/mk/monet5//Linux/lib/MonetDB5/lib:/ufs/mk/monet5//Linux/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/mk/monet5//Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5//Linux/var/MonetDB5/sql_logs"  --set mapi_open=true --set xrpc_open=true --set mapi_port=34223 --set xrpc_port=43286 --set monet_prompt= --trace --dbname=mTests_src_optimizer  inline07.mal
+# 18:00:44 >  
+
+# MonetDB server v5.3.0, based on kernel v1.21.0
+# Serving database 'mTests_src_optimizer'
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Copyright (c) 1993-2007 CWI, all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://gio.ins.cwi.nl:34223/
+## remapping inline functions
+#function foo{inline}(a:int,b:bat[:oid,:int]):dbl;
+#	s:= aggr.sum(b);
+#	c:= a+s;
+#	return foo:=c;
+#end foo;
+function user.foo{inline}(a:int,b:bat[:oid,:int]):dbl;	# 0  (foo:dbl)<-(a:int)(b:bat[:oid,:int])
+    s := aggr.sum(b);	# 1 ALGsum_int_dbl (s:dbl)<-(b:bat[:oid,:int])
+    c := calc.+(a,s);	# 2 CALCbinaryADDintdbl (c:dbl)<-(a:int)(s:dbl)
+    return foo{inline} := c;	# 3  (foo:dbl)<-(c:dbl)
+end foo;	# 4  
+#
+#function qry();
+#	b:= bat.new(:oid,:int);
+#	bat.insert(b,0@0,1);
+#	z:bat[:oid,:dbl]:= mal.multiplex("user","foo",b,b);
+#end qry;
+function user.qry():void;	# 0  (qry:void)
+    b := bat.new(:oid,:int);	# 1 CMDBATnew (b:bat[:oid,:int])<-(_2:oid)(_3:int)
+    bat.insert(b,0@0,1);	# 2 BKCinsert_bun (_4:void)<-(b:bat[:oid,:int])(_5:oid)(_6:int)
+    z:bat[:oid,:dbl]  := mal.multiplex("user","foo",b,b);	# 3 OPTremapMultiplex (z:bat[:oid,:dbl])<-(_8:str)(_9:str)(b:bat[:oid,:int])(b:bat[:oid,:int])
+end qry;	# 4  
+#
+#	optimizer.inline("user","qry");
+#	optimizer.remap("user","qry");
+#	mdb.list("user","qry");
+#
+function user.main():void;	# 0  (main:void)
+# remapping inline functions 	# 1  (_1:str)
+    mdb.list("user","qry");	# 2 MDBlist3 (_6:void)<-(_3:str)(_4:str)
+end main;	# 3  
+function user.qry():void;
+    b := bat.new(:oid,:int);
+    bat.insert(b,0@0,1);
+    z:bat[:oid,:dbl]{inline}  := mal.multiplex("user","foo",b,b);
+end qry;
+
+# 18:00:44 >  
+# 18:00:44 >  Done.
+# 18:00:44 >  
+
