@@ -38,10 +38,9 @@ end doit;	# 4
 #
 function user.main():void;	# 0  (main:void)
 #some tests to illustrate function inlining for a module 	# 1  (_1:str)
-    nil:void;	# 2  (_2:void)<-(_12:void)
-    io.print("hello world\n");	# 3 IOprint_val (_10:void)<-(_11:str)
-    z := dummy.doit(1,"help");	# 4  (z:int)<-(_4:int)(_5:str)
-end main;	# 5  
+    io.print("hello world\n");	# 2 IOprint_val (_10:void)<-(_11:str)
+    z := dummy.doit(1,"help");	# 3  (z:int)<-(_4:int)(_5:str)
+end main;	# 4  
 [ "hello world\n" ]
 [ 1 ]
 [ "help" ]
