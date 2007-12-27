@@ -59,6 +59,7 @@ function user.main():void;	# 0  (main:void)
     mdb.list("user","qry");	# 1 MDBlist3 (_5:void)<-(_2:str)(_3:str)
 end main;	# 2  
 function user.qry():void;
+    nil:void;
     _3 := bat.new(:int,:int);
     _5 := bat.new(:int,:int);
     bat.insert(_3,1,1);

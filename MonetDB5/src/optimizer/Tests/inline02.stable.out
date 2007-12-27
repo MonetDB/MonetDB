@@ -44,18 +44,22 @@ end qry;	# 7
 #
 function user.main():void;	# 0  (main:void)
 # remapping inline functions 	# 1  (_1:str)
-    mdb.list("user","qry");	# 2 MDBlist3 (_6:void)<-(_3:str)(_4:str)
-end main;	# 3  
+# inspired by SQL module 	# 2  (_2:str)
+    mdb.list("user","qry");	# 3 MDBlist3 (_7:void)<-(_4:str)(_5:str)
+end main;	# 4  
 function user.qry():void;
     b := bat.new(:oid,:int);
     bat.insert(b,0@0,1);
+    zz := nil:int;
     _16 := calc.+(1,2);
     zz := _16;
 # base line test for inlining 
-    _20 := batcalc.+(b,b);
-    z:bat[:oid,:int]{inline}  := _20;
-    _24 := batcalc.+(b,2);
-    z:bat[:oid,:int]{inline}  := _24;
+    z:bat[:oid,:int]{inline}  := nil;
+    _21 := batcalc.+(b,b);
+    z:bat[:oid,:int]{inline}  := _21;
+    z:bat[:oid,:int]{inline}  := nil;
+    _26 := batcalc.+(b,2);
+    z:bat[:oid,:int]{inline}  := _26;
 end qry;
 
 # 18:00:43 >  

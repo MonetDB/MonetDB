@@ -1,4 +1,5 @@
 # remapping inline functions
+# inspired by SQL module
 function foo{inline}(a:int,b:int):int;
 	c:= a+b;
 	return foo:=c;

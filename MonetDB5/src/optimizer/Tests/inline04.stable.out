@@ -62,6 +62,7 @@ end main;	# 6
 function user.qry():void;
     b := bat.new(:oid,:int);
     bat.insert(b,0@0,1);
+    z:bat[:oid,:int]{inline}  := nil;
     _14 := batcalc.+(b,b);
     _15 := 1;
 barrier _16 := true;
@@ -70,14 +71,15 @@ barrier _16 := true;
     redo _16 := calc.<(_15,3);
 exit _16;
     z:bat[:oid,:int]{inline}  := _14;
-    _22 := batcalc.+(b,2);
-    _23 := 1;
-barrier _24 := true;
-    _22 := batcalc.*(_22,_22);
-    _23 := calc.+(_23,1);
-    redo _24 := calc.<(_23,3);
-exit _24;
-    z:bat[:oid,:int]{inline}  := _22;
+    z:bat[:oid,:int]{inline}  := nil;
+    _23 := batcalc.+(b,2);
+    _24 := 1;
+barrier _25 := true;
+    _23 := batcalc.*(_23,_23);
+    _24 := calc.+(_24,1);
+    redo _25 := calc.<(_24,3);
+exit _25;
+    z:bat[:oid,:int]{inline}  := _23;
 end qry;
 
 # 18:00:43 >  
