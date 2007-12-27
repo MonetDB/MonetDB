@@ -81,6 +81,7 @@ newStmt(MalBlkPtr mb, char *module, char *name)
 	pushInstruction(mb, q);
 	return q;
 }
+
 InstrPtr
 newStmt1(MalBlkPtr mb, str module, char *name)
 {
@@ -92,6 +93,7 @@ newStmt1(MalBlkPtr mb, str module, char *name)
 	pushInstruction(mb, q);
 	return q;
 }
+
 InstrPtr
 newStmt2(MalBlkPtr mb, str module, char *name)
 {

@@ -150,8 +150,8 @@ comment "Strip whitespaces from start of a string.";
 command rtrim( s:str ) :str 
 address STRRtrim
 comment "Strip whitespaces from end of a string.";
-command substitute(s:str,src:str,dst:str,rep:bit)
-	:str 
+
+command substitute(s:str,src:str,dst:str,rep:bit) :str 
 address STRSubstitute
 comment "Substitute first occurrence of 'src' by 
 	'dst'.  Iff repeated = true this is 

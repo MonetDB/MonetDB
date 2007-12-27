@@ -155,6 +155,11 @@ comment "Perform SQL like operation against a string bat";
 command batstr.like(s:bat[:oid,:str],pat:str,esc:str):bat[:oid,:oid]
 address STRbatlike
 comment "Perform SQL like operation against a string bat";
+
+command batstr.replace(s:bat[:oid,:str],pat:str,s2:str):bat[:oid,:str]
+address STRbatreplace
+comment "Insert a string into another";
+
 @+ Implementation
 @c
 #include "mal_config.h"
@@ -725,4 +730,43 @@ bunins_failed:
 	BBPunfix(*ret);
 	throw(MAL, "batstr.substring" , "bunins failed");
 }
+
+batstr_export str STRbatreplace(int *ret, int *l, str *pat, str *s2);
+str STRbatreplace(int *ret, int *l, str *pat, str *s2)
+{   
+	BATiter li;
+	BAT *bn, *left;
+	BUN p,q;
+	str v, *vp= &v;
+
+	if( (left= BATdescriptor(*l)) == NULL ) 
+		throw(MAL, "batstr.replace" , "Cannot access descriptor"); 
+	bn= BATnew(left->htype,TYPE_str,BATcount(left)); 
+	if (left->htype== TYPE_void)
+		BATseqbase(bn, left->hseqbase); 
+	if (bn == NULL){
+		BBPreleaseref(left->batCacheid);
+		throw(MAL, "batstr.replace", "no space available ");
+	}
+	bn->hsorted= left->hsorted; 
+	bn->tsorted=0; 
+
+	li = bat_iterator(left);
+	BATloop(left, p, q) {
+		ptr h = BUNhead(li,p);
+		str tl = (str) BUNtail(li,p);
+		STRreplace(vp, &tl, pat, s2);
+		bunfastins(bn, h, *vp);
+		GDKfree(*vp);
+	}
+	finalizeResult(ret,bn,left);
+	return MAL_SUCCEED;
+
+bunins_failed:
+	BBPreleaseref(left->batCacheid);
+	BBPunfix(*ret);
+	throw(MAL, "batstr.replace" , "bunins failed");
+}
+
+
 @}

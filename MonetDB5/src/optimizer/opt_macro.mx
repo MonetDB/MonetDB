@@ -252,7 +252,7 @@ inlineMALblock(MalBlkPtr mb, int pc, MalBlkPtr mc)
 		else
 		if (mc->var[n]->isaconstant ){
 			nv[n] = cpyConstant(mb,getVar(mc,n));
-		} else{
+		} else {
 			nv[n] = newTmpVariable(mb, getVarType(mc, n));
 			getVar(mb,nv[n])->isudftype= getVar(mc,n)->isudftype;
 			getVar(mb,nv[n])->isused= getVar(mc,n)->isused;
@@ -286,7 +286,6 @@ inlineMALblock(MalBlkPtr mb, int pc, MalBlkPtr mc)
 		q= pushNil(mb, q, getArgType(mb, p, n));
 	}
 
-	/* copying stops at the first return statement */
 	for (i = 1; i < mc->stop - 1; i++) {
 		q = mc->stmt[i];
 		if( q->token == ENDsymbol)
@@ -305,6 +304,7 @@ inlineMALblock(MalBlkPtr mb, int pc, MalBlkPtr mc)
 		}
 		k++;
 	} 
+
 	/* copy the remainder of the stable part */
 	for (i = pc + 1; i < mb->stop; i++){
 		ns[k++] = mb->stmt[i];

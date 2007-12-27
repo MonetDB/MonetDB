@@ -1088,16 +1088,18 @@ hasSideEffects(InstrPtr p, int strict)
 {
 	if( getFunctionId(p) == NULL) return FALSE;
 
-	if (getFunctionId(p) == depositRef ||
-		getFunctionId(p) == insertRef ||
+	if ( getModuleId(p) == batRef &&
+	       (getFunctionId(p) == insertRef ||
 		getFunctionId(p) == inplaceRef ||
 		getFunctionId(p) == appendRef ||
 		getFunctionId(p) == updateRef ||
-		getFunctionId(p) == sortTailRef ||
 		getFunctionId(p) == setAccessRef ||
 		getFunctionId(p) == setWriteModeRef ||
 		getFunctionId(p) == replaceRef ||
-		getFunctionId(p) == deleteRef)
+		getFunctionId(p) == deleteRef))
+		return TRUE;
+
+	if (getFunctionId(p) == depositRef) 
 		return TRUE;
 
 	if( getModuleId(p) == ioRef ||
