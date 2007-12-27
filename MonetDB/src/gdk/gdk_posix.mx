@@ -1254,7 +1254,7 @@ MT_mmap_open(MT_mmap_hdl *hdl, char *path, int mode, off_t off, size_t len, size
 {
 	void *ret = NULL;
 	DWORD mode0 = FILE_READ_ATTRIBUTES | FILE_READ_DATA;
-	DWORD mode1 = FILE_SHARE_READ;
+	DWORD mode1 = FILE_SHARE_READ | FILE_SHARE_WRITE;
 	DWORD mode2 = mode & MMAP_ADVISE;
 	DWORD mode3 = PAGE_READONLY;
 	int mode4 = FILE_MAP_READ;
@@ -1265,7 +1265,6 @@ MT_mmap_open(MT_mmap_hdl *hdl, char *path, int mode, off_t off, size_t len, size
 	memset(hdl, 0, sizeof(MT_mmap_hdl));
 	if (mode & MMAP_WRITE) {
 		mode0 |= FILE_APPEND_DATA | FILE_WRITE_ATTRIBUTES | FILE_WRITE_DATA;
-		mode1 |= FILE_SHARE_WRITE;
 	}
 	if (mode2 == MMAP_RANDOM || mode2 == MMAP_DONTNEED) {
 		mode2 = FILE_FLAG_RANDOM_ACCESS;
