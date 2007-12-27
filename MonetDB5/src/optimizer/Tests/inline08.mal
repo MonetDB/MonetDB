@@ -23,6 +23,7 @@ function qry();
 	z:bat[:oid,:str]:= mal.multiplex("user","bar",b,b);
 end qry;
 
+	optimizer.inline("user","bar");
 	optimizer.inline("user","qry");
 	optimizer.remap("user","qry");
 	mdb.list("user","qry");
