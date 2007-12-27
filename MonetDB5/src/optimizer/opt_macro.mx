@@ -278,14 +278,13 @@ inlineMALblock(MalBlkPtr mb, int pc, MalBlkPtr mc)
 	for (i = 0; i < pc; i++)
 		ns[k++] = mb->stmt[i];
 
-	/* make result variable(s) known, ie assign a nil value
+	/* make result variable(s) known, ie assign a nil value */
 	for (n = 0; n < p->retc; n++) {
 		q = ns[k++] = newInstruction(NULL, ASSIGNsymbol);
 		q->argc = q->retc = 0;
 		q= pushArgument(mb, q, getArg(p, n)); q->retc++;
 		q= pushNil(mb, q, getArgType(mb, p, n));
 	}
-	*/
 
 	/* copying stops at the first return statement */
 	for (i = 1; i < mc->stop - 1; i++) {
