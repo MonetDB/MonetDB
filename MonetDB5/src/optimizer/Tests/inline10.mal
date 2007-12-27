@@ -5,7 +5,7 @@ function foo{inline}(a:int,b:int):int;
 	return foo:=c;
 end foo;
 
-function bar(a:int,b:int):int;
+function bar{inline}(a:int,b:int):int;
 	z:= foo(a,b);
 	return bar:=z;
 end bar;
