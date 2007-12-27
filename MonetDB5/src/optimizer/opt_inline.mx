@@ -23,6 +23,8 @@ whose primary target variable carry the @{inline@} property are inlined
 as well.
 The code is expanded inline using the macro processor.
 
+The inline optimizer processes all instructions, thereby
+causing recursive inlined functions to appear as well.
 @{
 @mal
 pattern optimizer.inline():str
@@ -45,23 +47,9 @@ comment "Expand inline functions";
 #include "mal_config.h"
 #include "opt_inline.h"
 
-static int OPTinlineMultiplex(MalBlkPtr mb, InstrPtr p){
-	Symbol s;
-	str mod,fcn;
-	mod = VALget(&getVar(mb, getArg(p, 1))->value);
-	fcn = VALget(&getVar(mb, getArg(p, 2))->value);
-	if( (s= findSymbol(mod,fcn)) ==0 )
-		return FALSE;
-@-
-Before we decide to propagate the inline request
-to the multiplex operation, we check some basic properties
-of the target function.
-@c
-	return varGetProp(s->def , getArg(getInstrPtr(s->def,0), 0),
-				inlineProp) != NULL;
-}
+extern int OPTinlineMultiplex(MalBlkPtr mb, InstrPtr p);
 
-static int
+int
 OPTinlineImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	int i;
@@ -118,6 +106,24 @@ Check if the local call is tagged as being inlined.
 	return actions;
 }
 
+
+int OPTinlineMultiplex(MalBlkPtr mb, InstrPtr p){
+	Symbol s;
+	str mod,fcn;
+	mod = VALget(&getVar(mb, getArg(p, 1))->value);
+	fcn = VALget(&getVar(mb, getArg(p, 2))->value);
+	if( (s= findSymbol(mod,fcn)) ==0 )
+		return FALSE;
+@-
+Before we decide to propagate the inline request
+to the multiplex operation, we check some basic properties
+of the target function. Moreover, we apply the inline optimizer
+to the target function as well.
+@c
+	(void) OPTinlineImplementation(s->def, NULL, p);
+	return varGetProp(s->def , getArg(getInstrPtr(s->def,0), 0),
+				inlineProp) != NULL;
+}
 @include optimizerWrapper.mx
 @h
 @:exportOptimizer(inline)@
