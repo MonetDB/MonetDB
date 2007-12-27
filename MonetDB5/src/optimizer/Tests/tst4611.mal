@@ -1,14 +1,10 @@
 # the first test for macro expansions and inversions
 
-function algebra.joinPath( a:bat[:any_1,:any_2],
-                b:bat[:any_2,:any_3],
-                c:bat[:any_3,:any_4]):bat[:any_1,:any_4];
+function user.joinPath( a:bat[:any_1,:any_2], b:bat[:any_2,:any_3], c:bat[:any_3,:any_4]):bat[:any_1,:any_4];
     z:= algebra.join(a,b);
     zz:= algebra.join(z,c);
 	return zz;
 end joinPath;
-
-optimizer.orcam("algebra","joinPath");
 
 a:= bat.new(:int,:int);
 b:= bat.new(:int,:int);
@@ -16,4 +12,5 @@ c:= bat.new(:int,:int);
 g:= algebra.join(a,b);
 h:= algebra.join(g,c);
 
+optimizer.orcam("user","joinPath");
 mdb.list();

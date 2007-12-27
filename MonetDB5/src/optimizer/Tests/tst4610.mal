@@ -1,8 +1,6 @@
 # the first test for macro expansions and inversions
 
-function joinPath( a:bat[:any_1,:any_2],
-                b:bat[:any_2,:any_3],
-                c:bat[:any_3,:any_4]):bat[:any_1,:any_4];
+function joinPath( a:bat[:any_1,:any_2], b:bat[:any_2,:any_3], c:bat[:any_3,:any_4]):bat[:any_1,:any_4];
     z:= algebra.join(a,b);
     zz:= algebra.join(z,c);
     return zz;

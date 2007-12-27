@@ -437,10 +437,11 @@ replaceMALblock(MalBlkPtr mb, int pc, MalBlkPtr mc)
 				q->argv[i] = mvar[j];
 				break;
 			}
+	/* take the return expression  and match the variables*/
 	rq = getInstrPtr(mc, mc->stop - 2);
 	for (i = 0; i < rq->retc; i++)
 		for (j = 0; j < ctop; j++)
-			if (rq->argv[i] == cvar[j]) {
+			if (rq->argv[i+rq->retc] == cvar[j]) {
 				q->argv[i] = mvar[j];
 				break;
 			}
