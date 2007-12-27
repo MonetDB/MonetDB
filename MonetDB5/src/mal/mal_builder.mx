@@ -292,14 +292,16 @@ pushNil(MalBlkPtr mb, InstrPtr q, int tpe)
 	int _t;
 	ValRecord cst;
 
-	cst.vtype=TYPE_void;
-	cst.val.oval= oid_nil;
 	if( !isaBatType(tpe) ){
+		cst.vtype=TYPE_void;
+		cst.val.oval= oid_nil;
 		convertConstant(tpe, &cst);
 		_t = defConstant(mb,tpe,&cst);
-	} else
-		_t = newTmpVariable(mb,tpe);
-
+	} else{
+		cst.vtype=TYPE_bat;
+		cst.val.bval= 0;
+		_t = defConstant(mb,TYPE_bat,&cst);
+	}
 	return pushArgument(mb, q, _t);
 }
 
