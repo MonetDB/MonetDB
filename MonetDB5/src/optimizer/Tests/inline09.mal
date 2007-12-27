@@ -12,7 +12,9 @@ end foo;
 
 function bar{inline}(a:str,b:str):str;
 	sa:= user.foo(a);
+	sa:= str.substring(sa, 1, 5);
 	sb:= user.foo(b);
+	sb:= str.substring(sb, 1, 3);
 	c:= sa+sb;
 	return bar:=c;
 end bar;
