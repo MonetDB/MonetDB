@@ -572,6 +572,7 @@ end main;	# 11
 [ "ltrim",			  "command",	  "batstr",	  "(s:bat[:oid,:str]):bat[:oid,:str] ",														  "STRbatLtrim;"			  ]
 [ "length",			  "command",	  "batstr",	  "(s:bat[:oid,:str]):bat[:oid,:int] ",														  "STRbatLength;"			  ]
 [ "nbytes",			  "command",	  "batstr",	  "(s:bat[:oid,:str]):bat[:oid,:int] ",														  "STRbatBytes;"			  ]
+[ "replace",			  "command",	  "batstr",	  "(s:bat[:oid,:str],pat:str,s2:str):bat[:oid,:str] ",						  "STRbatreplace;"			  ]
 [ "r_search",			  "command",	  "batstr",	  "(s:bat[:oid,:str],c:str):bat[:oid,:int] ",													  "STRbatRstrSearchcst;"		  ]
 [ "r_search",			  "command",	  "batstr",	  "(s:bat[:oid,:str],c:bat[:oid,:str]):bat[:oid,:int] ",											  "STRbatRstrSearch;"			  ]
 [ "rtrim",			  "command",	  "batstr",	  "(s:bat[:oid,:str]):bat[:oid,:str] ",														  "STRbatRtrim;"			  ]

@@ -119,6 +119,8 @@ Before we decide to propagate the inline request
 to the multiplex operation, we check some basic properties
 of the target function. Moreover, we apply the inline optimizer
 to the target function as well.
+This code should be protected against overflow due to recursive calls.
+In general, this is a hard problem. For now, we just expand.
 @c
 	(void) OPTinlineImplementation(s->def, NULL, p);
 	return varGetProp(s->def , getArg(getInstrPtr(s->def,0), 0),
