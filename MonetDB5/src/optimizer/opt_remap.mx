@@ -159,6 +159,7 @@ static int OPTmultiplexInline( MalBlkPtr mb, InstrPtr p, int pc ){
 	s= findSymbol( 	VALget(&getVar(mb, getArg(p, 1))->value),
 					VALget(&getVar(mb, getArg(p, 2))->value));
 
+#define DEBUG_OPT_REMAP
 	if( s== NULL || !isSideEffectFree(s->def)){
 #ifdef DEBUG_OPT_REMAP
 		if( s== NULL)
