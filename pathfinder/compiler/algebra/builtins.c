@@ -629,6 +629,20 @@ PFbui_fn_data (const PFla_op_t *loop,
 /* --------------------- */
 
 /**
+ * Build up operator tree for built-in function 'fn:error()'.
+ */
+struct PFla_pair_t
+PFbui_fn_error_empty (const PFla_op_t *loop, bool ordering,
+                      struct PFla_pair_t *args)
+{
+    (void) loop; (void) ordering; (void) args;
+
+    return (struct PFla_pair_t) {
+        .rel  = NULL,
+        .frag = PFla_empty_set ()};
+}
+
+/**
  * Build up operator tree for built-in function 'fn:error(string)'.
  */
 struct PFla_pair_t
@@ -648,10 +662,36 @@ struct PFla_pair_t
 PFbui_fn_error_str (const PFla_op_t *loop, bool ordering,
                     struct PFla_pair_t *args)
 {
-    (void) loop; (void) ordering; (void) args;
+    (void) loop; (void) ordering;
 
     return (struct PFla_pair_t) {
-        .rel = NULL,
+        .rel = error( 
+                   project (
+                       fun_1to1 (
+                           eqjoin (
+                               disjunion (
+                                   args[0].rel,
+                                   attach (
+                                       attach (
+                                           difference (
+                                               loop,
+                                               project (
+                                                   args[0].rel,
+                                                   proj (att_iter, att_iter))),
+                                           att_pos, lit_nat (1)),
+                                       att_item, lit_str (""))),
+                                   project (args[1].rel,
+                                            proj (att_iter1, att_iter),
+                                            proj (att_item1, att_item)),
+                                   att_iter,
+                                   att_iter1),
+                           alg_fun_fn_concat,
+                           att_res,
+                           attlist(att_item, att_item1)),
+                       proj (att_iter, att_iter),
+                       proj (att_pos, att_pos),
+                       proj (att_item, att_res)),
+                   att_item),
         .frag = PFla_empty_set ()};
 }
 

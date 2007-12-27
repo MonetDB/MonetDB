@@ -270,7 +270,7 @@ PFfun_xquery_fo (void)
       { .ns = PFns_fn, .loc = "error",
         .arity = 0,  .sig_count = 1, .sigs = { {
             .ret_ty = PFty_none () } },
-        .alg = NULL }
+        .alg = PFbui_fn_error_empty }
     , /* fn:error (string) as none */
       { .ns = PFns_fn, .loc = "error",
         .arity = 1, .sig_count = 1, .sigs = { {
