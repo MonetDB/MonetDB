@@ -129,11 +129,12 @@ OPTreduceImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			continue;
 		}
 		if (i>cnt) {
+			VarRecord *t = mb->var[cnt];
 			/* remap temporary variables */
 			if (isTmpVar(mb,i))
 				getVarTmp(mb,i) = cnt;
 			mb->var[cnt] = mb->var[i];
-			mb->var[i] = NULL;
+			mb->var[i] = t;
 			resetVarName(mb,cnt);
 		}
 		vars[i] = cnt;
