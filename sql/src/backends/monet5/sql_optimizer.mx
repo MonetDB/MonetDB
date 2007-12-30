@@ -493,11 +493,10 @@ addOptimizers(Client c,MalBlkPtr mb, str optimizer)
 	}
 
 	/* add the optimizers to the query plan */
-	for (i=0;i<top; i++) {
+	for (i=0; i<top; i++) {
 		InstrPtr p = newFcnCall(mb, "optimizer", optimizers[i]);
+
 		typeChecker(c->nspace, mb, p, TRUE);
-		/* niels added else leaks */
-		//pushInstruction(mb, p);
 	}
 	if (oldbase)
 		GDKfree(oldbase);
@@ -514,7 +513,7 @@ addQueryToCache(Client c)
 	insertSymbol(c->nspace, c->curprg);
 	trimMalBlk(c->curprg->def);
 	c->blkmode = 0;
-	mb= c->curprg->def;
+	mb = c->curprg->def;
 	chkProgram(c->nspace, mb);
 #ifdef _SQL_OPTIMIZER_DEBUG
 	printf("ADD QUERY TO CACHE\n");
@@ -537,8 +536,8 @@ to allow inspection.
 		return;
 	}
 	optimizer = stack_get_string(be->mvc, "optimizer");
-	if( optimizer == 0 ) 
-		optimizer= defaultPlan? defaultPlan:minimalPlan;
+	if (optimizer == 0) 
+		optimizer = defaultPlan? defaultPlan:minimalPlan;
 #ifdef _SQL_OPTIMIZER_DEBUG
 	if( optimizer)
 	stream_printf(c->fdout,"optimizer:%s:\n",optimizer?optimizer:"unknown");

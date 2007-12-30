@@ -499,15 +499,15 @@ freeVariables(MalBlkPtr mb, MalStkPtr glb, int start)
 	int i;
 
 	for (i = start; i < mb->vtop;) {
-		clearVariable(mb, i);
-
 		if (glb) {
-			garbageElement(&glb->stk[i]);
+			if (isVarGarbage(mb,i))
+				garbageElement(&glb->stk[i]);
 			/* clean stack entry */
 			glb->stk[i].vtype = TYPE_int;
 			glb->stk[i].val.ival = 0;
 			glb->stk[i].len = 0;
 		}
+		clearVariable(mb, i);
 		i++;
 	}
 	mb->vtop = start;
