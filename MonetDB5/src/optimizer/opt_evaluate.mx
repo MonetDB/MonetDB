@@ -101,7 +101,7 @@ OPTevaluateImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	
 	env= prepareMALstack(mb);
 	env->keepAlive= TRUE;
-	do{
+	do {
 		again = 0;
 		limit = mb->stop;
 		nxt= first;
@@ -118,16 +118,17 @@ OPTevaluateImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			if( j && p->retc== 1 && p->barrier == 0 &&
 				getLastUpdate(mb,getArg(p,0)) == i  &&
 				!isUnsafeFunction(p)){
-				msg= reenterMAL(c,mb,i,i+1,env,0,0);
+				msg = reenterMAL(c,mb,i,i+1,env,0,0);
 #ifdef DEBUG_OPT_CX
 				stream_printf(GDKout,"result:%s\n",msg==MAL_SUCCEED?"ok":msg);
 #endif
-				if( msg == MAL_SUCCEED){
+				if (msg == MAL_SUCCEED){
 @-
 The last assignment of a constant expression turns the variable into
 a constant itself.
 @c
 					isConstant(mb,getArg(p,0))= TRUE;
+					setVarCleanup(mb,getArg(p,0))= FALSE;
 					setFixed(mb,getArg(p,0));
 					getConstant(mb,getArg(p,0)) = env->stk[getArg(p,0)];
 					env->stk[getArg(p,0)].vtype= TYPE_int; /* no garbage */
@@ -156,7 +157,6 @@ a constant itself.
 		}
 		first = nxt;
 	} while( again );
-	clearStack(env);	/* garbage collect */
 	freeStack(env);
 	c->itrace= debugstate;
 	return 1;

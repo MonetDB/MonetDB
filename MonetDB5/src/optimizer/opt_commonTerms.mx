@@ -98,7 +98,7 @@ OPTcommonTermsImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	InstrPtr p, q;
 	int actions = 0;
 	int filter[1024];
-	int *mask,*alias,limit;
+	int *mask,*alias,limit, slimit;
 	InstrPtr *old;
 	int c;
 
@@ -114,6 +114,7 @@ OPTcommonTermsImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	setLifespan(mb);
 	old = mb->stmt;
 	limit = mb->stop;
+	slimit = mb->ssize;
 	newMalBlkStmt(mb, mb->ssize); /* a new statement stack */
 	for ( n= i = 0; i < limit; i++) {
 		p = old[i];
@@ -231,6 +232,9 @@ handled by the alias removal part
 		}
 		filter[c ]= 1;
 	}
+	for(; i<slimit; i++)
+	if( old[i])
+		freeInstruction(old[i]);
 	GDKfree(old);
 	return actions;
 }

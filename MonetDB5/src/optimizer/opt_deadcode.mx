@@ -86,7 +86,7 @@ comment "Dead code optimizer";
 static int 
 OPTdeadcodeImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int i, k, se,limit;
+	int i, k, se,limit, slimit;
 	InstrPtr p=0, *old= mb->stmt;
 	int actions = 0;
 
@@ -103,6 +103,7 @@ OPTdeadcodeImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #endif
 
 	limit= mb->stop;
+	slimit = mb->ssize;
 	newMalBlkStmt(mb, mb->ssize); /* a new statement stack */
 
 	pushInstruction(mb, old[0]);
@@ -139,11 +140,13 @@ OPTdeadcodeImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	/* we may have uncovered new use-less operations */
 	if( actions) 
 		i= OPTdeadcodeImplementation(mb, stk, pci);
-
 #ifdef DEBUG_OPT_DEAD
 	stream_printf(GDKout,"LEAVING DEAD CODE ELIMINATION\n");
 	printFunction(GDKout,mb,LIST_MAL_ALL);
 #endif
+	for(; i<slimit; i++)
+	if( old[i])
+		freeInstruction(old[i]);
 	GDKfree(old);
 	return actions+i;
 }

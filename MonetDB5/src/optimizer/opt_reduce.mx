@@ -104,7 +104,7 @@ OPTreduceImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	(void)stk;
 	(void) p;
 
-	vars = (int *) alloca(mb->vtop * sizeof(int));
+	vars= (int *) alloca(mb->vtop * sizeof(int));
 	used= (int *) alloca(mb->vtop * sizeof(int));
 	memset((char*) vars, 0, mb->vtop * sizeof(int));
 	memset((char*) used, 0, mb->vtop * sizeof(int));
@@ -124,17 +124,21 @@ OPTreduceImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	}
 	/* build the alias table */
 	for (i = 0; i < mb->vtop; i++) {
-		if ( used[i]==0 ){
+		if (used[i] == 0){
 			clearVariable(mb, i);
 			continue;
 		}
+
+		/* valgrind finds a leak when we move these variable 
+		   record pointers around. */
 		if (i>cnt) {
-			VarRecord *t = mb->var[cnt];
 			/* remap temporary variables */
+			VarRecord *t = mb->var[cnt];
 			if (isTmpVar(mb,i))
 				getVarTmp(mb,i) = cnt;
 			mb->var[cnt] = mb->var[i];
 			mb->var[i] = t;
+			t = NULL;
 			resetVarName(mb,cnt);
 		}
 		vars[i] = cnt;

@@ -1065,7 +1065,7 @@ OPTmergetableImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	InstrPtr *old=0, q, r;
 	mat_t *mat;
-	int oldtop, fm, i, k, m, mtop=0, tpe;
+	int oldtop, fm, i, k, m, mtop=0, tpe, slimit;
 	int size, match, actions=0;
 
 #ifdef DEBUG_OPT_MERGETABLE
@@ -1073,6 +1073,7 @@ OPTmergetableImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 #endif
 	old = mb->stmt;
 	oldtop= mb->stop;
+	slimit = mb->ssize;
 	size = (mb->stop * 1.2 < mb->ssize)? mb->ssize:(int)(mb->stop * 1.2);
 	mb->stmt = (InstrPtr *) GDKzalloc(size * sizeof(InstrPtr));
 	mb->ssize = size;
@@ -1357,6 +1358,9 @@ It requires MAT materialization.
 		if (p->argc >= 2)
 			propagateProp(mb, p, getArg(p,1));
 	}
+	for(; i<slimit; i++)
+	if( old[i])
+		freeInstruction(old[i]);
 	GDKfree(old);
 @-
 As a final optimization, we could remove the mal.new definitions,

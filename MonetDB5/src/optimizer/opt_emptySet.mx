@@ -271,6 +271,9 @@ of removal of superflous constructions.
 			}
 		}
 	}
+	for(; i<slimit; i++)
+	if( old[i])
+		freeInstruction(old[i]);
 	GDKfree(old);
 	if( actions) {
 		clrAllTypes(mb);	 /* force a complete resolve */
