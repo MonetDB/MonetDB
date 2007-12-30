@@ -3152,8 +3152,6 @@ the fetch.
 @item BAT *
 @tab BATouterjoin (BAT *l, BAT *r, size\_t estimate)
 @item BAT *
-@tab BATbandjoin (BAT *l, BAT *r, ptr c1, ptr c2)
-@item BAT *
 @tab BATthetajoin (BAT *l, BAT *r, int mode, size\_t estimate)
 @item BAT *
 @tab BATsemijoin (BAT *l, BAT *r)
@@ -3193,10 +3191,8 @@ BAT. A side effect is the clustering of the BAT store on the sort key.
 @
 The @%BATjoin@ over R[A, B] and S[C, D] performs an equi-join over B
 and C. It results in a BAT over A and D.  The @%BATouterjoin@
-implements a left outerjoin over the BATs involved.  The
-@%BATbandjoin@ produces the associations [A, D] such that S.C-c1 <=
-R.b <= S.C + c2.  The special case c1 = 0 and c2 = infinite leads to a
-thetajoin.  The @%BATsemijoin@ over R[A, B] and S[C, D] produces the
+implements a left outerjoin over the BATs involved.  
+The @%BATsemijoin@ over R[A, B] and S[C, D] produces the
 subset of R[A, B] that satisfies the semijoin over A and C.
 @
 The full-materialization policy intermediate results in MonetDB means that a
@@ -3240,7 +3236,6 @@ gdk_export BAT *BATconst(BAT *l, int tt, ptr val);
 gdk_export BAT *BATthetajoin(BAT *l, BAT *r, int mode, size_t estimate);
 gdk_export BAT *BATleftthetajoin(BAT *l, BAT *r, int mode, size_t estimate);
 gdk_export BAT *BATnlthetajoin(BAT *l, BAT *r, int mode, size_t estimate);
-gdk_export BAT *BATbandjoin(BAT *l, BAT *r, ptr c1, ptr c2);	/* should bandjoin remain in the kernel? */
 gdk_export BAT *BATsemijoin(BAT *l, BAT *r);
 gdk_export BAT *BATmergejoin(BAT *l, BAT *r, size_t estimate);
 gdk_export BAT *BATleftmergejoin(BAT *l, BAT *r, size_t estimate);

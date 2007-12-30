@@ -27,8 +27,18 @@ But that results in very large intermediates.
 
 #include "gdk.h"
 
+@- BAT range and band join operators
+@
+The @%BATbandjoin@ produces the associations [A, D] such that S.C-c1 <=
+R.b <= S.C + c2.  The special case c1 = 0 and c2 = infinite leads to a
+thetajoin.  
+
+@h
 gdk_export BAT *BATrangejoin(BAT *l, BAT *rl, BAT *rh, bit li, bit hi);
-/* Join all BUNs of the BATs that have tail values: {rl <= l <= rh}.  */
+/* Join all BUNs of the BATs that have tail values: {rl <= l <= rh}. */
+
+gdk_export BAT *BATbandjoin(BAT *l, BAT *r, ptr mnus, ptr plus, bit li, bit hi);
+/* Join all BUNs of the BATs that have tail values: {r-mnus <= l <= r+plus}. */
 
 #endif /* GDK_RANGEJOIN_H */
 @c
@@ -129,13 +139,15 @@ The hash indexing routines have been extended with a Band argument.
 @{
 @c
 BAT *
-BATbandjoin(BAT *l, BAT *r, ptr c1, ptr c2)
+BATbandjoin(BAT *l, BAT *r, ptr c1, ptr c2, bit li, bit hi)
 {
 	BAT *bn;
 
 	ERRORcheck(l == NULL, "BATbandjoin: invalid left operand");
 	ERRORcheck(r == NULL, "BATbandjoin: invalid right operand");
 	ERRORcheck(TYPEerror(l->ttype, r->htype), "BATbandjoin: type conflict\n");
+	(void)li;
+	(void)hi;
 	bn = BATnew(BAThtype(l), BAThtype(r), MIN(BATcount(l), BATcount(r)));
 	if (bn == NULL) 
 		return bn;
