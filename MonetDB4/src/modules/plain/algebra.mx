@@ -381,10 +381,19 @@ binary search trees on the join columns. "
 .COMMAND bandjoin ( BAT[any::1,any::2] outer,
 		   BAT[any::2,any::3] inner,
 		   any::2 minus, any::2 plus) :
-				BAT[any::1,any::3] = CMDbandjoin;
+				BAT[any::1,any::3] = CMDbandjoin_default;
 "This is a join() for which the predicate is that two BUNs match if
 the left-tail value is within the range [right-head - minus,
 right-head + plus]\n
+Works only for the builtin numerical types, and their derivates."
+
+.COMMAND bandjoin ( BAT[any::1,any::2] outer,
+		   BAT[any::2,any::3] inner,
+		   any::2 minus, any::2 plus, bit l_in, bit h_in) :
+				BAT[any::1,any::3] = CMDbandjoin;
+"This is a join() for which the predicate is that two BUNs match if
+the left-tail value is within the range [right-head - minus,
+right-head + plus], depending on (l_in/h_in), the bounds are included.\n
 Works only for the builtin numerical types, and their derivates."
 
 .COMMAND join ( BAT[any::1,any::2] l, 
@@ -1703,9 +1712,15 @@ CMDthetajoin(BAT **result, BAT *left, BAT *right, int *mode, lng *estimate)
 }
 
 int
-CMDbandjoin(BAT **result, BAT *left, BAT *right, ptr minus, ptr plus)
+CMDbandjoin_default(BAT **result, BAT *left, BAT *right, ptr minus, ptr plus)
 {
-	return (*result = BATbandjoin(left, right, minus, plus)) ? GDK_SUCCEED : GDK_FAIL;
+	return (*result = BATbandjoin(left, right, minus, plus, TRUE, TRUE)) ? GDK_SUCCEED : GDK_FAIL;
+}
+
+int
+CMDbandjoin(BAT **result, BAT *left, BAT *right, ptr minus, ptr plus, bit *li, bit *hi)
+{
+	return (*result = BATbandjoin(left, right, minus, plus, *li, *hi)) ? GDK_SUCCEED : GDK_FAIL;
 }
 
 int
