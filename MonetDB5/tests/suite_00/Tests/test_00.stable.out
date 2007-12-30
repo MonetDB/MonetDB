@@ -301,7 +301,7 @@ function user.main():void;	# 0  (main:void)
 #	io.print("# band algebra.join experiment\n"); 	# 135  (_165:str)
     c := algebra.copy(b);	# 136 ALGcopy (c:bat[:int,:int])<-(b:bat[:int,:int])
 #	io.print("bandjoin(b,c,4,4).print();"); 	# 137  (_169:str)
-    bd_a := algebra.bandjoin(b,c,4,4);	# 138 ALGbandjoin (bd_a:bat[:int,:int])<-(b:bat[:int,:int])(c:bat[:int,:int])(_171:int)(_171:int)
+    bd_a := algebra.bandjoin(b,c,4,4);	# 138 ALGbandjoin_default (bd_a:bat[:int,:int])<-(b:bat[:int,:int])(c:bat[:int,:int])(_171:int)(_171:int)
     cd_a := io.print(bd_a);	# 139 IOprint_val (cd_a:void)<-(bd_a:bat[:int,:int])
 #	io.print("#and theta algebra.joins\?\n"); 	# 140  (_173:str)
     LT := -1;	# 141  (LT:int)<-(_175:int)
@@ -316,7 +316,7 @@ end main;	# 147
 # h			t		  # name
 # str			str		  # type
 #-----------------------------------------#
-[ "version",		  "25105"	  ]
+[ "version",		  "25106"	  ]
 [ "batId",		  "tmp_10"	  ]
 [ "batCacheid",		  "8"		  ]
 [ "hparentid",		  "0"		  ]
