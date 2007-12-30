@@ -490,10 +490,19 @@ address ALGthetajoinEstimate;
 @mal
 command bandjoin( outer:bat[:any_1,:any_2], inner:bat[:any_2,:any_3],
 		   minus:any_2 , plus:any_2 ) :bat[:any_1,:any_3] 
-address ALGbandjoin
+address ALGbandjoin_default
 comment "This is a join() for which the predicate is that two BUNs match 
 		if the left-tail value is within the range [right-head - minus, 
 		right-head + plus]. Works only for the builtin numerical types, 
+		and their derivates.";
+
+command bandjoin( outer:bat[:any_1,:any_2], inner:bat[:any_2,:any_3],
+		   minus:any_2 , plus:any_2, li:bit, hi:bit ) :bat[:any_1,:any_3] 
+address ALGbandjoin
+comment "This is a join() for which the predicate is that two BUNs match 
+		if the left-tail value is within the range [right-head - minus, 
+		right-head + plus], depending on (l_in/h_in), the bounds 
+		are included. Works only for the builtin numerical types, 
 		and their derivates.";
 
 command join(l:bat[:any_1,:any_2], rl:bat[:any_3,:any_2], rh:bat[:any_3,:any_2], li:bit, hi:bit) :bat[:any_1,:any_3] 
@@ -923,7 +932,8 @@ algebra_export str ALGuselectInclusive(int *result, int *bid, ptr low, ptr high,
 algebra_export str ALGfragment(int *result, int *bid, ptr hlow, ptr hhigh, ptr tlow, ptr thigh);
 algebra_export str ALGthetajoinEstimate(int *result, int *lid, int *rid, int *opc, lng *estimate);
 algebra_export str ALGthetajoin(int *result, int *lid, int *rid, int *opc);
-algebra_export str ALGbandjoin(int *result, int *lid, int *rid, ptr *minus, ptr *plus);
+algebra_export str ALGbandjoin_default(int *result, int *lid, int *rid, ptr *minus, ptr *plus);
+algebra_export str ALGbandjoin(int *result, int *lid, int *rid, ptr *minus, ptr *plus, bit *li, bit *hi);
 algebra_export str ALGrangejoin(int *result, int *lid, int *rlid, int *rhid, bit *li, bit *hi);
 
 @= ALGunaryExport
@@ -1403,9 +1413,15 @@ CMDthetajoin(BAT **result, BAT *left, BAT *right, int *mode, lng *estimate)
 }
 
 int
-CMDbandjoin(BAT **result, BAT *left, BAT *right, ptr minus, ptr plus)
+CMDbandjoin_default(BAT **result, BAT *left, BAT *right, ptr minus, ptr plus)
 {
-	return (*result = BATbandjoin(left, right, minus, plus)) ? GDK_SUCCEED : GDK_FAIL;
+	return (*result = BATbandjoin(left, right, minus, plus, TRUE, TRUE)) ? GDK_SUCCEED : GDK_FAIL;
+}
+
+int
+CMDbandjoin(BAT **result, BAT *left, BAT *right, ptr minus, ptr plus, bit *li, bit *hi)
+{
+	return (*result = BATbandjoin(left, right, minus, plus, *li, *hi)) ? GDK_SUCCEED : GDK_FAIL;
 }
 
 @-
@@ -2589,7 +2605,7 @@ ALGthetajoin(int *result, int *lid, int *rid, int *opc)
 }
 
 str
-ALGbandjoin(int *result, int *lid, int *rid, ptr *minus, ptr *plus)
+ALGbandjoin(int *result, int *lid, int *rid, ptr *minus, ptr *plus, bit *li, bit *hi)
 {
 	BAT *left, *right, *bn = NULL;
 
@@ -2600,7 +2616,7 @@ ALGbandjoin(int *result, int *lid, int *rid, ptr *minus, ptr *plus)
 		BBPreleaseref(left->batCacheid);
 		throw(MAL, "algebra.bandjoin", "Cannot access descriptor");
 	}
-	CMDbandjoin(&bn, left, right, minus, plus);
+	CMDbandjoin(&bn, left, right, minus, plus, li, hi);
 	BBPreleaseref(left->batCacheid);
 	BBPreleaseref(right->batCacheid);
 	if (bn) {
@@ -2610,6 +2626,14 @@ ALGbandjoin(int *result, int *lid, int *rid, ptr *minus, ptr *plus)
 		return MAL_SUCCEED;
 	}
 	throw(MAL, "algebra.bandjoin", "GDKerror");
+}
+
+str
+ALGbandjoin_default(int *result, int *lid, int *rid, ptr *minus, ptr *plus)
+{
+	bit li = TRUE;
+	bit hi = TRUE;
+	return ALGbandjoin(result, lid, rid, minus, plus, &li, &hi);
 }
 
 str 
