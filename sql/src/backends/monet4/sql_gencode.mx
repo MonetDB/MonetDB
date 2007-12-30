@@ -1772,7 +1772,8 @@ backend_create_func(backend *be, sql_func *f)
 	stream_write(be->out, buf, i, 1);
 
 	stream_write(be->out, "{\n", 2, 1);
-	(void) backend_dumpstmt_((stmt*)s, &nr, be);
+	(void) backend_dumpstmt_(s, &nr, be);
+	stmt_destroy(s);
 	stream_write(be->out, "}\n", 2, 1);
 	cmd = buffer_get_buf(be->outbuf);
 	stream_flush(be->out);

@@ -833,7 +833,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				joinRef;
 
 			@:SQLprelude@
-
+		
 			if (s->op2.stval->type == st_atom &&
 			    s->op3.stval->type == st_atom &&
 			    atom_null(s->op2.stval->op1.aval) &&
@@ -845,6 +845,13 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				@:SQLpostlude@
 				break;
 			}
+			/* if st_join2 try to convert to bandjoin 
+			if (s->op2.stval->type == st_binop || s->op3.stval->type == st_binop) {
+				assert(0);
+				printf("possible bandjoin ?\n");
+			}
+			*/
+
 
 			q = newStmt2(mb, algebraRef, cmd);
 			q = pushArgument(mb, q, l);
@@ -1336,7 +1343,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			@:SQLpostlude@
 		}
 			break;
-		case st_atom:{
+		case st_atom: {
 			atom *a = s->op1.aval;
 			if (atom_null(a)) {
 				q = newStmt1(mb, calcRef, atom_type(a)->type->base.name);
@@ -2025,6 +2032,7 @@ backend_create_func(backend *be, sql_func *f)
 		}
 	}
 	backend_dumpstmt(be, curBlk, s);
+	stmt_destroy(s);
 	pushEndInstruction(curBlk);
 	setLifespan(curBlk);
 	addQueryToCache(c);
