@@ -861,6 +861,7 @@ rel2bin(mvc *c, stmt *s)
 		list_destroy(l2);
 		s->optimized = res->optimized = 2;
 		if (res != s) {
+			assert(s->rewritten==NULL);
 			s->rewritten = stmt_dup(res);
 		}
 		return res;
@@ -903,6 +904,7 @@ rel2bin(mvc *c, stmt *s)
 			list_destroy(l);
 		s->optimized = res->optimized = 2;
 		if (res != s) {
+			assert(s->rewritten==NULL);
 			s->rewritten = stmt_dup(res);
 		}
 		return res;
@@ -913,6 +915,7 @@ rel2bin(mvc *c, stmt *s)
 		stmt *res = push_semijoin(rel2bin(c, s->op1.stval), rel2bin(c, s->op2.stval));
 		s->optimized = res->optimized = 2;
 		if (res != s) {
+			assert(s->rewritten==NULL);
 			s->rewritten = stmt_dup(res);
 		}
 		return res;
@@ -1028,6 +1031,7 @@ rel2bin(mvc *c, stmt *s)
 		res = stmt_list(nl);
 		s->optimized = res->optimized = 2;
 		if (res != s) {
+			assert(s->rewritten==NULL);
 			s->rewritten = stmt_dup(res);
 		}
 		return res;
@@ -1037,6 +1041,7 @@ rel2bin(mvc *c, stmt *s)
 
 		if (s->flag == RDONLY && !mvc_debug_on(c, 8192)){
 			stmt *res = stmt_delta_table_bat( s->op1.cval, stmt_dup(s->h), s->flag);
+			assert(s->rewritten==NULL);
 			s->rewritten = stmt_dup(res);
 			s->optimized = res->optimized = 2;
 			return res;
@@ -1049,6 +1054,7 @@ rel2bin(mvc *c, stmt *s)
 
 		if (s->flag == RDONLY && !mvc_debug_on(c, 8192)){
 			stmt *res = stmt_delta_table_idxbat( s->op1.idxval, s->flag);
+			assert(s->rewritten==NULL);
 			s->rewritten = stmt_dup(res);
 			s->optimized = res->optimized = 2;
 			return res;

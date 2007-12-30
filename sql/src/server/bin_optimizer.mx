@@ -282,6 +282,7 @@ bin_optimizer(mvc *c, stmt *s)
 			s = stmt_join(l, r, cmp_equal); 
 			ns = bin_optimizer(c, s);
 			stmt_destroy(s);
+			assert(os->rewritten==NULL);
 			os->rewritten = stmt_dup(ns);
 			os->optimized = ns->optimized = 3;
 			return ns;
@@ -304,6 +305,7 @@ bin_optimizer(mvc *c, stmt *s)
 			s = stmt_join(l, r, cmp_equal); 
 			ns = bin_optimizer(c, s);
 			stmt_destroy(s);
+			assert(os->rewritten==NULL);
 			os->rewritten = stmt_dup(ns);
 			os->optimized = ns->optimized = 3;
 			return ns;
@@ -316,6 +318,7 @@ bin_optimizer(mvc *c, stmt *s)
 				j->flag+1), j->flag);
 			ns = bin_optimizer(c, s);
 			stmt_destroy(s);
+			assert(os->rewritten==NULL);
 			os->rewritten = stmt_dup(ns);
 			os->optimized = ns->optimized = 3;
 			return ns;
@@ -328,6 +331,7 @@ bin_optimizer(mvc *c, stmt *s)
 				0));
 			ns = bin_optimizer(c, s);
 			stmt_destroy(s);
+			assert(os->rewritten==NULL);
 			os->rewritten = stmt_dup(ns);
 			os->optimized = ns->optimized = 3;
 			return ns;
@@ -340,6 +344,7 @@ bin_optimizer(mvc *c, stmt *s)
 				j->op2.stval->op1.aval->data.val.ival);
 			ns = bin_optimizer(c, s);
 			stmt_destroy(s);
+			assert(os->rewritten==NULL);
 			os->rewritten = stmt_dup(ns);
 			os->optimized = ns->optimized = 3;
 			return ns;
@@ -388,6 +393,7 @@ bin_optimizer(mvc *c, stmt *s)
 		stmt_destroy(os);
 		s->optimized = ns->optimized = 3;
 		if (ns != s) {
+			assert(s->rewritten==NULL);
 			s->rewritten = stmt_dup(ns);
 		}
 		return ns;
@@ -449,6 +455,7 @@ bin_optimizer(mvc *c, stmt *s)
 		stmt_destroy(os);
 		s->optimized = ns->optimized = 3;
 		if (ns != s) {
+			assert(s->rewritten==NULL);
 			s->rewritten = stmt_dup(ns);
 		}
 		return ns;
@@ -593,6 +600,7 @@ bin_optimizer(mvc *c, stmt *s)
 		res = stmt_list(nl);
 		s->optimized = res->optimized = 3;
 		if (res != s) {
+			assert(s->rewritten==NULL);
 			s->rewritten = stmt_dup(res);
 		}
 		return res;

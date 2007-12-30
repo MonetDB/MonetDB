@@ -584,21 +584,30 @@ create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_name,
 				stmt *b = NULL;
 	
 				if (!(b = sequential_block(sql, NULL, restype, body, NULL, is_func))) {
+					sql_destroy_params(sql);
+					list_destroy(l);
 					return NULL;
 				}
 			
 				/* check if we have a return statement */
-				if (is_func && restype && !has_return(b)) 
+				if (is_func && restype && !has_return(b)) {
+					sql_destroy_params(sql);
+					list_destroy(l);
 					return sql_error(sql, 01, "Missing return statement");
-				if (!is_func && !restype && has_return(b)) 
+				}
+				if (!is_func && !restype && has_return(b)) {
+					sql_destroy_params(sql);
+					list_destroy(l);
 					return sql_error(sql, 01, "It is a procedure so it cannot have a return statement!!");
+				}
 	
 				/* in execute mode we instantiate the function */
+				sql_destroy_params(sql);
+
 				if (instantiate) {
+					list_destroy(l);
 					return b;
 				} else {
-					sql_destroy_params(sql);
-
 					f = mvc_create_func(sql, sql->session->schema, fname, l, restype, TRUE, is_aggr, "user", q, is_func);
 					if (b) {
 						id_col_l = stmt_list_dependencies(b, COLUMN_DEPENDENCY);
@@ -614,11 +623,14 @@ create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_name,
 						list_destroy(view_id_l);
 						stmt_destroy(b);
 					}
+					list_destroy(l);
 				}
 			} else {
 				char *fmod = qname_module(ext_name);
 				char *fnme = qname_fname(ext_name);
 				mvc_create_func(sql, sql->session->schema, fname, l, restype, FALSE, is_aggr, fmod, fnme, is_func );
+				sql_destroy_params(sql);
+				list_destroy(l);
 			}
 		}
 	}

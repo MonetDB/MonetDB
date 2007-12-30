@@ -1704,6 +1704,7 @@ optimize(mvc *c, stmt *s)
 		res = stmt_reljoin2(l1, l2);
 		s->optimized = res->optimized = 1;
 		if (res != s) {
+			assert(s->rewritten==NULL);
 			s->rewritten = stmt_dup(res);
 		}
 		return res;
@@ -1721,6 +1722,7 @@ optimize(mvc *c, stmt *s)
 		res = stmt_relselect(l);
 		s->optimized = res->optimized = 1;
 		if (res != s) {
+			assert(s->rewritten==NULL);
 			s->rewritten = stmt_dup(res);
 		}
 		return res;
@@ -1826,6 +1828,7 @@ optimize(mvc *c, stmt *s)
 		res = stmt_list(nl);
 		s->optimized = res->optimized = 1;
 		if (res != s) {
+			assert(s->rewritten==NULL);
 			s->rewritten = stmt_dup(res);
 		}
 		return res;
@@ -1840,6 +1843,7 @@ optimize(mvc *c, stmt *s)
 
 		s->optimized = np->optimized = 1;
 		if (np != s) {
+			assert(s->rewritten==NULL);
 			s->rewritten = stmt_dup(np);
 		}
 		return np;
@@ -1859,6 +1863,7 @@ optimize(mvc *c, stmt *s)
 			stmt_destroy(f);
 			s->optimized = np->optimized = 1;
 			if (np != s) {
+				assert(s->rewritten==NULL);
 				s->rewritten = stmt_dup(np);
 			}
 			return np;
@@ -1873,6 +1878,7 @@ optimize(mvc *c, stmt *s)
 			stmt_destroy(pivots);
 			s->optimized = np->optimized = 1;
 			if (np != s) {
+				assert(s->rewritten==NULL);
 				s->rewritten = stmt_dup(np);
 			}
 			return np;
