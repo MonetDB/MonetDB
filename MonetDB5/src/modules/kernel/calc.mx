@@ -764,7 +764,8 @@ CALCswitchbit(MalBlkPtr mb, MalStkPtr stk, InstrPtr P)
 		throw(MAL, "ifthenelse", "types should match\n");
 
 	if (b == bit_nil) {
-		p = ATOMnilptr(t1);
+		*(ptr**)retval = p = ATOMnilptr(t1);
+		return MAL_SUCCEED;
 	} else if (b) {
 		p = getArgReference(stk,P,2);
 	} else {
@@ -1293,7 +1294,7 @@ str CALC@12str(str *ret, @1 *val){
 	if( *val == @1_nil)
 		*ret= GDKstrdup(str_nil);
 	else {
-		if(*ret) l=strlen(*ret);
+		*ret = NULL;
 		(void) @1ToStr(ret,&l,val);
 	}
 	return MAL_SUCCEED;
