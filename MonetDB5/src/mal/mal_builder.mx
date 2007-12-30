@@ -260,15 +260,11 @@ pushStr(MalBlkPtr mb, InstrPtr q, const char *Val)
 {
 	int _t;
 	ValRecord cst;
-	char *val = (char*)Val;
 
 	cst.vtype= TYPE_str;
-	cst.val.sval= val;
+	cst.val.sval= GDKstrdup(Val);
 	cst.len= strlen(cst.val.sval);
 	_t = defConstant(mb,TYPE_str,&cst);
-
-	if (getConstant(mb,_t).val.sval == val) 
-		getConstant(mb,_t).val.sval = GDKstrdup(val);
 	return pushArgument(mb, q, _t);
 }
 
@@ -294,14 +290,21 @@ pushNil(MalBlkPtr mb, InstrPtr q, int tpe)
 	int _t;
 	ValRecord cst;
 
-	if( !isaBatType(tpe) ){
-		cst.vtype=TYPE_void;
-		cst.val.oval= oid_nil;
-		convertConstant(tpe, &cst);
+	if( !isaBatType(tpe) && tpe != TYPE_bat ) {
+		if (!tpe) {
+			cst.vtype=TYPE_void;
+			cst.val.oval= oid_nil;
+		} else if (ATOMextern(tpe)) {
+			ptr p = ATOMnil(tpe);
+			VALset(&cst, tpe, p);
+		} else {
+			ptr p = ATOMnilptr(tpe);
+			VALset(&cst, tpe, p);
+		}
 		_t = defConstant(mb,tpe,&cst);
-	} else{
-		cst.vtype=TYPE_bat;
-		cst.val.bval= 0;
+	} else {
+		cst.vtype = TYPE_bat;
+		cst.val.bval = 0;
 		_t = defConstant(mb,TYPE_bat,&cst);
 	}
 	return pushArgument(mb, q, _t);

@@ -423,8 +423,8 @@ int cstToken(Client cntxt, ValPtr cst)
 	case '"':
 		cst->vtype= TYPE_str;
 		i= stringLength(cntxt);
-		cst->val.sval =strCopy(cntxt, i);
-		cst->len= strlen(cst->val.sval);
+		cst->val.sval = strCopy(cntxt, i);
+		cst->len = strlen(cst->val.sval);
 		return i;
 	case '\'':
 		return charCst(cntxt,cst);
@@ -1527,6 +1527,7 @@ This code is used in both positions of the expression
 
 		cstidx = fndConstant(curBlk,&cst);
 		if( cstidx >= 0){
+			int free = 1;
 			advance(cntxt,i);
 			if( currChar(cntxt)==':') {
 				csttpe = typeElm(cntxt,getVarType(curBlk,cstidx));
@@ -1536,12 +1537,16 @@ This code is used in both positions of the expression
 					cstidx = defConstant(curBlk,csttpe,&cst);
 					setPolymorphic(curInstr,csttpe, FALSE);
 					freezeVarType(curBlk,cstidx);
+					free = 0;
 				}
-			} else
-			if( cst.vtype != getVarType(curBlk,cstidx)){
-					cstidx = defConstant(curBlk,cst.vtype,&cst);
-					setPolymorphic(curInstr,cst.vtype, FALSE);
+			} else if( cst.vtype != getVarType(curBlk,cstidx)){
+				cstidx = defConstant(curBlk,cst.vtype,&cst);
+				setPolymorphic(curInstr,cst.vtype, FALSE);
+				free = 0;
 			} 
+			/* protect against leaks coming from constant reuse */
+			if (free && ATOMextern(cst.vtype) && cst.val.pval)
+				VALclear(&cst);
 			curInstr = pushArgument(curBlk,curInstr,cstidx);
 			@1;
 		} else { 

@@ -298,10 +298,10 @@ moment of removal. This situation can not easily
 checked at runtime, without tremendous overhead.
 @c
 void deleteSymbol(Module scope, Symbol prg){
-		InstrPtr sig;
-		int t;
+	InstrPtr sig;
+	int t;
 
-		sig = getSignature(prg);
+	sig = getSignature(prg);
 	if( getModuleId(sig) && getModuleId(sig)!= scope->name ){
 		/* move the definition to the proper place */
 		Module c= findModule(scope,getModuleId(sig));
@@ -310,17 +310,17 @@ void deleteSymbol(Module scope, Symbol prg){
 		} else scope = c;
 	}
 	t = getSubScope(getFunctionId(sig));
-	if( scope->subscope[t] == prg){
+	if (scope->subscope[t] == prg) {
 		scope->subscope[t] = scope->subscope[t]->peer;
 		freeSymbol(prg);
 	} else {
 		Symbol nxt = scope->subscope[t];
-		while( nxt->peer != NULL){
-			if( nxt->peer == prg){
-			    nxt->peer = prg->peer;
-			    nxt->skip = prg->peer;
-			    freeSymbol(prg);
-			    return;
+		while (nxt->peer != NULL) {
+			if (nxt->peer == prg) {
+				nxt->peer = prg->peer;
+				nxt->skip = prg->peer;
+				freeSymbol(prg);
+				return;
 			}
 			nxt = nxt->peer;
 		}

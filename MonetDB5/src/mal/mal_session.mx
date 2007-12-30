@@ -383,7 +383,7 @@ MSresetInstructions(MalBlkPtr mb, int start)
 	int i;
 	InstrPtr p;
 
-	for (i = start; i < mb->stop; i++) {
+	for (i = start; i < mb->ssize; i++) {
 		p = getInstrPtr(mb, i);
 		if (p)
 			freeInstruction(p);
@@ -404,23 +404,23 @@ MSresetVariables(MalBlkPtr mb, MalStkPtr glb, int start)
 {
 	int i, j;
 
-	for (i = j = start; i < mb->vtop;) {
+	for (i = j = start; i < mb->vtop; i++) {
 		if (isTmpVar(mb, i) || unknownType(getVarType(mb,i)) ) {
-			clearVariable(mb, i);
-
 			if (glb) {
-				garbageElement(&glb->stk[i]);
+				if (!isConstant(mb,i))
+					garbageElement(&glb->stk[i]);
 				/* clean stack entry */
 				glb->stk[i].vtype = TYPE_int;
 				glb->stk[i].val.ival = 0;
 				glb->stk[i].len = 0;
 			}
-			i++;
+			clearVariable(mb, i);
 		} else {
+			assert(!mb->var[i]->value.vtype || mb->var[i]->isaconstant );
 			if (i != j) {
-				VarPtr v= getVar(mb,j);
-				mb->var[j]= mb->var[i];
-				getVar(mb,i)= v;
+				VarPtr v = getVar(mb,j);
+				getVar(mb,j) = getVar(mb,i);
+				getVar(mb,i) = v;
 				if (glb) {
 					/* save stack state */
 					glb->stk[j] = glb->stk[i];
@@ -430,7 +430,6 @@ MSresetVariables(MalBlkPtr mb, MalStkPtr glb, int start)
 					glb->stk[i].len = 0;
 				}
 			}
-			i++;
 			j++;
 		}
 	}

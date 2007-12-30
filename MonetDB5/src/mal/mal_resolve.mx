@@ -460,13 +460,13 @@ This piece of code may be shared by the separate binder
 Since we now know the storage type of the receiving variable, we can
 set the garbagge collection flag.
 @= prepostProcess
-	if( findGDKtype(@1) == TYPE_bat){
+	if (findGDKtype(@1) == TYPE_bat){
 		setVarCleanup(mb,getArg(p,@2)) = TRUE;
 		getInstrPtr(@3,0)->gc |= GARBAGECONTROL;
 		p->gc|= QUICKCLEANUP;
-	}
-	else if( !isPolyType(@1)  && @1< TYPE_any && 
-			@1>=0 && ATOMstorage(@1)== TYPE_str){
+	} else if (!isPolyType(@1)  && @1< TYPE_any && 
+		@1>=0 && ATOMstorage(@1)== TYPE_str &&
+		!isConstant(mb,getArg(p,@2))){
 		getInstrPtr(@3,0)->gc |= GARBAGECONTROL;
 		setVarCleanup(mb,getArg(p,@2)) = TRUE;
 		p->gc|= QUICKCLEANUP;

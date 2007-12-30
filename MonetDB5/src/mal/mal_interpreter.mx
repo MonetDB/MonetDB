@@ -194,15 +194,18 @@ updateBigFoot(Client cntxt, int bid, int add)
 }
 @-
 Copy the constant values onto the stack frame
+Also we cannot overwrite values on the stack as this maybe part of a 
+sequence of factory calls.
 @= initStack
-	for(i= @1; i< mb->vtop; i++)
-	if( isConstant(mb,i) > 0 ){
+	for(i= @1; i< mb->vtop; i++) {
 		lhs = &stk->stk[i];
-		rhs = &getConstant(mb,i);
-		VALcopy(lhs,rhs);
-	} else {
-		lhs = &stk->stk[i];
-		lhs->vtype = getVarGDKType(mb,i);
+		if( isConstant(mb,i) > 0 ){
+			assert(mb->var[i]->cleanup == 0);
+			rhs = &getConstant(mb,i);
+			*lhs = *rhs;
+		} else {
+			lhs->vtype = getVarGDKType(mb,i);
+		}
 	}
 @c
 
@@ -319,8 +322,8 @@ we should first remove garbage.
 	ret = runMALsequence(cntxt, mb, startpc,  0, stk, env, pcicaller);
 
 	/* pass the new debug mode to the caller */
-	if(stk->cmd  && env && stk->cmd!='f') env->cmd = stk->cmd; 
-	if( !stk->keepAlive && garbageControl(getInstrPtr(mb,0)) )
+	if (stk->cmd  && env && stk->cmd!='f') env->cmd = stk->cmd; 
+	if (!stk->keepAlive && garbageControl(getInstrPtr(mb,0)) )
 		garbageCollector(mb,stk, env != stk);
 	@:endProfile@
 	return ret;
@@ -346,8 +349,8 @@ str reenterMAL(Client cntxt, MalBlkPtr mb, int startpc, int stoppc,
 	ret = runMALsequence(cntxt, mb, startpc,  stoppc, stk, env, pcicaller);
 
 	/* pass the new debug mode to the caller */
-	if(env && stk->cmd!='f') env->cmd = stk->cmd;
-	if( !stk->keepAlive && garbageControl(getInstrPtr(mb,0)) )
+	if (env && stk->cmd!='f') env->cmd = stk->cmd;
+	if (!stk->keepAlive && garbageControl(getInstrPtr(mb,0)) )
 		garbageCollector(mb,stk,env!=stk);
 	return ret;
 }
@@ -999,6 +1002,7 @@ the bind(namespace, batname, mode) operation. [todo]
 			} else if( stk->stk[getArg(pci,i)].vtype == TYPE_str) {
 				backup[i]= stk->stk[getArg(pci,i)].len;
 				sbackup[i]= stk->stk[getArg(pci,i)].val.sval;
+				backup[i] += (sbackup[i]!=NULL);
 			} 
 		}
 	} 
@@ -1472,11 +1476,11 @@ before a function call is made.
 void garbageElement(ValPtr v)
 {   
 	if( v->vtype == TYPE_str) {
-		if(v->len && v->val.pval) {
+		if(v->val.pval) {
 			GDKfree(v->val.pval);
-			v->val.pval= NULL;
+			v->val.pval = NULL;
 		}
-		v->len= 0;
+		v->len = 0;
 		return;
 	}
 	if( v->vtype== TYPE_bat ) {
@@ -1520,7 +1524,8 @@ type should be saved for variables that recide on a global
 stack frame.
 @c
 void garbageCollector(MalBlkPtr mb, MalStkPtr stk, int flag)
-{   int k;
+{   
+	int k;
 	ValPtr v;
 
 #ifdef STACKTRACE
@@ -1528,8 +1533,8 @@ void garbageCollector(MalBlkPtr mb, MalStkPtr stk, int flag)
 	printStack(GDKout,mb,stk,0);
 #endif
 	for(k=0;k<mb->vtop; k++) {
-		if(isVarGarbage(mb,k) && (flag || isTmpVar(mb,k) )){
-			garbageElement(v= &stk->stk[k]);
+		if (isVarGarbage(mb,k) && (flag || isTmpVar(mb,k) )){
+			garbageElement(v = &stk->stk[k]);
 			v->vtype= TYPE_int;
 			v->val.ival= int_nil;
 		}

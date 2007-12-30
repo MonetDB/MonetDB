@@ -126,6 +126,14 @@ It should be reset before continuing.
 	Module oldnspace = c->nspace;
 	Symbol oldprg = c->curprg;
 	MalStkPtr oldglb = c->glb;
+@= restoreState3
+	bstream *oldfdin = c->fdin;
+	int oldmode = c->mode;
+	int oldblkmode = c->blkmode;
+	str oldsrcFile = c->srcFile;
+	Module oldnspace = c->nspace;
+	Symbol oldprg = c->curprg;
+	MalStkPtr oldglb = c->glb;
 
 @= restoreClient1
 	if (c->fdin) {
@@ -150,6 +158,13 @@ It should be reset before continuing.
 @= restoreClient
 	@:restoreClient1()@
 	@:restoreClient2()@
+@= restoreClient3
+	if (c->fdin) 
+		MCpopClientInput(c);
+	assert(c->fdin == oldfdin); 
+	c->mode = oldmode;
+	c->blkmode = oldblkmode;
+	c->srcFile = oldsrcFile;
 @= runPhase
 	if(msg== MAL_SUCCEED && c->phase[@1] && (msg= (str) (*c->phase[@1])(c)) ){
 		/* error occurred  and ignored */
@@ -266,19 +281,13 @@ mal_export str compileString(Symbol *fcn, Client c, str s);
 str
 compileString(Symbol *fcn, Client c, str s)
 {
-	@:restoreState@
+	@:restoreState3@
 	int len = strlen(s);
 	buffer *b;
 	str msg = MAL_SUCCEED;
 	str qry;
 	str old = s;
 
-	c->yycur = 0;
-	c->prompt = GDKstrdup("");	/* do not produce visible prompts */
-	c->promptlength = strlen(c->prompt);
-	c->listing = 0;
-	c->bak = NULL;
-	c->fdin = NULL;
 	c->srcFile= NULL;
 
 	s = mal_cmdline(s, &len);
@@ -289,23 +298,22 @@ compileString(Symbol *fcn, Client c, str s)
 	buffer_init(b, qry, len);
 	MCpushClientInput(c, bstream_create(buffer_rastream(b, "compileString"), b->len), 0, "");
 	MSinitClientPrg(c,"user", "main");	/* create new context */
-	/* runPhase(MAL_SCENARIO_READER,restoreClient1) */
 	if(msg== MAL_SUCCEED && c->phase[MAL_SCENARIO_READER] && 
 		(msg= (str) (*c->phase[MAL_SCENARIO_READER])(c)) ){
-		@:restoreClient1()@
+		@:restoreClient3()@
 		return msg;
 	}
-	/* runPhase(MAL_SCENARIO_PARSER,restoreClient1) */
 	if(msg== MAL_SUCCEED && c->phase[MAL_SCENARIO_PARSER] && 
 		(msg= (str) (*c->phase[MAL_SCENARIO_PARSER])(c)) ){
 		/* error occurred  and ignored */
 		/* stream_printf(GDKout,"%s",msg);*/
-		@:restoreClient1()@
+		@:restoreClient3()@
 		return msg;
 	}
 	*fcn= c->curprg;
 	/* restore IO channel */
-	@:restoreClient()@
+	@:restoreClient3()@
+	@:restoreClient2()@
 	GDKfree(qry);
 	GDKfree(b);
 	return MAL_SUCCEED;
@@ -317,18 +325,12 @@ mal_export void callString(Client c, str s, int listing);
 void
 callString(Client c, str s, int listing)
 {
-	@:restoreState@
+	@:restoreState3@
 	int len = strlen(s);
 	buffer *b;
 	str msg = MAL_SUCCEED,qry;
 	str old = s;
 
-	c->yycur = 0;
-	c->prompt = GDKstrdup("");	/* do not produce visible prompts */
-	c->promptlength = strlen(c->prompt);
-	c->listing = listing;
-	c->bak = NULL;
-	c->fdin = NULL;
 	c->srcFile= NULL;
 
 	s = mal_cmdline(s, &len);
@@ -339,10 +341,10 @@ callString(Client c, str s, int listing)
 	buffer_init(b, qry, len);
 	MCpushClientInput(c, bstream_create(buffer_rastream(b, "callString"), b->len), listing, "");
 	MSinitClientPrg(c,"user", "main");	/* create new context */
-	@:runPhase(MAL_SCENARIO_READER,restoreClient1)@
-	@:runPhase(MAL_SCENARIO_PARSER,restoreClient1)@
+	@:runPhase(MAL_SCENARIO_READER,restoreClient3)@
+	@:runPhase(MAL_SCENARIO_PARSER,restoreClient3)@
 	/* restore IO channel */
-	@:restoreClient1()@
+	@:restoreClient3()@
 	@:runPhase(MAL_SCENARIO_OPTIMIZE,restoreClient2)@
 	@:runPhase(MAL_SCENARIO_SCHEDULER,restoreClient2)@
 	@:runPhase(MAL_SCENARIO_ENGINE,restoreClient2)@

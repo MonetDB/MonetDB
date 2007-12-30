@@ -683,15 +683,15 @@ freeMalBlk(MalBlkPtr mb)
 	int i;
 
 	for (i = 0; i < mb->ssize; i++) 
-		if( mb->stmt[i]){
+		if (mb->stmt[i]){
 			freeInstruction(mb->stmt[i]);
 			mb->stmt[i] = NULL;
 		}
 	mb->stop = 0;
 	for (i = 0; i < mb->vsize; i++)
-		if( mb->var[i]){
+		if (mb->var[i]){
 			freeVariable(mb, i);
-			mb->var[i]=0;
+			mb->var[i] = 0;
 		}
 	mb->vtop = 0;
 	GDKfree(mb->stmt);
@@ -734,12 +734,12 @@ copyMalBlk(MalBlkPtr old)
 	mb->history = NULL;
 	mb->keephistory= old->keephistory;
 	mb->marker = 0;
-	mb->var = (VarPtr *) GDKmalloc(sizeof(VarPtr) * old->vsize);
+	mb->var = (VarPtr *) GDKzalloc(sizeof(VarPtr) * old->vsize);
 
 	if (mb->var == NULL)
 		GDKfatal("newMalBlk:could not get variable storage\n");
 	mb->vsize = old->vsize;
-	memcpy((char *) mb->var, old->var, sizeof(VarPtr) * old->vsize);
+	memcpy((char *) mb->var, old->var, sizeof(VarPtr) * old->vtop);
 
 	mb->vtop = 0;
 	for (i = 0; i < old->vtop; i++) {
@@ -845,7 +845,7 @@ trimexpand(MalBlkPtr mb, int varsize, int stmtsize)
 {
 	VarRecord **v;
 	InstrPtr *stmt;
-	int len;
+	int len,i;
 
 	assert(varsize > 0 && stmtsize > 0);
 	len = sizeof(ValPtr) * (mb->vtop + varsize);
@@ -855,6 +855,9 @@ trimexpand(MalBlkPtr mb, int varsize, int stmtsize)
 
 	memcpy((str) v, (str) mb->var, sizeof(ValPtr) * mb->vtop);
 
+	for (i=mb->vtop; i< mb->vsize; i++) 
+		if (mb->var[i])
+			freeVariable(mb,i);
 	if (mb->var)
 		GDKfree(mb->var);
 	mb->var = v;
@@ -867,6 +870,10 @@ trimexpand(MalBlkPtr mb, int varsize, int stmtsize)
 	if (stmt == NULL)
 		GDKfatal("newMalBlk:could not get instruction storage\n");
 	memcpy((str) stmt, (str) mb->stmt, sizeof(InstrPtr) * mb->stop);
+	for (i=mb->stop; i< mb->ssize; i++) {
+		if (mb->stmt[i])
+			freeInstruction(mb->stmt[i]);
+	}
 	GDKfree(mb->stmt);
 	mb->stmt = stmt;
 
@@ -889,8 +896,8 @@ void
 trimMalBlk(MalBlkPtr mb)
 {
 	(void) mb;		/* fool the compiler */
-	/* printf("safe %d %d\n",mb->vtop, (mb->vsize-mb->vtop)*sizeof(VarPtr));
-	   trimexpand(mb,0); */
+	/* printf("safe %d %ld\n", mb->vtop, (mb->vsize-mb->vtop)*sizeof(VarPtr));
+	   trimexpand(mb, mb->vsize, mb->ssize); */
 }
 
 @-
@@ -926,8 +933,10 @@ newInstruction(MalBlkPtr mb, int kind)
 	if (mb && mb->stop <mb->ssize) {
 		p = mb->stmt[mb->stop];
 
-		if (p && p->maxarg < MAXARG)
+		if (p && p->maxarg < MAXARG) {
+			assert(0);
 			p = NULL;
+		}
 		mb->stmt[mb->stop] = NULL;
 	}
 	if (p == NULL) {
@@ -1042,9 +1051,10 @@ removeInstruction(MalBlkPtr mb, InstrPtr p)
 		mb->stmt[i] = mb->stmt[i + 1];
 
 	mb->stop--;
-	mb->stmt[i] = p;
+	assert(i==mb->stop);
 
-	/* freeInstruction(p); */
+	/* move statement after stop */
+	mb->stmt[i] = p;
 }
 
 void
@@ -1807,34 +1817,42 @@ cpyConstant(MalBlkPtr mb, VarPtr vr)
 }
 
 int
-defConstant(MalBlkPtr mb, int type, ValPtr cst)
+defConstant(MalBlkPtr mb, int type, ValPtr cst )
 {
 	int i, k;
 	ValPtr vr;
 
 	if (cst->vtype != type && !isaBatType(type) && !isPolyType(type)){
-		int otype= cst->vtype;
+		ValRecord vr = *cst;
+		int otype = cst->vtype;
 		i= convertConstant(type, cst);
-		if( i ) {
+		if (i) {
 			str ft,tt;
+
+			/* free old value */
 			ft= getTypeName(otype);
 			tt= getTypeName(type);
 			showException(SYNTAX, "defConstant", "constant coercion error from %s to %s", ft,tt);
 			GDKfree(ft);
 			GDKfree(tt);
 			mb->errors++;
-		} else
+		} else {
 			assert(cst->vtype== type);
+		}
+		VALclear(&vr);
 	}
 	k= fndConstant(mb,cst);
-	if( k >= 0 )
+	if( k >= 0 ) {
+		/* protect against leaks coming from constant reuse */
+		if (ATOMextern(type) && cst->val.pval)
+			VALclear(cst);
 		return k;
+	}
 	k = newTmpVariable(mb, type);
 	isConstant(mb, k) = 1;
 	setFixed(mb, k);
 	vr = &getConstant(mb, k);
 	*vr = *cst;
-	/*memcpy((char *) vr, cst, sizeof(ValRecord));*/
 	return k;
 }
 
