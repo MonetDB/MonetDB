@@ -508,7 +508,7 @@ typedef int socklen_t;
 
 /* Define as const if the declaration of iconv() needs const for 2nd argument.
    */
-#define ICONV_CONST
+#define ICONV_CONST const
 
 /* Format to print 64 bit signed integers. */
 #define LLFMT "%I64d"
