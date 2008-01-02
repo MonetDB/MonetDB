@@ -2258,6 +2258,7 @@ struct icstream {
 	stream *s;
 	char buffer[BUFSIZ];
 	size_t buflen;
+	int eof;
 };
 
 static ssize_t
@@ -2266,11 +2267,51 @@ ic_write(stream *s, const void *buf, size_t elmsize, size_t cnt)
 	struct icstream *ic = (struct icstream *) s->stream_data.p;
 	ICONV_CONST char *inbuf = (char *) buf;
 	size_t inbytesleft = elmsize * cnt;
-	char *outbuf = ic->buffer;
-	size_t outbytesleft = sizeof(ic->buffer);
 
+	/* if unconverted data from a previous call remains, add it to
+	   the start of the new data, using temporary space */
+	if (ic->buflen > 0) {
+		char *s = alloca(ic->buflen + inbytesleft);
+
+		memcpy(s, ic->buffer, ic->buflen);
+		memcpy(s + ic->buflen, buf, inbytesleft);
+		buf = s;
+		inbytesleft += ic->buflen;
+		ic->buflen = 0;
+	}
 	while (inbytesleft > 0) {
-		iconv(ic->cd, &inbuf, &inbytesleft, &outbuf, &outbytesleft);
+		char *outbuf = ic->buffer;
+		size_t outbytesleft = sizeof(ic->buffer);
+
+		if (iconv(ic->cd, &inbuf, &inbytesleft, &outbuf, &outbytesleft) == (size_t) -1) {
+			switch (errno) {
+			case EILSEQ:
+				/* invalid multibyte sequence encountered */
+				s->errnr = WRITE_ERROR;
+				return -1;
+			case EINVAL:
+				/* incomplete multibyte sequence encountered */
+				/* flush what has been converted */
+				if (outbytesleft < sizeof(ic->buffer))
+					stream_write(ic->s, ic->buffer, 1, sizeof(ic->buffer) - outbytesleft);
+				/* remember what hasn't been converted */
+				if (inbytesleft > sizeof(ic->buffer)) {
+					/* ridiculously long multibyte sequence, so return error */
+					s->errnr = WRITE_ERROR;
+					return -1;
+				}
+				memcpy(ic->buffer, inbuf, inbytesleft);
+				ic->buflen = inbytesleft;
+				return cnt;
+			case E2BIG:
+				/* not enough space in output buffer */
+				break;
+			default:
+				/* cannot happen (according to manual) */
+				s->errnr = WRITE_ERROR;
+				return -1;
+			}
+		}
 		stream_write(ic->s, ic->buffer, 1, sizeof(ic->buffer) - outbytesleft);
 	}
 	return cnt;
@@ -2285,28 +2326,72 @@ ic_read(stream *s, void *buf, size_t elmsize, size_t cnt)
 	char *outbuf = (char *) buf;
 	size_t outbytesleft = elmsize * cnt;
 
-	errno = 0;
-	while (outbytesleft > 0 && errno != E2BIG) {
-		stream_read(ic->s, ic->buffer, 1, 1);
-		inbytesleft++;
-		iconv(ic->cd, &inbuf, &inbytesleft, &outbuf, &outbytesleft);
-		if (inbytesleft == 0)
+	while (outbytesleft > 0 && !ic->eof) {
+		if (ic->buflen == sizeof(ic->buffer)) {
+			/* ridiculously long multibyte sequence, return error */
+			s->errnr = READ_ERROR;
+			return -1;
+		}
+
+		switch (stream_read(ic->s, ic->buffer + ic->buflen, 1, 1)) {
+		case 1:
+			/* expected: read one byte */
+			ic->buflen++;
+			inbytesleft++;
+			break;
+		case 0:
+			/* end of file */
+			ic->eof = 1;
+			if (ic->buflen > 0) {
+				/* incomplete input */
+				s->errnr = READ_ERROR;
+				return -1;
+			}
+			iconv(ic->cd, NULL, NULL, &outbuf, &outbytesleft);
+			goto exit_func;
+		default:
+			/* error */
+			s->errnr = READ_ERROR;
+			return -1;
+		}
+		if (iconv(ic->cd, &inbuf, &inbytesleft, &outbuf, &outbytesleft) == (size_t) -1) {
+			switch (errno) {
+			case EILSEQ:
+				/* invalid multibyte sequence encountered */
+				s->errnr = READ_ERROR;
+				return -1;
+			case EINVAL:
+				/* incomplete multibyte sequence encountered */
+				break;
+			case E2BIG:
+				/* not enough space in output buffer,
+				   return what we have, saving what's in
+				   the buffer */
+				goto exit_func;
+			default:
+				/* cannot happen (according to manual) */
+				s->errnr = READ_ERROR;
+				return -1;
+			}
+		}
+		if (inbytesleft == 0) {
+			/* converted complete buffer */
 			inbuf = ic->buffer;
+			ic->buflen = 0;
+		}
 	}
+exit_func:
+	if (inbuf > ic->buffer)
+		memmove(ic->buffer, inbuf, inbytesleft);
 	ic->buflen = inbytesleft;
+	if (outbytesleft == elmsize * cnt) {
+		/* if we're returning data, we must pass on EOF on the
+		   next call (i.e. keep ic->eof set), otherwise we
+		   must clear it so that the next call will cause the
+		   underlying stream to be read again */
+		ic->eof = 0;
+	}
 	return (elmsize * cnt - outbytesleft) / elmsize;
-}
-
-static void
-ic_close(stream *s)
-{
-	struct icstream *ic = (struct icstream *) s->stream_data.p;
-
-	if (ic == NULL)
-		return;
-	stream_close(ic->s);
-	free(s->stream_data.p);
-	s->stream_data.p = NULL;
 }
 
 static int
@@ -2316,10 +2401,29 @@ ic_flush(stream *s)
 	char *outbuf = ic->buffer;
 	size_t outbytesleft = sizeof(ic->buffer);
 
+	/* if unconverted data from a previous call remains, it was an
+	   incomplete multibyte sequence, so an error */
+	if (ic->buflen > 0) {
+		s->errnr = WRITE_ERROR;
+		return 1;
+	}
 	iconv(ic->cd, NULL, NULL, &outbuf, &outbytesleft);
-	stream_write(ic->s, ic->buffer, 1, sizeof(ic->buffer) - outbytesleft);
-	stream_flush(ic->s);
-	return 1;
+	if (outbytesleft < sizeof(ic->buffer))
+		stream_write(ic->s, ic->buffer, 1, sizeof(ic->buffer) - outbytesleft);
+	return stream_flush(ic->s);
+}
+
+static void
+ic_close(stream *s)
+{
+	struct icstream *ic = (struct icstream *) s->stream_data.p;
+
+	if (ic == NULL)
+		return;
+	ic_flush(s);
+	stream_close(ic->s);
+	free(s->stream_data.p);
+	s->stream_data.p = NULL;
 }
 
 static stream *
@@ -2339,6 +2443,7 @@ ic_open(iconv_t cd, stream *ss, const char *name)
 	ic->cd = cd;
 	ic->s = ss;
 	ic->buflen = 0;
+	ic->eof = 0;
 	return s;
 }
 	
