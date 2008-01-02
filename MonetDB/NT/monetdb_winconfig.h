@@ -497,6 +497,12 @@ typedef int socklen_t;
 /* Define to 1 if you have the <unistd.h> header file. */
 /* #undef HAVE_UNISTD_H */
 
+/* Define to 1 if you have the `vsnprintf' function. */
+#define HAVE_VSNPRINTF 1
+#ifndef vsnprintf
+#define vsnprintf _vsnprintf
+#endif
+
 /* Define to 1 if you have the <winsock.h> header file. */
 #define HAVE_WINSOCK_H 1
 
