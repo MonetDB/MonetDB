@@ -207,7 +207,7 @@ Double bind operations should also be eliminated.
 	ns[0] = getInstrPtr(mb, 0);	/* its signature */
 	ns[0]->token = FACTORYsymbol;
  	setVarType(mb, getArg(ns[0],0), TYPE_bit);
-	freezeVarType(mb,getArg(ns[0],0));
+	setVarUDFtype(mb,getArg(ns[0],0));
 	for (i = 0; i < mb->stop; i++) {
 		p = getInstrPtr(mb, i);
 		if ( (getFunctionId(p) == bindRef || 
@@ -316,8 +316,8 @@ SQLgetStatistics(mvc *m, MalBlkPtr mb)
 		    (f == bindRef || f == bindidxRef || f == binddbatRef ) ){
 			ValRecord vr;
 			InstrPtr q;
-			char *sname = getConstant(mb, getArg(p,1)).val.sval;
-			char *tname = getConstant(mb, getArg(p,2)).val.sval;
+			char *sname = getVarConstant(mb, getArg(p,1)).val.sval;
+			char *tname = getVarConstant(mb, getArg(p,2)).val.sval;
 			char *cname = NULL;
 			int not_null = 0;
 			lng rows = 1;
@@ -327,10 +327,10 @@ SQLgetStatistics(mvc *m, MalBlkPtr mb)
 			sql_bpm *bpm = NULL;
 
 			if (f == binddbatRef) {
-				mode = getConstant(mb, getArg(p,3)).val.ival;
+				mode = getVarConstant(mb, getArg(p,3)).val.ival;
 			} else {
-				cname = getConstant(mb, getArg(p,3)).val.sval;
-				mode = getConstant(mb, getArg(p,4)).val.ival;
+				cname = getVarConstant(mb, getArg(p,3)).val.sval;
+				mode = getVarConstant(mb, getArg(p,4)).val.ival;
 			}
 
 			if( f == bindidxRef) {

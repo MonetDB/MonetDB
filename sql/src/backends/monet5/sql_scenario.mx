@@ -500,7 +500,7 @@ freeVariables(MalBlkPtr mb, MalStkPtr glb, int start)
 
 	for (i = start; i < mb->vtop;) {
 		if (glb) {
-			if (isVarGarbage(mb,i))
+			if (isVarCleanup(mb,i))
 				garbageElement(&glb->stk[i]);
 			/* clean stack entry */
 			glb->stk[i].vtype = TYPE_int;

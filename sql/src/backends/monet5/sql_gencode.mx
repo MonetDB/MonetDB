@@ -273,7 +273,7 @@ multiplex2(MalBlkPtr mb, char *mod, char *name /* should be eaten */, int o1, in
 
 	q = newStmt(mb, "mal","multiplex");
 	setVarType(mb,getArg(q,0), newBatType(TYPE_oid,rtype));
-	freezeVarType(mb,getArg(q,0));
+	setVarUDFtype(mb,getArg(q,0));
 	q = pushStr(mb, q, convertMultiplexMod(mod,name));
 	q = pushStr(mb, q, convertMultiplexFcn(name));
 	q = pushArgument(mb, q, o1);
@@ -304,7 +304,7 @@ reconnect(MalBlkPtr mb, list *l)
 	
 	/*create the mserver reconnect*/
 	q = newStmt1(mb,mserverRef,reconnectRef);
-	getVar(mb,getArg(q,0))->isudftype= 1;
+	setVarUDFtype(mb,getArg(q,0));
 	setVarType(mb, getArg(q, 0), TYPE_int);
 	
 	while (n) {
@@ -337,7 +337,7 @@ disconnect(MalBlkPtr mb, list *l)
 	
 	/*create the mserver disconnect*/
 	q = newStmt1(mb,mserverRef,disconnectRef);
-	getVar(mb,getArg(q,0))->isudftype= 1;
+	setVarUDFtype(mb,getArg(q,0));
 	setVarType(mb, getArg(q, 0), TYPE_int);
 	
 	if (list_length(l) == 2) {
@@ -387,7 +387,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 					q = newStmt1(mb, sqlRef, "getVariable");
 					q = pushStr(mb, q, s->op1.sval);
 					setVarType(mb, getArg(q, 0), tt);
-					freezeVarType(mb,getArg(q,0));
+					setVarUDFtype(mb,getArg(q,0));
 				} else if ((s->flag & VAR_DECLARE) == 0) {
 					char *buf;
 
@@ -424,7 +424,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 
 			q = newStmt1(mb, batRef, "new");
 			setVarType(mb, getArg(q, 0), newBatType(ht, tt));
-			freezeVarType(mb,getArg(q,0));
+			setVarUDFtype(mb,getArg(q,0));
 			q = pushNil(mb, q, ht);
 			q = pushNil(mb, q, tt);
 
@@ -440,7 +440,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			@:SQLprelude@
 			q = newStmt2(mb, sqlRef, bindRef);
 			setVarType(mb, getArg(q, 0), newBatType(ht, tt));
-			freezeVarType(mb,getArg(q,0));
+			setVarUDFtype(mb,getArg(q,0));
 			q = pushStr(mb, q, s->op1.cval->t->s->base.name);
 			q = pushStr(mb, q, s->op1.cval->t->base.name);
 			q = pushStr(mb, q, s->op1.cval->base.name);
@@ -454,7 +454,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			@:SQLprelude@
 			q = newStmt2(mb, sqlRef, binddbatRef);
 			setVarType(mb, getArg(q,0), newBatType(ht,TYPE_oid));
-			freezeVarType(mb,getArg(q,0));
+			setVarUDFtype(mb,getArg(q,0));
 			q = pushStr(mb, q, s->op1.tval->s->base.name);
 			q = pushStr(mb, q, s->op1.tval->base.name);
 			q = pushInt(mb, q, s->flag);
@@ -470,7 +470,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			q = newStmt2(mb, sqlRef, bindidxRef);
 			tt = tail_type(s)->type->localtype;
 			setVarType(mb, getArg(q, 0), newBatType(ht, tt));
-			freezeVarType(mb,getArg(q,0));
+			setVarUDFtype(mb,getArg(q,0));
 			q = pushStr(mb, q, s->op1.idxval->t->s->base.name);
 			q = pushStr(mb, q, s->op1.idxval->t->base.name);
 			q = pushStr(mb, q, s->op1.idxval->base.name);
@@ -514,7 +514,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 
 				q = newStmt1(mb, batRef, "new");
 				setVarType(mb, getArg(q, 0), newBatType(ht,tt));
-				freezeVarType(mb,getArg(q,0));
+				setVarUDFtype(mb,getArg(q,0));
 				q = pushNil(mb, q, ht);
 				q = pushNil(mb, q, tt);
 				k = getDestVar(q);
@@ -1153,7 +1153,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 
 				q = newStmt(mb, "mal","multiplex");
 				setVarType(mb,getArg(q,0), newBatType(TYPE_oid,type));
-				freezeVarType(mb,getArg(q,0));
+				setVarUDFtype(mb,getArg(q,0));
 				q = pushStr(mb, q, convertMultiplexMod("calc",convert));
 				q = pushStr(mb, q, convertMultiplexFcn(convert));
 			} else
@@ -1210,7 +1210,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 
 				q = newStmt(mb, "mal","multiplex");
 				setVarType(mb,getArg(q,0), newBatType(TYPE_oid,rtype));
-				freezeVarType(mb,getArg(q,0));
+				setVarUDFtype(mb,getArg(q,0));
 				q = pushStr(mb, q, convertMultiplexMod(mod,fimp));
 				q = pushStr(mb, q, convertMultiplexFcn(fimp));
 				q = pushArgument(mb, q, l);
@@ -1246,7 +1246,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 					q = newStmt(mb, "mal","multiplex");
 					setVarType(mb,getArg(q,0), 
 						newBatType(TYPE_oid,s->op4.funcval->res.type->localtype));
-					freezeVarType(mb,getArg(q,0));
+					setVarUDFtype(mb,getArg(q,0));
 					q = pushStr(mb, q, mod);
 					q = pushStr(mb, q, fimp);
 					q = pushArgument(mb, q, l);
@@ -1284,13 +1284,13 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 					q = newStmt(mb, "mal","multiplex");
 					setVarType(mb,getArg(q,0), 
 						newBatType(TYPE_oid,s->op4.funcval->res.type->localtype));
-					freezeVarType(mb,getArg(q,0));
+					setVarUDFtype(mb,getArg(q,0));
 					q = pushStr(mb, q, mod);
 					q = pushStr(mb, q, fimp);
 				} else {
 					setVarType(mb,getArg(q,0), 
 						newBatType(TYPE_any,s->op4.funcval->res.type->localtype));
-					freezeVarType(mb,getArg(q,0));
+					setVarUDFtype(mb,getArg(q,0));
 				}
 			} else {
 				q = newStmt(mb, mod, fimp);
@@ -1327,7 +1327,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 
 				q = newStmt(mb, mod, aggrfunc);
 				setVarType(mb, getArg(q, 0), newBatType(TYPE_any,restype));
-				freezeVarType(mb,getArg(q,0));
+				setVarUDFtype(mb,getArg(q,0));
 				q = pushArgument(mb, q, l);
 				q = pushArgument(mb, q, g);
 				q = pushArgument(mb, q, e);
@@ -1335,7 +1335,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				q = newStmt(mb, mod, aggrfunc);
 				if (output_type_needed){
 					setVarType(mb, getArg(q, 0), restype);
-					freezeVarType(mb,getArg(q,0));
+					setVarUDFtype(mb,getArg(q,0));
 				}
 				q = pushArgument(mb, q, l);
 			}
@@ -1486,7 +1486,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			q = newStmt1(mb, sqlRef, "columnBind");
 			/* adjust destination type */
 			setVarType(mb,getArg(q,0), newBatType( TYPE_oid,s->op4.typeval.type->localtype));
-			freezeVarType(mb,getArg(q,0));
+			setVarUDFtype(mb,getArg(q,0));
 			q = pushArgument(mb, q, o1);
 			q = pushArgument(mb, q, o2);
 			s->nr = getDestVar(q);
@@ -1822,7 +1822,7 @@ backend_callinline(backend *be, Client c, stmt *s )
 			varid = getDestVar(curInstr);
 			renameVariable(curBlk, varid, _strdup(arg));
 			setVarType(curBlk, varid, type);
-			freezeVarType(curBlk,varid);
+			setVarUDFtype(curBlk,varid);
 
 			if (atom_null(a)) {
 				sql_subtype *t = atom_type(a);
@@ -1867,7 +1867,7 @@ backend_dumpproc(backend *be, Client c, cq *cq, stmt *s)
 	curInstr = getInstrPtr(curBlk, 0);
 	/* we do not return anything */
 	setVarType(curBlk, 0, TYPE_void);
-	freezeVarType(curBlk,0);
+	setVarUDFtype(curBlk,0);
 	setModuleId(curInstr, putName("user",4));
 
 	if (be->mvc->argc) {
@@ -1880,7 +1880,7 @@ backend_dumpproc(backend *be, Client c, cq *cq, stmt *s)
 			varid = newVariable(curBlk, _strdup(arg), type);
 			curInstr = pushArgument(curBlk, curInstr, varid);
 			setVarType(curBlk, varid, type);
-			freezeVarType(curBlk,0);
+			setVarUDFtype(curBlk,0);
 		}
 	} else if (be->mvc->params) { /* needed for prepare statements */
 
@@ -1893,7 +1893,7 @@ backend_dumpproc(backend *be, Client c, cq *cq, stmt *s)
 			varid = newVariable(curBlk, _strdup(arg), type);
 			curInstr = pushArgument(curBlk, curInstr, varid);
 			setVarType(curBlk, varid, type);
-			freezeVarType(curBlk,varid);
+			setVarUDFtype(curBlk,varid);
 		}
 	}
 	/* keep the query for tracing and inspection */
@@ -1908,7 +1908,6 @@ backend_dumpproc(backend *be, Client c, cq *cq, stmt *s)
 
 	backend_dumpstmt(be, curBlk, s);
 	pushEndInstruction(curBlk);
-	setLifespan(curBlk);
 
 	if (cq){
 		be->Toptimize = GDKusec();
@@ -1939,10 +1938,10 @@ backend_call(backend *be, Client c, cq *cq)
 	/* cached (factorized queries return bit??) */
 	if (getInstrPtr(((Symbol)cq->code)->def, 0)->token == FACTORYsymbol ) {
 		setVarType(mb, getArg(q, 0), TYPE_bit);
-		freezeVarType(mb,getArg(q,0));
+		setVarUDFtype(mb,getArg(q,0));
 	} else {
 		setVarType(mb, getArg(q, 0), TYPE_void);
-		freezeVarType(mb,getArg(q,0));
+		setVarUDFtype(mb,getArg(q,0));
 	}
 	if (m->argc) {
 		int i;
@@ -2004,10 +2003,10 @@ backend_create_func(backend *be, sql_func *f)
 
 	if (f->res.type) { 
 		setVarType(curBlk, 0, f->res.type->localtype);
-		freezeVarType(curBlk,0);
+		setVarUDFtype(curBlk,0);
 	} else {
 		setVarType(curBlk, 0, TYPE_void);
-		freezeVarType(curBlk,0);
+		setVarUDFtype(curBlk,0);
 	}
 	setModuleId(curInstr, putName("user",4));
 
@@ -2028,13 +2027,12 @@ backend_create_func(backend *be, sql_func *f)
 			varid = newVariable(curBlk, _strdup(buf), type);
 			curInstr = pushArgument(curBlk, curInstr, varid);
 			setVarType(curBlk, varid, type);
-			freezeVarType(curBlk,varid);
+			setVarUDFtype(curBlk,varid);
 		}
 	}
 	backend_dumpstmt(be, curBlk, s);
 	stmt_destroy(s);
 	pushEndInstruction(curBlk);
-	setLifespan(curBlk);
 	addQueryToCache(c);
 	if (backup) 
 		c->curprg = backup;
