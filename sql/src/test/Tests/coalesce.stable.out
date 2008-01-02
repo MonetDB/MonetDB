@@ -5,6 +5,24 @@ stdout of test 'coalesce` in directory 'src/test` itself:
 # 09:32:10 >   mserver5 "--config=/ufs/niels/scratch/monetdb/Linux-x86_64/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB5:/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB5/lib:/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/niels/scratch/monetdb/Linux-x86_64/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/niels/scratch/monetdb/Linux-x86_64/var/MonetDB5/sql_logs"  --set mapi_open=true --set xrpc_open=true --set mapi_port=37610 --set xrpc_port=44307 --set monet_prompt= --trace "--dbname=mTests_src_test" --set mal_listing=0 "--dbinit= include sql;" ; echo ; echo Over..
 # 09:32:10 >  
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 # MonetDB server v5.3.0, based on kernel v1.21.0
 # Serving database 'mTests_src_test'
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
@@ -27,25 +45,46 @@ Over..
 [ 1	]
 [ 1	]
 [ 1	]
+[ 1	]
 % sys. # table_name
 % ifthenelse_not_isnull_age # name
 % double # type
 % 22 # length
-[ 28	]
+[ 30.5	]
 % sys.test,	sys. # table_name
 % id,	ifthenelse_not_isnull_name # name
 % int,	varchar # type
-% 1,	7 # length
+% 1,	12 # length
 [ 1,	"a"	]
-[ 2,	"unknown"	]
+[ 2,	"user unknown"	]
 [ 3,	"c"	]
+[ 4,	"user unknown"	]
+% sys.test,	sys. # table_name
+% id,	ifthenelse_not_isnull_age # name
+% int,	int # type
+% 1,	2 # length
+[ 1,	20	]
+[ 2,	26	]
+[ 3,	-1	]
+[ 4,	-1	]
 % . # table_name
 % ifthenelse_not_isnull_NULL # name
 % char # type
 % 0 # length
 [ "x"	]
+% sys.test,	sys.test,	sys.test # table_name
+% id,	name,	age  # name
+% int,	varchar,	int # type
+% 1,	1,	2 # length
+[ 2,	NULL,	26	]
+[ 4,	NULL,	NULL	]
+% sys.test,	sys.test,	sys.test # table_name
+% id,	name,	age  # name
+% int,	varchar,	int # type
+% 1,	1,	2 # length
+[ 2,	NULL,	26	]
 
-# 09:32:11 >  
-# 09:32:11 >  Done.
-# 09:32:11 >  
+# 15:56:24 >  
+# 15:56:24 >  Done.
+# 15:56:24 >  
 

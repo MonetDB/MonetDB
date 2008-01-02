@@ -7,6 +7,8 @@ stdout of test 'select_with_coalesce.SF-1841734` in directory 'src/test/BugTrack
 
 
 
+
+
 # MonetDB server v5.3.0, based on kernel v1.21.0
 # Serving database 'mTests_src_test_BugTracker'
 # Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs dynamically linked
@@ -22,12 +24,16 @@ Ready.
 
 Over..
 
-# 16:28:21 >  
-# 16:28:21 >  mclient -lsql -umonetdb -Pmonetdb --host=amelia --port=39902 
-# 16:28:21 >  
+# 18:25:24 >  
+# 18:25:24 >  mclient -lsql -umonetdb -Pmonetdb --host=amelia --port=32992 
+# 18:25:24 >  
 
+% sys.a,	sys.a,	sys.b,	sys.b # table_name
+% i,	f,	i,	j # name
+% int,	double,	int,	int # type
+% 1,	22,	1,	1 # length
 
-# 16:28:21 >  
-# 16:28:21 >  Done.
-# 16:28:21 >  
+# 18:25:24 >  
+# 18:25:24 >  Done.
+# 18:25:24 >  
 

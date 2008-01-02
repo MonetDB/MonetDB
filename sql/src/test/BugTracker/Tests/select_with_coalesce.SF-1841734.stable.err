@@ -12,9 +12,6 @@ stderr of test 'select_with_coalesce.SF-1841734` in directory 'src/test/BugTrack
 # 16:28:21 >  mclient -lsql -umonetdb -Pmonetdb --host=amelia --port=39902 
 # 16:28:21 >  
 
-MAPI  = monetdb@amelia:39902
-QUERY = SELECT *
-ERROR = !CASE: currently not supported here
 
 # 16:28:21 >  
 # 16:28:21 >  Done.
