@@ -138,8 +138,8 @@ newComment(MalBlkPtr mb, const char *val)
 	cst.val.sval= GDKstrdup(val);
 	cst.len= strlen(cst.val.sval);
 	getArg(q,0) = defConstant(mb,TYPE_str,&cst);
-	/* mark the constant for not being copied to the stack */
-	isConstant(mb,getArg(q,0)) = - isConstant(mb,getArg(q,0));
+	clrVarConstant(mb,getArg(q,0));
+	setVarDisabled(mb,getArg(q,0));
 	pushInstruction(mb, q);
 	return q;
 }

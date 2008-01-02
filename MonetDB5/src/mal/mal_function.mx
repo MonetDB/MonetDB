@@ -57,6 +57,14 @@ be geared towards fast execution and to ease symbolic debugging.
 #include "mal_module.h"
 #include "mal_resolve.h"
 
+typedef struct{
+	short beginLifespan, endLifespan, lastUpdate;
+}*Lifespan, LifespanRecord;
+
+#define getLastUpdate(L,I)	(L[I].lastUpdate)
+#define getEndLifespan(L,I)	(L[I].endLifespan)
+#define getBeginLifespan(L,I)	(L[I].beginLifespan)
+
 /* #define DEBUG_MAL_FCN */
 /* #define DEBUG_CLONE */
 
@@ -70,13 +78,16 @@ mal_export Symbol cloneFunction(Module scope, Symbol proc, MalBlkPtr mb, InstrPt
 
 mal_export Symbol   getFunctionSymbol(Module scope, InstrPtr p);
 mal_export void chkFlow(MalBlkPtr mb);
-mal_export void chkDeclarations(MalBlkPtr mb,int reset);
+mal_export void chkDeclarations(MalBlkPtr mb);
+mal_export void clrDeclarations(MalBlkPtr mb);
 mal_export int getBarrierEnvelop(MalBlkPtr mb);
 mal_export int isLoopBarrier(MalBlkPtr mb, int pc);
 mal_export int getBlockExit(MalBlkPtr mb,int pc);
 mal_export int getBlockBegin(MalBlkPtr mb,int pc);
-mal_export void setLifespan(MalBlkPtr mb);
-mal_export void debugLifespan(MalBlkPtr mb);
+
+#define newLifespan(M) (Lifespan)GDKmalloc(sizeof(LifespanRecord)*(M)->vtop)
+mal_export void setLifespan(MalBlkPtr mb, Lifespan span);
+mal_export void debugLifespan(MalBlkPtr mb, Lifespan span);
 
 mal_export void printFunction(stream *fd, MalBlkPtr mb, int listing);
 mal_export void showFlowGraph(MalBlkPtr mb, MalStkPtr stk, str fname);
@@ -339,10 +350,6 @@ void chkFlow(MalBlkPtr mb)
 			}
 			retseen = 1;
 			break;
-	    case ENDsymbol:
-			lastInstruction = lastInstruction < mb->stop?i:lastInstruction;
-			i= mb->stop;
-			break;
 	    case RAISEsymbol:
 	        break;
 		default:
@@ -591,7 +598,7 @@ printFunction(GDKout, new->def, LIST_MAL_ALL);
 	}
 	/* clear type fixations */
 	for(i=0;i< new->def->vtop; i++)
-		new->def->var[i]->fixtype=0;
+		clrVarFixed(new->def,i);
 
 #ifdef DEBUG_MAL_FCN
 	printf("FUNCTION TO BE CHECKED\n");
@@ -657,9 +664,13 @@ Unclear what will be the best strategy. For the time being we just recalc.
 
 Also take care of the nested block structure. Because the span should
 fall within a single block. This is handled by the chkflow already.
+
+The lifespan assumes that any potential conflict of variable
+declaration within blocks have been detected already by chkDeclarations().
+A variable may be introduced only once.
 @c
 void
-debugLifespan(MalBlkPtr mb)
+debugLifespan(MalBlkPtr mb, Lifespan span)
 {
 	int i;
 
@@ -668,60 +679,53 @@ debugLifespan(MalBlkPtr mb)
 			printf("%c%d ", TMPMARKER, getVar(mb,i)->tmpindex); 
 		else
 			printf("%8s ", getVar(mb,i)->name);
-		printf("%d - %d  update %d scope= %d\n", 
-			getBeginLifespan(mb,i),
-			getEndLifespan(mb,i),
-			getLastUpdate(mb,i),
-			getScope(mb,i));
+		printf("%d - %d  update %d \n", 
+			getBeginLifespan(span,i),
+			getEndLifespan(span,i),
+			getLastUpdate(span,i));
 	}
 }
-void
-setLifespan(MalBlkPtr mb)
-{
-	int pc, j, k, depth=0, blkId=1,scopes[256];
-	InstrPtr p;
 
-	for (k = 0; k < mb->vtop; k++) {
-		VarPtr v = getVar(mb, k);
-		v->lastUpdate = v->beginLifespan = v->endLifespan = 0;
-		v->isused= 0;
-	}
-	scopes[depth]=blkId;
+void
+setLifespan(MalBlkPtr mb, Lifespan span)
+{
+	int pc, k, depth=0, scopes[256];
+	InstrPtr p;
+	int top=0, *decl= (int*)alloca(sizeof(int)*mb->vtop);
+
+	memset((char*) span,0, sizeof(LifespanRecord)* mb->vtop);
 	for (pc = 0; pc < mb->stop; pc++) {
 		p = getInstrPtr(mb, pc);
 		if( p->token == NOOPsymbol)
 			continue;
 
 		for (k = 0; k < p->argc; k++) {
-			VarPtr v = getVar(mb, p->argv[k]);
+			int v = getArg(p,k);
 
-			if (v->beginLifespan == 0 )
-				v->beginLifespan = pc;
+			if (span[v].beginLifespan == 0 ){
+				span[v].beginLifespan = pc;
+				/* remember the variable in the scope stack*/
+				decl[top++]= v;
+			}
 			if (k < p->retc && 
 				p->barrier != RETURNsymbol &&
 				p->barrier != YIELDsymbol)
-					v->lastUpdate= pc;
-			if (pc > v->endLifespan && v->scope== scopes[depth])
-				v->endLifespan = pc;
-@-
-For all variables we keep track if it is used, cq modified.
-This simplifies subsequent optimization.
-@c
-			if( k >= p->retc)
-				v->isused= v->isused || !v->isatypevar;
-			else
-				v->isused= v->isused || blockCntrl(p) || blockStart(p);
+					span[v].lastUpdate= pc;
+			if (pc > span[v].endLifespan )
+				span[v].endLifespan = pc;
 		}
 @-
 At a block exit we can finalize some variables.
 @c
 		if( blockExit(p)){
-			depth--;
-			for (j = 0; j < mb->vtop; j++) {
-				VarPtr v = getVar(mb, j);
-				if( v->scope == scopes[depth] )
-					v->endLifespan= pc;
+			for(top--; top>=scopes[depth]; top--)
+				span[decl[top]].endLifespan= pc;
+			if( depth== 0) {
+				mb->errors++;
+				GDKerror("too many unnest operations.");
+				return;
 			}
+			depth--;
 		}
 		if( blockStart(p)){
 			if( depth== 255) {
@@ -729,13 +733,12 @@ At a block exit we can finalize some variables.
 				GDKerror("too deeply nested scope");
 				return;
 			}
-			scopes[++depth]= ++blkId;
+			scopes[++depth]= top;
 		}
 	}
 	/* debugLifespan(mb); */
 }
 
-@c
 int
 isLoopBarrier(MalBlkPtr mb, int pc){
 	InstrPtr p;
@@ -802,6 +805,7 @@ we make sure that all variables are properly initialized
 before being used. Since barrier blocks may be skipped at
 runtime, they actually introduce a separate scope.
 Variables declared within a block may not be used outside it.
+Variables can only be declared once.
 
 In many situation chkFlow and chkDeclarations should be called
 together. Moreover, an erroneous chkFlow most likely implies
@@ -810,39 +814,29 @@ errors in the declarations as well.
 Since in interactive mode each statement is handled separately,
 we have to remember the scope assigned to a variable.
 @c
-#define getDeclarePoint(I) decl[I]
-void chkDeclarations(MalBlkPtr mb,int reset){
+void clrDeclarations(MalBlkPtr mb){
+	int i;
+	for(i=0;i<mb->vtop; i++){
+		clrVarInit(mb,i);
+		clrVarUsed(mb,i);
+		clrVarDisabled(mb,i);
+	}
+}
+
+void chkDeclarations(MalBlkPtr mb){
 	int pc,i, k,l;
 	InstrPtr p;
-	short s, blks[MAXDEPTH], top= 0, blkId=1;
+	short blks[MAXDEPTH], top= 0, blkId=1;
 	int *decl =(int*) alloca(sizeof(int) * mb->vtop);
 
 	memset((char*) decl, 0, sizeof(int) * mb->vtop);
-	blks[top] = 1;
-	blks[++top]= 0;
-	if( reset) 
-	for(i=0; i<mb->vtop; i++){
-		getDeclarePoint(i)=0;
-		getVarScope(mb,i)=0;
-		if( mb->var[i]->name == 0 && !isTmpVar(mb,i)){
-			showScriptException(mb,0,TYPE,"Name missing in variable %d",i);
-			mb->errors++;
-		}
-	}
+	blks[top] = blkId;
 
 	/* all signature variables are declared at outer level */
 	p= getInstrPtr(mb,0);
-	for(k=p->retc;k<p->argc; k++){
-		getVarScope(mb,p->argv[k])= 1;
-	    getDeclarePoint(p->argv[k])= 0;
-	}
-	/* and the function name as well */
-	if( getFunctionId(p) == NULL){
-		showScriptException(mb,0, TYPE,
-			"Function name missing in signature");
-		return;
-	}
-		
+	for(k=0;k<p->argc; k++)
+		decl[getArg(p,k)]= blkId;
+
 	/* printFunction(GDKout,mb, LIST_MAL_ALL);*/
 
 	for(pc=1;pc<mb->stop; pc++){
@@ -850,61 +844,79 @@ void chkDeclarations(MalBlkPtr mb,int reset){
 		/* check correct use of the arguments*/
 		for(k=p->retc;k<p->argc; k++) {
 			l=getArg(p,k);
-			if( isConstant(mb, l) || isTypeVar(mb,l) ){
-				/* ok defined */
-			} else 
-			if( (s = getVarScope(mb,l) ) ==0 ) {
+			setVarUsed(mb,l);
+			if( decl[l] == 0){
+@-
+The problem created here is that only variables are
+recognized that are declared through instructions.
+For interactive code, and code that is based on a global
+stack this is insufficient. In those cases, the variable
+can be defined in a previous execution.
+We have to recognize if the declaration takes place
+in the context of a global stack. 
+@c
+				if( p->barrier == CATCHsymbol){
+					decl[l] = blks[0];
+				} else
+				if( !( isVarConstant(mb, l) || isVarTypedef(mb,l)) &&
+					!isVarInit(mb,l) ) {
 					showScriptException(mb,pc,TYPE,
 						"'%s' may not be used before being initialized", 
 						getVarName(mb,l));
-						mb->errors++;
-			} else 
-			if( getDeclarePoint(l) >= top){
-						showScriptException(mb,pc,TYPE,
-							"'%s' may not be used before being set",
-							getVarName(mb,l));
-						mb->errors++;
-			}
-		}
-		/* introduce new variables or propagate them to lower depth */
-		for(k=0; k<p->retc; k++){
-			l= getArg(p,k);
-			if( getVarScope(mb, l) == 0){
-				/* variable has not been defined yet */
-				if( (p->barrier== RETURNsymbol || p->barrier== YIELDsymbol) &&
-					getVarType(mb,l) != TYPE_void  && p->retc==p->argc){
-			            showScriptException(mb,pc,TYPE,
-							"'%s' returns before being initialized",
-							getVarName(mb,l));
-						mb->errors++;
+					mb->errors++;
 				}
-				/* declare its scope */
-			    getVarScope(mb, l) = blks[top-1];
-			    getDeclarePoint(l) = top-1;
 			} else {
 			    /* is the block still active ? */
-			    s = getVarScope(mb,l);
-			    for( i=0; i< top; i++)
-			    if( blks[i] == s ) break;
-			    if( i< top && blks[i]!= s && !isTmpVar(mb, l)){
+			    for( i=0; i<= top; i++)
+					if( blks[i] == decl[l] ) 
+						break;
+			    if( i> top || blks[i]!= decl[l] ){
 			            showScriptException(mb,pc,TYPE,
-							"'%s' used outside declaration",
+							"'%s' used outside scope",
 							getVarName(mb,l));
 			        mb->errors++;
 			    }
-				/* declare its new scope */
-				if( getDeclarePoint(l) > top -1){
-					getVarScope(mb, l) = blks[top-1];
-					getDeclarePoint(l) = top-1;
-				}
 			}
+			if( (blockCntrl(p) || blockStart(p)) && !isTmpVar(mb,l))
+				setVarInit(mb, l);
+		}
+		/* define variables */
+		for(k=0; k<p->retc; k++){
+			l= getArg(p,k);
+			setVarInit(mb,l);
+			if( decl[l] == 0){
+				/* variable has not been defined yet */
+				/* exceptions are always declared at level 1 */
+				if( p->barrier == CATCHsymbol)
+					decl[l] = blks[0];
+				else
+					decl[l] = blks[top];
+#ifdef DEBUG_MAL_FCN
+				stream_printf(GDKout,"defined %s in block %d\n", 
+					getVarName(mb,l),decl[l]);
+#endif
+			} else {
+			    /* is the block still active ? */
+			    for( i=0; i<= top; i++)
+					if( blks[i] == decl[l] ) 
+						break;
+			    if( i> top || blks[i]!= decl[l] ){
+			            showScriptException(mb,pc,TYPE,
+							"'%s' used outside scope",
+							getVarName(mb,l));
+			        mb->errors++;
+			    }
+			}
+			if( blockCntrl(p) || blockStart(p) )
+				setVarUsed(mb, l);
 		}
 		if( p->barrier){
 			if( blockStart(p)){
-				blkId++;
 				if( top <MAXDEPTH-2){
-					blks[top]= blkId;
-					blks[++top]= 0;
+					blks[++top]= ++blkId;
+#ifdef DEBUG_MAL_FCN
+				stream_printf(GDKout,"new block %d at top %d\n",blks[top], top);
+#endif
 				} else {
 					showScriptException(mb,pc,SYNTAX,
 						"too deeply nested  MAL program");
@@ -913,8 +925,10 @@ void chkDeclarations(MalBlkPtr mb,int reset){
 				}
 			}
 			if( blockExit(p) && top > 0) {
+#ifdef DEBUG_MAL_FCN
+				stream_printf(GDKout,"leave block %d at top %d\n",blks[top], top);
+#endif
 			    top--;
-			    blks[top]= 0;
 			}
 		}
 	}
@@ -1010,6 +1024,8 @@ showFlowGraph(MalBlkPtr mb, MalStkPtr stk, str fname)
 	stream *f;
 	InstrPtr p;
 	int i, k;
+	Lifespan span;
+	span = newLifespan(mb);
 
 	(void) stk;		/* fool the compiler */
 
@@ -1017,7 +1033,7 @@ showFlowGraph(MalBlkPtr mb, MalStkPtr stk, str fname)
 		f = GDKout;
 	else
 		f = open_wastream(fname);
-	setLifespan(mb);
+	setLifespan(mb,span);
 	p = getInstrPtr(mb, 0);
 	stream_printf(f, "digraph %s{\n", getFunctionId(p));
 	p = getInstrPtr(mb, 0);
@@ -1035,7 +1051,7 @@ showFlowGraph(MalBlkPtr mb, MalStkPtr stk, str fname)
 		if( p->retc== 0 || getArgType(mb,p,0)== TYPE_void) /* assume side effects */
 		for (k = p->retc; k < p->argc; k++) 
 			if (getArgType(mb,p,k) != TYPE_void && 
-				!isConstant(mb,getArg(p,k)))
+				!isVarConstant(mb,getArg(p,k)))
 				showOutFlow(mb, i, p->argv[k], f);
 
 		if( getFunctionId(p)== 0)

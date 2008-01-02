@@ -318,20 +318,22 @@ typedef struct SYMDEF {
 typedef struct VARRECORD {
 	str name;		/* argname or lexical value repr */
 	malType type;		/* internal type signature */
-	bit isaconstant;	/* value cannot change */
-	bit isatypevar;		/* denotes a type variable */
-	bit fixtype;		/* the type has been fixed */
-	bit isudftype;		/* type defined in program */
-	bit cleanup;		/* remove upon function return */
-	bit isused;		/* in-out argument to function */
 	int tmpindex;		/* temporary variable */
-	short scope;		/* block id where it is declared */
-	short beginLifespan, endLifespan, lastUpdate;	/* for optimizers */
 	ValRecord value;
-
+	short flags;		/* see below, reserve some space */
 	short propc, maxprop;	/* proc count and max number of properties */
 	short prps[];		/* property array */
 } *VarPtr, VarRecord;
+
+/* Variable properties */
+#define VAR_CONSTANT 	1
+#define VAR_TYPEVAR		2
+#define VAR_FIXTYPE		4
+#define VAR_UDFTYPE		8
+#define VAR_CLEANUP		16
+#define VAR_INIT		32
+#define VAR_USED		64
+#define VAR_DISABLED	128 /* used for comments and scheduler */
 
 /* type check status is kept around to improve type checking efficiency */
 #define TYPE_ERROR      -1
@@ -357,9 +359,9 @@ typedef struct {
 	bit gc;			/* garbage control flags */
 	bit polymorphic;	/* complex type analysis */
 	bit varargs;		/* variable number of arguments or targets */
+	int jump;		/* controlflow program counter */
 	MALfcn fcn;		/* resolved function address */
 	struct MALBLK *blk;	/* resolved MAL function address */
-	int jump;		/* controlflow program counter */
 @-
 The MAL instruction representation. The strings should not be garbage collected
 upon destruction of the definition. They are part of the global namespace.
@@ -429,6 +431,7 @@ for separate name space management.
 
 #define getInstrPtr(M,I)    (M)->stmt[I]
 #define getSignature(S)     getInstrPtr((S)->def,0)
+#define isMain(M)			((getInstrPtr(M,0))->fcnname== putName("main",4))
 #define getFcnName(M)       getFunctionId(getInstrPtr(M,0))
 #define getArgCount(M)      getInstrPtr(M,0)->argc
 #define getModName(M)       getModuleId(getInstrPtr(M,0))
@@ -436,26 +439,25 @@ for separate name space management.
 
 #define getVar(M,I)     (M)->var[I]
 #define getVarTmp(M,I)      (M)->var[I]->tmpindex
-#define isTypeVar(M,I)  ((M)->var[I]->isatypevar)
 #define isTmpVar(M,I)   (!(M)->var[I]->name || *(M)->var[I]->name == TMPMARKER)
 #define getVarType(M,I)     ((M)->var[I]->type)
 #define getVarGDKType(M,I)      getGDKType((M)->var[I]->type)
-#define getVarScope(M,I)   ((M)->var[I]->scope)
+@-
+@= varProperty
+#define clrVar@1(M,I)       ((M)->var[I]->flags &= ~VAR_@2)
+#define setVar@1(M,I)       ((M)->var[I]->flags |= VAR_@2)
+#define isVar@1(M,I)        ((M)->var[I]->flags & VAR_@2)
+@h
+@:varProperty(Fixed,FIXTYPE)@
+@:varProperty(Cleanup,CLEANUP)@
+@:varProperty(Used,USED)@
+@:varProperty(Init,INIT)@
+@:varProperty(Disabled,DISABLED)@
+@:varProperty(Typedef,TYPEVAR)@
+@:varProperty(UDFtype,UDFTYPE)@
+@:varProperty(Constant,CONSTANT)@
 
-#define isFixed(M,I)        ((M)->var[I]->fixtype)
-#define freezeVarType(M,I) getVar(M,I)->isudftype = 1;
-#define setFixed(M,I)       ((M)->var[I]->fixtype= 1)
-#define setVarCleanup(M,I)     ((M)->var[I]->cleanup)
-#define isVarGarbage(M,I)     ((M)->var[I]->cleanup)
-#define setVarUsed(M,I,V)		((M)->var[I]->isused= V)
-#define isVarUsed(M,I)		((M)->var[I]->isused)
-#define getConstant(M,I)     ((M)->var[I]->value)
-#define isConstant(M,I) ((M)->var[I]->isaconstant)
-
-#define getLastUpdate(M,I)	((M)->var[I]->lastUpdate)
-#define getEndLifespan(M,I)	((M)->var[I]->endLifespan)
-#define getBeginLifespan(M,I)	((M)->var[I]->beginLifespan)
-#define getScope(M,I)	((M)->var[I]->scope)
+#define getVarConstant(M,I)     ((M)->var[I]->value)
 
 #define getDestVar(P)   (P)->argv[0]
 #define setDestVar(P,X)   (P)->argv[0]  =X
@@ -1254,7 +1256,7 @@ getType(MalBlkPtr mb, str nme)
 str
 getArgDefault(MalBlkPtr mb, InstrPtr p, int idx)
 {
-	ValPtr v = &getConstant(mb, getArg(p, idx));
+	ValPtr v = &getVarConstant(mb, getArg(p, idx));
 
 	if (v->vtype == TYPE_str)
 		return v->val.sval;
@@ -1396,10 +1398,10 @@ newVariable(MalBlkPtr mb, str name, malType type)
 	mb->var[n]->maxprop = 2*MAXARG;
 
 	setVarType(mb, n, type);
-	isConstant(mb, n) = 0;
-	setVarCleanup(mb, n) = FALSE;
-	getVar(mb, n)->isudftype = 0;
-	getVar(mb, n)->isused = 0;
+	clrVarConstant(mb, n);
+	clrVarCleanup(mb, n);
+	clrVarUDFtype(mb, n);
+	clrVarUsed(mb, n);
 	mb->vtop++;
 	return n;
 }
@@ -1439,13 +1441,6 @@ newTmpVariable(MalBlkPtr mb, malType type)
 	n = mb->vtop;
 	if (getVar(mb, n) == NULL)
 		getVar(mb, n) = (VarPtr) GDKzalloc(sizeof(VarRecord) + 2*MAXARG * sizeof(short));
-/* already captured by memset
-    mb->var[n]->name = 0;
-    isConstant(mb,n) = 0;
-    setVarCleanup(mb,n) = FALSE;
-	getVar(mb,n)->isudftype= 0;
-	getVar(mb,n)->isused= 0;
-*/
 	getVarTmp(mb, n) = n;
 	setVarType(mb, n, type);
 	mb->var[n]->propc = 0;
@@ -1471,10 +1466,10 @@ newTypeVariable(MalBlkPtr mb, malType type)
 	int n;
 
 	n = type == TYPE_any ? -1 : findTmpVariable(mb, type);
-	if (n > 0 && isTypeVar(mb, n))
+	if (n > 0 && isVarTypedef(mb, n))
 		return n;
 	n = newTmpVariable(mb, type);
-	isTypeVar(mb, n) = TRUE;
+	setVarTypedef(mb, n);
 	return n;
 }
 
@@ -1497,14 +1492,8 @@ copyVariable(MalBlkPtr dst, MalBlkPtr src, VarPtr v)
 	w = (VarPtr) GDKzalloc(sizeof(VarRecord) + v->maxprop * sizeof(short));
 	w->name = v->name ? GDKstrdup(v->name) : 0;
 	w->type = v->type;
-	w->cleanup = v->cleanup;
-	w->fixtype = v->fixtype;
-	w->isudftype = v->isudftype;
-	w->isused = v->isused;
-	w->isaconstant = v->isaconstant;
-	w->isatypevar = v->isatypevar;
+	w->flags = v->flags;
 	w->tmpindex = v->tmpindex;
-	w->scope = v->scope;
 	w->propc = v->propc;
 	w->maxprop = v->maxprop;
 	for (i=0; i<v->propc; i++)
@@ -1550,18 +1539,12 @@ clearVariable(MalBlkPtr mb, int varid)
 		return;
 	if (v->name)
 		GDKfree(v->name);
-	if (v->isaconstant)
+	if (isVarConstant(mb,varid))
 		VALclear(&v->value);
 	v->name = 0;
 	v->type = 0;
-	v->cleanup = 0;
-	v->fixtype = 0;
-	v->isudftype = 0;
-	v->isused = 0;
-	v->isaconstant = 0;
-	v->isatypevar = 0;
+	v->flags = 0;
 	v->tmpindex = 0;
-	v->scope = 0;
 	v->propc = 0;
 }
 
@@ -1796,7 +1779,7 @@ fndConstant(MalBlkPtr mb, ValPtr cst)
 	for (i = mb->vtop - 1; i >= k; i--) {
 		VarPtr v = getVar(mb, i);
 
-		if (v && v->isaconstant &&
+		if (v && isVarConstant(mb,i) &&
 			v->type == cst->vtype &&
 			ATOMcmp(cst->vtype, VALget(&v->value), p) == 0)
 			return i;
@@ -1849,9 +1832,9 @@ defConstant(MalBlkPtr mb, int type, ValPtr cst )
 		return k;
 	}
 	k = newTmpVariable(mb, type);
-	isConstant(mb, k) = 1;
-	setFixed(mb, k);
-	vr = &getConstant(mb, k);
+	setVarConstant(mb, k);
+	setVarFixed(mb, k);
+	vr = &getVarConstant(mb, k);
 	*vr = *cst;
 	return k;
 }
@@ -1990,13 +1973,14 @@ clrAllTypes(MalBlkPtr mb)
 	p= getInstrPtr(mb,0);
 
 	for(i=p->argc; i<mb->vtop; i++)
-	if( !mb->var[i]->isudftype &&
-		mb->var[i]->isused &&
-		!mb->var[i]->isaconstant &&
+	if( !isVarUDFtype(mb,i) &&
+		isVarUsed(mb,i) &&
+		!isVarTypedef(mb,i) &&
+		!isVarConstant(mb,i) && 
 		!isExceptionVariable(mb->var[i]->name)){
-		setVarType(mb,i,TYPE_any);
-		setVarCleanup(mb,i) = FALSE;
-		mb->var[i]->fixtype= 0;
+			setVarType(mb,i,TYPE_any);
+			clrVarCleanup(mb,i);
+			clrVarFixed(mb,i);
 	}
 	for(i=1; i<mb->stop-1; i++){
 		p= getInstrPtr(mb,i);
@@ -2181,7 +2165,7 @@ recognizedCall(MalBlkPtr mb, InstrPtr p, str s)
 			str nme;
 			char nmebuf[PATHLENGTH];
 			tpe = getTypeName(getArgType(mb, p, i));
-			if (isTmpVar(mb, getArg(p, i)) || isTypeVar(mb, getArg(p, i))) {
+			if (isTmpVar(mb, getArg(p, i)) || isVarTypedef(mb, getArg(p, i))) {
 				snprintf(nmebuf, PATHLENGTH, "%c%d", TMPMARKER, getVarTmp(mb, getArg(p, i)));
 				nme = nmebuf;
 			} else
@@ -2200,7 +2184,7 @@ recognizedCall(MalBlkPtr mb, InstrPtr p, str s)
 			char nmebuf[PATHLENGTH];
 
 			tpe = getTypeName(getArgType(mb, p, i));
-			if (isTmpVar(mb, getArg(p, i)) || isTypeVar(mb, getArg(p, i))) {
+			if (isTmpVar(mb, getArg(p, i)) || isVarTypedef(mb, getArg(p, i))) {
 				snprintf(nmebuf, PATHLENGTH, "%c%d", TMPMARKER, getVarTmp(mb, getArg(p, i)));
 				nme = nmebuf;
 			} else
@@ -2233,7 +2217,7 @@ hiddenInstructionArgs(MalBlkPtr mb, InstrPtr p, str s)
 				advance(s);
 			}
 			tpe = getTypeName(getArgType(mb, p, i));
-			if (isTmpVar(mb, getArg(p, i)) || isTypeVar(mb, getArg(p, i))) {
+			if (isTmpVar(mb, getArg(p, i)) || isVarTypedef(mb, getArg(p, i))) {
 				snprintf(nmebuf, PATHLENGTH, "%c%d", TMPMARKER, getVarTmp(mb, getArg(p, i)));
 				nme = nmebuf;
 			} else
@@ -2456,7 +2440,7 @@ instruction2str(MalBlkPtr mb, InstrPtr p, int flg)
 				pstring = varGetPropStr(mb, getArg(p, 0));
 			else 
 				pstring = GDKstrdup("");
-			if (getVar(mb, getArg(p, 0))->isudftype) {
+			if ( isVarUDFtype(mb,getArg(p, 0))) {
 				str tpe = getTypeName(getVarType(mb, getArg(p, 0)));
 
 				sprintf(t, "%s:%s%s ", nme, tpe, pstring);
@@ -2482,7 +2466,7 @@ instruction2str(MalBlkPtr mb, InstrPtr p, int flg)
 					pstring = varGetPropStr(mb, getArg(p, i));
 				else 
 					pstring = GDKstrdup("");
-				if (getVar(mb, getArg(p, i))->isudftype) {
+				if ( isVarUDFtype(mb, getArg(p, i))) {
 					str tpe = getTypeName(getVarType(mb, getArg(p, i)));
 
 					sprintf(t, "%s:%s%s ", getArgName(mb, p, i), tpe, pstring);
@@ -2542,7 +2526,7 @@ instruction2str(MalBlkPtr mb, InstrPtr p, int flg)
 			sprintf(t, "...");
 			break;
 		}
-		if (isConstant(mb, getArg(p, i))) {
+		if (isVarConstant(mb, getArg(p, i))) {
 			str cv = NULL;
 
 			VALformat(&cv, &getVar(mb, getArg(p, i))->value);
@@ -2559,9 +2543,9 @@ instruction2str(MalBlkPtr mb, InstrPtr p, int flg)
 			GDKfree(cv);
 			advance(t);
 		} else {
-			if( ! isTypeVar(mb,getArg(p,i)) ){
+			if( ! isVarTypedef(mb,getArg(p,i)) ){
 				if (isTmpVar(mb, getArg(p, i))) {
-					if( ! isTypeVar(mb,getArg(p,i)) )
+					if( ! isVarTypedef(mb,getArg(p,i)) )
 						sprintf(t, "%c%d", TMPMARKER, getVarTmp(mb, getArg(p, i)));
 					advance(t);
 				} else
@@ -2581,9 +2565,9 @@ Dump the type and value information.
 			GDKfree(d1);
 			GDKfree(d2);
 			advance(t);
-		} else if ( isTypeVar(mb, getArg(p, i)) || 
-				  ( isConstant(mb, getArg(p, i)) &&
-					( getVar(mb, getArg(p, i))->isudftype ||
+		} else if ( isVarTypedef(mb, getArg(p, i)) || 
+				  ( isVarConstant(mb, getArg(p, i)) &&
+					( isVarUDFtype(mb, getArg(p, i)) ||
 					ATOMcmp(getArgType(mb,p,i), 
 							ATOMnilptr(getArgType(mb,p,i)), 
 							VALptr(&getVar(mb, getArg(p, i))->value) ) == 0

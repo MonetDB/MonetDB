@@ -957,17 +957,17 @@ initTrace(void)
 	mal_unset_lock(mal_contextLock, "trace");
 }
 
-#define CLEANUP(X)  if(X) { BBPdecref((X)->batCacheid, TRUE); (X)->batPersistence= TRANSIENT; } (X)= NULL;
+#define CLEANUPprofile(X)  if(X) { BBPdecref((X)->batCacheid, TRUE); (X)->batPersistence= TRANSIENT; } (X)= NULL;
 str
 cleanupProfiler(){
 	mal_set_lock(mal_contextLock, "cleanup");
-	CLEANUP( TRACE_id_time );
-	CLEANUP( TRACE_id_pc );
-	CLEANUP( TRACE_id_modfcn );
-	CLEANUP( TRACE_id_stmt );
-	CLEANUP( TRACE_id_ibytes );
-	CLEANUP( TRACE_id_obytes );
-	CLEANUP( TRACE_id_diskspace );
+	CLEANUPprofile( TRACE_id_time );
+	CLEANUPprofile( TRACE_id_pc );
+	CLEANUPprofile( TRACE_id_modfcn );
+	CLEANUPprofile( TRACE_id_stmt );
+	CLEANUPprofile( TRACE_id_ibytes );
+	CLEANUPprofile( TRACE_id_obytes );
+	CLEANUPprofile( TRACE_id_diskspace );
 	TRACE_init = 0;
 	mal_unset_lock(mal_contextLock, "cleanup");
 	return MAL_SUCCEED;

@@ -199,13 +199,14 @@ sequence of factory calls.
 @= initStack
 	for(i= @1; i< mb->vtop; i++) {
 		lhs = &stk->stk[i];
-		if( isConstant(mb,i) > 0 ){
-			assert(mb->var[i]->cleanup == 0);
-			rhs = &getConstant(mb,i);
-			*lhs = *rhs;
-		} else {
+		if( isVarConstant(mb,i) > 0 ){
+			assert(!isVarCleanup(mb,i));
+			if( !isVarDisabled(mb,i)){
+				rhs = &getVarConstant(mb,i);
+				*lhs = *rhs;
+			}
+		} else
 			lhs->vtype = getVarGDKType(mb,i);
-		}
 	}
 @c
 
@@ -1533,8 +1534,8 @@ void garbageCollector(MalBlkPtr mb, MalStkPtr stk, int flag)
 	printStack(GDKout,mb,stk,0);
 #endif
 	for(k=0;k<mb->vtop; k++) {
-		if (isVarGarbage(mb,k) && (flag || isTmpVar(mb,k) )){
-			garbageElement(v = &stk->stk[k]);
+		if(isVarCleanup(mb,k) && (flag || isTmpVar(mb,k) )){
+			garbageElement(v= &stk->stk[k]);
 			v->vtype= TYPE_int;
 			v->val.ival= int_nil;
 		}

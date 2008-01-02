@@ -432,9 +432,9 @@ callFactory(Client cntxt, MalBlkPtr mb, ValPtr argv[], char flag){
 		stk->cmd= flag;
 		/* initialize the stack */
 		for(i= psig->argc; i< mb->vtop; i++)
-		if( isConstant(mb,i) > 0 ){
+		if( isVarConstant(mb,i) > 0 ){
 			lhs = &stk->stk[i];
-			rhs = &getConstant(mb,i);
+			rhs = &getVarConstant(mb,i);
 			VALcopy(lhs,rhs);
 		} else {
 			lhs = &stk->stk[i];

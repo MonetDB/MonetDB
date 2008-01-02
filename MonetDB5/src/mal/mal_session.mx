@@ -407,7 +407,7 @@ MSresetVariables(MalBlkPtr mb, MalStkPtr glb, int start)
 	for (i = j = start; i < mb->vtop; i++) {
 		if (isTmpVar(mb, i) || unknownType(getVarType(mb,i)) ) {
 			if (glb) {
-				if (!isConstant(mb,i))
+				if (!isVarConstant(mb,i))
 					garbageElement(&glb->stk[i]);
 				/* clean stack entry */
 				glb->stk[i].vtype = TYPE_int;
@@ -416,7 +416,7 @@ MSresetVariables(MalBlkPtr mb, MalStkPtr glb, int start)
 			}
 			clearVariable(mb, i);
 		} else {
-			assert(!mb->var[i]->value.vtype || mb->var[i]->isaconstant );
+			assert(!mb->var[i]->value.vtype || isVarConstant(mb,i) );
 			if (i != j) {
 				VarPtr v = getVar(mb,j);
 				getVar(mb,j) = getVar(mb,i);

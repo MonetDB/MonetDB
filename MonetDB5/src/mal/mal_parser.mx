@@ -1430,7 +1430,7 @@ parseAssign(Client cntxt, int cntrl)
 			}
 			@:GETvariable@
 			if( currChar(cntxt)==':') {
-				freezeVarType(curBlk,varid);
+				setVarUDFtype(curBlk,varid);
 				type = typeElm(cntxt,getVarType(curBlk,varid));
 				setPolymorphic(curInstr, type, FALSE); 
 				setVarType(curBlk,varid,type);
@@ -1480,7 +1480,7 @@ parseAssign(Client cntxt, int cntrl)
 		@:GETvariable@
 		if( !(currChar(cntxt)==':' && CURRENT(cntxt)[1]=='=') ){
 			if( currChar(cntxt)==':') {
-				freezeVarType(curBlk,varid);
+				setVarUDFtype(curBlk,varid);
 				type = typeElm(cntxt,getVarType(curBlk,varid));
 				setPolymorphic(curInstr, type, FALSE);
 				setVarType(curBlk,varid,type);
@@ -1532,11 +1532,11 @@ This code is used in both positions of the expression
 			if( currChar(cntxt)==':') {
 				csttpe = typeElm(cntxt,getVarType(curBlk,cstidx));
 				if(csttpe == getVarType(curBlk,cstidx) ){
-					freezeVarType(curBlk,cstidx);
+					setVarUDFtype(curBlk,cstidx);
 				} else {
 					cstidx = defConstant(curBlk,csttpe,&cst);
 					setPolymorphic(curInstr,csttpe, FALSE);
-					freezeVarType(curBlk,cstidx);
+					setVarUDFtype(curBlk,cstidx);
 					free = 0;
 				}
 			} else if( cst.vtype != getVarType(curBlk,cstidx)){
@@ -1558,7 +1558,7 @@ This code is used in both positions of the expression
 			cstidx = defConstant(curBlk,csttpe,&cst);
 			setPolymorphic(curInstr,csttpe, FALSE);
 			if( flag )
-				freezeVarType(curBlk,cstidx);
+				setVarUDFtype(curBlk,cstidx);
 			curInstr = pushArgument(curBlk,curInstr,cstidx);
 			@1;
 		}
@@ -1727,9 +1727,8 @@ The deadcode optimizer removes all comment information.
 				cst.len = strlen(start);
 				cst.val.sval= GDKstrdup(start);
 				getArg(curInstr,0)= defConstant(curBlk, TYPE_str,&cst);
-				/* mark the constant for not being copied to the stack */
-				isConstant(curBlk,getArg(curInstr,0)) = 
-						-isConstant(curBlk,getArg(curInstr,0));
+				clrVarConstant(curBlk, getArg(curInstr,0));
+				setVarDisabled(curBlk, getArg(curInstr,0));
 				pushInstruction(curBlk,curInstr);
 			}
 			echoInput(cntxt);

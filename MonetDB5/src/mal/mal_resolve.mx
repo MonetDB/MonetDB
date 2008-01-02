@@ -374,9 +374,9 @@ Beware, this is not yet effectuated in the interpreter.
 	p->typechk= TYPE_RESOLVED;
 	for(i=0;i<p->retc;i++) {
 		int ts= returntype[i];
-		if( !isFixed(mb,getArg(p,i)) && ts>=0) {
+		if( !isVarFixed(mb,getArg(p,i)) && ts>=0) {
 			setVarType(mb, getArg(p,i),ts);
-			setFixed(mb, getArg(p,i));
+			setVarFixed(mb, getArg(p,i));
 		}
 		@:prepostProcess(ts,i,mb)@
 	}
@@ -460,15 +460,15 @@ This piece of code may be shared by the separate binder
 Since we now know the storage type of the receiving variable, we can
 set the garbagge collection flag.
 @= prepostProcess
-	if (findGDKtype(@1) == TYPE_bat){
-		setVarCleanup(mb,getArg(p,@2)) = TRUE;
+	if( findGDKtype(@1) == TYPE_bat){
+		setVarCleanup(mb,getArg(p,@2));
 		getInstrPtr(@3,0)->gc |= GARBAGECONTROL;
 		p->gc|= QUICKCLEANUP;
 	} else if (!isPolyType(@1)  && @1< TYPE_any && 
 		@1>=0 && ATOMstorage(@1)== TYPE_str &&
-		!isConstant(mb,getArg(p,@2))){
+		!isVarConstant(mb,getArg(p,@2))){
 		getInstrPtr(@3,0)->gc |= GARBAGECONTROL;
-		setVarCleanup(mb,getArg(p,@2)) = TRUE;
+		setVarCleanup(mb,getArg(p,@2));
 		p->gc|= QUICKCLEANUP;
 	} 
 @c
@@ -607,7 +607,7 @@ void typeChecker(Module scope, MalBlkPtr mb, InstrPtr p,int silent){
 
 	if( isaSignature(p) ) {
 		for(k=0;k<p->argc;k++)
-			setFixed(mb,getArg(p,k));
+			setVarFixed(mb,getArg(p,k));
 		for(k=p->retc;k<p->argc;k++){
 			@:prepostProcess(getArgType(mb,p,k),k,mb)@
 		}
@@ -689,9 +689,9 @@ using the target type.
 			rhs= lhs;
 		} 
 
-		if( !isFixed(mb,getArg(p,k))) {
+		if( !isVarFixed(mb,getArg(p,k))) {
 			setVarType(mb,getArg(p,k),rhs);
-			setFixed(mb,getArg(p,k));
+			setVarFixed(mb,getArg(p,k));
 		}
 		@:prepostProcess(s1,0,mb)@
 	}
@@ -814,7 +814,7 @@ void chkProgram(Module s, MalBlkPtr mb)
 
 	chkTypes(s,mb);
 	chkFlow(mb);
-	chkDeclarations(mb,FALSE);
+	chkDeclarations(mb);
 }
 @- Polymorphic type analysis
 MAL provides for type variables of the form any$N. This feature
