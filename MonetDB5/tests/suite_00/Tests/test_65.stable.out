@@ -106,11 +106,11 @@ function user.main():void;	# 0  (main:void)
     ua_a := io.printf("#~EndVariableOutput~#\n");	# 34 IOprint_str (ua_a:void)<-(_50:str)
 #	io.print("printf(\"#~BeginVariableOutput~#\\n\"); b.sample(9).print(); ioprintf(\"#~EndVariableOutput~#\\n\");"); 	# 35  (_55:str)
     va_a := io.printf("#~BeginVariableOutput~#\n");	# 36 IOprint_str (va_a:void)<-(_45:str)
-    wa_a := algebra.sample(b,9);	# 37 ALGsample (wa_a:bat[:oid,:int])<-(b:bat[:oid,:int])(_58:int)
+    wa_a := algebra.sample(b,9);	# 37 ALGsample (wa_a:bat[:oid,:int])<-(b:bat[:oid,:int])(_59:int)
     xa_a := io.print(wa_a);	# 38 IOprint_val (xa_a:void)<-(wa_a:bat[:oid,:int])
     ya_a := io.printf("#~EndVariableOutput~#\n");	# 39 IOprint_str (ya_a:void)<-(_50:str)
-#	io.print("b.sample(0).print();"); 	# 40  (_61:str)
-    ab_a := algebra.sample(b,0);	# 41 ALGsample (ab_a:bat[:oid,:int])<-(b:bat[:oid,:int])(_63:int)
+#	io.print("b.sample(0).print();"); 	# 40  (_62:str)
+    ab_a := algebra.sample(b,0);	# 41 ALGsample (ab_a:bat[:oid,:int])<-(b:bat[:oid,:int])(_64:int)
     bb_a := io.print(ab_a);	# 42 IOprint_val (bb_a:void)<-(ab_a:bat[:oid,:int])
 #	io.print("quit();"); 	# 43  (_65:str)
     cb_a := clients.quit();	# 44 CLTquit (cb_a:void)
@@ -120,7 +120,7 @@ end main;	# 45
 # h	t	  # name
 # int	int	  # type
 #-----------------#
-[ 9@0,	  nil	  ]
+[ 3@0,	  nil	  ]
 #~EndVariableOutput~#
 #printf(\"#~BeginVariableOutput~#\\n\"); b.sample(1).print(); io.printf(\"#~EndVariableOutput~#\\n\");
 #~BeginVariableOutput~#

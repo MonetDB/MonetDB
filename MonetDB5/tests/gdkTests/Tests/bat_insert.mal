@@ -1,3 +1,4 @@
+o:= nil:oid;
 function check_cap(b:bat[:any_1,:any_2]) :void;
 	inserted := aggr.count(b);
 	d:= bat.getDelta(b);

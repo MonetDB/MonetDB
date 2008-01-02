@@ -83,42 +83,43 @@ end check_cap;	# 11
 #clients.quit();
 #
 function user.main():void;	# 0  (main:void)
-    b := bat.new(:oid,:oid);	# 1 CMDBATnew (b:bat[:oid,:oid])<-(_2:oid)(_2:oid)
-    bat.setName(b,"b");	# 2 BKCsetName (_3:void)<-(b:bat[:oid,:oid])(_4:str)
-    bat.setPersistent(b,true);	# 3 BKCpersists (_5:void)<-(b:bat[:oid,:oid])(_6:bit)
-    cap := bat.getCapacity(b);	# 4 BKCgetCapacity (cap:lng)<-(b:bat[:oid,:oid])
-    cap := calc./(cap,4);	# 5 CALCbinarycheckDIVlngint (cap:lng)<-(cap:lng)(_8:int)
-    ci := calc.int(cap);	# 6 CALClng2int (ci:int)<-(cap:lng)
-    ci := calc.+(ci,1);	# 7 CALCbinaryADDintint (ci:int)<-(ci:int)(_10:int)
-    i := calc.*(ci,3);	# 8 CALCbinaryMULintint (i:int)<-(ci:int)(_12:int)
-barrier go := calc.>(i,0);	# 9 CALCcompGTintint (go:bit)<-(i:int)(_14:int) jump 14
-    o := calc.oid(i);	# 10 CALCint2oid (o:oid)<-(i:int)
-    bat.insert(b,o,o);	# 11 BKCinsert_bun (_16:void)<-(b:bat[:oid,:oid])(o:oid)(o:oid)
-    i := calc.-(i,1);	# 12 CALCbinarySUBintint (i:int)<-(i:int)(_10:int)
-    redo go := calc.>(i,0);	# 13 CALCcompGTintint (go:bit)<-(i:int)(_14:int) jump 10
-exit go;	# 14  (go:bit)
-    transaction.commit();	# 15 TRNglobal_commit (_17:bit)
-    i := calc.*(ci,2);	# 16 CALCbinaryMULintint (i:int)<-(ci:int)(_18:int)
-barrier go := calc.>(i,0);	# 17 CALCcompGTintint (go:bit)<-(i:int)(_14:int) jump 22
-    o := calc.oid(i);	# 18 CALCint2oid (o:oid)<-(i:int)
-    bat.delete(b,o);	# 19 BKCdelete (_19:void)<-(b:bat[:oid,:oid])(o:oid)
-    i := calc.-(i,1);	# 20 CALCbinarySUBintint (i:int)<-(i:int)(_10:int)
-    redo go := calc.>(i,0);	# 21 CALCcompGTintint (go:bit)<-(i:int)(_14:int) jump 18
-exit go;	# 22  (go:bit)
-    c := bat.new(:oid,:oid);	# 23 CMDBATnew (c:bat[:oid,:oid])<-(_2:oid)(_2:oid)
-    i := calc.*(ci,2);	# 24 CALCbinaryMULintint (i:int)<-(ci:int)(_18:int)
-barrier go := calc.>(i,0);	# 25 CALCcompGTintint (go:bit)<-(i:int)(_14:int) jump 30
-    o := calc.oid(i);	# 26 CALCint2oid (o:oid)<-(i:int)
-    bat.insert(c,o,o);	# 27 BKCinsert_bun (_21:void)<-(c:bat[:oid,:oid])(o:oid)(o:oid)
-    i := calc.-(i,1);	# 28 CALCbinarySUBintint (i:int)<-(i:int)(_10:int)
-    redo go := calc.>(i,0);	# 29 CALCcompGTintint (go:bit)<-(i:int)(_14:int) jump 26
-exit go;	# 30  (go:bit)
-    bat.insert(b,c);	# 31 BKCinsert_bat (_22:void)<-(b:bat[:oid,:oid])(c:bat[:oid,:oid])
-    user.check_cap(b);	# 32  (_23:void)<-(b:bat[:oid,:oid])
-    bat.setPersistent(b,false);	# 33 BKCpersists (_24:void)<-(b:bat[:oid,:oid])(_25:bit)
-    transaction.commit();	# 34 TRNglobal_commit (_26:bit)
-    clients.quit();	# 35 CLTquit (_27:void)
-end main;	# 36  
+    o := nil:oid;	# 1  (o:oid)<-(_2:oid)
+    b := bat.new(:oid,:oid);	# 2 CMDBATnew (b:bat[:oid,:oid])<-(_4:oid)(_5:oid)
+    bat.setName(b,"b");	# 3 BKCsetName (_6:void)<-(b:bat[:oid,:oid])(_7:str)
+    bat.setPersistent(b,true);	# 4 BKCpersists (_8:void)<-(b:bat[:oid,:oid])(_9:bit)
+    cap := bat.getCapacity(b);	# 5 BKCgetCapacity (cap:lng)<-(b:bat[:oid,:oid])
+    cap := calc./(cap,4);	# 6 CALCbinarycheckDIVlngint (cap:lng)<-(cap:lng)(_11:int)
+    ci := calc.int(cap);	# 7 CALClng2int (ci:int)<-(cap:lng)
+    ci := calc.+(ci,1);	# 8 CALCbinaryADDintint (ci:int)<-(ci:int)(_13:int)
+    i := calc.*(ci,3);	# 9 CALCbinaryMULintint (i:int)<-(ci:int)(_15:int)
+barrier go := calc.>(i,0);	# 10 CALCcompGTintint (go:bit)<-(i:int)(_17:int) jump 15
+    o := calc.oid(i);	# 11 CALCint2oid (o:oid)<-(i:int)
+    bat.insert(b,o,o);	# 12 BKCinsert_bun (_18:void)<-(b:bat[:oid,:oid])(o:oid)(o:oid)
+    i := calc.-(i,1);	# 13 CALCbinarySUBintint (i:int)<-(i:int)(_13:int)
+    redo go := calc.>(i,0);	# 14 CALCcompGTintint (go:bit)<-(i:int)(_17:int) jump 11
+exit go;	# 15  (go:bit)
+    transaction.commit();	# 16 TRNglobal_commit (_19:bit)
+    i := calc.*(ci,2);	# 17 CALCbinaryMULintint (i:int)<-(ci:int)(_20:int)
+barrier go := calc.>(i,0);	# 18 CALCcompGTintint (go:bit)<-(i:int)(_17:int) jump 23
+    o := calc.oid(i);	# 19 CALCint2oid (o:oid)<-(i:int)
+    bat.delete(b,o);	# 20 BKCdelete (_21:void)<-(b:bat[:oid,:oid])(o:oid)
+    i := calc.-(i,1);	# 21 CALCbinarySUBintint (i:int)<-(i:int)(_13:int)
+    redo go := calc.>(i,0);	# 22 CALCcompGTintint (go:bit)<-(i:int)(_17:int) jump 19
+exit go;	# 23  (go:bit)
+    c := bat.new(:oid,:oid);	# 24 CMDBATnew (c:bat[:oid,:oid])<-(_23:oid)(_24:oid)
+    i := calc.*(ci,2);	# 25 CALCbinaryMULintint (i:int)<-(ci:int)(_20:int)
+barrier go := calc.>(i,0);	# 26 CALCcompGTintint (go:bit)<-(i:int)(_17:int) jump 31
+    o := calc.oid(i);	# 27 CALCint2oid (o:oid)<-(i:int)
+    bat.insert(c,o,o);	# 28 BKCinsert_bun (_25:void)<-(c:bat[:oid,:oid])(o:oid)(o:oid)
+    i := calc.-(i,1);	# 29 CALCbinarySUBintint (i:int)<-(i:int)(_13:int)
+    redo go := calc.>(i,0);	# 30 CALCcompGTintint (go:bit)<-(i:int)(_17:int) jump 27
+exit go;	# 31  (go:bit)
+    bat.insert(b,c);	# 32 BKCinsert_bat (_26:void)<-(b:bat[:oid,:oid])(c:bat[:oid,:oid])
+    user.check_cap(b);	# 33  (_27:void)<-(b:bat[:oid,:oid])
+    bat.setPersistent(b,false);	# 34 BKCpersists (_28:void)<-(b:bat[:oid,:oid])(_29:bit)
+    transaction.commit();	# 35 TRNglobal_commit (_30:bit)
+    clients.quit();	# 36 CLTquit (_31:void)
+end main;	# 37  
 
 # 20:34:11 >  
 # 20:34:11 >  Done.
