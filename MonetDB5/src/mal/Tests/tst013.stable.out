@@ -35,7 +35,7 @@ stdout of test 'tst013` in directory 'src/mal` itself:
 function user.main():void;	# 0  (main:void)
 # incomplete barrier blocks. Resolve them when unambigous 	# 1  (_1:str)
 barrier z := true;	# 2  (z:bit)<-(_3:bit) jump 4
-    leave ;	# 3  (_4:any)
+    leave _4;	# 3  (_4:any)
 exit z;	# 4  (z:bit)
 barrier i := 1;	# 5  (i:int)<-(_6:int) jump 15
     i := calc.+(i,1);	# 6 CALCbinaryADDintint (i:int)<-(i:int)(_6:int)

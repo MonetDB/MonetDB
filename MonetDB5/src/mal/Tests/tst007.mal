@@ -1,4 +1,5 @@
 # A collection of forloops, which should not execute
+function foo();
 barrier	H := batoperatie;
 	Tail:= algebra.fetch(b,H);
 	#body
@@ -45,4 +46,4 @@ barrier FS:= batcalc.not(FTE);
 	#elsepart
 exit	FS;
 
-
+end foo;

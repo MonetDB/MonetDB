@@ -14,20 +14,21 @@ stdout of test 'tst070` in directory 'src/mal` itself:
 # Visit http://monetdb.cwi.nl/ for further information.
 ## parsing operations with multi-assignments
 #
-#(x,y):= point(z:int);
-#(initial:str,surname:str):= getName();
+#function foo();
+#(x,y):= user.point(z:int);
+#(initial:str,surname:str):= user.getName();
+#end foo;
+!TypeException:user.foo[1]:'user.point' undefined in: (x:any, y:any) := user.point(z:int)
+!TypeException:user.foo[2]:'user.getName' undefined in: (initial:str, surname:str) := user.getName()
+!TypeException:user.foo[1]:'z' may not be used before being initialized
+function user.foo():void;	# 0  (foo:void)
+    (x,y):= user.point(z);	# 1  unknown (x:any)(y:any)<-(z:int)
+    (initial:str ,surname:str ):= user.getName();	# 2  unknown (initial:str)(surname:str)
+end foo;	# 3  
 #
-!TypeException:user.main[2]:'user.point' undefined in: (x:any, y:any) := user.point(z:int)
-
-!TypeException:user.main[3]:'user.getName' undefined in: (initial:str, surname:str) := user.getName()
-
-!TypeException:user.main[2]:'z' may not be used before being initialized
-
 function user.main():void;	# 0  (main:void)
-# parsing operations with multi-assignments 	# 1  (_2:str)
-    (x,y):= user.point(z);	# 2  unknown (x:any)(y:any)<-(z:int)
-    (initial:str ,surname:str ):= user.getName();	# 3  unknown (initial:str)(surname:str)
-end main;	# 4  
+# parsing operations with multi-assignments 	# 1  (_1:str)
+end main;	# 2  
 
 # 07:58:49 >  
 # 07:58:49 >  Done.

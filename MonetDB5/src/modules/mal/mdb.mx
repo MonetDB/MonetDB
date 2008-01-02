@@ -674,7 +674,7 @@ MDBvar(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 
 	(void) p;
 	(void) stk;
-	printStack(c->fdout, mb, stk,0);
+	printStack(c->fdout, mb, stk);
 	return MAL_SUCCEED;
 }
 
@@ -690,7 +690,7 @@ MDBvar3(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	if (s == NULL)
 		showException(MAL,"mdb.var","Could not find %s.%s", modnme, fcnnme);
 	else
-		printStack(c->fdout, s->def, (s->def == mb ? stk : 0),0);
+		printStack(c->fdout, s->def, (s->def == mb ? stk : 0));
 	(void) mb;
 	return NULL;
 }

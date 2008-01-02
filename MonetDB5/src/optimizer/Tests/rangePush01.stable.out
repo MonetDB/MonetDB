@@ -26,26 +26,26 @@ stdout of test 'rangePush01` in directory 'src/optimizer` itself:
 #
 function user.main():void;	# 0  (main:void)
 # detect empty ranges 	# 1  (_1:str)
-    b := bat.new(nil:void,nil:int);	# 2 CMDBATnew (b:bat[:void,:int])<-(_3:void)(_4:int)
+    b := bat.new(:void,:int);	# 2 CMDBATnew (b:bat[:void,:int])<-(_3:void)(_4:int)
     s1 := algebra.select(b,80,90);	# 3 ALGselect (s1:bat[:void,:int])<-(b:bat[:void,:int])(_6:int)(_7:int)
-    s2{rows=0:lng} := bat.new(nil:void,nil:int);	# 4 CMDBATnew (s2:bat[:void,:int])<-(_3:void)(_4:int)
+    s2{rows=0:lng} := bat.new(:void,:int);	# 4 CMDBATnew (s2:bat[:void,:int])<-(_3:void)(_4:int)
     s3 := algebra.select(b,80,80);	# 5 ALGselect (s3:bat[:void,:int])<-(b:bat[:void,:int])(_6:int)(_6:int)
     s4 := algebra.select(b,80,80,true,true);	# 6 ALGselectInclusive (s4:bat[:void,:int])<-(b:bat[:void,:int])(_6:int)(_6:int)(_11:bit)(_11:bit)
-    s5{rows=0:lng} := bat.new(nil:void,nil:int);	# 7 CMDBATnew (s5:bat[:void,:int])<-(_3:void)(_4:int)
-    s6{rows=0:lng} := bat.new(nil:void,nil:int);	# 8 CMDBATnew (s6:bat[:void,:int])<-(_3:void)(_4:int)
-    s7{rows=0:lng} := bat.new(nil:void,nil:int);	# 9 CMDBATnew (s7:bat[:void,:int])<-(_3:void)(_4:int)
+    s5{rows=0:lng} := bat.new(:void,:int);	# 7 CMDBATnew (s5:bat[:void,:int])<-(_3:void)(_4:int)
+    s6{rows=0:lng} := bat.new(:void,:int);	# 8 CMDBATnew (s6:bat[:void,:int])<-(_3:void)(_4:int)
+    s7{rows=0:lng} := bat.new(:void,:int);	# 9 CMDBATnew (s7:bat[:void,:int])<-(_3:void)(_4:int)
     mdb.list();	# 10 MDBlist (_17:void)
 end main;	# 11  
 function user.main():void;
 # detect empty ranges 
-    b := bat.new(nil:void,nil:int);
+    b := bat.new(:void,:int);
     s1 := algebra.select(b,80,90);
-    s2{rows=0:lng} := bat.new(nil:void,nil:int);
+    s2{rows=0:lng} := bat.new(:void,:int);
     s3 := algebra.select(b,80,80);
     s4 := algebra.select(b,80,80,true,true);
-    s5{rows=0:lng} := bat.new(nil:void,nil:int);
-    s6{rows=0:lng} := bat.new(nil:void,nil:int);
-    s7{rows=0:lng} := bat.new(nil:void,nil:int);
+    s5{rows=0:lng} := bat.new(:void,:int);
+    s6{rows=0:lng} := bat.new(:void,:int);
+    s7{rows=0:lng} := bat.new(:void,:int);
     mdb.list();
 end main;
 

@@ -1,5 +1,6 @@
 # simple strength reduction
 	j:= "hello world";
+	k:= nil:str;
 barrier go:=true;
 	i:=23;
 	j:= "not moved";

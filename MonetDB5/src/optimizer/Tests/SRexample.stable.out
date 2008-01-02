@@ -24,33 +24,35 @@ stdout of test 'SRexample` in directory 'src/optimizer` itself:
 #mdb.list();
 #
 function user.main():void;	# 0  (main:void)
-    i := 23;	# 1  (i:int)<-(_7:int)
+    i := 23;	# 1  (i:int)<-(_9:int)
 # simple strength reduction 	# 2  (_1:str)
     j := "hello world";	# 3  (j:str)<-(_3:str)
-barrier go := true;	# 4  (go:bit)<-(_5:bit) jump 9
-    j := "not moved";	# 5  (j:str)<-(_8:str)
-    k := j;	# 6  (k:str)<-(j:str)
-    io.print(i);	# 7 IOprint_val (_10:void)<-(i:int)
-    redo go := false;	# 8  (go:bit)<-(_11:bit) jump 5
-exit go;	# 9  (go:bit)
-    z := j;	# 10  (z:str)<-(j:str)
-# This shows it should not work for blocks in general 	# 11  (_13:str)
-    r := "hello world";	# 12  (r:str)<-(_3:str)
-barrier go := true;	# 13  (go:bit)<-(_5:bit) jump 18
-    s := 23;	# 14  (s:int)<-(_7:int)
-    r := "not moved";	# 15  (r:str)<-(_8:str)
-    k := r;	# 16  (k:str)<-(r:str)
-    io.print(s);	# 17 IOprint_val (_16:void)<-(s:int)
-exit go;	# 18  (go:bit)
-    z := r;	# 19  (z:str)<-(r:str)
-    mdb.list();	# 20 MDBlist (_18:void)
-end main;	# 21  
+    k := nil:str;	# 4  (k:str)<-(_5:str)
+barrier go := true;	# 5  (go:bit)<-(_7:bit) jump 10
+    j := "not moved";	# 6  (j:str)<-(_10:str)
+    k := j;	# 7  (k:str)<-(j:str)
+    io.print(i);	# 8 IOprint_val (_11:void)<-(i:int)
+    redo go := false;	# 9  (go:bit)<-(_12:bit) jump 6
+exit go;	# 10  (go:bit)
+    z := j;	# 11  (z:str)<-(j:str)
+# This shows it should not work for blocks in general 	# 12  (_14:str)
+    r := "hello world";	# 13  (r:str)<-(_3:str)
+barrier go := true;	# 14  (go:bit)<-(_7:bit) jump 19
+    s := 23;	# 15  (s:int)<-(_9:int)
+    r := "not moved";	# 16  (r:str)<-(_10:str)
+    k := r;	# 17  (k:str)<-(r:str)
+    io.print(s);	# 18 IOprint_val (_17:void)<-(s:int)
+exit go;	# 19  (go:bit)
+    z := r;	# 20  (z:str)<-(r:str)
+    mdb.list();	# 21 MDBlist (_19:void)
+end main;	# 22  
 [ 23 ]
 [ 23 ]
 function user.main():void;
     i := 23;
 # simple strength reduction 
     j := "hello world";
+    k := nil:str;
 barrier go := true;
     j := "not moved";
     k := j;

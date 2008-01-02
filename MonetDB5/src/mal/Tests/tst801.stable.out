@@ -32,9 +32,9 @@ function user.main():void;	# 0  (main:void)
     x := algebra.find(b,0);	# 11 ALGfind (x:BAT)<-(b:bat[:int,:BAT])(_5:int)
 #io.print(x); 	# 12  (_16:str)
     x := algebra.find(b,1);	# 13 ALGfind (x:BAT)<-(b:bat[:int,:BAT])(_8:int)
-#io.print(x); 	# 14  (_16:str)
-    x := algebra.find(b,4);	# 15 ALGfind (x:BAT)<-(b:bat[:int,:BAT])(_17:int)
-    io.print(x);	# 16 IOprint_val (_18:void)<-(x:BAT)
+#io.print(x); 	# 14  (_17:str)
+    x := algebra.find(b,4);	# 15 ALGfind (x:BAT)<-(b:bat[:int,:BAT])(_18:int)
+    io.print(x);	# 16 IOprint_val (_19:void)<-(x:BAT)
 end main;	# 17  
 #-----------------#
 # h	t	  # name

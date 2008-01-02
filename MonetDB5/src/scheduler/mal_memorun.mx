@@ -162,7 +162,7 @@ propagateNonTarget(MalBlkPtr mb, int pc){
 				p->token = -p->token; /* temporary NOOP */
 		if( p->token<0)
 			for(i=0; i<p->retc; i++)
-				setVarUsed(mb,getArg(p,i),-1);
+				setVarDisabled(mb,getArg(p,i));
 	}
 }
 @-
@@ -196,7 +196,7 @@ RUNchoice(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		mincost= *(int*) getArgReference(stk,p,1);
 		for(i=3; i<p->argc; i+= 2){
 			cost= *(int*) getArgReference(stk,p,i);
-			if( cost <mincost && isVarUsed(mb,getArg(p,i+1))> -1 ){
+			if( cost <mincost && !isVarDisabled(mb,getArg(p,i+1))){
 				mincost= cost;
 				target= getArg(p,i+1);
 			}
@@ -210,7 +210,7 @@ RUNchoice(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 
 		mincost= -1;
 		for(j=2;j<p->argc; j++){
-			if(	isVarUsed(mb,getArg(p,j))> -1 )
+			if(	!isVarDisabled(mb,getArg(p,j)) )
 			for(i= pc+1; i<mb->stop; i++){
 				InstrPtr q= getInstrPtr(mb,i);
 				if(p->token >=0 && getArg(q,0)== getArg(p,j)){
@@ -230,8 +230,8 @@ RUNchoice(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	/* remove non-qualifying variables */
 	for(i=2; i<p->argc; i+= 2)
 		if( getArg(p,i) != target){
-			setVarUsed(mb,getArg(p,i-1),-1);
-			setVarUsed(mb,getArg(p,i),-1);
+			setVarDisabled(mb,getArg(p,i-1));
+			setVarDisabled(mb,getArg(p,i));
 		}
 	propagateNonTarget(mb,pc+1);
 #ifdef DEBUG_RUN_MEMORUN
@@ -253,7 +253,7 @@ RUNpickResult(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 
 	lhs= &stk->stk[getArg(p,0)];
 	for(i=p->retc; i<p->argc; i++)
-		if( isVarUsed(mb,getArg(p,i))> -1){
+		if( !isVarDisabled(mb,getArg(p,i))){
 			rhs= &stk->stk[getArg(p,i)];
 			if( (rhs)->vtype < TYPE_str) 
 				*lhs = *rhs; 

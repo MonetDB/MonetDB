@@ -241,7 +241,7 @@ mccValue(stream *f, MalBlkPtr mb, int i)
 	int sz = 0;
 	ValPtr val;
 
-	val = &getConstant(mb, i);
+	val = &getVarConstant(mb, i);
 	if (val->vtype == TYPE_str) {
 		stream_printf(f, "\"%s\"", val->val.sval);
 	} else {
@@ -326,7 +326,7 @@ mccVariables(stream *f, MalBlkPtr mb)
 	}
 
 	for (i = 1; i < mb->vtop; i++) 
-	if( !isTypeVar(mb,i)){
+	if( !isVarTypedef(mb,i)){
 		tpe = getTypeName(getVarType(mb, i));
 		seenbat += isaBatType(getVarType(mb,i));
 		v = getVarName(mb, i);
@@ -448,7 +448,7 @@ mccAssignment(stream *f, MalBlkPtr mb, InstrPtr p, int *catch, int *ctop){
 	if( p->retc+i <p->argc){
 		mccVar(f, mb, getArg(p, i));
 		stream_printf(f, " = ");
-		if( isConstant(mb,getArg(p,p->retc+i-1)))
+		if( isVarConstant(mb,getArg(p,p->retc+i-1)))
 			mccValue(f,mb, getArg(p,p->retc+i-1));
 		else
 			mccVar(f, mb, getArg(p, p->retc+i-1));
@@ -580,7 +580,7 @@ mccMultiplex(stream *f, MalBlkPtr mb, InstrPtr p)
 	if (getModuleId(pn))
 		setModuleId(p,NULL);
 	setModuleId(pn, NULL);
-	setFunctionId(pn, GDKstrdup(getConstant(mb, pn->argv[pn->retc]).val.sval));
+	setFunctionId(pn, GDKstrdup(getVarConstant(mb, pn->argv[pn->retc]).val.sval));
 	delArgument(pn, pn->retc);
 	typeChecker(MCgetClient()->nspace, mb, pn, TRUE);
 

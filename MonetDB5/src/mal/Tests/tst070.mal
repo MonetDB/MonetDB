@@ -1,4 +1,6 @@
 # parsing operations with multi-assignments
 
+function foo();
 (x,y):= user.point(z:int);
 (initial:str,surname:str):= user.getName();
+end foo;

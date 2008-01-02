@@ -65,9 +65,7 @@ stdout of test 'tst010` in directory 'src/mal` itself:
 !SyntaxException:user.main[31]:exit-label 'F' without begin-label
 
 !SyntaxException:user.main[41]:exit-label 'A' without begin-label
-
 !SyntaxException:user.main[44]:begin 'unfinished' without exit in main[45]
-
 function user.main():void;	# 0  (main:void)
 # syntax analysis test for guarded blocks, redo's and leave's 	# 1  (_1:str)
 # forcefully end the block, because the parser counts barrier/exit pairs 	# 2  (_2:str)
@@ -106,8 +104,8 @@ barrier D := 1;	# 33  (D:int)<-(_4:int) jump 37
     redo D;	# 35  (D:int) jump 34
 # dead code 	# 36  ($29:str)
 exit D;	# 37  (D:int)
-barrier D := 2;	# 38  (D:int)<-(_18:int) jump 40
-# duplicate block 	# 39  (_19:str)
+barrier D := 2;	# 38  (D:int)<-(_22:int) jump 40
+# duplicate block 	# 39  (_23:str)
 exit D;	# 40  (D:int)
 exit A;	# 41  (A:int)
 barrier unfinished := 1;	# 42  (unfinished:int)<-(_4:int)
@@ -152,8 +150,8 @@ barrier D := 1;	# 33  (D:int)<-(_4:int) jump 37
     redo D;	# 35  (D:int) jump 34
 # dead code 	# 36  ($29:str)
 exit D;	# 37  (D:int)
-barrier D := 2;	# 38  (D:int)<-(_18:int) jump 40
-# duplicate block 	# 39  (_19:str)
+barrier D := 2;	# 38  (D:int)<-(_22:int) jump 40
+# duplicate block 	# 39  (_23:str)
 exit D;	# 40  (D:int)
 exit A;	# 41  (A:int)
 barrier unfinished := 1;	# 42  (unfinished:int)<-(_4:int)

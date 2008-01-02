@@ -6,6 +6,6 @@ fs := algebra.find(cat,"mapi_port");
 port := calc.int(fs);
 mid:= mserver.reconnect("localhost",port,"s0_0","monetdb","monetdb","mal");
 #mserver.trace(mid,1);
-mserver.query(mid,"io.print(d);");
+mserver.query(mid,"io.print(1);");
 io.print("done");
 mserver.disconnect(mid);

@@ -290,8 +290,8 @@ str
 RUNinline(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	Symbol qc;
-	str modnme = getConstant(mb, getArg(p, 1)).val.sval;
-	str fcnnme = getConstant(mb, getArg(p, 2)).val.sval;
+	str modnme = getVarConstant(mb, getArg(p, 1)).val.sval;
+	str fcnnme = getVarConstant(mb, getArg(p, 2)).val.sval;
 
 	(void) stk;
 	(void) p;

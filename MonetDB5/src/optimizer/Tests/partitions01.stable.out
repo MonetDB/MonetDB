@@ -77,6 +77,7 @@ function sql.query(A0:sht):void;
     x19{rows=1} := bat.reverse(x18);
     x20{rows=1} := algebra.join(x19,x1);
     _39 := bpm.new(:oid,:int);
+    x28{rows=1} := nil;
 barrier x21:bat[:oid,:int]{bid=815,rows=1,notnil=true}  := bpm.newIterator(bpm17);
     x28{rows=1} := algebra.join(x19,x21);
     bpm.addPartition(_39,x28);

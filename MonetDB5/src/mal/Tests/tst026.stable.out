@@ -1,0 +1,61 @@
+stdout of test 'tst026` in directory 'src/mal` itself:
+
+
+# 12:49:31 >  
+# 12:49:31 >   mserver5 "--config=/ufs/mk/monet5/Linux/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5//Linux/lib/MonetDB5:/ufs/mk/monet5//Linux/lib/MonetDB5/lib:/ufs/mk/monet5//Linux/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/mk/monet5//Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5//Linux/var/MonetDB5/sql_logs"  --set mapi_open=true --set xrpc_open=true --set mapi_port=39517 --set xrpc_port=41696 --set monet_prompt= --trace --dbname=mTests_src_mal  tst026.mal
+# 12:49:31 >  
+
+# MonetDB server v5.3.0, based on kernel v1.21.0
+# Serving database 'mTests_src_mal'
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Copyright (c) 1993-2007 CWI, all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://gio.ins.cwi.nl:39517/
+#function foo();
+#	b:= bat.new(:oid,:int);
+#	cnt:= 0:int;
+#barrier d:=true;
+#	f:=1;
+#	cnt:= aggr.count(b);
+#	redo d:=false;
+#	barrier e:=true;
+#		g:=1;
+#	exit e;
+#	io.print(g);
+#exit d;
+#cnt:= aggr.count(b);
+#id := calc.oid(cnt);
+#io.print(f);
+#io.print(g);
+#end foo;
+!TypeException:user.foo[10]:'g' used outside scope
+!TypeException:user.foo[14]:'f' used outside scope
+!TypeException:user.foo[15]:'g' used outside scope
+function user.foo():void;	# 0  (foo:void)
+    b := bat.new(:oid,:int);	# 1 CMDBATnew (b:bat[:oid,:int])<-(_2:oid)(_3:int)
+    cnt := 0:int;	# 2  (cnt:int)<-(_5:int)
+barrier d := true;	# 3  (d:bit)<-(_7:bit) jump 11
+    f := 1;	# 4  (f:int)<-(_9:int)
+    cnt := aggr.count(b);	# 5 ALGcount_bat (cnt:int)<-(b:bat[:oid,:int])
+    redo d := false;	# 6  (d:bit)<-(_10:bit) jump 4
+barrier e := true;	# 7  (e:bit)<-(_7:bit) jump 9
+    g := 1;	# 8  (g:int)<-(_9:int)
+exit e;	# 9  (e:bit)
+    io.print(g);	# 10 IOprint_val (_13:void)<-(g:int)
+exit d;	# 11  (d:bit)
+    cnt := aggr.count(b);	# 12 ALGcount_bat (cnt:int)<-(b:bat[:oid,:int])
+    id := calc.oid(cnt);	# 13 CALCint2oid (id:oid)<-(cnt:int)
+    io.print(f);	# 14 IOprint_val (_15:void)<-(f:int)
+    io.print(g);	# 15 IOprint_val (_16:void)<-(g:int)
+end foo;	# 16  
+#foo();
+#
+function user.main():void;	# 0  (main:void)
+    user.foo();	# 1  (_1:void)
+end main;	# 2  
+!MALException:user.foo[0]:Syntax error in script
+
+# 12:49:32 >  
+# 12:49:32 >  Done.
+# 12:49:32 >  
+

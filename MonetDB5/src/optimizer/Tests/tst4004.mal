@@ -2,6 +2,7 @@
 
 A :=23;
 D :=22;
+F := 1;
 
 B:= true;
 barrier c:= B;

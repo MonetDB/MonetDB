@@ -1034,6 +1034,8 @@ function str2qgrams(s:str):bat[:oid,:str];
 #        if (b.count() > 32764) break; # ignore suffix of >32KB strings
 #        i :+= 1;
 #    }
+	cnt:= 0:int;
+    id := calc.oid(cnt);
     barrier B:= i < len;
   	sstr := str.string(s,i,1);
         bat.insert(b,sstr, nil:oid);
@@ -1053,7 +1055,6 @@ function str2qgrams(s:str):bat[:oid,:str];
 #    var c0 := b.select(0@0, oid(b.count() - 3)).mark(0@0).reverse();
     cnt := aggr.count(alg);
     cnt := calc.-(cnt,3);
-    id := calc.oid(cnt);
     sel := algebra.select(b, 0@0, id);
     mrk := algebra.markT(sel, 0@0); 
     c0  := bat.reverse(mrk);

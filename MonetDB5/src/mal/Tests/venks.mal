@@ -2,6 +2,7 @@
 # it illustrates weakness of the kintersect routine.
 
 t0:= alarm.usec();
+l:= 0:sht;
 large:= bat.new(:oid,:sht);
 barrier (go,i):= language.newRange(0:lng);
 	k:= mmath.rand();

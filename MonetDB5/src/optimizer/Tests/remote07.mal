@@ -17,9 +17,9 @@ mserver.rpc(mid,"c:=algebra.select(rb,0,12);");
 
 low:= 5+1;
 mserver.put(mid,"low",low);
-i:lng:= mserver.rpc(mid,"e:=algebra.select(d,low,7); i:=aggr.count(d); io.print(i);");
+i:lng:= mserver.rpc(mid,"e:=algebra.select(rb,low,7); i:=aggr.count(e); io.print(i);");
 io.printf(" count %d\n",i);
-d:bat[:int,:int]:= mserver.rpc(mid,"io.print(d);");
+d:bat[:int,:int]:= mserver.rpc(mid,"io.print(i);");
 io.print(d);
 mserver.disconnect(mid);
 optimizer.remoteQueries();

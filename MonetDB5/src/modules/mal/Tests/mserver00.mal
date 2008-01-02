@@ -31,6 +31,7 @@ s:str:= mserver.fetch_field(mid,1);
 io.printf("field 1 %s\n",s);
 
 mserver.query(mid,"r:= bat.new(:oid,:int);");
+io.printf("shipped first query\n");
 mserver.query(mid,"bat.insert(r, 1@0,311);");
 mserver.query(mid,"bat.insert(r,2@0,433);");
 b:bat[:oid,:int]:= mserver.rpc(mid,"io.print(r);");

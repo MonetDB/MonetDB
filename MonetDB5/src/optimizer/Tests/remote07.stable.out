@@ -54,16 +54,18 @@ function user.main():void;	# 0  (main:void)
     mserver.rpc(mid,"c:=algebra.select(rb,0,12);");	# 14 SERVERquery (_25:void)<-(mid:int)(_26:str)
     low := calc.+(5,1);	# 15 CALCbinaryADDintint (low:int)<-(_28:int)(_29:int)
     mserver.put(mid,"low",low);	# 16 SERVERput (_30:void)<-(mid:int)(_31:str)(low:int)
-    i:lng  := mserver.rpc(mid,"e:=algebra.select(d,low,7); i:=aggr.count(d); io.print(i);");	# 17 SERVERmapi_rpc_single_row (i:lng)<-(mid:int)(_33:str)
+    i:lng  := mserver.rpc(mid,"e:=algebra.select(rb,low,7); i:=aggr.count(e); io.print(i);");	# 17 SERVERmapi_rpc_single_row (i:lng)<-(mid:int)(_33:str)
     io.printf(" count %d\n",i);	# 18 IOprint_formatted_lng (_34:void)<-(_35:str)(i:lng)
-    d:bat[:int,:int]  := mserver.rpc(mid,"io.print(d);");	# 19 SERVERmapi_rpc_bat (d:bat[:int,:int])<-(mid:int)(_37:str)
+    d:bat[:int,:int]  := mserver.rpc(mid,"io.print(i);");	# 19 SERVERmapi_rpc_bat (d:bat[:int,:int])<-(mid:int)(_37:str)
     io.print(d);	# 20 IOprint_val (_38:void)<-(d:bat[:int,:int])
     mserver.disconnect(mid);	# 21 SERVERdisconnect (_39:void)<-(mid:int)
 end main;	# 22  
-!MALException:mserver.rpc:remote error: TypeException:user.main[1]:'algebra.select' undefined in: e:any := algebra.select(d:any, low:int, _6:int)
-!MALException:mserver.rpc:remote error:TypeException:user.main[2]:'aggr.count' undefined in: i:any := aggr.count(d:any)
-!MALException:mserver.rpc:remote error:TypeException:user.main[1]:'d' may not be used before being initialized
-!MALException:mserver.rpc:remote error:TypeException:user.main[2]:'d' may not be used before being initialized
+ count 2
+#-----------------#
+# h	t	  # name
+# int	int	  # type
+#-----------------#
+[ 2,	  nil	  ]
 
 # 15:27:54 >  
 # 15:27:54 >  Done.

@@ -1,0 +1,78 @@
+stdout of test 'inline08` in directory 'src/optimizer` itself:
+
+
+# 20:02:17 >  
+# 20:02:17 >   mserver5 "--config=/ufs/mk/monet5/Linux/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5//Linux/lib/MonetDB5:/ufs/mk/monet5//Linux/lib/MonetDB5/lib:/ufs/mk/monet5//Linux/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/mk/monet5//Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5//Linux/var/MonetDB5/sql_logs"  --set mapi_open=true --set xrpc_open=true --set mapi_port=30645 --set xrpc_port=40491 --set monet_prompt= --trace --dbname=mTests_src_optimizer  inline08.mal
+# 20:02:17 >  
+
+# MonetDB server v5.3.0, based on kernel v1.21.0
+# Serving database 'mTests_src_optimizer'
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Copyright (c) 1993-2007 CWI, all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://gio.ins.cwi.nl:30645/
+#
+## remapping inline functions
+#function foo{inline}(a:str):str;
+#	a:= str.replace(a,"A","");
+#	a:= str.replace(a,"E","");
+#	a:= str.replace(a,"I","");
+#	a:= str.replace(a,"O","");
+#	a:= str.replace(a,"U","");
+#	a:= str.replace(a," ","");
+#	return foo:=a;
+#end foo;
+function user.foo{inline}(a:str):str;	# 0  (foo:str)<-(a:str)
+    a := str.replace(a,"A","");	# 1 STRreplace (a:str)<-(a:str)(_2:str)(_3:str)
+    a := str.replace(a,"E","");	# 2 STRreplace (a:str)<-(a:str)(_4:str)(_3:str)
+    a := str.replace(a,"I","");	# 3 STRreplace (a:str)<-(a:str)(_5:str)(_3:str)
+    a := str.replace(a,"O","");	# 4 STRreplace (a:str)<-(a:str)(_6:str)(_3:str)
+    a := str.replace(a,"U","");	# 5 STRreplace (a:str)<-(a:str)(_7:str)(_3:str)
+    a := str.replace(a," ","");	# 6 STRreplace (a:str)<-(a:str)(_8:str)(_3:str)
+    return foo{inline} := a;	# 7  (foo:str)<-(a:str)
+end foo;	# 8  
+#
+#function bar{inline}(a:str,b:str):str;
+#	sa:= user.foo(a);
+#	sb:= user.foo(b);
+#	c:= sa+sb;
+#	return bar:=c;
+#end bar;
+function user.bar{inline}(a:str,b:str):str;	# 0  (bar:str)<-(a:str)(b:str)
+    sa := user.foo(a);	# 1  (sa:str)<-(a:str)
+    sb := user.foo(b);	# 2  (sb:str)<-(b:str)
+    c := calc.+(sa,sb);	# 3 CALCstrConcat (c:str)<-(sa:str)(sb:str)
+    return bar{inline} := c;	# 4  (bar:str)<-(c:str)
+end bar;	# 5  
+#
+#function qry();
+#	b:= bat.new(:oid,:str);
+#	bat.insert(b,0@0,1);
+#	z:bat[:oid,:str]:= mal.multiplex("user","bar",b,b);
+#end qry;
+!TypeException:user.qry[2]:'bat.insert' undefined in: _4:any := bat.insert(b:bat[:oid,:str], _5:oid, _6:int)
+function user.qry():void;	# 0  (qry:void)
+    b := bat.new(:oid,:str);	# 1 CMDBATnew (b:bat[:oid,:str])<-(_2:oid)(_3:str)
+    bat.insert(b,0@0,1);	# 2  unknown (_4:any)<-(b:bat[:oid,:str])(_5:oid)(_6:int)
+    z:bat[:oid,:str]  := mal.multiplex("user","bar",b,b);	# 3 OPTremapMultiplex (z:bat[:oid,:str])<-(_8:str)(_9:str)(b:bat[:oid,:str])(b:bat[:oid,:str])
+end qry;	# 4  
+#
+#	optimizer.inline("user","bar");
+#	optimizer.inline("user","qry");
+#	optimizer.remap("user","qry");
+#	mdb.list("user","qry");
+#
+function user.main():void;	# 0  (main:void)
+# remapping inline functions 	# 1  (_1:str)
+    mdb.list("user","qry");	# 2 MDBlist3 (_8:void)<-(_3:str)(_6:str)
+end main;	# 3  
+function user.qry():void;
+    b := bat.new(:oid,:str);
+    bat.insert(b,0@0,1);
+    z:bat[:oid,:str]  := mal.multiplex("user","bar",b,b);
+end qry;
+
+# 20:02:17 >  
+# 20:02:17 >  Done.
+# 20:02:17 >  
+

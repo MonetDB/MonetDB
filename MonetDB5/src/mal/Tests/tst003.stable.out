@@ -16,18 +16,19 @@ stdout of test 'tst003` in directory 'src/mal` itself:
 #
 #a:=b;	#b not yet defined
 #b:=c;	#c undefined
+#end foo;
+!TypeException:user.foo[1]:'b' may not be used before being initialized
+!TypeException:user.foo[3]:'c' may not be used before being initialized
+function user.foo():void;	# 0  (foo:void)
+    a := b;	# 1  (a:any)<-(b:any)
+#b not yet defined 	# 2  (_3:str)
+    b := c;	# 3  (b:any)<-(c:any)
+#c undefined 	# 4  (_5:str)
+end foo;	# 5  
 #
-!TypeException:user.main[2]:'b' may not be used before being initialized
-
-!TypeException:user.main[4]:'c' may not be used before being initialized
-
 function user.main():void;	# 0  (main:void)
-# test illegal variable use 	# 1  (_2:str)
-    a := b;	# 2  (a:any)<-(b:any)
-#b not yet defined 	# 3  ($6:str)
-    b := c;	# 4  (b:any)<-(c:any)
-#c undefined 	# 5  ($9:str)
-end main;	# 6  
+# test illegal variable use 	# 1  (_1:str)
+end main;	# 2  
 
 # 07:58:33 >  
 # 07:58:33 >  Done.

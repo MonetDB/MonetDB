@@ -1,4 +1,5 @@
 # minimal barrier
+function foo();
 barrier	l:=1;
 	io.print(l);
 exit	l:= 2;
@@ -7,3 +8,4 @@ barrier m:=3;
 	leave m;
 exit	m:= 4;
 	io.print(m);
+end foo;
