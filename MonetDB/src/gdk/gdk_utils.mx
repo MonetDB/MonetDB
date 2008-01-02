@@ -1886,7 +1886,6 @@ GDKsyserror(const char *format, ...)
 
 #ifdef NATIVE_WIN32
 	DWORD err = GetLastError();
-	LPTSTR lpMsgBuf;
 #else
 	int err = errno;
 #endif
