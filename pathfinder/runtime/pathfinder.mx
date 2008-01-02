@@ -3984,6 +3984,9 @@ fork(pf_logmanager());            # start checkpointing thread
 #include <streams.h>
 #include <mapi/mapi.h>
 #include <sys.h>
+#ifdef LIBPF
+#define LIBPF_SUPPORT LIBPF
+#endif
 #include <pathfinder.proto.h>
 #include <pf_support.proto.h>
 

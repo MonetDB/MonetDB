@@ -77,6 +77,10 @@ strndup (const char * s, size_t n)
 }
 #endif
 
+#ifdef NATIVE_WIN32
+#define access _access
+#endif
+
 #ifndef R_OK
 #define R_OK 4
 #define W_OK 2

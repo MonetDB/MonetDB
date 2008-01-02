@@ -4879,6 +4879,9 @@ PROC fix_consecutive_texts(bat[void, bat] ws, bat[oid,oid] contnid) : void
 
 #include <monet.h>
 #include "pathfinder.h"
+#ifdef LIBPF
+#define LIBPF_SUPPORT LIBPF
+#endif
 #include "pf_support.proto.h"
 #include <monet_interpreter.h>
 #include <monettime.h>

@@ -66,6 +66,10 @@ char * strdup (const char * s);
 #if !HAVE_DECL_STRDUP
 extern char *strdup(const char *);
 #endif
+
+#ifdef NATIVE_WIN32
+#define strdup _strdup
+#endif
 #endif
 
 #ifndef HAVE_STRNDUP

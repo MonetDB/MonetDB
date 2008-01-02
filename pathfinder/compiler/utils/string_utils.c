@@ -42,6 +42,10 @@
 #include <stdarg.h>
 #include <ctype.h>
 
+#ifdef NATIVE_WIN32
+#define strdup _strdup
+#endif
+
 typedef unsigned char byte;
 
 /****************************************************
