@@ -85,7 +85,7 @@ mal_export int isLoopBarrier(MalBlkPtr mb, int pc);
 mal_export int getBlockExit(MalBlkPtr mb,int pc);
 mal_export int getBlockBegin(MalBlkPtr mb,int pc);
 
-#define newLifespan(M) (Lifespan)GDKmalloc(sizeof(LifespanRecord)*(M)->vtop)
+#define newLifespan(M) (Lifespan)GDKmalloc(sizeof(LifespanRecord)*(M)->vsize)
 mal_export void setLifespan(MalBlkPtr mb, Lifespan span);
 mal_export void debugLifespan(MalBlkPtr mb, Lifespan span);
 
@@ -691,10 +691,17 @@ setLifespan(MalBlkPtr mb, Lifespan span)
 {
 	int pc, k, depth=0, scopes[256];
 	InstrPtr p;
-	int top=0, *decl= (int*)alloca(sizeof(int)*mb->vtop);
+	int top=0, *decl;
 
+	decl= (int *) GDKzalloc(sizeof(int)*mb->vsize);
+	assert(decl!= NULL);
 	memset((char*) span,0, sizeof(LifespanRecord)* mb->vtop);
-	for (pc = 0; pc < mb->stop; pc++) {
+	p = getInstrPtr(mb, 0);
+	for(k= 0; k<p->argc; k++){
+		span[getArg(p,k)].beginLifespan= 1;
+		span[getArg(p,k)].endLifespan= mb->stop-1;
+	}
+	for (pc = 1; pc < mb->stop; pc++) {
 		p = getInstrPtr(mb, pc);
 		if( p->token == NOOPsymbol)
 			continue;
@@ -722,6 +729,7 @@ At a block exit we can finalize some variables.
 				span[decl[top]].endLifespan= pc;
 			if( depth== 0) {
 				mb->errors++;
+				GDKfree(decl);
 				GDKerror("too many unnest operations.");
 				return;
 			}
@@ -730,12 +738,14 @@ At a block exit we can finalize some variables.
 		if( blockStart(p)){
 			if( depth== 255) {
 				mb->errors++;
+				GDKfree(decl);
 				GDKerror("too deeply nested scope");
 				return;
 			}
 			scopes[++depth]= top;
 		}
 	}
+	GDKfree(decl);
 	/* debugLifespan(mb); */
 }
 
