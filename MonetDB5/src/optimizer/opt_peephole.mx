@@ -90,6 +90,7 @@ OPTpeepholeImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	InstrPtr p, q, r, *old;
 	int i, limit, slimit, doit, actions = 0;
+	Lifespan span= newLifespan(mb);
 
 #ifdef DEBUG_OPT_PEEPHOLE
 	stream_printf(GDKout, "Peephole optimizer started\n");
@@ -98,7 +99,7 @@ OPTpeepholeImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) pci;
 	actions = 0;
 	doit = 0;
-	setLifespan(mb);
+	setLifespan(mb,span);
 	limit = mb->stop;
 	slimit = mb->ssize;
 	old = mb->stmt;
@@ -110,7 +111,7 @@ OPTpeepholeImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (q && match(p, batRef, reverseRef) && 
 					match(q, batRef, reverseRef) && 
 					getArg(p, 0) == getArg(q, 1) && 
-					getEndLifespan(mb,getArg(p,0)) == i + 1) {
+					getEndLifespan(span,getArg(p,0)) == i + 1) {
 #ifdef DEBUG_OPT_PEEPHOLE
 			printf("PEEPHOLE reverse-reverse\n");
 			printInstruction(GDKout, mb, p, LIST_MAL_ALL);
@@ -136,12 +137,12 @@ OPTpeepholeImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	GDKfree(old);
 	if (doit) {
 		chkProgram(MCgetClient()->nspace, mb);
-		setLifespan(mb);
 #ifdef DEBUG_OPT_PEEPHOLE
 		stream_printf(GDKout, "PEEPHOLE %d\n", doit);
 		printFunction(GDKout, mb, LIST_MAL_ALL);
 #endif
 	}
+	GDKfree(span);
 	return actions;
 }
 

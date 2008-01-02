@@ -103,6 +103,7 @@ OPTcrackImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	return actions;
 }
+
 @include optimizerWrapper.mx
 @h
 @:exportOptimizer(crack)@

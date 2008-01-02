@@ -75,10 +75,11 @@ OPTaccumulatorsImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	char *available;
 	int *alias;
 	InstrPtr *old;
+	Lifespan span= newLifespan(mb);
 
 	(void) pci;
 	(void) stk;		/* to fool compilers */
-	setLifespan(mb);
+	setLifespan(mb,span);
 	alias= (int*) alloca(sizeof(int)*mb->vtop);
 	for(j=0;j< mb->vtop; j++)
 		alias[j]=j;
@@ -134,24 +135,24 @@ the replacement is aborted.
 			b = getArg(p, 0);
 			
 			valid= 0;
-			if( available[getArg(p,1)] && getEndLifespan(mb,getArg(p,1))<=i){
+			if( available[getArg(p,1)] && getEndLifespan(span,getArg(p,1))<=i){
 				v = getVar(mb, a = getArg(p, 1));
 				valid=  v->type == getVarType(mb,b);
 			}
-			if(!valid && available[getArg(p,2)] && getEndLifespan(mb,getArg(p,2))<=i){
+			if(!valid && available[getArg(p,2)] && getEndLifespan(span,getArg(p,2))<=i){
 				v = getVar(mb, a = getArg(p, 2));
 				valid=  v->type == getVarType(mb,b);
 			} 
-			if(!valid && getEndLifespan(mb,getArg(p,1))<=i){
+			if(!valid && getEndLifespan(span,getArg(p,1))<=i){
 				v = getVar(mb, a = getArg(p, 1));
 				valid=  v->type == getVarType(mb,b);
 			} 
-			if( !valid && getEndLifespan(mb,getArg(p,2)) <= i){
+			if( !valid && getEndLifespan(span,getArg(p,2)) <= i){
 				v = getVar(mb, a = getArg(p, 2));
 				valid=v->type == getVarType(mb,b);
 			} 
 
-			if( getLastUpdate(mb,b) != i || !valid || !isaBatType(v->type)) {
+			if( getLastUpdate(span,b) != i || !valid || !isaBatType(v->type)) {
 				pushInstruction(mb,p);
 				continue;
 			}
@@ -179,7 +180,7 @@ sure it becomes one.
 			/* unary operation, check first argument  and return type */
 			v = getVar(mb, a = getArg(p, 1));
 			b = getArg(p, 0);
-			if( getLastUpdate(mb,b) != i || getEndLifespan(mb,a) > i ||
+			if( getLastUpdate(span,b) != i || getEndLifespan(span,a) > i ||
 				!isaBatType(v->type) || v->type!= getVarType(mb,b) ) {
 				pushInstruction(mb,p);
 				continue;
@@ -200,6 +201,7 @@ sure it becomes one.
 	if(old[i])
 		freeInstruction(old[i]);
 	GDKfree(old);
+	GDKfree(span);
 	return actions;
 }
 

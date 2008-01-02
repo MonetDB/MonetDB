@@ -68,7 +68,7 @@ OPTallConstant(MalBlkPtr mb, InstrPtr p){
 	int i;
 
 	for( i= p->retc; i < p->argc; i++)
-		if( isConstant(mb, getArg(p,i)) == FALSE)
+		if( isVarConstant(mb, getArg(p,i)) == FALSE)
 			return FALSE;
 	for( i=0; i<p->retc; i++)
 		if( isaBatType(getArgType(mb,p,i)))
@@ -86,8 +86,9 @@ OPTevaluateImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	MalStkPtr env = NULL;
 	str msg;
 	int debugstate= c->itrace;
-	c->itrace= 0;
+	Lifespan span= newLifespan(mb);
 
+	c->itrace= 0;
 	(void) stk;
 	(void) pci;
 
@@ -97,11 +98,11 @@ OPTevaluateImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #ifdef DEBUG_OPT_CX
 	stream_printf(GDKout,"Constant expression optimizer started\n");
 #endif
-	setLifespan(mb);
 	
 	env= prepareMALstack(mb);
 	env->keepAlive= TRUE;
 	do {
+		setLifespan(mb,span);
 		again = 0;
 		limit = mb->stop;
 		nxt= first;
@@ -112,11 +113,11 @@ OPTevaluateImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #ifdef DEBUG_OPT_CX
 			stream_printf(GDKout,"Constants:%d\n",j);
 			stream_printf(GDKout,"retc %d var %s\n",p->retc,getVarName(mb,getArg(p,0)));
-			stream_printf(GDKout,"last update:%d\n", getLastUpdate(mb,getArg(p,0)));
+			stream_printf(GDKout,"last update:%d\n", getLastUpdate(span,getArg(p,0)));
 			printInstruction(GDKout, mb, p, LIST_MAL_ALL);	
 #endif
 			if( j && p->retc== 1 && p->barrier == 0 &&
-				getLastUpdate(mb,getArg(p,0)) == i  &&
+				getLastUpdate(span,getArg(p,0)) == i  &&
 				!isUnsafeFunction(p)){
 				msg = reenterMAL(c,mb,i,i+1,env,0,0);
 #ifdef DEBUG_OPT_CX
@@ -127,10 +128,10 @@ OPTevaluateImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 The last assignment of a constant expression turns the variable into
 a constant itself.
 @c
-					isConstant(mb,getArg(p,0))= TRUE;
-					setVarCleanup(mb,getArg(p,0))= FALSE;
-					setFixed(mb,getArg(p,0));
-					getConstant(mb,getArg(p,0)) = env->stk[getArg(p,0)];
+					setVarConstant(mb,getArg(p,0));
+					clrVarCleanup(mb,getArg(p,0));
+					setVarFixed(mb,getArg(p,0));
+					getVarConstant(mb,getArg(p,0)) = env->stk[getArg(p,0)];
 					env->stk[getArg(p,0)].vtype= TYPE_int; /* no garbage */
 					freeInstruction(p);
 #ifdef DEBUG_OPT_CX
@@ -149,14 +150,10 @@ a constant itself.
 			if (k <= i)
 				mb->stmt[i] = NULL;
 		}
-		if( k != mb->stop) {
-			mb->stop = k;
-			setLifespan(mb);	/* the lastUpdate property changes */
-		} else {
-			mb->stop= k;
-		}
+		mb->stop= k;
 		first = nxt;
 	} while( again );
+	GDKfree(span);
 	freeStack(env);
 	c->itrace= debugstate;
 	return 1;

@@ -51,8 +51,8 @@ str OPT@1(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 #endif
 		if( getArgType(mb,p,1) != TYPE_str ||
 			getArgType(mb,p,2) != TYPE_str ||
-			!isConstant(mb,getArg(p,1)) ||
-			!isConstant(mb,getArg(p,2))
+			!isVarConstant(mb,getArg(p,1)) ||
+			!isVarConstant(mb,getArg(p,2))
 		) {
 			char buf[1024];
 			snprintf(buf,1024, "Optimizer requires constant string arguments\n");

@@ -244,16 +244,22 @@ inlineMALblock(MalBlkPtr mb, int pc, MalBlkPtr mc)
 		if (isExceptionVariable(mc->var[n]->name)) {
 			nv[n] = newVariable(mb,GDKstrdup(mc->var[n]->name),TYPE_str);
 			/* keep the properties */
-			getVar(mb,nv[n])->isudftype= getVar(mc,n)->isudftype;
-			getVar(mb,nv[n])->isused= getVar(mc,n)->isused;
-		} else if (isTypeVar(mc,n))
+			if( isVarUDFtype(mc,n))
+				setVarUDFtype(mb,nv[n]);
+			if( isVarUsed(mc,n))
+				setVarUsed(mb,nv[n]);
+		} else
+		if( isVarTypedef(mc,n) )
 			nv[n] = newTypeVariable(mb,getVarType(mc,n));
-		else if (mc->var[n]->isaconstant) {
+		else
+		if ( isVarConstant(mc,n)){
 			nv[n] = cpyConstant(mb,getVar(mc,n));
 		} else {
 			nv[n] = newTmpVariable(mb, getVarType(mc, n));
-			getVar(mb,nv[n])->isudftype= getVar(mc,n)->isudftype;
-			getVar(mb,nv[n])->isused= getVar(mc,n)->isused;
+			if( isVarUDFtype(mc,n))
+				setVarUDFtype(mb,nv[n]);
+			if( isVarUsed(mc,n))
+				setVarUsed(mb,nv[n]);
 		}
 	}
 

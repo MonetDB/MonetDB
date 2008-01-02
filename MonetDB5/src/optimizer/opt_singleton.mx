@@ -116,9 +116,9 @@ STunpack(MalBlkPtr mb, int varid, STtuple * tuples)
 
 	p = newFcnCall(mb, batRef, unpackRef);
 	getArg(p, 0) = tuples[varid].hidx;
-	setVarUsed(mb,getArg(p,0),TRUE);
+	setVarUsed(mb,getArg(p,0));
 	setArgument(mb, p, 1, tuples[varid].tidx);
-	setVarUsed(mb,getArg(p,1),TRUE);
+	setVarUsed(mb,getArg(p,1));
 	p->retc++;
 	p= pushArgument(mb, p, tuples[varid].vidx);
 	tuples[varid].packed = 0;
@@ -210,9 +210,9 @@ variables on the stack.
 				k = STnewTuple(mb, getArg(p, 0), &top, tuples);
 				tuples[k].packed = 0;
 				p->argv[0] = tuples[k].hidx;
-				setVarUsed(mb,getArg(p,0),TRUE);
+				setVarUsed(mb,getArg(p,0));
 				p->argv[1] = tuples[k].tidx;
-				setVarUsed(mb,getArg(p,1),TRUE);
+				setVarUsed(mb,getArg(p,1));
 				p->token = ASSIGNsymbol;
 				p->fcn = NULL;
 				actions++;
@@ -227,9 +227,9 @@ variables on the stack.
 				k = STnewTuple(mb, getArg(p, 0), &top, tuples);
 				tuples[k].packed = 0;
 				p->argv[0] = tuples[k].hidx;
-				setVarUsed(mb,getArg(p,0),TRUE);
+				setVarUsed(mb,getArg(p,0));
 				p->argv[1] = tuples[k].tidx;
-				setVarUsed(mb,getArg(p,1),TRUE);
+				setVarUsed(mb,getArg(p,1));
 				p->token = ASSIGNsymbol;
 				p->fcn = NULL;
 				actions++;

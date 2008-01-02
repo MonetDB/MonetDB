@@ -96,12 +96,13 @@ OPTdeadcodeImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (varGetProp(mb, getArg(mb->stmt[0], 0), inlineProp) != NULL)
 		return 0;
 
-	setLifespan(mb);
 #ifdef DEBUG_OPT_DEAD
 	stream_printf(GDKout,"ENTERING DEAD CODE ELIMINATION\n");
 	printFunction(GDKout,mb,LIST_MAL_ALL);
 #endif
 
+	clrDeclarations(mb);
+	chkDeclarations(mb);
 	limit= mb->stop;
 	slimit = mb->ssize;
 	newMalBlkStmt(mb, mb->ssize); /* a new statement stack */
@@ -126,7 +127,7 @@ OPTdeadcodeImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			} 
 
 		if( getModuleId(p)== sqlRef && getFunctionId(p)== assertRef &&
-			isConstant(mb,getArg(p,1)) && getConstant(mb,getArg(p,1)).val.ival==0){
+			isVarConstant(mb,getArg(p,1)) && getVarConstant(mb,getArg(p,1)).val.ival==0){
 			freeInstruction(p);
 			actions++;
 		} else

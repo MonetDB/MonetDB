@@ -225,7 +225,7 @@ QEPbuilt(MalBlkPtr mb){
 		p= getInstrPtr(mb,i);
 		q= QEPnewNode(mb,p);
 		for( k=p->retc; k<p->argc; k++) 
-		if( ! isConstant(mb, getArg(p,k)) ){
+		if( ! isVarConstant(mb, getArg(p,k)) ){
 			status[getArg(p,k)]= LEAFNODE;
 			if( vq[getArg(p,k)] )
 				QEPappend(q, vq[getArg(p,k)]);

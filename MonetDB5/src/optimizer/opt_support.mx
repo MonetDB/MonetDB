@@ -515,7 +515,6 @@ opt_export int optimizerCheck(MalBlkPtr mb, str name, int actions, lng usec, int
 opt_export str optimizeMALBlock(MalBlkPtr mb);
 opt_export void showOptimizerStep(str fnme,int i, int flg);
 opt_export void showOptimizerHistory(void);
-opt_export void replaceAlias(MalBlkPtr mb, int pc, int pcl, int src, int alias);
 
 opt_export int isUnsafeInstruction(InstrPtr q);
 opt_export int isUnsafeFunction(InstrPtr q);
@@ -531,12 +530,7 @@ opt_export int hasSideEffects(InstrPtr p, int strict);
 opt_export int isSideEffectFree(MalBlkPtr mb);
 opt_export int isBlocking(InstrPtr p);
 opt_export int isFragmentGroup(InstrPtr q);
-opt_export int allArgumentsVisible(MalBlkPtr mb, int pc,int qc);
-opt_export int allTargetsVisible(MalBlkPtr mb, int pc, int qc);
-
-#define isAlife(M,I,X)          ( getBeginLifespan(M,I)<=X && \
-                                  getEndLifespan(M,I)>=X)
-#define isSinglepoint(M,I)  (getBeginLifespan(M,I)== getEndLifespan(M,I))
+opt_export int allTargetsVisible(MalBlkPtr mb, Lifespan span, int pc,int qc);
 @}
 @-
 @node Framework, Lifespan Analysis, Building Blocks, The MAL Optimizer
@@ -610,9 +604,8 @@ for the future using an additional flag.
 #define OPT_CHECK_FLOW	1
 #define OPT_CHECK_TYPES 2
 #define OPT_CHECK_DECL 4
-#define OPT_CHECK_SPAN 8
 
-#define OPT_CHECK_ALL (OPT_CHECK_FLOW | OPT_CHECK_TYPES | OPT_CHECK_DECL | OPT_CHECK_SPAN)
+#define OPT_CHECK_ALL (OPT_CHECK_FLOW | OPT_CHECK_TYPES | OPT_CHECK_DECL )
 @c
 int
 optimizerCheck(MalBlkPtr mb, str name, int actions, lng usec, int flag)
@@ -621,8 +614,7 @@ optimizerCheck(MalBlkPtr mb, str name, int actions, lng usec, int flag)
 	if( actions > 0){
 		if( flag & OPT_CHECK_TYPES) chkTypes(cntxt->nspace, mb);
 		if( flag & OPT_CHECK_FLOW) chkFlow(mb);
-		if( flag & OPT_CHECK_DECL) chkDeclarations(mb, TRUE);
-		if( flag & OPT_CHECK_SPAN) setLifespan(mb);
+		if( flag & OPT_CHECK_DECL) chkDeclarations(mb);
 	}
 	if( cntxt->debugOptimizer){
 		/* keep the actions take as post block comments */
@@ -726,10 +718,10 @@ int hasSameArguments(MalBlkPtr mb, InstrPtr p, InstrPtr q)
 		return FALSE;
 	for(k=p->retc; k<p->argc;k++)
 		if( q->argv[k]!= p->argv[k]){
-			if( isConstant(mb,getArg(p,k)) && isConstant(mb,getArg(q,k)) ) {
+			if( isVarConstant(mb,getArg(p,k)) && isVarConstant(mb,getArg(q,k)) ) {
 					ValPtr w,u;
-					w= &getConstant(mb,getArg(p,k));
-					u= &getConstant(mb,getArg(q,k));
+					w= &getVarConstant(mb,getArg(p,k));
+					u= &getVarConstant(mb,getArg(q,k));
 
 					if( ATOMcmp(w->vtype, VALptr(w), VALptr(u)) == 0)
 						continue;
@@ -766,6 +758,7 @@ isDependent(InstrPtr p, InstrPtr q){
 		if( getArg(q,i)== getArg(p,j)) return TRUE;
 	return FALSE;
 }
+@}
 @-
 See is all arguments mentioned in the instruction at point pc
 are still visible at instruction qc and have not been updated
@@ -774,7 +767,7 @@ Take into account that variables may be declared inside
 a block. This can be calculated using the BARRIER/CATCH
 and EXIT pairs.
 @c
-int
+static int
 countBlocks(MalBlkPtr mb, int start, int stop){
 	int i,cnt =0;
 	InstrPtr p;
@@ -788,7 +781,7 @@ countBlocks(MalBlkPtr mb, int start, int stop){
 	return cnt;
 }
 int
-allArgumentsVisible(MalBlkPtr mb, int pc,int qc){
+allArgumentsVisible(MalBlkPtr mb, Lifespan span, int pc,int qc){
 	int i;
 	InstrPtr p;
 
@@ -796,14 +789,14 @@ allArgumentsVisible(MalBlkPtr mb, int pc,int qc){
 		return FALSE;
 	p= getInstrPtr(mb,pc);
 	for(i=p->retc; i< p->argc; i++){
-		if( getLastUpdate(mb,getArg(p,i)) >  getBeginLifespan(mb,getArg(p,i)) &&
-			qc > getLastUpdate(mb,getArg(p,i)) )
+		if( getLastUpdate(span,getArg(p,i)) >  getBeginLifespan(span,getArg(p,i)) &&
+			qc > getLastUpdate(span,getArg(p,i)) )
 			return FALSE;
 	}
 	return TRUE;
 }
 int
-allTargetsVisible(MalBlkPtr mb, int pc,int qc){
+allTargetsVisible(MalBlkPtr mb, Lifespan span, int pc,int qc){
 	int i;
 	InstrPtr p;
 
@@ -811,13 +804,12 @@ allTargetsVisible(MalBlkPtr mb, int pc,int qc){
 		return FALSE;
 	p= getInstrPtr(mb,pc);
 	for(i=0; i < p->retc; i++){
-		if( getLastUpdate(mb,getArg(p,i))> getBeginLifespan(mb,getArg(p,i))  &&
-			qc > getLastUpdate(mb,getArg(p,i)) )
+		if( getLastUpdate(span,getArg(p,i))> getBeginLifespan(span,getArg(p,i))  &&
+			qc > getLastUpdate(span,getArg(p,i)) )
 			return FALSE;
 	}
 	return TRUE;
 }
-@}
 @-
 The safety property should be relatively easy to determine for
 each MAL function. This calls for accessing the function MAL block
@@ -1175,23 +1167,6 @@ isBlocking(InstrPtr p)
 		getModuleId(p) == sqlRef )
 			return TRUE;
 	return FALSE;
-}
-
-void
-replaceAlias(MalBlkPtr mb, int pc, int pcl, int src, int alias)
-{
-	InstrPtr p;
-	int k;
-
-	for (; pc < pcl; pc++) {
-		p = getInstrPtr(mb, pc);
-		for (k = p->retc; k < p->argc; k++)
-			if (p->argv[k] == src) {
-				p->argv[k] = alias;
-				if (pc > getEndLifespan(mb,alias))
-					getEndLifespan(mb,alias)= pc;
-			}
-	}
 }
 @-
 Used in the merge table optimizer. It is build incrementally

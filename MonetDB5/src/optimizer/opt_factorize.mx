@@ -119,11 +119,12 @@ OPTfactorizeImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int fk = 0, sk = 0, blk = 0, blkstart = 0;
 	int *varused, returnseen = 0;
 	InstrPtr *first, *second;
+	Lifespan span= newLifespan(mb);
 
 	(void) pci;
 	(void) stk;		/* to fool compilers */
 
-	setLifespan(mb);
+	setLifespan(mb,span);
 	varused = GDKmalloc(mb->vtop * sizeof(int));
 	for (i = 0; i < mb->vtop; i++)
 		varused[i] = 0;
@@ -161,7 +162,7 @@ OPTfactorizeImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		/* beware, none of the target variables may live
 		   before the cut point.  */
 		for (k = 0; k < p->retc; k++)
-			if (getBeginLifespan(mb, p->argv[k])< i || !OPTallowed(p))
+			if (getBeginLifespan(span, p->argv[k])< i || !OPTallowed(p))
 				se = 0;
 		if (p->barrier == RETURNsymbol) {
 			se = 1;
@@ -190,6 +191,7 @@ OPTfactorizeImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		GDKfree(varused);
 		GDKfree(first);
 		GDKfree(second);
+		GDKfree(span);
 		/* remove the FToptimizer request */
 		return 1;
 	}
@@ -237,9 +239,9 @@ OPTfactorizeImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	GDKfree(varused);
 	GDKfree(first);
 	GDKfree(second);
+	GDKfree(span);
 	return 1;
 }
-
 @include optimizerWrapper.mx
 @h
 @:exportOptimizer(factorize)@

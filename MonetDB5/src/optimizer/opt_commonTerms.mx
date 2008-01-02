@@ -101,6 +101,7 @@ OPTcommonTermsImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int *mask,*alias,limit, slimit;
 	InstrPtr *old;
 	int c;
+	Lifespan span= newLifespan(mb);
 
 	(void) stk;
 	(void) pci;
@@ -111,7 +112,7 @@ OPTcommonTermsImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	for(i=0; i<mb->vtop; i++) 
 		alias[i]=i;
 
-	setLifespan(mb);
+	setLifespan(mb,span);
 	old = mb->stmt;
 	limit = mb->stop;
 	slimit = mb->ssize;
@@ -132,9 +133,9 @@ First apply alias propagation, before considering a match.
 		if (p->token == NOOPsymbol) 
 			continue;
 		if (OPTisAlias(p)){
-			if (getLastUpdate(mb,getArg(p,0)) == i &&
-				getBeginLifespan(mb,getArg(p,0)) == i &&
-				getLastUpdate(mb,getArg(p,1)) < i){
+			if (getLastUpdate(span,getArg(p,0)) == i &&
+				getBeginLifespan(span,getArg(p,0)) == i &&
+				getLastUpdate(span,getArg(p,1)) < i){
 					alias[getArg(p,0)] = alias[getArg(p,1)];
 					freeInstruction(p);
 					mb->stop--;
@@ -153,7 +154,7 @@ Use a hash filter to speed up matching
 		c = p->argc;
 		for(j=p->retc; j<p->argc; j++){
 			c *= 4;
-			if (!isConstant(mb,getArg(p,j)))
+			if (!isVarConstant(mb,getArg(p,j)))
 				c += getArg(p,j);
 		}
 		c &= 1023;
@@ -168,8 +169,8 @@ multiple occurrences of the same constant in the symbol table.
 @c
 			last=1;
 			for (j = p->retc; j<p->argc; j++)
-				if( getBeginLifespan(mb,getArg(p,j)) > last )
-					last = getBeginLifespan(mb,getArg(p,j));
+				if( getBeginLifespan(span,getArg(p,j)) > last )
+					last = getBeginLifespan(span,getArg(p,j));
 
 			for (j = (n-1) - 1; j >= last-(i-(n-1)) && j>0; j--) 
 			if (mask[j] == c ){
@@ -201,7 +202,7 @@ handled by the alias removal part
 					!hasCommonResults(p, q) && 
 					!hasSideEffects(p, TRUE) &&
 					isLinearFlow(p) &&
-					allTargetsVisible(mb,j,n-1) 
+					allTargetsVisible(mb,span,j,n-1) 
 					) {
 #ifdef DEBUG_OPT_COMMONTERMS
 					stream_printf(GDKout, "Found a common expression " "%d <-> %d\n", j, i);
@@ -217,9 +218,9 @@ handled by the alias removal part
 #endif
 					actions++;
 					if( p->argc== 2 &&
-						getLastUpdate(mb,getArg(p,0)) == i &&
-						getBeginLifespan(mb,getArg(p,0)) == i &&
-						getLastUpdate(mb,getArg(p,1)) < i){
+						getLastUpdate(span,getArg(p,0)) == i &&
+						getBeginLifespan(span,getArg(p,0)) == i &&
+						getLastUpdate(span,getArg(p,1)) < i){
 							alias[getArg(p,0)]= alias[getArg(p,1)];
 							freeInstruction(p);
 							mb->stop--;
@@ -236,6 +237,7 @@ handled by the alias removal part
 	if( old[i])
 		freeInstruction(old[i]);
 	GDKfree(old);
+	GDKfree(span);
 	return actions;
 }
 

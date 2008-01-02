@@ -65,7 +65,6 @@ OPTjoinselectImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	(void) stk;
 	(void) pci;
-	setLifespan(mb);
 	limit = mb->stop;
 	slimit = mb->ssize;
 	old = mb->stmt;

@@ -169,6 +169,11 @@ OPTbakeIterator(MalBlkPtr mb, InstrPtr p, int *alias, int *garbage){
 	alias[getArg(p,0)]= getArg(q,0);
 	garbage[getArg(q,0)]= 1;
 
+	/* declare the target at the outer level */
+	q= newAssignment(mb);
+	getArg(q,0)= getArg(p,0);
+	pushNil(mb,q, getArgType(mb,p,0));
+
 	/* dump the iterators */
 	OPTbarrierList(mb,p,alias);
 
@@ -189,7 +194,7 @@ possib;e side effects upon garbage collection.
 @c
 static int bindTest(MalBlkPtr mb, InstrPtr p){
 	ValPtr v;
-	v= &getConstant(mb,getArg(p,4));
+	v= &getVarConstant(mb,getArg(p,4));
 	return v->val.ival>0;
 }
 @-
@@ -241,16 +246,16 @@ Assume all bind operations are over partitioned bats.
 			q = newStmt(mb,"bpm","unfold");
 			q->argv[0]=
 				localVar(mb,"bpm",getArg(p,0), getVarType(mb, getArg(p,0)));
-			freezeVarType(mb,q->argv[0]);
+			setVarUDFtype(mb,q->argv[0]);
 			alias[getArg(p,0)]= getArg(q,0);
 #ifdef DEBUG_OPT_PARTITIONED
 		printf("1 alias[%d]=%d\n",getArg(p,0),getArg(q,0));
 #endif
 /*
 			snprintf(name,1024,"%s_%s_%s",
-			getConstant(mb, getArg(p,1)).val.sval,
-			getConstant(mb, getArg(p,2)).val.sval,
-			getConstant(mb, getArg(p,3)).val.sval );
+			getVarConstant(mb, getArg(p,1)).val.sval,
+			getVarConstant(mb, getArg(p,2)).val.sval,
+			getVarConstant(mb, getArg(p,3)).val.sval );
 			q= pushStr(mb, q,name);
 */
 			q= pushArgument(mb,q,getArg(p,0));

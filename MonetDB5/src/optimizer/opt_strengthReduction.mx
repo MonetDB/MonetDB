@@ -122,6 +122,7 @@ OPTstrengthReductionImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	InstrPtr p;
 	int bk, ik, blk, blkbegin, blkexit, actions = 0;
 	InstrPtr *before, *within;
+	Lifespan span= newLifespan(mb);
 
 	(void) pci;
 	(void) stk;		/* to fool compilers */
@@ -141,7 +142,7 @@ OPTstrengthReductionImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		before[i] = within[i] = 0;
 	before[bk++] = getInstrPtr(mb, 0);	/* to become a factory */
 
-	setLifespan(mb);
+	setLifespan(mb,span);
 	for (i = 1; i < mb->stop - 1; i++) {
 		p = getInstrPtr(mb, i);
 		if (blockStart(p)) {
@@ -214,11 +215,12 @@ Make sure the variables are not declared before the loop and used
 after the loop, because then you may not simple move an expression.
 @c
 		for (k = 0; k < p->retc; k++)
-			if ( getBeginLifespan(mb, getArg(p, k))<= blkbegin ||
-				 getEndLifespan(mb, getArg(p, k))>= blkexit) {
+			if ( getBeginLifespan(span, getArg(p, k))<= blkbegin ||
+				 getEndLifespan(span, getArg(p, k))> blkexit) {
 				se = TRUE;
 #ifdef DEBUG_OPT_STRENGTHREDUCTION
-				stream_printf(GDKout, "variable may not be used out %d\n", getArg(p, k));
+				stream_printf(GDKout, "variable %d may not be moved %d-%d\n",
+				getArg(p, k),getBeginLifespan(span, getArg(p, k)), getEndLifespan(span, getArg(p, k)));
 #endif
 				goto noreduction;
 			}
@@ -247,6 +249,7 @@ after the loop, because then you may not simple move an expression.
 	for (i = 0; i < bk; i++)
 	if( before[i])
 		pushInstruction(mb, before[i]);
+	GDKfree(span);
 	return actions;
 }
 @include optimizerWrapper.mx

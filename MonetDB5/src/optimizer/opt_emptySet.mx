@@ -95,7 +95,7 @@ comment "Symbolic evaluation of empty BAT expressions";
 #include "opt_prelude.h"
 #include "opt_support.h"
 
-/* #define DEBUG_OPT_EMPTYSET	 show partial result */
+/*#define DEBUG_OPT_EMPTYSET	 show partial result */
 @c
 #include "mal_config.h"
 #include "opt_emptySet.h"
@@ -104,7 +104,7 @@ comment "Symbolic evaluation of empty BAT expressions";
 #include "mal_interpreter.h"	/* for showErrors() */
 #include "mal_builder.h"
 
-#define propagate(X) {p->token= ASSIGNsymbol; setVarUsed(mb,getArg(p,1),TRUE); \
+#define propagate(X) {p->token= ASSIGNsymbol; setVarUsed(mb,getArg(p,1)); \
 	getArg(p,1)= getArg(p,X); p->argc = 2; p->fcn = 0; actions++;\
 	p->typechk=TYPE_UNKNOWN; p->fcn= NULL; \
 	if(getArgType(mb,p,0)== getArgType(mb,p,X)){\
@@ -175,10 +175,10 @@ We assume here that string constants have been matched already.
 			if( f == bindRef && runonce == FALSE) {
 				for( j=ctop-1; j>=0; j--){
 					q= constraints[j];
-					if( strcmp(getConstant(mb,getArg(q,1)).val.sval, getConstant(mb,getArg(p,1)).val.sval)==0 &&
-					    strcmp(getConstant(mb,getArg(q,2)).val.sval, getConstant(mb,getArg(p,2)).val.sval)==0 &&
-					    getConstant(mb,getArg(p,4)).val.ival<=2 && /* no updates etc */
-					    getConstant(mb,getArg(q,4)).val.ival == getConstant(mb,getArg(p,4)).val.ival
+					if( strcmp(getVarConstant(mb,getArg(q,1)).val.sval, getVarConstant(mb,getArg(p,1)).val.sval)==0 &&
+					    strcmp(getVarConstant(mb,getArg(q,2)).val.sval, getVarConstant(mb,getArg(p,2)).val.sval)==0 &&
+					    getVarConstant(mb,getArg(p,4)).val.ival<=2 && /* no updates etc */
+					    getVarConstant(mb,getArg(q,4)).val.ival == getVarConstant(mb,getArg(p,4)).val.ival
 					) 
 						/* don't generate the assertion */
 						goto ignoreConstraint;

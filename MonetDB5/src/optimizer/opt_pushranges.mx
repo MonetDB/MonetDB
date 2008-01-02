@@ -150,11 +150,11 @@ side-effect since it was bound to X.
 @c
 			x= getArg(p,1);
 			y= getArg(p,2);
-			if( range[x].lcst && isConstant(mb,y) ){
+			if( range[x].lcst && isVarConstant(mb,y) ){
 				/* merge lowerbound */
 				if( ATOMcmp( getVarType(mb,y), 
-						VALptr( &getConstant(mb,range[x].lcst)), 
-						VALptr( &getConstant(mb,y)) ) > 0){
+						VALptr( &getVarConstant(mb,range[x].lcst)), 
+						VALptr( &getVarConstant(mb,y)) ) > 0){
 					getArg(p,2)= range[x].lcst;
 					z= range[x].srcvar;
 					if( getArg(p,1) == x && 
@@ -166,10 +166,10 @@ side-effect since it was bound to X.
 				y= getArg(p,3);
 				/* merge higherbound */
 				if( ATOMcmp( getVarType(mb,y), 
-						VALptr( &getConstant(mb,range[x].hcst)), 
-						VALptr( &getConstant(mb,y)) ) < 0 ||
+						VALptr( &getVarConstant(mb,range[x].hcst)), 
+						VALptr( &getVarConstant(mb,y)) ) < 0 ||
 					ATOMcmp( getVarType(mb,y),
-						VALptr( &getConstant(mb,y)),
+						VALptr( &getVarConstant(mb,y)),
 						 ATOMnilptr(getVarType(mb,y)) ) == 0){
 					getArg(p,3)= range[x].hcst;
 					z= range[x].srcvar;
@@ -184,12 +184,12 @@ The second step is to assign the result of this exercise to the
 result variable.
 @c
 			x= getArg(p,0);
-			if( isConstant(mb, getArg(p,2)) ){
+			if( isVarConstant(mb, getArg(p,2)) ){
 				range[x].lcst = getArg(p,2);
 				range[x].srcvar= getArg(p,1);
 				range[x].lastupdate= range[x].lastrange = i;
 			}
-			if( isConstant(mb, getArg(p,3)) ){
+			if( isVarConstant(mb, getArg(p,3)) ){
 				range[x].hcst = getArg(p,3);
 				range[x].srcvar= getArg(p,1);
 				range[x].lastupdate= range[x].lastrange = i;
@@ -200,16 +200,16 @@ It is empty if L> H or when L=H and the bounds are !(true,true).
 @c
 			x= getArg(p,2);
 			y= getArg(p,3);
-			if( isConstant(mb, x)  &&
-				isConstant(mb, y)  ){
+			if( isVarConstant(mb, x)  &&
+				isVarConstant(mb, y)  ){
 				z =ATOMcmp( getVarType(mb,y),
-                        VALptr( &getConstant(mb,x)),
-                        VALptr( &getConstant(mb,y)));
+                        VALptr( &getVarConstant(mb,x)),
+                        VALptr( &getVarConstant(mb,y)));
 				x=  p->argc > 4;
-				x= x && isConstant(mb,getArg(p,4));
-				x= x && isConstant(mb,getArg(p,5));
-				x= x && getConstant(mb,getArg(p,4)).val.cval[0];
-				x= x && getConstant(mb,getArg(p,5)).val.cval[0];
+				x= x && isVarConstant(mb,getArg(p,4));
+				x= x && isVarConstant(mb,getArg(p,5));
+				x= x && getVarConstant(mb,getArg(p,4)).val.cval[0];
+				x= x && getVarConstant(mb,getArg(p,5)).val.cval[0];
 				if( z > 0 || (z==0 && p->argc>4 && !x)) {
 					int var = getArg(p, 0);
 					lng zero = 0;
@@ -223,9 +223,7 @@ It is empty if L> H or when L=H and the bounds are !(true,true).
 					getModuleId(p)= batRef;
 					getFunctionId(p)= newRef;
 					p= pushArgument(mb,p, typ=newTypeVariable(mb, getHeadType(x)));
-					isConstant(mb,typ)= TRUE;
 					p= pushArgument(mb,p, typ=newTypeVariable(mb, getTailType(x)));
-					isConstant(mb,typ)= TRUE;
 					actions++;
 				}
 			}

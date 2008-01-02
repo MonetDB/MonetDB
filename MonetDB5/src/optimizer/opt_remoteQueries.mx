@@ -132,7 +132,7 @@ RQcall2str(MalBlkPtr mb, InstrPtr p)
 	len= strlen(msg);
 	for (k = 0; k < p->retc; k++) {
 		VarPtr v = getVar(mb, getArg(p, k));
-		if( v->isudftype){
+		if( isVarUDFtype(mb, getArg(p,k)) ){ 
 			str tpe = getTypeName(getVarType(mb, getArg(p, k)));
 			sprintf(msg+len, "%s:%s ", v->name, tpe);
 			GDKfree(tpe);
@@ -154,7 +154,7 @@ RQcall2str(MalBlkPtr mb, InstrPtr p)
 		len = strlen(msg);
 		for (k = p->retc; k < p->argc; k++) {
 			VarPtr v = getVar(mb, getArg(p, k));
-			if( isConstant(mb, getArg(p,k)) ){
+			if( isVarConstant(mb, getArg(p,k)) ){
 				if( v->type == TYPE_void) {
 					sprintf(msg+len, "nil");
 				} else {
@@ -190,8 +190,8 @@ their isolated runtime environment.
 	/* lookup the server connection */
 	if( location[getArg(p,0)] == 0){
 		db = 0;
-		if( isConstant(mb,getArg(p,@1)) )
-			db= getConstant(mb, getArg(p,@1)).val.sval;
+		if( isVarConstant(mb,getArg(p,@1)) )
+			db= getVarConstant(mb, getArg(p,@1)).val.sval;
 		for(k=0; k<dbtop; k++)
 			if( strcmp(db, dbalias[k].dbname)== 0)
 				break;
@@ -218,7 +218,7 @@ their isolated runtime environment.
 
 @= putRemoteVariables
 	for(j=p->retc; j<p->argc; j++)
-	if( location[getArg(p,j)] == 0 && !isConstant(mb,getArg(p,j)) ){
+	if( location[getArg(p,j)] == 0 && !isVarConstant(mb,getArg(p,j)) ){
 		q= newStmt(mb,mserverRef,putRef);
 		getArg(q,0)= newTmpVariable(mb, TYPE_void);
 		q= pushArgument(mb,q,location[getArg(p,j)]);
@@ -259,7 +259,6 @@ OPTremoteQueriesImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) stk;
 	(void) pci;
 
-	setLifespan(mb);
 	limit = mb->stop;
 	slimit = mb->ssize;
 	old = mb->stmt;
@@ -285,7 +284,7 @@ OPTremoteQueriesImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if( (getModuleId(p)== mserverRef && getFunctionId(p)==bindRef)){
 			if( p->argc == 3 && getArgType(mb,p,1) == TYPE_int ) {
 				int tpe;
-				freezeVarType(mb,getArg(p,0));
+				setVarUDFtype(mb,getArg(p,0));
 				j = getArg(p,1); /* lookupServer with key */
 				tpe = getArgType(mb,p,0);
 				/* result is remote */
@@ -328,7 +327,7 @@ OPTremoteQueriesImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 			if( p->argc == 6 && getArgType(mb,p,4) == TYPE_str ) {
 				int tpe;
-				freezeVarType(mb,getArg(p,0));
+				setVarUDFtype(mb,getArg(p,0));
 				j = getArg(p,1); /* lookupServer with key */
 				tpe = getArgType(mb,p,0);
 
@@ -421,7 +420,7 @@ to be shipped should be simple.
 				r= pushArgument(mb, r, remoteSite);
 
 				for(j=p->retc; j<p->argc; j++)
-				if( location[getArg(p,j)] == 0 && !isConstant(mb,getArg(p,j)) ){
+				if( location[getArg(p,j)] == 0 && !isVarConstant(mb,getArg(p,j)) ){
 					q= newStmt(mb,mserverRef,putRef);
 					getArg(q,0)= newTmpVariable(mb, TYPE_void);
 					q= pushArgument(mb, q, remoteSite);

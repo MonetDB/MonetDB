@@ -55,15 +55,21 @@ They are marked as unsafe.
 static int
 coercionOptimizerStep(MalBlkPtr mb, int i, InstrPtr p)
 {
-	int t, a, b;
+	int t, k, a, b;
 
 	a = getArg(p, 0);
 	b = getArg(p, 1);
 	t = getVarType(mb, b);
 	if( getVarType(mb,a) != t) return 0;
 	if (strcmp(getFunctionId(p), ATOMname(t)) == 0) {
-		removeInstruction(mb, p);
-		replaceAlias(mb, i, mb->stop, a, b);
+		removeInstruction(mb, p); /* dead code */
+		for(; i< mb->stop; i++){
+			p= getInstrPtr(mb,i);
+			for( k= p->retc; k < p->argc; k++)
+			if( p->argv[k]== a) {
+				p->argv[k]= b;
+			}
+		}
 		return 1;
 	}
 	return 0;

@@ -280,23 +280,23 @@ OPTremapSwitched(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Module scope){
 
 	if( getModuleId(pci)!= malRef &&
 	    getFunctionId(pci) != multiplexRef &&
-	    !isConstant(mb,getArg(pci,1)) &&
-	    !isConstant(mb,getArg(pci,2)) &&
-	    !isConstant(mb,getArg(pci,4)) &&
+	    !isVarConstant(mb,getArg(pci,1)) &&
+	    !isVarConstant(mb,getArg(pci,2)) &&
+	    !isVarConstant(mb,getArg(pci,4)) &&
 		pci->argc != 5) 
 			return 0;
 	fcn = VALget(&getVar(mb, getArg(pci, 2))->value);
 	for(i=0;OperatorMap[i].src;i++)
 	if( strcmp(fcn,OperatorMap[i].src)==0){
 		/* found a candidate for a switch */
-		getConstant(mb, getArg(pci, 2)).val.sval = putName(OperatorMap[i].dst,OperatorMap[i].len);
-		getConstant(mb, getArg(pci, 2)).len = OperatorMap[i].len;
+		getVarConstant(mb, getArg(pci, 2)).val.sval = putName(OperatorMap[i].dst,OperatorMap[i].len);
+		getVarConstant(mb, getArg(pci, 2)).len = OperatorMap[i].len;
 		r= getArg(pci,3); getArg(pci,3)=getArg(pci,4);getArg(pci,4)=r;
 		r= OPTremapDirect(mb, stk, pci, scope);
 
 		/* always restore the allocated function name */
-		getConstant(mb, getArg(pci, 2)).val.sval= fcn;
-		getConstant(mb, getArg(pci, 2)).len= strlen(fcn);
+		getVarConstant(mb, getArg(pci, 2)).val.sval= fcn;
+		getVarConstant(mb, getArg(pci, 2)).len= strlen(fcn);
 
 		if (r) return 1;
 

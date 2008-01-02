@@ -111,34 +111,34 @@ OPTaliasesImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	int i,k=1, limit, actions=0;
 	int *alias;
+	Lifespan span= newLifespan(mb);
 
 	(void) stk;
 	alias= (int*) alloca(sizeof(int)* mb->vtop);
 	for(i=0; i<mb->vtop; i++) alias[i]=i;
 
-	setLifespan(mb);
+	setLifespan(mb,span);
 	limit = mb->stop;
 	for (i = 1; i < limit; i++){
 		p= getInstrPtr(mb,i);
 		mb->stmt[k++] = p;
 		if (OPTisAlias(p)){
-			if( getLastUpdate(mb,getArg(p,0)) == i  &&
-				getBeginLifespan(mb,getArg(p,0)) == i  &&
-				getLastUpdate(mb,getArg(p,1)) < i ){
+			if( getLastUpdate(span,getArg(p,0)) == i  &&
+				getBeginLifespan(span,getArg(p,0)) == i  &&
+				getLastUpdate(span,getArg(p,1)) <= i ){
 				alias[getArg(p,0)]= alias[getArg(p,1)];
 				freeInstruction(p);
 				actions++;
 				k--;
-			} else {
+			} else 
 				OPTaliasRemap(p,alias);
-			}
-		} else {
+		} else 
 			OPTaliasRemap(p,alias);
-		}
 	}
 	for(i=k; i<limit; i++)
 		mb->stmt[i]= NULL;
 	mb->stop= k;
+	GDKfree(span);
 	return actions;
 }
 @include optimizerWrapper.mx

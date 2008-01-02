@@ -165,9 +165,9 @@ find the actual arguments at the proper place of the callee.
 		return createException(MAL, "optimizer.multiplex", "Target tail type is missing");
 	setVarType(mb, getArg(q, 0), newBatType(ht, tt));
 	q = pushNil(mb, q, ht);
-	freezeVarType(mb,getArg(q,q->argc-1));
+	setVarUDFtype(mb,getArg(q,q->argc-1));
 	q = pushNil(mb, q, tt);
-	freezeVarType(mb,getArg(q,q->argc-1));
+	setVarUDFtype(mb,getArg(q,q->argc-1));
 	/* barrier (mloop,h,r) := newIterator(refBat); */
 	q = newFcnCall(mb, batRef, "newIterator");
 	q->barrier = BARRIERsymbol;
@@ -220,7 +220,7 @@ find the actual arguments at the proper place of the callee.
 /* catch   MALException and ignore them  and replace value with nil */
 	q = newInstruction(mb,CATCHsymbol);
 	k = newVariable(mb, GDKstrdup(exceptionToString(MAL)), TYPE_str);
-	getVar(mb,k)->isudftype = 1;
+	setVarUDFtype(mb,k);
 	q= pushReturn(mb, q, k);
 	pushInstruction(mb, q);
 
@@ -277,8 +277,7 @@ OPTmultiplexSimple(Client cntxt)
 		OPTmultiplexImplementation(mb, 0, 0);
 		chkTypes(cntxt->nspace, mb);
 		chkFlow(mb);
-		chkDeclarations(mb, TRUE);
-		setLifespan(mb);
+		chkDeclarations(mb);
 	}
 	return 0;
 }
