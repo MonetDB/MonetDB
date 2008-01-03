@@ -158,7 +158,7 @@ propagateNonTarget(MalBlkPtr mb, int pc){
 		if( getModuleId(p)== scheduler)
 			continue;
 		for(i=0; i<p->argc; i++)
-			if( isVarUsed(mb,getArg(p,i)) && p->token >=0 )
+			if( isVarDisabled(mb,getArg(p,i)) && p->token >=0 )
 				p->token = -p->token; /* temporary NOOP */
 		if( p->token<0)
 			for(i=0; i<p->retc; i++)
@@ -218,15 +218,15 @@ RUNchoice(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 					if( cost>0 && (cost<mincost || mincost== -1)){
 						mincost= cost;
 						target= getArg(p,j);
-#ifdef DEBUG_RUN_MEMORUN
-		stream_printf(GDKout,"#function target %s cost %d\n",getVarName(mb,target),mincost);
-#endif
 					}
 					break;
 				}
 			}
 		}
 	}
+#ifdef DEBUG_RUN_MEMORUN
+		stream_printf(GDKout,"#function target %s cost %d\n",getVarName(mb,target),mincost);
+#endif
 	/* remove non-qualifying variables */
 	for(i=2; i<p->argc; i+= 2)
 		if( getArg(p,i) != target){
