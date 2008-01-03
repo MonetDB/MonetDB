@@ -504,7 +504,6 @@ find_pivot(stmt *subset, stmt *t)
 				return stmt_dup(s);
 		}
 	}
-	assert(0);
 	return NULL;
 }
 

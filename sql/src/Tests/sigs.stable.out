@@ -163,6 +163,7 @@ module 'sql_server'
 [ "mvc_restart_seq(mvc, str, str, lng) : lng"						  ]
 [ "mvc_result_column(mvc, str, str, str, int, int, BAT[oid,any]) : void"  ]
 [ "mvc_result_column(mvc, str, str, str, int, int, any) : void"		  ]
+[ "mvc_result_file(mvc, int, str, str, str, str, BAT[oid,any]) : int"			  ]
 [ "mvc_result_table(mvc, int, int, BAT[oid,any]) : int"			  ]
 [ "mvc_result_table(mvc, int, int, any) : int"				  ]
 [ "mvc_schema_operation(mvc, Stream, str) : void"					  ]

@@ -1371,9 +1371,6 @@ insert_into(mvc *sql, dlist *qname, dlist *columns, symbol *val_or_q)
 	return res;
 }
 
-/* TODO rewrite on parser level into, INSERT INTO x select * from import()
-   where import is a function returning a table of to be inserted values.
- */
 static stmt *
 sql_import(mvc *sql, sql_table *t, char *tsep, char *rsep, char *ssep, char *filename, int nr, int offset)
 {
@@ -1407,7 +1404,7 @@ copyfrom(mvc *sql, dlist *qname, dlist *files, dlist *seps, dlist *nr_offset)
 	sql_table *t = NULL;
 	char *tsep = seps->h->data.sval;
 	char *rsep = seps->h->next->data.sval;
-	char *ssep = (seps->h->next->next)?seps->h->next->next->data.sval:"";
+	char *ssep = (seps->h->next->next)?seps->h->next->next->data.sval:"\"";
 	list *slist;
 	int nr = (nr_offset)?nr_offset->h->data.ival:-1;
 	int offset = (nr_offset)?nr_offset->h->next->data.ival:0;
@@ -1450,7 +1447,7 @@ copyto(mvc *sql, symbol *sq, str file, dlist *seps)
 {
 	char *tsep = seps->h->data.sval;
 	char *rsep = seps->h->next->data.sval;
-	char *ssep = (seps->h->next->next)?seps->h->next->next->data.sval:"";
+	char *ssep = (seps->h->next->next)?seps->h->next->next->data.sval:"\"";
 	stmt *s = flat_subquery(sql, sq);
 	list *slist;
 

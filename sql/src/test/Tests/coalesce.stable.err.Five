@@ -12,15 +12,12 @@ stderr of test 'coalesce` in directory 'src/test` itself:
 # 14:16:39 >  mclient -lsql -umonetdb -Pmonetdb --host=amelia --port=36320 
 # 14:16:39 >  
 
-MAPI  = monetdb@koala:37741
+MAPI  = monetdb@koala:31459
 QUERY = select id, coalesce(age,'age unknown') from test;
-ERROR = !ERROR: int: conversion of string 'age unknown' failed
-        !ERROR: str_2_int: operation failed.
-MAPI  = monetdb@koala:37741
+ERROR = !SQLException:int:conversion of string 'age unknown' failed
+MAPI  = monetdb@koala:31459
 QUERY = select id, coalesce(name, age, 'unknown') from test;
-ERROR = !ERROR: [int]: 2 times inserted nil due to errors at tuples 0, 2.
-        !ERROR: [int]: first error was:
-        !ERROR: int: conversion of string 'a' failed
+ERROR = !SQLException:int:conversion of string 'a' failed
 
 # 16:39:45 >  
 # 16:39:45 >  Done.
