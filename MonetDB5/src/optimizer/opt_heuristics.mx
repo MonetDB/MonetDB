@@ -111,14 +111,12 @@ static int
 OPTheuristicsImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i, k, combis = 0, squeeze = 0;
-	InstrPtr p;
 
 	(void) stk;		/* fool compilers */
 	(void) pci;
 
 	/* process the combinators */
 	for (i = 0; i < mb->stop - 1; i++) {
-		p = getInstrPtr(mb, i);
 		for (k = i + 1; k < mb->stop; k++)
 			if (SPcombi000(mb, i, k)) {
 #ifdef DEBUG_OPT_OPTIMIZER
@@ -131,7 +129,6 @@ OPTheuristicsImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	/* process the squeezers */
 	for (i = 0; i < mb->stop - 1; i++) {
-		p = getInstrPtr(mb, i);
 		for (k = i + 1; k < mb->stop; k++)
 			if (SPsqueezer000(mb, i, k)) {
 #ifdef DEBUG_OPT_OPTIMIZER
