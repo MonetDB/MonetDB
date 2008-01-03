@@ -1,0 +1,18 @@
+(: document.xml contains just <document><foo/></document>, i.e. 4
+   nodes (including collection and document nodes) :)
+pf:add-doc("$TSTSRCDIR/insert-new-page.SF-1854215.xml","document.xml","document.xml",10)
+<>
+(: insert 16380 (=2*2*3*3*5*7*13) nodes to create a document of 16384
+   (= 2**14) nodes (i.e. one complete page) :)
+for $i in (: 2*2 :) (1,2,1,2) return
+for $j in (: 3*3 :) (1,2,3,1,2,3,1,2,3) return
+for $k in (: 5 :) (1,2,3,4,5) return
+for $l in (: 7 :) (1,2,3,4,5,6,7) return
+do insert (: 13 :) <one><two><three/><four/><five/><six/><seven/></two><eight><nine/><ten/><eleven/><twelve/><thirteen/></eight></one> into exactly-one(doc("document.xml")/document)
+<>
+(: insert a node at the end of the document, this requires a new page
+   to be appended -- this is where the error being tested for occurs :)
+do insert <fail/> into exactly-one(doc("document.xml")/document)
+<>
+(: clean up :)
+pf:del-doc("document.xml")

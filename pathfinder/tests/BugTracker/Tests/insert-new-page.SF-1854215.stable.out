@@ -1,0 +1,34 @@
+stdout of test 'insert-new-page.SF-1854215` in directory 'tests/BugTracker` itself:
+
+
+# 16:30:54 >  
+# 16:30:54 >   Mserver "--config=/ufs/sjoerd/Monet-virgin-stable/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/sjoerd/src/MonetDB/virgin-stable/pathfinder/x86_64-unknown-linux-gnu/runtime/.libs:/ufs/sjoerd/src/MonetDB/virgin-stable/pathfinder/x86_64-unknown-linux-gnu/runtime:/ufs/sjoerd/src/MonetDB/virgin-stable/pathfinder/runtime:/ufs/sjoerd/src/MonetDB/virgin-stable/pathfinder/x86_64-unknown-linux-gnu/modules/pftijah/.libs:/ufs/sjoerd/src/MonetDB/virgin-stable/pathfinder/x86_64-unknown-linux-gnu/modules/pftijah:/ufs/sjoerd/src/MonetDB/virgin-stable/pathfinder/modules/pftijah:/ufs/sjoerd/Monet-virgin-stable/lib64/MonetDB4:/ufs/sjoerd/Monet-virgin-stable/lib64/MonetDB4/lib:/ufs/sjoerd/Monet-virgin-stable/lib64/MonetDB4/bin" --set "gdk_dbfarm=/ufs/sjoerd/src/MonetDB/virgin-stable/pathfinder/x86_64-unknown-linux-gnu/dbfarm" --set "sql_logdir=/ufs/sjoerd/src/MonetDB/virgin-stable/pathfinder/x86_64-unknown-linux-gnu/sql_logs" --set "xquery_logdir=/ufs/sjoerd/src/MonetDB/virgin-stable/pathfinder/x86_64-unknown-linux-gnu/xquery_logs" --set mapi_open=true --set xrpc_open=true --set mapi_port=35302 --set xrpc_port=47301 --set monet_prompt= --trace "--dbname=mTests_tests_BugTracker" "--dbinit= module(pathfinder);" ; echo ; echo Over..
+# 16:30:54 >  
+
+
+
+# MonetDB Server v4.20.1
+# based on GDK   v1.20.1
+# Copyright (c) 1993-2007, CWI. All rights reserved.
+# Compiled for x86_64-unknown-linux-gnu/64bit with 32bit OIDs; dynamically linked.
+# Visit http://monetdb.cwi.nl/ for further information.
+# PF/Tijah module v0.3.0 loaded. http://dbappl.cs.utwente.nl/pftijah
+# MonetDB/XQuery module v0.20.1 loaded
+# XRPC administrative console at http://127.0.0.1:47301/admin
+
+printf("\nReady.\n");
+
+Ready.
+quit();
+
+Over..
+
+# 16:30:55 >  
+# 16:30:55 >  mclient -lxquery -fxml -umonetdb -Pmonetdb --host=hirundo --port=35302 insert-new-page.SF-1854215.xq
+# 16:30:55 >  
+
+
+# 16:32:19 >  
+# 16:32:19 >  Done.
+# 16:32:19 >  
+
