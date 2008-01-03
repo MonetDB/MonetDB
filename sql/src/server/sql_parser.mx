@@ -2394,6 +2394,12 @@ copyfrom_stmt:
 	  append_list(l, $7);
 	  append_list(l, $2);
 	  $$ = _symbol_create_list( SQL_COPYFROM, l ); }
+  | COPY select_no_parens INTO string opt_seps 
+	{ dlist *l = L();
+	  append_symbol(l, $2);
+	  append_string(l, $4);
+	  append_list(l, $5);
+	  $$ = _symbol_create_list( SQL_COPYTO, l ); }
   ;
 
 opt_seps:

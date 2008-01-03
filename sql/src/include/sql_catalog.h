@@ -406,6 +406,10 @@ typedef struct res_table {
 	int query_type;
 	int nr_cols;
 	int cur_col;
+	char *filename;
+	char *tsep;
+	char *rsep;
+	char *ssep;
 	res_col *cols;
 	bat order;
 	struct res_table *next;

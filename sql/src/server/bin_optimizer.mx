@@ -252,7 +252,8 @@ bin_optimizer(mvc *c, stmt *s)
 	case st_idxbat:
 
 	case st_atom:
-	case st_bulkinsert:
+	case st_import:
+	case st_export:
 	case st_var:
 	case st_table_clear:
 

@@ -218,7 +218,8 @@ head_column(stmt *st)
 	case st_output:
 	case st_affected_rows:
 
-	case st_bulkinsert:
+	case st_import:
+	case st_export:
 
 	case st_exception:
 
@@ -838,7 +839,8 @@ rel2bin(mvc *c, stmt *s)
 	case st_basetable:
 
 	case st_atom:
-	case st_bulkinsert:
+	case st_import:
+	case st_export:
 	case st_var:
 	case st_table_clear:
 

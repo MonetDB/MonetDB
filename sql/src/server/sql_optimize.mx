@@ -1684,7 +1684,7 @@ optimize(mvc *c, stmt *s)
 	case st_bat:
 
 	case st_atom:
-	case st_bulkinsert:
+	case st_import:
 	case st_var:
 
 		s->optimized = 1;
@@ -1774,6 +1774,7 @@ optimize(mvc *c, stmt *s)
 	case st_return:
 	case st_table:
 	case st_assign:
+	case st_export:
 
 		if (s->op1.stval) {
 			stmt *os = s->op1.stval;
@@ -1784,6 +1785,11 @@ optimize(mvc *c, stmt *s)
 			stmt_destroy(os);
 		}
 
+		if (s->type == st_export || s->type == st_convert) {
+			s->optimized = 1;
+			return stmt_dup(s);
+		}
+
 	case st_append_col:
 	case st_append_idx:
 	case st_update_col:
@@ -1791,23 +1797,21 @@ optimize(mvc *c, stmt *s)
 	case st_delete:
 	case st_table_clear:
 
-		if (s->type != st_convert) {
-			if (s->op2.stval) {
-				stmt *os = s->op2.stval;
-				stmt *ns = optimize(c, os);
+		if (s->op2.stval) {
+			stmt *os = s->op2.stval;
+			stmt *ns = optimize(c, os);
 	
-				assert(ns != s);
-				s->op2.stval = ns;
-				stmt_destroy(os);
-			}
-			if (s->op3.stval) {
-				stmt *os = s->op3.stval;
-				stmt *ns = optimize(c, os);
+			assert(ns != s);
+			s->op2.stval = ns;
+			stmt_destroy(os);
+		}
+		if (s->op3.stval) {
+			stmt *os = s->op3.stval;
+			stmt *ns = optimize(c, os);
 	
-				assert(ns != s);
-				s->op3.stval = ns;
-				stmt_destroy(os);
-			}
+			assert(ns != s);
+			s->op3.stval = ns;
+			stmt_destroy(os);
 		}
 		s->optimized = 1;
 		return stmt_dup(s);

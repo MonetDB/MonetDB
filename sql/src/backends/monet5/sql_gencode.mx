@@ -827,6 +827,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			int l = _dumpstmt(sql, mb, s->op1.stval);
 			int r1 = _dumpstmt(sql, mb, s->op2.stval);
 			int r2 = _dumpstmt(sql, mb, s->op3.stval);
+			//int ls = 0, hs = 0;
 			char *cmd = 
 				(s->type == st_select2) ? selectRef :
 				(s->type == st_uselect2) ? uselectRef :
@@ -846,9 +847,17 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				break;
 			}
 			/* if st_join2 try to convert to bandjoin 
-			if (s->op2.stval->type == st_binop || s->op3.stval->type == st_binop) {
-				assert(0);
+			if ((ls = (s->op2.stval->type == st_binop && 
+			    strcmp(s->op2.stval->op4.funcval->func->base.name, "sql_add")==0)) || 
+			    (hs = (s->op3.stval->type == st_binop && 
+			    strcmp(s->op3.stval->op4.funcval->func->base.name, "sql_add")==0))) {
+				if (ls)
+					printf("ls\n");
+				if (hs)
+					printf("hs\n");
+					
 				printf("possible bandjoin ?\n");
+				assert(0);
 			}
 			*/
 
@@ -1492,7 +1501,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			s->nr = getDestVar(q);
 			@:SQLpostlude@
 		} break;
-		case st_bulkinsert:{
+		case st_import:{
 			char *tname = s->op1.stval->op1.tval->base.name;
 			node *n = s->op2.lval->h;
 			char *sep = n->data;
@@ -1576,7 +1585,8 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			s->nr = getDestVar(q);
 			@:SQLpostlude@
 		} break;
-		case st_output:{
+		case st_output:
+		case st_export:{
 			stmt *order = NULL;
 			stmt *lst = s->op1.stval;
 
@@ -1587,6 +1597,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				lst = lst->op2.stval;
 			}
 			if (lst->type == st_list) {
+				int file = 0;
 				list *l = lst->op1.lval;
 				int cnt = list_length(l);
 				stmt *f;
@@ -1596,7 +1607,8 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				f = n->data;
 
 				/* single value result, has a fast exit */
-				if (cnt == 1 && !order && f->nrcols <= 0){
+				if (cnt == 1 && !order && f->nrcols <= 0 &&
+				    s->type != st_export){
 					stmt *c = n->data;
 					sql_subtype *t = tail_type(c);
 					char *tname = table_name(c);
@@ -1638,10 +1650,24 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 						order = n->data;
 					}
 				}
+				if (s->type == st_export)
+					file = _dumpstmt(sql, mb, s->op4.stval);
 				k = newStmt2(mb, sqlRef, resultSetRef);
 				s->nr = getDestVar(k);
 				k = pushInt(mb, k, cnt);
-				k = pushInt(mb, k, sql->mvc->type);
+				if (s->type == st_export) {
+					node *n = s->op2.lval->h;
+					char *sep = n->data;
+					char *rsep = n->next->data;
+					char *ssep = sql_escape_ident(n->next->next->data);
+					k = pushArgument(mb, k, file);
+					k = pushStr(mb, k, sep);
+					k = pushStr(mb, k, rsep);
+					k = pushStr(mb, k, ssep);
+					_DELETE(ssep);
+				} else {
+					k = pushInt(mb, k, sql->mvc->type);
+				}
 				k = pushArgument(mb, k, order->nr);
 				dump_header(mb, s, l);
 				

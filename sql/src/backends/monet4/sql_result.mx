@@ -682,12 +682,10 @@ export_value( mvc *m, stream *s, int eclass, char *sqlname, int d, int sc, ptr p
 }
 
 static int
-mvc_export_row(mvc *m, stream *s, res_table *t)
+mvc_export_row(mvc *m, stream *s, res_table *t, str btag, str sep, str rsep, str ssep)
 {
-	char *sep = ",\t";
-	char *rsep = "\t]\n";
-	int seplen= 2;
-	int rseplen= 3;
+	int seplen = strlen(sep);
+	int rseplen= strlen(rsep);
 	char *buf = NULL;
 	int len = 0;
 	int i, ok = 1;
@@ -695,7 +693,9 @@ mvc_export_row(mvc *m, stream *s, res_table *t)
 	if (!s)
 		return 0;
 
-	ok = (stream_write(s, "[ ", 2, 1) == 1);
+	(void)ssep;
+	if (btag[0])
+		ok = (stream_write(s, btag, strlen(btag), 1) == 1);
 	for (i = 0; i < t->nr_cols && ok; i++) {
 		res_col *c = t->cols + i;
 
@@ -717,11 +717,8 @@ mvc_export_row(mvc *m, stream *s, res_table *t)
 }
 
 static int
-mvc_export_table(mvc *m, stream *s, res_table *t, BAT *order, size_t offset, size_t nr)
+mvc_export_table(mvc *m, stream *s, res_table *t, BAT *order, size_t offset, size_t nr, char *btag, char *sep, char *rsep, char *ssep )
 {
-	char *sep = ",\t";
-	char *rsep = "\t]\n";
-
 	ascii as;
 	ascii_io *fmt;
 	ssize_t i;
@@ -739,7 +736,7 @@ mvc_export_table(mvc *m, stream *s, res_table *t, BAT *order, size_t offset, siz
 	memset(fmt, 0, (as.nr_attrs + 1) * sizeof(ascii_io));
 
 	fmt[0].c = NULL;
-	fmt[0].sep = _strdup("[ ");
+	fmt[0].sep = _strdup(btag);
 	fmt[0].seplen = _strlen(fmt[0].sep);
 	fmt[0].ws = 0;
 
@@ -763,6 +760,7 @@ mvc_export_table(mvc *m, stream *s, res_table *t, BAT *order, size_t offset, siz
 		fmt[i].len = 0;
 		fmt[i].nillen = 0;
 		fmt[i].ws = 0;
+		fmt[i].quote = ssep?ssep[0]:0;
 		if (c->type.type->eclass == EC_DEC) {
 			fmt[i].tostr = &dec_tostr;
 			fmt[i].frstr = &dec_frstr;
@@ -985,6 +983,34 @@ export_error(BAT *order)
 }
 
 int
+mvc_export_file(mvc *m, res_table *t) 
+{
+	int res = 0;
+	size_t count;
+	stream *s;
+	BAT *order = NULL;
+
+	s = open_wastream(t->filename);
+	if (!s || stream_errnr(s)) {
+		GDKerror("failed to open %s\n", t->filename);
+		return -1;
+	}
+
+	if (!t->order) {
+		res = mvc_export_row(m, s, t, "", t->tsep, t->rsep, t->ssep);
+	} else {
+		order = BATdescriptor(t->order);
+		count = BATcount(order);
+		res = mvc_export_table(m, s, t, order, 0, count, "", t->tsep, t->rsep, t->ssep);
+		BBPunfix(order->batCacheid);
+		m->results = res_tables_remove(m->results, t);
+	} 
+	stream_close(s);
+	stream_destroy(s);
+	return res;
+}
+
+int
 mvc_export_result(mvc *m, stream *s, int res_id, str w)
 {
 	int i, clean = 0, res = 0;
@@ -997,6 +1023,8 @@ mvc_export_result(mvc *m, stream *s, int res_id, str w)
 
 	/* we shouldn't have anything else but Q_TABLE here */
 	assert(t->query_type == Q_TABLE);
+	if (t->filename)
+		return mvc_export_file(m, t);
 
 	/* query type: Q_TABLE */
 	if (!(stream_write(s, "&1 ", 3, 1) == 1))
@@ -1077,14 +1105,14 @@ mvc_export_result(mvc *m, stream *s, int res_id, str w)
 		return export_error(order);
 
 	if (!t->order)
-		return mvc_export_row(m, s, t);
+		return mvc_export_row(m, s, t, "[ ", ",\t", "\t]\n", "\"");
 
 	count = m->reply_size;
 	if (count == 0 || count >= BATcount(order)) {
 		count = BATcount(order);
 		clean = 1;
 	}
-	res = mvc_export_table(m, s, t, order, 0, count);
+	res = mvc_export_table(m, s, t, order, 0, count, "[ ", ",\t", "\t]\n", "\"");
 	BBPunfix(order->batCacheid);
 	if (clean)
 		m->results = res_tables_remove(m->results, t);
@@ -1140,7 +1168,7 @@ mvc_export_chunk(mvc *m, stream *s, int res_id, size_t offset, size_t nr)
 	if (stream_write(s, "\n", 1, 1) != 1)
 		return export_error(order);
 
-	res = mvc_export_table(m, s, t, order, offset, cnt);
+	res = mvc_export_table(m, s, t, order, offset, cnt, "[ ", ",\t", "\t]\n", "\"");
 	BBPunfix(order->batCacheid);
 	return res;
 }

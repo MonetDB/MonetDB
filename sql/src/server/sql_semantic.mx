@@ -1082,6 +1082,7 @@ semantic(mvc *sql, scope *scp, symbol *s)
 		break;
 	}
 	case SQL_COPYFROM:
+	case SQL_COPYTO:
 	case SQL_INSERT:
 	case SQL_UPDATE:
 	case SQL_DELETE:

@@ -1129,7 +1129,7 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 		case st_rs_column:
 			dump_2(sql, s, "find", nr);
 			break;
-		case st_bulkinsert:{
+		case st_import:{
 			char *tname = s->op1.stval->op1.tval->base.name;
 			node *n = s->op2.lval->h;
 			char *sep = n->data;
@@ -1188,7 +1188,8 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 			backend_dump_nil(sql, s->op1.stval);
 			break;
 		}
-		case st_output:{
+		case st_output:
+		case st_export:{
 			stmt *order = NULL;
 			stmt *lst = s->op1.stval;
 
@@ -1213,7 +1214,8 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 				f = n->data;
 
 				/* single value result, has a fast exit */
-				if (cnt == 1 && !order && f->nrcols <= 0){
+				if (cnt == 1 && !order && f->nrcols <= 0 && 
+				    s->type != st_export){
 					stmt *c = n->data;
 					sql_subtype *t = tail_type(c);
 					char *tname = table_name(c);
@@ -1254,7 +1256,17 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 					buflen += BUFSIZ;
 					buf = RENEW_ARRAY(char, buf, buflen);
 				}
-				len = snprintf(buf, buflen, "var s%d := mvc_result_table(myc, %d, %d, s%d);\n", -s->nr, cnt, sql->mvc->type, order->nr);
+				if (s->type == st_export) {
+					int file = backend_dumpstmt_(s->op4.stval, nr, sql);
+					node *n = s->op2.lval->h;
+					char *sep = n->data;
+					char *rsep = n->next->data;
+					char *ssep = sql_escape_ident(n->next->next->data);
+					len = snprintf(buf, buflen, "var s%d := mvc_result_file(myc, %d, s%d, \"%s\", \"%s\", \"%s\", s%d);\n", -s->nr, cnt, file, sep, rsep, ssep, order->nr);
+					_DELETE(ssep);
+				} else {
+					len = snprintf(buf, buflen, "var s%d := mvc_result_table(myc, %d, %d, s%d);\n", -s->nr, cnt, sql->mvc->type, order->nr);
+				}
 				assert(len <= buflen);
 				write_command(sql, buf);
 				write_part(sql, buf, len);

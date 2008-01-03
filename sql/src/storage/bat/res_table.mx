@@ -55,6 +55,7 @@ res_table_create(sql_trans *tr, int res_id, int nr_cols, int type, res_table *ne
 	t->nr_cols = nr_cols;
 	t->cur_col = 0;
 	t->cols = NEW_ARRAY(res_col, nr_cols);
+	t->filename = t->tsep = t->rsep = t->ssep = NULL;
 
 	t->order = 0;
 	if (order) {
@@ -115,6 +116,14 @@ res_table_destroy(res_table *t)
 	if (t->order)
 		bat_decref(t->order);
 	_DELETE(t->cols);
+	if (t->filename)
+		_DELETE(t->filename);
+	if (t->tsep)
+		_DELETE(t->tsep);
+	if (t->rsep)
+		_DELETE(t->rsep);
+	if (t->ssep)
+		_DELETE(t->ssep);
 	_DELETE(t);
 }
 

@@ -1375,7 +1375,7 @@ insert_into(mvc *sql, dlist *qname, dlist *columns, symbol *val_or_q)
    where import is a function returning a table of to be inserted values.
  */
 static stmt *
-sql_bulkinsert(mvc *sql, sql_table *t, char *tsep, char *rsep, char *ssep, char *filename, int nr, int offset)
+sql_import(mvc *sql, sql_table *t, char *tsep, char *rsep, char *ssep, char *filename, int nr, int offset)
 {
 	stmt *rs = NULL;
 	stmt *fname = (filename) ? stmt_atom_string(_strdup(filename)) : NULL;
@@ -1383,7 +1383,7 @@ sql_bulkinsert(mvc *sql, sql_table *t, char *tsep, char *rsep, char *ssep, char 
 	int i, len = 0;
 	stmt **inserts, *res = NULL;
 
-	rs = stmt_bulkinsert(stmt_basetable(t, t->base.name), _strdup(tsep), _strdup(rsep), _strdup(ssep), fname, nr, offset);
+	rs = stmt_import(stmt_basetable(t, t->base.name), _strdup(tsep), _strdup(rsep), _strdup(ssep), fname, nr, offset);
 	len = list_length(t->columns.set);
 	inserts = NEW_ARRAY(stmt *, len);
 
@@ -1436,12 +1436,35 @@ copyfrom(mvc *sql, dlist *qname, dlist *files, dlist *seps, dlist *nr_offset)
 		for (slist = create_stmt_list(); n; n = n->next) {
 			char *fname = n->data.sval;
 
-			list_append(slist, sql_bulkinsert(sql, t, tsep, rsep, ssep, fname, nr, offset));
+			list_append(slist, sql_import(sql, t, tsep, rsep, ssep, fname, nr, offset));
 		}
 		return stmt_list(slist);
 	}
 	slist = create_stmt_list();
-	list_append(slist, sql_bulkinsert(sql, t, tsep, rsep, ssep, NULL, nr, offset));
+	list_append(slist, sql_import(sql, t, tsep, rsep, ssep, NULL, nr, offset));
+	return stmt_list(slist);
+}
+
+static stmt *
+copyto(mvc *sql, symbol *sq, str file, dlist *seps)
+{
+	char *tsep = seps->h->data.sval;
+	char *rsep = seps->h->next->data.sval;
+	char *ssep = (seps->h->next->next)?seps->h->next->next->data.sval:"";
+	stmt *s = flat_subquery(sql, sq);
+	list *slist;
+
+	if (!s) 
+		return NULL;
+
+	slist = create_stmt_list();
+	list_append(slist, stmt_export(s, _strdup(tsep), _strdup(rsep), _strdup(ssep), stmt_atom_string(_strdup(file))));
+	if (s->type == st_list && ((stmt*)s->op1.lval->h->data)->nrcols != 0) {
+		stmt *cnt = stmt_aggr(stmt_dup(s->op1.lval->h->data), NULL, sql_bind_aggr(sql->session->schema, "count", NULL), 1);
+		list_append(slist, stmt_affected_rows(cnt));
+	} else {
+		list_append(slist, stmt_affected_rows(stmt_atom_int(1)));
+	}
 	return stmt_list(slist);
 }
 
@@ -1945,6 +1968,14 @@ updates(mvc *sql, scope *scp, symbol *s)
 		dlist *l = s->data.lval;
 
 		ret = copyfrom(sql, l->h->data.lval, l->h->next->data.lval, l->h->next->next->data.lval, l->h->next->next->next->data.lval);
+		sql->type = Q_UPDATE;
+	}
+		break;
+	case SQL_COPYTO:
+	{
+		dlist *l = s->data.lval;
+
+		ret = copyto(sql, l->h->data.sym, l->h->next->data.sval, l->h->next->next->data.lval);
 		sql->type = Q_UPDATE;
 	}
 		break;

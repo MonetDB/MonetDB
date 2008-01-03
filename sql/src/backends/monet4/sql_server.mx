@@ -127,6 +127,8 @@ The results of the SQL queries are assembled in result sets, which
 can be shipped to the front-end for display or exported over a
 stream.
 @m
+	.COMMAND mvc_result_file( mvc m, int nr_cols, str filename, str tsep, str rsep, str ssep, BAT[oid,any] order ) : int = mvc_result_file_wrap; "Create structure to cache a file query result" 
+
 	.COMMAND mvc_result_table( mvc m, int nr_cols, int type, any order ) : int = mvc_result_row_wrap; "Create structure to cache a row query result" 
 
 	.COMMAND mvc_result_table( mvc m, int nr_cols, int type, BAT[oid,any] order ) : int = mvc_result_table_wrap; "Create structure to cache a table query result" 
@@ -712,6 +714,21 @@ mvc_result_row(mvc *m, int nr_cols, int qtype)
 	return m->results->id;
 }
 
+int
+mvc_result_file_wrap(int *res_id, mvc *M, int *nr_cols, str filename, str tsep, str rsep, str ssep, BAT *order )
+{
+	mvc *m = *(mvc**)M;
+	res_table *t = res_table_create(m->session->tr, m->result_id++, *nr_cols, Q_TABLE, m->results, order);
+	m->results = t;
+	t->filename = _strdup(filename);
+	t->tsep = _strdup(tsep);
+	t->rsep = _strdup(rsep);
+	t->ssep = _strdup(ssep);
+	*res_id = t->id;
+	if (*res_id < 0)
+		return GDK_FAIL;
+	return GDK_SUCCEED;
+}
 
 int
 mvc_result_table_wrap(int *res_id, mvc *M, int *nr_cols, int *qtype, BAT *order)
