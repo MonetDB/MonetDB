@@ -1392,7 +1392,8 @@ newVariable(MalBlkPtr mb, str name, malType type)
 		}
 	}
 	n = mb->vtop;
-	getVar(mb, n) = (VarPtr) GDKzalloc(sizeof(VarRecord) + 2*MAXARG * sizeof(short));
+	if (getVar(mb, n) == NULL)
+		getVar(mb, n) = (VarPtr) GDKzalloc(sizeof(VarRecord) + 2*MAXARG * sizeof(short));
 	mb->var[n]->name = name;
 	mb->var[n]->propc = 0;
 	mb->var[n]->maxprop = 2*MAXARG;
@@ -1539,7 +1540,7 @@ clearVariable(MalBlkPtr mb, int varid)
 		return;
 	if (v->name)
 		GDKfree(v->name);
-	if (isVarConstant(mb,varid))
+	if (isVarConstant(mb,varid) || isVarDisabled(mb, varid))
 		VALclear(&v->value);
 	v->name = 0;
 	v->type = 0;
@@ -2375,7 +2376,7 @@ instruction2str(MalBlkPtr mb, InstrPtr p, int flg)
 	char nmebuf[PATHLENGTH];
 	str pstring = 0;
 
-	len = 8196;
+	len = 64*1024;
 	s = GDKmalloc(len);
 	if (flg) {
 		if( p->token<0){
