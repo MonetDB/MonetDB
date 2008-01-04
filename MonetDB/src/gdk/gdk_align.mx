@@ -270,14 +270,16 @@ the H and T column descriptors are fully copied. We need copies
 because in case of a mark, we are going to override a column with 
 a void. Take care to zero the accelerator data, though. 
 @c
+	*bn->U = *h->U;
 	*bn->H = *h->H;
 	if (h->H == t->T) {
 		tp = hp;
 		bn->T = bn->H;
 	} else {
 		*bn->T = *t->T;
+		if (bn->U->capacity > t->U->capacity)
+			bn->U->capacity = t->U->capacity;
 	}
-	*bn->U = *h->U;
 
 	if (hp)
 		BBPshare(hp);
