@@ -542,6 +542,7 @@ that just reuses the memory of the source.
 		bn->H->heap.maxsize = bn->H->heap.size = headsize(bn, cnt);
 		bn->T->heap.maxsize = bn->T->heap.size = tailsize(bn, cnt);
 		BATsetcount(bn, cnt);
+		BATsetcapacity(bn, cnt);
 @-
 We have to do it: create a new BAT and put everything into it.
 @c

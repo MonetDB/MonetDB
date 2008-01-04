@@ -146,8 +146,6 @@ BATbandjoin(BAT *l, BAT *r, ptr c1, ptr c2, bit li, bit hi)
 	ERRORcheck(l == NULL, "BATbandjoin: invalid left operand");
 	ERRORcheck(r == NULL, "BATbandjoin: invalid right operand");
 	ERRORcheck(TYPEerror(l->ttype, r->htype), "BATbandjoin: type conflict\n");
-	(void)li;
-	(void)hi;
 	bn = BATnew(BAThtype(l), BAThtype(r), MIN(BATcount(l), BATcount(r)));
 	if (bn == NULL) 
 		return bn;
@@ -186,7 +184,7 @@ The easiest case is to implement a nested loop for band operations.
 Choice point is to determine the status of the NULL values in the final
 result.
 @{
-@= bandjoin
+@= bandjoin_
 {
 	BATiter li = bat_iterator(l);
 	BATiter ri = bat_iterator(r);
@@ -199,8 +197,8 @@ result.
 		x1 = (@1 *) BUNtloc(li, p);
 		BATloop(r, v, w) {
 			x2 = (@1 *) BUNhloc(ri, v);
-			if ((*x1 >= *x2 -  *(@1 *) c1) &&
-			    (*x1 <= *x2 + *(@1 *) c2)) {
+			if ((*x1 @2 *x2 -  *(@1 *) c1) &&
+			    (*x1 @3 *x2 + *(@1 *) c2)) {
 				if (BUNfastins(bn, BUNhead(li, p), BUNtail(ri, v)) == NULL) {
 					BBPreclaim(bn);
 					return NULL;
@@ -208,7 +206,17 @@ result.
 			}
 		}
 	}
-	break;
 }
+
+@= bandjoin
+if (li && hi)
+	@:bandjoin_(@1,>=,<=)
+else if (li && !hi)
+	@:bandjoin_(@1,>=,<)
+else if (!li && hi)
+	@:bandjoin_(@1,>,<=)
+else
+	@:bandjoin_(@1,>,<)
+break;
 @
 @}

@@ -700,8 +700,8 @@ BATcopy(BAT *b, int ht, int tt, int writable)
 
 			if (isVIEWCOMBINE(b) ||	/* oops, mirror view! */
 			    /* reduced slice view: do not copy too much garbage */
-			    (hp != 0 && BATcount(BBP_cache(hp)) > cnt + cnt) ||
-			    (tp != 0 && BATcount(BBP_cache(tp)) > cnt + cnt))
+			    (hp != 0 && BATcapacity(BBP_cache(hp)) > cnt + cnt) ||
+			    (tp != 0 && BATcapacity(BBP_cache(tp)) > cnt + cnt))
 				bunstocopy = cnt;
 		}
 
@@ -720,6 +720,7 @@ BATcopy(BAT *b, int ht, int tt, int writable)
 			int tremap = remap && BATtrestricted(b) != BAT_WRITE && tt != TYPE_void;
 			int hvremap = hremap && ATOMstorage(ht) == TYPE_str && !GDK_ELIMDOUBLES(b->H->vheap);
 			int tvremap = tremap && ATOMstorage(tt) == TYPE_str && !GDK_ELIMDOUBLES(b->T->vheap);
+			size_t hcap = 0, tcap = 0;
 			Heap bhhp, bthp, hhp, thp;
 			memset(&bhhp, 0, sizeof(Heap));
 			memset(&bthp, 0, sizeof(Heap));
@@ -747,10 +748,15 @@ BATcopy(BAT *b, int ht, int tt, int writable)
 			if (bn->T->vheap)
 				heapfree(bn->T->vheap, &thp);
 
-			if (bn->htype)
-				bn->U->capacity = bn->H->heap.size>>bn->H->shift;
-			else if (bn->ttype)
-				bn->U->capacity = bn->T->heap.size>>bn->T->shift;
+			/* make sure we use the correct capacity */
+			hcap = (bn->htype)?bn->H->heap.size>>bn->H->shift:0;
+			tcap = (bn->ttype)?bn->T->heap.size>>bn->T->shift:0;
+			if (hcap && tcap)
+				bn->U->capacity = MIN(hcap,tcap);
+			else if (hcap)
+				bn->U->capacity = hcap;
+			else
+				bn->U->capacity = tcap;
 
 
 			/* first/inserted must point equally far into the heap as in the source */
@@ -1966,6 +1972,13 @@ BATcount(BAT *b)
 }
 
 void
+BATsetcapacity(BAT *b, size_t cnt)
+{
+	b->U->capacity = cnt;			
+	assert(b->batCount <= cnt);
+}
+
+void
 BATsetcount(BAT *b, size_t cnt)
 {
 	b->batCount = cnt;			
@@ -2796,7 +2809,9 @@ check if duplicated properties are equal
 		     ((b->H->heap.size > b->H->heap.maxsize) << 13) |
 		     (((b->H->heap.free > b->H->heap.size) & (b->htype != TYPE_void)) |
 		      ((b->T->heap.free > b->T->heap.size) & (b->ttype != TYPE_void))) << 14 | 
-		     (((xx - yy) != BATcount(b)) << 15);
+		     (((xx - yy) != BATcount(b)) << 15) |
+			((b->H->type && (b->U->capacity > (b->H->heap.size>>b->H->shift))) |
+			(b->T->type && (b->U->capacity > (b->T->heap.size>>b->T->shift)))) << 16;
 
 		if (zz) {
 			GDKfatal("BATpropcheck: BAT %s(%d) has inconsistent descriptor %d (%o)\n", BATgetId(b), b->batCacheid, zz, zz);
