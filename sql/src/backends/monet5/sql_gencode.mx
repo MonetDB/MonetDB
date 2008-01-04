@@ -1659,12 +1659,12 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 					node *n = s->op2.lval->h;
 					char *sep = n->data;
 					char *rsep = n->next->data;
-					char *ssep = sql_escape_ident(n->next->next->data);
+					char *ssep = n->next->next->data;
+
 					k = pushArgument(mb, k, file);
 					k = pushStr(mb, k, sep);
 					k = pushStr(mb, k, rsep);
 					k = pushStr(mb, k, ssep);
-					_DELETE(ssep);
 				} else {
 					k = pushInt(mb, k, sql->mvc->type);
 				}
