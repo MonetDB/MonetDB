@@ -46,12 +46,12 @@ monet_fcntbl.sort()@batloop() {
 }
 
 Fnts.count().print();
-[ 1035 ]
+[ 1036 ]
 Fnts.reverse().sort().reverse()@batloop() {
 	FnameS.insert($h,Fname.find($h));
 }
 FnameS.count().print();
-[ 1035 ]
+[ 1036 ]
 
 var All:=0;
 
@@ -156,8 +156,8 @@ Module: ""
 
 Module: "algebra"
 
-[ 152 ]
-#-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ 153 ]
+#-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function		type		signature										help																																													  # name
 # str		str		str											str																																													  # type
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
@@ -171,6 +171,7 @@ Module: "algebra"
 [ "avg",	  "PROC:      ",  "avg(BAT[any,sht]) : dbl",								  "Gives the average of all tail values."																																  ]
 [ "avg",			  "PROC:      ",  "avg(BAT[any,wrd]) : dbl",								  "Gives the average of all tail values."																																																																																  ]
 [ "bandjoin",	  "COMMAND:   ",  "bandjoin(BAT[any::1,any::2], BAT[any::2,any::3], any::2, any::2) : BAT[any::1,any::3]", "This is a join() for which the predicate is that two BUNs match if\nthe left-tail value is within the range [right-head - minus,\nright-head + plus]\n\nWorks only for the builtin numerical types, and their derivates."										  ]
+[ "bandjoin",			  "COMMAND:   ",  "bandjoin(BAT[any::1,any::2], BAT[any::2,any::3], any::2, any::2, bit, bit) : BAT[any::1,any::3]", "This is a join() for which the predicate is that two BUNs match if\nthe left-tail value is within the range [right-head - minus,\nright-head + plus], depending on (l_in/h_in), the bounds are included.\n\nWorks only for the builtin numerical types, and their derivates."						  ]
 [ "clear",	  "PROC:      ",  "clear(BAT[any::1,any::2]) : BAT[any::1,any::2]",					  "Backward compatibility. Does a b.delete()"																																  ]
 [ "copy",			  "COMMAND:   ",  "copy(BAT[any::1,any::2]) : BAT[any::1,any::2]",						  "Returns physical copy of a BAT, with access BAT_WRITE."																																																																																										  ]
 [ "count",	  "COMMAND:   ",  "count(BAT[any,any]) : int",								  "Returns the number of elements currently in a BAT."																															  ]
@@ -1180,7 +1181,7 @@ Module: "trans"
 [ "sync",	  "COMMAND:   ",  "sync() : bit",									  "save all persistent BATs"																																																												  ]
 
 All.print();
-[ 1035 ]
+[ 1036 ]
 
 quit();
 
