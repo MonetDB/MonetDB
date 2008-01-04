@@ -86,7 +86,7 @@ OPTevaluateImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	MalStkPtr env = NULL;
 	str msg;
 	int debugstate= c->itrace;
-	Lifespan span= newLifespan(mb);
+	Lifespan span;
 
 	c->itrace= 0;
 	(void) stk;
@@ -99,6 +99,7 @@ OPTevaluateImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	stream_printf(GDKout,"Constant expression optimizer started\n");
 #endif
 	
+	span = newLifespan(mb);
 	env= prepareMALstack(mb);
 	env->keepAlive= TRUE;
 	do {

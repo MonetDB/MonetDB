@@ -170,13 +170,14 @@ OPTgarbageCollectorImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	InstrPtr p, q, *old;
 	Module s = MCgetClient()->nspace;
 	int actions = 0;
-	Lifespan span= newLifespan(mb);
+	Lifespan span;
 
 	(void) pci;
 	(void) stk;		/* to fool compilers */
 
 	if (varGetProp(mb, getArg(mb->stmt[0], 0), inlineProp) != NULL)
 		return 0;
+	span = newLifespan(mb);
 	setLifespan(mb,span);
 
 	old= mb->stmt;
