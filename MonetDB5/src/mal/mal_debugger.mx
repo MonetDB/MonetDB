@@ -726,6 +726,7 @@ call2str(MalBlkPtr mb, MalStkPtr stk, int pc, int flags)
 			w = 0;
 			ATOMformat(val->vtype, VALptr(val), &w);
 			strcat(msg,w);
+			GDKfree(w);
 			if( ATOMcmp(val->vtype, ATOMnilptr(val->vtype), VALptr(val))==0){
 				str tpe= getTypeName(v->type);
 				strcat(msg,":");
@@ -745,7 +746,6 @@ call2str(MalBlkPtr mb, MalStkPtr stk, int pc, int flags)
 				}
 				GDKfree(tpe);
 			}
-			GDKfree(w);
 			if (k < p->argc - 1)
 				strcat(msg,", ");
 			len= strlen(msg);
