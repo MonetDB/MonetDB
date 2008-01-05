@@ -176,6 +176,8 @@ gdk_export void strHeapConvert(Heap *h, int directon);
 gdk_export int strElimDoubles(Heap *h);
 gdk_export var_t strLocate(Heap *h, str v);
 gdk_export int strCmpNoNil(unsigned char *l, unsigned char *r);
+gdk_export int escapedStrlen(const char * src);
+gdk_export int escapedStr(char *dst, const char *src);
 
 #ifdef __cplusplus
 }
@@ -2300,9 +2302,79 @@ Convert a GDK string value to something printable.
 #endif
 
 int
+escapedStrlen(const char * src)
+{
+	int end, sz = 0;
+
+	for (end = 0; src[end]; end++)
+		if (src[end] == '\t' || src[end] == '\n' || src[end] == '\\' || src[end] == '"') {
+			sz += 2;
+#ifndef ASCII_CHR
+		} else if (src[end] == (char) '\302' &&
+			   0200 <= ((int) src[end + 1] & 0377) &&
+			   ((int) src[end + 1] & 0377) <= 0237) {
+			/* Unicode control character (code
+			   point range U-00000080 through
+			   U-0000009F encoded in UTF-8 */
+			/* for the first one of the two UTF-8
+			   bytes we count a width of 7 and for
+			   the second one 1, together that's
+			   8, i.e. the width of two
+			   backslash-escaped octal coded
+			   characters */
+			sz += 7;
+#endif
+		} else if (!printable_chr(src[end])) {
+			sz += 4;
+		} else {
+			sz++;
+		}
+	return sz;
+}
+
+int
+escapedStr(char *dst, const char *src) 
+{
+	char *s, *r = (char *) src;
+	int cur = 0, l = 0; 
+
+	for (s = dst; r[cur]; cur++)
+		if (r[cur] == '\t') {
+			s[l++] = '\\';
+			s[l++] = 't';
+		} else if (r[cur] == '\n') {
+			s[l++] = '\\';
+			s[l++] = 'n';
+		} else if (r[cur] == '\\') {
+			s[l++] = '\\';
+			s[l++] = '\\';
+		} else if (r[cur] == '"') {
+			s[l++] = '\\';
+			s[l++] = '"';
+		} else if (!printable_chr(r[cur])
+#ifndef ASCII_CHR
+			   || (r[cur] == (char) '\302' &&
+			       0200 <= ((int) r[cur + 1] & 0377) &&
+			       ((int) r[cur + 1] & 0377) <= 0237)
+			   || (cur > 0 &&
+			       r[cur - 1] == (char) '\302' &&
+			       0200 <= ((int) r[cur] & 0377) &&
+			       ((int) r[cur] & 0377) <= 0237)
+#endif
+		    ) {
+			sprintf(s + l, "\\%03o", (unsigned char) r[cur]);
+			l += 4;
+		} else {
+			s[l++] = r[cur];
+		}
+	s[l] = 0;
+	return l;
+}
+
+int
 strToStr(char **dst, int *len, char *src)
 {
-	int l = 1;
+	int l = 0;
 
 	if (GDK_STRNIL((str) src)) {
 		@:atommem(char,4)@
@@ -2310,65 +2382,12 @@ strToStr(char **dst, int *len, char *src)
 		strcpy(*dst, "nil");
 		return 3;
 	} else {
-		char *s, *r = (char *) src;
-		int cur = 0, end, sz = 0;
-
-		for (end = 0; src[end]; end++)
-			if (src[end] == '\t' || src[end] == '\n' || src[end] == '\\' || src[end] == '"') {
-				sz += 2;
-#ifndef ASCII_CHR
-			} else if (src[end] == (char) '\302' &&
-				   0200 <= ((int) src[end + 1] & 0377) &&
-				   ((int) src[end + 1] & 0377) <= 0237) {
-				/* Unicode control character (code
-				   point range U-00000080 through
-				   U-0000009F encoded in UTF-8 */
-				/* for the first one of the two UTF-8
-				   bytes we count a width of 7 and for
-				   the second one 1, together that's
-				   8, i.e. the width of two
-				   backslash-escaped octal coded
-				   characters */
-				sz += 7;
-#endif
-			} else if (!printable_chr(src[end])) {
-				sz += 4;
-			} else {
-				sz++;
-			}
+		int sz = escapedStrlen(src);
 		@:atommem(char,sz+3)@
-
-		for (s = *dst; cur < end; cur++)
-			if (r[cur] == '\t') {
-				s[l++] = '\\';
-				s[l++] = 't';
-			} else if (r[cur] == '\n') {
-				s[l++] = '\\';
-				s[l++] = 'n';
-			} else if (r[cur] == '\\') {
-				s[l++] = '\\';
-				s[l++] = '\\';
-			} else if (r[cur] == '"') {
-				s[l++] = '\\';
-				s[l++] = '"';
-			} else if (!printable_chr(r[cur])
-#ifndef ASCII_CHR
-				   || (r[cur] == (char) '\302' &&
-				       0200 <= ((int) r[cur + 1] & 0377) &&
-				       ((int) r[cur + 1] & 0377) <= 0237)
-				   || (cur > 0 &&
-				       r[cur - 1] == (char) '\302' &&
-				       0200 <= ((int) r[cur] & 0377) &&
-				       ((int) r[cur] & 0377) <= 0237)
-#endif
-			    ) {
-				sprintf(s + l, "\\%03o", (unsigned char) r[cur]);
-				l += 4;
-			} else {
-				s[l++] = r[cur];
-			}
-		s[0] = s[l++] = '"';
-		s[l] = 0;
+		l = escapedStr((*dst)+1, src);
+		l++;
+		(*dst)[0] = (*dst)[l++] = '"';
+		(*dst)[l] = 0;
 	}
 	return l;
 }
