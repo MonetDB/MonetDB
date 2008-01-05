@@ -426,7 +426,7 @@ _ASCIIadt_toStr(void *extra, char **buf, int *len, int type, ptr a)
 	} else if (type == TYPE_str) {
 		ascii_io *fmt = (ascii_io*)extra;
 		char *dst, *src = a;
-		int l = escapedStrlen(src), l2 = 0;
+		int l = (fmt->quote)?escapedStrlen(src):(int)strlen(src), l2 = 0;
 
 		if (l + 3 > *len) {
 			GDKfree(*buf);
