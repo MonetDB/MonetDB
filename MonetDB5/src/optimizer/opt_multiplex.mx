@@ -141,9 +141,9 @@ OPTexpandMultiplex(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 								"Iterator BAT type is missing");
 
 #ifdef DEBUG_OPT_MULTIPLEX
-	printf("calling the optimize multiplex script routine\n");
+	stream_printf(GDKout,"calling the optimize multiplex script routine\n");
 	printFunction(GDKout,mb,LIST_MAL_ALL);
-	printf("multiplex against operator %d %s\n",iter, getTypeName(getVarType(mb,iter)));
+	stream_printf(GDKout,"multiplex against operator %d %s\n",iter, getTypeName(getVarType(mb,iter)));
 	printInstruction(GDKout,mb,pci,LIST_MAL_ALL);
 #endif
 @-
