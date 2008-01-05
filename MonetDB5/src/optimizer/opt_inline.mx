@@ -41,7 +41,7 @@ comment "Expand inline functions";
 #include "mal_interpreter.h"
 #include "opt_macro.h"
 
-/*#define DEBUG_OPT_INLINE     show partial result */
+/* #define DEBUG_OPT_INLINE     show partial result */
 
 @c
 #include "mal_config.h"
@@ -85,8 +85,10 @@ Check if the function definition is tagged as being inlined.
 			if (sig->token == FUNCTIONsymbol &&
 			    varGetProp(q->blk, getArg(sig, 0), inlineProp) != NULL) {
 				(void) inlineMALblock(mb,i,q->blk);
+				i--;
 				actions++;
 #ifdef DEBUG_OPT_INLINE
+				stream_printf(GDKout,"inline function at %d\n",i);
 				printFunction(GDKout, mb, LIST_MAL_ALL);
 #endif
 			} else 
@@ -95,8 +97,10 @@ Check if the local call is tagged as being inlined.
 @c
 			if (varGetProp(mb, getArg(q,0), inlineProp) != NULL) {
 				inlineMALblock(mb,i,q->blk);
+				i--;
 				actions++;
 #ifdef DEBUG_OPT_INLINE
+				stream_printf(GDKout,"inlined called at %d\n",i);
 				printFunction(GDKout, mb, LIST_MAL_ALL);
 #endif
 			} 
