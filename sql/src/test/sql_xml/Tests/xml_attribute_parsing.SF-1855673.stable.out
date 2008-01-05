@@ -27,8 +27,8 @@ Over..
 % . # table_name
 % element_element # name
 % xml # type
-% 43 # length
-[ <element "unnamed and wrong"></element>	]
+% 54 # length
+[ <element  single_value="unnamed and wrong"></element>	]
 
 # 17:54:53 >  
 # 17:54:53 >  Done.
