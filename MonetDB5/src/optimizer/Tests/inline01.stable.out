@@ -67,23 +67,21 @@ function user.main():void;	# 0  (main:void)
     mdb.list("user","qry");	# 1 MDBlist3 (_5:void)<-(_2:str)(_3:str)
 end main;	# 2  
 function user.qry():void;
-    nil:void;
-    nil:void;
-    _6 := bat.new(:int,:int);
-    _8 := bat.new(:int,:int);
-    _9:int  := 1;
-    bat.insert(_6,1,1);
-barrier (_12,_13,_9:int ):= bat.newIterator(_6);
-    io.print(_12);
+    _5 := bat.new(:int,:int);
+    _7 := bat.new(:int,:int);
+    _8:int  := 1;
+    bat.insert(_5,1,1);
+barrier (_11,_12,_8:int ):= bat.newIterator(_5);
+    io.print(_11);
 catch MALException:str ;
 exit MALException:str ;
-exit (_12,_13,_9:int );
-barrier (_12,_13,_9:int ):= bat.newIterator(_8);
-    io.print(_12);
-    redo (_12,_13,_9:int ):= bat.hasMoreElements(_8);
+exit (_11,_12,_8:int );
+barrier (_11,_12,_8:int ):= bat.newIterator(_7);
+    io.print(_11);
+    redo (_11,_12,_8:int ):= bat.hasMoreElements(_7);
 catch MALException:str ;
 exit MALException:str ;
-exit (_12,_13,_9:int );
+exit (_11,_12,_8:int );
 end qry;
 
 # 00:18:07 >  

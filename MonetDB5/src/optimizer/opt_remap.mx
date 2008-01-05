@@ -175,10 +175,15 @@ Determine the variables to be upgraded and adjust their type
 	sig= getInstrPtr(mq,0);
 #ifdef DEBUG_OPT_REMAP
 		stream_printf(GDKout,"#Modify the code\n");
-		printInstruction(GDKout,mq,sig,LIST_MAL_ALL);
+		printFunction(GDKout,mq,LIST_MAL_ALL);
 		printInstruction(GDKout,mb,p,LIST_MAL_ALL);
 #endif
 	upgrade= (int*) GDKzalloc(sizeof(int)*mq->vtop);
+
+	setVarType(mq, 0,newBatType(TYPE_oid, getArgType(mb,p,0)));
+	clrVarFixed(mq,getArg(getInstrPtr(mq,0),0)); /* for typing */
+	upgrade[getArg(getInstrPtr(mq,0),0)]= TRUE;
+
 	for(i=3; i<p->argc; i++){
 		if( !isaBatType( getArgType(mq,sig,i-2)) &&
 			isaBatType( getArgType(mb,p,i)) ){
@@ -203,8 +208,10 @@ an upgrade and resolve it afterwards.
 @c
 	for(i=1; i<mq->stop; i++){
 		q= getInstrPtr(mq,i);
+		if( q->token== ENDsymbol)
+			break;
 		k=0;
-		for(j=q->retc; j<q->argc; j++)
+		for(j=0; j<q->argc; j++)
 		if( upgrade[getArg(q,j)] )
 			k++;
 		if(k){
@@ -212,22 +219,29 @@ an upgrade and resolve it afterwards.
 			stream_printf(GDKout,"#Patch the instruction\n");
 			printInstruction(GDKout,mq,q,LIST_MAL_ALL);
 #endif
-			for(j=0;j<q->retc; j++)
+			for(j=0;j<q->retc; j++){
 				setVarType(mq,getArg(q,j),TYPE_any);
+				clrVarFixed(mq,getArg(q,j)); /* for typing */
+				upgrade[getArg(q,j)]= TRUE;
+			}
 			if( getModuleId(q)){
 				snprintf(buf,1024,"bat%s",getModuleId(q));
 				setModuleId(q,putName(buf,strlen(buf)));
-#ifdef DEBUG_OPT_REMAP
-				printInstruction(GDKout,mq,q,LIST_MAL_ALL);
-#endif
 			}
 			/* now see if we can resolve the instruction */
 			typeChecker(MCgetClient()->nspace,mq,q,TRUE);
 			if( q->typechk== TYPE_UNKNOWN)
 				goto terminateMX;
-			for(j=0;j<q->retc; j++)
-				upgrade[getArg(q,j)]= TRUE;
+#ifdef DEBUG_OPT_REMAP
+			printInstruction(GDKout,mq,q,LIST_MAL_ALL);
+#endif
 		}
+#ifdef DEBUG_OPT_REMAP
+		else{
+			stream_printf(GDKout,"#Don't patch the instruction\n");
+			printInstruction(GDKout,mq,q,LIST_MAL_ALL);
+		}
+#endif
 	}
 
 	if(mq->errors){

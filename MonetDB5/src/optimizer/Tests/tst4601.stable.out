@@ -41,17 +41,16 @@ end welcome;	# 8
 function user.main():void;	# 0  (main:void)
 # the first test for macro expansions and inversions 	# 1  (_1:str)
     io.print("test expansion");	# 2 IOprint_val (_5:void)<-(_6:str)
-    a := nil:int;	# 3  (a:int)<-(_19:int)
-    _13 := 0;	# 4  (_13:int)<-(_14:int)
-barrier _15 := calc.<(_13,2);	# 5 CALCcompLTintint (_15:bit)<-(_13:int)(_8:int) jump 9
-    io.print("Welcome");	# 6 IOprint_val (_16:void)<-(_17:str)
-    _13 := calc.+(_13,1);	# 7 CALCbinaryADDintint (_13:int)<-(_13:int)(_18:int)
-    redo _15 := calc.<(_13,2);	# 8 CALCcompLTintint (_15:bit)<-(_13:int)(_8:int) jump 6
-exit _15;	# 9  (_15:bit)
-    a := _13;	# 10  (a:int)<-(_13:int)
-    io.print(a);	# 11 IOprint_val (_9:void)<-(a:int)
-    mdb.list();	# 12 MDBlist (_10:void)
-end main;	# 13  
+    _13 := 0;	# 3  (_13:int)<-(_14:int)
+barrier _15 := calc.<(_13,2);	# 4 CALCcompLTintint (_15:bit)<-(_13:int)(_8:int) jump 8
+    io.print("Welcome");	# 5 IOprint_val (_16:void)<-(_17:str)
+    _13 := calc.+(_13,1);	# 6 CALCbinaryADDintint (_13:int)<-(_13:int)(_18:int)
+    redo _15 := calc.<(_13,2);	# 7 CALCcompLTintint (_15:bit)<-(_13:int)(_8:int) jump 5
+exit _15;	# 8  (_15:bit)
+    a := _13;	# 9  (a:int)<-(_13:int)
+    io.print(a);	# 10 IOprint_val (_9:void)<-(a:int)
+    mdb.list();	# 11 MDBlist (_10:void)
+end main;	# 12  
 [ "test expansion" ]
 [ "Welcome" ]
 [ "Welcome" ]
@@ -59,7 +58,6 @@ end main;	# 13
 function user.main():void;
 # the first test for macro expansions and inversions 
     io.print("test expansion");
-    a := nil:int;
     _13 := 0;
 barrier _15 := calc.<(_13,2);
     io.print("Welcome");

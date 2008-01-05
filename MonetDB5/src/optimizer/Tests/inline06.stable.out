@@ -52,18 +52,16 @@ end main;	# 4
 function user.qry():void;
     b := bat.new(:oid,:int);
     bat.insert(b,0@0,1);
-    z:bat[:oid,:int]{inline}  := nil;
     _14 := batcalc.+(b,b);
     _15 := mmath.rand();
 # this has a memory-side effect 
     _14 := batcalc.*(_14,_15);
     z:bat[:oid,:int]{inline}  := _14;
-    z:bat[:oid,:int]{inline}  := nil;
-    _21 := batcalc.+(b,2);
-    _22 := mmath.rand();
-# this has a memory-side effect 
-    _21 := batcalc.*(_21,_22);
-    z:bat[:oid,:int]{inline}  := _21;
+    _20 := batcalc.+(b,2);
+    _21 := mmath.rand();
+# 
+    _20 := batcalc.*(_20,_21);
+    z:bat[:oid,:int]{inline}  := _20;
 end qry;
 
 # 18:00:44 >  
