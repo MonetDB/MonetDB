@@ -259,24 +259,27 @@ XMLattribute(xml *ret, str *name, str *val)
 }
 
 str
-XMLelement(xml *ret, str *name, str *nspace, xml *attr, xml *val)
+XMLelement(xml *ret, str *name, str *nspace, xml *attr, xml *Val)
 {
+	char *val = *Val;
 	int len;
 	str buf= (str) GDKmalloc(len=2*strlen(*name) +
 				strlen(*nspace) + strlen(*attr)+
-				strlen("<></> ")+strlen(*val)+1);
+				strlen("<></> ")+strlen(val)+1);
+	if (strNil(val))  /* todo short hand <elementname /> */
+		val = "";
 	if( strNil(*nspace) && strNil(*attr))
 		snprintf(buf, len,"<%s>%s</%s>",
-			*name, *val, *name);
+			*name, val, *name);
 	else if( strNil(*nspace))
 		snprintf(buf, len,"<%s %s>%s</%s>",
-			*name, *attr, *val, *name);
+			*name, *attr, val, *name);
 	else if( strNil(*attr))
 		snprintf(buf, len,"<%s %s>%s</%s>",
-			*name, *nspace, *val, *name);
+			*name, *nspace, val, *name);
 	else
 		snprintf(buf, len,"<%s %s %s>%s</%s>",
-			*name, *nspace, *attr, *val, *name);
+			*name, *nspace, *attr, val, *name);
 
 	*ret= buf;
 	return MAL_SUCCEED;

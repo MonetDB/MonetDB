@@ -576,7 +576,6 @@ BATXMLelement(int *ret, str *name, str *namespace, str *attributes, int *bid)
 
 		/* include attributes */
 		if( attributes) {
-
 			if( (len=strlen(t)) >= size){
 				buf= GDKrealloc(buf,len+strlen(*name)+BUFSIZ);
 				size= len+strlen(*name)+BUFSIZ;
@@ -587,14 +586,14 @@ BATXMLelement(int *ret, str *name, str *namespace, str *attributes, int *bid)
 		elm= offset= strlen(buf);
 
 		/* fetch the elements */
-
 		if( (len=strlen(t)+elm) >= size-offset){
 			buf= GDKrealloc(buf,size+2*elm);
 			size= len+2*elm;
 		}
-		snprintf(buf+offset,size-offset,"%s",t);
-		offset+= strlen(buf+offset);
-	
+		if (!strNil(t)) {
+			snprintf(buf+offset,size-offset,"%s",t);
+			offset+= strlen(buf+offset);
+		}
 		snprintf(buf + offset,size-offset, "</%s>\n",*name);
 		bunfastins(bn,h,buf);
 	}
