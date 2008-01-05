@@ -990,10 +990,12 @@ char *symbol2string(mvc *sql, symbol *se)
 	case SQL_NEXT:{
 		char *seq = qname_table(se->data.lval);
 		char *sname = qname_schema(se->data.lval);
+		char *s;
 		
 		if (!sname)
 			sname = sql->session->schema->base.name;
-		len = snprintf( buf+len, BUFSIZ-len, "next value for \"%s\".\"%s\"", sname, sql_escape_ident(seq)); 
+		len = snprintf( buf+len, BUFSIZ-len, "next value for \"%s\".\"%s\"", sname, s=sql_escape_ident(seq)); 
+		_DELETE(s);
 	}	break;
 	case SQL_COLUMN: {
 		/* can only be variables */ 

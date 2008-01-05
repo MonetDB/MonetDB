@@ -1764,6 +1764,7 @@ sql_value_exp(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset, int f,
 	case SQL_XMLELEMENT:
 	case SQL_XMLFOREST:
 	case SQL_XMLCOMMENT:
+	case SQL_XMLATTRIBUTE:
 	case SQL_XMLCONCAT:
 	case SQL_XMLDOCUMENT:
 	case SQL_XMLPI:

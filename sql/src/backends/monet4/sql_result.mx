@@ -388,7 +388,7 @@ _ASCIIadt_frStr(void *extra, int type, char *s, char *e, char quote)
 {
 	ascii_io *c = extra;
 
-	if (s == NULL || s == e || (!quote && 
+	if (s == NULL || (!quote && s == e) || (!quote && 
 			(s[0] == 'N' || s[0] == 'n') &&
 			(s[1] == 'U' || s[1] == 'u') &&
 			(s[2] == 'L' || s[2] == 'l') &&
@@ -409,8 +409,6 @@ _ASCIIadt_frStr(void *extra, int type, char *s, char *e, char quote)
 static int
 _ASCIIadt_toStr(void *extra, char **buf, int *len, int type, ptr a)
 {
-
-	(void) extra;
 	if (!a || ATOMcmp(type, ATOMnilptr(type), a) == 0) {
 		char *dst;
 		const char src[] = "NULL";
@@ -425,6 +423,30 @@ _ASCIIadt_toStr(void *extra, char **buf, int *len, int type, ptr a)
 		strncpy(dst, src, l);
 		dst[l] = 0;
 		return l;
+	} else if (type == TYPE_str) {
+		ascii_io *fmt = (ascii_io*)extra;
+		char *dst, *src = a;
+		int l = escapedStrlen(src), l2 = 0;
+
+		if (l + 3 > *len) {
+			GDKfree(*buf);
+			*len = 2 * l + 3;
+			*buf = GDKmalloc(*len);
+		}
+		dst = *buf;
+		if (fmt->quote) {
+			dst[0] = fmt->quote;
+			l2 = 1;
+			l = escapedStr(dst+l2, src);
+		} else {
+			strncpy(dst + l2, src, l);
+		}
+		if (l2) {
+			dst[l + l2] = fmt->quote;
+			l2++;
+		}
+		dst[l + l2] = 0;
+		return l + l2;
 	} else {
 		return (*BATatoms[type].atomToStr) (buf, len, a);
 	}
@@ -783,6 +805,8 @@ mvc_export_table(mvc *m, stream *s, res_table *t, BAT *order, size_t offset, siz
 			fmt[i].tostr = &sql_time_tostr;
 			fmt[i].frstr = NULL;
 			fmt[i].extra = ts_res;
+		} else {
+			fmt[i].extra = fmt+i;
 		}
 	}
 	if (i == t->nr_cols + 1) {

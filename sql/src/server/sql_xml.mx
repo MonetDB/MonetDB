@@ -151,7 +151,7 @@ sql_xmlforest(mvc *sql, scope *scp, symbol *sym, group *grp, stmt *subset, int f
 	(void)content_option;
 	(void)returning;
 
-	if (ns) { 
+	if (ns) {
 		ns_st = sql_value_exp(sql, scp, ns, grp, subset, f, knd); 
 	} else {
 		ns_st = stmt_atom(atom_general(&str_type, NULL, 0));
@@ -224,6 +224,26 @@ sql_xmlcomment(mvc *sql, scope *scp, symbol *sym, group *grp, stmt *subset, int 
 		return NULL;
 	return sql_unop_(sql, scp, NULL, "comment", comment_st); 
 }
+
+static stmt *
+sql_xmlattribute(mvc *sql, scope *scp, symbol *sym, group *grp, stmt *subset, int f, exp_kind knd ) 
+{
+	dnode *d = sym->data.lval->h;
+	char *attr_name = d->data.sval;
+	symbol *attr = d->next->data.sym;
+	stmt *attr_st, *attr_name_st = NULL;
+
+	attr_st = sql_value_exp(sql, scp, attr, grp, subset, f, knd); 
+	if (!attr_st)
+		return NULL;
+	if (!attr_name) {
+		/*TODO:convert simple column names into valid attribute names */
+		attr_name = column_name(attr_st);
+	}
+	attr_name_st = stmt_atom_string(_strdup(attr_name));
+	return sql_binop_(sql, scp, NULL, "attribute", attr_name_st, attr_st); 
+}
+
 
 static stmt *
 sql_xmlconcat(mvc *sql, scope *scp, symbol *sym, group *grp, stmt *subset, int f, exp_kind knd ) 
@@ -324,6 +344,9 @@ sql_xml(mvc *sql, scope *scp, symbol *s, group *grp, stmt *subset, int f, exp_ki
 		break;
 	case SQL_XMLCOMMENT: 
 		ret = sql_xmlcomment(sql, scp, s, grp, subset, f, knd);
+		break;
+	case SQL_XMLATTRIBUTE: 
+		ret = sql_xmlattribute(sql, scp, s, grp, subset, f, knd);
 		break;
 	case SQL_XMLCONCAT: 
 		ret = sql_xmlconcat(sql, scp, s, grp, subset, f, knd);

@@ -39,6 +39,7 @@ extern atom *atom_bool( sql_subtype *tpe, bit t);
 extern atom *atom_int( sql_subtype *tpe, lng val);
 extern atom *atom_float( sql_subtype *tpe, double val);
 extern atom *atom_string( sql_subtype *tpe, char *val, int destroy);
+extern atom *atom_string2( sql_allocator *sa, sql_subtype *tpe, char *val, int destroy);
 extern atom *atom_general( sql_subtype *tpe, char *val, int destroy);
 extern atom *atom_dec( sql_subtype *tpe, lng val, double dval);
 
@@ -141,10 +142,8 @@ atom_dec(sql_subtype *tpe, lng val, double dval)
 }
 
 atom *
-atom_string(sql_subtype *tpe, char *val, int destroy)
+atom_string_(atom *a, sql_subtype *tpe, char *val, int destroy)
 {
-	atom *a = atom_create();
-
 	a->isnull = 1;
 	a->tpe = *tpe;
 	a->data.val.sval = NULL;
@@ -160,6 +159,23 @@ atom_string(sql_subtype *tpe, char *val, int destroy)
 	if (atom_debug)
 		fprintf(stderr, "atom_string(%s,%s)\n", tpe->type->sqlname, val);
 	return a;
+}
+
+atom *
+atom_string(sql_subtype *tpe, char *val, int destroy)
+{
+	return atom_string_(atom_create(), tpe, val, destroy);
+}
+
+atom *
+atom_string2( sql_allocator *sa, sql_subtype *tpe, char *val, int destroy)
+{
+	atom *a = SA_NEW(sa, atom);
+
+	a->destroy = 0;
+	memset(&a->data, 0, sizeof(a->data));
+	a->d = dbl_nil;
+	return atom_string_(a, tpe, val, destroy);
 }
 
 atom *

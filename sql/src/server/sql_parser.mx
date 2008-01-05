@@ -163,7 +163,7 @@ typedef enum tokens {
 	SQL_XMLCONCAT,
 	SQL_XMLDOCUMENT,
 	SQL_XMLELEMENT,
-	SQL_XMLATTRIBUTES,
+	SQL_XMLATTRIBUTE,
 	SQL_XMLFOREST,
 	SQL_XMLPARSE,
 	SQL_XMLPI,
@@ -220,7 +220,7 @@ extern int sqlparse(void *);
 #define append_string(l,d)   dlist_append_string( SA, l, d)
 #define append_type(l,d)     dlist_append_type( SA, l, d)
 
-#define _atom_string(t, v)   atom_string(t, v, 0)
+#define _atom_string(t, v)   atom_string2(SA, t, v, 0)
  
 #define YYPARSE_PARAM parm
 #define YYLEX_PARAM parm
@@ -253,7 +253,6 @@ extern int sqlparse(void *);
 }
 %{
 extern int sqllex( YYSTYPE *yylval, void *m );
-static symbol * str2atom(sql_allocator *sa, str x);
 /* enable to activate debugging support
 int yydebug=1;
 */
@@ -3663,7 +3662,7 @@ literal:
 		  int len = _strlen(s);
 		  sql_subtype t;
 		  sql_find_subtype(&t, "char", len, 0 );
-		  $$ = _newAtomNode( _atom_string(&t, s)); }
+		  $$ = _newAtomNode( atom_string(&t, s, 0)); }
 
  |  HEXADECIMAL { int len = _strlen($1), i = 2, err = 0;
 		  char * hexa = $1;
@@ -4550,13 +4549,10 @@ XML_attribute_list:
 
 XML_attribute:
   XML_attribute_value opt_XML_attribute_name	
-		{ /* what names to use if these aren't given?? */
-		  dlist *l = L();
-		  append_list(l, 
-		  	append_string(L(), sa_strdup(SA, "attribute")));
-	  	  append_symbol(l, str2atom(SA,$2));
-	  	  append_symbol(l, $1);
-	  	  $$ = _symbol_create_list( SQL_BINOP, l ); }
+	{ dlist *l = L();
+	  append_string(l, $2);
+	  append_symbol(l, $1);
+	  $$ = _symbol_create_list( SQL_XMLATTRIBUTE, l ); }
   ;
 
 opt_XML_attribute_name:
@@ -5057,7 +5053,7 @@ char *token2string(int token)
 	SQL(XMLCONCAT);
 	SQL(XMLDOCUMENT);
 	SQL(XMLELEMENT);
-	SQL(XMLATTRIBUTES);
+	SQL(XMLATTRIBUTE);
 	SQL(XMLFOREST);
 	SQL(XMLPARSE);
 	SQL(XMLPI);
@@ -5067,22 +5063,6 @@ char *token2string(int token)
 	SQL(XMLNAMESPACES);
 	}
 	return "unknown";	/* just needed for broken compilers ! */
-}
-
-static symbol* 
-str2atom(sql_allocator *sa, str x)
-{ 
-	atom *a = NULL;
-
-	if (x) {
-		char *s = sql2str(x);
-		int len = _strlen(s);
-		sql_subtype t;
-
-		sql_find_subtype(&t, "char", len, 0 );
-		a = atom_string(&t, s, 0); 
-	}
-	return newAtomNode( sa,  a); 
 }
 
 void *sql_error( mvc * sql, int error_code, char *format, ... )
