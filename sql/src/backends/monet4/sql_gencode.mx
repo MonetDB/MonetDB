@@ -598,11 +598,9 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 		case st_select2:
 		case st_uselect2:
 		case st_join2:{
-			int l = backend_dumpstmt_(s->op1.stval, nr, sql);
-			int r1 = backend_dumpstmt_(s->op2.stval, nr, sql);
-			int r2 = backend_dumpstmt_(s->op3.stval, nr, sql);
+			int l, r1, r2, ls = 0, hs = 0, rs = 0;
 			char *bits = NULL;
-			char *cmd;
+			char *cmd, *tpe = NULL;
 
 			if (s->type == st_select2)
 				cmd = "select";
@@ -610,6 +608,36 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 				cmd = "uselect";
 			else
 				cmd = "join";
+
+			buf = NEW_ARRAY(char, BUFSIZ + 1);
+			/* if st_join2 try to convert to bandjoin */
+			/* ie check if we substract/add a constant, to the
+			   same column */
+			if (s->type == st_join2 && 
+			   ((ls = (s->op2.stval->type == st_binop && 
+			    strcmp(s->op2.stval->op4.funcval->func->base.name, "sql_sub")==0 &&
+			    s->op2.stval->op2.stval->nrcols == 0)) || 
+			    (hs = (s->op3.stval->type == st_binop && 
+			    strcmp(s->op3.stval->op4.funcval->func->base.name, "sql_add")==0 && 
+			    s->op3.stval->op2.stval->nrcols == 0))) &&
+			    ((ls && hs && s->op2.stval->op1.stval == s->op3.stval->op1.stval) ||
+			     (ls && !hs && s->op2.stval->op1.stval == s->op3.stval) ||
+			     (!ls && hs && s->op2.stval == s->op3.stval->op1.stval)) ) {
+				stmt *r = (!ls)?s->op2.stval:s->op2.stval->op1.stval;
+				tpe = tail_type(r)->type->base.name;
+ 				rs = backend_dumpstmt_(r, nr, sql);
+				len = snprintf(buf, BUFSIZ, "var rs%d := s%d.reverse();\n", rs, rs);
+
+				if (ls) 
+ 					r1 = backend_dumpstmt_(s->op2.stval->op2.stval, nr, sql);
+				else
+					r1 = 0;
+				if (hs)
+ 					r2 = backend_dumpstmt_(s->op3.stval->op2.stval, nr, sql);
+				else
+					r2 = 0;
+				cmd = "bandjoin";
+			}
 			switch (s->flag) {
 			case 0:
 				bits = ", FALSE, FALSE";
@@ -624,14 +652,32 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 				bits = ", TRUE, TRUE";
 				break;
 			}
-			buf = NEW_ARRAY(char, BUFSIZ + 1);
+ 			l = backend_dumpstmt_(s->op1.stval, nr, sql);
+			if (!rs) {
+				r1 = backend_dumpstmt_(s->op2.stval, nr, sql);
+				r2 = backend_dumpstmt_(s->op3.stval, nr, sql);
+				len += snprintf(buf+len, BUFSIZ-len, "var s%d := s%d.%s(s%d, s%d%s);\n", -s->nr, l, cmd, r1, r2, bits);
+			} else {
+				char r1buf[64];
+				char r2buf[64];
 
-			len = snprintf(buf, BUFSIZ, "var s%d := s%d.%s(s%d, s%d%s);\n", -s->nr, l, cmd, r1, r2, bits);
+				if (r1)
+					snprintf(r1buf, 64, "s%d", r1);
+				else
+					snprintf(r1buf, 64, "%s(0)", tpe);
+				if (r2)
+					snprintf(r2buf, 64, "s%d", r2);
+				else
+					snprintf(r2buf, 64, "%s(0)", tpe);
+				len += snprintf(buf+len, BUFSIZ-len, "var s%d := s%d.%s(rs%d, %s, %s%s);\n", -s->nr, l, cmd, rs, r1buf, r2buf, bits);
+			}
 			dump(sql, buf, len, -s->nr);
 			_DELETE(buf);
 			backend_dump_nil(sql, s->op1.stval);
-			backend_dump_nil(sql, s->op2.stval);
-			backend_dump_nil(sql, s->op3.stval);
+			if (rs && r1)
+				backend_dump_nil(sql, s->op2.stval);
+			if (rs && r1)
+				backend_dump_nil(sql, s->op3.stval);
 			break;
 		}
 		case st_semijoin:

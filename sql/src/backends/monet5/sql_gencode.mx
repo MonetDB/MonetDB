@@ -97,6 +97,18 @@ constantAtom(backend *sql, MalBlkPtr mb, atom *a)
 	idx = defConstant(mb, vr->vtype, &cst);
 	return idx;
 }
+
+static int
+argumentZero(MalBlkPtr mb, int tpe) 
+{
+	ValRecord cst;
+
+	cst.vtype =TYPE_int;
+	cst.val.ival= 0;
+	convertConstant(tpe, &cst);
+	return defConstant(mb,tpe,&cst);
+}
+
 @-
 To speedup code generation we freeze the references to the major modules.
 This safes table lookups.
@@ -825,16 +837,49 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 		case st_select2:
 		case st_join2:{
 			int l = _dumpstmt(sql, mb, s->op1.stval);
-			int r1 = _dumpstmt(sql, mb, s->op2.stval);
-			int r2 = _dumpstmt(sql, mb, s->op3.stval);
-			//int ls = 0, hs = 0;
+			int r1, r2, ls = 0, hs = 0;
+			int rs = 0;
+
 			char *cmd = 
 				(s->type == st_select2) ? selectRef :
 				(s->type == st_uselect2) ? uselectRef :
 				joinRef;
 
 			@:SQLprelude@
-		
+
+			/* if st_join2 try to convert to bandjoin */
+			/* ie check if we substract/add a constant, to the
+			   same column */
+			if (s->type == st_join2 &&
+			   ((ls = (s->op2.stval->type == st_binop && 
+			    strcmp(s->op2.stval->op4.funcval->func->base.name, "sql_sub")==0 &&
+			    s->op2.stval->op2.stval->nrcols == 0)) || 
+			    (hs = (s->op3.stval->type == st_binop && 
+			    strcmp(s->op3.stval->op4.funcval->func->base.name, "sql_add")==0 && 
+			    s->op3.stval->op2.stval->nrcols == 0))) &&
+			    ((ls && hs && s->op2.stval->op1.stval == s->op3.stval->op1.stval) ||
+			     (ls && !hs && s->op2.stval->op1.stval == s->op3.stval) ||
+			     (!ls && hs && s->op2.stval == s->op3.stval->op1.stval)) ) {
+				stmt *r = (!ls)?s->op2.stval:s->op2.stval->op1.stval;
+				rs = _dumpstmt(sql, mb, r);
+				q = newStmt2(mb, batRef, reverseRef);
+				q = pushArgument(mb, q, rs);
+				rs = getDestVar(q);
+				if (ls) 
+					r1 = _dumpstmt(sql, mb, s->op2.stval->op2.stval);
+				else
+					r1 = argumentZero(mb, tail_type(r)->type->localtype);
+				if (hs)
+					r2 = _dumpstmt(sql, mb, s->op3.stval->op2.stval);
+				else
+					r2 = argumentZero(mb, tail_type(r)->type->localtype);
+				cmd = bandjoinRef;
+			}
+
+			if (!rs) {
+				r1 = _dumpstmt(sql, mb, s->op2.stval);
+				r2 = _dumpstmt(sql, mb, s->op3.stval);
+			}
 			if (s->op2.stval->type == st_atom &&
 			    s->op3.stval->type == st_atom &&
 			    atom_null(s->op2.stval->op1.aval) &&
@@ -846,24 +891,10 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				@:SQLpostlude@
 				break;
 			}
-			/* if st_join2 try to convert to bandjoin 
-			if ((ls = (s->op2.stval->type == st_binop && 
-			    strcmp(s->op2.stval->op4.funcval->func->base.name, "sql_add")==0)) || 
-			    (hs = (s->op3.stval->type == st_binop && 
-			    strcmp(s->op3.stval->op4.funcval->func->base.name, "sql_add")==0))) {
-				if (ls)
-					printf("ls\n");
-				if (hs)
-					printf("hs\n");
-					
-				printf("possible bandjoin ?\n");
-				assert(0);
-			}
-			*/
-
-
 			q = newStmt2(mb, algebraRef, cmd);
 			q = pushArgument(mb, q, l);
+			if (rs) 
+				q = pushArgument(mb, q, rs);
 			q = pushArgument(mb, q, r1);
 			q = pushArgument(mb, q, r2);
 
