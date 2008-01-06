@@ -146,7 +146,7 @@ BATbandjoin(BAT *l, BAT *r, ptr c1, ptr c2, bit li, bit hi)
 	ERRORcheck(l == NULL, "BATbandjoin: invalid left operand");
 	ERRORcheck(r == NULL, "BATbandjoin: invalid right operand");
 	ERRORcheck(TYPEerror(l->ttype, r->htype), "BATbandjoin: type conflict\n");
-	bn = BATnew(BAThtype(l), BAThtype(r), MIN(BATcount(l), BATcount(r)));
+	bn = BATnew(BAThtype(l), BATttype(r), MIN(BATcount(l), BATcount(r)));
 	if (bn == NULL) 
 		return bn;
 	switch (ATOMstorage(r->htype)) {
