@@ -3993,8 +3993,6 @@ sql_session_reset(sql_session *s, int ac)
 
 			if (isGlobalTable(t))
 				sql_trans_clear_table(s->tr, t);
-			else if (!isGlobalTable(t)) /* remove local tmp*/
-				sql_trans_drop_table(s->tr, tmp, t->base.id, DROP_RESTRICT);
 		}
 	}
 	assert(s->active == 0);
