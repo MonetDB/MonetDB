@@ -598,7 +598,7 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 		case st_select2:
 		case st_uselect2:
 		case st_join2:{
-			int l, r1, r2, ls = 0, hs = 0, rs = 0;
+			int l, r1 = 0, r2 = 0, ls = 0, hs = 0, rs = 0;
 			char *bits = NULL;
 			char *cmd, *tpe = NULL;
 
@@ -630,12 +630,8 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 
 				if (ls) 
  					r1 = backend_dumpstmt_(s->op2.stval->op2.stval, nr, sql);
-				else
-					r1 = 0;
 				if (hs)
  					r2 = backend_dumpstmt_(s->op3.stval->op2.stval, nr, sql);
-				else
-					r2 = 0;
 				cmd = "bandjoin";
 			}
 			switch (s->flag) {
