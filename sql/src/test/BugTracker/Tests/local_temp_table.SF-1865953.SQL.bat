@@ -8,7 +8,7 @@ set LANG=en_US.UTF-8
 prompt # $t $g  
 echo on
 
-call mjclient -h %HOST% -p %MAPIPORT% -d %TSTDB% -f "%RELSRCDIR%\local_temp_table_data.SF-1865953.sql"
-call mjclient -h %HOST% -p %MAPIPORT% -d %TSTDB% "
+call mclient -lsql -h %HOST% -p %MAPIPORT% -d %TSTDB% "%RELSRCDIR%\local_temp_table_data.SF-1865953.sql"
+call mclient -lsql -h %HOST% -p %MAPIPORT% -d %TSTDB% "
 
 @del .monetdb
