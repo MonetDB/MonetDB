@@ -250,6 +250,9 @@
 /* #undef HAVE_LOCKF */
 
 /* Define to 1 if the system has the type `long long'. */
+#if defined(__ICL) && __ICL >= 1010
+#define HAVE_LONG_LONG 1
+#else
 #if _MSC_VER >= 1300
 /* Visual Studio .NET 2003 does have long long, but the printf %lld
  * format is interpreted the same as %ld, i.e. useless
@@ -257,6 +260,7 @@
 /* #define HAVE_LONG_LONG 1 */
 #else
 /* #undef HAVE_LONG_LONG */
+#endif
 #endif
 
 /* Define to 1 if you have the `mallinfo' function. */
