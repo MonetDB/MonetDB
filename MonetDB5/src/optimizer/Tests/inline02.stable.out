@@ -50,13 +50,16 @@ end main;	# 4
 function user.qry():void;
     b := bat.new(:oid,:int);
     bat.insert(b,0@0,1);
+    zz := nil:int;
     _16 := calc.+(1,2);
     zz := _16;
 # base line test for inlining 
-    _20 := batcalc.+(b,b);
-    z:bat[:oid,:int]{inline}  := _20;
-    _24 := batcalc.+(b,2);
-    z:bat[:oid,:int]{inline}  := _24;
+    z:bat[:oid,:int]{inline}  := nil;
+    _21 := batcalc.+(b,b);
+    z:bat[:oid,:int]{inline}  := _21;
+    z:bat[:oid,:int]{inline}  := nil;
+    _26 := batcalc.+(b,2);
+    z:bat[:oid,:int]{inline}  := _26;
 end qry;
 
 # 18:00:43 >  

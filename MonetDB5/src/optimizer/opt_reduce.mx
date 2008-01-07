@@ -66,11 +66,11 @@ void MRconstant(MalBlkPtr mb){
 	alias= (int*) alloca(mb->vtop *sizeof(int));
 
 	for(i = 0; i< mb->vtop; i++)
-	if (isVarConstant(mb,i)){
+	if (isVarConstant(mb,i)) {
 		alias[i] = i;
 		for(j=0; j<top; j++) {
 			if (getVarType(mb,i) == getVarType(mb,cst[j]) &&
-			    ATOMcmp(getVarType(mb,i),
+			    ATOMcmp(getVarGDKType(mb,i),
 			     VALget(&getVar(mb,i)->value),
 			     VALget(&getVar(mb,cst[j])->value)) == 0) {
 				alias[i] = cst[j];

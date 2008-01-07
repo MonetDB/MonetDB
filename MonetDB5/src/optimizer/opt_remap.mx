@@ -150,14 +150,17 @@ The process terminates as soon as we
 find an instruction that does not have a multiplex
 counterpart.
 @c
-static int OPTmultiplexInline( MalBlkPtr mb, InstrPtr p, int pc ){
+static int 
+OPTmultiplexInline( MalBlkPtr mb, InstrPtr p, int pc )
+{
 	MalBlkPtr mq;
 	InstrPtr q,sig;
 	char buf[1024];
-	int i,j,k, *upgrade;
+	int i,j,k;
+	bit *upgrade;
 	Symbol s;
 	s= findSymbol( 	VALget(&getVar(mb, getArg(p, 1))->value),
-					VALget(&getVar(mb, getArg(p, 2))->value));
+			VALget(&getVar(mb, getArg(p, 2))->value));
 
 	if( s== NULL || !isSideEffectFree(s->def)){
 #ifdef DEBUG_OPT_REMAP
@@ -178,11 +181,11 @@ Determine the variables to be upgraded and adjust their type
 		printFunction(GDKout,mq,LIST_MAL_ALL);
 		printInstruction(GDKout,mb,p,LIST_MAL_ALL);
 #endif
-	upgrade= (int*) GDKzalloc(sizeof(int)*mq->vtop);
+	upgrade = (bit*) GDKzalloc(sizeof(bit)*mq->vtop);
 
 	setVarType(mq, 0,newBatType(TYPE_oid, getArgType(mb,p,0)));
 	clrVarFixed(mq,getArg(getInstrPtr(mq,0),0)); /* for typing */
-	upgrade[getArg(getInstrPtr(mq,0),0)]= TRUE;
+	upgrade[getArg(getInstrPtr(mq,0),0)] = TRUE;
 
 	for(i=3; i<p->argc; i++){
 		if( !isaBatType( getArgType(mq,sig,i-2)) &&
@@ -206,43 +209,64 @@ The next step is to check each instruction of the
 to-be-inlined function for arguments that require
 an upgrade and resolve it afterwards.
 @c
+	for(i=1; i<mq->stop; i++) {
+		int fnd = 0;
+
+		q = getInstrPtr(mq,i);
+		if (q->token == ENDsymbol)
+			break;
+		for(j=0; j<q->argc && !fnd; j++) 
+			if (upgrade[getArg(q,j)]) {
+				for(k=0; k<q->retc; k++){
+					//setVarType(mq,getArg(q,k),TYPE_any);
+					setVarType(mq,getArg(q,j),newBatType(TYPE_oid,getArgType(mq, q, j)));
+					/* for typing */
+					clrVarFixed(mq,getArg(q,k)); 
+					if (!upgrade[getArg(q,k)]) {
+						upgrade[getArg(q,k)]= TRUE;
+						/* lets restart */
+						i = 0;
+					}
+				}
+				fnd = 1;
+			}
+		/* nil:type -> nil:bat[:oid,:type] */
+		if (!getModuleId(q) && q->token == ASSIGNsymbol &&
+		    q->argc == 2 && isVarConstant(mq, getArg(q,1)) && 
+		    upgrade[getArg(q,0)] &&
+		    !isaBatType(getArgType(mq, q, 1)) &&
+		    ATOMcmp(getArgGDKType(mq, q, 1),
+			VALget(&getVar(mq, getArg(q,1))->value),
+			ATOMnilptr(getArgType(mq, q, 1))) == 0) {
+			ValRecord cst;
+			int tpe = newBatType(TYPE_oid,getArgType(mq, q, 1));
+
+			setVarType(mq,getArg(q,0),tpe);
+			cst.vtype = TYPE_bat;
+			cst.val.bval = bat_nil;
+			getArg(q,1) = defConstant(mq, tpe, &cst);
+			setVarType(mq, getArg(q,1), tpe);
+		}
+	}
+
+	/* now upgrade the statements */
 	for(i=1; i<mq->stop; i++){
 		q= getInstrPtr(mq,i);
 		if( q->token== ENDsymbol)
 			break;
-		k=0;
 		for(j=0; j<q->argc; j++)
-		if( upgrade[getArg(q,j)] )
-			k++;
-		if(k){
-#ifdef DEBUG_OPT_REMAP
-			stream_printf(GDKout,"#Patch the instruction\n");
-			printInstruction(GDKout,mq,q,LIST_MAL_ALL);
-#endif
-			for(j=0;j<q->retc; j++){
-				setVarType(mq,getArg(q,j),TYPE_any);
-				clrVarFixed(mq,getArg(q,j)); /* for typing */
-				upgrade[getArg(q,j)]= TRUE;
-			}
-			if( getModuleId(q)){
+			if (upgrade[getArg(q,j)] && getModuleId(q)){
 				snprintf(buf,1024,"bat%s",getModuleId(q));
 				setModuleId(q,putName(buf,strlen(buf)));
+
+				/* now see if we can resolve the instruction */
+				typeChecker(MCgetClient()->nspace,mq,q,TRUE);
+				if( q->typechk== TYPE_UNKNOWN)
+					goto terminateMX;
+				break;
 			}
-			/* now see if we can resolve the instruction */
-			typeChecker(MCgetClient()->nspace,mq,q,TRUE);
-			if( q->typechk== TYPE_UNKNOWN)
-				goto terminateMX;
-#ifdef DEBUG_OPT_REMAP
-			printInstruction(GDKout,mq,q,LIST_MAL_ALL);
-#endif
-		}
-#ifdef DEBUG_OPT_REMAP
-		else{
-			stream_printf(GDKout,"#Don't patch the instruction\n");
-			printInstruction(GDKout,mq,q,LIST_MAL_ALL);
-		}
-#endif
 	}
+
 
 	if(mq->errors){
 terminateMX:

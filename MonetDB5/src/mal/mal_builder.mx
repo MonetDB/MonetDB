@@ -306,6 +306,7 @@ pushNil(MalBlkPtr mb, InstrPtr q, int tpe)
 		cst.vtype = TYPE_bat;
 		cst.val.bval = 0;
 		_t = defConstant(mb,TYPE_bat,&cst);
+		mb->var[_t]->type = tpe;
 	}
 	return pushArgument(mb, q, _t);
 }

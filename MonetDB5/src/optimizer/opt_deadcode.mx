@@ -139,17 +139,17 @@ OPTdeadcodeImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 	}
 	/* we may have uncovered new use-less operations */
-	if( actions) 
-		i= OPTdeadcodeImplementation(mb, stk, pci);
+	if (actions) 
+		actions += OPTdeadcodeImplementation(mb, stk, pci);
 #ifdef DEBUG_OPT_DEAD
 	stream_printf(GDKout,"LEAVING DEAD CODE ELIMINATION\n");
 	printFunction(GDKout,mb,LIST_MAL_ALL);
 #endif
 	for(; i<slimit; i++)
-	if( old[i])
-		freeInstruction(old[i]);
+		if( old[i])
+			freeInstruction(old[i]);
 	GDKfree(old);
-	return actions+i;
+	return actions;
 }
 @include optimizerWrapper.mx
 @h

@@ -467,6 +467,7 @@ for separate name space management.
 #define setArg(P,I,R) (P)->argv[I]= R
 #define getArgName(M,P,I)   getVarName((M),(P)->argv[I])
 #define getArgType(M,P,I)   getVarType((M),(P)->argv[I])
+#define getArgGDKType(M,P,I)      getVarGDKType((M),(P)->argv[I])
 
 mal_export InstrPtr newInstruction(MalBlkPtr mb, int kind);
 mal_export InstrPtr copyInstruction(InstrPtr p);
@@ -1835,6 +1836,7 @@ defConstant(MalBlkPtr mb, int type, ValPtr cst )
 	k = newTmpVariable(mb, type);
 	setVarConstant(mb, k);
 	setVarFixed(mb, k);
+	clrVarCleanup(mb, k);
 	vr = &getVarConstant(mb, k);
 	*vr = *cst;
 	return k;
@@ -2557,23 +2559,11 @@ instruction2str(MalBlkPtr mb, InstrPtr p, int flg)
 Dump the type and value information.
 @c
 		advance(t);
-		if (!isTmpVar(mb, getArg(p, i)) && idcmp("bat", getArgName(mb, p, i)) == 0) {
-			str hprop = 0, tprop = 0;
-			str d1 = getTypeName(getHeadType(getArgType(mb, p, i)));
-			str d2 = getTypeName(getTailType(getArgType(mb, p, i)));
-
-			sprintf(t, ":bat[:%s%s,:%s%s]", d1, hprop, d2, tprop);
-			GDKfree(d1);
-			GDKfree(d2);
-			advance(t);
-		} else if ( isVarTypedef(mb, getArg(p, i)) || 
-				  ( isVarConstant(mb, getArg(p, i)) &&
-					( isVarUDFtype(mb, getArg(p, i)) ||
-					ATOMcmp(getArgType(mb,p,i), 
-							ATOMnilptr(getArgType(mb,p,i)), 
-							VALptr(&getVar(mb, getArg(p, i))->value) ) == 0
-
-					) )) {
+		if (isVarTypedef(mb, getArg(p, i)) || 
+			  (isVarConstant(mb, getArg(p, i)) &&
+			   !isaBatType(getArgType(mb, p, i)) &&
+			  (isVarUDFtype(mb, getArg(p, i)) ||
+			   ATOMcmp(getArgGDKType(mb,p,i), ATOMnilptr(getArgType(mb,p,i)), VALptr(&getVar(mb, getArg(p, i))->value) ) == 0))) {
 			char *tnme = getTypeName(getArgType(mb, p, i));
 
 			sprintf(t, ":%s", tnme);
