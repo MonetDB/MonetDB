@@ -1,0 +1,43 @@
+stdout of test 'local_temp_table.SF-1865953` in directory 'src/test/BugTracker` itself:
+
+
+# 17:53:12 >  
+# 17:53:12 >   mserver5 "--config=/ufs/goncalve/scratch/MonetDB/MonetDB5/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/goncalve/scratch/MonetDB/MonetDB5/lib/MonetDB5:/ufs/goncalve/scratch/MonetDB/MonetDB5/lib/MonetDB5/lib:/ufs/goncalve/scratch/MonetDB/MonetDB5/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/goncalve/scratch/MonetDB/MonetDB5/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/goncalve/scratch/MonetDB/MonetDB5/var/MonetDB5/sql_logs"  --set mapi_open=true --set xrpc_open=true --set mapi_port=37704 --set xrpc_port=47784 --set monet_prompt= --trace "--dbname=mTests_src_test_BugTracker" --set mal_listing=0 "--dbinit= include sql;" ; echo ; echo Over..
+# 17:53:12 >  
+
+
+
+# MonetDB server v5.3.0, based on kernel v1.21.0
+# Serving database 'mTests_src_test_BugTracker'
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Copyright (c) 1993-2007 CWI, all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://amelia.ins.cwi.nl:37704/
+# MonetDB/SQL module v2.21.0 loaded
+
+Ready.
+#function user.main():void;
+#    clients.quit();
+#end main;
+
+Over..
+
+# 17:53:12 >  
+# 17:53:12 >  ./local_temp_table.SF-1865953.SQL.sh local_temp_table.SF-1865953 
+# 17:53:12 >  
+
+
+# 17:53:12 >  
+# 17:53:12 >  Mtimeout -timeout 60  mclient -lsql -h amelia -p 37704 -d mTests_src_test_BugTracker "../../../../../../../../ufs/goncalve/MonetDB/sql/src/test/BugTracker/Tests/local_temp_table_data.SF-1865953.sql"
+# 17:53:12 >  
+
+
+# 17:53:12 >  
+# 17:53:12 >  Mtimeout -timeout 60  mclient -lsql -h amelia -p 37704 -d mTests_src_test_BugTracker
+# 17:53:12 >  
+
+
+# 17:53:12 >  
+# 17:53:12 >  Done.
+# 17:53:12 >  
+
