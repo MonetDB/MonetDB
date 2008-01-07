@@ -864,6 +864,7 @@ process_fun_sigs (PFpnode_t *p, int goalnt)
  * Reducer function. This is the heart of this source file. It
  * contains all the action code for the above burg patterns.
  */
+static void reduce_rest (PFpnode_t * p, int rule, short * nts, PFpnode_t *kids[MAX_KIDS]);
 static void
 reduce (PFpnode_t * p, int goalnt)
 {
@@ -872,7 +873,6 @@ reduce (PFpnode_t * p, int goalnt)
                                      the current rule */
     PFpnode_t    *kids[MAX_KIDS]; /* leaf nodes of this rule */
     bool          topdown;        /* is this a top-down rule? */
-    PFcnode_t    *c;              /* temporary helper variable */
 
     /* guard against too dep recursion */
     PFrecursion_fence();
@@ -936,6 +936,14 @@ reduce (PFpnode_t * p, int goalnt)
     if (!topdown)
         for (unsigned short i = 0; nts[i]; i++)
             reduce (kids[i], nts[i]);
+
+    reduce_rest(p, rule, nts, kids);
+}
+
+static void
+reduce_rest (PFpnode_t * p, int rule, short * nts, PFpnode_t *kids[MAX_KIDS])
+{
+    PFcnode_t    *c;              /* temporary helper variable */
 
     /*
     PFinfo (OOPS_NOTICE, "processing rule %i", rule);
