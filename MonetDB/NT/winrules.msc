@@ -36,6 +36,12 @@ BITS64=True
 !ENDIF
 !ENDIF
 
+!IFDEF DEBUG
+DEBUGLIB=d
+!ELSE
+DEBUGLIB=
+!ENDIF
+
 # This is the location of pthreads for Win32, 
 # see http://sources.redhat.com/pthreads-win32/
 PTHREAD = C:\Pthreads
@@ -65,7 +71,7 @@ PCRE_CFLAGS = -DHAVE_LIBPCRE "-I$(LIBPCRE)\include"
 # !IFDEF HAVE_ICONV
 # This is the location of the ICONV library
 LIBICONV = C:\iconv-1.9.2.win$(bits)
-ICONV_LIBS = "$(LIBICONV)\lib\iconv.lib"
+ICONV_LIBS = "$(LIBICONV)\lib\iconv$(DEBUGLIB).lib"
 ICONV_CFLAGS = -DHAVE_ICONV "-I$(LIBICONV)\include"
 # !ENDIF
 
@@ -73,9 +79,9 @@ ICONV_CFLAGS = -DHAVE_ICONV "-I$(LIBICONV)\include"
 # This is the location of the Z library
 LIBZLIB = C:\zlib-1.2.3.win$(bits)
 !IF $(bits) == 32
-Z_LIBS = "$(LIBZLIB)\lib\zdll.lib"
+Z_LIBS = "$(LIBZLIB)\lib\zdll$(DEBUGLIB).lib"
 !ELSE
-Z_LIBS = "$(LIBZLIB)\lib\zlib1.lib"
+Z_LIBS = "$(LIBZLIB)\lib\zlib1$(DEBUGLIB).lib"
 !ENDIF
 Z_CFLAGS = -DHAVE_LIBZ "-I$(LIBZLIB)\include"
 # !ENDIF
@@ -85,9 +91,9 @@ Z_CFLAGS = -DHAVE_LIBZ "-I$(LIBZLIB)\include"
 LIBXML2 = C:\libxml2-2.6.30.win$(bits)
 LIBXML2_CFLAGS = -DHAVE_LIBXML2 "-I$(LIBXML2)\include" "-I$(LIBZLIB)\include" "-I$(LIBICONV)\include"
 !IF $(bits) == 32
-LIBXML2_LIBS = "$(LIBXML2)\lib\libxml2.lib" "$(LIBZLIB)\lib\zdll.lib" "$(LIBICONV)\lib\iconv.lib"
+LIBXML2_LIBS = "$(LIBXML2)\lib\libxml2$(DEBUGLIB).lib" "$(LIBZLIB)\lib\zdll$(DEBUGLIB).lib" "$(LIBICONV)\lib\iconv$(DEBUGLIB).lib"
 !ELSE
-LIBXML2_LIBS = "$(LIBXML2)\lib\libxml2.lib" "$(LIBZLIB)\lib\zlib1.lib" "$(LIBICONV)\lib\iconv.lib"
+LIBXML2_LIBS = "$(LIBXML2)\lib\libxml2$(DEBUGLIB).lib" "$(LIBZLIB)\lib\zlib1$(DEBUGLIB).lib" "$(LIBICONV)\lib\iconv$(DEBUGLIB).lib"
 !ENDIF
 # !ENDIF
 
@@ -219,12 +225,15 @@ CONFIGURE=$(PYTHON) "$(TOPDIR)\..\..\MonetDB\conf\configure.py" "CLIENTS_BUILD=$
 !IFNDEF DEBUG
 !IFDEF NDEBUG
 CFLAGS = $(CFLAGS) -DNDEBUG
+MAKEDEBUG=NDEBUG=1
 !ELSE
 # default in case neither NDEBUG nor DEBUG are defined
 CFLAGS = $(CFLAGS)
+MAKEDEBUG=
 !ENDIF
 !ELSE
 CFLAGS = $(CFLAGS) -Wp64 -Wcheck
+MAKEDEBUG=DEBUG=1
 !ENDIF
 
 # When compiled with plain `nmake`,
