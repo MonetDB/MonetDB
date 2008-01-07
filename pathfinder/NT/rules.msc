@@ -30,17 +30,6 @@ CONFIG_H=pf_config.h
 # burg is part of the buildtools
 BURG=burg.exe
 
-# This is the location of libxml2 and its dependencies (depends how it was compiled; sometimes iconv and zlib are needed)
-LIBXML2 = C:\libxml2-2.6.30.win$(bits)
-LIBICONV = C:\iconv-1.9.2.win$(bits)
-LIBZLIB  = C:\zlib-1.2.3.win$(bits)
-LIBXML2_CFLAGS = "-I$(LIBXML2)\include" "-I$(LIBZLIB)\include" "-I$(LIBICONV)\include"
-!IF $(bits) == 32
-LIBXML2_LIBS = "$(LIBXML2)\lib\libxml2.lib" "$(LIBZLIB)\lib\zdll.lib" "$(LIBICONV)\lib\iconv.lib"
-!ELSE
-LIBXML2_LIBS = "$(LIBXML2)\lib\libxml2.lib" "$(LIBZLIB)\lib\zlib1.lib" "$(LIBICONV)\lib\iconv.lib"
-!ENDIF
-
 # override value from global rules.msc
 LIBC_INCS = $(PTHREAD_INCS) $(LIBXML_INCS)
 
