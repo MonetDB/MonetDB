@@ -49,7 +49,7 @@ shredding-remap-error.SF-1487156.shred_doc
 shredding-remap-error.SF-1487156.cache_doc
 recursion_type_error.SF-1579524
 xs_untypedAtomic.SF-1509806.mps
-xs_untypedAtomic.SF-1509806.alg
+NOT_WIN32?xs_untypedAtomic.SF-1509806.alg
 polymorphic_sequences.SF-1497419.mps
 polymorphic_sequences.SF-1497419.alg
 boolean_string_cast.SF-1525175
