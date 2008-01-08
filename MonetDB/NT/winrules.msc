@@ -159,7 +159,7 @@ MX=Mx.exe
 CP=copy
 MV=copy
 DEL=del
-EDITBIN=editbin
+EDITBIN=editbin /nologo
 NATIVE_WIN32 = 1
 
 # we can't use the Windows utility find since it prints the file name
