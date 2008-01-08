@@ -213,12 +213,103 @@ Win32 Binaries on the right, and download libxml2, iconv, and zlib.
 Install these in e.g. ``C:\``.
 
 On Windows64 you will have to compile libxml2 yourself (with its
-optional prerequisites iconv and zlib).
+optional prerequisites iconv_ and zlib_, for which see below).
+
+Edit the file ``win32\Makefile.msvc`` and change the one occurrence of
+``zdll.lib`` to ``zlib1.lib``, and then runt the following commands in
+the ``win32`` subdirectory, substituting the correct locations for the
+iconv and zlib libraries::
+
+ cscript configure.js compiler=msvc prefix=C:\libxml2-2.6.30.win64 include=C:\iconv-1.11.win64\include;C:\zlib-1.2.3.win64\include lib=C:\iconv-1.11.win64\lib;C:\zlib-1.2.3.win64\lib iconv=yes zlib=yes
+ nmake /f Makefile.msvc
+ nmake /f Makefile.msvc install
+
+After this, you may want to move the file ``libxml2.dll`` from the
+``lib`` directory to the ``bin`` directory.
 
 __ http://xmlsoft.org/
 
 Optional Packages
 =================
+
+.. _iconv:
+
+iconv
+-----
+
+Iconv__ is a program and library to convert between different
+character encodings.  We only use the library.
+
+The home of the program and library is
+http://www.gnu.org/software/libiconv/, but Windows binaries can be
+gotten from the same site as the libxml2 library:
+http://www.zlatkovic.com/libxml.en.html.  Click on Win32 Binaries on
+the right, and download iconv.  Install in e.g. ``C:\``.
+
+On Windows64 you will have to compile iconv yourself.  Get the source
+from the `iconv website`__ and extract somewhere.  Edit the file
+``config.h.msvc`` and add the line::
+
+ #define EXEEXT ".exe"
+
+Edit the file ``srclib\Makefile.msvc`` and add ``width.obj`` to the
+``OBJECTS`` variable and add::
+
+ width.obj: width.c; $(CC) $(INCLUDES) $(CFLAGS) -c width.c
+
+to the file.  Create a file ``windows\stdint.h`` with the contents::
+
+ typedef unsigned char uint8_t;
+ typedef unsigned short uint16_t;
+ typedef unsigned long uint32_t;
+
+Create an empty file ``windows\unistd.h``.  Then build using the
+commands::
+
+ nmake -f Makefile.msvc NO_NLS=1 DLL=1 MFLAGS=-MD PREFIX=C:\iconv-1.11.win64
+ nmake -f Makefile.msvc NO_NLS=1 DLL=1 MFLAGS=-MD PREFIX=C:\iconv-1.11.win64 install
+
+Fix the ``ICONV`` definitions in ``MonetDB\NT\winrules.msc`` so that
+they refer to the location where you installed the library and call
+``nmake`` with the extra parameter ``HAVE_ICONV=1``.
+
+__ http://www.gnu.org/software/libiconv/
+__ http://www.gnu.org/software/libiconv/#downloading
+
+.. _zlib:
+
+zlib
+----
+
+Zlib__ is a compression library which is optionally used by both
+MonetDB and the iconv library.  The home of zlib is
+http://www.zlib.net/, but Windows binaries can be gotten from the same
+site as the libxml2 library: http://www.zlatkovic.com/libxml.en.html.
+Click on Win32 Binaries on the right, and download zlib.  Install in
+e.g. ``C:\``.
+
+On Windows64 you will have to compile zlib yourself.  Get the source
+from the `zlib website`__ and extract somewhere.  Open the Visual
+Studio 6 project file ``projects\visualc6\zlib.dsw`` and click on
+``Yes To All`` to convert to the version of Visual Studio which you
+are using.  Then add a x64 Solution Platform by selecting ``Build`` ->
+``Confguration Manager...``, in the new window, in the pull down menu
+under ``Active solution platform:`` select ``<New...>``.  In the pop
+up window select ``x64`` for the new platform, copying the settings
+from ``Win32`` and click on ``OK``.  Set the ``Active solution
+configuration`` to ``DLL Release`` and click on ``Close``.  Then build
+by selecting ``Build`` -> ``Build Solution``.  Create the directory
+where you want to install the binaries, e.g. ``C:\zlib-1.2.3.win64``,
+and the subdirectories ``bin``, ``include``, and ``lib``.  Copy the
+files ``zconf.h`` and ``zlib.h`` to the newly created ``include``
+directory.  Copy the file
+``projects\visualc6\win32_dll_release\zlib1.lib`` to the new ``lib``
+directory, and copy the file
+``projects\visualc6\win32_dll_release\zlib1.dll`` to the new ``bin``
+directory.
+
+__ http://www.zlib.net/
+__ http://www.zlib.net/
 
 Perl
 ----
@@ -523,6 +614,7 @@ available.  The following parameters are possible:
 - ``DEBUG=1`` - compile with extra debugging information
 - ``NDEBUG=1`` - compile without extra debugging information (this is
   used for creating a binary release);
+- ``HAVE_ICONV=1`` - the iconv library is available;
 - ``HAVE_JAVA=1`` - Java and Apache Ant are both available;
 - ``HAVE_MONETDB4=1`` - for sql and pathfinder: MonetDB4 was compiled
   and installed;
