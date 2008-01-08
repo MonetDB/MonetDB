@@ -951,11 +951,15 @@ def am_ant(fd, var, ant, am):
 
     fd.write("\nendif !HAVE_JAVA\n\n")
 
+    if ant.has_key("COND"):
+        cond = "#" + ant["COND"][0]
+    else:
+        cond = ""
     for file in ant['FILES']:
         sfile = file.replace(".", "_")
         am['INSTALL'].append(sfile)
         am['UNINSTALL'].append(sfile)
-        am['InstallList'].append("\t" + jd + "/" + file + "\n")
+        am['InstallList'].append("\t" + jd + "/" + file + cond + "\n")
 
 def am_add_srcdir(path, am, prefix =""):
     dir = path
