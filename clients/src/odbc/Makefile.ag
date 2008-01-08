@@ -15,5 +15,5 @@
 # All Rights Reserved.
 
 SUBDIRS = include \
-	  NATIVE_WIN32?winsetup:setup \
+	  NOT_WIN32?setup:winsetup \
 	  driver samples
