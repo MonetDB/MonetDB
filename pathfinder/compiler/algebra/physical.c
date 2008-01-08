@@ -1650,6 +1650,16 @@ PFpa_fun_1to1 (const PFpa_op_t *n,
             res_type = aat_str;
             break;
 
+        case alg_fun_fn_name:
+        case alg_fun_fn_local_name:
+        case alg_fun_fn_namespace_uri:
+            assert (n->sem.fun_1to1.refs.count == 1);
+            /* make sure attribute is of type node */
+            assert (n->schema.items[ix[0]].type & aat_node);
+
+            res_type = aat_str;
+            break;
+
         case alg_fun_fn_number:
             assert (refs.count == 1);
             res_type = aat_dbl;

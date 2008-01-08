@@ -308,6 +308,9 @@ enum PFalg_fun_t {
     , alg_fun_fn_matches_flag     /**< fn:matches with flags */
     , alg_fun_fn_replace          /**< fn:replace */
     , alg_fun_fn_replace_flag     /**< fn:replace with flags */
+    , alg_fun_fn_name             /**< fn:name */
+    , alg_fun_fn_local_name       /**< fn:local-name */
+    , alg_fun_fn_namespace_uri    /**< fn:namespace-uri */
     , alg_fun_fn_number           /**< fn:number */
     , alg_fun_fn_qname            /**< fn:QName */
     , alg_fun_pf_fragment         /**< #pf:fragment */

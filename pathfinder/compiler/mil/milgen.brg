@@ -4057,6 +4057,18 @@ reduce (PFpa_op_t * p, int goalnt)
                                     VAR (L(p)->env, att4, aat_str))));
                 }   break;
 
+                case alg_fun_fn_name:
+                {
+                }   break;
+
+                case alg_fun_fn_local_name:
+                {
+                }   break;
+
+                case alg_fun_fn_namespace_uri:
+                {
+                }   break;
+
                 case alg_fun_fn_number:
                 {
                     PFalg_att_t         att;

@@ -1398,6 +1398,16 @@ PFla_fun_1to1 (const PFla_op_t *n,
             res_type = aat_str;
             break;
 
+        case alg_fun_fn_name:
+        case alg_fun_fn_local_name:
+        case alg_fun_fn_namespace_uri:
+            assert (n->sem.fun_1to1.refs.count == 1);
+            /* make sure attribute is of type node */
+            assert (n->schema.items[ix[0]].type & aat_node);
+
+            res_type = aat_str;
+            break;
+
         case alg_fun_fn_number:
             assert (refs.count == 1);
             res_type = aat_dbl;
@@ -1414,7 +1424,7 @@ PFla_fun_1to1 (const PFla_op_t *n,
 
         case alg_fun_pf_fragment:
             assert (n->sem.fun_1to1.refs.count == 1);
-            /* make sure both attributes are of type string */
+            /* make sure attribute is of type node */
             assert (n->schema.items[ix[0]].type & aat_node);
 
             res_type = aat_pnode;
@@ -1422,7 +1432,7 @@ PFla_fun_1to1 (const PFla_op_t *n,
 
         case alg_fun_pf_supernode:
             assert (n->sem.fun_1to1.refs.count == 1);
-            /* make sure both attributes are of type string */
+            /* make sure attribute is of type node */
             assert (n->schema.items[ix[0]].type & aat_node);
 
             res_type = n->schema.items[ix[0]].type;
@@ -1431,7 +1441,7 @@ PFla_fun_1to1 (const PFla_op_t *n,
         case alg_fun_upd_delete:
             assert(refs.count == 1);
 
-            /* make sure that the attributes is a node */
+            /* make sure that the attribute is a node */
             assert(n->schema.items[ix[0]].type & aat_node);
 
             /* the result type is aat_update bitwise OR the type of

@@ -2969,6 +2969,10 @@ reduce (PFla_op_t * p, int goalnt)
                 case alg_fun_fn_substring_lng:
                 case alg_fun_fn_normalize_space:
 
+                case alg_fun_fn_name:
+                case alg_fun_fn_local_name:
+                case alg_fun_fn_namespace_uri:
+
                 case alg_fun_fn_qname:
                 case alg_fun_pf_fragment:
                 case alg_fun_pf_supernode:

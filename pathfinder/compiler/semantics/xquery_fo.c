@@ -1216,7 +1216,8 @@ PFfun_xquery_fo (void)
       { .ns = PFns_fn, .loc = "name",
         .arity = 1, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_opt (PFty_node ()) },
-            .ret_ty = PFty_xs_string () } } }
+            .ret_ty = PFty_xs_string () } },
+        .alg = PFbui_fn_name }
 
 /* 14.2. fn:local-name */
     , /* fn:local-name (node) as string */
@@ -1228,7 +1229,8 @@ PFfun_xquery_fo (void)
       { .ns = PFns_fn, .loc = "local-name",
         .arity = 1, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_opt (PFty_node ()) },
-            .ret_ty = PFty_xs_string () } } }
+            .ret_ty = PFty_xs_string () } },
+        .alg = PFbui_fn_local_name }
 
 /* 14.3. fn:namespace-uri */
     , /* fn:namespace-uri (node) as string */
@@ -1240,7 +1242,8 @@ PFfun_xquery_fo (void)
       { .ns = PFns_fn, .loc = "namespace-uri",
         .arity = 1, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_opt (PFty_node ()) },
-            .ret_ty = PFty_xs_string () } } }
+            .ret_ty = PFty_xs_string () } },
+        .alg = PFbui_fn_namespace_uri }
 
 /* 14.4. fn:number */
     , /* fn:number () as double */

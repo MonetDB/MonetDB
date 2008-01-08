@@ -386,9 +386,21 @@ struct PFla_pair_t PFbui_fn_qname (const PFla_op_t *loop, bool ordering,
 /* 14 FUNCTIONS AND OPERATORS ON NODES */
 /* 14.1 fn:name */
 
+struct PFla_pair_t PFbui_fn_name (const PFla_op_t *loop,
+                                  bool ordering,
+                                  struct PFla_pair_t *args);
+
 /* 14.2. fn:local-name */
 
+struct PFla_pair_t PFbui_fn_local_name (const PFla_op_t *loop,
+                                        bool ordering,
+                                        struct PFla_pair_t *args);
+
 /* 14.3. fn:namespace-uri */
+
+struct PFla_pair_t PFbui_fn_namespace_uri (const PFla_op_t *loop,
+                                           bool ordering,
+                                           struct PFla_pair_t *args);
 
 /* 14.4. fn:number */
 struct PFla_pair_t PFbui_fn_number (const PFla_op_t *loop,

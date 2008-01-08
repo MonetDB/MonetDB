@@ -2360,13 +2360,78 @@ PFbui_fn_qname (const PFla_op_t *loop, bool ordering,
 /* 14.1 fn:name */
 /* ------------ */
 
+struct PFla_pair_t
+PFbui_fn_name (const PFla_op_t *loop, bool ordering, struct PFla_pair_t *args)
+{
+    (void) loop; (void) ordering;
+
+    return (struct PFla_pair_t) {
+        .rel = project (
+                   fun_1to1 (
+                       project (args[0].rel,
+                                proj (att_iter, att_iter),
+                                proj (att_pos, att_pos),
+                                proj (att_item, att_item)),
+                       alg_fun_fn_name,
+                       att_res,
+                       attlist(att_item)),
+                   proj (att_iter, att_iter),
+                   proj (att_pos, att_pos),
+                   proj (att_item, att_res)),
+        .frag = args[0].frag };
+}
+
 /* ------------------- */
 /* 14.2. fn:local-name */
 /* ------------------- */
 
+struct PFla_pair_t
+PFbui_fn_local_name (const PFla_op_t *loop, bool ordering,
+                     struct PFla_pair_t *args)
+{
+    (void) loop; (void) ordering;
+
+    return (struct PFla_pair_t) {
+        .rel = project (
+                   fun_1to1 (
+                       project (args[0].rel,
+                                proj (att_iter, att_iter),
+                                proj (att_pos, att_pos),
+                                proj (att_item, att_item)),
+                       alg_fun_fn_local_name,
+                       att_res,
+                       attlist(att_item)),
+                   proj (att_iter, att_iter),
+                   proj (att_pos, att_pos),
+                   proj (att_item, att_res)),
+        .frag = args[0].frag };
+}
+
 /* --------------------- */
 /* 14.3. fn:namespace-uri */
 /* --------------------- */
+
+struct PFla_pair_t
+PFbui_fn_namespace_uri (const PFla_op_t *loop, bool ordering,
+                        struct PFla_pair_t *args)
+{
+    (void) loop; (void) ordering;
+
+    return (struct PFla_pair_t) {
+        .rel = project (
+                   fun_1to1 (
+                       project (args[0].rel,
+                                proj (att_iter, att_iter),
+                                proj (att_pos, att_pos),
+                                proj (att_item, att_item)),
+                       alg_fun_fn_namespace_uri,
+                       att_res,
+                       attlist(att_item)),
+                   proj (att_iter, att_iter),
+                   proj (att_pos, att_pos),
+                   proj (att_item, att_res)),
+        .frag = args[0].frag };
+}
 
 /* --------------- */
 /* 14.4. fn:number */
