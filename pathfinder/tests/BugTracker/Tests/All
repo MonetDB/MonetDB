@@ -54,7 +54,7 @@ polymorphic_sequences.SF-1497419.mps
 polymorphic_sequences.SF-1497419.alg
 boolean_string_cast.SF-1525175
 NOT_WIN32?bogus_text_step.SF-1537500.mps
-bogus_text_step.SF-1537500.alg
+NOT_WIN32?bogus_text_step.SF-1537500.alg
 item_sequence_creation.SF-1543871a.mps
 item_sequence_creation.SF-1543871a.alg
 item_sequence_creation.SF-1543871b.mps
