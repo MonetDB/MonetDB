@@ -127,7 +127,9 @@ It should be reset before continuing.
 	Symbol oldprg = c->curprg;
 	MalStkPtr oldglb = c->glb;
 @= restoreState3
+#ifndef NDEBUG
 	bstream *oldfdin = c->fdin;
+#endif
 	int oldmode = c->mode;
 	int oldblkmode = c->blkmode;
 	str oldsrcFile = c->srcFile;
