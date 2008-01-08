@@ -48,7 +48,7 @@ hashtable_t new_hashtable (void);
 /**
  * Find element in hashtable.
  */
-int find_element (bucket_t **hash_table, char *key);
+int hashtable_find (bucket_t **hash_table, char *key);
 
 /**
  * Insert key and id to hashtable.
@@ -58,6 +58,6 @@ void hashtable_insert (bucket_t **hash_table, char *key, int id);
 /**
  * Free memory assigned to hash_table.
  */
-void free_hash(bucket_t **hash_table);
+void free_hashtable (bucket_t **hash_table);
 
 #endif /* HASH_H__ */

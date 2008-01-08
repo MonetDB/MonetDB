@@ -69,7 +69,7 @@ find_id (bucket_t *bucket, char *key)
  * Attach an (id, key) pair to a given bucket list.
  */
 static bucket_t *
-bucket_insert(bucket_t *bucket, char *key, int id)
+bucket_insert (bucket_t *bucket, char *key, int id)
 {
     int ident = find_id (bucket, key);
     
@@ -96,13 +96,15 @@ bucket_insert(bucket_t *bucket, char *key, int id)
  */
 static int
 find_hash_bucket (char *key)
-{
+{   
+    assert (key);
+    
     size_t len = strlen (key);
     /* keys have at least length 1 */
-    assert (len > 0);
+    /* assert (len > 0); */
     /* build a hash out of the first and the last character
        and the length of the key */
-    return (key[0] * key[len-1] * len) % PRIME;
+    return (key[0] * key[MAX(0,len-1)] * len) % PRIME;
 }
 
 /**
@@ -124,7 +126,7 @@ new_hashtable (void)
  * Insert key and id into hashtable.
  */
 void
-hashtable_insert(hashtable_t hash_table, char *key, int id)
+hashtable_insert (hashtable_t hash_table, char *key, int id)
 {
     int hashkey;
     
@@ -139,7 +141,7 @@ hashtable_insert(hashtable_t hash_table, char *key, int id)
  * Find element in hashtable. 
  */
 int
-find_element(hashtable_t hash_table, char *key)
+hashtable_find (hashtable_t hash_table, char *key)
 {
     assert (key);
     return find_id (hash_table[find_hash_bucket (key)], key);
@@ -149,7 +151,7 @@ find_element(hashtable_t hash_table, char *key)
  * Free memory assigned to hash_table.
  */
 void
-free_hash(hashtable_t hash_table)
+free_hashtable (hashtable_t hash_table)
 {
     bucket_t *bucket, *free_bucket;
     

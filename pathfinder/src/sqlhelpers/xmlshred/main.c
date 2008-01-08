@@ -37,6 +37,8 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
+extern int errno;
+ 
 /* alternative definitions for strdup and strndup
  * and some helper functions
  */
@@ -130,7 +132,11 @@ static const char
 #endif
 
 #define OPT_STRING "F:af:hno:qs:"
-
+                                  
+/** 
+ * Default format (for SQL-based XQuery processing)
+ * FIXME: eventually this should include %u to include namespace URIs 
+ */
 #define SQL_FORMAT "%e, %s, %l, %k, %n, %t, %g"
 
 /* print help message */
@@ -158,7 +164,8 @@ print_help (char *progname)
             "\t%%k: node kind\n"
             "\t%%p: preorder rank of parent node\n"
             "\t%%P: preorder rank of parent node in stretched pre/post plane\n"
-            "\t%%n: element/attribute name\n"
+            "\t%%n: element/attribute localname\n"
+            "\t%%u: element/attribute namespace URI\n"
             "\t%%t: text node content\n"
             "\t%%d: text node content stored as number (if possible)\n"
             "\t%%g: guide node for node (also writes dataguide to file <prefix>_guide.xml)\n",
@@ -166,8 +173,8 @@ print_help (char *progname)
     printf ("  -a%s: attributes separate (default: attributes inline)\n"
             "\twrites attribute encoding to file <prefix>_atts.csv\n",
             long_option (opt_buf, ", --%s", 'a'));
-    printf ("  -n%s: tag/attribute names inline (default: names separate)\n"
-            "\twrites name encoding to file <prefix>_names.csv\n",
+    printf ("  -n%s: element/attribute names inline (default: names separate)\n"
+            "\twrites localname/URI encoding to files <prefix>_names.csv/<prefix>_uris.csv\n",
             long_option (opt_buf, ", --%s", 'n'));
     printf ("  -h%s: print this help message\n",
             long_option (opt_buf, ", --%s", 'h'));
@@ -196,6 +203,7 @@ main (int argc, char **argv)
     FILE *shout      = NULL;
     FILE *attout     = NULL;
     FILE *namesout   = NULL;
+    FILE *urisout    = NULL;
     FILE *guideout   = NULL;
 
     /*
@@ -205,8 +213,7 @@ main (int argc, char **argv)
     progname = strndup (argv[0], FILENAME_MAX);
 
     status.format = SQL_FORMAT; 
-#define FAST_FORMAT "%e, %s, %l, %k, %n, %d, %t"
-    status.fastformat = !strcmp (status.format, FAST_FORMAT);
+    status.fastformat = true;
     status.infile = NULL;
     status.outfile = NULL;
     status.statistics = true;
@@ -240,20 +247,14 @@ main (int argc, char **argv)
             case 'F':
                 new_format = true;
                 status.format = strdup (optarg);
-                status.fastformat = !strcmp (status.format, FAST_FORMAT);
-                status.statistics = false;
-                
-                for (unsigned int i = 0; status.format[i+1]; i++)
-                    if (status.format[i] == '%' &&
-                        status.format[i+1] == 'g') {
-                        status.statistics = true;
-                        break;
-                    }
+                status.fastformat = !strcmp (status.format, SQL_FORMAT);
+                status.statistics = (strstr (status.format, "%g")) != NULL;
                 break;
             case 'f':
                 status.infile = strndup (optarg, FILENAME_MAX);
                 if (!SHreadable (status.infile)) 
-                    SHoops (SH_FATAL, "input XML file not readable\n");
+                    SHoops (SH_FATAL, "input XML file `%s' not readable: %s",
+                            status.infile, strerror (errno));
                 if (status.infile)
                     status.doc_name = status.infile;
                 else
@@ -267,7 +268,7 @@ main (int argc, char **argv)
                 break;
             case 's':
                 if (!sscanf (optarg, "%u", &status.strip_values))
-                    SHoops (SH_FATAL, "wrong argument to strip_values");
+                    SHoops (SH_FATAL, "option -s requires numeric argument\n");
                 break;
             case 'h':
                 print_help (progname);
@@ -283,9 +284,7 @@ main (int argc, char **argv)
         (status.attributes_separate ||
          status.names_separate ||
          status.statistics)) {
-        SHoops (SH_FATAL, "output filename required\n");
-        print_help (progname);
-        goto failure;
+        SHoops (SH_FATAL, "output filename required (-o)\n");
     }
     
     if (status.outfile) {
@@ -300,8 +299,11 @@ main (int argc, char **argv)
         if (status.names_separate) {
             /* names file */
             char namesoutfile[FILENAME_MAX];
+            char urisoutfile[FILENAME_MAX];
             snprintf (namesoutfile, FILENAME_MAX, "%s_names.csv", status.outfile);
             namesout = SHopen_write (namesoutfile);
+            snprintf (urisoutfile, FILENAME_MAX, "%s_uris.csv", status.outfile);
+            urisout = SHopen_write (urisoutfile);
         }
     
         if (status.statistics) {
@@ -318,21 +320,26 @@ main (int argc, char **argv)
     }
     else
         shout = stdout;
+                                
+    /* the input XML file is strictly required */
+    if (!status.infile)
+        SHoops (SH_FATAL, "input XML filename required (-f)\n");
+    
+    /* shred the XML input file */
+    SHshredder (status.infile,
+                shout, attout, namesout, urisout, guideout,
+                &status);
 
-
-    /* shred the files */
-    if (SHshredder (status.infile,
-                    shout, attout, namesout, guideout,
-                    &status) < 0)
-        goto failure;
-
-    if (status.outfile)             fclose (shout);
-    if (status.attributes_separate) fclose (attout);
-    if (status.names_separate)      fclose (namesout);
-    if (status.statistics)          fclose (guideout);
+    if (status.outfile)             
+        fclose (shout);
+    if (status.attributes_separate) 
+        fclose (attout);
+    if (status.names_separate) { 
+        fclose (namesout); 
+        fclose (urisout); 
+    }
+    if (status.statistics)          
+        fclose (guideout);
 
     MAIN_EXIT (EXIT_SUCCESS);
-
-failure:
-    MAIN_EXIT (EXIT_FAILURE);
 }

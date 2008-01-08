@@ -54,6 +54,9 @@ typedef ssize_t nat;
 #include <string.h>
 #endif
 
+#define MIN(x,y) ((x) < (y) ? (x) : (y))
+#define MAX(x,y) ((x) >= (y) ? (x) : (y))
+
 #ifndef HAVE_STRDUP
 /**
  * Alternative definition of strdup. It just duplicates a string

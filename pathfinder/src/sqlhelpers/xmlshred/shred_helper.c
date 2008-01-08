@@ -34,6 +34,8 @@
 #include "shred_helper.h"
 #include "oops.h"
 
+extern int errno;
+ 
 #ifndef HAVE_STRDUP
 /**
  * Alternative definition of strdup. It just duplicates a string
@@ -127,7 +129,8 @@ SHopen_write (const char *path)
     ret = fopen (path, "w");
 
     if (!ret)
-        SHoops (SH_FATAL, "Could not open file");
+        SHoops (SH_FATAL, "could not open file `%s' for writing: %s", 
+                path, strerror (errno));
 
     return ret;
 }

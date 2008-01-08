@@ -29,8 +29,7 @@
 #include <stdio.h>
 #include <string.h>
 
-/* SAX parser interface (libxml2) */
-#include "libxml/parser.h"
+/* libxml SAX2 parser internals */
 #include "libxml/parserInternals.h"
 
 #include "encoding.h"
@@ -41,20 +40,11 @@
 
 #include <assert.h>
 
-#define MIN(a,b) ((a) < (b) ? (a) : (b))
-
-#define TAG_SIZE  100
-#define BUF_SIZE 4096 
-#define NAME_ID 0
-
-#define BAILOUT(...) do { SHoops (SH_FATAL, __VA_ARGS__); \
-                          free_hash (hash_table);         \
-                          exit(1);                        \
-                        } while (0)
 
 FILE *out;
 FILE *out_attr;
 FILE *out_names;
+FILE *out_uris;
 FILE *guide_out;
 FILE *err;
 
@@ -65,36 +55,35 @@ unsigned int text_size;
 unsigned int tag_stripped;
 unsigned int text_stripped;
 
-
-typedef struct node_t node_t;
-struct node_t {
-    nat           pre;
-    nat           post;
-    nat           pre_stretched;
-    nat           post_stretched;
-    node_t       *parent;
-    nat           size;
-    int           level;
-    kind_t        kind;
-    xmlChar      *name;
-    int           name_id;
-    xmlChar      *value;
-    guide_tree_t *guide;
-};
-
 static shred_state_t shredstate;
 
-/* guide wrapper to ensure that guide information is only collected if needed */
-#define insert_guide_node_(n,p,k) ((shredstate.statistics)           \
-                                  ? insert_guide_node (n,p,k)        \
+/* Wrapper to ensure that guide information is only collected if needed */
+#define insert_guide_node_(u,n,p,k) ((shredstate.statistics)            \
+                                  ? insert_guide_node ((u),(n),(p),(k)) \
                                   : NULL)                            
-#define guide_val_(g)             ((shredstate.statistics)           \
-                                  ? (g)->guide                       \
+#define guide_val_(g)             ((shredstate.statistics) \
+                                  ? (g)->guide             \
                                   : 0)
 
-/* hash table */
-static hashtable_t hash_table;
+/* localname and URI hash tables */
+static hashtable_t localname_hash;
+static hashtable_t uris_hash;
 
+#define BAILOUT(...) do { SHoops (SH_FATAL, __VA_ARGS__);   \
+                          free_hashtable (localname_hash);  \
+                          free_hashtable (uris_hash);       \
+                          exit (1);                         \
+                        } while (0)
+
+
+/* id of empty namespace prefix */
+#define EMPTY_NS 0
+
+/* maximum localname/URI and text buffer sizes */
+#define TAG_SIZE 100
+#define BUF_SIZE 4096 
+                              
+/* buffer for XML node contents/values */
 static xmlChar buf[BUF_SIZE + 1];
 static int bufpos;
 
@@ -110,11 +99,11 @@ void
 print_text (FILE *f, char *buf, size_t len) {
     if (len)
         if (fwrite (buf, (size_t) 1, len, f) < len)
-            BAILOUT ("write failed");
+            BAILOUT ("write failed (print_text)");
 }
 
 /**
- * Print the encoded kind.
+ * Print the decoded kind
  */
 void
 print_kind (FILE *f, kind_t kind)
@@ -126,7 +115,7 @@ print_kind (FILE *f, kind_t kind)
        case comm: putc ('4', f); break;
        case pi:   putc ('5', f); break;
        case doc:  putc ('6', f); break;
-       default: assert (!"kind unknown");
+       default: assert (!"XML node kind unknown (print_kind)");
     }
 }
 
@@ -166,18 +155,31 @@ print_value (FILE *f, node_t tuple)
     }
 }
 
-void (*print_name) (FILE *, node_t);
+void (*print_localname) (FILE *, node_t);
+void (*print_uri) (FILE *, node_t);
     
 void
-print_name_str (FILE *f, node_t tuple)
+print_localname_id (FILE *f, node_t tuple)
 {
-    fprintf (f, "%i", tuple.name_id);
+    fprintf (f, "%i", tuple.localname_id);
 }
 
 void
-print_name_id (FILE *f, node_t tuple)
+print_localname_str (FILE *f, node_t tuple)
 {
-    fprintf (f, "\"%s\"", (char *) tuple.name);
+    fprintf (f, "\"%s\"", (char *) tuple.localname);
+}
+    
+void
+print_uri_id (FILE *f, node_t tuple)
+{
+    fprintf (f, "%i", tuple.uri_id);
+}
+
+void
+print_uri_str (FILE *f, node_t tuple)
+{
+    fprintf (f, "\"%s\"", (char *) tuple.uri);
 }
 
 static void
@@ -186,17 +188,17 @@ print_tuple (node_t tuple)
     const char  *format = shredstate.format;
     unsigned int i;
     
+    /* Fast path for the default SQL format */
     if (shredstate.fastformat) {
-        /* Ensure that in main.c the format string in shredstate.format
-           is compared with the string FAST_FORMAT and that FAST_FORMAT
-           describes the output printed here. */
-
         fprintf (out, SSZFMT ", " SSZFMT ", %i, ",
                  tuple.pre, tuple.size, tuple.level);
         print_kind (out, tuple.kind);
         print_text (out, ", ", 2);
-        if (tuple.name_id != -1)
-            print_name (out, tuple);
+        if (tuple.uri_id != -1)
+            print_uri (out, tuple);
+        print_text (out, ", ", 2);
+        if (tuple.localname_id != -1)
+            print_localname (out, tuple);
         print_text (out, ", ", 2);
         print_number (out, tuple);
         print_text (out, ", ", 2);
@@ -208,7 +210,6 @@ print_tuple (node_t tuple)
     for (i = 0; format[i]; i++)
          if (format[i] == '%') {
              i++;
-             assert (format[i]);
              switch (format[i]) {
                  case 'e': fprintf (out, SSZFMT, tuple.pre); break;
                  case 'o': fprintf (out, SSZFMT, tuple.post); break;
@@ -226,15 +227,19 @@ print_tuple (node_t tuple)
                          fprintf (out, SSZFMT,tuple.parent->pre_stretched);
                      break;
                  case 'n':
-                     if (tuple.name_id != -1)
-                         print_name (out, tuple);
+                     if (tuple.localname_id != -1)
+                         print_localname (out, tuple);
+                     break;
+                 case 'u':
+                     if (tuple.uri_id != -1)
+                         print_uri (out, tuple);
                      break;
                  case 'd':  print_number (out, tuple); break;    
                  case 't':  print_value (out, tuple); break;    
                  case 'g':  fprintf (out, SSZFMT, guide_val_(tuple.guide)); break;
                  case '%':  putc ('%', out); break;
                  default:   SHoops (SH_FATAL,
-                                    "Unexpected formatting character '%c'",
+                                    "unexpected formatting character `%c' (print_tuple)",
                                     format[i]);
              }
          }
@@ -244,45 +249,75 @@ print_tuple (node_t tuple)
 }
 
 static int
-generate_name_id (const xmlChar *name)
+generate_localname_id (const xmlChar *localname)
 {
-    static unsigned int global_name_id = NAME_ID;
-    int name_id;
+    static unsigned int global_localname_id = 0;
+    int localname_id;
    
-    if (!name)
+    if (!localname)
         return -1;
 
-    name_id = find_element (hash_table, (char *) name);
+    localname_id = hashtable_find (localname_hash, (char *) localname);
 
     /* key not found */
-    if (NOKEY(name_id)) {
-        /* create a new id */
-        name_id = global_name_id++;
+    if (NOKEY (localname_id)) {
+        /* create a new name id */
+        localname_id = global_localname_id++;
         /* add the pair into the hashtable */
-        hashtable_insert (hash_table, (char *) name, name_id);
+        hashtable_insert (localname_hash, (char *) localname, localname_id);
         /* print the name binding if necessary */
         if (shredstate.names_separate)
-            fprintf (out_names, "%i, \"%s\"\n", name_id, (char*)name);
+            fprintf (out_names, "%i, \"%s\"\n", localname_id, (char*) localname);
     }
 
-    return name_id;
+    return localname_id;
+}
+
+static int
+generate_uri_id (const xmlChar *URI)
+{  
+    static unsigned int global_uri_id = 0;
+    int uri_id;
+    
+    if (!URI)
+        return -1;
+        
+    uri_id = hashtable_find (uris_hash, (char *) URI);
+
+    /* key not found */
+    if (NOKEY (uri_id)) {
+        /* create a new URI id */
+        uri_id = global_uri_id++;
+        /* add the pair into the hashtable */
+        hashtable_insert (uris_hash, (char *) URI, uri_id);
+        /* print the URI binding if necessary */
+        if (shredstate.names_separate)
+            fprintf (out_uris, "%i, \"%s\"\n", uri_id, (char*) URI);
+    }
+
+    return uri_id;
 }
 
 static void
-flush_node (kind_t kind, const xmlChar *name, const xmlChar *value)
+flush_node (kind_t kind, 
+            const xmlChar *URI, const xmlChar *localname, 
+            const xmlChar *value)
 {
     int valStrLen = -1;
 
     pre++;
-    rank += 2;
+    rank++;
     level++;
 
-    if (level > max_level)
-        max_level = level;
+    max_level = MAX(level, max_level);
 
     /* check if tagname is larger than TAG_SIZE characters */
-    if (name && xmlStrlen (name) > TAG_SIZE)
-        BAILOUT ("we allow only attributes not greater as %u characters", TAG_SIZE);
+    if (localname && xmlStrlen (localname) > TAG_SIZE)
+        BAILOUT ("attribute local name `%s' exceeds %u characters", localname, TAG_SIZE);
+    
+    if (URI && xmlStrlen (URI) > TAG_SIZE)
+        BAILOUT ("namespace URI `%s' exceeds length of %u characters", 
+                 URI, TAG_SIZE);
 
     /* check if value is larger than text_size characters */
     if (value && (valStrLen = xmlStrlen (value)) >= 0 &&
@@ -290,30 +325,35 @@ flush_node (kind_t kind, const xmlChar *name, const xmlChar *value)
         text_stripped++;
 
     stack[level] = (node_t) {
-        .pre            = pre,
-        .post           = post,
-        .pre_stretched  = rank - 1,
-        .post_stretched = rank,
-        .parent         = stack + level - 1,
-        .size           = 0,
-        .level          = level,
-        .kind           = kind,
-        .name           = xmlStrdup (name),
-        .name_id        = generate_name_id (name),
-        .value          = xmlStrndup (value,
-                                      MIN ((unsigned int ) xmlStrlen (value),
-                                           text_size)),
-        .guide          = insert_guide_node_ (name,
+        .pre            = pre
+      , .post           = post
+      , .pre_stretched  = rank
+      , .post_stretched = rank + 1
+      , .parent         = stack + level - 1
+      , .size           = 0
+      , .level          = level
+      , .kind           = kind
+      , .localname      = xmlStrdup (localname)
+      , .localname_id   = generate_localname_id (localname)
+      , .uri            = xmlStrdup (URI)
+      , .uri_id         = generate_uri_id (URI)
+      , .value          = xmlStrndup (value,
+                                      MIN ((unsigned int) xmlStrlen (value),
+                                           text_size))
+      , .guide          = insert_guide_node_ (URI, localname,
                                               stack[level-1].guide,
                                               kind)
     };
 
     post++;
-
+    rank++;
+    
     print_tuple (stack[level]);
 
-    if (stack[level].name)  xmlFree (stack[level].name);
-    if (stack[level].value) xmlFree (stack[level].value);
+    if (stack[level].localname) xmlFree (stack[level].localname);
+    if (stack[level].uri)       xmlFree (stack[level].uri);
+    if (stack[level].value)     xmlFree (stack[level].value);
+
     level--;
 }
 
@@ -321,7 +361,7 @@ static void
 flush_buffer (void)
 {
     if (buf[0]) {
-        flush_node (text, NULL, buf);
+        flush_node (text, NULL, NULL, buf);
     }
 
     buf[0] = '\0';
@@ -331,7 +371,6 @@ flush_buffer (void)
 static void
 start_document (void *ctx)
 {
-    /* calling convention */
     (void) ctx;
 
     /* initialize everything with zero */
@@ -355,10 +394,13 @@ start_document (void *ctx)
         , .size           = 0
         , .level          = level
         , .kind           = doc
-        , .name           = NULL
-        , .name_id        = -1
+        , .localname      = NULL
+        , .localname_id   = -1
+        , .uri            = NULL
+        , .uri_id         = -1
         , .value          = xmlStrdup ((xmlChar *) shredstate.doc_name)
         , .guide          = insert_guide_node_ (
+                                NULL,
                                 xmlCharStrndup (
                                     shredstate.doc_name,
                                     MIN (FILENAME_MAX, text_size)),
@@ -371,7 +413,6 @@ start_document (void *ctx)
 static void
 end_document (void *ctx)
 {
-    /* calling convention */
     (void) ctx;
 
     flush_buffer ();
@@ -396,92 +437,129 @@ end_document (void *ctx)
 }
 
 static void
-start_element (void *ctx, const xmlChar *tagname, const xmlChar **atts)
-{
-    /* calling convention */
+start_element (void *ctx, 
+               const xmlChar *localname, 
+               const xmlChar *prefix, const xmlChar *URI, 
+               int nb_namespaces, const xmlChar **namespaces,
+               int nb_attributes, int nb_defaulted, 
+               const xmlChar **atts)
+{  
     (void) ctx;
-
+    (void) prefix;
+    (void) nb_namespaces;
+    (void) namespaces;
+    (void) nb_defaulted;
+                
+    xmlChar *attv;
+    
     flush_buffer ();
 
     pre++;
     rank++;
     level++;
-
-    if (level > max_level)
-        max_level = level;
-
-    assert (level < STACK_MAX);
     
-    if (xmlStrlen (tagname) > TAG_SIZE)
-        BAILOUT ("we allow only tag-names not greater as %u characters", TAG_SIZE);
+    assert (level < STACK_MAX);
+    max_level = MAX(level, max_level);
+
+    assert (localname);
+    if (xmlStrlen (localname) > TAG_SIZE)
+        BAILOUT ("tag name `%s' exceeds length of %u characters", 
+                 localname, TAG_SIZE);
+        
+    /* establish empty namespace prefix */
+    if (!URI)
+        URI = (xmlChar *) "";        
+    if (xmlStrlen (URI) > TAG_SIZE)
+        BAILOUT ("Namespace URI `%s' exceeds length of %u characters", 
+                 URI, TAG_SIZE);
 
     stack[level] = (node_t) {
-        .pre            = pre,
-        .post           = 0,
-        .pre_stretched  = rank,
-        .post_stretched = 0,
-        .parent         = stack + level - 1,
-        .size           = 0,
-        .level          = level,
-        .kind           = elem,
-        .name           = xmlStrdup (tagname),
-        .name_id        = generate_name_id (tagname), 
-        .value          = (xmlChar *) NULL,
-        .guide          = insert_guide_node_ (tagname,
+        .pre            = pre
+      , .post           = 0
+      , .pre_stretched  = rank
+      , .post_stretched = 0
+      , .parent         = stack + level - 1
+      , .size           = 0
+      , .level          = level
+      , .kind           = elem
+      , .localname      = xmlStrdup (localname)
+      , .localname_id   = generate_localname_id (localname) 
+      , .uri            = xmlStrdup (URI)
+      , .uri_id         = generate_uri_id (URI)
+      , .value          = (xmlChar *) NULL
+      , .guide          = insert_guide_node_ (URI, localname,
                                               stack[level-1].guide,
                                               elem)
     };
 
-    if (atts) {
+    if (nb_attributes) {
         if (shredstate.attributes_separate) {
-            if (shredstate.names_separate)
-                while (*atts) {
+            while (nb_attributes--) {
+                /* atts[0]: localname
+                   atts[1]: prefix
+                   atts[2]: URI
+                   atts[3]: value
+                   atts[4]: end of value
+                 */    
+                /* establish empty namespace prefix */
+                if (!atts[2])
+                    atts[2] = (xmlChar *) "";   
+                    
+                if (shredstate.names_separate)
                     fprintf (out_attr,
-                             SSZFMT ", " SSZFMT ", %i, \"%s\"",
+                             SSZFMT ", " SSZFMT ", %i, %i, \"%.*s\"",
                              att_id++,
                              pre,
-                             generate_name_id (atts[0]),
-                             (char*)atts[1]);
-                    if (shredstate.statistics)
-                        fprintf (out_attr, "," SSZFMT,
-                                 guide_val_ (
-                                     insert_guide_node_ (atts[0],
-                                                         stack[level].guide,
-                                                         attr)));
-                    putc ('\n', out_attr);
-                    atts += 2;
-                }
-            else
-                while (*atts) {
+                             generate_uri_id (atts[2]),
+                             generate_localname_id (atts[0]),
+                             atts[4] - atts[3],
+                             (char*) atts[3]);
+                else                           
                     fprintf (out_attr,
-                             SSZFMT ", " SSZFMT ", \"%s\", \"%s\"",
+                             SSZFMT ", " SSZFMT ", \"%s\", \"%s\", \"%.*s\"",
                              att_id++,
                              pre,
-                             (char*)atts[0],
-                             (char*)atts[1]);
-                    if (shredstate.statistics)
-                        fprintf (out_attr, "," SSZFMT,
-                                 guide_val_ (
-                                     insert_guide_node_ (atts[0],
-                                                         stack[level].guide,
-                                                         attr)));
-                    putc ('\n', out_attr);
-                    atts += 2;
-                }
+                             (char*) atts[2],
+                             (char*) atts[0],
+                             atts[4] - atts[3],
+                             (char*) atts[3]);
+                             
+                if (shredstate.statistics)
+                    fprintf (out_attr, "," SSZFMT,
+                             guide_val_ (
+                                 insert_guide_node_ (atts[2], atts[0],
+                                                     stack[level].guide,
+                                                     attr)));
+                putc ('\n', out_attr);
+                atts += 5;
+            }
         } else /* handle attributes like children */
-            while (*atts) {
-                flush_node (attr, atts[0], atts[1]);
-                atts += 2;
+            while (nb_attributes--) {      
+                /* establish empty namespace prefix */
+                if (!atts[2])
+                    atts[2] = (xmlChar *) "";   
+
+                /* extract attribute value */
+                attv = xmlStrndup (atts[3], atts[4] - atts[3]);
+
+                flush_node (attr, atts[2], atts[0], attv);
+
+                xmlFree (attv);
+                atts += 5;
             }
      }
 }
 
 static void
-end_element (void *ctx, const xmlChar *name)
+end_element (void *ctx,
+             const xmlChar *localname,
+             const xmlChar *prefix, const xmlChar *URI)
 {
     (void) ctx;
-    (void) name;
-
+    (void) localname;
+    (void) prefix;
+    (void) URI;
+    
 /* Enable the following lines if your code generation produces
    code that collapses path steps and directly following text
    value lookups into a single path step. */
@@ -505,39 +583,42 @@ end_element (void *ctx, const xmlChar *name)
         adjust_guide_min_max (stack[level].guide);
 
     post++;
+
     /* free the memory allocated for the element name and the text value */
-    if (stack[level].name)  xmlFree (stack[level].name);
-    if (stack[level].value) xmlFree (stack[level].value);
+    if (stack[level].localname) xmlFree (stack[level].localname);
+    if (stack[level].uri)       xmlFree (stack[level].uri);
+    if (stack[level].value)     xmlFree (stack[level].value);
+
     level--;
-    assert (level >= 0);
-}
+    assert (level >= 0);    
+}   
 
 static void
-processing_instruction (void *ctx, const xmlChar *target, const xmlChar *chars)
+processing_instruction (void *ctx, 
+                        const xmlChar *target, const xmlChar *chars)
 {
-    /* calling convention */
     (void) ctx;
         
     flush_buffer ();
 
-    flush_node (pi, target, chars);
+    /* XPath node tests may refer to the target of an XML 
+       processing instruction: processing-instruction(target) */
+    flush_node (pi, NULL, target, chars);
 }
 
 void
 comment (void *ctx, const xmlChar *chars)
 {
-    /* calling convention */
     (void) ctx;
 
     flush_buffer ();
 
-    flush_node (comm, NULL, chars);
+    flush_node (comm, NULL, NULL, chars);
 }
 
 void
 characters (void *ctx, const xmlChar *chars, int n)
 {
-    /* calling convention */
     (void) ctx;
 
     if (bufpos < 0 || (unsigned int) bufpos < text_size) {
@@ -569,10 +650,13 @@ error (void *ctx, const char *msg, ...)
 }
 
 static xmlSAXHandler saxhandler = {
-      .startDocument         = start_document
+      .initialized           = XML_SAX2_MAGIC  /* select SAX2 interface */
+    , .startDocument         = start_document
     , .endDocument           = end_document 
-    , .startElement          = start_element 
-    , .endElement            = end_element 
+    , .startElementNs        = start_element
+    , .endElementNs          = end_element 
+    , .startElement          = NULL
+    , .endElement            = NULL
     , .characters            = characters
     , .processingInstruction = processing_instruction
     , .comment               = comment
@@ -595,15 +679,14 @@ static xmlSAXHandler saxhandler = {
     , .warning               = NULL
     , .fatalError            = NULL
     , .getParameterEntity    = NULL
-    , .externalSubset        = NULL
-    , .initialized           = false
+    , .externalSubset        = NULL          
 };
 
 static void
 report (void)
 {
     if (text_stripped > 0) {
-        fprintf (err, "%u Values were stripped to %u "
+        fprintf (err, "%u values were stripped to %u "
                       "character(s).\n", text_stripped, text_size);
     }
 }
@@ -611,11 +694,12 @@ report (void)
 /**
  * Main shredding procedure.
  */
-int
+void
 SHshredder (const char *s, 
             FILE *shout,
             FILE *attout,
             FILE *namesout,
+            FILE *urisout,
             FILE *guideout,
             shred_state_t *status)
 {
@@ -629,7 +713,8 @@ SHshredder (const char *s,
        to make them accessible inside the callback functions */
     out       = shout;
     out_attr  = attout;
-    out_names = namesout;
+    out_names = namesout; 
+    out_uris  = urisout;
     err       = stderr;
 
     /* how many characters should be stored in
@@ -639,17 +724,23 @@ SHshredder (const char *s,
     text_stripped = 0;
     tag_stripped  = 0;
 
-    /* initialize hashtable */
-    hash_table = new_hashtable (); 
-
-    /* Decide whether to print the node names
-       or its corresponding name ids only once. */
-    if (shredstate.names_separate)
-        print_name = print_name_id;
-    else
-        print_name = print_name_str;
-
-    /* start XML parsing */
+    /* initialize localname and URI hashes */
+    localname_hash = new_hashtable (); 
+    uris_hash = new_hashtable ();
+    /* pre-insert entry for empty namespace prefixes */
+    generate_uri_id ((xmlChar *) "");
+    
+    /* Whether to print the node localnames and URIs
+       or the corresponding name ids */
+    if (shredstate.names_separate) {
+        print_localname = print_localname_id;
+        print_uri       = print_uri_id; 
+    } else {
+        print_localname = print_localname_str;
+        print_uri       = print_uri_str;
+    }
+    
+    /* start XML parsing via SAX2 interface */
     ctx = xmlCreateFileParserCtxt (s);
     ctx->sax = &saxhandler;
 
@@ -665,14 +756,13 @@ SHshredder (const char *s,
         free_guide_tree (stack[0].guide);
     }
 
-    free_hash (hash_table);
-
+    free_hashtable (localname_hash);
+    free_hashtable (uris_hash);
+    
     xmlCleanupParser ();
 
     if (!status->quiet)
         report ();
-
-    return 0;
 }
 
 /* vim:set shiftwidth=4 expandtab: */

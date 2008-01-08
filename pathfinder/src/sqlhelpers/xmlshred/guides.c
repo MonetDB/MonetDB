@@ -32,7 +32,8 @@
 #include <assert.h>
 
 guide_tree_t * 
-insert_guide_node (const xmlChar *tag_name, guide_tree_t *parent, kind_t kind)
+insert_guide_node (const xmlChar *URI, const xmlChar *localname, 
+                   guide_tree_t *parent, kind_t kind)
 {
     static nat    guide_count    = GUIDE_INIT;
     child_list_t *child_list     = NULL;
@@ -53,14 +54,25 @@ insert_guide_node (const xmlChar *tag_name, guide_tree_t *parent, kind_t kind)
                 (2) same tag name (if applicable) */
              if (guide_node->kind != kind)      
                  continue;
-            
-             if (kind == doc || kind == elem || kind == attr || kind == pi) {
-                 assert (guide_node->tag_name);
-                 assert (tag_name);        
-                 if (xmlStrcmp (guide_node->tag_name, tag_name) != 0)
-                     continue;
+             
+             switch (kind) {
+             case elem:
+             case attr:
+                assert (guide_node->uri);
+                assert (URI);
+                if (xmlStrcmp (guide_node->uri, URI) != 0)
+                    continue; 
+                /* fall through */    
+             case doc:
+             case pi:
+                assert (guide_node->localname);
+                assert (localname);
+                if (xmlStrcmp (guide_node->localname, localname) != 0)
+                    continue;
+             default:
+                ;
              }
-                
+                            
              /* node with identical charactistics found */
              guide_node->count++;    
              guide_node->rel_count++;
@@ -72,16 +84,17 @@ insert_guide_node (const xmlChar *tag_name, guide_tree_t *parent, kind_t kind)
     /* no matching guide node was found -- create a new one */
     guide_node = (guide_tree_t *) malloc (sizeof (guide_tree_t));
     *guide_node = (guide_tree_t) {
-        .tag_name   = xmlStrdup (tag_name),
-        .count      = 1,
-        .rel_count  = 1,
-        .min        = parent ? (parent->rel_count > 1 ? 0 : 1) : 1,
-        .max        = 0,
-        .parent     = parent,
-        .child_list = NULL, 
-        .last_child = NULL,
-        .guide      = guide_count++,
-        .kind       = kind,
+        .uri        = xmlStrdup (URI)
+      , .localname  = xmlStrdup (localname)
+      , .count      = 1
+      , .rel_count  = 1
+      , .min        = parent ? (parent->rel_count > 1 ? 0 : 1) : 1
+      , .max        = 0
+      , .parent     = parent
+      , .child_list = NULL 
+      , .last_child = NULL
+      , .guide      = guide_count++
+      , .kind       = kind
     };
 
     /* associate child with the parent */
@@ -161,8 +174,11 @@ print_guide_tree (FILE *guide_out, guide_tree_t *guide, int tree_depth)
     print_kind (guide_out, guide->kind);
     fputc ('\"', guide_out);
 
-    if (guide->tag_name != NULL)
-        fprintf (guide_out, " name=\"%s\"", (char*)guide->tag_name);
+    if (guide->uri)
+        fprintf (guide_out, " uri=\"%s\"", (char *) guide->uri);
+
+    if (guide->localname)
+        fprintf (guide_out, " name=\"%s\"", (char *) guide->localname);
 
     if (!guide->child_list) {
         fputc ('/', guide_out);
@@ -208,8 +224,9 @@ free_guide_tree (guide_tree_t *guide)
        free (child_list_free);
     }
 
-    /* free the copied tagname */
-    if (guide->tag_name) xmlFree (guide->tag_name);
+    /* free the copied URI and localname */
+    if (guide->uri) xmlFree (guide->uri);
+    if (guide->localname) xmlFree (guide->localname);
     /* free the current guide node */
     free (guide);
 }

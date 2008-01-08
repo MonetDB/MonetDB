@@ -33,11 +33,8 @@
 
 /* SAX parser interface (libxml2) */
 #include "libxml/parser.h"
-#include "libxml/parserInternals.h"
 
 #define GUIDE_INIT 1
-
-typedef struct guide_tree_t guide_tree_t;
 
 typedef struct child_list_t child_list_t;
 struct child_list_t {
@@ -46,7 +43,8 @@ struct child_list_t {
 };
 
 struct guide_tree_t {
-    xmlChar      *tag_name;
+    xmlChar      *uri;
+    xmlChar      *localname;
     nat           count;
     nat           rel_count;
     nat           min;
@@ -59,8 +57,8 @@ struct guide_tree_t {
 };
 
 /* insert a node in the guide tree */
-guide_tree_t* insert_guide_node(const xmlChar *tag_name, guide_tree_t 
-    *parent, kind_t kind);
+guide_tree_t* insert_guide_node(const xmlChar *URI, const xmlChar *tag_name, 
+                                guide_tree_t *parent, kind_t kind);
 
 /* adjust the minimum and maximum values of guide nodes */
 void adjust_guide_min_max (guide_tree_t *guide);
