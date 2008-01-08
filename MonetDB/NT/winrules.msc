@@ -47,9 +47,9 @@ DEBUGLIB=
 PTHREAD = C:\Pthreads
 PTHREAD_INCS = "-I$(PTHREAD)\include"
 !IF $(bits) == 32
-PTHREAD_LIBS = "$(PTHREAD)\lib\pthreadVC2.lib"
+PTHREAD_LIBS = "$(PTHREAD)\lib\pthreadVC2$(DEBUGLIB).lib"
 !ELSE
-PTHREAD_LIBS = "$(PTHREAD)\lib64\pthreadVC2.lib"
+PTHREAD_LIBS = "$(PTHREAD)\lib64\pthreadVC2$(DEBUGLIB).lib"
 !ENDIF
 PHP_INSTDIR = C:\php-525
 PHP_SRCDIR = $(PHP_INSTDIR)\php-5.2.5
