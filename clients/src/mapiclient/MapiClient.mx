@@ -847,9 +847,11 @@ setFormatter(Mapi mid, char *s)
 {
 	if (mode == XQUERY) {
 		mapi_output(mid, s);
-		if (output != NULL)
-			free(output);
-		output = strdup(s);
+		if (s != output) {
+			if (output != NULL)
+				free(output);
+			output = strdup(s);
+		}
 	} else if (strcmp(s, "sql") == 0)
 		formatter = TABLEformatter;
 	else if (strcmp(s, "csv") == 0)
