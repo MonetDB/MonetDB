@@ -317,25 +317,25 @@ lw_diff2wc_diff(int mindiff, int doChar, char *lw_diff_fn, char *wc_diff_fn)
 						i = 0;
 					} while (line[strlen(line) - 1] != '\n' && (ok = fgets(line, BUFLEN, lw_diff_fp)));
 				} else {
-					space = isspace((int) (line[1]));
+					space = isspace_((int) (line[1]));
 					alpha_ = isalpha_((int) (line[1]));
-					digit = isdigit((int) (line[1]));
+					digit = isdigit_((int) (line[1]));
 					i = 1;
 					do {
 						for (; line[i] != '\n' && line[i] != '\0'; i++) {
-							if ((space && !isspace((int) line[i])) ||
-							    (!space && isspace((int) line[i])) ||
+							if ((space && !isspace_((int) line[i])) ||
+							    (!space && isspace_((int) line[i])) ||
 							    (alpha_ && !isalpha_((int) line[i])) ||
 							    (!alpha_ && isalpha_((int) line[i])) ||
-							    (digit && !isdigit((int) line[i])) ||
-							    (!digit && isdigit((int) line[i])) ||
-							    (!isspace((int) line[i]) &&
+							    (digit && !isdigit_((int) line[i])) ||
+							    (!digit && isdigit_((int) line[i])) ||
+							    (!isspace_((int) line[i]) &&
 							     !isalpha_((int) line[i]) &&
-							     !isdigit((int) line[i]))) {
+							     !isdigit_((int) line[i]))) {
 								fprintf(fp[j], "\n");
-								space = isspace((int) line[i]);
+								space = isspace_((int) line[i]);
 								alpha_ = isalpha_((int) line[i]);
-								digit = isdigit((int) line[i]);
+								digit = isdigit_((int) line[i]);
 								l[j]++;
 							}
 							fprintf(fp[j], "%c", line[i]);

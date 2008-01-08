@@ -28,7 +28,9 @@ void ErrXit(char *text1, char *text2, int num);
 FILE *Rfopen(char *name);
 FILE *Wfopen(char *name);
 FILE *Afopen(char *name);
-int isalpha_(int c);
+#define isalpha_(c) (isascii(c) && (isalpha(c) || c == '_'))
+#define isspace_(c) (isascii(c) && isspace(c))
+#define isdigit_(c) (isascii(c) && isdigit(c))
 char *filename(char *path);
 char *tmpdir(void);
 

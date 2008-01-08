@@ -81,13 +81,6 @@ Afopen(char *name)
 /* Afopen */
 
 
-int
-isalpha_(int c)
-{
-	return (isalpha(c) || (c == '_'));
-}
-
-
 char *
 filename(char *path)
 {
