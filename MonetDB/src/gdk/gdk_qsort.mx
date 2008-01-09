@@ -141,7 +141,7 @@ typedef struct {
 #define void_SWAP(TYPE, a, b, s)
 #define void_multi_SWAP(TYPE, a, b, n)
 
-#define iterate_SWAP(TYPE, a, b, s) 		tpe_SWAP(chr, a, b, MULT_TS(s))
+#define iterate_SWAP(TYPE, a, b, s) 		tpe_SWAP(chr, a, b, s)
 #define iterate_multi_SWAP(TYPE, a, b, n) 	tpe_SWAP(chr, a, b, MULT_TS(n))
 
 #define tpe_SWAP(TYPE, a, b, n) {			\
