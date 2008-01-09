@@ -189,7 +189,7 @@ VOIDput & SIMPLEput should go to gdk_atoms where ATOMput is defined.
 #define ATOM_PUT_LNG(tpe,hp,dst,p,src)
 #endif
 
-#define FIXEDATOM_PUT(tpe,hp,dst,p,src)					\
+#define FIXEDATOM_PUT(sh,tpe,hp,dst,p,src)				\
 	ATOM_PUT_CHR(tpe,hp,dst,p,src)					\
 	ATOM_PUT_SHT(tpe,hp,dst,p,src)					\
 	ATOM_PUT_INT(tpe,hp,dst,p,src)					\
@@ -198,11 +198,10 @@ VOIDput & SIMPLEput should go to gdk_atoms where ATOMput is defined.
 		BBPincref(*(bat*) src, TRUE);				\
 		((bat*) dst)[p] = *(bat*) src;				\
 	} else {							\
-		/* TODO needs atom shift */			\
-		memcpy(dst+p, src, (size_t) ATOMsize(tpe));	\
+		memcpy(dst+(p<<sh), src, (size_t) ATOMsize(tpe));	\
 	}								
 
-#define VARATOM_PUT(tpe,hp,dst,p,src)					\
+#define VARATOM_PUT(sh,tpe,hp,dst,p,src)					\
 	if (tpe == TYPE_str) {						\
 		if (strPut(hp, ((var_t*) dst)+(p), (str) (src)) == 0) {	\
 				goto bunins_failed;			\
@@ -210,7 +209,7 @@ VOIDput & SIMPLEput should go to gdk_atoms where ATOMput is defined.
 	}
 
 @-
-#define VARATOM_PUT(tpe,hp,dst,p,src)					\
+#define VARATOM_PUT(sh,tpe,hp,dst,p,src)					\
 	if (tpe == TYPE_str) {						\
 		if (strPut(hp, ((var_t*) dst)+p, (str) src) == 0) {	\
 				goto bunins_failed;			\
@@ -224,8 +223,8 @@ VOIDput & SIMPLEput should go to gdk_atoms where ATOMput is defined.
 		ATOMfix(tpe, src);					\
 	}
 @h
-#define SIMPLE_PUT(tpe,hp,dst,p,src) { ((tpe*)(dst))[p] = *(tpe*) (ptr) (src); }
-#define VOID_PUT(tpe,hp,dst,p,src)   {}
+#define SIMPLE_PUT(sh,tpe,hp,dst,p,src) { ((tpe*)(dst))[p] = *(tpe*) (ptr) (src); }
+#define VOID_PUT(sh,tpe,hp,dst,p,src)   {}
 
 @-
 Type-specific
@@ -238,8 +237,8 @@ replacing their generic versions there.
 @= T_BUNfastins
 #define @1@4_bunfastins_nocheck_noinc(b, p, h, t)		\
 	do {							\
-		@2_PUT(@3, (b)->H->vheap, (b)->H->heap.base, p, h);	\
-		@5_PUT(@6, (b)->T->vheap, (b)->T->heap.base, p, t);	\
+		@2_PUT(b->H->shift, @3, (b)->H->vheap, (b)->H->heap.base, p, h);	\
+		@5_PUT(b->T->shift, @6, (b)->T->vheap, (b)->T->heap.base, p, t);	\
 	} while (0)
 #define @1@4_bunfastins_nocheck(b, p, h, t, hs, ts)		\
 	do {							\
