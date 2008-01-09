@@ -1788,19 +1788,23 @@ fetch(ptr ret, BAT *b, lng i)
 		int _s = ATOMsize(ATOMtype(b->ttype));
 		if (ATOMvarsized(b->ttype)) {
 			memcpy(*(ptr*) ret=GDKmalloc(_s), BUNtvar(bi, @1), _s);
+		} else if (b->ttype == TYPE_void) {
+			*(oid*) ret = b->tseqbase;
+			if (b->tseqbase != oid_nil)
+				*(oid*)ret += @1 - BUNfirst(b);
 		} else if (b->ttype == TYPE_bat) {
-			bat bid = *(bat*) BUNtloc(bi, @1);
+			bat bid = *(bat*) Tloc(b, @1);
 			*(BAT**) ret = BATdescriptor(bid);
 		} else if (_s == 4) {
-			*(int*) ret = *(int*) BUNtail(bi, @1);
+			*(int*) ret = *(int*) Tloc(b, @1);
 		} else if (_s == 1) {
-			*(bte*) ret = *(bte*) BUNtail(bi, @1);
+			*(bte*) ret = *(bte*) Tloc(b, @1);
 		} else if (_s == 2) {
-			*(sht*) ret = *(sht*) BUNtail(bi, @1);
+			*(sht*) ret = *(sht*) Tloc(b, @1);
 		} else if (_s == 8) {
-			*(lng*) ret = *(lng*) BUNtail(bi, @1);
+			*(lng*) ret = *(lng*) Tloc(b, @1);
 		} else {
-			memcpy(ret, BUNtloc(bi, @1), _s);
+			memcpy(ret, Tloc(b, @1), _s);
 		}
 	}
 @c

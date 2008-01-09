@@ -203,7 +203,7 @@ address MTIME@1_min
 comment "Minimum test for @1 value";
 command calc.max(v:@1,w:@1):@1 
 address MTIME@1_max
-comment "Minimum test for @1 value";
+comment "Maximum test for @1 value";
 @mal
 
 @+ Date atom
@@ -2851,22 +2851,25 @@ mtime_export str MTIME@1_max(@1 *ret, @1 *v, @1 *w);
 	    @:compareDef(GT,>,@1)@
 	    @:compareDef(GE,>=,@1)@
 @= compareAll
-str MTIME@1_isnil(bit *ret, @1 *v){
-	*ret= *v == @1_nil;
+str MTIME@1_isnil(bit *ret, @1 *v)
+{
+	*ret = (*v == @1_nil);
 	return MAL_SUCCEED;
 }
-str MTIME@1_min(@1 *ret, @1 *v, @1 *w){
-	if( *v== @1_nil || *w== @1_nil)
-			*ret= @1_nil;
+str MTIME@1_min(@1 *ret, @1 *v, @1 *w)
+{
+	if( *v == @1_nil || *w == @1_nil)
+		*ret= @1_nil;
 	else
-		*ret= *v<*w ? *v: *w;
+		*ret = *v<*w ? *v: *w;
 	return MAL_SUCCEED;
 }
-str MTIME@1_max(@1 *ret, @1 *v, @1 *w){
-	if( *v== @1_nil || *w== @1_nil)
-			*ret= @1_nil;
+str MTIME@1_max(@1 *ret, @1 *v, @1 *w)
+{
+	if (*v == @1_nil || *w == @1_nil)
+		*ret = @1_nil;
 	else
-		*ret= *v<*w ? *v: *w;
+		*ret = *v>*w ? *v: *w;
 	return MAL_SUCCEED;
 }
 	    @:compareImpl(EQ,==,@1)@
