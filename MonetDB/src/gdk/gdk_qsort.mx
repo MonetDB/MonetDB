@@ -111,13 +111,13 @@ typedef struct {
 #define offset_@1_SWAP(TYPE, a, b, s)			\
 	var_t_SWAP(TYPE, a, b, s)
 
-#define @1_multi_SWAP(TYPE, a, b, n)			\
+#define @1_multi_SWAP(TYPE, a, b, n, nt)		\
 	tpe_SWAP(TYPE, a, b, n)
 
-#define direct_@1_multi_SWAP(TYPE, a, b, n)		\
+#define direct_@1_multi_SWAP(TYPE, a, b, n, nt)		\
 	tpe_SWAP(TYPE, a, b, n)
 
-#define offset_@1_multi_SWAP(TYPE, a, b, n)		\
+#define offset_@1_multi_SWAP(TYPE, a, b, n, nt)		\
 	tpe_SWAP(var_t, a, b, n)
 
 @c
@@ -125,24 +125,21 @@ typedef struct {
 @:register_swap(bte)@
 @:register_swap(sht)@
 @:register_swap(int)@
-@:register_swap(flt)@
 @:register_swap(lng)@
-@:register_swap(var_t)@
+@:register_swap(flt)@
 @:register_swap(dbl)@
+@:register_swap(var_t)@
 
-#define any_SWAP(TYPE, a, b, s) 		var_t_SWAP(var_t, a, b, s)
-#define direct_any_SWAP(TYPE, a, b, s) 		var_t_SWAP(var_t, a, b, s)
-#define offset_any_SWAP(TYPE, a, b, s) 		var_t_SWAP(var_t, a, b, s)
-#define any_multi_SWAP(TYPE, a, b, n) 		tpe_SWAP(var_t, a, b, n)
-#define direct_any_multi_SWAP(TYPE, a, b, n) 	tpe_SWAP(var_t, a, b, n)
-#define offset_any_multi_SWAP(TYPE, a, b, n) 	tpe_SWAP(var_t, a, b, n)
+#define iterate_SWAP(TYPE, a, b, s) 		 tpe_SWAP(bte, a, b, s)
+#define direct_any_SWAP(TYPE, a, b, s) 		 tpe_SWAP(bte, a, b, s)
+#define offset_any_SWAP(TYPE, a, b, s) 		 var_t_SWAP(var_t, a, b, s)
+#define iterate_multi_SWAP(TYPE, a, b, n, nt) 	 tpe_SWAP(bte, a, b, nt)
+#define direct_any_multi_SWAP(TYPE, a, b, n, nt) tpe_SWAP(bte, a, b, nt)
+#define offset_any_multi_SWAP(TYPE, a, b, n, nt) tpe_SWAP(var_t, a, b, n)
 
 /* no swapping for voids */
 #define void_SWAP(TYPE, a, b, s)
-#define void_multi_SWAP(TYPE, a, b, n)
-
-#define iterate_SWAP(TYPE, a, b, s) 		tpe_SWAP(chr, a, b, s)
-#define iterate_multi_SWAP(TYPE, a, b, n) 	tpe_SWAP(chr, a, b, MULT_TS(n))
+#define void_multi_SWAP(TYPE, a, b, n, nt)
 
 #define tpe_SWAP(TYPE, a, b, n) {			\
 	ssize_t _i = (n);				\
@@ -198,8 +195,6 @@ typedef lng ptrdiff_t;
 #define any_LT(a,b)		((buf->cmp)(a,b) <  0)
 #define any_GE(a,b)		((buf->cmp)(a,b) >= 0)
 #define any_GT(a,b)		((buf->cmp)(a,b) >  0)
-
-typedef chr any;
 
 @:qsort_L_or_G_direction(any)@
 
@@ -260,10 +255,18 @@ typedef chr any;
 #define @1_@2_@3E(a,b)		@2_@3E(@1(a),@1(b))
 
 @:qsort_algo(void,@1,@2,@3,@4)@
+#ifndef NOEXPAND_BTE
 @:qsort_algo(bte,@1,@2,@3,@4)@
+#endif
+#ifndef NOEXPAND_SHT
 @:qsort_algo(sht,@1,@2,@3,@4)@
+#endif
+#ifndef NOEXPAND_INT
 @:qsort_algo(int,@1,@2,@3,@4)@
+#endif
+#ifndef NOEXPAND_LNG
 @:qsort_algo(lng,@1,@2,@3,@4)@
+#endif
 @:qsort_algo(iterate,@1,@2,@3,@4)@
 
 @= qsort_algo
@@ -362,11 +365,11 @@ loop:
 
 	pn = h + MULT_WIDTH(n);
 	r = MIN(pa - h, pb - pa);
-	@2_@3_multi_SWAP(@3, h, pb - r, DIV_WIDTH(r));
-	@1_multi_SWAP(@1, t, t+MULT_TS(DIV_WIDTH(pb-r-h)), DIV_WIDTH(r));
+	@2_@3_multi_SWAP(@3, h, pb - r, DIV_WIDTH(r), r);
+	@1_multi_SWAP(@1, t, t+MULT_TS(DIV_WIDTH(pb-r-h)), DIV_WIDTH(r), MULT_TS(DIV_WIDTH(r)));
 	r = MIN(pd - pc, (ptrdiff_t) (pn - pd - buf->hs));
-	@2_@3_multi_SWAP(@3, pb, pn - r, DIV_WIDTH(r));
-	@1_multi_SWAP(@1, t+MULT_TS(DIV_WIDTH(pb-h)), t+MULT_TS(DIV_WIDTH(pn-r-h)), DIV_WIDTH(r));
+	@2_@3_multi_SWAP(@3, pb, pn - r, DIV_WIDTH(r), r);
+	@1_multi_SWAP(@1, t+MULT_TS(DIV_WIDTH(pb-h)), t+MULT_TS(DIV_WIDTH(pn-r-h)), DIV_WIDTH(r), MULT_TS(DIV_WIDTH(r)));
 	if ((r = pb - pa) > buf->hs)
 		GDKqsort_@1_@2_@3@5(h, t, DIV_WIDTH(r), buf);
 	if ((r = pd - pc) > buf->hs) { 
@@ -391,7 +394,7 @@ loop:
 	switch (ts) {
 	case 0:
 		@:call_offset_or_direct_storage(@1,@2,void)@
-#ifndef NOEXPAND_CHR
+#ifndef NOEXPAND_BTE
 	case 1:
 		@:call_offset_or_direct_storage(@1,@2,bte)@
 #endif
