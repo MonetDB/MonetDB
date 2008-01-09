@@ -683,7 +683,7 @@ transform_expression (PFsql_t *n, PFsql_t *col)
     if (col->sem.column.name->ty == aat_bln)
         n = case_ (when (n, lit_int (1)), else_ (lit_int (0)));
 
-    if (n->kind == sql_column_name)
+    if (n->kind == sql_column_name || n->kind == sql_ref_column_name)
         return n;
     else
         return column_assign (n, col);
@@ -730,12 +730,20 @@ transform_colenv (PFarray_t *col_env, PFsql_aident_t ident)
     for (unsigned int i = 0; i < PFarray_last (col_env); i++) {
         sql_column_env_t * colitem =
             (sql_column_env_t *) PFarray_at (col_env, i);
-        if (colitem->expression->kind == sql_column_name)
+        if (colitem->expression->kind == sql_column_name) {
             colitem->expression =
                        ext_column_name (
                               ident,
                               colitem->expression->sem.column.name
                               );
+        } 
+        else if (colitem->expression->kind == sql_ref_column_name) {
+            colitem->expression =
+                       ref_column_name (
+                              ident,
+                              colitem->expression->sem.ref_column_name.name
+                              );
+        }
     }
 }
 
@@ -902,13 +910,20 @@ substitute_aliases_helper (PFsql_t *sqlnode,
     for (unsigned int i = 0; i < PFSQL_OP_MAXCHILD && sqlnode->child[i]; i++)
         substitute_aliases_helper (sqlnode->child[i], map, map_count);
 
-    if (sqlnode->kind == sql_column_name &&
-        sqlnode->sem.column.alias != PF_SQL_ALIAS_UNBOUND)
+    if ((sqlnode->kind == sql_column_name &&
+        sqlnode->sem.column.alias != PF_SQL_ALIAS_UNBOUND)) {
+            for (unsigned int i = 0; i < map_count; i++)
+                if (map[i].old == sqlnode->sem.column.alias) {
+                    sqlnode->sem.column.alias = map[i].new;
+                    break;
+                }
+    } else if (sqlnode->kind == sql_ref_column_name) {
         for (unsigned int i = 0; i < map_count; i++)
-            if (map[i].old == sqlnode->sem.column.alias) {
-                sqlnode->sem.column.alias = map[i].new;
+            if (map[i].old == sqlnode->sem.ref_column_name.alias) {
+                sqlnode->sem.ref_column_name.alias = map[i].new;
                 break;
             }
+    } 
 }
 
 /**
@@ -929,11 +944,14 @@ substitute_aliases (PFla_op_t * p)
     for (unsigned int i = 0; i < count; i++) {
         map[i].new = new_alias ();
         map[i].old = (from_list_at (FROMLIST(p), i)).alias->sem.alias.name;
-        (from_list_at (FROMLIST(p), i)).alias->sem.alias.name = map[i].new;
 
         /* Copy the expressions in the fromlist */
+        (from_list_at (FROMLIST(p), i)).alias
+            = duplicate ((from_list_at (FROMLIST(p), i)).alias);
         (from_list_at (FROMLIST(p), i)).table
             = duplicate ((from_list_at (FROMLIST(p), i)).table);
+
+        (from_list_at (FROMLIST(p), i)).alias->sem.alias.name = map[i].new;
     }
 
     for (unsigned int i = 0; i < PFarray_last (COLMAP(p)); i++) {
@@ -1044,7 +1062,8 @@ step_axis (PFla_op_t *p, PFsql_aident_t ctx, PFsql_aident_t step,
                 }
             } else
                 where_list_add (WHERELIST(p),
-                                between (PRE(step), add (PRE(ctx), lit_int (1)),
+                                between (PRE(step), add (PRE(ctx),
+                                         lit_int (1)),
                                          add (PRE(ctx), SIZE(ctx))));
             break;
 
@@ -2167,28 +2186,40 @@ reduce (PFla_op_t * p, int goalnt)
         /* Query:  serialize_rel(Rel) */
         case 7:
         {
-    
+            PFla_op_t          *query      = L(p);
 
-            /* construct schema information for serialization */
-            /*
-            PFsql_t * ser_info = ser_info_item (
-                           ser_comment ("START SCHEMA INFORMATION **"
-                                        " DO NOT EDIT THESE LINES"),
-                           ser_info_item (
-                               ser_comment ("END SCHEMA INFORMATION **"
-                                            " DO NOT EDIT THESE LINES"),
-                       nil ()));
-            */
+            PFalg_att_t         iter       = p->sem.ser_rel.iter;
+            PFalg_simple_type_t iter_ty    = type_of (p, p->sem.ser_rel.iter);
 
+            PFalg_att_t         pos        = p->sem.ser_rel.pos;
+            PFalg_simple_type_t pos_ty     = type_of (p, p->sem.ser_rel.pos);
+
+            PFsql_t* orderbyITER = col_env_lookup (COLMAP(query),
+                                                   iter, iter_ty);
+            PFsql_t* orderbyPOS  = col_env_lookup (COLMAP(query), pos, pos_ty);
+
+            /* check if pos and iter column are literals */
+            orderbyITER = IS_LITERAL(orderbyITER)?NULL:orderbyITER;  
+            orderbyPOS = IS_LITERAL(orderbyPOS)?NULL:orderbyPOS;  
+
+            PFsql_t* orderby = NULL;
+
+            /* we don't have to use literals in our order by criterion */
+            if(orderbyITER && orderbyPOS)
+                orderby = sortkey_list (sortkey_item (orderbyITER, true),
+                                        sortkey_item (orderbyPOS, true));
+            else if(orderbyPOS) 
+                orderby = sortkey_list (sortkey_item (orderbyPOS, true));
+            else if(orderbyITER) 
+                orderby = sortkey_list (sortkey_item (orderbyITER, true));
     
             /* call a helper function that does the 'real' job */
             PFsql_t* final_query = PFsql_select (false,
-                   transform_selectlist (COLMAP(L(p))),
-                   transform_frommap (L(p)),
-                   transform_wheremap (L(p)),
-                   NULL,
-                   NULL);
-    
+                                       transform_selectlist (COLMAP(L(p))),
+                                       transform_frommap (L(p)),
+                                       transform_wheremap (L(p)),
+                                       orderby,
+                                       NULL);
                 
             /* Check if there are already common-table expressions
                or we have a standalone query */
@@ -2198,10 +2229,6 @@ reduce (PFla_op_t * p, int goalnt)
                 sql_stmts = root (nil (), final_query);
         }
         break;
-
-
-
-
 
         /* Rel:    lit_tbl */
         case 9:
@@ -2308,8 +2335,6 @@ reduce (PFla_op_t * p, int goalnt)
 
             break;
 
-
-
         /* Rel:  ref_tbl */
         case 10:
         {
@@ -2347,8 +2372,6 @@ reduce (PFla_op_t * p, int goalnt)
             }
         }
         break;
-
-
 
         /* Rel:    attach (Rel) */
         case 11:
@@ -3478,8 +3501,7 @@ reduce (PFla_op_t * p, int goalnt)
                                        p->sem.sort.part,
                                        type_of (L(p), p->sem.sort.part))));
 
-            orderby = (srtbylist->kind == sql_nil)?NULL:order_by(srtbylist);
-
+            
             col_env_add (COLMAP(p),
                          p->sem.sort.res,
                          aat_nat,
