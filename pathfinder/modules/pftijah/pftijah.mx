@@ -3749,10 +3749,10 @@ int CMDmergeindex ( BAT** result, BAT* tidpre, BAT* oldindex, BAT* oldpre, int* 
 	
         /* insert bats in result */		
 	BATseqbase(res, (oid)0);
-	voidfix_bunfastins_nocheck_noinc(res, lst_res, 0, &newindex->batCacheid);
+	voidfix_bunfastins_nocheck_noinc(res, lst_res, 0, (void*)&newindex->batCacheid);
 	BBPunfix(newindex->batCacheid);	
 	lst_res++;
-	voidfix_bunfastins_nocheck_noinc(res, lst_res, 0, &newpre->batCacheid); 
+	voidfix_bunfastins_nocheck_noinc(res, lst_res, 0, (void*)&newpre->batCacheid); 
 	BBPunfix(newpre->batCacheid);	
 	lst_res++;
 	

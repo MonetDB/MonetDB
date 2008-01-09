@@ -5567,7 +5567,7 @@ merged_union( BAT** res, int ntabs, int ncols, BAT ***b)
 	DST = BUNlast(BN);
 	BATseqbase(BN, (oid)0);
 	for (c=0; c<ncols; c++, DST++) {
-		voidfix_bunfastins_nocheck_noinc(BN,DST,0,&bn[c]->batCacheid);
+		voidfix_bunfastins_nocheck_noinc(BN,DST,0,(void*)&bn[c]->batCacheid);
 		BBPunfix(bn[c]->batCacheid);
 	}
 	BATsetcount(BN, ncols); 
