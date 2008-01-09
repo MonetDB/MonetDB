@@ -512,7 +512,7 @@ start_element (void *ctx,
                              pre,
                              generate_uri_id (atts[2]),
                              generate_localname_id (atts[0]),
-                             atts[4] - atts[3],
+                             (int) (atts[4] - atts[3]),
                              (char*) atts[3]);
                 else                           
                     fprintf (out_attr,
@@ -521,7 +521,7 @@ start_element (void *ctx,
                              pre,
                              (char*) atts[2],
                              (char*) atts[0],
-                             atts[4] - atts[3],
+                             (int) (atts[4] - atts[3]),
                              (char*) atts[3]);
                              
                 if (shredstate.statistics)
