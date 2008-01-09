@@ -223,8 +223,9 @@ VOIDput & SIMPLEput should go to gdk_atoms where ATOMput is defined.
 		ATOMfix(tpe, src);					\
 	}
 @h
-#define SIMPLE_PUT(sh,tpe,hp,dst,p,src) { ((tpe*)(dst))[p] = *(tpe*) (ptr) (src); }
+#define SIMPLE_PUT(sh,tpe,hp,dst,p,src) ((tpe*)(dst))[p] = *(tpe*)(ptr)(src); 
 #define VOID_PUT(sh,tpe,hp,dst,p,src)   {}
+#define VID_PUT(sh,tpe,hp,dst,p,src) ((oid*)(dst))[p] = src; 
 
 @-
 Type-specific
@@ -279,6 +280,7 @@ Expand on head type
 @:H_BUNfastins(sht,SIMPLE,sht)@
 @:H_BUNfastins(int,SIMPLE,int)@
 @:H_BUNfastins(lng,SIMPLE,lng)@
+@:H_BUNfastins(vid,VID,vid)@
 @:H_BUNfastins(fix,FIXEDATOM,(b)->htype)@
 @:H_BUNfastins(var,VARATOM,(b)->htype)@
 
@@ -362,14 +364,6 @@ Type-mappers for convenience
 For backward compatibility:
 (also to be move to gdk.mx and gdk_bat.mx, respectively)
 @h
-/*
-#define bunfastins_nocheck(b, p, h, t, s) anyany_bunfastins_nocheck(b, p, h, t, s)
-#define bunfastins(b, h, t)               anyany_bunfastins(b, h, t)
-
-BAT *BUNfastins(BAT *b, ptr h, ptr t) {
-	return anyany_BUNfastins(b,h,t);
-}
-*/
 
 BAT *BAT_scanselect(BAT *b, BAT *bn, ptr tl, ptr th, bit li, bit hi, int equi, int lval, int hval, int nocheck);
 
@@ -401,10 +395,12 @@ Hence, we skip some type-expansions in this very case.
 	BUN p,q;
 	int t = b->ttype;
 	ptr nil = ATOMnilptr(t);
+	oid oid_ctr = b->hseqbase - BUNfirst(b);
 
 	(void) nil;
 	(void) tl;
 	(void) th;
+	(void) oid_ctr;
 @= seqscanEpilogue
 	if (!bn->batDirty)
 		bn->batDirty = TRUE;
@@ -451,13 +447,11 @@ input BAT, or not (see BAT_select in gdk_batop.mx). In the first case
 */
 
 @= DEFseqscan
-/* Parameter "oid_ctr" is only used to hand-over the base oid in case we
- * generate a oid head from a void head.
- * Parameter "str_idx" is only used to hand-over the integer index for
+/* Parameter "str_idx" is only used to hand-over the integer index for
  * equi-str-selects.
  */
 static BAT *
-seqscan_@1_@2_@3_@6_@7_nocheck_noinc(BAT* b, BAT* bn, ptr tl, ptr th, oid oid_ctr, var_t str_idx)
+seqscan_@1_@2_@3_@6_@7_nocheck_noinc(BAT* b, BAT* bn, ptr tl, ptr th, var_t str_idx)
 {
 	BATiter bi = bat_iterator(b);
 	REGISTER BUN _p = BUNlast(bn);
@@ -468,7 +462,7 @@ seqscan_@1_@2_@3_@6_@7_nocheck_noinc(BAT* b, BAT* bn, ptr tl, ptr th, oid oid_ct
 		ptr v = BUN@3(bi, p);
 
 		@4 {
-			@7@2_bunfastins_nocheck_noinc(bn, _p, (void *) (@8), @5);
+			@7@2_bunfastins_nocheck_noinc(bn, _p, @8, @5);
 			_p++;
 		}
 		@9
@@ -478,7 +472,7 @@ seqscan_@1_@2_@3_@6_@7_nocheck_noinc(BAT* b, BAT* bn, ptr tl, ptr th, oid oid_ct
 }
 
 static BAT *
-seqscan_@1_@2_@3_@6_@7(BAT* b, BAT* bn, ptr tl, ptr th, oid oid_ctr, var_t str_idx)
+seqscan_@1_@2_@3_@6_@7(BAT* b, BAT* bn, ptr tl, ptr th, var_t str_idx)
 {
 	BATiter bi = bat_iterator(b);
 	@:seqscanPrologue@
@@ -488,7 +482,7 @@ seqscan_@1_@2_@3_@6_@7(BAT* b, BAT* bn, ptr tl, ptr th, oid oid_ctr, var_t str_i
 		ptr v = BUN@3(bi, p);
 
 		@4 {
-			@7@2_bunfastins(bn, (void *) (@8), @5);
+			@7@2_bunfastins(bn, @8, @5);
 		}
 		@9
 	}
@@ -496,9 +490,9 @@ seqscan_@1_@2_@3_@6_@7(BAT* b, BAT* bn, ptr tl, ptr th, oid oid_ctr, var_t str_i
 }
 @= seqscan
 	if (nocheck) {
-		return seqscan_@1_@2_@3_@6_@7_nocheck_noinc(b, bn, tl, th, oid_ctr, str_idx);
+		return seqscan_@1_@2_@3_@6_@7_nocheck_noinc(b, bn, tl, th, str_idx);
 	} else {
-		return seqscan_@1_@2_@3_@6_@7(b, bn, tl, th, oid_ctr, str_idx);
+		return seqscan_@1_@2_@3_@6_@7(b, bn, tl, th, str_idx);
 	}
 @-
 
@@ -624,19 +618,13 @@ Taking special care of void/oid.
 */
 @= DEFseqscanHTget
 	@:DEFseqscan(@1,@2,@3,@4,@5,void,void,&oid_ctr,)@
-#if SIZEOF_OID == SIZEOF_INT && !defined(NOEXPAND_INT)
-	@:DEFseqscanTTput(@1,@2,@3,@4,@5,oid,int,&oid_ctr,oid_ctr++;)@
-#elif SIZEOF_OID == SIZEOF_LNG && !defined(NOEXPAND_LNG)
-	@:DEFseqscanTTput(@1,@2,@3,@4,@5,oid,lng,&oid_ctr,oid_ctr++;)@
-#else
-	@:DEFseqscanTTput(@1,@2,@3,@4,@5,oid,fix,&oid_ctr,oid_ctr++;)@
-#endif	/* SIZEOF_OID == SIZEOF_INT */
+	@:DEFseqscanTTput(@1,@2,@3,@4,@5,oid,vid,oid_ctr,oid_ctr++;)@
 	@:DEFseqscanHTput(@1,@2,@3,@4,@5)@
 @= seqscanHTget
 	if (BAThvoid(b)) {
 		/* input-head is void. we decide here, whether output-head
 		 * sould be void or oid, and skip seqscanHTput */
-		oid_ctr = b->hseqbase;
+		oid oid_ctr = b->hseqbase;
 		if (oid_ctr == oid_nil) {
 			/* avoid computing BUNpos many times over
 			 * output-head is void, hence output-tail cannot be void,
@@ -644,13 +632,7 @@ Taking special care of void/oid.
 			@:seqscan(@1,@2,@3,@4,@5,void,void,&oid_ctr,)@
 		} else {
 			/* increment instead of compute BUNpos */
-#if SIZEOF_OID == SIZEOF_INT && !defined(NOEXPAND_INT)
-			@:seqscanTTput(@1,@2,@3,@4,@5,oid,int,&oid_ctr,oid_ctr++;)@
-#elif SIZEOF_OID == SIZEOF_LNG && !defined(NOEXPAND_LNG)
-			@:seqscanTTput(@1,@2,@3,@4,@5,oid,lng,&oid_ctr,oid_ctr++;)@
-#else
-			@:seqscanTTput(@1,@2,@3,@4,@5,oid,fix,&oid_ctr,oid_ctr++;)@
-#endif
+			@:seqscanTTput(@1,@2,@3,@4,@5,oid,vid,oid_ctr,oid_ctr++;)@
 		}
 	} else {
 		/* output-head is identical to input-head. */
@@ -828,7 +810,6 @@ BAT_scanselect(BAT *b, BAT *bn, ptr tl, ptr th, bit li, bit hi, int equi, int lv
 #endif
 #endif
 	var_t str_idx = 0;
-	oid oid_ctr = (oid) 0;
 
 	@:seqscanTTget@
 
