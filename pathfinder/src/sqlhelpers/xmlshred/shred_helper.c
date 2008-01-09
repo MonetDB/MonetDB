@@ -25,17 +25,17 @@
  * $Id$
  */
 
-#include "pf_config.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
 #include <unistd.h>
 #include <assert.h>
+#include <errno.h>
+ 
+#include "pf_config.h"
 #include "shred_helper.h"
 #include "oops.h"
 
-extern int errno;
- 
 #ifndef HAVE_STRDUP
 /**
  * Alternative definition of strdup. It just duplicates a string

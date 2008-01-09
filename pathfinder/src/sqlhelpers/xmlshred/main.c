@@ -36,9 +36,8 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <errno.h> 
 
-extern int errno;
- 
 /* alternative definitions for strdup and strndup
  * and some helper functions
  */
@@ -151,7 +150,7 @@ print_help (char *progname)
 
     printf ("  -f filename%s: encode given input XML document\n",
             long_option (opt_buf, ", --%s=filename", 'f'));
-    printf ("  -o prefix%s: writes encoding to file <prefix>.csv\n",
+    printf ("  -o prefix%s: writes encoding to file PREFIX.csv\n",
             long_option (opt_buf, ", --%s=prefix", 'o'));
     printf ("  -F format%s: format selected encoding components\n"
             "\t(default: '%s')\n"
@@ -168,13 +167,13 @@ print_help (char *progname)
             "\t%%u: element/attribute namespace URI\n"
             "\t%%t: text node content\n"
             "\t%%d: text node content stored as number (if possible)\n"
-            "\t%%g: guide node for node (also writes dataguide to file <prefix>_guide.xml)\n",
+            "\t%%g: guide node for node (also writes dataguide to file PREFIX_guide.xml)\n",
             long_option (opt_buf, ", --%s=format", 'F'), SQL_FORMAT);
     printf ("  -a%s: attributes separate (default: attributes inline)\n"
-            "\twrites attribute encoding to file <prefix>_atts.csv\n",
+            "\twrites attribute encoding to file PREFIX_atts.csv\n",
             long_option (opt_buf, ", --%s", 'a'));
     printf ("  -n%s: element/attribute names inline (default: names separate)\n"
-            "\twrites localname/URI encoding to files <prefix>_names.csv/<prefix>_uris.csv\n",
+            "\twrites localname/URI encoding to files PREFIX_names.csv/PREFIX_uris.csv\n",
             long_option (opt_buf, ", --%s", 'n'));
     printf ("  -h%s: print this help message\n",
             long_option (opt_buf, ", --%s", 'h'));
