@@ -57,6 +57,12 @@ typedef ssize_t nat;
 #define MIN(x,y) ((x) < (y) ? (x) : (y))
 #define MAX(x,y) ((x) >= (y) ? (x) : (y))
 
+/*
+ * Get next token from string *in; tokens are (possibly empty)
+ * strings separated by characters from del.
+ */            
+char* strsplit(char **in, const char *del);   
+
 #ifndef HAVE_STRDUP
 /**
  * Alternative definition of strdup. It just duplicates a string
@@ -64,10 +70,10 @@ typedef ssize_t nat;
  *
  * @param s  String to duplicate.
  */
-char * strdup (const char * s);
+char* strdup (const char * s);
 #else
 #if !HAVE_DECL_STRDUP
-extern char *strdup(const char *);
+extern char* strdup(const char *);
 #endif
 
 #ifdef NATIVE_WIN32
@@ -84,7 +90,7 @@ extern char *strdup(const char *);
  * @param s  String to duplicate.
  * @param n  Copy only the first n characters.
  */
-char * strndup (const char * s, size_t n);
+char* strndup (const char * s, size_t n);
 #else
 #if !HAVE_DECL_STRNDUP
 extern char *strndup(const char *, size_t);
@@ -100,7 +106,6 @@ struct shred_state_t {
     bool  attributes_separate; /** < print attributes into a separate file    */
     bool  names_separate;      /** < print names into a separate file         */
     bool  statistics;          /** < print guides into a separate file        */
-    bool  fastformat;          /** < flag to use static formatting            */
     char *format;              /** < format string                            */
     unsigned int strip_values; /** < only store strip_values characters in the
                                      value column                             */
@@ -122,7 +127,7 @@ bool SHexists (const char *path);
 /**
  * Open file @a path for writing.
  */
-FILE * SHopen_write (const char *path);
+FILE* SHopen_write (const char *path);
 
 #endif /* SHRED_H__ */
 

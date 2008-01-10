@@ -37,6 +37,38 @@
 #include "shred_helper.h"
 #include "oops.h"
 
+/*
+ * Get next token from string *in; tokens are (possibly empty)
+ * strings separated by characters from del.
+ */  
+char *
+strsplit(char **in, const char *del)
+{
+    char *s;
+    const char *spanp;
+    int c, sc;
+    char *tok;
+
+    if (!(s = *in))
+        return NULL;
+    for (tok = s;;) {
+        c = *s++;
+        spanp = del;
+        do {
+            if ((sc = *spanp++) == c) {
+                if (c == 0)
+                    s = NULL;
+                else
+                    s[-1] = 0;
+                *in = s;
+                return (tok);
+            }
+        } while (sc != 0);
+    }
+    
+    return NULL;
+}
+
 #ifndef HAVE_STRDUP
 /**
  * Alternative definition of strdup. It just duplicates a string

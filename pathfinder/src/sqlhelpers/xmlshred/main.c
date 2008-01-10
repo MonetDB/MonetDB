@@ -187,7 +187,7 @@ print_help (char *progname)
 #define MAIN_EXIT(rtn)                                  \
         do { /* free the copied strings ... */          \
              if (progname)       free (progname);       \
-             if (new_format)     free (status.format);  \
+             free (status.format);                      \
              if (status.infile)  free (status.infile);  \
              if (status.outfile) free (status.outfile); \
              /* ... and exit */                         \
@@ -197,7 +197,6 @@ int
 main (int argc, char **argv)
 {
     shred_state_t status;  
-    bool  new_format = false; /* make sure we free only a new format string */
     char *progname   = NULL;
 
     FILE *shout      = NULL;
@@ -213,7 +212,6 @@ main (int argc, char **argv)
     progname = strndup (argv[0], FILENAME_MAX);
 
     status.format = strdup(SQL_FORMAT); 
-    status.fastformat = true;
     status.infile = NULL;
     status.outfile = NULL;
     status.statistics = true;
@@ -245,9 +243,7 @@ main (int argc, char **argv)
                 status.names_separate = false;
                 break;
             case 'F':
-                new_format = true;
                 status.format = strdup (optarg);
-                status.fastformat = !strcmp (status.format, SQL_FORMAT);
                 status.statistics = (strstr (status.format, "%g")) != NULL;
                 break;
             case 'f':

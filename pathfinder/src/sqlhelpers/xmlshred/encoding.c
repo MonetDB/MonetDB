@@ -295,7 +295,7 @@ compile_fmt (char *fmt)
 
     fmts = 0;
     
-    while (fmts < FMT_MAX && (sep = strsep (&fmt, "%"))) {
+    while (fmts < FMT_MAX && (sep = strsplit (&fmt, "%"))) {
         fmt_seps[fmts] = sep;
         if (fmt) {
             lambda = fmt_lambdas[(int)(*fmt)];
