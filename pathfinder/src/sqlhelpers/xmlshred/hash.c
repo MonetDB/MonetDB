@@ -25,39 +25,39 @@
  * $Id$
  */
 
-#include "pf_config.h"
-#include "hash.h"
-#include "shred_helper.h"
 #include <string.h>
 #include <unistd.h>
 #include <assert.h>
 
+#include "pf_config.h"
+#include "hash.h"
+#include "shred_helper.h"
+
 /* We use a seperate chaining strategy to
- * mantain our hash_table,
- * So each bucket is a chained list itself,
- * to handle possible collisions.
+ * mantain our hash table, so each bucket is a chained list itself
+ * to handle collisions.
  */
 struct bucket_t {
-    char *key;      /**< key as string */
-    int id;         /**< name_id */
-    bucket_t* next; /**< next bucket in our list */
+    xmlChar  *key;      /**< key (elem/attr name or namespace URI) */
+    int       id;       /**< name_id */
+    bucket_t *next;     /**< next bucket in overflow chain */
 };
 
-/* size of the hashtable */
+/* hashtable size */
 #define PRIME 113
 
 /**
- * Lookup an id in a given bucket using it associated key.
+ * Lookup an id in a given bucket using its associated key.
  */
 static int
-find_id (bucket_t *bucket, char *key)
+find_id (bucket_t *bucket, const xmlChar *key)
 {
     bucket_t *cur_bucket = bucket;
     
     assert (key);
 
     while (cur_bucket)
-        if (strcmp (cur_bucket->key, key) == 0)
+        if (xmlStrcmp (cur_bucket->key, key) == 0)
             return cur_bucket->id;
         else
             cur_bucket = cur_bucket->next;
@@ -69,16 +69,16 @@ find_id (bucket_t *bucket, char *key)
  * Attach an (id, key) pair to a given bucket list.
  */
 static bucket_t *
-bucket_insert (bucket_t *bucket, char *key, int id)
+bucket_insert (bucket_t *bucket, const xmlChar *key, int id)
 {
     int ident = find_id (bucket, key);
     
-    /* no key found */
     if (NOKEY (ident)) {
+        /* no key found */
         bucket_t *newbucket = (bucket_t*) malloc (sizeof (bucket_t));
 
         newbucket->id = id;
-        newbucket->key = strndup (key, strlen(key));
+        newbucket->key = xmlStrdup (key);
 
         /* add new bucket to the front of list */
         newbucket->next = bucket;
@@ -95,13 +95,12 @@ bucket_insert (bucket_t *bucket, char *key, int id)
  * Create the hash value for a given key.
  */
 static int
-find_hash_bucket (char *key)
+find_hash_bucket (const xmlChar *key)
 {   
     assert (key);
     
-    size_t len = strlen (key);
-    /* keys have at least length 1 */
-    /* assert (len > 0); */
+    size_t len = xmlStrlen (key);
+
     /* build a hash out of the first and the last character
        and the length of the key */
     return (key[0] * key[MAX(0,len-1)] * len) % PRIME;
@@ -113,7 +112,9 @@ find_hash_bucket (char *key)
 hashtable_t
 new_hashtable (void)
 {
-    hashtable_t ht = malloc (PRIME * sizeof (bucket_t));
+    hashtable_t ht;
+    
+    ht = (hashtable_t) malloc (PRIME * sizeof (bucket_t));
     
     /* initialize the hash table */
     for (unsigned int i = 0; i < PRIME; i++)
@@ -126,24 +127,25 @@ new_hashtable (void)
  * Insert key and id into hashtable.
  */
 void
-hashtable_insert (hashtable_t hash_table, char *key, int id)
+hashtable_insert (hashtable_t hash_table, const xmlChar *key, int id)
 {
     int hashkey;
     
-    assert (hash_table && key);
-    
+    assert (hash_table);
+    assert (key);
+
     hashkey = find_hash_bucket (key);
     hash_table[hashkey] = bucket_insert (hash_table[hashkey], key, id);
-    return;
 }
 
 /**
  * Find element in hashtable. 
  */
 int
-hashtable_find (hashtable_t hash_table, char *key)
+hashtable_find (hashtable_t hash_table, const xmlChar *key)
 {
-    assert (key);
+    assert (key); 
+    
     return find_id (hash_table[find_hash_bucket (key)], key);
 }
 
@@ -156,7 +158,6 @@ free_hashtable (hashtable_t hash_table)
     bucket_t *bucket, *free_bucket;
     
     assert (hash_table);
-    if (!hash_table) return;
 
     for (int i = 0; i < PRIME; i++) {
         bucket = hash_table[i];
@@ -165,9 +166,11 @@ free_hashtable (hashtable_t hash_table)
             free_bucket = bucket;
             bucket = bucket->next;
             /* free the copied hash key */
-            if (free_bucket->key) free (free_bucket->key);
+            if (free_bucket->key) 
+                xmlFree (free_bucket->key);
             free (free_bucket);
         }
    }
+
    free(hash_table);
 }

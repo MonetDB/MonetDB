@@ -28,11 +28,14 @@
 #ifndef HASH_H__
 #define HASH_H__
 
+/* needed xmlChar */
+#include "libxml/parser.h"
+
 /* code for no key */
 #define NO_KEY -1 
 
 /* returns true if no such key is found */
-#define NOKEY(k) (k == NO_KEY)
+#define NOKEY(k) ((k) == NO_KEY)
 
 /* a hashtable bucket */
 typedef struct bucket_t bucket_t;
@@ -48,16 +51,16 @@ hashtable_t new_hashtable (void);
 /**
  * Find element in hashtable.
  */
-int hashtable_find (bucket_t **hash_table, char *key);
+int hashtable_find (hashtable_t, const xmlChar*);
 
 /**
  * Insert key and id to hashtable.
  */
-void hashtable_insert (bucket_t **hash_table, char *key, int id);
+void hashtable_insert (hashtable_t, const xmlChar*, int);
 
 /**
  * Free memory assigned to hash_table.
  */
-void free_hashtable (bucket_t **hash_table);
+void free_hashtable (hashtable_t);
 
 #endif /* HASH_H__ */

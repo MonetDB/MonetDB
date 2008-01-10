@@ -25,12 +25,13 @@
  * $Id$
  */
 
-#include "pf_config.h"
 #include <stdio.h>
 #include <string.h>
 
 /* libxml SAX2 parser internals */
 #include "libxml/parserInternals.h"
+
+#include "pf_config.h"
 
 #include "encoding.h"
 #include "guides.h"
@@ -40,6 +41,9 @@
 
 #include <assert.h>
 
+#ifndef HAVE_SAX2
+ #error "libxml2 SAX2 interface required to compile the XML shredder `pfshred'"
+#endif
 
 FILE *out;
 FILE *out_attr;
@@ -256,15 +260,14 @@ generate_localname_id (const xmlChar *localname)
    
     if (!localname)
         return -1;
+                     
+    localname_id = hashtable_find (localname_hash, localname);
 
-    localname_id = hashtable_find (localname_hash, (char *) localname);
-
-    /* key not found */
     if (NOKEY (localname_id)) {
-        /* create a new name id */
+        /* key not found, create a new name id */
         localname_id = global_localname_id++;
-        /* add the pair into the hashtable */
-        hashtable_insert (localname_hash, (char *) localname, localname_id);
+        /* add the (localname, localname_id) pair into the hash table */
+        hashtable_insert (localname_hash, localname, localname_id);
         /* print the name binding if necessary */
         if (shredstate.names_separate)
             fprintf (out_names, "%i, \"%s\"\n", localname_id, (char*) localname);
@@ -282,14 +285,13 @@ generate_uri_id (const xmlChar *URI)
     if (!URI)
         return -1;
         
-    uri_id = hashtable_find (uris_hash, (char *) URI);
+    uri_id = hashtable_find (uris_hash, URI);
 
-    /* key not found */
     if (NOKEY (uri_id)) {
-        /* create a new URI id */
+        /* key not found, create a new URI id */
         uri_id = global_uri_id++;
-        /* add the pair into the hashtable */
-        hashtable_insert (uris_hash, (char *) URI, uri_id);
+        /* add the (URI, uri_id) pair to the hash table */
+        hashtable_insert (uris_hash, URI, uri_id);
         /* print the URI binding if necessary */
         if (shredstate.names_separate)
             fprintf (out_uris, "%i, \"%s\"\n", uri_id, (char*) URI);
@@ -313,7 +315,8 @@ flush_node (kind_t kind,
 
     /* check if tagname is larger than TAG_SIZE characters */
     if (localname && xmlStrlen (localname) > TAG_SIZE)
-        BAILOUT ("attribute local name `%s' exceeds %u characters", localname, TAG_SIZE);
+        BAILOUT ("attribute local name `%s' exceeds %u characters", 
+                 localname, TAG_SIZE);
     
     if (URI && xmlStrlen (URI) > TAG_SIZE)
         BAILOUT ("namespace URI `%s' exceeds length of %u characters", 
@@ -686,7 +689,7 @@ static void
 report (void)
 {
     if (text_stripped > 0) {
-        fprintf (err, "%u values were stripped to %u "
+        fprintf (err, "%u text node/attribute values were stripped to %u "
                       "character(s).\n", text_stripped, text_size);
     }
 }
