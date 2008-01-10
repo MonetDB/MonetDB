@@ -1,7 +1,7 @@
 @echo off
 
 if not "%1"=="" goto skip
-call %0 -r
+call %0 -rq
 goto end
 
 :skip
@@ -43,7 +43,7 @@ set PATH=%builddir%;%PATH%
 REM execute Mtest.py in the source directory
 pushd %srcdir%
 
-call python "%prefix%\src\testing\Mtest.py" "--TSTSRCBASE=%srcdir%" "--TSTBLDBASE=%builddir%" "--TSTTRGBASE=%builddir%" "--monet_mod_path=%MOD_PATH%" "--config=%prefix%\conf\MonetDB.conf" "--dbfarm=%prefix%\dbfarm" "--sql_logdir=%prefix%\log" %*
+call python "Mtest.py" "--TSTSRCBASE=%srcdir%" "--TSTBLDBASE=%builddir%" "--TSTTRGBASE=%builddir%" "--monet_mod_path=%MOD_PATH%" "--config=%prefix%\conf\MonetDB.conf" "--dbfarm=%prefix%\dbfarm" "--sql_logdir=%prefix%\log" %*
 
 popd
 endlocal
