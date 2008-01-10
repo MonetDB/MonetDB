@@ -431,12 +431,11 @@ end_document (void *ctx)
 
     print_tuple (stack[level]);
 
-    if (shredstate.statistics) {
-        assert (guide_val_ (stack[level].guide) == GUIDE_INIT);
-        adjust_guide_min_max (stack[level].guide);
-        stack[level].guide->max = 1;
-    }
-    if (stack[level].value) xmlFree (stack[level].value);
+    if (shredstate.statistics) 
+        guide_occurrence (stack[level].guide);
+
+    if (stack[level].value) 
+        xmlFree (stack[level].value);
 }
 
 static void
@@ -583,14 +582,17 @@ end_element (void *ctx,
     print_tuple (stack[level]);
 
     if (shredstate.statistics)
-        adjust_guide_min_max (stack[level].guide);
+        guide_occurrence (stack[level].guide);
 
     post++;
 
     /* free the memory allocated for the element name and the text value */
-    if (stack[level].localname) xmlFree (stack[level].localname);
-    if (stack[level].uri)       xmlFree (stack[level].uri);
-    if (stack[level].value)     xmlFree (stack[level].value);
+    if (stack[level].localname) 
+        xmlFree (stack[level].localname);
+    if (stack[level].uri)       
+        xmlFree (stack[level].uri);
+    if (stack[level].value)     
+        xmlFree (stack[level].value);
 
     level--;
     assert (level >= 0);    

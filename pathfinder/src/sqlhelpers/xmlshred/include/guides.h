@@ -34,21 +34,25 @@
 /* SAX parser interface (libxml2) */
 #include "libxml/parser.h"
 
-#define GUIDE_INIT 1
-
 typedef struct child_list_t child_list_t;
+
 struct child_list_t {
     child_list_t    *next_element;
     guide_tree_t    *node;
 };
 
+/* A guide node represents all XML nodes with identical
+ * (1) kind,
+ * (2) local name and namespace URI (if applicable), and
+ * (3) path to document node.
+ */
 struct guide_tree_t {
     xmlChar      *uri;
     xmlChar      *localname;
     nat           count;
-    nat           rel_count;
-    nat           min;
-    nat           max;
+    nat           occur;
+    nat           min_occur;
+    nat           max_occur;
     guide_tree_t *parent;
     child_list_t *child_list;
     child_list_t *last_child;
@@ -56,17 +60,17 @@ struct guide_tree_t {
     kind_t        kind;
 };
 
-/* insert a node in the guide tree */
-guide_tree_t* insert_guide_node(const xmlChar *URI, const xmlChar *tag_name, 
-                                guide_tree_t *parent, kind_t kind);
+/* Insert an XML node into the guide tree */
+guide_tree_t* insert_guide_node(const xmlChar*, const xmlChar*, 
+                                guide_tree_t*, kind_t);
 
-/* adjust the minimum and maximum values of guide nodes */
-void adjust_guide_min_max (guide_tree_t *guide);
+/* Adjust minimum and maximum occurrence of guide nodes */
+void guide_occurrence (guide_tree_t*);
 
-/* print the guide tree */
-void print_guide_tree(FILE *guide_out, guide_tree_t *root, int tree_depth);
+/* Serialize the guide tree in an XML format */
+void print_guide_tree(FILE*, guide_tree_t*, int);
 
-/* free the guide tree */
-void free_guide_tree(guide_tree_t *root);
+/* Free the guide tree */
+void free_guide_tree(guide_tree_t*);
 
 #endif /* GUIDES_H__ */

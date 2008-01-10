@@ -25,17 +25,21 @@
  * $Id$
  */
 
+#include <stdio.h>
+#include <assert.h>
+#include <limits.h>
+
 #include "pf_config.h"
 #include "guides.h"
 
-#include <stdio.h>
-#include <assert.h>
-
+/**
+ * Insert an XML node into the guide tree 
+ */
 guide_tree_t * 
 insert_guide_node (const xmlChar *URI, const xmlChar *localname, 
                    guide_tree_t *parent, kind_t kind)
 {
-    static nat    guide_count    = GUIDE_INIT;
+    static nat    guide_count    = 1;
     child_list_t *child_list     = NULL;
     guide_tree_t *guide_node     = NULL;
 
@@ -75,7 +79,7 @@ insert_guide_node (const xmlChar *URI, const xmlChar *localname,
                             
              /* node with identical charactistics found */
              guide_node->count++;    
-             guide_node->rel_count++;
+             guide_node->occur++;
 
              return guide_node;
         }
@@ -83,19 +87,29 @@ insert_guide_node (const xmlChar *URI, const xmlChar *localname,
 
     /* no matching guide node was found -- create a new one */
     guide_node = (guide_tree_t *) malloc (sizeof (guide_tree_t));
+
     *guide_node = (guide_tree_t) {
         .uri        = xmlStrdup (URI)
       , .localname  = xmlStrdup (localname)
       , .count      = 1
-      , .rel_count  = 1
-      , .min        = parent ? (parent->rel_count > 1 ? 0 : 1) : 1
-      , .max        = 0
+      , .occur      = 1
       , .parent     = parent
       , .child_list = NULL 
       , .last_child = NULL
       , .guide      = guide_count++
       , .kind       = kind
     };
+
+    if (parent) {
+        /* we know nothing about minimum/maximum occurrences yet */
+        guide_node->min_occur = INT_MAX;
+        guide_node->max_occur = INT_MIN;
+    } else {
+        /* minimum/maximum occurence for the document node always is 1/1
+           (this will not be updated further) */
+        guide_node->min_occur = 1;
+        guide_node->max_occur = 1;
+    }
 
     /* associate child with the parent */
     if (parent) {
@@ -115,10 +129,12 @@ insert_guide_node (const xmlChar *URI, const xmlChar *localname,
 }
 
 /**
- * Adjust the minimum and maximum value of all children.
+ * Adjust minimum and maximum occurrences of all child nodes
+ * (called once we've seen all children of the node associated
+ * with this guide, i.e., in end_element and end_document)
  */
 void
-adjust_guide_min_max (guide_tree_t *parent)
+guide_occurrence (guide_tree_t *parent)
 {
     child_list_t *child_list;
     guide_tree_t *guide = NULL;
@@ -129,28 +145,22 @@ adjust_guide_min_max (guide_tree_t *parent)
          child_list != NULL;
          child_list = child_list->next_element) {
 
-        guide = child_list->node;
-        /* if this is the first min/max assignement and the
-           guide node was not missing before (guide->min != 0)
-           we can use the relative count as the minimum value */
-        if (!guide->max && guide->min)
-            guide->min = guide->rel_count;
-        else
-            /* use the minimum */
-            guide->min = guide->min < guide->rel_count
-                         ? guide->min : guide->rel_count;
-
-        /* use the maximum */
-        guide->max = guide->max > guide->rel_count
-                     ? guide->max : guide->rel_count;
-
-        /* reset the relative count */
-        guide->rel_count = 0;
+        guide = child_list->node; 
+        
+        assert (guide);
+        
+        guide->min_occur = MIN(guide->min_occur, guide->occur);
+        guide->max_occur = MAX(guide->max_occur, guide->occur);
+        
+        guide->occur = 0;
     } 
 }
 
 #define GUIDE_PADDING_COUNT 2
 
+/**
+ * Serialize the guide tree in an XML format
+ */
 void 
 print_guide_tree (FILE *guide_out, guide_tree_t *guide, int tree_depth)
 {
@@ -169,7 +179,8 @@ print_guide_tree (FILE *guide_out, guide_tree_t *guide, int tree_depth)
     fprintf (guide_out, 
              "<node guide=\"" SSZFMT "\" count=\"" SSZFMT "\""
              " min=\"" SSZFMT "\" max=\"" SSZFMT "\" kind=\"",
-             guide->guide, guide->count, guide->min, guide->max);
+             guide->guide, guide->count, 
+             guide->min_occur, guide->max_occur);
     
     print_kind (guide_out, guide->kind);
     fputc ('\"', guide_out);
@@ -204,7 +215,7 @@ print_guide_tree (FILE *guide_out, guide_tree_t *guide, int tree_depth)
 }
 
 /**
- * free the memory allocated for the guide tree
+ * Free the memory allocated for the guide tree
  */
 void 
 free_guide_tree (guide_tree_t *guide)
@@ -225,8 +236,10 @@ free_guide_tree (guide_tree_t *guide)
     }
 
     /* free the copied URI and localname */
-    if (guide->uri) xmlFree (guide->uri);
-    if (guide->localname) xmlFree (guide->localname);
+    if (guide->uri) 
+        xmlFree (guide->uri);
+    if (guide->localname) 
+        xmlFree (guide->localname);
     /* free the current guide node */
     free (guide);
 }
