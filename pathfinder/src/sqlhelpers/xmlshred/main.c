@@ -26,6 +26,7 @@
  */
 
 #include "pf_config.h"
+
 #include <assert.h>
 #include <stdio.h>
 #ifdef HAVE_STDBOOL_H
@@ -211,7 +212,7 @@ main (int argc, char **argv)
      */
     progname = strndup (argv[0], FILENAME_MAX);
 
-    status.format = SQL_FORMAT; 
+    status.format = strdup(SQL_FORMAT); 
     status.fastformat = true;
     status.infile = NULL;
     status.outfile = NULL;

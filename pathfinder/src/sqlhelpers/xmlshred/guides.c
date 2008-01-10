@@ -25,11 +25,12 @@
  * $Id$
  */
 
+#include "pf_config.h"
+
 #include <stdio.h>
 #include <assert.h>
 #include <limits.h>
 
-#include "pf_config.h"
 #include "guides.h"
 
 /**

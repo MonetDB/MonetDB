@@ -25,21 +25,20 @@
  * $Id$
  */
 
+#include "pf_config.h"
+
 #include <stdio.h>
 #include <string.h>
+#include <assert.h>
 
 /* libxml SAX2 parser internals */
 #include "libxml/parserInternals.h"
-
-#include "pf_config.h"
 
 #include "encoding.h"
 #include "guides.h"
 #include "oops.h"
 #include "hash.h"
 #include "shred_helper.h"
-
-#include <assert.h>
 
 #ifndef HAVE_SAX2
  #error "libxml2 SAX2 interface required to compile the XML shredder `pfshred'"
@@ -98,6 +97,21 @@ static nat pre;
 static nat post;
 static nat rank;
 static nat att_id;
+             
+/* encoding format compilation */
+
+/* maximum and actual number of 
+ * formatting instructions `%.' in `-F' argument 
+ */
+#define FMT_MAX 32
+static unsigned int fmts;
+
+/* type of a node formatting function */
+typedef void (fmt_lambda_t) (node_t);
+
+/* formatting instructions and their separating strings */
+static fmt_lambda_t *fmt_funs[FMT_MAX];
+static char         *fmt_seps[FMT_MAX];
 
 void
 print_text (FILE *f, char *buf, size_t len) {
@@ -186,70 +200,117 @@ print_uri_str (FILE *f, node_t tuple)
     fprintf (f, "\"%s\"", (char *) tuple.uri);
 }
 
+/* implementation of formatting functions */
+static void lambda_e (node_t n) 
+{ fprintf (out, SSZFMT, n.pre); }
+
+static void lambda_o (node_t n) 
+{ fprintf (out, SSZFMT, n.post); }
+
+static void lambda_E (node_t n) 
+{ fprintf (out, SSZFMT, n.pre_stretched); }
+
+static void lambda_O (node_t n) 
+{ fprintf (out, SSZFMT, n.post_stretched); }
+
+static void lambda_s (node_t n) 
+{ fprintf (out, SSZFMT, n.size); }
+
+static void lambda_l (node_t n) 
+{ fprintf (out, "%i", n.level); }
+
+static void lambda_k (node_t n) 
+{ print_kind (out, n.kind); }
+
+static void lambda_p (node_t n) 
+{ if (n.parent) lambda_e (*(n.parent)); }
+
+static void lambda_P (node_t n) 
+{ if (n.parent) lambda_E (*(n.parent)); }
+
+static void lambda_n (node_t n) 
+{ if (n.localname_id != -1) print_localname (out, n); }
+
+static void lambda_u (node_t n) 
+{ if (n.uri_id != -1) print_uri (out, n); }
+
+static void lambda_d (node_t n) 
+{ print_number (out, n); }
+
+static void lambda_t (node_t n) 
+{ print_value (out, n); }
+
+static void lambda_g (node_t n) 
+{ fprintf (out, SSZFMT, guide_val_ (n.guide)); }
+
+static void lambda_percent (node_t n) 
+{ (void) n; putc ('%', out); } 
+           
+/* binding formatting functions to formatting instructions `%.' */
+static fmt_lambda_t *fmt_lambdas[] = {
+    ['e'] = lambda_e 
+  , ['o'] = lambda_o 
+  , ['E'] = lambda_E 
+  , ['O'] = lambda_O 
+  , ['s'] = lambda_s 
+  , ['l'] = lambda_l 
+  , ['k'] = lambda_k
+  , ['p'] = lambda_p
+  , ['P'] = lambda_P
+  , ['n'] = lambda_n
+  , ['u'] = lambda_u
+  , ['d'] = lambda_d
+  , ['t'] = lambda_t
+  , ['g'] = lambda_g
+  , ['%'] = lambda_percent
+  , ['~'] = NULL
+};
+
 static void
-print_tuple (node_t tuple)
+apply_fmt (node_t tuple)
+{   
+    unsigned int fn;
+
+    /* alternate: 
+     * - print separator string
+     * - execute formatting instruction
+     * - print separator string
+     * - ...
+     */
+    fputs (fmt_seps[0], out);
+
+    for (fn = 0; fn < fmts; fn++) { 
+        (*fmt_funs[fn]) (tuple);
+        fputs (fmt_seps[fn + 1], out);
+    } 
+    
+    fputc ('\n', out);
+}
+
+static void
+compile_fmt (char *fmt)
 {
-    const char  *format = shredstate.format;
-    unsigned int i;
+    char *sep;
+    fmt_lambda_t *lambda;
+
+    fmts = 0;
     
-    /* Fast path for the default SQL format */
-    if (shredstate.fastformat) {
-        fprintf (out, SSZFMT ", " SSZFMT ", %i, ",
-                 tuple.pre, tuple.size, tuple.level);
-        print_kind (out, tuple.kind);
-        print_text (out, ", ", 2);
-        if (tuple.uri_id != -1)
-            print_uri (out, tuple);
-        print_text (out, ", ", 2);
-        if (tuple.localname_id != -1)
-            print_localname (out, tuple);
-        print_text (out, ", ", 2);
-        print_number (out, tuple);
-        print_text (out, ", ", 2);
-        print_value (out, tuple);
-        putc ('\n', out);
-        return;
+    while (fmts < FMT_MAX && (sep = strsep (&fmt, "%"))) {
+        fmt_seps[fmts] = sep;
+        if (fmt) {
+            lambda = fmt_lambdas[(int)(*fmt)];
+            if (!lambda)
+               SHoops (SH_FATAL,
+                       "unknown formatting instruction `%%%c' in argument to -F",
+                       *fmt);
+
+            fmt_funs[fmts] = lambda;
+
+            fmts++;
+            /* skip over formatting instruction character */
+            fmt++;
+        } 
     }
-    
-    for (i = 0; format[i]; i++)
-         if (format[i] == '%') {
-             i++;
-             switch (format[i]) {
-                 case 'e': fprintf (out, SSZFMT, tuple.pre); break;
-                 case 'o': fprintf (out, SSZFMT, tuple.post); break;
-                 case 'E': fprintf (out, SSZFMT, tuple.pre_stretched); break;
-                 case 'O': fprintf (out, SSZFMT, tuple.post_stretched); break;
-                 case 's': fprintf (out, SSZFMT, tuple.size); break;
-                 case 'l': fprintf (out, "%i",   tuple.level); break;
-                 case 'k': print_kind (out, tuple.kind); break;
-                 case 'p':
-                     if (tuple.parent)
-                         fprintf (out, SSZFMT, tuple.parent->pre);
-                     break;
-                 case 'P':
-                     if (tuple.parent)
-                         fprintf (out, SSZFMT,tuple.parent->pre_stretched);
-                     break;
-                 case 'n':
-                     if (tuple.localname_id != -1)
-                         print_localname (out, tuple);
-                     break;
-                 case 'u':
-                     if (tuple.uri_id != -1)
-                         print_uri (out, tuple);
-                     break;
-                 case 'd':  print_number (out, tuple); break;    
-                 case 't':  print_value (out, tuple); break;    
-                 case 'g':  fprintf (out, SSZFMT, guide_val_(tuple.guide)); break;
-                 case '%':  putc ('%', out); break;
-                 default:   SHoops (SH_FATAL,
-                                    "unexpected formatting character `%c' (print_tuple)",
-                                    format[i]);
-             }
-         }
-         else
-             putc (format[i], out);
-    putc ('\n', out);
 }
 
 static int
@@ -351,7 +412,7 @@ flush_node (kind_t kind,
     post++;
     rank++;
     
-    print_tuple (stack[level]);
+    apply_fmt (stack[level]);
 
     if (stack[level].localname) xmlFree (stack[level].localname);
     if (stack[level].uri)       xmlFree (stack[level].uri);
@@ -422,14 +483,15 @@ end_document (void *ctx)
 
     assert (level == 0);
 
-    post++;
     rank++;
 
     stack[level].post           = post;
     stack[level].post_stretched = rank;
     stack[level].size           = pre - stack[level].pre;
 
-    print_tuple (stack[level]);
+    apply_fmt (stack[level]);
+
+    post++;
 
     if (shredstate.statistics) 
         guide_occurrence (stack[level].guide);
@@ -579,7 +641,7 @@ end_element (void *ctx,
     stack[level].post_stretched = rank;
     stack[level].size           = pre - stack[level].pre;
 
-    print_tuple (stack[level]);
+    apply_fmt (stack[level]);
 
     if (shredstate.statistics)
         guide_occurrence (stack[level].guide);
@@ -724,15 +786,18 @@ SHshredder (const char *s,
 
     /* how many characters should be stored in
      * the value column */
-    text_size = status->strip_values;
+    text_size = shredstate.strip_values;
 
     text_stripped = 0;
     tag_stripped  = 0;
 
+    /* compile the -F format string */
+    compile_fmt (shredstate.format);
+    
     /* initialize localname and URI hashes */
     localname_hash = new_hashtable (); 
     uris_hash = new_hashtable ();
-    /* pre-insert entry for empty namespace prefixes */
+    /* pre-insert entry for empty namespace URIs */
     generate_uri_id ((xmlChar *) "");
     
     /* Whether to print the node localnames and URIs

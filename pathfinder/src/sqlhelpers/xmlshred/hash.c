@@ -25,11 +25,12 @@
  * $Id$
  */
 
+#include "pf_config.h"
+
 #include <string.h>
 #include <unistd.h>
 #include <assert.h>
 
-#include "pf_config.h"
 #include "hash.h"
 #include "shred_helper.h"
 
