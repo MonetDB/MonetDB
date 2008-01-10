@@ -58,7 +58,7 @@ PHP_EXTENSIONDIR = lib\php5
 
 PYTHONBASE=C:\Python25
 PYTHON_INCS=-I$(PYTHONBASE)\include
-PYTHON_LIBS=$(PYTHONBASE)\libs\python25.lib
+PYTHON_LIBS=/libpath:$(PYTHONBASE)\libs python25.lib
 PYTHON_LIBDIR=share\MonetDB\python
 
 !IFDEF HAVE_PCRE
