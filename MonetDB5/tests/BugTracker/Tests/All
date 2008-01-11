@@ -1,6 +1,0 @@
-# tests related to bug reports:
-# <descriptive-name>.SF-<bug-report-id>[.<ext>]
-batcalc-convert_on_void_view.SF-1573060
-assertion_on_return.SF-1727339
-batcast.SF-1730987
-empty_line_crash.SF-1806638

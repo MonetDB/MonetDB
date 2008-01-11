@@ -1,6 +1,0 @@
-# test illegal variable use
-
-function foo();
-a:=b;	#b not yet defined
-b:=c;	#c undefined
-end foo;

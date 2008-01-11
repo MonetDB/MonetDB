@@ -1,4 +1,0 @@
-The optimizer section contains all the tools to perform
-a static optimization of a MAL program. It relies on
-the MAL engine and module layers.
-No code in those modules should require a call back to this layer.

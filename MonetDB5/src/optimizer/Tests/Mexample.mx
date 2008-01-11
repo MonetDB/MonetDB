@@ -1,4 +1,0 @@
-	b:= bbp.new(:int,:int);
-	bat.insert(b,1,1);
-	optimizer.multiplex("calc.+",b,1);
-	mdb.showFunction();
