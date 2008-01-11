@@ -1044,25 +1044,24 @@ opt_complex (PFla_op_t *p)
                 PFprop_key (p->prop,
                             PFord_order_col_at (p->sem.sort.sortby, 0))) {
                 /* create projection list */
-                PFalg_proj_t *proj_list = PFmalloc (p->schema.count *
-                                                    sizeof (*(proj_list)));
+                PFalg_proj_t *proj_list = PFmalloc ((L(p)->schema.count + 1)
+                                                    * sizeof (*(proj_list)));
 
-                /* copy the schema and replace the rownum result column
-                   by its input */
-                for (unsigned int i = 0; i < p->schema.count; i++)
-                    if (p->schema.items[i].name !=
-                        p->sem.sort.res)
-                        proj_list[i] = PFalg_proj (
-                                           p->schema.items[i].name,
-                                           p->schema.items[i].name);
-                    else
-                        proj_list[i] = PFalg_proj (
-                                           p->sem.sort.res,
-                                           PFord_order_col_at (
-                                               p->sem.sort.sortby,
-                                               0));
+                /* copy the child schema (as we cannot be sure that
+                   the schema of the rownum operator is still valid) ...*/
+                for (unsigned int i = 0; i < L(p)->schema.count; i++)
+                    proj_list[i] = PFalg_proj (
+                                       L(p)->schema.items[i].name,
+                                       L(p)->schema.items[i].name);
 
-                *p = *PFla_project_ (L(p), p->schema.count, proj_list);
+                /* ... and extend it with the sort
+                   criterion as new rownum column */
+                proj_list[L(p)->schema.count] = PFalg_proj (
+                                                    p->sem.sort.res,
+                                                    PFord_order_col_at (
+                                                        p->sem.sort.sortby, 0));
+
+                *p = *PFla_project_ (L(p), L(p)->schema.count + 1, proj_list);
             }
             break;
             
