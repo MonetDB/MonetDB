@@ -482,17 +482,18 @@ special_col (PFsql_special_t spc)
 #define MAX_        column_name (special_col (sql_col_max))
 #define DIST_       column_name (special_col (sql_col_dist))
 
-#define PRE(n)      ext_column_name (n, special_col (sql_col_pre))
-#define SIZE(n)     ext_column_name (n, special_col (sql_col_size))
-#define LEVEL(n)    ext_column_name (n, special_col (sql_col_level))
-#define KIND(n)     ext_column_name (n, special_col (sql_col_kind))
-#define NAME(n)     ext_column_name (n, special_col (sql_col_name))
-#define GUIDE(n)    ext_column_name (n, special_col (sql_col_guide))
-#define VALUE(n)    ext_column_name (n, special_col (sql_col_value))
-#define TWIG_PRE(n) ext_column_name (n, special_col (sql_col_twig_pre))
-#define ITER(n)     ext_column_name (n, special_col (sql_col_iter))
-#define POS(n)      ext_column_name (n, special_col (sql_col_pos))
-#define MAX(n)      ext_column_name (n, special_col (sql_col_max))
+#define PRE(n)        ext_column_name (n, special_col (sql_col_pre))
+#define SIZE(n)       ext_column_name (n, special_col (sql_col_size))
+#define LEVEL(n)      ext_column_name (n, special_col (sql_col_level))
+#define KIND(n)       ext_column_name (n, special_col (sql_col_kind))
+#define NAME(n)       ext_column_name (n, special_col (sql_col_name))
+#define NAMESPACE(n)  ext_column_name (n, special_col (sql_col_namespace))   
+#define GUIDE(n)      ext_column_name (n, special_col (sql_col_guide))
+#define VALUE(n)      ext_column_name (n, special_col (sql_col_value))
+#define TWIG_PRE(n)   ext_column_name (n, special_col (sql_col_twig_pre))
+#define ITER(n)       ext_column_name (n, special_col (sql_col_iter))
+#define POS(n)        ext_column_name (n, special_col (sql_col_pos))
+#define MAX(n)        ext_column_name (n, special_col (sql_col_max))
 
 /**
  * Returns a new column name
@@ -685,7 +686,7 @@ transform_expression (PFsql_t *n, PFsql_t *col)
             n:
             case_ (when (n, lit_int (1)), else_ (lit_int (0)));
 
-    if (n->kind == sql_column_name || n->kind == sql_ref_column_name)
+    if (n->kind == sql_column_name)
         return n;
     else
         return column_assign (n, col);
@@ -1198,78 +1199,84 @@ static void
 step_name (PFla_op_t *p, PFsql_aident_t step, PFty_t ty)
 {
     PFsql_t *name = NULL;
+    PFsql_t *namespace = NULL;
 
     if (!PFty_subtype (ty, PFty_xs_anyElement ()) &&
         !PFty_subtype (ty, PFty_xs_anyAttribute ()))
         return;
 
-        /* This is a test for element nodes */
+    /* This is a test for element nodes */
 
-        /* This is just a generic kind test */
-        if (PFty_subtype (PFty_xs_anyElement (), ty) ||
-            PFty_subtype (PFty_xs_anyAttribute (), ty))
-            return;
-        /* test on local name only */
-        else if (PFty_subtype (
-                     PFty_elem (
-                         PFqname (
-                             PFns_wild,
-                             PFqname_loc (PFty_name (PFty_defn (ty)))),
-                         PFty_xs_anyType ()),
-                     ty) ||
-                 PFty_subtype (
-                     PFty_attr (
-                         PFqname (
-                             PFns_wild,
-                             PFqname_loc (PFty_name (PFty_defn (ty)))),
-                         PFty_xs_anySimpleType ()),
-                     ty))
-            name = lit_str (PFqname_loc (PFty_name (PFty_defn (ty))));
-        /* test on namespace only */
-        else if (PFty_subtype (
-                     PFty_elem (
-                         PFqname (
-                             PFqname_ns (PFty_name (PFty_defn (ty))),
-                             NULL),
-                         PFty_xs_anyType ()),
-                     ty) ||
-                 PFty_subtype (
-                     PFty_attr (
-                         PFqname (
-                             PFqname_ns (PFty_name (PFty_defn (ty))),
-                             NULL),
-                         PFty_xs_anySimpleType ()),
-                     ty))
-            PFoops (OOPS_FATAL, "SQLgen: namespace tests only not supported");
-        /* test on full QName */
-        else if (PFty_subtype (
-                     PFty_elem (
-                         PFty_name (PFty_defn (ty)),
-                         PFty_xs_anyType ()),
-                     ty) ||
-                 PFty_subtype (
-                     PFty_attr (
-                         PFty_name (PFty_defn (ty)),
-                         PFty_xs_anySimpleType ()),
-                     ty))
-            /* we simply ignore the namespace here */
-            name = lit_str (PFqname_loc (PFty_name (PFty_defn (ty))));
-        else
-        /*
-         * If we couldn't figure out what name test we got,
-         * give up.
-         *
-         * NOTE: The surface language actually allows such tests. We
-         *       just cannot implement them (yet):
-         *
-         *    doc("foo")/attribute::attribute(shoeSize, xs:integer)
-         */
-             PFoops (OOPS_FATAL,
-                     "SQLgen: Problem with an XPath step: cannot evaluate "
-                     "node test `%s'", PFty_str (ty));
+    /* This is just a generic kind test */
+    if (PFty_subtype (PFty_xs_anyElement (), ty) ||
+        PFty_subtype (PFty_xs_anyAttribute (), ty))
+        return;
+    /* test on local name only */
+    else if (PFty_subtype (
+                 PFty_elem (
+                     PFqname (
+                         PFns_wild,
+                         PFqname_loc (PFty_name (PFty_defn (ty)))),
+                     PFty_xs_anyType ()),
+                 ty) ||
+             PFty_subtype (
+                 PFty_attr (
+                     PFqname (
+                         PFns_wild,
+                         PFqname_loc (PFty_name (PFty_defn (ty)))),
+                     PFty_xs_anySimpleType ()),
+                 ty))
+        name = lit_str (PFqname_loc (PFty_name (PFty_defn (ty))));
+    /* test on namespace only */
+    else if (PFty_subtype (
+                 PFty_elem (
+                     PFqname (
+                         PFqname_ns (PFty_name (PFty_defn (ty))),
+                         NULL),
+                     PFty_xs_anyType ()),
+                 ty) ||
+             PFty_subtype (
+                 PFty_attr (
+                     PFqname (
+                         PFqname_ns (PFty_name (PFty_defn (ty))),
+                         NULL),
+                     PFty_xs_anySimpleType ()),
+                 ty))
+         /* get the URI of the given namespace */
+         namespace = lit_str (PFqname_uri (PFty_name (PFty_defn (ty))));
+    /* test on full QName */
+    else if (PFty_subtype (
+                 PFty_elem (
+                     PFty_name (PFty_defn (ty)),
+                     PFty_xs_anyType ()),
+                 ty) ||
+             PFty_subtype (
+                 PFty_attr (
+                     PFty_name (PFty_defn (ty)),
+                     PFty_xs_anySimpleType ()),
+                 ty)) {
+        /* get the uri of the given namespace */
+        namespace = lit_str (PFqname_uri (PFty_name (PFty_defn(ty))));
+        name = lit_str (PFqname_loc (PFty_name (PFty_defn (ty))));
+    }
+    else
+    /*
+     * If we couldn't figure out what name test we got,
+     * give up.
+     *
+     * NOTE: The surface language actually allows such tests. We
+     *       just cannot implement them (yet):
+     *
+     *    doc("foo")/attribute::attribute(shoeSize, xs:integer)
+     */
+         PFoops (OOPS_FATAL,
+                 "SQLgen: Problem with an XPath step: cannot evaluate "
+                 "node test `%s'", PFty_str (ty));
 
     if (name)
         where_list_add (WHERELIST(p), eq (NAME(step), name));
+    if (namespace)
+        where_list_add (WHERELIST(p), eq (NAMESPACE(step), namespace));
 }
 
 static void

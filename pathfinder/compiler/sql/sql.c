@@ -1292,19 +1292,20 @@ PFsql_column_name_str (PFsql_col_t *name)
  
     if (name->id == PF_SQL_COLUMN_SPECIAL)
         switch (name->spec) {
-            case sql_col_pre:      return "pre";
-            case sql_col_level:    return "level";
-            case sql_col_size:     return "size";
-            case sql_col_kind:     return "kind";
-            case sql_col_prop:     return "prop";
-            case sql_col_nameid:   return "nameid";
-            case sql_col_value:    return "value";
-            case sql_col_name:     return "name";
-            case sql_col_twig_pre: return "twig_pre";
-            case sql_col_iter:     return "iter";
-            case sql_col_pos:      return "pos";
-            case sql_col_guide:    return "guide";
-            case sql_col_max:      return "max";
+            case sql_col_pre:        return "pre";
+            case sql_col_level:      return "level";
+            case sql_col_size:       return "size";
+            case sql_col_kind:       return "kind";
+            case sql_col_prop:       return "prop";
+            case sql_col_nameid:     return "nameid";
+            case sql_col_value:      return "value";
+            case sql_col_name:       return "name";
+            case sql_col_namespace:  return "namespace";  
+            case sql_col_twig_pre:   return "twig_pre";
+            case sql_col_iter:       return "iter";
+            case sql_col_pos:        return "pos";
+            case sql_col_guide:      return "guide";
+            case sql_col_max:        return "max";
             case sql_col_dist:
                 assert (name->ty < 100);
                 res = (char *) PFmalloc (7 * sizeof (char));
