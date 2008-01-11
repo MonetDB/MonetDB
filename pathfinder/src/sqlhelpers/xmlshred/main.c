@@ -135,9 +135,8 @@ static const char
                                   
 /** 
  * Default format (for SQL-based XQuery processing)
- * FIXME: eventually this should include %u to include namespace URIs 
  */
-#define SQL_FORMAT "%e, %s, %l, %k, %n, %t, %g"
+#define SQL_FORMAT "%e, %s, %l, %k, %n, %t, %g, %u"
 
 /* print help message */
 static void
