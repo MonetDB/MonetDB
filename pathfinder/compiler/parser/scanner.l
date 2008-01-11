@@ -293,7 +293,6 @@ PFscanner_init (char *buf)
         gotoState(0);
     }
 
-    *PFerrbuf = 0;
     pfinput  = buf;
     inputpos = 0;
     cur_col  = 0;
