@@ -13,7 +13,7 @@
 # The Original Code is the MonetDB Database System.
 #
 # The Initial Developer of the Original Code is CWI.
-# Portions created by CWI are Copyright (C) 1997-2007 CWI.
+# Portions created by CWI are Copyright (C) 1997-2008 CWI.
 # All Rights Reserved.
 
 # runs a test by the given name and compares the output to the PostgreSQL

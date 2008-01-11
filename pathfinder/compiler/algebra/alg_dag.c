@@ -24,7 +24,7 @@
  * is now maintained by the Database Systems Group at the Technische
  * Universitaet Muenchen, Germany.  Portions created by the University of
  * Konstanz and the Technische Universitaet Muenchen are Copyright (C)
- * 2000-2005 University of Konstanz and (C) 2005-2007 Technische
+ * 2000-2005 University of Konstanz and (C) 2005-2008 Technische
  * Universitaet Muenchen, respectively.  All Rights Reserved.
  *
  * $Id$

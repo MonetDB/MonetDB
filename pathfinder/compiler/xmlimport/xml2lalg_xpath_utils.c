@@ -26,7 +26,7 @@
  * is now maintained by the Database Systems Group at the Technische
  * Universitaet Muenchen, Germany.  Portions created by the University of
  * Konstanz and the Technische Universitaet Muenchen are Copyright (C)
- * 2000-2005 University of Konstanz and (C) 2005-2007 Technische
+ * 2000-2005 University of Konstanz and (C) 2005-2008 Technische
  * Universitaet Muenchen, respectively.  All Rights Reserved.
  *
  * $Id: xml2lalg_xpath_utils.c,v 1.0 2007/10/31 22:00:00 ts-tum 
