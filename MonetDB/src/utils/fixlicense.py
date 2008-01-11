@@ -13,7 +13,7 @@
 # The Original Code is the MonetDB Database System.
 #
 # The Initial Developer of the Original Code is CWI.
-# Portions created by CWI are Copyright (C) 1997-2007 CWI.
+# Portions created by CWI are Copyright (C) 1997-2008 CWI.
 # All Rights Reserved.
 
 # This script requires Python 2.2 or later.
@@ -56,7 +56,7 @@ license = [
     'The Original Code is the MonetDB Database System.',
     '',
     'The Initial Developer of the Original Code is CWI.',
-    'Portions created by CWI are Copyright (C) 1997-2007 CWI.',
+    'Portions created by CWI are Copyright (C) 1997-2008 CWI.',
     'All Rights Reserved.',
     ]
 
