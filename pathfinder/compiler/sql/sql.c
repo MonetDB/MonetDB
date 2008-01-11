@@ -1335,6 +1335,8 @@ PFsql_simple_type_str (PFalg_simple_type_t type)
         case aat_attr:
         case aat_nat:
         case aat_int:
+        /* we even translate boolean as INTEGER */
+        case aat_bln:
             return "INTEGER";
         case aat_uA:
         case aat_str:

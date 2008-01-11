@@ -419,7 +419,7 @@ literal (PFalg_atom_t atom)
         case aat_nat:   return lit_int (atom.val.nat_);
         case aat_int:   return lit_int (atom.val.int_);
         case aat_str:   return lit_str (atom.val.str);
-        case aat_bln:   return eq (lit_int (atom.val.bln?1:0), lit_int (1));
+        case aat_bln:   return lit_int (atom.val.bln?1:0);
         case aat_dbl:   return lit_dec (atom.val.dbl);
         case aat_dec:   return lit_dec (atom.val.dec_);
         case aat_qname: return lit_str (PFqname_loc (atom.val.int_));
@@ -681,7 +681,9 @@ transform_expression (PFsql_t *n, PFsql_t *col)
 
     /* we have a different strategy when our item is boolean */
     if (col->sem.column.name->ty == aat_bln)
-        n = case_ (when (n, lit_int (1)), else_ (lit_int (0)));
+        n = (n->kind == sql_column_name)?
+            n:
+            case_ (when (n, lit_int (1)), else_ (lit_int (0)));
 
     if (n->kind == sql_column_name || n->kind == sql_ref_column_name)
         return n;
@@ -1861,7 +1863,9 @@ reduce (PFla_op_t * p, int goalnt)
                     colexpr = entry.expression;
                     /* Ensure that boolean columns are replaced. */
                     if (entry.type == aat_bln)
-                        colexpr = case_ (when (colexpr, lit_int (1)),
+                        colexpr = (colexpr->kind == sql_column_name)?
+                                  colexpr:
+                                  case_ (when (colexpr, lit_int (1)),
                                          else_ (lit_int (0)));
                     
                     /* Generate a special column name DIST
@@ -2233,9 +2237,17 @@ reduce (PFla_op_t * p, int goalnt)
         /* Rel:    lit_tbl */
         case 9:
             if (p->sem.lit_tbl.count == 1) {
+                PFsql_t * lit;
                 for (unsigned int col = 0; col < p->schema.count; col++)
                     for (PFalg_simple_type_t t = 1; t; t <<= 1)
                         if (t & TYPE_MASK (p->schema.items[col].type)) {
+                            lit = literal (p->sem.lit_tbl.tuples[0]
+                                                         .atoms[col]);
+                            
+                            /* if we have a boolean, generate
+                             * a boolean expression */
+                            if (t == aat_bln) lit = eq (lit, lit_int (1));
+
                             col_env_add (
                                 COLMAP(p),
                                 p->schema.items[col].name,
@@ -2243,8 +2255,7 @@ reduce (PFla_op_t * p, int goalnt)
                                 (t == p->sem.lit_tbl
                                             .tuples[0]
                                             .atoms[col].type)
-                                ? literal (p->sem.lit_tbl.tuples[0]
-                                                         .atoms[col])
+                                ? lit
                                 : cast (null (), type (t)));
                         }
 
@@ -3047,15 +3058,38 @@ reduce (PFla_op_t * p, int goalnt)
 
         /* Rel:    bool_and (Rel) */
         case 28:
-            /* FIXME: implementation is missing */
-            assert (!"missing");
-            break;
-
         /* Rel:    bool_or (Rel) */
         case 29:
-            /* FIXME: implementation is missing */
-            assert (!"missing");
-            break;
+        {
+            PFsql_t *sqlnode1;
+            PFsql_t *sqlnode2;
+            
+            PFsql_t * (*op) (const PFsql_t *a, const PFsql_t *b);
+
+            /* copy all existing column, from and where lists */
+            copy_cols_from_where (p, L(p));
+
+            sqlnode1 = col_env_lookup (COLMAP(p), p->sem.binary.att1, aat_bln);
+            sqlnode2 = col_env_lookup (COLMAP(p), p->sem.binary.att2, aat_bln);
+
+            if (sqlnode1->kind == sql_column_name)
+                sqlnode1 = eq (sqlnode1, lit_int (1));
+            if (sqlnode2->kind == sql_column_name)
+                sqlnode2 = eq (sqlnode2, lit_int (1));
+
+            switch (p->kind) {
+                case la_bool_and: op = PFsql_and; break;
+                case la_bool_or:  op = PFsql_or;  break;
+                default:
+                    PFoops (OOPS_FATAL,
+                            "la_bool_and or la_bool_or expected!");
+            }
+
+            col_env_add (COLMAP(p),
+                         p->sem.binary.res,
+                         aat_bln,
+                         op (sqlnode1, sqlnode2));
+        }   break;
 
         /* Rel:    bool_not (Rel) */
         case 30:
