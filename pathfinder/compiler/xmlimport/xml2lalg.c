@@ -941,7 +941,7 @@ void createAndStoreAlgOpNode(XML2LALGContext* ctx, xmlNodePtr nodePtr)
              CHILDNODE(0), 
              E2INT("/content/position"), 
              PFLA_ORDERING("/content/column[@function='sort']"), 
-             PFLA_ATT_O("/content/column[@function='partition']/@name", -1)
+             PFLA_ATT_O("/content/column[@function='partition']/@name", att_NULL)
              );
         }  
         break;
@@ -1148,7 +1148,7 @@ void createAndStoreAlgOpNode(XML2LALGContext* ctx, xmlNodePtr nodePtr)
              PFLA_ATT("/content/column[@new='true']/@name"), 
              PFLA_ATT("/content/column[@function='start']/@name"), 
              PFLA_ATT("/content/column[@function='end']/@name"), 
-             PFLA_ATT_O("/content/column[@function='partition']/@name", -1)
+             PFLA_ATT_O("/content/column[@function='partition']/@name", att_NULL)
              );
         }  
         break;
@@ -1175,7 +1175,7 @@ void createAndStoreAlgOpNode(XML2LALGContext* ctx, xmlNodePtr nodePtr)
              CHILDNODE(0), 
              PFLA_ATT("/content/column[@new='true']/@name"), 
              PFLA_ATT("/content/column[@function='item']/@name"), 
-             PFLA_ATT_O("/content/column[@function='partition']/@name", -1)
+             PFLA_ATT_O("/content/column[@function='partition']/@name", att_NULL)
              );
         }  
         break;                       
@@ -1197,7 +1197,7 @@ void createAndStoreAlgOpNode(XML2LALGContext* ctx, xmlNodePtr nodePtr)
              (
              CHILDNODE(0), 
              PFLA_ATT("/content/column[@new='true']/@name"), 
-             PFLA_ATT_O("/content/column[@function='partition']/@name", -1)
+             PFLA_ATT_O("/content/column[@function='partition']/@name", att_NULL)
              );
         }  
         break;
@@ -1221,7 +1221,7 @@ void createAndStoreAlgOpNode(XML2LALGContext* ctx, xmlNodePtr nodePtr)
              CHILDNODE(0), 
              PFLA_ATT("/content/column[@new='true']/@name"), 
              PFLA_ORDERING("/content/column[@function='sort']"), 
-             PFLA_ATT_O("/content/column[@function='partition']/@name", -1)
+             PFLA_ATT_O("/content/column[@function='partition']/@name", att_NULL)
              );
         }  
         break;
@@ -1381,7 +1381,7 @@ void createAndStoreAlgOpNode(XML2LALGContext* ctx, xmlNodePtr nodePtr)
              CHILDNODE(0), 
              PFLA_ATT("/content/column[@new='true']/@name"), 
              PFLA_ATT("/content/column[@function='item']/@name"), 
-             PFLA_ATT_O("/content/column[@function='partition']/@name", -1)
+             PFLA_ATT_O("/content/column[@function='partition']/@name", att_NULL)
              );
         }  
         break;
@@ -1405,7 +1405,7 @@ void createAndStoreAlgOpNode(XML2LALGContext* ctx, xmlNodePtr nodePtr)
              CHILDNODE(0), 
              PFLA_ATT("/content/column[@new='true']/@name"), 
              PFLA_ATT("/content/column[@function='item']/@name"), 
-             PFLA_ATT_O("/content/column[@function='partition']/@name", -1)
+             PFLA_ATT_O("/content/column[@function='partition']/@name", att_NULL)
              );
         }  
         break;
