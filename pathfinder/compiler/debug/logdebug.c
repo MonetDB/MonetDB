@@ -331,7 +331,7 @@ la_dot (PFarray_t *dot, PFla_op_t *n, bool print_frag_info)
         , [la_serialize_rel]   = "#C0C0C0"
         , [la_lit_tbl]         = "#C0C0C0"
         , [la_empty_tbl]       = "#C0C0C0"
-        , [la_ref_tbl ]        = "#C0C0C0"
+        , [la_ref_tbl]         = "#C0C0C0"
         , [la_attach]          = "#EEEEEE"
         , [la_cross]           = "#990000"
         , [la_eqjoin]          = "#00FF00"
@@ -475,19 +475,22 @@ la_dot (PFarray_t *dot, PFla_op_t *n, bool print_frag_info)
             PFarray_printf (dot, ")");
             break;
 
-        /*todo: implement me*/
         case la_ref_tbl :
-            /* list the attributes of this table */
-            PFarray_printf (dot, "%s: (%s", a_id[n->kind],
-                            PFatt_str (n->schema.items[0].name));
-    
-           /*
-           for (c = 1; c < n->schema.count;c++)
-                PFarray_printf (dot, " | %s", 
+            PFarray_printf (dot, "%s: ", a_id[n->kind]);
+            for (c = 0; c < n->schema.count;c++) 
+                PFarray_printf (dot, "%s%s", c ? " | " : "(",
                                 PFatt_str (n->schema.items[c].name));
-    
+            PFarray_printf (dot, ")\\ncolumn name ");
+            for (c = 0; c < n->schema.count;c++) 
+                PFarray_printf (dot, "%s%s", c ? " | " : "(",
+                                *((char**) PFarray_at (n->sem.ref_tbl.tatts,
+                                                       c)));
+            PFarray_printf (dot, ")\\ntype ");
+            for (c = 0; c < n->schema.count;c++) 
+                PFarray_printf (dot, "%s%s", c ? " | " : "(",
+                                PFalg_simple_type_str (
+                                    n->schema.items[c].type));
             PFarray_printf (dot, ")");
-            */
             break;
 
         case la_attach:
@@ -1022,15 +1025,56 @@ la_dot (PFarray_t *dot, PFla_op_t *n, bool print_frag_info)
                                     PFatt_str (keys.atts[i]));
             }
             if (*fmt == '+' || *fmt == 'V') {
+                bool fst;
+                fst = true;
                 /* list required value columns and their values */
-                for (unsigned int pre = 0, i = 0; i < n->schema.count; i++) {
+                for (unsigned int i = 0; i < n->schema.count; i++) {
                     PFalg_att_t att = n->schema.items[i].name;
-                    if (PFprop_reqval (n->prop, att))
+                    if (PFprop_req_bool_val (n->prop, att)) {
                         PFarray_printf (
                             dot, 
-                            pre++ ? ", %s=%s " : "\\nreq. val: %s=%s ",
+                            fst ? "\\nreq. val: %s=%s " : ", %s=%s ",
                             PFatt_str (att),
-                            PFprop_reqval_val (n->prop, att)?"true":"false");
+                            PFprop_req_bool_val_val (n->prop, att)
+                            ?"true":"false");
+                        fst = false;
+                    }
+                }
+                fst = true;
+                /* list distribution columns */
+                for (unsigned int i = 0; i < n->schema.count; i++) {
+                    PFalg_att_t att = n->schema.items[i].name;
+                    if (PFprop_req_distr_col (n->prop, att)) {
+                        PFarray_printf (
+                            dot, 
+                            fst ? "\\ndistr col: %s" : ", %s",
+                            PFatt_str (att));
+                        fst = false;
+                    }
+                }
+                fst = true;
+                /* list multi-col columns */
+                for (unsigned int i = 0; i < n->schema.count; i++) {
+                    PFalg_att_t att = n->schema.items[i].name;
+                    if (PFprop_req_multi_col_col (n->prop, att)) {
+                        PFarray_printf (
+                            dot, 
+                            fst ? "\\nmulti-col col: %s" : ", %s",
+                            PFatt_str (att));
+                        fst = false;
+                    }
+                }
+                fst = true;
+                /* list value columns */
+                for (unsigned int i = 0; i < n->schema.count; i++) {
+                    PFalg_att_t att = n->schema.items[i].name;
+                    if (PFprop_req_value_col (n->prop, att)) {
+                        PFarray_printf (
+                            dot, 
+                            fst ? "\\nvalue col: %s" : ", %s",
+                            PFatt_str (att));
+                        fst = false;
+                    }
                 }
             }
             if (*fmt == '+' || *fmt == 'D') {
@@ -1381,12 +1425,13 @@ la_xml (PFarray_t *xml, PFla_op_t *n)
                 /* list required value columns and their values */
                 for (unsigned int i = 0; i < n->schema.count; i++) {
                     PFalg_att_t att = n->schema.items[i].name;
-                    if (PFprop_reqval (n->prop, att))
+                    if (PFprop_req_bool_val (n->prop, att))
                         PFarray_printf (
                             xml, 
                             "      <required attr=\"%s\" value=\"%s\"/>\n",
                             PFatt_str (att),
-                            PFprop_reqval_val (n->prop, att)?"true":"false");
+                            PFprop_req_bool_val_val (n->prop, att)
+                            ?"true":"false");
                 }
             }
             if (*fmt == '+' || *fmt == 'D') {
@@ -1405,7 +1450,8 @@ la_xml (PFarray_t *xml, PFla_op_t *n)
             if (*fmt == '+' || *fmt == 'S') {
                 /* print whether columns do have to respect duplicates */
                 if (PFprop_set (n->prop))
-                    PFarray_printf (xml, "      <duplicates allowed=\"yes\"/>\n");
+                    PFarray_printf (xml, "      <duplicates"
+                                                " allowed=\"yes\"/>\n");
             }
             if (*fmt == '+') {
                 /* print the number of referenced columns */
@@ -1496,12 +1542,15 @@ la_xml (PFarray_t *xml, PFla_op_t *n)
             /* todo: only print the properties here, if the 
                "general property output" is not enabled (e.g. via -f<format>)
 
-               NB: the keys-property is an inherent information for the la_ref_tbl-op
+               NB: the keys-property is an inherent information
+                   for the la_ref_tbl-op
             */
             PFarray_printf (xml, "    <properties>\n"); 
             PFarray_printf (xml, "      <keys>\n"); 
             /* list the keys of this table */
-            for (unsigned int c = 0; c < PFarray_last (n->sem.ref_tbl.keys); c++) 
+            for (unsigned int c = 0;
+                 c < PFarray_last (n->sem.ref_tbl.keys);
+                 c++) 
             {
 
                 int keyPos = *((int*) PFarray_at (n->sem.ref_tbl.keys, c));
@@ -1510,7 +1559,8 @@ la_xml (PFarray_t *xml, PFla_op_t *n)
 
                 PFarray_printf (xml, "    <key>\n");
                 PFarray_printf (xml, 
-                                 "          <column name=\"%s\" position=\"%i\"/>\n",
+                                 "          <column name=\"%s\""
+                                            " position=\"%i\"/>\n",
                                 PFatt_str(keyName),
                                  1);
                 PFarray_printf (xml, "    </key>\n");
@@ -1526,10 +1576,13 @@ la_xml (PFarray_t *xml, PFla_op_t *n)
             for (c = 0; c < n->schema.count;c++) 
             {
                 PFarray_printf (xml, 
-                                 "        <column name=\"%s\" tname=\"%s\" type=\"%s\"/>\n",
-                                 PFatt_str (n->schema.items[c].name),
-                                 *((char**) PFarray_at (n->sem.ref_tbl.tatts, c)),                                 
-                                 PFalg_simple_type_str (n->schema.items[c].type));
+                                "        <column name=\"%s\""
+                                         " tname=\"%s\" type=\"%s\"/>\n",
+                                PFatt_str (n->schema.items[c].name),
+                                *((char**) PFarray_at (n->sem.ref_tbl.tatts,
+                                                       c)),
+                                PFalg_simple_type_str (
+                                    n->schema.items[c].type));
             }
             PFarray_printf (xml, "      </table>\n");
             PFarray_printf (xml, "    </content>\n");
@@ -1641,8 +1694,9 @@ la_xml (PFarray_t *xml, PFla_op_t *n)
 
             if (n->sem.pos_sel.part != att_NULL)
                 PFarray_printf (xml,
-                                "      <column name=\"%s\" function=\"partition\""
-                                        " new=\"false\"/>\n",
+                                "      <column name=\"%s\""
+                                       " function=\"partition\""
+                                       " new=\"false\"/>\n",
                                 PFatt_str (n->sem.pos_sel.part));
 
             PFarray_printf (xml, "    </content>\n");
@@ -1768,7 +1822,8 @@ la_xml (PFarray_t *xml, PFla_op_t *n)
 
             if (n->sem.sort.part != att_NULL)
                 PFarray_printf (xml,
-                                "      <column name=\"%s\" function=\"partition\""
+                                "      <column name=\"%s\""
+                                        " function=\"partition\""
                                         " new=\"false\"/>\n",
                                 PFatt_str (n->sem.sort.part));
 
@@ -1884,8 +1939,10 @@ la_xml (PFarray_t *xml, PFla_op_t *n)
             if (n->kind == la_step || n->kind == la_guide_step)
                 PFarray_printf (xml,
                                 "/>\n"
-                                "      <column name=\"%s\" function=\"iter\"/>\n"
-                                "      <column name=\"%s\" function=\"item\"/>\n"
+                                "      <column name=\"%s\""
+                                       " function=\"iter\"/>\n"
+                                "      <column name=\"%s\""
+                                       " function=\"item\"/>\n"
                                 "    </content>\n",
                                 PFatt_str (n->sem.step.iter),
                                 PFatt_str (n->sem.step.item));
@@ -1893,7 +1950,8 @@ la_xml (PFarray_t *xml, PFla_op_t *n)
                 PFarray_printf (xml,
                                 "/>\n"
                                 "      <column name=\"%s\" new=\"true\"/>\n"
-                                "      <column name=\"%s\" function=\"item\"/>\n"
+                                "      <column name=\"%s\""
+                                       " function=\"item\"/>\n"
                                 "    </content>\n",
                                 PFatt_str (n->sem.step.item_res),
                                 PFatt_str (n->sem.step.item));
@@ -1994,8 +2052,8 @@ la_xml (PFarray_t *xml, PFla_op_t *n)
                             "      <column name=\"%s\" function=\"iter\"/>\n"
                             "      <column name=\"%s\" function=\"qname item\""
                                     "/>\n"
-                            "      <column name=\"%s\" function=\"content item\""
-                                    "/>\n"
+                            "      <column name=\"%s\""
+                                   " function=\"content item\"/>\n"
                             "    </content>\n",
                             PFatt_str (n->sem.iter_item1_item2.iter),
                             PFatt_str (n->sem.iter_item1_item2.item1),
@@ -2237,7 +2295,9 @@ PFla_xml (FILE *f, PFla_op_t *root)
 
         PFarray_printf (xml, "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
         PFarray_printf (xml, "<logical_query_plan unique_names=\"%s\">\n",
-                        (PFalg_is_unq_name(root->schema.items[0].name) ? "true" : "false"));
+                        PFalg_is_unq_name (root->schema.items[0].name)
+                        ? "true" : "false");
+
         /* add domain subdomain relationships if required */
         if (PFstate.format) {
             char *fmt = PFstate.format;

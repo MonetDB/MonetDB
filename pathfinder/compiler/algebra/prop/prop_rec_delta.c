@@ -428,9 +428,9 @@ prop_check (PFla_op_t *n)
         /* this reference is the only one */
         REFS(L(n)) == 1 &&
         /* column item generates a value that may be required */
-        PFprop_reqval (n->prop, n->sem.attach.res) &&
+        PFprop_req_bool_val (n->prop, n->sem.attach.res) &&
         /* the required value differs from the attached value */
-        PFprop_reqval_val (n->prop, n->sem.attach.res) !=
+        PFprop_req_bool_val_val (n->prop, n->sem.attach.res) !=
         n->sem.attach.value.val.bln)
         /* mark the distinct operator as unused */
         NOT_USED(L(n)) = true;

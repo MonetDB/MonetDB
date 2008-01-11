@@ -1020,8 +1020,8 @@ opt_complex (PFla_op_t *p)
            select operators above comparisons whose required
            value is true. */
         case la_bool_and:
-            if (PFprop_reqval (p->prop, p->sem.binary.res) &&
-                PFprop_reqval_val (p->prop, p->sem.binary.res) &&
+            if (PFprop_req_bool_val (p->prop, p->sem.binary.res) &&
+                PFprop_req_bool_val_val (p->prop, p->sem.binary.res) &&
                 PFprop_set (p->prop)) {
                 *p = *PFla_attach (
                           PFla_select (
@@ -1034,6 +1034,38 @@ opt_complex (PFla_op_t *p)
             }
             break;
 
+        case la_rownum:
+            /* Replace the rownumber operator by a projection
+               if only its order and value distribution (keys)
+               are required instead of its values. */
+            if (PFprop_req_distr_col (p->prop, p->sem.sort.res) &&
+                PFord_count (p->sem.sort.sortby) == 1 &&
+                PFord_order_dir_at (p->sem.sort.sortby, 0) == DIR_ASC &&
+                PFprop_key (p->prop,
+                            PFord_order_col_at (p->sem.sort.sortby, 0))) {
+                /* create projection list */
+                PFalg_proj_t *proj_list = PFmalloc (p->schema.count *
+                                                    sizeof (*(proj_list)));
+
+                /* copy the schema and replace the rownum result column
+                   by its input */
+                for (unsigned int i = 0; i < p->schema.count; i++)
+                    if (p->schema.items[i].name !=
+                        p->sem.sort.res)
+                        proj_list[i] = PFalg_proj (
+                                           p->schema.items[i].name,
+                                           p->schema.items[i].name);
+                    else
+                        proj_list[i] = PFalg_proj (
+                                           p->sem.sort.res,
+                                           PFord_order_col_at (
+                                               p->sem.sort.sortby,
+                                               0));
+
+                *p = *PFla_project_ (L(p), p->schema.count, proj_list);
+            }
+            break;
+            
         case la_rank:
             /* match the pattern rank - (project -) rank and
                try to merge both rank operators if the nested

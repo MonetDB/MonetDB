@@ -46,6 +46,7 @@
 #include "mem.h"
 
 #define SEEN(p) ((p)->bit_dag)
+#define empty_list 0
 
 /**
  * Create new property container.
@@ -68,9 +69,9 @@ PFprop (void)
     ret->set      = false;
 
     /* initialize icols attribute list */
-    ret->icols   = 0;
-    ret->l_icols = 0;
-    ret->r_icols = 0;
+    ret->icols   = empty_list;
+    ret->l_icols = empty_list;
+    ret->r_icols = empty_list;
 
     /* initialize key attribute list */
     ret->keys   = NULL;
@@ -80,9 +81,12 @@ PFprop (void)
     /* initialize cardinality */
     ret->card = 0;
 
-    /* initialize key attribute list */
-    ret->reqvals.name = 0;
-    ret->reqvals.val  = 0;
+    /* initialize required value lists */
+    ret->req_bool_vals.name = empty_list;
+    ret->req_bool_vals.val  = empty_list;
+    ret->req_distr_cols     = empty_list;
+    ret->req_multi_col_cols = empty_list;
+    ret->req_value_cols     = empty_list;
 
     /* initialize domain information */
     ret->domains   = NULL;
@@ -140,6 +144,8 @@ PFprop_infer (bool card, bool const_, bool set,
         PFprop_infer_guide (root, guide);
     if (const_)
         PFprop_infer_const (root);
+    if (reqval)
+        PFprop_infer_reqval (root);
     if (dom)
         PFprop_infer_dom (root);
     if (set)
@@ -148,8 +154,6 @@ PFprop_infer (bool card, bool const_, bool set,
         PFprop_infer_icol (root);
     if (ocols)
         PFprop_infer_ocol (root);
-    if (reqval)
-        PFprop_infer_reqval (root);
     if (ori_names)
         PFprop_infer_ori_names (root);
     if (refctr)

@@ -45,11 +45,11 @@ typedef struct PFprop_t PFprop_t;
 #include "logical.h"
 
 /* required values list */
-struct reqval_t {
+struct req_bool_val_t {
     PFalg_att_t  name;
     PFalg_att_t  val;
 };
-typedef struct reqval_t reqval_t;
+typedef struct req_bool_val_t req_bool_val_t;
 
 struct PFprop_t {
     unsigned int card;       /**< Exact number of tuples in intermediate
@@ -68,8 +68,14 @@ struct PFprop_t {
                                   parent operators. */
     PFarray_t   *keys;       /**< List of attributes that have
                                   unique values. */
-    reqval_t     reqvals;    /**< List of attributes with their corresponding
-                                  required values. */
+    req_bool_val_t req_bool_vals; /**< List of attributes with their
+                                       corresponding required values. */
+    PFalg_att_t  req_distr_cols;  /**< List of columns whose values only
+                                       have to have the same distribution. */
+    PFalg_att_t  req_multi_col_cols; /**< List of columns that can be
+                                       split up into multiple columns. */
+    PFalg_att_t  req_value_cols;  /**< List of columns whose values are
+                                       important for the query evaluation. */
     PFarray_t   *name_pairs; /**< List of attributes with their corresponding
                                   unique names. */
     PFarray_t   *level_mapping; /**< List of attributes annotated with
@@ -431,13 +437,31 @@ void PFprop_update_ocol (PFla_op_t *n);
  * Test if @a attr is in the list of required value columns
  * in container @a prop
  */
-bool PFprop_reqval (const PFprop_t *prop, PFalg_att_t attr);
+bool PFprop_req_bool_val (const PFprop_t *prop, PFalg_att_t attr);
 
 /**
  * Looking up required value of column @a attr
  * in container @a prop
  */
-bool PFprop_reqval_val (const PFprop_t *prop, PFalg_att_t attr);
+bool PFprop_req_bool_val_val (const PFprop_t *prop, PFalg_att_t attr);
+
+/**
+ * Test if @a attr is in the list of distribution columns
+ * in container @a prop
+ */
+bool PFprop_req_distr_col (const PFprop_t *prop, PFalg_att_t attr);
+
+/**
+ * Test if @a attr is in the list of multi-col columns
+ * in container @a prop
+ */
+bool PFprop_req_multi_col_col (const PFprop_t *prop, PFalg_att_t attr);
+
+/**
+ * Test if @a attr is in the list of value columns
+ * in container @a prop
+ */
+bool PFprop_req_value_col (const PFprop_t *prop, PFalg_att_t attr);
 
 /* --------------------- unique names property accessors ------------------- */
 

@@ -813,49 +813,104 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, unsigned int node_id)
     if (PFstate.format) {
 
         char *fmt = PFstate.format;
+        /* format character '+' overwrites all others */
         bool all = false;
+        while (*fmt) {
+            if (*fmt == '+') {
+                all = true;
+                break;
+            }
+            fmt++;
+        }
+        /* iterate over all format characters 
+           if we haven't found a '+' character */
+        if (!all)
+            fmt = PFstate.format;
 
-        while (*fmt) { 
-            if (*fmt == '+')
-            {
-                PFalg_attlist_t icols = PFprop_icols_to_attlist (n->prop);
-                PFalg_attlist_t keys = PFprop_keys_to_attlist (n->prop);
-
-                /* list costs if requested */
-                PFarray_printf (dot, "\\ncost: %lu", n->cost);
-
+        while (*fmt) {
+            if (*fmt == '+' || *fmt == 'A') {
                 /* if present print cardinality */
                 if (PFprop_card (n->prop))
                     PFarray_printf (dot, "\\ncard: %i", PFprop_card (n->prop));
-
+            }
+            if (*fmt == '+' || *fmt == 'O') {
                 /* list attributes marked const */
                 for (unsigned int i = 0;
                         i < PFprop_const_count (n->prop); i++)
                     PFarray_printf (dot, i ? ", %s" : "\\nconst: %s",
                                     PFatt_str (
                                         PFprop_const_at (n->prop, i)));
+            }
+            if (*fmt == '+' || *fmt == 'I') {
+                PFalg_attlist_t icols = PFprop_icols_to_attlist (n->prop);
 
                 /* list icols attributes */
                 for (unsigned int i = 0; i < icols.count; i++)
                     PFarray_printf (dot, i ? ", %s" : "\\nicols: %s",
                                     PFatt_str (icols.atts[i]));
+            }
+            if (*fmt == '+' || *fmt == 'K') {
+                PFalg_attlist_t keys = PFprop_keys_to_attlist (n->prop);
 
                 /* list keys attributes */
                 for (unsigned int i = 0; i < keys.count; i++)
                     PFarray_printf (dot, i ? ", %s" : "\\nkeys: %s",
                                     PFatt_str (keys.atts[i]));
-
+            }
+            if (*fmt == '+' || *fmt == 'V') {
+                bool fst;
+                fst = true;
                 /* list required value columns and their values */
-                for (unsigned int pre = 0, i = 0; i < n->schema.count; i++) {
+                for (unsigned int i = 0; i < n->schema.count; i++) {
                     PFalg_att_t att = n->schema.items[i].name;
-                    if (PFprop_reqval (n->prop, att))
+                    if (PFprop_req_bool_val (n->prop, att)) {
                         PFarray_printf (
                             dot, 
-                            pre++ ? ", %s=%s " : "\\nreq. val: %s=%s ",
+                            fst ? "\\nreq. val: %s=%s " : ", %s=%s ",
                             PFatt_str (att),
-                            PFprop_reqval_val (n->prop, att)?"true":"false");
+                            PFprop_req_bool_val_val (n->prop, att)
+                            ?"true":"false");
+                        fst = false;
+                    }
                 }
-
+                fst = true;
+                /* list distribution columns */
+                for (unsigned int i = 0; i < n->schema.count; i++) {
+                    PFalg_att_t att = n->schema.items[i].name;
+                    if (PFprop_req_distr_col (n->prop, att)) {
+                        PFarray_printf (
+                            dot, 
+                            fst ? "\\ndistr col: %s" : ", %s",
+                            PFatt_str (att));
+                        fst = false;
+                    }
+                }
+                fst = true;
+                /* list multi-col columns */
+                for (unsigned int i = 0; i < n->schema.count; i++) {
+                    PFalg_att_t att = n->schema.items[i].name;
+                    if (PFprop_req_multi_col_col (n->prop, att)) {
+                        PFarray_printf (
+                            dot, 
+                            fst ? "\\nmulti-col col: %s" : ", %s",
+                            PFatt_str (att));
+                        fst = false;
+                    }
+                }
+                fst = true;
+                /* list value columns */
+                for (unsigned int i = 0; i < n->schema.count; i++) {
+                    PFalg_att_t att = n->schema.items[i].name;
+                    if (PFprop_req_value_col (n->prop, att)) {
+                        PFarray_printf (
+                            dot, 
+                            fst ? "\\nvalue col: %s" : ", %s",
+                            PFatt_str (att));
+                        fst = false;
+                    }
+                }
+            }
+            if (*fmt == '+' || *fmt == 'D') {
                 /* list attributes and their corresponding domains */
                 for (unsigned int i = 0; i < n->schema.count; i++)
                     if (PFprop_dom (n->prop, n->schema.items[i].name)) {
@@ -865,8 +920,131 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, unsigned int node_id)
                             dot, 
                             PFprop_dom (n->prop, n->schema.items[i].name));
                     }
+            }
+            if (*fmt == '+' || *fmt == '[') {
+                /* list attributes and their unique names */
+                for (unsigned int i = 0; i < n->schema.count; i++) {
+                    PFalg_att_t ori = n->schema.items[i].name;
+                    PFalg_att_t unq = PFprop_unq_name (n->prop, ori);
+                    if (unq) {
+                        PFalg_att_t l_unq, r_unq;
+                        PFarray_printf (
+                            dot,
+                            i ? " , %s=%s" : "\\nO->U names: %s=%s",
+                            PFatt_str (ori), PFatt_str (unq));
 
-                /* list orderings if requested */
+                        l_unq = PFprop_unq_name_left (n->prop, ori);
+                        r_unq = PFprop_unq_name_right (n->prop, ori);
+
+                        if (l_unq && l_unq != unq && r_unq && r_unq != unq)
+                            PFarray_printf (dot,
+                                            " [%s|%s]", 
+                                            PFatt_str(l_unq),
+                                            PFatt_str(r_unq));
+                        else if (l_unq && l_unq != unq)
+                            PFarray_printf (dot, " [%s|", PFatt_str(l_unq));
+                        else if (r_unq && r_unq != unq)
+                            PFarray_printf (dot, " |%s]", PFatt_str(r_unq));
+                    }
+                }
+            }
+            if (*fmt == '+' || *fmt == ']') {
+                /* list attributes and their original names */
+                for (unsigned int i = 0; i < n->schema.count; i++) {
+                    PFalg_att_t unq = n->schema.items[i].name;
+                    PFalg_att_t ori = PFprop_ori_name (n->prop, unq);
+                    if (ori) {
+                        PFalg_att_t l_ori, r_ori;
+                        PFarray_printf (
+                            dot,
+                            i ? " , %s=%s" : "\\nU->O names: %s=%s",
+                            PFatt_str (unq), PFatt_str (ori));
+
+                        l_ori = PFprop_ori_name_left (n->prop, unq);
+                        r_ori = PFprop_ori_name_right (n->prop, unq);
+
+                        if (l_ori && l_ori != ori && r_ori && r_ori != ori)
+                            PFarray_printf (dot,
+                                            " [%s|%s]", 
+                                            PFatt_str(l_ori),
+                                            PFatt_str(r_ori));
+                        else if (l_ori && l_ori != ori)
+                            PFarray_printf (dot, " [%s|", PFatt_str(l_ori));
+                        else if (r_ori && r_ori != ori)
+                            PFarray_printf (dot, " |%s]", PFatt_str(r_ori));
+                    }
+                }
+            }
+            if (*fmt == '+' || *fmt == 'S') {
+                /* print whether columns do have to respect duplicates */
+                if (PFprop_set (n->prop))
+                    PFarray_printf (dot, "\\nset"); 
+            }
+            if (*fmt == '+' || *fmt == 'L') {
+                /* print columns that have a level information attached */
+                bool first = true;
+                for (unsigned int i = 0; i < n->schema.count; i++) {
+                    PFalg_att_t att = n->schema.items[i].name;
+                    int level = PFprop_level (n->prop, att);
+                    if (level >= 0) {
+                        PFarray_printf (
+                            dot,
+                            "%s %s=%i",
+                            first ? "\\nlevel:" : ",",
+                            PFatt_str (att),
+                            level);
+                        first = false;
+                    }
+                }
+            }
+            if (*fmt == '+' || *fmt == 'U') {
+                PFguide_tree_t **guides;
+                PFalg_att_t att;
+                unsigned int i, j, count;
+                bool first = true;
+                
+                for (i = 0; i < n->schema.count; i++) {
+                    att = n->schema.items[i].name;
+                    if (PFprop_guide (n->prop, att)) {
+                    
+                        PFarray_printf (dot, "%s %s:", 
+                                        first ? "\\nGUIDE:" : ",",
+                                        PFatt_str(att));
+                        first = false;
+                        
+                        /* print guides */
+                        count  = PFprop_guide_count (n->prop, att);
+                        guides = PFprop_guide_elements (n->prop, att);
+                        for (j = 0; j < count; j++)
+                            PFarray_printf (dot, " %i", guides[j]->guide);
+                    }
+                }
+            }
+            if (*fmt == '+' || *fmt == 'Y') {
+                if (PFprop_ckeys_count (n->prop)) {
+                    PFalg_attlist_t list;
+                    unsigned int i, j;
+                    bool first = true;
+                    
+                    PFarray_printf (dot, "\\ncomposite keys:");
+
+                    for (i = 0; i < PFprop_ckeys_count (n->prop); i++) {
+                        list = PFprop_ckey_at (n->prop, i);
+                        first = true;
+                        for (j = 0; j < list.count; j++) {
+                            PFarray_printf (dot, "%s%s",
+                                            first ? "\\n<" : ", ",
+                                            PFatt_str(list.atts[j]));
+                            first = false;
+                        }
+                        PFarray_printf (dot, ">");
+                    }
+                } 
+            }
+            if (*fmt == '+' || *fmt == 'c') {
+                PFarray_printf (dot, "\\ncost: %lu", n->cost);
+            }
+            if (*fmt == '+' || *fmt == 'o') {
                 PFarray_printf (dot, "\\norderings:");
                 for (unsigned int i = 0;
                         i < PFarray_last (n->orderings); i++)
@@ -875,34 +1053,13 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, unsigned int node_id)
                             PFord_str (
                                 *(PFord_ordering_t *)
                                         PFarray_at (n->orderings,i)));
-
-                all = true;
             }
-            fmt++;
-        }
-        fmt = PFstate.format;
 
-        while (!all && *fmt) {
-            switch (*fmt) {
-
-                /* list costs if requested */
-                case 'c':
-                    PFarray_printf (dot, "\\ncost: %lu", n->cost);
-                    break;
-
-                /* list orderings if requested */
-                case 'o':
-                    PFarray_printf (dot, "\\norderings:");
-                    for (unsigned int i = 0;
-                            i < PFarray_last (n->orderings); i++)
-                        PFarray_printf (
-                                dot, "\\n%s",
-                                PFord_str (
-                                    *(PFord_ordering_t *)
-                                            PFarray_at (n->orderings,i)));
-                    break;
-            }
-            fmt++;
+            /* stop after all properties have been printed */
+            if (*fmt == '+')
+                break;
+            else
+                fmt++;
         }
     }
 

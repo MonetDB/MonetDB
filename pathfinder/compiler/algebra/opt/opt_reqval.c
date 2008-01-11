@@ -76,19 +76,19 @@ opt_reqvals (PFla_op_t *p)
     for (unsigned int i = 0; i < p->schema.count; i++) {
         PFalg_att_t cur_att = p->schema.items[i].name;
 
-        if (PFprop_reqval (p->prop, cur_att) &&
+        if (PFprop_req_bool_val (p->prop, cur_att) &&
             PFprop_const (p->prop, cur_att) &&
             (PFprop_const_val (p->prop, cur_att)).val.bln !=
-             PFprop_reqval_val (p->prop, cur_att)) {
+             PFprop_req_bool_val_val (p->prop, cur_att)) {
             /* create an empty table instead */
             *p = *PFla_empty_tbl_ (p->schema);
             return;
         }
 
-        if (PFprop_reqval (p->prop, cur_att)) {
+        if (PFprop_req_bool_val (p->prop, cur_att)) {
             count++;
             att = cur_att;
-            val = PFprop_reqval_val (p->prop, cur_att);
+            val = PFprop_req_bool_val_val (p->prop, cur_att);
         }
 
     }
@@ -130,6 +130,12 @@ opt_reqvals (PFla_op_t *p)
         }
     }
 
+    /* replace rowrank operators whose real values
+       are not needed by rank operators */
+    if (p->kind == la_rowrank &&
+        PFprop_req_distr_col (p->prop, p->sem.sort.res))
+        *p = *PFla_rank (L(p), p->sem.sort.res, p->sem.sort.sortby);
+                
     /* infer properties for children */
     for (unsigned int i = 0; i < PFLA_OP_MAXCHILD && p->child[i]; i++)
         opt_reqvals (p->child[i]);
