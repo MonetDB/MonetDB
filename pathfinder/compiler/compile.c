@@ -131,6 +131,8 @@ PFstate_t PFstate = {
     .timing              = false,
     .print_dot           = false,
     .print_xml           = false,
+    .import_xml          = false,
+    .import_xml_filename = NULL,
     .print_pretty        = false,
     .stop_after          = 0,
     .print_types         = false,
@@ -582,12 +584,12 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
     if (status->timing)
         PFlog ("logical algebra tree generation:\t %s", PFtimer_str (tm));
 
-    STOP_POINT(16);
-
 /*******************************************/
 /* Merge point logical algebra XML import. */
 /*******************************************/
 AFTER_CORE2ALG:
+
+    STOP_POINT(16);
 
     /*
      * Rewrite/optimize algebra tree
