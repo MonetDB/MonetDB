@@ -652,7 +652,7 @@ main (int argc, char *argv[])
                                      "e:f:Shlo:pqrs:t", 
                          long_options, &option_index);
 #else
-        c = getopt (argc, argv, "ADHMO::PTXabc"
+        c = getopt (argc, argv, "ADHIMO::PTXabc"
 #ifndef NDEBUG
                                 "d:"
 #endif
@@ -815,7 +815,6 @@ main (int argc, char *argv[])
                 printf ("Enjoy.\n");
                 exit (0);
 
-
             case 'I':
                 status->import_xml = true;
                 status->import_xml_filename = NULL;
@@ -894,8 +893,6 @@ main (int argc, char *argv[])
                                                     + strlen (optarg) +1);
                     strcat (status->format, optarg);
                 }
-
-                PFinfo (OOPS_NOTICE, "format: `%s'", status->format);
                 break;
 
             case 'h':
@@ -948,9 +945,6 @@ main (int argc, char *argv[])
             case 'o':
                 explicit_opt = true;
                 status->opt_alg = PFstrdup (optarg);
-                PFinfo (OOPS_NOTICE, 
-                        "optimization options: `%s'", 
-                        status->opt_alg);
                 break;
 
             case 'q':
