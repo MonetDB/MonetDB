@@ -46,6 +46,7 @@ enum PFsql_special_t {
     , sql_col_nameid
     , sql_col_value
     , sql_col_name
+    , sql_col_namespace
     , sql_col_twig_pre
     , sql_col_iter
     , sql_col_pos
