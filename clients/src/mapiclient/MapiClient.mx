@@ -1044,6 +1044,7 @@ doFile(Mapi mid, const char *file)
 	MapiHdl hdl = NULL;
 	MapiMsg rc = MOK;
 	int bufsize = 0;
+	int xquery_sep = 0;    /* we saw an XQuery separator (<>\n) */
 
 	if (file == NULL)
 		fp = stdin;
@@ -1064,7 +1065,24 @@ doFile(Mapi mid, const char *file)
 	timerStart();
 	do {
 		timerPause();
-		if ((length = fread(buf, 1, bufsize, fp)) == 0) {
+		if (mode == XQUERY) {
+			/* In XQuery mode we must read one line at a
+			   time so that we can stop when we encounter
+			   a line with just "<>" on it. */
+			if (fgets(buf, bufsize, fp) == NULL) {
+				/* end of file */
+				if (file != NULL) {
+					fclose(fp);
+					file = NULL;
+				}
+				length = 0;
+				if (hdl == NULL)
+					break;  /* nothing more to do */
+			} else {
+				length = strlen(buf);
+				xquery_sep = length >= 3 && buf[0] == '<' && buf[1] == '>' && (buf[2] == '\n' || buf[2] == '\r');
+			}
+		} else if ((length = fread(buf, 1, bufsize, fp)) == 0) {
 			/* end of file */
 			if (file != NULL) {
 				fclose(fp);
@@ -1079,34 +1097,14 @@ doFile(Mapi mid, const char *file)
 			hdl = mapi_query_prep(mid);
 			CHECK_RESULT(mid, hdl, buf, continue);
 		}
-		if (length > 0) {
-			char *xquery_sep = buf;
-
+		if (length > 0 && !xquery_sep) {
 			assert(hdl != NULL);
-
-			if (mode == XQUERY) {
-				/* support <>\n xquery separator in file mode 
-				   (must be at start of line) */
-				while (xquery_sep) {
-					xquery_sep = strstr(xquery_sep + 1, "<>");
-					if (xquery_sep && (xquery_sep[-1] == '\n' || xquery_sep[-1] == '\r')) {
-						char *next = xquery_sep + 2;
-
-						while (*next && isspace(*next))
-							next++;
-						fseek(fp, next - (buf + length), SEEK_CUR);
-						length = xquery_sep - buf;
-						buf[length] = 0;
-						break;
-					}
-				}
-			}
 
 			mapi_query_part(hdl, buf, length);
 			CHECK_RESULT(mid, hdl, buf, continue);
 
-			/* in case of xquery; do the whole file in one go */
-			if (xquery_sep == NULL && !feof(fp))
+			/* in case of XQuery; do the whole file in one go */
+			if (mode == XQUERY)
 				continue;
 		}
 
