@@ -342,6 +342,12 @@
 /* Define if the compiler supports the __restrict__ keyword */
 /* #undef HAVE___RESTRICT__ */
 
+/* Do we have the SAX2.h header file available, and hence SAX2 support in
+   libxml2? */
+#ifdef HAVE_LIBXML2
+#define HAVE_SAX2 1
+#endif
+
 /* Define to 1 if you have the `sbrk' function. */
 /* #undef HAVE_SBRK */
 
