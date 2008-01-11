@@ -8,6 +8,7 @@ DB2=`which db2`
 DEBUG=0
 
 TAB_NAMES="names"
+TAB_URIS="uris"
 TAB_DOC="doc"
 TAB_XMLDOC="xmldoc"
 
@@ -109,12 +110,13 @@ function print_help () {
     out -e "<schema>:\tName of the Schema the content should be placed/removed."
     out -e "<enc_file>:\tEncoded XML-Document"
     out -e "<name_file>:\tEncoded Name-File "
+    out -e "<uri_file>:\tEncoded Namespace-File"
 }
 
 ################################################
 # MAIN
 
-if [ $# -ne 4 ]; then
+if [ $# -ne 5 ]; then
     print_help;
     exit 0;
 fi     
@@ -123,6 +125,7 @@ DATABASE=${1}
 SCHEMA=${2}
 LFILE=${3}
 NFILE=${4}
+UFILE=${5}
 
 ${DB2} "connect to ${DATABASE}"
 EFLAG=${?}
@@ -133,6 +136,10 @@ test ${EFLAG} -ne 0 && exit 1;
 load_table "${NFILE}" "${SCHEMA}" "${TAB_NAMES}";
 EFLAG=${?};
 out -ne "Loading ${SCHEMA}.${TAB_NAMES} ... "; fail ${EFLAG};
+
+load_table "${UFILE}" "${SCHEMA}" "${TAB_URIS}";
+EFLAG=${?};
+out -ne "Loading ${SCHEMA}.${TAB_URS} ... "; fail ${EFLAG};
 
 load_table ${LFILE} "${SCHEMA}" "${TAB_DOC}";
 EFLAG=${?};

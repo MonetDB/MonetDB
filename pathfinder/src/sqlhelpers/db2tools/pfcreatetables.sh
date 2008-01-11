@@ -8,6 +8,7 @@ DB2=`which db2`
 DEBUG=0
 
 TAB_NAMES="names"
+TAB_URIS="uris"
 TAB_DOC="doc"
 TAB_XMLDOC="xmldoc"
 
@@ -86,15 +87,37 @@ EOT
     return ${EFLAG}
 }
 
+function create_uris {
+    #check parameter list
+    if [ ${#} -ne 2]; then
+       error "Usage: ${0} <schema> <tabname>"
+    fi
+
+    SCHEMA=${1}
+    TABNAME=${2}
+
+    # set schema to ours
+    ${DB2} "set current schema ${SCHEMA}"
+
+    # create the uris-table
+    ${DB2} -t<<EOT
+CREATE TABLE ${TABNAME}(uriid INT NOT NULL PRIMARY KEY,
+                   uri    VARCHAR(100) NOT NULL);
+EOT
+    EFLAG=${?}
+    return ${EFLAG}
+}
+
 function create_doc {
     #check parameter list
-    if [ ${#} -ne 3 ]; then
-        error "Usage: ${0} <schema> <tabname> <namesname>"
+    if [ ${#} -ne 4 ]; then
+        error "Usage: ${0} <schema> <tabname> <namesname> <urisname>"
     fi
 
     SCHEMA=${1}
     TABNAME=${2}
     NAMESNAME=${3}
+    URISNAME=${4}
 
     ${DB2} "set current schema ${SCHEMA}"
     
@@ -106,8 +129,10 @@ CREATE TABLE ${TABNAME}(pre INT NOT NULL PRIMARY KEY,
                  nameid INT,
                  value VARCHAR(100),
                  guide INT NOT NULL,
+                 uriid  INT,
                  pre_plus_size INT GENERATED ALWAYS AS (pre + size),
-                 FOREIGN KEY (nameid) references ${NAMESNAME}(nameid));
+                 FOREIGN KEY (nameid) REFERENCES ${NAMESNAME}(nameid),
+                 FOREIGN KEY (uriid)  REFERENCES ${URISNAME}(uriid));
 EOT
     EFLAG=${?}
     return ${EFLAG}
@@ -115,26 +140,30 @@ EOT
 
 function create_xmldoc {
     #check parameter list
-    if [ ${#} -ne 4 ]; then
-        error "Usage: ${0} <schema> <tabname> <docname> <namesname>"
+    if [ ${#} -ne 5 ]; then
+        error "Usage: ${0} <schema> <tabname> <docname> <namesname> <urisname>"
     fi
 
     SCHEMA=${1}
     TABNAME=${2}
     DOCNAME=${3}
-    NAMENAME=${4}
+    NAMESNAME=${4}
+    URISNAME=${5}
 
     ${DB2} "set current schema ${SCHEMA}"
 
     ${DB2} -t<<EOT
 CREATE VIEW ${TABNAME}(pre, size, level, kind, guide,
-                   nameid, value, name) AS
+                       value, name, uri, nameid, uriid) AS
 (SELECT pre, size, level, kind, guide,
-        doc.nameid, value, name
+        value, name, uri, doc.nameid, doc.uriid
    FROM ${DOCNAME} AS doc
         LEFT OUTER JOIN
         ${NAMESNAME} AS names
-          ON doc.nameid = names.nameid);
+          ON doc.nameid = names.nameid
+        LEFT OUTER JOIN
+        ${URISNAME} AS uris
+          ON doc.uriid = uris.uriid);
 EOT
     EFLAG=${?}
     return ${EFLAG}
@@ -161,6 +190,20 @@ function drop_names {
 
     ${DB2} "set current schema ${SCHEMA}"
     drop_table "${TAB_NAMES}" 
+    EFLAG=${?}
+    return ${EFLAG}
+}
+
+function drop_uris {
+    #check parameter list
+    if [ ${#} -ne 1 ]; then
+        error "Usage: ${0} <schema>"
+    fi
+
+    SCHEMA=${1}
+
+    ${DB2} "set current schema ${SCHEMA}"
+    drop_table "${TAB_URIS}" 
     EFLAG=${?}
     return ${EFLAG}
 }
@@ -230,11 +273,15 @@ case ${OPTION} in
            EFLAG=${?};
            out -ne "Creating ${SCHEMA}.${TAB_NAMES} ... "; fail ${EFLAG};
 
-           create_doc ${SCHEMA} ${TAB_DOC} ${TAB_NAMES};
+           create_uris ${SCHEMA} ${TAB_URIS};
+           EFLAG=${?};
+           out -ne "Creating ${SCHEMA}.${TAB_URIS} ... "; fail ${EFLAG};
+
+           create_doc ${SCHEMA} ${TAB_DOC} ${TAB_NAMES} ${TAB_URIS};
            EFLAG=${?};
            out -ne "Creating ${SCHEMA}.${TAB_DOC} ... "; fail ${EFLAG};
 
-           create_xmldoc ${SCHEMA} ${TAB_XMLDOC} ${TAB_DOC} ${TAB_NAMES};
+           create_xmldoc ${SCHEMA} ${TAB_XMLDOC} ${TAB_DOC} ${TAB_NAMES} ${TAB_URIS};
            EFLAG=${?};
            out -ne "Creating ${SCHEMA}.${TAB_XMLDOC} ... "; fail ${EFLAG};
            ;;
@@ -250,6 +297,10 @@ case ${OPTION} in
            drop_names ${SCHEMA}
            EFLAG=${?}
            out -ne "Dropping ${SCHEMA}.${TAB_NAMES} ... "; fail ${EFLAG};
+
+           drop_uris ${SCHEMA}
+           EFLAG=${?}
+           out -ne "Dropping ${SCHEMA}.${TAB_URIS} ... "; fail ${EFLAG};
            ;;
    *)      print_help; 
            exit 1;
