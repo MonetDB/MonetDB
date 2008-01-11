@@ -24,7 +24,7 @@ gdk_scanselect_CFLAGS = $(NO_INLINE_CFLAGS)
 lib_gdk = { 
 	NAME = bat
 	SOURCES = \
-		gdk_scanselect.mx gdk.mx gdk_batop.mx gdk_desc.mx \
+		gdk_scanselect.mx gdk_scanselect_defs.mx gdk.mx gdk_batop.mx gdk_desc.mx \
 		gdk_search.mx gdk_tm.mx gdk_align.mx gdk_bbp.mx \
 		gdk_heap.mx gdk_setop.mx gdk_utils.mx gdk_atoms.mx \
 		gdk_qsort.mx gdk_ssort.mx gdk_storage.mx gdk_bat.mx \

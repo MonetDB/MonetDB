@@ -21,8 +21,10 @@
 This module provides BAT_scanselect, used by gdk_batop.mx's BAT_select to do
 selections that cannot be done any better than doing a sequential scan. The
 function needed to be "sourced-out" from gdk_batop.mx, as the fully expanded
-code grows to large to be (conveniently) compiled in a single file (see
-below).
+code grows too large to be (conveniently) compiled in a single file (see
+below).  This file is accompanied by gdk_scanselect_defs.mx where the
+worker functions are defined that are called from the dispatcher which
+is definend in this file.
 
 @+ Background and Idea
 In tests with Q1 of TPC-H showed, a range select that produces a big result
@@ -377,6 +379,7 @@ BAT *BAT_scanselect(BAT *b, BAT *bn, ptr tl, ptr th, bit li, bit hi, int equi, i
 #define SKIP_TYPE_EXPANSIONS
 #endif
 #include "gdk_scanselect.h"
+#include "gdk_scanselect_defs.h"
 
 @-
 With all the expansions enabled, (our) GNU compiler (gcc 3.2.1)
@@ -446,48 +449,6 @@ input BAT, or not (see BAT_select in gdk_batop.mx). In the first case
 	    otherwise it's empty
 */
 
-@= DEFseqscan
-/* Parameter "str_idx" is only used to hand-over the integer index for
- * equi-str-selects.
- */
-static BAT *
-seqscan_@1_@2_@3_@6_@7_nocheck_noinc(BAT* b, BAT* bn, ptr tl, ptr th, var_t str_idx)
-{
-	BATiter bi = bat_iterator(b);
-	REGISTER BUN _p = BUNlast(bn);
-	@:seqscanPrologue@
-	ALGODEBUG THRprintf(GDKout, "#seqscan_@1_@2_@3_@6_@7_nocheck_noinc[@4,@5,@8,@9](b=%s, bn=%s, tl, th, oid_ctr=" SZFMT ", str_idx=" SZFMT ");\n",
-				    BATgetId(b), BATgetId(bn), (size_t) oid_ctr, (size_t) str_idx);
-	BATloop(b, p, q) {
-		ptr v = BUN@3(bi, p);
-
-		@4 {
-			@7@2_bunfastins_nocheck_noinc(bn, _p, @8, @5);
-			_p++;
-		}
-		@9
-	}
-	BATsetcount(bn, _p);
-	@:seqscanEpilogue@
-}
-
-static BAT *
-seqscan_@1_@2_@3_@6_@7(BAT* b, BAT* bn, ptr tl, ptr th, var_t str_idx)
-{
-	BATiter bi = bat_iterator(b);
-	@:seqscanPrologue@
-	ALGODEBUG THRprintf(GDKout, "#seqscan_@1_@2_@3_@6_@7[@4,@5,@8,@9](b=%s, bn=%s, tl, th, oid_ctr=" SZFMT ", str_idx=" SZFMT ");\n",
-			    BATgetId(b), BATgetId(bn), (size_t) oid_ctr, (size_t) str_idx);
-	BATloop(b, p, q) {
-		ptr v = BUN@3(bi, p);
-
-		@4 {
-			@7@2_bunfastins(bn, @8, @5);
-		}
-		@9
-	}
-	@:seqscanEpilogue@
-}
 @= seqscan
 	if (nocheck) {
 		return seqscan_@1_@2_@3_@6_@7_nocheck_noinc(b, bn, tl, th, str_idx);
@@ -517,9 +478,6 @@ Output-tail-type is either identical to input-tail-type or TYPE_void
 	    ("oid_ctr++;"),
 	    otherwise it's empty
 */
-@= DEFseqscanTTput
-	@:DEFseqscan(@1,void,@3,@4,@5,@6,@7,@8,@9)@
-	@:DEFseqscan(@1,@2,@3,@4,@5,@6,@7,@8,@9)@
 @= seqscanTTput
 	if (bn->ttype == TYPE_void) {
 		@:seqscan(@1,void,@3,@4,@5,@6,@7,@8,@9)@
@@ -548,26 +506,6 @@ Expand on output-head-type; usually inherited from input-head-type.
 	    ("oid_ctr++;"),
 	    otherwise it's empty
 */
-@= DEFseqscanHTput
-#ifndef SKIP_TYPE_EXPANSIONS
-#ifndef NOEXPAND_CHR
-	@:DEFseqscanTTput(@1,@2,@3,@4,@5,chr,chr,BUNhloc(bi,p),)@
-#endif	/* NOEXPAND_CHR */
-#ifndef NOEXPAND_BTE
-	@:DEFseqscanTTput(@1,@2,@3,@4,@5,bte,bte,BUNhloc(bi,p),)@
-#endif	/* NOEXPAND_CHR */
-#ifndef NOEXPAND_SHT
-	@:DEFseqscanTTput(@1,@2,@3,@4,@5,sht,sht,BUNhloc(bi,p),)@
-#endif	/* NOEXPAND_SHT */
-#ifndef NOEXPAND_INT
-	@:DEFseqscanTTput(@1,@2,@3,@4,@5,int,int,BUNhloc(bi,p),)@
-#endif	/* NOEXPAND_INT */
-#ifndef NOEXPAND_LNG
-	@:DEFseqscanTTput(@1,@2,@3,@4,@5,lng,lng,BUNhloc(bi,p),)@
-#endif	/* NOEXPAND_LNG */
-#endif	/* SKIP_TYPE_EXPANSIONS */
-	@:DEFseqscanTTput(@1,@2,@3,@4,@5,fix,fix,BUNhloc(bi,p),)@
-	@:DEFseqscanTTput(@1,@2,@3,@4,@5,var,var,BUNhvar(bi,p),)@
 @= seqscanHTput
 #ifndef SKIP_TYPE_EXPANSIONS
 #ifndef NOEXPAND_CHR
@@ -616,10 +554,6 @@ Taking special care of void/oid.
 	@5: the tail to be store, being either the tail read ("v")
 	    or in case of equi-str-select the search string ("tl")
 */
-@= DEFseqscanHTget
-	@:DEFseqscan(@1,@2,@3,@4,@5,void,void,&oid_ctr,)@
-	@:DEFseqscanTTput(@1,@2,@3,@4,@5,oid,vid,oid_ctr,oid_ctr++;)@
-	@:DEFseqscanHTput(@1,@2,@3,@4,@5)@
 @= seqscanHTget
 	if (BAThvoid(b)) {
 		/* input-head is void. we decide here, whether output-head
@@ -657,17 +591,6 @@ In case of a range select we skip all nil.
 	    as then @4_LE(tl ,v,@5) with tl != nil (i.e., tl > nil) already
 	    ensures v != nil
 */
-@= DEFseqscanIF
-	@:DEFseqscanHTget(eq_@1,@2,@3,if ( @4_EQ(tl ,v,@5)                      ),v)@
-	@:DEFseqscanHTget(LH_@1,@2,@3,if ( @4_LE(tl ,v,@5) && @4_LE(v,th,@5) @6 ),v)@
-	@:DEFseqscanHTget(Lh_@1,@2,@3,if ( @4_LE(tl ,v,@5) && @4_LT(v,th,@5) @6 ),v)@
-	@:DEFseqscanHTget(lH_@1,@2,@3,if ( @4_LT(tl ,v,@5) && @4_LE(v,th,@5) @6 ),v)@
-	@:DEFseqscanHTget(lh_@1,@2,@3,if ( @4_LT(tl ,v,@5) && @4_LT(v,th,@5) @6 ),v)@
-	@:DEFseqscanHTget(Ln_@1,@2,@3,if ( @4_LE(tl ,v,@5)                   @6 ),v)@
-	@:DEFseqscanHTget(ln_@1,@2,@3,if ( @4_LT(tl ,v,@5)                   @6 ),v)@
-	@:DEFseqscanHTget(nH_@1,@2,@3,if (!@4_EQ(nil,v,@5) && @4_LE(v,th,@5)    ),v)@
-	@:DEFseqscanHTget(nh_@1,@2,@3,if (!@4_EQ(nil,v,@5) && @4_LT(v,th,@5)    ),v)@
-	@:DEFseqscanHTget(nn_@1,@2,@3,if (!@4_EQ(nil,v,@5)                      ),v)@
 @= seqscanIF
 	if (equi) {
 		@:seqscanHTget(eq_@1,@2,@3,if ( @4_EQ(tl ,v,@5)                      ),v)@
@@ -707,33 +630,6 @@ Taking special care of equi selects on str when there are no doubles in the
 heap.
 Adding test for v != nil for types where nil != MIN.
 
-@= DEFseqscanTTget
-#ifndef SKIP_TYPE_EXPANSIONS
-#ifndef NOEXPAND_CHR
-	@:DEFseqscanIF(chr,chr,tloc,simple,chr,)@
-#endif
-#ifndef NOEXPAND_BTE
-	@:DEFseqscanIF(bte,bte,tloc,simple,bte,)@
-#endif
-#ifndef NOEXPAND_SHT
-	@:DEFseqscanIF(sht,sht,tloc,simple,sht,)@
-#endif
-#ifndef NOEXPAND_INT
-	@:DEFseqscanIF(int,int,tloc,simple,int,)@
-#endif
-#ifndef NOEXPAND_FLT
-	@:DEFseqscanIF(flt,int,tloc,simple,flt,)@
-#endif
-#ifndef NOEXPAND_DBL
-	@:DEFseqscanIF(dbl,lng,tloc,simple,dbl,)@
-#endif
-#ifndef NOEXPAND_LNG
-	@:DEFseqscanIF(lng,lng,tloc,simple,lng,)@
-#endif
-#endif	/* SKIP_TYPE_EXPANSIONS */
-	@:DEFseqscanHTget(eq_str,var,tloc,if(*(var_t*)v==str_idx),tl)@
-	@:DEFseqscanIF(fix,fix,tloc,atom,t,&&!atom_EQ(nil,v,t))@
-	@:DEFseqscanIF(var,var,tvar,atom,t,&&!atom_EQ(nil,v,t))@
 @= seqscanTTget
 #ifndef SKIP_TYPE_EXPANSIONS
 #ifndef NOEXPAND_CHR
@@ -788,12 +684,6 @@ Adding test for v != nil for types where nil != MIN.
 	} else {
 		@:seqscanIF(fix,fix,tloc,atom,t,&&!atom_EQ(nil,v,t))@
 	}
-@-
-
-Generate all working functions.
-
-@c
-@:DEFseqscanTTget@
 @-
 
 The dispatcher, called from BAT_select (gdk_batop.mx).

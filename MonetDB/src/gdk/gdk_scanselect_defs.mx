@@ -1,0 +1,302 @@
+@' The contents of this file are subject to the MonetDB Public License
+@' Version 1.1 (the "License"); you may not use this file except in
+@' compliance with the License. You may obtain a copy of the License at
+@' http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+@'
+@' Software distributed under the License is distributed on an "AS IS"
+@' basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+@' License for the specific language governing rights and limitations
+@' under the License.
+@'
+@' The Original Code is the MonetDB Database System.
+@'
+@' The Initial Developer of the Original Code is CWI.
+@' Portions created by CWI are Copyright (C) 1997-2007 CWI.
+@' All Rights Reserved.
+
+@f gdk_scanselect_defs
+@a S. Manegold, N. J. Nes, M. L. Kersten, P. Boncz
+@c
+#include "monetdb_config.h"
+#include "gdk.h"
+
+#if defined(__sgi) && defined(__GNUC__) && (SIZEOF_VOID_P == 8)
+#define SKIP_TYPE_EXPANSIONS
+#endif
+#include "gdk_scanselect.h"
+
+@-
+The structure of this file closely follows the structure of
+gdk_scanselect.mx.  This file contains the many functions that are
+created for scanselect, whereas the file gdk_scanselect.mx contains the
+calls to these functions.
+@c
+
+@- The actual BAT_scanselect
+
+@= seqscanPrologue
+	BUN p,q;
+	int t = b->ttype;
+	ptr nil = ATOMnilptr(t);
+	oid oid_ctr = b->hseqbase - BUNfirst(b);
+
+	(void) nil;
+	(void) tl;
+	(void) th;
+	(void) oid_ctr;
+@= seqscanEpilogue
+	if (!bn->batDirty)
+		bn->batDirty = TRUE;
+	
+	/* Just to silence compilers (Intel's icc) that otherwise might
+	 * complain about "declared but never referenced" labels
+	 * (condition should never be true).
+	 * (A "dead" goto between the return and the label makes (other)
+	 * compilers (Sun) complain about never reached code...)
+	 */
+	if (!bn)
+		goto bunins_failed;
+	return bn;
+
+bunins_failed:
+	BBPreclaim(bn);
+	return NULL;
+@c
+
+@-
+The templates for the inner loops that do the actual work.
+
+Expanding on whether we created the result BAT (at least) as big as the
+input BAT, or not (see BAT_select in gdk_batop.mx). In the first case
+("nocheck"), we do not have to check for a "BAT overflow" in the inner loop.
+
+@c
+/*	@1: input-tail-type for working function name,
+	    prefixed with predicate type (eq,lh,ln,nl,nn)
+	@2: output-tail-type for bunfastins macro name
+	@3: "tloc" / "tvar" specifying how to read the tail-input
+	@4: the predicate
+	@5: the tail to be store, being either the tail read ("v")
+	    or in case of equi-str-select the search string ("tl")
+	@6: input-head-type for working function name
+	@7: output-head-type for bunfastins macro name
+	@8: how to access the head-input: "BUNhloc(bi,p)", "BUNhvar(bi,p)",
+	    or the oid counter ("&oid_ctr") in case we generate a void/oid
+	    output-head from a void input-head
+	@9: in case we generate a void/oid output-head from a void
+	    input-head, this is the statement to inc the oid counter
+	    ("oid_ctr++;"),
+	    otherwise it's empty
+*/
+
+@= DEFseqscan_c
+/* Parameter "str_idx" is only used to hand-over the integer index for
+ * equi-str-selects.
+ */
+BAT *
+seqscan_@1_@2_@3_@6_@7_nocheck_noinc(BAT* b, BAT* bn, ptr tl, ptr th, var_t str_idx)
+{
+	BATiter bi = bat_iterator(b);
+	REGISTER BUN _p = BUNlast(bn);
+	@:seqscanPrologue@
+	ALGODEBUG THRprintf(GDKout, "#seqscan_@1_@2_@3_@6_@7_nocheck_noinc[@4,@5,@8,@9](b=%s, bn=%s, tl, th, oid_ctr=" SZFMT ", str_idx=" SZFMT ");\n",
+				    BATgetId(b), BATgetId(bn), (size_t) oid_ctr, (size_t) str_idx);
+	BATloop(b, p, q) {
+		ptr v = BUN@3(bi, p);
+
+		@4 {
+			@7@2_bunfastins_nocheck_noinc(bn, _p, @8, @5);
+			_p++;
+		}
+		@9
+	}
+	BATsetcount(bn, _p);
+	@:seqscanEpilogue@
+}
+
+BAT *
+seqscan_@1_@2_@3_@6_@7(BAT* b, BAT* bn, ptr tl, ptr th, var_t str_idx)
+{
+	BATiter bi = bat_iterator(b);
+	@:seqscanPrologue@
+	ALGODEBUG THRprintf(GDKout, "#seqscan_@1_@2_@3_@6_@7[@4,@5,@8,@9](b=%s, bn=%s, tl, th, oid_ctr=" SZFMT ", str_idx=" SZFMT ");\n",
+			    BATgetId(b), BATgetId(bn), (size_t) oid_ctr, (size_t) str_idx);
+	BATloop(b, p, q) {
+		ptr v = BUN@3(bi, p);
+
+		@4 {
+			@7@2_bunfastins(bn, @8, @5);
+		}
+		@9
+	}
+	@:seqscanEpilogue@
+}
+@= DEFseqscan_h
+BAT *seqscan_@1_@2_@3_@6_@7_nocheck_noinc(BAT* b, BAT* bn, ptr tl, ptr th, var_t str_idx);
+BAT *seqscan_@1_@2_@3_@6_@7(BAT* b, BAT* bn, ptr tl, ptr th, var_t str_idx);
+@= DEFseqscan
+@:DEFseqscan_@[10](@1,@2,@3,@4,@5,@6,@7,@8,@9)@
+@-
+
+Output-tail-type is either identical to input-tail-type or TYPE_void
+(uselect).
+
+@c
+/*	@1: input-tail-type for working function name,
+	    prefixed with predicate type (eq,lh,ln,nl,nn)
+	@2: output-tail-type for bunfastins macro name
+	@3: "tloc" / "tvar" specifying how to read the tail-input
+	@4: the predicate
+	@5: the tail to be store, being either the tail read ("v")
+	    or in case of equi-str-select the search string ("tl")
+	@6: input-head-type for working function name
+	@7: output-head-type for bunfastins macro name
+	@8: how to access the head-input: "BUNhloc(bi,p)", "BUNhvar(bi,p)",
+	    or the oid counter ("&oid_ctr") in case we generate a void/oid
+	    output-head from a void input-head
+	@9: in case we generate a void/oid output-head from a void
+	    input-head, this is the statement to inc the oid counter
+	    ("oid_ctr++;"),
+	    otherwise it's empty
+	@[10]: c/h
+*/
+@= DEFseqscanTTput
+	@:DEFseqscan(@1,void,@3,@4,@5,@6,@7,@8,@9,@[10])@
+	@:DEFseqscan(@1,@2,@3,@4,@5,@6,@7,@8,@9,@[10])@
+@-
+
+Expand on output-head-type; usually inherited from input-head-type.
+
+@c
+/*	@1: input-tail-type for working function name,
+	    prefixed with predicate type (eq,lh,ln,nl,nn)
+	@2: output-tail-type for bunfastins macro name
+	@3: "tloc" / "var" specifying how to read the tail-input
+	@4: the predicate
+	@5: the tail to be store, being either the tail read ("v")
+	    or in case of equi-str-select the search string ("tl")
+	@6: input-head-type for working function name
+	@7: output-head-type for bunfastins macro name
+	@8: how to access the head-input: "BUNhloc(bi,p)", "BUNhvar(bi,p)",
+	    or the oid counter ("&oid_ctr") in case we generate a void/oid
+	    output-head from a void input-head
+	@9: in case we generate a void/oid output-head from a void
+	    input-head, this is the statement to inc the oid counter
+	    ("oid_ctr++;"),
+	    otherwise it's empty
+	@[10]: c/h
+*/
+@= DEFseqscanHTput
+#ifndef SKIP_TYPE_EXPANSIONS
+#ifndef NOEXPAND_CHR
+	@:DEFseqscanTTput(@1,@2,@3,@4,@5,chr,chr,BUNhloc(bi,p),,@[10])@
+#endif	/* NOEXPAND_CHR */
+#ifndef NOEXPAND_BTE
+	@:DEFseqscanTTput(@1,@2,@3,@4,@5,bte,bte,BUNhloc(bi,p),,@[10])@
+#endif	/* NOEXPAND_CHR */
+#ifndef NOEXPAND_SHT
+	@:DEFseqscanTTput(@1,@2,@3,@4,@5,sht,sht,BUNhloc(bi,p),,@[10])@
+#endif	/* NOEXPAND_SHT */
+#ifndef NOEXPAND_INT
+	@:DEFseqscanTTput(@1,@2,@3,@4,@5,int,int,BUNhloc(bi,p),,@[10])@
+#endif	/* NOEXPAND_INT */
+#ifndef NOEXPAND_LNG
+	@:DEFseqscanTTput(@1,@2,@3,@4,@5,lng,lng,BUNhloc(bi,p),,@[10])@
+#endif	/* NOEXPAND_LNG */
+#endif	/* SKIP_TYPE_EXPANSIONS */
+	@:DEFseqscanTTput(@1,@2,@3,@4,@5,fix,fix,BUNhloc(bi,p),,@[10])@
+	@:DEFseqscanTTput(@1,@2,@3,@4,@5,var,var,BUNhvar(bi,p),,@[10])@
+@-
+
+Expanding on input-head-type for data read.
+Taking special care of void/oid.
+
+@c
+/*	@1: input-tail-type for working function name,
+	    prefixed with predicate type (eq,lh,ln,nl,nn)
+	@2: output-tail-type for bunfastins macro name
+	@3: "tloc" / "tvar" specifying how to read the tail-input
+	@4: the predicate
+	@5: the tail to be store, being either the tail read ("v")
+	    or in case of equi-str-select the search string ("tl")
+	@6: c/h
+*/
+@= DEFseqscanHTget
+	@:DEFseqscan(@1,@2,@3,@4,@5,void,void,&oid_ctr,,@6)@
+	@:DEFseqscanTTput(@1,@2,@3,@4,@5,oid,vid,oid_ctr,oid_ctr++;,@6)@
+	@:DEFseqscanHTput(@1,@2,@3,@4,@5,,,,,@6)@
+@-
+
+Expanding on the type of predicate: either equi, or range.
+The latter with both, one, or none of upper bound and lower bound.
+In case of a range select we skip all nil.
+
+@c
+/*	@1: input-tail-type for working function name
+	@2: output-tail-type for bunfastins macro name
+	@3: "tloc" / "tvar" specifying how to read the tail-input
+	@4: "simple" or "atom"
+	@5: input-tail-type for comparison
+	@6: in case of range selects with lower bound on types where nil != MIN:
+		check for  v != nil
+	    otherwise
+		empty
+	    as then @4_LE(tl ,v,@5) with tl != nil (i.e., tl > nil) already
+	    ensures v != nil
+	@7: c/h
+*/
+@= DEFseqscanIF
+	@:DEFseqscanHTget(eq_@1,@2,@3,if ( @4_EQ(tl ,v,@5)                      ),v,@7)@
+	@:DEFseqscanHTget(LH_@1,@2,@3,if ( @4_LE(tl ,v,@5) && @4_LE(v,th,@5) @6 ),v,@7)@
+	@:DEFseqscanHTget(Lh_@1,@2,@3,if ( @4_LE(tl ,v,@5) && @4_LT(v,th,@5) @6 ),v,@7)@
+	@:DEFseqscanHTget(lH_@1,@2,@3,if ( @4_LT(tl ,v,@5) && @4_LE(v,th,@5) @6 ),v,@7)@
+	@:DEFseqscanHTget(lh_@1,@2,@3,if ( @4_LT(tl ,v,@5) && @4_LT(v,th,@5) @6 ),v,@7)@
+	@:DEFseqscanHTget(Ln_@1,@2,@3,if ( @4_LE(tl ,v,@5)                   @6 ),v,@7)@
+	@:DEFseqscanHTget(ln_@1,@2,@3,if ( @4_LT(tl ,v,@5)                   @6 ),v,@7)@
+	@:DEFseqscanHTget(nH_@1,@2,@3,if (!@4_EQ(nil,v,@5) && @4_LE(v,th,@5)    ),v,@7)@
+	@:DEFseqscanHTget(nh_@1,@2,@3,if (!@4_EQ(nil,v,@5) && @4_LT(v,th,@5)    ),v,@7)@
+	@:DEFseqscanHTget(nn_@1,@2,@3,if (!@4_EQ(nil,v,@5)                      ),v,@7)@
+@-
+
+Expanding on input-tail-type for data read and comparison.
+Most is straight forward.
+Taking special care of equi selects on str when there are no doubles in the
+heap.
+Adding test for v != nil for types where nil != MIN.
+
+@= DEFseqscanTTget
+#ifndef SKIP_TYPE_EXPANSIONS
+#ifndef NOEXPAND_CHR
+	@:DEFseqscanIF(chr,chr,tloc,simple,chr,,@1)@
+#endif
+#ifndef NOEXPAND_BTE
+	@:DEFseqscanIF(bte,bte,tloc,simple,bte,,@1)@
+#endif
+#ifndef NOEXPAND_SHT
+	@:DEFseqscanIF(sht,sht,tloc,simple,sht,,@1)@
+#endif
+#ifndef NOEXPAND_INT
+	@:DEFseqscanIF(int,int,tloc,simple,int,,@1)@
+#endif
+#ifndef NOEXPAND_FLT
+	@:DEFseqscanIF(flt,int,tloc,simple,flt,,@1)@
+#endif
+#ifndef NOEXPAND_DBL
+	@:DEFseqscanIF(dbl,lng,tloc,simple,dbl,,@1)@
+#endif
+#ifndef NOEXPAND_LNG
+	@:DEFseqscanIF(lng,lng,tloc,simple,lng,,@1)@
+#endif
+#endif	/* SKIP_TYPE_EXPANSIONS */
+	@:DEFseqscanHTget(eq_str,var,tloc,if(*(var_t*)v==str_idx),tl,@1)@
+	@:DEFseqscanIF(fix,fix,tloc,atom,t,&&!atom_EQ(nil,v,t),@1)@
+	@:DEFseqscanIF(var,var,tvar,atom,t,&&!atom_EQ(nil,v,t),@1)@
+@-
+
+Generate all working functions.
+
+@h
+@:DEFseqscanTTget(h)@
+@c
+@:DEFseqscanTTget(c)@
+@-
