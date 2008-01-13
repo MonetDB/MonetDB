@@ -297,7 +297,7 @@ inlineMALblock(MalBlkPtr mb, int pc, MalBlkPtr mc)
 
 		/* copy the instruction and fix variable references */
 		ns[k] = copyInstruction(q);
-		for (n = 0; n < q->argc; n++) 
+		for (n = 0; n < q->argc; n++)
 			getArg(ns[k], n) = nv[getArg(q, n)];
 
 		if (q->barrier == RETURNsymbol || q->barrier == YIELDsymbol) {

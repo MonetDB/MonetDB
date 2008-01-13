@@ -912,7 +912,7 @@ in the context of a global stack.
 						break;
 			    if( i> top || blks[i]!= decl[l] ){
 			            showScriptException(mb,pc,TYPE,
-							"'%s' used outside scope",
+							"'%s' assigned outside scope",
 							getVarName(mb,l));
 			        mb->errors++;
 			    }
