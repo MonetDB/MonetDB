@@ -730,7 +730,6 @@ BATdelete(BAT *b)
 	bat bid = ABS(b->batCacheid);
 	str o = BBP_physical(bid);
 	BAT *loaded = BBP_cache(bid);
-	int vv = (!b->htype && !b->ttype);
 
 	if (loaded) {
 		b = loaded;
@@ -750,14 +749,14 @@ BATdelete(BAT *b)
 		if (b->htype != TYPE_void && HEAPdelete(&b->H->heap, o, "head") &&
 		    b->batCopiedtodisk)
 			GDKwarning("BATdelete(%s): bun heap\n", BATgetId(b));
-	} else if (b->H->heap.base && !vv) {
+	} else if (b->H->heap.base) {
 		HEAPfree(&b->H->heap);
 	}
 	if (b->batCopiedtodisk || (b->T->heap.storage & STORE_MMAP)) {
-		if (b->htype != TYPE_void && HEAPdelete(&b->T->heap, o, "tail") &&
+		if (b->ttype != TYPE_void && HEAPdelete(&b->T->heap, o, "tail") &&
 		    b->batCopiedtodisk)
 			GDKwarning("BATdelete(%s): bun heap\n", BATgetId(b));
-	} else if (b->T->heap.base && !vv) {
+	} else if (b->T->heap.base) {
 		HEAPfree(&b->T->heap);
 	}
 	if (b->hheap) {

@@ -221,6 +221,7 @@ HEAPextend(Heap *h, size_t size)
 				fclose(fp);
 				/* a non-persistent heap: we create a .priv but *not* MMAP_PRIV !!! */
 				h->storage = STORE_MMAP;
+				h->base = NULL;
 				if (HEAPload(h, nme, ext, FALSE) >= 0) {
 					memcpy(h->base, bak.base, bak.free);
 					HEAPfree(&bak);
@@ -414,6 +415,7 @@ HEAPdelete(Heap *h, str o, str ext)
 	char ext2[64];
 
 	if (h->size <= 0) {
+		assert(h->base == 0);
 		return 0;
 	}
 	if (h->base) {

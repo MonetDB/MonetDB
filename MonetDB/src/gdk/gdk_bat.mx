@@ -437,6 +437,7 @@ BATclear(BAT *b)
 		size_t cap = 0;
 
 		hh.filename = th.filename = NULL;
+		hh.base = th.base = NULL;
 		if (b->H->vheap && b->H->vheap->free > 0) {
 			if (ATOMheap(b->htype, &hh, cap) < 0)
 				return NULL;
@@ -501,8 +502,12 @@ BATfree(BAT *b)
 	HASHdestroy(b);
 	if (b->htype)
 		HEAPfree(&b->H->heap);
+	else
+		assert(!b->H->heap.base);
 	if (b->ttype)
 		HEAPfree(&b->T->heap);
+	else
+		assert(!b->T->heap.base);
 	if (b->H->vheap) 
 		HEAPfree(b->H->vheap);
 	if (b->T->vheap) 
@@ -3058,7 +3063,7 @@ for determining which algebra commands set properties sub-optimally.
 			q = yy + lim;
 			if (p < q) {
 				BAT *bv = VIEWcreate(b, b);
-				Heap *hp = (Heap *) GDKmalloc(sizeof(Heap));
+				Heap *hp = (Heap *) GDKzalloc(sizeof(Heap));
 				str nme = BBP_physical(bv->batCacheid);
 
 				hp->filename = GDKmalloc(strlen(nme) + 12);

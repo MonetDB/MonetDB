@@ -42,19 +42,7 @@ gdk_export BAT *GDKenv;
 @c
 #include "monetdb_config.h"
 
-#ifndef GDK_NOLINK
 #include "gdk.h"
-
-#else /* GDK_NOLINK */
-
-#undef GDKmalloc
-#undef GDKrealloc
-#undef GDKfree
-
-#define GDKmalloc(size)	malloc(size)
-#define GDKrealloc(buf,size)	realloc(buf,size)
-#define GDKfree(buf)	free(buf)
-#endif
 
 int gdk_alloc_map = 1;
 char GDKdbfarmStr[PATHLENGTH] = { "dbfarm" };
@@ -88,6 +76,15 @@ BAT *GDKenv = NULL;
 #ifdef NATIVE_WIN32
 #define chdir _chdir
 #endif
+
+#ifdef NDEBUG
+#ifndef NVALGRIND
+#define NVALGRIND NDEBUG
+#endif
+#endif
+
+#include <valgrind.h>
+
 @}
 @+ Monet configuration file
 Parse a possible MonetDB.conf file (either in the default location
@@ -1263,6 +1260,8 @@ GDKmmap(char *path, int mode, off_t off, size_t len)
 		}
 	}
 	if (ret != (void *) -1L) {
+		/* since mmap directly have content we say its zero-ed memory */
+		VALGRIND_MALLOCLIKE_BLOCK(ret, len, 0, 1);
 		MT_alloc_register(ret, len, 'M');
 		GDKvminc(len);
 	}
@@ -1276,6 +1275,7 @@ GDKmunmap(void *addr, size_t size)
 
 	MT_alloc_register(addr, size, 'm');
 	ret = MT_munmap(addr, size);
+	VALGRIND_FREELIKE_BLOCK(addr, 0);
 	if (ret == 0) {
 		@:memdec(0,size,"GDKunmap")@
 	}

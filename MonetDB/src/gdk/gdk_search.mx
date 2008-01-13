@@ -388,7 +388,7 @@ BAThash(BAT *b, size_t masksize)
 			if (h)
 				GDKfree(h);
 			/* create the hash structures */
-			hp = (Heap *) GDKmalloc(sizeof(Heap));
+			hp = (Heap *) GDKzalloc(sizeof(Heap));
 			hp->filename = GDKmalloc(strlen(nme) + 12);
 			sprintf(hp->filename, "%s.%chash", nme, b->batCacheid > 0 ? 'h' : 't');
 			if ((h = HASHnew(hp, ATOMtype(b->htype), BATcapacity(b), (size_t) mask)) == NULL) {

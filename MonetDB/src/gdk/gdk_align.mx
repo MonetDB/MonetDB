@@ -684,6 +684,7 @@ Destroy a view.
 void
 VIEWdestroy(BAT *b)
 {
+	assert(isVIEW(b));
 	VIEWunlink(b);
 	b->H->heap.base = NULL;
 	b->H->heap.filename = NULL;
