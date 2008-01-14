@@ -528,6 +528,7 @@ TODO synced/key case..
 				BUN r1 = p1 + 65536;
 				if (r1 > q1) r1 = q1;
 				if (o + 65536 > BATcapacity(bn)){	
+					BATsetcount(bn, o);
 					if (BATextend(bn, BATcapacity(bn)+65536) == NULL)
 						goto bunins_failed; 
 				}
