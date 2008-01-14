@@ -671,6 +671,17 @@ col_env_lookup_step_leaf (const PFarray_t * env, PFalg_att_t att,
     return false;
 }
 
+bool
+column_eq (PFsql_col_t *a, PFsql_col_t *b)
+{
+    if (a->id == PF_SQL_COLUMN_SPECIAL &&
+        b->id == PF_SQL_COLUMN_SPECIAL)
+        return (a->spec == b->spec);
+    else
+      return (a->att == b->att) &&
+             (a->ty  == b->ty); 
+}
+
 /**
  * Transforms an expression into a selectlist statement.
  */
@@ -682,12 +693,18 @@ transform_expression (PFsql_t *n, PFsql_t *col)
 
     /* we have a different strategy when our item is boolean */
     if (col->sem.column.name->ty == aat_bln)
-        n = (n->kind == sql_column_name)?
+        n = (n->kind == sql_column_name ||
+             n->kind == sql_lit_int)?
             n:
             case_ (when (n, lit_int (1)), else_ (lit_int (0)));
 
     if (n->kind == sql_column_name)
-        return n;
+    {
+        if (column_eq (n->sem.column.name, col->sem.column.name))
+            return n;
+        else
+            return column_assign (n, col);
+    }
     else
         return column_assign (n, col);
 }
@@ -3542,6 +3559,7 @@ reduce (PFla_op_t * p, int goalnt)
                                        p->sem.sort.part,
                                        type_of (L(p), p->sem.sort.part))));
 
+            if (srtbylist) orderby = order_by (srtbylist);
             
             col_env_add (COLMAP(p),
                          p->sem.sort.res,
