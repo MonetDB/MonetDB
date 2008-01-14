@@ -83,7 +83,12 @@ BAT *GDKenv = NULL;
 #endif
 #endif
 
+#if defined(__GNUC__)
 #include <valgrind.h>
+#else
+#define VALGRIND_MALLOCLIKE_BLOCK(addr, sizeB, rzB, is_zeroed)    
+#define VALGRIND_FREELIKE_BLOCK(addr, rzB)                       
+#endif
 
 @}
 @+ Monet configuration file
