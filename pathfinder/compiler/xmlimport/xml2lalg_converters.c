@@ -118,7 +118,19 @@ PFxml2la_conv_2PFLA_atomValue_dbl(char* s)
 bool 
 PFxml2la_conv_2PFLA_atomValue_bln(char* s)
 {
-    return atoi(s);
+   
+    if(strcmp(s, "true") == 0)
+    {
+        return true;
+    } 
+    else if(strcmp(s, "false") == 0)
+    {
+        return false;
+    } 
+    else 
+    {
+        PFoops (OOPS_FATAL, "don't know what to do with (%s)", s);
+    }
 }
 
 
@@ -790,7 +802,6 @@ PFxml2la_conv_2PFLA_atom(char* typeString, char* valueString)
     case aat_bln:    
         {
             return lit_bln(PFxml2la_conv_2PFLA_atomValue_bln(valueString));
-            
         }
     case aat_uA:      
         {
