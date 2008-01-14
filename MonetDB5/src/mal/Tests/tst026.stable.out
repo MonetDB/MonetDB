@@ -28,9 +28,6 @@ stdout of test 'tst026` in directory 'src/mal` itself:
 #io.print(f);
 #io.print(g);
 #end foo;
-!TypeException:user.foo[10]:'g' used outside scope
-!TypeException:user.foo[14]:'f' used outside scope
-!TypeException:user.foo[15]:'g' used outside scope
 function user.foo():void;	# 0  (foo:void)
     b := bat.new(:oid,:int);	# 1 CMDBATnew (b:bat[:oid,:int])<-(_2:oid)(_3:int)
     cnt := 0:int;	# 2  (cnt:int)<-(_5:int)
@@ -53,7 +50,9 @@ end foo;	# 16
 function user.main():void;	# 0  (main:void)
     user.foo();	# 1  (_1:void)
 end main;	# 2  
-!MALException:user.foo[0]:Syntax error in script
+[ 1 ]
+[ 1 ]
+[ 1 ]
 
 # 12:49:32 >  
 # 12:49:32 >  Done.
