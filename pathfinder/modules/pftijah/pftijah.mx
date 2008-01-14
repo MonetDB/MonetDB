@@ -298,8 +298,6 @@ PROC ws_ft_index_info_base(BAT[void,BAT] ws, BAT[any,str] ftiNames, bit all) : B
 
 var verbose      := false;
 
-var extra_commit := false;
-
 const dflt_ft_index   := "DFLT_FT_INDEX";
 const dflt_bg_index   := "DFLT_FT_INDEX";
 const dflt_score_base := "0";
@@ -983,7 +981,6 @@ PROC tj_add2collection(str ftiName, str uri_loc, str uri_name, bit store) : void
       _tj_add2collection(ftiName, collBat, uri_loc, uri_name, store);
       _tj_finalize_collection(ftiName, collBat, FALSE);
       _tj_commit(collBat); 
-      if ( extra_commit ) subcommit(_tj_collection_str(ftiName));
       if ( timing ) {
          var ms := (usec()-t_start)/1000;
          printf("#C[%s]:tj_add2collection(): + aggregate time = %lld.%03llds.\n",ftiName,/(ms,1000),%(ms,1000));
@@ -1025,7 +1022,6 @@ PROC tj_add2collection(str ftiName, BAT[str,str] uri, bit store) : void
          printf("#C[%s]:tj_add2collection(BAT): + aggregate time = %lld.%03llds.\n",ftiName,/(ms,1000),%(ms,1000));
        }
       _tj_commit(collBat); 
-      if ( extra_commit ) subcommit(_tj_collection_str(ftiName));
     });
     lock_unset(coll_lock);
     if (not(isnil(err))) ERROR(err);
@@ -1155,10 +1151,12 @@ PROC _tj_finalize_collection(str ftiName, BAT[str,bat] collBat, bit fforce) : vo
         var replaceBats := collBat.find("replaceBats");
         replaceBats.insert("_globalTerms", _tj_TermBat(ftiName));
         replaceBats.insert("_globalTags", _tj_TagBat(ftiName));
+        replaceBats.insert("_globalTags", _tj_RTagBat(ftiName));
     
     }
     collBat.find("submitBats").append(_tj_TermBat(ftiName));
     collBat.find("submitBats").append(_tj_TagBat(ftiName));
+    collBat.find("submitBats").append(_tj_RTagBat(ftiName));
     
     if ( timing ) {
         var ms := (usec()-t_start)/1000;
