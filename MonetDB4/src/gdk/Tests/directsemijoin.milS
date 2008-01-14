@@ -1,0 +1,22 @@
+module(xtables);
+vm_minsize(lng(270000));
+print(vm_minsize());
+
+var a:=new(void,int).seqbase(oid(0));
+a.append(0);
+a.append(1);
+a.append(2);
+
+var b:=new(void,int);
+
+var i := 0;
+while(i<(128*1024)) {
+	var o := i%2;
+	b.append(o);
+	i := i + 1;
+}
+b.seqbase(oid(0));
+
+var s := b.reverse().semijoin(a.reverse());
+var g := CTgroup(s.reverse()).CTextend();
+print(g);
