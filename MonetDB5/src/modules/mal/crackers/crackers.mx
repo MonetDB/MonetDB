@@ -106,6 +106,11 @@ ultra fast.
 
 @- Type expansion
 
+@= TypeSwitch_temp2
+@:@1(@2,int)@
+@:@1(@2,date)@
+@
+
 @= TypeSwitch_1
 @:@1(@2,chr)@
 @:@1(@2,sht)@
@@ -117,10 +122,14 @@ ultra fast.
 @
 
 @= TypeSwitch_2
-@:TypeSwitch_1(@1,int)@
-@:TypeSwitch_1(@1,date)@
+@:TypeSwitch_temp2(@1,int)@
+@:TypeSwitch_temp2(@1,date)@
+@:@1(date,lng)@
 @
 
+@= TypeSwitch_temp
+@:@1(@2,int)@
+@
 
 @- MAL file
 
@@ -135,8 +144,28 @@ module crackers;
 @:TypeSwitch_1(CoreOrdered)@
 @:TypeSwitch_1(Validate)@
 @:TypeSwitch_1(AVLindex)@
-
+@:TypeSwitch_temp(Joins)@
 @:TypeSwitch_2(Sideways)@
+
+command mapCount(b:bat[:oid,:oid]) :lng
+address CRKbatCount
+comment "Retrieve the size of the map";
+
+command getTotalStorage( ):void
+address CRKgetTotalStorage
+comment "Get the number of total tuples stored in sideways maps";
+
+command setStorageThreshold(threshold:lng):void
+address CRKsetStorageThreshold
+comment "set the maximum number of total tuples that can be stored in sideways maps";
+
+command fmclearReferences():void
+address CRKclearReferencesFullMaps
+comment "clear all references ";
+
+command fmremoveMap():void
+address CRKremoveFullMap
+comment "clear all debugging map ";
 @
 
 @= Select
@@ -343,6 +372,10 @@ comment "Validate whether a BAT is correctly broken into three pieces with
 @
 
 @= Sideways
+command getMap( b:bat[:oid,:@1], bp:bat[:oid,:@2] ):bat[:@1,:@2]
+address getCrackerMap
+comment "Get a certain map";
+
 command DeleteMap( b:bat[:oid,:@1], bp:bat[:oid,:@2] ):void
 address DeleteCrackerMap
 comment "Throw away a certain map"; 
@@ -412,6 +445,43 @@ comment "Sync the cracking pair and project the tail. Use for disjunctive querie
 command projectH( b:bat[:oid,:@1],bp:bat[:oid,:@2],l:@1,h:@1,li:bit,hi:bit):bat[:oid,:@1]
 address CRKProjectH_@1_@2
 comment "Sync the cracking pair and project the head";
+
+command pmselect(b:bat[:oid,:@1],bp:bat[:oid,:@2],l:@1,h:@1,li:bit,hi:bit,l2:@2,h2:@2,li2:bit,hi2:bit):bat[:oid,:bit]
+address CRKselectBoundsIncrementalSideways_@1_@2
+comment "Crack based on @1 and evaluate the @2 conjunctive predicate. Return a bit vector.";
+
+command pmtselect(b:bat[:oid,:@1],bp:bat[:oid,:@2],l:@1,h:@1,li:bit,hi:bit):bat[:oid,:@2]
+address CRKselectBoundsTailIncrementalSideways_@1_@2
+comment "Crack based on @1 and project the @2 tail .";
+
+command pmjoinselect(b:bat[:oid,:@1],bp:bat[:oid,:@2], pivot:bat[:oid,:bit], cl:@1, ch:@1, cli:bit, chi:bit, l:@2, h:@2, li:bit, hi:bit ):bat[:oid,:bit]
+address CRKjoinSelectIncrementalSideways_@1_@2
+comment "Use the pivot. For each tuple in pivot with a 1, check if the respective tuple (in the same position)
+	 in the tail of cpair(collection of pieces) satisfies the range restriction. If not mark the pivot BUN as 0.";
+
+command pmproject(b:bat[:oid,:@1],bp:bat[:oid,:@2],pivot:bat[:oid,:bit],l:@1,h:@1,li:bit,hi:bit):bat[:oid,:@2]
+address CRKProjectIncrementalSideways_@1_@2
+comment "Sync the map and project the tail based on the pivot";
+
+command pmmaxTail(b:bat[:oid,:@1],bp:bat[:oid,:@2],l:@1,h:@1,li:bit,hi:bit):bat[:oid,:@2]
+address CRKMaxTailIncrementalSideways_@1_@2
+comment "Sync/crack the map and get the max of the tail";
+
+command pmaddReference(b:bat[:oid,:@1],bp:bat[:oid,:@2]):void
+address CRKaddReference
+comment "add bp reference to map set of b";
+
+command pmclearReferences(b:bat[:oid,:@1]):void
+address CRKclearReferences
+comment "clear all references to b";
+
+command fmaddReference(b:bat[:oid,:@1],bp:bat[:oid,:@2]):void
+address CRKaddReferenceFullMaps
+comment "add bp reference to map set of b";
+
+command fmcreateMap(b:bat[:oid,:@1],bp:bat[:oid,:@2]):void
+address CRKcreateFullMap_@1_@2
+comment "make new map for debugging";
 @
 
 @= AVLindex
@@ -432,6 +502,37 @@ address CRKdeleteFromAVL_@2
 comment "Delete a collection of values from the index";
 @
 
+@= Joins
+command simpleJoin(b1:bat[:oid,:@2],b2:bat[:oid,:@2],b3:bat[:oid,:@2],b4:bat[:oid,:@2]):bat[:oid,:oid]
+address CRKsimpleJoin_@2
+comment "Join two maps based on head values by exploiting the already existing partitioning information";
+
+command crackJoin(b1:bat[:oid,:@2],b2:bat[:oid,:@2],b3:bat[:oid,:@2],b4:bat[:oid,:@2]):bat[:oid,:oid]
+address CRKcrackJoin_@2
+comment "Join two maps based on head values. Align the maps to avoid overlapping pieces";
+
+command crackHashJoin(b1:bat[:oid,:@2],b2:bat[:oid,:@2],b3:bat[:oid,:@2],b4:bat[:oid,:@2]):bat[:oid,:oid]
+address CRKcrackHashJoin_@2
+comment "Join two maps based on head values. Align the maps to avoid overlapping pieces. Reuse hash tables";
+
+command fullAlignment(b1:bat[:oid,:@2],b2:bat[:oid,:@2],b3:bat[:oid,:@2]):void
+address CRKFullAlignment_@2
+comment "Align a bat with the cracks on a map";
+
+command alignedJoin(b1:bat[:oid,:@2],b2:bat[:oid,:@2],b3:bat[:oid,:@2]):bat[:oid,:oid]
+address CRKAlreadyAlignedJoin_@2
+comment "Join an aligned cracker bat with a map";
+
+command bandJoin(b1:bat[:oid,:@2],b2:bat[:oid,:@2],c1:@2,c2:@2,inclusiveLow:bit,inclusiveHgh:bit):bat[:oid,:oid]
+address CRKbandJoin_@2
+comment "Band Join two maps based on head values. 
+	Continuously crack the right BAT for each tuple of the left one";
+
+command sortBandJoin(b1:bat[:oid,:@2],b2:bat[:oid,:@2],c1:@2,c2:@2,inclusiveLow:bit,inclusiveHgh:bit):bat[:oid,:oid]
+address CRKsortBandJoin_@2
+comment "Band Join two maps based on head values. 
+	First sort the right BAT and then continuously binary search the right BAT for each tuple of the left one";
+@
 
 @- Header file
 
@@ -453,16 +554,17 @@ comment "Delete a collection of values from the index";
 #endif
 
 #include "mtime.h"
+#include "crackers_index.h"
 #include "crackers_select_ops.h"
 #include "crackers_joinselect_ops.h"
 #include "crackers_sideways.h"
 #include "crackers_updates.h"
 #include "crackers_validation.h"
-#include "crackers_index.h"
 #include "crackers_core_unordered.h"
 #include "crackers_core_ordered.h"
 #include "crackers_AVL_tree.h"
 #include "crackers_AVL_index.h"
+#include "crackers_joins.h"
 
 #ifdef LIBCRACKERS 
 extern int maxCrackMap;
@@ -470,6 +572,7 @@ extern CrackerIndexNode *CrackerIndex;
 extern int IndexEntries;
 extern int IndexSize;
 extern int IndexStop;
+struct storageManagement *StorageInfo;
 #endif
 
 #endif /* _CRACKERS_H */
@@ -487,6 +590,9 @@ extern int IndexStop;
 int maxCrackMap = 0;
 
 CrackerIndexNode *CrackerIndex;
+
+struct storageManagement *StorageInfo = NULL;
+
 int IndexEntries = 220000; /* Initial size used for the bat that stores index values */
 
 /* Temp variables used to test the effect of stop updating the index, they operate only on one cracker bat */

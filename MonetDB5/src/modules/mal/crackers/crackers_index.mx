@@ -45,17 +45,62 @@
 #ifdef LIBCRACKERS
 /* Type definitions shared within the crackers module/library */
 
+/* used to keep track of the bats that use a given map set within a query
+   With this information we can improve the alignment procedure of incremental sideways cracking
+   by avoiding alignment operations not necessary for the current query 
+   All bats required for the current query are kept in these nodes as a list in the CrackerIndexNode of the cracker bat
+  of the head of the used map set */
+
+struct referencesNodeFM{
+	int 		batId;
+	int 		tailBatId;
+	struct referencesNodeFM *next;
+};
+
+struct referencesNode{
+	int 		batId;
+	lng 		cursor;
+	struct referencesNode *next;
+};
+
+typedef struct referencesNode refNode; 
+
 struct Node{
-        lng	      position;
-	bit 	      inclusive;	
-        struct Node  *left;
-        struct Node  *right;
-        int	      height;
-	bit	      head;
-	bit	      deleted;
-        struct Node  *previous;
-	bit 	      isPreviousSmaller;	
-	lng	      hols; /* # of hols before this piece */
+	/* Tree related */
+        struct Node  	*left;
+        struct Node  	*right;
+        int	      	height;
+	bit	      	head;
+
+	/* Information stored at this node */
+        oid	      	position;		/* The position in the BAT of the index where the bounds are stored */
+	bit 	      	inclusive;	  
+	bit	      	deleted;		/* If true then this node is deleted and can be reused */
+        struct Node  	*previous;
+	bit 	      	isPreviousSmaller;	
+	oid	      	hols; 		  	/* # of hols before this piece */
+
+	/* Joins */	
+	int 	      	slice;		  	/* A view between the position of this index entry and the next one
+						   Keeping views around allows us to reuse hash tables built for a view for joins */	
+
+	/* Info needed for incremental maps */
+	int 		pieceBAT;		/* The BAT id of the  map for this piece */
+	bit		localBound;		/* TRUE if this bound exists only in this piece. FALSE if it exists in the cracker BAT too */
+	bit 		first;			/* TRUE if this is the first bound in this piece. FALSE if it is the last. 
+							Valid only if localBound=FALSE */
+	oid 		indexLocal;		/* Local crack positions */
+
+	 /* Used in the storage management procedure*/ 
+	struct Node     *nextPiece;		/*  It identifies the next piece, i.e., the next first node in the map*/
+	lng 		creationTimestamp;
+	lng 		accesses;
+	lng		dropped;
+	lng 		tuples;
+
+	/* Used on the cracker BAT side in the case of incremental maps */
+	struct referencesNode *references;	/* maps that use this piece */
+	int 		tape;			/* Tape holding previous cracks, (value,inclusive) */
 };
 
 typedef struct {
@@ -90,10 +135,17 @@ typedef struct {
 				           hiid is a [bit,bit] BAT that stores inclusive information 
 					   for each bound stored in chid */
 
-	lng 		nextCrack;	/* Points to the next cracking operation that should be applied 
-                                           in thhis map to sync it */
+	oid 		nextCrack;	/* Points to the next cracking operation that should be applied 
+                                           in this map to sync it */
 	int 		chid;
 	int 		hiid;
+
+	struct referencesNode *references;
+	lng 		creationTimestamp;
+	lng 		accesses;
+	lng		dropped;
+	lng 		tuples;
+
 } CrackerIndexNode;
 
 /* Signatures shared within the crackers module/library */
@@ -131,7 +183,8 @@ int newCrackerIndex_@1(int bid, int cbid);
 void reCreateMap_@1(int position);
 
 /* InsertIndexElements */
-void addCrackerIndex_@1(int m, @1 *value, bit inclusive, lng index, BAT * b);
+void addCrackerIndex_@1(int m, @1 *value, bit inclusive, oid index, BAT * b);
+struct Node *  addCrackerIndexIncrementalSideways_@1(int m, @1 value, bit inclusive, oid indexLocal, oid index, BAT * b, bit localBound, bit first, int pieceBAT);
 @
 
 
@@ -173,7 +226,7 @@ CRKprintCrackerIndexBATpart(int *k, int *bid){
 str
 CRKprintAVLTree_int(int *k, int *bid){
 	BAT *c;
-	int zz, position;
+	int position;
 	BUN idxFirst;
 
 	(void) k;
@@ -185,9 +238,8 @@ CRKprintAVLTree_int(int *k, int *bid){
 	if ((c = BATdescriptor(CrackerIndex[position].cid)) == NULL)
                 throw(MAL, "crackers.CRKprintAVLTree_int", "Cannot access cracker index");
 
-        zz = BUNsize(c);
         idxFirst = BUNfirst(c);
-	printAVLTree(CrackerIndex[position].Tree, c, idxFirst, zz);
+	printAVLTree(CrackerIndex[position].Tree, c, idxFirst);
 
 	BBPunfix(c->batCacheid);
 
@@ -212,10 +264,12 @@ CRKgetCrackerBAT(int *vid, int *bid){
         int i = existsCrackerIndex(*bid);
         if (i == -1)
                 fprintf(stderr, " the cracker index does not exist \n");
-        if (CrackerIndex[i].cbid > 0)
+        if (CrackerIndex[i].cbid > 0){
 		*vid = CrackerIndex[i].cbid;
+		BBPincref(*vid,TRUE);
+	}
 	else
-		*vid = -1;
+		*vid = 0;
 
         return MAL_SUCCEED;
 }
@@ -240,40 +294,45 @@ existsCrackerIndex(int bid){
 /* CreateNewIndex */
 int
 newCrackerIndex_@1(int bid, int cbid){
-	int i, freemap = -1, units = 1024;
-	BAT *b;
-	
-	for (i = 0; i < maxCrackMap; i++)
-		if (CrackerIndex[i].bid == -1)
-			freemap = i;
+	int i, j, freemap = -1, units = 100;
+        BAT *b;
 
-	if (freemap != -1) {
-		CrackerIndex[freemap].bid = bid;
-		return freemap;
-	}
+        for (i = 0; i < maxCrackMap; i++){
+                if (CrackerIndex[i].bid == -1){
+                        freemap = i;
+                        break;
+                }
+        }
 
-	if (i == maxCrackMap) {
-		CrackerIndexNode *x;
+        if (freemap == -1){
+                if (i == maxCrackMap) {
+                        CrackerIndexNode *x;
 
-		if (maxCrackMap > 0)
-			units = (int) (1.2 * maxCrackMap);
-		x = (CrackerIndexNode *) GDKmalloc(sizeof(CrackerIndexNode) * units);
-		memset(x, 0, sizeof(CrackerIndexNode) * units);
-		if (CrackerIndex) {
-			fprintf(stderr, "reallocate index \n");
-			memcpy(x, CrackerIndex, sizeof(CrackerIndexNode) * i);
-			GDKfree(CrackerIndex);
-		}
-		CrackerIndex = x;
-		maxCrackMap = units;
-	}
+                        if (maxCrackMap > 0)
+                                units = (int) (1.2 * maxCrackMap);
+                        x = (CrackerIndexNode *) GDKmalloc(sizeof(CrackerIndexNode) * units);
+                        memset(x, 0, sizeof(CrackerIndexNode) * units);
+                        if (CrackerIndex) {
+                                fprintf(stderr, "reallocate index \n");
+                                memcpy(x, CrackerIndex, sizeof(CrackerIndexNode) * i);
+                                GDKfree(CrackerIndex);
+                        }
+                        CrackerIndex = x;
+
+                        /* mark the new slots as empty */
+                        for(j=maxCrackMap; j<units;j++){
+                                CrackerIndex[j].bid = -1;
+                        }
+                        maxCrackMap = units;
+                }
+        }
 
 	CrackerIndex[i].chid = -1;
 	CrackerIndex[i].hiid = -1;
 	CrackerIndex[i].pbid = -1;
 	CrackerIndex[i].bid = bid;
 	CrackerIndex[i].cbid = cbid;
-	b = BATnew(TYPE_lng, TYPE_@1, IndexEntries);	/* TODO: size */
+	b = BATnew(TYPE_oid, TYPE_@1, IndexEntries);	/* TODO: size */
 	BBPkeepref(b->batCacheid);
 	CrackerIndex[i].cid = b->batCacheid;
 	CrackerIndex[i].iid = -1;
@@ -281,6 +340,7 @@ newCrackerIndex_@1(int bid, int cbid){
 	CrackerIndex[i].mergeInsertions = -1;
 	CrackerIndex[i].reCreate = 0;
 	CrackerIndex[i].Tree = NULL;
+	CrackerIndex[i].references = NULL;
 	CrackerIndex[i].deleteNodes = FALSE;
 	CrackerIndex[i].mergeDeletions = -1;
 	return i;
@@ -290,7 +350,7 @@ void
 reCreateMap_@1(int position){
 	BAT *b;
 
-	b = BATnew(TYPE_lng, TYPE_@1, IndexEntries);	/* TODO: size */
+	b = BATnew(TYPE_oid, TYPE_@1, IndexEntries);	/* TODO: size */
 	BBPkeepref(b->batCacheid);
 	CrackerIndex[position].cid = b->batCacheid;
 	CrackerIndex[position].reCreate = 0;
@@ -301,15 +361,64 @@ reCreateMap_@1(int position){
 
 /* InsertIndexElements */
 void
-addCrackerIndex_@1(int m, @1 *value, bit inclusive, lng index, BAT * b){
-	BUN ph,pt,base;
-        int xx = BUNsize(b);
+addCrackerIndex_@1(int m, @1 *value, bit inclusive, oid index, BAT * b){
+	BUN base;
+	oid *ph;
+	@1  *pt;
+	struct Node *newNode=NULL, *prev=NULL;
+	oid count;
 
-	ph = BUNhloc(b, BUNlast(b));
-	pt = BUNtloc(b, BUNlast(b));
+	ph = (oid*)Hloc(b, BUNlast(b));
+	pt = (@1 *)Tloc(b, BUNlast(b));
 
-        if (BATcount(b) == 0){
-                @:insertIndexElement(@1, BUNhloc(b, BUNfirst(b)), BUNtloc(b, BUNfirst(b)), index, *value)@
+	count = BATcount(b);
+        if (count == (oid)0){
+                @:insertIndexElement(@1, (oid*)Hloc(b, BUNfirst(b)), (@1*)Tloc(b, BUNfirst(b)), index, *value)@
+		CrackerIndex[m].Tree = (struct Node *)GDKmalloc(sizeof(struct Node));
+                CrackerIndex[m].Tree->position = (oid)0;
+                CrackerIndex[m].Tree->inclusive = inclusive;
+                CrackerIndex[m].Tree->height = 0;
+                CrackerIndex[m].Tree->left = NULL;
+                CrackerIndex[m].Tree->right = NULL;		
+                CrackerIndex[m].Tree->head = TRUE;	
+                CrackerIndex[m].Tree->deleted = FALSE;	
+                CrackerIndex[m].Tree->previous = NULL;	
+                CrackerIndex[m].Tree->hols = (oid)0;	
+                CrackerIndex[m].Tree->slice = -1;	
+
+                return;
+        }
+
+	base = BUNfirst(b);
+	InsertTree_@1(m, count, *value, inclusive, index, CrackerIndex[m].Tree, b, base, &newNode);
+        if ( newNode != NULL ) {
+		/* use a new BUN only if we cannot reuse a previously deleted one */
+		@:insertIndexElement(@1, ph, pt, index, *value)@
+		/* remove hash table since cracking has destroyed tuple positioning */
+		prev = findPreviousPieceWalkingBack(newNode);
+		if (prev != NULL){
+			if (prev->slice != -1){
+				BBPdecref(prev->slice,TRUE);
+				prev->slice = -1; 
+			}
+		}
+	}
+}
+
+struct Node *
+addCrackerIndexIncrementalSideways_@1(int m, @1 value, bit inclusive, oid indexLocal, oid index, BAT * b, bit localBound, bit first, int pieceBAT){
+	BUN base;
+	oid *ph;
+	@1  *pt;
+	struct Node *newNode=NULL, *prev=NULL;
+	lng count;
+
+	ph = (oid*)Hloc(b, BUNlast(b));
+	pt = (@1 *)Tloc(b, BUNlast(b));
+
+	count = BATcount(b);
+        if (count == 0){
+                @:insertIndexElement(@1, (oid*)Hloc(b, BUNfirst(b)), (@1*)Tloc(b, BUNfirst(b)), index, value)@
 		CrackerIndex[m].Tree = (struct Node *)GDKmalloc(sizeof(struct Node));
                 CrackerIndex[m].Tree->position = 0;
                 CrackerIndex[m].Tree->inclusive = inclusive;
@@ -320,15 +429,33 @@ addCrackerIndex_@1(int m, @1 *value, bit inclusive, lng index, BAT * b){
                 CrackerIndex[m].Tree->deleted = FALSE;	
                 CrackerIndex[m].Tree->previous = NULL;	
                 CrackerIndex[m].Tree->hols = 0;	
+                CrackerIndex[m].Tree->slice = -1;	
+                CrackerIndex[m].Tree->localBound = localBound;	
+                CrackerIndex[m].Tree->first = first;	
+                CrackerIndex[m].Tree->pieceBAT = pieceBAT;	
+                CrackerIndex[m].Tree->tape = -1;	
+                CrackerIndex[m].Tree->indexLocal = indexLocal;	
+                CrackerIndex[m].Tree->references = NULL;	
+                CrackerIndex[m].Tree->nextPiece = NULL;	
 
-                return;
+                return CrackerIndex[m].Tree;
         }
 
-	base = BUNhloc(b, BUNfirst(b));
-        if ( (InsertTree_@1(m, BATcount(b), *value, inclusive, index, CrackerIndex[m].Tree, b, base, xx)) != NULL ) {
+	base = BUNfirst(b);
+	InsertTreeIncrementalSideways_@1(m, count, value, inclusive, index, indexLocal, CrackerIndex[m].Tree, b, base, &newNode,localBound, first, pieceBAT);
+        if ( newNode != NULL ) {
 		/* use a new BUN only if we cannot reuse a previously deleted one */
-		@:insertIndexElement(@1, ph, pt, index, *value)@
+		@:insertIndexElement(@1, ph, pt, index, value)@
+		/* remove hash table since cracking has destroyed tuple posititioning */
+		prev = findPreviousPieceWalkingBack(newNode);
+		if (prev != NULL){
+			if (prev->slice != -1){
+				BBPdecref(prev->slice,TRUE);
+				prev->slice = -1; 
+			}
+		}
 	}
+	return newNode;
 }
 @
 
@@ -336,10 +463,10 @@ addCrackerIndex_@1(int m, @1 *value, bit inclusive, lng index, BAT * b){
 @- Local support functions and macros
 
 @= insertIndexElement
-	*(lng*) @2 = @4;	
-	*(@1 *) @3 = @5;	
-	(b)->batBuns->free += xx;
-        (b)->batCount ++;
+	*@2 = @4;	
+	*@3 = @5;	
+	count++;
+	BATsetcount(b,count);
 @
 
 @}

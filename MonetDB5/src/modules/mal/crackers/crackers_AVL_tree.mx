@@ -65,16 +65,26 @@ struct Node * DoubleRotateRight(int m, struct Node * node);
 struct Node * findPreviousPieceWalkingBack(struct Node * node);
 struct Node * findNextPiece(struct Node * node);
 void FreeAVLTree(struct Node * current);
-void printAVLTree(struct Node * current, BAT *b, BUN base, int xx);
+void printAVLTree(struct Node * current, BAT *b, BUN base);
+void printAVLTreeIncrementalSideways(struct Node * current, BAT *b, BUN base);
+struct Node * getFirstNode(struct Node * node);
+struct Node * getLastNode(struct Node * node);
+struct Node * getPreviousNodeAny(struct Node * current);
+struct Node * getPreviousNonLocalNode(struct Node * current);
+struct Node * getNextNonLocalNode(struct Node * current);
 @
 
 @= AVLtreeSharedFunctions_decl_1
-bit GetLow_@1(@1  x, bit inclusive, struct Node * current, BAT *b, BUN base, int xx, lng *p1, lng *p2, lng previous, lng next);
-bit GetHgh_@1(@1  x, bit inclusive, struct Node * current, BAT *b, BUN base, int xx, lng *p1, lng *p2, lng previous, lng next);
-struct Node * InsertTree_@1(int m, int indexPosition, @1 value, bit inclusive, lng crackPosition, struct Node * current, BAT * b, BUN base, int xx);
-struct Node * findNodeH_@1(@1  x, bit inclusive, struct Node * current, BAT *b, BUN base, int xx, struct Node * next);
-struct Node * findNodeL_@1(@1  x, bit inclusive, struct Node * current, BAT *b, BUN base, int xx, struct Node * prev);
-void PartiallyLazyFreeAVLTree_@1(struct Node * current, @1 value, BAT *b, BUN base, int xx);
+bit GetLow_@1(@1  x, bit inclusive, struct Node * current, BAT *b, BUN base, oid *p1, oid *p2, oid previous, oid next);
+bit GetHgh_@1(@1  x, bit inclusive, struct Node * current, BAT *b, BUN base, oid *p1, oid *p2, oid previous, oid next);
+bit GetLowNodes_@1(@1  x, bit inclusive, struct Node * current, BAT *b, BUN base, struct Node **p1, struct Node **p2, struct Node *previous, struct Node *next);
+bit GetHghNodes_@1(@1  x, bit inclusive, struct Node * current, BAT *b, BUN base, struct Node **p1, struct Node **p2, struct Node *previous, struct Node *next);
+struct Node * InsertTree_@1(int m, oid indexPosition, @1 value, bit inclusive, oid crackPosition, struct Node * current, BAT * b, BUN base, struct Node **newNode);
+struct Node *
+InsertTreeIncrementalSideways_@1(int m, oid indexPosition, @1 value, bit inclusive, oid crackPosition, oid crackPositionLocal, struct Node * current, BAT * b, BUN base, struct Node **newNode, bit localBound, bit first, int pieceBAT);
+struct Node * findNodeH_@1(@1  x, bit inclusive, struct Node * current, BAT *b, BUN base, struct Node * next);
+struct Node * findNodeL_@1(@1  x, bit inclusive, struct Node * current, BAT *b, BUN base, struct Node * prev);
+void PartiallyLazyFreeAVLTree_@1(struct Node * current, @1 value, BAT *b, BUN base);
 @
 
 
@@ -204,6 +214,9 @@ struct Node *
 findPreviousPieceWalkingBack(struct Node * node){
 	struct Node * res = NULL, *current = node;
 
+	if (current == NULL)
+		return NULL;
+
 	if (current->left != NULL)
                 res= getP(current->left);
 	if (res != NULL)
@@ -232,6 +245,9 @@ findPreviousPieceWalkingBack(struct Node * node){
 struct Node *
 findNextPiece(struct Node * node){
 	struct Node * res = NULL, *current = node;
+
+	if (current == NULL)
+		return NULL;
 
 	if (current->right != NULL)
                 res= getN(current->right);
@@ -273,54 +289,114 @@ FreeAVLTree(struct Node * current){
 }
 
 void
-printAVLTree(struct Node * current, BAT *b, BUN base, int xx){
+printAVLTreeIncrementalSideways(struct Node * current, BAT *b, BUN base){
 	BUN cur;
 
-	cur = base + ((current->position) * xx);
+	if (current == NULL) {
+		printf("\n Empty index \n");
+		return;
+	}
+	cur = base + current->position;
 	if (current->deleted == FALSE) {
-		printf("\n "LLFMT", %d  Hols:"LLFMT" ", *(lng*)BUNhloc(b, cur), *(int*)BUNtloc(b, cur), current->hols );
+		printf("\n index: "SZFMT", indexLocal: "SZFMT", Val: %d, pieceID: %d  ", *(oid*)Hloc(b, cur), current->indexLocal, *(int*)Tloc(b, cur), current->pieceBAT);
 	} else
-		printf("\n DELETED "LLFMT", %d  Hols:"LLFMT" ", *(lng*)BUNhloc(b, cur), *(int*)BUNtloc(b, cur), current->hols );
+		printf("\n DELETED "SZFMT", %d  Hols:"SZFMT" ", *(oid*)Hloc(b, cur), *(int*)Tloc(b, cur), current->hols );
+	if (current->localBound == TRUE) printf(" local: TRUE ");	
+	else printf(" local: FALSE ");
+	if (current->first == TRUE) printf(" first: TRUE ");	
+	else printf(" first: FALSE ");
 	
 	if (current->left != NULL)
-                printAVLTree(current->left, b, base, xx);
+                printAVLTreeIncrementalSideways(current->left, b, base);
 
         if (current->right != NULL)
-                printAVLTree(current->right, b, base, xx);
+                printAVLTreeIncrementalSideways(current->right, b, base);
 
         return;
-
 }
+
+void
+printAVLTree(struct Node * current, BAT *b, BUN base){
+	BUN cur;
+
+	cur = base + current->position;
+	if (current->deleted == FALSE) {
+		printf("\n Pos: "SZFMT", PosBat: "SZFMT", Val: %d,  Hols: "SZFMT", Slice: %d ", current->position, *(oid*)Hloc(b, cur), *(int*)Tloc(b, cur), current->hols, current->slice );
+	} else
+		printf("\n DELETED "SZFMT", %d  Hols:"SZFMT" ", *(oid*)Hloc(b, cur), *(int*)Tloc(b, cur), current->hols );
+	
+	if (current->left != NULL)
+                printAVLTree(current->left, b, base);
+
+        if (current->right != NULL)
+                printAVLTree(current->right, b, base);
+
+        return;
+}
+
+/* Get the piece that holds the lowest values */
+struct Node *
+getFirstNode(struct Node * node){
+        struct Node *res=NULL, *cur;
+        cur = node;
+        while(cur != NULL){
+                res = cur;
+                if (cur->left != NULL)
+                        cur = cur->left;
+                else
+                        break;
+        }
+
+        return res;
+}
+
+/* Get the piece that holds the highest values */
+struct Node *
+getLastNode(struct Node * node){
+        struct Node *res=NULL, *cur;
+        cur = node;
+        while(cur != NULL){
+                res = cur;
+                if (cur->right != NULL)
+                        cur = cur->right;
+                else
+                        break;
+        }
+
+        return res;
+}
+
 @
 
 @= AVLtreeSharedFunctions_impl_1
 bit
-GetLow_@1(@1  x, bit inclusive, struct Node * current, BAT *b, BUN base, int xx, lng *p1, lng *p2, lng previous, lng next){
-	BUN cur, curValue;
+GetLow_@1(@1  x, bit inclusive, struct Node * current, BAT *b, BUN base, oid *p1, oid *p2, oid previous, oid next){
+	BUN cur;
+	@1 *curValue;
 
-	cur = base + ((current->position) * xx);
-	curValue = BUNtloc(b, cur);
+	cur = base + current->position;
+	curValue = (@1*)Tloc(b, cur);
 
 	if (current->deleted == TRUE){
 		if ( @2_EQ(&x,curValue,@3@1) || @2_LT(&x,curValue,@3@1) ){	
 			if (current->left == NULL){
         	                *p1 = previous;
-                	        *p2 = getNextPosition(current, b, base,  xx, next);
+                	        *p2 = getNextPosition(current, b, base, next);
                        	 	return 0;
                 	} else
                         	/* check for the left one */
-                        	return GetLow_@1(x, inclusive, current->left, b, base, xx, p1, p2, previous, getNextPosition(current, b, base,  xx, next));
+                        	return GetLow_@1(x, inclusive, current->left, b, base, p1, p2, previous, getNextPosition(current, b, base, next));
 		}
 		if (current->right == NULL){
-               	 	*p1 = getPreviousPosition(current, b, base,  xx, previous);
+               	 	*p1 = getPreviousPosition(current, b, base, previous);
 			*p2 = next;
 			return 0;
 		} else 	
-			return GetLow_@1(x, inclusive, current->right, b, base, xx, p1, p2, getPreviousPosition(current, b, base,  xx, previous), next);
+			return GetLow_@1(x, inclusive, current->right, b, base, p1, p2, getPreviousPosition(current, b, base, previous), next);
 	}
 
 	if ( @2_EQ(&x,curValue,@3@1) && (inclusive == FALSE || (inclusive == TRUE && current->inclusive == TRUE)) ){
-		*p1 = *(lng*)BUNhloc(b, cur);	
+		*p1 = *(oid*)Hloc(b, cur);	
 		return 1;
 	}	
 
@@ -329,51 +405,52 @@ GetLow_@1(@1  x, bit inclusive, struct Node * current, BAT *b, BUN base, int xx,
 		if (current->left == NULL){
 			/* crack from the begining of the bat */
                 	*p1 = previous;
-			*p2 = *(lng*)BUNhloc(b, cur);
+			*p2 = *(oid*)Hloc(b, cur);
 			return 0;
 		} else
 			/* check for the left one */
-      			return GetLow_@1(x, inclusive, current->left, b, base, xx, p1, p2, previous, *(lng*)BUNhloc(b, cur));
+      			return GetLow_@1(x, inclusive, current->left, b, base, p1, p2, previous, *(oid*)Hloc(b, cur));
 			
 	}
 
 	if (current->right == NULL){
 		/* crack until the end of the bat */
-                *p1 = *(lng*)BUNhloc(b, cur);
+                *p1 = *(oid*)Hloc(b, cur);
 		*p2 = next;
 		return 0;
 	} else 	
 		/* check for the right one */
-		return GetLow_@1(x, inclusive, current->right, b, base, xx, p1, p2, *(lng*)BUNhloc(b, cur), next);
+		return GetLow_@1(x, inclusive, current->right, b, base, p1, p2, *(oid*)Hloc(b, cur), next);
 }
 
 bit
-GetHgh_@1(@1  x, bit inclusive, struct Node * current, BAT *b, BUN base, int xx, lng *p1, lng *p2, lng previous, lng next){
-        BUN cur, curValue;	
+GetHgh_@1(@1  x, bit inclusive, struct Node * current, BAT *b, BUN base, oid *p1, oid *p2, oid previous, oid next){
+        BUN cur;
+	@1 *curValue;	
 
-	cur = base + ((current->position) * xx);
-	curValue = BUNtloc(b, cur);
+	cur = base + current->position;
+	curValue = (@1*)Tloc(b, cur);
 
 	if (current->deleted == TRUE){
 		if ( @2_EQ(&x,curValue,@3@1) || @2_GT(&x,curValue,@3@1) ){
 			 if (current->right == NULL){
-                       	 	*p1 = getPreviousPosition(current, b, base,  xx, previous);
+                       	 	*p1 = getPreviousPosition(current, b, base, previous);
                         	*p2 = next;
                         	return 0;
                 	} else
-                        	return GetHgh_@1(x, inclusive, current->right, b, base, xx, p1, p2, getPreviousPosition(current, b, base,  xx, previous), next);
+                        	return GetHgh_@1(x, inclusive, current->right, b, base, p1, p2, getPreviousPosition(current, b, base, previous), next);
 		}
 		if (current->left == NULL){
                	 	*p1 = previous;
-                	*p2 = getNextPosition(current, b, base,  xx, next);
+                	*p2 = getNextPosition(current, b, base, next);
                	 	return 0;
 	        } else
-                	return GetHgh_@1(x, inclusive, current->left, b, base, xx, p1, p2, previous, getNextPosition(current, b, base,  xx, next));
+                	return GetHgh_@1(x, inclusive, current->left, b, base, p1, p2, previous, getNextPosition(current, b, base, next));
 
 	}
 
 	if ( @2_EQ(&x,curValue,@3@1) && (inclusive == FALSE || (inclusive == TRUE && current->inclusive == FALSE))){
-		*p2 = *(lng*)BUNhloc(b, cur);	
+		*p2 = *(oid*)Hloc(b, cur);	
 		return 1;
 	}	
 
@@ -381,28 +458,152 @@ GetHgh_@1(@1  x, bit inclusive, struct Node * current, BAT *b, BUN base, int xx,
 
 		if (current->right == NULL){
 			/* crack until the end of the BAT if this was the last index entry but the needed value is still bigger */
-			*p1 = *(lng*)BUNhloc(b, cur);
+			*p1 = *(oid*)Hloc(b, cur);
                 	*p2 = next;
 			return 0;
 		} else
 			/* check for the right one */
-      			return GetHgh_@1(x, inclusive, current->right, b, base, xx, p1, p2, *(lng*)BUNhloc(b, cur), next);
+      			return GetHgh_@1(x, inclusive, current->right, b, base, p1, p2, *(oid*)Hloc(b, cur), next);
 	}
 
 	/* then it is smaller than the current value */
 	if (current->left == NULL){
 		/* crack from the beginning of the bat until here */
 		*p1 = previous;
-               	*p2 = *(lng*)BUNhloc(b, cur);
+               	*p2 = *(oid*)Hloc(b, cur);
 		return 0;
 	} else	
 		/* check for the left one */	
-		return GetHgh_@1(x, inclusive, current->left, b, base, xx, p1, p2, previous, *(lng*)BUNhloc(b, cur));	
+		return GetHgh_@1(x, inclusive, current->left, b, base, p1, p2, previous, *(oid*)Hloc(b, cur));	
+}
+
+bit
+GetLowNodes_@1(@1  x, bit inclusive, struct Node * current, BAT *b, BUN base, struct Node **p1, struct Node **p2, struct Node *previous, struct Node *next){
+	BUN cur;
+	@1 * curValue;
+
+	if (current==NULL){
+                *p1 = previous;
+		*p2 = next;
+		return 0;
+	}	
+
+	cur = base + current->position;
+	curValue = (@1*)Tloc(b, cur);
+
+	if (current->deleted == TRUE){
+		if ( @2_EQ(&x,curValue,@3@1) || @2_LT(&x,curValue,@3@1) ){	
+			if (current->left == NULL){
+        	                *p1 = previous;
+                	        *p2 = getNextNode(current, next);
+                       	 	return 0;
+                	} else
+                        	/* check for the left one */
+                        	return GetLowNodes_@1(x, inclusive, current->left, b, base, p1, p2, previous, getNextNode(current, next));
+		}
+		if (current->right == NULL){
+               	 	*p1 = getPreviousNode(current, previous);
+			*p2 = next;
+			return 0;
+		} else 	
+			return GetLowNodes_@1(x, inclusive, current->right, b, base, p1, p2, getPreviousNode(current, previous), next);
+	}
+
+	if ( @2_EQ(&x,curValue,@3@1) && (inclusive == FALSE || (inclusive == TRUE && current->inclusive == TRUE)) ){
+		*p1 = current;	
+		*p2 = getNextNode(current, next); /* added to avoid nulls */
+		return 1;
+	}	
+
+       	if ( @2_LT(&x,curValue,@3@1) || @2_EQ(&x,curValue,@3@1) ){
+
+		if (current->left == NULL){
+			/* crack from the begining of the bat */
+                	*p1 = previous;
+			*p2 = current;
+			return 0;
+		} else
+			/* check for the left one */
+      			return GetLowNodes_@1(x, inclusive, current->left, b, base, p1, p2, previous, current);
+			
+	}
+
+	if (current->right == NULL){
+		/* crack until the end of the bat */
+                *p1 = current;
+		*p2 = next;
+		return 0;
+	} else 	
+		/* check for the right one */
+		return GetLowNodes_@1(x, inclusive, current->right, b, base, p1, p2, current, next);
+}
+
+bit
+GetHghNodes_@1(@1  x, bit inclusive, struct Node * current, BAT *b, BUN base, struct Node **p1, struct Node **p2, struct Node *previous, struct Node *next){
+        BUN cur;
+	@1 *curValue;	
+
+	if (current==NULL){
+                *p1 = previous;
+		*p2 = next;
+		return 0;
+	}	
+
+	cur = base + current->position;
+	curValue = (@1*)Tloc(b, cur);
+
+	if (current->deleted == TRUE){
+		if ( @2_EQ(&x,curValue,@3@1) || @2_GT(&x,curValue,@3@1) ){
+			 if (current->right == NULL){
+                       	 	*p1 = getPreviousNode(current, previous);
+                        	*p2 = next;
+                        	return 0;
+                	} else
+                        	return GetHghNodes_@1(x, inclusive, current->right, b, base, p1, p2, getPreviousNode(current, previous), next);
+		}
+		if (current->left == NULL){
+               	 	*p1 = previous;
+                	*p2 = getNextNode(current, next);
+               	 	return 0;
+	        } else
+                	return GetHghNodes_@1(x, inclusive, current->left, b, base, p1, p2, previous, getNextNode(current, next));
+	}
+
+	if ( @2_EQ(&x,curValue,@3@1) && (inclusive == FALSE || (inclusive == TRUE && current->inclusive == FALSE))){
+		*p1 = getPreviousNode(current, previous); /*added to avoid nulls*/
+		*p2 = current;	
+		return 1;
+	}	
+
+	if ( @2_GT(&x,curValue,@3@1) || @2_EQ(&x,curValue,@3@1) ){
+
+		if (current->right == NULL){
+			/* crack until the end of the BAT if this was the last index entry but the needed value is still bigger */
+			*p1 = current;
+                	*p2 = next;
+			return 0;
+		} else
+			/* check for the right one */
+      			return GetHghNodes_@1(x, inclusive, current->right, b, base, p1, p2, current, next);
+	}
+
+	/* then it is smaller than the current value */
+	if (current->left == NULL){
+		/* crack from the beginning of the bat until here */
+		*p1 = previous;
+               	*p2 = current;
+		return 0;
+	} else	
+		/* check for the left one */	
+		return GetHghNodes_@1(x, inclusive, current->left, b, base, p1, p2, previous, current);	
 }
 
 struct Node *
-InsertTree_@1(int m, int indexPosition, @1 value, bit inclusive, lng crackPosition, struct Node * current, BAT * b, BUN base, int xx){
-	BUN cur, curValue, curPosition, Lchild, LchildValue, Rchild, RchildValue;
+InsertTreeIncrementalSideways_@1(int m, oid indexPosition, @1 value, bit inclusive, oid crackPosition, oid crackPositionLocal, struct Node * current, BAT * b, BUN base, struct Node **newNode, bit localBound, bit first, int pieceBAT){
+	BUN cur, Lchild, Rchild;
+	@1 *curValue, *LchildValue, *RchildValue;
+	oid *curPosition;
+
 	int lh, rh;
 	bit use;
 	struct Node *temp;
@@ -419,20 +620,51 @@ InsertTree_@1(int m, int indexPosition, @1 value, bit inclusive, lng crackPositi
 		current->previous = NULL;
 		current->isPreviousSmaller = FALSE;
 		current->hols = 0;
+		current->slice = -1;
+		current->localBound = localBound;
+                current->first = first;
+                current->pieceBAT = pieceBAT;
+                current->tape = -1;
+		current->indexLocal = crackPositionLocal;
+                current->references = NULL;
+		current->nextPiece = NULL;
+		/* storage management info are initialized only for the first node of a piece when registering the piece in StorageInfo */
+		*newNode = current;
 		goto end;
         }
 
-	cur = base + ((current->position) * xx);
-        curValue = BUNtloc(b, cur);
+	cur = base + current->position;
+        curValue = (@1*)Tloc(b, cur);
+
+	if (*curValue == value && current->inclusive == inclusive){
+		if (current->deleted == FALSE){
+			if (!(current->localBound == FALSE && current->first == TRUE)){
+				current->localBound = localBound;
+				current->first = first;
+				current->pieceBAT = pieceBAT;
+				current->indexLocal = crackPositionLocal;
+			}
+			*newNode = current;
+			return NULL;
+		}else{
+			current->deleted = FALSE; 
+			current->localBound = localBound;
+			current->first = first;
+			current->pieceBAT = pieceBAT;
+			current->indexLocal = crackPositionLocal;
+			*newNode = current;
+			return NULL;
+		}
+	}
 
 	/* reuse if possible nodes that have been deleted with lazy deletion */
 	use = FALSE;
 	if (current->deleted == TRUE){
 		if (current->left != NULL && current->right != NULL){
-			Lchild = base + (((getPreviousNodeAny(current))->position) * xx);
-                        LchildValue = BUNtloc(b, Lchild);
-			Rchild = base + (((getNextNodeAny(current))->position) * xx);
-                        RchildValue = BUNtloc(b, Rchild);
+			Lchild = base + (getPreviousNodeAny(current))->position;
+                        LchildValue = (@1*)Tloc(b, Lchild);
+			Rchild = base + (getNextNodeAny(current))->position;
+                        RchildValue = (@1*)Tloc(b, Rchild);
 			
 			if ( ( @2_LT(&value,RchildValue,@3@1) || (@2_EQ(&value,RchildValue,@3@1) && 
 			       inclusive == TRUE && current->right->inclusive == FALSE) )  &&
@@ -441,16 +673,16 @@ InsertTree_@1(int m, int indexPosition, @1 value, bit inclusive, lng crackPositi
 				use = TRUE;			
 		} else
 		if (current->left != NULL && current->right == NULL){
-			Lchild = base + (((getPreviousNodeAny(current))->position) * xx);
-                        LchildValue = BUNtloc(b, Lchild);
+			Lchild = base + (getPreviousNodeAny(current))->position;
+                        LchildValue = (@1*)Tloc(b, Lchild);
 
 			if ( @2_GT(&value,LchildValue,@3@1) || (@2_EQ(&value,LchildValue,@3@1) && 
 			     inclusive == FALSE && current->left->inclusive == TRUE) )
 				use = TRUE;
 		} else
 		if (current->left == NULL && current->right != NULL){
-			Rchild = base + (((getNextNodeAny(current))->position) * xx);
-                        RchildValue = BUNtloc(b, Rchild);
+			Rchild = base + (getNextNodeAny(current))->position;
+                        RchildValue = (@1*)Tloc(b, Rchild);
 			
 			if ( @2_LT(&value,RchildValue,@3@1) || (@2_EQ(&value,RchildValue,@3@1) && 
 			     inclusive == TRUE && current->right->inclusive == FALSE) )
@@ -460,18 +692,30 @@ InsertTree_@1(int m, int indexPosition, @1 value, bit inclusive, lng crackPositi
 				use = TRUE;
 
 		if (use == TRUE){
-        		curPosition = BUNhloc(b, cur);
-			*(lng*)curPosition = crackPosition;
-                        *(@1*)curValue = value;
-			current->inclusive = inclusive;
                         current->deleted = FALSE;
+
+        		curPosition = (oid*)Hloc(b, cur);
+			*curPosition = crackPosition;
+                        *curValue = value;
+			current->inclusive = inclusive;
+
+			current->localBound = localBound;
+                        current->first = first;
+                        current->pieceBAT = pieceBAT;
+                        current->indexLocal = crackPositionLocal;
+			
+			current->hols = 0;
+		        current->slice = -1;
+
+			*newNode = current;
+
                         return NULL;
 		}
 	}
 
         if ( @2_LT(&value,curValue,@3@1) || (@2_EQ(&value,curValue,@3@1) && inclusive == TRUE && current->inclusive == FALSE) ){
 
-		if ( (temp = InsertTree_@1(m, indexPosition, value, inclusive, crackPosition, current->left, b, base, xx)) == NULL )
+		if ( (temp = InsertTreeIncrementalSideways_@1(m, indexPosition, value, inclusive, crackPosition, crackPositionLocal, current->left, b, base, newNode, localBound, first, pieceBAT)) == NULL)
                 	return NULL;
 
 		current->left = temp;
@@ -479,8 +723,8 @@ InsertTree_@1(int m, int indexPosition, @1 value, bit inclusive, lng crackPositi
 		temp->isPreviousSmaller = FALSE;
 
                 if ( Height(current->left) - Height(current->right) == 2 ){
-		        Lchild = base + ((current->left->position) * xx);
-        		LchildValue = BUNtloc(b, Lchild);
+		        Lchild = base + current->left->position;
+        		LchildValue = (@1*)Tloc(b, Lchild);
 
                     	if ( @2_LT(&value,LchildValue,@3@1) || (@2_EQ(&value,LchildValue,@3@1) && 
 			     inclusive == TRUE && current->left->inclusive == FALSE) )
@@ -491,7 +735,7 @@ InsertTree_@1(int m, int indexPosition, @1 value, bit inclusive, lng crackPositi
         } else
         if ( @2_GT(&value,curValue,@3@1) || (@2_EQ(&value,curValue,@3@1) && inclusive == FALSE && current->inclusive == TRUE) ){
 
-		if ( (temp = InsertTree_@1(m, indexPosition, value, inclusive, crackPosition, current->right, b, base, xx)) == NULL )
+		if ( (temp = InsertTreeIncrementalSideways_@1(m, indexPosition, value, inclusive, crackPosition, crackPositionLocal, current->right, b, base, newNode, localBound, first, pieceBAT)) == NULL)
 			return NULL;
 
                 current->right = temp;
@@ -500,8 +744,8 @@ InsertTree_@1(int m, int indexPosition, @1 value, bit inclusive, lng crackPositi
 
 
                 if ( Height(current->right) - Height(current->left) == 2 ){
-			Rchild = base + ((current->right->position) * xx);
-                        RchildValue = BUNtloc(b, Rchild);
+			Rchild = base + current->right->position;
+                        RchildValue = (@1*)Tloc(b, Rchild);
 
                         if ( @2_GT(&value,RchildValue,@3@1) || (@2_EQ(&value,RchildValue,@3@1) && 
 			     inclusive == FALSE && current->right->inclusive == TRUE) )
@@ -520,11 +764,140 @@ InsertTree_@1(int m, int indexPosition, @1 value, bit inclusive, lng crackPositi
 }
 
 struct Node *
-findNodeH_@1(@1  x, bit inclusive, struct Node * current, BAT *b, BUN base, int xx, struct Node * next){
-        BUN cur,curValue;	
+InsertTree_@1(int m, oid indexPosition, @1 value, bit inclusive, oid crackPosition, struct Node * current, BAT * b, BUN base, struct Node **newNode){
+	BUN cur,Lchild, Rchild;
+	@1 *curValue, *LchildValue, *RchildValue;
+	oid *curPosition;
+	int lh, rh;
+	bit use;
+	struct Node *temp;
 
-	cur = base + ((current->position) * xx);
-	curValue = BUNtloc(b, cur);
+	if (current == NULL){
+        	current = (struct Node *)GDKmalloc(sizeof(struct Node));
+		if (current == NULL)
+			printf("\n GDK malloc failed !! new node is not created \n");
+                current->position = indexPosition;
+                current->inclusive = inclusive;
+		current->height = 0;
+                current->left = NULL;
+		current->right = NULL;
+		current->head = FALSE;
+		current->deleted = FALSE;
+		current->previous = NULL;
+		current->isPreviousSmaller = FALSE;
+		current->hols = (oid)0;
+		current->slice = -1;
+		*newNode = current;
+		goto end;
+        }
+
+	if (current==NULL)
+		printf("\n current is NULL\n");
+
+	cur = base + current->position;
+        curValue = (@1*)Tloc(b, cur);
+
+	/* reuse if possible nodes that have been deleted with lazy deletion */
+	use = FALSE;
+	if (current->deleted == TRUE){
+		if (current->left != NULL && current->right != NULL){
+			Lchild = base + (getPreviousNodeAny(current))->position;
+                        LchildValue = (@1*)Tloc(b, Lchild);
+			Rchild = base + (getNextNodeAny(current))->position;
+                        RchildValue = (@1*)Tloc(b, Rchild);
+			
+			if ( ( @2_LT(&value,RchildValue,@3@1) || (@2_EQ(&value,RchildValue,@3@1) && 
+			       inclusive == TRUE && current->right->inclusive == FALSE) )  &&
+			     ( @2_GT(&value,LchildValue,@3@1) || (@2_EQ(&value,LchildValue,@3@1) && 
+ 			       inclusive == FALSE && current->left->inclusive == TRUE) ) )
+				use = TRUE;			
+		} else
+		if (current->left != NULL && current->right == NULL){
+			Lchild = base + (getPreviousNodeAny(current))->position;
+                        LchildValue = (@1*)Tloc(b, Lchild);
+
+			if ( @2_GT(&value,LchildValue,@3@1) || (@2_EQ(&value,LchildValue,@3@1) && 
+			     inclusive == FALSE && current->left->inclusive == TRUE) )
+				use = TRUE;
+		} else
+		if (current->left == NULL && current->right != NULL){
+			Rchild = base + (getNextNodeAny(current))->position;
+                        RchildValue = (@1*)Tloc(b, Rchild);
+			
+			if ( @2_LT(&value,RchildValue,@3@1) || (@2_EQ(&value,RchildValue,@3@1) && 
+			     inclusive == TRUE && current->right->inclusive == FALSE) )
+				use = TRUE;
+		} else
+		if (current->left == NULL && current->right == NULL)
+				use = TRUE;
+
+		if (use == TRUE){
+        		curPosition = (oid*)Hloc(b, cur);
+			*curPosition = crackPosition;
+                        *curValue = value;
+			current->inclusive = inclusive;
+                        current->deleted = FALSE;
+                        return NULL;
+		}
+	}
+
+        if ( @2_LT(&value,curValue,@3@1) || (@2_EQ(&value,curValue,@3@1) && inclusive == TRUE && current->inclusive == FALSE) ){
+
+		if ( (temp = InsertTree_@1(m, indexPosition, value, inclusive, crackPosition, current->left, b, base, newNode)) == NULL)
+                	return NULL;
+
+		current->left = temp;
+		temp->previous = current;
+		temp->isPreviousSmaller = FALSE;
+
+                if ( Height(current->left) - Height(current->right) == 2 ){
+		        Lchild = base + current->left->position;
+        		LchildValue = (@1*)Tloc(b, Lchild);
+
+                    	if ( @2_LT(&value,LchildValue,@3@1) || (@2_EQ(&value,LchildValue,@3@1) && 
+			     inclusive == TRUE && current->left->inclusive == FALSE) )
+                        	current = SingleRotateLeft(m, current);
+                    	else
+                        	current = DoubleRotateLeft(m, current);
+		}
+        } else
+        if ( @2_GT(&value,curValue,@3@1) || (@2_EQ(&value,curValue,@3@1) && inclusive == FALSE && current->inclusive == TRUE) ){
+
+		if ( (temp = InsertTree_@1(m, indexPosition, value, inclusive, crackPosition, current->right, b, base, newNode)) == NULL )
+			return NULL;
+
+                current->right = temp;
+		temp->previous = current;
+		temp->isPreviousSmaller = TRUE;
+
+
+                if ( Height(current->right) - Height(current->left) == 2 ){
+			Rchild = base + current->right->position;
+                        RchildValue = (@1*)Tloc(b, Rchild);
+
+                        if ( @2_GT(&value,RchildValue,@3@1) || (@2_EQ(&value,RchildValue,@3@1) && 
+			     inclusive == FALSE && current->right->inclusive == TRUE) )
+                        	current = SingleRotateRight(m, current);
+                    	else
+                        	current = DoubleRotateRight(m, current);
+		}
+        }
+
+	end:;
+	lh = Height(current->left);
+	rh = Height(current->right);
+		
+        current->height = (lh > rh? lh : rh) + 1;
+        return current;
+}
+
+struct Node *
+findNodeH_@1(@1  x, bit inclusive, struct Node * current, BAT *b, BUN base, struct Node * next){
+        BUN cur;
+	@1 *curValue;	
+
+	cur = base + current->position;
+	curValue = (@1*)Tloc(b, cur);
 
 	if ( @2_EQ(&x,curValue,@3@1) && (inclusive == FALSE || (inclusive == TRUE && current->inclusive == FALSE)) )
 		return (current->deleted == TRUE) ? getNextNode(current, next) : current;
@@ -534,21 +907,22 @@ findNodeH_@1(@1  x, bit inclusive, struct Node * current, BAT *b, BUN base, int 
 		if (current->right == NULL)
 			return next;
 		else
-      			return findNodeH_@1(x, inclusive, current->right, b, base, xx, next);
+      			return findNodeH_@1(x, inclusive, current->right, b, base, next);
 	}
 
 	if (current->left == NULL)
 		return (current->deleted == TRUE) ? getNextNode(current, next) : current;
 	else		
-		return findNodeH_@1(x, inclusive, current->left, b, base, xx, (current->deleted == TRUE) ? getNextNode(current, next) : current);	
+		return findNodeH_@1(x, inclusive, current->left, b, base, (current->deleted == TRUE) ? getNextNode(current, next) : current);	
 }
 
 struct Node *
-findNodeL_@1(@1  x, bit inclusive, struct Node * current, BAT *b, BUN base, int xx, struct Node * prev){
-	BUN cur,curValue;
+findNodeL_@1(@1  x, bit inclusive, struct Node * current, BAT *b, BUN base, struct Node * prev){
+	BUN cur;
+	@1 *curValue;
 
-	cur = base + ((current->position) * xx);
-	curValue = BUNtloc(b, cur);
+	cur = base + current->position;
+	curValue = (@1*)Tloc(b, cur);
 
 	if ( @2_EQ(&x,curValue,@3@1) && (inclusive == FALSE || (inclusive == TRUE && current->inclusive == TRUE)) )
 		return (current->deleted == TRUE) ? getPreviousNode(current, prev) : current;
@@ -558,27 +932,28 @@ findNodeL_@1(@1  x, bit inclusive, struct Node * current, BAT *b, BUN base, int 
 		if (current->left == NULL)
 			return prev;
 		else
-			return findNodeL_@1(x, inclusive, current->left, b, base, xx, prev);
+			return findNodeL_@1(x, inclusive, current->left, b, base, prev);
 	}
 
 	if (current->right == NULL)
 		return (current->deleted == TRUE) ? getPreviousNode(current, prev) : current;
 	else
-		return findNodeL_@1(x, inclusive, current->right, b, base, xx, (current->deleted == TRUE) ? getPreviousNode(current, prev) : current);
+		return findNodeL_@1(x, inclusive, current->right, b, base, (current->deleted == TRUE) ? getPreviousNode(current, prev) : current);
 }
 
 void
-PartiallyLazyFreeAVLTree_@1(struct Node * current, @1 value, BAT *b, BUN base, int xx){
-	BUN cur,curValue;
+PartiallyLazyFreeAVLTree_@1(struct Node * current, @1 value, BAT *b, BUN base){
+	BUN cur;
+	@1 *curValue;
 
-        cur = base + ((current->position) * xx);
-        curValue = BUNtloc(b, cur);
+        cur = base + current->position;
+        curValue = (@1*)Tloc(b, cur);
 
 	if (current->left != NULL)
-		PartiallyLazyFreeAVLTree_@1(current->left, value, b, base, xx);
+		PartiallyLazyFreeAVLTree_@1(current->left, value, b, base);
 
 	if (current->right != NULL)
-		PartiallyLazyFreeAVLTree_@1(current->right, value, b, base, xx);
+		PartiallyLazyFreeAVLTree_@1(current->right, value, b, base);
 
 	if( @2_LT(&value,curValue,@3@1) || (@2_EQ(&value,curValue,@3@1) && current->inclusive == FALSE) )
 		current->deleted = TRUE;
@@ -591,7 +966,7 @@ PartiallyLazyFreeAVLTree_@1(struct Node * current, @1 value, BAT *b, BUN base, i
 
 @= AVLtreeLocalFunctions
 /* Get the previous node in the tree (in terms of value), the result can be any node, deleted or no */
-static struct Node *
+struct Node *
 getPreviousNodeAny(struct Node * current){
 	struct Node *res = NULL;
 
@@ -622,6 +997,9 @@ static struct Node *
 getP(struct Node * current){
         struct Node *res = NULL;
 
+	if (current == NULL)
+		return NULL;
+
 	if (current->right != NULL)
 		res = getP(current->right);
 	if (res == NULL){
@@ -637,6 +1015,9 @@ getP(struct Node * current){
 static struct Node *
 getN(struct Node * current){
         struct Node *res = NULL;
+	
+	if (current == NULL)
+		return NULL;
 
 	if (current->left != NULL)
 		res = getN(current->left);
@@ -675,27 +1056,52 @@ getNextNode(struct Node * current, struct Node * next){
         return res;
 }
 
-static lng
-getPreviousPosition(struct Node * current, BAT *b, BUN base, int xx, lng previous){
+static oid
+getPreviousPosition(struct Node * current, BAT *b, BUN base, oid previous){
         struct Node *res = NULL;
 
 	if (current->left != NULL)
 		res= getP(current->left);
 	if (res == NULL)
 		return previous;
-        return *(lng*)BUNhloc(b,base + ((res->position) * xx));
+        return *(oid*)Hloc(b,base + res->position);
 
 }
 
-static lng
-getNextPosition(struct Node * current, BAT *b, BUN base, int xx, lng next){
+static oid
+getNextPosition(struct Node * current, BAT *b, BUN base, oid next){
         struct Node *res = NULL;
 
 	if (current->right != NULL)
 		res= getN(current->right);
 	if (res == NULL)
 		return next;
-        return *(lng*)BUNhloc(b,base + ((res->position) * xx));
+        return *(oid*)Hloc(b,base + res->position);
+}
+
+struct Node *
+getPreviousNonLocalNode(struct Node * current){
+        struct Node *res=current;
+
+	while (res !=NULL)
+		if (res->localBound == TRUE)
+			res = findPreviousPieceWalkingBack(res);
+		else 
+			return res;
+	return res;
+}
+
+struct Node *
+getNextNonLocalNode(struct Node * current){
+        struct Node *res=current;
+
+	while (res !=NULL){
+		if (res->localBound == TRUE)
+			res = findNextPiece(res);
+		else 
+			return res;
+	}
+	return res;
 }
 @
 

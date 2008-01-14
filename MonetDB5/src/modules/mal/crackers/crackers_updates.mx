@@ -85,12 +85,12 @@ str appendInsertions(int *new, int position);
 
 @= UpdatesSharedFunctions_decl_1
 /* mergeInsertionOperations */
-str mergeInsertionsB_@1(int *bid, int *new, lng startPosition, lng endPosition);
-str mergeInsertionsBGradually_@1(int *bid, int *new, lng startPosition, lng endPosition);
-str mergeInsertionsBRipple_@1(BAT *b, BAT *u, lng startPosition, lng endPosition, @1 *hgh, bit inclusive, int position);
-str mergeDeletions_@1(int *bid, int *del, lng startPosition, lng endPosition);
-str mergeDeletionsGradually_@1(int *bid, int *del, lng startPosition, lng endPosition);
-str mergeDeletionsGraduallyRipple_@1(int *bid, int *del, lng startPosition, lng endPosition, @1 *lowV, bit inclusiveL, @1 *hghV, bit inclusiveH);
+str mergeInsertionsB_@1(int *bid, int *new, oid startPosition, oid endPosition);
+str mergeInsertionsBGradually_@1(int *bid, int *new, oid startPosition, oid endPosition);
+str mergeInsertionsBRipple_@1(BAT *b, BAT *u, oid startPosition, oid endPosition, @1 *hgh, bit inclusive, int position);
+str mergeDeletions_@1(int *bid, int *del, oid startPosition, oid endPosition);
+str mergeDeletionsGradually_@1(int *bid, int *del, oid startPosition, oid endPosition);
+str mergeDeletionsGraduallyRipple_@1(int *bid, int *del, oid startPosition, oid endPosition, @1 *lowV, bit inclusiveL, @1 *hghV, bit inclusiveH);
 @
 
 
@@ -174,9 +174,9 @@ CRKextendCrackerBAT(int *k, int *bid, lng positions){
 	if ((b = BATdescriptor(CrackerIndex[position].cbid)) == NULL)
                 throw(MAL, "crackers.CRKextendCrackerBAT", "Cannot access cracker BAT");
 
-	if (BATextend(b, positions) == NULL)
+	if (BATextend(b, (size_t)positions) == NULL)
                 throw(MAL, "crackers.CRKextendCrackerBAT", "Failed to extend the cracker BAT");	
-	
+
 	BBPunfix(b->batCacheid);
 
 	return MAL_SUCCEED;
@@ -234,8 +234,8 @@ str
 CRKmergeInsertions_PartiallyForget_@1(int *k, int *bid, int *new){
 	BAT *c, *u;
 	@1 min;
-	BUN inst, insLast;
-	int xx, position = -1;
+	@1 *inst, *insLast;
+	int position = -1;
 	int i;
 
 	(void) k;
@@ -260,16 +260,15 @@ CRKmergeInsertions_PartiallyForget_@1(int *k, int *bid, int *new){
         }
 
 	/* get the min value */
-	xx = BUNsize(u);
-	inst = BUNtloc(u,BUNfirst(u));
-	insLast = BUNtloc(u,BUNlast(u));
-	min = *(@1*)inst;
-	for(inst+=xx;inst < insLast; inst+=xx)
+	inst    = (@1*)Tloc(u,BUNfirst(u));
+	insLast = (@1*)Tloc(u,BUNlast(u));
+	min = *inst;
+	for(inst+=1;inst < insLast; inst++)
 		if (@2_GT(&min,inst,@3@1))
-			min = *(@1*)inst;
+			min = *inst;
 
 	/* Partially delete tree with lazy deletion */
-	PartiallyLazyFreeAVLTree_@1(CrackerIndex[position].Tree, min, c, BUNfirst(c), BUNsize(c));
+	PartiallyLazyFreeAVLTree_@1(CrackerIndex[position].Tree, min, c, BUNfirst(c));
 
 	appendCrackerBAT(bid,new);
 
@@ -281,22 +280,21 @@ CRKmergeInsertions_PartiallyForget_@1(int *k, int *bid, int *new){
 
 str
 CRKmergeInsertionsB_Force_@1(int *k, int *bid, int *new){
-	lng startPosition = 0;
-	lng endPosition   = -1;
+	oid startPosition = 0;
+	oid endPosition;
+	int endPositionStatus   = -1;
 	@1 *hgh;
 	bit inclusive = TRUE;
 
 	@:mergeInsertionsFromTheEndBodyI(@1,@2,@3)@
 
 	(void)k;
-	next = BUNlast(b) - xx;
-	hgh = (@1*)BUNtloc(b,next);
+	next = BUNlast(b) - (oid)1;
+	hgh = (@1*)Tloc(b,next);
 	@:mergeInsertionsFromTheEndBodyCG(@1,@2,@3)@
 	@:mergeInsertionsFromTheEndBodyII(@1,@2,@3)@
 
-	crkLast = BUNlast(b) + insertions * xx;
-	b->batBuns->free = crkLast - b->batBuns->base;
-        BATsetcount(b, b->batBuns->free/xx);
+        BATsetcount(b, BUNlast(b) + insertions);
 
 	BBPunfix(c->batCacheid);
 	BBPunfix(u->batCacheid);
@@ -340,20 +338,19 @@ appendInsertions(int *new, int position){
 @= UpdatesSharedFunctions_impl_1
 /* mergeInsertionOperations */
 str
-mergeInsertionsB_@1(int *bid, int *new, lng startPosition, lng endPosition){
+mergeInsertionsB_@1(int *bid, int *new, oid startPosition, oid endPosition){
 	@1 *hgh;
 	bit inclusive = TRUE;
+	int endPositionStatus   = 0;
 	@:mergeInsertionsFromTheEndBodyI(@1,@2,@3)@
 
-	next = BUNlast(b) - xx;
-	hgh = (@1*)BUNtloc(b,next);
+	next = BUNlast(b) - 1;
+	hgh  = (@1*)Tloc(b,next);
+
 	@:mergeInsertionsFromTheEndBodyCG(@1,@2,@3)@
-	@:mergeInsertionsFromTheEndBodyII(@1,@2,@3)@
+        @:mergeInsertionsFromTheEndBodyII(@1,@2,@3)@
 
-	crkLast = BUNlast(b) + insertions * xx;
-	b->batBuns->free = crkLast - b->batBuns->base;
-        BATsetcount(b, b->batBuns->free/xx);
-
+        BATsetcount(b, BUNlast(b) + insertions);
 	BBPunfix(c->batCacheid);
 	BBPunfix(u->batCacheid);
 	BBPunfix(b->batCacheid);
@@ -362,23 +359,21 @@ mergeInsertionsB_@1(int *bid, int *new, lng startPosition, lng endPosition){
 }
 
 str
-mergeInsertionsBGradually_@1(int *bid, int *new, lng startPosition, lng endPosition){
+mergeInsertionsBGradually_@1(int *bid, int *new, oid startPosition, oid endPosition){
 	/* First merge then shrink the insertions column */
 	@1 *hgh;
 	bit inclusive = TRUE;
+	int endPositionStatus   = 0;
 	@:mergeInsertionsFromTheEndBodyI(@1,@2,@3)@
 
-	next = BUNlast(b) - xx;
-	hgh = (@1*)BUNtloc(b,next);
+	next = BUNlast(b) - 1;
+	hgh = (@1*)Tloc(b,next);
 	
 	@:mergeInsertionsFromTheEndBodyCG(@1,@2,@3)@
 	@:mergeInsertionsFromTheEndBodyII(@1,@2,@3)@
 
-	crkLast = BUNlast(b) + insertions * xx;
-	b->batBuns->free = crkLast - b->batBuns->base;
-        BATsetcount(b, b->batBuns->free/xx);
+        BATsetcount(b, BUNlast(b) + insertions);
 	endPosition++;
-
 	@:shrinkInsertions(@1)@
 
         BBPunfix(c->batCacheid);
@@ -389,23 +384,29 @@ mergeInsertionsBGradually_@1(int *bid, int *new, lng startPosition, lng endPosit
 }
 
 str
-mergeInsertionsBRipple_@1(BAT *b, BAT *u, lng startPosition, lng endPosition, @1 *hgh, bit inclusive, int position){
+mergeInsertionsBRipple_@1(BAT *b, BAT *u, oid startPosition, oid endPosition, @1 *hgh, bit inclusive, int position){
         BAT *ripple;
-        BUN rh, rt, rnext, insLast;
-	lng toRippleBuns;
-	lng exceedBuns = 0;
+        BUN rnext;
+        oid *rh;
+	@1 *rt, *insLast;	
+	oid toRippleBuns;
+	oid exceedBuns = 0;
 	struct Node * NextNode;
 	bit fromTheEnd = FALSE;
-	int i;
-	lng consumedRipple = 0, consumedInsertions = 0, values, usedHoles = 0;
+	oid i;
+	oid consumedRipple = 0, consumedInsertions = 0, values, usedHoles = 0;
 	struct Node *rippleNode = NULL;
 
         BAT *c;
-	BUN insh, inst, crkh, crkt, idxFirst, cur, curVal, curPos, crkFirst, crkLast, insFirst, next, write;
-	int xx, zz;
+	BUN idxFirst, cur, crkFirst, insFirst, next, write;
+	oid *insh, *crkh;
+	@1 *inst, *crkt, *crkLast, *curVal;
+	oid *curPos;
 	struct Node *IndexNode = NULL;
-	lng prevPos, prevcrsize, insertions, remainingIns, buns, needed;
+	oid prevPos, prevcrsize, insertions, remainingIns, buns, needed;
 	struct Node *prevNode =NULL;
+	@1  *startT, *endT;
+	oid *startH, *endH;
 
 	/* abort if there are no insertions to merge */	
 	if (BATcount(u) == 0) {
@@ -416,8 +417,10 @@ mergeInsertionsBRipple_@1(BAT *b, BAT *u, lng startPosition, lng endPosition, @1
 		throw(MAL, "crackers.mergeInsertions_@1", "Cannot access cracker index");
 	}
 
-	if (endPosition == -1)
+	/*if (endPositionStatus == -1){
 		endPosition = BATcount(u) - 1;
+		endPositionStatus = 0;
+	}*/
 	insertions = endPosition - startPosition + 1;
 
 	/* sort in place the insertions bat */
@@ -428,46 +431,46 @@ mergeInsertionsBRipple_@1(BAT *b, BAT *u, lng startPosition, lng endPosition, @1
 
 	remainingIns = insertions;
 	prevcrsize = BATcount(b);
-	xx = BUNsize(b);
-	zz = BUNsize(c);
 	insFirst = BUNfirst(u);	
 
 	/* make room for the new tuples */
-	needed = insertions - (((b)->batBuns->size - (b)->batBuns->free) / xx);
-	if ( needed > 0 ){
-                size_t ncap = BATcapacity(b) + needed;
-                size_t grows = BATgrows(b);
+	if ( insertions > BATcapacity(b) - BATcount(b) ){
+		size_t ncap;
+		size_t grows;
+		needed = insertions - (BATcapacity(b) - BATcount(b));
+                ncap = BATcapacity(b) + needed;
+                grows = BATgrows(b);
                 if (ncap > grows)
                         grows = ncap;
                 if (BATextend(b, grows) == NULL)
                         throw(MAL, "crackers.mergeInsertions_@1", "Failed to make room for the new values");
         }
 	
-	insh 	 = BUNhloc(u, insFirst + endPosition*xx);
-	inst 	 = BUNtloc(u, insFirst + endPosition*xx);
+	insh 	 = (oid*)Hloc(u, insFirst + endPosition);
+	inst 	 = (@1 *)Tloc(u, insFirst + endPosition);
 	idxFirst = BUNfirst(c);
 	crkFirst = BUNfirst(b);
 	prevPos = prevcrsize - 1;
 
-	insLast = BUNtloc(u,BUNlast(u));	
+	insLast = (@1*)Tloc(u,BUNlast(u));	
 	toRippleBuns = endPosition - startPosition +1;
 	ripple = BATnew(TYPE_oid, TYPE_@1, toRippleBuns);
 
         /* Find out buns that should be rippled. Take this values out in a temporary BAT */
 
 	/* first find the piece where the biggest insertions should be placed */
-        if ( (NextNode = findNodeH_@1(*(@1*)hgh, inclusive, CrackerIndex[position].Tree, c, idxFirst, zz, NULL)) != NULL ){
+        if ( (NextNode = findNodeH_@1(*(@1*)hgh, inclusive, CrackerIndex[position].Tree, c, idxFirst, NULL)) != NULL ){
 
 		prevNode = NextNode;
-		cur     = idxFirst + (NextNode->position) * zz;
-                curPos  = BUNhloc(c, cur);
+		cur     = idxFirst + NextNode->position;
+                curPos  = (oid*)Hloc(c, cur);
 
 		/* prevPos should not be changed! 
 		   mergeInsertionsFromTheEndBodyII expects it to point in the position from where merging will start */
-		prevPos = *(lng*)curPos;
+		prevPos = *curPos;
 
 		/* merging will start from this bun */		
-		next = crkFirst + (*(lng*)curPos) * xx;
+		next = crkFirst + (*curPos) ;
 
 		/* use hols if any at the end of the result area */
 		if (NextNode->hols > 0){
@@ -480,25 +483,25 @@ mergeInsertionsBRipple_@1(BAT *b, BAT *u, lng startPosition, lng endPosition, @1
 			
 		}
 
-		rh = BUNhloc(ripple, BUNfirst(ripple));
-		rt = BUNtloc(ripple, BUNfirst(ripple));
+		rh = (oid*)Hloc(ripple, BUNfirst(ripple));
+		rt = (@1 *)Tloc(ripple, BUNfirst(ripple));
 
-                rnext   = crkFirst + (*(lng*)curPos) * xx + xx;
+                rnext   = crkFirst + (*curPos) + 1;
 
 		NextNode->deleted = TRUE; /* TODO: consider not deleting this piece and instead extend it... */
 
-                crkh = BUNhloc(b,rnext);
-                crkt = BUNtloc(b,rnext);
-		crkLast = BUNtloc(b,BUNlast(b));
+                crkh = (oid*)Hloc(b,rnext);
+                crkt = (@1 *)Tloc(b,rnext);
+		crkLast = (@1*)Tloc(b,BUNlast(b));
 
 		/* find out how many buns until we get into the next chunk. Variable buns holds this information*/ 
 		if  ((NextNode =findNextPiece(NextNode)) == NULL)
 			buns = values = BATcount(b) - prevPos - 1;
 		else {
-			cur    = idxFirst + (NextNode->position) * zz;
-               		curPos = BUNhloc(c, cur);
-                	rnext   = crkFirst + (*(lng*)curPos) * xx + xx;
-                	buns   = (*(lng*)curPos) - prevPos;
+			cur    = idxFirst + NextNode->position;
+               		curPos = (oid*)Hloc(c, cur);
+                	rnext   = crkFirst + (*curPos)  + 1;
+                	buns   = (*curPos) - prevPos;
 			values = buns - NextNode->hols;
 		}
 		/* move values out. If we get into the next piece then we simply delete it */
@@ -509,25 +512,25 @@ mergeInsertionsBRipple_@1(BAT *b, BAT *u, lng startPosition, lng endPosition, @1
 				if  ((NextNode =findNextPiece(NextNode)) == NULL)
 					buns = values = BATcount(b) - prevPos - 1;
 				else {
-					cur    = idxFirst + (NextNode->position)*zz;
-               				curPos = BUNhloc(c, cur);
-                			rnext  = crkFirst + (*(lng*)curPos)*xx + xx;
-                			buns   = (*(lng*)curPos) - prevPos;
+					cur    = idxFirst + NextNode->position;
+               				curPos = (oid*)Hloc(c, cur);
+                			rnext  = crkFirst + (*curPos) + 1;
+                			buns   = (*curPos) - prevPos;
 					values = buns - NextNode->hols;
 				}
 			}
 
 			/* do not ripple if this is a hole */
 			if (i< values){
-				*(oid*)rh = *(oid*)crkh;
-				*(@1 *)rt = *(@1 *)crkt;
-				rh+=xx; rt+=xx; 
+				*rh = *crkh;
+				*rt = *crkt;
+				rh++; rt++; 
 			} else { 
 				if (NextNode!=NULL)
 					NextNode->hols --;
 				usedHoles++;
 			}
-			crkh+=xx; crkt+=xx;	
+			crkh++; crkt++;	
 
 			/* we consumed all values until the end of the column. nothing more to ripple */
 			if (crkt >= crkLast){
@@ -538,14 +541,13 @@ mergeInsertionsBRipple_@1(BAT *b, BAT *u, lng startPosition, lng endPosition, @1
 		}
 		if (i == buns && NextNode != NULL) {
 			NextNode->deleted = TRUE;
-			/*printf("\n have to delete piece "LLFMT"  \n", *(lng*)curPos);*/
+			/*printf("\n have to delete piece "LLFMT"  \n", *(oid*)curPos);*/
 		}
-		ripple->batBuns->free = BUNfirst(ripple) + (i-usedHoles)*xx - ripple->batBuns->base;	
 		BATsetcount(ripple, i-usedHoles);
 	} else {
 		/* then we do not have to ripple. We simply start merging from the end of the cracker column */
 		exceedBuns = toRippleBuns;
-		next = BUNlast(b) - xx;
+		next = BUNlast(b) - 1;
 		/* prevPos has been correctly set in mergeInsertionsFromTheEndBodyI pointing at the last bun of the cracker column */
 		fromTheEnd = TRUE;
 	}
@@ -557,9 +559,7 @@ mergeInsertionsBRipple_@1(BAT *b, BAT *u, lng startPosition, lng endPosition, @1
         @:mergeInsertionsFromTheEndBodyII(@1,@2,@3)@
 		
 	if (exceedBuns > 0){
-		crkLast = BUNlast(b) + exceedBuns * xx;
-		b->batBuns->free = crkLast - b->batBuns->base;
-       	 	BATsetcount(b, b->batBuns->free/xx);
+       	 	BATsetcount(b, BUNlast(b) + exceedBuns);
         }
 
 	if (rippleNode != NULL){
@@ -614,47 +614,45 @@ mergeInsertionsBRipple_@1(BAT *b, BAT *u, lng startPosition, lng endPosition, @1
 		BATmirror(BATorder(BATmirror(ripple)));
 		
 		/* merge */
-		rh    = BUNhloc(ripple, BUNfirst(ripple));
-		rt    = BUNtloc(ripple, BUNfirst(ripple));
-		crkh  = BUNhloc(u,insFirst+startPosition*xx);
-		crkt  = BUNtloc(u,insFirst+startPosition*xx);
-		insh  = BUNhloc(u,insFirst+endPosition*xx);
-		inst  = BUNtloc(u,insFirst+endPosition*xx);
+		rh    = (oid*)Hloc(ripple, BUNfirst(ripple));
+		rt    = (@1 *)Tloc(ripple, BUNfirst(ripple));
+		crkh  = (oid*)Hloc(u,insFirst+startPosition);
+		crkt  = (@1 *)Tloc(u,insFirst+startPosition);
+		insh  = (oid*)Hloc(u,insFirst+endPosition);
+		inst  = (@1 *)Tloc(u,insFirst+endPosition);
 
-		crkLast = BUNtloc(ripple,BUNlast(ripple));
+		crkLast = (@1*)Tloc(ripple,BUNlast(ripple));
 		while(rt < crkLast && inst < insLast){
 			if (@2_LE(rt,inst,@3@1)){	
-				*(oid*)crkh = *(oid*)rh;
-				*( @1*)crkt = *( @1*)rt;
-				rh+=xx; rt+=xx; consumedRipple++;
+				*crkh = *rh;
+				*crkt = *rt;
+				rh++; rt++; consumedRipple++;
 			} else {
-				*(oid*)crkh = *(oid*)insh;
-				*( @1*)crkt = *( @1*)inst;
-				insh+=xx; inst+=xx; consumedInsertions++;
+				*crkh = *insh;
+				*crkt = *inst;
+				insh++; inst++; consumedInsertions++;
 			}
-			crkh+=xx; crkt+=xx;
+			crkh++; crkt++;
 		}
 		
 		if (rt < crkLast && inst == insLast){
 			int i;
 			for(i = 0; (size_t)i<BATcount(ripple)-(size_t)consumedRipple; i++){
-				*(oid*)crkh = *(oid*)rh;
-                                *( @1*)crkt = *( @1*)rt;
-				 rh+=xx; rt+=xx;crkh+=xx; crkt+=xx;
+				*crkh = *rh;
+                                *crkt = *rt;
+				 rh++; rt++;crkh++; crkt++;
 			}
 		} else	
 		if (rt == crkLast && inst < insLast){
 			int i;
 			for(i = 0; (size_t)i<BATcount(u)-(size_t)endPosition -(size_t)consumedInsertions; i++){
-                                *(oid*)crkh = *(oid*)insh;
-                                *( @1*)crkt = *( @1*)inst;
-                                 insh+=xx; inst+=xx;crkh+=xx; crkt+=xx;
+                                *crkh = *insh;
+                                *crkt = *inst;
+                                 insh++; inst++;crkh++; crkt++;
                         }
 		}
 		/* if some of the insertions went at the end of the cracker column, then the pending insertions has less values now */
-		crkLast = BUNlast(u) - (insertions - BATcount(ripple))*xx;
-               	u->batBuns->free = crkLast - u->batBuns->base;
-                BATsetcount(u, u->batBuns->free/xx);
+                BATsetcount(u, BUNlast(u) - (insertions - BATcount(ripple)));
 	} else {
 		EmptyRipple:;
 		@:shrinkInsertions(@1)@
@@ -667,7 +665,7 @@ mergeInsertionsBRipple_@1(BAT *b, BAT *u, lng startPosition, lng endPosition, @1
 }
 
 str
-mergeDeletions_@1(int *bid, int *del, lng startPosition, lng endPosition){
+mergeDeletions_@1(int *bid, int *del, oid startPosition, oid endPosition){
 	@:mergeDeletionsBody(@1,@2,@3)@
 
 	BBPunfix(c->batCacheid);
@@ -678,7 +676,7 @@ mergeDeletions_@1(int *bid, int *del, lng startPosition, lng endPosition){
 }
 
 str
-mergeDeletionsGradually_@1(int *bid, int *del, lng startPosition, lng endPosition){
+mergeDeletionsGradually_@1(int *bid, int *del, oid startPosition, oid endPosition){
         @:mergeDeletionsBody(@1,@2,@3)@
 
 	@:shrinkDeletions(@1)@
@@ -691,16 +689,24 @@ mergeDeletionsGradually_@1(int *bid, int *del, lng startPosition, lng endPositio
 }
 
 str
-mergeDeletionsGraduallyRipple_@1(int *bid, int *del, lng startPosition, lng endPosition, @1 *lowV, bit inclusiveL, @1 *hghV, bit inclusiveH){
+mergeDeletionsGraduallyRipple_@1(int *bid, int *del, oid startPosition, oid endPosition, @1 *lowV, bit inclusiveL, @1 *hghV, bit inclusiveH){
         BAT *c, *u, *b, *crackerPieceO, *deletesPieceO,  *crackerPieceV, *deletesPieceV;
 	BAT *positionsO, *positionsV, *positions, *crackerSlice, *deletesSlice;
-	BUN delt, idxFirst, crk, crkFirst, crkLast, delFirst, low, lowVal, hgh, hghPos=NULL, hghVal, pos, posLast;
-	int xx, zz, pp, position = -1;
-	lng deletions, remainingDel, buns;
+	BUN idxFirst, crk, crkFirst, delFirst, low, hgh;
+	@1 *delt, *lowVal, *hghVal;
+	oid *pos, *posLast;
+	oid *hghPos=NULL;
+	int position = -1;
+	oid deletions, remainingDel, buns;
+	oid *startH;
+        @1  *startT;
+        oid *endH;
+	@1  *endT;
+
 
 	struct Node *lowNode, *hghNode, *temp, *stopNode;
-	lng LposCr=0,HposCr=0, LposDe, HposDe, deletesForCurrentPiece=0, deletedFromCurrentPiece;
-	lng holSize, holPiece, notFound = 0, prevPos, notFoundHere;
+	oid LposCr=0,HposCr=0, LposDe, HposDe, deletesForCurrentPiece=0, deletedFromCurrentPiece;
+	oid holSize, holPiece, notFound = 0, prevPos, notFoundHere;
 	int i;
 
 
@@ -729,22 +735,21 @@ mergeDeletionsGraduallyRipple_@1(int *bid, int *del, lng startPosition, lng endP
 		throw(MAL, "crackers.mergeDeletions_@1", "Cannot access cracker BAT");
 	}
 
-	if (endPosition == -1)
+	/*if (endPositionStatus == -1){
 		endPosition = BATcount(u) - 1;
-
+		endPositionStatus = 0;
+	}*/
 	deletions = endPosition - startPosition + 1;
 
 	remainingDel = deletions;
-	xx = BUNsize(b);
-	zz = BUNsize(c);
 	delFirst = BUNfirst(u);	
 
-	delt 	 = BUNtloc(u, delFirst + startPosition*xx);
+	delt 	 = (@1*)Tloc(u, delFirst + startPosition);
 	idxFirst = BUNfirst(c);
 	crkFirst = BUNfirst(b);
 
-	lowNode = findNodeL_@1(*lowV, inclusiveL, CrackerIndex[position].Tree, c, idxFirst, zz, NULL); 
-	stopNode = findNodeH_@1(*hghV, inclusiveH, CrackerIndex[position].Tree, c, idxFirst, zz, NULL); 
+	lowNode  = findNodeL_@1(*lowV, inclusiveL, CrackerIndex[position].Tree, c, idxFirst, NULL); 
+	stopNode = findNodeH_@1(*hghV, inclusiveH, CrackerIndex[position].Tree, c, idxFirst, NULL); 
 
 	LposDe = startPosition;
 	HposDe = 0;
@@ -752,7 +757,7 @@ mergeDeletionsGraduallyRipple_@1(int *bid, int *del, lng startPosition, lng endP
 	u->batRestricted= BAT_READ;
 
 	if (lowNode != NULL)
-		prevPos = *(lng*)BUNhloc(c,(idxFirst + (lowNode->position) * zz)) + 1;
+		prevPos = *(oid*)Hloc(c,(idxFirst + lowNode->position)) + 1;
 	else 
 		prevPos = 0;
 
@@ -772,42 +777,42 @@ mergeDeletionsGraduallyRipple_@1(int *bid, int *del, lng startPosition, lng endP
 
 		/* find deletes that belong in this piece */
 		if (lowNode != NULL && hghNode != NULL){
-	                low    = idxFirst + (lowNode->position) * zz;
-                	lowVal = BUNtloc(c, low);
+	                low    = idxFirst + lowNode->position;
+                	lowVal = (@1*)Tloc(c, low);
 
-	                hgh    = idxFirst + (hghNode->position) * zz;
-                	hghVal = BUNtloc(c, hgh);
-        	        hghPos = BUNhloc(c, hgh);
+	                hgh    = idxFirst + hghNode->position;
+                	hghVal = (@1 *)Tloc(c, hgh);
+        	        hghPos = (oid*)Hloc(c, hgh);
 
 	                deletesForCurrentPiece = 0;
         	        while((@2_GT(delt,lowVal,@3@1) || (@2_EQ(delt,lowVal,@3@1) && lowNode->inclusive == TRUE))  &&
                 	      (@2_LT(delt,hghVal,@3@1) || (@2_EQ(delt,hghVal,@3@1) && hghNode->inclusive == FALSE)) &&
 			      remainingDel > deletesForCurrentPiece ){
 
-                        	delt+=xx;
+                        	delt++;
 	                        deletesForCurrentPiece++;
         	        }
 
       		        LposCr = prevPos;
-        	        HposCr = *(lng*)hghPos;
+        	        HposCr = *hghPos;
 		} else
 		if (lowNode == NULL && hghNode != NULL){
-			hgh    = idxFirst + (hghNode->position) * zz;
-       		        hghVal = BUNtloc(c, hgh);
-        	        hghPos = BUNhloc(c, hgh);
+			hgh    = idxFirst + hghNode->position;
+       		        hghVal = (@1 *)Tloc(c, hgh);
+        	        hghPos = (oid*)Hloc(c, hgh);
 	
            	        deletesForCurrentPiece = 0;
 	                while( (@2_LT(delt,hghVal,@3@1) || (@2_EQ(delt,hghVal,@3@1) && hghNode->inclusive == FALSE)) &&
 			       remainingDel > deletesForCurrentPiece){
-                	        delt+=xx;
+                	        delt++;
                        		deletesForCurrentPiece++;
 	                }
 
 			LposCr = 0;
-        	        HposCr = *(lng*)hghPos;
+        	        HposCr = *hghPos;
 		} else
 		if (lowNode != NULL && hghNode == NULL){
-			low    = idxFirst + (lowNode->position) * zz;
+			low    = idxFirst + lowNode->position ;
 			deletesForCurrentPiece = remainingDel;
 			LposCr = prevPos;
                         HposCr = BATcount(b)-1;
@@ -842,21 +847,25 @@ mergeDeletionsGraduallyRipple_@1(int *bid, int *del, lng startPosition, lng endP
 
 
 				/* fill in the hols */
-				pp = BUNsize(positions);
-				pos = BUNhloc(positions, BUNfirst(positions));
-				posLast = BUNhloc(positions, BUNlast(positions)-pp);
-				crk = crkFirst + HposCr*xx;
+				pos     = (oid*)Hloc(positions, BUNfirst(positions));
+				posLast = (oid*)Hloc(positions, BUNlast(positions)-1);
+				crk = crkFirst + HposCr;
 				buns =  HposCr - LposCr;
 				
 				while(pos<=posLast){
-					if (*(oid*)posLast != (size_t)buns){
-						memcpy(crkFirst+(LposCr+(*(oid*)pos))*xx, crk, xx);
-						pos+=pp;
+					if (*posLast != (size_t)buns){
+						startH = (oid*)Hloc(b,crkFirst+(LposCr+(*pos)));
+						startT = (@1 *)Tloc(b,crkFirst+(LposCr+(*pos)));
+						endH  = (oid*)Hloc(b,crk);
+						endT  = (@1 *)Tloc(b,crk);
+						memcpy(startH, endH, sizeof(oid));
+						memcpy(startT, endT, sizeof(@1));
+						pos++;
 					} else 
-						posLast-=pp;
+						posLast--;
 					
 	
-					crk-=xx; buns--;
+					crk--; buns--;
 				}
 
 				/* values requested to be deleted may not exist */
@@ -882,10 +891,22 @@ mergeDeletionsGraduallyRipple_@1(int *bid, int *del, lng startPosition, lng endP
 
 		/* no need to to shift if nothing has been deleted from previous pieces */
 		if (holSize > 0 && buns > 0){
-			if (holSize >= buns)
-				memcpy(crkFirst+(LposCr-holSize)*xx, crkFirst+LposCr*xx, buns*xx);
-			else
-				memcpy(crkFirst+(LposCr-holSize)*xx, crkFirst+(LposCr+(buns-holSize))*xx, holSize*xx);
+			if (holSize >= buns){
+				startH = (oid*)Hloc(b,crkFirst+(LposCr-holSize));
+				startT = (@1 *)Tloc(b,crkFirst+(LposCr-holSize));
+				endH   = (oid*)Hloc(b,crkFirst+LposCr);
+				endT   = (@1 *)Tloc(b,crkFirst+LposCr);
+				memcpy(startH, endH, buns*sizeof(oid));
+				memcpy(startT, endT, buns*sizeof(@1));
+			}
+			else{
+				startH = (oid*)Hloc(b,crkFirst+(LposCr-holSize));
+				startT = (@1 *)Tloc(b,crkFirst+(LposCr-holSize));
+				endH   = (oid*)Hloc(b, crkFirst+(LposCr+(buns-holSize)));
+				endT   = (@1 *)Tloc(b, crkFirst+(LposCr+(buns-holSize)));
+				memcpy(startH, endH, holSize*sizeof(oid));
+				memcpy(startT, endT, holSize*sizeof(@1));
+			}
 		}
 		if (buns == 0 && lowNode != NULL) lowNode->deleted = TRUE; /* deleted all values in current piece*/
 		remainingDel -= deletesForCurrentPiece;
@@ -899,16 +920,14 @@ mergeDeletionsGraduallyRipple_@1(int *bid, int *del, lng startPosition, lng endP
 				LposDe = HposDe;
 			hghNode ->hols = 0;
 			lowNode = hghNode;
-			prevPos = *(lng*)hghPos+1;
-			*(lng*)hghPos = *(lng*)hghPos - holSize - deletedFromCurrentPiece - holPiece;
+			prevPos = *hghPos+1;
+			*hghPos = *hghPos - holSize - deletedFromCurrentPiece - holPiece;
 		} else
 			break;
 	}
 
 	if (hghNode == NULL){
-		crkLast = BUNlast(b) - (deletions -remainingDel)*xx + notFound*xx;
-		b->batBuns->free = crkLast - b->batBuns->base;
-	        BATsetcount(b, b->batBuns->free/xx);
+	        BATsetcount(b, BUNlast(b) - (deletions -remainingDel) + notFound);
 	} else
 		hghNode->hols = deletions-remainingDel - notFound;
 	
@@ -1069,11 +1088,16 @@ appendDeletions(int *del, int position){
 
 @= mergeInsertionsFromTheEndBodyI
         BAT *c, *u, *b;
-	BUN insh, inst, crkh, crkt, idxFirst, cur, curVal, curPos, crkFirst, crkLast, insFirst, next, write;
-	int xx, zz, position = -1;
+	BUN idxFirst, cur, crkFirst, insFirst, next, write;
+	oid *curPos;
+	oid *insh, *crkh;
+	@1  *inst, *crkt, *curVal;
+	int position = -1;
 	struct Node *IndexNode = NULL;
-	lng prevPos, prevcrsize, insertions, remainingIns, buns, needed;
+	oid prevPos, prevcrsize, insertions, remainingIns, buns, needed;
 	struct Node *prevNode =NULL;
+	oid *startH, *endH;
+	@1  *startT, *endT;
 
 	{
 		int i;
@@ -1102,8 +1126,10 @@ appendDeletions(int *del, int position){
 		BBPunfix(c->batCacheid);
 		throw(MAL, "crackers.mergeInsertions_@1", "Cannot access cracker BAT");
 	}
-	if (endPosition == -1)
+	if (endPositionStatus == -1){
 		endPosition = BATcount(u) - 1;
+		endPositionStatus = 0;
+	}
 	insertions = endPosition - startPosition + 1;
 
 	/* sort in place the insertions bat */
@@ -1114,23 +1140,24 @@ appendDeletions(int *del, int position){
 
 	remainingIns = insertions;
 	prevcrsize = BATcount(b);
-	xx = BUNsize(b);
-	zz = BUNsize(c);
 	insFirst = BUNfirst(u);	
 
 	/* make room for the new tuples */
-	needed = insertions - (((b)->batBuns->size - (b)->batBuns->free) / xx);
-	if ( needed > 0 ){
-                size_t ncap = BATcapacity(b) + needed;
-                size_t grows = BATgrows(b);
+	if ( insertions > BATcapacity(b) - BATcount(b) ){
+		size_t ncap;
+		size_t grows;
+		needed = insertions - (BATcapacity(b) - BATcount(b));
+                ncap = BATcapacity(b) + needed;
+                grows = BATgrows(b);
                 if (ncap > grows)
                         grows = ncap;
+
                 if (BATextend(b, grows) == NULL)
                         throw(MAL, "crackers.mergeInsertions_@1", "Failed to make room for the new values");
         }
 	
-	insh 	 = BUNhloc(u, insFirst + endPosition*xx);
-	inst 	 = BUNtloc(u, insFirst + endPosition*xx);
+	insh 	 = (oid*)Hloc(u, insFirst + endPosition);
+	inst 	 = (@1 *)Tloc(u, insFirst + endPosition);
 	idxFirst = BUNfirst(c);
 	crkFirst = BUNfirst(b);
 	prevPos = prevcrsize - 1;
@@ -1143,42 +1170,58 @@ appendDeletions(int *del, int position){
 	/* First position after the last value of this piece. 
            Here we will start moving values we shift from the begginning of the piece */
 		
-	write  = next + xx - (prevNode==NULL?0:prevNode->hols)*xx;
+	write  = next + 1 - (prevNode==NULL?0:prevNode->hols);
 
-	cur    = idxFirst + (IndexNode->position) * zz;
-        curPos = BUNhloc(c, cur);
-	curVal = BUNtloc(c, cur);
+	cur    = idxFirst + (IndexNode->position);
+        curPos = (oid*)Hloc(c, cur);
+	curVal = (@1 *)Tloc(c, cur);
 
-	buns   = prevPos - (*(lng*)curPos) - (prevNode==NULL?0:prevNode->hols); /* find out how many values this piece has */
+	buns   = prevPos - (*curPos) - (prevNode==NULL?0:prevNode->hols); /* find out how many values this piece has */
 
-	/* prevPos takes the correct value for the next itteration */
-	prevPos = *(lng*)curPos;
+	/* prevPos takes the correct value for the next iteration */
+	prevPos = *curPos;
 
-	/* next takes the corect value for the next itteration. This is the position of the last value of the previous piece */
-	next   = crkFirst + (*(lng*)curPos) * xx;
+	/* next takes the corect value for the next iteration. This is the position of the last value of the previous piece */
+	next   = crkFirst + (*curPos);
 	
 	/* First insert any pending insertions that belong to this piece */
-	crkh = BUNhloc(b,write+(remainingIns-1)*xx);
-	crkt = BUNtloc(b,write+(remainingIns-1)*xx);
+	crkh = (oid*)Hloc(b,write+(remainingIns-1));
+	crkt = (@1 *)Tloc(b,write+(remainingIns-1));
 	while(  remainingIns > 0 &&
 		(@2_GT(inst,curVal,@3@1) || (@2_EQ(inst,curVal,@3@1) && IndexNode->inclusive == TRUE)) ){
-		*(oid*)crkh = *(oid*)insh;
-		*(@1 *)crkt = *(@1 *)inst;
-		crkh-=xx; crkt-=xx; insh-=xx; inst-=xx; remainingIns--;
+		*crkh = *insh;
+		*crkt = *inst;
+		crkh--; crkt--; insh--; inst--; remainingIns--;
 	}
 
 	if (remainingIns == 0)
                	goto mergeDone;
 
 	/* Then we shift values from the beggining of the piece */
-	if (buns > remainingIns)
-		memcpy(write, next+xx, remainingIns*xx);
-	 else
-		memcpy( write+ (remainingIns-buns)*xx, next+xx, buns*xx);
-		
+	if (buns > remainingIns){
+		startH = (oid*)Hloc(b,write);
+		startT = (@1 *)Tloc(b,write);
+		endH   = (oid*)Hloc(b,next+1);
+		endT   = (@1 *)Tloc(b,next+1);
+	
+		memcpy(startH, endH, remainingIns*sizeof(oid));
+		memcpy(startT, endT, remainingIns*sizeof(@1));
+	
+	}
+	else{
+		startH = (oid*)Hloc(b,write+remainingIns-buns);
+		startT = (@1 *)Tloc(b,write+remainingIns-buns);
+		endH   = (oid*)Hloc(b,next+1);
+		endT   = (@1 *)Tloc(b,next+1);
+	
+		memcpy(startH, endH, buns*sizeof(oid));
+		memcpy(startT, endT, buns*sizeof(@1));
+	
+	}	
+
 	/* we always update the index to be +remainingIns since even if we move 
            buns values we put them remainingIns positions ahead */
-	*(lng*)curPos =  *(lng*)curPos + remainingIns;
+	*curPos =  *curPos + remainingIns;
 	prevNode = IndexNode;
 @
 
@@ -1186,7 +1229,7 @@ appendDeletions(int *del, int position){
 	/* merge for the last piece only */
 	if ( remainingIns > 0) {
 		/* get the last piece */
-		IndexNode = findNodeL_@1(*(@1*)hgh, inclusive, CrackerIndex[position].Tree, c, idxFirst, zz, NULL);
+		IndexNode = findNodeL_@1(*hgh, inclusive, CrackerIndex[position].Tree, c, idxFirst, NULL);
 		@:mergeLoop(@1,@2,@3)@
 	}
 @
@@ -1204,12 +1247,12 @@ appendDeletions(int *del, int position){
 	/* We reached the first piece. If there are more insertions then they all go here */
 	if (IndexNode == NULL && remainingIns > 0){
 		
-		crkh = BUNhloc(b,next + xx - (prevNode==NULL?0:prevNode->hols)*xx + (remainingIns-1)*xx);
-                crkt = BUNtloc(b,next + xx - (prevNode==NULL?0:prevNode->hols)*xx + (remainingIns-1)*xx);
+		crkh = (oid*)Hloc(b,next + 1 - (prevNode==NULL?0:prevNode->hols) + (remainingIns-1));
+                crkt = (@1 *)Tloc(b,next + 1 - (prevNode==NULL?0:prevNode->hols) + (remainingIns-1));
                 while(  remainingIns > 0  ){
-                        *(oid*)crkh = *(oid*)insh;
-                        *(@1 *)crkt = *(@1 *)inst;
-                        crkh-=xx; crkt-=xx; insh-=xx; inst-=xx; remainingIns--;
+                        *crkh = *insh;
+                        *crkt = *inst;
+                        crkh--; crkt--; insh--; inst--; remainingIns--;
 		}
 	}
 @
@@ -1219,17 +1262,16 @@ appendDeletions(int *del, int position){
         	BATmode(u, TRANSIENT);
                 CrackerIndex[position].iid = -1;
         } else  if ((size_t)endPosition == BATcount(u)){
-                crkLast = insFirst + startPosition*xx;
-                u->batBuns->free = crkLast - u->batBuns->base;
-                BATsetcount(u, u->batBuns->free/xx);
+                BATsetcount(u,insFirst + startPosition);
         } else {
-		crkh  = insFirst+startPosition*xx;
-		insh  = insFirst+endPosition*xx;
-		memmove(crkh,insh, (BATcount(u)-endPosition)*xx);
+		oid *startH = (oid*)Hloc(u,insFirst+startPosition);
+		@1  *startT = (@1 *)Tloc(u,insFirst+startPosition);
+		oid *endH   = (oid*)Hloc(u,insFirst+endPosition);
+		@1  *endT   = (@1 *)Tloc(u,insFirst+endPosition);
+		memmove(startH, endH, (BATcount(u)-endPosition)*sizeof(oid));
+		memmove(startT, endT, (BATcount(u)-endPosition)*sizeof(@1));
 
-		crkLast = insFirst + (startPosition + (BATcount(u) - endPosition))*xx;
-		u->batBuns->free = crkLast - u->batBuns->base;
-   		BATsetcount(u, u->batBuns->free/xx);
+   		BATsetcount(u, insFirst + (startPosition + (BATcount(u) - endPosition)));
 	}
 @
 
@@ -1249,13 +1291,18 @@ appendDeletions(int *del, int position){
 @= mergeDeletionsBody
         BAT *c, *u, *b, *crackerPieceO, *deletesPieceO,  *crackerPieceV, *deletesPieceV;
 	BAT *positionsO, *positionsV, *positions, *crackerSlice, *deletesSlice;
-	BUN delt, idxFirst, crk, crkFirst, crkLast, delFirst, low, lowVal, hgh, hghPos=NULL, hghVal, pos, posLast;
-	int xx, zz, pp, position = -1;
-	lng deletions, remainingDel, buns;
+	BUN idxFirst, crk, crkFirst, delFirst, low, hgh;
+	@1 *delt, *hghVal, *lowVal;
+	oid *pos, *posLast;
+	oid *hghPos=NULL;
+	int position = -1;
+	oid deletions, remainingDel, buns;
 	struct Node *lowNode, *hghNode, *temp;
-	lng LposCr=0,HposCr=0, LposDe, HposDe, deletesForCurrentPiece=0, deletedFromCurrentPiece;
-	lng holSize, holPiece, notFound = 0, prevPos, notFoundHere;
+	oid LposCr=0,HposCr=0, LposDe, HposDe, deletesForCurrentPiece=0, deletedFromCurrentPiece;
+	oid holSize, holPiece, notFound = 0, prevPos, notFoundHere;
 	int i;
+	@1  *startT, *endT;
+	oid *startH, *endH;
 
 	for (i = 0; i < maxCrackMap; i++)
                 if (CrackerIndex[i].bid == *bid){
@@ -1282,27 +1329,22 @@ appendDeletions(int *del, int position){
 		throw(MAL, "crackers.mergeDeletions_@1", "Cannot access cracker BAT");
 	}
 
-	if (endPosition == -1)
-		endPosition = BATcount(u) - 1;
-
 	deletions = endPosition - startPosition + 1;
 
 	remainingDel = deletions;
-	xx = BUNsize(b);
-	zz = BUNsize(c);
 	delFirst = BUNfirst(u);	
 
-	delt 	 = BUNtloc(u, delFirst + startPosition*xx);
+	delt 	 = (@1*)Tloc(u, delFirst + startPosition);
 	idxFirst = BUNfirst(c);
 	crkFirst = BUNfirst(b);
 
-	lowNode = findNodeL_@1(*(@1*)delt, TRUE, CrackerIndex[position].Tree, c, idxFirst, zz, NULL);
+	lowNode = findNodeL_@1(*delt, TRUE, CrackerIndex[position].Tree, c, idxFirst, NULL);
 	LposDe = startPosition;
 	HposDe = 0;
 	b->batRestricted= BAT_READ;
 	u->batRestricted= BAT_READ;
 	if (lowNode != NULL)
-		prevPos = *(lng*)BUNhloc(c,(idxFirst + (lowNode->position) * zz)) + 1;
+		prevPos = *(oid*)Hloc(c,(idxFirst + (lowNode->position) )) + 1;
 	else 
 		prevPos = 0;
 	while (1){
@@ -1322,42 +1364,42 @@ appendDeletions(int *del, int position){
 
 		/* find deletes that belong in this piece */
 		if (lowNode != NULL && hghNode != NULL){
-	                low    = idxFirst + (lowNode->position) * zz;
-                	lowVal = BUNtloc(c, low);
+	                low    = idxFirst + lowNode->position;
+                	lowVal = (@1*)Tloc(c, low);
 
-	                hgh    = idxFirst + (hghNode->position) * zz;
-                	hghVal = BUNtloc(c, hgh);
-        	        hghPos = BUNhloc(c, hgh);
+	                hgh    = idxFirst + hghNode->position;
+                	hghVal = (@1 *)Tloc(c, hgh);
+        	        hghPos = (oid*)Hloc(c, hgh);
 
 	                deletesForCurrentPiece = 0;
         	        while((@2_GT(delt,lowVal,@3@1) || (@2_EQ(delt,lowVal,@3@1) && lowNode->inclusive == TRUE))  &&
                 	      (@2_LT(delt,hghVal,@3@1) || (@2_EQ(delt,hghVal,@3@1) && hghNode->inclusive == FALSE)) &&
 			      remainingDel > deletesForCurrentPiece ){
 
-                        	delt+=xx;
+                        	delt++;
 	                        deletesForCurrentPiece++;
         	        }
 
       		        LposCr = prevPos;
-        	        HposCr = *(lng*)hghPos;
+        	        HposCr = *hghPos;
 		} else
 		if (lowNode == NULL && hghNode != NULL){
-			hgh    = idxFirst + (hghNode->position) * zz;
-       		        hghVal = BUNtloc(c, hgh);
-        	        hghPos = BUNhloc(c, hgh);
+			hgh    = idxFirst + hghNode->position;
+       		        hghVal = (@1 *)Tloc(c, hgh);
+        	        hghPos = (oid*)Hloc(c, hgh);
 	
            	        deletesForCurrentPiece = 0;
 	                while( (@2_LT(delt,hghVal,@3@1) || (@2_EQ(delt,hghVal,@3@1) && hghNode->inclusive == FALSE)) &&
 			       remainingDel > deletesForCurrentPiece){
-                	        delt+=xx;
+                	        delt++;
                        		deletesForCurrentPiece++;
 	                }
 
 			LposCr = 0;
-        	        HposCr = *(lng*)hghPos;
+        	        HposCr = *hghPos;
 		} else
 		if (lowNode != NULL && hghNode == NULL){
-			low    = idxFirst + (lowNode->position) * zz;
+			low    = idxFirst + lowNode->position;
 			deletesForCurrentPiece = remainingDel;
 			LposCr = prevPos;
                         HposCr = BATcount(b)-1;
@@ -1392,18 +1434,22 @@ appendDeletions(int *del, int position){
 				BATorder(positions);
 
 				/* fill in the hols */
-				pp = BUNsize(positions);
-				pos = BUNhloc(positions, BUNfirst(positions));
-				posLast = BUNhloc(positions, BUNlast(positions)-pp);
-				crk = crkFirst + HposCr*xx;
-				buns =  HposCr - LposCr;
+				pos = (oid*)Hloc(positions, BUNfirst(positions));
+				posLast = (oid*)Hloc(positions, BUNlast(positions)-1);
+				crk  = crkFirst + HposCr;
+				buns = HposCr - LposCr;
 				while(pos<=posLast){
-					if (*(oid*)posLast != (size_t)buns){
-						memcpy(crkFirst+(LposCr+(*(oid*)pos))*xx, crk, xx);
-						pos+=pp;
+					if (*posLast != (size_t)buns){
+						startH = (oid*)Hloc(b,crkFirst+(LposCr+(*pos)));
+						startT = (@1 *)Tloc(b,crkFirst+(LposCr+(*pos)));
+						endH  = (oid*)Hloc(b,crk);
+						endT  = (@1 *)Tloc(b,crk);
+						memcpy(startH, endH, sizeof(oid));
+						memcpy(startT, endT, sizeof(@1));
+						pos++;
 					} else
-						posLast-=pp;
-					crk-=xx; buns--;
+						posLast--;
+					crk--; buns--;
 				}
 
 				deletedFromCurrentPiece = BATcount(positions);
@@ -1427,10 +1473,22 @@ appendDeletions(int *del, int position){
 		buns = HposCr - LposCr + 1 - deletedFromCurrentPiece;
 		/* no need to to shift if nothing has been deleted from previous pieces */
 		if (holSize > 0 && buns > 0){
-			if (holSize >= buns)
-				memcpy(crkFirst+(LposCr-holSize)*xx, crkFirst+LposCr*xx, buns*xx);
-			else
-				memcpy(crkFirst+(LposCr-holSize)*xx, crkFirst+(LposCr+(buns-holSize))*xx, holSize*xx);
+			if (holSize >= buns){
+				startH = (oid*)Hloc(b,crkFirst+(LposCr-holSize));
+				startT = (@1 *)Tloc(b,crkFirst+(LposCr-holSize));
+				endH  = (oid*)Hloc(b,crkFirst+LposCr);
+				endT  = (@1 *)Tloc(b,crkFirst+LposCr);
+				memcpy(startH, endH, buns*sizeof(oid));
+				memcpy(startT, endT, buns*sizeof(@1));
+			}
+			else{
+				startH = (oid*)Hloc(b,crkFirst+(LposCr-holSize));
+				startT = (@1 *)Tloc(b,crkFirst+(LposCr-holSize));
+				endH  = (oid*)Hloc(b,crkFirst+(LposCr+(buns-holSize)));
+				endT  = (@1 *)Tloc(b,crkFirst+(LposCr+(buns-holSize)));
+				memcpy(startH, endH, holSize*sizeof(oid));
+				memcpy(startT, endT, holSize*sizeof(@1));
+			}
 		}
 		if (buns == 0 && lowNode != NULL) lowNode->deleted = TRUE; /* deleted all values in current piece*/
 		remainingDel -= deletesForCurrentPiece;
@@ -1440,16 +1498,14 @@ appendDeletions(int *del, int position){
 				LposDe = HposDe;
 			hghNode ->hols = 0;
 			lowNode = hghNode;
-			prevPos = *(lng*)hghPos+1;
-			*(lng*)hghPos = *(lng*)hghPos - holSize - deletedFromCurrentPiece - holPiece;
+			prevPos = *hghPos+1;
+			*hghPos = *hghPos - holSize - deletedFromCurrentPiece - holPiece;
 
 		} else
 			break;
 	}
 
-	crkLast = BUNlast(b) - (deletions-remainingDel)*xx + notFound*xx;
-	b->batBuns->free = crkLast - b->batBuns->base;
-        BATsetcount(b, b->batBuns->free/xx);
+        BATsetcount(b, BUNlast(b) - (deletions-remainingDel) + notFound);
 @
 
 @}

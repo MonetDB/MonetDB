@@ -153,99 +153,101 @@ CRKcrackOrderedThree_@1 (int *res, int *bid, @1 *low, @1 *hgh){
 
 @= moveOrdered
 	while (@1 @6 ){
-		@2 @4= xx;
-		@3 @4= xx;
+		@2 @4= 1;
+		@3 @4= 1;
 		@5
 	}
 @
 
 @= OThree
-	while (*(@1*)tmpt @5){
-		tmpt @2= xx;
-		tmph @2= xx;
+	while (*tmpt @5){
+		tmpt @2= 1;
+		tmph @2= 1;
 	}
 	
 	while (tmpt @3 ht){
-		if ( *(@1*)tmpt @4){
-			if (*(@1*)ct @5){
-				scr_h[hil] = *(oid*)ch;
-				scr_t[hil] = *(@1* )ct;				
+		if ( *tmpt @4){
+			if (*ct @5){
+				scr_h[hil] = *ch;
+				scr_t[hil] = *ct;				
 				hil++;	
 			}
-			*(oid*)ch = *(oid*)tmph;
-			*(@1 *)ct = *(@1 *)tmpt;
-			ch @2= xx;
-			ct @2= xx;
+			*ch = *tmph;
+			*ct = *tmpt;
+			ch @2= 1;
+			ct @2= 1;
 		
 		}
 		else{
-			scr_h[mids] = *(oid*)tmph;
-			scr_t[mids] = *(@1* )tmpt;				
+			scr_h[mids] = *tmph;
+			scr_t[mids] = *tmpt;				
 			mids--;	
 		}
-		tmpt @2= xx;
-		tmph @2= xx;
-		while (tmpt @3 ht && *(@1*)tmpt @5){
-			tmpt @2= xx;
-			tmph @2= xx;
+		tmpt @2= 1;
+		tmph @2= 1;
+		while (tmpt @3 ht && *tmpt @5){
+			tmpt @2= 1;
+			tmph @2= 1;
 		}
 	}
 	tmph = hh;
 	tmpt = ht;
-	ct @2= xx*((scrH-mids)+hil);
-	for(; tmpt @7 ct; tmph @6=xx, tmpt @6=xx){
-		if (*(@1*)tmpt @5){
-			*(oid*)hh = *(oid*)tmph;
-			*(@1 *)ht = *(@1 *)tmpt;
-			hh @6= xx;
-			ht @6= xx;
+	ct @2= (scrH-mids)+hil;
+	for(; tmpt @7 ct; tmph @6=1, tmpt @6=1){
+		if (*tmpt @5){
+			*hh = *tmph;
+			*ht = *tmpt;
+			hh @6= 1;
+			ht @6= 1;
 		}
 	}
 	for (i= hil-1; i >= 0; i--){
-		if (*(@1*)tmpt @5){
-			*(oid*)hh = *(oid*)tmph;
-			*(@1 *)ht = *(@1 *)tmpt;
-			hh @6= xx;
-			ht @6= xx;
+		if (*tmpt @5){
+			*hh = *tmph;
+			*ht = *tmpt;
+			hh @6= 1;
+			ht @6= 1;
 		}	
-		*(oid*)tmph = scr_h[i];
-		*(@1 *)tmpt = scr_t[i];
-		tmpt @6= xx;
-		tmph @6= xx;
+		*tmph = scr_h[i];
+		*tmpt = scr_t[i];
+		tmpt @6= 1;
+		tmph @6= 1;
 	}
 	i = mids + 1;
 	for (; i <= scrH; i++){
-		 if (*(@1*)tmpt @5){
-                        *(oid*)hh = *(oid*)tmph;
-                        *(@1 *)ht = *(@1 *)tmpt;
-                        hh @6= xx;
-                        ht @6= xx;
+		 if (*tmpt @5){
+                        *hh = *tmph;
+                        *ht = *tmpt;
+                        hh @6= 1;
+                        ht @6= 1;
                 }
-		*(oid*)tmph = scr_h[i];
-		*(@1 *)tmpt = scr_t[i];
-		tmph @6= xx;
-		tmpt @6= xx;
+		*tmph = scr_h[i];
+		*tmpt = scr_t[i];
+		tmph @6= 1;
+		tmpt @6= 1;
 	}
 @
 
 @= crackInThreeOrderedPieces
 static str
 CRKcrackOrderedThree_@2_@3_@1(BAT *b, @1 low, @1 hgh, int idx_first, int idx_last){
-	BUN hh, ht, tmpt, tmph, ch, ct, t, s, fh, ft;
+	oid *hh, *tmph, *ch, *fh;
+	@1  *ht, *tmpt, *ct, *ft, *s, *t;
 	oid *scr_h;
 	@1  *scr_t;
 	int scr_size = idx_last - idx_first +1;
 	int hghShrinked = 0, lowShrinked = 0, scrH, hil, mids, probe, j;
-	int xx = BUNsize(b);
 	int i;
+	BUN first;
 
-	tmph = BUNhloc(b, BUNptr(b, idx_first));
-	tmpt = BUNtloc(b, BUNptr(b, idx_first));
-	ht = BUNtloc(b, BUNptr(b, idx_last));
-	hh = BUNhloc(b, BUNptr(b, idx_last));
+	first = BUNfirst(b);
+	tmph = (oid*)Hloc(b, first + idx_first);
+	tmpt = (@1 *)Tloc(b, first + idx_first);
+	hh   = (oid*)Hloc(b, first + idx_last);
+	ht   = (@1 *)Tloc(b, first + idx_last);
 
-	@:moveOrdered(*(@1*)tmpt @4 low,tmph,tmpt,+,lowShrinked++;,&& tmpt<=ht)@
-	@:moveOrdered(*(@1*)ht @7 hgh ,hh,ht,-,hghShrinked++;,&& ht<=tmpt)@
+	@:moveOrdered(*tmpt @4 low,tmph,tmpt,+,lowShrinked++;,&& tmpt<=ht)@
+	@:moveOrdered(*ht @7 hgh ,hh,ht,-,hghShrinked++;,&& ht<=tmpt)@
 
 	if (lowShrinked == idx_last - idx_first +1) return MAL_SUCCEED;
 	if (hghShrinked == idx_last - idx_first +1) return MAL_SUCCEED;
@@ -258,10 +260,10 @@ CRKcrackOrderedThree_@2_@3_@1(BAT *b, @1 low, @1 hgh, int idx_first, int idx_las
 
 	probe = 25;
 	t = tmpt;
-	s = tmpt+(2*probe*xx);
+	s = tmpt+(2*probe);
 	j=0;
-	for (;t<s;t+=xx)
-		j += *(@1*)t @4 low;
+	for (;t<s;t+=1)
+		j += *t @4 low;
 
 	if (j > probe){
 		ch = tmph; ct = tmpt;
@@ -284,21 +286,25 @@ CRKcrackOrderedThree_@2_@3_@1(BAT *b, @1 low, @1 hgh, int idx_first, int idx_las
 @= crackInThreeOrderedPiecesL
 static str
 CRKcrackOrderedThreeL_@2_@3_@1(BAT *b, @1 low, @1 hgh, lng idx_first, lng idx_last, lng *posl, lng *posh){
-	BUN lh, lt, hh, ht, tmpt, tmph, t, s, fh, ft, mh, mt;
+	oid *lh, *hh, *tmph, *fh, *mh;
+	@1 *lt, *ht, *tmpt, *ft, *mt, *t, *s, *t0;
 	oid *scr_h,*mscr_h;
 	@1  *scr_t,*mscr_t;
 	int scr_size = idx_last - idx_first +1;
 	int hghShrinked = 0, lowShrinked = 0, scrH, hp, hil, mids, mmids, j, probe;
-	int xx = BUNsize(b);
 	lng pos1, pos2;
+	BUN first;
 
-	lh = BUNhloc(b, BUNptr(b, idx_first));
-	lt = BUNtloc(b, BUNptr(b, idx_first));
-	ht = BUNtloc(b, BUNptr(b, idx_last));
-	hh = BUNhloc(b, BUNptr(b, idx_last));
+	first = BUNfirst(b);
+	t0   = (@1 *)Tloc(b, first);
 
-	@:moveOrdered(*(@1*)lt @4 low,lh,lt,+,lowShrinked++;,&& lt<=ht)@
-	@:moveOrdered(*(@1*)ht @7 hgh ,hh,ht,-,hghShrinked++;,&& ht>=lt)@
+	lh = (oid*)Hloc(b, first + idx_first);
+	lt = (@1 *)Tloc(b, first + idx_first);
+	hh   = (oid*)Hloc(b, first + idx_last);
+	ht   = (@1 *)Tloc(b, first + idx_last);
+
+	@:moveOrdered(*lt @4 low,lh,lt,+,lowShrinked++;,&& lt<=ht)@
+	@:moveOrdered(*ht @7 hgh ,hh,ht,-,hghShrinked++;,&& ht>=lt)@
 
 	/* These are different cases. For now just make sure that the result will be empty.
 	   TODO : when the index will learn from empty results return the appropriate information*/
@@ -315,24 +321,24 @@ CRKcrackOrderedThreeL_@2_@3_@1(BAT *b, @1 low, @1 hgh, lng idx_first, lng idx_la
 	}
 	/*Middle piece is empty and lt = ht + 1*/
 	if (lowShrinked + hghShrinked == scr_size){
-		*posl =  BUNindex(b,lt);
-		*posh =  BUNindex(b,ht);
+		*posl = lt - t0;
+		*posh = ht - t0;
 		return MAL_SUCCEED;
 	}
 
 	scrH = scr_size-1;	
 	hp = 0; hil = 0; mids = scrH; mmids = 0;
-	scr_h = (oid*) GDKmalloc(scr_size * sizeof(oid));
-	scr_t = (@1 *) GDKmalloc(scr_size * sizeof(@1 ));
+	scr_h  = (oid*) GDKmalloc(scr_size * sizeof(oid));
+	scr_t  = (@1 *) GDKmalloc(scr_size * sizeof(@1 ));
 	mscr_h = (oid*) GDKmalloc(scr_size * sizeof(oid));
 	mscr_t = (@1 *) GDKmalloc(scr_size * sizeof(@1 ));
 
 	probe = 100;
 	t = lt;
-	s = lt+(2*probe*xx);
+	s = lt+(2*probe);
 	j=0;
-	for (;t<s;t+=xx)
-		j += *(@1*)t @4 low;
+	for (;t<s;t+=1)
+		j += *t @4 low;
 	if (j > probe){
 		tmph = lh;
 		tmpt = lt;	
@@ -359,265 +365,267 @@ CRKcrackOrderedThreeL_@2_@3_@1(BAT *b, @1 low, @1 hgh, lng idx_first, lng idx_la
 
 @= OThreeLateCopying
 {
-	BUN tmp1, tmp2;
+	@1 *tmp1, *tmp2;
 	int i;
 
-	while (*(@1*)tmpt @5){
-		tmpt @2= xx;
-		tmph @2= xx;
+	while (*tmpt @5){
+		tmpt @2= 1;
+		tmph @2= 1;
 	}
 	tmp1 = lt;
 	while (tmpt @3 ht){
-		if ( *(@1*)tmpt @4){
-			if (*(@1*)lt @5){
-				scr_h[hil] = *(oid*)lh;
-				scr_t[hil] = *(@1* )lt;				
+		if ( *tmpt @4){
+			if (*lt @5){
+				scr_h[hil] = *lh;
+				scr_t[hil] = *lt;				
 				hil++;	
 			}
-			if (*(@1*)lt @8 low && *(@1*)lt @9 hgh){
-				scr_h[mids] = *(oid*)lh;
-				scr_t[mids] = *(@1* )lt;				
+			if (*lt @8 low && *lt @9 hgh){
+				scr_h[mids] = *lh;
+				scr_t[mids] = *lt;				
 				mids--;	
 			}
-			*(oid*)lh = *(oid*)tmph;
-			*(@1 *)lt = *(@1 *)tmpt;
-			lh @2= xx;
-			lt @2= xx;
+			*lh = *tmph;
+			*lt = *tmpt;
+			lh @2= 1;
+			lt @2= 1;
 		}
 		hp++;
-		tmpt @2= xx;
-		tmph @2= xx;
-		while (*(@1*)tmpt @5 && tmpt @3 ht){
-			tmpt @2= xx;
-			tmph @2= xx;
+		tmpt @2= 1;
+		tmph @2= 1;
+		while (*tmpt @5 && tmpt @3 ht){
+			tmpt @2= 1;
+			tmph @2= 1;
 		}
 	}
 	
-	pos1 = BUNindex(b,lt);
+	pos1 = lt - t0; 
 
 	tmph = hh;
 	tmpt = ht;
 	tmp2 = lt;
-	tmp1 @2= xx*(hp+hil);
-	for(; tmpt @7 tmp1; tmph @6=xx, tmpt @6=xx){
-		if (*(@1*)tmpt @5 ){
-			*(oid*)hh = *(oid*)tmph;
-			*(@1 *)ht = *(@1 *)tmpt;
-			hh @6= xx;
-			ht @6= xx;
+	tmp1 @2= hp+hil;
+	for(; tmpt @7 tmp1; tmph @6=1, tmpt @6=1){
+		if (*tmpt @5 ){
+			*hh = *tmph;
+			*ht = *tmpt;
+			hh @6= 1;
+			ht @6= 1;
 		}
-		if (*(@1*)tmpt @8 low && *(@1*)tmpt @9 hgh){
-			mscr_h[mmids] = *(oid*)tmph;
-			mscr_t[mmids] = *(@1* )tmpt;				
+		if (*tmpt @8 low && *tmpt @9 hgh){
+			mscr_h[mmids] = *tmph;
+			mscr_t[mmids] = *tmpt;				
 			mmids++;	
 		}
 	}
 	for (i= hil-1; i >= 0; i--){
-		if (*(@1*)tmpt @5){
-			*(oid*)hh = *(oid*)tmph;
-			*(@1 *)ht = *(@1 *)tmpt;
-			hh @6= xx;
-			ht @6= xx;
+		if (*tmpt @5){
+			*hh = *tmph;
+			*ht = *tmpt;
+			hh @6= 1;
+			ht @6= 1;
 		}	
-		if (*(@1*)tmpt @8 low && *(@1*)tmpt @9 hgh){
-			mscr_h[mmids] = *(oid*)tmph;
-			mscr_t[mmids] = *(@1* )tmpt;				
+		if (*tmpt @8 low && *tmpt @9 hgh){
+			mscr_h[mmids] = *tmph;
+			mscr_t[mmids] = *tmpt;				
 			mmids++;	
 		}
-		*(oid*)tmph = scr_h[i];
-		*(@1 *)tmpt = scr_t[i];
-		tmpt @6= xx;
-		tmph @6= xx;
+		*tmph = scr_h[i];
+		*tmpt = scr_t[i];
+		tmpt @6= 1;
+		tmph @6= 1;
 	}
 
-	pos2 = BUNindex(b,tmpt);
+	pos2 = tmpt - t0; 
 
 	i = 0;
 	for (; i < mmids; i++){
-		 if (*(@1*)tmpt @5 ){
-                        *(oid*)hh = *(oid*)tmph;
-                        *(@1 *)ht = *(@1 *)tmpt;
-                        hh @6= xx;
-                        ht @6= xx;
+		 if (*tmpt @5 ){
+                        *hh = *tmph;
+                        *ht = *tmpt;
+                        hh @6= 1;
+                        ht @6= 1;
                 }
-		if (*(@1*)tmpt @8 low && *(@1*)tmpt @9 hgh){
-			mscr_h[mmids] = *(oid*)tmph;
-			mscr_t[mmids] = *(@1* )tmpt;				
+		if (*tmpt @8 low && *tmpt @9 hgh){
+			mscr_h[mmids] = *tmph;
+			mscr_t[mmids] = *tmpt;				
 			mmids++;	
 		}
-		*(oid*)tmph = mscr_h[i];
-		*(@1 *)tmpt = mscr_t[i];
-		tmph @6= xx;
-		tmpt @6= xx;
+		*tmph = mscr_h[i];
+		*tmpt = mscr_t[i];
+		tmph @6= 1;
+		tmpt @6= 1;
 	}
-	tmp2 @2= xx*(scrH-mids);
+	tmp2 @2= scrH-mids;
 	/*todo check as in the zero case*/
-	mh= tmph;
+	mh = tmph;
 	mt = tmpt;
-	for(; tmpt @7 tmp2; tmph @6=xx, tmpt @6=xx){
-		if (*(@1*)tmpt @5 ){
-                        *(oid*)hh = *(oid*)tmph;
-                        *(@1 *)ht = *(@1 *)tmpt;
-                        hh @6= xx;
-                        ht @6= xx;
+	for(; tmpt @7 tmp2; tmph @6=1, tmpt @6=1){
+		if (*tmpt @5 ){
+                        *hh = *tmph;
+                        *ht = *tmpt;
+                        hh @6= 1;
+                        ht @6= 1;
                 }
-		if (*(@1*)tmpt @8 low && *(@1*)tmpt @9 hgh){
+		if (*tmpt @8 low && *tmpt @9 hgh){
 			if (mt != tmpt){
-				*(oid*)mh = *(oid*)tmph;
-                        	*(@1 *)mt = *(@1 *)tmpt;
+				*mh = *tmph;
+                        	*mt = *tmpt;
 			}
-                        mh @6= xx;
-                        mt @6= xx;
+                        mh @6= 1;
+                        mt @6= 1;
 		}
 	}
 
         i = mids+1;
         for (; i <= scrH; i++){
-                 if (*(@1*)tmpt @5 ){
-                        *(oid*)hh = *(oid*)tmph;
-                        *(@1 *)ht = *(@1 *)tmpt;
-                        hh @6= xx;
-                        ht @6= xx;
+                 if (*tmpt @5 ){
+                        *hh = *tmph;
+                        *ht = *tmpt;
+                        hh @6= 1;
+                        ht @6= 1;
                 }
-                if (*(@1*)tmpt @8 low && *(@1*)tmpt @9 hgh){
-	        	*(oid*)mh = *(oid*)tmph;
-                        *(@1 *)mt = *(@1 *)tmpt;
-                        mh @6= xx;
-                        mt @6= xx;
+                if (*tmpt @8 low && *tmpt @9 hgh){
+	        	*mh = *tmph;
+                        *mt = *tmpt;
+                        mh @6= 1;
+                        mt @6= 1;
                 }
-                *(oid*)tmph = scr_h[i];
-                *(@1 *)tmpt = scr_t[i];
-                tmph @6= xx;
-                tmpt @6= xx;
+                *tmph = scr_h[i];
+                *tmpt = scr_t[i];
+                tmph @6= 1;
+                tmpt @6= 1;
         }
 }
 @
 
 @= OrderedZero
 		while (tmpt @3 ht){
-			while (*(@1*)tmpt @4 mid){
-				tmpt @2=xx;
-				tmph @2=xx;
+			while (*tmpt @4 mid){
+				tmpt @2=1;
+				tmph @2=1;
 			}
-			if (*(@1*)ct @4 mid){
-				scr_h[hil] = *(oid*)ch;
-				scr_t[hil] = *(@1* )ct;				
+			if (*ct @4 mid){
+				scr_h[hil] = *ch;
+				scr_t[hil] = *ct;				
 				hil++;	
 			}
-			*(oid*)ch = *(oid*)tmph;
-			*(@1 *)ct = *(@1 *)tmpt;
-			ch @2= xx;
-			ct @2= xx;
+			*ch = *tmph;
+			*ct = *tmpt;
+			ch @2= 1;
+			ct @2= 1;
 			
-			tmpt @2= xx;
-			tmph @2= xx;
+			tmpt @2= 1;
+			tmph @2= 1;
 		}
-		tmph @5= 2*xx;
-		tmpt @5= 2*xx;
+		tmph @5= 2;
+		tmpt @5= 2;
 	
 		/* Take the position where the last BUN of the left piece is. */
-		*pos = BUNindex(b,ct @7);
+		*pos = (ct - t0) @7; 
 
-		ct  @2= xx*hil;
+		ct  @2= hil;
 		/* Extreme case where all lows(or all but one, or all but two) where in the hgh partition 
                    (or opposite depending how we move) */
 		if (ct @6 tmpt ){
-			if (ct == tmpt || ct == tmpt @2 xx) {
+			if (ct == tmpt || ct == tmpt @2 1) {
 				for (i=hil; i >=0 ; i--){
-					if (*(@1*)tmpt @4 mid){
-						*(oid*)hh = *(oid*)tmph;
-						*(@1 *)ht = *(@1 *)tmpt;
-						hh @5= xx;
-						ht @5= xx;
+					if (*tmpt @4 mid){
+						*hh = *tmph;
+						*ht = *tmpt;
+						hh @5= 1;
+						ht @5= 1;
 					}	
-					tmpt @5= xx;
-					tmph @5= xx;
+					tmpt @5= 1;
+					tmph @5= 1;
 				}
 				for (i=hil-1; i >=0 ; i--){
-					*(oid*)hh = scr_h[i];
-					*(@1 *)ht = scr_t[i];
-					ht @5= xx;
-					hh @5= xx;
+					*hh = scr_h[i];
+					*ht = scr_t[i];
+					ht @5= 1;
+					hh @5= 1;
 				}
-
 			}
 			else{
 				for (i=hil-1; i >=0 ; i--){
-					*(oid*)hh = scr_h[i];
-					*(@1 *)ht = scr_t[i];
-					ht @5= xx;
-					hh @5= xx;
+					*hh = scr_h[i];
+					*ht = scr_t[i];
+					ht @5= 1;
+					hh @5= 1;
 				}
 			}
 			return MAL_SUCCEED;
 		}
 
-		for(; tmpt @6 ct; tmph @5=xx, tmpt @5=xx){
-			if (*(@1*)tmpt @4 mid){
-				*(oid*)hh = *(oid*)tmph;
-				*(@1 *)ht = *(@1 *)tmpt;
-				hh @5= xx;
-				ht @5= xx;
+		for(; tmpt @6 ct; tmph @5=1, tmpt @5=1){
+			if (*tmpt @4 mid){
+				*hh = *tmph;
+				*ht = *tmpt;
+				hh @5= 1;
+				ht @5= 1;
 			}
 		}
 		for (i=hil-1; i >=0 ; i--){
-			if (*(@1*)tmpt @4 mid){
-				*(oid*)hh = *(oid*)tmph;
-				*(@1 *)ht = *(@1 *)tmpt;
-				hh @5= xx;
-				ht @5= xx;
+			if (*tmpt @4 mid){
+				*hh = *tmph;
+				*ht = *tmpt;
+				hh @5= 1;
+				ht @5= 1;
 			}	
-			*(oid*)tmph = scr_h[i];
-			*(@1 *)tmpt = scr_t[i];
-			tmpt @5= xx;
-			tmph @5= xx;
+			*tmph = scr_h[i];
+			*tmpt = scr_t[i];
+			tmpt @5= 1;
+			tmph @5= 1;
 		}
 @
 
 @= crackInTwoOrderedPieces
 static str
 CRKcrackOrderedZero_@2_@1(BAT *b, @1 mid, lng idx_first, lng idx_last, lng *pos){
-	BUN hh, ht, tmpt, tmph, fh, ft;
-	BUN ch, ct, t, s;
+	oid *hh, *tmph, *fh, *ch;
+	@1  *ht, *tmpt, *ft, *ct, *t, *s, *t0;
 	oid *scr_h;
 	@1  *scr_t;
 	lng hghShrinked = 0, lowShrinked = 0;
-	int xx = BUNsize(b);
 	int j=0, hil=0, scr_size, probe = 25;
 	int i;
+	BUN first;
 
-	tmph = BUNhloc(b, BUNptr(b, idx_first));
-	tmpt = BUNtloc(b, BUNptr(b, idx_first));
-	ht = BUNtloc(b, BUNptr(b, idx_last));
-	hh = BUNhloc(b, BUNptr(b, idx_last));
+	first = BUNfirst(b);
+	t0   = (@1 *)Tloc(b, first);
 
-	@:moveOrdered(*(@1*)tmpt @3 mid,tmph,tmpt,+,lowShrinked++;,&& tmpt<=ht)@
-	@:moveOrdered(*(@1*)ht @4 mid,hh,ht,-,hghShrinked++;,&& ht>=tmpt)@
+	tmph = (oid*)Hloc(b, first + idx_first);
+	tmpt = (@1 *)Tloc(b, first + idx_first);
+	hh   = (oid*)Hloc(b, first + idx_last);
+	ht   = (@1 *)Tloc(b, first + idx_last);
+
+	@:moveOrdered(*tmpt @3 mid,tmph,tmpt,+,lowShrinked++;,&& tmpt<=ht)@
+	@:moveOrdered(*ht @4 mid,hh,ht,-,hghShrinked++;,&& ht>=tmpt)@
 	if (lowShrinked == idx_last - idx_first + 1) {
-			*pos = idx_last+1;
-			return MAL_SUCCEED;
+		*pos = idx_last + 1;
+		return MAL_SUCCEED;
 	}
 	if (hghShrinked == idx_last - idx_first + 1){
-			*pos = idx_first-1;
-			return MAL_SUCCEED;
+		*pos = idx_first-1;
+		return MAL_SUCCEED;
 	}
 	
-	if (ht == tmpt + xx){
-		oid dh = *(oid*)tmph;
-		@1  dt = *(@1 *)tmpt;
-		*(oid*)tmph = *(oid*)hh;
-		*(@1 *)tmpt = *(@1 *)ht;
+	if (ht == tmpt + 1){
+		oid dh = *tmph;
+		@1  dt = *tmpt;
+		*tmph = *hh;
+		*tmpt = *ht;
 
-		*pos = BUNindex(b,tmpt);
+		*pos = tmpt - t0; 
 
-		*(oid*)hh = dh;
-		*(@1 *)ht = dt;
+		*hh = dh;
+		*ht = dt;
 
 		return MAL_SUCCEED;
 	}
 
-	if (ht == tmpt - xx){
-		*pos = BUNindex(b,ht);
+	if (ht == tmpt - 1){
+		*pos = ht - t0; 
 		return MAL_SUCCEED;
 	}	
 
@@ -626,13 +634,13 @@ CRKcrackOrderedZero_@2_@1(BAT *b, @1 mid, lng idx_first, lng idx_last, lng *pos)
 	scr_h = (oid*) GDKmalloc(scr_size * sizeof(oid));
 	scr_t = (@1 *) GDKmalloc(scr_size * sizeof(@1 ));
 	t = tmpt;
-	s = tmpt+(2*probe*xx);
-	for (;t<s;t+=xx)
-		j+=*(@1*)t @3 mid;
+	s = tmpt+(2*probe);
+	for (;t<s;t+=1)
+		j+=*t @3 mid;
 	
 	if (j > probe){
 		ch = tmph; ct = tmpt;
-		@:OrderedZero(@1,+,<=,@4,-,>=, -xx)@
+		@:OrderedZero(@1,+,<=,@4,-,>=, -1)@
 	}
 	else{
 		ch =hh; ct = ht;

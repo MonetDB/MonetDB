@@ -105,7 +105,6 @@ CRKjoinSelectBounds_@1(int *res, int *right, @1 *low, @1 *hgh, bit *inclusiveLow
 
 	if (BATcount(l) == 0 || BATcount(r) == 0){
 		BAT *d = BATnew(TYPE_oid, TYPE_void, 0);
-		d->batBuns->free = 0;
 		BATsetcount(d, 0);
 		d->hsorted = GDK_SORTED;
 		d->hdense = TRUE;
@@ -171,14 +170,14 @@ CRKjoinSelectBounds_@1(int *res, int *right, @1 *low, @1 *hgh, bit *inclusiveLow
 @= JoinSelectR
 static str
 JoinSelectRange_@2_@3_@1(int *res, BAT *l, BAT *r, @1 *low, @1 *hgh, bit inPlace, bit isForeignKey){
-	@:JoinSelectBody(@6_@4(rt,low,@7@1) && @6_@5(rt,hgh,@7@1))@
+	@:JoinSelectBody(@6_@4(rt,low,@7@1) && @6_@5(rt,hgh,@7@1),@1)@
 }
 @
 
 @= JoinSelectS
 static str
 JoinSelectSingle_@2_@1(int *res, BAT *l, BAT *r, @1 *mid, bit inPlace, bit isForeignKey){
-	@:JoinSelectBody(@4_@3(rt,mid,@5@1))@
+	@:JoinSelectBody(@4_@3(rt,mid,@5@1),@1)@
 }
 @
 
@@ -187,87 +186,83 @@ JoinSelectSingle_@2_@1(int *res, BAT *l, BAT *r, @1 *mid, bit inPlace, bit isFor
 From the right bat, only BUNs that pass the range-restriction on the tail qualify.
 The result is a [oid,void] bat. */
 	BAT *d;
-	BUN rt, rbase, dt;
-	int zz, dd;
+	@2 *rt, *rbase;
+	oid *dt;
 	oid rmin, rmax;
 	bit d_hdense = FALSE;
 
-	rmin = *(oid*)BUNhead(r, BUNfirst(r));
+	rmin = 0; /* *(oid*)Hloc(r, BUNfirst(r)); FIX */
 	rmax = rmin + (BATcount(r) - 1);
-	zz = BUNsize(r);
-	rbase = BUNtloc(r, BUNfirst(r)) - rmin*zz;
+	rbase = (@2*)Tloc(r, BUNfirst(r)) - rmin;
 
-	if (!inPlace || l->batParentid != 0 || l->htype == TYPE_void) {
+	if (!inPlace || /*l->batParentid != 0 ||*/ l->htype == TYPE_void) {
 		d = BATnew(TYPE_oid, TYPE_void, MIN(BATcount(l), BATcount(r)));
 	} else {
 		d = l;
 	}
 
-	dt = BUNhloc(d, BUNfirst(d));
-	dd = BUNsize(d);
+	dt = (oid*)Hloc(d, BUNfirst(d));
 
 	/* For each BUN of the left bat check if the corresponding BUN in the right bat satisfies the restriction.
 	   If yes the respective oid is added to the result */
 	if (BAThdense(l)) {
-		oid lv = MAX(rmin, *(oid*)BUNhead(l, BUNfirst(l)));
+		oid lv = MAX(rmin, *(oid*)Hloc(l, BUNfirst(l)));
 		oid llast = MIN(rmax, lv + (BATcount(l) - 1));
 		oid l0 = lv;
-		BUN d0 = dt;
-		rt = rbase + lv*zz;
+		oid *d0 = dt;
+		rt = rbase + lv;
 		while (lv <= llast) {
 			if (@1) {
-				*(oid*)dt = lv;
-				dt += dd;	
+				*dt = lv;
+				dt ++;	
 			}		
 			lv++;
-			rt += zz;
+			rt ++;
 		}
-		d_hdense = ((size_t)(dt - d0)/dd == (lv - l0));
+		d_hdense = ((size_t)(dt - d0) == (lv - l0));
 	} else {
-		int xx = BUNsize(l);
-		BUN llast = BUNhloc(l, BUNlast(l));
-		BUN lt = BUNhloc(l, BUNfirst(l));
+		oid *llast = (oid*)Hloc(l, BUNlast(l));
+		oid *lt = (oid*)Hloc(l, BUNfirst(l));
 		oid lv = oid_nil;
 
 		if (isForeignKey) {
 			while (lt < llast) {
-				lv = *(oid*)lt;
-				rt = rbase + lv*zz;
+				lv = *lt;
+				rt = rbase + lv;
 				if (@1) {
-					*(oid*)dt = lv;
-					dt += dd;	
+					*dt = lv;
+					dt ++;	
 				}	
-				lt += xx;
+				lt ++;
 			}
 		} else if (BAThordered(l)&1) {
-			while(lt < llast && (lv = *(oid*)lt) < rmin) {
-				lt += xx;
+			while(lt < llast && (lv = *lt) < rmin) {
+				lt ++;
 			}
-			while(lt < llast && (lv = *(oid*)lt) <= rmax) {
-				rt = rbase + lv*zz;
+			while(lt < llast && (lv = *lt) <= rmax) {
+				rt = rbase + lv;
 				if (@1) {
-					*(oid*)dt = lv;
-					dt += dd;	
+					*dt = lv;
+					dt ++;	
 				}	
-				lt += xx;
+				lt ++;
 			}
 		} else {
 			while(lt < llast){
-			    lv = *(oid*)lt;
+			    lv = *lt;
 			    if (lv >= rmin && lv <= rmax) {
-				rt = rbase + lv*zz;
+				rt = rbase + lv;
 				if (@1){
-					*(oid*)dt = lv;
-					dt += dd;	
+					*dt = lv;
+					dt ++;	
 				}	
 			    }
-			    lt += xx;
+			    lt ++;
 			}
 		}
 	}
 
-	d->batBuns->free = dt - d->batBuns->base;
-    	BATsetcount(d, d->batBuns->free/dd);
+    	BATsetcount(d, dt - (oid*)Hloc(d,BUNfirst(d)));
 	d->hsorted = (BATcount(d)<2 || BAThordered(l)&1) ? GDK_SORTED : 0;
 	d->hdense = BATcount(d)<2 || d_hdense;
 	if (d->hdense) {
@@ -275,7 +270,7 @@ The result is a [oid,void] bat. */
 			/* does not really matter */
 			BATseqbase(d, (oid)0);
 		} else {
-			BATseqbase(d, *(oid*)BUNhloc(d,BUNfirst(d)));
+			BATseqbase(d, *(oid*)Hloc(d,BUNfirst(d)));
 		}
 	} else {
 		BATseqbase(d, oid_nil);

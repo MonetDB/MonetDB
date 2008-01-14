@@ -110,7 +110,6 @@ str
 CRKmakeAVLIndex_@1(int *k, int *bid){
 	BUN last, cur;
 	int indexPos;
-	int xx;
 	lng curPos;
 	BAT *b;
 
@@ -121,11 +120,10 @@ CRKmakeAVLIndex_@1(int *k, int *bid){
 	indexPos = newAVLIndex(*bid);
 	cur = BUNfirst(b);
 	last = BUNlast(b);
-	xx = BUNsize(b);
 	curPos = 0;
 	while (cur < last){
 		addAVLIndex_@1(indexPos,curPos,b);
-		cur+=xx;
+		cur++;
 		curPos++;
 	}
 	
@@ -137,7 +135,6 @@ str
 CRKInsertAVLIndex_@1(int *k, int *bid, int *uid){
 	BUN last, cur;
 	int indexPos;
-	int xx;
 	lng curPos;
 	BAT *b, *u;
 
@@ -154,11 +151,10 @@ CRKInsertAVLIndex_@1(int *k, int *bid, int *uid){
 
 	cur = BUNfirst(u);
 	last = BUNlast(u);
-	xx = BUNsize(b);
 	curPos = BATcount(b)-BATcount(u);
 	while (cur < last){
 		addAVLIndex_@1(indexPos,curPos,b);
-		cur+=xx;
+		cur++;
 		curPos++;
 	}
 	
@@ -172,9 +168,10 @@ CRKAVLIndexSelectBounds_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveL
 	BAT *b, *result;
 	int indexPos;
 	struct Node *cur;
-	int xx;
 	lng  resSize;
-	BUN first, resLast, resh, rest;
+	BUN first; 
+	oid *resh;
+	@1 *rest;
 
 	indexPos = existsAVLIndex(*bid);
         if (indexPos == -1)
@@ -188,16 +185,13 @@ CRKAVLIndexSelectBounds_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveL
 	/* find the node that we should start searching from */
 	cur = AVLIndex[indexPos].Tree;
 	first = BUNfirst(b);
-	xx = BUNsize(b);
 
-	while( @2_LT(BUNtloc(b,first+cur->position*xx),low,@3@1) && cur != NULL )		
+	while( @2_LT(Tloc(b,first+cur->position),low,@3@1) && cur != NULL )		
 		cur = cur->right;
 
 	resSize = 0;
 	/*if NULL then result is empty */
 	if (cur == NULL){
-		resLast = BUNfirst(result);
-		result->batBuns->free =  resLast - result->batBuns->base;
                 BATsetcount(result, 0);
 		BBPkeepref(result->batCacheid);
 		*vid = result->batCacheid;
@@ -206,35 +200,31 @@ CRKAVLIndexSelectBounds_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveL
 		return MAL_SUCCEED;
 	}
 
-	resh = BUNhloc(result, BUNfirst(result));
-	rest = BUNtloc(result, BUNfirst(result));
-	if (@2_EQ(low,BUNtloc(b,first+cur->position*xx),@3@1) && *inclusiveLow == TRUE){
-		while (@2_EQ(low,BUNtloc(b,first+cur->position*xx),@3@1) && cur != NULL){
+	resh = (oid*)Hloc(result, BUNfirst(result));
+	rest = (@1 *)Tloc(result, BUNfirst(result));
+	if (@2_EQ(low,Tloc(b,first+cur->position),@3@1) && *inclusiveLow == TRUE){
+		while (@2_EQ(low,Tloc(b,first+cur->position),@3@1) && cur != NULL){
 			if (cur->deleted == FALSE){
 				*(oid*)resh = (oid)cur->position;
-				*(@1 *)rest = *(@1 *)BUNtloc(b,first+cur->position*xx);
-				resh+=xx; rest+=xx;
+				*(@1 *)rest = *(@1 *)Tloc(b,first+cur->position);
+				resh++; rest++;
 				resSize++;
 			}
 			cur = cur->right;
 		}
 	} else
-	if (@2_EQ(low,BUNtloc(b,first+cur->position*xx),@3@1) && *inclusiveLow == FALSE){
-		while(@2_EQ(low,BUNtloc(b,first+cur->position*xx),@3@1) && cur != NULL)
+	if (@2_EQ(low,Tloc(b,first+cur->position),@3@1) && *inclusiveLow == FALSE){
+		while(@2_EQ(low,Tloc(b,first+cur->position),@3@1) && cur != NULL)
 			cur = cur->right;
 	} 
 
 	if (cur != NULL)       
-		resSize = findQualifyingValuesAVLIndex_@1(low, hgh, inclusiveLow, inclusiveHgh, resSize, b, first, xx, cur, resh, rest, *(@1*)BUNtloc(b,first+cur->position));
+		resSize = findQualifyingValuesAVLIndex_@1(low, hgh, inclusiveLow, inclusiveHgh, resSize, b, first, cur, resh, rest, *(@1*)Tloc(b,first+cur->position));
 
-
-	resLast = BUNfirst(result) + xx*resSize;
-        result->batBuns->free =  resLast - result->batBuns->base;
         BATsetcount(result, resSize);
         BBPkeepref(result->batCacheid);
         *vid = result->batCacheid;
         BBPunfix(b->batCacheid);
-
 
 	return MAL_SUCCEED;
 }
@@ -281,10 +271,11 @@ newAVLIndex(int bid){
 
 @= AVLIndexOperations
 static struct Node *
-InsertAVLIndex_@1(int m, int indexPosition, @1 value,  struct Node * current, BAT * b, BUN base, int xx){	
-	BUN cur, curValue, Lchild, LchildValue, Rchild, RchildValue;
+InsertAVLIndex_@1(int m, int indexPosition, @1 value,  struct Node * current, BAT * b, BUN base){	
+	BUN cur, Lchild, Rchild;
 	int lh, rh;
 	struct Node *temp;
+	ptr curValue, LchildValue, RchildValue;
 
 	if (current == NULL){
         	current = (struct Node *)GDKmalloc(sizeof(struct Node));
@@ -298,14 +289,15 @@ InsertAVLIndex_@1(int m, int indexPosition, @1 value,  struct Node * current, BA
 		current->previous = NULL;
 		current->isPreviousSmaller = FALSE;
 		current->hols = 0;
+		current->slice= -1;
 		goto end;
         }
 
-	cur = base + ((current->position) * xx);
-        curValue = BUNtloc(b, cur);
+	cur = base + current->position;
+        curValue = Tloc(b, cur);
 
         if ( @2_LT(&value,curValue,@3@1) || @2_EQ(&value,curValue,@3@1) ){
-		if ( (temp = InsertAVLIndex_@1(m, indexPosition, value,  current->left, b, base, xx)) == NULL )
+		if ( (temp = InsertAVLIndex_@1(m, indexPosition, value,  current->left, b, base)) == NULL )
                 	return NULL;
 
 		current->left = temp;
@@ -313,8 +305,8 @@ InsertAVLIndex_@1(int m, int indexPosition, @1 value,  struct Node * current, BA
 		temp->isPreviousSmaller = FALSE;
 
                 if ( Height(current->left) - Height(current->right) == 2 ){
-		        Lchild = base + ((current->left->position) * xx);
-        		LchildValue = BUNtloc(b, Lchild);
+		        Lchild = base + current->left->position;
+        		LchildValue = Tloc(b, Lchild);
 
                     	if ( @2_LT(&value,LchildValue,@3@1) || @2_EQ(&value,LchildValue,@3@1) )
                         	current = SingleRotateLeft(m, current);
@@ -322,7 +314,7 @@ InsertAVLIndex_@1(int m, int indexPosition, @1 value,  struct Node * current, BA
                         	current = DoubleRotateLeft(m, current);
 		}
         } else {
-		if ( (temp = InsertAVLIndex_@1(m, indexPosition, value, current->right, b, base, xx)) == NULL )
+		if ( (temp = InsertAVLIndex_@1(m, indexPosition, value, current->right, b, base)) == NULL )
 			return NULL;
 
                 current->right = temp;
@@ -331,8 +323,8 @@ InsertAVLIndex_@1(int m, int indexPosition, @1 value,  struct Node * current, BA
 
 
                 if ( Height(current->right) - Height(current->left) == 2 ){
-			Rchild = base + ((current->right->position) * xx);
-                        RchildValue = BUNtloc(b, Rchild);
+			Rchild = base + current->right->position;
+                        RchildValue = Tloc(b, Rchild);
 
                         if ( @2_GT(&value,RchildValue,@3@1) )
                         	current = SingleRotateRight(m, current);
@@ -352,7 +344,6 @@ InsertAVLIndex_@1(int m, int indexPosition, @1 value,  struct Node * current, BA
 static void
 addAVLIndex_@1(int m,  lng position, BAT * b){
         BUN base;
-        int xx = BUNsize(b);
 
         if (position == 0){
                 AVLIndex[m].Tree = (struct Node *)GDKmalloc(sizeof(struct Node));
@@ -364,50 +355,55 @@ addAVLIndex_@1(int m,  lng position, BAT * b){
                 AVLIndex[m].Tree->head = TRUE;
                 AVLIndex[m].Tree->deleted = FALSE;
                 AVLIndex[m].Tree->previous = NULL;
+                AVLIndex[m].Tree->hols = 0;
+                AVLIndex[m].Tree->slice= -1;
 
                 return;
         }
 
-        base = BUNhloc(b, BUNfirst(b));
-        InsertAVLIndex_@1(m, position, *(@1*)BUNtloc(b,base+position*xx),  AVLIndex[m].Tree, b, base, xx);
+        base = BUNfirst(b);
+        InsertAVLIndex_@1(m, position, *(@1*)Tloc(b,base+position), AVLIndex[m].Tree, b, base);
 }
 
 static lng 
-findQualifyingValuesAVLIndex_@1(@1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh, lng resSize, BAT *b, BUN first, int xx, struct Node * cur, BUN resh, BUN rest, @1 prevL){
-	BUN rh = resh, rt = rest;
+findQualifyingValuesAVLIndex_@1(@1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh, lng resSize, BAT *b, BUN first, struct Node * cur, oid *resh, @1 *rest, @1 prevL){
+	oid *rh = resh;
+	@1  *rt = rest;
 	lng size = resSize;
 	
-	@1 value = *(@1*)BUNtloc(b,first+cur->position*xx);
+	@1 value = *(@1*)Tloc(b,first+cur->position);
 	if (cur->deleted == FALSE){
 		if ( (@2_GT(&value,low,@3@1) && @2_LT(&value,hgh,@3@1)) ||
 		     (@2_EQ(&value,low,@3@1) && *inclusiveLow == TRUE) ||	
 		     (@2_EQ(&value,hgh,@3@1) && *inclusiveHgh == TRUE) ){
 			*(oid*)rh = (oid)cur->position;
-       	         	*(@1 *)rt = *(@1*)BUNtloc(b,first+cur->position*xx);
-	       	         rh+=xx; rt+=xx;
+       	         	*(@1 *)rt = *(@1*)Tloc(b,first+cur->position);
+	       	        rh++; 
+			rt++;
         	        size++;	
 		}
 	}
 
 	if (cur->left != NULL &&  @2_GT(&value,low,@3@1) && @2_LT(&prevL,hgh,@3@1) )
-		size = findQualifyingValuesAVLIndex_@1(low, hgh, inclusiveLow, inclusiveHgh, size, b, first, xx, cur->left, rh, rt, prevL);
+		size = findQualifyingValuesAVLIndex_@1(low, hgh, inclusiveLow, inclusiveHgh, size, b, first, cur->left, rh, rt, prevL);
+
 	if (cur->right != NULL && (@2_LT(&value,hgh,@3@1) || (@2_EQ(&value,hgh,@3@1) && *inclusiveHgh == TRUE)))
-		size = findQualifyingValuesAVLIndex_@1(low, hgh, inclusiveLow, inclusiveHgh, size, b, first, xx, cur->right, rh, rt, value);
+		size = findQualifyingValuesAVLIndex_@1(low, hgh, inclusiveLow, inclusiveHgh, size, b, first, cur->right, rh, rt, value);
 
 	return size;
 }
 
 /* Locate and mark as deleted a node in the AVL tree, starting from a given node */
 static struct Node *
-LocateDelete_@1(struct Node *cur, oid id, @1 *value, BAT *b, BUN first, int xx){
+LocateDelete_@1(struct Node *cur, oid id, @1 *value, BAT *b, BUN first){
 	struct Node * current = cur;
-	if ( @2_GT(BUNtloc(b, first + current->position*xx),value,@3@1) )
-		return current->right != NULL ? LocateDelete_@1(current->right, id, value, b, first, xx): NULL;	
+	if ( @2_GT(Tloc(b, first + current->position),value,@3@1) )
+		return current->right != NULL ? LocateDelete_@1(current->right, id, value, b, first): NULL;	
 	else
-	if ( @2_LT(BUNtloc(b, first + current->position*xx),value,@3@1) )
-		return current->left != NULL ? LocateDelete_@1(current->left, id, value, b, first, xx): NULL;	
+	if ( @2_LT(Tloc(b, first + current->position),value,@3@1) )
+		return current->left != NULL ? LocateDelete_@1(current->left, id, value, b, first): NULL;	
 	else
-	if ( @2_EQ(BUNtloc(b, first + current->position*xx),value,@3@1) ){
+	if ( @2_EQ(Tloc(b, first + current->position),value,@3@1) ){
 		if ( (oid)current->position ==  id ){
 			current->deleted = TRUE;
 			return current;
@@ -416,15 +412,14 @@ LocateDelete_@1(struct Node *cur, oid id, @1 *value, BAT *b, BUN first, int xx){
 			while(1){
 				if (current->right != NULL)
 					current= current->right;
-				if ( @2_EQ(BUNtloc(b, first + current->position*xx),value,@3@1) ){
+				if ( @2_EQ(Tloc(b, first + current->position),value,@3@1) ){
 			                if ( (oid)current->position ==  id ){
 						current->deleted = TRUE;
                		 		        return current;
 					} else
 						continue;
-				} else {
+				} else 
 					return current;
-				}
 			}
 		}
 	}
@@ -437,9 +432,9 @@ str
 CRKdeleteFromAVL_@1(int *k, int *bid, int *uid){
 	BAT *b, *u;
 	lng indexPos;
-	BUN delt, delh, delLast, first;
-	int xx;
-	
+	BUN first;
+	@1 *delt, *delLast;
+	oid *delh;
 	(void)k;
 	
 	indexPos = existsAVLIndex(*bid);
@@ -448,7 +443,6 @@ CRKdeleteFromAVL_@1(int *k, int *bid, int *uid){
 
         if ((b = BATdescriptor(*bid)) == NULL)
                 throw(MAL, "crackers.delete from AVL index", "Cannot access descriptor");
-
 
 	if ((u = BATdescriptor(*uid)) == NULL)
                 throw(MAL, "crackers.delete from AVL index", "Cannot access deletions BAT");
@@ -464,14 +458,15 @@ CRKdeleteFromAVL_@1(int *k, int *bid, int *uid){
                 BATmirror(BATorder(BATmirror(u)));
         }
 
-	first = BUNfirst(b);
-	xx = BUNsize(b);
-	delt = BUNtloc(u, BUNfirst(u));
-	delh = BUNhloc(u, BUNfirst(u));
-	delLast = BUNtloc(u, BUNlast(u));
+	first   = BUNfirst(b);
+
+	delt    = (@1 *)Tloc(u, BUNfirst(u));
+	delh    = (oid*)Hloc(u, BUNfirst(u));
+	delLast = (@1 *)Tloc(u, BUNlast(u));
+
 	while (delt < delLast){
-		LocateDelete_@1(AVLIndex[indexPos].Tree, *(oid*)delh, (@1*)delt, b, first, xx);
-		delt+=xx; delh+=xx;
+		LocateDelete_@1(AVLIndex[indexPos].Tree, *delh, delt, b, first);
+		delt++; delh++;
 	}
 	
 	BATmode(u, TRANSIENT);

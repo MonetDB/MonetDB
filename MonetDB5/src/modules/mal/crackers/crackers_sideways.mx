@@ -26,12 +26,8 @@
 @- Type expansion
 
 @= TypeSwitch_1
-@:@1(,chr,simple,,chr,@2)@
-@:@1(,sht,simple,,sht,@2)@
 @:@1(,int,simple,,int,@2)@
-@:@1(,lng,simple,,lng,@2)@
-@:@1(,flt,simple,,flt,@2)@
-@:@1(,dbl,simple,,dbl,@2)@
+@:@1(,lng,simple,,int,@2)@
 @:@1(,date,atom,TYPE_,loc,@2)@
 @
 
@@ -42,19 +38,11 @@
 
 @= TypeSwitch_3
 /* TODO: add the rest of the type combinations once code is stable */
-@:@1(int,chr,simple,,,@2)@
-@:@1(int,sht,simple,,,@2)@
 @:@1(int,int,simple,,,@2)@
-@:@1(int,lng,simple,,,@2)@
-@:@1(int,flt,simple,,,@2)@
-@:@1(int,dbl,simple,,,@2)@
 @:@1(int,date,atom,TYPE_,,@2)@
-@:@1(date,chr,atom,TYPE_,,@2)@
-@:@1(date,sht,atom,TYPE_,,@2)@
+
 @:@1(date,int,atom,TYPE_,,@2)@
 @:@1(date,lng,atom,TYPE_,,@2)@
-@:@1(date,flt,atom,TYPE_,,@2)@
-@:@1(date,dbl,atom,TYPE_,,@2)@
 @:@1(date,date,atom,TYPE_,,@2)@
 @
 
@@ -65,6 +53,37 @@
 #ifndef _CRACKERS_SIDEWAYS_H_
 #define _CRACKERS_SIDEWAYS_H_
 
+struct mapNode{
+        int             tailBatId;	  
+        struct mapNode  *nextMap;
+        struct Node     *nextPiece;
+};
+
+struct mapSetNode{
+        int             batId;
+        struct mapNode  *nextMap;
+        struct mapSetNode *nextMapSet;
+};
+
+struct storageManagement{
+	lng totalTuples;	
+	lng threshold;
+	struct mapSetNode *nextMapSet;	/* the list of map set nodes are holding info on map sets based on mapSetNode->batId
+					   Each map set node has a list of mapNodes for each map that exists in this map set
+					   Each mapNode has a list of Nodes linking directly to the cracker indices of the respective maps
+					   Each Node is the FIRST node of a piece in a map*/
+
+	struct referencesNodeFM *references; /* used in the case of full maps to hold the maps used in the current query */
+	int temp;
+};
+
+#ifdef LIBCRACKERS
+/* Signatures shared within the crackers module/library */
+@:SidewaysSharedFunctions_decl_0@
+@:TypeSwitch_2(SidewaysSharedFunctions_decl_2)@
+@:TypeSwitch_3(SidewaysSharedFunctions_decl_3)@
+#endif
+
 /* Exported signatures */
 @:SidewaysFunctions_decl_0@
 @:TypeSwitch_1(SidewaysFunctions_decl_1)@
@@ -73,15 +92,40 @@
 #endif /* _CRACKERS_SIDEWAYS_H */
 @
 
+@- Signatures shared within the crackers module/library
+
+@= SidewaysSharedFunctions_decl_0
+int existsCrackerIndexSideways(int bid, int pbid);
+@
+
+@= SidewaysSharedFunctions_decl_2
+int CreateTape_@1(int bid);
+str AddToTape_@1(int h, @1 low, @1 hgh, bit li, bit hi);
+str AddToTapeIncrementalSideways_@1(struct Node *node, @1 value, bit inclusive);
+@
+
+@= SidewaysSharedFunctions_decl_3
+str Sync_@1_@2(int m, int h);
+@:crackInTwoUnorderedPiecesSideways_decl(@1,@2,LE,LE,GT,@3,@4)@
+@:crackInTwoUnorderedPiecesSideways_decl(@1,@2,RE,LT,GE,@3,@4)@
+@
 
 @- Exported signatures
  
 @= SidewaysFunctions_decl_0
 crackers_export str CRKsizePendingInsertions(int *k, int *bid, int *pbid);
-crackers_export str CRKextendCrackerMap(int *k, int *bid, int *pbid, lng positions);
+crackers_export str CRKextendCrackerMap(int *k, int *bid, int *pbid, oid positions);
 crackers_export str CRKprintPendingInsertions(int *k, int *bid, int  *pbid);
 crackers_export str CRKinsert(int *k, int *bid, int *pbid, int *insertions);
 crackers_export str DeleteCrackerMap(int *k, int *bid, int *pbid);
+crackers_export str getCrackerMap(int *k, int *bid, int *pbid);
+crackers_export str CRKgetTotalStorage(int *k);
+crackers_export str CRKsetStorageThreshold(int *k, lng * threshold);
+crackers_export str CRKaddReference(int* res, int *bid, int *pbid);
+crackers_export str CRKaddReferenceFullMaps(int* res, int *bid, int *pbid);
+crackers_export str CRKclearReferences(int* res, int *bid);
+crackers_export str CRKclearReferencesFullMaps(int* res);
+crackers_export str CRKremoveFullMap(int* res);
 @
 
 @= SidewaysFunctions_decl_1
@@ -91,11 +135,17 @@ crackers_export str CRKjoinSelectSideways_@2(int *res, int *cpair, @2 *low, @2 *
 
 @= SidewaysFunctions_decl_3
 /* SelectFunctionsSideways */
+crackers_export str CRKcreateFullMap_@1_@2(int* res, int *bid, int *pbid);
 crackers_export str CRKhselectBoundsSideways_@1_@2(int *vid, int *bid, int *pbid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh);
 crackers_export str CRKtselectBoundsSideways_@1_@2(int *vid, int *bid, int *pbid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh);
 crackers_export str CRKdselectBoundsSideways_@1_@2(int *vid, int *bid, int *pbid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh, @2 *low2, @2 *hgh2, bit *inclusiveLow2, bit *inclusiveHgh2);
+crackers_export str CRKselectBoundsIncrementalSideways_@1_@2(int *vid, int *bid, int *pbid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh, @2 *low2, @2 *hgh2, bit *inclusiveLow2, bit *inclusiveHgh2);
+crackers_export str CRKselectBoundsTailIncrementalSideways_@1_@2(int *vid, int *bid, int *pbid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh);
 /* JoinSelectFunctionsSideways */
 crackers_export str CRKjoinSelectSideways_P_@1_@2(int *res, int *bid, int *pbid, int *pivot, @1 *low1, @1 *hgh1, bit *inclusiveLow1, bit *inclusiveHgh1, @2 *low, @2 *hgh, bit *inclusiveLow, bit *inclusiveHgh);
+crackers_export str CRKjoinSelectIncrementalSideways_@1_@2(int *res, int *bid, int *pbid, int *pivot, @1 *low1, @1 *hgh1, bit *inclusiveLow1, bit *inclusiveHgh1, @2 *low, @2 *hgh, bit *inclusiveLow, bit *inclusiveHgh);
+crackers_export str CRKProjectIncrementalSideways_@1_@2(int *res, int *bid, int *pbid, int *pivot, @1 *low1, @1 *hgh1, bit *inclusiveLow1, bit *inclusiveHgh1);
+crackers_export str CRKMaxTailIncrementalSideways_@1_@2(int *res, int *bid, int *pbid, @1 *low1, @1 *hgh1, bit *inclusiveLow1, bit *inclusiveHgh1);
 crackers_export str CRKdjoinSelectSideways_P_@1_@2(int *res, int *bid, int *pbid, int *pivot, @2 *low, @2 *hgh, bit *inclusiveLow, bit *inclusiveHgh);
 /* Project */
 crackers_export str CRKProjectCrack_@1_@2(int *res, int *bid, int *pbid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh);
@@ -121,11 +171,14 @@ crackers_export str CRKdProject_@1_@2(int *res, int *bid, int *pbid, int *pivot)
 @:NewIndexSidewaysCracking_0@
 @:TypeSwitch_2(NewIndexSidewaysCracking_2,)@
 @:TypeSwitch_3(SyncOperation,)@
-@:TypeSwitch_2(TapeOperations,)@
+@:TypeSwitch_3(PieceMaps,)@
 @:TypeSwitch_2(updatesSideways,)@
 @:TypeSwitch_3(crackOperationsSideways,)@
 @:TypeSwitch_1(JoinSelectOperationsSideways,WithoutPivot)@
 @:TypeSwitch_3(JoinSelectOperationsSideways,)@
+
+/* Functions shared within the crackers module/library */
+@:TypeSwitch_2(TapeOperations,)@
 
 /* Exported functions */
 @:SidewaysFunctions_impl_0@
@@ -158,7 +211,7 @@ CRKsizePendingInsertions(int *k, int *bid, int *pbid){
 }
 
 str
-CRKextendCrackerMap(int *k, int *bid, int *pbid, lng positions){
+CRKextendCrackerMap(int *k, int *bid, int *pbid, oid positions){
         BAT *b;
         int position = existsCrackerIndexSideways(*bid,*pbid);
         (void) k;
@@ -214,6 +267,49 @@ DeleteCrackerMap(int *k, int *bid, int *pbid){
 		}
 	return MAL_SUCCEED;
 }
+
+str
+getCrackerMap(int *k, int *bid, int *pbid){
+        int i;
+        (void)k;
+        for (i = 0; i < maxCrackMap; i++)
+                if (CrackerIndex[i].bid == *bid && CrackerIndex[i].pbid == *pbid){
+                        if (CrackerIndex[i].cbid > 0)
+                                *k = CrackerIndex[i].cbid;
+                        else
+                                *k = -1;
+                }
+        return MAL_SUCCEED;
+}
+
+str
+CRKgetTotalStorage(int *k){
+        (void) k;
+
+	printf("\n\nTotal Storage: %lld tuples  \n\n", StorageInfo->totalTuples);
+
+        return MAL_SUCCEED;
+}
+
+
+str
+CRKsetStorageThreshold(int *k, lng *threshold){
+        (void) k;
+
+	if (StorageInfo == NULL){
+        	StorageInfo = (struct storageManagement *)GDKmalloc(sizeof(struct storageManagement));
+                StorageInfo->nextMapSet = NULL;
+                StorageInfo->totalTuples = 0;
+                StorageInfo->references  = NULL;
+        }
+
+	printf("\n\nchaning the threshold to %lld \n\n", *threshold);
+	StorageInfo->threshold = *threshold;	
+	printf("\n\n new threshold is %lld \n\n", StorageInfo->threshold);
+
+        return MAL_SUCCEED;
+}
+
 @
 
 
@@ -251,6 +347,8 @@ CRKjoinSelectSideways_@2(int *res, int *cpair, @2 *low, @2 *hgh, bit *inclusiveL
 
 @= SidewaysFunctions_impl_3
 /* SelectFunctionsSideways */
+
+/* take the head of this map as a view */
 str
 CRKhselectBoundsSideways_@1_@2(int *vid, int *bid, int *pbid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh){
 	if (@3_EQ(low,ATOMnilptr(TYPE_@1),@4@1))
@@ -263,6 +361,7 @@ CRKhselectBoundsSideways_@1_@2(int *vid, int *bid, int *pbid, @1 *low, @1 *hgh, 
         throw(MAL, "crackers.CRKhselectBoundsSideways_@1_@2", "case not handled");
 }
 
+/* take the tail as a view */
 str
 CRKtselectBoundsSideways_@1_@2(int *vid, int *bid, int *pbid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh){
 	if (@3_EQ(low,ATOMnilptr(TYPE_@1),@4@1))
@@ -285,6 +384,32 @@ CRKdselectBoundsSideways_@1_@2(int *vid, int *bid, int *pbid, @1 *low, @1 *hgh, 
 		return CRKdRangeSideways_@1_@2(vid, bid, pbid, low, hgh, inclusiveLow, inclusiveHgh, low2, hgh2, inclusiveLow2, inclusiveHgh2);
 
         throw(MAL, "crackers.CRKdselectBoundsSideways_@1_@2", "case not handled");
+}
+
+/* return bit vector of the conjuction */
+str
+CRKselectBoundsIncrementalSideways_@1_@2(int *vid, int *bid, int *pbid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh, @2 *low2, @2 *hgh2, bit *inclusiveLow2, bit *inclusiveHgh2){
+	if (@3_EQ(low,ATOMnilptr(TYPE_@1),@4@1))
+       		throw(MAL, "crackers.CRKtselectBoundIncrementalsSideways_@1_@2", "case not handled");
+	else if (@3_EQ(hgh,ATOMnilptr(TYPE_@1),@4@1))
+        	throw(MAL, "crackers.CRKtselectBoundsIncrementalSideways_@1_@2", "case not handled");
+	else
+		return CRKRangeIncrementalSideways_@1_@2(vid, bid, pbid, low, hgh, inclusiveLow, inclusiveHgh, low2, hgh2, inclusiveLow2, inclusiveHgh2);
+
+        throw(MAL, "crackers.CRKtselectBoundsIncrementalSideways_@1_@2", "case not handled");
+}
+
+/* Get directly the qualifying tail tuples */
+str
+CRKselectBoundsTailIncrementalSideways_@1_@2(int *vid, int *bid, int *pbid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh){
+	if (@3_EQ(low,ATOMnilptr(TYPE_@1),@4@1))
+       		throw(MAL, "crackers.CRKtselectBoundIncrementalsSideways_@1_@2", "case not handled");
+	else if (@3_EQ(hgh,ATOMnilptr(TYPE_@1),@4@1))
+        	throw(MAL, "crackers.CRKtselectBoundsIncrementalSideways_@1_@2", "case not handled");
+	else
+		return CRKRangeTailIncrementalSideways_@1_@2(vid, bid, pbid, low, hgh, inclusiveLow, inclusiveHgh);
+
+        throw(MAL, "crackers.CRKtselectBoundsIncrementalSideways_@1_@2", "case not handled");
 }
 
 /* JoinSelectFunctionsSideways */
@@ -315,6 +440,42 @@ CRKjoinSelectSideways_P_@1_@2(int *res, int *bid, int *pbid, int *pivot, @1 *low
                 	return JoinSelectRangeSideways_P_LO_RE_@1_@2(res, bid, pbid, pivot, low, hgh, low1, hgh1, inclusiveLow1, inclusiveHgh1);
 	}
         throw(MAL, "crackers.crackJoinSelectSideways", "case not handled");
+}
+
+str                     
+CRKjoinSelectIncrementalSideways_@1_@2(int *res, int *bid, int *pbid, int *pivot, @1 *low1, @1 *hgh1, bit *inclusiveLow1, bit *inclusiveHgh1, @2 *low, @2 *hgh, bit *inclusiveLow, bit *inclusiveHgh){               
+        if (@3_EQ(low1,ATOMnilptr(TYPE_@1),@4@1))
+       		throw(MAL, "crackers.CRKjoinSelectIncrementalSideways_@1_@2", "case not handled");
+        else if (@3_EQ(hgh1,ATOMnilptr(TYPE_@1),@4@1))
+       		throw(MAL, "crackers.CRKjoinSelectIncrementalSideways_@1_@2", "case not handled");
+        else
+               	return JoinSelectRangeIncrementalSideways_@1_@2(res, bid, pbid, pivot, low1, hgh1, inclusiveLow1, inclusiveHgh1, low, hgh, inclusiveLow, inclusiveHgh);
+	
+        throw(MAL, "crackers.JoinSelectIncrementalSideways", "case not handled");
+}
+
+str                     
+CRKProjectIncrementalSideways_@1_@2(int *res, int *bid, int *pbid, int *pivot, @1 *low1, @1 *hgh1, bit *inclusiveLow1, bit *inclusiveHgh1){               
+        if (@3_EQ(low1,ATOMnilptr(TYPE_@1),@4@1))
+       		throw(MAL, "crackers.CRKProjectIncrementalSideways_@1_@2", "case not handled");
+        else if (@3_EQ(hgh1,ATOMnilptr(TYPE_@1),@4@1))
+       		throw(MAL, "crackers.CRKProjectIncrementalSideways_@1_@2", "case not handled");
+        else
+               	return ProjectIncrementalSideways_@1_@2(res, bid, pbid, pivot, low1, hgh1, inclusiveLow1, inclusiveHgh1);
+	
+        throw(MAL, "crackers.CRKProjectIncrementalSideways", "case not handled");
+}
+
+str                     
+CRKMaxTailIncrementalSideways_@1_@2(int *res, int *bid, int *pbid, @1 *low1, @1 *hgh1, bit *inclusiveLow1, bit *inclusiveHgh1){               
+        if (@3_EQ(low1,ATOMnilptr(TYPE_@1),@4@1))
+       		throw(MAL, "crackers.CRKMaxTailncrementalSideways_@1_@2", "case not handled");
+        else if (@3_EQ(hgh1,ATOMnilptr(TYPE_@1),@4@1))
+       		throw(MAL, "crackers.CRKMaxTailIncrementalSideways_@1_@2", "case not handled");
+        else
+               	return MaxTailIncrementalSideways_@1_@2(res, bid, pbid, low1, hgh1, inclusiveLow1, inclusiveHgh1);
+	
+        throw(MAL, "crackers.CRKMaxTailIncrementalSideways", "case not handled");
 }
 
 str                     
@@ -351,26 +512,27 @@ str
 CRKProjectCrack_@1_@2(int *res, int *bid, int *pbid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh){
         BAT *b, *c, *view;
 	int m;
-	lng cl1,cl2,ch1,ch2;
-
+	oid cl1,cl2,ch1,ch2;
+	bit newMap = FALSE;
 	m = existsCrackerIndexSideways(*bid, *pbid);
 	if (m==-1){	
 		@:CreateCrackerMap(@1,@2)@		
-		BBPincref(b->batCacheid,TRUE);
-	}	
+		newMap = TRUE;
+	}else{
+        	if ((b = BATdescriptor(CrackerIndex[m].cbid)) == NULL) 
+                	throw(MAL, "crackers.crackJoinSelectSideways", "Cannot access descriptor");
 
+	        if ((c = BATdescriptor(CrackerIndex[m].cid)) == NULL)
+        	        throw(MAL, "crackers.crackRange", "Cannot access crack index");
+                
+        	CrackerIndex[m].accesses += 1;
+	}
 	selectMergeInsertionsPart_@1Sideways(low, inclusiveLow, hgh, inclusiveHgh, m);
 	Sync_@1_@2(m,existsCrackerIndexSideways(*bid, -1));
 
-        if ((b = BATdescriptor(CrackerIndex[m].cbid)) == NULL) 
-                throw(MAL, "crackers.crackJoinSelectSideways", "Cannot access descriptor");
-
-        if ((c = BATdescriptor(CrackerIndex[m].cid)) == NULL)
-                throw(MAL, "crackers.crackRange", "Cannot access crack index");
+        GetLow_@1(*low, *inclusiveLow, CrackerIndex[m].Tree, c, BUNfirst(c), &cl1, &ch1, 0, BUNlast(b)-(oid)1);
                 
-        GetLow_@1(*low, *inclusiveLow, CrackerIndex[m].Tree, c, BUNhloc(c, BUNfirst(c)), BUNsize(c), &cl1, &ch1, 0, BUNindex(b, BUNlast(b)-BUNsize(b)));
-                
-        GetHgh_@1(*hgh, *inclusiveHgh, CrackerIndex[m].Tree, c, BUNhloc(c, BUNfirst(c)), BUNsize(c), &cl2, &ch2, 0, BUNindex(b, BUNlast(b)-BUNsize(b)));
+        GetHgh_@1(*hgh, *inclusiveHgh, CrackerIndex[m].Tree, c, BUNfirst(c), &cl2, &ch2, 0, BUNlast(b)-(oid)1);
 
 	if (cl1 != 0) cl1++;
 
@@ -379,27 +541,34 @@ CRKProjectCrack_@1_@2(int *res, int *bid, int *pbid, @1 *low, @1 *hgh, bit *incl
         *res = view->batCacheid;
         BBPkeepref(*res);
 
-        BBPunfix(b->batCacheid);
-        BBPunfix(c->batCacheid);
+	if (newMap){
+                BBPkeepref(b->batCacheid);
+                BBPkeepref(c->batCacheid);
+        }else{
+                BBPunfix(b->batCacheid);
+                BBPunfix(c->batCacheid);
+        }
+
         return MAL_SUCCEED;
 }
 
 str
 CRKProjectH_@1_@2(int *res, int *bid, int *pbid,int *pivot, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh){
         BAT *b, *p, *r, *c, *pair;
-        BUN pairh, pivott, rest, reslast;
+        @1 *pairh, *rest;
+	bit *pivott; 
         lng size, fsize;
-        int bsize, psize, rsize;
         lng skip;
 	int m;
-	lng cl1,cl2,ch1,ch2;
+	oid cl1,cl2,ch1,ch2;
 	lng j;
 
 	m = existsCrackerIndexSideways(*bid, *pbid);
 	if (m==-1){	
 		@:CreateCrackerMap(@1,@2)@		
-		BBPincref(b->batCacheid,TRUE);
-	}	
+		BBPkeepref(b->batCacheid);
+	}else
+        	CrackerIndex[m].accesses += 1;
 
 	selectMergeInsertionsPart_@1Sideways(low, inclusiveLow, hgh, inclusiveHgh, m);
 	Sync_@1_@2(m,existsCrackerIndexSideways(*bid, -1));
@@ -410,9 +579,9 @@ CRKProjectH_@1_@2(int *res, int *bid, int *pbid,int *pivot, @1 *low, @1 *hgh, bi
 	if ((c = BATdescriptor(CrackerIndex[m].cid)) == NULL)
                 throw(MAL, "crackers.crackRange", "Cannot access crack index");
 
-        GetLow_@1(*low, *inclusiveLow, CrackerIndex[m].Tree, c, BUNhloc(c, BUNfirst(c)), BUNsize(c), &cl1, &ch1, 0, BUNindex(pair, BUNlast(pair)-BUNsize(pair)));
+        GetLow_@1(*low, *inclusiveLow, CrackerIndex[m].Tree, c, BUNfirst(c), &cl1, &ch1, 0, BUNlast(pair)-1);
 
-        GetHgh_@1(*hgh, *inclusiveHgh, CrackerIndex[m].Tree, c, BUNhloc(c, BUNfirst(c)), BUNsize(c), &cl2, &ch2, 0, BUNindex(pair, BUNlast(pair)-BUNsize(pair)));
+        GetHgh_@1(*hgh, *inclusiveHgh, CrackerIndex[m].Tree, c, BUNfirst(c), &cl2, &ch2, 0, BUNlast(pair)-1);
 
 	if (cl1 != 0) cl1++;
 
@@ -425,28 +594,23 @@ CRKProjectH_@1_@2(int *res, int *bid, int *pbid,int *pivot, @1 *low, @1 *hgh, bi
         size = BATcount(p);
  	r = BATnew(TYPE_void,b->htype,size);
 
-        pairh  = BUNhloc(b, BUNfirst(b));
-        pivott = BUNtloc(p, BUNfirst(p));
-        rest   = BUNtloc(r, BUNfirst(r));
-        bsize = BUNsize(b);
-        psize = BUNsize(p);
-        rsize = BUNsize(r);
+        pairh  = (@1 *)Hloc(b, BUNfirst(b));
+        pivott = (bit*)Tloc(p, BUNfirst(p));
+        rest   = (@1 *)Tloc(r, BUNfirst(r));
         skip = 0;
 	fsize = 0;
         for (j = 0; j<size; j++){
-                if (*(bit*)pivott == TRUE){
-                        pairh += skip*bsize;
-			*(@1*)rest = *(@1*)pairh; 
-			rest += rsize;
+                if (*pivott == TRUE){
+                        pairh += skip;
+			*rest = *pairh; 
+			rest ++;
                         skip = 0;
 			fsize++;
                 }
-                pivott += psize;
+                pivott ++;
                 skip++;
         }
 
-        reslast = BUNfirst(r) + rsize*fsize;
-        r->batBuns->free =  reslast - r->batBuns->base;
         BATsetcount(r, fsize);
 
 	r->hsorted = FALSE;
@@ -465,73 +629,71 @@ CRKProjectH_@1_@2(int *res, int *bid, int *pbid,int *pivot, @1 *low, @1 *hgh, bi
 
 str
 CRKProject_@1_@2(int *res, int *bid, int *pbid,int *pivot, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh){
-        BAT *b, *p, *r, *c, *pair;
-        BUN pairt, pivott, rest, reslast;
+        BAT *b, *p, *r, *c, *slice;
+        @2 *pairt, *rest;
+	bit *pivott;
         lng size, fsize;
-        int bsize, psize, rsize;
         lng skip;
 	int m;
-	lng cl1,cl2,ch1,ch2;
+	oid cl1,cl2,ch1,ch2;
 	lng j;
+	bit newMap = TRUE;
 
 	/* If the necessary map does not exits, then create it */	
 	m = existsCrackerIndexSideways(*bid, *pbid);
 	if (m==-1){	
 		@:CreateCrackerMap(@1,@2)@		
-		BBPincref(b->batCacheid,TRUE);
-	}	
+		newMap = TRUE;
+	}else{	
+		/* Get the map */
+        	if ((b = BATdescriptor(CrackerIndex[m].cbid)) == NULL) 
+                	throw(MAL, "crackers.CRKProject", "Cannot access descriptor");
+
+		if ((c = BATdescriptor(CrackerIndex[m].cid)) == NULL)
+        	        throw(MAL, "crackers.CRKProject", "Cannot access crack index");
+        	CrackerIndex[m].accesses += 1;
+	}
 
 	/* Align the map based on the cracker tape of this set */
 	selectMergeInsertionsPart_@1Sideways(low, inclusiveLow, hgh, inclusiveHgh, m);
 	Sync_@1_@2(m,existsCrackerIndexSideways(*bid, -1));
 
-	/* Get the map */
-        if ((pair = BATdescriptor(CrackerIndex[m].cbid)) == NULL) 
-                throw(MAL, "crackers.CRKProject", "Cannot access descriptor");
-
-	if ((c = BATdescriptor(CrackerIndex[m].cid)) == NULL)
-                throw(MAL, "crackers.CRKProject", "Cannot access crack index");
 
 	/* Get the result area on the map
            Note. We know that this search leads to an exact match sice a project call always 
            follows a select call with the same restriction in the same query. 
            Then this restriction is on the cracker tape. */
-        GetLow_@1(*low, *inclusiveLow, CrackerIndex[m].Tree, c, BUNhloc(c, BUNfirst(c)), BUNsize(c), &cl1, &ch1, 0, BUNindex(pair, BUNlast(pair)-BUNsize(pair)));
+        GetLow_@1(*low, *inclusiveLow, CrackerIndex[m].Tree, c, BUNfirst(c), &cl1, &ch1, 0, BUNlast(b)-(oid)1);
 
-        GetHgh_@1(*hgh, *inclusiveHgh, CrackerIndex[m].Tree, c, BUNhloc(c, BUNfirst(c)), BUNsize(c), &cl2, &ch2, 0, BUNindex(pair, BUNlast(pair)-BUNsize(pair)));
+        GetHgh_@1(*hgh, *inclusiveHgh, CrackerIndex[m].Tree, c, BUNfirst(c), &cl2, &ch2, 0, BUNlast(b)-(oid)1);
 
 	if (cl1 != 0) cl1++;
 
-        b = BATslice(pair, cl1, ch2+1);
+        slice = BATslice(b, cl1, ch2+1);
 	
         if ((p = BATdescriptor(*pivot)) == NULL) 
                 throw(MAL, "crackers.CRKProject", "Cannot access descriptor");
 
         size = BATcount(p);
- 	r = BATnew(TYPE_void,b->ttype,size);
+ 	r = BATnew(TYPE_void,slice->ttype,size);
 
-        pairt  = BUNtloc(b, BUNfirst(b));
-        pivott = BUNtloc(p, BUNfirst(p));
-        rest   = BUNtloc(r, BUNfirst(r));
-        bsize = BUNsize(b);
-        psize = BUNsize(p);
-        rsize = BUNsize(r);
+        pairt  = (@2 *)Tloc(slice, BUNfirst(slice));
+        pivott = (bit*)Tloc(p, BUNfirst(p));
+        rest   = (@2 *)Tloc(r, BUNfirst(r));
         skip = 0;
 	fsize = 0;
         for (j = 0; j<size; j++){
-                if (*(bit*)pivott == TRUE){
-                        pairt += skip*bsize;
-			*(@2*)rest = *(@2*)pairt; 
-			rest += rsize;
+                if (*pivott == TRUE){
+                        pairt += skip;
+			*rest = *pairt; 
+			rest ++;
                         skip = 0;
 			fsize++;
                 }
-                pivott += psize;
+                pivott ++;
                 skip++;
         }
 
-        reslast = BUNfirst(r) + rsize*fsize;
-        r->batBuns->free =  reslast - r->batBuns->base;
         BATsetcount(r, fsize);
 
 	r->hsorted = FALSE;
@@ -541,19 +703,28 @@ CRKProject_@1_@2(int *res, int *bid, int *pbid,int *pivot, @1 *low, @1 *hgh, bit
 
         *res = r->batCacheid;
         BBPkeepref(r->batCacheid);
+
         BBPunfix(p->batCacheid);
-        BBPunfix(b->batCacheid);
-        BBPunfix(pair->batCacheid);
+        BBPunfix(slice->batCacheid);
+	
+	if (newMap){
+                BBPkeepref(b->batCacheid);
+                BBPkeepref(c->batCacheid);
+        }else{
+                BBPunfix(b->batCacheid);
+                BBPunfix(c->batCacheid);
+        }
+
 
         return MAL_SUCCEED;
 }
 
 str
 CRKdProject_@1_@2(int *res, int *bid, int *pbid,int *pivot){
-        BAT *b, *p, *r;
-        BUN pairt, pivott, rest, reslast;
+        BAT *b, *p, *r, *c;
+        @2 *pairt, *rest;
+	bit *pivott;
         lng size, fsize;
-        int bsize, psize, rsize;
         lng skip;
 	int m;
 	lng j;
@@ -562,7 +733,8 @@ CRKdProject_@1_@2(int *res, int *bid, int *pbid,int *pivot){
 	m = existsCrackerIndexSideways(*bid, *pbid);
 	if (m==-1){	
 		@:CreateCrackerMap(@1,@2)@		
-		BBPincref(b->batCacheid,TRUE);
+		BBPkeepref(b->batCacheid);
+		BBPkeepref(c->batCacheid);
 	}	
 
 	/* Align the map based on the cracker tape of this set */
@@ -578,28 +750,23 @@ CRKdProject_@1_@2(int *res, int *bid, int *pbid,int *pivot){
         size = BATcount(p);
  	r = BATnew(TYPE_void,b->ttype,size);
 
-        pairt  = BUNtloc(b, BUNfirst(b));
-        pivott = BUNtloc(p, BUNfirst(p));
-        rest   = BUNtloc(r, BUNfirst(r));
-        bsize = BUNsize(b);
-        psize = BUNsize(p);
-        rsize = BUNsize(r);
+        pairt  = (@2 *)Tloc(b, BUNfirst(b));
+        pivott = (bit*)Tloc(p, BUNfirst(p));
+        rest   = (@2 *)Tloc(r, BUNfirst(r));
         skip = 0;
 	fsize = 0;
         for (j = 0; j<size; j++){
-                if (*(bit*)pivott == TRUE){
-                        pairt += skip*bsize;
-			*(@2*)rest = *(@2*)pairt; 
-			rest += rsize;
+                if (*pivott == TRUE){
+                        pairt += skip;
+			*rest = *pairt; 
+			rest ++;
                         skip = 0;
 			fsize++;
                 }
-                pivott += psize;
+                pivott ++;
                 skip++;
         }
 
-        reslast = BUNfirst(r) + rsize*fsize;
-        r->batBuns->free =  reslast - r->batBuns->base;
         BATsetcount(r, fsize);
 
 	r->hsorted = FALSE;
@@ -649,52 +816,56 @@ CRKdProject_@1_@2(int *res, int *bid, int *pbid,int *pivot){
         *(@2*) @6 = tdummy;
 @
 
+@= crackInTwoUnorderedPiecesSideways_decl
+str CRKcrackUnorderedZeroSideways_@3_@1_@2( BAT *b, @1 mval, oid first, oid last, oid *pos);
+@
+
 @= crackInTwoUnorderedPiecesSideways
-static str
-CRKcrackUnorderedZeroSideways_@3_@1_@2( BAT *b, @1 mval, lng first, lng last, lng *pos){
-        BUN vm, vl;
-        BUN vmt, vlt;
-        int xx;
+str
+CRKcrackUnorderedZeroSideways_@3_@1_@2( BAT *b, @1 mval, oid first, oid last, oid *pos){
+        @1 *vm, *vl, *h0;
+        @2 *vmt, *vlt;
         @1 hdummy;
         @2 tdummy;
-
+	BUN firstBUN;
         /* set bounds for the iterator */
-        xx = BUNsize(b);
 
-        vm = BUNhloc(b, BUNptr(b,first));
-        vl= BUNhloc(b,BUNptr(b,last));
-        vmt = BUNtloc(b, BUNptr(b,first));
-        vlt= BUNtloc(b,BUNptr(b,last));
+	firstBUN = BUNfirst(b);
+        h0  = (@1*)Hloc(b, firstBUN);
+        vm  = (@1*)Hloc(b, firstBUN+first);
+        vl  = (@1*)Hloc(b, firstBUN+last );
+        vmt = (@2*)Tloc(b, firstBUN+first);
+        vlt = (@2*)Tloc(b, firstBUN+last );
 
         while(vm<vl) {
                 if (@6_@4(vm, &mval,@7@1)){
-                        vm  += xx; 
-			vmt += xx;
+                        vm  ++; 
+			vmt ++;
 		}
                 else {
                         while( @6_@5(vl, &mval,@7@1) && vl>vm){
-                                vl  -= xx; 
-				vlt -= xx;
+                                vl  --; 
+				vlt --;
 			}
                         @:shuffleSideways(@1,@2,vm,vl,vmt,vlt)@
-                        vl  -= xx;
-			vlt -= xx;
-                        vm  += xx;
-			vmt += xx;
+                        vl  --;
+			vlt --;
+                        vm  ++;
+			vmt ++;
                 }
         }
 
 	if (vl == vm) {
 		if (@6_@5(vl, &mval,@7@1))
-			*pos = BUNindex(b,vl - xx); /*works for empty left piece also*/
+			*pos = (vl - h0) - 1; /*works for empty left piece also*/
 		else{
-			*pos = BUNindex(b,vl);
-			if (BUNindex(b,vl)==(size_t)last) /*empty right piece*/
-				*pos = *pos+1;
+			*pos = vl - h0;
+			if (*pos==last) /*empty right piece*/
+				*pos = *pos+(oid)1;
 		}
 	}
 	else
-		*pos = BUNindex(b,vl);
+		*pos = vl - h0;
 		
         return MAL_SUCCEED;
 }
@@ -702,33 +873,35 @@ CRKcrackUnorderedZeroSideways_@3_@1_@2( BAT *b, @1 mval, lng first, lng last, ln
 
 @= crackInThreeUnorderedPiecesSideways
 static str
-CRKcrackUnorderedThreeSideways_@3_@4_@1_@2( BAT *b, @1 low, @1 hgh, lng first, lng last, lng *posl, lng *posh){
-        BUN vm, vl, hmax;
-        BUN vmt, vlt, hmaxt;
-        int xx;
+CRKcrackUnorderedThreeSideways_@3_@4_@1_@2( BAT *b, @1 low, @1 hgh, oid first, oid last, oid *posl, oid *posh){
+        @1 *vm, *vl, *hmax, *h0;
+        @2 *vmt, *vlt, *hmaxt;
         @1 hdummy;
         @2 tdummy;
+	BUN firstBUN;
 
         /* set bounds for the iterator */
-        xx = BUNsize(b);
+	firstBUN = BUNfirst(b);
+        h0    = (@1*)Hloc(b, firstBUN);
 
-        vm = BUNhloc(b, BUNptr(b,first));
-        hmax = BUNhloc(b,BUNptr(b,last));
-        vmt = BUNtloc(b, BUNptr(b,first));
-        hmaxt = BUNtloc(b,BUNptr(b,last));
-        while( @9_@8(hmax, &hgh,@[10]@1) && hmax>vm)
-                hmax-= xx; hmaxt-= xx;
+        vm    = (@1*)Hloc(b, firstBUN+first);
+        hmax  = (@1*)Hloc(b, firstBUN+last);
+        vmt   = (@2*)Tloc(b, firstBUN+first);
+        hmaxt = (@2*)Tloc(b, firstBUN+last);
+        while( @9_@8(hmax, &hgh,@[10]@1) && hmax>vm){
+                hmax--; hmaxt--;
+	}
 
 	if (hmax == vm){
 		if (@9_@8(hmax, &hgh,@[10]@1)){ /*left and middle are empty*/
 			*posl =  1;
-			*posh = -1;
+			*posh =  0;/*-1;*/
 		}
 		else if (@9_@6(hmax, &low,@[10]@1))  /*result is one bun*/
-			*posl = *posh = BUNindex(b,hmax);
+			*posl = *posh = hmax - h0;
 		else{
-			*posl = BUNindex(b, hmax + xx);
-			*posh = BUNindex(b,hmax);
+			*posl = (hmax - h0) + (oid)1;
+			*posh = hmax - h0;
 		}
 		return MAL_SUCCEED;
 	}
@@ -738,20 +911,20 @@ CRKcrackUnorderedThreeSideways_@3_@4_@1_@2( BAT *b, @1 low, @1 hgh, lng first, l
                 /* move all high values into their final place */
                 if( @9_@8(vl, &hgh,@[10]@1)){
                         @:shuffleSideways(@1,@2,vl,hmax,vlt,hmaxt)@
-                        hmax-=xx;hmaxt-=xx;
+                        hmax--;hmaxt--;
                 }
-                vl-= xx; vlt-= xx;
+                vl--; vlt--;
         }
 	if (vl == vm){ /* Left piece is empty */
 		if (@9_@8(vl, &hgh,@[10]@1)){
 			@:shuffleSideways(@1,@2,vl,hmax,vlt,hmaxt)@
-			*posl = BUNindex(b,vl);
+			*posl = vl - h0;
 		}
 		else if (@9_@6(vl, &low,@[10]@1))
-			*posl = BUNindex(b,vl);
+			*posl = vl - h0;
 		else
-			*posl = BUNindex(b,vl + xx);
-		*posh = BUNindex(b,hmax);
+			*posl = (vl - h0) + (oid)1;
+		*posh = hmax - h0;
 		return MAL_SUCCEED;
 	}
         /* vl point to the first <=low, all values >hg are beyond hmax */
@@ -759,37 +932,37 @@ CRKcrackUnorderedThreeSideways_@3_@4_@1_@2( BAT *b, @1 low, @1 hgh, lng first, l
         /* perform Zero crack first */
         while(vm<=vl) {
                 if (@9_@5(vm, &low,@[10]@1)){
-                        vm += xx; vmt += xx;
+                        vm ++; vmt ++;
                 } else {
                         @:shuffleSideways(@1,@2,vm,vl,vmt,vlt)@
                         while( @9_@6(vl, &low,@[10]@1) && vl>vm){
                                 if(@9_@8(vl, &hgh,@[10]@1) ){
                                         @:shuffleSideways(@1,@2,vl,hmax,vlt,hmaxt)@
-                                        hmax-=xx; hmaxt-=xx;
+                                        hmax--; hmaxt--;
                                 }
-                                vl -= xx; vlt -= xx;
+                                vl --; vlt --;
                         }
                 }
         }
-	if (vm ==  BUNhloc(b,BUNptr(b,last+1))){ /* Right and middle are empty */
-		*posl = -1;
-		*posh = -1;
+	if (vm == (@1*)Hloc(b,firstBUN+last+1)){ /* Right and middle are empty */
+		*posl = 0;/*-1;*/
+		*posh = 0;/*-1;*/
 		return MAL_SUCCEED;
 	}	
 	if (hmax == vl){ /* Middle piece is empty */
-		*posl = BUNindex(b,vl + xx);
-		*posh = BUNindex(b,hmax);
+		*posl = (vl - h0)  + (oid)1;
+		*posh = hmax - h0;
 		return MAL_SUCCEED;
 	}
-	*posl = BUNindex(b,vm);
-	*posh = BUNindex(b,hmax);
+	*posl = vm - h0;
+	*posh = hmax - h0;
 
 	return MAL_SUCCEED;
 }
 @
 
 @= existsCrackerIndexSideways
-static int
+int
 existsCrackerIndexSideways(int bid, int pbid){
 	int i;
 	
@@ -798,39 +971,733 @@ existsCrackerIndexSideways(int bid, int pbid){
 			return i;
 	return -1;
 }
+
+void
+newReference(int m, int batid){
+	struct referencesNode *newNode, *cur;
+
+	newNode = (refNode*) GDKmalloc(sizeof(refNode));
+	newNode->batId = batid;
+	newNode->cursor = 0;
+	newNode->next = NULL;
+
+	if (CrackerIndex[m].references == NULL){
+		CrackerIndex[m].references = newNode;
+	}else{
+		cur = CrackerIndex[m].references;
+		while (cur->next != NULL){
+			cur = cur->next;
+		}
+		cur->next = newNode;
+	}
+	return;
+}
+
+str
+CRKaddReference(int* res, int *bid, int *pbid){
+	int m;
+	(void)res;
+
+	m = existsCrackerIndex(*bid);
+	if (m>=0){
+		newReference(m,*pbid);
+	}
+
+	return MAL_SUCCEED;
+}
+
+str
+CRKremoveFullMap(int* res){
+	BBPdecref(CrackerIndex[0].cbid, TRUE);
+	BBPdecref(CrackerIndex[0].cid, TRUE);
+	CrackerIndex[0].bid = -1;
+	CrackerIndex[0].pbid =-1;
+	(void)res;
+	return MAL_SUCCEED;
+}
+
+str
+CRKaddReferenceFullMaps(int* res, int *bid, int *pbid){
+	
+	struct referencesNodeFM *newNode, *cur;
+	(void)res;
+
+        newNode = (struct referencesNodeFM*) GDKmalloc(sizeof(struct referencesNodeFM));
+        newNode->batId = *bid;
+        newNode->tailBatId = *pbid;
+        newNode->next = NULL;
+
+        if (StorageInfo == NULL){
+	        StorageInfo = (struct storageManagement *)GDKmalloc(sizeof(struct storageManagement));
+                StorageInfo->nextMapSet  = NULL;
+                StorageInfo->totalTuples = 0;
+                StorageInfo->threshold   = -1;
+                StorageInfo->references  = NULL;
+	}
+
+        if (StorageInfo->references == NULL){
+                StorageInfo->references = newNode;
+        }else{
+                cur = StorageInfo->references;
+                while (cur->next != NULL){
+                        cur = cur->next;
+                }
+                cur->next = newNode;
+        }
+
+	return MAL_SUCCEED;
+}
+
+str
+CRKclearReferencesFullMaps(int* res){
+	struct referencesNodeFM *cur,*nodeToFree;
+	(void)res;
+
+	if (StorageInfo != NULL){
+		if (StorageInfo->references == NULL)
+			return MAL_SUCCEED;	
+		cur = StorageInfo->references;
+		while (cur->next != NULL){
+			nodeToFree = cur;
+			cur = cur->next;
+			GDKfree(nodeToFree);
+		}
+		GDKfree(cur);
+		StorageInfo->references = NULL;
+	}
+
+	return MAL_SUCCEED;
+}
+
+str
+CRKclearReferences(int* res, int *bid){
+	int m;
+	struct referencesNode *cur,*nodeToFree;
+	(void)res;
+
+	m = existsCrackerIndex(*bid);
+
+	if (m>=0){
+		if (CrackerIndex[m].references == NULL)
+			return MAL_SUCCEED;	
+		cur = CrackerIndex[m].references;
+		while (cur->next != NULL){
+			nodeToFree = cur;
+			cur = cur->next;
+			GDKfree(nodeToFree);
+		}
+		GDKfree(cur);
+		CrackerIndex[m].references = NULL;
+	}
+
+	return MAL_SUCCEED;
+}
+
+void 
+registerMapReference(struct Node *CBnode, int batId){
+	struct referencesNode *newNode, *cur;
+
+        newNode = (refNode*) GDKmalloc(sizeof(refNode));
+        newNode->batId = batId;
+        newNode->cursor = 0;
+        newNode->next = NULL;
+
+        if (CBnode->references == NULL){
+                CBnode->references = newNode;
+        }else{
+                cur = CBnode->references;
+                while (cur->next != NULL){
+                        cur = cur->next;
+		}
+                cur->next = newNode;
+        }
+        return;
+}
+
+void 
+clearMapReference(struct Node *CBnode, int batId){
+	struct referencesNode *prev, *cur;
+/*	struct Node *temp;*/
+
+
+        if (CBnode->references == NULL){
+                return;
+        }else{
+		if ( CBnode->references->next == NULL){
+			if (CBnode->references->batId == batId){
+
+/*
+				temp = findPreviousPieceWalkingBack(CBnode);
+			        if (temp == NULL)
+			                CBnode->deleted = TRUE;
+			        else
+			        if (!(temp->localBound == TRUE && temp->first == FALSE))
+			                CBnode->first   = FALSE;
+			        else
+			                CBnode->deleted = TRUE;
+
+				temp = findNextPiece(CBnode);
+				if (temp == NULL)
+					printf("\n\n LAST is NULL \n\n");
+					
+				if (temp->first == FALSE)
+					temp->deleted = TRUE;
+*/				
+				if (CBnode->tape >0)
+					BBPdecref(CBnode->tape, TRUE);
+				CBnode->tape = -1;
+
+				GDKfree(CBnode->references);
+				CBnode->references = NULL;
+				return;
+			}
+printf("\n\n Trying to remoce a piece that is not registered \n\n");
+		}
+                cur  = CBnode->references;
+		prev = NULL;
+                while (cur->next != NULL){
+			if (cur->batId == batId){
+				if (cur->next == NULL) 
+					prev->next = NULL;
+				else{
+					if (prev == NULL)
+						CBnode->references = cur->next;
+					else
+						prev->next = cur->next;
+				}
+				GDKfree(cur);
+				return;			
+			}
+			prev = cur;
+                        cur  = cur->next;
+		}
+        }
+        return;
+}
+
+oid getTapeCursor(struct Node *CBnode, int batId){
+	struct referencesNode *cur;
+
+	cur = CBnode->references;
+	while(cur != NULL){
+		if (cur->batId == batId){
+			return cur->cursor;
+		}
+		cur=cur->next;
+	}		
+
+	return 0;
+} 
+
+oid getMaxTapeCursorForRefsInCurrentQuery(struct Node *CBnode, int m){
+	struct referencesNode *cur;
+	oid max = 0, curCursor;
+
+	cur = CrackerIndex[m].references;
+	while (cur != NULL){
+		curCursor = getTapeCursor(CBnode, cur->batId);
+
+		if (curCursor > max)
+			max = curCursor;
+		cur = cur->next;
+	}
+	return max;
+}
+
+void increaseLocalCursor(struct Node *CBnode, int batId, oid increase){
+	struct referencesNode *cur;
+
+        cur = CBnode->references;
+        while(cur != NULL){
+                if (cur->batId == batId){
+                        cur->cursor += increase;
+			return;
+		}
+                cur=cur->next; 
+        }         
+}
+
+bit isThisMapUsedInCurrentQuery(int CBindex, int batId, int tailBatId){
+	struct referencesNode *cur;
+	
+	if (CrackerIndex[CBindex].bid != batId)
+		return FALSE;
+
+	cur = CrackerIndex[CBindex].references;
+	while (cur != NULL){
+		if (cur->batId == tailBatId)
+			return TRUE;
+		cur = cur->next;
+	}
+	return FALSE;
+}
+
+void 
+registerPieceForStorageManagement(int batId, int tailBatId, struct Node * localFirst, lng tuples){
+	struct mapSetNode *curMapSet, *prevMapSet, *newMapSet;	
+	struct mapNode *curMap, *newMap, *prevMap;
+
+	localFirst->creationTimestamp = GDKusec(); 
+	localFirst->tuples   = tuples;
+	localFirst->accesses = 1;
+	localFirst->dropped  = 0;
+
+	StorageInfo->totalTuples += tuples;
+
+	prevMapSet = NULL;
+	curMapSet  = StorageInfo->nextMapSet;
+	while( curMapSet != NULL){
+		if (curMapSet->batId == batId){
+			prevMap = NULL;
+			curMap  = curMapSet->nextMap;	
+			while(curMap != NULL){
+				if (curMap->tailBatId == tailBatId){
+					/* put the new piece in the beginning of the pieces list */
+					if (curMap->nextPiece == NULL){
+						curMap->nextPiece = localFirst;
+			                        localFirst->nextPiece = NULL;
+						return;
+					}
+					localFirst->nextPiece = curMap->nextPiece;
+					curMap->nextPiece = localFirst;
+					return;
+				}
+				prevMap = curMap;
+				curMap	= curMap->nextMap;
+			}
+		
+			/* although the map set exists, there are no registered pieces for this map so make a new entry */
+			newMap = (struct mapNode *)GDKmalloc(sizeof(struct mapNode));
+		        newMap->tailBatId = tailBatId;
+		        newMap->nextMap = NULL; 
+		        newMap->nextPiece = localFirst;        
+		        localFirst->nextPiece = NULL;
+
+			if (curMapSet->nextMap == NULL)
+				curMapSet->nextMap = newMap;
+			else
+				prevMap->nextMap = newMap;
+			return;
+		}
+		prevMapSet = curMapSet;
+		curMapSet  = curMapSet->nextMapSet; 
+	}
+
+	/* if no pieces in this map set are previously registered then make a new entry for the map set and the map */
+	newMapSet = (struct mapSetNode *)GDKmalloc(sizeof(struct mapSetNode));
+	newMapSet->batId = batId;
+	newMapSet->nextMapSet = NULL;
+
+	newMap = (struct mapNode *)GDKmalloc(sizeof(struct mapNode));
+	newMap->tailBatId = tailBatId;
+	newMap->nextMap = NULL;
+	newMap->nextPiece = localFirst;		
+	localFirst->nextPiece = NULL;
+
+	newMapSet->nextMap = newMap;
+
+	if (StorageInfo->nextMapSet == NULL)
+		StorageInfo->nextMapSet = newMapSet;
+	else
+		prevMapSet->nextMapSet = newMapSet;
+}
+
+struct Node *
+getTheLeastUsedMapPiece(int CBindex, int *batId, int *tailBatId){
+	struct mapSetNode *curMapSet;	
+	struct mapNode *curMap;
+	struct Node *curPiece, *res = NULL;
+	lng accesses = 0;
+
+	curMapSet  = StorageInfo->nextMapSet;
+	while( curMapSet != NULL){
+
+		if (curMapSet->nextMap != NULL){
+			curMap  = curMapSet->nextMap;	
+			while(curMap != NULL){
+
+				/*----------------------------------------------------------------------*/
+				/*  do not drop a piece from one of the maps used in the current query  */
+				if (isThisMapUsedInCurrentQuery(CBindex, curMapSet->batId, curMap->tailBatId)){
+					curMap  = curMap->nextMap;
+					continue;
+				}
+				/*----------------------------------------------------------------------*/
+
+				curPiece = curMap->nextPiece;
+				while(curPiece != NULL){
+
+					/*---------------------------------------------------*/
+					/* get the piece with the smaller number of accesses */
+					if (accesses == 0){
+						accesses   = curPiece->accesses;
+						res 	   = curPiece;
+						*batId 	   = curMapSet->batId;
+						*tailBatId = curMap->tailBatId;
+					}
+					else if (curPiece->accesses < accesses){
+						accesses = curPiece->accesses;
+						res = curPiece;
+						*batId 	   = curMapSet->batId;
+						*tailBatId = curMap->tailBatId;
+					}
+					/*----------------------------------------------------*/
+
+					curPiece = curPiece->nextPiece;
+				}
+				curMap	= curMap->nextMap;
+			}
+		}
+		curMapSet  = curMapSet->nextMapSet; 
+	}
+	return res;
+}
+
+void printStorageInfo(){
+	struct mapSetNode *curMapSet;	
+	struct mapNode *curMap;
+	struct Node *curPiece;
+
+printf("\n\nSTORAGE INFO\n\n");
+	curMapSet  = StorageInfo->nextMapSet;
+	while( curMapSet != NULL){
+printf("\n MAP SET of %d \n  Maps are: \n ", curMapSet->batId);
+		if (curMapSet->nextMap != NULL){
+			curMap  = curMapSet->nextMap;	
+			while(curMap != NULL){
+
+printf("     MAP: %d  with pieces: \n", curMap->tailBatId);
+
+				curPiece = curMap->nextPiece;
+				while(curPiece != NULL){
+printf("          Piece: %d \n", curPiece->pieceBAT);
+					curPiece = curPiece->nextPiece;
+				}
+				curMap	= curMap->nextMap;
+			}
+		}
+		curMapSet  = curMapSet->nextMapSet; 
+	}
+printf("\n\n");
+}
+
+void
+removePieceFromStorageInfo(int batId, int tailBatId, int pieceId){
+	struct mapSetNode *curMapSet, *prevMapSet;	
+	struct mapNode *curMap, *prevMap;
+	struct Node *curPiece, *prevPiece;
+
+	prevMapSet = NULL;
+	curMapSet  = StorageInfo->nextMapSet;
+	while( curMapSet != NULL){
+		if (curMapSet->batId == batId){
+			prevMap = NULL;
+			curMap  = curMapSet->nextMap;	
+			while(curMap != NULL){
+				if (curMap->tailBatId == tailBatId){
+					prevPiece = NULL;
+					curPiece  = curMap->nextPiece;
+					while(curPiece != NULL){
+						if (curPiece->pieceBAT == pieceId){
+
+							StorageInfo->totalTuples -= curPiece->tuples;
+
+							if (curPiece->nextPiece == NULL){
+								if (prevPiece == NULL){
+									if (curMap->nextMap == NULL){
+										GDKfree(curMap);
+										if (prevMap == NULL){
+											if (curMapSet->nextMapSet == NULL){
+												GDKfree(curMapSet);
+												if (prevMapSet == NULL){
+													StorageInfo->nextMapSet = NULL;	
+												}else
+													prevMapSet->nextMapSet = NULL;
+												return;
+											}
+											if (prevMapSet == NULL)
+												StorageInfo->nextMapSet = curMapSet->nextMapSet;
+											else
+												prevMapSet->nextMapSet = curMapSet->nextMapSet;		
+											GDKfree(curMapSet);
+                                                                                        return;
+											
+										}else
+											prevMap->nextMap = NULL;
+										return;
+									}	
+									if (prevMap == NULL)
+										curMapSet->nextMap = curMap->nextMap;
+									else
+										prevMap->nextMap = curMap->nextMap;
+									GDKfree(curMap);
+                                                                        return;
+								}else
+									prevPiece->nextPiece = NULL;
+								return;
+							}
+							if (prevPiece == NULL)
+								curMap->nextPiece = curPiece->nextPiece;
+							else
+								prevPiece->nextPiece = curPiece->nextPiece;
+
+							curPiece->nextPiece = NULL;
+							return;
+						}
+						prevPiece = curPiece;
+						curPiece  = curPiece->nextPiece;
+					}
+				}
+				prevMap = curMap;
+				curMap	= curMap->nextMap;
+			}
+		
+		}
+		prevMapSet = curMapSet;
+		curMapSet  = curMapSet->nextMapSet; 
+	}
+}
+
+void
+removePieceFromAVLtree(struct Node *localFirst){
+	struct Node *temp;
+	
+	/* if there is a piece attached to this one then mark the current node as a LAST node 
+	   otherwise simply mark it as deleted, similarly to the middle nodes */
+	temp = findPreviousPieceWalkingBack(localFirst);
+	if (temp == NULL)
+		localFirst->deleted = TRUE;
+	else
+	if (!(temp->localBound == FALSE && temp->first == FALSE)){ 
+		localFirst->first   = FALSE;
+		localFirst->pieceBAT = temp->pieceBAT; 
+	}else
+		localFirst->deleted = TRUE;
+
+
+	/* mark all the middle piece as deleted */
+	temp =findNextPiece(localFirst);
+	while (temp->localBound == TRUE){
+		temp->deleted = TRUE;
+		temp = findNextPiece(temp);
+	}
+
+	/* now temp points to the last node in this piece 
+	   If a new piece starts from here let is be as it is
+	   otherwise delete this one too */
+	if (temp->first == FALSE)
+		temp->deleted = TRUE;
+}
+
+bit
+isThisFullMapUsedInTheCurrentQuery(int batId, int tailBatId){
+	struct referencesNodeFM *cur;
+	if (StorageInfo == NULL)
+		return FALSE;
+
+	if (StorageInfo->references == NULL)
+		return FALSE;
+	cur = StorageInfo->references;
+	while (cur != NULL){
+		if (cur->batId == batId && cur->tailBatId == tailBatId)
+			return TRUE;
+		cur = cur->next;
+	}
+	
+	return FALSE;
+}
+	
+int 
+getLeastUsedMap(){
+	int i;
+	lng accesses = 0;
+	int res = -1;
+        for (i = 0; i < maxCrackMap; i++){
+		if (CrackerIndex[i].bid == -1 || CrackerIndex[i].pbid == -1)
+			continue;
+                if (!(isThisFullMapUsedInTheCurrentQuery(CrackerIndex[i].bid,CrackerIndex[i].pbid))){
+                        
+			if (res == -1){
+				accesses = CrackerIndex[i].accesses;
+				res = i;
+			}else
+			if ( (CrackerIndex[i].accesses < accesses) || 
+			     (CrackerIndex[i].accesses == accesses && 
+					CrackerIndex[i].creationTimestamp < CrackerIndex[res].creationTimestamp) ){
+				accesses = CrackerIndex[i].accesses;
+				res = i;
+			}
+
+		}
+	}
+	return res;
+}	
+
+str removeFullMap(int MapToDropIndex){
+	int i, TapeIndex = -1;
+	bit moreMaps = FALSE;
+	BAT *cbat,*cindex;
+
+	/* remove the BATs holding the map and the cracker index */
+	if ((cbat = BATdescriptor(CrackerIndex[MapToDropIndex].cbid)) == NULL)
+                throw(MAL, "crackers.sync", "Cannot access descriptor");
+	if ((cindex = BATdescriptor(CrackerIndex[MapToDropIndex].cid)) == NULL)
+                throw(MAL, "crackers.sync", "Cannot access descriptor");
+	BATmode(cbat, TRANSIENT);
+	BATmode(cindex, TRANSIENT);	
+	BBPunfix( cbat->batCacheid);
+	BBPunfix( cindex->batCacheid);
+	
+	BBPdecref(CrackerIndex[MapToDropIndex].cbid, TRUE);
+	BBPdecref(CrackerIndex[MapToDropIndex].cid, TRUE);
+
+	/* todo free avl tree */
+	FreeAVLTree(CrackerIndex[MapToDropIndex].Tree);
+	CrackerIndex[MapToDropIndex].Tree = NULL;
+
+	/* If there is no map left in this map set, then we also remove the tape */
+	for(i=0; i < maxCrackMap; i++){
+		if (i == MapToDropIndex) 
+			continue;
+		if (CrackerIndex[i].bid == CrackerIndex[MapToDropIndex].bid){
+			if (CrackerIndex[i].pbid == -1 )
+				TapeIndex = i;
+			else
+				moreMaps = TRUE;
+		}
+	}
+
+	CrackerIndex[MapToDropIndex].bid  = -1;
+	CrackerIndex[MapToDropIndex].pbid = -1;
+
+	if (moreMaps == FALSE){
+		BBPdecref(CrackerIndex[TapeIndex].chid, TRUE);
+		BBPdecref(CrackerIndex[TapeIndex].hiid, TRUE);
+
+		CrackerIndex[TapeIndex].bid  = -1;
+		CrackerIndex[TapeIndex].chid = -1;
+		CrackerIndex[TapeIndex].hiid = -1;
+	}
+
+	StorageInfo->totalTuples -= CrackerIndex[MapToDropIndex].tuples;
+	return MAL_SUCCEED;
+}
+
+
 @
+
+@= PieceMaps
+str
+CRKcreateFullMap_@1_@2(int* res, int *bid, int *pbid){
+	BAT *b, *c;
+	int m=-1;
+	@:CreateCrackerMap(@1,@2)@
+	StorageInfo->temp = b->batCacheid;
+	BBPkeepref( b->batCacheid);
+	BBPkeepref( c->batCacheid);
+	(void)res;
+	return MAL_SUCCEED;
+	
+}
+
+BAT * 
+createPieceMap_@1_@2(BAT * crackerBAT, BAT *tailBAT, struct Node *nodeLow, struct Node *nodeHgh, int CBindex){
+	BAT *pieceMap;
+	@1 *mapHead, *crackerBATTail ;
+	oid *crackerBATHead;
+	BUN tailBATFirst; 
+	@2 *mapTail;
+	lng size;
+	oid pos1,pos2;
+
+	if (nodeLow == NULL)
+                printf("\n crackers.createPieceMap Unexpected case: Low node is NULL\n ");
+	if (nodeHgh == NULL)
+                printf("\n  crackers.createPieceMap Unexpected case: Hgh node is NULL \n ");
+
+	if (nodeLow->indexLocal == 0) pos1 = 0;
+	else pos1 = nodeLow->indexLocal + 1;
+	pos2 = nodeHgh->indexLocal; 
+
+	size = (pos2-pos1)+1;
+        pieceMap = BATnew(crackerBAT->ttype, tailBAT->ttype, size);
+
+	tailBATFirst = BUNfirst(tailBAT);
+	mapHead = (@1*)Hloc(pieceMap, BUNfirst(pieceMap));
+	mapTail = (@2*)Tloc(pieceMap, BUNfirst(pieceMap));
+	crackerBATHead = (oid*)Hloc(crackerBAT, BUNfirst(crackerBAT)+pos1);
+	crackerBATTail = (@1 *)Tloc(crackerBAT, BUNfirst(crackerBAT)+pos1);
+
+	for(int i=0;i<size;i++){
+		*mapHead = *crackerBATTail;
+		*mapTail = *(@2*)Tloc(tailBAT, tailBATFirst + *crackerBATHead);
+
+		mapHead ++; 
+		mapTail ++; 
+		crackerBATHead ++;
+		crackerBATTail ++;
+	}	
+
+	
+        BATsetcount(pieceMap,size);
+
+        BATkey(BATmirror(pieceMap),FALSE);
+        pieceMap->batRestricted= BAT_READ;
+        BATmode(pieceMap,PERSISTENT);
+
+	if (StorageInfo->threshold > 0){
+
+		/* remove pieces until we have enough space left for the new one */
+		while (StorageInfo->totalTuples + size > StorageInfo->threshold){
+			struct Node *localFirstNodeOfPieceToRemove = NULL;
+			int batId, tailBatId;
+			localFirstNodeOfPieceToRemove = getTheLeastUsedMapPiece(CBindex, &batId, &tailBatId); 
+			if (localFirstNodeOfPieceToRemove == NULL)
+				 printf("\n crackers.createPieceMap Unexpected case: Could not find a piece to remove \n ");
+			else
+				dropPiece_@1(batId, tailBatId, localFirstNodeOfPieceToRemove);
+		}
+
+	}
+
+	registerMapReference(nodeLow,tailBAT->batCacheid);
+
+	return pieceMap;	
+}
 
 @= NewIndexSidewaysCracking_0
 static int
 newCrackerIndexHistorySideways(int bid, int chid, int hiid){
-        int i, freemap = -1, units = 1024;
+        int i, j, freemap = -1, units = 100;
 
-        for (i = 0; i < maxCrackMap; i++)
-                if (CrackerIndex[i].bid == -1)
+        for (i = 0; i < maxCrackMap; i++){
+                if (CrackerIndex[i].bid == -1){
                         freemap = i;
+			break;
+		}
+	}
+	if (freemap == -1){ 
+		if (i == maxCrackMap) {
+			CrackerIndexNode *x;
 
-        if (freemap != -1) {
-                CrackerIndex[freemap].bid = bid;
-                CrackerIndex[freemap].chid = chid;
-                CrackerIndex[freemap].hiid = hiid;
-                return freemap;
-        }
-
-        if (i == maxCrackMap) {
-                CrackerIndexNode *x;
-
-                if (maxCrackMap > 0)
-                        units = (int) (1.2 * maxCrackMap);
-                x = (CrackerIndexNode *) GDKmalloc(sizeof(CrackerIndexNode) * units);
-                memset(x, 0, sizeof(CrackerIndexNode) * units);
-                if (CrackerIndex) {
-                        fprintf(stderr, "reallocate index \n");
-                        memcpy(x, CrackerIndex, sizeof(CrackerIndexNode) * i);
-                        GDKfree(CrackerIndex);
-                }
-                CrackerIndex = x;
-                maxCrackMap = units;
-        }
+			if (maxCrackMap > 0)
+				units = (int) (1.2 * maxCrackMap);
+			x = (CrackerIndexNode *) GDKmalloc(sizeof(CrackerIndexNode) * units);
+			memset(x, 0, sizeof(CrackerIndexNode) * units);
+			if (CrackerIndex) {
+				fprintf(stderr, "reallocate index \n");
+				memcpy(x, CrackerIndex, sizeof(CrackerIndexNode) * i);
+				GDKfree(CrackerIndex);
+			}
+			CrackerIndex = x;
+		
+			/* mark the new slots as empty */
+			for(j=maxCrackMap; j<units;j++){
+				CrackerIndex[j].bid = -1;
+			}
+			maxCrackMap = units;
+		}
+	}
 
         CrackerIndex[i].chid = chid;
         CrackerIndex[i].hiid = hiid;
@@ -851,34 +1718,37 @@ newCrackerIndexHistorySideways(int bid, int chid, int hiid){
 
 @= NewIndexSidewaysCracking_2
 static int
-newCrackerIndexSideways_@1(int bid, int cbid, int pbid){
-	int i, freemap = -1, units = 1024;
-	BAT *b;
+newCrackerIndexSideways_@1(int bid, int cbid, int pbid, int cid){
+	int i, j, freemap = -1, units = 100;
 	
-	for (i = 0; i < maxCrackMap; i++)
-		if (CrackerIndex[i].bid == -1)
+	for (i = 0; i < maxCrackMap; i++){
+		if (CrackerIndex[i].bid == -1){
 			freemap = i;
-
-	if (freemap != -1) {
-		CrackerIndex[freemap].bid = bid;
-		CrackerIndex[i].pbid = pbid;
-		return freemap;
+			break;
+		}
 	}
 
-	if (i == maxCrackMap) {
-		CrackerIndexNode *x;
+	if (freemap == -1){ 
+		if (i == maxCrackMap) {
+			CrackerIndexNode *x;
 
-		if (maxCrackMap > 0)
-			units = (int) (1.2 * maxCrackMap);
-		x = (CrackerIndexNode *) GDKmalloc(sizeof(CrackerIndexNode) * units);
-		memset(x, 0, sizeof(CrackerIndexNode) * units);
-		if (CrackerIndex) {
-			fprintf(stderr, "reallocate index \n");
-			memcpy(x, CrackerIndex, sizeof(CrackerIndexNode) * i);
-			GDKfree(CrackerIndex);
+			if (maxCrackMap > 0)
+				units = (int) (1.2 * maxCrackMap);
+			x = (CrackerIndexNode *) GDKmalloc(sizeof(CrackerIndexNode) * units);
+			memset(x, 0, sizeof(CrackerIndexNode) * units);
+			if (CrackerIndex) {
+				fprintf(stderr, "reallocate index \n");
+				memcpy(x, CrackerIndex, sizeof(CrackerIndexNode) * i);
+				GDKfree(CrackerIndex);
+			}
+			CrackerIndex = x;
+		
+			/* mark the new slots as empty */
+			for(j=maxCrackMap; j<units;j++){
+				CrackerIndex[j].bid = -1;
+			}
+			maxCrackMap = units;
 		}
-		CrackerIndex = x;
-		maxCrackMap = units;
 	}
 
 	CrackerIndex[i].nextCrack = 0;
@@ -887,18 +1757,127 @@ newCrackerIndexSideways_@1(int bid, int cbid, int pbid){
 	CrackerIndex[i].pbid = pbid;  /* this line is the only addittion compared to the non projections function */
 	CrackerIndex[i].bid = bid;
 	CrackerIndex[i].cbid = cbid;
-	b = BATnew(TYPE_lng, TYPE_@1, IndexEntries);	/* TODO: size */
-	BBPkeepref(b->batCacheid);
-	CrackerIndex[i].cid = b->batCacheid;
+	CrackerIndex[i].cid = cid;
 	CrackerIndex[i].iid = -1;
 	CrackerIndex[i].did = -1;
 	CrackerIndex[i].mergeInsertions = -1;
 	CrackerIndex[i].reCreate = 0;
 	CrackerIndex[i].Tree = NULL;
+	CrackerIndex[i].references = NULL;
 	CrackerIndex[i].deleteNodes = FALSE;
 	CrackerIndex[i].mergeDeletions = -1;
 	return i;
 }
+
+str 
+dropPiece_@1(int batId, int tailBatId, struct Node *localFirst){
+	int CBindex, Lindex;
+	BAT *ci, *li, *piece;
+	struct Node *CBnodeFirst, *CBnodeLast;
+	bit found = FALSE;
+
+	removePieceFromStorageInfo(batId, tailBatId, localFirst->pieceBAT);
+
+	/* Find the corresponding CB node and remove the piece reference for this map */
+	CBindex = existsCrackerIndexSideways(batId,-1);
+        if ((ci = BATdescriptor(CrackerIndex[CBindex].cid)) == NULL)
+                throw(MAL, "crackers.dropPiece", "Cannot access crack index");
+	Lindex = existsCrackerIndexSideways(batId, tailBatId);
+        if ((li = BATdescriptor(CrackerIndex[Lindex].cid)) == NULL)
+                throw(MAL, "crackers.dropPiece", "Cannot access crack index");
+
+        found = GetLowNodes_@1(*(@1*)Tloc(li, BUNfirst(li)+localFirst->position), localFirst->inclusive, CrackerIndex[CBindex].Tree, ci, BUNfirst(ci), &CBnodeFirst, &CBnodeLast, NULL, NULL);
+
+	BBPunfix (ci->batCacheid);	
+	BBPunfix (li->batCacheid);	
+
+	if (CBnodeFirst == NULL)
+		throw(MAL, "crackers.dropPiece", "Could not find correct CB node. I fot a NULL node");
+
+	if (CBnodeFirst->first ==FALSE)
+		throw(MAL, "crackers.dropPiece", "Could not find correct CB node. I fot a LAST node");
+	if (found == 0)
+		throw(MAL, "crackers.dropPiece", "Could not find CB node");
+
+	clearMapReference(CBnodeFirst, tailBatId);
+
+	/* remove the actual bat holding the map piece */
+        if ((piece = BATdescriptor(localFirst->pieceBAT)) == NULL)
+                throw(MAL, "crackers.dropPiece", "Cannot access crack index");
+	BATmode(piece, TRANSIENT);	
+	BBPunfix(localFirst->pieceBAT);
+	BBPdecref(localFirst->pieceBAT, TRUE);
+	
+	removePieceFromAVLtree(localFirst);
+
+	return MAL_SUCCEED;
+}
+
+@
+@= crkTwoRTree
+	if (@4==NULL) cl2=0;
+        else cl2 = @4->indexLocal;
+        if (@5==NULL) ch2=BATcount(@3)-1;
+        else if (@5->localBound == FALSE) ch2=BATcount(@3)-1;
+        else ch2 = @5->indexLocal;
+        if (cl2>0) cl2+=1;
+        /*CRACK in two pieces cl2-ch2 using <incHgh bound*/
+        if (*inclusiveHgh == TRUE)
+                CRKcrackUnorderedZero_LE_@1(@3,*hgh, cl2, ch2,&vh);
+        else
+                CRKcrackUnorderedZero_RE_@1(@3,*hgh, cl2, ch2,&vh);
+
+        /*check for gaps*/
+        if (vh < cl2)
+                /*then the left piece is empty*/
+                gapH = -1;
+        if (vh > ch2){
+                /*then the right piece is empty*/
+                gapH = -1;
+                vh--;
+        }
+@
+
+@= crkTwoLTree
+	if (@4==NULL) cl1=0;
+        else cl1 = @4->indexLocal;
+        if (@5==NULL) ch1=BATcount(@3)-1;
+        else if (@5->localBound == FALSE) ch1=BATcount(@3)-1;
+        else ch1 = @5->indexLocal;
+        if (cl1>0) cl1+=1;
+        /*CRACK in two pieces cl1-ch1 using >incLow bound*/
+        if (*inclusiveLow == TRUE)
+                CRKcrackUnorderedZero_RE_@1(@3,*low, cl1, ch1,&vl);
+        else
+                CRKcrackUnorderedZero_LE_@1(@3,*low, cl1, ch1,&vl);
+        if (vl < cl1){
+                /*then the left piece is empty*/
+                gapL = -1;
+        }
+        if (vl > ch1){
+                /*then the right piece is empty*/
+                vl--;
+                gapL = -1;
+        }
+        vl++; /* We need to take next position because the crack function always returns the last bun of the left piece.
+                Instead we want the first bun of the right piece*/
+@
+
+@= crkThreeTree
+        if (*inclusiveLow == TRUE && *inclusiveHgh == TRUE)
+                CRKcrackUnorderedThree_LE_RE_@1(b,*low,*hgh, @3, @4, &vl, &vh);
+        if (*inclusiveLow == TRUE && *inclusiveHgh == FALSE)
+                CRKcrackUnorderedThree_LE_RO_@1(b,*low,*hgh, @3, @4, &vl, &vh);
+        if (*inclusiveLow == FALSE && *inclusiveHgh == TRUE)
+                CRKcrackUnorderedThree_LO_RE_@1(b,*low,*hgh, @3, @4, &vl, &vh);
+        if (*inclusiveLow == FALSE && *inclusiveHgh == FALSE)
+                CRKcrackUnorderedThree_LO_RO_@1(b,*low,*hgh, @3, @4, &vl, &vh);
+
+        /*if (vl != -1 && vh != -1){*/
+                if (vl>0) _vl=vl-1; else _vl=vl;
+	   	nodeLow1 = addCrackerIndexIncrementalSideways_@1(m, *low, *inclusiveLow, _vl, _vl, c, TRUE, TRUE, -1);
+        	nodeHgh1 = addCrackerIndexIncrementalSideways_@1(m, *hgh, HBound, vh, vh, c, TRUE, FALSE, -1);
+        
 @
 
 @= crkTwoRTreeSideways
@@ -948,31 +1927,130 @@ newCrackerIndexSideways_@1(int bid, int cbid, int pbid){
         if (*inclusiveLow == FALSE && *inclusiveHgh == FALSE)
                 CRKcrackUnorderedThreeSideways_LO_RO_@1_@2(b,*low,*hgh, @3, @4, &vl, &vh);
 
-        if (vl != -1 && vh != -1){
+        /*if (vl != -1 && vh != -1){*/
                 if (vl>0) _vl=vl-1; else _vl=vl;
                 addCrackerIndex_@1(m,low,*inclusiveLow,_vl,c);
                 addCrackerIndex_@1(m,hgh,HBound,vh,c);
+        
+@
+
+@= crkThreeTreeIncrementalSideways
+        if (*inclusiveLow == TRUE && *inclusiveHgh == TRUE)
+                CRKcrackUnorderedThreeSideways_LE_RE_@1_@2(@5,*low,*hgh, @3, @4, &vl, &vh);
+        if (*inclusiveLow == TRUE && *inclusiveHgh == FALSE)
+                CRKcrackUnorderedThreeSideways_LE_RO_@1_@2(@5,*low,*hgh, @3, @4, &vl, &vh);
+        if (*inclusiveLow == FALSE && *inclusiveHgh == TRUE)
+                CRKcrackUnorderedThreeSideways_LO_RE_@1_@2(@5,*low,*hgh, @3, @4, &vl, &vh);
+        if (*inclusiveLow == FALSE && *inclusiveHgh == FALSE)
+                CRKcrackUnorderedThreeSideways_LO_RO_@1_@2(@5,*low,*hgh, @3, @4, &vl, &vh);
+@
+
+@= crkTwoRTreeIncrementalSideways
+	if (@4==NULL) cl2=0;
+        else cl2 = @4->indexLocal;
+        if (@5==NULL) ch2=BATcount(@3)-1;
+        else if (@5->localBound == FALSE) ch2=BATcount(@3)-1;
+        else ch2 = @5->indexLocal;
+        if (cl2>0) cl2+=1;
+        /*CRACK in two pieces cl2-ch2 using <incHgh bound*/
+        if (*inclusiveHgh == TRUE)
+                CRKcrackUnorderedZeroSideways_LE_@1_@2(@3,*hgh, cl2, ch2,&vh);
+        else
+                CRKcrackUnorderedZeroSideways_RE_@1_@2(@3,*hgh, cl2, ch2,&vh);
+
+        /*check for gaps*/
+        if (vh < cl2)
+                /*then the left piece is empty*/
+                gapH = -1;
+        if (vh > ch2){
+                /*then the right piece is empty*/
+                gapH = -1;
+                vh--;
         }
 @
 
+@= crkTwoLTreeIncrementalSideways
+	if (@4==NULL) cl1=0;
+        else cl1 = @4->indexLocal;
+        if (@5==NULL) ch1=BATcount(@3)-1;
+        else if (@5->localBound == FALSE) ch1=BATcount(@3)-1;
+        else ch1 = @5->indexLocal;
+        if (cl1>0) cl1+=1;
+
+        /*CRACK in two pieces cl1-ch1 using >incLow bound*/
+        if (*inclusiveLow == TRUE)
+                CRKcrackUnorderedZeroSideways_RE_@1_@2(@3,*low, cl1, ch1,&vl);
+        else
+                CRKcrackUnorderedZeroSideways_LE_@1_@2(@3,*low, cl1, ch1,&vl);
+        if (vl < cl1){
+                /*then the left piece is empty*/
+                gapL = -1;
+        }
+        if (vl > ch1){
+                /*then the right piece is empty*/
+                vl--;
+                gapL = -1;
+        }
+        vl++; /* We need to take next position because the crack function always returns the last bun of the left piece.
+                Instead we want the first bun of the right piece*/
+@
+
+@= crkTwoLTreeIncrementalSideways2
+	if (@4==NULL) cl1=0;
+        else cl1 = @4->indexLocal;
+        if (@5==NULL) ch1=BATcount(@3)-1;
+        else if (@5->localBound == FALSE) ch1=BATcount(@3)-1;
+        else ch1 = @5->indexLocal;
+        if (cl1>0) cl1+=1;
+
+        /*CRACK in two pieces cl1-ch1 using >incLow bound*/
+        if (inclusiveLow == TRUE)
+                CRKcrackUnorderedZeroSideways_RE_@1_@2(@3,low, cl1, ch1,&vl);
+        else
+                CRKcrackUnorderedZeroSideways_LE_@1_@2(@3,low, cl1, ch1,&vl);
+        if (vl < cl1){
+                /*then the left piece is empty*/
+                gapL = -1;
+        }
+        if (vl > ch1){
+                /*then the right piece is empty*/
+                vl--;
+                gapL = -1;
+        }
+        vl++; /* We need to take next position because the crack function always returns the last bun of the left piece.
+                Instead we want the first bun of the right piece*/
+@
+@= printMacro
+
+/* @1: the type; e.g., chr bte sht int oid wrd flt dbl lng str */
+{
+        str MyBuf = NULL;
+        int MyBufLen = 0;
+        (void)(*BATatoms[TYPE_@1].atomToStr) (&MyBuf, &MyBufLen, (ptr)(&@3));
+        printf("\n @2 %s \n", MyBuf);
+        GDKfree(MyBuf);
+}
+@
+
+
 @= SyncOperation
-static str
+str
 Sync_@1_@2(int m, int h){
 	BAT *h1,*h2,*b, *c;
-	BUN h1head,h1tail,h2head,h2tail;
-	int h1size, h2size, zz;
-	lng syncs;
-	lng size;
+	@1  *h1head, *h1tail;
+	bit *h2head, *h2tail;
+	oid syncs;
+	oid size;
 
-        lng vl=-1, vh=-1;
-        lng cl1, ch1, cl2, ch2;
-        int _vl;
+        oid vl, vh;
+        oid cl1, ch1, cl2, ch2;
+        oid _vl;
         bit HBound, foundLow=0, foundHgh=0;
         int gapL = 1;
         int gapH = 1;
 	bit *inclusiveHgh,*inclusiveLow;
 	@1 *low, *hgh;
-	lng j;
+	oid j;
 
         if ((b = BATdescriptor(CrackerIndex[m].cbid)) == NULL)
                 throw(MAL, "crackers.crackRange", "Cannot access crack index");
@@ -994,51 +2072,49 @@ Sync_@1_@2(int m, int h){
 		goto done;
 
 	syncs = size - CrackerIndex[m].nextCrack;
-	h1size = BUNsize(h1);
-	h2size = BUNsize(h2);
 
-	h1head = BUNhloc(h1, BUNfirst(h1)+h1size*CrackerIndex[m].nextCrack);
-	h1tail = BUNtloc(h1, BUNfirst(h1)+h1size*CrackerIndex[m].nextCrack);
-	h2head = BUNhloc(h2, BUNfirst(h2)+h2size*CrackerIndex[m].nextCrack);
-	h2tail = BUNtloc(h2, BUNfirst(h2)+h2size*CrackerIndex[m].nextCrack);
-        zz = BUNsize(c);
-
+	h1head = (@1 *)Hloc(h1, BUNfirst(h1)+CrackerIndex[m].nextCrack);
+	h1tail = (@1 *)Tloc(h1, BUNfirst(h1)+CrackerIndex[m].nextCrack);
+	h2head = (bit*)Hloc(h2, BUNfirst(h2)+CrackerIndex[m].nextCrack);
+	h2tail = (bit*)Tloc(h2, BUNfirst(h2)+CrackerIndex[m].nextCrack);
+	j=0;
 	if (CrackerIndex[m].nextCrack == 0){
-		low = (@1*)h1head;
-                hgh = (@1*)h1tail;
-                inclusiveLow = (bit*)h2head;
-                inclusiveHgh = (bit*)h2tail;
+		low = h1head;
+                hgh = h1tail;
+                inclusiveLow = h2head;
+                inclusiveHgh = h2tail;
                 if (*inclusiveHgh == TRUE) HBound = FALSE;
                 else HBound = TRUE;
 
 		if ( (!(@3_EQ(h1head,ATOMnilptr(TYPE_@1),@4@1))) && (!(@3_EQ(h1tail,ATOMnilptr(TYPE_@1),@4@1)))){
-			lng posl = BUNindex(b,BUNfirst(b));
-        	        lng posh = BUNindex(b,BUNlast(b)-BUNsize(b));
+			oid posl = BUNfirst(b);
+        	        oid posh = BUNlast(b)-1;
 	
                 	@:crkThreeTreeSideways(@1,@2,posl,posh)@
 		}
 
-		h1head += h1size;
-                h1tail += h1size; 
-                h2head += h2size;
-                h2tail += h2size;
+		h1head ++;
+                h1tail ++; 
+                h2head ++;
+                h2tail ++;
+		j=1;
 	}	
 
-	for (j=0; j<syncs; j++){
-		low = (@1*)h1head; 
-		hgh = (@1*)h1tail; 
-		inclusiveLow = (bit*)h2head; 
-		inclusiveHgh = (bit*)h2tail; 
+	for (; j<syncs; j++){
+		low = h1head; 
+		hgh = h1tail; 
+		inclusiveLow = h2head; 
+		inclusiveHgh = h2tail; 
 		if (*inclusiveHgh == TRUE) HBound = FALSE;
 		else HBound = TRUE;
 
 		if ( (!(@3_EQ(h1head,ATOMnilptr(TYPE_@1),@4@1))) && (!(@3_EQ(h1tail,ATOMnilptr(TYPE_@1),@4@1)))){
         
        		 	/* find out where in the index the low   falls */
-               	 	foundLow = GetLow_@1(*low, *inclusiveLow, CrackerIndex[m].Tree, c, BUNhloc(c, BUNfirst(c)), zz, &cl1, &ch1, 0, BUNindex(b, BUNlast(b)-BUNsize(b)));
+               	 	foundLow = GetLow_@1(*low, *inclusiveLow, CrackerIndex[m].Tree, c, BUNfirst(c), &cl1, &ch1, 0, BUNlast(b)-(oid)1);
         
         		/* find out where in the index the high falls */        
-			foundHgh = GetHgh_@1(*hgh, *inclusiveHgh, CrackerIndex[m].Tree, c, BUNhloc(c, BUNfirst(c)), zz, &cl2, &ch2, 0, BUNindex(b, BUNlast(b)-BUNsize(b)));
+			foundHgh = GetHgh_@1(*hgh, *inclusiveHgh, CrackerIndex[m].Tree, c, BUNfirst(c), &cl2, &ch2, 0, BUNlast(b)-(oid)1);
                 
 			/*need to increase one position for the low bound only since we always store the previous position in the index*/
         		if (cl1 != 0) cl1++;
@@ -1046,53 +2122,66 @@ Sync_@1_@2(int m, int h){
         
        			 /* If one or both of the result view bounds were not found using the
         		index then we have to crack */
-        		if (foundLow == 0 || foundHgh == 0){
-                		if (foundLow == 0 && foundHgh == 0){                         
-					/* If ch2 is right after cl1 in the index then we split this piece in three pieces*/   
-                        		if (cl1 == cl2){
-                                		@:crkThreeTreeSideways(@1,@2,cl1,ch2)@
-                        		} else {
-                                		/* Else we have to do two cracks separatelly */
-                                
-                                		/* For the cl bound and the next one in the index*/
-                                		@:crkTwoLTreeSideways(@1,@2)@
-                                
-                                		/* For the ch bound and the previous one in the index*/
-                                		@:crkTwoRTreeSideways(@1,@2)@
-                                
-						if (vl>0) _vl=vl-1; 
-						else      _vl=vl;
-                                        	if (gapL>0) addCrackerIndex_@1(m,low,*inclusiveLow,_vl,c);                                
-                                        	if (gapH>0) addCrackerIndex_@1(m,hgh,HBound,vh,c);
-                        		}
-                		} else
-                		if (foundLow == 0){
-                        		@:crkTwoLTreeSideways(@1,@2)@
-                                	if (vl>0) _vl=vl-1; else _vl=vl;
-					if (gapL>0) addCrackerIndex_@1(m,low,*inclusiveLow,_vl,c);
-                        		vh = ch2;
-                		} else
-                		if (foundHgh == 0){
-                        		@:crkTwoRTreeSideways(@1,@2)@
-                                	if (gapH>0) addCrackerIndex_@1(m,hgh,HBound,vh,c);
-                       		 	vl = cl1;
-                		}
-        		} else {
-                		vl = cl1;
-                		vh = ch2;
-        		}
-		}	
+                	if (foundLow == 0 && foundHgh == 0){                         
+				/* If ch2 is right after cl1 in the index then we split this piece in three pieces*/   
+                        	if (cl1 == cl2){
+                               		@:crkThreeTreeSideways(@1,@2,cl1,ch2)@
+                        	} else {
+                               		/* Else we have to do two cracks separatelly */
+                               
+                               		/* For the cl bound and the next one in the index*/
+                               		@:crkTwoLTreeSideways(@1,@2)@
+                               
+                               		/* For the ch bound and the previous one in the index*/
+                               		@:crkTwoRTreeSideways(@1,@2)@
+                               
+					if (vl>0) _vl=vl-1; 
+					else      _vl=vl;
+                                       	if (gapL>0) addCrackerIndex_@1(m,low,*inclusiveLow,_vl,c);                                
+                                       	if (gapH>0) addCrackerIndex_@1(m,hgh,HBound,vh,c);
+                        	}
+                	} else
+                	if (foundLow == 0){
+                        	@:crkTwoLTreeSideways(@1,@2)@
+                               	if (vl>0) _vl=vl-1; else _vl=vl;
+				if (gapL>0) addCrackerIndex_@1(m,low,*inclusiveLow,_vl,c);
+                	} else
+                	if (foundHgh == 0){
+                       		@:crkTwoRTreeSideways(@1,@2)@
+                               	if (gapH>0) addCrackerIndex_@1(m,hgh,HBound,vh,c);
+                	}
+		}
+	
+	 	if ( (!(@3_EQ(h1head,ATOMnilptr(TYPE_@1),@4@1))) && ((@3_EQ(h1tail,ATOMnilptr(TYPE_@1),@4@1)))){
 
-/* TODO fill in the rest of the cases */
-/*		if ( (!(@3_EQ(h1head,ATOMnilptr(TYPE_@1),@4@1))) && ((@3_EQ(h1tail,ATOMnilptr(TYPE_@1),@4@1)))){
-		}
-		if ( ((@3_EQ(h1head,ATOMnilptr(TYPE_@1),@4@1))) && (!(@3_EQ(h1tail,ATOMnilptr(TYPE_@1),@4@1)))){
-		}
-*/	
-		h1head += h1size;
-		h1tail += h1size;
-		h2head += h2size;
-		h2tail += h2size;
+                        /* find out where in the index the low   falls */
+                       foundLow = GetLow_@1(*low, *inclusiveLow, CrackerIndex[m].Tree, c, BUNfirst(c), &cl1, &ch1, 0, BUNlast(b)-(oid)1);      
+
+                        if (cl1 != 0) cl1++;
+
+                        if (foundLow == 0){
+                                @:crkTwoLTreeSideways(@1,@2)@
+                                if (vl>0) _vl=vl-1; else _vl=vl;
+                                if (gapL>0) addCrackerIndex_@1(m,low,*inclusiveLow,_vl,c);
+                         }
+
+                }
+                if ( ((@3_EQ(h1head,ATOMnilptr(TYPE_@1),@4@1))) && (!(@3_EQ(h1tail,ATOMnilptr(TYPE_@1),@4@1)))){
+
+                        /* find out where in the index the high falls */
+                        foundHgh = GetHgh_@1(*hgh, *inclusiveHgh, CrackerIndex[m].Tree, c, BUNfirst(c), &cl2, &ch2, 0, BUNlast(b)-(oid)1);
+
+                        if (cl2 != 0) cl2++;
+                        if (foundHgh == 0){
+                                @:crkTwoRTreeSideways(@1,@2)@
+                                if (gapH>0) addCrackerIndex_@1(m,hgh,HBound,vh,c);
+                         }
+                }
+
+		h1head ++;
+		h1tail ++;
+		h2head ++;
+		h2tail ++;
 	}		
 	
 	CrackerIndex[m].nextCrack = size;
@@ -1104,20 +2193,103 @@ Sync_@1_@2(int m, int h){
 	BBPunfix(c->batCacheid);
 	return MAL_SUCCEED;
 }
+
+lng
+SyncPiece_@1_@2(int m, BAT * b, struct Node * cur, int CBindex, int tailBatId, bit force){
+	BAT *h,*c;
+	@1 *hhead;
+	bit *htail;
+	oid syncs;
+	oid size;
+	struct Node *localNodeLow1, *localNodeHgh1;
+
+        oid vl, _vl;
+        oid cl1, ch1, base ;
+        bit foundLow=0;
+        int gapL = 1;
+	bit inclusiveLow;
+	@1 low;
+	oid j,firstsync;
+	oid cursor;
+
+	if (cur->tape==-1)
+		return 0;
+
+        if ((h = BATdescriptor(cur->tape)) == NULL) 
+                printf("\n\n crackers.sync Cannot access tape \n\n");
+
+	/* check if the current pair is already synced */	
+	cursor = getTapeCursor(cur,tailBatId);
+
+	if (force){
+		size = BATcount(h);
+	}
+	else{
+		size = getMaxTapeCursorForRefsInCurrentQuery(cur,CBindex);
+	}
+
+	if (cursor >= size){
+		BBPunfix(h->batCacheid);
+		return 0;
+	}
+	 /* Take the index of the bat */
+        if ((c = BATdescriptor(CrackerIndex[m].cid)) == NULL)
+                printf(" \n\n crackers.sync Cannot access crack index \n\n");
+
+	syncs = size - cursor;
+
+	hhead = (@1*)Hloc(h, BUNfirst(h)+cursor);
+	htail = (bit*)Tloc(h, BUNfirst(h)+cursor);
+
+	base = cur->indexLocal;
+	firstsync = 0;
+	if (cursor == 0){
+		low 	     = *hhead;
+                inclusiveLow = *htail;
+
+		localNodeLow1 = localNodeHgh1 = NULL;
+                @:crkTwoLTreeIncrementalSideways2(@1,@2,b,localNodeLow1,localNodeHgh1)@
+                if (vl>0) _vl=vl-1; else _vl=vl;
+                if (gapL>0) addCrackerIndexIncrementalSideways_@1(m,low,inclusiveLow,_vl,_vl+base+1,c,TRUE,FALSE,b->batCacheid);
+		hhead ++;
+                htail ++; 
+		firstsync++;
+	}	
+
+	for (j=firstsync; j<syncs; j++){
+		low 	     = *hhead;
+                inclusiveLow = *htail;
+
+                foundLow = GetLowNodes_@1(low, inclusiveLow, CrackerIndex[m].Tree, c, BUNfirst(c), &localNodeLow1, &localNodeHgh1, NULL,NULL);      
+
+                if (foundLow == 0){
+                	@:crkTwoLTreeIncrementalSideways2(@1,@2,b,localNodeLow1,localNodeHgh1)@
+                        if (vl>0) _vl=vl-1; else _vl=vl;
+                        if (gapL>0) addCrackerIndexIncrementalSideways_@1(m,low,inclusiveLow,_vl,_vl+base+1,c,TRUE,FALSE,b->batCacheid);
+                }
+
+		hhead ++;
+		htail ++;
+	}		
+	
+	increaseLocalCursor(cur,tailBatId,syncs);
+
+	BBPunfix(h->batCacheid);
+	BBPunfix(c->batCacheid);
+	return syncs;
+}
 @
 
 @= TapeOperations
-static int
+int
 CreateTape_@1(int bid){
 	BAT *h1,*h2;
-	lng tape_size= 200000;
+	oid tape_size= 200000;
 
 	h1 = BATnew(TYPE_@1,TYPE_@1,tape_size);		
 	h2 = BATnew(TYPE_bit,TYPE_bit,tape_size);		
 
-	h1->batBuns->free =  BUNfirst(h1) - h1->batBuns->base;
         BATsetcount(h1, 0);
-	h2->batBuns->free =  BUNfirst(h2) - h2->batBuns->base;
         BATsetcount(h2, 0);
 
 	BBPkeepref(h1->batCacheid);
@@ -1126,10 +2298,10 @@ CreateTape_@1(int bid){
 	return newCrackerIndexHistorySideways(bid, h1->batCacheid, h2->batCacheid);				
 }
 
-static str
+str
 AddToTape_@1(int h, @1 low, @1 hgh, bit li, bit hi){
-	BAT *h1,*h2;
-	lng size;	
+	BAT *h1,*h2,*h1new,*h2new;
+	oid size;	
 
 	if ((h1 = BATdescriptor(CrackerIndex[h].chid)) == NULL) 
                 throw(MAL, "crackers.sync", "Cannot access descriptor");
@@ -1139,67 +2311,182 @@ AddToTape_@1(int h, @1 low, @1 hgh, bit li, bit hi){
                                                 
         size = BATcount(h1);
 
-        *(@1*)BUNhloc(h1, BUNlast(h1)) = low;
-        *(@1*)BUNtloc(h1, BUNlast(h1)) = hgh;
-        *(bit*)BUNhloc(h2, BUNlast(h2)) = li;
-        *(bit*)BUNtloc(h2, BUNlast(h2)) = hi;
+	h1new = BATnew(TYPE_@1,TYPE_@1,1); 
+        *(@1*)Hloc(h1new, BUNfirst(h1new)) = low;
+        *(@1*)Tloc(h1new, BUNfirst(h1new)) = hgh;
+	BATsetcount(h1new, 1);
 
-	h1->batBuns->free =  (BUNlast(h1)+BUNsize(h1)) - h1->batBuns->base;
-        BATsetcount(h1, size+1);
-	h2->batBuns->free =  (BUNlast(h2)+BUNsize(h2)) - h2->batBuns->base;
-        BATsetcount(h2, size+1);
+	h2new = BATnew(TYPE_bit,TYPE_bit,1); 
+        *(bit*)Hloc(h2new, BUNfirst(h2new)) = li;
+        *(bit*)Tloc(h2new, BUNfirst(h2new)) = hi;
+	BATsetcount(h2new, 1);
+
+	BATins(h1,h1new,TRUE);
+	BATins(h2,h2new,TRUE);
 	
 	BBPunfix(h1->batCacheid);
         BBPunfix(h2->batCacheid);
+	BBPunfix(h1new->batCacheid);
+        BBPunfix(h2new->batCacheid);
         return MAL_SUCCEED;
 }
+
+str
+AddToTapeIncrementalSideways_@1(struct Node *node, @1 value, bit inclusive){
+	BAT *h,*tape = NULL;
+	bit madeNewTape=FALSE;
+
+	if (node->tape == -1)
+		madeNewTape = TRUE;
+	else
+	if ((tape = BATdescriptor(node->tape)) == NULL) 
+                throw(MAL, "crackers.sync", "Cannot access descriptor");
+
+	h = BATnew(TYPE_@1,TYPE_bit,1); 
+        *(@1 *)Hloc(h, BUNfirst(h)) = value;
+        *(bit*)Tloc(h, BUNfirst(h)) = inclusive;
+        BATsetcount(h, 1);
+	
+	if (madeNewTape==FALSE){
+		BATins(tape,h,TRUE);
+		BBPunfix(h->batCacheid);
+		BBPunfix(tape->batCacheid);
+	}
+	else{ 
+		BATmode(h,PERSISTENT);
+		h->batRestricted= BAT_WRITE;
+
+		node->tape = h->batCacheid;
+	        BBPkeepref(h->batCacheid);
+	}
+        return MAL_SUCCEED;
+}
+
 @
 
 
 @= CreateResultSideways
 createView:
-        view = BATslice(b, vl, vh+1);
+{ BAT * viewHead;
+	if (tail){
+		viewHead = VIEWhead_(BATmirror(b), BAT_READ);
+                view = BATslice(BATmirror( viewHead), vl, vh+1);
+	}
+	else {
+		viewHead = VIEWhead_(b, BAT_READ);
+                view = BATslice(BATmirror(viewHead), vl, vh+1);
+	}
 
-	if (tail)
-                view = BATslice(BATmirror(VIEWhead_(BATmirror(b), BAT_READ)), vl, vh+1);
-	else 
-                view = BATslice(BATmirror(VIEWhead_(b, BAT_READ)), vl, vh+1);
+	if (newCrackerMAP){
+                BBPkeepref(b->batCacheid);
+                BBPkeepref(c->batCacheid);
+	}
+	else{
+	        BBPunfix(b->batCacheid);
+        	BBPunfix(c->batCacheid);
+	}
+
+	BBPunfix(viewHead->batCacheid);
 
         *vid = view->batCacheid;
         BBPkeepref(*vid);
-
-        BBPunfix(b->batCacheid);
+}
 @
 
 @= CreateCrackerMap
 		BAT *bo, *bp;
-                lng size;
-                BUN ptail, ctail, nhead, ntail, nlast;
-                int csize, psize, nsize;
+                lng sizeM;
+                @2 *ptail, *ntail;
+		@1 *nhead, *ctail;
 		lng j;
-		printf("create new map\n");
+
+                if ((bo = BATdescriptor(*bid)) == NULL)
+                        throw(MAL, "crackers.create new map", "Cannot access descriptor of map head BAT");
+                if ((bp = BATdescriptor(*pbid)) == NULL)
+                        throw(MAL, "crackers.create new map", "Cannot access pdescriptor of map tail BAT");
+
+                sizeM = BATcount(bo);
+		b = BATnew(bo->ttype, bp->ttype, sizeM);
+
+                nhead = (@1*)Hloc(b,  BUNfirst(b));
+                ntail = (@2*)Tloc(b,  BUNfirst(b));
+                ctail = (@1*)Tloc(bo, BUNfirst(bo));
+                ptail = (@2*)Tloc(bp, BUNfirst(bp));
+                for(j=0;j<sizeM;j++){
+                        *nhead = *ctail;
+                        *ntail = *ptail;
+                        nhead++;
+                        ntail++;
+                        ctail++;
+                        ptail++;
+                }
+
+                b->hsorted = FALSE;
+                b->tsorted = FALSE;
+                b->hdense = FALSE;
+                b->tdense = FALSE;
+
+                /*BATkey(b,TRUE);*/
+
+                BATkey(BATmirror(b),FALSE);
+                b->batRestricted= BAT_READ;
+               BATmode(b,PERSISTENT);
+	
+        	BATsetcount(b, sizeM);
+
+		c = BATnew(TYPE_lng, TYPE_@1, IndexEntries);	/* TODO: size */
+
+                m = newCrackerIndexSideways_@1(*bid, b->batCacheid, *pbid, c->batCacheid);
+		CrackerIndex[m].creationTimestamp = GDKusec();
+		CrackerIndex[m].accesses = 1;
+		CrackerIndex[m].dropped = 0;
+		CrackerIndex[m].tuples = sizeM;
+
+		if (StorageInfo == NULL){
+			StorageInfo = (struct storageManagement *)GDKmalloc(sizeof(struct storageManagement));
+			StorageInfo->nextMapSet  = NULL;
+			StorageInfo->totalTuples = 0;
+			StorageInfo->threshold   = -1;
+			StorageInfo->references  = NULL;
+		}else{
+			int MapToDropIndex = -1;
+			if (StorageInfo->threshold >0){
+				if (StorageInfo->totalTuples + sizeM > StorageInfo->threshold){
+					MapToDropIndex = getLeastUsedMap();	
+					if (MapToDropIndex >=0)
+						removeFullMap(MapToDropIndex);
+				}
+			}
+		}
+
+		StorageInfo->totalTuples += sizeM;
+
+                BBPunfix(bo->batCacheid);
+                BBPunfix(bp->batCacheid);
+@
+
+@= CreateCrackerBAT
+{
+		BAT *bo;
+                oid sizeB;
+                @1  *ctail, *ntail;
+		oid *nhead;
+		oid j;
                 if ((bo = BATdescriptor(*bid)) == NULL)
                         throw(MAL, "crackers.crackRange", "Cannot access descriptor");
-                if ((bp = BATdescriptor(*pbid)) == NULL)
-                        throw(MAL, "crackers.crackRange", "Cannot access pdescriptor");
 
-                size = BATcount(bo);
-		b = BATnew(bo->ttype, bp->ttype, size);
+                sizeB = BATcount(bo);
+		b = BATnew(TYPE_oid, bo->ttype, sizeB);
 
-                nsize = BUNsize(b);
-                csize = BUNsize(bo);
-                psize = BUNsize(bp);
-                nhead = BUNhloc(b,  BUNfirst(b));
-                ntail = BUNtloc(b,  BUNfirst(b));
-                ctail = BUNtloc(bo, BUNfirst(bo));
-                ptail = BUNtloc(bp, BUNfirst(bp));
-                for(j=0;j<size;j++){
-                        *(@1*)nhead = *(@1*)ctail;
-                        *(@2*)ntail = *(@2*)ptail;
-                        nhead+=nsize;
-                        ntail+=nsize;
-                        ctail+=csize;
-                        ptail+=psize;
+                nhead = (oid*)Hloc(b,  BUNfirst(b));
+                ntail = (@1*)Tloc(b,  BUNfirst(b));
+                ctail = (@1*)Tloc(bo, BUNfirst(bo));
+                for(j=0;j<sizeB;j++){
+                        *nhead = (oid)j;
+                        *ntail = *ctail;
+                        nhead++;
+                        ntail++;
+                        ctail++;
                 }
 
                 b->hsorted = FALSE;
@@ -1211,24 +2498,31 @@ createView:
                 b->batRestricted= BAT_READ;
                 BATmode(b,PERSISTENT);
 	
-		nlast = BUNfirst(b) + nsize*size;
-        	b->batBuns->free =  nlast - b->batBuns->base;
-        	BATsetcount(b, size);
+        	BATsetcount(b, sizeB);
 
-                m = newCrackerIndexSideways_@1(*bid, b->batCacheid, *pbid);
+		c = BATnew(TYPE_oid, TYPE_@1, IndexEntries);	/* TODO: size */
+                m = newCrackerIndexSideways_@1(*bid, b->batCacheid,-1, c->batCacheid);
 
                 bo->batRestricted= BAT_READ;
                 BBPunfix(bo->batCacheid);
-                BBPunfix(bp->batCacheid);
+
+	if (StorageInfo == NULL){
+		StorageInfo = (struct storageManagement *)GDKmalloc(sizeof(struct storageManagement));
+		StorageInfo->nextMapSet = NULL;
+		StorageInfo->totalTuples = 0;
+		StorageInfo->threshold = -1;
+	}
+
+}
 @
 
 @= updatesSideways
 static str
 selectMergeInsertionsPart_@1Sideways( @1 *low, bit *inclusiveLow, @1 *hgh, bit *inclusiveHgh, int position){
 	BAT *u,*b;
-	lng updates, updatesStart, updatesEnd;
-	BUN l, lt, updLast;
-	int xx;
+	oid updates, updatesStart, updatesEnd;
+	BUN l;
+	@1 *lt, *updLast, *t0;
 	 if (CrackerIndex[position].iid == -1) return NULL;
 	if ((u = BATdescriptor(CrackerIndex[position].iid)) == NULL)
 		return "Cannot access insertions BAT";			
@@ -1249,16 +2543,16 @@ selectMergeInsertionsPart_@1Sideways( @1 *low, bit *inclusiveLow, @1 *hgh, bit *
 
 	/* binary search to find the position of the lowest requested value in the insertions */
 	l = SORTfndfirst_@5(u,low);
-	lt = BUNtloc(u,l);
-	updLast = BUNtloc(u, BUNlast(u));
+	lt = (@1*)Tloc(u,l);
+	t0 = (@1*)Tloc(u,BUNfirst(u));
+	updLast = (@1*)Tloc(u, BUNlast(u));
 	if (lt == updLast){
 		BBPunfix(u->batCacheid);	
 		return NULL; /* no qualifying values in the insertions */
 	}
-	xx = BUNsize(u);
 	if (@3_EQ(lt,low,@4@1) && *inclusiveLow == FALSE){
 		while (lt < updLast && @3_EQ(lt,low,@4@1))
-			lt +=xx;
+			lt ++;
 	} 			
 	if (lt == updLast){
 		BBPunfix(u->batCacheid);	
@@ -1268,26 +2562,26 @@ selectMergeInsertionsPart_@1Sideways( @1 *low, bit *inclusiveLow, @1 *hgh, bit *
 		BBPunfix(u->batCacheid);	
 		return NULL; /* no qualifying values in the insertions */ 	
 	}
-	updatesStart = BUNindex(u,lt);	
+	updatesStart = lt - t0;	
 	
 	/* binary search to find the position of the highest requested value in the insertions */
         l = SORTfndfirst_@5(u, hgh);
-	lt = BUNtloc(u,l);
+	lt = (@1*)Tloc(u,l);
 	if (lt < updLast){
 		if (@3_EQ(lt,hgh,@4@1) && *inclusiveHgh == TRUE){	
 			while (lt < updLast && @3_EQ(lt,hgh,@4@1))
-                            	lt +=xx;
-			lt-=xx;
+                            	lt ++;
+			lt--;
 		} else
 		if (@3_EQ(lt,hgh,@4@1) && *inclusiveHgh == FALSE)
-                        lt -=xx;
+                        lt --;
 		else
 		if ( @3_GT(lt,hgh,@4@1) )
-                        lt -=xx;
+                        lt --;
 	}
 
-	if (lt == updLast) lt-=xx;
-	updatesEnd = BUNindex(u,lt);
+	if (lt == updLast) lt--;
+	updatesEnd = lt - t0;
 
 	if ((b = BATdescriptor(CrackerIndex[position].cbid)) == NULL)
                 throw(MAL, "crackers.crackRangeInsertionPart", "Cannot access cracker map");
@@ -1304,34 +2598,163 @@ selectMergeInsertionsPart_@1Sideways( @1 *low, bit *inclusiveLow, @1 *hgh, bit *
 }
 @
 
+@= EnrichMaxTailResultIncrementalSideways
+	size+=@5;
+	
+	if (BATcount(p) == 0){
+		*maxt = *pairt;
+		j = 1;
+	        BATsetcount(p, 1);
+	}else
+		j = 0;
+	
+
+        for (j = j; j<@5; j++){
+		if (@3_GT(pairt,maxt,@4@2))
+			*maxt = *pairt;	
+		pairt  ++;
+	}
+	if (newPiece)
+		BBPkeepref(piece->batCacheid);		
+	else
+		BBPunfix(piece->batCacheid);		
+	newPiece = FALSE;
+@
+
+@= analyzeTailConjunction
+ 
+        for (j = 0; j<@6; j++){
+                if (@2_@4(pairt,low2,@3@1) && @2_@5(pairt,hgh2,@3@1))
+                        *pivott = (bit)TRUE;
+                else
+                        *pivott = (bit)FALSE;
+
+                pairt  ++;
+                pivott ++;
+        }
+@	
+
+@= EnrichConjunctiveResultIncrementalSideways
+
+	size+=@5;
+
+	if (*inclusiveLow2==TRUE && *inclusiveHgh2==TRUE){
+		@:analyzeTailConjunction(@2,@3,@4,GE,LE,@5)@	
+	}
+	if (*inclusiveLow2==FALSE && *inclusiveHgh2==TRUE){
+		@:analyzeTailConjunction(@2,@3,@4,GT,LE,@5)@	
+	}
+	if (*inclusiveLow2==TRUE && *inclusiveHgh2==FALSE){
+		@:analyzeTailConjunction(@2,@3,@4,GE,LT,@5)@	
+	}
+	if (*inclusiveLow2==FALSE && *inclusiveHgh2==FALSE){
+		@:analyzeTailConjunction(@2,@3,@4,GT,LT,@5)@	
+	}
+	if (newPiece)
+		BBPkeepref(piece->batCacheid);		
+	else
+		BBPunfix(piece->batCacheid);		
+	newPiece = FALSE;
+@
+
+@= analyzeTailConjunctionPivot
+ 
+        for (j = 0; j<@6; j++){
+		if (*pivott == (bit)TRUE){
+	                if ((@2_@4(pairt,low2,@3@1) && @2_@5(pairt,hgh2,@3@1)) == FALSE){
+        	                *pivott = (bit)FALSE;
+			}
+		}
+                pairt  ++;
+                pivott ++;
+        }
+@	
+
+@= EnrichConjunctivePivotResultIncrementalSideways
+
+	size+=@5;
+
+	if (*inclusiveLow2==TRUE && *inclusiveHgh2==TRUE){
+		@:analyzeTailConjunctionPivot(@2,@3,@4,GE,LE,@5)@	
+	}
+	if (*inclusiveLow2==FALSE && *inclusiveHgh2==TRUE){
+		@:analyzeTailConjunctionPivot(@2,@3,@4,GT,LE,@5)@	
+	}
+	if (*inclusiveLow2==TRUE && *inclusiveHgh2==FALSE){
+		@:analyzeTailConjunctionPivot(@2,@3,@4,GE,LT,@5)@	
+	}
+	if (*inclusiveLow2==FALSE && *inclusiveHgh2==FALSE){
+		@:analyzeTailConjunctionPivot(@2,@3,@4,GT,LT,@5)@	
+	}
+
+	if (newPiece)
+		BBPkeepref(piece->batCacheid);		
+	else
+		BBPunfix(piece->batCacheid);		
+	newPiece = FALSE;
+@
+
+@= EnrichProjectionResultIncrementalSideways
+
+	size+=@5;
+	for (j = 0; j<@5; j++){
+		*(@2*)pivott = *(@2*)pairt;
+	 	pairt  ++;
+                pivott ++;
+
+	} 
+	if (newPiece)
+		BBPkeepref(piece->batCacheid);		
+	else
+		BBPunfix(piece->batCacheid);		
+	newPiece = FALSE;
+@
+
+@= EnrichProjectionPivotResultIncrementalSideways
+	for (j = 0; j<@5; j++){
+		if (*pivott == (bit)TRUE){
+			*rest = *pairt;
+			size++;
+			rest ++;
+		}
+	 	pairt  ++;
+                pivott ++;
+
+	} 
+	if (newPiece)
+		BBPkeepref(piece->batCacheid);		
+	else
+		BBPunfix(piece->batCacheid);		
+	newPiece = FALSE;
+@
 
 @= analyzeTailDisjunction
  
         for (j = 0; j<vl; j++){
                 if (@2_@4(pairt,low2,@3@1) && @2_@5(pairt,hgh2,@3@1))
-                        *(bit*)pivott = (bit)TRUE;
+                        *pivott = (bit)TRUE;
                 else
-                        *(bit*)pivott = (bit)FALSE;
+                        *pivott = (bit)FALSE;
 
-                pairt  += bsize;
-                pivott += psize;
+                pairt  ++;
+                pivott ++;
         }
 	
         for (j = vl; j<=vh; j++){
-                *(bit*)pivott = (bit)TRUE;
+                *pivott = (bit)TRUE;
 
-                pairt  += bsize;
-                pivott += psize;
+                pairt  ++;
+                pivott ++;
         }
 
 	for (j = vh+1; j<size; j++){
                 if (@2_@4(pairt,low2,@3@1) && @2_@5(pairt,hgh2,@3@1))
-                        *(bit*)pivott = (bit)TRUE;
+                        *pivott = (bit)TRUE;
                 else
-                        *(bit*)pivott = (bit)FALSE;
+                        *pivott = (bit)FALSE;
 
-                pairt  += bsize;
-                pivott += psize;
+                pairt  ++;
+                pivott ++;
         }
 @
 
@@ -1339,18 +2762,16 @@ selectMergeInsertionsPart_@1Sideways( @1 *low, bit *inclusiveLow, @1 *hgh, bit *
 createView:
 {
         BAT *p;     
-        BUN pairt, pivott, pivotlast;        
-	lng size;
-	int bsize, psize;
-	lng j;
+        @2 *pairt;
+	bit *pivott;        
+	oid size;
+	oid j;
 
 	size = BATcount(b);
         p = BATnew(TYPE_void,TYPE_bit,size);
 
-        pairt = BUNtloc(b, BUNfirst(b));
-        pivott = BUNtloc(p, BUNfirst(p));
-        bsize = BUNsize(b);
-        psize = BUNsize(p);
+        pairt  = (@2 *)Tloc(b, BUNfirst(b));
+        pivott = (bit*)Tloc(p, BUNfirst(p));
 
 	if (*inclusiveLow2==TRUE && *inclusiveHgh2==TRUE){
 		@:analyzeTailDisjunction(@2,@3,@4,GE,LE)@	
@@ -1365,8 +2786,6 @@ createView:
 		@:analyzeTailDisjunction(@2,@3,@4,GT,LT)@	
 	}
 
-        pivotlast = BUNfirst(p) + psize*size;
-        p->batBuns->free =  pivotlast - p->batBuns->base;
         BATsetcount(p, size);
 
         p->hsorted = FALSE;
@@ -1384,18 +2803,16 @@ createView:
 createView:
 {
         BAT *p;     
-        BUN pairt, pivott, pivotlast;        
-	lng size;
-	int bsize, psize;
-	lng j;
+        @2 *pairt;
+	bit *pivott, *pivotlast;        
+	oid size;
+	oid j;
 
 	size = BATcount(b);
         p = BATnew(TYPE_void,TYPE_bit,size);
 
-        pairt = BUNtloc(b, BUNfirst(b));
-        pivott = BUNtloc(p, BUNfirst(p));
-        bsize = BUNsize(b);
-        psize = BUNsize(p);
+        pairt  = (@2 *)Tloc(b, BUNfirst(b));
+        pivott = (bit*)Tloc(p, BUNfirst(p));
 
 	if (*inclusiveLow2==TRUE && *inclusiveHgh2==TRUE){
 		@:analyzeTailDisjunction(@2,@3,@4,GE,LE)@	
@@ -1410,8 +2827,6 @@ createView:
 		@:analyzeTailDisjunction(@2,@3,@4,GT,LT)@	
 	}
 
-        pivotlast = BUNfirst(p) + psize*size;
-        p->batBuns->free =  pivotlast - p->batBuns->base;
         BATsetcount(p, size);
 
         p->hsorted = FALSE;
@@ -1421,17 +2836,85 @@ createView:
 
         BBPkeepref(p->batCacheid);
         BBPunfix(b->batCacheid);
+        BBPunfix(c->batCacheid);
         *vid = p->batCacheid;
 }
+@
+
+@= CrackPiece
+	if (localNodeLow1==NULL) cl1=0;
+	else cl1 = localNodeLow1->indexLocal;
+        if (localNodeHgh1==NULL) ch1=BATcount(piece)-1;
+        else if (localNodeHgh1->localBound == FALSE) ch1=BATcount(piece)-1;
+        else ch1 = localNodeHgh1->indexLocal;
+        if (cl1>0) cl1+=1;
+	if (localNodeLow2==NULL) cl2=0;
+        else cl2 = localNodeLow2->indexLocal;
+        if (localNodeHgh2==NULL) ch2=BATcount(piece)-1;
+        else if (localNodeHgh2->localBound == FALSE) ch2=BATcount(piece)-1;
+        else ch2 = localNodeHgh2->indexLocal;
+        if (cl2>0) cl2+=1;
+        /* If one or both of the selection bounds were not found, then we have to crack */
+        if (foundLow == 0 || foundHgh == 0){
+                if (foundLow == 0 && foundHgh == 0){                         
+                        if (cl1 == cl2){
+                                @:crkThreeTreeIncrementalSideways(@1,@2,cl1,ch2,piece)@
+		        	/*if (vl != -1 && vh != -1){*/
+                			if (vl>0) _vl=vl-1; else _vl=vl;
+                			addCrackerIndexIncrementalSideways_@1(h,*low,*inclusiveLow,_vl,_vl+base+1,cm,TRUE,FALSE,piece->batCacheid);
+                			addCrackerIndexIncrementalSideways_@1(h,*hgh,HBound,vh,vh+base+1,cm,TRUE,FALSE,piece->batCacheid);
+        			
+                        } else {
+                                @:crkTwoLTreeIncrementalSideways(@1,@2,piece,localNodeLow1,localNodeHgh1)@
+                                @:crkTwoRTreeIncrementalSideways(@1,@2,piece,localNodeLow2,localNodeHgh2)@
+                                
+                                if (IndexSize <IndexStop){                                        
+					if (vl>0)_vl=vl-1; else _vl=vl;
+                                        if (gapL>0)  addCrackerIndexIncrementalSideways_@1(h,*low,*inclusiveLow,_vl,_vl+base+1,cm,TRUE,FALSE,piece->batCacheid);                            
+                                        if (gapH>0)  addCrackerIndexIncrementalSideways_@1(h,*hgh,HBound,vh,vh+base+1,cm,TRUE,FALSE,piece->batCacheid);
+                                }
+                        }
+			/* Update the cracker tape and the cursor */
+			AddToTapeIncrementalSideways_@1(nodeLow1, *low, *inclusiveLow);
+			AddToTapeIncrementalSideways_@1(nodeLow1, *hgh, HBound);
+			increaseLocalCursor(nodeLow1,*pbid,2);
+			
+                } else
+                if (foundLow == 0){
+                        @:crkTwoLTreeIncrementalSideways(@1,@2,piece,localNodeLow1,localNodeHgh1)@
+                        if (IndexSize <IndexStop){
+                                if (vl>0) _vl=vl-1; else _vl=vl;
+				if (gapL>0) addCrackerIndexIncrementalSideways_@1(h,*low,*inclusiveLow,_vl,_vl+base+1,cm,TRUE,FALSE,piece->batCacheid);
+				/* Update the cracker tape and the cursor */
+				AddToTapeIncrementalSideways_@1(nodeLow1, *low, *inclusiveLow);
+				increaseLocalCursor(nodeLow1,*pbid,1);
+                        }
+                        vh = ch2;
+                } else
+                if (foundHgh == 0){
+                        @:crkTwoRTreeIncrementalSideways(@1,@2,piece,localNodeLow2,localNodeHgh2)@
+                        if (IndexSize <IndexStop){
+                                if (gapH>0)  addCrackerIndexIncrementalSideways_@1(h,*hgh,HBound,vh,vh+base+1,cm,TRUE,FALSE,piece->batCacheid);
+				AddToTapeIncrementalSideways_@1(nodeLow1, *hgh, HBound);
+				increaseLocalCursor(nodeLow1,*pbid,1);
+			}
+                        vl = cl1;
+                }
+        } else {
+                vl = cl1;
+                vh = ch2;
+        }
 @
 
 @= RangeSelectBody
         BAT *b, *c, *view=NULL;
         int  m, h;
-        lng vl=-1, vh=-1, posl, posh, cl1, ch1, cl2, ch2;
-        int zz,_vl;
+        oid vl, vh, posl, posh, cl1, ch1, cl2, ch2;
+        oid _vl;
         int gapL = 1, gapH = 1;
         bit HBound, foundLow=0, foundHgh=0;
+	bit newCrackerMAP = FALSE;
+	bit newTape = FALSE;
 
         if (@3_GT(low,hgh,@4@1))
                 throw(MAL, "crackers.crack", "illegal range");
@@ -1439,45 +2922,48 @@ createView:
         if (*inclusiveHgh == TRUE) HBound = FALSE;
         else    HBound = TRUE;
 
+
 	/* get the cracker tape for this set or create one if it does not exist */
         h = existsCrackerIndexSideways(*bid, -1);
-	if (h == -1)
+	if (h==-1){
 		h = CreateTape_@1(*bid); 
+		newTape = TRUE;
+	}
 
 	/* get the map */
         m = existsCrackerIndexSideways(*bid, *pbid);
 
         /* create the map if it does not exist and perform the fist crack 
 	   without searching the index (it is empty at this point) */
-        if (m == -1){
+        if (m == -1 && newTape == TRUE){
 		@:CreateCrackerMap(@1,@2)@		
-
-                if ((c = BATdescriptor(CrackerIndex[m].cid)) == NULL)
-                        throw(MAL, "crackers.crackRange", "Cannot access crack index");
+		newCrackerMAP = TRUE;
 
 		/* crack the whole map based on the current restriction */
-                posl = BUNindex(b,BUNfirst(b));
-                posh = BUNindex(b,BUNlast(b)-BUNsize(b));
+                posl = BUNfirst(b);
+                posh = BUNlast(b)-(oid)1;
                 @:crkThreeTreeSideways(@1,@2,posl,posh)@
 
-                BBPincref(b->batCacheid,TRUE);
 		
 		/* update the cracker tape and the cursor of the map */
 		AddToTape_@1(h, *low, *hgh, *inclusiveLow, *inclusiveHgh );
 		CrackerIndex[m].nextCrack+=1;
 
                 goto createView;
-        }
-
+        }else
+	if (m == -1){
+		@:CreateCrackerMap(@1,@2)@		
+		newCrackerMAP = TRUE;
+	}else
         /*  Check if this map was previously cracked but the map is not there anymore.
             This may happen if we chose to forget the index because of updates, so now we          
             have to create a new one and crack in three pieces anyway. */
-
         if (CrackerIndex[m].reCreate == 1){
                 
                 /* function "reCreateMap" is used as is in selections cracking */
                 reCreateMap_@1(m);
-                
+                CrackerIndex[m].accesses += 1;
+ 
                 /* Take the index of the bat */
                 if ((c = BATdescriptor(CrackerIndex[m].cid)) == NULL)                        
 			throw(MAL, "crackers.crackRange", "Cannot access cracker index");
@@ -1486,13 +2972,25 @@ createView:
                 if ((b = BATdescriptor(CrackerIndex[m].cbid)) == NULL)
                         throw(MAL, "crackers.crackRange", "Cannot access cracker BAT");
                 
-                posl = BUNindex(b,BUNfirst(b));
-                posh = BUNindex(b,BUNlast(b)-BUNsize(b));
+                posl = BUNfirst(b);
+                posh = BUNlast(b)-(oid)1;
                 
                 @:crkThreeTreeSideways(@1,@2,posl,posh)@
 
                 goto createView;
-        }
+        }else{
+        	/* Take the index of the map */
+	        if ((c = BATdescriptor(CrackerIndex[m].cid)) == NULL)
+        	        throw(MAL, "crackers.crackRange", "Cannot access cracker index");
+        
+	        /* Take the map */
+        	if ((b = BATdescriptor(CrackerIndex[m].cbid)) == NULL)
+                	throw(MAL, "crackers.crackRange", "Cannot access crack map");
+
+        	CrackerIndex[m].accesses += 1;
+
+	}
+
 
 	 /* If a map exists for this bat (so it has been cracked before)
             we search its index to find where our range falls.
@@ -1512,23 +3010,13 @@ createView:
 	/* Align the map based on the position of its cursor in the cracker tape */
 	Sync_@1_@2(m,h);        
         
-        /* Take the index of the map */
-        if ((c = BATdescriptor(CrackerIndex[m].cid)) == NULL)
-                throw(MAL, "crackers.crackRange", "Cannot access crack index");
-        
-        /* Take the map */
-        if ((b = BATdescriptor(CrackerIndex[m].cbid)) == NULL)
-                throw(MAL, "crackers.crackRange", "Cannot access crack index");
-
-        zz = BUNsize(c);
-	
 	selectMergeInsertionsPart_@1Sideways(low, inclusiveLow, hgh, inclusiveHgh, m);
         
         /* find out where in the index the low falls */
-        foundLow = GetLow_@1(*low, *inclusiveLow, CrackerIndex[m].Tree, c, BUNhloc(c, BUNfirst(c)), zz, &cl1, &ch1, 0, BUNindex(b, BUNlast(b)-BUNsize(b)));
+        foundLow = GetLow_@1(*low, *inclusiveLow, CrackerIndex[m].Tree, c, BUNfirst(c), &cl1, &ch1, 0, BUNlast(b)-(oid)1);
         
         /* find out where in the index the high falls */        
-	foundHgh = GetHgh_@1(*hgh, *inclusiveHgh, CrackerIndex[m].Tree, c, BUNhloc(c, BUNfirst(c)), zz, &cl2, &ch2, 0, BUNindex(b, BUNlast(b)-BUNsize(b)));
+	foundHgh = GetHgh_@1(*hgh, *inclusiveHgh, CrackerIndex[m].Tree, c, BUNfirst(c), &cl2, &ch2, 0, BUNlast(b)-(oid)1);
                 
 	/* need to increase one position for the low bound only since we always store the previous position in the index */
         if (cl1 != 0) cl1++;
@@ -1583,6 +3071,571 @@ createView:
 	CrackerIndex[m].nextCrack+=1;
 @
 
+@= SyncAndCrackBasedonFirstBound
+                SyncPiece_@1_@2(h, piece, nodeLow1, m, *pbid, FALSE);
+		foundLow = GetLowNodes_@1(*low, *inclusiveLow, CrackerIndex[h].Tree, cm, BUNfirst(cm), &localNodeLow1, &localNodeHgh1, NULL, NULL);
+        	if (foundLow == 0)
+                	if ((SyncPiece_@1_@2(h, piece, nodeLow1, m, *pbid, TRUE))>0)
+        			foundLow = GetLowNodes_@1(*low, *inclusiveLow, CrackerIndex[h].Tree, cm, BUNfirst(cm), &localNodeLow1, &localNodeHgh1, NULL, NULL);
+		foundHgh = 1;
+		base = nodeLow1->indexLocal;
+		@:CrackPiece(@1,@2)@
+        	pairt = (@2*)Tloc(piece, BUNfirst(piece)+vl);
+		tuplesToAnalyze = BATcount(piece) - vl;
+@
+
+@= SyncAndCrackBasedonLastBound
+		
+		SyncPiece_@1_@2(h, piece, nodeLow1, m, *pbid, FALSE);
+
+		/* if the high bound falls in here we crack this piece */
+		if ( (*(@1*)Tloc(c, BUNfirst(c)+nodeHgh1->position)) > *hgh || 
+			((*(@1*)Tloc(c, BUNfirst(c)+nodeHgh1->position)) == *hgh && 
+								nodeHgh1->inclusive == HBound) ){
+			foundHgh = GetHghNodes_@1(*hgh, *inclusiveHgh, CrackerIndex[h].Tree, cm, BUNfirst(cm), &localNodeLow2, &localNodeHgh2, NULL, NULL);
+
+        		if (foundHgh == 0)
+		                if ((SyncPiece_@1_@2(h, piece, nodeLow1, m, *pbid, TRUE)) > 0)
+	        			foundHgh = GetHghNodes_@1(*hgh, *inclusiveHgh, CrackerIndex[h].Tree, cm, BUNfirst(cm), &localNodeLow2, &localNodeHgh2, NULL, NULL);
+
+			foundLow = 1;
+			base = nodeLow1->indexLocal;
+			@:CrackPiece(@1,@2)@
+
+			tuplesToAnalyze = vh + 1;
+			done = TRUE;
+		}else
+			tuplesToAnalyze = BATcount(piece);
+		
+        	pairt = (@2*)Tloc(piece, BUNfirst(piece));
+@
+
+@= SyncAndCrackBasedonBothBounds
+		
+		SyncPiece_@1_@2(h, piece, nodeLow1, m, *pbid, FALSE);
+		/* get the new node after the sync */
+        	foundLow = GetLowNodes_@1(*low, *inclusiveLow, CrackerIndex[h].Tree, cm, BUNfirst(cm), &localNodeLow1, &localNodeHgh1, NULL, NULL);
+		foundHgh = GetHghNodes_@1(*hgh, *inclusiveHgh, CrackerIndex[h].Tree, cm, BUNfirst(cm), &localNodeLow2, &localNodeHgh2, NULL, NULL);
+
+		if (foundLow == 0 || foundHgh == 0){
+		        if ((SyncPiece_@1_@2(h, piece, nodeLow1, m, *pbid, TRUE)) > 0 ){
+	        		foundLow = GetLowNodes_@1(*low, *inclusiveLow, CrackerIndex[h].Tree, cm, BUNfirst(cm), &localNodeLow1, &localNodeHgh1, NULL, NULL);
+				foundHgh = GetHghNodes_@1(*hgh, *inclusiveHgh, CrackerIndex[h].Tree, cm, BUNfirst(cm), &localNodeLow2, &localNodeHgh2, NULL, NULL);
+			}
+		}
+		base = nodeLow1->indexLocal;
+		@:CrackPiece(@1,@2)@
+
+		tuplesToAnalyze = vh-vl+1;
+                pairt = (@2*)Tloc(piece, BUNfirst(piece)+vl);
+@
+
+@= makeNewMapPiece1
+		/*printStorageInfo(); can be used to what is in the Storage management structure */
+			piece = createPieceMap_@1_@2(b, tailBAT, nodeLow1, nodeHgh1, m);
+			newPiece = TRUE;
+			
+	   		localFirst = addCrackerIndexIncrementalSideways_@1(h, *(@1*)Tloc(c, BUNfirst(c)+nodeLow1->position), nodeLow1->inclusive, 0, nodeLow1->indexLocal, cm, FALSE, TRUE, piece->batCacheid);
+
+	        	curPieceNodeLast = addCrackerIndexIncrementalSideways_@1(h, *(@1*)Tloc(c, BUNfirst(c)+nodeHgh1->position), nodeHgh1->inclusive, BATcount(piece)-1, nodeHgh1->indexLocal, cm, FALSE, FALSE, piece->batCacheid);
+
+			registerPieceForStorageManagement(*bid, *pbid, localFirst, nodeHgh1->indexLocal - nodeLow1->indexLocal);
+@
+
+@= makeNewMapPiece2
+			piece = createPieceMap_@1_@2(b, tailBAT, nodeLow1, nodeHgh1, m);
+			newPiece = TRUE;
+			localNodeLow1->first = TRUE;
+			localNodeLow1->indexLocal = 0;
+			localNodeLow1->pieceBAT = piece->batCacheid;
+
+	        	localNodeHgh1 = addCrackerIndexIncrementalSideways_@1(h, *(@1*)Tloc(c, BUNfirst(c)+nodeHgh1->position), nodeHgh1->inclusive, BATcount(piece)-1, nodeHgh1->indexLocal, cm, FALSE, FALSE, piece->batCacheid);
+
+			registerPieceForStorageManagement(*bid, *pbid, localNodeLow1, nodeHgh1->indexLocal - nodeLow1->indexLocal);
+@
+
+@= FirstBoundWithinAnExistingArea
+		foundLow = GetLowNodes_@1(*low, *inclusiveLow, CrackerIndex[m].Tree, c, BUNfirst(c), &nodeLow1, &nodeHgh1, NULL, NULL);
+		if (nodeLow1 == NULL){
+                        @:crkTwoLTree(@1,@2,b,nodeLow1,nodeHgh1)@
+                        if (vl>0) _vl=vl-1; else _vl=vl;
+                        if (gapL>0) nodeLow1 = addCrackerIndexIncrementalSideways_@1(m,*low,*inclusiveLow,_vl,_vl,c,TRUE,TRUE,-1);
+			
+			@:makeNewMapPiece1(@1,@2)@
+
+			tuplesToAnalyze = BATcount(piece);
+        		pairt = (@2*)Tloc(piece, BUNfirst(piece));
+		}else
+		/* A previous query has already created a piece for this area */
+		if (nodeLow1->first == TRUE){
+			@:makeNewMapPiece1(@1,@2)@
+			@:SyncAndCrackBasedonFirstBound(@1,@2)@
+		}else {
+		/* No existing piece for this area. Thus we have the freedom to crack it */
+			if (foundLow != 0)
+				nodeLow1->first = TRUE;
+			else{
+                                @:crkTwoLTree(@1,@2,b,nodeLow1,nodeHgh1)@
+                                if (vl>0) _vl=vl-1; else _vl=vl;
+                                if (gapL>0) nodeLow1 = addCrackerIndexIncrementalSideways_@1(m,*low,*inclusiveLow,_vl,_vl,c,TRUE,TRUE,-1);
+			}	
+			@:makeNewMapPiece1(@1,@2)@
+
+			tuplesToAnalyze = BATcount(piece);
+        		pairt = (@2*)Tloc(piece, BUNfirst(piece));
+		}
+		@:Enrich@5ResultIncrementalSideways(@1,@2,@3,@4,tuplesToAnalyze)@
+                curCBatNodeLast = nodeHgh1;
+@
+
+@= LastBoundWithinAnExistingArea
+			if (nodeLow1->first == TRUE){
+				@:makeNewMapPiece2(@1,@2)@
+
+				@:SyncAndCrackBasedonLastBound(@1,@2)@
+			}else{
+			/* No previous piece here.
+			   If the whole area is relevant simply make a new piece out of it
+			   Otherwise crack the area and fetch only the relevant part */
+					
+				nodeLow1->first = TRUE;
+
+				if ( (*(@1*)Tloc(c, BUNfirst(c)+nodeHgh1->position)) > *hgh || 
+					((*(@1*)Tloc(c, BUNfirst(c)+nodeHgh1->position)) == *hgh && 
+									nodeHgh1->inclusive == HBound) ){
+					foundHgh = GetLowNodes_@1(*hgh, *inclusiveHgh, CrackerIndex[m].Tree, c, BUNfirst(c), &nodeLow1, &nodeHgh1, NULL, NULL);
+					if (foundHgh==0){
+	 					@:crkTwoRTree(@1,@2,b,nodeLow1,nodeHgh1)@
+	                			if (gapH>0) nodeHgh1 = addCrackerIndexIncrementalSideways_@1(m,*hgh,HBound,vh,vh,c,TRUE,FALSE,-1);
+					}
+					done = TRUE;
+				}
+					
+				@:makeNewMapPiece2(@1,@2)@
+				tuplesToAnalyze = BATcount(piece);
+        			pairt = (@2*)Tloc(piece, BUNfirst(piece));
+			}
+			@:Enrich@5ResultIncrementalSideways(@1,@2,@3,@4,tuplesToAnalyze)@
+@
+
+@= BothBoundsWithinAnExistingArea
+		foundLow = GetLowNodes_@1(*low, *inclusiveLow, CrackerIndex[m].Tree, c, BUNfirst(c), &nodeLow1, &nodeHgh1, NULL, NULL);
+		foundHgh = GetHghNodes_@1(*hgh, *inclusiveHgh, CrackerIndex[m].Tree, c, BUNfirst(c), &nodeLow2, &nodeHgh2, NULL, NULL);
+
+		if (nodeLow1 == NULL && nodeLow2 == NULL) {
+			if (foundHgh != 0){
+                                @:crkTwoLTree(@1,@2,b,nodeLow1,nodeHgh1)@
+                                if (vl>0) _vl=vl-1; else _vl=vl;
+                                if (gapL>0) nodeLow1 = addCrackerIndexIncrementalSideways_@1(m,*low,*inclusiveLow,_vl,_vl,c,TRUE,TRUE,-1);
+			}else{
+                		posl = 0;
+			        posh = nodeHgh1->indexLocal;
+			        @:crkThreeTree(@1,@2,posl,posh)@
+			}	
+			@:makeNewMapPiece1(@1,@2)@
+
+			tuplesToAnalyze = BATcount(piece);
+        		pairt = (@2*)Tloc(piece, BUNfirst(piece));
+			@:Enrich@5ResultIncrementalSideways(@1,@2,@3,@4,tuplesToAnalyze)@
+			goto end;	
+		}else
+		if (nodeHgh1 == NULL && nodeHgh2 == NULL) {
+			if (foundLow != 0){
+                                @:crkTwoRTree(@1,@2,b,nodeLow1,nodeHgh1)@
+				nodeLow1->first = TRUE;
+                                if (gapH>0) nodeHgh1 = addCrackerIndexIncrementalSideways_@1(m,*hgh,HBound,vh,vh,c,TRUE,FALSE,-1);
+			}else{
+                		posl = nodeLow1->indexLocal+1;
+			        posh = BATcount(b)-1;
+			        @:crkThreeTree(@1,@2,posl,posh)@
+			}	
+			@:makeNewMapPiece1(@1,@2)@
+
+			tuplesToAnalyze = BATcount(piece);
+        		pairt = (@2*)Tloc(piece, BUNfirst(piece));
+			@:Enrich@5ResultIncrementalSideways(@1,@2,@3,@4,tuplesToAnalyze)@
+			goto end;	
+		}else
+		if (nodeLow1 == NULL){
+			@:crkTwoLTree(@1,@2,b,nodeLow1,nodeHgh1)@
+                        if (vl>0) _vl=vl-1; else _vl=vl;
+		        if (gapL>0) nodeLow1 = addCrackerIndexIncrementalSideways_@1(m,*low,*inclusiveLow,_vl,_vl,c,TRUE,TRUE,-1);
+			@:makeNewMapPiece1(@1,@2)@
+
+	                tuplesToAnalyze = BATcount(piece);
+                        pairt = (@2*)Tloc(piece, BUNfirst(piece));
+                        @:Enrich@5ResultIncrementalSideways(@1,@2,@3,@4,tuplesToAnalyze)@
+		}else	
+		/* A previous query has already created a piece for this area */
+		if (nodeLow1->first == TRUE){
+
+			@:makeNewMapPiece1(@1,@2)@
+
+			/* if both in the new piece */
+                	if ( (*(@1*)Tloc(c, BUNfirst(c)+nodeHgh1->position)) > *hgh ||
+                        ((*(@1*)Tloc(c, BUNfirst(c)+nodeHgh1->position)) == *hgh &&
+                                                                nodeHgh1->inclusive == HBound) ){
+				@:SyncAndCrackBasedonBothBounds(@1,@2)@
+			        @:Enrich@5ResultIncrementalSideways(@1,@2,@3,@4,tuplesToAnalyze)@
+				goto end;
+			}else{
+				@:SyncAndCrackBasedonFirstBound(@1,@2)@
+			        @:Enrich@5ResultIncrementalSideways(@1,@2,@3,@4,tuplesToAnalyze)@
+			}
+		}else {
+		/* No existing piece for this area. Thus we have the freedom to crack it */
+			/* Both in the same area */
+
+			if (nodeLow1->indexLocal == nodeLow2->indexLocal){
+			
+				if (foundLow != 0 && foundHgh !=0)
+					nodeLow1->first = TRUE;
+				else 
+				if (foundLow == 0 && foundHgh ==0){	
+                			posl = nodeLow1->indexLocal+1;
+			                posh = nodeHgh1->indexLocal;
+			                @:crkThreeTree(@1,@2,posl,posh)@
+				}
+				else 
+				if (foundLow != 0){
+					nodeLow1->first = TRUE;
+	                                @:crkTwoRTree(@1,@2,b,nodeLow2,nodeHgh2)@
+        	                        if (gapH>0) nodeHgh1 = addCrackerIndexIncrementalSideways_@1(m,*hgh,HBound,vh,vh,c,TRUE,FALSE,-1);
+				}
+				else{
+                                	@:crkTwoLTree(@1,@2,b,nodeLow1,nodeHgh1)@
+	                                if (vl>0) _vl=vl-1; else _vl=vl;
+        	                        if (gapL>0) nodeLow1 = addCrackerIndexIncrementalSideways_@1(m,*low,*inclusiveLow,_vl,_vl,c,TRUE,TRUE,-1);
+				}	
+				@:makeNewMapPiece1(@1,@2)@
+
+				tuplesToAnalyze = BATcount(piece);
+        			pairt = (@2*)Tloc(piece, BUNfirst(piece));
+				@:Enrich@5ResultIncrementalSideways(@1,@2,@3,@4,tuplesToAnalyze)@
+				goto end;	
+			}else{
+				if (foundLow != 0)
+        	                        nodeLow1->first = TRUE;
+	                        else{
+                	                @:crkTwoLTree(@1,@2,b,nodeLow1,nodeHgh1)@
+                        	        if (vl>0) _vl=vl-1; else _vl=vl;
+                                	if (gapL>0) nodeLow1 = addCrackerIndexIncrementalSideways_@1(m,*low,*inclusiveLow,_vl,_vl,c,TRUE,TRUE,-1);
+				}
+				@:makeNewMapPiece1(@1,@2)@
+
+				tuplesToAnalyze = BATcount(piece);
+        			pairt = (@2*)Tloc(piece, BUNfirst(piece));
+				@:Enrich@5ResultIncrementalSideways(@1,@2,@3,@4,tuplesToAnalyze)@
+			}
+
+		}
+		curCBatNodeLast = nodeHgh1;
+@
+
+@= IncrementalCrackingBasicBodyA
+
+        BAT *b, *c, *cm, *tailBAT, *piece;
+        int  m, h;
+        oid vl=-1, vh=-1, posl, posh;
+	struct Node *localNodeLow1=NULL,*localNodeLow2=NULL,*localNodeHgh1=NULL,*localNodeHgh2=NULL, *nodeLow1,*nodeHgh1, *nodeLow2,*nodeHgh2, *localFirst; 
+	struct Node *curCBatNodeLast=NULL, *curPieceNodeLast=NULL;
+	oid cl1, ch1, cl2, ch2;
+        int _vl=-1;
+        int gapL = 1, gapH = 1;
+        bit HBound, foundLow=0, foundHgh=0, done=FALSE;
+        BAT *p;     
+        bit *pivott;        
+	lng size=0;
+	@2 *pairt;
+	lng j, tuplesToAnalyze, base;
+	bit newMapSet = FALSE;
+	bit newMap = FALSE;
+	bit newPiece = FALSE;
+
+        if (@3_GT(low,hgh,@4@1))
+                throw(MAL, "crackers.crack", "illegal range");
+
+
+        if ((tailBAT = BATdescriptor(*pbid)) == NULL)
+	        throw(MAL, "crackers.crackRange", "Cannot access crack index");
+
+@
+@= IncrementalCrackingBasicBodyB
+
+	pivott = (bit*)Tloc(p, BUNfirst(p));
+
+        if (*inclusiveHgh == TRUE) HBound = FALSE;
+        else    HBound = TRUE;
+
+	/* Get the cracker bat */
+        m = existsCrackerIndexSideways(*bid,-1);
+
+        /* If the cracker bat does not exist, then this is the first operation on this map set
+	   We will create the cracker bat and the appropriate map 
+	   This first select will be done by cracking the whole cracker BAT */
+        if (m == -1){
+
+		newMapSet = TRUE;
+		newMap = TRUE;
+		@:CreateCrackerBAT(@1)@		
+
+                posl = BUNfirst(b);
+                posh = BUNlast(b)-(oid)1;
+                @:crkThreeTree(@1,@2,posl,posh)@
+		
+		cm = BATnew(TYPE_oid, TYPE_@1, IndexEntries);	/* TODO: size */
+                h = newCrackerIndexSideways_@1(*bid, -1, *pbid, cm->batCacheid);
+                if ((cm = BATdescriptor(CrackerIndex[h].cid)) == NULL)
+                        throw(MAL, "crackers.crackRange", "Cannot access crack index");
+
+		@:makeNewMapPiece1(@1,@2)@
+
+		tuplesToAnalyze = BATcount(piece);
+        	pairt = (@2*)Tloc(piece, BUNfirst(piece));
+       		@:Enrich@5ResultIncrementalSideways(@1,@2,@3,@4,tuplesToAnalyze)@ 
+	
+		goto end;
+        }
+
+	/* Get the map */
+        h = existsCrackerIndexSideways(*bid, *pbid);
+	if (h == -1){
+		newMap = TRUE;
+		cm = BATnew(TYPE_lng, TYPE_@1, IndexEntries);	/* TODO: size */
+                h  = newCrackerIndexSideways_@1(*bid, -1, *pbid, cm->batCacheid);
+	}
+	
+	/* If the map does not exist then we need to create the map, sync it and crack it
+	   We have to fetch from the cracker bat all the pieces that are relevant with the current query q
+	   Then we need to sync these pieces and crack based on q */
+
+	/* If the map exists then we need to fetch any missing pieces necessary for the current query,
+	   sync all relevant pieces and crack */
+        
+        /* Take the index of the cracker BAT */
+        if ((c = BATdescriptor(CrackerIndex[m].cid)) == NULL)
+                throw(MAL, "crackers.crackRange", "Cannot access crack index");
+        
+        /* Take the index of the cracker map */
+        if ((cm = BATdescriptor(CrackerIndex[h].cid)) == NULL)
+                throw(MAL, "crackers.crackRange", "Cannot access crack index");
+        
+        /* Take the cracker BAT */
+        if ((b = BATdescriptor(CrackerIndex[m].cbid)) == NULL)
+                throw(MAL, "crackers.crackRange", "Cannot access crack index");
+
+
+/*
+		printf("\n\n\n NEW CALL\n Index of CB \n");
+		printAVLTreeIncrementalSideways(CrackerIndex[m].Tree,c,BUNfirst(c),zz);
+		printf("\nIndex of map \n");
+		printAVLTreeIncrementalSideways(CrackerIndex[h].Tree,cm,BUNfirst(cm),zz);
+*/		
+
+        /* find out where in the index the low falls */
+        foundLow = GetLowNodes_@1(*low, *inclusiveLow, CrackerIndex[h].Tree, cm, BUNfirst(cm), &localNodeLow1, &localNodeHgh1, NULL, NULL);
+        
+        /* find out where in the index the high falls */        
+	foundHgh = GetHghNodes_@1(*hgh, *inclusiveHgh, CrackerIndex[h].Tree, cm, BUNfirst(cm), &localNodeLow2, &localNodeHgh2, NULL, NULL);
+
+	/*If this map is new but previous maps existed in this map set then CrackerIndex[h].Tree=NULL 
+	  Then all the above calls will set all localNodes* to NULL*/
+
+/*
+		if (localNodeLow1!=NULL)
+		printf("\n locallow1 %lld ", *(oid*)BUNhloc(cm, BUNfirst(cm)+localNodeLow1->position*zz));
+		if (localNodeHgh1!=NULL)
+		printf("\n localhgh1 %lld ", *(oid*)BUNhloc(cm, BUNfirst(cm)+localNodeHgh1->position*zz));
+		if (localNodeLow2!=NULL)
+		printf("\n locallow2 %lld ", *(oid*)BUNhloc(cm, BUNfirst(cm)+localNodeLow2->position*zz));
+		if (localNodeHgh2!=NULL)
+		printf("\n localhgh2 %lld ", *(oid*)BUNhloc(cm, BUNfirst(cm)+localNodeHgh2->position*zz));
+	if (localNodeLow1 == NULL) printf("\n low1 \n");
+	if (localNodeHgh1 == NULL) printf("\n hgh1 \n");
+	if (localNodeLow2 == NULL) printf("\n low2 \n");
+	if (localNodeHgh2 == NULL) printf("\n hgh2 \n");
+*/		
+	if (localNodeLow1 != NULL && localNodeHgh1 != NULL && localNodeLow2 != NULL && localNodeHgh2 != NULL){
+	/* The whole result falls within a single existing piece of the map */       
+		if ((localNodeLow1->pieceBAT == localNodeLow2->pieceBAT  && 
+				localNodeLow1->pieceBAT == localNodeHgh1->pieceBAT &&
+					localNodeLow1->pieceBAT == localNodeHgh2->pieceBAT) ||
+
+	   	    ( (localNodeLow1->pieceBAT == localNodeLow2->pieceBAT) && 
+			(localNodeHgh2->first == TRUE) &&
+			!(localNodeLow1->localBound == FALSE && localNodeLow1->first == FALSE) &&
+			!(localNodeLow2->localBound == FALSE && localNodeLow2->first == FALSE)) ){ 
+			
+        		GetLowNodes_@1(*low, *inclusiveLow, CrackerIndex[m].Tree, c, BUNfirst(c), &nodeLow1, &nodeHgh1, NULL, NULL);		
+
+			if ((piece = BATdescriptor(localNodeLow1->pieceBAT)) == NULL)
+	                	throw(MAL, "crackers.crackRange", "Cannot access crack index");
+			
+			/* register this piece access */
+			localFirst = getPreviousNonLocalNode(localNodeLow1);
+			localFirst->accesses+=1;	
+
+			@:SyncAndCrackBasedonBothBounds(@1,@2)@	
+	
+       			@:Enrich@5ResultIncrementalSideways(@1,@2,@3,@4,tuplesToAnalyze)@ 
+			goto end;
+		}
+	} 
+	if (localNodeLow1 != NULL && localNodeHgh1 != NULL){
+		/* First bound falls within an existing piece. We are going to sync and crack this piece */
+		if ( (localNodeLow1->pieceBAT == localNodeHgh1->pieceBAT) ||  
+		     (localNodeHgh1->localBound == FALSE && 
+			!(localNodeLow1->localBound == FALSE && localNodeLow1->first == FALSE)) ){
+
+                	GetLowNodes_@1(*low, *inclusiveLow, CrackerIndex[m].Tree, c, BUNfirst(c), &nodeLow1, &nodeHgh1, NULL, NULL);
+
+	                if ((piece = BATdescriptor(localNodeLow1->pieceBAT)) == NULL)
+        	                throw(MAL, "crackers.crackRange", "Cannot access crack index");
+
+			/* register this piece access */
+			localFirst = getPreviousNonLocalNode(localNodeLow1);
+			localFirst->accesses+=1;	
+
+			@:SyncAndCrackBasedonFirstBound(@1,@2)@
+
+	       		@:Enrich@5ResultIncrementalSideways(@1,@2,@3,@4,tuplesToAnalyze)@ 
+	
+			curCBatNodeLast  = nodeHgh1;
+			curPieceNodeLast = getNextNonLocalNode(localNodeHgh1);
+		} else 
+		if (localNodeLow1->localBound == FALSE && localNodeLow1->first == FALSE){
+			if (*(oid*)Hloc(cm,BUNfirst(cm)+localNodeLow1->position) == *(oid*)Hloc(cm,BUNfirst(cm)+localNodeLow2->position)){
+				/* Both bounds fall within a non materialized area of the map */
+				@:BothBoundsWithinAnExistingArea(@1,@2,@3,@4,@5)@	
+			}else{
+				/* The first bound falls within a non materialized area of the map */
+				@:FirstBoundWithinAnExistingArea(@1,@2,@3,@4,@5)@	
+			}
+		}
+	}
+			
+
+
+	/*NULL checks*/
+	/*low1 && low2 are null -> both bounds fall within the non materialized area in the beggining of the map*/
+	/*hgh1 && hgh2 are null -> both bounds fall within the non materialized area in the end of the map*/
+	/*only first bound in the non materialized area in the beggining of the map*/
+         
+	if (localNodeLow1 == NULL && localNodeHgh1 == NULL && localNodeLow2 == NULL && localNodeHgh2 == NULL){
+		@:BothBoundsWithinAnExistingArea(@1,@2,@3,@4,@5)@	
+	}else
+	/* In the first piece of the index */
+	if (localNodeLow1 == NULL && localNodeLow2 == NULL){
+		@:BothBoundsWithinAnExistingArea(@1,@2,@3,@4,@5)@	
+	}else
+	/* In the last piece of the index */
+	if (localNodeHgh1 == NULL && localNodeHgh2 == NULL){
+		@:BothBoundsWithinAnExistingArea(@1,@2,@3,@4,@5)@	
+	}else
+	/*only first bound in the first piece*/
+	if (localNodeLow1 == NULL){
+		@:FirstBoundWithinAnExistingArea(@1,@2,@3,@4,@5)@	
+	}
+
+
+
+	/* Now we go through the middle area and fetch any missing pieces. 
+	   Each piece in this area needs to be synced if necessary and enrich the result
+	   If the hgh bound falls in a piece then we also have to crack it */
+
+	while(done==FALSE){
+		
+
+/*
+
+printf("\n\n analyze next piece \n\n");
+printf("\nIndex of CB \n");
+printAVLTreeIncrementalSideways(CrackerIndex[m].Tree,c,BUNfirst(c),zz);
+
+printf("\nIndex of map \n");
+printAVLTreeIncrementalSideways(CrackerIndex[h].Tree,cm,BUNfirst(cm),zz);
+if (curPieceNodeLast!=NULL) printf("\n cur piece last %lld ",*(oid*)BUNhloc(cm,BUNfirst(cm)+curPieceNodeLast->position*zz));
+if (curCBatNodeLast!=NULL) printf("\n cur bat last %lld ",*(oid*)BUNhloc(c,BUNfirst(c)+curCBatNodeLast->position*zz));
+*/
+
+
+		localNodeLow1 = curPieceNodeLast;
+		localNodeHgh1 = getNextNonLocalNode(findNextPiece(localNodeLow1));
+		nodeLow1      = curCBatNodeLast;
+		nodeHgh1      = findNextPiece(nodeLow1);
+	
+/*
+if (localNodeLow1!=NULL) printf("\n local first %lld ",*(oid*)BUNhloc(cm,BUNfirst(cm)+localNodeLow1->position*zz));
+if (localNodeHgh1!=NULL) printf("\n local last %lld ",*(oid*)BUNhloc(cm,BUNfirst(cm)+localNodeHgh1->position*zz));
+if (nodeLow1!=NULL) printf("\n  first %lld ",*(oid*)BUNhloc(c,BUNfirst(c)+nodeLow1->position*zz));
+if (nodeHgh1!=NULL) printf("\n  last %lld ",*(oid*)BUNhloc(c,BUNfirst(c)+nodeHgh1->position*zz));
+
+if (*(oid*)BUNhloc(cm,BUNfirst(cm)+localNodeLow1->position*zz) != *(oid*)BUNhloc(c,BUNfirst(c)+nodeLow1->position*zz))
+	                	throw(MAL, "crackers.crackRange", "diff lows");
+if (localNodeLow1->first == TRUE)
+	if (*(oid*)BUNhloc(cm,BUNfirst(cm)+localNodeHgh1->position*zz) != *(oid*)BUNhloc(c,BUNfirst(c)+nodeHgh1->position*zz))
+                                throw(MAL, "crackers.crackRange", "diff hghs");
+*/
+	
+
+		if (localNodeHgh1==NULL){
+			if (nodeHgh1 == NULL){
+                                nodeLow1->first = TRUE;
+                                @:crkTwoRTree(@1,@2,b,nodeLow1,nodeHgh1)@
+                                if (gapH>0) nodeHgh1 = addCrackerIndexIncrementalSideways_@1(m,*hgh,HBound,vh,vh,c,TRUE,FALSE,-1);
+                                @:makeNewMapPiece1(@1,@2)@
+
+                                tuplesToAnalyze = BATcount(piece);
+                                pairt = (@2*)Tloc(piece, BUNfirst(piece));
+                                @:Enrich@5ResultIncrementalSideways(@1,@2,@3,@4,tuplesToAnalyze)@
+                                goto end;
+
+			}else{
+				@:LastBoundWithinAnExistingArea(@1,@2,@3,@4,@5)@
+			}
+		}else
+		/* An already fetched piece starts from here */
+		if (localNodeLow1->first == TRUE){
+                	if ((piece = BATdescriptor(localNodeLow1->pieceBAT)) == NULL)
+                        	throw(MAL, "crackers.crackRange", "Cannot access crack index");
+
+			/* register this piece access */
+			localNodeLow1->accesses+=1;	
+		
+			@:SyncAndCrackBasedonLastBound(@1,@2)@
+			@:Enrich@5ResultIncrementalSideways(@1,@2,@3,@4,tuplesToAnalyze)@
+		}else {
+			@:LastBoundWithinAnExistingArea(@1,@2,@3,@4,@5)@
+		}
+		curCBatNodeLast  = nodeHgh1;
+		curPieceNodeLast = localNodeHgh1;
+	}
+
+	end:;
+/*	
+printf("\nFINISHED WITH this QUERY \n Index of CB \n");
+printAVLTreeIncrementalSideways(CrackerIndex[m].Tree,c,BUNfirst(c),zz);
+
+printf("\nIndex of map \n");
+printAVLTreeIncrementalSideways(CrackerIndex[h].Tree,cm,BUNfirst(cm),zz);
+*/
+
+	if (newMap)
+	        BBPkeepref(cm->batCacheid);
+	else
+        	BBPunfix(cm->batCacheid);
+
+	if (newMapSet){
+	        BBPkeepref(c->batCacheid);
+	        BBPkeepref(b->batCacheid);
+	}else{
+		BBPunfix(c->batCacheid);
+		BBPunfix(b->batCacheid);
+	}
+			
+	BBPunfix(tailBAT->batCacheid);		
+@
+
 @= crackOperationsSideways
 static str
 CRKRangeSideways_@1_@2(int *vid, int *bid, int *pbid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh, bit tail){
@@ -1604,14 +3657,123 @@ CRKdRangeSideways_@1_@2(int *vid, int *bid, int *pbid, @1 *low, @1 *hgh, bit *in
 
         return MAL_SUCCEED;
 }
+
+static str
+CRKRangeIncrementalSideways_@1_@2(int *vid, int *bid, int *pbid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh, @2 *low2, @2 *hgh2, bit *inclusiveLow2, bit *inclusiveHgh2){
+
+	@:IncrementalCrackingBasicBodyA(@1,@2,@3,@4,Conjunctive)@	
+
+        p = BATnew(TYPE_void,TYPE_bit,BATcount(tailBAT));
+
+	@:IncrementalCrackingBasicBodyB(@1,@2,@3,@4,Conjunctive)@	
+
+        BATsetcount(p, size);
+	
+        p->hsorted = FALSE;
+        p->tsorted = FALSE;
+        p->hdense = FALSE;
+        p->tdense = FALSE;
+
+        BBPkeepref(p->batCacheid);
+        *vid = p->batCacheid;
+        return MAL_SUCCEED;
+}
+
+static str
+CRKRangeTailIncrementalSideways_@1_@2(int *vid, int *bid, int *pbid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh){
+
+	@:IncrementalCrackingBasicBodyA(@1,@2,@3,@4,Projection)@	
+
+        p = BATnew(TYPE_void,TYPE_@2,BATcount(tailBAT));
+
+	@:IncrementalCrackingBasicBodyB(@1,@2,@3,@4,Projection)@	
+
+        BATsetcount(p, size);
+	
+        p->hsorted = FALSE;
+        p->tsorted = FALSE;
+        p->hdense = FALSE;
+        p->tdense = FALSE;
+
+        BBPkeepref(p->batCacheid);
+        *vid = p->batCacheid;
+        return MAL_SUCCEED;
+}
+
+static str
+JoinSelectRangeIncrementalSideways_@1_@2(int *vid, int *bid, int *pbid, int *pivotid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh, @2 *low2, @2 *hgh2, bit *inclusiveLow2, bit *inclusiveHgh2){
+
+	@:IncrementalCrackingBasicBodyA(@1,@2,@3,@4,ConjunctivePivot)@	
+
+	if ((p = BATdescriptor(*pivotid)) == NULL) 
+                throw(MAL, "crackers.JoinSelectRangeIncrementalSideways", "Cannot access pivot");
+
+	@:IncrementalCrackingBasicBodyB(@1,@2,@3,@4,ConjunctivePivot)@	
+
+        BBPunfix(p->batCacheid);
+        *vid = p->batCacheid;
+        return MAL_SUCCEED;
+}
+
+static str
+ProjectIncrementalSideways_@1_@2(int *vid, int *bid, int *pbid, int *pivotid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh){
+
+	BAT *res;
+	@2 *rest;
+
+	@:IncrementalCrackingBasicBodyA(@1,@2,@3,@4,ProjectionPivot)@	
+
+	if ((p = BATdescriptor(*pivotid)) == NULL) 
+                throw(MAL, "crackers.ProjectIncrementalSideways", "Cannot access pivot");
+   
+	res = BATnew(TYPE_void,TYPE_@2,BATcount(p));
+	rest = (@2*)Tloc(res,BUNfirst(res));
+
+	@:IncrementalCrackingBasicBodyB(@1,@2,@3,@4,ProjectionPivot)@	
+
+        BATsetcount(res, size);
+        res->hsorted = FALSE;
+        res->tsorted = FALSE;
+        res->hdense = FALSE;
+        res->tdense = FALSE;
+        BBPkeepref(res->batCacheid);
+        *vid = res->batCacheid;
+
+        BBPunfix(p->batCacheid);
+
+        return MAL_SUCCEED;
+}
+
+static str
+MaxTailIncrementalSideways_@1_@2(int *vid, int *bid, int *pbid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh){
+
+	@2 *maxt;
+	@:IncrementalCrackingBasicBodyA(@1,@2,@3,@4,MaxTail)@	
+
+	p = BATnew(TYPE_void,TYPE_@2,1);
+
+	maxt = (@2*)Tloc(p, BUNfirst(p));
+
+	@:IncrementalCrackingBasicBodyB(@1,@2,@3,@4,MaxTail)@	
+
+        p->hsorted = FALSE;
+        p->tsorted = FALSE;
+        p->hdense = FALSE;
+        p->tdense = FALSE;
+
+        BBPkeepref(p->batCacheid);
+        *vid = p->batCacheid;
+
+        return MAL_SUCCEED;
+}
 @
 
 @= JoinSelectBodySideways
         BAT *b, *p;     
-        BUN pairt, pivott, pivotlast;        
-	lng size;
-	int bsize, psize;
-	lng j;
+        @2 *pairt;
+	bit *pivott;        
+	oid size;
+	oid j;
 
         if ((b = BATdescriptor(*cpair)) == NULL) {
                 throw(MAL, "crackers.crackJoinSelectSideways", "Cannot access descriptor");
@@ -1620,22 +3782,18 @@ CRKdRangeSideways_@1_@2(int *vid, int *bid, int *pbid, @1 *low, @1 *hgh, bit *in
 	size = BATcount(b);
 	p = BATnew(TYPE_void,TYPE_bit,size);
 
-	pairt = BUNtloc(b, BUNfirst(b));
-	pivott = BUNtloc(p, BUNfirst(p));
-	bsize = BUNsize(b);
-	psize = BUNsize(p);
+	pairt  = (@2*)Tloc(b, BUNfirst(b));
+	pivott = (bit*)Tloc(p, BUNfirst(p));
 	for (j = 0; j<size; j++){
 		if (@3)	
-			*(bit*)pivott = (bit)TRUE;
+			*pivott = (bit)TRUE;
 		else 
-			*(bit*)pivott = (bit)FALSE;
+			*pivott = (bit)FALSE;
 
-		pairt  += bsize;
-		pivott += psize;	
+		pairt  ++;
+		pivott ++;	
 	}
 
-	pivotlast = BUNfirst(p) + psize*size;
-        p->batBuns->free =  pivotlast - p->batBuns->base;
         BATsetcount(p, size);	
 	
 	p->hsorted = FALSE;
@@ -1651,77 +3809,86 @@ CRKdRangeSideways_@1_@2(int *vid, int *bid, int *pbid, @1 *low, @1 *hgh, bit *in
 @
 
 @= JoinSelectBodySidewaysWithPivot
-        BAT *b, *p, *c, *pair;     
-        BUN pairt, pivott;        
-	lng size;
-	int bsize, psize;
+        BAT *b, *p, *c, *slice;     
+        @2 *pairt;
+	bit *pivott;        
+	oid size;
 	lng skip;
 	int m;
-	lng cl1,cl2,ch1,ch2;
-	lng j;
+	oid cl1,cl2,ch1,ch2;
+	oid j;
+	bit newMap = FALSE;
 
 	m = existsCrackerIndexSideways(*bid, *pbid);
 	if (m==-1){	
 		@:CreateCrackerMap(@1,@2)@		
-		BBPincref(b->batCacheid,TRUE);
-	}	
+		newMap = TRUE;
+	}else{	
+        	if ((c = BATdescriptor(CrackerIndex[m].cid)) == NULL)
+                	throw(MAL, "crackers.crackRange", "Cannot access crack index");
+
+		if ((b = BATdescriptor(CrackerIndex[m].cbid)) == NULL)
+        	        throw(MAL, "crackers.crackJoinSelectSideways", "Cannot access descriptor");
+
+        	CrackerIndex[m].accesses += 1;
+	}
 
 	Sync_@1_@2(m,existsCrackerIndexSideways(*bid, -1));
 
-	if ((pair = BATdescriptor(CrackerIndex[m].cbid)) == NULL)
-                throw(MAL, "crackers.crackJoinSelectSideways", "Cannot access descriptor");
 
-        if ((c = BATdescriptor(CrackerIndex[m].cid)) == NULL)
-                throw(MAL, "crackers.crackRange", "Cannot access crack index");
+        GetLow_@1(*low1, *inclusiveLow1, CrackerIndex[m].Tree, c, BUNfirst(c), &cl1, &ch1, 0, BUNlast(b)-(oid)1);
 
-        GetLow_@1(*low1, *inclusiveLow1, CrackerIndex[m].Tree, c, BUNhloc(c, BUNfirst(c)), BUNsize(c), &cl1, &ch1, 0, BUNindex(pair, BUNlast(pair)-BUNsize(pair)));
-
-        GetHgh_@1(*hgh1, *inclusiveHgh1, CrackerIndex[m].Tree, c, BUNhloc(c, BUNfirst(c)), BUNsize(c), &cl2, &ch2, 0, BUNindex(pair, BUNlast(pair)-BUNsize(pair)));
+        GetHgh_@1(*hgh1, *inclusiveHgh1, CrackerIndex[m].Tree, c, BUNfirst(c), &cl2, &ch2, 0, BUNlast(b)-(oid)1);
 
 	if (cl1 != 0) cl1++;
 
-        b = BATslice(pair, cl1, ch2+1);
+        slice = BATslice(b, cl1, ch2+1);
 
         if ((p = BATdescriptor(*pivot)) == NULL) 
                 throw(MAL, "crackers.crackJoinSelectSideways", "Cannot access descriptor");
 	
 	size = BATcount(p);
-	pairt = BUNtloc(b, BUNfirst(b));
-	pivott = BUNtloc(p, BUNfirst(p));
-	bsize = BUNsize(b);
-	psize = BUNsize(p);
+	pairt = (@2*)Tloc(slice, BUNfirst(slice));
+	pivott = (bit*)Tloc(p, BUNfirst(p));
 	skip = 0;
 	for (j = 0; j<size; j++){
-		if (*(bit*)pivott == TRUE){
-	        	pairt += skip*bsize;	
+		if (*pivott == TRUE){
+	        	pairt += skip;	
 			if (!(@3))	
-				*(bit*)pivott = FALSE;
+				*pivott = FALSE;
 			skip = 0;
 		}
-		pivott += psize;	
+		pivott ++;	
 		skip++;
 	}
 
-	BBPunfix(pair->batCacheid);
+	if (newMap){
+		BBPkeepref(b->batCacheid);
+		BBPkeepref(c->batCacheid);
+	}else{
+		BBPunfix(b->batCacheid);
+		BBPunfix(c->batCacheid);
+	}
 	BBPkeepref(p->batCacheid);
 	*res = p->batCacheid;
-	BBPunfix(b->batCacheid);
+	BBPunfix(slice->batCacheid);
 	return MAL_SUCCEED;
 @
 
 @= dJoinSelectBodySidewaysWithPivot
-        BAT *b, *p;     
-        BUN pairt, pivott;        
-	lng size;
-	int bsize, psize;
+        BAT *b, *p, *c;     
+        @2 *pairt;
+	bit *pivott;        
+	oid size;
 	lng skip;
 	int m;
-	lng j;
+	oid j;
 
 	m = existsCrackerIndexSideways(*bid, *pbid);
 	if (m==-1){	
 		@:CreateCrackerMap(@1,@2)@		
-		BBPincref(b->batCacheid,TRUE);
+		BBPkeepref(b->batCacheid);
+		BBPkeepref(c->batCacheid);
 	}	
 
 	Sync_@1_@2(m,existsCrackerIndexSideways(*bid, -1));
@@ -1734,19 +3901,17 @@ CRKdRangeSideways_@1_@2(int *vid, int *bid, int *pbid, @1 *low, @1 *hgh, bit *in
                 throw(MAL, "crackers.crackJoinSelectSideways", "Cannot access descriptor");
 	
 	size = BATcount(p);
-	pairt = BUNtloc(b, BUNfirst(b));
-	pivott = BUNtloc(p, BUNfirst(p));
-	bsize = BUNsize(b);
-	psize = BUNsize(p);
+	pairt  = (@2 *)Tloc(b, BUNfirst(b));
+	pivott = (bit*)Tloc(p, BUNfirst(p));
 	skip = 0;
 	for (j = 0; j<size; j++){
-		if (*(bit*)pivott == FALSE){
-	        	pairt += skip*bsize;	
+		if (*pivott == FALSE){
+	        	pairt += skip;	
 			if ((@3))	
-				*(bit*)pivott = TRUE;
+				*pivott = TRUE;
 			skip = 0;
 		}
-		pivott += psize;	
+		pivott ++;	
 		skip++;
 	}
 

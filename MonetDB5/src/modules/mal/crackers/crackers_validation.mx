@@ -154,8 +154,9 @@ str
 CRKverifyCrackerIndex_@1(int *k, int *bid){
         BAT *c, *b;
 	int position = -1;
-	BUN crkt, idxh, idxt, idxFirst, crkFirst, crkLast, bnd, cur;
-	int xx, zz;
+	BUN idxFirst, crkFirst, cur;
+	@1 *crkt, *idxt, *crkLast, *bnd;
+	lng *idxh;
 	struct Node * hghIndexNode;
 	bit prevIncl;
 	@1 prevVal;
@@ -177,15 +178,12 @@ CRKverifyCrackerIndex_@1(int *k, int *bid){
 		throw(MAL, "crackers.mergeInsertions_@1", "Cannot access cracker BAT");
 	}
 	
-	xx = BUNsize(b);
-	zz = BUNsize(c);
-	
 	idxFirst = BUNfirst(c);
 	crkFirst = BUNfirst(b);
-	crkLast  = BUNtloc(b, BUNlast(b));
-	crkt     = BUNtloc(b, BUNfirst(b));
+	crkLast  = (@1*)Tloc(b, BUNlast(b));
+	crkt     = (@1*)Tloc(b, BUNfirst(b));
 
-	hghIndexNode = findNodeH_@1(*(@1*)crkt, TRUE, CrackerIndex[position].Tree, c, idxFirst, zz, NULL);
+	hghIndexNode = findNodeH_@1(*(@1*)crkt, TRUE, CrackerIndex[position].Tree, c, idxFirst, NULL);
 	if (hghIndexNode == NULL){
 		BBPunfix(c->batCacheid);
         	BBPunfix(b->batCacheid);
@@ -193,17 +191,17 @@ CRKverifyCrackerIndex_@1(int *k, int *bid){
 	}
 
 	indexEntries++;
-	cur = idxFirst + ((hghIndexNode->position) * zz);
-	idxh = BUNhloc(c, cur);
-	idxt = BUNtloc(c, cur);
-	bnd  = BUNtloc(b, crkFirst + (*(lng*)idxh - hghIndexNode->hols) * xx);
+	cur = idxFirst + hghIndexNode->position;
+	idxh = (lng*)Hloc(c, cur);
+	idxt = (@1 *)Tloc(c, cur);
+	bnd  = (@1 *)Tloc(b, crkFirst + (*idxh - hghIndexNode->hols));
 
 	if (crkt > bnd)
 		printf("\n Error: cracker index and column are not aligned. Checked %d tuples and %d index entries \n reader pointer is beyond index...", tuples, indexEntries);
 	while(crkt <= bnd){
 
 		if (@2_LT(crkt,idxt,@3@1) ||(@2_EQ(crkt,idxt,@3@1) && hghIndexNode->inclusive == FALSE)){
-			crkt+=xx;
+			crkt++;
 			tuples++;
 		} else {
 			printf("\n Error: cracker index and column are not aligned. Checked %d tuples and %d index entries \n", tuples, indexEntries);
@@ -212,19 +210,19 @@ CRKverifyCrackerIndex_@1(int *k, int *bid){
 			return MAL_SUCCEED;
 		}
 	}
-	crkt+=hghIndexNode->hols * xx;
+	crkt+=hghIndexNode->hols;
 
-	prevVal  = *(@1*)idxt;
+	prevVal  = *idxt;
 	prevIncl = hghIndexNode->inclusive;
 
 	while (crkt < crkLast){
-		if ((hghIndexNode = findNodeH_@1(*(@1*)crkt, TRUE, CrackerIndex[position].Tree, c, idxFirst, zz, NULL)) == NULL)
+		if ((hghIndexNode = findNodeH_@1(*crkt, TRUE, CrackerIndex[position].Tree, c, idxFirst, NULL)) == NULL)
 			break;
 		indexEntries++;
-		cur = idxFirst + ((hghIndexNode->position) * zz);
-		idxh = BUNhloc(c, cur);
-		idxt = BUNtloc(c, cur);
-		bnd  = BUNtloc(b, crkFirst + (*(lng*)idxh - hghIndexNode->hols) * xx);
+		cur = idxFirst + hghIndexNode->position;
+		idxh = (lng*)Hloc(c, cur);
+		idxt = (@1 *)Tloc(c, cur);
+		bnd  = (@1 *)Tloc(b, crkFirst + (*idxh - hghIndexNode->hols));
 
 		if (crkt > bnd){
 			printf("\n Error: cracker index and column are not aligned. Checked %d tuples and %d index entries \n reader pointer is beyond index...", tuples, indexEntries);
@@ -236,7 +234,7 @@ CRKverifyCrackerIndex_@1(int *k, int *bid){
 
 			if ( (@2_LT(crkt,idxt,@3@1) ||(@2_EQ(crkt,idxt,@3@1) && hghIndexNode->inclusive == FALSE)) &&
 			     (@2_GT(crkt,&prevVal,@3@1) ||(@2_EQ(crkt,&prevVal,@3@1) && prevIncl == TRUE)) ){
-				crkt+=xx;
+				crkt++;
 				tuples++;
 			} else {
 			printf("\n Error: cracker index and column are not aligned. Checked %d tuples and %d index entries \n", tuples, indexEntries);
@@ -245,15 +243,15 @@ CRKverifyCrackerIndex_@1(int *k, int *bid){
 				return MAL_SUCCEED;
 			}
 		}
-		crkt+=hghIndexNode->hols * xx;
-		prevVal  = *(@1*)idxt;
+		crkt+=hghIndexNode->hols;
+		prevVal  = *idxt;
 		prevIncl = hghIndexNode->inclusive;
 	}
 	
 	if (hghIndexNode == NULL){
 		while(crkt < crkLast){
                         if (@2_GT(crkt,&prevVal,@3@1) ||(@2_EQ(crkt,&prevVal,@3@1) && prevIncl == TRUE)){
-                                crkt+=xx;
+                                crkt++;
 				tuples++;
 			} else {
 			printf("\n Error: cracker index and column are not aligned. Checked %d tuples and %d index entries \n", tuples, indexEntries);
@@ -276,7 +274,6 @@ CRKverifyCrackerIndex_@1(int *k, int *bid){
 @= validate_init_1
 	BAT *b,*c,*w;
 	BUN fst_bn, lst_bn, bn;
-	int bs;
 	size_t count[6] = {0,0,0,0,0,0};
 
 	/* initialization */
@@ -284,7 +281,6 @@ CRKverifyCrackerIndex_@1(int *k, int *bid){
 	if ((b = BATdescriptor(*bid)) == NULL) 
 		throw(MAL, "crackers.@2crack_validate", "Cannot access descriptor");
 
-	bs = BUNsize(b);
 	fst_bn = BUNfirst(b);
 	lst_bn = BUNlast(b);
 	bn = fst_bn;
@@ -299,35 +295,35 @@ CRKverifyCrackerIndex_@1(int *k, int *bid){
 
 @= validate_checkUnordered
         while (bn < lst_bn @2 @3 ) {
-                bn += bs;
+                bn ++;
                 count[@1]++;
         }
 @
 
 @= validate_checkOrdered
 {	oid hd = 0;
-	while (bn < lst_bn && hd <= *(oid*)BUNhloc(b, bn) @2 @3 ) {
-		hd = *(oid*)BUNhloc(b, bn);
-		bn += bs;
+	while (bn < lst_bn && hd <= *(oid*)Hloc(b, bn) @2 @3 ) {
+		hd = *(oid*)Hloc(b, bn);
+		bn ++;
 		count[@1]++;
 	}	
 }
 @
 
 @= validate_check_1
-	@:validate_check@5(@2, && *(@1*)BUNtloc(b, bn) @3 @4 )@
+	@:validate_check@5(@2, && *(@1*)Tloc(b, bn) @3 @4 )@
 @
 
 @= validate_check_2
-	@:validate_check@7(@2, && *(@1*)BUNtloc(b, bn) @3 @4 , && *(@1*)BUNtloc(b, bn) @5 @6 )@
+	@:validate_check@7(@2, && *(@1*)Tloc(b, bn) @3 @4 , && *(@1*)Tloc(b, bn) @5 @6 )@
 @
 
 @= validate_end
 	count[0] = BATcount(b);
 	if (bn < lst_bn) {
 		@3;
-		c = BATslice(b, BUNindex(b, fst_bn), BUNindex(b, bn));
-		w = BATslice(b, BUNindex(b, bn), BUNindex(b, lst_bn));
+		c = BATslice(b, (lng)fst_bn, (lng)bn); 
+		w = BATslice(b, (lng)bn, (lng)lst_bn);
 		printf("correct:\n");
 		BATprint(c);
 		printf("wrong:\n");
