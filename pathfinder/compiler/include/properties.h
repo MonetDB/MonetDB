@@ -70,8 +70,10 @@ struct PFprop_t {
                                   unique values. */
     req_bool_val_t req_bool_vals; /**< List of attributes with their
                                        corresponding required values. */
-    PFalg_att_t  req_distr_cols;  /**< List of columns whose values only
-                                       have to have the same distribution. */
+    PFalg_att_t  req_order_cols;  /**< List of columns whose values need
+                                       to maintain the order. */
+    PFalg_att_t  req_bijective_cols;  /**< List of columns whose values have
+                                       to fulfill any bijective function. */
     PFalg_att_t  req_multi_col_cols; /**< List of columns that can be
                                        split up into multiple columns. */
     PFalg_att_t  req_value_cols;  /**< List of columns whose values are
@@ -446,10 +448,16 @@ bool PFprop_req_bool_val (const PFprop_t *prop, PFalg_att_t attr);
 bool PFprop_req_bool_val_val (const PFprop_t *prop, PFalg_att_t attr);
 
 /**
- * Test if @a attr is in the list of distribution columns
+ * Test if @a attr is in the list of order columns
  * in container @a prop
  */
-bool PFprop_req_distr_col (const PFprop_t *prop, PFalg_att_t attr);
+bool PFprop_req_order_col (const PFprop_t *prop, PFalg_att_t attr);
+
+/**
+ * Test if @a attr is in the list of bijective columns
+ * in container @a prop
+ */
+bool PFprop_req_bijective_col (const PFprop_t *prop, PFalg_att_t attr);
 
 /**
  * Test if @a attr is in the list of multi-col columns

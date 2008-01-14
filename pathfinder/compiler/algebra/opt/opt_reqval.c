@@ -130,10 +130,13 @@ opt_reqvals (PFla_op_t *p)
         }
     }
 
-    /* replace rowrank operators whose real values
-       are not needed by rank operators */
+    /* Replace rowrank operators whose real values
+       are not needed by rank operators.
+       Note that we do not need to check for the order
+       constraint (PFprop_req_order_col()) as this rewrite
+       does not harm it.  */
     if (p->kind == la_rowrank &&
-        PFprop_req_distr_col (p->prop, p->sem.sort.res))
+        !PFprop_req_value_col (p->prop, p->sem.sort.res))
         *p = *PFla_rank (L(p), p->sem.sort.res, p->sem.sort.sortby);
                 
     /* infer properties for children */

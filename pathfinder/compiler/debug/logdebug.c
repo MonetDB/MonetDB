@@ -1041,13 +1041,25 @@ la_dot (PFarray_t *dot, PFla_op_t *n, bool print_frag_info)
                     }
                 }
                 fst = true;
-                /* list distribution columns */
+                /* list order columns */
                 for (unsigned int i = 0; i < n->schema.count; i++) {
                     PFalg_att_t att = n->schema.items[i].name;
-                    if (PFprop_req_distr_col (n->prop, att)) {
+                    if (PFprop_req_order_col (n->prop, att)) {
                         PFarray_printf (
                             dot, 
-                            fst ? "\\ndistr col: %s" : ", %s",
+                            fst ? "\\norder col: %s" : ", %s",
+                            PFatt_str (att));
+                        fst = false;
+                    }
+                }
+                fst = true;
+                /* list bijective columns */
+                for (unsigned int i = 0; i < n->schema.count; i++) {
+                    PFalg_att_t att = n->schema.items[i].name;
+                    if (PFprop_req_bijective_col (n->prop, att)) {
+                        PFarray_printf (
+                            dot, 
+                            fst ? "\\nbijective col: %s" : ", %s",
                             PFatt_str (att));
                         fst = false;
                     }

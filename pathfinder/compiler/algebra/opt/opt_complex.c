@@ -1036,17 +1036,23 @@ opt_complex (PFla_op_t *p)
 
         case la_rownum:
             /* Replace the rownumber operator by a projection
-               if only its order and value distribution (keys)
-               are required instead of its values. */
-            if (PFprop_req_distr_col (p->prop, p->sem.sort.res) &&
+               if only its value distribution (keys) are required
+               instead of its real values. */
+            if (!PFprop_req_value_col (p->prop, p->sem.sort.res) &&
                 PFord_count (p->sem.sort.sortby) == 1 &&
-                PFord_order_dir_at (p->sem.sort.sortby, 0) == DIR_ASC &&
                 PFprop_key (p->prop,
                             PFord_order_col_at (p->sem.sort.sortby, 0))) {
                 /* create projection list */
                 PFalg_proj_t *proj_list = PFmalloc ((L(p)->schema.count + 1)
                                                     * sizeof (*(proj_list)));
 
+                /* We cannot rewrite if we require the correct order
+                   and the rownum operator changes it from descending
+                   to ascending. */
+                if (PFord_order_dir_at (p->sem.sort.sortby, 0) == DIR_DESC &&
+                    PFprop_req_order_col (p->prop, p->sem.sort.res))
+                    break;
+                
                 /* copy the child schema (as we cannot be sure that
                    the schema of the rownum operator is still valid) ...*/
                 for (unsigned int i = 0; i < L(p)->schema.count; i++)

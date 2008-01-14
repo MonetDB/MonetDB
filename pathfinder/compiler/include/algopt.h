@@ -52,6 +52,7 @@ PFla_op_t * PFalgopt_join_pd (PFla_op_t *root);
 PFla_op_t * PFalgopt_key (PFla_op_t *root);
 PFla_op_t * PFalgopt_mvd (PFla_op_t *root, unsigned int noneffective_tries);
 PFla_op_t * PFalgopt_reqval (PFla_op_t *root);
+PFla_op_t * PFalgopt_rowrank (PFla_op_t *root);
 PFla_op_t * PFalgopt_set (PFla_op_t *root);
 PFla_op_t * PFalgopt_thetajoin (PFla_op_t *root);
 
