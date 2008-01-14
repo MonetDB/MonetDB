@@ -195,6 +195,7 @@ Query:  serialize_seq (
             roots_ (twig (Twig)))                    =   5 (10);
 Query:  serialize_seq (Frag, empty_tbl)              =   6 (10);
 Query:  serialize_rel (Rel)                          =   7 (10);
+Query:  serialize_rel (empty_tbl)                    =   8 (10);
 Rel:    lit_tbl                                      =   9 (10);
 Rel:    ref_tbl                                      =  10 (10);
 Rel:    attach (Rel)                                 =  11 (10);
@@ -2255,6 +2256,40 @@ reduce (PFla_op_t * p, int goalnt)
                 sql_stmts = root (nil (), with (sql_stmts, final_query));
             else
                 sql_stmts = root (nil (), final_query);
+        }
+        break;
+
+        /* Query:  serialize_rel(empty_tbl) */
+        case 8:
+        {
+            /*
+            Let's generate a pseudo-query whose result is an empty table:
+            
+            SELECT -1 AS iter, -1 AS pos
+            FROM sysibm.sysdummy1 AS a0000
+            WHERE 1 = 0;
+            */
+
+
+            /* call a helper function that does the 'real' job */
+            PFsql_t* final_query = PFsql_select (
+                false,
+                select_list (
+                    column_assign (lit_int (-1), ITER_),
+                    column_assign (lit_int (-1), POS_)),
+                from_list(
+                    alias_bind (
+                        schema_table_name (
+                            "sysibm",
+                            table_name (PF_SQL_TABLE_SYSDUMMY1)),
+                        alias (new_alias ()))),
+                where_list (
+                    eq (lit_int (1), lit_int (0))),
+                NULL,
+                NULL);
+              
+
+            sql_stmts = root (nil (), final_query);
         }
         break;
 
