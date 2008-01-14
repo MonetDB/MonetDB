@@ -209,14 +209,6 @@ command_tree **CAS_plan_gen(
 
     topic_num++;
 
-    /* INEX specific !!!!!!!!!!!!!!!!!! SHOULD BE REMOVED */
-    if (topic_num == 148 || (topic_type == CAS_TOPIC && (topic_num == 206 || topic_num == 209 || topic_num == 221 || topic_num == 227 || topic_num == 235 || topic_num == 237)))
-      topic_num++;
-    if (topic_type == CAS_TOPIC && (topic_num == 217))
-      topic_num+=2;
-    if (topic_type == CAS_TOPIC && (topic_num == 213))
-      topic_num+=3;
-
     if ( mil_file ) fprintf(mil_file, "printf(\"Executing topic number %d...\\t\");\n\n", topic_num);
 
     if ( mil_file ) fprintf(mil_file, "topics.insert(%d,\"%s%d_probab\");\n", topic_num, result_name, topic_num);

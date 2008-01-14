@@ -103,19 +103,16 @@
 #define AND_PROB 6
 
 #define UP_SUM 1
-#define UP_AVG 2
+#define UP_MAX 2
 #define UP_WSUMD 3
 #define UP_WSUMA 4
 
 #define DOWN_SUM 1
-#define DOWN_AVG 2
+#define DOWN_MAX 2
 #define DOWN_WSUMD 3
 #define DOWN_WSUMA 4
 
 #define IMAGE_AVG 1
-
-#define SIZE_ENTITY 1
-#define SIZE_TERM 2
 
 #define NO_PRIOR 1
 #define LENGTH_PRIOR 2
@@ -264,7 +261,6 @@ struct struct_RMT {
   char e_class[TERM_LENGTH];
   char exp_class[TERM_LENGTH];
   bool stemming;
-  int size_type;
   float param1;
   float param2;
   int param3;

@@ -204,12 +204,11 @@ int old_main(BAT* optbat, char* startNodes_name)
     txt_retr_model->model       = MODEL_NLLR;
     txt_retr_model->or_comb     = OR_SUM;
     txt_retr_model->and_comb    = AND_PROD;
-    txt_retr_model->up_prop     = UP_WSUMD;
-    txt_retr_model->down_prop   = DOWN_SUM;
+    txt_retr_model->up_prop     = UP_MAX;
+    txt_retr_model->down_prop   = DOWN_MAX;
     //strcpy(txt_retr_model->e_class, "TRUE");
     strcpy(txt_retr_model->e_class, "FALSE");
     txt_retr_model->stemming    = TRUE;
-    txt_retr_model->size_type   = SIZE_TERM;
     txt_retr_model->param1      = 0.8;
     txt_retr_model->param2      = 0.5;
     txt_retr_model->param3      = 0;
@@ -364,8 +363,8 @@ int old_main(BAT* optbat, char* startNodes_name)
         } else if ( strcmp(optName,"txtmodel_upprop") == 0 ) {        
             if ( strcasecmp(optVal,"SUM") == 0 ) {
                 txt_retr_model->up_prop = UP_SUM;
-            } else if ( strcasecmp(optVal,"AVG") == 0 ) {
-                txt_retr_model->up_prop = UP_AVG;
+            } else if ( strcasecmp(optVal,"MAX") == 0 ) {
+                txt_retr_model->up_prop = UP_MAX;
             } else if ( strcasecmp(optVal,"WSUMD") == 0 ) {
                 txt_retr_model->up_prop = UP_WSUMD;
             } else if ( strcasecmp(optVal,"WSUMA") == 0 ) {
@@ -375,8 +374,8 @@ int old_main(BAT* optbat, char* startNodes_name)
         } else if ( strcmp(optName,"txtmodel_downprop") == 0 ) {
             if ( strcasecmp(optVal,"SUM") == 0 ) {
                 txt_retr_model->down_prop = DOWN_SUM;
-            } else if ( strcasecmp(optVal,"AVG") == 0 ) {
-                txt_retr_model->down_prop = DOWN_AVG;
+            } else if ( strcasecmp(optVal,"MAX") == 0 ) {
+                txt_retr_model->down_prop = DOWN_MAX;
             } else if ( strcasecmp(optVal,"WSUMD") == 0 ) {
                 txt_retr_model->down_prop = DOWN_WSUMD;
             } else if ( strcasecmp(optVal,"WSUMA") == 0 ) {
