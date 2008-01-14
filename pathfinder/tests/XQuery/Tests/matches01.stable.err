@@ -63,7 +63,6 @@ stderr of test 'matches01` in directory 'tests/XQuery` itself:
 
 MAPI  = monetdb@localhost:32765
 QUERY = (: 'flags' containing undefined characters should trigger err:FORX001 :)
-        fn:matches("abc", "abc", "invalidflags")
 ERROR = !ERROR: err:FORX0001: flags of fn:matches containing undefined character(s)
 
 # 18:14:21 >  

@@ -70,9 +70,6 @@ stderr of test 'xquery_crashtest.SF-1207048` in directory 'tests/BugDay_2005-11-
 
 MAPI  = monetdb@localhost:39248
 QUERY = string(string(string(string(string(string(string(string(string(string( string(string(string(string(string(string(string(string(string(string(
-        string(string(string(string(string(string(string(string(string(string( string(string(string(string(string(string(string(string(string(string(
-        string(string(string(string(string(string(string(string(string(string( string(string(string(string(string(string(string(string(string(string(
-        string(string(string(string(string(string(string(string(string(string( string(string(s
 ERROR = !fatal error: aborted too deep recursion
         !# halted in /ufs/manegold/_/scratch0/Monet/Testing/Current/source/pathfinder/compiler/semantics/normalize.brg (reduce), line 711
 

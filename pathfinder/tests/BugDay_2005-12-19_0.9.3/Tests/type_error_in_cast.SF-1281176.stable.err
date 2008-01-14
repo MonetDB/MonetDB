@@ -70,7 +70,6 @@ stderr of test 'type_error_in_cast.SF-1281176` in directory 'tests/BugDay_2005-1
 
 MAPI  = monetdb@localhost:35613
 QUERY = let $a := doc("foo.xml") cast as xs:anyNode
-        return $a/bar
 ERROR = !type error: err:XPTY0004: casting is only allowed to an atomic type
         !# halted in /ufs/fabian/scratch/monetdb/current/xquery/compiler/semantics/typecheck.brg (reduce), line 1067
 

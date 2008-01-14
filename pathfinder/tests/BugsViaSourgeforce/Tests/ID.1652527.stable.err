@@ -12,21 +12,6 @@ stderr of test 'ID.1652527` in directory 'tests/BugsViaSourgeforce` itself:
 
 MAPI  = monetdb@localhost:30815
 QUERY = declare function wrapincertainpxml($node as node()*)
-           as element(prob)
-        {
-           <prob><poss prob="1.0">{$node}</poss></prob>
-        };
-           
-        declare function xmltopxml($node as node())
-           as element(prob)
-        {
-           typeswitch($node)
-              case $n as element() return
-                 let $name:=exactly-one($n/name())
-                 let $newchildren := for $child in $n/child::node() return xmltopxml($child)
-                 return wrapincertainpxml(element {$name} {$newchildren})
-              case $n as attribute() return 
-                 wrapincertainpxml($n)
 ERROR = !ERROR: err:FORG0005: function fn:exactly-one expects exactly one value.
 
 # 11:55:23 >  

@@ -70,9 +70,6 @@ stderr of test 'zero-or-one_merged-union.SF-1221336` in directory 'tests/BugDay_
 
 MAPI  = monetdb@localhost:35613
 QUERY = let $a := (<a/>,<a/>)
-        for $i in 0 to 3
-        let $b := zero-or-one($a[$i])
-        return element { name($b) } { $b/@* }
 ERROR = !ERROR: err:XPTY0004: illegal qname ''
 
 # 11:03:12 >  

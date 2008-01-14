@@ -12,14 +12,6 @@ stderr of test 'type_check.SF-1705898` in directory 'tests/BugTracker` itself:
 
 MAPI  = monetdb@localhost:36569
 QUERY = let $min :=  123.4
-        
-        let $max := 5678.9
-        
-        let $bins := 400
-        
-        let $grp := ($max - $min) idiv $bins
-        
-        return element { "result" } { $grp }
 ERROR = !type error: no variant of function op:idiv accepts the given argument type(s): decimal; integer
         !type error: maybe you meant:
         !type error:   op:idiv (integer, integer) as integer

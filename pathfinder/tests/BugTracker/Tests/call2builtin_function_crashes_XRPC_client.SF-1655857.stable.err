@@ -76,10 +76,6 @@ stderr of test 'call2builtin_function_crashes_XRPC_client.SF-1655857` in directo
 
 MAPI  = monetdb@localhost:35820
 QUERY = execute at { "localhost:48080" }
-            {
-                fn:doc("hello.xml")
-            }
-
 ERROR = !unsupported feature: RPC calls to built-in functions not supported by XRPC.
         !# halted in ../../../compiler/mil/milprint_summer.c (translateXRPCCall), line 6228
 

@@ -70,13 +70,6 @@ stderr of test 'cast_as_anyNode.SF-1280519` in directory 'tests/BugDay_2005-12-1
 
 MAPI  = monetdb@localhost:35613
 QUERY = let $items := fn:subsequence(fn:doc("test1280519.xml")//Asset, 1, 100)
-        let $assets := for $item in $items return $item cast as xs:anyNode
-        let $albums := $assets/parent::*
-        for $album in $albums
-          for $asset in $album/Asset
-          where $asset/TrackNr = 1
-          return <Result><Album> { $album/Title }
-        </Album><Track> { $asset/Title } </Track></Result>
 ERROR = !type error: err:XPTY0004: casting is only allowed to an atomic type
         !# halted in /ufs/fabian/scratch/monetdb/current/xquery/compiler/semantics/typecheck.brg (reduce), line 1038
 

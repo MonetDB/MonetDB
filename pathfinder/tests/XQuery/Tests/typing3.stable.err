@@ -65,15 +65,6 @@ stderr of test 'typing3` in directory 'tests/XQuery` itself:
 
 MAPI  = monetdb@localhost:35613
 QUERY = (: The `as xs:decimal' sets the *static* type of $a to
-           xs:decimal (without affecting its *dynamic type).
-           Function foo() is thus called with ill-typed parameters,
-           and static typing will complain. :)
-        declare function foo ($x as xs:integer)
-        {
-          $x
-        };
-        
-        let $a as xs:decimal := 42 return foo ($a)
 ERROR = !type error: no variant of function fn:foo accepts the given argument type(s): decimal
         !type error: maybe you meant:
         !type error:   fn:foo (xs:integer) as item*

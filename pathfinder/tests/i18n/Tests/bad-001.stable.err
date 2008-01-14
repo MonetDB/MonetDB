@@ -63,10 +63,6 @@ stderr of test 'bad-001` in directory 'tests/i18n` itself:
 
 MAPI  = monetdb@localhost:36098
 QUERY = (: This file is UTF-8 encoded.  Be careful when editing this file! :)
-        xquery version '1.0' encoding 'utf-8';
-        
-        (: the × symbol is not a valid Letter :)
-        doc('i18n.xml')/×
 ERROR = !parse error: syntax error, unexpected invalid_character on line 5, column 19 (next token is `�')
         !parse error: XQuery parsing failed
         !# halted in /local_tmp/try_new/pathfinder/compiler/parser/parser.y (PFparse), line 2867

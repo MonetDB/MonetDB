@@ -70,9 +70,6 @@ stderr of test 'invisible_error_messages.SF-1409122` in directory 'tests/BugsVia
 
 MAPI  = monetdb@sn-1:31203
 QUERY = for    $b in doc("auction.xml")/site/open_auctions/open_auction
-        where  $b/bidder/personref[@person="person18829"] <<
-               $b/bidder/personref[@person="person10487"]
-               return <history> {$b/reserve/text()} </history>
 ERROR = !type error: no variant of function op:node-before accepts the given argument type(s): (element personref { item* } | ())* | (element { item* } | ())*; (element personref { item* } | ())* | (element { item* } | ())*
         !type error: maybe you meant:
         !type error:   op:node-before (node, node) as boolean
