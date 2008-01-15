@@ -569,7 +569,8 @@ CRKcrackOrderedThreeL_@2_@3_@1(BAT *b, @1 low, @1 hgh, oid idx_first, oid idx_la
                    (or opposite depending how we move) */
 		if (ct @6 tmpt ){
 			if (ct == tmpt || ct == tmpt @2 1) {
-				for (i=hil; i >=0 ; i--){
+				i=hil;
+				while(1){
 					if (*tmpt @4 mid){
 						*hh = *tmph;
 						*ht = *tmpt;
@@ -578,20 +579,54 @@ CRKcrackOrderedThreeL_@2_@3_@1(BAT *b, @1 low, @1 hgh, oid idx_first, oid idx_la
 					}	
 					tmpt @5= 1;
 					tmph @5= 1;
+				
+					i--;
+					if (i==0){
+						if (*tmpt @4 mid){
+                                                	*hh = *tmph;
+                                                	*ht = *tmpt;
+                                                	hh @5= 1;
+                                                	ht @5= 1;
+                                        	}
+                                        	tmpt @5= 1;
+                                        	tmph @5= 1;					
+
+						break;
+					}
 				}
-				for (i=hil-1; i >=0 ; i--){
+				i=hil-1;
+				while(1){
 					*hh = scr_h[i];
 					*ht = scr_t[i];
 					ht @5= 1;
 					hh @5= 1;
+			
+					i--;
+					if (i==0){
+						*hh = scr_h[i];
+                                        	*ht = scr_t[i];
+                                        	ht @5= 1;
+                                        	hh @5= 1;
+						break;
+					}
 				}
 			}
 			else{
-				for (i=hil-1; i >=0 ; i--){
+				i=hil-1;
+				while(1){
 					*hh = scr_h[i];
 					*ht = scr_t[i];
 					ht @5= 1;
 					hh @5= 1;
+					
+					i--;
+                                        if (i==0){
+						*hh = scr_h[i];
+                                        	*ht = scr_t[i];
+                                        	ht @5= 1;
+                                        	hh @5= 1;
+						break;
+					}
 				}
 			}
 			return MAL_SUCCEED;
@@ -605,7 +640,8 @@ CRKcrackOrderedThreeL_@2_@3_@1(BAT *b, @1 low, @1 hgh, oid idx_first, oid idx_la
 				ht @5= 1;
 			}
 		}
-		for (i=hil-1; i >=0 ; i--){
+		i=hil-1;
+		while(1){
 			if (*tmpt @4 mid){
 				*hh = *tmph;
 				*ht = *tmpt;
@@ -616,6 +652,22 @@ CRKcrackOrderedThreeL_@2_@3_@1(BAT *b, @1 low, @1 hgh, oid idx_first, oid idx_la
 			*tmpt = scr_t[i];
 			tmpt @5= 1;
 			tmph @5= 1;
+
+			i--;
+			if(i==0){
+				if (*tmpt @4 mid){
+        	                        *hh = *tmph;
+                	                *ht = *tmpt;
+                        	        hh @5= 1;
+          	                      	ht @5= 1;
+                	        }
+                        	*tmph = scr_h[i];
+               		        *tmpt = scr_t[i];
+                        	tmpt @5= 1;
+                        	tmph @5= 1;
+
+				break;
+			}
 		}
 @
 
@@ -628,7 +680,7 @@ CRKcrackOrderedZero_@2_@1(BAT *b, @1 mid, oid idx_first, oid idx_last, oid *pos)
 	@1  *scr_t;
 	oid hghShrinked = 0, lowShrinked = 0;
 	oid j=0, hil=0, scr_size, probe = 25;
-	lng i;
+	oid i;
 	BUN first;
 
 	first = BUNfirst(b);

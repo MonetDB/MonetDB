@@ -135,7 +135,7 @@ str
 CRKInsertAVLIndex_@1(int *k, int *bid, int *uid){
 	BUN last, cur;
 	int indexPos;
-	lng curPos;
+	oid curPos;
 	BAT *b, *u;
 
 	(void) k;
@@ -180,7 +180,7 @@ CRKAVLIndexSelectBounds_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveL
         if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "crackers.insert AVL index", "Cannot access descriptor");
 
-	result = BATnew(TYPE_oid, TYPE_@1, (*(@1*)hgh-*(@1*)low)*2);
+	result = BATnew(TYPE_oid, TYPE_@1, (size_t)(*(@1*)hgh-*(@1*)low)*2);
 
 	/* find the node that we should start searching from */
 	cur = AVLIndex[indexPos].Tree;
@@ -271,7 +271,7 @@ newAVLIndex(int bid){
 
 @= AVLIndexOperations
 static struct Node *
-InsertAVLIndex_@1(int m, int indexPosition, @1 value,  struct Node * current, BAT * b, BUN base){	
+InsertAVLIndex_@1(int m, oid indexPosition, @1 value,  struct Node * current, BAT * b, BUN base){	
 	BUN cur, Lchild, Rchild;
 	int lh, rh;
 	struct Node *temp;

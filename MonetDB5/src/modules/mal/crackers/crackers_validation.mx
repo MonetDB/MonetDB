@@ -322,8 +322,8 @@ CRKverifyCrackerIndex_@1(int *k, int *bid){
 	count[0] = BATcount(b);
 	if (bn < lst_bn) {
 		@3;
-		c = BATslice(b, (lng)fst_bn, (lng)bn); 
-		w = BATslice(b, (lng)bn, (lng)lst_bn);
+		c = BATslice(b, fst_bn, bn); 
+		w = BATslice(b, bn, lst_bn);
 		printf("correct:\n");
 		BATprint(c);
 		printf("wrong:\n");
