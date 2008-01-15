@@ -80,6 +80,12 @@ java
 Also known as MonetDB Java, this component provides both the MonetDB
 JDBC driver and the XRPC wrapper.  This component is optional.
 
+geom
+----
+
+The geom component provides a module for the MonetDB SQL frontend.
+This component is optional.
+
 Prerequisites
 =============
 
@@ -228,6 +234,44 @@ After this, you may want to move the file ``libxml2.dll`` from the
 ``lib`` directory to the ``bin`` directory.
 
 __ http://xmlsoft.org/
+
+geos (Geometry Engine Open Souce)
+---------------------------------
+
+Geos__ is a library that provides geometric functions.  This library
+is only a prerequisite for the geom component.
+
+There are no Windows binaries available (not that I looked very hard),
+so to get the software, you will have to get the source and build it
+yourself.  Get the a checkout with Subversion__::
+
+ svn checkout http://svn.osgeo.org/geos/branches/3.0 geos
+
+The ``geos-3.0.0.tar.bz2`` tar ball does not contain all the files
+needed to compile on Windows.  Also, at the time I tried, the trunk
+checkout which is suggested on the website also didn't compile on
+Windows.
+
+With the sources checked out, compile using::
+
+ cd source
+ nmake /f Makefile.vc
+
+Then install the sources somewhere, e.g. in ``C:\geos-3.0.win32``::
+
+ mkdir C:\geos-3.0.win32
+ mkdir C:\geos-3.0.win32\lib
+ mkdir C:\geos-3.0.win32\bin
+ mkdir C:\geos-3.0.win32\include
+ mkdir C:\geos-3.0.win32\include\geos
+ copy geos_c_i.lib C:\geos-3.0.win32\lib
+ copy geos_c.dll C:\geos-3.0.win32\bin
+ copy headers C:\geos-3.0.win32\include
+ copy headers\geos C:\geos-3.0.win32\include\geos
+ copy ..\capi\geos_c.h C:\geos-3.0.win32\include
+
+__ http://geos.refractions.net/
+__ http://subversion.tigris.org/
 
 Optional Packages
 =================
