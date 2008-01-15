@@ -733,13 +733,13 @@ void createAndStoreAlgOpNode(XML2LALGContext* ctx, xmlNodePtr nodePtr)
         {
             /*
             <content>
-              (<column name="COLNAME" new="true"/>)*
+              (<column name="COLNAME" type="DATATYPE" new="true"/>)*
             </content>            
             */
 
-            newAlgNode = PFla_empty_tbl 
+            newAlgNode = PFla_empty_tbl_ 
              (
-             PFLA_ATT_LST("/content/column[@new='true']")
+             PFLA_SCHEMA("/content/column[@new='true']")
              );
         }  
         break;

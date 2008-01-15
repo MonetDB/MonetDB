@@ -2265,18 +2265,46 @@ reduce (PFla_op_t * p, int goalnt)
             /*
             Let's generate a pseudo-query whose result is an empty table:
             
-            SELECT -1 AS iter, -1 AS pos
+            SELECT -1 AS iter_nat, -1 AS pos_nat, ... AS item_...
             FROM sysibm.sysdummy1 AS a0000
             WHERE 1 = 0;
             */
 
+            PFsql_t *selectlist = NULL;
+            PFalg_schema_t schema = p->schema;
+            int count = schema.count;
+            for(int i = 0; i < count; i++)
+            {
+                PFalg_schm_item_t schemaItem = schema.items[i];
+
+                PFalg_att_t columnName = schemaItem.name;
+                PFalg_simple_type_t columnType = schemaItem.type;
+
+                PFsql_t* columnPseudoVal;
+                switch (columnType) {
+                    case aat_nat:   columnPseudoVal = lit_int (-1);   break;
+                    case aat_int:   columnPseudoVal = lit_int (-1);   break;
+                    case aat_str:   columnPseudoVal = lit_str ("");   break;
+                    case aat_dec:   columnPseudoVal = lit_dec (-1);   break;
+                    default:        columnPseudoVal = lit_int (-1);   break;
+                }
+
+                selectlist = 
+                    select_list (
+                        selectlist,
+                        column_assign (
+                            columnPseudoVal,  
+                            column_name(
+                                new_col (
+                                    columnName, 
+                                    columnType))));
+
+            }
 
             /* call a helper function that does the 'real' job */
             PFsql_t* final_query = PFsql_select (
                 false,
-                select_list (
-                    column_assign (lit_int (-1), ITER_),
-                    column_assign (lit_int (-1), POS_)),
+                selectlist,
                 from_list(
                     alias_bind (
                         schema_table_name (
