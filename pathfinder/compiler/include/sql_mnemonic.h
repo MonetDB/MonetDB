@@ -52,7 +52,7 @@
 /* .......... Columns .......... */
 #define column_list(...)             PFsql_column_list(__VA_ARGS__)
 #define column_name(i)               PFsql_column_name(PF_SQL_ALIAS_UNBOUND,i)
-#define ref_column_name(a,n)         PFsql_ref_column_name(PF_SQL_ALIAS_UNBOUND,n)
+#define ref_column_name(a,n)         PFsql_ref_column_name(a,n)
 #define ext_column_name(a,i)         PFsql_column_name(a,i)
 #define star()                       PFsql_star()
 
