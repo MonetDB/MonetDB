@@ -61,6 +61,13 @@ PYTHON_INCS=-I$(PYTHONBASE)\include
 PYTHON_LIBS=/libpath:$(PYTHONBASE)\libs python25.lib
 PYTHON_LIBDIR=share\MonetDB\python
 
+!IFDEF HAVE_PERL
+LIBPERL = C:\Perl
+PERL_INCS = -I$(LIBPERL)\lib\CORE -DWIN32
+PERL_LIBS = $(LIBPERL)\lib\CORE\perl510.lib
+PERL_LIBDIR = share\MonetDB\perl
+!ENDIF
+
 !IFDEF HAVE_PCRE
 # This is the loccation of the PCRE library
 LIBPCRE = C:\Program Files\PCRE

@@ -361,11 +361,15 @@ Perl
 Perl__ is only needed to create an interface that can be used from a
 Perl program to communicate with a MonetDB server.
 
-We haven't tried Perl ourselves yet on Windows, so no help here.
-ActiveState's ActivePerl at http://www.activestate.com looks like a
-promising distribution.
+We have used ActiveState__'s ActivePerl__ distribution (release
+5.10.0.1001).  Just install the 32 or 64 bit version and compile the
+clients component with the additional ``nmake`` flags ``HAVE_PER=1
+HAVE_PERL_DEVEL=1 HAVE_PERL_SWIG=1`` (the latter flag only if ``swig``
+is also installed).
 
 __ http://www.perl.org/
+__ http://www.activestate.com/
+__ http://www.activestate.com/Products/activeperl/
 
 PHP
 ---

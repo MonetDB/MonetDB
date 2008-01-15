@@ -379,6 +379,10 @@ def msc_dep(fd, tar, deplist, msc):
         fd.write('\t$(SWIG) -python $(SWIGFLAGS) -outdir . -o dummy.c "%s"\n' % src)
     if ext == 'py.c' and deplist[0].endswith('.py.i'):
         fd.write('\t$(SWIG) -python $(SWIGFLAGS) -outdir . -o "$@" "%s"\n' % src)
+    if ext == 'pm' and deplist[0].endswith('.pm.i'):
+        fd.write('\t$(SWIG) -perl $(SWIGFLAGS) -outdir . -o dummy.c "%s"\n' % src)
+    if ext == 'pm.c' and deplist[0].endswith('.pm.i'):
+        fd.write('\t$(SWIG) -perl $(SWIGFLAGS) -outdir . -o "$@" "%s"\n' % src)
     if ext == 'res':
         fd.write("\t$(RC) -fo%s %s\n" % (t, src))
 
@@ -848,6 +852,8 @@ def msc_library(fd, var, libmap, msc):
                 srcs = srcs + " " + t + ".yy.obj"
             elif ext == "py.o":
                 srcs = srcs + " " + t + ".py.obj"
+            elif ext == "pm.o":
+                srcs = srcs + " " + t + ".pm.obj"
             elif ext == 'res':
                 srcs = srcs + " " + t + ".res"
             elif ext in hdrs_ext:
