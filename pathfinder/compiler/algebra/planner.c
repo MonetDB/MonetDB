@@ -2795,6 +2795,7 @@ plan_subexpression (PFla_op_t *n)
                 if (n->schema.count == 1 &&
                     L(n)->sem.thetajoin.count == 2 &&
                     L(n)->sem.thetajoin.pred[0].comp == alg_comp_eq &&
+                    L(n)->sem.thetajoin.pred[1].comp != alg_comp_ne &&
                     (n->sem.proj.items[0].old ==
                      L(n)->sem.thetajoin.pred[0].left ||
                      n->sem.proj.items[0].old ==
@@ -2806,6 +2807,7 @@ plan_subexpression (PFla_op_t *n)
                    and the right children of the thetajoin */
                 } else if (n->schema.count == 2 &&
                     L(n)->sem.thetajoin.count == 1 &&
+                    L(n)->sem.thetajoin.pred[0].comp != alg_comp_ne &&
                     (PFprop_ocol (L(L(n)), n->sem.proj.items[0].old) &&
                      PFprop_ocol (R(L(n)), n->sem.proj.items[1].old)) ^
                     (PFprop_ocol (L(L(n)), n->sem.proj.items[1].old) &&
