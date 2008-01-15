@@ -411,7 +411,7 @@ addCrackerIndexIncrementalSideways_@1(int m, @1 value, bit inclusive, oid indexL
 	oid *ph;
 	@1  *pt;
 	struct Node *newNode=NULL, *prev=NULL;
-	lng count;
+	oid count;
 
 	ph = (oid*)Hloc(b, BUNlast(b));
 	pt = (@1 *)Tloc(b, BUNlast(b));

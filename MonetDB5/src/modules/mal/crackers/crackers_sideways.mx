@@ -3340,7 +3340,7 @@ createView:
 			*nodeLow1=NULL,*nodeHgh1=NULL, *nodeLow2=NULL,*nodeHgh2=NULL, *localFirst=NULL; 
 	struct Node *curCBatNodeLast=NULL, *curPieceNodeLast=NULL;
 	oid cl1=0, ch1=0, cl2=0, ch2=0;
-        int _vl=0;
+        oid _vl=0;
         int gapL = 1, gapH = 1;
         bit HBound, foundLow=0, foundHgh=0, done=FALSE;
         BAT *p;     
