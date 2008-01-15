@@ -61,20 +61,34 @@ BAT *BATrangejoin(BAT *l, BAT *rl, BAT *rh, bit li, bit hi)
 	if (bn == NULL) 
 		return bn;
 	switch (ATOMstorage(rl->ttype)) {
+#ifndef NOEXPAND_CHR
 	case TYPE_chr:
 		@:rangejoin(chr)@
+#endif
+#ifndef NOEXPAND_BTE
 	case TYPE_bte:
 		@:rangejoin(bte)@
+#endif
+#ifndef NOEXPAND_SHT
 	case TYPE_sht:
 		@:rangejoin(sht)@
+#endif
+#ifndef NOEXPAND_INT
 	case TYPE_int:
 		@:rangejoin(int)@
+#endif
+#ifndef NOEXPAND_FLT
 	case TYPE_flt:
 		@:rangejoin(flt)@
+#endif
+#ifndef NOEXPAND_DBL
 	case TYPE_dbl:
 		@:rangejoin(dbl)@
+#endif
+#ifndef NOEXPAND_LNG
 	case TYPE_lng:
 		@:rangejoin(lng)@
+#endif
 	default:
 		GDKerror("BATrangejoin: type not implemented\n");
 		return NULL;
@@ -139,31 +153,46 @@ The hash indexing routines have been extended with a Band argument.
 @{
 @c
 BAT *
-BATbandjoin(BAT *l, BAT *r, ptr c1, ptr c2, bit li, bit hi)
+BATbandjoin_nl(BAT *l, BAT *r, ptr c1, ptr c2, bit li, bit hi)
 {
 	BAT *bn;
 
 	ERRORcheck(l == NULL, "BATbandjoin: invalid left operand");
 	ERRORcheck(r == NULL, "BATbandjoin: invalid right operand");
 	ERRORcheck(TYPEerror(l->ttype, r->htype), "BATbandjoin: type conflict\n");
+	ALGODEBUG THRprintf(GDKout, "#BATbandjoin: nestedloop;\n");
 	bn = BATnew(BAThtype(l), BATttype(r), MIN(BATcount(l), BATcount(r)));
 	if (bn == NULL) 
 		return bn;
 	switch (ATOMstorage(r->htype)) {
+#ifndef NOEXPAND_CHR
 	case TYPE_chr:
-		@:bandjoin(chr)@
+		@:bandjoin_nl(chr)@
+#endif
+#ifndef NOEXPAND_BTE
 	case TYPE_bte:
-		@:bandjoin(bte)@
+		@:bandjoin_nl(bte)@
+#endif
+#ifndef NOEXPAND_SHT
 	case TYPE_sht:
-		@:bandjoin(sht)@
+		@:bandjoin_nl(sht)@
+#endif
+#ifndef NOEXPAND_INT
 	case TYPE_int:
-		@:bandjoin(int)@
+		@:bandjoin_nl(int)@
+#endif
+#ifndef NOEXPAND_FLT
 	case TYPE_flt:
-		@:bandjoin(flt)@
+		@:bandjoin_nl(flt)@
+#endif
+#ifndef NOEXPAND_DBL
 	case TYPE_dbl:
-		@:bandjoin(dbl)@
+		@:bandjoin_nl(dbl)@
+#endif
+#ifndef NOEXPAND_LNG
 	case TYPE_lng:
-		@:bandjoin(lng)@
+		@:bandjoin_nl(lng)@
+#endif
 	default:
 		GDKerror("BATbandjoin: type not implemented\n");
 		return NULL;
@@ -184,21 +213,18 @@ The easiest case is to implement a nested loop for band operations.
 Choice point is to determine the status of the NULL values in the final
 result.
 @{
-@= bandjoin_
+@= bandjoin_nl_
 {
-	BATiter li = bat_iterator(l);
-	BATiter ri = bat_iterator(r);
-	@1 *x1;
-	@1 *x2;
-	BUN p, q;
-	BUN v, w;
+	BATiter li = bat_iterator(l), ri = bat_iterator(r);
+	@1 *x1, *x2, cc1 = *(@1*)c1, cc2 = *(@1*)c2;
+	BUN p, q, v, w;
 
 	BATloop(l, p, q) {
 		x1 = (@1 *) BUNtloc(li, p);
 		BATloop(r, v, w) {
 			x2 = (@1 *) BUNhloc(ri, v);
-			if ((*x1 @2 *x2 -  *(@1 *) c1) &&
-			    (*x1 @3 *x2 + *(@1 *) c2)) {
+			if ((*x1 @2 *x2 - cc1) &&
+			    (*x1 @3 *x2 + cc2)) {
 				if (BUNfastins(bn, BUNhead(li, p), BUNtail(ri, v)) == NULL) {
 					BBPreclaim(bn);
 					return NULL;
@@ -208,15 +234,157 @@ result.
 	}
 }
 
-@= bandjoin
+@= bandjoin_nl
 if (li && hi)
-	@:bandjoin_(@1,>=,<=)
+	@:bandjoin_nl_(@1,>=,<=)
 else if (li && !hi)
-	@:bandjoin_(@1,>=,<)
+	@:bandjoin_nl_(@1,>=,<)
 else if (!li && hi)
-	@:bandjoin_(@1,>,<=)
+	@:bandjoin_nl_(@1,>,<=)
 else
-	@:bandjoin_(@1,>,<)
+	@:bandjoin_nl_(@1,>,<)
 break;
 @
 @}
+
+@= bandjoin_mj_loop
+	/* sliding window like solution */
+	while(lp < lc && rp < rc) {
+		BUN i;
+
+		/* slide r */
+		while(rp<rc && !(lt[lp] @3 (rh[rp] + cc2)))
+			rp++;
+		if (rp>=rc)
+			break;
+
+		/* slide window */
+		while(lp<lc && !(lt[lp] @2 (rh[rp] - cc1)))
+			lp++;
+		while(ll<lc && (lt[ll] @3 (rh[rp] + cc2)))
+			ll++;
+		if (o + ll-lp > BATcapacity(bn)) {
+			BUN g = MAX(ll-lp, 1024*1024);
+
+			BATsetcount(bn, o);
+			if (BATextend(bn, BATcapacity(bn)+g) == NULL)
+				goto failed; 
+		}
+		bnh = (oid*)Hloc(bn, bnf);
+		bnt = (oid*)Tloc(bn, bnf);
+		for (i=0; i<(ll-lp); i++, o++) {
+			bnh[o] = @4;
+			bnt[o] = @5;
+		}
+		rp++;
+	}
+
+/* lets assume result is oid,oid */
+@= bandjoin_mj
+{
+	BUN lp = 0, rp = 0, bnf = BUNfirst(bn);
+	oid *bnh = NULL, *bnt = NULL;
+	oid *lh = (oid*)Hloc(l, BUNfirst(l)), *rt = (oid*)Tloc(r, BUNfirst(r));
+	@1 *lt = (@1*)Tloc(l, BUNfirst(l)), *rh = (@1*)Hloc(r, BUNfirst(r)); 
+	@1 cc1 = *(@1*)c1, cc2 = *(@1*)c2;
+	BUN ll = lp, o = 0;
+	oid lhb = l->hseqbase, rtb = r->tseqbase;
+	
+
+	/* handle oid and void inputs */
+	if (lh && rt) {
+		@:bandjoin_mj_loop(@1,@2,@3,lh[lp+i],rt[rp])
+	} else if (!lh && rt) {
+		@:bandjoin_mj_loop(@1,@2,@3,lhb+lp+i,rt[rp])
+	} else if (lh && !rt) {
+		@:bandjoin_mj_loop(@1,@2,@3,lh[lp+i],rtb+rp)
+	} else {
+		@:bandjoin_mj_loop(@1,@2,@3,lhb+lp+i,rtb+rp)
+	}
+	BATsetcount(bn, o);
+}
+
+@= bandjoin_mj_
+if (li && hi)
+	@:bandjoin_mj(@1,>=,<=)
+else if (li && !hi)
+	@:bandjoin_mj(@1,>=,<)
+else if (!li && hi)
+	@:bandjoin_mj(@1,>,<=)
+else
+	@:bandjoin_mj(@1,>,<)
+break;
+@c
+
+static BAT *
+BATbandjoin_mj(BAT *l, BAT *r, ptr c1, ptr c2, bit li, bit hi) 
+{
+	BAT *bn = NULL;
+	BUN lc = BATcount(l), rc = BATcount(r);
+
+	ALGODEBUG THRprintf(GDKout, "#BATbandjoin: mergejoin;\n");
+	bn = BATnew(ATOMtype(l->htype), ATOMtype(r->ttype), MIN(lc,rc));
+	switch (l->ttype) {
+#ifndef NOEXPAND_CHR
+	case TYPE_chr:
+		@:bandjoin_mj_(chr)@
+#endif
+#ifndef NOEXPAND_BTE
+	case TYPE_bte:
+		@:bandjoin_mj_(bte)@
+#endif
+#ifndef NOEXPAND_SHT
+	case TYPE_sht:
+		@:bandjoin_mj_(sht)@
+#endif
+#ifndef NOEXPAND_INT
+	case TYPE_int:
+		@:bandjoin_mj_(int)@
+#endif
+#ifndef NOEXPAND_FLT
+	case TYPE_flt:
+		@:bandjoin_mj_(flt)@
+#endif
+#ifndef NOEXPAND_DBL
+	case TYPE_dbl:
+		@:bandjoin_mj_(dbl)@
+#endif
+#ifndef NOEXPAND_LNG
+	case TYPE_lng:
+		@:bandjoin_mj_(lng)@
+#endif
+	}
+	BATkey(bn, FALSE);
+	BATkey(BATmirror(bn), FALSE);
+	bn->hsorted = FALSE;
+	bn->tsorted = BATtordered(r);
+	return bn;
+failed:
+	BBPreclaim(bn);
+	return NULL;
+}
+
+BAT *
+BATbandjoin(BAT *l, BAT *r, ptr c1, ptr c2, bit li, bit hi) 
+{
+	BAT *ol = l, *or = r, *bn = NULL;
+
+	if ((!BATtordered(l) && BATcount(l) < BATTINY) ||
+	    (!BAThordered(r) && BATcount(r) < BATTINY) ||
+	    ATOMtype(l->htype) != TYPE_oid || ATOMtype(r->ttype) != TYPE_oid)
+		return BATbandjoin_nl(l, r, c1, c2, li, hi);
+
+	/* large cases use a merge join like band, therefor we first sort */
+	if (!BATtordered(l))
+		l = BATmirror(BATsort(BATmirror(l)));
+	if (!BAThordered(r))
+		r = BATsort(r);
+
+	bn = BATbandjoin_mj(l, r, c1, c2, li, hi);
+
+	if (l != ol)
+		BBPreclaim(l);
+	if (r != or)
+		BBPreclaim(r);
+	return bn;
+}
