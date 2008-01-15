@@ -130,6 +130,8 @@ PFxml2la_conv_2PFLA_atomValue_bln(char* s)
     else 
     {
         PFoops (OOPS_FATAL, "don't know what to do with (%s)", s);
+        /* pacify picky compilers */
+        return -1;
     }
 }
 
