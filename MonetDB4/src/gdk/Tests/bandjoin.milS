@@ -1,0 +1,47 @@
+var a:=new(void,int).seqbase(oid(0));
+a.append(0);
+a.append(1);
+
+var b:=new(int,int);
+b.insert(0,0);
+b.insert(0,1);
+b.insert(0,2);
+b.insert(0,3);
+b.insert(0,4);
+b.insert(0,5);
+b.insert(0,6);
+b.insert(0,7);
+b.insert(0,8);
+b.insert(0,9);
+b.insert(1,0);
+b.insert(1,1);
+b.insert(1,2);
+b.insert(1,3);
+b.insert(1,4);
+b.insert(1,5);
+b.insert(1,6);
+b.insert(1,7);
+b.insert(1,8);
+b.insert(1,9);
+
+var c:=b.reverse().[oid]().reverse();
+var d:=a.reverse();
+
+a.print();
+d.print();
+b.print();
+c.print();
+
+b.bandjoin(d, 0, 3).print();
+
+c.bandjoin(d, 0, 3).print();
+a.bandjoin(b, 0, 3).print();
+a.bandjoin(c.reverse(), 0, 3).print();
+a.bandjoin(c.reverse().sort(), 0, 3).print();
+
+c:=b.reverse().mirror().[oid]();
+d:=a.reverse();
+c.reverse().bandjoin(c, 0, 3).sort().reverse().ssort().reverse().print();
+c.sort().reverse().bandjoin(c.sort(), 0, 3).sort().reverse().ssort().reverse().print();
+
+

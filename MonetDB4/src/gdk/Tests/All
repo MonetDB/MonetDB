@@ -29,3 +29,4 @@ append_bat_val.new
 append_dense_tail
 scanselect
 directsemijoin
+bandjoin
