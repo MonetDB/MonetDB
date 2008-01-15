@@ -1376,6 +1376,7 @@ str CRKbandJoin_@1(int *resid, int *bidL, int *bidR, @1 *c1, @1 *c2, bit *inclus
 	int foundLow, foundHgh;
 	oid viewCount, resCount=0;
 	int gapL=0,gapH=0;
+	oid i;
 	
 	if (*inclusiveHgh == TRUE) HBound = FALSE;
 	else	HBound = TRUE; 				
@@ -1412,7 +1413,7 @@ str CRKbandJoin_@1(int *resid, int *bidL, int *bidR, @1 *c1, @1 *c2, bit *inclus
 
 	idxFirst = BUNfirst(c);
 
-	for(oid i=1;i<numberOfTuplesLeft;i++){
+	for(i=1;i<numberOfTuplesLeft;i++){
 		currentValue = *(@1*)Tloc(BATLeft, currentTupleLeft);
 		currentTupleLeftHead = (oid*)Hloc(BATLeft, currentTupleLeft);
 		low  = currentValue - *c1;			
@@ -1477,6 +1478,7 @@ str CRKsortBandJoin_@1(int *resid, int *bidL, int *bidR, @1 *c1, @1 *c2, bit *in
 	oid numberOfTuplesLeft;
 	@1 low, hgh;
 	oid resCount=0;
+	oid i;
 
 	if ((BATLeft = BATdescriptor(*bidL)) == NULL)
         	throw(MAL, "crackers.thetajoin", "Cannot access descriptor");
@@ -1497,7 +1499,7 @@ str CRKsortBandJoin_@1(int *resid, int *bidL, int *bidR, @1 *c1, @1 *c2, bit *in
                 BATmirror(BATorder(BATmirror(BATRight)));
         }
 
-	for(oid i=0;i<numberOfTuplesLeft;i++){
+	for(i=0;i<numberOfTuplesLeft;i++){
 		currentValue = *(@1*)Tloc(BATLeft, currentTupleLeft);
 		currentTupleLeftHead = (oid*)Hloc(BATLeft, currentTupleLeft);
 		low  = currentValue - *c1;			

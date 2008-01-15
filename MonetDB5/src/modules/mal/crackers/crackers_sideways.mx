@@ -1610,6 +1610,7 @@ createPieceMap_@1_@2(BAT * crackerBAT, BAT *tailBAT, struct Node *nodeLow, struc
 	@2 *mapTail;
 	oid size;
 	oid pos1,pos2;
+	oid i;
 
 	if (nodeLow == NULL)
                 printf("\n crackers.createPieceMap Unexpected case: Low node is NULL\n ");
@@ -1629,7 +1630,7 @@ createPieceMap_@1_@2(BAT * crackerBAT, BAT *tailBAT, struct Node *nodeLow, struc
 	crackerBATHead = (oid*)Hloc(crackerBAT, BUNfirst(crackerBAT)+pos1);
 	crackerBATTail = (@1 *)Tloc(crackerBAT, BUNfirst(crackerBAT)+pos1);
 
-	for(oid i=0;i<size;i++){
+	for(i=0;i<size;i++){
 		*mapHead = *crackerBATTail;
 		*mapTail = *(@2*)Tloc(tailBAT, tailBATFirst + *crackerBATHead);
 
