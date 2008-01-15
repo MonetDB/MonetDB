@@ -31,8 +31,11 @@
 #define isTempSchema(x)  (strcmp(x->base.name,"tmp") == 0)
 
 typedef enum store_type {
-	store_bat,
-	store_bpm
+	store_bat,	/* delta bats, ie multi user read/write */
+	store_su,	/* single user, read/write */
+	store_ro,	/* multi user, read only */
+	store_suro,	/* single user, read only */
+	store_bpm	/* bat partition manager */
 } store_type;
 
 extern sql_trans *gtrans;

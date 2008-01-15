@@ -28,6 +28,10 @@
 #include <bat/bat_table.h>
 #include <bat/bat_logger.h>
 
+#include <restrict/restrict_storage.h>
+#include <restrict/restrict_table.h>
+#include <restrict/restrict_logger.h>
+
 #include <bpm/bpm_storage.h>
 #include <bpm/bpm_table.h>
 #include <bpm/bpm_logger.h>
@@ -1157,6 +1161,18 @@ store_init(int debug, store_type store, char *logdir, char *dbname, backend_stac
 		bat_storage_init(&store_funcs);
 		bat_table_init(&table_funcs);
 		bat_logger_init(&logger_funcs);
+	} else if (store == store_su) {
+		su_storage_init(&store_funcs);
+		su_table_init(&table_funcs);
+		su_logger_init(&logger_funcs);
+	} else if (store == store_ro) {
+		ro_storage_init(&store_funcs);
+		ro_table_init(&table_funcs);
+		ro_logger_init(&logger_funcs);
+	} else if (store == store_suro) {
+		suro_storage_init(&store_funcs);
+		suro_table_init(&table_funcs);
+		suro_logger_init(&logger_funcs);
 	} else if (store == store_bpm) {
 		bpm_storage_init(&store_funcs);
 		bpm_table_init(&table_funcs);

@@ -23,22 +23,19 @@
 #include "sql_storage.h"
 #include "bat_logger.h"
 
-typedef struct sql_bat {
+typedef struct sql_delta {	
 	char *name;		/* name of the main bat */
 	char *uname;		/* name of updates bat */
 	int bid;
 	oid ibase;		/* ibase: first id of inserts */
 	int ibid;		/* bat with inserts */
 	int ubid;		/* bat with updates */
-} sql_bat;
+} sql_delta;
 
 typedef struct sql_dbat {
 	char *dname;		/* name of the persistent deletes bat */
 	int dbid;		/* bat with deletes */
 } sql_dbat;
-
-#define bat_set_access(b,access) b->P->restricted = access
-#define bat_clear(b) bat_set_access(b,BAT_WRITE);BATclear(b);bat_set_access(b,BAT_READ)
 
 /* initialize bat storage call back functions interface */
 extern int bat_storage_init( store_functions *sf );
@@ -147,7 +144,7 @@ static BAT *
 bind_ucol(sql_trans *tr, sql_column *c, int access)
 {
 	BAT *b;
-	sql_bat *bat = c->data;
+	sql_delta *bat = c->data;
 
 #ifdef NDEBUG
 	(void) access; /* satisfy compiler */
@@ -164,7 +161,7 @@ static BAT *
 bind_uidx(sql_trans *tr, sql_idx * i, int access)
 {
 	BAT *b;
-	sql_bat *bat = i->data;
+	sql_delta *bat = i->data;
 
 #ifdef NDEBUG
 	(void) access; /* satisfy compiler */
@@ -181,7 +178,7 @@ static BAT *
 bind_col(sql_trans *tr, sql_column *c, int access)
 {
 	BAT *b;
-	sql_bat *bat = c->data;
+	sql_delta *bat = c->data;
 
 	if (access == RD_UPD)
 		return bind_ucol(tr, c, access);
@@ -204,7 +201,7 @@ static BAT *
 bind_idx(sql_trans *tr, sql_idx * i, int access)
 {
 	BAT *b;
-	sql_bat *bat = i->data;
+	sql_delta *bat = i->data;
 
 	if (access == RD_UPD)
 		return bind_uidx(tr, i, access);
@@ -242,7 +239,7 @@ bind_del(sql_trans *tr, sql_table *t, int access)
 }
 
 static void
-update_bat( sql_bat *bat, BAT *upd) 
+update_bat( sql_delta *bat, BAT *upd) 
 {
 	BAT *b;
 
@@ -273,7 +270,7 @@ update_bat( sql_bat *bat, BAT *upd)
 }
 
 static void
-update_val( sql_bat *bat, ssize_t rid, void *upd) 
+update_val( sql_delta *bat, ssize_t rid, void *upd) 
 {
 	BAT *b;
 
@@ -301,7 +298,7 @@ update_val( sql_bat *bat, ssize_t rid, void *upd)
 static void
 update_col(sql_trans *tr, sql_column *c, void *i, int tpe, ssize_t rid)
 {
-	sql_bat *bat = c->data;
+	sql_delta *bat = c->data;
 
 	c->base.wtime = c->t->base.wtime = c->t->s->base.wtime = tr->wtime = tr->stime;
 	c->base.rtime = c->t->base.rtime = c->t->s->base.rtime = tr->rtime = tr->stime;
@@ -314,7 +311,7 @@ update_col(sql_trans *tr, sql_column *c, void *i, int tpe, ssize_t rid)
 static void 
 update_idx(sql_trans *tr, sql_idx * i, void *ib, int tpe)
 {
-	sql_bat *bat = i->data;
+	sql_delta *bat = i->data;
 
 	i->base.wtime = i->t->base.wtime = i->t->s->base.wtime = tr->wtime = tr->stime;
 	i->base.rtime = i->t->base.rtime = i->t->s->base.rtime = tr->rtime = tr->stime;
@@ -325,7 +322,7 @@ update_idx(sql_trans *tr, sql_idx * i, void *ib, int tpe)
 }
 
 static void
-append_bat( sql_bat *bat, BAT *i ) 
+append_bat( sql_delta *bat, BAT *i ) 
 {
 	BAT *b = temp_descriptor(bat->ibid);
 
@@ -343,8 +340,8 @@ append_bat( sql_bat *bat, BAT *i )
 	bat_destroy(b);
 }
 
-void
-append_val( sql_bat *bat, void *i ) 
+static void
+append_val( sql_delta *bat, void *i ) 
 {
 	BAT *b = temp_descriptor(bat->ibid);
 
@@ -361,7 +358,7 @@ append_val( sql_bat *bat, void *i )
 static void 
 append_col(sql_trans *tr, sql_column *c, void *i, int tpe)
 {
-	sql_bat *bat = c->data;
+	sql_delta *bat = c->data;
 
 	c->base.wtime = c->t->base.wtime = c->t->s->base.wtime = tr->wtime = tr->stime;
 	c->base.rtime = c->t->base.rtime = c->t->s->base.rtime = tr->rtime = tr->stime;
@@ -374,7 +371,7 @@ append_col(sql_trans *tr, sql_column *c, void *i, int tpe)
 static void
 append_idx(sql_trans *tr, sql_idx * i, void *ib, int tpe)
 {
-	sql_bat *bat = i->data;
+	sql_delta *bat = i->data;
 
 	i->base.wtime = i->t->base.wtime = i->t->s->base.wtime = tr->wtime = tr->stime;
 	i->base.rtime = i->t->base.rtime = i->t->s->base.rtime = tr->rtime = tr->stime;
@@ -435,11 +432,11 @@ delete_tab(sql_trans *tr, sql_table * t, void *ib, int tpe)
 		delete_val(bat, ib);
 }
 
-static sql_bat *
+static sql_delta *
 load_bat( char *sname, char *tname, char *bname, int type, int sz, lng *cnt ) 
 {
 	BAT *b;
-	sql_bat *bat = ZNEW(sql_bat);
+	sql_delta *bat = ZNEW(sql_delta);
 
 	(void)sz;
 	bat->name = sql_message("%s_%s_%s", sname, tname, bname );
@@ -469,7 +466,7 @@ load_bat( char *sname, char *tname, char *bname, int type, int sz, lng *cnt )
 }
 
 static int
-new_persistent_bat(sql_trans *tr, sql_bat *bat, char *sname, char *tname, char *bname, int sz, lng *cnt) 
+new_persistent_bat(sql_trans *tr, sql_delta *bat, char *sname, char *tname, char *bname, int sz, lng *cnt) 
 {
 	int ok = LOG_OK;
 	BAT *u, *i, *b = temp_descriptor(bat->ibid);
@@ -511,7 +508,7 @@ create_col(sql_trans *tr, sql_column *c)
 {
 	int ok = LOG_OK;
 	int type = c->type.type->localtype;
-	sql_bat *bat = c->data;
+	sql_delta *bat = c->data;
 
 	(void)tr;
 	if (c->base.flag == TR_OLD && !isTempTable(c->t)){
@@ -520,7 +517,7 @@ create_col(sql_trans *tr, sql_column *c)
 		return new_persistent_bat( tr, c->data, c->t->s->base.name, c->t->base.name, c->base.name, c->t->sz, &c->t->cnt);
 	} else {
 		if (!bat)
- 			bat = c->data = ZNEW(sql_bat);
+ 			bat = c->data = ZNEW(sql_delta);
 		if (!bat->ibid) {
 			BAT *b = bat_new(TYPE_void, type, c->t->sz);
 			if (!b) 
@@ -537,7 +534,7 @@ static int
 create_idx(sql_trans *tr, sql_idx *ni)
 {
 	int ok = LOG_OK;
-	sql_bat *bat = ni->data;
+	sql_delta *bat = ni->data;
 	int type = TYPE_int;
 
 	if (ni->type == join_idx)
@@ -553,7 +550,7 @@ create_idx(sql_trans *tr, sql_idx *ni)
 	} else {
 		if (ni->type == join_idx || list_length(ni->columns) > 1 ) {
 			if (!bat)
- 				bat = ni->data = ZNEW(sql_bat);
+ 				bat = ni->data = ZNEW(sql_delta);
 			if (!bat->ibid) {
 				BAT *b = bat_new(TYPE_void, type, ni->t->sz);
 				if (!b) 
@@ -615,7 +612,7 @@ create_del(sql_trans *tr, sql_table *t)
 }
 
 static int 
-dup_bat(sql_trans *tr, sql_table *t, sql_bat *obat, sql_bat *bat, int type, int oc_isnew, int c_isnew)
+dup_bat(sql_trans *tr, sql_table *t, sql_delta *obat, sql_delta *bat, int type, int oc_isnew, int c_isnew)
 {
 	if (!obat)
 		return LOG_OK;
@@ -673,7 +670,7 @@ dup_col(sql_trans *tr, sql_column *oc, sql_column *c )
 {
 	if (oc->data) {
 		int type = c->type.type->localtype;
-		sql_bat *bat = c->data = ZNEW(sql_bat), *obat = oc->data;
+		sql_delta *bat = c->data = ZNEW(sql_delta), *obat = oc->data;
 		return dup_bat(tr, c->t, obat, bat, type, isNew(oc), c->base.flag == TR_NEW);
 	}
 	return LOG_OK;
@@ -684,7 +681,7 @@ dup_idx(sql_trans *tr, sql_idx *i, sql_idx *ni )
 {
 	if (i->data) {
 		int type = (ni->type==join_idx)?TYPE_oid:TYPE_int;
-		sql_bat *bat = ni->data = ZNEW(sql_bat), *obat = i->data;
+		sql_delta *bat = ni->data = ZNEW(sql_delta), *obat = i->data;
 		return dup_bat(tr, ni->t, obat, bat, type, isNew(i), ni->base.flag == TR_NEW);
 	}
 	return LOG_OK;
@@ -708,7 +705,7 @@ dup_del(sql_trans *tr, sql_table *ot, sql_table *t)
 }
 
 static int
-destroy_bat(sql_trans *tr, sql_bat *b)
+destroy_bat(sql_trans *tr, sql_delta *b)
 {
 	int ok = LOG_OK;
 	if (!b)
@@ -791,7 +788,7 @@ destroy_del(sql_trans *tr, sql_table *t)
 }
 
 static size_t 
-clear_bat(sql_trans *tr, sql_bat *bat)
+clear_bat(sql_trans *tr, sql_delta *bat)
 {
 	BAT *b;
 	size_t sz = 0;
@@ -865,7 +862,7 @@ clear_del(sql_trans *tr, sql_table *t)
 }
 
 static int 
-tr_update_bat( sql_trans *tr, sql_bat *obat, sql_bat *cbat, lng *cnt)
+tr_update_bat( sql_trans *tr, sql_delta *obat, sql_delta *cbat, lng *cnt)
 {
 	int ok = LOG_OK;
 	BAT *ups, *ins, *cur;
@@ -989,11 +986,11 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 	for (n = ft->columns.set->h, m = tt->columns.set->h; ok == LOG_OK && n && m; n = n->next, m = m->next) {
 		sql_column *cc = n->data;
 		sql_column *oc = m->data;
-		sql_bat *cbat = cc->data;
+		sql_delta *cbat = cc->data;
 
 		/* for cleared tables the bid is reset */
 		if (cbat->bid == 0) {
-			sql_bat *obat = oc->data;
+			sql_delta *obat = oc->data;
 			cbat->bid = obat->bid;
 			temp_dup(cbat->bid);
 		}
@@ -1010,8 +1007,8 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 		for (n = ft->idxs.set->h, m = tt->idxs.set->h; ok == LOG_OK && n && m; n = n->next, m = m->next) {
 			sql_idx *ci = n->data;
 			sql_idx *oi = m->data;
-			sql_bat *cbat = ci->data;
-			sql_bat *obat = oi->data;
+			sql_delta *cbat = ci->data;
+			sql_delta *obat = oi->data;
 
 			/* some indices have no bats */
 			if (!obat)
