@@ -464,13 +464,13 @@ new_env (void)
 void
 env_add (PFarray_t *env, PFalg_att_t att, PFalg_simple_type_t ty, mvar_t *v)
 {
-    assert (ty == aat_nat || ty == aat_int || ty == aat_str || ty == aat_dec
-            || ty == aat_dbl || ty == aat_bln || ty == aat_qname
-            || ty == aat_uA || ty == aat_pre || ty == aat_attr
-            || ty == aat_pfrag || ty == aat_afrag || ty == aat_update
-            || ty == aat_node1 || ty == aat_anode1 || ty == aat_attr1
-            || ty == aat_afrag1 || ty == aat_pnode1 || ty == aat_pre1
-            || ty == aat_pfrag1 );
+    assert (ty == aat_nat    || ty == aat_int    || ty == aat_str 
+         || ty == aat_dec    || ty == aat_dbl    || ty == aat_bln
+         || ty == aat_node   || ty == aat_qname  || ty == aat_uA
+         || ty == aat_pre    || ty == aat_attr   || ty == aat_pfrag
+         || ty == aat_afrag  || ty == aat_update || ty == aat_node1
+         || ty == aat_anode1 || ty == aat_attr1  || ty == aat_afrag1
+         || ty == aat_pnode1 || ty == aat_pre1   || ty == aat_pfrag1 );
 
     *(env_t *) PFarray_add (env)
         = (env_t) { .att = att, .ty = ty, .mvar = v };
@@ -4059,14 +4059,127 @@ reduce (PFpa_op_t * p, int goalnt)
 
                 case alg_fun_fn_name:
                 {
+                    PFalg_att_t         att;
+                    PFmil_t             *name     = NULL;
+                    PFmil_t             *frag     = NULL;
+                    PFmil_ident_t       node_qn   = PF_MIL_VAR_UNUSED;
+                    PFmil_ident_t       node_cont = PF_MIL_VAR_UNUSED;
+                    mvar_t              *prefix   = new_var(1);
+
+
+                    att = p->sem.fun_1to1.refs.atts[0];
+
+                    switch (type_of (L(p), att)) {
+                        case (aat_anode): {       /* attribute       */
+                            name      = VAR (L(p)->env, att, aat_attr);
+                            frag      = VAR (L(p)->env, att, aat_afrag);
+                            node_qn   = PF_MIL_VAR_ATTR_QN;
+                            node_cont = PF_MIL_VAR_ATTR_CONT;
+                        }   break;
+                        case (aat_pnode): {       /* all other nodes */
+                            name = VAR (L(p)->env, att, aat_pre);
+                            frag = VAR (L(p)->env, att, aat_pfrag);
+                            node_qn   = PF_MIL_VAR_PRE_PROP;
+                            node_cont = PF_MIL_VAR_PRE_CONT;
+                        }   break;
+                        default:
+                            assert(!"should never reach here"); break;
+                    } 
+
+                    /* get all prefix and add : to the ones that are not "" */
+                    /* FIXME: not sure if this mil code (the first execute
+                              command) actually works correctly, therefore
+                              it must be tested and changed if necessery. */
+                    execute ( 
+                        assgn (var (prefix->name),
+                               mposjoin ( mposjoin (name,
+                                                    frag,
+                                                    fetch (var (PF_MIL_VAR_WS),
+                                                           var (node_qn))),
+                                          mposjoin (name,
+                                                    frag,
+                                                    fetch (var (PF_MIL_VAR_WS),
+                                                           var (node_cont))),
+                                          fetch (var (PF_MIL_VAR_WS),
+                                                 var (PF_MIL_VAR_QN_PREFIX)))),
+                        madd (uselect (meq (var (prefix->name),
+                                            lit_str("")),
+                                       lit_bit(false)),
+                              lit_str(":")));
+
+                    execute (
+                        assgn (var (res->name),
+                               madd (var (prefix->name),
+                                     mposjoin (mposjoin (
+                                                   name,
+                                                   frag,
+                                                   fetch (var (PF_MIL_VAR_WS),
+                                                          var (node_qn))),
+                                               mposjoin (
+                                                   name,
+                                                   frag,
+                                                   fetch (var (PF_MIL_VAR_WS),
+                                                          var (node_cont))),
+                                               fetch (
+                                                   var (PF_MIL_VAR_WS),
+                                                   var (PF_MIL_VAR_QN_LOC))))));
+
+                    res_type = aat_str;
+                    unpin(prefix, 1);
                 }   break;
 
                 case alg_fun_fn_local_name:
-                {
-                }   break;
-
                 case alg_fun_fn_namespace_uri:
                 {
+                    PFalg_att_t         att;
+                    PFmil_t             *name     = NULL;
+                    PFmil_t             *frag     = NULL;
+                    PFmil_ident_t       uri_loc   = PF_MIL_VAR_UNUSED;
+                    PFmil_ident_t       node_qn   = PF_MIL_VAR_UNUSED;
+                    PFmil_ident_t       node_cont = PF_MIL_VAR_UNUSED;
+
+                    att = p->sem.fun_1to1.refs.atts[0];
+
+                    switch (p->sem.fun_1to1.kind) {
+                        case alg_fun_fn_local_name:
+                            uri_loc = PF_MIL_VAR_QN_LOC; break;
+                        case alg_fun_fn_namespace_uri:
+                            uri_loc = PF_MIL_VAR_QN_URI; break;
+                        default:
+                            assert(!"should never reach here"); break;
+                    }
+
+                    switch (type_of (L(p), att)) {
+                        case (aat_anode): {       /* attribute       */
+                            name      = VAR (L(p)->env, att, aat_attr);
+                            frag      = VAR (L(p)->env, att, aat_afrag);
+                            node_qn   = PF_MIL_VAR_ATTR_QN;
+                            node_cont = PF_MIL_VAR_ATTR_CONT;
+                        }   break;
+                        case (aat_pnode): {       /* all other nodes */
+                            name = VAR (L(p)->env, att, aat_pre);
+                            frag = VAR (L(p)->env, att, aat_pfrag);
+                            node_qn   = PF_MIL_VAR_PRE_PROP;
+                            node_cont = PF_MIL_VAR_PRE_CONT;
+                        }   break;
+                        default:
+                            assert(!"should never reach here"); break;
+                    } 
+
+                    execute (
+                        assgn (var (res->name),
+                               mposjoin (mposjoin (name,
+                                                   frag,
+                                                   fetch (var (PF_MIL_VAR_WS),
+                                                          var (node_qn))),
+                                         mposjoin (name,
+                                                   frag,
+                                                   fetch (var (PF_MIL_VAR_WS),
+                                                          var (node_cont))),
+                                         fetch (var (PF_MIL_VAR_WS),
+                                                var (uri_loc)))));
+
+                    res_type = aat_str;
                 }   break;
 
                 case alg_fun_fn_number:
@@ -4212,7 +4325,7 @@ reduce (PFpa_op_t * p, int goalnt)
                         assgn (var (res->name),
                                project (
                                    var (loop->name),
-                                   lit_int(UPDATE_DELETE))));
+                                   lit_lng(UPDATE_DELETE))));
                 }   break;
 
                 case alg_fun_upd_rename:
@@ -4290,7 +4403,7 @@ reduce (PFpa_op_t * p, int goalnt)
                         assgn (var (res->name),
                                project (
                                    var (loop->name),
-                                   lit_int(update_str))));
+                                   lit_lng(update_str))));
                 }   break;
             }
 

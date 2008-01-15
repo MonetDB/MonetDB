@@ -322,6 +322,7 @@ char * PFmil_var_str (PFmil_ident_t name) {
         case PF_MIL_VAR_ATTR_CONT:   return "ATTR_CONT";
         case PF_MIL_VAR_QN_LOC:      return "QN_LOC";
         case PF_MIL_VAR_QN_URI:      return "QN_URI";
+        case PF_MIL_VAR_QN_PREFIX:   return "QN_PREFIX";
         case PF_MIL_VAR_PROP_VAL:    return "PROP_VAL";
         case PF_MIL_VAR_PROP_TEXT:   return "PROP_TEXT";
         case PF_MIL_VAR_PROP_COM:    return "PROP_COM";

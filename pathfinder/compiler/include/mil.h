@@ -76,29 +76,30 @@ typedef unsigned int PFmil_ident_t;
 #define PF_MIL_VAR_ATTR_CONT   26
 #define PF_MIL_VAR_QN_LOC      27
 #define PF_MIL_VAR_QN_URI      28
-#define PF_MIL_VAR_PROP_VAL    29
-#define PF_MIL_VAR_PROP_TEXT   30
-#define PF_MIL_VAR_PROP_COM    31
-#define PF_MIL_VAR_PROP_INS    32
-#define PF_MIL_VAR_PROP_TGT    33
+#define PF_MIL_VAR_QN_PREFIX   29
+#define PF_MIL_VAR_PROP_VAL    30
+#define PF_MIL_VAR_PROP_TEXT   31
+#define PF_MIL_VAR_PROP_COM    32
+#define PF_MIL_VAR_PROP_INS    33
+#define PF_MIL_VAR_PROP_TGT    34
 
-#define PF_MIL_VAR_LE          34
-#define PF_MIL_VAR_LT          35
-#define PF_MIL_VAR_EQ          36
-#define PF_MIL_VAR_GT          37
-#define PF_MIL_VAR_GE          38
+#define PF_MIL_VAR_LE          35
+#define PF_MIL_VAR_LT          36
+#define PF_MIL_VAR_EQ          37
+#define PF_MIL_VAR_GT          38
+#define PF_MIL_VAR_GE          39
 
-#define PF_MIL_VAR_TRACE_OUTER 39
-#define PF_MIL_VAR_TRACE_INNER 40
-#define PF_MIL_VAR_TRACE_ITER  41
-#define PF_MIL_VAR_TRACE_MSG   42
-#define PF_MIL_VAR_TRACE_ITEM  43
-#define PF_MIL_VAR_TRACE_TYPE  44
-#define PF_MIL_VAR_TRACE_REL   45
+#define PF_MIL_VAR_TRACE_OUTER 40
+#define PF_MIL_VAR_TRACE_INNER 41
+#define PF_MIL_VAR_TRACE_ITER  42
+#define PF_MIL_VAR_TRACE_MSG   43
+#define PF_MIL_VAR_TRACE_ITEM  44
+#define PF_MIL_VAR_TRACE_TYPE  45
+#define PF_MIL_VAR_TRACE_REL   46
 
-#define PF_MIL_VAR_TIME_LOAD   46
-#define PF_MIL_VAR_TIME_QUERY  47
-#define PF_MIL_VAR_TIME_PRINT  48
+#define PF_MIL_VAR_TIME_LOAD   47
+#define PF_MIL_VAR_TIME_QUERY  48
+#define PF_MIL_VAR_TIME_PRINT  49
 
 #define PF_MIL_RES_VAR_COUNT (PF_MIL_VAR_TIME_PRINT + 1)
 
