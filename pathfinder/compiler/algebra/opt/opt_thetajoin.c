@@ -584,7 +584,11 @@ modify_binary_op (PFla_op_t *p,
         else if (integrate &&
             PFprop_ocol (LL(p), p->sem.binary.att2) &&
             PFprop_ocol (LR(p), p->sem.binary.att1)) {
-            comp = alg_comp_gt ? alg_comp_lt : comp;
+            /* switch direction of inequality predicates */
+            if (comp == alg_comp_gt)
+                comp = alg_comp_lt;
+            else if (comp == alg_comp_lt)
+                comp = alg_comp_gt;
             res  = p->sem.binary.res;
             att1 = p->sem.binary.att2;
             att2 = p->sem.binary.att1;
@@ -594,13 +598,10 @@ modify_binary_op (PFla_op_t *p,
         /* integrate the comparison as a possible new predicate
            in the thetajoin operator */
         if (match) {
-            /* create a new thetajoin operator ... */
-            *p = *(thetajoin_opt (LL(p),
-                                  LR(p),
-                                  L(p)->sem.thetajoin_opt.pred));
-
-            /* ... and add a new predicate */
-            *(pred_struct *) PFarray_add (p->sem.thetajoin_opt.pred) =
+            PFarray_t *pred = PFarray_copy (L(p)->sem.thetajoin_opt.pred);
+            
+            /* add a new predicate ... */
+            *(pred_struct *) PFarray_add (pred) =
                 (pred_struct) {
                     .comp      = comp,
                     .left      = att1,
@@ -611,6 +612,10 @@ modify_binary_op (PFla_op_t *p,
                     .right_vis = true,
                     .res_vis   = true
                 };
+            
+            /* ... and create a new thetajoin operator */
+            *p = *(thetajoin_opt (LL(p), LR(p), pred));
+
             modified = true;
         }
     }
@@ -1286,20 +1291,32 @@ opt_mvd (PFla_op_t *p)
                                 att = p->sem.unary.att;
                     PFarray_t  *pred;
                     unsigned int i;
-                    PFalg_comp_t comp;
+                    PFalg_comp_t comp = alg_comp_eq;
 
-                    /* pacify picky compilers: one does not like no value (gcc)
-                       and the other one does not like a dummy value (icc) */
-                    comp = alg_comp_eq;
+                    /* copy the predicates ... */
+                    pred = PFarray_copy (L(p)->sem.thetajoin_opt.pred);
+                    
+                    /* ... and introduce a new predicate that makes
+                       the result column visible */
+                    *(pred_struct *) PFarray_add (pred) =
+                        (pred_struct) {
+                            .comp      = comp, /* dummy comparison */
+                            .left      = att_NULL, /* dummy column */
+                            .right     = att_NULL, /* dummy column */
+                            .res       = res,
+                            .persist   = false,
+                            .left_vis  = false, /* dummy column is invisible */
+                            .right_vis = false, /* dummy column is invisible */
+                            .res_vis   = true
+                        };
 
                     /* make sure that column res is not used as join argument */
                     resolve_name_conflict (L(p), res);
                     /* create a new thetajoin operator ... */
-                    *p = *(thetajoin_opt (LL(p),
-                                          LR(p),
-                                          L(p)->sem.thetajoin_opt.pred));
+                    *p = *(thetajoin_opt (LL(p), LR(p), pred));
 
-                    /* find the result column ... */
+                    /* get the current predicate list,
+                       find the result column ... */
                     pred = p->sem.thetajoin_opt.pred;
                     for (i = 0; i < PFarray_last (pred); i++)
                         if (RES_VIS_AT (pred, i) && RES_AT (pred, i) == att)
@@ -1333,9 +1350,9 @@ opt_mvd (PFla_op_t *p)
                             break;
                     }
 
-                    /* ... and introduce a new predicate
-                       based on the already existing one */
-                    *(pred_struct *) PFarray_add (pred) =
+                    /* ... and update the new predicate based
+                       on the information of the already existing one */
+                    *(pred_struct *) PFarray_top (pred) =
                         (pred_struct) {
                             .comp      = comp,
                             .left      = LEFT_AT (pred, i),
