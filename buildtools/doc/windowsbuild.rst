@@ -364,7 +364,7 @@ Perl program to communicate with a MonetDB server.
 We have used ActiveState__'s ActivePerl__ distribution (release
 5.10.0.1001).  Just install the 32 or 64 bit version and compile the
 clients component with the additional ``nmake`` flags ``HAVE_PER=1
-HAVE_PERL_DEVEL=1 HAVE_PERL_SWIG=1`` (the latter flag only if ``swig``
+HAVE_PERL_DEVEL=1 HAVE_PERL_SWIG=1`` (the latter flag only if SWIG_
 is also installed).
 
 __ http://www.perl.org/
@@ -434,6 +434,8 @@ Windows64, choose ``C:/Program Files (x86)/PCRE`` for the
 ``CMAKE_INSTALL_PREFIX`` value.
 
 __ http://www.pcre.org/
+
+.. _SWIG:
 
 SWIG (Simplified Wrapper and Interface Generator)
 -------------------------------------------------
