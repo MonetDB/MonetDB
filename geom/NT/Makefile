@@ -24,7 +24,7 @@ check: "$(SRCDIR)\Makefile.msc" RunMtest.bat
 	$(MAKE) /nologo /i /f "$(SRCDIR)\Makefile.msc" "prefix=$(prefix)" check
 	call RunMtest.bat
 
-install: targetdirs monetdb_config.h all
+install: targetdirs geom_config.h all
 	$(MAKE) /nologo /f "$(SRCDIR)\Makefile.msc" "prefix=$(prefix)" install
 
 $(SRCDIR)\Makefile.msc: "$(SRCDIR)\Makefile.ag"
@@ -67,22 +67,22 @@ unistd.h:
 
 unistd.h-clear:
 	if exist unistd.h $(DEL) unistd.h
-	
+
 RunMtest.bat: "$(SRCDIR)\RunMtest.bat.in"
 	if exist "$(SRCDIR)\RunMtest.bat.in" $(CONFIGURE) "$(SRCDIR)\RunMtest.bat.in" > RunMtest.bat
-	
+
 RunMtest.bat-clear:
 	if exist "RunMtest.bat" $(DEL) "RunMtest.bat"
 
 RunMapprove.bat: "$(SRCDIR)\RunMapprove.bat.in"
 	if exist "$(SRCDIR)\RunMapprove.bat.in" $(CONFIGURE) "$(SRCDIR)\RunMapprove.bat.in" > RunMapprove.bat
-	
+
 RunMapprove.bat-clear:
 	if exist "RunMapprove.bat" $(DEL) "RunMapprove.bat"
 
 RunMserver.bat: "$(SRCDIR)\RunMserver.bat.in"
 	if exist "$(SRCDIR)\RunMserver.bat.in" $(CONFIGURE) "$(SRCDIR)\RunMserver.bat.in" > RunMserver.bat
-	
+
 RunMserver.bat-clear:
 	if exist "RunMserver.bat" $(DEL) "RunMserver.bat"
 
