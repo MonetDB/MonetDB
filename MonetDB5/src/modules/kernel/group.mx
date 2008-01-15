@@ -677,6 +677,8 @@ derive_mask( BAT *ct_map, BAT *ct_histo, BAT *b)
 		}
 		BBPunfix(histo->batCacheid);
 		BBPunfix(map->batCacheid);
+		if (r == 0)
+			r = BATcount(ct_histo);
 		if (bits(r) > *N)
 			return (1<<bits(r))-1;
 	}
