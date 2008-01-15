@@ -375,7 +375,7 @@ printAVLTree(CrackerIndex[mapRpos].Tree, indexRight, baseRight, bunSizeRight);
 	}				
 	curTuple@2 = base@2 + curNode@2->position;
         curValue@2 =  *(@1 *)Tloc(index@2, curTuple@2);
-        curPos@2   =  *(lng*)Hloc(index@2, curTuple@2);
+        curPos@2   =  *(oid*)Hloc(index@2, curTuple@2);
 @
 
 
@@ -527,11 +527,11 @@ str CRKsimpleJoin_@1(int *resid, int *bidL1, int *bidL2, int *bidR1, int *bidR2)
 
 	curTupleLeft = baseLeft + curNodeLeft->position;
         curValueLeft =  *(@1*)Tloc(indexLeft, curTupleLeft);
-        curPosLeft   = *(lng*)Hloc(indexLeft, curTupleLeft);
+        curPosLeft   = *(oid*)Hloc(indexLeft, curTupleLeft);
 
         curTupleRight = baseRight + curNodeRight->position;
         curValueRight =  *(@1*)Tloc(indexRight, curTupleRight);
-        curPosRight   = *(lng*)Hloc(indexRight, curTupleRight);
+        curPosRight   = *(oid*)Hloc(indexRight, curTupleRight);
 
 	@:JoinTwoPieces()@
 	
@@ -584,7 +584,7 @@ str CRKcrackJoin_@1(int *resid, int *bidL1, int *bidL2, int *bidR1, int *bidR2){
 	bit crackedRight;
 
 	BAT *res;
-	oid newPosition;
+	oid newPosition=0;
 
 	lng crackedOperationsLeft = 0 , crackedOperationsRight = 0, joinsDone = 0;
 
@@ -876,7 +876,7 @@ str CRKcrackHashJoin_@1(int *resid, int *bidL1, int *bidL2, int *bidR1, int *bid
 	bit crackedRight, existsHashTableRight;
 
 	BAT *res;
-	oid newPosition;
+	oid newPosition=0;
 
 	lng crackedOperationsLeft = 0 , crackedOperationsRight = 0, joinsDone = 0;
 
@@ -1371,11 +1371,11 @@ str CRKbandJoin_@1(int *resid, int *bidL, int *bidR, @1 *c1, @1 *c2, bit *inclus
 	oid numberOfTuplesLeft;
 	bit HBound;	
 	@1 low, hgh;
-	oid vl, vh, posl, posh, _vl;
-	oid cl1, ch1, cl2, ch2;
+	oid vl=0, vh=0, posl, posh, _vl;
+	oid cl1=0, ch1=0, cl2=0, ch2=0;
 	int foundLow, foundHgh;
 	oid viewCount, resCount=0;
-	int gapL,gapH;
+	int gapL=0,gapH=0;
 	
 	if (*inclusiveHgh == TRUE) HBound = FALSE;
 	else	HBound = TRUE; 				
@@ -1404,7 +1404,7 @@ str CRKbandJoin_@1(int *resid, int *bidL, int *bidR, @1 *c1, @1 *c2, bit *inclus
 	hgh  = currentValue + *c2;			
 
 	posl = BUNfirst(b);
-	posh = BUNlast(b)-(oid)1;
+	posh = BUNlast(b)-1;
 
 	@:crackDoubleSidedBound(@1,posl,posh)@
 	@:addPartialResult()@
@@ -1538,7 +1538,7 @@ str CRKsortBandJoin_@1(int *resid, int *bidL, int *bidR, @1 *c1, @1 *c2, bit *in
 }
 
 void alignStep(BAT *mapLeft, struct Node *curNodeRight, oid startPos, oid endPos, BAT *indexRight, BUN baseRight, BAT * indexLeft, int mapLpos){
-	oid newPosition;
+	oid newPosition=0;
 	@1 bound = *(@1*)Tloc(indexRight, baseRight + curNodeRight->position);
 	
 	if (curNodeRight->inclusive == TRUE)

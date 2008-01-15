@@ -109,8 +109,8 @@ existsAVLIndex(int bid){
 str
 CRKmakeAVLIndex_@1(int *k, int *bid){
 	BUN last, cur;
-	int indexPos;
-	lng curPos;
+	oid indexPos;
+	oid curPos;
 	BAT *b;
 
 	(void) k;
@@ -168,7 +168,7 @@ CRKAVLIndexSelectBounds_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveL
 	BAT *b, *result;
 	int indexPos;
 	struct Node *cur;
-	lng  resSize;
+	oid  resSize;
 	BUN first; 
 	oid *resh;
 	@1 *rest;
@@ -342,7 +342,7 @@ InsertAVLIndex_@1(int m, int indexPosition, @1 value,  struct Node * current, BA
 }
 
 static void
-addAVLIndex_@1(int m,  lng position, BAT * b){
+addAVLIndex_@1(int m,  oid position, BAT * b){
         BUN base;
 
         if (position == 0){
@@ -365,11 +365,11 @@ addAVLIndex_@1(int m,  lng position, BAT * b){
         InsertAVLIndex_@1(m, position, *(@1*)Tloc(b,base+position), AVLIndex[m].Tree, b, base);
 }
 
-static lng 
-findQualifyingValuesAVLIndex_@1(@1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh, lng resSize, BAT *b, BUN first, struct Node * cur, oid *resh, @1 *rest, @1 prevL){
+static oid 
+findQualifyingValuesAVLIndex_@1(@1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh, oid resSize, BAT *b, BUN first, struct Node * cur, oid *resh, @1 *rest, @1 prevL){
 	oid *rh = resh;
 	@1  *rt = rest;
-	lng size = resSize;
+	oid size = resSize;
 	
 	@1 value = *(@1*)Tloc(b,first+cur->position);
 	if (cur->deleted == FALSE){

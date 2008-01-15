@@ -298,9 +298,9 @@ printAVLTreeIncrementalSideways(struct Node * current, BAT *b, BUN base){
 	}
 	cur = base + current->position;
 	if (current->deleted == FALSE) {
-		printf("\n index: "SZFMT", indexLocal: "SZFMT", Val: %d, pieceID: %d  ", *(oid*)Hloc(b, cur), current->indexLocal, *(int*)Tloc(b, cur), current->pieceBAT);
+		printf("\n index: "OIDFMT", indexLocal: "OIDFMT", Val: %d, pieceID: %d  ", *(oid*)Hloc(b, cur), current->indexLocal, *(int*)Tloc(b, cur), current->pieceBAT);
 	} else
-		printf("\n DELETED "SZFMT", %d  Hols:"SZFMT" ", *(oid*)Hloc(b, cur), *(int*)Tloc(b, cur), current->hols );
+		printf("\n DELETED "OIDFMT", %d  Hols:"OIDFMT , *(oid*)Hloc(b, cur), *(int*)Tloc(b, cur), current->hols );
 	if (current->localBound == TRUE) printf(" local: TRUE ");	
 	else printf(" local: FALSE ");
 	if (current->first == TRUE) printf(" first: TRUE ");	
@@ -321,9 +321,9 @@ printAVLTree(struct Node * current, BAT *b, BUN base){
 
 	cur = base + current->position;
 	if (current->deleted == FALSE) {
-		printf("\n Pos: "SZFMT", PosBat: "SZFMT", Val: %d,  Hols: "SZFMT", Slice: %d ", current->position, *(oid*)Hloc(b, cur), *(int*)Tloc(b, cur), current->hols, current->slice );
+		printf("\n Pos: "OIDFMT", PosBat: "OIDFMT", Val: %d,  Hols: "OIDFMT", Slice: %d ", current->position, *(oid*)Hloc(b, cur), *(int*)Tloc(b, cur), current->hols, current->slice );
 	} else
-		printf("\n DELETED "SZFMT", %d  Hols:"SZFMT" ", *(oid*)Hloc(b, cur), *(int*)Tloc(b, cur), current->hols );
+		printf("\n DELETED "OIDFMT", %d  Hols:"OIDFMT , *(oid*)Hloc(b, cur), *(int*)Tloc(b, cur), current->hols );
 	
 	if (current->left != NULL)
                 printAVLTree(current->left, b, base);

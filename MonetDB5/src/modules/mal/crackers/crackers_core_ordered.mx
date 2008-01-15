@@ -85,7 +85,7 @@ str
 CRKcrackOrderedZero_@1 (int *res, int *bid, @1 *mid){
         BAT *b;
         str msg;
-	lng pos;
+	oid pos;
 
         if ((b = BATdescriptor(*bid)) == NULL) 
                 throw(MAL, "crackers.crack_zeroOrdered", "Cannot access descriptor");
@@ -115,7 +115,7 @@ str
 CRKcrackOrderedThree_@1 (int *res, int *bid, @1 *low, @1 *hgh){
 	BAT *b;
 	str msg;
-	lng posl,posh;
+	oid posl,posh;
 
 	if ((b = BATdescriptor(*bid)) == NULL) 
 		throw(MAL, "crackers.crack_threeOrdered", "Cannot access descriptor");
@@ -201,7 +201,8 @@ CRKcrackOrderedThree_@1 (int *res, int *bid, @1 *low, @1 *hgh){
 			ht @6= 1;
 		}
 	}
-	for (i= hil-1; i >= 0; i--){
+	i=hil-1;
+	while(1){
 		if (*tmpt @5){
 			*hh = *tmph;
 			*ht = *tmpt;
@@ -212,7 +213,24 @@ CRKcrackOrderedThree_@1 (int *res, int *bid, @1 *low, @1 *hgh){
 		*tmpt = scr_t[i];
 		tmpt @6= 1;
 		tmph @6= 1;
+		
+		i--;
+		if (i==0) {
+			if (*tmpt @5){
+                        	*hh = *tmph;
+                     		*ht = *tmpt;
+                        	hh @6= 1;
+                        	ht @6= 1;
+                	}
+                	*tmph = scr_h[i];
+                	*tmpt = scr_t[i];
+                	tmpt @6= 1;
+                	tmph @6= 1;
+		
+			break;
+		}
 	}
+
 	i = mids + 1;
 	for (; i <= scrH; i++){
 		 if (*tmpt @5){
@@ -230,14 +248,14 @@ CRKcrackOrderedThree_@1 (int *res, int *bid, @1 *low, @1 *hgh){
 
 @= crackInThreeOrderedPieces
 static str
-CRKcrackOrderedThree_@2_@3_@1(BAT *b, @1 low, @1 hgh, int idx_first, int idx_last){
+CRKcrackOrderedThree_@2_@3_@1(BAT *b, @1 low, @1 hgh, oid idx_first, oid idx_last){
 	oid *hh, *tmph, *ch, *fh;
 	@1  *ht, *tmpt, *ct, *ft, *s, *t;
 	oid *scr_h;
 	@1  *scr_t;
-	int scr_size = idx_last - idx_first +1;
-	int hghShrinked = 0, lowShrinked = 0, scrH, hil, mids, probe, j;
-	int i;
+	oid scr_size = idx_last - idx_first +1;
+	oid hghShrinked = 0, lowShrinked = 0, scrH, hil, mids, probe, j;
+	oid i;
 	BUN first;
 
 	first = BUNfirst(b);
@@ -285,14 +303,14 @@ CRKcrackOrderedThree_@2_@3_@1(BAT *b, @1 low, @1 hgh, int idx_first, int idx_las
 
 @= crackInThreeOrderedPiecesL
 static str
-CRKcrackOrderedThreeL_@2_@3_@1(BAT *b, @1 low, @1 hgh, lng idx_first, lng idx_last, lng *posl, lng *posh){
+CRKcrackOrderedThreeL_@2_@3_@1(BAT *b, @1 low, @1 hgh, oid idx_first, oid idx_last, oid *posl, oid *posh){
 	oid *lh, *hh, *tmph, *fh, *mh;
 	@1 *lt, *ht, *tmpt, *ft, *mt, *t, *s, *t0;
 	oid *scr_h,*mscr_h;
 	@1  *scr_t,*mscr_t;
-	int scr_size = idx_last - idx_first +1;
-	int hghShrinked = 0, lowShrinked = 0, scrH, hp, hil, mids, mmids, j, probe;
-	lng pos1, pos2;
+	oid scr_size = idx_last - idx_first +1;
+	oid hghShrinked = 0, lowShrinked = 0, scrH, hp, hil, mids, mmids, j, probe;
+	oid pos1, pos2;
 	BUN first;
 
 	first = BUNfirst(b);
@@ -366,7 +384,7 @@ CRKcrackOrderedThreeL_@2_@3_@1(BAT *b, @1 low, @1 hgh, lng idx_first, lng idx_la
 @= OThreeLateCopying
 {
 	@1 *tmp1, *tmp2;
-	int i;
+	oid i;
 
 	while (*tmpt @5){
 		tmpt @2= 1;
@@ -418,7 +436,8 @@ CRKcrackOrderedThreeL_@2_@3_@1(BAT *b, @1 low, @1 hgh, lng idx_first, lng idx_la
 			mmids++;	
 		}
 	}
-	for (i= hil-1; i >= 0; i--){
+	i= hil-1;
+	while (1){
 		if (*tmpt @5){
 			*hh = *tmph;
 			*ht = *tmpt;
@@ -434,6 +453,27 @@ CRKcrackOrderedThreeL_@2_@3_@1(BAT *b, @1 low, @1 hgh, lng idx_first, lng idx_la
 		*tmpt = scr_t[i];
 		tmpt @6= 1;
 		tmph @6= 1;
+
+		i--;
+		if (i==0){
+			if (*tmpt @5){
+				*hh = *tmph;
+				*ht = *tmpt;
+				hh @6= 1;
+				ht @6= 1;
+			}	
+			if (*tmpt @8 low && *tmpt @9 hgh){
+				mscr_h[mmids] = *tmph;
+				mscr_t[mmids] = *tmpt;				
+				mmids++;	
+			}
+			*tmph = scr_h[i];
+			*tmpt = scr_t[i];
+			tmpt @6= 1;
+			tmph @6= 1;
+
+			break;
+		}
 	}
 
 	pos2 = tmpt - t0; 
@@ -581,14 +621,14 @@ CRKcrackOrderedThreeL_@2_@3_@1(BAT *b, @1 low, @1 hgh, lng idx_first, lng idx_la
 
 @= crackInTwoOrderedPieces
 static str
-CRKcrackOrderedZero_@2_@1(BAT *b, @1 mid, lng idx_first, lng idx_last, lng *pos){
+CRKcrackOrderedZero_@2_@1(BAT *b, @1 mid, oid idx_first, oid idx_last, oid *pos){
 	oid *hh, *tmph, *fh, *ch;
 	@1  *ht, *tmpt, *ft, *ct, *t, *s, *t0;
 	oid *scr_h;
 	@1  *scr_t;
-	lng hghShrinked = 0, lowShrinked = 0;
-	int j=0, hil=0, scr_size, probe = 25;
-	int i;
+	oid hghShrinked = 0, lowShrinked = 0;
+	oid j=0, hil=0, scr_size, probe = 25;
+	lng i;
 	BUN first;
 
 	first = BUNfirst(b);

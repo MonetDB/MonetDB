@@ -66,8 +66,9 @@ struct mapSetNode{
 };
 
 struct storageManagement{
-	lng totalTuples;	
-	lng threshold;
+	oid totalTuples;	
+	oid threshold;
+	bit setThreshold;
 	struct mapSetNode *nextMapSet;	/* the list of map set nodes are holding info on map sets based on mapSetNode->batId
 					   Each map set node has a list of mapNodes for each map that exists in this map set
 					   Each mapNode has a list of Nodes linking directly to the cracker indices of the respective maps
@@ -120,7 +121,7 @@ crackers_export str CRKinsert(int *k, int *bid, int *pbid, int *insertions);
 crackers_export str DeleteCrackerMap(int *k, int *bid, int *pbid);
 crackers_export str getCrackerMap(int *k, int *bid, int *pbid);
 crackers_export str CRKgetTotalStorage(int *k);
-crackers_export str CRKsetStorageThreshold(int *k, lng * threshold);
+crackers_export str CRKsetStorageThreshold(int *k, oid * threshold);
 crackers_export str CRKaddReference(int* res, int *bid, int *pbid);
 crackers_export str CRKaddReferenceFullMaps(int* res, int *bid, int *pbid);
 crackers_export str CRKclearReferences(int* res, int *bid);
@@ -286,14 +287,14 @@ str
 CRKgetTotalStorage(int *k){
         (void) k;
 
-	printf("\n\nTotal Storage: %lld tuples  \n\n", StorageInfo->totalTuples);
+	printf("\n\nTotal Storage: "OIDFMT" tuples  \n\n", StorageInfo->totalTuples);
 
         return MAL_SUCCEED;
 }
 
 
 str
-CRKsetStorageThreshold(int *k, lng *threshold){
+CRKsetStorageThreshold(int *k, oid *threshold){
         (void) k;
 
 	if (StorageInfo == NULL){
@@ -303,9 +304,8 @@ CRKsetStorageThreshold(int *k, lng *threshold){
                 StorageInfo->references  = NULL;
         }
 
-	printf("\n\nchaning the threshold to %lld \n\n", *threshold);
 	StorageInfo->threshold = *threshold;	
-	printf("\n\n new threshold is %lld \n\n", StorageInfo->threshold);
+	StorageInfo->setThreshold = TRUE;
 
         return MAL_SUCCEED;
 }
@@ -557,11 +557,11 @@ CRKProjectH_@1_@2(int *res, int *bid, int *pbid,int *pivot, @1 *low, @1 *hgh, bi
         BAT *b, *p, *r, *c, *pair;
         @1 *pairh, *rest;
 	bit *pivott; 
-        lng size, fsize;
-        lng skip;
+        oid size, fsize;
+        oid skip;
 	int m;
-	oid cl1,cl2,ch1,ch2;
-	lng j;
+	oid cl1=0,cl2=0,ch1=0,ch2=0;
+	oid j;
 
 	m = existsCrackerIndexSideways(*bid, *pbid);
 	if (m==-1){	
@@ -632,11 +632,11 @@ CRKProject_@1_@2(int *res, int *bid, int *pbid,int *pivot, @1 *low, @1 *hgh, bit
         BAT *b, *p, *r, *c, *slice;
         @2 *pairt, *rest;
 	bit *pivott;
-        lng size, fsize;
-        lng skip;
+        oid size, fsize;
+        oid skip;
 	int m;
-	oid cl1,cl2,ch1,ch2;
-	lng j;
+	oid cl1=0,cl2=0,ch1=0,ch2=0;
+	oid j;
 	bit newMap = TRUE;
 
 	/* If the necessary map does not exits, then create it */	
@@ -663,9 +663,9 @@ CRKProject_@1_@2(int *res, int *bid, int *pbid,int *pivot, @1 *low, @1 *hgh, bit
            Note. We know that this search leads to an exact match sice a project call always 
            follows a select call with the same restriction in the same query. 
            Then this restriction is on the cracker tape. */
-        GetLow_@1(*low, *inclusiveLow, CrackerIndex[m].Tree, c, BUNfirst(c), &cl1, &ch1, 0, BUNlast(b)-(oid)1);
+        GetLow_@1(*low, *inclusiveLow, CrackerIndex[m].Tree, c, BUNfirst(c), &cl1, &ch1, 0, BUNlast(b)-1);
 
-        GetHgh_@1(*hgh, *inclusiveHgh, CrackerIndex[m].Tree, c, BUNfirst(c), &cl2, &ch2, 0, BUNlast(b)-(oid)1);
+        GetHgh_@1(*hgh, *inclusiveHgh, CrackerIndex[m].Tree, c, BUNfirst(c), &cl2, &ch2, 0, BUNlast(b)-1);
 
 	if (cl1 != 0) cl1++;
 
@@ -724,10 +724,10 @@ CRKdProject_@1_@2(int *res, int *bid, int *pbid,int *pivot){
         BAT *b, *p, *r, *c;
         @2 *pairt, *rest;
 	bit *pivott;
-        lng size, fsize;
-        lng skip;
+        oid size, fsize;
+        oid skip;
 	int m;
-	lng j;
+	oid j;
 
 	/* If the necessary map does not exits, then create it */	
 	m = existsCrackerIndexSideways(*bid, *pbid);
@@ -1031,7 +1031,8 @@ CRKaddReferenceFullMaps(int* res, int *bid, int *pbid){
 	        StorageInfo = (struct storageManagement *)GDKmalloc(sizeof(struct storageManagement));
                 StorageInfo->nextMapSet  = NULL;
                 StorageInfo->totalTuples = 0;
-                StorageInfo->threshold   = -1;
+                StorageInfo->threshold   = 0;
+                StorageInfo->setThreshold   = FALSE;
                 StorageInfo->references  = NULL;
 	}
 
@@ -1233,7 +1234,7 @@ bit isThisMapUsedInCurrentQuery(int CBindex, int batId, int tailBatId){
 }
 
 void 
-registerPieceForStorageManagement(int batId, int tailBatId, struct Node * localFirst, lng tuples){
+registerPieceForStorageManagement(int batId, int tailBatId, struct Node * localFirst, oid tuples){
 	struct mapSetNode *curMapSet, *prevMapSet, *newMapSet;	
 	struct mapNode *curMap, *newMap, *prevMap;
 
@@ -1607,7 +1608,7 @@ createPieceMap_@1_@2(BAT * crackerBAT, BAT *tailBAT, struct Node *nodeLow, struc
 	oid *crackerBATHead;
 	BUN tailBATFirst; 
 	@2 *mapTail;
-	lng size;
+	oid size;
 	oid pos1,pos2;
 
 	if (nodeLow == NULL)
@@ -1628,7 +1629,7 @@ createPieceMap_@1_@2(BAT * crackerBAT, BAT *tailBAT, struct Node *nodeLow, struc
 	crackerBATHead = (oid*)Hloc(crackerBAT, BUNfirst(crackerBAT)+pos1);
 	crackerBATTail = (@1 *)Tloc(crackerBAT, BUNfirst(crackerBAT)+pos1);
 
-	for(int i=0;i<size;i++){
+	for(oid i=0;i<size;i++){
 		*mapHead = *crackerBATTail;
 		*mapTail = *(@2*)Tloc(tailBAT, tailBATFirst + *crackerBATHead);
 
@@ -1645,12 +1646,12 @@ createPieceMap_@1_@2(BAT * crackerBAT, BAT *tailBAT, struct Node *nodeLow, struc
         pieceMap->batRestricted= BAT_READ;
         BATmode(pieceMap,PERSISTENT);
 
-	if (StorageInfo->threshold > 0){
+	if (StorageInfo->setThreshold == TRUE){
 
 		/* remove pieces until we have enough space left for the new one */
 		while (StorageInfo->totalTuples + size > StorageInfo->threshold){
 			struct Node *localFirstNodeOfPieceToRemove = NULL;
-			int batId, tailBatId;
+			int batId=0, tailBatId=0;
 			localFirstNodeOfPieceToRemove = getTheLeastUsedMapPiece(CBindex, &batId, &tailBatId); 
 			if (localFirstNodeOfPieceToRemove == NULL)
 				 printf("\n crackers.createPieceMap Unexpected case: Could not find a piece to remove \n ");
@@ -1773,7 +1774,7 @@ str
 dropPiece_@1(int batId, int tailBatId, struct Node *localFirst){
 	int CBindex, Lindex;
 	BAT *ci, *li, *piece;
-	struct Node *CBnodeFirst, *CBnodeLast;
+	struct Node *CBnodeFirst=NULL, *CBnodeLast=NULL;
 	bit found = FALSE;
 
 	removePieceFromStorageInfo(batId, tailBatId, localFirst->pieceBAT);
@@ -2042,8 +2043,8 @@ Sync_@1_@2(int m, int h){
 	oid syncs;
 	oid size;
 
-        oid vl, vh;
-        oid cl1, ch1, cl2, ch2;
+        oid vl=0, vh=0;
+        oid cl1=0, ch1=0, cl2=0, ch2=0;
         oid _vl;
         bit HBound, foundLow=0, foundHgh=0;
         int gapL = 1;
@@ -2203,7 +2204,7 @@ SyncPiece_@1_@2(int m, BAT * b, struct Node * cur, int CBindex, int tailBatId, b
 	oid size;
 	struct Node *localNodeLow1, *localNodeHgh1;
 
-        oid vl, _vl;
+        oid vl=0, _vl;
         oid cl1, ch1, base ;
         bit foundLow=0;
         int gapL = 1;
@@ -2301,7 +2302,6 @@ CreateTape_@1(int bid){
 str
 AddToTape_@1(int h, @1 low, @1 hgh, bit li, bit hi){
 	BAT *h1,*h2,*h1new,*h2new;
-	oid size;	
 
 	if ((h1 = BATdescriptor(CrackerIndex[h].chid)) == NULL) 
                 throw(MAL, "crackers.sync", "Cannot access descriptor");
@@ -2309,8 +2309,6 @@ AddToTape_@1(int h, @1 low, @1 hgh, bit li, bit hi){
         if ((h2 = BATdescriptor(CrackerIndex[h].hiid)) == NULL) 
                 throw(MAL, "crackers.sync", "Cannot access descriptor");
                                                 
-        size = BATcount(h1);
-
 	h1new = BATnew(TYPE_@1,TYPE_@1,1); 
         *(@1*)Hloc(h1new, BUNfirst(h1new)) = low;
         *(@1*)Tloc(h1new, BUNfirst(h1new)) = hgh;
@@ -2367,7 +2365,6 @@ AddToTapeIncrementalSideways_@1(struct Node *node, @1 value, bit inclusive){
 
 @= CreateResultSideways
 createView:
-{ BAT * viewHead;
 	if (tail){
 		viewHead = VIEWhead_(BATmirror(b), BAT_READ);
                 view = BATslice(BATmirror( viewHead), vl, vh+1);
@@ -2390,15 +2387,14 @@ createView:
 
         *vid = view->batCacheid;
         BBPkeepref(*vid);
-}
 @
 
 @= CreateCrackerMap
 		BAT *bo, *bp;
-                lng sizeM;
+                oid sizeM;
                 @2 *ptail, *ntail;
 		@1 *nhead, *ctail;
-		lng j;
+		oid j;
 
                 if ((bo = BATdescriptor(*bid)) == NULL)
                         throw(MAL, "crackers.create new map", "Cannot access descriptor of map head BAT");
@@ -2434,7 +2430,7 @@ createView:
 	
         	BATsetcount(b, sizeM);
 
-		c = BATnew(TYPE_lng, TYPE_@1, IndexEntries);	/* TODO: size */
+		c = BATnew(TYPE_oid, TYPE_@1, IndexEntries);	/* TODO: size */
 
                 m = newCrackerIndexSideways_@1(*bid, b->batCacheid, *pbid, c->batCacheid);
 		CrackerIndex[m].creationTimestamp = GDKusec();
@@ -2446,11 +2442,12 @@ createView:
 			StorageInfo = (struct storageManagement *)GDKmalloc(sizeof(struct storageManagement));
 			StorageInfo->nextMapSet  = NULL;
 			StorageInfo->totalTuples = 0;
-			StorageInfo->threshold   = -1;
+			StorageInfo->threshold   = 0;
+			StorageInfo->setThreshold   = FALSE;
 			StorageInfo->references  = NULL;
 		}else{
 			int MapToDropIndex = -1;
-			if (StorageInfo->threshold >0){
+			if (StorageInfo->setThreshold == TRUE){
 				if (StorageInfo->totalTuples + sizeM > StorageInfo->threshold){
 					MapToDropIndex = getLeastUsedMap();	
 					if (MapToDropIndex >=0)
@@ -2510,7 +2507,8 @@ createView:
 		StorageInfo = (struct storageManagement *)GDKmalloc(sizeof(struct storageManagement));
 		StorageInfo->nextMapSet = NULL;
 		StorageInfo->totalTuples = 0;
-		StorageInfo->threshold = -1;
+		StorageInfo->threshold = 0;
+		StorageInfo->setThreshold = FALSE;
 	}
 
 }
@@ -2907,6 +2905,7 @@ createView:
 @
 
 @= RangeSelectBody
+	BAT *viewHead;
         BAT *b, *c, *view=NULL;
         int  m, h;
         oid vl, vh, posl, posh, cl1, ch1, cl2, ch2;
@@ -3336,18 +3335,19 @@ createView:
 
         BAT *b, *c, *cm, *tailBAT, *piece;
         int  m, h;
-        oid vl=-1, vh=-1, posl, posh;
-	struct Node *localNodeLow1=NULL,*localNodeLow2=NULL,*localNodeHgh1=NULL,*localNodeHgh2=NULL, *nodeLow1,*nodeHgh1, *nodeLow2,*nodeHgh2, *localFirst; 
+        oid vl=0, vh=0, posl, posh;
+	struct Node *localNodeLow1=NULL,*localNodeLow2=NULL,*localNodeHgh1=NULL,*localNodeHgh2=NULL, 
+			*nodeLow1=NULL,*nodeHgh1=NULL, *nodeLow2=NULL,*nodeHgh2=NULL, *localFirst=NULL; 
 	struct Node *curCBatNodeLast=NULL, *curPieceNodeLast=NULL;
-	oid cl1, ch1, cl2, ch2;
-        int _vl=-1;
+	oid cl1=0, ch1=0, cl2=0, ch2=0;
+        int _vl=0;
         int gapL = 1, gapH = 1;
         bit HBound, foundLow=0, foundHgh=0, done=FALSE;
         BAT *p;     
         bit *pivott;        
-	lng size=0;
+	oid size=0;
 	@2 *pairt;
-	lng j, tuplesToAnalyze, base;
+	oid j, tuplesToAnalyze, base;
 	bit newMapSet = FALSE;
 	bit newMap = FALSE;
 	bit newPiece = FALSE;
@@ -3380,7 +3380,7 @@ createView:
 		@:CreateCrackerBAT(@1)@		
 
                 posl = BUNfirst(b);
-                posh = BUNlast(b)-(oid)1;
+                posh = BUNlast(b)-1;
                 @:crkThreeTree(@1,@2,posl,posh)@
 		
 		cm = BATnew(TYPE_oid, TYPE_@1, IndexEntries);	/* TODO: size */
@@ -3401,7 +3401,7 @@ createView:
         h = existsCrackerIndexSideways(*bid, *pbid);
 	if (h == -1){
 		newMap = TRUE;
-		cm = BATnew(TYPE_lng, TYPE_@1, IndexEntries);	/* TODO: size */
+		cm = BATnew(TYPE_oid, TYPE_@1, IndexEntries);	/* TODO: size */
                 h  = newCrackerIndexSideways_@1(*bid, -1, *pbid, cm->batCacheid);
 	}
 	
@@ -3650,7 +3650,7 @@ CRKRangeSideways_@1_@2(int *vid, int *bid, int *pbid, @1 *low, @1 *hgh, bit *inc
 static str
 CRKdRangeSideways_@1_@2(int *vid, int *bid, int *pbid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh, @2 *low2, @2 *hgh2, bit *inclusiveLow2, bit *inclusiveHgh2){
 	@:RangeSelectBody(@1,@2,@3,@4)@
-
+	(void)viewHead;
 	(void)view;
 	/* Define resulting view: a contiguous area on the map */	
         @:CreateDisjunctiveResultSideways(@1,@2,@3,@4)@
@@ -3755,6 +3755,7 @@ MaxTailIncrementalSideways_@1_@2(int *vid, int *bid, int *pbid, @1 *low, @1 *hgh
 	maxt = (@2*)Tloc(p, BUNfirst(p));
 
 	@:IncrementalCrackingBasicBodyB(@1,@2,@3,@4,MaxTail)@	
+	(void)pivott;
 
         p->hsorted = FALSE;
         p->tsorted = FALSE;
@@ -3813,9 +3814,9 @@ MaxTailIncrementalSideways_@1_@2(int *vid, int *bid, int *pbid, @1 *low, @1 *hgh
         @2 *pairt;
 	bit *pivott;        
 	oid size;
-	lng skip;
+	oid skip;
 	int m;
-	oid cl1,cl2,ch1,ch2;
+	oid cl1=0,cl2=0,ch1=0,ch2=0;
 	oid j;
 	bit newMap = FALSE;
 
@@ -3836,9 +3837,9 @@ MaxTailIncrementalSideways_@1_@2(int *vid, int *bid, int *pbid, @1 *low, @1 *hgh
 	Sync_@1_@2(m,existsCrackerIndexSideways(*bid, -1));
 
 
-        GetLow_@1(*low1, *inclusiveLow1, CrackerIndex[m].Tree, c, BUNfirst(c), &cl1, &ch1, 0, BUNlast(b)-(oid)1);
+        GetLow_@1(*low1, *inclusiveLow1, CrackerIndex[m].Tree, c, BUNfirst(c), &cl1, &ch1, 0, BUNlast(b)-1);
 
-        GetHgh_@1(*hgh1, *inclusiveHgh1, CrackerIndex[m].Tree, c, BUNfirst(c), &cl2, &ch2, 0, BUNlast(b)-(oid)1);
+        GetHgh_@1(*hgh1, *inclusiveHgh1, CrackerIndex[m].Tree, c, BUNfirst(c), &cl2, &ch2, 0, BUNlast(b)-1);
 
 	if (cl1 != 0) cl1++;
 
@@ -3880,7 +3881,7 @@ MaxTailIncrementalSideways_@1_@2(int *vid, int *bid, int *pbid, @1 *low, @1 *hgh
         @2 *pairt;
 	bit *pivott;        
 	oid size;
-	lng skip;
+	oid skip;
 	int m;
 	oid j;
 

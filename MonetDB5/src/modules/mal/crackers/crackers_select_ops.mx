@@ -493,9 +493,9 @@ CRKRangeTree_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *in
 	BAT *b,*c,*bo;
 	BAT *view;
 	int  m;
-	oid vl, vh, posl, posh;
+	oid vl=0, vh=0, posl, posh;
 	/* vl and vh are the low and high index values to create the view with the result */
-	oid cl1, ch1, cl2, ch2;
+	oid cl1=0, ch1=0, cl2=0, ch2=0;
 	/* index values in the case we have to crack
 		|cl1...........ch1|.....................|cl2.........ch2|
 		if we have to crack only one piece, i.e., if our range falls
@@ -582,7 +582,7 @@ CRKRangeTree_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *in
 			throw(MAL, "crackers.crackRange", "Cannot access cracker BAT");
 	
 		posl = BUNfirst(b);
-		posh = BUNlast(b)-(oid)1;
+		posh = BUNlast(b)-1;
 
 		@:crkThreeTree(@1,posl,posh)@
 		goto createView;
@@ -730,8 +730,8 @@ CRKRangeLeftNilTree_@1(int *vid, int *bid, @1 *hgh, bit *inclusiveHgh, bit tail)
 	BAT *b,*c,*bo;
 	BAT *view;
 	int  m;
-	oid vl=-1, vh=-1;
-	oid cl2, ch2;
+	oid vl=0, vh=0;
+	oid cl2=0, ch2=0;
 	bit HBound,foundHgh=0;
 	int gapH = 1;
 	
@@ -826,8 +826,8 @@ CRKRangeRightNilTree_@1(int *vid, int *bid, @1 *low, bit *inclusiveLow, bit tail
 	BAT *b,*c,*bo;
 	BAT *view;
 	int  m;
-	oid vl=-1, vh=-1;
-	oid cl1, ch1;
+	oid vl=0, vh=0;
+	oid cl1=0, ch1=0;
 	bit foundLow=0;
 	int gapL = 1;
 	

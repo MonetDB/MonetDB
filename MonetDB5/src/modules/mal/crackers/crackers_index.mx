@@ -59,7 +59,7 @@ struct referencesNodeFM{
 
 struct referencesNode{
 	int 		batId;
-	lng 		cursor;
+	oid 		cursor;
 	struct referencesNode *next;
 };
 
@@ -96,7 +96,7 @@ struct Node{
 	lng 		creationTimestamp;
 	lng 		accesses;
 	lng		dropped;
-	lng 		tuples;
+	oid 		tuples;
 
 	/* Used on the cracker BAT side in the case of incremental maps */
 	struct referencesNode *references;	/* maps that use this piece */
@@ -144,7 +144,7 @@ typedef struct {
 	lng 		creationTimestamp;
 	lng 		accesses;
 	lng		dropped;
-	lng 		tuples;
+	oid 		tuples;
 
 } CrackerIndexNode;
 

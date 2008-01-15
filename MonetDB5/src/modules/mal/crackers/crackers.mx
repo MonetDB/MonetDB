@@ -572,7 +572,7 @@ extern CrackerIndexNode *CrackerIndex;
 extern int IndexEntries;
 extern int IndexSize;
 extern int IndexStop;
-struct storageManagement *StorageInfo;
+extern struct storageManagement *StorageInfo;
 #endif
 
 #endif /* _CRACKERS_H */

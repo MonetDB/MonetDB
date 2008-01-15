@@ -156,7 +156,7 @@ CRKverifyCrackerIndex_@1(int *k, int *bid){
 	int position = -1;
 	BUN idxFirst, crkFirst, cur;
 	@1 *crkt, *idxt, *crkLast, *bnd;
-	lng *idxh;
+	oid *idxh;
 	struct Node * hghIndexNode;
 	bit prevIncl;
 	@1 prevVal;
@@ -192,7 +192,7 @@ CRKverifyCrackerIndex_@1(int *k, int *bid){
 
 	indexEntries++;
 	cur = idxFirst + hghIndexNode->position;
-	idxh = (lng*)Hloc(c, cur);
+	idxh = (oid*)Hloc(c, cur);
 	idxt = (@1 *)Tloc(c, cur);
 	bnd  = (@1 *)Tloc(b, crkFirst + (*idxh - hghIndexNode->hols));
 
@@ -220,7 +220,7 @@ CRKverifyCrackerIndex_@1(int *k, int *bid){
 			break;
 		indexEntries++;
 		cur = idxFirst + hghIndexNode->position;
-		idxh = (lng*)Hloc(c, cur);
+		idxh = (oid*)Hloc(c, cur);
 		idxt = (@1 *)Tloc(c, cur);
 		bnd  = (@1 *)Tloc(b, crkFirst + (*idxh - hghIndexNode->hols));
 
