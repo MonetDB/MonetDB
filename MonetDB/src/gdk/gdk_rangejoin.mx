@@ -90,6 +90,8 @@ BAT *BATrangejoin(BAT *l, BAT *rl, BAT *rh, bit li, bit hi)
 		@:rangejoin(lng)@
 #endif
 	default:
+		(void) li;
+		(void) hi;
 		GDKerror("BATrangejoin: type not implemented\n");
 		return NULL;
 	}
@@ -194,6 +196,10 @@ BATbandjoin_nl(BAT *l, BAT *r, ptr c1, ptr c2, bit li, bit hi)
 		@:bandjoin_nl(lng)@
 #endif
 	default:
+		(void) c1;
+		(void) c2;
+		(void) li;
+		(void) hi;
 		GDKerror("BATbandjoin: type not implemented\n");
 		return NULL;
 	}
@@ -353,6 +359,13 @@ BATbandjoin_mj(BAT *l, BAT *r, ptr c1, ptr c2, bit li, bit hi)
 	case TYPE_lng:
 		@:bandjoin_mj_(lng)@
 #endif
+	default:
+		(void) c1;
+		(void) c2;
+		(void) li;
+		(void) hi;
+		GDKerror("BATbandjoin: type not implemented\n");
+		goto failed;
 	}
 	BATkey(bn, FALSE);
 	BATkey(BATmirror(bn), FALSE);
@@ -374,7 +387,7 @@ BATbandjoin(BAT *l, BAT *r, ptr c1, ptr c2, bit li, bit hi)
 	    ATOMtype(l->htype) != TYPE_oid || ATOMtype(r->ttype) != TYPE_oid)
 		return BATbandjoin_nl(l, r, c1, c2, li, hi);
 
-	/* large cases use a merge join like band, therefor we first sort */
+	/* large cases use a merge join like band, therefore we first sort */
 	if (!BATtordered(l))
 		l = BATmirror(BATsort(BATmirror(l)));
 	if (!BAThordered(r))
