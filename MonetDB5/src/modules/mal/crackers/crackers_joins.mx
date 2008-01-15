@@ -383,7 +383,7 @@ printAVLTree(CrackerIndex[mapRpos].Tree, indexRight, baseRight, bunSizeRight);
 	view = BATslice(b, vl, vh+1);
 	viewCount = BATcount(view);
 	curViewTupleHead = (oid*)Hloc(view,BUNfirst(view));
-	for (oid i=0;i<viewCount;i++){
+	for (i=0;i<viewCount;i++){
 		*currentResTupleHead = *currentTupleLeftHead;	
 		*currentResTupleTail = *curViewTupleHead;	
 
