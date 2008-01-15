@@ -35,6 +35,7 @@ module 'pftijah'
 [ "left_mul(BAT[oid,dbl], BAT[oid,dbl]) : BAT[oid,dbl]"															  ]
 [ "left_sub(BAT[oid,dbl], BAT[oid,dbl]) : BAT[oid,dbl]"															  ]
 [ "mergeindex(BAT[oid,oid], BAT[void,oid], BAT[void,oid], int) : BAT[void,BAT]"												  ]
+[ "mergeindex2(BAT[oid,oid], BAT[oid,int], BAT[void,oid], BAT[void,oid], BAT[void,int], int) : BAT[void,BAT]"								  ]
 [ "offsetindex(BAT[void,oid], int) : BAT[void,oid]"															  ]
 [ "pf2tijah_node(BAT[oid,str], BAT[oid,oid], BAT[oid,oid], BAT[oid,oid], BAT[oid,int], BAT[oid,str]) : BAT[void,oid]"							  ]
 [ "serialize_tijah_opt(BAT[void,BAT], int, BAT[void,oid], BAT[void,oid], BAT[void,oid], BAT[void,int], BAT[void,lng], BAT[void,dbl], BAT[void,str]) : BAT[str,str]"	  ]

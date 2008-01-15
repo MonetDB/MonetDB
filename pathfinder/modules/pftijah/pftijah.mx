@@ -124,6 +124,19 @@ DESCRIPTION:
 the operation merges a new sorted tid_pre with an existing offset index.
 "
 
+.COMMAND mergeindex2( BAT[oid,oid] tid_pre, BAT[oid,int] tid_size, BAT[void,oid] index, BAT[void, oid] pre, BAT[void, int] size, int indsize)
+		: BAT[void,bat] = CMDmergeindex2;
+"PARAMETERS:
+BAT[oid,oid] - new tid_pre to merge with the old index
+BAT[oid,int] - sizes of new elements to merge with the old index (synched with tid_pre)
+BAT[void,oid] - old index bat with value-offset
+BAT[void,oid] - old posting lists (pre order lists)
+BAT[void,int] - corresponding size lists (pre order lists)
+int - size of new (dense) offset index.
+DESCRIPTION:
+the operation merges a new sorted tid_pre with an existing offset index.
+"
+
 .COMMAND indexfetchjoin( BAT[any,oid] tid, BAT[void,oid] index, BAT[void, oid] pre)
 		: BAT[void,oid] = CMDindexfetchjoin;
 "PARAMETERS:
@@ -2588,17 +2601,18 @@ PROC _buildIRindex(str ftiName, BAT[str,bat] collBat) : void :=
 	        
 	        tmp := tids.semijoin(bat("tj_" + ftiName + "_pfpre"));
                 tmp := tmp.reverse().ssort();
-      
-                i := mergeindex(tmp, collBat.find("_TagIndex"),
-                                     collBat.find("_Tags"),
-                                     collBat.find("_globalTags").count() + 1);
-		var tagsize := i.fetch(1).leftfetchjoin(sizes);
+		var tmpsize := tmp.leftfetchjoin(sizes);
+                i := mergeindex2(tmp, tmpsize,
+		                 collBat.find("_TagIndex"),
+                                 collBat.find("_Tags"),
+                                 collBat.find("_TagSize"),
+                                 collBat.find("_globalTags").count() + 1);
                 collBat.replace("_TagIndex", i.fetch(0));
                 collBat.replace("_Tags", i.fetch(1));
-                collBat.replace("_TagSize", tagsize);
+                collBat.replace("_TagSize", i.fetch(2));
 	        i := nil;
 		tmp := nil;
-		tagsize := nil;
+		tmpsize := nil;
 		replaceBats.insert("_TagIndex", "tj_" + ftiName + "_TagIndex");
                 replaceBats.insert("_Tags", "tj_" + ftiName + "_Tags");
                 replaceBats.insert("_TagSize", "tj_" + ftiName + "_TagSize");
@@ -3353,6 +3367,169 @@ int CMDmergeindex ( BAT** result, BAT* tidpre, BAT* oldindex, BAT* oldpre, int* 
 	lst_res++;
 	
 	BATsetcount(res, 2);
+	res->batDirty = TRUE;
+	BATkey(res, TRUE);
+	BATkey(BATmirror(res), TRUE);
+        res->hsorted = GDK_SORTED;
+        res->tsorted = FALSE;
+	
+	*result = res;
+	return GDK_SUCCEED;
+}
+
+int CMDmergeindex2 ( BAT** result, BAT* tidpre, BAT* tidsize, BAT* oldindex, BAT* oldpre, BAT* oldsize, int* indsize )
+{
+	char *name = "TJmergeindex2";
+	BAT *res = NULL;
+	BAT *newindex = NULL;
+	BAT *newpre = NULL;
+	BAT *newsize = NULL;
+	int i,j, ressize = 0;
+        BUN lst_tidpre, lst_oldindex, lst_copy, lst_res, cur_tidpre, cur_tidsize, cur_oldindex, cur_oldpre, cur_oldsize;
+        BATiter tidprei, tidsizei, oldindexi, oldprei, oldsizei;
+        oid *s_newindex, *lst_newindex, *s_newpre, *lst_newpre;
+	int *s_newsize, *lst_newsize;
+	oid tid;
+	
+	/* --------------------------- checks ---------------------------------- */
+	
+	BATcheck(tidpre, name);
+	BATcheck(tidsize, name);
+	BATcheck(oldindex, name);
+	BATcheck(oldpre, name);
+	BATcheck(oldsize, name);
+        
+	if (!(BAThordered(tidpre) & 1))
+	{
+        	GDKerror("%s: term-bat must be ordered on tail.\n", name);
+    		return GDK_FAIL;
+	}
+
+	/* ---------------------------- inits ---------------------------------- */
+
+	ressize = 3;
+	res = BATnew(TYPE_void, TYPE_bat, ressize);
+        if (res == NULL) 
+        { 
+            	GDKerror("%s: could not allocate a result BAT[void,oid] of size %d.\n", name, ressize);
+            	return(GDK_FAIL);
+        }
+	
+	ressize = BATcount(tidpre) + BATcount(oldpre);
+	newpre = BATnew(TYPE_void, TYPE_oid, ressize);
+        if (res == NULL) 
+        { 
+            	GDKerror("%s: could not allocate a result BAT[void,oid] of size %d.\n", name, ressize);
+            	return(GDK_FAIL);
+        }
+	
+	newsize = BATnew(TYPE_void, TYPE_int, ressize);
+        if (res == NULL) 
+        { 
+            	GDKerror("%s: could not allocate a result BAT[void,int] of size %d.\n", name, ressize);
+            	return(GDK_FAIL);
+        }
+	
+	ressize = *indsize;
+	newindex = BATnew(TYPE_void, TYPE_oid, ressize);
+        if (res == NULL) 
+        { 
+            	GDKerror("%s: could not allocate a result BAT[void,oid] of size %d.\n", name, ressize);
+            	return(GDK_FAIL);
+        }
+	
+	lst_tidpre = BUNlast(tidpre);
+	lst_oldindex = BUNlast(oldindex) - 1; /* last index is not a real term */
+	s_newindex = lst_newindex = (oid*)Tloc(newindex, BUNlast(newindex));
+	s_newpre = lst_newpre = (oid*)Tloc(newpre, BUNlast(newpre));
+	s_newsize = lst_newsize = (int*)Tloc(newsize, BUNlast(newsize));
+	lst_res = BUNlast(res);
+	
+	cur_tidpre = BUNfirst(tidpre);
+	cur_tidsize = BUNfirst(tidsize);
+	cur_oldindex = BUNfirst(oldindex);
+	cur_oldpre = BUNfirst(oldpre);
+	cur_oldsize = BUNfirst(oldsize);
+	
+        tidprei = bat_iterator(tidpre);
+        tidsizei = bat_iterator(tidsize);
+        oldindexi = bat_iterator(oldindex);
+        oldprei = bat_iterator(oldpre);
+        oldsizei = bat_iterator(oldsize);
+
+	/* ----------------------------- main ---------------------------------- */
+	
+	j = *indsize - 1;
+	for(i = 0; i < j; i++)
+        {
+	        tid = (oid) i;
+		*lst_newindex++ = lst_newpre - s_newpre;
+               
+                /* copy old nodes to new index */
+                if (cur_oldindex < lst_oldindex && tid == *(oid*)BUNhead(oldindexi, cur_oldindex))
+                {
+		        lst_copy = *(int*) BUNtail(oldindexi, cur_oldindex + 1);
+		        while (cur_oldpre < lst_copy)
+		        {
+			        *lst_newpre++ = *(oid*)BUNtail(oldprei, cur_oldpre);
+			        *lst_newsize++ = *(int*)BUNtail(oldsizei, cur_oldsize);
+			        cur_oldpre++;
+			        cur_oldsize++;
+		        }
+                        cur_oldindex++;
+                }
+                /* merge-in new nodes */
+                while(cur_tidpre < lst_tidpre && tid == *(oid*)BUNhead(tidprei, cur_tidpre))
+                {
+                        *lst_newpre++ = *(oid*)BUNtail(tidprei, cur_tidpre);
+                        *lst_newsize++ = *(int*)BUNtail(tidsizei, cur_tidsize);
+	        	cur_tidpre++;
+	        	cur_tidsize++;
+                }
+        }
+
+	/* write limit of index as last item to index bat */
+	*lst_newindex = lst_newpre - s_newpre;
+	lst_newindex++;
+
+	/* ---------------------------- tidy up --------------------------------- */
+
+	BATsetcount(newindex, lst_newindex - s_newindex);
+    	newindex->batDirty = TRUE;
+        newindex->hsorted = GDK_SORTED;
+        newindex->tsorted = GDK_SORTED;
+        BATkey(newindex, TRUE);
+        BATkey(BATmirror(newindex), FALSE);
+	BATseqbase(newindex, (oid)0);
+
+	BATsetcount(newpre, lst_newpre - s_newpre);
+    	newpre->batDirty = TRUE;
+        newpre->hsorted = GDK_SORTED;
+        newpre->tsorted = FALSE;
+        BATkey(newpre, TRUE);
+        BATkey(BATmirror(newpre), TRUE);
+	BATseqbase(newpre, (oid)0);
+	
+	BATsetcount(newsize, lst_newsize - s_newsize);
+    	newsize->batDirty = TRUE;
+        newsize->hsorted = GDK_SORTED;
+        newsize->tsorted = FALSE;
+        BATkey(newsize, TRUE);
+	BATseqbase(newsize, (oid)0);
+	
+        /* insert bats in result */		
+	BATseqbase(res, (oid)0);
+	voidfix_bunfastins_nocheck_noinc(res, lst_res, 0, (void*)&newindex->batCacheid);
+	BBPunfix(newindex->batCacheid);	
+	lst_res++;
+	voidfix_bunfastins_nocheck_noinc(res, lst_res, 0, (void*)&newpre->batCacheid); 
+	BBPunfix(newpre->batCacheid);	
+	lst_res++;
+	voidfix_bunfastins_nocheck_noinc(res, lst_res, 0, (void*)&newsize->batCacheid); 
+	BBPunfix(newsize->batCacheid);	
+	lst_res++;
+	
+	BATsetcount(res, 3);
 	res->batDirty = TRUE;
 	BATkey(res, TRUE);
 	BATkey(BATmirror(res), TRUE);
