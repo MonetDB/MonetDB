@@ -1041,7 +1041,10 @@ rel2bin(mvc *c, stmt *s)
 
 	case st_bat:
 
-		if (s->flag == RDONLY && !mvc_debug_on(c, 8192)){
+		if (s->flag == RDONLY && 
+			!mvc_debug_on(c, 32) &&
+			!mvc_debug_on(c, 64) &&
+			!mvc_debug_on(c, 8192)) {
 			stmt *res = stmt_delta_table_bat( s->op1.cval, stmt_dup(s->h), s->flag);
 			assert(s->rewritten==NULL);
 			s->rewritten = stmt_dup(res);
@@ -1054,7 +1057,10 @@ rel2bin(mvc *c, stmt *s)
 
 	case st_idxbat:
 
-		if (s->flag == RDONLY && !mvc_debug_on(c, 8192)){
+		if (s->flag == RDONLY && 
+			!mvc_debug_on(c, 32) &&
+			!mvc_debug_on(c, 64) &&
+			!mvc_debug_on(c, 8192)) {
 			stmt *res = stmt_delta_table_idxbat( s->op1.idxval, s->flag);
 			assert(s->rewritten==NULL);
 			s->rewritten = stmt_dup(res);

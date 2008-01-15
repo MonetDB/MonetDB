@@ -224,8 +224,11 @@ SQLinit(Client c)
 	(void) tz;
 	if (debug_str) 
 		SQLdebug = strtol(debug_str,NULL,10);
-	if (((SQLdebug&16)!=0 && mvc_init(FALSE, store_bpm, 0) < 0) ||
-	    ((SQLdebug&16)==0 && mvc_init(FALSE, store_bat, 0) < 0))
+	if (((SQLdebug&16)==16 && mvc_init(FALSE, store_bpm, 0) < 0) ||
+	    ((SQLdebug&96)==96 && mvc_init(FALSE, store_suro, 0) < 0) ||
+	    ((SQLdebug&96)==64 && mvc_init(FALSE, store_su, 0) < 0) ||
+	    ((SQLdebug&96)==32 && mvc_init(FALSE, store_ro, 0) < 0) ||
+	    ((SQLdebug&112)==0 && mvc_init(FALSE, store_bat, 0) < 0))
 		throw(SQL, "SQLinit", "Catalogue initialization failed");
         SQLinitialized = TRUE;
         if (!GDKembedded && MT_create_thread(&sqllogthread, (void (*)(void *)) mvc_logmanager, NULL) < 0) {

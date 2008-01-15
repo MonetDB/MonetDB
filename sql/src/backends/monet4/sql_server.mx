@@ -286,6 +286,8 @@ handles and returns proper error messages upon failure.
 #include "sql_mvc.h"
 #include "sql_server.proto.h"
 
+int SQLdebug;
+
 #endif /*_SQL_SERVER_H_*/
 
 @c
@@ -310,6 +312,8 @@ both program representation (YYSTREE), runtime stack (Cntxt),
 and the MIL interpreter. Details can be found in the src/monet
 directory.
 @c
+
+int SQLdebug = 0;
 
 void
 monet4_freestack(backend_stack stk)
@@ -343,10 +347,14 @@ monet4_freecode(backend_code code, backend_stack stk, int nr, char *name)
 int
 sql_frontend_wrap(Cntxt stk, YYSTREE lt, ValPtr res)
 {
+	char *debug_str = GDKgetenv("sql_debug");
 	Client father = NULL;
 
 	if (lt->cnt != 0) 
 		return handle_argerror(res, lt->cnt, 0);
+
+	if (debug_str) 
+		SQLdebug = strtol(debug_str,NULL,10);
 
 	memset((char *)&be_funcs, '\0', sizeof(backend_functions));
 	be_funcs.fstack = &monet4_freestack;
@@ -362,9 +370,15 @@ sql_frontend_wrap(Cntxt stk, YYSTREE lt, ValPtr res)
 	}
 	if (father)
 		stk = father->stk;
-	if (mvc_init(0/*debug*/, store_bat, (backend_stack) stk) < 0) {
+	if (((SQLdebug&64)!=0 && (SQLdebug&32)!=0 &&
+		mvc_init(FALSE, store_suro, (backend_stack)stk) < 0) ||
+	    ((SQLdebug&64)!=0 && (SQLdebug&32)==0 && 
+		mvc_init(FALSE, store_su, (backend_stack)stk) < 0) ||
+	    ((SQLdebug&64)==0 && (SQLdebug&32)!=0 &&
+		mvc_init(FALSE, store_ro, (backend_stack)stk) < 0) ||
+	    ((SQLdebug&64)==0 && (SQLdebug&32)==0 && 
+		mvc_init(FALSE, store_bat, (backend_stack)stk) < 0))
 		return GDK_FAIL;
-	}
 	res->vtype = TYPE_ptr;
 	res->val.pval = (ptr) sql_frontend();
 	return GDK_SUCCEED;

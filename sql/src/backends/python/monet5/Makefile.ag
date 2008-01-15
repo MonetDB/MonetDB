@@ -36,7 +36,7 @@ lib_monetdb5 = {
 	PREFIX =
 	NAME = _monetdb5
 	SOURCES = monetdb5.py.i
-	LIBS = ../../monet5/libembeddedsql5 ../../../server/libsqlserver ../../../storage/libstore ../../../storage/bat/libbatstore ../../../common/libsqlcommon \
+	LIBS = ../../monet5/libembeddedsql5 ../../../server/libsqlserver ../../../storage/libstore ../../../storage/bat/libbatstore ../../../storage/restrict/librestrictstore ../../../storage/bpm/libbpmstore ../../../common/libsqlcommon \
 		$(MONETDB5_MODS) -l_logger -l_bat5 -l_tablet $(MONETDB5_LIBS) -lmal \
 		$(CLIENTS_LIBS) $(MONETDB_LIBS) -lbat -lMapi -lmutils -lstream $(PYTHON_LIBS) $(READLINE_LIBS) $(PTHREAD_LIBS)
 	DIR = $(prefix)/$(PYTHON_LIBDIR)

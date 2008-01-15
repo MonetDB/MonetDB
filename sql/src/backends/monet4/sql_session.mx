@@ -66,7 +66,6 @@ extern ptr sql_frontend(void);
 #include <sql_storage.h>
 #include <mapi/mapi.h>
 
-static int SQLdebug = 0;
 static int keep_trace = 0;
 static char *sqlinit = NULL;
 
@@ -157,22 +156,22 @@ sql_symbol2stmt(mvc *c)
 	if (s){
 		stmt *opt;
 
-		if (mvc_debug_on(c,32)) 
+		if (mvc_debug_on(c,128)) 
 			stmt2dot(s, 1, "/tmp/g1.dot");
 		opt = optimize(c, s);
 		stmt_destroy(s);
 		s = opt;
-		if (mvc_debug_on(c,32)) 
+		if (mvc_debug_on(c,128)) 
 			stmt2dot(s, 2, "/tmp/g2.dot");
 		opt = rel2bin(c, s);
 		stmt_destroy(s);
 		s = opt;
-		if (mvc_debug_on(c,32)) 
+		if (mvc_debug_on(c,128)) 
 			stmt2dot(s, 3, "/tmp/g3.dot");
 		opt = bin_optimizer(c, s);
 		stmt_destroy(s);
 		s = opt;
-		if (mvc_debug_on(c,32)) 
+		if (mvc_debug_on(c,128)) 
 			stmt2dot(s, 4, "/tmp/g4.dot");
 	}
 	return s;
@@ -1005,7 +1004,6 @@ sql_client_free(mapi_client *fc)
 ptr
 sql_frontend(void)
 {
-	char *debug_str = GDKgetenv("sql_debug");
 	char *m_clients = GDKgetenv("mapi_clients"); 
 	int nr = (m_clients)?strtol(m_clients, NULL, 10):1;
 	mapi_frontend *f = (mapi_frontend*)GDKmalloc(sizeof(mapi_frontend));
@@ -1015,10 +1013,7 @@ sql_frontend(void)
 	f->f_init  = sql_client_init;
 	f->f_free  = sql_client_free;
 	f->f_engine  = sql_client_engine; /* read/parse/execute loop */
-
 	sqlinit = GDKgetenv("sqlinit");
-	if (debug_str) 
-		SQLdebug = strtol(debug_str,NULL,10);
 	return (ptr)f;
 }
 
