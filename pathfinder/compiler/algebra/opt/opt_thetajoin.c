@@ -1293,25 +1293,28 @@ opt_mvd (PFla_op_t *p)
                     unsigned int i;
                     PFalg_comp_t comp = alg_comp_eq;
 
+                    /* make sure that column res is not used as join argument */
+                    resolve_name_conflict (L(p), res);
+                    
                     /* copy the predicates ... */
                     pred = PFarray_copy (L(p)->sem.thetajoin_opt.pred);
                     
                     /* ... and introduce a new predicate that makes
-                       the result column visible */
+                       the result column visible (as we do not know
+                       the comparison kind as well as the arguments
+                       we choose dummy ones)  */
                     *(pred_struct *) PFarray_add (pred) =
                         (pred_struct) {
-                            .comp      = comp, /* dummy comparison */
-                            .left      = att_NULL, /* dummy column */
-                            .right     = att_NULL, /* dummy column */
+                            .comp      = comp,                   /* dummy */
+                            .left      = LEFT_AT (pred, 0),      /* dummy */
+                            .right     = RIGHT_AT (pred, 0),     /* dummy */
                             .res       = res,
                             .persist   = false,
-                            .left_vis  = false, /* dummy column is invisible */
-                            .right_vis = false, /* dummy column is invisible */
+                            .left_vis  = LEFT_VIS_AT (pred, 0),  /* dummy */
+                            .right_vis = RIGHT_VIS_AT (pred, 0), /* dummy */
                             .res_vis   = true
                         };
 
-                    /* make sure that column res is not used as join argument */
-                    resolve_name_conflict (L(p), res);
                     /* create a new thetajoin operator ... */
                     *p = *(thetajoin_opt (LL(p), LR(p), pred));
 
