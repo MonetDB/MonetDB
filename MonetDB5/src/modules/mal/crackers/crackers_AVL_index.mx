@@ -109,7 +109,7 @@ existsAVLIndex(int bid){
 str
 CRKmakeAVLIndex_@1(int *k, int *bid){
 	BUN last, cur;
-	oid indexPos;
+	int indexPos;
 	oid curPos;
 	BAT *b;
 
