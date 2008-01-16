@@ -42,9 +42,6 @@ operators.
 
 #include "sql_storage.h"
 
-/* initialize bat storage call back functions interface */
-extern int bpm_table_init( table_functions *tf );
-
 #endif /*BPM_TABLE_H*/
 @c
 #include "sql_config.h"

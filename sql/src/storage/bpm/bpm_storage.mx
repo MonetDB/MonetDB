@@ -54,9 +54,6 @@ typedef struct sql_bpm {
 #define bat_set_access(b,access) b->P->restricted = access
 #define bat_clear(b) bat_set_access(b,BAT_WRITE);BATclear(b);bat_set_access(b,BAT_READ)
 
-/* initialize bat storage call back functions interface */
-extern int bpm_storage_init( store_functions *sf );
-
 extern int bpm_add_partition(sql_bpm *p);
 
 #endif /*BPMSTORAGE_H */

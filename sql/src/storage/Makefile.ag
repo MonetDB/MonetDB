@@ -20,7 +20,7 @@
 
 EXTRA_DIST = sql_storage.h
 
-SUBDIRS = bat restrict HAVE_MONETDB5?bpm HAVE_MONETDB4?m4
+SUBDIRS = bat restrict m4 HAVE_MONETDB5?bpm 
 
 INCLUDES = ../include ../common $(MONETDB_INCS)
 

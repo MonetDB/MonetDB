@@ -24,8 +24,6 @@
 
 extern logger *bpm_logger;
 
-extern int bpm_logger_init( logger_functions *lf );
-
 #endif /*BPM_LOGGER_H */
 @c
 #include "sql_config.h"

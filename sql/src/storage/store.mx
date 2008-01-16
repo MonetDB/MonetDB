@@ -32,9 +32,7 @@
 #include <restrict/restrict_table.h>
 #include <restrict/restrict_logger.h>
 
-#include <bpm/bpm_storage.h>
-#include <bpm/bpm_table.h>
-#include <bpm/bpm_logger.h>
+#include <m4/bpm.h>
 
 /* version 04.00.00 of catalog */
 #define CATALOG_VERSION 40000
