@@ -721,7 +721,7 @@ prop_infer_reqvals (PFla_op_t *n,
             rv.val = empty_list;
             
             /* mark the input columns as value columns */
-            vc = n->sem.aggr.att;
+            vc = union_ (diff (vc, n->sem.aggr.res), n->sem.aggr.att);
 
             if (n->sem.aggr.part) {
                 /* we only have to provide the same groups */
