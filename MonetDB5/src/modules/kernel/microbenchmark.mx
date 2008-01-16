@@ -89,13 +89,13 @@ BATuniform(BAT **bn, oid *base, int *size, int *domain)
 	}
 
 	firstbun = BUNfirst(b);
+	BATsetcount(b, n);
 	/* create BUNs with uniform distribution */
 	BATloop(b, p, q) {
 		*(int *) Tloc(b, p) = j;
 		if (++j >= *domain)
 			j = 0;
 	}
-	BATsetcount(b, n);
 
 	/* mix BUNs randomly */
 	for (r = i = 0; i < n; i++) {
@@ -180,6 +180,7 @@ BATnormal(BAT **bn, oid *base, int *size, int *domain, int *stddev, int *mean)
 	}
 	itab[m] += r;
 
+	BATsetcount(b, n);
 	/* create BUNs with normal distribution */
 	BATloop(b, p, q) {
 		while (itab[r] == 0)
@@ -187,7 +188,6 @@ BATnormal(BAT **bn, oid *base, int *size, int *domain, int *stddev, int *mean)
 		itab[r]--;
 		*(int *) Tloc(b, p) = (int) r;
 	}
-	BATsetcount(b, n);
 	GDKfree(itab);
 
 	/* mix BUNs randomly */
