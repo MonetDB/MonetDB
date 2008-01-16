@@ -566,10 +566,10 @@ the string representations.
 
 /* the normal implementation of an operator is to just stick the
    operator between the operands */
-#define calc_abs(s) ((s)>0)?(s):-(s)
+#define calc_abs(s) ((s) > 0 ? (s) : -(s))
 #define calc_inv(s) (1/(s))
 #define calc_neg(s) (-(s))
-#define calc_sign(s) ((s)<0)?-1:((s)==0)?0:1
+#define calc_sign(s) ((s) < 0 ? -1 : (s) == 0 ? 0 : 1)
 
 @= calc_length
 calc_export str CALClength@1(int *res , @1 *a );
@@ -1053,7 +1053,7 @@ str CALCunary@3@1(@3 *res , @3 *a ) {
    if (*a == @3_nil) {
 	   *res = @3_nil;
    } else {   
-	   *res = @2 (*a);
+		   *res = (@3) (@2 (*a));
    }
    return(MAL_SUCCEED);
 }
