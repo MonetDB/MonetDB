@@ -286,7 +286,7 @@ handles and returns proper error messages upon failure.
 #include "sql_mvc.h"
 #include "sql_server.proto.h"
 
-int SQLdebug;
+extern int SQLdebug;
 
 #endif /*_SQL_SERVER_H_*/
 
