@@ -2906,10 +2906,10 @@ createView:
 @
 
 @= RangeSelectBody
-	BAT *viewHead;
+	BAT *viewHead = NULL;
         BAT *b, *c, *view=NULL;
         int  m, h;
-        oid vl, vh, posl, posh, cl1, ch1, cl2, ch2;
+        oid vl=0, vh=0, posl, posh, cl1=0, ch1=0, cl2=0, ch2=0;
         oid _vl;
         int gapL = 1, gapH = 1;
         bit HBound, foundLow=0, foundHgh=0;
@@ -3653,6 +3653,7 @@ CRKdRangeSideways_@1_@2(int *vid, int *bid, int *pbid, @1 *low, @1 *hgh, bit *in
 	@:RangeSelectBody(@1,@2,@3,@4)@
 	(void)viewHead;
 	(void)view;
+	(void)newCrackerMAP;
 	/* Define resulting view: a contiguous area on the map */	
         @:CreateDisjunctiveResultSideways(@1,@2,@3,@4)@
 
