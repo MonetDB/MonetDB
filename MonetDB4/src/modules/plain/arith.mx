@@ -410,9 +410,9 @@ flt2int(int *r, flt *v)
 @:check_unop(_INV,arith_inv,flt,"Cannot take inverse of zero")@
 @:check_unop(_INV,arith_inv,dbl,"Cannot take inverse of zero")@
 
-#define arith_abs(s) ((s)<0)?-(s):(s)
+#define arith_abs(s) ((s) < 0 ? -(s) : (s))
 #define arith_neg(s) (-(s))
-#define arith_sign(s) ((s)<0)?-1:((s)==0)?0:1
+#define arith_sign(s) ((s) < 0 ? -1 : (s) == 0 ? 0 : 1)
 @= c_unary_ops
 @:arith_unop(_ABS,arith_abs,@1)@
 @:arith_unop(_NEG,arith_neg,@1)@
@@ -709,7 +709,7 @@ int @3_unary@1(@3 *res , @3 *a)
 	if (*a == @3_nil) {
 		*res = @3_nil;
 	} else {
-		*res = @2 (*a);
+		*res = (@3) (@2 (*a));
 	}
 	return(GDK_SUCCEED);
 }
