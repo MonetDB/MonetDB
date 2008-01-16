@@ -12,7 +12,7 @@ prefix = $(MAKEDIR)
 UNISTD_H = unistd.h
 
 all: "$(SRCDIR)\Makefile.msc" all-msc $(UNISTD_H) RunMserver.bat RunMtest.bat RunMapprove.bat
-	$(MAKE) /nologo /f "$(SRCDIR)\Makefile.msc" "prefix=$(prefix)" all
+	$(MAKE) /nologo /f "$(SRCDIR)\Makefile.msc" "prefix=$(prefix)" "bits=$(bits)" all
 
 all-clear: "$(SRCDIR)\Makefile.msc-clear" all-msc-clear $(UNISTD_H)-clear RunMserver.bat-clear RunMtest.bat-clear RunMapprove.bat-clear
 	if exist "src"  RMDIR /S /Q "src"
@@ -21,11 +21,11 @@ all-clear: "$(SRCDIR)\Makefile.msc-clear" all-msc-clear $(UNISTD_H)-clear RunMse
 clear-all: all-clear all
 
 check: "$(SRCDIR)\Makefile.msc" RunMtest.bat
-	$(MAKE) /nologo /i /f "$(SRCDIR)\Makefile.msc" "prefix=$(prefix)" check
+	$(MAKE) /nologo /i /f "$(SRCDIR)\Makefile.msc" "prefix=$(prefix)" "bits=$(bits)" check
 	call RunMtest.bat
 
 install: targetdirs geom_config.h all
-	$(MAKE) /nologo /f "$(SRCDIR)\Makefile.msc" "prefix=$(prefix)" install
+	$(MAKE) /nologo /f "$(SRCDIR)\Makefile.msc" "prefix=$(prefix)" "bits=$(bits)" install
 
 $(SRCDIR)\Makefile.msc: "$(SRCDIR)\Makefile.ag"
 	$(CD) "$(SRCDIR)" && autogen.py
