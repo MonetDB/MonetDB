@@ -38,6 +38,7 @@
 @:TypeSwitch_1(JoinFunctions_decl1)@
 crackers_export str CRKbatCount(lng *count, int *bid);
 
+/* #define DEBUG_CRACKERS_JOIN 		to enable debug trace */
 #endif /* _CRACKERS_JOINS_H */
 @
 
@@ -125,7 +126,7 @@ CRKjoin(BAT *bn, BAT *l, BAT *r) {
 		@:hashjoin(atom,any,tail)@
 	}
 
-      bunins_failed: // blindly assume bunins does NOT fail
+      bunins_failed: /* blindly assume bunins does NOT fail*/
 	BATmmap_unpin(r);
 	return;
 }
@@ -161,15 +162,16 @@ str CRKbatCount(lng *count, int *bid){
         markedViewRight = (BAT*)BATmark(viewRight,prevPosRight+1);
         BBPunfix(viewRight->batCacheid);
 
-/*	{
+/* STRATOS look at this, should it remain?
+	{
 	BAT * partialRes;
-        TJ1=GDKusec();
-        //partialRes = BATmirror((BAT*)BATjoin(BATmirror(markedViewRight), markedViewLeft, oid_nil));
-        partialRes = BATjoin(BATmirror(markedViewLeft), markedViewRight, oid_nil);
-        TJ2=GDKusec();
-        TJtotal += TJ2 - TJ1;
+	TJ1=GDKusec();
+	/ * partialRes = BATmirror((BAT*)BATjoin(BATmirror(markedViewRight), markedViewLeft, oid_nil)); * /
+	partialRes = BATjoin(BATmirror(markedViewLeft), markedViewRight, oid_nil);
+	TJ2=GDKusec();
+	TJtotal += TJ2 - TJ1;
 
-        BATins(res,partialRes,TRUE);
+	BATins(res,partialRes,TRUE);
 	BBPunfix(partialRes->batCacheid);
 	}
 */
@@ -188,13 +190,16 @@ str CRKbatCount(lng *count, int *bid){
 	BBPunfix(markedViewLeft->batCacheid);
 @
 
-@= JoinTwoPiecesReuseHashTables
-/* printf("\n Index Left \n");
-printAVLTree(CrackerIndex[mapLpos].Tree, indexLeft, baseLeft, bunSizeLeft);
+@= dumpIndex
+#ifdef DEBUG_CRACKERS_JOIN
+	printf("\n @1 \n");
+	printAVLTree(CrackerIndex[mapLpos].Tree, indexLeft, baseLeft, bunSizeLeft);
+	printf("\n Index Right \n");
+	printAVLTree(CrackerIndex[mapRpos].Tree, indexRight, baseRight, bunSizeRight);
+#endif
 
-printf("\n Index Right \n");
-printAVLTree(CrackerIndex[mapRpos].Tree, indexRight, baseRight, bunSizeRight);
-*/
+@= JoinTwoPiecesReuseHashTables
+	@:dumpIndex(Index Left)@
 	/* Exploit existing views if possible */
 	if (prevNodeLeft != NULL){
 		if (prevNodeLeft->slice != -1){
@@ -211,8 +216,10 @@ printAVLTree(CrackerIndex[mapRpos].Tree, indexRight, baseRight, bunSizeRight);
 		markedViewLeft  = (BAT*)BATmark(viewLeft,prevPosLeft+1);
 	        BBPunfix(viewLeft->batCacheid);
 	}
-	//else
-	//	printf("\n found hash table left \n");
+#ifdef DEBUG_CRACKERS_JOIN
+	 else
+		printf("\n found hash table left \n"); */
+#endif
 
 	if (prevNodeRight != NULL){
                 if (prevNodeRight->slice != -1){
@@ -229,15 +236,18 @@ printAVLTree(CrackerIndex[mapRpos].Tree, indexRight, baseRight, bunSizeRight);
         	markedViewRight = (BAT*)BATmark(viewRight,prevPosRight+1);
 	        BBPunfix(viewRight->batCacheid);
 	}
-	//else
-	//	printf("\n found hash table right \n");
+#ifdef DEBUG_CRACKERS_JOIN
+	else
+		printf("\n found hash table right \n");
+#endif
 
-/*
+#ifdef DEBUG_CRACKERS_JOIN
 	printf("\n Left \n");
 	BATprint(markedViewLeft);
 	printf("\n Right \n");
 	BATprint(markedViewRight);
-*/
+#endif
+
 	TJ1=GDKusec();
 	if (curPosLeft - prevPosLeft > 0 && curPosRight - prevPosRight > 0) {
 		if ( (existsHashTableLeft == FALSE && existsHashTableRight == FALSE) || (existsHashTableLeft == TRUE && existsHashTableRight == TRUE) ){ 
@@ -282,26 +292,15 @@ printAVLTree(CrackerIndex[mapRpos].Tree, indexRight, baseRight, bunSizeRight);
 	}
 	TJ2=GDKusec();
 	TJtotal += TJ2 - TJ1;
-/*
+#ifdef DEBUG_CRACKERS_JOIN
 	printf("\n Res \n");
 	BATprint(res);
-*/
-/*
-printf("\n Index Left \n");
-printAVLTree(CrackerIndex[mapLpos].Tree, indexLeft, baseLeft, bunSizeLeft);
-
-printf("\n Index Right \n");
-printAVLTree(CrackerIndex[mapRpos].Tree, indexRight, baseRight, bunSizeRight);
-*/
+	@:dumpIndex(Index Left)@
+#endif
 @
 
 @= JoinTwoPiecesReuseHashTablesRight
-/* printf("\n Index Left \n");
-printAVLTree(CrackerIndex[mapLpos].Tree, indexLeft, baseLeft, bunSizeLeft);
-
-printf("\n Index Right \n");
-printAVLTree(CrackerIndex[mapRpos].Tree, indexRight, baseRight, bunSizeRight);
-*/
+	@:dumpIndex(Index Left)@
 	/* Exploit existing views if possible */
 	viewHeadLeft = VIEWhead_(mapLeft,  BAT_READ);
 	viewLeft  = BATslice(viewHeadLeft, prevPosLeft+1,  curPosLeft +1);
@@ -326,12 +325,12 @@ printAVLTree(CrackerIndex[mapRpos].Tree, indexRight, baseRight, bunSizeRight);
 		BBPunfix(viewRight->batCacheid);
 	}
 
-/*
+#ifdef DEBUG_CRACKERS_JOIN
 	printf("\n Left \n");
 	BATprint(markedViewLeft);
 	printf("\n Right \n");
 	BATprint(markedViewRight);
-*/
+#endif
 	TJ1=GDKusec();
 	if (curPosLeft - prevPosLeft > 0 && curPosRight - prevPosRight > 0) {
 		if (existsHashTableRight == FALSE){ 
@@ -351,25 +350,23 @@ printAVLTree(CrackerIndex[mapRpos].Tree, indexRight, baseRight, bunSizeRight);
 	}
 	TJ2=GDKusec();
 	TJtotal += TJ2 - TJ1;
-/*
+#ifdef DEBUG_CRACKERS_JOIN
 	printf("\n Res \n");
 	BATprint(res);
-*/
-/*
-printf("\n Index Left \n");
-printAVLTree(CrackerIndex[mapLpos].Tree, indexLeft, baseLeft, bunSizeLeft);
-
-printf("\n Index Right \n");
-printAVLTree(CrackerIndex[mapRpos].Tree, indexRight, baseRight, bunSizeRight);
-*/
+	@:dumpIndex(Index Left)@
+#endif
 @
 
 @= MoveToNextPiece
-	//printf("Move @2 \n");
+#ifdef DEBUG_CRACKERS_JOIN
+	printf("Move @2 \n"); 
+#endif
 	prevPos@2 = curPos@2;
 	curNode@2 = findNextPiece(curNode@2);
 	if (curNode@2 == NULL){
-//		printf(" Skip the rest of the opposite(@2) pieces because @2 pieces are done \n");
+#ifdef DEBUG_CRACKERS_JOIN
+		printf(" Skip the rest of the opposite(@2) pieces because @2 pieces are done \n"); 
+#endif
 		break;
 	}				
 	curTuple@2 = base@2 + curNode@2->position;
@@ -472,7 +469,8 @@ str CRKsimpleJoin_@1(int *resid, int *bidL1, int *bidL2, int *bidR1, int *bidR2)
 
 	BAT *res;
 
-	/* Get the cracker tape for the set of the left map or create one if it does not exist */
+	/* Get the cracker tape for the set of the left 
+	   map or create one if it does not exist */
         tapeLpos = existsCrackerIndexSideways(*bidL1, -1);
         if (tapeLpos == -1)
                 tapeLpos = CreateTape_@1(*bidL1);
@@ -496,7 +494,8 @@ str CRKsimpleJoin_@1(int *resid, int *bidL1, int *bidL2, int *bidR1, int *bidR2)
 
 	baseLeft      = BUNfirst(indexLeft);
 
-	/* Get the cracker tape for the set of the right map or create one if it does not exist */
+	/* Get the cracker tape for the set of the right map or 
+		create one if it does not exist */
         tapeRpos = existsCrackerIndexSideways(*bidR1, -1);
         if (tapeRpos == -1)
                 tapeRpos = CreateTape_@1(*bidR1);
@@ -628,11 +627,11 @@ str CRKcrackJoin_@1(int *resid, int *bidL1, int *bidL2, int *bidR1, int *bidR2){
         /* Take the map */
         if ((mapRight = BATdescriptor(CrackerIndex[mapRpos].cbid)) == NULL)
                 throw(MAL, "crackers.simpleJoin", "Cannot access crack index");
-	/*
+#ifdef DEBUG_CRACKERS_JOIN
 	printf("maps\n");
 	BATprint(mapLeft);
 	BATprint(mapRight);
-	*/
+#endif
 
         /* Get the piece that holds the lowest values */
         curNodeRight = getFirstNode(CrackerIndex[mapRpos].Tree);
@@ -645,11 +644,11 @@ str CRKcrackJoin_@1(int *resid, int *bidL1, int *bidL2, int *bidR1, int *bidR2){
 
 	while (1){
 
-	/*
+#ifdef DEBUG_CRACKERS_JOIN
 	printf(" new loop maps\n");
 	BATprint(mapLeft);
 	BATprint(mapRight);
-	*/
+#endif
 		crackedLeft = crackedRight = FALSE;
 
 
@@ -661,11 +660,11 @@ str CRKcrackJoin_@1(int *resid, int *bidL1, int *bidL2, int *bidR1, int *bidR2){
         	curValueRight = *(@1 *)Tloc(indexRight, curTupleRight);
         	curPosRight   = *(oid*)Hloc(indexRight, curTupleRight);
 
-		/*
+#ifdef DEBUG_CRACKERS_JOIN
 		printf(" leftVal %d rightVal %d \n", curValueLeft, curValueRight);
 		printf(" prevPosLeft %lld curPosLeft %lld \n", prevPosLeft,curPosLeft);
 		printf(" prevPosRight %lld curPosRight %lld \n", prevPosRight,curPosRight);
-		*/
+#endif
 
 		if (curValueLeft < curValueRight || 
 		((curValueLeft == curValueRight) && (curNodeLeft->inclusive == FALSE) && (curNodeRight->inclusive == TRUE))){
@@ -749,11 +748,11 @@ str CRKcrackJoin_@1(int *resid, int *bidL1, int *bidL2, int *bidR1, int *bidR2){
         	        curPosRight   = *(oid*)Hloc(indexRight, curTupleRight);	
 		}
 		
-		/*
+#ifdef DEBUG_CRACKERS_JOIN
 		printf(" leftVal %d rightVal %d \n", curValueLeft, curValueRight);
 		printf(" prevPosLeft %lld curPosLeft %lld \n", prevPosLeft,curPosLeft);
 		printf(" prevPosRight %lld curPosRight %lld \n", prevPosRight,curPosRight);
-		*/
+#endif
 
 		if (curNodeLeft != NULL && curNodeRight == NULL){	
 			crackedOperationsRight++;
@@ -931,20 +930,17 @@ str CRKcrackHashJoin_@1(int *resid, int *bidL1, int *bidL2, int *bidR1, int *bid
 	prevPosLeft   = prevPosRight   = -1;
 	prevNodeLeft  = prevNodeRight  = NULL;
 
-/*
-printf("\n New Join Index Left \n");
-printAVLTree(CrackerIndex[mapLpos].Tree, indexLeft, baseLeft, bunSizeLeft);
-
-printf("\n Index Right \n");
-printAVLTree(CrackerIndex[mapRpos].Tree, indexRight, baseRight, bunSizeRight);
-*/
+#ifdef DEBUG_CRACKERS_JOIN
+	printf("\n New Join Index Left \n");
+	@:dumpIndex(Index Left)@
+#endif
 	while (curNodeLeft != NULL && curNodeRight != NULL){
 
-/*	
+#ifdef DEBUG_CRACKERS_JOIN
 	printf(" new loop maps\n");
 	BATprint(mapLeft);
 	BATprint(mapRight);
-*/	
+#endif
 		crackedLeft = crackedRight = FALSE;
 		existsHashTableLeft = existsHashTableRight = FALSE;
 
@@ -957,11 +953,11 @@ printAVLTree(CrackerIndex[mapRpos].Tree, indexRight, baseRight, bunSizeRight);
         	curValueRight = *(@1 *)Tloc(indexRight, curTupleRight);
         	curPosRight   = *(oid*)Hloc(indexRight, curTupleRight);
 
-	/*	
+#ifdef DEBUG_CRACKERS_JOIN
 		printf(" leftVal %d rightVal %d \n", curValueLeft, curValueRight);
 		printf(" prevPosLeft %lld curPosLeft %lld \n", prevPosLeft,curPosLeft);
 		printf(" prevPosRight %lld curPosRight %lld \n", prevPosRight,curPosRight);
-	*/
+#endif
 
 		if (curValueLeft < curValueRight || 
 		((curValueLeft == curValueRight) && (curNodeLeft->inclusive == FALSE) && (curNodeRight->inclusive == TRUE))){
@@ -1057,14 +1053,16 @@ printAVLTree(CrackerIndex[mapRpos].Tree, indexRight, baseRight, bunSizeRight);
         	        curPosRight   = *(oid*)Hloc(indexRight, curTupleRight);	
 		}
 		
-		/*
+#ifdef DEBUG_CRACKERS_JOIN
 		printf(" leftVal %d rightVal %d \n", curValueLeft, curValueRight);
 		printf(" prevPosLeft %lld curPosLeft %lld \n", prevPosLeft,curPosLeft);
 		printf(" prevPosRight %lld curPosRight %lld \n", prevPosRight,curPosRight);
-		*/
+#endif
 
 		if (curNodeLeft != NULL && curNodeRight == NULL){	
-		//	printf("crack Right \n");
+#ifdef DEBUG_CRACKERS_JOIN
+			printf("crack Right \n");
+#endif
 			crackedOperationsRight++;
 
 			TC1=GDKusec();	
@@ -1073,7 +1071,9 @@ printAVLTree(CrackerIndex[mapRpos].Tree, indexRight, baseRight, bunSizeRight);
         		else 
                 		CRKcrackUnorderedZeroSideways_LE_@1_@1(mapRight, curValueLeft, prevPosRight+1, curPosRight, &newPosition);
 
-			//printf("newPos %lld \n",newPosition);
+#ifdef DEBUG_CRACKERS_JOIN
+			printf("newPos %lld \n",newPosition);
+#endif
 
 			TC2=GDKusec();	
 			TCtotal+=TC2-TC1;
@@ -1085,7 +1085,9 @@ printAVLTree(CrackerIndex[mapRpos].Tree, indexRight, baseRight, bunSizeRight);
 			}
 			else {  /* this means that there is no chance to join with the future pieces of the other side */
 
-				//printf("skippiing the rest of the pieces left");
+#ifdef DEBUG_CRACKERS_JOIN
+				printf("skippiing the rest of the pieces left");
+#endif
 
 				@:JoinTwoPiecesReuseHashTables()@
 				joinsDone++;
@@ -1093,7 +1095,9 @@ printAVLTree(CrackerIndex[mapRpos].Tree, indexRight, baseRight, bunSizeRight);
 			}
 		}
 		else if (curNodeLeft == NULL && curNodeRight != NULL){
-			//printf("crack Left \n");
+#ifdef DEBUG_CRACKERS_JOIN
+			printf("crack Left \n");
+#endif
 
 			crackedOperationsLeft++;
 
@@ -1103,7 +1107,9 @@ printAVLTree(CrackerIndex[mapRpos].Tree, indexRight, baseRight, bunSizeRight);
         		else 
                 		CRKcrackUnorderedZeroSideways_LE_@1_@1(mapLeft, curValueRight, prevPosLeft+1, curPosLeft, &newPosition);
 
-			//printf("newPos %lld \n",newPosition);
+#ifdef DEBUG_CRACKERS_JOIN
+			printf("newPos %lld \n",newPosition);
+#endif
 
 			TC2=GDKusec();	
 			TCtotal+=TC2-TC1;
@@ -1115,7 +1121,9 @@ printAVLTree(CrackerIndex[mapRpos].Tree, indexRight, baseRight, bunSizeRight);
 			}
 			else {
 
-				//printf("skipping the rest of the pieces right");
+#ifdef DEBUG_CRACKERS_JOIN
+				printf("skipping the rest of the pieces right");
+#endif
 
 				@:JoinTwoPiecesReuseHashTables()@
 				joinsDone++;
@@ -1124,7 +1132,9 @@ printAVLTree(CrackerIndex[mapRpos].Tree, indexRight, baseRight, bunSizeRight);
 		}
 		else if (curNodeLeft == NULL && curNodeRight == NULL){
 
-			//printf(" into the last piece for both maps \n");
+#ifdef DEBUG_CRACKERS_JOIN
+			printf(" into the last piece for both maps \n");
+#endif
 
 			@:JoinTwoPiecesReuseHashTables()@
 			joinsDone++;
@@ -1230,11 +1240,11 @@ str CRKAlreadyAlignedJoin_@1(int *resid, int *bidL1,  int *bidR1, int *bidR2){
         if ((mapRight = BATdescriptor(CrackerIndex[mapRpos].cbid)) == NULL)
                 throw(MAL, "crackers.Join", "Cannot access crack map right");
 	
-/*
+#ifdef DEBUG_CRACKERS_JOIN
 	printf("maps\n");
 	BATprint(mapLeft);
 	BATprint(mapRight);
-*/	
+#endif
 
         /* Get the piece that holds the lowest values */
         curNodeRight = getFirstNode(CrackerIndex[mapRpos].Tree);
@@ -1246,13 +1256,7 @@ str CRKAlreadyAlignedJoin_@1(int *resid, int *bidL1,  int *bidR1, int *bidR2){
 	prevPosLeft   = prevPosRight   = -1;
 	prevNodeRight  = NULL;
 
-/*
-printf("\n New Join Index Left \n");
-printAVLTree(CrackerIndex[mapLpos].Tree, indexLeft, baseLeft, bunSizeLeft);
-
-printf("\n Index Right \n");
-printAVLTree(CrackerIndex[mapRpos].Tree, indexRight, baseRight, bunSizeRight);
-*/
+	@:dumpIndex(New Join Index Left)@
 	/* the left has no index and it all falls into the first piece of the right */
 	if (curNodeLeft == NULL){
         	curTupleRight = baseRight + curNodeRight->position;
@@ -1282,11 +1286,11 @@ printAVLTree(CrackerIndex[mapRpos].Tree, indexRight, baseRight, bunSizeRight);
         	curValueRight = *(@1 *)Tloc(indexRight, curTupleRight);
         	curPosRight   = *(oid*)Hloc(indexRight, curTupleRight);
 		
-/*
+#ifdef DEBUG_CRACKERS_JOIN
 		printf(" leftVal %d rightVal %d \n", curValueLeft, curValueRight);
 		printf(" prevPosLeft %lld curPosLeft %lld \n", prevPosLeft,curPosLeft);
 		printf(" prevPosRight %lld curPosRight %lld \n", prevPosRight,curPosRight);
-*/	
+#endif
 
 		while (curValueRight < curValueLeft ||
                 ((curValueLeft == curValueRight) && (curNodeRight->inclusive == FALSE) && (curNodeLeft->inclusive == TRUE))){
@@ -1587,13 +1591,7 @@ str CRKFullAlignment_@1(int *res, int *bidL, int *bidR1, int *bidR2){
 	if (CrackerIndex[mapRpos].Tree == NULL) printf("\n head is null \n");
 
 	alignStep(mapLeft, CrackerIndex[mapRpos].Tree, 0, BATcount(mapLeft)-1, indexRight, baseRight, indexLeft, mapLpos);
-/*
-printf("\n  Index Left \n");
-printAVLTree(CrackerIndex[mapLpos].Tree, indexLeft, BUNfirst(indexLeft), bunSizeLeft);
-
-printf("\n Index Right \n");
-printAVLTree(CrackerIndex[mapRpos].Tree, indexRight, baseRight, bunSizeRight);
-*/
+	@:dumpIndex(Index Left)@
 	BBPunfix(indexLeft->batCacheid);
 	BBPkeepref(mapLeft->batCacheid);
 	BBPunfix(indexRight->batCacheid);
