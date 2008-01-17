@@ -111,6 +111,12 @@
 /** mark() operator */
 #define mark(a,b) PFmil_mark((a), (b))
 
+/** hmark() operator */
+#define hmark(a,b) PFmil_hmark((a), (b))
+
+/** tmark() operator */
+#define tmark(a,b) PFmil_tmark((a), (b))
+
 /** mark_grp() operator */
 #define mark_grp(a,b) PFmil_mark_grp((a), (b))
 
@@ -139,8 +145,8 @@
 /** leftjoin() operator */
 #define leftjoin(a,b) PFmil_leftjoin((a), (b))
 
-/** leftjoin() operator */
-#define leftjoin(a,b) PFmil_leftjoin((a), (b))
+/** leftfetchjoin() operator */
+#define leftfetchjoin(a,b) PFmil_leftfetchjoin((a), (b))
 
 /** thetajoin() operator */
 #define tjoin(a,b,c,d) PFmil_thetajoin((a), (b), (c), (d))

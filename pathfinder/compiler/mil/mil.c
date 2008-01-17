@@ -591,6 +591,25 @@ PFmil_mark (const PFmil_t *bat, const PFmil_t *value)
 }
 
 /**
+ * Monet hmark() function.
+ */
+PFmil_t *
+PFmil_hmark (const PFmil_t *bat, const PFmil_t *value)
+{
+    return wire2 (m_hmark, bat, value);
+}
+
+/**
+ * Monet tmark() function.
+ */
+PFmil_t *
+PFmil_tmark (const PFmil_t *bat, const PFmil_t *value)
+{
+    return wire2 (m_tmark, bat, value);
+}
+
+
+/**
  * Monet mark_grp() function.
  */
 PFmil_t *
@@ -647,6 +666,16 @@ PFmil_leftjoin (const PFmil_t *a, const PFmil_t *b)
 {
     return wire2 (m_leftjoin, a, b);
 }
+
+/**
+ * Monet join operator
+ */
+PFmil_t *
+PFmil_leftfetchjoin (const PFmil_t *a, const PFmil_t *b)
+{
+    return wire2 (m_leftfetchjoin, a, b);
+}
+
 
 /**
  * Monet thetajoin() operator

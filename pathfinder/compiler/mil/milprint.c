@@ -228,11 +228,14 @@ static char *ID[] = {
     , [m_fetch]        = "fetch"
     , [m_project]      = "project"
     , [m_mark]         = "mark"
+    , [m_hmark]        = "hmark"
+    , [m_tmark]        = "tmark"
     , [m_mark_grp]     = "mark_grp"
     , [m_access]       = "access"
     , [m_cross]        = "cross"
     , [m_join]         = "join"
     , [m_leftjoin]     = "leftjoin"
+    , [m_leftfetchjoin]= "leftfetchjoin"
     , [m_thetajoin]    = "thetajoin"
     , [m_unq2_tjoin]   = "htordered_unique_thetajoin"
     , [m_unq1_tjoin]   = "ll_htordered_unique_thetajoin"
@@ -749,6 +752,10 @@ print_expression (PFmil_t * n)
         case m_project:
         /* expression : expression '.mark (' expression ')' */
         case m_mark:
+        /* expression : expression '.hmark (' expression ')' */
+        case m_hmark:
+        /* expression : expression '.tmark (' expression ')' */
+        case m_tmark:
         /* expression : expression '.mark_grp (' expression ')' */
         case m_mark_grp:
         /* expression : expression '.cross (' expression ')' */
@@ -757,6 +764,8 @@ print_expression (PFmil_t * n)
         case m_join:
         /* expression : expression '.leftjoin (' expression ')' */
         case m_leftjoin:
+        /* expression : expression '.leftfetchjoin (' expression ')' */
+        case m_leftfetchjoin:
         /* expression : expression '.CTrefine (' expression ')' */
         case m_ctrefine:
         /* expression : expression '.CTrefine_rev (' expression ')' */

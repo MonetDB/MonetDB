@@ -4062,9 +4062,13 @@ reduce (PFpa_op_t * p, int goalnt)
                     PFalg_att_t         att;
                     PFmil_t             *name     = NULL;
                     PFmil_t             *frag     = NULL;
+                    PFmil_t             *args     = NULL;
                     PFmil_ident_t       node_qn   = PF_MIL_VAR_UNUSED;
                     PFmil_ident_t       node_cont = PF_MIL_VAR_UNUSED;
                     mvar_t              *prefix   = new_var(1);
+                    mvar_t              *prefix_bool   = new_var(1);
+                    mvar_t              *true_oid      = new_var(1);
+                    mvar_t              *false_oid     = new_var(1);
 
 
                     att = p->sem.fun_1to1.refs.atts[0];
@@ -4086,10 +4090,7 @@ reduce (PFpa_op_t * p, int goalnt)
                             assert(!"should never reach here"); break;
                     } 
 
-                    /* get all prefix and add : to the ones that are not "" */
-                    /* FIXME: not sure if this mil code (the first execute
-                              command) actually works correctly, therefore
-                              it must be tested and changed if necessery. */
+                    /* get all prefix */
                     execute ( 
                         assgn (var (prefix->name),
                                mposjoin ( mposjoin (name,
@@ -4101,11 +4102,37 @@ reduce (PFpa_op_t * p, int goalnt)
                                                     fetch (var (PF_MIL_VAR_WS),
                                                            var (node_cont))),
                                           fetch (var (PF_MIL_VAR_WS),
-                                                 var (PF_MIL_VAR_QN_PREFIX)))),
-                        madd (uselect (meq (var (prefix->name),
-                                            lit_str("")),
-                                       lit_bit(false)),
-                              lit_str(":")));
+                                                 var (PF_MIL_VAR_QN_PREFIX)))));
+
+                    /* add ":" only to prefix that are not "" */
+
+                    execute (
+                        assgn (var (prefix_bool->name),
+                               meq (var (prefix->name),
+                                    lit_str(""))),
+                        assgn (var (true_oid->name),
+                               hmark (uselect (var (prefix_bool->name),
+                                               lit_bit(true)),
+                                      lit_oid(0))),
+                        assgn (var (false_oid->name),
+                               hmark (uselect (var (prefix_bool->name),
+                                               lit_bit(false)),
+                                      lit_oid(0))),
+                        assgn (var (prefix->name),
+                               madd (leftfetchjoin (var (false_oid->name),
+                                                    var (prefix->name)),
+                                     lit_str(":"))));
+
+                    args = arg ( arg (var (true_oid->name), var (false_oid->name)),
+                                 arg (lit_str(""), var (prefix->name))); 
+                    execute (
+                        assgn (var (prefix->name),
+                               fetch (merged_union (args),
+                                      lit_int(1))));
+
+                    unpin(prefix_bool, 1);
+                    unpin(true_oid, 1);
+                    unpin(false_oid, 1);
 
                     execute (
                         assgn (var (res->name),

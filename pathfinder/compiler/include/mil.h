@@ -143,6 +143,8 @@ enum PFmil_kind_t {
 
     , m_project      /**< MIL project() function */
     , m_mark         /**< MIL mark() function */
+    , m_hmark        /**< MIL hmark() function */
+    , m_tmark        /**< MIL tmark() function */
     , m_mark_grp     /**< MIL mark_grp() function */
     , m_fetch        /**< MIL fetch() function */
     , m_access       /**< change access restrictions to a BAT */
@@ -150,6 +152,7 @@ enum PFmil_kind_t {
     , m_cross        /**< MIL join operator */
     , m_join         /**< MIL join operator */
     , m_leftjoin     /**< MIL leftjoin operator */
+    , m_leftfetchjoin/**< MIL leftfetchjoin operation */
     , m_thetajoin    /**< MIL thetajoin operator */
     , m_unq2_tjoin   /**< MIL htordered_unique_thetajoin PROC
                           applying a unique on both iter columns */
@@ -577,6 +580,12 @@ PFmil_t * PFmil_project (const PFmil_t *, const PFmil_t *);
 /** MIL mark() function */
 PFmil_t * PFmil_mark (const PFmil_t *, const PFmil_t *);
 
+/** MIL hmark() function */
+PFmil_t * PFmil_hmark (const PFmil_t *, const PFmil_t *);
+
+/** MIL tmark() function */
+PFmil_t * PFmil_tmark (const PFmil_t *, const PFmil_t *);
+
 /** MIL mark_grp() function */
 PFmil_t * PFmil_mark_grp (const PFmil_t *, const PFmil_t *);
 
@@ -594,6 +603,9 @@ PFmil_t * PFmil_join (const PFmil_t *, const PFmil_t *);
 
 /** MIL leftjoin() operator ensures ordering by left operand */
 PFmil_t * PFmil_leftjoin (const PFmil_t *, const PFmil_t *);
+
+/** MIL leftfetchjoin() operator */
+PFmil_t * PFmil_leftfetchjoin (const PFmil_t *, const PFmil_t *);
 
 /** MIL thetajoin() operator */
 PFmil_t * PFmil_thetajoin (const PFmil_t *, const PFmil_t *,
