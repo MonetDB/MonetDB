@@ -352,6 +352,9 @@
 /** Multiplexed toLower() function `[toLower](a)' */
 #define mtoLower(a) PFmil_mtoLower ((a))
 
+/** Multiplexed translate() function `[translate](a,b,c)' */
+#define mtranslate(a,b,c) PFmil_mtranslate ((a),(b),(c))
+
 /** Multiplexed normSpace() function `[normSpace](a)' */
 #define mnorm_space(a) PFmil_mnorm_space ((a))
 

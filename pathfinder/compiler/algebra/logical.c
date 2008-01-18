@@ -439,12 +439,12 @@ PFla_empty_tbl (PFalg_attlist_t attlist)
  * external attribute/column names, and a list of the (internal)
  * key attributes.
  *
- * @param name    The name of the referenced table.  
+ * @param name    The name of the referenced table.
  * @param schema  Attribute list ("internal" attribute names)
  *                with annotated types.
  * @param tatts   String list ("external" attribute/column
  *                names).
- * @param keys    Array holding the *positions* (w.r.t. the 
+ * @param keys    Array holding the *positions* (w.r.t. the
  *                schema) of key attributes
  */
 PFla_op_t *
@@ -470,7 +470,7 @@ PFla_ref_tbl_ (const char* name, PFalg_schema_t schema, PFarray_t* tatts,
     /* set its semantical infos */
     /* deep copy the name of the referenced table*/
     ret->sem.ref_tbl.name = PFstrdup(name);
-    
+
     /* deep copy the "original column names" of the referenced table*/
     ret->sem.ref_tbl.tatts = PFarray(sizeof (char*));
     for (unsigned int i = 0; i < PFarray_last (tatts); i++)
@@ -479,7 +479,7 @@ PFla_ref_tbl_ (const char* name, PFalg_schema_t schema, PFarray_t* tatts,
             char* copiedValue = PFstrdup(value);
             *(char**) PFarray_add (ret->sem.ref_tbl.tatts) = copiedValue;
     }
-    
+
     /* (it's save to) shallow copy the list of key-attribute-names */
     ret->sem.ref_tbl.keys  = PFarray_copy(keys);
 
@@ -1377,6 +1377,7 @@ PFla_fun_1to1 (const PFla_op_t *n,
             res_type = aat_bln;
             break;
 
+        case alg_fun_fn_translate:
         case alg_fun_fn_replace:
             assert (refs.count == 3);
             /* make sure all attributes are of type string */
@@ -1436,6 +1437,69 @@ PFla_fun_1to1 (const PFla_op_t *n,
             assert (n->schema.items[ix[0]].type & aat_node);
 
             res_type = n->schema.items[ix[0]].type;
+            break;
+
+        case alg_fun_pf_add_doc:
+            assert(refs.count == 2);
+
+            /* make sure atts are of the correct type */
+            assert(n->schema.items[ix[0]].type == aat_str);
+            assert(n->schema.items[ix[1]].type == aat_str);
+
+            /* the returning type of doc management functions
+             * is aat_docmgmt bitwise OR the attribute types*/
+            res_type = aat_docmgmt | aat_str | aat_str1;
+            break;
+
+        case alg_fun_pf_add_doc_str:
+            assert(refs.count == 3);
+
+            /* make sure atts are of the correct type */
+            assert(n->schema.items[ix[0]].type == aat_str);
+            assert(n->schema.items[ix[1]].type == aat_str);
+            assert(n->schema.items[ix[2]].type == aat_str);
+
+            /* the returning type of doc management functions
+             * is aat_docmgmt bitwise OR the attribute types*/
+            res_type = aat_docmgmt | aat_str | aat_str1 | aat_str2;
+            break;
+
+        case alg_fun_pf_add_doc_int:
+            assert(refs.count == 3);
+
+            /* make sure atts are of the correct type */
+            assert(n->schema.items[ix[0]].type == aat_str);
+            assert(n->schema.items[ix[1]].type == aat_str);
+            assert(n->schema.items[ix[2]].type == aat_int);
+
+            /* the returning type of doc management functions
+             * is aat_docmgmt bitwise OR the attribute types */
+            res_type = aat_docmgmt | aat_str | aat_str1 | aat_int;
+            break;
+
+        case alg_fun_pf_add_doc_str_int:
+            assert(refs.count == 4);
+
+            /* make sure atts are of the correct type */
+            assert(n->schema.items[ix[0]].type == aat_str);
+            assert(n->schema.items[ix[1]].type == aat_str);
+            assert(n->schema.items[ix[2]].type == aat_str);
+            assert(n->schema.items[ix[3]].type == aat_int);
+
+            /* the returning type of doc management functions
+             * is aat_docmgmt bitwise OR the attribute types */
+            res_type = aat_docmgmt | aat_str | aat_str1 | aat_str2 | aat_int;
+            break;
+
+        case alg_fun_pf_del_doc:
+            assert(refs.count == 1);
+
+            /* make sure atts are of the correct type */
+            assert(n->schema.items[ix[0]].type == aat_str);
+
+            /* the returning type of doc management functions
+             * is aat_docmgmt bitwise OR the attribute types */
+            res_type = aat_docmgmt | aat_str1;
             break;
 
         case alg_fun_upd_delete:
@@ -2037,7 +2101,7 @@ PFla_count (const PFla_op_t *n, PFalg_att_t res, PFalg_att_t part)
  * Worker for PFla_rownum, PFla_rowrank, and PFla_rank.
  */
 static PFla_op_t *
-sort_col (const PFla_op_t *n, PFla_op_kind_t kind, char *name, 
+sort_col (const PFla_op_t *n, PFla_op_kind_t kind, char *name,
           PFalg_att_t a, PFord_ordering_t s, PFalg_att_t p)
 {
     PFla_op_t    *ret = la_op_wire1 (kind, n);
@@ -3933,7 +3997,7 @@ PFla_fun_frag_param (const PFla_op_t *argument,
     ret->schema.items = NULL;
 
     ret->sem.col_ref.pos = col_pos;
-    
+
     return ret;
 }
 
@@ -4421,11 +4485,11 @@ PFla_op_duplicate (PFla_op_t *n, PFla_op_t *left, PFla_op_t *right)
         case la_fun_param:
             return PFla_fun_param (left, right,
                                    n->schema);
-                                   
+
         case la_fun_frag_param:
             return PFla_fun_frag_param (left, right,
                                         n->sem.col_ref.pos);
-                                   
+
         case la_string_join:
             return PFla_fn_string_join (
                        left, right,

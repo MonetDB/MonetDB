@@ -99,6 +99,16 @@
 #define aat_pre1    0x00002000 /**< a node is represented by a pre value... */
 #define aat_pfrag1  0x00001000 /**< ...and a node fragment */
 
+/**
+ * The following types are for the document management functions. We introduce
+ * one new type, aat_docmgmt, to signify document management queries, and reuse
+ * types from the update functions since doc management and update functions
+ * can not be together in the same query.
+ */
+#define aat_docmgmt 0x00020000 /**< represents the doc management type */
+#define aat_str1    0x00001000 /**< second string param of a docmgmt fun */
+#define aat_str2    0x00002000 /**< third string param of a docmgmt fun */
+
 /** Simple atomic types in our algebra */
 typedef unsigned int PFalg_simple_type_t;
 
@@ -299,6 +309,7 @@ enum PFalg_fun_t {
     , alg_fun_fn_normalize_space  /**< fn:normalize-space */
     , alg_fun_fn_upper_case       /**< fn:upper-case */
     , alg_fun_fn_lower_case       /**< fn:lower-case */
+    , alg_fun_fn_translate        /**< fn:translate */
     , alg_fun_fn_contains         /**< fn:contains */
     , alg_fun_fn_starts_with      /**< fn:starts-with */
     , alg_fun_fn_ends_with        /**< fn:ends-with */
@@ -315,6 +326,11 @@ enum PFalg_fun_t {
     , alg_fun_fn_qname            /**< fn:QName */
     , alg_fun_pf_fragment         /**< #pf:fragment */
     , alg_fun_pf_supernode        /**< #pf:supernode */
+    , alg_fun_pf_add_doc          /**< pf:add-doc */
+    , alg_fun_pf_add_doc_str      /**< pf:add-doc */
+    , alg_fun_pf_add_doc_int      /**< pf:add-doc */
+    , alg_fun_pf_add_doc_str_int  /**< pf:add-doc */
+    , alg_fun_pf_del_doc          /**< pf:del-doc */
     , alg_fun_upd_rename          /**< upd:rename */
     , alg_fun_upd_delete          /**< upd:delete */
     , alg_fun_upd_insert_into_as_first    /**< upd:insertIntoAsFirst */
@@ -443,7 +459,7 @@ char * PFatt_str (PFalg_att_t att);
 /**
  * Checks whether a name is unique or not.
  */
-bool PFalg_is_unq_name(PFalg_att_t att); 
+bool PFalg_is_unq_name(PFalg_att_t att);
 
 /**
  * Create a unique name based on an id @a id and

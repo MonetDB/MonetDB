@@ -464,13 +464,14 @@ new_env (void)
 void
 env_add (PFarray_t *env, PFalg_att_t att, PFalg_simple_type_t ty, mvar_t *v)
 {
-    assert (ty == aat_nat    || ty == aat_int    || ty == aat_str 
+    assert (ty == aat_nat    || ty == aat_int    || ty == aat_str
          || ty == aat_dec    || ty == aat_dbl    || ty == aat_bln
          || ty == aat_node   || ty == aat_qname  || ty == aat_uA
          || ty == aat_pre    || ty == aat_attr   || ty == aat_pfrag
          || ty == aat_afrag  || ty == aat_update || ty == aat_node1
          || ty == aat_anode1 || ty == aat_attr1  || ty == aat_afrag1
-         || ty == aat_pnode1 || ty == aat_pre1   || ty == aat_pfrag1 );
+         || ty == aat_pnode1 || ty == aat_pre1   || ty == aat_pfrag1
+         || ty == aat_docmgmt|| ty == aat_str1   || ty == aat_str2 );
 
     *(env_t *) PFarray_add (env)
         = (env_t) { .att = att, .ty = ty, .mvar = v };
@@ -3910,6 +3911,23 @@ reduce (PFpa_op_t * p, int goalnt)
 
                 }   break;
 
+                case alg_fun_fn_translate:
+                {
+                    PFalg_att_t         att1, att2, att3;
+
+                    att1 = p->sem.fun_1to1.refs.atts[0];
+                    att2 = p->sem.fun_1to1.refs.atts[1];
+                    att3 = p->sem.fun_1to1.refs.atts[2];
+                    res_type = aat_str;
+
+                    execute (
+                        assgn ( var (res->name),
+                                mtranslate (
+                                    VAR (L(p)->env, att1, aat_str),
+                                    VAR (L(p)->env, att2, aat_str),
+                                    VAR (L(p)->env, att3, aat_str))));
+                }   break;
+
                 case alg_fun_fn_contains:
                 {
                     PFalg_att_t         att1, att2;
@@ -4088,10 +4106,10 @@ reduce (PFpa_op_t * p, int goalnt)
                         }   break;
                         default:
                             assert(!"should never reach here"); break;
-                    } 
+                    }
 
                     /* get all prefix */
-                    execute ( 
+                    execute (
                         assgn (var (prefix->name),
                                mposjoin ( mposjoin (name,
                                                     frag,
@@ -4124,7 +4142,7 @@ reduce (PFpa_op_t * p, int goalnt)
                                      lit_str(":"))));
 
                     args = arg ( arg (var (true_oid->name), var (false_oid->name)),
-                                 arg (lit_str(""), var (prefix->name))); 
+                                 arg (lit_str(""), var (prefix->name)));
                     execute (
                         assgn (var (prefix->name),
                                fetch (merged_union (args),
@@ -4191,7 +4209,7 @@ reduce (PFpa_op_t * p, int goalnt)
                         }   break;
                         default:
                             assert(!"should never reach here"); break;
-                    } 
+                    }
 
                     execute (
                         assgn (var (res->name),
@@ -4317,14 +4335,23 @@ reduce (PFpa_op_t * p, int goalnt)
                 }   break;
 
                 case alg_fun_pf_fragment:
+                {
                     res_type = aat_pfrag;
                     res = env_mvar (L(p)->env,
                                     p->sem.fun_1to1.refs.atts[0],
                                     aat_node);
-                    break;
+                }   break;
 
                 case alg_fun_pf_supernode:
                     assert (!"no implementation here");
+                    break;
+
+                case alg_fun_pf_add_doc:
+                case alg_fun_pf_add_doc_str:
+                case alg_fun_pf_add_doc_int:
+                case alg_fun_pf_add_doc_str_int:
+                case alg_fun_pf_del_doc:
+                    res_type = aat_docmgmt;
                     break;
 
                 case alg_fun_upd_delete:
@@ -4611,7 +4638,7 @@ reduce (PFpa_op_t * p, int goalnt)
             /* put the result into p's environment */
             env_add (p->env, p->sem.mark.res, aat_nat, res);
         } break;
-        
+
         /* Rel:      rank (Rel) */
         case 72:
         /* Rel:      rank (std_sort (Rel)) */
@@ -4702,7 +4729,7 @@ reduce (PFpa_op_t * p, int goalnt)
 
             /* put the result into p's environment */
             env_add (p->env, p->sem.rank.res, aat_nat, res);
-            
+
             /*
              * The join with each input relation:
              *
@@ -7585,20 +7612,20 @@ reduce (PFpa_op_t * p, int goalnt)
                          env_at (L(p)->env, i).mvar);
             }
             break;
-            
+
         /* Rel:      FunRel */
         case 150:
             /* no operator -- nothing to do */
             break;
-            
+
         /* FunRel:   fun_call (Rel, Param) */
         case 151:
         {   /* TOPDOWN */
             PFarray_t     *old_fun_params;
-            
+
             /* Collect the destinations */
             reduce (kids[0], nts[0]);
-            
+
             old_fun_params = fun_params;
 
             /* We will collect the parameters here */
@@ -7614,14 +7641,14 @@ reduce (PFpa_op_t * p, int goalnt)
             /* DO FUNCTION TRANSFORMATION HERE */
             /*                                 */
             /***********************************/
-            
+
             if (p->sem.fun_call.kind == alg_fun_call_xrpc) {
                 PFcnode_t *core_apply = (PFcnode_t *) p->sem.fun_call.ctx;
-                
+
                 /* do XRPC stuff here */
                 (void)* fun_params;
                 (void)* core_apply;
-                
+
                 /* dummy stub to fill the environment */
 
                 /* create dummy temp variable */
@@ -7630,7 +7657,7 @@ reduce (PFpa_op_t * p, int goalnt)
                 pin (v, 1);
                 /* release all pins */
                 unpin (v, 2);
-                
+
                 /* fill the environment for all attributes and columns */
                 for (unsigned int i = 0; i < p->schema.count; i++) {
                     for (PFalg_simple_type_t t = 1; t; t <<= 1)
@@ -7645,12 +7672,12 @@ reduce (PFpa_op_t * p, int goalnt)
                         }
                 }
 
-            } 
+            }
 
             /* restore the function arguments */
             fun_params = old_fun_params;
         }   break;
-        
+
         /* Param:    fun_param (Rel, Param) */
         case 152:
         {   /* TOPDOWN */
@@ -7673,12 +7700,12 @@ reduce (PFpa_op_t * p, int goalnt)
             /* go on to next arguments */
             reduce (kids[1], nts[1]);
         }   break;
-            
+
         /* Param:    fun_frag_param (FragList, Param) */
         case 153:
             /* fragment part of the parameter list -- probably ignored */
             break;
-            
+
         /* Param:    nil */
         case 154:
             /* end of parameter list */

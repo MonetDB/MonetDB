@@ -316,6 +316,10 @@ struct PFla_pair_t PFbui_fn_lower_case (const PFla_op_t *loop,
                                         bool ordering,
                                         struct PFla_pair_t *args);
 
+struct PFla_pair_t PFbui_fn_translate (const PFla_op_t *loop,
+                                        bool ordering,
+                                        struct PFla_pair_t *args);
+
 /* 7.5. Functions Based on Substring Matching */
 struct PFla_pair_t PFbui_fn_contains (const PFla_op_t *loop,
                                       bool ordering,
@@ -640,6 +644,18 @@ struct PFla_pair_t PFbui_pf_text (const PFla_op_t *loop, bool ordering,
                                   struct PFla_pair_t *args);
 struct PFla_pair_t PFbui_pf_supernode (const PFla_op_t *loop, bool ordering,
                                        struct PFla_pair_t *args);
+struct PFla_pair_t PFbui_pf_add_doc (const PFla_op_t *loop, bool ordering,
+                                     struct PFla_pair_t *args);
+struct PFla_pair_t PFbui_pf_add_doc_str (const PFla_op_t *loop, bool ordering,
+                                         struct PFla_pair_t *args);
+struct PFla_pair_t PFbui_pf_add_doc_int (const PFla_op_t *loop, bool ordering,
+                                         struct PFla_pair_t *args);
+struct PFla_pair_t PFbui_pf_add_doc_str_int (const PFla_op_t *loop,
+                                             bool ordering,
+                                             struct PFla_pair_t *args);
+struct PFla_pair_t PFbui_pf_del_doc (const PFla_op_t *loop, bool ordering,
+                                     struct PFla_pair_t *args);
+
 
 /* #3. UPDATE FUNCTIONS */
 struct PFla_pair_t PFbui_upd_rename (const PFla_op_t *loop, bool ordering,

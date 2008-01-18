@@ -1340,6 +1340,8 @@ la_xml (PFarray_t *xml, PFla_op_t *n)
         
         if (n->schema.items[i].type & aat_update)
             PFarray_printf (xml, "update");
+        else if (n->schema.items[i].type & aat_docmgmt)
+            PFarray_printf (xml, "docmgmt");
         else
             for (PFalg_simple_type_t t = 1; t; t <<= 1) {
                 if (t & n->schema.items[i].type) {

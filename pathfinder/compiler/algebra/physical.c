@@ -1629,6 +1629,7 @@ PFpa_fun_1to1 (const PFpa_op_t *n,
             res_type = aat_bln;
             break;
 
+        case alg_fun_fn_translate:
         case alg_fun_fn_replace:
             assert (refs.count == 3);
             /* make sure all attributes are of type string */
@@ -1688,6 +1689,70 @@ PFpa_fun_1to1 (const PFpa_op_t *n,
             assert (n->schema.items[ix[0]].type & aat_node);
 
             res_type = n->schema.items[ix[0]].type;
+            break;
+
+        case alg_fun_pf_add_doc:
+            assert(refs.count == 2);
+
+            /* make sure atts are of the correct type */
+            assert(n->schema.items[ix[0]].type == aat_str);
+            assert(n->schema.items[ix[1]].type == aat_str);
+
+            /* the returning type of doc management functions
+             * is aat_docmgmt bitwise OR the attribute types*/
+            res_type = aat_docmgmt | aat_str | aat_str1;
+
+            break;
+
+        case alg_fun_pf_add_doc_str:
+            assert(refs.count == 3);
+
+            /* make sure atts are of the correct type */
+            assert(n->schema.items[ix[0]].type == aat_str);
+            assert(n->schema.items[ix[1]].type == aat_str);
+            assert(n->schema.items[ix[2]].type == aat_str);
+
+            /* the returning type of doc management functions
+             * is aat_docmgmt bitwise OR the attribute types*/
+            res_type = aat_docmgmt | aat_str | aat_str1 | aat_str2;
+            break;
+
+        case alg_fun_pf_add_doc_int:
+            assert(refs.count == 3);
+
+            /* make sure atts are of the correct type */
+            assert(n->schema.items[ix[0]].type == aat_str);
+            assert(n->schema.items[ix[1]].type == aat_str);
+            assert(n->schema.items[ix[2]].type == aat_int);
+
+            /* the returning type of doc management functions
+             * is aat_docmgmt bitwise OR the attribute types */
+            res_type = aat_docmgmt | aat_str | aat_str1 | aat_int;
+            break;
+
+        case alg_fun_pf_add_doc_str_int:
+            assert(refs.count == 4);
+
+            /* make sure atts are of the correct type */
+            assert(n->schema.items[ix[0]].type == aat_str);
+            assert(n->schema.items[ix[1]].type == aat_str);
+            assert(n->schema.items[ix[2]].type == aat_str);
+            assert(n->schema.items[ix[3]].type == aat_int);
+
+            /* the returning type of doc management functions
+             * is aat_docmgmt bitwise OR the attribute types */
+            res_type = aat_docmgmt | aat_str | aat_str1 | aat_str2 | aat_int;
+            break;
+
+        case alg_fun_pf_del_doc:
+            assert(refs.count == 1);
+
+            /* make sure atts are of the correct type */
+            assert(n->schema.items[ix[0]].type == aat_str);
+
+            /* the returning type of doc management functions
+             * is aat_docmgmt bitwise OR the attribute types */
+            res_type = aat_docmgmt | aat_str1;
             break;
 
         case alg_fun_upd_delete:
@@ -3794,7 +3859,7 @@ PFpa_fun_call (const PFpa_op_t *loop, const PFpa_op_t *param_list,
     /* by default we don't know anything about the output ordering */
 
     /* XRPC functions return the result in iter|pos order */
-    if (kind == alg_fun_call_xrpc) 
+    if (kind == alg_fun_call_xrpc)
         PFord_set_add (ret->orderings, sortby (schema.items[0].name,
                                                schema.items[1].name));
 
@@ -3862,7 +3927,7 @@ PFpa_fun_frag_param (const PFpa_op_t *argument,
     ret->schema.items = NULL;
 
     ret->sem.col_ref.pos = col_pos;
-    
+
     /* costs */
     ret->cost = argument->cost + param_list->cost;
 

@@ -37,10 +37,13 @@
                  | expression '.exist (' expression ')'     <m_exist>
                  | expression '.project (' expression ')'   <m_project>
                  | expression '.mark (' expression ')'      <m_mark>
+                 | expression '.hmark (' expression ')'     <m_hmark>
+                 | expression '.tmark (' expression ')'     <m_tmark>
                  | expression '.mark_grp (' expression ')'  <m_mark_grp>
                  | expression '.cross (' expression ')'     <m_cross>
                  | expression '.join (' expression ')'      <m_join>
                  | expression '.leftjoin (' expression ')'  <m_leftjoin>
+                 | expression '.leftfetchjoin (' expr ')'   <m_leftfetchjoin>
                  | 'thetajoin ('exp','exp','exp','exp')'    <m_thetajoin>
                  | 'htordered_unique_thetajoin ('
                       exp ',' exp ',' exp ', nil, nil)'     <m_unq2_tjoin>
@@ -122,6 +125,7 @@
                  | '[length](' expresion ')'                <m_mlength>
                  | '[toUpper](' expresion ')'               <m_mtoUpper>
                  | '[toLower](' expresion ')'               <m_mtoLower>
+                 | '[translate](' exp ',' exp ',' exp ')'   <m_mtranslate>
                  | '[normSpace](' expresion ')'             <m_mnorm_space>
                  | '[pcre_match]('exp','exp')'              <m_mpcre_match>
                  | '[pcre_match]('exp','exp','exp')'        <m_mpcre_match_flag>
@@ -297,6 +301,7 @@ static char *ID[] = {
     , [m_mlength]      = "[length]"
     , [m_mtoUpper]     = "[toUpper]"
     , [m_mtoLower]     = "[toLower]"
+    , [m_mtranslate]   = "[translate]"
     , [m_mnorm_space]  = "[normSpace]"
     , [m_mpcre_match]  = "[pcre_match]"
     , [m_mpcre_match_flag] = "[pcre_match]"
@@ -1020,6 +1025,8 @@ print_expression (PFmil_t * n)
             milprintf ("%s ()", ID[n->kind]);
             break;
 
+        /* expression : '[translate] (' expr ',' expr ',' expr ')' */
+        case m_mtranslate:
         /* expression : 'attr_constr (' expr ',' expr ',' expr ')' */
         case m_attr_constr:
         /* expression : 'mposjoin (' exp ',' exp ',' exp ')' */

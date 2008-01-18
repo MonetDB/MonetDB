@@ -1320,6 +1320,14 @@ PFmil_mtoLower (const PFmil_t *a)
     return wire1 (m_mtoLower, a);
 }
 
+/** Multiplexed translate() function `[translate](a,b,c)' */
+PFmil_t *
+PFmil_mtranslate (const PFmil_t *a, const PFmil_t *b, const PFmil_t *c)
+{
+    return wire3 (m_mtranslate, a, b, c);
+}
+
+
 /** Multiplexed normSpace() function `[normSpace](a)' */
 PFmil_t *
 PFmil_mnorm_space (const PFmil_t *a)

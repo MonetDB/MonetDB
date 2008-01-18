@@ -1060,7 +1060,8 @@ PFfun_xquery_fo (void)
             .par_ty = (PFty_t[]) { PFty_opt (PFty_xs_string ()),
                                 PFty_xs_string (),
                                 PFty_xs_string () },
-            .ret_ty = PFty_xs_string () } } }
+            .ret_ty = PFty_xs_string () } },
+        .alg = PFbui_fn_translate }
 
 /* 7.5. Functions Based on Substring Matching */
     , /* fn:contains (string, string) as boolean */
@@ -1912,21 +1913,24 @@ PFfun_xquery_fo (void)
         .arity = 2, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_xs_string (),
                                    PFty_xs_string () },
-            .ret_ty = PFty_docmgmt () } } }
+            .ret_ty = PFty_docmgmt () } },
+        .alg = PFbui_pf_add_doc }
     ,  /* pf:add-doc (string, string, string) as docmgmt */
       { .ns = PFns_lib, .loc = "add-doc",
         .arity = 3, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_xs_string (),
                                    PFty_xs_string (),
                                    PFty_xs_string () },
-            .ret_ty = PFty_docmgmt () } } }
+            .ret_ty = PFty_docmgmt () } },
+         .alg = PFbui_pf_add_doc_str }
     ,  /* pf:add-doc (string, string, int) as docmgmt */
       { .ns = PFns_lib, .loc = "add-doc",
         .arity = 3, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_xs_string (),
                                    PFty_xs_string (),
                                    PFty_xs_integer() },
-            .ret_ty = PFty_docmgmt () } } }
+            .ret_ty = PFty_docmgmt () } },
+        .alg =  PFbui_pf_add_doc_int }
     ,  /* pf:add-doc (string, string, string, int) as docmgmt */
       { .ns = PFns_lib, .loc = "add-doc",
         .arity = 4, .sig_count = 1, .sigs = { {
@@ -1934,12 +1938,14 @@ PFfun_xquery_fo (void)
                                    PFty_xs_string (),
                                    PFty_xs_string (),
                                    PFty_xs_integer() },
-            .ret_ty = PFty_docmgmt () } } }
+            .ret_ty = PFty_docmgmt () } },
+        .alg =  PFbui_pf_add_doc_str_int }
     ,  /* pf:del-doc (string) as docmgmt */
       { .ns = PFns_lib, .loc = "del-doc",
         .arity = 1, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_xs_string () },
-            .ret_ty = PFty_docmgmt () } } }
+            .ret_ty = PFty_docmgmt () } },
+        .alg = PFbui_pf_del_doc }
     ,  /* pf:mil (string) as item* */
       { .ns = PFns_lib, .loc = "mil",
         .arity = 1, .sig_count = 1, .sigs = { {

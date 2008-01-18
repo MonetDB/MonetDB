@@ -263,6 +263,7 @@ enum PFmil_kind_t {
     , m_mlength      /**< Multiplexed length() function `[length](a)' */
     , m_mtoUpper     /**< Multiplexed toUpper() function `[toUpper](a)' */
     , m_mtoLower     /**< Multiplexed toLower() function `[toLower](a)' */
+    , m_mtranslate   /**< Multiplexed translate() func `[translate](a,b,c)' */
 
     , m_mnorm_space       /**< Multiplexed normSpace() function */
     , m_mpcre_match       /**< Multiplexed pcre_match() function */
@@ -833,6 +834,9 @@ PFmil_t * PFmil_mtoUpper (const PFmil_t *);
 
 /** Multiplexed toLower() function `[toLower](a)' */
 PFmil_t * PFmil_mtoLower (const PFmil_t *);
+
+/** Multiplexed translate() function `[translate](a,b,c)' */
+PFmil_t * PFmil_mtranslate (const PFmil_t *, const PFmil_t *, const PFmil_t *);
 
 /** Multiplexed normSpace() function `[normSpace](a)' */
 PFmil_t * PFmil_mnorm_space (const PFmil_t *);

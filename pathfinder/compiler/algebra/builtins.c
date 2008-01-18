@@ -665,7 +665,7 @@ PFbui_fn_error_str (const PFla_op_t *loop, bool ordering,
     (void) loop; (void) ordering;
 
     return (struct PFla_pair_t) {
-        .rel = error( 
+        .rel = error(
                    project (
                        fun_1to1 (
                            eqjoin (
@@ -1687,6 +1687,53 @@ PFbui_fn_lower_case (const PFla_op_t *loop, bool ordering,
                    proj (att_iter, att_iter),
                    proj (att_pos, att_pos),
                    proj (att_item, att_res)),
+        .frag = PFla_empty_set () };
+}
+
+/**
+ * Algebra implementation for
+ * <code>fn:translate(xs:string?, xs:string, xs:string)</code>
+ */
+struct PFla_pair_t
+PFbui_fn_translate (const PFla_op_t *loop, bool ordering,
+                    struct PFla_pair_t *args)
+{
+    (void) ordering;
+
+    return (struct PFla_pair_t) {
+        .rel = project (
+                   fun_1to1 (
+                       eqjoin (
+                           eqjoin (
+                               disjunion (
+                                   args[0].rel,
+                                   attach (
+                                       attach (
+                                           difference (
+                                               loop,
+                                               project (
+                                                   args[0].rel,
+                                                   proj (att_iter, att_iter))),
+                                           att_pos, lit_nat (1)),
+                                       att_item, lit_str (""))),
+                               project (args[1].rel,
+                                        proj (att_iter1, att_iter),
+                                        proj (att_item1, att_item)),
+                               att_iter,
+                               att_iter1),
+                           project (args[2].rel,
+                                    proj (att_iter2, att_iter),
+                                    proj (att_item2, att_item)),
+                           att_iter,
+                           att_iter2),
+                       alg_fun_fn_translate,
+                       att_res,
+                       attlist (att_item, att_item1, att_item2)),
+                proj (att_iter, att_iter),
+                proj (att_pos, att_pos),
+                proj (att_item, att_res)),
+
+
         .frag = PFla_empty_set () };
 }
 
@@ -4516,6 +4563,161 @@ PFbui_pf_supernode (const PFla_op_t *loop, bool ordering,
                         proj (att_iter, att_iter),
                         proj (att_pos, att_pos),
                         proj (att_item, att_res)),
+        .frag = args[0].frag };
+}
+
+/**
+ * Built-in function pf:add-doc(string, string)
+ */
+struct PFla_pair_t
+PFbui_pf_add_doc (const PFla_op_t *loop, bool ordering,
+                  struct PFla_pair_t *args)
+{
+    (void) loop; (void) ordering;
+
+    return (struct PFla_pair_t) {
+        .rel = project (fun_1to1 (
+                            eqjoin (args[0].rel,
+                               project (args[1].rel,
+                                        proj (att_iter1, att_iter),
+                                        proj (att_item1, att_item)),
+                               att_iter,
+                               att_iter1),
+                            alg_fun_pf_add_doc,
+                            att_res,
+                            attlist (att_item, att_item1)),
+                        proj (att_iter, att_iter),
+                        proj (att_pos, att_pos),
+                        proj (att_item, att_res)),
+        .frag = args[0].frag };
+}
+
+/**
+ * Built-in function pf:add-doc(string, string, string)
+ */
+struct PFla_pair_t
+PFbui_pf_add_doc_str (const PFla_op_t *loop, bool ordering,
+                      struct PFla_pair_t *args)
+{
+    (void) loop; (void) ordering;
+
+    return (struct PFla_pair_t) {
+        .rel = project (fun_1to1 (
+                           eqjoin (
+                               eqjoin (
+                                   args[0].rel,
+                                   project (args[1].rel,
+                                            proj (att_iter1, att_iter),
+                                            proj (att_item1, att_item)),
+                                   att_iter,
+                                   att_iter1),
+                               project (args[2].rel,
+                                        proj (att_iter2, att_iter),
+                                        proj (att_item2, att_item)),
+                               att_iter,
+                               att_iter2),
+                            alg_fun_pf_add_doc_str,
+                            att_res,
+                            attlist (att_item, att_item1, att_item2)),
+                        proj (att_iter, att_iter),
+                        proj (att_pos, att_pos),
+                        proj (att_item, att_res)),
+
+        .frag = args[0].frag };
+}
+
+/**
+ * Built-in function pf:add-doc(string, string, int)
+ */
+struct PFla_pair_t
+PFbui_pf_add_doc_int (const PFla_op_t *loop, bool ordering,
+                      struct PFla_pair_t *args)
+{
+    (void) loop; (void) ordering;
+
+    return (struct PFla_pair_t) {
+        .rel = project (fun_1to1 (
+                           eqjoin (
+                               eqjoin (
+                                   args[0].rel,
+                                   project (args[1].rel,
+                                            proj (att_iter1, att_iter),
+                                            proj (att_item1, att_item)),
+                                   att_iter,
+                                   att_iter1),
+                               project (args[2].rel,
+                                        proj (att_iter2, att_iter),
+                                        proj (att_item2, att_item)),
+                               att_iter,
+                               att_iter2),
+                            alg_fun_pf_add_doc_int,
+                            att_res,
+                            attlist (att_item, att_item1, att_item2)),
+                        proj (att_iter, att_iter),
+                        proj (att_pos, att_pos),
+                        proj (att_item, att_res)),
+
+        .frag = args[0].frag };
+}
+
+/**
+ * Built-in function pf:add-doc(string, string, string, int)
+ */
+struct PFla_pair_t
+PFbui_pf_add_doc_str_int (const PFla_op_t *loop, bool ordering,
+                          struct PFla_pair_t *args)
+{
+    (void) loop; (void) ordering;
+
+    return (struct PFla_pair_t) {
+        .rel = project (fun_1to1 (
+                       eqjoin (
+                           eqjoin (
+                               eqjoin (
+                                   args[0].rel,
+                                   project (args[1].rel,
+                                            proj (att_iter1, att_iter),
+                                            proj (att_item1, att_item)),
+                                   att_iter,
+                                   att_iter1),
+                               project (args[2].rel,
+                                        proj (att_iter2, att_iter),
+                                        proj (att_item2, att_item)),
+                               att_iter,
+                               att_iter2),
+                            project (args[3].rel,
+                                        proj (att_iter3, att_iter),
+                                        proj (att_item3, att_item)),
+                            att_iter,
+                            att_iter3),
+                            alg_fun_pf_add_doc_str_int,
+                            att_res,
+                            attlist (att_item,
+                                     att_item1,
+                                     att_item2,
+                                     att_item3))),
+        .frag = args[0].frag };
+}
+
+/**
+ * Built-in function pf:del-doc(string)
+ */
+struct PFla_pair_t
+PFbui_pf_del_doc (const PFla_op_t *loop, bool ordering,
+                  struct PFla_pair_t *args)
+{
+    (void) loop; (void) ordering;
+
+    return (struct PFla_pair_t) {
+        .rel = project (fun_1to1 (
+                            args[0].rel,
+                            alg_fun_pf_del_doc,
+                            att_res,
+                            attlist (att_item)),
+                        proj (att_iter, att_iter),
+                        proj (att_pos, att_pos),
+                        proj (att_item, att_res)),
+
         .frag = args[0].frag };
 }
 
