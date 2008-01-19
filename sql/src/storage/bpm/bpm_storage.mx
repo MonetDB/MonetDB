@@ -58,8 +58,8 @@ typedef struct sql_bpm {
 
 extern int bpm_add_partition(sql_bpm *p);
 
-extern int bpm_set_part_location(Part p, char *host, int port, char *dbname, char* username, char* passwd);
-extern int bpm_del_part_location(Part p);
+extern int bpm_set_part_location(sql_bpm *pp, int part, int id, char *host, int port, char *dbname, char* username, char* passwd);
+extern int bpm_del_part_location(sql_bpm *pp, int part);
 
 #endif /*BPMSTORAGE_H */
 
@@ -135,21 +135,27 @@ extend_part( sql_bpm *p, BAT *b, bat u)
 }
 
 int
-bpm_set_part_location(Part p, char *host, int port, char *dbname, char* user, char* passwd)
+bpm_set_part_location(sql_bpm *pp, int part, int host_id, char *host, int port, char *dbname, char* user, char* passwd)
 {
 	BATiter part_namei;
 	ptr id;
 	BAT *part_name = bpm_part_name();
-	bpmHost bpmH = 	bpm_host_create(host, port, dbname, user, passwd);
+	bpmHost bpmH = NULL;
+	Part p = &(pp->parts[part]);
+
+	if (host_id)
+		bpmH = bpm_host_get(host_id);
+	else
+		bpmH = 	bpm_host_create(host, port, dbname, user, passwd);
 
 	if (bpmH) {
 		p->host = bpmH;
+		part_namei = bat_iterator(part_name);
+		id = BUNhead(part_namei,BUNfnd(part_name, p->name));
+		BUNins(part_host, (ptr)&id, &bpmH->id, TRUE);
+
 		return 1;
 	}
-
-	part_namei = bat_iterator(part_name);
-	id = BUNhead(part_namei,BUNfnd(part_name, p->name));
-	BUNins(part_host, (ptr)&id, &bpmH->id, TRUE);
 
 	/* error */
 	assert(0);
@@ -157,12 +163,13 @@ bpm_set_part_location(Part p, char *host, int port, char *dbname, char* user, ch
 }
 
 int
-bpm_remove_part_location(Part p)
+bpm_del_part_location(sql_bpm *pp, int part)
 {
 	BATiter part_namei;
 	ptr id;
 	BAT *part_name = bpm_part_name();
 	int host_id = 0;
+	Part p = &(pp->parts[part]);
 
 	if (p->host) {
 		p->host = NULL;
