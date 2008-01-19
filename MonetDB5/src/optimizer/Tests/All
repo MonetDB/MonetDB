@@ -70,6 +70,11 @@ inline05
 inline06
 inline07
 inline08
+inline09
+inline10
+#inline11
+inlineIfthen
+inlineCst
 
 CXerror1
 #the remainder are snippets used in the reference manual

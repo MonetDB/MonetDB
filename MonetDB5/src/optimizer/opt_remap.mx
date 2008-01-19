@@ -218,7 +218,6 @@ an upgrade and resolve it afterwards.
 		for(j=0; j<q->argc && !fnd; j++) 
 			if (upgrade[getArg(q,j)]) {
 				for(k=0; k<q->retc; k++){
-					//setVarType(mq,getArg(q,k),TYPE_any);
 					setVarType(mq,getArg(q,j),newBatType(TYPE_oid,getArgType(mq, q, j)));
 					/* for typing */
 					clrVarFixed(mq,getArg(q,k)); 
@@ -234,18 +233,29 @@ an upgrade and resolve it afterwards.
 		if (!getModuleId(q) && q->token == ASSIGNsymbol &&
 		    q->argc == 2 && isVarConstant(mq, getArg(q,1)) && 
 		    upgrade[getArg(q,0)] &&
-		    !isaBatType(getArgType(mq, q, 1)) &&
-		    ATOMcmp(getArgGDKType(mq, q, 1),
-			VALget(&getVar(mq, getArg(q,1))->value),
-			ATOMnilptr(getArgType(mq, q, 1))) == 0) {
-			ValRecord cst;
-			int tpe = newBatType(TYPE_oid,getArgType(mq, q, 1));
+		    !isaBatType(getArgType(mq, q, 1)) ){
+				/* handle nil assignment */
+				if( ATOMcmp(getArgGDKType(mq, q, 1),
+					VALget(&getVar(mq, getArg(q,1))->value),
+					ATOMnilptr(getArgType(mq, q, 1))) == 0) {
+				ValRecord cst;
+				int tpe = newBatType(TYPE_oid,getArgType(mq, q, 1));
 
-			setVarType(mq,getArg(q,0),tpe);
-			cst.vtype = TYPE_bat;
-			cst.val.bval = bat_nil;
-			getArg(q,1) = defConstant(mq, tpe, &cst);
-			setVarType(mq, getArg(q,1), tpe);
+				setVarType(mq,getArg(q,0),tpe);
+				cst.vtype = TYPE_bat;
+				cst.val.bval = bat_nil;
+				getArg(q,1) = defConstant(mq, tpe, &cst);
+				setVarType(mq, getArg(q,1), tpe);
+			} else{
+				/* handle constant tail setting */
+				int tpe = newBatType(TYPE_oid,getArgType(mq, q, 1));
+
+				setVarType(mq,getArg(q,0),tpe);
+				setModuleId(q,algebraRef);
+				setFunctionId(q,projectRef);
+				q= pushArgument(mb,q, getArg(q,1));
+				getArg(q,1)= getArg(q,0);
+			}
 		}
 	}
 
@@ -255,21 +265,30 @@ an upgrade and resolve it afterwards.
 		if( q->token== ENDsymbol)
 			break;
 		for(j=0; j<q->argc; j++)
-			if (upgrade[getArg(q,j)] && getModuleId(q)){
-				snprintf(buf,1024,"bat%s",getModuleId(q));
-				setModuleId(q,putName(buf,strlen(buf)));
-
-				/* now see if we can resolve the instruction */
-				typeChecker(MCgetClient()->nspace,mq,q,TRUE);
-				if( q->typechk== TYPE_UNKNOWN)
+			if ( upgrade[getArg(q,j)]){
+				if ( blockStart(q) || 
+					 q->barrier== REDOsymbol || q->barrier==LEAVEsymbol )
 					goto terminateMX;
-				break;
-			}
+				if (getModuleId(q)){
+					snprintf(buf,1024,"bat%s",getModuleId(q));
+					setModuleId(q,putName(buf,strlen(buf)));
+
+					/* now see if we can resolve the instruction */
+					typeChecker(MCgetClient()->nspace,mq,q,TRUE);
+					if( q->typechk== TYPE_UNKNOWN)
+						goto terminateMX;
+					break;
+				}
+		}
 	}
 
 
 	if(mq->errors){
 terminateMX:
+#ifdef DEBUG_OPT_REMAP
+		stream_printf(GDKout,"Abort remap\n");
+		printInstruction(GDKout,mb,q,LIST_MAL_ALL);
+#endif
 		freeMalBlk(mq);
 		GDKfree(upgrade);
 		return 0;
