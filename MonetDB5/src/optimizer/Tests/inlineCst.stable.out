@@ -1,0 +1,70 @@
+stdout of test 'inlineCst` in directory 'src/optimizer` itself:
+
+
+# 20:07:33 >  
+# 20:07:33 >   mserver5 "--config=/ufs/mk/monet5/Linux/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5//Linux/lib/MonetDB5:/ufs/mk/monet5//Linux/lib/MonetDB5/lib:/ufs/mk/monet5//Linux/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/mk/monet5//Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5//Linux/var/MonetDB5/sql_logs"  --set mapi_open=true --set xrpc_open=true --set mapi_port=33414 --set xrpc_port=46798 --set monet_prompt= --trace --dbname=mTests_src_optimizer  inlineCst.mal
+# 20:07:33 >  
+
+# MonetDB server v5.3.0, based on kernel v1.21.0
+# Serving database 'mTests_src_optimizer'
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Copyright (c) 1993-2007 CWI, all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://gio.ins.cwi.nl:33414/
+#function user.foo{inline}(b:int):int;
+#   i:= 213;
+#   return foo:=i;
+#end foo;
+function user.foo{inline}(b:int):int;	# 0  (foo:int)<-(b:int)
+    i := 213;	# 1  (i:int)<-(_3:int)
+    return foo{inline} := i;	# 2  (foo:int)<-(i:int)
+end foo;	# 3  
+#
+#function qry();
+#	b:= bat.new(:oid,:int);
+#	bat.append(b,1);
+#	bat.append(b,10);
+#	bat.append(b,20);
+#	r:bat[:oid,:int]:= mal.multiplex("user","foo",b);
+#	io.print(r);
+#end qry;
+function user.qry():void;	# 0  (qry:void)
+    b := bat.new(:oid,:int);	# 1 CMDBATnew (b:bat[:oid,:int])<-(_2:oid)(_3:int)
+    bat.append(b,1);	# 2 BKCappend_val_wrap (_4:void)<-(b:bat[:oid,:int])(_5:int)
+    bat.append(b,10);	# 3 BKCappend_val_wrap (_6:void)<-(b:bat[:oid,:int])(_7:int)
+    bat.append(b,20);	# 4 BKCappend_val_wrap (_8:void)<-(b:bat[:oid,:int])(_9:int)
+    r:bat[:oid,:int]  := mal.multiplex("user","foo",b);	# 5 OPTremapMultiplex (r:bat[:oid,:int])<-(_11:str)(_12:str)(b:bat[:oid,:int])
+    io.print(r);	# 6 IOprint_val (_13:void)<-(r:bat[:oid,:int])
+end qry;	# 7  
+#
+#qry();
+#optimizer.inline("user","qry");
+#optimizer.remap("user","qry");
+#mdb.list("user","qry");
+#
+function user.main():void;	# 0  (main:void)
+    user.qry();	# 1  (_1:void)
+    mdb.list("user","qry");	# 2 MDBlist3 (_6:void)<-(_3:str)(_4:str)
+end main;	# 3  
+#-----------------#
+# h	t	  # name
+# void	int	  # type
+#-----------------#
+[ 0@0,	  213	  ]
+[ 1@0,	  213	  ]
+[ 2@0,	  213	  ]
+function user.qry():void;
+    b := bat.new(:oid,:int);
+    bat.append(b,1);
+    bat.append(b,10);
+    bat.append(b,20);
+    r:bat[:oid,:int]{inline}  := nil;
+    _16 := 213;
+    r:bat[:oid,:int]{inline}  := algebra.project(b,_16);
+    io.print(r);
+end qry;
+
+# 20:07:33 >  
+# 20:07:33 >  Done.
+# 20:07:33 >  
+

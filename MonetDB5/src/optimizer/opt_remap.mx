@@ -157,6 +157,7 @@ OPTmultiplexInline( MalBlkPtr mb, InstrPtr p, int pc )
 	InstrPtr q,sig;
 	char buf[1024];
 	int i,j,k;
+	int refbat=0;
 	bit *upgrade;
 	Symbol s;
 	s= findSymbol( 	VALget(&getVar(mb, getArg(p, 1))->value),
@@ -198,10 +199,11 @@ Determine the variables to be upgraded and adjust their type
 				goto terminateMX;
 			}
 #ifdef DEBUG_OPT_REMAP
-			stream_printf(GDKout,"#Upgrade type %d\n",i);
+			stream_printf(GDKout,"#Upgrade type %d %d\n",i, getArg(sig,i-2));
 #endif
 			setVarType(mq, i-2,newBatType(TYPE_oid, getArgType(mb,p,i)));
 			upgrade[getArg(sig,i-2)]= TRUE;
+			refbat= getArg(sig,i-2);
 		}
 	}
 @-
@@ -254,7 +256,7 @@ an upgrade and resolve it afterwards.
 				setModuleId(q,algebraRef);
 				setFunctionId(q,projectRef);
 				q= pushArgument(mb,q, getArg(q,1));
-				getArg(q,1)= getArg(q,0);
+				getArg(q,1)= refbat;
 			}
 		}
 	}
@@ -274,6 +276,20 @@ an upgrade and resolve it afterwards.
 					setModuleId(q,putName(buf,strlen(buf)));
 
 					/* now see if we can resolve the instruction */
+					typeChecker(MCgetClient()->nspace,mq,q,TRUE);
+					if( q->typechk== TYPE_UNKNOWN)
+						goto terminateMX;
+					break;
+				}
+				/* handle simple upgraded assignments as well */
+				if ( q->token== ASSIGNsymbol &&
+					 q->argc == 2  &&
+					!(isaBatType( getArgType(mq,q,1))) ){
+					setModuleId(q,algebraRef);
+					setFunctionId(q,projectRef);
+					q= pushArgument(mq,q, getArg(q,1));
+					getArg(q,1)= refbat;
+				
 					typeChecker(MCgetClient()->nspace,mq,q,TRUE);
 					if( q->typechk== TYPE_UNKNOWN)
 						goto terminateMX;

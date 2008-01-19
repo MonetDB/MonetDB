@@ -1,6 +1,6 @@
 function user.foo{inline}(b:int):int;
-   foo:= 0;
-   return foo;
+   i:= 213;
+   return foo:=i;
 end foo;
 
 function qry();
@@ -12,6 +12,7 @@ function qry();
 	io.print(r);
 end qry;
 
+qry();
 optimizer.inline("user","qry");
 optimizer.remap("user","qry");
 mdb.list("user","qry");

@@ -303,8 +303,8 @@ inlineMALblock(MalBlkPtr mb, int pc, MalBlkPtr mc)
 		if (q->barrier == RETURNsymbol || q->barrier == YIELDsymbol) {
 			for(n=0; n<q->retc; n++)
 				clrVarFixed(mb,getArg(ns[k],n)); /* for typing */
-			setModuleId(ns[k],NULL);
-			setFunctionId(ns[k],NULL);
+			setModuleId(ns[k],getModuleId(q));
+			setFunctionId(ns[k],getFunctionId(q));
 			ns[k]->barrier = 0;
 			ns[k]->token = ASSIGNsymbol;
 		}
