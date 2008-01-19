@@ -22,6 +22,7 @@
 
 #include "sql_storage.h"
 #include "bpm_logger.h"
+#include "bpm_distribution.h"
 
 #define BPM_SPLIT 	1024
 #define BPM_DEFAULT 	8
@@ -37,6 +38,7 @@ typedef struct PartRec {
 	sht hbits, tbits; /* linear hashing bits */
 	char *name, *uname;
 	size_t cnt;
+	bpmHost host;
 } *Part, PartRec;
 
 typedef struct sql_bpm {
@@ -55,6 +57,9 @@ typedef struct sql_bpm {
 #define bat_clear(b) bat_set_access(b,BAT_WRITE);BATclear(b);bat_set_access(b,BAT_READ)
 
 extern int bpm_add_partition(sql_bpm *p);
+
+extern int bpm_set_part_location(Part p, char *host, int port, char *dbname, char* username, char* passwd);
+extern int bpm_del_part_location(Part p);
 
 #endif /*BPMSTORAGE_H */
 
@@ -75,7 +80,9 @@ static BAT *part_tlow = NULL;
 static BAT *part_thgh = NULL;
 static BAT *part_hbits = NULL;
 static BAT *part_tbits = NULL;
+static BAT *part_host = NULL;
 
+static BAT * bpm_part_name(void);
 int part = 1; /* part id is saved by the logger */
 
 static int 
@@ -122,8 +129,52 @@ extend_part( sql_bpm *p, BAT *b, bat u)
 	}
 	p -> parts[nr].tlow = p -> parts[nr].thgh = NULL; 
 	p -> parts[nr].hbits = p -> parts[nr].tbits = 0;
+	p -> parts[nr].host = bpm_set_default_host();
 	p -> nr++;
 	return nr;
+}
+
+int
+bpm_set_part_location(Part p, char *host, int port, char *dbname, char* user, char* passwd)
+{
+	BATiter part_namei;
+	ptr id;
+	BAT *part_name = bpm_part_name();
+	bpmHost bpmH = 	bpm_host_create(host, port, dbname, user, passwd);
+
+	if (bpmH) {
+		p->host = bpmH;
+		return 1;
+	}
+
+	part_namei = bat_iterator(part_name);
+	id = BUNhead(part_namei,BUNfnd(part_name, p->name));
+	BUNins(part_host, (ptr)&id, &bpmH->id, TRUE);
+
+	/* error */
+	assert(0);
+	return 0;
+}
+
+int
+bpm_remove_part_location(Part p)
+{
+	BATiter part_namei;
+	ptr id;
+	BAT *part_name = bpm_part_name();
+	int host_id = 0;
+
+	if (p->host) {
+		p->host = NULL;
+		return 1;
+	}
+	part_namei = bat_iterator(part_name);
+	id = BUNhead(part_namei,BUNfnd(part_name, p->name));
+	BUNins(part_host, (ptr)&id, &host_id, TRUE);
+
+	/* error */
+	assert(0);
+	return 0;
 }
 
 int
@@ -201,6 +252,7 @@ bpm_init(void)
 		part_thgh = get_bat("part_thgh");
 		part_hbits = get_bat("part_hbits");
 		part_tbits = get_bat("part_tbits");
+		part_host = get_bat("part_host");
 	}
 	if (!part_name) {
 		/* partition bats */
@@ -217,6 +269,7 @@ bpm_init(void)
 		part_thgh = bat_new(TYPE_oid, TYPE_oid, 0);
 		part_hbits = bat_new(TYPE_oid, TYPE_sht, 0);
 		part_tbits = bat_new(TYPE_oid, TYPE_sht, 0);
+		part_host = bat_new(TYPE_oid, TYPE_int, 0);
 
 #define log_P(l, b, n) logger_add_bat(l, b, n); log_bat_persists(l, b, n)
 		log_P(bpm_logger, part_name, "part_name");
@@ -229,11 +282,12 @@ bpm_init(void)
 		log_P(bpm_logger, part_thgh, "part_thgh");
 		log_P(bpm_logger, part_hbits, "part_hbits");
 		log_P(bpm_logger, part_tbits, "part_tbits");
+		log_P(bpm_logger, part_host, "part_host");
 	}
 }
 
 static BAT *
-bpm_part_name() {
+bpm_part_name(void) {
 	if (!part_name)
 		bpm_init();
 	return part_name;
@@ -599,6 +653,8 @@ load_part (sql_bpm *pp, int ttpe, int sz, lng *cnt)
 		ptr id = BUNhead(partsi,p);
 		BATiter part_nri = bat_iterator(part_nr);
 		sht nr = *(sht*)BUNtail(part_nri, BUNfnd(part_nr, id));
+		BATiter part_hosti = bat_iterator(part_host);
+		int host = *(int*)BUNtail(part_hosti, BUNfnd(part_host, id));
 		char *name = sql_message("%s_%d", pp->name, nr);
 		char *uname = sql_message("U_%s_%d", pp->name, nr);
 		int bid = logger_find_bat(bpm_logger, name);
@@ -609,7 +665,9 @@ load_part (sql_bpm *pp, int ttpe, int sz, lng *cnt)
 		pp->parts[pp->nr-1].name = name;
 		pp->parts[pp->nr-1].uname = uname;
 		bat_destroy(b);
+		pp->parts[pp->nr-1].host = bpm_host_get(host);
 		assert(pp->parts[pp->nr-1].hlow != (oid)-1);
+		
 	}
 	*cnt = o;
 	pp->ins = pp->nr;
@@ -949,6 +1007,8 @@ destroy_part(sql_bpm *p)
 			_DELETE(p->parts[i].tlow);
 		if (p->parts[i].thgh)
 			_DELETE(p->parts[i].thgh);
+		if (p->parts[i].host)
+			p->parts[i].host = NULL;
 	}
 	if (p->name)
 		_DELETE(p->name);
@@ -1224,6 +1284,7 @@ update_part( sql_trans *tr, sql_bpm *op, sql_bpm *cp, lng *cnt)
 				BUNappend(part_nr, &i, TRUE);
 				BUNappend(part_hlow, &p->hlow, TRUE);
 				BUNappend(part_hhgh, &p->hhgh, TRUE);
+				BUNappend(part_host, &p->host, TRUE);
 				p->name = sql_message("%s_%d", op->name, i);
 				p->uname = sql_message("U_%s_%d", op->name,i);
 
@@ -1268,6 +1329,7 @@ update_part( sql_trans *tr, sql_bpm *op, sql_bpm *cp, lng *cnt)
 				BUNappend(part_nr, &i, TRUE);
 				BUNappend(part_hlow, &p->hlow, TRUE);
 				BUNappend(part_hhgh, &p->hhgh, TRUE);
+				BUNappend(part_host, &p->host, TRUE);
 				p->name = sql_message("%s_%d", op->name, i);
 				p->uname = sql_message("U_%s_%d", op->name,i);
 
@@ -1304,6 +1366,7 @@ update_part( sql_trans *tr, sql_bpm *op, sql_bpm *cp, lng *cnt)
 		log_bat(bpm_logger, part_nr, "part_nr");
 		log_bat(bpm_logger, part_hlow, "part_hlow");
 		log_bat(bpm_logger, part_hhgh, "part_hhgh");
+		log_bat(bpm_logger, part_host, "part_host");
 	}
 	return ok;
 }
