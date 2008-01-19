@@ -38,6 +38,20 @@ command parts(sname:str, tname:str, cname:str, access:int, nrparts:int):void
 address Cparts
 comment "Check if the number of partions is still valid";
 
+module distribution;
+
+command bind_host(sname:str, tname:str, cname:str, part:int):int
+address dist_bind_host_wrap
+comment "Bind location id for a partition fragment";
+
+command set_host(sname:str, tname:str, cname:str, part:int, host:int):int
+address dist_set_host_wrap
+comment "Set location id for a partition fragment";
+
+command add_host(host:str, por:int, dbname:str, user:str, passwd:str):int
+address dist_add_host_wrap
+comment "Add a location for a partition fragment";
+
 @h
 #ifndef _SQL_BPM_H_
 #define _SQL_BPM_H_
@@ -47,6 +61,9 @@ sql5_export str mat_bind_wrap(int *bid, str *sname, str *tname, str *cname, int 
 sql5_export str mat_bind_idxbat_wrap(int *bid, str *sname, str *tname, str *cname, int *access, int *part);
 sql5_export str inc_parts_wrap(int *d, str *sname, str *tname);
 sql5_export str Cparts(int *d, str *sname, str *tname, str *cname, int *access, int *parts);
+sql5_export str dist_bind_host_wrap(int *host, str *sname, str *tname, str *cname, int *part);
+sql5_export str dist_set_host_wrap(int *bid, str *sname, str *tname, str *cname, int *part, int *host);
+sql5_export str dist_add_host_wrap(int *id, str *host, int *port, str *dbname, str *user, str *passwd);
 
 #endif /* _SQL_BPM_H_ */
 
@@ -219,5 +236,73 @@ inc_parts_wrap(int *d, str *sname, str *tname)
 			sql_message("table %s unknown", *tname));
 	inc_parts(t);
 	return MAL_SUCCEED;
+}
+
+static int
+dist_bind(mvc *m, char *sname, char *tname, char *cname, int part)
+{
+	sql_schema *s = mvc_bind_schema(m, sname);
+	sql_table *t = mvc_bind_table(m, s, tname);
+	sql_column *c = mvc_bind_column(m, t, cname);
+	sql_bpm *p = c->data;
+
+	if (p->nr <= part) {
+		return 0;
+	} else {
+		return *(int *) p->parts[part].host;
+	}
+}
+
+
+str
+dist_bind_host_wrap(int *host, str *sname, str *tname, str *cname, int *part)
+{
+	mvc *m = NULL;
+	str msg = getContext(&m, NULL);
+
+	if (msg)
+		return msg;
+	if ((*host = dist_bind(m, *sname, *tname, *cname, *part)))
+		return MAL_SUCCEED;
+	throw(SQL, "dist.bind", "limitation in transaction scope");
+}
+
+static int
+dist_set(mvc *m, char *sname, char *tname, char *cname, int part, int host)
+{
+	sql_schema *s = mvc_bind_schema(m, sname);
+	sql_table *t = mvc_bind_table(m, s, tname);
+	sql_column *c = mvc_bind_column(m, t, cname);
+	sql_bpm *p = c->data;
+
+	if (p->nr <= part) {
+		return 0;
+	} else {
+		
+		return bpm_set_part_location(p, part, host, NULL, 0, NULL, NULL, NULL);
+	}
+}
+
+str 
+dist_set_host_wrap(int *bid, str *sname, str *tname, str *cname, int *part, int *host)
+{
+	mvc *m = NULL;
+	str msg = getContext(&m, NULL);
+	
+	if (msg)
+		return msg;
+	if ((*bid = dist_set(m, *sname, *tname, *cname, *part, *host)))
+		return MAL_SUCCEED;
+	throw(SQL, "dist.set", "limitation in transaction scope");
+}
+
+str 
+dist_add_host_wrap(int *id, str *host, int *port, str *dbname, str *user, str *passwd)
+{
+	bpmHost bpmH = bpm_host_create(*host, *port, *dbname, *user, *passwd);
+	if (bpmH && (*id = *(int *) bpmH->host))
+		return MAL_SUCCEED;
+	throw(SQL, "dist.add", "limitation in transaction scope");
+
 }
 
