@@ -22,5 +22,5 @@ lib_bpmstore = {
 	NOINST
 	DIR = libdir
 	SOURCES = \
-		bpm_table.mx bpm_storage.mx bpm_logger.mx 
+		bpm_table.mx bpm_storage.mx bpm_logger.mx bpm_distribution.mx
 }
