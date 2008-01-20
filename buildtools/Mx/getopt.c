@@ -1,7 +1,9 @@
 /* ::[[ @(#) getopt.c 1.5 89/03/11 05:40:23 ]]:: */
+/*
 #ifndef LINT
 static const char Id[] = "$Id$";
 #endif
+*/
 
 /*
  * Here's something you've all been waiting for:  the AT&T public domain
