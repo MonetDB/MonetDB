@@ -27,10 +27,10 @@ function user.main():void;	# 0  (main:void)
 #this example tests recieving tuple values as part of the 	# 1  (_1:str)
 #MAL interface. 	# 2  (_2:str)
     b := bat.new(:oid,:int);	# 3 CMDBATnew (b:bat[:oid,:int])<-(_4:oid)(_5:int)
-    tuples := "/tmp/filevf4ZMd";	# 4  (tuples:str)<-(_8:str)
+    tuples := io.data("/tmp/file8j6cL1");	# 4 IOdatafile (tuples:str)<-(_8:str)
     b := io.import(b,tuples);	# 5 IOimport (b:bat[:oid,:int])<-(b:bat[:oid,:int])(tuples:str)
     c := bat.new(:oid,:str);	# 6 CMDBATnew (c:bat[:oid,:str])<-(_4:oid)(_10:str)
-    tuples := "/tmp/fileMx2CD3";	# 7  (tuples:str)<-(_13:str)
+    tuples := io.data("/tmp/fileZjrMI8");	# 7 IOdatafile (tuples:str)<-(_13:str)
     c := io.import(c,tuples);	# 8 IOimport (c:bat[:oid,:str])<-(c:bat[:oid,:str])(tuples:str)
     io.print(b);	# 9 IOprint_val (_14:void)<-(b:bat[:oid,:int])
     io.print(c);	# 10 IOprint_val (_15:void)<-(c:bat[:oid,:str])
@@ -45,8 +45,8 @@ end main;	# 11
 # h	t		  # name
 # oid	str		  # type
 #-------------------------#
-[ 0@0,	  "hello"	  ]
-[ 2@0,	  "world"	  ]
+[ 2@0,	  "hello"	  ]
+[ 3@0,	  "world"	  ]
 
 # 04:46:54 >  
 # 04:46:54 >  Done.

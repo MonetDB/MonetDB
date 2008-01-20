@@ -114,6 +114,11 @@ address IOprint_str;
 command printf(format:str,val:str):void
 address IOprint_formatted_str;
 
+command data(fname:str):str
+address IOdatafile
+comment "Signals receipt of tuples in a file fname.
+It returns the name of the file, if it still exists."
+
 command export(b:bat[:any_1,:any_2], filepath:str):bit  
 address IOexport
 comment "Export a BAT as ASCII to a file. If the 'filepath' is not absolute, it
@@ -186,6 +191,7 @@ io_export str IOprint_formatted_str(int *ret, ptr fmt, str *s);
 io_export str IOprint_oid(int *ret, ptr fmt, oid *s);
 io_export str IOprint_formatted_bit(int *ret, ptr fmt, bit *s);
 io_export str IOexport(int *ret, int *bid, str *fnme);
+io_export str IOdatafile(str *ret, str *fnme);
 io_export str IOimport(int *ret, int *bid, str *fnme);
 io_export str io_stdin(bstream **ret);
 io_export str io_stdout(stream **ret);
@@ -691,6 +697,19 @@ The exported file is saved in the context of the directory
 where the server was started unless an absolute file name was
 presented.
 @c
+str
+IOdatafile(str *ret, str *fnme){
+	stream *s = open_rstream(*fnme);
+	if (s == NULL || stream_errnr(s)) {
+		*ret = 0;
+		throw(MAL, "io.export", "Could not open file");
+	}
+	*ret= GDKstrdup(*fnme);
+	stream_close(s);
+	stream_destroy(s);
+	return MAL_SUCCEED;
+}
+
 str
 IOexport(int *ret, int *bid, str *fnme)
 {

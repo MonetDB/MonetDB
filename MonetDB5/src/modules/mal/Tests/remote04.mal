@@ -3,12 +3,12 @@
 
 b:= bat.new(:oid,:int);
 [ 0@0, 1]
-[ 0@1, 2]
+[ 1@0, 2]
 b:= io.import(b, tuples);
 
 c:= bat.new(:oid,:str);
-[ 0@0, "hello"]
-[ 0@1, "world"]
+[ 2@0, "hello"]
+[ 3@0, "world"]
 c:= io.import(c, tuples);
 
 io.print(b);
