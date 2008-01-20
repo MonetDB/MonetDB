@@ -1711,6 +1711,8 @@ parseTuple(Client cntxt) {
 	curPrg = cntxt->curprg;
 	curBlk = curPrg->def;
 	curInstr = newAssignment(curBlk);
+	setModuleId(curInstr,putName("io",2));
+	setFunctionId(curInstr,putName("data",4));
 	c = newVariable(curBlk,GDKstrdup("tuples"),TYPE_any);
 	getArg(curInstr,0)= c;
 	pushStr(curBlk,curInstr,fname);
