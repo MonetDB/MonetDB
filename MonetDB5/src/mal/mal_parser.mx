@@ -93,6 +93,7 @@ request and each time we encounter EOL.
 #include "mal_instruction.h"    /* for pushEndInstruction(), findVariableLength() */
 #include "mal_namespace.h"
 #include "mal_utils.h"
+#include "mal_builder.h"
 
 #define FATALINPUT MAXERRORS+1
 #define NL(X) ((X)=='\n' || (X)=='\r')
@@ -1676,6 +1677,47 @@ part3:
 	skipToEnd(cntxt);
 	pushInstruction(curBlk,curInstr);
 }
+
+@-
+A piggybacked way to ship tuples is to mimick
+a copycommand through the language interface.
+All tuples are stored in a temporary file 
+whose name can be picked up immediately afterwards.
+The code should be made thread safe, by storing
+the file name in the client record.
+@c
+static void
+parseTuple(Client cntxt) {
+	InstrPtr curInstr;
+	MalBlkPtr curBlk;
+	Symbol curPrg;
+	FILE *f= 0;
+	char  buf[MAXPATHLEN]="monetXXXXX",*fname= buf;
+	int c;
+
+	fname= tmpnam(fname);
+	if(fname == 0)
+		showException(SYNTAX, "no temp file", "");
+	else 
+		f= fopen(fname,"w");
+	while( (c=currChar(cntxt)) == '[' && c){
+		do {
+			if (f && c) fputc(c, f);
+			nextChar(cntxt);
+		} while( (c=currChar(cntxt)) != '\n' && c);
+		if (f && c) fputc(c, f);
+		nextChar(cntxt);
+	}
+	curPrg = cntxt->curprg;
+	curBlk = curPrg->def;
+	curInstr = newAssignment(curBlk);
+	c = newVariable(curBlk,GDKstrdup("tuples"),TYPE_any);
+	getArg(curInstr,0)= c;
+	pushStr(curBlk,curInstr,fname);
+	if( f)
+		(void) fclose(f);
+}
+
 #define BRKONERR if( curPrg->def->errors>=MAXERRORS) return curPrg->def->errors;
 int parseMAL(Client cntxt, Symbol curPrg){
 	int cntrl=0;
@@ -1693,6 +1735,10 @@ int parseMAL(Client cntxt, Symbol curPrg){
 		case ';': case '\t': case ' ': 
 			nextChar(cntxt);
 			continue;
+		case '[':
+		/* parse a tuple value. stops at end of line */
+			parseTuple(cntxt);
+			break;
 		case '#': 
 		{ /* keep the full line comments unless it is a MX #line */
 			char start[256], *e=start, c; 
