@@ -40,17 +40,25 @@ comment "Check if the number of partions is still valid";
 
 module distribution;
 
-command bind_host(sname:str, tname:str, cname:str, part:int):int
-address dist_bind_host_wrap
+command bindHost(sname:str, tname:str, cname:str, part:int):int
+address dist_bindHost_wrap
 comment "Bind location id for a partition fragment";
 
-command set_host(sname:str, tname:str, cname:str, part:int, host:int):int
-address dist_set_host_wrap
+command setHost(sname:str, tname:str, cname:str, part:int, host:int):int
+address dist_setHost_wrap
 comment "Set location id for a partition fragment";
 
-command add_host(host:str, por:int, dbname:str, user:str, passwd:str):int
-address dist_add_host_wrap
+command addHost(host:str, por:int, dbname:str, user:str, passwd:str):int
+address dist_addHost_wrap
 comment "Add a location for a partition fragment";
+
+command reconnect(id:int):int
+address dist_reconnect_wrap
+comment "Reconnect to a remote host using the location information associated to id";
+
+command send(mid:int, sname:str, tname:str, cname:str, part:int):int
+address dist_send_wrap
+comment "Send a fragment to a remote location";
 
 @h
 #ifndef _SQL_BPM_H_
@@ -61,9 +69,13 @@ sql5_export str mat_bind_wrap(int *bid, str *sname, str *tname, str *cname, int 
 sql5_export str mat_bind_idxbat_wrap(int *bid, str *sname, str *tname, str *cname, int *access, int *part);
 sql5_export str inc_parts_wrap(int *d, str *sname, str *tname);
 sql5_export str Cparts(int *d, str *sname, str *tname, str *cname, int *access, int *parts);
-sql5_export str dist_bind_host_wrap(int *host, str *sname, str *tname, str *cname, int *part);
-sql5_export str dist_set_host_wrap(int *bid, str *sname, str *tname, str *cname, int *part, int *host);
-sql5_export str dist_add_host_wrap(int *id, str *host, int *port, str *dbname, str *user, str *passwd);
+sql5_export str dist_bindHost_wrap(int *host, str *sname, str *tname, str *cname, int *part);
+sql5_export str dist_setHost_wrap(int *bid, str *sname, str *tname, str *cname, int *part, int *host);
+sql5_export str dist_addHost_wrap(int *id, str *host, int *port, str *dbname, str *user, str *passwd);
+sql5_export str dist_reconnect_wrap(int *mid, int *id);
+sql5_export str dist_send_wrap(int *mid, str *sname, str *tname, str *cname, int *part);
+
+
 
 #endif /* _SQL_BPM_H_ */
 
@@ -76,6 +88,7 @@ sql5_export str dist_add_host_wrap(int *id, str *host, int *port, str *dbname, s
 #include <mal_exception.h>
 #include <bpm/bpm_storage.h>
 #include <bat/bat_utils.h>
+#include <mserver.h>
 
 static BAT *
 mat_bind(mvc *m, char *sname, char *tname, char *cname, int access, int part)
@@ -255,7 +268,7 @@ dist_bind(mvc *m, char *sname, char *tname, char *cname, int part)
 
 
 str
-dist_bind_host_wrap(int *host, str *sname, str *tname, str *cname, int *part)
+dist_bindHost_wrap(int *host, str *sname, str *tname, str *cname, int *part)
 {
 	mvc *m = NULL;
 	str msg = getContext(&m, NULL);
@@ -264,7 +277,7 @@ dist_bind_host_wrap(int *host, str *sname, str *tname, str *cname, int *part)
 		return msg;
 	if ((*host = dist_bind(m, *sname, *tname, *cname, *part)))
 		return MAL_SUCCEED;
-	throw(SQL, "dist.bind", "limitation in transaction scope");
+	throw(SQL, "dist.bindHost", "limitation in transaction scope");
 }
 
 static int
@@ -284,7 +297,7 @@ dist_set(mvc *m, char *sname, char *tname, char *cname, int part, int host)
 }
 
 str 
-dist_set_host_wrap(int *bid, str *sname, str *tname, str *cname, int *part, int *host)
+dist_setHost_wrap(int *bid, str *sname, str *tname, str *cname, int *part, int *host)
 {
 	mvc *m = NULL;
 	str msg = getContext(&m, NULL);
@@ -293,16 +306,61 @@ dist_set_host_wrap(int *bid, str *sname, str *tname, str *cname, int *part, int 
 		return msg;
 	if ((*bid = dist_set(m, *sname, *tname, *cname, *part, *host)))
 		return MAL_SUCCEED;
-	throw(SQL, "dist.set", "limitation in transaction scope");
+	throw(SQL, "dist.setHost", "limitation in transaction scope");
 }
 
 str 
-dist_add_host_wrap(int *id, str *host, int *port, str *dbname, str *user, str *passwd)
+dist_addHost_wrap(int *id, str *host, int *port, str *dbname, str *user, str *passwd)
 {
 	bpmHost bpmH = bpm_host_create(*host, *port, *dbname, *user, *passwd);
 	if (bpmH && (*id = *(int *) bpmH->host))
 		return MAL_SUCCEED;
-	throw(SQL, "dist.add", "limitation in transaction scope");
+	throw(SQL, "dist.addHost", "limitation in transaction scope");
 
 }
 
+str 
+dist_reconnect_wrap(int *mid, int *id)
+{
+	bpmHost bpmH = bpm_host_get(*id);
+	char *lng = "mal";
+	str msg = SERVERreconnectAlias(mid, &bpmH->host, &bpmH->port, &bpmH->dbname, &bpmH->user, &bpmH->passwd, &lng); 
+	if (msg)
+		return msg;
+	return MAL_SUCCEED;
+}
+
+static str 
+dist_send(mvc *m, int *mid, str sname, str tname, str cname, int part)
+{
+	sql_schema *s = mvc_bind_schema(m, sname);
+	sql_table *t = mvc_bind_table(m, s, tname);
+	sql_column *c = mvc_bind_column(m, t, cname);
+	sql_bpm *p = c->data;
+	BAT *b = NULL;
+
+	if (p->nr <= part) {
+		return NULL;
+	} else {
+		int bid = logger_find_bat(bpm_logger, p->parts[part].name);
+                b = temp_descriptor(bid);
+		(void) b;
+		(void) mid;
+		/*return SERVERsend(*mid, &p->parts[part].name, b);	*/
+	}
+	
+	return NULL;	
+}
+
+str 
+dist_send_wrap(int *mid, str *sname, str *tname, str *cname, int *part)
+{
+	mvc *m = NULL;
+	str msg = getContext(&m, NULL);
+	
+	if (msg)
+		return msg;
+	if ((msg = dist_send(m, mid, *sname, *tname, *cname, *part)))
+		return MAL_SUCCEED;
+	throw(SQL, "dist.put", msg);
+}
