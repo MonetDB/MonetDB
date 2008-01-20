@@ -1,0 +1,13 @@
+#this example tests recieving tuple values as part of the
+#MAL interface.
+
+b:bat[:oid,:int]:=mserver.receive();
+[ 0@0, 1]
+[ 0@1, 2]
+
+c:bat[:oid,:str]:=mserver.receive();
+[ 0@0, "hello"]
+[ 0@1, "world"]
+
+io.print(b);
+io.print(c);
