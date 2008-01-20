@@ -692,6 +692,12 @@ print_statement (PFmil_t * n)
             milprintf (")");
             break;
 
+        case m_docmgmt_tape:
+            milprintf ("DocmgmTape (");
+            print_args (n->child[0]);
+            milprintf (")");
+            break;
+
         default:
             debug_output;     /* Print MIL code so far when in debug mode. */
 #ifndef NDEBUG

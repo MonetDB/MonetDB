@@ -471,7 +471,8 @@ env_add (PFarray_t *env, PFalg_att_t att, PFalg_simple_type_t ty, mvar_t *v)
          || ty == aat_afrag  || ty == aat_update || ty == aat_node1
          || ty == aat_anode1 || ty == aat_attr1  || ty == aat_afrag1
          || ty == aat_pnode1 || ty == aat_pre1   || ty == aat_pfrag1
-         || ty == aat_docmgmt|| ty == aat_str1   || ty == aat_str2 );
+         || ty == aat_docmgmt|| ty == aat_path   || ty == aat_docnm
+         || ty == aat_colnm );
 
     *(env_t *) PFarray_add (env)
         = (env_t) { .att = att, .ty = ty, .mvar = v };
@@ -622,23 +623,27 @@ static void aggr_function (PFmil_t * (*op) (const PFmil_t *),
 
 /** MIL implementation types for algebra types */
 static PFmil_type_t impl_types[] = {
-      [aat_nat]   = mty_oid
-    , [aat_int]   = mty_lng
-    , [aat_str]   = mty_str
-    , [aat_uA]    = mty_str
-    , [aat_dec]   = mty_dbl
-    , [aat_dbl]   = mty_dbl
-    , [aat_bln]   = mty_bit
-    , [aat_qname] = mty_oid
-    , [aat_pre]   = mty_oid
-    , [aat_attr]  = mty_oid
-    , [aat_pfrag] = mty_oid
-    , [aat_afrag] = mty_oid
-    , [aat_pre1]   = mty_oid
-    , [aat_attr1]  = mty_oid
-    , [aat_pfrag1] = mty_oid
-    , [aat_afrag1] = mty_oid
-    , [aat_update] = mty_lng
+      [aat_nat]     = mty_oid
+    , [aat_int]     = mty_lng
+    , [aat_str]     = mty_str
+    , [aat_uA]      = mty_str
+    , [aat_dec]     = mty_dbl
+    , [aat_dbl]     = mty_dbl
+    , [aat_bln]     = mty_bit
+    , [aat_qname]   = mty_oid
+    , [aat_pre]     = mty_oid
+    , [aat_attr]    = mty_oid
+    , [aat_pfrag]   = mty_oid
+    , [aat_afrag]   = mty_oid
+    , [aat_pre1]    = mty_oid
+    , [aat_attr1]   = mty_oid
+    , [aat_pfrag1]  = mty_oid
+    , [aat_afrag1]  = mty_oid
+    , [aat_update]  = mty_lng
+    , [aat_path]    = mty_str
+    , [aat_colnm]   = mty_str
+    , [aat_docnm]   = mty_str
+    , [aat_docmgmt] = mty_lng
 };
 
 /** implementation type for a given algebra type, as a MIL node */
@@ -1405,6 +1410,72 @@ reduce (PFpa_op_t * p, int goalnt)
                 unpin (pre_cont_ins, 1);
                 unpin (attr_ins, 1);
                 unpin (attr_cont_ins, 1);
+
+            /* docmgmt query */
+            } else if (aat_docmgmt & type_of (R(p), pa_item)) {
+
+                mvar_t *docmgmt, *docname, *colname, *filepath;
+
+                docmgmt  = new_var(1);
+                docname  = new_var(1);
+                colname  = new_var(1);
+                filepath = new_var(1);
+
+                ty = type_of (R(p), pa_item);
+
+                /* consider docmgmt kind / percentage */
+                execute (
+                    assgn (var (docmgmt->name),
+                           VAR (R(p)->env, pa_item, aat_docmgmt))
+                );
+
+                /* consider file path */
+                if (ty & aat_path) {
+                    execute (
+                        assgn (var (filepath->name),
+                               VAR (R(p)->env, pa_item, aat_path))
+                    );
+                } else {
+                    execute (
+                        assgn (var (filepath->name),
+                               project (var (docmgmt->name),
+                                        nil()))
+                    );
+                }
+
+
+                /* consider document names */
+                execute (
+                    assgn (var (docname->name),
+                           VAR (R(p)->env, pa_item, aat_docnm))
+                );
+
+                /* consider colection names */
+                if (ty & aat_colnm) {
+                    execute (
+                        assgn (var (colname->name),
+                               VAR (R(p)->env, pa_item, aat_colnm))
+                    );
+                } else {
+                    execute (
+                        assgn (var (colname->name),
+                               project (var (docmgmt->name),
+                                        nil()))
+                    );
+                }
+
+                execute (
+                    docmgmt_tape (
+                        arg (var (PF_MIL_VAR_WS),
+                            arg (var (filepath->name),
+                                arg (var (docname->name),
+                                    arg (var (colname->name),
+                                         var (docmgmt->name)))))));
+                unpin (docmgmt, 1);
+                unpin (docname, 1);
+                unpin (colname, 1);
+                unpin (filepath, 1);
+
             } else {                     /* else, is not an update query */
 
                 /* Set up all the value containers for print_result().
@@ -4346,13 +4417,124 @@ reduce (PFpa_op_t * p, int goalnt)
                     assert (!"no implementation here");
                     break;
 
-                case alg_fun_pf_add_doc:
                 case alg_fun_pf_add_doc_str:
-                case alg_fun_pf_add_doc_int:
-                case alg_fun_pf_add_doc_str_int:
-                case alg_fun_pf_del_doc:
+                {
+                    PFalg_att_t filepath   = p->sem.fun_1to1.refs.atts[0],
+                                docname    = p->sem.fun_1to1.refs.atts[1],
+                                collection = p->sem.fun_1to1.refs.atts[2];
+
+                    assert (env_count (L(p)->env));
+
+                    /* relink all filepath strings to the result BATs */
+                    for (unsigned int i = 0; i < env_count (L(p)->env); i++)
+                        if (env_at (L(p)->env, i).att == filepath) {
+                            pin (env_at (L(p)->env, i).mvar, p->refctr);
+                            env_add (p->env,
+                                     p->sem.fun_1to1.res,
+                                     aat_path,
+                                     env_at (L(p)->env, i).mvar);
+                        }
+
+                    /* relink all document name strings to the result BATs */
+                    for (unsigned int i = 0; i < env_count (L(p)->env); i++)
+                        if (env_at (L(p)->env, i).att == docname) {
+                            pin (env_at (L(p)->env, i).mvar, p->refctr);
+                            env_add (p->env,
+                                     p->sem.fun_1to1.res,
+                                     aat_docnm,
+                                     env_at (L(p)->env, i).mvar);
+                        }
+
+                    /* relink all colection name strings to the result BATs */
+                    for (unsigned int i = 0; i < env_count (L(p)->env); i++)
+                        if (env_at (L(p)->env, i).att == collection) {
+                            pin (env_at (L(p)->env, i).mvar, p->refctr);
+                            env_add (p->env,
+                                     p->sem.fun_1to1.res,
+                                     aat_colnm,
+                                     env_at (L(p)->env, i).mvar);
+                        }
+
+                    /* update percentage is the result BAT */
                     res_type = aat_docmgmt;
-                    break;
+                    execute (
+                        assgn ( var (res->name),
+                                project (VAR (L(p)->env, docname, aat_str),
+                                         lit_lng(0)))); 
+
+                }   break;
+
+                case alg_fun_pf_add_doc_str_int:
+                {
+                    PFalg_att_t filepath   = p->sem.fun_1to1.refs.atts[0],
+                                docname    = p->sem.fun_1to1.refs.atts[1],
+                                collection = p->sem.fun_1to1.refs.atts[2],
+                                percentage = p->sem.fun_1to1.refs.atts[3];
+
+                    assert (env_count (L(p)->env));
+
+                    /* relink all filepath strings to the result BATs */
+                    for (unsigned int i = 0; i < env_count (L(p)->env); i++)
+                        if (env_at (L(p)->env, i).att == filepath) {
+                            pin (env_at (L(p)->env, i).mvar, p->refctr);
+                            env_add (p->env,
+                                     p->sem.fun_1to1.res,
+                                     aat_path,
+                                     env_at (L(p)->env, i).mvar);
+                        }
+
+                    /* relink all document name strings to the result BATs */
+                    for (unsigned int i = 0; i < env_count (L(p)->env); i++)
+                        if (env_at (L(p)->env, i).att == docname) {
+                            pin (env_at (L(p)->env, i).mvar, p->refctr);
+                            env_add (p->env,
+                                     p->sem.fun_1to1.res,
+                                     aat_docnm,
+                                     env_at (L(p)->env, i).mvar);
+                        }
+
+                    /* relink all colection name strings to the result BATs */
+                    for (unsigned int i = 0; i < env_count (L(p)->env); i++)
+                        if (env_at (L(p)->env, i).att == collection) {
+                            pin (env_at (L(p)->env, i).mvar, p->refctr);
+                            env_add (p->env,
+                                     p->sem.fun_1to1.res,
+                                     aat_colnm,
+                                     env_at (L(p)->env, i).mvar);
+                        }
+
+                    /* update percentage is the result BAT */
+                    res_type = aat_docmgmt;
+                    execute (
+                        assgn ( var (res->name),
+                                VAR (L(p)->env, percentage, aat_int))); 
+
+                }   break;
+
+                case alg_fun_pf_del_doc:
+                {
+                    PFalg_att_t docname   = p->sem.fun_1to1.refs.atts[0];
+
+                    assert (env_count (L(p)->env));
+
+                    /* relink all document name strings to the result BATs */
+                    for (unsigned int i = 0; i < env_count (L(p)->env); i++)
+                        if (env_at (L(p)->env, i).att == docname) {
+                            pin (env_at (L(p)->env, i).mvar, p->refctr);
+                            env_add (p->env,
+                                     p->sem.fun_1to1.res,
+                                     aat_docnm,
+                                     env_at (L(p)->env, i).mvar);
+                        }
+
+                    /* update percentage is the result BAT */
+                    res_type = aat_docmgmt;
+                    execute (
+                        assgn ( var (res->name),
+                                project (VAR (L(p)->env, docname, aat_str),
+                                         lit_lng(-1)))); 
+
+                }   break;
 
                 case alg_fun_upd_delete:
                 {
@@ -4392,7 +4574,7 @@ reduce (PFpa_op_t * p, int goalnt)
                 case alg_fun_upd_replace_element:
                 case alg_fun_upd_replace_node:
                 {
-                    PFalg_att_t tgt = p->sem.fun_1to1.refs.atts[0],
+                    PFalg_att_t tgt     = p->sem.fun_1to1.refs.atts[0],
                                 changes = p->sem.fun_1to1.refs.atts[1];
                     mvar_t *loop = NULL;
                     int update_str;

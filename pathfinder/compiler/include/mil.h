@@ -431,6 +431,7 @@ enum PFmil_kind_t {
     , m_module       /**< module loading */
 
     , m_update_tape  /**< play update tape function */ 
+    , m_docmgmt_tape /**< play docmgmt tape function */ 
 };
 typedef enum PFmil_kind_t PFmil_kind_t;
 
@@ -1373,6 +1374,8 @@ PFmil_t * PFmil_trace (const PFmil_t *);
 PFmil_t * PFmil_module (const PFmil_t *);
 
 PFmil_t * PFmil_upd (const PFmil_t *);
+
+PFmil_t * PFmil_docmgmt (const PFmil_t *);
 
 #define PFmil_seq(...) \
     PFmil_seq_ (sizeof ((PFmil_t *[]) { __VA_ARGS__} ) / sizeof (PFmil_t *), \

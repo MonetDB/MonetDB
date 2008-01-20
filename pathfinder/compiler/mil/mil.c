@@ -2393,4 +2393,10 @@ PFmil_upd (const PFmil_t *args)
     return wire1 (m_update_tape, args);
 }
 
+PFmil_t *
+PFmil_docmgmt (const PFmil_t *args)
+{
+    return wire1 (m_docmgmt_tape, args);
+}
+
 /* vim:set shiftwidth=4 expandtab: */

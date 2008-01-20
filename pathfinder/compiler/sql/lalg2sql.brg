@@ -3099,9 +3099,7 @@ reduce (PFla_op_t * p, int goalnt)
                 case alg_fun_pf_fragment:
                 case alg_fun_pf_supernode:
 
-                case alg_fun_pf_add_doc:
                 case alg_fun_pf_add_doc_str:
-                case alg_fun_pf_add_doc_int:
                 case alg_fun_pf_add_doc_str_int:
                 case alg_fun_pf_del_doc:
 

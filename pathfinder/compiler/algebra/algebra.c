@@ -702,10 +702,10 @@ PFalg_atom_cmp (PFalg_atom_t a, PFalg_atom_t b)
         case aat_node1:
         case aat_pnode1:
         case aat_anode1:
-        case aat_pre1:    /* or aat_str2, which can be compared but there is */
-        case aat_attr1:   /*          no way to distinguish it from aat_pre1 */
-        case aat_pfrag1:  /* or aat_str1, same as str2. */
-        case aat_afrag1:
+        case aat_pre1:    /* or aat_docnm */
+        case aat_attr1:
+        case aat_pfrag1:  /* or aat_path  */
+        case aat_afrag1:  /* or aat_colnm */ 
                         break; /* error */
     }
 
@@ -739,18 +739,10 @@ PFalg_simple_type_str (PFalg_simple_type_t type) {
         case aat_node1: return "node1";
         case aat_anode1:return "attr1";
         case aat_attr1: return "attrID1";
-        case aat_afrag1:return "afrag1";
+        case aat_afrag1:return "afrag1/colnm";
         case aat_pnode1:return "pnode1";
-        case aat_pre1:
-            if (type & aat_docmgmt)
-                return "aat_str2";
-            else
-                return "pre1";
-        case aat_pfrag1:
-            if (type & aat_docmgmt)
-                return "aat_str1";
-            else
-                return "pfrag1";
+        case aat_pre1:  return "pre1/docnm";
+        case aat_pfrag1:return "pfrag1/path";
         default:
             if (type & aat_update)
                 return "update";
@@ -1038,10 +1030,9 @@ PFalg_type (PFty_t ty)
     }
     if (!PFty_disjoint (ty, PFty_docmgmt ())) {
         alg_ty |= aat_docmgmt;
-        alg_ty |= aat_str;
-        alg_ty |= aat_str1;
-        alg_ty |= aat_str2;
-        alg_ty |= aat_int;
+        alg_ty |= aat_path;
+        alg_ty |= aat_docnm;
+        alg_ty |= aat_colnm;
     }
     return alg_ty;
 }
@@ -1102,9 +1093,7 @@ PFalg_fun_str (PFalg_fun_t fun)
         case alg_fun_fn_qname:            return "fn:QName";
         case alg_fun_pf_fragment:         return "#pf:fragment";
         case alg_fun_pf_supernode:        return "#pf:supernode";
-        case alg_fun_pf_add_doc:          return "pf:add-doc";
         case alg_fun_pf_add_doc_str:      return "pf:add-doc";
-        case alg_fun_pf_add_doc_int:      return "pf:add-doc";
         case alg_fun_pf_add_doc_str_int:  return "pf:add-doc";
         case alg_fun_pf_del_doc:          return "pf:del-doc";
         case alg_fun_upd_rename:          return "upd:rename";

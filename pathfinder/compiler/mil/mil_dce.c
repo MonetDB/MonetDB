@@ -441,6 +441,7 @@ mil_dce_worker (PFmil_t *root, PFbitset_t *used_vars, PFbitset_t *dirty_vars,
         case m_error:
         case m_print:
         case m_update_tape:
+        case m_docmgmt_tape:
 
 #ifndef NDEBUG
             /* update dirty vars */

@@ -459,19 +459,6 @@ infer_ocol (PFla_op_t *n)
                     res_type = ocol_at (L(n), ix[0]).type;
                     break;
 
-
-                case alg_fun_pf_add_doc:
-                    assert(n->sem.fun_1to1.refs.count == 2);
-
-                    /* make sure atts are of the correct type */
-                    assert(ocol_at (L(n), ix[0]).type == aat_str);
-                    assert(ocol_at (L(n), ix[1]).type == aat_str);
-
-                    /* the returning type of doc management functions
-                     * is aat_docmgmt bitwise OR the attribute types*/
-                    res_type = aat_docmgmt | aat_str | aat_str1;
-                    break;
-
                 case alg_fun_pf_add_doc_str:
                     assert(n->sem.fun_1to1.refs.count == 3);
 
@@ -482,20 +469,7 @@ infer_ocol (PFla_op_t *n)
 
                     /* the returning type of doc management functions
                      * is aat_docmgmt bitwise OR the attribute types*/
-                    res_type = aat_docmgmt | aat_str | aat_str1 | aat_str2;
-                    break;
-
-                case alg_fun_pf_add_doc_int:
-                    assert(n->sem.fun_1to1.refs.count == 3);
-
-                    /* make sure atts are of the correct type */
-                    assert(ocol_at (L(n), ix[0]).type == aat_str);
-                    assert(ocol_at (L(n), ix[1]).type == aat_str);
-                    assert(ocol_at (L(n), ix[2]).type == aat_int);
-
-                    /* the returning type of doc management functions
-                     * is aat_docmgmt bitwise OR the attribute types */
-                    res_type = aat_docmgmt | aat_str | aat_str1 | aat_int;
+                    res_type = aat_docmgmt | aat_path | aat_docnm | aat_colnm;
                     break;
 
                 case alg_fun_pf_add_doc_str_int:
@@ -509,8 +483,7 @@ infer_ocol (PFla_op_t *n)
 
                     /* the returning type of doc management functions
                      * is aat_docmgmt bitwise OR the attribute types */
-                    res_type = aat_docmgmt | aat_str | aat_str1 |
-                                            aat_str2 | aat_int;
+                    res_type = aat_docmgmt | aat_path | aat_docnm | aat_colnm;
                     break;
 
                 case alg_fun_pf_del_doc:
@@ -521,7 +494,7 @@ infer_ocol (PFla_op_t *n)
 
                     /* the returning type of doc management functions
                      * is aat_docmgmt bitwise OR the attribute types */
-                    res_type = aat_docmgmt | aat_str1;
+                    res_type = aat_docmgmt | aat_docnm;
                     break;
 
                 case alg_fun_upd_delete:

@@ -3760,6 +3760,35 @@ PROC play_doc_tape(BAT[void,BAT] ws,
                    stream_nil, ws_id(ws));
 }
 
+@- XQuery Document Management Interface For the Algebra backend
+
+The DocmgmTape() is the same proc as play_doc_tape but adabted to the needs of the algebra
+backend of pathfinder.
+@mil
+PROC DocmgmTape(BAT[oid,BAT] ws,
+                BAT[oid,str] filepath, 
+                BAT[oid,str] docname, 
+                BAT[oid,str] colname, 
+                BAT[oid,lng] percentage) : void
+{
+    filepath.print();
+    docname.print();
+    colname.print();
+    percentage.print();
+}
+
+PROC DocmgmTape(BAT[oid,BAT] ws,
+                BAT[oid,void] filepath, 
+                BAT[oid,str] docname, 
+                BAT[oid,void] colname, 
+                BAT[oid,lng] percentage) : void
+{
+    filepath.print();
+    docname.print();
+    colname.print();
+    percentage.print();
+}
+
 @- MIL Document Management Interface
 
 This is the old MIL administrative interface, now superseded by the 

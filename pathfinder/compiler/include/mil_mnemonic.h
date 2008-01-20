@@ -592,4 +592,7 @@
 /** play update tape function */
 #define update_tape(a) PFmil_upd (a)
 
+/** play docmgmt tape function */
+#define docmgmt_tape(a) PFmil_docmgmt (a)
+
 /* vim:set shiftwidth=4 expandtab: */

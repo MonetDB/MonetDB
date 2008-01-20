@@ -4577,18 +4577,26 @@ PFbui_pf_add_doc (const PFla_op_t *loop, bool ordering,
 
     return (struct PFla_pair_t) {
         .rel = project (fun_1to1 (
-                            eqjoin (args[0].rel,
+                           eqjoin (
+                               eqjoin (
+                                   args[0].rel,
+                                   project (args[1].rel,
+                                            proj (att_iter1, att_iter),
+                                            proj (att_item1, att_item)),
+                                   att_iter,
+                                   att_iter1),
                                project (args[1].rel,
-                                        proj (att_iter1, att_iter),
-                                        proj (att_item1, att_item)),
+                                        proj (att_iter2, att_iter),
+                                        proj (att_item2, att_item)),
                                att_iter,
-                               att_iter1),
-                            alg_fun_pf_add_doc,
+                               att_iter2),
+                            alg_fun_pf_add_doc_str,
                             att_res,
-                            attlist (att_item, att_item1)),
+                            attlist (att_item, att_item1, att_item2)),
                         proj (att_iter, att_iter),
                         proj (att_pos, att_pos),
                         proj (att_item, att_res)),
+
         .frag = args[0].frag };
 }
 
@@ -4636,7 +4644,9 @@ PFbui_pf_add_doc_int (const PFla_op_t *loop, bool ordering,
     (void) loop; (void) ordering;
 
     return (struct PFla_pair_t) {
-        .rel = project (fun_1to1 (
+        .rel = project (
+                   fun_1to1 (
+                       eqjoin (
                            eqjoin (
                                eqjoin (
                                    args[0].rel,
@@ -4645,17 +4655,25 @@ PFbui_pf_add_doc_int (const PFla_op_t *loop, bool ordering,
                                             proj (att_item1, att_item)),
                                    att_iter,
                                    att_iter1),
-                               project (args[2].rel,
+                               project (args[1].rel,
                                         proj (att_iter2, att_iter),
                                         proj (att_item2, att_item)),
                                att_iter,
                                att_iter2),
-                            alg_fun_pf_add_doc_int,
+                            project (args[2].rel,
+                                     proj (att_iter3, att_iter),
+                                     proj (att_item3, att_item)),
+                            att_iter,
+                            att_iter3),
+                            alg_fun_pf_add_doc_str_int,
                             att_res,
-                            attlist (att_item, att_item1, att_item2)),
-                        proj (att_iter, att_iter),
-                        proj (att_pos, att_pos),
-                        proj (att_item, att_res)),
+                            attlist (att_item,
+                                     att_item1,
+                                     att_item2,
+                                     att_item3)),
+                   proj(att_iter, att_iter),
+                   proj(att_pos, att_pos),
+                   proj(att_item, att_item)),
 
         .frag = args[0].frag };
 }
@@ -4670,7 +4688,8 @@ PFbui_pf_add_doc_str_int (const PFla_op_t *loop, bool ordering,
     (void) loop; (void) ordering;
 
     return (struct PFla_pair_t) {
-        .rel = project (fun_1to1 (
+        .rel = project (
+                   fun_1to1 (
                        eqjoin (
                            eqjoin (
                                eqjoin (
@@ -4686,8 +4705,8 @@ PFbui_pf_add_doc_str_int (const PFla_op_t *loop, bool ordering,
                                att_iter,
                                att_iter2),
                             project (args[3].rel,
-                                        proj (att_iter3, att_iter),
-                                        proj (att_item3, att_item)),
+                                     proj (att_iter3, att_iter),
+                                     proj (att_item3, att_item)),
                             att_iter,
                             att_iter3),
                             alg_fun_pf_add_doc_str_int,
@@ -4695,7 +4714,10 @@ PFbui_pf_add_doc_str_int (const PFla_op_t *loop, bool ordering,
                             attlist (att_item,
                                      att_item1,
                                      att_item2,
-                                     att_item3))),
+                                     att_item3)),
+                   proj(att_iter, att_iter),
+                   proj(att_pos, att_pos),
+                   proj(att_item, att_item)),
         .frag = args[0].frag };
 }
 
