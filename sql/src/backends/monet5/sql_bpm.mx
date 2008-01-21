@@ -88,7 +88,7 @@ sql5_export str dist_send_wrap(int *mid, str *sname, str *tname, str *cname, int
 #include <mal_exception.h>
 #include <bpm/bpm_storage.h>
 #include <bat/bat_utils.h>
-#include <mserver.h>
+#include <mal_mapi.h>
 
 static BAT *
 mat_bind(mvc *m, char *sname, char *tname, char *cname, int access, int part)
