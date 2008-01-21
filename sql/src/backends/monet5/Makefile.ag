@@ -33,7 +33,7 @@ lib__sql = {
 		sql_readline.mx \
 		sql_bpm.mx
 	LIBS = ../../server/libsqlserver ../../storage/libstore ../../storage/bat/libbatstore ../../storage/restrict/librestrictstore ../../storage/bpm/libbpmstore ../../common/libsqlcommon \
-		$(MONETDB5_MODS) -l_blob -l_logger -l_mtime -l_bat5 -l_optimizer -l_tablet -l_bpm $(MONETDB5_LIBS) -lmal \
+		$(MONETDB5_MODS) -l_blob -l_logger -l_mtime -l_bat5 -l_optimizer -l_tablet -l_bpm $(MONETDB5_LIBS) -lmal -l_mal_mapi \
 		$(MONETDB_LIBS) -lbat -lstream $(READLINE_LIBS) $(PTHREAD_LIBS)
 }
 
