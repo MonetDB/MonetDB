@@ -21,6 +21,7 @@
 @rem Future versions might inspect a database of eligible servers
 @rem to direct the interaction to the proper ports.
 
+@set prefix="@prefix@"
 @set jdbcclient_jar="@datadir@\MonetDB\lib\jdbcclient.jar"
 @if not exist %jdbcclient_jar% set jdbcclient_jar="@XMONETDB_JAVA_BUILD@\jdbcclient.jar"
 
