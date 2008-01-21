@@ -1139,6 +1139,12 @@ PFsql_op_duplicate (PFsql_t *expr)
     if (!expr) return NULL;
 
     switch (expr->kind) {
+        case sql_ref_tbl_name:
+            return ref_table_name (PFstrdup (expr->sem.ref_tbl.name)); 
+
+        case sql_ref_column_name:
+            return ref_column_name (expr->sem.ref_column_name.alias,
+                                    PFstrdup (expr->sem.ref_column_name.name)); 
         case sql_ser_comment:
             return ser_comment (expr->sem.comment.str);
             
