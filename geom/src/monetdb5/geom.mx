@@ -255,7 +255,7 @@ end @2;
 #include "libgeom.h"
 
 #ifdef WIN32
-#ifndef GEOM
+#ifndef LIBGEOM
 #define geom_export extern __declspec(dllimport)
 #else
 #define geom_export extern __declspec(dllexport)
