@@ -4673,7 +4673,7 @@ PFbui_pf_add_doc_int (const PFla_op_t *loop, bool ordering,
                                      att_item3)),
                    proj(att_iter, att_iter),
                    proj(att_pos, att_pos),
-                   proj(att_item, att_item)),
+                   proj(att_item, att_res)),
 
         .frag = args[0].frag };
 }
@@ -4717,7 +4717,7 @@ PFbui_pf_add_doc_str_int (const PFla_op_t *loop, bool ordering,
                                      att_item3)),
                    proj(att_iter, att_iter),
                    proj(att_pos, att_pos),
-                   proj(att_item, att_item)),
+                   proj(att_item, att_res)),
         .frag = args[0].frag };
 }
 

@@ -1439,7 +1439,7 @@ reduce (PFpa_op_t * p, int goalnt)
                     execute (
                         assgn (var (filepath->name),
                                project (var (docmgmt->name),
-                                        nil()))
+                                        lit_str("")))
                     );
                 }
 
@@ -1460,7 +1460,7 @@ reduce (PFpa_op_t * p, int goalnt)
                     execute (
                         assgn (var (colname->name),
                                project (var (docmgmt->name),
-                                        nil()))
+                                        lit_str ("")))
                     );
                 }
 
