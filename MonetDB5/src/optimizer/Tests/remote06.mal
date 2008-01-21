@@ -1,11 +1,11 @@
-# Checking correctness of mserver library
+# Checking correctness of mapi library
 # we expect an exception from this query
 
 cat:= inspect.getEnvironment();
 fs := algebra.find(cat,"mapi_port");
 port := calc.int(fs);
-mid:= mserver.reconnect("localhost",port,"s0_0","monetdb","monetdb","mal");
-#mserver.trace(mid,1);
-mserver.rpc(mid,"io.print(d);");
+mid:= mapi.reconnect("localhost",port,"s0_0","monetdb","monetdb","mal");
+#mapi.trace(mid,1);
+mapi.rpc(mid,"io.print(d);");
 io.print("done");
-mserver.disconnect(mid);
+mapi.disconnect(mid);

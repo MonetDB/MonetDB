@@ -117,7 +117,7 @@ address IOprint_formatted_str;
 command data(fname:str):str
 address IOdatafile
 comment "Signals receipt of tuples in a file fname.
-It returns the name of the file, if it still exists."
+It returns the name of the file, if it still exists.";
 
 command export(b:bat[:any_1,:any_2], filepath:str):bit  
 address IOexport

@@ -58,10 +58,10 @@ lib_bpm = {
                 $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
 }
 
-lib_mserver = {
+lib_mal_mapi = {
 	DIR = libdir/MonetDB5
 	SEP = _
-	SOURCES = mserver.mx
+	SOURCES = mal_mapi.mx
 	LIBS = ../../mal/libmal $(MONETDB_LIBS) -lbat -lstream $(CLIENTS_LIBS) -lMapi \
                 $(OPENSSL_LIBS) $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
                 $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
@@ -141,7 +141,7 @@ lib__statistics = {
 
 headers_h = {
 	DIR = includedir/MonetDB5/mal
-	SOURCES = batExtensions.mx bpm.mx mserver.mx mal_io.mx clients.mx \
+	SOURCES = batExtensions.mx bpm.mx mal_mapi.mx mal_io.mx clients.mx \
 		pcre.mx bbp.mx tablet.mx transaction.mx statistics.mx \
 		\
 		chopper.mx constraints.mx language.mx box.mx \
@@ -164,7 +164,7 @@ headers_mal = {
 		chopper.mx clients.mx \
 		factory.mx mdb.mx pcre.mx  tablet.mx mat.mx \
 		urlbox.mx statistics.mx transaction.mx \
-		mserver.mx sabaoth.mx remote.mx \
+		mal_mapi.mx sabaoth.mx remote.mx \
 		bpm.mx batxml.mx txtsim.mx
 	#radix.mx
 }

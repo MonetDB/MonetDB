@@ -6,11 +6,11 @@ fs := algebra.find(cat,"mapi_port");
 port := calc.int(fs);
 io.printf("port %d\n",port);
 
-mid:= mserver.reconnect("s0_0","localhost",port,"monetdb","monetdb","mal");
-mserver.rpc(mid,"include sql;sql.init();");
+mid:= mapi.reconnect("s0_0","localhost",port,"monetdb","monetdb","mal");
+mapi.rpc(mid,"include sql;sql.init();");
 io.print("ready for remote SQL interaction");
 
-b:bat[:void,:int] := mserver.bind(mid,"sys","ptables","schema_id",0);
+b:bat[:void,:int] := mapi.bind(mid,"sys","ptables","schema_id",0);
 c:=algebra.select(b,0,6000);
 io.print(c);
 d:=algebra.select(b,5,6000);
@@ -21,5 +21,5 @@ io.print("k2");
 i:=aggr.count(e);
 io.printf(" count %d\n",i);
 io.print(d);
-mserver.disconnect(mid);
+mapi.disconnect(mid);
 optimizer.remoteQueries();

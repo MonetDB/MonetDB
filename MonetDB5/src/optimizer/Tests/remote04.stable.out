@@ -28,11 +28,11 @@ function user.main():void;	# 0  (main:void)
     fs := algebra.find(cat,"mapi_port");	# 3 ALGfind (fs:str)<-(cat:bat[:str,:str])(_4:str)
     port := calc.int(fs);	# 4 CALCstr2int (port:int)<-(fs:str)
 #io.printf("port %d\n",port); 	# 5  (_6:str)
-    mid := mserver.reconnect("localhost",port,"s0_0","monetdb","monetdb","mal");	# 6 SERVERreconnectAlias (mid:int)<-(_8:str)(port:int)(_9:str)(_10:str)(_10:str)(_11:str)
-#mserver.trace(mid,1); 	# 7  (_12:str)
-    s:str  := mserver.rpc(mid,"io.print(123456);");	# 8 SERVERmapi_rpc_single_row (s:str)<-(mid:int)(_14:str)
+    mid := mapi.reconnect("localhost",port,"s0_0","monetdb","monetdb","mal");	# 6 SERVERreconnectAlias (mid:int)<-(_8:str)(port:int)(_9:str)(_10:str)(_10:str)(_11:str)
+#mapi.trace(mid,1); 	# 7  (_12:str)
+    s:str  := mapi.rpc(mid,"io.print(123456);");	# 8 SERVERmapi_rpc_single_row (s:str)<-(mid:int)(_14:str)
     io.print(s);	# 9 IOprint_val (_15:void)<-(s:str)
-    mserver.disconnect(mid);	# 10 SERVERdisconnect (_16:void)<-(mid:int)
+    mapi.disconnect(mid);	# 10 SERVERdisconnect (_16:void)<-(mid:int)
 end main;	# 11  
 [ "123456" ]
 

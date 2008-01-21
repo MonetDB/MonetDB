@@ -79,7 +79,7 @@ library inspect;
 library manual;
 library language;
 library constraints;
-library mserver;
+library mal_mapi;
 
 library profiler;
 library statistics;
@@ -164,7 +164,7 @@ include inspect;
 include manual;
 include language;
 include constraints;
-include mserver;
+include mal_mapi;
 
 include profiler;
 include statistics;
@@ -212,7 +212,7 @@ include mal_memorun;
 include opt_crack;
 include opt_joinselect;
 include opt_remoteQueries;
-#include crackers; 
+include crackers; 
 
 include xml;
 include batxml;
