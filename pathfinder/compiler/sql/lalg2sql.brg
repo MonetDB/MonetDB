@@ -2675,7 +2675,7 @@ reduce (PFla_op_t * p, int goalnt)
 
             /* add the constraint coming from semijoin */
             where_list_add (WHERELIST(p),
-                            eq (col_env_lookup (COLMAP(L(p)), att1, ty),
+                            eq (col_env_lookup (COLMAP(p), att1, ty),
                                 col_env_lookup (right->colmap, att2, ty)));
         }   break;
 
