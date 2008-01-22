@@ -1284,10 +1284,10 @@ reduce (PFcnode_t * p, int goalnt)
                 if (PFty_subtype (TY(LL(p)), PFty_empty ())) {
                     *p = *str ("");
                     TY(p) = PFty_xs_string ();
+                    rewritten = true;
 
                     /* assign new node a state label */
-                    relabel (p, kids);
-                    rewritten = true;
+                    PFcoreopt_label (p);
                     break;
                 }
                 else if (PFty_subtype (TY(LL(p)), PFty_xs_string ())) {
@@ -1353,6 +1353,9 @@ reduce (PFcnode_t * p, int goalnt)
                 *p = *empty ();
                 TY(p) = PFty_empty ();
                 rewritten = true;
+
+                /* assign new node a state label */
+                PFcoreopt_label (p);
                 break;
             }
             break;
@@ -1404,6 +1407,7 @@ relabel (PFcnode_t *p,  PFcnode_t **kids)
                                           STATE_LABEL(R(p)));
     }
 
+    assert (STATE_LABEL(p));
 }
 
 /* Collect all let (and position) bound variables and additionally
