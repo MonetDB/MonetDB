@@ -5,8 +5,8 @@ stdout of test 'procs` in directory 'modules/pftijah` itself:
 # 02:59:56 >  Mtimeout -timeout 60 Mserver "--config=/var/tmp/_Stable_PREFIX__GNU_32_d_--enable-debug_/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/var/tmp/_Stable_PREFIX__GNU_32_d_--enable-debug_/lib/MonetDB:/var/tmp/_Stable_PREFIX__GNU_32_d_--enable-debug_/lib/bin" --set "gdk_dbfarm=/var/tmp/_Stable_PREFIX__GNU_32_d_--enable-debug_/var/MonetDB/dbfarm" --set "sql_logdir=/var/tmp/_Stable_PREFIX__GNU_32_d_--enable-debug_/var/MonetDB/log" --set mapi_port=37488 --set sql_port=45466 --set xquery_port=52692 --set monet_prompt= --trace --dbname=mTests_modules_pftijah  < procs.milS
 # 02:59:56 >  
 
-# MonetDB Server v4.20.1
-# based on GDK   v1.20.1
+# MonetDB Server v4.21.0
+# based on GDK   v1.21.0
 # Copyright (c) 1993-2007, CWI. All rights reserved.
 # Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
@@ -28,6 +28,7 @@ procs();
 [ "CTrefine_rev(oid, BAT[oid,any]) : BAT[oid,oid]"													  ]
 [ "CTrefine_rev(oid, any) : oid"															  ]
 [ "CTsubgroup(BAT[oid,oid], BAT[oid,any], BAT[oid,any]) : BAT[oid,oid]"											  ]
+[ "DocmgmTape(BAT[oid,BAT], BAT[oid,str], BAT[oid,str], BAT[oid,str], BAT[oid,lng]) : void"									  ]
 [ "TIMEZONE(str) : tzone"																  ]
 [ "[:rotate_xor_hash=](BAT[any::1,int], int, BAT[any::1,any]) : BAT[any::1,int]"																				  ]
 [ "[date](BAT[any::1,timestamp]) : BAT[any::1,date]"													  ]
