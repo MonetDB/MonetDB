@@ -1,0 +1,16 @@
+stdout of test 'substitution_fails.SF-1871789` in directory 'tests/BugTracker` itself:
+
+
+# 14:10:41 >  
+# 14:10:41 >  ./substitution_fails.SF-1871789.sh substitution_fails.SF-1871789 
+# 14:10:41 >  
+
+"pf -M substitution_fails.SF-1871789.ok.xq >/dev/null"
+"pf -A substitution_fails.SF-1871789.ok.xq >/dev/null"
+"pf -M substitution_fails.SF-1871789.ko.xq >/dev/null"
+"pf -A substitution_fails.SF-1871789.ko.xq >/dev/null"
+
+# 14:10:43 >  
+# 14:10:43 >  Done.
+# 14:10:43 >  
+

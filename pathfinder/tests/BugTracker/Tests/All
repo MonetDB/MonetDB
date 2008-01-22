@@ -142,3 +142,5 @@ preceding-sibling_failure.SF-1841747-d10
 preceding-sibling_failure.SF-1841747-d0
 preceding_following-sibling_bug.SF-1850772
 insert-new-page.SF-1854215
+substitution_fails.SF-1871789
+uncompilable_comparison.SF-1871790
