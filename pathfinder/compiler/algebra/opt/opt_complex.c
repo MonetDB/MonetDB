@@ -1390,9 +1390,9 @@ PFalgopt_complex (PFla_op_t *root)
     */
     PFprop_infer_level (root);
     PFprop_infer_icol (root);
-    PFprop_infer_dom (root);
     PFprop_infer_set (root);
     PFprop_infer_reqval (root);
+    PFprop_infer_dom (root);
     PFprop_infer_refctr (root);
 
     /* Optimize algebra tree */
