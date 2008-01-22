@@ -10,17 +10,6 @@ stdout of test 'q19alg` in directory 'benchmarks/XBench/DC/MD` itself:
 # Compiled for x86_64-redhat-linux-gnu/64bit with 32bit OIDs; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
 
-printf("\nReady.\n");
-
-Ready.
-quit();
-
-Over..
-
-# 21:08:52 >  
-# 21:08:52 >  Mtimeout -timeout 600 MapiClient -lxquery -fxml -umonetdb -Pmonetdb --host=localhost --port=39381 q19alg.xq
-# 21:08:52 >  
-
 <?xml version="1.0" encoding="utf-8"?>
 <XQueryResult><Output id="7"><order_status>PROCESSING</order_status><first_name>quietly ste</first_name><last_name>bravely </last_name><phone_number>5861080412717056</phone_number></Output></XQueryResult>
 
