@@ -349,7 +349,8 @@ tj_termOid(tjCtx* tjctx, char *t) {
 #endif
 }
 
-INLINE oid tj_extend_plane(struct tijahContextStruct *tjctx) {
+INLINE static oid
+tj_extend_plane(struct tijahContextStruct *tjctx) {
     oid base = tjctx->tijahPre - tjctx->dbat_collPre.seqbase; 
 
     if ( base >= tjctx->dbat_collPre.raw_max ) {
