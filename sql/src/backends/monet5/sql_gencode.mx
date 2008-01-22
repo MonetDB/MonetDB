@@ -126,33 +126,7 @@ void initSQLreferences(void){
 		exportResultRef==NULL || exportOperationRef==NULL )
 			GDKfatal("error initSQLreferences");
 }
-@-
-Instructions are encapsulated with time code.
-@= SQLprelude
-	if (mvc_debug_on(sql->mvc, 2)) {
-		/* t0:= time(); printf(" %d ",t0); */
-		q = newStmtId(mb, "t0","alarm","usec");
-		q = newStmt(mb,"io","printf");
-		q = pushStr(mb,q," %d ");
-		q = pushArgumentId(mb,q,_strdup("t0"));
-	}
 
-@= SQLpostlude
-	if (mvc_debug_on(sql->mvc, 2)) {
-		/* t1 := time();t1:= t1-t0; 
-		   stream_printf(GDKout," %d ",t1);
-		   stream_printf(GDKout,"%d\n",nr);*/
-		q = newStmtId(mb,"t1","alarm","usec");
-		q = newStmtId(mb,"t1","calc","-");
-		q = pushArgumentId(mb,q,_strdup("t1"));
-		q = pushArgumentId(mb,q,_strdup("t0"));
-		q = newStmt(mb,"io","printf");
-		q = pushStr(mb,q," %d ");
-		q = pushArgumentId(mb,q,_strdup("t1"));
-		q = newStmt(mb,"io","printf");
-		q = pushStr(mb,q," %d \n");
-		q = pushArgumentId(mb,q,_strdup("nr"));
-	}
 @-
 The dump_header produces a sequence of instructions for
 the front-end to prepare presentation of a result table.
@@ -256,11 +230,9 @@ dump_1(backend *sql, MalBlkPtr mb, stmt *s, char *mod, char *name)
 	InstrPtr q;
 	int o1 = _dumpstmt(sql, mb, s->op1.stval);
 
-	@:SQLprelude@
 	q = newStmt2(mb, mod, name);
 	q = pushArgument(mb, q, o1);
 	s->nr = getDestVar(q);
-	@:SQLpostlude@
 }
 
 void
@@ -270,12 +242,10 @@ dump_2(backend *sql, MalBlkPtr mb, stmt *s, char *mod, char *name)
 	int o1 = _dumpstmt(sql, mb, s->op1.stval);
 	int o2 = _dumpstmt(sql, mb, s->op2.stval);
 
-	@:SQLprelude@
 	q = newStmt2(mb, mod, name);
 	q = pushArgument(mb, q, o1);
 	q = pushArgument(mb, q, o2);
 	s->nr = getDestVar(q);
-	@:SQLpostlude@
 }
 
 InstrPtr
@@ -449,7 +419,6 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			int ht = TYPE_oid;
 			int tt = s->op1.cval->type.type->localtype;
 
-			@:SQLprelude@
 			q = newStmt2(mb, sqlRef, bindRef);
 			setVarType(mb, getArg(q, 0), newBatType(ht, tt));
 			setVarUDFtype(mb,getArg(q,0));
@@ -458,12 +427,10 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			q = pushStr(mb, q, s->op1.cval->base.name);
 			q = pushInt(mb, q, s->flag);
 			s->nr = getDestVar(q);
-			@:SQLpostlude@
 		}
 			break;
 		case st_dbat:{
 			int ht = TYPE_oid;
-			@:SQLprelude@
 			q = newStmt2(mb, sqlRef, binddbatRef);
 			setVarType(mb, getArg(q,0), newBatType(ht,TYPE_oid));
 			setVarUDFtype(mb,getArg(q,0));
@@ -471,14 +438,12 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			q = pushStr(mb, q, s->op1.tval->base.name);
 			q = pushInt(mb, q, s->flag);
 			s->nr = getDestVar(q);
-			@:SQLpostlude@
 		}
 			break;
 		case st_idxbat:{
 			int tt;
 			int ht = TYPE_oid;
 
-			@:SQLprelude@
 			q = newStmt2(mb, sqlRef, bindidxRef);
 			tt = tail_type(s)->type->localtype;
 			setVarType(mb, getArg(q, 0), newBatType(ht, tt));
@@ -488,7 +453,6 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			q = pushStr(mb, q, s->op1.idxval->base.name);
 			q = pushInt(mb, q, s->flag);
 			s->nr = getDestVar(q);
-			@:SQLpostlude@
 		}
 			break;
 		case st_const:{
@@ -515,8 +479,6 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			int l = _dumpstmt(sql, mb, s->op1.stval);
 			int offset = _dumpstmt(sql, mb, s->op2.stval);
 			int len = _dumpstmt(sql, mb, s->op3.stval);
-
-			@:SQLprelude@
 
 			/* first insert single value into a bat */
 			if (s->nrcols == 0) { 
@@ -594,12 +556,10 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				l = getDestVar(q);
 			}
 			s->nr = l;
-			@:SQLpostlude@
 		} break;
 		case st_order:{
 			int l = _dumpstmt(sql, mb, s->op1.stval);
 
-			@:SQLprelude@
 			q = newStmt1(mb, algebraRef, "sortTail" );
 			q = pushArgument(mb, q, l);
 			s->nr = getDestVar(q);
@@ -608,13 +568,11 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				q= pushArgument(mb,q,s->nr);
 				s->nr = getDestVar(q);
 			}
-			@:SQLpostlude@
 		} break;
 		case st_reorder:{
 			int l = _dumpstmt(sql, mb, s->op1.stval);
 			int r = _dumpstmt(sql, mb, s->op2.stval);
 
-			@:SQLprelude@
 			if (s->flag) {
 				q = newStmt1(mb, groupRef, "refine");
 			} else {
@@ -623,7 +581,6 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			q = pushArgument(mb, q, l);
 			q = pushArgument(mb, q, r);
 			s->nr = getDestVar(q);
-			@:SQLpostlude@
 		}
 			break;
 
@@ -635,7 +592,6 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 
 			char *cmd = s->type == st_select ? "select" : "uselect";
 
-			@:SQLprelude@
 			if (s->op2.stval->nrcols >= 1) {
 				char *mod = calcRef;
 				char *op = "=";
@@ -830,7 +786,6 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				}
 			}
 			s->nr = getDestVar(q);
-			@:SQLpostlude@
 		}
 			break;
 		case st_uselect2:
@@ -844,8 +799,6 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				(s->type == st_select2) ? selectRef :
 				(s->type == st_uselect2) ? uselectRef :
 				joinRef;
-
-			@:SQLprelude@
 
 			/* if st_join2 try to convert to bandjoin */
 			/* ie check if we substract/add a constant, to the
@@ -888,7 +841,6 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				q = newStmt2(mb, algebraRef, selectNotNilRef);
 				q = pushArgument(mb, q, l);
 				s->nr = getDestVar(q);
-				@:SQLpostlude@
 				break;
 			}
 			q = newStmt2(mb, algebraRef, cmd);
@@ -917,7 +869,6 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				break;
 			}
 			s->nr = getDestVar(q);
-			@:SQLpostlude@
 		}
 			break;
 		case st_semijoin:{
@@ -938,7 +889,6 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			int r = _dumpstmt(sql, mb, s->op2.stval);
 			char *jt = "join";
 
-			@:SQLprelude@
 			if (s->type == st_outerjoin) {
 				jt = "outerjoin";
 			/* handle fetchjoins differently 
@@ -959,14 +909,12 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 
 				q = pushArgument(mb, q, l);
 				q = pushArgument(mb, q, r);
-				@:SQLpostlude@
 				break;
 			case cmp_notequal:
 				q = newStmt1(mb, algebraRef, "antijoin");
 
 				q = pushArgument(mb, q, l);
 				q = pushArgument(mb, q, r);
-				@:SQLpostlude@
 				break;
 			case cmp_lt:
 				q = newStmt1(mb, algebraRef, "thetajoin");
@@ -974,7 +922,6 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				q = pushArgument(mb, q, l);
 				q = pushArgument(mb, q, r);
 				q = pushInt(mb, q, -1);
-				@:SQLpostlude@
 				break;
 			case cmp_lte:
 				q = newStmt1(mb, algebraRef, "thetajoin");
@@ -982,7 +929,6 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				q = pushArgument(mb, q, l);
 				q = pushArgument(mb, q, r);
 				q = pushInt(mb, q, -2);
-				@:SQLpostlude@
 				break;
 			case cmp_gt:
 				q = newStmt1(mb, algebraRef, "thetajoin");
@@ -990,7 +936,6 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				q = pushArgument(mb, q, l);
 				q = pushArgument(mb, q, r);
 				q = pushInt(mb, q, 1);
-				@:SQLpostlude@
 				break;
 			case cmp_gte:
 				q = newStmt1(mb, algebraRef, "thetajoin");
@@ -998,7 +943,6 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				q = pushArgument(mb, q, l);
 				q = pushArgument(mb, q, r);
 				q = pushInt(mb, q, 2);
-				@:SQLpostlude@
 				break;
 			case cmp_all:	/* aka cross table */
 			{
@@ -1029,7 +973,6 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				q = newStmt2(mb, algebraRef, joinRef);
 				q = pushArgument(mb, q, l);
 				q = pushArgument(mb, q, r);
-				@:SQLpostlude@
 				break;
 			}
 			default:
@@ -1043,7 +986,6 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			int ext, grp, o1 = _dumpstmt(sql, mb, s->op1.stval);
 
 			nme = alloca(SMALLBUFSIZ);
-			@:SQLprelude@
 			q = newStmt2(mb, groupRef, newRef);
 			ext = getDestVar(q);
 			snprintf( nme, SMALLBUFSIZ, "grp%d", getDestVar(q));
@@ -1058,7 +1000,6 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			snprintf( nme, SMALLBUFSIZ, "ext%d", s->nr);
 			renameVariable(mb, ext, _strdup(nme));
 
-			@:SQLpostlude@
 		} 	break;
 		case st_group_ext:{
 			char *ext;
@@ -1069,11 +1010,9 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			e = findVariable(mb, ext);
 			assert(e >= 0);
 
-			@:SQLprelude@
 			q = newStmt1(mb, batRef, "mirror");
 			q = pushArgument(mb, q, e);
 			s->nr = getDestVar(q);
-			@:SQLpostlude@
 		} break;
 		case st_derive:{
 			char *nme, *buf;
@@ -1083,7 +1022,6 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 
 			nme = alloca(SMALLBUFSIZ);
 			buf = alloca(SMALLBUFSIZ);
-			@:SQLprelude@
 			q = newStmt2(mb, groupRef, deriveRef);
 			ext = getDestVar(q);
 			snprintf( nme, SMALLBUFSIZ, "grp%d", getDestVar(q));
@@ -1101,12 +1039,10 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			snprintf( nme, SMALLBUFSIZ, "ext%d", s->nr);
 			renameVariable(mb, ext, _strdup(nme));
 
-			@:SQLpostlude@
 		} 	break;
 		case st_unique:{
 			int l = _dumpstmt(sql, mb, s->op1.stval);
 
-			@:SQLprelude@
 			if (s->op2.stval) {
 				char *nme, *buf;
 				int e, g = _dumpstmt(sql, mb, s->op2.stval);
@@ -1143,7 +1079,6 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				q = pushArgument(mb, q, k);
 			}
 			s->nr = getDestVar(q);
-			@:SQLpostlude@
 			break;
 		}
 		case st_convert: {
@@ -1161,8 +1096,6 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				s->nr = l;	
 				break;
 			}
-
-			@:SQLprelude@
 
 			/* external types have sqlname convert functions,
 			   these can generate errors (fromstr cannot) */
@@ -1225,17 +1158,15 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			    s->op4.typeval.digits == 0) )
 				q = pushInt(mb, q, s->op4.typeval.digits);
 			s->nr = getDestVar(q);
-			@:SQLpostlude@
 			break;
 		}
 		case st_op:{
 			char *mod = sql_func_mod(s->op4.funcval->func);
 			char *fimp = sql_func_imp(s->op4.funcval->func);
-			@:SQLprelude@
+
 			backend_create_func(sql, s->op4.funcval->func); 
 			q = newStmt(mb, mod, fimp);
 			s->nr = getDestVar(q);
-			@:SQLpostlude@
 			break;
 		}
 		case st_unop:{
@@ -1243,7 +1174,6 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			char *fimp = sql_func_imp(s->op4.funcval->func);
 			int l = _dumpstmt(sql, mb, s->op1.stval);
 
-			@:SQLprelude@
 			backend_create_func(sql, s->op4.funcval->func); 
 			if (s->op1.stval->nrcols) {
 				int rtype = s->op4.funcval->res.type->localtype;
@@ -1259,7 +1189,6 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				q = pushArgument(mb, q, l);
 			}
 			s->nr = getDestVar(q);
-			@:SQLpostlude@
 		}
 			break;
 		case st_binop:{
@@ -1275,7 +1204,6 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			    tpe->type->eclass == EC_DEC) 
 				special = 1;
 
-			@:SQLprelude@
 			backend_create_func(sql, s->op4.funcval->func); 
 			if (s->op1.stval->nrcols || s->op2.stval->nrcols) {
 				if (!special) {
@@ -1305,7 +1233,6 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				q = pushArgument(mb, q, r);
 			}
 			s->nr = getDestVar(q);
-			@:SQLpostlude@
 		}
 			break;
 		case st_Nop:{
@@ -1313,9 +1240,8 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			char *fimp = sql_func_imp(s->op4.funcval->func);
 			node *n;
 			/* dump operands */
-			_dumpstmt(sql, mb, s->op1.stval);	
+			_dumpstmt(sql, mb, s->op1.stval);
 
-			@:SQLprelude@
 			backend_create_func(sql, s->op4.funcval->func); 
 			if (s->nrcols) {
 				fimp = convertMultiplexFcn(fimp);
@@ -1333,6 +1259,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 					setVarUDFtype(mb,getArg(q,0));
 				}
 			} else {
+				fimp = convertOperator(fimp);
 				q = newStmt(mb, mod, fimp);
 			}
 			for (n = s->op1.stval->op1.lval->h; n; n = n->next) {
@@ -1341,7 +1268,6 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				q = pushArgument(mb, q, op->nr);
 			}
 			s->nr = getDestVar(q);
-			@:SQLpostlude@
 		} break;
 		case st_aggr:{
 			int l = _dumpstmt(sql, mb, s->op1.stval);
@@ -1353,7 +1279,6 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			if (strcmp(aggrfunc, "sum") == 0) 
 				output_type_needed = 1;
 
-			@:SQLprelude@
 			if (s->flag) { 
 				int l2 = _dumpstmt(sql, mb, s->op2.stval);
 
@@ -1380,7 +1305,6 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				q = pushArgument(mb, q, l);
 			}
 			s->nr = getDestVar(q);
-			@:SQLpostlude@
 		}
 			break;
 		case st_atom: {
@@ -1413,7 +1337,6 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			q = pushArgument(mb, q, r);
 			q = pushBit(mb, q, TRUE);
 			s->nr = l;
-			@:SQLpostlude@
 		} break;
 		case st_update_col:
 		case st_append_col:{
@@ -1428,7 +1351,6 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			q = pushStr(mb, q, c->base.name);
 			q = pushArgument(mb, q, r);
 			s->nr = l;
-			@:SQLpostlude@
 		} break;
 
 		case st_update_idx:
@@ -1444,30 +1366,25 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			q = pushStr(mb, q, i->base.name);
 			q = pushArgument(mb, q, r);
 			s->nr = l;
-			@:SQLpostlude@
 		} break;
 		case st_delete:{
 			int l = 0;
 			int r = _dumpstmt(sql, mb, s->op2.stval);
 			sql_table *t = s->op1.tval;
 
-			@:SQLprelude@
 			q = newStmt1(mb, sqlRef, "delete");
 			q = pushStr(mb, q, t->s->base.name);
 			q = pushStr(mb, q, t->base.name);
 			q = pushArgument(mb, q, r);
 			s->nr = l;
-			@:SQLpostlude@
 		} break;
 		case st_table_clear:{
 			sql_table *t = s->op1.tval;
 
-			@:SQLprelude@
 			q = newStmt1(mb, sqlRef, "clear_table");
 			q = pushStr(mb, q, t->s->base.name);
 			q = pushStr(mb, q, t->base.name);
 			s->nr = getDestVar(q);
-			@:SQLpostlude@
 		} break;
 		case st_exception:{
 			int l,r;
@@ -1475,25 +1392,21 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			l = _dumpstmt(sql, mb, s->op1.stval);
 			r = _dumpstmt(sql, mb, s->op2.stval);
 
-			@:SQLprelude@
 			/* if(bit(l)) { error(r);}  ==raising an exception */
 			q = newStmt1(mb, sqlRef, "assert");
 			q = pushArgument(mb, q, l);
 			q = pushArgument(mb, q, r);
 			s->nr = getDestVar(q);
-			@:SQLpostlude@
 			break;
 		}
 		case st_intersect:{
 			int l = _dumpstmt(sql, mb, s->op1.stval);
 			int r = _dumpstmt(sql, mb, s->op2.stval);
 
-			@:SQLprelude@
 			q = newStmt1(mb, algebraRef, "sintersect");
 			q = pushArgument(mb, q, l);
 			q = pushArgument(mb, q, r);
 			s->nr = getDestVar(q);
-			@:SQLpostlude@
 		} break;
 		case st_alias:
 			s->nr = _dumpstmt(sql, mb, s->op1.stval);
@@ -1522,7 +1435,6 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			int o1 = _dumpstmt(sql, mb, s->op1.stval);
 			int o2 = _dumpstmt(sql, mb, s->op2.stval);
 
-			@:SQLprelude@
 			q = newStmt1(mb, sqlRef, "columnBind");
 			/* adjust destination type */
 			setVarType(mb,getArg(q,0), newBatType( TYPE_oid,s->op4.typeval.type->localtype));
@@ -1530,7 +1442,6 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			q = pushArgument(mb, q, o1);
 			q = pushArgument(mb, q, o2);
 			s->nr = getDestVar(q);
-			@:SQLpostlude@
 		} break;
 		case st_import:{
 			char *tname = s->op1.stval->op1.tval->base.name;
@@ -1609,12 +1520,10 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			InstrPtr q;
 			int o1 = _dumpstmt(sql, mb, s->op1.stval);
 
-			@:SQLprelude@
 			q = newStmt1(mb, sqlRef, "affectedRows");
 			q = pushArgument(mb, q, o1);
 			q = pushStr(mb, q, ""); /* warning */
 			s->nr = getDestVar(q);
-			@:SQLpostlude@
 		} break;
 		case st_output:
 		case st_export:{

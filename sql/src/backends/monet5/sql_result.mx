@@ -412,7 +412,7 @@ _ASCIIadt_frStr(void *extra, int type, char *s, char *e, char quote)
 {
 	Column *c = extra;
 
-	if (s == NULL || (!quote && s == e) || (!quote && 
+	if (s == NULL || (type < TYPE_str && !quote && s == e) || (!quote && 
 			(s[0] == 'N' || s[0] == 'n') &&
 			(s[1] == 'U' || s[1] == 'u') &&
 			(s[2] == 'L' || s[2] == 'l') &&

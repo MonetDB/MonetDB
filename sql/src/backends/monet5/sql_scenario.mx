@@ -976,7 +976,7 @@ SQLparser(Client c)
 	if( be->mvc->mode== m_profile )
 		T0 = GDKusec();
 
-	if ((err = sqlparse(m)) && m->debug){
+	if ((err = sqlparse(m)) && m->debug&1){
 		/* switch to different language mode */
 		char oldlang= be->language;
 		be->language= 'D';
