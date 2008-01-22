@@ -641,8 +641,8 @@ case "$GCC-$CC-$host_os-$host-$bits" in
 	;;
 yes-*-solaris*-*-*)
 	case `$bits-$CC -v 2>&1` in
-	32-*|*-*'gcc version 3.'*)	;;
-	*)	AC_MSG_ERROR([need GCC version 3.X for 64 bits]);;
+	32-*|*-*'gcc version '[34]'.'*)	;;
+	*)	AC_MSG_ERROR([need GCC version >=3.X for 64 bits]);;
 	esac
 	CC="$CC -m$bits"
 	;;
@@ -671,7 +671,8 @@ yes-*-linux*-x86_64*-*)
 -*pgcc*-linux*-x86_64*-*)
 	CC="$CC -tp=k8-$bits"
 	;;
-yes-*-darwin8*-powerpc*-*)
+yes-*-darwin[[89]]*-powerpc*-*|yes-*-darwin[[89]]*-i?86*-*|yes-*-darwin[[89]]*-x86_64*-*)
+	# Darwin/OSX cases
 	CC="$CC -m$bits"
 	;;
 *)
@@ -696,8 +697,8 @@ AC_ARG_ENABLE(oid32,
 		[use 32 bits vor OIDs on a 64-bit architecture]),
 	enable_oid32=$enableval,
 	enable_oid32=no)
-case $enable_oid32 in
-yes)	AC_DEFINE(MONET_OID32, 1, [Define if the oid type should use 32 bits on a 64-bit architecture])
+case $bits-$enable_oid32 in
+64-yes)	AC_DEFINE(MONET_OID32, 1, [Define if the oid type should use 32 bits on a 64-bit architecture])
 	oids=32
 	;;
 esac
