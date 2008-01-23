@@ -532,6 +532,11 @@ command sortBandJoin(b1:bat[:oid,:@2],b2:bat[:oid,:@2],c1:@2,c2:@2,inclusiveLow:
 address CRKsortBandJoin_@2
 comment "Band Join two maps based on head values. 
 	First sort the right BAT and then continuously binary search the right BAT for each tuple of the left one";
+
+command materializeHead(b:bat[:oid,:@2]) :void
+address CRKmaterializeH
+comment "Materialize the head of BAT b";
+
 @
 
 @- Header file

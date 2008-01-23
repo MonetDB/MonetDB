@@ -293,6 +293,7 @@ end main;	# 11
 [ "joinuselect",		  "command",	  "crackers",	  "(right:bat[:oid,:chr],l:chr,h:chr,li:bit,hi:bit,left:bat[:oid,:oid],inPlace:bit,isForeignKey:bit):bat[:oid,:oid] ",			  "CRKjoinSelectBounds_chr;"			  ]
 [ "joinuselect",		  "command",	  "crackers",	  "(right:bat[:oid,:chr],l:chr,h:chr,li:bit,hi:bit,left:bat[:oid,:oid]):bat[:oid,:oid] ",						  "CRKjoinSelectDefault_chr;"			  ]
 [ "mapCount",			  "command",	  "crackers",	  "(b:bat[:oid,:oid]):lng ",														  "CRKbatCount;"				  ]
+[ "materializeHead",			  "command",	  "crackers",	  "(b:bat[:oid,:int]):void ",														  "CRKmaterializeH;"				  ]
 [ "pmclearReferences",		  "command",	  "crackers",	  "(b:bat[:oid,:date]):void ",														  "CRKclearReferences;"				  ]
 [ "pmaddReference",		  "command",	  "crackers",	  "(b:bat[:oid,:date],bp:bat[:oid,:lng]):void ",											  "CRKaddReference;"				  ]
 [ "pmmaxTail",			  "command",	  "crackers",	  "(b:bat[:oid,:date],bp:bat[:oid,:lng],l:date,h:date,li:bit,hi:bit):bat[:oid,:lng] ",							  "CRKMaxTailIncrementalSideways_date_lng;"	  ]

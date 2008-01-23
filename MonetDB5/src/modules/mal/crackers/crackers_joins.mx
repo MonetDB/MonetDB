@@ -37,6 +37,7 @@
 /* Exported signatures */
 @:TypeSwitch_1(JoinFunctions_decl1)@
 crackers_export str CRKbatCount(lng *count, int *bid);
+crackers_export str CRKmaterializeH(int *res, int *bid);
 
 /* #define DEBUG_CRACKERS_JOIN 		to enable debug trace */
 #endif /* _CRACKERS_JOINS_H */
@@ -141,6 +142,13 @@ str CRKbatCount(lng *count, int *bid){
 	return MAL_SUCCEED;
 }
 
+str CRKmaterializeH(int *res, int *bid){
+	BAT *b=BATdescriptor(*bid);
+	b=BATmaterializeh(b);
+	BBPunfix(b->batCacheid);	
+	(void)res;
+	return MAL_SUCCEED;
+}
 @
 
 
@@ -376,10 +384,14 @@ str CRKbatCount(lng *count, int *bid){
 
 
 @= addPartialResult
-	view = BATslice(b, vl, vh+1);
-	viewCount = BATcount(view);
-	curViewTupleHead = (oid*)Hloc(view,BUNfirst(view));
-	for (i=0;i<viewCount;i++){
+	curViewTupleHead = (oid*)Hloc(b,BUNfirst(b)+vl);
+
+#ifdef DEBUG_CRACKERS_JOIN
+	printf("\n adding tuples "OIDFMT" to "OIDFMT" \n",vl,vh);
+	BATprint(b);
+#endif
+
+	for (j=vl;j<vh+1;j++){
 		*currentResTupleHead = *currentTupleLeftHead;	
 		*currentResTupleTail = *curViewTupleHead;	
 
@@ -389,18 +401,20 @@ str CRKbatCount(lng *count, int *bid){
 	}
 
 
-	resCount += viewCount;
-	BBPunfix(view->batCacheid);	
+	resCount += (vh-vl) + 1;
 @
 
 @= sortInsertPartialResult
 	*currentResTupleHead = *currentTupleLeftHead;
-	*currentResTupleTail = *Hloc(BATRight, currentTupleRight);
+	*currentResTupleTail = *(oid*)Hloc(BATRight, currentTupleRight);
 	
 	currentTupleRight   ++;
         currentResTupleHead ++;
         currentResTupleTail ++;
 	resCount++;
+
+        if (currentTupleRight == BUNlast(BATRight))
+		goto next;
 @
 
 @= crackDoubleSidedBound
@@ -1381,7 +1395,7 @@ str CRKAlreadyAlignedJoin_@1(int *resid, int *bidL1,  int *bidR1, int *bidR2){
 }	
 
 str CRKbandJoin_@1(int *resid, int *bidL, int *bidR, @1 *c1, @1 *c2, bit *inclusiveLow, bit *inclusiveHgh){
-	BAT *BATLeft, *b, *c, *res, *view;
+	BAT *BATLeft, *b, *c, *res;
 	int m;
 	@1 currentValue;
 	BUN currentTupleLeft; 
@@ -1392,9 +1406,9 @@ str CRKbandJoin_@1(int *resid, int *bidL, int *bidR, @1 *c1, @1 *c2, bit *inclus
 	oid vl=0, vh=0, posl, posh, _vl;
 	oid cl1=0, ch1=0, cl2=0, ch2=0;
 	int foundLow, foundHgh;
-	oid viewCount, resCount=0;
+	oid resCount=0;
 	int gapL=0,gapH=0;
-	oid i;
+	oid i,j;
 	
 	if (*inclusiveHgh == TRUE) HBound = FALSE;
 	else	HBound = TRUE; 				
@@ -1437,10 +1451,10 @@ str CRKbandJoin_@1(int *resid, int *bidL, int *bidR, @1 *c1, @1 *c2, bit *inclus
 
 
 		foundLow = GetLow_@1(low, *inclusiveLow, CrackerIndex[m].Tree, c, BUNfirst(c), 
-					&cl1, &ch1, 0, BUNlast(b)-(oid)1);
+					&cl1, &ch1, 0, BUNlast(b)-1);
 
 		foundHgh = GetHgh_@1(hgh, *inclusiveHgh, CrackerIndex[m].Tree, c,  BUNfirst(c), 
-					&cl2, &ch2, 0, BUNlast(b)-(oid)1);
+					&cl2, &ch2, 0, BUNlast(b)-1);
 
 		if (cl1 != 0) cl1++;
 		if (cl2 != 0) cl2++;
@@ -1522,10 +1536,8 @@ str CRKsortBandJoin_@1(int *resid, int *bidL, int *bidR, @1 *c1, @1 *c2, bit *in
 		hgh  = currentValue + *c2;			
 		
 		currentTupleRight = SORTfndfirst_@1(BATRight,&low);
-		if (currentTupleRight == BUNlast(BATRight)){
-			currentTupleLeft ++;
-			continue;
-		}
+		if (currentTupleRight == BUNlast(BATRight))
+			goto next;
 	
 		if ((*(@1*)Tloc(BATRight, currentTupleRight) == low)&&(*inclusiveLow == TRUE)){
 			@:sortInsertPartialResult()@
@@ -1544,6 +1556,7 @@ str CRKsortBandJoin_@1(int *resid, int *bidL, int *bidR, @1 *c1, @1 *c2, bit *in
                 	}
 		}
 
+		next:;
 		currentTupleLeft ++;
 	}
 
