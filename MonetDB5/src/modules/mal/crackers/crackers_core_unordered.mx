@@ -180,16 +180,24 @@ CRKcrackUnorderedZero_@2_@1( BAT *b, @1 mval, oid first, oid last, oid *pos){
         }
 
 	if (lt == ft) {
-		if (@5_@4(lt, &mval,@6@1))
-			*pos = (oid)(lt - t0) - (oid)1; /*works for empty left piece also*/
+		if (@5_@4(lt, &mval,@6@1)){
+			if (lt==t0) 
+				*pos = BUNfirst(b);
+			else	
+				*pos = (lt - t0) - 1; /*works for empty left piece also*/
+		}
 		else{
-			*pos = (oid)(lt - t0); 
+			*pos = lt - t0; 
 			if (*pos==last) /*empty right piece*/
-				*pos = *pos + (oid)1;
+				*pos = *pos + 1;
 		}
 	}
-	else
-		*pos = (oid)(lt - t0); 
+	else{
+		if (lt > t0)
+			*pos = lt - t0;
+		else
+			*pos = BUNfirst(b);
+	}		
 		
         return MAL_SUCCEED;
 }
@@ -223,7 +231,7 @@ CRKcrackUnorderedThree_@2_@3_@1( BAT *b, @1 low, @1 hgh, oid first, oid last, oi
 		else if (@8_@5(tmax, &low,@9@1))  /*result is one bun*/
 			*posl = *posh = tmax-t0;
 		else{
-			*posl = tmax-t0 - (oid)1; 
+			*posl = (tmax-t0) - 1; 
 			*posh = tmax-t0; 
 		}
 		return MAL_SUCCEED;
@@ -246,7 +254,7 @@ CRKcrackUnorderedThree_@2_@3_@1( BAT *b, @1 low, @1 hgh, oid first, oid last, oi
 		else if (@8_@5(lt, &low,@9@1))
 			*posl = lt-t0;
 		else
-			*posl = lt-t0 + (oid)1;
+			*posl = (lt-t0) + 1;
 		*posh = tmax-t0;
 		return MAL_SUCCEED;
 	}
@@ -274,7 +282,7 @@ CRKcrackUnorderedThree_@2_@3_@1( BAT *b, @1 low, @1 hgh, oid first, oid last, oi
 		return MAL_SUCCEED;
 	}	
 	if (tmax == lt){ /*then middle piece is empty*/
-		*posl = lt - t0 + (oid)1;
+		*posl = (lt - t0) + 1;
 		*posh = tmax - t0;
 		return MAL_SUCCEED;
 	}
