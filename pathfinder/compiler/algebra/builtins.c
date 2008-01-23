@@ -2425,7 +2425,7 @@ PFbui_fn_name (const PFla_op_t *loop, bool ordering, struct PFla_pair_t *args)
                    proj (att_iter, att_iter),
                    proj (att_pos, att_pos),
                    proj (att_item, att_res)),
-        .frag = args[0].frag };
+        .frag = PFla_empty_set() };
 }
 
 /* ------------------- */
