@@ -186,6 +186,9 @@ idLength(Client cntxt)
 
 	if (!idCharacter[(int) (*s)])
 		return 0;
+	/* avoid a clash with old temporaries */
+	if( s[0]== TMPMARKER)
+		s[0]= REFMARKER;
 	/* prepare escape of temporary names */
 	s++;
 	while (idCharacter2[(int) (*s)] ) 
@@ -219,6 +222,9 @@ str idCopy(Client cntxt, int length){
 	str s= GDKmalloc(length+1);
 	memcpy(s, CURRENT(cntxt),(size_t) length);
 	s[length]=0;
+	/* avoid a clash with old temporaries */
+	if( s[0]== TMPMARKER)
+		s[0]= REFMARKER;
 	advance(cntxt,length);
 	return s;
 }

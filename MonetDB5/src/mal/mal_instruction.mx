@@ -439,7 +439,7 @@ for separate name space management.
 
 #define getVar(M,I)     (M)->var[I]
 #define getVarTmp(M,I)      (M)->var[I]->tmpindex
-#define isTmpVar(M,I)   (!(M)->var[I]->name || *(M)->var[I]->name == TMPMARKER)
+#define isTmpVar(M,I)   	((M)->var[I]->tmpindex)
 #define getVarType(M,I)     ((M)->var[I]->type)
 #define getVarGDKType(M,I)      getGDKType((M)->var[I]->type)
 @-

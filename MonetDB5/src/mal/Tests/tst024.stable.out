@@ -16,29 +16,24 @@ stdout of test 'tst024` in directory 'src/mal` itself:
 #i:= 12;		# internal location of i is 3
 #
 #_2:=55;		# acceptable
-!MALException:user.main[0]:'_2' overwrites i
-
 #_3:= 23;	# error, overwriting non-temp
 #_5:=23;
-!MALException:user.main[0]:'_5' overwrites _2
-
 #io.print(_5);
-!MALException:user.main[0]:'_5' overwrites _2
-
 #
 function user.main():void;	# 0  (main:void)
-#detect illegal use of temporary variables 	# 1  unknown (_1:str)
-    i := 12;	# 2  unknown (i:any)<-(_3:int)
-# internal location of i is 3 	# 3  unknown (_4:str)
-    _2 := 55;	# 4  unknown (_0:any)<-(_6:int)
-# acceptable 	# 5  unknown (_7:str)
-    23;	# 6  unknown (_3:int)<-(_8:int)
-# error, overwriting non-temp 	# 7  unknown (_9:str)
-    _5 := 23;	# 8  unknown (_0:any)<-(_8:int)
-    io.print(_0);	# 9  unknown (_11:any)<-(_0:any)
-end main;	# 10  unknown 
+#detect illegal use of temporary variables 	# 1  (_1:str)
+    i := 12;	# 2  (i:int)<-(_3:int)
+# internal location of i is 3 	# 3  (_4:str)
+    X2 := 55;	# 4  (X2:int)<-(_6:int)
+# acceptable 	# 5  (_7:str)
+    X3 := 23;	# 6  (X3:int)<-(_9:int)
+# error, overwriting non-temp 	# 7  (_10:str)
+    X5 := 23;	# 8  (X5:int)<-(_9:int)
+    io.print(X5);	# 9 IOprint_val (_12:void)<-(X5:int)
+end main;	# 10  
+[ 23 ]
 
-# 07:58:40 >  
-# 07:58:40 >  Done.
-# 07:58:40 >  
+# 11:44:09 >  
+# 11:44:09 >  Done.
+# 11:44:09 >  
 
