@@ -93,12 +93,12 @@ OPTjoinPathImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		p= getInstrPtr(mb,i);
 		if( getModuleId(p)== algebraRef && getFunctionId(p)== joinRef ){
 @-
-Try to expand each of its argument list
+Try to expand each of its argument list.
 @c
 			q= copyInstruction(p);
 			q->argc=1;
 			for(j=p->retc; j<p->argc; j++)
-			if( pc[getArg(p,j)] && used[getArg(p,j)]==1 ){
+			if( pc[getArg(p,j)] ){
 				r= getInstrPtr(mb,pc[getArg(p,j)]);
 #ifdef DEBUG_OPT_JOINPATH 
 				stream_printf(GDKout,"expand with \n");
@@ -131,7 +131,11 @@ Final type check.
 					getHeadType(getArgType(mb,q,j))== TYPE_oid)
 				 )
 					goto nochange;
-
+@-
+Post-optimization. After the join path has been constructed
+it could locate common subpaths with previous ones and factor
+out that processing step. [TODO]
+@c
 				setFunctionId(q,joinPathRef);
 				getInstrPtr(mb,i)=q;
 				freeInstruction(p);
