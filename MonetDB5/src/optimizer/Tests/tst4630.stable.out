@@ -1,0 +1,62 @@
+stdout of test 'tst4630` in directory 'src/optimizer` itself:
+
+
+# 12:56:30 >  
+# 12:56:30 >   mserver5 "--config=/ufs/mk/monet5/Linux/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5//Linux/lib/MonetDB5:/ufs/mk/monet5//Linux/lib/MonetDB5/lib:/ufs/mk/monet5//Linux/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/mk/monet5//Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5//Linux/var/MonetDB5/sql_logs"  --set mapi_open=true --set xrpc_open=true --set mapi_port=31732 --set xrpc_port=42786 --set monet_prompt= --trace --dbname=mTests_src_optimizer  tst4630.mal
+# 12:56:30 >  
+
+# MonetDB server v5.3.0, based on kernel v1.21.0
+# Serving database 'mTests_src_optimizer'
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Copyright (c) 1993-2007 CWI, all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://gio.ins.cwi.nl:31732/
+## testing join path optimizations
+## the common part should not be replicated
+#
+#function qry( a:bat[:any_1,:any_2], b:bat[:any_2,:any_3], c:bat[:any_3,:any_4]):bat[:any_1,:any_4];
+#	a1:= a;
+#	b1:=b;
+#	c1:=c;
+#    z:= algebra.join(a,b);
+#    zz:= algebra.join(z,c);
+#	ww:= algebra.join(z,a1);
+#	yy:= algebra.join(ww,b1);
+#	xx:= algebra.join(yy,c1);
+#    return qry:= xx;
+#end qry;
+function user.qry(a:bat[:any_1,:any_2],b:bat[:any_2,:any_3],c:bat[:any_3,:any_4]):bat[:any_1,:any_4];	# 0  dynamic (qry:bat[:any_1,:any_4])<-(a:bat[:any_1,:any_2])(b:bat[:any_2,:any_3])(c:bat[:any_3,:any_4])
+    a1 := a;	# 1  (a1:bat[:any_1,:any_2])<-(a:bat[:any_1,:any_2])
+    b1 := b;	# 2  (b1:bat[:any_2,:any_3])<-(b:bat[:any_2,:any_3])
+    c1 := c;	# 3  (c1:bat[:any_3,:any_4])<-(c:bat[:any_3,:any_4])
+    z := algebra.join(a,b);	# 4 ALGjoin (z:bat[:any,:any])<-(a:bat[:any_1,:any_2])(b:bat[:any_2,:any_3])
+    zz := algebra.join(z,c);	# 5 ALGjoin (zz:bat[:any,:any])<-(z:bat[:any,:any])(c:bat[:any_3,:any_4])
+    ww := algebra.join(z,a1);	# 6 ALGjoin (ww:bat[:any,:any])<-(z:bat[:any,:any])(a1:bat[:any_1,:any_2])
+    yy := algebra.join(ww,b1);	# 7 ALGjoin (yy:bat[:any,:any])<-(ww:bat[:any,:any])(b1:bat[:any_2,:any_3])
+    xx := algebra.join(yy,c1);	# 8 ALGjoin (xx:bat[:any,:any])<-(yy:bat[:any,:any])(c1:bat[:any_3,:any_4])
+    return qry := xx;	# 9  (qry:bat[:any_1,:any_4])<-(xx:bat[:any,:any])
+end qry;	# 10  
+#
+#optimizer.joinPath("user","qry");
+#optimizer.deadcode("user","qry");
+#mdb.list("user","qry");
+#
+#
+function user.main():void;	# 0  (main:void)
+# testing join path optimizations 	# 1  (_1:str)
+# the common part should not be replicated 	# 2  (_2:str)
+    mdb.list("user","qry");	# 3 MDBlist3 (_7:void)<-(_4:str)(_5:str)
+end main;	# 4  
+function user.qry(a:bat[:any_1,:any_2],b:bat[:any_2,:any_3],c:bat[:any_3,:any_4]):bat[:any_1,:any_4];
+    a1 := a;
+    b1 := b;
+    c1 := c;
+    z := algebra.join(a,b);
+    xx := algebra.joinPath(z,a1,b1,c1);
+    return qry := xx;
+end qry;
+
+# 12:56:30 >  
+# 12:56:30 >  Done.
+# 12:56:30 >  
+
