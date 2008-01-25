@@ -328,6 +328,7 @@ typedef struct mvar_t mvar_t;
  */
 PFarray_t *mvars = NULL;
 
+static unsigned int global_trace_id;
 /**
  * Return a ``new'' trace id. This id is used to refer
  * to a certain trace relation.
@@ -337,8 +338,7 @@ new_trace_id (void)
 {
     /* the trace_id corresponds to the oids
        in the trace containers */
-    static unsigned int trace_id = 1;
-    return trace_id++;
+    return global_trace_id++;
 }
 
 /**
@@ -1931,7 +1931,7 @@ reduce (PFpa_op_t * p, int goalnt)
             unpin (time, 1);
 
             /* output trace information if available */
-            if (new_trace_id () != 1)
+            if (global_trace_id != 1)
                 execute (
                     trace (
                         arg (var (PF_MIL_VAR_WS),
@@ -8979,8 +8979,9 @@ PFmilgen (PFpa_op_t *n)
                     new (type (mty_oid), type (mty_oid))));
 
     /* dummy initializations */
-    twig_state = NULL;
-    fun_params = NULL;
+    twig_state      = NULL;
+    fun_params      = NULL;
+    global_trace_id = 1;
 
     /* start compilation */
     reduce (n, 1);
