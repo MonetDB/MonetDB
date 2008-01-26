@@ -290,13 +290,13 @@ address SERVERepilogue;
 #include <mapilib/Mapi.h>
 
 #ifdef WIN32
-#ifndef LIBMSERVER
-#define m_export extern __declspec(dllimport)
+#ifndef LIBMAL_MAPI
+#define mal_mapi_export extern __declspec(dllimport)
 #else
-#define m_export extern __declspec(dllexport)
+#define mal_mapi_export extern __declspec(dllexport)
 #endif
 #else
-#define m_export extern
+#define mal_mapi_export extern
 #endif
 
 
@@ -307,66 +307,66 @@ address SERVERepilogue;
 #define SERVERSSLPORT		40000
 #define SERVERMAXUSERS 		5
 
-m_export str SERVERlistenThread(int *Sock);
-m_export str SERVERlisten(int *Port, str *Usockfile, int *Maxusers, str *Cmd);
-m_export bat * SERVERprelude(void);
-m_export void SERVERepilogue(void);
-m_export str SERVERlistenSSL(int *Port, int *Maxusers, str keyfile, str certfile, str cmd);
-m_export str SERVERlisten_default(int *ret);
-m_export str SERVERlisten2(int *ret, int *port, int *maxusers);
-m_export str SERVERlisten3(int *ret, int *port, int *maxusers, str *cmd);
-m_export str SERVERlisten_port(int *ret, int *pid);
-m_export str SERVERstop(int *ret);
-m_export str SERVERsuspend(int *ret);
-m_export str SERVERresume(int *ret);
-m_export void SERVERexit(void);
+mal_mapi_export str SERVERlistenThread(int *Sock);
+mal_mapi_export str SERVERlisten(int *Port, str *Usockfile, int *Maxusers, str *Cmd);
+mal_mapi_export bat * SERVERprelude(void);
+mal_mapi_export void SERVERepilogue(void);
+mal_mapi_export str SERVERlistenSSL(int *Port, int *Maxusers, str keyfile, str certfile, str cmd);
+mal_mapi_export str SERVERlisten_default(int *ret);
+mal_mapi_export str SERVERlisten2(int *ret, int *port, int *maxusers);
+mal_mapi_export str SERVERlisten3(int *ret, int *port, int *maxusers, str *cmd);
+mal_mapi_export str SERVERlisten_port(int *ret, int *pid);
+mal_mapi_export str SERVERstop(int *ret);
+mal_mapi_export str SERVERsuspend(int *ret);
+mal_mapi_export str SERVERresume(int *ret);
+mal_mapi_export void SERVERexit(void);
 
-m_export str SERVERconnect(int *ret, str *host, int *port, str *username, str *password, str *lang);
-m_export str SERVERdisconnectWithAlias(int *ret, str *db_alias);
-m_export str SERVERdisconnectALL(int *ret);
-m_export str SERVERreconnectAlias(int *ret, str *host, int *port, str *dbalias, str *username, str *password, str *lang);
-m_export str SERVERreconnectWithoutAlias(int *ret, str *host, int *port, str *username, str *password, str *lang);
-m_export str SERVERconnectssl(int *ret, str *host, int *port, str *username, str *password, str *lang);
-m_export str SERVERtrace(int *ret, int *mid, int *flag);
-m_export str SERVERdisconnect(int *ret, int *mid);
-m_export str SERVERsetAlias(int *ret, int *mid, str *dbalias);
-m_export str SERVERlookup(int *ret, str *dbalias);
-m_export str SERVERdestroy(int *ret, int *mid);
-m_export str SERVERreconnect(int *ret, int *mid);
-m_export str SERVERping(int *ret, int *mid);
-m_export str SERVERquery(int *ret, int *mid, str *qry);
-m_export str SERVERquery_handle(int *ret, int *mid, str *qry);
-m_export str SERVERquery_array(MalBlkPtr mb, MalStkPtr stk, InstrPtr pc);
-m_export str SERVERprepare(int *ret, int *key, str *qry);
-m_export str SERVERexecute(int *ret, int *idx);
-m_export str SERVERfinish(int *ret, int *idx);
-m_export str SERVERrows_affected(int *ret, int *idx);
-m_export str SERVERget_row_count(int *ret, int *idx);
-m_export str SERVERget_field_count(int *ret, int *idx);
-m_export str SERVERfetch_row(int *ret, int *idx);
-m_export str SERVERfetch_all_rows(int *ret, int *idx);
-m_export str SERVERfetch_field_str(str *ret, int *idx, int *fnr);
-m_export str SERVERfetch_field_int(int *ret, int *idx, int *fnr);
-m_export str SERVERfetch_field_lng(lng *ret, int *idx, int *fnr);
-m_export str SERVERfetch_field_sht(sht *ret, int *idx, int *fnr);
-m_export str SERVERfetch_field_void(oid *ret, int *idx, int *fnr);
-m_export str SERVERfetch_field_oid(oid *ret, int *idx, int *fnr);
-m_export str SERVERfetch_field_chr(chr *ret, int *idx, int *fnr);
-m_export str SERVERfetch_line(str *ret, int *key);
-m_export str SERVERnext_result(int *ret, int *key);
-m_export str SERVERfetch_reset(int *ret, int *key);
-m_export str SERVERfetch_field_bat(int *bid, int *idx);
-m_export str SERVERerror(int *ret, int *idx);
-m_export str SERVERgetError(str *ret, int *idx);
-m_export str SERVERexplain(str *ret, int *idx);
-m_export str SERVERmapi_rpc_single_row(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-m_export str SERVERmapi_rpc_single_bat(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-m_export str SERVERput(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-m_export str SERVERputLocal(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-m_export str SERVERbindBAT(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-m_export str SERVERclient(int *res, stream **In, stream **Out);
-m_export str SERVERmapi_rpc_single_row(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-m_export str SERVERmapi_rpc_bat(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_mapi_export str SERVERconnect(int *ret, str *host, int *port, str *username, str *password, str *lang);
+mal_mapi_export str SERVERdisconnectWithAlias(int *ret, str *db_alias);
+mal_mapi_export str SERVERdisconnectALL(int *ret);
+mal_mapi_export str SERVERreconnectAlias(int *ret, str *host, int *port, str *dbalias, str *username, str *password, str *lang);
+mal_mapi_export str SERVERreconnectWithoutAlias(int *ret, str *host, int *port, str *username, str *password, str *lang);
+mal_mapi_export str SERVERconnectssl(int *ret, str *host, int *port, str *username, str *password, str *lang);
+mal_mapi_export str SERVERtrace(int *ret, int *mid, int *flag);
+mal_mapi_export str SERVERdisconnect(int *ret, int *mid);
+mal_mapi_export str SERVERsetAlias(int *ret, int *mid, str *dbalias);
+mal_mapi_export str SERVERlookup(int *ret, str *dbalias);
+mal_mapi_export str SERVERdestroy(int *ret, int *mid);
+mal_mapi_export str SERVERreconnect(int *ret, int *mid);
+mal_mapi_export str SERVERping(int *ret, int *mid);
+mal_mapi_export str SERVERquery(int *ret, int *mid, str *qry);
+mal_mapi_export str SERVERquery_handle(int *ret, int *mid, str *qry);
+mal_mapi_export str SERVERquery_array(MalBlkPtr mb, MalStkPtr stk, InstrPtr pc);
+mal_mapi_export str SERVERprepare(int *ret, int *key, str *qry);
+mal_mapi_export str SERVERexecute(int *ret, int *idx);
+mal_mapi_export str SERVERfinish(int *ret, int *idx);
+mal_mapi_export str SERVERrows_affected(int *ret, int *idx);
+mal_mapi_export str SERVERget_row_count(int *ret, int *idx);
+mal_mapi_export str SERVERget_field_count(int *ret, int *idx);
+mal_mapi_export str SERVERfetch_row(int *ret, int *idx);
+mal_mapi_export str SERVERfetch_all_rows(int *ret, int *idx);
+mal_mapi_export str SERVERfetch_field_str(str *ret, int *idx, int *fnr);
+mal_mapi_export str SERVERfetch_field_int(int *ret, int *idx, int *fnr);
+mal_mapi_export str SERVERfetch_field_lng(lng *ret, int *idx, int *fnr);
+mal_mapi_export str SERVERfetch_field_sht(sht *ret, int *idx, int *fnr);
+mal_mapi_export str SERVERfetch_field_void(oid *ret, int *idx, int *fnr);
+mal_mapi_export str SERVERfetch_field_oid(oid *ret, int *idx, int *fnr);
+mal_mapi_export str SERVERfetch_field_chr(chr *ret, int *idx, int *fnr);
+mal_mapi_export str SERVERfetch_line(str *ret, int *key);
+mal_mapi_export str SERVERnext_result(int *ret, int *key);
+mal_mapi_export str SERVERfetch_reset(int *ret, int *key);
+mal_mapi_export str SERVERfetch_field_bat(int *bid, int *idx);
+mal_mapi_export str SERVERerror(int *ret, int *idx);
+mal_mapi_export str SERVERgetError(str *ret, int *idx);
+mal_mapi_export str SERVERexplain(str *ret, int *idx);
+mal_mapi_export str SERVERmapi_rpc_single_row(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_mapi_export str SERVERmapi_rpc_single_bat(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_mapi_export str SERVERput(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_mapi_export str SERVERputLocal(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_mapi_export str SERVERbindBAT(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_mapi_export str SERVERclient(int *res, stream **In, stream **Out);
+mal_mapi_export str SERVERmapi_rpc_single_row(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_mapi_export str SERVERmapi_rpc_bat(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 #endif /* SERVER_H */
 @c
