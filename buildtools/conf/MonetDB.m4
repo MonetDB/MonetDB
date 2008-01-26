@@ -466,9 +466,6 @@ AC_SUBST(MONETDB4_VERSION)
 AC_SUBST(CLASSPATH)
 AM_MONETDB_MEL("NO ABORT")
 AM_CONDITIONAL(HAVE_MONETDB4,test x$have_monetdb4 = xyes -a x$have_mel = xyes)
-if test x$have_monetdb4 = xyes -a x$have_mel = xyes; then
-	AC_DEFINE(HAVE_MONETDB4, 1, [MonetDB4 Server is available])
-fi
 ]) dnl AC_DEFUN AM_MONETDB4
 
 AC_DEFUN([AM_MONETDB5],
@@ -555,9 +552,6 @@ AC_SUBST(MONETDB5_MOD_PATH)
 AC_SUBST(MONETDB5_PREFIX)
 AC_SUBST(MONETDB5_VERSION)
 AM_CONDITIONAL(HAVE_MONETDB5,test x$have_monetdb5 = xyes)
-if test x$have_monetdb5 = xyes; then
-	AC_DEFINE(HAVE_MONETDB5, 1, [MonetDB5 Server is available])
-fi
 ]) dnl AC_DEFUN AM_MONETDB5
 
 AC_DEFUN([AM_MONETDB_LINUX_DIST],
