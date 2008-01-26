@@ -5,57 +5,6 @@ stderr of test 'transient_upward_steps` in directory 'tests/XQuery` itself:
 # 10:53:18 >  Mtimeout -timeout 180 Mserver "--config=/local_tmp/MonetDB/Linux/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/local_tmp/pathfinder/Linux/lib/MonetDB:/local_tmp/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/local_tmp/MonetDB/Linux/var/MonetDB/dbfarm" --set "sql_logdir=/local_tmp/MonetDB/Linux/var/MonetDB/log" --set mapi_port=37534 --set monet_prompt= --trace "--dbname=mTests_tests_XQuery" --dbinit="module(pathfinder); pfstart();" ; echo ; echo Over..
 # 10:53:18 >  
 
-# builtin opt 	config = ${prefix}/etc/MonetDB.conf
-# builtin opt 	gdk_arch = 32biti686-suse-linux
-# builtin opt 	gdk_version = 4.13.0
-# builtin opt 	monet_pid = 17983
-# builtin opt 	prefix = /local_tmp/MonetDB/Linux
-# builtin opt 	exec_prefix = ${prefix}
-# builtin opt 	gdk_dbname = tst
-# builtin opt 	gdk_dbfarm = ${prefix}/var/MonetDB
-# builtin opt 	gdk_debug = 8
-# builtin opt 	gdk_mem_bigsize = 1048576
-# builtin opt 	gdk_vm_minsize = 137438953472
-# builtin opt 	gdk_alloc_map = yes
-# builtin opt 	monet_admin = adm
-# builtin opt 	monet_prompt = >
-# builtin opt 	monet_welcome = yes
-# builtin opt 	monet_mod_path = ${exec_prefix}/lib/MonetDB:${exec_prefix}/lib/bin
-# builtin opt 	monet_daemon = yes
-# builtin opt 	host = localhost
-# builtin opt 	mapi_port = 50000
-# builtin opt 	mapi_noheaders = no
-# builtin opt 	mapi_debug = 0
-# builtin opt 	mapi_clients = 2
-# builtin opt 	sql_debug = 0
-# builtin opt 	sql_logdir = ${prefix}/var/MonetDB/log
-# config opt 	prefix = /local_tmp/MonetDB/Linux
-# config opt 	exec_prefix = ${prefix}
-# config opt 	gdk_dbfarm = ${prefix}/var/MonetDB/dbfarm
-# config opt 	gdk_dbname = demo
-# config opt 	gdk_alloc_map = no
-# config opt 	gdk_embedded = no
-# config opt 	gdk_debug = 0
-# config opt 	monet_admin = adm
-# config opt 	monet_prompt = MonetDB>
-# config opt 	monet_welcome = yes
-# config opt 	monet_mod_path = ${exec_prefix}/lib/MonetDB:${exec_prefix}/lib/bin
-# config opt 	monet_daemon = no
-# config opt 	mapi_port = 50000
-# config opt 	mapi_debug = 0
-# config opt 	sql_debug = 0
-# config opt 	sql_logdir = ${prefix}/var/MonetDB/log
-# config opt 	pf_httpd_port = 48080
-# config opt 	xquery_output = dm
-# config opt 	xquery_cacheMB = 100
-# cmdline opt 	config = /local_tmp/MonetDB/Linux/etc/MonetDB.conf
-# cmdline opt 	gdk_debug = 10
-# cmdline opt 	monet_mod_path = /local_tmp/pathfinder/Linux/lib/MonetDB:/local_tmp/MonetDB/Linux/lib/MonetDB
-# cmdline opt 	gdk_dbfarm = /local_tmp/MonetDB/Linux/var/MonetDB/dbfarm
-# cmdline opt 	sql_logdir = /local_tmp/MonetDB/Linux/var/MonetDB/log
-# cmdline opt 	mapi_port = 37534
-# cmdline opt 	monet_prompt = 
-# cmdline opt 	gdk_dbname = mTests_tests_XQuery
 
 # 10:53:19 >  
 # 10:53:19 >  Mtimeout -timeout 60 MapiClient -lxquery -sxml -umonetdb -Pmonetdb --host=localhost --port=37534 transient_upward_steps.xq

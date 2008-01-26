@@ -5,59 +5,6 @@ stderr of test 'fun3` in directory 'tests/XQuery` itself:
 # 10:29:59 >  ( pf -M -O3 fun3.xq | Mtimeout -timeout 60 Mserver "--config=/opt/MonetDB-cvs/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/home/teubner/tmp/work/pathfinder/Linux/lib/MonetDB:/opt/MonetDB-cvs/lib/MonetDB" --set "gdk_dbfarm=/opt/MonetDB-cvs/var/MonetDB/dbfarm" --set "sql_logdir=/opt/MonetDB-cvs/var/MonetDB/log" --set mapi_port=46778 --set sql_port=57401 --set monet_prompt= --dbname=mTests_tests_XQuery   --dbinit='module(pathfinder,pf_support,ascii_io);' )
 # 10:29:59 >  
 
-# builtin opt 	config = ${prefix}/etc/MonetDB.conf
-# builtin opt 	gdk_arch = 32biti686-pc-linux-gnu
-# builtin opt 	gdk_version = 4.6.0_rc3
-# builtin opt 	monet_pid = 4411
-# builtin opt 	prefix = /opt/MonetDB-cvs
-# builtin opt 	exec_prefix = ${prefix}
-# builtin opt 	gdk_dbname = tst
-# builtin opt 	gdk_dbfarm = ${prefix}/var/MonetDB
-# builtin opt 	gdk_debug = 8
-# builtin opt 	gdk_mem_bigsize = 33554432
-# builtin opt 	gdk_vm_minsize = 134217728
-# builtin opt 	gdk_alloc_map = yes
-# builtin opt 	monet_admin = adm
-# builtin opt 	monet_prompt = >
-# builtin opt 	monet_welcome = yes
-# builtin opt 	monet_nostalgic = no
-# builtin opt 	monet_mod_path = ${exec_prefix}/lib/MonetDB
-# builtin opt 	monet_daemon = yes
-# builtin opt 	host = localhost
-# builtin opt 	mapi_port = 50000
-# builtin opt 	mapi_noheaders = no
-# builtin opt 	mapi_debug = 0
-# builtin opt 	sql_port = 45123
-# builtin opt 	sql_debug = 0
-# builtin opt 	sql_user = monetdb
-# builtin opt 	sql_schema = sys
-# builtin opt 	sql_logdir = ${prefix}/var/MonetDB/log
-# config opt 	prefix = /opt/MonetDB-cvs
-# config opt 	exec_prefix = ${prefix}
-# config opt 	gdk_dbfarm = ${prefix}/var/MonetDB/dbfarm
-# config opt 	gdk_dbname = demo
-# config opt 	gdk_embedded = no
-# config opt 	gdk_debug = 0
-# config opt 	monet_admin = adm
-# config opt 	monet_prompt = MonetDB>
-# config opt 	monet_welcome = yes
-# config opt 	monet_nostalgic = no
-# config opt 	monet_mod_path = ${exec_prefix}/lib/MonetDB
-# config opt 	monet_daemon = no
-# config opt 	mapi_port = 50000
-# config opt 	mapi_debug = 0
-# config opt 	sql_port = 45123
-# config opt 	sql_debug = 0
-# config opt 	sql_logdir = ${prefix}/var/MonetDB/log
-# cmdline opt 	config = /opt/MonetDB-cvs/etc/MonetDB.conf
-# cmdline opt 	gdk_debug = 10
-# cmdline opt 	monet_mod_path = /home/teubner/tmp/work/pathfinder/Linux/lib/MonetDB:/opt/MonetDB-cvs/lib/MonetDB
-# cmdline opt 	gdk_dbfarm = /opt/MonetDB-cvs/var/MonetDB/dbfarm
-# cmdline opt 	sql_logdir = /opt/MonetDB-cvs/var/MonetDB/log
-# cmdline opt 	mapi_port = 46778
-# cmdline opt 	sql_port = 57401
-# cmdline opt 	monet_prompt = 
-# cmdline opt 	gdk_dbname = mTests_tests_XQuery
 
 # 10:29:59 >  
 # 10:29:59 >  Done.

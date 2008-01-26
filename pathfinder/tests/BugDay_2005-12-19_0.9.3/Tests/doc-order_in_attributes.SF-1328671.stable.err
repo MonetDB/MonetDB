@@ -5,64 +5,6 @@ stderr of test 'doc-order_in_attributes.SF-1328671` in directory 'tests/BugDay_2
 # 22:08:40 >  Mtimeout -timeout 180 Mserver "--config=/ufs/niels/scratch/rc/Linux-x86_64/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/niels/scratch/rc/Linux-x86_64/lib64/MonetDB:/ufs/niels/scratch/rc/Linux-x86_64/lib64/MonetDB/lib:/ufs/niels/scratch/rc/Linux-x86_64/lib64/MonetDB/bin" --set "gdk_dbfarm=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB/sql_logs" --set "sql_logdir=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB/xquery_logs" --set mapi_port=31763 --set monet_prompt= --trace "--dbname=mTests_tests_BugDay_2005-12-19_0.9.3" --dbinit=" module(pathfinder); module(mapi); mil_start(); module(mapi); mil_start();" ; echo ; echo Over..
 # 22:08:40 >  
 
-# builtin opt 	config = ${prefix}/etc/MonetDB.conf
-# builtin opt 	gdk_arch = 64bitx86_64-redhat-linux-gnu
-# builtin opt 	gdk_version = 4.9.3
-# builtin opt 	monet_pid = 8955
-# builtin opt 	prefix = /ufs/manegold/_/scratch0/Monet/Testing/Current/.GNU.64.64.d.--enable-debug.PREFIX./MONETDB
-# builtin opt 	exec_prefix = ${prefix}
-# builtin opt 	gdk_dbname = tst
-# builtin opt 	gdk_dbfarm = ${prefix}/var/MonetDB
-# builtin opt 	gdk_debug = 8
-# builtin opt 	gdk_mem_bigsize = 137438953472
-# builtin opt 	gdk_vm_minsize = 137438953472
-# builtin opt 	gdk_alloc_map = yes
-# builtin opt 	monet_admin = adm
-# builtin opt 	monet_prompt = >
-# builtin opt 	monet_welcome = yes
-# builtin opt 	monet_mod_path = ${exec_prefix}/lib/MonetDB:${exec_prefix}/lib/bin
-# builtin opt 	monet_daemon = yes
-# builtin opt 	host = localhost
-# builtin opt 	mapi_port = 50000
-# builtin opt 	mapi_noheaders = no
-# builtin opt 	mapi_debug = 0
-# builtin opt 	mapi_clients = 2
-# builtin opt 	sql_port = 45123
-# builtin opt 	sql_debug = 0
-# builtin opt 	sql_user = monetdb
-# builtin opt 	sql_schema = sys
-# builtin opt 	sql_logdir = ${prefix}/var/MonetDB/log
-# config opt 	prefix = /ufs/manegold/_/scratch0/Monet/Testing/Current/.GNU.64.64.d.--enable-debug.PREFIX./MONETDB
-# config opt 	exec_prefix = ${prefix}
-# config opt 	gdk_dbfarm = ${prefix}/var/MonetDB/dbfarm
-# config opt 	gdk_dbname = demo
-# config opt 	gdk_alloc_map = no
-# config opt 	gdk_embedded = no
-# config opt 	gdk_debug = 0
-# config opt 	monet_admin = adm
-# config opt 	monet_prompt = MonetDB>
-# config opt 	monet_welcome = yes
-# config opt 	monet_mod_path = ${exec_prefix}/lib/MonetDB:${exec_prefix}/lib/bin
-# config opt 	monet_daemon = no
-# config opt 	mapi_port = 50000
-# config opt 	mapi_debug = 0
-# config opt 	sql_port = 45123
-# config opt 	sql_debug = 0
-# config opt 	sql_logdir = ${prefix}/var/MonetDB/log
-# config opt 	xquery_port = 45789
-# config opt 	pf_httpd_port = 8080
-# config opt 	xquery_output = dm
-# config opt 	xquery_cacheMB = 100
-# cmdline opt 	config = /ufs/manegold/_/scratch0/Monet/Testing/Current/.GNU.64.64.d.--enable-debug.PREFIX./MONETDB/etc/MonetDB.conf
-# cmdline opt 	gdk_debug = 10
-# cmdline opt 	monet_mod_path = /ufs/manegold/_/scratch0/Monet/Testing/Current/.GNU.64.64.d.--enable-debug.PREFIX./PATHFINDER/lib/MonetDB:/ufs/manegold/_/scratch0/Monet/Testing/Current/.GNU.64.64.d.--enable-debug.PREFIX./MONETDB/lib/MonetDB
-# cmdline opt 	gdk_dbfarm = /ufs/manegold/_/scratch0/Monet/Testing/Current/.GNU.64.64.d.--enable-debug.PREFIX./MONETDB/var/MonetDB/dbfarm
-# cmdline opt 	sql_logdir = /ufs/manegold/_/scratch0/Monet/Testing/Current/.GNU.64.64.d.--enable-debug.PREFIX./MONETDB/var/MonetDB/log
-# cmdline opt 	mapi_port = 34148
-# cmdline opt 	sql_port = 40767
-# cmdline opt 	xquery_port = 55010
-# cmdline opt 	monet_prompt = 
-# cmdline opt 	gdk_dbname = mTests_tests_BugDay_2005-12-19_0.9.3
 
 # 22:33:44 >  
 # 22:33:44 >  Mtimeout -timeout 60 MapiClient -lmil -u monetdb -P monetdb "--config=/ufs/manegold/_/scratch0/Monet/Testing/Current/.GNU.64.64.d.--enable-debug.PREFIX./MONETDB/etc/MonetDB.conf" --host=localhost --port=34148 < doc-order_in_attributes.SF-1328671.milC

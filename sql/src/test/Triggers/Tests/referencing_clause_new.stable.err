@@ -5,61 +5,6 @@ stderr of test 'referencing_clause_new` in directory 'src/test/Triggers` itself:
 # 16:00:56 >  Mtimeout -timeout 180 Mserver "--config=/ufs/goncalve/scratch/MonetDB/monetdb4/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/goncalve/scratch/MonetDB/monetdb4/lib/MonetDB:/ufs/goncalve/scratch/MonetDB/monetdb4/lib/MonetDB/lib:/ufs/goncalve/scratch/MonetDB/monetdb4/lib/MonetDB/bin" --set "gdk_dbfarm=/ufs/goncalve/scratch/MonetDB/monetdb4/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/goncalve/scratch/MonetDB/monetdb4/var/MonetDB/sql_logs" --set "xquery_logdir=something" --set mapi_port=35011 --set monet_prompt= --trace "--dbname=mTests_src_test_Triggers" --dbinit=" module(sql_server);" ; echo ; echo Over..
 # 16:00:56 >  
 
-# builtin opt 	config = ${prefix}/etc/MonetDB.conf
-# builtin opt 	gdk_arch = 64bitx86_64-redhat-linux-gnu
-# builtin opt 	gdk_version = 4.15.0
-# builtin opt 	monet_pid = 13730
-# builtin opt 	prefix = /ufs/goncalve/scratch/MonetDB/monetdb4
-# builtin opt 	exec_prefix = ${prefix}
-# builtin opt 	gdk_dbname = tst
-# builtin opt 	gdk_dbfarm = ${prefix}/var/MonetDB
-# builtin opt 	gdk_debug = 8
-# builtin opt 	gdk_mem_bigsize = 262144
-# builtin opt 	gdk_vm_minsize = 137438953472
-# builtin opt 	gdk_alloc_map = yes
-# builtin opt 	monet_admin = adm
-# builtin opt 	monet_prompt = >
-# builtin opt 	monet_welcome = yes
-# builtin opt 	monet_mod_path = ${exec_prefix}/lib/MonetDB:${exec_prefix}/lib/bin
-# builtin opt 	monet_daemon = yes
-# builtin opt 	host = localhost
-# builtin opt 	mapi_port = 50000
-# builtin opt 	mapi_noheaders = no
-# builtin opt 	mapi_debug = 0
-# builtin opt 	mapi_clients = 2
-# builtin opt 	sql_debug = 0
-# builtin opt 	sql_logdir = ${prefix}/var/MonetDB/sql_logs
-# config opt 	prefix = /ufs/goncalve/scratch/MonetDB/monetdb4
-# config opt 	exec_prefix = ${prefix}
-# config opt 	gdk_dbfarm = ${prefix}/var/MonetDB/dbfarm
-# config opt 	gdk_dbname = demo
-# config opt 	gdk_alloc_map = no
-# config opt 	gdk_embedded = no
-# config opt 	gdk_debug = 0
-# config opt 	monet_admin = adm
-# config opt 	monet_prompt = MonetDB>
-# config opt 	monet_welcome = yes
-# config opt 	monet_mod_path = ${exec_prefix}/lib/MonetDB:${exec_prefix}/lib/MonetDB/lib:${exec_prefix}/lib/MonetDB/bin
-# config opt 	monet_daemon = no
-# config opt 	mapi_port = 50000
-# config opt 	mapi_open = false
-# config opt 	mapi_debug = 0
-# config opt 	sql_debug = 0
-# config opt 	sql_logdir = ${prefix}/var/MonetDB/sql_logs
-# config opt 	pf_httpd_port = 48080
-# config opt 	xquery_output = xml
-# config opt 	xquery_cacheMB = 100
-# config opt 	xquery_procMB = 64
-# config opt 	xquery_logdir = ${prefix}/var/MonetDB/xquery_logs
-# cmdline opt 	config = /ufs/goncalve/scratch/MonetDB/monetdb4/etc/MonetDB.conf
-# cmdline opt 	gdk_debug = 10
-# cmdline opt 	monet_mod_path = /ufs/goncalve/scratch/MonetDB/monetdb4/lib/MonetDB:/ufs/goncalve/scratch/MonetDB/monetdb4/lib/MonetDB/lib:/ufs/goncalve/scratch/MonetDB/monetdb4/lib/MonetDB/bin
-# cmdline opt 	gdk_dbfarm = /ufs/goncalve/scratch/MonetDB/monetdb4/var/MonetDB/dbfarm
-# cmdline opt 	sql_logdir = /ufs/goncalve/scratch/MonetDB/monetdb4/var/MonetDB/sql_logs
-# cmdline opt 	xquery_logdir = something
-# cmdline opt 	mapi_port = 35011
-# cmdline opt 	monet_prompt = 
-# cmdline opt 	gdk_dbname = mTests_src_test_Triggers
 
 # 16:00:56 >  
 # 16:00:56 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35011  < referencing_clause_new.sql

@@ -5,61 +5,6 @@ stderr of test 'ID.1600704-a` in directory 'tests/BugsViaSourgeforce` itself:
 # 08:33:55 >  Mtimeout -timeout 240 Mserver "--config=/Win/MonetDB/.GNU.32.32.d.--disable-optimize_--enable-debug_--enable-assert.PREFIX./etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/Win/MonetDB/.GNU.32.32.d.--disable-optimize_--enable-debug_--enable-assert.PREFIX./lib/MonetDB:/Win/MonetDB/.GNU.32.32.d.--disable-optimize_--enable-debug_--enable-assert.PREFIX./lib/MonetDB/lib:/Win/MonetDB/.GNU.32.32.d.--disable-optimize_--enable-debug_--enable-assert.PREFIX./lib/MonetDB/bin" --set "gdk_dbfarm=/Win/MonetDB/.GNU.32.32.d.--disable-optimize_--enable-debug_--enable-assert.PREFIX./var/MonetDB/dbfarm" --set "sql_logdir=/Win/MonetDB/.GNU.32.32.d.--disable-optimize_--enable-debug_--enable-assert.PREFIX./var/MonetDB/sql_logs" --set "sql_logdir=/Win/MonetDB/.GNU.32.32.d.--disable-optimize_--enable-debug_--enable-assert.PREFIX./var/MonetDB/xquery_logs" --set mapi_port=34248 --set monet_prompt= --trace "--dbname=mTests_tests_BugsViaSourgeforce" --dbinit=" module(pathfinder);" ; echo ; echo Over..
 # 08:33:55 >  
 
-# builtin opt 	config = ${prefix}/etc/MonetDB.conf
-# builtin opt 	gdk_arch = 32biti686-redhat-linux-gnu
-# builtin opt 	gdk_version = 4.14.0
-# builtin opt 	monet_pid = 5487
-# builtin opt 	prefix = /Win/MonetDB/.GNU.32.32.d.--disable-optimize_--enable-debug_--enable-assert.PREFIX.
-# builtin opt 	exec_prefix = ${prefix}
-# builtin opt 	gdk_dbname = tst
-# builtin opt 	gdk_dbfarm = ${prefix}/var/MonetDB
-# builtin opt 	gdk_debug = 8
-# builtin opt 	gdk_mem_bigsize = 262144
-# builtin opt 	gdk_vm_minsize = 137438953472
-# builtin opt 	gdk_alloc_map = yes
-# builtin opt 	monet_admin = adm
-# builtin opt 	monet_prompt = >
-# builtin opt 	monet_welcome = yes
-# builtin opt 	monet_mod_path = ${exec_prefix}/lib/MonetDB:${exec_prefix}/lib/bin
-# builtin opt 	monet_daemon = yes
-# builtin opt 	host = localhost
-# builtin opt 	mapi_port = 50000
-# builtin opt 	mapi_noheaders = no
-# builtin opt 	mapi_debug = 0
-# builtin opt 	mapi_clients = 2
-# builtin opt 	sql_debug = 0
-# builtin opt 	sql_logdir = ${prefix}/var/MonetDB/sql_logs
-# config opt 	prefix = /Win/MonetDB/.GNU.32.32.d.--disable-optimize_--enable-debug_--enable-assert.PREFIX.
-# config opt 	exec_prefix = ${prefix}
-# config opt 	gdk_dbfarm = ${prefix}/var/MonetDB/dbfarm
-# config opt 	gdk_dbname = demo
-# config opt 	gdk_alloc_map = no
-# config opt 	gdk_embedded = no
-# config opt 	gdk_debug = 0
-# config opt 	monet_admin = adm
-# config opt 	monet_prompt = MonetDB>
-# config opt 	monet_welcome = yes
-# config opt 	monet_mod_path = ${exec_prefix}/lib/MonetDB:${exec_prefix}/lib/MonetDB/lib:${exec_prefix}/lib/MonetDB/bin
-# config opt 	monet_daemon = no
-# config opt 	mapi_port = 50000
-# config opt 	mapi_open = false
-# config opt 	mapi_debug = 0
-# config opt 	sql_debug = 0
-# config opt 	sql_logdir = ${prefix}/var/MonetDB/sql_logs
-# config opt 	pf_httpd_port = 48080
-# config opt 	xquery_output = xml
-# config opt 	xquery_cacheMB = 100
-# config opt 	xquery_procMB = 64
-# config opt 	xquery_logdir = ${prefix}/var/MonetDB/xquery_logs
-# cmdline opt 	config = /Win/MonetDB/.GNU.32.32.d.--disable-optimize_--enable-debug_--enable-assert.PREFIX./etc/MonetDB.conf
-# cmdline opt 	gdk_debug = 10
-# cmdline opt 	monet_mod_path = /Win/MonetDB/.GNU.32.32.d.--disable-optimize_--enable-debug_--enable-assert.PREFIX./lib/MonetDB:/Win/MonetDB/.GNU.32.32.d.--disable-optimize_--enable-debug_--enable-assert.PREFIX./lib/MonetDB/lib:/Win/MonetDB/.GNU.32.32.d.--disable-optimize_--enable-debug_--enable-assert.PREFIX./lib/MonetDB/bin
-# cmdline opt 	gdk_dbfarm = /Win/MonetDB/.GNU.32.32.d.--disable-optimize_--enable-debug_--enable-assert.PREFIX./var/MonetDB/dbfarm
-# cmdline opt 	sql_logdir = /Win/MonetDB/.GNU.32.32.d.--disable-optimize_--enable-debug_--enable-assert.PREFIX./var/MonetDB/sql_logs
-# cmdline opt 	sql_logdir = /Win/MonetDB/.GNU.32.32.d.--disable-optimize_--enable-debug_--enable-assert.PREFIX./var/MonetDB/xquery_logs
-# cmdline opt 	mapi_port = 34248
-# cmdline opt 	monet_prompt = 
-# cmdline opt 	gdk_dbname = mTests_tests_BugsViaSourgeforce
 
 # 08:33:56 >  
 # 08:33:56 >  Mtimeout -timeout 120 ./ID.1600704-a.XQUERY ID.1600704-a 

@@ -5,53 +5,6 @@ stderr of test 'string_join5` in directory 'runtime` itself:
 # 21:06:43 >  Mtimeout -timeout 60 Mserver "--config=/ufs/rittinge/work/MonetDB/Linux/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/rittinge/work/pathfinder/Linux/lib/MonetDB:/ufs/rittinge/work/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/rittinge/work/MonetDB/Linux/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/rittinge/work/MonetDB/Linux/var/MonetDB/log" --set mapi_port=47258 --set sql_port=55510 --set monet_prompt= --trace --dbname=mTests_runtime  < string_join5.milS
 # 21:06:43 >  
 
-# builtin opt 	config = ${prefix}/etc/MonetDB.conf
-# builtin opt 	gdk_arch = 32biti686-redhat-linux-gnu
-# builtin opt 	gdk_version = 4.4.0_rc3
-# builtin opt 	monet_pid = 13587
-# builtin opt 	prefix = /ufs/rittinge/work/MonetDB/Linux
-# builtin opt 	exec_prefix = ${prefix}
-# builtin opt 	gdk_dbname = tst
-# builtin opt 	gdk_dbfarm = ${prefix}/var/MonetDB
-# builtin opt 	gdk_debug = 8
-# builtin opt 	gdk_mem_bigsize = 33554432
-# builtin opt 	gdk_vm_minsize = 134217728
-# builtin opt 	gdk_alloc_map = yes
-# builtin opt 	monet_admin = adm
-# builtin opt 	monet_prompt = >
-# builtin opt 	monet_welcome = yes
-# builtin opt 	monet_mod_path = ${exec_prefix}/lib/MonetDB
-# builtin opt 	monet_daemon = yes
-# builtin opt 	host = localhost
-# builtin opt 	mapi_port = 50000
-# builtin opt 	mapi_noheaders = no
-# builtin opt 	mapi_debug = 0
-# builtin opt 	sql_port = 45123
-# builtin opt 	sql_debug = 0
-# builtin opt 	sql_api = sql(default-schema)
-# builtin opt 	sql_user = monetdb
-# builtin opt 	sql_schema = default-schema
-# builtin opt 	sql_logdir = ${prefix}/var/MonetDB/log
-# config opt 	prefix = /ufs/rittinge/work/MonetDB/Linux
-# config opt 	exec_prefix = ${prefix}
-# config opt 	gdk_dbfarm = ${prefix}/var/MonetDB/dbfarm
-# config opt 	gdk_dbname = demo
-# config opt 	gdk_debug = 0
-# config opt 	monet_admin = adm
-# config opt 	monet_prompt = monet>
-# config opt 	monet_welcome = yes
-# config opt 	monet_mod_path = ${exec_prefix}/lib/MonetDB
-# config opt 	monet_daemon = no
-# config opt 	sql_logdir = ${prefix}/var/MonetDB/log
-# cmdline opt 	config = /ufs/rittinge/work/MonetDB/Linux/etc/MonetDB.conf
-# cmdline opt 	gdk_debug = 10
-# cmdline opt 	monet_mod_path = /ufs/rittinge/work/pathfinder/Linux/lib/MonetDB:/ufs/rittinge/work/MonetDB/Linux/lib/MonetDB
-# cmdline opt 	gdk_dbfarm = /ufs/rittinge/work/MonetDB/Linux/var/MonetDB/dbfarm
-# cmdline opt 	sql_logdir = /ufs/rittinge/work/MonetDB/Linux/var/MonetDB/log
-# cmdline opt 	mapi_port = 47258
-# cmdline opt 	sql_port = 55510
-# cmdline opt 	monet_prompt = 
-# cmdline opt 	gdk_dbname = mTests_runtime
 
 # 21:06:45 >  
 # 21:06:45 >  Done.
