@@ -1,25 +1,41 @@
 stdout of test 'remote00` in directory 'src/optimizer` itself:
 
 
-# 09:35:05 >  
-# 09:35:05 >  /usr/bin/python remote00.py remote00 
-# 09:35:05 >  
+# 23:06:19 >  
+# 23:06:19 >  Mtimeout -timeout 60 mserver5 "--config=/ufs/mk/monet5/Linux/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5/Linux/var/MonetDB5/dblogs" --set mapi_port=30126 --set monet_prompt= --trace --dbname=mTests_src_optimizer  remote00.mal < /dev/null
+# 23:06:19 >  
 
-# MonetDB server v5.3.0, based on kernel v1.21.0
-# Serving database 'db1'
-# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
-# Copyright (c) 1993-2007 CWI, all rights reserved
+# MonetDB Server v4.99.19
+# Copyright (c) 1993-2006 CWI, all rights reserved
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs dynamically linked
+# config:/ufs/mk/monet5/Linux/etc/MonetDB5.conf
+# dbfarm:/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm
+# dbname:mTests_src_optimizer
 # Visit http://monetdb.cwi.nl/ for further information
-# Listening for connection requests on mapi:monetdb://gio.ins.cwi.nl:12345/
 [ 1 ]
-# MonetDB server v5.3.0, based on kernel v1.21.0
-# Serving database 'db2'
-# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
-# Copyright (c) 1993-2007 CWI, all rights reserved
+[ "12345" ]
+# MonetDB Server v4.99.19
+# Copyright (c) 1993-2006 CWI, all rights reserved
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs dynamically linked
+# config:/ufs/niels/scratch/Linux-x86_64/etc/MonetDB5.conf
+# dbfarm:/ufs/niels/scratch/Linux-x86_64/var/MonetDB5/dbfarm
+# dbname:db2
 # Visit http://monetdb.cwi.nl/ for further information
-# Listening for connection requests on mapi:monetdb://gio.ins.cwi.nl:12346/
+[ "12346" ]
+#-----------------#
+# h	t	  # name
+# int	int	  # type
+#-----------------#
+[ 1,	  1	  ]
+[ 2,	  7	  ]
+[ 1 ]
+#-----------------#
+# h	t	  # name
+# int	int	  # type
+#-----------------#
+[ 2,	  7	  ]
 
-# 09:35:07 >  
-# 09:35:07 >  Done.
-# 09:35:07 >  
+# 16:36:12 >  
+# 16:36:12 >  Done.
+# 16:36:12 >  
 
