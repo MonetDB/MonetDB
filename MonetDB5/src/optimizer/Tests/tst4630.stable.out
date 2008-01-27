@@ -48,11 +48,11 @@ function user.main():void;	# 0  (main:void)
     mdb.list("user","qry");	# 3 MDBlist3 (_7:void)<-(_4:str)(_5:str)
 end main;	# 4  
 function user.qry(a:bat[:any_1,:any_2],b:bat[:any_2,:any_3],c:bat[:any_3,:any_4]):bat[:any_1,:any_4];
-    a1 := a;
-    b1 := b;
-    c1 := c;
     z := algebra.join(a,b);
-    xx := algebra.joinPath(z,a1,b1,c1);
+    zz := algebra.join(z,c);
+    ww := algebra.join(z,a);
+    yy := algebra.joinPath(z,a,b);
+    xx := algebra.joinPath(ww,b,c);
     return qry := xx;
 end qry;
 

@@ -14,6 +14,6 @@ function qry( a:bat[:any_1,:any_2], b:bat[:any_2,:any_3], c:bat[:any_3,:any_4]):
 end qry;
 
 optimizer.joinPath("user","qry");
-optimizer.deadcode("user","qry");
+optimizer.commonTerms("user","qry");
 mdb.list("user","qry");
 

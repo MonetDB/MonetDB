@@ -19,6 +19,7 @@
 The routine @sc{optimizer.joinPath()}
 walks through the program looking for join operations
 and cascades them into multiple join paths.
+To illustrate, consider
 @verbatim
 	a:= bat.new(:oid,:oid);
 	b:= bat.new(:oid,:oid);
@@ -28,9 +29,10 @@ and cascades them into multiple join paths.
 	j3:= algebra.join(b,b);
 	j4:= algebra.join(b,j3);
 @end verbatim
-The result includes the expanded join expressions.
-The deadcode optimizer should take care of superflous
-paths.
+The optimizer will first replace all arguments
+by their join sequence. The underlying instructions
+are left behind for the deadcode optimizer to be
+removed.
 @verbatim
 	a:= bat.new(:oid,:oid);
 	j1:= algebra.join(a,b);
@@ -38,6 +40,36 @@ paths.
 	j3:= algebra.join(b,b);
 	j4:= algebra.joinPath(b,b,b);
 @end verbatim
+In principle, the joinpaths may contain common
+subpaths, whose materialization would improve
+performance.
+The SQL front-end produces often produces
+snippets of the following structure
+@verbatim
+    t1:= algebra.join(b,c);
+    z1:= algebra.join(a,t1);
+	...
+    t2:= algebra.join(b,d);
+    z2:= algebra.join(a,t2);
+@end verbatim
+The joinpath would merge them into
+@verbatim
+    z1:= algebra.joinPath(a,b,c);
+	...
+    z2:= algebra.joinPath(a,b,d);
+@end verbatim
+which are handle by a heuristic looking
+at the first two argments and re-uses
+a materialized join.
+@verbatim
+    _13:= algebra.join(a,b);
+    z1:= algebra.joinPath(_13,c);
+	...
+    z2:= algebra.joinPath(_13,d);
+@end verbatim
+An alternative is to make recognition
+of the common re-useable paths an
+integral part of the joinPath body.
 @{
 @mal
 pattern optimizer.joinPath():str
@@ -56,7 +88,7 @@ comment "internal routine to handle join paths.
 #include "opt_support.h"
 #include "mal_interpreter.h"
 
-/* #define DEBUG_OPT_JOINPATH */
+/* #define DEBUG_OPT_JOINPATH  */
 @-
 @c
 #include "mal_config.h"
@@ -69,6 +101,8 @@ OPTjoinPathImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	int *pc, *used;
 	str joinPathRef = putName("joinPath",8);
 	InstrPtr q,r;
+	InstrPtr *old;
+	int limit,slimit;
 
 	(void) stk;
 	if (varGetProp(mb, getArg(mb->stmt[0], 0), inlineProp) != NULL)
@@ -81,30 +115,31 @@ OPTjoinPathImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	   we are only expanding when a variable is used once. */
 	used= (int*) alloca(sizeof(int)* mb->vtop); 
 	memset((char*) used, 0, sizeof(int)* mb->vtop);
-	for (i = 1; i < mb->stop; i++){
-		p= getInstrPtr(mb,i);
-		for(j=p->retc; j< p->argc; j++)
-			used[getArg(p,j)]++;
-		for(j=0; j< p->retc; j++)
-			pc[getArg(p,j)]= i;
-	}
 
-	for (i = 1; i < mb->stop; i++){
-		p= getInstrPtr(mb,i);
+	old= mb->stmt;
+	limit= mb->stop;
+	slimit= mb->ssize;
+	newMalBlkStmt(mb,mb->ssize);
+
+	for (i = 0; i<limit; i++){
+		p= old[i];
 		if( getModuleId(p)== algebraRef && getFunctionId(p)== joinRef ){
 @-
-Try to expand each of its argument list.
+Try to expand its argument list
 @c
 			q= copyInstruction(p);
 			q->argc=1;
-			for(j=p->retc; j<p->argc; j++)
-			if( pc[getArg(p,j)] ){
+			for(j=p->retc; j<p->argc; j++){
 				r= getInstrPtr(mb,pc[getArg(p,j)]);
+				assert(r);
 #ifdef DEBUG_OPT_JOINPATH 
-				stream_printf(GDKout,"expand with \n");
+				stream_printf(GDKout,"expand list \n");
+				printInstruction(GDKout,mb, p, LIST_MAL_ALL);
+				printInstruction(GDKout,mb, q, LIST_MAL_ALL);
+				if(r)
 				printInstruction(GDKout,mb, r, LIST_MAL_ALL);
 #endif
-				if(  getModuleId(r)== algebraRef && 
+				if( r &&  getModuleId(r)== algebraRef && 
 					( getFunctionId(r)== joinRef  || getFunctionId(r)== joinPathRef) ){
 					for(k= r->retc; k<r->argc; k++)
 						q = pushArgument(mb,q,getArg(r,k));
@@ -117,33 +152,61 @@ Try to expand each of its argument list.
 #endif
 			if(q->argc<= p->argc){
 				/* no change */
-			nochange:
 				freeInstruction(q);
-			} else {
+				goto wrapup;
+			}
 @-
 Final type check.
 @c
-				for(j=1; j<q->argc-1; j++)
-				if( getTailType(getArgType(mb,q,j)) != getHeadType(getArgType(mb,q,j+1)) &&
-				!( getTailType(getArgType(mb,q,j))== TYPE_oid  &&
-					getHeadType(getArgType(mb,q,j))== TYPE_void) &&
-				!( getTailType(getArgType(mb,q,j))== TYPE_void &&
-					getHeadType(getArgType(mb,q,j))== TYPE_oid)
-				 )
-					goto nochange;
+			for(j=1; j<q->argc-1; j++)
+			if( getTailType(getArgType(mb,q,j)) != getHeadType(getArgType(mb,q,j+1)) &&
+			!( getTailType(getArgType(mb,q,j))== TYPE_oid  &&
+				getHeadType(getArgType(mb,q,j))== TYPE_void) &&
+			!( getTailType(getArgType(mb,q,j))== TYPE_void &&
+				getHeadType(getArgType(mb,q,j))== TYPE_oid)
+			 ){
+				freeInstruction(q);
+				goto wrapup;
+			}
 @-
 Post-optimization. After the join path has been constructed
-it could locate common subpaths with previous ones and factor
-out that processing step. [TODO]
+it should factor out common subpaths. The heuristic is to
+remove the first pair if its variables are used often.
+In principle, any re-used pair should be localized recursively.
+The heuristics is sufficient for the code produced by SQL frontend
 @c
-				setFunctionId(q,joinPathRef);
-				getInstrPtr(mb,i)=q;
-				freeInstruction(p);
-				p=q;
-				actions++;
+			if ( used[getArg(q,1)]>=2 && used[getArg(q,2)]>=2){
+				r= copyInstruction(q);
+				r->argc=3;
+				getArg(r,0)= newTmpVariable(mb,TYPE_any);
+				getArg(q,1)= getArg(r,0);
+				delArgument(q,2);
+				pushInstruction(mb,r);
+				for(j=0; j< r->retc; j++)
+					pc[getArg(r,j)]= mb->stop-1;
+#ifdef DEBUG_OPT_JOINPATH 
+				stream_printf(GDKout,"heuristic joinPath rule\n");
+				printInstruction(GDKout,mb, r, LIST_MAL_ALL);
+				printInstruction(GDKout,mb, q, LIST_MAL_ALL);
+#endif
 			}
-		}
+
+			if ( q->argc > 3)
+				setFunctionId(q,joinPathRef);
+			p= q;
+			actions++;
+		} 
+	wrapup:
+		pushInstruction(mb,p);
+		for(j=0; j< p->retc; j++)
+			pc[getArg(p,j)]= mb->stop-1;
+		for(j=p->retc; j< p->argc; j++)
+			used[getArg(p,j)]++;
 	}
+	for(; i<slimit; i++)
+	if(old[i])
+		freeInstruction(old[i]);
+	GDKfree(old);
 	return actions;
 }
 @include optimizerWrapper.mx
