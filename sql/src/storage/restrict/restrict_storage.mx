@@ -55,6 +55,9 @@ bind_col(sql_trans *tr, sql_column *c, int access)
 	bat_set_access(b, BAT_READ);
 	b->batDirty |= 2;
 	c->base.rtime = c->t->base.rtime = c->t->s->base.rtime = tr->rtime = tr->stime;
+#ifdef NDEBUG
+	(void) access; /* satisfy compiler */
+#endif
 	assert(access != RD_UPD && access != RD_INS);
 	return b;
 }
@@ -69,6 +72,9 @@ bind_idx(sql_trans *tr, sql_idx * i, int access)
 	bat_set_access(b, BAT_READ);
 	b->batDirty |= 2;
 	i->base.rtime = i->t->base.rtime = i->t->s->base.rtime = tr->rtime = tr->stime;
+#ifdef NDEBUG
+	(void) access; /* satisfy compiler */
+#endif
 	assert(access != RD_UPD && access != RD_INS);
 	return b;
 }
