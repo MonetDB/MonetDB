@@ -3927,7 +3927,6 @@ rel_setquery_(mvc *sql, sql_rel *l, sql_rel *r, dlist *cols, int op )
 		for (n = ls->h, m = rs->h; n && m; n = n->next, m = m->next) {
 			sql_exp *le = exp_dup(n->data), *lb = le;
 			sql_exp *re = exp_dup(m->data), *rb = re;
-			//char *nme = exp_name(le);
 
 			if ((rel_convert_types(sql, &le, &re, 1, type_set) < 0)) {
 				if (le)
@@ -3939,10 +3938,6 @@ rel_setquery_(mvc *sql, sql_rel *l, sql_rel *r, dlist *cols, int op )
 			if (le != lb || re != rb)
 				changes = 1;
 			append(nls, le); 
-/*
-			if (nme) {
-				exp_setname(re, nme);
-*/
 			append(nrs, re); 
 		}
 		if (changes) {
@@ -4105,8 +4100,12 @@ rel_joinquery_(mvc *sql, sql_rel *rel, symbol *tab1, int natural, jt jointype, s
 		}
 		list_destroy(exps);
 		rel = rel_project(rel, outexps);
+		if (!rel->name)
+			rel_label(rel, ++sql->label);
 	} else {		/* ! js -> natural join */
 		rel = join_on_column_name(sql, rel, t1, t2, 0);
+		if (!rel->name)
+			rel_label(rel, ++sql->label);
 	}
 	if (!rel)
 		return NULL;
