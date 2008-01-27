@@ -25,9 +25,7 @@
 #define RELATION 1
 
 typedef enum expression_type {
-	e_exp,
 	e_atom,
-	e_relation,
 	e_column,
 	e_cmp,
 	e_func,
@@ -47,17 +45,20 @@ typedef struct expression {
 	void *l;
 	void *r;
 	void *f; 	/* =,!=, but also func's and aggr's and column type */
-	int  flag;
+	int  flag;	/* DISTINCT, NO_NIL, ASCENDING */
 	char card;	/* card 
 				(0 truth value!)
 				(1 atoms) 
 				(2 aggr)
 				(3 multi value)
 			*/
+	void *p;	/* properties for the optimizer */
 } sql_exp;
 
 #define DISTINCT	1
 #define NO_NIL		2
+/* ASCENDING > 8 else we have problems with cmp types */
+#define ASCENDING	16
  
 #define MAXOPS 16
 
@@ -65,7 +66,7 @@ typedef enum operator_type {
 	op_basetable = 0,
 	op_table,
 	op_project,
-	op_select,
+	op_select,	/* includes order by */
 	op_join,
 	op_left,
 	op_right,
@@ -74,7 +75,6 @@ typedef enum operator_type {
 	op_inter,
 	op_except,
 	op_groupby,	/* currently includes the projection (aggr) */
-	op_orderby,
 	op_topn
 } operator_type;
 
@@ -85,13 +85,13 @@ typedef enum operator_type {
 #define is_set(op) \
 	(op == op_union || op == op_inter || op == op_except)
 #define is_project(op) \
-	(op == op_project || op == op_groupby)
+	(op == op_project || op == op_groupby || is_set(op))
 #define is_groupby(op) \
 	(op == op_groupby)
-#define is_sort(op) \
-	(op == op_orderby || op == op_topn)
+#define is_sort(rel) \
+	((rel->op == op_project && rel->r) || rel->op == op_topn)
 #define is_distinct(rel) \
-	(rel->op == op_project && rel->r != NULL)
+	((rel->flag&DISTINCT))
 
 typedef struct relation {
 	sql_ref ref;
@@ -102,6 +102,7 @@ typedef struct relation {
 	void *r;
 	list *exps; 
 	int nrcols;	/* nr of cols */	
+	char flag;	/* DISTINCT */ 
 	char card;	/* 0, 1 (row), 2 aggr, 3 */
 	char processed; /* fully processed or still in the process of building */
 	char subquery;	/* is this part a subquery, this is needed for proper name binding */

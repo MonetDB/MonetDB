@@ -58,17 +58,26 @@ extern int list_traverse(list *l, traverse_func f, void *clientdata);
  * Returns 0 if data and key are equal 
  * */
 typedef int (*fcmp) (void *data, void *key);
+typedef int (*fcmp2) (void *data, void *v1, void *v2);
 typedef void *(*fdup) (void *data);
 typedef void *(*freduce) (void *v1, void *v2);
 typedef void *(*fmap) (void *data, void *clientdata);
+typedef int (*fkeyvalue) (void *data);
 
 extern node *list_find(list *l, void *key, fcmp cmp);
 extern list *list_select(list *l, void *key, fcmp cmp, fdup dup);
 extern list *list_order(list *l, fcmp cmp, fdup dup);
 extern list *list_distinct(list *l, fcmp cmp, fdup dup);
+extern list *list_distinct2(list *l, void *data, fcmp2 cmp, fdup dup);
 extern void *list_reduce(list *l, freduce red, fdup dup);
 extern list *list_map(list *l, void *data, fmap f);
 extern int list_cmp(list *l1, list *l2, fcmp cmp);
+/* cmp the lists in link order */
+extern int list_match(list *l1, list *l2, fcmp cmp);
+/* match the lists (in any order) */
+extern list *list_sort(list *l, fkeyvalue key, fdup dup);
+/* The sort function sorts the list using the key function, which 
+ * translates the list item values into integer keyvalues. */
 
 extern list *list_dup(list *l, fdup dup);
 extern list *list_merge(list *l, list *data, fdup dup);
