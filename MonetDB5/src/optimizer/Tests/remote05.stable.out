@@ -18,9 +18,9 @@ stdout of test 'remote05` in directory 'src/optimizer` itself:
 #cat:= inspect.getEnvironment();
 #fs := algebra.find(cat,"mapi_port");
 #port := calc.int(fs);
-#mid:= mserver.reconnect("s0_0","localhost",port,"monetdb","monetdb","mal");
-##mserver.trace(mid,1);
-#mserver.query(mid,"io.print(d);");
+#mid:= mapi.reconnect("s0_0","localhost",port,"monetdb","monetdb","mal");
+##mapi.trace(mid,1);
+#mapi.query(mid,"io.print(d);");
 #io.print("done");
 #
 function user.main():void;	# 0  (main:void)

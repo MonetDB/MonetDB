@@ -24,8 +24,8 @@ the corresponding BAT is fetched and added to the local cache.
 
 Consider the following snippet produced by a query compiler,
 @verbatim
-mid:= mserver.reconnect("s0_0","localhost",50000,"monetdb","monetdb","mal");
-b:bat[:oid,:int] := mserver.bind(mid,"rvar");
+mid:= mapi.reconnect("s0_0","localhost",50000,"monetdb","monetdb","mal");
+b:bat[:oid,:int] := mapi.bind(mid,"rvar");
 c:=algebra.select(b,0,12);
 io.print(c);
 d:=algebra.select(b,5,10);
@@ -55,17 +55,17 @@ the statements. The objects are retrieved
 just before they are locally needed.
 
 @verbatim
-mid:= mserver.reconnect("s0_0","localhost",50000,"monetdb","monetdb","mal");
-mserver.rpc(mid,"b:bat[:oid,:int] :=bbp.bind(\"rvar\");");
-mserver.rpc(mid,"c:=algebra.select(b,0,12);");
-c:bat[:oid,:int]:= mserver.rpc(mid, "io.print(c);");
+mid:= mapi.reconnect("s0_0","localhost",50000,"monetdb","monetdb","mal");
+mapi.rpc(mid,"b:bat[:oid,:int] :=bbp.bind(\"rvar\");");
+mapi.rpc(mid,"c:=algebra.select(b,0,12);");
+c:bat[:oid,:int]:= mapi.rpc(mid, "io.print(c);");
 io.print(c);
-mserver.rpc(mid,"d:=algebra.select(b,5,10);");
+mapi.rpc(mid,"d:=algebra.select(b,5,10);");
 low:= 5+1;
-mserver.put(mid,"low",low);
-mserver.rpc(mid,"e:=algebra.select(d,low,7);");
-mserver.rpc(mid,"i:=aggr.count(d);");
-i:= mserver.rpc(mid,"io.print(i);");
+mapi.put(mid,"low",low);
+mapi.rpc(mid,"e:=algebra.select(d,low,7);");
+mapi.rpc(mid,"i:=aggr.count(d);");
+i:= mapi.rpc(mid,"io.print(i);");
 io.printf(" count %d\n",i);
 io.print(d);
 @end verbatim
@@ -79,15 +79,15 @@ Glueing together statements should respect the flow.
 It seems that we can savely concatenate subsequence
 requests.
 @verbatim
-    mid:= mserver.reconnect("s0_0","localhost",50000,"monetdb","monetdb","mal");
-    mserver.rpc(mid,"b:bat[:oid,:int] :=bbp.bind(\"rvar\");");
-    mserver.rpc(mid,"c:=algebra.select(b,0,12);");
-    c:bat[:oid,:int]:= mserver.rpc(mid, "io.print(c);");
+    mid:= mapi.reconnect("s0_0","localhost",50000,"monetdb","monetdb","mal");
+    mapi.rpc(mid,"b:bat[:oid,:int] :=bbp.bind(\"rvar\");");
+    mapi.rpc(mid,"c:=algebra.select(b,0,12);");
+    c:bat[:oid,:int]:= mapi.rpc(mid, "io.print(c);");
     io.print(c);
-    mserver.rpc(mid,"d:=algebra.select(b,5,10);");
+    mapi.rpc(mid,"d:=algebra.select(b,5,10);");
     low:= 5+1;
-    mserver.put(mid,"low",low);
-    i:= mserver.rpc(mid,"e:=algebra.select(d,low,7); i:=aggr.count(d); io.print(i);");
+    mapi.put(mid,"low",low);
+    i:= mapi.rpc(mid,"e:=algebra.select(d,low,7); i:=aggr.count(d); io.print(i);");
     io.printf(" count %d\n",i);
     io.print(d);
 @end verbatim
@@ -198,7 +198,7 @@ their isolated runtime environment.
 		
 		if( k== dbtop){
 			r= newInstruction(mb,ASSIGNsymbol);
-			getModuleId(r)= mserverRef;
+			getModuleId(r)= mapiRef;
 			getFunctionId(r)= lookupRef;
 			j= getArg(r,0)= newTmpVariable(mb, TYPE_int);
 			r= pushArgument(mb,r, getArg(p,@1));
@@ -211,7 +211,7 @@ their isolated runtime environment.
 	} else j= location[getArg(p,0)];
 @= prepareRemote
 	r= newInstruction(mb,ASSIGNsymbol);
-	getModuleId(r)= mserverRef;
+	getModuleId(r)= mapiRef;
 	getFunctionId(r)= rpcRef;
 	getArg(r,0)= newTmpVariable(mb, @1);
 	r= pushArgument(mb,r,j);
@@ -219,7 +219,7 @@ their isolated runtime environment.
 @= putRemoteVariables
 	for(j=p->retc; j<p->argc; j++)
 	if( location[getArg(p,j)] == 0 && !isVarConstant(mb,getArg(p,j)) ){
-		q= newStmt(mb,mserverRef,putRef);
+		q= newStmt(mb,mapiRef,putRef);
 		getArg(q,0)= newTmpVariable(mb, TYPE_void);
 		q= pushArgument(mb,q,location[getArg(p,j)]);
 		q= pushStr(mb,q, getRefName(mb,getArg(p,j)));
@@ -281,7 +281,7 @@ OPTremoteQueriesImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 		/* detect remote variable binding */
 		
-		if( (getModuleId(p)== mserverRef && getFunctionId(p)==bindRef)){
+		if( (getModuleId(p)== mapiRef && getFunctionId(p)==bindRef)){
 			if( p->argc == 3 && getArgType(mb,p,1) == TYPE_int ) {
 				int tpe;
 				setVarUDFtype(mb,getArg(p,0));
@@ -399,7 +399,7 @@ to be shipped should be simple.
 				/* perform locally */
 				for(j=p->retc; j<p->argc; j++)
 				if( location[getArg(p,j)]){
-					q= newStmt(mb,mserverRef,rpcRef);
+					q= newStmt(mb,mapiRef,rpcRef);
 					getArg(q,0)= getArg(p,j);
 					q= pushArgument(mb,q,location[getArg(p,j)]);
 					snprintf(buf,BUFSIZ,"io.print(%s);",
@@ -414,14 +414,14 @@ to be shipped should be simple.
 			} else if (remoteSite){
 				/* single remote site involved */
 				r= newInstruction(mb,ASSIGNsymbol);
-				getModuleId(r)= mserverRef;
+				getModuleId(r)= mapiRef;
 				getFunctionId(r)= rpcRef;
 				getArg(r,0)= newTmpVariable(mb, TYPE_void);
 				r= pushArgument(mb, r, remoteSite);
 
 				for(j=p->retc; j<p->argc; j++)
 				if( location[getArg(p,j)] == 0 && !isVarConstant(mb,getArg(p,j)) ){
-					q= newStmt(mb,mserverRef,putRef);
+					q= newStmt(mb,mapiRef,putRef);
 					getArg(q,0)= newTmpVariable(mb, TYPE_void);
 					q= pushArgument(mb, q, remoteSite);
 					q= pushStr(mb,q, getRefName(mb,getArg(p,j)));

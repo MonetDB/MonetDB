@@ -1376,7 +1376,7 @@ str
 GRPrefine(int *retid, int *bid, int *aid)
 {
 	BAT *b, *a;
-	BAT *bn;
+	BAT *bn = NULL;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "group.refine", "Cannot access descriptor");
@@ -1389,10 +1389,11 @@ GRPrefine(int *retid, int *bid, int *aid)
 	@:chkHeader(a,GRPrefine)@
 
 	CTrefine(&bn, b, a);
-	*retid = bn->batCacheid;
-	BBPkeepref(*retid);
 	BBPreleaseref(b->batCacheid);
 	BBPreleaseref(a->batCacheid);
+	if (!bn)
+		throw(MAL, "group.refine", "Failed");
+	BBPkeepref(*retid = bn->batCacheid);
 	return MAL_SUCCEED;
 }
 

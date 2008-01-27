@@ -760,7 +760,7 @@ command year(months:int):int
 address MTIMEsql_year;
 command month(months:int):int
 address MTIMEsql_month;
-command day(secs:lng):int
+command day(secs:lng):lng
 address MTIMEsql_day;
 command hours(secs:lng):int
 address MTIMEsql_hours;
@@ -986,7 +986,7 @@ mtime_export str MTIMEtimestamp_seconds(int *ret, timestamp *t);
 mtime_export str MTIMEtimestamp_milliseconds(int *ret, timestamp *t);
 mtime_export str MTIMEsql_year(int *ret, int *t);
 mtime_export str MTIMEsql_month(int *ret, int *t);
-mtime_export str MTIMEsql_day(int *ret, lng *t);
+mtime_export str MTIMEsql_day(lng *ret, lng *t);
 mtime_export str MTIMEsql_hours(int *ret, lng *t);
 mtime_export str MTIMEsql_minutes(int *ret, lng *t);
 mtime_export str MTIMEsql_seconds(int *ret, lng *t);
@@ -3840,9 +3840,9 @@ MTIMEsql_month(int *ret, int *t)
 	return MAL_SUCCEED;
 }
 str
-MTIMEsql_day(int *ret, lng *t)
+MTIMEsql_day(lng *ret, lng *t)
 {
-	*ret=(int)( *t/86400);
+	*ret= (*t/86400);
 	return MAL_SUCCEED;
 }
 str

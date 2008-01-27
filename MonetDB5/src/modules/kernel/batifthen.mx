@@ -29,7 +29,7 @@ command batcalc.ifthen(b:bat[:oid,:bit], v:@1) :bat[:oid,:@1]
 address CMDifThenCst_@1
 comment "Ifthen operation to assemble a conditional result ";
 
-command batcalc.ifthenelse(b:bat[:oid,:bit], v:@1,w:@1) :bat[:oid,:@1] 
+command batcalc.ifthenelse(b:bat[:oid,:bit], v:@1, w:@1) :bat[:oid,:@1] 
 address CMDifThenElseCst_@1
 comment "Ifthen operation to assemble a conditional result ";
 
@@ -335,6 +335,10 @@ str CMDifThenElseCst_@1(int *ret, int *bid, @1 *tid, @1 *eid)
 	bi = bat_iterator(b);
 	t = (bit*)Tloc(b,BUNfirst(b));
 
+	if (ATOMvarsized(TYPE_@1)) {
+		tid = *(@1**)tid;
+		eid = *(@1**)eid;
+	}
 	BATloop(b, p, q) {
 		if (*t == bit_nil) 
 			BUNfastins(bn, BUNhead(bi,p), (ptr) & nilval);
