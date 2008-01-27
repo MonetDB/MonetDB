@@ -108,13 +108,14 @@ OPTjoinPathImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	if (varGetProp(mb, getArg(mb->stmt[0], 0), inlineProp) != NULL)
 		return 0;
 
-	pc= (int*) alloca(sizeof(int)* mb->vtop); /* to find last assignment */
-	memset((char*) pc, 0, sizeof(int)* mb->vtop);
+	/* beware, new variables and instructions are introduced */
+	pc= (int*) GDKmalloc(sizeof(int)* mb->vtop * 2); /* to find last assignment */
+	memset((char*) pc, 0, sizeof(int)* mb->vtop *2);
 
 	/* calculate how often each variable is used ,
 	   we are only expanding when a variable is used once. */
-	used= (int*) alloca(sizeof(int)* mb->vtop); 
-	memset((char*) used, 0, sizeof(int)* mb->vtop);
+	used= (int*) GDKmalloc(sizeof(int)* mb->vtop * 2); /* beware, new variables are introduced */
+	memset((char*) used, 0, sizeof(int)* mb->vtop * 2);
 
 	old= mb->stmt;
 	limit= mb->stop;
@@ -207,6 +208,8 @@ The heuristics is sufficient for the code produced by SQL frontend
 	if(old[i])
 		freeInstruction(old[i]);
 	GDKfree(old);
+	GDKfree(pc);
+	GDKfree(used);
 	return actions;
 }
 @include optimizerWrapper.mx

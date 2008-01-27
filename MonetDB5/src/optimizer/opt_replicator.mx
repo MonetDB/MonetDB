@@ -44,9 +44,13 @@ module replicator;
 pattern replicator.prelude(dst:bat[:any,:any]):void
 address REPprelude
 comment "Prepare for re-using an intermediate result.";
-pattern replicator.postlude(dst:bat[:any,:any]):void
-address REPpostlude
-comment "Keep the new intermediate and manage the pool.";
+
+pattern replicator.select(dst:bat[:any_1,:any_2],low:any_2,hgh:any_2):bat[:any_1,:any_2]
+address REPselect
+comment "The overloaded select operator for replicated operations";
+pattern replicator.uselect(dst:bat[:any_1,:any_2],low:any_2,hgh:any_2):bat[:any_1,:any_2]
+address REPuselect
+comment "The overloaded uselect operator for replicated operations";
 @h
 #ifndef _OPT_REPLICATOR_
 #define _OPT_REPLICATOR_
@@ -85,11 +89,12 @@ OPTreplicatorImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			( getFunctionId(p) == uselectRef ||
 			  getFunctionId(p) == selectRef
 			) && pc[getArg(p,1)]){
-				q= newStmt(mb,replicatorRef,preludeRef);
+				q=copyInstruction(getInstrPtr(mb,pc[getArg(p,1)]));
+				setModuleId(q,replicatorRef);
+				setFunctionId(q,preludeRef);
 				q= pushArgument(mb,q,getArg(p,1));
 				pushInstruction(mb,p);
-				q= newStmt(mb,replicatorRef,postludeRef);
-				q= pushArgument(mb,q,getArg(p,0));
+				setModuleId(q,replicatorRef);
 		} else
 			pushInstruction(mb,p);
 	}
@@ -109,12 +114,12 @@ opt_export str ALGreplicator(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 @:wrapOptimizer(replicator,OPT_CHECK_ALL)@
 
 str
-REPpostlude(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+REPuselect(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void) mb;
 	(void) stk;
 	(void) pci;
-	throw(MAL,"replicator.postlude","nyi");
+	throw(MAL,"replicator.uselect","nyi");
 }
 str
 REPprelude(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
@@ -123,5 +128,13 @@ REPprelude(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) stk;
 	(void) pci;
 	throw(MAL,"replicator.postlude","nyi");
+}
+str
+REPselect(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void) mb;
+	(void) stk;
+	(void) pci;
+	throw(MAL,"replicator.select","nyi");
 }
 @}
