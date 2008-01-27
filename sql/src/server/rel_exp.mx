@@ -50,6 +50,8 @@ extern sql_exp *exp_op( list *l, sql_subfunc *f );
 #define exp_op4(l,r,r2,r3,f) \
 	exp_op(append(append(append(append(new_exp_list(),l),r),r2),r3), f)
 extern sql_exp *exp_aggr( list *l, sql_subaggr *a, int distinct, int no_nils, int card );
+#define exp_aggr1(e, a, d, n, c) \
+	exp_aggr(append(new_exp_list(), e), a, d, n, c)
 extern sql_exp * exp_atom( atom *a);
 extern sql_exp * exp_atom_int(int i);
 extern sql_exp * exp_atom_str(str s, sql_subtype *st);

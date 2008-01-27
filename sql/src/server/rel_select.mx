@@ -1821,13 +1821,14 @@ rel_compare(mvc *sql, sql_rel *rel, symbol *lo, symbol *ro, char *compare_op, in
 				rs = rel_lastexp(sql, r->r);
 				rel = r;
 			}
-		} else if (r->card > CARD_ATOM) {
-			/* should be changed to a dynamic check ! */
-			return sql_error(sql, 02, 
-				"SELECT: subquery returned more than one row");
 		} else if (r) {
 			rel_setsubquery(r);
 			rs = rel_lastexp(sql, r);
+			if (r->card > CARD_ATOM) {
+				sql_subaggr *zero_or_one = sql_bind_aggr(sql->session->schema, "zero_or_one", exp_subtype(rs));
+
+				rs = exp_aggr1(rs, zero_or_one, 0, 0, CARD_ATOM);
+			}
 			rel = rel_crossproduct(rel, r, op_join);
 		}
 	}
@@ -1927,13 +1928,14 @@ rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 					rs = exp_atom_bool(0);
 					return rel_binop_(sql, ls, rs, NULL, "=");
 				}
-			} else if (r->card > CARD_ATOM) {
-				/* should be changed to a dynamic check ! */
-				return sql_error(sql, 02, 
-				 "SELECT: subquery returned more than one row");
 			} else if (r) { 
 				rel_setsubquery(r);
 				rs = rel_lastexp(sql, r);
+				if (r->card > CARD_ATOM) {
+					sql_subaggr *zero_or_one = sql_bind_aggr(sql->session->schema, "zero_or_one", exp_subtype(rs));
+
+					rs = exp_aggr1(rs, zero_or_one, 0, 0, CARD_ATOM);
+				}
 				*rel = rel_crossproduct(*rel, r, op_join);
 			}
 			if (!rs) {
@@ -2882,10 +2884,8 @@ rel_aggr(mvc *sql, sql_rel **rel, symbol *se, int f)
 	if (a) {
 		/* type may have changed, ie. need to fix_scale */
 		sql_subtype *t = exp_subtype(e);
-		list *exps = new_exp_list();
 
-		append(exps, e);
-		e = exp_aggr(exps, a, distinct, no_nil, groupby->card);
+		e = exp_aggr1(e, a, distinct, no_nil, groupby->card);
 		exp = e;
 		if (*rel != old)
 			exp = rel_groupby_add_aggr(sql, *rel, exp);
@@ -3400,9 +3400,16 @@ rel_value_exp(mvc *sql, sql_rel **rel, symbol *se, int f)
 
 		ninner = rel_subquery(sql, inner, se, f);
 		if (ninner && !*rel) {
+			sql_exp *e;
 			*rel = ninner;
 			rel_setsubquery(ninner);
-			return rel_lastexp(sql, ninner); 
+			e = rel_lastexp(sql, ninner); 
+			if (e->card > CARD_ATOM) {
+				sql_subaggr *zero_or_one = sql_bind_aggr(sql->session->schema, "zero_or_one", exp_subtype(e));
+
+				e = exp_aggr1(e, zero_or_one, 0, 0, CARD_ATOM);
+			}
+			return e;
 		}
 		if (!ninner) {
 			if (!*rel)
