@@ -838,23 +838,15 @@ PFcompile_MonetDB (char *xquery, char* url, char** prologue, char** query, char*
         int num_fun;
         long timing;
         int module_base;
-#if ALGEBRA_IS_DEFAULT
+        /* for ALGEBRA (PFoutput_format_mil) & SQL (PFoutput_format_sql) */
         PFla_op_t  *laroot = NULL;
         PFpa_op_t  *paroot = NULL;
         PFmil_t    *mroot  = NULL;
         PFarray_t  *serialized_mil_code = NULL;
-#endif
-#if SQL_IS_DEFAULT /* inside MonetDB use the algebra variant */
-        PFla_op_t  *laroot = NULL;
-        PFpa_op_t  *paroot = NULL;
-        PFmil_t    *mroot  = NULL;
-        PFarray_t  *serialized_mil_code = NULL;
-#endif
-#if MILPRINT_SUMMER_IS_DEFAULT
+        /* for MILPRINT_SUMMER (PFoutput_format_milprint_summer) */
         char *intern_prologue = NULL,
              *intern_query = NULL,
              *intern_epilogue = NULL;
-#endif
 
         PFmem_init ();
 
@@ -897,7 +889,8 @@ PFcompile_MonetDB (char *xquery, char* url, char** prologue, char** query, char*
         croot = PFsimplify (croot);
         croot = PFty_check (croot);
     	croot = PFcoreopt (croot);
-#if MILPRINT_SUMMER_IS_DEFAULT
+
+    if (PFstate.output_format == PFoutput_format_milprint_summer) {
         (void)  PFprintMILtemp (croot, 1, module_base, num_fun, timing, 
                                 &intern_prologue, &intern_query, &intern_epilogue,
                                 url, PFstate.standoff_axis_steps);
@@ -910,12 +903,7 @@ PFcompile_MonetDB (char *xquery, char* url, char** prologue, char** query, char*
         strcpy (*prologue, intern_prologue);
         strcpy (*query, intern_query);
         strcpy (*epilogue, intern_epilogue);
-#else
-        (void) url;		/* not used in the Algebra case (yet??) */
-        (void) num_fun;		/* not used in the Algebra case (yet??) */
-        (void) timing;		/* not used in the Algebra case (yet??) */
-        (void) module_base;	/* not used in the Algebra case (yet??) */
-
+    } else {
         /* compile into logical algebra */
         laroot = PFcore2alg (croot);
         /* optimize logical algebra */
@@ -944,8 +932,8 @@ PFcompile_MonetDB (char *xquery, char* url, char** prologue, char** query, char*
         /* we don't actually need a prolog or epilogue */
         *prologue = malloc (1); **prologue = '\0';
         *epilogue = malloc (1); **epilogue = '\0';
+    }
 
-#endif
         PFmem_destroy ();
         return (*PFerrbuf) ? PFerrbuf : NULL;
 }
