@@ -149,7 +149,7 @@ start_sql_server(void *arg)
 		"include sql;\n"
 		"in  := \"" PTRFMT "\":streams;\n"
 		"out := \"" PTRFMT "\":streams;\n"
-		"mserver.malclient(in, out);\n", PTRFMTCAST in, PTRFMTCAST out);
+		"mapi.malclient(in, out);\n", PTRFMTCAST in, PTRFMTCAST out);
 	callString(mal_clients, buf, 0);
 	return NULL;
 }

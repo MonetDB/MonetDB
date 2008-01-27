@@ -87,7 +87,7 @@ This reference list is illustrative for optimizer developers .
      20 calc.==                           2 mmath.sqrt
      17 calc.+                            2 mmath.rand
      17 batcalc.+                         2 mmath.atan
-      2 mmath.acos                        1 mserver.disconnect
+      2 mmath.acos                        1 mapi.disconnect
       2 calc.not                          1 mmath.floor
       2 calc.date                         1 group.refine_reverse
       2 batcalc.not                       1 calc.month_interval
@@ -452,7 +452,7 @@ str defaultPlan=
 	"commonTerms,"
 	"accumulators,"
 	"mergetable," 
-	"joinPath,"
+	/* "joinPath," */
 	"deadcode,"
 	"reduce,"
 	"garbageCollector," 

@@ -899,8 +899,8 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 
 			buflen = strlen(fimp) + SMALLBUFSIZ;
 			buf = NEW_ARRAY(char, buflen + 1);
-			dec_func[0] = 0;
 			backend_create_func(sql, s->op4.funcval->func); 
+			dec_func[0] = 0;
 			if (strcmp(fimp, "round")==0 &&
 			    tpe->type->eclass == EC_DEC) {
 				len = snprintf(dec_func, SMALLBUFSIZ, "%u,%u,",
@@ -921,13 +921,24 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 		}
 		case st_Nop:{
 			char *fimp = sql_func_imp(s->op4.funcval->func);
+			sql_subtype *tpe = NULL;
 			int opslen = 0;
 			char *ops;
 			node *n;
 			int cnt = list_length(s->op1.stval->op1.lval);
+			char dec_func[SMALLBUFSIZ];
 
 			backend_create_func(sql, s->op4.funcval->func); 
 			backend_dumpstmt_(s->op1.stval, nr, sql);	/* dump operands */
+			if (cnt)
+ 				tpe = tail_type(s->op1.stval->op1.lval->h->data);
+			dec_func[0] = 0;
+			if (strcmp(fimp, "round")==0 && tpe &&
+			    tpe->type->eclass == EC_DEC) {
+				len = snprintf(dec_func, SMALLBUFSIZ, ",%u,%u",
+				tpe->digits, tpe->scale);
+				assert(len < SMALLBUFSIZ);
+			}
 			write_head(sql, -s->nr);
 			if (s->nrcols) {
 				stmt *h;
@@ -951,7 +962,8 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 						stmt *op = n->data;
 						int n = op->nr;
 	
-						opslen += snprintf(ops + opslen, buflen - opslen, "%cs%d", (opslen) ? ',' : ' ', n);
+						opslen += snprintf(ops + opslen, buflen - opslen, "%cs%d%s", (opslen) ? ',' : ' ', n, dec_func);
+						dec_func[0] = 0;
 					}
 				}
 				buflen = strlen(fimp) + opslen + SMALLBUFSIZ;
@@ -973,7 +985,8 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 						stmt *op = n->data;
 						int n = op->nr;
 
-						opslen += snprintf(ops + opslen, buflen - opslen, "%cs%d", (opslen) ? ',' : ' ', n);
+						opslen += snprintf(ops + opslen, buflen - opslen, "%cs%d%s", (opslen) ? ',' : ' ', n, dec_func);
+						dec_func[0] = 0;
 					}
 				}
 				buflen = strlen(fimp) + opslen + SMALLBUFSIZ;

@@ -904,6 +904,7 @@ sql_symbol2stmt(mvc *c, symbol *sym)
 	stmt *s = NULL;
 
 	if (mvc_debug_on(c,16384)) {
+		int status = c->session->status;
 		sql_rel *r;
 		printf("# semantic relational algebra\n");
 		r = rel_semantic(c, sym);
@@ -912,7 +913,7 @@ sql_symbol2stmt(mvc *c, symbol *sym)
 				printf("# %s\n", c->errstr);
 				return NULL;
 			} else {
-				c->session->status = 0;
+				c->session->status = status;
 				printf("# falling back to direct mode \n");
 				s = output_semantic(c, NULL, sym);
 			}

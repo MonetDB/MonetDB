@@ -285,7 +285,7 @@ reconnect(MalBlkPtr mb, list *l)
 	n = n->next;
 	
 	/*create the mserver reconnect*/
-	q = newStmt1(mb,mserverRef,reconnectRef);
+	q = newStmt1(mb,mapiRef,reconnectRef);
 	setVarUDFtype(mb,getArg(q,0));
 	setVarType(mb, getArg(q, 0), TYPE_int);
 	
@@ -318,7 +318,7 @@ disconnect(MalBlkPtr mb, list *l)
 
 	
 	/*create the mserver disconnect*/
-	q = newStmt1(mb,mserverRef,disconnectRef);
+	q = newStmt1(mb,mapiRef,disconnectRef);
 	setVarUDFtype(mb,getArg(q,0));
 	setVarType(mb, getArg(q, 0), TYPE_int);
 	
@@ -1238,6 +1238,8 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 		case st_Nop:{
 			char *mod = sql_func_mod(s->op4.funcval->func);
 			char *fimp = sql_func_imp(s->op4.funcval->func);
+			sql_subtype *tpe = NULL;
+			int special = 0;
 			node *n;
 			/* dump operands */
 			_dumpstmt(sql, mb, s->op1.stval);
@@ -1262,10 +1264,21 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				fimp = convertOperator(fimp);
 				q = newStmt(mb, mod, fimp);
 			}
+			if (list_length(s->op1.stval->op1.lval))
+				tpe = tail_type(s->op1.stval->op1.lval->h->data);
+			if (strcmp(fimp, "round")==0 && tpe &&
+			    tpe->type->eclass == EC_DEC) 
+				special = 1;
+
 			for (n = s->op1.stval->op1.lval->h; n; n = n->next) {
 				stmt *op = n->data;
 
 				q = pushArgument(mb, q, op->nr);
+				if (special) {
+					q = pushInt(mb, q, tpe->digits);
+					q = pushInt(mb, q, tpe->scale);
+				}
+				special = 0;
 			}
 			s->nr = getDestVar(q);
 		} break;
