@@ -1,0 +1,127 @@
+@' The contents of this file are subject to the MonetDB Public License
+@' Version 1.1 (the "License"); you may not use this file except in
+@' compliance with the License. You may obtain a copy of the License at
+@' http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+@'
+@' Software distributed under the License is distributed on an "AS IS"
+@' basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+@' License for the specific language governing rights and limitations
+@' under the License.
+@'
+@' The Original Code is the MonetDB Database System.
+@'
+@' The Initial Developer of the Original Code is CWI.
+@' Portions created by CWI are Copyright (C) 1997-2008 CWI.
+@' All Rights Reserved.
+
+@f opt_replicator
+@- The replicator
+The replicator is an optimizer and runtime support
+module to re-use operation results against persistent columns.
+It is developed primarilly for the SQL front-end.
+
+The following patterns are the target:
+@verbatim
+_3:bat[:oid,:bte]  := sql.bind(_4="sky", _5="photoobjall", _6="mode", _7=0) ]
+_9 := algebra.uselect(_3=<tmp_30445>bat[:oid,:bte]{200276}, _8=1) ]
+
+_20:bat[:oid,:lng]  := sql.bind(_4="sky", _5="photoobjall", _21="fieldid", _7=0) ]
+_22 := algebra.joinPath(_19=<~tmp_33363>bat[:oid,:oid]{57328}, _12=<~tmp_33364>bat[:oid,:oid]{149491}, _20=<tmp_31311>bat[:oid,:lng]{200276}) ]
+
+@end verbatim
+
+The replicator comes with a few controlling operators
+to experiment with its effect in concrete settings.
+@{
+@mal
+pattern optimizer.replicator():str
+address OPTreplicator;
+pattern optimizer.replicator(mod:str, fcn:str):str
+address OPTreplicator
+comment "Replicator code injection";
+
+module replicator;
+pattern replicator.prelude(dst:bat[:any,:any]):void
+address REPprelude
+comment "Prepare for re-using an intermediate result.";
+pattern replicator.postlude(dst:bat[:any,:any]):void
+address REPpostlude
+comment "Keep the new intermediate and manage the pool.";
+@h
+#ifndef _OPT_REPLICATOR_
+#define _OPT_REPLICATOR_
+#include "opt_prelude.h"
+#include "opt_support.h"
+#include "mal_interpreter.h"
+
+/* #define DEBUG_OPT_REPLICATOR  */
+@-
+@c
+#include "mal_config.h"
+#include "opt_replicator.h"
+
+static int
+OPTreplicatorImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+{
+	int i, actions=0;
+	int *pc;
+	InstrPtr q,*old;
+	int limit,slimit;
+
+	(void) stk;
+	pc= (int*) alloca(sizeof(int)* mb->vtop); /* to find last assignment */
+	memset((char*) pc, 0, sizeof(int)* mb->vtop);
+
+	old= mb->stmt;
+	limit= mb->stop;
+	slimit= mb->ssize;
+	newMalBlkStmt(mb,mb->ssize);
+
+	for (i = 0; i<limit; i++){
+		p= old[i];
+		if( (getModuleId(p)== sqlRef && getFunctionId(p)==bindRef) )
+			pc[getArg(p,0)]= i;
+		if( getModuleId(p)== algebraRef && 
+			( getFunctionId(p) == uselectRef ||
+			  getFunctionId(p) == selectRef
+			) && pc[getArg(p,1)]){
+				q= newStmt(mb,replicatorRef,preludeRef);
+				q= pushArgument(mb,q,getArg(p,1));
+				pushInstruction(mb,p);
+				q= newStmt(mb,replicatorRef,postludeRef);
+				q= pushArgument(mb,q,getArg(p,0));
+		} else
+			pushInstruction(mb,p);
+	}
+	for(; i<slimit; i++)
+	if(old[i])
+		freeInstruction(old[i]);
+	GDKfree(old);
+	return actions;
+}
+@include optimizerWrapper.mx
+@h
+@:exportOptimizer(replicator)@
+#endif
+opt_export str ALGreplicator(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+@c
+#include "opt_statistics.h"
+@:wrapOptimizer(replicator,OPT_CHECK_ALL)@
+
+str
+REPpostlude(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void) mb;
+	(void) stk;
+	(void) pci;
+	throw(MAL,"replicator.postlude","nyi");
+}
+str
+REPprelude(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void) mb;
+	(void) stk;
+	(void) pci;
+	throw(MAL,"replicator.postlude","nyi");
+}
+@}

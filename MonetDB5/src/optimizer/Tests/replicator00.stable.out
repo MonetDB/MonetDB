@@ -1,0 +1,53 @@
+stdout of test 'replicator00` in directory 'src/optimizer` itself:
+
+
+# 12:06:27 >  
+# 12:06:27 >   mserver5 "--config=/ufs/mk/monet5/Linux/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5//Linux/lib/MonetDB5:/ufs/mk/monet5//Linux/lib/MonetDB5/lib:/ufs/mk/monet5//Linux/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/mk/monet5//Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5//Linux/var/MonetDB5/sql_logs"  --set mapi_open=true --set xrpc_open=true --set mapi_port=31116 --set xrpc_port=45281 --set monet_prompt= --trace --dbname=mTests_src_optimizer  replicator00.mal
+# 12:06:27 >  
+
+# MonetDB server v5.3.0, based on kernel v1.21.0
+# Serving database 'mTests_src_optimizer'
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Copyright (c) 1993-2007 CWI, all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://gio.ins.cwi.nl:31116/
+##test the basics of the replicator
+#
+#module sql;
+#function sql.bind(s:str,r:str,c:str):bat[:int,:int];
+#	b:= bat.new(:int,:int);
+#	return bind:= b;
+#end bind;
+function sql.bind(s:str,r:str,c:str):bat[:int,:int];	# 0  (bind:bat[:int,:int])<-(s:str)(r:str)(c:str)
+    b := bat.new(:int,:int);	# 1 CMDBATnew (b:bat[:int,:int])<-(_5:int)(_5:int)
+    return bind := b;	# 2  (bind:bat[:int,:int])<-(b:bat[:int,:int])
+end bind;	# 3  
+#
+#function qry();
+#	b:bat[:int,:int]:= sql.bind("schema","r","t");
+#	t:= algebra.select(b,1,10);
+#end qry;
+function sql.qry():void;	# 0  (qry:void)
+    b:bat[:int,:int]  := sql.bind("schema","r","t");	# 1  (b:bat[:int,:int])<-(_2:str)(_3:str)(_4:str)
+    t := algebra.select(b,1,10);	# 2 ALGselect (t:bat[:int,:int])<-(b:bat[:int,:int])(_6:int)(_7:int)
+end qry;	# 3  
+#
+#
+#optimizer.replicator("user","qry");
+#mdb.list("user","qry");
+#
+function user.main():void;	# 0  (main:void)
+#test the basics of the replicator 	# 1  (_1:str)
+    mdb.list("user","qry");	# 2 MDBlist3 (_5:void)<-(_3:str)(_4:str)
+end main;	# 3  
+function sql.qry():void;
+    b:bat[:int,:int]  := sql.bind("schema","r","t");
+    replicator.prelude(b);
+    t := algebra.select(b,1,10);
+    replicator.postlude(t);
+end qry;
+
+# 12:06:28 >  
+# 12:06:28 >  Done.
+# 12:06:28 >  
+

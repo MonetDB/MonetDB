@@ -32,9 +32,10 @@ function user.main():void;	# 0  (main:void)
     j1 := algebra.join(a,b);	# 5 ALGjoin (j1:bat[:void,:oid])<-(a:bat[:void,:oid])(b:bat[:oid,:oid])
     j2 := algebra.joinPath(a,b,c);	# 6 ALGjoinPath (j2:bat[:void,:str])<-(a:bat[:void,:oid])(b:bat[:oid,:oid])(c:bat[:oid,:str])
     j3 := algebra.join(b,b);	# 7 ALGjoin (j3:bat[:oid,:oid])<-(b:bat[:oid,:oid])(b:bat[:oid,:oid])
-    j4 := algebra.joinPath(b,b,b);	# 8 ALGjoinPath (j4:bat[:oid,:oid])<-(b:bat[:oid,:oid])(b:bat[:oid,:oid])(b:bat[:oid,:oid])
-    mdb.list();	# 9 MDBlist (_13:void)
-end main;	# 10  
+    _14 := algebra.join(b,b);	# 8 ALGjoin (_14:bat[:oid,:oid])<-(b:bat[:oid,:oid])(b:bat[:oid,:oid])
+    j4 := algebra.join(_14,b);	# 9 ALGjoin (j4:bat[:oid,:oid])<-(_14:bat[:oid,:oid])(b:bat[:oid,:oid])
+    mdb.list();	# 10 MDBlist (_13:void)
+end main;	# 11  
 function user.main():void;
 # test the joinpath expander 
     a := bat.new(:void,:oid);
@@ -43,7 +44,8 @@ function user.main():void;
     j1 := algebra.join(a,b);
     j2 := algebra.joinPath(a,b,c);
     j3 := algebra.join(b,b);
-    j4 := algebra.joinPath(b,b,b);
+    _14 := algebra.join(b,b);
+    j4 := algebra.join(_14,b);
     mdb.list();
 end main;
 
