@@ -235,17 +235,19 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, group *grp)
 			 */
 			sql_idx *i = p->value, *ri;
 			sql_fkey *fk = (sql_fkey*)i->key;
+			sql_exp *el = e->l;
+			sql_exp *er = e->r;
 
 			ri = fk->rkey->k.idx;
 
 			/* find out left and right */
-			l = bin_find_column(left, NULL, i->base.name);
+			l = bin_find_column(left, el->l, i->base.name);
 			if (!l) {
 				swapped = 1;
-				l = bin_find_column(right, NULL, i->base.name);
-				r = bin_find_column(left, NULL, ri->base.name);
+				l = bin_find_column(right, el->l, i->base.name);
+				r = bin_find_column(left, er->l, ri->base.name);
 			} else {
-				r = bin_find_column(right, NULL, ri->base.name);
+				r = bin_find_column(right, er->l, ri->base.name);
 			}
 			if (swapped)
 				s = stmt_join(r, stmt_reverse(l), cmp_equal);
@@ -344,6 +346,7 @@ rel2bin_basetable( mvc *sql, sql_rel *rel )
 		for (n = t->idxs.set->h; n; n = n->next) {
 			sql_idx *i = n->data;
 			stmt *sc = NULL;
+			char *rnme = (rel->name)?rel->name:t->base.name;
 
 			if (i->type == join_idx) {
 				sc = stmt_idxbat(i, RDONLY);
@@ -352,7 +355,8 @@ rel2bin_basetable( mvc *sql, sql_rel *rel )
 				sc = stmt_bat(c, stmt_dup(ts), RDONLY);
 				sc = stmt_mirror(sc);
 			}
-			sc = stmt_alias(sc, NULL, _strdup(i->base.name));
+			rnme = (rnme)?_strdup(rnme):NULL;
+			sc = stmt_alias(sc, rnme, _strdup(i->base.name));
 			list_append(l, sc);
 		}
 	}

@@ -452,7 +452,7 @@ str defaultPlan=
 	"commonTerms,"
 	"accumulators,"
 	"mergetable," 
-	/* "joinPath," */
+	"joinPath,"
 	"deadcode,"
 	"reduce,"
 	"garbageCollector," 
