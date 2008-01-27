@@ -1587,13 +1587,13 @@ END;
 CREATE FUNCTION fStripeOfRun(run_val int)
 RETURNS int
 BEGIN
-  RETURN (SELECT stripe from Segment where run = run_val and camcol=1 LIMIT 1);
+  RETURN (SELECT MAX(stripe) FROM (SELECT stripe from Segment where run = run_val and camcol=1) as stripe);
 END;
 
 CREATE FUNCTION fStripOfRun(run_val int)
 RETURNS int
 BEGIN
-  RETURN (SELECT strip from Segment where run = run_val and camcol=1 LIMIT 1);
+  RETURN (SELECT MAX(strip) FROM (SELECT strip from Segment where run = run_val and camcol=1) as strip);
 END;
 
 CREATE FUNCTION fGetDiagChecksum()

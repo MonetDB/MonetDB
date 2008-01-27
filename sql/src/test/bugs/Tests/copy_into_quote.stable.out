@@ -29,11 +29,11 @@ Over..
 % sys.test_copyinto,	sys.test_copyinto,	sys.test_copyinto,	sys.test_copyinto,	sys.test_copyinto,	sys.test_copyinto,	sys.test_copyinto,	sys.test_copyinto,	sys.test_copyinto,	sys.test_copyinto,	sys.test_copyinto,	sys.test_copyinto,	sys.test_copyinto # table_name
 % householdid,	individualid,	address1,	address2,	city,	state,	zipcode,	zip4,	firstname,	middlename,	lastname,	gender,	headofhouseholdflag # name
 % int,	int,	varchar,	varchar,	varchar,	varchar,	varchar,	varchar,	varchar,	varchar,	varchar,	varchar,	varchar # type
-% 7,	7,	17,	1,	5,	2,	5,	4,	3,	1,	4,	1,	1 # length
-[ 2413949,	8117533,	"1234 ANOTHER DISK",	NULL,	"ABCDE",	"TT",	"23456",	"7860",	"\" S",	NULL,	"LAST",	"-",	"N"	]
-[ 2413949,	8117533,	"1234 ANOTHER DISK",	NULL,	"ABCDE",	"TT",	"23456",	"7860",	"' S",	NULL,	"LAST",	"-",	"N"	]
+% 7,	7,	17,	0,	5,	2,	5,	4,	3,	0,	4,	1,	1 # length
+[ 2413949,	8117533,	"1234 ANOTHER DISK",	"",	"ABCDE",	"TT",	"23456",	"7860",	"\" S",	"",	"LAST",	"-",	"N"	]
+[ 2413949,	8117533,	"1234 ANOTHER DISK",	"",	"ABCDE",	"TT",	"23456",	"7860",	"' S",	"",	"LAST",	"-",	"N"	]
 
-# 17:26:23 >  
-# 17:26:23 >  Done.
-# 17:26:23 >  
+# 12:36:40 >  
+# 12:36:40 >  Done.
+# 12:36:40 >  
 

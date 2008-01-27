@@ -14,6 +14,9 @@ INSERT INTO t3 VALUES ( 'cc', 33 );
 SELECT * FROM t1 FULL JOIN t2 USING (name);
 SELECT * FROM t1 FULL JOIN t2 USING (name) FULL JOIN t3 USING (name);
 
+SELECT * FROM t1 natural FULL JOIN t2 ;
+SELECT * FROM t1 natural FULL JOIN t2 natural FULL JOIN t3;
+
 drop table t1;
 drop table t2;
 drop table t3;

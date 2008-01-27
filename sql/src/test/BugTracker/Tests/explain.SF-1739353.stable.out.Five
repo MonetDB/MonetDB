@@ -43,12 +43,12 @@ Over..
 |     _6:bat[:oid,:oid]{rows=1:lng}  := nil;                                   |
 |     _9{rows=1:lng} := algebra.kdifference(_1,_8);                            |
 |     _8{rows=1:lng} := nil;                                                   |
-|     _11{rows=1:lng} := algebra.markT(_9,0@0);                                |
+|     _11{rows=1:lng,tlb>=0@0:oid,tub<1@0:oid} := algebra.markT(_9,0@0);       |
 |     _9{rows=1:lng} := nil;                                                   |
-|     _12{rows=1:lng} := bat.reverse(_11);                                     |
-|     _11{rows=1:lng} := nil;                                                  |
+|     _12{rows=1:lng,hlb>=0@0:oid,hub<1@0:oid} := bat.reverse(_11);            |
+|     _11{rows=1:lng,tlb>=0@0:oid,tub<1@0:oid} := nil;                         |
 |     _13:bat[:oid,:sht]{rows=1:lng,notnil}  := sql.bind("tmp","_tables","type",0); |
-|     _15{rows=1:lng} := algebra.join(_12,_13);                                |
+|     _15{rows=1:lng,hlb>=0@0:oid,hub<1@0:oid} := algebra.join(_12,_13);       |
 |     _13:bat[:oid,:sht]{rows=1:lng,notnil}  := nil;                           |
 |     _16:bat[:oid,:int]{rows=107:lng,notnil}  := sql.bind("sys","_tables","id",0); |
 |     _18:bat[:oid,:int]{rows=1:lng,notnil}  := sql.bind("sys","_tables","id",1); |
@@ -66,10 +66,10 @@ Over..
 |     _24:bat[:oid,:oid]{rows=1:lng}  := nil;                                  |
 |     _26{rows=109:lng} := algebra.kdifference(_23,_25);                       |
 |     _25{rows=1:lng} := nil;                                                  |
-|     _27{rows=109:lng} := algebra.markT(_26,0@0);                             |
+|     _27{rows=109:lng,tlb>=0@0:oid,tub<1@0:oid} := algebra.markT(_26,0@0);    |
 |     _26{rows=109:lng} := nil;                                                |
-|     _28{rows=109:lng} := bat.reverse(_27);                                   |
-|     _27{rows=109:lng} := nil;                                                |
+|     _28{rows=109:lng,hlb>=0@0:oid,hub<1@0:oid} := bat.reverse(_27);          |
+|     _27{rows=109:lng,tlb>=0@0:oid,tub<1@0:oid} := nil;                       |
 |     _29:bat[:oid,:sht]{rows=107:lng,notnil}  := sql.bind("sys","_tables","type",0); |
 |     _30:bat[:oid,:sht]{rows=1:lng,notnil}  := sql.bind("sys","_tables","type",1); |
 |     _31{rows=108:lng} := algebra.kunion(_29,_30);                            |
@@ -81,35 +81,35 @@ Over..
 |     _34{rows=109:lng} := algebra.kunion(_33,_32);                            |
 |     _33{rows=108:lng} := nil;                                                |
 |     _32:bat[:oid,:sht]{rows=1:lng,notnil}  := nil;                           |
-|     _35{rows=109:lng} := algebra.join(_28,_34);                              |
+|     _35{rows=109:lng,hlb>=0@0:oid,hub<1@0:oid} := algebra.join(_28,_34);     |
 |     _34{rows=109:lng} := nil;                                                |
-|     _36{rows=111:lng} := bat.setWriteMode(_35);                              |
-|     _35{rows=109:lng} := nil;                                                |
+|     _36{rows=111:lng,hlb>=0@0:oid,hub<1@0:oid} := bat.setWriteMode(_35);     |
+|     _35{rows=109:lng,hlb>=0@0:oid,hub<1@0:oid} := nil;                       |
 |     bat.append(_36,_15,true);                                                |
-|     _15{rows=1:lng} := nil;                                                  |
-|     _40{rows=56:lng} := algebra.uselect(_36,nil:sht,2,false,false);          |
-|     _36{rows=111:lng} := nil;                                                |
-|     _43{rows=56:lng} := algebra.markT(_40,0@0);                              |
-|     _40{rows=56:lng} := nil;                                                 |
-|     _44{rows=56:lng} := bat.reverse(_43);                                    |
-|     _43{rows=56:lng} := nil;                                                 |
-|     _45{rows=1:lng} := algebra.join(_12,_1);                                 |
+|     _15{rows=1:lng,hlb>=0@0:oid,hub<1@0:oid} := nil;                         |
+|     _40{rows=56:lng,hlb>=0@0:oid,hub<1@0:oid} := algebra.uselect(_36,nil:sht,2,false,false); |
+|     _36{rows=111:lng,hlb>=0@0:oid,hub<1@0:oid} := nil;                       |
+|     _43{rows=56:lng,hlb>=0@0:oid,hub<1@0:oid,tlb>=0@0:oid,tub<1@0:oid} := algebra.markT(_40,0@0); |
+|     _40{rows=56:lng,hlb>=0@0:oid,hub<1@0:oid} := nil;                        |
+|     _44{rows=56:lng,tlb>=0@0:oid,tub<1@0:oid,hlb>=0@0:oid,hub<1@0:oid} := bat.reverse(_43); |
+|     _43{rows=56:lng,hlb>=0@0:oid,hub<1@0:oid,tlb>=0@0:oid,tub<1@0:oid} := nil; |
+|     _45{rows=1:lng,hlb>=0@0:oid,hub<1@0:oid} := algebra.join(_12,_1);        |
 |     _1:bat[:oid,:int]{rows=1:lng,notnil}  := nil;                            |
-|     _46{rows=109:lng} := algebra.join(_28,_23);                              |
+|     _46{rows=109:lng,hlb>=0@0:oid,hub<1@0:oid} := algebra.join(_28,_23);     |
 |     _23{rows=109:lng} := nil;                                                |
-|     _47{rows=111:lng} := bat.setWriteMode(_46);                              |
-|     _46{rows=109:lng} := nil;                                                |
+|     _47{rows=111:lng,hlb>=0@0:oid,hub<1@0:oid} := bat.setWriteMode(_46);     |
+|     _46{rows=109:lng,hlb>=0@0:oid,hub<1@0:oid} := nil;                       |
 |     bat.append(_47,_45,true);                                                |
-|     _45{rows=1:lng} := nil;                                                  |
-|     _49{rows=56:lng} := algebra.join(_44,_47);                               |
-|     _47{rows=111:lng} := nil;                                                |
-|     _50{rows=56:lng} := algebra.markT(_49,0@0);                              |
-|     _49{rows=56:lng} := nil;                                                 |
-|     _51{rows=56:lng} := bat.reverse(_50);                                    |
-|     _50{rows=56:lng} := nil;                                                 |
+|     _45{rows=1:lng,hlb>=0@0:oid,hub<1@0:oid} := nil;                         |
+|     _49{rows=56:lng,hlb>=0@0:oid,hub<1@0:oid} := algebra.join(_44,_47);      |
+|     _47{rows=111:lng,hlb>=0@0:oid,hub<1@0:oid} := nil;                       |
+|     _50{rows=56:lng,hlb>=0@0:oid,hub<1@0:oid,tlb>=0@0:oid,tub<1@0:oid} := algebra.markT(_49,0@0); |
+|     _49{rows=56:lng,hlb>=0@0:oid,hub<1@0:oid} := nil;                        |
+|     _51{rows=56:lng,tlb>=0@0:oid,tub<1@0:oid,hlb>=0@0:oid,hub<1@0:oid} := bat.reverse(_50); |
+|     _50{rows=56:lng,hlb>=0@0:oid,hub<1@0:oid,tlb>=0@0:oid,tub<1@0:oid} := nil; |
 |     _52:bat[:oid,:str]{rows=1:lng,notnil}  := sql.bind("tmp","_tables","name",0); |
-|     _54{rows=1:lng} := algebra.join(_12,_52);                                |
-|     _12{rows=1:lng} := nil;                                                  |
+|     _54{rows=1:lng,hlb>=0@0:oid,hub<1@0:oid} := algebra.join(_12,_52);       |
+|     _12{rows=1:lng,hlb>=0@0:oid,hub<1@0:oid} := nil;                         |
 |     _52:bat[:oid,:str]{rows=1:lng,notnil}  := nil;                           |
 |     _55:bat[:oid,:str]{rows=107:lng,notnil}  := sql.bind("sys","_tables","name",0); |
 |     _56:bat[:oid,:str]{rows=1:lng,notnil}  := sql.bind("sys","_tables","name",1); |
@@ -122,24 +122,26 @@ Over..
 |     _60{rows=109:lng} := algebra.kunion(_59,_58);                            |
 |     _59{rows=108:lng} := nil;                                                |
 |     _58:bat[:oid,:str]{rows=1:lng,notnil}  := nil;                           |
-|     _61{rows=109:lng} := algebra.join(_28,_60);                              |
-|     _28{rows=109:lng} := nil;                                                |
+|     _61{rows=109:lng,hlb>=0@0:oid,hub<1@0:oid} := algebra.join(_28,_60);     |
+|     _28{rows=109:lng,hlb>=0@0:oid,hub<1@0:oid} := nil;                       |
 |     _60{rows=109:lng} := nil;                                                |
-|     _62{rows=111:lng} := bat.setWriteMode(_61);                              |
-|     _61{rows=109:lng} := nil;                                                |
+|     _62{rows=111:lng,hlb>=0@0:oid,hub<1@0:oid} := bat.setWriteMode(_61);     |
+|     _61{rows=109:lng,hlb>=0@0:oid,hub<1@0:oid} := nil;                       |
 |     bat.append(_62,_54,true);                                                |
-|     _54{rows=1:lng} := nil;                                                  |
-|     _64{rows=56:lng} := algebra.joinPath(_51,_44,_62);                       |
-|     _51{rows=56:lng} := nil;                                                 |
-|     _44{rows=56:lng} := nil;                                                 |
-|     _62{rows=111:lng} := nil;                                                |
-|     _65 := sql.resultSet(1,1,_64);                                           |
-|     sql.rsColumn(_65,"sys.tables","name","varchar",1024,0,_64);              |
-|     _64{rows=56:lng} := nil;                                                 |
-|     sql.exportResult(_65,"");                                                |
+|     _54{rows=1:lng,hlb>=0@0:oid,hub<1@0:oid} := nil;                         |
+|     _64{rows=56:lng,hlb>=0@0:oid,hub<1@0:oid} := algebra.join(_44,_62);      |
+|     _44{rows=56:lng,tlb>=0@0:oid,tub<1@0:oid,hlb>=0@0:oid,hub<1@0:oid} := nil; |
+|     _62{rows=111:lng,hlb>=0@0:oid,hub<1@0:oid} := nil;                       |
+|     _65{rows=56:lng,hlb>=0@0:oid,hub<1@0:oid} := algebra.join(_51,_64);      |
+|     _51{rows=56:lng,tlb>=0@0:oid,tub<1@0:oid,hlb>=0@0:oid,hub<1@0:oid} := nil; |
+|     _64{rows=56:lng,hlb>=0@0:oid,hub<1@0:oid} := nil;                        |
+|     _66 := sql.resultSet(1,1,_65);                                           |
+|     sql.rsColumn(_66,"sys.tables","name","varchar",1024,0,_65);              |
+|     _65{rows=56:lng,hlb>=0@0:oid,hub<1@0:oid} := nil;                        |
+|     sql.exportResult(_66,"");                                                |
 | end s1_1;                                                                    |
 +------------------------------------------------------------------------------+
-102 rows
+104 rows
 
 
 # 13:06:44 >  

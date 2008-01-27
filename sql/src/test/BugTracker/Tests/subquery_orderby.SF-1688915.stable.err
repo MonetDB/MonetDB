@@ -10,6 +10,9 @@ stderr of test 'subquery_orderby.SF-1688915` in directory 'src/test/BugTracker` 
 # 10:11:41 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35778 
 # 10:11:41 >  
 
+MAPI  = monetdb@koala:31630
+QUERY = select name from (select name, id from tables order by id) as x;
+ERROR = !syntax error, unexpected ORDER, expecting INTERSECT or EXCEPT or UNION or ')' in: "select name from (select name, id from tables order"
 
 # 10:11:41 >  
 # 10:11:41 >  Done.

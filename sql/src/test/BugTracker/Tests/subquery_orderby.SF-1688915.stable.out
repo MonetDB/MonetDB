@@ -1,59 +1,31 @@
 stdout of test 'subquery_orderby.SF-1688915` in directory 'src/test/BugTracker` itself:
 
 
-# 10:11:41 >  
-# 10:11:41 >  Mtimeout -timeout 180 Mserver "--config=/ufs/niels/scratch/rc/Linux-x86_64/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB4:/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB4/lib:/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB4/bin" --set "gdk_dbfarm=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB4/dbfarm" --set "sql_logdir=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB4/sql_logs" --set "xquery_logdir=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB4/xquery_logs" --set mapi_port=35778 --set xrpc_port=45704 --set monet_prompt= --trace "--dbname=mTests_src_test_BugTracker" --dbinit=" module(sql_server);" ; echo ; echo Over..
-# 10:11:41 >  
+# 12:35:21 >  
+# 12:35:21 >   mserver5 "--config=/ufs/niels/scratch/monetdb/Linux-x86_64/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB5:/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB5/lib:/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/niels/scratch/monetdb/Linux-x86_64/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/niels/scratch/monetdb/Linux-x86_64/var/MonetDB5/sql_logs"  --set mapi_open=true --set xrpc_open=true --set mapi_port=31630 --set xrpc_port=49305 --set monet_prompt= --trace "--dbname=mTests_src_test_BugTracker" --set mal_listing=0 "--dbinit= include sql;" ; echo ; echo Over..
+# 12:35:21 >  
 
-# Monet Database Server V4.16.3
-# Copyright (c) 1993-2007, CWI. All rights reserved.
-# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
-# Visit http://monetdb.cwi.nl/ for further information.
-
-printf("\nReady.\n");
+# MonetDB server v5.3.0, based on kernel v1.21.0
+# Serving database 'mTests_src_test_BugTracker'
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Copyright (c) 1993-2007 CWI, all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://koala.ins.cwi.nl:31630/
+# MonetDB/SQL module v2.21.0 loaded
 
 Ready.
-quit();
+#function user.main():void;
+#    clients.quit();
+#end main;
 
 Over..
 
-# 10:11:41 >  
-# 10:11:41 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35778 
-# 10:11:41 >  
+# 12:35:21 >  
+# 12:35:21 >  mclient -lsql -umonetdb -Pmonetdb --host=koala --port=31630 
+# 12:35:21 >  
 
-% .x # table_name
-% name # name
-% varchar # type
-% 12 # length
-[ "schemas"	]
-[ "types"	]
-[ "functions"	]
-[ "args"	]
-[ "sequences"	]
-[ "dependencies"	]
-[ "connections"	]
-[ "_tables"	]
-[ "_columns"	]
-[ "keys"	]
-[ "idxs"	]
-[ "triggers"	]
-[ "keycolumns"	]
-[ "_tables"	]
-[ "_columns"	]
-[ "keys"	]
-[ "idxs"	]
-[ "triggers"	]
-[ "keycolumns"	]
-[ "tables"	]
-[ "columns"	]
-[ "db_users"	]
-[ "users"	]
-[ "user_role"	]
-[ "auths"	]
-[ "privileges"	]
-[ "profile"	]
 
-# 14:16:47 >  
-# 14:16:47 >  Done.
-# 14:16:47 >  
+# 12:35:21 >  
+# 12:35:21 >  Done.
+# 12:35:21 >  
 
