@@ -1,36 +1,53 @@
 stdout of test 'remote01` in directory 'src/optimizer` itself:
 
 
-# 23:06:19 >  
-# 23:06:19 >  Mtimeout -timeout 60 mserver5 "--config=/ufs/mk/monet5/Linux/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5/Linux/var/MonetDB5/dblogs" --set mapi_port=30126 --set monet_prompt= --trace --dbname=mTests_src_optimizer  remote01.mal < /dev/null
-# 23:06:19 >  
+# 09:35:05 >  
+# 09:35:05 >   mserver5 "--config=/ufs/mk/monet5/Linux/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5//Linux/lib/MonetDB5:/ufs/mk/monet5//Linux/lib/MonetDB5/lib:/ufs/mk/monet5//Linux/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/mk/monet5//Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5//Linux/var/MonetDB5/sql_logs"  --set mapi_open=true --set xrpc_open=true --set mapi_port=39715 --set xrpc_port=43844 --set monet_prompt= --trace --dbname=mTests_src_optimizer  remote01.mal
+# 09:35:05 >  
 
-# MonetDB Server v4.99.19
-# Copyright (c) 1993-2006 CWI, all rights reserved
-# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs dynamically linked
-# config:/ufs/mk/monet5/Linux/etc/MonetDB5.conf
-# dbfarm:/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm
-# dbname:mTests_src_optimizer
+# MonetDB server v5.3.0, based on kernel v1.21.0
+# Serving database 'mTests_src_optimizer'
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Copyright (c) 1993-2007 CWI, all rights reserved
 # Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://gio.ins.cwi.nl:39715/
 ## First test of the remoteQueries optimizer
 ## we create a remote bat and fake a bind operation.
 #
-#mid:= mserver.reconnect("s0_0","localhost",50000,"monetdb","monetdb","mal");
-#mserver.rpc(mid,"rb:= bat.new(:int,:int); bat.setName(rb,\"rbat\"); bat.insert(rb,1,1);");
+#cat:= inspect.getEnvironment();
+#fs := algebra.find(cat,"mapi_port");
+#port := calc.int(fs);
+##io.printf("port %d\n",port);
 #
-#b:bat[:int,:int]:= mserver.bind(mid,"rbat");
-#mserver.rpc(mid,"c:=algebra.select(b,0,12);");
-#c:bat[:int,:int]:= mserver.rpc(mid, "io.print(c);");
+#mid:= mapi.reconnect("localhost",port,"s0_0","monetdb","monetdb","mal");
+#mapi.rpc(mid,"rb:= bat.new(:int,:int); bat.setName(rb,\"rbat\");");
+#mapi.rpc(mid,"bat.insert(rb,1,1);");
+#mapi.rpc(mid,"bat.insert(rb,3,3);");
+#mapi.rpc(mid,"bat.insert(rb,5,5);");
+#mapi.rpc(mid,"bat.insert(rb,6,6);");
+#mapi.rpc(mid,"bat.insert(rb,7,7);");
+#mapi.rpc(mid,"c:=algebra.select(rb,0,12);");
+#c:bat[:int,:int]:= mapi.rpc(mid, "io.print(c);");
 #io.print(c);
-#mserver.rpc(mid,"d:=algebra.select(b,5,10);");
+#mapi.rpc(mid,"c:=algebra.select(rb,0,4);");
+#c:bat[:int,:int]:= mapi.rpc(mid, "io.print(c);");
+#io.print(c);
+#
+#b:bat[:int,:int]:= mapi.bind(mid,"rbat");
+#io.print(b);
+#
+## see if we can do some remote selections.
+#mapi.rpc(mid,"d:=algebra.select(b,5,10);");
 #low:= 5+1;
-#mserver.put(mid,"low",low);
-#mserver.rpc(mid,"e:=algebra.select(d,low,7);");
-#mserver.rpc(mid,"i:=aggr.count(d);");
-#i:lng:= mserver.rpc(mid,"io.print(i);");
+#mapi.put(mid,"low",low);
+#mapi.rpc(mid,"e:=algebra.select(d,low,7);");
+#mapi.rpc(mid,"i:=aggr.count(d);");
+#i:lng:= mapi.rpc(mid,"io.print(i);");
 #io.printf(" count %d\n",i);
-#d:bat[:int,:int]:= mserver.rpc(mid,"io.print(d);");
+#d:bat[:int,:int]:= mapi.rpc(mid,"io.print(d);");
 #io.print(d);
+#mapi.disconnect(mid);
+#optimizer.remoteQueries();
 #
 function user.main():void;	# 0  (main:void)
 # First test of the remoteQueries optimizer 	# 1  (_1:str)
@@ -39,34 +56,33 @@ function user.main():void;	# 0  (main:void)
     fs := algebra.find(cat,"mapi_port");	# 4 ALGfind (fs:str)<-(cat:bat[:str,:str])(_5:str)
     port := calc.int(fs);	# 5 CALCstr2int (port:int)<-(fs:str)
 #io.printf("port %d\n",port); 	# 6  (_7:str)
-    mid := mserver.reconnect("localhost",port,"s0_0","monetdb","monetdb","mal");	# 7 SERVERreconnectAlias (mid:int)<-(_9:str)(port:int)(_10:str)(_11:str)(_11:str)(_12:str)
-    mserver.rpc(mid,"rb:= bat.new(:int,:int); bat.setName(rb,\"rbat\");");	# 8 SERVERquery (_13:void)<-(mid:int)(_14:str)
-    mserver.rpc(mid,"bat.insert(rb,1,1);");	# 9 SERVERquery (_15:void)<-(mid:int)(_16:str)
-    mserver.rpc(mid,"bat.insert(rb,3,3);");	# 10 SERVERquery (_17:void)<-(mid:int)(_18:str)
-    mserver.rpc(mid,"bat.insert(rb,5,5);");	# 11 SERVERquery (_19:void)<-(mid:int)(_20:str)
-    mserver.rpc(mid,"bat.insert(rb,6,6);");	# 12 SERVERquery (_21:void)<-(mid:int)(_22:str)
-    mserver.rpc(mid,"bat.insert(rb,7,7);");	# 13 SERVERquery (_23:void)<-(mid:int)(_24:str)
-    mserver.rpc(mid,"c:=algebra.select(rb,0,12);");	# 14 SERVERquery (_25:void)<-(mid:int)(_26:str)
-    c:bat[:int,:int]  := mserver.rpc(mid,"io.print(c);");	# 15 SERVERmapi_rpc_bat (c:bat[:int,:int])<-(mid:int)(_28:str)
+    mid := mapi.reconnect("localhost",port,"s0_0","monetdb","monetdb","mal");	# 7 SERVERreconnectAlias (mid:int)<-(_9:str)(port:int)(_10:str)(_11:str)(_11:str)(_12:str)
+    mapi.rpc(mid,"rb:= bat.new(:int,:int); bat.setName(rb,\"rbat\");");	# 8 SERVERquery (_13:void)<-(mid:int)(_14:str)
+    mapi.rpc(mid,"bat.insert(rb,1,1);");	# 9 SERVERquery (_15:void)<-(mid:int)(_16:str)
+    mapi.rpc(mid,"bat.insert(rb,3,3);");	# 10 SERVERquery (_17:void)<-(mid:int)(_18:str)
+    mapi.rpc(mid,"bat.insert(rb,5,5);");	# 11 SERVERquery (_19:void)<-(mid:int)(_20:str)
+    mapi.rpc(mid,"bat.insert(rb,6,6);");	# 12 SERVERquery (_21:void)<-(mid:int)(_22:str)
+    mapi.rpc(mid,"bat.insert(rb,7,7);");	# 13 SERVERquery (_23:void)<-(mid:int)(_24:str)
+    mapi.rpc(mid,"c:=algebra.select(rb,0,12);");	# 14 SERVERquery (_25:void)<-(mid:int)(_26:str)
+    c:bat[:int,:int]  := mapi.rpc(mid,"io.print(c);");	# 15 SERVERmapi_rpc_bat (c:bat[:int,:int])<-(mid:int)(_28:str)
     io.print(c);	# 16 IOprint_val (_29:void)<-(c:bat[:int,:int])
-    mserver.rpc(mid,"c:=algebra.select(rb,0,4);");	# 17 SERVERquery (_30:void)<-(mid:int)(_31:str)
-    c:bat[:int,:int]  := mserver.rpc(mid,"io.print(c);");	# 18 SERVERmapi_rpc_bat (c:bat[:int,:int])<-(mid:int)(_28:str)
+    mapi.rpc(mid,"c:=algebra.select(rb,0,4);");	# 17 SERVERquery (_30:void)<-(mid:int)(_31:str)
+    c:bat[:int,:int]  := mapi.rpc(mid,"io.print(c);");	# 18 SERVERmapi_rpc_bat (c:bat[:int,:int])<-(mid:int)(_28:str)
     io.print(c);	# 19 IOprint_val (_32:void)<-(c:bat[:int,:int])
-    mserver.rpc(mid,"b:bat[:int,:int] := bbp.bind(\"rbat\":str);");	# 20 SERVERmapi_rpc_bat (_57:bat[:int,:int])<-(mid:int)(_58:str)
-    b:bat[:int,:int]  := mserver.rpc(mid,"io.print(b);");	# 21 SERVERmapi_rpc_bat (b:bat[:int,:int])<-(mid:int)(_60:str)
-    io.print(b);	# 22 IOprint_val (_35:void)<-(b:bat[:int,:int])
-# see if we can do some remote selections. 	# 23  (_36:str)
-    mserver.rpc(mid,"d:=algebra.select(b,5,10);");	# 24 SERVERquery (_37:void)<-(mid:int)(_38:str)
-    low := calc.+(5,1);	# 25 CALCbinaryADDintint (low:int)<-(_40:int)(_41:int)
-    mserver.put(mid,"low",low);	# 26 SERVERput (_42:void)<-(mid:int)(_43:str)(low:int)
-    mserver.rpc(mid,"e:=algebra.select(d,low,7);");	# 27 SERVERquery (_44:void)<-(mid:int)(_45:str)
-    mserver.rpc(mid,"i:=aggr.count(d);");	# 28 SERVERquery (_46:void)<-(mid:int)(_47:str)
-    i:lng  := mserver.rpc(mid,"io.print(i);");	# 29 SERVERmapi_rpc_single_row (i:lng)<-(mid:int)(_49:str)
-    io.printf(" count %d\n",i);	# 30 IOprint_formatted_lng (_50:void)<-(_51:str)(i:lng)
-    d:bat[:int,:int]  := mserver.rpc(mid,"io.print(d);");	# 31 SERVERmapi_rpc_bat (d:bat[:int,:int])<-(mid:int)(_53:str)
-    io.print(d);	# 32 IOprint_val (_54:void)<-(d:bat[:int,:int])
-    mserver.disconnect(mid);	# 33 SERVERdisconnect (_55:void)<-(mid:int)
-end main;	# 34  
+    b:bat[:int,:int]  := mapi.bind(mid,"rbat");	# 20 SERVERbindBAT (b:bat[:int,:int])<-(mid:int)(_34:str)
+    io.print(b);	# 21 IOprint_val (_35:void)<-(b:bat[:int,:int])
+# see if we can do some remote selections. 	# 22  (_36:str)
+    mapi.rpc(mid,"d:=algebra.select(b,5,10);");	# 23 SERVERquery (_37:void)<-(mid:int)(_38:str)
+    low := calc.+(5,1);	# 24 CALCbinaryADDintint (low:int)<-(_40:int)(_41:int)
+    mapi.put(mid,"low",low);	# 25 SERVERput (_42:void)<-(mid:int)(_43:str)(low:int)
+    mapi.rpc(mid,"e:=algebra.select(d,low,7);");	# 26 SERVERquery (_44:void)<-(mid:int)(_45:str)
+    mapi.rpc(mid,"i:=aggr.count(d);");	# 27 SERVERquery (_46:void)<-(mid:int)(_47:str)
+    i:lng  := mapi.rpc(mid,"io.print(i);");	# 28 SERVERmapi_rpc_single_row (i:lng)<-(mid:int)(_49:str)
+    io.printf(" count %d\n",i);	# 29 IOprint_formatted_lng (_50:void)<-(_51:str)(i:lng)
+    d:bat[:int,:int]  := mapi.rpc(mid,"io.print(d);");	# 30 SERVERmapi_rpc_bat (d:bat[:int,:int])<-(mid:int)(_53:str)
+    io.print(d);	# 31 IOprint_val (_54:void)<-(d:bat[:int,:int])
+    mapi.disconnect(mid);	# 32 SERVERdisconnect (_55:void)<-(mid:int)
+end main;	# 33  
 #-----------------#
 # h	t	  # name
 # int	int	  # type
@@ -82,25 +98,12 @@ end main;	# 34
 #-----------------#
 [ 1,	  1	  ]
 [ 3,	  3	  ]
-#-----------------#
-# h	t	  # name
-# int	int	  # type
-#-----------------#
-[ 1,	  1	  ]
-[ 3,	  3	  ]
-[ 5,	  5	  ]
-[ 6,	  6	  ]
-[ 7,	  7	  ]
- count 3
-#-----------------#
-# h	t	  # name
-# int	int	  # type
-#-----------------#
-[ 5,	  5	  ]
-[ 6,	  6	  ]
-[ 7,	  7	  ]
+!MALException:mapi.bind:remote error: SyntaxException:parseError:b:bat[int,int]:=bbp.bind("rbat");
+!MALException:mapi.bind:remote error:SyntaxException:parseError:     ^',' expected
+!MALException:mapi.bind:remote error:SyntaxException:parseError:
+!MALException:mapi.bind:remote error:';' expected
 
-# 23:06:19 >  
-# 23:06:19 >  Done.
-# 23:06:19 >  
+# 09:35:05 >  
+# 09:35:05 >  Done.
+# 09:35:05 >  
 

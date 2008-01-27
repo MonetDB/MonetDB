@@ -1,12 +1,16 @@
 stderr of test 'remote00` in directory 'src/optimizer` itself:
 
 
-# 23:06:19 >  
-# 23:06:19 >  Mtimeout -timeout 60 mserver5 "--config=/ufs/mk/monet5/Linux/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5/Linux/var/MonetDB5/dblogs" --set mapi_port=30126 --set monet_prompt= --trace --dbname=mTests_src_optimizer  remote00.mal < /dev/null
-# 23:06:19 >  
+# 09:35:05 >  
+# 09:35:05 >  /usr/bin/python remote00.py remote00 
+# 09:35:05 >  
 
+#warning: please don't forget to set your vault key!
+#(see /ufs/mk/monet5/Linux/etc/monetdb5.conf)
+#warning: please don't forget to set your vault key!
+#(see /ufs/mk/monet5/Linux/etc/monetdb5.conf)
 
-# 23:06:19 >  
-# 23:06:19 >  Done.
-# 23:06:19 >  
+# 09:35:07 >  
+# 09:35:07 >  Done.
+# 09:35:07 >  
 
