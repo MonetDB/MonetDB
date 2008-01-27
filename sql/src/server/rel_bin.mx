@@ -33,6 +33,7 @@ extern stmt * rel_bin(mvc *sql, sql_rel *rel);
 #define LINESIZE 80
 
 #include "rel_bin.h"
+#include "rel_prop.h"
 
 static stmt * subrel_bin(mvc *sql, sql_rel *rel);
 
@@ -123,7 +124,7 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, group *grp)
 			atom *a = e->l;
 			s = stmt_atom(atom_dup(a));
 		} else if (e->r) { 		/* parameters */
-			s = stmt_var(e->r, e->f, 0, 0);
+			s = stmt_var(e->r, e->f, 0, e->flag);
 		} else { 			/* arguments */
 			s = stmt_varnr(e->flag, e->f);
 		}
@@ -133,10 +134,8 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, group *grp)
 		list *tps = e->r;
 		sql_subtype *from = tps->h->data;
 		sql_subtype *to = tps->h->next->data;
-		if (!l) {
-			assert(0);
+		if (!l) 
 			return NULL;
-		}
 		s = stmt_convert(l, from, to);
 	} 	break;
 	case e_func: {
@@ -149,7 +148,6 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, group *grp)
 
 				es = exp_bin(sql, en->data, left, right, grp);
 				if (!es) {
-					assert(0);
 					list_destroy(l);
 					return NULL;
 				}
@@ -177,10 +175,8 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, group *grp)
 			else
 				as = bin_first_column(left);
 		}
-		if (!as) {
-			assert(0);
+		if (!as) 
 			return NULL;	
-		}
 		/* inconsistent sql requires NULL != NULL and NULL <> NULL, ie unknown
 		 * but also NULL means no values, which means 'ignore'
 		 *
@@ -203,15 +199,10 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, group *grp)
 			s = stmt_aggr2(stmt_reverse(as), as2, sql_dup_aggr(a) );
 		else
 			s = stmt_aggr(as, g, sql_dup_aggr(a), 1 );
+		/* HACK: correct cardinality for window functions */
+		if (e->card > CARD_AGGR)
+			s->nrcols = 2;
 	} 	break;
-	case e_relation: {
-		stmt *r = NULL;
-		s = subrel_bin(sql, e->l );
-		if (s->type == st_list) 
-			r = stmt_dup(s->op1.lval->h->data);
-		stmt_destroy(s);
-		s = r;
-	}	break;
 	case e_column: {
 		if (right) /* check relation names */
 			s = bin_find_column(right, e->l, e->r);
@@ -233,7 +224,36 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, group *grp)
 	case e_cmp: {
 		stmt *l = NULL, *r = NULL;
 		int swapped = 0;
+		sql_exp *re = e->r;
+		prop *p;
 
+		/* here we handle join indices */
+		if ((p=find_prop(e->p, PROP_JOINIDX)) != NULL) {
+			/* it maybe much easier to rewrite the join expression
+			   in the optimizer, to allready use the 'columns'
+			   fk_idx, pk_idx
+			 */
+			sql_idx *i = p->value, *ri;
+			sql_fkey *fk = (sql_fkey*)i->key;
+
+			ri = fk->rkey->k.idx;
+
+			/* find out left and right */
+			l = bin_find_column(left, NULL, i->base.name);
+			if (!l) {
+				swapped = 1;
+				l = bin_find_column(right, NULL, i->base.name);
+				r = bin_find_column(left, NULL, ri->base.name);
+			} else {
+				r = bin_find_column(right, NULL, ri->base.name);
+			}
+			if (swapped)
+				s = stmt_join(r, stmt_reverse(l), cmp_equal);
+			else
+				s = stmt_join(l, stmt_reverse(r), cmp_equal);
+			sql->opt_stats[0]++; 
+			break;
+		}
 		if (!l) {
 			l = exp_bin(sql, e->l, left, NULL, grp);
 			swapped = 0;
@@ -245,13 +265,11 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, group *grp)
 		/* the escape charachter of like is in the right expression */
 		if (e->flag == cmp_notlike || e->flag == cmp_like) {
 			stmt *escape = NULL;
-			sql_exp *re = e->r;
 
-			if (re->type == e_exp) {
- 				r = exp_bin(sql, re->l, left, right, grp);
- 				escape = exp_bin(sql, re->r, left, right, grp);
+ 			r = exp_bin(sql, e->r, left, right, grp);
+			if (e->f) {
+ 				escape = exp_bin(sql, e->f, left, right, grp);
 			} else {
- 				r = exp_bin(sql, e->r, left, right, grp);
 				escape = stmt_atom_string(_strdup(""));
 			}
 			if (!l || !r || !escape) {
@@ -273,7 +291,7 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, group *grp)
 			if (r) stmt_destroy(r);
 			return NULL;
 		}
-		if (left && right) {
+		if (left && right && re->card > CARD_ATOM) {
 			if (swapped)
 				s = stmt_join(r, stmt_reverse(l), swap_compare((comp_type)e->flag));
 			else
@@ -322,6 +340,23 @@ rel2bin_basetable( mvc *sql, sql_rel *rel )
 		stmt *sc = stmt_bat(c, stmt_dup(ts), RDONLY);
 		list_append(l, sc);
 	}
+	if (t->idxs.set) {
+		for (n = t->idxs.set->h; n; n = n->next) {
+			sql_idx *i = n->data;
+			stmt *sc = NULL;
+
+			if (i->type == join_idx) {
+				sc = stmt_idxbat(i, RDONLY);
+			} else {
+				sql_column *c = t->columns.set->h->data;
+				sc = stmt_bat(c, stmt_dup(ts), RDONLY);
+				sc = stmt_mirror(sc);
+			}
+			sc = stmt_alias(sc, NULL, _strdup(i->base.name));
+			list_append(l, sc);
+		}
+	}
+	stmt_destroy(ts);
 	sub = stmt_list(l);
 	/* add aliases */
 	if (rel->exps) {
@@ -339,7 +374,6 @@ rel2bin_basetable( mvc *sql, sql_rel *rel )
 			list_append(l, s);
 		}
 	}
-	stmt_destroy(ts);
 	return sub;
 }
 
@@ -461,9 +495,9 @@ rel2bin_join( mvc *sql, sql_rel *rel )
 			}
 		}
 	} else {
-		join = stmt_join(
-			bin_first_column(left), 
-			stmt_reverse(bin_first_column(right)), cmp_all); 
+		stmt *l = bin_first_column(left);
+		stmt *r = bin_first_column(right);
+		join = stmt_join(l, stmt_reverse(r), cmp_all); 
 		
 	}
 
@@ -487,7 +521,7 @@ rel2bin_join( mvc *sql, sql_rel *rel )
 		stmt *c = n->data;
 		char *rnme = table_name(c);
 		char *nme = column_name(c);
-		stmt *s = stmt_join(stmt_dup(jl), stmt_dup(c), cmp_equal);
+		stmt *s = stmt_join(stmt_dup(jl), column(c), cmp_equal);
 
 		if (rel->op == op_left || rel->op == op_full)
 			s = stmt_append(s, stmt_join(stmt_dup(ld), stmt_dup(c), cmp_equal));
@@ -504,7 +538,7 @@ rel2bin_join( mvc *sql, sql_rel *rel )
 		stmt *c = n->data;
 		char *rnme = table_name(c);
 		char *nme = column_name(c);
-		stmt *s = stmt_join(stmt_dup(jr), stmt_dup(c), cmp_equal);
+		stmt *s = stmt_join(stmt_dup(jr), column(c), cmp_equal);
 
 		if (rel->op == op_left || rel->op == op_full) 
 			s = stmt_append(s, stmt_const(stmt_dup(ld), stmt_atom(atom_general(tail_type(c), NULL, 0))));
@@ -525,11 +559,37 @@ rel2bin_join( mvc *sql, sql_rel *rel )
 }
 
 static stmt *
+rel2bin_distinct(stmt *s)
+{
+	node *n;
+	group *grp = NULL;
+	list *rl = create_stmt_list();
+
+	for (n = s->op1.lval->h; n; n = n->next) {
+		stmt *t = n->data;
+
+		grp = grp_create(column(t), grp, NULL);
+	}
+
+	for (n = s->op1.lval->h; n; n = n->next) {
+		stmt *t = n->data;
+
+		list_append(rl, stmt_join(stmt_dup(grp->ext), stmt_dup(t), cmp_equal));
+	}
+
+	if (grp)
+		grp_destroy(grp);
+	stmt_destroy(s);
+	s = stmt_list(rl);
+	return s;
+}
+
+static stmt *
 rel2bin_union( mvc *sql, sql_rel *rel )
 {
 	list *l; 
 	node *n, *m;
-	stmt *left = NULL, *right = NULL;
+	stmt *left = NULL, *right = NULL, *sub;
 
 	if (rel->l) /* first construct the left sub relation */
 		left = subrel_bin(sql, rel->l);
@@ -567,7 +627,10 @@ rel2bin_union( mvc *sql, sql_rel *rel )
 	}
 	stmt_destroy(left);
 	stmt_destroy(right);
-	return stmt_list(l);
+	sub = stmt_list(l);
+	if (rel->flag&DISTINCT) /* distinct */
+		sub = rel2bin_distinct(sub);
+	return sub;
 }
 
 static stmt *
@@ -575,7 +638,7 @@ rel2bin_except( mvc *sql, sql_rel *rel )
 {
 	list *stmts; 
 	node *n, *m;
-	stmt *left = NULL, *right = NULL;
+	stmt *left = NULL, *right = NULL, *sub;
 
 	group *lgrp = NULL, *rgrp = NULL;
 	stmt *s, *lm, *ls = NULL, *rs = NULL, *ld = NULL;
@@ -682,7 +745,10 @@ rel2bin_except( mvc *sql, sql_rel *rel )
 
 	stmt_destroy(left);
 	stmt_destroy(right);
-	return stmt_list(stmts);
+	sub = stmt_list(stmts);
+	if (rel->flag&DISTINCT) /* distinct */
+		sub = rel2bin_distinct(sub);
+	return sub;
 }
 
 static stmt *
@@ -690,7 +756,7 @@ rel2bin_inter( mvc *sql, sql_rel *rel )
 {
 	list *stmts; 
 	node *n, *m;
-	stmt *left = NULL, *right = NULL;
+	stmt *left = NULL, *right = NULL, *sub;
 
 	group *lgrp = NULL, *rgrp = NULL;
 	stmt *s, *lm, *ls = NULL, *rs = NULL;
@@ -784,33 +850,10 @@ rel2bin_inter( mvc *sql, sql_rel *rel )
 
 	stmt_destroy(left);
 	stmt_destroy(right);
-	return stmt_list(stmts);
-}
-
-static stmt *
-rel2bin_distinct(stmt *s)
-{
-	node *n;
-	group *grp = NULL;
-	list *rl = create_stmt_list();
-
-	for (n = s->op1.lval->h; n; n = n->next) {
-		stmt *t = n->data;
-
-		grp = grp_create(column(t), grp, NULL);
-	}
-
-	for (n = s->op1.lval->h; n; n = n->next) {
-		stmt *t = n->data;
-
-		list_append(rl, stmt_join(stmt_dup(grp->ext), stmt_dup(t), cmp_equal));
-	}
-
-	if (grp)
-		grp_destroy(grp);
-	stmt_destroy(s);
-	s = stmt_list(rl);
-	return s;
+	sub = stmt_list(stmts);
+	if (rel->flag&DISTINCT) /* distinct */
+		sub = rel2bin_distinct(sub);
+	return sub;
 }
 
 static stmt *
@@ -818,12 +861,10 @@ rel2bin_project( mvc *sql, sql_rel *rel )
 {
 	list *l; 
 	node *en;
-	stmt *sub = NULL;
+	stmt *sub = NULL, *psub = NULL;
 
-	if (!rel->exps) {
-		assert(0);
-		return NULL;
-	}
+	if (!rel->exps) 
+		return stmt_none();
 
 	if (rel->l) { /* first construct the sub relation */
 		sub = subrel_bin(sql, rel->l);
@@ -852,12 +893,33 @@ rel2bin_project( mvc *sql, sql_rel *rel )
 		s = stmt_rename(rel, exp, s);
 		list_append(l, s);
 	}
+	psub = stmt_list(l);
+	if (rel->flag&DISTINCT) /* distinct */
+		psub = rel2bin_distinct(psub);
+	if (rel->r) {
+		list *oexps = rel->r;
+		stmt *orderby = NULL;
+
+		for (en = oexps->h; en; en = en->next) {
+			sql_exp *orderbycole = en->data; 
+			stmt *orderbycols = exp_bin(sql, orderbycole, sub, psub, NULL); 
+
+			if (!orderbycols) {
+				assert(0);
+				stmt_destroy(sub);
+				cond_stmt_destroy(orderby);
+				return NULL;
+			}
+			if (orderby)
+				orderby = stmt_reorder(orderby, orderbycols, orderbycole->flag&ASCENDING);
+			else
+				orderby = stmt_order(orderbycols, orderbycole->flag&ASCENDING);
+		}
+		psub = stmt_ordered(orderby, psub);
+	}
 	if (sub) 
 		stmt_destroy(sub);
-	sub = stmt_list(l);
-	if (rel->r) /* distinct */
-		sub = rel2bin_distinct(sub);
-	return sub;
+	return psub;
 }
 
 static stmt *
@@ -943,7 +1005,7 @@ rel2bin_groupby( mvc *sql, sql_rel *rel )
 {
 	list *l, *aggrs;
 	node *n, *en;
-	stmt *sub = NULL;
+	stmt *sub = NULL, *cursub;
 	group *groupby = NULL;
 
 
@@ -974,13 +1036,20 @@ rel2bin_groupby( mvc *sql, sql_rel *rel )
 	/* now aggregate */
 	l = create_stmt_list();
 	aggrs = rel->exps;
+	cursub = stmt_list(l);
 	for( n = aggrs->h; n; n = n->next ) {
 		sql_exp *aggrexp = n->data;
+
 		stmt *aggrstmt = exp_bin(sql, aggrexp, sub, NULL, groupby); 
 
+		/* maybe the aggr uses intermediate results of this group by,
+		   therefor we pass the group by columns too 
+		 */
+		if (!aggrstmt) 
+			aggrstmt = exp_bin(sql, aggrexp, sub, cursub, groupby); 
 		if (!aggrstmt) {
 			assert(0);
-			list_destroy(l);
+			stmt_destroy(cursub);
 			stmt_destroy(sub);
 			if (groupby) grp_destroy(groupby);
 			return NULL;
@@ -991,53 +1060,14 @@ rel2bin_groupby( mvc *sql, sql_rel *rel )
 	}
 	stmt_destroy(sub);
 	if (groupby) grp_destroy(groupby);
-	return stmt_list(l);
-}
-
-static stmt *
-rel2bin_orderby( mvc *sql, sql_rel *rel )
-{
-	node *en;
-	stmt *sub = NULL, *orderby = NULL;
-
-	if (!rel->exps) {
-		assert(0);
-		return NULL;
-	}
-
-	if (rel->l) /* first construct the sub relation */
-		sub = subrel_bin(sql, rel->l);
-	if (!sub) { 
-		assert(0);
-		return NULL;	
-	}
-
-	for( en = rel->exps->h; en; en = en->next->next ) {
-		sql_exp *orderbycole = en->data; 
-		stmt *orderbycols = exp_bin(sql, orderbycole, sub, NULL, NULL); 
-		sql_exp *directione = en->next->data;
-		atom *dir = directione->l;
-
-		if (!orderbycols) {
-			assert(0);
-			stmt_destroy(sub);
-			if (orderby) 
-				stmt_destroy(orderby);
-			return NULL;
-		}
-		if (orderby)
-			orderby = stmt_reorder(orderby, orderbycols, dir->data.val.ival);
-		else
-			orderby = stmt_order(orderbycols, dir->data.val.ival);
-	}
-	return stmt_ordered(orderby, sub);
+	return cursub;
 }
 
 static stmt *
 rel2bin_topn( mvc *sql, sql_rel *rel )
 {
 	list *newl;
-	int l = -1,o = 0;
+	int l = -1, o = 0;
 	stmt *sub = NULL, *order = NULL;
 	node *n;
 
@@ -1058,6 +1088,8 @@ rel2bin_topn( mvc *sql, sql_rel *rel )
 
 			a = offset->l;
 			o = a->data.val.ival;
+			if (o <= 0)
+				o = 0;
 		}
 	}
 
@@ -1072,21 +1104,39 @@ rel2bin_topn( mvc *sql, sql_rel *rel )
 
 	if (n) {
 		stmt *limit = NULL;
+		int lmt = l;
+
+		if (l < 0) {
+			l = o;
+			o = 0;
+		}
 
 		if (order) {
-		 	order = stmt_limit(order, o, l, 0);
-			limit = order;
+		 	limit = stmt_limit(stmt_dup(order), o, l, 0);
 		} else {
 			limit = stmt_limit(stmt_dup(n->data), o, l, 0);
-			n = n->next;
-			list_append(newl, limit);
+			if (lmt >= 0) {
+				n = n->next;
+				list_append(newl, limit);
+			}
 		}
 
 		for ( ; n; n = n->next) {
 			stmt *s;
 	
-			s = stmt_semijoin(stmt_dup(n->data), stmt_dup(limit));
+			if (lmt < 0)
+				s = stmt_diff(stmt_dup(n->data), stmt_dup(limit));
+			else
+				s = stmt_semijoin(stmt_dup(n->data), stmt_dup(limit));
 			list_append(newl, s);
+		}
+		if (order) {
+			if (lmt < 0) {
+		 		order = stmt_diff(order, limit);
+			} else {
+				stmt_destroy(order);
+		 		order = limit;
+			}
 		}
 	}
 	stmt_destroy(sub);
@@ -1132,9 +1182,6 @@ subrel_bin(mvc *sql, sql_rel *rel )
 	case op_select: 
 		s = rel2bin_select(sql, rel);
 		break;
-	case op_orderby: 
-		s = rel2bin_orderby(sql, rel);
-		break;
 	case op_groupby: 
 		s = rel2bin_groupby(sql, rel);
 		break;
@@ -1151,7 +1198,7 @@ stmt *
 rel_bin(mvc *sql, sql_rel *rel ) 
 {
 	stmt *s = subrel_bin( sql, rel);
-	if (s) {
+	if (s && s->type != st_none) {
 		s = stmt_output(s);
 		sql->type = Q_TABLE;
 	}

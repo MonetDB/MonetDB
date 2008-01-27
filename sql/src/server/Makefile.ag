@@ -65,8 +65,11 @@ lib_sqlserver = {
 		sql_xml.mx \
 		rel_semantic.mx \
 		rel_select.mx \
+		rel_prop.mx \
+		rel_exp.mx \
 		rel_optimizer.mx \
 		rel_bin.mx \
+		rel_xml.mx \
 		rel_dump.mx
 }
 

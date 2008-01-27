@@ -321,11 +321,9 @@ int yydebug=1;
 	when_search_statement
 	if_statement
 	while_statement
-	select_with_parens
-	select_no_parens
 	simple_select
-	complex_select
-	set_select
+	select_no_parens
+	select_no_parens_orderby
 	subquery
 	test_for_null
 	values_or_query_spec
@@ -654,7 +652,7 @@ int yydebug=1;
 %left <operation> OR
 %left <operation> AND
 %left <operation> NOT
-%left <operation> '('
+%left <operation> '(' ')'
 %left <sval> COMPARISON /* <> < > <= >= */
 %left <operation> '='
 %left <operation> '+' '-'
@@ -1742,7 +1740,7 @@ view_def:
   ;
 
 query_expression:
-	select_no_parens
+	select_no_parens_orderby
   ;
 
 opt_with_check_option:
@@ -1940,9 +1938,9 @@ return_statement:
    ;
 
 return_value:
-      complex_select
+      select_no_parens
    |  search_condition
-   |  TABLE '(' complex_select ')'	
+   |  TABLE '(' select_no_parens ')'	
 		{ $$ = _symbol_create_symbol(SQL_TABLE, $3); }
    |  sqlNULL 	{ $$ = _newAtomNode( NULL);  }
    ;
@@ -2393,7 +2391,7 @@ copyfrom_stmt:
 	  append_list(l, $7);
 	  append_list(l, $2);
 	  $$ = _symbol_create_list( SQL_COPYFROM, l ); }
-  | COPY select_no_parens INTO string opt_seps 
+  | COPY select_no_parens_orderby INTO string opt_seps 
 	{ dlist *l = L();
 	  append_symbol(l, $2);
 	  append_string(l, $4);
@@ -2563,7 +2561,7 @@ values_or_query_spec:
 		{ $$ = _symbol_create_list( SQL_VALUES, L()); }
  |   VALUES row_commalist
 		{ $$ = _symbol_create_list( SQL_VALUES, $2); }
- |  select_no_parens
+ |  select_no_parens_orderby
  ;
 
 
@@ -2606,8 +2604,7 @@ simple_atom:
 
 insert_atom:
     simple_atom
- |  simple_select
- |  set_select
+ |  select_no_parens_orderby
  ;
 
 opt_distinct:
@@ -2757,24 +2754,17 @@ with_list_element:
  ;
 
 sql:
-    select_no_parens
- |  '(' select_no_parens ')' 	{ $$ = $2; }
- ;
-
-select_with_parens:
-    '(' select_no_parens ')'	{ $$ = $2; }
- |  '(' select_with_parens ')'	{ $$ = $2; }
+    select_no_parens_orderby
  ;
 
 simple_select:
     SELECT opt_distinct selection table_exp
-		opt_order_by_clause opt_limit opt_offset
 	{ $$ = newSelectNode( SA, $2, $3, NULL,
 		$4->h->data.sym,
 		$4->h->next->data.sym,
 		$4->h->next->next->data.sym,
 		$4->h->next->next->next->data.sym,
-		$5, NULL, $6, $7);
+		NULL, NULL, -1, -1);
 	}
     ;
 
@@ -2789,6 +2779,16 @@ select_statement_single_row:
 	}
     ;
 
+select_no_parens_orderby:
+     select_no_parens opt_order_by_clause opt_limit opt_offset
+	{ SelectNode *s = (SelectNode*)$1;
+	  $$ = $1;
+	  s -> orderby = $2;
+	  s -> limit = $3;
+	  s -> offset = $4;
+	}
+    ;
+
 select_target_list:
 	target_specification 	{ $$ = append_string(L(), $1); }
  |  	select_target_list ',' target_specification
@@ -2800,19 +2800,7 @@ target_specification:
  ;
 
 select_no_parens:
-    simple_select
- |  set_select 
- ;
-
-complex_select:
-    select_no_parens
- |  select_with_parens
- ;
-
-set_select:
-
-    complex_select UNION
-	set_distinct opt_corresponding complex_select
+    select_no_parens UNION set_distinct opt_corresponding select_no_parens
 
 	{ dlist *l = L();
 	  append_symbol(l, $1);
@@ -2821,7 +2809,7 @@ set_select:
 	  append_symbol(l, $5);
 	  $$ = _symbol_create_list( SQL_UNION, l); }
 
- |  complex_select EXCEPT set_distinct opt_corresponding complex_select
+ |  select_no_parens EXCEPT set_distinct opt_corresponding select_no_parens
 
 	{ dlist *l = L();
 	  append_symbol(l, $1);
@@ -2830,7 +2818,7 @@ set_select:
 	  append_symbol(l, $5);
 	  $$ = _symbol_create_list( SQL_EXCEPT, l); }
 
- |  complex_select INTERSECT set_distinct opt_corresponding complex_select
+ |  select_no_parens INTERSECT set_distinct opt_corresponding select_no_parens
 
 	{ dlist *l = L();
 	  append_symbol(l, $1);
@@ -2838,6 +2826,8 @@ set_select:
 	  append_list(l, $4);
 	  append_symbol(l, $5);
 	  $$ = _symbol_create_list( SQL_INTERSECT, l); }
+ |  '(' select_no_parens ')' { $$ = $2; }
+ |   simple_select
  ;
 
 set_distinct:
@@ -2902,7 +2892,7 @@ simple_table:
 
 table_ref:
     simple_table
- |  select_with_parens table_name
+ |  subquery table_name
 				{
 				  $$ = $1;
 				  if ($$->token == SQL_SELECT) {
@@ -2912,7 +2902,7 @@ table_ref:
 				  	append_symbol($1->data.lval, $2);
 				  }
 				}
- |  select_with_parens
+ |  subquery
 				{ $$ = NULL;
 				  yyerror("subquery table reference needs alias, use AS xxx");
 				  YYABORT;
@@ -3165,7 +3155,7 @@ existence_test:
  ;
 
 subquery:
-	select_with_parens
+    '(' select_no_parens ')'	{ $$ = $2; }
  ;
 
 	/* simple_scalar expressions */

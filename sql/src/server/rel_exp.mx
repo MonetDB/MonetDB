@@ -1,0 +1,511 @@
+@' The contents of this file are subject to the MonetDB Public License
+@' Version 1.1 (the "License"); you may not use this file except in
+@' compliance with the License. You may obtain a copy of the License at
+@' http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+@'
+@' Software distributed under the License is distributed on an "AS IS"
+@' basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+@' License for the specific language governing rights and limitations
+@' under the License.
+@'
+@' The Original Code is the MonetDB Database System.
+@'
+@' The Initial Developer of the Original Code is CWI.
+@' Portions created by CWI are Copyright (C) 1997-2008 CWI.
+@' All Rights Reserved.
+
+@f rel_exp
+@a N.J. Nes
+@* 
+
+@h
+#ifndef _REL_EXP_H_
+#define _REL_EXP_H_
+
+typedef struct pair {
+	void *l, *r;
+} pair;
+
+#define new_exp_list() list_create((fdestroy)&exp_destroy)
+
+extern sql_exp *exp_create( int type);
+extern sql_exp *exp_dup(sql_exp* e);
+extern void exp_destroy(sql_exp* e);
+
+extern sql_exp *exp_compare( sql_exp *l, sql_exp *r, int cmptype);
+extern sql_exp *exp_like( sql_exp *l, sql_exp *r, sql_exp *esc, int like);
+
+#define exp_fromtype(e)	((list*)e->r)->h->data
+#define exp_totype(e)	((list*)e->r)->h->next->data
+extern sql_exp *exp_convert( sql_exp *exp, sql_subtype *fromtype, sql_subtype *totype );
+extern sql_exp *exp_op( list *l, sql_subfunc *f );
+
+#define append(l,v) list_append(l,v) 
+#define exp_unop(l,f) \
+	exp_op(append(new_exp_list(),l), f)
+#define exp_binop(l,r,f) \
+	exp_op(append(append(new_exp_list(),l),r), f)
+#define exp_op3(l,r,r2,f) \
+	exp_op(append(append(append(new_exp_list(),l),r),r2), f)
+#define exp_op4(l,r,r2,r3,f) \
+	exp_op(append(append(append(append(new_exp_list(),l),r),r2),r3), f)
+extern sql_exp *exp_aggr( list *l, sql_subaggr *a, int distinct, int no_nils, int card );
+extern sql_exp * exp_atom( atom *a);
+extern sql_exp * exp_atom_int(int i);
+extern sql_exp * exp_atom_str(str s, sql_subtype *st);
+extern sql_exp * exp_atom_clob(str s);
+
+extern void exp_swap( sql_exp *e );
+
+extern sql_subtype * exp_subtype( sql_exp *e );
+extern char * exp_name( sql_exp *e );
+
+extern int exps_card( list *l );
+
+extern char *exp_find_rel_name(sql_exp *e);
+
+extern sql_exp *rel_find_exp( sql_rel *rel, sql_exp *e);
+
+extern int exp_is_join(sql_exp *e);
+extern int exp_is_eqjoin(sql_exp *e);
+extern int exp_is_correlation(sql_exp *e, sql_rel *r );
+
+extern sql_exp *exps_bind_column( list *exps, char *cname);
+extern sql_exp *exps_bind_column2( list *exps, char *tname, char *cname);
+
+#endif /* _REL_EXP_H_ */
+@c
+#include <sql_config.h>
+#include "sql_semantic.h"
+#include "rel_semantic.h"
+#include "rel_exp.h"
+
+sql_exp * 
+exp_create( int type ) 
+{
+	sql_exp *e = NEW(sql_exp);
+	sql_ref_init(&e->ref);
+	e->name = NULL;
+	e->card = 0;
+	e->flag = 0;
+	e->l = e->r = NULL;
+	e->type = (expression_type)type;
+	e->f = NULL;
+	e->p = NULL;
+	return e;
+}
+
+sql_exp *
+exp_dup(sql_exp *exp)
+{
+	sql_ref_inc(&exp->ref);
+	return exp;
+}
+
+void 
+exp_destroy(sql_exp *exp)
+{
+	if (!exp) 
+		return;
+	if (sql_ref_dec(&exp->ref) > 0)
+		return;
+	if (exp->name) 
+		_DELETE(exp->name);
+	switch(exp->type){
+	case e_atom:
+		if (exp->l) 
+			atom_destroy(exp->l);
+		if (exp->r) 
+			_DELETE(exp->r);
+		break;
+	case e_column:
+		if (exp->l)
+			_DELETE(exp->l);
+		_DELETE(exp->r);
+		break;
+	case e_cmp:
+		exp_destroy(exp->l);
+		exp_destroy(exp->r);
+		if (exp->f)
+			exp_destroy(exp->f);
+		break;
+	case e_convert:
+		exp_destroy(exp->l);
+		list_destroy(exp->r);
+		break;
+	case e_aggr:
+		sql_subaggr_destroy(exp->f);
+		if (exp->l) list_destroy(exp->l);
+		break;
+	case e_func:
+		if (exp->f) sql_subfunc_destroy(exp->f);
+		if (exp->l) list_destroy(exp->l);
+		break;
+	default:
+		printf("TODO: exp_destroy %u\n", exp->type);
+	}
+	_DELETE(exp);
+}
+
+sql_exp * 
+exp_compare( sql_exp *l, sql_exp *r, int cmptype) 
+{
+	sql_exp *e = exp_create(e_cmp);
+	e->card = l->card;
+	e->l = l;
+	e->r = r;
+	e->flag = cmptype;
+	return e;
+}
+
+sql_exp * 
+exp_like( sql_exp *l, sql_exp *r, sql_exp *esc, int like) 
+{
+	sql_exp *e = exp_create(e_cmp);
+	e->card = l->card;
+	e->l = l;
+	e->r = r;
+	if (esc)
+		e->f = esc;
+	e->flag = like;
+	return e;
+}
+
+static sql_subtype*
+dup_subtype(sql_subtype *st)
+{
+	sql_subtype *res = NEW(sql_subtype);
+
+	*res = *st;
+	return res;
+}
+
+#define new_subtype_list() list_create((fdestroy)&sql_subtype_destroy)
+
+sql_exp * 
+exp_convert( sql_exp *exp, sql_subtype *fromtype, sql_subtype *totype )
+{
+	sql_exp *e = exp_create(e_convert);
+	e->card = exp->card;
+	e->l = exp;
+	totype = dup_subtype(totype);
+	e->r = append(append(new_subtype_list(),
+			dup_subtype(fromtype)),totype);
+	e->f = totype; /* keep a pointer to the copied type, the original may
+			  disappear */
+	return e;
+}
+
+sql_exp * 
+exp_op( list *l, sql_subfunc *f )
+{
+	sql_exp *e = exp_create(e_func);
+	e->card = exps_card(l);
+	if (!l || list_length(l) == 0)
+		e->card = CARD_ATOM; /* unop returns a single atom */
+	e->l = l;
+	e->f = f; 
+	return e;
+}
+
+sql_exp * 
+exp_aggr( list *l, sql_subaggr *a, int distinct, int no_nils, int card )
+{
+	sql_exp *e = exp_create(e_aggr);
+	e->card = card;
+	e->l = l;
+	e->f = a; 
+	e->flag = (no_nils<<1) + distinct;
+	return e;
+}
+
+sql_exp * exp_atom( atom *a) 
+{
+	sql_exp *e = exp_create(e_atom);
+	e->card = CARD_ATOM;
+	e->l = a;
+	return e;
+}
+
+sql_exp *
+exp_atom_int(int i) 
+{
+	sql_subtype it; 
+
+	sql_find_subtype(&it, "int", 9, 0);
+	return exp_atom(atom_int(&it, i ));
+}
+
+sql_exp *
+exp_atom_str(str s, sql_subtype *st) 
+{
+	return exp_atom(atom_string(st, _strdup(s), 1 ));
+}
+
+sql_exp *
+exp_atom_clob(str s) 
+{
+	sql_subtype clob;
+
+	sql_find_subtype(&clob, "clob", 0, 0);
+	return exp_atom(atom_string(&clob, _strdup(s), 1 ));
+}
+
+void
+exp_swap( sql_exp *e ) 
+{
+	sql_exp *s = e->l;
+
+	e->l = e->r;
+	e->r = s;
+	e->flag = swap_compare(e->flag);
+}
+
+sql_subtype *
+exp_subtype( sql_exp *e )
+{
+	switch(e->type) {
+	case e_atom: {
+		if (e->l) {
+			atom *a = e->l;
+			return atom_type(a);
+		} else { /* atom reference */
+			return e->f;
+		}
+	}
+	case e_convert:
+	case e_column:
+		return e->f;
+	case e_aggr: {
+		sql_subaggr *a = e->f;
+		return &a->res;
+	}
+	case e_func: {
+		if (e->f) {
+			sql_subfunc *f = e->f;
+			return &f->res;
+		}
+		return NULL;
+	}
+	case e_cmp:
+		/* return bit */
+	default:
+		return NULL;
+	}
+}
+
+char *
+exp_name( sql_exp *e )
+{
+	if (e->name)
+		return e->name;
+	if (e->type == e_convert && e->l)
+		return exp_name(e->l);
+	if (!e->name && e->type == e_atom)
+		return "single_value";
+	return NULL;
+}
+
+
+int
+exps_card( list *l ) 
+{
+	node *n;
+	int card = 0;
+
+	if (l) for(n = l->h; n; n = n->next) {
+		sql_exp *e = n->data;
+
+		if (card < e->card)
+			card = e->card;
+	}
+	return card;
+}
+	
+char *
+exp_find_rel_name(sql_exp *e)
+{
+	switch(e->type) {
+	case e_column:
+		if (e->l)
+			return e->l;
+		break;
+	case e_convert:
+		return exp_find_rel_name(e->l);
+	default:
+		return NULL;
+	}
+	return NULL;
+}
+
+int
+exp_is_join(sql_exp *e)
+{
+	if (e->type == e_cmp && e->l && e->r)
+		return 0;
+	return -1;
+}
+
+int
+exp_is_eqjoin(sql_exp *e)
+{
+	if (e->flag == cmp_equal)
+		return 0;
+	return -1; 
+}
+
+static sql_exp *
+rel_find_exp_( sql_rel *rel, sql_exp *e) 
+{
+	sql_exp *ne = NULL;
+
+	switch(e->type) {
+	case e_column:
+		if (e->l) { 
+			ne = exps_bind_column2(rel->exps, e->l, e->r);
+			/* if relation name matches expressions relation name, find column based on column name alone */
+			if (!ne && rel->name && strcmp(e->l, rel->name) == 0) 
+				ne = exps_bind_column(rel->exps, e->r);
+		} else {
+			ne = exps_bind_column(rel->exps, e->r);
+		}
+		return ne;
+	case e_convert:
+		return rel_find_exp(rel, e->l);
+	case e_aggr:
+	case e_func: {
+		list *l = e->l;
+		if (l->h)
+			return rel_find_exp(rel, l->h->data);
+	}
+	case e_cmp:	
+		return NULL;
+	case e_atom:
+		return ne;
+	}
+	return ne;
+}
+
+sql_exp *
+rel_find_exp( sql_rel *rel, sql_exp *e)
+{
+	sql_exp *ne = rel_find_exp_(rel, e);
+	if (!ne) {
+		switch(rel->op) {
+		case op_left:
+		case op_right:
+		case op_full:
+		case op_join:
+			ne = rel_find_exp(rel->l, e);
+			if (!ne) 
+				ne = rel_find_exp(rel->r, e);
+			break;
+		case op_table:
+			if (e->l && rel->name && strcmp(e->l, rel->name) != 0)
+				return NULL;
+			if (rel->exps && exps_bind_column(rel->exps, e->r)) 
+				ne = e;
+			break;
+		case op_basetable: 
+	    	{
+			sql_table *t = rel->l;
+
+			if (e->l) {
+				if (rel->name && strcmp(e->l, rel->name) != 0)
+					return NULL;
+				else if (!rel->name && strcmp(e->l, t->base.name) != 0)
+					return NULL;
+			}
+			if (rel->exps) { 
+				ne = exps_bind_column(rel->exps, e->r);
+			} else {
+				node *n;
+				for (n = t->columns.set->h; n; n = n->next) {
+					sql_column *c = n->data;
+					if (strcmp(c->base.name, e->r) == 0) {
+						ne = e;
+						break;
+					}
+				}
+			}
+			break;
+	    	}
+		default:
+			if (!is_project(rel->op) && rel->l)
+				ne = rel_find_exp(rel->l, e);
+		}
+	}
+	return ne;
+}
+
+int 
+exp_is_correlation(sql_exp *e, sql_rel *r )
+{
+	if (e->type == e_cmp) {
+		sql_exp *le = rel_find_exp(r->l, e->l);
+		sql_exp *re = rel_find_exp(r->r, e->r);
+
+		if (le && re)
+			return 0;
+		le = rel_find_exp(r->r, e->l);
+		re = rel_find_exp(r->l, e->r);
+		if (le && re) {
+			/* for future processing we depend on 
+			   the correct order of the expression, ie swap here */
+			exp_swap(e);
+			return 0;
+		}
+	}
+	return -1;
+}
+
+sql_exp *
+exps_bind_column( list *exps, char *cname ) 
+{
+	if (exps) {
+		node *en;
+
+		for (en = exps->h; en; en = en->next ) {
+			sql_exp *e = en->data;
+			if (e->name && strcmp(e->name, cname) == 0)
+				return e;
+		}
+	}
+	return NULL;
+}
+
+static sql_exp *
+exp_find_column( sql_exp *e )
+{
+	while(e && e->type != e_column) {
+		if (e->type == e_atom || e->type == e_cmp || !e->l)
+			return NULL;
+		if (e->type == e_aggr || e->type == e_func) {
+			list *l = e->l;
+			e = l->h->data;
+		}
+		if (e->type == e_convert) 
+			e = e->l;
+	}
+	return e;
+}
+
+sql_exp *
+exps_bind_column2( list *exps, char *tname, char *cname ) 
+{
+	if (exps) {
+		node *en;
+
+		for (en = exps->h; en; en = en->next ) {
+			sql_exp *e = exp_find_column(en->data);
+		
+			if (e && e->type == e_column && e->name && e->l && strcmp(e->name, cname) == 0 && strcmp(e->l, tname) == 0)
+				return e;
+			if (e && e->type == e_column && !e->name && e->l && e->r && strcmp(e->r, cname) == 0 && strcmp(e->l, tname) == 0)
+				return e;
+		}
+	}
+	return NULL;
+}
+
+

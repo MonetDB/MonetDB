@@ -73,7 +73,7 @@ cmp_print(mvc *sql, int cmp)
 	printf(" %s ", r);
 }
 
-static void exps_print(mvc *sql, list *exps, int depth, int alias);
+static void exps_print(mvc *sql, list *exps, int depth, int alias, int brackets);
 
 static void
 exp_print(mvc *sql, sql_exp *e, int depth, int comma, int alias) 
@@ -82,15 +82,10 @@ exp_print(mvc *sql, sql_exp *e, int depth, int comma, int alias)
 	if (!e)
 		return;
 	switch(e->type) {
-	case e_exp: 
-		exp_print(sql, e->l, depth, 0, 0);
-		printf(", ");
-		exp_print(sql, e->r, depth, 0, 0);
-	 	break;
 	case e_convert: {
-		printf("convert( ");
+		printf("convert(");
 		exp_print(sql, e->l, depth, 0, 0);
-		printf(") ");
+		printf(")");
 	 	break;
 	}
 	case e_atom: {
@@ -113,19 +108,18 @@ exp_print(mvc *sql, sql_exp *e, int depth, int comma, int alias)
 	} 	break;
 	case e_func: {
 		sql_subfunc *f = e->f;
-		printf("'%s' ", f->func->base.name );
-		exps_print( sql, e->l, depth, alias);
+		printf("%s", f->func->base.name );
+		exps_print( sql, e->l, depth, alias, 1);
 	} 	break;
 	case e_aggr: {
 		sql_subaggr *a = e->f;
-		printf("'%s' ", a->aggr->base.name );
-		if (e->flag)
-			printf("unique ");
-		exps_print( sql, e->l, depth, alias);
+		printf("%s", a->aggr->base.name );
+		if (e->flag&DISTINCT)
+			printf(" unique ");
+		if (e->flag&NO_NIL)
+			printf(" no nil ");
+		exps_print( sql, e->l, depth, alias, 1);
 	} 	break;
-	case e_relation: 
-		rel_print(sql, e->l, depth);
-	 	break;
 	case e_column: 
 		if (e->l)
 			printf("%s.", (char*)e->l);
@@ -137,10 +131,16 @@ exp_print(mvc *sql, sql_exp *e, int depth, int comma, int alias)
 		exp_print(sql, e->l, depth+1, 0, 0);
 		cmp_print(sql, e->flag );
 		exp_print(sql, e->r, depth+1, 0, 0);
+		if (e->f) {
+			printf(", ");
+			exp_print(sql, e->f, depth+1, 0, 0);
+		}
 	 	break;
 	default:
 		;
 	}
+	if (e->flag&ASCENDING)
+		printf(" ASC");
 	if (e->name && alias)
 		printf(" as %s", e->name);
 	if (comma)
@@ -148,17 +148,23 @@ exp_print(mvc *sql, sql_exp *e, int depth, int comma, int alias)
 }
 
 static void
-exps_print(mvc *sql, list *exps, int depth, int alias) 
+exps_print(mvc *sql, list *exps, int depth, int alias, int brackets) 
 {
 	node *en;
 
 	if (!exps)
 		return;
 
-	printf(" [ ");
+	if (brackets)
+		printf("(");
+	else
+		printf(" [ ");
 	for( en = exps->h; en; en = en->next ) 
 		exp_print(sql, en->data, depth+1, (en->next!=NULL), alias);
-	printf(" ]");
+	if (brackets)
+		printf(")");
+	else
+		printf(" ]");
 }
 
 const char *
@@ -184,8 +190,6 @@ op2string(operator_type op)
 		return "set op";
 	case op_groupby: 
 		return "group by";
-	case op_orderby: 
-		return "order by";
 	case op_topn: 
 		return "topn";
 	}
@@ -211,7 +215,7 @@ rel_print(mvc *sql, sql_rel *rel, int depth)
 		}
 		if (rel->exps) {
 			printf(" aliases");
-			exps_print(sql, rel->exps, depth, 1);
+			exps_print(sql, rel->exps, depth, 1, 0);
 		}
 		break;
 	case op_table:
@@ -220,7 +224,7 @@ rel_print(mvc *sql, sql_rel *rel, int depth)
 			printf("table(%s)", rel->name);
 		}
 		if (rel->exps) {
-			exps_print(sql, rel->exps, depth, 1);
+			exps_print(sql, rel->exps, depth, 1, 0);
 		}
 		break;
 	case op_join: 
@@ -246,43 +250,46 @@ rel_print(mvc *sql, sql_rel *rel, int depth)
 		else if (!rel->exps && rel->op == op_join)
 			r = "crossproduct";
 		print_indent(sql, depth);
+		if (is_distinct(rel))
+			printf("distinct ");
 		printf("%s (", r);
 		rel_print(sql, rel->l, depth+1);
 		printf(",");
 		rel_print(sql, rel->r, depth+1);
 		print_indent(sql, depth);
 		printf(")");
-		exps_print(sql, rel->exps, depth, 0);
+		exps_print(sql, rel->exps, depth, 0, 0);
 		if (rel->name)
 			printf(" as %s", rel->name);
 		break;
 	case op_project:
 	case op_select: 
 	case op_groupby: 
-	case op_orderby: 
 	case op_topn: 
 		r = "project";
-		if (rel->op == op_project && rel->r)
-			r = "distinct";
 		if (rel->op == op_select)
 			r = "select";
 		if (rel->op == op_groupby)
 			r = "group by";
-		if (rel->op == op_orderby)
-			r = "order by";
 		if (rel->op == op_topn)
 			r = "top N";
 		if (rel->l) {
 			print_indent(sql, depth);
+			if (is_distinct(rel))
+				printf("distinct ");
 			printf("%s (", r);
 			rel_print(sql, rel->l, depth+1);
 			print_indent(sql, depth);
 			printf(")");
 		}
-		if (rel->r && rel->op == op_groupby) { /* group by columns */
-			exps_print(sql, rel->r, depth, 1);
+		if (rel->r && 
+	           (rel->op == op_groupby || rel->op == op_project)) { 
+		   /* group by and order by columns */
+			if (rel->op == op_project)
+				r = " order by ";
+			exps_print(sql, rel->r, depth, 1, 0);
 		}
-		exps_print(sql, rel->exps, depth, 1);
+		exps_print(sql, rel->exps, depth, 1, 0);
 		if (rel->name)
 			printf(" as %s", rel->name);
 		break;

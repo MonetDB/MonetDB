@@ -1114,7 +1114,7 @@ push_selects_down(mvc *c, list *con)
 				/* replace foreign key joins by index */
 				if (idx && fkjoins) {
 					int nr = 0;
-					jdx = stmt_idxbat(idx, 0);
+					jdx = stmt_idxbat(idx, RDONLY);
 					jdx->nrcols = 2;
 					if(tail) {
 						jdx->h = stmt_dup(((stmt*)fkjoins->h->data)->t);

@@ -29,10 +29,18 @@ extern sql_rel * rel_optimizer(mvc *sql, sql_rel *rel);
 #endif /*_REL_OPTIMIZER_H_*/
 @c
 
+//#define DEBUG
+
 #include "sql_config.h"
 #include "rel_optimizer.h"
 #include "rel_select.h"
+#include "rel_prop.h"
+#include "rel_exp.h"
 #include "rel_dump.h"
+
+typedef struct global_props {
+	int cnt[MAXOPS];
+} global_props;
 
 typedef sql_rel *(*rewrite_fptr)(mvc *sql, sql_rel *rel);
 typedef int (*find_prop_fptr)(mvc *sql, sql_rel *rel);
@@ -45,44 +53,7 @@ typedef int (*find_prop_fptr)(mvc *sql, sql_rel *rel);
    a select this join is choosen over one without such selections. 
  */
 
-typedef struct prop {
-	sql_rel *r;	/* the relation sub tree with the property */
-	int kind;	/* kind of property */
-	int value;	/* most properties are integer valued properties */
-	struct prop *p;	/* some relations may have many properties, 
-			   which are kept in a chain list */
-} prop;
-
-typedef struct global_props {
-	int cnt[MAXOPS];
-} global_props;
-
-#define PROP_COUNT	0
-
-#define prop_list() 	list_create((fdestroy)&prop_destroy)
-
-static void
-prop_destroy( prop *p )
-{
-	if (p->p)
-		prop_destroy(p->p);
-	_DELETE(p);
-}
-
-static prop *
-prop_create( int kind, sql_rel *r, prop *pre )
-{
-	prop *p = NEW(prop);
-	
-	p->r = r;
-	p->kind = kind;
-	p->value = 0;
-	p->p = pre;
-	return p;
-}
-
 /* currently we only find simple column expressions */
-
 static sql_column *
 name_find_column( sql_rel *rel, char *rname, char *name ) 
 {
@@ -119,7 +90,8 @@ name_find_column( sql_rel *rel, char *rname, char *name )
 			return NULL;
 		if (rel->exps)
 			alias = exps_bind_column(rel->exps, name);
-		break;
+		/* table func */
+		return NULL;
 	case op_join: 
 	case op_left: 
 	case op_right: 
@@ -133,7 +105,6 @@ name_find_column( sql_rel *rel, char *rname, char *name )
 	case op_union: 
 	case op_inter: 
 	case op_except: 
-	case op_orderby: 
 	case op_topn: 
 		return name_find_column( rel->l, rname, name);
 	case op_project:
@@ -225,7 +196,6 @@ rel_properties(mvc *sql, global_props *gp, sql_rel *rel)
 	case op_project:
 	case op_select: 
 	case op_groupby: 
-	case op_orderby: 
 	case op_topn: 
 		if (rel->l)
 			rel_properties(sql, gp, rel->l);
@@ -235,7 +205,7 @@ rel_properties(mvc *sql, global_props *gp, sql_rel *rel)
 	switch (rel->op) {
 	case op_basetable:
 	case op_table:
-		rel->p = prop_create(PROP_COUNT, rel, rel->p);
+		rel->p = prop_create(PROP_COUNT, rel->p);
 		break;
 	case op_join: 
 		join_properties(rel);
@@ -251,7 +221,6 @@ rel_properties(mvc *sql, global_props *gp, sql_rel *rel)
 
 	case op_project:
 	case op_groupby: 
-	case op_orderby: 
 	case op_topn: 
 	case op_select: 
 		/* propagate relation names */
@@ -285,27 +254,10 @@ get_tables(mvc *sql, sql_rel *rel, list *tables)
 	case op_project:
 	case op_select: 
 	case op_groupby: 
-	case op_orderby: 
 	case op_topn: 
 		get_tables(sql, rel->l, tables);
 		break;
 	}
-}
-
-static char *
-find_rel_name(sql_exp *e)
-{
-	switch(e->type) {
-	case e_column:
-		if (e->l)
-			return e->l;
-		break;
-	case e_convert:
-		return find_rel_name(e->l);
-	default:
-		return NULL;
-	}
-	return NULL;
 }
 
 static void
@@ -326,8 +278,8 @@ relation_names(list *exps)
 	for(n = exps->h; n; n = n->next) {
 		sql_exp *e = n->data;
 		if (e->type == e_cmp) {
-			cond_append(l, find_rel_name(e->l));
-			cond_append(l, find_rel_name(e->r));
+			cond_append(l, exp_find_rel_name(e->l));
+			cond_append(l, exp_find_rel_name(e->r));
 		}
 	}
 	return l;
@@ -352,6 +304,10 @@ static int
 exp_count(int *cnt, int seqnr, sql_exp *e) 
 {
 	(void)seqnr;
+	if (!e)
+		return 0;
+	if (find_prop(e->p, PROP_JOINIDX))
+		*cnt += 100;
 	switch(e->type) {
 	case e_cmp:
 		switch (e->flag) {
@@ -375,24 +331,12 @@ exp_count(int *cnt, int seqnr, sql_exp *e)
 	return 0;
 }
 
-static sql_rel * 
-rel_smallest(sql_rel *r, sql_rel *key) 
+static int
+exp_keyvalue(sql_exp *e) 
 {
-	if (r->exps && key->exps) {
-		int rcnt = 0, kcnt = 0;
-
-		list_traverse(r->exps, (traverse_func)&exp_count, &rcnt);   
-		list_traverse(key->exps, (traverse_func)&exp_count, &kcnt);  
-		if (rcnt > kcnt) {
-			return r;
-		} else {
-			return key;
-		}
-	} else if (r->exps) {
-		return r;
-	} else {
-		return key;
-	}
+	int cnt = 0;
+	exp_count(&cnt, 0, e);
+	return cnt;
 }
 
 /* return matching relation */
@@ -400,67 +344,51 @@ static int
 matching_rel(sql_rel *r, sql_exp *je) 
 {
 	if (je->type == e_cmp) {
-		char *name = find_rel_name(je->l);
+		char *name = exp_find_rel_name(je->l);
 		if (name && r->name && strcmp(name,r->name) == 0)
 			return 0; 
-		name = find_rel_name(je->r);
+		name = exp_find_rel_name(je->r);
 		if (name && r->name && strcmp(name,r->name) == 0)
 			return 0; 
 	} 
+	if (je->type == e_column) {
+		char *name = exp_find_rel_name(je);
+		if (name && r->name && strcmp(name,r->name) == 0)
+			return 0; 
+	}
 	return -1;
 }
-
-/* return join expression for relation r */
-static int 
-join_exp(sql_exp *je, sql_rel *r) 
-{
-	if (je->type == e_cmp) {
-		char *name = find_rel_name(je->l);
-		if (name && r->name && strcmp(name,r->name) == 0) {
-			return 0; 
-		} else {
-			char *name = find_rel_name(je->r);
-			if (name && r->name && strcmp(name,r->name) ==0)
-				return 0; 
-		}
-	} 
-	return -1;
-}
-
-typedef struct pair {
-	void *l, *r;
-} pair;
-
-static int 
-rel_exp(sql_exp *je, pair *p) {
-	if (je->type == e_cmp) {
-		char *lname = find_rel_name(je->l);
-		char *rname = find_rel_name(je->r);
-
-		if (!lname || !rname)
-			return -1;
-		if (strcmp(lname,p->l) == 0 && strcmp(rname,p->r) == 0) 
-			return 0; 
-		if (strcmp(lname,p->r) == 0 && strcmp(rname,p->l) == 0) 
-			return 0; 
-	} 
-	return -1;
-} 
 
 static int
-joinexp_cmp(sql_exp *h, sql_exp *key)
+rel_has_exp(sql_rel *rel, sql_exp *e) 
 {
-	char *h_lname = find_rel_name(h->l);
-	char *h_rname = find_rel_name(h->r);
-	char *key_lname = find_rel_name(key->l);
-	char *key_rname = find_rel_name(key->r);
+	if (rel_find_exp(rel, e) != NULL) 
+		return 0;
+	return -1;
+}
+
+static sql_rel *
+find_rel(list *rels, sql_exp *e)
+{
+	node *n = list_find(rels, e, (fcmp)&rel_has_exp);
+	if (n) 
+		return n->data;
+	return NULL;
+}
+
+static int
+joinexp_cmp(list *rels, sql_exp *h, sql_exp *key)
+{
+	sql_rel *h_l = find_rel(rels, h->l);
+	sql_rel *h_r = find_rel(rels, h->r);
+	sql_rel *key_l = find_rel(rels, key->l);
+	sql_rel *key_r  = find_rel(rels, key->r);
 
 	assert (h->type == e_cmp && key->type == e_cmp);
-	if (strcmp(h_lname, key_lname) == 0 &&
-	    strcmp(h_rname, key_rname) == 0)
+	assert (h_l && h_r && key_l && key_r);
+	if (h_l == key_l && h_r == key_r)
 		return 0;
-	if (strcmp(h_rname, key_lname) == 0 &&
-	    strcmp(h_lname, key_rname) == 0)
+	if (h_r == key_l && h_l == key_r)
 		return 0;
         return -1;
 }
@@ -469,14 +397,31 @@ static sql_exp *
 joinexp_col(sql_exp *e, char *rel_name)
 {
 	if (e->type == e_cmp) {
-		char *rname = find_rel_name(e->l);
+		char *rname = exp_find_rel_name(e->l);
 		if (rname && strcmp(rname, rel_name) == 0)
 			return exp_dup(e->l);
-		return e->r;
+		return exp_dup(e->r);
 	}
 	assert(0);
 	return NULL;
 }
+
+static sql_column *
+table_colexp(sql_exp *e, sql_table *t)
+{
+	if (e->type == e_column) {
+		char *name = e->name;
+		node *cn;
+
+		for (cn = t->columns.set->h; cn; cn = cn->next) {
+			sql_column *c = cn->data;
+			if (strcmp(c->base.name, name) == 0) 
+				return c;
+		}
+	}
+	return NULL;
+}
+
 
 static int
 relation_name( sql_rel *r, char *name) 
@@ -504,12 +449,12 @@ rel_find_table(sql_rel *rel)
 	case op_union: 
 	case op_inter: 
 	case op_except: 
-	case op_orderby: 
 	case op_topn: 
 
 	case op_project:
 	case op_groupby: 
-		return rel_find_table(rel->l);
+		if (rel->l)
+			return rel_find_table(rel->l);
 	}
 	return NULL;
 }
@@ -523,84 +468,258 @@ find_table(list *rels, char *rel_name)
 	return NULL;
 }
 
+static int
+exp_joins_rels(sql_exp *e, list *rels)
+{
+	sql_rel *l, *r;
+
+	assert (e->type == e_cmp);
+		
+	l = find_rel(rels, e->l);
+	r = find_rel(rels, e->r);
+	if (l && r)
+		return 0;
+	return -1;
+}
+
+static list *
+matching_joins(list *rels, list *exps, sql_exp *je) 
+{
+	sql_rel *l, *r;
+
+	assert (je->type == e_cmp);
+		
+	l = find_rel(rels, je->l);
+	r = find_rel(rels, je->r);
+	if (l && r) {
+		list *res;
+		list *n_rels = list_create(NULL);	
+
+		append(n_rels, l);
+		append(n_rels, r);
+		res = list_select(exps, n_rels, (fcmp) &exp_joins_rels, (fdup)exp_dup);
+		list_destroy(n_rels);
+		return res; 
+	}
+	return list_create(NULL);
+}
+
+static int
+sql_column_kc_cmp(sql_column *c, sql_kc *kc)
+{
+	/* return on equality */
+	return (c->colnr - kc->c->colnr);
+}
+
+static sql_idx *
+find_fk_index(sql_table *l, list *lcols, sql_table *r, list *rcols)
+{
+	if (l->idxs.set) {
+		node *in;
+	   	for(in = l->idxs.set->h; in; in = in->next){
+	    		sql_idx *li = in->data;
+			if (li->type == join_idx) {
+		        	sql_idx *ri = ((sql_fkey*)li->key)->rkey->k.idx;
+				fcmp cmp = (fcmp)&sql_column_kc_cmp;
+
+              			if (ri->t == r && 
+				    list_match(lcols, li->columns, cmp) == 0 &&
+				    list_match(rcols, ri->columns, cmp) == 0) {
+					return li;
+				}
+			}
+		}
+	}
+	return NULL;
+}
+
 static sql_rel *
 order_joins(list *rels, list *exps)
 {
-	sql_rel *top = NULL, *cur = NULL;
-	list *n_rels = list_create(NULL);
-	node *un, *djn;
+	sql_rel *top = NULL, *l, *r;
+	sql_exp *cje;
+	node *djn;
+	list *sdje, *n_rels = list_create(NULL);
+	int fnd;
 
 	/* first find the distinct join expressions */
-	list *dje = list_distinct(exps, (fcmp) &joinexp_cmp, (fdup)exp_dup);
+	list *aje = list_select(exps, (void*)1, (fcmp) &exp_is_join, (fdup)exp_dup);
+	list *dje = list_distinct2(aje, rels, (fcmp2) &joinexp_cmp, (fdup)exp_dup);
 
 	for(djn=dje->h; djn; djn = djn->next) {
 		/* equal join expressions */
+		sql_idx *idx = NULL;
 		sql_exp *je = djn->data, *le = je->l, *re = je->r; 
-		list *eje = list_select(dje, je, (fcmp) &joinexp_cmp, (fdup) &exp_dup);
-		/* TODO check for equi joins etc */
 
-		char *lname = find_rel_name(le);
-		char *rname = find_rel_name(re);
-		list *lcols = list_map(eje, lname, (fmap) &joinexp_col);
-		list *rcols = list_map(eje, rname, (fmap) &joinexp_col);
-		sql_table *l, *r;
+		if (!find_prop(je->p, PROP_JOINIDX)) {
+			int swapped = 0;
+			list *aaje = matching_joins(rels, aje, je);
+			list *eje = list_select(aaje, (void*)1, (fcmp) &exp_is_eqjoin, (fdup) &exp_dup);
 
-		l = find_table(rels, lname);
-		r = find_table(rels, rname);
-		assert(l && r);
-		printf("%s %d %s %d\n", l->base.name, list_length(lcols),
-					r->base.name, list_length(rcols));
-	}
+			char *lname = exp_find_rel_name(le);
+			char *rname = exp_find_rel_name(re);
+			list *lexps = list_map(eje, lname, (fmap) &joinexp_col);
+			list *rexps = list_map(eje, rname, (fmap) &joinexp_col);
+			sql_table *l = find_table(rels, lname);
+			sql_table *r = find_table(rels, rname);
+			list *lcols, *rcols;
 
-	/* pick first relation on smallest size */
-	top = cur = list_reduce(rels, (freduce)&rel_smallest, (fdup)&rel_dup);
-	list_remove_data(rels, cur);
-	append(n_rels, cur);
-	while (list_length(exps)) {
-		node *jen = NULL;
-		for (un=n_rels->h;!jen && un; un = un->next) {
-			jen = list_find(exps, un->data, (fcmp)&join_exp); 
+			if (!l || !r) {
+				list_destroy(lexps);
+				list_destroy(rexps);
+				continue;
+			}
+			lcols = list_map(lexps, l, (fmap) &table_colexp);
+			rcols = list_map(rexps, r, (fmap) &table_colexp);
+			list_destroy(lexps);
+			list_destroy(rexps);
+			if (list_length(lcols) != list_length(rcols)) {
+				lcols->destroy = NULL;
+				rcols->destroy = NULL;
+				list_destroy(lcols);
+				list_destroy(rcols);
+				continue;
+			}
+
+			idx = find_fk_index(l, lcols, r, rcols); 
+			if (!idx) {
+				idx = find_fk_index(r, rcols, l, lcols); 
+				swapped = 1;
+			} 
+
+#ifdef DEBUG
+			printf("%s %d %s %d (%d)\n", 
+				l->base.name, list_length(lcols),
+				r->base.name, list_length(rcols),
+				idx?1:0);
+#endif
+			if (idx) { 	
+				prop *p;
+				node *n;
+	
+				/* Remove all other join expressions */
+				for (n = eje->h; n; n = n->next) {
+					if (je != n->data)
+						list_remove_data(exps, n->data);
+				}
+				/* Add the join index using PROP_JOINIDX  */
+				if (swapped) {
+					sql_exp *s = je->l;
+					je->l = je->r;
+					je->r = s;
+				}
+				je->p = p = prop_create(PROP_JOINIDX, je->p);
+				p->value = idx;
+			}
+			lcols->destroy = NULL;
+			rcols->destroy = NULL;
+			list_destroy(lcols);
+			list_destroy(rcols);
+			list_destroy(eje);
+			list_destroy(aaje);
 		}
-		if (jen) {
-			node *rn;
-			sql_exp *je = jen->data;
+	}
+	list_destroy(aje);
 
-			je = exp_dup(je);
-			list_remove_data(exps, je);
-			/* find right relation */
-			rn = list_find(rels, je, (fcmp)&matching_rel);
-			if (!rn) { /* create a selection on the current */
-				rel_join_add_exp(top, je);
-			} else {
-				sql_rel *r = rn->data;
-				pair p;
+	/* sort expressions on weighted number of reducing operators */
+	sdje = list_sort(dje, (fkeyvalue)&exp_keyvalue, (fdup)&exp_dup);
+	list_destroy(dje);
 
-				p.l = cur->name;
-				p.r = r->name;
-				assert(p.l && p.r);
+	/* get the first expression */
+	cje = sdje->h->data;
+	list_remove_data(sdje, cje);
+	list_remove_data(exps, cje);
 
+	/* find the involved relations */
+	l = find_rel(rels, cje->l);
+	r = find_rel(rels, cje->r);
+	list_remove_data(rels, l);
+	list_remove_data(rels, r);
+	list_append(n_rels, l);
+	list_append(n_rels, r);
+
+	/* Create a relation between l and r. Since the calling 
+	   functions rewrote the join tree, into a list of expressions 
+	   and a list of (simple) relations, there are no outer joins 
+	   involved, we can simply do a crossproduct here.
+	 */
+	top = rel_crossproduct(l, r, op_join);
+	rel_join_add_exp(top, exp_dup(cje));
+
+	/* all other join expressions on these 2 relations */
+	while((djn = list_find(exps, n_rels, (fcmp)&exp_joins_rels)) != NULL) {
+		sql_exp *e = djn->data;
+
+		rel_join_add_exp(top, exp_dup(e));
+		list_remove_data(exps, e);
+	}
+	/* Remove other joins on the current 'n_rels' 
+	   set in the distinct list too */
+	while((djn = list_find(sdje, n_rels, (fcmp)&exp_joins_rels)) != NULL) 
+		list_remove_data(sdje, djn->data);
+
+	/* build join tree using the ordered list */
+	fnd = 1;
+	while(list_length(exps) && fnd) {
+		fnd = 0;
+		/* find the first expression which could be added */
+		for(djn = sdje->h; djn && !fnd; djn = djn->next) {
+			node *ln, *rn, *en;
+			
+			cje = djn->data;
+			ln = list_find(n_rels, cje->l, (fcmp)&matching_rel);
+			rn = list_find(n_rels, cje->r, (fcmp)&matching_rel);
+
+			if (ln || rn) {
+				/* remove the expression from the lists */
+				list_remove_data(sdje, cje);
+				list_remove_data(exps, cje);
+			}
+			if (ln && rn) {
+				assert(0);
+				/* create a selection on the current */
+				l = ln->data;
+				r = rn->data;
+				rel_join_add_exp(top, exp_dup(cje));
+				fnd = 1;
+			} else if (ln || rn) {
+				if (ln) {
+					l = ln->data;
+					r = find_rel(rels, cje->r);
+				} else {
+					l = rn->data;
+					r = find_rel(rels, cje->l);
+				}
 				list_remove_data(rels, r);
 				append(n_rels, r);
-				top = rel_crossproduct(top, r, op_join);
 
-				rel_join_add_exp(top, je);
+				/* create a join using the current expression */
+				top = rel_crossproduct(top, r, op_join);
+				rel_join_add_exp(top, exp_dup(cje));
+
 				/* all join expressions on these tables */
-				while((jen = list_find(exps, &p, (fcmp)&rel_exp)) != NULL) {
-					sql_exp *e = jen->data;
-					rel_join_add_exp(top, e);
+				while((en = list_find(exps, n_rels, (fcmp)&exp_joins_rels)) != NULL) {
+					sql_exp *e = en->data;
+					rel_join_add_exp(top, exp_dup(e));
 					list_remove_data(exps, e);
 				}
-				cur = r;
+				/* Remove other joins on the current 'n_rels' 
+				   set in the distinct list too */
+				while((en = list_find(sdje, n_rels, (fcmp)&exp_joins_rels)) != NULL) 
+					list_remove_data(sdje, en->data);
+				fnd = 1;
 			}
-		} else {
-			if (list_length(rels)) {
-				sql_rel *r = order_joins(rels, exps);
-				top = rel_crossproduct(top, r, op_join);
-			}
-			if (list_length(exps))
-				top->exps = exps;
-			return top;
 		}
+	}
+	if (list_length(rels)) { /* more relations */
+		node *n;
+		for(n=rels->h; n; n = n->next) 
+			top = rel_crossproduct(top, n->data, op_join);
+	}
+	if (list_length(exps)) { /* more expressions */
+		node *n;
+		for(n=exps->h; n; n = n->next) 
+			rel_join_add_exp(top, exp_dup(n->data));
 	}
 	return top;
 }
@@ -662,8 +781,7 @@ rel_join_order(mvc *sql, sql_rel *rel)
 {
 	if (rel->op == op_join) {
 		if (rel->exps) {
-			node *n;
-
+			/* use other (sub) relation count */
 			list *rels = relation_names(rel->exps);
 			int len = list_length(rels);
 			switch(len) {
@@ -671,9 +789,11 @@ rel_join_order(mvc *sql, sql_rel *rel)
 			case 1: /* crosstables */
 				/* also column refs fall into this because 
 				   they have no relation names */
-				rel_print(sql, rel, 0);
-				break;
 #ifdef DEBUG
+				rel_print(sql, rel, 0);
+#endif
+				break;
+#ifdef DEBUG_2
 			case 2:
 				printf("%d\n", len);
 				for(n = rels->h; n; n = n->next) 
@@ -684,17 +804,25 @@ rel_join_order(mvc *sql, sql_rel *rel)
 #endif
 			default: 
 				/* lets try too rewrite */
+#ifdef DEBUG
 				rel_print(sql, rel, 0);
 
 				printf("%d", len);
-				for(n = rels->h; n; n = n->next) 
-					printf(" %s", (char*)n->data);
+				if (len) {
+					node *n;
+
+					for(n = rels->h; n; n = n->next) 
+						printf(" %s", (char*)n->data);
+				}
 				printf("\n");
+#endif
 
 				rel->exps = push_up_join_exps(rel);
 				rel = reorder_join(sql, rel);
 
+#ifdef DEBUG
 				rel_print(sql, rel, 0);
+#endif
 				break;
 			}
 			list_destroy(rels);
@@ -722,10 +850,11 @@ exp_remove_alias(sql_exp *e, list *exps)
 			return r;
 		}
 		break;
-	case e_exp:	/* like only */
 	case e_cmp: 
 		e->l = exp_remove_alias(e->l, exps);
 		e->r = exp_remove_alias(e->r, exps);
+		if (e->f)
+			e->f = exp_remove_alias(e->f, exps);
 		return e;
 	case e_convert:
 		e->l = exp_remove_alias(e->l, exps);
@@ -746,9 +875,6 @@ exp_remove_alias(sql_exp *e, list *exps)
 			e->l = nl;
 		}
 	}	return e;
-	case e_relation: 
-		/* TODO */
-		assert(0);
 	case e_atom:
 		return e;
 	}
@@ -793,9 +919,11 @@ exp_push_down(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 		assert(e);
 		//return exp_dup(e);
 		return e;
-	case e_exp:	/* like only (todo remove) */
 	case e_cmp: 
-		return exp_compare( exp_push_down(sql, e->l, f, t), exp_push_down(sql, e->r, f, t), e->flag);
+		if (e->f) 
+			return exp_like( exp_push_down(sql, e->l, f, t), exp_push_down(sql, e->r, f, t), exp_push_down(sql, e->f, f, t), e->flag);
+		else
+			return exp_compare( exp_push_down(sql, e->l, f, t), exp_push_down(sql, e->r, f, t), e->flag);
 	case e_convert:
 		return exp_convert( exp_push_down(sql, e->l, f, t), exp_fromtype(e), exp_totype(e));
 	case e_aggr:
@@ -816,11 +944,9 @@ exp_push_down(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 			}
 		}
 		if (e->type == e_func)
-			return exp_op(nl, e->f);
-		return exp_aggr(nl, e->f, e->flag&1, (e->flag>>1), e->card);
+			return exp_op(nl, sql_dup_func(e->f));
+		return exp_aggr(nl, sql_dup_aggr(e->f), e->flag&1, (e->flag>>1), e->card);
 	}	
-	case e_relation: 
-		assert(0);
 	case e_atom:
 		return exp_dup(e);
 	}
@@ -830,11 +956,12 @@ exp_push_down(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 static sql_rel *
 rel_push_select_down(mvc *sql, sql_rel *rel) 
 {
-	sql_rel *rr, *rl;
+	//sql_rel *rr, *rl;
 
-	if (rel->op == op_select) {
+(void)sql;
+	if (rel->op == op_select && rel->l) {
 		sql_rel *r = rel->l; 
-		node *n;
+	//	node *n;
 
 		assert(rel->exps);
 
@@ -848,7 +975,9 @@ rel_push_select_down(mvc *sql, sql_rel *rel)
 		case op_right: 
 		case op_full: 
 
-//			rel_print(sql, rel, 0);
+#ifdef DEBUG
+			rel_print(sql, rel, 0);
+#endif
 
 			/* for each exp check if we can push it left or right */
 /*
@@ -862,9 +991,9 @@ rel_push_select_down(mvc *sql, sql_rel *rel)
 		
 					e = exp_dup(e);
 					if (re->card >= CARD_AGGR) {
-						nr = rel_push_join(sql, r, le, re, e);
+						nr = rel_push_join(r, le, re, e);
 					} else {
-						nr =rel_push_select(sql, r, le, re);
+						nr =rel_push_select(r, le, re);
 					}
 					assert(nr==r);
 					(void)nr;
@@ -878,19 +1007,24 @@ rel_push_select_down(mvc *sql, sql_rel *rel)
 		case op_inter: 
 
 			/* we could push through both */
-			//rel_print(sql, rel, 0);
+/*
+#ifdef DEBUG
+			rel_print(sql, rel, 0);
+#endif
 
 			r = rel_dup(rel->l); 
 			rl = rel_select(rel_dup(r->l), NULL);
 			rr = rel_select(rel_dup(r->r), NULL);
 			for (n=rel->exps->h; n; n = n->next) { 
 				sql_exp *le, *re, *e = n->data;
+*/
 
 				/* rewrite expression */
+/*
 				le = exp_push_down(sql, e, r, r->l);
 				re = exp_push_down(sql, e, r, r->r);
-				rel_select_add_exp(rl, le);
-				rel_select_add_exp(rr, re);
+				rel_select_add_exp(rl, exp_dup(le));
+				rel_select_add_exp(rr, exp_dup(re));
 			}
 			rel_destroy(r->l);
 			rel_destroy(r->r);
@@ -899,13 +1033,19 @@ rel_push_select_down(mvc *sql, sql_rel *rel)
 			if (rel->name)
 				rel_set_name(r, rel->name); 
 			rel_destroy(rel);
-			//rel_print(sql, r, 0);
+#ifdef DEBUG
+			rel_print(sql, r, 0);
+#endif
 			return r;
+*/
+			break;
 
 		case op_except: 
 		case op_select: 
-			/* simple (merge exp lists) (but shouldn't happen) */
-			assert(0);
+			(void)list_merge(r->exps, rel->exps, (fdup)&exp_dup);
+			rel->l = NULL;
+			rel_destroy(rel);
+			return r;
 			
 		case op_project:
 
@@ -925,9 +1065,9 @@ rel_push_select_down(mvc *sql, sql_rel *rel)
  					le = e->l;
 					re = e->r;
 					if (re->card >= CARD_AGGR) {
-						nr = rel_push_join(sql, r, le, re, e);
+						nr = rel_push_join(r, le, re, e);
 					} else {
-						nr = rel_push_select(sql, r, le, re);
+						nr = rel_push_select(r, le, re);
 					}
 					assert(nr==r);
 					(void)nr;
@@ -942,7 +1082,6 @@ rel_push_select_down(mvc *sql, sql_rel *rel)
 			return rel;
 
 		case op_groupby: 
-		case op_orderby: 
 		case op_topn: 
 			return rel;
 		}
@@ -971,7 +1110,6 @@ rewrite(mvc *sql, sql_rel *rel, rewrite_fptr rewriter)
 	case op_project:
 	case op_select: 
 	case op_groupby: 
-	case op_orderby: 
 	case op_topn: 
 		if (rel->l)
 			rel->l = rewrite(sql, rel->l, rewriter);
@@ -984,25 +1122,38 @@ sql_rel *
 rel_optimizer(mvc *sql, sql_rel *rel) 
 {
 	global_props gp; 
-	int i;
 
 	memset(&gp, 0, sizeof(global_props));
 	rel_properties(sql, &gp, rel);
 
+#ifdef DEBUG
+{
+	int i;
 	for (i = 0; i < MAXOPS; i++) {
 		if (gp.cnt[i]> 0)
 			printf("%s %d\n", op2string((operator_type)i), gp.cnt[i]);
 	}
+}
+#endif
 
+#ifdef DEBUG
 	rel_print(sql, rel, 0);
+#endif
 
-	if (gp.cnt[op_select])
-		rel = rewrite(sql, rel, &rel_push_select_down); 
+	/* TODO add rename optimizer, ie remove projects */
+
+	/* TODO add optimizer which removes unions 
+		(for example common rels, with only one different expression) */
 
 	if (gp.cnt[op_join])
 		rel = rewrite(sql, rel, &rel_join_order); 
 
+	if (gp.cnt[op_select])
+		rel = rewrite(sql, rel, &rel_push_select_down); 
+
+#ifdef DEBUG
 	rel_print(sql, rel, 0);
+#endif
 
 	/* optimize */
 	return rel;

@@ -325,7 +325,7 @@ mvc_set_role(mvc *m, char *role)
 	sql_column *auths_name = find_sql_column(auths, "name");
 	int res = 0;
 
-	if (m->debug)
+	if (m->debug&1)
 		fprintf(stderr, "mvc_set_role %s\n", role);
 
 	rid = table_funcs.column_find_row(m->session->tr, auths_name, role, NULL);

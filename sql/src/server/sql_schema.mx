@@ -723,7 +723,6 @@ create_view(mvc *sql, sql_schema *ss, dlist *qname, dlist *column_spec, symbol *
 	char *sname = qname_schema(qname);
 	sql_schema *s = NULL;
 	sql_table *t = NULL;
-	list * id_l = NULL, *view_id_l = NULL, *func_id_l = NULL;
 	int instantiate = (sql->mode == m_execute || !persistent);
 
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
@@ -763,9 +762,9 @@ create_view(mvc *sql, sql_schema *ss, dlist *qname, dlist *column_spec, symbol *
 		if (!persistent && column_spec) 
 			sq = view_rename_columns( name, sq, column_spec);
 		if (!instantiate && sq) {
-			view_id_l = stmt_list_dependencies(sq, VIEW_DEPENDENCY);
-			id_l = stmt_list_dependencies(sq, COLUMN_DEPENDENCY);
-			func_id_l = stmt_list_dependencies(sq, FUNC_DEPENDENCY);
+			list *view_id_l = stmt_list_dependencies(sq, VIEW_DEPENDENCY);
+			list *id_l = stmt_list_dependencies(sq, COLUMN_DEPENDENCY);
+			list *func_id_l = stmt_list_dependencies(sq, FUNC_DEPENDENCY);
 			mvc_create_dependencies(sql, id_l, t->base.id, VIEW_DEPENDENCY);
 			mvc_create_dependencies(sql, view_id_l, t->base.id, VIEW_DEPENDENCY);
 			mvc_create_dependencies(sql, func_id_l, t->base.id, VIEW_DEPENDENCY);

@@ -537,8 +537,6 @@ complex_find_subset(stmt *subset, stmt *t)
    table (ie. on the marked columns). We just need to know which oid list
    is involved (ie. find one subset).
    We need to check if for all results the types are the same. 
-
- TODO case in where part!!
  */
 static stmt *
 sql_case(mvc *sql, scope *scp, int token, symbol *opt_cond, dlist *when_search_list, symbol *opt_else, group *grp, stmt *subset, int f)
@@ -789,6 +787,7 @@ sql_cast(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset, int f)
 		l = check_types(sql, tpe, l, type_cast);
 		if (!l) {
 			/* we overwrite the error here */
+			sql->session->status = 0;
 			sql->errstr[0] = 0;
 			return sql_error(sql, 02, "CAST: cannot cast type '%s' to type '%s'", ltpe, tpe->type->sqlname );
 		}
@@ -944,8 +943,8 @@ sql_binop_(mvc *sql, scope *scp, sql_schema *s, char *fname, stmt *ls, stmt *rs)
 			}
 		}
 		/* reset error */
-		sql->errstr[0] = '\0';
 		sql->session->status = 0;
+		sql->errstr[0] = '\0';
 
 		if (ls)
 			stmt_destroy(ls);
@@ -978,8 +977,8 @@ sql_binop_(mvc *sql, scope *scp, sql_schema *s, char *fname, stmt *ls, stmt *rs)
 			}
 		}
 		/* reset error */
-		sql->errstr[0] = '\0';
 		sql->session->status = 0;
+		sql->errstr[0] = '\0';
 
 		if (ls)
 			stmt_destroy(ls);
@@ -1114,12 +1113,14 @@ sql_op(mvc *sql, symbol *se)
 stmt *
 sql_unop_(mvc *sql, scope *scp, sql_schema *s, char *fname, stmt *rs)
 {
-	sql_subtype *rt = tail_type(rs);
-	sql_subfunc *f = sql_bind_func(s, fname, rt, NULL);
+	sql_subtype *rt = NULL;
+	sql_subfunc *f = NULL;
 
 	(void)scp;
 	if (!s)
 		s = sql->session->schema;
+	rt = tail_type(rs);
+	f = sql_bind_func(s, fname, rt, NULL);
 	/* try to find the function without a type, and convert
 	 * the value to the type needed by this function!
 	 */
@@ -1319,8 +1320,8 @@ query_groupby(mvc *sql, scope *scp, symbol *groupby, stmt *subset, dlist *select
 
 		if (!c) {
 			/* reset error */
-			sql->errstr[0] = '\0';
 			sql->session->status = 0;
+			sql->errstr[0] = '\0';
 
 			c = sql_selection_ref(sql, scp, grp, selection, subset);
 			if (c) {
@@ -1476,8 +1477,8 @@ query_orderby(mvc *sql, scope *scp, symbol *orderby, stmt *sel, stmt *subset, gr
 				sc = orderby_column_ref(sql, col, sel);
 			if (sel && !sc) {
 				/* reset error */
-				sql->errstr[0] = '\0';
 				sql->session->status = 0;
+				sql->errstr[0] = '\0';
 
 				sc = orderby_column_exp(sql, col, sel);
 			}
@@ -1486,8 +1487,8 @@ query_orderby(mvc *sql, scope *scp, symbol *orderby, stmt *sel, stmt *subset, gr
 			   the selection result */
 			if (!sc && !grp) {
 				/* reset error */
-				sql->errstr[0] = '\0';
 				sql->session->status = 0;
+				sql->errstr[0] = '\0';
 
 				sc = sql_column_ref(sql, scp, col);
 				if (sc) {
@@ -1662,14 +1663,14 @@ sql_value_exp(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset, int f,
 		return sql_error(sql, 10, "SELECT: too many nested operators");
 
 	switch (se->token) {
-	case SQL_NOP:
-		return sql_Nop(sql, scp, se, grp, subset, f);
-	case SQL_BINOP:
-		return sql_binop(sql, scp, se, grp, subset, f);
 	case SQL_OP:
 		return sql_op(sql, se);
 	case SQL_UNOP:
 		return sql_unop(sql, scp, se, grp, subset, f);
+	case SQL_BINOP:
+		return sql_binop(sql, scp, se, grp, subset, f);
+	case SQL_NOP:
+		return sql_Nop(sql, scp, se, grp, subset, f);
 	case SQL_AGGR:
 		return sql_aggrop(sql, scp, se, grp, subset, f);
 	case SQL_RANK:
@@ -1796,37 +1797,33 @@ stmt2pivot(scope *scp, stmt *s)
 	return res;
 }
 
-static stmt *
-find_on_column_name(mvc *sql, scope *scp, tvar *t, char *name)
+static cvar *
+find_on_column_name(tvar *t, char *name)
 {
 	node *m;
-
-	(void) sql;
-	(void) scp;		/* Stefan: unused!? */
 
 	for (m = t->columns->h; m; m = m->next) {
 		cvar *rc = m->data;
 
-		if (strcmp(name, rc->cname) == 0) {
-			return stmt_dup(rc->s);
-		}
+		if (strcmp(name, rc->cname) == 0) 
+			return rc;
 	}
 	return NULL;
 }
 
 static list *
-join_on_column_name(mvc *sql, scope *scp, tvar *tv, tvar *r, int all)
+join_on_column_name(tvar *tv, tvar *r, int all)
 {
-	list *res = create_stmt_list();
+	list *res = list_create(NULL);
 	node *n;
 
 	for (n = tv->columns->h; n; n = n->next) {
 		cvar *lc = n->data;
-		stmt *rs = find_on_column_name(sql, scp, r, lc->cname);
+		cvar *rc = find_on_column_name(r, lc->cname);
 
-		if (rs) {
-			list_append(res, stmt_dup(lc->s));
-			list_append(res, rs);
+		if (rc) {
+			list_append(res, lc);
+			list_append(res, rc);
 		} else if (all) {
 			list_destroy(res);
 			return NULL;
@@ -1907,10 +1904,16 @@ set2table( mvc *sql, scope *scp, stmt *s)
 	return s;
 }
 
+static int 
+cvar_cmp(cvar *c1, cvar *c2)
+{
+	return c1-c2;
+}
 
 static stmt *
 sql_join_(mvc *sql, scope *scp, symbol *tab1, int natural, jt jointype, symbol *tab2, symbol *js)
 {
+	list *matching_columns = NULL;
 	stmt *s = NULL, *subset = NULL;
 	tvar *tv1, *tv2;
 
@@ -1933,22 +1936,23 @@ sql_join_(mvc *sql, scope *scp, symbol *tab1, int natural, jt jointype, symbol *
 	} else if (js) {	/* using */
 		dnode *n = js->data.lval->h;
 
+		matching_columns = list_create(NULL);
 		s = stmt_reljoin_init();
 		for (; n; n = n->next) {
 			char *nm = n->data.sval;
 
-			stmt *ls = find_on_column_name(sql, scp, tv1, nm);
-			stmt *rs = find_on_column_name(sql, scp, tv2, nm);
+			cvar *lc = find_on_column_name(tv1, nm);
+			cvar *rc = find_on_column_name(tv2, nm);
+			stmt *ls, *rs;
 
-			if (!ls || !rs) {
-				if (ls)
-					stmt_destroy(ls);
-				if (rs)
-					stmt_destroy(rs);
+			if (!lc || !rc) {
 				if (s)
 					stmt_destroy(s);
+				list_destroy(matching_columns);
 				return sql_error(sql, 02, "JOIN: tables '%s' and '%s' do not have a matching column '%s'\n", tv1->tname, tv2->tname, nm);
 			}
+			ls = stmt_dup(lc->s);
+			rs = stmt_dup(rc->s);
 			if ((convert_types(sql, &ls, &rs, 1, type_equal) < 0)) {
 				if (ls)
 					stmt_destroy(ls);
@@ -1958,13 +1962,14 @@ sql_join_(mvc *sql, scope *scp, symbol *tab1, int natural, jt jointype, symbol *
 					stmt_destroy(s);
 				return NULL;
 			}
+			list_append(matching_columns, lc);
+			list_append(matching_columns, rc);
 			stmt_reljoin_fill(s, ls, rs);
 		}
 	} else {		/* ! js -> natural join */
-		list *matching_columns;
 		node *m;
 
-		matching_columns = join_on_column_name(sql, scp, tv1, tv2, 0);
+		matching_columns = join_on_column_name(tv1, tv2, 0);
 
 		if (!matching_columns || list_length(matching_columns) == 0) {
 			if (matching_columns)
@@ -1974,21 +1979,26 @@ sql_join_(mvc *sql, scope *scp, symbol *tab1, int natural, jt jointype, symbol *
 
 		s = stmt_reljoin_init();
 		for (m = matching_columns->h; m; m = m->next->next) {
-			stmt *ls = stmt_dup(m->data);
-			stmt *rs = stmt_dup(m->next->data);
+			cvar *lc = m->data;
+			cvar *rc = m->next->data;
+			stmt *ls, *rs;
 
-			if ((!rs) || (!ls) || (convert_types(sql, &ls, &rs, 1, type_equal) < 0)) {
-				if (ls)
-					stmt_destroy(ls);
-				if (rs)
-					stmt_destroy(rs);
-				if (s)
-					stmt_destroy(s);
+			if (!lc || !rc) {
+				cond_stmt_destroy(s);
+				list_destroy(matching_columns);
+				return NULL;
+			}
+			ls = stmt_dup(lc->s);
+			rs = stmt_dup(rc->s);
+			if (convert_types(sql, &ls, &rs, 1, type_equal) < 0) {
+				cond_stmt_destroy(ls);
+				cond_stmt_destroy(rs);
+				cond_stmt_destroy(s);
+				list_destroy(matching_columns);
 				return NULL;
 			}
 			stmt_reljoin_fill(s, ls, rs);
 		}
-		list_destroy(matching_columns);
 	}
 
 	if (s && s->type != st_set && s->type != st_sets) 
@@ -2005,10 +2015,9 @@ sql_join_(mvc *sql, scope *scp, symbol *tab1, int natural, jt jointype, symbol *
 		stmt *ld = NULL, *rd = NULL;
 
 		if (!fs1 || !fs2) {
-			if (fs1)
-				stmt_destroy(fs1);
-			if (fs2)
-				stmt_destroy(fs2);
+			cond_stmt_destroy(fs1);
+			cond_stmt_destroy(fs2);
+			list_destroy(matching_columns);
 			if (!fs1) {
 				return sql_error(sql, 02, "JOIN: subset '%s' not found", tv1->tname);
 			} else if (!fs2) {
@@ -2047,10 +2056,8 @@ sql_join_(mvc *sql, scope *scp, symbol *tab1, int natural, jt jointype, symbol *
 
 			list_append(l1, stmt_join(stmt_dup(fs2), stmt_dup(cs->s), cmp_equal));
 		}
-		if (fs1)
-			stmt_destroy(fs1);
-		if (fs2)
-			stmt_destroy(fs2);
+		cond_stmt_destroy(fs1);
+		cond_stmt_destroy(fs2);
 		if (jointype == jt_left || jointype == jt_full) {
 			list *l2 = create_stmt_list();
 			node *m = l1->h;
@@ -2089,10 +2096,57 @@ sql_join_(mvc *sql, scope *scp, symbol *tab1, int natural, jt jointype, symbol *
 			list_destroy(l1);
 			l1 = l2;
 		}
-		if (ld)
-			stmt_destroy(ld);
-		if (rd)
-			stmt_destroy(rd);
+		if (matching_columns) {
+			/* Natural join and join on columns list output the
+			   join columns once.  
+			   Natural join only outputs join columns.
+			 */
+			list *l2 = create_stmt_list();
+			node *o = NULL, *m = l1->h, *rm;
+
+			t = tv1;
+			for (n = t->columns->h; n; n = n->next, m = m->next) 
+				;
+			rm = m;
+			m = l1->h;
+			for (n = t->columns->h; n; n = n->next, m = m->next) {
+				cvar *lc = n->data;
+				if ((o = list_find(matching_columns, lc, (fcmp)&cvar_cmp))) {
+					stmt *ls, *rs;
+					cvar *rc = o->next->data;
+					node *p = rm;
+
+					for (o = tv2->columns->h; o && o->data != rc; o = o->next, p = p->next) 
+						;
+					ls = stmt_dup(m->data);
+					rs = stmt_dup(p->data);
+					ls = sql_Nop_(sql, "ifthenelse", sql_unop_(sql, scp, NULL, "isnull", ls), rs, stmt_dup(ls), NULL);
+					ls = stmt_alias(ls, NULL, _strdup(lc->cname));
+					list_append(l2, ls);
+				}
+			}
+			if (js) {
+				t = tv1;
+				m = l1->h;
+				for (n = t->columns->h; n; n = n->next, m = m->next) {
+					cvar *cs = n->data;
+					if (!(o = list_find(matching_columns, cs, (fcmp)&cvar_cmp))) 
+						list_append(l2, stmt_dup(m->data));
+				}
+				t = tv2;
+				for (n = t->columns->h; n; n = n->next, m = m->next) {
+					cvar *cs = n->data;
+					if (!(o = list_find(matching_columns, cs, (fcmp)&cvar_cmp))) 
+						list_append(l2, stmt_dup(m->data));
+				}
+			}
+			/* add no join columns */
+			list_destroy(l1);
+			l1 = l2;
+			list_destroy(matching_columns);
+		}
+		cond_stmt_destroy(ld);
+		cond_stmt_destroy(rd);
 		s = stmt_list(l1);
 	}
 	if (subset)
@@ -2103,7 +2157,6 @@ sql_join_(mvc *sql, scope *scp, symbol *tab1, int natural, jt jointype, symbol *
 static stmt *
 sql_join(mvc *sql, scope *scp, symbol *q)
 {
-
 	dnode *n = q->data.lval->h;
 	symbol *tab_ref1 = n->data.sym;
 	int natural = n->next->data.ival;
@@ -2558,7 +2611,7 @@ query_exp_optname(mvc *sql, scope *scp, symbol *q)
 		 */
 		/* join all result columns ie join(lh,rh) on column_name */
 
-		matching_columns = join_on_column_name(sql, nscp, lv, rv, 1);
+		matching_columns = join_on_column_name(lv, rv, 1);
 
 		if (!matching_columns)
 			return NULL;
@@ -2887,6 +2940,12 @@ sql_compare_exp(mvc *sql, scope *scp, group *grp, stmt *subset, symbol *lo, symb
 			}
 			/* it can happen that the subquery reduces the outer
 			   refs, so we need to semijoin here 
+			 */
+			/* THIS IS A BUG, the inner query cannot reduce by 
+			   itself (a subquery is simply a function which always
+			   gives a result (famous count bug!). 
+
+			   We should do a outer join like solution here. 
 			 */
 			ls = stmt_semijoin(ls, stmt_dup(cmp));
 
@@ -3306,7 +3365,6 @@ sql_logical_exp_(mvc *sql, scope *scp, symbol *sc, group *grp, stmt *subset, int
 			}
 			/* outer references */
 			if (temp->type == st_list) {
-				//return sql_error(sql, 02, "IN: with outer references is not supported");
 				node *o = temp->op1.lval->h;
 				stmt *oref = stmt_dup(o->next->data);
 				stmt *sqa = stmt_dup(o->data);
