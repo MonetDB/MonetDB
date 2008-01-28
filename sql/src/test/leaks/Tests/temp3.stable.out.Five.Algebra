@@ -1,0 +1,45 @@
+stdout of test 'temp3` in directory 'src/test/leaks` itself:
+
+
+# 17:22:26 >  
+# 17:22:26 >   mserver5 "--config=/ufs/niels/scratch/monetdb/Linux-x86_64/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB5:/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB5/lib:/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/niels/scratch/monetdb/Linux-x86_64/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/niels/scratch/monetdb/Linux-x86_64/var/MonetDB5/sql_logs"  --set mapi_open=true --set xrpc_open=true --set mapi_port=38431 --set xrpc_port=43909 --set monet_prompt= --trace "--dbname=mTests_src_test_leaks" --set sql_debug=16384 --set mal_listing=0 "--dbinit= include sql;" ; echo ; echo Over..
+# 17:22:26 >  
+
+# MonetDB server v5.3.0, based on kernel v1.21.0
+# Serving database 'mTests_src_test_leaks'
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Copyright (c) 1993-2007 CWI, all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://koala.ins.cwi.nl:38431/
+# MonetDB/SQL module v2.21.0 loaded
+
+Ready.
+# semantic relational algebra
+# falling back to direct mode 
+# semantic relational algebra
+# semantic relational algebra
+#function user.main():void;
+#    clients.quit();
+#end main;
+
+Over..
+
+# 15:17:45 >  
+# 15:17:45 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=31784  < temp3.sql
+# 15:17:45 >  
+
+% .bbp,	.bbp # table_name
+% single_value,	L1 # name
+% char,	int # type
+% 9,	3 # length
+[ "transient",	196	]
+% .bbp,	.bbp # table_name
+% single_value,	L2 # name
+% char,	int # type
+% 10,	3 # length
+[ "persistent",	227	]
+
+# 15:17:45 >  
+# 15:17:45 >  Done.
+# 15:17:45 >  
+

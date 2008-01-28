@@ -884,9 +884,8 @@ rel2bin_project( mvc *sql, sql_rel *rel )
 
 		if (!s) {
 			assert(0);
+			cond_stmt_destroy(sub);
 			list_destroy(l);
-			if (sub) 
-				stmt_destroy(sub);
 			return NULL;
 		}
 		if (sub && sub->nrcols >= 1 && s->nrcols == 0)

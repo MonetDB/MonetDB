@@ -1,0 +1,55 @@
+stdout of test 'variables.SF-1508160` in directory 'src/test/BugTracker` itself:
+
+
+# 15:20:26 >  
+# 15:20:26 >   mserver5 "--config=/ufs/niels/scratch/monetdb/Linux-x86_64/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB5:/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB5/lib:/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/niels/scratch/monetdb/Linux-x86_64/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/niels/scratch/monetdb/Linux-x86_64/var/MonetDB5/sql_logs"  --set mapi_open=true --set xrpc_open=true --set mapi_port=36121 --set xrpc_port=46332 --set monet_prompt= --trace "--dbname=mTests_src_test_BugTracker" --set sql_debug=16384 --set mal_listing=0 "--dbinit= include sql;" ; echo ; echo Over..
+# 15:20:26 >  
+
+# MonetDB server v5.3.0, based on kernel v1.21.0
+# Serving database 'mTests_src_test_BugTracker'
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Copyright (c) 1993-2007 CWI, all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://koala.ins.cwi.nl:36121/
+# MonetDB/SQL module v2.21.0 loaded
+
+Ready.
+# semantic relational algebra
+# semantic relational algebra
+# semantic relational algebra
+# semantic relational algebra
+#function user.main():void;
+#    clients.quit();
+#end main;
+
+Over..
+
+# 11:54:19 >  
+# 11:54:19 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35185  < variables.SF-1508160.sql
+# 11:54:19 >  
+
+% . # table_name
+% single_value # name
+% int # type
+% 5 # length
+[ 16384	]
+% . # table_name
+% single_value # name
+% int # type
+% 5 # length
+[ 16384	]
+% . # table_name
+% single_value # name
+% varchar # type
+% 0 # length
+[ ""	]
+% . # table_name
+% single_value # name
+% varchar # type
+% 0 # length
+[ ""	]
+
+# 17:12:03 >  
+# 17:12:03 >  Done.
+# 17:12:03 >  
+

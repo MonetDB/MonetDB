@@ -249,16 +249,6 @@ SQLexit(Client c)
 	return MAL_SUCCEED;
 }
 
-static int keep_trace = 0;
-
-str
-SQLtrace(int *ret)
-{
-	(void)ret;
-	keep_trace = !keep_trace;
-	return MAL_SUCCEED;
-}
-
 #define SQLglobal(name, val) \
 	r = stmt_var(_strdup(name), &ctype, 0, 1); \
 	stack_push_var(sql, name, r, &ctype);	   \
@@ -409,13 +399,6 @@ SQLinitClient(Client c)
 		throw(PERMD, "SQLinitClient", "schema authorization error");
 	}
 	_DELETE(schema);
-
-	if (keep_trace && !m->scanner.log) {
-		char fn[BUFSIZ];
-
-		snprintf(fn, BUFSIZ, "sql.%d", c->idx);
-		m->scanner.log = open_wastream(fn);
-	}
 
 	/*expect SQL text first */
 	be->language = 'S';

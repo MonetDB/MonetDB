@@ -923,8 +923,9 @@ stmt_list_dependencies(stmt *s, int depend_type)
 		case st_bat:
 		case st_append_col:
 		case st_update_col:
-			if (depend_type == COLUMN_DEPENDENCY) {
-				dep_list = list_append(dep_list, &(s->op1.cval->base.id));
+			if (depend_type == COLUMN_DEPENDENCY) { 
+			    	if (isTable(s->op1.cval->t)) 
+					dep_list = list_append(dep_list, &(s->op1.cval->base.id));
 				dep_list = list_append(dep_list, &(s->op1.cval->t->base.id));
 			}
 			break;

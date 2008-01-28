@@ -35,10 +35,6 @@ command start2():void
 address SQLsession2
 comment "Switch to processing precompiled sql statements";
 
-command trace():void 
-address SQLtrace
-comment "Enable/disable saving the sql statement traces on a client basis.";
-
 command init():void
 address SQLinitEnvironment
 comment "Initialize the environment for MAL";
@@ -94,6 +90,10 @@ comment "Set the value of a session variable";
 pattern getVariable( varname:str ):any_1
 address getVariable
 comment "Get the value of a session variable";
+
+command logfile(filename:str):void 
+address mvc_logfile
+comment "Enable/disable saving the sql statement traces";
 
 command next_value( sname:str, sequence:str ):lng
 address mvc_next_value
@@ -710,6 +710,7 @@ sql5_export str hash_wrap(MalBlkPtr m, MalStkPtr s, InstrPtr p);
 sql5_export str setVariable(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str getVariable(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str sql_variables(int *res);
+sql5_export str mvc_logfile(int *d, str *filename);
 sql5_export str mvc_next_value(lng *res, str *sname, str *seqname);
 sql5_export str mvc_bat_next_value(int *res, int *sname, str *seqname);
 sql5_export str mvc_get_value(lng *res, str *sname, str *seqname);
@@ -1102,6 +1103,25 @@ sql_variables(int *res)
 	BBPunfix(vars->batCacheid);
 	*res = r->batCacheid;
 	BBPkeepref(r->batCacheid);
+	return MAL_SUCCEED;
+}
+
+str
+mvc_logfile(int *d, str *filename)
+{
+	mvc *m = NULL;
+	str msg = getContext(&m, NULL);
+
+	(void)d;
+	if (msg)
+		return msg;
+	if (m->scanner.log) {
+		close_stream(m->scanner.log);
+		m->scanner.log = NULL;
+	}
+
+	if (*filename != str_nil) 
+		m->scanner.log = open_wastream(*filename);
 	return MAL_SUCCEED;
 }
 

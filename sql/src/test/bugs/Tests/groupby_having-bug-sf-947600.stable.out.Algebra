@@ -1,0 +1,88 @@
+stdout of test 'groupby_having-bug-sf-947600` in directory 'src/test/bugs` itself:
+
+
+# 12:30:55 >  
+# 12:30:55 >  Mtimeout -timeout 180 mserver5 "--config=/ufs/goncalve/scratch/MonetDB/MonetDB5/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/goncalve/scratch/MonetDB/MonetDB5/lib/MonetDB5:/ufs/goncalve/scratch/MonetDB/MonetDB5/lib/MonetDB5/lib:/ufs/goncalve/scratch/MonetDB/MonetDB5/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/goncalve/scratch/MonetDB/MonetDB5/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/goncalve/scratch/MonetDB/MonetDB5/var/MonetDB5/sql_logs" --set "xquery_logdir=/ufs/goncalve/scratch/MonetDB/MonetDB5/var/MonetDB5/xquery_logs" --set mapi_port=30086 --set xrpc_port=44187 --set monet_prompt= --trace "--dbname=mTests_src_test_bugs" --dbinit='include sql;' ; echo ; echo Over..
+# 12:30:55 >  
+
+# MonetDB Server v5.0.0_beta2_1
+# Copyright (c) 1993-2007 CWI, all rights reserved
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs dynamically linked
+# dbname:mTests_src_test_bugs
+# Visit http://monetdb.cwi.nl/ for further information
+
+Ready.
+
+Over..
+
+# 11:55:31 >  
+# 11:55:31 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35185  < groupby_having-bug-sf-947600.sql
+# 11:55:31 >  
+
+% sys.a,	sys.b,	sys.b # table_name
+% name,	name,	L4 # name
+% varchar,	varchar,	int # type
+% 10,	10,	2 # length
+[ "args",	"columns",	6	]
+[ "args",	"idxs",	6	]
+[ "args",	"keycolumns",	2	]
+[ "args",	"keys",	6	]
+[ "args",	"sequences",	2	]
+[ "functions",	"args",	2	]
+[ "functions",	"columns",	2	]
+[ "functions",	"idxs",	4	]
+[ "functions",	"keycolumns",	2	]
+[ "functions",	"keys",	4	]
+[ "functions",	"sequences",	3	]
+[ "idxs",	"columns",	8	]
+[ "idxs",	"idxs",	4	]
+[ "idxs",	"keycolumns",	3	]
+[ "idxs",	"keys",	4	]
+[ "keycolumns",	"columns",	2	]
+[ "keycolumns",	"idxs",	1	]
+[ "keycolumns",	"keycolumns",	4	]
+[ "keycolumns",	"keys",	1	]
+[ "keys",	"columns",	8	]
+[ "keys",	"idxs",	12	]
+[ "keys",	"keycolumns",	3	]
+[ "keys",	"keys",	6	]
+[ "sequences",	"columns",	2	]
+[ "sequences",	"idxs",	4	]
+[ "sequences",	"keycolumns",	2	]
+[ "sequences",	"keys",	4	]
+% sys.tables # table_name
+% name # name
+% varchar # type
+% 10 # length
+[ "args"	]
+[ "functions"	]
+[ "idxs"	]
+[ "idxs"	]
+[ "keycolumns"	]
+[ "keycolumns"	]
+[ "keys"	]
+[ "keys"	]
+[ "sequences"	]
+% sys.tables # table_name
+% name # name
+% varchar # type
+% 0 # length
+% sys.tables # table_name
+% name # name
+% varchar # type
+% 10 # length
+[ "args"	]
+[ "functions"	]
+[ "idxs"	]
+[ "keycolumns"	]
+[ "keys"	]
+[ "sequences"	]
+% sys.tables # table_name
+% name # name
+% varchar # type
+% 0 # length
+
+# 11:55:31 >  
+# 11:55:31 >  Done.
+# 11:55:31 >  
+

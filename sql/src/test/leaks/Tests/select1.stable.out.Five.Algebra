@@ -1,0 +1,52 @@
+stdout of test 'select1` in directory 'src/test/leaks` itself:
+
+
+# 16:09:55 >  
+# 16:09:55 >   Mserver "--config=/ufs/niels/scratch/monetdb/Linux-x86_64/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB4:/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB4/lib:/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB4/bin" --set "gdk_dbfarm=/ufs/niels/scratch/monetdb/Linux-x86_64/var/MonetDB4/dbfarm" --set "sql_logdir=/ufs/niels/scratch/monetdb/Linux-x86_64/var/MonetDB4/sql_logs" --set "xquery_logdir=/ufs/niels/scratch/monetdb/Linux-x86_64/var/MonetDB4/xquery_logs" --set mapi_open=true --set xrpc_open=true --set mapi_port=35858 --set xrpc_port=40172 --set monet_prompt= --trace "--dbname=mTests_src_test_leaks" "--dbinit= module(sql_server);" ; echo ; echo Over..
+# 16:09:55 >  
+
+# MonetDB Server v4.21.0
+# based on GDK   v1.21.0
+# Copyright (c) 1993-2007, CWI. All rights reserved.
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
+# Visit http://monetdb.cwi.nl/ for further information.
+# MonetDB/SQL module v2.21.0 loaded
+
+Ready.
+# semantic relational algebra
+# semantic relational algebra
+#function user.main():void;
+#    clients.quit();
+#end main;
+
+Over..
+
+# 16:09:55 >  
+# 16:09:55 >  mclient -lsql -umonetdb -Pmonetdb --host=koala --port=35858 
+# 16:09:55 >  
+
+% . # table_name
+% single_value # name
+% tinyint # type
+% 1 # length
+[ 1	]
+% .bbp # table_name
+% L1 # name
+% int # type
+% 2 # length
+[ 74	]
+% . # table_name
+% single_value # name
+% tinyint # type
+% 1 # length
+[ 1	]
+% .bbp # table_name
+% L1 # name
+% int # type
+% 2 # length
+[ 74	]
+
+# 16:09:55 >  
+# 16:09:55 >  Done.
+# 16:09:55 >  
+

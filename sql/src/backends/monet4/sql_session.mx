@@ -66,15 +66,7 @@ extern ptr sql_frontend(void);
 #include <sql_storage.h>
 #include <mapi/mapi.h>
 
-static int keep_trace = 0;
 static char *sqlinit = NULL;
-
-int
-sql_trace()
-{
-	keep_trace = !keep_trace;
-	return GDK_SUCCEED;
-}
 
 @= builtin_operand
 {
@@ -453,8 +445,10 @@ query string with "M".
 		if (language == 'X') {
 			int n, v, off, len;
 
-			if (m->scanner.log) 
+			if (m->scanner.log) {
 				stream_write(m->scanner.log, in->buf+in->pos, in->len - in->pos, 1);
+				stream_write(m->scanner.log, "\n", 1, 1);
+			}
 
 			n = sscanf(in->buf + in->pos, "export %d %d %d", &v, &off, &len);
 
@@ -931,13 +925,6 @@ sql_client_init(mapi_client *fc)
 	}
 	GDKfree(schema);
 
-	if (keep_trace && !m->scanner.log) {
-		char fn[BUFSIZ];
-
-		snprintf(fn, BUFSIZ, "sql.%d", (int)(fc->c - monet_clients)); 
-		m->scanner.log = open_wastream(fn);
-	}
-
 	/* shouldn't be needed to reset the myc variable ! */ 
         v = VARfind(&fc->stk, "myc");
         if (v == NULL) 
@@ -982,7 +969,7 @@ sql_client_engine(mapi_client *fc )
 	res_tables_destroy(be->mvc->results);
 	be->mvc->results = NULL;
 
-	if (keep_trace && be->mvc->scanner.log) 
+	if (be->mvc->scanner.log)
 		stream_flush(be->mvc->scanner.log);
 }
 

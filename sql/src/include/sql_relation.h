@@ -42,6 +42,7 @@ typedef struct expression {
 
 	expression_type  type;	/* atom, cmp, func/aggr */
 	char *name;
+	char *rname;
 	void *l;
 	void *r;
 	void *f; 	/* =,!=, but also func's and aggr's and column type */
@@ -78,6 +79,8 @@ typedef enum operator_type {
 	op_topn
 } operator_type;
 
+#define is_base(op) \
+	(op == op_basetable || op == op_table)
 #define is_join(op) \
 	(op == op_join || op == op_left || op == op_right || op == op_full)
 #define is_select(op) \

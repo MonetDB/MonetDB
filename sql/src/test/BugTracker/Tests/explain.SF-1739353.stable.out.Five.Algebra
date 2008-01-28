@@ -1,0 +1,118 @@
+stdout of test 'explain.SF-1739353` in directory 'src/test/BugTracker` itself:
+
+
+# 15:20:44 >  
+# 15:20:44 >   mserver5 "--config=/ufs/niels/scratch/monetdb/Linux-x86_64/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB5:/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB5/lib:/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/niels/scratch/monetdb/Linux-x86_64/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/niels/scratch/monetdb/Linux-x86_64/var/MonetDB5/sql_logs"  --set mapi_open=true --set xrpc_open=true --set mapi_port=36121 --set xrpc_port=46332 --set monet_prompt= --trace "--dbname=mTests_src_test_BugTracker" --set sql_debug=16384 --set mal_listing=0 "--dbinit= include sql;" ; echo ; echo Over..
+# 15:20:44 >  
+
+# MonetDB server v5.3.0, based on kernel v1.21.0
+# Serving database 'mTests_src_test_BugTracker'
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Copyright (c) 1993-2007 CWI, all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://koala.ins.cwi.nl:36121/
+# MonetDB/SQL module v2.21.0 loaded
+
+Ready.
+# semantic relational algebra
+# falling back to direct mode 
+# semantic relational algebra
+# semantic relational algebra
+# semantic relational algebra
+#function user.main():void;
+#    clients.quit();
+#end main;
+
+Over..
+
+# 15:20:44 >  
+# 15:20:44 >  ./explain.SF-1739353.SQL.sh explain.SF-1739353 
+# 15:20:44 >  
+
+
+# 15:20:44 >  
+# 15:20:44 >  Mtimeout -timeout 60  mjclient -h koala -p 36121 -d mTests_src_test_BugTracker -f "../../../../../../../../scratch1/niels/monetdb/sql/src/test/BugTracker/Tests/explain.SF-1739353-data.sql"
+# 15:20:44 >  
+
++------------------------------------------------------------------------------+
+| mal                                                                          |
++==============================================================================+
+| function user.s1_1():void;                                                   |
+|     _1:bat[:oid,:sht]{rows=1:lng,notnil}  := sql.bind("tmp","_tables","type",0); |
+|     _6:bat[:oid,:oid]{rows=1:lng}  := sql.bind_dbat("tmp","_tables",1);      |
+|     _8{rows=1:lng} := bat.reverse(_6);                                       |
+|     _6:bat[:oid,:oid]{rows=1:lng}  := nil;                                   |
+|     _9{rows=1:lng} := algebra.kdifference(_1,_8);                            |
+|     _1:bat[:oid,:sht]{rows=1:lng,notnil}  := nil;                            |
+|     _8{rows=1:lng} := nil;                                                   |
+|     _10:bat[:oid,:sht]{rows=107:lng,notnil}  := sql.bind("sys","_tables","type",0); |
+|     _12:bat[:oid,:sht]{rows=1:lng,notnil}  := sql.bind("sys","_tables","type",1); |
+|     _13{rows=108:lng} := algebra.kunion(_10,_12);                            |
+|     _10:bat[:oid,:sht]{rows=107:lng,notnil}  := nil;                         |
+|     _12:bat[:oid,:sht]{rows=1:lng,notnil}  := nil;                           |
+|     _14:bat[:oid,:sht]{rows=1:lng,notnil}  := sql.bind("sys","_tables","type",2); |
+|     _16{rows=108:lng} := algebra.kdifference(_13,_14);                       |
+|     _13{rows=108:lng} := nil;                                                |
+|     _17{rows=109:lng} := algebra.kunion(_16,_14);                            |
+|     _16{rows=108:lng} := nil;                                                |
+|     _14:bat[:oid,:sht]{rows=1:lng,notnil}  := nil;                           |
+|     _18:bat[:oid,:oid]{rows=1:lng}  := sql.bind_dbat("sys","_tables",1);     |
+|     _19{rows=1:lng} := bat.reverse(_18);                                     |
+|     _18:bat[:oid,:oid]{rows=1:lng}  := nil;                                  |
+|     _20{rows=109:lng} := algebra.kdifference(_17,_19);                       |
+|     _17{rows=109:lng} := nil;                                                |
+|     _19{rows=1:lng} := nil;                                                  |
+|     _21{rows=111:lng} := bat.setWriteMode(_20);                              |
+|     _20{rows=109:lng} := nil;                                                |
+|     bat.append(_21,_9,true);                                                 |
+|     _9{rows=1:lng} := nil;                                                   |
+|     _25{rows=56:lng} := algebra.select(_21,nil:sht,2,false,false);           |
+|     _21{rows=111:lng} := nil;                                                |
+|     _29{rows=56:lng,tlb>=0@0:oid,tub<1@0:oid} := algebra.markT(_25,0@0);     |
+|     _25{rows=56:lng} := nil;                                                 |
+|     _30{rows=56:lng,hlb>=0@0:oid,hub<1@0:oid} := bat.reverse(_29);           |
+|     _29{rows=56:lng,tlb>=0@0:oid,tub<1@0:oid} := nil;                        |
+|     _31:bat[:oid,:str]{rows=1:lng,notnil}  := sql.bind("tmp","_tables","name",0); |
+|     _33:bat[:oid,:oid]{rows=1:lng}  := sql.bind_dbat("tmp","_tables",1);     |
+|     _34{rows=1:lng} := bat.reverse(_33);                                     |
+|     _33:bat[:oid,:oid]{rows=1:lng}  := nil;                                  |
+|     _35{rows=1:lng} := algebra.kdifference(_31,_34);                         |
+|     _31:bat[:oid,:str]{rows=1:lng,notnil}  := nil;                           |
+|     _34{rows=1:lng} := nil;                                                  |
+|     _36:bat[:oid,:str]{rows=107:lng,notnil}  := sql.bind("sys","_tables","name",0); |
+|     _37:bat[:oid,:str]{rows=1:lng,notnil}  := sql.bind("sys","_tables","name",1); |
+|     _38{rows=108:lng} := algebra.kunion(_36,_37);                            |
+|     _36:bat[:oid,:str]{rows=107:lng,notnil}  := nil;                         |
+|     _37:bat[:oid,:str]{rows=1:lng,notnil}  := nil;                           |
+|     _39:bat[:oid,:str]{rows=1:lng,notnil}  := sql.bind("sys","_tables","name",2); |
+|     _40{rows=108:lng} := algebra.kdifference(_38,_39);                       |
+|     _38{rows=108:lng} := nil;                                                |
+|     _41{rows=109:lng} := algebra.kunion(_40,_39);                            |
+|     _40{rows=108:lng} := nil;                                                |
+|     _39:bat[:oid,:str]{rows=1:lng,notnil}  := nil;                           |
+|     _42:bat[:oid,:oid]{rows=1:lng}  := sql.bind_dbat("sys","_tables",1);     |
+|     _43{rows=1:lng} := bat.reverse(_42);                                     |
+|     _42:bat[:oid,:oid]{rows=1:lng}  := nil;                                  |
+|     _44{rows=109:lng} := algebra.kdifference(_41,_43);                       |
+|     _41{rows=109:lng} := nil;                                                |
+|     _43{rows=1:lng} := nil;                                                  |
+|     _45{rows=111:lng} := bat.setWriteMode(_44);                              |
+|     _44{rows=109:lng} := nil;                                                |
+|     bat.append(_45,_35,true);                                                |
+|     _35{rows=1:lng} := nil;                                                  |
+|     _47{rows=56:lng,hlb>=0@0:oid,hub<1@0:oid} := algebra.join(_30,_45);      |
+|     _30{rows=56:lng,hlb>=0@0:oid,hub<1@0:oid} := nil;                        |
+|     _45{rows=111:lng} := nil;                                                |
+|     _48 := sql.resultSet(1,1,_47);                                           |
+|     sql.rsColumn(_48,"sys.tables","name","varchar",1024,0,_47);              |
+|     _47{rows=56:lng,hlb>=0@0:oid,hub<1@0:oid} := nil;                        |
+|     sql.exportResult(_48,"");                                                |
+| end s1_1;                                                                    |
++------------------------------------------------------------------------------+
+71 rows
+
+
+# 15:20:44 >  
+# 15:20:44 >  Done.
+# 15:20:44 >  
+

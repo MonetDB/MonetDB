@@ -1,0 +1,133 @@
+stdout of test 'session_vars` in directory 'src/test` itself:
+
+
+# 15:18:12 >  
+# 15:18:12 >   mserver5 "--config=/ufs/niels/scratch/monetdb/Linux-x86_64/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB5:/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB5/lib:/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/niels/scratch/monetdb/Linux-x86_64/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/niels/scratch/monetdb/Linux-x86_64/var/MonetDB5/sql_logs"  --set mapi_open=true --set xrpc_open=true --set mapi_port=36121 --set xrpc_port=46332 --set monet_prompt= --trace "--dbname=mTests_src_test" --set sql_debug=16384 --set mal_listing=0 "--dbinit= include sql;" ; echo ; echo Over..
+# 15:18:12 >  
+
+# MonetDB server v5.3.0, based on kernel v1.21.0
+# Serving database 'mTests_src_test'
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Copyright (c) 1993-2007 CWI, all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://koala.ins.cwi.nl:36121/
+# MonetDB/SQL module v2.21.0 loaded
+
+Ready.
+# semantic relational algebra
+# semantic relational algebra
+# semantic relational algebra
+# semantic relational algebra
+# semantic relational algebra
+# falling back to direct mode 
+# semantic relational algebra
+# falling back to direct mode 
+# semantic relational algebra
+# falling back to direct mode 
+# semantic relational algebra
+# falling back to direct mode 
+# semantic relational algebra
+# falling back to direct mode 
+# semantic relational algebra
+# falling back to direct mode 
+# semantic relational algebra
+# semantic relational algebra
+# semantic relational algebra
+# semantic relational algebra
+# semantic relational algebra
+# semantic relational algebra
+# semantic relational algebra
+# semantic relational algebra
+# falling back to direct mode 
+# semantic relational algebra
+# falling back to direct mode 
+# semantic relational algebra
+# falling back to direct mode 
+# semantic relational algebra
+# semantic relational algebra
+# semantic relational algebra
+#function user.main():void;
+#    clients.quit();
+#end main;
+
+Over..
+
+# 11:50:12 >  
+# 11:50:12 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781  < session_vars.sql
+# 11:50:12 >  
+
+% . # table_name
+% single_value # name
+% int # type
+% 5 # length
+[ 16384	]
+% . # table_name
+% single_value # name
+% varchar # type
+% 3 # length
+[ "sys"	]
+% . # table_name
+% single_value # name
+% varchar # type
+% 7 # length
+[ "monetdb"	]
+% . # table_name
+% single_value # name
+% varchar # type
+% 7 # length
+[ "monetdb"	]
+% . # table_name
+% single_value # name
+% int # type
+% 1 # length
+[ 1	]
+% . # table_name
+% single_value # name
+% varchar # type
+% 4 # length
+[ "help"	]
+% . # table_name
+% single_value # name
+% boolean # type
+% 5 # length
+[ true	]
+% . # table_name
+% single_value # name
+% int # type
+% 5 # length
+[ 16384	]
+% . # table_name
+% single_value # name
+% varchar # type
+% 3 # length
+[ "sys"	]
+% . # table_name
+% single_value # name
+% varchar # type
+% 7 # length
+[ "monetdb"	]
+% . # table_name
+% single_value # name
+% varchar # type
+% 7 # length
+[ "monetdb"	]
+% . # table_name
+% single_value # name
+% int # type
+% 1 # length
+[ 1	]
+% . # table_name
+% single_value # name
+% varchar # type
+% 1 # length
+[ "1"	]
+% . # table_name
+% single_value # name
+% boolean # type
+% 5 # length
+[ NULL	]
+
+# 12:30:00 >  
+# 12:30:00 >  Done.
+# 12:30:00 >  
+

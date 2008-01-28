@@ -152,7 +152,7 @@ rel_create()
 static void
 rel_setsubquery(sql_rel*r) 
 {
-	if (r->l && r->op != op_basetable)
+	if (r->l && !is_base(r->op))
 		rel_setsubquery(r->l);
 	if (r->r && is_join(r->op)) 
 		rel_setsubquery(r->r);
@@ -182,72 +182,6 @@ rel_label( sql_rel *r, int nr)
 	r->name = _strdup(nme);
 }
 
-static sql_exp * exp_atom_ref(int i, sql_subtype *tpe) 
-{
-	sql_exp *e = exp_create(e_atom);
-	e->card = CARD_ATOM;
-	e->flag = i;
-	e->f = tpe;
-	return e;
-}
-
-static sql_exp * exp_param(char *name, sql_subtype *tpe, int frame) 
-{
-	sql_exp *e = exp_create(e_atom);
-	e->r = _strdup(name);
-	e->card = CARD_ATOM;
-	e->f = tpe;
-	e->flag = frame;
-	return e;
-}
-
-static sql_exp *
-exp_atom_bool(int b) {
-	sql_subtype bt; 
-
-	sql_find_subtype(&bt, "boolean", 0, 0);
-	if (b) 
-		return exp_atom(atom_bool(&bt, TRUE ));
-	else
-		return exp_atom(atom_bool(&bt, FALSE ));
-}
-
-static sql_exp * 
-exp_column( char *tname, char *cname, sql_subtype *t, int card) 
-{
-	sql_exp *e = exp_create(e_column);
-	e->name = _strdup(cname);
-	e->card = card;
-	e->l = (tname)?_strdup(tname):NULL;
-	e->r = _strdup(cname);
-	e->f = t;
-	return e;
-}
-
-static sql_exp * 
-exp_alias( char *tname, char *cname, sql_rel *orel, sql_exp *old) 
-{
-	sql_exp *e = exp_create(e_column);
-
-	assert(cname);
-	e->card = orel->card;
-	e->name = _strdup(cname);
-	e->l = (tname)?_strdup(tname):NULL;
-	e->r = _strdup(cname);
-	e->f = exp_subtype(old);
-	return e;
-}
-
-/* Set a name (alias) for the expression, such that we can refer 
-   to this expression by this simple name.
- */
-static void exp_setname( sql_exp *e, char *name )
-{
-	if (e->name)
-		_DELETE(e->name);
-	e->name = _strdup(name);
-}
-
 static sql_exp * 
 exp_alias_or_copy( mvc *sql, char *tname, char *cname, sql_rel *orel, sql_exp *old, int settname) 
 {
@@ -258,12 +192,12 @@ exp_alias_or_copy( mvc *sql, char *tname, char *cname, sql_rel *orel, sql_exp *o
 		char name[16], *nme;
 		nme = number2name(name, 16, ++sql->label);
 
-		exp_setname(old, nme);
-		return exp_alias(tname, nme, orel, old);
+		exp_setname(old, NULL, nme);
+		return exp_column(tname, nme, exp_subtype(old), orel->card);
 	} else if (cname && !old->name) {
-		exp_setname(old, cname);
+		exp_setname(old, NULL, cname);
 	}
-	return exp_alias(tname, cname, orel, old);
+	return exp_column(tname, cname, exp_subtype(old), orel->card);
 }
 
 static sql_exp *
@@ -276,7 +210,7 @@ basetable_bind_column( sql_rel *rel, char *cname )
 	if (rel->exps) /* list of aliases */
 		e = exps_bind_column(rel->exps, cname);
 	if (e) 
-		return exp_alias(NULL, cname, rel, e);
+		return exp_column(NULL, cname, exp_subtype(e), rel->card);
 	for (cn = t->columns.set->h; cn; cn = cn->next) {
 		sql_column *c = cn->data;
 		if (strcmp(c->base.name, cname) == 0)
@@ -480,7 +414,7 @@ rel_projections(mvc *sql, sql_rel *rel, char *tname, int settname )
 			node *en;
 			for (en = rel->exps->h; en; en = en->next) {
 				sql_exp *e = en->data;
-				append(exps, exp_alias(NULL, e->name, rel, e));
+				append(exps, exp_column(NULL, e->name, exp_subtype(e), rel->card));
 			}
 		} else {
 			for (cn = t->columns.set->h; cn; cn = cn->next) {
@@ -711,14 +645,14 @@ static sql_exp *rel_groupby_add_aggr(mvc *sql, sql_rel *rel, sql_exp *e)
 	if ((m=exps_find_match_exp(rel->exps, e)) == NULL) {
 		if (!e->name) {
 			nme = number2name(name, 16, ++sql->label);
-			exp_setname(e, nme);
+			exp_setname(e, NULL, nme);
 		}
 		append(rel->exps, e);
 		m = e;
 	}
 	if (!tname && e->type == e_column)
 		tname = e->l;
-	return exp_alias(tname, m->name, rel, m);
+	return exp_column(tname, m->name, exp_subtype(m), rel->card);
 }
 
 static void 
@@ -737,37 +671,18 @@ rel_project_add_exp( mvc *sql, sql_rel *rel, sql_exp *e)
 }
 
 static sql_exp *
-rel_project_label_exp(mvc *sql, sql_rel *rel, sql_exp *e)
-{
-	char name[16], *nme;
-	nme = number2name(name, 16, ++sql->label);
-
-	exp_setname(e, nme);
-	return exp_alias(rel->name, nme, rel, e);
-}
-
-static sql_exp *
-rel_lastexp_renamed(mvc *sql, sql_rel *rel ) 
-{
-	sql_exp *e;
-	assert(is_project(rel->op) && list_length(rel->exps));
-
-	e = rel->exps->t->data;
-	return rel_project_label_exp(sql, rel, e);
-}
-
-static sql_exp *
 rel_lastexp(mvc *sql, sql_rel *rel ) 
 {
 	sql_exp *e;
 
-	if (rel->op == op_project)
-		return rel_lastexp_renamed(sql, rel);
-	assert(is_project(rel->op) && list_length(rel->exps));
+	assert(list_length(rel->exps));
+	if (rel->op == op_project) 
+		return exp_alias_or_copy(sql, rel->name, NULL, 
+					 rel, rel->exps->t->data, 1); 
+	assert(is_project(rel->op));
 	e = rel->exps->t->data;
 	return exp_column(rel->name, e->name, exp_subtype(e), e->card);
 }
-
 
 void
 rel_select_add_exp(sql_rel *l, sql_exp *e)
@@ -1058,7 +973,7 @@ rel_table_optname(mvc *sql, sql_rel *sq, symbol *optname)
 			node *ne = sq->exps->h;
 
 			for (; d && ne; d = d->next, ne = ne->next) 
-				exp_setname( ne->data, d->data.sval );
+				exp_setname( ne->data, NULL, d->data.sval );
 		}
 	}
 	return sq;
@@ -1195,8 +1110,8 @@ rel_rename_column( mvc *sql, sql_rel *rel, char *cname )
 	if (!rel->exps)
 		rel->exps = new_exp_list();
 	append(rel->exps, e);
-	exp_setname(e, nme);
-	return exp_alias(NULL, nme, rel, e);
+	exp_setname(e, NULL, nme);
+	return exp_column(NULL, nme, exp_subtype(e), rel->card);
 }
 
 sql_exp *
@@ -1337,7 +1252,7 @@ table_ref(mvc *sql, sql_rel *rel, symbol *tableref)
 				sql_column *c = n->data;
 				sql_exp *e = m->data;
 
-				exp_setname(e, c->base.name);
+				exp_setname(e, NULL, c->base.name);
 				if (e->card == CARD_AGGR)
 					e->card = CARD_MULTI;
 			}
@@ -3192,7 +3107,7 @@ rel_selection_ref(mvc *sql, sql_rel *rel, symbol *grp, dlist *selection )
 				if (ve) {
 					dlist *l = dlist_create(sql->sa);
 					symbol *sym;
-					exp_setname(ve, name);
+					exp_setname(ve, NULL, name);
 					/* now we should rewrite the selection
 					   such that it uses the new group
 					   by column 
@@ -3510,7 +3425,7 @@ column_exp(mvc *sql, sql_rel **rel, symbol *column_e, int f)
 		return NULL;
 	/* AS name */
 	if (ve && l->h->next->data.sval) 
-		exp_setname(ve, l->h->next->data.sval);
+		exp_setname(ve, NULL, l->h->next->data.sval);
 	return ve;
 }
 
@@ -3607,7 +3522,7 @@ join_on_column_name(mvc *sql, sql_rel *rel, sql_rel *t1, sql_rel *t2, int all)
 			rel = rel_compare_exp(sql, rel, exp_dup(lc), exp_dup(rc), "=", NULL, sql_where);
 			cond = rel_unop_(sql, exp_dup(lc), NULL, "isnull");
 			lc = rel_nop_(sql, cond, exp_dup(rc), exp_dup(lc), NULL, NULL, "ifthenelse");
-			exp_setname(lc, nm);
+			exp_setname(lc, NULL, nm);
 			append(outexps, lc);
 		} else if (all) {
 			found = 0;
@@ -3693,7 +3608,7 @@ rel_select_exp(mvc *sql, sql_rel *rel, sql_rel *outer, SelectNode *sn, int tople
 
 				assert(e->type == e_cmp);
 				assert(re->type == e_column);
-				re = exp_alias(inner->name, re->r, inner, re);
+				re = exp_column(inner->name, re->r, exp_subtype(re), inner->card);
 				e = exp_compare( exp_dup(e->l), re, e->flag);
 				append(jexps, e);
 			}
@@ -4050,6 +3965,7 @@ rel_joinquery_(mvc *sql, sql_rel *rel, symbol *tab1, int natural, jt jointype, s
 	if (js && js->token != SQL_USING) {	/* On sql_logical_exp */
 		rel = rel_logical_exp(sql, rel, js, sql_where);
 	} else if (js) {	/* using */
+		char *tname = NULL;
 		dnode *n = js->data.lval->h;
 		list *outexps = new_exp_list(), *exps;
 		node *m;
@@ -4069,7 +3985,7 @@ rel_joinquery_(mvc *sql, sql_rel *rel, symbol *tab1, int natural, jt jointype, s
 			rel = rel_compare_exp(sql, rel, exp_dup(ls), exp_dup(rs), "=", NULL, sql_where);
 			cond = rel_unop_(sql, exp_dup(ls), NULL, "isnull");
 			ls = rel_nop_(sql, cond, exp_dup(rs), exp_dup(ls), NULL, NULL, "ifthenelse");
-			exp_setname(ls, nm);
+			exp_setname(ls, tname, nm);
 			append(outexps, ls);
 			if (!rel) {
 				list_destroy(outexps);
@@ -4107,10 +4023,13 @@ rel_joinquery_(mvc *sql, sql_rel *rel, symbol *tab1, int natural, jt jointype, s
 		}
 		list_destroy(exps);
 		rel = rel_project(rel, outexps);
-		if (!rel->name)
-			rel_label(rel, ++sql->label);
 	} else {		/* ! js -> natural join */
 		rel = join_on_column_name(sql, rel, t1, t2, 0);
+		/* As the natural join only returns a new relation with 
+		   join columns, we should rename this relation too beable
+		   to uniquely describe a column of this relation again
+		   (not refering to the lower relation columns).
+		 */
 		if (!rel->name)
 			rel_label(rel, ++sql->label);
 	}

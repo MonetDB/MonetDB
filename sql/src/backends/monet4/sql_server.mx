@@ -37,9 +37,6 @@ for the time being.
 	.BUILTIN sql_frontend() : ptr = sql_frontend_wrap;
 		"create/return the sql_frontend"
 
-	.COMMAND sql_trace() : void = sql_trace;
-		"enable/disable saving the sql statement traces (per client)" 
-
 @+ extra low level interface 
 @m
 	.BUILTIN mvc_new() : mvc = mvc_new;
@@ -66,6 +63,8 @@ access after being logged in.
 	.COMMAND mvc_sql( mvc m, str cmd ) = mvc_sql_wrap;
 		"execute a sql query"
 
+	.COMMAND mvc_logfile(mvc m, str file) : void = mvc_logfile;
+		"enable/disable saving the sql statement traces" 
 
 	.COMMAND declareVariable( mvc m, str varname, any::1 nl ) = declareVariable;
 		"Declare a new session variable in the mvc structure"
@@ -451,8 +450,21 @@ getVariable(ptr value, int *type, mvc* M, str varname)
 	return GDK_SUCCEED;
 }
 
+int
+mvc_logfile(mvc *M, str filename)
+{
+	mvc *m = *(mvc**)M;
 
-/* TODO pass also the schema name */
+	if (m->scanner.log) {
+		close_stream(m->scanner.log);
+		m->scanner.log = NULL;
+	}
+
+	if (filename != str_nil) 
+		m->scanner.log = open_wastream(filename);
+	return GDK_SUCCEED;
+}
+
 int
 mvc_next_value(lng *res, mvc *C, str sname, str seqname)
 {
@@ -1579,6 +1591,9 @@ proc log2(lng i) : int {
 
 # forward reference, will be filled in the sql session 
 var myc := mvc(ptr(nil));
+proc logfile( str filename) : void {
+	return mvc_logfile(myc, filename);
+}
 proc next_value( str sname, str v ) : lng {
 	return mvc_next_value(myc, sname, v);
 }
