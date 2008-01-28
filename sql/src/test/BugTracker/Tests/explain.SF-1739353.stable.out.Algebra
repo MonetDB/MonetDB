@@ -1,0 +1,121 @@
+stdout of test 'explain.SF-1739353` in directory 'src/test/BugTracker` itself:
+
+
+# 13:18:23 >  
+# 13:18:23 >  Mtimeout -timeout 300  Mserver "--config=/ufs/fabian/scratch/monetdb/current/program-x86_64/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/fabian/scratch/monetdb/current/program-x86_64/lib64/MonetDB4:/ufs/fabian/scratch/monetdb/current/program-x86_64/lib64/MonetDB4/lib:/ufs/fabian/scratch/monetdb/current/program-x86_64/lib64/MonetDB4/bin" --set "gdk_dbfarm=/net/pegasus.ins.cwi.nl/export/scratch0/fabian/vtmp/mtest-current-pegasus.ins.cwi.nl/sql/dbfarm" --set "sql_logdir=/net/pegasus.ins.cwi.nl/export/scratch0/fabian/vtmp/mtest-current-pegasus.ins.cwi.nl/sql/sqllog" --set "xquery_logdir=/net/pegasus.ins.cwi.nl/export/scratch0/fabian/vtmp/mtest-current-pegasus.ins.cwi.nl/sql/xquerylog" --set mapi_open=true --set mapi_port=36347 --set xrpc_port=43236 --set monet_prompt= --trace "--dbname=mTests_src_test_BugTracker" --dbinit=" module(sql_server);" ; echo ; echo Over..
+# 13:18:23 >  
+
+# MonetDB Server v4.19.0
+# based on GDK   v1.19.0
+# Copyright (c) 1993-2007, CWI. All rights reserved.
+# Compiled for x86_64-pc-linux-gnu/64bit with 64bit OIDs; dynamically linked.
+# Visit http://monetdb.cwi.nl/ for further information.
+# MonetDB/SQL module v2.19.0 loaded
+
+printf("\nReady.\n");
+
+Ready.
+quit();
+
+Over..
+
+# 13:18:23 >  
+# 13:18:23 >  Mtimeout -timeout 180 ./explain.SF-1739353.SQL explain.SF-1739353 
+# 13:18:23 >  
+
+
+# 13:18:23 >  
+# 13:18:23 >  Mtimeout -timeout 60 mjclient -h pegasus -p 36347 -d mTests_src_test_BugTracker -f ../../../../../../../../../scratch1/fabian/monetdb/current/sql/src/test/BugTracker/Tests/explain.SF-1739353-data.sql
+# 13:18:23 >  
+
++-----------------------------------------------------------------------+
+| statement                                                             |
++=======================================================================+
+| var s13 := mvc_bind(myc, "tmp", "_tables", "type", 0);                |
+| var s15 := mvc_bind_dbat(myc, "tmp", "_tables", 1);                   |
+| var s14 := s15.reverse();                                             |
+| s15 := nil;                                                           |
+| var s12 := kdiff(s13, s14);                                           |
+| s13 := nil;                                                           |
+| s14 := nil;                                                           |
+| var s11 := s12;                                                       |
+| var s21 := mvc_bind(myc, "sys", "_tables", "type", 0);                |
+| var s22 := mvc_bind(myc, "sys", "_tables", "type", 1);                |
+| var s20 := kunion(s21, s22);                                          |
+| s21 := nil;                                                           |
+| s22 := nil;                                                           |
+| var s23 := mvc_bind(myc, "sys", "_tables", "type", 2);                |
+| var s19 := kdiff(s20, s23);                                           |
+| s20 := nil;                                                           |
+| var s18 := kunion(s19, s23);                                          |
+| s19 := nil;                                                           |
+| s23 := nil;                                                           |
+| var s25 := mvc_bind_dbat(myc, "sys", "_tables", 1);                   |
+| var s24 := s25.reverse();                                             |
+| s25 := nil;                                                           |
+| var s17 := kdiff(s18, s24);                                           |
+| s18 := nil;                                                           |
+| s24 := nil;                                                           |
+| var s16 := s17;                                                       |
+| var s10 := append(s16.access(BAT_WRITE),s11);                         |
+| s16 := nil;                                                           |
+| s11 := nil;                                                           |
+| var s9 := s10;                                                        |
+| var s27 := bte("2");                                                  |
+| var s26 := sht(s27);                                                  |
+| s27 := nil;                                                           |
+| var s8 := s9.select(sht(nil), s26, FALSE, FALSE);                     |
+| s9 := nil;                                                            |
+| s26 := nil;                                                           |
+| var s28 := oid("0@0");                                                |
+| var s7 := mark(s8, s28);                                              |
+| s8 := nil;                                                            |
+| s28 := nil;                                                           |
+| var s6 := s7.reverse();                                               |
+| s7 := nil;                                                            |
+| var s33 := mvc_bind(myc, "tmp", "_tables", "name", 0);                |
+| var s35 := mvc_bind_dbat(myc, "tmp", "_tables", 1);                   |
+| var s34 := s35.reverse();                                             |
+| s35 := nil;                                                           |
+| var s32 := kdiff(s33, s34);                                           |
+| s33 := nil;                                                           |
+| s34 := nil;                                                           |
+| var s31 := s32;                                                       |
+| var s41 := mvc_bind(myc, "sys", "_tables", "name", 0);                |
+| var s42 := mvc_bind(myc, "sys", "_tables", "name", 1);                |
+| var s40 := kunion(s41, s42);                                          |
+| s41 := nil;                                                           |
+| s42 := nil;                                                           |
+| var s43 := mvc_bind(myc, "sys", "_tables", "name", 2);                |
+| var s39 := kdiff(s40, s43);                                           |
+| s40 := nil;                                                           |
+| var s38 := kunion(s39, s43);                                          |
+| s39 := nil;                                                           |
+| s43 := nil;                                                           |
+| var s45 := mvc_bind_dbat(myc, "sys", "_tables", 1);                   |
+| var s44 := s45.reverse();                                             |
+| s45 := nil;                                                           |
+| var s37 := kdiff(s38, s44);                                           |
+| s38 := nil;                                                           |
+| s44 := nil;                                                           |
+| var s36 := s37;                                                       |
+| var s30 := append(s36.access(BAT_WRITE),s31);                         |
+| s36 := nil;                                                           |
+| s31 := nil;                                                           |
+| var s29 := s30;                                                       |
+| var s5 := s6.join(s29);                                               |
+| s6 := nil;                                                            |
+| s29 := nil;                                                           |
+| var s4 := s5;                                                         |
+| var s3 := s4;                                                         |
+| var s1 := mvc_result_table(myc, 1, 1, s3);                            |
+| mvc_result_column(myc, "sys.tables", "name", "varchar", 1024, 0, s3); |
+| mvc_export_result(myc, Output, s1, "");                               |
++-----------------------------------------------------------------------+
+80 rows
+
+
+# 13:18:24 >  
+# 13:18:24 >  Done.
+# 13:18:24 >  
+
