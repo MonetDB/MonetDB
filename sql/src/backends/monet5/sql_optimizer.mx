@@ -449,10 +449,10 @@ str defaultPlan=
 	"accessmode,"
 	"aliases,"
 	/* "crack," */
-	"commonTerms,"
+	"joinPath," 
 	"accumulators,"
 	"mergetable," 
-	"joinPath,"
+	"commonTerms,"
 	"deadcode,"
 	"reduce,"
 	"garbageCollector," 
