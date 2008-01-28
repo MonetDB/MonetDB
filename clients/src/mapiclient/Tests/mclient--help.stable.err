@@ -35,10 +35,12 @@ SQL specific opions
  -r nr       | --rows=nr          for pagination
  -w nr       | --width=nr         for pagination
  -D          | --dump             create an SQL dump
+ -G          | --algebra          use algebra frontend
 
 XQuery specific options
  -C colname  | --collection=colname  collection name
  -I docname  | --input=docname    document name, XML document on standard input
+ -G          | --algebra          use algebra frontend
 
 # 13:46:19 >  
 # 13:46:19 >  Done.
