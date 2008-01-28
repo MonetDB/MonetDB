@@ -1211,6 +1211,7 @@ def GetBitsAndOIDsAndModsAndStatic(env) :
     env['TST_OIDS'] = ""
     env['TST_FIVE'] = ""
     env['TST_STATIC'] = ""
+    env['TST_ALGEBRA'] = ""
     if qOut:
         tbs = re.compile("^# Compiled for .*/([63][42]bit) with ([63][42])bit OIDs;? (.*) linked", re.MULTILINE)
         tm = re.compile("^Modules: (.*)$", re.MULTILINE)
@@ -1262,6 +1263,9 @@ def GetBitsAndOIDsAndModsAndStatic(env) :
     if par['M5']:
         env['TST_FIVE'] = "Five"
         os.environ['TST_FIVE'] = "Five"
+    if par['ALGEBRA']:
+        env['TST_ALGEBRA'] = "Algebra"
+        os.environ['TST_ALGEBRA'] = "Algebra"
     return rtrn
 ### GetBitsAndOIDsAndModsAndStatic(env) #
 
@@ -1375,12 +1379,15 @@ def StableOutErr(env,par,TST,OS,RELEASE,DIST,VERSION) :
     OIDS = env['TST_OIDS']
     FIVE = env['TST_FIVE']
     STATIC = env['TST_STATIC']
+    ALGEBRA = env['TST_ALGEBRA']
     if FIVE:
         FIVE = "(\.Five)?"
     if STATIC:
         STATIC = "(\.STATIC)?"
+    if ALGEBRA:
+        ALGEBRA = "(\.Algebra)?"
     dir,file = os.path.split(TST)
-    outre = re.compile('^'+re.escape(file)+'\.stable\.(?P<tp>out|err)(\.(%s(%s)?|%s(%s)?))?(\.%s)?(\.%s)?%s%s$' % (re.escape(OS), re.escape(RELEASE), re.escape(DIST), re.escape(VERSION), BITS, OIDS, FIVE, STATIC))
+    outre = re.compile('^'+re.escape(file)+'\.stable\.(?P<tp>out|err)(\.(%s(%s)?|%s(%s)?))?(\.%s)?(\.%s)?%s%s%s$' % (re.escape(OS), re.escape(RELEASE), re.escape(DIST), re.escape(VERSION), BITS, OIDS, FIVE, STATIC, ALGEBRA))
     bestout = besterr = ''
     for f in os.listdir(dir or os.curdir):
         res = outre.match(f)
@@ -2206,6 +2213,8 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
             Srvr = '%s "--dbinit=%s"' % (Srvr, DBINIT)
         if SERVER == "SQL":
             lang="sql"
+            if par['ALGEBRA']:
+                Srvr = '%s --set sql_debug=16384' % Srvr
             if par['M5']:
                 Srvr = '%s --set mal_listing=0 "--dbinit=%s include sql;"' % (Srvr, DBINIT)
             else:
@@ -2534,6 +2543,7 @@ def ReadMapproveRc(f) :
     v['OIDS'] = ''
     v['FIVE'] = ''
     v['STATIC'] = ''
+    v['ALGEBRA'] = ''
     if os.path.isfile(f):
         r = re.compile('^([A-Z]+) = "(.*)".*$')
         for l in open(f):
@@ -2709,7 +2719,7 @@ _PackageDict = {
     }
 
 par = {}
-# the default; only used for usage information in case -p/---package has not been given
+# the default; only used for usage information in case -p/--package has not been given
 par['PACKAGE'] = 'monetdb'
 # try to be "smart"
 if os.path.exists(os.path.join('CVS', 'Repository')):
@@ -2808,6 +2818,8 @@ def main(argv) :
          "use Mserver of MonetDB Version 4 (default with <package> not in {monetdb5, monetdb-datacell})"),
         ('MonetDB5', '5', 'MonetDB5', None,
          "use mserver5 of MonetDB Version 5 (default with <package> in {monetdb5, monetdb-datacell})"),
+        ('algebra', 'a', 'algebra', None,
+         "use the algebra version of the SQL compiler"),
         ('recursive', 'r', 'recursive', None,
          "recurse into subdirectories (implies 'All')"),
         ('MONETDB_SOURCE', None, 'MONETDB_SOURCE', '<path>',
@@ -2872,7 +2884,7 @@ def main(argv) :
     elif THISFILE == 'Mapprove.py':
         f = os.path.join(GetMonetConfig(par['PACKAGE'],'--prefix'),dftTSTPREF,'.Mapprove.rc')
         v = ReadMapproveRc(f)
-        for i in 'BITS', 'OIDS', 'FIVE', 'STATIC':
+        for i in 'BITS', 'OIDS', 'FIVE', 'STATIC', 'ALGEBRA':
             if v[i]:
                 v[i] = '[.%s]' % v[i]
         options = cmd_options + [
@@ -2881,9 +2893,9 @@ def main(argv) :
              "(default: <ext> = 'out' & 'err')"),
             (None, 'S', 'sys', '<sys>',
              "approve specific output *.<ext><sys>\n"
-             "(<sys> = '[.(<OS>[<RELEASE>]|<DIST>[<VERSION>])][.(32|64)bit][.oid(32|64)][.Five][.STATIC]',\n"
-             "(default: longest match for <sys> = '[.(%s[%s]|%s[%s])]%s%s%s%s')"
-              % (v['OS'], v['RELEASE'], v['DIST'], v['VERSION'], v['BITS'], v['OIDS'], v['FIVE'], v['STATIC'])),
+             "(<sys> = '[.(<OS>[<RELEASE>]|<DIST>[<VERSION>])][.(32|64)bit][.oid(32|64)][.Five][.STATIC][.Algebra]',\n"
+             "(default: longest match for <sys> = '[.(%s[%s]|%s[%s])]%s%s%s%s%s')"
+              % (v['OS'], v['RELEASE'], v['DIST'], v['VERSION'], v['BITS'], v['OIDS'], v['FIVE'], v['STATIC'], v['ALGEBRA'])),
             (None, 'f', 'force', None,
              "force approval of error messages (i.e., lines starting with '!')"),
             ]
@@ -2934,8 +2946,8 @@ def main(argv) :
     if par['M5'] and par['PACKAGE'] == 'monetdb4':
         ErrXit('"-5/--MonetDB5" conflicts with "--package=monetdb4"!')
     if not par['M4'] and not par['M5']:
-        par['M4'] = par['PACKAGE'] not in ['monetdb5', 'monetdb-datacell']
-        par['M5'] = par['PACKAGE']     in ['monetdb5', 'monetdb-datacell']
+        par['M4'] = par['PACKAGE'] not in ['monetdb5', 'monetdb-datacell', 'monetdb-template', 'monetdb-sql', 'monetdb-geom']
+        par['M5'] = par['PACKAGE']     in ['monetdb5', 'monetdb-datacell', 'monetdb-template', 'monetdb-sql', 'monetdb-geom']
 
     config = opts.get('config')
     if config is None and par['PACKAGE'] not in ('monetdb', 'monetdb-java', 'monetdb-clients'):
@@ -2950,10 +2962,15 @@ def main(argv) :
         except monet_options.Error:
             sys.exit(1)
 
+    par['ALGEBRA'] = opts.get('algebra', 0)
     par['RECURSIVE'] = opts.get('recursive', 0)
     par['QUIET'] = opts.get('quiet', 0)
     if THISFILE == "Mtest.py":
-        par['IGNORE'] = opts.get('ignore', dftIGNORE)
+        if par['ALGEBRA'] and par['PACKAGE'] == 'monetdb-sql':
+            _IGNORE = '^[#%]'
+        else:
+            _IGNORE = dftIGNORE
+        par['IGNORE'] = opts.get('ignore', _IGNORE)
         par['CONTEXT'] = '-C%d' % int(opts.get('context', 1))
         a = int(opts.get('accuracy', 1))
         if a not in (-1,0,1,2):
@@ -3132,17 +3149,17 @@ def main(argv) :
         os.environ['DISTVER'] = DISTVER
         os.environ['VERSION'] = VERSION
         w = {}
-        for i in 'OS', 'RELEASE', 'DIST', 'VERSION', 'BITS', 'OIDS', 'FIVE', 'STATIC':
+        for i in 'OS', 'RELEASE', 'DIST', 'VERSION', 'BITS', 'OIDS', 'FIVE', 'STATIC', 'ALGEBRA':
             w[i] = re.escape(v[i])
-        for i in 'BITS', 'OIDS', 'FIVE', 'STATIC':
+        for i in 'BITS', 'OIDS', 'FIVE', 'STATIC', 'ALGEBRA':
             j = 'TST_'+i
             env[j] = v[i]
             os.environ[j] = v[i]
             if v[i]:
                 v[i] = '(.%s)?' % v[i]
                 w[i] = '(\.%s)?' % w[i]
-        sv = '^(.(%s(%s)?|%s(%s)?))?%s%s%s%s$' % (v['OS'], v['RELEASE'], v['DIST'], v['VERSION'], v['BITS'], v['OIDS'], v['FIVE'], v['STATIC'])
-        sw = '^(\.(%s(%s)?|%s(%s)?))?%s%s%s%s$' % (w['OS'], w['RELEASE'], w['DIST'], w['VERSION'], w['BITS'], w['OIDS'], w['FIVE'], w['STATIC'])
+        sv = '^(.(%s(%s)?|%s(%s)?))?%s%s%s%s%s$' % (v['OS'], v['RELEASE'], v['DIST'], v['VERSION'], v['BITS'], v['OIDS'], v['FIVE'], v['STATIC'], v['ALGEBRA'])
+        sw = '^(\.(%s(%s)?|%s(%s)?))?%s%s%s%s%s$' % (w['OS'], w['RELEASE'], w['DIST'], w['VERSION'], w['BITS'], w['OIDS'], w['FIVE'], w['STATIC'], w['ALGEBRA'])
         r = re.compile(sw)
         if not r.match(par['SYSTEM']):
             ErrXit("System (-S) must match '"+sv+"' !")
@@ -3396,6 +3413,7 @@ def main(argv) :
             env['TST_OIDS'] = ""
             env['TST_FIVE'] = ""
             env['TST_STATIC'] = ""
+            env['TST_ALGEBRA'] = ""
 
         is_sql = par['PACKAGE'] == 'monetdb-sql'
         if not is_sql:
@@ -3491,7 +3509,7 @@ def main(argv) :
         env['VERSION'] = os.environ['VERSION']
         n = os.path.join(env['TSTTRGBASE'],TSTPREF,'.Mapprove.rc')
         f = open(n, 'w')
-        for v in 'OS', 'RELEASE', 'DIST', 'VERSION', 'TST_BITS', 'TST_OIDS', 'TST_FIVE', 'TST_STATIC':
+        for v in 'OS', 'RELEASE', 'DIST', 'VERSION', 'TST_BITS', 'TST_OIDS', 'TST_FIVE', 'TST_STATIC', 'TST_ALGEBRA':
             w = v.replace('TST_','')
             f.write('%s = "%s"\n' % (w, env[v]))
         f.close()
@@ -3537,6 +3555,7 @@ def main(argv) :
         product = os.path.split(env['TSTSRCBASE'])[-1]
         if product == 'sql':
             product += env['TST_FIVE']
+            product += env['TST_ALGEBRA']
         compiler = ''
         if os.name == 'nt':
             compiler = 'Mic' # Microsoft Visual Studio C
