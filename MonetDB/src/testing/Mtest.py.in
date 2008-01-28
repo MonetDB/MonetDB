@@ -2818,7 +2818,7 @@ def main(argv) :
          "use Mserver of MonetDB Version 4 (default with <package> not in {monetdb5, monetdb-datacell})"),
         ('MonetDB5', '5', 'MonetDB5', None,
          "use mserver5 of MonetDB Version 5 (default with <package> in {monetdb5, monetdb-datacell})"),
-        ('algebra', 'a', 'algebra', None,
+        ('algebra', 'G', 'algebra', None,
          "use the algebra version of the SQL compiler"),
         ('recursive', 'r', 'recursive', None,
          "recurse into subdirectories (implies 'All')"),
