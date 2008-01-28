@@ -108,6 +108,11 @@ OPTjoinPathImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	if (varGetProp(mb, getArg(mb->stmt[0], 0), inlineProp) != NULL)
 		return 0;
 
+	old= mb->stmt;
+	limit= mb->stop;
+	slimit= mb->ssize;
+	newMalBlkStmt(mb,mb->ssize);
+
 	/* beware, new variables and instructions are introduced */
 	pc= (int*) GDKmalloc(sizeof(int)* mb->vtop * 2); /* to find last assignment */
 	memset((char*) pc, 0, sizeof(int)* mb->vtop *2);
@@ -117,10 +122,11 @@ OPTjoinPathImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	used= (int*) GDKmalloc(sizeof(int)* mb->vtop * 2); /* beware, new variables are introduced */
 	memset((char*) used, 0, sizeof(int)* mb->vtop * 2);
 
-	old= mb->stmt;
-	limit= mb->stop;
-	slimit= mb->ssize;
-	newMalBlkStmt(mb,mb->ssize);
+	for (i = 0; i<limit; i++){
+		p= old[i];
+		for(j=p->retc; j< p->argc; j++)
+			used[getArg(p,j)]++;
+	}
 
 	for (i = 0; i<limit; i++){
 		p= old[i];
@@ -172,19 +178,22 @@ Final type check.
 @-
 Post-optimization. After the join path has been constructed
 it should factor out common subpaths. The heuristic is to
-remove the first pair if its variables are used often.
-In principle, any re-used pair should be localized recursively.
+remove any pair if its variables are used often.
 The heuristics is sufficient for the code produced by SQL frontend
 @c
-			if ( used[getArg(q,1)]>=2 && used[getArg(q,2)]>=2){
+			for(k=1; k< q->argc-1; k++)
+			if ( used[getArg(q,k)] > 1 && used[getArg(q,k+1)] > 1){
 				r= copyInstruction(q);
+				getArg(r,1)= getArg(q,k);
+				getArg(r,2)= getArg(q,k+1);
 				r->argc=3;
 				getArg(r,0)= newTmpVariable(mb,TYPE_any);
-				getArg(q,1)= getArg(r,0);
-				delArgument(q,2);
+				getArg(q,k)= getArg(r,0);
+				delArgument(q,k+1);
 				pushInstruction(mb,r);
 				for(j=0; j< r->retc; j++)
 					pc[getArg(r,j)]= mb->stop-1;
+				k--;
 #ifdef DEBUG_OPT_JOINPATH 
 				stream_printf(GDKout,"heuristic joinPath rule\n");
 				printInstruction(GDKout,mb, r, LIST_MAL_ALL);
@@ -201,8 +210,6 @@ The heuristics is sufficient for the code produced by SQL frontend
 		pushInstruction(mb,p);
 		for(j=0; j< p->retc; j++)
 			pc[getArg(p,j)]= mb->stop-1;
-		for(j=p->retc; j< p->argc; j++)
-			used[getArg(p,j)]++;
 	}
 	for(; i<slimit; i++)
 	if(old[i])
