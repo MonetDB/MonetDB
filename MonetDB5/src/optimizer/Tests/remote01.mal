@@ -34,4 +34,4 @@ io.printf(" count %d\n",i);
 d:bat[:int,:int]:= mapi.rpc(mid,"io.print(d);");
 io.print(d);
 mapi.disconnect(mid);
-optimizer.remoteQueries();
+#optimizer.remoteQueries();

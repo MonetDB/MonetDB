@@ -52,7 +52,7 @@ function user.qry(a:bat[:any_1,:any_2],b:bat[:any_2,:any_3],c:bat[:any_3,:any_4]
     zz := algebra.join(z,c);
     ww := algebra.join(z,a);
     yy := algebra.joinPath(z,a,b);
-    xx := algebra.joinPath(ww,b,c);
+    xx := algebra.joinPath(z,a,b,c);
     return qry := xx;
 end qry;
 

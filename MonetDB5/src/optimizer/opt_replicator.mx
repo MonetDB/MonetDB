@@ -93,8 +93,9 @@ OPTreplicatorImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 				setModuleId(q,replicatorRef);
 				setFunctionId(q,preludeRef);
 				q= pushArgument(mb,q,getArg(p,1));
+				pushInstruction(mb,q);
+				setModuleId(p,replicatorRef);
 				pushInstruction(mb,p);
-				setModuleId(q,replicatorRef);
 		} else
 			pushInstruction(mb,p);
 	}

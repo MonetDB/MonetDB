@@ -82,7 +82,8 @@ function user.main():void;	# 0  (main:void)
     d:bat[:int,:int]  := mapi.rpc(mid,"io.print(d);");	# 30 SERVERmapi_rpc_bat (d:bat[:int,:int])<-(mid:int)(_53:str)
     io.print(d);	# 31 IOprint_val (_54:void)<-(d:bat[:int,:int])
     mapi.disconnect(mid);	# 32 SERVERdisconnect (_55:void)<-(mid:int)
-end main;	# 33  
+#optimizer.remoteQueries(); 	# 33  (_56:str)
+end main;	# 34  
 #-----------------#
 # h	t	  # name
 # int	int	  # type
@@ -98,10 +99,15 @@ end main;	# 33
 #-----------------#
 [ 1,	  1	  ]
 [ 3,	  3	  ]
-!MALException:mapi.bind:remote error: SyntaxException:parseError:b:bat[int,int]:=bbp.bind("rbat");
-!MALException:mapi.bind:remote error:SyntaxException:parseError:     ^',' expected
-!MALException:mapi.bind:remote error:SyntaxException:parseError:
-!MALException:mapi.bind:remote error:';' expected
+[ nil ]
+ count 3
+#-----------------#
+# h	t	  # name
+# int	int	  # type
+#-----------------#
+[ 5,	  5	  ]
+[ 6,	  6	  ]
+[ 7,	  7	  ]
 
 # 09:35:05 >  
 # 09:35:05 >  Done.
