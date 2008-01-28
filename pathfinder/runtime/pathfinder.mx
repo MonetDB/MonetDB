@@ -3765,11 +3765,11 @@ PROC play_doc_tape(BAT[void,BAT] ws,
 The DocmgmTape() is the same proc as play_doc_tape but adabted to the needs of the algebra
 backend of pathfinder.
 @mil
-PROC DocmgmTape(BAT[oid,BAT] ws,
-                BAT[oid,str] location, 
-                BAT[oid,str] docname, 
-                BAT[oid,str] colname, 
-                BAT[oid,lng] percentage) : void
+PROC DocmgmTape(BAT[void,BAT] ws,
+                BAT[void,str] location, 
+                BAT[void,str] docname, 
+                BAT[void,str] colname, 
+                BAT[void,lng] percentage) : void
 {
     var del_doc := percentage.ord_uselect(-1LL).hmark(0@0);
     var add_doc := percentage.ord_uselect(0LL,lng_nil).hmark(0@0);
