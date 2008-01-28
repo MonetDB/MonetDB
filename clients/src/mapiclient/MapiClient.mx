@@ -1187,6 +1187,10 @@ showCommands(void)
 		stream_printf(toConsole, "\\A      - enable auto commit\n");
 		stream_printf(toConsole, "\\a      - disable auto commit\n");
 	}
+	if (mode == SQL || mode == XQUERY) {
+		stream_printf(toConsole, "\\G      - switch to algebra frontend\n");
+		stream_printf(toConsole, "\\g      - switch to old frontend\n");
+	}
 	if (mode == XQUERY) {
 		stream_printf(toConsole, "\\f      - result format: dm or xml[-noheader][-typed|-noroot|-root-FOOBAR]\n");
 	} else {
@@ -1322,6 +1326,16 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt)
 					if (mode != SQL)
 						break;
 					mapi_setAutocommit(mid, 0);
+					continue;
+				case 'G':
+					if (mode != SQL && mode != XQUERY)
+						break;
+					mapi_setAlgebra(mid, 1);
+					continue;
+				case 'g':
+					if (mode != SQL && mode != XQUERY)
+						break;
+					mapi_setAlgebra(mid, 0);
 					continue;
 				case 'w':
 					pagewidth = atoi(line + 2);
@@ -1594,10 +1608,12 @@ usage(const char *prog)
 	fprintf(stderr, " -r nr       | --rows=nr          for pagination\n");
 	fprintf(stderr, " -w nr       | --width=nr         for pagination\n");
 	fprintf(stderr, " -D          | --dump             create an SQL dump\n");
+	fprintf(stderr, " -G          | --algebra          use algebra frontend\n");
 
 	fprintf(stderr, "\nXQuery specific options\n");
 	fprintf(stderr, " -C colname  | --collection=colname  collection name\n");
 	fprintf(stderr, " -I docname  | --input=docname    document name, XML document on standard input\n");
+	fprintf(stderr, " -G          | --algebra          use algebra frontend\n");
 	exit(-1);
 }
 
@@ -1618,6 +1634,7 @@ main(int argc, char **argv)
 	int trace = 0;
 	int guest = 1;
 	int dump = 0;
+	int algebra = 0;
 	int c = 0;
 	Mapi mid;
 	int save_history = 0;
@@ -1625,6 +1642,7 @@ main(int argc, char **argv)
 	int option_index = 0;
 	struct stat statb;
 	static struct option long_options[] = {
+		{"algebra", 0, 0, 'G'},
 		{"collection", 1, 0, 'C'},
 		{"database", 1, 0, 'd'},
 		{"dump", 0, 0, 'D'},
@@ -1672,7 +1690,7 @@ main(int argc, char **argv)
 #ifdef HAVE_ICONV
 				"E:"
 #endif
-				"f:I:ih:L:l:"
+				"f:Gh:I:iL:l:"
 #ifdef HAVE_POPEN
 				"|:"
 #endif
@@ -1748,6 +1766,9 @@ main(int argc, char **argv)
 			break;
 		case 'h':
 			host = optarg;
+			break;
+		case 'G':
+			algebra = 1;
 			break;
 		case 'p':
 			port = atoi(optarg);
@@ -1865,6 +1886,8 @@ main(int argc, char **argv)
 	if (logfile)
 		mapi_log(mid, logfile);
 
+	if (algebra && (mode == SQL || mode == XQUERY))
+		mapi_setAlgebra(mid, algebra);
 	mapi_profile(mid, mark != NULL);
 	mapi_trace(mid, trace);
 	if (output)

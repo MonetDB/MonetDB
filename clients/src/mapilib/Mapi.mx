@@ -227,6 +227,7 @@ section.
 @item mapi_rows_affected()	@tab Obtain number of rows changed
 @item mapi_seek_row()	@tab	Move row reader to specific location in cache
 @item mapi_setAutocommit()	@tab	Set auto-commit flag
+@item mapi_setAlgebra()	@tab	Use algebra backend
 @item mapi_stream_query()	@tab Send query and prepare for reading tuple stream
 @item mapi_table()	@tab	Get current table name
 @item mapi_timeout()	@tab	Set timeout for long-running queries[TODO]
@@ -589,6 +590,10 @@ Clear all parameter bindings.
 Set the autocommit flag (default is on).  This only has an effect
 when the language is SQL.  In that case, the server commits after each
 statement sent to the server.
+
+@item MapiMsg mapi_setAlgebra(Mapi mid, int algebra)
+
+Tell the backend to use or stop using the algebra-based compiler.
 
 @item MapiMsg mapi_cache_limit(Mapi mid, int maxrows)
 
@@ -1073,6 +1078,7 @@ mapi_export MapiMsg mapi_trace(Mapi mid, int flag);
 mapi_export int mapi_get_trace(Mapi mid);
 mapi_export MapiMsg mapi_log(Mapi mid, const char *nme);
 mapi_export MapiMsg mapi_setAutocommit(Mapi mid, int autocommit);
+mapi_export MapiMsg mapi_setAlgebra(Mapi mid, int algebra);
 mapi_export char *mapi_result_error(MapiHdl hdl);
 mapi_export MapiMsg mapi_next_result(MapiHdl hdl);
 mapi_export MapiMsg mapi_needmore(MapiHdl hdl);
@@ -3146,6 +3152,12 @@ mapi_setAutocommit(Mapi mid, int autocommit)
 		return mapi_Xcommand(mid, "auto_commit", "1");
 	else
 		return mapi_Xcommand(mid, "auto_commit", "0");
+}
+
+MapiMsg
+mapi_setAlgebra(Mapi mid, int algebra)
+{
+	return mapi_Xcommand(mid, "algebra", algebra ? "1" : "0");
 }
 
 MapiMsg
