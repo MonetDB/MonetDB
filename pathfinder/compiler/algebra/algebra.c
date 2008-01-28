@@ -683,6 +683,9 @@ PFalg_atom_cmp (PFalg_atom_t a, PFalg_atom_t b)
                                 : (a.val.nat_ < b.val.nat_ ? -1 : 1));
         case aat_int:   return a.val.int_ - b.val.int_;
         case aat_uA:
+        case aat_path:
+        case aat_docnm:
+        case aat_colnm:
         case aat_str:   return strcmp (a.val.str, b.val.str);
         case aat_dec:   return (a.val.dec_ == b.val.dec_ ? 0
                                 : (a.val.dec_ < b.val.dec_ ? -1 : 1));
@@ -702,11 +705,11 @@ PFalg_atom_cmp (PFalg_atom_t a, PFalg_atom_t b)
         case aat_node1:
         case aat_pnode1:
         case aat_anode1:
-        case aat_pre1:    /* or aat_docnm */
+        case aat_pre1:
         case aat_attr1:
-        case aat_pfrag1:  /* or aat_path  */
-        case aat_afrag1:  /* or aat_colnm */ 
-                        break; /* error */
+        case aat_pfrag1:
+        case aat_afrag1:
+                        break;
     }
 
     PFoops (OOPS_FATAL, "error comparing literal values");
@@ -739,10 +742,13 @@ PFalg_simple_type_str (PFalg_simple_type_t type) {
         case aat_node1: return "node1";
         case aat_anode1:return "attr1";
         case aat_attr1: return "attrID1";
-        case aat_afrag1:return "afrag1/colnm";
+        case aat_afrag1:return "afrag1";
         case aat_pnode1:return "pnode1";
-        case aat_pre1:  return "pre1/docnm";
-        case aat_pfrag1:return "pfrag1/path";
+        case aat_pre1:  return "pre1";
+        case aat_pfrag1:return "pfrag1";
+        case aat_path:  return "path";
+        case aat_docnm: return "docnm";
+        case aat_colnm: return "colnm";
         default:
             if (type & aat_update)
                 return "update";

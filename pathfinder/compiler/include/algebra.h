@@ -101,14 +101,13 @@
 
 /**
  * The following types are for the document management functions. We introduce
- * one new type, aat_docmgmt, to signify document management queries, and reuse
- * types from the update functions since doc management and update functions
- * can not be together in the same query.
+ * one new type, aat_docmgmt, to signify document management queries, and 3 
+ * new types for path, document name and collection name.
  */
-#define aat_docmgmt  0x00020000 /**< represents the doc management type */
-#define aat_path     0x00001000 /**< the path where a document resides*/
-#define aat_docnm    0x00002000 /**< the name of the document */
-#define aat_colnm    0x00004000 /**< the name of the collection */
+#define aat_docmgmt  0x00100000 /**< represents the doc management type */
+#define aat_path     0x00020000 /**< the path where a document resides*/
+#define aat_docnm    0x00040000 /**< the name of the document */
+#define aat_colnm    0x00080000 /**< the name of the collection */
 
 /** Simple atomic types in our algebra */
 typedef unsigned int PFalg_simple_type_t;
