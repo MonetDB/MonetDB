@@ -2041,7 +2041,7 @@ SERVERbindBAT(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 		int target= getArgType(mb,pci,0);
 		hn= getTypeName(getHeadType(target));
 		tn= getTypeName(getTailType(target));
-		snprintf(buf,BUFSIZ,"%s:bat[%s,%s]:=bbp.bind(\"%s\");",
+		snprintf(buf,BUFSIZ,"%s:bat[:%s,:%s]:=bbp.bind(\"%s\");",
 			getVarName(mb,getDestVar(pci)), hn,tn, *nme);
 		GDKfree(hn);
 		GDKfree(tn);

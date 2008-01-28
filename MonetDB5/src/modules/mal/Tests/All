@@ -39,7 +39,7 @@ remote02
 remote03
 
 #some mapi related tests
-mapi01
+#mapi01 this one generates different output always
 mapi02
 
 xml00
