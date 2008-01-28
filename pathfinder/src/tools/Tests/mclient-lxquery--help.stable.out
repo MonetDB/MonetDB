@@ -1,12 +1,14 @@
 stdout of test 'mclient-lxquery--help` in directory 'src/tools` itself:
 
 
-# 23:46:23 >  
-# 23:46:23 >   Mserver "--config=/ufs/manegold/_/scratch0/Monet/Testing/Stable/prefix.--enable-strict_--disable-debug_--enable-optimize_--disable-assert/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/manegold/_/scratch0/Monet/Testing/Stable/prefix.--enable-strict_--disable-debug_--enable-optimize_--disable-assert/lib64/MonetDB4:/ufs/manegold/_/scratch0/Monet/Testing/Stable/prefix.--enable-strict_--disable-debug_--enable-optimize_--disable-assert/lib64/MonetDB4/lib:/ufs/manegold/_/scratch0/Monet/Testing/Stable/prefix.--enable-strict_--disable-debug_--enable-optimize_--disable-assert/lib64/MonetDB4/bin" --set "gdk_dbfarm=/ufs/manegold/_/scratch0/Monet/Testing/Stable/prefix.--enable-strict_--disable-debug_--enable-optimize_--disable-assert/var/MonetDB4/dbfarm" --set "sql_logdir=/ufs/manegold/_/scratch0/Monet/Testing/Stable/prefix.--enable-strict_--disable-debug_--enable-optimize_--disable-assert/var/MonetDB4/sql_logs" --set "xquery_logdir=/ufs/manegold/_/scratch0/Monet/Testing/Stable/prefix.--enable-strict_--disable-debug_--enable-optimize_--disable-assert/var/MonetDB4/xquery_logs" --set mapi_open=true --set xrpc_open=true --set mapi_port=34548 --set xrpc_port=49429 --set monet_prompt= --trace "--dbname=mTests_src_tools" "--dbinit= module(pathfinder);" ; echo ; echo Over..
-# 23:46:23 >  
+# 19:33:05 >  
+# 19:33:05 >   Mserver "--config=/ufs/manegold/_/scratch0/Monet/Testing/Current/prefix.--enable-strict_--disable-debug_--enable-optimize_--disable-assert/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/manegold/_/scratch0/Monet/Testing/Current/prefix.--enable-strict_--disable-debug_--enable-optimize_--disable-assert/lib64/MonetDB4:/ufs/manegold/_/scratch0/Monet/Testing/Current/prefix.--enable-strict_--disable-debug_--enable-optimize_--disable-assert/lib64/MonetDB4/lib:/ufs/manegold/_/scratch0/Monet/Testing/Current/prefix.--enable-strict_--disable-debug_--enable-optimize_--disable-assert/lib64/MonetDB4/bin" --set "gdk_dbfarm=/ufs/manegold/_/scratch0/Monet/Testing/Current/prefix.--enable-strict_--disable-debug_--enable-optimize_--disable-assert/var/MonetDB4/dbfarm" --set "sql_logdir=/ufs/manegold/_/scratch0/Monet/Testing/Current/prefix.--enable-strict_--disable-debug_--enable-optimize_--disable-assert/var/MonetDB4/sql_logs" --set "xquery_logdir=/ufs/manegold/_/scratch0/Monet/Testing/Current/prefix.--enable-strict_--disable-debug_--enable-optimize_--disable-assert/var/MonetDB4/xquery_logs" --set mapi_open=true --set xrpc_open=true --set mapi_port=31795 --set xrpc_port=42301 --set monet_prompt= --trace "--dbname=mTests_src_tools" "--dbinit= module(pathfinder);" ; echo ; echo Over..
+# 19:33:05 >  
 
-# MonetDB Server v4.20.1
-# based on GDK   v1.20.1
+
+
+# MonetDB Server v4.21.0
+# based on GDK   v1.21.0
 # Copyright (c) 1993-2007, CWI. All rights reserved.
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
@@ -47,6 +49,8 @@ Session commands:
 \|cmd   - pipe result to process, or stop when no command is given
 \h      - show the readline history
 \t      - toggle timer
+\G      - switch to algebra frontend
+\g      - switch to old frontend
 \f      - result format: dm or xml[-noheader][-typed|-noroot|-root-FOOBAR]
 \L file - save client/server interaction
 \X      - trace mclient code
