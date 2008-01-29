@@ -1,7 +1,0 @@
-#!/bin/sh
-
-NAME="$1"
-PRELUDE="$2"
-
-ln -s $RELTRGDIR/niels.mil .
-Mlog -x $MSERVER --dbname=$TSTDB niels.mil

@@ -1,9 +1,0 @@
-var a := new(oid,oid).insert(0@0,0@0).insert(0@0,1@0).insert(1@0,1@0);
-a.delete(0@0,1@0);
-a := a.sort();
-var b := new(void,str).seqbase(0@0).append("b").append("b");
-var bb := a.join(b);
-var aa := a.project("a");
-aa.print();
-bb.print();
-[+](aa,bb).print();
