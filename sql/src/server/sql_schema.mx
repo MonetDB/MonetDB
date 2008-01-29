@@ -1733,15 +1733,23 @@ drop_table(mvc *sql, dlist *qname, int drop_action)
 }
 
 static stmt *
-alter_table(mvc *sql, sql_schema *ss, dlist *qname, symbol *te)
+alter_table(mvc *sql, dlist *qname, symbol *te)
 {
-	char *name = qname_table(qname);
+	char *sname = qname_schema(qname);
+	char *tname = qname_table(qname);
+	sql_schema *s = NULL;
 	sql_table *t = NULL;
 
-	if ((t = mvc_bind_table(sql, ss, name)) == NULL) {
-		return sql_error(sql, 02, "ALTER TABLE: no such table '%s'", name);
+	if (sname && !(s=mvc_bind_schema(sql, sname))) {
+		(void) sql_error(sql, 02, "ALTER TABLE: no such schema '%s'", sname);
+		return NULL;
+	}
+	if (!s)
+		s = cur_schema(sql);
+	if ((t = mvc_bind_table(sql, s, tname)) == NULL) {
+		return sql_error(sql, 02, "ALTER TABLE: no such table '%s'", tname);
 	} else {
-		return table_element(sql, te, ss, t, 1);
+		return table_element(sql, te, s, t, 1);
 	}
 }
 
@@ -1956,8 +1964,8 @@ schemas(mvc *sql, symbol *s)
 	{
 		dlist *l = s->data.lval;
 
-		ret = alter_table(sql, cur_schema(sql), l->h->data.lval,	/* table name */
-				  l->h->next->data.sym);	/* table element */
+		ret = alter_table(sql, l->h->data.lval,	/* table name */
+				  l->h->next->data.sym);/* table element */
 		sql->type = Q_SCHEMA;
 	}
 		break;
