@@ -2228,7 +2228,6 @@ tail_type(stmt *st)
 	case st_group:
 	case st_derive:
 	case st_group_ext:
-	case st_mark:
 	case st_gen_group:
 	case st_order:
 		return tail_type(st->op1.stval);
@@ -2244,6 +2243,7 @@ tail_type(stmt *st)
 		} else if (st->op1.idxval->type == join_idx) {
 			return sql_bind_localtype("oid");
 		}
+	case st_mark:
 	case st_reorder:
 		return sql_bind_localtype("oid");
 	case st_table_clear:
@@ -2311,6 +2311,7 @@ head_type(stmt *st)
 	case st_group:
 	case st_group_ext:
 	case st_order:
+	case st_mark:
 		return head_type(st->op1.stval);
 	case st_relselect:
 	case st_reljoin:
@@ -2319,7 +2320,6 @@ head_type(stmt *st)
 	case st_list:
 		return head_type(st->op1.lval->h->data);
 
-	case st_mark:
 	case st_temp:
 	case st_bat:
 	case st_idxbat:

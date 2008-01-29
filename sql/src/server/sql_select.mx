@@ -308,22 +308,13 @@ flat_subquery(mvc *sql, symbol *sq)
 {
 	scope *scp = scope_open(NULL);
 	exp_kind ek = {type_value, card_relation, TRUE};
-	stmt *s = sql_subquery(sql, scp, sq, ek);
+	stmt *n = NULL, *s = sql_subquery(sql, scp, sq, ek);
 
 	scp = scope_close(scp);
 	if (s && s->type == st_ordered) {
-		list *l = create_stmt_list();
-		node *n;
-
-		for (n = s->op2.stval->op1.lval->h; n; n = n->next) {
-			stmt *sc = stmt_dup(n->data);
-
-			list_append(l, stmt_reverse(stmt_order(stmt_reverse(stmt_join(stmt_mark(stmt_reverse(stmt_dup(s->op1.stval)), 0), sc, cmp_equal)
-							       ), 1))
-			    );
-		}
+		n = sql_reorder(stmt_dup(s->op1.stval), stmt_dup(s->op2.stval));
 		stmt_destroy(s);
-		s = stmt_list(l);
+		s = n;
 	}
 	return s;
 }
