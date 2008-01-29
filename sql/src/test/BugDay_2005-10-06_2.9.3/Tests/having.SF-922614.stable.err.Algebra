@@ -10,9 +10,9 @@ stderr of test 'having.SF-922614` in directory 'src/test/BugDay_2005-10-06_2.9.3
 # 16:54:28 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=44748  < having.SF-922614.sql
 # 16:54:28 >  
 
-MAPI  = monetdb@koala:36121
+MAPI  = monetdb@koala:31530
 QUERY = select * from t10 having i= max(i);
-ERROR = !SELECT: cannot compare sets with values, probably an aggregate function missing
+ERROR = !SELECT: cannot use non GROUP BY column 'i' in query results without an aggregate function
 
 # 16:54:28 >  
 # 16:54:28 >  Done.
