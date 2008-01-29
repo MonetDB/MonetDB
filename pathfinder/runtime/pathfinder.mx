@@ -4198,6 +4198,7 @@ typedef struct {
         
     /* error stream (normally fderr=GDKerr=GDKout) */
     stream *fderr;
+    char *errbuf;
 
     /* live BAT handles (note we gave them a memory refcount in BBP) */
     BAT *proc_vid, *var_usage;
@@ -4383,7 +4384,10 @@ xquery_compile_exec(xquery_client *ctx,
             *prologue = xquery; *epilogue = NULL;
         } else {
             PFmaxstack = ((char*) &xquery) - 2*THREAD_STACK_SIZE;
+            PFerrbuf = ctx->errbuf;
+            PFerrbuf[0] = 0;
             err = PFcompile_MonetDB(xquery, url, prologue, &del, epilogue, options);
+            ctx->errbuf = PFerrbuf; 
             if (err == NULL && nsurl != NULL){
                 /* get the module namespace URL Y from pattern: "module namespace X = Y" */
                 char *p0 = xquery_parse_space(xquery); 
@@ -5078,6 +5082,7 @@ xquery_client_new(Cntxt stk) {
         memset(ctx, 0, sizeof(xquery_client));
         ctx->stk = stk; 
         ctx->fderr = GDKerr;
+        ctx->errbuf = GDKmalloc(GDKMAXERRLEN);
     }
     return ctx; 
 }
