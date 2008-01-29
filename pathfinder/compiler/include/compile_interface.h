@@ -36,6 +36,8 @@
 #define COMPILE_OPTION_STANDOFF 1 /* use bit 0 of the 'options'
                                      param to enable StandOff */
 
+extern char* PFerrbuf;
+
 /* main compiler call from the Monet runtime environment */
 char* PFcompile_MonetDB (char* xquery, char* url, char** prologue, char** query, char** epilogue, int options);
 

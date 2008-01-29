@@ -83,7 +83,7 @@ static char *oops_msg[] = {
 /**
  * global buffer for collecting all errors 
  */
-char PFerrbuf[OOPS_SIZE] = { 0 };
+char *PFerrbuf = NULL;
 
 /**
  * global stack threshold to guard against too deep recursions
