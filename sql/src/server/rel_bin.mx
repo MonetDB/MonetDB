@@ -318,10 +318,12 @@ static stmt *
 stmt_rename( sql_rel *rel, sql_exp *exp, stmt *s )
 {
 	char *name = exp->name;
-	char *rname = rel->name;
+	char *rname = exp->rname;
 
 	if (!name)
 		name = column_name(s);
+	if (!rname) 	
+		rname = rel->name;
 	if (!rname)
 		rname = table_name(s);
 	name = _strdup(name);
@@ -373,12 +375,14 @@ rel2bin_basetable( mvc *sql, sql_rel *rel )
 		for( en = rel->exps->h; en; en = en->next ) {
 			sql_exp *exp = en->data;
 			stmt *s = bin_find_column(sub, exp->l, exp->r);
+			char *rname = exp->rname;
 	
 			if (!s) {
 				assert(0);
 				stmt_destroy(sub);
 				return NULL;
 			}
+			rname = rname?_strdup(rname):NULL;
 			s = stmt_alias(s, NULL, _strdup(exp->name));
 			list_append(l, s);
 		}

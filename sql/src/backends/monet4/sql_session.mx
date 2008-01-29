@@ -116,11 +116,9 @@ sql_symbol2stmt(mvc *c)
 	if (mvc_debug_on(c,16384)) {
 		int status = c->session->status;
 		sql_rel *r;
-		printf("# semantic relational algebra\n");
 		r = rel_semantic(c, c->sym);
 		if (!r) {
 			if (c->errstr[0]) {
-				printf("# %s\n", c->errstr);
 				return NULL;
 			} else {
 				c->session->status = status;
@@ -142,7 +140,6 @@ sql_symbol2stmt(mvc *c)
 			}
 		}
 	}  else {
-		/*printf("# semantic binary algebra\n");*/
 		s = output_semantic(c, NULL, c->sym);
 	}
 
@@ -475,6 +472,16 @@ query string with "M".
 						break;
 					else if (!commit && mvc_rollback(m, 0, NULL) < 0)
 						break;
+				}
+				in->pos = in->len;	/* HACK: should use parsed lenght */
+				continue;
+			}
+			if( strncmp(in->buf+in->pos,"algebra ", 8)==0 ){
+				v= (int) strtol(in->buf+in->pos+8,NULL,10);
+				if (v) {
+					m->debug |= 16384;
+				} else {
+					m->debug &= (~16384);
 				}
 				in->pos = in->len;	/* HACK: should use parsed lenght */
 				continue;
@@ -955,13 +962,6 @@ static void
 sql_client_engine(mapi_client *fc )
 {
 	backend *be = fc->fc;
-	char *buf = THRget_errbuf(fc->thread);
-
-	if (!buf) {
-		buf = GDKmalloc(GDKMAXERRLEN);
-		buf[0] = '\0';
-		THRset_errbuf(fc->thread, buf);
-	}
 	if (sqlinit)
 		mvc_sql(be->mvc, sqlinit);
 	sqlclient(be, be->mvc->scanner.rs, be->mvc->scanner.ws);

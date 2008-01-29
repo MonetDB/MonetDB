@@ -58,8 +58,8 @@ extern sql_exp * exp_atom_str(str s, sql_subtype *st);
 extern sql_exp * exp_atom_clob(str s);
 extern sql_exp * exp_atom_ref(int i, sql_subtype *tpe);
 extern sql_exp * exp_param(char *name, sql_subtype *tpe, int frame);
-extern sql_exp * exp_column( char *tname, char *name, sql_subtype *t, int card);
-extern void exp_setname( sql_exp *e, char *tname, char *name );
+extern sql_exp * exp_column( char *rname, char *name, sql_subtype *t, int card);
+extern void exp_setname( sql_exp *e, char *rname, char *name );
 
 extern void exp_swap( sql_exp *e );
 
@@ -77,7 +77,7 @@ extern int exp_is_eqjoin(sql_exp *e);
 extern int exp_is_correlation(sql_exp *e, sql_rel *r );
 
 extern sql_exp *exps_bind_column( list *exps, char *cname);
-extern sql_exp *exps_bind_column2( list *exps, char *tname, char *cname);
+extern sql_exp *exps_bind_column2( list *exps, char *rname, char *cname);
 
 #endif /* _REL_EXP_H_ */
 @c
@@ -292,14 +292,14 @@ exp_param(char *name, sql_subtype *tpe, int frame)
 }
 
 sql_exp * 
-exp_column( char *tname, char *cname, sql_subtype *t, int card) 
+exp_column( char *rname, char *cname, sql_subtype *t, int card) 
 {
 	sql_exp *e = exp_create(e_column);
 
 	assert(cname);
 	e->card = card;
 	e->name = _strdup(cname);
-	e->l = (tname)?_strdup(tname):NULL;
+	e->l = (rname)?_strdup(rname):NULL;
 	e->r = _strdup(cname);
 	e->f = t;
 	return e;
@@ -309,7 +309,7 @@ exp_column( char *tname, char *cname, sql_subtype *t, int card)
    to this expression by this simple name.
  */
 void 
-exp_setname( sql_exp *e, char *tname, char *name )
+exp_setname( sql_exp *e, char *rname, char *name )
 {
 	if (e->name)
 		_DELETE(e->name);
@@ -317,7 +317,7 @@ exp_setname( sql_exp *e, char *tname, char *name )
 
 	if (e->rname)
 		_DELETE(e->rname);
-	e->rname = (tname)?_strdup(tname):NULL;
+	e->rname = (rname)?_strdup(rname):NULL;
 }
 
 void
@@ -543,10 +543,11 @@ exps_bind_column( list *exps, char *cname )
 	return NULL;
 }
 
+/*
 static sql_exp *
 exp_find_column( sql_exp *e )
 {
-	while(e && e->type != e_column) {
+	while(e && !is_column(e->type)) {
 		if (e->type == e_atom || e->type == e_cmp || !e->l)
 			return NULL;
 		if (e->type == e_aggr || e->type == e_func) {
@@ -558,19 +559,23 @@ exp_find_column( sql_exp *e )
 	}
 	return e;
 }
+*/
 
 sql_exp *
-exps_bind_column2( list *exps, char *tname, char *cname ) 
+exps_bind_column2( list *exps, char *rname, char *cname ) 
 {
 	if (exps) {
 		node *en;
 
 		for (en = exps->h; en; en = en->next ) {
-			sql_exp *e = exp_find_column(en->data);
+			//sql_exp *e = exp_find_column(en->data);
+			sql_exp *e = en->data;
 		
-			if (e && e->type == e_column && e->name && e->l && strcmp(e->name, cname) == 0 && strcmp(e->l, tname) == 0)
+			if (e && is_column(e->type) && e->name && e->rname && strcmp(e->name, cname) == 0 && strcmp(e->rname, rname) == 0)
 				return e;
-			if (e && e->type == e_column && !e->name && e->l && e->r && strcmp(e->r, cname) == 0 && strcmp(e->l, tname) == 0)
+			if (e && is_column(e->type) && e->name && e->l && strcmp(e->name, cname) == 0 && strcmp(e->l, rname) == 0)
+				return e;
+			if (e && is_column(e->type) && !e->name && e->l && e->r && strcmp(e->r, cname) == 0 && strcmp(e->l, rname) == 0)
 				return e;
 		}
 	}

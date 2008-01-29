@@ -940,6 +940,16 @@ SQLparser(Client c)
 			in->pos = in->len;	/* HACK: should use parsed lenght */
 			return NULL;
 		}
+		if( strncmp(in->buf+in->pos,"algebra ", 8)==0 ){
+			v= (int) strtol(in->buf+in->pos+8,NULL,10);
+			if (v) {
+				m->debug |= 16384;
+			} else {
+				m->debug &= (~16384);
+			}
+			in->pos = in->len;	/* HACK: should use parsed lenght */
+			return NULL;
+		}
 		if( strncmp(in->buf+in->pos,"reply_size ", 11)==0 ){
 			v= (int) strtol(in->buf+in->pos+11,NULL,10);
 			m->reply_size = v;

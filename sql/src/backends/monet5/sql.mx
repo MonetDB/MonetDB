@@ -906,12 +906,9 @@ sql_symbol2stmt(mvc *c, symbol *sym)
 
 	if (mvc_debug_on(c,16384)) {
 		int status = c->session->status;
-		sql_rel *r;
-		printf("# semantic relational algebra\n");
-		r = rel_semantic(c, sym);
+		sql_rel *r = rel_semantic(c, sym);
 		if (!r) {
 			if (c->errstr[0]) {
-				printf("# %s\n", c->errstr);
 				return NULL;
 			} else {
 				c->session->status = status;
@@ -933,7 +930,6 @@ sql_symbol2stmt(mvc *c, symbol *sym)
 			}
 		}
 	}  else {
-		/*printf("# semantic binary algebra\n");*/
 		s = output_semantic(c, NULL, sym);
 	}
 

@@ -195,7 +195,7 @@ exp_alias_or_copy( mvc *sql, char *tname, char *cname, sql_rel *orel, sql_exp *o
 		exp_setname(old, NULL, nme);
 		return exp_column(tname, nme, exp_subtype(old), orel->card);
 	} else if (cname && !old->name) {
-		exp_setname(old, NULL, cname);
+		exp_setname(old, tname, cname);
 	}
 	return exp_column(tname, cname, exp_subtype(old), orel->card);
 }
@@ -293,11 +293,11 @@ rel_bind_path_(sql_rel *rel, sql_exp *e, list *path )
 
 			if (exps_bind_column(rel->exps, e->r))
 				found = 1;
-		} else if (e->l && exps_bind_column2(rel->exps, e->l, e->r)) {
-			found = 1;
-		} else if (!e->l && exps_bind_column(rel->exps, e->r)) {
-			found = 1;
 		}
+		if (!found && e->l && exps_bind_column2(rel->exps, e->l, e->r)) 
+			found = 1;
+		if (!found && !e->l && exps_bind_column(rel->exps, e->r)) 
+			found = 1;
 		break;
 	case op_table:
 		if (e->l && rel->name && strcmp(e->l, rel->name) != 0)
@@ -506,7 +506,6 @@ rel_setop(sql_rel *l, sql_rel *r, operator_type setop)
 {
 	sql_rel *rel = rel_create();
 
-	rel->name = NULL;
 	rel->l = l;
 	rel->r = r;
 	rel->op = setop;
@@ -522,7 +521,6 @@ rel_crossproduct(sql_rel *l, sql_rel *r, operator_type join)
 {
 	sql_rel *rel = rel_create();
 
-	rel->name = NULL;
 	rel->l = l;
 	rel->r = r;
 	rel->op = join;
@@ -557,7 +555,6 @@ rel_project(sql_rel *l, list *e)
 {
 	sql_rel *rel = rel_create();
 
-	rel->name = NULL;
 	rel->l = l;
 	rel->r = NULL;
 	rel->op = op_project;
@@ -762,7 +759,6 @@ rel_groupby(sql_rel *l, list *groupbyexps )
 			append(aggrs, e);
 		}
 	}
-	rel->name = NULL;
 	rel->l = l;
 	rel->r = groupbyexps;
 	rel->exps = aggrs;
@@ -777,7 +773,6 @@ rel_orderby(mvc *sql, sql_rel *l, list *orderbyexps )
 	if (l->op != op_project) {
 		sql_rel *rel = rel_create();
 
-		rel->name = NULL;
 		rel->l = l;
 		rel->r = orderbyexps;
 		rel->op = op_project;	
@@ -796,7 +791,6 @@ rel_topn(sql_rel *l, list *exps )
 {
 	sql_rel *rel = rel_create();
 
-	rel->name = NULL;
 	rel->l = l;
 	rel->r = NULL;
 	rel->op = op_topn;	
@@ -901,7 +895,7 @@ rel_push_join(sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_exp *e)
 	node *ln, *rn;
 	sql_rel *lrel = NULL, *rrel = NULL, *p = NULL;
 
-	if (!l || !r)
+	if (!l || !r) 
 		return NULL;
 
 	p = rel;
@@ -1131,7 +1125,7 @@ rel_bind_column( mvc *sql, sql_rel *rel, char *cname )
 		if (rel->exps) {
 			sql_exp *e = exps_bind_column(rel->exps, cname);
 			if (e)
-				return exp_alias_or_copy(sql, rel->name, cname, rel, e, 1);
+				return exp_alias_or_copy(sql, e->rname?e->rname:rel->name, cname, rel, e, 1);
 		}
 	} else if (rel->op == op_basetable) {
 		return basetable_bind_column(rel, cname);
@@ -1685,6 +1679,10 @@ rel_compare_exp(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *rs, char *compare_
 	}
 
 	/* atom or row => select */
+	if (ls->card > rel->card)
+		return sql_error(sql, 02, "SELECT: cannot use non GROUP BY column '%s' in query results without an aggregate function", ls->name);
+	if (rs->card > rel->card) 
+		return sql_error(sql, 02, "SELECT: cannot use non GROUP BY column '%s' in query results without an aggregate function", rs->name);
 	if (rs->card <= CARD_ATOM && is_atom(rs)) {
 		if (ls->card == rs->card)  /* bin compare op */
 			return rel_select(rel, e);
@@ -3663,21 +3661,12 @@ rel_select_exp(mvc *sql, sql_rel *rel, sql_rel *outer, SelectNode *sn, int tople
 			list *te = NULL; 
 			sql_exp *ce = rel_column_exp(sql, &inner, n->data.sym, sql_sel);
 			if (ce && exp_subtype(ce)) {
-				/* seems some sub-queries return 
-				   valid expressions with invalid cardinality 
-				   (which need a dynamic check!!!)
-				 */
-				if (/*outer && */ rel->card < ce->card) {
-					if (ce->type == e_column && ce->r) {
-						return sql_error(sql, 02, "SELECT: cannot use non GROUP BY column '%s' in query results without an aggregate function", ce->r);
+				if (rel->card < ce->card) {
+					if (ce->name) {
+						return sql_error(sql, 02, "SELECT: cannot use non GROUP BY column '%s' in query results without an aggregate function", ce->name);
 					} else {
 						return sql_error(sql, 02, "SELECT: cannot use non GROUP BY column in query results without an aggregate function");
 					}
-/*
-					assert(0);
-					ce = rel_groupby_add_aggr(sql, rel->l, ce);
-					ce->card = rel->card;	
-*/
 				}
 				if (sn->having) {
 					ce = rel_groupby_add_aggr(sql, inner, ce);
@@ -3708,36 +3697,8 @@ rel_select_exp(mvc *sql, sql_rel *rel, sql_rel *outer, SelectNode *sn, int tople
 			list_merge( rel->exps, te, (fdup)&exp_dup);
 			list_destroy(te);
 		}
-		/* here we need to check the cardinality of the columns */
-		if (rel && is_project(rel->op) && !outer) {
-			node *n;
-			list *exps = rel->exps;
-
-			for (n = exps->h; n; n = n->next) {
-				sql_exp *ce = n->data;
-
-				if (ce->card > rel->card) {
-					rel_destroy(rel);
-					assert(0);
-					if (ce->type == e_column && ce->r) {
-						return sql_error(sql, 02, "SELECT: cannot use non GROUP BY column '%s' in query results without an aggregate function", ce->r);
-					} else {
-						return sql_error(sql, 02, "SELECT: cannot use non GROUP BY column in query results without an aggregate function");
-					}
-				}
-/*
-				if (rel->card != ce->card && ce->card != CARD_ATOM) {
-					rel_destroy(rel);
-					return sql_error(sql, 02, "SELECT: single value in column expression");
-				}
-				ce->card = rel->card;
-*/
-				/* reset cardinality of constants */
-			}
-		}
 	} else {
 		/* select * from tables */
-
 		if (aggr) {
 			rel_destroy(rel);
 			return sql_error(sql, 02, "SELECT: cannot combine '*' with GROUP BY");
@@ -3972,11 +3933,12 @@ rel_joinquery_(mvc *sql, sql_rel *rel, symbol *tab1, int natural, jt jointype, s
 	if (js && js->token != SQL_USING) {	/* On sql_logical_exp */
 		rel = rel_logical_exp(sql, rel, js, sql_where);
 	} else if (js) {	/* using */
-		char *tname = NULL;
+		char rname[16], *rnme;
 		dnode *n = js->data.lval->h;
 		list *outexps = new_exp_list(), *exps;
 		node *m;
 
+		rnme = number2name(rname, 16, ++sql->label);
 		for (; n; n = n->next) {
 			char *nm = n->data.sval;
 			sql_exp *cond;
@@ -3992,7 +3954,7 @@ rel_joinquery_(mvc *sql, sql_rel *rel, symbol *tab1, int natural, jt jointype, s
 			rel = rel_compare_exp(sql, rel, exp_dup(ls), exp_dup(rs), "=", NULL, sql_where);
 			cond = rel_unop_(sql, exp_dup(ls), NULL, "isnull");
 			ls = rel_nop_(sql, cond, exp_dup(rs), exp_dup(ls), NULL, NULL, "ifthenelse");
-			exp_setname(ls, tname, nm);
+			exp_setname(ls, rnme, nm);
 			append(outexps, ls);
 			if (!rel) {
 				list_destroy(outexps);

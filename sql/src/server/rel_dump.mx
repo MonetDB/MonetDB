@@ -124,7 +124,7 @@ exp_print(mvc *sql, sql_exp *e, int depth, int comma, int alias)
 		if (e->l)
 			printf("%s.", (char*)e->l);
 		printf("%s", (char*)e->r);
-		if (e->name && strcmp(e->name, e->r)==0)
+		if (!e->rname && e->name && strcmp(e->name, e->r)==0)
 			alias = 0;
 	 	break;
 	case e_cmp: 
@@ -141,8 +141,12 @@ exp_print(mvc *sql, sql_exp *e, int depth, int comma, int alias)
 	}
 	if (e->flag&ASCENDING)
 		printf(" ASC");
-	if (e->name && alias)
-		printf(" as %s", e->name);
+	if (e->name && alias) {
+		printf(" as ");
+		if (e->rname)
+			printf("%s.", e->rname);
+		printf("%s", e->name);
+	}
 	if (comma)
 		printf(", ");
 }
