@@ -12,15 +12,10 @@ stdout of test 'groupby_having-bug-sf-947600` in directory 'src/test/bugs` itsel
 # Visit http://monetdb.cwi.nl/ for further information.
 # MonetDB/SQL module v2.21.0 loaded
 
-printf("\nReady.\n");
-
 Ready.
-# semantic relational algebra
-# semantic relational algebra
-# semantic relational algebra
-# semantic relational algebra
-# semantic relational algebra
-quit();
+#function user.main():void;
+#    clients.quit();
+#end main;
 
 Over..
 
@@ -59,23 +54,6 @@ Over..
 [ "sequences",	"idxs",	4	]
 [ "sequences",	"keycolumns",	2	]
 [ "sequences",	"keys",	4	]
-% sys.tables # table_name
-% name # name
-% varchar # type
-% 10 # length
-[ "functions"	]
-[ "args"	]
-[ "sequences"	]
-[ "keys"	]
-[ "idxs"	]
-[ "keycolumns"	]
-[ "keys"	]
-[ "idxs"	]
-[ "keycolumns"	]
-% sys.tables # table_name
-% name # name
-% varchar # type
-% 0 # length
 % sys.tables # table_name
 % name # name
 % varchar # type
