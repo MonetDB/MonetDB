@@ -77,3 +77,4 @@ scalar_and_predicate_bug
 decimal_copy_into_bug
 not_in_null_bug
 copy_into_quote
+alter_add_column-bug
