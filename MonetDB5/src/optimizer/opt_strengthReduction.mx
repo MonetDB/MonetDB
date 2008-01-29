@@ -99,6 +99,7 @@ SRoverwritten(InstrPtr p, int varid)
 static int
 isNewSource(InstrPtr p) {
 	str mp= getModuleId(p);
+	if( mp == sqlRef && getFunctionId(p) == bindRef) return 1;
 	if( mp == calcRef) return 1;
 	if( mp == batcalcRef) return 1;
 	if( mp == strRef) return 1;
@@ -189,6 +190,7 @@ Flow control statements may not be moved around
 		}
 @-
 Limit strength reduction to the type modules and the batcalc, batstr, batcolor
+and sql.bind.
 @c
 		if( !isNewSource(p) ) {
 			within[ik++] = p;

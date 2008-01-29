@@ -112,6 +112,7 @@ OPTreplicatorImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 opt_export str ALGreplicator(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 @c
 #include "opt_statistics.h"
+#include "../kernel/algebra.h"
 @:wrapOptimizer(replicator,OPT_CHECK_ALL)@
 
 str
@@ -128,14 +129,45 @@ REPprelude(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) mb;
 	(void) stk;
 	(void) pci;
-	throw(MAL,"replicator.postlude","nyi");
+	return MAL_SUCCEED;
 }
+@-
+The overloaded algebra operator simply calles the
+underlying implementation and collects statistics on the
+cost.
+@c
 str
 REPselect(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
+	int *ret, *bid;
+	ptr low,hgh;
+	bit t=TRUE,*li=&t,*hi=&t;
+	BAT *b;
+	lng cnt,clk;
+	str msg= MAL_SUCCEED;
+	
 	(void) mb;
-	(void) stk;
-	(void) pci;
-	throw(MAL,"replicator.select","nyi");
+	ret= (int*) getArgReference(stk, pci,0);
+	bid= (int*) getArgReference(stk, pci,1);
+	low= (ptr) getArgReference(stk, pci,2);
+	hgh= (ptr) getArgReference(stk, pci,3);
+	if( pci->argc==6){
+		li= (bit*) getArgReference(stk, pci,4);
+		hi= (bit*) getArgReference(stk, pci,5);
+	}
+	
+	clk= GDKusec();
+	msg= ALGselectInclusive(ret, bid, low,hgh,li,hi);
+	clk= GDKusec()-clk;
+
+	/* time for the decision */
+	if ( (b=BATdescriptor(*bid)) == NULL)
+		throw(MAL,"replicator.select","can not access BAT");
+	cnt= BATcount(b);
+	(void) cnt;
+	(void) clk;
+	BBPunfix(b->batCacheid);
+
+	return msg;
 }
 @}
