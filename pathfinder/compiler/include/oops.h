@@ -33,12 +33,13 @@
 #ifndef OOPS_H
 #define OOPS_H
 
+#include "compile_interface.h"  /* PFerrbuf */
+
 /**
  * Maximum length of error message strings (messages will be
  *  truncated if necessary)
  */
 #define OOPS_SIZE 4096
-extern char PFerrbuf[OOPS_SIZE];
 extern char* PFmaxstack;
 
 /**
