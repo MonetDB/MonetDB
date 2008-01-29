@@ -30,9 +30,9 @@ extern stmt * rel_bin(mvc *sql, sql_rel *rel);
 #endif /*_REL_BIN_H_*/
 @c
 #include "sql_config.h"
-#define LINESIZE 80
 
 #include "rel_bin.h"
+#include "rel_exp.h"
 #include "rel_prop.h"
 
 static stmt * subrel_bin(mvc *sql, sql_rel *rel);
@@ -182,8 +182,8 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, group *grp)
 		 *
 		 * so here we need to ignore NULLs
 		 */
-		if (e->flag&NO_NIL) {
-			sql_subtype *t = tail_type(as);
+		if (e->flag&NO_NIL && attr) {
+			sql_subtype *t = exp_subtype(attr->h->data);
 			stmt *n = stmt_atom(atom_general(t, NULL, 0));
 			as = stmt_select2(as, n, stmt_dup(n), 0);
 		}
@@ -294,10 +294,15 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, group *grp)
 			return NULL;
 		}
 		if (left && right && re->card > CARD_ATOM) {
-			if (swapped)
+			if (l->nrcols == 0)
+				l = stmt_const(bin_first_column(swapped?right:left), l); 
+			if (r->nrcols == 0)
+				r = stmt_const(bin_first_column(swapped?left:right), r); 
+			if (swapped) {
 				s = stmt_join(r, stmt_reverse(l), swap_compare((comp_type)e->flag));
-			else
+			} else {
 				s = stmt_join(l, stmt_reverse(r), (comp_type)e->flag);
+			}
 		} else {
 			s = stmt_select(l, r, (comp_type)e->flag);
 		}

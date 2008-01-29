@@ -1806,10 +1806,8 @@ rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 			if (!rs) 
 				return NULL;
 			if (rel_convert_types(sql, &ls, &rs, 1, type_equal) < 0) {
-				if (ls)
-					exp_destroy(ls);
-				if (rs)
-					exp_destroy(rs);
+				exp_destroy(ls);
+				exp_destroy(rs);
 				return NULL;
 			}
 			return rel_binop_(sql, ls, rs, NULL, compare_op);
@@ -1937,7 +1935,6 @@ rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 		} else {
 			return sql_error(sql, 02, "IN: missing inner query");
 		}
-		/* right is a relation without correlations */
 		if (right) {
 			sql_exp *r = NULL, *e;
 
@@ -1946,16 +1943,14 @@ rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 			if (p)
 				rel_destroy(p->l);
 			if (rel_convert_types(sql, &l, &r, 1, type_equal) < 0) {
-				if (l)
-					exp_destroy(l);
-				if (r)
-					exp_destroy(r);
+				exp_destroy(l);
+				exp_destroy(r);
 				return NULL;
 			}
 			left = p->l = rel_crossproduct(left, right, op_join);
+			left->op = op_left;
 			e = exp_compare( l, r, cmp_equal );
 			rel_join_add_exp(left, e);
-			left->op = op_left;
 			l = rel_unop_(sql, l, NULL, "isnull");
 			if (sc->token == SQL_NOT_IN) 
 				r = exp_atom_bool(1);
@@ -2161,13 +2156,14 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 
 		/* first remove the NULLs, TODO optimize for not null exprs */
 		/* TODO use exp_compare with 2 arguments */
-		e = rel_unop_(sql, exp_dup(l), NULL, "isnull");
-		e = exp_compare( e, exp_atom_bool(0), cmp_equal);
-		if (!is_select(rel->op))
-			left = rel = rel_select(rel, e);
-		else
-			rel_select_add_exp(rel, e);
-
+		if (l->card != CARD_ATOM) {
+			e = rel_unop_(sql, exp_dup(l), NULL, "isnull");
+			e = exp_compare( e, exp_atom_bool(0), cmp_equal);
+			if (!is_select(rel->op))
+				left = rel = rel_select(rel, e);
+			else
+				rel_select_add_exp(rel, e);
+		}
 		/* list of values or subqueries */
 
 		/* single element could be a 'select' */
@@ -2214,10 +2210,8 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 			rel_setsubquery(right);
 			rel = rel_crossproduct(left, right, op_join);
 			if (rel_convert_types(sql, &l, &r, 1, type_equal) < 0) {
-				if (l)
-					exp_destroy(l);
-				if (r)
-					exp_destroy(r);
+				exp_destroy(l);
+				exp_destroy(r);
 				return NULL;
 			}
 			e = exp_compare( l, r, cmp_equal );
@@ -2862,8 +2856,11 @@ rel_case(mvc *sql, sql_rel **rel, int token, symbol *opt_cond, dlist *when_searc
 			if (opt_cond) {
 				sql_exp *l = rel_value_exp(sql, rel, opt_cond, f);
 				sql_exp *r = rel_value_exp(sql, rel, when->h->data.sym, f);
-				if (!l || !r)
+				if (!l || !r || rel_convert_types(sql, &l, &r, 1, type_equal) < 0) {
+					exp_destroy(l);
+					exp_destroy(r);
 					return NULL;
+				}
 				cond = rel_binop_(sql, l, r, NULL, "=");
 			} else {
 				cond = rel_logical_value_exp(sql, rel, when->h->data.sym, sql_sel);
@@ -2907,9 +2904,12 @@ rel_case(mvc *sql, sql_rel **rel, int token, symbol *opt_cond, dlist *when_searc
 			if (opt_cond) {
 				sql_exp *l = rel_value_exp(sql, rel, opt_cond, f);
 				sql_exp *r = rel_value_exp(sql, rel, when->h->data.sym, f);
-				cond = rel_binop_(sql, l, r, NULL, "=");
-				if (!l || !r)
+				if (!l || !r || rel_convert_types(sql, &l, &r, 1, type_equal) < 0) {
+					exp_destroy(l);
+					exp_destroy(r);
 					return NULL;
+				}
+				cond = rel_binop_(sql, l, r, NULL, "=");
 			} else {
 				cond = rel_logical_value_exp(sql, rel, when->h->data.sym, sql_sel);
 			}
@@ -3667,10 +3667,17 @@ rel_select_exp(mvc *sql, sql_rel *rel, sql_rel *outer, SelectNode *sn, int tople
 				   valid expressions with invalid cardinality 
 				   (which need a dynamic check!!!)
 				 */
-				if (outer && rel->card < ce->card) {
+				if (/*outer && */ rel->card < ce->card) {
+					if (ce->type == e_column && ce->r) {
+						return sql_error(sql, 02, "SELECT: cannot use non GROUP BY column '%s' in query results without an aggregate function", ce->r);
+					} else {
+						return sql_error(sql, 02, "SELECT: cannot use non GROUP BY column in query results without an aggregate function");
+					}
+/*
 					assert(0);
 					ce = rel_groupby_add_aggr(sql, rel->l, ce);
 					ce->card = rel->card;	
+*/
 				}
 				if (sn->having) {
 					ce = rel_groupby_add_aggr(sql, inner, ce);
@@ -4163,7 +4170,7 @@ rel_view(mvc *sql, dlist *qname, dlist *column_spec, symbol *query, int check, i
 	sql_schema *s = NULL;
 	sql_table *t = NULL;
 	int instantiate = (sql->mode == m_execute || !persistent);
-	int mode = sql->mode;
+	modes_t mode = sql->mode;
 
 	(void) check;		/* Stefan: unused!? */
 	(void)column_spec;

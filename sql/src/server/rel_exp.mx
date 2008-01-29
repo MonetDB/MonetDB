@@ -327,7 +327,7 @@ exp_swap( sql_exp *e )
 
 	e->l = e->r;
 	e->r = s;
-	e->flag = swap_compare(e->flag);
+	e->flag = swap_compare((comp_type)e->flag);
 }
 
 sql_subtype *
