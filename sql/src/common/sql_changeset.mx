@@ -81,3 +81,9 @@ cs_first_node(changeset * cs)
 {
 	return cs->set->h;
 }
+
+node *
+cs_last_node(changeset * cs)
+{
+	return cs->set->t;
+}

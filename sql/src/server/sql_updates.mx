@@ -464,16 +464,35 @@ sql_insert_triggers(mvc *sql, sql_table *t, stmt **inserts, list *l)
 	return res;
 }
 
+
+static stmt ** 
+table_update_array(sql_table *t, int *Len)
+{
+	stmt **updates;
+	int i, len = list_length(t->columns.set);
+	node *m;
+
+	*Len = len;
+	updates = NEW_ARRAY(stmt *, len);
+	for (m = t->columns.set->h, i = 0; m; m = m->next, i++) {
+		sql_column *c = m->data;
+
+		/* update the column number, for correct array access */
+		c->colnr = i;
+		updates[i] = NULL;
+	}
+	return updates;
+}
+
 stmt *
 sql_insert_add_idx(mvc *sql, sql_table *t, sql_idx * idx, list *l)
 {
 	stmt **inserts;
 	node *m;
-	int i, len = list_length(t->columns.set);
+	int i, len;
 	stmt *ts = stmt_basetable(t, t->base.name);
 
-	inserts = NEW_ARRAY(stmt *, len);
-
+	inserts = table_update_array(t, &len);
 	for (m = t->columns.set->h, i = 0; m; m = m->next, i++) {
 		sql_column *c = m->data;
 		stmt *b = stmt_bat(c, stmt_dup(ts), RDONLY);
@@ -725,7 +744,7 @@ static stmt*
 sql_delete_set_Fkeys(mvc *sql, sql_schema *schema, sql_key *k, stmt *rows, int action)
 {
 	list *l = NULL;
-	int len = 0, i;
+	int len = 0;
 	node *m, *o;
 	sql_idx *ri = ((sql_fkey*)k)->rkey->k.idx;
 	stmt *ts = stmt_basetable(ri->t, ri->t->base.name), *fts, **new_updates;
@@ -733,12 +752,7 @@ sql_delete_set_Fkeys(mvc *sql, sql_schema *schema, sql_key *k, stmt *rows, int a
 
 	fts = stmt_basetable(k->idx->t, k->idx->t->base.name);
 
-	len = list_length(t->columns.set);
-	new_updates = NEW_ARRAY(stmt *, len);
-
-	for (i = 0; i < len; i++)
-		new_updates[i] = NULL;
-
+	new_updates = table_update_array(t, &len);
 	for (m = k->idx->columns->h, o = ri->columns->h; m && o; m = m->next, o = o->next) {
 		sql_kc *fc = m->data;
 		stmt *upd = NULL;
@@ -789,7 +803,7 @@ static stmt*
 sql_update_cascade_Fkeys(mvc *sql, sql_schema *schema, sql_key *k, int updcol, stmt **updates, int action)
 {
 	list *l = NULL;
-	int len = 0, i;
+	int len = 0;
 	node *m, *o;
 	sql_idx *ri = ((sql_fkey*)k)->rkey->k.idx;
 	stmt *ts = stmt_basetable(ri->t, ri->t->base.name), *fts, **new_updates;
@@ -802,12 +816,7 @@ sql_update_cascade_Fkeys(mvc *sql, sql_schema *schema, sql_key *k, int updcol, s
 	rows = stmt_semijoin(stmt_reverse(rows), stmt_dup(updates[updcol]->op2.stval));
 	rows = stmt_reverse(rows);
 		
-	len = list_length(t->columns.set);
-	new_updates = NEW_ARRAY(stmt *, len);
-
-	for (i = 0; i < len; i++)
-		new_updates[i] = NULL;
-
+	new_updates = table_update_array(t, &len);
 	for (m = k->idx->columns->h, o = ri->columns->h; m && o; m = m->next, o = o->next) {
 		sql_kc *fc = m->data;
 		sql_kc *c = o->data;
@@ -1227,11 +1236,7 @@ insert_into(mvc *sql, dlist *qname, dlist *columns, symbol *val_or_q)
 		collist = t->columns.set;
 	}
 
-	len = list_length(t->columns.set);
-	inserts = NEW_ARRAY(stmt *, len);
-
-	for (i = 0; i < len; i++)
-		inserts[i] = NULL;
+	inserts = table_update_array(t, &len);
 
 	if (val_or_q->token == SQL_VALUES) {
 		dlist *rowlist = val_or_q->data.lval;
@@ -1381,9 +1386,7 @@ sql_import(mvc *sql, sql_table *t, char *tsep, char *rsep, char *ssep, char *fil
 	stmt **inserts, *res = NULL;
 
 	rs = stmt_import(stmt_basetable(t, t->base.name), _strdup(tsep), _strdup(rsep), _strdup(ssep), fname, nr, offset);
-	len = list_length(t->columns.set);
-	inserts = NEW_ARRAY(stmt *, len);
-
+	inserts = table_update_array(t, &len);
 	for (n = t->columns.set->h, i = 0; n; n = n->next, i++) {
 		sql_column *c = n->data;
 
@@ -1594,11 +1597,7 @@ sql_update_table(mvc *sql, scope *scp, sql_schema *schema, char *tname, dlist *a
 		}
 		l = create_stmt_list();
 
-		len = list_length(t->columns.set);
-		updates = NEW_ARRAY(stmt *, len);
-
-		for (i = 0; i < len; i++)
-			updates[i] = NULL;
+		updates = table_update_array(t, &len);
 
 		for (n = assignmentlist->h, i = 0; n; n = n->next, i++) {
 			symbol *a = NULL;

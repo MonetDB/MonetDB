@@ -138,6 +138,7 @@ extern int cs_size(changeset * cs);
 extern node *cs_find_name(changeset * cs, char *name);
 extern node *cs_find_id(changeset * cs, int id);
 extern node *cs_first_node(changeset * cs);
+extern node *cs_last_node(changeset * cs);
 
 typedef struct sql_schema {
 	sql_base base;

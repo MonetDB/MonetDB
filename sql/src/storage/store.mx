@@ -1040,6 +1040,20 @@ insert_aggrs(sql_trans *tr, sql_table *sysfunc, sql_table *sysarg)
 	}
 }
 
+static int
+table_next_column_nr(sql_table *t)
+{
+	int nr = cs_size(&t->columns);
+	if (nr) {
+		node *n = cs_last_node(&t->columns);
+		if (n) {
+			sql_column *c = n->data;
+
+			nr = c->colnr+1;
+		}
+	}
+	return nr;
+}
 
 static sql_column *
 bootstrap_create_column(sql_trans *tr, sql_table *t, char *name, char *sqltype, int digits)
@@ -1053,7 +1067,7 @@ bootstrap_create_column(sql_trans *tr, sql_table *t, char *name, char *sqltype, 
 	sql_find_subtype(&col->type, sqltype, digits, 0);
 	col->def = NULL;
 	col->null = 1;
-	col->colnr = cs_size(&t->columns);
+	col->colnr = table_next_column_nr(t);
 	col->t = t;
 	col->unique = 0;
 	cs_add(&t->columns, col, TR_NEW);
@@ -3326,7 +3340,7 @@ create_sql_column(sql_table *t, char *name, sql_subtype *tpe)
 	col->type = *tpe;
 	col->def = NULL;
 	col->null = 1;
-	col->colnr = cs_size(&t->columns);
+	col->colnr = table_next_column_nr(t);
 	col->t = t;
 	col->unique = 0;
 

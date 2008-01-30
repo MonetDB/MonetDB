@@ -383,30 +383,6 @@ dec_frstr(void *extra, int type, char *s, char *e, char quote)
 	return NULL;
 }
 
-static char *
-coerce(char *s)
-{
-	char *n = GDKmalloc(strlen(s) + 1);
-	char *t = n;
-
-	for (; *s; s++)
-		switch (*s) {
-		case '\\':
-			s++;
-			if (*s == 'n')
-				*t++ = '\n';
-			else if (*s == 't')
-				*t++ = '\t';
-			else if (*s == '\\')
-				*t++ = '\\';
-			else
-		default:
-				*t++ = *s;
-		}
-	*t = 0;
-	return n;
-}
-
 ptr *
 _ASCIIadt_frStr(void *extra, int type, char *s, char *e, char quote)
 {
@@ -501,8 +477,6 @@ mvc_import_table(mvc *m, bstream *bs, char *tname, char *sep, char *rsep, char *
 
 	if (offset > 0)
 		offset--;
-	sep = coerce(sep);
-	rsep = coerce(rsep);
 	if (t->columns.set) {
 		stream *out = m->scanner.ws;
 		dec_format *dec;
@@ -551,8 +525,6 @@ mvc_import_table(mvc *m, bstream *bs, char *tname, char *sep, char *rsep, char *
 		GDKfree(dec);
 		TABLETdestroy_format(&as);
 	}
-	_DELETE(sep);
-	_DELETE(rsep);
 
 	m->type = Q_UPDATE;
 	return bats;
@@ -1044,8 +1016,6 @@ mvc_export_file(mvc *m, res_table *t)
 	size_t count;
 	stream *s;
 	BAT *order = NULL;
-	char *sep = t->tsep;
-	char *rsep = t->rsep;
 
 	s = open_wastream(t->filename);
 	if (!s || stream_errnr(s)) {
@@ -1053,19 +1023,15 @@ mvc_export_file(mvc *m, res_table *t)
 		return -1;
 	}
 
-	sep = coerce(sep);
-	rsep = coerce(rsep);
 	if (!t->order) {
-		res = mvc_export_row(m, s, t, "", sep, rsep, t->ssep);
+		res = mvc_export_row(m, s, t, "", t->tsep, t->rsep, t->ssep);
 	} else {
 		order = BATdescriptor(t->order);
 		count = BATcount(order);
-		res = mvc_export_table(m, s, t, order, 0, count, "", sep, rsep, t->ssep);
+		res = mvc_export_table(m, s, t, order, 0, count, "", t->tsep, t->rsep, t->ssep);
 		BBPunfix(order->batCacheid);
 		m->results = res_tables_remove(m->results, t);
 	} 
-	_DELETE(sep);
-	_DELETE(rsep);
 	stream_close(s);
 	stream_destroy(s);
 	return res;
