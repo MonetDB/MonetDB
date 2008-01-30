@@ -1215,7 +1215,11 @@ match (PFla_op_t *a, PFla_op_t *b)
         case la_fragment:
         case la_frag_union:
         case la_empty_frag:
+            return true;
         case la_error:
+            if (ACTATT (L(a), a->sem.err.att) !=
+                ACTATT (L(b), b->sem.err.att))  
+                return false;
             return true;
 
         case la_cond_err:
@@ -1981,9 +1985,8 @@ new_operator (PFla_op_t *n)
             return PFla_empty_frag ();
 
         case la_error:
-            assert (!"PFla_error not yet implemented!");
-            /* FIXME */
-            /* return PFla_error (CSE(L(n)));   */ 
+            return PFla_error (CSE(L(n)),
+                               ACTATT (L(n), n->sem.err.att));
 
         case la_cond_err:
             return PFla_cond_err (CSE(L(n)), CSE(R(n)),
