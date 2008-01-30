@@ -14,6 +14,21 @@ stdout of test 'add_qnames.SF-1611353.alg` in directory 'tests/BugTracker` itsel
 # Copyright (c) 1993-2006, CWI. All rights reserved.
 # Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
+# PF/Tijah module v0.3.0 loaded. http://dbappl.cs.utwente.nl/pftijah
+# MonetDB/XQuery module v0.21.0 loaded
+# XRPC administrative console at http://127.0.0.1:45248/admin
+
+printf("\nReady.\n");
+
+Ready.
+quit();
+
+Over..
+
+# 20:08:54 >  
+# 20:08:54 >  mclient -lxquery -fxml -umonetdb -Pmonetdb --host=corona --port=36201 add_qnames.SF-1611353.alg.xq
+# 20:08:54 >  
+
 <?xml version="1.0" encoding="utf-8"?>
 <XQueryResult><foo/></XQueryResult>
 

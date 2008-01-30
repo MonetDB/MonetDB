@@ -4,8 +4,9 @@ import string
 TST = os.environ['TST']
 TSTDB = os.environ['TSTDB']
 MSERVER = os.environ['MSERVER'].replace('--trace','')
+PF = os.environ['PF']
 
-CALL = 'pf -O0 "%s.xq" | %s --dbname=%s "--dbinit=module(pathfinder);"' % (TST,MSERVER,TSTDB)
+CALL = '%s -O0 "%s.xq" | %s --dbname=%s "--dbinit=module(pathfinder);"' % (PF,TST,MSERVER,TSTDB)
 
 import sys, time
 Mlog = "\n%s  %s\n\n" % (time.strftime('# %H:%M:%S >',time.localtime(time.time())), CALL)

@@ -5,8 +5,7 @@ stderr of test 'uncompilable_comparison.SF-1871790` in directory 'tests/BugTrack
 # 14:15:46 >  ./uncompilable_comparison.SF-1871790.sh uncompilable_comparison.SF-1871790 
 # 14:15:46 >  
 
-"pf -M uncompilable_comparison.SF-1871790.xq >/dev/null"
-"pf -A uncompilable_comparison.SF-1871790.xq >/dev/null"
+"pf uncompilable_comparison.SF-1871790.xq >/dev/null"
 
 # 14:15:46 >  
 # 14:15:46 >  Done.
