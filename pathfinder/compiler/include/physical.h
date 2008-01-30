@@ -343,10 +343,9 @@ union PFpa_op_sem_t {
 
     /* semantic content for error and conditional error */
     struct {
-        /* error: column of error message
-         * cond_error: name of the boolean attribute */
-        PFalg_att_t     att;
-        char *          str;     /**< error message, only used by cond_err */
+        PFalg_att_t     att;      /**< error:      column of error message
+                                       cond_error: name of the bool column */
+        char *          str;      /**< error message (only used by cond_err) */
     } err;
     
     /* semantic content for debug relation map operator */
@@ -869,9 +868,10 @@ PFpa_op_t *PFpa_frag_union (const PFpa_op_t *n1, const PFpa_op_t *n2);
 PFpa_op_t *PFpa_empty_frag (void);
 
 /**
- * Constructor for error
+ * Constructor for a runtime error message
  */
-PFpa_op_t * PFpa_error (const PFpa_op_t *n,  PFalg_att_t att);
+PFpa_op_t * PFpa_error (const PFpa_op_t *n,  PFalg_att_t att,
+                        PFalg_simple_type_t att_ty);
 
 /**
  * Constructor for conditional error

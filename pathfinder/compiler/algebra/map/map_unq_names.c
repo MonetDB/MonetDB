@@ -748,8 +748,11 @@ map_unq_names (PFla_op_t *p, PFarray_t *map)
             break;
 
         case la_error:
-            res =  error (U(L(p)), UNAME(L(p), p->sem.err.att) );
+            res = PFla_error_ (U(L(p)),
+                               UNAME(L(p), p->sem.err.att),
+                               PFprop_type_of (p, p->sem.err.att));
             break;
+
         case la_cond_err:
             res = cond_err (U(L(p)), U(R(p)),
                             /* unique name of input attribute att is

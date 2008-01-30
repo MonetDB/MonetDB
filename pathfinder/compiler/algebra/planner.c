@@ -2030,7 +2030,8 @@ plan_error (const PFla_op_t *n)
 
     for (unsigned int i = 0; i < PFarray_last (L(n)->plans); i++)
         add_plan (ret, error(*(plan_t **) PFarray_at (L(n)->plans, i),
-                             n->sem.err.att));
+                             n->sem.err.att,
+                             type_of (n->schema, n->sem.err.att)));
 
     return ret;
 }

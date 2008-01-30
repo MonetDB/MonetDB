@@ -3489,13 +3489,15 @@ PFla_empty_frag (void)
 
 
 /**
- * Construct for an error message.
+ * Constructor for a runtime error message.
  *
+ * This operator generates a runtime error (using the string in column
+ * @a att) if a tuple flows through it.
  */
 PFla_op_t *
-PFla_error (const PFla_op_t *n, PFalg_att_t att)
+PFla_error_ (const PFla_op_t *n, PFalg_att_t att, PFalg_simple_type_t att_ty)
 {
-    PFla_op_t    *ret;
+    PFla_op_t   *ret;
     unsigned int i;
 
     assert(n);
@@ -3511,16 +3513,26 @@ PFla_error (const PFla_op_t *n, PFalg_att_t att)
     for (i = 0; i < n->schema.count; i++) {
         ret->schema.items[i] = n->schema.items[i];
         if (att == n->schema.items[i].name)
-            ret->schema.items[i].type = 0;
+            ret->schema.items[i].type = att_ty;
     }
 
     ret->sem.err.att = att;
-    ret->sem.err.str =  "Flying is learning how to throw yourself "
-                        "at the ground and miss.";
+    ret->sem.err.str = NULL; /* error message is stored in column @a att */
 
     return ret;
 }
 
+/**
+ * Constructor for a runtime error message.
+ *
+ * This operator generates a runtime error (using the string in column
+ * @a att) if a tuple flows through it.
+ */
+PFla_op_t *
+PFla_error (const PFla_op_t *n, PFalg_att_t att)
+{
+    return PFla_error_ (n, att, 0);
+}
 
 /**
  * Constructor for a conditional error message.
@@ -4422,7 +4434,8 @@ PFla_op_duplicate (PFla_op_t *n, PFla_op_t *left, PFla_op_t *right)
             return PFla_empty_frag ();
 
         case la_error:
-            return PFla_error (left, n->sem.err.att);
+            return PFla_error_ (left, n->sem.err.att,
+                                PFprop_type_of (n, n->sem.err.att));
 
         case la_cond_err:
             return PFla_cond_err (left, right,

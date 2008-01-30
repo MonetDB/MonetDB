@@ -838,8 +838,9 @@ map_ori_names (PFla_op_t *p, PFarray_t *map)
             break;
 
         case la_error:
-            res = error (PROJ(LEFT, p),
-                         PFprop_ori_name_left (p->prop, p->sem.err.att));
+            res = PFla_error_ (O(L(p)),
+                               PFprop_ori_name_left (p->prop, p->sem.err.att),
+                               PFprop_type_of (p, p->sem.err.att));
             break;
 
         case la_cond_err:

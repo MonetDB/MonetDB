@@ -938,6 +938,14 @@ infer_ocol (PFla_op_t *n)
             break;
 
         case la_error:
+        {
+            PFalg_simple_type_t ty = PFprop_type_of (n, n->sem.err.att);
+            ocols (n) = copy_ocols (ocols (L(n)), ocols_count (L(n)));
+            for (unsigned int i = 0; i < ocols_count (n); i++)
+                if (ocol_at (n, i).name == n->sem.err.att)
+                    ocol_at (n, i).type = ty;
+        }   break;
+            
         case la_cond_err:
         case la_trace:
         case la_trace_msg:

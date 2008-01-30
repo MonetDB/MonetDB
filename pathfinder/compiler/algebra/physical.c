@@ -3316,7 +3316,8 @@ PFpa_empty_frag (void)
 /**
  * Constructor for error
  */
-PFpa_op_t * PFpa_error (const PFpa_op_t *n,  PFalg_att_t att)
+PFpa_op_t * PFpa_error (const PFpa_op_t *n,  PFalg_att_t att,
+                        PFalg_simple_type_t att_ty)
 {
     PFpa_op_t *ret = wire1 (pa_error, n);
 
@@ -3331,16 +3332,16 @@ PFpa_op_t * PFpa_error (const PFpa_op_t *n,  PFalg_att_t att)
     for (unsigned int i = 0; i < n->schema.count; i++) {
         ret->schema.items[i] = n->schema.items[i];
         if (att == n->schema.items[i].name)
-            ret->schema.items[i].type = 0;
+            ret->schema.items[i].type = att_ty;
     }
 
     ret->sem.err.att = att;
-    ret->sem.err.str = "I was there, Case; I was there when "
-                       "they invented your kind";
+    ret->sem.err.str = NULL; /* error message is stored in column @a att */
 
     /* ordering stays the same */
     for (unsigned int i = 0; i < PFord_set_count (n->orderings); i++)
         PFord_set_add (ret->orderings, PFord_set_at (n->orderings, i));
+
     /* costs */
     ret->cost = DEFAULT_COST + n->cost;
 
