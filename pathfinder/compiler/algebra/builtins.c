@@ -638,7 +638,12 @@ PFbui_fn_error_empty (const PFla_op_t *loop, bool ordering,
     (void) loop; (void) ordering; (void) args;
 
     return (struct PFla_pair_t) {
-        .rel  = NULL,
+        .rel  = error (
+                    attach (
+                        attach (loop, att_pos, lit_nat (1)),
+                        att_item,
+                        lit_str ("http://www.w3.org/2005/xqt-errors#FOER0000")),
+                    att_item),
         .frag = PFla_empty_set ()};
 }
 
