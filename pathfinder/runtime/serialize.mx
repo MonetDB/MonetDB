@@ -380,6 +380,7 @@ timer_str (long elapsed)
  * Return true if there are still nodes on stack.
  */
 #define moreTags(ctx) ((ctx)->stackPtr > 0)
+#define someMoreTags(ctx,i) ((ctx)->stackPtr > (i))
 
 /**
  * Push the pre-value, namespace and nodename of stack
@@ -1126,7 +1127,8 @@ process_node_attr (XqueryCtx* ctx, int cont, oid pre) {
  * Generate the subtree ranging from node 'pre' to node 'to'.
  */
 static bool
-emitNodesInRange (XqueryCtx* ctx, oid pre, oid to, BAT* pre_cont, oid cont)
+emitNodesInRange_ (XqueryCtx* ctx, oid pre, oid to, BAT* pre_cont, oid cont,
+                   int stack_offset)
 {
     ptr res;
     chr kind;
@@ -1146,7 +1148,7 @@ emitNodesInRange (XqueryCtx* ctx, oid pre, oid to, BAT* pre_cont, oid cont)
         }
     
         /* print end element */
-        while( moreTags(ctx) && pre > topSF(ctx)->limit ) {
+        while( someMoreTags(ctx, stack_offset) && pre > topSF(ctx)->limit ) {
             if ( !ctx->driverFun->handle_endElement(
                                       ctx,
                                       topPrefix(ctx),
@@ -1247,9 +1249,28 @@ emitNodesInRange (XqueryCtx* ctx, oid pre, oid to, BAT* pre_cont, oid cont)
                     /* nothing to be done, here */
                     break;
                 }
+            case (char)6:
+                {   /* REFERENCE */
+                    /* recursively invoke node printing */
+                    oid pre = prop, pre_size;
+                    getWsValue(res, ctx, vCONT, PRE_SIZE, pre);
+                    pre_size = pre + *(int*) res;
+
+                    BAT *b;
+                    BATiter bi;
+                    getWsBAT(b, bi, ctx, vCONT, PRE_CONT);
+                    if ( !emitNodesInRange_ (ctx,
+                                             pre,
+                                             pre_size,
+                                             IS_FAKE_PROJECT(b)?NULL:b,
+                                             vCONT,
+                                             ctx->stackPtr) )
+                        return PROBLEM;
+                    break;
+                }
             default:
                 fatal_err (ctx,
-                           "Unknow kind %d IN xquery_node_print",
+                           "Unknown kind %d IN xquery_node_print",
                            (int)kind);
                 return PROBLEM;
         }
@@ -1258,7 +1279,7 @@ emitNodesInRange (XqueryCtx* ctx, oid pre, oid to, BAT* pre_cont, oid cont)
 
     /* in case the last nodes where deleted 
        we skipped the end element handling */
-    while( moreTags(ctx) ) {
+    while( someMoreTags(ctx, stack_offset) ) {
         if ( !ctx->driverFun->handle_endElement(
                                   ctx,
                                   topPrefix(ctx),
@@ -1268,6 +1289,11 @@ emitNodesInRange (XqueryCtx* ctx, oid pre, oid to, BAT* pre_cont, oid cont)
     }
 
     return SUCCESS;
+}
+static bool
+emitNodesInRange (XqueryCtx* ctx, oid pre, oid to, BAT* pre_cont, oid cont)
+{
+    return emitNodesInRange_ (ctx, pre, to, pre_cont, cont, 0);
 }
 
 /**

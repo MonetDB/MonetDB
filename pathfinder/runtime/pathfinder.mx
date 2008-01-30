@@ -402,6 +402,7 @@ const LOGGER_VERSION := 1;
 @:ws_@1_decl(PI,        3,,,,,,.chr())@
 @:ws_@1_decl(DOCUMENT,  4,,,,,,.chr())@
 @:ws_@1_decl(COLLECTION,5,,,,,,.chr())@
+@:ws_@1_decl(REFERENCE ,6,,,,,,.chr())@
 
 @mil
 # zero

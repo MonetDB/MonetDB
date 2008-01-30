@@ -7227,7 +7227,7 @@ reduce (PFpa_op_t * p, int goalnt)
                 *(mvar_t **) PFarray_add (twig_state->attr_vars) = v;
             }
 
-            if (treat_pre) {
+            if (treat_pre && true) {
                 mvar_t  *unq_iter, *scj_res, *root_level, *content_level;
                 mvar_t  *iter = new_var (1);
                 mvar_t  *item = new_var (1);
@@ -7433,6 +7433,102 @@ reduce (PFpa_op_t * p, int goalnt)
                                 twig_state->loop,
                                 var (gsize->name))));
                     unpin (sizes, 1);
+                    /* add the grouped sizes to the variable environment */
+                    env_add (p->env, att_NULL, aat_int, gsize);
+                }
+            }
+            else if (treat_pre && false) {
+                mvar_t  *v    = new_var (1);
+
+                /* add the node references into list of twig constructors
+                   (size = 0, kind = REFERENCE, prop = p_prop, cont = p_cont):
+                   v := new(void, bat).seqbase(0@0);
+                   v.append(p_iter);
+                   v.append(p_iter.project(%twig_state->pre%));
+                   v.append(p_iter.project(0));
+                   v.append(p_iter.project(%twig_state->level%));
+                   v.append(p_iter.project(REFERENCE));
+                   # store the references to look up the reference 
+                   # in the PRE_PROP column
+                   v.append(p_item);
+                   # store the node container to look up the reference
+                   # in the PRE_CONT column
+                   v.append(p_cont);
+                   v.append(p_iter.project(oid(nil)));
+                   v.append(p_iter.project(oid(nil)));
+                   */
+                execute (
+                    assgn (var (v->name),
+                           seqbase (new (type (mty_void), type (mty_bat)),
+                                    lit_oid (0))),
+                    /* iter */
+                    bappend (var (v->name),
+                             var (p_iter->name)),
+                    /* pre */
+                    bappend (var (v->name),
+                             project (
+                                 var (p_iter->name),
+                                 lit_oid (twig_state->pre))),
+                    /* size */
+                    bappend (var (v->name),
+                             project (
+                                 var (p_iter->name),
+                                 lit_int (0))),
+                    /* level */
+                    bappend (var (v->name),
+                             project (
+                                 var (p_iter->name),
+                                 cast (
+                                     type (mty_chr),
+                                     lit_int (twig_state->level)))),
+                    /* kind */
+                    bappend (var (v->name),
+                             project (
+                                 var (p_iter->name),
+                                 var (PF_MIL_VAR_KIND_REF))),
+                    /* prop */
+                    bappend (var (v->name),
+                             var (p_item->name)),
+                    /* cont */
+                    bappend (var (v->name),
+                             var (p_cont->name)),
+                    /* old_pre */
+                    bappend (var (v->name),
+                             project (
+                                 var (p_iter->name),
+                                 cast (type (mty_oid), nil ()))),
+                    /* old_cont */
+                    bappend (var (v->name),
+                             project (
+                                 var (p_iter->name),
+                                 cast (type (mty_oid), nil ()))));
+
+                *(mvar_t **) PFarray_add (twig_state->elem_vars) = v;
+                twig_state->pre++;
+                /* do not tell the twig constructor to handle
+                   subtree attribute copies */
+                /* twig_state->elem_content = false; */
+
+                /* add count of the references to the environment */
+                if (twig_state->loop) {
+                    mvar_t *gsize = new_var (1);
+
+                    /* gsize := {count}(p_iter.reverse(),
+                                        %twig_state->loop%.reverse());
+                       # map back to head values
+                       gsize := %twig_state->loop%.leftjoin(gsize); */
+                    execute (
+                        assgn (
+                            var (gsize->name),
+                            egcount (
+                                reverse (var (p_iter->name)),
+                                reverse (twig_state->loop))),
+                        assgn (
+                            var (gsize->name),
+                            leftjoin (
+                                twig_state->loop,
+                                var (gsize->name))));
+
                     /* add the grouped sizes to the variable environment */
                     env_add (p->env, att_NULL, aat_int, gsize);
                 }

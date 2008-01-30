@@ -298,6 +298,7 @@ char * PFmil_var_str (PFmil_ident_t name) {
         case PF_MIL_VAR_KIND_TEXT:   return "TEXT";
         case PF_MIL_VAR_KIND_COM:    return "COMMENT";
         case PF_MIL_VAR_KIND_PI:     return "PI";
+        case PF_MIL_VAR_KIND_REF:    return "REFERENCE";
 
         case PF_MIL_VAR_ATTR:        return "ATTR";
         case PF_MIL_VAR_ELEM:        return "ELEM";
