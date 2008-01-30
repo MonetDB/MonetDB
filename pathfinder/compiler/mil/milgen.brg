@@ -1841,7 +1841,7 @@ reduce (PFpa_op_t * p, int goalnt)
 
                 /* consider bit results */
                 if (ty & aat_bln) {
-                    if (ty == aat_int) {
+                    if (ty == aat_bln) {
                         execute (
                             assgn (
                                 var (item->name),
@@ -4352,20 +4352,19 @@ reduce (PFpa_op_t * p, int goalnt)
 
                 case alg_fun_fn_qname:
                 {
-                    PFalg_att_t att1, att2;
-                    att1 = p->sem.fun_1to1.refs.atts[0];
-                    att2 = p->sem.fun_1to1.refs.atts[0];
+                    PFalg_att_t uri, pfx_loc;
+                    uri = p->sem.fun_1to1.refs.atts[0];
+                    pfx_loc = p->sem.fun_1to1.refs.atts[1];
 
                     PFmil_t *str = NULL;
                     mvar_t  *offset  = new_var (1);
                     mvar_t  *prefix  = new_var (1);
                     mvar_t  *local   = new_var (1);
                     mvar_t  *err_str = new_var (1);
-                    PFmil_t *v_cast  = VAR (L(p)->env, att1, aat_str),
-                            *v_uri   = VAR (L(p)->env, att2, aat_str);
+                    PFmil_t *v_cast  = VAR (L(p)->env, pfx_loc, aat_str),
+                            *v_uri   = VAR (L(p)->env, uri, aat_str);
 
                     /* split up strings using ``:'' as delimiter */
-                    /* FIXME: currently we we don't retrieve the URI */
                     execute (
                         assgn (var (err_str->name),
                                check_qnames (v_cast)),
@@ -4384,8 +4383,9 @@ reduce (PFpa_op_t * p, int goalnt)
                                mstring (v_cast,
                                         madd (lit_int (1),
                                               var (offset->name)))));
-                    /* FIXME: do not allow "|" uris if we have
-                       no namespace prefix */
+
+                    /* FIXME: do not allow missing uris (encoded by the string "|")
+                       if we have no namespace prefix */
 
                     /* add_qnames changes the working set
                        in 'var (PF_MIL_VAR_WS)' as side effect */
