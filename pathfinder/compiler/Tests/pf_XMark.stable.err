@@ -1,0 +1,33 @@
+stderr of test 'pf_XMark` in directory 'compiler` itself:
+
+
+# 16:36:51 >  
+# 16:36:51 >  Mtimeout -timeout 60 ./pf_XMark pf_XMark 
+# 16:36:51 >  
+
+"pf q01.xq >/dev/null"
+"pf q02.xq >/dev/null"
+"pf q03.xq >/dev/null"
+"pf q04.xq >/dev/null"
+"pf q05.xq >/dev/null"
+"pf q06.xq >/dev/null"
+"pf q07.xq >/dev/null"
+"pf q08.xq >/dev/null"
+"pf q09.xq >/dev/null"
+"pf q10.xq >/dev/null"
+"pf q11.xq >/dev/null"
+"pf q12.xq >/dev/null"
+"pf q13.xq >/dev/null"
+"pf q14.xq >/dev/null"
+"pf q15.xq >/dev/null"
+"pf q16.xq >/dev/null"
+"pf q17.xq >/dev/null"
+"pf q18.xq >/dev/null"
+"pf q19.xq >/dev/null"
+"pf q20.xq >/dev/null"
+"pf upd.xq >/dev/null"
+
+# 16:36:55 >  
+# 16:36:55 >  Done.
+# 16:36:55 >  
+

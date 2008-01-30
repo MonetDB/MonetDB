@@ -4231,6 +4231,8 @@ typedef struct {
 /* bitmasks for mode */
 #define XQ_DEBUG 1
 #define XQ_MAPI  2 
+#define XQ_ALGEBRA 4
+#define XQ_MILPRINT_SUMMER 8
 
 size_t xquery_client_bytes = 64<<20; /* 64MB of procs should be enough for anyone */
 int xquery_cacheid = 0;
@@ -4371,6 +4373,18 @@ xquery_compile_exec(xquery_client *ctx,
     /* Setting the StandOff flag based on runtime settings */
     if ((GDKgetenv("standoff") != NULL) && (strcmp(GDKgetenv("standoff"),"enabled") == 0))
         options |= COMPILE_OPTION_STANDOFF;
+    /* Setting the Algebra flag; server setting overules compile-time default; client choice overrules server setting */
+#if MILPRINT_SUMMER_IS_DEFAULT
+    if ((ctx->mode & XQ_ALGEBRA) || \
+        (!(ctx->mode & XQ_MILPRINT_SUMMER) && \
+         (GDKgetenv("xquery_backend") != NULL) && (strcmp(GDKgetenv("xquery_backend"),"algebra") == 0)))
+        options |= COMPILE_OPTION_ALGEBRA;
+#else /* ALGEBRA_IS_DEFAULT */
+    if (!(ctx->mode & XQ_MILPRINT_SUMMER) && \
+        ((ctx->mode & XQ_ALGEBRA) || \
+         (GDKgetenv("xquery_backend") == NULL) || (strcmp(GDKgetenv("xquery_backend"),"miprint_summer") != 0)))
+        options |= COMPILE_OPTION_ALGEBRA;
+#endif
 
     MT_set_lock(pf_compiler_lock, "xquery_compile_exec");
     if (is_url) {
@@ -5820,6 +5834,13 @@ xquery_client_engine(mapi_client *mc)
                         if (genType != buf) MT_locktrace_start();
 #endif
                         genType = buf; /* now includes "timing-" prefix */
+                        break;
+                case 'a': /* enable algebra? */
+                        p += sizeof("algebra ") - 1;
+                        if (*p == '1')
+                            ctx->mode |= XQ_ALGEBRA;
+                        if (*p == '0')
+                            ctx->mode |= XQ_MILPRINT_SUMMER;
                         break;
                 case 'o': /* output format */
                         p += sizeof("output ") - 1;

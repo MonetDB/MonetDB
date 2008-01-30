@@ -853,11 +853,11 @@ PFcompile_MonetDB (char *xquery, char* url, char** prologue, char** query, char*
 
         PFstate.invocation = invoke_monetdb;
 
-#if MILPRINT_SUMMER_IS_DEFAULT
-        PFstate.output_format = PFoutput_format_milprint_summer;
-#else
-        PFstate.output_format = PFoutput_format_mil;
-#endif
+        if (options & COMPILE_OPTION_ALGEBRA) {
+                PFstate.output_format = PFoutput_format_mil;
+        } else {
+                PFstate.output_format = PFoutput_format_milprint_summer;
+        }
 
         /* the state of the standoff_axis_steps support should be 
          * passed through the function-arguments.

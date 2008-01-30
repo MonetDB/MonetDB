@@ -239,9 +239,7 @@ HAVE_PCRE?replace16
 HAVE_PCRE?replace17
 HAVE_PCRE?replace18
 typing1
-typing1alg
 typing2
-typing2alg
 typing3
 type_integer
 fn_not
