@@ -7531,16 +7531,37 @@ reduce (PFpa_op_t * p, int goalnt)
                 if_ (eq (count (VAR (L(p)->env, p->sem.err.att, aat_str)),
                          lit_int (0)),
                      nop(),
-                     error (fetch ( VAR (L(p)->env, p->sem.err.att, aat_str),
-                                    lit_int (0)))));
+                     error (fetch (VAR (L(p)->env, p->sem.err.att, aat_str),
+                                   lit_int (0)))));
 
             /* copy all the attributes */
             for (unsigned int i = 0; i < env_count (L(p)->env); i++) {
-                pin (env_at (L(p)->env, i).mvar, p->refctr);
-                env_add (p->env,
-                         env_at (L(p)->env, i).att,
-                         env_at (L(p)->env, i).ty,
-                         env_at (L(p)->env, i).mvar);
+                /* make sure that the implicit type change
+                   is correctly implemented */
+                if (env_at (L(p)->env, i).att == p->sem.err.att) {
+                    PFalg_simple_type_t ty = type_of (p, p->sem.err.att);
+                    assert (env_at (L(p)->env, i).ty == aat_str);
+                    
+                    for (PFalg_simple_type_t t = 1; t; t <<= 1)
+                        if (t & ty) {
+                            /* create new variable */
+                            mvar_t *v  = new_var (p->refctr);
+                            /* dummy assignment */
+                            execute (
+                                assgn (var (v->name),
+                                       seqbase (new (type (mty_void),
+                                                     implty (t)),
+                                                lit_oid (0))));
+                            env_add (p->env, p->sem.err.att, t, v);
+                        }
+                }
+                else {
+                    pin (env_at (L(p)->env, i).mvar, p->refctr);
+                    env_add (p->env,
+                             env_at (L(p)->env, i).att,
+                             env_at (L(p)->env, i).ty,
+                             env_at (L(p)->env, i).mvar);
+                }
             }
             break;
 
