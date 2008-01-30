@@ -2384,6 +2384,7 @@ PFbui_fn_qname (const PFla_op_t *loop, bool ordering,
                                                args[0].rel,
                                                proj (att_iter, att_iter))),
                                        att_pos, lit_nat (1)),
+                                   /* use '|' as invalid uri */
                                    att_item, lit_str ("|"))),
                            project (args[1].rel,
                                     proj (att_iter1, att_iter),
@@ -3148,12 +3149,12 @@ struct PFla_pair_t
 PFbui_fn_zero_or_one (const PFla_op_t *loop, bool ordering,
                       struct PFla_pair_t *args)
 {
-    PFla_op_t *count = eq (attach (
+    PFla_op_t *count = gt (attach (
                                count (
                                    project (args[0].rel,
                                             proj (att_iter, att_iter)),
                                    att_item, att_iter),
-                               att_item1, lit_int (1)),
+                               att_item1, lit_int (2)),
                            att_res, att_item1, att_item);
 
     char *err_string = "err:FORG0003, fn:zero-or-one called with "
