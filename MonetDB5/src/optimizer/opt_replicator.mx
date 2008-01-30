@@ -51,6 +51,15 @@ comment "The overloaded select operator for replicated operations";
 pattern replicator.uselect(dst:bat[:any_1,:any_2],low:any_2,hgh:any_2):bat[:any_1,:any_2]
 address REPuselect
 comment "The overloaded uselect operator for replicated operations";
+
+command init():void
+address REPinit
+comment "Initialize replica table"
+
+command dump():void
+address REPdump
+comment "Dump summary of replica table for potential re-use benefits"
+
 @h
 #ifndef _OPT_REPLICATOR_
 #define _OPT_REPLICATOR_
@@ -62,11 +71,53 @@ opt_export str REPselect(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 opt_export str REPuselect(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 opt_export str REPprelude(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
+opt_export str REPinit(void);
+opt_export str REPdump(void);
+
 /* #define DEBUG_OPT_REPLICATOR  */
 @-
 @c
 #include "mal_config.h"
 #include "opt_replicator.h"
+
+typedef struct REPLICAREC {
+        bat srcbid, resbid;                /* partition BAT, back into BBP */
+
+        ValRecord low,hgh; /* selected tail range */
+        bit li, hi; 	/* inclusive bits */
+        size_t cnt;     /* how many tuples */
+	dbl cost;	/* how much time was spent to produce */
+	MalBlkPtr malblk; /* mal instruction block*/
+} *Replica, ReplicaRec;
+
+static Replica repltable = NULL;
+static int replsz = 0;  /* alloc. mem */
+static int replnr = 0;	/* number of replicas */
+
+static void assureSpace(){
+	if ( replsz == 0){
+		replsz = 16;
+		repltable = (ReplicaRec*)GDKzalloc((replsz)*sizeof(ReplicaRec));
+	}
+	else if( replnr == replsz){
+		replsz <<=1;
+		repltable = (ReplicaRec*) GDKrealloc((void*)repltable,
+				 sizeof(ReplicaRec) * replsz);
+	}
+}
+
+str
+REPinit(){
+	str msg= MAL_SUCCEED;
+
+        if ( repltable != NULL){
+		GDKfree(repltable);
+                replsz = replnr = 0;
+        }
+	assureSpace();
+	return msg;
+}
+
 
 static int
 OPTreplicatorImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
@@ -148,6 +199,7 @@ REPselect(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bit t=TRUE,*li=&t,*hi=&t;
 	BAT *b;
 	lng cnt,clk;
+	Replica r;
 	str msg= MAL_SUCCEED;
 	
 	(void) mb;
@@ -165,11 +217,21 @@ REPselect(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	clk= GDKusec()-clk;
 
 	/* time for the decision */
-	if ( (b=BATdescriptor(*bid)) == NULL)
+	if ( (b=BATdescriptor(*ret)) == NULL)
 		throw(MAL,"replicator.select","can not access BAT");
 	cnt= BATcount(b);
-	(void) cnt;
-	(void) clk;
+	/* keep stat */
+	assureSpace();
+	r = repltable + replnr;
+	r->srcbid = *bid;
+	r->resbid = *ret;
+	VALset(&r->low,b->ttype,(ValPtr) low);
+	VALset(&r->hgh,b->ttype,(ValPtr) hgh);
+	r->li = *li;
+	r->hi = *hi; 
+	r->cnt = cnt;
+	r->cost = clk;
+	replnr++;
 	BBPunfix(b->batCacheid);
 
 	return msg;
