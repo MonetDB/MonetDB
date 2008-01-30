@@ -157,6 +157,8 @@ CONDITIONALS = {
     'HAVE_MONETDB_JAVA': "@HAVE_MONETDB_JAVA_FALSE@",
     'HAVE_MONETDB_JAVAJDBC': "@HAVE_MONETDB_JAVAJDBC_FALSE@",
     'HAVE_MONETDB_JAVAXRPC': "@HAVE_MONETDB_JAVAXRPC_FALSE@",
+    'WITH_ALGEBRA'     : "",
+    'NOT_ALGEBRA'      : "",
 }
 
 # a bunch of classes to help with generating (X)HTML files
@@ -1264,8 +1266,8 @@ def GetBitsAndOIDsAndModsAndStatic(env) :
         env['TST_FIVE'] = "Five"
         os.environ['TST_FIVE'] = "Five"
     if par['ALGEBRA']:
-        env['TST_ALGEBRA'] = "Algebra"
-        os.environ['TST_ALGEBRA'] = "Algebra"
+        env['TST_ALGEBRA'] = "-G:Algebra"
+        os.environ['TST_ALGEBRA'] = "-G:Algebra"
     return rtrn
 ### GetBitsAndOIDsAndModsAndStatic(env) #
 
@@ -2194,6 +2196,8 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
             PROLOGUE = " "+TST+".prologue5"
 
         Srvr = '%s%s "--dbname=%s"' % (exe['Mserver'][1], LOCAL_CONF, TSTDB)
+        if par['ALGEBRA']:
+            Srvr += ' --set sql_debug=16384 --set xquery_backend=algebra'
 
         DBINIT=""
         if os.path.isfile(TST+".dbinit") and par['M4']:
@@ -2213,8 +2217,6 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
             Srvr = '%s "--dbinit=%s"' % (Srvr, DBINIT)
         if SERVER == "SQL":
             lang="sql"
-            if par['ALGEBRA']:
-                Srvr = '%s --set sql_debug=16384' % Srvr
             if par['M5']:
                 Srvr = '%s --set mal_listing=0 "--dbinit=%s include sql;"' % (Srvr, DBINIT)
             else:
@@ -2259,6 +2261,8 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
             killed = RunIt(cmd, "", ClntOut, ClntErr, CTIMEOUT)
         elif CALL in ["mal", "malXs", "milS", "milSXs"]:
             cmd = '%s%s --dbname=%s %s ' % (exe['Mserver'][1], LOCAL_CONF, TSTDB, PRELUDE)
+            if par['ALGEBRA']:
+                cmd += ' --set sql_debug=16384 --set xquery_backend=algebra'
             if CALL in ["mal", "milS"]:
                 X=""
             else:
@@ -2819,7 +2823,7 @@ def main(argv) :
         ('MonetDB5', '5', 'MonetDB5', None,
          "use mserver5 of MonetDB Version 5 (default with <package> in {monetdb5, monetdb-datacell})"),
         ('algebra', 'G', 'algebra', None,
-         "use the algebra version of the SQL compiler"),
+         "use the algebra version of the SQL or XQuery compiler"),
         ('recursive', 'r', 'recursive', None,
          "recurse into subdirectories (implies 'All')"),
         ('MONETDB_SOURCE', None, 'MONETDB_SOURCE', '<path>',
@@ -3046,6 +3050,12 @@ def main(argv) :
         CONDITIONALS['HAVE_MONETDB_JAVA'] = ''
         CONDITIONALS['HAVE_MONETDB_JAVAJDBC'] = ''
         CONDITIONALS['HAVE_MONETDB_JAVAXRPC'] = ''
+    if par['ALGEBRA']:
+        CONDITIONALS['WITH_ALGEBRA'] = '#'
+        CONDITIONALS['NOT_ALGEBRA']  = ''
+    else:
+        CONDITIONALS['WITH_ALGEBRA'] = ''
+        CONDITIONALS['NOT_ALGEBRA']  = '#'
 
     #if env.has_key('MONETDB_PREFIX'):
         #bp = os.path.join(env['MONETDB_PREFIX'],"bin")
@@ -3265,6 +3275,9 @@ def main(argv) :
         exe['SQL_Dump']      = CheckExec(env['SQLDUMP'].split(None, 1)[0])     , '%s -umonetdb -Pmonetdb --host=%s --port=%s %s' % (env['SQLDUMP'], HOST, env['MAPIPORT'], env['SQL_TRACE'])
         exe['XQuery_Client'] = CheckExec(env['XQUERYCLIENT'].split(None, 1)[0]), '%s -umonetdb -Pmonetdb --host=%s --port=%s' % (env['XQUERYCLIENT'], HOST, env['MAPIPORT'])
         exe['X100_Client']   = CheckExec(env['X100CLIENT'].split(None, 1)[0])  , '%s -umonetdb -Pmonetdb --host=%s --port=%s' % (env['X100CLIENT'], HOST, env['MAPIPORT'])
+        if par['ALGEBRA']:
+            exe['SQL_Client']    = exe['SQL_Client'][0]   , exe['SQL_Client'][1]   +' -G'
+            exe['XQuery_Client'] = exe['XQuery_Client'][0], exe['XQuery_Client'][1]+' -G'
         if par['TIMEOUT'] == 0 or not exe['Mtimeout'][0]:
             exe['Mtimeout'] = '', ''
         env['exe'] = exe
@@ -3451,6 +3464,23 @@ def main(argv) :
         if is_pf:
             if not CheckExec('pf'):
                 ErrXit('Stopping Pathfinder testing as XQuery compiler "pf" is not available!')
+            if par['ALGEBRA']:
+                env['PF'] = 'pf -A'
+                CONDITIONALS['WITH_ALGEBRA'] = '#'
+                CONDITIONALS['NOT_ALGEBRA']  = ''
+            else:
+                env['PF'] = 'pf'
+                CONDITIONALS['WITH_ALGEBRA'] = ''
+                CONDITIONALS['NOT_ALGEBRA']  = '#'
+                r = re.compile('^\-A, --mil: generate MIL code \(default\)$')
+                proc = subprocess.Popen(['pf','-h'], stdin = subprocess.PIPE, stdout = subprocess.PIPE, universal_newlines = True)
+                qOut, qErr = proc.communicate()
+                for l in qOut.split('\n'):
+                    m = r.match(l.strip())
+                    if m:
+                        CONDITIONALS['WITH_ALGEBRA'] = '#'
+                        CONDITIONALS['NOT_ALGEBRA']  = ''
+            os.environ['PF'] = env['PF']
             MissingMods = CheckMods(env, '', 'XQUERY', '')
             if MissingMods:
                 ErrXit('Stopping Pathfinder testing as modules "%s" are missing!' % str(MissingMods))
