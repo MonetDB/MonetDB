@@ -17,29 +17,31 @@ Usage: pf [OPTION] [FILE]
 
   Reads from standard input if FILE is omitted.
 
-= -A, --mil: generate MIL code
-= -M, --mil_2004: generate MIL code (directly from XQuery Core) (default)
-= -S, --sql: generate SQL code
+  -A, --mil: generate MIL code
+  -M, --mil_2004: generate MIL code (directly from XQuery Core) (default)
+  -S, --sql: generate SQL code
 
-= -D, --dot: print internal tree structure in AT&T dot notation
-= -P, --text: print internal tree structure in human-readable notation
+  -I, --xml-import: import logical-algebra-plan from xml file
+
+  -D, --dot: print internal tree structure in AT&T dot notation
+  -P, --text: print internal tree structure in human-readable notation
               (can be used in combination with options -a or -c)
-= -X, --xml: print internal algebraic plan in XML notation
+  -X, --xml: print internal algebraic plan in XML notation
              (if options -A, -M, and -S are not used this option
               implicitly extends options with -S, -l, and -s18)
 
-= -a, --abstract-syntax-tree: enable generation of abstract syntax tree
-= -c, --core-tree: enable generation of internal Core language
-= -t, --typing: enable generation of static types in internal Core language
+  -a, --abstract-syntax-tree: enable generation of abstract syntax tree
+  -c, --core-tree: enable generation of internal Core language
+  -t, --typing: enable generation of static types in internal Core language
                 using {...} (can be used in combination with option -c)
-= -l, --logical-algebra-plan: enable generation of logical algebra plan
-= -p, --physical-algebra-plan: enable generation of physical algebra plan
-= -f<format>, --format=<format>: enable generation of algebra properties
+  -l, --logical-algebra-plan: enable generation of logical algebra plan
+  -p, --physical-algebra-plan: enable generation of physical algebra plan
+  -f<format>, --format=<format>: enable generation of algebra properties
          +  print all available properties (logical/physical algebra)
          c  print cost value (physical algebra)
          o  print orderings (physical algebra)
 
-= -s<phase>, --stop-after=<phase>: stop processing after certain phase:
+  -s<phase>, --stop-after=<phase>: stop processing after certain phase:
          1  right after input parsing
          2  after loading XQuery modules
          3  after parse/abstract syntax tree has been normalized
@@ -63,7 +65,7 @@ Usage: pf [OPTION] [FILE]
         21  after compiling the physical algebra into MIL code
         22  after the MIL program has been serialized
 
-= -o<options>, --optimize-algebra=<options>: optimize algebra according to options:
+  -o<options>, --optimize-algebra=<options>: optimize algebra according to options:
          O  apply optimization based on constant property
          I  apply optimization based on icols property
          K  apply optimization based on key property
@@ -81,21 +83,22 @@ Usage: pf [OPTION] [FILE]
          {  remove proxy operators
          P  infer all properties
          _  does nothing (used for structuring the options)
-            (default for option -A is: '-o OIKDCG_VGO_[J]OKVCG}IM__{_[J]OKVCG}IM__{_[J]OKVCGCG}IM__{_[J]OKVCG}IMTS{_[J]OKVCGCG}IMTS{_[J]OKVCG}IMTS{_[J]OKVCGCGP')
-            (default for option -S is: '-o OIKDCG_VGO_[J]OKVCG}IM__{_[J]OKVCG}IM__{_[J]OKVCGCG}IM__{_[J]OKVCG}IMTS{_[J]OKVCGUCG}IMTS{_[J]OKVCGU}IMTS{_[J]OKVCGUCGP}IQ[J]}IQ[J]IOKVCGQUCGP')
+            (default for option -A is: '-o OIKDCG_VGO_[J]OKVCG}IM__{_[J]OKVCG}IM__{_[J]OKVCGCG}IM__{_[J]OKVCG}IMTS{_[J]OKVCGCG}IMTS{_[J]OKVCG}IMTS{_[J]OKVCGE[]CGP')
+            (default for option -S is: '-o OIKDCG_VGO_[J]OKVCG}IM__{_[J]OKVCG}IM__{_[J]OKVCGCG}IM__{_[J]OKVCG}IMTS{_[J]OKVCGUCG}IMTS{_[J]OKVCGU}IMTS{_[J]OKVCGUE[]CGP}IQ[J]}IQ[J]IOKVCGQUCGP')
 
-= -e[0|1], --mil-dead-code-elimination=[0|1]: dead code elimination (on the MIL level):
+  -e[0|1], --mil-dead-code-elimination=[0|1]: dead code elimination (on the MIL level):
          0  disable dead code elimination
          1  enable dead code elimination (default)
-= -O[0-3], --optimize: select optimization level (default=1)
+  -O[0-3], --optimize: select optimization level (default=1)
                        (only works in combination with option -M)
-= -b, --enable-standoff: enable StandOff axis steps
-= -q, --quiet: do not print informational messages to log file
+  -d TEST, --debug=TEST: call internall debugging function TEST
+  -b, --enable-standoff: enable StandOff axis steps
+  -q, --quiet: do not print informational messages to log file
 
-= -T, --timing: print elapsed times for compiler phases
+  -T, --timing: print elapsed times for compiler phases
 
-= -h, --help: print short help message
-= -H, --fullhelp: print this help message for advanced options
+  -h, --help: print short help message
+  -H, --fullhelp: print this help message for advanced options
 
 Enjoy.
 
