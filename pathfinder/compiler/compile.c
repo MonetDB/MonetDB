@@ -152,16 +152,14 @@ PFstate_t PFstate = {
                                 "}IM__{_[J]OKVCG"
                                 "}IMTS{_[J]OKVCGCG"
                                 "}IMTS{_[J]OKVCG"
-                                "}IMTS{_[J]OKVCGCGP",
-                                /*"}IMTS{_[J]OKVCGE[]CGP",*/
+                                "}IMTS{_[J]OKVCGE[]CGP",
     .opt_sql             = "OIKDCG_VGO_[J]OKVCG"
                                 "}IM__{_[J]OKVCG"
                                 "}IM__{_[J]OKVCGCG"
                                 "}IM__{_[J]OKVCG"
                                 "}IMTS{_[J]OKVCGUCG"
                                 "}IMTS{_[J]OKVCGU"
-                                "}IMTS{_[J]OKVCGUCGP"
-                                /*"}IMTS{_[J]OKVCGUE[]CGP"*/
+                                "}IMTS{_[J]OKVCGUE[]CGP"
                            "}IQ[J]}IQ[J]IOKVCGQUCGP",
 
     .format              = NULL,
