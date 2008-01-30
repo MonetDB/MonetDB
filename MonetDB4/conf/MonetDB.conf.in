@@ -125,6 +125,9 @@ sql_logdir=@Xlocalstatedir@@DIRSEP@MonetDB4@DIRSEP@sql_logs
 # XQuery Interface Section
 #=========================
 
+#default back-end: "milprint_summer" or "algebra"
+#xquery_backend=milprint_summer
+
 #output mode "dm" = pretty printed, 
 #            "xml" = enforce XML with enclosing <XQueryResult> tags
 xquery_output=dm                          

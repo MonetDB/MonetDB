@@ -35,6 +35,8 @@
 
 #define COMPILE_OPTION_STANDOFF 1 /* use bit 0 of the 'options'
                                      param to enable StandOff */
+#define COMPILE_OPTION_ALGEBRA  2 /* use bit 1 of the 'options'
+                                     param to enable Algebra */
 
 extern char* PFerrbuf;
 
