@@ -1127,6 +1127,16 @@ infer_dom (PFla_op_t *n, unsigned int id)
             break;
 
         case la_error:
+            /* use a new domain for the result of the error operator */
+            for (unsigned int i = 0; i < L(n)->schema.count; i++)
+                if (L(n)->schema.items[i].name != n->sem.err.att)
+                    add_dom (n->prop,
+                             L(n)->schema.items[i].name,
+                             PFprop_dom (L(n)->prop, L(n)->schema.items[i].name));
+                else
+                    add_dom (n->prop, n->sem.err.att, id++);
+            break;
+
         case la_cond_err:
         case la_trace:
             bulk_add_dom (n->prop, L(n));

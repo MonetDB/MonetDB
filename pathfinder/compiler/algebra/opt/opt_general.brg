@@ -325,8 +325,9 @@ EmptyRel:    roots_ (twig (content (Frag,
 EmptyRel:    roots_ (twig (nil))                  = 188  (0);
 EmptyRel:    roots_ (merge_adjacent (Frag,
                                      EmptyRel))   = 189  (0);
-EmptyRel:    cond_err (EmptyRel, Rel)             = 190  (0);
-EmptyRel:    fun_call (EmptyRel, Param)           = 191  (0);
+EmptyRel:    error (EmptyRel)                     = 190  (0);
+EmptyRel:    cond_err (EmptyRel, Rel)             = 191  (0);
+EmptyRel:    fun_call (EmptyRel, Param)           = 192  (0);
 EmptyRel:    string_join (EmptyRel, Rel)          = 201  (0);
 EmptyRel:    dummy (EmptyRel)                     = 202  (0);
 

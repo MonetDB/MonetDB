@@ -685,6 +685,10 @@ prop_infer_icols (PFla_op_t *n, PFalg_att_t icols)
             break;
 
         case la_error:
+            n->prop->l_icols = n->prop->icols;
+            n->prop->l_icols = union_ (n->prop->l_icols, n->sem.err.att);
+            break;
+            
         case la_cond_err:
             /* infer incoming icols for input relation */
             n->prop->l_icols = n->prop->icols;

@@ -183,7 +183,6 @@ find_join_worker (PFla_op_t *n,
         case la_disjunion:
         case la_intersect:
         case la_difference:
-        case la_error:
         case la_distinct:
             break;
 
@@ -496,6 +495,13 @@ find_join_worker (PFla_op_t *n,
             /* for the fragment information we do not need to introduce
                column names as the thetajoin can never be moved along
                its edges. */
+            LEFT_COLS(n)  = att_NULL;
+            RIGHT_COLS(n) = att_NULL;
+            break;
+
+        case la_error:
+            /* FIXME: for now we assume that a theta-join
+               cannot be pushed through an error */
             LEFT_COLS(n)  = att_NULL;
             RIGHT_COLS(n) = att_NULL;
             break;

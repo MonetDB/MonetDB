@@ -1694,7 +1694,29 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
                 }
                 break;
 
-            case la_error: /* don't rewrite errors */
+            case la_error:
+                if (!PFprop_key (rp->prop, ratt) ||
+                    !PFprop_subdom (rp->prop,
+                                    PFprop_dom (lp->prop, latt),
+                                    PFprop_dom (rp->prop, ratt)))
+                    /* Ensure that the values of the left join argument
+                       are a subset of the values of the right join argument
+                       and that the right join argument is keyed. These
+                       two tests make sure that we have exactly one match per
+                       tuple in the left relation and thus the result of the
+                       error operator stays stable. */
+                    break;
+
+                if (!is_join_att (p, lp->sem.err.att)) {
+                    *p = *(PFla_error_ (eqjoin_unq (L(lp), rp, latt, ratt,
+                                                    p->sem.eqjoin_unq.res),
+                                        lp->sem.err.att,
+                                        PFprop_type_of (lp, lp->sem.err.att)));
+                    next_join = L(p);
+                    break;
+                }
+                break;
+
             case la_cond_err:
                 /* this breaks proxy generation - thus don't
                    rewrite conditional errors */

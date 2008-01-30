@@ -1589,8 +1589,9 @@ opt_mvd (PFla_op_t *p)
     case la_empty_frag:
         break;
 
-    case la_error: /* don't rewrite errors */
+    case la_error: /* don't rewrite runtime errors */
         break;
+
     case la_cond_err:
         if (is_cross (L(p))) {
             *p = *(cross_can (cond_err (LL(p), R(p),
