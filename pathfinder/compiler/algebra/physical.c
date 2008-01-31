@@ -2078,6 +2078,65 @@ PFpa_bool_not (const PFpa_op_t *n, PFalg_att_t res, PFalg_att_t att)
 }
 
 /**
+ * Constructor for op:to operator
+ */
+PFpa_op_t *
+PFpa_to (const PFpa_op_t *n, PFalg_att_t res,
+         PFalg_att_t att1, PFalg_att_t att2)
+{
+    PFpa_op_t *ret = wire1 (pa_to, n);
+
+    /* allocate memory for the result schema */
+    ret->schema.count = n->schema.count + 1;
+    ret->schema.items
+        = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
+
+    /* copy schema from n */
+    for (unsigned int i = 0; i < n->schema.count; i++)
+        ret->schema.items[i] = n->schema.items[i];
+
+#ifndef NDEBUG
+    /* verify that attributes 'att1' and 'att2' are attributes of n */
+    if (!check_col (n, att1))
+        PFoops (OOPS_FATAL,
+                "attribute `%s' referenced in op:to not found",
+                PFatt_str (att1));
+    if (!check_col (n, att2))
+        PFoops (OOPS_FATAL,
+                "attribute `%s' referenced in op:to not found",
+                PFatt_str (att2));
+#endif
+
+    /* finally add schema item for new attribute */
+    ret->schema.items[n->schema.count].name = res;
+    ret->schema.items[n->schema.count].type = aat_int;
+
+    /* insert semantic value (input attributes and result attribute)
+       into the result */
+    ret->sem.binary.res = res;
+    ret->sem.binary.att1 = att1;
+    ret->sem.binary.att2 = att2;
+
+    /* ---- orderings ---- */
+    for (unsigned int i = 0; i < PFord_set_count (n->orderings); i++) {
+        PFord_set_add (ret->orderings, PFord_set_at (n->orderings, i));
+
+        /* if we have already an ordering we can also add the new
+           generated column at the end. It won't break the ordering. */
+        PFord_set_add (ret->orderings,
+                       PFord_refine (
+                           PFord_set_at (n->orderings, i),
+                           res, DIR_ASC));
+
+    }
+
+    /* ---- costs ---- */
+    ret->cost = DEFAULT_COST + n->cost;
+
+    return ret;
+}
+
+/**
  * HashCount: Hash-based Count operator. Does neither benefit from
  * any existing ordering, nor does it provide/preserve any input
  * ordering.

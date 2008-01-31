@@ -201,6 +201,7 @@ enum PFmil_kind_t {
     , m_div          /**< arithmetic divide */
     , m_mdiv         /**< multiplexed arithmetic divide */
     , m_mmod         /**< multiplexed arithmetic modulo */
+    , m_mmax         /**< multiplexed arithmetic maximum */
 
     , m_mabs         /**< multiplexed operator abs */
     , m_mceiling     /**< multiplexed operator ceil */
@@ -223,6 +224,7 @@ enum PFmil_kind_t {
     , m_mand         /**< multiplexed boolean operator `and' */
     , m_mor          /**< multiplexed boolean operator `or' */
 
+    , m_enum         /**< MIL enumerate() function */
     , m_count        /**< MIL count() function */
     , m_gcount       /**< Grouped count() function `{count}()' */
     , m_egcount      /**< Grouped count() function `{count}()' */
@@ -685,6 +687,9 @@ PFmil_t * PFmil_ctrefine (const PFmil_t *, const PFmil_t *, bool dir_desc);
 /** MIL CTderive function */
 PFmil_t * PFmil_ctderive (const PFmil_t *, const PFmil_t *);
 
+/** enumerate operator, return sequence of integers */
+PFmil_t * PFmil_enumerate (const PFmil_t *, const PFmil_t *);
+    
 /** MIL count() function, return number of BUNs in a BAT */
 PFmil_t * PFmil_count (const PFmil_t *);
 
@@ -752,6 +757,9 @@ PFmil_t * PFmil_mdiv (const PFmil_t *, const PFmil_t *);
 
 /** MIL multiplexed modulo operator */
 PFmil_t * PFmil_mmod (const PFmil_t *, const PFmil_t *);
+
+/** MIL multiplexed maximum operator */
+PFmil_t * PFmil_mmax (const PFmil_t *, const PFmil_t *);
 
 /** MIL multiplexed operator abs */
 PFmil_t * PFmil_mabs (const PFmil_t *);

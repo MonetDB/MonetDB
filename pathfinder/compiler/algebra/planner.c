@@ -1193,6 +1193,27 @@ plan_unary (const PFla_op_t *n)
 }
 
 /**
+ * Generate physical plan for integer enumeration (op:to).
+ */
+static PFplanlist_t *
+plan_to (const PFla_op_t *n)
+{
+    PFplanlist_t *ret = new_planlist ();
+
+    assert (n);
+    assert (n->kind == la_to);
+    assert (L(n)); assert (L(n)->plans);
+
+    /* consider each plan in n */
+    for (unsigned int i = 0; i < PFarray_last (L(n)->plans); i++)
+        add_plan (ret,
+                  to (*(plan_t **) PFarray_at (L(n)->plans, i),
+                      n->sem.to.res, n->sem.to.att1, n->sem.to.att2));
+
+    return ret;
+}
+
+/**
  * Generate physical plan for logical aggregation operators
  * (avg, max, min, sum).
  */
@@ -2864,11 +2885,12 @@ plan_subexpression (PFla_op_t *n)
 
         case la_bool_not:
                                 plans = plan_unary (n);        break;
+        case la_to:             plans = plan_to (n);           break;
+        case la_count:          plans = plan_count (n);        break;
         case la_avg:            plans = plan_aggr (pa_avg, n); break;
         case la_max:            plans = plan_aggr (pa_max, n); break;
         case la_min:            plans = plan_aggr (pa_min, n); break;
         case la_sum:            plans = plan_aggr (pa_sum, n); break;
-        case la_count:          plans = plan_count (n);        break;
 
         case la_rownum:         plans = plan_rownum (n);       break;
         case la_rowrank:

@@ -86,6 +86,7 @@ enum PFpa_op_kind_t {
     , pa_bool_or        =  47 /**< Boolean or */
     , pa_bool_and_atom  =  48 /**< Boolean and, where one arg is an atom */
     , pa_bool_or_atom   =  49 /**< Boolean or, where one arg is an atom */
+    , pa_to             =  50 /**< op:to operator */
     , pa_hash_count     =  55 /**< Hash-based count operator */
     , pa_avg            =  56 /**< Avg operator */
     , pa_max            =  57 /**< Max operator */
@@ -635,6 +636,12 @@ PFpa_op_t *PFpa_and_atom (const PFpa_op_t *, PFalg_att_t res,
  */
 PFpa_op_t *PFpa_or_atom (const PFpa_op_t *, PFalg_att_t res,
                          PFalg_att_t att1, PFalg_atom_t att2);
+
+/**
+ * Constructor for op:to operator
+ */
+PFpa_op_t * PFpa_to (const PFpa_op_t *n, PFalg_att_t res,
+                     PFalg_att_t att1, PFalg_att_t att2);
 
 /**
  * HashCount: Hash-based Count operator. Does neither benefit from

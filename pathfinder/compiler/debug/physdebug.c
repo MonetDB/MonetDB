@@ -83,6 +83,7 @@ static char *a_id[]  = {
     , [pa_bool_not]        = "NOT"
     , [pa_bool_and_atom]   = "AND (atom)"
     , [pa_bool_or_atom]    = "OR (atom)"
+    , [pa_to]              = "op:to"
     , [pa_avg]             = "AVG"
     , [pa_min]             = "MAX"
     , [pa_max]             = "MIN"
@@ -172,6 +173,7 @@ static char *xml_id[]  = {
     , [pa_bool_not]        = "not"
     , [pa_bool_and_atom]   = "and (atom)"
     , [pa_bool_or_atom]    = "or (atom)"
+    , [pa_to]              = "op:to"
     , [pa_avg]             = "avg"
     , [pa_min]             = "max"
     , [pa_max]             = "min"
@@ -375,6 +377,7 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, unsigned int node_id)
         , [pa_bool_or]         = "\"#C0C0C0\""
         , [pa_bool_and_atom]   = "\"#C0C0C0\""
         , [pa_bool_or_atom]    = "\"#C0C0C0\""
+        , [pa_to]              = "\"#C0C0C0\""
         , [pa_avg]             = "\"#A0A0A0\""
         , [pa_max]             = "\"#A0A0A0\""
         , [pa_min]             = "\"#A0A0A0\""
@@ -608,6 +611,15 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, unsigned int node_id)
                             PFatt_str (n->sem.unary.res),
                             PFatt_str (n->sem.unary.att));
             break;
+
+        case pa_to:
+            PFarray_printf (dot, "%s (%s:<%s,%s>/%s)",
+                            a_id[n->kind],
+                            PFatt_str (n->sem.to.res),
+                            PFatt_str (n->sem.to.att1),
+                            PFatt_str (n->sem.to.att2),
+                            PFatt_str (n->sem.to.part));
+	    break;
 
         case pa_hash_count:
             if (n->sem.count.part == att_NULL)
@@ -1447,6 +1459,23 @@ pa_xml (PFarray_t *xml, PFpa_op_t *n, unsigned int node_id)
                             "    </content>\n",
                             PFatt_str (n->sem.unary.res),
                             PFatt_str (n->sem.unary.att));
+            break;
+
+        case pa_to:
+            PFarray_printf (xml,
+                            "    <content>\n"
+                            "      <column name=\"%s\" new=\"true\"/>\n"
+                            "      <column name=\"%s\" new=\"false\""
+                                         " function=\"start\"/>\n"
+                            "      <column name=\"%s\" new=\"false\""
+                                         " function=\"end\"/>\n"
+                            "      <column name=\"%s\" new=\"false\""
+                                         " function=\"partition\"/>\n"
+                            "    </content>\n",
+                            PFatt_str (n->sem.to.res),
+                            PFatt_str (n->sem.to.att1),
+                            PFatt_str (n->sem.to.att2),
+                            PFatt_str (n->sem.to.part));
             break;
 
         case pa_hash_count:

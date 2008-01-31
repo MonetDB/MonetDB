@@ -96,9 +96,10 @@
 
 #define bool_not(a,b,c)      PFpa_bool_not ((a), (b), (c))
 
-#define hash_count(a,b,c)    PFpa_hash_count ((a), (b), (c))
+#define to(a,b,c,d)          PFpa_to ((a), (b), (c), (d))
 
-#define aggr(a,b,c,d, e)     PFpa_aggr ((a), (b), (c), (d), (e))
+#define hash_count(a,b,c)    PFpa_hash_count ((a), (b), (c))
+#define aggr(a,b,c,d,e)      PFpa_aggr ((a), (b), (c), (d), (e))
 
 /** a sort specification list is just another attribute list */
 #define sortby(...)          PFord_order_intro (__VA_ARGS__)

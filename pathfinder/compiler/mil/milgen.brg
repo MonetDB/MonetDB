@@ -112,6 +112,7 @@ typedef struct PFpa_op_t *NODEPTR_TYPE;
 %term bool_or        =  47
 %term bool_and_atom  =  48
 %term bool_or_atom   =  49
+%term to             =  50
 %term hash_count     =  55
 %term avg            =  56
 %term max_           =  57
@@ -203,11 +204,12 @@ Rel:      eq (Rel)                                                 =  50 (10);
 Rel:      eq_atom (Rel)                                            =  51 (10);
 Rel:      gt (Rel)                                                 =  52 (10);
 Rel:      gt_atom (Rel)                                            =  53 (10);
-Rel:      bool_not (Rel)                                           =  61 (10);
-Rel:      bool_and (Rel)                                           =  62 (10);
-Rel:      bool_or (Rel)                                            =  63 (10);
-Rel:      bool_and_atom (Rel)                                      =  64 (10);
-Rel:      bool_or_atom (Rel)                                       =  65 (10);
+Rel:      bool_not (Rel)                                           =  60 (10);
+Rel:      bool_and (Rel)                                           =  61 (10);
+Rel:      bool_or (Rel)                                            =  62 (10);
+Rel:      bool_and_atom (Rel)                                      =  63 (10);
+Rel:      bool_or_atom (Rel)                                       =  64 (10);
+Rel:      to (Rel)                                                 =  65 (10);
 Rel:      hash_count (Rel)                                         =  66 (10);
 Rel:      avg (Rel)                                                =  67 (10);
 Rel:      max_ (Rel)                                               =  68 (10);
@@ -4676,74 +4678,135 @@ reduce (PFpa_op_t * p, int goalnt)
             break;
 
         /* Rel:      bool_not (Rel) */
-        case 61:
+        case 60:
             unary_op (PFmil_mnot, p);
             break;
 
         /* Rel:      bool_and (Rel) */
-        case 62:
+        case 61:
             bin_bool (PFmil_mand, p);
             break;
 
         /* Rel:      bool_or (Rel) */
-        case 63:
+        case 62:
             bin_bool (PFmil_mor, p);
             break;
 
         /* Rel:      bool_and_atom (Rel) */
-        case 64:
+        case 63:
             bin_bool_atom (PFmil_mand, p);
             break;
 
         /* Rel:      bool_or_atom (Rel) */
-        case 65:
+        case 64:
             bin_bool_atom (PFmil_mor, p);
             break;
+
+        /* Rel:      to (Rel) */
+        case 65:
+        {
+            mvar_t *v              = new_var (1);
+            mvar_t *res            = new_var (p->refctr);
+            
+            execute (
+                /* v := in2.[-](in1).[+](1LL).[max](0LL);
+                   v := enumerate(in1, v);
+                   res := v.reverse().mark(0@0).reverse();
+                   v := v.mark(0@0).reverse();
+                   
+                   out_n := v.leftjoin(in_n);
+                   out_n := out_n.tmark(0@0); */
+                assgn (
+                    var (v->name),
+                    mmax (lit_lng (0),
+                          madd (lit_lng (1),
+                                msub (VAR (L(p)->env,
+                                           p->sem.binary.att2,
+                                           aat_int),
+                                      VAR (L(p)->env,
+                                           p->sem.binary.att1,
+                                           aat_int))))),
+                assgn (
+                    var (v->name),
+                    enumerate (VAR (L(p)->env, p->sem.binary.att1, aat_int),
+                               var (v->name))),
+                assgn (
+                    var (res->name),
+                    tmark (var (v->name), lit_oid (0))),
+                assgn (
+                    var (v->name),
+                    reverse (mark (var (v->name), lit_oid (0)))));
+            
+            for (unsigned int i = 0; i < env_count (L(p)->env); i++) {
+                 mvar_t *w = new_var (p->refctr);
+
+                 execute (
+                      assgn (var (w->name),
+                             leftjoin (
+                                 var (v->name),
+                                 var (env_at (L(p)->env, i).mvar->name))),
+                      /* because leftjoin does not know that we have
+                         exactly one match for each tuple in v,
+                         we need to make the heads void ourselves */
+                      assgn (var (w->name),
+                             tmark (var (w->name), lit_oid (0)))
+                      );
+
+                 env_add (p->env,
+                          env_at (L(p)->env, i).att,
+                          env_at (L(p)->env, i).ty,
+                          w);
+            }
+            env_add (p->env, p->sem.binary.res, aat_int, res);
+
+            unpin (v, 1);
+        }   break;
+
 
         /* Rel:      hash_count (Rel) */
         case 66:
             if (p->sem.count.part != att_NULL) {
-                for (unsigned int i = 0; i < L(p)->schema.count; i++)
-                    for (PFalg_simple_type_t t = 1; t; t <<= 1)
-                        if (t & L(p)->schema.items[i].type) {
+                mvar_t *v              = new_var (1);
+                mvar_t *res            = new_var (p->refctr);
+                mvar_t *part           = new_var (p->refctr);
+                PFalg_simple_type_t ty = type_of (L(p), p->sem.count.part);
+                
+                for (PFalg_simple_type_t t = 1; t; t <<= 1)
+                    if (t & ty) {
+                        if  (t != ty)
+                            PFoops (OOPS_FATAL,
+                                    "HashCount not implemented for "
+                                    "polymorphic groups");
+                        break;
+                    }
 
-                            if (t != L(p)->schema.items[i].type)
-                                PFoops (OOPS_FATAL,
-                                        "HashCount not implemented for "
-                                        "polymorphic groups");
+                execute (
+                    /* v := {count}(p_in.reverse ()) */
+                    assgn (
+                        var (v->name),
+                        gcount (
+                            reverse (VAR (L(p)->env,
+                                          p->sem.count.part, ty)))),
+                    /* align with integer representation (lng) */
+                    assgn (var (v->name),
+                           mcast (type (mty_lng), var (v->name))),
+                    /* res := v.reverse ().mark (0@0).reverse (); */
+                    assgn (
+                        var (res->name),
+                        reverse (
+                            mark (
+                                reverse (var (v->name)),
+                                lit_oid (0)))),
+                    /* part := v.mark (0@0).reverse (); */
+                    assgn (
+                        var (part->name),
+                        reverse (
+                            mark (var (v->name), lit_oid (0)))));
 
-                            mvar_t *v    = new_var (1);
-                            mvar_t *res  = new_var (p->refctr);
-                            mvar_t *part = new_var (p->refctr);
+                env_add (p->env, p->sem.count.res, aat_int, res);
+                env_add (p->env, p->sem.count.part, ty, part);
 
-                            execute (
-                                /* v := {count}(p_in.reverse ()) */
-                                assgn (
-                                    var (v->name),
-                                    gcount (
-                                        reverse (VAR (L(p)->env,
-                                                      p->sem.count.part, t)))),
-                                /* align with integer representation (lng) */
-                                assgn (var (v->name),
-                                       mcast (type (mty_lng), var (v->name))),
-                                /* res := v.reverse ().mark (0@0).reverse (); */
-                                assgn (
-                                    var (res->name),
-                                    reverse (
-                                        mark (
-                                            reverse (var (v->name)),
-                                            lit_oid (0)))),
-                                /* part := v.mark (0@0).reverse (); */
-                                assgn (
-                                    var (part->name),
-                                    reverse (
-                                        mark (var (v->name), lit_oid (0)))));
-
-                            env_add (p->env, p->sem.count.res, aat_int, res);
-                            env_add (p->env, p->sem.count.part, t, part);
-
-                            unpin (v, 1);
-                        }
+                unpin (v, 1);
             }
             else {
 
