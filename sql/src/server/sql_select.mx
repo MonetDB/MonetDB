@@ -3639,14 +3639,23 @@ query_groupby_outers(mvc *sql, scope *scp, stmt *subset)
 	return cur;
 }
 
+static stmt *
+find_order(stmt *s)
+{
+	assert(s->type == st_order || s->type == st_reorder);
+	while(s->type == st_reorder)
+		s = s->op1.stval;
+	return s;
+}
+
 stmt *
 sql_reorder(stmt *order, stmt *s) 
 {
 	list *l = create_stmt_list();
 	node *n;
 	/* we need to keep the order by column, to propagate the sort property*/
-	stmt *x = order->op1.stval;
-	stmt *o = order;
+	stmt *o = find_order(order);
+	stmt *x = o->op1.stval;
 
 	order = stmt_mark(stmt_reverse(order), 0);
 	for (n = s->op1.lval->h; n; n = n->next) {
@@ -3656,7 +3665,7 @@ sql_reorder(stmt *order, stmt *s)
 
 		if (sc != x)
 			sc = stmt_reverse(stmt_order(stmt_reverse(stmt_join(stmt_dup(order), stmt_dup(sc), cmp_equal)), 1));
-		else	/* order by column */
+		else	/* first order by column */
 			sc = stmt_mark(stmt_dup(o), 0);
 		sc = stmt_alias(sc, tname, cname );
 		list_append(l, sc);
