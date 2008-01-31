@@ -2783,7 +2783,7 @@ sys_drop_key(sql_trans *tr, sql_key *k, int drop_action)
 	sql_trans_drop_dependencies(tr, k->base.id);
 
 	if (drop_action) 
-		sql_trans_drop_all_dependencies(tr, syss, k->base.id, (k->type == fkey) ? FKEY_DEPENDENCY : KEY_DEPENDENCY);
+		sql_trans_drop_all_dependencies(tr, k->t->s, k->base.id, (k->type == fkey) ? FKEY_DEPENDENCY : KEY_DEPENDENCY);
 
 }
 
@@ -2827,7 +2827,7 @@ sys_drop_idx(sql_trans *tr, sql_idx * i, int drop_action)
 		tr->schema_updates ++;
 
 	if (drop_action)
-		sql_trans_drop_all_dependencies(tr, syss, i->base.id, INDEX_DEPENDENCY);
+		sql_trans_drop_all_dependencies(tr, i->t->s, i->base.id, INDEX_DEPENDENCY);
 }
 
 static void
@@ -2878,7 +2878,7 @@ sys_drop_sequence(sql_trans *tr, sql_sequence * seq, int drop_action)
 	table_funcs.table_delete(tr, sysseqs, rid);
 
 	if (drop_action)
-		sql_trans_drop_all_dependencies(tr, syss, seq->base.id, SEQ_DEPENDENCY);
+		sql_trans_drop_all_dependencies(tr, seq->s, seq->base.id, SEQ_DEPENDENCY);
 		
 }
 
@@ -2897,7 +2897,7 @@ sys_drop_column(sql_trans *tr, sql_column *col, int drop_action)
 		tr->schema_updates ++;
 
 	if (drop_action)
-		sql_trans_drop_all_dependencies(tr, syss, col->base.id, COLUMN_DEPENDENCY);
+		sql_trans_drop_all_dependencies(tr, col->t->s, col->base.id, COLUMN_DEPENDENCY);
 }
 
 static void
@@ -2961,7 +2961,7 @@ sys_drop_table(sql_trans *tr, sql_table *t, int drop_action)
 		tr->schema_updates ++;
 
 	if (drop_action) 
-		sql_trans_drop_all_dependencies(tr, syss, t->base.id, isTable(t) ? TABLE_DEPENDENCY : VIEW_DEPENDENCY);
+		sql_trans_drop_all_dependencies(tr, t->s, t->base.id, isTable(t) ? TABLE_DEPENDENCY : VIEW_DEPENDENCY);
 }
 
 static void
@@ -2980,7 +2980,7 @@ sys_drop_type(sql_trans *tr, sql_type *type, int drop_action)
 	tr->schema_updates ++;
 
 	if (drop_action)
-		sql_trans_drop_all_dependencies(tr, syss, type->base.id, TYPE_DEPENDENCY);
+		sql_trans_drop_all_dependencies(tr, type->s, type->base.id, TYPE_DEPENDENCY);
 }
 
 
@@ -3007,7 +3007,7 @@ sys_drop_func(sql_trans *tr, sql_func *func, int drop_action)
 	tr->schema_updates ++;
 
 	if (drop_action)
-		sql_trans_drop_all_dependencies(tr, syss, func->base.id, func->is_func ? FUNC_DEPENDENCY : PROC_DEPENDENCY);
+		sql_trans_drop_all_dependencies(tr, func->s, func->base.id, func->is_func ? FUNC_DEPENDENCY : PROC_DEPENDENCY);
 }
 
 static void
