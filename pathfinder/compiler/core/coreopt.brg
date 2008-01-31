@@ -392,6 +392,7 @@ CoreExpr:           xrpc (CoreExpr, FunExpr)                    =  116(10);
 /* ... and so on ... */
 #define LRL(p) L(R(L(p)))
 #define RRL(p) L(R(R(p)))
+#define RRR(p) R(R(R(p)))
 #define RRRL(p) L(R(R(R(p))))
 #define RRRRL(p) L(R(R(R(R(p)))))
 #define RRRRRL(p) L(R(R(R(R(R(p))))))
@@ -400,8 +401,10 @@ CoreExpr:           xrpc (CoreExpr, FunExpr)                    =  116(10);
 #define LLR(p) R(L(L(p)))
 #define LRR(p) R(R(L(p)))
 #define LLLL(p) L(L(L(L(p))))
-#define LRLL(p) L(L(R(L(p))))
+#define LLLR(p) R(L(L(L(p))))
 #define LLRL(p) L(R(L(L(p))))
+#define LRLL(p) L(L(R(L(p))))
+#define RLLL(p) L(L(L(R(p))))
 #define LRLR(p) R(L(R(L(p))))
 #define LLRR(p) R(R(L(L(p))))
 #define RLR(p) R(L(R(p)))
@@ -995,6 +998,46 @@ reduce (PFcnode_t * p, int goalnt)
                               PFqname (PFns_fn, "zero-or-one"))) {
                 if (PFty_subtype (TY(LL(p)), PFty_opt (PFty_item ()))) {
                     *p = *LL(p);
+                    rewritten = true;
+                    break;
+                }
+                /**
+                 * try to find a positional predicate:
+                 *
+                 *                flwr
+                 *                /  \
+                 *              for   if_________
+                 *              /      \         \ 
+                 *           forbind   apply(eq) then_else
+                 *            /          \         \      \
+                 *         forvars       arg      var(a)  empty
+                 *          /   \       /   \
+                 *       var(a) var(p)      arg
+                 *                         /   \
+                 *                      var(p)   
+                 */
+                else if (LL(p)->kind == c_flwr &&
+                         L(LL(p))->kind == c_for &&
+                         LL(LL(p))->kind == c_forbind &&
+                         LLL(LL(p))->kind == c_forvars &&
+                         LLLR(LL(p))->kind == c_var &&
+                         LLLL(LL(p))->kind == c_var &&
+                         R(LL(p))->kind == c_if &&
+                         RL(LL(p))->kind == c_apply &&
+                         ! PFqname_eq (RL(LL(p))->sem.fun->qname,
+                                       PFqname (PFns_op, "eq")) &&
+                         RLL(LL(p))->kind == c_arg &&
+                         R(RLL(LL(p)))->kind == c_arg &&
+                         RL(RLL(LL(p)))->kind == c_var &&
+                         LLLR(LL(p))->sem.var == RL(RLL(LL(p)))->sem.var &&
+                         RR(LL(p))->kind == c_then_else &&
+                         RRL(LL(p))->kind == c_var &&
+                         LLLL(LL(p))->sem.var == RRL(LL(p))->sem.var &&
+                         RRR(LL(p))->kind == c_empty) {
+                    /* remove function and replace flwr type */
+                    PFty_t ty = TY(p);
+                    *p = *LL(p);
+                    TY(p) = ty;
                     rewritten = true;
                     break;
                 }
