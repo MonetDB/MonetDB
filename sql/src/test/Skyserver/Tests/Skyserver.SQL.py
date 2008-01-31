@@ -3,7 +3,7 @@ import os, sys
 
 def main():
     clcmd = str(os.getenv('SQL_CLIENT'))
-    clcmd1 = str(os.getenv('SQL_CLIENT')) + "-uskyserver -Pskyserver"
+    clcmd1 = str(os.getenv('SQL_CLIENT')) + " -uskyserver -Pskyserver"
     sys.stdout.write('Create User\n')
     clt = os.popen(clcmd + "<%s" % ('%s/../create_user.sql' % os.getenv('RELSRCDIR')), 'w')
     clt.close()
