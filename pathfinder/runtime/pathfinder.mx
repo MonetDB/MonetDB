@@ -4383,7 +4383,7 @@ xquery_compile_exec(xquery_client *ctx,
 #else /* ALGEBRA_IS_DEFAULT */
     if (!(ctx->mode & XQ_MILPRINT_SUMMER) && \
         ((ctx->mode & XQ_ALGEBRA) || \
-         (GDKgetenv("xquery_backend") == NULL) || (strcmp(GDKgetenv("xquery_backend"),"miprint_summer") != 0)))
+         (GDKgetenv("xquery_backend") == NULL) || (strcmp(GDKgetenv("xquery_backend"),"milprint_summer") != 0)))
         options |= COMPILE_OPTION_ALGEBRA;
 #endif
 
