@@ -14,7 +14,7 @@ def client(cmd):
 
 
 def main():
-    clcmd = str(os.getenv('SQL_CLIENT')) + "-umy_user2 -Pp2 < %s" % ('%s/../role.sql' % os.getenv('RELSRCDIR'))
+    clcmd = str(os.getenv('SQL_CLIENT')) + " -umy_user2 -Pp2 < %s" % ('%s/../role.sql' % os.getenv('RELSRCDIR'))
     client(clcmd)
 
 main()
