@@ -361,7 +361,7 @@ PFxml2la_conv_2PFLA_OpKind(const char* s)
     {
         return la_content;
     }
-    else if (strcmp(s, "#pf:merge-adjacent-text-nodeStore") == 0)
+    else if (strcmp(s, "#pf:merge-adjacent-text-nodes") == 0)
     {
         return la_merge_adjacent;
     }
