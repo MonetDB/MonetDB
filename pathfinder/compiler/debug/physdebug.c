@@ -613,12 +613,11 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, unsigned int node_id)
             break;
 
         case pa_to:
-            PFarray_printf (dot, "%s (%s:<%s,%s>/%s)",
+            PFarray_printf (dot, "%s (%s:<%s,%s>)",
                             a_id[n->kind],
-                            PFatt_str (n->sem.to.res),
-                            PFatt_str (n->sem.to.att1),
-                            PFatt_str (n->sem.to.att2),
-                            PFatt_str (n->sem.to.part));
+                            PFatt_str (n->sem.binary.res),
+                            PFatt_str (n->sem.binary.att1),
+                            PFatt_str (n->sem.binary.att2));
 	    break;
 
         case pa_hash_count:
@@ -1404,6 +1403,7 @@ pa_xml (PFarray_t *xml, PFpa_op_t *n, unsigned int node_id)
         case pa_gt:
         case pa_bool_and:
         case pa_bool_or:
+        case pa_to:
             PFarray_printf (xml,
                             "    <content>\n"
                             "      <column name=\"%s\" new=\"true\">\n"
@@ -1459,23 +1459,6 @@ pa_xml (PFarray_t *xml, PFpa_op_t *n, unsigned int node_id)
                             "    </content>\n",
                             PFatt_str (n->sem.unary.res),
                             PFatt_str (n->sem.unary.att));
-            break;
-
-        case pa_to:
-            PFarray_printf (xml,
-                            "    <content>\n"
-                            "      <column name=\"%s\" new=\"true\"/>\n"
-                            "      <column name=\"%s\" new=\"false\""
-                                         " function=\"start\"/>\n"
-                            "      <column name=\"%s\" new=\"false\""
-                                         " function=\"end\"/>\n"
-                            "      <column name=\"%s\" new=\"false\""
-                                         " function=\"partition\"/>\n"
-                            "    </content>\n",
-                            PFatt_str (n->sem.to.res),
-                            PFatt_str (n->sem.to.att1),
-                            PFatt_str (n->sem.to.att2),
-                            PFatt_str (n->sem.to.part));
             break;
 
         case pa_hash_count:
