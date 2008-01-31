@@ -250,7 +250,14 @@ PFxml2la_xpath_getAttributeValuesFromAttributeNodes(
 char* 
 PFxml2la_xpath_getElementValue(xmlNodePtr nodePtr)
 {
-    return(char*)nodePtr->children->content;
+    if (nodePtr && nodePtr->children)
+        return (char *) nodePtr->children->content;
+    else {
+        /* cope with empty nodes and interpret them as empty strings */
+        char *empty_str = PFmalloc (sizeof (char));
+        empty_str[0] = 0;
+        return empty_str;
+    }
 }
 
 
