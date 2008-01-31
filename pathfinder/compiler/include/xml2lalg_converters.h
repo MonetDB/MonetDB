@@ -74,7 +74,8 @@ PFxml2la_conv_2PFLA_atomType(char* typeString);
  
 
 PFalg_atom_t 
-PFxml2la_conv_2PFLA_atom(char* typeString, char* valueString);
+PFxml2la_conv_2PFLA_atom(PFalg_simple_type_t,
+                         char *prefix, char *uri, char* valueString);
 
 
 PFalg_comp_t 

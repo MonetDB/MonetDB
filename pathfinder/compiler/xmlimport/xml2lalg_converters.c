@@ -767,11 +767,9 @@ PFxml2la_conv_2PFLA_atomType(char* typeString)
 
 
 PFalg_atom_t 
-PFxml2la_conv_2PFLA_atom(char* typeString, char* valueString)
+PFxml2la_conv_2PFLA_atom(PFalg_simple_type_t type,
+                         char *prefix, char *uri, char* valueString)
 {
-
-    PFalg_simple_type_t type = PFxml2la_conv_2PFLA_atomType(typeString);
-
 
     switch (type)
     {
@@ -812,9 +810,9 @@ PFxml2la_conv_2PFLA_atom(char* typeString, char* valueString)
         }
     case aat_qname:
         {
-
-            return lit_qname(PFxml2la_conv_2PFLA_atomValue_int(valueString));
-            
+            return lit_qname (PFqname ((PFns_t) { .prefix = prefix,
+                                                  .uri    = uri },
+                                       valueString));
         }
     case aat_node:   
     case aat_anode:   
@@ -826,7 +824,8 @@ PFxml2la_conv_2PFLA_atom(char* typeString, char* valueString)
     case aat_charseq:
     default:       
         {
-            PFoops (OOPS_FATAL, "don't know what to do (%s, %s)", typeString, valueString);
+            PFoops (OOPS_FATAL, "don't know what to do (%s, %s)", 
+                    PFalg_simple_type_str (type), valueString);
             /* pacify picky compilers */
             return (PFalg_atom_t) { .type = 0, .val = { .nat_ = 0 } }; 
 

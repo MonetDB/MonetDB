@@ -244,7 +244,7 @@ literal (PFalg_atom_t a)
             break;
 
         case aat_qname:
-            PFarray_printf (s, "%s", PFqname_str (a.val.qname));
+            PFarray_printf (s, "%s", PFesc_string (PFqname_str (a.val.qname)));
             break;
 
         default:
@@ -293,9 +293,13 @@ xml_literal (PFalg_atom_t a)
                "true" : "false");
     else if (a.type == aat_qname)
         PFarray_printf (
-           s, "<value type=\"%s\">%s</value>",
+           s, "<value type=\"%s\">"
+              "<qname prefix=\"%s\" uri=\"%s\" local=\"%s\"/>"
+              "</value>",
            PFalg_simple_type_str (a.type),
-           PFqname_str (a.val.qname));
+           PFqname_prefix (a.val.qname),
+           PFqname_uri (a.val.qname),
+           PFqname_loc (a.val.qname));
     else
         PFarray_printf (s, "<value type=\"node\"/>");
 
