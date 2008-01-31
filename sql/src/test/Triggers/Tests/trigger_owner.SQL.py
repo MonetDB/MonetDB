@@ -16,7 +16,7 @@ def client(cmd):
 
 def main():
     clcmd = str(os.getenv('SQL_CLIENT')) + "< %s" % ('%s/../trigger_owner_create.sql' % os.getenv('RELSRCDIR'))
-    clcmd1 = str(os.getenv('SQL_CLIENT')) + "-uuser_test -Ppass < %s" % ('%s/../trigger_owner.sql' % os.getenv('RELSRCDIR'))
+    clcmd1 = str(os.getenv('SQL_CLIENT')) + " -uuser_test -Ppass < %s" % ('%s/../trigger_owner.sql' % os.getenv('RELSRCDIR'))
     clcmd2 = str(os.getenv('SQL_CLIENT')) + "< %s" % ('%s/../trigger_owner_drop.sql' % os.getenv('RELSRCDIR'))
     sys.stdout.write('trigger owner\n')
     client(clcmd)

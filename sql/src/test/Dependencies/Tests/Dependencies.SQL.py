@@ -16,7 +16,7 @@ def client(cmd):
 
 def main():
     clcmd = str(os.getenv('SQL_CLIENT'))
-    clcmd1 = str(os.getenv('SQL_CLIENT')) + "-umonet_test -Ppass_test"
+    clcmd1 = str(os.getenv('SQL_CLIENT')) + " -umonet_test -Ppass_test"
 
     sys.stdout.write('Dependencies between User and Schema\n')
     sys.stdout.flush()
