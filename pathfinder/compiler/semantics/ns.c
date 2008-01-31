@@ -1024,12 +1024,10 @@ ns_resolve (PFpnode_t *n)
 
 
 /**
- * Resolve NS usage in a query.
- *
- * @param root root of query abstract syntax tree
+ * Initialize the namespaces.
  */
 void
-PFns_resolve (PFpnode_t *root)
+PFns_init (void)
 {
     stat_known_ns = PFarray (sizeof (PFns_t));
 
@@ -1058,7 +1056,17 @@ PFns_resolve (PFpnode_t *root)
 
     /* allow any namespace for declarations in queries */
     target_ns = PFns_wild;
+}
 
+
+/**
+ * Resolve NS usage in a query.
+ *
+ * @param root root of query abstract syntax tree
+ */
+void
+PFns_resolve (PFpnode_t *root)
+{
     /* initiate the actual NS resolution */
     ns_resolve (root); 
 }

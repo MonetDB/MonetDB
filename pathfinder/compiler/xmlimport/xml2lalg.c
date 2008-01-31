@@ -208,15 +208,6 @@
                     PFxml2la_xpath_getNthNode(XPATH(xpath), 0)))
 
 /**              
- * Macro return-type:  PFty_t 
- * XPath return-type:  attribute(){1}
- */
-#define PFLA_SEQTY(xpath) \
-            PFxml2la_conv_2PFLA_sequenceType( \
-                PFxml2la_xpath_getAttributeValueFromAttributeNode( \
-                    PFxml2la_xpath_getNthNode(XPATH(xpath), 0)))
-
-/**              
  * Macro return-type:  PFalg_fun_t 
  * XPath return-type:  attribute(){1}
  */
@@ -287,6 +278,13 @@
 #define A2STR(xpath) \
   (char*)xmlXPathCastToString(XPATH(xpath))
 
+/**              
+ * Macro return-type:  char* 
+ * XPath return-type:  attribute()?
+ */
+#define A2STR_O(xpath, fallback) \
+   getOptionalAttributeValueAsStr(ctx, nodePtr, xpath, fallback)
+
 
 
 /**              
@@ -336,6 +334,13 @@ getOptionalAttributeValueAsInt(
   xmlNodePtr nodePtr, 
   const char* xpathExpression, 
   int fallback);
+
+char *
+getOptionalAttributeValueAsStr(
+  XML2LALGContext* ctx, 
+  xmlNodePtr nodePtr, 
+  const char* xpathExpression, 
+  char *fallback);
 
 /******************************************************************************/
 /******************************************************************************/
@@ -414,6 +419,13 @@ getPFLA_Ordering(
     XML2LALGContext* ctx, 
     xmlNodePtr nodePtr, 
     const char* xpathExpression);
+
+PFty_t
+getPFLA_SeqTy(
+    char *kind,
+    char *prefix,
+    char *uri,
+    char *local);
 
 /******************************************************************************/
 /******************************************************************************/
@@ -1418,8 +1430,9 @@ void createAndStoreAlgOpNode(XML2LALGContext* ctx, xmlNodePtr nodePtr)
         {
             /*
             <content>
-               <step axis="AXIS" type="NODE TEST" (level="LEVEL")? />
-               <column name="COLNAME" new="true"/>
+               <step axis="AXIS" kind="KIND TEST"
+                     (prefix="NS TEST" uri="NS TEST")?
+                     (name="NAME TEST")? (level="LEVEL")? />
                <column name="COLNAME" function="iter"/>
                <column name="COLNAME" function="item"/>
             </content>
@@ -1429,11 +1442,15 @@ void createAndStoreAlgOpNode(XML2LALGContext* ctx, xmlNodePtr nodePtr)
              (
              CHILDNODE(0), CHILDNODE(1), 
              PFLA_AXIS("/content/step/@axis"), 
-             PFLA_SEQTY("/content/step/@type"), 
+             getPFLA_SeqTy (
+                 A2STR("/content/step/@kind"),
+                 A2STR_O("/content/step/@prefix", NULL),
+                 A2STR_O("/content/step/@uri", NULL),
+                 A2STR_O("/content/step/@name", NULL)),
              A2INT_O("/content/step/@level", -1), 
              PFLA_ATT("/content/column[@function='iter']/@name"), 
              PFLA_ATT("/content/column[@function='item']/@name"), 
-             PFLA_ATT("/content/column[@new='true']/@name")
+             PFLA_ATT("/content/column[@function='item']/@name")
              );
         }  
         break;
@@ -1446,7 +1463,9 @@ void createAndStoreAlgOpNode(XML2LALGContext* ctx, xmlNodePtr nodePtr)
         {
             /*
              <content>
-               <step axis="AXIS" type="NODE TEST" (level="LEVEL")?/>
+               <step axis="AXIS" kind="KIND TEST"
+                     (prefix="NS TEST" uri="NS TEST")?
+                     (name="NAME TEST")? (level="LEVEL")? />
                <column name="COLNAME" new="true"/>
                <column name="COLNAME" function="item"/>
              </content>
@@ -1456,7 +1475,11 @@ void createAndStoreAlgOpNode(XML2LALGContext* ctx, xmlNodePtr nodePtr)
              (
              CHILDNODE(0), CHILDNODE(1), 
              PFLA_AXIS("/content/step/@axis"), 
-             PFLA_SEQTY("/content/step/@type"), 
+             getPFLA_SeqTy (
+                 A2STR("/content/step/@kind"),
+                 A2STR_O("/content/step/@prefix", NULL),
+                 A2STR_O("/content/step/@uri", NULL),
+                 A2STR_O("/content/step/@name", NULL)),
              A2INT_O("/content/step/@level", -1), 
              PFLA_ATT("/content/column[@function='item']/@name"), 
              PFLA_ATT("/content/column[@new='true']/@name")
@@ -1476,7 +1499,10 @@ void createAndStoreAlgOpNode(XML2LALGContext* ctx, xmlNodePtr nodePtr)
         {
             /*
             <content>
-               <step axis="AXIS" type="NODE TEST" guide="GUIDELIST"/>
+               <step axis="AXIS" kind="KIND TEST"
+                     (prefix="NS TEST" uri="NS TEST")?
+                     (name="NAME TEST")? (level="LEVEL")?
+                     guide="GUIDELIST"/>
                <column name="COLNAME" function="iter"/>
                <column name="COLNAME" function="item"/>
             </content>
@@ -1498,7 +1524,10 @@ void createAndStoreAlgOpNode(XML2LALGContext* ctx, xmlNodePtr nodePtr)
         {
             /*
             <content>
-               <step axis="AXIS" type="NODE TEST" guide="GUIDELIST"/>
+               <step axis="AXIS" kind="KIND TEST"
+                     (prefix="NS TEST" uri="NS TEST")?
+                     (name="NAME TEST")? (level="LEVEL")?
+                     guide="GUIDELIST"/>
                <column name="COLNAME" new="true"/>
                <column name="COLNAME" function="item"/>
             </content>
@@ -2188,6 +2217,25 @@ getOptionalAttributeValueAsInt(
     return  value;  
 }
 
+char *
+getOptionalAttributeValueAsStr(
+    XML2LALGContext* ctx, xmlNodePtr nodePtr, 
+    const char* xpathExpression, 
+    char *fallback)
+{
+
+    char *value = fallback;
+
+    xmlNodePtr xml_att =  PFxml2la_xpath_getNthNode(XPATH(xpathExpression), 0);
+    if (xml_att)
+    {
+        value = PFxml2la_xpath_getAttributeValueFromAttributeNode(xml_att);
+
+    }
+
+    return  value;  
+}
+
 /******************************************************************************/
 /******************************************************************************/
 int 
@@ -2691,6 +2739,47 @@ getPFLA_Ordering(
 
     return ordering;
 
+}
+
+
+
+
+
+PFty_t
+getPFLA_SeqTy (char *kind, char *prefix, char *uri, char *local)
+{
+    if (!strcmp (kind, "attribute")) {
+        if (!prefix && !uri && !local)
+            return PFty_xs_anyAttribute ();
+        else
+            return PFty_attr (
+                       PFqname (
+                           (PFns_t) { .prefix = prefix, .uri = uri },
+                           local),
+                       PFty_xs_anySimpleType ());
+    }
+    else if (!strcmp (kind, "element")) {
+        if (!prefix && !uri && !local)
+            return PFty_xs_anyElement ();
+        else
+            return PFty_elem (
+                       PFqname (
+                           (PFns_t) { .prefix = prefix, .uri = uri },
+                           local),
+                       PFty_xs_anyType ());
+    }
+    else if (!strcmp (kind, "textnode"))
+        return PFty_text ();
+    else if (!strcmp (kind, "comment"))
+        return PFty_comm ();
+    else if (!strcmp (kind, "processing-instruction"))
+        return PFty_pi (local);
+    else if (!strcmp (kind, "node"))
+        return PFty_xs_anyNode ();
+    else
+        PFoops (OOPS_FATAL,
+                "Problem with an XPath step: cannot evaluate "
+                "node test");
 }
 
 

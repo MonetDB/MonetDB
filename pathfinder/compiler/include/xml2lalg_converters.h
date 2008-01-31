@@ -89,9 +89,6 @@ PFxml2la_conv_2PFLA_orderingDirection(char* s);
 PFalg_axis_t 
 PFxml2la_conv_2PFLA_xpathaxis(char* s);
 
-PFty_t 
-PFxml2la_conv_2PFLA_sequenceType(char* s);
-
 PFalg_doc_t 
 PFxml2la_conv_2PFLA_docType(char* s);
 

@@ -810,7 +810,7 @@ PFxml2la_conv_2PFLA_atom(char* typeString, char* valueString)
             return lit_str(PFxml2la_conv_2PFLA_atomValue_str(valueString));
             
         }
-    case aat_qname:  //todo: main: pfqname init() aufrufen
+    case aat_qname:
         {
 
             return lit_qname(PFxml2la_conv_2PFLA_atomValue_int(valueString));
@@ -981,51 +981,51 @@ PFxml2la_conv_2PFLA_orderingDirection(char* s)
 PFalg_axis_t 
 PFxml2la_conv_2PFLA_xpathaxis(char* s) 
 {
-    if (strcmp(s, "ancestor::") == 0)
+    if (strcmp(s, "ancestor") == 0)
     {
         return alg_anc;
     }
-    else if (strcmp(s, "anc-or-self::") == 0)
+    else if (strcmp(s, "ancestor-or-self") == 0)
     {
         return alg_anc_s;
     }
-    else if (strcmp(s, "attribute::") == 0)
+    else if (strcmp(s, "attribute") == 0)
     {
         return alg_attr;
     }
-    else if (strcmp(s, "child::") == 0)
+    else if (strcmp(s, "child") == 0)
     {
         return alg_chld;
     }
-    else if (strcmp(s, "descendant::") == 0)
+    else if (strcmp(s, "descendant") == 0)
     {
         return alg_desc;
     }
-    else if (strcmp(s, "desc-or-self::") == 0)
+    else if (strcmp(s, "descendant-or-self") == 0)
     {
         return alg_desc_s;
     }
-    else if (strcmp(s, "following::") == 0)
+    else if (strcmp(s, "following") == 0)
     {
         return alg_fol;
     }
-    else if (strcmp(s, "fol-sibling::") == 0)
+    else if (strcmp(s, "following-sibling") == 0)
     {
         return alg_fol_s;
     }
-    else if (strcmp(s, "parent::") == 0)
+    else if (strcmp(s, "parent") == 0)
     {
         return alg_par;
     }
-    else if (strcmp(s, "preceding::") == 0)
+    else if (strcmp(s, "preceding") == 0)
     {
         return alg_prec;
     }
-    else if (strcmp(s, "prec-sibling::") == 0)
+    else if (strcmp(s, "preceding-sibling") == 0)
     {
         return alg_prec_s;
     }
-    else if (strcmp(s, "self::") == 0)
+    else if (strcmp(s, "self") == 0)
     {
         return alg_self;
     }
@@ -1042,57 +1042,6 @@ PFxml2la_conv_2PFLA_xpathaxis(char* s)
 
 
 
-
-
-/******************************************************************************/
-/******************************************************************************/
-
-/*todo: implement me */
-PFty_t 
-PFxml2la_conv_2PFLA_sequenceType(char* s)
-{
-
-
-    PFty_t type = PFty_none();
-
-    
-
-
-    if (PFstrUtils_beginsWith(s, "item"))
-    {
-        type.type = ty_item;
-
-    }
-    else if (PFstrUtils_beginsWith(s, "node"))
-    {
-
-    }
-    else if (PFstrUtils_beginsWith(s, "element"))
-    {
-
-    }
-    else if (PFstrUtils_beginsWith(s, "attribute"))
-    {
-    }
-    else if (PFstrUtils_beginsWith(s, "text"))
-    {
-
-    }
-
-
-    else
-    {
-        PFoops (OOPS_FATAL, "don't know what to do (%s)", s);
-        /* pacify picky compilers */
-        return type;
-
-
-    }
-
-
-    return type;
-
-}
 
 
 /******************************************************************************/

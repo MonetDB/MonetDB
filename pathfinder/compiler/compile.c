@@ -341,6 +341,12 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
         XML2LALGContext *ctx = PFxml2la_xml2lalgContext();
         PFla_op_t       *rootOp;
         
+        /* Initialize data structures in the Namespace department */
+        PFns_init ();
+
+        /* Initialize data structures in the QName department */
+        PFqname_init ();
+
         if (status->import_xml_filename) {
             /**
              * If the input is explicitely specified with an filename,
@@ -427,6 +433,9 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
 
     STOP_POINT(3);
     
+    /* Initialize data structures in the Namespace department */
+    PFns_init ();
+
     /* Initialize data structures in the QName department */
     PFqname_init ();
 

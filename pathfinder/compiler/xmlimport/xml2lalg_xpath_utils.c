@@ -210,6 +210,8 @@ PFxml2la_xpath_getAttributeValueFromElementNode(xmlNodePtr nodePtr,
 char* 
 PFxml2la_xpath_getAttributeValueFromAttributeNode(xmlNodePtr nodePtr)
 {
+    assert (nodePtr);
+
     return(char*)nodePtr->children->content;
 }
 
