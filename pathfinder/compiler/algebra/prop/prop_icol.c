@@ -371,6 +371,7 @@ prop_infer_icols (PFla_op_t *n, PFalg_att_t icols)
         case la_num_gt:
         case la_bool_and:
         case la_bool_or:
+        case la_to:
             n->prop->l_icols = n->prop->icols;
 
             /* do not infer input columns if operator is not required */
@@ -391,16 +392,6 @@ prop_infer_icols (PFla_op_t *n, PFalg_att_t icols)
 
             n->prop->l_icols = diff (n->prop->l_icols, n->sem.unary.res);
             n->prop->l_icols = union_ (n->prop->l_icols, n->sem.unary.att);
-            break;
-
-        case la_to:
-            /* infer att1|att2 schema for input relation */
-            n->prop->l_icols = union_ (n->sem.to.att1,
-                                       n->sem.to.att2);
-            /* only infer part if available */
-            if (n->sem.to.part != att_NULL)
-                n->prop->l_icols = union_ (n->prop->l_icols,
-                                           n->sem.to.part);
             break;
 
         case la_avg:

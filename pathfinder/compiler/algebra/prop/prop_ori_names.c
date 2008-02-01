@@ -379,31 +379,12 @@ infer_ori_names (PFla_op_t *n, PFarray_t *par_np_list)
         case la_num_gt:
         case la_bool_and:
         case la_bool_or:
+        case la_to:
             diff_np (n->prop->l_name_pairs, np_list, n->sem.binary.res);
             break;
 
         case la_bool_not:
             diff_np (n->prop->l_name_pairs, np_list, n->sem.unary.res);
-            break;
-
-        case la_to:
-            unq = n->sem.to.att1;
-            ori = PFalg_ori_name (unq, FREE(n));
-            FREE(n) = diff (FREE(n), ori);
-            add_name_pair (np_list, ori, unq);
-            add_name_pair (n->prop->l_name_pairs, ori, unq);
-
-            unq = n->sem.to.att2;
-            ori = PFalg_ori_name (unq, FREE(n));
-            FREE(n) = diff (FREE(n), ori);
-            add_name_pair (np_list, ori, unq);
-            add_name_pair (n->prop->l_name_pairs, ori, unq);
-
-            if (n->sem.to.part) {
-                unq = n->sem.to.part;
-                ori = find_ori_name (np_list, unq);
-                add_name_pair (n->prop->l_name_pairs, ori, unq);
-            }
             break;
 
         case la_avg:

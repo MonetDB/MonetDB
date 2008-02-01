@@ -525,10 +525,17 @@ infer_ckey (PFla_op_t *n)
             break;
 
         case la_to:
-            if (n->sem.to.part)
-                union_ (n->prop->ckeys, n->sem.to.part | n->sem.to.res);
-            union_ (n->prop->ckeys, n->sem.to.res);
-            break;
+        {
+            PFarray_t *ckeys = L(n)->prop->ckeys;
+            PFalg_att_t ckey;
+            unsigned int i;
+
+            /* extend all keys with the result column */
+            for (i = 0; i < PFarray_last (ckeys); i++) {
+                ckey = *(PFalg_att_t *) PFarray_at (ckeys, i);
+                union_ (n->prop->ckeys, ckey | n->sem.binary.res);
+            }
+        }   break;
 
         case la_avg:
         case la_max:

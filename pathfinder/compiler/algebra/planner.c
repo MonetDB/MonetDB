@@ -1208,7 +1208,9 @@ plan_to (const PFla_op_t *n)
     for (unsigned int i = 0; i < PFarray_last (L(n)->plans); i++)
         add_plan (ret,
                   to (*(plan_t **) PFarray_at (L(n)->plans, i),
-                      n->sem.to.res, n->sem.to.att1, n->sem.to.att2));
+                      n->sem.binary.res,
+                      n->sem.binary.att1,
+                      n->sem.binary.att2));
 
     return ret;
 }

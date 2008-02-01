@@ -486,11 +486,7 @@ map_ori_names (PFla_op_t *p, PFarray_t *map)
             break;
 
         case la_to:
-            res = to (PROJ(LEFT, p),
-                      ONAME(p, p->sem.to.res),
-                      ONAME(p, p->sem.to.att1),
-                      ONAME(p, p->sem.to.att2),
-                      p->sem.to.part?ONAME(p, p->sem.to.part):att_NULL);
+            res = binary_op (PFla_to, p, map);
             break;
 
         case la_avg:

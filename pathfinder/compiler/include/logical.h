@@ -297,14 +297,6 @@ union PFla_op_sem_t {
         PFalg_att_t     res;      /**< attribute to hold the result */
     } unary;
 
-    /* semantic content for op:to operator */
-    struct {
-        PFalg_att_t     att1;     /**< first operand */
-        PFalg_att_t     att2;     /**< second operand */
-        PFalg_att_t     part;     /**< partitioning attribute */
-        PFalg_att_t     res;      /**< attribute to hold the result */
-    } to;
-
     /*
      * semantic content for operators applying a 
      * (partitioned) aggregation function (count, sum, min, max and avg)
@@ -769,8 +761,7 @@ PFla_op_t * PFla_not (const PFla_op_t *n, PFalg_att_t res, PFalg_att_t att);
 PFla_op_t * PFla_to (const PFla_op_t *n, 
                      PFalg_att_t res,
                      PFalg_att_t att1,
-                     PFalg_att_t att2,
-                     PFalg_att_t part);
+                     PFalg_att_t att2);
 
 /** 
  * Constructor for operators forming the application of a 

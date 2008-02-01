@@ -481,10 +481,10 @@ infer_key (PFla_op_t *n, bool with_guide_info)
             break;
 
         case la_to:
-            /* if the partition is not present
-               op:to generates key values */
-            if (!n->sem.to.part)
-                union_ (n->prop->keys, n->sem.to.res);
+            /* if the cardinality is equal to one
+               the result is key itself */
+            if (PFprop_card (n->prop) == 1)
+                union_ (n->prop->keys, n->sem.binary.res);
             break;
 
         case la_avg:

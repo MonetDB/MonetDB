@@ -100,7 +100,7 @@
 #define not(a,b,c)        PFla_not ((a),(b),(c))
 
 /* op:to operator */
-#define to(a,b,c,d,e)     PFla_to ((a),(b),(c),(d),(e))
+#define to(a,b,c,d)       PFla_to ((a),(b),(c),(d))
 
 /* operator applying a (partitioned) aggregation function on a column */
 #define aggr(a,b,c,d,e)   PFla_aggr ((a),(b),(c),(d),(e))

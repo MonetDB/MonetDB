@@ -254,15 +254,12 @@ map_names (PFla_op_t *n, PFla_op_t *goal, PFarray_t *par_np_list,
         case la_num_gt:
         case la_bool_and:
         case la_bool_or:
+        case la_to:
             diff_np (np_list, n->sem.binary.res);
             break;
 
         case la_bool_not:
             diff_np (np_list, n->sem.unary.res);
-            break;
-
-        case la_to:
-            diff_np (np_list, n->sem.to.res);
             break;
 
         case la_avg:

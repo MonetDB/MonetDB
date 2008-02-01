@@ -608,6 +608,7 @@ la_dot (PFarray_t *dot, PFla_op_t *n, bool print_frag_info)
         case la_num_gt:
         case la_bool_and:
         case la_bool_or:
+        case la_to:
             PFarray_printf (dot, "%s (%s:<%s, %s>)", a_id[n->kind],
                             PFatt_str (n->sem.binary.res),
                             PFatt_str (n->sem.binary.att1),
@@ -618,15 +619,6 @@ la_dot (PFarray_t *dot, PFla_op_t *n, bool print_frag_info)
             PFarray_printf (dot, "%s (%s:<%s>)", a_id[n->kind],
                             PFatt_str (n->sem.unary.res),
                             PFatt_str (n->sem.unary.att));
-	    break;
-
-        case la_to:
-            PFarray_printf (dot, "%s (%s:<%s,%s>/%s)",
-                            a_id[n->kind],
-                            PFatt_str (n->sem.to.res),
-                            PFatt_str (n->sem.to.att1),
-                            PFatt_str (n->sem.to.att2),
-                            PFatt_str (n->sem.to.part));
 	    break;
 
         case la_avg:
@@ -1787,6 +1779,7 @@ la_xml (PFarray_t *xml, PFla_op_t *n)
         case la_num_gt:
         case la_bool_and:
         case la_bool_or:
+        case la_to:
             PFarray_printf (xml,
                             "    <content>\n"
                             "      <column name=\"%s\" new=\"true\"/>\n"
@@ -1808,23 +1801,6 @@ la_xml (PFarray_t *xml, PFla_op_t *n)
                             "    </content>\n",
                             PFatt_str (n->sem.unary.res),
                             PFatt_str (n->sem.unary.att));
-            break;
-
-        case la_to:
-            PFarray_printf (xml,
-                            "    <content>\n"
-                            "      <column name=\"%s\" new=\"true\"/>\n"
-                            "      <column name=\"%s\" new=\"false\""
-                                         " function=\"start\"/>\n"
-                            "      <column name=\"%s\" new=\"false\""
-                                         " function=\"end\"/>\n"
-                            "      <column name=\"%s\" new=\"false\""
-                                         " function=\"partition\"/>\n"
-                            "    </content>\n",
-                            PFatt_str (n->sem.to.res),
-                            PFatt_str (n->sem.to.att1),
-                            PFatt_str (n->sem.to.att2),
-                            PFatt_str (n->sem.to.part));
             break;
 
         case la_avg:

@@ -256,6 +256,7 @@ infer_const (PFla_op_t *n)
         case la_bool_and:
         case la_bool_or:
         case la_bool_not:
+        case la_to:
         case la_rownum:
         case la_rowrank:
         case la_rank:
@@ -506,18 +507,18 @@ infer_const (PFla_op_t *n)
             break;
 
         case la_to:
-            if (PFprop_const (L(n)->prop, n->sem.to.att1) &&
-                PFprop_const (L(n)->prop, n->sem.to.att2) &&
+            if (PFprop_const (L(n)->prop, n->sem.binary.att1) &&
+                PFprop_const (L(n)->prop, n->sem.binary.att2) &&
                 PFalg_atom_comparable (
-                    PFprop_const_val (L(n)->prop, n->sem.to.att1),
-                    PFprop_const_val (L(n)->prop, n->sem.to.att2)) &&
+                    PFprop_const_val (L(n)->prop, n->sem.binary.att1),
+                    PFprop_const_val (L(n)->prop, n->sem.binary.att2)) &&
                 !PFalg_atom_cmp (
-                    PFprop_const_val (L(n)->prop, n->sem.to.att1),
-                    PFprop_const_val (L(n)->prop, n->sem.to.att2)))
+                    PFprop_const_val (L(n)->prop, n->sem.binary.att1),
+                    PFprop_const_val (L(n)->prop, n->sem.binary.att2)))
                 PFprop_mark_const (
                     n->prop,
-                    n->sem.to.res,
-                    PFprop_const_val (L(n)->prop, n->sem.to.att1));
+                    n->sem.binary.res,
+                    PFprop_const_val (L(n)->prop, n->sem.binary.att1));
             break;
 
         case la_avg:

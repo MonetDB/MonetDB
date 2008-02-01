@@ -885,6 +885,7 @@ infer_dom (PFla_op_t *n, unsigned int id)
         case la_num_gt:
         case la_bool_and:
         case la_bool_or:
+        case la_to:
             bulk_add_dom (n->prop, L(n));
             add_dom (n->prop, n->sem.binary.res, id++);
             break;
@@ -892,14 +893,6 @@ infer_dom (PFla_op_t *n, unsigned int id)
         case la_bool_not:
             bulk_add_dom (n->prop, L(n));
             add_dom (n->prop, n->sem.unary.res, id++);
-            break;
-
-        case la_to:
-            add_dom (n->prop, n->sem.to.res, id++);
-            if (n->sem.to.part)
-                add_dom (n->prop,
-                         n->sem.to.part,
-                         PFprop_dom (L(n)->prop, n->sem.to.part));
             break;
 
         case la_avg:

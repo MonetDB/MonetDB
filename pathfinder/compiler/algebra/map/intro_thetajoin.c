@@ -319,15 +319,11 @@ find_join_worker (PFla_op_t *n,
             break;
 
         case la_to:
-            if (LEFT_COLS(n) & n->sem.to.res) {
-                LEFT_COLS(n) = diff   (LEFT_COLS(n), n->sem.to.res);
-                LEFT_COLS(n) = union_ (LEFT_COLS(n), n->sem.to.att1);
-                LEFT_COLS(n) = union_ (LEFT_COLS(n), n->sem.to.att2);
+            if (LEFT_COLS(n) & n->sem.binary.res) {
+                LEFT_COLS(n) = diff (LEFT_COLS(n), n->sem.binary.res);
             }
-            if (RIGHT_COLS(n) & n->sem.to.res) {
-                RIGHT_COLS(n) = diff   (RIGHT_COLS(n), n->sem.to.res);
-                RIGHT_COLS(n) = union_ (RIGHT_COLS(n), n->sem.to.att1);
-                RIGHT_COLS(n) = union_ (RIGHT_COLS(n), n->sem.to.att2);
+            if (RIGHT_COLS(n) & n->sem.binary.res) {
+                RIGHT_COLS(n) = diff (RIGHT_COLS(n), n->sem.binary.res);
             }
             break;
 

@@ -853,33 +853,25 @@ opt_mvd (PFla_op_t *p)
 
     case la_to:
         if (is_cross (L(p))) {
-            if (att_present (LL(p), p->sem.to.att1) &&
-                att_present (LL(p), p->sem.to.att2)) {
-                *p = *(cross_can (
-                           LR(p),
-                           project (to (attach (LL(p),
-                                                p->sem.to.part,
-                                                lit_nat(1)),
-                                        p->sem.to.res,
-                                        p->sem.to.att1,
-                                        p->sem.to.att2,
-                                        p->sem.to.part),
-                                    proj (p->sem.to.res,
-                                          p->sem.to.res))));
+            bool switch_left = att_present (LL(p), p->sem.binary.att1) &&
+                               att_present (LL(p), p->sem.binary.att2);
+            bool switch_right = att_present (LR(p), p->sem.binary.att1) &&
+                                att_present (LR(p), p->sem.binary.att2);
+
+            if (switch_left) {
+                *p = *(cross_can (to (LL(p),
+                                      p->sem.binary.res,
+                                      p->sem.binary.att1,
+                                      p->sem.binary.att2),
+                                  LR(p)));
                 modified = true;
-            } else if (att_present (LR(p), p->sem.to.att1) &&
-                       att_present (LR(p), p->sem.to.att2)) {
-                *p = *(cross_can (
-                           LL(p),
-                           project (to (attach (LR(p),
-                                                p->sem.to.part,
-                                                lit_nat(1)),
-                                        p->sem.to.res,
-                                        p->sem.to.att1,
-                                        p->sem.to.att2,
-                                        p->sem.to.part),
-                                    proj (p->sem.to.res,
-                                          p->sem.to.res))));
+            }
+            else if (switch_right) {
+                *p = *(cross_can (LL(p),
+                                  to (LR(p),
+                                      p->sem.binary.res,
+                                      p->sem.binary.att1,
+                                      p->sem.binary.att2)));
                 modified = true;
             }
         }

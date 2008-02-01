@@ -481,7 +481,6 @@ PFalgopt_join_graph (PFla_op_t *root, PFguide_tree_t *guide_tree)
     /* Infer key, icols, set, and composite key
        properties first */
     PFprop_infer_composite_key (root);
-    /* PFprop_infer_key (root); */
     PFprop_infer_icol (root);
     PFprop_infer_set (root);
     PFprop_infer_guide (root, guide_tree);

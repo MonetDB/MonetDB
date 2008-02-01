@@ -1158,20 +1158,17 @@ void createAndStoreAlgOpNode(XML2LALGContext* ctx, xmlNodePtr nodePtr)
             /*
             <content>
                <column name="COLNAME" new="true"/>
-               <column name="COLNAME" new="false" function="start"/>
-               <column name="COLNAME" new="false" function="end"/>
-              (<column name="COLNAME" new="false" function="partition"/>)?
-           </content>
-           */
+               <column name="COLNAME" new="false" position="1"/>
+               <column name="COLNAME" new="false" position="2"/>
+            </content>
+            */
 
             newAlgNode = PFla_to 
              (
              CHILDNODE(0), 
              PFLA_ATT("/content/column[@new='true']/@name"), 
-             PFLA_ATT("/content/column[@function='start']/@name"), 
-             PFLA_ATT("/content/column[@function='end']/@name"), 
-             PFLA_ATT_O("/content/column[@function='partition']/@name",
-                        att_NULL)
+             PFLA_ATT("/content/column[@new='false' and @position='1']/@name"), 
+             PFLA_ATT("/content/column[@new='false' and @position='2']/@name")
              );
         }  
         break;

@@ -444,7 +444,6 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
             case la_intersect:
             case la_difference:
             case la_distinct:
-            case la_to:
             case la_avg:
             case la_max:
             case la_min:
@@ -1383,6 +1382,9 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
                 break;
             case la_bool_not:
                 next_join = modify_unary_op (p, lp, rp, PFla_not);
+                break;
+            case la_to:
+                next_join = modify_binary_op (p, lp, rp, PFla_to);
                 break;
 
             case la_rownum:

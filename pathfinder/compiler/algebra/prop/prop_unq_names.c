@@ -387,6 +387,7 @@ infer_unq_names (PFla_op_t *n, unsigned int id)
         case la_num_gt:
         case la_bool_and:
         case la_bool_or:
+        case la_to:
             bulk_add_name_pairs (np_list, L(n));
             new_name_pair (np_list, n->sem.binary.res, id++);
             break;
@@ -394,15 +395,6 @@ infer_unq_names (PFla_op_t *n, unsigned int id)
         case la_bool_not:
             bulk_add_name_pairs (np_list, L(n));
             new_name_pair (np_list, n->sem.unary.res, id++);
-            break;
-
-        case la_to:
-            new_name_pair (np_list, n->sem.to.res, id++);
-            if (n->sem.to.part)
-                add_name_pair (np_list,
-                               n->sem.to.part,
-                               PFprop_unq_name (L(n)->prop,
-                                                n->sem.to.part));
             break;
 
         case la_avg:

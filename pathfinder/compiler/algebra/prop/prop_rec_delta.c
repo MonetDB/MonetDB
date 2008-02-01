@@ -101,6 +101,7 @@ check_op (PFla_op_t *n)
         case la_bool_and:
         case la_bool_or:
         case la_bool_not:
+        case la_to:
         case la_type:
         case la_type_assert:
         case la_doc_tbl:
@@ -233,12 +234,6 @@ check_op (PFla_op_t *n)
                 if (INNER(L(n)) & n->sem.proj.items[i].old)
                     INNER(n) |= n->sem.proj.items[i].new;
             }
-            break;
-
-        case la_to:
-            ITER (n) = ITER (L(n));
-            POS  (n) = POS  (L(n));
-            INNER(n) = INNER(L(n));
             break;
 
         case la_avg:

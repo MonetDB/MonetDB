@@ -627,6 +627,7 @@ prop_infer_reqvals (PFla_op_t *n,
 
         case la_num_eq:
         case la_num_gt:
+        case la_to:
             rv.name = diff (rv.name, n->sem.binary.res);
             rv.val = diff (rv.val, n->sem.binary.res);
             
@@ -689,27 +690,6 @@ prop_infer_reqvals (PFla_op_t *n,
             cols = diff (cols, n->sem.unary.res);
             break;
 
-        case la_to:
-            rv.name = empty_list;
-            rv.val = empty_list;
-            
-            /* mark the input columns as value columns */
-            vc = union_ (union_ (empty_list, n->sem.to.att1), n->sem.to.att2);
-
-            if (n->sem.to.part) {
-                /* we only have to provide the same groups */
-                bc = union_ (bc, n->sem.to.part);
-                /* we cannot split up a partition column */
-                mc = diff (mc, n->sem.to.part);
-            }
-            
-            /* make the new column invisible for the children */
-            cols = diff (cols, n->sem.to.res);
-            /* to make up for the schema change
-               we add the input columns by hand */
-            cols = union_ (union_ (cols, n->sem.to.att1), n->sem.to.att2);
-            break;
-            
         case la_avg:
         case la_max:
         case la_min:

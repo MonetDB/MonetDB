@@ -1901,27 +1901,14 @@ unary_op(PFla_op_kind_t kind, const PFla_op_t *n, PFalg_att_t res,
 /**
  * Constructor for op:to operator
  */
-PFla_op_t * PFla_to (const PFla_op_t *n,
-                     PFalg_att_t res,
-                     PFalg_att_t att1,
-                     PFalg_att_t att2,
-                     PFalg_att_t part)
+PFla_op_t *
+PFla_to (const PFla_op_t *n, PFalg_att_t res,
+         PFalg_att_t att1, PFalg_att_t att2)
 {
     PFla_op_t    *ret = la_op_wire1 (la_to, n);
 
-    /* set number of schema items in the result schema
-     * (partitioning attribute plus result attribute)
-     */
-    ret->schema.count = part ? 2 : 1;
-
-    ret->schema.items
-        = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
-
-
 #ifndef NDEBUG
-    /* verify that attributes 'att' and 'part' are attributes of n
-     * and include them into the result schema
-     */
+    /* verify that attributes 'att1' and 'att2' are attributes of n */
     if (!PFprop_ocol (n, att1))
         PFoops (OOPS_FATAL,
                 "attribute `%s' referenced in op:to not found",
@@ -1930,26 +1917,29 @@ PFla_op_t * PFla_to (const PFla_op_t *n,
         PFoops (OOPS_FATAL,
                 "attribute `%s' referenced in op:to not found",
                 PFatt_str (att2));
-    if (part && !PFprop_ocol (n, part))
-        PFoops (OOPS_FATAL,
-                "partitioning attribute `%s' referenced in op:to not found",
-                PFatt_str (part));
 #endif
 
-    ret->schema.items[0].name = res;
-    ret->schema.items[0].type = aat_int;
-    if (part) {
-        ret->schema.items[1].name = part;
-        ret->schema.items[1].type = PFprop_type_of (n, part);
-    }
+    /* allocate memory for the result schema (schema(n) + 'res') */
+    ret->schema.count = n->schema.count + 1;
+    ret->schema.items
+        = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
 
-    /* insert semantic value (input attributes, partitioning
-     * attribute(s), and result attribute) into the result
+    /* copy schema from 'n' argument */
+    for (unsigned int i = 0; i < n->schema.count; i++)
+        ret->schema.items[i] = n->schema.items[i];
+
+    /* add the information on the 'res' attribute; it is of type
+     * integer and named 'res'
      */
-    ret->sem.to.res = res;
-    ret->sem.to.att1 = att1;
-    ret->sem.to.att2 = att2;
-    ret->sem.to.part = part;
+    ret->schema.items[n->schema.count].name = res;
+    ret->schema.items[n->schema.count].type = aat_int;
+
+    /* insert semantic value (operand attributes and result attribute)
+     * into the result
+     */
+    ret->sem.binary.att1 = att1;
+    ret->sem.binary.att2 = att2;
+    ret->sem.binary.res = res;
 
     return ret;
 }
@@ -4237,10 +4227,9 @@ PFla_op_duplicate (PFla_op_t *n, PFla_op_t *left, PFla_op_t *right)
 
         case la_to:
             return PFla_to (left,
-                            n->sem.to.res,
-                            n->sem.to.att1,
-                            n->sem.to.att2,
-                            n->sem.to.part);
+                            n->sem.binary.res,
+                            n->sem.binary.att1,
+                            n->sem.binary.att2);
 
         case la_avg:
         case la_max:

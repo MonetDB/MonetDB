@@ -1010,6 +1010,7 @@ match (PFla_op_t *a, PFla_op_t *b)
         case la_num_gt:
         case la_bool_and:
         case la_bool_or:
+        case la_to:
             if ((ACTATT (L(a), a->sem.binary.att1) &&
                  ACTATT (L(b), b->sem.binary.att1)) ==
                 (ACTATT (L(a), a->sem.binary.att2) &&
@@ -1023,23 +1024,6 @@ match (PFla_op_t *a, PFla_op_t *b)
                 ACTATT (L(b), b->sem.unary.att))
                 return true;
             
-            return false;
-
-        case la_to:
-
-            /* partition attribute is not necesserily set */
-            if (IS_NULL(a->sem.to.part)?att_NULL:
-                    ACTATT (L(a), a->sem.to.part) !=
-                IS_NULL(b->sem.to.part)?att_NULL:
-                    ACTATT (L(b), b->sem.to.part))
-                    return false;
-
-            if ((ACTATT (L(a), a->sem.to.att1) ==
-                 ACTATT (L(b), b->sem.to.att1)) &&
-                (ACTATT (L(a), a->sem.to.att2) ==
-                 ACTATT (L(b), b->sem.to.att2)))
-                return true;
-
             return false;
 
         case la_avg:
@@ -1708,6 +1692,7 @@ new_operator (PFla_op_t *n)
         case la_num_gt:
         case la_bool_and:
         case la_bool_or:
+        case la_to:
         {
             PFla_op_t * (*comp) (const PFla_op_t *n, PFalg_att_t res, 
                                  PFalg_att_t att1, PFalg_att_t att2);
@@ -1717,6 +1702,7 @@ new_operator (PFla_op_t *n)
                case la_num_gt:   comp = PFla_gt;  break;
                case la_bool_and: comp = PFla_and; break;
                case la_bool_or:  comp = PFla_or;  break;
+               case la_to:       comp = PFla_to;  break;
                default:
                   PFoops (OOPS_FATAL, "bool or num expected but %s found",
                           ID[n->kind]);
@@ -1734,16 +1720,6 @@ new_operator (PFla_op_t *n)
                              create_unq_name (CSE(L(n))->schema,
                                               n->sem.unary.res),
                              ACTATT (L(n), n->sem.unary.att));
-
-        case la_to:
-            return PFla_to (CSE(L(n)),
-                            create_unq_name (CSE(L(n))->schema,
-                                             n->sem.to.res),
-                            ACTATT (L(n), n->sem.to.att1),
-                            ACTATT (L(n), n->sem.to.att2),
-                            (n->sem.to.part == att_NULL)?
-                            att_NULL:
-                            ACTATT (L(n), n->sem.to.part));
 
         case la_avg:
         case la_max:
@@ -2187,6 +2163,7 @@ adjust_operator (PFla_op_t *ori, PFla_op_t *cse)
         case la_num_gt:
         case la_bool_and:
         case la_bool_or:
+        case la_to:
             actmap = actatt_map_copy (ACT(L(ori)));
             INACTATT(actmap,
                      actatt (cse->sem.binary.res, ori->sem.binary.res));
@@ -2197,12 +2174,6 @@ adjust_operator (PFla_op_t *ori, PFla_op_t *cse)
             INACTATT(actmap,
                      actatt (cse->sem.unary.res, ori->sem.unary.res));
             break;
-
-        case la_to:
-            actmap = actatt_map_copy (ACT(L(ori)));
-            INACTATT(actmap,
-                     actatt (cse->sem.to.res, ori->sem.to.res));
-            break;     
 
         case la_avg:
         case la_max:

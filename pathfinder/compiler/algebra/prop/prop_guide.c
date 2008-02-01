@@ -1001,6 +1001,7 @@ infer_guide(PFla_op_t *n, PFguide_tree_t *guide)
         case la_bool_and:
         case la_bool_or:
         case la_bool_not:
+        case la_to:
         case la_rownum:
         case la_rowrank:
         case la_rank:
@@ -1024,7 +1025,6 @@ infer_guide(PFla_op_t *n, PFguide_tree_t *guide)
         case la_lit_tbl:
         case la_empty_tbl:
         case la_ref_tbl:
-        case la_to:
         case la_avg:
         case la_max:
         case la_min:

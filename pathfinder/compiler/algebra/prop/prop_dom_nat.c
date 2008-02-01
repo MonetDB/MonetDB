@@ -644,28 +644,11 @@ infer_dom (PFla_op_t *n, unsigned int id)
         case la_bool_and:
         case la_bool_or:
         case la_bool_not:
+        case la_to:
         case la_type:
         case la_cast:
         case la_type_assert:
             bulk_add_dom (n->prop, L(n));
-            break;
-
-        case la_to:
-            if (n->sem.to.part) {
-                PFalg_simple_type_t join_ty = 0;
-                /* find the partition type */
-                for (unsigned int i = 0; i < n->schema.count; i++)
-                    if (n->schema.items[i].name == n->sem.to.part) {
-                        join_ty = n->schema.items[i].type;
-                        break;
-                    }
-                assert (join_ty);
-
-                if (join_ty == aat_nat)
-                    add_dom (n->prop,
-                             n->sem.to.part,
-                             PFprop_dom (L(n)->prop, n->sem.to.part));
-            }
             break;
 
         case la_avg:

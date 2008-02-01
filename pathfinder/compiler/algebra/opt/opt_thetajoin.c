@@ -1373,6 +1373,37 @@ opt_mvd (PFla_op_t *p)
             break;
 
         case la_to:
+            if (is_tj (L(p))) {
+                bool switch_left = PFprop_ocol (LL(p), p->sem.binary.att1) &&
+                                   PFprop_ocol (LL(p), p->sem.binary.att2);
+                bool switch_right = PFprop_ocol (LR(p), p->sem.binary.att1) &&
+                                    PFprop_ocol (LR(p), p->sem.binary.att2);
+
+                if (switch_left) {
+                    resolve_name_conflict (L(p), p->sem.binary.res);
+                    *p = *(thetajoin_opt (
+                               to (LL(p),
+                                   p->sem.binary.res,
+                                   p->sem.binary.att1,
+                                   p->sem.binary.att2),
+                               LR(p),
+                               L(p)->sem.thetajoin_opt.pred));
+                    modified = true;
+                }
+                else if (switch_right) {
+                    resolve_name_conflict (L(p), p->sem.binary.res);
+                    *p = *(thetajoin_opt (
+                               LL(p),
+                               to (LR(p),
+                                   p->sem.binary.res,
+                                   p->sem.binary.att1,
+                                   p->sem.binary.att2),
+                               L(p)->sem.thetajoin_opt.pred));
+                    modified = true;
+                }
+            }
+            break;
+
         case la_avg:
         case la_max:
         case la_min:
@@ -1896,6 +1927,7 @@ opt_mvd (PFla_op_t *p)
 
         case la_error: /* don't rewrite errors */
             break;
+
         case la_cond_err:
             /* We push the error operator into the left input
                as we do not know whether it relates to the left or

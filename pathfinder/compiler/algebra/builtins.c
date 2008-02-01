@@ -3638,8 +3638,8 @@ PFbui_op_to (const PFla_op_t *loop, bool ordering,
     (void) loop;
     (void) ordering;
 
-    PFla_op_t *to = to (project (
-                            eqjoin (
+    PFla_op_t *to = project (
+                        to (eqjoin (
                                 project (
                                     args[0].rel,
                                     proj (att_iter, att_iter),
@@ -3650,13 +3650,11 @@ PFbui_op_to (const PFla_op_t *loop, bool ordering,
                                     proj (att_item1, att_item)),
                                 att_iter,
                                 att_iter1),
-                            proj (att_iter, att_iter),
-                            proj (att_item, att_item),
-                            proj (att_item1, att_item1)),
-                        att_item,
-                        att_item,
-                        att_item1,
-                        att_iter);
+                            att_res,
+                            att_item,
+                            att_item1),
+                        proj (att_iter, att_iter),
+                        proj (att_item, att_res));
 
     return (struct PFla_pair_t) {
         .rel = rank (

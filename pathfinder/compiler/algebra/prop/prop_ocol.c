@@ -591,28 +591,10 @@ infer_ocol (PFla_op_t *n)
             break;
 
         case la_to:
-            /* set number of schema items in the result schema:
-             * result attribute plus partitioning attribute
-             * (if available -- constant optimizations may
-             *  have removed it).
-             */
-            new_ocols (n, n->sem.to.part ? 2 : 1);
-
-            /* verify that attributes 'att1', 'att2' and 'part'
-             * are attributes of n* and include them into the result
-             * schema
-             */
-            assert (PFprop_ocol (L(n), n->sem.to.att1) &&
-                    PFprop_ocol (L(n), n->sem.to.att2));
-
-            ocol_at (n, 0).name = n->sem.to.res;
-            ocol_at (n, 0).type = aat_int;
-
-            if (n->sem.to.part) {
-                assert (PFprop_ocol (L(n), n->sem.to.part));
-                ocol_at (n, 1).name = n->sem.to.part;
-                ocol_at (n, 1).type = PFprop_type_of (L(n), n->sem.to.part);
-            }
+            ocols (n) = copy_ocols (ocols (L(n)), ocols_count (L(n)) + 1);
+            ocol_at (n, ocols_count (n)).name = n->sem.binary.res;
+            ocol_at (n, ocols_count (n)).type = aat_int;
+            ocols_count (n)++;
             break;
 
         case la_avg:

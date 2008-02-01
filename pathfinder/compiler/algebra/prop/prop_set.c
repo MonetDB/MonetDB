@@ -99,7 +99,6 @@ prop_infer_set (PFla_op_t *n, bool set)
 
         case la_serialize_rel:
         case la_pos_select:
-        case la_to:
         case la_avg:
         case la_sum:
         case la_count:
@@ -128,6 +127,7 @@ prop_infer_set (PFla_op_t *n, bool set)
         case la_bool_and:
         case la_bool_or:
         case la_bool_not:
+        case la_to:
         case la_rowrank:
         case la_rank:
         case la_type:
