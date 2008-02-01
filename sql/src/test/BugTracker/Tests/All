@@ -97,3 +97,4 @@ alter_col_to_set_same_constraint.SF-1850781
 add_and_drop_the_same_constraint.SF-1850789
 create_same_temp_tab_after_its_drop.SF-1850809
 local_temp_table.SF-1865953
+table_dependency_inside_union.SF-1884382
