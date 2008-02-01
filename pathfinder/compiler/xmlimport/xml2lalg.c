@@ -2864,6 +2864,8 @@ getPFLA_SeqTy (char *kind, char *prefix, char *uri, char *local)
         PFoops (OOPS_FATAL,
                 "Problem with an XPath step: cannot evaluate "
                 "node test");
+
+    return PFty_none(); /* return dummy type */
 }
 
 
