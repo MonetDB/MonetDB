@@ -431,10 +431,13 @@ table_optname(mvc *sql, scope *scp, stmt *sq, symbol *optname)
 	} else {
 		/* foreach column add full basetable,column name */
 		for (m = sq->op1.lval->h; m; m = m->next) {
-			stmt *st = m->data;
+			stmt *sc = NULL, *st = m->data;
 			char *cname = column_name(st);
 			char *tname = table_name(st);
-			stmt *sc = stmt_column(stmt_dup(st), stmt_dup(sq), NULL);
+			sql_table *t = NULL;
+			if(tname)
+				t = mvc_bind_table(sql, sql->session->schema, tname); 
+			sc = stmt_column(stmt_dup(st), stmt_dup(sq), t);
 
 			table_add_column(tv, sc, tname, cname);
 			_DELETE(tname);
