@@ -35,7 +35,6 @@ comment "Common sub-expression optimizer"
 #include "mal_config.h"
 #include "opt_commonTerms.h"
 #include "mal_exception.h"
-#include "opt_aliases.h"
 @}
 @- Common Subexpression Elimination
 Common subexpression elimination merely involves a scan through the 
@@ -94,7 +93,7 @@ The last instruction signifies the end.
 static int
 OPTcommonTermsImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int i, j, k, last, n=1;
+	int i, j, k, barrier=0, last, n=1;
 	InstrPtr p, q;
 	int actions = 0;
 	int filter[1024];
@@ -120,34 +119,40 @@ OPTcommonTermsImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	for ( n= i = 0; i < limit; i++) {
 		p = old[i];
 		pushInstruction(mb,p);
+		if(p->barrier)
+			barrier= getArg(p,0); /* at least one barrier block */
 		n++;
-@-
-First apply alias propagation, before considering a match.
-@c
 		if (p->token == ENDsymbol){
 			for(i++; i<limit; i++)
-				if(old[i])
-					pushInstruction(mb,old[i]);
+			if( old[i])
+				pushInstruction(mb,old[i]);
 			break;
 		}
 		if (p->token == NOOPsymbol) 
 			continue;
-		if (OPTisAlias(p)){
-			if (getLastUpdate(span,getArg(p,0)) == i &&
-				getBeginLifespan(span,getArg(p,0)) == i &&
-				getLastUpdate(span,getArg(p,1)) < i){
+@-
+First recognize simple assignments for alias removal
+and apply alias propagation, before considering a match.
+@c
+		if( p->token == ASSIGNsymbol &&
+			barrier== 0 &&
+			p->argc == 2 &&
+			/* type compatible to be added */
+			getArgType(mb,p,0)== getArgType(mb,p,1) &&
+			getLastUpdate(span,getArg(p,0)) == i &&
+			getBeginLifespan(span,getArg(p,0)) == i &&
+			getLastUpdate(span,getArg(p,1) < i) ){
 					alias[getArg(p,0)] = alias[getArg(p,1)];
+/* can be handled by the deadcode optimizer
 					freeInstruction(p);
 					mb->stop--;
 					mb->stmt[mb->stop]=0;
 					n--;
+*/
 					continue;
-			} else {
-				OPTaliasRemap(p,alias);
-			}
-		} else {
-			OPTaliasRemap(p,alias);
-		}
+			} 
+		for(j=0; j<p->argc; j++)
+			getArg(p,j) = alias[getArg(p,j)];
 @-
 Use a hash filter to speed up matching
 @c
@@ -195,13 +200,21 @@ multiple occurrences of the same constant in the symbol table.
 Simple assignments are not replaced either. They should be
 handled by the alias removal part
 @c
-				if (q->token != ASSIGNsymbol &&
+				if (q->token != ASSIGNsymbol && q->retc == 1 &&
+					( getModuleId(p)== batcalcRef  ||
+					  getModuleId(p)== batstrRef ||
+					  getModuleId(p)== batmathRef ||
+					  getModuleId(p)== mmathRef ||
+					  getModuleId(p)== algebraRef ||
+					  getModuleId(p)== strRef ||
+					  getModuleId(p)== calcRef) &&
 					hasSameSignature(p, q) && 
 					hasSameArguments(mb, p, q) && 
-					!isUpdated(mb, i) && 
+					getLastUpdate(span, getArg(p,0)) <= i &&
 					!hasCommonResults(p, q) && 
 					!hasSideEffects(p, TRUE) &&
 					isLinearFlow(p) &&
+					isLinearFlow(q) &&
 					allTargetsVisible(mb,span,j,n-1) 
 					) {
 #ifdef DEBUG_OPT_COMMONTERMS
