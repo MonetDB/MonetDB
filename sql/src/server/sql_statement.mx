@@ -865,6 +865,10 @@ stmt_list_dependencies(stmt *s, int depend_type)
 			if (s->op2.stval)
 				dep_list = list_merge_destroy(dep_list, stmt_list_dependencies(s->op2.stval, depend_type), (fdup)NULL);
 			break;
+		case st_sql:
+			if (s->op1.stval)
+				dep_list = list_merge_destroy(dep_list, stmt_list_dependencies(s->op1.stval, depend_type), (fdup)NULL);
+			break;
 		case st_diff:
 		case st_alias:
 		case st_intersect:
@@ -876,7 +880,6 @@ stmt_list_dependencies(stmt *s, int depend_type)
 		case st_unique:
 		case st_append:
 		case st_rs_column:
-		case st_sql:
 
 		case st_while:
 		case st_if:
@@ -984,6 +987,8 @@ stmt_list_dependencies(stmt *s, int depend_type)
 			break;
 		case st_atom:
 		case st_column:
+			if (s->op1.stval && depend_type == VIEW_DEPENDENCY) 
+				dep_list = list_merge_destroy(dep_list, stmt_list_dependencies(s->op1.stval, depend_type), (fdup)NULL);
 			if (s->op4.tval && depend_type == VIEW_DEPENDENCY) {
 				dep_list = list_append(dep_list, &(s->op4.tval->base.id));	
 			}
