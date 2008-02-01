@@ -143,30 +143,49 @@ fill in heap names, so HEAPallocs can resort to disk for very large writes.
 
 		if (ht) {
 			bn->H->heap.filename = (str) GDKmalloc(strlen(nme) + 12);
+			if (bn->H->heap.filename == NULL) 
+				goto bailout;
 			GDKfilepath(bn->H->heap.filename, NULL, nme, "head");
 		}
 
 		if (tt) {
 			bn->T->heap.filename = (str) GDKmalloc(strlen(nme) + 12);
+			if (bn->T->heap.filename == NULL) 
+				goto bailout;
 			GDKfilepath(bn->T->heap.filename, NULL, nme, "tail");
 		}
 
 		if (ATOMneedheap(ht)) {
-			bn->H->vheap = (Heap *) GDKzalloc(sizeof(Heap));
-			bn->H->vheap->filename = (str) GDKmalloc(strlen(nme) + 12);
+			if ((bn->H->vheap = (Heap *) GDKzalloc(sizeof(Heap))) == NULL || (bn->H->vheap->filename = (str) GDKmalloc(strlen(nme) + 12)) == NULL)
+				goto bailout;
 			GDKfilepath(bn->H->vheap->filename, NULL, nme, "hheap");
 			bn->batMaphheap = STORE_UNSET;
 		}
 
 		if (ATOMneedheap(tt)) {
-			bn->T->vheap = (Heap *) GDKzalloc(sizeof(Heap));
-			bn->T->vheap->filename = (str) GDKmalloc(strlen(nme) + 12);
+			if ((bn->T->vheap = (Heap *) GDKzalloc(sizeof(Heap))) == NULL || (bn->T->vheap->filename = (str) GDKmalloc(strlen(nme) + 12)) == NULL)
+				goto bailout;
 			GDKfilepath(bn->T->vheap->filename, NULL, nme, "theap");
 			bn->batMaptheap = STORE_UNSET;
 		}
 	}
 	bn->batDirty = TRUE;
 	return bn;
+bailout:
+	if (ht)
+		HEAPfree(&bn->H->heap);
+	if (tt)
+		HEAPfree(&bn->T->heap);
+	if (ht && bn->H->vheap) {
+		HEAPfree(bn->H->vheap);
+		GDKfree(bn->H->vheap);
+	}
+	if (tt && bn->T->vheap) {
+		HEAPfree(bn->T->vheap);
+		GDKfree(bn->T->vheap);
+	}
+	GDKfree(bn);
+	return NULL;
 }
 
 chr
@@ -269,9 +288,9 @@ BATclone(BAT *b, size_t cap)
 {
 	BAT *c = BATnew(b->htype, b->ttype, cap);
 
-	if (c->htype == TYPE_void && b->hseqbase != oid_nil)
+	if (c && c->htype == TYPE_void && b->hseqbase != oid_nil)
 		BATseqbase(c, b->hseqbase);
-	if (c->ttype == TYPE_void && b->tseqbase != oid_nil)
+	if (c && c->ttype == TYPE_void && b->tseqbase != oid_nil)
 		BATseqbase(BATmirror(c), b->tseqbase);
 	return c;
 }
@@ -736,12 +755,10 @@ BATcopy(BAT *b, int ht, int tt, int writable)
 			    (b->ttype && heapcopy(&bthp, &b->T->heap, &tremap) < 0)||
 			    (bn->H->vheap && heapcopy(&hhp, b->H->vheap, &hvremap) < 0) ||
 			    (bn->T->vheap && heapcopy(&thp, b->T->vheap, &tvremap) < 0)) {
-				if (hhp.base)
-					HEAPfree(&hhp);
-				if (bthp.base)
-					HEAPfree(&bthp);
-				if (bhhp.base)
-					HEAPfree(&bhhp);
+				HEAPfree(&thp);
+				HEAPfree(&hhp);
+				HEAPfree(&bthp);
+				HEAPfree(&bhhp);
 				BBPreclaim(bn);
 				return NULL;
 			}
@@ -980,12 +997,13 @@ This code assumes that new elements are appended to the BUN list.
 BAT *
 BUNins(BAT *b, ptr h, ptr t, bit force)
 {
-	int countonly = (b->htype == TYPE_void && b->ttype == TYPE_void);
+	int countonly;
 	BUN p;
 	BAT *bm;
 
 	BATcheck(b, "BUNins");
 	BATcheck(h, "BUNins: head value is nil\n");
+ 	countonly = (b->htype == TYPE_void && b->ttype == TYPE_void);
 	bm = BBP_cache(-b->batCacheid);
 
 	@:void_insertbun(h)@
@@ -1186,12 +1204,12 @@ BUNappend(BAT *b, ptr t, bit force)
 	int countonly;
 	size_t hsize = 0, tsize = 0;
 
+	BATcheck(b, "BUNappend");
 	if (b->H->hash && b->H->vheap)
 		hsize = b->H->vheap->size;
 	if (b->T->hash && b->T->vheap)
 		tsize = b->T->vheap->size;
 
-	BATcheck(b, "BUNappend");
 	bm = BBP_cache(-b->batCacheid);
 
 	countonly = (b->htype == TYPE_void && b->ttype == TYPE_void);
@@ -1268,6 +1286,8 @@ BUNappend(BAT *b, ptr t, bit force)
 
 				b = BATmaterializet(b);
 				countonly = 0;
+				if (b == NULL)
+					return NULL;
 				b->T->nodense = cnt;
 				b->tdense = FALSE;
 				if (b->tsorted & 1) {
@@ -1312,6 +1332,8 @@ BUNappend(BAT *b, ptr t, bit force)
 			if (*(oid *) t == oid_nil) {
 				BATmaterializet(b);
 				countonly = 0;
+				if (b == NULL)
+					return NULL;
 			} else {
 				b->tseqbase = bm->hseqbase = *(oid *) t;
 			}
@@ -1714,8 +1736,9 @@ BUNfnd(BAT *b, ptr v)
 	BUN r = BUN_NONE;
 	BATiter bi = bat_iterator(b);
 
-
 	BATcheck(b, "BUNfnd");
+	if (!v)
+		return r;
 	if (BAThvoid(b)) {
 		BUNfndVOID(r, bi, v);
 		return r;
@@ -1751,8 +1774,8 @@ BUNfnd(BAT *b, ptr v)
 	return r;
 }
 
-@= swapif
-	if (@1) {
+@= swap
+	{
 		int (*_cmp) (ptr, ptr);
 		ptr _p;
 
@@ -1763,8 +1786,6 @@ BUNfnd(BAT *b, ptr v)
 		x = y;
 		y = _p;
 		bi.b = b = BATmirror(b);
-		if (v)
-			v = BATmirror(v);
 	}	
 			    
 @= dohash
@@ -1774,8 +1795,7 @@ BUN
 BUNlocate(BAT *b, ptr x, ptr y)
 {
 	BATiter bi = bat_iterator(b);
-	int (*hcmp) (ptr, ptr) = BATatoms[b->htype].atomCmp;
-	int (*tcmp) (ptr, ptr) = BATatoms[b->ttype].atomCmp;
+	int (*hcmp) (ptr, ptr), (*tcmp) (ptr, ptr);
 	int htpe, ttpe, hint = 0, tint = 0, hlng = 0, tlng = 0;
 	var_t hidx, tidx;
 	BUN p, q;
@@ -1783,19 +1803,23 @@ BUNlocate(BAT *b, ptr x, ptr y)
 
 	BATcheck(b, "BUNlocate: BAT parameter");
 	BATcheck(x, "BUNlocate: value parameter");
+	hcmp = BATatoms[b->htype].atomCmp;
+	tcmp = BATatoms[b->ttype].atomCmp;
 	p = BUNfirst(b);
 	q = BUNlast(b);
 	if (p == q)
 		return BUN_NONE;	/* empty bat */
 
 	/* sometimes BUNlocate is just about a single column */
-	@:swapif(y && ((BAThordered(b)&1) && (*hcmp)(x,BUNhead(bi,p)) == 0 && (*hcmp)(x,BUNhead(bi,q-1)) == 0))@
+	if(y && ((BAThordered(b)&1) && (*hcmp)(x,BUNhead(bi,p)) == 0 && (*hcmp)(x,BUNhead(bi,q-1)) == 0))
+		@:swap()@
 	if (y == NULL || ((BATtordered(b) & 1) && (*tcmp) (y, BUNtail(bi, p)) == 0 && (*tcmp) (y, BUNtail(bi, q - 1)) == 0)) {
 		return BUNfnd(b, x);
 	}
 
 	/* positional lookup is always the best choice */
-	@:swapif(BATtdense(b))@
+	if(BATtdense(b))
+		@:swap()@
 	if (BAThdense(b)) {
 		oid i = *(oid *) x - b->hseqbase;
 
@@ -1830,7 +1854,8 @@ BUNlocate(BAT *b, ptr x, ptr y)
 		/* regrettably MonetDB support only single-column hashes 
 		 * strategy: create a hash on both columns, and select the column with the best distribution
 		 */
-		@:swapif((b->T->hash && b->H->hash == NULL) || !(@:dohash(b,h)@))@
+		if((b->T->hash && b->H->hash == NULL) || !(@:dohash(b,h)@))
+			@:swap()@
 		if (b->H->hash == NULL && (v = VIEWcreate_(b, b, TRUE)) != NULL) {
 			/* As we are going to remove the worst hash table later, we must do everything 
 			 * in a view, as it is not permitted to remove a hash table from a read-only 
@@ -1847,12 +1872,17 @@ BUNlocate(BAT *b, ptr x, ptr y)
 					hcnt += (v->H->hash->hash[i] != HASH_MAX);
 				for (i = 0; i <= v->T->hash->mask; i++)
 					tcnt += (v->T->hash->hash[i] != HASH_MAX);
-				@:swapif(hcnt < tcnt)@
-
+				if (hcnt < tcnt) {
+					@:swap()@
+					v = BATmirror(v);
+				}
 				/* remove the least selective hash table */
 				HASHremove(BATmirror(v));
 			}
-			@:swapif(v->H->hash == NULL)@
+			if (v->H->hash == NULL) {
+				@:swap()@
+				v = BATmirror(v);
+			}
 			if (v->H->hash) {
 				gdk_set_lock(GDKhashLock(ABS(b->batCacheid) & BBP_BATMASK), "BUNlocate");
 				if (b->H->hash == NULL) {	/* give it to the parent */
@@ -2148,8 +2178,10 @@ BATname(BAT *b, str nme)
 str
 BATrename(BAT *b, str nme)
 {
-	int ret = BATname(b, nme);
+	int ret;
 
+	BATcheck(b, "BATrename");
+	ret = BATname(b, nme);
 	if (ret == 1) {
 		GDKerror("BATrename: identifier expected: %s\n", nme);
 	} else if (ret == BBPRENAME_ALREADY) {
@@ -3067,8 +3099,10 @@ for determining which algebra commands set properties sub-optimally.
 				str nme = BBP_physical(bv->batCacheid);
 
 				hp->filename = GDKmalloc(strlen(nme) + 12);
-				sprintf(hp->filename, "%s.%chash", nme, b->batCacheid > 0 ? 'h' : 't');
-				if ((bv->H->hash = HASHnew(hp, tpe, yy + lim, HASHmask(lim))) == NULL) {
+				if (hp->filename != NULL)
+					sprintf(hp->filename, "%s.%chash", nme, b->batCacheid > 0 ? 'h' : 't');
+				if (hp->filename == NULL ||
+				    (bv->H->hash = HASHnew(hp, tpe, yy + lim, HASHmask(lim))) == NULL) {
 					GDKfree(hp->filename);
 					GDKfree(hp);
 					THRprintf(GDKout, "#BATpropcheck: BAT %s(%d): could not allocate hash table for key test\n", BATgetId(b), b->batCacheid);

@@ -1060,7 +1060,10 @@ ATOMformat(int t, ptr p, char **buf)
 
 		return l;
 	}
-	strcpy(*buf = GDKmalloc(4), "nil");
+	*buf = GDKmalloc(4);
+	if (*buf == NULL)
+		return -1;
+	strcpy(*buf, "nil");
 	return 3;
 }
 
@@ -1093,6 +1096,8 @@ conversion function will then alloc some region for you.
 		GDKfree(*dst);
 		*dst = (@1 *) GDKmalloc(*len = @2);
 	}
+	if (!*dst)
+		return -1;
 @= atomtostr
 int
 @1ToStr(char ** dst, int *len, @1 *src)
@@ -1460,7 +1465,7 @@ batFromStr(char *src, int *len, bat **dst)
 {
 	char *s, *t, *r = src;
 	int c, sign = 1;
-	bat bid;
+	bat bid = 0;
 
 	@:atommem(bat,sizeof(bat))@
 
@@ -1476,9 +1481,11 @@ batFromStr(char *src, int *len, bat **dst)
 	while ((c = *t) && (c == '_' || GDKisalnum(c)))
 		t++;
 	s = (char *) alloca((unsigned) (1 + t - r));
-	strncpy(s, r, t - r);
-	s[t - r] = 0;
-	bid = BBPindex(s);
+	if (s != NULL) {
+		strncpy(s, r, t - r);
+		s[t - r] = 0;
+		bid = BBPindex(s);
+	}
 	**dst = bid == 0 ? bat_nil : sign * bid;
 	return (int) (t + (c == '>') - src);
 }
@@ -2553,10 +2560,10 @@ int
 OIDfromStr(char *src, int *len, oid **dst)
 {
 #if SIZEOF_OID == SIZEOF_INT
-	int ui, *uip = &ui;
+	int ui = 0, *uip = &ui;
 	int l = (int) sizeof(int);
 #else
-	lng ui, *uip = &ui;
+	lng ui = 0, *uip = &ui;
 	int l = (int) sizeof(lng);
 #endif
 	int pos = 0;

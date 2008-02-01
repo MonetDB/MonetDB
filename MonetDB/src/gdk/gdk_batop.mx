@@ -285,7 +285,9 @@ BATappend(BAT *b, BAT *n, bit force)
 			return b;
 		}
 		/* we need to materialize the tail */
-		BATmaterializet(b);
+		b = BATmaterializet(b);
+		if (b == NULL)
+			return NULL;
 	}
 
 	/* a hash is useless for void bats */
@@ -1001,7 +1003,7 @@ BAT *
 BATsample(BAT *b, size_t size)
 {
 	size_t cnt, i, r = 0, n, j;
-	size_t *choice, *dst;
+	size_t *choice = NULL, *dst;
 	BAT *bn;
 	BATiter bi = bat_iterator(b);
 
@@ -1016,10 +1018,14 @@ BATsample(BAT *b, size_t size)
 	if (n == 0)
 		return bn;
 	dst = choice = (size_t *) GDKmalloc(n * sizeof(size_t));
+	if (!choice)
+		goto bunins_failed;
 
 	if (n * 2 < BATcount(b)) {	/* nondense sample */
 		char *vec = (char *) GDKzalloc(1 + (cnt / 8));
 
+		if (vec == NULL)
+      			goto bunins_failed;
 		for (j = 0; j < n; j++) {
 			r += rand();
 			i = r % cnt;
@@ -1040,6 +1046,8 @@ BATsample(BAT *b, size_t size)
 	} else if (cnt < 65536) {
 		unsigned short *vec = (unsigned short *) GDKmalloc(cnt * sizeof(unsigned short));
 
+		if (vec == NULL)
+      			goto bunins_failed;
 		for (i = 0; i < cnt; i++)
 			vec[i] = (unsigned short) i;
 		for (j = 0; j < n; j++) {
@@ -1052,6 +1060,8 @@ BATsample(BAT *b, size_t size)
 	} else {
 		size_t *vec = (size_t *) GDKmalloc(cnt * sizeof(size_t));
 
+		if (vec == NULL)
+      			goto bunins_failed;
 		for (i = 0; i < cnt; i++)
 			vec[i] = i;
 		for (j = 0; j < n; j++) {
@@ -1088,6 +1098,8 @@ BATsample(BAT *b, size_t size)
 	BATkey(BATmirror(bn), BATtkey(b));
 	return bn;
       bunins_failed:
+	if (choice)
+		GDKfree(choice);
 	BBPreclaim(bn);
 	return NULL;
 }
@@ -1556,9 +1568,10 @@ BAT *
 BAT@6sort@3(BAT *b)
 {
 	BAT *bn;
-	int tt = b->ttype;
+	int tt = 0;
 
 	BATcheck(b, "BATsort@3: BAT");
+ 	tt = b->ttype;
 	if (b->htype == TYPE_void && b->hseqbase == oid_nil) {
 		/* b's head is void-nil, hence we return a read-only copy/view of b */
 		return BATcopy(b, b->htype, b->ttype, FALSE);
@@ -1627,6 +1640,8 @@ BAT@6order@3(BAT *b)
 	if (b->ttype == TYPE_void && b->tseqbase != oid_nil) {
 		/* materialize void-tail in-place */
 		b = BATmaterializet(b);
+		if (b == NULL)
+			return NULL;
 	}
 	if ((GDK_SORTED@2 == GDK_SORTED_REV && b->htype == TYPE_void) || 
 	    (b->htype != TYPE_void && (b->hkey || '@7' != 's') && BATordered@4(b))) {
@@ -1662,12 +1677,19 @@ BATrevert(BAT *b)
 	if ((b->htype == TYPE_void && b->hseqbase != oid_nil) || (b->ttype == TYPE_void && b->tseqbase != oid_nil)) {
 		/* materialize void columns in-place */
 		b = BATmaterialize(b);
+		if (b == NULL)
+			return NULL;
 	}
 	ALIGNdel(b, "BATrevert", FALSE);
 	hs = (size_t) Hsize(b);
 	ts = (size_t) Tsize(b);
 	h = (char *) GDKmalloc(hs);
 	t = (char *) GDKmalloc(ts);
+	if (!h || !t) {
+		GDKfree(h);
+		GDKfree(t);
+		return NULL;
+	}
 	for (p = BUNlast(b)?BUNlast(b) - 1:0, q = BUNfirst(b); p > q; p--, q++){
 		char *ph = BUNhloc(bi,p);
 		char *qh = BUNhloc(bi,q);
@@ -2325,6 +2347,8 @@ BATconst(BAT *b, int tailtype, ptr v)
 	BATiter bi = bat_iterator(b);
 
 	BATcheck(b, "BATconst");
+	if (!v)
+		return NULL;
 	if (BAThrestricted(b) == BAT_READ && 
 	    !ATOMvarsized(tailtype) && tailtype != TYPE_bat) {
  		if (tailtype == TYPE_void) {
@@ -2395,7 +2419,8 @@ BATconst(BAT *b, int tailtype, ptr v)
 	}
 	return bn;
       bunins_failed:
-	BBPreclaim(bn);
+	if (bn)
+		BBPreclaim(bn);
 	return NULL;
 }
 
@@ -2488,16 +2513,16 @@ BATsetprop(BAT *b, int idx, int type, void *v)
 	ValRecord vr;
 	PROPrec *p = BATgetprop(b, idx);
 
-	if (!p) {
-		p = (PROPrec *) GDKmalloc(sizeof(PROPrec));
+	if (!p && (p = (PROPrec *) GDKmalloc(sizeof(PROPrec))) != NULL) {
 		p->id = idx;
-
 		p->next = b->T->props;
 		b->T->props = p;
 	}
-	VALset(&vr, type, v);
-	VALcopy(&p->v, &vr);
-	b->batDirtydesc = TRUE;
+	if (p) {
+		VALset(&vr, type, v);
+		VALcopy(&p->v, &vr);
+		b->batDirtydesc = TRUE;
+	}
 }
 
 void

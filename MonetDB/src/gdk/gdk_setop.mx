@@ -288,6 +288,8 @@ BATkunique(BAT *b)
 
 	if (b->hkey) {
 		bn = BATcopy(b, b->htype, b->ttype, FALSE);
+		if (bn == NULL)
+			return NULL;
 	} else {
 		size_t cnt = BATcount(b);
 

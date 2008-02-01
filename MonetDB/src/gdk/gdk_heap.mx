@@ -361,13 +361,14 @@ HEAPload(Heap *h, str nme, str ext, int trunc)
 		}
 	}
 	h->base = (char *) GDKload(nme, ext, h->free, h->size, h->storage);
-	if (h->base == NULL) {
+	h->filename = (char *) GDKmalloc(strlen(nme) + strlen(ext) + 2);
+	if (h->base == NULL || h->filename == NULL) {
+		GDKfree(h->base);
+		GDKfree(h->filename);
 		return -1;	/* file could  not be read satisfactorily */
 	}
 	h->newstorage = h->storage;
-	h->filename = (char *) GDKmalloc(strlen(nme) + strlen(ext) + 2);
 	sprintf(h->filename, "%s.%s", nme, ext);
-
 	return desc_status;	/* ok */
 }
 
@@ -895,6 +896,11 @@ HEAP_check(Heap *heap, HeapRepair *hr)
 	 */
 	hr->validmask = (size_t *) GDKmalloc(sizeof(size_t) * ++nwords);
 	freemask = (size_t *) GDKmalloc(sizeof(size_t) * nwords);
+	if (hr->validmask == NULL || freemask == NULL) {
+		GDKfree(hr->validmask);
+		GDKfree(freemask);
+		return FALSE;
+	}
 	for (block = 0; block < nwords; block++)
 		freemask[block] = hr->validmask[block] = 0;
 

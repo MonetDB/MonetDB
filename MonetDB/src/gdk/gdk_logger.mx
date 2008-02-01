@@ -190,7 +190,7 @@ typedef struct logformat_t {
 #define LOGFILE "log"
 
 static int bm_commit(logger *lg);
-static void tr_grow(trans *tr);
+static int tr_grow(trans *tr);
 
 static void
 logbat_destroy(BAT *b)
@@ -204,9 +204,11 @@ logbat_new(int ht, int tt, size_t size)
 {
 	BAT *nb = BATnew(ht, tt, size);
 
-	if (ht == TYPE_void)
-		BATseqbase(nb, 0);
-	nb->batDirty |= 2;
+	if (nb) {
+		if (ht == TYPE_void)
+			BATseqbase(nb, 0);
+		nb->batDirty |= 2;
+	}
 	return nb;
 }
 
@@ -274,10 +276,11 @@ log_read_clear(logger *lg, trans *tr, char *name)
 	if (lg->debug & 1)
 		fprintf(stderr, "logger found log_read_clear %s\n", name);
 
-	tr_grow(tr);
-	tr->changes[tr->nr].type = LOG_CLEAR;
-	tr->changes[tr->nr].name = GDKstrdup(name);
-	tr->nr++;
+	if (tr_grow(tr)) {
+		tr->changes[tr->nr].type = LOG_CLEAR;
+		tr->changes[tr->nr].name = GDKstrdup(name);
+		tr->nr++;
+	}
 }
 
 static void
@@ -411,14 +414,15 @@ log_read_updates(logger *lg, trans *tr, logformat *l, char *name)
 		GDKfree(tv);
 		logbat_destroy(b);
 
-		tr_grow(tr);
-		tr->changes[tr->nr].type = l->flag;
-		tr->changes[tr->nr].nr = l->nr;
-		tr->changes[tr->nr].ht = ht;
-		tr->changes[tr->nr].tt = tt;
-		tr->changes[tr->nr].name = GDKstrdup(name);
-		tr->changes[tr->nr].b = r;
-		tr->nr++;
+		if (tr_grow(tr)) {
+			tr->changes[tr->nr].type = l->flag;
+			tr->changes[tr->nr].nr = l->nr;
+			tr->changes[tr->nr].ht = ht;
+			tr->changes[tr->nr].tt = tt;
+			tr->changes[tr->nr].name = GDKstrdup(name);
+			tr->changes[tr->nr].b = r;
+			tr->nr++;
+		}
 	} else {		/* bat missing ERROR or ignore ? currently error. */
 		res = LOG_ERR;
 	}
@@ -495,10 +499,11 @@ static void
 log_read_destroy(logger *lg, trans *tr, char *name)
 {
 	(void) lg;
-	tr_grow(tr);
-	tr->changes[tr->nr].type = LOG_DESTROY;
-	tr->changes[tr->nr].name = GDKstrdup(name);
-	tr->nr++;
+	if (tr_grow(tr)) {
+		tr->changes[tr->nr].type = LOG_DESTROY;
+		tr->changes[tr->nr].name = GDKstrdup(name);
+		tr->nr++;
+	}
 }
 
 static void
@@ -538,13 +543,14 @@ log_read_create(logger *lg, trans *tr, char *name)
 		} else {
 			tt = ATOMindex(ta);
 		}
-		tr_grow(tr);
-		tr->changes[tr->nr].type = LOG_CREATE;
-		tr->changes[tr->nr].ht = ht;
-		tr->changes[tr->nr].tt = tt;
-		tr->changes[tr->nr].name = GDKstrdup(name);
-		tr->changes[tr->nr].b = NULL;
-		tr->nr++;
+		if (tr_grow(tr)) {
+			tr->changes[tr->nr].type = LOG_CREATE;
+			tr->changes[tr->nr].ht = ht;
+			tr->changes[tr->nr].tt = tt;
+			tr->changes[tr->nr].name = GDKstrdup(name);
+			tr->changes[tr->nr].b = NULL;
+			tr->nr++;
+		}
 	}
 	if (buf)
 		GDKfree(buf);
@@ -558,25 +564,28 @@ la_bat_create(logger *lg, logaction *la)
 	int tt = (la->tt < 0) ? TYPE_void : la->tt;
 	BAT *b = BATnew(ht, tt, BATSIZE);
 
-	if (la->ht < 0)
-		BATseqbase(b, 0);
-	if (la->tt < 0)
-		BATseqbase(BATmirror(b), 0);
-
-	logger_add_bat(lg, b, la->name);
-	logbat_destroy(b);
+	if (b != NULL) {
+		if (la->ht < 0)
+			BATseqbase(b, 0);
+		if (la->tt < 0)
+			BATseqbase(BATmirror(b), 0);
+	
+		logger_add_bat(lg, b, la->name);
+		logbat_destroy(b);
+	}
 }
 
 static void
 log_read_use(logger *lg, trans *tr, logformat *l, char *name)
 {
 	(void) lg;
-	tr_grow(tr);
-	tr->changes[tr->nr].type = LOG_USE;
-	tr->changes[tr->nr].nr = l->nr;
-	tr->changes[tr->nr].name = GDKstrdup(name);
-	tr->changes[tr->nr].b = NULL;
-	tr->nr++;
+	if (tr_grow(tr)) {
+		tr->changes[tr->nr].type = LOG_USE;
+		tr->changes[tr->nr].nr = l->nr;
+		tr->changes[tr->nr].name = GDKstrdup(name);
+		tr->changes[tr->nr].b = NULL;
+		tr->nr++;
+	}
 }
 
 static void
@@ -601,10 +610,16 @@ tr_create(trans *tr, int tid)
 {
 	trans *ntr = (trans *) GDKmalloc(sizeof(trans));
 
+	if (ntr == NULL)
+		return NULL;
 	ntr->tid = tid;
 	ntr->sz = TR_SIZE;
 	ntr->nr = 0;
 	ntr->changes = (logaction *) GDKmalloc(sizeof(logaction) * TR_SIZE);
+	if (ntr->changes == NULL) {
+		GDKfree(ntr);
+		return NULL;
+	}
 	ntr->tr = tr;
 	return ntr;
 }
@@ -662,16 +677,19 @@ la_destroy(logaction *c)
 		logbat_destroy(c->b);
 }
 
-static void
+static int
 tr_grow(trans *tr)
 {
 	if (tr->nr == tr->sz) {
 		tr->sz <<= 1;
 		tr->changes = (logaction *) GDKrealloc(tr->changes, tr->sz * sizeof(logaction));
+		if (tr->changes == NULL)
+			return 0;
 	}
 	/* cleanup the next */
 	tr->changes[tr->nr].name = NULL;
 	tr->changes[tr->nr].b = NULL;
+	return 1;
 }
 
 static trans *
@@ -938,6 +956,8 @@ logger_new(int debug, char *fn, char *logdir, char *dbname, int version)
 	snprintf(bak, BUFSIZ, "%s_catalog", fn);
 	catalog = BBPindex(bak);
 
+	if (lg == NULL)
+		return NULL;
 	lg->debug = debug;
 
 	lg->changes = 0;
@@ -1105,6 +1125,7 @@ logger_destroy(logger *lg)
 		logbat_destroy(lg->catalog);
 		logbat_destroy(lg->freed);
 	}
+	GDKfree(lg->fn);
 	GDKfree(lg->dir);
 	logger_close(lg);
 	GDKfree(lg);
@@ -1515,6 +1536,8 @@ log_tend(logger *lg)
 		/* sub commit all new snapshots */
 		BAT *b = BATselect(lg->snapshots, &lg->tid, &lg->tid);
 
+		if (b == NULL)
+			return LOG_ERR;
 		res = bm_subcommit(b, lg->snapshots, lg->debug);
 		BBPunfix(b->batCacheid);
 	}

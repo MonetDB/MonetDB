@@ -2544,7 +2544,9 @@ Tpos(BATiter *bi, BUN p)
 static INLINE BAT *
 BATmirror(REGISTER BAT *b)
 {
-	return BBP_cache(-(b)->batCacheid);
+	if (b == NULL)
+		return NULL;
+	return BBP_cache(-b->batCacheid);
 }
 
 #ifdef __cplusplus

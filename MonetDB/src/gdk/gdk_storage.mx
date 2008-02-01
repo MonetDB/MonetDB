@@ -519,11 +519,13 @@ BATsave(BAT *bd)
 
 	if (b->hheap) {
 		b->hheap = (Heap *) GDKmalloc(sizeof(Heap));
-		*b->hheap = *bd->hheap;
+		if (b->hheap)
+			*b->hheap = *bd->hheap;
 	}
 	if (b->theap) {
 		b->theap = (Heap *) GDKmalloc(sizeof(Heap));
-		*b->theap = *bd->theap;
+		if (b->theap)
+			*b->theap = *bd->theap;
 	}
 
 	/* start saving data */

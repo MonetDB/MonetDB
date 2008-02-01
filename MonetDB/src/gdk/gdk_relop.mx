@@ -137,9 +137,8 @@ On small joins we just assume 1-N joins with a limited (=3) hit rate.
 
 		@:joinestimate(@1, @2, _estimate)@
 		bn = BATnew(BAThtype(l), BATttype(r), _estimate);
-		if (bn == NULL) {
+		if (bn == NULL) 
 			return bn;
-		}
 	}
 @}
 @- Merge join
@@ -523,6 +522,8 @@ densefetchjoin_@1_@2(BAT *bn, BAT *l, BAT *r)
 	BATiter li = bat_iterator(l);
 	BATiter ri = bat_iterator(r);
 
+	if (bn == NULL)
+		return NULL;
 	dst = BUNfirst(bn);
 	base = BUNfirst(r);
 	offset = (ssize_t) (base - r->hseqbase);
@@ -555,6 +556,8 @@ orderedfetchjoin_@1_@2(BAT *bn, BAT *l, BAT *r)
 	BATiter li = bat_iterator(l);
 	BATiter ri = bat_iterator(r);
 
+	if (bn == NULL)
+		return NULL;
 	dst = BUNfirst(bn);
 	base = BUNfirst(r);
 	offset = (ssize_t) (base - r->hseqbase);
@@ -588,6 +591,8 @@ defaultfetchjoin_@1_@2(BAT *bn, BAT *l, BAT *r)
 	BATiter ri = bat_iterator(r);
 
 
+	if (bn == NULL)
+		return NULL;
 	dst = BUNfirst(bn);
 	base = BUNfirst(r);
 	offset = (ssize_t) (base - r->hseqbase);
@@ -817,6 +822,8 @@ batfetchjoin(BAT *l, BAT *r, size_t estimate, bit swap, bit hitalways)
 		}
 #endif
 		bn = BATnew(@1->htype, @2->ttype, 0);
+		if (bn == NULL)
+			return NULL;
 		bn->hsorted = bn->tsorted = GDK_SORTED;
 		BATkey(bn, TRUE);
 		BATkey(BATmirror(bn), TRUE);
@@ -1658,9 +1665,8 @@ instead of l, and semijoin using binary search in r.
 @= semijoinbat
 	bn = BATnew(BAThtype(@1), BATttype(@1), MAX(BATTINY, MIN(BATcount(l), BATcount(r))));
 	ESTIDEBUG THRprintf(GDKout, "#%s.semijoinbat: estimated resultsize: " SZFMT "\n",@4,MAX(BATTINY, MIN(BATcount(l), BATcount(r))));
-	if (bn == NULL) {
+	if (bn == NULL) 
 		return bn;
-	}
 	BATkey(bn, BAThkey(@1));
 	BATkey(BATmirror(bn), BATtkey(@1));
 	bn->hsorted = @2;
@@ -2237,9 +2243,8 @@ BATantijoin(BAT *l, BAT *r)
 	}
 
 	bn = BATnew(BAThtype(l), BATttype(r), sz);
-	if (bn == NULL) {
+	if (bn == NULL) 
 		return bn;
-	}
 	if (sz == 0)
 		return bn;
 
@@ -2406,9 +2411,8 @@ BATcross(BAT *l, BAT *r)
 	}
 
 	bn = BATnew(BAThtype(l), BATttype(r), sz);
-	if (bn == NULL) {
+	if (bn == NULL) 
 		return bn;
-	}
 	if (sz == 0)
 		return bn;
 

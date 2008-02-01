@@ -201,10 +201,10 @@ BATloaddesc(str nme)
 		return NULL;
 	}
 	if (read(fd, &ver, sizeof(int)) != sizeof(int) ||
-	    ver > BUFSIZ ||
+	    ver < 0 || ver > (int)sizeof(hatm) ||
 	    read(fd, hatm, ver) != ver ||
 	    read(fd, &ver, sizeof(int)) != sizeof(int) ||
-	    ver > BUFSIZ ||
+	    ver < 0 || ver > (int)sizeof(tatm) ||
 	    read(fd, tatm, ver) != ver) {
 		if (b->hheap)
 			GDKfree(b->hheap);

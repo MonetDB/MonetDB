@@ -389,9 +389,11 @@ BAThash(BAT *b, size_t masksize)
 				GDKfree(h);
 			/* create the hash structures */
 			hp = (Heap *) GDKzalloc(sizeof(Heap));
-			hp->filename = GDKmalloc(strlen(nme) + 12);
-			sprintf(hp->filename, "%s.%chash", nme, b->batCacheid > 0 ? 'h' : 't');
-			if ((h = HASHnew(hp, ATOMtype(b->htype), BATcapacity(b), (size_t) mask)) == NULL) {
+			if (hp && (hp->filename = GDKmalloc(strlen(nme) + 12)) != NULL)
+				sprintf(hp->filename, "%s.%chash", nme, b->batCacheid > 0 ? 'h' : 't');
+			if (hp == NULL || 
+			    hp->filename == NULL ||
+			    (h = HASHnew(hp, ATOMtype(b->htype), BATcapacity(b), (size_t) mask)) == NULL) {
 				gdk_unset_lock(GDKhashLock(ABS(b->batCacheid) & BBP_BATMASK), "BAThash");
 				GDKfree(hp->filename);
 				GDKfree(hp);
@@ -518,17 +520,18 @@ BAT *
 HASHprint(BAT *b)
 {
 	BATiter bi = bat_iterator(b);
-#if SIZEOF_OID == SIZEOF_INT
-	BAT *bn = BATnew(BAThtype(b), TYPE_int, BATcount(b));
-#else
-	BAT *bn = BATnew(BAThtype(b), TYPE_lng, BATcount(b));
-#endif
+	BAT *bn;
 	BUN p, q;
 
+	if (!(b && b->H->hash))
+		return NULL;
+#if SIZEOF_OID == SIZEOF_INT
+	bn = BATnew(BAThtype(b), TYPE_int, BATcount(b));
+#else
+	bn = BATnew(BAThtype(b), TYPE_lng, BATcount(b));
+#endif
 	if (bn == NULL)
 		return NULL;
-	if (!(b && b->H->hash))
-		return 0;
 	BATloop(b, p, q) {
 		size_t i = HASHprobe(b->H->hash, BUNhead(bi, p));
 
@@ -562,7 +565,7 @@ HASHlist(Hash *h, size_t i)
 void
 HASHremove(BAT *b)
 {
-	if (b->H->hash) {
+	if (b && b->H->hash) {
 		bat p = VIEWhparent(b);
 		BAT *hp = NULL;
 
@@ -586,9 +589,12 @@ HASHremove(BAT *b)
 void
 HASHdestroy(BAT *b)
 {
-	HASHremove(b);
-	if (BATmirror(b))
-		HASHremove(BATmirror(b));
+	if (b) {
+		HASHremove(b);
+		if (BATmirror(b))
+			HASHremove(BATmirror(b));
+	
+	}
 }
 
 int

@@ -687,6 +687,7 @@ BBPexit(void)
 	if (!BBP)
 		return;		/* AARGH */
 
+	BBPrecycle_minsize(0);	/* clear the bat cache */
 	BBPlock("BBPexit");	/* stop all threads ever touching more descriptors */
 
 	/* free all memory (just for leak-checking in Purify) */
@@ -813,9 +814,9 @@ BBP_find(str nme, int lock)
 
 	if (i > 0) {
 		/* for tmp_X BATs, we already know X */
-		str s = BBP_logical(i);
+		str s;
 
-		if (i >= BBPsize || s == NULL || strcmp(s, nme)) {
+		if (i >= BBPsize || (s = BBP_logical(i)) == NULL || strcmp(s, nme)) {
 			i = 0;
 		}
 	} else if (*nme != '.') {
@@ -1027,6 +1028,8 @@ BBPcacheit(BAT *b)
 	int mode;
 	BAT *bm = (BAT *) GDKmalloc(sizeof(BAT));	/* alloc before lock to prevent trim problems */
 
+	if (!bm)
+		return ;
 	if (i) {
 		assert(i > 0);
 	} else {
@@ -1522,10 +1525,13 @@ int
 BBPreclaim(BAT *b)
 {
 	int lock = locked_by ? BBP_getpid() != locked_by : 1;
-	bat i = ABS(b->batCacheid);
+	bat i;
 	int reclaim_while_unloading = 0;
 	int ret = 0;
 
+	if (b == NULL)
+		return -1;
+ 	i = ABS(b->batCacheid);
 	if (lock)
 		gdk_set_lock(GDKswapLock(i), "BBPreclaim");
 
@@ -2819,6 +2825,8 @@ BBPbackup(BAT *b, bit subcommit)
 	/* determine location dir and physical suffix */
 	GDKfilepath(srcdir, BATDIR, s, NULL);
 	s = strrchr(srcdir, DIR_SEP);
+	if (!s)
+		return -1;
 	strcpy(nme, ++s);
 	srcdir[s - srcdir] = 0;
 

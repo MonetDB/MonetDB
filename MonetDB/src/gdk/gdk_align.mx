@@ -102,11 +102,12 @@ ALIGNundo(BAT *b)
 int
 ALIGNsetH(BAT *b1, BAT *b2)
 {
-	ssize_t diff = BUNfirst(b1) - BUNfirst(b2);
+	ssize_t diff;
 
 	BATcheck(b1, "ALIGNsetH: bat 1 required");
 	BATcheck(b2, "ALIGNsetH: bat 2 required");
 
+ 	diff = BUNfirst(b1) - BUNfirst(b2);
 	if (b2->halign == 0) {
 		b2->halign = OIDnew(1);
 		b2->batDirtydesc = TRUE;
@@ -338,11 +339,13 @@ The @#VIEWhead@ routine effortlessly projects out the tail column.
 BAT *
 VIEWhead(BAT *b)
 {
-	BAT *bn = VIEWhcreate(b);
-	BAT *bm = BATmirror(bn);
+	BAT *bn = VIEWhcreate(b), *bm;
 	BATstore *bs = (BATstore *) bn;
 
-	if (bn == NULL || bm == NULL)
+	if (bn == NULL)
+		return NULL;
+ 	bm = BATmirror(bn);
+ 	if (bm == NULL)
 		return NULL;
 	bm->H = bn->T = &bs->T;
 	bn->T->type = TYPE_void;
@@ -374,12 +377,13 @@ vision on the head column.
 BAT *
 VIEWcombine(BAT *b)
 {
-	BAT *bn = VIEWhcreate(b);
-	BAT *bm = BATmirror(bn);
+	BAT *bn = VIEWhcreate(b), *bm;
 
-	if (bn == NULL || bm == NULL)
+	if (bn == NULL)
 		return NULL;
-
+ 	bm = BATmirror(bn);
+	if (bm == NULL)
+		return NULL;
 	if (bn->htype != TYPE_void) {
 		bn->T = bn->H;
 		bm->H = bn->H;
@@ -400,15 +404,20 @@ for VIEWs).
 BAT *
 BATmaterializeh(BAT *b)
 {
-	int ht = b->htype;
-	size_t cnt = BATcapacity(b);
-	Heap head = b->H->heap;
-	BUN p = BUNfirst(b), q = BUNlast(b);
+	int ht;
+	size_t cnt;
+	Heap head;
+	BUN p, q;
 	oid h, *x;
 
-	assert(!isVIEW(b));
-	assert(cnt >= q - p);
 	BATcheck(b, "BATmaterialize: bat required");
+	assert(!isVIEW(b));
+	ht = b->htype;
+	cnt = BATcapacity(b);
+	head = b->H->heap;
+	p = BUNfirst(b); 
+	q = BUNlast(b);
+	assert(cnt >= q - p);
 	ALGODEBUG THRprintf(GDKout, "#BATmaterialize(%d);\n", (int) b->batCacheid);
 
 	if (!BAThdense(b) || ht != TYPE_void) {
@@ -509,60 +518,61 @@ want to reduce storage of the new BAT.
 BAT *
 VIEWreset(BAT *b)
 {
-	bat hp = VIEWhparent(b), tp = VIEWtparent(b);
+	bat hp, tp;
+	Heap head,tail, hh, th;
 
-	if (b && (hp || tp)) {
-		Heap head,tail, hh, th;
-		BAT *n = ((b) = BBP_cache(ABS((b)->batCacheid)));
+	if (b == NULL)
+		return NULL;
+	hp = VIEWhparent(b);
+	tp = VIEWtparent(b);
+	if (hp || tp) {
+		BAT *r = b, *n = ((b) = BBP_cache(ABS((b)->batCacheid)));
 		BAT *m = BATmirror(n);
 		BAT *v;
 		BATstore *bs = (BATstore *) n;
 		size_t cnt = BATcount(b) + 1;
 		str nme = BBP_physical(n->batCacheid);
 
+		assert(hp || !r->htype);
+		assert(tp || !r->ttype);
+
 		/* alloc heaps */
 		memset(&head, 0, sizeof(Heap));
-		head.filename = (str) GDKmalloc(strlen(nme) + 12);
-		sprintf(head.filename, "%s.head", nme);
-		if (n->htype && HEAPalloc(&head, cnt, Hsize(n)) < 0) {
-			GDKfree(head.filename);
-			head.filename = NULL;
-			return NULL;
-		}
 		memset(&tail, 0, sizeof(Heap));
-		tail.filename = (str) GDKmalloc(strlen(nme) + 12);
-		sprintf(tail.filename, "%s.tail", nme);
-		if (n->ttype && HEAPalloc(&tail, cnt, Tsize(n)) < 0) {
-			HEAPfree(&head);
-			GDKfree(tail.filename);
-			tail.filename = NULL;
-			return NULL;
-		}
 		memset(&hh, 0, sizeof(Heap));
+		memset(&th, 0, sizeof(Heap));
+		head.filename = (str) GDKmalloc(strlen(nme) + 12);
+		if (head.filename == NULL)
+			goto bailout;
+		sprintf(head.filename, "%s.head", nme);
+		if (n->htype && HEAPalloc(&head, cnt, Hsize(n)) < 0) 
+			goto bailout;
+		tail.filename = (str) GDKmalloc(strlen(nme) + 12);
+		if (tail.filename == NULL)
+			goto bailout;
+		sprintf(tail.filename, "%s.tail", nme);
+		if (n->ttype && HEAPalloc(&tail, cnt, Tsize(n)) < 0) 
+			goto bailout;
 		if (n->H->vheap) {
 			hh.filename = (str) GDKmalloc(strlen(nme) + 12);
+			if (hh.filename == NULL)
+				goto bailout;
 			sprintf(hh.filename, "%s.hheap", nme);
-			if (ATOMheap(n->htype, &hh, cnt) < 0) {
-				HEAPfree(&head);
-				HEAPfree(&tail);
-				GDKfree(hh.filename);
-				return NULL;
-			}
+			if (ATOMheap(n->htype, &hh, cnt) < 0) 
+				goto bailout;
 		}
-		memset(&th, 0, sizeof(Heap));
 		if (n->T->vheap) {
 			th.filename = (str) GDKmalloc(strlen(nme) + 12);
+			if (th.filename == NULL)
+				goto bailout;
 			sprintf(th.filename, "%s.theap", nme);
-			if (ATOMheap(n->ttype, &th, cnt) < 0) {
-				HEAPfree(&head);
-				HEAPfree(&tail);
-				HEAPfree(&hh);
-				GDKfree(th.filename);
-				return NULL;
-			}
+			if (ATOMheap(n->ttype, &th, cnt) < 0) 
+				goto bailout;
 		}
 
 		v = VIEWcreate(b, b);
+		if (v == NULL) 
+			goto bailout;
 
 		/* cut the link to your parents */
 		VIEWunlink(n);
@@ -604,10 +614,14 @@ VIEWreset(BAT *b)
 		/* unshare from parents heap */
 		if (hh.base) {
 			n->H->vheap = (Heap *) GDKmalloc(sizeof(Heap));
+			if (n->H->vheap == NULL)
+				goto bailout;
 			*n->H->vheap = hh;
 		}
 		if (th.base) {
 			n->T->vheap = (Heap *) GDKmalloc(sizeof(Heap));
+			if (n->T->vheap == NULL)
+				goto bailout;
 			*n->T->vheap = th;
 		}
 
@@ -627,8 +641,15 @@ VIEWreset(BAT *b)
 		/* insert all of v in b, and quit */
 		BATins(b, v, FALSE);
 		BBPreclaim(v);
+		b = r; 
 	}
 	return b;
+bailout:
+	HEAPfree(&head);
+	HEAPfree(&tail);
+	HEAPfree(&hh);
+	HEAPfree(&th);
+	return NULL;
 }
 
 @-
@@ -640,13 +661,18 @@ compensates for outliers.
 void
 VIEWbounds(BAT *view, size_t l, size_t h)
 {
-	bat hp = VIEWhparent(view);
-	bat tp = VIEWtparent(view);
+	bat hp, tp;
 	BAT *hb;
 	BAT *tb;
 	BAT *b;
 
-	if (view == NULL || (hp == 0 && tp == 0)) {
+	if (view == NULL){
+		GDKerror("VIEWbounds: bat required");
+		return;
+	}
+	hp = VIEWhparent(view);
+	tp = VIEWtparent(view);
+	if (hp == 0 && tp == 0) {
 		GDKerror("VIEWbounds: bat required");
 		return;
 	}

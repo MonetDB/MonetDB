@@ -1708,15 +1708,16 @@ static ssize_t
 udp_write(stream *s, const void *buf, size_t elmsize, size_t cnt)
 {
 	ssize_t res = 0, size = elmsize * cnt;
-	udp_stream *udp = s->stream_data.p;
-	int addrlen = sizeof(udp->addr);
+	udp_stream *udp;
+	int addrlen;
 
 	if (!s || s->errnr) 
 		return -1;
 
 	if (size == 0 || elmsize == 0)
 		return cnt;
-
+ 	udp = s->stream_data.p;
+ 	addrlen = sizeof(udp->addr);
 	errno = 0;
 	if ((res = sendto(udp->s, buf,
 #ifdef NATIVE_WIN32
@@ -1737,11 +1738,12 @@ udp_read(stream *s, void *buf, size_t elmsize, size_t cnt)
 	ssize_t res = 0, size = elmsize * cnt;
 	struct sockaddr_in from;
 	socklen_t fromlen = sizeof(struct sockaddr_in);
-	udp_stream *udp = s->stream_data.p;
+	udp_stream *udp;
 
 	if (!s || s->errnr) 
 		return(-1);
 
+	udp = s->stream_data.p;
 	errno = 0;
 	if ((res = recvfrom(udp->s, buf,
 #ifdef NATIVE_WIN32
@@ -2509,10 +2511,11 @@ buffer_create(size_t size)
 char *
 buffer_get_buf(buffer *b)
 {
-	char *r = b->buf;
+	char *r;
 
 	if (b->pos == b->len && (b->buf = realloc(b->buf, b->len+1)) == NULL) 
 		return NULL;
+	r = b->buf;
 	r[b->pos] = '\0';
 	b->buf = malloc(b->len);
 	b->len = b->buf ? b->len : 0;

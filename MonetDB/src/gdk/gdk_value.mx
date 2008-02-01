@@ -55,6 +55,8 @@ VALnew(void)
 {
 	ValPtr v = (ValPtr) GDKmalloc(sizeof(ValRecord));
 
+	if (v == NULL)
+		return NULL;
 	VALempty(v);
 	return v;
 }
