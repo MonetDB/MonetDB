@@ -1,3 +1,5 @@
+--set optimizer = 'inline,remap,evaluate,costModel,coercions,emptySet,accessmode,aliases,joinPath,accumulators,mergetable,deadcode,reduce,garbageCollector,multiplex';
+
 declare epsilon double;
 set epsilon=0.00001;
 
@@ -22,6 +24,26 @@ from alphatest
 where abs(expected - computed)>epsilon;
 
 ---------Spatial Zone Index-------------
+create table photoobj (
+    objID       bigint      not null, -- object Identifier in table
+    ra          float       not null, 
+    "dec"       float       not null,
+    mode        tinyint	    not null,
+    primary key (objID)
+    );
+
+insert into photoobj
+values( 687726014001184891,	193.754250579787,	1.4851688900683999,	0);
+insert into photoobj
+values( 687726014001184892,	193.755094586886,	1.4846298308572601,	0);
+insert into photoobj
+values( 687726014001184894,	193.75653243396599,	1.4825263586962001,	0);
+insert into photoobj
+values( 687726014001184895,	193.75663392621499,	1.61956881843685,	0);
+insert into photoobj
+values( 687726014001184896,	193.75664598583401,	1.6195802985663199,	0);
+
+
 create table ZoneIndex (
     objID       bigint         not null, -- object Identifier in table
     zone        int         not null, -- zone number (using 10 arcminu
@@ -30,29 +52,37 @@ create table ZoneIndex (
     x           float       not null, -- cartesian coordinates
     y           float       not null,
     z           float       not null,
-    margin      int         not null, -- "margin" or "native" elements, bit
+    mode        tinyint	    not null,       
+    margin      int         not null, 
     primary key (zone, ra, objID)
     );
 
+---Parameterizing the algo with zoneHeight
+create table ZoneHeight( "value" double not null); -- zone height in degrees.
+insert into ZoneHeight values(cast (0.1  as double));
+
+declare zHeight double;
+set zHeight = (select min("value") from ZoneHeight);
+
+
 insert into zoneindex
-values( 687726014001184891,	1,	193.754250579787,	1.4851688900683999,	-0.97099811213370246,	-0.23767817297968644,	0.025918185156838715,	0);
-insert into zoneindex
-values( 687726014001184892,	1,	193.755094586886,	1.4846298308572601,	-0.97099484767300204,	-0.2376925344085847,	0.0259087799579065,	0);
-insert into zoneindex
-values( 687726014001184894,	1,	193.75653243396599,	1.4825263586962001,	-0.97098980567114368,	-0.2377171276374572,	0.025872079748478348,	0);
-insert into zoneindex
-values( 687726014001184895,	1,	193.75663392621499,	1.61956881843685,	-0.97092650035194339,	-0.23770345222609343,	0.028263045025703246,	0);
-insert into zoneindex
-values( 687726014001184896,	1,	193.75664598583401,	1.6195802985663199,	-0.97092644481955426,	-0.23770365524011272,	0.028263245311723893,	0);
+     select objID,
+            cast(floor("dec"/zHeight) as int) as zone,
+            ra, "dec",
+              cos(radians("dec"))*cos(radians(ra)) as x,
+              cos(radians("dec"))*sin(radians(ra)) as y,
+              sin(radians("dec")) as z,
+              mode, 0 as margin
+      from photoobj;
 
 ------margins
 
 insert into zoneindex
-select objid,zone,ra-360.0,"dec",x,y,z,1 as margin
+select objid,zone,ra-360.0,"dec",x,y,z,mode,1 as margin
 from zoneindex where ra>=180.0;
 
 insert into zoneindex
-select objid,zone,ra+360.0,"dec",x,y,z,1 as margin
+select objid,zone,ra+360.0,"dec",x,y,z,mode,1 as margin
 from zoneindex where ra<180.0 and margin=0;
 
 -------------------------------------

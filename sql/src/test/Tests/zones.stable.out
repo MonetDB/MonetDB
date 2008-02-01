@@ -1,19 +1,22 @@
 stdout of test 'zones` in directory 'src/test` itself:
 
 
-# 11:50:13 >  
-# 11:50:13 >  Mtimeout -timeout 180 Mserver "--config=/ufs/fabian/scratch/monetdb/current/program-x86_64/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/fabian/scratch/monetdb/current/program-x86_64/lib/MonetDB:/ufs/fabian/scratch/monetdb/current/program-x86_64/lib/MonetDB/lib:/ufs/fabian/scratch/monetdb/current/program-x86_64/lib/MonetDB/bin" --set "gdk_dbfarm=/net/pegasus.ins.cwi.nl/export/scratch0/fabian/vtmp/mtest-current-monetdb-pegasus.ins.cwi.nl/sql/dbfarm" --set "sql_logdir=/net/pegasus.ins.cwi.nl/export/scratch0/fabian/vtmp/mtest-current-monetdb-pegasus.ins.cwi.nl/sql/log" --set "sql_logdir=/ufs/fabian/scratch/monetdb/current/program-x86_64/var/MonetDB/xquery_logs" --set mapi_port=35781 --set monet_prompt= --trace "--dbname=mTests_src_test" --dbinit="module(sql_server); sql_server_start();" ; echo ; echo Over..
-# 11:50:13 >  
+# 10:41:27 >  
+# 10:41:27 >   mserver5 "--config=/export/scratch1/milena/monet/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/export/scratch1/milena/monet/lib/MonetDB5:/export/scratch1/milena/monet/lib/MonetDB5/lib:/export/scratch1/milena/monet/lib/MonetDB5/bin" --set "gdk_dbfarm=/export/scratch0/milena/var/dbfarm" --set "sql_logdir=/export/scratch0/milena/var/dblogs/logs/sql"  --set mapi_open=true --set xrpc_open=true --set mapi_port=34832 --set xrpc_port=45144 --set monet_prompt= --trace  "--dbname=mTests_src_test" --set mal_listing=0 "--dbinit= include sql;" ; echo ; echo Over..
+# 10:41:27 >  
 
-# Monet Database Server V4.13.1
-# Copyright (c) 1993-2006, CWI. All rights reserved.
-# Compiled for x86_64-pc-linux-gnu/64bit with 64bit OIDs; dynamically linked.
-# Visit http://monetdb.cwi.nl/ for further information.
-
-printf("\nReady.\n");
+# MonetDB server v5.3.0, based on kernel v1.21.0
+# Serving database 'mTests_src_test'
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Copyright (c) 1993-2007 CWI, all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://aquarius.ins.cwi.nl:34832/
+# MonetDB/SQL module v2.21.0 loaded
 
 Ready.
-quit();
+#function user.main():void;
+#    clients.quit();
+#end main;
 
 Over..
 
@@ -33,6 +36,8 @@ Over..
 [ 1	]
 [ 1	]
 [ 1	]
+[ 1	]
+[ 5	]
 [ 5	]
 [ 0	]
 % .s # table_name
