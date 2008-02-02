@@ -450,9 +450,9 @@ str defaultPlan=
 	"aliases,"
 	/* "crack," */
 	"joinPath," 
-	"accumulators,"
 	"mergetable," 
 	"commonTerms,"
+	"accumulators,"
 	"deadcode,"
 	"reduce,"
 	"garbageCollector," 
