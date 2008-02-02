@@ -235,10 +235,12 @@ handled by the alias removal part
 						getBeginLifespan(span,getArg(p,0)) == i &&
 						getLastUpdate(span,getArg(p,1)) < i){
 							alias[getArg(p,0)]= alias[getArg(p,1)];
+/*
 							freeInstruction(p);
 							mb->stop--;
 							mb->stmt[mb->stop]=0;
 							n--;
+*/
 					}
 					j= 0; /* end of search */
 				}

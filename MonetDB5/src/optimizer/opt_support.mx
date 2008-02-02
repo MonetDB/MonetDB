@@ -1080,6 +1080,9 @@ hasSideEffects(InstrPtr p, int strict)
 {
 	if( getFunctionId(p) == NULL) return FALSE;
 
+	if ( getModuleId(p) == algebraRef &&
+		 getFunctionId(p) == reuseRef)
+			return TRUE;
 	if ( getModuleId(p) == batRef &&
 	       (getFunctionId(p) == insertRef ||
 		getFunctionId(p) == inplaceRef ||
