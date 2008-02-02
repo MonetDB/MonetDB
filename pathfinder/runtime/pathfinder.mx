@@ -81,7 +81,7 @@ if (not(isnil(CATCH_module_pftijah))) {
 }
 else {
     if (monet_environment.find("monet_welcome") = "yes")
-        printf("%c PF/Tijah module v0.3.0 loaded. http://dbappl.cs.utwente.nl/pftijah\n", int
+        printf("%c PF/Tijah module v0.5.0 loaded. http://dbappl.cs.utwente.nl/pftijah\n", int
 (35));
 }
 
