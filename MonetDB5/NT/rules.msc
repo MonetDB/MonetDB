@@ -19,7 +19,7 @@
 RULESMSC = $(MONETDB_PREFIX)\share\MonetDB\winrules.msc
 !INCLUDE $(RULESMSC)
 
-VERSION=5.3.0
+VERSION=5.5.0
 #       ^^^^^
 # Maintained via vertoo. Please don't modify by hand!
 # Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.

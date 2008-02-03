@@ -27,7 +27,7 @@ REQUIREMENTS
 
    -- MonetDB (the MonetDB main-memory database system)
       Pathfinder is quite tightly coupled to the MonetDB database system.
-      It depends on a version that is at least 4.21.0.
+      It depends on a version that is at least 4.22.0.
 
 
   Some libraries are used or even required by the Pathfinder compiler:

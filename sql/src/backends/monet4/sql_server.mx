@@ -1683,7 +1683,7 @@ proc sql_server_start() : void {
 
 sql_server_start();
 if (monet_environment.find("monet_welcome") = "yes") 
-    printf("%c MonetDB/SQL module v2.21.0 loaded\n", int(35));
+    printf("%c MonetDB/SQL module v2.23.0 loaded\n", int(35));
     #                              ^^^^^^
     # Maintained via vertoo. Please don't modify by hand!
     # Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
