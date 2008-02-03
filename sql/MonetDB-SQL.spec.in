@@ -32,11 +32,11 @@ BuildRoot: %(mktemp -ud %{_tmppath}/%{name}-%{version}-%{release}-XXXXXX)
 %{!?_with_monetdb5: %{!?_without_monetdb5: %define _with_monetdb5 --with-monetdb5}}
 
 %if !%{?buildsystem}
-BuildRequires: MonetDB-devel >= 1.21
+BuildRequires: MonetDB-devel >= 1.22
 #                               ^^^^
 # Maintained via vertoo. Please don't modify by hand!
 # Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
-BuildRequires: MonetDB-client-devel >= 1.20
+BuildRequires: MonetDB-client-devel >= 1.22
 #                                      ^^^^
 # Maintained via vertoo. Please don't modify by hand!
 # Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
@@ -61,12 +61,12 @@ This package contains some common files for the %{name}-server4 and
 %package server4
 Summary: MonetDB4 SQL server modules
 Group: Applications/Databases
-Requires: MonetDB4-server >= 4.21
+Requires: MonetDB4-server >= 4.22
 #                            ^^^^
 # Maintained via vertoo. Please don't modify by hand!
 # Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
 %if !%{?buildsystem}
-BuildRequires: MonetDB4-server-devel >= 4.21
+BuildRequires: MonetDB4-server-devel >= 4.22
 #                                       ^^^^
 # Maintained via vertoo. Please don't modify by hand!
 # Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
@@ -86,12 +86,12 @@ This package contains the SQL frontend for MonetDB4.
 %package server5
 Summary: MonetDB5 SQL server modules
 Group: Applications/Databases
-Requires: MonetDB5-server >= 5.3
+Requires: MonetDB5-server >= 5.4
 #                            ^^^
 # Maintained via vertoo. Please don't modify by hand!
 # Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
 %if !%{?buildsystem}
-BuildRequires: MonetDB5-server-devel >= 5.3
+BuildRequires: MonetDB5-server-devel >= 5.4
 #                                       ^^^
 # Maintained via vertoo. Please don't modify by hand!
 # Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
