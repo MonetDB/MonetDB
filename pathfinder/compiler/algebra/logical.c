@@ -986,11 +986,13 @@ PFla_project_ (const PFla_op_t *n, unsigned int count, PFalg_proj_t *proj)
 
         /* see if we have duplicate attributes now */
         for (j = 0; j < i; j++)
-            if (ret->sem.proj.items[i].new == ret->sem.proj.items[j].new)
+            if (ret->sem.proj.items[i].new == ret->sem.proj.items[j].new) {
+                fprintf (stderr, "foo\n");
                 PFoops (OOPS_FATAL,
                         "projection results in duplicate attribute `%s' "
                         "(attributes %i and %i)",
                         PFatt_str (ret->sem.proj.items[i].new), i+1, j+1);
+            }
     }
 
     return ret;

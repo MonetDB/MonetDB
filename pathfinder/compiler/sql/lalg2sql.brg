@@ -2910,12 +2910,11 @@ reduce (PFla_op_t * p, int goalnt)
 
         /* Rel:    disjunion (Rel, Rel) */
         case 20:
+        /* Rel:    intersect (Rel, Rel) */
+        case 21:
         /* Rel:    difference (Rel, Rel) */
         case 22:
         {
-            /* FIXME: the translation won't work if the same operator
-               is referenced twice (as the left environment is
-               overwritten -- see joins) */
             PFsql_t * (*op) (const PFsql_t *, const PFsql_t *);
             PFsql_t *selectlist1 = NULL;
             PFsql_t *selectlist2 = NULL;
@@ -2986,11 +2985,13 @@ reduce (PFla_op_t * p, int goalnt)
                     }
             }
 
-            if (p->kind == la_disjunion)
-                op = PFsql_union;
-            else
-                op = PFsql_difference;
-
+            switch (p->kind) {
+                case la_disjunion:  op = PFsql_union;      break;
+                case la_difference: op = PFsql_difference; break;
+                case la_intersect:  op = PFsql_intersect;  break;
+                default: assert(!"set operator expected");
+            };
+                  
             /* dump the operator binding */
             execute (comment ("binding due to set operation"));
             execute (bind (table_def (newtable, columnlist),
@@ -3004,12 +3005,6 @@ reduce (PFla_op_t * p, int goalnt)
             /* mark node p as bound */
             BOUND(p) = true;
         }   break;
-
-        /* Rel:    intersect (Rel, Rel) */
-        case 21:
-            /* FIXME: implementation is missing */
-            assert (!"missing");
-            break;
 
         /* Rel:    distinct (Rel) */
         case 23:
@@ -3580,11 +3575,18 @@ reduce (PFla_op_t * p, int goalnt)
             col_env_add_full (COLMAP(p), iter, iter_ty,
                               col_env_lookup (COLMAP(L(p)), iter, iter_ty),
                               col_env_lookup_step (
-                                  COLMAP(L(p)), iter, iter_ty),
+                                  COLMAP(L(p)),
+                                  p->sem.string_join.iter,
+                                  type_of (p, p->sem.string_join.iter)),
                               col_env_lookup_step_leaf (
-                                  COLMAP(L(p)), iter, iter_ty));
+                                  COLMAP(L(p)),
+                                  p->sem.string_join.iter,
+                                  type_of (p, p->sem.string_join.iter)));
+                                      
             col_env_add (COLMAP(p), item, item_ty,
-                         col_env_lookup (COLMAP(L(p)), item, item_ty));
+                         col_env_lookup (COLMAP(L(p)),
+                                         p->sem.string_join.item,
+                                         type_of (p, p->sem.string_join.item)));
 
             /* copy fromlist */
             from_list_copy (FROMLIST(p), FROMLIST(L(p)));

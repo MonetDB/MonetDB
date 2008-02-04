@@ -141,6 +141,7 @@ enum PFsql_kind_t {
 
     , sql_union             /* UNION ALL expression */
     , sql_diff              /* EXCEPT ALL expression */
+    , sql_intersect         /* INTERSECT ALL expression */
 
     , sql_lit_int           /* literal integer */
     , sql_lit_lng           /* literal 64 bit integer */
@@ -620,6 +621,12 @@ PFsql_t * PFsql_union (const PFsql_t *a, const PFsql_t *b);
  * `EXCEPT ALL' operator.
  */
 PFsql_t * PFsql_difference (const PFsql_t *a, const PFsql_t *b);
+
+/**
+ * Create a SQL tree node representing the SQL
+ * `INTERSECT ALL' operator.
+ */
+PFsql_t * PFsql_intersect (const PFsql_t *a, const PFsql_t *b);
 
 /* .......... Literal construction .......... */
 

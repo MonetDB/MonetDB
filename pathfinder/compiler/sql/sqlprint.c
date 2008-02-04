@@ -97,8 +97,9 @@ static char *ID[] = {
       [sql_alias_bind]        = "alias_bind",
       [sql_on]                = "on",
       [sql_left_outer_join]   = "left_outer_join",
-      [sql_union]             = "union",
-      [sql_diff]              = "diff",
+      [sql_union]             = "UNION ALL",
+      [sql_diff]              = "EXCEPT ALL",
+      [sql_intersect]         = "INTERSECT ALL",
       [sql_lit_int]           = "lit_int",
       [sql_lit_lng]           = "lit_lng",
       [sql_lit_dec]           = "lit_dec",
@@ -935,20 +936,15 @@ print_fullselect (FILE *f, PFsql_t *n, int i)
             break;
 
         case sql_union:
+        case sql_diff:
+        case sql_intersect:
             print_fullselect (f, L(n), i);
             indent (f, i);
-            fprintf (f, "UNION ALL");
+            fprintf (f, "%s", ID[n->kind]);
             indent (f, i);
             print_fullselect (f, R(n), i);
             break;
             
-        case sql_diff:
-            print_fullselect (f, L(n), i);
-            indent (f, i);
-            fprintf (f, "EXCEPT ALL");
-            indent (f, i);
-            print_fullselect (f, R(n), i);
-            break;
         case sql_alias_bind:
         case sql_tbl_name:
         case sql_schema_tbl_name:

@@ -558,7 +558,7 @@ PFsql_where_list_ (unsigned int count, const PFsql_t **list)
 
 
 
-/* .......... Union .......... */
+/* .......... Set operators .......... */
 
 /**
  * Create a SQL tree node representing the SQL
@@ -570,10 +570,6 @@ PFsql_union (const PFsql_t *a, const PFsql_t *b)
     return wire2 (sql_union, a, b);
 }
 
-
-
-/* .......... Difference .......... */
-
 /**
  * Create a SQL tree node representing the SQL
  * `EXCEPT ALL' operator.
@@ -584,7 +580,15 @@ PFsql_difference (const PFsql_t *a, const PFsql_t *b)
     return wire2 (sql_diff, a, b);
 }
 
-
+/**
+ * Create a SQL tree node representing the SQL
+ * `INTERSECT ALL' operator.
+ */
+PFsql_t *
+PFsql_intersect (const PFsql_t *a, const PFsql_t *b)
+{
+    return wire2 (sql_intersect, a, b);
+}
 
 /* .......... Literal construction .......... */
 
