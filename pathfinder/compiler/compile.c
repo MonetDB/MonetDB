@@ -885,6 +885,7 @@ PFcompile_MonetDB (char *xquery, char* url, char** prologue, char** query, char*
             /* algebra MIL/MAL generation could/should also use it.. */
             proot = PFheuristic_index (proot);
         }
+        PFns_init ();
         PFqname_init ();
         PFns_resolve (proot);
         PFextract_options (proot);
