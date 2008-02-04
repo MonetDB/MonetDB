@@ -318,6 +318,36 @@ DESCRIPTION:
 returns all nodes on the @1-sibling axis of the ctx-nodes duplicate free for each group."
 @
 @m
+@(
+TDOD:
+@:ws_step_down(descendant)@
+@:ws_step_down(descendant_or_self)@
+@)
+@:ws_step_down(child)@
+
+@= ws_step_down
+.COMMAND ws_@1(BAT[oid,oid] l_prune,
+                   BAT[oid,oid] l_pre,
+                   BAT[oid,int] pre_size,
+                   BAT[oid,oid] r_pre,
+                   bit one_iter, bit one_ctx,
+                   oid min_iter, oid max_iter,
+                   bit no_iter_order): BAT[oid,oid] = PFws_@1;
+"PARAMETERS:
+BAT[void,oid] l_prune (grouping relation; sorted on tail within each ctx group)
+BAT[void,oid] l_pre (context set; sorted on tail)
+BAT[void,int] pre_size (from the working set)
+BAT[void,oid] r_pre (sorted list of result candidate OIDs in the tail)
+bit           one_iter (only one iter?)
+bit           one_ctx  (only one ctx node, i.e., the same for all iters?)
+oid           min_iter,max_iter (smallest and largest iter id)
+bit           no_iter_order (descendant & descendant_or_self, only: 
+               result will be ordered on item, but not sub-ordered on iter)
+DESCRIPTION:
+returns all pairs of positions/IDs ([l_pre.head, r_pre.head]) such that
+(l_pre.tail STEP r_pre.tail) holds and {[l_prune.tail, r_pre.tail]} is distinct."
+@
+@m
 @:ll_cmd(descendant)@
 @:ll_cmd(descendant_or_self)@
 @:ll_cmd(child)@
