@@ -1255,17 +1255,17 @@ match (PFla_op_t *a, PFla_op_t *b)
           return false;
     }
 
-    PFoops (OOPS_FATAL, "this should not haben (match)");
+    PFoops (OOPS_FATAL, "this should not occur (match)");
     return false;
 }
 
 /**
- * Check if col1 of littbl1 is a subset of col2 of
- * littbl2.
+ * Checks the equivalence of two columns
+ * of different literal table operators.
  */
 static bool
-issubset (unsigned int col1, unsigned int col2,
-          PFla_op_t *littbl1, PFla_op_t *littbl2)
+column_eq (unsigned int col1, unsigned int col2,
+           PFla_op_t *littbl1, PFla_op_t *littbl2)
 {
     assert (littbl1->kind == la_lit_tbl);  
     assert (littbl2->kind == la_lit_tbl);
@@ -1285,21 +1285,6 @@ issubset (unsigned int col1, unsigned int col2,
             return false;
     } 
     return true;
-}
-
-/**
- * Checks the equivalence of two columns
- * of different literal table operators.
- */
-static bool
-column_eq (unsigned int col1, unsigned int col2,
-           PFla_op_t *littbl1, PFla_op_t *littbl2)
-{
-    assert (littbl1->kind == la_lit_tbl);  
-    assert (littbl2->kind == la_lit_tbl);
-
-    return (issubset (col1, col2, littbl1, littbl2) &&
-            issubset (col2, col1, littbl2, littbl1));
 }
 
 /**
@@ -1941,15 +1926,9 @@ new_operator (PFla_op_t *n)
                                  ACTATT (R(n), n->sem.merge_adjacent.iter_in),
                                  ACTATT (R(n), n->sem.merge_adjacent.pos_in),
                                  ACTATT (R(n), n->sem.merge_adjacent.item_in), 
-                                 create_unq_name (
-                                     CSE(R(n))->schema,
-                                     n->sem.merge_adjacent.iter_res),
-                                 create_unq_name (
-                                     CSE(R(n))->schema,
-                                     n->sem.merge_adjacent.pos_res),
-                                 create_unq_name (
-                                     CSE(R(n))->schema,
-                                     n->sem.merge_adjacent.item_res));
+                                 ACTATT (R(n), n->sem.merge_adjacent.iter_in),
+                                 ACTATT (R(n), n->sem.merge_adjacent.pos_in),
+                                 ACTATT (R(n), n->sem.merge_adjacent.item_in));
             break; 
 
         case la_roots:
@@ -1993,7 +1972,7 @@ new_operator (PFla_op_t *n)
                                    ACTATT (R(n), n->sem.trace_map.inner),
                                    ACTATT (R(n), n->sem.trace_map.outer));
 
-        case la_string_join:
+        case la_string_join: {
             return PFla_fn_string_join (
                        CSE(L(n)), CSE(R(n)),
                        ACTATT (L(n), n->sem.string_join.iter),
@@ -2001,11 +1980,14 @@ new_operator (PFla_op_t *n)
                        ACTATT (L(n), n->sem.string_join.item),
                        ACTATT (R(n), n->sem.string_join.iter_sep),
                        ACTATT (R(n), n->sem.string_join.item_sep),
-                       create_unq_name (CSE(R(n))->schema,
+                       ACTATT (L(n), n->sem.string_join.iter),
+                       ACTATT (L(n), n->sem.string_join.item));
+
+/*                       create_unq_name (CSE(R(n))->schema,
                                         n->sem.string_join.iter_res),
                        create_unq_name (CSE(R(n))->schema,
-                                        n->sem.string_join.item_res));
-
+                                        n->sem.string_join.item_res)); */
+        }
         case la_dummy:
             PFoops (OOPS_FATAL,
                     "dummy operators are not allowed");
@@ -2144,9 +2126,8 @@ adjust_operator (PFla_op_t *ori, PFla_op_t *cse)
         case la_disjunion:
         case la_intersect:
         case la_difference:
-        {
             actmap = actatt_map_copy (ACT(L(ori)));
-        }   break; 
+            break; 
 
         case la_distinct:
             actmap = actatt_map_copy (ACT(L(ori)));
