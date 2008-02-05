@@ -758,6 +758,7 @@ This section contains the wrappers to re-use the implementation
 section of the blob modules from MonetDB 4.3
 @-
 @c
+@{
 int
 BLOBnequal(blob *l, blob *r)
 {

@@ -28,7 +28,7 @@ the target variable to link it with the instruction of interest.
 If optimizers decide to move things around, it can still be
 localized at runtime.
 @example
-_26{rows=31:lng} := algebra.uselect(_22,nil:sht,2,false,false);
+_26@{rows=31:lng@} := algebra.uselect(_22,nil:sht,2,false,false);
 mdb.collect(_26);
 @end example
 

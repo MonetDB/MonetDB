@@ -19,7 +19,6 @@
 @v 1.0
 
 @* Temporal Module
-@T
 The goal of this module is to provide adequate functionality for storing
 and manipulated time-related data. The minimum requirement is that data
 can easily be imported from all common commercial RDBMS products.

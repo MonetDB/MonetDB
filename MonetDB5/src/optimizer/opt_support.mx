@@ -767,6 +767,7 @@ Take into account that variables may be declared inside
 a block. This can be calculated using the BARRIER/CATCH
 and EXIT pairs.
 @c
+@{
 static int
 countBlocks(MalBlkPtr mb, int start, int stop){
 	int i,cnt =0;
@@ -810,6 +811,7 @@ allTargetsVisible(MalBlkPtr mb, Lifespan span, int pc,int qc){
 	}
 	return TRUE;
 }
+@}
 @-
 The safety property should be relatively easy to determine for
 each MAL function. This calls for accessing the function MAL block

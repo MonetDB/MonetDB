@@ -37,6 +37,7 @@ comment "Replace select with join select";
 #define match3(X,M) (getModuleId(X) && getModuleId(X)==M) 
 
 @c
+@{
 #include "mal_config.h"
 #include "opt_joinselect.h"
 #include "mal_interpreter.h"	/* for showErrors() */
