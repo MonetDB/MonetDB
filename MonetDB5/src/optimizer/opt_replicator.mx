@@ -41,24 +41,38 @@ address OPTreplicator
 comment "Replicator code injection";
 
 module replicator;
-pattern replicator.prelude(dst:bat[:any,:any]):void
-address REPprelude
-comment "Prepare for re-using an intermediate result.";
 
-pattern replicator.select(dst:bat[:any_1,:any_2],low:any_2,hgh:any_2):bat[:any_1,:any_2]
+pattern replicator.select(b:bat[:any_1,:any_2],value:any_2,sname:str,tname:str,cname:str):bat[:any_1,:any_2]
 address REPselect
 comment "The overloaded select operator for replicated operations";
-pattern replicator.uselect(dst:bat[:any_1,:any_2],low:any_2,hgh:any_2):bat[:any_1,:any_2]
+
+pattern replicator.select(b:bat[:any_1,:any_2],low:any_2,hgh:any_2,sname:str,tname:str,cname:str):bat[:any_1,:any_2]
+address REPselect
+comment "The overloaded select operator for replicated operations";
+
+pattern replicator.select(b:bat[:any_1,:any_2],low:any_2,hgh:any_2,li:bit,hi:bit,sname:str,tname:str,cname:str):bat[:any_1,:any_2]
+address REPselect
+comment "The overloaded select operator for replicated operations";
+
+pattern replicator.uselect(b:bat[:any_1,:any_2],value:any_2,sname:str,tname:str,cname:str):bat[:any_1,:oid ]
 address REPuselect
 comment "The overloaded uselect operator for replicated operations";
 
-command init():void
-address REPinit
-comment "Initialize replica table"
+pattern replicator.uselect(b:bat[:any_1,:any_2],low:any_2,hgh:any_2,sname:str,tname:str,cname:str):bat[:any_1,:oid]
+address REPuselect
+comment "The overloaded uselect operator for replicated operations";
 
-command dump():void
+pattern replicator.uselect(b:bat[:any_1,:any_2],low:any_2,high:any_2,li:bit,hi:bit,sname:str,tname:str,cname:str):bat[:any_1,:oid] 
+address REPuselect
+comment "The overloaded uselect operator for replicated operations";
+
+command replicator.init():void
+address REPinit
+comment "Initialize replica table";
+
+command replicator.dump():void
 address REPdump
-comment "Dump summary of replica table for potential re-use benefits"
+comment "Dump summary of replica table for potential re-use benefits";
 
 @h
 #ifndef _OPT_REPLICATOR_
@@ -69,10 +83,8 @@ comment "Dump summary of replica table for potential re-use benefits"
 
 opt_export str REPselect(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 opt_export str REPuselect(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-opt_export str REPprelude(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-
 opt_export str REPinit(void);
-opt_export str REPdump(void);
+opt_export str REPdump(int *ret);
 
 /* #define DEBUG_OPT_REPLICATOR  */
 @-
@@ -81,13 +93,15 @@ opt_export str REPdump(void);
 #include "opt_replicator.h"
 
 typedef struct REPLICAREC {
-        bat srcbid, resbid;                /* partition BAT, back into BBP */
+	str sname, tname, cname;	/* source BAT schema, table, column */
+        bat resbid;		/* intermediate result BAT */
 
-        ValRecord low,hgh; /* selected tail range */
-        bit li, hi; 	/* inclusive bits */
-        size_t cnt;     /* how many tuples */
-	dbl cost;	/* how much time was spent to produce */
-	MalBlkPtr malblk; /* mal instruction block*/
+        ValRecord low,hgh;	/* selected tail range */
+        bit li, hi;		/* inclusive bits */
+        size_t cnt;     	/* how many tuples */
+	dbl cost;		/* how much time was spent to produce */
+	int ucnteq,ucntsub;	/* usage counts equality and subset */
+	MalBlkPtr malblk;	/* mal instruction block*/
 } *Replica, ReplicaRec;
 
 static Replica repltable = NULL;
@@ -118,18 +132,45 @@ REPinit(){
 	return msg;
 }
 
+static void printReplica(stream *f, int i){
+
+	Replica r = repltable+i;
+	if (r==NULL) GDKerror("Empty replica element");
+	stream_printf(f,"Source BAT: %s, %s, %s\n", r->sname, r->tname, r->cname);
+	stream_printf(f,"Selection ["); VALprint(f,&r->low);
+	stream_printf(f,":"); VALprint(f,&r->hgh);
+	stream_printf(f,"] inclusive [%d,%d]\n", r->li,r->hi);
+	stream_printf(f,"Cnt %d cost %f \n", r->cnt,r->cost);
+	stream_printf(f,"Usage: equality %d, subset %d \n", r->ucnteq,r->ucntsub);
+}
+
+str
+REPdump(int *ret)
+{
+	int i;
+	(void) ret;
+	stream_printf(GDKout,"Number of replicas %d\n",replnr);
+	for( i=0; i<replnr; i++)
+		printReplica(GDKout, i);
+	return MAL_SUCCEED;
+}
 
 static int
 OPTreplicatorImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	int i, actions=0;
-	int *pc;
-	InstrPtr q,*old;
+	InstrPtr *old;
 	int limit,slimit;
+	sht v,v1;
+	sht *ps, *pt, *pc ;
 
 	(void) stk;
-	pc= (int*) alloca(sizeof(int)* mb->vtop); /* to find last assignment */
-	memset((char*) pc, 0, sizeof(int)* mb->vtop);
+	ps= (sht*) alloca(sizeof(sht)* mb->vtop); /* bind schema */
+	memset((char*) ps, 0, sizeof(sht)* mb->vtop);
+	pt= (sht*) alloca(sizeof(sht)* mb->vtop); /* bind table */
+	memset((char*) pt, 0, sizeof(sht)* mb->vtop);
+	pc= (sht*) alloca(sizeof(sht)* mb->vtop); /* bind column */
+	memset((char*) pc, 0, sizeof(sht)* mb->vtop);
 
 	old= mb->stmt;
 	limit= mb->stop;
@@ -138,17 +179,20 @@ OPTreplicatorImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 
 	for (i = 0; i<limit; i++){
 		p= old[i];
-		if( (getModuleId(p)== sqlRef && getFunctionId(p)==bindRef) )
-			pc[getArg(p,0)]= i;
+		if( (getModuleId(p)== sqlRef && getFunctionId(p)==bindRef) ){
+			v = getArg(p,0); /* bound var */
+			ps[v]= getArg(p,1);
+			pt[v]= getArg(p,2);
+			pc[v]= getArg(p,3); 
+		}
 		if( getModuleId(p)== algebraRef && 
 			( getFunctionId(p) == uselectRef ||
 			  getFunctionId(p) == selectRef
 			) && pc[getArg(p,1)]){
-				q=copyInstruction(getInstrPtr(mb,pc[getArg(p,1)]));
-				setModuleId(q,replicatorRef);
-				setFunctionId(q,preludeRef);
-				q= pushArgument(mb,q,getArg(p,1));
-				pushInstruction(mb,q);
+				v1 = getArg(p,1);
+				p= pushArgument(mb,p,ps[v1]);
+				p= pushArgument(mb,p,pt[v1]);
+				p= pushArgument(mb,p,pc[v1]); 
 				setModuleId(p,replicatorRef);
 				pushInstruction(mb,p);
 		} else
@@ -173,19 +217,74 @@ opt_export str ALGreplicator(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 str
 REPuselect(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
+	int *ret, *bid;
+	ptr low,hgh;
+	bit t=TRUE,*li=&t,*hi=&t;
+	BAT *b,*bn;
+	lng cnt,clk;
+	Replica r;
+	sht argcnt = pci->argc;
+	
 	(void) mb;
-	(void) stk;
-	(void) pci;
-	throw(MAL,"replicator.uselect","nyi");
-}
-str
-REPprelude(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	(void) mb;
-	(void) stk;
-	(void) pci;
+	ret= (int*) getArgReference(stk, pci,0);
+	bid= (int*) getArgReference(stk, pci,1);
+	low= (ptr) getArgReference(stk, pci,2);
+	if( argcnt>=7)
+		hgh= (ptr) getArgReference(stk, pci,3);
+	if( argcnt==9){
+		li= (bit*) getArgReference(stk, pci,4);
+		hi= (bit*) getArgReference(stk, pci,5);
+	}
+	
+	
+	if ((b = BATdescriptor(*bid)) == NULL) {
+                throw(MAL, "REPuselect", "Cannot access descriptor");
+        }
+	
+	{int _tpe= ATOMstorage(b->ttype);
+	 if( _tpe == TYPE_str || _tpe > TYPE_str ){
+	 	if(low== 0 || *(str*)low==0) low = (str)str_nil;
+			else low = *(str *)low;
+		if(hgh== 0 || *(str*)hgh==0) hgh = (str)str_nil;
+			else hgh = *(str *)hgh;
+	}}
+
+	clk= GDKusec();
+	bn = BAT_select_(b, low, hgh, *li, *hi, FALSE, FALSE);
+	clk= GDKusec()-clk;
+
+        BBPreleaseref(b->batCacheid);
+        if (bn) {
+                if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
+                *ret = bn->batCacheid;
+                BBPincref(bn->batCacheid,TRUE);
+        }
+        else throw(MAL, "REPuselect", "GDKerror");
+
+	/* decide about replica */
+	/* Currently just keep stat */
+
+	cnt= BATcount(bn);
+	assureSpace();
+	r = repltable + replnr;
+	r->resbid = *ret;
+	r->sname = GDKstrdup((str) getArgReference(stk, pci,argcnt-3));
+	r->tname = GDKstrdup((str) getArgReference(stk, pci,argcnt-2));
+	r->cname = GDKstrdup((str) getArgReference(stk, pci,argcnt-1));
+
+	VALset(&r->low,b->ttype,(ValPtr) low);
+	VALset(&r->hgh,b->ttype,(ValPtr) hgh);
+	r->li = *li;
+	r->hi = *hi; 
+	r->cnt = cnt;
+	r->cost = clk;
+	replnr++;
+	BBPkeepref(*ret);
+
 	return MAL_SUCCEED;
 }
+
+
 @-
 The overloaded algebra operator simply calles the
 underlying implementation and collects statistics on the
@@ -197,34 +296,59 @@ REPselect(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int *ret, *bid;
 	ptr low,hgh;
 	bit t=TRUE,*li=&t,*hi=&t;
-	BAT *b;
+	BAT *b,*bn;
 	lng cnt,clk;
 	Replica r;
-	str msg= MAL_SUCCEED;
+	sht argcnt = pci->argc;
+
 	
 	(void) mb;
 	ret= (int*) getArgReference(stk, pci,0);
 	bid= (int*) getArgReference(stk, pci,1);
 	low= (ptr) getArgReference(stk, pci,2);
-	hgh= (ptr) getArgReference(stk, pci,3);
-	if( pci->argc==6){
+	if( argcnt>=7)
+		hgh= (ptr) getArgReference(stk, pci,3);
+	if( argcnt==9){
 		li= (bit*) getArgReference(stk, pci,4);
 		hi= (bit*) getArgReference(stk, pci,5);
 	}
 	
+	
+	if ((b = BATdescriptor(*bid)) == NULL) {
+                throw(MAL, "REPselect", "Cannot access descriptor");
+        }
+	
+	{int _tpe= ATOMstorage(b->ttype);
+	 if( _tpe == TYPE_str || _tpe > TYPE_str ){
+	 	if(low== 0 || *(str*)low==0) low = (str)str_nil;
+			else low = *(str *)low;
+		if(hgh== 0 || *(str*)hgh==0) hgh = (str)str_nil;
+			else hgh = *(str *)hgh;
+	}}
+
 	clk= GDKusec();
-	msg= ALGselectInclusive(ret, bid, low,hgh,li,hi);
+	bn = BAT_select_(b, low, hgh, *li, *hi, TRUE, FALSE);
 	clk= GDKusec()-clk;
 
-	/* time for the decision */
-	if ( (b=BATdescriptor(*ret)) == NULL)
-		throw(MAL,"replicator.select","can not access BAT");
-	cnt= BATcount(b);
-	/* keep stat */
+        BBPreleaseref(b->batCacheid);
+        if (bn) {
+                if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
+                *ret = bn->batCacheid;
+                BBPincref(bn->batCacheid,TRUE);
+        }
+        else throw(MAL, "REPselect", "GDKerror");
+
+	/* decide about replica */
+	/* Currently just keep stat */
+
+	cnt= BATcount(bn);
 	assureSpace();
 	r = repltable + replnr;
-	r->srcbid = *bid;
 	r->resbid = *ret;
+	r->sname = GDKstrdup((str) getArgReference(stk, pci,argcnt-3));
+	r->tname = GDKstrdup((str) getArgReference(stk, pci,argcnt-2));
+	r->cname = GDKstrdup((str) getArgReference(stk, pci,argcnt-1));
+
 	VALset(&r->low,b->ttype,(ValPtr) low);
 	VALset(&r->hgh,b->ttype,(ValPtr) hgh);
 	r->li = *li;
@@ -232,8 +356,8 @@ REPselect(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	r->cnt = cnt;
 	r->cost = clk;
 	replnr++;
-	BBPunfix(b->batCacheid);
+	BBPkeepref(*ret);
 
-	return msg;
+	return MAL_SUCCEED;
 }
 @}

@@ -42,8 +42,7 @@ function user.main():void;	# 0  (main:void)
 end main;	# 3  
 function sql.qry():void;
     b:bat[:int,:int]  := sql.bind("schema","r","t");
-    b:bat[:int,:int]  := replicator.prelude("schema","r","t",b);
-    t := replicator.select(b,1,10);
+    t := replicator.select(b,1,10,"schema","r","t");
 end qry;
 
 # 12:06:28 >  
