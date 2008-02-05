@@ -286,6 +286,7 @@ dynamic optimization, something that is not known at the MAL level.
 [The current optimizer also generates a factory, that should be
 done here and upon explicit request]
 @c
+@{
 str
 RUNinline(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
