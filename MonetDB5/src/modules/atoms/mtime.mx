@@ -286,7 +286,7 @@ address daytime_tostr;
 
 @+ Timestamp
 An absolute point of time, as formed by the combination of a date a daytime in GMT
-e.g. 1999-01-31@23:59:59:000. GMT is the universal time at the Greenwich meridian,
+e.g. 1999-01-31@@23:59:59:000. GMT is the universal time at the Greenwich meridian,
 without any daylight savings time (DST). As such GMT times are 'absolute' (continuous,
 without hour jumps as in DST), so accurate time difference computations can be performed.
 
@@ -308,6 +308,7 @@ timezone. The default local timezone is just GMT+00, but it can be set
 arbitrarily.
 # not stored as a lng !
 @mal
+@{
 atom timestamp :lng;
 command fromstr():timestamp 
 address timestamp_fromstr;
@@ -365,7 +366,7 @@ iff @b{D} in [-31,..,-1], @b{W} in [-7,..,-1]
 
 @item exact @b{D}th day of month @b{M}.
 iff @b{D} in [1,..,31], @b{W}=0;
-@\end itemize
+@end itemize
 
 The parameters @b{M} is a month number between 1 and 12, and @b{T} is a time
 to the minute detail just like the time offset of the timezone.
@@ -777,7 +778,6 @@ command msec{unsafe}():lng
 address MTIMEmsec
 comment "get time of day in msec since 1-1-1970.";
 
-@{
 @+ Prelude section
 Upon intialization of the time module, we have to
 initialize some variables, e.g. nils and the box with predefined
