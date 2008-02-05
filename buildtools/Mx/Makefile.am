@@ -1,7 +1,4 @@
-bin_PROGRAMS = Mx prefixMxFile idxmx
-bin_SCRIPTS = epstogif
-Mx_SOURCES = Mx.c Index.c Def.c Form.c Tok.c Code.c Display.c Print.c Io.c \
-	     Sys.c disclaimer.c  Tex2Html.c Mx.h MxFcnDef.h
-prefixMxFile_SOURCES = prefixMxFile.c disclaimer.c
-idxmx_SOURCES = idxmx.c
+bin_PROGRAMS = Mx 
+Mx_SOURCES = Mx.c Def.c Form.c Tok.c Code.c Display.c Print.c Io.c \
+	     Sys.c disclaimer.c Mx.h MxFcnDef.h
 EXTRA_DIST = warning.gif

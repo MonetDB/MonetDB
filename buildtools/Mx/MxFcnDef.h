@@ -91,16 +91,6 @@ extern void FormSec(char *, int, int);
 extern void FormPar(char *);
 extern void FormIf(Def *);
 
-/* Index.c
- */
-extern void InitIndex(void);
-extern void IndexTable(int, char *);
-extern void IndexEntry(int, char *, int, int);
-extern void SortIndex(void);
-extern void PrCont(void);
-extern void PrIndex(void);
-extern void PrItable(int);
-
 /* Io.c
  */
 extern char *FileName(char *);
@@ -176,8 +166,3 @@ extern void DbArgv(char **);
 
 extern void addextension(char *);
 
-/* TeX2Html 
- */
-
-extern void bib_print(void);
-extern void latex2html(char *, int, int);
