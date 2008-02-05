@@ -18,7 +18,6 @@
 @a N.J. Nes, P. Boncz, Arjen P. de Vries
 @t The Arithmetics Module
 @* Introduction
-@T
 This module implements the arithmetic operations on the built-in types,
 {\tt chr}, {\tt bte}, {\tt sht}, {\tt int}, {\tt wrd}, {\tt flt}, {\tt dbl} and {\tt lng}.
 All combinations are implemented. Limited combinations are implemented
@@ -107,7 +106,6 @@ whether a value is nil).
 	@:mel_isnil_op(str)@
 
 @- comparisons { <, <=, =, !=, >=, > }
-@T
 The {\tt mel\_comp\_ops} Mx macro implements the mel interface to the
 arithmetic operations. Note that comparison operators with unequal
 operands are already supported in the kernel, but are not nearly as fast,
@@ -149,7 +147,6 @@ operands are already supported in the kernel, but are not nearly as fast,
 	@:mel_comp_ops(str,str)@
 
 @- computation of { +, -, *, /, % }
-@T
 The {\tt mel\_arith\_ops} Mx macro implements the mel interface to the
 arithmetic operations.  The macro expects four parameters, two input
 atomic types and two result types, the last of which for modulo and
@@ -520,7 +517,7 @@ int_srand(int *seed)
 	return GDK_SUCCEED;
 }
 
-@T
+@
 The {\tt c\_comp} and {\tt c\_comp\_ops} macros implement the mil comparison
 operations.
 
@@ -687,7 +684,7 @@ int @1_comp_between(bit *retval, @1 *v, @1 *low, @1 *high)
 	}
 	return GDK_SUCCEED;
 }
-@T
+@
 The {\tt c\_arith\_ops} implement the arithmetic operations on the given type.
 The {\tt c\_arith\_ops} macro gets three arguments, two input types and a
 result type.

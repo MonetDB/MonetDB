@@ -1257,7 +1257,6 @@ but rather discard the complete result and return an error.
 }
 
 @- Optimized Special Multiplex Operators
-@T
 The following special multiplex operators are supported:
 \begin{itemize}
 \item {\tt ifthen(bit, val) -> (bit==true)?val:none}
@@ -1356,7 +1355,6 @@ CMDifthenelse(int argc, ValPtr argv)
 }
 
 @* Set Aggregate Implementation
-@T
 Set aggregates are the MIL language construct
 	{\tt \{Y\}(bat-expr)}
 that allow you to to interpret a
@@ -1387,7 +1385,7 @@ its generic form, because it implies translating one command into
 N calls to some operator that needs a unary BAT. When N is very large,
 and the assembled BATs are small, the assembling and call-overhead
 will be substantial.
-@T
+
 Power users are therefore requested to overload their much-used set-
 aggregates Y by {\tt \{Y\}()} user-defined commands that have the same
 semantics.
@@ -1476,7 +1474,6 @@ interpret_setaggr(str name, int argc, ValPtr argv, ValPtr res, YYSTREE tt, int s
 	(void) name;
 
 @- argument check
-@T
 The function can have two parameters. The first is obligatory, and contains
 the {\tt bat[ht,tt]}. The second is the extent {\tt bat[ht,any]} and may
 be omitted; in which case the operators are executed on all unique

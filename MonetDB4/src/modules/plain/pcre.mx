@@ -18,7 +18,6 @@
 @a N. Nes
 @t PCRE - Perl-compatible regular expressions
 @v 0.1
-@T
 The  PCRE library is a set of functions that implement regular expres-
 sion pattern matching using the same syntax  and  semantics  as  Perl,
 with  just  a  few  differences.  The  current  implementation of PCRE

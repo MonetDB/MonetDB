@@ -206,7 +206,6 @@ This is a stable sort."
 "Fill the tail column with a constant value."
 
 @+ Sets
-@T
 Sets in Monet can be viewed in two ways:
 \begin{itemize}
 \item by looking at both columns of a BAT together (Set-, or s-operators).
@@ -219,7 +218,6 @@ For this reason, all standard set operations come in two flavors:
 \end{itemize}
 @
 
-@T
 Operands provided are:
 \begin{itemize}
 \item {\tt [s,k]unique} (bat[any::1,any::2]) : bat[any::1,any::2]\\
@@ -519,7 +517,6 @@ over it.
 "has fast implementation: histogram(bat.reverse)"
 
 @- Default Min and Max
-@T
 Implementations a generic Min and Max routines get declared first. The
 {\tt min()} and {\tt max()} routines below catch any tail-type.
 The type-specific routines defined later are faster, and will
@@ -537,7 +534,6 @@ Give the lowest tail value. Error on empty BATs."
 			: any::2 = CMDmaxany; "
 Give the highest tail value. Error on empty BATs."
 @+ Type-Specific Sum, Product, Max and Min
-@T
 For X $\in$ \{ bte,sht,int,wrd,flt,dbl,lng \},	we define (using the {\em aggregate}
 macro):
 \begin{itemize}
@@ -1141,7 +1137,6 @@ the issues as we developed the kernel routines.
 No Prolog code is used and the information is retained
 as it illustrates many of the issues.
 @+ Modeling With Properties
-@T
 The Monet kernel performs {\em run-time optimizations}. To choose between
 alternative algorithms in a sensible way, it maintains knowledge about
 each BAT, sometimes as a {\em BAT property}, sometimes as two
@@ -1156,7 +1151,6 @@ column ({\tt ordered(BAT)}). Tail columns can be described by
 using the mirror BAT with the minus operator ({\tt ordered(-BAT)}).
 
 @- Column Properties
-@T
 \begin{description}
 \item[{\tt ordered(BAT) : bit}]
 	TRUE if the head column is stored in ascending order, else FALSE.
@@ -1179,7 +1173,6 @@ using the mirror BAT with the minus operator ({\tt ordered(-BAT)}).
 \end{description}
 
 @- BAT properties
-@T
 \begin{description}
 \item[{\tt size(BAT) : int}]
 	The (estimated) length of a column.
@@ -1193,7 +1186,6 @@ using the mirror BAT with the minus operator ({\tt ordered(-BAT)}).
 \end{description}
 
 @- Property Propagation Rules
-@T
 At database creation time, the properties of the BATs in the database
 can be derived directly from the database schema.
 
@@ -1212,7 +1204,6 @@ This module specifies full property propagation rules for the entire set
 of standard algebraic MIL operators.
 
 @- Kernel vs Model Properties
-@T
 The properties managed by the model are a superset of the ones maintained
 run-rime by the query. The reason for this follows:
 
@@ -1231,7 +1222,6 @@ and {\tt distinct()} properties were introduced into the model,
 although they do not occur in the Monet kernel at run-time.
 
 @- Cost Functions
-@T
 With the property propagation rules in hand, for each algebraic operator,
 split out for each different algorithmic strategy in each operator, it is
 a small step to a full cost model. In the last section, cost functions
@@ -1258,7 +1248,6 @@ MIL algebra primitives. Special Prolog clauses also exist for introducing
 a data model (that is, persistent BATs) in the model.
 
 @- Data Definition
-@T
 We quickly sketch the Prolog clauses that can be used to declare
 an object-oriented data model, mapped on Monet BATs, in the
 Prolog cost model:
@@ -1302,7 +1291,6 @@ random assumptions.
 \end{itemize}
 
 @- MIL to Prolog
-@T
 For each execution order, we give a mil-like Prolog script. The
 first line tpcd() clause instantiates the tpcd data model.
 The other lines correspond 1-1 with MIL assignments statements,
@@ -1328,7 +1316,6 @@ the SWI/Prolog compiler wants you to do anyway.
      the standard synonym {\tt table\_attr\_} (underscore appended).}
 
 @- Bugs
-@T
 We should package this program into a utility that eats MIL
 directly.  It would be an attractive idea to have it callable
 as an extension module from MIL directly.

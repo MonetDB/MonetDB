@@ -20,7 +20,6 @@
 @t The "string" module
 
 @* Introduction
-@T
 Strings can be created in many ways. Already in the built-in operations
 each atom can be cast to a string using the str(atom) mil command.
 The string module gives the possibility of construction string as a
@@ -257,7 +256,6 @@ proc space(int c) : str {
 #endif
 
 @+ UTF-8 Handling
-@T
 UTF-8 is a way to store Unicode strings in zero-terminated byte sequences, which you can e.g.
 strcmp() with old 8-bit Latin-1 strcmp() functions and which then gives the same results as doing
 the strcmp() on equivalent Latin-1 and ASCII character strings stored in simple one-byte sequences.

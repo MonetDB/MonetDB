@@ -20,7 +20,6 @@
 @v 1.0
 
 @* Introduction
-@T
 The goal of this module is to provide adequate functionality for storing
 and manipulated time-related data. The minimum requirement is that data
 can easily be imported from all common commercial RDBMS products.
@@ -31,7 +30,6 @@ conceptual problems and hard-to-solve bugs that stem from these problems.
 The starting point of this module are SQL 92 and the ODBC time-related data types.
 Also, some functionalities have been imported from the time classes of the Java
 standard library.
-@T
 This module introduces four basic types and operations on them:
 \begin{description}
 \item[date] a date in the Gregorian calendar, e.g. 1999-JAN-31
@@ -58,7 +56,6 @@ of the local timezone is plain GMT).
 \end{description}
 
 @- Limitations
-@T
 The valid ranges of the various data types are as follows:
 \begin{description}
 \item[min and max year]
@@ -159,7 +156,6 @@ would just set the string name of the tzone.
 .MODULE monettime;
 
 @- date atom
-@T
 Monet atoms can have multiple {\em parse formats}. One of these formats is
 chosen as the {\em print format}.
 
@@ -204,7 +200,6 @@ in a string.
 
 @- daytime atom
 @+ Daytime atom
-@T
 A valid time of day to the detail of milliseconds, like 23:59:59:000
 {\small
 \begin{verbatim}
@@ -236,7 +231,6 @@ with: HOUR = integer between 0 and 23
 
 
 @- timestamp
-@T
 An absolute point of time, as formed by the combination of a date a daytime in GMT
 e.g. 1999-01-31@23:59:59:000. GMT is the universal time at the Greenwich meridian,
 without any daylight savings time (DST). As such GMT times are 'absolute' (continuous,
@@ -273,7 +267,7 @@ arbitrarily.
 .OPERATOR0 (timestamp) "<=" (timestamp) : bit = timestamp_comp_LE;  "timestamp smaller-or-equal test (!DS2.2)"
 .OPERATOR0 (timestamp) ">=" (timestamp) : bit = timestamp_comp_GE;  "timestamp greater-or-equal test (!DS2.2)"
 
-@T
+@
 When creating a timestamp from a date and daytime, a timezone should be specified
 (if timezone is omitted, the local timezone is assumed). If a timezone is specified,
 it is used to convert the date and time in that timezone to GMT, which is the internal
@@ -284,7 +278,6 @@ such date and time combinations. In those case, we act as if it was the first
 occurrence (still within DST).
 
 @- tzone
-@T
 A timezone determines a {\em time offset} from GMT with format
 [-] HOUR ':' MINUTES, with HOUR between [0:23] and MINUTES between [0:59].
 
@@ -356,7 +349,6 @@ Out-of range result values are represented by the nil.
 	"create a tzone as an hour difference from GMT and a DST. (!DS2.2)"
 
 @- Time/date decomposition
-@T
 There are routines that decompose a date and routines that decompose a daytime.
 For decomposing a timestamp, there are routines that decompose it in a date
 and daytime. The bulk variants are also provided to simplify code
@@ -418,7 +410,6 @@ generation for SQL and to improve speed.
 	"extract minutes from rule (!DS2.2)."
 
 @- Time/date arithmetic
-@T
 We choose to represent intervals of time as numbers of days (as int, a 32-bits integer)
 and numbers of milliseconds (as lng, a 64-bits integer). Using standard integer types
 facilitates computation with these amounts of time (you can use all normal integer

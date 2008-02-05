@@ -20,7 +20,6 @@
 @v 1.0
 
 @+ Introduction
-@T
 This module introduces the decimal atom to monet. Decimals are intended to
 represent highly complex decimal numbers in a flexible way. Decimal
 numbers consist of a {\em sign}, {\em number} and {\em scale} in the following
@@ -245,7 +244,6 @@ These commands are internal to the procedures in the load section.
 
 @{
 @+ Implementation
-@T
 There were three important design aspects for the decimal atom:
 \begin{description}
 \item[fixed or variable-size]
@@ -296,7 +294,6 @@ typedef struct {
 #endif /* _DECIMAL_H_ */
 
 @-
-@T
 Valid numbers have minimally 1 and maximally 16384 digits.  The valid scales are between
 [-16384,16384]. There are two special values:
 \begin{description}
@@ -1440,12 +1437,10 @@ decimal_istenfold(bit *ret, decimal *val)
 }
 
 @- arithmetic
-@T
 Computer hardware does not provide built-in support for arbitrarily large numbers.
 The iterative algorithms employed here stem directly from Peter's primary school.
 
 @- plus and minus
-@T
 plus and minus algorithms assume positive numbers. Other cases are handled
 as follows:
 \begin{verbatim}

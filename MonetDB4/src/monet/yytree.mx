@@ -618,7 +618,7 @@ Myysubstitute_iter(YYSTREE t, int argc, ValPtr argv)
 @- Tree-guided Garbage Collection
 The Monet Interpreter (mis)uses the syntax tree structures to guide the
 garbage collection process. This is because:
-@T
+
 \begin{itemize}
 \item {\em it is possible}. MIL has call-by value parameters. Only return
 values are a problem, from the garbage collection point of view. Functions

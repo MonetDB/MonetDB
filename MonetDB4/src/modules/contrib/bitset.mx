@@ -19,10 +19,8 @@
 @a Menzo Windhouwer
 @v 1.0
 @* Introduction
-@T
 
 @* Implementation
-@T
 
 @+ MEL definition
 @m
@@ -121,7 +119,7 @@ typedef int bitset;
 @- Atom commands
 @c
 
-@T
+@
 {\bf{\tt fromstr(str):bitset}}
 
 Create a BitSet from a string
@@ -151,7 +149,7 @@ bitset_fromstr(char *src, int *len, bitset **atom)
 
 }
 
-@T
+@
 {\bf{\tt tostr(bitset):str}}
 
 Create a string from a BitSet
@@ -211,7 +209,7 @@ bitset_tostr(char **dst, int *len, bitset *atom)
 @- Constructors
 @c
 
-@T
+@
 {\bf{\tt newBitset(int):bitset}}
 
 Create a new BitSet from an existing integer.
@@ -232,7 +230,7 @@ newBitset1(bitset *res, int *theBits)
 
 }
 
-@T
+@
 {\bf{\tt newBitset():bitset}}
 
 Create a new empty BitSet.
@@ -256,7 +254,7 @@ newBitset2(bitset *res)
 @- Accessors
 @c
 
-@T
+@
 {\bf{\tt bitset\_clearBit(bitset,int):bitset}}
 
 Clear the specified bit in this BitSet.
@@ -279,7 +277,7 @@ bitset_clearBit(bitset *res, bitset *theBitSet, int *theBit)
 }
 
 
-@T
+@
 {\bf{\tt bitset\_flipBit(bitset,int)}}
 
 Flip the specified bit in this BitSet.
@@ -301,7 +299,7 @@ bitset_flipBit(bitset *res, bitset *theBitSet, int *theBit)
 
 }
 
-@T
+@
 {\bf{\tt bitset\_getBit(bitset,int):bit}}
 
 Get the specified bit from this BitSet.
@@ -325,7 +323,7 @@ fprintf(GDKout,"bitset_getBit(%d,%d) result: %d %s\n",*theBitSet,*theBit,*res,*r
 
 }
 
-@T
+@
 {\bf{\tt bitset\_setBit(bitset,int)}}
 
 Set the specified bit from this BitSet.
@@ -347,7 +345,7 @@ bitset_setBit(bitset *res, bitset *theBitSet, int *theBit)
 
 }
 
-@T
+@
 {\bf{\tt bitset\_and(bitset,bitset):bitset}}
 
 AND this BitSet with an other BitSet.
@@ -364,7 +362,7 @@ bitset_and(bitset *res, bitset *theBitSet, bitset *otherBitSet)
 
 }
 
-@T
+@
 {\bf{\tt bitset\_or(bitset,bitset):bitset}}
 
 OR this BitSet with an other BitSet.
@@ -381,7 +379,7 @@ bitset_or(bitset *res, bitset *theBitSet, bitset *otherBitSet)
 
 }
 
-@T
+@
 {\bf{\tt bitset\_xor(bitset,bitset):bitset}}
 
 XOR this BitSet with an other BitSet.
@@ -398,7 +396,7 @@ bitset_xor(bitset *res, bitset *theBitSet, bitset *otherBitSet)
 
 }
 
-@T
+@
 {\bf{\tt bitset\_not(bitset):bitset}}
 
 NOT this BitSet.
@@ -415,7 +413,7 @@ bitset_not(bitset *res, bitset *theBitSet)
 
 }
 
-@T
+@
 {\bf{\tt bitset\_toInt(bitset):int}}
 
 Convert this BitSet to an integer.

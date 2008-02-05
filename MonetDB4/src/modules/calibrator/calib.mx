@@ -21,7 +21,6 @@
 @* Synopsis
 The Calibrator is microbenchmark to analyze a computers (cache-) 
 memory system and extract the following parameters:
-@T
 \begin{itemize}
 \item number of cache levels
 \item for each cache level:
@@ -65,7 +64,6 @@ PROC calib_init(lng max_range) : void {
 @m
 .END calib;
 @-
-@T
 Run {\tt calib_init()} once, then extract the results with {\tt calib_info()} into a BAT.
 @{
 @-

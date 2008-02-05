@@ -28,7 +28,7 @@ Only the standard types {\tt bte}, {\tt sht}, {\tt int}, {\tt wrd}, {\tt lng}, {
 @m
 .MODULE bat_arith;
 
-@T
+@
 \begin{verbatim}
 	mel_operation
 	@1:	bte, sht, int, wrd, lng, flt, dbl arithmetic type

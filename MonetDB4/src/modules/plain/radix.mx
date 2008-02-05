@@ -28,7 +28,6 @@ hand, and in the next section go into detail on how these algorithms
 are applied in Monet's join processing strategy.
 
 @+ The Memory Story
-@T
 Computer RAM carries the acronym Random Access Memory, indicating that
 the memory access speed is independent of memory location. While this
 is still (mostly) true, the imbalance in speed improvements between CPU
@@ -73,7 +72,6 @@ relational DBMS products has indeed shown that CPUs are stalled for most of
 their time on memory cache misses.
 
 @- Optimizing Memory Access during Join
-@T
 We focus here on improving the memory access performance of the join
 operator in order to gain performance. This is relevant, because the
 most popular main-memory join algorithm is hash-join, which exhibits a
@@ -138,7 +136,6 @@ poses an even lower bound on the size of Hi than the number of cache lines.
 This makes radix-cluster even more beneficial on those platforms.
 
 @+ The CPU Story
-@T
 Modern CPUs are called {\em super-scalar}, by which is meant that the CPU
 has two mechanisms for parallel processing:
 \begin{enumerate}
@@ -211,7 +208,6 @@ instructions to keep a whole array of independent pipelines busy (assuming, for 
 minute, that we solved our first problem, memory access).
 
 @- The CPU optimization problem
-@T
 Many independent studies show that CPU resource usage during most DBMS loads is awful,
 plagued by low prediction rates (and high number of cache misses). This indicates that
 typical DBMS software has a nature of being full of if-statements and branches,
@@ -243,7 +239,6 @@ with and without these optimization techniques enabled in order to monitor
 their effectiveness.
 
 @* Join Processing Optimized for Memory/CPU cost
-@T
 We now address the issue of optimizing generic join processing for optimal usage of
 CPU resources and memory hardware on super-scalar CPUs featuring long pipelines and
 out-of-order speculative execution and memory subsystems that consist of deep hierarchies
@@ -261,7 +256,6 @@ Without loss of generality we assume that the "larger" table has the same amount
 tuples than the "smaller" table.
 
 @+ The Monet Approach
-@T
 In the standard approach this query would be executed in Monet with the following MIL statements:
 \begin{verbatim}
 01
@@ -309,7 +303,6 @@ do not fit the memory cache. Then, we discuss what happens if even the smaller\_
 its hash-table does not fit anymore.
 
 @- The Role of Sorting in improving Memory Access
-@T
 If the BATs storing the columns of the "larger" table do not fit the memory cache anymore,
 the positional joins in the last Y statements of the MIL script will start to generate cache
 misses. This is caused by the fact that the OIDs in the tail of the res\_larger BATs are
@@ -377,7 +370,6 @@ types, we hash first). Hashing is not necessary due to absence of value-skew on 
 absence of hashing allows us to use radix-cluster as radix-sort.
 
 @- Partitioned Hash Join
-@T
 We now discuss the case that even the smaller\_key BAT with its hash structure does not fit the
 smallest cache. What happens then in the join-phase? Since the hash-join algorithm exhibits a random
 access pattern, compulsory cache misses will start to appear up to the point that each access to
@@ -539,7 +531,6 @@ BZ  res_bZ := join(res_larger_sorted, larger_bZ);
 \end{verbatim}
 
 @+ The Relational Approach
-@T
 A cache-conscious join in a relational DBMS would first radix-cluster both the smaller and larger table,
 where in the process it would project on just the selected columns. As the relational model does not
 separate its algebraic actions by column, as Monet in MIL does, it cannot use the technique of type-expansion
@@ -1570,7 +1561,6 @@ M4_RDX_pax_blocksize_get(int *ret)
 
 
 @+ Radix Cluster
-@T
 In radix cluster we want to deliver one new BAT that consists
 of a consecutive memory area (like all BATs do) with the tuples
 clustered on a certain radix. To do this correctly in one scan
@@ -2351,7 +2341,6 @@ M4_RDX_radix_count2(BAT **res, BAT *b, int *shift, int *radix)
 }
 
 @+ Phash Join
-@T
 Joins two clustered inputs with partitioned hash-join. The main innovation of this
 implementation is to avoid the (int % mask) and replace it with shifts and masks.
 The % takes 40 cycles in modern CPUs while the >>, and, xor take one. Moreover;
@@ -2838,7 +2827,6 @@ M4_RDX_radix_join_xh(BAT **res, BAT *l, BAT *r)
 
 
 @+ Radix Decluster
-@T
 Radix decluster reclusters a BAT that is partially radix-clustered on tail by converting
 its non-sorted OID head column into a sorted and densely ascending void column. The tail
 itself does not need to contain the partially sorted values; in fact we do not even look
@@ -3021,7 +3009,6 @@ M4_RDX_radix_decluster_m(BAT **res, BAT *b, BAT *cnts)
 }
 
 @- radix_decluster
-@T
 intends to improve performance by using a cheaper positional join:
 	join(bat[void,oid], bat[void,T])
 instead of

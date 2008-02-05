@@ -20,7 +20,6 @@
 @t TCP/IP Communication
 
 @* Introduction
-@T
 With this module you can establish TCP/IP connections between Mservers,
 and pass BATs {\em or any other MIL value} asynchronously between them.
 Mode of operation:
@@ -732,7 +731,6 @@ TCPraise(SOCKET fd, str name)
 
 
 @- the connection waiter
-@T
 is a thread created individually for each opened TCP/IP connection.
 It waits for requests that can be one of three different things:
 \begin{itemize}

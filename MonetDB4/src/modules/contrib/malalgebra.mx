@@ -19,7 +19,6 @@
 @v 1.0
 @t Work around internal select and join algorithm selection
 @* Introduction
-@T
 Too many bugs.
 
 @m

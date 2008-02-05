@@ -19,7 +19,6 @@
 @t Timers and Timed Interrupts
 
 @* Introduction
-@T
 This module handles various signaling/timer functionalities.
 The Monet interface supports two timer commands: {\tt alarm} and {\tt sleep}.
 Their argument is the number of seconds to wait before the timer goes off.

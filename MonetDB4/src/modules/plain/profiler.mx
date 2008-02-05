@@ -25,7 +25,6 @@ are a few extra tests for each interpreter call. A substantial delay will
 be incurred when the event records should be produced as well.
 To limit the output to a subset of the events you can set a filter on
 the kind and function name. A convenient filter set is the following
-@T
 \begin{verbatim}
 setFilter("proc","*");
 setFilter("command","*");
@@ -204,7 +203,6 @@ setFilterCmd(int *res, str left, str right)
 
 @-
 
-@T
 \begin{tabular}{| l| l|}\hline
 maxrss     &the maximum resident set size utilized (in kilobytes).\\
 minflt     &the number of page faults serviced without any I/O\\

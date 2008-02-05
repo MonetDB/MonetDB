@@ -18,7 +18,6 @@
 @v 1.0
 @a Peter Boncz, M.L. Kersten
 @* Binary Association Tables
-@T
 This module contains all commands that are of use when managing Binary
 Association Tables (BATs). The relational operations you can execute
 on BATs have the form of a @[<a href="../algebra/index.html">neat algebra</a>@.
@@ -176,7 +175,6 @@ The appended bats tail can not be set key-ed.
 .COMMAND inplace( BAT[void,any::1] o, BAT[oid,any::1] d, bit force ) : BAT[void,any::1] = bat_inplace_force; "inplace replace values on the given locations"
 
 @- BAT properties
-@T
 Monet maintains a number of {\em properties} on each BAT that is used to steer tactical
 query optimization (i.e. choosing a good algorithms for a particular algebra command).
 
@@ -371,7 +369,6 @@ By default, both bits in the {\tt debugmask} are off, which gives fastest perfor
  'b@hashloop(v)..' iterates over all BUNs [$h,$t] of BAT b where ($h = val)."
 
 @- BAT I/O, Persistency
-@T
 The BAT Buffer Pool (BBP) manages all known BATs. It administers
 their logical and physical names and a reference count. BATs can
 be {\em persistent}, {\em transient} or {\em session}. The BBP also manages
@@ -428,7 +425,6 @@ allocated arena gets to be large, BATs may be swapped out.
 
 
 @- Heap Specific Commands
-@T
 BATs are stored in memory in a number of Heap objects. A heap is nothing
 more than a contiguous range of memory. Bats are saved to disk by just writing
 away their image. This approach without pointer swizzling makes it possible
@@ -1801,7 +1797,6 @@ CMDset_seqbase(BAT **r, BAT *b, oid *o)
 }
 
 @+ Page-wise BAT remappings
-@T
 The XML node storage scheme of MonetDB/XQuery needs some extra kernel support. 
 
 \begin{itemize}
@@ -1871,7 +1866,6 @@ with seqbases 0@0, which is an idempotent join. This case now returns a view at
 zero cost.
 
 @- Remapped Copy
-@T
 CMDremap makes a copy of a bat, putting the logical 'pages' (REMAP_PAGE_SIZE tuples) in an 
 alternative order, specified by a map. It is optimized to use copy-on-write memory 
 mappings to make cheap copies, when possible.

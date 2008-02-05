@@ -62,7 +62,7 @@ We compress actual parameter types (argc,argv) of a command in a so-called
 'signature bitstring'. This representation is specifically targeted to
 providing signature equality checks at very high speed. This is achieved by
 making sure the bit string can be compared as an array of 32-bit words.
-@T
+
 The signatures contain, in a bit sequence, descriptions for all parameters.
 Each parameter starts with a length field of 4 bits. This can encode
 values between 0-13 (14/15 are the special values MONETSIG\_BAT/MONETSIG\_BATCONST
@@ -836,7 +836,7 @@ primitives CATCH* look after garbage collecting these results.
 @- MIL functor interpretation
 Basic MIL functors with multiple parameters (builtins were handled separately
 above). All of which may be string derefences ((*nme)(), {*nme}(), [*nme]())
-@T
+
 When a functor-tree is inside a loop, it gets executed multiple times.
 Evaluation of a MIL functor (be it a command, proc, set aggregate or multiplex)
 needs to go through a phase of {\em function resolution}. This involves finding
