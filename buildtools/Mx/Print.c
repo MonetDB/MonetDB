@@ -203,7 +203,6 @@ PrChr(char c)
 			break;
 		case '{':
 		case '}':
-		case '$':
 		case '@':
 			ofile_printf("@%c", c);
 			break;
