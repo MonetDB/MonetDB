@@ -21,6 +21,7 @@
 The sql statement b.x <= a.z <= b.y, could be implemented using too thetajoins.
 But that results in very large intermediates.
 
+@{
 @h
 #ifndef GDK_RANGEJOIN_H
 #define GDK_RANGEJOIN_H
@@ -136,6 +137,8 @@ break;
 		}
 	}
 }
+@-
+@}
 @+ Bandjoin
 A non-equi join of two relations R and S is called a Band-join if
 the join predicate requires the values of R to fall within a given range.
