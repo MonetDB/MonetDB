@@ -2204,13 +2204,13 @@ main ideas:
 
 and then benchmark the d*mn thing (also missing in the previous exercise) :
 
-module(alarm);
-bbp_batcache_minsize(wrd(256));
-@{ var t := time(), i := 0; while((i :+= 1) < 100000) bat(int,int); print(time() - t); @}
-[ 490 ]
-bbp_batcache_minsize(wrd(0));
-@{ var t := time(), i := 0; while((i :+= 1) < 100000) bat(int,int); print(time() - t); @}
-[ 847 ]
+ module(alarm);
+ bbp_batcache_minsize(wrd(256));
+ @{ var t := time(), i := 0; while((i :+= 1) < 100000) bat(int,int); print(time() - t); @}
+ [ 490 ]
+ bbp_batcache_minsize(wrd(0));
+ @{ var t := time(), i := 0; while((i :+= 1) < 100000) bat(int,int); print(time() - t); @}
+ [ 847 ]
 
 so with caching *some* MIL programs can be nearly twice as fast (optimized compile),
 though I expect the gains to be smaller in general.
