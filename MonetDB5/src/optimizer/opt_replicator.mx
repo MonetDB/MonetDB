@@ -158,11 +158,13 @@ REPdump(int *ret)
 static int
 OPTreplicatorImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
-	int i, actions=0;
+	int i, actions=0, si;
 	InstrPtr *old;
 	int limit,slimit;
 	sht v,v1;
 	sht *ps, *pt, *pc ;
+	ValPtr sv;
+
 
 	(void) stk;
 	ps= (sht*) alloca(sizeof(sht)* mb->vtop); /* bind schema */
@@ -190,9 +192,15 @@ OPTreplicatorImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			  getFunctionId(p) == selectRef
 			) && pc[getArg(p,1)]){
 				v1 = getArg(p,1);
-				p= pushArgument(mb,p,ps[v1]);
+				sv = VALnew();
+                                VALcopy(sv,&getVar(mb,ps[v1])->value);
+                                si = defConstant(mb, TYPE_str, sv);
+				p= pushArgument(mb,p,si);
+
 				p= pushArgument(mb,p,pt[v1]);
-				p= pushArgument(mb,p,pc[v1]); 
+                                p= pushArgument(mb,p,pc[v1]);
+
+ 
 				setModuleId(p,replicatorRef);
 				pushInstruction(mb,p);
 		} else
@@ -217,7 +225,7 @@ opt_export str ALGreplicator(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 str
 REPuselect(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int *ret, *bid;
+	int *ret, *bid, tpe;
 	ptr low,hgh;
 	bit t=TRUE,*li=&t,*hi=&t;
 	BAT *b,*bn;
@@ -226,14 +234,15 @@ REPuselect(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	sht argcnt = pci->argc;
 	
 	(void) mb;
-	ret= (int*) getArgReference(stk, pci,0);
-	bid= (int*) getArgReference(stk, pci,1);
-	low= (ptr) getArgReference(stk, pci,2);
-	if( argcnt>=7)
-		hgh= (ptr) getArgReference(stk, pci,3);
-	if( argcnt==9){
-		li= (bit*) getArgReference(stk, pci,4);
-		hi= (bit*) getArgReference(stk, pci,5);
+	ret= (int*) getArgReference(stk,pci,0);
+	bid= (int*) getArgReference(stk,pci,1);
+	low= (ptr) getArgReference(stk,pci,2);
+	if( argcnt >= 7)
+		hgh = (ptr) getArgReference(stk,pci,3);
+	else hgh = 0;
+	if( argcnt == 9){
+		li= (bit*) getArgReference(stk,pci,4);
+		hi= (bit*) getArgReference(stk,pci,5);
 	}
 	
 	
@@ -241,13 +250,13 @@ REPuselect(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
                 throw(MAL, "REPuselect", "Cannot access descriptor");
         }
 	
-	{int _tpe= ATOMstorage(b->ttype);
-	 if( _tpe == TYPE_str || _tpe > TYPE_str ){
+	tpe= ATOMstorage(b->T->type);
+	if( tpe == TYPE_str || tpe > TYPE_str ){
 	 	if(low== 0 || *(str*)low==0) low = (str)str_nil;
 			else low = *(str *)low;
 		if(hgh== 0 || *(str*)hgh==0) hgh = (str)str_nil;
 			else hgh = *(str *)hgh;
-	}}
+	}
 
 	clk= GDKusec();
 	bn = BAT_select_(b, low, hgh, *li, *hi, FALSE, FALSE);
@@ -272,8 +281,10 @@ REPuselect(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	r->tname = GDKstrdup((str) getArgReference(stk, pci,argcnt-2));
 	r->cname = GDKstrdup((str) getArgReference(stk, pci,argcnt-1));
 
-	VALset(&r->low,b->ttype,(ValPtr) low);
-	VALset(&r->hgh,b->ttype,(ValPtr) hgh);
+	VALset(&r->low,tpe, low);
+	if( hgh == 0) 
+		VALset(&r->hgh,tpe, ATOMnilptr(tpe));
+	else VALset(&r->hgh,tpe, hgh);
 	r->li = *li;
 	r->hi = *hi; 
 	r->cnt = cnt;
@@ -293,7 +304,7 @@ cost.
 str
 REPselect(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int *ret, *bid;
+	int *ret, *bid, tpe;
 	ptr low,hgh;
 	bit t=TRUE,*li=&t,*hi=&t;
 	BAT *b,*bn;
@@ -306,8 +317,10 @@ REPselect(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	ret= (int*) getArgReference(stk, pci,0);
 	bid= (int*) getArgReference(stk, pci,1);
 	low= (ptr) getArgReference(stk, pci,2);
-	if( argcnt>=7)
-		hgh= (ptr) getArgReference(stk, pci,3);
+	if( argcnt >= 7)
+                hgh = (ptr) getArgReference(stk,pci,3);
+        else hgh = 0;
+
 	if( argcnt==9){
 		li= (bit*) getArgReference(stk, pci,4);
 		hi= (bit*) getArgReference(stk, pci,5);
@@ -318,13 +331,13 @@ REPselect(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
                 throw(MAL, "REPselect", "Cannot access descriptor");
         }
 	
-	{int _tpe= ATOMstorage(b->ttype);
-	 if( _tpe == TYPE_str || _tpe > TYPE_str ){
-	 	if(low== 0 || *(str*)low==0) low = (str)str_nil;
-			else low = *(str *)low;
-		if(hgh== 0 || *(str*)hgh==0) hgh = (str)str_nil;
-			else hgh = *(str *)hgh;
-	}}
+	tpe= ATOMstorage(b->T->type);
+        if( tpe == TYPE_str || tpe > TYPE_str ){
+                if(low== 0 || *(str*)low==0) low = (str)str_nil;
+                        else low = *(str *)low;
+                if(hgh== 0 || *(str*)hgh==0) hgh = (str)str_nil;
+                        else hgh = *(str *)hgh;
+        }
 
 	clk= GDKusec();
 	bn = BAT_select_(b, low, hgh, *li, *hi, TRUE, FALSE);
@@ -348,9 +361,11 @@ REPselect(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	r->sname = GDKstrdup((str) getArgReference(stk, pci,argcnt-3));
 	r->tname = GDKstrdup((str) getArgReference(stk, pci,argcnt-2));
 	r->cname = GDKstrdup((str) getArgReference(stk, pci,argcnt-1));
-
-	VALset(&r->low,b->ttype,(ValPtr) low);
-	VALset(&r->hgh,b->ttype,(ValPtr) hgh);
+	
+        VALset(&r->low,tpe, low);
+        if( hgh == 0)
+                VALset(&r->hgh,tpe, ATOMnilptr(tpe));
+        else VALset(&r->hgh,tpe, hgh);
 	r->li = *li;
 	r->hi = *hi; 
 	r->cnt = cnt;
