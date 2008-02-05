@@ -1058,7 +1058,7 @@ BBPcacheit(BAT *b)
 		gdk_unset_lock(GDKswapLock(i), "BBPcacheit");
 }
 
-@
+@-
 @%BBPuncacheit@ changes the BBP status to swapped out.  Currently only 
 used in BBPfree (bat swapped out) and BBPclear (bat destroyed forever).
 @c
@@ -3311,7 +3311,6 @@ BBPdiskscan(void)
 	return BBPdiskscan_r(NULL);
 }
 
-@}
 void 
 BBPatom_drop(int atom)
 {

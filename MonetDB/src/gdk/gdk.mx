@@ -1492,8 +1492,6 @@ gdk_export int BATcheckmodes(BAT *b, int persistent, int unloadable);
 @item BAT *
 @tab BATmirror (BAT *b)
 @item BAT *
-@tab BATreverse (BAT *b)
-@item BAT *
 @tab BATreset (BAT *b)
 @end multitable
 @
