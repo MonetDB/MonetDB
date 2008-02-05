@@ -3303,6 +3303,8 @@ reduce (PFla_op_t * p, int goalnt)
         case 38:
         /* Rel:    count (Rel) */
         case 39:
+        /* Rel:    all (Rel) */
+        case 42:
             /* Bind the input of the aggregate if the group by
                criterion is not a column reference. */
             if (p->sem.aggr.part &&
@@ -3321,8 +3323,8 @@ reduce (PFla_op_t * p, int goalnt)
             PFalg_att_t att = p->sem.aggr.att,
                         part = p->sem.aggr.part,
                         res_att = p->sem.aggr.res;
-            PFalg_simple_type_t ty,
-                                part_ty,
+            PFalg_simple_type_t part_ty,
+                                ty = 0 /* dummy type */,
                                 res_ty = type_of (p, res_att);
             PFsql_t *expr = NULL,
                     *part_expr;
@@ -3374,6 +3376,18 @@ reduce (PFla_op_t * p, int goalnt)
                 case la_avg:   expr = avg (expr); break;
                 case la_max:   expr = max (expr); break;
                 case la_min:   expr = min (expr); break;
+                /* with la_all we have to ensure that each
+                 * attribute att is true for all rows within
+                 * a group, since we express boolean values
+                 * as literal integers, MIN does the job */ 
+                case la_all:   assert (ty == aat_bln);
+                               expr = min (((expr)->kind == sql_column_name)?
+                                           expr:
+                                           case_(
+                                              when (expr,
+                                                    lit_int(1)),
+                                              else_ (lit_int (0))));
+                             break;
                 case la_sum:   expr = sum (expr); break;
                 case la_count: expr = count (star ()); break;
                 default: assert (0); break;
@@ -3550,12 +3564,6 @@ reduce (PFla_op_t * p, int goalnt)
 
         /* Rel:    seqty1 (Rel) */
         case 41:
-            /* FIXME: implementation is missing */
-            assert (!"missing");
-            break;
-
-        /* Rel:    all (Rel) */
-        case 42:
             /* FIXME: implementation is missing */
             assert (!"missing");
             break;
