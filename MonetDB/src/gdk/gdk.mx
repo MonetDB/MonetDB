@@ -88,7 +88,7 @@ considered in the Goblin runtime system
 .  A BAT is a
 self-descriptive main-memory structure that represents the @strong{binary
 relationship} between two atomic types.
-@
+
 The association can be defined over:
 @table @code
 @item void:
@@ -162,7 +162,7 @@ for main-memory: bucket chained hash
 @end tex
 . Alternatively, when the table is sorted, it will resort to merge-scan
 operations or binary lookups.
-@
+
 BATs are built on the concept of heaps, which are large pieces of main
 memory. They can also consist of virtual memory, in case the working
 set exceeds main-memory. In this case, GDK supports operations that
@@ -171,7 +171,6 @@ main-memory.
 
 
 @- Rationale
-
 The rationale for choosing a BAT as the building block for both
 relational and object-oriented system is based on the following
 observations:
@@ -293,7 +292,6 @@ These are much used operations on BATs, such as aggregate functions
 and relational operators. They are implemented in terms of BAT- and
 BUN-manipulation GDK primitives.
 @end table
-@
 
 @+ Interface Files
 In this section we summarize the user interface to the GDK library.
@@ -450,7 +448,7 @@ extern "C" {
 @item int
 @tab GDKexit (int status)
 @end multitable
-@
+
 The session is bracketed by @%GDKinit@ and @%GDKexit@. Initialization involves
 setting up the administration for database access, such as memory allocation
 for the database buffer pool.
@@ -712,7 +710,7 @@ the columns has an extra heap for storing those (such
 referred to as @strong{Head Heap}s and @strong{Tail Heap}s). The BUN heap then
 contains integer byte-offsets (fixed-sized, of course) into a head-
 or tail-heap.
-@
+
 The BUN heap contains a contiguous range of BUNs. It starts after
 the @strong{first} pointer, and finishes at the end in the @strong{free}
 area of the BUN. All BUNs after the @strong{inserted} pointer have been
@@ -726,7 +724,7 @@ The location of a certain BUN in a BAT
 may change between successive library routine invocations.  Therefore, one
 should avoid keeping references into the BAT storage area for long
 periods.
-@
+
 Passing values between the library routines and the enclosing C
 program is primarily through value pointers of type @%ptr@. Pointers
 into the BAT storage area should only be used for retrieval. Direct
@@ -788,10 +786,9 @@ gdk_export void *VALget(ValPtr v);
 @}
 
 @- The BAT record
-
 The elements of the BAT structure are introduced in the remainder.
 Instead of using the underlying types hidden beneath it, one should
-use a @%BAT@ type that is supposed to look like this:
+use a @emph{BAT} type that is supposed to look like this:
 @verbatim
 typedef struct {
           /* static BAT properties */

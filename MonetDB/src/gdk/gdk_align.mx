@@ -31,9 +31,9 @@ such that the BUNs are in the same order as those in the second argument.
 This operation will mark both columns of the first @emph{BAT} as synced with
 the second (likewise, @emph{BATcopy()}, which makes a copy, instead of in-place 
 shuffling, has the same alignment effect, @emph{BATmark()} marks the tail column 
-as synced with the head of the original @emph{BAT}, and for instance 
-@emph{BATsemijoin()} marks both return columns as aligned with its left parameter).
-@
+as synced with the head of the original @emph{BAT}, and for 
+instance @emph{BATsemijoin()} marks both return columns as aligned with its left parameter).
+
 Each alignment sequence is given a unique identifier, so as to easily
 detect this situation. It is retained in the @emph{BAT descriptor}.
 @+ Alignment Design Considerations
@@ -52,7 +52,7 @@ information automatically.
 Alignment statuses must be 
 kept consistent under database commits and aborts.
 @end itemize
-@
+
 As for performance, the most important observation to make is that 
 operations that do not need alignment, will suffer most from
 overheads introduced in the BUN update mechanism. For this reason,
@@ -192,11 +192,11 @@ The general routine for getting a 'view' BAT upon another
 BAT is @emph{VIEWcreate}. On this @emph{#read-only} BAT (there is kernel
 support for this), you can then make vertical slices. 
 Use @emph{VIEWhead} for this. 
-@
+
 It is possible to create a view on a writable BAT. Updates
 in the parent are then automatically reflected in the VIEW.
 Note that the VIEW bat itself can never be modified.
-@
+
 Horizontal views should only be given out on a view BAT, but
 only if it is dead sure the parent BAT is read-only.
 This because they cannot physically share the batBuns heap
