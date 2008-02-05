@@ -22,9 +22,6 @@
 #include	"Mx.h"
 #include	"MxFcnDef.h"
 
-#define TEXIMODE (textmode==M_TEXI)
-
-
 int pr_hide = 0;
 int pr_hide_text = 0;
 int pr_env = 0;
@@ -43,8 +40,7 @@ PrEnv(int env)
 
 	switch (pr_env) {
 	case E_CODE:
-		if TEXIMODE 
-			ofile_printf("@end example\n");
+		ofile_printf("@end example\n");
 		break;
 	case E_TEXT:
 	case E_CMD:
@@ -54,8 +50,7 @@ PrEnv(int env)
 	pr_pos = 0;
 	switch (pr_env) {
 	case E_CODE:
-		if TEXIMODE 
-			ofile_printf("@example\n");
+		ofile_printf("@example\n");
 		break;
 	case E_TEXT:
 	case E_CMD:
@@ -114,27 +109,15 @@ PrTxt(char *s)
 			ofile_printf("{%c}", c);
 			break;
 		case '@':
-			if TEXIMODE {
-				ofile_puts("@@");
-				break;
-			}
-			MathOff();
-			ofile_printf("@");
+			ofile_puts("@@");
 			break;
 		case '#':
-			if TEXIMODE {
-				ofile_puts("\\#");
-				break;
-			}
-			MathOff();
-			ofile_printf("\\%c", c);
+			ofile_puts("\\#");
 			break;
 		case '{':
 		case '}':
-			if TEXIMODE {
-				ofile_printf("@%c", c);
-				break;
-			}
+			ofile_printf("@%c", c);
+			break;
 		case '&':
 		case '%':
 		case '$':
@@ -204,15 +187,8 @@ PrChr(char c)
 		pr_pos++;
 	}
 
-	if (TEXIMODE) {
-		switch (c) {
-		case '{':
-		case '}':
-		case '$':
-		case '#':
-		default:
-			ofile_putc(c);
-		}
+	if ((pr_env & E_TEXT) == E_TEXT) {
+		ofile_putc(c);
 		return;
 	}
 
@@ -224,6 +200,15 @@ PrChr(char c)
 			break;
 		case '\\':
 			ofile_puts("\\");
+			break;
+		case '{':
+		case '}':
+		case '$':
+		case '@':
+			ofile_printf("@%c", c);
+			break;
+		case '#':
+			ofile_printf("\\#");
 			break;
 		default:
 			ofile_putc(c);
