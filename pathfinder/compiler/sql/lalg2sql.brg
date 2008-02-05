@@ -3046,8 +3046,15 @@ reduce (PFla_op_t * p, int goalnt)
                 case alg_fun_num_divide:
                     res_expr = div (expr[0], expr[1]); break;
                 case alg_fun_fn_contains:
-                    /* FIXME: this only works with constant expr[1] */
-                    res_expr = like (expr[0], expr[1]); break;
+                    /* adding check for constant expression */
+                    if (!PFprop_const (L(p)->prop, att[1]) || 
+                        ty[1]         != aat_str           ||
+                        expr[1]->kind == sql_column_name)
+                        PFoops (OOPS_FATAL, "fn_contains works only with constant "
+                                            "string expressions");
+
+                    res_expr = like (expr[0], expr[1]);
+                    break;
                 /**< fn:ceiling */
                 case alg_fun_fn_ceiling:
                     res_expr = ceil (expr[0]); break;
@@ -3072,9 +3079,14 @@ reduce (PFla_op_t * p, int goalnt)
                 /** string functions */
                 case alg_fun_fn_starts_with:
                 case alg_fun_fn_ends_with:
+                    assert (!"missing");
+                    break;
                 case alg_fun_fn_string_length:
+                    res_expr = str_length (expr[0]); break;
                 case alg_fun_fn_upper_case:
+                    res_expr = str_upper (expr[0]); break;
                 case alg_fun_fn_lower_case:
+                    res_expr = str_lower (expr[0]); break;
                 case alg_fun_fn_translate:
                 case alg_fun_fn_substring_before:
                 case alg_fun_fn_substring_after:

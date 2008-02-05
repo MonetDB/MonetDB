@@ -972,6 +972,37 @@ PFsql_sum (const PFsql_t * column)
     return wire1 (sql_sum, column);
 }
 
+/* ........... String Functions ........... */
+
+/**
+ * Construct a SQL tree  node representing
+ * the SQL length functions for strings
+ */
+PFsql_t *
+PFsql_str_length (const PFsql_t *a)
+{
+    return wire1 (sql_str_length, a);
+}
+
+/**
+ * Construct a SQL tree  node representing
+ * the SQL length functions for strings
+ */
+PFsql_t *
+PFsql_str_upper (const PFsql_t *a)
+{
+    return wire1 (sql_str_upper, a);
+}
+
+/**
+ * Construct a SQL tree  node representing
+ * the SQL length functions for strings
+ */
+PFsql_t *
+PFsql_str_lower (const PFsql_t *a)
+{
+    return wire1 (sql_str_lower, a);
+}
 
 
 /* .......... OLAP Functionality .......... */

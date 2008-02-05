@@ -182,6 +182,10 @@ enum PFsql_kind_t {
     , sql_min               /* MIN () aggregate */
     , sql_avg               /* AVG () aggregate */
 
+    , sql_str_length        /* SQL LENGTH () function */
+    , sql_str_upper         /* SQL UPPER () function */
+    , sql_str_lower         /* SQL LOWER () function */
+
     , sql_over              /* OVER expression */
     , sql_row_number        /* ROW_NUMBER () function
                                (first argument of a sql_over operator) */
@@ -842,6 +846,26 @@ PFsql_t * PFsql_avg (const PFsql_t *column);
  * the aggregate function `SUM'.
  */
 PFsql_t * PFsql_sum (const PFsql_t * column);
+
+/* ........... String Functions ........... */
+
+/**
+ * Construct a SQL tree  node representing
+ * the SQL length functions for strings
+ */
+PFsql_t * PFsql_str_length (const PFsql_t *a);
+
+/**
+ * Construct a SQL tree  node representing
+ * the SQL length functions for strings
+ */
+PFsql_t * PFsql_str_upper (const PFsql_t *a);
+
+/**
+ * Construct a SQL tree  node representing
+ * the SQL length functions for strings
+ */
+PFsql_t * PFsql_str_lower (const PFsql_t *a);
 
 /* .......... OLAP Functionality .......... */
 

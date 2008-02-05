@@ -122,7 +122,7 @@ static char *ID[] = {
       [sql_between]           = "between",
       [sql_like]              = "like",
       [sql_in]                = "in",
-      [sql_stmt_list]          = "stmt_list",
+      [sql_stmt_list]         = "stmt_list",
       [sql_list_list]         = "list_list",
       [sql_not]               = "not",
       [sql_and]    /* used */ = "AND",
@@ -132,6 +132,9 @@ static char *ID[] = {
       [sql_sum]    /* used */ = "SUM",
       [sql_min]    /* used */ = "MIN",
       [sql_avg]    /* used */ = "AVG",
+      [sql_str_length]        = "LENGTH",
+      [sql_str_upper]         = "UPPER",
+      [sql_str_lower]         = "LOWER",
       [sql_over]              = "over",
       [sql_row_number]        = "ROW_NUMBER",
       [sql_dense_rank]        = "DENSE_RANK",
@@ -612,6 +615,14 @@ print_statement (PFsql_t *n)
         case sql_avg:
         case sql_max:
         case sql_count:
+            PFprettyprintf("%s (", ID[n->kind]);
+            print_statement (L(n));
+            PFprettyprintf(")");
+            break;
+
+        case sql_str_length:
+        case sql_str_upper:
+        case sql_str_lower:
             PFprettyprintf("%s (", ID[n->kind]);
             print_statement (L(n));
             PFprettyprintf(")");

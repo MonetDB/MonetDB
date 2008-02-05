@@ -126,6 +126,12 @@
 #define min(c)                       PFsql_min(c)
 #define avg(c)                       PFsql_avg(c)
 #define sum(c)                       PFsql_sum(c)
+
+/* ............ String Functions ........... */
+
+#define str_length(a)                PFsql_str_length(a)
+#define str_upper(a)                 PFsql_str_upper(a)
+#define str_lower(a)                 PFsql_str_lower(a)
                                      
 /* .......... OLAP Functionality .......... */
 #define over(a,b)                    PFsql_over(a,b)
