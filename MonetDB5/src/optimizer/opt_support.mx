@@ -1040,7 +1040,6 @@ of simple SQL rewrites using the module name as the discriminator.
 * Dead Code Removal::
 * Empty Set Removal::
 * Garbage Collector::
-* Generators::
 * Heuristic Rules::
 * Inline Functions::
 * Join Paths::
