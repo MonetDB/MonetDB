@@ -36,6 +36,7 @@ The last byte holds whether inet atom represents the value nil or not.
 The value nil is represented as (per byte) 0000 0001.
 
 @h
+@{
 typedef struct _inet {
 	unsigned char q1;
 	unsigned char q2;
@@ -46,7 +47,7 @@ typedef struct _inet {
 	unsigned char filler2;
 	unsigned char isnil;
 } inet;
-
+@}
 #define in_isnil(i) ((i)->q1 == 0 && (i)->q2 == 0 && (i)->q3 == 0 && (i)->q4 == 0 && (i)->mask == 0 && (i)->isnil != 0)
 #define in_setnil(i) (i)->q1 = (i)->q2 = (i)->q3 = (i)->q4 = (i)->mask = (i)->filler1 = (i)->filler2 = 0; (i)->isnil = 1
 
