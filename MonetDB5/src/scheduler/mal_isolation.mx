@@ -33,7 +33,7 @@ Its lifetime then is identical to that of the main program call.
 The first example create a private copy, leaving out the scheduler call.
 @example
 function f();
-	i{runonce, rows>4}:=1;	# just properties
+    i@{runonce, rows>4@}:=1;	# just properties
     mdb.list();
     io.print("start running\n");
     scheduler.isolation();

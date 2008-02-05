@@ -42,7 +42,7 @@ The following options are supported:
 @tab host to connect to 
 @item -l language 
 @tab --language=lang  
-@tab {mal,sql,mil} 
+@tab @{mal,sql,mil@} 
 @item -P passwd   
 @tab --passwd=passwd  
 @tab password 
