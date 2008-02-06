@@ -813,7 +813,9 @@ AFTER_CORE2ALG:
             if (status->print_dot)
                 PFpa_dot (pfout, paroot);
             if (status->print_xml)
-                PFpa_xml (pfout, paroot);
+                PFinfo (OOPS_WARNING,
+                        "No xml representation for physical algebra tree."
+                        " Sorry.");
         }
         else
             PFinfo (OOPS_NOTICE,
