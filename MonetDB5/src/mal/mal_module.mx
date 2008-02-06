@@ -695,6 +695,8 @@ void dumpManualHelp(stream *f, Module s, int recursive){
 	Module list[256]; int k, ftop, fnd,top=0;
 	InstrPtr fcn[5000];
 	str hlp[5000],msg;
+	str hlp_texi = NULL;
+	size_t hlp_texi_len = 0;
 
 
 	if(s==NULL || f==NULL){
@@ -740,11 +742,41 @@ void dumpManualHelp(stream *f, Module s, int recursive){
 		for(z=0; z<ftop; z++){
 			stream_printf(f,"@" "item %s.%s\n",
 				getModuleId(fcn[z]), getFunctionId(fcn[z]));
-			if( hlp[z] )
-				stream_printf(f,"@" "tab %s\n", hlp[z]);
+			if( hlp[z] ) {
+				str hlp_ = hlp[z];
+				size_t hlp_len = 2*strlen(hlp[z]) + 1;
+				if (hlp_texi == NULL) {
+					hlp_texi = (str) GDKmalloc(hlp_len);
+					hlp_texi_len = hlp_len;
+				} else if (hlp_len > hlp_texi_len) {
+					hlp_texi = (str) GDKrealloc(hlp_texi, hlp_len);
+					hlp_texi_len = hlp_len;
+				}
+				if (hlp_texi != NULL) {
+					str i = hlp[z];
+					str o = hlp_texi;
+					char c;
+					while ((c = (*i++))) {
+						/* quote special texi characters with '@' */
+						switch (c) {
+						case '@':
+						case '{':
+						case '}':
+							*o++ = '@';
+							break;
+						}
+						*o++ = c;
+					}
+					*o++ = '\0';
+					hlp_ = hlp_texi;
+				}
+				stream_printf(f,"@" "tab %s\n", hlp_);
+			}
 		}
 	}
 	stream_printf(f,"@end multitable\n");
+	if (hlp_texi != NULL)
+		GDKfree(hlp_texi);
 }
 @-
 Summarize the type resolution table.
