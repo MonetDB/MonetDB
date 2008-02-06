@@ -6,6 +6,7 @@ stderr of test 'internal` in directory 'compiler/semantics/tests/typechecking` i
 # 11:48:33 >  
 
 pf: invalid option -- d
+unknown or incomplete command line argument: try `pf -h'
 
 # 11:38:33 >  
 # 11:38:33 >  Done.
