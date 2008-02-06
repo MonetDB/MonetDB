@@ -5,18 +5,11 @@ stderr of test 'internal` in directory 'compiler/semantics/tests/typechecking` i
 # 11:48:33 >  Mtimeout -timeout 60 ./internal internal 
 # 11:48:33 >  
 
-Testing the subtyping algorithm:
---------------------------------
+pf: invalid option -- d
+./internal: line 10: 19773 Done                    echo 42
+     19774 Segmentation fault      | pf -d subtyping -s11
 
-integer <: decimal : true
-element #pf:foo { integer } | element { double } <: element #pf:foo { integer } : false
-element #pf:foo { integer } | element { double } <: element { double } : false
-element { double } | element #pf:foo { integer } <: element #pf:foo { integer } : false
-element { double } | element #pf:foo { integer } <: element { double } : false
-
-Subtype debugging completed.
-
-# 11:48:33 >  
-# 11:48:33 >  Done.
-# 11:48:33 >  
+# 11:38:33 >  
+# 11:38:33 >  Done.
+# 11:38:33 >  
 
