@@ -96,15 +96,8 @@ barrier x17:bat[:oid,:int]{notnil=true,rows=1:lng,bid=772}  := bpm.newIterator(b
     bpm.addPartition(_46,x19);
     redo x17:bat[:oid,:int]{notnil=true,rows=1:lng,bid=772}  := bpm.hasMoreElements(bpm19);
 exit x17:bat[:oid,:int]{notnil=true,rows=1:lng,bid=772} ;
-    _54 := bpm.new(:oid,:int);
-    x33 := nil;
-barrier x19{rows=1:lng} := bpm.newIterator(_46);
-    x33 := algebra.reuse(x19);
-    bpm.addPartition(_54,x33);
-    redo x19{rows=1:lng} := bpm.hasMoreElements(_46);
-exit x19{rows=1:lng};
-    x33 := bpm.fold(_54);
     x19{rows=1:lng} := bpm.fold(_46);
+    x33 := algebra.reuse(x19);
     x20:bat[:oid,:int]{rows=1:lng}  := batcalc.+(x33,x16,x19);
     x20:bat[:oid,:int]{rows=1:lng}  := batcalc.+(x20,x20,x16);
     x21 := sql.resultSet(1,1,x20);
