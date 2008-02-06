@@ -30,7 +30,7 @@ function user.helloWorld(msg:str):str;
     io.print(msg);
     msg:= "done";
     return msg;
-end user.hellowWorld;
+end user.helloWorld;
 @end example
 
 The module name designates the collection to which this function
