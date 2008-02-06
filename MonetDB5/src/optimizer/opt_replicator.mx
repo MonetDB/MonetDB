@@ -277,9 +277,9 @@ REPuselect(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	assureSpace();
 	r = repltable + replnr;
 	r->resbid = *ret;
-	r->sname = GDKstrdup((str) getArgReference(stk, pci,argcnt-3));
-	r->tname = GDKstrdup((str) getArgReference(stk, pci,argcnt-2));
-	r->cname = GDKstrdup((str) getArgReference(stk, pci,argcnt-1));
+	r->sname = GDKstrdup(*(str *) getArgReference(stk, pci,argcnt-3));
+	r->tname = GDKstrdup(*(str *) getArgReference(stk, pci,argcnt-2));
+	r->cname = GDKstrdup(*(str *) getArgReference(stk, pci,argcnt-1));
 
 	VALset(&r->low,tpe, low);
 	if( hgh == 0) 
@@ -358,9 +358,9 @@ REPselect(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	assureSpace();
 	r = repltable + replnr;
 	r->resbid = *ret;
-	r->sname = GDKstrdup((str) getArgReference(stk, pci,argcnt-3));
-	r->tname = GDKstrdup((str) getArgReference(stk, pci,argcnt-2));
-	r->cname = GDKstrdup((str) getArgReference(stk, pci,argcnt-1));
+	r->sname = GDKstrdup(*(str *) getArgReference(stk, pci,argcnt-3));
+	r->tname = GDKstrdup(*(str *) getArgReference(stk, pci,argcnt-2));
+	r->cname = GDKstrdup(*(str *) getArgReference(stk, pci,argcnt-1));
 	
         VALset(&r->low,tpe, low);
         if( hgh == 0)
