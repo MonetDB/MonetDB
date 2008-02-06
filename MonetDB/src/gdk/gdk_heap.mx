@@ -497,7 +497,7 @@ Due to non-careful design, the HEADER field was found to be 32/64-bit dependent.
 As we do not (yet) want to change the BAT image on disk, This is now fixed by 
 switching on-the-fly between two representations. We ensure that the 64-bit memory 
 representation is just as long as the 32-bits version (20 bytes) so the rest of 
-the heap never needs to shift. The function HEAP\_checkformat converts at load 
+the heap never needs to shift. The function HEAP_checkformat converts at load 
 time dynamically between the layout found on disk and the memory format.
 Recognition of the header mode is done by looking at the first two ints: 
 alignment must be 4 or 8, and head can never be 4 or eight. 

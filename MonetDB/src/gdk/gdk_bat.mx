@@ -2476,8 +2476,8 @@ tab
 goto (1)
 @end multitable
 
-Now we see that for BBPsync (heap\_move) it is sufficient to check for the .priv
-suffix to determine the appropriate backup\_bat behavior (i.e. register a X .killfile
+Now we see that for BBPsync (heap_move) it is sufficient to check for the .priv
+suffix to determine the appropriate backup_bat behavior (i.e. register a X .killfile
 anticipating the write(X) besides a X.priv).
 
 HEAPsave: we do not need to worry about saving readonly bats: as we save them in 
