@@ -17,9 +17,9 @@
 @f gdk
 @t The Goblin Database Kernel
 @v Version 3.05
-@a Martin L. Kersten & Peter Boncz & Niels Nes
+@a Martin L. Kersten, Peter Boncz, Niels Nes
 
-@* The Inner Core
+@+ The Inner Core
 The innermost library of the MonetDB database system is formed by
 the library called GDK, an abbreviation of Goblin Database Kernel.
 Its development was originally rooted in the design of a pure
@@ -86,8 +86,8 @@ considered in the Goblin runtime system
 [@cite{Goblin}]
 @end tex
 .  A BAT is a
-self-descriptive main-memory structure that represents the @strong{binary
-relationship} between two atomic types.
+self-descriptive main-memory structure that represents the 
+@strong{binary relationship} between two atomic types.
 
 The association can be defined over:
 @table @code
@@ -124,7 +124,6 @@ Memory pointer values. DEPRECATED.  Can only be stored in transient BATs.
  Bat descriptor. This allows for recursive adminstered tables, but
 severely complicates transaction management. Therefore, they
 CAN ONLY BE STORED IN TRANSIENT BATs.
-[on the list to become depreciated,
 @end table
 
 This model can be used as a back-end model underlying other -higher
@@ -210,7 +209,7 @@ encountered in relational systems.
 @item -
 Object-oriented systems often maintain a double cache, one with the
 disk-based representation and a C pointer-based main-memory structure.
-This causes expensive conversions and replicated storage management.\\
+This causes expensive conversions and replicated storage management.
 GDK does not do such `pointer swizzling'. It used virtual-memory 
 (@strong{mmap()}) and buffer management advice (@strong{madvise()}) OS primitives to
 cache only once. Tables take the same form in memory as on disk,
@@ -1020,7 +1019,6 @@ they can either be stored on disk, loaded into memory, or memory mapped.
 @item int
 @tab
  HEAPwarm (Heap *h);
-@item int
 @end multitable
 
 @
@@ -1048,13 +1046,13 @@ atoms in this heap. A standard implementation is provided here.
 
 @table @code
 @item void
-HEAP_initialize  (Heap* h, size\_t nbytes, size\_t nprivate, int align )
+HEAP_initialize  (Heap* h, size_t nbytes, size_t nprivate, int align )
 @item void
 HEAP_destroy     (Heap* h)
 @item int
-HEAP_malloc      (Heap* heap, size\_t nbytes)
+HEAP_malloc      (Heap* heap, size_t nbytes)
 @item void
-HEAP_free        (Heap *heap, size\_t block)
+HEAP_free        (Heap *heap, size_t block)
 @item int
 HEAP_private     (Heap* h)
 @item void
@@ -1557,7 +1555,7 @@ indication conversion from network to host or host to network format.
 MonetDB now has a mmap trim thread that takes care of flushing the
 memory mapped regions when MonetDB starts to consume too much
 main memory. Heaps (that are randomly accessed) can be excluded
-from this mechanism, by pinning them. BATmmap\_pin/unpin do
+from this mechanism, by pinning them. BATmmap_pin/unpin do
 this for all heaps of a BAT.
 
 @- Heap Storage Modes
@@ -2662,8 +2660,8 @@ MonetDB.
 by doing BATabort on all persistent bats.
 
 BUG: after a failed @%TMcommit@, @%TMabort@ does not do anything
-because @%TMcommit@ does the @%BATcommit@s *before* attempting to 
-sync to disk instead of *after& doing this. 
+because @%TMcommit@ does the @%BATcommit@s @emph{before} attempting to 
+sync to disk instead of @sc{after} doing this. 
 
 The previous state can also be queried. @%BATprev@ is a view 
 on the current BAT as it was in the previous state.  @%BATalpha@ 
@@ -2693,10 +2691,10 @@ gdk_export BAT *BATprev(BAT *b);
 @tab ALIGNrelated (BAT *b1, BAT *b2)
 @item int
 @tab ALIGNsetH    ((BAT *dst, BAT *src)
-\hline
+
 @item BAT *
 @tab BATpropcheck (BAT *b, int mode)
-\hline
+
 @item BAT*
 @tab VIEWcreate   (BAT *h, BAT *t)
 @item int
@@ -2712,7 +2710,7 @@ gdk_export BAT *BATprev(BAT *b);
 @item BAT*
 @tab VIEWreset    (BAT *b)
 @item BAT*
-@tab BATmaterialize  (BAT *b, size\_t size)
+@tab BATmaterialize  (BAT *b, size_t size)
 @end multitable
 @
 Alignments of two columns of a BAT means that the system knows
@@ -2952,9 +2950,9 @@ The following example shows how the hashloop is used:
 
 @verbatim
 void
-print_books(BAT *author\_books, str author)
+print_books(BAT *author_books, str author)
 {
-        BAT *b = author\_books;
+        BAT *b = author_books;
         size_t i;
 
         printf("%s\n==================\n", author);
@@ -3148,18 +3146,18 @@ the fetch.
 @- BAT relational operators
  @multitable @columnfractions 0.08 0.7
 @item BAT *
-@tab BATjoin (BAT *l, BAT *r, size\_t estimate)
+@tab BATjoin (BAT *l, BAT *r, size_t estimate)
 @item BAT *
-@tab BATouterjoin (BAT *l, BAT *r, size\_t estimate)
+@tab BATouterjoin (BAT *l, BAT *r, size_t estimate)
 @item BAT *
-@tab BATthetajoin (BAT *l, BAT *r, int mode, size\_t estimate)
+@tab BATthetajoin (BAT *l, BAT *r, int mode, size_t estimate)
 @item BAT *
 @tab BATsemijoin (BAT *l, BAT *r)
 @item BAT *
 @tab BATselect (BAT *b, ptr tl, ptr th)
 @item BAT *
 @tab BATfragment (BAT *b, ptr l, ptr h, ptr L, ptr H)
-@item \hline
+@item 
 @item BAT *
 @tab BATsunique (BAT *b)
 @item BAT *
