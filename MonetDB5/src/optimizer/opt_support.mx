@@ -766,8 +766,8 @@ in the mean time.
 Take into account that variables may be declared inside
 a block. This can be calculated using the BARRIER/CATCH
 and EXIT pairs.
-@c
 @{
+@c
 static int
 countBlocks(MalBlkPtr mb, int start, int stop){
 	int i,cnt =0;

@@ -281,6 +281,7 @@ The MAL language uses a few defaults, recognizable as properties
 @tab data can be appended
 @end multitable
 @-
+@{
 @h
 #ifndef _MAL_PROPERTIES_
 #define _MAL_PROPERTIES_
@@ -311,7 +312,6 @@ mal_export str PropertyOperatorString( prop_op_t op );
 
 #endif
 
-@{
 @c
 #include "mal_config.h"
 #include "mal_properties.h"
