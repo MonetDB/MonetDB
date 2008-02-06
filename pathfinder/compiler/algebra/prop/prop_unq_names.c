@@ -455,11 +455,8 @@ infer_unq_names (PFla_op_t *n, unsigned int id)
             break;
 
         case la_doc_tbl:
-            add_name_pair (np_list,
-                           n->sem.doc_tbl.iter,
-                           PFprop_unq_name (L(n)->prop,
-                                            n->sem.doc_tbl.iter));
-            new_name_pair (np_list, n->sem.doc_tbl.item_res, id++);
+            bulk_add_name_pairs (np_list, L(n));
+            new_name_pair (np_list, n->sem.doc_tbl.res, id++);
             break;
 
         case la_doc_access:

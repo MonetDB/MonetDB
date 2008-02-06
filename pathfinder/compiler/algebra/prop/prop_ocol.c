@@ -806,18 +806,11 @@ infer_ocol (PFla_op_t *n)
             ocols_count (n)++;
             break;
 
-        /* operators with static iter|item schema */
         case la_doc_tbl:
-            new_ocols (n, 2);
-
-            ocol_at (n, 0)
-                = (PFalg_schm_item_t) { .name = n->sem.doc_tbl.iter,
-                                        .type = PFprop_type_of (
-                                                    L(n),
-                                                    n->sem.doc_tbl.iter) };
-            ocol_at (n, 1)
-                = (PFalg_schm_item_t) { .name = n->sem.doc_tbl.item_res,
-                                        .type = aat_pnode };
+            ocols (n) = copy_ocols (ocols (L(n)), ocols_count (L(n)) + 1);
+            ocol_at (n, ocols_count (n)).name = n->sem.doc_tbl.res;
+            ocol_at (n, ocols_count (n)).type = aat_pnode;
+            ocols_count (n)++;
             break;
 
         case la_twig:

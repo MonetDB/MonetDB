@@ -659,14 +659,13 @@ infer_ckey (PFla_op_t *n)
         }   break;
 
         case la_doc_tbl:
-            if (PFprop_card (n->prop) == 1) {
-                /* If the cardinality is equal to one
-                   the result is key itself. */
-                union_ (n->prop->ckeys, n->sem.doc_tbl.iter);
-                union_ (n->prop->ckeys, n->sem.doc_tbl.item_res);
-            } else
-                /* Otherwise at least column iter is key. */
-                union_ (n->prop->ckeys, n->sem.doc_tbl.iter);
+            /* composite key columns are propagated */
+            copy (n->prop->ckeys, L(n)->prop->ckeys);
+
+            /* If the cardinality is equal to one
+               the result is key itself. */
+            if (PFprop_card (n->prop) == 1)
+                union_ (n->prop->ckeys, n->sem.doc_tbl.res);
             break;
 
         case la_doc_access:

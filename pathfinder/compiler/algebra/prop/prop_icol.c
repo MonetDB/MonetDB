@@ -503,9 +503,14 @@ prop_infer_icols (PFla_op_t *n, PFalg_att_t icols)
             break;
 
         case la_doc_tbl:
-            /* infer iter|item schema for input relation */
-            n->prop->l_icols = union_ (n->sem.doc_tbl.iter,
-                                       n->sem.doc_tbl.item);
+            n->prop->l_icols = n->prop->icols;
+
+            /* do not infer input columns if operator is not required */
+            if (!(n->prop->icols & n->sem.doc_tbl.res))
+                break;
+
+            n->prop->l_icols = diff (n->prop->l_icols, n->sem.doc_tbl.res);
+            n->prop->l_icols = union_ (n->prop->l_icols, n->sem.doc_tbl.att);
             break;
 
         case la_doc_access:

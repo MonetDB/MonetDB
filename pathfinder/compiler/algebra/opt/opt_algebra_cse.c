@@ -1155,10 +1155,10 @@ match (PFla_op_t *a, PFla_op_t *b)
             return false;
 
         case la_doc_tbl:
-            if ((ACTATT (L(a), a->sem.doc_tbl.iter) ==
-                 ACTATT (L(b), b->sem.doc_tbl.iter))  && 
-                (ACTATT (L(a), a->sem.doc_tbl.item) == 
-                 ACTATT (L(b), b->sem.doc_tbl.item)))
+            if ((ACTATT (L(a), a->sem.doc_tbl.res) ==
+                 ACTATT (L(b), b->sem.doc_tbl.res))  && 
+                (ACTATT (L(a), a->sem.doc_tbl.att) == 
+                 ACTATT (L(b), b->sem.doc_tbl.att)))
                 return true;
 
             return false;
@@ -1864,10 +1864,9 @@ new_operator (PFla_op_t *n)
 
         case la_doc_tbl:
             return PFla_doc_tbl (CSE(L(n)),
-                                 ACTATT (L(n), n->sem.doc_tbl.iter),
-                                 ACTATT (L(n), n->sem.doc_tbl.item),
                                  create_unq_name (CSE(L(n))->schema,
-                                                  n->sem.doc_tbl.item_res));
+                                                  n->sem.doc_tbl.res),
+                                 ACTATT (L(n), n->sem.doc_tbl.att));
 
         case la_doc_access:
             return PFla_doc_access (CSE(L(n)), CSE(R(n)),
@@ -2262,14 +2261,11 @@ adjust_operator (PFla_op_t *ori, PFla_op_t *cse)
             break;
 
         case la_doc_tbl:
-            actmap = create_actatt_map ();
+            actmap = actatt_map_copy (ACT(L(ori)));
             INACTATT (actmap,
                       actatt (
-                          cse->sem.doc_tbl.item_res,
-                          ori->sem.doc_tbl.item_res),
-                      actatt (
-                          cse->sem.doc_tbl.iter,
-                          ori->sem.doc_tbl.iter));
+                          cse->sem.doc_tbl.res,
+                          ori->sem.doc_tbl.res));
             break;   
 
         case la_doc_access:

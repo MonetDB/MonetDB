@@ -3941,19 +3941,16 @@ reduce (PFla_op_t * p, int goalnt)
         /* Constr: doc_tbl (Rel) */
         case 70:
         {
-            PFalg_att_t iter = p->sem.doc_tbl.iter,
-                        item = p->sem.doc_tbl.item,
-                        item_res = p->sem.doc_tbl.item_res;
-            PFalg_simple_type_t iter_ty = type_of (p, iter),
-                                item_ty = type_of (L(p), item),
-                                item_res_ty = type_of (p, item_res);
-            PFsql_t *item_expr = col_env_lookup (COLMAP(L(p)), item, item_ty);
-            PFsql_aident_t doc_tbl;
+            PFalg_att_t         att    = p->sem.doc_tbl.att,
+                                res    = p->sem.doc_tbl.res;
+            PFalg_simple_type_t res_ty = type_of (p, res);
+            PFsql_t            *item_expr;
+            PFsql_aident_t      doc_tbl;
 
-            /* copy the existing frommap */
-            from_list_copy (FROMLIST(p), FROMLIST(L(p)));
-            /* copy the existing wheremap */
-            where_list_copy (WHERELIST(p), WHERELIST(L(p)));
+            /* copy all existing column, from, and where lists */
+            copy_cols_from_where (p, L(p));
+
+            item_expr = col_env_lookup (COLMAP(p), att, aat_str);
 
             /* throw away singleton relation */
             if (PFarray_last (FROMLIST(p)) == 1) {
@@ -3973,13 +3970,7 @@ reduce (PFla_op_t * p, int goalnt)
                            alias (doc_tbl));
 
             /* add the output columns to the column map */
-            col_env_add_full (COLMAP(p), iter, iter_ty,
-                              col_env_lookup (COLMAP(L(p)), iter, iter_ty),
-                              col_env_lookup_step (
-                                  COLMAP(L(p)), iter, iter_ty),
-                              col_env_lookup_step_leaf (
-                                  COLMAP(L(p)), iter, iter_ty));
-            col_env_add_full (COLMAP(p), item_res, item_res_ty,
+            col_env_add_full (COLMAP(p), res, res_ty,
                               PRE(doc_tbl), doc_tbl, false);
 
             /* add the two checks to lookup the correct document */

@@ -461,17 +461,7 @@ infer_ori_names (PFla_op_t *n, PFarray_t *par_np_list)
             break;
 
         case la_doc_tbl:
-            /* input iter column */
-            unq = n->sem.doc_tbl.iter;
-            ori = find_ori_name (np_list, unq);
-            add_name_pair (n->prop->l_name_pairs, ori, unq);
-
-            /* input item column (use same name as for output) */
-            ori = find_ori_name (np_list, n->sem.doc_tbl.item_res);
-            unq = n->sem.doc_tbl.item;
-            if (!find_ori_name (np_list, unq))
-                add_name_pair (np_list, ori, unq);
-            add_name_pair (n->prop->l_name_pairs, ori, unq);
+            diff_np (n->prop->l_name_pairs, np_list, n->sem.doc_tbl.res);
             break;
 
         case la_doc_access:

@@ -438,13 +438,13 @@ find_join_worker (PFla_op_t *n,
             break;
 
         case la_doc_tbl:
-            if (LEFT_COLS(n) & n->sem.doc_tbl.item_res) {
-                LEFT_COLS(n) = diff   (LEFT_COLS(n), n->sem.doc_tbl.item_res);
-                LEFT_COLS(n) = union_ (LEFT_COLS(n), n->sem.doc_tbl.item);
+            if (LEFT_COLS(n) & n->sem.doc_tbl.res) {
+                LEFT_COLS(n) = diff   (LEFT_COLS(n), n->sem.doc_tbl.res);
+                LEFT_COLS(n) = union_ (LEFT_COLS(n), n->sem.doc_tbl.att);
             }
-            if (RIGHT_COLS(n) & n->sem.doc_tbl.item_res) {
-                RIGHT_COLS(n) = diff   (RIGHT_COLS(n), n->sem.doc_tbl.item_res);
-                RIGHT_COLS(n) = union_ (RIGHT_COLS(n), n->sem.doc_tbl.item);
+            if (RIGHT_COLS(n) & n->sem.doc_tbl.res) {
+                RIGHT_COLS(n) = diff   (RIGHT_COLS(n), n->sem.doc_tbl.res);
+                RIGHT_COLS(n) = union_ (RIGHT_COLS(n), n->sem.doc_tbl.att);
             }
             break;
 

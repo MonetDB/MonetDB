@@ -640,11 +640,8 @@ map_unq_names (PFla_op_t *p, PFarray_t *map)
 
         case la_doc_tbl:
             res = doc_tbl (U(L(p)),
-                           UNAME(p, p->sem.doc_tbl.iter),
-                           /* unique name of input attribute item is
-                              stored in the child operator only */
-                           UNAME(L(p), p->sem.doc_tbl.item),
-                           UNAME(p, p->sem.doc_tbl.item_res));
+                           UNAME(p, p->sem.doc_tbl.res),
+                           UNAME(p, p->sem.doc_tbl.att));
             break;
 
         case la_doc_access:

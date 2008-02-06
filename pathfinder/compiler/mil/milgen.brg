@@ -5665,31 +5665,23 @@ reduce (PFpa_op_t * p, int goalnt)
         /* FragRel:  doc_tbl (Rel) */
         case 100:
         {
-            mvar_t *time;
+            /* temporary variables */
+            mvar_t *time = new_var (1),
+                   *v    = new_var (1),
+                    /* result BATs */
+                   *frag = new_var (p->refctr),
+                   *pre  = new_var (p->refctr);
 
-            /* copy the iter BAT */
-            mvar_t *iter = env_mvar (L(p)->env, p->sem.ii.iter, aat_nat);
-
-            env_add (p->env, p->sem.ii.iter, aat_nat, iter);
-            pin (iter, p->refctr);
+            env_add (p->env, p->sem.unary.res, aat_pre, pre);
+            env_add (p->env, p->sem.unary.res, aat_pfrag, frag);
 
             /* add timing information */
-            time = new_var (1);
             execute (assgn (var (time->name), usec ()));
-
-            /* temporary variable */
-            mvar_t *v = new_var (1);
-            /* result BATs */
-            mvar_t *frag = new_var (p->refctr);
-            mvar_t *pre  = new_var (p->refctr);
-
-            env_add (p->env, p->sem.ii.item, aat_pre, pre);
-            env_add (p->env, p->sem.ii.item, aat_pfrag, frag);
 
             execute (
                  assgn (var (v->name),
                         doc_tbl (var (PF_MIL_VAR_WS),
-                                 VAR (L(p)->env, p->sem.ii.item, aat_str))),
+                                 VAR (L(p)->env, p->sem.unary.att, aat_str))),
                  assgn (var (pre->name), fetch (var (v->name), lit_int (1))),
                  assgn (var (frag->name), fetch (var (v->name), lit_int (2))),
                  assgn (var (PF_MIL_VAR_WS), fetch (var (v->name), lit_int (0)))
@@ -5705,6 +5697,15 @@ reduce (PFpa_op_t * p, int goalnt)
                                  var (time->name)))));
             unpin (time, 1);
 
+            /* copy p's child environment */
+            for (unsigned int i = 0; i < PFarray_last (L(p)->env); i++) {
+
+                env_t entry = env_at (L(p)->env, i);
+
+                env_add (p->env, entry.att, entry.ty, entry.mvar);
+
+                pin (entry.mvar, p->refctr);
+            }
         } break;
 
         /* Rel:      doc_access (FragList, Rel) */

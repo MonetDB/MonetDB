@@ -1580,6 +1580,7 @@ void createAndStoreAlgOpNode(XML2LALGContext* ctx, xmlNodePtr nodePtr)
             /*
             <content>
                <column name="COLNAME" new="true"/>
+               <column name="COLNAME" new="false"/>
                <column name="COLNAME" function="iter"/>
                <column name="COLNAME" function="item"/>
             </content>
@@ -1588,9 +1589,8 @@ void createAndStoreAlgOpNode(XML2LALGContext* ctx, xmlNodePtr nodePtr)
             newAlgNode = PFla_doc_tbl
              (
              CHILDNODE(0),
-             PFLA_ATT("/content/column[@function='iter']/@name"),
-             PFLA_ATT("/content/column[@function='item']/@name"),
-             PFLA_ATT("/content/column[@new='true']/@name")
+             PFLA_ATT("/content/column[@new='true']/@name"),
+             PFLA_ATT("/content/column[@new='false']/@name")
              );
         }  
         break;

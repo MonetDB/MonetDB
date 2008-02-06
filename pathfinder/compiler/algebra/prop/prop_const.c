@@ -267,6 +267,7 @@ infer_const (PFla_op_t *n)
         case la_step_join:
         case la_guide_step_join:
         case la_doc_index_join:
+        case la_doc_tbl:
         case la_doc_access:
         case la_docnode:
         case la_element:
@@ -602,14 +603,6 @@ infer_const (PFla_op_t *n)
                         PFprop_const_val (R(n)->prop, n->sem.step.iter));
             break;
 
-        case la_doc_tbl:
-            if (PFprop_const (L(n)->prop, n->sem.doc_tbl.iter))
-                PFprop_mark_const (
-                        n->prop,
-                        n->sem.doc_tbl.iter,
-                        PFprop_const_val (L(n)->prop, n->sem.doc_tbl.iter));
-            break;
-
         case la_twig:
             switch (L(n)->kind) {
                 case la_docnode:
@@ -731,6 +724,7 @@ infer_const (PFla_op_t *n)
         case la_step_join:
         case la_guide_step_join:
         case la_doc_index_join:
+        case la_doc_tbl:
         case la_doc_access:
         case la_fcns:
         case la_docnode:

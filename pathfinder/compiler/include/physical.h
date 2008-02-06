@@ -777,12 +777,10 @@ PFpa_op_t *PFpa_llscj_prec_sibl (const PFpa_op_t *frag,
 
 /**
  * Access to persistently stored document table.
- *
- * Requires an iter | item schema as its input.
  */
 PFpa_op_t * PFpa_doc_tbl (const PFpa_op_t *,
-                          PFalg_att_t iter,
-                          PFalg_att_t item);
+                          PFalg_att_t res,
+                          PFalg_att_t att);
 
 /**
  * Access to the string content of loaded documents

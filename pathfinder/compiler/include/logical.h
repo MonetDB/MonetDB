@@ -357,9 +357,8 @@ union PFla_op_sem_t {
     
     /* store the column names necessary for document lookup */
     struct {
-        PFalg_att_t     iter;     /**< iter column to retain */
-        PFalg_att_t     item;     /**< column that contains the references */
-        PFalg_att_t     item_res; /**< column to store the document nodes */
+        PFalg_att_t     res;      /**< column to store the document nodes */
+        PFalg_att_t     att;      /**< column that contains the references */
     } doc_tbl;
 
     /* store the column names necessary for document access */
@@ -947,8 +946,7 @@ PFla_op_t * PFla_doc_index_join (const PFla_op_t *doc, const PFla_op_t *n,
  * function.  Returns a (frag, result) pair.
  */
 PFla_op_t * PFla_doc_tbl (const PFla_op_t *rel, 
-                          PFalg_att_t iter, PFalg_att_t item,
-                          PFalg_att_t item_res);
+                          PFalg_att_t res, PFalg_att_t att);
 
 /** Constructor for string access of loaded documents */
 PFla_op_t * PFla_doc_access (const PFla_op_t *doc,

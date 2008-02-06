@@ -381,9 +381,8 @@ subexp_eq (PFla_op_t *a, PFla_op_t *b)
             break;
 
         case la_doc_tbl:
-            return (a->sem.doc_tbl.iter        == b->sem.doc_tbl.iter
-                    && a->sem.doc_tbl.item     == b->sem.doc_tbl.item
-                    && a->sem.doc_tbl.item_res == b->sem.doc_tbl.item_res);
+            return (a->sem.doc_tbl.att == b->sem.doc_tbl.att &&
+                    a->sem.doc_tbl.res == b->sem.doc_tbl.res);
             break;
 
         case la_merge_adjacent:

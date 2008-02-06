@@ -298,7 +298,7 @@ map_names (PFla_op_t *n, PFla_op_t *goal, PFarray_t *par_np_list,
             break;
 
         case la_doc_tbl:
-            diff_np (np_list, n->sem.doc_tbl.item_res);
+            diff_np (np_list, n->sem.doc_tbl.res);
             break;
 
         case la_doc_access:

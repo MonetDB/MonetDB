@@ -3746,13 +3746,13 @@ PFbui_fn_doc (const PFla_op_t *loop, bool ordering,
 {
     (void) loop; (void) ordering;
 
-    PFla_op_t *doc = doc_tbl (project (args[0].rel,
-                                       proj (att_iter, att_iter),
-                                       proj (att_item, att_item)),
-                              att_iter, att_item, att_item);
+    PFla_op_t *doc = doc_tbl (args[0].rel, att_res, att_item);
 
     return (struct PFla_pair_t) {
-        .rel  = attach (roots (doc), att_pos, lit_nat (1)),
+        .rel  = project (roots (doc),
+                         proj (att_iter, att_iter),
+                         proj (att_pos, att_pos),
+                         proj (att_item, att_res)),
         .frag = PFla_set (fragment (doc)) };
 }
 

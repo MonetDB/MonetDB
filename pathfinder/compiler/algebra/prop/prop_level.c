@@ -300,7 +300,10 @@ infer_level (PFla_op_t *n)
             break;
 
         case la_doc_tbl:
-            mark_level (n->prop, n->sem.doc_tbl.item_res, 0);
+            /* level stays the same */
+            copy_level_info (n, L(n));
+
+            mark_level (n->prop, n->sem.doc_tbl.res, 0);
             break;
     }
 }

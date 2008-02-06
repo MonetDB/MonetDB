@@ -313,7 +313,6 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
             case la_all:
             case la_step:
             case la_guide_step:
-            case la_doc_tbl:
             case la_twig:
             case la_fcns:
             case la_docnode:
@@ -419,6 +418,10 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
                 if ((modified = GEN(lp->sem.doc_join.item_res))) LP = R(lp);
                 break;
 
+            case la_doc_tbl:
+                if ((modified = GEN(lp->sem.doc_tbl.res))) LP = L(lp);
+                break;
+
             case la_doc_access:
                 if ((modified = GEN(lp->sem.doc_access.res))) LP = R(lp);
                 break;
@@ -453,7 +456,6 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
             case la_all:
             case la_step:
             case la_guide_step:
-            case la_doc_tbl:
             case la_twig:
             case la_fcns:
             case la_docnode:
@@ -1682,6 +1684,18 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
                 }
                 break;
 
+            case la_doc_tbl:
+                if (!is_join_att (p, lp->sem.doc_tbl.res)) {
+                    *p = *(doc_tbl (eqjoin_unq (L(lp), rp, latt, ratt,
+                                                p->sem.eqjoin_unq.res),
+                                    lp->sem.doc_tbl.res,
+                                    is_join_att(p, lp->sem.doc_tbl.att)
+                                       ? p->sem.eqjoin_unq.res
+                                       : lp->sem.doc_tbl.att));
+                    next_join = L(p);
+                }
+                break;
+                
             case la_doc_access:
                 if (!is_join_att (p, lp->sem.doc_access.res)) {
                     *p = *(doc_access (L(lp),
@@ -1862,7 +1876,6 @@ map_name (PFla_op_t *p, PFalg_att_t att)
         case la_all:
         case la_step:
         case la_guide_step:
-        case la_doc_tbl:
         case la_twig:
         case la_fcns:
         case la_docnode:
@@ -1948,6 +1961,9 @@ map_name (PFla_op_t *p, PFalg_att_t att)
             break;
         case la_doc_index_join:
             if (att == p->sem.doc_join.item_res) return att_NULL;
+            break;
+        case la_doc_tbl:
+            if (att == p->sem.doc_tbl.res) return att_NULL;
             break;
         case la_doc_access:
             if (att == p->sem.doc_access.res) return att_NULL;

@@ -2853,60 +2853,36 @@ PFpa_llscj_prec_sibl (const PFpa_op_t *frag,
  * function.  Returns a (frag, result) pair.
  */
 PFpa_op_t *
-PFpa_doc_tbl (const PFpa_op_t *rel, PFalg_att_t iter, PFalg_att_t item)
+PFpa_doc_tbl (const PFpa_op_t *n, PFalg_att_t res, PFalg_att_t att)
 {
-    PFpa_op_t         *ret;
+    unsigned int i;
+    PFpa_op_t   *ret;
 
-#ifndef NDEBUG
-    unsigned short found = 0;
+    ret = wire1 (pa_doc_tbl, n);
 
-    for (unsigned int i = 0; i < rel->schema.count; i++)
-        if (rel->schema.items[i].name == iter
-            || rel->schema.items[i].name == item)
-            found++;
+    /* store columns to work on in semantical field */
+    ret->sem.unary.res = res;
+    ret->sem.unary.att = att;
 
-    if (found != 2)
-        PFoops (OOPS_FATAL, "document access requires iter|item schema");
-#endif
-
-    ret = wire1 (pa_doc_tbl, rel);
-
-    ret->sem.ii.iter = iter;
-    ret->sem.ii.item = item;
-
-    /* The schema of the result part is iter|item */
-    ret->schema.count = 2;
+    /* allocate memory for the result schema */
+    ret->schema.count = n->schema.count + 1;
     ret->schema.items
-        = PFmalloc (ret->schema.count * sizeof (*ret->schema.items));
+        = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
 
-    ret->schema.items[0]
-        = (PFalg_schm_item_t) { .name = iter,
-                                .type = aat_nat };
-    ret->schema.items[1]
-        = (PFalg_schm_item_t) { .name = item,
-                                .type = aat_pnode };
+    for (i = 0; i < n->schema.count; i++)
+        ret->schema.items[i] = n->schema.items[i];
+
+    ret->schema.items[i]
+        = (struct PFalg_schm_item_t) { .name = res,
+                                       .type = aat_pnode };
 
     /* ---- doc_tbl: orderings ---- */
-
-    /* If the input is sorted by `iter', the output will be as well. */
-    bool sorted_by_iter = false;
-
-    for (unsigned int i = 0; i < PFord_set_count (rel->orderings); i++)
-        if (PFord_implies (PFord_set_at (rel->orderings, i),
-                           sortby (iter))) {
-            sorted_by_iter = true;
-            break;
-        }
-
-    if (sorted_by_iter) {
-        if (PFprop_const (rel->prop, item))
-            PFord_set_add (ret->orderings, sortby (iter, item));
-        else
-            PFord_set_add (ret->orderings, sortby (iter));
-    }
+    /*    ordering stays the same   */
+    for (unsigned int i = 0; i < PFord_set_count (n->orderings); i++)
+        PFord_set_add (ret->orderings, PFord_set_at (n->orderings, i));
 
     /* ---- doc_tbl: costs ---- */
-    ret->cost = DEFAULT_COST + rel->cost;
+    ret->cost = DEFAULT_COST + n->cost;
 
     return ret;
 }

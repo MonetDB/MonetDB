@@ -2938,29 +2938,28 @@ PFla_doc_index_join (const PFla_op_t *doc, const PFla_op_t *n,
  * function.  Returns a (frag, result) pair.
  */
 PFla_op_t *
-PFla_doc_tbl (const PFla_op_t *rel,
-              PFalg_att_t iter, PFalg_att_t item,
-              PFalg_att_t item_res)
+PFla_doc_tbl (const PFla_op_t *n, PFalg_att_t res, PFalg_att_t att)
 {
-    PFla_op_t         *ret;
+    unsigned int i;
+    PFla_op_t   *ret;
 
-    ret = la_op_wire1 (la_doc_tbl, rel);
+    ret = la_op_wire1 (la_doc_tbl, n);
 
     /* store columns to work on in semantical field */
-    ret->sem.doc_tbl.iter     = iter;
-    ret->sem.doc_tbl.item     = item;
-    ret->sem.doc_tbl.item_res = item_res;
+    ret->sem.doc_tbl.res = res;
+    ret->sem.doc_tbl.att = att;
 
-    /* The schema of the result part is iter|item */
-    ret->schema.count = 2;
+    /* allocate memory for the result schema */
+    ret->schema.count = n->schema.count + 1;
     ret->schema.items
-        = PFmalloc (ret->schema.count * sizeof (*ret->schema.items));
+        = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
 
-    ret->schema.items[0]
-        = (PFalg_schm_item_t) { .name = iter,
-                                .type = PFprop_type_of (rel, iter) };
-    ret->schema.items[1]
-        = (PFalg_schm_item_t) { .name = item_res, .type = aat_pnode };
+    for (i = 0; i < n->schema.count; i++)
+        ret->schema.items[i] = n->schema.items[i];
+
+    ret->schema.items[i]
+        = (struct PFalg_schm_item_t) { .name = res,
+                                       .type = aat_pnode };
 
     return ret;
 }
@@ -4344,9 +4343,8 @@ PFla_op_duplicate (PFla_op_t *n, PFla_op_t *left, PFla_op_t *right)
 
         case la_doc_tbl:
             return PFla_doc_tbl (left,
-                                 n->sem.doc_tbl.iter,
-                                 n->sem.doc_tbl.item,
-                                 n->sem.doc_tbl.item_res);
+                                 n->sem.doc_tbl.res,
+                                 n->sem.doc_tbl.att);
 
         case la_doc_access:
             return PFla_doc_access (left, right,

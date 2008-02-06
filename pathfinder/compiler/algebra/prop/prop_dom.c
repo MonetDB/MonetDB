@@ -1005,12 +1005,8 @@ infer_dom (PFla_op_t *n, unsigned int id)
             break;
 
         case la_doc_tbl:
-            /* retain domain for attribute iter */
-            add_dom (n->prop,
-                     n->sem.doc_tbl.iter,
-                     PFprop_dom (L(n)->prop, n->sem.doc_tbl.iter));
-            /* create new domain for attribute item */
-            add_dom (n->prop, n->sem.doc_tbl.item_res, id++);
+            bulk_add_dom (n->prop, L(n));
+            add_dom (n->prop, n->sem.doc_tbl.res, id++);
             break;
 
         case la_doc_access:

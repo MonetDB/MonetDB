@@ -149,7 +149,7 @@
         PFla_doc_index_join ((a),(b),(c),(d),(e),(f))
 
 /* document table */
-#define doc_tbl(a,b,c,d)    PFla_doc_tbl((a),(b),(c),(d))
+#define doc_tbl(a,b,c)    PFla_doc_tbl((a),(b),(c))
 
 /* document content access */
 #define doc_access(a,b,c,d,e) PFla_doc_access ((a), (b), (c), (d), (e))

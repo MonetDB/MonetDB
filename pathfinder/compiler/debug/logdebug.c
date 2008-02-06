@@ -809,14 +809,10 @@ la_dot (PFarray_t *dot, PFla_op_t *n, bool print_frag_info)
         }   break;
 
         case la_doc_tbl:
-            PFarray_printf (dot, "%s (%s, %s%s%s)", 
+            PFarray_printf (dot, "%s (%s:<%s>)", 
                             a_id[n->kind],
-                            PFatt_str (n->sem.doc_tbl.iter),
-                            PFatt_str (n->sem.doc_tbl.item_res),
-                            n->sem.doc_tbl.item_res != n->sem.doc_tbl.item
-                            ? ":" : "",
-                            n->sem.doc_tbl.item_res != n->sem.doc_tbl.item
-                            ? PFatt_str (n->sem.doc_tbl.item) : "");
+                            PFatt_str (n->sem.doc_tbl.res),
+                            PFatt_str (n->sem.doc_tbl.att));
             break;
 
         case la_doc_access:
@@ -2168,12 +2164,10 @@ la_xml (PFarray_t *xml, PFla_op_t *n)
             PFarray_printf (xml,
                             "    <content>\n"
                             "      <column name=\"%s\" new=\"true\"/>\n"
-                            "      <column name=\"%s\" function=\"iter\"/>\n"
-                            "      <column name=\"%s\" function=\"item\"/>\n"
+                            "      <column name=\"%s\" new=\"false\"/>\n"
                             "    </content>\n",
-                            PFatt_str (n->sem.doc_tbl.item_res),
-                            PFatt_str (n->sem.doc_tbl.iter),
-                            PFatt_str (n->sem.doc_tbl.item));
+                            PFatt_str (n->sem.doc_tbl.res),
+                            PFatt_str (n->sem.doc_tbl.att));
             break;
 
         case la_doc_access:

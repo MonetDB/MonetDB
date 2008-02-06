@@ -483,7 +483,7 @@ infer_key (PFla_op_t *n, bool with_guide_info)
         case la_to:
             /* if the cardinality is equal to one
                the result is key itself */
-            if (PFprop_card (n->prop) == 1)
+            if (PFprop_card (L(n)->prop) == 1)
                 union_ (n->prop->keys, n->sem.binary.res);
             break;
 
@@ -617,14 +617,13 @@ infer_key (PFla_op_t *n, bool with_guide_info)
             break;
 
         case la_doc_tbl:
-            if (PFprop_card (n->prop) == 1) {
-                /* If the cardinality is equal to one
-                   the result is key itself. */
-                union_ (n->prop->keys, n->sem.doc_tbl.iter);
-                union_ (n->prop->keys, n->sem.doc_tbl.item_res);
-            } else
-                /* Otherwise at least column iter is key. */
-                union_ (n->prop->keys, n->sem.doc_tbl.iter);
+            /* key columns are propagated */
+            copy (n->prop->keys, L(n)->prop->keys);
+
+            /* if the cardinality is equal to one
+               the result is key itself */
+            if (PFprop_card (n->prop) == 1)
+                union_ (n->prop->keys, n->sem.doc_tbl.res);
             break;
 
         case la_doc_access:
