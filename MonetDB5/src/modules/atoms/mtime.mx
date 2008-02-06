@@ -86,11 +86,11 @@ by some value of a standard integer type).
 
 @item valid timestamp
 is formed by a combination of a valid date and valid daytime.
-\item[difference in days]
+@item difference in days
 For difference calculations between dates (in numbers of days) we use signed integers (the @i{int}
 Monet type), hence the valid range for difference calculations is between -2147483648 and
 2147483647 days (which corresponds to roughly -5,867,411 and 5,867,411 years).
-\item[difference in msecs]
+@item difference in msecs
 For difference between timestamps (in numbers of milliseconds) we use 64-bit longs (the @i{lng} Monet type).
 These are large integers of maximally 19 digits, which therefore impose a limit of about 106,000,000,000 years
 on the maximum time difference used in computations.
@@ -154,9 +154,9 @@ in days) have a small error if the time difference spans many hundreds of years.
 
 TODO: we cannot handle well changes in the timezone rules (e.g., DST only exists since
 40 years, and some countries make frequent changes to the DST policy). To accommodate
-this we should make timezone\_local a function with a year parameter. The tool should
+this we should make timezone_local a function with a year parameter. The tool should
 maintain and access the timezone database stored in two bats [str,timezone],[str,year].
-Lookup of the correct timezone would be dynamic in this structure. The timezone\_setlocal
+Lookup of the correct timezone would be dynamic in this structure. The timezone_setlocal
 would just set the string name of the timezone.
 
 @+ Time/date comparison 

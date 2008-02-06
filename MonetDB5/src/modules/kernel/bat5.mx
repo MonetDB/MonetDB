@@ -1804,22 +1804,22 @@ CMDset_seqbase(BAT **r, BAT *b, oid *o)
 @T
 The XML node storage scheme of MonetDB/XQuery needs some extra kernel support. 
 
-\begin{itemize}
-\item
+@itemize
+@item
   we introduce a fast way to create BATs with the VM pages in a different order
   (to cheaply support inserting new pages halfway). 
-\item
+@item
   for other bats, there is a new rcopy(), that copies large heaps using
   copy-on-write memory maps. This is also done for string heaps, if they are
   no longer double eliminated. 
-\item
+@item
   we introduce a primitive to swizzle OIDs for such remappings between RIDs (the real
   voids on disk) and PREs (the voids of the remapped copy).
-\item
+@item
   we introduce 'isolate()' a primitive that executes a number of idempotent updates
   on a bat, such that all modified logical pages have received physical page
   copies (transparently by the MMU page faults it generates).
-\end{itemize}
+@end itemize
 
 Also, we use copy-on-write maps for transaction isolation. Contrary to intuition, we 
 write into STORE_MMAP read-only master bats (overriding the read-only protection 
@@ -1840,26 +1840,26 @@ using the special-purpose CMDswizzle.
 
 other changes were:
 
-\begin{itemize}
-\item
+@ itemize
+@item
   gdk_bat.mx/gdk_batop.mx: a 'force' flag in update operations that allow to update
   read-only/append-only BATs anyway. Note that if used, another (WAL-based) recovery
   mechanism must be used to repair BATs after a system crash!! This is a user
   respsonability (in this case, of the MonetDB/XQuery frontend).
-\item
+@item
   gdk_bat.mx: make a true copy of remapped/rcopied BUN heaps if the bat becomes persistent 
   or updatable. 
-\item
+@item
   gdk_batop.mx: optimized fetchjoin for idempotent positional joins (into a bat[void,void]
   with equal seqbase and all tuples hitting). To keep semantics consistent, it is now
   an error if a fetchjoin is performed with a key that is out-of-range. Everything *must* match!
-\item
+@item
   gdk_storage.mx: batload.  To preserve the integritry of string heaps with such forced updates, 
   the kernel zaps the internal hash table of string heaps. Note that this is only allowed if 
   double-elimination inside the string heap is disabled (in that case the hash table is not 
   required to be complete).  To prevent problems, the rcopy() does not do mmap-tricks for 
   double-eliminating heaps.
-\end{itemize}
+@end itemize
 
 In swizzling as well as in positional join, specific optimizations are made for
 the common case where all pages appear in order (this occurs in XML tables that have
