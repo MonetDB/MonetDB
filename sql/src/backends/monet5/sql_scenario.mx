@@ -402,6 +402,8 @@ SQLinitClient(Client c)
 
 	/*expect SQL text first */
 	be->language = 'S';
+	/* Set state, this indicates an initialized client scenario */
+	c->state[MAL_SCENARIO_READER] = c;
 	c->state[MAL_SCENARIO_PARSER] = be;
 	c->state[MAL_SCENARIO_OPTIMIZE] = m;
 
@@ -439,6 +441,7 @@ SQLexitClient(Client c)
 		c->state[MAL_SCENARIO_PARSER] = NULL;
 		*/
 	}
+	c->state[MAL_SCENARIO_READER] = NULL;
 	return MAL_SUCCEED;
 }
 
