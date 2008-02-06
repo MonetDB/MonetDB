@@ -6,8 +6,6 @@ stderr of test 'internal` in directory 'compiler/semantics/tests/typechecking` i
 # 11:48:33 >  
 
 pf: invalid option -- d
-./internal: line 10: 19773 Done                    echo 42
-     19774 Segmentation fault      | pf -d subtyping -s11
 
 # 11:38:33 >  
 # 11:38:33 >  Done.
