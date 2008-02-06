@@ -496,6 +496,13 @@ special_col (PFsql_special_t spc)
 #define POS(n)        ext_column_name (n, special_col (sql_col_pos))
 #define MAX(n)        ext_column_name (n, special_col (sql_col_max))
 
+#define TRUE_STR       lit_str("true")
+#define FALSE_STR      lit_str("false")
+#define TRUE_DEC       lit_dec(1.0E0)
+#define FALSE_DEC      lit_dec(0.0E0)
+#define TRUE_INT       lit_int(1)
+#define FALSE_INT      lit_int(0)
+
 /**
  * Returns a new column name
  * (also storing its logical algebra name and its type).
@@ -697,7 +704,7 @@ transform_expression (PFsql_t *n, PFsql_t *col)
         n = (n->kind == sql_column_name ||
              n->kind == sql_lit_int)?
             n:
-            case_ (when (n, lit_int (1)), else_ (lit_int (0)));
+            case_ (when (n, TRUE_INT), else_ (FALSE_INT));
 
     if (n->kind == sql_column_name)
     {
@@ -1635,6 +1642,60 @@ collect_fragments (PFla_op_t * p)
         return frag_select (table_name (PF_SQL_TABLE_FRAG));
 }
 
+/**
+ * Cast from a boolean value 
+ */
+static PFsql_t *
+cast_from_bool (PFsql_t * expr, PFalg_simple_type_t res_ty)
+{
+    switch (res_ty) {
+        case aat_uA:  
+        case aat_str:
+            if (expr->kind == sql_column_name)
+                expr = eq (expr, TRUE_INT);
+            return case_ (when (expr,TRUE_STR),
+                          else_ (FALSE_STR));
+        case aat_dec:
+        case aat_dbl:
+            if (expr->kind != sql_column_name)
+                return case_ (when (expr, TRUE_DEC),
+                              else_ (FALSE_DEC));
+            else
+                return cast (expr, type (res_ty));
+        case aat_int:
+            if (expr->kind != sql_column_name)
+                return case_ (when (expr, TRUE_INT),
+                              else_ (FALSE_INT));
+            else
+                return expr;
+        default:
+            PFoops (OOPS_FATAL, "This cast from a boolean"
+                                " value is not allowed");
+    }
+    
+    return NULL; /* satisfy picky compilers */
+}
+
+/**
+ * A cast to boolean is has to provide a boolean expression.
+ */
+static PFsql_t *
+cast_to_bool (PFsql_t *expr, PFalg_simple_type_t ty)
+{
+    switch (ty) {
+        case aat_dec:
+        case aat_dbl:
+            return eq(expr, TRUE_DEC);
+        case aat_int:
+            return eq(expr, TRUE_INT);
+        default:
+            PFoops (OOPS_FATAL, "This cast to a boolean"
+                                " boolean value is not allowed");
+    }
+    
+    return NULL; /* satisfy picky compilers */
+}
+
 static PFsql_t *
 cast_ (PFsql_t * expr, PFalg_simple_type_t ty, PFalg_simple_type_t res_ty)
 {
@@ -1647,12 +1708,20 @@ cast_ (PFsql_t * expr, PFalg_simple_type_t ty, PFalg_simple_type_t res_ty)
     #define CHAR_TYPE(t)   ((t == aat_str) || \
                             (t == aat_uA))
     #define NUM_NOTEXPR(t) ((t == aat_int))
+    #define BOOL_TYPE(t)    (t == aat_bln)
 
     /* Since we handle untypedAtomic and Strings the same
      * way in SQL, its obvious we don't have to
      * perform a cast if res_ty is a CHAR_TYPE and
      * and input type is a CHAR_TYPE */
     if (CHAR_TYPE(ty) && CHAR_TYPE(res_ty)) return expr;
+
+    if (BOOL_TYPE(ty))
+        return cast_from_bool (expr, res_ty);
+
+    if (BOOL_TYPE(res_ty))
+        return cast_to_bool (expr, ty); 
+
 
     /* if we cast a numeric type to varchar we have to
        first cast it to CHAR and then to varchar */
@@ -1890,8 +1959,8 @@ reduce (PFla_op_t * p, int goalnt)
                     if (entry.type == aat_bln)
                         colexpr = (colexpr->kind == sql_column_name)?
                                   colexpr:
-                                  case_ (when (colexpr, lit_int (1)),
-                                         else_ (lit_int (0)));
+                                  case_ (when (colexpr, TRUE_INT),
+                                         else_ (FALSE_INT));
                     
                     /* Generate a special column name DIST
                        that can be overloaded ... */
@@ -3396,9 +3465,8 @@ reduce (PFla_op_t * p, int goalnt)
                                expr = min (((expr)->kind == sql_column_name)?
                                            expr:
                                            case_(
-                                              when (expr,
-                                                    lit_int(1)),
-                                              else_ (lit_int (0))));
+                                              when (expr, TRUE_INT),
+                                              else_ (FALSE_INT)));
                              break;
                 case la_sum:   expr = sum (expr); break;
                 case la_count: expr = count (star ()); break;
