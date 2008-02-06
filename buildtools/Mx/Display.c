@@ -26,7 +26,6 @@
 
 extern int pr_env;
 
-#define TEXIMODE (textmode==M_TEXI)
 /* Printing modes
  *	Formatted text	Plain/Math.
  *		Math is used for special symbols.
@@ -167,6 +166,6 @@ void
 PrPostlude(void)
 {
 	PrEnv(E_CMD);
-	if (bodymode == 0)
+	if (TEXIMODE && bodymode == 0) 
 		ofile_printf("@bye\n");
 }

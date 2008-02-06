@@ -33,7 +33,7 @@ unsigned int db_flag = 0x00;
 int archived;			/* set for archived portions */
 int mode = M_TEXT;
 int opt_hide = NO_HIDE;
-int textmode = M_TEXI;
+int textmode = M_TEXT;
 int bodymode = 0;		/* all should be shown */
 char *opt_code;
 char *defHideText = 0;

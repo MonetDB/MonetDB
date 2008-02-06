@@ -129,6 +129,8 @@ extern	char *		strchr();
 
 #define	M_TEXI	0xf0000
 
+#define TEXIMODE (textmode==M_TEXI)
+
 extern int mode;
 
 /* 

@@ -25,7 +25,6 @@
 #include	"Mx.h"
 #include	"MxFcnDef.h"
 
-#define TEXIMODE 	(textmode==M_TEXI)
 #define Newline		if TEXIMODE {PrCmd("\n");} 
 
 extern int pr_env;
