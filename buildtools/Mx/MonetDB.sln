@@ -14,17 +14,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "config", "config.vcproj", "
 	ProjectSection(ProjectDependencies) = postProject
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "idxmx", "idxmx.vcproj", "{B6441D66-A219-41B6-8671-DC63BC15D8E8}"
-	ProjectSection(ProjectDependencies) = postProject
-		{E7B3561F-5153-405A-83CA-3AD0C0CA80DD} = {E7B3561F-5153-405A-83CA-3AD0C0CA80DD}
-	EndProjectSection
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "prefixMxFile", "prefixMxFile.vcproj", "{7E7B0548-B66C-4561-B875-0F9F2FF981AE}"
-	ProjectSection(ProjectDependencies) = postProject
-		{408E0201-215B-424F-AECB-02668D827ADB} = {408E0201-215B-424F-AECB-02668D827ADB}
-		{E7B3561F-5153-405A-83CA-3AD0C0CA80DD} = {E7B3561F-5153-405A-83CA-3AD0C0CA80DD}
-	EndProjectSection
-EndProject
 Global
 	GlobalSection(SolutionConfiguration) = preSolution
 		Debug = Debug

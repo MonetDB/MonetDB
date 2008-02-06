@@ -29,32 +29,22 @@ COPY=copy
 MKDIR=mkdir
 MT=mt -nologo
 
-all: Mx.exe prefixMxFile.exe idxmx.exe
+all: Mx.exe
 
 install: all
 	if not exist "$(bindir)" $(MKDIR) "$(bindir)"
 	$(COPY) Mx.exe "$(bindir)"
-	$(COPY) prefixMxFile.exe "$(bindir)"
-	$(COPY) idxmx.exe "$(bindir)"
 
 clean:
 	del *.exe *.obj mx_config.h
 
-MX_OBJS = Mx.obj Index.obj Def.obj Form.obj Tok.obj Code.obj Display.obj \
-	  Print.obj Io.obj Sys.obj disclaimer.obj Tex2Html.obj getopt.obj
+MX_OBJS = Mx.obj Def.obj Form.obj Tok.obj Code.obj Display.obj \
+	  Print.obj Io.obj Sys.obj disclaimer.obj getopt.obj
 Mx.exe: $(MX_OBJS)
 	$(CC) $(CFLAGS) /FeMx.exe $(MX_OBJS) /link /subsystem:console /NODEFAULTLIB:LIBC
 	if exist $@.manifest $(MT) -manifest $@.manifest -outputresource:$@;1
 
-PREFIXMXFILE_OBJS = prefixMxFile.obj disclaimer.obj getopt.obj
-prefixMxFile.exe: $(PREFIXMXFILE_OBJS)
-	$(CC) $(CFLAGS) /FeprefixMxFile.exe $(PREFIXMXFILE_OBJS) /link /subsystem:console /NODEFAULTLIB:LIBC
-
-IDXMX_OBJS = idxmx.obj
-idxmx.exe: $(IDXMX_OBJS)
-	$(CC) $(CFLAGS) /Feidxmx.exe $(IDXMX_OBJS) /link /subsystem:console /NODEFAULTLIB:LIBC
-
-$(MX_OBJS) $(PREFIXMXFILE_OBJS) $(IDXMX_OBJS): mx_config.h
+$(MX_OBJS): mx_config.h
 
 mx_config.h: winconfig.h
 	$(COPY) winconfig.h mx_config.h
