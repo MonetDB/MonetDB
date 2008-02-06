@@ -328,6 +328,7 @@ comment "unix-time (epoch) support: seconds since epoch";
 
 @:compareGrp(timestamp)@
 
+@
 When creating a timestamp from a date and daytime, a timezone should be specified
 (if timezone is omitted, the local timezone is assumed). If a timezone is specified,
 it is used to convert the date and time in that timezone to GMT, which is the internal
