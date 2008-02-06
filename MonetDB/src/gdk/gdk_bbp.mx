@@ -1786,7 +1786,7 @@ just one thread does a BBPtrim at a time (by having a BBPtrimLock set).
 @item
 while decisions are made as to which bats to unload (1) the BBP is
 scanned, and (2) unload decisions are made. Due to these properties,
-the search&decide phase of BBPtrim acquires both GDKcacheLock (due to (1))i
+the search&decide phase of BBPtrim acquires both GDKcacheLock (due to (1))
 and all GDKswapLocks (due to (2)). They must be released during the actual 
 unloading.  (as otherwise deadlock occurs => unloading a bat may e.g. kill 
 an accelerator that is a BAT, which in turn requires BBP lock acquisition).
