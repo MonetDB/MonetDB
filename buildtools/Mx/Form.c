@@ -355,11 +355,11 @@ FormBlk(Def * d)
 void
 FormTitle(void)
 {
-	if (bodymode == 0)
-		return;
-	if (!(mx_author && mx_title))
+	if (bodymode)
 		return;
 
+	if (!(mx_author && mx_title))
+		return;
 	PrCmd("@titlepage\n");
 	if (*mx_title) {
 		PrCmd("@title ");

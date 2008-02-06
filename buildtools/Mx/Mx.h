@@ -161,7 +161,6 @@ extern int textmode;		/* either T_TEX or T_MS */
 extern int bodymode;		/* either 0= all 1= for inclusion */
 extern int noline;
 extern int notouch;
-extern int texihdr;
 
 #define	NO_HIDE	-1
 

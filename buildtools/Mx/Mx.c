@@ -37,7 +37,6 @@ int textmode = M_TEXI;
 int bodymode = 0;		/* all should be shown */
 char *opt_code;
 char *defHideText = 0;
-int texihdr = 0;		/* todo add option for this */
 
 int mx_err = 0;
 char *mx_file = 0;

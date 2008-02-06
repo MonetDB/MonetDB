@@ -137,8 +137,6 @@ PrRule(char *tail)
 
 extern char *bname;
 
-static int preludeDone = 0;
-
 void
 PrPrelude(char *file)
 {
@@ -160,13 +158,8 @@ PrPrelude(char *file)
 	*t = 0;
 
 
-	if (TEXIMODE && bodymode == 0)
+	if (bodymode == 0) 
 		ofile_printf("\\input texinfo\n");
-
-	if (bodymode == 0) {
-		if (TEXIMODE)
-			ofile_printf("@iftex\n@tex\n\\begin{document}\n@end tex\n@end iftex\n");
-	}
 	PrEnv(E_CMD);
 }
 
@@ -174,10 +167,6 @@ void
 PrPostlude(void)
 {
 	PrEnv(E_CMD);
-	if TEXIMODE 
-		if (preludeDone)
-			if (bodymode == 0)
-				ofile_printf("@bye\n");
-	if (TEXIMODE && bodymode == 0)
+	if (bodymode == 0)
 		ofile_printf("@bye\n");
 }

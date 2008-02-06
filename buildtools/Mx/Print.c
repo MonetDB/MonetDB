@@ -198,16 +198,14 @@ PrChr(char c)
 			while (start_pos++ < pr_pos)
 				ofile_putc(' ');
 			break;
+		/* now idea how to translate backslashes savely */
 		case '\\':
-			ofile_puts("\\");
+			ofile_putc(' ');
 			break;
 		case '{':
 		case '}':
 		case '@':
 			ofile_printf("@%c", c);
-			break;
-		case '#':
-			ofile_printf("\\#");
 			break;
 		default:
 			ofile_putc(c);

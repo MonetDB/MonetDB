@@ -221,7 +221,7 @@ IoWriteFile(char *s, CmdCode m)
 	File *f;
 
 	if (ofile) {
-		if (texihdr)
+		if (bodymode == 0)
 			ofile_printf("@bye\n");
 		fclose(ofile);
 	}
