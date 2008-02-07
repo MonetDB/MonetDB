@@ -1581,7 +1581,7 @@ The interpreter has a built-in performance monitor hook, which is
 activated using the compile option MALprofiler. Activation can lead to
 a significant performance degradation, because for all traced functions
 we have to keep track of essential system counter information.
-See @url{The MAL Profiler} for more details.
+See @ref{The MAL Profiler} for more details.
 
 @= performanceVariables
 #ifdef MALprofiler

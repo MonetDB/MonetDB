@@ -104,7 +104,7 @@ the following content. The ticks are measured in micro-seconds.
 @node Event Caching, Stethoscope, Event Filtering, The MAL Profiler
 @+ Event Caching
 Aside from shipping events to a separate process, the profiler
-can keep the events in a local @sc{BAT} group.
+can keep the events in a local @sc{bat} group.
 It is the default when no target file has been opened
 to collect the information.
 

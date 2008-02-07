@@ -17,7 +17,6 @@
 @f mal_properties
 @a M. Kersten
 @+ Property Management
-
 Properties come in several classes, those linked with the symbol table and
 those linked with the runtime environment. The former are determined
 once upon parsing or catalog lookup. The runtime properties have two 
@@ -282,12 +281,14 @@ The MAL language uses a few defaults, recognizable as properties
 @tab data can be appended
 @end multitable
 @-
+@{
 @h
 #ifndef _MAL_PROPERTIES_
 #define _MAL_PROPERTIES_
 #include "mal.h"
 #include "mal_namespace.h"
 
+@{
 typedef struct MalProp {
 	bte idx;
 	bte op;
@@ -302,6 +303,7 @@ typedef enum prop_op_t {
 	op_gt = 4,
 	op_ne = 5
 } prop_op_t;
+@}
 
 mal_export sht PropertyIndex(str name);
 mal_export str PropertyName(sht idx);
@@ -310,7 +312,6 @@ mal_export str PropertyOperatorString( prop_op_t op );
 
 #endif
 
-@{
 @c
 #include "mal_config.h"
 #include "mal_properties.h"
