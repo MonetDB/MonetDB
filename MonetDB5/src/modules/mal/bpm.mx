@@ -183,13 +183,13 @@ be used to reduce the plan size.
 @example
 	bpm.open();
 	Ralias:= bpm.take("myversion",:bat[:oid,:int]); # get the partition alias
-	R0{hlow=nil:oid,hhigh=nil:oid,tlow=nil:int,thigh=100}:= bpm.take(Ralias, 0);
+	R0@{hlow=nil:oid,hhigh=nil:oid,tlow=nil:int,thigh=100@}:= bpm.take(Ralias, 0);
 	T0:=algebra.select(R0,0,100);
 
-	R1{hlow=nil:oid,hhigh=nil:oid,tlow=101,thigh=200}:= bpm.take(Ralias, 1);
+	R1@{hlow=nil:oid,hhigh=nil:oid,tlow=101,thigh=200@}:= bpm.take(Ralias, 1);
 	T1:= algebra.select(R1,0,100);
 
-	R2{hlow=nil:oid,hhigh=nil:oid,tlow=201,thigh=nil:int}:=  bpm.take(Ralias, 2);
+	R2@{hlow=nil:oid,hhigh=nil:oid,tlow=201,thigh=nil:int@}:=  bpm.take(Ralias, 2);
 	R:= mat.new(T0,T1,T2);
 	T2:=algebra.select(R2,0,100);
 @end example
