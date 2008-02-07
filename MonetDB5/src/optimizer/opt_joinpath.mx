@@ -231,22 +231,30 @@ opt_export str ALGjoinPath(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 The join path optimizer takes a join sequence and
 attempts to minimize the intermediate result.
 The choice depends on a good estimate of intermediate
-results.SAMPLE_THRESHOLD_lOG
+results.
 For the time being, we use a simplistic model, based
 on the assumption that most joins are foreign key joins anyway.
+
 We use a sample based approach for sizeable  tables.
-The model is derived from the select statement.
+The model is derived from the select statement. However, we did not succeed.
+The code is now commented for future improvement.
+Final conclusion from this exercise is:
+The difference between the join input size and the join output size is not 
+the correct (or unique) metric which should be used to decide which order 
+should be used in the joinPath. 
+
 @c
-#define SAMPLE_THRESHOLD_lOG 17
+/*#define SAMPLE_THRESHOLD_lOG 17*/
 size_t
 ALGjoinCost(BAT *l, BAT *r)
 {
-	size_t lc, rc, lsize,rsize;
-	BAT *lsample, *rsample, *j;
+	size_t lc, rc;
+/*	size_t lsize,rsize;
+	BAT *lsample, *rsample, *j; */
 
 	lc = BATcount(l);
 	rc = BATcount(r);
-	if( lc > 100000 || rc > 100000){
+/*	if( lc > 100000 || rc > 100000){
 		lsize= MIN(lc/100, (1<<SAMPLE_THRESHOLD_lOG)/3);
 		lsample= BATsample(l,lsize);
 		BBPreclaim(lsample);
@@ -257,7 +265,7 @@ ALGjoinCost(BAT *l, BAT *r)
 		lsize= BATcount(j);
 		BBPreclaim(j);
 		return lsize;
-	}
+	}*/
 	if( l->ttype== TYPE_oid || r->htype== TYPE_oid )
 		return MIN(lc,rc);
 	return lc * rc;
