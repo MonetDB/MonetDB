@@ -141,14 +141,12 @@ and apply alias propagation, before considering a match.
 			getArgType(mb,p,0)== getArgType(mb,p,1) &&
 			getLastUpdate(span,getArg(p,0)) == i &&
 			getBeginLifespan(span,getArg(p,0)) == i &&
-			getLastUpdate(span,getArg(p,1) < i) ){
+			getLastUpdate(span,getArg(p,1)) <= i ){
 					alias[getArg(p,0)] = alias[getArg(p,1)];
-/* can be handled by the deadcode optimizer
 					freeInstruction(p);
 					mb->stop--;
 					mb->stmt[mb->stop]=0;
 					n--;
-*/
 					continue;
 			} 
 		for(j=0; j<p->argc; j++)
@@ -187,8 +185,7 @@ multiple occurrences of the same constant in the symbol table.
 				printf("%d, %d  %d %d ", i, j, 
 					hasSameSignature(p, q), 
 					hasSameArguments(mb, p, q));
-				printf(" :%d %d %d %d %d %d\n", 
-					!isUpdated(mb, i), 
+				printf(" :%d %d %d %d %d\n", 
 					!hasCommonResults(p, q), 
 					!hasSideEffects(p, TRUE),
 					!hasSideEffects(q, TRUE),
@@ -200,14 +197,7 @@ multiple occurrences of the same constant in the symbol table.
 Simple assignments are not replaced either. They should be
 handled by the alias removal part
 @c
-				if (q->token != ASSIGNsymbol && q->retc == 1 &&
-					( getModuleId(p)== batcalcRef  ||
-					  getModuleId(p)== batstrRef ||
-					  getModuleId(p)== batmathRef ||
-					  getModuleId(p)== mmathRef ||
-					  getModuleId(p)== algebraRef ||
-					  getModuleId(p)== strRef ||
-					  getModuleId(p)== calcRef) &&
+				if (q->token != ASSIGNsymbol && 
 					hasSameSignature(p, q) && 
 					hasSameArguments(mb, p, q) && 
 					getLastUpdate(span, getArg(p,0)) <= i &&
@@ -235,12 +225,10 @@ handled by the alias removal part
 						getBeginLifespan(span,getArg(p,0)) == i &&
 						getLastUpdate(span,getArg(p,1)) < i){
 							alias[getArg(p,0)]= alias[getArg(p,1)];
-/*
 							freeInstruction(p);
 							mb->stop--;
 							mb->stmt[mb->stop]=0;
 							n--;
-*/
 					}
 					j= 0; /* end of search */
 				}
