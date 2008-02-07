@@ -246,9 +246,13 @@ comment "Returns a BAT copy with buns in reverse order";
 
 @+ Set operations
 Sets in Monet can be viewed in two ways:
-(1) by looking at both columns of a BAT together (Set-, or s-operators).
-(2) by looking at the head column only (Key- or k-operators).
-(3) by looking at the tail column only (Tail key- or t-operators).
+@itemize
+@item
+by looking at both columns of a BAT together (Set-, or s-operators).
+@item
+by looking at the head column only (Key- or k-operators).
+by looking at the tail column only (Tail key- or t-operators).
+@end itemize
 For this reason, all standard set operations come in three flavors:
 k-@emph{operand} series, which look only at the head column, 
 t-@emph{operand} series, which look only at the tail column, and
@@ -267,14 +271,14 @@ bat intersection.
 @end itemize
 Implementations typically take two forms: if the input relation(s) is/are
 ordered, a merge-algorithm is used. Otherwise, hash-indices are produced
-on demand for the hash-based algorithms.@*
+on demand for the hash-based algorithms.
 The [k,s]intersect(l,r) operations result in all BUNs of @emph{l} that
-are also in @emph{r}. They do not do double-elimination over the @emph{l} BUNs.@*
+are also in @emph{r}. They do not do double-elimination over the @emph{l} BUNs.
 The [k,s]difference(l,r) operations result in all BUNs of @emph{l} that are
-not in @emph{r}. They do not do double-elimination over the @emph{l} BUNs.@*
-The [k,s]union(l,r) operations result in all BUNs of l that are 
-not in @emph{r}, plus all BUNs of @emph{r}. They do not do double-elimination
-over the @emph{l} nor @emph{r} BUNs.@*
+not in @emph{r}. They do not do double-elimination over the @emph{l} BUNs.
+The [k,s]union(l,r) operations result in all BUNs of l, plus all BUNs
+of @emph{r} that are not in @emph{l}. They do not do double-elimination
+over the @emph{l} nor @emph{r} BUNs.
 Operations with double-elimination can be formed by performing
 [k,s]unique(l) on their operands.
 The kintersect(l,r) is used also as implementation for the
@@ -658,7 +662,7 @@ comment "Produce a BAT containing the histogram over the tail values.";
 
 @- Default Min and Max
 Implementations a generic Min and Max routines get declared first. The
-@emph{ min()} and @emph{ max()} routines below catch any tail-type.
+@emph{min()} and @emph{max()} routines below catch any tail-type.
 The type-specific routines defined later are faster, and will
 override these any implementations.
 @mal
@@ -765,35 +769,36 @@ properties; which then is supposed to be valid for the head
 column (ordered(BAT)). Tail columns can be described by
 using the mirror BAT with the minus operator (ordered(-BAT)).
 
+@- Column Properties
 @table @code
-@item[ordered(BAT) :bit]
+@item [ordered(BAT) :bit]
 	TRUE if the head column is stored in ascending order, else FALSE.
-@item[keyed(BAT) :bit]
+@item [keyed(BAT) :bit]
 	TRUE if no duplicates are present in the head column, else FALSE.
-@item[idx(BAT) :bit]
+@item [idx(BAT) :bit]
 	TRUE if a binary index tree search accelerator is present on
 	the head column of the BAT, else FALSE.
-@item[hashtab(BAT) :bit] 
-		presence of hash table on the head column of
-		a BAT. TRUE if a bucket-chained hash table search accelerator is
-		present on the head column of the BAT, else FALSE.
-@item[subcol(BAT, BAT) :bit]
+@item [hashtab(BAT) :bit] 
+	presence of hash table on the head column of
+	a BAT. TRUE if a bucket-chained hash table search accelerator is
+	present on the head column of the BAT, else FALSE.
+@item [subcol(BAT, BAT) :bit]
 	TRUE if the bag of all values in the head column of the left BAT is
 	a bag-subset of the bag of all values in the head column of the
 	right BAT, else FALSE.
-@item[sync(BAT) :oid]
+@item [sync(BAT) :oid]
 	Sync-OID on the head column of a BAT. A sync-OID denotes some unique
 	sequence of values. If two columns have the same sync-OID, then they
 	are guaranteed to contain the same values, in the same sequence.
 
-@item[size(BAT) :int]
+@item [size(BAT) :int]
 	The (estimated) length of a column.
-@item[unique(BAT) :int]
+@item [unique(BAT) :int]
 	The (estimated) number of distinct values in one column.
-@item[subset(BAT, BAT) :bit]
+@item [subset(BAT, BAT) :bit]
 	TRUE if the left BAT is a subset of the BUNs of the right BAT,
 	else FALSE.
-@item[setunique(BAT) :bit]
+@item [setunique(BAT) :bit]
 	TRUE if the BAT contains no duplicate BUNs, else FALSE.
 @end table
 

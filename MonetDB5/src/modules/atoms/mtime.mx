@@ -15,10 +15,11 @@
 @' All Rights Reserved.
 
 @f mtime
+@t New Temporal Module
 @a Peter Boncz, Martin van Dinther
 @v 1.0
 
-@* Temporal Module
+@+ Temporal Module
 The goal of this module is to provide adequate functionality for storing
 and manipulated time-related data. The minimum requirement is that data
 can easily be imported from all common commercial RDBMS products.
@@ -40,6 +41,7 @@ a time of day to the detail of milliseconds, e.g. 23:59:59:000
 
 @item timestamp 
 a combination of date and time, indicating an exact point in
+
 time (GMT). GMT is the time at the Greenwich meridian without a daylight savings
 time (DST) regime. Absence of DST means that hours are consecutive (no jumps) which
 makes it easy to perform time difference calculations.
@@ -306,7 +308,6 @@ timezone.   Also, if a timestamp is parsed from a string that does not have
 an explicit GMT specifier, it is taken to be a timestamp in the local
 timezone. The default local timezone is just GMT+00, but it can be set
 arbitrarily.
-# not stored as a lng !
 @mal
 @{
 atom timestamp :lng;

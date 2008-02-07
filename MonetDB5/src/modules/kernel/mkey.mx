@@ -61,7 +61,7 @@ address MKEYbulk_rotate_xor_hash
 comment "pre:  h and b should be synced on head
          post: [:xor=]([:rotate=](h, nbits), [hash](b))";
 
-@-
+@- The Problem
 @}
 When creating a join, we want to make a unique key of the attributes on both
 sides and then join these keys. Consider the following BATs.
@@ -104,7 +104,7 @@ Computing the hash value for all columns in the key for one table is done
 by the command hash(). Hence, we do hash on both sides, and join
 that together with a simple join:
 
-join(hash(keys), hash(keys.reverse);
+@code{join(hash(keys), hash(keys.reverse);}
 
 One complication of this procedure are nil values:
 @table
