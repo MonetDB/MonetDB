@@ -41,11 +41,5 @@ headers_html = {
 	DIR = datadir/doc/MonetDB-SQL-$(VERSION)
 }
 
-headers_docs = {
-	HEADERS = ""
-	SOURCES = HowToStart-SQL 
-	DIR = datadir/doc/MonetDB-SQL-$(VERSION)
-}
-
 TESTS = RunMtest
 TESTS_ENVIRONMENT = $(SHELL)

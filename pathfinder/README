@@ -1,7 +1,7 @@
 MONETDB XQUERY FRONTEND
 
 Please see files
-	"./HowToStart-PF" (Unix)
+	"../MonetDB/HowToStart.rst" (Unix)
 or
 	"../buildtools/doc/windowsbuild.rst" (Windows) 
 for details.
