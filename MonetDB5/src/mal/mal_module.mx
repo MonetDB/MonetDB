@@ -624,11 +624,13 @@ The manual overview merely lists the mod.function names
 in texi format for inclusion in the documetation.
 @c
 void dumpManualOverview(stream *f, Module s, int recursive){
-	int j,z,rows;
+	int j,z,rows,cols;
 	Symbol t;
 	InstrPtr sig;
 	Module list[256]; int k, top=0, ftop, fnd;
 	InstrPtr fcn[5000];
+	int r,c,*x = NULL;
+	size_t x_sze = 0;
 
 
 	if(s==NULL || f==NULL){
@@ -640,6 +642,7 @@ void dumpManualOverview(stream *f, Module s, int recursive){
 	if(top>1) qsort(list, top, sizeof(Module), 
 		(int(*)(const void *, const void *))cmpModName);
 
+	cols = 4;
 	stream_printf(f,"@multitable @columnfractions .24 .24 .24 .24\n");
 	for(k=0;k<top;k++){
 		s= list[k];
@@ -666,23 +669,47 @@ void dumpManualOverview(stream *f, Module s, int recursive){
 			 sig= fcn[j]; fcn[j]=fcn[z]; fcn[z]= sig;
 		}
 		stream_printf(f,"@" "item\n");
-		rows = ftop/4;
-		rows += (ftop %4) ?1:0;
-		for(z=0; z<rows; z++){
-			stream_printf(f,"@" "item\n%s.%s\n",
-				getModuleId(fcn[z]), getFunctionId(fcn[z]));
-			if( z+rows <ftop)
-			stream_printf(f,"@" "tab\n%s.%s\n",
-				getModuleId(fcn[z+rows]), getFunctionId(fcn[z+rows]));
-			if(z+rows*2 <ftop)
-			stream_printf(f,"@" "tab\n%s.%s\n",
-				getModuleId(fcn[z+rows*2]), getFunctionId(fcn[z+rows*2]));
-			if(z+rows*3 <ftop)
-			stream_printf(f,"@" "tab\n%s.%s\n",
-				getModuleId(fcn[z+rows*3]), getFunctionId(fcn[z+rows*3]));
+		rows = (ftop + cols - 1) / cols;
+		if (x == NULL) {
+			/* 2x* to allow for empty/skipped fields/columns */
+			x_sze = 2 * cols * rows;
+			x = (int*) GDKmalloc(x_sze * sizeof(int));
+		} else if (2 * cols * rows > x_sze) {
+			x_sze = 2 * cols * rows;
+			x = (int*) GDKrealloc(x, x_sze * sizeof(int));
+		}
+		assert(x != NULL);
+		for (z = 0; z < rows; z++) {
+			x[cols * z] = z;
+		}
+		for (c = 1; c < cols; c++) {
+			for (r = 0; r < rows; r++) {
+				int i = (cols * r) + c - 1;
+				if (z < ftop && 
+				    (x[i] < 0 || strlen(getModuleId(fcn[x[i]])) + strlen(getFunctionId(fcn[x[i]])) < 80 / cols)) {
+					x[i+1] = z++;
+				} else {
+					/* HACK to avoid long names running into next column in printed version */
+					x[i+1] = -1;
+				}
+			}
+		}
+		z = 0;
+		for (r = 0; r < rows; r++) {
+			for (c = 0; c < cols; c++) {
+				str it[] = {"item", "tab"};
+				stream_printf(f,"@" "%s\n", it[(c > 0)]);
+				if (x[z] != -1) {
+					stream_printf(f,"%s.%s\n",
+						getModuleId(fcn[x[z]]), getFunctionId(fcn[x[z]]));
+				}
+				z++;
+			}
 		}
 	}
 	stream_printf(f,"@end multitable\n");
+	if (x != NULL)
+		GDKfree(x);
 }
 @-
 The manual help overview merely lists the mod.function names
@@ -769,6 +796,10 @@ void dumpManualHelp(stream *f, Module s, int recursive){
 					}
 					*o++ = '\0';
 					hlp_ = hlp_texi;
+				}
+				if (strlen(getModuleId(fcn[z])) + strlen(getFunctionId(fcn[z])) >= 20) {
+					/* HACK to avoid long names running into help text in printed version */
+					stream_printf(f,"@" "item\n");
 				}
 				stream_printf(f,"@" "tab %s\n", hlp_);
 			}
