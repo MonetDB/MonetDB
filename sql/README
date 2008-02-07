@@ -3,6 +3,6 @@ MONETDB SQL FRONTEND
 Please see files
 	"HowToStart-SQL" (Unix)
 or
-	"HowToStart-SQL-Win32.txt" (Windows) 
+	"../buildtools/doc/windowsbuild.rst" (Windows) 
 for details.
 

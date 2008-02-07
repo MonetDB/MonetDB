@@ -93,7 +93,7 @@ Releasing
     options ``NEED_MX=1 HAVE_JAVA=1 HAVE_PYTHON=1 HAVE_PYTHON_SWIG=1
     NDEBUG=1 NO_MONETDB4=1 HAVE_MONETDB5=1``);
   + MonetDB/ODBC using Visual Studio on 32-bit Windows;
-  + MonetDB4/XQuery using MinGW on 32-bit Window (Cygwin).
+  + MonetDB4/XQuery using Intel C++ on 32- & 64-bit Windows.
 
 - Copy the daily builds and Windows installers and upload to
   SourceForge using the ``releaseforge`` program.

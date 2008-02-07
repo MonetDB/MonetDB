@@ -31,7 +31,7 @@ headers_pc = {
 
 headers_txt = {
 	HEADERS = txt
-	SOURCES = HowToStart-SQL-Win32.txt dump-restore.txt 
+	SOURCES = dump-restore.txt 
 	DIR = datadir/doc/MonetDB-SQL-$(VERSION)
 }
 
