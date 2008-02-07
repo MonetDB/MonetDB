@@ -254,7 +254,8 @@ ALGjoinCost(BAT *l, BAT *r)
 
 	lc = BATcount(l);
 	rc = BATcount(r);
-/*	if( lc > 100000 || rc > 100000){
+#if 0	
+	if( lc > 100000 || rc > 100000){
 		lsize= MIN(lc/100, (1<<SAMPLE_THRESHOLD_lOG)/3);
 		lsample= BATsample(l,lsize);
 		BBPreclaim(lsample);
@@ -265,7 +266,8 @@ ALGjoinCost(BAT *l, BAT *r)
 		lsize= BATcount(j);
 		BBPreclaim(j);
 		return lsize;
-	}*/
+	}
+#endif
 	if( l->ttype== TYPE_oid || r->htype== TYPE_oid )
 		return MIN(lc,rc);
 	return lc * rc;
