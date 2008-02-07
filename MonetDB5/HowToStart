@@ -9,7 +9,7 @@ This document assumes that you are planning to compile and install
 MonetDB on a Unix system (e.g., Linux, IRIX, Solaris, AIX, MacOS
 X/Darwin, or CYGWIN).
 For compilation and installation on a native Windows system (NT, 2000, XP)
-see the instructions in the file 'HowToStart-Win32.txt'.
+see the instructions in the file '../buildtools/doc/windowsbuild.rst'.
 
 
 Prerequisites:
