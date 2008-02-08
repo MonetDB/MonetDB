@@ -36,13 +36,13 @@ mclient [options] [inputfile+]
 
 The following options are supported:
 
-@multitable @columnfractions .25 .25 .25 @verb @verb @verb
+@multitable @columnfractions .25 .25 .25 
 @item -h hostname 
 @tab --host=hostname  
 @tab host to connect to 
 @item -l language 
 @tab --language=lang  
-@tab {mal,sql,mil} 
+@tab @{mal,sql,mil@} 
 @item -P passwd   
 @tab --passwd=passwd  
 @tab password 
@@ -76,7 +76,7 @@ To protect your database you may want to introduce another DBA name and
 limit the access permissions of 'monetdb' to the level of a guest account.
 
 In the SQL mode, a few more convenient commands are available.
-@multitable @columnfractions .25 .75 @verb @verb
+@multitable @columnfractions .25 .75
 @item --rows
 @tab to control the pagination behavior
 @item --width

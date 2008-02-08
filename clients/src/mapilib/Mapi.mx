@@ -353,7 +353,7 @@ Send the Command to the database server represented by mid.  This
 function returns a query handle with which the results of the query
 can be retrieved.  The handle should be closed with
 @code{mapi_close_handle()}.  The command response is buffered for
-consumption, c.f. mapi\_fetch\_row().
+consumption, c.f. @code{mapi_fetch_row()}.
 
 @item MapiMsg mapi_query_handle(MapiHdl hdl, const char *Command)
 
@@ -399,7 +399,7 @@ returned upon success.
 
 @item MapiMsg mapi_execute_array(MapiHdl hdl, char **argv)
 
-Similar to mapi\_execute but replacing the placeholders for the string
+Similar to @code{mapi_execute} but replacing the placeholders for the string
 values provided.
 
 @item MapiMsg mapi_finish(MapiHdl hdl)
@@ -473,7 +473,7 @@ stream. The result is not analyzed or cached.
 Reset the row pointer to the requested row number.  If whence is
 @code{MAPI_SEEK_SET} (0), rownr is the absolute row number (0 being the
 first row); if whence is @code{MAPI_SEEK_CUR} (1), rownr is relative to the
-current row; if whence is MAPI\_SEEK\_END (2), rownr is relative to
+current row; if whence is @code{MAPI_SEEK_END} (2), rownr is relative to
 the last row.
 
 @item MapiMsg mapi_fetch_reset(MapiHdl hdl)
@@ -486,13 +486,13 @@ tuples at once.
 
 Return an array of string pointers to the individual fields.  A zero
 is returned upon encountering end of sequence or error. This can be
-analyzed in using mapi\_error().
+analyzed in using @code{mapi_error()}.
 
 @item char *mapi_fetch_field(MapiHdl hdl, int fnr)
 
 Return a pointer a C-string representation of the value returned.  A
 zero is returned upon encountering an error or when the database value
-is NULL; this can be analyzed in using mapi\_error().
+is NULL; this can be analyzed in using @code{mapi_error()}.
 
 @item MapiMsg mapi_next_result(MapiHdl hdl)
 
@@ -621,7 +621,7 @@ read counter, so rows may be lost.
 
 @item char * mapi_quote(const char *str, int size)
 
-Escape special characters such as \n, \t in str with
+Escape special characters such as @code{\n}, @code{\t} in str with
 backslashes.  The returned value is a newly allocated string which
 should be freed by the caller.
 
