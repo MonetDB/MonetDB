@@ -18,7 +18,6 @@
 @a M. L. Kersten, P. Boncz
 
 @* Monet Processes
-@T
 The multi-threaded parallel implementation of Monet is geared towards 
 shared-memory multiprocessors only. 
 The single threaded code simply cycles through the queue until it becomes empty.

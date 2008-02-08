@@ -18,7 +18,6 @@
 @t Transactions
 @a M.L. Kersten, P. Boncz
 @v 1.0
-@T
 @* Introduction
 In the philosophy of Monet, transaction management overhead should only
 be paid when necessary. Transaction management is for this purpose

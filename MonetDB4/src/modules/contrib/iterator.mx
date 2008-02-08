@@ -18,7 +18,6 @@
 @a Peter Boncz
 @t Iterator-Based BAT Engine
 @* Introduction
-@T
 In the Monet system it was decided that operators use full materialization.
 This is a simple approach that allows for efficient implementation of the 
 individual operators. In MIL, one operator is executed without interruption 
@@ -148,7 +147,6 @@ typedef ptr iter;
 size_t chunksize = 1;
 
 @- BUN insert
-@T
 Moving tuples is optimized to moving only the fixed-size part. The operators presented
 here do not introduce new values; they only pass already existing values. For
 the result tuple buffers we use BATs, but let their heaps for variable-size atoms
@@ -174,7 +172,6 @@ point to the original BATs at the bottom of the tree.
 
 
 @- Data Structure
-@T
 A stream is an object that has a next() method that returns more tuples. We also gave 
 it a guess() for estimating how many tuples more will come, and a free() for deallocation.
 This would have been nicely implemented as a hierarchy of streams in C++, but I hate
@@ -335,7 +332,6 @@ ITERcollect(ITER *it)
 
 
 @+ Scan Iterator
-@T
 Input is simpy an already loaded bat. We provide slices of it.
 @h
 typedef struct {
@@ -378,7 +374,6 @@ iter_scan(iter *res, BAT *b)
 }
 
 @+ Mirror, Reverse and Mark Iterators
-@T
 This passes through the mirrored results of its input. No buns need to be copied as
 their BAT buffers are views of each other; hence share the same data structures. 
 @c
@@ -410,7 +405,6 @@ iter_mirror(iter *res, iter *in)
 }
 
 @- reverse
-@T
 This passes through the reversed results of its input. We reuse the mirror methods.
 @c
 int
@@ -436,7 +430,6 @@ iter_mark(iter *res, iter *in, oid *base)
 }
 
 @+ Scan-Select Iterator
-@T
 This scans the input stream (whatever it may be) and only lets pass the qualifying 
 elements. Qualification is determined using some bit-function that is executed with
 three parameters: current tail-value and two constant parameter values.
@@ -594,11 +587,9 @@ iter_select1(iter *res, iter *input, bit *t, str fcn, ptr v1, int t1)
 }
 
 @+ Join Iterator
-@T
 Falls down into two cases: hash-join and positional join.
 
 @- hash-join
-@T
 This is equi-join using a hash table on the inner operand. The inner
 operand is materialied (it is a BAT).  The iterator then iteratively 
 returns matches on tuples from the outer stream with the hash-table.
@@ -756,7 +747,6 @@ iter_join(iter *res, iter *input, BAT *inner)
 
 
 @+ GroupBy-Aggregation 
-@T
 Aggregation breaks the tuple stream, as it needs to see all tuples before the
 aggregate totals are known. Therefore, these operators return a BAT rather than 
 an ITER. We provide two implementations: a generic hash-based grouping and
@@ -977,7 +967,6 @@ iter_histo(BAT **bn, iter *input)
 
 
 @+ next
-@T
 Replace the contents of the result bat with the next chunk (if any) and return TRUE.
 Otherwise, deallocate the iterator and return FALSE.
 @c
@@ -999,7 +988,6 @@ iter_chunk(BAT **ret, iter *input)
 }
 
 @+ collect
-@T
 Materialize a tuple stream into a BAT. This function intelligently uses
 the guess() method for estimating the memory resources needed.
 @c
@@ -1026,7 +1014,6 @@ iter_count(int *res, iter *input)
 }
 
 @+ chunksize
-@T
 Get and set the chunksize parameter. This determines the granularity in
 which tuples flow through an iterator tree.
 @c

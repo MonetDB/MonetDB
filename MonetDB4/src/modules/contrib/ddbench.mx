@@ -19,12 +19,10 @@
 @a Peter Boncz
 @t DDbench Optimization Module
 @* Introduction
-@T
 This module is intended to attack the times presented on the DD benchmark
 by the infocharger product. 
 
 @+ Enumeration Grouping/Counting
-@T
 It enables experimentation with various optimizations:
 \begin{itemize}
 
@@ -56,7 +54,6 @@ exactly they will improve the computation time. These implementations
 are incorporated using procs into the generic {\small\tt group()} commands.
 
 @+ Selections and Intersecting them
-@T
 Our initial benchmark result was obtained by 
 creating selection-BATs with {\small\tt uselect()} and intersecting those for AND 
 predicates.
@@ -120,7 +117,6 @@ head-columns of the data BATs are {\small\tt void} and that their tail-column is
 an enumeration type.
 
 @+ Sub-Histograms
-@T
 For the computation of the sub-histograms, the following
 optimizations have been done:
 
@@ -143,7 +139,6 @@ by using a direct-indexed array instead of a hash-table to organize
 the histogram counting buckets.
 
 @+ Other Possible Optimizations
-@T
 We discuss possible avenues to further improve the performance of the DD benchmark. 
 
 One such is idea is to further enhance the speed of the basic primitives on
@@ -160,7 +155,6 @@ interpreted using a tree-data structure is being investigated by Martin. It
 should find its way into this document (TODO).
 
 @- MMX parallellism
-@T
 Extra speed may be gained by implementing in assembly directly. 
 The incompatibilities suffered by this might be recompensated by
 the opportunity to achieve implementation code that cannot possibly
@@ -183,7 +177,6 @@ over a bitmask to see which tuples are selected.
 \end{description}
 
 @- Query Optimization
-@T
 An additional way to speed up the DD benchmark is to use an intelligent
 cube-caching system. The basic idea is to first invest in computing a 
 complex cubes that are cached instead of out current binary \[X,reliable\]
@@ -982,7 +975,6 @@ enum_group(BAT **res, BAT *ct, BAT *b)
 }
 
 @- optimized implementation
-@T
 The below grouping algorithm exploits a limited number of grouping
 combinations by creating an 'map' of index numbers for each possible group
 that is initialized on zero. The index to the map is computed for each
@@ -1431,7 +1423,6 @@ rngs_bitselect(BAT **res, BAT *b, ...)
 
 
 @- optimized bit32 select/refine implementations
-@T
 The creation of the destination submask, of which each integer
 contains 32 answers (yes or no selected) is sped up by loop
 unrolling these 32 tests. If the attribute type being

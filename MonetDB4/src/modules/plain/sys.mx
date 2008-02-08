@@ -58,7 +58,7 @@ that you might well find very useful.
         "print a map of all memory that is in use"
 .COMMAND mem_colormap() : void = print_color_map;
         "print a color map of all memory that is in use"
-@T
+@
 For each 64KB block in the first 3GB of the virtual memory {\tt mem\_printmap()} prints a character:
 \begin{verbatim}
 0-9 - thread stack space of thread <num>
@@ -103,7 +103,7 @@ low value (say 64KB).
 	"get a split-up of how much virtual memory blocks are in use."
 .COMMAND vm_trim(lng maxsize) : void = vm_trim;
 	"flush memory maps"
-@T
+@
 Some explanation of what mem\_usage() and vm\_usage() display:
 \begin{verbatim}
 > mem_usage().print();
@@ -1681,7 +1681,6 @@ get_vm_usage(BAT **ret, lng *minsize)
 Additional information on the process utilization is given by
 the io command. The following information is obtained.
 
-@T
 \begin{tabular}{| l| l|}\hline
 maxrss     &the maximum resident set size utilized (in kilobytes).\\
 minflt     &the number of page faults serviced without any I/O\\

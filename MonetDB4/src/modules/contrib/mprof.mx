@@ -20,7 +20,6 @@
 @v 1.0
 
 @* Introduction
-@T
 Performance analysis is a must to understand the and improve the
 database applications developed for Monet.
 To simplify this job, a profiling module is provided, which
@@ -89,7 +88,6 @@ concurrent mode the labelling should be used to differentiate the cases.
 
 The properties collected are summarized below. The items marked '*' are 
 collected for both the beginning and the end of the intervals.
-@T
 \begin{tabular}{l l}
 name	& label associate with a oid \\
 intervals & oid associate with each interval\\
@@ -1344,7 +1342,6 @@ facilities.
 The first example does not rely on general aggregate processing.
 
 @-
-@T
 \begin{verbatim}
 # some simple atom expressions
 a := Tms("12,13");
@@ -1385,7 +1382,7 @@ PROC test_mprof() : void {
 	pmE("pmPrint");
 	printf("#~BeginVariableOutput~#\n"); pmSummary(); printf("#~EndVariableOutput~#\n");
 }
-@T
+@
 
 A sample output of the pmSummary routine is shown below
 (for the example above)

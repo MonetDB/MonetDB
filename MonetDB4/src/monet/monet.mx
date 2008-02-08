@@ -15,8 +15,6 @@
 @' All Rights Reserved.
 
 @f monet
-@T
-% define titlepage
 @t The Monet Database System
 @v Version 4.2
 @a Martin L. Kersten & Peter Boncz
@@ -35,7 +33,7 @@ our experience with earlier systems, e.g. Troll and PRISMA,
 showed that the overhead can be kept within acceptable limits.
 Moreover, a textual interface reduces the programming
 effort otherwise needed to develop test and application programs.
-@T
+
     \begin{figure}[hbt]
         \mbox{\hspace{120pt}\epsffile{monet.eps}}\\
         \caption{The Monet Modules}
@@ -69,7 +67,7 @@ and when they are inspected or being modified to take decisions.
 
 In the current implementation the following list of locks and semaphores
 is used:
-@T
+
 \begin{tabular}{|l | l | l |}\hline
 Name & Used in & Protects\\
 GDKthreadLock   & GDKinit       & {\em created }\\
@@ -110,7 +108,6 @@ monet\_available	& monet\_init    & {\em created}\\
                 &               & {\em up to signal available requests}\\ \hline
 \end{tabular}
 
-@T
 \begin{verbatim}
 Some conclusions:
 - BBPcache is also used in BBPdummy, BBPexit, BBPcacheit
@@ -283,7 +280,6 @@ The number of invocation arguments is kept to a minimum.
 The listing flag is set automatically
 when statements are read from a file.
 The prompt character is printed each time @%Monet@ expects a new command.
-@T
 \begin{itemize}
 \item
 A dataset within the database server can be selected with the {\tt
@@ -402,7 +398,7 @@ monet_hello(stream *out)
 			out = GDKout;
 		stream_printf(out, "# MonetDB Server v%s\n", monet_version);
 		stream_printf(out, "# based on GDK   v%s\n", GDKversion());
-		stream_printf(out, "# Copyright (c) 1993-2007, CWI. "
+		stream_printf(out, "# Copyright (c) 1993-2008, CWI. "
 			      "All rights reserved.\n");
 		stream_printf(out, "# Compiled for %s/" SZFMT "bit with " SZFMT "bit OIDs; %s linked.\n", 
 		                   monet_arch, (size_t) (sizeof(ptr) * 8), (size_t) (sizeof(oid) * 8), linkinfo);
@@ -594,7 +590,7 @@ Read the entire file, realloc if necessary.
 @- Monet MIL Evaluation
 Monet MIL execution made easy: you provide a mil string. It gets
 executed and you get a pointer to the return value (a GDK atom) back.
-@T
+
 Take good notice of the below points on return values:
 \begin{itemize}
 \item if there is no return value you get a NULL pointer back!

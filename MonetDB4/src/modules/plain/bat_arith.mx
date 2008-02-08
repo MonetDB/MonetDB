@@ -28,7 +28,7 @@ Only the standard types {\tt bte}, {\tt sht}, {\tt int}, {\tt wrd}, {\tt lng}, {
 @m
 .MODULE bat_arith;
 
-@T
+@
 \begin{verbatim}
 	mel_operation
 	@1:	bte, sht, int, wrd, lng, flt, dbl arithmetic type
@@ -58,37 +58,37 @@ Only the standard types {\tt bte}, {\tt sht}, {\tt int}, {\tt wrd}, {\tt lng}, {
 
 @= operations
 @:@1_operation(bte,+,add,,0,2)@
-@:@1_operation(bte,-,sub,,0,1)@
-@:@1_operation(bte,*,mul,1,0,2)@
+@:@1_operation(bte,-,sub,,0,2)@
+@:@1_operation(bte,*,mul,1,0,3)@
 @:@1_operation(bte,/,div,1,1,1)@
 @:@1_operation(bte,%,mod,1,1,0)@
 @:@1_operation(sht,+,add,,0,2)@
-@:@1_operation(sht,-,sub,,0,1)@
-@:@1_operation(sht,*,mul,1,0,2)@
+@:@1_operation(sht,-,sub,,0,2)@
+@:@1_operation(sht,*,mul,1,0,3)@
 @:@1_operation(sht,/,div,1,1,1)@
 @:@1_operation(sht,%,mod,1,1,0)@
 @:@1_operation(int,+,add,,0,2)@
-@:@1_operation(int,-,sub,,0,1)@
-@:@1_operation(int,*,mul,1,0,2)@
+@:@1_operation(int,-,sub,,0,2)@
+@:@1_operation(int,*,mul,1,0,3)@
 @:@1_operation(int,/,div,1,1,1)@
 @:@1_operation(int,%,mod,1,1,0)@
 @:@1_operation(wrd,+,add,,0,2)@
-@:@1_operation(wrd,-,sub,,0,1)@
-@:@1_operation(wrd,*,mul,1,0,2)@
+@:@1_operation(wrd,-,sub,,0,2)@
+@:@1_operation(wrd,*,mul,1,0,3)@
 @:@1_operation(wrd,/,div,1,1,1)@
 @:@1_operation(wrd,%,mod,1,1,0)@
 @:@1_operation(lng,+,add,,0,2)@
-@:@1_operation(lng,-,sub,,0,1)@
-@:@1_operation(lng,*,mul,1,0,2)@
+@:@1_operation(lng,-,sub,,0,2)@
+@:@1_operation(lng,*,mul,1,0,3)@
 @:@1_operation(lng,/,div,1,1,1)@
 @:@1_operation(lng,%,mod,1,1,0)@
 @:@1_operation(flt,+,add,,0,2)@
-@:@1_operation(flt,-,sub,,0,1)@
-@:@1_operation(flt,*,mul,1,0,2)@
+@:@1_operation(flt,-,sub,,0,2)@
+@:@1_operation(flt,*,mul,1,0,3)@
 @:@1_operation(flt,/,div,1,1,1)@
 @:@1_operation(dbl,+,add,,0,2)@
-@:@1_operation(dbl,-,sub,,0,1)@
-@:@1_operation(dbl,*,mul,1,0,2)@
+@:@1_operation(dbl,-,sub,,0,2)@
+@:@1_operation(dbl,*,mul,1,0,3)@
 @:@1_operation(dbl,/,div,1,1,1)@
 @:@1_redefine_OP()@
 @:@1_operation(flt,%,mod,1,1,1,%)@
@@ -227,6 +227,12 @@ valbat_@1_@3(BAT **ret, @1 *v, BAT *b)
 
 	if (@6 == 2) 
 		bn->tsorted = BATtordered(b);
+	if (@6 == 3) { 
+		if (*v > 0)
+			bn->tsorted = BATtordered(b);
+		else
+			bn->tsorted = REVERT_SORTED(BATtordered(b));
+	}
 
 	*ret = bn;
 	return GDK_SUCCEED;
@@ -240,7 +246,6 @@ int valbat_@1_@3_inplace(BAT **ret, @1 *v, BAT *b) {
 		   "valbat_@1_@3_inplace: BAT b must be void-headed.\n");
 	/* todo for commutative operators call batval (ie. for * and /) */
 
-	b->tsorted = 0;
 	bq = (@1*)Tloc(b,BUNlast(b));
 	bp = (@1*)Tloc(b,BUNfirst(b));
 	if (vv != @1_nil) {
@@ -261,6 +266,13 @@ int valbat_@1_@3_inplace(BAT **ret, @1 *v, BAT *b) {
 
 	if (@6 == 2) 
 		b->tsorted = BATtordered(b);
+	if (@6 == 3) { 
+		if (*v > 0)
+			b->tsorted = BATtordered(b);
+		else
+			b->tsorted = REVERT_SORTED(BATtordered(b));
+	} else 
+		b->tsorted = 0;
 
 	BBPfix(b->batCacheid);
 	*ret = b;
@@ -305,8 +317,14 @@ batval_@1_@3(BAT **ret, BAT *b, @1 *v)
 	}
 	BATsetcount(bn, bnp-s);
 	if (!bn->batDirty) bn->batDirty = TRUE;
-	if (@6) 
+	if (@6 == 2) 
 		bn->tsorted = BATtordered(b);
+	if (@6 == 3) { 
+		if (*v > 0)
+			bn->tsorted = BATtordered(b);
+		else
+			bn->tsorted = REVERT_SORTED(BATtordered(b));
+	} 
 
 	*ret = bn;
 	return GDK_SUCCEED;
@@ -321,7 +339,6 @@ batval_@1_@3_inplace(BAT **ret, BAT *b, @1 *v)
 	ERRORcheck((b->htype!=TYPE_void),
 		   "batval_@1_@3_inplace: BAT b must be void-headed.\n");
 
-	b->tsorted = 0;
 	bq = (@1*)Tloc(b,BUNlast(b));
 	bp = (@1*)Tloc(b,BUNfirst(b));
 	if (@5 && (vv == 0)) {
@@ -339,8 +356,15 @@ batval_@1_@3_inplace(BAT **ret, BAT *b, @1 *v)
 		}
 	}
 	if (!b->batDirty) b->batDirty = TRUE;
-	if (@6) 
+	if (@6 == 2) 
 		b->tsorted = BATtordered(b);
+	if (@6 == 3) { 
+		if (*v > 0)
+			b->tsorted = BATtordered(b);
+		else
+			b->tsorted = REVERT_SORTED(BATtordered(b));
+	} else
+		b->tsorted = 0;
 
 	BBPfix(b->batCacheid);
 	*ret = b;

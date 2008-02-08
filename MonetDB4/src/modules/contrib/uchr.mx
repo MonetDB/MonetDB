@@ -19,7 +19,6 @@
 @a Niels Nes
 @v 1.0
 @* Introduction
-@T
 The uchr atom is just a chr but uses numerical string representations.
 
 

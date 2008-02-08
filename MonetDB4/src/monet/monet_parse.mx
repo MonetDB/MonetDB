@@ -18,7 +18,6 @@
 @a M. L. Kersten, P. Boncz
 
 @* Parsing BAT algebra
-@T
 We will discuss how BAT algebra is lexically analyzed with {\tt lex},
 parsed with {\tt yacc}, and discuss the dunction table.
 
@@ -691,7 +690,6 @@ yywrap(void)
 }
 
 @- The YACC Grammar
-@T
 A parse tree is built during parsing, such that a compact
 representation for function calls result.
 

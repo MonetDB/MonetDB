@@ -19,9 +19,7 @@ SUBDIRS = src conf scripts
 EXTRA_DIST = bootstrap configure.ag RunMtest.in \
 		RunMtest.bat.in RunMapprove.in RunMapprove.bat.in \
 		RunMserver.bat.in RunMserver.in \
-		rpm.mk.in MonetDB-server.spec MonetDB-server.spec.in \
-		HowToStart HowToStart-MinGW.txt \
-		HowToStart-MinGW-pcre.txt HowToStart-MinGW-swig.txt 
+		rpm.mk.in MonetDB-server.spec MonetDB-server.spec.in
 
 EXTRA_DIST_DIR = NT tests
 

@@ -19,7 +19,6 @@
 @a Niels Nes
 @* Ascii io Module
 
-@T
 A database cannot live with out bulk load/store operations. The ASCII io
 module can be used bulk load from an ASCII file or dump to one.
 The file can plain ASCII, gzipped or bzipped, decided by the extension

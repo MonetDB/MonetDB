@@ -19,7 +19,6 @@
 @v 1.0
 @t Some (experimental) sorted-order algebraic operators
 @* Introduction
-@T
 
 Warning: experimental code!
 
@@ -164,7 +163,6 @@ Meer notities:
 \end{verbatim}
 
 @+ Running example
-@T
 
 In the following, we will assume that we work with three [void,oid] BATs 
 {\tt dj}, {\tt ti}, {\tt tfij} -- like the {\tt CONTREP} structure described
@@ -181,7 +179,6 @@ TODO:
 \end{verbatim}
   
 @+ Building the cluster-hash
-@T
 
 We first need to obtain `a' clustering of the data; potential sources are a
 normal hash-table, an enum, a radix-ed BAT, as well as a 
@@ -251,7 +248,6 @@ build the cluster hash from the enum.
 #include "gdk.h"
 
 @+ Type definition
-@T
 
 Explain fields.
 @h
@@ -284,7 +280,6 @@ to be explained
 @c
 
 @+ Utility functions
-@T
 
 Not extremely interesting utility stuff.
 We maintain a cache of known clusterhashes, protected by a lock,
@@ -333,7 +328,6 @@ BAT *salgebra_namecache;
 BAT *salgebra_refcnt;
 
 @+ MEL required functions
-@T
 \begin{itemize}
   \item size() and align()
   \item ToStr
@@ -502,7 +496,6 @@ clusterhashFromStr(str src, int *len, clusterhash **dst)
 }
 
 @+ Dictionary
-@T
 
 The dictionary stores for each cluster the start and end bucket in the 
 clusterhash itself.
@@ -542,7 +535,6 @@ DICTclear(dict_entry *d, size_t n)
 }
 
 @+ Hashtable
-@T
 
 ...
 
@@ -650,7 +642,7 @@ salgebra_@1RefCnt( clusterhash *ch ) {
 @:deltaRefCnt(inc,++)@
 @:deltaRefCnt(dec,--)@
 
-@T
+@
 Build a clusterhash for bat b, deriving the clustering from a hash 
 defined for b.
 @c

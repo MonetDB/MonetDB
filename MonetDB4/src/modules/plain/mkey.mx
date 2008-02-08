@@ -59,7 +59,6 @@ When creating a join, we want to make a unique key of the attributes on both
 sides and then join these keys.
 
 Example :
-@T
 \begin{verbatim}
 orders                  customer                link
 ====================    =====================   ===========
@@ -117,7 +116,6 @@ by the MIL proc ds\_hash(). Hence, we do ds\_hash on both sides, and join
 that together with a simple MIL join:
 
 join(ds\_hash(keys), ds\_hash(keys.reverse);
-@T
 One complication of this procedure are nil values:
 \begin{itemize}
 \item it may happen that the final hash-value (an int formed by a

@@ -18,7 +18,6 @@
 @a N. Nes
 @t PCL - The Performance Counter Library
 @v 2.2, January 2003
-@T
 PCL (The Performance Counter Library) is a common interface to access
 in a portable way performance counters built into modern
 microprocessors. PCL supports query for functionality, start and stop

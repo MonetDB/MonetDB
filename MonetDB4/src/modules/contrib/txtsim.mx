@@ -20,7 +20,6 @@
 @d 15/04/2005
 @v 0.3
 
-@T 
 @* String metrics
 
 Provides basic similarity metrics for strings.

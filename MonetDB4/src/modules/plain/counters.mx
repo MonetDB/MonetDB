@@ -17,7 +17,6 @@
 @f counters
 @a S. Manegold, P. Boncz
 @t Performance Counters
-@T
 This is a memory/cpu performance measurement tool for
 the following processor (families).
 \begin{tabular}{l}

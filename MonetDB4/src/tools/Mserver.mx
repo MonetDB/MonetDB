@@ -18,20 +18,17 @@
 @a M.L. Kersten, P. Boncz, Niels Nes
 @v 4.1
 @* The Monet Server
-@T
 The {\tt Mserver} is the Monet server. The database administrator starts
 and stops it. (S)he can type on the console, which is started on the
 standard input/output.
 
 @+ Manual Page
-@T
 The Mserver is a multi-threaded program. There is one system thread, and for
 each user (system administrator included) there is one worker thread.
 As a default, the Mserver also starts the network listener thread,
 on the port number specified in the parameter file.
 
 @- Usage
-@T
 \begin{verbatim}
 Mserver { [ --dbname <db-name> ] 
 	  [ --dbfarm <dbfarm> ]

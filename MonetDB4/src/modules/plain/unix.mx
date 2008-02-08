@@ -20,7 +20,6 @@
 @d 06/06/2001
 @v 0.2
 
-@T
 @* Unix stdlib
 
 Provides access to some of the C stdlib.h functions.

@@ -213,7 +213,6 @@ MT_Sema TBL_barrier;
 int TBL_readers = 0, TBL_writer = 0;
 
 @- read-write locking
-@T
 The function tables are concurrently read by the parser and (multiple)
 interpreter threads. When modules are loaded/dropped or procedures
 defined, the parser thread may also write these tables.
@@ -769,7 +768,6 @@ TBL_getparams(ptr imp, str argv[])
 }
 
 @- TBL_checkparams
-@T
 This routine checks whether a set of actual parameters make a match
 with the signature of a certain registered MIL operator. Signatures
 are registered in the {\tt monet\_fcn\_pro} system BAT, which
@@ -1151,7 +1149,6 @@ SHOULD NEVER OCCUR UNDER NEW 'RECURSIVE LOADING' POLICY! <= P. Boncz
 @+ MIL Procedure Management
 
 @- MIL Proc Ref counting
-@T
 While MIL procs are typically introduced by MIL modules, they can be typed in at anytime
 in a MIL session (not belonging to any specific module). They are represented as parsed
 MIL trees, with their root in TBL\_fcn\_imp and shared in all client fcntbl-s. As a consequence,
@@ -1782,7 +1779,6 @@ TBL_inc_mod_use(Client client, Client father)
 
 
 @- TBL_loadmod:
-@T
 byuser == cinstalled to the client
 \begin{verbatim}
 loaded	byuser	level	ACTION (in order!)
@@ -2463,7 +2459,6 @@ constraints for assigment-multiplexing: first must be identically typed BAT
 		}
 	}
 @- optimization check
-@T
 The generic multiplex implementation fills an (argc,argv) array
 of @%ValRecord@ structures before each tuple call. That tuple call
 then reconstructs the original atomic values from its (argc,argv)
@@ -2730,7 +2725,6 @@ TBL_iterator(Cntxt stk, str name, int argc, ValPtr argv)
 }
 
 @- TBL_procreturn
-@T
 We now allow the user to specify a procedure return value.
 This does not add much functionality, but allows for an
 extra check on a procedure return value (TBL\_procreturn).

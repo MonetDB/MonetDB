@@ -18,7 +18,6 @@
 @a M.L. Kersten, P. Boncz, A.P. de Vries, N.J. Nes -- $Id$
 @v 2.2
 @t Cross Table Module
-@T
 {\bf Copyright \copyright\ 1996-1999 by Data Distilleries, All Rights Reserved.
 
 No part of this work covered by the copyright hereon may be reproduced or used
@@ -28,7 +27,6 @@ without permission of the copyright owner. }
 
 @{
 @+ Document control
-@T
 (April 2005:) Niels HASH_MAX now indicates the end of the hash chain list 
 (Mar 2005:) Niels removed the histolink accelerator and changed to the grp atom
 
@@ -47,7 +45,6 @@ This is simple stable and fast. good memory performance.
 @}
 
 @* Introduction
-@T
 Data mining applications require efficient construction and manipulation
 of cross-tables.
 The Monet kernel already provides for a histogram function over a single BAT.
@@ -61,14 +58,12 @@ retrieved easily. An optimized implementation in which we use positional
 integer id's (as embodied by Monet's void type) is also available.
 
 @+ Algorithms
-@T
 There are several approaches to build a cross table. The one chosen here
 is aimed at incremental construction, such that re-use of intermediates
 becomes possible. Starting with the first dimension, a BAT is derived to
 represent the various groups, called a {\bf CT BAT} or cross-table BAT.
 
 @- Cross Table (CT)
-@T
 A cross table is an <oid,oid> BAT where the first (head) denotes a tuple in
 the cross table and the second (tail) marks all identical lists.
 The tail-oids contain group identifiers; that is, {\em this value is equal
@@ -80,13 +75,12 @@ as saying that each member of the group is 'like John' with respect
 to the grouping-criterion.
 
 @- going deeper
-@T
 Successively the subgroups can be identified by modifying the CT BAT or
 to derive a new CT BAT for the subgroups. After all groups have been
 identified this way, a BAT histogram operation can be used to obtain
 the counts of each data cube. Other aggregation operations using the MIL
 set aggregate construct \{X\}(bat) (see the
-@[<a href="../../../FrontEnds/mil/index.html#mod_3_2_0">MIL Reference Manual</a>@)
+@[<a href="_ROOTURL_/MonetDB/Version4/Documentation/mil/index.html#mod_3_2_0">MIL Reference Manual</a>@)
 can be used as well; note for instance that histogram == \{count\}(b.reverse).
 
 @* Module Definition
@@ -322,7 +316,6 @@ grp_unfix( grp *g )
 }
 
 @+ Core Grouping Algorithms
-@T
 We use hash-grouping all the way. This implementation employs
 a simple sequential scan through the operands, adding group
 values to a hash-table. This hash-table gives access to the group
@@ -450,7 +443,7 @@ bunins_failed:
 	return bn;
 }
 
-@T
+@
 The group macro is split along three dimensions:
 \begin{description}
 \item [type:] Type specific implementation for selecting the right

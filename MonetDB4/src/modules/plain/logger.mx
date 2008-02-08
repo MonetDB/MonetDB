@@ -18,7 +18,6 @@
 @t Transactions
 @a N. J. Nes
 @v 2.0
-@T
 @* Introduction
 In the philosophy of MonetDB, transaction management overhead should only
 be paid when necessary. Transaction management is for this purpose 
