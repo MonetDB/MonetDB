@@ -1681,31 +1681,36 @@ BATrevert(BAT *b)
 			return NULL;
 	}
 	ALIGNdel(b, "BATrevert", FALSE);
-	hs = (size_t) Hsize(b);
-	ts = (size_t) Tsize(b);
-	h = (char *) GDKmalloc(hs);
-	t = (char *) GDKmalloc(ts);
-	if (!h || !t) {
+	if ((hs = (size_t) Hsize(b)) > 0) {
+		h = (char *) GDKmalloc(hs);
+		if (!h) {
+			return NULL;
+		}
+		for (p = BUNlast(b)?BUNlast(b) - 1:0, q = BUNfirst(b); p > q; p--, q++){
+			char *ph = BUNhloc(bi,p);
+			char *qh = BUNhloc(bi,q);
+
+			memcpy(h , ph, hs);
+			memcpy(ph, qh, hs);
+			memcpy(qh, h , hs);
+		}
 		GDKfree(h);
+	}
+	if ((ts = (size_t) Tsize(b)) > 0) {
+		t = (char *) GDKmalloc(ts);
+		if (!t) {
+			return NULL;
+		}
+		for (p = BUNlast(b)?BUNlast(b) - 1:0, q = BUNfirst(b); p > q; p--, q++){
+			char *pt = BUNtloc(bi,p);
+			char *qt = BUNtloc(bi,q);
+
+			memcpy(t , pt, ts);
+			memcpy(pt, qt, ts);
+			memcpy(qt, t , ts);
+		}
 		GDKfree(t);
-		return NULL;
 	}
-	for (p = BUNlast(b)?BUNlast(b) - 1:0, q = BUNfirst(b); p > q; p--, q++){
-		char *ph = BUNhloc(bi,p);
-		char *qh = BUNhloc(bi,q);
-		char *pt = BUNtloc(bi,p);
-		char *qt = BUNtloc(bi,q);
-
-		memcpy(h , ph, hs);
-		memcpy(ph, qh, hs);
-		memcpy(qh, h , hs);
-
-		memcpy(h , pt, ts);
-		memcpy(pt, qt, ts);
-		memcpy(qt, h , ts);
-	}
-	GDKfree(h);
-	GDKfree(t);
 	HASHdestroy(b);
 	if (b->hsorted & GDK_SORTED)
 		b->hsorted = GDK_SORTED_REV;
