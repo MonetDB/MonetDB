@@ -114,7 +114,8 @@ The suite can be compiled using one of the following compilers:
 
 - Microsoft Visual Studio .NET 2003 (also known as Microsoft Visual Studio 7);
 - Microsoft Visual Studio 2005 (also known as Microsoft Visual Studio 8);
-- Intel(R) C++ Compiler 9.1 (which actually needs one of the above).
+- Intel(R) C++ Compiler 9.1 (which actually needs one of the above);
+- Intel(R) C++ Compiler 10.1 (which also needs one of the Microsoft compilers).
 
 Note that the pathfinder component can currently not be compiled with
 any of the Microsoft compilers.  It can be compiled with the Intel
@@ -124,7 +125,7 @@ Not supported anymore (but probably still possible) are the GNU C
 Compiler gcc under Cygwin__.  Using that it (probably still) is possible
 to build a version that runs using the Cygwin DLLs, but also a version
 that uses the MinGW__ (Minimalist GNU for Windows) package.  This is
-not further described here.
+not supported and not further described here.
 
 __ http://www.cygwin.com/
 __ http://www.mingw.org/
@@ -534,9 +535,18 @@ files that are provided by the compilers:
 
    call "%ProgramFiles%\Microsoft Visual Studio 8\Common7\Tools\vsvars32.bat"
 
-- Intel(R) C++ Compiler 9.1::
+- Intel(R) C++ Compiler 10.1.013::
 
-   call "%ProgramFiles%\Intel\Compiler\C++\9.1\IA32\Bin\iclvars.bat"
+   call "C:%ProgramFiles%\Intel\Compiler\C++\10.1.013\IA32\Bin\iclvars.bat"
+
+When using the Intel compiler, you also need to set the ``CC`` and
+``CXX`` variables::
+
+ set CC=icl -Qstd=c99 -GR- -Qsafeseh-
+ set CXX=icl -Qstd=c99 -GR- -Qsafeseh-
+
+(These are the values for the 10.1 version, for 9.1 replace
+``-Qstd=c99`` with ``-Qc99``.)
 
 Internal Variables
 ~~~~~~~~~~~~~~~~~~
