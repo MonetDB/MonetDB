@@ -629,8 +629,7 @@ void dumpManualOverview(stream *f, Module s, int recursive){
 	InstrPtr sig;
 	Module list[256]; int k, top=0, ftop, fnd;
 	InstrPtr fcn[5000];
-	int r,c,*x = NULL;
-	size_t x_sze = 0;
+	int r, c, *x = NULL, x_sze = 0;
 
 
 	if(s==NULL || f==NULL){
@@ -686,7 +685,7 @@ void dumpManualOverview(stream *f, Module s, int recursive){
 			for (r = 0; r < rows; r++) {
 				int i = (cols * r) + c - 1;
 				if (z < ftop && 
-				    (x[i] < 0 || strlen(getModuleId(fcn[x[i]])) + strlen(getFunctionId(fcn[x[i]])) < 80 / cols)) {
+				    (x[i] < 0 || strlen(getModuleId(fcn[x[i]])) + strlen(getFunctionId(fcn[x[i]])) < (size_t)(80 / cols))) {
 					x[i+1] = z++;
 				} else {
 					/* HACK to avoid long names running into next column in printed version */
