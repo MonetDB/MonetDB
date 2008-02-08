@@ -617,24 +617,24 @@ reduce (PFcnode_t * p, int goalnt)
 
                 PFcnode_t *c = R(p);
 
-                if (LLR(p)->kind != c_nil) {
+                if (LLR(p)->kind != c_nil)
                     c = let (letbind (LLR(p), num (1)), c);
 
-                    /* fix types */
-                    TY(LR(c)) = PFty_xs_integer ();
-                    c->sem.flwr.quantifier = PFty_one;
-                }
-
                 *p = *let (letbind (LLL(p), LR(p)), c);
-                /* type let binding */
-                p->sem.flwr.quantifier = PFty_one;
 
-                relabel (p, kids);
+                /* type-check what we just created */
+                PFty_check (flwr (p, num(1)));
+
                 rewritten = true;
 
+                /*
+                 * Re-label entire subtree. Type-checking may have
+                 * modified all the state labels in the subtree, so
+                 * we have to restore them.
+                 */
+                PFcoreopt_label (p);
                 break;
             }
-
             break;
 
         /* OptBindExpr:        let (letbind (var,
@@ -662,14 +662,18 @@ reduce (PFcnode_t * p, int goalnt)
             if (RLR(p)->kind == c_orderby)
                 RLR(p) = R(RLR(p));
     
-            /* type let binding */
-            p->sem.flwr.quantifier    = 
-            R(p)->sem.flwr.quantifier = RR(p)->sem.flwr.quantifier;
+            /* type-check what we just created */
+            PFty_check (flwr (p, num(1)));
 
-            relabel (p, kids);
             rewritten = true;
-            break;
 
+            /*
+             * Re-label entire subtree. Type-checking may have
+             * modified all the state labels in the subtree, so
+             * we have to restore them.
+             */
+            PFcoreopt_label (p);
+            break;
 
         /* OptBindExpr:        let (letbind (var,
                                              flwr (let (letbind (var, 
@@ -693,12 +697,17 @@ reduce (PFcnode_t * p, int goalnt)
                                          LRR(p))),
                           R(p)));                        /*     ret e''      */
 
-            /* type let binding */
-            p->sem.flwr.quantifier    = 
-            R(p)->sem.flwr.quantifier = RR(p)->sem.flwr.quantifier;
+            /* type-check what we just created */
+            PFty_check (flwr (p, num (1)));
 
-            relabel (p, kids);
             rewritten = true;
+
+            /*
+             * Re-label entire subtree. Type-checking may have
+             * modified all the state labels in the subtree, so
+             * we have to restore them.
+             */
+            PFcoreopt_label (p);
             break;
 
         /* CoreExpr:           typesw (CoreExpr,
