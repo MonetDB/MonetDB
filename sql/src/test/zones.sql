@@ -1,4 +1,3 @@
---set optimizer = 'inline,remap,evaluate,costModel,coercions,emptySet,accessmode,aliases,joinPath,accumulators,mergetable,deadcode,reduce,garbageCollector,multiplex';
 
 declare epsilon double;
 set epsilon=0.00001;

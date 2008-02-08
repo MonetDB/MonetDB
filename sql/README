@@ -1,8 +1,8 @@
 MONETDB SQL FRONTEND
 
 Please see files
-	"HowToStart-SQL" (Unix)
+	"../MonetDB/HowToStart.rst" (Unix)
 or
-	"HowToStart-SQL-Win32.txt" (Windows) 
+	"../buildtools/doc/windowsbuild.rst" (Windows) 
 for details.
 

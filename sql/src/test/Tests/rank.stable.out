@@ -5,15 +5,18 @@ stdout of test 'rank` in directory 'src/test` itself:
 # 19:18:12 >  Mtimeout -timeout 180 Mserver "--config=/ufs/niels/scratch/rc/Linux-x86_64/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB4:/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB4/lib:/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB4/bin" --set "gdk_dbfarm=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB4/dbfarm" --set "sql_logdir=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB4/sql_logs" --set "xquery_logdir=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB4/xquery_logs" --set mapi_port=33222 --set xrpc_port=48072 --set monet_prompt= --trace "--dbname=mTests_src_test" --dbinit=" module(sql_server);" ; echo ; echo Over..
 # 19:18:12 >  
 
-# Monet Database Server V4.16.3
-# Copyright (c) 1993-2007, CWI. All rights reserved.
-# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
-# Visit http://monetdb.cwi.nl/ for further information.
-
-printf("\nReady.\n");
+# MonetDB server v5.4.0, based on kernel v1.22.0
+# Serving database 'mTests_src_test'
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Copyright (c) 1993-2008 CWI, all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://koala.ins.cwi.nl:35135/
+# MonetDB/SQL module v2.22.0 loaded
 
 Ready.
-quit();
+#function user.main():void;
+#    clients.quit();
+#end main;
 
 Over..
 
@@ -57,6 +60,8 @@ Over..
 [ 29	]
 [ 30	]
 [ 31	]
+[ 32	]
+[ 33	]
 % sys.tables,	sys.tables # table_name
 % foo,	schema_id # name
 % int,	int # type
@@ -93,6 +98,8 @@ Over..
 [ 22,	980	]
 [ 23,	980	]
 [ 24,	980	]
+[ 25,	980	]
+[ 26,	980	]
 % sys.tables,	sys.tables # table_name
 % foo,	schema_id # name
 % int,	int # type
@@ -129,6 +136,8 @@ Over..
 [ 22,	980	]
 [ 23,	980	]
 [ 24,	980	]
+[ 25,	980	]
+[ 26,	980	]
 % .,	sys.tables # table_name
 % foo,	schema_id # name
 % int,	int # type
@@ -158,13 +167,15 @@ Over..
 [ 22,	980	]
 [ 23,	980	]
 [ 24,	980	]
-[ 25,	1081	]
-[ 26,	1081	]
+[ 25,	980	]
+[ 26,	980	]
 [ 27,	1081	]
 [ 28,	1081	]
 [ 29,	1081	]
 [ 30,	1081	]
 [ 31,	1081	]
+[ 32,	1081	]
+[ 33,	1081	]
 % sys. # table_name
 % foo # name
 % int # type
@@ -201,6 +212,8 @@ Over..
 [ 29	]
 [ 30	]
 [ 31	]
+[ 32	]
+[ 33	]
 % sys.tables,	sys.tables # table_name
 % foo,	schema_id # name
 % int,	int # type
@@ -237,6 +250,8 @@ Over..
 [ 0,	980	]
 [ 0,	980	]
 [ 0,	980	]
+[ 0,	980	]
+[ 0,	980	]
 % sys.tables,	sys.tables # table_name
 % foo,	schema_id # name
 % int,	int # type
@@ -268,6 +283,8 @@ Over..
 [ 0,	980	]
 [ 0,	980	]
 [ 13,	1081	]
+[ 0,	980	]
+[ 0,	980	]
 [ 0,	980	]
 [ 0,	980	]
 [ 0,	980	]
@@ -277,6 +294,8 @@ Over..
 % foo,	schema_id # name
 % int,	int # type
 % 2,	4 # length
+[ 0,	980	]
+[ 0,	980	]
 [ 0,	980	]
 [ 0,	980	]
 [ 0,	980	]
